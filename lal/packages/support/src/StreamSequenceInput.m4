@@ -158,8 +158,11 @@ LALCHARReadSequence( LALStatus *stat, CHARSequence **sequence, FILE *stream )
   while ( !feof( stream ) ) {
     size_t n = BUFFSIZE;
     data = here->buf.CH;
-    while ( !feof( stream ) && n-- )
-      *(data++) = (CHAR)getc( stream );
+    while ( !feof( stream ) && n )
+	{
+	   *(data++) = (CHAR)getc( stream );
+	    n--;
+	}
     /* The very last value returned by getc() is EOF, which is not a
        character and should not be stored. */
     if ( feof( stream ) ) {
