@@ -368,6 +368,10 @@ while cont:
       print 'Original Fstats1:'
       os.system('cat Fstats-1')
       sys.exit(0)
+
+    if float(sf1) < float(freq) or float(sf1) > (float(freq)+float(coincidence_band)):
+      os.system('rm -rf signal1')            
+      continue
     
     # inject the fake signal into 2nd ifo data
     os.mkdir('signal2')
@@ -455,9 +459,19 @@ while cont:
         [sf1,sa1,sd1,sF1,sfa1,sf2,sa2,sd2,sF2,sfa2,sfa]=line.split(None,11)
       polka_file.close()
       if line_kounter != 1:
-        print 'Fstats file larger or smaller than expected. Exiting 3'
+        print 'Polka file larger or smaller than expected. Exiting 3'
+        print f0,alphaT,deltaT,float(sF1), 2*float(sF1th), float(sF2), 2*float(sF2th),abs(float(sf1)-float(sf2)),h0
         print 'Polka-file:'
+        sys.stdout.flush()
         os.system('cat polka_out')
+        print 'ran:',makefakedata_args
+        print 'ran:',cfstat_args
+        print 'In.data files:'
+        sys.stdout.flush()
+        os.system('cat In1.data')
+        os.system('cat In2.data')
+        os.system('cat Fstats-1')
+        os.system('cat Fstats-2')
         sys.exit(0)
 
       # first check if false alarm is lower than for loudest candidate; if so proceed to chi-sq test
@@ -488,11 +502,25 @@ while cont:
           cfstat_args=' '.join(['./lalapps_ComputeFStatistic','-f',str(chi_fstart),'-b',str(chi_freq_band),\
                                 '-I',str(ifo),'-r',df,'-a',sa,'-d',sd,'-D',data,'-E . -y 00-04 -F',\
                                 Fth,'-p'])
+
+
           #print cfstat_args
           os.system(cfstat_args)
 ##          print 'Fstats1:'
 ##          sys.stdout.flush()
 ##          os.system('cat Fstats')
+
+          fstats1_file=open('Fstats',mode='r')
+          line_kounter=0
+          for line in fstats1_file:
+            line_kounter=line_kounter+1
+          fstats1_file.close()
+          if line_kounter != 1:
+            print 'Fstats file larger or smaller than expected. Exiting 1'
+            print 'Chi-sq Fstats1:'
+            os.system('cat Fstats')
+            sys.exit(0)
+ 
     
           # 2) run makeinvetofile makes the In.data file for makefakedata
           #    and checks that there's only one outlier
@@ -577,6 +605,18 @@ while cont:
 ##          print 'Fstats2:'
 ##          sys.stdout.flush()
 ##          os.system('cat Fstats')
+
+
+          fstats2_file=open('Fstats',mode='r')
+          line_kounter=0
+          for line in fstats2_file:
+            line_kounter=line_kounter+1
+          fstats2_file.close()
+          if line_kounter != 1:
+            print 'Fstats file larger or smaller than expected. Exiting 1'
+            print 'Chi-sq Fstats2:'
+            os.system('cat Fstats')
+            sys.exit(0)
 
       
           # 2) run makeinvetofile makes the In.data file for makefakedata
