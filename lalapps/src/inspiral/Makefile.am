@@ -4,11 +4,13 @@ INSPIRALSRC = ligolwbank.h ligolwbank.c inspiral.h inspiral.c \
               inspiralfrutils.c inspiralfrutils.h
 TMPLTBANKSRC = ligolwbank.h ligolwbank.c tmpltbank.c \
                inspiralfrutils.c inspiralfrutils.h
+TRIGTMPLTSRC = trigg2tmplt.c ligolwbank.h ligolwbank.c
 if FRAME
 if DATAFLOW
-bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank
+bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank lalapps_trigg2tmplt
 lalapps_inspiral_SOURCES = $(INSPIRALSRC)
 lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
+lalapps_trigg2tmplt_SOURCES = $(TRIGTMPLTSRC)
 else
 bin_PROGRAMS = 
 endif
