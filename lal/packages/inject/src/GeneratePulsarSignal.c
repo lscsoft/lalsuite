@@ -1313,7 +1313,7 @@ LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect)
 LIGOTimeGPSVector* 
 make_timestamps (const LIGOTimeGPS *tStart, REAL8 duration, REAL8 Tsft)
 {
-  LALStatus status;
+  LALStatus status = emptyStatus;
   UINT4 i;
   UINT4 numSFTs;
   LIGOTimeGPS tt;
