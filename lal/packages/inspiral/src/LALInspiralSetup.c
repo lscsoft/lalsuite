@@ -418,7 +418,7 @@ LALInspiralSetup (
 		+ (541.0/806.0)*eta*eta - (5605.0/2592.0)*eta*eta*eta
 		+ (1.0/48.0) * LAL_PI*LAL_PI * (256.0 + 451.0*eta)
 		- (856.0/105.0)*log(16.0) );                          
-   ak->ST[threePN+1] = ( -(1712.0/315.0) );     
+   ak->ST[threePN+1] = ( -(1712.0/315.0) );     /* extra 3PN component */
    /* sT[8] is the threePointFivePN contribution */
    ak->ST[8] = (LAL_PI/12096.0) * (-13245.0 + 661775.0*eta + 599156.0*eta*eta); 
    
