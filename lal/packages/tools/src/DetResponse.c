@@ -693,21 +693,12 @@ LALComputeDetAMResponse( LALStatus             *status,
   /* psi */
   psi = pDetAndSrc->pSource->orientation;
 
-  if (lalDebugLevel > 0)
-    {
-      printf("LALComputeDetAMResponse: psi   = %12g\n", psi);
-      printf("LALComputeDetAMResponse: theta = %12g\n", theta);
-      printf("LALComputeDetAMResponse: phi   = %12g\n", phi);
-    }
-
-
-
   /* Now, form the Euler rotations, and compute total rotation */
   LALDR_EulerRotation(r1, -psi,   zAxis);
   LALDR_EulerRotation(r2, -theta, xAxis);
   LALDR_EulerRotation(r3, -phi,   zAxis);
 
-  if (lalDebugLevel > 8)
+  if (lalDebugLevel >= 8)
     {
       sprintf(infostr,
               "Rz(-psi) = \n\t%2.9e   %2.9e   %2.9e\n\t%2.9e   %2.9e   %2.9e\n\t%2.9e   %2.9e   %2.9e\n",
@@ -737,7 +728,7 @@ LALComputeDetAMResponse( LALStatus             *status,
   LALDR_Multiply33Matrix(tmpmat, r2, r1);
   LALDR_Multiply33Matrix(rtot, r3, tmpmat);
 
-  if (lalDebugLevel > 8)
+  if (lalDebugLevel >= 8)
     {
       sprintf(infostr,
               "Rtot = \n\t%2.9e   %2.9e   %2.9e\n\t%2.9e   %2.9e   %2.9e\n\t%2.9e   %2.9e   %2.9e\n",
@@ -771,7 +762,7 @@ LALComputeDetAMResponse( LALStatus             *status,
     for (j = 0; j < 3; ++j)
       response[i][j] = (REAL8)(pDetAndSrc->pDetector->response[i][j]);
 
-  if (lalDebugLevel > 8)
+  if (lalDebugLevel >= 8)
     {
 
       sprintf(infostr,
@@ -834,7 +825,7 @@ LALComputeDetAMResponseSeries( LALStatus              *status,
   INITSTATUS(status, "LALComputeDetAMResponseSeries", DETRESPONSEC);
   ATTATCHSTATUSPTR(status);
 
-  if (lalDebugLevel > 0)
+  if (lalDebugLevel >= 8)
     {
       sprintf(infostr,
               "pResponseSeries->pPlus->length = %d\npTimeInfo->nSample = %d\n",
@@ -860,7 +851,8 @@ LALComputeDetAMResponseSeries( LALStatus              *status,
    */
   if (pResponseSeries->pPlus->length < pTimeInfo->nSample)
     {
-      LALInfo(status, "plus sequence too short -- reallocating");
+      if (lalDebugLevel >= 8)
+        LALInfo(status, "plus sequence too short -- reallocating");
 
       TRY( LALSDestroyVector(status->statusPtr,
                              &(pResponseSeries->pPlus)), status );
@@ -877,7 +869,8 @@ LALComputeDetAMResponseSeries( LALStatus              *status,
 
   if (pResponseSeries->pCross->length < pTimeInfo->nSample)
     {
-      LALInfo(status, "cross sequence too short -- reallocating");
+      if (lalDebugLevel >= 8)      
+        LALInfo(status, "cross sequence too short -- reallocating");
 
       TRY( LALSDestroyVector(status->statusPtr,
                              &(pResponseSeries->pCross)), status );
@@ -890,7 +883,8 @@ LALComputeDetAMResponseSeries( LALStatus              *status,
 
   if (pResponseSeries->pScalar->length < pTimeInfo->nSample)
     {
-      LALInfo(status, "scalar sequence too short -- reallocating");
+      if (lalDebugLevel >= 8)      
+        LALInfo(status, "scalar sequence too short -- reallocating");
 
       TRY( LALSDestroyVector(status->statusPtr,
                              &(pResponseSeries->pScalar)), status );
@@ -911,7 +905,7 @@ LALComputeDetAMResponseSeries( LALStatus              *status,
 
   for (i = 0; i < pTimeInfo->nSample; ++i)
     {
-      if (lalDebugLevel > 0)
+      if (lalDebugLevel >= 8)
         {
           sprintf(infostr, "LALComputeDetAMResponseSeries: i = %d\n", i);
           LALInfo(status, infostr);
