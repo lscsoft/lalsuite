@@ -277,11 +277,11 @@ int ReadFiles(struct CommandLineArgsTag CLA)
 
   /* Fill in R0, C0 data */
   R0.f0=0.0;
-  R0.deltaF=1.0/8.0;                   /*ACHTUNG: HARDWIRED !!*/
+  R0.deltaF=1.0/64.0;                   /*ACHTUNG: HARDWIRED !!*/
   C0.f0=0.0;
-  C0.deltaF=1.0/8.0;                   /*ACHTUNG: HARDWIRED !!*/
+  C0.deltaF=1.0/64.0;                   /*ACHTUNG: HARDWIRED !!*/
   A0.f0=0.0;
-  A0.deltaF=1.0/8.0;                   /*ACHTUNG: HARDWIRED !!*/
+  A0.deltaF=1.0/64.0;                   /*ACHTUNG: HARDWIRED !!*/
 
  /* This is kinda messy... Unfortunately there's no good way of doing this */ 
  /* ------ Open and read Sensing file ------ */
