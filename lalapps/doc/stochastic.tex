@@ -373,38 +373,52 @@ where
 to run the stochastic pipeline.
 
 \item[Synopsis]
-\begin{verbatim}
-  -h, --help               display this message
-  -v, --version            print version information and exit
+\prog{lalapps\_stochastic\_pipe} \newline \hspace*{0.5in}
+[\option{--help}] \newline \hspace*{0.5in}
+[\option{--version}] \newline \hspace*{0.5in}
+[\option{--user-tag}~\parm{TAG}] \newline \hspace*{0.5in}
+[\option{--datafind}] \newline \hspace*{0.5in}
+[\option{--stochastic}] \newline \hspace*{0.5in}
+[\option{--stopp}] \newline \hspace*{0.5in}
+[\option{--priority}] \newline \hspace*{0.5in}
+\option{--config-file}~\parm{FILE} \newline \hspace*{0.5in}
+\option{--log-path}~\parm{PATH}
 
-  -d, --datafind           run LSCdataFind to create frame cache files
-  -s, --stochastic         run lalapps_stochastic
+\item[Description] \prog{lalapps\_stochastic\_pipe} builds a stochastic
+search DAG suitable for running at the various LSC Data Grid sites. The
+configuration file specifies the parameters needed to run the analysis
+jobs contained within the pipeline. It is specified with the
+\option{--config-file} option. A typical .ini file is the following:
 
-  -P, --priority PRIO      run jobs with condor priority PRIO
+\input{stochastic_ini.tex}
 
-  -f, --config-file FILE   use configuration file FILE
-  -l, --log-path PATH      directory to write condor log file
-\end{verbatim}
+The .ini file contains several sections. The \verb$[condor]$ section
+contains the names of executables which will run the various stages of
+the pipeline. The \verb$[pipeline]$ section gives the CVS details of the
+pipeline. The \verb$[input]$ section specifies the segment list and the
+minimum and maximum segment duration for the jobs. The \verb$[datafind]$
+section specifies the frame types for the two input streams for passing
+onto LSCdataFind. The \verb$[detectors]$ section specifies the detector
+pair to cross correlate. The \verb$[calibration]$ section specifies the
+location and name of the various calibration cache files. The
+\verb$[stochastic]$ section specifies static options to pass to
+\prog{lalapps\_stochastic}, i.e.~options that are not automatically
+generated. Finally the \verb$[stopp]$ section specifies the static
+options to pass onto \prog{lalapps\_stopp}.
 
-\item[Description] \prog{lalapps\_stochastic\_pipe} generates a Condor DAG
-to run the stochastic search pipeline. The configuration should specify
-the parameters needed to run the jobs and must be specified with the
-\verb$--config-file$ option. A file containing science segments to
-analysed should be specified in the \verb$[input]$ section of the
-configuration file with a line such as
-
-\begin{verbatim}
-segments = S2H1L1v03_selectedsegs.txt
-\end{verbatim}
-
-This should contain four whitespace separated columns:
-
-\begin{verbatim}
-  segment_id    gps_start_time    gps_end_time    duration
-\end{verbatim}
-
-that define the science segments to be used. Lines starting with an
-octothorpe are ignored.
+\item[Options]\leavevmode
+\begin{entry}
+\item[\option{--help}] Display usage information
+\item[\option{--version}] Display version information
+\item[\option{--user-tag}~\parm{TAG}] The tag for the job
+\item[\option{--datafind}] Run LSCdataFind as part of the DAG to create
+the cache files for each science segment
+\item[\option{--stochastic}] Run \prog{lalapps\_stochastic} on the data
+\item[\option{--stopp}] Run \prog{lalapps\_stopp} on the data
+\item[\option{--priority}~\parm{PRIO}] Run jobs with condor priority \parm{PRIO}
+\item[\option{--config-file}~\parm{FILE}] Use configuration file \parm{FILE}
+\item[\option{--log-path}~\parm{PATH}] Directory to write condor log file
+\end{entry}
 
 \item[Example]
 Generate a DAG to run a stochastic search on a pair of interferometers
@@ -432,39 +446,51 @@ Adam Mercer
 to run the stochastic bayesian pipeline.
 
 \item[Synopsis]
-\begin{verbatim}
-  -h, --help               display this message
-  -v, --version            print version information and exit
+\prog{lalapps\_stochastic\_bayes} \newline \hspace*{0.5in}
+[\option{--help}] \newline \hspace*{0.5in}
+[\option{--version}] \newline \hspace*{0.5in}
+[\option{--user-tag}~\parm{TAG}] \newline \hspace*{0.5in}
+[\option{--datafind}] \newline \hspace*{0.5in}
+[\option{--stochastic}] \newline \hspace*{0.5in}
+[\option{--priority}~\parm{PRIO}] \newline \hspace*{0.5in}
+\option{--config-file}~\parm{FILE} \newline \hspace*{0.5in}
+\option{--log-path}~\parm{PATH}
 
-  -d, --datafind           run LSCdataFind to create frame cache files
-  -s, --stochastic         run lalapps_stochastic
+\item[Description] \prog{lalapps\_stochastic\_pipe} builds a stochastic
+search DAG suitable for running at the various LSC Data Grid sites. The
+configuration file specifies the parameters needed to run the analysis
+jobs contained within the pipeline. It is specified with the
+\option{--config-file} option. A typical .ini file is the following:
 
-  -P, --priority PRIO      run jobs with condor priority PRIO
+\input{stochastic_bayes_ini.tex}
 
-  -f, --config-file FILE   use configuration file FILE
-  -l, --log-path PATH      directory to write condor log file
-\end{verbatim}
+The .ini file contains several sections. The \verb$[condor]$ section
+contains the names of executables which will run the various stages of
+the pipeline. The \verb$[pipeline]$ section gives the CVS details of the
+pipeline. The \verb$[input]$ section specifies the segment list and the
+minimum and maximum segment duration for the jobs. The \verb$[datafind]$
+section specifies the frame types for the two input streams for passing
+onto LSCdataFind. The \verb$[detectors]$ section specifies the detector
+pair to cross correlate. The \verb$[calibration]$ section specifies the
+location and name of the various calibration cache files. The
+\verb$[frequency]$ section specifies the minimum and maximum frequencies
+and the band over which the bayesian search runs. Finally
+\verb$[stochastic]$ section specifies static options to pass to
+\prog{lalapps\_stochastic}, i.e.~options that are not automatically
+generated.
 
-\item[Description] \prog{lalapps\_stochastic\_bayes} generates a Condor
-DAG to run the stochastic search bayesian pipeline. The configuration
-should specify the parameters needed to run the jobs and must be
-specified with the \verb$--config-file$ option. A file containing
-science segments to analysed should be specified in the \verb$[input]$
-section of the configuration file with a line such as
-
-\begin{verbatim}
-segments = S2H1L1v03_selectedsegs.txt
-\end{verbatim}
-
-This should contain
-four whitespace separated columns:
-
-\begin{verbatim}
-  segment_id    gps_start_time    gps_end_time    duration
-\end{verbatim}
-
-that define the science segments to be used. Lines starting with an
-octothorpe are ignored.
+\item[Options]\leavevmode
+\begin{entry}
+\item[\option{--help}] Display usage information
+\item[\option{--version}] Display version information
+\item[\option{--user-tag}~\parm{TAG}] The tag for the job
+\item[\option{--datafind}] Run LSCdataFind as part of the DAG to create
+the cache files for each science segment
+\item[\option{--stochastic}] Run \prog{lalapps\_stochastic} on the data
+\item[\option{--priority}~\parm{PRIO}] Run jobs with condor priority \parm{PRIO}
+\item[\option{--config-file}~\parm{FILE}] Use configuration file \parm{FILE}
+\item[\option{--log-path}~\parm{PATH}] Directory to write condor log file
+\end{entry}
 
 \item[Example]
 Generate a DAG to run a stochastic search on a pair of interferometers
@@ -492,50 +518,51 @@ Adam Mercer
 
 \item[Synopsis]
 \prog{lalapps\_stochastic} \newline \hspace*{0.5in}
-\option{--help} \newline \hspace*{0.5in}
-\option{--version} \newline \hspace*{0.5in}
-\option{--verbose} \newline \hspace*{0.5in}
-\option{--debug-level} \parm{N} \newline \hspace*{0.5in}
-\option{--gps-start-time} \parm{N} \newline \hspace*{0.5in}
-\option{--gps-end-time} \parm{N} \newline \hspace*{0.5in}
-\option{--interval-duration} \parm{N} \newline \hspace*{0.5in}
-\option{--segment-duration} \parm{N} \newline \hspace*{0.5in}
-\option{--sample-rate} \parm{N} \newline \hspace*{0.5in}
-\option{--resample-rate} \parm{N} \newline \hspace*{0.5in}
-\option{--f-min} \parm{N} \newline \hspace*{0.5in}
-\option{--f-max} \parm{N} \newline \hspace*{0.5in}
-\option{--ifo-one} \parm{IFO} \newline \hspace*{0.5in}
-\option{--ifo-two} \parm{IFO} \newline \hspace*{0.5in}
-\option{--channel-one} \parm{CHANNEL} \newline \hspace*{0.5in}
-\option{--channel-two} \parm{CHANNEL} \newline \hspace*{0.5in}
-\option{--frame-cache-one} \parm{FILE} \newline \hspace*{0.5in}
-\option{--frame-cache-two} \parm{FILE} \newline \hspace*{0.5in}
-\option{--calibration-cache-one} \parm{FILE} \newline \hspace*{0.5in}
-\option{--calibration-cache-two} \parm{FILE} \newline \hspace*{0.5in}
-\option{--calibration-offset} \parm{N} \newline \hspace*{0.5in}
-\option{--apply-mask} \parm{N} \newline \hspace*{0.5in}
-\option{--mask-bin} \parm{N} \newline \hspace*{0.5in}
-\option{--overlap-hann} \newline \hspace*{0.5in}
-\option{--hann-duration} \parm{N} \newline \hspace*{0.5in}
-\option{--high-pass-filter} \newline \hspace*{0.5in}
-\option{--hpf-frequency} \parm{N} \newline \hspace*{0.5in}
-\option{--hpf-attenuation} \parm{N} \newline \hspace*{0.5in}
-\option{--hpf-order} \parm{N} \newline \hspace*{0.5in}
+[\option{--help}] \newline \hspace*{0.5in}
+[\option{--version}] \newline \hspace*{0.5in}
+[\option{--verbose}] \newline \hspace*{0.5in}
+[\option{--debug-level}~\parm{N}] \newline \hspace*{0.5in}
+[\option{--user-tag}~\parm{STRING}] \newline \hspace*{0.5in}
+[\option{--comment}~\parm{STRING}] \newline \hspace*{0.5in}
+[\option{--output-dir}~\parm{DIR}] \newline \hspace*{0.5in}
+[\option{--cc-spectra}] \newline \hspace*{0.5in}
+[\option{--bayesian}] \newline \hspace*{0.5in}
+\option{--gps-start-time}~\parm{N} \newline \hspace*{0.5in}
+\option{--gps-end-time}~\parm{N} \newline \hspace*{0.5in}
+\option{--interval-duration}~\parm{N} \newline \hspace*{0.5in}
+\option{--segment-duration}~\parm{N} \newline \hspace*{0.5in}
+\option{--resample-rate}~\parm{N} \newline \hspace*{0.5in}
+\option{--f-min}~\parm{N} \newline \hspace*{0.5in}
+\option{--f-max}~\parm{N} \newline \hspace*{0.5in}
+\option{--ifo-one}~\parm{IFO} \newline \hspace*{0.5in}
+\option{--ifo-two}~\parm{IFO} \newline \hspace*{0.5in}
+\option{--channel-one}~\parm{CHANNEL} \newline \hspace*{0.5in}
+\option{--channel-two}~\parm{CHANNEL} \newline \hspace*{0.5in}
+\option{--frame-cache-one}~\parm{FILE} \newline \hspace*{0.5in}
+\option{--frame-cache-two}~\parm{FILE} \newline \hspace*{0.5in}
+\option{--calibration-cache-one}~\parm{FILE} \newline \hspace*{0.5in}
+\option{--calibration-cache-two}~\parm{FILE} \newline \hspace*{0.5in}
+\option{--calibration-offset}~\parm{N} \newline \hspace*{0.5in}
+[\option{--apply-mask}~\parm{N} \newline \hspace*{0.5in}
+\option{--mask-bin}~\parm{N}] \newline \hspace*{0.5in}
+[\option{--overlap-hann} \newline \hspace*{0.5in}
+\option{--hann-duration}~\parm{N}] \newline \hspace*{0.5in}
+[\option{--high-pass-filter} \newline \hspace*{0.5in}
+\option{--hpf-frequency}~\parm{N} \newline \hspace*{0.5in}
+\option{--hpf-attenuation}~\parm{N} \newline \hspace*{0.5in}
+\option{--hpf-order}~\parm{N}] \newline \hspace*{0.5in}
 \option{--recentre} \newline \hspace*{0.5in}
-\option{--post-analysis} \newline \hspace*{0.5in}
 \option{--middle-segment} \newline \hspace*{0.5in}
-\option{--inject} \newline \hspace*{0.5in}
-\option{--scale-factor} \parm{N} \newline \hspace*{0.5in}
-\option{--seed} \parm{N} \newline \hspace*{0.5in}
-\option{--trials} \parm{N} \newline \hspace*{0.5in}
-\option{--output-dir} \parm{DIR} \newline \hspace*{0.5in}
-\option{--test} \newline \hspace*{0.5in}
-\option{--test-interval} \parm{N} \newline \hspace*{0.5in}
-\option{--test-segment} \parm{N} \newline \hspace*{0.5in}
-\option{--test-trial} \parm{N} \newline \hspace*{0.5in}
-\option{--geo-hpf-frequency} \parm{N} \newline \hspace*{0.5in}
-\option{--geo-hpf-attenuation} \parm{N} \newline \hspace*{0.5in}
-\option{--geo-hpf-order} \parm{N}
+[\option{--inject} \newline \hspace*{0.5in}
+\option{--scale-factor}~\parm{N} \newline \hspace*{0.5in}
+\option{--seed}~\parm{N} \newline \hspace*{0.5in}
+\option{--trials}~\parm{N}] \newline \hspace*{0.5in}
+[\option{--geo-hpf-frequency}~\parm{N} \newline \hspace*{0.5in}
+\option{--geo-hpf-attenuation}~\parm{N} \newline \hspace*{0.5in}
+\option{--geo-hpf-order}~\parm{N}] \newline \hspace*{0.5in}
+[\option{--alpha}~\parm{N}] \newline \hspace*{0.5in}
+[\option{--f-ref}~\parm{N}] \newline \hspace*{0.5in}
+[\option{--omega0}~\parm{N}]
 
 \item[Description] \prog{lalapps\_stochastic} runs the standalone
 stochastic analysis code.
