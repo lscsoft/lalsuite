@@ -517,16 +517,6 @@ class AnalysisJob:
     """
     return self.__channel
 
-  def calibration(self,ifo):
-    """
-    Returns the name of the calibration file to use for the given IFO.
-    ifo = name of interferomener (e.g. L1, H1 or H2).
-    """
-    cal_path = string.strip(self.__cp.get('calibration','path'))
-    cal_file = string.strip(self.__cp.get('calibration',ifo))
-    cal = os.path.join(cal_path,cal_file)
-    return cal    
-
 
 
 class AnalysisNode(CondorDAGNode):
@@ -540,6 +530,8 @@ class AnalysisNode(CondorDAGNode):
     self.__ifo = None
     self.__input = None
     self.__output = None
+    self.__calibration = None
+    self.__LHO2k = re.compile(r'H2')
 
   def set_start(self,time):
     """
@@ -549,6 +541,8 @@ class AnalysisNode(CondorDAGNode):
     """
     self.add_var_opt('gps-start-time',time)
     self.__start = time
+    if not self.__calibration and self.__ifo and self.__start > 0:
+      self.calibration()
 
   def get_start(self):
     """
@@ -610,7 +604,8 @@ class AnalysisNode(CondorDAGNode):
     """
     self.__ifo = ifo
     self.add_var_opt('channel-name', ifo + ':' + self.job().channel())
-    self.add_var_opt('calibration-cache', self.job().calibration(ifo))
+    if not self.__calibration and self.__ifo and self.__start > 0:
+      self.calibration()
 
   def get_ifo(self):
     """
@@ -626,6 +621,27 @@ class AnalysisNode(CondorDAGNode):
     """
     self.add_var_opt('frame-cache', file)
 
+  def calibration(self):
+    """
+    Set the path to the calibration cache file for the given IFO.
+    During S2 the Hanford 2km IFO had two calibration epochs, so 
+    if the start time is during S2, we use the correct cache file.
+    """
+    cal_path = string.strip(self.__cp.get('calibration','path'))
+
+    if ( self.__LHO2k.match(self.__ifo) and 
+      (self.__start >= 729273613) and (self.__start <= 734367613) ):
+      if self.__start < int(
+        self.__cp.get('calibration','H2-cal-epoch-boundary')):
+        cal_file = string.strip(self.__cp.get('calibration','H2-1'))
+      else:
+        cal_file = string.strip(self.__cp.get('calibration','H2-2'))
+    else:
+      cal_file = string.strip(self.__cp.get('calibration',self.__ifo))
+
+    cal = os.path.join(cal_path,cal_file)
+    self.add_var_opt('calibration-cache', cal)
+    self.__calibration = cal
 
 
 
