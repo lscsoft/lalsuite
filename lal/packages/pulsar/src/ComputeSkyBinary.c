@@ -113,6 +113,7 @@ void ComputeSkyBinary	(LALStatus	*status,
  ASSERT(params->TperiapseSSB.gpsSeconds>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA); 
  ASSERT((params->TperiapseSSB.gpsNanoSeconds>=0)&&(params->TperiapseSSB.gpsNanoSeconds<1e9), status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
 
+
  /* Here we redefine the orbital variables for ease of use */
  a=params->SemiMajorAxis;  /* This is the projected semi-major axis of the orbit normalised by the speed of light */
  Period=params->OrbitalPeriod;  /* This is the period of the orbit in seconds */
@@ -124,7 +125,7 @@ void ComputeSkyBinary	(LALStatus	*status,
 
  /* Convert half the SFT length to a LALTimeInterval for later use */
  HalfSFTfloat=params->tSFT/2.0;
- LALFloatToInterval(status,&HalfSFT,&HalfSFTfloat);
+ LALFloatToInterval(status->statusPtr,&HalfSFT,&HalfSFTfloat);
  
  /* Here we check that the GPS timestamps are greater than zero */
  for(n=0;n<params->mObsSFT;n++)
@@ -151,7 +152,7 @@ void ComputeSkyBinary	(LALStatus	*status,
  for (n=0; n<params->mObsSFT; n++) 
    {
      /* Calculate the detector time at the mid point of current SFT ( T(i)+(tsft/2) ) using LAL functions */
-     LALIncrementGPS(status,&(params->baryinput->tgps),&params->tGPS[n],&HalfSFT);
+     LALIncrementGPS(status->statusPtr,&(params->baryinput->tgps),&params->tGPS[n],&HalfSFT);
      
      /* Convert this mid point detector time into barycentric time (SSB) */
      LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat);    
@@ -160,8 +161,8 @@ void ComputeSkyBinary	(LALStatus	*status,
      /* Calculate the time difference since the observed periapse passage in barycentric time (SSB). */ 
      /* This time difference, when converted to REAL8, should lose no precision unless we are dealing */
      /* with periods >~ 1 Year */
-     LALDeltaGPS(status,&dTBaryInterval,&(params->emit->te),&Tperi); 
-     LALIntervalToFloat(status,&dTbary,&dTBaryInterval);
+     LALDeltaGPS(status->statusPtr,&dTBaryInterval,&(params->emit->te),&Tperi); 
+     LALIntervalToFloat(status->statusPtr,&dTbary,&dTBaryInterval);
           
      /* Calculate the time since the last periapse passage ( < Single Period (SP) ) */
      dTbarySP=Period*((dTbary/(1.0*Period))-(REAL8)floor(dTbary/(1.0*Period)));
