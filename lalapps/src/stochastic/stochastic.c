@@ -1689,6 +1689,17 @@ INT4 main(INT4 argc, CHAR *argv[])
     LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
     LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
   }
+
+  /* add the xml comment, if specified */
+  if (!*comment)
+  {
+    LALSnprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " ");
+  }
+  else
+  {
+    LALSnprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", \
+        comment);
+  }
     
   /* delete empty first entry in process params table */
   this_proc_param = procparams.processParamsTable;
@@ -2786,7 +2797,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
   /* filter reference frequency greater than max */
   if (fRef > fMax)
   {
-    fprintf(stderr, "Reference frequency (%f Hz) is less than maximum " \
+    fprintf(stderr, "Reference frequency (%f Hz) is greater than maximum " \
         "frequency (%d Hz)\n", fRef, fMax);
     exit(1);
   }
