@@ -219,7 +219,7 @@ int main( int argc, char *argv[] )
   ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       xmlStream;
 
-  Approximant           approximant;          /* waveform approximant */
+  /* Approximant           approximant; */         /* waveform approximant */
   
   INT4                  i, j;
 
@@ -295,9 +295,6 @@ int main( int argc, char *argv[] )
   /* default values */
   errorParams.epsilon = EPSILON;
   errorParams.kappa = KAPPA;
-
-  /* value of approximant */
-  errorParams.approximant = approximant;
 
   /* parse the arguments */
   while ( 1 )
@@ -375,11 +372,11 @@ int main( int argc, char *argv[] )
       case 'A':
         if ( ! strcmp( "TaylorF2", optarg ) )
         {
-          approximant = TaylorF2;
+          errorParams.approximant = TaylorF2;
         }
         else if ( ! strcmp( "BCV", optarg ) )
         {
-          approximant = BCV;
+          errorParams.approximant = BCV;
         }
         else
         {
@@ -950,14 +947,14 @@ int main( int argc, char *argv[] )
       eventHandle[i] = thisEvent;
     }
     
-    if ( approximant == TaylorF2 )
+    if ( errorParams.approximant == TaylorF2 )
     {	    
       if ( vrbflg ) fprintf( stdout, "sorting events by mass... " );
       qsort( eventHandle, numEvents, sizeof(eventHandle[0]), 
           compareTmpltsByMass );
       if ( vrbflg ) fprintf( stdout, "done\n" );
     }
-    else if ( approximant == BCV )
+    else if ( errorParams.approximant == BCV )
     { 
       if ( vrbflg ) fprintf( stdout, "sorting events by psi... " );
       qsort( eventHandle, numEvents, sizeof(eventHandle[0]),
@@ -976,7 +973,7 @@ int main( int argc, char *argv[] )
     numTriggers[0] = 1;
     for ( i = 1; i < numEvents; ++i )
     {
-      if ( approximant == TaylorF2 )
+      if ( errorParams.approximant == TaylorF2 )
       {
         if ( (prevEvent->mass1 == eventHandle[i]->mass1)  &&
             (prevEvent->mass2 == eventHandle[i]->mass2) ) 
@@ -991,7 +988,7 @@ int main( int argc, char *argv[] )
           ++numTriggers[0];
         }
       }
-      else if ( approximant == BCV )
+      else if ( errorParams.approximant == BCV )
       {
         if ( (prevEvent->psi0 == eventHandle[i]->psi0)  &&
             (prevEvent->psi3 == eventHandle[i]->psi3) )
@@ -1169,7 +1166,7 @@ int main( int argc, char *argv[] )
     if ( ( usePlayground && isPlay ) || ( ! usePlayground && ! isPlay)) 
     {
  
-      /* determine whether we should expect to see a trigger in ifo b */
+      /* determine whether we should expect to see a trigger in ifo b  */
       if ( useRangeCut )
       {
 	REAL4 lower_limit = 0;
