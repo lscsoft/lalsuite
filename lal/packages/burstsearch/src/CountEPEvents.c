@@ -107,11 +107,11 @@ LALTFTileToBurstEvent (
   dummyNS = tstart + (INT8) (1e9 * event->tstart * event->deltaT);
   burstEvent->startTime        = (INT4) (dummyNS/1000000000L);
   burstEvent->startTimeNS      = (INT4) (dummyNS%1000000000L);
-  burstEvent->duration         = (REAL4) (event->tend - event->tstart + 1.0) * 
+  burstEvent->duration         = (REAL4) (event->tend - event->tstart + 1) * 
     event->deltaT;
   burstEvent->centralFrequency = flow + 
-    (REAL4) (event->fstart + event->fend) / (2.0 * event->deltaT);
-  burstEvent->bandwidth        = (REAL4) (event->fend - event->fstart + 1.0) / 
+    (REAL4) (event->fstart + event->fend + 1) / (2.0 * event->deltaT);
+  burstEvent->bandwidth        = (REAL4) (event->fend - event->fstart + 1) / 
     (event->deltaT);
   burstEvent->amplitude        = event->excessPower;
   burstEvent->excessPower      = event->excessPower;
