@@ -738,6 +738,11 @@ LALFindChirpFilterSegment (
           thisEvent->time.gpsSeconds = (INT4) (timeNS/1000000000L);
           thisEvent->time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
 
+          /* record the ifo name for the event */
+          /* XXX this should eventually cope with channel name as well XXX */
+          strncpy( thisEvent->ifoName, input->segment->data->name, 
+              2 * sizeof(CHAR) );
+
           /* copy the template into the event */
           memcpy( &(thisEvent->tmplt), input->tmplt, sizeof(InspiralTemplate) );
           thisEvent->tmplt.next = NULL;
@@ -799,6 +804,11 @@ LALFindChirpFilterSegment (
     timeNS += (INT8) (1e9 * (thisEvent->timeIndex) * deltaT);
     thisEvent->time.gpsSeconds = (INT4) (timeNS/1000000000L);
     thisEvent->time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
+
+    /* record the ifo name for the event */
+    /* XXX this should eventually cope with channel name as well XXX */
+    strncpy( thisEvent->ifoName, input->segment->data->name, 
+        2 * sizeof(CHAR) );
 
     /* copy the template into the event */
     memcpy( &(thisEvent->tmplt), input->tmplt, sizeof(InspiralTemplate) );
