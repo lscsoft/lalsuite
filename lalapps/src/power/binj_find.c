@@ -21,9 +21,11 @@ RCSID("$Id$");
 #define PLAYGROUND_LENGTH 600
 
 /* Usage format string. */
-#define USAGE "Usage: %s --input infile  --injfile injectionfile \
-     --injmadefile filename --detsnglfile filename --injfoundfile filename \
-     --best-confidence|--best-peaktime [--noplayground] [--help]\n"
+#define USAGE \
+"Usage: %s --input-trig filename --input-inj filename\n" \
+"	--output-trig filename --output-inj-made filename\n" \
+"	--output-inj-found filename --best-confidence|--best-peaktime\n" \
+"	[--noplayground] [--help]\n"
 
 #define BINJ_FIND_EARG   1
 #define BINJ_FIND_EROW   2
@@ -221,7 +223,7 @@ static SimBurstTable *read_injection_list(LALStatus *stat, char *filename, INT4 
 	SimBurstTable **addpoint = &list;
 
 	if (options.verbose)
-		fprintf(stdout, "Reading in SimBurst Table\n");
+		fprintf(stderr, "Reading in SimBurst Table\n");
 
 	if (!(infile = fopen(filename, "r")))
 		LALPrintError("Could not open input file\n");
@@ -323,7 +325,6 @@ static SimBurstTable *extract_injections(LALStatus *stat, SimBurstTable *injecti
 static INT4 read_search_summary_start_end(char *filename, INT4 *start, INT4 *end, FILE *fpout)
 {
 	SearchSummaryTable *searchSummary = NULL;
-	SearchSummaryTable *tmp;
 	INT4 local_start, local_end;
 
 	/* allow for NULL pointers if the calling code doesn't care about these
@@ -342,7 +343,7 @@ static INT4 read_search_summary_start_end(char *filename, INT4 *start, INT4 *end
 		fprintf(fpout, "%d  %d  %d\n", *start, *end, *end - *start);
 
 	while(searchSummary) {
-		tmp = searchSummary;
+		SearchSummaryTable *tmp = searchSummary;
 		searchSummary = searchSummary->next;
 		LALFree(tmp);
 	}
@@ -366,7 +367,7 @@ static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT4 *
 	SimBurstTable **injectionaddpoint = &newinjection;
 	INT4 start, end;
 
-	if (!(infile = fopen(filename, "r")))
+	if(!(infile = fopen(filename, "r")))
 		LALPrintError("Could not open input file\n");
 
 	*timeAnalyzed = 0;
@@ -377,20 +378,24 @@ static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT4 *
 		*timeAnalyzed += read_search_summary_start_end(line, &start, &end, NULL);
 
 		*injectionaddpoint = extract_injections(stat, *injection, start + 1000000000LL, end * 1000000000LL);
-		while (*injectionaddpoint)
+		while(*injectionaddpoint)
 			injectionaddpoint = &(*injectionaddpoint)->next;
 
 		LAL_CALL(LALSnglBurstTableFromLIGOLw(stat, eventaddpoint, line), stat);
-		while (*eventaddpoint)
+		while(*eventaddpoint)
 			eventaddpoint = &(*eventaddpoint)->next;
 	}
 
+	/*
+	 * FIXME: LAL's memory management blows.  On Saikat's S3 injections,
+	 * this loop takes about .25 seconds PER ITERATION!
 	while(*injection) {
 		SimBurstTable *tmp = *injection;
 		*injection = (*injection)->next;
 		LALFree(tmp);
 	}
 	*injection = newinjection;
+	*/
 
 	fclose(infile);
 
@@ -497,8 +502,6 @@ int main(int argc, char **argv)
 	/* times of comparison */
 	INT4 gpsStartTime = S2StartTime;
 	INT4 gpsEndTime = S2StopTime;
-	INT8 injPeakTime = 0;
-	INT8 burstStartTime = 0;
 
 	/* triggers */
 	SnglBurstTable *event;
@@ -536,20 +539,20 @@ int main(int argc, char **argv)
 			/* these options set a flag */
 			{"verbose", no_argument, &options.verbose, 1},
 			/* parameters which determine the output XML file */
-			{"input", required_argument, NULL, 'a'},
-			{"injfile", required_argument, NULL, 'b'},
-			{"injmadefile", required_argument, NULL, 'c'},
+			{"input-trig", required_argument, NULL, 'a'},
+			{"input-inj", required_argument, NULL, 'b'},
+			{"output-inj-made", required_argument, NULL, 'c'},
 			{"max-confidence", required_argument, NULL, 'd'},
 			{"gps-start-time", required_argument, NULL, 'e'},
 			{"gps-end-time", required_argument, NULL, 'f'},
 			{"min-centralfreq", required_argument, NULL, 'g'},
 			{"max-centralfreq", required_argument, NULL, 'h'},
-			{"injfoundfile", required_argument, NULL, 'j'},
+			{"output-inj-found", required_argument, NULL, 'j'},
 			{"playground", no_argument, &options.playground, 1},
 			{"noplayground", no_argument, &options.noplayground, 1},
 			{"help", no_argument, NULL, 'o'},
 			{"sort", no_argument, NULL, 'p'},
-			{"detsnglfile", required_argument, NULL, 'q'},
+			{"output-trig", required_argument, NULL, 'q'},
 			{"best-confidence", no_argument, &options.best_confidence, 1},
 			{"best-peaktime", no_argument, &options.best_peaktime, 1},
 			{NULL, 0, NULL, 0}
@@ -650,8 +653,8 @@ int main(int argc, char **argv)
 		exit(BINJ_FIND_EARG);
 	}
 
-	if (!injmadeFile || !inputFile || !injectionFile || !outSnglFile) {
-		LALPrintError("Input file, injection file, output trig. file and output inj. file " "            names must be specified\n");
+	if (!inputFile || !injectionFile || !injmadeFile  || !injFoundFile || !outSnglFile) {
+		LALPrintError("Must specify --input-trig, --input-inj, --output-trig, --output-inj-made, and --output-inj-found\n");
 		exit(BINJ_FIND_EARG);
 	}
 
@@ -674,7 +677,11 @@ int main(int argc, char **argv)
 	 * Do any requested cuts and sort the remaining triggers.
 	 */
 
+	if(options.verbose)
+		fprintf(stderr, "Culling triggers...\n");
 	burstEventList = trim_event_list(burstEventList, options);
+	if(options.verbose)
+		fprintf(stderr, "Sorting triggers...\n");
 	LAL_CALL(LALSortSnglBurst(&stat, &burstEventList, LALCompareSnglBurstByTime), &stat);
 
 	/*
@@ -683,14 +690,17 @@ int main(int argc, char **argv)
 	 */
 
 	ninjected = ndetected = 0;
-	for (injection = simBurstList; injection; injection = injection->next) {
-		ninjected++;
+	for (injection = simBurstList; injection; ninjected++, injection = injection->next) {
+		INT8 injPeakTime;
 
 		LAL_CALL(LALGPStoINT8(&stat, &injPeakTime, &injection->l_peak_time), &stat);
+		if(options.verbose)
+			fprintf(stderr, "Searching for injection at time %d.%09d s\n", injection->l_peak_time.gpsSeconds, injection->l_peak_time.gpsNanoSeconds);
 
 		bestmatch = NULL;
 		for (event = burstEventList; event; event = event->next) {
 			SnglBurstAccuracy accParams;
+			INT8 burstStartTime;
 
 			LAL_CALL(LALGPStoINT8(&stat, &burstStartTime, &event->start_time), &stat);
 
@@ -729,12 +739,12 @@ int main(int argc, char **argv)
 		*detInjectionsAddPoint = NULL;
 	}
 
-	fprintf(stdout,"%d sec = %d hours analyzed\n", timeAnalyzed, timeAnalyzed/3600);
-	fprintf(stdout, "Detected %i injections out of %i made\n", ndetected, ninjected);
-	fprintf(stdout, "Efficiency is %f \n", ((REAL4) ndetected / (REAL4) ninjected));
+	fprintf(stderr,"%d sec = %d hours analyzed\n", timeAnalyzed, timeAnalyzed/3600);
+	fprintf(stderr, "Detected %i injections out of %i made\n", ndetected, ninjected);
+	fprintf(stderr, "Efficiency is %f \n", ((REAL4) ndetected / (REAL4) ninjected));
 
 	/*
-	 * Write output XML file.
+	 * Write output XML files.
 	 */
 
 	memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
