@@ -1,5 +1,5 @@
 /********* <lalVerbatim file="CountEPEventsCV"> ********
-Author: Flanagan, E
+Author: Flanagan, E and Brady, P R
 $Id$
 ********** </lalVerbatim> ********/
 
