@@ -21,6 +21,7 @@ STYPE * XFUNC ( UINT4 length, UINT4 veclen )
   STYPE *seq;
 
   if ( ! length || ! veclen )
+    XLAL_ERROR_NULL( "XFUNC", XLAL_EBADLEN );
 
   seq = LALMalloc( sizeof( *seq ) );
   if ( ! seq )
