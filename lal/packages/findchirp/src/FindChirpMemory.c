@@ -114,7 +114,7 @@ LALInitializeDataSegmentVector (
   /* check that there is enough data to populate the data seg vec */
   inputLength = params->numPoints * params->numSegments - 
     ( params->numSegments - 1 ) * params->ovrlap;
-  if ( inputLength != chan->data->length )
+  if ( inputLength > chan->data->length )
   {
     ABORT( status, FINDCHIRPH_ESMSM, FINDCHIRPH_MSGESMSM );
   }
