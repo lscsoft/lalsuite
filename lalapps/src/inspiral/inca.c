@@ -1049,8 +1049,11 @@ int main( int argc, char *argv[] )
     /* create a linked list of sorted templates */
     if ( vrbflg ) fprintf( stdout, 
         "discarding template with duplicate masses: " );
+    
+    numTriggers[0] = 0;
     coincidentEvents[0] = prevEvent = eventHandle[0];
-    numTriggers[0] = 1;
+    if ( coincidentEvents[0] ) numTriggers[0] = 1;
+    
     for ( i = 1; i < numEvents; ++i )
     {
       if ( errorParams.approximant == TaylorF2 )
@@ -1093,7 +1096,10 @@ int main( int argc, char *argv[] )
 	exit( 1 );
       }
     }
-    prevEvent->next = NULL;
+    
+    /* if the list is non-emnpty, make sure it is terminated */
+    if ( prevEvent ) prevEvent->next = NULL;
+    
     if ( vrbflg ) 
     {
       fprintf( stdout, " done\n" );
