@@ -165,6 +165,9 @@ LALBeginLIGOLwXMLTable (
     case sim_inspiral_table:
       fprintf( xml->fp, LIGOLW_XML_SIM_INSPIRAL );
       break;
+    case sim_burst_table:
+      fprintf( xml->fp, LIGOLW_XML_SIM_BURST );
+      break;
     case summ_value_table:
       fprintf( xml->fp, LIGOLW_XML_SUMM_VALUE );
       break;
@@ -423,6 +426,31 @@ LALWriteLIGOLwXMLTable (
             tablePtr.simInspiralTable->eff_dist_l
             );
         tablePtr.simInspiralTable = tablePtr.simInspiralTable->next;
+      }
+      break;
+    case sim_burst_table:
+      while( tablePtr.simBurstTable )
+      {
+        FIRST_TABLE_ROW
+        fprintf( xml->fp, SIM_BURST_ROW,
+            tablePtr.simBurstTable->waveform,
+            tablePtr.simBurstTable->geocent_peak_time.gpsSeconds,
+            tablePtr.simBurstTable->geocent_peak_time.gpsNanoSeconds,
+            tablePtr.simBurstTable->h_peak_time.gpsSeconds,
+            tablePtr.simBurstTable->h_peak_time.gpsNanoSeconds,
+            tablePtr.simBurstTable->l_peak_time.gpsSeconds,
+            tablePtr.simBurstTable->l_peak_time.gpsNanoSeconds,
+            tablePtr.simBurstTable->peak_time_gmst,
+            tablePtr.simBurstTable->longitude,
+            tablePtr.simBurstTable->latitude,
+            tablePtr.simBurstTable->polarization,
+            tablePtr.simBurstTable->hrss,
+            tablePtr.simBurstTable->hpeak,
+            tablePtr.simBurstTable->freq,
+            tablePtr.simBurstTable->tau,
+            tablePtr.simBurstTable->zmNumber
+            );
+        tablePtr.simBurstTable = tablePtr.simBurstTable->next;
       }
       break;
     case summ_value_table:

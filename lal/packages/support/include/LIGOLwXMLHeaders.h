@@ -314,6 +314,30 @@ extern "C" {
 #define SIM_INSPIRAL_ROW \
 "         \"process:process_id:0\",\"%s\",%d,%d,%d,%d,%d,%d,%22.16e,\"%s\",%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"sim_inspiral:simulation_id:0\""
 
+#define LIGOLW_XML_SIM_BURST \
+"   <Table Name=\"sim_burstgroup:sim_burst:table\">\n" \
+"      <Column Name=\"sim_burstgroup:sim_burst:process_id\" Type=\"ilwd:char\"/>\n" \
+"      <Column Name=\"sim_burstgroup:sim_burst:waveform\" Type=\"lstring\"/>\n" \
+"      <Column Name=\"sim_burstgroup:sim_burst:geocent_peak_time\" Type=\"int_4s\"/>\n" \
+"      <Column Name=\"sim_burstgroup:sim_burst:geocent_peak_time_ns\" Type=\"int_4s\"/>\n" \
+"      <Column Name=\"sim_burstgroup:sim_burst:h_peak_time\" Type=\"int_4s\"/>\n" \
+"      <Column Name=\"sim_burstgroup:sim_burst:h_peak_time_ns\" Type=\"int_4s\"/>\n" \
+"      <Column Name=\"sim_burstgroup:sim_burst:l_peak_time\" Type=\"int_4s\"/>\n" \
+"      <Column Name=\"sim_burstgroup:sim_burst:l_peak_time_ns\" Type=\"int_4s\"/>\n" \
+"      <Column Name=\"sim_burstgroup:sim_burst:peak_time_gmst\" Type=\"real_8\"/>\n" \
+"      <Column Name=\"sim_burstgroup:sim_burst:longitude\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_burstgroup:sim_burst:latitude\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_burstgroup:sim_burst:polarization\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_burstgroup:sim_burst:hrss\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_burstgroup:sim_burst:hpeak\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_burstgroup:sim_burst:freq\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_burstgroup:sim_burst:tau\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_burstgroup:sim_burst:simulation_id\" Type=\"ilwd:char\"/>\n" \
+"      <Stream Name=\"sim_burstgroup:sim_burst:table\" Type=\"Local\" Delimiter=\",\">\n"
+
+#define SIM_BURST_ROW \
+"         \"process:process_id:0\",\"%s\",%d,%d,%d,%d,%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%e,\"sim_burst:simulation_id:0\""
+
 #define LIGOLW_XML_SUMM_VALUE \
 "   <Table Name=\"summ_valuegroup:summ_value:table\">\n" \
 "      <Column Name=\"summ_valuegroup:summ_value:program\" Type=\"lstring\"/>\n" \
