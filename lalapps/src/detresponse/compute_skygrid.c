@@ -175,9 +175,9 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data)
   CHAR                    relfreq_file_name[LALNameLength];
   CHAR                    dottimestamp[LALNameLength];
   CHAR                    outfile_suffix[5];
-  UINT4                   i, j, k, cnt;
-  UINT4                   num_ra;
-  UINT4                   num_dec;
+  UINT4                   i, j, k, cnt, cnt_offset;
+  UINT4                   num_ra, count_ra, start_ra, end_ra;
+  UINT4                   num_dec, count_dec, start_dec, end_dec;
   REAL8                   Pi_num_ra;
   FILE                  * timesfile = NULL;
   
@@ -193,7 +193,17 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data)
   
   /* useful numbers */
   num_ra = args_info.n_ra_arg;
+  count_ra = args_info.count_ra_arg;
+  start_ra = args_info.start_ra_arg;
+  end_ra = args_info.count_ra_arg + start_ra;
+  
   num_dec = args_info.n_dec_arg;
+  count_dec = args_info.count_dec_arg;
+  start_dec = args_info.start_dec_arg;
+  end_dec = args_info.count_dec_arg + start_dec;
+  
+  cnt_offset = start_ra*count_dec + start_dec;
+    
   Pi_num_ra = (REAL8)LAL_PI / (REAL8)num_ra;
   
   /* allocate skygrids */
@@ -201,6 +211,19 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data)
   (void *)alloc_skygrid(status, &grid_plus_sq);
   (void *)alloc_skygrid(status, &grid_sum_sq);
   (void *)alloc_skygrid(status, &grid_relfreq);
+  
+  if (lalDebugLevel)
+  {
+    printf("cnt_offset = %d\n", cnt_offset);
+    printf("grid_cros_sq->dimLength->data = %d x %d\n", 
+           grid_cros_sq->dimLength->data[0], grid_cros_sq->dimLength->data[1]);
+    printf("grid_plus_sq->dimLength->data = %d x %d\n", 
+           grid_plus_sq->dimLength->data[0], grid_plus_sq->dimLength->data[1]);
+    printf("grid_sum_sq->dimLength->data = %d x %d\n", 
+           grid_sum_sq->dimLength->data[0], grid_sum_sq->dimLength->data[1]);
+    printf("grid_relfreq->dimLength->data = %d x %d\n", 
+           grid_relfreq->dimLength->data[0], grid_relfreq->dimLength->data[1]);
+  }
   
   /* 
    * set up detector 
@@ -345,18 +368,26 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data)
     }    
     
     Pi_num_ra = (REAL8)LAL_PI/(REAL8)num_ra;
-    for (j = 0; j < num_ra; ++j)
+    for (j = start_ra; j < end_ra; ++j)
     {
       source.equatorialCoords.longitude = Pi_num_ra * (1. + 2.*(REAL8)j);
 
-      /*
-      printf("j = %d\n", j);
-      printf("RA = % f\n", source.equatorialCoords.longitude);
-      */
-
-      for (i = 0; i < num_dec; ++i)
+      if (lalDebugLevel)
       {
-        cnt = j*num_dec + i;
+        printf("j = %d\t\t", j);
+        printf("RA = % f\n", source.equatorialCoords.longitude);
+      }
+      
+      for (i = start_dec; i < end_dec; ++i)
+      {
+        cnt = j*count_dec + i - cnt_offset;
+        
+        if (lalDebugLevel)
+        {
+          printf("\ti = %d\n", i);
+          printf("\t\tcnt = %d\n", cnt);
+        }
+        
         source.equatorialCoords.latitude = 
           asin(-1. + (1. + 2.*i)/(REAL8)num_dec);
 
@@ -413,13 +444,13 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data)
       fprintf(timesfile, "%.9d\n", gps_and_acc.gps.gpsSeconds);
       snprintf(dottimestamp, LALNameLength, ".%.9d", gps_and_acc.gps.gpsSeconds);
       
-      for (j = 0; j < num_ra; ++j)
+      for (j = start_ra; j < end_ra; ++j)
       {
         source.equatorialCoords.longitude = Pi_num_ra * (1. + 2.*j);
   
-        for (i = 0; i < num_dec; ++i)
+        for (i = start_dec; i < end_dec; ++i)
         {
-          cnt = j*num_dec + i;
+          cnt = j*count_dec + i - cnt_offset;
           source.equatorialCoords.latitude = 
             asin(-1. + (1. + 2.*i)/(REAL8)num_dec);
           
@@ -507,13 +538,13 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data)
     
     for (k = 0; k < (UINT4)args_info.nsample_arg; ++k)
     {
-      for (j = 0; j < num_ra; ++j)
+      for (j = start_ra; j < end_ra; ++j)
       {
         source.equatorialCoords.longitude = Pi_num_ra * (1. + 2.*j);
 
-        for (i = 0; i < num_dec; ++i)
+        for (i = start_dec; i < end_dec; ++i)
         {
-          cnt = j*num_dec + i;
+          cnt = j*count_dec + i - cnt_offset;
           source.equatorialCoords.latitude = 
             asin(-1. + (1. + 2.*i)/(REAL8)num_dec);
           
@@ -540,6 +571,15 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data)
     skygrid_print(status, &start_time, grid_plus_sq, plus_file_name);
     skygrid_print(status, &start_time, grid_sum_sq, sum_file_name);
     skygrid_print(status, &start_time, grid_relfreq, relfreq_file_name);
+  }
+  
+  if (lalDebugLevel)
+  {
+    printf("grid_cros_sq->data = 0x%x\n", grid_cros_sq->data);
+    printf("grid_plus_sq->data = 0x%x\n", grid_plus_sq->data);
+    printf("grid_sum_sq->data = 0x%x\n", grid_sum_sq->data);
+    printf("grid_relfreq->data = 0x%x\n", grid_relfreq->data);
+
   }
   
   free_skygrid(status, &grid_cros_sq);

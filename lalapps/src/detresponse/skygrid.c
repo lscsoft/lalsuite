@@ -5,6 +5,7 @@
 #include <stdarg.h>
 
 #include <ctype.h>
+#include <assert.h>
 #include "config.h"
 #include "cmdline.h"
 #include "skygrid.h"
@@ -21,7 +22,11 @@
 
 
 static UINT4 num_ra;
+static UINT4 start_ra;
+static UINT4 count_ra;
 static UINT4 num_dec;
+static UINT4 start_dec;
+static UINT4 count_dec;
 static UINT4 grid_lim;
 
 static const double rad2deg = 180./LAL_PI;
@@ -119,13 +124,34 @@ void cleanup_ephemeris(LALStatus *status, EphemerisData *p_ephemeris_data)
 
 void init_skygrid(LALStatus *status)
 {
-  num_ra = args_info.n_ra_arg;
-  num_dec = args_info.n_dec_arg;
-  grid_lim = num_ra * num_dec;
+  num_ra    = args_info.n_ra_arg;
+  start_ra  = args_info.start_ra_arg;
+  count_ra  = args_info.count_ra_arg;
+  
+  num_dec   = args_info.n_dec_arg;
+  start_dec = args_info.start_dec_arg;
+  count_dec = args_info.count_dec_arg;
+  
+  grid_lim  = count_ra * count_dec;
+  
+  if (lalDebugLevel)
+  {
+    printf("start_ra  = %d\n", start_ra);
+    printf("count_ra  = %d\n", count_ra);
+    printf("start_dec = %d\n", start_dec);
+    printf("count_dec = %d\n", count_dec);
+    printf("grid_lim  = %d\n", grid_lim);
+  }
+  
+  /*
+   * error checking
+   */
+  assert(count_ra <= num_ra - start_ra);
+  assert(count_dec <= num_dec - start_dec);
 
   LALU4CreateVector(status, &skygrid_dims, 2);
-  skygrid_dims->data[0] = num_ra;
-  skygrid_dims->data[1] = num_dec;
+  skygrid_dims->data[0] = count_ra;
+  skygrid_dims->data[1] = count_dec;
 } /* END: init_skygrid() */
 
 
@@ -140,9 +166,17 @@ skygrid_t * alloc_skygrid(LALStatus *status, skygrid_t *g)
 } /* END: alloc_skygrid() */
 
 
-void free_skygrid(LALStatus *status, skygrid_t *skygrid)
+void free_skygrid(LALStatus *status, skygrid_t *g)
 {
-  LALDDestroyArray(status, skygrid);
+  if (lalDebugLevel)
+  {
+    printf("(*g)->data = %x\n", (*g)->data);
+    printf("(*g)->dimLength->length = %x\n", (*g)->dimLength->length);
+    printf("(*g)->dimLength->data[] = %d x %d\n", 
+           (*g)->dimLength->data[0], (*g)->dimLength->data[1]);
+  }
+  
+  LALDDestroyArray(status, g);
 } /* END: free_skygrid() */
 
 
@@ -215,6 +249,7 @@ INT4 skygrid_copy(LALStatus *status, skygrid_t dest, const skygrid_t src)
 {
   UINT4 i;
   
+  /* FIXME: replace with memcpy(3) */
   for (i = 0; i < grid_lim; ++i)
     dest->data[i] = src->data[i];
   
@@ -270,10 +305,10 @@ void skygrid_print(LALStatus *status,
       if (gps != (LIGOTimeGPS *)NULL)
         fprintf(outfile, "%c %.9d\n", '%', gps->gpsSeconds);
       
-      for (i = 0; i < num_ra; ++i)
+      for (i = 0; i < count_ra; ++i)
       {
-        for (j = 0; j < num_dec; ++j)
-          fprintf(outfile, "% 20.14e\t", input->data[i*num_dec + j]);
+        for (j = 0; j < count_dec; ++j)
+          fprintf(outfile, "% 20.14e\t", input->data[i*count_dec + j]);
         fprintf(outfile, "\n");
       }      
     }

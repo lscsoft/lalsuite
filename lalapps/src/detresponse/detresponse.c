@@ -19,9 +19,10 @@
 #include "detresponse.h"
 #include <string.h>
 
-int lalDebugLevel = 1;
+int lalDebugLevel = 3;
 int verbosity_level = 3;
 struct gengetopt_args_info args_info;
+
 
 int
 main(int argc, char **argv)

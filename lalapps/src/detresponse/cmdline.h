@@ -35,6 +35,10 @@ struct gengetopt_args_info
   double sampling_interval_arg;	/* sampling time interval, in seconds.  */
   int n_ra_arg;	/* Number of grid points in RA (default='256').  */
   int n_dec_arg;	/* Number of grid points in Dec (default='64').  */
+  int start_ra_arg;	/* Starting RA index (>= 0).  */
+  int count_ra_arg;	/* Number of sub-grid points in RA.  */
+  int start_dec_arg;	/* Starting Dec index (>= 0).  */
+  int count_dec_arg;	/* Number of sub-grid points in Dec.  */
   char * format_arg;	/* output format (default='mam').  */
   char * output_dir_arg;	/* Output directory (default='.').  */
   int verbosity_arg;	/* verbosity level for debugging (default='0').  */
@@ -58,6 +62,10 @@ struct gengetopt_args_info
   int sampling_interval_given ;	/* Whether sampling-interval was given.  */
   int n_ra_given ;	/* Whether n-ra was given.  */
   int n_dec_given ;	/* Whether n-dec was given.  */
+  int start_ra_given ;	/* Whether start-ra was given.  */
+  int count_ra_given ;	/* Whether count-ra was given.  */
+  int start_dec_given ;	/* Whether start-dec was given.  */
+  int count_dec_given ;	/* Whether count-dec was given.  */
   int format_given ;	/* Whether format was given.  */
   int output_dir_given ;	/* Whether output-dir was given.  */
   int verbosity_given ;	/* Whether verbosity was given.  */

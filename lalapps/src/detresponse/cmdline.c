@@ -60,6 +60,10 @@ cmdline_parser_print_help (void)
   printf("  -i, --sampling-interval=DOUBLE  sampling time interval, in seconds\n");
   printf("      --n-ra=INT                  Number of grid points in RA  (default=`256')\n");
   printf("      --n-dec=INT                 Number of grid points in Dec  (default=`64')\n");
+  printf("      --start-ra=INT              Starting RA index (>= 0)\n");
+  printf("      --count-ra=INT              Number of sub-grid points in RA\n");
+  printf("      --start-dec=INT             Starting Dec index (>= 0)\n");
+  printf("      --count-dec=INT             Number of sub-grid points in Dec\n");
   printf("  -F, --format=STRING             output format  (default=`mam')\n");
   printf("  -O, --output-dir=STRING         Output directory  (default=`.')\n");
   printf("  -v, --verbosity=INT             verbosity level for debugging  (default=`0')\n");
@@ -109,6 +113,10 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
   args_info->sampling_interval_given = 0 ;
   args_info->n_ra_given = 0 ;
   args_info->n_dec_given = 0 ;
+  args_info->start_ra_given = 0 ;
+  args_info->count_ra_given = 0 ;
+  args_info->start_dec_given = 0 ;
+  args_info->count_dec_given = 0 ;
   args_info->format_given = 0 ;
   args_info->output_dir_given = 0 ;
   args_info->verbosity_given = 0 ;
@@ -156,6 +164,10 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
         { "sampling-interval",	1, NULL, 'i' },
         { "n-ra",	1, NULL, 0 },
         { "n-dec",	1, NULL, 0 },
+        { "start-ra",	1, NULL, 0 },
+        { "count-ra",	1, NULL, 0 },
+        { "start-dec",	1, NULL, 0 },
+        { "count-dec",	1, NULL, 0 },
         { "format",	1, NULL, 'F' },
         { "output-dir",	1, NULL, 'O' },
         { "verbosity",	1, NULL, 'v' },
@@ -414,6 +426,62 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
             break;
           }
           
+          /* Starting RA index (>= 0).  */
+          else if (strcmp (long_options[option_index].name, "start-ra") == 0)
+          {
+            if (args_info->start_ra_given)
+              {
+                fprintf (stderr, "%s: `--start-ra' option given more than once\n", CMDLINE_PARSER_PACKAGE);
+                clear_args ();
+                exit (EXIT_FAILURE);
+              }
+            args_info->start_ra_given = 1;
+            args_info->start_ra_arg = strtol (optarg,&stop_char,0);
+            break;
+          }
+          
+          /* Number of sub-grid points in RA.  */
+          else if (strcmp (long_options[option_index].name, "count-ra") == 0)
+          {
+            if (args_info->count_ra_given)
+              {
+                fprintf (stderr, "%s: `--count-ra' option given more than once\n", CMDLINE_PARSER_PACKAGE);
+                clear_args ();
+                exit (EXIT_FAILURE);
+              }
+            args_info->count_ra_given = 1;
+            args_info->count_ra_arg = strtol (optarg,&stop_char,0);
+            break;
+          }
+          
+          /* Starting Dec index (>= 0).  */
+          else if (strcmp (long_options[option_index].name, "start-dec") == 0)
+          {
+            if (args_info->start_dec_given)
+              {
+                fprintf (stderr, "%s: `--start-dec' option given more than once\n", CMDLINE_PARSER_PACKAGE);
+                clear_args ();
+                exit (EXIT_FAILURE);
+              }
+            args_info->start_dec_given = 1;
+            args_info->start_dec_arg = strtol (optarg,&stop_char,0);
+            break;
+          }
+          
+          /* Number of sub-grid points in Dec.  */
+          else if (strcmp (long_options[option_index].name, "count-dec") == 0)
+          {
+            if (args_info->count_dec_given)
+              {
+                fprintf (stderr, "%s: `--count-dec' option given more than once\n", CMDLINE_PARSER_PACKAGE);
+                clear_args ();
+                exit (EXIT_FAILURE);
+              }
+            args_info->count_dec_given = 1;
+            args_info->count_dec_arg = strtol (optarg,&stop_char,0);
+            break;
+          }
+          
 
         case '?':	/* Invalid option.  */
           /* `getopt_long' already printed an error message.  */
@@ -461,6 +529,26 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
   if (! args_info->n_dec_given)
     {
       fprintf (stderr, "%s: '--n-dec' option required\n", CMDLINE_PARSER_PACKAGE);
+      missing_required_options = 1;
+    }
+  if (! args_info->start_ra_given)
+    {
+      fprintf (stderr, "%s: '--start-ra' option required\n", CMDLINE_PARSER_PACKAGE);
+      missing_required_options = 1;
+    }
+  if (! args_info->count_ra_given)
+    {
+      fprintf (stderr, "%s: '--count-ra' option required\n", CMDLINE_PARSER_PACKAGE);
+      missing_required_options = 1;
+    }
+  if (! args_info->start_dec_given)
+    {
+      fprintf (stderr, "%s: '--start-dec' option required\n", CMDLINE_PARSER_PACKAGE);
+      missing_required_options = 1;
+    }
+  if (! args_info->count_dec_given)
+    {
+      fprintf (stderr, "%s: '--count-dec' option required\n", CMDLINE_PARSER_PACKAGE);
       missing_required_options = 1;
     }
   if ( missing_required_options )
