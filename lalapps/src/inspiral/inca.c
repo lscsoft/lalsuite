@@ -126,6 +126,34 @@ int compareTmpltsByMass ( const void *a, const void *b )
 }
 
 
+int compareTmpltsByPsi ( const void *a, const void *b )
+{
+  SnglInspiralTable *aPtr = *((SnglInspiralTable **)a);
+  SnglInspiralTable *bPtr = *((SnglInspiralTable **)b);
+
+  if ( aPtr->psi0 > bPtr->psi0 )
+  {
+    return 1;
+  }
+  else if ( aPtr->psi0 < bPtr->psi0 )
+  {
+    return -1;
+  }
+  else if ( aPtr->psi3 > bPtr->psi3 )
+  {
+    return 1;
+  }
+  else if ( aPtr->psi3 < bPtr->psi3 )
+  {
+    return -1;
+  }
+  else
+  {
+    return 0;
+  }
+}
+
+
 int main( int argc, char *argv[] )
 {
   static LALStatus      status;
