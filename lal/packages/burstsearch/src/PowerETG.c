@@ -25,11 +25,16 @@ $Id$
 #include <string.h>
 
 #define SetStringParameter(par) if(!(params)) {ABORT(status, STDBURSTSEARCHH_ENULLPI, STDBURSTSEARCHH_MSGENULLPI);} \
-  if(!(params->char_)) {ABORT(status, STDBURSTSEARCHH_ENULLPI, STDBURSTSEARCHH_MSGENULLPI);} \
   ASSERT ( par, status, STDBURSTSEARCHH_ENULLP, STDBURSTSEARCHH_MSGENULLP); \
-  strcpy(par,params->char_); \
+  if(params->char_) { \
+    strcpy(par,params->char_); \
+  } else if(params->int4_) { \
+    sprintf(par,"%i",*(params->int4_)); \
+  } else if(params->real4_) { \
+    sprintf(par,"%g",*(params->real4_)); \
+  } else {ABORT(status, STDBURSTSEARCHH_ENULLPI, STDBURSTSEARCHH_MSGENULLPI);} \
   params = params->next
-
+ 
 NRCSID (POWERETGC, "$Id$");
 
 /******** <lalLaTeX file="PowerETGC"> ********
