@@ -1,8 +1,12 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#ifndef _REENTRANT
 #define _REENTRANT
+#endif
+#ifndef __USE_POSIX
 #define __USE_POSIX
+#endif
 #include <time.h>
 
 #include <lal/LALStdlib.h>
