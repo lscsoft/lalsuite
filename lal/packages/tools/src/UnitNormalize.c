@@ -70,16 +70,36 @@ gcd(INT2 numer, UINT2 denom)
    return abs(next_numer);
 }
 
+int XLALUnitNormalize( LALUnit *unit )
+{
+  static const char *func = "XLALUnitNormalize";
+  UINT2 commonFactor;
+  INT2  numer;
+  UINT2 denom;
+  UINT2 i;
+
+  if ( ! unit )
+    XLAL_ERROR( func, XLAL_EFAULT );
+
+  for (i=0; i<LALNumUnits; ++i)
+  {
+    numer = unit->unitNumerator[i];
+    denom = unit->unitDenominatorMinusOne[i] + 1;
+    commonFactor = gcd (numer, denom);
+    unit->unitNumerator[i] = numer / commonFactor;
+    unit->unitDenominatorMinusOne[i] = denom / commonFactor - 1;
+  } /* for i */
+
+  return 0;
+}
+
+
 /* <lalVerbatim file="UnitNormalizeCP"> */
 void
 LALUnitNormalize (LALStatus *status, LALUnit *output, const LALUnit *input)
 /* </lalVerbatim> */
      /* Reduce all the rational powers in an LALUnit structure */
 {
-  UINT2 commonFactor;
-  INT2  numer;
-  UINT2 denom;
-  UINT2 i;
 
   INITSTATUS( status, "LALUnitNormalize", UNITNORMALIZEC );
 
@@ -87,13 +107,11 @@ LALUnitNormalize (LALStatus *status, LALUnit *output, const LALUnit *input)
 
   ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
 
-  output->powerOfTen = input->powerOfTen;
-  for (i=0; i<LALNumUnits; ++i)
+  *output = *input;
+  if ( XLALUnitNormalize( output ) == XLAL_FAILURE )
   {
-    numer = input->unitNumerator[i];
-    denom = input->unitDenominatorMinusOne[i] + 1;
-    commonFactor = gcd (numer, denom);
-    output->unitNumerator[i] = numer / commonFactor;
-    output->unitDenominatorMinusOne[i] = denom / commonFactor - 1;
-  } /* for i */
+    ABORTXLAL( status );
+  }
+
+  RETURN( status );
 }

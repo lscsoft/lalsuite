@@ -48,50 +48,73 @@ standard form.
 
 NRCSID( UNITMULTIPLYC, "$Id$" );
 
-/* <lalVerbatim file="UnitMultiplyCP"> */
-void 
-LALUnitMultiply (LALStatus *status, LALUnit *output, const LALUnitPair *input)
-/* </lalVerbatim> */
+LALUnit * XLALUnitMultiply( LALUnit *output, const LALUnit *unit1, const LALUnit *unit2 )
 {
+  static const char *func = "XLALUnitMultiply";
   LALUnit     unReduced;
   UINT2        i;
   INT4         numer;
   UINT4        denom, denom1, denom2;
 
-  INITSTATUS( status, "LALUnitMultiply", UNITMULTIPLYC );
-  ATTATCHSTATUSPTR (status);
+  if ( ! output || ! unit1 || ! unit2 )
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
 
-  ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
-
-  ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
-
-  numer = input->unitOne->powerOfTen + input->unitTwo->powerOfTen;
-
-  ASSERT(numer < 32767L && numer > -32768L, status, UNITSH_EOVERFLOW,
-	 UNITSH_MSGEOVERFLOW);
+  numer = unit1->powerOfTen + unit2->powerOfTen;
+  if ( numer >= 32767L || numer <= -32768L )
+    XLAL_ERROR_NULL( func, XLAL_ERANGE );
 
   unReduced.powerOfTen = numer;
   for (i=0; i<LALNumUnits; ++i) {
-    denom1 = 1 + input->unitOne->unitDenominatorMinusOne[i];
-    denom2 = 1 + input->unitTwo->unitDenominatorMinusOne[i];
+    denom1 = 1 + unit1->unitDenominatorMinusOne[i];
+    denom2 = 1 + unit2->unitDenominatorMinusOne[i];
     denom = denom1 * denom2;
 
-    ASSERT(denom - 1 < 65535L, status, UNITSH_EOVERFLOW,
-	   UNITSH_MSGEOVERFLOW);
+    if ( denom >= 65535L )
+      XLAL_ERROR_NULL( func, XLAL_ERANGE );
 
     /* One could use the gcd function to find the common factors of
        denom1 and denom2, but we have to reduce the fractions after
        addition anyway; consider e.g., 1/6 + 1/10 = (5+3)/30 = 4/15 */
     unReduced.unitDenominatorMinusOne[i] = denom - 1;
-    numer = ((INT4) denom2) * input->unitOne->unitNumerator[i]
-      + ((INT4) denom1) * input->unitTwo->unitNumerator[i];
+    numer = ((INT4) denom2) * unit1->unitNumerator[i]
+      + ((INT4) denom1) * unit2->unitNumerator[i];
 
-    ASSERT(numer < 32767L && numer > -32768L, status, UNITSH_EOVERFLOW,
-	   UNITSH_MSGEOVERFLOW);
+    if ( numer >= 32767L || numer <= -32768L )
+      XLAL_ERROR_NULL( func, XLAL_ERANGE );
 
     unReduced.unitNumerator[i] = numer;
   } /* for i */
-  LALUnitNormalize(status->statusPtr, output, &unReduced);
-  DETATCHSTATUSPTR(status);
+
+  *output = unReduced;
+  if ( XLALUnitNormalize( output ) == XLAL_FAILURE )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+
+  return output;
+}
+
+/* <lalVerbatim file="UnitMultiplyCP"> */
+void 
+LALUnitMultiply (LALStatus *status, LALUnit *output, const LALUnitPair *input)
+/* </lalVerbatim> */
+{
+  INITSTATUS( status, "LALUnitMultiply", UNITMULTIPLYC );
+
+  ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
+
+  ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
+
+  
+  if ( ! XLALUnitMultiply( output, input->unitOne, input->unitTwo ) )
+  {
+    int code = xlalErrno;
+    XLALClearErrno();
+    switch ( code )
+    {
+      case XLAL_ERANGE:
+        ABORT(status, UNITSH_EOVERFLOW, UNITSH_MSGEOVERFLOW);
+      default:
+        ABORTXLAL(status);
+    }
+  }
   RETURN(status);
 }

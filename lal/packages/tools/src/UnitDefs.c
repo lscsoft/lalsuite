@@ -288,7 +288,7 @@ const LALUnit lalPicoFaradUnit     = {-12, {-2,-1, 2, 2, 0, 0, 0}, { 0, 0, 0, 0,
 /* Static function to read a number into a character array */
 /* returns 0 on success, 1 on failure */
 /* leaves *charPtrPtr pointing to first non-digit */
-static int readNumber( char temp[], char **charPtrPtr )
+static int readNumber( char temp[], const char **charPtrPtr )
 {
   CHAR *tempPtr, *tempStopPtr;
 
@@ -312,7 +312,7 @@ static int readNumber( char temp[], char **charPtrPtr )
 /* Static function to read a string into a character array */
 /* returns 0 on success, 1 on failure */
 /* leaves *charPtrPtr pointing to first non-letter */
-static int readString( char temp[UNITDEFSC_TEMPSIZE], char **charPtrPtr )
+static int readString( char temp[UNITDEFSC_TEMPSIZE], const char **charPtrPtr )
 {
   CHAR *tempPtr, *tempStopPtr;
 
@@ -331,6 +331,69 @@ static int readString( char temp[UNITDEFSC_TEMPSIZE], char **charPtrPtr )
   while ( isalpha(**charPtrPtr) );
   *tempPtr = '\0';
   return 0;
+}
+
+char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input )
+{
+  static const char *func = "XLALUnitAsString";
+  UINT2        i;
+  CHAR         temp[UNITDEFSC_TEMPSIZE];
+  INT2         numer;
+  CHAR         *charPtr, *charStopPtr;
+
+  if ( ! string || ! input )
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  if ( ! length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+
+  charPtr = string;
+  charStopPtr = string + length;
+  /* Points one past the end of the array! */
+
+  *charPtr = '\0';
+
+  if (input->powerOfTen != 0)
+  {
+    sprintf(temp, "10^%d", input->powerOfTen);
+    if ( charPtr + strlen(temp) >= charStopPtr) 
+      XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    strncpy(charPtr, temp, charStopPtr - charPtr);
+    charPtr += strlen(temp);
+  } /* if (input->powerOfTen != 0) */
+
+  for (i=0; i<LALNumUnits; ++i)
+  {
+    numer = input->unitNumerator[i];
+    if (numer != 0)
+    {
+      if (charPtr != string) 
+      {
+	*charPtr = ' ';
+	++charPtr;
+      } /* if (charPtr != output->data) */
+      if (input->unitDenominatorMinusOne[i] == 0) 
+      {
+	if (numer == 1) 
+	{
+	  sprintf(temp, "%s", lalUnitName[i]);
+	} /* if (numer == 1) */
+	else
+	{
+	  sprintf(temp, "%s^%d", lalUnitName[i], numer);
+	}
+      } /* if (input->unitDenominatorMinusOne[i] == 0) */
+      else {
+	sprintf(temp, "%s^%d/%d", lalUnitName[i], numer,
+		 input->unitDenominatorMinusOne[i] + 1);
+      }
+      if ( charPtr + strlen(temp) >= charStopPtr) 
+        XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+      strncpy(charPtr, temp, charStopPtr - charPtr);
+      charPtr += strlen(temp);
+    } /* if (numer != 0) */
+  }  /* for (i=0; i<LALNumUnits; ++i) */
+
+  return string;
 }
 
 /* <lalVerbatim file="UnitDefsCP"> */
@@ -358,102 +421,63 @@ LALUnitAsString( LALStatus *status,
   ASSERT( output->length > 0, status,
 	  UNITSH_ESTRINGSIZE, UNITSH_MSGESTRINGSIZE );
 
-  charPtr = output->data;
-  charStopPtr = charPtr + output->length; 
-  /* Points one past the end of the array! */
-
-  *charPtr = '\0';
-
-  if (input->powerOfTen != 0)
+  if ( ! XLALUnitAsString( output->data, output->length, input ) )
   {
-    sprintf(temp, "10^%d", input->powerOfTen);
-    if ( charPtr + strlen(temp) >= charStopPtr) 
+    int code = xlalErrno;
+    XLALClearErrno();
+    switch ( code )
     {
-      ABORT( status, UNITSH_ESTRINGSIZE, UNITSH_MSGESTRINGSIZE );
+      case XLAL_EFAULT: /* a NULL pointer was passed to the XLAL function */
+        if ( ! input )
+        {
+          ABORT( status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
+        }
+        else /* must have been a NULL output data pointer */
+        {
+          ABORT( status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
+        }
+      default: /* otherwise must have almost overwritten the string */
+        ABORT( status, UNITSH_ESTRINGSIZE, UNITSH_MSGESTRINGSIZE );
     }
-    strncpy(charPtr, temp, charStopPtr - charPtr);
-    charPtr += strlen(temp);
-  } /* if (input->powerOfTen != 0) */
+  }
 
-  for (i=0; i<LALNumUnits; ++i)
-  {
-    numer = input->unitNumerator[i];
-    if (numer != 0)
-    {
-      if (charPtr != output->data) 
-      {
-	*charPtr = ' ';
-	++charPtr;
-      } /* if (charPtr != output->data) */
-      if (input->unitDenominatorMinusOne[i] == 0) 
-      {
-	if (numer == 1) 
-	{
-	  sprintf(temp, "%s", lalUnitName[i]);
-	} /* if (numer == 1) */
-	else
-	{
-	  sprintf(temp, "%s^%d", lalUnitName[i], numer);
-	}
-      } /* if (input->unitDenominatorMinusOne[i] == 0) */
-      else {
-	sprintf(temp, "%s^%d/%d", lalUnitName[i], numer,
-		 input->unitDenominatorMinusOne[i] + 1);
-      }
-      if ( charPtr + strlen(temp) >= charStopPtr) 
-      {
-	ABORT( status, UNITSH_ESTRINGSIZE, UNITSH_MSGESTRINGSIZE );
-      }
-      strncpy(charPtr, temp, charStopPtr - charPtr);
-      charPtr += strlen(temp);
-    } /* if (numer != 0) */
-  }  /* for (i=0; i<LALNumUnits; ++i) */
-
-  /* printf("Units are:\"%s\"\n",output->data);*/
-
-  /* DETATCHSTATUSPTR(status); */
   RETURN(status);
 }
 
 
-/* <lalVerbatim file="UnitDefsCP"> */
-void 
-LALParseUnitString ( LALStatus *status,
-		     LALUnit *output,
-		     const CHARVector *input )
-/* </lalVerbatim> */
+LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
 {
+  static const char *func = "XLALParseUnitString";
   UINT2        i;
   INT2         sign;
   CHAR         temp[20];
-  CHAR         *charPtr, *charStopPtr;
+  const CHAR   *charPtr, *charStopPtr;
+  int outputAllocated = 0;
 
-  INITSTATUS( status, "LALParseUnitString", UNITDEFSC );
-  /* ATTATCHSTATUSPTR (status); */
-
-  ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
-
-  ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
-
-  ASSERT( input->data != NULL, status, UNITSH_ENULLPD, UNITSH_MSGENULLPD );
-
-  /* ensure that there's a '\0' within the input CHARVector */
-  charPtr = input->data;
-  charStopPtr = charPtr + strlen(input->data); 
-  /* Should point to first '\0' in string */
-  if (charStopPtr >= charPtr + input->length) 
+  if ( ! output )
   {
-    ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
+    output = LALMalloc( sizeof( *output ) );
+    outputAllocated = 1;
+    if ( ! output )
+      XLAL_ERROR_NULL( func, XLAL_ENOMEM );
   }
+
+  /* Start with dimensionless (all zeros) and fill in from there */
+  *output = lalDimensionlessUnit;
+
+  /* If the string is NULL, it represents dimensionless */
+  if ( ! string )
+    return output;
+
+  charPtr = string;
+  charStopPtr = string + strlen(string); 
 
   /* Start with dimensionless (all zeros) and fill in from there */
   *output = lalDimensionlessUnit;
   
   /* If the string is empty, it represents dimensionless */
   if (charPtr == charStopPtr)
-  {
-    RETURN(status);
-  }
+    return output;
 
   /* Look for power of ten; note LALUnitsAsString is set up to say
    * "10^1" rather than "10", so need not allow for missing '^'
@@ -476,7 +500,9 @@ LALParseUnitString ( LALStatus *status,
     /* read power of ten into temp[]; return value of 1 means failure */
     if ( readNumber( temp, &charPtr ) ) 
     {
-      ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
+      if ( outputAllocated )
+        LALFree( output );
+      XLAL_ERROR_NULL( func, XLAL_EFAILED );
     }
     /* charPtr now points to one after end of power of ten */
     
@@ -484,13 +510,13 @@ LALParseUnitString ( LALStatus *status,
 
     /* If the power of ten was all there was, return */
     if (*charPtr == '\0')
-    {
-      RETURN(status);
-    }
+      return output;
 
     if ( *charPtr != ' ') 
     {
-      ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
+      if ( outputAllocated )
+        LALFree( output );
+      XLAL_ERROR_NULL( func, XLAL_EFAILED );
     }
     
     ++charPtr;
@@ -502,9 +528,13 @@ LALParseUnitString ( LALStatus *status,
   do
   {
     /* read unit name into temp[]; return value of 1 means failure */
-    if ( readString( temp, &charPtr ) ) {
-      ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
+    if ( readString( temp, &charPtr ) )
+    {
+      if ( outputAllocated )
+        LALFree( output );
+      XLAL_ERROR_NULL( func, XLAL_EFAILED );
     }
+
     /* charPtr now points to one after end of unit name */
 
     /* find which unit name this matches */
@@ -512,14 +542,18 @@ LALParseUnitString ( LALStatus *status,
     {
       if (i>=LALNumUnits) /* didn't find it */
       {
-	ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
+        if ( outputAllocated )
+          LALFree( output );
+        XLAL_ERROR_NULL( func, XLAL_EFAILED );
       }
     }
 
     /* Make sure we haven't already read in this unit */
     if ( output->unitNumerator[i] || output->unitDenominatorMinusOne[i] )
     {
-      ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
+      if ( outputAllocated )
+        LALFree( output );
+      XLAL_ERROR_NULL( func, XLAL_EFAILED );
     }
 
     if ( *charPtr == ' ' || *charPtr == '\0' )
@@ -543,8 +577,11 @@ LALParseUnitString ( LALStatus *status,
 
       /* read exponent numerator into temp[];
 	 return value of 1 means failure */
-      if ( readNumber( temp, &charPtr ) ) {
-	ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
+      if ( readNumber( temp, &charPtr ) )
+      {
+        if ( outputAllocated )
+          LALFree( output );
+        XLAL_ERROR_NULL( func, XLAL_EFAILED );
       }
       output->unitNumerator[i] = sign * atoi(temp);
 
@@ -555,15 +592,20 @@ LALParseUnitString ( LALStatus *status,
 
 	/* read exponent denominator into temp[];
 	   return value of 1 means failure */
-	if ( readNumber( temp, &charPtr ) || temp[0] == '0') {
-	  ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
-	}
+	if ( readNumber( temp, &charPtr ) || temp[0] == '0')
+        {
+          if ( outputAllocated )
+            LALFree( output );
+          XLAL_ERROR_NULL( func, XLAL_EFAILED );
+        }
 	output->unitDenominatorMinusOne[i] = atoi(temp) - 1;
       } /* if ( *charPtr == '/' ) */
     } /* else if ( *charPtr == '^' ) */
     else 
     {
-      ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
+      if ( outputAllocated )
+        LALFree( output );
+      XLAL_ERROR_NULL( func, XLAL_EFAILED );
     }
 
     if ( *charPtr == ' ') ++charPtr;
@@ -571,5 +613,43 @@ LALParseUnitString ( LALStatus *status,
   }
   while ( *charPtr != '\0' );
   
+  return output;
+}
+
+
+/* <lalVerbatim file="UnitDefsCP"> */
+void 
+LALParseUnitString ( LALStatus *status,
+		     LALUnit *output,
+		     const CHARVector *input )
+/* </lalVerbatim> */
+{
+  CHAR         *charPtr, *charStopPtr;
+
+  INITSTATUS( status, "LALParseUnitString", UNITDEFSC );
+
+  ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
+
+  ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
+
+  ASSERT( input->data != NULL, status, UNITSH_ENULLPD, UNITSH_MSGENULLPD );
+
+  /* ensure that there's a '\0' within the input CHARVector */
+  charPtr = input->data;
+  charStopPtr = charPtr + strlen(input->data); 
+  /* Should point to first '\0' in string */
+  if (charStopPtr >= charPtr + input->length) 
+  {
+    ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
+  }
+
+  /* call the XLAL function */
+  output = XLALParseUnitString( output, charPtr );
+  if ( ! output ) /* there was a parse error */
+  {
+    XLALClearErrno();
+    ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
+  }
+
   RETURN(status);
 }

@@ -50,20 +50,101 @@ standard form.
 
 NRCSID( UNITRAISEC, "$Id$" );
 
+LALUnit * XLALUnitRaiseRAT4( LALUnit *output, const LALUnit *input,
+    const RAT4 *power )
+{
+  static const char *func = "XLALUnitRaiseRAT4";
+  LALUnit     unReduced;
+  UINT2       i;
+  INT4        numer;
+  UINT4       denom, denom1, denom2;
+  
+  if ( ! output || ! input || ! power )
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+
+  denom2 = power->denominatorMinusOne + 1;
+
+  if ( input->powerOfTen % denom2 )
+    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+
+  numer = (input->powerOfTen / (INT4) denom2) * power->numerator;
+
+  if ( numer >= 32767L || numer <= -32768L )
+    XLAL_ERROR_NULL( func, XLAL_ERANGE );
+
+  unReduced.powerOfTen = numer;
+
+  for (i=0; i<LALNumUnits; ++i) {
+    denom1 = 1 + input->unitDenominatorMinusOne[i];
+    denom = denom1 * denom2;
+
+    if ( denom - 1 >= 65535L )
+      XLAL_ERROR_NULL( func, XLAL_ERANGE );
+
+    unReduced.unitDenominatorMinusOne[i] = denom - 1;
+
+    numer = input->unitNumerator[i] * power->numerator;
+
+    if ( numer >= 32767L || numer <= -32768L )
+      XLAL_ERROR_NULL( func, XLAL_ERANGE );
+
+    unReduced.unitNumerator[i] = numer;
+  } /* for i */
+
+  *output = unReduced;
+  if ( XLALUnitNormalize( output ) == XLAL_FAILURE )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+
+  return output;
+}
+
+
+LALUnit * XLALUnitRaiseINT2( LALUnit *output, const LALUnit *input,
+    INT2 power )
+{
+  static const char *func = "XLALUnitRaiseINT2";
+  RAT4 pow;
+  pow.numerator = power;
+  pow.denominatorMinusOne = 0;
+  if ( ! XLALUnitRaiseRAT4( output, input, &pow ) )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  return output;
+}
+
+
+LALUnit * XLALUnitSquare( LALUnit *output, const LALUnit *input )
+{
+  static const char *func = "XLALUnitRaiseSquare";
+  RAT4 pow;
+  pow.numerator = 2;
+  pow.denominatorMinusOne = 0;
+  if ( ! XLALUnitRaiseRAT4( output, input, &pow ) )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  return output;
+}
+
+
+LALUnit * XLALUnitSqrt( LALUnit *output, const LALUnit *input )
+{
+  static const char *func = "XLALUnitRaiseSqrt";
+  RAT4 pow;
+  pow.numerator = 1;
+  pow.denominatorMinusOne = 1;
+  if ( ! XLALUnitRaiseRAT4( output, input, &pow ) )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  return output;
+}
+
+
 /* <lalVerbatim file="UnitRaiseCP"> */
 void 
 LALUnitRaise (LALStatus *status, LALUnit *output, const LALUnit *input, const RAT4 *power)
 /* </lalVerbatim> */
      /* Raise a Unit variable to a rational power */
 {
-  LALUnit     unReduced;
-  UINT2       i;
-  INT4        numer;
-  UINT4       denom, denom1, denom2;
+  UINT4       denom2;
 
   INITSTATUS( status, "LALUnitRaise", UNITRAISEC );
-  ATTATCHSTATUSPTR (status);
-
 
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
 
@@ -76,31 +157,21 @@ LALUnitRaise (LALStatus *status, LALUnit *output, const LALUnit *input, const RA
   ASSERT( input->powerOfTen % denom2 == 0, status, 
 	  UNITSH_ENONINT, UNITSH_MSGENONINT);
 
-  numer = (input->powerOfTen / (INT4) denom2) * power->numerator;
 
-  ASSERT(numer < 32767L && numer > -32768L, status, UNITSH_EOVERFLOW,
-	 UNITSH_MSGEOVERFLOW);
+  if ( ! XLALUnitRaiseRAT4( output, input, power ) )
+  {
+    int code = xlalErrno;
+    XLALClearErrno();
+    switch ( code )
+    {
+      case XLAL_EINVAL:
+        ABORT( status, UNITSH_ENONINT, UNITSH_MSGENONINT);
+      case XLAL_ERANGE:
+        ABORT( status, UNITSH_EOVERFLOW, UNITSH_MSGEOVERFLOW);
+      default:
+        ABORTXLAL( status );
+    }
+  }
 
-  unReduced.powerOfTen = numer;
-
-  for (i=0; i<LALNumUnits; ++i) {
-    denom1 = 1 + input->unitDenominatorMinusOne[i];
-    denom = denom1 * denom2;
-
-    ASSERT(denom - 1 < 65535L, status, UNITSH_EOVERFLOW,
-	   UNITSH_MSGEOVERFLOW);
-
-    unReduced.unitDenominatorMinusOne[i] = denom - 1;
-
-    numer = input->unitNumerator[i] * power->numerator;
-
-    ASSERT(numer < 32767L && numer > -32768L, status, UNITSH_EOVERFLOW,
-	   UNITSH_MSGEOVERFLOW);
-
-    unReduced.unitNumerator[i] = numer;
-  } /* for i */
-
-  LALUnitNormalize(status->statusPtr, output, &unReduced);
-  DETATCHSTATUSPTR(status);
   RETURN(status);
 }

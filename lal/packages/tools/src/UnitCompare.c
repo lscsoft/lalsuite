@@ -46,45 +46,64 @@ turn.
 
 NRCSID( UNITCOMPAREC, "$Id$" );
 
+
+/* returns 1 if units are the same (after normalization) or 0 if not */
+/* returns -1 if there is an error */
+int XLALUnitCompare( const LALUnit *unit1, const LALUnit *unit2 )
+{
+  static const char *func = "XLALUnitCompare";
+  LALUnit  unitOne, unitTwo;
+  INT2 i;
+
+  if ( ! unit1 || ! unit2 )
+    XLAL_ERROR( func, XLAL_EFAULT );
+
+  unitOne = *unit1;
+  unitTwo = *unit2;
+
+  /* normalize the units */
+  if ( XLALUnitNormalize( &unitOne ) == XLAL_FAILURE )
+    XLAL_ERROR( func, XLAL_EFUNC );
+  if ( XLALUnitNormalize( &unitTwo ) == XLAL_FAILURE )
+    XLAL_ERROR( func, XLAL_EFUNC );
+
+  if (unitOne.powerOfTen != unitTwo.powerOfTen)
+    return 0; /* false */
+
+  for (i=0; i<LALNumUnits; ++i)
+    if (
+	unitOne.unitNumerator[i] != unitTwo.unitNumerator[i]
+	|| unitOne.unitDenominatorMinusOne[i] 
+	   != unitTwo.unitDenominatorMinusOne[i]
+	)
+      return 0; /* false */
+
+  return 1; /* true */
+}
+
+
 /* <lalVerbatim file="UnitCompareCP"> */
 void
 LALUnitCompare (LALStatus *status, BOOLEAN *output, const LALUnitPair *input)
 /* </lalVerbatim> */
      /* Compare two units structures, returning false if they differ */
 {
-  INT2        i;
-  LALUnit     unitOne, unitTwo;
+  int code;
 
   INITSTATUS( status, "LALUnitCompare", UNITCOMPAREC );
-  ATTATCHSTATUSPTR (status);
-
 
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
 
   ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
 
-  LALUnitNormalize(status->statusPtr, &unitOne, input->unitOne);
-  LALUnitNormalize(status->statusPtr, &unitTwo, input->unitTwo);
-
-  if (unitOne.powerOfTen != unitTwo.powerOfTen)
+  code = XLALUnitCompare( input->unitOne, input->unitTwo );
+  if ( code == XLAL_FAILURE )
   {
-    *output = FALSE;
-    DETATCHSTATUSPTR(status);
-    RETURN(status);
+    XLALClearErrno();
+    ABORTXLAL( status );
   }
-  for (i=0; i<LALNumUnits; ++i) {
-    if (
-	unitOne.unitNumerator[i] != unitTwo.unitNumerator[i]
-	|| unitOne.unitDenominatorMinusOne[i] 
-	   != unitTwo.unitDenominatorMinusOne[i]
-	)
-    {
-      *output = FALSE;
-      DETATCHSTATUSPTR(status);
-      RETURN(status);
-    } /* if */
-  } /* for i */
-  *output = TRUE;
-  DETATCHSTATUSPTR(status);
+
+  *output = code ? TRUE : FALSE;
+
   RETURN(status);  
 }

@@ -64,6 +64,99 @@ A four-byte rational number, used as a parameter structure for
 \newpage\input{UnitRaiseC}
 \newpage\input{UnitMultiplyC}
 \newpage\input{UnitCompareC}
+
+\newpage\subsection{XLAL Functions}
+
+\subsubsection*{Synopsis}
+\begin{verbatim}
+#include <lal/Units.h>
+
+char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input );
+LALUnit * XLALParseUnitString( LALUnit *output, const char *string );
+int XLALUnitNormalize( LALUnit *unit );
+int XLALUnitCompare( const LALUnit *unit1, const LALUnit *unit2 );
+LALUnit * XLALUnitMultiply( LALUnit *output, const LALUnit *unit1,
+    const LALUnit *unit2 );
+LALUnit * XLALUnitRaiseRAT4( LALUnit *output, const LALUnit *input,
+    const RAT4 *power );
+LALUnit * XLALUnitRaiseINT2( LALUnit *output, const LALUnit *input,
+    INT2 power );
+LALUnit * XLALUnitSquare( LALUnit *output, const LALUnit *input );
+LALUnit * XLALUnitSqrt( LALUnit *output, const LALUnit *input );
+\end{verbatim}
+\idx{XLALUnitAsString}
+\idx{XLALParseUnitString}
+\idx{XLALUnitNormalize}
+\idx{XLALUnitCompare}
+\idx{XLALUnitMultiply}
+\idx{XLALUnitRaiseRAT4}
+\idx{XLALUnitRaiseINT2}
+\idx{XLALUnitSquare}
+\idx{XLALUnitSqrt}
+
+\subsubsection*{Description}
+
+\verb+XLALUnitAsString+ converts a \verb+LALUnit+ structure into a character
+string of maximum length \verb+length+ (including NUL termination)
+representation of the units.  The inverse function, \verb+XLALParseUnitString+
+parses a character string to produce a \verb+LALUnit+ structure; if 
+\verb+output+ is \verb+NULL+, memory for the output is allocated.  If the input
+\verb+string+ is \verb+NULL+ or is empty then the output units are
+dimensionless: \verb+lalDimensionlessUnit+.
+
+\verb+XLALUnitNormalize+ puts a \verb+LALUnit+ structure into normal form
+by simplifying all unit exponent fractions to their simplest form.
+
+\verb+XLALUnitCompare+ compares two \verb+LALUnit+ structures: they are the
+same if their normal forms are identical.
+
+\verb+XLALUnitMultiply+ multiplies two \verb+LALUnit+ structures.  The result
+is put into normal form.
+
+\verb+XLALUnitRaiseRAT4+ raises a \verb+LALUnit+ structure to a rational
+power given by the \verb+RAT4+ structure \verb+power+.
+\verb+XLALUnitRaiseINT2+ raises a \verb+LALUnit+ structure to an integer
+power \verb+power+.  
+\verb+XLALUnitSquare+ produces the square of a \verb+LALUnit+ structure.
+\verb+XLALUnitSqrt+ produces the square-root of a \verb+LALUnit+ structure.
+
+\subsubsection*{Return Values}
+
+\verb+XLALUnitAsString+ returns the pointer to the input \verb+string+, which
+is populated with the unit string if successful.  If there is a failure,
+\verb+XLALUnitAsString+ returns a \verb+NULL+ pointer and \verb+xlalErrno+
+is set to one of the following values:  \verb+XLAL_EFAULT+ if one of the
+input pointers is \verb+NULL+ or \verb+XLAL_EBADLEN+ if the length of the
+string is insufficent for the unit string.
+
+\verb+XLALParseUnitString+ returns the pointer \verb+output+ upon return
+or a pointer to newly allocated memory if \verb+output+ was \verb+NULL+;
+on failure, \verb+XLALParseUnitString+ returns \verb+NULL+ and sets
+\verb+xlalErrno+ to one of the following values:  \verb+XLAL_ENOMEM+
+if the routine was unable to allocate memory for the output or
+\verb+XLAL_EFAILED+ if the routine was unable to parse the unit string.
+
+\verb+XLALUnitNormalize+ returns 0 upon success or \verb+XLAL_FAILURE+
+if the input pointer is \verb+NULL+, in which case \verb+xlalErrno+
+is set to \verb+XLAL_EFAULT+
+
+\verb+XLALUnitCompare+ returns 1 if the the normal form of the two unit
+structures are the same or 0 if they are different.  It returns
+\verb+XLAL_FAILURE+ and \verb+xlalErrno+ is set to \verb+XLAL_EFAULT+
+if one of the input pointers is \verb+NULL+.
+
+\verb+XLALUnitMultiply+
+\verb+XLALUnitRaiseRAT4+
+\verb+XLALUnitRaiseINT2+
+\verb+XLALUnitSquare+ and
+\verb+XLALUnitSqrt+ all return a pointer to the output unit structure
+\verb+output+ upon success or \verb+NULL+ upon failure.  If there is
+a failure, \verb+xlalErrno+ is set to one of the following values:
+\verb+XLAL_EFAULT+ if one of the input pointers is \verb+NULL+,
+\verb+XLAL_ERANGE+ if one of the unit powers exceeds the allowed range,
+or \verb+XLAL_EINVAL+ (for the raise functions only) if the unit power
+would not be an integer.
+
 \newpage\input{UnitsTestC}
 
 </lalLaTeX> */
@@ -102,11 +195,40 @@ NRCSID (UNITSH, "$Id$");
 /************************************ </lalErrTable> */
 
 
+/* The parameter structure for LALUnitRaise contains the numerator and
+ * denominator-minus-one of the rational power.  
+ */
+
+typedef struct
+tagRAT4 
+{
+  INT2 numerator;
+  UINT2 denominatorMinusOne;
+} RAT4;
+
+
 /*********************************************************
  *                                                       *
  *       Functions to manipulate unit structures         *
  *                                                       *
  *********************************************************/
+
+
+/* XLAL routines */
+
+char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input );
+LALUnit * XLALParseUnitString( LALUnit *output, const char *string );
+int XLALUnitNormalize( LALUnit *unit );
+int XLALUnitCompare( const LALUnit *unit1, const LALUnit *unit2 );
+LALUnit * XLALUnitMultiply( LALUnit *output, const LALUnit *unit1,
+    const LALUnit *unit2 );
+LALUnit * XLALUnitRaiseRAT4( LALUnit *output, const LALUnit *input,
+    const RAT4 *power );
+LALUnit * XLALUnitRaiseINT2( LALUnit *output, const LALUnit *input,
+    INT2 power );
+LALUnit * XLALUnitSquare( LALUnit *output, const LALUnit *input );
+LALUnit * XLALUnitSqrt( LALUnit *output, const LALUnit *input );
+
 
 /* LALUnitNormalize will reduce the rational powers in the basic unit
  * exponents, e.g. converting 2/2 to 1/1 and 3/6 to 1/2.  
@@ -141,18 +263,6 @@ void LALUnitMultiply (LALStatus *status, LALUnit *output,
 
 void LALUnitCompare (LALStatus *status, BOOLEAN *output,
 		      const LALUnitPair *input);
-
-
-/* The parameter structure for LALUnitRaise contains the numerator and
- * denominator-minus-one of the rational power.  
- */
-
-typedef struct
-tagRAT4 
-{
-  INT2 numerator;
-  UINT2 denominatorMinusOne;
-} RAT4;
 
 /* LALUnitRaise will raise a unit structure to a rational power; the
  * most common choices will presumably be -1, 2, and 1/2.  An error
