@@ -73,6 +73,7 @@
 
 
 #include <stdio.h>
+#include <math.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -114,7 +115,7 @@ ParseOptions (int argc, char *argv[]);
 
 int main( int argc, char *argv[] )
 {
-  UINT4 i, j;
+  UINT4 i, j, k;
   const REAL4 tiny = 1e-6;
 
   CHAR  ifoCode[][3] = { "H1", "L1" };
@@ -133,7 +134,6 @@ int main( int argc, char *argv[] )
   UINT4                 sampleRate = 4096;
   CHAR                  outFile[LALNameLength];
   LIGOTimeGPS           duration = {0,0};
-
 
   COMPLEX8FrequencySeries       response;
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
@@ -212,6 +212,19 @@ int main( int argc, char *argv[] )
         /* match the expected ones up to tiny. Need to if on j to get   */
         /* the correct ifo                                              */
 
+        /* test that the response does not contain NaN or Inf */
+        for ( k = 0; k < response.data->length; ++k )
+        {
+          if ( (! finite( response.data->data[k].re )) || 
+              (! finite( response.data->data[k].im )) )
+          {
+            fprintf( stderr, "ERROR: non-finite value found in response "
+                "at k = %d (%e,%e)\n",
+                k, response.data->data[k].re, response.data->data[k].im );
+            exit( 1 );
+          }
+        }
+        
         /* print out the response function */
         if ( verbose )
         {
