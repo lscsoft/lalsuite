@@ -2,7 +2,7 @@
  *
  * File Name: TwoInterfFindChirp.h
  *
- * Author: Bose, S. and Sorensen, S.
+ * Author: Bose, S., Sorensen, S., and Noel, J. S.
  *
  * Revision: $Id$
  *
@@ -47,6 +47,7 @@ a pair of interferometers for binary inspiral chirps.
 #include <lal/FindChirpChisq.h>
 #include <lal/DetectorSite.h>
 #include <lal/StochasticCrossCorrelation.h>
+#include <lal/SkyCoordinates.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -82,7 +83,7 @@ NRCSID (TWOINTERFFINDCHIRPH, "$Id$");
 #define TWOINTERFFINDCHIRPH_MSGENUMZ "Invalid number of points in segment"
 #define TWOINTERFFINDCHIRPH_MSGESEGZ "Invalid number of segments"
 #define TWOINTERFFINDCHIRPH_MSGECHIZ "Invalid number of chi squared bins"
-#define TWOINTERFFINDCHIRPH_MSGEDTZO "deltaT is zero or negative"
+#define TWOINTERFFINDCHIRPH_MSGEDTZO "deltaT is zero or negative or unequal for detector 1 and 2 data segments"
 #define TWOINTERFFINDCHIRPH_MSGEMLZO "maxLag is zero or negative"
 #define TWOINTERFFINDCHIRPH_MSGETRNC "Duration of inverse spectrum in time domain is negative"
 #define TWOINTERFFINDCHIRPH_MSGEFLOW "Inverse spectrum low frequency cutoff is negative"
@@ -104,6 +105,7 @@ NRCSID (TWOINTERFFINDCHIRPH, "$Id$");
 \subsection*{Types}
 </lalLaTeX>
 #endif
+
 /* --- structure for describing a binary insipral event ------------------ */
 /* <lalVerbatim file="FindChirpHInspiralEvent"> */
 typedef struct
@@ -189,8 +191,17 @@ tagTwoInterfInspiralEvent
   LIGOTimeGPS                            time;
   LIGOTimeGPS                            impulseTime;
   UINT4                                  timeIndex;
+  UINT4                                  timeIndex2;
   InspiralTemplate                       tmplt;
   REAL4                                  snrsq;
+  REAL4                                  sigma;
+  REAL4                                  effDist;
+  REAL4                                  chisq1;
+  REAL4                                  chisq2;
+  REAL4                                  twoInterfAxisRa; /*Direction of detector1-to-detector2 (e.g., Hanford-to-Livingston ray at time of eventthe central axis of the cone on which the source lies)*/
+  REAL4                                  twoInterfAxisDec; 
+  REAL4                                  twoInterfAngle; /*Wave arrival angle with respect to detector1-to-detector2 (e.g., Hanford-to-Livingston) ray...*/
+  REAL4                                  twoInterfAngleSig; /*...and error*/
   InspiralEvent                         *eventIn1;
   InspiralEvent                         *eventIn2;
   struct tagTwoInterfInspiralEvent      *next;
@@ -242,6 +253,19 @@ a linked list of network events.
 </lalLaTeX>
 #endif
 
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+\subsubsection*{Structure \texttt{MultiInspiralTable}}
+\idx[Type]{MultiInspiralTable}
+
+%\input{TwoInterfFindChirpHMultiInspiralTable}
+
+\noindent This is an alternative structure describing 
+inspiral events in the data of a pair of detectors found by \texttt{TwoInterffindchirp}.
+This structure is being redesigned to be eventually consistent with the database table
+definitions.
+#endif
 
 /* --- vector of DataSegmentVector, as defined in the 
    findchirp/framedata packages --------- */
@@ -322,6 +346,7 @@ tagTwoInterfFindChirpInitParams
   UINT4                         numPoints;  
   UINT4                         numChisqBins;
   BOOLEAN                       createRhosqVec;
+  UINT4                         ovrlap;
   BOOLEAN                       createTwoInterfRhosqVec;
 }
 TwoInterfFindChirpInitParams;
@@ -429,7 +454,7 @@ whose data is filtered.
 \item[\texttt{TwoInterfFindChirpFilterParamsVector *paramsVec}] Pointer to the
 \texttt{TwoInterfFindChirpFilterParamsVector} structure defined above.
 
-\item[\texttt{REAL4Vector *twoInterfRhosqVec}] Pointer to a network vector that 
+\item[\texttt{REAL4TimeSeries *twoInterfRhosqVec}] Pointer to a network vector that 
 is set to $\rho^2(t_j)$ on exit. If NULL, $\rho^2(t_j)$ is not stored.
 \end{description}
 </lalLaTeX>
@@ -601,7 +626,32 @@ LALTwoInterfFindChirpSPDataFinalize (
     LALStatus                                 *status,
     TwoInterfFindChirpSPDataParamsVector     **output
     );
+
+/* prototypes for chisq vetoing functions */
      
+void
+LALTwoInterfFindChirpChisqVetoInit (
+    LALStatus                  *status,
+    FindChirpChisqParams       *params,
+    UINT4                       numChisqBins,
+    UINT4                       numPoints
+    );
+
+void
+LALTwoInterfFindChirpChisqVetoFinalize (
+    LALStatus                  *status,
+    FindChirpChisqParams       *params,
+    UINT4                       numChisqBins
+    );
+
+void
+LALTwoInterfFindChirpChisqVeto (
+    LALStatus                  *status,
+    REAL4Vector                *chisqVec,
+    FindChirpChisqInput        *input,
+    FindChirpChisqParams       *params
+    );
+
 #ifdef  __cplusplus
 #pragma {
 }
