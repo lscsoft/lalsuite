@@ -1,3 +1,4 @@
+#include <lal/Date.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStatusMacros.h>
@@ -7,6 +8,19 @@
 NRCSID(TIMESERIESC, "$Id$");
 
 
+static void DestroyREAL4TimeSeries(
+	REAL4TimeSeries *series
+)
+{
+	if(series) {
+		if(series->data)
+			LALFree(series->data->data);
+		LALFree(series->data);
+	}
+	LALFree(series);
+}
+
+
 void LALDestroyREAL4TimeSeries(
 	LALStatus *status,
 	REAL4TimeSeries *series
@@ -14,14 +28,42 @@ void LALDestroyREAL4TimeSeries(
 {
 	INITSTATUS(status, "LALDestroyREAL4TimeSeries", TIMESERIESC);
 
-	if(series) {
-		if(series->data)
-			LALFree(series->data->data);
-		LALFree(series->data);
-	}
-	LALFree(series);
+	DestroyREAL4TimeSeries(series);
 
 	RETURN(status);
+}
+
+
+static REAL4TimeSeries *CutREAL4TimeSeries(
+	REAL4TimeSeries *series,
+	size_t first_sample,
+	size_t num_samples
+)
+{
+	REAL4TimeSeries *new;
+	REAL4Sequence *sequence;
+	REAL4 *data;
+	LALStatus status = {}; /* AddFloatToGPS cannot fail so we can defeat the error reporting mechanism for cleanliness */
+
+	new = LALMalloc(sizeof(*new));
+	sequence = LALMalloc(sizeof(*sequence));
+	data = LALMalloc(num_samples * sizeof(*data));
+	if(!series || !series->data || !series->data->data || !new || !sequence || !data) {
+		LALFree(new);
+		LALFree(sequence);
+		LALFree(data);
+		return(NULL);
+	}
+
+	*new = *series;
+	new->data = sequence;
+	sequence->data = data;
+	sequence->length = num_samples;
+	memcpy(sequence->data, series->data->data + first_sample, num_samples * sizeof(*data));
+
+	LALAddFloatToGPS(&status, &new->epoch, &new->epoch, first_sample * new->deltaT);
+
+	return(new);
 }
 
 
@@ -33,30 +75,13 @@ void LALCutREAL4TimeSeries(
 	size_t num_samples
 )
 {
-	REAL4Sequence *sequence;
-	REAL4 *data;
-
 	INITSTATUS(status, "LALCutREAL4TimeSeries", TIMESERIESC);
 	ATTATCHSTATUSPTR(status);
 
-	*output = LALMalloc(sizeof(**output));
-	sequence = LALMalloc(sizeof(*sequence));
-	data = LALMalloc(num_samples * sizeof(*data));
-	if(!input || !input->data->data || !*output || !sequence || !data) {
-		LALFree(*output);
-		LALFree(sequence);
-		LALFree(data);
-		*output = NULL;
+	*output = CutREAL4TimeSeries(input, first_sample, num_samples);
+
+	if(!*output)
 		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
-	}
-
-	**output = *input;
-	(*output)->data = sequence;
-	sequence->data = data;
-	sequence->length = num_samples;
-	memcpy(sequence->data, input->data->data + first_sample, num_samples * sizeof(*data));
-
-	LALAddFloatToGPS(status->statusPtr, &(*output)->epoch, &(*output)->epoch, first_sample * (*output)->deltaT);
 
 	DETATCHSTATUSPTR(status);
 	RETURN(status);

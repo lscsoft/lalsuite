@@ -8,6 +8,7 @@ $Id$
 #define _TIMESERIES_H
 
 #include <stddef.h>
+#include <lal/LALDatatypes.h>
 
 #define LAL_FAIL_ERR	1
 #define LAL_FAIL_MSG	"operation failed"
