@@ -926,9 +926,11 @@ LALMergeClusterLists (
     ASSERT ( A->params, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
   }
   else {
-    LALCopyCList(status->statusPtr, out_, B);
-    CHECKSTATUSPTR (status);
-
+    if(B != out_) {
+      LALCopyCList(status->statusPtr, out_, B);
+      CHECKSTATUSPTR (status);
+    }
+    
     DETATCHSTATUSPTR (status);
     RETURN (status); 
   }
@@ -941,9 +943,12 @@ LALMergeClusterLists (
     ASSERT ( B->params, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
   }
   else {
-    LALCopyCList(status->statusPtr, out_, A);
-    CHECKSTATUSPTR (status);
-
+    
+    if(A!=out_) {
+      LALCopyCList(status->statusPtr, out_, A);
+      CHECKSTATUSPTR (status);
+    }
+    
     DETATCHSTATUSPTR (status);
     RETURN (status); 
   }
@@ -1272,14 +1277,12 @@ LALCopyCList (
   ASSERT ( dest, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
   ASSERT ( src, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
 
-  if(dest->nclusters > 0) {
-    LALFreeCList(status->statusPtr, dest);
-    CHECKSTATUSPTR (status);
-  }
-
+  LALFreeCList(status->statusPtr, dest);
+  CHECKSTATUSPTR (status);
+  
   dest->nclusters = src->nclusters;
 
-  if(src->nclusters) {
+  if(src->nclusters > 0) {
 
     dest->sizes = (UINT4*)LALMalloc(src->nclusters * sizeof(UINT4));
     if(!dest->sizes) {
