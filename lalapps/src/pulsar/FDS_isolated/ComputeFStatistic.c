@@ -70,38 +70,6 @@ BOOLEAN uvar_debug;		/* NOTE: don't use this, it's a dummy!! lalDebugLevel is se
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel 	= NULL;
 
-LALUserVariable uvars[] = {
-  regUserVar (Dterms, 	UVAR_INT4, 't', "Number of terms to keep in Dirichlet kernel sum"),
-  regUserVar (Freq, 	UVAR_REAL8,'f', "Starting search frequency in Hz"),
-  regUserVar (FreqBand, UVAR_REAL8,'b', "Demodulation frequency band in Hz"),
-  regUserVar (dFreq, 	UVAR_REAL8,'r', "Demodulation frequency resolution in Hz (set to 1/(8*Tsft*Nsft) by default"),
-  regUserVar (Alpha, 	UVAR_REAL8,'a', "Sky position alpha (equatorial coordinates) in radians"),
-  regUserVar (AlphaBand,UVAR_REAL8,'z', "Band in alpha (equatorial coordinates) in radians"),
-  regUserVar (dAlpha, 	UVAR_REAL8,'l', "Resolution in alpha (equatorial coordinates) in radians"),
-  regUserVar (Delta, 	UVAR_REAL8,'d', "Sky position delta (equatorial coordinates) in radians"),
-  regUserVar (DeltaBand,UVAR_REAL8,'c', "Band in delta (equatorial coordinates) in radians"),
-  regUserVar (dDelta, 	UVAR_REAL8,'g', "Resolution in delta (equatorial coordinates) in radians"),
-  regUserVar (DataDir, 	UVAR_STRING, 'D', "Directory where SFT's are located"),
-  regUserVar (EphemDir, UVAR_STRING, 'E', "Directory where Ephemeris files are located"),
-  regUserVar (EphemYear,UVAR_STRING, 'y', "Year (or range of years) of ephemeris files to be used"),
-  regUserVar (IFO, 	UVAR_INT4, 'I', "Detector, must be set to 0=GEO, 1=LLO, 2=LHO or 3=Roman Bar"),
-  regUserVar (SignalOnly,UVAR_BOOL,'S', "Signal only flag"),
-  regUserVar (Spin, 	UVAR_REAL8,'s', "Starting spindown parameter"),
-  regUserVar (SpinBand, UVAR_REAL8,'m', "Spindown band"),
-  regUserVar (dSpin, 	UVAR_REAL8,'e', "Spindown resolution (default 1/(2*Tobs*Tsft*Nsft)"),
-  regUserVar (EstimSigParam, UVAR_BOOL, 'p', "Do Signal Parameter Estimation"),
-  regUserVar (Fthreshold,UVAR_REAL8,'F', "Signal Set the threshold for selection of 2F"),
-  regUserVar (BaseName, UVAR_STRING, 'i', "The base name of the input  file you want to read"),
-  regUserVar (Metric,	UVAR_INT4, 'M', "Metric for template grid: 0=none, 1 = PtoleMetric, 2 = CoherentMetric"),
-  regUserVar (metricMismatch, UVAR_REAL8, 'X', "Maximal mismatch for metric tiling"),
-  regUserVar (debug, 	UVAR_INT4, 'v', "Set lalDebugLevel"),
-  regUserVar (help, 	UVAR_BOOL, 'h', "Print this message"),
-  regUserVar (skyRegion,UVAR_STRING, 'R', "Specify sky-region by polygon"),
-  regUserVar (outputLabel,UVAR_STRING,'o', "Label to be appended to all output file-names"),
-  {NULL, 0, 0, NULL, NULL}
-};
-
-
 /*----------------------------------------------------------------------*/
 
 
@@ -146,6 +114,46 @@ INT4 EstimateFloor(REAL8Vector *Sp, INT2 windowSize, REAL8Vector *SpFloor);
 int compare(const void *ip, const void *jp);
 INT4 writeFaFb(INT4 *maxIndex);
 
+/* make it a bit easier for us to register all the user-variables in a constistent way */
+#define regUserVar(name,type,option,help) LALRegisterUserVar(stat, #name, type, option, help, &(uvar_ ## name)) 
+
+/* register all our "user-variables", which can be read from cmd-line and config-file */
+void
+initUserVars (LALStatus *stat)
+{
+  INITSTATUS( stat, "initUserVars", COMPUTEFSTATISTIC );
+
+  regUserVar (Dterms, 	UVAR_INT4,   't', "Number of terms to keep in Dirichlet kernel sum");
+  regUserVar (Freq, 	UVAR_REAL8,  'f', "Starting search frequency in Hz");
+  regUserVar (FreqBand, UVAR_REAL8,  'b', "Demodulation frequency band in Hz");
+  regUserVar (dFreq, 	UVAR_REAL8,  'r', "Demodulation frequency resolution in Hz (set to 1/(8*Tsft*Nsft) by default");
+  regUserVar (Alpha, 	UVAR_REAL8,  'a', "Sky position alpha (equatorial coordinates) in radians");
+  regUserVar (AlphaBand,UVAR_REAL8,  'z', "Band in alpha (equatorial coordinates) in radians");
+  regUserVar (dAlpha, 	UVAR_REAL8,  'l', "Resolution in alpha (equatorial coordinates) in radians");
+  regUserVar (Delta, 	UVAR_REAL8,  'd', "Sky position delta (equatorial coordinates) in radians");
+  regUserVar (DeltaBand,UVAR_REAL8,  'c', "Band in delta (equatorial coordinates) in radians");
+  regUserVar (dDelta, 	UVAR_REAL8,  'g', "Resolution in delta (equatorial coordinates) in radians");
+  regUserVar (DataDir, 	UVAR_STRING, 'D', "Directory where SFT's are located");
+  regUserVar (EphemDir, UVAR_STRING, 'E', "Directory where Ephemeris files are located");
+  regUserVar (EphemYear,UVAR_STRING, 'y', "Year (or range of years) of ephemeris files to be used");
+  regUserVar (IFO, 	UVAR_INT4,   'I', "Detector, must be set to 0=GEO, 1=LLO, 2=LHO or 3=Roman Bar");
+  regUserVar (SignalOnly,UVAR_BOOL,  'S', "Signal only flag");
+  regUserVar (Spin, 	UVAR_REAL8,  's', "Starting spindown parameter");
+  regUserVar (SpinBand, UVAR_REAL8,  'm', "Spindown band");
+  regUserVar (dSpin, 	UVAR_REAL8,  'e', "Spindown resolution (default 1/(2*Tobs*Tsft*Nsft)");
+  regUserVar (EstimSigParam,UVAR_BOOL,'p',"Do Signal Parameter Estimation");
+  regUserVar (Fthreshold,UVAR_REAL8, 'F', "Signal Set the threshold for selection of 2F");
+  regUserVar (BaseName, UVAR_STRING, 'i', "The base name of the input  file you want to read");
+  regUserVar (Metric,	UVAR_INT4,   'M', "Metric for template grid: 0=none, 1 = PtoleMetric, 2 = CoherentMetric");
+  regUserVar (metricMismatch,UVAR_REAL8,'X',"Maximal mismatch for metric tiling");
+  regUserVar (debug, 	UVAR_INT4,   'v', "Set lalDebugLevel");
+  regUserVar (help, 	UVAR_BOOL,   'h', "Print this message");
+  regUserVar (skyRegion,UVAR_STRING, 'R', "Specify sky-region by polygon");
+  regUserVar (outputLabel,UVAR_STRING,'o',"Label to be appended to all output file-names");
+
+  RETURN (stat);
+} /* initUserVars() */
+
 /*----------------------------------------------------------------------
  * MAIN
  *----------------------------------------------------------------------*/
@@ -170,7 +178,9 @@ int main(int argc,char *argv[])
   } /* for cmd-line */
   /*----------------------------------------------------------------------*/
 
-  LALReadUserInput (&status, argc,argv, uvars);
+  initUserVars (&status); 	/* register all user-variable */
+
+  LALUserVarReadAllInput (&status, argc,argv);	/* do ALL cmdline and cfgfile handling */
 
   /* print help-string and exit if -h was specified */
   if (uvar_help)
@@ -178,7 +188,7 @@ int main(int argc,char *argv[])
       /* little hack here: default for uvar_help = False, therefore we have to set that back: */
       CHAR *helpstr = NULL;
       uvar_help = 0;
-      LALGetUvarHelpString (&status, &helpstr, uvars);
+      LALUserVarHelpString (&status, &helpstr);
       printf ("Arguments are (short alternative arguments in brackets):\n");
       printf (helpstr);
       LALFree (helpstr);
@@ -1348,7 +1358,7 @@ int Freemem(void)
   LALFree(DemodParams);
 
   /* Free config-Variables and userInput stuff */
-  LALFreeUserVars (&status, uvars);
+  LALDestroyUserVars (&status);
 
   /* Free DopplerScan-stuff (grid) */
   FreeDopplerScan (&status, &thisScan);
