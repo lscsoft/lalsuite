@@ -284,7 +284,7 @@ LALFree( void *p )
       if ( lalMallocTotal < n )
       {
         lalRaiseHook( SIGSEGV, "%sLALFree error: lalMallocTotal too small\n",
-            newline ? "\n" : 0 );
+            newline ? "\n" : "" );
         return;
       }
 
