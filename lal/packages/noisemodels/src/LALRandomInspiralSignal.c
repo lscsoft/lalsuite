@@ -194,7 +194,6 @@ LALRandomInspiralSignal
 		 (randIn->mMax - 3) * epsilon2;
 	       randIn->param.massChoice=m1Andm2;
 	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
-	       randIn->param.massChoice=bhns;
 	       break;
 
 	     case m1Andm2: 
