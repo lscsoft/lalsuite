@@ -18,8 +18,7 @@ RINGPROG =
 STRINGPROG =
 endif
 bin_SCRIPTS = lalapps_ring_pipe
-bin_PROGRAMS = lalapps_stringfind $(RINGPROG) $(STRINGPROG)
-lalapps_stringfind_SOURCES = stringfind.c
+bin_PROGRAMS = $(RINGPROG) $(STRINGPROG)
 if FRAME
 if LALFRAME
 if LALMETAIO
@@ -37,11 +36,11 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 MOSTLYCLEANFILES = ring-*.dat *RING*.xml *RING*.asc *RING*.gwf \
 		   S2_H1_dag.*S2_RING_001.*
 CLEANFILES = python_config.sed lalapps_ring_pipe S2_H1_dag.ini
-EXTRA_DIST = ring.c stringfind.c StringSearch.c\
+EXTRA_DIST = ring.c StringSearch.c\
              F-600000000-6-10.F F-600000060-6-10.F F-600000120-6-10.F \
              H-CAL_FAC-600000000-6000.gwf H-CAL_REF-600000000-64.gwf \
              H-600000000-600000180.cache H1-CAL-600000000-600006000.cache \
-             response.asc filterpar.in ring_test.sh string_test.sh \
+             response.asc filterpar.in ring_test.sh \
 	     ring_test_inj.sh ring_test_sim.sh ring_test_pipe.sh \
              $(SCRIPTS) $(DATA) \
 	     ring_pipe.in S2_H1_dag.in S2H1v03_test.txt
