@@ -1,14 +1,25 @@
-\section{Program \texttt{lalapps\_power}}
+\section{Power Tools}
+\label{section:powertools}
+
+This section of \textsc{LALApps} contains programs that can be used to
+perform burst searches using the excess power algorithm.   
+
+Put a summary of the excess power algorithm here .........
+
+\clearpage
+
+
+\subsection{Program \texttt{lalapps\_power}}
 \label{program:lalapps-power}
 \idx[Program]{lalapps\_power}
 
 \begin{entry}
 
 \item[Name]
-\verb$lal_power$ --- runs excess power code on chunks of (simulated) data.
+\verb$lalapps_power$ --- runs excess power code on chunks of (simulated) data.
 
 \item[Synopsis]
-\verb$lal_power$ \verb$--npts$ \textsc{npts} \verb$--nseg$ \textsc{nseg}
+\verb$lalapps_power$ \verb$--npts$ \textsc{npts} \verb$--nseg$ \textsc{nseg}
 \verb$--olap$ \textsc{olap} \verb$--olapfctr$ \textsc{olapfctr}
 $\backslash$ \newline \hspace*{0.25in}
 \verb$--minfbin$ \textsc{minfbin} \verb$--mintbin$ \textsc{mintbin} 
@@ -130,6 +141,66 @@ data;  a character string [\texttt{useMean}, \texttt{useMedian}].
 \item[\texttt{--window} \textsc{window}] Type of window to use on the data;
 must be an integer.  [Possible values are:  0=Rectangular, 1=Hann,
 2=Welch, 3=Bartlett, 4=Parzen, 5=Papoulis, 6=Hamming.]
+\end{entry}
+
+
+\item[Example]
+To run the program,  type:
+\begin{verbatim}
+lalapps_power --npts 2048 --nseg 719 --olap 1024 --olapfctr 3 \
+    --minfbin 2 --mintbin 2 --flow 100.0 --delf 1.0 --lngth 512 --nsigma 2.0 \
+    --alphdef 0.5 --segdcle 32 --threshold 1.0e-13 --etomstr 10 \
+    --channel S1:LSC-AS_Q --simtype 0 --spectype useMedian --window 2 \
+    --epoch  693768279 0 --numpts 1048576 --printSpectrum --noise 1 11 \
+    --outfile sim-inj.xml
+\end{verbatim}
+
+\item[Author]
+Patrick Brady
+\end{entry}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% manipulate the events from power code
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Program \texttt{lalapps\_snglBurstHistogram}}
+\label{program:lalapps-snglBurstHistogram}
+\idx[Program]{lalapps\_snglBurstHistogram}
+
+\begin{entry}
+
+\item[Name]
+\verb$lalapps_snglBurstHistogram$ --- runs over LIGO lightweight files and histograms
+the triggers by frequency.   
+
+\item[Synopsis]
+\verb$lalapps_snglBurstHistogram$ \verb$--input$ \textsc{infile} 
+[\verb$--threshold$ \textsc{threshold}]    
+$\backslash$ \newline \hspace*{0.25in}
+\verb$--freq$ \textsc{fstart} \textsc{fstop} \textsc{df} 
+[\verb$--help$]
+
+\item[Description] 
+\verb$lal_snglBurstHistogram$ reads in LIGO lightweight files and
+constructs a histogram of the triggers over frequency.   The code
+should be extensible to do a number of similar things like this.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--input}  \textsc{infile}] The name of a file containing
+a list of XML files to parse;  one XML file per line of
+\textsc{infile}.
+
+\item[\texttt{--threshold} \textsc{threshold}] Identify events with alpha
+less than this; a real number.  The meaning of the threshold is the same as
+\verb$lalapps_power$ itself.  (Optional)
+
+\item[\texttt{--freq} \textsc{fstart} \textsc{fstop} \textsc{df}]
+Parameters which define a frequency histogram.  \textsc{fstart} is the
+lowest frequency;  \textsc{fstop} is the highest frequency; \textsc{df} 
+is the width of abin.
+
+\item[\texttt{--help}] Print usage instructions.
 \end{entry}
 
 
