@@ -669,3 +669,142 @@ SimInspiralTableFromLIGOLw (
 
 #undef CLOBBER_SIM
 
+int
+SearchSummaryTableFromLIGOLw (
+    SearchSummaryTable **sumHead,
+    CHAR                *fileName
+    )
+{
+  int                                   i, j, nrows;
+  int                                   mioStatus;
+  struct MetaioParseEnvironment         parseEnv;
+  const  MetaioParseEnv                 env = &parseEnv;
+  MetaTableDirectory tableDir[] =
+  {
+    {"comment",                 -1, 0},
+    {"in_start_time",           -1, 1},
+    {"in_start_time_ns",        -1, 2},
+    {"in_end_time",             -1, 3},
+    {"in_end_time_ns",          -1, 4},
+    {"out_start_time",          -1, 5},
+    {"out_start_time_ns",       -1, 6},
+    {"out_end_time",            -1, 7},
+    {"out_end_time_ns",         -1, 8},
+    {"nevents",                 -1, 9},
+    {"nnodes",                  -1, 10},
+    {NULL,                       0, 0}
+  };
+
+  /* check that the bank handle and pointer are vaid */
+  if ( ! sumHead )
+  {
+    fprintf( stderr, "null pointer passed as handle to search summary" );
+    return -1;
+  }
+  if ( *sumHead )
+  {
+    fprintf( stderr, "non-null pointer passed as pointer to search summary" );
+    return -1;
+  }
+  
+  /* open the search_summary table in the file file */
+  mioStatus = MetaioOpenTable( env, fileName, "search_summary" );
+  if ( mioStatus )
+  {
+    fprintf( stderr, "error opening search_summary table from file %s\n", 
+        fileName );
+    return -1;
+  }
+
+  /* figure out the column positions */
+  for ( i = 0; tableDir[i].name; ++i )
+  {
+    if ( (tableDir[i].pos = MetaioFindColumn( env, tableDir[i].name )) < 0 )
+    {
+      fprintf( stderr, "unable to find column %s\n", tableDir[i].name );
+      MetaioClose(env);
+      return -1;
+    }
+  }
+
+  /* allocate memory for the table */
+  *sumHead = (SearchSummaryTable *) LALCalloc( 1, sizeof(SearchSummaryTable) );
+
+  /* loop over the rows in the file */
+  i = nrows = 0;
+  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
+  {
+    /* parse the rows into the SearhSummary structure */
+    for ( j = 1; tableDir[j].name; ++j )
+    {
+      INT4 intData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+
+      if ( tableDir[j].idx == 0 )
+      {
+        LALSnprintf( (*sumHead)->comment, LIGOMETA_COMMENT_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 1 )
+      {
+        (*sumHead)->in_start_time.gpsSeconds = intData;
+      }
+      else if ( tableDir[j].idx == 2 )
+      {
+        (*sumHead)->in_start_time.gpsNanoSeconds = intData;
+      }
+      else if ( tableDir[j].idx == 3 )
+      {
+        (*sumHead)->in_end_time.gpsSeconds = intData;
+      }
+      else if ( tableDir[j].idx == 4 )
+      {
+        (*sumHead)->in_end_time.gpsNanoSeconds = intData;
+      }
+      else if ( tableDir[j].idx == 5 )
+      {
+        (*sumHead)->out_start_time.gpsSeconds = intData;
+      }
+      else if ( tableDir[j].idx == 6 )
+      {
+        (*sumHead)->out_start_time.gpsNanoSeconds = intData;
+      }
+      else if ( tableDir[j].idx == 7 )
+      {
+        (*sumHead)->out_end_time.gpsSeconds = intData;
+      }
+      else if ( tableDir[j].idx == 8 )
+      {
+        (*sumHead)->out_end_time.gpsNanoSeconds = intData;
+      }
+      else if ( tableDir[j].idx == 9 )
+      {
+        (*sumHead)->nevents = intData;
+      }
+      else if ( tableDir[j].idx == 10 )
+      {
+        (*sumHead)->nnodes = intData;
+      }
+      else
+      {
+        LALFree( *sumHead );
+        fprintf( stderr, "unknown column while parsing\n" );
+        return -1;
+      }
+    }
+
+    /* increase the count of rows parsed */
+    ++nrows;
+  }
+
+  if ( mioStatus == -1 )
+  {
+    fprintf( stderr, "error parsing after row %d\n", i );
+    LALFree( *sumHead );
+    MetaioClose( env );
+    return -1;
+  }
+
+  /* we have sucesfully parsed table */
+  MetaioClose( env );
+  return nrows;  
+}

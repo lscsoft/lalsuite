@@ -47,4 +47,10 @@ SimInspiralTableFromLIGOLw (
     INT4                 endTime
     );
 
+int
+SearchSummaryTableFromLIGOLw (
+    SearchSummaryTable **sumHead,
+    CHAR                *fileName
+    );
+
 #endif

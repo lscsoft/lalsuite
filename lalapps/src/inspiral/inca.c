@@ -23,6 +23,7 @@
 #include <lal/LIGOMetadataUtils.h>
 #include <lalapps.h>
 #include <processtable.h>
+#include "ligolwbank.h"
 
 RCSID("$Id$");
 
@@ -98,6 +99,9 @@ int main( int argc, char *argv[] )
   INT4  have_ifo_a_trigger = 0;
   INT4  isPlay = 0;
   INT8  ta, tb;
+  INT4  numTriggers[MAXIFO];
+  INT4  inStartTime = -1;
+  INT4  inEndTime = -1;
 
   SnglInspiralTable    *inspiralEventList[MAXIFO];
   SnglInspiralTable    *currentTrigger[MAXIFO];
@@ -109,8 +113,9 @@ int main( int argc, char *argv[] )
 
   MetadataTable         proctable;
   MetadataTable         processParamsTable;
+  MetadataTable         searchsumm;
   MetadataTable         inspiralTable;
-  ProcessParamsTable   *this_proc_param;
+  ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       xmlStream;
   
   INT4                  i, j;
@@ -161,11 +166,16 @@ int main( int argc, char *argv[] )
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
+  /* create the search summary and zero out the summvars table */
+  searchsumm.searchSummaryTable = (SearchSummaryTable *)
+    calloc( 1, sizeof(SearchSummaryTable) );
+
   memset( &errorParams, 0, sizeof(SnglInspiralAccuracy) );
   memset( inspiralEventList, 0, MAXIFO * sizeof(SnglInspiralTable *) );
   memset( currentTrigger, 0, MAXIFO * sizeof(SnglInspiralTable *) );
   memset( coincidentEvents, 0, MAXIFO * sizeof(SnglInspiralTable *) );
   memset( outEvent, 0, MAXIFO * sizeof(SnglInspiralTable *) );
+  memset( numTriggers, 0, MAXIFO * sizeof(INT4) );
 
   /* parse the arguments */
   while ( 1 )
@@ -356,10 +366,14 @@ int main( int argc, char *argv[] )
   if ( ! *comment )
   {
     LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+    LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, 
+        " " );
   } 
   else 
   {
     LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
+        "%s", comment );
+    LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
   }
 
@@ -407,8 +421,38 @@ int main( int argc, char *argv[] )
   {
     for( i = optind; i < argc; ++i )
     {
+      INT4 haveSearchSum = 0;
       INT4 numTriggers = 0;
       SnglInspiralTable *inputData = NULL;
+      SearchSummaryTable *inputSummary = NULL;
+
+      if ( verbose ) fprintf( stdout, 
+          "reading search_summary table from file: %s\n", argv[i] );
+
+      haveSearchSum = SearchSummaryTableFromLIGOLw( &inputSummary, argv[i] );
+      
+      if ( haveSearchSum < 1 || ! inputSummary )
+      {
+        if ( verbose ) 
+          fprintf( stdout, "no valid search_summary table, continuing\n" );
+      }
+      else
+      {
+        if ( inStartTime < 0 || 
+            inputSummary->out_start_time.gpsSeconds < inStartTime )
+        {
+          inStartTime = inputSummary->out_start_time.gpsSeconds;
+        }
+
+        if ( inEndTime < 0 ||
+            inputSummary->out_end_time.gpsSeconds > inEndTime )
+        {
+          inEndTime = inputSummary->out_end_time.gpsSeconds;
+        }
+
+        LALFree( inputSummary );
+        inputSummary = NULL;
+      }
 
       if ( verbose ) 
         fprintf( stdout, "reading triggers from file: %s\n", argv[i] );
@@ -641,6 +685,7 @@ int main( int argc, char *argv[] )
                   sizeof(SnglInspiralTable) );
               outEvent[j]->next = NULL;
 
+              ++numTriggers[j];
               have_ifo_a_trigger = 1;
             }
           }
@@ -672,81 +717,77 @@ int main( int argc, char *argv[] )
 
 cleanexit:
 
+  /* search summary entries: nevents is from primary ifo */
+  if ( inStartTime > 0 && inEndTime > 0 )
+  {
+    searchsumm.searchSummaryTable->in_start_time.gpsSeconds = inStartTime;
+    searchsumm.searchSummaryTable->in_end_time.gpsSeconds = inEndTime;
+  }
+  searchsumm.searchSummaryTable->out_start_time.gpsSeconds = startCoincidence;
+  searchsumm.searchSummaryTable->out_end_time.gpsSeconds = endCoincidence;
+  searchsumm.searchSummaryTable->nnodes = 1;
+
   if ( verbose ) fprintf( stdout, "writing output file... " );
 
-  if ( userTag )
+
+
+  for ( j = 0; j < MAXIFO; ++j )
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", ifoName[0],
-        userTag, startCoincidence, endCoincidence - startCoincidence );
-  }
-  else
-  {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-INCA-%d-%d.xml", ifoName[0],
-        startCoincidence, endCoincidence - startCoincidence );
-  }
+    if ( userTag )
+    {
+      LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", ifoName[j],
+          userTag, startCoincidence, endCoincidence - startCoincidence );
+    }
+    else
+    {
+      LALSnprintf( fileName, FILENAME_MAX, "%s-INCA-%d-%d.xml", ifoName[j],
+          startCoincidence, endCoincidence - startCoincidence );
+    }
 
-  memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName), &status );
+    searchsumm.searchSummaryTable->nevents = numTriggers[j];
 
-  /* write process table */
-  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
-      ifoName[0], ifoName[1] );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
-        &accuracy ), &status );
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
-      &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 
-        process_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
-  free( proctable.processTable );
+    memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
+    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName), &status );
 
-  /* write process_params table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_params_table ),
-      &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, processParamsTable, 
-        process_params_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
-
-  /* write the sngl_inspiral table using events from IFO A */
-  if ( coincidentEvents[0] )
-  {
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, sngl_inspiral_table),
+    /* write process table */
+    LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
+        ifoName[0], ifoName[1] );
+    LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
+          &accuracy ), &status );
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
         &status );
-    inspiralTable.snglInspiralTable = coincidentEvents[0];
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, inspiralTable,
-          sngl_inspiral_table), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
-  }
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 
+          process_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+    free( proctable.processTable );
 
-  LAL_CALL( LALCloseLIGOLwXMLFile( &status, &xmlStream), &status );
+    /* write process_params table */
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
+          process_params_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, processParamsTable, 
+          process_params_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
-  /* write secondary ifo events to another file */
-  if ( userTag )
-  {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", ifoName[1],
-        userTag, startCoincidence, endCoincidence - startCoincidence );
-  }
-  else
-  {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-INCA-%d-%d.xml", ifoName[1],
-        startCoincidence, endCoincidence - startCoincidence );
-  }
+    /* write search_summary table */
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
+          search_summary_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, searchsumm, 
+          process_params_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
-  memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName), &status );
-  
-  /* write the sngl_inspiral table using events from IFO B */
-  if ( coincidentEvents[1] )
-  {
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, sngl_inspiral_table),
-        &status );
-    inspiralTable.snglInspiralTable = coincidentEvents[1];
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, inspiralTable,
-          sngl_inspiral_table), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
-  }
+    /* write the sngl_inspiral table using events from IFO A */
+    if ( coincidentEvents[j] )
+    {
+      LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
+            sngl_inspiral_table), &status );
+      inspiralTable.snglInspiralTable = coincidentEvents[j];
+      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, inspiralTable,
+            sngl_inspiral_table), &status );
+      LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
+    }
 
-  LAL_CALL( LALCloseLIGOLwXMLFile( &status, &xmlStream), &status );
+    LAL_CALL( LALCloseLIGOLwXMLFile( &status, &xmlStream), &status );
+  }
 
   if ( verbose ) fprintf( stdout, "done\n" );
 

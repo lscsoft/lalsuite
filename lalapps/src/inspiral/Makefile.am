@@ -8,7 +8,7 @@ TRIGTOTMPLTSRC = trigtotmplt.c ligolwbank.h ligolwbank.c
 PRINTINSPIRALSRC = print_inspiral.c ligolwbank.h ligolwbank.c
 COHERESRC = coherent_inspiral.c ligolwbank.h ligolwbank.c inspiral.h \
             inspiralfrutils.c inspiralfrutils.h
-INCASRC = inca.c
+INCASRC = inca.c ligolwbank.h ligolwbank.c
 if FRAME
 if DATAFLOW
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank lalapps_trigtotmplt \
