@@ -9,10 +9,10 @@
  *----------------------------------------------------------------------- 
  * 
  * NAME 
- * Overlap 
+ * LALOverlap 
  * 
  * SYNOPSIS 
- * void Overlap (Status *, REAL4Vector *, OverlapParameters *);
+ * void LALOverlap (LALStatus *, REAL4Vector *, OverlapParameters *);
  *
  * typedef struct tagOverlapParameters {
  *   IFOsite   site1ID; 
@@ -65,7 +65,7 @@ CalcSiteCoordinates ( SiteCoordinates*, SiteParameters* );
 static CHAR* siteNames[]=SITENAMELIST;
 
 void
-Overlap ( Status            *status,
+LALOverlap ( LALStatus            *status,
 	  REAL4Vector       *vector,
 	  OverlapParameters *parameters )
 {
@@ -94,7 +94,7 @@ Overlap ( Status            *status,
   REAL8  besselJ0, besselJ1, besselJ2;
 
   /* initialize status structure */
-  INITSTATUS( status, "Overlap", OVERLAPC );
+  INITSTATUS( status, "LALOverlap", OVERLAPC );
 
   /* check that pointer to input parameters is not null */
   ASSERT(parameters!=NULL, status, OVERLAP_ENULLIP, OVERLAP_MSGENULLIP);

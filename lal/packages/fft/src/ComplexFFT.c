@@ -45,13 +45,13 @@ NRCSID( COMPLEXFFTC, "$Id$" );
 
 
 void
-EstimateFwdComplexFFTPlan (
-    Status          *stat,
+LALEstimateFwdComplexFFTPlan (
+    LALStatus          *stat,
     ComplexFFTPlan **plan,
     UINT4            size
     )
 {
-  INITSTATUS( stat, "EstimateFwdComplexFFTPlan", COMPLEXFFTC );
+  INITSTATUS( stat, "LALEstimateFwdComplexFFTPlan", COMPLEXFFTC );
 
   FFTWHOOKS;
 
@@ -88,13 +88,13 @@ EstimateFwdComplexFFTPlan (
 
 
 void
-EstimateInvComplexFFTPlan (
-    Status          *stat,
+LALEstimateInvComplexFFTPlan (
+    LALStatus          *stat,
     ComplexFFTPlan **plan,
     UINT4            size
     )
 {
-  INITSTATUS( stat, "EstimateInvComplexFFTPlan", COMPLEXFFTC );
+  INITSTATUS( stat, "LALEstimateInvComplexFFTPlan", COMPLEXFFTC );
 
   FFTWHOOKS;
 
@@ -131,13 +131,13 @@ EstimateInvComplexFFTPlan (
 
 
 void
-MeasureFwdComplexFFTPlan (
-    Status          *stat,
+LALMeasureFwdComplexFFTPlan (
+    LALStatus          *stat,
     ComplexFFTPlan **plan,
     UINT4            size
     )
 {
-  INITSTATUS( stat, "MeasureFwdComplexFFTPlan", COMPLEXFFTC );
+  INITSTATUS( stat, "LALMeasureFwdComplexFFTPlan", COMPLEXFFTC );
 
   FFTWHOOKS;
 
@@ -174,13 +174,13 @@ MeasureFwdComplexFFTPlan (
 
 
 void
-MeasureInvComplexFFTPlan (
-    Status          *stat,
+LALMeasureInvComplexFFTPlan (
+    LALStatus          *stat,
     ComplexFFTPlan **plan,
     UINT4            size
     )
 {
-  INITSTATUS( stat, "MeasureInvComplexFFTPlan", COMPLEXFFTC );
+  INITSTATUS( stat, "LALMeasureInvComplexFFTPlan", COMPLEXFFTC );
 
   FFTWHOOKS;
 
@@ -217,12 +217,12 @@ MeasureInvComplexFFTPlan (
 
 
 void
-DestroyComplexFFTPlan (
-    Status          *stat,
+LALDestroyComplexFFTPlan (
+    LALStatus          *stat,
     ComplexFFTPlan **plan
     )
 {
-  INITSTATUS (stat, "DestroyComplexFFTPlan", COMPLEXFFTC);
+  INITSTATUS (stat, "LALDestroyComplexFFTPlan", COMPLEXFFTC);
 
   FFTWHOOKS;
 
@@ -243,14 +243,14 @@ DestroyComplexFFTPlan (
 
 
 void
-COMPLEX8VectorFFT (
-    Status         *stat,
+LALCOMPLEX8VectorFFT (
+    LALStatus         *stat,
     COMPLEX8Vector *vout,
     COMPLEX8Vector *vinp,
     ComplexFFTPlan *plan
     )
 {
-  INITSTATUS( stat, "COMPLEX8VectorFFT", COMPLEXFFTC );
+  INITSTATUS( stat, "LALCOMPLEX8VectorFFT", COMPLEXFFTC );
 
   FFTWHOOKS;
 

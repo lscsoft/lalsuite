@@ -113,8 +113,8 @@ NRCSID(IIRFILTERH,"$Id$");
 %\hline
 %\end{tabular}
 
-Status codes are represented by the symbol
-\verb@IIRFILTERH_E@\textit{name}.  Status descriptions are represented
+LALStatus codes are represented by the symbol
+\verb@IIRFILTERH_E@\textit{name}.  LALStatus descriptions are represented
 by the symbol \verb@IIRFILTERH_MSGE@\textit{name}.
 
 \begin{center}
@@ -204,59 +204,59 @@ typedef struct tagREAL8IIRFilter{
 /* <lalLaTeX>
 \newpage\input{CreateIIRFilterC}
 </lalLaTeX> */
-void CreateREAL4IIRFilter(Status            *stat,
+void LALCreateREAL4IIRFilter(LALStatus            *stat,
 			  REAL4IIRFilter    **output,
 			  COMPLEX8ZPGFilter *input);
 
-void CreateREAL8IIRFilter(Status             *stat,
+void LALCreateREAL8IIRFilter(LALStatus             *stat,
 			  REAL8IIRFilter     **output,
 			  COMPLEX16ZPGFilter *input);
 
 /* <lalLaTeX>
 \newpage\input{DestroyIIRFilterC}
 </lalLaTeX> */
-void DestroyREAL4IIRFilter(Status         *stat,
+void LALDestroyREAL4IIRFilter(LALStatus         *stat,
 			   REAL4IIRFilter **input);
 
-void DestroyREAL8IIRFilter(Status         *stat,
+void LALDestroyREAL8IIRFilter(LALStatus         *stat,
 			   REAL8IIRFilter **input);
 
 /* <lalLaTeX>
 \newpage\input{IIRFilterC}
 </lalLaTeX> */
-void IIRFilterREAL4(Status         *stat,
+void LALIIRFilterREAL4(LALStatus         *stat,
 		    REAL4          *output,
 		    REAL4          input,
 		    REAL4IIRFilter *filter);
 
-void IIRFilterREAL8(Status         *stat,
+void LALIIRFilterREAL8(LALStatus         *stat,
 		    REAL8          *output,
 		    REAL8          input,
 		    REAL8IIRFilter *filter);
 
-REAL4 SIIRFilter(REAL4 x, REAL4IIRFilter *filter);
+REAL4 LALSIIRFilter(REAL4 x, REAL4IIRFilter *filter);
 
-REAL8 DIIRFilter(REAL8 x, REAL8IIRFilter *filter);
+REAL8 LALDIIRFilter(REAL8 x, REAL8IIRFilter *filter);
 
 /* <lalLaTeX>
 \newpage\input{IIRFilterVectorC}
 </lalLaTeX> */
-void IIRFilterREAL4Vector(Status         *stat,
+void LALIIRFilterREAL4Vector(LALStatus         *stat,
 			  REAL4Vector    *vector,
 			  REAL4IIRFilter *filter);
 
-void IIRFilterREAL8Vector(Status         *stat,
+void LALIIRFilterREAL8Vector(LALStatus         *stat,
 			  REAL8Vector    *vector,
 			  REAL8IIRFilter *filter);
 
 /* <lalLaTeX>
 \newpage\input{IIRFilterVectorRC}
 </lalLaTeX> */
-void IIRFilterREAL4VectorR(Status         *stat,
+void LALIIRFilterREAL4VectorR(LALStatus         *stat,
 			   REAL4Vector    *vector,
 			   REAL4IIRFilter *filter);
 
-void IIRFilterREAL8VectorR(Status         *stat,
+void LALIIRFilterREAL8VectorR(LALStatus         *stat,
 			   REAL8Vector    *vector,
 			   REAL8IIRFilter *filter);
 

@@ -13,8 +13,8 @@ Creates IIR filter objects.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{CreateIIRFilterCP}
-\index{\verb&CreateREAL4IIRFilter()&}
-\index{\verb&CreateREAL8IIRFilter()&}
+\index{\verb&LALCreateREAL4IIRFilter()&}
+\index{\verb&LALCreateREAL8IIRFilter()&}
 
 \subsubsection*{Description}
 
@@ -36,7 +36,7 @@ function.  The function \verb@Create<datatype>IIRFilter()@ deals with
 the constraints either by aborting if they are not met, or by
 adjusting the filter response so that they are met.  In the latter
 case, warning messages will be issued if the external parameter
-\verb@debuglevel@ is 1 or more.  The specific constraints, and how
+\verb@LALDebugLevel@ is 1 or more.  The specific constraints, and how
 they are dealt with, are as follows:
 
 First, the filter must be \emph{causal}; that is, the output at any
@@ -51,7 +51,7 @@ Second, the filter should be \emph{stable}, which means that all poles
 should be located on or within the circle $|z|=1$.  This is not
 enforced by \verb@Create<datatype>IIRFilter()@, which can be used to
 make unstable filters; however, warnings will be issued if
-\verb@debuglevel@ is 1 or more.  (In some sense the first condition is
+\verb@LALDebugLevel@ is 1 or more.  (In some sense the first condition is
 a special case of this one, since a transfer function with more zeros
 than poles actually has corresponding poles at infinity.)
 
@@ -66,17 +66,17 @@ and poles; it assumes that the latter are paired with
 negative-imaginary conjugates.  The routine will abort if this
 assumption results in a change in the given number of zeros or poles,
 but will otherwise simply modify the filter response.  This allows
-\verb@debuglevel@=0 runs to proceed without lengthy and usually
-unnecessary error trapping; when \verb@debuglevel@ is 1 or more, the
+\verb@LALDebugLevel@=0 runs to proceed without lengthy and usually
+unnecessary error trapping; when \verb@LALDebugLevel@ is 1 or more, the
 routine checks to make sure that each nonreal zero or pole does in
 fact have a complex-conjugate partner.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-debuglevel
+LALDebugLevel
 LALMalloc()
-SCreateVector()
-DCreateVector()
+LALSCreateVector()
+LALDCreateVector()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -93,10 +93,10 @@ DCreateVector()
 
 NRCSID(CREATEIIRFILTERC,"$Id$");
 
-extern INT4 debuglevel;
+extern INT4 LALDebugLevel;
 
 /* <lalVerbatim file="CreateIIRFilterCP"> */
-void CreateREAL4IIRFilter(Status            *stat,
+void LALCreateREAL4IIRFilter(LALStatus            *stat,
 			  REAL4IIRFilter    **output,
 			  COMPLEX8ZPGFilter *input)
 { /* </lalVerbatim> */
@@ -112,7 +112,7 @@ void CreateREAL4IIRFilter(Status            *stat,
   REAL4 *recurs;   /* The recursive filter coefficients. */
   REAL4 *history;  /* The filter history. */
 
-  INITSTATUS(stat,"CreateREAL4IIRFilter",CREATEIIRFILTERC);
+  INITSTATUS(stat,"LALCreateREAL4IIRFilter",CREATEIIRFILTERC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure all the input structures have been initialized. */
@@ -143,7 +143,7 @@ void CreateREAL4IIRFilter(Status            *stat,
     }
     else if(zeros[i].im>0.0){
       num+=2;
-      if(debuglevel>0){
+      if(LALDebugLevel>0){
 	/* Check to see that another zero is an actual conjugate.
            This is not a foolproof test, as it can be fooled by
            multiple zeros at the same location. */
@@ -155,10 +155,10 @@ void CreateREAL4IIRFilter(Status            *stat,
 	if(!ok){
 	  LALPrintError("Warning: createIIRFilter: zero number %i"
 			" has no complex conjugate pair.\n",i);
-	  if(debuglevel>1)
+	  if(LALDebugLevel>1)
 	    LALPrintError("         Zero location:      %.8e +"
 			  " i*%.8e\n",zeros[i].re,zeros[i].im);
-	  if(debuglevel>2){
+	  if(LALDebugLevel>2){
 	    /* Find the nearest approximation to a conjugate, to check
                for possible typos or roundoff errors. */
             REAL4 x = zeros[i].re - zeros[0].re;
@@ -193,7 +193,7 @@ void CreateREAL4IIRFilter(Status            *stat,
     }
     else if(poles[i].im>0.0){
       num+=2;
-      if(debuglevel>0){
+      if(LALDebugLevel>0){
 	/* Check to see that another zero is an actual conjugate.
            This is not a foolproof test, as it can be fooled by
            multiple poles at the same location. */
@@ -205,10 +205,10 @@ void CreateREAL4IIRFilter(Status            *stat,
 	if(!ok){
 	  LALPrintError("Warning: createIIRFilter: pole number %i"
 			" has no complex conjugate pair.\n",i);
-	  if(debuglevel>1)
+	  if(LALDebugLevel>1)
 	    LALPrintError("         Pole location:      %.8e +"
 			  " i*%.8e\n",poles[i].re,poles[i].im);
-	  if(debuglevel>2){
+	  if(LALDebugLevel>2){
 	    /* Find the nearest approximation to a conjugate, to check
                for possible typos or roundoff errors. */
 	    REAL4 x=poles[i].re-poles[0].re;
@@ -231,11 +231,11 @@ void CreateREAL4IIRFilter(Status            *stat,
     }
   ASSERT(num==numPoles,stat,IIRFILTER_EPAIR,IIRFILTER_MSGEPAIR);
 
-  if(debuglevel>0){
+  if(LALDebugLevel>0){
     /* Issue a warning if the gain is nonreal. */
     if(input->gain.im!=0.0){
       LALPrintError("Warning: createIIRFilter: gain is non-real.\n");
-      if(debuglevel>1)
+      if(LALDebugLevel>1)
 	LALPrintError("         Value: %.8e + i*%.8e\n",
 		      input->gain.re,input->gain.im);
     }
@@ -246,7 +246,7 @@ void CreateREAL4IIRFilter(Status            *stat,
 	if((poles[i].re==zeros[j].re)&&(poles[i].im==zeros[j].im)){
 	  LALPrintError("Warning: createIIRFilter: pole number %i"
 			" overlaps with zero number %i\n",i,j);
-	  if(debuglevel>1)
+	  if(LALDebugLevel>1)
 	    LALPrintError("         Location: %.8e + i*%.8e\n",
 			  poles[i].re,poles[i].im);
 	}
@@ -260,7 +260,7 @@ void CreateREAL4IIRFilter(Status            *stat,
       if(poles[i].re*poles[i].re+poles[i].im*poles[i].im>1.0){
 	LALPrintError("Warning: createIIRFilter: pole number %i lies"
 		      " outside |z|=1\n",i);
-	if(debuglevel>1)
+	if(LALDebugLevel>1)
 	  LALPrintError("         Location: %.8e + i*%.8e\n",
 			poles[i].re,poles[i].im);
       }
@@ -277,9 +277,9 @@ void CreateREAL4IIRFilter(Status            *stat,
   numDirect+=num;
   numRecurs+=num;
 
-  TRY(SCreateVector(stat->statusPtr,&((*output)->directCoef),numDirect),
+  TRY(LALSCreateVector(stat->statusPtr,&((*output)->directCoef),numDirect),
       stat);
-  TRY(SCreateVector(stat->statusPtr,&((*output)->recursCoef),numRecurs),
+  TRY(LALSCreateVector(stat->statusPtr,&((*output)->recursCoef),numRecurs),
       stat);
   direct=(*output)->directCoef->data;
   recurs=(*output)->recursCoef->data;
@@ -325,7 +325,7 @@ void CreateREAL4IIRFilter(Status            *stat,
     num=numDirect-1;
   else
     num=numRecurs-1;
-  TRY(SCreateVector(stat->statusPtr,&((*output)->history),num),stat);
+  TRY(LALSCreateVector(stat->statusPtr,&((*output)->history),num),stat);
   history=(*output)->history->data;
   for(i=0;i<num;i++)
     history[i]=0.0;
@@ -337,7 +337,7 @@ void CreateREAL4IIRFilter(Status            *stat,
 
 
 /* <lalVerbatim file="CreateIIRFilterCP"> */
-void CreateREAL8IIRFilter(Status             *stat,
+void LALCreateREAL8IIRFilter(LALStatus             *stat,
 			  REAL8IIRFilter     **output,
 			  COMPLEX16ZPGFilter *input)
 { /* </lalVerbatim> */
@@ -353,7 +353,7 @@ void CreateREAL8IIRFilter(Status             *stat,
   REAL8 *recurs;    /* The recursive filter coefficients. */
   REAL8 *history;   /* The filter history. */
 
-  INITSTATUS(stat,"CreateREAL8IIRFilter",CREATEIIRFILTERC);
+  INITSTATUS(stat,"LALCreateREAL8IIRFilter",CREATEIIRFILTERC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure all the input structures have been initialized. */
@@ -384,7 +384,7 @@ void CreateREAL8IIRFilter(Status             *stat,
     }
     else if(zeros[i].im>0.0){
       num+=2;
-      if(debuglevel>0){
+      if(LALDebugLevel>0){
 	/* Check to see that another zero is an actual conjugate. */
 	BOOLEAN ok=0;
 	INT4 j=0;
@@ -394,10 +394,10 @@ void CreateREAL8IIRFilter(Status             *stat,
 	if(!ok){
 	  LALPrintError("Warning: createIIRFilter: zero number %i"
 			" has no complex conjugate pair.\n",i);
-	  if(debuglevel>1)
+	  if(LALDebugLevel>1)
 	    LALPrintError("         Zero location:      %.16e +"
 			  " i*%.16e\n",zeros[i].re,zeros[i].im);
-	  if(debuglevel>2){
+	  if(LALDebugLevel>2){
 	    /* Find the nearest approximation to a conjugate, to check
                for possible typos or roundoff errors. */
 	    REAL8 x=zeros[i].re-zeros[0].re;
@@ -432,7 +432,7 @@ void CreateREAL8IIRFilter(Status             *stat,
     }
     else if(poles[i].im>0.0){
       num+=2;
-      if(debuglevel>0){
+      if(LALDebugLevel>0){
 	/* Check to see that another zero is an actual conjugate. */
 	BOOLEAN ok=0;
 	INT4 j=0;
@@ -442,10 +442,10 @@ void CreateREAL8IIRFilter(Status             *stat,
 	if(!ok){
 	  LALPrintError("Warning: createIIRFilter: pole number %i"
 			" has no complex conjugate pair.\n",i);
-	  if(debuglevel>1)
+	  if(LALDebugLevel>1)
 	    LALPrintError("         Pole location:      %.16e +"
 			  " i*%.16e\n",poles[i].re,poles[i].im);
-	  if(debuglevel>2){
+	  if(LALDebugLevel>2){
 	    /* Find the nearest approximation to a conjugate, to check
                for possible typos or roundoff errors. */
 	    REAL8 x=poles[i].re-poles[0].re;
@@ -468,11 +468,11 @@ void CreateREAL8IIRFilter(Status             *stat,
     }
   ASSERT(num==numPoles,stat,IIRFILTER_EPAIR,IIRFILTER_MSGEPAIR);
 
-  if(debuglevel>0){
+  if(LALDebugLevel>0){
     /* Issue a warning if the gain is nonreal. */
     if(input->gain.im!=0.0){
       LALPrintError("Warning: createIIRFilter: gain is non-real.\n");
-      if(debuglevel>1)
+      if(LALDebugLevel>1)
 	LALPrintError("         Value: %.16e + i*%.16e\n",
 		      input->gain.re,input->gain.im);
     }
@@ -483,7 +483,7 @@ void CreateREAL8IIRFilter(Status             *stat,
 	if((poles[i].re==zeros[j].re)&&(poles[i].im==zeros[j].im)){
 	  LALPrintError("Warning: createIIRFilter: pole number %i"
 			" overlaps with zero number %i\n",i,j);
-	  if(debuglevel>1)
+	  if(LALDebugLevel>1)
 	    LALPrintError("         Location: %.16e + i*%.16e\n",
 			  poles[i].re,poles[i].im);
 	}
@@ -497,7 +497,7 @@ void CreateREAL8IIRFilter(Status             *stat,
       if(poles[i].re*poles[i].re+poles[i].im*poles[i].im>1.0){
 	LALPrintError("Warning: createIIRFilter: pole number %i lies"
 		      " outside |z|=1\n",i);
-	if(debuglevel>1)
+	if(LALDebugLevel>1)
 	  LALPrintError("         Location: %.16e + i*%.16e\n",
 			poles[i].re,poles[i].im);
       }
@@ -514,9 +514,9 @@ void CreateREAL8IIRFilter(Status             *stat,
   numDirect+=num;
   numRecurs+=num;
 
-  TRY(DCreateVector(stat->statusPtr,&((*output)->directCoef),numDirect),
+  TRY(LALDCreateVector(stat->statusPtr,&((*output)->directCoef),numDirect),
       stat);
-  TRY(DCreateVector(stat->statusPtr,&((*output)->recursCoef),numRecurs),
+  TRY(LALDCreateVector(stat->statusPtr,&((*output)->recursCoef),numRecurs),
       stat);
   direct=(*output)->directCoef->data;
   recurs=(*output)->recursCoef->data;
@@ -562,7 +562,7 @@ void CreateREAL8IIRFilter(Status             *stat,
     num=numDirect-1;
   else
     num=numRecurs-1;
-  TRY(DCreateVector(stat->statusPtr,&((*output)->history),num),stat);
+  TRY(LALDCreateVector(stat->statusPtr,&((*output)->history),num),stat);
   history=(*output)->history->data;
   for(i=0;i<num;i++)
     history[i]=0.0;

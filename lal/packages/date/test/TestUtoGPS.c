@@ -4,7 +4,7 @@
 
 /* $Id$ */
 
-INT4 debuglevel = 2;
+INT4 LALDebugLevel = 2;
 
 NRCSID (TESTUTOGPSC, "$Id$");
 
@@ -17,7 +17,7 @@ NRCSID (TESTUTOGPSC, "$Id$");
 const time_t UTCGPS = 315964811;
 
 /* Taken from GRASP */
-void printone(Status *status, const LIGOTimeUnix *time1)
+void printone(LALStatus *status, const LIGOTimeUnix *time1)
 {
     LIGOTimeGPS  gpstime;
     LALDate      laldate;
@@ -32,12 +32,12 @@ void printone(Status *status, const LIGOTimeUnix *time1)
     /*
      * Allocate space for CHARVectors
      */
-    CHARCreateVector(status, &utc, (UINT4)64);
-    CHARCreateVector(status, &gmt, (UINT4)64);
-    CHARCreateVector(status, &gps, (UINT4)64);
+    LALCHARCreateVector(status, &utc, (UINT4)64);
+    LALCHARCreateVector(status, &gmt, (UINT4)64);
+    LALCHARCreateVector(status, &gps, (UINT4)64);
 
     /* compute GPS time */
-    UtoGPS(status, &gpstime, time1);
+    LALUtoGPS(status, &gpstime, time1);
 
     /*
      * construct strings with appropriate time stamps
@@ -47,16 +47,16 @@ void printone(Status *status, const LIGOTimeUnix *time1)
     strftime(gmt->data, gmt->length,
              "%Y-%m-%d %H:%M:%S UTC %a", &(utimestruct));
 
-    /* Utime() */
-    Utime(status, &laldate, time1);
+    /* LALUtime() */
+    LALUtime(status, &laldate, time1);
     /* strcpy(utc, asctime(&(laldate.unixDate))); */
-    DateString(status, utc, &laldate);
+    LALDateString(status, utc, &laldate);
 
     /* GPS */
     /* tmp.unixSeconds += UTCGPS; */ /* shift back to Unix epoch */
-    GPStoU(status, &tmp, &gpstime);
-    Utime(status, &laldate, &tmp);
-    DateString(status, gps, &laldate);
+    LALGPStoU(status, &tmp, &gpstime);
+    LALUtime(status, &laldate, &tmp);
+    LALDateString(status, gps, &laldate);
     /* strcpy(gps, asctime(&(laldate.unixDate))); */
 
     /* printf("C-time: %10d GPS Time %10d  UTC: %.24s GPS: %.24s gmtime: %s",
@@ -68,15 +68,15 @@ void printone(Status *status, const LIGOTimeUnix *time1)
     /*
      * House cleaning
      */
-    CHARDestroyVector(status, &utc);
-    CHARDestroyVector(status, &gmt);
-    CHARDestroyVector(status, &gps);
+    LALCHARDestroyVector(status, &utc);
+    LALCHARDestroyVector(status, &gmt);
+    LALCHARDestroyVector(status, &gps);
     
     RETURN (status);
 }
 
 void
-testunixtime(Status *status, const LIGOTimeUnix *time1)
+testunixtime(LALStatus *status, const LIGOTimeUnix *time1)
 {
     LIGOTimeUnix tmp;
 
@@ -104,7 +104,7 @@ main(int argc, char *argv[])
     LIGOTimeGPS  gpstime;
     LIGOTimeUnix unixtime;
     time_t      tmptime;
-    Status      status = {0};
+    LALStatus      status = {0};
 
 
     if (argc == 1)
@@ -117,10 +117,10 @@ main(int argc, char *argv[])
     }
 
     if (argc == 2)
-        debuglevel = atoi(argv[1]);
+        LALDebugLevel = atoi(argv[1]);
 
     printf("TEST Unix time and Unix to GPS conversion\n");
-    printf("   and DateString\n");
+    printf("   and LALDateString\n");
     printf("=========================================\n");
 
     printf("\nLocal timezone: tzname[0] = %s\n                tzname[1] = %s\n", tzname[0], tzname[1]);
@@ -132,7 +132,7 @@ main(int argc, char *argv[])
 
     printf("unixtime = %13d;\t\t", unixtime.unixSeconds);
 
-    UtoGPS(&status, &gpstime, &unixtime);
+    LALUtoGPS(&status, &gpstime, &unixtime);
 
     printf("gpstime = %13d\n", gpstime.gpsSeconds);
     printf("\n");

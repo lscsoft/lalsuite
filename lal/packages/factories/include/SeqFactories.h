@@ -99,92 +99,92 @@ typedef struct tagCreateVectorSequenceIn {
 \newpage\input{VectorSequenceFactoriesC}
 </lalLaTeX> */
 
-void CreateSequence(Status *, REAL4Sequence **, UINT4);
-void CHARCreateSequence(Status *, CHARSequence **, UINT4);
-void I2CreateSequence(Status *, INT2Sequence **, UINT4);
-void I4CreateSequence(Status *, INT4Sequence **, UINT4);
-void I8CreateSequence(Status *, INT8Sequence **, UINT4);
-void U2CreateSequence(Status *, UINT2Sequence **, UINT4);
-void U4CreateSequence(Status *, UINT4Sequence **, UINT4);
-void U8CreateSequence(Status *, UINT8Sequence **, UINT4);
-void SCreateSequence(Status *, REAL4Sequence **, UINT4);
-void DCreateSequence(Status *, REAL8Sequence **, UINT4);
-void CCreateSequence(Status *, COMPLEX8Sequence **, UINT4);
-void ZCreateSequence(Status *, COMPLEX16Sequence **, UINT4);
+void LALCreateSequence(LALStatus *, REAL4Sequence **, UINT4);
+void LALCHARCreateSequence(LALStatus *, CHARSequence **, UINT4);
+void LALI2CreateSequence(LALStatus *, INT2Sequence **, UINT4);
+void LALI4CreateSequence(LALStatus *, INT4Sequence **, UINT4);
+void LALI8CreateSequence(LALStatus *, INT8Sequence **, UINT4);
+void LALU2CreateSequence(LALStatus *, UINT2Sequence **, UINT4);
+void LALU4CreateSequence(LALStatus *, UINT4Sequence **, UINT4);
+void LALU8CreateSequence(LALStatus *, UINT8Sequence **, UINT4);
+void LALSCreateSequence(LALStatus *, REAL4Sequence **, UINT4);
+void LALDCreateSequence(LALStatus *, REAL8Sequence **, UINT4);
+void LALCCreateSequence(LALStatus *, COMPLEX8Sequence **, UINT4);
+void LALZCreateSequence(LALStatus *, COMPLEX16Sequence **, UINT4);
 
-void DestroySequence(Status *, REAL4Sequence **);
-void CHARDestroySequence(Status *, CHARSequence **);
-void I2DestroySequence(Status *, INT2Sequence **);
-void I4DestroySequence(Status *, INT4Sequence **);
-void I8DestroySequence(Status *, INT8Sequence **);
-void U2DestroySequence(Status *, UINT2Sequence **);
-void U4DestroySequence(Status *, UINT4Sequence **);
-void U8DestroySequence(Status *, UINT8Sequence **);
-void SDestroySequence(Status *, REAL4Sequence **);
-void DDestroySequence(Status *, REAL8Sequence **);
-void CDestroySequence(Status *, COMPLEX8Sequence **);
-void ZDestroySequence(Status *, COMPLEX16Sequence **);
+void LALDestroySequence(LALStatus *, REAL4Sequence **);
+void LALCHARDestroySequence(LALStatus *, CHARSequence **);
+void LALI2DestroySequence(LALStatus *, INT2Sequence **);
+void LALI4DestroySequence(LALStatus *, INT4Sequence **);
+void LALI8DestroySequence(LALStatus *, INT8Sequence **);
+void LALU2DestroySequence(LALStatus *, UINT2Sequence **);
+void LALU4DestroySequence(LALStatus *, UINT4Sequence **);
+void LALU8DestroySequence(LALStatus *, UINT8Sequence **);
+void LALSDestroySequence(LALStatus *, REAL4Sequence **);
+void LALDDestroySequence(LALStatus *, REAL8Sequence **);
+void LALCDestroySequence(LALStatus *, COMPLEX8Sequence **);
+void LALZDestroySequence(LALStatus *, COMPLEX16Sequence **);
 
-void CreateVectorSequence(Status *, 
+void LALCreateVectorSequence(LALStatus *, 
                              REAL4VectorSequence **,
 			     CreateVectorSequenceIn *);
-void CHARCreateVectorSequence(Status *, 
+void LALCHARCreateVectorSequence(LALStatus *, 
                              CHARVectorSequence **,
 			     CreateVectorSequenceIn *);
-void I2CreateVectorSequence(Status *, 
+void LALI2CreateVectorSequence(LALStatus *, 
 			     INT2VectorSequence **,
 			     CreateVectorSequenceIn *);
-void I4CreateVectorSequence(Status *, 
+void LALI4CreateVectorSequence(LALStatus *, 
 			     INT4VectorSequence **,
 			     CreateVectorSequenceIn *);
-void I8CreateVectorSequence(Status *, 
+void LALI8CreateVectorSequence(LALStatus *, 
 			     INT8VectorSequence **,
 			     CreateVectorSequenceIn *);
-void U2CreateVectorSequence(Status *, 
+void LALU2CreateVectorSequence(LALStatus *, 
 			     UINT2VectorSequence **,
 			     CreateVectorSequenceIn *);
-void U4CreateVectorSequence(Status *, 
+void LALU4CreateVectorSequence(LALStatus *, 
 			     UINT4VectorSequence **,
 			     CreateVectorSequenceIn *);
-void U8CreateVectorSequence(Status *, 
+void LALU8CreateVectorSequence(LALStatus *, 
 			     UINT8VectorSequence **,
 			     CreateVectorSequenceIn *);
-void SCreateVectorSequence(Status *, 
+void LALSCreateVectorSequence(LALStatus *, 
 			     REAL4VectorSequence **,
 			     CreateVectorSequenceIn *);
-void DCreateVectorSequence(Status *, 
+void LALDCreateVectorSequence(LALStatus *, 
 			     REAL8VectorSequence **,
 			     CreateVectorSequenceIn *);
-void CCreateVectorSequence(Status *, 
+void LALCCreateVectorSequence(LALStatus *, 
 			     COMPLEX8VectorSequence **, 
 			     CreateVectorSequenceIn *);
-void ZCreateVectorSequence(Status *, 
+void LALZCreateVectorSequence(LALStatus *, 
 			     COMPLEX16VectorSequence **, 
 			     CreateVectorSequenceIn *);
 
-void DestroyVectorSequence (Status *, 
+void LALDestroyVectorSequence (LALStatus *, 
                              REAL4VectorSequence **);
-void CHARDestroyVectorSequence (Status *, 
+void LALCHARDestroyVectorSequence (LALStatus *, 
                              CHARVectorSequence **);
-void I2DestroyVectorSequence(Status *, 
+void LALI2DestroyVectorSequence(LALStatus *, 
 			     INT2VectorSequence **);
-void I4DestroyVectorSequence(Status *, 
+void LALI4DestroyVectorSequence(LALStatus *, 
 			     INT4VectorSequence **);
-void I8DestroyVectorSequence(Status *, 
+void LALI8DestroyVectorSequence(LALStatus *, 
 			     INT8VectorSequence **);
-void U2DestroyVectorSequence(Status *, 
+void LALU2DestroyVectorSequence(LALStatus *, 
 			     UINT2VectorSequence **);
-void U4DestroyVectorSequence(Status *, 
+void LALU4DestroyVectorSequence(LALStatus *, 
 			     UINT4VectorSequence **);
-void U8DestroyVectorSequence(Status *, 
+void LALU8DestroyVectorSequence(LALStatus *, 
 			     UINT8VectorSequence **);
-void SDestroyVectorSequence(Status *, 
+void LALSDestroyVectorSequence(LALStatus *, 
 			     REAL4VectorSequence **);
-void DDestroyVectorSequence(Status *, 
+void LALDDestroyVectorSequence(LALStatus *, 
 			     REAL8VectorSequence **);
-void CDestroyVectorSequence(Status *, 
+void LALCDestroyVectorSequence(LALStatus *, 
 			     COMPLEX8VectorSequence **);
-void ZDestroyVectorSequence(Status *, 
+void LALZDestroyVectorSequence(LALStatus *, 
 			     COMPLEX16VectorSequence **);
 
 /* Test program. */

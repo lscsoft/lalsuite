@@ -16,8 +16,8 @@
 NRCSID (FINDCHIRPEXCHC, "$Id$");
 
 void
-InitializeExchange (
-    Status      *status,
+LALInitializeExchange (
+    LALStatus      *status,
     ExchParams **exchParamsOut,
     ExchParams  *exchParamsInp,
     INT4         myProcNum
@@ -25,7 +25,7 @@ InitializeExchange (
 {
   MPIMessage hello; /* initialization message */
 
-  INITSTATUS (status, "InitializeExchange", FINDCHIRPEXCHC);
+  INITSTATUS (status, "LALInitializeExchange", FINDCHIRPEXCHC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (exchParamsOut, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
@@ -64,7 +64,7 @@ InitializeExchange (
     }
 
     /* send off the communications */
-    MPISendMsg (status->statusPtr, &hello, dest);
+    LALMPISendMsg (status->statusPtr, &hello, dest);
     CHECKSTATUSPTR (status);
 
     /* copy the input structure to the output structure */
@@ -76,7 +76,7 @@ InitializeExchange (
   else /* I am waiting for someone else to initialize the exchange */
   {
     /* wait for incoming message */
-    MPIRecvMsg (status->statusPtr, &hello);
+    LALMPIRecvMsg (status->statusPtr, &hello);
     CHECKSTATUSPTR (status);
 
     /* the message contains all the information needed */
@@ -92,15 +92,15 @@ InitializeExchange (
 }
 
 void
-FinalizeExchange (
-    Status      *status,
+LALFinalizeExchange (
+    LALStatus      *status,
     ExchParams **exchParams
     )
 {
   INT2       magic = 0xA505; /* A SOS */
   INT2Vector goodbye;
 
-  INITSTATUS (status, "FinalizeExchange", FINDCHIRPEXCHC);
+  INITSTATUS (status, "LALFinalizeExchange", FINDCHIRPEXCHC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (exchParams, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
@@ -115,7 +115,7 @@ FinalizeExchange (
     goodbye.length = 1;
     goodbye.data   = &magic;
 
-    MPISendINT2Vector (status->statusPtr, &goodbye, dest);
+    LALMPISendINT2Vector (status->statusPtr, &goodbye, dest);
     CHECKSTATUSPTR (status);
   }
   else
@@ -126,7 +126,7 @@ FinalizeExchange (
     goodbye.length = 1;
     goodbye.data   = &myMagic;
 
-    MPIRecvINT2Vector (status->statusPtr, &goodbye, source);
+    LALMPIRecvINT2Vector (status->statusPtr, &goodbye, source);
     CHECKSTATUSPTR (status);
 
     ASSERT (goodbye.data[0] == magic, status, 
@@ -142,15 +142,15 @@ FinalizeExchange (
 }
 
 void
-ExchangeDataSegment (
-    Status      *status,
+LALExchangeDataSegment (
+    LALStatus      *status,
     DataSegment *segment,
     ExchParams  *exchParams
     )
 {
   CHARVector box; /* a box to hold some bytes of data */
 
-  INITSTATUS (status, "ExchangeDataSegment", FINDCHIRPEXCHC);
+  INITSTATUS (status, "LALExchangeDataSegment", FINDCHIRPEXCHC);
   ATTATCHSTATUSPTR (status);
 
   /* only do a minimal check to see if arguments are somewhat reasonable */
@@ -169,21 +169,21 @@ ExchangeDataSegment (
     box.data   = (CHAR *) segment;
 
     /* send box (this sends too much, but it is simple) */
-    MPISendCHARVector (status->statusPtr, &box, dest);
+    LALMPISendCHARVector (status->statusPtr, &box, dest);
     CHECKSTATUSPTR (status);
 
     /* send pointer fields of data segment */
 
     /* data */
-    MPISendINT2TimeSeries (status->statusPtr, segment->data, dest);
+    LALMPISendINT2TimeSeries (status->statusPtr, segment->data, dest);
     CHECKSTATUSPTR (status);
 
     /* spec */
-    MPISendREAL4FrequencySeries (status->statusPtr, segment->spec, dest);
+    LALMPISendREAL4FrequencySeries (status->statusPtr, segment->spec, dest);
     CHECKSTATUSPTR (status);
 
     /* resp */
-    MPISendCOMPLEX8FrequencySeries (status->statusPtr, segment->resp, dest);
+    LALMPISendCOMPLEX8FrequencySeries (status->statusPtr, segment->resp, dest);
     CHECKSTATUSPTR (status);
   }
   else /* I am receiving */
@@ -195,7 +195,7 @@ ExchangeDataSegment (
     box.data   = (CHAR *) &tmpSegment;
 
     /* receive box */
-    MPIRecvCHARVector (status->statusPtr, &box, source);
+    LALMPIRecvCHARVector (status->statusPtr, &box, source);
     CHECKSTATUSPTR (status);
 
     /* set relevant fields */
@@ -207,15 +207,15 @@ ExchangeDataSegment (
     /* receive remaining fields */
 
     /* data */
-    MPIRecvINT2TimeSeries (status->statusPtr, segment->data, source);
+    LALMPIRecvINT2TimeSeries (status->statusPtr, segment->data, source);
     CHECKSTATUSPTR (status);
 
     /* spec */
-    MPIRecvREAL4FrequencySeries (status->statusPtr, segment->spec, source);
+    LALMPIRecvREAL4FrequencySeries (status->statusPtr, segment->spec, source);
     CHECKSTATUSPTR (status);
 
     /* resp */
-    MPIRecvCOMPLEX8FrequencySeries (status->statusPtr, segment->resp, source);
+    LALMPIRecvCOMPLEX8FrequencySeries (status->statusPtr, segment->resp, source);
     CHECKSTATUSPTR (status);
   }
 
@@ -225,15 +225,15 @@ ExchangeDataSegment (
 
 
 void
-ExchangeInspiralBankIn (
-    Status         *status,
+LALExchangeInspiralBankIn (
+    LALStatus         *status,
     InspiralBankIn *bankIn,
     ExchParams     *exchParams
     )
 {
   CHARVector box; /* a box to hold some bytes of data */
 
-  INITSTATUS (status, "ExchangeInspiralBankIn", FINDCHIRPEXCHC);
+  INITSTATUS (status, "LALExchangeInspiralBankIn", FINDCHIRPEXCHC);
   ATTATCHSTATUSPTR (status);
 
   /* only do a minimal check to see if arguments are somewhat reasonable */
@@ -249,7 +249,7 @@ ExchangeInspiralBankIn (
     INT4 dest = exchParams->partnerProcNum;
 
     /* send box */
-    MPISendCHARVector (status->statusPtr, &box, dest);
+    LALMPISendCHARVector (status->statusPtr, &box, dest);
     CHECKSTATUSPTR (status);
   }
   else /* I am receiving */
@@ -257,7 +257,7 @@ ExchangeInspiralBankIn (
     INT4 source = exchParams->partnerProcNum;
 
     /* receive box */
-    MPIRecvCHARVector (status->statusPtr, &box, source);
+    LALMPIRecvCHARVector (status->statusPtr, &box, source);
     CHECKSTATUSPTR (status);
   }
 
@@ -267,15 +267,15 @@ ExchangeInspiralBankIn (
 
 
 void
-ExchangeInspiralTemplate (
-    Status           *status,
+LALExchangeInspiralTemplate (
+    LALStatus           *status,
     InspiralTemplate *tmplt,
     ExchParams       *exchParams
     )
 {
   CHARVector box; /* a box to hold some bytes of data */
 
-  INITSTATUS (status, "ExchangeInspiralTemplate", FINDCHIRPEXCHC);
+  INITSTATUS (status, "LALExchangeInspiralTemplate", FINDCHIRPEXCHC);
   ATTATCHSTATUSPTR (status);
 
   /* only do a minimal check to see if arguments are somewhat reasonable */
@@ -291,7 +291,7 @@ ExchangeInspiralTemplate (
     INT4 dest = exchParams->partnerProcNum;
 
     /* send box */
-    MPISendCHARVector (status->statusPtr, &box, dest);
+    LALMPISendCHARVector (status->statusPtr, &box, dest);
     CHECKSTATUSPTR (status);
   }
   else /* I am receiving */
@@ -299,7 +299,7 @@ ExchangeInspiralTemplate (
     INT4 source = exchParams->partnerProcNum;
 
     /* receive box */
-    MPIRecvCHARVector (status->statusPtr, &box, source);
+    LALMPIRecvCHARVector (status->statusPtr, &box, source);
     CHECKSTATUSPTR (status);
   }
 
@@ -309,15 +309,15 @@ ExchangeInspiralTemplate (
 
 
 void
-ExchangeInspiralEvent (
-    Status        *status,
+LALExchangeInspiralEvent (
+    LALStatus        *status,
     InspiralEvent *event,
     ExchParams    *exchParams
     )
 {
   CHARVector box; /* a box to hold some bytes of data */
 
-  INITSTATUS (status, "ExchangeInspiralEvent", FINDCHIRPEXCHC);
+  INITSTATUS (status, "LALExchangeInspiralEvent", FINDCHIRPEXCHC);
   ATTATCHSTATUSPTR (status);
 
   /* only do a minimal check to see if arguments are somewhat reasonable */
@@ -333,7 +333,7 @@ ExchangeInspiralEvent (
     INT4 dest = exchParams->partnerProcNum;
 
     /* send box */
-    MPISendCHARVector (status->statusPtr, &box, dest);
+    LALMPISendCHARVector (status->statusPtr, &box, dest);
     CHECKSTATUSPTR (status);
   }
   else /* I am receiving */
@@ -341,7 +341,7 @@ ExchangeInspiralEvent (
     INT4 source = exchParams->partnerProcNum;
 
     /* receive box */
-    MPIRecvCHARVector (status->statusPtr, &box, source);
+    LALMPIRecvCHARVector (status->statusPtr, &box, source);
     CHECKSTATUSPTR (status);
   }
 

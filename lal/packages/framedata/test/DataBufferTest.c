@@ -35,7 +35,7 @@ NRCSID (MAIN, "$Id$");
 extern char *optarg;
 extern int   optind;
 
-int   debuglevel = 1;
+int   LALDebugLevel = 1;
 int   verbose    = 0;
 int   output     = 0;
 char *framePath  = NULL;
@@ -47,10 +47,10 @@ static void
 ParseOptions (int argc, char *argv[]);
 
 static void
-TestStatus (Status *status, const char *expectedCodes, int exitCode);
+TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
 static void
-ClearStatus (Status *status);
+ClearStatus (LALStatus *status);
 
 int
 main (int argc, char *argv[])
@@ -59,7 +59,7 @@ main (int argc, char *argv[])
   const INT4 numSpec   = 8;
   const INT4 numSegs   = 10;
 
-  static Status            status;
+  static LALStatus            status;
   DataBuffer              *buffer = NULL;
   DataBufferPar            bufferPar;
   DataSegment              dataout;
@@ -84,13 +84,13 @@ main (int argc, char *argv[])
   spec.data = NULL;
   resp.data = NULL;
 
-  I2CreateVector (&status, &data.data, numPoints);
+  LALI2CreateVector (&status, &data.data, numPoints);
   TestStatus (&status, "0", 1);
 
-  CreateVector (&status, &spec.data, numPoints/2 + 1);
+  LALCreateVector (&status, &spec.data, numPoints/2 + 1);
   TestStatus (&status, "0", 1);
 
-  CCreateVector (&status, &resp.data, numPoints/2 + 1);
+  LALCCreateVector (&status, &resp.data, numPoints/2 + 1);
   TestStatus (&status, "0", 1);
 
   dataout.data = &data;
@@ -102,10 +102,10 @@ main (int argc, char *argv[])
   bufferPar.windowType = Welch;
   bufferPar.plan       = NULL;
   bufferPar.framePath  = framePath;
-  EstimateFwdRealFFTPlan (&status, &bufferPar.plan, numPoints);
+  LALEstimateFwdRealFFTPlan (&status, &bufferPar.plan, numPoints);
   TestStatus (&status, "0", 1);
 
-  CreateDataBuffer (&status, &buffer, &bufferPar);
+  LALCreateDataBuffer (&status, &buffer, &bufferPar);
   TestStatus (&status, "-1 0", 1);
   ClearStatus (&status);
 
@@ -113,7 +113,7 @@ main (int argc, char *argv[])
   {
     fprintf (stderr, "Segment %2d", seg);
 
-    GetData (&status, &dataout, 3*numPoints/4, buffer);
+    LALGetData (&status, &dataout, 3*numPoints/4, buffer);
     TestStatus (&status, "-1 0", 1);
     ClearStatus (&status);
 
@@ -183,15 +183,15 @@ main (int argc, char *argv[])
 
 exit:
 
-  DestroyRealFFTPlan (&status, &bufferPar.plan);
+  LALDestroyRealFFTPlan (&status, &bufferPar.plan);
   TestStatus (&status, "0", 1);
-  DestroyDataBuffer (&status, &buffer);
+  LALDestroyDataBuffer (&status, &buffer);
   TestStatus (&status, "0", 1);
-  I2DestroyVector (&status, &data.data);
+  LALI2DestroyVector (&status, &data.data);
   TestStatus (&status, "0", 1);
-  DestroyVector (&status, &spec.data);
+  LALDestroyVector (&status, &spec.data);
   TestStatus (&status, "0", 1);
-  CDestroyVector (&status, &resp.data);
+  LALCDestroyVector (&status, &resp.data);
   TestStatus (&status, "0", 1);
 
   LALCheckMemoryLeaks ();
@@ -209,7 +209,7 @@ exit:
  *
  */
 static void
-TestStatus (Status *status, const char *ignored, int exitcode)
+TestStatus (LALStatus *status, const char *ignored, int exitcode)
 {
   char  str[64];
   char *tok;
@@ -255,7 +255,7 @@ TestStatus (Status *status, const char *ignored, int exitcode)
  *
  */
 void
-ClearStatus (Status *status)
+ClearStatus (LALStatus *status)
 {
   if (status->statusPtr)
   {
@@ -279,7 +279,7 @@ Usage (const char *program, int exitcode)
   fprintf (stderr, "  -h         print this message\n");
   fprintf (stderr, "  -q         quiet: run silently\n");
   fprintf (stderr, "  -v         verbose: print extra information\n");
-  fprintf (stderr, "  -d level   set debuglevel to level\n");
+  fprintf (stderr, "  -d level   set LALDebugLevel to level\n");
   fprintf (stderr, "  -o         output framedata to files\n");
   fprintf (stderr, "  -f dir     set frame data path to dir\n");
   fprintf (stderr, "             "
@@ -318,7 +318,7 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'd': /* set debug level */
-        debuglevel = atoi (optarg);
+        LALDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* verbose */

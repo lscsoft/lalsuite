@@ -135,7 +135,7 @@ typedef struct tagTrackSearchParams /* Parameter structure for the Track search 
 /* function Prototypes */
 
 void 
-SignalTrackSearch(Status *, TrackSearchOut *, const TimeFreqRep *, TrackSearchParams *);
+LALSignalTrackSearch(LALStatus *, TrackSearchOut *, const TimeFreqRep *, TrackSearchParams *);
 
 #ifdef  __cplusplus
 }

@@ -19,7 +19,7 @@ NRCSID (COMMTESTSLAVEC, "$Id$");
 #include "CommTestGlobal.h"
 
 void
-Slave (Status *status, MPIId id)
+Slave (LALStatus *status, MPIId id)
 {
   MPIMessage   message;
   REAL4Vector *vector = NULL;
@@ -30,14 +30,14 @@ Slave (Status *status, MPIId id)
 
   printf ("Slave %d starting up\n", id.myId);
 
-  SCreateVector (status->statusPtr, &vector, numPoints);
+  LALSCreateVector (status->statusPtr, &vector, numPoints);
   CHECKSTATUSPTR (status);
 
   printf ("Slave %d sending message code %d to master\n", id.myId, MPISVector);
   message.msg    = MPISVector;
   message.send   = 1;
   message.source = id.myId;
-  MPISendMsg (status->statusPtr, &message, 0);
+  LALMPISendMsg (status->statusPtr, &message, 0);
   CHECKSTATUSPTR (status);
 
   for (i = 0; i < vector->length; ++i)
@@ -46,10 +46,10 @@ Slave (Status *status, MPIId id)
   }
 
   printf ("Slave %d sending REAL4Vector to master\n", id.myId);
-  MPISendREAL4Vector (status->statusPtr, vector, 0);
+  LALMPISendREAL4Vector (status->statusPtr, vector, 0);
   CHECKSTATUSPTR (status);
 
-  SDestroyVector (status->statusPtr, &vector);
+  LALSDestroyVector (status->statusPtr, &vector);
   CHECKSTATUSPTR (status);
 
   printf ("Slave %d shutting down\n", id.myId);

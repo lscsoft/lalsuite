@@ -14,7 +14,7 @@ Revision: $Id$
 \label{s:AVFactories.h}
 
 Provides prototype and status code information for use of CreateVector,
-CreateArray, DestroyVector and DestroyArray
+CreateArray, LALDestroyVector and DestroyArray
 
 \subsection*{Synopsis}
 \begin{verbatim}
@@ -64,55 +64,55 @@ NRCSID (AVFACTORIESH, "$Id$");
 \newpage\input{ArrayFactoriesC}
 </lalLaTeX> */
 
-void CHARCreateVector(Status *, CHARVector **, UINT4);
-void I2CreateVector(Status *, INT2Vector **, UINT4);
-void I4CreateVector(Status *, INT4Vector **, UINT4);
-void I8CreateVector(Status *, INT8Vector **, UINT4);
-void U2CreateVector(Status *, UINT2Vector **, UINT4);
-void U4CreateVector(Status *, UINT4Vector **, UINT4);
-void U8CreateVector(Status *, UINT8Vector **, UINT4);
-void CreateVector(Status *, REAL4Vector **, UINT4);
-void SCreateVector(Status *, REAL4Vector **, UINT4);
-void DCreateVector(Status *, REAL8Vector **, UINT4);
-void CCreateVector(Status *, COMPLEX8Vector **, UINT4);
-void ZCreateVector(Status *, COMPLEX16Vector **, UINT4);
+void LALCHARCreateVector(LALStatus *, CHARVector **, UINT4);
+void LALI2CreateVector(LALStatus *, INT2Vector **, UINT4);
+void LALI4CreateVector(LALStatus *, INT4Vector **, UINT4);
+void LALI8CreateVector(LALStatus *, INT8Vector **, UINT4);
+void LALU2CreateVector(LALStatus *, UINT2Vector **, UINT4);
+void LALU4CreateVector(LALStatus *, UINT4Vector **, UINT4);
+void LALU8CreateVector(LALStatus *, UINT8Vector **, UINT4);
+void LALCreateVector(LALStatus *, REAL4Vector **, UINT4);
+void LALSCreateVector(LALStatus *, REAL4Vector **, UINT4);
+void LALDCreateVector(LALStatus *, REAL8Vector **, UINT4);
+void LALCCreateVector(LALStatus *, COMPLEX8Vector **, UINT4);
+void LALZCreateVector(LALStatus *, COMPLEX16Vector **, UINT4);
 
-void I2CreateArray(Status *, INT2Array **, UINT4Vector *);
-void I4CreateArray(Status *, INT4Array **, UINT4Vector *);
-void I8CreateArray(Status *, INT8Array **, UINT4Vector *);
-void U2CreateArray(Status *, UINT2Array **, UINT4Vector *);
-void U4CreateArray(Status *, UINT4Array **, UINT4Vector *);
-void U8CreateArray(Status *, UINT8Array **, UINT4Vector *);
-void CreateArray(Status *, REAL4Array **, UINT4Vector *);
-void SCreateArray(Status *, REAL4Array **, UINT4Vector *);
-void DCreateArray(Status *, REAL8Array **, UINT4Vector *);
-void CCreateArray(Status *, COMPLEX8Array **, UINT4Vector *);
-void ZCreateArray(Status *, COMPLEX16Array **, UINT4Vector *);
+void LALI2CreateArray(LALStatus *, INT2Array **, UINT4Vector *);
+void LALI4CreateArray(LALStatus *, INT4Array **, UINT4Vector *);
+void LALI8CreateArray(LALStatus *, INT8Array **, UINT4Vector *);
+void LALU2CreateArray(LALStatus *, UINT2Array **, UINT4Vector *);
+void LALU4CreateArray(LALStatus *, UINT4Array **, UINT4Vector *);
+void LALU8CreateArray(LALStatus *, UINT8Array **, UINT4Vector *);
+void LALCreateArray(LALStatus *, REAL4Array **, UINT4Vector *);
+void LALSCreateArray(LALStatus *, REAL4Array **, UINT4Vector *);
+void LALDCreateArray(LALStatus *, REAL8Array **, UINT4Vector *);
+void LALCCreateArray(LALStatus *, COMPLEX8Array **, UINT4Vector *);
+void LALZCreateArray(LALStatus *, COMPLEX16Array **, UINT4Vector *);
  
-void CHARDestroyVector(Status *, CHARVector **);
-void I2DestroyVector(Status *, INT2Vector **);
-void I4DestroyVector(Status *, INT4Vector **);
-void I8DestroyVector(Status *, INT8Vector **);
-void U2DestroyVector(Status *, UINT2Vector **);
-void U4DestroyVector(Status *, UINT4Vector **);
-void U8DestroyVector(Status *, UINT8Vector **);
-void DestroyVector(Status *, REAL4Vector **);
-void SDestroyVector(Status *, REAL4Vector **);
-void DDestroyVector(Status *, REAL8Vector **);
-void CDestroyVector(Status *, COMPLEX8Vector **);
-void ZDestroyVector(Status *, COMPLEX16Vector **);
+void LALCHARDestroyVector(LALStatus *, CHARVector **);
+void LALI2DestroyVector(LALStatus *, INT2Vector **);
+void LALI4DestroyVector(LALStatus *, INT4Vector **);
+void LALI8DestroyVector(LALStatus *, INT8Vector **);
+void LALU2DestroyVector(LALStatus *, UINT2Vector **);
+void LALU4DestroyVector(LALStatus *, UINT4Vector **);
+void LALU8DestroyVector(LALStatus *, UINT8Vector **);
+void LALDestroyVector(LALStatus *, REAL4Vector **);
+void LALSDestroyVector(LALStatus *, REAL4Vector **);
+void LALDDestroyVector(LALStatus *, REAL8Vector **);
+void LALCDestroyVector(LALStatus *, COMPLEX8Vector **);
+void LALZDestroyVector(LALStatus *, COMPLEX16Vector **);
 
-void I2DestroyArray(Status *, INT2Array **);
-void I4DestroyArray(Status *, INT4Array **);
-void I8DestroyArray(Status *, INT8Array **);
-void U2DestroyArray(Status *, UINT2Array **);
-void U4DestroyArray(Status *, UINT4Array **);
-void U8DestroyArray(Status *, UINT8Array **);
-void DestroyArray(Status *, REAL4Array **);
-void SDestroyArray(Status *, REAL4Array **);
-void DDestroyArray(Status *, REAL8Array **);
-void CDestroyArray(Status *, COMPLEX8Array **);
-void ZDestroyArray(Status *, COMPLEX16Array **);
+void LALI2DestroyArray(LALStatus *, INT2Array **);
+void LALI4DestroyArray(LALStatus *, INT4Array **);
+void LALI8DestroyArray(LALStatus *, INT8Array **);
+void LALU2DestroyArray(LALStatus *, UINT2Array **);
+void LALU4DestroyArray(LALStatus *, UINT4Array **);
+void LALU8DestroyArray(LALStatus *, UINT8Array **);
+void LALDestroyArray(LALStatus *, REAL4Array **);
+void LALSDestroyArray(LALStatus *, REAL4Array **);
+void LALDDestroyArray(LALStatus *, REAL8Array **);
+void LALCDestroyArray(LALStatus *, COMPLEX8Array **);
+void LALZDestroyArray(LALStatus *, COMPLEX16Array **);
 
 /* Test program. */
 

@@ -7,7 +7,7 @@
 
 NRCSID (TIMEDOMAIN2C, "$Id$");
 
-void TimeDomain2(Status *status,
+void LALTimeDomain2(LALStatus *status,
 		 REAL8Vector *signal,
 		 InspiralTemplate *params)
  {
@@ -38,10 +38,10 @@ void TimeDomain2(Status *status,
    ASSERT (params,  status, TIMEDOMAIN2_ENULL, TIMEDOMAIN2_MSGENULL);
 
 
-   InspiralSetup (status->statusPtr, &ak, params);
+   LALInspiralSetup (status->statusPtr, &ak, params);
    CHECKSTATUSPTR(status);
 
-   ChooseModel(status->statusPtr, &func, &ak, params);
+   LALChooseModel(status->statusPtr, &func, &ak, params);
    CHECKSTATUSPTR(status);
 
 
@@ -92,12 +92,12 @@ void TimeDomain2(Status *status,
 
    funcParams = (void *) &in3;
 
-   InspiralVelocity(status->statusPtr, &v, &in1);
+   LALInspiralVelocity(status->statusPtr, &v, &in1);
    CHECKSTATUSPTR(status);
 
    f = pow(v,3.)/(LAL_PI*m);
 
-   InspiralPhase(status->statusPtr, &p, v, &in2);
+   LALInspiralPhase(status->statusPtr, &p, v, &in2);
    CHECKSTATUSPTR(status);
 
 /*   fprintf (stderr, "Initial velocity %e, frequency %e and phase %e\n", v,f,p);
@@ -115,7 +115,7 @@ void TimeDomain2(Status *status,
 	dyt->data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
 	yt->data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
 
-   in4.function = InspiralDerivatives;
+   in4.function = LALInspiralDerivatives;
    in4.x = t;
    in4.y = vandp;
    in4.h = dt;
@@ -133,11 +133,11 @@ void TimeDomain2(Status *status,
    t = 0.0;
    do {
       h = params->signalAmplitude * v*v * cos(p);
-      InspiralDerivatives(status->statusPtr, vandp, dvanddp, funcParams);
+      LALInspiralDerivatives(status->statusPtr, vandp, dvanddp, funcParams);
       CHECKSTATUSPTR(status);
       in4.dydx = dvanddp;
       in4.x=t;
-      RungeKutta4(status->statusPtr, vandpnew, &in4, funcParams);
+      LALRungeKutta4(status->statusPtr, vandpnew, &in4, funcParams);
       CHECKSTATUSPTR(status);
       *(vandp->data) = v = *(vandpnew->data);
       *(vandp->data+1) = p = *(vandpnew->data+1);

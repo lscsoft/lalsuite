@@ -3,7 +3,7 @@
 
 NRCSID (INSPIRALDERIVATIVESC, "$Id$");
 
-void InspiralDerivatives (Status *status,
+void LALInspiralDerivatives (LALStatus *status,
 			  REAL8Vector *values,
 			  REAL8Vector *dvalues,
 			  void *params)
@@ -11,7 +11,7 @@ void InspiralDerivatives (Status *status,
 
   InspiralDerivativesIn *ak;
 
-  INITSTATUS(status, "InspiralDerivatives", INSPIRALDERIVATIVESC);
+  INITSTATUS(status, "LALInspiralDerivatives", INSPIRALDERIVATIVESC);
 
   ASSERT (values, status, INSPIRALDERIVATIVES_ENULL, INSPIRALDERIVATIVES_MSGENULL);
   ASSERT (values->data, status, INSPIRALDERIVATIVES_ENULL, INSPIRALDERIVATIVES_MSGENULL);

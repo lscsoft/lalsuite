@@ -34,15 +34,15 @@ BasicRandom (INT4 i)
 }
 
 void
-CreateRandomParams (
-    Status        *status,
+LALCreateRandomParams (
+    LALStatus        *status,
     RandomParams **params,
     INT4           seed
     )
 {
   INT4 n;
 
-  INITSTATUS (status, "CreateRandomParams", RANDOMC);
+  INITSTATUS (status, "LALCreateRandomParams", RANDOMC);
 
   ASSERT (params, status, RANDOM_ENULL, RANDOM_MSGENULL);
   ASSERT (!*params, status, RANDOM_ENNUL, RANDOM_MSGENNUL);
@@ -78,12 +78,12 @@ CreateRandomParams (
 }
 
 void
-DestroyRandomParams (
-    Status        *status,
+LALDestroyRandomParams (
+    LALStatus        *status,
     RandomParams **params
     )
 {
-  INITSTATUS (status, "DestroyRandomParams", RANDOMC);
+  INITSTATUS (status, "LALDestroyRandomParams", RANDOMC);
 
   ASSERT (params, status, RANDOM_ENULL, RANDOM_MSGENULL);
   ASSERT (*params, status, RANDOM_ENULL, RANDOM_MSGENULL);
@@ -96,8 +96,8 @@ DestroyRandomParams (
 
 
 void
-UniformDeviate (
-    Status       *status,
+LALUniformDeviate (
+    LALStatus       *status,
     REAL4        *deviate,
     RandomParams *params
     )
@@ -105,7 +105,7 @@ UniformDeviate (
   INT4 ndiv;
   INT4 n;
 
-  INITSTATUS (status, "UniformDeviate", RANDOMC);
+  INITSTATUS (status, "LALUniformDeviate", RANDOMC);
 
   ASSERT (deviate, status, RANDOM_ENULL, RANDOM_MSGENULL);
   ASSERT (params, status, RANDOM_ENULL, RANDOM_MSGENULL);
@@ -127,8 +127,8 @@ UniformDeviate (
 
 
 void
-NormalDeviates (
-    Status       *status,
+LALNormalDeviates (
+    LALStatus       *status,
     REAL4Vector  *deviates,
     RandomParams *params
     )
@@ -136,7 +136,7 @@ NormalDeviates (
   REAL4 *data;
   INT4   half;
 
-  INITSTATUS (status, "NormalDeviates", RANDOMC);
+  INITSTATUS (status, "LALNormalDeviates", RANDOMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (params, status, RANDOM_ENULL, RANDOM_MSGENULL);
@@ -157,9 +157,9 @@ NormalDeviates (
     REAL4 fac;
 
     do {
-      UniformDeviate (status->statusPtr, &u, params);
+      LALUniformDeviate (status->statusPtr, &u, params);
       CHECKSTATUSPTR (status);
-      UniformDeviate (status->statusPtr, &v, params);
+      LALUniformDeviate (status->statusPtr, &v, params);
       CHECKSTATUSPTR (status);
       x   = 2*u - 1;
       y   = 2*v - 1;
@@ -183,9 +183,9 @@ NormalDeviates (
     REAL4 fac;
 
     do {
-      UniformDeviate (status->statusPtr, &u, params);
+      LALUniformDeviate (status->statusPtr, &u, params);
       CHECKSTATUSPTR (status);
-      UniformDeviate (status->statusPtr, &v, params);
+      LALUniformDeviate (status->statusPtr, &v, params);
       CHECKSTATUSPTR (status);
       x   = 2*u - 1;
       y   = 2*v - 1;

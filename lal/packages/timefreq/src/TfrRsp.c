@@ -44,7 +44,7 @@
 NRCSID (TFRRSPC, "$Id$");
 
 
-void TfrRsp (Status *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqParam *param)
+void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqParam *param)
 {
 
   INT4    nf;
@@ -68,7 +68,7 @@ void TfrRsp (Status *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqParam *pa
   REAL4         hatt, hatf;        /* reassignment operator */
   INT4          indext,indexf;     /* reassignment index */
 
-  INITSTATUS (stat, "TfrRsp", TFRRSPC);
+  INITSTATUS (stat, "LALTfrRsp", TFRRSPC);
   ATTATCHSTATUSPTR (stat);
   
   /* Make sure the arguments are not NULL: */
@@ -113,18 +113,18 @@ void TfrRsp (Status *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqParam *pa
 	}
     }
   
-  TRY(EstimateFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);
-  TRY(DestroyRealFFTPlan(stat->statusPtr, &plan), stat);
-  TRY(MeasureFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);
+  TRY(LALEstimateFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);
+  TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);
+  TRY(LALMeasureFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);
 
-  TRY(SCreateVector(stat->statusPtr, &windowT, param->windowT->length), stat);
-  TRY(SCreateVector(stat->statusPtr, &windowD, param->windowT->length), stat);
-  TRY(CCreateVector(stat->statusPtr, &vtmpH, tfr->fRow/2 + 1), stat);
-  TRY(CCreateVector(stat->statusPtr, &vtmpT, tfr->fRow/2 + 1), stat);
-  TRY(CCreateVector(stat->statusPtr, &vtmpD, tfr->fRow/2 + 1), stat);
-  TRY(SCreateVector(stat->statusPtr, &windSigH, tfr->fRow), stat);
-  TRY(SCreateVector(stat->statusPtr, &windSigT, tfr->fRow), stat);
-  TRY(SCreateVector(stat->statusPtr, &windSigD, tfr->fRow), stat);
+  TRY(LALSCreateVector(stat->statusPtr, &windowT, param->windowT->length), stat);
+  TRY(LALSCreateVector(stat->statusPtr, &windowD, param->windowT->length), stat);
+  TRY(LALCCreateVector(stat->statusPtr, &vtmpH, tfr->fRow/2 + 1), stat);
+  TRY(LALCCreateVector(stat->statusPtr, &vtmpT, tfr->fRow/2 + 1), stat);
+  TRY(LALCCreateVector(stat->statusPtr, &vtmpD, tfr->fRow/2 + 1), stat);
+  TRY(LALSCreateVector(stat->statusPtr, &windSigH, tfr->fRow), stat);
+  TRY(LALSCreateVector(stat->statusPtr, &windSigT, tfr->fRow), stat);
+  TRY(LALSCreateVector(stat->statusPtr, &windSigD, tfr->fRow), stat);
 
   stepTime = tfr->timeInstant[1] - tfr->timeInstant[0];
   
@@ -133,7 +133,7 @@ void TfrRsp (Status *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqParam *pa
   for (column = 0; column < param->windowT->length; column++)
     windowT->data[column] = param->windowT->data[column] * (column - hwl);
 
-  TRY(Dwindow(stat->statusPtr, param->windowT, windowD), stat);
+  TRY(LALDwindow(stat->statusPtr, param->windowT, windowD), stat);
 
   for (column = 0; column < tfr->tCol; column++)
     for (row = 0; row < (tfr->fRow/2+1); row++)
@@ -176,9 +176,9 @@ void TfrRsp (Status *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqParam *pa
 	    * windowD->data[hwl + tau]/normH;
 	}
       
-      FwdRealFFT(stat->statusPtr, vtmpH, windSigH, plan);   
-      FwdRealFFT(stat->statusPtr, vtmpT, windSigT, plan);   
-      FwdRealFFT(stat->statusPtr, vtmpD, windSigD, plan);   
+      LALFwdRealFFT(stat->statusPtr, vtmpH, windSigH, plan);   
+      LALFwdRealFFT(stat->statusPtr, vtmpT, windSigT, plan);   
+      LALFwdRealFFT(stat->statusPtr, vtmpD, windSigD, plan);   
       
       normhatf = tfr->fRow / (2.0 * LAL_PI);
 
@@ -221,15 +221,15 @@ void TfrRsp (Status *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqParam *pa
   for (row = 0; row < tfr->fRow/2 + 1; row++)
     tfr->freqBin[row] = (REAL4) row / tfr->fRow;
 
-  TRY(SDestroyVector(stat->statusPtr, &windowT), stat);
-  TRY(SDestroyVector(stat->statusPtr, &windowD), stat);
-  TRY(CDestroyVector(stat->statusPtr, &vtmpH), stat);
-  TRY(CDestroyVector(stat->statusPtr, &vtmpT), stat);
-  TRY(CDestroyVector(stat->statusPtr, &vtmpD), stat);
-  TRY(SDestroyVector(stat->statusPtr, &windSigH), stat);
-  TRY(SDestroyVector(stat->statusPtr, &windSigT), stat);
-  TRY(SDestroyVector(stat->statusPtr, &windSigD), stat);
-  TRY(DestroyRealFFTPlan(stat->statusPtr, &plan), stat);
+  TRY(LALSDestroyVector(stat->statusPtr, &windowT), stat);
+  TRY(LALSDestroyVector(stat->statusPtr, &windowD), stat);
+  TRY(LALCDestroyVector(stat->statusPtr, &vtmpH), stat);
+  TRY(LALCDestroyVector(stat->statusPtr, &vtmpT), stat);
+  TRY(LALCDestroyVector(stat->statusPtr, &vtmpD), stat);
+  TRY(LALSDestroyVector(stat->statusPtr, &windSigH), stat);
+  TRY(LALSDestroyVector(stat->statusPtr, &windSigT), stat);
+  TRY(LALSDestroyVector(stat->statusPtr, &windSigD), stat);
+  TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);
 
   DETATCHSTATUSPTR (stat);
 

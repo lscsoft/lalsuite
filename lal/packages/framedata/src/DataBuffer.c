@@ -19,7 +19,7 @@ NRCSID (DATABUFFERC, "$Id$");
 
 static void
 FillDataBlock (
-    Status     *status,
+    LALStatus     *status,
     DataBuffer *buffer,
     INT4        whichBlock
     )
@@ -36,7 +36,7 @@ FillDataBlock (
   theBlock->anomalous  = 0;
   theBlock->number     = buffer->blocksFilled++;
 
-  GetFrameData (status->statusPtr, theBlock->framedata, buffer->frameData);
+  LALGetFrameData (status->statusPtr, theBlock->framedata, buffer->frameData);
   CHECKSTATUSPTR (status);
   if (buffer->frameData->endOfData) /* end of data */
   {
@@ -60,7 +60,7 @@ FillDataBlock (
     dumvec.length           = 3*60/theBlock->framedata->deltaT; /* 3 minutes */
     dumvec.data             = NULL;                             /* seek mode */
     dummy.data              = &dumvec;
-    GetFrameData (status->statusPtr, theBlock->framedata, buffer->frameData);
+    LALGetFrameData (status->statusPtr, theBlock->framedata, buffer->frameData);
     CHECKSTATUSPTR (status);
     if (buffer->frameData->endOfData) /* end of data */
     {
@@ -77,7 +77,7 @@ FillDataBlock (
   /* if the block is not anomalous, add it to the spectrum buffer */
   if (!theBlock->anomalous)
   {
-    AddSpectrum (status->statusPtr, buffer->specBuffer, theBlock->framedata);
+    LALAddSpectrum (status->statusPtr, buffer->specBuffer, theBlock->framedata);
     CHECKSTATUSPTR (status);
   }
 
@@ -89,7 +89,7 @@ FillDataBlock (
 
 static void
 FillAllDataBlocks (
-    Status     *status,
+    LALStatus     *status,
     DataBuffer *buffer
     )
 {
@@ -130,8 +130,8 @@ FillAllDataBlocks (
 
 
 void
-CreateDataBuffer (
-    Status         *status,
+LALCreateDataBuffer (
+    LALStatus         *status,
     DataBuffer    **buffer,
     DataBufferPar  *params
     )
@@ -140,7 +140,7 @@ CreateDataBuffer (
   CreateVectorSequenceIn vseqin;
   INT4 block;
 
-  INITSTATUS (status, "CreateDataBuffer", DATABUFFERC);
+  INITSTATUS (status, "LALCreateDataBuffer", DATABUFFERC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
@@ -162,7 +162,7 @@ CreateDataBuffer (
 
   /* create buffer */
   (*buffer)->dataBuffer = NULL;
-  I2CreateVectorSequence (status->statusPtr, &(*buffer)->dataBuffer, &vseqin);
+  LALI2CreateVectorSequence (status->statusPtr, &(*buffer)->dataBuffer, &vseqin);
   CHECKSTATUSPTR (status);
 
   /* create block array */
@@ -194,12 +194,12 @@ CreateDataBuffer (
   specpar.numPoints     = params->numPoints;
   specpar.windowType    = params->windowType;
   specpar.plan          = params->plan;
-  CreateSpectrumBuffer (status->statusPtr, &(*buffer)->specBuffer, &specpar);
+  LALCreateSpectrumBuffer (status->statusPtr, &(*buffer)->specBuffer, &specpar);
   CHECKSTATUSPTR (status);
 
   /* initialize frame data */
   (*buffer)->frameData = NULL;
-  InitializeFrameData (
+  LALInitializeFrameData (
       status->statusPtr,
       &(*buffer)->frameData,
       params->framePath
@@ -223,14 +223,14 @@ CreateDataBuffer (
 
 
 void
-DestroyDataBuffer (
-    Status      *status,
+LALDestroyDataBuffer (
+    LALStatus      *status,
     DataBuffer **buffer
     )
 {
   INT4 block;
 
-  INITSTATUS (status, "DestroyDataBuffer", DATABUFFERC);
+  INITSTATUS (status, "LALDestroyDataBuffer", DATABUFFERC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
@@ -238,15 +238,15 @@ DestroyDataBuffer (
   ASSERT (*buffer, status, DATABUFFER_ENULL, DATABUFFER_MSGENULL);
 
   /* finalize frame data */
-  FinalizeFrameData (status->statusPtr, &(*buffer)->frameData);
+  LALFinalizeFrameData (status->statusPtr, &(*buffer)->frameData);
   CHECKSTATUSPTR (status);
 
   /* destroy spectrum buffer */
-  DestroySpectrumBuffer (status->statusPtr, &(*buffer)->specBuffer);
+  LALDestroySpectrumBuffer (status->statusPtr, &(*buffer)->specBuffer);
   CHECKSTATUSPTR (status);
 
   /* destroy data buffer */
-  I2DestroyVectorSequence (status->statusPtr, &(*buffer)->dataBuffer);
+  LALI2DestroyVectorSequence (status->statusPtr, &(*buffer)->dataBuffer);
   CHECKSTATUSPTR (status);
 
   for (block = 0; block < (*buffer)->blockArraySize; ++block)
@@ -267,8 +267,8 @@ DestroyDataBuffer (
 
 
 void
-GetData (
-    Status      *status,
+LALGetData (
+    LALStatus      *status,
     DataSegment *output,
     INT4         advance,
     DataBuffer  *buffer
@@ -277,7 +277,7 @@ GetData (
   INT4 numPoints;
   INT4 numBlocks;
 
-  INITSTATUS (status, "GetData", DATABUFFERC);
+  INITSTATUS (status, "LALGetData", DATABUFFERC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
@@ -406,7 +406,7 @@ GetData (
   }
 
   /* get average spectrum */
-  AverageSpectrum (status->statusPtr, output->spec, buffer->specBuffer);
+  LALAverageSpectrum (status->statusPtr, output->spec, buffer->specBuffer);
   CHECKSTATUSPTR (status);
 
   /* now is the time to deal with new calibration if pending */
@@ -415,7 +415,7 @@ GetData (
     output->newCal = 1;
 
     /* get new calibration data */
-    GetFrameDataResponse (
+    LALGetFrameDataResponse (
         status->statusPtr,
         output->resp,
         buffer->frameData

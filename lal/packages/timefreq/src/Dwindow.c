@@ -16,7 +16,7 @@
  *
  * DESCRIPTION 
  * Compute the time derivative of a given window.
- * Used by TfrRsp (reassigned spectrogram).
+ * Used by LALTfrRsp (reassigned spectrogram).
  * 
  * DIAGNOSTICS 
  *
@@ -36,12 +36,12 @@
 
 NRCSID (DWINDOWC, "$Id$");
 
-void Dwindow (Status *stat, REAL4Vector* window, REAL4Vector* dwindow)
+void LALDwindow (LALStatus *stat, REAL4Vector* window, REAL4Vector* dwindow)
 {
   INT4      column, hwl;
   REAL4     step, ramp, dwin1, dwin2;
 
-  INITSTATUS (stat, "Dwindow", DWINDOWC);
+  INITSTATUS (stat, "LALDwindow", DWINDOWC);
   ATTATCHSTATUSPTR (stat);
 
   /* Make sure the arguments are not NULL: */

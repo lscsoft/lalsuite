@@ -37,7 +37,7 @@
 NRCSID (TAPPRPNTDOMTIMEPHASEC, "$Id$");
 
 
-void TappRpnTdomTimePhase0PN (Status *status,
+void LALTappRpnTdomTimePhase0PN (LALStatus *status,
                            InspiralwavePhaseOutput *output,
 			   InspiralwavePhaseInput *params) 
 {
@@ -54,7 +54,7 @@ void TappRpnTdomTimePhase0PN (Status *status,
   RETURN(status);
 }
 
-void TappRpnTdomTimePhase1PN (Status *status,
+void LALTappRpnTdomTimePhase1PN (LALStatus *status,
                            InspiralwavePhaseOutput *output,
 			   InspiralwavePhaseInput *params) 
 {
@@ -71,7 +71,7 @@ void TappRpnTdomTimePhase1PN (Status *status,
   RETURN(status);
 }
 
-void TappRpnTdomTimePhase2PN (Status *status,
+void LALTappRpnTdomTimePhase2PN (LALStatus *status,
                            InspiralwavePhaseOutput *output,
 			   InspiralwavePhaseInput *params) 
 {
@@ -89,7 +89,7 @@ void TappRpnTdomTimePhase2PN (Status *status,
   RETURN(status);
 }
 
-void TappRpnTdomTimePhase3PN (Status *status,
+void LALTappRpnTdomTimePhase3PN (LALStatus *status,
                            InspiralwavePhaseOutput *output,
 			   InspiralwavePhaseInput *params) 
 {
@@ -109,7 +109,7 @@ void TappRpnTdomTimePhase3PN (Status *status,
   RETURN(status);
 }
 
-void TappRpnTdomTimePhase4PN (Status *status,
+void LALTappRpnTdomTimePhase4PN (LALStatus *status,
                            InspiralwavePhaseOutput *output,
 			   InspiralwavePhaseInput *params) 
 {

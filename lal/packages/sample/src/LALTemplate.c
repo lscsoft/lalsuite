@@ -18,7 +18,7 @@ NRCSID(LALTEMPLATEC,"$Id$");
 /* Define global functions.  Function prototypes must be
    auto-extracted for inclusion in the documentation */
 /* <lalVerbatim file="LALTemplateCP"> */
-void LALTemplate( Status *stat )
+void LALTemplate( LALStatus *stat )
 { /* </lalVerbatim> */
   /* Variable declarations */
   INITSTATUS(stat,"LALTemplate",LALTEMPLATEC);

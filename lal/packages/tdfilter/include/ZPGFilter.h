@@ -109,12 +109,12 @@ status & status      & Explanation \\
 /* <lalLaTeX>
 \newpage\input{CreateZPGFilterC}
 </lalLaTeX> */
-void CreateCOMPLEX8ZPGFilter(Status            *stat,
+void LALCreateCOMPLEX8ZPGFilter(LALStatus            *stat,
 			     COMPLEX8ZPGFilter **output,
 			     INT4              numZeros,
 			     INT4              numPoles);
 
-void CreateCOMPLEX16ZPGFilter(Status             *stat,
+void LALCreateCOMPLEX16ZPGFilter(LALStatus             *stat,
 			      COMPLEX16ZPGFilter **output,
 			      INT4               numZeros,
 			      INT4               numPoles);
@@ -122,19 +122,19 @@ void CreateCOMPLEX16ZPGFilter(Status             *stat,
 /* <lalLaTeX>
 \newpage\input{DestroyZPGFilterC}
 </lalLaTeX> */
-void DestroyCOMPLEX8ZPGFilter(Status            *stat,
+void LALDestroyCOMPLEX8ZPGFilter(LALStatus            *stat,
 			      COMPLEX8ZPGFilter **input);
 
-void DestroyCOMPLEX16ZPGFilter(Status             *stat,
+void LALDestroyCOMPLEX16ZPGFilter(LALStatus             *stat,
 			       COMPLEX16ZPGFilter **input);
 
 /* <lalLaTeX>
 \newpage\input{BilinearTransformC}
 </lalLaTeX> */
-void WToZCOMPLEX8ZPGFilter(Status            *stat,
+void LALWToZCOMPLEX8ZPGFilter(LALStatus            *stat,
 			   COMPLEX8ZPGFilter *filter);
 
-void WToZCOMPLEX16ZPGFilter(Status             *stat,
+void LALWToZCOMPLEX16ZPGFilter(LALStatus             *stat,
 			    COMPLEX16ZPGFilter *filter);
 
 #ifdef __cplusplus

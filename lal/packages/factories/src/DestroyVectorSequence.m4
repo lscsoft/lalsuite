@@ -12,7 +12,7 @@ ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')')
 ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`STYPE',`format(`%sVectorSequence',TYPE)')
-define(`FUNC',`format(`%sDestroyVectorSequence',TYPECODE)')
+define(`FUNC',`format(`LAL%sDestroyVectorSequence',TYPECODE)')
 
 /* <lalVerbatim file="VectorSequenceFactoriesD"> */
 void FUNC ( Status *status, STYPE **vseq )

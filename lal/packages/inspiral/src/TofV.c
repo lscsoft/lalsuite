@@ -6,7 +6,7 @@
 NRCSID (TOFVC, "$Id$");
 
 
-void TofV (Status *status,
+void LALTofV (LALStatus *status,
 	   REAL8 *tofv,
 	   REAL8 v,
 	   void *params)
@@ -20,7 +20,7 @@ void TofV (Status *status,
    REAL8 sign;
 
 
-   INITSTATUS (status, "TofV", TOFVC);
+   INITSTATUS (status, "LALTofV", TOFVC);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (tofv, status, TOFV_ENULL, TOFV_MSGENULL);
@@ -31,7 +31,7 @@ void TofV (Status *status,
 
    in1 = (TofVIn *) params;
 
-   intinp.function = TofVIntegrand;
+   intinp.function = LALTofVIntegrand;
    intinp.xmin = in1->v0;
    intinp.xmax = v;
    intinp.type = ClosedInterval;
@@ -58,7 +58,7 @@ void TofV (Status *status,
 	}
 
 	
-   DRombergIntegrate (status->statusPtr, &answer, &intinp, funcParams);
+   LALDRombergIntegrate (status->statusPtr, &answer, &intinp, funcParams);
    CHECKSTATUSPTR(status);
    *tofv = in1->t - in1->t0 + in1->totalmass*answer*sign;
 

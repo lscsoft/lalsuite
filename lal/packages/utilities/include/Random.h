@@ -37,28 +37,28 @@ tagRandomParams
 RandomParams;
 
 void
-CreateRandomParams (
-    Status        *status,
+LALCreateRandomParams (
+    LALStatus        *status,
     RandomParams **params,
     INT4           seed
     );
 
 void
-DestroyRandomParams (
-    Status        *status,
+LALDestroyRandomParams (
+    LALStatus        *status,
     RandomParams **params
     );
 
 void
-UniformDeviate (
-    Status       *status,
+LALUniformDeviate (
+    LALStatus       *status,
     REAL4        *deviate,
     RandomParams *params
     );
 
 void
-NormalDeviates (
-    Status       *status,
+LALNormalDeviates (
+    LALStatus       *status,
     REAL4Vector  *deviates,
     RandomParams *params
     );

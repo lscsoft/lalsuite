@@ -5,7 +5,7 @@
 NRCSID (TOFVINTEGRANDC, "$Id$"); 
 
 
-void TofVIntegrand (Status *status,
+void LALTofVIntegrand (LALStatus *status,
 		   REAL8 *integrand,
 		   REAL8 v,
 		   void *params)
@@ -13,7 +13,7 @@ void TofVIntegrand (Status *status,
 
    TofVIntegrandIn *ak;
 
-   INITSTATUS (status, "TofVIntegrand", TOFVINTEGRANDC);
+   INITSTATUS (status, "LALTofVIntegrand", TOFVINTEGRANDC);
 
    ASSERT (integrand, status, TOFVINTEGRAND_ENULL, TOFVINTEGRAND_MSGENULL);
    ASSERT (params, status, TOFVINTEGRAND_ENULL, TOFVINTEGRAND_MSGENULL);

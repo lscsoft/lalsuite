@@ -119,54 +119,54 @@ ComputeExcessPowerIn;
 
 
 void
-AddWhiteNoise (
-               Status                               *status,
+LALAddWhiteNoise (
+               LALStatus                               *status,
                COMPLEX8Vector                       *v,
                REAL8                                noiseLevel
                );
 
 
 void
-CreateTFTiling (
-                Status                              *status,
+LALCreateTFTiling (
+                LALStatus                              *status,
                 TFTiling                            **tfTiling,
                 CreateTFTilingIn                    *input
                 );
 
 
 void
-DestroyTFTiling (
-                 Status                             *status,
+LALDestroyTFTiling (
+                 LALStatus                             *status,
                  TFTiling                           **tfTiling
                  );
 
 
 void
-ComputeTFPlanes (
-                 Status                             *status,
+LALComputeTFPlanes (
+                 LALStatus                             *status,
                  TFTiling                           *tfTiling,
                  COMPLEX8FrequencySeries            *freqSeries
                  );
 
 
 void
-ComputeExcessPower (
-                    Status                          *status,
+LALComputeExcessPower (
+                    LALStatus                          *status,
                     TFTiling                        *tfTiling,
                     ComputeExcessPowerIn            *input
                     );
 
 
 void
-SortTFTiling (
-              Status                                *status,
+LALSortTFTiling (
+              LALStatus                                *status,
               TFTiling                              *tfTiling
               );
 
 
 void
-CountEPEvents (
-               Status                               *status,
+LALCountEPEvents (
+               LALStatus                               *status,
                INT4                                 *numEvents,
                TFTiling                             *tfTiling,
                REAL8                                alphaThreshold
@@ -174,16 +174,16 @@ CountEPEvents (
 
 
 void
-ComputeLikelihood (
-                   Status                           *status,
+LALComputeLikelihood (
+                   LALStatus                           *status,
                    REAL8                            *lambda,
                    TFTiling                         *tfTiling
                    );
 
 
 void 
-PrintTFTileList (
-                 Status                             *status,
+LALPrintTFTileList (
+                 LALStatus                             *status,
                  FILE                               *fp,
                  TFTiling                           *tfTiling,
                  INT4                               maxTiles
@@ -191,7 +191,7 @@ PrintTFTileList (
 
 void 
 PrintTFTileList1 (
-                 Status                             *status,
+                 LALStatus                             *status,
                  FILE                               *fp,
                  TFTiling                           *tfTiling,
                  INT4                               maxTiles

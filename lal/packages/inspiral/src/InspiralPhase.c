@@ -6,7 +6,7 @@
 NRCSID (INSPIRALPHASEC, "$Id$"); 
 
 
-void InspiralPhase (Status *status,
+void LALInspiralPhase (LALStatus *status,
 	            REAL8 *phiofv,
 	            REAL8 v,
 	            void *params)
@@ -19,7 +19,7 @@ void InspiralPhase (Status *status,
    REAL8 sign;
    REAL8 answer;
 
-  INITSTATUS (status, "InspiralPhase", INSPIRALPHASEC);
+  INITSTATUS (status, "LALInspiralPhase", INSPIRALPHASEC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (phiofv, status, INSPIRALPHASE_ENULL, INSPIRALPHASE_MSGENULL);
@@ -31,7 +31,7 @@ void InspiralPhase (Status *status,
    in1 = (InspiralPhaseIn *) params;
 
 
-   intinp.function = PhiofVIntegrand;
+   intinp.function = LALPhiofVIntegrand;
    intinp.xmin = in1->v0;
    intinp.xmax = v;
    intinp.type = ClosedInterval;
@@ -59,7 +59,7 @@ void InspiralPhase (Status *status,
 	}
 
 
-   DRombergIntegrate (status->statusPtr, &answer, &intinp, funcParams);
+   LALDRombergIntegrate (status->statusPtr, &answer, &intinp, funcParams);
    CHECKSTATUSPTR (status);
 
    printf("inside InspiralPhase, in1->phi0,p= %e %e\n",in1->phi0,answer);

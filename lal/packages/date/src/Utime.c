@@ -13,12 +13,12 @@
  * 
  * SYNOPSIS 
  *
- * Utime(): Returns UTC time in LALDate structure, corrected for
+ * LALUtime(): Returns UTC time in LALDate structure, corrected for
  *          leap seconds given UTC time in seconds since Unix epoch
  * 
  * DESCRIPTION
  *
- * Utime():
+ * LALUtime():
  *      Inputs:   LIGOTimeUnix *unixtime  -- UTC time in seconds since
  *                                             Unix epoch
  *                                             1970-01-01 00:00:00 UTC
@@ -127,7 +127,7 @@ static const time_t leaps[]={
  * Bruce Allen, et al.
  */
 void
-Utime (Status              *status,
+LALUtime (LALStatus              *status,
        LALDate             *utc,
        const LIGOTimeUnix  *unixtime)
 {
@@ -139,7 +139,7 @@ Utime (Status              *status,
     INT4         i;
     LALUnixDate *gmt;
     
-    INITSTATUS (status, "Utime", UTIMEC);
+    INITSTATUS (status, "LALUtime", UTIMEC);
 
     /*
      * Check pointer to input variable
@@ -232,5 +232,5 @@ Utime (Status              *status,
     utc->residualNanoSeconds = unixtime->unixNanoSeconds;
 
     RETURN (status);
-} /* END Utime() */
+} /* END LALUtime() */
 

@@ -39,8 +39,8 @@
 NRCSID(UNWRAPREAL8ANGLEC,"$Id$");
 
 void
-UnwrapREAL8Angle (
-    Status               *status,
+LALUnwrapREAL8Angle (
+    LALStatus               *status,
     REAL8Vector          *out,
     const REAL8Vector    *in
     )
@@ -53,7 +53,7 @@ UnwrapREAL8Angle (
   REAL8     phaseII;
   REAL8     diffph;
   
-  INITSTATUS (status, "UnwrapREAL8Angle", UNWRAPREAL8ANGLEC );
+  INITSTATUS (status, "LALUnwrapREAL8Angle", UNWRAPREAL8ANGLEC );
   
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);

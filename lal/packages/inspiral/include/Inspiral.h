@@ -346,7 +346,7 @@ typedef struct {
 
 typedef double EnergyFunction(double, expnCoeffs *);
 typedef double FluxFunction(double, expnCoeffs *);
-typedef void (TestFunction) (Status *,REAL8Vector *,REAL8Vector *,void *);
+typedef void (TestFunction) (LALStatus *,REAL8Vector *,REAL8Vector *,void *);
 
 
 typedef struct
@@ -453,11 +453,11 @@ PhiofVIntegrandIn;
 
 
 
-void InspiralSetup (Status *,
+void LALInspiralSetup (LALStatus *,
 		    expnCoeffs *,
 		    InspiralTemplate *);
 
-void ChooseModel(Status *,
+void LALChooseModel(LALStatus *,
 		 expnFunc *,
 		 expnCoeffs *,
 		 InspiralTemplate *);
@@ -466,186 +466,186 @@ void ChooseModel(Status *,
 void  printf_timeseries(int n, double *data, double dt, double t0);
 */
 
-void TofV (Status *,
+void LALTofV (LALStatus *,
 	   REAL8 *,
 	   REAL8,
 	   void *);
 
-void InspiralVelocity (Status *,
+void LALInspiralVelocity (LALStatus *,
 	               REAL8 *,
 	               TofVIn *);
 
-void InspiralDerivatives (Status *,
+void LALInspiralDerivatives (LALStatus *,
 			  REAL8Vector *,
 			  REAL8Vector *,
 			  void *);
 
-void RungeKutta4(Status *,
+void LALRungeKutta4(LALStatus *,
 	         REAL8Vector *,
 	         rk4In *,
 	         void *);
 
-void TimeDomain2(Status *,
+void LALTimeDomain2(LALStatus *,
 		 REAL8Vector *,
 		 InspiralTemplate *);
 
 
 
-void InspiralPhase (Status *,
+void LALInspiralPhase (LALStatus *,
 	            REAL8 *,
 	            REAL8,
 	            void *);
 
-void PhiofVIntegrand (Status *,
+void LALPhiofVIntegrand (LALStatus *,
 		    REAL8 *,
 		    REAL8,
 		    void *);
 
-void TofVIntegrand (Status *,
+void LALTofVIntegrand (LALStatus *,
 		    REAL8 *,
 		    REAL8,
 		    void *);
 
 
-void InspiralWave(Status *,
+void LALInspiralWave(LALStatus *,
 		  REAL8Vector *,
 		  InspiralTemplate *);
 
-void timedomain(Status *,
+void timedomain(LALStatus *,
 		REAL8Vector *,
 		InspiralTemplate *,
 	        TimeDomainIn *);
 
 
-void TappRpnTdomTime0PN (Status *,
+void TappRpnTdomTime0PN (LALStatus *,
                          REAL8Vector *, 
 		         InspiralTemplate *);
-void TappRpnTdomTime1PN (Status *,
+void TappRpnTdomTime1PN (LALStatus *,
                          REAL8Vector *, 
 		         InspiralTemplate *);
-void TappRpnTdomTime2PN (Status *,
+void TappRpnTdomTime2PN (LALStatus *,
                          REAL8Vector *, 
 		         InspiralTemplate *);
-void TappRpnTdomTime3PN (Status *,
+void TappRpnTdomTime3PN (LALStatus *,
                          REAL8Vector *, 
 		         InspiralTemplate *);
-void TappRpnTdomTime4PN (Status *,
+void TappRpnTdomTime4PN (LALStatus *,
                          REAL8Vector *, 
 		         InspiralTemplate *);
 
-void InspiralParameterCalc (Status *,
+void LALInspiralParameterCalc (LALStatus *,
 			     InspiralParamsOutput *,
 			     InspiralParamsInput *);
 
-void TappRpnTdomTimeFrequency0PN (Status *,
+void LALTappRpnTdomTimeFrequency0PN (LALStatus *,
                                  InspiralwaveFrequencyOutput *,
 			         InspiralwaveFrequencyInput *);
 
-void TappRpnTdomTimeFrequency1PN (Status *,
+void LALTappRpnTdomTimeFrequency1PN (LALStatus *,
                                  InspiralwaveFrequencyOutput *,
 			         InspiralwaveFrequencyInput *);
 
-void TappRpnTdomTimeFrequency2PN (Status *,
+void LALTappRpnTdomTimeFrequency2PN (LALStatus *,
                                  InspiralwaveFrequencyOutput *,
 			         InspiralwaveFrequencyInput *);
 
-void TappRpnTdomTimeFrequency3PN (Status *,
+void LALTappRpnTdomTimeFrequency3PN (LALStatus *,
                                  InspiralwaveFrequencyOutput *,
 			         InspiralwaveFrequencyInput *);
 
-void TappRpnTdomTimeFrequency4PN (Status *,
+void LALTappRpnTdomTimeFrequency4PN (LALStatus *,
                                  InspiralwaveFrequencyOutput *,
 			         InspiralwaveFrequencyInput *);
 
-void TappRpnTdomTimePhase0PN (Status *,
+void LALTappRpnTdomTimePhase0PN (LALStatus *,
                               InspiralwavePhaseOutput *,
 			      InspiralwavePhaseInput *);
 
-void TappRpnTdomTimePhase1PN (Status *,
+void LALTappRpnTdomTimePhase1PN (LALStatus *,
                               InspiralwavePhaseOutput *,
 			      InspiralwavePhaseInput *);
 
-void TappRpnTdomTimePhase2PN (Status *,
+void LALTappRpnTdomTimePhase2PN (LALStatus *,
                               InspiralwavePhaseOutput *,
 			      InspiralwavePhaseInput *);
 
-void TappRpnTdomTimePhase3PN (Status *,
+void LALTappRpnTdomTimePhase3PN (LALStatus *,
                               InspiralwavePhaseOutput *,
 			      InspiralwavePhaseInput *);
 
-void TappRpnTdomTimePhase4PN (Status *,
+void LALTappRpnTdomTimePhase4PN (LALStatus *,
                               InspiralwavePhaseOutput *,
 			      InspiralwavePhaseInput *);
 
-void TappRpnTdomFreq0PN (Status *, 
+void TappRpnTdomFreq0PN (LALStatus *, 
                          REAL8Vector *, 
                          InspiralTemplate *);
 
-void TappRpnTdomFreq1PN (Status *, 
+void TappRpnTdomFreq1PN (LALStatus *, 
                          REAL8Vector *, 
                          InspiralTemplate *);
 
-void TappRpnTdomFreq2PN (Status *, 
+void TappRpnTdomFreq2PN (LALStatus *, 
                          REAL8Vector *, 
                          InspiralTemplate *);
 
-void TappRpnTdomFreq3PN (Status *, 
+void TappRpnTdomFreq3PN (LALStatus *, 
                          REAL8Vector *, 
                          InspiralTemplate *);
 
-void TappRpnTdomFreq4PN (Status *, 
+void TappRpnTdomFreq4PN (LALStatus *, 
                          REAL8Vector *, 
                          InspiralTemplate *);
 
-void TappRpnTdomFreqTofF0PN (Status *,
+void LALTappRpnTdomFreqTofF0PN (LALStatus *,
                              REAL8 *,
 			     REAL8,
                              void *);
 
-void TappRpnTdomFreqTofF1PN (Status *,
+void LALTappRpnTdomFreqTofF1PN (LALStatus *,
                              REAL8 *,
 			     REAL8,
                              void *);
 
-void TappRpnTdomFreqTofF2PN (Status *,
+void LALTappRpnTdomFreqTofF2PN (LALStatus *,
                              REAL8 *,
 			     REAL8,
                              void *);
 
-void TappRpnTdomFreqTofF3PN (Status *,
+void LALTappRpnTdomFreqTofF3PN (LALStatus *,
                              REAL8 *,
 			     REAL8,
                              void *);
 
-void TappRpnTdomFreqTofF4PN (Status *,
+void LALTappRpnTdomFreqTofF4PN (LALStatus *,
                              REAL8 *,
 			     REAL8,
                              void *);
 
-void TappRpnTdomFreqPhase0PN (Status *,
+void LALTappRpnTdomFreqPhase0PN (LALStatus *,
                              REAL8 *, 
                              InspiralPhasesInput *);
 
-void TappRpnTdomFreqPhase1PN (Status *,
+void LALTappRpnTdomFreqPhase1PN (LALStatus *,
                              REAL8 *, 
                              InspiralPhasesInput *);
 
-void TappRpnTdomFreqPhase2PN (Status *,
+void LALTappRpnTdomFreqPhase2PN (LALStatus *,
                              REAL8 *, 
                              InspiralPhasesInput *);
 
-void TappRpnTdomFreqPhase3PN (Status *,
+void LALTappRpnTdomFreqPhase3PN (LALStatus *,
                              REAL8 *, 
                              InspiralPhasesInput *);
 
-void TappRpnTdomFreqPhase4PN (Status *,
+void LALTappRpnTdomFreqPhase4PN (LALStatus *,
                              REAL8 *, 
                              InspiralPhasesInput *);
 
-void TappRpnTdomTime (Status *status,
+void LALTappRpnTdomTime (LALStatus *status,
                       REAL8Vector *signal, 
                       InspiralTemplate *params);
-void TappRpnTdomFreq (Status *status,
+void LALTappRpnTdomFreq (LALStatus *status,
                       REAL8Vector *signal, 
                       InspiralTemplate *params);
 

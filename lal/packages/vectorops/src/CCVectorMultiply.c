@@ -34,8 +34,8 @@
 NRCSID (CCVECTORMULTIPLYC, "$Id$");
 
 void
-CCVectorMultiply (
-    Status               *status,
+LALCCVectorMultiply (
+    LALStatus               *status,
     COMPLEX8Vector       *out,
     const COMPLEX8Vector *in1,
     const COMPLEX8Vector *in2
@@ -46,7 +46,7 @@ CCVectorMultiply (
   COMPLEX8 *c;
   INT4      n;
 
-  INITSTATUS (status, "CCVectorMultiply", CCVECTORMULTIPLYC);
+  INITSTATUS (status, "LALCCVectorMultiply", CCVECTORMULTIPLYC);
 
   ASSERT (out, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);
   ASSERT (in1, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);

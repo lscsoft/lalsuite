@@ -24,8 +24,11 @@
  * REVISION HISTORY
  *
  * $Log$
+ * Revision 1.2  2000/07/23 01:14:48  jolien
+ * LAL-prefix in front of functions and Status; debuglevel is now LALDebugLevel.
+ *
  * Revision 1.1  2000/06/19 22:33:35  jolien
- * Added CrossCorr and SiteInfo.
+ * Added LALCrossCorr and SiteInfo.
  *
  *
  *-----------------------------------------------------------------------

@@ -17,7 +17,7 @@ Options:
   -h         print help
   -q         quiet: run silently
   -v         verbose: print extra information
-  -d level   set debuglevel to level
+  -d level   set LALDebugLevel to level
 \end{verbatim}
 
 \subsubsection*{Description}
@@ -33,7 +33,7 @@ Options:
 
 \subsubsection*{Uses}
 \begin{verbatim}
-debuglevel
+LALDebugLevel
 LALHello()
 \end{verbatim}
 
@@ -68,7 +68,7 @@ NRCSID( MAIN, "$Id$" );
 extern char *optarg;
 extern int   optind;
 
-int debuglevel = 0;
+int LALDebugLevel = 0;
 int verbose    = 0;
 
 static void
@@ -78,16 +78,16 @@ static void
 ParseOptions( int argc, char *argv[] );
 
 static void
-TestStatus( Status *status, const char *expectedCodes, int exitCode );
+TestStatus( LALStatus *status, const char *expectedCodes, int exitCode );
 
 static void
-ClearStatus( Status *status );
+ClearStatus( LALStatus *status );
 
 int
 main( int argc, char *argv[] )
 {
-  Status status = { 0 };
-  Status keep;
+  LALStatus status = { 0 };
+  LALStatus keep;
 
   ParseOptions( argc, argv );
 
@@ -119,7 +119,7 @@ main( int argc, char *argv[] )
  *
  */
 static void
-TestStatus( Status *status, const char *ignored, int exitcode )
+TestStatus( LALStatus *status, const char *ignored, int exitcode )
 {
   char  str[64];
   char *tok;
@@ -165,7 +165,7 @@ TestStatus( Status *status, const char *ignored, int exitcode )
  *
  */
 void
-ClearStatus( Status *status )
+ClearStatus( LALStatus *status )
 {
   if ( status->statusPtr )
   {
@@ -189,7 +189,7 @@ Usage( const char *program, int exitcode )
   fprintf( stderr, "  -h         print this message\n" );
   fprintf( stderr, "  -q         quiet: run silently\n" );
   fprintf( stderr, "  -v         verbose: print extra information\n" );
-  fprintf( stderr, "  -d level   set debuglevel to level\n" );
+  fprintf( stderr, "  -d level   set LALDebugLevel to level\n" );
   exit( exitcode );
 }
 
@@ -216,7 +216,7 @@ ParseOptions( int argc, char *argv[] )
     switch ( c )
     {
       case 'd': /* set debug level */
-        debuglevel = atoi( optarg );
+        LALDebugLevel = atoi( optarg );
         break;
 
       case 'v': /* verbose */

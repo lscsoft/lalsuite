@@ -38,14 +38,14 @@
 NRCSID (TAPPRPNTDOMTIMEC, "$Id$");
 
 
-void (*TappRpnTdomTimeFrequency) (Status *status,
+void (*TappRpnTdomTimeFrequency) (LALStatus *status,
                                   InspiralwaveFrequencyOutput *output,
 			          InspiralwaveFrequencyInput *params);
-void (*TappRpnTdomTimePhase) (Status *status,
+void (*TappRpnTdomTimePhase) (LALStatus *status,
                               InspiralwavePhaseOutput *output,
 			      InspiralwavePhaseInput *params);
 
-void TappRpnTdomTime (Status *status,
+void LALTappRpnTdomTime (LALStatus *status,
                       REAL8Vector *output, 
 		      InspiralTemplate *params)
 {
@@ -66,7 +66,7 @@ void TappRpnTdomTime (Status *status,
 
 
 
-  INITSTATUS (status, "TappRpnTdomTime", TAPPRPNTDOMTIMEC);
+  INITSTATUS (status, "LALTappRpnTdomTime", TAPPRPNTDOMTIMEC);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(output, status, TAPPRPNTDOMTIME_ENULL, TAPPRPNTDOMTIME_MSGENULL);
@@ -100,7 +100,7 @@ void TappRpnTdomTime (Status *status,
   paramCalc.massChoice = params->massChoice;
   paramCalc.order = params->order;
 
-  InspiralParameterCalc (status->statusPtr, &out1, &paramCalc);
+  LALInspiralParameterCalc (status->statusPtr, &out1, &paramCalc);
   CHECKSTATUSPTR(status);
 
 
@@ -117,23 +117,23 @@ void TappRpnTdomTime (Status *status,
   switch (params->order) {
      case newtonian:
      case oneHalfPN:
-          TappRpnTdomTimePhase = &TappRpnTdomTimePhase0PN;
-          TappRpnTdomTimeFrequency = &TappRpnTdomTimeFrequency0PN;
+          TappRpnTdomTimePhase = &LALTappRpnTdomTimePhase0PN;
+          TappRpnTdomTimeFrequency = &LALTappRpnTdomTimeFrequency0PN;
           break;
      case onePN:
-          TappRpnTdomTimePhase = &TappRpnTdomTimePhase2PN;
-          TappRpnTdomTimeFrequency = &TappRpnTdomTimeFrequency2PN;
+          TappRpnTdomTimePhase = &LALTappRpnTdomTimePhase2PN;
+          TappRpnTdomTimeFrequency = &LALTappRpnTdomTimeFrequency2PN;
           break;
      case onePointFivePN:
-          TappRpnTdomTimePhase = &TappRpnTdomTimePhase3PN;
-          TappRpnTdomTimeFrequency = &TappRpnTdomTimeFrequency3PN;
+          TappRpnTdomTimePhase = &LALTappRpnTdomTimePhase3PN;
+          TappRpnTdomTimeFrequency = &LALTappRpnTdomTimeFrequency3PN;
           break;
      case twoPN:
-          TappRpnTdomTimePhase = &TappRpnTdomTimePhase4PN;
-          TappRpnTdomTimeFrequency = &TappRpnTdomTimeFrequency4PN;
+          TappRpnTdomTimePhase = &LALTappRpnTdomTimePhase4PN;
+          TappRpnTdomTimeFrequency = &LALTappRpnTdomTimeFrequency4PN;
           break;
      default:
-          fprintf(stderr, "No order selected in TappRpnTdomTime ... exiting\n");
+          fprintf(stderr, "No order selected in LALTappRpnTdomTime ... exiting\n");
           exit(0);
      }
   

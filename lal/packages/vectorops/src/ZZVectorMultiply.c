@@ -29,6 +29,9 @@
  * REVISION HISTORY 
  * 
  * $Log$
+ * Revision 1.3  2000/07/23 01:16:13  jolien
+ * LAL-prefix in front of functions and Status; debuglevel is now LALDebugLevel.
+ *
  * Revision 1.2  2000/04/17 23:31:14  jolien
  * Removed redundant include protection.
  * Changed INITSTATUS() to take extra argument (function name).
@@ -47,8 +50,8 @@
 NRCSID(ZZVECTORMULTIPLYC,"$Id$");
 
 void
-ZZVectorMultiply (
-    Status                *status,
+LALZZVectorMultiply (
+    LALStatus                *status,
     COMPLEX16Vector       *out,
     const COMPLEX16Vector *in1,
     const COMPLEX16Vector *in2
@@ -59,7 +62,7 @@ ZZVectorMultiply (
   COMPLEX16 *c;
   INT4       n;
 
-  INITSTATUS (status, "ZZVectorMultiply", ZZVECTORMULTIPLYC);
+  INITSTATUS (status, "LALZZVectorMultiply", ZZVECTORMULTIPLYC);
 
   ASSERT (out, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);
   ASSERT (in1, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);

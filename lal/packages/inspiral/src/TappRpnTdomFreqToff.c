@@ -37,7 +37,7 @@
 NRCSID (TAPPRPNTDOMFREQTOFFC, "$Id$");
 
 		   
-void TappRpnTdomFreqTofF0PN (Status *status,
+void LALTappRpnTdomFreqTofF0PN (LALStatus *status,
                              REAL8 *toff,
 			     REAL8 f,
                              void *params) 
@@ -64,7 +64,7 @@ void TappRpnTdomFreqTofF0PN (Status *status,
   RETURN(status);
 }
 		   
-void TappRpnTdomFreqTofF1PN (Status *status,
+void LALTappRpnTdomFreqTofF1PN (LALStatus *status,
                              REAL8 *toff,
 			     REAL8 f,
                              void *params) 
@@ -91,7 +91,7 @@ void TappRpnTdomFreqTofF1PN (Status *status,
   RETURN(status);
 }
 		   
-void TappRpnTdomFreqTofF2PN (Status *status,
+void LALTappRpnTdomFreqTofF2PN (LALStatus *status,
                              REAL8 *toff,
 			     REAL8 f,
                              void *params) 
@@ -119,7 +119,7 @@ void TappRpnTdomFreqTofF2PN (Status *status,
   RETURN(status);
 }
 		   
-void TappRpnTdomFreqTofF3PN (Status *status,
+void LALTappRpnTdomFreqTofF3PN (LALStatus *status,
                              REAL8 *toff,
 			     REAL8 f,
                              void *params) 
@@ -148,7 +148,7 @@ void TappRpnTdomFreqTofF3PN (Status *status,
   RETURN(status);
 }
 		   
-void TappRpnTdomFreqTofF4PN (Status *status,
+void LALTappRpnTdomFreqTofF4PN (LALStatus *status,
                              REAL8 *toff,
 			     REAL8 f,
                              void *params) 

@@ -6,7 +6,7 @@
 NRCSID (INSPIRALPARAMETERCALCC, "$Id$");
 
 
-void InspiralParameterCalc (Status *status,
+void LALInspiralParameterCalc (LALStatus *status,
 			     InspiralParamsOutput *output,
 			     InspiralParamsInput *params)
 {
@@ -15,7 +15,7 @@ void InspiralParameterCalc (Status *status,
   REAL8 dumm_const1, dumm_const2, dumm_const3;
 
 
-  INITSTATUS (status, "InspiralParameterCalc", INSPIRALPARAMETERCALCC );
+  INITSTATUS (status, "LALInspiralParameterCalc", INSPIRALPARAMETERCALCC );
 
   ASSERT(output, status, INSPIRALPARAMETERCALCALC_ENULL,INSPIRALPARAMETERCALCALC_MSGENULL);
   ASSERT(params, status, INSPIRALPARAMETERCALCALC_ENULL,INSPIRALPARAMETERCALCALC_MSGENULL);
@@ -55,7 +55,7 @@ void InspiralParameterCalc (Status *status,
   		output->chirpMass = pow(eta,0.6)*totalMass;
 
   	default:
-                fprintf(stderr, "No choice of masses in InspiralParameterCalc ... exiting\n");
+                fprintf(stderr, "No choice of masses in LALInspiralParameterCalc ... exiting\n");
                 exit(0);
    }
    totalMass = totalMass*LAL_MTSUN_SI;
@@ -105,7 +105,7 @@ void InspiralParameterCalc (Status *status,
 		break;
 
 	   default:
-		fprintf(stderr,"You haven't chosen a PN order in InspiralParameterCalc\n");
+		fprintf(stderr,"You haven't chosen a PN order in LALInspiralParameterCalc\n");
    }
    RETURN (status);
 

@@ -29,7 +29,7 @@
 NRCSID (INSPIRALSETUPC, "$Id$");
 
 
-void InspiralSetup (Status *status,
+void LALInspiralSetup (LALStatus *status,
 		    expnCoeffs *ak,
 		    InspiralTemplate *params) {
    
@@ -39,7 +39,7 @@ void InspiralSetup (Status *status,
    REAL8 c1, c2, c3, c4, c5;
    REAL8 oneby6=1.0/6.0;
 
-   INITSTATUS (status, "InspiralSetup", INSPIRALSETUPC);
+   INITSTATUS (status, "LALInspiralSetup", INSPIRALSETUPC);
 
    ASSERT (ak,  status, INSPIRALSETUP_ENULL, INSPIRALSETUP_MSGENULL);
    ASSERT (params,  status, INSPIRALSETUP_ENULL, INSPIRALSETUP_MSGENULL);

@@ -151,8 +151,8 @@ HorizontalTFTransformIn;
 
 
 void
-CreateRealDFTParams ( 
-                     Status                         *status, 
+LALCreateRealDFTParams ( 
+                     LALStatus                         *status, 
                      RealDFTParams                  **dftParams, 
                      LALWindowParams                   *params,
                      INT2                           sign
@@ -160,15 +160,15 @@ CreateRealDFTParams (
 
 
 void
-DestroyRealDFTParams (
-                      Status                        *status, 
+LALDestroyRealDFTParams (
+                      LALStatus                        *status, 
                       RealDFTParams                 **dftParams
                       );
 
 
 void
-CreateComplexDFTParams ( 
-                        Status                      *status, 
+LALCreateComplexDFTParams ( 
+                        LALStatus                      *status, 
                         ComplexDFTParams            **dftParams, 
                         LALWindowParams                *params,
                         INT2                        sign
@@ -176,15 +176,15 @@ CreateComplexDFTParams (
 
 
 void
-DestroyComplexDFTParams (
-                         Status                     *status, 
+LALDestroyComplexDFTParams (
+                         LALStatus                     *status, 
                          ComplexDFTParams           **dftParams
                          );
 
 
 void
-ComputeFrequencySeries (
-                        Status                      *status,
+LALComputeFrequencySeries (
+                        LALStatus                      *status,
                         COMPLEX8FrequencySeries     *freqSeries,
                         REAL4TimeSeries             *timeSeries,
                         RealDFTParams               *dftParams
@@ -192,23 +192,23 @@ ComputeFrequencySeries (
 
 
 void
-CreateTFPlane (
-               Status                               *status,
+LALCreateTFPlane (
+               LALStatus                               *status,
                COMPLEX8TimeFrequencyPlane           **tfp,
                TFPlaneParams                        *input
                );
 
 
 void
-DestroyTFPlane (
-               Status                               *status,
+LALDestroyTFPlane (
+               LALStatus                               *status,
                COMPLEX8TimeFrequencyPlane           **tfp
                 );
 
 
 void
-TimeSeriesToTFPlane (
-                     Status                         *status,
+LALTimeSeriesToTFPlane (
+                     LALStatus                         *status,
                      COMPLEX8TimeFrequencyPlane     *tfp,
                      REAL4TimeSeries                *timeSeries,
                      VerticalTFTransformIn         *input
@@ -216,8 +216,8 @@ TimeSeriesToTFPlane (
 
 
 void
-FreqSeriesToTFPlane (
-                     Status                         *status,
+LALFreqSeriesToTFPlane (
+                     LALStatus                         *status,
                      COMPLEX8TimeFrequencyPlane     *tfp,
                      COMPLEX8FrequencySeries        *freqSeries,
                      HorizontalTFTransformIn        *input

@@ -82,36 +82,36 @@ RhoThresholdIn;
 
 
 void
-ChisqCdf (
-          Status                        *status,
+LALChisqCdf (
+          LALStatus                        *status,
           REAL8                         *prob,
           ChisqCdfIn                    *input
           );
 
 void
-OneMinusChisqCdf (
-                  Status                *status,
+LALOneMinusChisqCdf (
+                  LALStatus                *status,
                   REAL8                 *prob,
                   ChisqCdfIn            *input
                   );
 
 void
-NoncChisqCdf (
-              Status                    *status,
+LALNoncChisqCdf (
+              LALStatus                    *status,
               REAL8                     *prob,
               ChisqCdfIn                *input
               );
 
 void
-Chi2Threshold (
-              Status                    *status,
+LALChi2Threshold (
+              LALStatus                    *status,
               REAL8                     *chi2,
               Chi2ThresholdIn           *input
                );
 
 void
-RhoThreshold (
-              Status                    *status,
+LALRhoThreshold (
+              LALStatus                    *status,
               REAL8                     *rho,
               RhoThresholdIn            *input
               );

@@ -87,28 +87,28 @@ tagFrameData
 FrameData;
 
 void
-InitializeFrameData (
-    Status     *status,
+LALInitializeFrameData (
+    LALStatus     *status,
     FrameData **frameData,
     CHAR       *framePath
     );
 
 void
-FinalizeFrameData (
-    Status     *status,
+LALFinalizeFrameData (
+    LALStatus     *status,
     FrameData **frameData
     );
 
 void
-GetFrameData (
-    Status         *status,
+LALGetFrameData (
+    LALStatus         *status,
     INT2TimeSeries *data,
     FrameData      *frameData
     );
 
 void
-GetFrameDataResponse (
-    Status                  *status,
+LALGetFrameDataResponse (
+    LALStatus                  *status,
     COMPLEX8FrequencySeries *response,
     FrameData               *frameData
     );

@@ -34,8 +34,8 @@
 NRCSID(ZZVECTORDIVIDEC,"$Id$");
 
 void
-ZZVectorDivide (
-    Status                *status,
+LALZZVectorDivide (
+    LALStatus                *status,
     COMPLEX16Vector       *out,
     const COMPLEX16Vector *in1,
     const COMPLEX16Vector *in2
@@ -46,7 +46,7 @@ ZZVectorDivide (
   COMPLEX16 *c;
   INT4       n;
 
-  INITSTATUS (status, "ZZVectorDivide", ZZVECTORDIVIDEC);
+  INITSTATUS (status, "LALZZVectorDivide", ZZVECTORDIVIDEC);
 
   ASSERT (out, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);
   ASSERT (in1, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);

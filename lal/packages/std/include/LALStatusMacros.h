@@ -25,16 +25,16 @@ routines.
 \label{ss:status-reporting-objects}
 
 LAL routines make use of two objects in reporting their current
-status: the status structure \verb@Status@, and the global integer
-\verb@debuglevel@.  These two objects are described in the following
+status: the status structure \verb@LALStatus@, and the global integer
+\verb@LALDebugLevel@.  These two objects are described in the following
 sections.
 
-\subsubsection{The \texttt{Status} structure}
+\subsubsection{The \texttt{LALStatus} structure}
 
 LAL routines store their current execution status in a linked list of
-structures of type \verb@Status@, with each node in the list
+structures of type \verb@LALStatus@, with each node in the list
 representing a subroutine in the current calling sequence.  The
-\verb@Status@ structure is described in Sec.~\ref{ss:status-structure}
+\verb@LALStatus@ structure is described in Sec.~\ref{ss:status-structure}
 of the header \verb@LALDatatypes.h@, but for completeness, we explain
 its fields below:
 \begin{description}
@@ -52,7 +52,7 @@ the source file and version number of the function being reported on.
 containing the function code.
 \item[\texttt{INT4 line}] The line number in the \verb@.c@ file of the
 instruction where any error was reported.
-\item[\texttt{Status *statusPtr}] A recursive pointer to another
+\item[\texttt{LALStatus *statusPtr}] A recursive pointer to another
 status pointer.  This structure is used to report an error in a
 subroutine of the current function.  Thus if an error occurs in a
 deeply-nested routine, the status structure returned to the main
@@ -105,9 +105,9 @@ to \verb@NULL@. \\
 \end{tabular}
 \end{center}
 
-\subsubsection{The \texttt{debuglevel}}
+\subsubsection{The \texttt{LALDebugLevel}}
 
-The \verb@debuglevel@ is a global variable, set at runtime, that
+The \verb@LALDebugLevel@ is a global variable, set at runtime, that
 determines how much and what kind of debugging information will be
 reported.  It is declared as an \verb@extern int@ in the header
 \verb@LALStatusMacros.h@, and is therefore accessible in any standard
@@ -115,11 +115,11 @@ LAL module that includes this header.  Note, however, that it is
 declared to be of the C type \verb@int@, which is usually but not
 always a 32-bit integer (on some systems it may only be 16 bits).
 
-The value of \verb@debuglevel@ should be thought of not as a number,
+The value of \verb@LALDebugLevel@ should be thought of not as a number,
 but as a \emph{bit mask}, wherein each bit in the binary
 representation turns on or off a specific type of status reporting.
 At present, there are five types of status reporting, each associated
-with a bit in \verb@debuglevel@.
+with a bit in \verb@LALDebugLevel@.
 
 \paragraph{Error messages} tell the operator that a computation has
 terminated abnormally, and has failed to produce an acceptable result.
@@ -146,7 +146,7 @@ is allocated or freed from the memory heap.
 
 \paragraph{}The module \verb@LALError.c@ defines functions for
 printing each of these types of status message.  Each type of message
-is turned on by setting the corrsponding bit in \verb@debuglevel@ to
+is turned on by setting the corrsponding bit in \verb@LALDebugLevel@ to
 1, and is suppressed by setting the bit to 0.  This header file
 \verb@#define@s flags with numerical values designed to switch on the
 appropriate bits.  Combinations of bits can be switched on by
@@ -179,13 +179,13 @@ messages \\
 
 Here $N$ is the number of bits in the statndard C type \verb@int@ on
 the particular system.  The $N^\mathrm{th}$, or most significant, bit
-of \verb@debuglevel@ has a special meaning, in that it is not
+of \verb@LALDebugLevel@ has a special meaning, in that it is not
 associated with any type of status message.  However, certain pieces
 of debugging or error-tracking code --- such as the memory leak
 detection code in \verb@LALMalloc.c@ --- do not write status messages
-and are not associated with a \verb@debuglevel@ bit; instead, these
+and are not associated with a \verb@LALDebugLevel@ bit; instead, these
 pieces of code are turned on for \emph{any} nonzero value of
-\verb@debuglevel@.  Switching on only the $N^\mathrm{th}$ bit with
+\verb@LALDebugLevel@.  Switching on only the $N^\mathrm{th}$ bit with
 \verb@LALMEMDBG@ activates this code without turning on any other
 error reporting.
 
@@ -202,10 +202,10 @@ treated as a primer on LAL coding conventions.
 \subsubsection{LAL function calls}
 
 All functions should have return type void.  The first argument of any
-function should be a pointer to a structure of type \verb@Status@.
+function should be a pointer to a structure of type \verb@LALStatus@.
 Thus:
 \begin{verbatim} 
-void MyFunction( Status *stat, ... )
+void MyFunction( LALStatus *stat, ... )
 \end{verbatim}
 Since the function has no return code, it must report all errors or
 failure through the status structure.  A function that is passed a
@@ -257,7 +257,7 @@ This takes the place of any return statements.  If
 \verb@stat->statusCode@ is non-zero, the macro calls \verb@LALError()@
 (see \verb@LALError.c@) to log \verb@stat->statusDescription@ and
 other information, depending on implementation and the value of
-\verb@debuglevel@.  Typically \verb@RETURN()@ is used only for
+\verb@LALDebugLevel@.  Typically \verb@RETURN()@ is used only for
 successful completion, with other macros \verb@ABORT()@,
 \verb@ASSERT()@, \verb@CHECKSTATUSPTR()@, and \verb@TRY()@ being used
 to report failure.  However, it is possible for the programmer to
@@ -279,7 +279,7 @@ where the error code \verb@MYHEADERH_EMYERR@ and the error message
 standard LAL naming convention for error messages prevents namespace
 conflicts between different header files.  Like \verb@RETURN()@,
 \verb@ABORT()@ correctly handles any status logging required by the
-implementation and the \verb@debuglevel@.  Note that \verb@ABORT()@
+implementation and the \verb@LALDebugLevel@.  Note that \verb@ABORT()@
 does \emph{not} raise a \verb@SIGABRT@ signal, but instead returns
 control to the calling routine.
 
@@ -411,14 +411,14 @@ The module \verb@LALError.c@ defines the functions \verb@LALError()@,
 \verb@LALWarning()@, \verb@LALInfo()@, and \verb@LALTrace()@ to issue
 various types of status message.  This is the preferred means of
 printing status messages, since each type of message can be activated
-or suppressed by setting \verb@debuglevel@ appropriately.  In fact,
+or suppressed by setting \verb@LALDebugLevel@ appropriately.  In fact,
 \verb@LALError()@ and \verb@LALTrace()@ are called automatically by
 the status macros whenever they are required, so most LAL modules will
 explicitly invoke only the \verb@LALWarning()@ and \verb@LALInfo()@
 functions.
 
 \verb@LALStatusMacros.h@ provides a macro, \verb@REPORTSTATUS()@,
-which is used to report the current state of the \verb@Status@ list.
+which is used to report the current state of the \verb@LALStatus@ list.
 It takes a status pointer as its argument:
 \begin{verbatim}
 REPORTSTATUS( stat );
@@ -427,41 +427,41 @@ This macro iteratively prints the contents of \verb@stat@ and all
 subsequent structures in the list to the error log.
 
 The action of \verb@REPORTSTATUS()@ is not suppressed by any value of
-\verb@debuglevel@.  Therefore, as a rule, it should only be called by
+\verb@LALDebugLevel@.  Therefore, as a rule, it should only be called by
 test programs, not by LAL routines intended for use in production
 code.
 
-\subsubsection{Setting the initial \texttt{Status} structure and
-global \texttt{debuglevel}}
+\subsubsection{Setting the initial \texttt{LALStatus} structure and
+global \texttt{LALDebugLevel}}
 
 As mentioned above, any module including \verb@LALStatusMacros.h@
-includes the global variable \verb@debuglevel@ as an
+includes the global variable \verb@LALDebugLevel@ as an
 \verb@extern int@.  At least one module in the final executable
-program must have a global \emph{declaration} of \verb@int debuglevel@
-(not \verb@extern int@), and assign \verb@debuglevel@ a value.  In
-most cases \verb@debuglevel@ will be declared in the module containing
+program must have a global \emph{declaration} of \verb@int LALDebugLevel@
+(not \verb@extern int@), and assign \verb@LALDebugLevel@ a value.  In
+most cases \verb@LALDebugLevel@ will be declared in the module containing
 the \verb@main()@ function, and will be assigned a value on
 declaration or from command-line arguments to \verb@main()@.
 Alternatively, if the LAL functions are to be embedded in a non-LAL
-program, \verb@debuglevel@ can be declared and set in the topmost
+program, \verb@LALDebugLevel@ can be declared and set in the topmost
 module that calls LAL functions.
 
-A \verb@Status@ structure should also be declared as a local variable
+A \verb@LALStatus@ structure should also be declared as a local variable
 in the \verb@main()@ function of a LAL program, or in the topmost
 function calling LAL functions withing a non-LAL program, to pass in
 its LAL function calls.  The structure must be empty (all fields set
-to zero) before being passed into a function.  The \verb@Status@
+to zero) before being passed into a function.  The \verb@LALStatus@
 structure need only be declared and initialized once, no matter how
 many LAL functions are called.
 
 Thus a typical LAL program might look something like the following:
 
 \begin{verbatim}
-int debuglevel = 1;
+int LALDebugLevel = 1;
 
 int main( int argc, char **argv )
 {
-  static Status stat;
+  static LALStatus stat;
   MyFunction( &stat );
   REPORTSTATUS( &stat );
   return stat.statusCode;
@@ -499,12 +499,12 @@ header.  The two flags are named \verb@NDEBUG@ and \verb@NOLALMACROS@.
 Setting the \verb@NDEBUG@ flag turns off debugging and error-reporting
 code, in order to get condensed production-line programs.  As far as
 error reporting is concerned, setting the \verb@NDEBUG@ flag at
-compile time is similar to setting \verb@debuglevel@ equal to zero at
+compile time is similar to setting \verb@LALDebugLevel@ equal to zero at
 runtime, in that it suppresses all status messages and memory leak
 detection.  However, the \verb@NDEBUG@ flag accoplishes this by
 telling the compiler preprocessor to remove the relevant code from the
 object file, thus eliminating frequent and unnecessary tests on
-\verb@debuglevel@.
+\verb@LALDebugLevel@.
 
 Compiling with the \verb@NDEBUG@ flag set also removes all
 \verb@ASSERT()@ macros from the object code, in keeping with the
@@ -604,7 +604,7 @@ The following sections give a sample program program
 program itself is trivial to the point of silliness: it takes two
 arguments from the command line and computes their ratio.  (Optionally
 it can take a third command line argument to set the
-\verb@debuglevel@.)  It is intended simply to illustrate how to use
+\verb@LALDebugLevel@.)  It is intended simply to illustrate how to use
 the LAL status structure and macros in an actual, complete piece of
 code.
 
@@ -655,7 +655,7 @@ extern "C" {
 
 NRCSID (LALSTATUSMACROSH, "$Id$");
 
-extern int debuglevel;
+extern int LALDebugLevel;
 
 #ifndef NOLALMACROS
 
@@ -664,7 +664,7 @@ extern int debuglevel;
   {                                                                           \
     INT4 level = (statusptr)->level ;                                         \
     INT4 statp = (statusptr)->statusPtr ? 1 : 0 ;                             \
-    memset( (statusptr), 0, sizeof( Status ) ); /* possible memory leak */    \
+    memset( (statusptr), 0, sizeof( LALStatus ) ); /* possible memory leak */    \
     (statusptr)->level    = level > 0 ? level : 1 ;                           \
     (statusptr)->Id       = (id);                                             \
     (statusptr)->function = (funcname);                                       \
@@ -694,7 +694,7 @@ extern int debuglevel;
 #define ATTATCHSTATUSPTR(statusptr)                                           \
   if ( !(statusptr)->statusPtr )                                              \
   {                                                                           \
-    (statusptr)->statusPtr = (Status *) LALCalloc( 1, sizeof( Status ) );     \
+    (statusptr)->statusPtr = (LALStatus *) LALCalloc( 1, sizeof( LALStatus ) );     \
     if ( !(statusptr)->statusPtr )                                            \
     {                                                                         \
       ABORT( statusptr, -4, "ATTATCHSTATUSPTR: memory allocation error" );    \
@@ -765,7 +765,7 @@ extern int debuglevel;
 #define FREESTATUSPTR( statusptr )                                            \
   do                                                                          \
   {                                                                           \
-    Status *next = (statusptr)->statusPtr->statusPtr;                         \
+    LALStatus *next = (statusptr)->statusPtr->statusPtr;                         \
     LALFree( (statusptr)->statusPtr );                                        \
     (statusptr)->statusPtr = next;                                            \
   }                                                                           \
@@ -782,7 +782,7 @@ extern int debuglevel;
 #define REPORTSTATUS( statusptr )                                             \
   do                                                                          \
   {                                                                           \
-    Status *ptr;                                                              \
+    LALStatus *ptr;                                                              \
     for ( ptr = (statusptr); ptr; ptr = ptr->statusPtr )                      \
     {                                                                         \
       LALPrintError( "\nLevel %i: %s\n", ptr->level, ptr->Id );               \

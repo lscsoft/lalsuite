@@ -40,7 +40,7 @@
 
 NRCSID (TAPPRPNTDOMFREQPHASEC, "$Id$");
 
-void TappRpnTdomFreqPhase0PN (Status *status,
+void LALTappRpnTdomFreqPhase0PN (LALStatus *status,
                               REAL8 *phase, 
                               InspiralPhasesInput *params) 
 {
@@ -61,7 +61,7 @@ void TappRpnTdomFreqPhase0PN (Status *status,
 
 }
 
-void TappRpnTdomFreqPhase1PN (Status *status,
+void LALTappRpnTdomFreqPhase1PN (LALStatus *status,
                               REAL8 *phase, 
                               InspiralPhasesInput *params) 
 {
@@ -81,7 +81,7 @@ void TappRpnTdomFreqPhase1PN (Status *status,
   RETURN(status);
 }
 
-void TappRpnTdomFreqPhase2PN (Status *status,
+void LALTappRpnTdomFreqPhase2PN (LALStatus *status,
                               REAL8 *phase, 
                               InspiralPhasesInput *params) 
 {
@@ -102,7 +102,7 @@ void TappRpnTdomFreqPhase2PN (Status *status,
   RETURN(status);
 }
 
-void TappRpnTdomFreqPhase3PN (Status *status,
+void LALTappRpnTdomFreqPhase3PN (LALStatus *status,
                               REAL8 *phase, 
                               InspiralPhasesInput *params) 
 {
@@ -126,7 +126,7 @@ void TappRpnTdomFreqPhase3PN (Status *status,
 
 }
 
-void TappRpnTdomFreqPhase4PN (Status *status,
+void LALTappRpnTdomFreqPhase4PN (LALStatus *status,
                               REAL8 *phase, 
                               InspiralPhasesInput *params) 
 {

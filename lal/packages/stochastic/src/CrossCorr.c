@@ -12,7 +12,7 @@
  * CrossCorr.c
  * 
  * SYNOPSIS 
- * void CrossCorr (Status *status, REAL4 *out, CCIn *in);
+ * void LALCrossCorr (LALStatus *status, REAL4 *out, CCIn *in);
  *
  * typedef struct tagCCIn {
  *      REAL4TimeSeries	*g1;
@@ -29,14 +29,14 @@
  * 
  * CALLS
  *  InitStatus()
- *  SCreateVector()
- *  SDestroyVector()
- *  CCreateVector()
- *  CDestroyVector()
- *  MeasureFwdRealFFTPlan()
+ *  LALSCreateVector()
+ *  LALSDestroyVector()
+ *  LALCCreateVector()
+ *  LALCDestroyVector()
+ *  LALMeasureFwdRealFFTPlan()
  *  EstimateFrdRealFFTPlan()
- *  FwdRealFFT()
- *  DestroyRealFFTPlan()
+ *  LALFwdRealFFT()
+ *  LALDestroyRealFFTPlan()
  * 
  * NOTES
  *
@@ -52,10 +52,10 @@
 
 NRCSID (CROSSCORRC, "$Id$");
 
-extern INT4 debuglevel;
+extern INT4 LALDebugLevel;
 
 void 
-CrossCorr ( Status *status,
+LALCrossCorr ( LALStatus *status,
             REAL4  *out,
             CCIn   *in     )
 {
@@ -68,7 +68,7 @@ CrossCorr ( Status *status,
 	COMPLEX8Vector	*g2BarTilde=NULL;
 
 	/* initialize status structure */
-	INITSTATUS(status, "CrossCorr", CROSSCORRC);
+	INITSTATUS(status, "LALCrossCorr", CROSSCORRC);
 	ATTATCHSTATUSPTR (status);
 
 	/* check address of input structure */
@@ -91,10 +91,10 @@ CrossCorr ( Status *status,
 	ASSERT(in->QmaxTilde->length == N, status, CROSSCORR_ESIZE2, CROSSCORR_MSGESIZE2);
 
         /* allocate padded vectors and FFT vectors */
-	SCreateVector(status->statusPtr,&g1Bar,2*N-1);
-	SCreateVector(status->statusPtr,&g2Bar,2*N-1);
-	CCreateVector(status->statusPtr,&g1BarTilde,N);
-	CCreateVector(status->statusPtr,&g2BarTilde,N);
+	LALSCreateVector(status->statusPtr,&g1Bar,2*N-1);
+	LALSCreateVector(status->statusPtr,&g2Bar,2*N-1);
+	LALCCreateVector(status->statusPtr,&g1BarTilde,N);
+	LALCCreateVector(status->statusPtr,&g2BarTilde,N);
 
 	/* fill */
         for (i=0; i<N; i++) {
@@ -109,16 +109,16 @@ CrossCorr ( Status *status,
 
 	/* FFT plans */
 	if (in->plan != 1) {
-		MeasureFwdRealFFTPlan(status->statusPtr,&g1Plan,2*N-1);
-		MeasureFwdRealFFTPlan(status->statusPtr,&g2Plan,2*N-1);
+		LALMeasureFwdRealFFTPlan(status->statusPtr,&g1Plan,2*N-1);
+		LALMeasureFwdRealFFTPlan(status->statusPtr,&g2Plan,2*N-1);
 	} else {
-                EstimateFwdRealFFTPlan(status->statusPtr,&g1Plan,2*N-1);
-                EstimateFwdRealFFTPlan(status->statusPtr,&g2Plan,2*N-1);
+                LALEstimateFwdRealFFTPlan(status->statusPtr,&g1Plan,2*N-1);
+                LALEstimateFwdRealFFTPlan(status->statusPtr,&g2Plan,2*N-1);
 	}
 
 	/* FFT */
-	FwdRealFFT(status->statusPtr,g1BarTilde,g1Bar,g1Plan);
-	FwdRealFFT(status->statusPtr,g2BarTilde,g2Bar,g2Plan);
+	LALFwdRealFFT(status->statusPtr,g1BarTilde,g1Bar,g1Plan);
+	LALFwdRealFFT(status->statusPtr,g2BarTilde,g2Bar,g2Plan);
 
 	/* initialize output with zero index part */
 	*out = in->QmaxTilde->data[0] * 0.5 * ( g1BarTilde->data[0].re * g2BarTilde->data[0].re
@@ -134,16 +134,16 @@ CrossCorr ( Status *status,
         *out /= (REAL4) N-0.5;
 
 	/* free the memory */
-	SDestroyVector(status->statusPtr,&g1Bar);
-	SDestroyVector(status->statusPtr,&g2Bar);
-	CDestroyVector(status->statusPtr,&g1BarTilde);
-	CDestroyVector(status->statusPtr,&g2BarTilde);
-	DestroyRealFFTPlan(status->statusPtr,&g1Plan);
-	DestroyRealFFTPlan(status->statusPtr,&g2Plan);
+	LALSDestroyVector(status->statusPtr,&g1Bar);
+	LALSDestroyVector(status->statusPtr,&g2Bar);
+	LALCDestroyVector(status->statusPtr,&g1BarTilde);
+	LALCDestroyVector(status->statusPtr,&g2BarTilde);
+	LALDestroyRealFFTPlan(status->statusPtr,&g1Plan);
+	LALDestroyRealFFTPlan(status->statusPtr,&g2Plan);
 	
 
 	/* normal exit */
 	DETATCHSTATUSPTR (status);
 	RETURN (status);
 
-} /* CrossCorr() */
+} /* LALCrossCorr() */

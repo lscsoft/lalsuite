@@ -38,7 +38,7 @@ NRCSID (MAIN, "$Id$");
  */
 
 
-void f1 (Status *s, REAL4 *y, REAL4 x, void *p)
+void f1 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   REAL4  x2 = x*x;
   REAL4  x4 = x2*x2;
@@ -50,7 +50,7 @@ void f1 (Status *s, REAL4 *y, REAL4 x, void *p)
   RETURN (s);
 }
 
-void ff1 (Status *s, REAL8 *y, REAL8 x, void *p)
+void ff1 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
 {
   REAL8  x2 = x*x;
   REAL8  x4 = x2*x2;
@@ -62,7 +62,7 @@ void ff1 (Status *s, REAL8 *y, REAL8 x, void *p)
   RETURN (s);
 }
 
-void f2 (Status *s, REAL4 *y, REAL4 x, void *p)
+void f2 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n;
   INITSTATUS (s, "f2", MAIN);
@@ -72,7 +72,7 @@ void f2 (Status *s, REAL4 *y, REAL4 x, void *p)
   RETURN (s);
 }
 
-void ff2 (Status *s, REAL8 *y, REAL8 x, void *p)
+void ff2 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
 {
   INT4 *n;
   INITSTATUS (s, "ff2", MAIN);
@@ -82,7 +82,7 @@ void ff2 (Status *s, REAL8 *y, REAL8 x, void *p)
   RETURN (s);
 }
 
-void f3 (Status *s, REAL4 *y, REAL4 x, void *p)
+void f3 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n;
   INITSTATUS (s, "f3", MAIN);
@@ -92,7 +92,7 @@ void f3 (Status *s, REAL4 *y, REAL4 x, void *p)
   RETURN (s);
 }
 
-void ff3 (Status *s, REAL8 *y, REAL8 x, void *p)
+void ff3 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
 {
   INT4 *n;
   INITSTATUS (s, "ff3", MAIN);
@@ -102,7 +102,7 @@ void ff3 (Status *s, REAL8 *y, REAL8 x, void *p)
   RETURN (s);
 }
 
-void f4 (Status *s, REAL4 *y, REAL4 x, void *p)
+void f4 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n;
   INITSTATUS (s, "f4", MAIN);
@@ -112,7 +112,7 @@ void f4 (Status *s, REAL4 *y, REAL4 x, void *p)
   RETURN (s);
 }
 
-void ff4 (Status *s, REAL8 *y, REAL8 x, void *p)
+void ff4 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
 {
   INT4 *n;
   INITSTATUS (s, "ff4", MAIN);
@@ -122,7 +122,7 @@ void ff4 (Status *s, REAL8 *y, REAL8 x, void *p)
   RETURN (s);
 }
 
-void f5 (Status *s, REAL4 *y, REAL4 x, void *p)
+void f5 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n;
   INITSTATUS (s, "f5", MAIN);
@@ -132,7 +132,7 @@ void f5 (Status *s, REAL4 *y, REAL4 x, void *p)
   RETURN (s);
 }
 
-void ff5 (Status *s, REAL8 *y, REAL8 x, void *p)
+void ff5 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
 {
   INT4 *n;
   INITSTATUS (s, "ff5", MAIN);
@@ -142,7 +142,7 @@ void ff5 (Status *s, REAL8 *y, REAL8 x, void *p)
   RETURN (s);
 }
 
-void g (Status *s, REAL4 *z, REAL4 x, void *p)
+void g (LALStatus *s, REAL4 *z, REAL4 x, void *p)
 {
   REAL4 y;
   INITSTATUS (s, "g", MAIN);
@@ -152,7 +152,7 @@ void g (Status *s, REAL4 *z, REAL4 x, void *p)
   RETURN (s);
 }
 
-void gg (Status *s, REAL8 *z, REAL8 x, void *p)
+void gg (LALStatus *s, REAL8 *z, REAL8 x, void *p)
 {
   REAL8 y;
   INITSTATUS (s, "gg", MAIN);
@@ -162,7 +162,7 @@ void gg (Status *s, REAL8 *z, REAL8 x, void *p)
   RETURN (s);
 }
 
-void h (Status *s, REAL4 *z, REAL4 y, void *p)
+void h (LALStatus *s, REAL4 *z, REAL4 y, void *p)
 {
   SIntegrateIn intinp;
   INITSTATUS (s, "h", MAIN);
@@ -172,13 +172,13 @@ void h (Status *s, REAL4 *z, REAL4 y, void *p)
   intinp.xmin     = 0;
   intinp.xmax     = sqrt(y);
   intinp.type     = ClosedInterval;
-  SRombergIntegrate (s->statusPtr, z, &intinp, &y);
+  LALSRombergIntegrate (s->statusPtr, z, &intinp, &y);
   CHECKSTATUSPTR (s);
   DETATCHSTATUSPTR (s);
   RETURN (s);
 }
 
-void hh (Status *s, REAL8 *z, REAL8 y, void *p)
+void hh (LALStatus *s, REAL8 *z, REAL8 y, void *p)
 {
   DIntegrateIn intinp;
   INITSTATUS (s, "hh", MAIN);
@@ -188,7 +188,7 @@ void hh (Status *s, REAL8 *z, REAL8 y, void *p)
   intinp.xmin     = 0;
   intinp.xmax     = sqrt(y);
   intinp.type     = ClosedInterval;
-  DRombergIntegrate (s->statusPtr, z, &intinp, &y);
+  LALDRombergIntegrate (s->statusPtr, z, &intinp, &y);
   CHECKSTATUSPTR (s);
   DETATCHSTATUSPTR (s);
   RETURN (s);
@@ -201,13 +201,13 @@ void hh (Status *s, REAL8 *z, REAL8 y, void *p)
  * not converge.  Make this routine fast... no status handling!
  *
  */
-void bad (Status *s, REAL4 *y, REAL4 x, void *p)
+void bad (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n = (INT4 *)p;
   *y = *n = 1664525L*(*n) + 1013904223L;
 }
 
-void bbad (Status *s, REAL8 *y, REAL8 x, void *p)
+void bbad (LALStatus *s, REAL8 *y, REAL8 x, void *p)
 {
   *y = (REAL8)(++(*(INT4 *)p));
 }
@@ -217,23 +217,23 @@ void bbad (Status *s, REAL8 *y, REAL8 x, void *p)
 extern char *optarg;
 extern int   optind;
 
-int   debuglevel = 0;
+int   LALDebugLevel = 0;
 int   verbose    = 0;
 
 static void Usage (const char *program, int exitflag);
 
 static void ParseOptions (int argc, char *argv[]);
 
-static void TestStatus (Status *status, const char *expectCodes, int exitCode);
+static void TestStatus (LALStatus *status, const char *expectCodes, int exitCode);
 
-static void ClearStatus (Status *status);
+static void ClearStatus (LALStatus *status);
 
 
 int main (int argc, char *argv[])
 {
   const REAL4   sepsilon = 1e-6;
   const REAL8   depsilon = 1e-13; /* not as good as expected (1e-15) */
-  static Status status;
+  static LALStatus status;
   SIntegrateIn  sintinp;
   DIntegrateIn  dintinp;
   REAL4         sresult;
@@ -265,7 +265,7 @@ int main (int argc, char *argv[])
 
   count  = 0;
   expect = 8.153364119811650205L;
-  SRombergIntegrate (&status, &sresult, &sintinp, &count);
+  LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
   TestStatus (&status, CODES(0), 1);
   printf ("number of function calls: %d\n", count);
   printf ("result: %.15f\n", sresult);
@@ -276,7 +276,7 @@ int main (int argc, char *argv[])
     return 1;
   }
   count = 0;
-  DRombergIntegrate (&status, &dresult, &dintinp, &count);
+  LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(0), 1);
   printf ("number of function calls: %d\n", count);
   printf ("result: %.15f\n", dresult);
@@ -308,7 +308,7 @@ int main (int argc, char *argv[])
 
   count  = 0;
   expect = 1.0L/200.0L;
-  SRombergIntegrate (&status, &sresult, &sintinp, &count);
+  LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
   TestStatus (&status, CODES(0), 1);
   printf ("number of function calls: %d\n", count);
   printf ("result: %.15f\n", sresult);
@@ -320,7 +320,7 @@ int main (int argc, char *argv[])
   }
 
   count = 0;
-  DRombergIntegrate (&status, &dresult, &dintinp, &count);
+  LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(0), 1);
   printf ("number of function calls: %d\n", count);
   printf ("result: %.15f\n", dresult);
@@ -352,7 +352,7 @@ int main (int argc, char *argv[])
 
   count  = 0;
   expect = 0.0570261239928920483L;
-  SRombergIntegrate (&status, &sresult, &sintinp, &count);
+  LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
   TestStatus (&status, CODES(0), 1);
   printf ("number of function calls: %d\n", count);
   printf ("result: %.15f\n", sresult);
@@ -364,7 +364,7 @@ int main (int argc, char *argv[])
   }
 
   count = 0;
-  DRombergIntegrate (&status, &dresult, &dintinp, &count);
+  LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(0), 1);
   printf ("number of function calls: %d\n", count);
   printf ("result: %.15f\n", dresult);
@@ -396,7 +396,7 @@ int main (int argc, char *argv[])
 
   count  = 0;
   expect = 2.0L;
-  SRombergIntegrate (&status, &sresult, &sintinp, &count);
+  LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
   TestStatus (&status, CODES(0), 1);
   printf ("number of function calls: %d\n", count);
   printf ("result: %.15f\n", sresult);
@@ -408,7 +408,7 @@ int main (int argc, char *argv[])
   }
 
   count  = 0;
-  DRombergIntegrate (&status, &dresult, &dintinp, &count);
+  LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(0), 1);
   printf ("number of function calls: %d\n", count);
   printf ("result: %.15f\n", dresult);
@@ -440,7 +440,7 @@ int main (int argc, char *argv[])
 
   count  = 0;
   expect = 6.5L;
-  SRombergIntegrate (&status, &sresult, &sintinp, &count);
+  LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
   TestStatus (&status, CODES(0), 1);
   printf ("number of function calls: %d\n", count);
   printf ("result: %.15f\n", sresult);
@@ -453,7 +453,7 @@ int main (int argc, char *argv[])
   }
 
   count  = 0;
-  DRombergIntegrate (&status, &dresult, &dintinp, &count);
+  LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(0), 1);
   printf ("number of function calls: %d\n", count);
   printf ("result: %.15f\n", dresult);
@@ -484,7 +484,7 @@ int main (int argc, char *argv[])
   dintinp.type     = OpenInterval;
 
   expect = 0.88274109326014810823L;
-  SRombergIntegrate (&status, &sresult, &sintinp, NULL);
+  LALSRombergIntegrate (&status, &sresult, &sintinp, NULL);
   TestStatus (&status, CODES(0), 1);
   printf ("result: %.15f\n", sresult);
   printf ("expect: %.15Lf\n", expect);
@@ -493,7 +493,7 @@ int main (int argc, char *argv[])
   /*
    * don't do 2d double-precision: it takes too long!
    *
-   * DRombergIntegrate (&status, &dresult, &dintinp, NULL);
+   * LALDRombergIntegrate (&status, &dresult, &dintinp, NULL);
    * TestStatus (&status, CODES(0), 1);
    * printf ("result: %.15f\n", dresult);
    * printf ("expect: %.15Lf\n", expect);
@@ -515,16 +515,16 @@ int main (int argc, char *argv[])
   printf ("\nChecking error conditions:\n");
 
   printf ("\nNull pointer:\r");
-  SRombergIntegrate (&status, NULL, &sintinp, &count);
+  LALSRombergIntegrate (&status, NULL, &sintinp, &count);
   TestStatus (&status, CODES(INTEGRATE_ENULL), 1);
-  DRombergIntegrate (&status, NULL, &dintinp, &count);
+  LALDRombergIntegrate (&status, NULL, &dintinp, &count);
   TestStatus (&status, CODES(INTEGRATE_ENULL), 1);
   printf ("Null pointer check passed.\n");
 
   printf ("\nNull pointer:\r");
-  SRombergIntegrate (&status, &sresult, NULL, &count);
+  LALSRombergIntegrate (&status, &sresult, NULL, &count);
   TestStatus (&status, CODES(INTEGRATE_ENULL), 1);
-  DRombergIntegrate (&status, &dresult, NULL, &count);
+  LALDRombergIntegrate (&status, &dresult, NULL, &count);
   TestStatus (&status, CODES(INTEGRATE_ENULL), 1);
   printf ("Null pointer check passed.\n");
 
@@ -537,9 +537,9 @@ int main (int argc, char *argv[])
   dintinp.xmin     = 0;
   dintinp.xmax     = 2;
   dintinp.type     = ClosedInterval;
-  SRombergIntegrate (&status, &sresult, &sintinp, &count);
+  LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
   TestStatus (&status, CODES(INTEGRATE_ENULL), 1);
-  DRombergIntegrate (&status, &dresult, &dintinp, &count);
+  LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(INTEGRATE_ENULL), 1);
   printf ("Null pointer check passed.\n");
 
@@ -552,9 +552,9 @@ int main (int argc, char *argv[])
   dintinp.xmin     = 0;
   dintinp.xmax     = 0;
   dintinp.type     = ClosedInterval;
-  SRombergIntegrate (&status, &sresult, &sintinp, &count);
+  LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
   TestStatus (&status, CODES(INTEGRATE_EIDOM), 1);
-  DRombergIntegrate (&status, &dresult, &dintinp, &count);
+  LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(INTEGRATE_EIDOM), 1);
   printf ("Invalid domain check passed.\n");
 
@@ -567,9 +567,9 @@ int main (int argc, char *argv[])
   dintinp.xmin     = 0;
   dintinp.xmax     = 2;
   dintinp.type     = 999;
-  SRombergIntegrate (&status, &sresult, &sintinp, &count);
+  LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
   TestStatus (&status, CODES(INTEGRATE_ETYPE), 1);
-  DRombergIntegrate (&status, &dresult, &dintinp, &count);
+  LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(INTEGRATE_ETYPE), 1);
   printf ("Unknown integral type check passed.\n");
 
@@ -583,10 +583,10 @@ int main (int argc, char *argv[])
   dintinp.xmax     = 2;
   dintinp.type     = ClosedInterval;
   count            = 13;   /* count is now used as a random number seed */
-  SRombergIntegrate (&status, &sresult, &sintinp, &count);
+  LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
   TestStatus (&status, CODES(INTEGRATE_EMXIT), 1);
   count = 1;
-  DRombergIntegrate (&status, &dresult, &dintinp, &count);
+  LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(INTEGRATE_EMXIT), 1);
   printf ("Maximum iterations exceeded check passed.\n");
 
@@ -599,10 +599,10 @@ int main (int argc, char *argv[])
   dintinp.xmin     = 0;
   dintinp.xmax     = 2;
   dintinp.type     = ClosedInterval;
-  SRombergIntegrate (&status, &sresult, &sintinp, NULL);
+  LALSRombergIntegrate (&status, &sresult, &sintinp, NULL);
   TestStatus (&status, CODES(-1), 1);
   ClearStatus (&status);
-  DRombergIntegrate (&status, &dresult, &dintinp, NULL);
+  LALDRombergIntegrate (&status, &dresult, &dintinp, NULL);
   TestStatus (&status, CODES(-1), 1);
   printf ("Recursive error check passed.\n");
   ClearStatus (&status);
@@ -620,7 +620,7 @@ int main (int argc, char *argv[])
  *
  */
 static void
-TestStatus (Status *status, const char *ignored, int exitcode)
+TestStatus (LALStatus *status, const char *ignored, int exitcode)
 {
   char  str[64];
   char *tok;
@@ -666,7 +666,7 @@ TestStatus (Status *status, const char *ignored, int exitcode)
  *
  */
 void
-ClearStatus (Status *status)
+ClearStatus (LALStatus *status)
 {
   if (status->statusPtr)
   {
@@ -690,7 +690,7 @@ Usage (const char *program, int exitcode)
   fprintf (stderr, "  -h         print this message\n");
   fprintf (stderr, "  -q         quiet: run silently\n");
   fprintf (stderr, "  -v         verbose: print extra information\n");
-  fprintf (stderr, "  -d level   set debuglevel to level\n");
+  fprintf (stderr, "  -d level   set LALDebugLevel to level\n");
   exit (exitcode);
 }
 
@@ -717,7 +717,7 @@ ParseOptions (int argc, char *argv[])
     switch (c)
     {
       case 'd': /* set debug level */
-        debuglevel = atoi (optarg);
+        LALDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* verbose */

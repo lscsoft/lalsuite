@@ -12,8 +12,8 @@ NRCSID(LALTEMPLATETESTC,"$Id$");
 
 /* Define local constants and macros */
 
-/* Declare and set global debuglevel */
-int debuglevel = 0;
+/* Declare and set global LALDebugLevel */
+int LALDebugLevel = 0;
 
 /* Declare local (static) functions (definitions can go here or at the
    end of the file) */
@@ -22,7 +22,7 @@ int debuglevel = 0;
 int main( int argc, char **argv )
 {
   /* Variable declarations */
-  static Status stat;
+  static LALStatus stat;
 
   /* Code */
   LALTemplate( &stat );

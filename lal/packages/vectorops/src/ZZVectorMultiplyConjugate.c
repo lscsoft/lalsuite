@@ -34,8 +34,8 @@
 NRCSID(ZZVECTORMULTIPLYCONJUGATEC,"$Id$");
 
 void
-ZZVectorMultiplyConjugate (
-    Status                *status,
+LALZZVectorMultiplyConjugate (
+    LALStatus                *status,
     COMPLEX16Vector       *out,
     const COMPLEX16Vector *in1,
     const COMPLEX16Vector *in2
@@ -46,7 +46,7 @@ ZZVectorMultiplyConjugate (
   COMPLEX16 *c;
   INT4       n;
 
-  INITSTATUS (status, "ZZVectorMultiplyConjugate", ZZVECTORMULTIPLYCONJUGATEC);
+  INITSTATUS (status, "LALZZVectorMultiplyConjugate", ZZVECTORMULTIPLYCONJUGATEC);
 
   ASSERT (out, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);
   ASSERT (in1, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);

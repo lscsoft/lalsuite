@@ -19,7 +19,7 @@ NRCSID (FINDCHIRPSLAVEC, "$Id$");
 #include "FindChirpGlobal.h"
 
 void
-Slave (Status *status, MPIId id)
+Slave (LALStatus *status, MPIId id)
 {
   ExchParams        exchDataSegments;
   ExchParams        exchInspiralBankIn;
@@ -110,22 +110,22 @@ Slave (Status *status, MPIId id)
     segment[i].resp->data        = NULL;
     segment[i].resp->sampleUnits = NULL;
 
-    I2CreateVector (status->statusPtr, &segment[i].data->data, numPoints);
+    LALI2CreateVector (status->statusPtr, &segment[i].data->data, numPoints);
     CHECKSTATUSPTR (status);
 
-    CreateVector (status->statusPtr, &segment[i].spec->data, numPoints/2 + 1);
+    LALCreateVector (status->statusPtr, &segment[i].spec->data, numPoints/2 + 1);
     CHECKSTATUSPTR (status);
 
-    CCreateVector (status->statusPtr, &segment[i].resp->data, numPoints/2 + 1);
+    LALCCreateVector (status->statusPtr, &segment[i].resp->data, numPoints/2 + 1);
     CHECKSTATUSPTR (status);
     
-    CHARCreateVector (status->statusPtr, &segment[i].data->sampleUnits, 128);
+    LALCHARCreateVector (status->statusPtr, &segment[i].data->sampleUnits, 128);
     CHECKSTATUSPTR (status);
 
-    CHARCreateVector (status->statusPtr, &segment[i].spec->sampleUnits, 128);
+    LALCHARCreateVector (status->statusPtr, &segment[i].spec->sampleUnits, 128);
     CHECKSTATUSPTR (status);
 
-    CHARCreateVector (status->statusPtr, &segment[i].resp->sampleUnits, 128);
+    LALCHARCreateVector (status->statusPtr, &segment[i].resp->sampleUnits, 128);
     CHECKSTATUSPTR (status);
   }
 
@@ -151,7 +151,7 @@ Slave (Status *status, MPIId id)
    */
 
 
-  InitializeExchange (status->statusPtr, &thisExch,
+  LALInitializeExchange (status->statusPtr, &thisExch,
                       &exchInspiralBankIn, id.myId);
   CHECKSTATUSPTR (status);
 
@@ -164,9 +164,9 @@ Slave (Status *status, MPIId id)
   bankIn.detector = Caltech40m;
   bankIn.method   = Best;
 
-  ExchangeInspiralBankIn (status->statusPtr, &bankIn, thisExch);
+  LALExchangeInspiralBankIn (status->statusPtr, &bankIn, thisExch);
 
-  FinalizeExchange (status->statusPtr, &thisExch);
+  LALFinalizeExchange (status->statusPtr, &thisExch);
   CHECKSTATUSPTR (status);
 
 
@@ -177,7 +177,7 @@ Slave (Status *status, MPIId id)
    */
 
 
-  InitializeExchange (status->statusPtr, &thisExch,
+  LALInitializeExchange (status->statusPtr, &thisExch,
                       &exchInspiralTemplates, id.myId);
   CHECKSTATUSPTR (status);
 
@@ -185,7 +185,7 @@ Slave (Status *status, MPIId id)
 
   for (i = 0; i < maxNumTemplates; ++i)
   {
-    ExchangeInspiralTemplate (status->statusPtr, tmplt + i, thisExch);
+    LALExchangeInspiralTemplate (status->statusPtr, tmplt + i, thisExch);
     CHECKSTATUSPTR (status);
 
     printf ("Slave %d:   got template %d of %d\n", id.myId, i, maxNumTemplates);
@@ -201,7 +201,7 @@ Slave (Status *status, MPIId id)
     }
   }
 
-  FinalizeExchange (status->statusPtr, &thisExch);
+  LALFinalizeExchange (status->statusPtr, &thisExch);
   CHECKSTATUSPTR (status);
 
 
@@ -212,7 +212,7 @@ Slave (Status *status, MPIId id)
    */
 
 
-  InitializeExchange (status->statusPtr, &thisExch,
+  LALInitializeExchange (status->statusPtr, &thisExch,
                       &exchDataSegments, id.myId);
   CHECKSTATUSPTR (status);
 
@@ -221,13 +221,13 @@ Slave (Status *status, MPIId id)
 
   for (i = 0; i < numSegments; ++i)
   {
-    ExchangeDataSegment (status->statusPtr, segment + i, thisExch);
+    LALExchangeDataSegment (status->statusPtr, segment + i, thisExch);
     CHECKSTATUSPTR (status);
     printf ("Slave %d:   got segment %d of %d\n", id.myId, i, numSegments);
     fflush (stdout);
   }
 
-  FinalizeExchange (status->statusPtr, &thisExch);
+  LALFinalizeExchange (status->statusPtr, &thisExch);
   CHECKSTATUSPTR (status);
 
 
@@ -243,7 +243,7 @@ Slave (Status *status, MPIId id)
   printf ("Slave %d: sending %d events\n",
           id.myId, exchInspiralEvents.numObjects);
 
-  InitializeExchange (status->statusPtr, &thisExch,
+  LALInitializeExchange (status->statusPtr, &thisExch,
                       &exchInspiralEvents, id.myId);
   CHECKSTATUSPTR (status);
 
@@ -257,11 +257,11 @@ Slave (Status *status, MPIId id)
     event[i].snrsq               = 100;
     event[i].chisq               = 50;
     event[i].sigma               = 1;
-    ExchangeInspiralEvent (status->statusPtr, event + i, thisExch);
+    LALExchangeInspiralEvent (status->statusPtr, event + i, thisExch);
     CHECKSTATUSPTR (status);
   }
 
-  FinalizeExchange (status->statusPtr, &thisExch);
+  LALFinalizeExchange (status->statusPtr, &thisExch);
   CHECKSTATUSPTR (status);
 
 
@@ -275,10 +275,10 @@ Slave (Status *status, MPIId id)
   printf ("Slave %d: sending finished message\n", id.myId);
   fflush (stdout);
 
-  InitializeExchange (status->statusPtr, &thisExch, &exchFinished, id.myId);
+  LALInitializeExchange (status->statusPtr, &thisExch, &exchFinished, id.myId);
   CHECKSTATUSPTR (status);
 
-  FinalizeExchange (status->statusPtr, &thisExch);
+  LALFinalizeExchange (status->statusPtr, &thisExch);
   CHECKSTATUSPTR (status);
 
   printf ("Slave %d: shutting down\n", id.myId);
@@ -297,22 +297,22 @@ Slave (Status *status, MPIId id)
 
   for (i = 0; i < numSegments; ++i)
   {
-    CHARDestroyVector (status->statusPtr, &segment[i].data->sampleUnits);
+    LALCHARDestroyVector (status->statusPtr, &segment[i].data->sampleUnits);
     CHECKSTATUSPTR (status);
 
-    CHARDestroyVector (status->statusPtr, &segment[i].spec->sampleUnits);
+    LALCHARDestroyVector (status->statusPtr, &segment[i].spec->sampleUnits);
     CHECKSTATUSPTR (status);
 
-    CHARDestroyVector (status->statusPtr, &segment[i].resp->sampleUnits);
+    LALCHARDestroyVector (status->statusPtr, &segment[i].resp->sampleUnits);
     CHECKSTATUSPTR (status);
 
-    I2DestroyVector (status->statusPtr, &segment[i].data->data);
+    LALI2DestroyVector (status->statusPtr, &segment[i].data->data);
     CHECKSTATUSPTR (status);
 
-    DestroyVector (status->statusPtr, &segment[i].spec->data);
+    LALDestroyVector (status->statusPtr, &segment[i].spec->data);
     CHECKSTATUSPTR (status);
 
-    CDestroyVector (status->statusPtr, &segment[i].resp->data);
+    LALCDestroyVector (status->statusPtr, &segment[i].resp->data);
     CHECKSTATUSPTR (status);
     
     LALFree (segment[i].data);

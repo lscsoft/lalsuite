@@ -12,7 +12,7 @@
  * DestroyTimeFreqRep
  * 
  * SYNOPSIS 
- * void DestroyTimeFreqRep ( Status *,  TimeFreqRep **tfr );
+ * void LALDestroyTimeFreqRep ( LALStatus *,  TimeFreqRep **tfr );
  * 
  * DESCRIPTION 
  * Returns to system storage allocated by CreateTimeFreqRep
@@ -32,13 +32,13 @@
 
 NRCSID (DESTROYTIMEFREQREPC, "$Id$");
 
-void DestroyTimeFreqRep (Status *status, TimeFreqRep **tfr)
+void LALDestroyTimeFreqRep (LALStatus *status, TimeFreqRep **tfr)
 {
   /* 
    * Initialize status
    */
 
-  INITSTATUS (status, "DestroyTimeFreqRep", DESTROYTIMEFREQREPC);
+  INITSTATUS (status, "LALDestroyTimeFreqRep", DESTROYTIMEFREQREPC);
       
   /* Check tfr: report if NULL */
   ASSERT (tfr != NULL, status, DESTROYTFR_ENULL, DESTROYTFR_MSGENULL); 

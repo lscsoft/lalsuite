@@ -34,8 +34,8 @@
 NRCSID (CCVECTORDIVIDEC, "$Id$");
 
 void
-CCVectorDivide (
-    Status               *status,
+LALCCVectorDivide (
+    LALStatus               *status,
     COMPLEX8Vector       *out,
     const COMPLEX8Vector *in1,
     const COMPLEX8Vector *in2
@@ -46,7 +46,7 @@ CCVectorDivide (
   COMPLEX8 *c;
   INT4      n;
 
-  INITSTATUS (status, "CCVectorDivide", CCVECTORDIVIDEC);
+  INITSTATUS (status, "LALCCVectorDivide", CCVECTORDIVIDEC);
 
   ASSERT (out, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);
   ASSERT (in1, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);

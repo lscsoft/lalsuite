@@ -35,14 +35,14 @@
 
 NRCSID (MAIN, "$Id$");
 
-int debuglevel = 2;
+int LALDebugLevel = 2;
 
 int main()
 {
   const INT4 m = NumberWindowTypes;
   const INT4 n = 65536;
 
-  static Status status;
+  static LALStatus status;
 
   RealFFTPlan            *plan = NULL;
   REAL4Vector            *wss  = NULL;
@@ -63,17 +63,17 @@ int main()
   Pinp.length       = m;
   Pinp.vectorLength = n/2 + 1;
 
-  SCreateVector          (&status, &hvec, n);
-  SCreateVectorSequence  (&status, &hseq, &hinp);
-  SCreateVectorSequence  (&status, &Pseq, &Pinp);
-  EstimateFwdRealFFTPlan (&status, &plan, n);
+  LALSCreateVector          (&status, &hvec, n);
+  LALSCreateVectorSequence  (&status, &hseq, &hinp);
+  LALSCreateVectorSequence  (&status, &Pseq, &Pinp);
+  LALEstimateFwdRealFFTPlan (&status, &plan, n);
 
   /* initialize raw data vector */
   for (k = 0; k < hvec->length; ++k)
     hvec->data[k] = sin(0.001*k);
 
   /* create window sum-of-squares vector */
-  SCreateVector (&status, &wss, m);
+  LALSCreateVector (&status, &wss, m);
 
   for (j = 0; j < hseq->length; ++j)
   {
@@ -88,19 +88,19 @@ int main()
     winp.type   = (WindowType) j;
 
     /* create window */
-    SCreateVector (&status, &win, winp.length);
+    LALSCreateVector (&status, &win, winp.length);
     LALWindow (&status, win, &winp);
     wss->data[j] = winp.sumofsquares;
 
     /* apply window to data */
-    SSVectorMultiply (&status, &dum, hvec, win);
+    LALSSVectorMultiply (&status, &dum, hvec, win);
 
     /* destroy window */
-    SDestroyVector (&status, &win);
+    LALSDestroyVector (&status, &win);
   }
 
   /* compute power spectra */
-  RealSequencePowerSpectrum (&status, Pseq, hseq, plan);
+  LALRealSequencePowerSpectrum (&status, Pseq, hseq, plan);
 
   /* print power spectra omitting DC component */
   for (k = 1; k < Pseq->vectorLength; ++k)
@@ -115,10 +115,10 @@ int main()
   }
   fclose (fp);
 
-  SDestroyVector         (&status, &wss );
-  SDestroyVector         (&status, &hvec);
-  SDestroyVectorSequence (&status, &hseq);
-  SDestroyVectorSequence (&status, &Pseq);
-  DestroyRealFFTPlan     (&status, &plan);
+  LALSDestroyVector         (&status, &wss );
+  LALSDestroyVector         (&status, &hvec);
+  LALSDestroyVectorSequence (&status, &hseq);
+  LALSDestroyVectorSequence (&status, &Pseq);
+  LALDestroyRealFFTPlan     (&status, &plan);
   return 0;
 }

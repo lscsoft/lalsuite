@@ -12,7 +12,7 @@ ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
 ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`VTYPE',`format(`%sVector',TYPE)')
-define(`FUNC',`format(`%sCreateVector',TYPECODE)')
+define(`FUNC',`format(`LAL%sCreateVector',TYPECODE)')
 
 /* <lalVerbatim file="VectorFactoriesD"> */
 void FUNC ( Status *status, VTYPE **vector, UINT4 length ) 

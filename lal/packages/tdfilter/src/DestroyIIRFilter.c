@@ -13,8 +13,8 @@ Destroys IIR filter objects.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{DestroyIIRFilterCP}
-\index{\verb&DestroyREAL4IIRFilter()&}
-\index{\verb&DestroyREAL8IIRFilter()&}
+\index{\verb&LALDestroyREAL4IIRFilter()&}
+\index{\verb&LALDestroyREAL8IIRFilter()&}
 
 \subsubsection*{Description}
 
@@ -27,8 +27,8 @@ These functions destroy an object \verb@**input@ of type
 \subsubsection*{Uses}
 \begin{verbatim}
 void LALFree()
-void SDestroyVector()
-void DDestroyVector()
+void LALSDestroyVector()
+void LALDDestroyVector()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -45,22 +45,22 @@ NRCSID(DESTROYIIRFILTERC,"$Id$");
 
 
 /* <lalVerbatim file="DestroyIIRFilterCP"> */
-void DestroyREAL4IIRFilter(Status         *stat,
+void LALDestroyREAL4IIRFilter(LALStatus         *stat,
 			   REAL4IIRFilter **input)
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"DestroyREAL4IIRFilter",DESTROYIIRFILTERC);
+  INITSTATUS(stat,"LALDestroyREAL4IIRFilter",DESTROYIIRFILTERC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure handle is non-null, and points to a non-null pointer.
-     (The routine SDestroyVector will check that the data fields are
+     (The routine LALSDestroyVector will check that the data fields are
      non-null.) */
   ASSERT(input,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
   ASSERT(*input,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
 
   /* Destroy the vector fields. */
-  TRY(SDestroyVector(stat->statusPtr,&((*input)->directCoef)),stat);
-  TRY(SDestroyVector(stat->statusPtr,&((*input)->recursCoef)),stat);
-  TRY(SDestroyVector(stat->statusPtr,&((*input)->history)),stat);
+  TRY(LALSDestroyVector(stat->statusPtr,&((*input)->directCoef)),stat);
+  TRY(LALSDestroyVector(stat->statusPtr,&((*input)->recursCoef)),stat);
+  TRY(LALSDestroyVector(stat->statusPtr,&((*input)->history)),stat);
 
   /* Free the filter, then point the handle to NULL. */
   LALFree(*input);
@@ -73,22 +73,22 @@ void DestroyREAL4IIRFilter(Status         *stat,
 
 
 /* <lalVerbatim file="DestroyIIRFilterCP"> */
-void DestroyREAL8IIRFilter(Status         *stat,
+void LALDestroyREAL8IIRFilter(LALStatus         *stat,
 			   REAL8IIRFilter **input)
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"DestroyREAL8IIRFilter",DESTROYIIRFILTERC);
+  INITSTATUS(stat,"LALDestroyREAL8IIRFilter",DESTROYIIRFILTERC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure handle is non-null, and points to a non-null pointer.
-     (The routine DDestroyVector will check that the data fields are
+     (The routine LALDDestroyVector will check that the data fields are
      non-null.) */
   ASSERT(input,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
   ASSERT(*input,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
 
   /* Destroy the vector fields. */
-  TRY(DDestroyVector(stat->statusPtr,&((*input)->directCoef)),stat);
-  TRY(DDestroyVector(stat->statusPtr,&((*input)->recursCoef)),stat);
-  TRY(DDestroyVector(stat->statusPtr,&((*input)->history)),stat);
+  TRY(LALDDestroyVector(stat->statusPtr,&((*input)->directCoef)),stat);
+  TRY(LALDDestroyVector(stat->statusPtr,&((*input)->recursCoef)),stat);
+  TRY(LALDDestroyVector(stat->statusPtr,&((*input)->history)),stat);
 
   /* Free the filter, then point the handle to NULL. */
   LALFree(*input);

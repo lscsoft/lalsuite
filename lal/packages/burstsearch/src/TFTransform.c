@@ -45,14 +45,14 @@ NRCSID (TFTRANSFORMC, "$Id$");
 
 
 void
-CreateRealDFTParams ( 
-                     Status                         *status, 
+LALCreateRealDFTParams ( 
+                     LALStatus                         *status, 
                      RealDFTParams                  **dftParams, 
                      LALWindowParams                   *params,
                      INT2                           sign
 		     )
 {
-  INITSTATUS (status, "CreateRealDFTParams", TFTRANSFORMC);
+  INITSTATUS (status, "LALCreateRealDFTParams", TFTRANSFORMC);
   ATTATCHSTATUSPTR (status);
 
   /* 
@@ -86,17 +86,17 @@ CreateRealDFTParams (
 
   if(sign==1)
     {
-      EstimateFwdRealFFTPlan (status->statusPtr, &((*dftParams)->plan), 
+      LALEstimateFwdRealFFTPlan (status->statusPtr, &((*dftParams)->plan), 
                               params->length);
     }
   else
     {
-      EstimateInvRealFFTPlan (status->statusPtr, &((*dftParams)->plan), 
+      LALEstimateInvRealFFTPlan (status->statusPtr, &((*dftParams)->plan), 
                               params->length);
     }
   CHECKSTATUSPTR (status);
 
-  SCreateVector (status->statusPtr, &((*dftParams)->window), params->length);
+  LALSCreateVector (status->statusPtr, &((*dftParams)->window), params->length);
   CHECKSTATUSPTR (status);
 
   LALWindow (status->statusPtr, ((*dftParams)->window), params);
@@ -113,8 +113,8 @@ CreateRealDFTParams (
 
 
 void
-CreateComplexDFTParams ( 
-                     Status                         *status, 
+LALCreateComplexDFTParams ( 
+                     LALStatus                         *status, 
                      ComplexDFTParams               **dftParams, 
                      LALWindowParams                   *params,
                      INT2                           sign
@@ -122,7 +122,7 @@ CreateComplexDFTParams (
 {
 
 
-  INITSTATUS (status, "CreateComplexDFTParams", TFTRANSFORMC);
+  INITSTATUS (status, "LALCreateComplexDFTParams", TFTRANSFORMC);
   ATTATCHSTATUSPTR (status);
 
   /* 
@@ -156,17 +156,17 @@ CreateComplexDFTParams (
 
   if(sign==1)
     {
-      EstimateFwdComplexFFTPlan (status->statusPtr, &((*dftParams)->plan), 
+      LALEstimateFwdComplexFFTPlan (status->statusPtr, &((*dftParams)->plan), 
                               params->length);
     }
   else
     {
-      EstimateInvComplexFFTPlan (status->statusPtr, &((*dftParams)->plan), 
+      LALEstimateInvComplexFFTPlan (status->statusPtr, &((*dftParams)->plan), 
                               params->length);
     }
   CHECKSTATUSPTR (status);
 
-  SCreateVector (status->statusPtr, &((*dftParams)->window), params->length);
+  LALSCreateVector (status->statusPtr, &((*dftParams)->window), params->length);
   CHECKSTATUSPTR (status);
 
   LALWindow (status->statusPtr, ((*dftParams)->window), params);
@@ -185,12 +185,12 @@ CreateComplexDFTParams (
 
 
 void
-DestroyRealDFTParams (
-		      Status                 *status, 
+LALDestroyRealDFTParams (
+		      LALStatus                 *status, 
 		      RealDFTParams          **dftParams
 		      )
 {
-  INITSTATUS (status, "DestroyRealDFTParams", TFTRANSFORMC);
+  INITSTATUS (status, "LALDestroyRealDFTParams", TFTRANSFORMC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not null */
@@ -204,9 +204,9 @@ DestroyRealDFTParams (
           TFTRANSFORM_MSGENULLP); 
 
   /* Ok, now let's free allocated storage */
-  SDestroyVector (status->statusPtr, &((*dftParams)->window));
+  LALSDestroyVector (status->statusPtr, &((*dftParams)->window));
   CHECKSTATUSPTR (status);
-  DestroyRealFFTPlan (status->statusPtr, &((*dftParams)->plan));
+  LALDestroyRealFFTPlan (status->statusPtr, &((*dftParams)->plan));
   CHECKSTATUSPTR (status);
   LALFree ( *dftParams );      /* free DFT parameters structure itself */
 
@@ -221,12 +221,12 @@ DestroyRealDFTParams (
 
 
 void
-DestroyComplexDFTParams (
-		         Status                 *status, 
+LALDestroyComplexDFTParams (
+		         LALStatus                 *status, 
 		         ComplexDFTParams       **dftParams
 		        )
 {
-  INITSTATUS (status, "DestroyComplexDFTParams", TFTRANSFORMC);
+  INITSTATUS (status, "LALDestroyComplexDFTParams", TFTRANSFORMC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not null */
@@ -240,9 +240,9 @@ DestroyComplexDFTParams (
           TFTRANSFORM_MSGENULLP); 
 
   /* Ok, now let's free allocated storage */
-  SDestroyVector (status->statusPtr, &((*dftParams)->window));
+  LALSDestroyVector (status->statusPtr, &((*dftParams)->window));
   CHECKSTATUSPTR (status);
-  DestroyComplexFFTPlan (status->statusPtr, &((*dftParams)->plan));
+  LALDestroyComplexFFTPlan (status->statusPtr, &((*dftParams)->plan));
   CHECKSTATUSPTR (status);
   LALFree ( *dftParams );      /* free DFT parameters structure itself */
 
@@ -260,8 +260,8 @@ DestroyComplexDFTParams (
 
 
 void
-ComputeFrequencySeries (
-		    Status                   *status,
+LALComputeFrequencySeries (
+		    LALStatus                   *status,
 		    COMPLEX8FrequencySeries  *freqSeries,
 		    REAL4TimeSeries          *timeSeries,
 		    RealDFTParams            *dftParams
@@ -272,7 +272,7 @@ ComputeFrequencySeries (
   INT4         i;
   INT4         n;
 
-  INITSTATUS (status, "ComputeFrequencySeries", TFTRANSFORMC);
+  INITSTATUS (status, "LALComputeFrequencySeries", TFTRANSFORMC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
@@ -315,7 +315,7 @@ ComputeFrequencySeries (
 
 
   /* create temporary vector */
-  CreateVector (status->statusPtr, &tmp, n);
+  LALCreateVector (status->statusPtr, &tmp, n);
   CHECKSTATUSPTR (status);
 
 
@@ -326,10 +326,10 @@ ComputeFrequencySeries (
   };
 
   /* compute the DFT */
-  FwdRealFFT (status->statusPtr, freqSeries->data, tmp, dftParams->plan);
+  LALFwdRealFFT (status->statusPtr, freqSeries->data, tmp, dftParams->plan);
   CHECKSTATUSPTR (status);
 
-  DestroyVector (status->statusPtr, &tmp);
+  LALDestroyVector (status->statusPtr, &tmp);
   CHECKSTATUSPTR (status);
 
   /* normal exit */
@@ -341,13 +341,13 @@ ComputeFrequencySeries (
 
 
 void
-CreateTFPlane (
-	       Status                               *status,
+LALCreateTFPlane (
+	       LALStatus                               *status,
 	       COMPLEX8TimeFrequencyPlane           **tfp,
 	       TFPlaneParams                        *input
 	       )
 {
-  INITSTATUS (status, "CreateTFPlane", TFTRANSFORMC);
+  INITSTATUS (status, "LALCreateTFPlane", TFTRANSFORMC);
 
   /* Check input structure: report if NULL */
   ASSERT (input, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
@@ -426,12 +426,12 @@ CreateTFPlane (
 
 
 void
-DestroyTFPlane (
-	       Status                               *status,
+LALDestroyTFPlane (
+	       LALStatus                               *status,
 	       COMPLEX8TimeFrequencyPlane           **tfp
 	       )
 {
-  INITSTATUS (status, "DestroyTFPlane", TFTRANSFORMC);
+  INITSTATUS (status, "LALDestroyTFPlane", TFTRANSFORMC);
 
   /* make sure that arguments are not null */
   ASSERT (tfp, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
@@ -457,8 +457,8 @@ DestroyTFPlane (
 
 
 void
-TimeSeriesToTFPlane (
-            Status                               *status,
+LALTimeSeriesToTFPlane (
+            LALStatus                               *status,
 	    COMPLEX8TimeFrequencyPlane           *tfp,
 	    REAL4TimeSeries                      *timeSeries,
 	    VerticalTFTransformIn                *input
@@ -479,7 +479,7 @@ TimeSeriesToTFPlane (
   INT4               fhigh1;
   INT4               tseglength;
 
-  INITSTATUS (status, "TimeSeriesToTFPlane", TFTRANSFORMC);
+  INITSTATUS (status, "LALTimeSeriesToTFPlane", TFTRANSFORMC);
   ATTATCHSTATUSPTR (status);
 
   
@@ -662,9 +662,9 @@ TimeSeriesToTFPlane (
    */
 
   /* create temporary vectors */
-  SCreateVector (status->statusPtr, &tmp, tseglength);
+  LALSCreateVector (status->statusPtr, &tmp, tseglength);
   CHECKSTATUSPTR (status);
-  CCreateVector (status->statusPtr, &tmp1, tseglength/2+1);
+  LALCCreateVector (status->statusPtr, &tmp1, tseglength/2+1);
   CHECKSTATUSPTR (status);
 
 
@@ -683,7 +683,7 @@ TimeSeriesToTFPlane (
 	}
       
       /* Do the FFT */
-      FwdRealFFT (status->statusPtr, tmp1, tmp, input->dftParams->plan);
+      LALFwdRealFFT (status->statusPtr, tmp1, tmp, input->dftParams->plan);
       CHECKSTATUSPTR (status);
       
       /* Copy the result into appropriate spot in output structure */
@@ -695,10 +695,10 @@ TimeSeriesToTFPlane (
        
     }
 
-  DestroyVector (status->statusPtr, &tmp);
+  LALDestroyVector (status->statusPtr, &tmp);
   CHECKSTATUSPTR (status);
 
-  CDestroyVector (status->statusPtr, &tmp1);
+  LALCDestroyVector (status->statusPtr, &tmp1);
   CHECKSTATUSPTR (status);
 
   /* normal exit */
@@ -711,8 +711,8 @@ TimeSeriesToTFPlane (
 
 
 void
-FreqSeriesToTFPlane (
-	       Status                               *status,
+LALFreqSeriesToTFPlane (
+	       LALStatus                               *status,
 	       COMPLEX8TimeFrequencyPlane           *tfp,
 	       COMPLEX8FrequencySeries              *freqSeries,
 	       HorizontalTFTransformIn              *input
@@ -730,7 +730,7 @@ FreqSeriesToTFPlane (
   INT4               flow1;
   INT4               fseglength;
 
-  INITSTATUS (status, "FreqSeriesToTFPlane", TFTRANSFORMC);
+  INITSTATUS (status, "LALFreqSeriesToTFPlane", TFTRANSFORMC);
   ATTATCHSTATUSPTR (status);
 
   
@@ -854,9 +854,9 @@ FreqSeriesToTFPlane (
    */
 
   /* create temporary vectors */
-  CCreateVector (status->statusPtr, &tmp, fseglength);
+  LALCCreateVector (status->statusPtr, &tmp, fseglength);
   CHECKSTATUSPTR (status);
-  CCreateVector (status->statusPtr, &tmp1, fseglength);
+  LALCCreateVector (status->statusPtr, &tmp1, fseglength);
   CHECKSTATUSPTR (status);
 
   fac = 1/sqrt(input->dftParams->sumofsquares);
@@ -873,7 +873,7 @@ FreqSeriesToTFPlane (
 	  tmp->data[j].im = fac * freqSeries->data->data[offset+j].im * input->dftParams->window->data[j]; 
 	}
 
-      COMPLEX8VectorFFT (status->statusPtr, tmp1, tmp, input->dftParams->plan);
+      LALCOMPLEX8VectorFFT (status->statusPtr, tmp1, tmp, input->dftParams->plan);
       CHECKSTATUSPTR (status);
             
       /* Copy the result into appropriate spot in output structure */
@@ -884,10 +884,10 @@ FreqSeriesToTFPlane (
        
     }
 
-  CDestroyVector (status->statusPtr, &tmp);
+  LALCDestroyVector (status->statusPtr, &tmp);
   CHECKSTATUSPTR (status);
 
-  CDestroyVector (status->statusPtr, &tmp1);
+  LALCDestroyVector (status->statusPtr, &tmp1);
   CHECKSTATUSPTR (status);
 
   /* normal exit */

@@ -14,7 +14,7 @@ code only.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{PrintVectorCP}
-\index{\verb&PrintVector()&}
+\index{\verb&LALPrintVector()&}
 
 \subsubsection*{Description}
 
@@ -48,7 +48,7 @@ NRCSID( PRINTVECTORC, "$Id$" );
 
 /* <lalVerbatim file="PrintVectorCP"> */
 void
-PrintVector( REAL4Vector *vector )
+LALPrintVector( REAL4Vector *vector )
 { /* </lalVerbatim> */
   int i;
   static int fileno=0;

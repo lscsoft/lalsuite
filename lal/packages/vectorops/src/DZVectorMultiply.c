@@ -34,8 +34,8 @@
 NRCSID(DZVECTORMULTIPLYC,"$Id$");
 
 void
-DZVectorMultiply (
-    Status                *status,
+LALDZVectorMultiply (
+    LALStatus                *status,
     COMPLEX16Vector       *out,
     const REAL8Vector     *in1,
     const COMPLEX16Vector *in2
@@ -46,7 +46,7 @@ DZVectorMultiply (
   COMPLEX16 *c;
   INT4       n;
 
-  INITSTATUS (status, "DZVectorMultiply", DZVECTORMULTIPLYC);
+  INITSTATUS (status, "LALDZVectorMultiply", DZVECTORMULTIPLYC);
 
   ASSERT (out, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);
   ASSERT (in1, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);

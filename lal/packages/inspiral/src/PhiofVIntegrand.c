@@ -4,14 +4,14 @@
 
 NRCSID (PHIOFVINTEGRANDC, "$Id$"); 
 
-void PhiofVIntegrand (Status *status,
+void LALPhiofVIntegrand (LALStatus *status,
 		      REAL8 *integrand,
 		      REAL8 v,
 		      void *params)
 {
   PhiofVIntegrandIn *in;
 
-  INITSTATUS (status, "PhiofVIntegrand", PHIOFVINTEGRANDC);
+  INITSTATUS (status, "LALPhiofVIntegrand", PHIOFVINTEGRANDC);
 
   ASSERT (integrand, status, PHIOFVINTEGRAND_ENULL, PHIOFVINTEGRAND_MSGENULL);
   ASSERT (params, status, PHIOFVINTEGRAND_ENULL, PHIOFVINTEGRAND_MSGENULL);

@@ -21,8 +21,8 @@
 NRCSID (FRAMEDATAC, "$Id$");
 
 void
-InitializeFrameData (
-    Status     *status,
+LALInitializeFrameData (
+    LALStatus     *status,
     FrameData **frameData,
     CHAR       *framePath
     )
@@ -37,7 +37,7 @@ InitializeFrameData (
   CHAR                   command[1024];
   INT4                   nameType;
 
-  INITSTATUS (status, "InitializeFrameData", FRAMEDATAC);
+  INITSTATUS (status, "LALInitializeFrameData", FRAMEDATAC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are reasonable */
@@ -49,7 +49,7 @@ InitializeFrameData (
   *frameData = LALCalloc (1, sizeof(FrameData));
   ASSERT (*frameData, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
 
-  /* debuglevel zero: don't report errors */
+  /* LALDebugLevel zero: don't report errors */
   FrLibIni (NULL, stderr, 0);
 
   /* set some flags and modes */
@@ -61,7 +61,7 @@ InitializeFrameData (
 
   frameFileNameIn.length       = maxNumFiles;
   frameFileNameIn.vectorLength = maxFileNameLength;
-  CHARCreateVectorSequence (
+  LALCHARCreateVectorSequence (
       status->statusPtr,
       &(*frameData)->frameFileNames,
       &frameFileNameIn
@@ -114,12 +114,12 @@ InitializeFrameData (
 
 
 void
-FinalizeFrameData (
-    Status     *status,
+LALFinalizeFrameData (
+    LALStatus     *status,
     FrameData **frameData
     )
 {
-  INITSTATUS (status, "FinalizeFrameData", FRAMEDATAC);
+  INITSTATUS (status, "LALFinalizeFrameData", FRAMEDATAC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure argument is reasonable */
@@ -139,7 +139,7 @@ FinalizeFrameData (
   }
 
   /* destroy file name vector sequence */
-  CHARDestroyVectorSequence (status->statusPtr, &(*frameData)->frameFileNames);
+  LALCHARDestroyVectorSequence (status->statusPtr, &(*frameData)->frameFileNames);
   CHECKSTATUSPTR (status);
 
   /* free memory */
@@ -153,7 +153,7 @@ FinalizeFrameData (
 
 static void
 GetNewFrame (
-    Status    *status,
+    LALStatus    *status,
     FrameData *frameData
     )
 {
@@ -269,8 +269,8 @@ GetNewFrame (
 
 
 void
-GetFrameData (
-    Status         *status,
+LALGetFrameData (
+    LALStatus         *status,
     INT2TimeSeries *data,
     FrameData      *frameData
     )
@@ -280,7 +280,7 @@ GetFrameData (
   INT4 numPoints;
   INT4 needed;
 
-  INITSTATUS (status, "GetFrameData", FRAMEDATAC);
+  INITSTATUS (status, "LALGetFrameData", FRAMEDATAC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are reasonable */
@@ -440,7 +440,7 @@ GetFrameData (
 
 static void
 SplineFit (
-    Status      *status,
+    LALStatus      *status,
     REAL4Vector *yout,
     REAL4Vector *yinp,
     REAL4Vector *xinp
@@ -469,7 +469,7 @@ SplineFit (
   ASSERT (xinp->length == n, status, FRAMEDATA_ESIZE, FRAMEDATA_MSGESIZE);
 
   /* create temporary vector */
-  CreateVector (status->statusPtr, &yppvec, n);
+  LALCreateVector (status->statusPtr, &yppvec, n);
   CHECKSTATUSPTR (status);
   ypp = yppvec->data;
 
@@ -483,7 +483,7 @@ SplineFit (
 
     INT4  i;
 
-    CreateVector (status->statusPtr, &uvec, n);
+    LALCreateVector (status->statusPtr, &uvec, n);
     CHECKSTATUSPTR (status);
     u = uvec->data;
 
@@ -511,7 +511,7 @@ SplineFit (
       ypp[i] = ypp[i]*ypp[i+1] + u[i];
     }
 
-    DestroyVector (status->statusPtr, &uvec);
+    LALDestroyVector (status->statusPtr, &uvec);
     CHECKSTATUSPTR (status);
 
   }
@@ -554,7 +554,7 @@ SplineFit (
 
   }
 
-  DestroyVector (status->statusPtr, &yppvec);
+  LALDestroyVector (status->statusPtr, &yppvec);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
@@ -563,8 +563,8 @@ SplineFit (
 
 
 void
-GetFrameDataResponse (
-    Status                  *status,
+LALGetFrameDataResponse (
+    LALStatus                  *status,
     COMPLEX8FrequencySeries *response,
     FrameData               *frameData
     )
@@ -584,7 +584,7 @@ GetFrameDataResponse (
   INT4   n;
   INT4   i;
 
-  INITSTATUS (status, "GetFrameDataResponse", FRAMEDATAC);
+  INITSTATUS (status, "LALGetFrameDataResponse", FRAMEDATAC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (frameData, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
@@ -602,9 +602,9 @@ GetFrameDataResponse (
   ssi = ssr + ssn;
   ASSERT (ssn > 2, status, FRAMEDATA_ESSSZ, FRAMEDATA_MSGESSSZ);
 
-  CreateVector (status->statusPtr, &re, response->data->length);
+  LALCreateVector (status->statusPtr, &re, response->data->length);
   CHECKSTATUSPTR (status);
-  CreateVector (status->statusPtr, &im, response->data->length);
+  LALCreateVector (status->statusPtr, &im, response->data->length);
   CHECKSTATUSPTR (status);
 
   x.data   = ssf;
@@ -647,9 +647,9 @@ GetFrameDataResponse (
   response->f0     = 0;
   response->deltaF = 0.5*frameData->sampleRate/response->data->length;
 
-  DestroyVector (status->statusPtr, &re);
+  LALDestroyVector (status->statusPtr, &re);
   CHECKSTATUSPTR (status);
-  DestroyVector (status->statusPtr, &im);
+  LALDestroyVector (status->statusPtr, &im);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);

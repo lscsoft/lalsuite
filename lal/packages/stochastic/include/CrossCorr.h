@@ -15,7 +15,7 @@
  * #include "CcrossCorr.h"
  *
  * DESCRIPTION
- * Error codes, typedefs, and protypes for the function CrossCorr()
+ * Error codes, typedefs, and protypes for the function LALCrossCorr()
  *
  * DIAGNOSTICS
  *

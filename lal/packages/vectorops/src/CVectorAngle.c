@@ -37,8 +37,8 @@
 NRCSID(CVECTORANGLEC,"$Id$");
 
 void
-CVectorAngle (
-    Status               *status,
+LALCVectorAngle (
+    LALStatus               *status,
     REAL4Vector          *out,
     const COMPLEX8Vector *in
     )
@@ -47,7 +47,7 @@ CVectorAngle (
   REAL4    *b;
   INT4      n;
 
-  INITSTATUS (status, "CVectorAngle", CVECTORANGLEC);
+  INITSTATUS (status, "LALCVectorAngle", CVECTORANGLEC);
   
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);

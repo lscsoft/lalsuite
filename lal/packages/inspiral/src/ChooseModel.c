@@ -259,7 +259,7 @@ static REAL8 Fp5(REAL8 v, expnCoeffs *ak) {
 
 
 
-void ChooseModel(Status *status,
+void LALChooseModel(LALStatus *status,
 		 expnFunc *f,
 		 expnCoeffs *ak,
 		 InspiralTemplate *params)
@@ -269,7 +269,7 @@ void ChooseModel(Status *status,
    REAL8 tofv;
    void *in2;
 
-   INITSTATUS (status, "ChooseModel", CHOOSEMODELC);
+   INITSTATUS (status, "LALChooseModel", CHOOSEMODELC);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (f,  status, CHOOSEMODEL_ENULL, CHOOSEMODEL_MSGENULL);
@@ -413,7 +413,7 @@ void ChooseModel(Status *status,
 
       in2 = (void *) &in1;      
 
-      TofV(status->statusPtr, &tofv, ak->vn, in2);
+      LALTofV(status->statusPtr, &tofv, ak->vn, in2);
       CHECKSTATUSPTR(status);
 
 

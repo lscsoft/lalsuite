@@ -34,7 +34,7 @@ signal \verb+SIGSEGV+.
 Memory leak detection adds significant computational overhead to a
 program.  It also requires the use of static memory, making the code
 non-thread-safe.  Production code should suppress memory leak
-detection at runtime by setting the global \verb+debuglevel+ equal to
+detection at runtime by setting the global \verb+LALDebugLevel+ equal to
 zero, or at compile time by compiling all modules with the
 \verb+NDEBUG+ flag set.  This causes \verb+LALCheckMemoryLeaks()+ to
 do nothing, and the other functions to revert to their standard C
@@ -69,25 +69,25 @@ information messages are considered a distinct class of status
 message, and can be activated or suppressed independently of other
 status messages.  See the discussion in \verb+LALStatusMacros.h+.
 
-When \verb+debuglevel+ is set to zero, or when compiled with the
+When \verb+LALDebugLevel+ is set to zero, or when compiled with the
 \verb+NDEBUG+ flag set, these functions revert to their standard
 system versions, and \verb+LALCheckMemoryLeaks()+ does nothing.
 
 \subsubsection*{Uses}
 
 \begin{verbatim}
-debuglevel
+LALDebugLevel
 LALPrintError()
 \end{verbatim}
 
 \subsubsection*{Notes}
 
-Memory leak detection only occurs when \verb+debuglevel+$\neq0$.  To
+Memory leak detection only occurs when \verb+LALDebugLevel+$\neq0$.  To
 turn on leak detection independent of error reporting, simply switch
-on the most-significant bit of \verb+debuglevel+, which is reserved
+on the most-significant bit of \verb+LALDebugLevel+, which is reserved
 not to be associated with any type of status message.  See the
 discussion in \verb+LALStatusMacros.h+ for more information about
-\verb+debuglevel+.
+\verb+LALDebugLevel+.
 
 \vfill{\footnotesize\input{LALMallocCV}}
 
@@ -116,14 +116,14 @@ static const size_t magic     = 0xABadCafe;
 
 static size_t lalMallocTotal = 0;
 static int    lalMallocCount = 0;
-extern int    debuglevel;
+extern int    LALDebugLevel;
 
 
 /* <lalVerbatim file="LALMallocCP"> */
 void *
 LALMalloc( size_t n )
 { /* </lalVerbatim> */
-  if ( debuglevel == 0 )
+  if ( LALDebugLevel == 0 )
   {
     return malloc( n );
   }
@@ -134,13 +134,13 @@ LALMalloc( size_t n )
     int     i;
     int     newline = 0; /* need a new line */
 
-    if ( debuglevel & LALMEMINFO )
+    if ( LALDebugLevel & LALMEMINFO )
     {
       newline = 1;
       LALPrintError( "LALMalloc meminfo: allocating %ld bytes", n );
     }
 
-    if ( debuglevel & LALWARNING && n == 0 )
+    if ( LALDebugLevel & LALWARNING && n == 0 )
     {
       newline = newline ? LALPrintError( "\n" ),0 : 0;
       LALPrintError( "LALMalloc warning: zero size allocation\n" );
@@ -149,7 +149,7 @@ LALMalloc( size_t n )
     p = (char *) malloc( padFactor*n + prefix );
     if ( !p )
     {
-      if ( debuglevel & LALERROR )
+      if ( LALDebugLevel & LALERROR )
       {
         newline = newline ? LALPrintError( "\n" ),0 : 0;
         LALPrintError( "LALMalloc error: out of memory\n" );
@@ -166,7 +166,7 @@ LALMalloc( size_t n )
       p[i + prefix] = (char) (i ^ padding);
     }
 
-    if ( debuglevel & LALMEMINFO )
+    if ( LALDebugLevel & LALMEMINFO )
     {
       if ( newline )
       {
@@ -191,7 +191,7 @@ LALMalloc( size_t n )
 void
 LALFree( void *p )
 { /* </lalVerbatim> */
-  if ( debuglevel == 0 )
+  if ( LALDebugLevel == 0 )
   {
     free( p );
     return;
@@ -204,7 +204,7 @@ LALFree( void *p )
 
     if ( !p )
     {
-      if ( debuglevel & LALERROR )
+      if ( LALDebugLevel & LALERROR )
       {
         LALPrintError( "LALFree error: tried to free NULL pointer\n" );
       }
@@ -214,7 +214,7 @@ LALFree( void *p )
 
     if ( !q )
     {
-      if ( debuglevel & LALERROR )
+      if ( LALDebugLevel & LALERROR )
       {
         LALPrintError( "LALFree error: tried to free NULL+TWOINTS pointer\n" );
       }
@@ -227,13 +227,13 @@ LALFree( void *p )
       size_t myMagic = ((size_t *) q)[1];
       size_t i;
           
-      if ( debuglevel & LALMEMINFO )
+      if ( LALDebugLevel & LALMEMINFO )
       {
         newline = 1;
         LALPrintError( "LALFree meminfo: freeing %ld bytes", n );
       }
           
-      if ( debuglevel & LALWARNING && n == 0)
+      if ( LALDebugLevel & LALWARNING && n == 0)
       {
         newline = newline ? LALPrintError( "\n" ),0 : 0;
         LALPrintError( "LALFree warning: tried to free a freed pointer\n" );
@@ -241,7 +241,7 @@ LALFree( void *p )
           
       if ( myMagic != magic )
       {
-        if ( debuglevel & LALERROR )
+        if ( LALDebugLevel & LALERROR )
         {
           newline = newline ? LALPrintError( "\n" ),0 : 0;
           LALPrintError( "LALFree error: wrong magic\n" );
@@ -252,7 +252,7 @@ LALFree( void *p )
 
       if ( ( (INT4) n ) < 0 )
       {
-        if ( debuglevel & LALERROR )
+        if ( LALDebugLevel & LALERROR )
         {
           newline = newline ? LALPrintError( "\n" ),0 : 0;
           LALPrintError( "LALFree error: corrupt size descriptor\n" );
@@ -266,7 +266,7 @@ LALFree( void *p )
       {
         if ( q[i + prefix] != (char) (i ^ padding) )
         {
-          if ( debuglevel & LALERROR )
+          if ( LALDebugLevel & LALERROR )
           {
             newline = newline ? LALPrintError( "\n" ),0 : 0;
             LALPrintError( "LALFree error: array bounds overwritten\n" );
@@ -281,7 +281,7 @@ LALFree( void *p )
       /* see if there is enough allocated memory to be freed */
       if ( lalMallocTotal < n )
       {
-        if ( debuglevel & LALERROR )
+        if ( LALDebugLevel & LALERROR )
         {
           newline = newline ? LALPrintError( "\n" ),0 : 0;
           LALPrintError( "LALFree error: lalMallocTotal too small\n" );
@@ -296,7 +296,7 @@ LALFree( void *p )
         q[i + prefix] = (char) (i ^ repadding);
       }
 
-      if ( debuglevel & LALMEMINFO )
+      if ( LALDebugLevel & LALMEMINFO )
       {
         if ( newline )
         {
@@ -323,7 +323,7 @@ LALFree( void *p )
 void *
 LALCalloc( size_t m, size_t n )
 { /* </lalVerbatim> */
-  if ( debuglevel == 0 )
+  if ( LALDebugLevel == 0 )
   {
     return calloc( m, n );
   }
@@ -345,7 +345,7 @@ LALCalloc( size_t m, size_t n )
 void *
 LALRealloc( void *p, size_t n )
 { /* </lalVerbatim> */
-  if ( debuglevel == 0 )
+  if ( LALDebugLevel == 0 )
   {
     return realloc( p, n );
   }
@@ -388,14 +388,14 @@ LALRealloc( void *p, size_t n )
 void
 LALCheckMemoryLeaks( void )
 { /* </lalVerbatim> */
-  if ( debuglevel == 0 )
+  if ( LALDebugLevel == 0 )
   {
     return;
   }
 
   if ( lalMallocTotal || lalMallocCount )
   {
-    if ( debuglevel & LALERROR || debuglevel & LALWARNING )
+    if ( LALDebugLevel & LALERROR || LALDebugLevel & LALWARNING )
     {
       LALPrintError( "LALCheckMemoryLeaks: memory leak\n" );
       LALPrintError( "lalMallocCount = %d allocs\n", lalMallocCount );
@@ -405,7 +405,7 @@ LALCheckMemoryLeaks( void )
     return;
   }
 
-  if ( debuglevel & LALMEMINFO )
+  if ( LALDebugLevel & LALMEMINFO )
   {
     LALPrintError( "LALCheckMemoryLeaks meminfo: no memory leaks detected\n" );
   }

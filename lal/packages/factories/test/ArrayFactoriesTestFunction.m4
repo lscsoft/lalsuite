@@ -11,8 +11,8 @@ ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')')
 ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`VTYPE',`format(`%sArray',TYPE)')
-define(`CFUNC',`format(`%sCreateArray',TYPECODE)')
-define(`DFUNC',`format(`%sDestroyArray',TYPECODE)')
+define(`CFUNC',`format(`LAL%sCreateArray',TYPECODE)')
+define(`DFUNC',`format(`LAL%sDestroyArray',TYPECODE)')
 define(`FUNC',`format(`%sArrayFactoriesTest',TYPECODE)')
 
 

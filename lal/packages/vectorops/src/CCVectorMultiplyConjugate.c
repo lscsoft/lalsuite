@@ -34,8 +34,8 @@
 NRCSID (CCVECTORMULTIPLYCONJUGATEC, "$Id$");
 
 void
-CCVectorMultiplyConjugate (
-    Status               *status,
+LALCCVectorMultiplyConjugate (
+    LALStatus               *status,
     COMPLEX8Vector       *out,
     const COMPLEX8Vector *in1,
     const COMPLEX8Vector *in2
@@ -46,7 +46,7 @@ CCVectorMultiplyConjugate (
   COMPLEX8 *c;
   INT4      n;
 
-  INITSTATUS (status, "CCVectorMultiplyConjugate", CCVECTORMULTIPLYCONJUGATEC);
+  INITSTATUS (status, "LALCCVectorMultiplyConjugate", CCVECTORMULTIPLYCONJUGATEC);
 
   ASSERT (out, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);
   ASSERT (in1, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);

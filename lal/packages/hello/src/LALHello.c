@@ -48,7 +48,7 @@ NRCSID( LALHELLOC, "$Id$" );
 
 /* don't want this function to be visible outside this file */
 static void
-LALPrintMessage( Status *status, const CHAR *message, const CHAR *fileName )
+LALPrintMessage( LALStatus *status, const CHAR *message, const CHAR *fileName )
 {
   INT4  error;
   INT4  numChar;
@@ -101,7 +101,7 @@ LALPrintMessage( Status *status, const CHAR *message, const CHAR *fileName )
 
 /* <lalVerbatim file="LALHelloCP"> */
 void
-LALHello( Status *status, const CHAR *fileName )
+LALHello( LALStatus *status, const CHAR *fileName )
 { /* </lalVerbatim> */
   INITSTATUS( status, "LALHello", LALHELLOC );
   ATTATCHSTATUSPTR( status );

@@ -22,7 +22,7 @@ NRCSID (FINDCHIRPMASTERC, "$Id$");
 static const INT4 numSpec = 8;
 
 void
-Master (Status *status, MPIId id)
+Master (LALStatus *status, MPIId id)
 {
   CHAR                    *framePath;
   DataBuffer              *buffer = NULL;
@@ -72,22 +72,22 @@ Master (Status *status, MPIId id)
     segment[i].resp->data        = NULL;
     segment[i].resp->sampleUnits = NULL;
 
-    I2CreateVector (status->statusPtr, &segment[i].data->data, numPoints);
+    LALI2CreateVector (status->statusPtr, &segment[i].data->data, numPoints);
     CHECKSTATUSPTR (status);
 
-    CreateVector (status->statusPtr, &segment[i].spec->data, numPoints/2 + 1);
+    LALCreateVector (status->statusPtr, &segment[i].spec->data, numPoints/2 + 1);
     CHECKSTATUSPTR (status);
 
-    CCreateVector (status->statusPtr, &segment[i].resp->data, numPoints/2 + 1);
+    LALCCreateVector (status->statusPtr, &segment[i].resp->data, numPoints/2 + 1);
     CHECKSTATUSPTR (status);
     
-    CHARCreateVector (status->statusPtr, &segment[i].data->sampleUnits, 128);
+    LALCHARCreateVector (status->statusPtr, &segment[i].data->sampleUnits, 128);
     CHECKSTATUSPTR (status);
 
-    CHARCreateVector (status->statusPtr, &segment[i].spec->sampleUnits, 128);
+    LALCHARCreateVector (status->statusPtr, &segment[i].spec->sampleUnits, 128);
     CHECKSTATUSPTR (status);
 
-    CHARCreateVector (status->statusPtr, &segment[i].resp->sampleUnits, 128);
+    LALCHARCreateVector (status->statusPtr, &segment[i].resp->sampleUnits, 128);
     CHECKSTATUSPTR (status);
   }
 
@@ -111,10 +111,10 @@ Master (Status *status, MPIId id)
   bufferPar.windowType = Welch;
   bufferPar.plan       = NULL;
   bufferPar.framePath  = framePath;
-  EstimateFwdRealFFTPlan (status->statusPtr, &bufferPar.plan, numPoints);
+  LALEstimateFwdRealFFTPlan (status->statusPtr, &bufferPar.plan, numPoints);
   CHECKSTATUSPTR (status);
 
-  CreateDataBuffer (status->statusPtr, &buffer, &bufferPar);
+  LALCreateDataBuffer (status->statusPtr, &buffer, &bufferPar);
   CHECKSTATUSPTR (status);
 
 
@@ -132,7 +132,7 @@ Master (Status *status, MPIId id)
     ExchParams *thisExch = NULL;
 
     printf ("\nMaster: waiting for request... ");
-    InitializeExchange (status->statusPtr, &thisExch, NULL, id.myId);
+    LALInitializeExchange (status->statusPtr, &thisExch, NULL, id.myId);
     CHECKSTATUSPTR (status);
     printf ("got request %d from slave %d\n",
             (INT4) thisExch->exchObjectType, thisExch->partnerProcNum);
@@ -157,7 +157,7 @@ Master (Status *status, MPIId id)
         ASSERT (thisExch->send == 0, status,
                 4, "Master expects to receive");
 
-        ExchangeInspiralBankIn (status->statusPtr, &bankIn, thisExch);
+        LALExchangeInspiralBankIn (status->statusPtr, &bankIn, thisExch);
         CHECKSTATUSPTR (status);
 
         break;
@@ -188,14 +188,14 @@ Master (Status *status, MPIId id)
           tmplt[i].mass1  = 1 + (i + 1)/2;
           tmplt[i].mass2  = 1 + i/2;
 
-          ExchangeInspiralTemplate (status->statusPtr, tmplt + i, thisExch);
+          LALExchangeInspiralTemplate (status->statusPtr, tmplt + i, thisExch);
           CHECKSTATUSPTR (status);
         }
 
         /* one more to say we're done */
         printf ("Master:   sent template 4 -- done\n");
         tmplt[4].number = -1;
-        ExchangeInspiralTemplate (status->statusPtr, tmplt + 4, thisExch);
+        LALExchangeInspiralTemplate (status->statusPtr, tmplt + 4, thisExch);
         CHECKSTATUSPTR (status);
 
         break;
@@ -219,11 +219,11 @@ Master (Status *status, MPIId id)
 
         for (i = 0; i < numSegments; ++i)
         {
-          GetData (status->statusPtr, segment + i, 3*numPoints/4, buffer);
+          LALGetData (status->statusPtr, segment + i, 3*numPoints/4, buffer);
           CHECKSTATUSPTR (status);
 
           printf ("Master:  sent segment %d of %d\n", i, numSegments);
-          ExchangeDataSegment (status->statusPtr, segment + i, thisExch);
+          LALExchangeDataSegment (status->statusPtr, segment + i, thisExch);
           CHECKSTATUSPTR (status);
         }
 
@@ -250,7 +250,7 @@ Master (Status *status, MPIId id)
         for (i = 0; i < thisExch->numObjects; ++i)
         {
           printf ("Master:   got event %d of %d\n", i, thisExch->numObjects);
-          ExchangeInspiralEvent (status->statusPtr, event + i, thisExch);
+          LALExchangeInspiralEvent (status->statusPtr, event + i, thisExch);
           CHECKSTATUSPTR (status);
         }
 
@@ -285,7 +285,7 @@ Master (Status *status, MPIId id)
 
     }
 
-    FinalizeExchange (status->statusPtr, &thisExch);
+    LALFinalizeExchange (status->statusPtr, &thisExch);
     printf ("Master: done with request\n");
   }
 
@@ -307,10 +307,10 @@ Master (Status *status, MPIId id)
    */
 
 
-  DestroyRealFFTPlan (status->statusPtr, &bufferPar.plan);
+  LALDestroyRealFFTPlan (status->statusPtr, &bufferPar.plan);
   CHECKSTATUSPTR (status);
 
-  DestroyDataBuffer (status->statusPtr, &buffer);
+  LALDestroyDataBuffer (status->statusPtr, &buffer);
   CHECKSTATUSPTR (status);
 
   LALFree (event);
@@ -318,22 +318,22 @@ Master (Status *status, MPIId id)
 
   for (i = 0; i < numSegments; ++i)
   {
-    CHARDestroyVector (status->statusPtr, &segment[i].data->sampleUnits);
+    LALCHARDestroyVector (status->statusPtr, &segment[i].data->sampleUnits);
     CHECKSTATUSPTR (status);
 
-    CHARDestroyVector (status->statusPtr, &segment[i].spec->sampleUnits);
+    LALCHARDestroyVector (status->statusPtr, &segment[i].spec->sampleUnits);
     CHECKSTATUSPTR (status);
 
-    CHARDestroyVector (status->statusPtr, &segment[i].resp->sampleUnits);
+    LALCHARDestroyVector (status->statusPtr, &segment[i].resp->sampleUnits);
     CHECKSTATUSPTR (status);
 
-    I2DestroyVector (status->statusPtr, &segment[i].data->data);
+    LALI2DestroyVector (status->statusPtr, &segment[i].data->data);
     CHECKSTATUSPTR (status);
 
-    DestroyVector (status->statusPtr, &segment[i].spec->data);
+    LALDestroyVector (status->statusPtr, &segment[i].spec->data);
     CHECKSTATUSPTR (status);
 
-    CDestroyVector (status->statusPtr, &segment[i].resp->data);
+    LALCDestroyVector (status->statusPtr, &segment[i].resp->data);
     CHECKSTATUSPTR (status);
 
     LALFree (segment[i].data);

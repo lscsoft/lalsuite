@@ -12,8 +12,8 @@ ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
 ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`VTYPE',`format(`%sVector',TYPE)')
-define(`CFUNC',`format(`%sCreateVector',TYPECODE)')
-define(`DFUNC',`format(`%sDestroyVector',TYPECODE)')
+define(`CFUNC',`format(`LAL%sCreateVector',TYPECODE)')
+define(`DFUNC',`format(`LAL%sDestroyVector',TYPECODE)')
 define(`FUNC',`format(`%sVectorFactoriesTest',TYPECODE)')
 
 

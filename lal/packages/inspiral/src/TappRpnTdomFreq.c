@@ -42,17 +42,17 @@
 
 NRCSID (TAPPRPNTDOMFREQC, "$Id$");
 
-void (*TappRpnTdomFreqPhase) (Status *status,
+void (*TappRpnTdomFreqPhase) (LALStatus *status,
                               REAL8 *phase, 
                               InspiralPhasesInput *params);
 
-void (*TappRpnTdomFreqTofF) (Status *status,
+void (*TappRpnTdomFreqTofF) (LALStatus *status,
                              REAL8 *toff,
 			     REAL8 f,
                              void *params);
 
 
-void TappRpnTdomFreq(Status *status, 
+void LALTappRpnTdomFreq(LALStatus *status, 
                      REAL8Vector *output, 
                      InspiralTemplate *params)
 {
@@ -68,7 +68,7 @@ void TappRpnTdomFreq(Status *status,
   void *funcParams;
 
 
-  INITSTATUS (status, "TappRpnTdomFreq", TAPPRPNTDOMFREQC);
+  INITSTATUS (status, "LALTappRpnTdomFreq", TAPPRPNTDOMFREQC);
   ATTATCHSTATUSPTR(status);
 
 
@@ -110,34 +110,34 @@ void TappRpnTdomFreq(Status *status,
   switch (params->order) {
      case newtonian:
      case oneHalfPN:
-          TappRpnTdomFreqPhase = &TappRpnTdomFreqPhase0PN;
-          TappRpnTdomFreqTofF = &TappRpnTdomFreqTofF0PN;
-          rootIn.function = TappRpnTdomFreqTofF0PN;
+          TappRpnTdomFreqPhase = &LALTappRpnTdomFreqPhase0PN;
+          TappRpnTdomFreqTofF = &LALTappRpnTdomFreqTofF0PN;
+          rootIn.function = LALTappRpnTdomFreqTofF0PN;
           break;
      case onePN:
-          TappRpnTdomFreqPhase = &TappRpnTdomFreqPhase2PN;
-          TappRpnTdomFreqTofF = &TappRpnTdomFreqTofF2PN;
-          rootIn.function = TappRpnTdomFreqTofF2PN;
+          TappRpnTdomFreqPhase = &LALTappRpnTdomFreqPhase2PN;
+          TappRpnTdomFreqTofF = &LALTappRpnTdomFreqTofF2PN;
+          rootIn.function = LALTappRpnTdomFreqTofF2PN;
           break;
      case onePointFivePN:
-          TappRpnTdomFreqPhase = &TappRpnTdomFreqPhase3PN;
-          TappRpnTdomFreqTofF = &TappRpnTdomFreqTofF3PN;
-          rootIn.function = TappRpnTdomFreqTofF3PN;
+          TappRpnTdomFreqPhase = &LALTappRpnTdomFreqPhase3PN;
+          TappRpnTdomFreqTofF = &LALTappRpnTdomFreqTofF3PN;
+          rootIn.function = LALTappRpnTdomFreqTofF3PN;
           break;
      case twoPN:
-          TappRpnTdomFreqPhase = &TappRpnTdomFreqPhase4PN;
-          TappRpnTdomFreqTofF = &TappRpnTdomFreqTofF4PN;
-          rootIn.function = TappRpnTdomFreqTofF4PN;
+          TappRpnTdomFreqPhase = &LALTappRpnTdomFreqPhase4PN;
+          TappRpnTdomFreqTofF = &LALTappRpnTdomFreqTofF4PN;
+          rootIn.function = LALTappRpnTdomFreqTofF4PN;
           break;
      default:
-          fprintf(stderr, "No order selected in TappRpnTdomTime ... exiting\n");
+          fprintf(stderr, "No order selected in LALTappRpnTdomTime ... exiting\n");
           exit(0);
      }
 /* Call the function which calculates all the chirptimes etc. The output
    from this function is in the structure out1 */
 
 
-  InspiralParameterCalc (status->statusPtr, &out1, &paramCalc);
+  LALInspiralParameterCalc (status->statusPtr, &out1, &paramCalc);
   CHECKSTATUSPTR(status);
 
 
@@ -216,7 +216,7 @@ void TappRpnTdomFreq(Status *status,
 
   funcParams = (void *) &toffIn;
 
-  DBisectionFindRoot(status->statusPtr, &freq, &rootIn, funcParams);
+  LALDBisectionFindRoot(status->statusPtr, &freq, &rootIn, funcParams);
   CHECKSTATUSPTR(status);
 
   
@@ -231,7 +231,7 @@ void TappRpnTdomFreq(Status *status,
     toffIn.t=count*dt;
     ++count;
     funcParams = (void *) &toffIn;
-    DBisectionFindRoot(status->statusPtr, &freq, &rootIn, funcParams);
+    LALDBisectionFindRoot(status->statusPtr, &freq, &rootIn, funcParams);
     CHECKSTATUSPTR(status);
     phaseIn.f=freq;
   }

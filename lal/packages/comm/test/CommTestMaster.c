@@ -19,7 +19,7 @@ NRCSID (COMMTESTMASTERC, "$Id$");
 #include "CommTestGlobal.h"
 
 void
-Master (Status *status, MPIId id)
+Master (LALStatus *status, MPIId id)
 {
   MPIMessage   message;
   REAL4Vector *vector = NULL;
@@ -31,14 +31,14 @@ Master (Status *status, MPIId id)
 
   printf ("Master starting up\n");
 
-  SCreateVector (status->statusPtr, &vector, numPoints);
+  LALSCreateVector (status->statusPtr, &vector, numPoints);
   CHECKSTATUSPTR (status);
 
   numProcs = id.numProcs;
 
   while (--numProcs > 0)
   {
-    MPIRecvMsg (status->statusPtr, &message);
+    LALMPIRecvMsg (status->statusPtr, &message);
     CHECKSTATUSPTR (status);
 
     printf ("Master received message code %d from slave %d\n",
@@ -48,7 +48,7 @@ Master (Status *status, MPIId id)
     {
       case MPISVector:
 
-        MPIRecvREAL4Vector (status->statusPtr, vector, message.source);
+        LALMPIRecvREAL4Vector (status->statusPtr, vector, message.source);
         CHECKSTATUSPTR (status);
 
         ASSERT (message.send == 1, status, 99, "Master expects to receive");
@@ -71,7 +71,7 @@ Master (Status *status, MPIId id)
 
   }
 
-  SDestroyVector (status->statusPtr, &vector);
+  LALSDestroyVector (status->statusPtr, &vector);
   CHECKSTATUSPTR (status);
 
   printf ("Master shutting down\n");

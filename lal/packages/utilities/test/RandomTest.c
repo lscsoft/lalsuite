@@ -33,7 +33,7 @@ extern char *optarg;
 extern int   optind;
 
 int output     = 0;
-int debuglevel = 0;
+int LALDebugLevel = 0;
 int verbose    = 0;
 
 static void
@@ -43,16 +43,16 @@ static void
 ParseOptions (int argc, char *argv[]);
 
 static void
-TestStatus (Status *status, const char *expectedCodes, int exitCode);
+TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
 static void
-ClearStatus (Status *status);
+ClearStatus (LALStatus *status);
 
 int
 main (int argc, char *argv[])
 {
   const  INT4          numPoints = 999;
-  static Status        status;
+  static LALStatus        status;
   static REAL4Vector  *vector;
   static RandomParams *randpar;
   INT4                 i;
@@ -80,7 +80,7 @@ main (int argc, char *argv[])
     printf ("\n===== Allocate Memory =====\n");
   }
 
-  CreateVector (&status, &vector, numPoints);
+  LALCreateVector (&status, &vector, numPoints);
   TestStatus (&status, CODES(0), 1);
 
 
@@ -96,7 +96,7 @@ main (int argc, char *argv[])
     printf ("\n===== Test Random Routines =====\n");
   }
 
-  CreateRandomParams (&status, &randpar, 0);
+  LALCreateRandomParams (&status, &randpar, 0);
   TestStatus (&status, CODES(0), 1);
 
 
@@ -109,7 +109,7 @@ main (int argc, char *argv[])
 
   for (i = 0; i < vector->length; ++i)
   {
-    UniformDeviate (&status, vector->data + i, randpar);
+    LALUniformDeviate (&status, vector->data + i, randpar);
     if (status.statusCode)
     {
       break;
@@ -135,7 +135,7 @@ main (int argc, char *argv[])
    */
 
 
-  NormalDeviates (&status, vector, randpar);
+  LALNormalDeviates (&status, vector, randpar);
   TestStatus (&status, CODES(0), 1);
 
   if (output)
@@ -156,7 +156,7 @@ main (int argc, char *argv[])
    */
 
 
-  if (verbose || debuglevel)
+  if (verbose || LALDebugLevel)
   {
     printf ("\n===== Check Errors =====\n");
   }
@@ -168,7 +168,7 @@ main (int argc, char *argv[])
     printf ("\n----- Non-Null Pointer Error: Code 2\n");
   }
 
-  CreateRandomParams (&status, &randpar, 0);
+  LALCreateRandomParams (&status, &randpar, 0);
   TestStatus (&status, CODES(RANDOM_ENNUL), 1);
 
   /* null pointer error */
@@ -178,36 +178,36 @@ main (int argc, char *argv[])
     printf ("\n----- Null Pointer Error: Code 1 (8 times)\n");
   }
 
-  CreateRandomParams (&status, NULL, 0);
+  LALCreateRandomParams (&status, NULL, 0);
   TestStatus (&status, CODES(RANDOM_ENULL), 1);
 
-  DestroyRandomParams (&status, NULL);
+  LALDestroyRandomParams (&status, NULL);
   TestStatus (&status, CODES(RANDOM_ENULL), 1);
 
   {
     RandomParams *tmp = NULL;
-    DestroyRandomParams (&status, &tmp);
+    LALDestroyRandomParams (&status, &tmp);
   }
   TestStatus (&status, CODES(RANDOM_ENULL), 1);
 
-  UniformDeviate (&status, NULL, randpar);
+  LALUniformDeviate (&status, NULL, randpar);
   TestStatus (&status, CODES(RANDOM_ENULL), 1);
   
-  UniformDeviate (&status, vector->data, NULL);
+  LALUniformDeviate (&status, vector->data, NULL);
   TestStatus (&status, CODES(RANDOM_ENULL), 1);
 
-  NormalDeviates (&status, NULL, randpar);
+  LALNormalDeviates (&status, NULL, randpar);
   TestStatus (&status, CODES(RANDOM_ENULL), 1);
 
   {
     REAL4Vector tmp;
     tmp.length = 10;
     tmp.data   = NULL;
-    NormalDeviates (&status, &tmp, randpar);
+    LALNormalDeviates (&status, &tmp, randpar);
   }
   TestStatus (&status, CODES(RANDOM_ENULL), 1);
   
-  NormalDeviates (&status, vector, NULL);
+  LALNormalDeviates (&status, vector, NULL);
   TestStatus (&status, CODES(RANDOM_ENULL), 1);
 
   /* vector length error */
@@ -221,7 +221,7 @@ main (int argc, char *argv[])
     REAL4Vector tmp;
     tmp.length = 0;
     tmp.data   = (REAL4 *)1;
-    NormalDeviates (&status, &tmp, randpar);
+    LALNormalDeviates (&status, &tmp, randpar);
   }
   TestStatus (&status, CODES(RANDOM_ESIZE), 1);
   
@@ -233,15 +233,15 @@ main (int argc, char *argv[])
    */
 
 
-  if (verbose || debuglevel)
+  if (verbose || LALDebugLevel)
   {
     printf ("\n===== Clean up and Exit =====\n");
   }
 
-  DestroyRandomParams (&status, &randpar);
+  LALDestroyRandomParams (&status, &randpar);
   TestStatus (&status, CODES(0), 1);
 
-  DestroyVector (&status, &vector);
+  LALDestroyVector (&status, &vector);
   TestStatus (&status, CODES(0), 1);
 
   LALCheckMemoryLeaks ();
@@ -258,7 +258,7 @@ main (int argc, char *argv[])
  *
  */
 static void
-TestStatus (Status *status, const char *ignored, int exitcode)
+TestStatus (LALStatus *status, const char *ignored, int exitcode)
 {
   char  str[64];
   char *tok;
@@ -304,7 +304,7 @@ TestStatus (Status *status, const char *ignored, int exitcode)
  *
  */
 void
-ClearStatus (Status *status)
+ClearStatus (LALStatus *status)
 {
   if (status->statusPtr)
   {
@@ -328,7 +328,7 @@ Usage (const char *program, int exitcode)
   fprintf (stderr, "  -h         print this message\n");
   fprintf (stderr, "  -q         quiet: run silently\n");
   fprintf (stderr, "  -v         verbose: print extra information\n");
-  fprintf (stderr, "  -d level   set debuglevel to level\n");
+  fprintf (stderr, "  -d level   set LALDebugLevel to level\n");
   fprintf (stderr, "  -o         output random numbers to files\n");
   exit (exitcode);
 }
@@ -360,7 +360,7 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'd': /* set debug level */
-        debuglevel = atoi (optarg);
+        LALDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* verbose */

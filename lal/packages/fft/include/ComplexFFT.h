@@ -57,43 +57,43 @@ ComplexFFTPlan;
 
 
 void
-EstimateFwdComplexFFTPlan (
-    Status          *stat,
+LALEstimateFwdComplexFFTPlan (
+    LALStatus          *stat,
     ComplexFFTPlan **plan,
     UINT4            size
     );
 
 void
-EstimateInvComplexFFTPlan (
-    Status          *stat,
+LALEstimateInvComplexFFTPlan (
+    LALStatus          *stat,
     ComplexFFTPlan **plan,
     UINT4            size
     );
 
 void
-MeasureFwdComplexFFTPlan (
-    Status          *stat,
+LALMeasureFwdComplexFFTPlan (
+    LALStatus          *stat,
     ComplexFFTPlan **plan,
     UINT4            size
     );
 
 void
-MeasureInvComplexFFTPlan (
-    Status          *stat,
+LALMeasureInvComplexFFTPlan (
+    LALStatus          *stat,
     ComplexFFTPlan **plan,
     UINT4            size
     );
 
 void
-DestroyComplexFFTPlan (
-    Status          *stat,
+LALDestroyComplexFFTPlan (
+    LALStatus          *stat,
     ComplexFFTPlan **plan
     );
 
 
 void
-COMPLEX8VectorFFT (
-    Status         *stat,
+LALCOMPLEX8VectorFFT (
+    LALStatus         *stat,
     COMPLEX8Vector *vout,
     COMPLEX8Vector *vinp,
     ComplexFFTPlan *plan

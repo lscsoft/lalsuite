@@ -13,12 +13,12 @@
  * 
  * SYNOPSIS
  *
- * DateString(): Returns a formatted string for the date and time in
+ * LALDateString(): Returns a formatted string for the date and time in
  *               ISO 8601 format, given an LALDate.
  * 
  * DESCRIPTION
  *
- * DateString():
+ * LALDateString():
  *      Inputs:   (LALDate *) time
  *
  *      Outputs:  (CHAR *) formatted string date and time
@@ -45,11 +45,11 @@ NRCSID (DATESTRINGC, "$Id$");
 
 
 void
-DateString (Status        *status,
+LALDateString (LALStatus        *status,
             CHARVector    *timestamp,
             const LALDate *date)
 {
-    INITSTATUS (status, "DateString", DATESTRINGC);
+    INITSTATUS (status, "LALDateString", DATESTRINGC);
 
     /*
      * Check pointer to input variable
@@ -76,6 +76,6 @@ DateString (Status        *status,
              "%Y-%m-%d %H:%M:%S UTC %a", &(date->unixDate));
 
     RETURN (status);
-} /* END DateString() */
+} /* END LALDateString() */
 
     

@@ -11,7 +11,7 @@ ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')')
 ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`ATYPE',`format(`%sArray',TYPE)')
-define(`FUNC',`format(`%sCreateArray',TYPECODE)')
+define(`FUNC',`format(`LAL%sCreateArray',TYPECODE)')
 
 /* <lalVerbatim file="ArrayFactoriesD"> */
 void FUNC ( Status *status, ATYPE **array, UINT4Vector *dimLength ) 
@@ -53,7 +53,7 @@ void FUNC ( Status *status, ATYPE **array, UINT4Vector *dimLength )
 
   /* allocate dimLength field and copy information there */
 
-  U4CreateVector (status->statusPtr, &(*array)->dimLength, numDims);
+  LALU4CreateVector (status->statusPtr, &(*array)->dimLength, numDims);
   if (status->statusPtr->statusCode)
   {
     LALFree (*array);
@@ -70,7 +70,7 @@ void FUNC ( Status *status, ATYPE **array, UINT4Vector *dimLength )
   {
     /* try to free memory                                               */
     /* this should ALWAYS work so we can use the CHECKSTATUSPTR() macro */
-    U4DestroyVector (status->statusPtr, &(*array)->dimLength);
+    LALU4DestroyVector (status->statusPtr, &(*array)->dimLength);
     CHECKSTATUSPTR (status);  /* if this fails, there is a memory leak  */
 
     LALFree (*array);

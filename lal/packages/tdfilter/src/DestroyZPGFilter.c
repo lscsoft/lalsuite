@@ -13,8 +13,8 @@ Destroys ZPG filter objects.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{DestroyZPGFilterCP}
-\index{\verb&DestroyCOMPLEX8ZPGFilter()&}
-\index{\verb&DestroyCOMPLEX16ZPGFilter()&}
+\index{\verb&LALDestroyCOMPLEX8ZPGFilter()&}
+\index{\verb&LALDestroyCOMPLEX16ZPGFilter()&}
 
 \subsubsection*{Description}
 
@@ -27,8 +27,8 @@ These functions destroy an object \verb@**output@ of type
 \subsubsection*{Uses}
 \begin{verbatim}
 LALFree()
-CDestroyVector()
-ZDestroyVector()
+LALCDestroyVector()
+LALZDestroyVector()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -44,21 +44,21 @@ ZDestroyVector()
 NRCSID(DESTROYZPGFILTERC,"$Id$");
 
 /* <lalVerbatim file="DestroyZPGFilterCP"> */
-void DestroyCOMPLEX8ZPGFilter(Status            *stat,
+void LALDestroyCOMPLEX8ZPGFilter(LALStatus            *stat,
 			      COMPLEX8ZPGFilter **input)
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"DestroyCOMPLEX8ZPGFilter",DESTROYZPGFILTERC);
+  INITSTATUS(stat,"LALDestroyCOMPLEX8ZPGFilter",DESTROYZPGFILTERC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure handle is non-null, and points to a non-null pointer.
-     (The routine CDestroyVector will check that the data fields are
+     (The routine LALCDestroyVector will check that the data fields are
      non-null.) */
   ASSERT(input,stat,ZPGFILTER_ENUL,ZPGFILTER_MSGENUL);
   ASSERT(*input,stat,ZPGFILTER_ENUL,ZPGFILTER_MSGENUL);
 
   /* Destroy the vector fields. */
-  TRY(CDestroyVector(stat->statusPtr,&((*input)->zeros)),stat);
-  TRY(CDestroyVector(stat->statusPtr,&((*input)->poles)),stat);
+  TRY(LALCDestroyVector(stat->statusPtr,&((*input)->zeros)),stat);
+  TRY(LALCDestroyVector(stat->statusPtr,&((*input)->poles)),stat);
 
   /* Free the filter, then point the handle to NULL. */
   LALFree(*input);
@@ -71,21 +71,21 @@ void DestroyCOMPLEX8ZPGFilter(Status            *stat,
 
 
 /* <lalVerbatim file="DestroyZPGFilterCP"> */
-void DestroyCOMPLEX16ZPGFilter(Status             *stat,
+void LALDestroyCOMPLEX16ZPGFilter(LALStatus             *stat,
 			       COMPLEX16ZPGFilter **input)
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"DestroyCOMPLEX16ZPGFilter",DESTROYZPGFILTERC);
+  INITSTATUS(stat,"LALDestroyCOMPLEX16ZPGFilter",DESTROYZPGFILTERC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure handle is non-null, and points to a non-null pointer.
-     (The routine ZDestroyVector will check that the data fields are
+     (The routine LALZDestroyVector will check that the data fields are
      non-null.) */
   ASSERT(input,stat,ZPGFILTER_ENUL,ZPGFILTER_MSGENUL);
   ASSERT(*input,stat,ZPGFILTER_ENUL,ZPGFILTER_MSGENUL);
 
   /* Destroy the vector fields. */
-  TRY(ZDestroyVector(stat->statusPtr,&((*input)->zeros)),stat);
-  TRY(ZDestroyVector(stat->statusPtr,&((*input)->poles)),stat);
+  TRY(LALZDestroyVector(stat->statusPtr,&((*input)->zeros)),stat);
+  TRY(LALZDestroyVector(stat->statusPtr,&((*input)->poles)),stat);
 
   /* Free the filter, then point the handle to NULL. */
   LALFree(*input);

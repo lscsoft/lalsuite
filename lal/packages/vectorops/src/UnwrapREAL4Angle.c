@@ -39,8 +39,8 @@
 NRCSID(UNWRAPREAL4ANGLEC,"$Id$");
 
 void
-UnwrapREAL4Angle (
-    Status               *status,
+LALUnwrapREAL4Angle (
+    LALStatus               *status,
     REAL4Vector          *out,
     const REAL4Vector    *in
     )
@@ -53,7 +53,7 @@ UnwrapREAL4Angle (
   REAL4     phaseII;
   REAL4     diffph;
   
-  INITSTATUS (status, "UnwrapREAL4Angle", UNWRAPREAL4ANGLEC );
+  INITSTATUS (status, "LALUnwrapREAL4Angle", UNWRAPREAL4ANGLEC );
   
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);

@@ -20,9 +20,9 @@
  * Writes PASS or FAIL to stdout as tests are passed or failed.
  *
  * CALLS
- * Overlap()
- * SCreateVector()
- * SDestroyVector()
+ * LALOverlap()
+ * LALSCreateVector()
+ * LALSDestroyVector()
  * FindRoot()
  *
  * NOTES
@@ -50,7 +50,7 @@ NRCSID (MAIN, "$Id$");
 extern char *optarg;
 extern int   optind;
 
-INT4 debuglevel = 0;   /* set to 2 to get full status information for tests */
+INT4 LALDebugLevel = 0;   /* set to 2 to get full status information for tests */
 INT4 verbose    = 1;
 
 static void
@@ -60,14 +60,14 @@ static void
 ParseOptions (int argc, char *argv[]);
 
 static void
-TestStatus (Status *status, const char *expectedCodes, int exitCode);
+TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
 
 
 int
 main (int argc, char *argv[])
 {
-  static Status    status;
+  static LALStatus    status;
   ChisqCdfIn       input1;
   Chi2ThresholdIn  input2;
   RhoThresholdIn   input3;
@@ -104,17 +104,17 @@ main (int argc, char *argv[])
   input1.nonCentral = rho*rho;
 
 
-  ChisqCdf (&status, &alpha1, &input1);
+  LALChisqCdf (&status, &alpha1, &input1);
   TestStatus (&status, CODES(0), 1);
-  OneMinusChisqCdf (&status, &alpha2, &input1);
+  LALOneMinusChisqCdf (&status, &alpha2, &input1);
   TestStatus (&status, CODES(0), 1);
-  NoncChisqCdf( &status, &beta, &input1);
+  LALNoncChisqCdf( &status, &beta, &input1);
   TestStatus (&status, CODES(0), 1);
 
   alpha = 1.0 - alpha1;
   if(verbose)
     {
-      printf("-- Test 1 of ChisqCdf(), NoncChisqCdf(), Chi2Threshold() and RhoThreshold() --\n");
+      printf("-- Test 1 of LALChisqCdf(), LALNoncChisqCdf(), LALChi2Threshold() and LALRhoThreshold() --\n");
       printf("chi2 is %f and dof is %f\n",chi2,dof);
       printf("rho is %f\n",rho);
       printf("alpha is %f, should be 0.970406\n",alpha);
@@ -131,12 +131,12 @@ main (int argc, char *argv[])
       
   input2.falseAlarm = alpha;
   input2.dof = dof;
-  Chi2Threshold( &status, &temp1, &input2);
+  LALChi2Threshold( &status, &temp1, &input2);
   TestStatus (&status, CODES(0), 1);
   input3.chi2 = chi2;
   input3.dof = dof;
   input3.falseDismissal=beta;
-  RhoThreshold( &status, &temp2, &input3);
+  LALRhoThreshold( &status, &temp2, &input3);
   TestStatus (&status, CODES(0), 1);
 
   if(verbose)
@@ -164,15 +164,15 @@ main (int argc, char *argv[])
   input1.dof = dof;
   input1.nonCentral = rho*rho;
 
-  ChisqCdf (&status, &alpha1, &input1);
+  LALChisqCdf (&status, &alpha1, &input1);
   TestStatus (&status, CODES(0), 1);
-  NoncChisqCdf( &status, &beta, &input1);
+  LALNoncChisqCdf( &status, &beta, &input1);
   TestStatus (&status, CODES(0), 1);
 
   alpha = 1.0 - alpha1;
   if(verbose)
     {
-      printf("-- Test 2 of ChisqCdf(), NoncChisqCdf(), Chi2Threshold() and RhoThreshold() --\n");
+      printf("-- Test 2 of LALChisqCdf(), LALNoncChisqCdf(), LALChi2Threshold() and LALRhoThreshold() --\n");
       printf("chi2 is %f and dof is %f\n",chi2,dof);
       printf("rho is %f\n",rho);
       printf("alpha is %f, should be 0.007066\n",alpha);
@@ -188,12 +188,12 @@ main (int argc, char *argv[])
       
   input2.falseAlarm = alpha;
   input2.dof = dof;
-  Chi2Threshold( &status, &temp1, &input2);
+  LALChi2Threshold( &status, &temp1, &input2);
   TestStatus (&status, CODES(0), 1);
   input3.chi2 = chi2;
   input3.dof = dof;
   input3.falseDismissal=beta;
-  RhoThreshold( &status, &temp2, &input3);
+  LALRhoThreshold( &status, &temp2, &input3);
   TestStatus (&status, CODES(0), 1);
 
   if(verbose)
@@ -218,7 +218,7 @@ main (int argc, char *argv[])
    */
 
 
-  if (verbose || debuglevel)
+  if (verbose || LALDebugLevel)
   {
     printf ("\n===== Check Errors =====\n");
   }
@@ -231,28 +231,28 @@ main (int argc, char *argv[])
     printf ("\n----- Null Pointer Error: Code 1 (8 times) \n");
   }
 
-  ChisqCdf (&status, &alpha1, NULL);
+  LALChisqCdf (&status, &alpha1, NULL);
   TestStatus (&status, CODES(THRESHOLDS_ENULLP), 1);
 
-  ChisqCdf (&status, NULL, &input1);
+  LALChisqCdf (&status, NULL, &input1);
   TestStatus (&status, CODES(THRESHOLDS_ENULLP), 1);
 
-  NoncChisqCdf (&status, &alpha1, NULL);
+  LALNoncChisqCdf (&status, &alpha1, NULL);
   TestStatus (&status, CODES(THRESHOLDS_ENULLP), 1);
 
-  NoncChisqCdf (&status, NULL, &input1);
+  LALNoncChisqCdf (&status, NULL, &input1);
   TestStatus (&status, CODES(THRESHOLDS_ENULLP), 1);
 
-  Chi2Threshold( &status, &temp1, NULL);
+  LALChi2Threshold( &status, &temp1, NULL);
   TestStatus (&status, CODES(THRESHOLDS_ENULLP), 1);
 
-  Chi2Threshold( &status, NULL, &input2);
+  LALChi2Threshold( &status, NULL, &input2);
   TestStatus (&status, CODES(THRESHOLDS_ENULLP), 1);
 
-  RhoThreshold( &status, &temp2, NULL);
+  LALRhoThreshold( &status, &temp2, NULL);
   TestStatus (&status, CODES(THRESHOLDS_ENULLP), 1);
 
-  RhoThreshold( &status, NULL, &input3);
+  LALRhoThreshold( &status, NULL, &input3);
   TestStatus (&status, CODES(THRESHOLDS_ENULLP), 1);
 
 
@@ -266,36 +266,36 @@ main (int argc, char *argv[])
   }
 
   input1.chi2 *= -1.0;
-  ChisqCdf (&status, &alpha1, &input1);
+  LALChisqCdf (&status, &alpha1, &input1);
   TestStatus (&status, CODES(THRESHOLDS_EPOSARG), 1);
-  NoncChisqCdf (&status, &alpha1, &input1);
+  LALNoncChisqCdf (&status, &alpha1, &input1);
   TestStatus (&status, CODES(THRESHOLDS_EPOSARG), 1);
   input1.chi2 *= -1.0;  /* set it back to positive for remaining tests */
 
   input1.dof *= -1.0;
-  ChisqCdf (&status, &alpha1, &input1);
+  LALChisqCdf (&status, &alpha1, &input1);
   TestStatus (&status, CODES(THRESHOLDS_EPOSARG), 1);
-  NoncChisqCdf (&status, &alpha1, &input1);
+  LALNoncChisqCdf (&status, &alpha1, &input1);
   TestStatus (&status, CODES(THRESHOLDS_EPOSARG), 1);
   input1.dof *= -1.0;
 
   input1.nonCentral *= -1.0;
-  NoncChisqCdf (&status, &alpha1, &input1);
+  LALNoncChisqCdf (&status, &alpha1, &input1);
   TestStatus (&status, CODES(THRESHOLDS_EPOSARG), 1);
   input1.nonCentral *= -1.0;
 
   input2.dof *= -1;
-  Chi2Threshold( &status, &temp1, &input2);
+  LALChi2Threshold( &status, &temp1, &input2);
   TestStatus (&status, CODES(THRESHOLDS_EPOSARG), 1);
   input2.dof *= -1;
   
   input3.dof *= -1;
-  RhoThreshold( &status, &temp2, &input3);
+  LALRhoThreshold( &status, &temp2, &input3);
   TestStatus (&status, CODES(THRESHOLDS_EPOSARG), 1);
   input3.dof *= -1;
 
   input3.chi2 *= -1;
-  RhoThreshold( &status, &temp2, &input3);
+  LALRhoThreshold( &status, &temp2, &input3);
   TestStatus (&status, CODES(THRESHOLDS_EPOSARG), 1);
   input3.chi2 *= -1;
 
@@ -312,29 +312,29 @@ main (int argc, char *argv[])
 
   input1.dof = 1000;
   input1.chi2 = 1000;
-  ChisqCdf (&status, &alpha1, &input1);
+  LALChisqCdf (&status, &alpha1, &input1);
   TestStatus (&status, CODES(THRESHOLDS_EMXIT), 1);
 
 
   /* 
    *  There is no test here for the second ASSERT for this error
-   *  in ChisqCdf() since I could not find a set of parameters
+   *  in LALChisqCdf() since I could not find a set of parameters
    *  which caused this condition to occur.
    */
 
 
 
   /* 
-   *  Test NoncChisqCdf for a recursive error 
+   *  Test LALNoncChisqCdf for a recursive error 
    *
    *  This test currently commented out since it causes a memory
    *  leak and causes the LALCheckMemoryLeaks() test below to fail.
-   *  The memory leak is due to the way the LAL Status macros are
+   *  The memory leak is due to the way the LAL LALStatus macros are
    *  currently written.  
    *
    */
 
-  /*  NoncChisqCdf (&status, &alpha1, &input1);
+  /*  LALNoncChisqCdf (&status, &alpha1, &input1);
       TestStatus (&status, CODES(-1), 1); */
 
 
@@ -346,7 +346,7 @@ main (int argc, char *argv[])
   
   /* 
    *  There is no test here for exceeding the maximum number of
-   *  iterations in NoncChisqCdf() since I could not find a set
+   *  iterations in LALNoncChisqCdf() since I could not find a set
    *   of parameters which caused this condition to occur.
    */
 
@@ -364,10 +364,10 @@ main (int argc, char *argv[])
 
 
   input2.falseAlarm = -1.0;
-  Chi2Threshold (&status, &temp1, &input2);
+  LALChi2Threshold (&status, &temp1, &input2);
   TestStatus (&status, CODES(THRESHOLDS_EBADPROB), 1);
   input2.falseAlarm = 2.0;
-  Chi2Threshold (&status, &alpha1, &input2);
+  LALChi2Threshold (&status, &alpha1, &input2);
   TestStatus (&status, CODES(THRESHOLDS_EBADPROB), 1);
   /* set it back to original value for remaining tests */
   input2.falseAlarm= alpha;  
@@ -375,10 +375,10 @@ main (int argc, char *argv[])
 
 
   input3.falseDismissal = -1.0;
-  RhoThreshold (&status, &temp2, &input3);
+  LALRhoThreshold (&status, &temp2, &input3);
   TestStatus (&status, CODES(THRESHOLDS_EBADPROB), 1);
   input3.falseDismissal = 2.0;
-  RhoThreshold (&status, &temp2, &input3);
+  LALRhoThreshold (&status, &temp2, &input3);
   TestStatus (&status, CODES(THRESHOLDS_EBADPROB), 1);
   /* set it back to original value for remaining tests */
   input3.falseDismissal= beta;  
@@ -402,7 +402,7 @@ main (int argc, char *argv[])
  *
  */
 static void
-TestStatus (Status *status, const char *ignored, int exitcode)
+TestStatus (LALStatus *status, const char *ignored, int exitcode)
 {
   char  str[64];
   char *tok;
@@ -453,7 +453,7 @@ Usage (const char *program, int exitcode)
   fprintf (stderr, "  -h         print this message\n");
   fprintf (stderr, "  -q         quiet: run silently\n");
   fprintf (stderr, "  -v         verbose: print extra information\n");
-  fprintf (stderr, "  -d level   set debuglevel to level\n");
+  fprintf (stderr, "  -d level   set LALDebugLevel to level\n");
   exit (exitcode);
 }
 
@@ -480,7 +480,7 @@ ParseOptions (int argc, char *argv[])
     switch (c)
     {
       case 'd': /* set debug level */
-        debuglevel = atoi (optarg);
+        LALDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* verbose */

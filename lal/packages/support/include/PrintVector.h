@@ -15,7 +15,7 @@ This is a simple utility to print vectors into a file.
 #include "PrintVector.h"
 \end{verbatim}
 
-\noindent Defines PrintVector interface.
+\noindent Defines LALPrintVector interface.
 
 \vfill{\footnotesize\input{PrintVectorHV}}
 \newpage\input{PrintVectorC}
@@ -34,7 +34,7 @@ extern "C" {
 
 NRCSID( PRINTVECTORH, "$Id$" );
 
-void PrintVector( REAL4Vector *vector );
+void LALPrintVector( REAL4Vector *vector );
 
 #ifdef  __cplusplus
 }

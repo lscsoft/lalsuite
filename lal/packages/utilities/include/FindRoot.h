@@ -29,8 +29,8 @@ NRCSID (FINDROOTH, "$Id$");
 #define FINDROOT_MSGEMXIT "Maximum iterations exceeded"
 #define FINDROOT_MSGEBRKT "Root not bracketed"
 
-typedef void (REAL4LALFunction) (Status *s, REAL4 *y, REAL4 x, void *p);
-typedef void (REAL8LALFunction) (Status *s, REAL8 *y, REAL8 x, void *p);
+typedef void (REAL4LALFunction) (LALStatus *s, REAL4 *y, REAL4 x, void *p);
+typedef void (REAL8LALFunction) (LALStatus *s, REAL8 *y, REAL8 x, void *p);
 
 typedef struct
 tagSFindRootIn
@@ -53,30 +53,30 @@ tagDFindRootIn
 DFindRootIn;
 
 void
-SBracketRoot (
-    Status      *status,
+LALSBracketRoot (
+    LALStatus      *status,
     SFindRootIn *inout,
     void        *params
     );
 
 void
-DBracketRoot (
-    Status      *status,
+LALDBracketRoot (
+    LALStatus      *status,
     DFindRootIn *inout,
     void        *params
     );
 
 void
-SBisectionFindRoot (
-    Status      *status,
+LALSBisectionFindRoot (
+    LALStatus      *status,
     REAL4       *root,
     SFindRootIn *input,
     void        *params
     );
 
 void
-DBisectionFindRoot (
-    Status      *status,
+LALDBisectionFindRoot (
+    LALStatus      *status,
     REAL8       *root,
     DFindRootIn *input,
     void        *params

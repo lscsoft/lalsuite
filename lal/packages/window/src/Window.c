@@ -12,7 +12,7 @@
  * Window
  * 
  * SYNOPSIS 
- * void Window (Status *, REAL4Vector *vector, WindowParams parameters);
+ * void Window (LALStatus *, REAL4Vector *vector, WindowParams parameters);
  * 
  * DESCRIPTION 
  * Create a Window function of specified type in vector. 
@@ -36,7 +36,7 @@ NRCSID (WINDOW, "$Id$");
 
 static char *WindowTypeNames[] = WINDOWNAMELIST;
 
-void LALWindow(Status *status, REAL4Vector *vector, LALWindowParams *parameters) 
+void LALWindow(LALStatus *status, REAL4Vector *vector, LALWindowParams *parameters) 
 {
   INT4 i;
   INT4 length;

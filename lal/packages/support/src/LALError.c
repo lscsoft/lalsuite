@@ -47,7 +47,7 @@ Usually this is done by raising a \verb@SIGABRT@ signal, but this can
 change in implementations that have different requirements.  Standard
 LAL routines should \emph{not} terminate execution, but should instead
 return control to the calling routine, reporting errors through their
-\verb@Status@ structure.  The exception is when a function receives a
+\verb@LALStatus@ structure.  The exception is when a function receives a
 \verb@NULL@ status pointer, in which case it has no option but to
 abort.  This is done automatically by the \verb@INITSTATUS()@ macro
 (see \verb@LALStatusMacros.h@), so programmers should never need to
@@ -55,7 +55,7 @@ invoke \verb@LALAbort()@ explicitly.
 
 \paragraph{\texttt{LALError()}} prints the \verb@statement@
 string to the error log, provided that the value of the global
-\verb@debuglevel@ is set to allow error messages.  It returns the
+\verb@LALDebugLevel@ is set to allow error messages.  It returns the
 number of characters printed.  This is the standard LAL routine for
 printing error messages.  However, \verb@LALError()@ is called
 automatically by the status-handling macros (see
@@ -66,7 +66,7 @@ will generally not have to call \verb@LALError()@ explicitly.
 
 \paragraph{\texttt{LALWarning()}} prints the \verb@warning@
 string to the error log, provided that the value of the global
-\verb@debuglevel@ is set to allow warning messages.  It returns the
+\verb@LALDebugLevel@ is set to allow warning messages.  It returns the
 number of characters printed.  A warning message is less serious than
 an error message: it indicates that computation is proceeding
 successfully, but with unusual or unexpected behaviour that may
@@ -74,7 +74,7 @@ invalidate the results of the computation.
 
 \paragraph{\texttt{LALInfo()}} prints the \verb@info@
 string to the error log, provided that the value of the global
-\verb@debuglevel@ is set to allow information messages.  It returns
+\verb@LALDebugLevel@ is set to allow information messages.  It returns
 the number of characters printed.  An information message indicates
 that a computation is proceding normally, and simply provides
 additional information about its progress.
@@ -87,7 +87,7 @@ characters printed.  The message begins with the word \verb@Enter@ (if
 \verb@exit@ = 0) or \verb@Leave@ (if \verb@exit@ $\neq0$), to indicate
 whether the flow of execution has just entered or is about to leave
 the function.  Tracking information is printed only if the value of
-the global \verb@debuglevel@ is set to allow it.  \verb@LALTrace()@ is
+the global \verb@LALDebugLevel@ is set to allow it.  \verb@LALTrace()@ is
 called automatically by the status macros when entering or leaving a
 function (see \verb@LALStatusMacros.h@), so LAL programmers need never
 invoke it explicitly.
@@ -96,12 +96,12 @@ invoke it explicitly.
 
 The functions \verb@LALError()@, \verb@LALWarning()@,
 \verb@LALInfo()@, and \verb@LALTrace()@ print status messages
-depending on the value of the global \verb@debuglevel@.  Specifically,
+depending on the value of the global \verb@LALDebugLevel@.  Specifically,
 each type of status message is associated with a particular bit in
-\verb@debuglevel@.  If the value of the bit is 1, that type status
+\verb@LALDebugLevel@.  If the value of the bit is 1, that type status
 message will be printed; if it is 0, that type of message will be
 suppressed.  See the documentation in \verb@LALStatusMacros.h@ for
-information about how to set the value of \verb@debuglevel@.
+information about how to set the value of \verb@LALDebugLevel@.
 
 These four functions are also suppressed if a module is compiled with
 the \verb@NDEBUG@ flag set.  In this case, however, the function calls
@@ -135,7 +135,7 @@ we will not bother with additional usage information.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-debuglevel
+LALDebugLevel
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -161,7 +161,7 @@ debuglevel
 
 NRCSID( LALERRORC, "$Id$" );
 
-extern int debuglevel;
+extern int LALDebugLevel;
 
 
 /* <lalVerbatim file="LALErrorCP"> */
@@ -191,10 +191,10 @@ LALAbort( const char *fmt, ... )
 
 /* <lalVerbatim file="LALErrorCP"> */
 int
-LALError( Status *status, const char *statement )
+LALError( LALStatus *status, const char *statement )
 { /* </lalVerbatim> */
   int n = 0;
-  if ( debuglevel & LALERROR )
+  if ( LALDebugLevel & LALERROR )
   {
     n = LALPrintError( "Error[%d] %d: function %s, file %s, line %d, %s\n" 
         "        %s %s\n", status->level, status->statusCode,
@@ -207,10 +207,10 @@ LALError( Status *status, const char *statement )
 
 /* <lalVerbatim file="LALErrorCP"> */
 int
-LALWarning( Status *status, const char *warning )
+LALWarning( LALStatus *status, const char *warning )
 { /* </lalVerbatim> */
   int n = 0;
-  if ( debuglevel & LALWARNING )
+  if ( LALDebugLevel & LALWARNING )
   {
     n = LALPrintError( "Warning[%d]: function %s, file %s, line %d, %s\n" 
         "        %s\n", status->level, status->function, status->file,
@@ -222,10 +222,10 @@ LALWarning( Status *status, const char *warning )
 
 /* <lalVerbatim file="LALErrorCP"> */
 int
-LALInfo( Status *status, const char *info )
+LALInfo( LALStatus *status, const char *info )
 { /* </lalVerbatim> */
   int n = 0;
-  if ( debuglevel & LALINFO )
+  if ( LALDebugLevel & LALINFO )
   {
     n = LALPrintError( "Info[%d]: function %s, file %s, line %d, %s\n" 
         "        %s\n", status->level, status->function, status->file,
@@ -237,10 +237,10 @@ LALInfo( Status *status, const char *info )
 
 /* <lalVerbatim file="LALErrorCP"> */
 int
-LALTrace( Status *status, int exit )
+LALTrace( LALStatus *status, int exit )
 { /* </lalVerbatim> */
   int n = 0;
-  if ( debuglevel & LALTRACE )
+  if ( LALDebugLevel & LALTRACE )
   {
     n = LALPrintError( "%s[%d]: function %s, file %s, line %d, %s\n",
         exit ? "Leave" : "Enter", status->level, status->function,
@@ -261,7 +261,7 @@ LALTrace( Status *status, int exit )
 
 /* <lalVerbatim file="LALErrorCP2"> */
 int
-LALInitStatus( Status *status, const char *function, const char *id,
+LALInitStatus( LALStatus *status, const char *function, const char *id,
 	       const char *file, const int line )
 { /* </lalVerbatim> */
   int exitcode = 0;
@@ -269,7 +269,7 @@ LALInitStatus( Status *status, const char *function, const char *id,
   {
     INT4 level = status->level;
     exitcode = status->statusPtr ? 1 : 0;
-    memset( status, 0, sizeof( Status ) ); /* possible memory leak */
+    memset( status, 0, sizeof( LALStatus ) ); /* possible memory leak */
     status->level    = level > 0 ? level : 1;
     status->Id       = id;
     status->function = function;
@@ -294,7 +294,7 @@ LALInitStatus( Status *status, const char *function, const char *id,
 
 /* <lalVerbatim file="LALErrorCP2"> */
 int
-LALPrepareReturn( Status *status, const char *file, const int line )
+LALPrepareReturn( LALStatus *status, const char *file, const int line )
 { /* </lalVerbatim> */
   status->file = file;
   status->line = line;
@@ -309,7 +309,7 @@ LALPrepareReturn( Status *status, const char *file, const int line )
 
 /* <lalVerbatim file="LALErrorCP2"> */
 int
-LALAttatchStatusPtr( Status *status, const char *file, const int line )
+LALAttatchStatusPtr( LALStatus *status, const char *file, const int line )
 { /* </lalVerbatim> */
   int exitcode = 0;
   if ( status->statusPtr )
@@ -320,7 +320,7 @@ LALAttatchStatusPtr( Status *status, const char *file, const int line )
   }
   else
   {
-    status->statusPtr = (Status *) LALCalloc( 1, sizeof( Status ) );
+    status->statusPtr = (LALStatus *) LALCalloc( 1, sizeof( LALStatus ) );
     if ( !status->statusPtr )
     {
       LALPrepareAbort( status, -4, "ATTATCHSTATUSPTR: memory allocation error",
@@ -338,7 +338,7 @@ LALAttatchStatusPtr( Status *status, const char *file, const int line )
 
 /* <lalVerbatim file="LALErrorCP2"> */
 int
-LALDetatchStatusPtr( Status *status, const char *file, const int line )
+LALDetatchStatusPtr( LALStatus *status, const char *file, const int line )
 { /* </lalVerbatim> */
   int exitcode = 0;
   if ( status->statusPtr )
@@ -359,7 +359,7 @@ LALDetatchStatusPtr( Status *status, const char *file, const int line )
 
 /* <lalVerbatim file="LALErrorCP2"> */
 int
-LALPrepareAbort( Status *status, const INT4 code, const char *mesg,
+LALPrepareAbort( LALStatus *status, const INT4 code, const char *mesg,
 		 const char *file, const int line )
 { /* </lalVerbatim> */
   if ( status->statusPtr )
@@ -381,7 +381,7 @@ LALPrepareAbort( Status *status, const INT4 code, const char *mesg,
 
 /* <lalVerbatim file="LALErrorCP2"> */
 int
-LALPrepareAssertFail( Status *status, const INT4 code, const char *mesg,
+LALPrepareAssertFail( LALStatus *status, const INT4 code, const char *mesg,
 		      const char *statement, const char *file,
 		      const int line )
 { /* </lalVerbatim> */
@@ -401,7 +401,7 @@ LALPrepareAssertFail( Status *status, const INT4 code, const char *mesg,
 
 /* <lalVerbatim file="LALErrorCP2"> */
 int
-LALCheckStatusPtr( Status *status, const char *statement, const char *file,
+LALCheckStatusPtr( LALStatus *status, const char *statement, const char *file,
 		   const int line )
 { /* </lalVerbatim> */
   if ( status->statusPtr->statusCode )
@@ -425,11 +425,11 @@ LALCheckStatusPtr( Status *status, const char *statement, const char *file,
  */
 /* <lalVerbatim file="LALErrorCP2"> */
 void
-FREESTATUSPTR( Status *status )
+FREESTATUSPTR( LALStatus *status )
 { /* </lalVerbatim> */
   do
   {
-    Status *next = status->statusPtr->statusPtr;
+    LALStatus *next = status->statusPtr->statusPtr;
     LALFree( status->statusPtr );
     status->statusPtr = next;
   }
@@ -440,9 +440,9 @@ FREESTATUSPTR( Status *status )
 
 /* <lalVerbatim file="LALErrorCP2"> */
 void
-REPORTSTATUS( Status *status )
+REPORTSTATUS( LALStatus *status )
 { /* </lalVerbatim> */
-  Status *ptr;                                                    
+  LALStatus *ptr;                                                    
   for ( ptr = status; ptr ; ptr = ptr->statusPtr )                  
   {                                                           
     LALPrintError( "\nLevel %i: %s\n", ptr->level, ptr->Id );    

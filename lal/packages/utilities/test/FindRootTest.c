@@ -33,7 +33,7 @@ NRCSID (MAIN, "$Id$");
 extern char *optarg;
 extern int   optind;
 
-int debuglevel = 0;
+int LALDebugLevel = 0;
 int verbose    = 0;
 
 static void
@@ -43,10 +43,10 @@ static void
 ParseOptions (int argc, char *argv[]);
 
 static void
-TestStatus (Status *status, const char *expectedCodes, int exitCode);
+TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
 static void
-ClearStatus (Status *status);
+ClearStatus (LALStatus *status);
 
 /*
  *
@@ -54,7 +54,7 @@ ClearStatus (Status *status);
  *
  */
 static void
-F (Status *s, REAL4 *y, REAL4 x, void *p)
+F (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   REAL4 y0;
   INITSTATUS (s, "F", MAIN);
@@ -66,7 +66,7 @@ F (Status *s, REAL4 *y, REAL4 x, void *p)
 }
 
 static void
-FF (Status *s, REAL8 *y, REAL8 x, void *p)
+FF (LALStatus *s, REAL8 *y, REAL8 x, void *p)
 {
   REAL8 y0;
   INITSTATUS (s, "FF", MAIN);
@@ -81,7 +81,7 @@ FF (Status *s, REAL8 *y, REAL8 x, void *p)
 int
 main (int argc, char *argv[])
 {
-  static Status  status;
+  static LALStatus  status;
   SFindRootIn    sinput;
   DFindRootIn    dinput;
   REAL4          y0;
@@ -136,7 +136,7 @@ main (int argc, char *argv[])
     printf ("Initial domain: [%e,%e]\n", dinput.xmin, dinput.xmax);
   }
 
-  SBracketRoot (&status, &sinput, &y0);
+  LALSBracketRoot (&status, &sinput, &y0);
   TestStatus (&status, CODES(0), 1);
 
   if (verbose)
@@ -150,7 +150,7 @@ main (int argc, char *argv[])
     return 1;
   }
 
-  DBracketRoot (&status, &dinput, &yy0);
+  LALDBracketRoot (&status, &dinput, &yy0);
   TestStatus (&status, CODES(0), 1);
 
   if (verbose)
@@ -165,7 +165,7 @@ main (int argc, char *argv[])
   }
 
 
-  SBisectionFindRoot (&status, &sroot, &sinput, &y0);
+  LALSBisectionFindRoot (&status, &sroot, &sinput, &y0);
   TestStatus (&status, CODES(0), 1);
 
   if (verbose)
@@ -180,7 +180,7 @@ main (int argc, char *argv[])
   }
 
 
-  DBisectionFindRoot (&status, &droot, &dinput, &yy0);
+  LALDBisectionFindRoot (&status, &droot, &dinput, &yy0);
   TestStatus (&status, CODES(0), 1);
 
   if (verbose)
@@ -202,7 +202,7 @@ main (int argc, char *argv[])
    */
 
 
-  if (verbose || debuglevel)
+  if (verbose || LALDebugLevel)
   {
     printf ("\n===== Check Errors =====\n");
   }
@@ -214,10 +214,10 @@ main (int argc, char *argv[])
     printf ("\n----- Recursive Error: Code -1 (2 times)\n");
   }
 
-  SBracketRoot (&status, &sinput, NULL);
+  LALSBracketRoot (&status, &sinput, NULL);
   TestStatus  (&status, CODES(-1), 1);
   ClearStatus (&status);
-  DBracketRoot (&status, &dinput, NULL);
+  LALDBracketRoot (&status, &dinput, NULL);
   TestStatus  (&status, CODES(-1), 1);
   ClearStatus (&status);
 
@@ -228,32 +228,32 @@ main (int argc, char *argv[])
     printf ("\n----- Null Pointer Error: Code 1 (10 times)\n");
   }
 
-  SBracketRoot (&status, NULL, &y0);
+  LALSBracketRoot (&status, NULL, &y0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
-  DBracketRoot (&status, NULL, &yy0);
-  TestStatus (&status, CODES(FINDROOT_ENULL), 1);
-
-  SBisectionFindRoot (&status, NULL, &sinput, &y0);
-  TestStatus (&status, CODES(FINDROOT_ENULL), 1);
-  DBisectionFindRoot (&status, NULL, &dinput, &yy0);
+  LALDBracketRoot (&status, NULL, &yy0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
 
-  SBisectionFindRoot (&status, &sroot, NULL, &y0);
+  LALSBisectionFindRoot (&status, NULL, &sinput, &y0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
-  DBisectionFindRoot (&status, &droot, NULL, &yy0);
+  LALDBisectionFindRoot (&status, NULL, &dinput, &yy0);
+  TestStatus (&status, CODES(FINDROOT_ENULL), 1);
+
+  LALSBisectionFindRoot (&status, &sroot, NULL, &y0);
+  TestStatus (&status, CODES(FINDROOT_ENULL), 1);
+  LALDBisectionFindRoot (&status, &droot, NULL, &yy0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
 
   sinput.function = NULL;
   dinput.function = NULL;
 
-  SBracketRoot (&status, &sinput, &y0);
+  LALSBracketRoot (&status, &sinput, &y0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
-  DBracketRoot (&status, &dinput, &yy0);
+  LALDBracketRoot (&status, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
 
-  SBisectionFindRoot (&status, &sroot, &sinput, &y0);
+  LALSBisectionFindRoot (&status, &sroot, &sinput, &y0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
-  DBisectionFindRoot (&status, &droot, &dinput, &yy0);
+  LALDBisectionFindRoot (&status, &droot, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
 
   /* invalid initial domain error for BracketRoot() */
@@ -270,9 +270,9 @@ main (int argc, char *argv[])
   dinput.xmin     = 5;
   dinput.xmax     = 5;
 
-  SBracketRoot (&status, &sinput, &y0);
+  LALSBracketRoot (&status, &sinput, &y0);
   TestStatus (&status, CODES(FINDROOT_EIDOM), 1);
-  DBracketRoot (&status, &dinput, &yy0);
+  LALDBracketRoot (&status, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_EIDOM), 1);
 
   /* maximum iterations exceeded error */
@@ -289,9 +289,9 @@ main (int argc, char *argv[])
   dinput.xmin     = -1e-18;
   dinput.xmax     = 1e-18;
 
-  SBracketRoot (&status, &sinput, &y0);
+  LALSBracketRoot (&status, &sinput, &y0);
   TestStatus (&status, CODES(FINDROOT_EMXIT), 1);
-  DBracketRoot (&status, &dinput, &yy0);
+  LALDBracketRoot (&status, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_EMXIT), 1);
 
   y0              = -1;
@@ -303,9 +303,9 @@ main (int argc, char *argv[])
   dinput.xmax     = 1e19;
   dinput.xacc     = 2e-38;
 
-  SBisectionFindRoot (&status, &sroot, &sinput, &y0);
+  LALSBisectionFindRoot (&status, &sroot, &sinput, &y0);
   TestStatus (&status, CODES(FINDROOT_EMXIT), 1);
-  DBisectionFindRoot (&status, &droot, &dinput, &yy0);
+  LALDBisectionFindRoot (&status, &droot, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_EMXIT), 1);
 
   /* root not bracketed error in BisectionFindRoot() */
@@ -322,9 +322,9 @@ main (int argc, char *argv[])
   dinput.xmax     = -3;
   dinput.xacc     = 1e-6;
 
-  SBisectionFindRoot (&status, &sroot, &sinput, &y0);
+  LALSBisectionFindRoot (&status, &sroot, &sinput, &y0);
   TestStatus (&status, CODES(FINDROOT_EBRKT), 1);
-  DBisectionFindRoot (&status, &droot, &dinput, &yy0);
+  LALDBisectionFindRoot (&status, &droot, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_EBRKT), 1);
 
   return 0;
@@ -340,7 +340,7 @@ main (int argc, char *argv[])
  *
  */
 static void
-TestStatus (Status *status, const char *ignored, int exitcode)
+TestStatus (LALStatus *status, const char *ignored, int exitcode)
 {
   char  str[64];
   char *tok;
@@ -386,7 +386,7 @@ TestStatus (Status *status, const char *ignored, int exitcode)
  *
  */
 void
-ClearStatus (Status *status)
+ClearStatus (LALStatus *status)
 {
   if (status->statusPtr)
   {
@@ -410,7 +410,7 @@ Usage (const char *program, int exitcode)
   fprintf (stderr, "  -h         print this message\n");
   fprintf (stderr, "  -q         quiet: run silently\n");
   fprintf (stderr, "  -v         verbose: print extra information\n");
-  fprintf (stderr, "  -d level   set debuglevel to level\n");
+  fprintf (stderr, "  -d level   set LALDebugLevel to level\n");
   exit (exitcode);
 }
 
@@ -437,7 +437,7 @@ ParseOptions (int argc, char *argv[])
     switch (c)
     {
       case 'd': /* set debug level */
-        debuglevel = atoi (optarg);
+        LALDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* verbose */

@@ -9,12 +9,12 @@
 NRCSID (INSPIRALWAVEC, "$Id$");
 
 
-void InspiralWave(Status *status,
+void LALInspiralWave(LALStatus *status,
 		  REAL8Vector *signal,
 		  InspiralTemplate *params)
 {
 
-   INITSTATUS(status, "InspiralWave", INSPIRALWAVEC);
+   INITSTATUS(status, "LALInspiralWave", INSPIRALWAVEC);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (signal,  status, INSPIRALWAVE_ENULL, INSPIRALWAVE_MSGENULL);
@@ -28,15 +28,15 @@ void InspiralWave(Status *status,
 
 			case one:
 			case best:
-		        	TimeDomain2(status->statusPtr, signal, params);
+		        	LALTimeDomain2(status->statusPtr, signal, params);
    	                	CHECKSTATUSPTR(status);
 				break;
 			case two:
-				TappRpnTdomFreq(status->statusPtr, signal, params);
+				LALTappRpnTdomFreq(status->statusPtr, signal, params);
    	                	CHECKSTATUSPTR(status);
 				break;
 			case three:
-				TappRpnTdomTime(status->statusPtr, signal, params);
+				LALTappRpnTdomTime(status->statusPtr, signal, params);
    	                	CHECKSTATUSPTR(status);
 				break;
 			default:

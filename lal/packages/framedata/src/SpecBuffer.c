@@ -20,8 +20,8 @@
 NRCSID (SPECBUFFERC, "$Id$");
 
 void
-ComputeSpectrum (
-    Status               *status,
+LALComputeSpectrum (
+    LALStatus               *status,
     REAL4FrequencySeries *spectrum,
     INT2TimeSeries       *timeSeries,
     ComputeSpectrumPar   *parameters
@@ -32,7 +32,7 @@ ComputeSpectrum (
   INT4         i;
   INT4         n;
 
-  INITSTATUS (status, "ComputeSpectrum", SPECBUFFERC);
+  INITSTATUS (status, "LALComputeSpectrum", SPECBUFFERC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
@@ -51,7 +51,7 @@ ComputeSpectrum (
           SPECBUFFER_ESZMM, SPECBUFFER_MSGESZMM);
 
   /* create temporary vector */
-  CreateVector (status->statusPtr, &tmp, timeSeries->data->length);
+  LALCreateVector (status->statusPtr, &tmp, timeSeries->data->length);
   CHECKSTATUSPTR (status);
 
   spectrum->epoch = timeSeries->epoch;
@@ -68,10 +68,10 @@ ComputeSpectrum (
     tmp->data[i] = fac*timeSeries->data->data[i]*parameters->window->data[i];
   }
 
-  RealPowerSpectrum (status->statusPtr, spectrum->data, tmp, parameters->plan);
+  LALRealPowerSpectrum (status->statusPtr, spectrum->data, tmp, parameters->plan);
   CHECKSTATUSPTR (status);
 
-  DestroyVector (status->statusPtr, &tmp);
+  LALDestroyVector (status->statusPtr, &tmp);
   CHECKSTATUSPTR (status);
 
   /* normal exit */
@@ -81,8 +81,8 @@ ComputeSpectrum (
 
 
 void
-CreateSpectrumBuffer (
-    Status             *status,
+LALCreateSpectrumBuffer (
+    LALStatus             *status,
     SpectrumBuffer    **buffer,
     SpectrumBufferPar  *params
     )
@@ -91,7 +91,7 @@ CreateSpectrumBuffer (
   INT4 specSize;
   INT4 spec;
 
-  INITSTATUS (status, "CreateSpectrumBuffer", SPECBUFFERC);
+  INITSTATUS (status, "LALCreateSpectrumBuffer", SPECBUFFERC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
@@ -132,13 +132,13 @@ CreateSpectrumBuffer (
     REAL4FrequencySeries *thisSpec = (*buffer)->specBuffer + spec;
 
     thisSpec->data = NULL;
-    CreateVector (status->statusPtr, &thisSpec->data, specSize);
+    LALCreateVector (status->statusPtr, &thisSpec->data, specSize);
     CHECKSTATUSPTR (status);
   }
 
   /* create window and assign specParams fields */
   (*buffer)->specParams->window = NULL;
-  CreateVector (
+  LALCreateVector (
       status->statusPtr,
       &(*buffer)->specParams->window,
       params->numPoints
@@ -163,14 +163,14 @@ CreateSpectrumBuffer (
 
 
 void
-DestroySpectrumBuffer (
-    Status          *status,
+LALDestroySpectrumBuffer (
+    LALStatus          *status,
     SpectrumBuffer **buffer
     )
 {
   INT4 spec;
 
-  INITSTATUS (status, "DestroySpectrumBuffer", SPECBUFFERC);
+  INITSTATUS (status, "LALDestroySpectrumBuffer", SPECBUFFERC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
@@ -181,14 +181,14 @@ DestroySpectrumBuffer (
   for (spec = 0; spec < (*buffer)->numSpec; ++spec)
   {
     REAL4FrequencySeries *thisSpec = (*buffer)->specBuffer + spec;
-    DestroyVector (status->statusPtr, &thisSpec->data);
+    LALDestroyVector (status->statusPtr, &thisSpec->data);
     CHECKSTATUSPTR (status);
   }
 
   LALFree ((*buffer)->specBuffer);
 
   /* destroy window */
-  DestroyVector (status->statusPtr, &(*buffer)->specParams->window);
+  LALDestroyVector (status->statusPtr, &(*buffer)->specParams->window);
   CHECKSTATUSPTR (status);
   
   LALFree ((*buffer)->specParams);
@@ -203,15 +203,15 @@ DestroySpectrumBuffer (
 
 
 void
-AddSpectrum (
-    Status         *status,
+LALAddSpectrum (
+    LALStatus         *status,
     SpectrumBuffer *specBuffer,
     INT2TimeSeries *timeSeries
     )
 {
   INT4 whichSpec;
 
-  INITSTATUS (status, "AddSpectrum", SPECBUFFERC);
+  INITSTATUS (status, "LALAddSpectrum", SPECBUFFERC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
@@ -222,7 +222,7 @@ AddSpectrum (
   whichSpec = specBuffer->specFilled % specBuffer->numSpec;
 
   /* fill it */
-  ComputeSpectrum (
+  LALComputeSpectrum (
       status->statusPtr,
       specBuffer->specBuffer + whichSpec,
       timeSeries,
@@ -239,8 +239,8 @@ AddSpectrum (
 
 
 void
-AverageSpectrum (
-    Status               *status,
+LALAverageSpectrum (
+    LALStatus               *status,
     REAL4FrequencySeries *spectrum,
     SpectrumBuffer       *buffer
     )
@@ -250,7 +250,7 @@ AverageSpectrum (
   INT4  nspec;
   REAL4 fac;
 
-  INITSTATUS (status, "AverageSpectrum", SPECBUFFERC);
+  INITSTATUS (status, "LALAverageSpectrum", SPECBUFFERC);
 
   /* make sure that arguments are not NULL */
   ASSERT (spectrum, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);

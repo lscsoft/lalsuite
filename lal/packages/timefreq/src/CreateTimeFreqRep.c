@@ -12,7 +12,7 @@
  * CreateTimeFreqRep
  * 
  * SYNOPSIS 
- * void CreateTimeFreqRep (Status *, TimeFreqRep **vseq, CreateTimeFreqIn *in);
+ * void LALCreateTimeFreqRep (LALStatus *, TimeFreqRep **vseq, CreateTimeFreqIn *in);
  * 
  * DESCRIPTION 
  * Create a TimeFreqRep object. 
@@ -32,14 +32,14 @@
 
 NRCSID (CREATETIMEFREQREPC, "$Id$");
 
-void CreateTimeFreqRep (Status *status, 
+void LALCreateTimeFreqRep (LALStatus *status, 
 			TimeFreqRep **tfr,
 			CreateTimeFreqIn *in) 
 {
   /* 
    * Initialize status
    */
-  INITSTATUS (status, "CreateTimeFreqRep", CREATETIMEFREQREPC);	
+  INITSTATUS (status, "LALCreateTimeFreqRep", CREATETIMEFREQREPC);	
   
   /* Check input structure: report if NULL */
   ASSERT (in != NULL, status, CREATETFR_ENULL, CREATETFR_MSGENULL);

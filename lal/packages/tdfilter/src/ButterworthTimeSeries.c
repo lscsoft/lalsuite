@@ -19,8 +19,8 @@ Applies a low- or high-pass Butterworth filter to a time series.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{ButterworthTimeSeriesD}
-\index{\verb&ButterworthREAL4TimeSeries()&}
-\index{\verb&ButterworthREAL8TimeSeries()&}
+\index{\verb&LALButterworthREAL4TimeSeries()&}
+\index{\verb&LALButterworthREAL8TimeSeries()&}
 
 \subsubsection*{Description}
 
@@ -124,20 +124,20 @@ little frequency-dependent phase shift.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-debuglevel
+LALDebugLevel
 LALPrintError()
-CreateREAL4IIRFilter()
-CreateREAL8IIRFilter()
-DestroyREAL4IIRFilter()
-DestroyREAL8IIRFilter()
-CreateCOMPLEX8ZPGFilter()
-CreateCOMPLEX16ZPGFilter()
-DestroyCOMPLEX8ZPGFilter()
-DestroyCOMPLEX16ZPGFilter()
-IIRFilterREAL4Vector()
-IIRFilterREAL8Vector()
-IIRFilterREAL4VectorR()
-IIRFilterREAL8VectorR()
+LALCreateREAL4IIRFilter()
+LALCreateREAL8IIRFilter()
+LALDestroyREAL4IIRFilter()
+LALDestroyREAL8IIRFilter()
+LALCreateCOMPLEX8ZPGFilter()
+LALCreateCOMPLEX16ZPGFilter()
+LALDestroyCOMPLEX8ZPGFilter()
+LALDestroyCOMPLEX16ZPGFilter()
+LALIIRFilterREAL4Vector()
+LALIIRFilterREAL8Vector()
+LALIIRFilterREAL4VectorR()
+LALIIRFilterREAL8VectorR()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -155,7 +155,7 @@ IIRFilterREAL8VectorR()
 
 NRCSID(BUTTERWORTHTIMESERIESC,"$Id$");
 
-extern INT4 debuglevel;
+extern INT4 LALDebugLevel;
 
 static INT4 ParsePassBandParamStruc(PassBandParamStruc  *params,
 				    INT4                *n,
@@ -165,7 +165,7 @@ static INT4 ParsePassBandParamStruc(PassBandParamStruc  *params,
 
 
 /* <lalVerbatim file="ButterworthTimeSeriesD"> */
-void ButterworthREAL4TimeSeries(Status             *stat,
+void LALButterworthREAL4TimeSeries(LALStatus             *stat,
 				REAL4TimeSeries    *series,
 				PassBandParamStruc *params)
 { /* </lalVerbatim> */
@@ -175,7 +175,7 @@ void ButterworthREAL4TimeSeries(Status             *stat,
   INT4 j;    /* Another index. */
   REAL8 wc;  /* The filter's transformed frequency. */
 
-  INITSTATUS(stat,"ButterworthREAL4TimeSeries",BUTTERWORTHTIMESERIESC);
+  INITSTATUS(stat,"LALButterworthREAL4TimeSeries",BUTTERWORTHTIMESERIESC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure the input pointers are non-null. */
@@ -210,7 +210,7 @@ void ButterworthREAL4TimeSeries(Status             *stat,
 
     /* Generate the filter in the w-plane. */
     if(type==2){
-      TRY(CreateCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter,2,2),
+      TRY(LALCreateCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter,2,2),
 	  stat);
       zpgFilter->zeros->data[0].re=0.0;
       zpgFilter->zeros->data[0].im=0.0;
@@ -219,7 +219,7 @@ void ButterworthREAL4TimeSeries(Status             *stat,
       zpgFilter->gain.re=1.0;
       zpgFilter->gain.im=0.0;
     }else{
-      TRY(CreateCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter,0,2),
+      TRY(LALCreateCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter,0,2),
 	  stat);
       zpgFilter->gain.re=-wc*wc;
       zpgFilter->gain.im=0.0;
@@ -230,19 +230,19 @@ void ButterworthREAL4TimeSeries(Status             *stat,
     zpgFilter->poles->data[1].im=ai;
 
     /* Transform to the z-plane and create the IIR filter. */
-    TRY(WToZCOMPLEX8ZPGFilter(stat->statusPtr,zpgFilter),stat);
-    TRY(CreateREAL4IIRFilter(stat->statusPtr,&iirFilter,zpgFilter),
+    TRY(LALWToZCOMPLEX8ZPGFilter(stat->statusPtr,zpgFilter),stat);
+    TRY(LALCreateREAL4IIRFilter(stat->statusPtr,&iirFilter,zpgFilter),
 	stat);
 
     /* Filter the data, once each way. */
-    TRY(IIRFilterREAL4Vector(stat->statusPtr,series->data,iirFilter),
+    TRY(LALIIRFilterREAL4Vector(stat->statusPtr,series->data,iirFilter),
 	stat);
-    TRY(IIRFilterREAL4VectorR(stat->statusPtr,series->data,iirFilter),
+    TRY(LALIIRFilterREAL4VectorR(stat->statusPtr,series->data,iirFilter),
 	stat);
 
     /* Free the filters. */
-    TRY(DestroyREAL4IIRFilter(stat->statusPtr,&iirFilter),stat);
-    TRY(DestroyCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter),stat);
+    TRY(LALDestroyREAL4IIRFilter(stat->statusPtr,&iirFilter),stat);
+    TRY(LALDestroyCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter),stat);
   }
 
   /* Next, this conditional applies the possible order 1 filter
@@ -253,14 +253,14 @@ void ButterworthREAL4TimeSeries(Status             *stat,
 
     /* Generate the filter in the w-plane. */
     if(type==2){
-      TRY(CreateCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter,1,1),
+      TRY(LALCreateCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter,1,1),
 	  stat);
       zpgFilter->zeros->data->re=0.0;
       zpgFilter->zeros->data->im=0.0;
       zpgFilter->gain.re=1.0;
       zpgFilter->gain.im=0.0;
     }else{
-      TRY(CreateCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter,0,1),
+      TRY(LALCreateCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter,0,1),
 	  stat);
       zpgFilter->gain.re=0.0;
       zpgFilter->gain.im=-wc;
@@ -269,19 +269,19 @@ void ButterworthREAL4TimeSeries(Status             *stat,
     zpgFilter->poles->data->im=wc;
 
     /* Transform to the z-plane and create the IIR filter. */
-    TRY(WToZCOMPLEX8ZPGFilter(stat->statusPtr,zpgFilter),stat);
-    TRY(CreateREAL4IIRFilter(stat->statusPtr,&iirFilter,zpgFilter),
+    TRY(LALWToZCOMPLEX8ZPGFilter(stat->statusPtr,zpgFilter),stat);
+    TRY(LALCreateREAL4IIRFilter(stat->statusPtr,&iirFilter,zpgFilter),
 	stat);
 
     /* Filter the data, once each way. */
-    TRY(IIRFilterREAL4Vector(stat->statusPtr,series->data,iirFilter),
+    TRY(LALIIRFilterREAL4Vector(stat->statusPtr,series->data,iirFilter),
 	stat);
-    TRY(IIRFilterREAL4VectorR(stat->statusPtr,series->data,iirFilter),
+    TRY(LALIIRFilterREAL4VectorR(stat->statusPtr,series->data,iirFilter),
 	stat);
 
     /* Free the filters. */
-    TRY(DestroyREAL4IIRFilter(stat->statusPtr,&iirFilter),stat);
-    TRY(DestroyCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter),stat);
+    TRY(LALDestroyREAL4IIRFilter(stat->statusPtr,&iirFilter),stat);
+    TRY(LALDestroyCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter),stat);
   }
 
   /* Normal exit. */
@@ -291,7 +291,7 @@ void ButterworthREAL4TimeSeries(Status             *stat,
 
 
 /* <lalVerbatim file="ButterworthTimeSeriesD"> */
-void ButterworthREAL8TimeSeries(Status             *stat,
+void LALButterworthREAL8TimeSeries(LALStatus             *stat,
 				REAL8TimeSeries    *series,
 				PassBandParamStruc *params)
 { /* </lalVerbatim> */
@@ -301,7 +301,7 @@ void ButterworthREAL8TimeSeries(Status             *stat,
   INT4 j;    /* Another index. */
   REAL8 wc;  /* The filter's transformed frequency. */
 
-  INITSTATUS(stat,"ButterworthREAL8TimeSeries",BUTTERWORTHTIMESERIESC);
+  INITSTATUS(stat,"LALButterworthREAL8TimeSeries",BUTTERWORTHTIMESERIESC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure the input pointers are non-null. */
@@ -336,7 +336,7 @@ void ButterworthREAL8TimeSeries(Status             *stat,
 
     /* Generate the filter in the w-plane. */
     if(type==2){
-      TRY(CreateCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter,2,2),
+      TRY(LALCreateCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter,2,2),
 	  stat);
       zpgFilter->zeros->data[0].re=0.0;
       zpgFilter->zeros->data[0].im=0.0;
@@ -345,7 +345,7 @@ void ButterworthREAL8TimeSeries(Status             *stat,
       zpgFilter->gain.re=-1.0;
       zpgFilter->gain.im=0.0;
     }else{
-      TRY(CreateCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter,0,2),
+      TRY(LALCreateCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter,0,2),
 	  stat);
       zpgFilter->gain.re=-wc*wc;
       zpgFilter->gain.im=0.0;
@@ -356,19 +356,19 @@ void ButterworthREAL8TimeSeries(Status             *stat,
     zpgFilter->poles->data[1].im=ai;
 
     /* Transform to the z-plane and create the IIR filter. */
-    TRY(WToZCOMPLEX16ZPGFilter(stat->statusPtr,zpgFilter),stat);
-    TRY(CreateREAL8IIRFilter(stat->statusPtr,&iirFilter,zpgFilter),
+    TRY(LALWToZCOMPLEX16ZPGFilter(stat->statusPtr,zpgFilter),stat);
+    TRY(LALCreateREAL8IIRFilter(stat->statusPtr,&iirFilter,zpgFilter),
 	stat);
 
     /* Filter the data, once each way. */
-    TRY(IIRFilterREAL8Vector(stat->statusPtr,series->data,iirFilter),
+    TRY(LALIIRFilterREAL8Vector(stat->statusPtr,series->data,iirFilter),
 	stat);
-    TRY(IIRFilterREAL8VectorR(stat->statusPtr,series->data,iirFilter),
+    TRY(LALIIRFilterREAL8VectorR(stat->statusPtr,series->data,iirFilter),
 	stat);
 
     /* Free the filters. */
-    TRY(DestroyREAL8IIRFilter(stat->statusPtr,&iirFilter),stat);
-    TRY(DestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),stat);
+    TRY(LALDestroyREAL8IIRFilter(stat->statusPtr,&iirFilter),stat);
+    TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),stat);
   }
 
   /* Next, this conditional applies the possible order 1 filter
@@ -379,14 +379,14 @@ void ButterworthREAL8TimeSeries(Status             *stat,
 
     /* Generate the filter in the w-plane. */
     if(type==2){
-      TRY(CreateCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter,1,1),
+      TRY(LALCreateCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter,1,1),
 	  stat);
       zpgFilter->zeros->data->re=0.0;
       zpgFilter->zeros->data->im=0.0;
       zpgFilter->gain.re=1.0;
       zpgFilter->gain.im=0.0;
     }else{
-      TRY(CreateCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter,0,1),
+      TRY(LALCreateCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter,0,1),
 	  stat);
       zpgFilter->gain.re=0.0;
       zpgFilter->gain.im=-wc;
@@ -395,19 +395,19 @@ void ButterworthREAL8TimeSeries(Status             *stat,
     zpgFilter->poles->data->im=wc;
 
     /* Transform to the z-plane and create the IIR filter. */
-    TRY(WToZCOMPLEX16ZPGFilter(stat->statusPtr,zpgFilter),stat);
-    TRY(CreateREAL8IIRFilter(stat->statusPtr,&iirFilter,zpgFilter),
+    TRY(LALWToZCOMPLEX16ZPGFilter(stat->statusPtr,zpgFilter),stat);
+    TRY(LALCreateREAL8IIRFilter(stat->statusPtr,&iirFilter,zpgFilter),
 	stat);
 
     /* Filter the data, once each way. */
-    TRY(IIRFilterREAL8Vector(stat->statusPtr,series->data,iirFilter),
+    TRY(LALIIRFilterREAL8Vector(stat->statusPtr,series->data,iirFilter),
 	stat);
-    TRY(IIRFilterREAL8VectorR(stat->statusPtr,series->data,iirFilter),
+    TRY(LALIIRFilterREAL8VectorR(stat->statusPtr,series->data,iirFilter),
 	stat);
 
     /* Free the filters. */
-    TRY(DestroyREAL8IIRFilter(stat->statusPtr,&iirFilter),stat);
-    TRY(DestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),stat);
+    TRY(LALDestroyREAL8IIRFilter(stat->statusPtr,&iirFilter),stat);
+    TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),stat);
   }
 
   /* Normal exit. */
@@ -454,7 +454,7 @@ static INT4 ParsePassBandParamStruc(PassBandParamStruc  *params,
     /* First make sure that two different frequencies and attenuations
        have been specified. */
     if((w1==w2)||(a1==a2)){
-      if(debuglevel>1)
+      if(LALDebugLevel>1)
 	LALPrintError("Error: ButterworthTimeSeries: Specified"
 		      " frequencies or attenuations are the\n"
 		      "       same across the transition band.\n");
@@ -472,12 +472,12 @@ static INT4 ParsePassBandParamStruc(PassBandParamStruc  *params,
     /* If a positive params->nMax less than *n has been specified,
        reduce to that order, with appropriate warnings. */
     if((params->nMax>0)&&(params->nMax<*n)){
-      if(debuglevel>0){
+      if(LALDebugLevel>0){
 	LALPrintError("Warning: ButterworthTimeSeries: Filter order"
 		      " required to achieve requested\n"
 		      "         performance exceeds specified"
 		      " limit\n");
-	if(debuglevel>1)
+	if(LALDebugLevel>1)
 	  LALPrintError("         Required: %i  Limit: %i\n",n,
 			params->nMax);
       }
@@ -501,7 +501,7 @@ static INT4 ParsePassBandParamStruc(PassBandParamStruc  *params,
      all future cases. */
   else{
     if(params->nMax<=0){
-      if(debuglevel>0)
+      if(LALDebugLevel>0)
 	LALPrintError("Error: ButterworthTimeSeries: Both"
 		      " attenuations have not been specified, so\n"
 		      "       the filter order must be.\n");
@@ -525,7 +525,7 @@ static INT4 ParsePassBandParamStruc(PassBandParamStruc  *params,
        frequency given, otherwise we don't know whether to make a low-
        or a high-pass filter. */
     else if(wHighGiven && wLowGiven){
-      if(debuglevel>0)
+      if(LALDebugLevel>0)
 	LALPrintError("Error: ButterworthTimeSeries: Neither"
 		      " attenuation has been specified, so\n"
 		      "       only one frequency should be.\n");
@@ -543,7 +543,7 @@ static INT4 ParsePassBandParamStruc(PassBandParamStruc  *params,
 	*wc=tan(LAL_PI*wLow);
 	return 1;
       }else{
-	if(debuglevel>0)
+	if(LALDebugLevel>0)
 	  LALPrintError("Error: ButterworthTimeSeries: No frequencies"
 			" have been specified!\n");
 	return 0;

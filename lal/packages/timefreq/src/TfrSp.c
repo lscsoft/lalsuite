@@ -38,7 +38,7 @@
 NRCSID (TFRSPC, "$Id$");
 
 
-void TfrSp (Status *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqParam *param)
+void LALTfrSp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqParam *param)
 {
 
   INT4    nf;
@@ -51,7 +51,7 @@ void TfrSp (Status *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqParam *par
   REAL4Vector  *ptmp = NULL;
   RealFFTPlan  *plan = NULL;
 
-  INITSTATUS (stat, "TfrSp", TFRSPC);
+  INITSTATUS (stat, "LALTfrSp", TFRSPC);
   ATTATCHSTATUSPTR (stat);
   
   /* Make sure the arguments are not NULL: */
@@ -96,12 +96,12 @@ void TfrSp (Status *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqParam *par
 	}
     }
   
-  TRY(EstimateFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);
-  TRY(DestroyRealFFTPlan(stat->statusPtr, &plan), stat);
-  TRY(MeasureFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);
+  TRY(LALEstimateFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);
+  TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);
+  TRY(LALMeasureFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);
 
-  TRY(SCreateVector(stat->statusPtr, &ptmp, tfr->fRow/2 + 1), stat);
-  TRY(SCreateVector(stat->statusPtr, &windSig, tfr->fRow), stat);
+  TRY(LALSCreateVector(stat->statusPtr, &ptmp, tfr->fRow/2 + 1), stat);
+  TRY(LALSCreateVector(stat->statusPtr, &windSig, tfr->fRow), stat);
 
   hwl = (param->windowT->length - 1) / 2.0;
   
@@ -134,7 +134,7 @@ void TfrSp (Status *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqParam *par
 	}
 
       /*       printf("%d\n",column); */
-      RealPowerSpectrum (stat->statusPtr, ptmp, windSig, plan);
+      LALRealPowerSpectrum (stat->statusPtr, ptmp, windSig, plan);
       
       for (row = 0; row < (tfr->fRow/2 +1); ++row)
 	tfr->map[column][row] =  ptmp->data[row];
@@ -146,10 +146,10 @@ void TfrSp (Status *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqParam *par
   for (row = 0; row < tfr->fRow/2+1; row++)
     tfr->freqBin[row] = (REAL4) row / tfr->fRow;
   
-  TRY(SDestroyVector(stat->statusPtr, &ptmp), stat);
-  TRY(SDestroyVector(stat->statusPtr, &windSig), stat);
+  TRY(LALSDestroyVector(stat->statusPtr, &ptmp), stat);
+  TRY(LALSDestroyVector(stat->statusPtr, &windSig), stat);
 
-  TRY(DestroyRealFFTPlan(stat->statusPtr, &plan), stat);
+  TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);
 
   DETATCHSTATUSPTR (stat);
 

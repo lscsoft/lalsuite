@@ -14,17 +14,17 @@
  * SYNOPSIS 
  * 
  * DESCRIPTION 
- * Test suite for Dirichlet()
+ * Test suite for LALDirichlet()
  * 
  * DIAGNOSTICS
  * Writes PASS or FAIL to stdout as tests are passed or failed.
- * Also writes to a file the values of the Dirichlet kernel for threee
+ * Also writes to a file the values of the LALDirichlet kernel for threee
  * different valid test cases.
  *    
  * CALLS
- * Dirichlet()
- * SCreateVector()
- * SDestroyVector()
+ * LALDirichlet()
+ * LALSCreateVector()
+ * LALSDestroyVector()
  * 
  * NOTES
  *
@@ -38,9 +38,9 @@
 #include "PrintVector.h"
 #include "Dirichlet.h"
 
-INT4 debuglevel = 2; /* set to 2 to get full status information for tests */
+INT4 LALDebugLevel = 2; /* set to 2 to get full status information for tests */
 
-int check ( Status*, INT4, CHAR* );
+int check ( LALStatus*, INT4, CHAR* );
 
 NRCSID (MAIN, "$ID: DirichletTest.c$");
 
@@ -48,26 +48,26 @@ int
 main()
 {
    
-   Status               status  = {0};
+   LALStatus               status  = {0};
    REAL4Vector*         poutput = NULL; 
    REAL4Vector          dummy;
    DirichletParameters  parameters;
 
 
    /* test behavior for null pointer to input parameters */
-   Dirichlet( &status, &dummy, NULL );
+   LALDirichlet( &status, &dummy, NULL );
 
    if ( check( &status, DIRICHLET_ENULLIP, DIRICHLET_MSGENULLIP ) ) return 1;
    printf("PASS: %s\n", DIRICHLET_MSGENULLIP); 
 
-   /* test behavior for Dirichlet parameter N <= 0  */
+   /* test behavior for LALDirichlet parameter N <= 0  */
    parameters.n = -3;
-   Dirichlet( &status, &dummy, &parameters);
+   LALDirichlet( &status, &dummy, &parameters);
    if ( check( &status, DIRICHLET_ENVALUE, DIRICHLET_MSGENVALUE ) ) return 1;
    printf("PASS: %s\n", DIRICHLET_MSGENVALUE);
 
    parameters.n = 0;
-   Dirichlet( &status, &dummy, &parameters);
+   LALDirichlet( &status, &dummy, &parameters);
    if ( check( &status, DIRICHLET_ENVALUE, DIRICHLET_MSGENVALUE ) ) return 1;
    printf("PASS: %s\n", DIRICHLET_MSGENVALUE);
 
@@ -76,12 +76,12 @@ main()
 
    /* test behavior for specified length of output vector <= 0  */
    parameters.length = -3;
-   Dirichlet( &status, &dummy, &parameters);
+   LALDirichlet( &status, &dummy, &parameters);
    if ( check( &status, DIRICHLET_ESIZE, DIRICHLET_MSGESIZE ) ) return 1;
    printf("PASS: %s\n", DIRICHLET_MSGESIZE);
 
    parameters.length = 0;
-   Dirichlet( &status, &dummy, &parameters);
+   LALDirichlet( &status, &dummy, &parameters);
    if ( check( &status, DIRICHLET_ESIZE, DIRICHLET_MSGESIZE ) ) return 1;
    printf("PASS: %s\n", DIRICHLET_MSGESIZE);
 
@@ -90,12 +90,12 @@ main()
 
    /* test behavior for x spacing <= 0 */
    parameters.deltaX = -4;
-   Dirichlet( &status, &dummy, &parameters);
+   LALDirichlet( &status, &dummy, &parameters);
    if ( check( &status, DIRICHLET_EDELTAX, DIRICHLET_MSGEDELTAX ) ) return 1;
    printf("PASS: %s\n", DIRICHLET_MSGEDELTAX );
 
    parameters.deltaX = 0.0;
-   Dirichlet( &status, &dummy, &parameters);
+   LALDirichlet( &status, &dummy, &parameters);
    if ( check( &status, DIRICHLET_EDELTAX, DIRICHLET_MSGEDELTAX ) ) return 1;
    printf("PASS: %s\n", DIRICHLET_MSGEDELTAX );
 
@@ -103,14 +103,14 @@ main()
    parameters.deltaX = 0.1;
 
    /* test behavior for null pointer to output vector */
-   Dirichlet( &status, NULL, &parameters );
+   LALDirichlet( &status, NULL, &parameters );
    if ( check( &status, DIRICHLET_ENULLOP, DIRICHLET_MSGENULLOP)) return 1;
    printf("PASS: %s\n", DIRICHLET_MSGENULLOP);
       
    /* test behavior for length of output vector not equal to length  */
    /* specified in input parameters */
    dummy.length = 10; 
-   Dirichlet( &status, &dummy, &parameters );
+   LALDirichlet( &status, &dummy, &parameters );
    if ( check( &status, DIRICHLET_ESIZEMM, DIRICHLET_MSGESIZEMM ) ) return 1;
    printf( "PASS: %s\n", DIRICHLET_MSGESIZEMM );
 
@@ -119,7 +119,7 @@ main()
 
    /* test behavior for null pointer to data member of output vector */
    dummy.data = NULL;
-   Dirichlet( &status, &dummy, &parameters );
+   LALDirichlet( &status, &dummy, &parameters );
    if ( check( &status, DIRICHLET_ENULLD, DIRICHLET_MSGENULLD)) return 1;
    printf("PASS: %s\n", DIRICHLET_MSGENULLD);
 
@@ -128,43 +128,43 @@ main()
    parameters.n      = 10;
    parameters.length = 101;
    parameters.deltaX = 0.01; 
-   SCreateVector (&status, &poutput, parameters.length);  
+   LALSCreateVector (&status, &poutput, parameters.length);  
 
-   Dirichlet( &status, poutput, &parameters );  
-   PrintVector(poutput); 
+   LALDirichlet( &status, poutput, &parameters );  
+   LALPrintVector(poutput); 
 
-   SDestroyVector( &status, &poutput );   
+   LALSDestroyVector( &status, &poutput );   
 
    /* VALID TEST DATA #2 */
    /* call Dirichet() with valid data (N=odd) */
    parameters.n      = 11;
    parameters.length = 101;
    parameters.deltaX = 0.01; 
-   SCreateVector(&status, &poutput, parameters.length);  
+   LALSCreateVector(&status, &poutput, parameters.length);  
 
-   Dirichlet( &status, poutput, &parameters );  
-   PrintVector(poutput); 
+   LALDirichlet( &status, poutput, &parameters );  
+   LALPrintVector(poutput); 
 
-   SDestroyVector( &status, &poutput );   
+   LALSDestroyVector( &status, &poutput );   
 
    /* VALID TEST DATA #3 */
    /* call Dirichet() with valid data (x=0 to 2) */
    parameters.n      = 10;
    parameters.length = 201;
    parameters.deltaX = 0.01; 
-   SCreateVector(&status, &poutput, parameters.length);  
+   LALSCreateVector(&status, &poutput, parameters.length);  
 
-   Dirichlet( &status, poutput, &parameters );  
-   PrintVector(poutput); 
+   LALDirichlet( &status, poutput, &parameters );  
+   LALPrintVector(poutput); 
 
-   SDestroyVector( &status, &poutput );   
+   LALSDestroyVector( &status, &poutput );   
 
    return 0;
 }
 /*------------------------------------------------------------------------*/
 
 int 
-check( Status* status, INT4 code, CHAR* message )
+check( LALStatus* status, INT4 code, CHAR* message )
 {
    if ( status->statusCode!= code ) {
      printf ( "FAIL: did not recognize \"%s\"\n", message );

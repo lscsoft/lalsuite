@@ -15,7 +15,7 @@
  * #include "Dirichlet.h"
  *
  * DESCRIPTION
- * Error codes, typedefs, and prototype for function Dirichlet()
+ * Error codes, typedefs, and prototype for function LALDirichlet()
  *
  * DIAGNOSTICS
  *
@@ -43,7 +43,7 @@ NRCSID (DIRICHLETH, "$Id$");
 #define DIRICHLET_ENULLD      64
 
 #define DIRICHLET_MSGENULLIP  "Pointer to input parameters must be non-null"
-#define DIRICHLET_MSGENVALUE  "Dirichlet parameter N must be > 0"
+#define DIRICHLET_MSGENVALUE  "LALDirichlet parameter N must be > 0"
 #define DIRICHLET_MSGESIZE    "Specified length of output vector must be > 0"
 #define DIRICHLET_MSGEDELTAX  "Spacing of x values must be > 0"
 #define DIRICHLET_MSGENULLOP  "Pointer to ouput vector must be non-null"
@@ -51,13 +51,13 @@ NRCSID (DIRICHLETH, "$Id$");
 #define DIRICHLET_MSGENULLD   "Pointer to data member of output vector must be non-null"
 
 typedef struct tagDirichletParameters{
-  INT4	 n;       /* Dirichlet parameter N */
+  INT4	 n;       /* LALDirichlet parameter N */
   INT4	 length;  /* specified length of output vector */
   REAL8	 deltaX;  /* spacing of x values */
 } DirichletParameters; 
 
 void 
-Dirichlet ( Status*, REAL4Vector*, DirichletParameters* );
+LALDirichlet ( LALStatus*, REAL4Vector*, DirichletParameters* );
 
 
 #ifdef  __cplusplus

@@ -104,11 +104,11 @@ typedef struct tagPassBandParamStruc{
 /* <lalLaTeX>
 \newpage\input{ButterworthTimeSeriesC}
 </lalLaTeX> */
-void ButterworthREAL4TimeSeries(Status             *stat,
+void LALButterworthREAL4TimeSeries(LALStatus             *stat,
 				REAL4TimeSeries    *series,
 				PassBandParamStruc *params);
 
-void ButterworthREAL8TimeSeries(Status             *stat,
+void LALButterworthREAL8TimeSeries(LALStatus             *stat,
 				REAL8TimeSeries    *series,
 				PassBandParamStruc *params);
 

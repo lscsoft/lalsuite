@@ -13,10 +13,10 @@ Computes an instant-by-instant IIR filter response.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{IIRFilterCP}
-\index{\verb&IIRFilterREAL4()&}
-\index{\verb&IIRFilterREAL8()&}
-\index{\verb&SIIRFilter()&}
-\index{\verb&DIIRFilter()&}
+\index{\verb&LALIIRFilterREAL4()&}
+\index{\verb&LALIIRFilterREAL8()&}
+\index{\verb&LALSIIRFilter()&}
+\index{\verb&LALDIIRFilter()&}
 
 \subsubsection*{Description}
 
@@ -26,11 +26,11 @@ filter response.  This is done using the auxiliary data series
 formalism described in the header \verb@IIRFilter.h@.
 
 There are two pairs of routines in this module.  The functions
-\verb@IIRFilterReal4()@ and \verb@IIRFilterREAL8()@ conform to the LAL
+\verb@IIRFilterReal4()@ and \verb@LALIIRFilterREAL8()@ conform to the LAL
 standard, with status handling and error trapping; the input datum is
 passed in as \verb@input@ and the response is returned in
-\verb@*output@.  The functions \verb@SIIRFilter()@ and
-\verb@DIIRFilter()@ are non-standard lightweight routines, which may
+\verb@*output@.  The functions \verb@LALSIIRFilter()@ and
+\verb@LALDIIRFilter()@ are non-standard lightweight routines, which may
 be more suitable for multiple callings from the inner loops of
 programs; they have no status handling or error trapping.  The input
 datum is passed in by the variable \verb@x@, and the response is
@@ -53,7 +53,7 @@ NRCSID(IIRFILTERC,"$Id$");
 
 
 /* <lalVerbatim file="IIRFilterCP"> */
-void IIRFilterREAL4(Status         *stat,
+void LALIIRFilterREAL4(LALStatus         *stat,
 		    REAL4          *output,
 		    REAL4          input,
 		    REAL4IIRFilter *filter)
@@ -63,7 +63,7 @@ void IIRFilterREAL4(Status         *stat,
   REAL4 *coef; /* Values of filter coefficients. */
   REAL4 *hist; /* Values of filter history. */
 
-  INITSTATUS(stat,"IIRFilterREAL4",IIRFILTERC);
+  INITSTATUS(stat,"LALIIRFilterREAL4",IIRFILTERC);
 
   /* Check all the passed parameters for null pointers. */
   ASSERT(output,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
@@ -106,7 +106,7 @@ void IIRFilterREAL4(Status         *stat,
 
 
 /* <lalVerbatim file="IIRFilterCP"> */
-void IIRFilterREAL8(Status         *stat,
+void LALIIRFilterREAL8(LALStatus         *stat,
 		    REAL8          *output,
 		    REAL8          input,
 		    REAL8IIRFilter *filter)
@@ -116,7 +116,7 @@ void IIRFilterREAL8(Status         *stat,
   REAL8 *coef; /* Values of filter coefficients. */
   REAL8 *hist; /* Values of filter history. */
 
-  INITSTATUS(stat,"IIRFilterREAL8",IIRFILTERC);
+  INITSTATUS(stat,"LALIIRFilterREAL8",IIRFILTERC);
 
   /* Check all the passed parameters for null pointers. */
   ASSERT(output,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
@@ -159,7 +159,7 @@ void IIRFilterREAL8(Status         *stat,
 
 
 /* <lalVerbatim file="IIRFilterCP"> */
-REAL4 SIIRFilter(REAL4 x, REAL4IIRFilter *filter)
+REAL4 LALSIIRFilter(REAL4 x, REAL4IIRFilter *filter)
 { /* </lalVerbatim> */
   INT4 j;      /* Index for filter coefficients. */
   INT4 jmax;   /* Number of filter coefficients. */
@@ -198,7 +198,7 @@ REAL4 SIIRFilter(REAL4 x, REAL4IIRFilter *filter)
 
 
 /* <lalVerbatim file="IIRFilterCP"> */
-REAL8 DIIRFilter(REAL8 x, REAL8IIRFilter *filter)
+REAL8 LALDIIRFilter(REAL8 x, REAL8IIRFilter *filter)
 { /* </lalVerbatim> */
   INT4 j;      /* Index for filter coefficients. */
   INT4 jmax;   /* Number of filter coefficients. */

@@ -28,7 +28,7 @@
 
 #include "TimeFreq.h"
 
-int debuglevel=2;
+int LALDebugLevel=2;
 
 int main(void)
 {
@@ -36,7 +36,7 @@ int main(void)
   const INT4 Nwindow=5;
   const INT4 Nfft=8;
 
-  static Status status;
+  static LALStatus status;
 
   REAL4Vector  *signal = NULL;
   CreateTimeFreqIn tfrIn;
@@ -48,7 +48,7 @@ int main(void)
 
   /*--------------------------------------------------------------------*/
 
-  SCreateVector(&status, &signal, Nsignal);
+  LALSCreateVector(&status, &signal, Nsignal);
 
   /*   signal->data[0]=1.0; */
   for (column = 0; column < signal->length; column++)
@@ -69,12 +69,12 @@ int main(void)
 
   /*--------------------------------------------------------------------*/
 
-  CreateTimeFreqRep(&status, &tfr, &tfrIn);
+  LALCreateTimeFreqRep(&status, &tfr, &tfrIn);
 
   for (column = 0; column < tfr->tCol; column++)
     tfr->timeInstant[column]=column;    
 
-  CreateTimeFreqParam(&status, &param, &tfrIn);
+  LALCreateTimeFreqParam(&status, &param, &tfrIn);
 
   for (column = 0; column < param->windowT->length; column++)
     param->windowT->data[column]=1.0;    
@@ -84,7 +84,7 @@ int main(void)
 
   /*--------------------------------------------------------------------*/
 
-  TfrRsp(&status,signal,tfr,param);
+  LALTfrRsp(&status,signal,tfr,param);
   REPORTSTATUS(&status);
 
   /*--------------------------------------------------------------------*/
@@ -104,9 +104,9 @@ int main(void)
 
   /*--------------------------------------------------------------------*/
 
-  SDestroyVector(&status,&signal);
-  DestroyTimeFreqRep(&status,&tfr);
-  DestroyTimeFreqParam(&status,&param);
+  LALSDestroyVector(&status,&signal);
+  LALDestroyTimeFreqRep(&status,&tfr);
+  LALDestroyTimeFreqParam(&status,&param);
 
   LALCheckMemoryLeaks();
 

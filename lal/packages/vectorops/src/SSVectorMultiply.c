@@ -34,8 +34,8 @@
 NRCSID (SSVECTORMULTIPLYC, "$Id$");
 
 void
-SSVectorMultiply (
-    Status               *status,
+LALSSVectorMultiply (
+    LALStatus               *status,
     REAL4Vector          *out,
     const REAL4Vector    *in1,
     const REAL4Vector    *in2
@@ -46,7 +46,7 @@ SSVectorMultiply (
   REAL4 *c;
   INT4   n;
 
-  INITSTATUS (status, "SSVectorMultiply", SSVECTORMULTIPLYC);
+  INITSTATUS (status, "LALSSVectorMultiply", SSVECTORMULTIPLYC);
 
   ASSERT (out, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);
   ASSERT (in1, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);

@@ -76,7 +76,7 @@ tagLALWindowParams
 }
 LALWindowParams;
 
-void LALWindow(Status * ,REAL4Vector *, LALWindowParams *);
+void LALWindow(LALStatus * ,REAL4Vector *, LALWindowParams *);
 
 #ifdef  __cplusplus
 }

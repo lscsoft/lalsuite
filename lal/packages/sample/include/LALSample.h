@@ -49,10 +49,10 @@ NRCSID( LALSAMPLEH, "$Id$" );
 /* Function prototypes */
 
 void
-REAL8Invert( Status *stat, REAL8 *output, REAL8 input );
+LALREAL8Invert( LALStatus *stat, REAL8 *output, REAL8 input );
 
 void
-REAL8Divide( Status *stat, REAL8 *output, REAL8 numer, REAL8 denom);
+LALREAL8Divide( LALStatus *stat, REAL8 *output, REAL8 numer, REAL8 denom);
 
 /********************************************************** <lalLaTeX>
 \newpage\input{LALSampleTestC}

@@ -12,7 +12,7 @@
  * DestroyTimeFreqParam
  * 
  * SYNOPSIS 
- * void DestroyTimeFreqParam ( Status *,  TimeFreqParam **param );
+ * void LALDestroyTimeFreqParam ( LALStatus *,  TimeFreqParam **param );
  * 
  * DESCRIPTION 
  * Returns to system storage allocated by CreateTimeFreqParam
@@ -32,10 +32,10 @@
 
 NRCSID (DESTROYTIMEFREQPARAMC, "$Id$");
 
-void DestroyTimeFreqParam (Status *status, TimeFreqParam **param)
+void LALDestroyTimeFreqParam (LALStatus *status, TimeFreqParam **param)
 {
   /*  Initialize status */
-  INITSTATUS (status, "DestroyTimeFreqParam", DESTROYTIMEFREQPARAMC);
+  INITSTATUS (status, "LALDestroyTimeFreqParam", DESTROYTIMEFREQPARAMC);
       
   /* Check param: report if NULL */
   ASSERT (param != NULL, status, DESTROYTFP_ENULL, DESTROYTFP_MSGENULL); 
@@ -46,7 +46,7 @@ void DestroyTimeFreqParam (Status *status, TimeFreqParam **param)
   switch ((*param)->type) {
   case Spectrogram :
   
-    SDestroyVector(status,&(*param)->windowT);
+    LALSDestroyVector(status,&(*param)->windowT);
     (*param)->type = Undefined; 
 
     break;
@@ -57,14 +57,14 @@ void DestroyTimeFreqParam (Status *status, TimeFreqParam **param)
     break;
   case PSWignerVille :
 
-    SDestroyVector(status,&(*param)->windowT);
-    SDestroyVector(status,&(*param)->windowF);
+    LALSDestroyVector(status,&(*param)->windowT);
+    LALSDestroyVector(status,&(*param)->windowF);
     (*param)->type = Undefined; 
     
     break;
   case RSpectrogram :
 
-    SDestroyVector(status,&(*param)->windowT);
+    LALSDestroyVector(status,&(*param)->windowT);
     (*param)->type = Undefined; 
 
     break;

@@ -94,21 +94,21 @@ tagDataSegment
 DataSegment;
 
 void
-CreateDataBuffer (
-    Status         *status,
+LALCreateDataBuffer (
+    LALStatus         *status,
     DataBuffer    **buffer,
     DataBufferPar  *params
     );
 
 void
-DestroyDataBuffer (
-    Status      *status,
+LALDestroyDataBuffer (
+    LALStatus      *status,
     DataBuffer **buffer
     );
 
 void
-GetData (
-    Status      *status,
+LALGetData (
+    LALStatus      *status,
     DataSegment *output,
     INT4         advance,
     DataBuffer  *buffer

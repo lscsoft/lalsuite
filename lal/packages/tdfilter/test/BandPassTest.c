@@ -42,11 +42,11 @@ level from 0 to 1, or sets it to the specified value
 
 \subsubsection*{Uses}
 \begin{verbatim}
-debuglevel
+LALDebugLevel
 LALPrintError()
-SCreateVector()
-SDestroyVector()
-ButterworthREAL4TimeSeries()
+LALSCreateVector()
+LALSDestroyVector()
+LALButterworthREAL4TimeSeries()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -79,11 +79,11 @@ NRCSID(BANDPASSTESTC,"$Id$");
 #define BANDPASSTEST_MSGESUB  "Subroutine returned error"
 #define BANDPASSTEST_MSGEFILE "File creation error"
 
-INT4 debuglevel=0;
+INT4 LALDebugLevel=0;
 
 INT4 main(INT4 argc, CHAR **argv)
 {
-  Status stat = { 0 };       /* Status pointer for subroutines. */
+  LALStatus stat = { 0 };       /* LALStatus pointer for subroutines. */
   CHAR *fname=NULL;          /* The output filename. */
   INT4 i;                    /* Index counter. */
   REAL4TimeSeries series;    /* Time series. */
@@ -101,10 +101,10 @@ INT4 main(INT4 argc, CHAR **argv)
 	fname=OUTFILE;
     }else if(!strcmp(argv[i],"-d")){
       if((argc>2)&&(argv[i+1][0]!='-')){
-	debuglevel=atoi(argv[++i]);
+	LALDebugLevel=atoi(argv[++i]);
 	argc--;
       }else
-	debuglevel=1;
+	LALDebugLevel=1;
     }else
       LALPrintError("%s: Ignoring argument: %s\n",argv[0],argv[i]);
   }
@@ -124,7 +124,7 @@ INT4 main(INT4 argc, CHAR **argv)
   series.f0=0.0;
   series.sampleUnits=NULL;
   series.data=NULL;
-  SCreateVector(&stat,&(series.data),NPOINTS);
+  LALSCreateVector(&stat,&(series.data),NPOINTS);
   if(stat.statusCode){
     LALPrintError("%s: %s\n",argv[0],BANDPASSTEST_MSGESUB);
     REPORTSTATUS(&stat);
@@ -136,7 +136,7 @@ INT4 main(INT4 argc, CHAR **argv)
   data[OFFSET]=1.0;
 
   /* Filter the time series. */
-  ButterworthREAL4TimeSeries(&stat,&series,&params);
+  LALButterworthREAL4TimeSeries(&stat,&series,&params);
   if(stat.statusCode){
     LALPrintError("%s: %s\n",argv[0],BANDPASSTEST_MSGESUB);
     REPORTSTATUS(&stat);
@@ -156,7 +156,7 @@ INT4 main(INT4 argc, CHAR **argv)
   }
 
   /* Free memory. */
-  SDestroyVector(&stat,&(series.data));
+  LALSDestroyVector(&stat,&(series.data));
   if(stat.statusCode){
     LALPrintError("%s: %s\n",argv[0],BANDPASSTEST_MSGESUB);
     REPORTSTATUS(&stat);

@@ -44,13 +44,13 @@ NRCSID (REALFFTC, "$Id$");
   do { fftw_malloc_hook = LALMalloc; fftw_free_hook = LALFree; } while(0)
 
 void
-EstimateFwdRealFFTPlan (
-    Status       *stat,
+LALEstimateFwdRealFFTPlan (
+    LALStatus       *stat,
     RealFFTPlan **plan,
     UINT4         size
     )
 {
-  INITSTATUS (stat, "EstimateFwdRealFFTPlan", REALFFTC);
+  INITSTATUS (stat, "LALEstimateFwdRealFFTPlan", REALFFTC);
 
   FFTWHOOKS;
 
@@ -90,13 +90,13 @@ EstimateFwdRealFFTPlan (
 }
 
 void
-EstimateInvRealFFTPlan (
-    Status       *stat,
+LALEstimateInvRealFFTPlan (
+    LALStatus       *stat,
     RealFFTPlan **plan,
     UINT4         size
     )
 {
-  INITSTATUS (stat, "EstimateInvRealFFTPlan", REALFFTC);
+  INITSTATUS (stat, "LALEstimateInvRealFFTPlan", REALFFTC);
  
   FFTWHOOKS;
 
@@ -136,13 +136,13 @@ EstimateInvRealFFTPlan (
 }
 
 void
-MeasureFwdRealFFTPlan (
-    Status       *stat,
+LALMeasureFwdRealFFTPlan (
+    LALStatus       *stat,
     RealFFTPlan **plan,
     UINT4         size
     )
 {
-  INITSTATUS (stat, "MeasureFwdRealFFTPlan", REALFFTC);
+  INITSTATUS (stat, "LALMeasureFwdRealFFTPlan", REALFFTC);
 
   FFTWHOOKS;
 
@@ -182,13 +182,13 @@ MeasureFwdRealFFTPlan (
 }
 
 void
-MeasureInvRealFFTPlan (
-    Status       *stat,
+LALMeasureInvRealFFTPlan (
+    LALStatus       *stat,
     RealFFTPlan **plan,
     UINT4         size
     )
 {
-  INITSTATUS (stat, "MeasureInvRealFFTPlan", REALFFTC);
+  INITSTATUS (stat, "LALMeasureInvRealFFTPlan", REALFFTC);
 
   FFTWHOOKS;
 
@@ -228,12 +228,12 @@ MeasureInvRealFFTPlan (
 }
 
 void
-DestroyRealFFTPlan (
-    Status       *stat,
+LALDestroyRealFFTPlan (
+    LALStatus       *stat,
     RealFFTPlan **plan
     )
 {
-  INITSTATUS (stat, "DestroyRealFFTPlan", REALFFTC);
+  INITSTATUS (stat, "LALDestroyRealFFTPlan", REALFFTC);
 
   FFTWHOOKS;
 
@@ -254,14 +254,14 @@ DestroyRealFFTPlan (
 
 
 void
-REAL4VectorFFT (
-    Status      *stat,
+LALREAL4VectorFFT (
+    LALStatus      *stat,
     REAL4Vector *vout,
     REAL4Vector *vinp,
     RealFFTPlan *plan
     )
 {
-  INITSTATUS (stat, "REAL4VectorFFT", REALFFTC);
+  INITSTATUS (stat, "LALREAL4VectorFFT", REALFFTC);
 
   FFTWHOOKS;
 
@@ -294,14 +294,14 @@ REAL4VectorFFT (
 
 
 void
-REAL4VectorSequenceFFT (
-    Status              *stat,
+LALREAL4VectorSequenceFFT (
+    LALStatus              *stat,
     REAL4VectorSequence *vout,
     REAL4VectorSequence *vinp,
     RealFFTPlan         *plan
     )
 {
-  INITSTATUS (stat, "REAL4VectorSequenceFFT", REALFFTC);
+  INITSTATUS (stat, "LALREAL4VectorSequenceFFT", REALFFTC);
 
   FFTWHOOKS;
 
@@ -338,8 +338,8 @@ REAL4VectorSequenceFFT (
 
 
 void
-FwdRealFFT (
-    Status         *stat,
+LALFwdRealFFT (
+    LALStatus         *stat,
     COMPLEX8Vector *vout,
     REAL4Vector    *vinp,
     RealFFTPlan    *plan
@@ -349,7 +349,7 @@ FwdRealFFT (
   INT4         n;
   INT4         k;
 
-  INITSTATUS (stat, "FwdRealFFT", REALFFTC);
+  INITSTATUS (stat, "LALFwdRealFFT", REALFFTC);
   ATTATCHSTATUSPTR (stat);
 
   FFTWHOOKS;
@@ -374,10 +374,10 @@ FwdRealFFT (
   ASSERT (plan->sign == 1, stat, REALFFT_ESIGN, REALFFT_MSGESIGN);
 
   /* create temporary vector and check that it was created */
-  TRY (CreateVector (stat->statusPtr, &vtmp, n), stat);
+  TRY (LALCreateVector (stat->statusPtr, &vtmp, n), stat);
 
   /* perform the FFT */
-  TRY (REAL4VectorFFT (stat->statusPtr, vtmp, vinp, plan), stat);
+  TRY (LALREAL4VectorFFT (stat->statusPtr, vtmp, vinp, plan), stat);
 
   /* DC component */
   vout->data[0].re = vtmp->data[0];
@@ -398,7 +398,7 @@ FwdRealFFT (
   }
 
   /* destroy temporary vector and check that it was destroyed */
-  TRY (DestroyVector (stat->statusPtr, &vtmp), stat);
+  TRY (LALDestroyVector (stat->statusPtr, &vtmp), stat);
 
   DETATCHSTATUSPTR (stat);
   /* normal exit */
@@ -407,8 +407,8 @@ FwdRealFFT (
 
 
 void
-InvRealFFT (
-    Status         *stat,
+LALInvRealFFT (
+    LALStatus         *stat,
     REAL4Vector    *vout,
     COMPLEX8Vector *vinp,
     RealFFTPlan    *plan
@@ -418,7 +418,7 @@ InvRealFFT (
   INT4         n;
   INT4         k;
 
-  INITSTATUS (stat, "InvRealFFT", REALFFTC);
+  INITSTATUS (stat, "LALInvRealFFT", REALFFTC);
   ATTATCHSTATUSPTR (stat);
 
   FFTWHOOKS;
@@ -443,7 +443,7 @@ InvRealFFT (
   ASSERT (plan->sign == -1, stat, REALFFT_ESIGN, REALFFT_MSGESIGN);
 
   /* create temporary vector and check that it was created */
-  TRY (CreateVector (stat->statusPtr, &vtmp, n), stat);
+  TRY (LALCreateVector (stat->statusPtr, &vtmp, n), stat);
 
   /* DC component */
   vtmp->data[0] = vinp->data[0].re;
@@ -465,10 +465,10 @@ InvRealFFT (
   }
 
   /* perform the FFT */
-  TRY (REAL4VectorFFT (stat->statusPtr, vout, vtmp, plan), stat);
+  TRY (LALREAL4VectorFFT (stat->statusPtr, vout, vtmp, plan), stat);
 
   /* destroy temporary vector and check that it was destroyed */
-  TRY (DestroyVector (stat->statusPtr, &vtmp), stat);
+  TRY (LALDestroyVector (stat->statusPtr, &vtmp), stat);
 
   DETATCHSTATUSPTR (stat);
   /* normal exit */
@@ -477,8 +477,8 @@ InvRealFFT (
 
 
 void
-RealPowerSpectrum (
-    Status      *stat,
+LALRealPowerSpectrum (
+    LALStatus      *stat,
     REAL4Vector *vout,
     REAL4Vector *vinp,
     RealFFTPlan *plan
@@ -488,7 +488,7 @@ RealPowerSpectrum (
   INT4         n;
   INT4         k;
 
-  INITSTATUS (stat, "RealPowerSpectrum", REALFFTC);
+  INITSTATUS (stat, "LALRealPowerSpectrum", REALFFTC);
   ATTATCHSTATUSPTR (stat);
 
   FFTWHOOKS;
@@ -513,10 +513,10 @@ RealPowerSpectrum (
   ASSERT (plan->sign == 1, stat, REALFFT_ESIGN, REALFFT_MSGESIGN);
 
   /* create temporary vector and check that it was created */
-  TRY (CreateVector (stat->statusPtr, &vtmp, n), stat);
+  TRY (LALCreateVector (stat->statusPtr, &vtmp, n), stat);
 
   /* perform the FFT */
-  TRY (REAL4VectorFFT (stat->statusPtr, vtmp, vinp, plan), stat);
+  TRY (LALREAL4VectorFFT (stat->statusPtr, vtmp, vinp, plan), stat);
 
   /* DC component */
   vout->data[0] = (vtmp->data[0])*(vtmp->data[0]);
@@ -534,7 +534,7 @@ RealPowerSpectrum (
     vout->data[n/2] = (vtmp->data[n/2])*(vtmp->data[n/2]);
 
   /* destroy temporary vector and check that it was destroyed */
-  TRY (DestroyVector (stat->statusPtr, &vtmp), stat);
+  TRY (LALDestroyVector (stat->statusPtr, &vtmp), stat);
 
   DETATCHSTATUSPTR (stat);
   /* normal exit */
@@ -543,8 +543,8 @@ RealPowerSpectrum (
 
 
 void
-FwdRealSequenceFFT (
-    Status                 *stat,
+LALFwdRealSequenceFFT (
+    LALStatus                 *stat,
     COMPLEX8VectorSequence *vout,
     REAL4VectorSequence    *vinp,
     RealFFTPlan            *plan
@@ -558,7 +558,7 @@ FwdRealSequenceFFT (
   INT4 j;
   INT4 k;
 
-  INITSTATUS (stat, "FwdRealSequenceFFT", REALFFTC);
+  INITSTATUS (stat, "LALFwdRealSequenceFFT", REALFFTC);
   ATTATCHSTATUSPTR (stat);
 
   FFTWHOOKS;
@@ -586,10 +586,10 @@ FwdRealSequenceFFT (
   ASSERT (plan->sign == 1, stat, REALFFT_ESIGN, REALFFT_MSGESIGN);
 
   /* create temporary vector sequence and check that it was created */
-  TRY (CreateVectorSequence (stat->statusPtr, &vtmp, &sqin), stat);
+  TRY (LALCreateVectorSequence (stat->statusPtr, &vtmp, &sqin), stat);
 
   /* perform the FFT */
-  TRY (REAL4VectorSequenceFFT (stat->statusPtr, vtmp, vinp, plan), stat);
+  TRY (LALREAL4VectorSequenceFFT (stat->statusPtr, vtmp, vinp, plan), stat);
 
   /* loop over transforms */
   for (j = 0; j < m; ++j)
@@ -617,7 +617,7 @@ FwdRealSequenceFFT (
   }
 
   /* destroy temporary vector and check that it was destroyed */
-  TRY (DestroyVectorSequence (stat->statusPtr, &vtmp), stat);
+  TRY (LALDestroyVectorSequence (stat->statusPtr, &vtmp), stat);
 
   DETATCHSTATUSPTR (stat);
   /* normal exit */
@@ -626,8 +626,8 @@ FwdRealSequenceFFT (
 
 
 void
-InvRealSequenceFFT (
-    Status                 *stat,
+LALInvRealSequenceFFT (
+    LALStatus                 *stat,
     REAL4VectorSequence    *vout,
     COMPLEX8VectorSequence *vinp,
     RealFFTPlan            *plan
@@ -641,7 +641,7 @@ InvRealSequenceFFT (
   INT4 j;
   INT4 k;
 
-  INITSTATUS (stat, "InvRealSequenceFFT", REALFFTC);
+  INITSTATUS (stat, "LALInvRealSequenceFFT", REALFFTC);
   ATTATCHSTATUSPTR (stat);
 
   FFTWHOOKS;
@@ -669,7 +669,7 @@ InvRealSequenceFFT (
   ASSERT (plan->sign == -1, stat, REALFFT_ESIGN, REALFFT_MSGESIGN);
 
   /* create temporary vector sequence and check that it was created */
-  TRY (CreateVectorSequence (stat->statusPtr, &vtmp, &sqin), stat);
+  TRY (LALCreateVectorSequence (stat->statusPtr, &vtmp, &sqin), stat);
 
   /* loop over transforms */
   for (j = 0; j < m; ++j)
@@ -700,10 +700,10 @@ InvRealSequenceFFT (
   }
 
   /* perform the FFT */
-  TRY (REAL4VectorSequenceFFT (stat->statusPtr, vout, vtmp, plan), stat);
+  TRY (LALREAL4VectorSequenceFFT (stat->statusPtr, vout, vtmp, plan), stat);
 
   /* destroy temporary vector sequence and check that it was destroyed */
-  TRY (DestroyVectorSequence (stat->statusPtr, &vtmp), stat);
+  TRY (LALDestroyVectorSequence (stat->statusPtr, &vtmp), stat);
 
   DETATCHSTATUSPTR (stat);
   /* normal exit */
@@ -712,8 +712,8 @@ InvRealSequenceFFT (
 
 
 void
-RealSequencePowerSpectrum (
-    Status              *stat,
+LALRealSequencePowerSpectrum (
+    LALStatus              *stat,
     REAL4VectorSequence *vout,
     REAL4VectorSequence *vinp,
     RealFFTPlan         *plan
@@ -727,7 +727,7 @@ RealSequencePowerSpectrum (
   INT4 j;
   INT4 k;
 
-  INITSTATUS (stat, "RealSequencePowerSpectrum", REALFFTC);
+  INITSTATUS (stat, "LALRealSequencePowerSpectrum", REALFFTC);
   ATTATCHSTATUSPTR (stat);
 
   FFTWHOOKS;
@@ -755,10 +755,10 @@ RealSequencePowerSpectrum (
   ASSERT (plan->sign == 1, stat, REALFFT_ESIGN, REALFFT_MSGESIGN);
 
   /* create temporary vector sequence and check that it was created */
-  TRY (CreateVectorSequence (stat->statusPtr, &vtmp, &sqin), stat);
+  TRY (LALCreateVectorSequence (stat->statusPtr, &vtmp, &sqin), stat);
 
   /* perform the FFT */
-  TRY (REAL4VectorSequenceFFT (stat->statusPtr, vtmp, vinp, plan), stat);
+  TRY (LALREAL4VectorSequenceFFT (stat->statusPtr, vtmp, vinp, plan), stat);
 
   /* loop over transforms */
   for (j = 0; j < m; ++j)
@@ -783,7 +783,7 @@ RealSequencePowerSpectrum (
   }
 
   /* destroy temporary vector and check that it was destroyed */
-  TRY (DestroyVectorSequence (stat->statusPtr, &vtmp), stat);
+  TRY (LALDestroyVectorSequence (stat->statusPtr, &vtmp), stat);
 
   DETATCHSTATUSPTR (stat);
   /* normal exit */

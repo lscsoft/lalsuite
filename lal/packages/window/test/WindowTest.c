@@ -40,13 +40,13 @@
 NRCSID (MAIN, "$Id$");
 
 /* modify this value to get a stack trace of test */
-int debuglevel=2;
+int LALDebugLevel=2;
 
 /* modify this to turn on printing windows into files for checking */
 #define PRINT 1
 
 int
-check(Status *status,INT4 code,CHAR * message)
+check(LALStatus *status,INT4 code,CHAR * message)
 {
   if (status->statusCode != code) {
     printf("FAIL: did not recognize %s\n",message);
@@ -63,7 +63,7 @@ check(Status *status,INT4 code,CHAR * message)
 int main()
 {
 
-  static Status status;     
+  static LALStatus status;     
   REAL4Vector *vector = NULL;
   REAL4Vector dummy;
   LALWindowParams params;
@@ -77,7 +77,7 @@ int main()
     300.357781729967622,   /* Papoulis */
     406.9376};     /* Hamming */
 
-  CreateVector (&status, &vector, 1024);
+  LALCreateVector (&status, &vector, 1024);
 
   /* Test behavior for null parameter block */
   LALWindow(&status,vector,NULL );
@@ -125,13 +125,13 @@ int main()
       printf("FAIL: Window %s appears incorrect.\n",params.windowname);
       return 1;
     }
-    if (PRINT) PrintVector(vector);
+    if (PRINT) LALPrintVector(vector);
   }
 
 
   printf("PASS Window()\n");
 
-  DestroyVector (&status, &vector);
+  LALDestroyVector (&status, &vector);
 
   return 0;
 }

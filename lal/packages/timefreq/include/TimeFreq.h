@@ -150,15 +150,15 @@ typedef struct tagCreateTimeFreqIn {
  * 9. Functions Declarations (i.e., prototypes).
  */
 
-void CreateTimeFreqRep (Status*, TimeFreqRep**, CreateTimeFreqIn*);
-void CreateTimeFreqParam (Status*, TimeFreqParam**, CreateTimeFreqIn*);
-void DestroyTimeFreqRep (Status*, TimeFreqRep**);
-void DestroyTimeFreqParam (Status*, TimeFreqParam**);
-void TfrSp (Status*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
-void TfrWv (Status*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
-void TfrPswv (Status*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
-void TfrRsp (Status*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
-void Dwindow (Status*, REAL4Vector*, REAL4Vector*);
+void LALCreateTimeFreqRep (LALStatus*, TimeFreqRep**, CreateTimeFreqIn*);
+void LALCreateTimeFreqParam (LALStatus*, TimeFreqParam**, CreateTimeFreqIn*);
+void LALDestroyTimeFreqRep (LALStatus*, TimeFreqRep**);
+void LALDestroyTimeFreqParam (LALStatus*, TimeFreqParam**);
+void LALTfrSp (LALStatus*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
+void LALTfrWv (LALStatus*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
+void LALTfrPswv (LALStatus*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
+void LALTfrRsp (LALStatus*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
+void LALDwindow (LALStatus*, REAL4Vector*, REAL4Vector*);
 
 #ifdef  __cplusplus
 }

@@ -39,7 +39,7 @@
 
 NRCSID (MAIN, "$Id$");
 
-int debuglevel = 2;
+int LALDebugLevel = 2;
 
 int
 main ()
@@ -54,16 +54,16 @@ main ()
   REAL4Vector    *y1 = NULL;
   REAL4Vector    *y2 = NULL;
   REAL4Vector    *y3 = NULL;
-  static Status   status;
+  static LALStatus   status;
   INT4            i;
 
-  CCreateVector(&status, &z1, size);
-  CCreateVector(&status, &z2, size);
-  CCreateVector(&status, &z3, size);
-  SCreateVector(&status, &x1, size);
-  SCreateVector(&status, &x2, size);
-  SCreateVector(&status, &x3, size);
-  SCreateVector(&status, &y1, size/2);
+  LALCCreateVector(&status, &z1, size);
+  LALCCreateVector(&status, &z2, size);
+  LALCCreateVector(&status, &z3, size);
+  LALSCreateVector(&status, &x1, size);
+  LALSCreateVector(&status, &x2, size);
+  LALSCreateVector(&status, &x3, size);
+  LALSCreateVector(&status, &y1, size/2);
   y2         = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
   y2->data   = NULL;
   y2->length = size;
@@ -82,7 +82,7 @@ main ()
   }
 
   printf("\n");
-  CCVectorMultiply(&status, z3, z1, z2);
+  LALCCVectorMultiply(&status, z3, z1, z2);
   for (i = 0; i < size; ++i)
     printf("(% 6.0f,% 6.0f) x (% 6.0f,% 6.0f) = (% 6.0f,% 6.0f)\n",
            z1->data[i].re, z1->data[i].im,
@@ -90,7 +90,7 @@ main ()
            z3->data[i].re, z3->data[i].im);
 
   printf("\n");
-  CCVectorMultiplyConjugate(&status, z3, z1, z2);
+  LALCCVectorMultiplyConjugate(&status, z3, z1, z2);
   for (i = 0; i < size; ++i)
     printf("(% 6.0f,% 6.0f) x (% 6.0f,% 6.0f)* = (% 6.0f,% 6.0f)\n",
            z1->data[i].re, z1->data[i].im,
@@ -98,7 +98,7 @@ main ()
            z3->data[i].re, z3->data[i].im);
 
   printf("\n");
-  CCVectorDivide(&status, z3, z1, z2);
+  LALCCVectorDivide(&status, z3, z1, z2);
   for (i = 0; i < size; ++i)
     printf("(% 6.0f,% 6.0f) / (% 6.0f,% 6.0f) = (% 9.6f,% 9.6f)\n",
            z1->data[i].re, z1->data[i].im,
@@ -106,7 +106,7 @@ main ()
            z3->data[i].re, z3->data[i].im);
 
   printf("\n");
-  SCVectorMultiply(&status, z3, x1, z1);
+  LALSCVectorMultiply(&status, z3, x1, z1);
   for (i = 0; i < size; ++i)
     printf("% 6.0f x (% 6.0f,% 6.0f) = (% 6.0f,% 6.0f)\n",
            x1->data[i],
@@ -114,24 +114,24 @@ main ()
            z3->data[i].re, z3->data[i].im);
 
   printf("\n");
-  SSVectorMultiply(&status, x3, x1, x2);
+  LALSSVectorMultiply(&status, x3, x1, x2);
   for (i = 0; i < size; ++i)
     printf("% 6.0f x % 6.0f = % 6.0f\n",
            x1->data[i], x2->data[i], x3->data[i]);
 
   printf("\n");
-  SSVectorMultiply(&status, x3, x1, NULL);
-  SSVectorMultiply(&status, x3, y2, x2);
-  SSVectorMultiply(&status, y3, x1, x2);
-  SSVectorMultiply(&status, x3, x1, y1);
+  LALSSVectorMultiply(&status, x3, x1, NULL);
+  LALSSVectorMultiply(&status, x3, y2, x2);
+  LALSSVectorMultiply(&status, y3, x1, x2);
+  LALSSVectorMultiply(&status, x3, x1, y1);
 
-  CDestroyVector(&status, &z1);
-  CDestroyVector(&status, &z2);
-  CDestroyVector(&status, &z3);
-  SDestroyVector(&status, &x1);
-  SDestroyVector(&status, &x2);
-  SDestroyVector(&status, &x3);
-  SDestroyVector(&status, &y1);
+  LALCDestroyVector(&status, &z1);
+  LALCDestroyVector(&status, &z2);
+  LALCDestroyVector(&status, &z3);
+  LALSDestroyVector(&status, &x1);
+  LALSDestroyVector(&status, &x2);
+  LALSDestroyVector(&status, &x3);
+  LALSDestroyVector(&status, &y1);
   LALFree(y2);
   LALFree(y3->data);
   LALFree(y3);
@@ -140,11 +140,11 @@ main ()
   z1 = z2 = z3 = NULL;
   
   
-  CCreateVector(&status, &z1, size);
+  LALCCreateVector(&status, &z1, size);
   
-  SCreateVector(&status, &x1, size);
-  SCreateVector(&status, &x2, size);
-  SCreateVector(&status, &x3, size);
+  LALSCreateVector(&status, &x1, size);
+  LALSCreateVector(&status, &x2, size);
+  LALSCreateVector(&status, &x3, size);
   
   
    for (i = 0; i < size; ++i)
@@ -154,26 +154,26 @@ main ()
   }
   
    printf("\n"); 
-   CVectorAbs(&status, x1, z1);  
+   LALCVectorAbs(&status, x1, z1);  
    for (i = 0; i < size; ++i)
     printf(" Abs(% f,%f)  = %f \n",
            z1->data[i].re, z1->data[i].im,
            x1->data[i]);
            
-    CVectorAngle(&status, x2, z1);
+    LALCVectorAngle(&status, x2, z1);
     for (i = 0; i < size; ++i)    
      printf(" Angle(%f,%f)  = %f \n",
            z1->data[i].re, z1->data[i].im,
            x2->data[i]);
  
-    UnwrapREAL4Angle(&status, x3, x2); 
+    LALUnwrapREAL4Angle(&status, x3, x2); 
      for (i = 0; i < size; ++i)    
      printf(" Unwrap Phase Angle ( %f )  = %f \n",
            x2->data[i],
            x3->data[i]);
   
   
-  SCreateVector(&status, &y1, size/2);
+  LALSCreateVector(&status, &y1, size/2);
   
   y2         = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
   y2->data   = NULL;
@@ -185,34 +185,34 @@ main ()
 
   printf("\n");
   
-    CVectorAbs(&status, x1, NULL);
-    CVectorAbs(&status, NULL, z1);
-    CVectorAbs(&status, y1, z1);
-    CVectorAbs(&status, y2, z1);
-    CVectorAbs(&status, y3, z1);
+    LALCVectorAbs(&status, x1, NULL);
+    LALCVectorAbs(&status, NULL, z1);
+    LALCVectorAbs(&status, y1, z1);
+    LALCVectorAbs(&status, y2, z1);
+    LALCVectorAbs(&status, y3, z1);
     
     
-    CVectorAngle(&status, x2, NULL);
-    CVectorAngle(&status, NULL, z1);
-    CVectorAngle(&status, y1, z1);
-    CVectorAngle(&status, y2, z1);
-    CVectorAngle(&status, y3, z1);
+    LALCVectorAngle(&status, x2, NULL);
+    LALCVectorAngle(&status, NULL, z1);
+    LALCVectorAngle(&status, y1, z1);
+    LALCVectorAngle(&status, y2, z1);
+    LALCVectorAngle(&status, y3, z1);
     
-    UnwrapREAL4Angle(&status, x3, NULL);   
-    UnwrapREAL4Angle(&status, NULL, x2);   
-    UnwrapREAL4Angle(&status, y1, x2);   
-    UnwrapREAL4Angle(&status, y2, x2);   
-    UnwrapREAL4Angle(&status, y3, x2);   
-    UnwrapREAL4Angle(&status, x2, x2);   
+    LALUnwrapREAL4Angle(&status, x3, NULL);   
+    LALUnwrapREAL4Angle(&status, NULL, x2);   
+    LALUnwrapREAL4Angle(&status, y1, x2);   
+    LALUnwrapREAL4Angle(&status, y2, x2);   
+    LALUnwrapREAL4Angle(&status, y3, x2);   
+    LALUnwrapREAL4Angle(&status, x2, x2);   
  
 
-  CDestroyVector(&status, &z1);
+  LALCDestroyVector(&status, &z1);
  
-  SDestroyVector(&status, &x1);
-  SDestroyVector(&status, &x2);
-  SDestroyVector(&status, &x3);
+  LALSDestroyVector(&status, &x1);
+  LALSDestroyVector(&status, &x2);
+  LALSDestroyVector(&status, &x3);
   
-  SDestroyVector(&status, &y1);
+  LALSDestroyVector(&status, &y1);
   LALFree(y2);
   LALFree(y3->data);
   LALFree(y3);

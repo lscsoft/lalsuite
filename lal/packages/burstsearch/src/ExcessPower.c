@@ -51,7 +51,7 @@ NRCSID (EXCESSPOWERC, "$Id$");
 #define FALSE 0
 
 
-extern INT4 debuglevel;
+extern INT4 LALDebugLevel;
 
 static INT4 pow1(INT4 a, INT4 b)
 {
@@ -73,7 +73,7 @@ static int TileCompare( TFTile **tiles1, TFTile **tiles2 )
 }
 
 static void 
-DestroyTFTile (Status *status, TFTile *tfTile)
+DestroyTFTile (LALStatus *status, TFTile *tfTile)
 {
   /*
    *  this function destroys linked list of tiles
@@ -137,7 +137,7 @@ DestroyTFTile (Status *status, TFTile *tfTile)
 
 static void 
 PrintTFTile (
-	     Status                                 *status,
+	     LALStatus                                 *status,
 	     FILE                                   *fp,
 	     TFTile                                 *tfTile,
 	     TFTiling                               *tfTiling
@@ -196,7 +196,7 @@ PrintTFTile (
 
     input.dof = 1.0;
     input.falseAlarm = tfTile->alpha;
-    Chi2Threshold (status->statusPtr, &sigma2, &input);
+    LALChi2Threshold (status->statusPtr, &sigma2, &input);
     CHECKSTATUSPTR (status);
     fprintf(fp," Effective number of sigma:  %f\n", sqrt(sigma2));
   }
@@ -216,8 +216,8 @@ PrintTFTile (
 
 
 void
-AddWhiteNoise (
-	       Status                               *status,
+LALAddWhiteNoise (
+	       LALStatus                               *status,
 	       COMPLEX8Vector                       *v,
 	       REAL8                                noiseLevel
 	       )
@@ -233,7 +233,7 @@ AddWhiteNoise (
   REAL4Vector            *vi=NULL;
   INT4                   i;
 
-  INITSTATUS (status, "AddWhiteNoise", EXCESSPOWERC);
+  INITSTATUS (status, "LALAddWhiteNoise", EXCESSPOWERC);
   ATTATCHSTATUSPTR (status);
 
 
@@ -247,19 +247,19 @@ AddWhiteNoise (
 
   
   /* Seed Random Number Generator with current time for seed */
-  CreateRandomParams (status->statusPtr, &params, 0);  
+  LALCreateRandomParams (status->statusPtr, &params, 0);  
   CHECKSTATUSPTR (status);
 
   /* create temporary vectors */
-  SCreateVector (status->statusPtr, &vr, v->length);
+  LALSCreateVector (status->statusPtr, &vr, v->length);
   CHECKSTATUSPTR (status);
-  SCreateVector (status->statusPtr, &vi, v->length);
+  LALSCreateVector (status->statusPtr, &vi, v->length);
   CHECKSTATUSPTR (status);
   
   /* Fill temporary vectors with Gaussian deviates */
-  NormalDeviates (status->statusPtr, vr, params);
+  LALNormalDeviates (status->statusPtr, vr, params);
   CHECKSTATUSPTR (status);
-  NormalDeviates (status->statusPtr, vi, params);
+  LALNormalDeviates (status->statusPtr, vi, params);
   CHECKSTATUSPTR (status);
 
   for(i=0;i<v->length;i++) 
@@ -268,13 +268,13 @@ AddWhiteNoise (
       v->data[i].im += noiseLevel * vi->data[i];
     }
     
-  SDestroyVector (status->statusPtr, &vr);
+  LALSDestroyVector (status->statusPtr, &vr);
   CHECKSTATUSPTR (status);
   
-  SDestroyVector (status->statusPtr, &vi);
+  LALSDestroyVector (status->statusPtr, &vi);
   CHECKSTATUSPTR (status);
   
-  DestroyRandomParams (status->statusPtr, &params);
+  LALDestroyRandomParams (status->statusPtr, &params);
   CHECKSTATUSPTR (status);
   
   /* normal exit */
@@ -294,8 +294,8 @@ AddWhiteNoise (
 
 
 void
-CreateTFTiling (
-		 Status                             *status,
+LALCreateTFTiling (
+		 LALStatus                             *status,
 		 TFTiling                           **tfTiling,
 		 CreateTFTilingIn                   *input
 		 )
@@ -310,7 +310,7 @@ CreateTFTiling (
 
   TFTile                        **currentTile;
 
-  INITSTATUS (status, "CreateTFTiling", EXCESSPOWERC);
+  INITSTATUS (status, "LALCreateTFTiling", EXCESSPOWERC);
   ATTATCHSTATUSPTR (status);
 
   /* Check input structure: report if NULL */
@@ -438,7 +438,7 @@ CreateTFTiling (
       /* Create TF plane structure */
       thisPlane = (*tfTiling)->tfp + i;
       *thisPlane=NULL;
-      CreateTFPlane( status->statusPtr, thisPlane, &params);
+      LALCreateTFPlane( status->statusPtr, thisPlane, &params);
       CHECKSTATUSPTR (status);
 
       /* create the DFTParams structure */
@@ -449,7 +449,7 @@ CreateTFTiling (
 
 	thisDftParams  = (*tfTiling)->dftParams + i;
 	*thisDftParams = NULL;
-	CreateComplexDFTParams( status->statusPtr, thisDftParams, 
+	LALCreateComplexDFTParams( status->statusPtr, thisDftParams, 
                              &winParams, -1);
 	CHECKSTATUSPTR (status);
 	/* Its an inverse transform instead of a forward transform */
@@ -560,14 +560,14 @@ CreateTFTiling (
 
 
 void
-DestroyTFTiling (
-		 Status                             *status,
+LALDestroyTFTiling (
+		 LALStatus                             *status,
 		 TFTiling                           **tfTiling
 		 )
 {
   INT4                         i;
 
-  INITSTATUS (status, "DestroyTFTiling", EXCESSPOWERC);
+  INITSTATUS (status, "LALDestroyTFTiling", EXCESSPOWERC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not null */
@@ -591,11 +591,11 @@ DestroyTFTiling (
       ComplexDFTParams              **thisDftParams;
 
       thisPlane = (*tfTiling)->tfp + i;
-      DestroyTFPlane( status->statusPtr, thisPlane );
+      LALDestroyTFPlane( status->statusPtr, thisPlane );
       CHECKSTATUSPTR (status);
 
       thisDftParams = (*tfTiling)->dftParams + i;
-      DestroyComplexDFTParams( status->statusPtr, thisDftParams );
+      LALDestroyComplexDFTParams( status->statusPtr, thisDftParams );
       CHECKSTATUSPTR (status);
     }
 
@@ -625,15 +625,15 @@ DestroyTFTiling (
 
 
 void
-ComputeTFPlanes (
-		 Status                             *status,
+LALComputeTFPlanes (
+		 LALStatus                             *status,
 		 TFTiling                           *tfTiling,
 		 COMPLEX8FrequencySeries            *freqSeries
 		 )
 {
   INT4               i;
 
-  INITSTATUS (status, "ComputeTFPlanes", EXCESSPOWERC);
+  INITSTATUS (status, "LALComputeTFPlanes", EXCESSPOWERC);
   ATTATCHSTATUSPTR (status);
 
 
@@ -670,7 +670,7 @@ ComputeTFPlanes (
       transformparams.dftParams=*thisDftParams;
 
       /* Compute TF transform */
-      FreqSeriesToTFPlane( status->statusPtr, *thisPlane, freqSeries, 
+      LALFreqSeriesToTFPlane( status->statusPtr, *thisPlane, freqSeries, 
                            &transformparams); 
       CHECKSTATUSPTR (status);
     }
@@ -693,8 +693,8 @@ ComputeTFPlanes (
 
 
 void
-ComputeExcessPower (
-		   Status                             *status,
+LALComputeExcessPower (
+		   LALStatus                             *status,
 		   TFTiling                           *tfTiling,
 		   ComputeExcessPowerIn               *input
 		   )
@@ -704,7 +704,7 @@ ComputeExcessPower (
   TFTile             *thisTile;
 
 
-  INITSTATUS (status, "ComputeExcessPower", EXCESSPOWERC);
+  INITSTATUS (status, "LALComputeExcessPower", EXCESSPOWERC);
   ATTATCHSTATUSPTR (status);
 
 
@@ -820,9 +820,9 @@ ComputeExcessPower (
 	  /* compute alpha value */
 	  input.chi2= sum;
 	  input.dof = dof;
-	  /* input->nonCentral not used by ChisqCdf() */
+	  /* input->nonCentral not used by LALChisqCdf() */
 
-	  OneMinusChisqCdf( status->statusPtr, &alpha, &input);
+	  LALOneMinusChisqCdf( status->statusPtr, &alpha, &input);
 
 	  /* 
            *  trap error where alpha=0.0.
@@ -838,7 +838,7 @@ ComputeExcessPower (
 	      alpha = exp(-700.0);
 	    }
 
-	  /* check for other possible errors from OneMinusChisqCdf() */
+	  /* check for other possible errors from LALOneMinusChisqCdf() */
 	  CHECKSTATUSPTR (status);
 
 	  thisTile->alpha = alpha;
@@ -869,8 +869,8 @@ ComputeExcessPower (
 
 
 void
-SortTFTiling (
-	      Status                                *status,
+LALSortTFTiling (
+	      LALStatus                                *status,
 	      TFTiling                              *tfTiling
 	      )
 {
@@ -879,7 +879,7 @@ SortTFTiling (
   TFTile             *thisTile;
   TFTile             **tiles;
 
-  INITSTATUS (status, "SortTFTiling", EXCESSPOWERC);
+  INITSTATUS (status, "LALSortTFTiling", EXCESSPOWERC);
   ATTATCHSTATUSPTR (status);
 
 
@@ -964,8 +964,8 @@ SortTFTiling (
 
 
 void
-CountEPEvents (
-               Status                               *status,
+LALCountEPEvents (
+               LALStatus                               *status,
                INT4                                 *numEvents,
                TFTiling                             *tfTiling,
                REAL8                                alphaThreshold
@@ -974,7 +974,7 @@ CountEPEvents (
   INT4               tileCount;
   TFTile             *thisTile;
 
-  INITSTATUS (status, "CountEPEvents", EXCESSPOWERC);
+  INITSTATUS (status, "LALCountEPEvents", EXCESSPOWERC);
   ATTATCHSTATUSPTR (status);
 
 
@@ -1021,8 +1021,8 @@ CountEPEvents (
 
 
 void
-ComputeLikelihood (
-		   Status                             *status,
+LALComputeLikelihood (
+		   LALStatus                             *status,
 		   REAL8                              *lambda,
 		   TFTiling                           *tfTiling
 		   )
@@ -1031,7 +1031,7 @@ ComputeLikelihood (
   TFTile             *thisTile;
 
 
-  INITSTATUS (status, "ComputeLikelihood", EXCESSPOWERC);
+  INITSTATUS (status, "LALComputeLikelihood", EXCESSPOWERC);
   ATTATCHSTATUSPTR (status);
 
 
@@ -1041,7 +1041,7 @@ ComputeLikelihood (
           EXCESSPOWER_MSGENULLP);
   ASSERT (lambda, status, EXCESSPOWER_ENULLP, EXCESSPOWER_MSGENULLP);
 
-  /* make sure ComputeExcessPower() has been already called */
+  /* make sure LALComputeExcessPower() has been already called */
   ASSERT ( tfTiling->excessPowerComputed, status, EXCESSPOWER_EORDER, 
            EXCESSPOWER_MSGEORDER);
 
@@ -1095,8 +1095,8 @@ ComputeLikelihood (
 
 
 void 
-PrintTFTileList (
-		 Status                                 *status,
+LALPrintTFTileList (
+		 LALStatus                                 *status,
 		 FILE                                   *fp,
 		 TFTiling                               *tfTiling,
 		 INT4                                   maxTiles
@@ -1105,7 +1105,7 @@ PrintTFTileList (
   TFTile *thisTile;
   INT4   tileCount=0;
 
-  INITSTATUS (status, "PrintTFTileList", EXCESSPOWERC);
+  INITSTATUS (status, "LALPrintTFTileList", EXCESSPOWERC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT(fp, status, EXCESSPOWER_ENULLP, EXCESSPOWER_MSGENULLP);

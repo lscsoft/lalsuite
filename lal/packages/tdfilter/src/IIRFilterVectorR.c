@@ -18,7 +18,7 @@ Applies a time-reversed IIR filter to a data stream.
 
 These functions apply a generic time-domain filter \verb@*filter@ to a
 time series \verb@*vector@, as with the routines
-\verb@IIRFilterREAL4Vector()@ and \verb@IIRFilterREAL8Vector()@, but
+\verb@LALIIRFilterREAL4Vector()@ and \verb@LALIIRFilterREAL8Vector()@, but
 do so in a time-reversed manner.  By successively applying normal and
 time-reversed IIR filters to the same data, one squares the magnitude
 of the frequency response while canceling the phase shift.  This can
@@ -46,7 +46,7 @@ NRCSID(IIRFILTERVECTORRC,"$Id$");
 
 
 /* <lalVerbatim file="IIRFilterVectorRCP"> */
-void IIRFilterREAL4VectorR(Status         *stat,
+void LALIIRFilterREAL4VectorR(LALStatus         *stat,
 			   REAL4Vector    *vector,
 			   REAL4IIRFilter *filter)
 { /* </lalVerbatim> */
@@ -59,7 +59,7 @@ void IIRFilterREAL4VectorR(Status         *stat,
   REAL4 *directCoef; /* Direct filter coefficients. */
   REAL4 *recursCoef; /* Recursive filter coefficients. */
 
-  INITSTATUS(stat,"IIRFilterREAL4VectorR",IIRFILTERVECTORRC);
+  INITSTATUS(stat,"LALIIRFilterREAL4VectorR",IIRFILTERVECTORRC);
 
   /* Make sure all the structures have been initialized. */
   ASSERT(vector,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
@@ -105,7 +105,7 @@ void IIRFilterREAL4VectorR(Status         *stat,
 
 
 /* <lalVerbatim file="IIRFilterVectorRCP"> */
-void IIRFilterREAL8VectorR(Status         *stat,
+void LALIIRFilterREAL8VectorR(LALStatus         *stat,
 			   REAL8Vector    *vector,
 			   REAL8IIRFilter *filter)
 { /* </lalVerbatim> */
@@ -118,7 +118,7 @@ void IIRFilterREAL8VectorR(Status         *stat,
   REAL8 *directCoef; /* Direct filter coefficients. */
   REAL8 *recursCoef; /* Recursive filter coefficients. */
 
-  INITSTATUS(stat,"IIRFilterREAL8VectorR",IIRFILTERVECTORRC);
+  INITSTATUS(stat,"LALIIRFilterREAL8VectorR",IIRFILTERVECTORRC);
 
   /* Make sure all the structures have been initialized. */
   ASSERT(vector,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);

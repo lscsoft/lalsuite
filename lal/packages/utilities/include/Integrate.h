@@ -29,8 +29,8 @@ NRCSID (INTEGRATEH, "$Id$");
 #define INTEGRATE_MSGEIDOM "Invalid domain"
 #define INTEGRATE_MSGEMXIT "Maximum iterations exceeded"
 
-typedef void (REAL4LALFunction) (Status *s, REAL4 *y, REAL4 x, void *p);
-typedef void (REAL8LALFunction) (Status *s, REAL8 *y, REAL8 x, void *p);
+typedef void (REAL4LALFunction) (LALStatus *s, REAL4 *y, REAL4 x, void *p);
+typedef void (REAL8LALFunction) (LALStatus *s, REAL8 *y, REAL8 x, void *p);
 
 
 typedef enum
@@ -68,8 +68,8 @@ DIntegrateIn;
 
 
 void
-SRombergIntegrate (
-    Status       *status,
+LALSRombergIntegrate (
+    LALStatus       *status,
     REAL4        *result,
     SIntegrateIn *input,
     void         *params
@@ -77,8 +77,8 @@ SRombergIntegrate (
 
 
 void
-DRombergIntegrate (
-    Status       *status,
+LALDRombergIntegrate (
+    LALStatus       *status,
     REAL8        *result,
     DIntegrateIn *input,
     void         *params

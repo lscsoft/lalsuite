@@ -6,10 +6,10 @@
 
 NRCSID (TESTSTSC,"$Id$");
 
-INT4 debuglevel=0;
+INT4 LALDebugLevel=0;
 INT4 main()
 {
-  static Status status;
+  static LALStatus status;
   static TrackSearchOut out;
   static TimeFreqRep in;
   static TrackSearchParams params;
@@ -48,7 +48,7 @@ INT4 main()
   /* set the allocFlag so that space can be allocated */
   params.allocFlag=1;
   /* Search for curves */
-  SignalTrackSearch(&status, &out, &in, &params);
+  LALSignalTrackSearch(&status, &out, &in, &params);
   REPORTSTATUS(&status);
   /* Output the details of the curves found.*/
     for(i=0;i<params.height;i++)
@@ -77,7 +77,7 @@ INT4 main()
   out.curves=NULL;
   /* set params.allocFlag=2 and call the routine again to free space*/
   params.allocFlag=2;
-  SignalTrackSearch(&status, &out, &in, &params);
+  LALSignalTrackSearch(&status, &out, &in, &params);
   REPORTSTATUS(&status);
   return(0);
 }

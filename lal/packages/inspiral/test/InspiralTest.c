@@ -8,7 +8,7 @@
 #include "Inspiral.h"
 #include "LALStdlib.h"
 
-INT4 debuglevel=1;
+INT4 LALDebugLevel=1;
 
 void printf_timeseries (int n, double *signal, double delta, double t0) 
 {
@@ -31,7 +31,7 @@ int main () {
    /*
    double dt;
    */
-   static Status status;
+   static LALStatus status;
 
 
    params.ieta=1; 
@@ -51,7 +51,7 @@ int main () {
    params.approximant=pade;
    params.massChoice=m1Andm2;
 
-   InspiralWave (&status, &signal, &params);
+   LALInspiralWave (&status, &signal, &params);
    /*
    dt = 1./params.tSampling;
    printf_timeseries(signal.length, signal.data, dt, 0.0);

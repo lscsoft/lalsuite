@@ -20,8 +20,8 @@
 NRCSID (COMMC, "$Id$");
 
 void
-MPIExportEnvironment (
-    Status     *status,
+LALMPIExportEnvironment (
+    LALStatus     *status,
     const CHAR *env,
     INT4        myId
     )
@@ -29,7 +29,7 @@ MPIExportEnvironment (
   CHAR command[256];
   INT4 code;
 
-  INITSTATUS (status, "MPIExportEnvironment", COMMC);
+  INITSTATUS (status, "LALMPIExportEnvironment", COMMC);
 
   /* if master, get environment variable */
   if (myId == 0)
@@ -68,14 +68,14 @@ MPIExportEnvironment (
 
 /* be sure to have exported DISPLAY first! */
 void
-MPIDebug (
-    Status         *status,
+LALMPIDebug (
+    LALStatus         *status,
     MPIDebugParams *params
     )
 {
   INT4  code;
 
-  INITSTATUS (status, "MPIDebug", COMMC);
+  INITSTATUS (status, "LALMPIDebug", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (params, status, COMM_ENULL, COMM_MSGENULL);
@@ -116,8 +116,8 @@ MPIDebug (
 
 
 void
-MPIKillScript (
-    Status  *status,
+LALMPIKillScript (
+    LALStatus  *status,
     MPIId   *id
     )
 {
@@ -125,7 +125,7 @@ MPIKillScript (
   INT4       procId;
   INT4       code;
 
-  INITSTATUS (status, "MPIKillScript", COMMC);
+  INITSTATUS (status, "LALMPIKillScript", COMMC);
 
   procId = (INT4) getpid();
 
@@ -180,8 +180,8 @@ MPIKillScript (
 
 
 void
-MPISendMsg (
-    Status     *status,
+LALMPISendMsg (
+    LALStatus     *status,
     MPIMessage *msg,
     INT4        dest
     )
@@ -189,7 +189,7 @@ MPISendMsg (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, "MPISendMsg", COMMC);
+  INITSTATUS (status, "LALMPISendMsg", COMMC);
 
   size = sizeof(MPIMessage);
   code = MPI_Send (msg, size, MPI_BYTE, dest, MPIMsg, MPI_COMM_WORLD);
@@ -200,8 +200,8 @@ MPISendMsg (
 
 
 void
-MPIRecvMsg (
-    Status     *status,
+LALMPIRecvMsg (
+    LALStatus     *status,
     MPIMessage *msg
     )
 {
@@ -209,7 +209,7 @@ MPIRecvMsg (
   INT4       code;
   INT4       size;
 
-  INITSTATUS (status, "MPIRecvMsg", COMMC);
+  INITSTATUS (status, "LALMPIRecvMsg", COMMC);
 
   size = sizeof(MPIMessage);
   code = MPI_Recv (msg, size, MPI_BYTE, MPI_ANY_SOURCE, MPIMsg,
@@ -232,8 +232,8 @@ MPIRecvMsg (
 /* Send/Recv CHARVector: */
 
 void
-MPISendCHARVector (
-    Status     *status,
+LALMPISendCHARVector (
+    LALStatus     *status,
     CHARVector *vector,
     INT4        dest
     )
@@ -241,7 +241,7 @@ MPISendCHARVector (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, "MPISendCHARVector", COMMC);
+  INITSTATUS (status, "LALMPISendCHARVector", COMMC);
 
   ASSERT (vector, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (vector->data, status, COMM_ENULL, COMM_MSGENULL);
@@ -264,8 +264,8 @@ MPISendCHARVector (
 
 
 void
-MPIRecvCHARVector (
-    Status     *status,
+LALMPIRecvCHARVector (
+    LALStatus     *status,
     CHARVector *vector,
     INT4        source
     )
@@ -275,7 +275,7 @@ MPIRecvCHARVector (
   INT4       code;
   INT4       size;
 
-  INITSTATUS (status, "MPIRecvCHARVector", COMMC);
+  INITSTATUS (status, "LALMPIRecvCHARVector", COMMC);
 
   ASSERT (vector, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (vector->data, status, COMM_ENULL, COMM_MSGENULL);
@@ -309,8 +309,8 @@ MPIRecvCHARVector (
 
 
 void
-MPISendINT2Vector (
-    Status     *status,
+LALMPISendINT2Vector (
+    LALStatus     *status,
     INT2Vector *vector,
     INT4        dest
     )
@@ -318,7 +318,7 @@ MPISendINT2Vector (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, "MPISendINT2Vector", COMMC);
+  INITSTATUS (status, "LALMPISendINT2Vector", COMMC);
 
   ASSERT (vector, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (vector->data, status, COMM_ENULL, COMM_MSGENULL);
@@ -340,8 +340,8 @@ MPISendINT2Vector (
 
 
 void
-MPIRecvINT2Vector (
-    Status     *status,
+LALMPIRecvINT2Vector (
+    LALStatus     *status,
     INT2Vector *vector,
     INT4        source
     )
@@ -351,7 +351,7 @@ MPIRecvINT2Vector (
   INT4       code;
   INT4       size;
 
-  INITSTATUS (status, "MPIRecvINT2Vector", COMMC);
+  INITSTATUS (status, "LALMPIRecvINT2Vector", COMMC);
 
   ASSERT (vector, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (vector->data, status, COMM_ENULL, COMM_MSGENULL);
@@ -385,8 +385,8 @@ MPIRecvINT2Vector (
 
 
 void
-MPISendREAL4Vector (
-    Status      *status,
+LALMPISendREAL4Vector (
+    LALStatus      *status,
     REAL4Vector *vector,
     INT4         dest
     )
@@ -394,7 +394,7 @@ MPISendREAL4Vector (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, "MPISendREAL4Vector", COMMC);
+  INITSTATUS (status, "LALMPISendREAL4Vector", COMMC);
 
   ASSERT (vector, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (vector->data, status, COMM_ENULL, COMM_MSGENULL);
@@ -416,8 +416,8 @@ MPISendREAL4Vector (
 
 
 void
-MPIRecvREAL4Vector (
-    Status      *status,
+LALMPIRecvREAL4Vector (
+    LALStatus      *status,
     REAL4Vector *vector,
     INT4         source
     )
@@ -427,7 +427,7 @@ MPIRecvREAL4Vector (
   INT4        code;
   INT4        size;
 
-  INITSTATUS (status, "MPIRecvREAL4Vector", COMMC);
+  INITSTATUS (status, "LALMPIRecvREAL4Vector", COMMC);
 
   ASSERT (vector, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (vector->data, status, COMM_ENULL, COMM_MSGENULL);
@@ -461,8 +461,8 @@ MPIRecvREAL4Vector (
 
 
 void
-MPISendCOMPLEX8Vector (
-    Status         *status,
+LALMPISendCOMPLEX8Vector (
+    LALStatus         *status,
     COMPLEX8Vector *vector,
     INT4            dest
     )
@@ -470,7 +470,7 @@ MPISendCOMPLEX8Vector (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, "MPISendCOMPLEX8Vector", COMMC);
+  INITSTATUS (status, "LALMPISendCOMPLEX8Vector", COMMC);
 
   ASSERT (vector, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (vector->data, status, COMM_ENULL, COMM_MSGENULL);
@@ -492,8 +492,8 @@ MPISendCOMPLEX8Vector (
 
 
 void
-MPIRecvCOMPLEX8Vector (
-    Status         *status,
+LALMPIRecvCOMPLEX8Vector (
+    LALStatus         *status,
     COMPLEX8Vector *vector,
     INT4            source
     )
@@ -503,7 +503,7 @@ MPIRecvCOMPLEX8Vector (
   INT4           code;
   INT4           size;
 
-  INITSTATUS (status, "MPIRecvCOMPLEX8Vector", COMMC);
+  INITSTATUS (status, "LALMPIRecvCOMPLEX8Vector", COMMC);
 
   ASSERT (vector, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (vector->data, status, COMM_ENULL, COMM_MSGENULL);
@@ -544,8 +544,8 @@ MPIRecvCOMPLEX8Vector (
 
 
 void
-MPISendINT2TimeSeries (
-    Status          *status,
+LALMPISendINT2TimeSeries (
+    LALStatus          *status,
     INT2TimeSeries *series,
     INT4             dest
     )
@@ -553,7 +553,7 @@ MPISendINT2TimeSeries (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, "MPISendINT2TimeSeries", COMMC);
+  INITSTATUS (status, "LALMPISendINT2TimeSeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
@@ -574,11 +574,11 @@ MPISendINT2TimeSeries (
   /* not sure how to send name --- ignore it! */
 
   /* send sampleUnits vector */
-  MPISendCHARVector (status->statusPtr, series->sampleUnits, dest);
+  LALMPISendCHARVector (status->statusPtr, series->sampleUnits, dest);
   CHECKSTATUSPTR (status);
 
   /* send data vector */
-  MPISendINT2Vector (status->statusPtr, series->data, dest);
+  LALMPISendINT2Vector (status->statusPtr, series->data, dest);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
@@ -587,8 +587,8 @@ MPISendINT2TimeSeries (
 
 
 void
-MPIRecvINT2TimeSeries (
-    Status         *status,
+LALMPIRecvINT2TimeSeries (
+    LALStatus         *status,
     INT2TimeSeries *series,
     INT4            source
     )
@@ -598,7 +598,7 @@ MPIRecvINT2TimeSeries (
   INT4            code;
   INT4            size;
 
-  INITSTATUS (status, "MPIRecvINT2TimeSeries", COMMC);
+  INITSTATUS (status, "LALMPIRecvINT2TimeSeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
@@ -627,11 +627,11 @@ MPIRecvINT2TimeSeries (
   series->name   = "anonymous";
 
   /* receive sampleUnits vector */
-  MPIRecvCHARVector (status->statusPtr, series->sampleUnits, source);
+  LALMPIRecvCHARVector (status->statusPtr, series->sampleUnits, source);
   CHECKSTATUSPTR (status);
 
   /* receive data vector */
-  MPIRecvINT2Vector (status->statusPtr, series->data, source);
+  LALMPIRecvINT2Vector (status->statusPtr, series->data, source);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
@@ -644,8 +644,8 @@ MPIRecvINT2TimeSeries (
 
 
 void
-MPISendREAL4TimeSeries (
-    Status          *status,
+LALMPISendREAL4TimeSeries (
+    LALStatus          *status,
     REAL4TimeSeries *series,
     INT4             dest
     )
@@ -653,7 +653,7 @@ MPISendREAL4TimeSeries (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, "MPISendREAL4TimeSeries", COMMC);
+  INITSTATUS (status, "LALMPISendREAL4TimeSeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
@@ -674,11 +674,11 @@ MPISendREAL4TimeSeries (
   /* not sure how to send name --- ignore it! */
 
   /* send sampleUnits vector */
-  MPISendCHARVector (status->statusPtr, series->sampleUnits, dest);
+  LALMPISendCHARVector (status->statusPtr, series->sampleUnits, dest);
   CHECKSTATUSPTR (status);
 
   /* send data vector */
-  MPISendREAL4Vector (status->statusPtr, series->data, dest);
+  LALMPISendREAL4Vector (status->statusPtr, series->data, dest);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
@@ -687,8 +687,8 @@ MPISendREAL4TimeSeries (
 
 
 void
-MPIRecvREAL4TimeSeries (
-    Status          *status,
+LALMPIRecvREAL4TimeSeries (
+    LALStatus          *status,
     REAL4TimeSeries *series,
     INT4             source
     )
@@ -698,7 +698,7 @@ MPIRecvREAL4TimeSeries (
   INT4            code;
   INT4            size;
 
-  INITSTATUS (status, "MPIRecvREAL4TimeSeries", COMMC);
+  INITSTATUS (status, "LALMPIRecvREAL4TimeSeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
@@ -727,11 +727,11 @@ MPIRecvREAL4TimeSeries (
   series->name   = "anonymous";
 
   /* receive sampleUnits vector */
-  MPIRecvCHARVector (status->statusPtr, series->sampleUnits, source);
+  LALMPIRecvCHARVector (status->statusPtr, series->sampleUnits, source);
   CHECKSTATUSPTR (status);
 
   /* receive data vector */
-  MPIRecvREAL4Vector (status->statusPtr, series->data, source);
+  LALMPIRecvREAL4Vector (status->statusPtr, series->data, source);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
@@ -743,8 +743,8 @@ MPIRecvREAL4TimeSeries (
 
 
 void
-MPISendCOMPLEX8TimeSeries (
-    Status             *status,
+LALMPISendCOMPLEX8TimeSeries (
+    LALStatus             *status,
     COMPLEX8TimeSeries *series,
     INT4                dest
     )
@@ -752,7 +752,7 @@ MPISendCOMPLEX8TimeSeries (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, "MPISendCOMPLEX8TimeSeries", COMMC);
+  INITSTATUS (status, "LALMPISendCOMPLEX8TimeSeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
@@ -773,11 +773,11 @@ MPISendCOMPLEX8TimeSeries (
   /* not sure how to send name --- ignore it! */
 
   /* send sampleUnits vector */
-  MPISendCHARVector (status->statusPtr, series->sampleUnits, dest);
+  LALMPISendCHARVector (status->statusPtr, series->sampleUnits, dest);
   CHECKSTATUSPTR (status);
 
   /* send data vector */
-  MPISendCOMPLEX8Vector (status->statusPtr, series->data, dest);
+  LALMPISendCOMPLEX8Vector (status->statusPtr, series->data, dest);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
@@ -786,8 +786,8 @@ MPISendCOMPLEX8TimeSeries (
 
 
 void
-MPIRecvCOMPLEX8TimeSeries (
-    Status             *status,
+LALMPIRecvCOMPLEX8TimeSeries (
+    LALStatus             *status,
     COMPLEX8TimeSeries *series,
     INT4                source
     )
@@ -797,7 +797,7 @@ MPIRecvCOMPLEX8TimeSeries (
   INT4               code;
   INT4               size;
 
-  INITSTATUS (status, "MPIRecvCOMPLEX8TimeSeries", COMMC);
+  INITSTATUS (status, "LALMPIRecvCOMPLEX8TimeSeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
@@ -826,11 +826,11 @@ MPIRecvCOMPLEX8TimeSeries (
   series->name   = "anonymous";
 
   /* receive sampleUnits vector */
-  MPIRecvCHARVector (status->statusPtr, series->sampleUnits, source);
+  LALMPIRecvCHARVector (status->statusPtr, series->sampleUnits, source);
   CHECKSTATUSPTR (status);
 
   /* receive data vector */
-  MPIRecvCOMPLEX8Vector (status->statusPtr, series->data, source);
+  LALMPIRecvCOMPLEX8Vector (status->statusPtr, series->data, source);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
@@ -850,8 +850,8 @@ MPIRecvCOMPLEX8TimeSeries (
 
 
 void
-MPISendREAL4FrequencySeries (
-    Status               *status,
+LALMPISendREAL4FrequencySeries (
+    LALStatus               *status,
     REAL4FrequencySeries *series,
     INT4                  dest
     )
@@ -859,7 +859,7 @@ MPISendREAL4FrequencySeries (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, "MPISendREAL4FrequencySeries", COMMC);
+  INITSTATUS (status, "LALMPISendREAL4FrequencySeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
@@ -880,11 +880,11 @@ MPISendREAL4FrequencySeries (
   /* not sure how to send name --- ignore it! */
 
   /* send sampleUnits vector */
-  MPISendCHARVector (status->statusPtr, series->sampleUnits, dest);
+  LALMPISendCHARVector (status->statusPtr, series->sampleUnits, dest);
   CHECKSTATUSPTR (status);
 
   /* send data vector */
-  MPISendREAL4Vector (status->statusPtr, series->data, dest);
+  LALMPISendREAL4Vector (status->statusPtr, series->data, dest);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
@@ -893,8 +893,8 @@ MPISendREAL4FrequencySeries (
 
 
 void
-MPIRecvREAL4FrequencySeries (
-    Status               *status,
+LALMPIRecvREAL4FrequencySeries (
+    LALStatus               *status,
     REAL4FrequencySeries *series,
     INT4                  source
     )
@@ -904,7 +904,7 @@ MPIRecvREAL4FrequencySeries (
   INT4                 code;
   INT4                 size;
 
-  INITSTATUS (status, "MPIRecvREAL4FrequencySeries", COMMC);
+  INITSTATUS (status, "LALMPIRecvREAL4FrequencySeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
@@ -933,11 +933,11 @@ MPIRecvREAL4FrequencySeries (
   series->name   = "anonymous";
 
   /* receive sampleUnits vector */
-  MPIRecvCHARVector (status->statusPtr, series->sampleUnits, source);
+  LALMPIRecvCHARVector (status->statusPtr, series->sampleUnits, source);
   CHECKSTATUSPTR (status);
 
   /* receive data vector */
-  MPIRecvREAL4Vector (status->statusPtr, series->data, source);
+  LALMPIRecvREAL4Vector (status->statusPtr, series->data, source);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
@@ -949,8 +949,8 @@ MPIRecvREAL4FrequencySeries (
 
 
 void
-MPISendCOMPLEX8FrequencySeries (
-    Status                  *status,
+LALMPISendCOMPLEX8FrequencySeries (
+    LALStatus                  *status,
     COMPLEX8FrequencySeries *series,
     INT4                     dest
     )
@@ -958,7 +958,7 @@ MPISendCOMPLEX8FrequencySeries (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, "MPISendCOMPLEX8FrequencySeries", COMMC);
+  INITSTATUS (status, "LALMPISendCOMPLEX8FrequencySeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
@@ -979,11 +979,11 @@ MPISendCOMPLEX8FrequencySeries (
   /* not sure how to send name --- ignore it! */
 
   /* send sampleUnits vector */
-  MPISendCHARVector (status->statusPtr, series->sampleUnits, dest);
+  LALMPISendCHARVector (status->statusPtr, series->sampleUnits, dest);
   CHECKSTATUSPTR (status);
 
   /* send data vector */
-  MPISendCOMPLEX8Vector (status->statusPtr, series->data, dest);
+  LALMPISendCOMPLEX8Vector (status->statusPtr, series->data, dest);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
@@ -992,8 +992,8 @@ MPISendCOMPLEX8FrequencySeries (
 
 
 void
-MPIRecvCOMPLEX8FrequencySeries (
-    Status                  *status,
+LALMPIRecvCOMPLEX8FrequencySeries (
+    LALStatus                  *status,
     COMPLEX8FrequencySeries *series,
     INT4                     source
     )
@@ -1003,7 +1003,7 @@ MPIRecvCOMPLEX8FrequencySeries (
   INT4                    code;
   INT4                    size;
 
-  INITSTATUS (status, "MPIRecvCOMPLEX8FrequencySeries", COMMC);
+  INITSTATUS (status, "LALMPIRecvCOMPLEX8FrequencySeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
@@ -1032,11 +1032,11 @@ MPIRecvCOMPLEX8FrequencySeries (
   series->name   = "anonymous";
 
   /* receive sampleUnits vector */
-  MPIRecvCHARVector (status->statusPtr, series->sampleUnits, source);
+  LALMPIRecvCHARVector (status->statusPtr, series->sampleUnits, source);
   CHECKSTATUSPTR (status);
 
   /* receive data vector */
-  MPIRecvCOMPLEX8Vector (status->statusPtr, series->data, source);
+  LALMPIRecvCOMPLEX8Vector (status->statusPtr, series->data, source);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);

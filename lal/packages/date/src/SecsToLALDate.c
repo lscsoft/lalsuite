@@ -10,12 +10,12 @@
  *
  * SYNOPSIS
  *
- * SecsToLALDate(): Converts time in seconds to time in an LALDate
+ * LALSecsToLALDate(): Converts time in seconds to time in an LALDate
  *                  structure. 
  * 
  * DESCRIPTION
  * 
- * SecsToLALDate():
+ * LALSecsToLALDate():
  *       Inputs:  REAL8  seconds  -- time in seconds since 0h (midnight)
  *
  *       Outputs: LALDate *date   -- time in LALDate structure.  Of course,
@@ -30,7 +30,7 @@
  * CALLS
  * 
  * NOTES
- * To convert a LIGOTimeUTC structure to LALDate, use Utime().
+ * To convert a LIGOTimeUTC structure to LALDate, use LALUtime().
  * 
  *----------------------------------------------------------------------- */
 
@@ -46,7 +46,7 @@ NRCSID (SECSTOLALDATEC, "$Id$");
  * Convert time in seconds to LALDate struct
  */
 void
-SecsToLALDate(Status  *status,
+LALSecsToLALDate(LALStatus  *status,
               LALDate *date,
               REAL8    seconds)
 {
@@ -83,4 +83,4 @@ SecsToLALDate(Status  *status,
     date->residualNanoSeconds = modf(sec, &dum) * 1.e+09;
 
     RETURN (status);
-} /* END SecsToLALDate() */
+} /* END LALSecsToLALDate() */

@@ -55,12 +55,12 @@ rank[index[i]] = i
 These routines use the standard heap sort algorithm described in
 Sec.~8.3 of Ref.~\cite{ptvf:1992}.
 
-The \verb@SHeapSort()@ and \verb@DHeapSort()@ routines are entirely
-in-place, with no auxiliary storage vector.  The \verb@SHeapIndex()@
-and \verb@DHeapIndex()@ routines are also technically in-place, but
+The \verb@LALSHeapSort()@ and \verb@LALDHeapSort()@ routines are entirely
+in-place, with no auxiliary storage vector.  The \verb@LALSHeapIndex()@
+and \verb@LALDHeapIndex()@ routines are also technically in-place, but
 they require two input vectors (the data vector and the index vector),
-and leave the data vector unchanged.  The \verb@SHeapRank()@ and
-\verb@DHeapRank()@ routines require two input vectors (the data and
+and leave the data vector unchanged.  The \verb@LALSHeapRank()@ and
+\verb@LALDHeapRank()@ routines require two input vectors (the data and
 rank vectors), and also allocate a temporary index vector internally;
 these routines are therefore the most memory-intensive.  All of these
 algorithms are $N\log_2(N)$ algorithms, regardless of the ordering of
@@ -69,8 +69,8 @@ the initial dataset.
 
 \subsubsection{Uses}
 \begin{verbatim}
-I4CreateVector()
-I4DestroyVector()
+LALI4CreateVector()
+LALI4DestroyVector()
 \end{verbatim}
 
 \subsubsection{Notes}
@@ -84,7 +84,7 @@ I4DestroyVector()
 NRCSID(HEAPSORTC,"$Id$");
 
 /* <lalVerbatim file="HeapSortD"> */
-void SHeapSort(Status      *stat,
+void LALSHeapSort(LALStatus      *stat,
 	       REAL4Vector *vector)
 { /* </lalVerbatim> */
   INT4 i;
@@ -94,7 +94,7 @@ void SHeapSort(Status      *stat,
   REAL4 temp;
   REAL4 *data;
 
-  INITSTATUS(stat,"SHeapSort",HEAPSORTC);
+  INITSTATUS(stat,"LALSHeapSort",HEAPSORTC);
 
   /* Make sure all pointers are valid. */
   ASSERT(vector,stat,SORT_ENUL,SORT_MSGENUL);
@@ -141,7 +141,7 @@ void SHeapSort(Status      *stat,
 
 
 /* <lalVerbatim file="HeapSortD"> */
-void SHeapIndex(Status      *stat,
+void LALSHeapIndex(LALStatus      *stat,
 		INT4Vector  *index,
 		REAL4Vector *vector)
 { /* </lalVerbatim> */
@@ -154,7 +154,7 @@ void SHeapIndex(Status      *stat,
   REAL4 temp;
   REAL4 *data;
 
-  INITSTATUS(stat,"SHeapIndex",HEAPSORTC);
+  INITSTATUS(stat,"LALSHeapIndex",HEAPSORTC);
 
   /* Make sure all pointers are valid, and the index vector is of the
      same length as the data vector. */
@@ -213,7 +213,7 @@ void SHeapIndex(Status      *stat,
 
 
 /* <lalVerbatim file="HeapSortD"> */
-void SHeapRank(Status      *stat,
+void LALSHeapRank(LALStatus      *stat,
 	       INT4Vector  *rank,
 	       REAL4Vector *vector)
 { /* </lalVerbatim> */
@@ -222,7 +222,7 @@ void SHeapRank(Status      *stat,
   INT4       *rnk;
   INT4Vector *index=NULL;
 
-  INITSTATUS(stat,"SHeapRank",HEAPSORTC);
+  INITSTATUS(stat,"LALSHeapRank",HEAPSORTC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure all pointers are valid, and the rank vector is of the
@@ -234,8 +234,8 @@ void SHeapRank(Status      *stat,
   ASSERT(vector->length==rank->length,stat,SORT_ELEN,SORT_MSGELEN);
 
   /* Make the temporary index vector. */
-  TRY(I4CreateVector(stat->statusPtr,&index,vector->length),stat);
-  TRY(SHeapIndex(stat->statusPtr,index,vector),stat);
+  TRY(LALI4CreateVector(stat->statusPtr,&index,vector->length),stat);
+  TRY(LALSHeapIndex(stat->statusPtr,index,vector),stat);
 
   /* Invert to get the rank vector. */
   indx=index->data;
@@ -244,14 +244,14 @@ void SHeapRank(Status      *stat,
     rnk[indx[i]]=i;
 
   /* Free memory and exit. */
-  TRY(I4DestroyVector(stat->statusPtr,&index),stat);
+  TRY(LALI4DestroyVector(stat->statusPtr,&index),stat);
   DETATCHSTATUSPTR(stat);
   RETURN(stat);
 }
 
 
 /* <lalVerbatim file="HeapSortD"> */
-void DHeapSort(Status      *stat,
+void LALDHeapSort(LALStatus      *stat,
 	       REAL8Vector *vector)
 { /* </lalVerbatim> */
   INT4 i;
@@ -261,7 +261,7 @@ void DHeapSort(Status      *stat,
   REAL8 temp;
   REAL8 *data;
 
-  INITSTATUS(stat,"DHeapSort",HEAPSORTC);
+  INITSTATUS(stat,"LALDHeapSort",HEAPSORTC);
 
   /* Make sure all pointers are valid. */
   ASSERT(vector,stat,SORT_ENUL,SORT_MSGENUL);
@@ -308,7 +308,7 @@ void DHeapSort(Status      *stat,
 
 
 /* <lalVerbatim file="HeapSortD"> */
-void DHeapIndex(Status      *stat,
+void LALDHeapIndex(LALStatus      *stat,
 		INT4Vector  *index,
 		REAL8Vector *vector)
 { /* </lalVerbatim> */
@@ -321,7 +321,7 @@ void DHeapIndex(Status      *stat,
   REAL8 temp;
   REAL8 *data;
 
-  INITSTATUS(stat,"DHeapIndex",HEAPSORTC);
+  INITSTATUS(stat,"LALDHeapIndex",HEAPSORTC);
 
   /* Make sure all pointers are valid, and the index vector is of the
      same length as the data vector. */
@@ -380,7 +380,7 @@ void DHeapIndex(Status      *stat,
 
 
 /* <lalVerbatim file="HeapSortD"> */
-void DHeapRank(Status      *stat,
+void LALDHeapRank(LALStatus      *stat,
 	       INT4Vector  *rank,
 	       REAL8Vector *vector)
 { /* </lalVerbatim> */
@@ -389,7 +389,7 @@ void DHeapRank(Status      *stat,
   INT4       *rnk;
   INT4Vector *index=NULL;
 
-  INITSTATUS(stat,"DHeapRank",HEAPSORTC);
+  INITSTATUS(stat,"LALDHeapRank",HEAPSORTC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure all pointers are valid, and the rank vector is of the
@@ -401,8 +401,8 @@ void DHeapRank(Status      *stat,
   ASSERT(vector->length==rank->length,stat,SORT_ELEN,SORT_MSGELEN);
 
   /* Make the temporary index vector. */
-  TRY(I4CreateVector(stat->statusPtr,&index,vector->length),stat);
-  TRY(DHeapIndex(stat->statusPtr,index,vector),stat);
+  TRY(LALI4CreateVector(stat->statusPtr,&index,vector->length),stat);
+  TRY(LALDHeapIndex(stat->statusPtr,index,vector),stat);
 
   /* Invert to get the rank vector. */
   indx=index->data;
@@ -411,7 +411,7 @@ void DHeapRank(Status      *stat,
     rnk[indx[i]]=i;
 
   /* Free memory and exit. */
-  TRY(I4DestroyVector(stat->statusPtr,&index),stat);
+  TRY(LALI4DestroyVector(stat->statusPtr,&index),stat);
   DETATCHSTATUSPTR(stat);
   RETURN(stat);
 }

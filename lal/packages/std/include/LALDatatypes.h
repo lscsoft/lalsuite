@@ -1255,24 +1255,24 @@ COMPLEX16ZPGFilter;
 
 /* <lalLaTeX>
 \newpage
-\subsection{The LAL universal status structure \texttt{Status}}
+\subsection{The LAL universal status structure \texttt{LALStatus}}
 \label{ss:status-structure}
 
 This structure is the means by which LAL functions report their
 success or failure; it provides a useful mechanism for tracking
 progress and errors through nested function calls.  The error
-reporting structure is a linked list of \verb@Status@ structures, with
+reporting structure is a linked list of \verb@LALStatus@ structures, with
 each node corresponding to a given function in the current calling
 sequence.  When a function terminates successfully, its node is
 dropped from the list.  If a function encounters an error, it must
 still return control to the calling routine, reporting the error
-through its \verb@Status@.  The calling routine must either deal with
+through its \verb@LALStatus@.  The calling routine must either deal with
 the error (pruning the linked list if it succeeds), or else return an
 error itself.  A fatal error will thus return a linked list of
-\verb@Status@ structures to the top-level routine, where the tail of
+\verb@LALStatus@ structures to the top-level routine, where the tail of
 the list identifies the source of the error, and the intermediate
 nodes identify the sequence of nested function calls that led to the
-error.  The fields of the \verb@Status@ are as follows:
+error.  The fields of the \verb@LALStatus@ are as follows:
 \begin{description}
 \item[\texttt{INT4 statusCode}] A numerical code identifying the type
 of error, or 0 for nominal status.
@@ -1285,7 +1285,7 @@ source file of the current function.
 current function.
 \item[\texttt{INT4 line}] The line number in the source file where the
 current \verb@statusCode@ was set.
-\item[\texttt{Status *statusPtr}] Pointer to the next node in the
+\item[\texttt{LALStatus *statusPtr}] Pointer to the next node in the
 list; \verb@NULL@ if this function is not reporting a subroutine
 error.
 \item[\texttt{INT4 level}] The current level in the nested calling
@@ -1295,7 +1295,7 @@ sequence.
 </lalLaTeX> */
 
 typedef struct
-tagStatus
+tagLALStatus
 {
   INT4                 statusCode;
   const CHAR          *statusDescription;
@@ -1303,10 +1303,10 @@ tagStatus
   const CHAR          *function;
   const CHAR          *file;
   INT4                 line;
-  struct tagStatus    *statusPtr;
+  struct tagLALStatus *statusPtr;
   INT4                 level;
 }
-Status;
+LALStatus;
 
 
 /* <lalLaTeX>

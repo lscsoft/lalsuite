@@ -57,7 +57,7 @@ made after all subsidiary header files have been included (notably
 this header file, or \verb@LALStdlib.h@ which includes this header
 file), but before any actual functions or function prototypes.  In
 modules containing LAL functions, the RCS ID string will typically be
-assigned to the \verb@Status@ structure for those functions; see the
+assigned to the \verb@LALStatus@ structure for those functions; see the
 documentation for the header \verb@LALStatusMacros.h@.
 
 This header is included automatically by all standard LAL headers,

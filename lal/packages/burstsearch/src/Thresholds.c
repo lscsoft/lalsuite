@@ -95,15 +95,15 @@ static REAL8 Factorial(INT4 n)
 
 static void
 ChisqCdf1 (
-    Status                *status,
+    LALStatus                *status,
     REAL8                 *prob,
     REAL8                 lnchi2,
     void                  *params
     )
 {  
   /* 
-   *  This is just the ChisqCdf() function plus an added constant. 
-   *  Its used in Chi2Threshold() in the call to DFindRoot().
+   *  This is just the LALChisqCdf() function plus an added constant. 
+   *  Its used in LALChi2Threshold() in the call to DFindRoot().
    *
    */
 
@@ -132,12 +132,12 @@ ChisqCdf1 (
    */
   input = (Chi2ThresholdIn *)params;
 
-  /* set up parameters to be passed to ChisqCdf()  */
+  /* set up parameters to be passed to LALChisqCdf()  */
   localparams.dof = input->dof;
   localparams.chi2 = exp(lnchi2);
 
 
-  OneMinusChisqCdf( status->statusPtr, prob, &localparams );
+  LALOneMinusChisqCdf( status->statusPtr, prob, &localparams );
   /* we can ignore the error where probability is 1 or 0 */
   if(status->statusPtr->statusCode==THRESHOLDS_ERANGE)
     {
@@ -157,15 +157,15 @@ ChisqCdf1 (
 
 static void
 NoncChisqCdf1 (
-    Status                *status,
+    LALStatus                *status,
     REAL8                 *prob,
     REAL8                 lnrho,
     void                  *params
     )
 {  
   /* 
-   *  This is just the NoncChisqCdf() function plus an added constant. 
-   *  Its used in RhoThreshold() in the call to DFindRoot().
+   *  This is just the LALNoncChisqCdf() function plus an added constant. 
+   *  Its used in LALRhoThreshold() in the call to DFindRoot().
    *
    */
 
@@ -188,12 +188,12 @@ NoncChisqCdf1 (
    */
   input = (RhoThresholdIn *)params;
 
-  /* set up parameters to be passed to NoncChisqCdf()  */
+  /* set up parameters to be passed to LALNoncChisqCdf()  */
   localparams.dof = input->dof;
   localparams.chi2 = input->chi2;
   localparams.nonCentral = exp(2.0*lnrho);
 
-  NoncChisqCdf( status->statusPtr, prob, &localparams );
+  LALNoncChisqCdf( status->statusPtr, prob, &localparams );
   /* we can ignore the error where probability is 1 or 0 */
   if(status->statusPtr->statusCode==THRESHOLDS_ERANGE)
     {
@@ -219,8 +219,8 @@ NoncChisqCdf1 (
 
 
 void
-ChisqCdf (
-    Status        *status,
+LALChisqCdf (
+    LALStatus        *status,
     REAL8         *prob,
     ChisqCdfIn    *input
     )
@@ -251,7 +251,7 @@ ChisqCdf (
   const REAL8 small = 3.0e-7;
   const REAL8 small1 = 1.0e-30;
 
-  INITSTATUS (status, "ChisqCdf", THRESHOLDSC);
+  INITSTATUS (status, "LALChisqCdf", THRESHOLDSC);
 
   /* check that arguments are reasonable */
   ASSERT (prob, status, THRESHOLDS_ENULLP, THRESHOLDS_MSGENULLP);
@@ -341,8 +341,8 @@ ChisqCdf (
 
 
 void
-OneMinusChisqCdf (
-    Status        *status,
+LALOneMinusChisqCdf (
+    LALStatus        *status,
     REAL8         *prob,
     ChisqCdfIn    *input
     )
@@ -364,7 +364,7 @@ OneMinusChisqCdf (
    *  The parameter input->nonCentral is not used by OneMinusChisqCdf.
    *
    *  This function's code is the same as
-   *  the function ChisqCdf() except for the very end.
+   *  the function LALChisqCdf() except for the very end.
    */
 
   REAL8 temp1;
@@ -376,7 +376,7 @@ OneMinusChisqCdf (
   const REAL8 small = 3.0e-7;
   const REAL8 small1 = 1.0e-30;
 
-  INITSTATUS (status, "OneMinusChisqCdf", THRESHOLDSC);
+  INITSTATUS (status, "LALOneMinusChisqCdf", THRESHOLDSC);
 
   /* check that arguments are reasonable */
   ASSERT (prob, status, THRESHOLDS_ENULLP, THRESHOLDS_MSGENULLP);
@@ -466,8 +466,8 @@ OneMinusChisqCdf (
 
 
 void
-NoncChisqCdf (
-	      Status            *status,
+LALNoncChisqCdf (
+	      LALStatus            *status,
 	      REAL8             *prob,
 	      ChisqCdfIn        *input
 	      )
@@ -481,14 +481,14 @@ NoncChisqCdf (
    *  dof = number of degrees of freedom
    *
    *  We use the series formula to evaluate the probability.  Each term in the
-   *  series involves a call to ChisqCdf().
+   *  series involves a call to LALChisqCdf().
    */
 
   ChisqCdfIn  localparams;  
   /* 
    *  local copies of input parameters.  localparams.nonCentral and 
    *  localparams.chi2 will not change, but localparams.dof will change
-   *  from one call to the next of ChisqCdf().
+   *  from one call to the next of LALChisqCdf().
    *
    */
 
@@ -501,7 +501,7 @@ NoncChisqCdf (
   const INT4 maxloop=1000;  /* maximum number of terms in series to be used */
 
 
-  INITSTATUS (status, "NoncChisqCdf", THRESHOLDSC);
+  INITSTATUS (status, "LALNoncChisqCdf", THRESHOLDSC);
   ATTATCHSTATUSPTR (status);
 
   /* check that pointers are not null */
@@ -518,7 +518,7 @@ NoncChisqCdf (
 
 
    /* Evaluate the first term in the series   */
-  ChisqCdf (status->statusPtr, &temp, &localparams);
+  LALChisqCdf (status->statusPtr, &temp, &localparams);
   CHECKSTATUSPTR (status);
   sum = temp * exp(- localparams.nonCentral/2.0);
 
@@ -532,7 +532,7 @@ NoncChisqCdf (
     {
       n++;
       localparams.dof = input->dof + 2.0 * (REAL8)(n);
-      ChisqCdf (status->statusPtr, &temp, &localparams );
+      LALChisqCdf (status->statusPtr, &temp, &localparams );
       CHECKSTATUSPTR (status);
       current = exp(- localparams.nonCentral/2.0 + ((REAL8)(n)) * log(localparams.nonCentral/2.0)) * temp / Factorial(n);  
       sum += current;
@@ -558,8 +558,8 @@ NoncChisqCdf (
 
 
 void
-Chi2Threshold (
-	      Status            *status,
+LALChi2Threshold (
+	      LALStatus            *status,
 	      REAL8             *chi2,
 	      Chi2ThresholdIn   *input
 	      )
@@ -572,7 +572,7 @@ Chi2Threshold (
   REAL8              lnchi2Ans;
   DFindRootIn        frInput; 
 
-  INITSTATUS (status, "Chi2Threshold", THRESHOLDSC);
+  INITSTATUS (status, "LALChi2Threshold", THRESHOLDSC);
   ATTATCHSTATUSPTR (status);
 
   /* check that pointers are not null */
@@ -596,10 +596,10 @@ Chi2Threshold (
   frInput.xacc = 1e-5;
  
   /* Now bracket and find the root */
-  DBracketRoot (status->statusPtr, &frInput, input );
+  LALDBracketRoot (status->statusPtr, &frInput, input );
   CHECKSTATUSPTR (status);
   
-  DBisectionFindRoot (status->statusPtr, &lnchi2Ans, 
+  LALDBisectionFindRoot (status->statusPtr, &lnchi2Ans, 
 			      &frInput, input );
   CHECKSTATUSPTR (status);
 
@@ -616,8 +616,8 @@ Chi2Threshold (
 
 
 void
-RhoThreshold (
-	      Status            *status,
+LALRhoThreshold (
+	      LALStatus            *status,
 	      REAL8             *rho,
 	      RhoThresholdIn    *input
 	      )
@@ -631,7 +631,7 @@ RhoThreshold (
   REAL8              lnrhoAns;
   DFindRootIn        frInput; 
 
-  INITSTATUS (status, "RhoThreshold", THRESHOLDSC);
+  INITSTATUS (status, "LALRhoThreshold", THRESHOLDSC);
   ATTATCHSTATUSPTR (status);
 
   /* check that pointers are not null */
@@ -655,10 +655,10 @@ RhoThreshold (
  
 
   /* Now bracket and find the root */
-  DBracketRoot (status->statusPtr, &frInput, input );
+  LALDBracketRoot (status->statusPtr, &frInput, input );
   CHECKSTATUSPTR (status);
   
-  DBisectionFindRoot (status->statusPtr, &lnrhoAns, 
+  LALDBisectionFindRoot (status->statusPtr, &lnrhoAns, 
                           &frInput, input );
   CHECKSTATUSPTR (status);
 

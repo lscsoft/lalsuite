@@ -35,7 +35,7 @@ NRCSID(LALTEMPLATEH,"$Id$");
 
 /* Declare global function prototypes */
 void
-LALTemplate( Status *stat );
+LALTemplate( LALStatus *stat );
 
 #ifdef __cplusplus
 }                   /* Close C++ protection */

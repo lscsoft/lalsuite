@@ -61,51 +61,51 @@ RealFFTPlan;
 
 
 void
-EstimateFwdRealFFTPlan (
-    Status       *stat,
+LALEstimateFwdRealFFTPlan (
+    LALStatus       *stat,
     RealFFTPlan **plan,
     UINT4         size
     );
 
 void
-EstimateInvRealFFTPlan (
-    Status       *stat,
+LALEstimateInvRealFFTPlan (
+    LALStatus       *stat,
     RealFFTPlan **plan,
     UINT4         size
     );
 
 void
-MeasureFwdRealFFTPlan (
-    Status       *stat,
+LALMeasureFwdRealFFTPlan (
+    LALStatus       *stat,
     RealFFTPlan **plan,
     UINT4         size
     );
 
 void
-MeasureInvRealFFTPlan (
-    Status       *stat,
+LALMeasureInvRealFFTPlan (
+    LALStatus       *stat,
     RealFFTPlan **plan,
     UINT4         size
     );
 
 void
-DestroyRealFFTPlan (
-    Status       *stat,
+LALDestroyRealFFTPlan (
+    LALStatus       *stat,
     RealFFTPlan **plan
     );
 
 
 void
-REAL4VectorFFT (
-    Status      *stat,
+LALREAL4VectorFFT (
+    LALStatus      *stat,
     REAL4Vector *vout,
     REAL4Vector *vinp,
     RealFFTPlan *plan
     );
 
 void
-REAL4VectorSequenceFFT (
-    Status              *stat,
+LALREAL4VectorSequenceFFT (
+    LALStatus              *stat,
     REAL4VectorSequence *vout,
     REAL4VectorSequence *vinp,
     RealFFTPlan         *plan
@@ -113,24 +113,24 @@ REAL4VectorSequenceFFT (
 
 
 void
-FwdRealFFT (
-    Status         *stat,
+LALFwdRealFFT (
+    LALStatus         *stat,
     COMPLEX8Vector *vout,
     REAL4Vector    *vinp,
     RealFFTPlan    *plan
     );
 
 void
-InvRealFFT (
-    Status         *stat,
+LALInvRealFFT (
+    LALStatus         *stat,
     REAL4Vector    *vout,
     COMPLEX8Vector *vinp,
     RealFFTPlan    *plan
     );
 
 void
-RealPowerSpectrum (
-    Status      *stat,
+LALRealPowerSpectrum (
+    LALStatus      *stat,
     REAL4Vector *vout,
     REAL4Vector *vinp,
     RealFFTPlan *plan
@@ -138,24 +138,24 @@ RealPowerSpectrum (
 
 
 void
-FwdRealSequenceFFT (
-    Status                 *stat,
+LALFwdRealSequenceFFT (
+    LALStatus                 *stat,
     COMPLEX8VectorSequence *vout,
     REAL4VectorSequence    *vinp,
     RealFFTPlan            *plan
     );
 
 void
-InvRealSequenceFFT (
-    Status                 *stat,
+LALInvRealSequenceFFT (
+    LALStatus                 *stat,
     REAL4VectorSequence    *vout,
     COMPLEX8VectorSequence *vinp,
     RealFFTPlan            *plan
     );
 
 void
-RealSequencePowerSpectrum (
-    Status              *stat,
+LALRealSequencePowerSpectrum (
+    LALStatus              *stat,
     REAL4VectorSequence *vout,
     REAL4VectorSequence *vinp,
     RealFFTPlan         *plan

@@ -12,7 +12,7 @@
  * TrackSearch.c
  * 
  * SYNOPSIS 
- * (void) SignalTrackSearch()
+ * (void) LALSignalTrackSearch()
  * 
  * DESCRIPTION 
  * This file contains the routines to detect curves on the time frequency plane. 
@@ -71,11 +71,11 @@ typedef struct tagOffset {
 /*
  * Local Function prototypes; not visible outside;
  */
-static void InitializeStorage(Status *, TrackSearchStore *, TrackSearchParams *);
-static void DestroyStorage(Status *, TrackSearchStore *);
-static void ComputeConvolutions(Status *,  TrackSearchStore *, const TimeFreqRep *, TrackSearchParams *);
-static void ComputeLinePoints(Status *, TrackSearchStore * , TrackSearchParams *);
-static void ConnectLinePoints(Status *, TrackSearchOut *, TrackSearchParams *);
+static void InitializeStorage(LALStatus *, TrackSearchStore *, TrackSearchParams *);
+static void DestroyStorage(LALStatus *, TrackSearchStore *);
+static void ComputeConvolutions(LALStatus *,  TrackSearchStore *, const TimeFreqRep *, TrackSearchParams *);
+static void ComputeLinePoints(LALStatus *, TrackSearchStore * , TrackSearchParams *);
+static void ConnectLinePoints(LALStatus *, TrackSearchOut *, TrackSearchParams *);
 static REAL4 GetAngle(REAL4 , REAL4 );
 static REAL4 Gauss0(INT4,REAL4);
 static REAL4 Gauss1(INT4,REAL4);
@@ -87,14 +87,14 @@ static INT4 CompareLinePoints(const void *,const void *);
   and then connects them into curves
 */
 void 
-SignalTrackSearch(Status *status,
+LALSignalTrackSearch(LALStatus *status,
                   TrackSearchOut *out,
                   const TimeFreqRep *tFMap,
                   TrackSearchParams *params)
 {
     
   /* Initialize status structure   */
-  INITSTATUS(status,"SignalTrackSearch",TRACKSEARCHC);
+  INITSTATUS(status,"LALSignalTrackSearch",TRACKSEARCHC);
   ATTATCHSTATUSPTR (status);
   
   /* Check the the arguments are not null pointers */
@@ -151,7 +151,7 @@ SignalTrackSearch(Status *status,
 /* Routine to allocate and initialise the Gaussian mask arrays */
 
 static void 
-InitializeStorage( Status * status, 
+InitializeStorage( LALStatus * status, 
                    TrackSearchStore *store,
                    TrackSearchParams *params
                    )
@@ -210,7 +210,7 @@ InitializeStorage( Status * status,
 
 
 static void 
-DestroyStorage (Status *status,
+DestroyStorage (LALStatus *status,
                 TrackSearchStore *store
                 )
 {
@@ -249,7 +249,7 @@ DestroyStorage (Status *status,
 
 
 static void 
-ComputeConvolutions (Status *status, 
+ComputeConvolutions (LALStatus *status, 
                      TrackSearchStore *store, 
                      const TimeFreqRep *tfMap, 
                      TrackSearchParams *params)
@@ -390,7 +390,7 @@ ComputeConvolutions (Status *status,
 
 
 static void
-ComputeLinePoints (Status *status,
+ComputeLinePoints (LALStatus *status,
                    TrackSearchStore *store, 
                    TrackSearchParams *params)
 { 
@@ -499,7 +499,7 @@ ComputeLinePoints (Status *status,
 const static Offset offset[9]={{0,0},{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1}}; /*neighbouring pixels*/
 
 static void 
-ConnectLinePoints(Status *status,
+ConnectLinePoints(LALStatus *status,
                   TrackSearchOut *out,
                   TrackSearchParams *params)
 {

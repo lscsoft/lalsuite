@@ -13,17 +13,17 @@
  * 
  * SYNOPSIS 
  *
- * UtoGPS(): Returns UTC in GPS seconds given time in Unix seconds.
- * GPStoU(): Returns UTC in Unix seconds given time in GPS seconds.
+ * LALUtoGPS(): Returns UTC in GPS seconds given time in Unix seconds.
+ * LALGPStoU(): Returns UTC in Unix seconds given time in GPS seconds.
  * 
  * DESCRIPTION
  *
- * UtoGPS():
+ * LALUtoGPS():
  *      Inputs:   LIGOTimeUnix *utctime -- UTC time in seconds since Unix epoch
  *
  *      Outputs:  LIGOTimeGPS *gpstime -- UTC time in seconds since GPS epoch
  *
- * GPStoU():
+ * LALGPStoU():
  *      Inputs:  LIGOTimeGPS *gpstime -- UTC time in seconds since GPS epoch
  *
  *      Outputs:  LIGOTimeUnix *utctime -- UTC time in seconds since Unix epoch
@@ -35,8 +35,8 @@
  *
  * CALLS
  *
- * UtoGPS(): none
- * GPStoU(): none
+ * LALUtoGPS(): none
+ * LALGPStoU(): none
  * 
  * NOTES
  * The only difference between LIGOTimeUnix and LIGOTimeGPS is the reference
@@ -70,11 +70,11 @@ NRCSID (UTOGPSC, "$Id$");
  * Output:
  */
 void
-UtoGPS (Status             *status,
+LALUtoGPS (LALStatus             *status,
         LIGOTimeGPS        *gpstime,
         const LIGOTimeUnix *unixtime)
 {
-    INITSTATUS (status, "UtoGPS", UTOGPSC);
+    INITSTATUS (status, "LALUtoGPS", UTOGPSC);
 
     /*
      * Check pointer to input variable
@@ -96,7 +96,7 @@ UtoGPS (Status             *status,
     gpstime->gpsSeconds = unixtime->unixSeconds - UNIXGPS;
 
     RETURN (status);
-} /* END UtoGPS() */
+} /* END LALUtoGPS() */
 
 
 /*
@@ -107,11 +107,11 @@ UtoGPS (Status             *status,
  * Output:
  */
 void
-GPStoU (Status            *status,
+LALGPStoU (LALStatus            *status,
         LIGOTimeUnix      *unixtime,
         const LIGOTimeGPS *gpstime)
 {
-    INITSTATUS (status, "GPStoU", UTOGPSC);
+    INITSTATUS (status, "LALGPStoU", UTOGPSC);
 
     /*
      * Check pointer to input variable
@@ -132,5 +132,5 @@ GPStoU (Status            *status,
     unixtime->unixSeconds = gpstime->gpsSeconds + UNIXGPS;
 
     RETURN (status);
-} /* END GPStoU() */
+} /* END LALGPStoU() */
 

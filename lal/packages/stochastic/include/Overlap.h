@@ -15,7 +15,7 @@
  * #include "Overlap.h"
  *
  * DESCRIPTION
- * Error codes, typedefs, and protypes for the function Overlap().
+ * Error codes, typedefs, and protypes for the function LALOverlap().
  *
  * DIAGNOSTICS
  *
@@ -91,7 +91,7 @@ typedef struct tagOverlapParameters {
 OverlapParameters;
 
 void
-Overlap ( Status *, REAL4Vector *, OverlapParameters * );
+LALOverlap ( LALStatus *, REAL4Vector *, OverlapParameters * );
 
 
 #ifdef  __cplusplus

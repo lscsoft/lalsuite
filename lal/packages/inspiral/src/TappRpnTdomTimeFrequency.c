@@ -6,7 +6,7 @@
 NRCSID (TAPPRPNTDOMTIMEFREQUENCYC, "$Id$");
 
 
-void TappRpnTdomTimeFrequency0PN (Status *status,
+void LALTappRpnTdomTimeFrequency0PN (LALStatus *status,
                                   InspiralwaveFrequencyOutput *output,
 			          InspiralwaveFrequencyInput *params) 
 {
@@ -23,7 +23,7 @@ void TappRpnTdomTimeFrequency0PN (Status *status,
   RETURN(status);
 }
 
-void TappRpnTdomTimeFrequency1PN (Status *status,
+void LALTappRpnTdomTimeFrequency1PN (LALStatus *status,
                                   InspiralwaveFrequencyOutput *output,
 			          InspiralwaveFrequencyInput *params) 
 {
@@ -40,7 +40,7 @@ void TappRpnTdomTimeFrequency1PN (Status *status,
   RETURN(status);
 }
 
-void TappRpnTdomTimeFrequency2PN (Status *status,
+void LALTappRpnTdomTimeFrequency2PN (LALStatus *status,
                                   InspiralwaveFrequencyOutput *output,
 			          InspiralwaveFrequencyInput *params) 
 {
@@ -58,7 +58,7 @@ void TappRpnTdomTimeFrequency2PN (Status *status,
   RETURN(status);
 }
 
-void TappRpnTdomTimeFrequency3PN (Status *status,
+void LALTappRpnTdomTimeFrequency3PN (LALStatus *status,
                                   InspiralwaveFrequencyOutput *output,
 			          InspiralwaveFrequencyInput *params) 
 {
@@ -77,7 +77,7 @@ void TappRpnTdomTimeFrequency3PN (Status *status,
   RETURN(status);
 }
 
-void TappRpnTdomTimeFrequency4PN (Status *status,
+void LALTappRpnTdomTimeFrequency4PN (LALStatus *status,
                                   InspiralwaveFrequencyOutput *output,
 			          InspiralwaveFrequencyInput *params) 
 {

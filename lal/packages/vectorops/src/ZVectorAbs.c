@@ -36,8 +36,8 @@
 NRCSID(ZVECTORABSC,"$Id$");
 
 void
-ZVectorAbs(
-    Status               *status,
+LALZVectorAbs(
+    LALStatus               *status,
     REAL8Vector          *out,
     const COMPLEX16Vector *in
     )
@@ -46,7 +46,7 @@ ZVectorAbs(
   REAL8    *b;
   INT4      n;
 
-  INITSTATUS (status, "ZVectorAbs", ZVECTORABSC);
+  INITSTATUS (status, "LALZVectorAbs", ZVECTORABSC);
   
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);

@@ -32,7 +32,7 @@ DIntegralState;
 
 static void
 STrapezoid (
-    Status         *status,
+    LALStatus         *status,
     SIntegralState *output,
     SIntegrateIn   *input,
     void           *params
@@ -77,7 +77,7 @@ STrapezoid (
 
 static void
 DTrapezoid (
-    Status         *status,
+    LALStatus         *status,
     DIntegralState *output,
     DIntegrateIn   *input,
     void           *params
@@ -170,7 +170,7 @@ SEqualsMinusLogX (REAL4 x, REAL4 a, REAL4 b, REAL4 *jac)
 
 static void
 SMidpoint (
-    Status         *status,
+    LALStatus         *status,
     SIntegralState *output,
     SIntegrateIn   *input,
     void           *params
@@ -305,7 +305,7 @@ DEqualsMinusLogX (REAL8 x, REAL8 a, REAL8 b, REAL8 *jac)
 
 static void
 DMidpoint (
-    Status         *status,
+    LALStatus         *status,
     DIntegralState *output,
     DIntegrateIn   *input,
     void           *params
@@ -405,8 +405,8 @@ DMidpoint (
 
 
 void
-SRombergIntegrate (
-    Status       *status,
+LALSRombergIntegrate (
+    LALStatus       *status,
     REAL4        *result,
     SIntegrateIn *input,
     void         *params
@@ -416,14 +416,14 @@ SRombergIntegrate (
   enum { MaxSteps     = 20 };
   enum { Order        = 4  };
 
-  void (*Algorithm)(Status *, SIntegralState *, SIntegrateIn *, void *);
+  void (*Algorithm)(LALStatus *, SIntegralState *, SIntegrateIn *, void *);
 
   SIntegralState state;
   REAL4          integral[MaxSteps + 1];
   REAL4          stepSize[MaxSteps + 1];
   REAL4          refineFactor;
 
-  INITSTATUS (status, "SRombergIntegrate", INTEGRATEC);
+  INITSTATUS (status, "LALSRombergIntegrate", INTEGRATEC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (result, status, INTEGRATE_ENULL, INTEGRATE_MSGENULL);
@@ -470,7 +470,7 @@ SRombergIntegrate (
       intpar.y = integral + state.refinement - Order;
 
       /* extrapolate to continuum limit (stepSize = 0) */
-      SPolynomialInterpolation (status->statusPtr, &intout, 0, &intpar);
+      LALSPolynomialInterpolation (status->statusPtr, &intout, 0, &intpar);
       CHECKSTATUSPTR (status);
 
       if (fabs(intout.dy) < epsilon*fabs(intout.y))
@@ -490,8 +490,8 @@ SRombergIntegrate (
 
 
 void
-DRombergIntegrate (
-    Status       *status,
+LALDRombergIntegrate (
+    LALStatus       *status,
     REAL8        *result,
     DIntegrateIn *input,
     void         *params
@@ -501,14 +501,14 @@ DRombergIntegrate (
   enum { MaxSteps     = 20 };
   enum { Order        = 4  };
 
-  void (*Algorithm)(Status *, DIntegralState *, DIntegrateIn *, void *);
+  void (*Algorithm)(LALStatus *, DIntegralState *, DIntegrateIn *, void *);
 
   DIntegralState state;
   REAL8          integral[MaxSteps + 1];
   REAL8          stepSize[MaxSteps + 1];
   REAL8          refineFactor;
 
-  INITSTATUS (status, "DRombergIntegrate", INTEGRATEC);
+  INITSTATUS (status, "LALDRombergIntegrate", INTEGRATEC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (result, status, INTEGRATE_ENULL, INTEGRATE_MSGENULL);
@@ -555,7 +555,7 @@ DRombergIntegrate (
       intpar.y = integral + state.refinement - Order;
 
       /* extrapolate to continuum limit (stepSize = 0) */
-      DPolynomialInterpolation (status->statusPtr, &intout, 0, &intpar);
+      LALDPolynomialInterpolation (status->statusPtr, &intout, 0, &intpar);
       CHECKSTATUSPTR (status);
 
       if (fabs(intout.dy) < epsilon*fabs(intout.y))

@@ -68,36 +68,36 @@ tagSpectrumBufferPar
 SpectrumBufferPar;
 
 void
-ComputeSpectrum (
-    Status               *status,
+LALComputeSpectrum (
+    LALStatus               *status,
     REAL4FrequencySeries *spectrum,
     INT2TimeSeries       *timeSeries,
     ComputeSpectrumPar   *parameters
     );
 
 void
-CreateSpectrumBuffer (
-    Status             *status,
+LALCreateSpectrumBuffer (
+    LALStatus             *status,
     SpectrumBuffer    **buffer,
     SpectrumBufferPar  *params
     );
 
 void
-DestroySpectrumBuffer (
-    Status          *status,
+LALDestroySpectrumBuffer (
+    LALStatus          *status,
     SpectrumBuffer **buffer
     );
 
 void
-AddSpectrum (
-    Status         *status,
+LALAddSpectrum (
+    LALStatus         *status,
     SpectrumBuffer *specBuffer,
     INT2TimeSeries *timeSeries
     );
 
 void
-AverageSpectrum (
-    Status               *status,
+LALAverageSpectrum (
+    LALStatus               *status,
     REAL4FrequencySeries *spectrum,
     SpectrumBuffer       *buffer
     );

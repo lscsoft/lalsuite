@@ -25,10 +25,10 @@ subroutines, producing no output.  All filter parameters are set from
 
 The \verb@-o@ flag tells the program to print the input and output
 vectors to data files: \verb@out.0@ stores the initial impulse,
-\verb@out.1@ the response computed using \verb@IIRFilterREAL4()@,
-\verb@out.2@ the response computed using \verb@SIIRFilter()@,
-\verb@out.3@ the response from \verb@IIRFilterREAL4Vector()@, and
-\verb@out.4@ the response from \verb@IIRFilterREAL4VectorR()@.  The
+\verb@out.1@ the response computed using \verb@LALIIRFilterREAL4()@,
+\verb@out.2@ the response computed using \verb@LALSIIRFilter()@,
+\verb@out.3@ the response from \verb@LALIIRFilterREAL4Vector()@, and
+\verb@out.4@ the response from \verb@LALIIRFilterREAL4VectorR()@.  The
 \verb@-d@ option increases the default debug level from 0 to 1, or
 sets it to the specified value \verb@debug-level@.
 
@@ -45,19 +45,19 @@ sets it to the specified value \verb@debug-level@.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-debuglevel
+LALDebugLevel
 LALPrintError()
-SCreateVector()
-SDestroyVector()
-CreateCOMPLEX8ZPGFilter()
-DestroyCOMPLEX8ZPGFilter()
-WToZCOMPLEX8ZPGFilter()
-CreateREAL4IIRFilter()
-DestroyREAL4IIRFilter()
-SIIRFilter()
-IIRFilterREAL4()
-IIRFilterREAL4Vector()
-IIRFilterREAL4VectorR()
+LALSCreateVector()
+LALSDestroyVector()
+LALCreateCOMPLEX8ZPGFilter()
+LALDestroyCOMPLEX8ZPGFilter()
+LALWToZCOMPLEX8ZPGFilter()
+LALCreateREAL4IIRFilter()
+LALDestroyREAL4IIRFilter()
+LALSIIRFilter()
+LALIIRFilterREAL4()
+LALIIRFilterREAL4Vector()
+LALIIRFilterREAL4VectorR()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -95,7 +95,7 @@ NRCSID(IIRFILTERTESTC,"$Id$");
 #define CHECKSTAT(statusptr)                                         \
 do{                                                                  \
   if((statusptr).statusCode){                                        \
-    if(debuglevel>0){                                                \
+    if(LALDebugLevel>0){                                                \
       LALPrintError("%s: %s\n",argv[0],IIRFILTERTEST_MSGESUB);       \
       REPORTSTATUS(&stat);                                           \
     }                                                                \
@@ -103,13 +103,13 @@ do{                                                                  \
   }                                                                  \
 } while(0)
 
-static void PrintVector(FILE *fp, REAL4Vector *vector);
+static void LALPrintVector(FILE *fp, REAL4Vector *vector);
 
-INT4 debuglevel=0;
+INT4 LALDebugLevel=0;
 
 INT4 main(INT4 argc, CHAR **argv)
 {
-  Status stat={0};          /* Status pointer for subroutines. */
+  LALStatus stat={0};          /* LALStatus pointer for subroutines. */
   BOOLEAN printout=0;       /* Whether output will be printed. */
   INT4 i;                   /* Index counter. */
   REAL4Vector *input1=NULL; /* A time series input vector. */
@@ -128,16 +128,16 @@ INT4 main(INT4 argc, CHAR **argv)
       printout=1;
     }else if(!strcmp(argv[i],"-d")){
       if((argc>2)&&(argv[i+1][0]!='-')){
-	debuglevel=atoi(argv[++i]);
+	LALDebugLevel=atoi(argv[++i]);
 	argc--;
       }else
-	debuglevel=1;
+	LALDebugLevel=1;
     }else
       LALPrintError("%s: Ignoring argument: %s\n",argv[0],argv[i]);
   }
 
   /* Create the time-domain filter. */
-  CreateCOMPLEX8ZPGFilter(&stat,&zpgFilter,0,3);
+  LALCreateCOMPLEX8ZPGFilter(&stat,&zpgFilter,0,3);
   CHECKSTAT(stat);
   zpgFilter->poles->data[0].re=WC*sqrt(0.5);
   zpgFilter->poles->data[0].im=WC*sqrt(0.5);
@@ -147,19 +147,19 @@ INT4 main(INT4 argc, CHAR **argv)
   zpgFilter->poles->data[2].im=WC*sqrt(0.5);
   zpgFilter->gain.re=0.0;
   zpgFilter->gain.im=WC*WC*WC;
-  WToZCOMPLEX8ZPGFilter(&stat,zpgFilter);
+  LALWToZCOMPLEX8ZPGFilter(&stat,zpgFilter);
   CHECKSTAT(stat);
-  CreateREAL4IIRFilter(&stat,&iirFilter,zpgFilter);
+  LALCreateREAL4IIRFilter(&stat,&iirFilter,zpgFilter);
   CHECKSTAT(stat);
-  DestroyCOMPLEX8ZPGFilter(&stat,&zpgFilter);
+  LALDestroyCOMPLEX8ZPGFilter(&stat,&zpgFilter);
   CHECKSTAT(stat);
 
   /* Allocate memory for the time series. */
-  SCreateVector(&stat,&input1,NPOINTS);
+  LALSCreateVector(&stat,&input1,NPOINTS);
   CHECKSTAT(stat);
-  SCreateVector(&stat,&input2,NPOINTS);
+  LALSCreateVector(&stat,&input2,NPOINTS);
   CHECKSTAT(stat);
-  SCreateVector(&stat,&output,NPOINTS);
+  LALSCreateVector(&stat,&output,NPOINTS);
   CHECKSTAT(stat);
 
   /* Create the input time series. */
@@ -175,14 +175,14 @@ INT4 main(INT4 argc, CHAR **argv)
       LALPrintError("%s: %s\n",argv[0],IIRFILTERTEST_MSGEFILE);
       return IIRFILTERTEST_EFILE;
     }
-    PrintVector(fp,input1);
+    LALPrintVector(fp,input1);
   }
 
-  /* Filter the time series using IIRFilterREAL4(). */
+  /* Filter the time series using LALIIRFilterREAL4(). */
   data1=input1->data;
   data2=output->data;
   for(i=0;i<NPOINTS;i++){
-    IIRFilterREAL4(&stat,data2++,*(data1++),iirFilter);
+    LALIIRFilterREAL4(&stat,data2++,*(data1++),iirFilter);
     CHECKSTAT(stat);
   }
   if(printout){
@@ -190,58 +190,58 @@ INT4 main(INT4 argc, CHAR **argv)
       LALPrintError("%s: %s\n",argv[0],IIRFILTERTEST_MSGEFILE);
       return IIRFILTERTEST_EFILE;
     }
-    PrintVector(fp,output);
+    LALPrintVector(fp,output);
   }
 
-  /* Filter the time series using SIIRFilter(). */
+  /* Filter the time series using LALSIIRFilter(). */
   data1=input1->data;
   data2=output->data;
   for(i=0;i<NPOINTS;i++)
-    *(data2++)=SIIRFilter(*(data1++),iirFilter);
+    *(data2++)=LALSIIRFilter(*(data1++),iirFilter);
   if(printout){
     if(!(fp=fopen(OUTFILE2,"w"))){
       LALPrintError("%s: %s\n",argv[0],IIRFILTERTEST_MSGEFILE);
       return IIRFILTERTEST_EFILE;
     }
-    PrintVector(fp,output);
+    LALPrintVector(fp,output);
   }
 
-  /* Filter the time series using IIRFilterREAL4Vector(). */
-  IIRFilterREAL4Vector(&stat,input1,iirFilter);
+  /* Filter the time series using LALIIRFilterREAL4Vector(). */
+  LALIIRFilterREAL4Vector(&stat,input1,iirFilter);
   CHECKSTAT(stat);
   if(printout){
     if(!(fp=fopen(OUTFILE3,"w"))){
       LALPrintError("%s: %s\n",argv[0],IIRFILTERTEST_MSGEFILE);
       return IIRFILTERTEST_EFILE;
     }
-    PrintVector(fp,input1);
+    LALPrintVector(fp,input1);
   }
 
-  /* Filter the time series using IIRFilterREAL4VectorR(). */
-  IIRFilterREAL4VectorR(&stat,input2,iirFilter);
+  /* Filter the time series using LALIIRFilterREAL4VectorR(). */
+  LALIIRFilterREAL4VectorR(&stat,input2,iirFilter);
   CHECKSTAT(stat);
   if(printout){
     if(!(fp=fopen(OUTFILE4,"w"))){
       LALPrintError("%s: %s\n",argv[0],IIRFILTERTEST_MSGEFILE);
       return IIRFILTERTEST_EFILE;
     }
-    PrintVector(fp,input2);
+    LALPrintVector(fp,input2);
   }
 
   /* Free memory and exit. */
-  SDestroyVector(&stat,&input1);
+  LALSDestroyVector(&stat,&input1);
   CHECKSTAT(stat);
-  SDestroyVector(&stat,&input2);
+  LALSDestroyVector(&stat,&input2);
   CHECKSTAT(stat);
-  SDestroyVector(&stat,&output);
+  LALSDestroyVector(&stat,&output);
   CHECKSTAT(stat);
-  DestroyREAL4IIRFilter(&stat,&iirFilter);
+  LALDestroyREAL4IIRFilter(&stat,&iirFilter);
   CHECKSTAT(stat);
   return 0;
 }
 
 
-static void PrintVector(FILE *fp, REAL4Vector *vector)
+static void LALPrintVector(FILE *fp, REAL4Vector *vector)
 {
   INT4 i=vector->length;
   REAL4 *data=vector->data;

@@ -12,7 +12,7 @@
  * CreateTimeFreqParam
  * 
  * SYNOPSIS 
- * void CreateTimeFreqParam (Status *, TimeFreqParam **param, CreateTimeFreqIn *in);
+ * void LALCreateTimeFreqParam (LALStatus *, TimeFreqParam **param, CreateTimeFreqIn *in);
  * 
  * DESCRIPTION 
  * Create a TimeFreqParam object. 
@@ -32,12 +32,12 @@
 
 NRCSID (CREATETIMEFREQPARAMC, "$Id$");
 
-void CreateTimeFreqParam (Status *status, 
+void LALCreateTimeFreqParam (LALStatus *status, 
 			TimeFreqParam **param,
 			CreateTimeFreqIn *in) 
 {
   /* Initialize status */
-  INITSTATUS (status, "CreateTimeFreqParam", CREATETIMEFREQPARAMC);	
+  INITSTATUS (status, "LALCreateTimeFreqParam", CREATETIMEFREQPARAMC);	
   
   /* Check input structure: report if NULL */
   ASSERT (in != NULL, status, CREATETFP_ENULL, CREATETFP_MSGENULL);
@@ -61,7 +61,7 @@ void CreateTimeFreqParam (Status *status,
     /* Make sure the window length is a odd number */
     ASSERT (in->wlengthT%2 != 0, status, CREATETFP_EWSIZ, CREATETFP_MSGEWSIZ);
   
-    SCreateVector(status,&(*param)->windowT,in->wlengthT);
+    LALSCreateVector(status,&(*param)->windowT,in->wlengthT);
     (*param)->type = Spectrogram; 
 
     break;
@@ -78,8 +78,8 @@ void CreateTimeFreqParam (Status *status,
     /* Make sure the window length is a odd number */
     ASSERT (in->wlengthF%2 != 0, status, CREATETFP_EWSIZ, CREATETFP_MSGEWSIZ);
 
-    SCreateVector(status,&(*param)->windowT,in->wlengthT);
-    SCreateVector(status,&(*param)->windowF,in->wlengthF);
+    LALSCreateVector(status,&(*param)->windowT,in->wlengthT);
+    LALSCreateVector(status,&(*param)->windowF,in->wlengthF);
     (*param)->type = PSWignerVille; 
     
     break;
@@ -88,7 +88,7 @@ void CreateTimeFreqParam (Status *status,
     /* Make sure the window length is a odd number */
     ASSERT (in->wlengthT%2 != 0, status, CREATETFP_EWSIZ, CREATETFP_MSGEWSIZ);
 
-    SCreateVector(status,&(*param)->windowT,in->wlengthT);
+    LALSCreateVector(status,&(*param)->windowT,in->wlengthT);
     (*param)->type = RSpectrogram; 
 
     break;

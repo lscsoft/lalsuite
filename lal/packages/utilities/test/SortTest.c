@@ -38,14 +38,14 @@ specified value \verb@debug-level@.
 
 \subsubsection{Uses}
 \begin{verbatim}
-debuglevel
+LALDebugLevel
 CreateI4Vector()
 CreateSVector()
 DestroyI4Vector()
 DestroySVector()
-CreateRandomParams()
-DestroyRandomParams()
-UniformDeviate()
+LALCreateRandomParams()
+LALDestroyRandomParams()
+LALUniformDeviate()
 LALPrintError()
 \end{verbatim}
 
@@ -66,11 +66,11 @@ NRCSID(SORTTESTC,"$Id$");
 #define SORTTEST_ESUB 1
 #define SORTTEST_MSGESUB "Subroutine returned error"
 
-INT4 debuglevel=0;
+INT4 LALDebugLevel=0;
 
 int main(int argc, char **argv)
 {
-  Status       stat={0};
+  LALStatus       stat={0};
   INT4         i;
   INT4         seed=0;
   INT4Vector   *index=NULL;
@@ -87,28 +87,28 @@ int main(int argc, char **argv)
 	LALPrintError("%s: Ignoring argument: -s\n",argv[0]);
     }else if(!strcmp(argv[i],"-d")){
       if((argc>2)&&(argv[i+1][0]!='-')){
-	debuglevel=atoi(argv[++i]);
+	LALDebugLevel=atoi(argv[++i]);
 	argc--;
       }else
-	debuglevel=1;
+	LALDebugLevel=1;
     }else
       LALPrintError("%s: Ignoring argument: %s\n",argv[0],argv[i]);
   }
 
   /* Create vectors and random parameters. */
-  I4CreateVector(&stat,&index,NPTS);
+  LALI4CreateVector(&stat,&index,NPTS);
   if(stat.statusCode){
     LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
     REPORTSTATUS(&stat);
     return SORTTEST_ESUB;
   }
-  SCreateVector(&stat,&data,NPTS);
+  LALSCreateVector(&stat,&data,NPTS);
   if(stat.statusCode){
     LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
     REPORTSTATUS(&stat);
     return SORTTEST_ESUB;
   }
-  CreateRandomParams(&stat,&params,seed);
+  LALCreateRandomParams(&stat,&params,seed);
   if(stat.statusCode){
     LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
     REPORTSTATUS(&stat);
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
 
   /* Initialize data. */
   for(i=0;i<NPTS;i++){
-    UniformDeviate(&stat,data->data+i,params);
+    LALUniformDeviate(&stat,data->data+i,params);
     if(stat.statusCode){
       LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
       REPORTSTATUS(&stat);
@@ -127,7 +127,7 @@ int main(int argc, char **argv)
   }
 
   /* Rank data; print data and ranks. */
-  SHeapRank(&stat,index,data);
+  LALSHeapRank(&stat,index,data);
   if(stat.statusCode){
     LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
     REPORTSTATUS(&stat);
@@ -139,13 +139,13 @@ int main(int argc, char **argv)
   fprintf(stdout,"\n");
 
   /* Index and sort data; print sorted data and indecies. */
-  SHeapIndex(&stat,index,data);
+  LALSHeapIndex(&stat,index,data);
   if(stat.statusCode){
     LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
     REPORTSTATUS(&stat);
     return SORTTEST_ESUB;
   }
-  SHeapSort(&stat,data);
+  LALSHeapSort(&stat,data);
   if(stat.statusCode){
     LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
     REPORTSTATUS(&stat);
@@ -156,19 +156,19 @@ int main(int argc, char **argv)
     fprintf(stdout," %4.2f     %2i\n",data->data[i],index->data[i]);
 
   /* Free and clear. */
-  I4DestroyVector(&stat,&index);
+  LALI4DestroyVector(&stat,&index);
   if(stat.statusCode){
     LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
     REPORTSTATUS(&stat);
     return SORTTEST_ESUB;
   }
-  SDestroyVector(&stat,&data);
+  LALSDestroyVector(&stat,&data);
   if(stat.statusCode){
     LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
     REPORTSTATUS(&stat);
     return SORTTEST_ESUB;
   }
-  DestroyRandomParams(&stat,&params);
+  LALDestroyRandomParams(&stat,&params);
   if(stat.statusCode){
     LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
     REPORTSTATUS(&stat);

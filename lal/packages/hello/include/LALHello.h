@@ -73,7 +73,7 @@ NRCSID (LALHELLOH, "$Id$");
 </lalLaTeX> */
 
 void
-LALHello( Status *status, const CHAR *fileName );
+LALHello( LALStatus *status, const CHAR *fileName );
 
 
 /* Test program. */

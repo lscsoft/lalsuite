@@ -34,22 +34,22 @@ NRCSID (MAIN, "$Id$");
 extern char *optarg;
 extern int   optind;
 
-int   debuglevel = 0;
+int   LALDebugLevel = 0;
 int   verbose    = 0;
 
 static void Usage (const char *program, int exitflag);
 
 static void ParseOptions (int argc, char *argv[]);
 
-static void TestStatus (Status *status, const char *expectCodes, int exitCode);
+static void TestStatus (LALStatus *status, const char *expectCodes, int exitCode);
 
-static void ClearStatus (Status *status);
+static void ClearStatus (LALStatus *status);
 
 int main (int argc, char *argv[])
 {
   enum {ArraySize = 10};
 
-  static Status       status;
+  static LALStatus       status;
   static REAL4Vector *x;
   static REAL4Vector *y;
   static REAL8Vector *xx;
@@ -64,13 +64,13 @@ int main (int argc, char *argv[])
 
   ParseOptions (argc, argv);
 
-  SCreateVector (&status, &x, ArraySize);
+  LALSCreateVector (&status, &x, ArraySize);
   TestStatus (&status, CODES(0), 1);
-  SCreateVector (&status, &y, ArraySize);
+  LALSCreateVector (&status, &y, ArraySize);
   TestStatus (&status, CODES(0), 1);
-  DCreateVector (&status, &xx, ArraySize);
+  LALDCreateVector (&status, &xx, ArraySize);
   TestStatus (&status, CODES(0), 1);
-  DCreateVector (&status, &yy, ArraySize);
+  LALDCreateVector (&status, &yy, ArraySize);
   TestStatus (&status, CODES(0), 1);
 
   printf ("Initial data:\n");
@@ -98,9 +98,9 @@ int main (int argc, char *argv[])
   {
     sintpar.n = i;
     dintpar.n = i;
-    SPolynomialInterpolation (&status, &sintout, 0.3, &sintpar);
+    LALSPolynomialInterpolation (&status, &sintout, 0.3, &sintpar);
     TestStatus (&status, CODES(0), 1);
-    DPolynomialInterpolation (&status, &dintout, 0.3, &dintpar);
+    LALDPolynomialInterpolation (&status, &dintout, 0.3, &dintpar);
     TestStatus (&status, CODES(0), 1);
     printf ("%d\t%f\t%f\t%f\t%f\n", i - 1,
             sintout.y, sintout.dy, dintout.y, dintout.dy);
@@ -119,9 +119,9 @@ int main (int argc, char *argv[])
   {
     sintpar.n = i;
     dintpar.n = i;
-    SPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
+    LALSPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
     TestStatus (&status, CODES(0), 1);
-    DPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
+    LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
     TestStatus (&status, CODES(0), 1);
     printf ("%d\t%f\t%f\t%f\t%f\n", i - 1,
             sintout.y, sintout.dy, dintout.y, dintout.dy);
@@ -129,49 +129,49 @@ int main (int argc, char *argv[])
   printf ("---------------------------------\n");
 
 
-  SDestroyVector (&status, &x);
+  LALSDestroyVector (&status, &x);
   TestStatus (&status, CODES(0), 1);
-  SDestroyVector (&status, &y);
+  LALSDestroyVector (&status, &y);
   TestStatus (&status, CODES(0), 1);
-  DDestroyVector (&status, &xx);
+  LALDDestroyVector (&status, &xx);
   TestStatus (&status, CODES(0), 1);
-  DDestroyVector (&status, &yy);
+  LALDDestroyVector (&status, &yy);
   TestStatus (&status, CODES(0), 1);
 
   LALCheckMemoryLeaks ();
 
-  SCreateVector (&status, &x, ArraySize);
+  LALSCreateVector (&status, &x, ArraySize);
   TestStatus (&status, CODES(0), 1);
-  SCreateVector (&status, &y, ArraySize);
+  LALSCreateVector (&status, &y, ArraySize);
   TestStatus (&status, CODES(0), 1);
-  DCreateVector (&status, &xx, ArraySize);
+  LALDCreateVector (&status, &xx, ArraySize);
   TestStatus (&status, CODES(0), 1);
-  DCreateVector (&status, &yy, ArraySize);
+  LALDCreateVector (&status, &yy, ArraySize);
   TestStatus (&status, CODES(0), 1);
 
 
   printf ("\nCheck error conditions:\n");
 
   printf ("\nNull pointer:\r");
-  SPolynomialInterpolation (&status, NULL, -0.3, &sintpar);
+  LALSPolynomialInterpolation (&status, NULL, -0.3, &sintpar);
   TestStatus (&status, CODES(INTERPOLATE_ENULL), 1);
-  DPolynomialInterpolation (&status, NULL, -0.3, &dintpar);
+  LALDPolynomialInterpolation (&status, NULL, -0.3, &dintpar);
   TestStatus (&status, CODES(INTERPOLATE_ENULL), 1);
   printf ("Null pointer check passed.\n");
 
   printf ("\nNull pointer:\r");
-  SPolynomialInterpolation (&status, &sintout, -0.3, NULL);
+  LALSPolynomialInterpolation (&status, &sintout, -0.3, NULL);
   TestStatus (&status, CODES(INTERPOLATE_ENULL), 1);
-  DPolynomialInterpolation (&status, &dintout, -0.3, NULL);
+  LALDPolynomialInterpolation (&status, &dintout, -0.3, NULL);
   TestStatus (&status, CODES(INTERPOLATE_ENULL), 1);
   printf ("Null pointer check passed.\n");
 
   sintpar.x = NULL;
   dintpar.x = NULL;
   printf ("\nNull pointer:\r");
-  SPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
+  LALSPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
   TestStatus (&status, CODES(INTERPOLATE_ENULL), 1);
-  DPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
+  LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
   TestStatus (&status, CODES(INTERPOLATE_ENULL), 1);
   printf ("Null pointer check passed.\n");
 
@@ -180,9 +180,9 @@ int main (int argc, char *argv[])
   dintpar.x = xx->data;
   dintpar.y = NULL;
   printf ("\nNull pointer:\r");
-  SPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
+  LALSPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
   TestStatus (&status, CODES(INTERPOLATE_ENULL), 1);
-  DPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
+  LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
   TestStatus (&status, CODES(INTERPOLATE_ENULL), 1);
   printf ("Null pointer check passed.\n");
 
@@ -191,9 +191,9 @@ int main (int argc, char *argv[])
   dintpar.y = yy->data;
   dintpar.n = 1;
   printf ("\nInvalid size:\r");
-  SPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
+  LALSPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
   TestStatus (&status, CODES(INTERPOLATE_ESIZE), 1);
-  DPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
+  LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
   TestStatus (&status, CODES(INTERPOLATE_ESIZE), 1);
   printf ("Invalid size check passed.\n");
 
@@ -202,20 +202,20 @@ int main (int argc, char *argv[])
   sintpar.n = 3;
   dintpar.n = 3;
   printf ("\nZero divide:\r");
-  SPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
+  LALSPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
   TestStatus (&status, CODES(INTERPOLATE_EZERO), 1);
-  DPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
+  LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
   TestStatus (&status, CODES(INTERPOLATE_EZERO), 1);
   printf ("Zero divide check passed.\n");
 
 
-  SDestroyVector (&status, &x);
+  LALSDestroyVector (&status, &x);
   TestStatus (&status, CODES(0), 1);
-  SDestroyVector (&status, &y);
+  LALSDestroyVector (&status, &y);
   TestStatus (&status, CODES(0), 1);
-  DDestroyVector (&status, &xx);
+  LALDDestroyVector (&status, &xx);
   TestStatus (&status, CODES(0), 1);
-  DDestroyVector (&status, &yy);
+  LALDDestroyVector (&status, &yy);
   TestStatus (&status, CODES(0), 1);
 
   return 0;
@@ -231,7 +231,7 @@ int main (int argc, char *argv[])
  *
  */
 static void
-TestStatus (Status *status, const char *ignored, int exitcode)
+TestStatus (LALStatus *status, const char *ignored, int exitcode)
 {
   char  str[64];
   char *tok;
@@ -277,7 +277,7 @@ TestStatus (Status *status, const char *ignored, int exitcode)
  *
  */
 void
-ClearStatus (Status *status)
+ClearStatus (LALStatus *status)
 {
   if (status->statusPtr)
   {
@@ -301,7 +301,7 @@ Usage (const char *program, int exitcode)
   fprintf (stderr, "  -h         print this message\n");
   fprintf (stderr, "  -q         quiet: run silently\n");
   fprintf (stderr, "  -v         verbose: print extra information\n");
-  fprintf (stderr, "  -d level   set debuglevel to level\n");
+  fprintf (stderr, "  -d level   set LALDebugLevel to level\n");
   exit (exitcode);
 }
 
@@ -328,7 +328,7 @@ ParseOptions (int argc, char *argv[])
     switch (c)
     {
       case 'd': /* set debug level */
-        debuglevel = atoi (optarg);
+        LALDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* verbose */

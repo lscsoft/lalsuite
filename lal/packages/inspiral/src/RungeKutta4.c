@@ -3,7 +3,7 @@
 
 NRCSID (RUNGEKUTTA4C, "$Id$");
 
-void RungeKutta4(Status *status,
+void LALRungeKutta4(LALStatus *status,
 	         REAL8Vector *yout,
 	         rk4In *input,
 	         void *params)
@@ -11,7 +11,7 @@ void RungeKutta4(Status *status,
 	INT4 i;
 	REAL8 xh,hh,h6;
 
-   INITSTATUS(status, "RungeKutta4", RUNGEKUTTA4C);
+   INITSTATUS(status, "LALRungeKutta4", RUNGEKUTTA4C);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (yout, status, RUNGEKUTTA4_ENULL, RUNGEKUTTA4_MSGENULL);

@@ -34,8 +34,8 @@
 NRCSID(DDVECTORMULTIPLYC,"$Id$");
 
 void
-DDVectorMultiply (
-    Status               *status,
+LALDDVectorMultiply (
+    LALStatus               *status,
     REAL8Vector          *out,
     const REAL8Vector    *in1,
     const REAL8Vector    *in2
@@ -46,7 +46,7 @@ DDVectorMultiply (
   REAL8 *c;
   INT4   n;
 
-  INITSTATUS (status, "DDVectorMultiply", DDVECTORMULTIPLYC);
+  INITSTATUS (status, "LALDDVectorMultiply", DDVECTORMULTIPLYC);
 
   ASSERT (out, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);
   ASSERT (in1, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);

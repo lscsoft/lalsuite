@@ -35,14 +35,14 @@
 
 NRCSID (MAIN, "$Id$");
 
-int debuglevel = 1;
+int LALDebugLevel = 1;
 
 int main()
 {
   const INT4 m = 4;   /* example length of sequence of vectors */
   const INT4 n = 32;  /* example vector length */
 
-  static Status status; 
+  static LALStatus status; 
 
   RealFFTPlan            *pfwd = NULL;
   RealFFTPlan            *pinv = NULL;
@@ -65,42 +65,42 @@ int main()
   seqout.length       = m;
   seqout.vectorLength = n/2 + 1;
 
-  SCreateVector         (&status, &hvec, n);
+  LALSCreateVector         (&status, &hvec, n);
   REPORTSTATUS (&status);
 
-  CCreateVector         (&status, &Hvec, n/2 + 1);
+  LALCCreateVector         (&status, &Hvec, n/2 + 1);
   REPORTSTATUS (&status);
 
-  SCreateVector         (&status, &Pvec, n/2 + 1);
+  LALSCreateVector         (&status, &Pvec, n/2 + 1);
   REPORTSTATUS (&status);
 
-  SCreateVectorSequence (&status, &hseq, &seqinp);
+  LALSCreateVectorSequence (&status, &hseq, &seqinp);
   REPORTSTATUS (&status);
 
-  CCreateVectorSequence (&status, &Hseq, &seqout);
+  LALCCreateVectorSequence (&status, &Hseq, &seqout);
   REPORTSTATUS (&status);
 
-  SCreateVectorSequence (&status, &Pseq, &seqout);
+  LALSCreateVectorSequence (&status, &Pseq, &seqout);
   REPORTSTATUS (&status);
 
   /* create plans */
 
-  EstimateFwdRealFFTPlan (&status, &pfwd, n);
+  LALEstimateFwdRealFFTPlan (&status, &pfwd, n);
   REPORTSTATUS (&status);
 
-  EstimateInvRealFFTPlan (&status, &pinv, n);
+  LALEstimateInvRealFFTPlan (&status, &pinv, n);
   REPORTSTATUS (&status);
 
-  DestroyRealFFTPlan     (&status, &pfwd);
+  LALDestroyRealFFTPlan     (&status, &pfwd);
   REPORTSTATUS (&status);
 
-  DestroyRealFFTPlan     (&status, &pinv);
+  LALDestroyRealFFTPlan     (&status, &pinv);
   REPORTSTATUS (&status);
 
-  MeasureFwdRealFFTPlan  (&status, &pfwd, n);
+  LALMeasureFwdRealFFTPlan  (&status, &pfwd, n);
   REPORTSTATUS (&status);
 
-  MeasureInvRealFFTPlan  (&status, &pinv, n);
+  LALMeasureInvRealFFTPlan  (&status, &pinv, n);
   REPORTSTATUS (&status);
 
   /* assign data ... */
@@ -121,25 +121,25 @@ int main()
   /* perform FFTs */
 
   printf ("\nSingle Forward FFT:\n");
-  FwdRealFFT (&status, Hvec, hvec, pfwd);
+  LALFwdRealFFT (&status, Hvec, hvec, pfwd);
   REPORTSTATUS (&status);
   for (i = 0; i < Hvec->length; ++i)
     printf ("(% 9.3f, % 9.3f)\n", Hvec->data[i].re, Hvec->data[i].im);
 
   printf ("\nSingle Forward FFT Power:\n");
-  RealPowerSpectrum (&status, Pvec, hvec, pfwd);
+  LALRealPowerSpectrum (&status, Pvec, hvec, pfwd);
   REPORTSTATUS (&status);
   for (i = 0; i < Pvec->length; ++i)
     printf ("%12.3f\n", Pvec->data[i]);
 
   printf ("\nSingle Inverse FFT:\n");
-  InvRealFFT (&status, hvec, Hvec, pinv);
+  LALInvRealFFT (&status, hvec, Hvec, pinv);
   REPORTSTATUS (&status);
   for (i = 0; i < hvec->length; ++i)
     printf ("% 9.3f\n", hvec->data[i]/n);
 
   printf ("\nMultiple Forward FFT:\n");
-  FwdRealSequenceFFT (&status, Hseq, hseq, pfwd);
+  LALFwdRealSequenceFFT (&status, Hseq, hseq, pfwd);
   REPORTSTATUS (&status);
   for (i = 0; i < Hseq->vectorLength; ++i)
   {
@@ -151,7 +151,7 @@ int main()
   }
 
   printf ("\nMultiple Forward FFT Power:\n");
-  RealSequencePowerSpectrum (&status, Pseq, hseq, pfwd);
+  LALRealSequencePowerSpectrum (&status, Pseq, hseq, pfwd);
   REPORTSTATUS (&status);
   for (i = 0; i < Pseq->vectorLength; ++i)
   {
@@ -161,7 +161,7 @@ int main()
   }
 
   printf ("\nMultiple Inverse FFT:\n");
-  InvRealSequenceFFT (&status, hseq, Hseq, pinv);
+  LALInvRealSequenceFFT (&status, hseq, Hseq, pinv);
   REPORTSTATUS (&status);
   for (i = 0; i < hseq->vectorLength; ++i)
   {
@@ -171,28 +171,28 @@ int main()
   }
 
   /* destroy plans, vectors, and sequences */
-  DestroyRealFFTPlan     (&status, &pfwd);
+  LALDestroyRealFFTPlan     (&status, &pfwd);
   REPORTSTATUS (&status);
 
-  DestroyRealFFTPlan     (&status, &pinv);
+  LALDestroyRealFFTPlan     (&status, &pinv);
   REPORTSTATUS (&status);
 
-  SDestroyVector         (&status, &hvec);
+  LALSDestroyVector         (&status, &hvec);
   REPORTSTATUS (&status);
 
-  CDestroyVector         (&status, &Hvec);
+  LALCDestroyVector         (&status, &Hvec);
   REPORTSTATUS (&status);
 
-  SDestroyVector         (&status, &Pvec);
+  LALSDestroyVector         (&status, &Pvec);
   REPORTSTATUS (&status);
 
-  SDestroyVectorSequence (&status, &hseq);
+  LALSDestroyVectorSequence (&status, &hseq);
   REPORTSTATUS (&status);
 
-  CDestroyVectorSequence (&status, &Hseq);
+  LALCDestroyVectorSequence (&status, &Hseq);
   REPORTSTATUS (&status);
 
-  SDestroyVectorSequence (&status, &Pseq);
+  LALSDestroyVectorSequence (&status, &Pseq);
   REPORTSTATUS (&status);
 
   LALCheckMemoryLeaks ();

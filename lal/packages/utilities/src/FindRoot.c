@@ -15,8 +15,8 @@
 NRCSID (FINDROOTC, "$Id$");
 
 void
-SBracketRoot (
-    Status      *status,
+LALSBracketRoot (
+    LALStatus      *status,
     SFindRootIn *inout,
     void        *params
     )
@@ -28,7 +28,7 @@ SBracketRoot (
   REAL4 y1;
   REAL4 y2;
 
-  INITSTATUS (status, "SBracketRoot", FINDROOTC);
+  INITSTATUS (status, "LALSBracketRoot", FINDROOTC);
   ATTATCHSTATUSPTR (status);
 
   /* check that arguments are reasonable */
@@ -82,8 +82,8 @@ SBracketRoot (
 
 
 void
-DBracketRoot (
-    Status      *status,
+LALDBracketRoot (
+    LALStatus      *status,
     DFindRootIn *inout,
     void        *params
     )
@@ -95,7 +95,7 @@ DBracketRoot (
   REAL8 y1;
   REAL8 y2;
 
-  INITSTATUS (status, "DBracketRoot", FINDROOTC);
+  INITSTATUS (status, "LALDBracketRoot", FINDROOTC);
   ATTATCHSTATUSPTR (status);
 
   /* check that arguments are reasonable */
@@ -149,8 +149,8 @@ DBracketRoot (
 
 
 void
-SBisectionFindRoot (
-    Status      *status,
+LALSBisectionFindRoot (
+    LALStatus      *status,
     REAL4       *root,
     SFindRootIn *input,
     void        *params
@@ -164,7 +164,7 @@ SBisectionFindRoot (
   REAL4 x;
   REAL4 dx;
 
-  INITSTATUS (status, "SBisectionFindRoot", FINDROOTC);
+  INITSTATUS (status, "LALSBisectionFindRoot", FINDROOTC);
   ATTATCHSTATUSPTR (status);
 
   /* check that arguments are reasonable */
@@ -241,8 +241,8 @@ SBisectionFindRoot (
 
 
 void
-DBisectionFindRoot (
-    Status      *status,
+LALDBisectionFindRoot (
+    LALStatus      *status,
     REAL8       *root,
     DFindRootIn *input,
     void        *params
@@ -256,7 +256,7 @@ DBisectionFindRoot (
   REAL8 x;
   REAL8 dx;
 
-  INITSTATUS (status, "DBisectionFindRoot", FINDROOTC);
+  INITSTATUS (status, "LALDBisectionFindRoot", FINDROOTC);
   ATTATCHSTATUSPTR (status);
 
   /* check that arguments are reasonable */

@@ -3,7 +3,7 @@
 #include "AVFactories.h"
 #include "Date.h"
 
-INT4 debuglevel = 2;
+INT4 LALDebugLevel = 2;
 
 NRCSID (TESTLMSTC, "$Id$");
 
@@ -20,7 +20,7 @@ main(int argc, char *argv[])
     CHARVector *tmpstamp = NULL;
     INT4        testid;
     INT4        dayofmonth, monthofyear;
-    Status  status = {0};
+    LALStatus  status = {0};
 
     
     if (argc != 3)
@@ -35,12 +35,12 @@ main(int argc, char *argv[])
     }
 
     testid     = atoi(argv[1]);
-    debuglevel = atoi(argv[2]);
+    LALDebugLevel = atoi(argv[2]);
 
 
-    CHARCreateVector(&status, &tmpstamp, (UINT4)64);
+    LALCHARCreateVector(&status, &tmpstamp, (UINT4)64);
 
-    printf("TEST of GMST1 routine\n");
+    printf("TEST of LALGMST1 routine\n");
     printf("=====================\n");
 
     if (testid == 1)
@@ -57,15 +57,15 @@ main(int argc, char *argv[])
         date.unixDate.tm_year = 94;
 
         longitude = 0.; /* Greenwich */
-        GMST1(&status, &gmsthours, &date, MST_HRS);
-        LMST1(&status, &lmsthours, &date, longitude, MST_HRS);
+        LALGMST1(&status, &gmsthours, &date, MST_HRS);
+        LALLMST1(&status, &lmsthours, &date, longitude, MST_HRS);
 
-        GMST1(&status, &gmstsecs, &date, MST_SEC);
-        SecsToLALDate(&status, &mstdate, gmstsecs);
+        LALGMST1(&status, &gmstsecs, &date, MST_SEC);
+        LALSecsToLALDate(&status, &mstdate, gmstsecs);
         strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
         sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
         strcat(timestamp, tmpstr+1); /* remove leading 0 */
-        DateString(&status, tmpstamp, &date);
+        LALDateString(&status, tmpstamp, &date);
 
         printf("     Time = %s\n", tmpstamp->data);
         printf("gmsthours = %f = %s\n", gmsthours, timestamp);
@@ -86,15 +86,15 @@ main(int argc, char *argv[])
         date.unixDate.tm_year = 94;
 
         longitude = 0.; /* Greenwich */
-        GMST1(&status, &gmsthours, &date, MST_HRS);
-        LMST1(&status, &lmsthours, &date, longitude, MST_HRS);
+        LALGMST1(&status, &gmsthours, &date, MST_HRS);
+        LALLMST1(&status, &lmsthours, &date, longitude, MST_HRS);
 
-        GMST1(&status, &gmstsecs, &date, MST_SEC);
-        SecsToLALDate(&status, &mstdate, gmstsecs);
+        LALGMST1(&status, &gmstsecs, &date, MST_SEC);
+        LALSecsToLALDate(&status, &mstdate, gmstsecs);
         strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
         sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
         strcat(timestamp, tmpstr+1); /* remove leading 0 */
-        DateString(&status, tmpstamp, &date);
+        LALDateString(&status, tmpstamp, &date);
 
         printf("     Time = %s\n", tmpstamp->data);
         printf("gmsthours = %f = %s\n", gmsthours, timestamp);
@@ -115,15 +115,15 @@ main(int argc, char *argv[])
         date.unixDate.tm_year = 94;
 
         longitude = 0.; /* Greenwich */
-        GMST1(&status, &gmsthours, &date, MST_HRS);
-        LMST1(&status, &lmsthours, &date, longitude, MST_HRS);
+        LALGMST1(&status, &gmsthours, &date, MST_HRS);
+        LALLMST1(&status, &lmsthours, &date, longitude, MST_HRS);
 
-        GMST1(&status, &gmstsecs, &date, MST_SEC);
-        SecsToLALDate(&status, &mstdate, gmstsecs);
+        LALGMST1(&status, &gmstsecs, &date, MST_SEC);
+        LALSecsToLALDate(&status, &mstdate, gmstsecs);
         strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
         sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
         strcat(timestamp, tmpstr+1); /* remove leading 0 */
-        DateString(&status, tmpstamp, &date);
+        LALDateString(&status, tmpstamp, &date);
 
         printf("     Time = %s\n", tmpstamp->data);
         printf("gmsthours = %f   = %s\n", gmsthours, timestamp);
@@ -141,15 +141,15 @@ main(int argc, char *argv[])
         date.unixDate.tm_year = 94;
 
         longitude = 0.; /* Greenwich */
-        GMST1(&status, &gmsthours, &date, MST_HRS);
-        LMST1(&status, &lmsthours, &date, longitude, MST_HRS);
+        LALGMST1(&status, &gmsthours, &date, MST_HRS);
+        LALLMST1(&status, &lmsthours, &date, longitude, MST_HRS);
 
-        GMST1(&status, &gmstsecs, &date, MST_SEC);
-        SecsToLALDate(&status, &mstdate, gmstsecs);
+        LALGMST1(&status, &gmstsecs, &date, MST_SEC);
+        LALSecsToLALDate(&status, &mstdate, gmstsecs);
         strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
         sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
         strcat(timestamp, tmpstr+1); /* remove leading 0 */
-        DateString(&status, tmpstamp, &date);
+        LALDateString(&status, tmpstamp, &date);
 
         printf("     Time = %s\n", tmpstamp->data);
         printf("gmsthours = %f   = %s\n", gmsthours, timestamp);
@@ -170,15 +170,15 @@ main(int argc, char *argv[])
         date.unixDate.tm_year = 94;
 
         longitude = 0.; /* Greenwich */
-        GMST1(&status, &gmsthours, &date, MST_HRS);
-        LMST1(&status, &lmsthours, &date, longitude, MST_HRS);
+        LALGMST1(&status, &gmsthours, &date, MST_HRS);
+        LALLMST1(&status, &lmsthours, &date, longitude, MST_HRS);
 
-        GMST1(&status, &gmstsecs, &date, MST_SEC);
-        SecsToLALDate(&status, &mstdate, gmstsecs);
+        LALGMST1(&status, &gmstsecs, &date, MST_SEC);
+        LALSecsToLALDate(&status, &mstdate, gmstsecs);
         strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
         sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
         strcat(timestamp, tmpstr+1); /* remove leading 0 */
-        DateString(&status, tmpstamp, &date);
+        LALDateString(&status, tmpstamp, &date);
 
         printf("     Time = %s\n", tmpstamp->data);
         printf("gmsthours = %f = %s\n", gmsthours, timestamp);
@@ -201,12 +201,12 @@ main(int argc, char *argv[])
             {
                 date.unixDate.tm_mday = dayofmonth;
 
-                GMST1(&status, &gmstsecs, &date, MST_SEC);
-                SecsToLALDate(&status, &mstdate, gmstsecs);
+                LALGMST1(&status, &gmstsecs, &date, MST_SEC);
+                LALSecsToLALDate(&status, &mstdate, gmstsecs);
                 strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
                 sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
                 strcat(timestamp, tmpstr+1); /* remove leading 0 */
-                DateString(&status, tmpstamp, &date);
+                LALDateString(&status, tmpstamp, &date);
                 printf("%s: %s\n", tmpstamp->data, timestamp); 
                 
                 /* February */
@@ -225,7 +225,7 @@ main(int argc, char *argv[])
     /*
      * Housekeeping
      */
-    CHARDestroyVector(&status, &tmpstamp);
+    LALCHARDestroyVector(&status, &tmpstamp);
 
     return(0);
 }

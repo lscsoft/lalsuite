@@ -13,8 +13,8 @@ Applies an IIR filter to a data stream.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{IIRFilterVectorCP}
-\index{\verb&IIRFilterREAL4Vector()&}
-\index{\verb&IIRFilterREAL8Vector()&}
+\index{\verb&LALIIRFilterREAL4Vector()&}
+\index{\verb&LALIIRFilterREAL8Vector()&}
 
 \subsubsection*{Description}
 
@@ -48,7 +48,7 @@ NRCSID(IIRFILTERVECTORC,"$Id$");
 
 
 /* <lalVerbatim file="IIRFilterVectorCP"> */
-void IIRFilterREAL4Vector(Status         *stat,
+void LALIIRFilterREAL4Vector(LALStatus         *stat,
 			  REAL4Vector    *vector,
 			  REAL4IIRFilter *filter)
 { /* </lalVerbatim> */
@@ -65,7 +65,7 @@ void IIRFilterREAL4Vector(Status         *stat,
   REAL4 *history;    /* Filter history. */
   REAL4 *temp=NULL;  /* Temporary storage for the filter history. */
 
-  INITSTATUS(stat,"IIRFilterREAL4Vector",IIRFILTERVECTORC);
+  INITSTATUS(stat,"LALIIRFilterREAL4Vector",IIRFILTERVECTORC);
 
   /* Make sure all the structures have been initialized. */
   ASSERT(vector,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
@@ -134,7 +134,7 @@ void IIRFilterREAL4Vector(Status         *stat,
 
 
 /* <lalVerbatim file="IIRFilterVectorCP"> */
-void IIRFilterREAL8Vector(Status         *stat,
+void LALIIRFilterREAL8Vector(LALStatus         *stat,
 			  REAL8Vector    *vector,
 			  REAL8IIRFilter *filter)
 { /* </lalVerbatim> */
@@ -151,7 +151,7 @@ void IIRFilterREAL8Vector(Status         *stat,
   REAL8 *history;    /* Filter history. */
   REAL8 *temp=NULL;  /* Temporary storage for the filter history. */
 
-  INITSTATUS(stat,"IIRFilterREAL8Vector",IIRFILTERVECTORC);
+  INITSTATUS(stat,"LALIIRFilterREAL8Vector",IIRFILTERVECTORC);
 
   /* Make sure all the structures have been initialized. */
   ASSERT(vector,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);

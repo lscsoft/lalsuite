@@ -13,8 +13,8 @@ Creates ZPG filter objects.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{CreateZPGFilterCP}
-\index{\verb&CreateCOMPLEX8ZPGFilter()&}
-\index{\verb&CreateCOMPLEX16ZPGFilter()&}
+\index{\verb&LALCreateCOMPLEX8ZPGFilter()&}
+\index{\verb&LALCreateCOMPLEX16ZPGFilter()&}
 
 \subsubsection*{Description}
 
@@ -31,8 +31,8 @@ point to an existing object (\i.e.\ \verb@*output@=\verb@NULL@).
 \subsubsection*{Uses}
 \begin{verbatim}
 LALMalloc()
-CCreateVector()
-ZCreateVector()
+LALCCreateVector()
+LALZCreateVector()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -49,12 +49,12 @@ NRCSID(CREATEZPGFILTERC,"$Id$");
 
 
 /* <lalVerbatim file="CreateZPGFilterCP"> */
-void CreateCOMPLEX8ZPGFilter(Status            *stat,
+void LALCreateCOMPLEX8ZPGFilter(LALStatus            *stat,
 			     COMPLEX8ZPGFilter **output,
 			     INT4              numZeros,
 			     INT4              numPoles)
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"CreateCOMPLEX8ZPGFilter",CREATEZPGFILTERC);
+  INITSTATUS(stat,"LALCreateCOMPLEX8ZPGFilter",CREATEZPGFILTERC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure that the output handle exists, but points to a null
@@ -74,10 +74,10 @@ void CreateCOMPLEX8ZPGFilter(Status            *stat,
   /* Allocate the data fields.  If the number of poles or zeros is 0,
      the corresponding field(s) should remain null. */
   if(numZeros>0)
-    TRY(CCreateVector(stat->statusPtr,&((*output)->zeros),numZeros),
+    TRY(LALCCreateVector(stat->statusPtr,&((*output)->zeros),numZeros),
 	stat);
   if(numPoles>0)
-    TRY(CCreateVector(stat->statusPtr,&((*output)->poles),numPoles),
+    TRY(LALCCreateVector(stat->statusPtr,&((*output)->poles),numPoles),
 	stat);
 
   /* Normal exit */
@@ -87,12 +87,12 @@ void CreateCOMPLEX8ZPGFilter(Status            *stat,
 
 
 /* <lalVerbatim file="CreateZPGFilterCP"> */
-void CreateCOMPLEX16ZPGFilter(Status             *stat,
+void LALCreateCOMPLEX16ZPGFilter(LALStatus             *stat,
 			      COMPLEX16ZPGFilter **output,
 			      INT4               numZeros,
 			      INT4               numPoles)
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"CreateCOMPLEX16ZPGFilter",CREATEZPGFILTERC);
+  INITSTATUS(stat,"LALCreateCOMPLEX16ZPGFilter",CREATEZPGFILTERC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure that the output handle exists, but points to a null
@@ -112,10 +112,10 @@ void CreateCOMPLEX16ZPGFilter(Status             *stat,
   /* Allocate the data fields.  If the number of poles or zeros is 0,
      the corresponding field(s) should remain null. */
   if(numZeros>0)
-    TRY(ZCreateVector(stat->statusPtr,&((*output)->zeros),numZeros),
+    TRY(LALZCreateVector(stat->statusPtr,&((*output)->zeros),numZeros),
 	stat);
   if(numPoles>0)
-    TRY(ZCreateVector(stat->statusPtr,&((*output)->poles),numPoles),
+    TRY(LALZCreateVector(stat->statusPtr,&((*output)->poles),numPoles),
 	stat);
 
   /* Normal exit */

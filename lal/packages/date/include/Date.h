@@ -155,17 +155,17 @@ LALDate;
 /*
  * 9. Functions Declarations (i.e., prototypes).
  */
-void JulianDay (Status*, INT4*, const LALDate*);
-void ModJulianDay(Status*, REAL8*, const LALDate*);
-void JulianDate(Status*, REAL8*, const LALDate*);
-void ModJulianDate(Status*, REAL8*, const LALDate*);
-void UtoGPS(Status*, LIGOTimeGPS*, const LIGOTimeUnix*);
-void GPStoU(Status*, LIGOTimeUnix*, const LIGOTimeGPS*);
-void Utime(Status*, LALDate*, const LIGOTimeUnix*);
-void DateString(Status*, CHARVector*, const LALDate*);
-void GMST1(Status*, REAL8*, const LALDate*, INT4);
-void LMST1(Status*, REAL8*, const LALDate*, REAL8, INT4);
-void SecsToLALDate(Status*, LALDate*, REAL8);
+void LALJulianDay (LALStatus*, INT4*, const LALDate*);
+void LALModJulianDay(LALStatus*, REAL8*, const LALDate*);
+void LALJulianDate(LALStatus*, REAL8*, const LALDate*);
+void LALModJulianDate(LALStatus*, REAL8*, const LALDate*);
+void LALUtoGPS(LALStatus*, LIGOTimeGPS*, const LIGOTimeUnix*);
+void LALGPStoU(LALStatus*, LIGOTimeUnix*, const LIGOTimeGPS*);
+void LALUtime(LALStatus*, LALDate*, const LIGOTimeUnix*);
+void LALDateString(LALStatus*, CHARVector*, const LALDate*);
+void LALGMST1(LALStatus*, REAL8*, const LALDate*, INT4);
+void LALLMST1(LALStatus*, REAL8*, const LALDate*, REAL8, INT4);
+void LALSecsToLALDate(LALStatus*, LALDate*, REAL8);
 
 
 #ifdef  __cplusplus

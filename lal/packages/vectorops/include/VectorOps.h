@@ -44,122 +44,122 @@ NRCSID (VECTOROPSH, "$Id$");
 #define VECTOROPS_MSGESAME "Input/Output data vectors are the same"
 
 void
-CCVectorMultiply (
-    Status               *,
+LALCCVectorMultiply (
+    LALStatus               *,
     COMPLEX8Vector       *, 
     const COMPLEX8Vector *,
     const COMPLEX8Vector *
     );
 
 void
-CCVectorMultiplyConjugate (
-    Status               *,
+LALCCVectorMultiplyConjugate (
+    LALStatus               *,
     COMPLEX8Vector       *, 
     const COMPLEX8Vector *,
     const COMPLEX8Vector *
     );
 
 void
-CCVectorDivide (
-    Status               *,
+LALCCVectorDivide (
+    LALStatus               *,
     COMPLEX8Vector       *, 
     const COMPLEX8Vector *,
     const COMPLEX8Vector *
     );
 
 void
-CVectorAbs (
-    Status               *,
+LALCVectorAbs (
+    LALStatus               *,
     REAL4Vector          *,
     const COMPLEX8Vector *
     );
 
 void
-CVectorAngle (
-    Status               *,
+LALCVectorAngle (
+    LALStatus               *,
     REAL4Vector          *,
     const COMPLEX8Vector *
     );
 
 void
-UnwrapREAL4Angle (
-    Status               *,
+LALUnwrapREAL4Angle (
+    LALStatus               *,
     REAL4Vector          *,
     const REAL4Vector    *
     );
 
 void
-ZZVectorMultiply (
-    Status                *,
+LALZZVectorMultiply (
+    LALStatus                *,
     COMPLEX16Vector       *, 
     const COMPLEX16Vector *,
     const COMPLEX16Vector *
     );
 
 void
-ZZVectorMultiplyConjugate (
-    Status                *,
+LALZZVectorMultiplyConjugate (
+    LALStatus                *,
     COMPLEX16Vector       *, 
     const COMPLEX16Vector *,
     const COMPLEX16Vector *
     );
 
 void
-ZZVectorDivide (
-    Status                *,
+LALZZVectorDivide (
+    LALStatus                *,
     COMPLEX16Vector       *, 
     const COMPLEX16Vector *,
     const COMPLEX16Vector *
     );
 
 void
-ZVectorAbs (
-    Status                *,
+LALZVectorAbs (
+    LALStatus                *,
     REAL8Vector           *,
     const COMPLEX16Vector *
     );
 
 void
-ZVectorAngle (
-    Status                *,
+LALZVectorAngle (
+    LALStatus                *,
     REAL8Vector           *,
     const COMPLEX16Vector *
     );
 
 void
-UnwrapREAL8Angle (
-    Status               *,
+LALUnwrapREAL8Angle (
+    LALStatus               *,
     REAL8Vector          *,
     const REAL8Vector    *
     );
 
 void
-SCVectorMultiply(
-    Status               *,
+LALSCVectorMultiply(
+    LALStatus               *,
     COMPLEX8Vector       *,
     const REAL4Vector    *,
     const COMPLEX8Vector *
     );
 
 void
-SSVectorMultiply(
-    Status               *,
+LALSSVectorMultiply(
+    LALStatus               *,
     REAL4Vector          *,
     const REAL4Vector    *,
     const REAL4Vector    *
     );
 
 void
-DZVectorMultiply(
-    Status                *,
+LALDZVectorMultiply(
+    LALStatus                *,
     COMPLEX16Vector       *,
     const REAL8Vector     *,
     const COMPLEX16Vector *
     );
 
 void
-DDVectorMultiply(
-    Status               *,
+LALDDVectorMultiply(
+    LALStatus               *,
     REAL8Vector          *,
     const REAL8Vector    *,
     const REAL8Vector    *

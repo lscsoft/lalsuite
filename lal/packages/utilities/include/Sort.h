@@ -67,25 +67,25 @@ status & status                      & Explanation                      \\
 /* <lalLaTeX>
 \newpage\input{HeapSortC}
 </lalLaTeX> */
-void SHeapSort(Status      *stat,
+void LALSHeapSort(LALStatus      *stat,
 	       REAL4Vector *vector);
 
-void SHeapIndex(Status      *stat,
+void LALSHeapIndex(LALStatus      *stat,
 		INT4Vector  *index,
 		REAL4Vector *vector);
 
-void SHeapRank(Status      *stat,
+void LALSHeapRank(LALStatus      *stat,
 	       INT4Vector  *rank,
 	       REAL4Vector *vector);
 
-void DHeapSort(Status      *stat,
+void LALDHeapSort(LALStatus      *stat,
 	       REAL8Vector *vector);
 
-void DHeapIndex(Status      *stat,
+void LALDHeapIndex(LALStatus      *stat,
 		INT4Vector  *index,
 		REAL8Vector *vector);
 
-void DHeapRank(Status      *stat,
+void LALDHeapRank(LALStatus      *stat,
 	       INT4Vector  *rank,
 	       REAL8Vector *vector);
 

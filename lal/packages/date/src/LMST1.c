@@ -10,12 +10,12 @@
  *
  * SYNOPSIS
  *
- * GMST1(): Returns GMST1 for given date-time
- * LMST1(): Returns LMST1 given date-time, and longitude
+ * LALGMST1(): Returns LALGMST1 for given date-time
+ * LALLMST1(): Returns LALLMST1 given date-time, and longitude
  * 
  * DESCRIPTION
  *
- * GMST1():
+ * LALGMST1():
  *      Inputs: LALDate *date      -- date-time to compute GMST1
  *              INT4    outunits   -- units requested:
  *                                    MST_SEC - seconds
@@ -23,9 +23,9 @@
  *                                    MST_DEG - degrees
  *                                    MST_RAD - radians
  *
- *      Outputs: REAL8  *gmst      -- GMST1 in units requested
+ *      Outputs: REAL8  *gmst      -- LALGMST1 in units requested
  *
- * LMST1():
+ * LALLMST1():
  *      Inputs: LALDate *date      -- date-time to compute GMST1
  *              REAL8   longitude  -- longitude (in decimal degrees East)
  *              INT4    outunits   -- units requested:
@@ -34,7 +34,7 @@
  *                                    MST_DEG - degrees
  *                                    MST_RAD - radians
  *
- *      Outputs: REAL8  *lmst      -- GMST1 in units requested
+ *      Outputs: REAL8  *lmst      -- LALGMST1 in units requested
  *
  * 
  * DIAGNOSTICS 
@@ -42,16 +42,16 @@
  * here. More complete descriptions are found in documentation.)
  *
  * CALLS
- *    GMST1():  JulianDate()
- *    LMST1():  GMST1()
+ *    LALGMST1():  LALJulianDate()
+ *    LALLMST1():  LALGMST1()
  * 
  * NOTES
- * GMST1 is from NOVAS - C Version 2.0.1 (10 Dec 99): Naval Observatory
+ * LALGMST1 is from NOVAS - C Version 2.0.1 (10 Dec 99): Naval Observatory
  * Vector Astrometry Subroutines. See http://aa.usno.navy.mil/AA/
  *
  * The basic formula is from the Explanatory Supplement to the Astronomical
  * Almanac, 1992, Ch. 2, Sec. 24, and also Section B of the Almanac. The
- * formula computes GMST1 for 0h UT1.  To compute GMST1 for other times, a
+ * formula computes LALGMST1 for 0h UT1.  To compute LALGMST1 for other times, a
  * simple linear interpolation is done.
  * 
  *----------------------------------------------------------------------- */
@@ -66,13 +66,13 @@ NRCSID (LMST1C, "$Id$");
 
 
 /*
- * Compute GMST1 in requested units given date UTC.
+ * Compute LALGMST1 in requested units given date UTC.
  * Use algorithm as coded in NOVAS-C Version 2.0.1 (10 Dec 99)
  *   Naval Observatory Vector Astrometry Subroutines
  *  C Version
  */
 void
-GMST1 (Status        *status,
+LALGMST1 (LALStatus        *status,
        REAL8         *gmst,
        const LALDate *date,
        INT4           outunits)
@@ -89,7 +89,7 @@ GMST1 (Status        *status,
     const REAL8      d =    8640184.812866;
     const REAL8      e = 3155760000.0;
 
-    INITSTATUS (status, "GMST1", LMST1C);
+    INITSTATUS (status, "LALGMST1", LMST1C);
 
     /*
      * Check pointer to input variables
@@ -104,9 +104,9 @@ GMST1 (Status        *status,
             GMST1_ENULLOUTPUT, GMST1_MSGENULLOUTPUT);
 
     /*
-     * Compute GMST1 for 0h UT1 on given date in seconds since J2000.0 
+     * Compute LALGMST1 for 0h UT1 on given date in seconds since J2000.0 
      */
-    JulianDate(status, &jdate, date);
+    LALJulianDate(status, &jdate, date);
     jdate -= J2000_0;
     tmp    = (INT4)jdate;  /* get the integral part of jdate */
     jd_hi  = (REAL8)tmp;
@@ -148,15 +148,15 @@ GMST1 (Status        *status,
     }
 
     RETURN (status);
-} /* END GMST1() */
+} /* END LALGMST1() */
 
 
 
 /*
- * Compute LMST1 in requested units given date-time, and longitude in degrees
+ * Compute LALLMST1 in requested units given date-time, and longitude in degrees
  */
 void
-LMST1 (Status        *status,
+LALLMST1 (LALStatus        *status,
        REAL8         *lmst,
        const LALDate *date,
        REAL8          longitude,
@@ -165,7 +165,7 @@ LMST1 (Status        *status,
     REAL8 gmst;
 	REAL8 day;
 
-    INITSTATUS (status, "LMST1", LMST1C);
+    INITSTATUS (status, "LALLMST1", LMST1C);
 
     /*
      * Check pointer to input variables
@@ -180,11 +180,11 @@ LMST1 (Status        *status,
             LMST1_ENULLOUTPUT, LMST1_MSGENULLOUTPUT);
 
     /*
-     * Compute LMST1 in seconds since J2000.0
+     * Compute LALLMST1 in seconds since J2000.0
      */
 
-    /* get GMST1 in seconds */
-    GMST1(status, &gmst, date, outunits);
+    /* get LALGMST1 in seconds */
+    LALGMST1(status, &gmst, date, outunits);
 
     /* convert longitude to appropriate units of sidereal time */
     switch (outunits)
@@ -214,4 +214,4 @@ LMST1 (Status        *status,
         *lmst += day;
 
     RETURN (status);
-} /* END LMST1() */
+} /* END LALLMST1() */

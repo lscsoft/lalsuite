@@ -132,43 +132,43 @@ InspiralEvent;
 
 
 void
-InitializeExchange (
-    Status      *status,
+LALInitializeExchange (
+    LALStatus      *status,
     ExchParams **exchParamsOut,
     ExchParams  *exchParamsInp,
     INT4         myProcNum
     );
 
 void
-FinalizeExchange (
-    Status      *status,
+LALFinalizeExchange (
+    LALStatus      *status,
     ExchParams **exchParams
     );
 
 void
-ExchangeDataSegment (
-    Status      *status,
+LALExchangeDataSegment (
+    LALStatus      *status,
     DataSegment *segment,
     ExchParams  *exchParams
     );
 
 void
-ExchangeInspiralBankIn (
-    Status         *status,
+LALExchangeInspiralBankIn (
+    LALStatus         *status,
     InspiralBankIn *bankIn,
     ExchParams     *exchParams
     );
 
 void
-ExchangeInspiralTemplate (
-    Status           *status,
+LALExchangeInspiralTemplate (
+    LALStatus           *status,
     InspiralTemplate *tmplt,
     ExchParams       *exchParams
     );
 
 void
-ExchangeInspiralEvent (
-    Status        *status,
+LALExchangeInspiralEvent (
+    LALStatus        *status,
     InspiralEvent *event,
     ExchParams    *exchParams
     );

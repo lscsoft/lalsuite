@@ -62,16 +62,16 @@ tagDInterpolatePar
 DInterpolatePar;
 
 void
-SPolynomialInterpolation (
-    Status          *status,
+LALSPolynomialInterpolation (
+    LALStatus          *status,
     SInterpolateOut *output,
     REAL4            target,
     SInterpolatePar *params
     );
 
 void
-DPolynomialInterpolation (
-    Status          *status,
+LALDPolynomialInterpolation (
+    LALStatus          *status,
     DInterpolateOut *output,
     REAL8            target,
     DInterpolatePar *params

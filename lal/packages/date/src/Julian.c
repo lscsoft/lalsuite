@@ -15,30 +15,30 @@
  * ModJulianDate
  * 
  * SYNOPSIS 
- *     JulianDay(): Returns Julian Day Number for a given Gregorian date UTC
- *     ModJulianDay(): Returns Modified Julian Day Number for given
+ *     LALJulianDay(): Returns Julian Day Number for a given Gregorian date UTC
+ *     LALModJulianDay(): Returns Modified Julian Day Number for given
  *                     Gregorian date UTC, i.e. Julian Day - 2400000.5
- *     JulianDate(): Returns Julian Date in decimal days
- *     ModJulianDate(): Returns Modified Julian Date in decimal days
+ *     LALJulianDate(): Returns Julian Date in decimal days
+ *     LALModJulianDate(): Returns Modified Julian Date in decimal days
  *
  *
  * DESCRIPTION
- * JulianDay()
+ * LALJulianDay()
  *       Inputs:  LALDate *date  -- Gregorian date (UTC)
  *
  *       Outputs: INT4 *jDay     -- Julian Day number
  *
- * ModJulianDay()
+ * LALModJulianDay()
  *       Inputs:  LALDate *date   -- Gregorian date (UTC)
  *
  *       Outputs: REAL8 *modJDay  -- modified Julian day
  *
- * JulianDate()
+ * LALJulianDate()
  *       Inputs:  LALDate *date -- Gregorian date (UTC)
  *
  *       Outputs: REAL8 *jDate  -- Julian Date in decimal days
  *
- * ModJulianDate()
+ * LALModJulianDate()
  *       Inputs:  LALDate *date   -- Gregorian date (UTC)
  *
  *       Outputs: REAL8 *modJDate -- Modified Julian Date in decimal days 
@@ -48,10 +48,10 @@
  * here. More complete descriptions are found in documentation.)
  *
  * CALLS
- * JulianDay(): (none)
- * ModJulianDay(): JulianDay()
- * JulianDate(): JulianDay()
- * ModJulianDate(): JulianDate()
+ * LALJulianDay(): (none)
+ * LALModJulianDay(): LALJulianDay()
+ * LALJulianDate(): LALJulianDay()
+ * LALModJulianDate(): LALJulianDate()
  * 
  * NOTES
  * (Other notes)
@@ -118,13 +118,13 @@ NRCSID (JULIANC, "$Id$");
  * Compute Julian Day for given Gregorian date
  */
 void
-JulianDay (Status        *status,
+LALJulianDay (LALStatus        *status,
            INT4          *jDay,
            const LALDate *date)
 {
     INT4 y, m, d;
 
-    INITSTATUS (status, "JulianDay", JULIANC);
+    INITSTATUS (status, "LALJulianDay", JULIANC);
 
     /*
      * Check pointer to input variable
@@ -170,7 +170,7 @@ JulianDay (Status        *status,
                    + d + 1721014);
 
     RETURN (status);
-} /* END JulianDay() */
+} /* END LALJulianDay() */
 
 
 
@@ -178,13 +178,13 @@ JulianDay (Status        *status,
  * Compute Modified Julian Day for given Gregorian date
  */
 void
-ModJulianDay (Status        *status,
+LALModJulianDay (LALStatus        *status,
               REAL8         *modJDay,
               const LALDate *date)
 {
     INT4 jd;
 
-    INITSTATUS (status, "ModJulianDay", JULIANC);
+    INITSTATUS (status, "LALModJulianDay", JULIANC);
     
     /*
      * Check pointer to input variable
@@ -198,12 +198,12 @@ ModJulianDay (Status        *status,
     ASSERT (modJDay   != (REAL8 *)NULL, status,
             JULIAN_ENULLOUTPUT, JULIAN_MSGENULLOUTPUT);
 
-    JulianDay(status, &jd, date);
+    LALJulianDay(status, &jd, date);
 
     *modJDay = (REAL8)jd - MJDREF;
 
     RETURN (status);
-} /* END ModJulianDay() */
+} /* END LALModJulianDay() */
 
 
 
@@ -211,7 +211,7 @@ ModJulianDay (Status        *status,
  * Compute Julian Date for given Gregorian date and UTC time
  */
 void
-JulianDate (Status        *status,
+LALJulianDate (LALStatus        *status,
             REAL8         *jDateOut,
             const LALDate *date)
 {
@@ -220,7 +220,7 @@ JulianDate (Status        *status,
     INT4  jday;
     REAL8 jdate;
 
-    INITSTATUS(status, "JulianDate", JULIANC);
+    INITSTATUS(status, "LALJulianDate", JULIANC);
 
     /*
      * Check pointer to input variable
@@ -245,7 +245,7 @@ JulianDate (Status        *status,
     /*
      * Get Julian Day number
      */
-    JulianDay(status, &jday, date);
+    LALJulianDay(status, &jday, date);
 
     /*
      * Convert to fractions of a day
@@ -258,7 +258,7 @@ JulianDate (Status        *status,
     *jDateOut = jdate;
 
     RETURN (status);
-} /* END JulianDate() */
+} /* END LALJulianDate() */
 
 
 
@@ -266,14 +266,14 @@ JulianDate (Status        *status,
  * Compute Modified Julian Date for given Gregorian date and UTC time
  */
 void
-ModJulianDate (Status        *status,
+LALModJulianDate (LALStatus        *status,
                REAL8         *modJDate,
                const LALDate *date)
 {
     INT4  hr, min, sec;
     REAL8 jdate;
 
-    INITSTATUS(status, "ModJulianDate", JULIANC);
+    INITSTATUS(status, "LALModJulianDate", JULIANC);
 
     /*
      * Check pointer to input variable
@@ -297,12 +297,12 @@ ModJulianDate (Status        *status,
     /*
      * Get Julian Date, and modify it
      */
-    JulianDate(status, &jdate, date);
+    LALJulianDate(status, &jdate, date);
     jdate -= MJDREF;
     
     *modJDate = jdate;
 
     RETURN (status);
-} /* END ModJulianDate() */
+} /* END LALModJulianDate() */
 
 

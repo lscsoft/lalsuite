@@ -11,7 +11,7 @@ ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')')
 ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`ATYPE',`format(`%sArray',TYPE)')
-define(`FUNC',`format(`%sDestroyArray',TYPECODE)')
+define(`FUNC',`format(`LAL%sDestroyArray',TYPECODE)')
 
 /* <lalVerbatim file="ArrayFactoriesD"> */
 void FUNC ( Status *status, ATYPE **array )
@@ -25,7 +25,7 @@ void FUNC ( Status *status, ATYPE **array )
 
   /* Free allocated storage */
 
-  U4DestroyVector (status->statusPtr, &(*array)->dimLength);
+  LALU4DestroyVector (status->statusPtr, &(*array)->dimLength);
   CHECKSTATUSPTR (status);
 
   LALFree ((*array)->data); /* free allocated data */

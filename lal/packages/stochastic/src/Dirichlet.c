@@ -13,7 +13,7 @@
  *
  * SYNOPSIS
  *
- * void Dirichlet( Status*, REAL4Vector*, DirichletParameters* )
+ * void LALDirichlet( LALStatus*, REAL4Vector*, DirichletParameters* )
  *
  * typedef struct tagDirichletParameters{
  *   INT4   n; 
@@ -22,12 +22,12 @@
  * } DirichletParameters; 
  *
  * DESCRIPTION
- * Calculates the values of the Dirichlet kernel for a discrete set of
+ * Calculates the values of the LALDirichlet kernel for a discrete set of
  * of values starting at x = 0.
  *
  * DIAGNOSTICS
  * null pointer to input parameters
- * Dirichlet parameter N <= 0
+ * LALDirichlet parameter N <= 0
  * specified length of output vector <= 0
  * spacing of x values <= 0
  * null pointer to output vector 
@@ -49,13 +49,13 @@
 NRCSID (DIRICHLETC, "$Id$");
 
 void 
-Dirichlet(Status*              pstatus, 
+LALDirichlet(LALStatus*              pstatus, 
 	  REAL4Vector*         poutput, 
 	  DirichletParameters* pparameters )
 
 {
   INT4  i;
-  INT4  n;	   /* Dirichlet parameter N */
+  INT4  n;	   /* LALDirichlet parameter N */
   INT4  length;	   /* specified length of output vector */
   REAL8 deltaX;    /* spacing of x values */
   REAL8 x;  
@@ -63,15 +63,15 @@ Dirichlet(Status*              pstatus,
   REAL8 bot;
 
   /* initialize status structure */
-  INITSTATUS( pstatus, "Dirichlet", DIRICHLETC );
+  INITSTATUS( pstatus, "LALDirichlet", DIRICHLETC );
 
   /* check that pointer to input parameters is not null */
   ASSERT(pparameters != NULL,pstatus,DIRICHLET_ENULLIP,DIRICHLET_MSGENULLIP);
 	
-  /* check that Dirichlet parameter N is > 0 */
+  /* check that LALDirichlet parameter N is > 0 */
   ASSERT(pparameters->n > 0,pstatus,DIRICHLET_ENVALUE,DIRICHLET_MSGENVALUE);
 
-  /* assign valid data to Dirichlet parameter N */
+  /* assign valid data to LALDirichlet parameter N */
   n=pparameters->n;
 
   /* check that specified length of output vector is > 0 */
@@ -100,7 +100,7 @@ Dirichlet(Status*              pstatus,
 
   /* everything okay here ----------------------------------------------*/
 
-  /* calculate the values of the Dirichlet kernel D_N(x) */
+  /* calculate the values of the LALDirichlet kernel D_N(x) */
 
   poutput->data[0] = 1;  /* D_N(0)=1 */
 

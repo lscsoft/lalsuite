@@ -1,7 +1,7 @@
 #include "LALStdlib.h"
 #include "Date.h"
 
-INT4 debuglevel = 2;
+INT4 LALDebugLevel = 2;
 
 NRCSID (TESTJULIANDAYC, "$Id$");
 
@@ -10,7 +10,7 @@ main(int argc, char *argv[])
 {
     time_t        now;
     LALUnixDate  *ltime;
-    Status        status = {0};
+    LALStatus        status = {0};
     LALDate       date;
     INT4          julian_day;
     REAL8         mod_julian_day;
@@ -28,7 +28,7 @@ main(int argc, char *argv[])
     }
 
     if (argc == 2)
-        debuglevel = atoi(argv[1]);
+        LALDebugLevel = atoi(argv[1]);
 
     /*
      * Get current local time
@@ -73,17 +73,17 @@ main(int argc, char *argv[])
     printf("\n");
     printf("Find Julian Day/Date for current date and time:\n");
     
-    JulianDay(&status, &julian_day, &date);
+    LALJulianDay(&status, &julian_day, &date);
     printf("\n");
     printf("\tJulian Day Number          = %9d\n", julian_day);
 
-    ModJulianDay(&status, &mod_julian_day, &date);
+    LALModJulianDay(&status, &mod_julian_day, &date);
     printf("\tModified Julian Day Number = %13.3f\n", mod_julian_day);
     
-    JulianDate(&status, &julian_date, &date);
+    LALJulianDate(&status, &julian_date, &date);
     printf("\tJulian Date                = %13.3f\n", julian_date);
 
-    ModJulianDate(&status, &julian_date, &date);
+    LALModJulianDate(&status, &julian_date, &date);
     printf("\tModified Julian Date       = %13.3f\n", julian_date);
 
     
@@ -104,17 +104,17 @@ main(int argc, char *argv[])
     date.unixDate.tm_yday = 0;
     date.unixDate.tm_isdst = 0;
     
-    JulianDay(&status, &julian_day, &date);
+    LALJulianDay(&status, &julian_day, &date);
     printf("\n");
     printf("\tJulian Day Number          = %8d\n", julian_day);
 
-    ModJulianDay(&status, &mod_julian_day, &date);
+    LALModJulianDay(&status, &mod_julian_day, &date);
     printf("\tModified Julian Day Number = %10.1f\n", mod_julian_day);
     
-    JulianDate(&status, &julian_date, &date);
+    LALJulianDate(&status, &julian_date, &date);
     printf("\tJulian Date                = %10.1f\n", julian_date);
 
-    ModJulianDate(&status, &julian_date, &date);
+    LALModJulianDate(&status, &julian_date, &date);
     printf("\tModified Julian Date       = %10.1f\n", julian_date);
 
     /* */
@@ -131,23 +131,23 @@ main(int argc, char *argv[])
     date.unixDate.tm_yday = 0;
     date.unixDate.tm_isdst = 0;
     
-    JulianDay(&status, &julian_day, &date);
+    LALJulianDay(&status, &julian_day, &date);
     printf("\n");
     printf("\tJulian Day Number          = %8d\n", julian_day);
 
-    ModJulianDay(&status, &mod_julian_day, &date);
+    LALModJulianDay(&status, &mod_julian_day, &date);
     printf("\tModified Julian Day Number = %10.1f\n", mod_julian_day);
     
-    JulianDate(&status, &julian_date, &date);
+    LALJulianDate(&status, &julian_date, &date);
     printf("\tJulian Date                = %10.1f\n", julian_date);
 
-    ModJulianDate(&status, &julian_date, &date);
+    LALModJulianDate(&status, &julian_date, &date);
     printf("\tModified Julian Date       = %10.1f\n", julian_date);
 
     /* */
     printf("\n");
     printf("Find Julian Day/Date for 1800-Jan-01 11h 00m 00s:\n");
-    printf("(this should produce errors at debuglevel > 0)\n");
+    printf("(this should produce errors at LALDebugLevel > 0)\n");
 
     date.unixDate.tm_sec  = 0;
     date.unixDate.tm_min  = 0;
@@ -159,17 +159,17 @@ main(int argc, char *argv[])
     date.unixDate.tm_yday = 0;
     date.unixDate.tm_isdst = 0;
     
-    JulianDay(&status, &julian_day, &date);
+    LALJulianDay(&status, &julian_day, &date);
     printf("\n");
     printf("\tJulian Day Number          = %8d\n", julian_day);
 
-    ModJulianDay(&status, &mod_julian_day, &date);
+    LALModJulianDay(&status, &mod_julian_day, &date);
     printf("\tModified Julian Day Number = %10.1f\n", mod_julian_day);
     
-    JulianDate(&status, &julian_date, &date);
+    LALJulianDate(&status, &julian_date, &date);
     printf("\tJulian Date                = %10.1f\n", julian_date);
 
-    ModJulianDate(&status, &julian_date, &date);
+    LALModJulianDate(&status, &julian_date, &date);
     printf("\tModified Julian Date       = %10.1f\n", julian_date);
 
     /* */
@@ -188,17 +188,17 @@ main(int argc, char *argv[])
     date.unixDate.tm_yday = 0;
     date.unixDate.tm_isdst = 0;
     
-    JulianDay(&status, &julian_day, &date);
+    LALJulianDay(&status, &julian_day, &date);
     printf("\n");
     printf("\tJulian Day Number          = %8d\n", julian_day);
 
-    ModJulianDay(&status, &mod_julian_day, &date);
+    LALModJulianDay(&status, &mod_julian_day, &date);
     printf("\tModified Julian Day Number = %10.1f\n", mod_julian_day);
     
-    JulianDate(&status, &julian_date, &date);
+    LALJulianDate(&status, &julian_date, &date);
     printf("\tJulian Date                = %10.1f\n", julian_date);
 
-    ModJulianDate(&status, &julian_date, &date);
+    LALModJulianDate(&status, &julian_date, &date);
     printf("\tModified Julian Date       = %10.1f\n", julian_date);
 
     return 0;

@@ -107,160 +107,160 @@ MPIMessage;
 
 
 void
-MPIExportEnvironment (
-    Status     *status,
+LALMPIExportEnvironment (
+    LALStatus     *status,
     const CHAR *env,
     INT4        myId
     );
 
 void
-MPIDebug (
-    Status         *status,
+LALMPIDebug (
+    LALStatus         *status,
     MPIDebugParams *params
     );
 
 void
-MPIKillScript (
-    Status  *status,
+LALMPIKillScript (
+    LALStatus  *status,
     MPIId   *id
     );
 
 
 void
-MPISendMsg (
-    Status     *status,
+LALMPISendMsg (
+    LALStatus     *status,
     MPIMessage *msg,
     INT4        dest
     );
 
 void
-MPIRecvMsg (
-    Status     *status,
+LALMPIRecvMsg (
+    LALStatus     *status,
     MPIMessage *msg
     );
 
 void
-MPISendCHARVector (
-    Status     *status,
+LALMPISendCHARVector (
+    LALStatus     *status,
     CHARVector *vector,
     INT4        dest
     );
 
 void
-MPIRecvCHARVector (
-    Status     *status,
+LALMPIRecvCHARVector (
+    LALStatus     *status,
     CHARVector *vector,
     INT4        source
     );
 
 void
-MPISendINT2Vector (
-    Status     *status,
+LALMPISendINT2Vector (
+    LALStatus     *status,
     INT2Vector *vector,
     INT4        dest
     );
 
 void
-MPIRecvINT2Vector (
-    Status     *status,
+LALMPIRecvINT2Vector (
+    LALStatus     *status,
     INT2Vector *vector,
     INT4        source
     );
 
 void
-MPISendREAL4Vector (
-    Status      *status,
+LALMPISendREAL4Vector (
+    LALStatus      *status,
     REAL4Vector *vector,
     INT4         dest
     );
 
 void
-MPIRecvREAL4Vector (
-    Status      *status,
+LALMPIRecvREAL4Vector (
+    LALStatus      *status,
     REAL4Vector *vector,
     INT4         source
     );
 
 void
-MPISendCOMPLEX8Vector (
-    Status         *status,
+LALMPISendCOMPLEX8Vector (
+    LALStatus         *status,
     COMPLEX8Vector *vector,
     INT4            dest
     );
 
 void
-MPIRecvCOMPLEX8Vector (
-    Status         *status,
+LALMPIRecvCOMPLEX8Vector (
+    LALStatus         *status,
     COMPLEX8Vector *vector,
     INT4            source
     );
 
 void
-MPISendINT2TimeSeries (
-    Status         *status,
+LALMPISendINT2TimeSeries (
+    LALStatus         *status,
     INT2TimeSeries *series,
     INT4            dest
     );
 
 void
-MPIRecvINT2TimeSeries (
-    Status         *status,
+LALMPIRecvINT2TimeSeries (
+    LALStatus         *status,
     INT2TimeSeries *series,
     INT4            source
     );
 
 void
-MPISendREAL4TimeSeries (
-    Status          *status,
+LALMPISendREAL4TimeSeries (
+    LALStatus          *status,
     REAL4TimeSeries *series,
     INT4             dest
     );
 
 void
-MPIRecvREAL4TimeSeries (
-    Status          *status,
+LALMPIRecvREAL4TimeSeries (
+    LALStatus          *status,
     REAL4TimeSeries *series,
     INT4             source
     );
 
 void
-MPISendCOMPLEX8TimeSeries (
-    Status             *status,
+LALMPISendCOMPLEX8TimeSeries (
+    LALStatus             *status,
     COMPLEX8TimeSeries *series,
     INT4                dest
     );
 
 void
-MPIRecvCOMPLEX8TimeSeries (
-    Status             *status,
+LALMPIRecvCOMPLEX8TimeSeries (
+    LALStatus             *status,
     COMPLEX8TimeSeries *series,
     INT4                source
     );
 
 void
-MPISendREAL4FrequencySeries (
-    Status               *status,
+LALMPISendREAL4FrequencySeries (
+    LALStatus               *status,
     REAL4FrequencySeries *series,
     INT4                  dest
     );
 
 void
-MPIRecvREAL4FrequencySeries (
-    Status               *status,
+LALMPIRecvREAL4FrequencySeries (
+    LALStatus               *status,
     REAL4FrequencySeries *series,
     INT4                  source
     );
 
 void
-MPISendCOMPLEX8FrequencySeries (
-    Status                  *status,
+LALMPISendCOMPLEX8FrequencySeries (
+    LALStatus                  *status,
     COMPLEX8FrequencySeries *series,
     INT4                     dest
     );
 
 void
-MPIRecvCOMPLEX8FrequencySeries (
-    Status                  *status,
+LALMPIRecvCOMPLEX8FrequencySeries (
+    LALStatus                  *status,
     COMPLEX8FrequencySeries *series,
     INT4                     source
     );

@@ -36,7 +36,7 @@ NRCSID (MAIN, "$Id$");
 extern char *optarg;
 extern int   optind;
 
-int   debuglevel = 0;
+int   LALDebugLevel = 0;
 int   verbose    = 0;
 int   output     = 0;
 char *framePath  = NULL;
@@ -48,10 +48,10 @@ static void
 ParseOptions (int argc, char *argv[]);
 
 static void
-TestStatus (Status *status, const char *expectedCodes, int exitCode);
+TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
 static void
-ClearStatus (Status *status);
+ClearStatus (LALStatus *status);
 
 int
 main (int argc, char *argv[])
@@ -60,7 +60,7 @@ main (int argc, char *argv[])
   const INT4 numSpec   = 8;
   const INT4 numSegs   = 10;
 
-  static Status            status;
+  static LALStatus            status;
   FrameData               *frameData = NULL;
   INT2TimeSeries           data;
   COMPLEX8FrequencySeries  response;
@@ -83,18 +83,18 @@ main (int argc, char *argv[])
   }
 
   data.data = NULL;
-  I2CreateVector (&status, &data.data, numPoints);
+  LALI2CreateVector (&status, &data.data, numPoints);
   TestStatus (&status, "0", 1);
 
   response.data = NULL;
-  CCreateVector (&status, &response.data, numPoints/2 + 1);
+  LALCCreateVector (&status, &response.data, numPoints/2 + 1);
   TestStatus (&status, "0", 1);
 
-  InitializeFrameData (&status, &frameData, framePath);
+  LALInitializeFrameData (&status, &frameData, framePath);
   TestStatus (&status, CODES(0 FRAMEDATA_EREAD), 1);
 
   spectrum.data = NULL;
-  CreateVector (&status, &spectrum.data, numPoints/2 + 1);
+  LALCreateVector (&status, &spectrum.data, numPoints/2 + 1);
   TestStatus (&status, "0", 1);
 
   specParm.numSpec    = numSpec;
@@ -102,10 +102,10 @@ main (int argc, char *argv[])
   specParm.windowType = Welch;
   specParm.plan       = NULL;
 
-  EstimateFwdRealFFTPlan (&status, &specParm.plan, numPoints);
+  LALEstimateFwdRealFFTPlan (&status, &specParm.plan, numPoints);
   TestStatus (&status, "0", 1);
 
-  CreateSpectrumBuffer (&status, &specBuff, &specParm);
+  LALCreateSpectrumBuffer (&status, &specBuff, &specParm);
   TestStatus (&status, "0", 1);
 
   for (seg = 0; seg < numSegs; ++seg)
@@ -126,7 +126,7 @@ main (int argc, char *argv[])
         dumvec.data     = NULL;             /* seek mode */
         dummy.data      = &dumvec;
 
-        GetFrameData (&status, &dummy, frameData);
+        LALGetFrameData (&status, &dummy, frameData);
         TestStatus (&status, "0", 1);
         if (frameData->endOfData)
         {
@@ -141,7 +141,7 @@ main (int argc, char *argv[])
         }
       }
 
-      GetFrameData (&status, &data, frameData);
+      LALGetFrameData (&status, &data, frameData);
       TestStatus (&status, "0", 1);
       if (frameData->endOfData)
       {
@@ -158,7 +158,7 @@ main (int argc, char *argv[])
 
     if (newCal)
     {
-      GetFrameDataResponse (&status, &response, frameData);
+      LALGetFrameDataResponse (&status, &response, frameData);
       TestStatus (&status, "0", 1);
 
       /* print calibration info */
@@ -206,7 +206,7 @@ main (int argc, char *argv[])
       fclose (fp);
     }
 
-    AddSpectrum (&status, specBuff, &data);
+    LALAddSpectrum (&status, specBuff, &data);
     TestStatus (&status, "0", 1);
 
     fprintf (stderr, "\n");
@@ -214,7 +214,7 @@ main (int argc, char *argv[])
 
 exit:
 
-  AverageSpectrum (&status, &spectrum, specBuff);
+  LALAverageSpectrum (&status, &spectrum, specBuff);
   TestStatus (&status, CODES(0 SPECBUFFER_ENONE), 1);
 
   if (output)
@@ -230,22 +230,22 @@ exit:
     fclose (fp);
   }
 
-  DestroyVector (&status, &spectrum.data);
+  LALDestroyVector (&status, &spectrum.data);
   TestStatus (&status, "0", 1);
 
-  DestroySpectrumBuffer (&status, &specBuff);
+  LALDestroySpectrumBuffer (&status, &specBuff);
   TestStatus (&status, "0", 1);
 
-  DestroyRealFFTPlan (&status, &specParm.plan);
+  LALDestroyRealFFTPlan (&status, &specParm.plan);
   TestStatus (&status, "0", 1);
 
-  FinalizeFrameData (&status, &frameData);
+  LALFinalizeFrameData (&status, &frameData);
   TestStatus (&status, "0", 1);
 
-  I2DestroyVector (&status, &data.data);
+  LALI2DestroyVector (&status, &data.data);
   TestStatus (&status, "0", 1);
 
-  CDestroyVector (&status, &response.data);
+  LALCDestroyVector (&status, &response.data);
   TestStatus (&status, "0", 1);
 
   LALCheckMemoryLeaks ();
@@ -264,7 +264,7 @@ exit:
  *
  */
 static void
-TestStatus (Status *status, const char *ignored, int exitcode)
+TestStatus (LALStatus *status, const char *ignored, int exitcode)
 {
   char  str[64];
   char *tok;
@@ -310,7 +310,7 @@ TestStatus (Status *status, const char *ignored, int exitcode)
  *
  */
 void
-ClearStatus (Status *status)
+ClearStatus (LALStatus *status)
 {
   if (status->statusPtr)
   {
@@ -334,7 +334,7 @@ Usage (const char *program, int exitcode)
   fprintf (stderr, "  -h         print this message\n");
   fprintf (stderr, "  -q         quiet: run silently\n");
   fprintf (stderr, "  -v         verbose: print extra information\n");
-  fprintf (stderr, "  -d level   set debuglevel to level\n");
+  fprintf (stderr, "  -d level   set LALDebugLevel to level\n");
   fprintf (stderr, "  -o         output framedata to files\n");
   fprintf (stderr, "  -f dir     set frame data path to dir\n");
   fprintf (stderr, "             "
@@ -373,7 +373,7 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'd': /* set debug level */
-        debuglevel = atoi (optarg);
+        LALDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* verbose */

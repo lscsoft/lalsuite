@@ -5,7 +5,7 @@
 
 NRCSID (INSPIRALVELOCITYC, "$Id$"); 
 
-void InspiralVelocity(Status *status,
+void LALInspiralVelocity(LALStatus *status,
 		      REAL8 *v,
 		      TofVIn *ak)
 {
@@ -13,13 +13,13 @@ void InspiralVelocity(Status *status,
   void *funcParams;
 
 
-  INITSTATUS (status, "InspiralVelocity", INSPIRALVELOCITYC);
+  INITSTATUS (status, "LALInspiralVelocity", INSPIRALVELOCITYC);
   ATTATCHSTATUSPTR(status);
 
   ASSERT (v, status, INSPIRALVELOCITY_ENULL, INSPIRALVELOCITY_MSGENULL);
   ASSERT (ak, status, INSPIRALVELOCITY_ENULL, INSPIRALVELOCITY_MSGENULL);
 
-  rootIn.function = TofV;
+  rootIn.function = LALTofV;
   rootIn.xmax = ak->vlso;
   rootIn.xmin = ak->v0/2.;
   rootIn.xacc = 1.0e-8;
@@ -36,7 +36,7 @@ void InspiralVelocity(Status *status,
   }
 
 
-  DBisectionFindRoot(status->statusPtr, v, &rootIn, funcParams);
+  LALDBisectionFindRoot(status->statusPtr, v, &rootIn, funcParams);
   CHECKSTATUSPTR(status);
 
 

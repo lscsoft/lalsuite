@@ -13,8 +13,8 @@ Transforms the complex frequency coordinate of a ZPG filter.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{BilinearTransformCP}
-\index{\verb&WToZCOMPLEX8ZPGFilter()&}
-\index{\verb&WToZCOMPLEX16ZPGFilter()&}
+\index{\verb&LALWToZCOMPLEX8ZPGFilter()&}
+\index{\verb&LALWToZCOMPLEX16ZPGFilter()&}
 
 \subsubsection*{Description}
 
@@ -83,18 +83,18 @@ part of $10^{-12}$ instead of 0.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-I4CreateVector()
-SCreateVector()
-DCreateVector()
-CCreateVector()
-ZCreateVector()
-I4DestroyVector()
-SDestroyVector()
-DDestroyVector()
-CDestroyVector()
-ZDestroyVector()
-SHeapIndex()
-DHeapIndex()
+LALI4CreateVector()
+LALSCreateVector()
+LALDCreateVector()
+LALCCreateVector()
+LALZCreateVector()
+LALI4DestroyVector()
+LALSDestroyVector()
+LALDDestroyVector()
+LALCDestroyVector()
+LALZDestroyVector()
+LALSHeapIndex()
+LALDHeapIndex()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -114,7 +114,7 @@ NRCSID(BILINEARTRANSFORMC,"$Id$");
 
 
 /* <lalVerbatim file="BilinearTransformCP"> */
-void WToZCOMPLEX8ZPGFilter(Status            *stat,
+void LALWToZCOMPLEX8ZPGFilter(LALStatus            *stat,
 			   COMPLEX8ZPGFilter *filter)
 { /* </lalVerbatim> */
   INT4 i;        /* A counter. */
@@ -131,7 +131,7 @@ void WToZCOMPLEX8ZPGFilter(Status            *stat,
   REAL4Vector *absGain=NULL; /* Magnitudes of gain corrections. */
   INT4Vector *index=NULL;    /* Index array for sorting absGain. */
 
-  INITSTATUS(stat,"WToZCOMPLEX8ZPGFilter",BILINEARTRANSFORMC);
+  INITSTATUS(stat,"LALWToZCOMPLEX8ZPGFilter",BILINEARTRANSFORMC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure the filter pointer is non-null. */
@@ -182,12 +182,12 @@ void WToZCOMPLEX8ZPGFilter(Status            *stat,
       numPoles--;
 
   /* Create the vector of gain correction factors. */
-  TRY(CCreateVector(stat->statusPtr,&gain,filter->zeros->length+
+  TRY(LALCCreateVector(stat->statusPtr,&gain,filter->zeros->length+
 		    filter->poles->length),stat);
   g=gain->data;
 
   /* Create the new vector of zeros. */
-  TRY(CCreateVector(stat->statusPtr,&z,numZeros),stat);
+  TRY(LALCCreateVector(stat->statusPtr,&z,numZeros),stat);
   b=z->data;
   /* Transform existing zeros from w to z, except for those at w=-i,
      which are mapped to z=infinity.  At the same time, compute the
@@ -239,12 +239,12 @@ void WToZCOMPLEX8ZPGFilter(Status            *stat,
   }
   /* Replace the old filter zeros with the new ones. */
   if(filter->zeros->length>0)
-    TRY(CDestroyVector(stat->statusPtr,&(filter->zeros)),stat);
+    TRY(LALCDestroyVector(stat->statusPtr,&(filter->zeros)),stat);
   filter->zeros=z;
   z=NULL;
 
   /* Create the new vector of poles. */
-  TRY(CCreateVector(stat->statusPtr,&z,numPoles),stat);
+  TRY(LALCCreateVector(stat->statusPtr,&z,numPoles),stat);
   b=z->data;
   /* Transform existing poles from w to z, except for those at w=-i,
      which are mapped to z=infinity.  At the same time, compute the
@@ -296,21 +296,21 @@ void WToZCOMPLEX8ZPGFilter(Status            *stat,
   }
   /* Replace the old filter poles with the new ones. */
   if(filter->poles->length>0)
-    TRY(CDestroyVector(stat->statusPtr,&(filter->poles)),stat);
+    TRY(LALCDestroyVector(stat->statusPtr,&(filter->poles)),stat);
   filter->poles=z;
   z=NULL;
 
   /* To avoid numerical overflow when applying the gain correction
      factors, we should multiply alternately by large and small
      factors.  First, create a vector of the factors' magnitudes. */
-  TRY(SCreateVector(stat->statusPtr,&absGain,gain->length),stat);
-  TRY(CVectorAbs(stat->statusPtr,absGain,gain),stat);
+  TRY(LALSCreateVector(stat->statusPtr,&absGain,gain->length),stat);
+  TRY(LALCVectorAbs(stat->statusPtr,absGain,gain),stat);
 
   /* Now create an index vector that indexes the magnitudes from small
      to large, and free the magnitude vector. */
-  TRY(I4CreateVector(stat->statusPtr,&index,gain->length),stat);
-  TRY(SHeapIndex(stat->statusPtr,index,absGain),stat);
-  TRY(SDestroyVector(stat->statusPtr,&absGain),stat);
+  TRY(LALI4CreateVector(stat->statusPtr,&index,gain->length),stat);
+  TRY(LALSHeapIndex(stat->statusPtr,index,absGain),stat);
+  TRY(LALSDestroyVector(stat->statusPtr,&absGain),stat);
 
   /* Now multiply the gain alternately by small and large correction
      factors. */
@@ -341,15 +341,15 @@ void WToZCOMPLEX8ZPGFilter(Status            *stat,
   }
 
   /* Free remaining temporary vectors, and exit. */
-  TRY(CDestroyVector(stat->statusPtr,&gain),stat);
-  TRY(I4DestroyVector(stat->statusPtr,&index),stat);
+  TRY(LALCDestroyVector(stat->statusPtr,&gain),stat);
+  TRY(LALI4DestroyVector(stat->statusPtr,&index),stat);
   DETATCHSTATUSPTR(stat);
   RETURN(stat);
 }
 
 
 /* <lalVerbatim file="BilinearTransformCP"> */
-void WToZCOMPLEX16ZPGFilter(Status             *stat,
+void LALWToZCOMPLEX16ZPGFilter(LALStatus             *stat,
 			    COMPLEX16ZPGFilter *filter)
 { /* </lalVerbatim> */
   INT4 i;        /* A counter. */
@@ -366,7 +366,7 @@ void WToZCOMPLEX16ZPGFilter(Status             *stat,
   REAL8Vector *absGain=NULL;  /* Magnitudes of gain corrections. */
   INT4Vector *index=NULL;     /* Index array for sorting absGain. */
 
-  INITSTATUS(stat,"WToZCOMPLEX16ZPGFilter",BILINEARTRANSFORMC);
+  INITSTATUS(stat,"LALWToZCOMPLEX16ZPGFilter",BILINEARTRANSFORMC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure the filter pointer is non-null. */
@@ -417,12 +417,12 @@ void WToZCOMPLEX16ZPGFilter(Status             *stat,
       numPoles--;
 
   /* Create the vector of gain correction factors. */
-  TRY(ZCreateVector(stat->statusPtr,&gain,filter->zeros->length+
+  TRY(LALZCreateVector(stat->statusPtr,&gain,filter->zeros->length+
 		    filter->poles->length),stat);
   g=gain->data;
 
   /* Create the new vector of zeros. */
-  TRY(ZCreateVector(stat->statusPtr,&z,numZeros),stat);
+  TRY(LALZCreateVector(stat->statusPtr,&z,numZeros),stat);
   b=z->data;
   /* Transform existing zeros from w to z, except for those at w=-i,
      which are mapped to z=infinity.  At the same time, compute the
@@ -474,12 +474,12 @@ void WToZCOMPLEX16ZPGFilter(Status             *stat,
   }
   /* Replace the old filter zeros with the new ones. */
   if(filter->zeros->length>0)
-    TRY(ZDestroyVector(stat->statusPtr,&(filter->zeros)),stat);
+    TRY(LALZDestroyVector(stat->statusPtr,&(filter->zeros)),stat);
   filter->zeros=z;
   z=NULL;
 
   /* Create the new vector of poles. */
-  TRY(ZCreateVector(stat->statusPtr,&z,numPoles),stat);
+  TRY(LALZCreateVector(stat->statusPtr,&z,numPoles),stat);
   b=z->data;
   /* Transform existing poles from w to z, except for those at w=-i,
      which are mapped to z=infinity.  At the same time, compute the
@@ -531,21 +531,21 @@ void WToZCOMPLEX16ZPGFilter(Status             *stat,
   }
   /* Replace the old filter poles with the new ones. */
   if(filter->poles->length>0)
-    TRY(ZDestroyVector(stat->statusPtr,&(filter->poles)),stat);
+    TRY(LALZDestroyVector(stat->statusPtr,&(filter->poles)),stat);
   filter->poles=z;
   z=NULL;
 
   /* To avoid numerical overflow, we should multiply alternately by
      large and small factors.  First, create a vector of the factors'
      magnitudes. */
-  TRY(DCreateVector(stat->statusPtr,&absGain,gain->length),stat);
-  TRY(ZVectorAbs(stat->statusPtr,absGain,gain),stat);
+  TRY(LALDCreateVector(stat->statusPtr,&absGain,gain->length),stat);
+  TRY(LALZVectorAbs(stat->statusPtr,absGain,gain),stat);
 
   /* Now create an index vector that indexes the magnitudes from small
      to large, and free the magnitude vector. */
-  TRY(I4CreateVector(stat->statusPtr,&index,gain->length),stat);
-  TRY(DHeapIndex(stat->statusPtr,index,absGain),stat);
-  TRY(DDestroyVector(stat->statusPtr,&absGain),stat);
+  TRY(LALI4CreateVector(stat->statusPtr,&index,gain->length),stat);
+  TRY(LALDHeapIndex(stat->statusPtr,index,absGain),stat);
+  TRY(LALDDestroyVector(stat->statusPtr,&absGain),stat);
 
   /* Now multiply the gain alternately by small and large correction
      factors. */
@@ -580,8 +580,8 @@ void WToZCOMPLEX16ZPGFilter(Status             *stat,
   }
 
   /* Free remaining temporary vectors, and exit. */
-  TRY(ZDestroyVector(stat->statusPtr,&gain),stat);
-  TRY(I4DestroyVector(stat->statusPtr,&index),stat);
+  TRY(LALZDestroyVector(stat->statusPtr,&gain),stat);
+  TRY(LALI4DestroyVector(stat->statusPtr,&index),stat);
   DETATCHSTATUSPTR(stat);
   RETURN(stat);
 }

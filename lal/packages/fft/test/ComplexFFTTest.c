@@ -35,7 +35,7 @@ NRCSID( MAIN, "$Id$" );
 extern char *optarg;
 extern int   optind;
 
-int debuglevel = 0;
+int LALDebugLevel = 0;
 int verbose    = 0;
 
 static void
@@ -45,10 +45,10 @@ static void
 ParseOptions( int argc, char *argv[] );
 
 static void
-TestStatus( Status *status, const char *expectedCodes, int exitCode );
+TestStatus( LALStatus *status, const char *expectedCodes, int exitCode );
 
 static void
-ClearStatus( Status *status );
+ClearStatus( LALStatus *status );
 
 static void
 CheckErrorCodes();
@@ -59,7 +59,7 @@ main( int argc, char *argv[] )
   const UINT4 n       = 17;
   const REAL4 epsilon = 1e-6;
 
-  Status          stat = {0};
+  LALStatus          stat = {0};
   ComplexFFTPlan *pfwd = NULL;
   ComplexFFTPlan *pinv = NULL;
   COMPLEX8Vector *avec = NULL;
@@ -73,19 +73,19 @@ main( int argc, char *argv[] )
 
   fp = verbose ? stdout : NULL ;
 
-  CCreateVector( &stat, &avec, n );
+  LALCCreateVector( &stat, &avec, n );
   TestStatus( &stat, CODES( 0 ), 1 );
 
-  CCreateVector( &stat, &bvec, n );
+  LALCCreateVector( &stat, &bvec, n );
   TestStatus( &stat, CODES( 0 ), 1 );
 
-  CCreateVector( &stat, &cvec, n );
+  LALCCreateVector( &stat, &cvec, n );
   TestStatus( &stat, CODES( 0 ), 1 );
 
-  EstimateFwdComplexFFTPlan( &stat, &pfwd, n );
+  LALEstimateFwdComplexFFTPlan( &stat, &pfwd, n );
   TestStatus( &stat, CODES( 0 ), 1 );
 
-  EstimateInvComplexFFTPlan( &stat, &pinv, n );
+  LALEstimateInvComplexFFTPlan( &stat, &pinv, n );
   TestStatus( &stat, CODES( 0 ), 1 );
 
 
@@ -98,7 +98,7 @@ main( int argc, char *argv[] )
   }
   fp ? fprintf( fp, "\n" ) : 0;
 
-  COMPLEX8VectorFFT( &stat, bvec, avec, pfwd );
+  LALCOMPLEX8VectorFFT( &stat, bvec, avec, pfwd );
   TestStatus( &stat, CODES( 0 ), 1 );
 
   for ( i = 0; i < n; ++i )
@@ -107,7 +107,7 @@ main( int argc, char *argv[] )
   }
   fp ? fprintf( fp, "\n" ) : 0;
 
-  COMPLEX8VectorFFT( &stat, cvec, bvec, pinv );
+  LALCOMPLEX8VectorFFT( &stat, cvec, bvec, pinv );
   TestStatus( &stat, CODES( 0 ), 1 );
 
   for ( i = 0; i < n; ++i )
@@ -128,19 +128,19 @@ main( int argc, char *argv[] )
     }
   }
 
-  DestroyComplexFFTPlan( &stat, &pinv );
+  LALDestroyComplexFFTPlan( &stat, &pinv );
   TestStatus( &stat, CODES( 0 ), 1 );
 
-  DestroyComplexFFTPlan( &stat, &pfwd );
+  LALDestroyComplexFFTPlan( &stat, &pfwd );
   TestStatus( &stat, CODES( 0 ), 1 );
 
-  CDestroyVector( &stat, &cvec );
+  LALCDestroyVector( &stat, &cvec );
   TestStatus( &stat, CODES( 0 ), 1 );
 
-  CDestroyVector( &stat, &bvec );
+  LALCDestroyVector( &stat, &bvec );
   TestStatus( &stat, CODES( 0 ), 1 );
 
-  CDestroyVector( &stat, &avec );
+  LALCDestroyVector( &stat, &avec );
   TestStatus( &stat, CODES( 0 ), 1 );
 
   fp ? fprintf( fp, "\nChecking error codes:\n\n" ) : 0;
@@ -156,7 +156,7 @@ CheckErrorCodes()
 {
   enum { Size = 19 };
   const UINT4 size = Size;
-  Status          stat = {0};
+  LALStatus          stat = {0};
   ComplexFFTPlan *plan;
   ComplexFFTPlan  aplan;
   COMPLEX8Vector  avec;
@@ -166,38 +166,38 @@ CheckErrorCodes()
 
   aplan.size = size;
 
-  EstimateFwdComplexFFTPlan( &stat, NULL, size );
+  LALEstimateFwdComplexFFTPlan( &stat, NULL, size );
   TestStatus( &stat, CODES( COMPLEXFFT_ENULL ), 1 );
-  EstimateInvComplexFFTPlan( &stat, NULL, size );
+  LALEstimateInvComplexFFTPlan( &stat, NULL, size );
   TestStatus( &stat, CODES( COMPLEXFFT_ENULL ), 1 );
-  MeasureFwdComplexFFTPlan( &stat, NULL, size );
+  LALMeasureFwdComplexFFTPlan( &stat, NULL, size );
   TestStatus( &stat, CODES( COMPLEXFFT_ENULL ), 1 );
-  MeasureInvComplexFFTPlan( &stat, NULL, size );
+  LALMeasureInvComplexFFTPlan( &stat, NULL, size );
   TestStatus( &stat, CODES( COMPLEXFFT_ENULL ), 1 );
 
   plan = &aplan;
-  EstimateFwdComplexFFTPlan( &stat, &plan, size );
+  LALEstimateFwdComplexFFTPlan( &stat, &plan, size );
   TestStatus( &stat, CODES( COMPLEXFFT_ENNUL ), 1 );
-  EstimateInvComplexFFTPlan( &stat, &plan, size );
+  LALEstimateInvComplexFFTPlan( &stat, &plan, size );
   TestStatus( &stat, CODES( COMPLEXFFT_ENNUL ), 1 );
-  MeasureFwdComplexFFTPlan( &stat, &plan, size );
+  LALMeasureFwdComplexFFTPlan( &stat, &plan, size );
   TestStatus( &stat, CODES( COMPLEXFFT_ENNUL ), 1 );
-  MeasureInvComplexFFTPlan( &stat, &plan, size );
+  LALMeasureInvComplexFFTPlan( &stat, &plan, size );
   TestStatus( &stat, CODES( COMPLEXFFT_ENNUL ), 1 );
 
   plan = NULL;
-  EstimateFwdComplexFFTPlan( &stat, &plan, 0 );
+  LALEstimateFwdComplexFFTPlan( &stat, &plan, 0 );
   TestStatus( &stat, CODES( COMPLEXFFT_ESIZE ), 1 );
-  EstimateInvComplexFFTPlan( &stat, &plan, 0 );
+  LALEstimateInvComplexFFTPlan( &stat, &plan, 0 );
   TestStatus( &stat, CODES( COMPLEXFFT_ESIZE ), 1 );
-  MeasureFwdComplexFFTPlan( &stat, &plan, 0 );
+  LALMeasureFwdComplexFFTPlan( &stat, &plan, 0 );
   TestStatus( &stat, CODES( COMPLEXFFT_ESIZE ), 1 );
-  MeasureInvComplexFFTPlan( &stat, &plan, 0 );
+  LALMeasureInvComplexFFTPlan( &stat, &plan, 0 );
   TestStatus( &stat, CODES( COMPLEXFFT_ESIZE ), 1 );
 
-  DestroyComplexFFTPlan( &stat, &plan );
+  LALDestroyComplexFFTPlan( &stat, &plan );
   TestStatus( &stat, CODES( COMPLEXFFT_ENULL ), 1 );
-  DestroyComplexFFTPlan( &stat, NULL );
+  LALDestroyComplexFFTPlan( &stat, NULL );
   TestStatus( &stat, CODES( COMPLEXFFT_ENULL ), 1 );
 
   plan        = &aplan;
@@ -205,44 +205,44 @@ CheckErrorCodes()
   bvec.length = size;
   avec.data   = adat;
   bvec.data   = bdat;
-  COMPLEX8VectorFFT( &stat, NULL, &avec, plan );
+  LALCOMPLEX8VectorFFT( &stat, NULL, &avec, plan );
   TestStatus( &stat, CODES( COMPLEXFFT_ENULL ), 1 );
-  COMPLEX8VectorFFT( &stat, &bvec, NULL, plan );
+  LALCOMPLEX8VectorFFT( &stat, &bvec, NULL, plan );
   TestStatus( &stat, CODES( COMPLEXFFT_ENULL ), 1 );
-  COMPLEX8VectorFFT( &stat, &bvec, &avec, NULL );
+  LALCOMPLEX8VectorFFT( &stat, &bvec, &avec, NULL );
   TestStatus( &stat, CODES( COMPLEXFFT_ENULL ), 1 );
 
   avec.data = NULL;
   bvec.data = bdat;
-  COMPLEX8VectorFFT( &stat, &bvec, &avec, plan );
+  LALCOMPLEX8VectorFFT( &stat, &bvec, &avec, plan );
   TestStatus( &stat, CODES( COMPLEXFFT_ENULL ), 1 );
 
   avec.data = adat;
   bvec.data = NULL;
-  COMPLEX8VectorFFT( &stat, &bvec, &avec, plan );
+  LALCOMPLEX8VectorFFT( &stat, &bvec, &avec, plan );
   TestStatus( &stat, CODES( COMPLEXFFT_ENULL ), 1 );
 
   avec.data = adat;
   bvec.data = adat;
-  COMPLEX8VectorFFT( &stat, &bvec, &avec, plan );
+  LALCOMPLEX8VectorFFT( &stat, &bvec, &avec, plan );
   TestStatus( &stat, CODES( COMPLEXFFT_ESAME ), 1 );
 
   aplan.size = 0;
   avec.data  = adat;
   avec.data  = bdat;
-  COMPLEX8VectorFFT( &stat, &bvec, &avec, plan );
+  LALCOMPLEX8VectorFFT( &stat, &bvec, &avec, plan );
   TestStatus( &stat, CODES( COMPLEXFFT_ESIZE ), 1 );
 
   aplan.size  = size;
   avec.length = 0;
   bvec.length = size;
-  COMPLEX8VectorFFT( &stat, &bvec, &avec, plan );
+  LALCOMPLEX8VectorFFT( &stat, &bvec, &avec, plan );
   TestStatus( &stat, CODES( COMPLEXFFT_ESZMM ), 1 );
 
   aplan.size  = size;
   avec.length = size;
   bvec.length = 0;
-  COMPLEX8VectorFFT( &stat, &bvec, &avec, plan );
+  LALCOMPLEX8VectorFFT( &stat, &bvec, &avec, plan );
   TestStatus( &stat, CODES( COMPLEXFFT_ESZMM ), 1 );
 
   return;
@@ -258,7 +258,7 @@ CheckErrorCodes()
  *
  */
 static void
-TestStatus( Status *status, const char *ignored, int exitcode )
+TestStatus( LALStatus *status, const char *ignored, int exitcode )
 {
   char  str[64];
   char *tok;
@@ -304,7 +304,7 @@ TestStatus( Status *status, const char *ignored, int exitcode )
  *
  */
 void
-ClearStatus( Status *status )
+ClearStatus( LALStatus *status )
 {
   if ( status->statusPtr )
   {
@@ -329,7 +329,7 @@ Usage( const char *program, int exitcode )
   fprintf( stderr, "  -h         print this message\n" );
   fprintf( stderr, "  -q         quiet: run silently\n" );
   fprintf( stderr, "  -v         verbose: print extra information\n" );
-  fprintf( stderr, "  -d level   set debuglevel to level\n" );
+  fprintf( stderr, "  -d level   set LALDebugLevel to level\n" );
   exit( exitcode );
 }
 
@@ -356,7 +356,7 @@ ParseOptions( int argc, char *argv[] )
     switch ( c )
     {
       case 'd': /* set debug level */
-        debuglevel = atoi( optarg );
+        LALDebugLevel = atoi( optarg );
         break;
 
       case 'v': /* verbose */

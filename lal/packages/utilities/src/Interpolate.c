@@ -15,8 +15,8 @@
 NRCSID (INTERPOLATEC, "$Id$");
 
 void
-SPolynomialInterpolation (
-    Status          *status,
+LALSPolynomialInterpolation (
+    LALStatus          *status,
     SInterpolateOut *output,
     REAL4            target,
     SInterpolatePar *params
@@ -30,7 +30,7 @@ SPolynomialInterpolation (
   UINT4  n;
   UINT4  i;
 
-  INITSTATUS (status, "SPolynomialInterpolation", INTERPOLATEC);
+  INITSTATUS (status, "LALSPolynomialInterpolation", INTERPOLATEC);
 
   ASSERT (output, status, INTERPOLATE_ENULL, INTERPOLATE_MSGENULL);
   ASSERT (params, status, INTERPOLATE_ENULL, INTERPOLATE_MSGENULL);
@@ -100,8 +100,8 @@ SPolynomialInterpolation (
 
 
 void
-DPolynomialInterpolation (
-    Status          *status,
+LALDPolynomialInterpolation (
+    LALStatus          *status,
     DInterpolateOut *output,
     REAL8            target,
     DInterpolatePar *params
@@ -115,7 +115,7 @@ DPolynomialInterpolation (
   UINT4  n;
   UINT4  i;
 
-  INITSTATUS (status, "DPolynomialInterpolation", INTERPOLATEC);
+  INITSTATUS (status, "LALDPolynomialInterpolation", INTERPOLATEC);
 
   ASSERT (output, status, INTERPOLATE_ENULL, INTERPOLATE_MSGENULL);
   ASSERT (params, status, INTERPOLATE_ENULL, INTERPOLATE_MSGENULL);

@@ -17,22 +17,22 @@
 NRCSID (MAIN, "$Id$");
 
 void
-Master (Status *, MPIId);
+Master (LALStatus *, MPIId);
 
 void
-Slave (Status *, MPIId);
+Slave (LALStatus *, MPIId);
 
 /* global variables */
 #define FINDCHIRPGLOBAL_INIT
 #include "FindChirpGlobal.h"
 #undef FINDCHIRPGLOBAL_INIT
 
-int debuglevel = 1;
+int LALDebugLevel = 1;
 
 int
 main (int argc, char *argv[])
 {
-  static Status  stat;
+  static LALStatus  stat;
   MPIDebugParams debug;
   MPIId          id;
 
@@ -42,17 +42,17 @@ main (int argc, char *argv[])
   MPI_Get_processor_name (id.procName, &id.nameLen);
 
   /* write kill script */
-  MPIKillScript (&stat, &id);
+  LALMPIKillScript (&stat, &id);
 
   /* debugging example */
   if (0)
   {
-    MPIExportEnvironment (&stat, "DISPLAY", id.myId);
+    LALMPIExportEnvironment (&stat, "DISPLAY", id.myId);
     debug.debugger = id.myId == 0 ? "ddd" : NULL ; /* attatch ddd to master */
     debug.progName = argv[0];
     debug.delay    = 15;
     debug.myId     = id.myId;
-    MPIDebug (&stat, &debug);
+    LALMPIDebug (&stat, &debug);
   }
 
   if (id.myId == 0)
