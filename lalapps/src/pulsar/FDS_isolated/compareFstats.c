@@ -72,6 +72,7 @@ main(int argc, char *argv[])
   UINT4 i;
   REAL8 eps8 = 10.0 * LAL_REAL8_EPS;
   REAL4 eps4 = 100.0 * LAL_REAL4_EPS;
+  REAL8 relErr;
 
   lalDebugLevel = 0;
 
@@ -120,19 +121,19 @@ main(int argc, char *argv[])
 
 
 
-      if ( relError ( freq1, freq2) > eps8 )
+      if ( (relErr=relError( freq1, freq2)) > eps8 )
 	{
-	  LALPrintError ("\nRelative frequency-error ecceeds %g in line %d\n", eps8, i+1);
+	  LALPrintError ("\nRelative frequency-error %g ecceeds %g in line %d\n", relErr, eps8, i+1);
 	  exit (1);
 	} 
-      if ( relError ( a1, a2) > eps8 )
+      if ( (relErr=relError( a1, a2)) > eps8 )
 	{
-	  LALPrintError ("\nRelative error in alpha ecceeds %g in line %d\n", eps8, i+1);
+	  LALPrintError ("\nRelative error %g in alpha ecceeds %g in line %d\n", relErr, eps8, i+1);
 	  exit (1);
 	} 
-      if ( relError ( d1, d2) > eps8 )
+      if ( (relErr=relError( d1, d2)) > eps8 )
 	{
-	  LALPrintError ("\nRelative error in delta ecceeds %g in line %d\n", eps8, i+1);
+	  LALPrintError ("\nRelative error %g in delta ecceeds %g in line %d\n", relErr, eps8, i+1);
 	  exit (1);
 	} 
       if ( N1 != N2)
@@ -140,19 +141,19 @@ main(int argc, char *argv[])
 	  LALPrintError ("\nDifferent cluster-sizes in line %d\n", i+1);
 	  exit (1);
 	} 
-      if ( relError ( mean1, mean2) > eps4 )
+      if ( (relErr=relError( mean1, mean2)) > eps4 )
 	{
-	  LALPrintError ("\nRelative error in mean ecceeds %g in line %d\n", eps4, i+1);
+	  LALPrintError ("\nRelative error %g in mean ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  exit (1);
 	}
-      if ( relError ( std1, std2) > eps4 )
+      if ( (relErr=relError( std1, std2)) > eps4 )
 	{
-	  LALPrintError ("\nRelative error in std-deviation ecceeds %g in line %d\n", eps4, i+1);
+	  LALPrintError ("\nRelative error %g in std-deviation ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  exit (1);
 	}
-      if ( relError ( max1, max2) > eps4 )
+      if ( (relErr=relError( max1, max2)) > eps4 )
 	{
-	  LALPrintError ("\nRelative error in std-deviation ecceeds %g in line %d\n", eps4, i+1);
+	  LALPrintError ("\nRelative error %g in std-deviation ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  exit (1);
 	}
       
