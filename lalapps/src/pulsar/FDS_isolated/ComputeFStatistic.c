@@ -3,7 +3,7 @@
  * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
  * Implements the so-called "F-statistic" as introduced in JKS98.
  *                                                                          
- * \author		   Y. Ioth, M.A. Papa, X. Siemens, R.Prix, B. Machenschalk
+ * \author                 Y. Ioth, M.A. Papa, X. Siemens, R.Prix, B. Machenschalk
  *                                                                          
  *                 Albert Einstein Institute/UWM - started September 2002   
  *********************************************************************************/
@@ -167,19 +167,19 @@ int polka(int argc,char *argv[]);
 /*----------------------------------------------------------------------*/
 /* Error-codes */
 
-#define COMPUTEFSTATC_ENULL 		1
-#define COMPUTEFSTATC_ESYS     		2
-#define COMPUTEFSTATC_EINPUT   		3
-#define COMPUTEFSTATC_EMEM   		4
-#define COMPUTEFSTATC_ECHECKPOINT	5
-#define COMPUTEFSTATC_ECLUSTER		6
+#define COMPUTEFSTATC_ENULL             1
+#define COMPUTEFSTATC_ESYS              2
+#define COMPUTEFSTATC_EINPUT            3
+#define COMPUTEFSTATC_EMEM              4
+#define COMPUTEFSTATC_ECHECKPOINT       5
+#define COMPUTEFSTATC_ECLUSTER          6
 
-#define COMPUTEFSTATC_MSGENULL 		"Arguments contained an unexpected null pointer"
-#define COMPUTEFSTATC_MSGESYS		"System call failed (probably file IO)"
-#define COMPUTEFSTATC_MSGEINPUT   	"Invalid input"
-#define COMPUTEFSTATC_MSGEMEM   	"Out of memory. Bad."
-#define COMPUTEFSTATC_MSGECHECKPOINT	"Illegal checkpoint"
-#define COMPUTEFSTATC_MSGECLUSTER	"Unspecified error in cluster-related routine"
+#define COMPUTEFSTATC_MSGENULL          "Arguments contained an unexpected null pointer"
+#define COMPUTEFSTATC_MSGESYS           "System call failed (probably file IO)"
+#define COMPUTEFSTATC_MSGEINPUT         "Invalid input"
+#define COMPUTEFSTATC_MSGEMEM           "Out of memory. Bad."
+#define COMPUTEFSTATC_MSGECHECKPOINT    "Illegal checkpoint"
+#define COMPUTEFSTATC_MSGECLUSTER       "Unspecified error in cluster-related routine"
 
 /*----------------------------------------------------------------------*/
 /* Exit values */
@@ -197,12 +197,12 @@ int polka(int argc,char *argv[]);
 #define COMPUTEFSTAT_EXIT_CANTUNZIP      17  /* unable to zip Fstats file */
 #define COMPUTEFSTAT_EXIT_CANTRENAME     18  /* unable to zip Fstats file */
 #define COMPUTEFSTAT_EXIT_NOPOLKADEL     19  /* no // found in command line */
-#define COMPUTEFSTAT_EXIT_USER     	 20  /* user asked for exit */
-#define COMPUTEFSTAT_EXIT_DEMOD     	 21  /* error in LAL-Demod */
-#define COMPUTEFSTAT_EXIT_SIGNAL	 22   /* exited on signal */
-#define COMPUTEFSTAT_EXIT_BOINCRESOLVE	 23   /* boinc_resolve_filename failed */
-#define COMPUTEFSTAT_EXIT_DLOPEN	 24   /* problems with dynamic lib */
-#define COMPUTEFSTAT_EXIT_WORKER	 25   /* can't start worker-thread */
+#define COMPUTEFSTAT_EXIT_USER           20  /* user asked for exit */
+#define COMPUTEFSTAT_EXIT_DEMOD          21  /* error in LAL-Demod */
+#define COMPUTEFSTAT_EXIT_SIGNAL         22   /* exited on signal */
+#define COMPUTEFSTAT_EXIT_BOINCRESOLVE   23   /* boinc_resolve_filename failed */
+#define COMPUTEFSTAT_EXIT_DLOPEN         24   /* problems with dynamic lib */
+#define COMPUTEFSTAT_EXIT_WORKER         25   /* can't start worker-thread */
 #define COMPUTEFSTAT_EXIT_LALCALLERROR  100  /* this is added to the LAL status to get BOINC exit value */
 
 /*----------------------------------------------------------------------
@@ -252,28 +252,28 @@ BOOLEAN uvar_useCompression;
 /*----------------------------------------------------------------------*/
 /* some other global variables */
 
-FFT **SFTData=NULL; 		/**< SFT Data for LALDmod */
-DemodPar *DemodParams  = NULL;	/**< Demodulation parameters for LALDemod */
-LIGOTimeGPS *timestamps=NULL;	/**< Time stamps from SFT data */
-LALFstat Fstat;			/**< output from LALDemod(): F-statistic and amplitudes Fa and Fb */
-AMCoeffs amc;			/**< amplitude-modulation coefficients (and derived quantities) */
-REAL8 Alpha,Delta;		/**< sky-position currently searched (equatorial coords, radians) */
-Clusters HFLines;		/**< stores information about outliers/clusters in F-statistic */
-Clusters HPLines;		/**< stores information about outliers/clusters in SFT-power spectrum */
+FFT **SFTData=NULL;             /**< SFT Data for LALDmod */
+DemodPar *DemodParams  = NULL;  /**< Demodulation parameters for LALDemod */
+LIGOTimeGPS *timestamps=NULL;   /**< Time stamps from SFT data */
+LALFstat Fstat;                 /**< output from LALDemod(): F-statistic and amplitudes Fa and Fb */
+AMCoeffs amc;                   /**< amplitude-modulation coefficients (and derived quantities) */
+REAL8 Alpha,Delta;              /**< sky-position currently searched (equatorial coords, radians) */
+Clusters HFLines;               /**< stores information about outliers/clusters in F-statistic */
+Clusters HPLines;               /**< stores information about outliers/clusters in SFT-power spectrum */
 Clusters *highSpLines=&HPLines, *highFLines=&HFLines;
 
-REAL8 medianbias=1.0;		/**< bias in running-median depending on window-size (set in NormaliseSFTDataRngMdn()) */
+REAL8 medianbias=1.0;           /**< bias in running-median depending on window-size (set in NormaliseSFTDataRngMdn()) */
 
-FILE *fp_mergedSFT;		/**< input-file containing merged SFTs */
-FILE *fpmax;			/**< output-file: maximum of F-statistic over frequency-range */
-FILE *fpstat=NULL;		/**< output-file: F-statistic candidates and cluster-information */
+FILE *fp_mergedSFT;             /**< input-file containing merged SFTs */
+FILE *fpmax;                    /**< output-file: maximum of F-statistic over frequency-range */
+FILE *fpstat=NULL;              /**< output-file: F-statistic candidates and cluster-information */
 
-ConfigVariables GV;		/**< global container for various derived configuration settings */
+ConfigVariables GV;             /**< global container for various derived configuration settings */
 int reverse_endian=-1;          /**< endian order of SFT data.  -1: unknown, 0: native, 1: reversed */
-CHAR Fstatsfilename[256]; 		/* Fstats file name*/
-CHAR ckp_fname[260];			/* filename of checkpoint-file, global for polka */
-CHAR *Outputfilename; 		/* Name of output file, either Fstats- or Polka file name*/
-INT4 cfsRunNo = 0; 		    /* the CFS run no if ran multiple times 0=run only once, 1=first run, 2=second run */
+CHAR Fstatsfilename[256];               /* Fstats file name*/
+CHAR ckp_fname[260];                    /* filename of checkpoint-file, global for polka */
+CHAR *Outputfilename;           /* Name of output file, either Fstats- or Polka file name*/
+INT4 cfsRunNo = 0;                  /* the CFS run no if ran multiple times 0=run only once, 1=first run, 2=second run */
 
 
 /*----------------------------------------------------------------------*/
@@ -355,10 +355,10 @@ LALStatus global_status;
 int BOINC_ERR_EXIT(LALStatus  *stat, const char *func, const char *file, const int line, volatile const char *id) {
   if (stat->statusCode) {
     fprintf(stderr,
-	    "Level 0: %s\n"
-	    "\tFunction call `%s' failed.\n"
-	    "\tfile %s, line %d\n",
-	    id, func, file, line );
+            "Level 0: %s\n"
+            "\tFunction call `%s' failed.\n"
+            "\tfile %s, line %d\n",
+            id, func, file, line );
     REPORTSTATUS(stat);
     fprintf (stderr, "BOINC_ERR_EXIT: now calling boinc_finish()\n");
     boinc_finish( COMPUTEFSTAT_EXIT_LALCALLERROR+stat->statusCode );
@@ -382,23 +382,23 @@ int main(int argc,char *argv[])
 {
   LALStatus *stat = &global_status;
 
-  INT4 *maxIndex=NULL; 			/*  array that contains indexes of maximum of each cluster */
-  INT4 spdwn;				/* counter over spindown-params */
-  DopplerScanInit scanInit;		/* init-structure for DopperScanner */
+  INT4 *maxIndex=NULL;                  /*  array that contains indexes of maximum of each cluster */
+  INT4 spdwn;                           /* counter over spindown-params */
+  DopplerScanInit scanInit;             /* init-structure for DopperScanner */
   DopplerScanState thisScan = emptyScan; /* current state of the Doppler-scan */
-  DopplerPosition dopplerpos;		/* current search-parameters */
+  DopplerPosition dopplerpos;           /* current search-parameters */
   SkyPosition thisPoint;
   LIGOTimeGPS t0, t1;
   REAL8 duration;
   FILE *fpOut = NULL;
 
-  UINT4 loopcounter;		/* Checkpoint-counters for restarting checkpointed search */
+  UINT4 loopcounter;            /* Checkpoint-counters for restarting checkpointed search */
   long fstat_bytecounter;
   UINT4 checksum=0;             /* Checksum of fstats file contents */
 
   /* set LAL error-handler */
 #if USE_BOINC
-  CHAR resfname[256];	/* buffer for boinc-resolving config-file name */
+  CHAR resfname[256];   /* buffer for boinc-resolving config-file name */
 
   lal_errhandler = BOINC_ERR_EXIT;
 #else
@@ -406,11 +406,11 @@ int main(int argc,char *argv[])
 #endif
 
   lalDebugLevel = 0 ;  
-  vrbflg = 1;	/* verbose error-messages */
+  vrbflg = 1;   /* verbose error-messages */
 
   /* register all user-variable */
   LAL_CALL (LALGetDebugLevel(stat, argc, argv, 'v'), stat);
-  LAL_CALL (initUserVars(stat), stat); 	
+  LAL_CALL (initUserVars(stat), stat);  
 
 #if USE_BOINC
   /* handle config file request with boinc_resolve_filename */
@@ -419,20 +419,20 @@ int main(int argc,char *argv[])
     {
       resfname[0] = '@';
       if (boinc_resolve_filename(argv[1]+1,resfname+1,sizeof(resfname)))
-	fprintf(stderr,"WARNING: Can't boinc-resolve config file \"%s\"\n", argv[1]+1);
+        fprintf(stderr,"WARNING: Can't boinc-resolve config file \"%s\"\n", argv[1]+1);
       else
-	{
-	  /* hack the command-line: replace config-file by boinc-resolved path */
-	  argv[1] = resfname;
-	  /* note: we don't free the previous argv[1] in order to avoid possible problems..*/
-	}
+        {
+          /* hack the command-line: replace config-file by boinc-resolved path */
+          argv[1] = resfname;
+          /* note: we don't free the previous argv[1] in order to avoid possible problems..*/
+        }
     } /* if config-file given as first argument */
 #endif
 
-  LAL_CALL (LALUserVarReadAllInput(stat,argc,argv),stat);	
+  LAL_CALL (LALUserVarReadAllInput(stat,argc,argv),stat);       
 
 
-  if (uvar_help)	/* if help was requested, we're done here */
+  if (uvar_help)        /* if help was requested, we're done here */
     return COMPUTEFSTAT_EXIT_USAGE;
 
   /* This is dangerous for BOINC since it calls system() and makes
@@ -453,7 +453,7 @@ int main(int argc,char *argv[])
 
 #ifdef FILE_FMAX
   {
-    CHAR Fmaxfilename[256]; 		/* Fmax file name*/
+    CHAR Fmaxfilename[256];             /* Fmax file name*/
 
     /*   open file */
     strcpy(Fmaxfilename,"Fmax");
@@ -487,9 +487,9 @@ int main(int argc,char *argv[])
   scanInit.fmax  = uvar_Freq;
   scanInit.fmax += uvar_FreqBand;
   scanInit.Detector = &GV.Detector;
-  scanInit.ephemeris = GV.edat;		/* used by Ephemeris-based metric */
+  scanInit.ephemeris = GV.edat;         /* used by Ephemeris-based metric */
   scanInit.skyRegion = GV.skyRegion;
-  scanInit.skyGridFile = uvar_skyGridFile;	/* if applicable */
+  scanInit.skyGridFile = uvar_skyGridFile;      /* if applicable */
 
   if ( uvar_searchNeighbors ) {
     LAL_CALL ( InitDopplerScanOnRefinedGrid( stat, &thisScan, &scanInit ), stat );
@@ -511,31 +511,31 @@ int main(int argc,char *argv[])
   if (uvar_outputFstat) 
     {
       if ( (fpOut = fopen (uvar_outputFstat, "wb")) == NULL)
-	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
-	  return COMPUTEFSTAT_EXIT_OPENFSTAT;
-	}
-      if ( uvar_openDX )	/* prepend openDX header */
-	{
-	  UINT4 nFreq, nAlpha, nDelta;
-	  nFreq = GV.FreqImax;
-	  nAlpha = (UINT4)(uvar_AlphaBand / uvar_dAlpha) + 1;
-	  nDelta = (UINT4)(uvar_DeltaBand / uvar_dDelta) + 1;
+        {
+          LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
+          return COMPUTEFSTAT_EXIT_OPENFSTAT;
+        }
+      if ( uvar_openDX )        /* prepend openDX header */
+        {
+          UINT4 nFreq, nAlpha, nDelta;
+          nFreq = GV.FreqImax;
+          nAlpha = (UINT4)(uvar_AlphaBand / uvar_dAlpha) + 1;
+          nDelta = (UINT4)(uvar_DeltaBand / uvar_dDelta) + 1;
 
-	  /* regular grid or not? */
-	  if ( uvar_gridType == GRID_FLAT )
-	    fprintf (fpOut, "grid = %d x %d x %d \n", nFreq, nAlpha, nDelta);
-	  else
-	    fprintf (fpOut, "points = %d \n", nFreq * thisScan.numGridPoints);
+          /* regular grid or not? */
+          if ( uvar_gridType == GRID_FLAT )
+            fprintf (fpOut, "grid = %d x %d x %d \n", nFreq, nAlpha, nDelta);
+          else
+            fprintf (fpOut, "points = %d \n", nFreq * thisScan.numGridPoints);
 
-	  fprintf (fpOut, 
-		   "format = ascii\n"
-		   "field = locations, Fstat\n"
-		   "structure = 3-vector, scalar\n"
-		   "dependency = positions, positions\n"
-		   "interleaving = field\n"
-		   "end\n" );
-	}
+          fprintf (fpOut, 
+                   "format = ascii\n"
+                   "field = locations, Fstat\n"
+                   "structure = 3-vector, scalar\n"
+                   "dependency = positions, positions\n"
+                   "interleaving = field\n"
+                   "end\n" );
+        }
     } /* if outputFstat */
 
   /* prepare main output-file "Fstats": get actual filename */
@@ -549,7 +549,7 @@ int main(int argc,char *argv[])
 #if USE_BOINC
   /* only boinc_resolve the filename if we run CFS once */
   if (cfsRunNo == 0)
-	  use_boinc_filename0(Fstatsfilename);
+          use_boinc_filename0(Fstatsfilename);
   /* use_boinc_filename0(ckp_fname); */
 #endif /* USE_BOINC */
 
@@ -605,12 +605,12 @@ int main(int argc,char *argv[])
     for (i=0; i < loopcounter; i++) {
       LAL_CALL (NextDopplerPos( stat, &dopplerpos, &thisScan ), stat);
       if (thisScan.state == STATE_FINISHED) {
-	LALPrintError ("Error: checkpointed loopcounter already at the end of main-loop\n");
-	return COMPUTEFSTATC_ECHECKPOINT; 
+        LALPrintError ("Error: checkpointed loopcounter already at the end of main-loop\n");
+        return COMPUTEFSTATC_ECHECKPOINT; 
       }
     }
     /* seek to right point of fstats file (truncate what's left over) */
-    if ( 0 != fseek( fpstat, fstat_bytecounter, SEEK_SET) ) {	/* something gone wrong seeking .. */
+    if ( 0 != fseek( fpstat, fstat_bytecounter, SEEK_SET) ) {   /* something gone wrong seeking .. */
       if (lalDebugLevel) LALPrintError ("broken fstats-file.\nStarting main-loop from beginning.\n");
       return COMPUTEFSTATC_ECHECKPOINT;;
     }
@@ -620,57 +620,57 @@ int main(int argc,char *argv[])
     {
       /* flush fstats-file and write checkpoint-file */
       if (uvar_doCheckpointing && fpstat)
-	{
+        {
 #if USE_BOINC
-	  if (boinc_time_to_checkpoint())
-	    {
+          if (boinc_time_to_checkpoint())
+            {
 #endif
-	      FILE *fp;
-	      fflush (fpstat);
-	      if ( (fp = fopen(ckp_fname, "wb")) == NULL) {
-		LALPrintError ("Failed to open checkpoint-file for writing. Exiting.\n");
-		return COMPUTEFSTATC_ECHECKPOINT;
-	      }
-	      if ( fprintf (fp, "%" LAL_UINT4_FORMAT " %" LAL_UINT4_FORMAT " %ld\nDONE\n", loopcounter, checksum, fstat_bytecounter) < 0) {
-		LALPrintError ("Error writing to checkpoint-file. Exiting.\n");
-		return COMPUTEFSTATC_ECHECKPOINT;
-	      }
-	      fclose (fp);
+              FILE *fp;
+              fflush (fpstat);
+              if ( (fp = fopen(ckp_fname, "wb")) == NULL) {
+                LALPrintError ("Failed to open checkpoint-file for writing. Exiting.\n");
+                return COMPUTEFSTATC_ECHECKPOINT;
+              }
+              if ( fprintf (fp, "%" LAL_UINT4_FORMAT " %" LAL_UINT4_FORMAT " %ld\nDONE\n", loopcounter, checksum, fstat_bytecounter) < 0) {
+                LALPrintError ("Error writing to checkpoint-file. Exiting.\n");
+                return COMPUTEFSTATC_ECHECKPOINT;
+              }
+              fclose (fp);
 #if USE_BOINC
-	      boinc_checkpoint_completed();
-	    } /* if boinc_time_to_checkpoint() */
+              boinc_checkpoint_completed();
+            } /* if boinc_time_to_checkpoint() */
 #endif
-	} /* if doCheckpointing && fpstat */
+        } /* if doCheckpointing && fpstat */
       
 
       /* Show some progress */
 #if USE_BOINC
       {
-	double local_fraction_done;
-	if (cfsRunNo == 1)
-	  local_fraction_done=(((double)loopcounter)/((double)thisScan.numGridPoints))/2;
-	else if (cfsRunNo == 2)
-	  local_fraction_done=(((double)loopcounter)/((double)thisScan.numGridPoints))/2+0.5;
-	else
-	  local_fraction_done=((double)loopcounter)/((double)thisScan.numGridPoints);
-	if (local_fraction_done<0.0)
-	  local_fraction_done=0.0;
-	if (local_fraction_done>1.0)
-	  local_fraction_done=1.0;
-	boinc_fraction_done(local_fraction_done);
- 	    /* pass variable externally to graphics routines */
-	    if (fraction_done_hook != NULL)
-	      *fraction_done_hook=local_fraction_done;
+        double local_fraction_done;
+        if (cfsRunNo == 1)
+          local_fraction_done=(((double)loopcounter)/((double)thisScan.numGridPoints))/2;
+        else if (cfsRunNo == 2)
+          local_fraction_done=(((double)loopcounter)/((double)thisScan.numGridPoints))/2+0.5;
+        else
+          local_fraction_done=((double)loopcounter)/((double)thisScan.numGridPoints);
+        if (local_fraction_done<0.0)
+          local_fraction_done=0.0;
+        if (local_fraction_done>1.0)
+          local_fraction_done=1.0;
+        boinc_fraction_done(local_fraction_done);
+            /* pass variable externally to graphics routines */
+            if (fraction_done_hook != NULL)
+              *fraction_done_hook=local_fraction_done;
       }
 #endif
       if (lalDebugLevel) LALPrintError ("Search progress: %5.1f%%", 
-					(100.0* loopcounter / thisScan.numGridPoints));
+                                        (100.0* loopcounter / thisScan.numGridPoints));
       
       LAL_CALL (NextDopplerPos( stat, &dopplerpos, &thisScan ), stat);
 
       /* Have we scanned all DopplerPositions yet? */
       if (thisScan.state == STATE_FINISHED)
-	break;
+        break;
 
       LAL_CALL (LALNormalizeSkyPosition(stat, &thisPoint, &(dopplerpos.skypos) ), stat);
 
@@ -678,82 +678,82 @@ int main(int argc,char *argv[])
       Delta = thisPoint.latitude;
 #if USE_BOINC
       /* pass current search position, for use with starsphere.C
-	 revision 4.6 or greater. Need to convert radians to
-	 degrees. */
-	  if (set_search_pos_hook != NULL){
-		float pAlpha=(180.0*Alpha/LAL_PI), pDelta=(180.0*Delta/LAL_PI);
+         revision 4.6 or greater. Need to convert radians to
+         degrees. */
+          if (set_search_pos_hook != NULL){
+                float pAlpha=(180.0*Alpha/LAL_PI), pDelta=(180.0*Delta/LAL_PI);
         set_search_pos_hook(pAlpha,pDelta);
-	  }
+          }
 #endif
-	  
+          
       LAL_CALL (CreateDemodParams(stat), stat);
 #ifdef FILE_AMCOEFFS
-	  PrintAMCoeffs(Alpha, Delta, DemodParams->amcoe);
+          PrintAMCoeffs(Alpha, Delta, DemodParams->amcoe);
 #endif
-	  /* loop over spin params */
+          /* loop over spin params */
       for (spdwn=0; spdwn <= GV.SpinImax; spdwn++)
-	{
-	  DemodParams->spinDwn[0] = uvar_f1dot + spdwn * uvar_df1dot;
+        {
+          DemodParams->spinDwn[0] = uvar_f1dot + spdwn * uvar_df1dot;
 
-	  if ( uvar_expLALDemod )
-	    LAL_CALL ( TestLALDemod(stat, &Fstat, SFTData, DemodParams), stat);
-	  else
-	    LAL_CALL ( OrigLALDemod(stat, &Fstat, SFTData, DemodParams), stat);
+          if ( uvar_expLALDemod )
+            LAL_CALL ( TestLALDemod(stat, &Fstat, SFTData, DemodParams), stat);
+          else
+            LAL_CALL ( OrigLALDemod(stat, &Fstat, SFTData, DemodParams), stat);
 
-	  /*  This fills-in highFLines that contains the outliers of F*/
-	  if (GV.FreqImax > 5) {
-	    LAL_CALL (EstimateFLines(stat), stat);
-	  }
-	  
-	  /* if user requested it, we output ALL F-statistic results */
-	  if (fpOut) 
-	    {
-	      INT4 i;
-	      for(i=0;i < GV.FreqImax ;i++)
-		{
-		  fprintf (fpOut, "%20.17f %20.17f %20.17f %20.17f\n", 
-			   uvar_Freq + i*GV.dFreq, Alpha, Delta, 2.0*medianbias*Fstat.F[i]);
-		}
+          /*  This fills-in highFLines that contains the outliers of F*/
+          if (GV.FreqImax > 5) {
+            LAL_CALL (EstimateFLines(stat), stat);
+          }
+          
+          /* if user requested it, we output ALL F-statistic results */
+          if (fpOut) 
+            {
+              INT4 i;
+              for(i=0;i < GV.FreqImax ;i++)
+                {
+                  fprintf (fpOut, "%20.17f %20.17f %20.17f %20.17f\n", 
+                           uvar_Freq + i*GV.dFreq, Alpha, Delta, 2.0*medianbias*Fstat.F[i]);
+                }
 
-	    } /* if outputFstat */
+            } /* if outputFstat */
 
-	  
-	  /*  This fills-in highFLines  */
-	  if (highFLines != NULL && highFLines->Nclusters > 0)
-	    {
-	      int bytesWritten = 0;
+          
+          /*  This fills-in highFLines  */
+          if (highFLines != NULL && highFLines->Nclusters > 0)
+            {
+              int bytesWritten = 0;
 
-	      maxIndex=(INT4 *)LALMalloc(highFLines->Nclusters*sizeof(INT4));
-	    
-	      /*  for every cluster writes the information about it in file Fstats */
-	      if (writeFLines(maxIndex, &bytesWritten, &checksum))
-		{
-		  fprintf(stderr, "%s: trouble making file Fstats\n", argv[0]);
-		  return COMPUTEFSTAT_EXIT_WRITEFSTAT;
-		}
-	      fstat_bytecounter += (long)bytesWritten;	/* bookkeeping of nominal length of Fstats-file */
-	   	  
-	      if (uvar_EstimSigParam)
-		{
-		  if(writeFaFb(maxIndex)) return COMPUTEFSTAT_EXIT_WRITEFAFB;
-		  if (EstimateSignalParameters(maxIndex)) return COMPUTEFSTAT_EXIT_ESTSIGPAR;
-		} /* if signal-estimation */
-	  
-	  
-	      LALFree(maxIndex);
-	    } /* if highFLines found */
+              maxIndex=(INT4 *)LALMalloc(highFLines->Nclusters*sizeof(INT4));
+            
+              /*  for every cluster writes the information about it in file Fstats */
+              if (writeFLines(maxIndex, &bytesWritten, &checksum))
+                {
+                  fprintf(stderr, "%s: trouble making file Fstats\n", argv[0]);
+                  return COMPUTEFSTAT_EXIT_WRITEFSTAT;
+                }
+              fstat_bytecounter += (long)bytesWritten;  /* bookkeeping of nominal length of Fstats-file */
+                  
+              if (uvar_EstimSigParam)
+                {
+                  if(writeFaFb(maxIndex)) return COMPUTEFSTAT_EXIT_WRITEFAFB;
+                  if (EstimateSignalParameters(maxIndex)) return COMPUTEFSTAT_EXIT_ESTSIGPAR;
+                } /* if signal-estimation */
+          
+          
+              LALFree(maxIndex);
+            } /* if highFLines found */
 
-	  if (PrintTopValues(/* thresh */ 0.0, /* max returned */ 1))
-	    LALPrintError ("%s: trouble making files Fmax and/or Fstats\n", argv[0]);
+          if (PrintTopValues(/* thresh */ 0.0, /* max returned */ 1))
+            LALPrintError ("%s: trouble making files Fmax and/or Fstats\n", argv[0]);
 
-	  
-	  /* Set the number of the clusters detected to 0 at each iteration 
-	     of the sky-direction and the spin down */
-	  highFLines->Nclusters=0;
+          
+          /* Set the number of the clusters detected to 0 at each iteration 
+             of the sky-direction and the spin down */
+          highFLines->Nclusters=0;
 
-	} /* For GV.spinImax */
+        } /* For GV.spinImax */
 
-      loopcounter ++;		/* number of *completed* loops */
+      loopcounter ++;           /* number of *completed* loops */
 
     } /*  while SkyPos */
   
@@ -800,28 +800,28 @@ initUserVars (LALStatus *stat)
   ATTATCHSTATUSPTR (stat);
 
   /* set a few defaults */
-  uvar_Dterms 	= 16;
+  uvar_Dterms   = 16;
   uvar_FreqBand = 0.0;
   uvar_dFreq = 0;
 
-  uvar_Alpha 	= 0.0;
-  uvar_Delta 	= 0.0;
+  uvar_Alpha    = 0.0;
+  uvar_Delta    = 0.0;
   uvar_AlphaBand = 0;
   uvar_DeltaBand = 0;
-  uvar_dAlpha 	= 0.001;
-  uvar_dDelta 	= 0.001;
+  uvar_dAlpha   = 0.001;
+  uvar_dDelta   = 0.001;
   uvar_skyRegion = NULL;
 
   uvar_ephemYear = (CHAR*)LALCalloc (1, strlen(EPHEM_YEARS)+1);
 
 
 #if USE_BOINC
-  strcpy (uvar_ephemYear, "");		  /* the default year-string under BOINC is empty! */
+  strcpy (uvar_ephemYear, "");            /* the default year-string under BOINC is empty! */
 #else
   strcpy (uvar_ephemYear, EPHEM_YEARS);
 #endif
 
-  uvar_BaseName	= (CHAR*)LALCalloc (1, strlen(SFT_BNAME)+1);
+  uvar_BaseName = (CHAR*)LALCalloc (1, strlen(SFT_BNAME)+1);
   strcpy (uvar_BaseName, SFT_BNAME);
 
 #define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
@@ -832,7 +832,7 @@ initUserVars (LALStatus *stat)
   uvar_EstimSigParam = FALSE;
  
   uvar_f1dot = 0.0;
-  uvar_df1dot 	= 0.0;
+  uvar_df1dot   = 0.0;
   uvar_f1dotBand = 0.0;
   
   uvar_Fthreshold = 10.0;
@@ -872,47 +872,47 @@ initUserVars (LALStatus *stat)
 #endif
 
   /* register all our user-variables */
-  LALregBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message"); 
-  LALregSTRINGUserVar(stat, 	IFO, 		'I', UVAR_REQUIRED, "Detector: GEO(0),LLO(1),LHO(2),NAUTILUS(3),VIRGO(4),TAMA(5),CIT(6)");
-  LALregREALUserVar(stat, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
-  LALregREALUserVar(stat, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
-  LALregREALUserVar(stat, 	dFreq, 		'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(2*Tsft*Nsft)");
-  LALregREALUserVar(stat, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
-  LALregREALUserVar(stat, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
-  LALregREALUserVar(stat, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
-  LALregREALUserVar(stat, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
-  LALregSTRINGUserVar(stat,	skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: specify sky-region by polygon");
-  LALregINTUserVar(stat, 	gridType,	 0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=file");
-  LALregINTUserVar(stat, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
-  LALregREALUserVar(stat, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
-  LALregREALUserVar(stat, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
-  LALregREALUserVar(stat, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
-  LALregSTRINGUserVar(stat,	skyGridFile,	 0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
-  LALregSTRINGUserVar(stat,	outputSkyGrid,	 0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
-  LALregREALUserVar(stat, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter f1dot");
-  LALregREALUserVar(stat, 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search-band for f1dot");
-  LALregREALUserVar(stat, 	df1dot, 	'e', UVAR_OPTIONAL, "Resolution for f1dot (default 1/(2*Tobs*Tsft*Nsft)");
-  LALregSTRINGUserVar(stat,	DataDir, 	'D', UVAR_OPTIONAL, "Directory where SFT's are located");
-  LALregSTRINGUserVar(stat,	BaseName, 	'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
-  LALregSTRINGUserVar(stat,	mergedSFTFile, 	'B', UVAR_OPTIONAL, "Merged SFT's file to be used"); 
-  LALregSTRINGUserVar(stat,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
-  LALregSTRINGUserVar(stat,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
-  LALregBOOLUserVar(stat, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
-  LALregBOOLUserVar(stat, 	EstimSigParam, 	'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
-  LALregREALUserVar(stat, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
-  LALregINTUserVar(stat,	Dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
-  LALregSTRINGUserVar(stat,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
-  LALregSTRINGUserVar(stat,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for the F-statistic field over the parameter-space");
-  LALregBOOLUserVar(stat,	openDX,	 	 0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
+  LALregBOOLUserVar(stat,       help,           'h', UVAR_HELP,     "Print this message"); 
+  LALregSTRINGUserVar(stat,     IFO,            'I', UVAR_REQUIRED, "Detector: GEO(0),LLO(1),LHO(2),NAUTILUS(3),VIRGO(4),TAMA(5),CIT(6)");
+  LALregREALUserVar(stat,       Freq,           'f', UVAR_REQUIRED, "Starting search frequency in Hz");
+  LALregREALUserVar(stat,       FreqBand,       'b', UVAR_OPTIONAL, "Search frequency band in Hz");
+  LALregREALUserVar(stat,       dFreq,          'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(2*Tsft*Nsft)");
+  LALregREALUserVar(stat,       Alpha,          'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(stat,       Delta,          'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
+  LALregREALUserVar(stat,       AlphaBand,      'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(stat,       DeltaBand,      'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
+  LALregSTRINGUserVar(stat,     skyRegion,      'R', UVAR_OPTIONAL, "ALTERNATIVE: specify sky-region by polygon");
+  LALregINTUserVar(stat,        gridType,        0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=file");
+  LALregINTUserVar(stat,        metricType,     'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
+  LALregREALUserVar(stat,       metricMismatch, 'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
+  LALregREALUserVar(stat,       dAlpha,         'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(stat,       dDelta,         'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
+  LALregSTRINGUserVar(stat,     skyGridFile,     0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
+  LALregSTRINGUserVar(stat,     outputSkyGrid,   0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
+  LALregREALUserVar(stat,       f1dot,          's', UVAR_OPTIONAL, "First spindown parameter f1dot");
+  LALregREALUserVar(stat,       f1dotBand,      'm', UVAR_OPTIONAL, "Search-band for f1dot");
+  LALregREALUserVar(stat,       df1dot,         'e', UVAR_OPTIONAL, "Resolution for f1dot (default 1/(2*Tobs*Tsft*Nsft)");
+  LALregSTRINGUserVar(stat,     DataDir,        'D', UVAR_OPTIONAL, "Directory where SFT's are located");
+  LALregSTRINGUserVar(stat,     BaseName,       'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
+  LALregSTRINGUserVar(stat,     mergedSFTFile,  'B', UVAR_OPTIONAL, "Merged SFT's file to be used"); 
+  LALregSTRINGUserVar(stat,     ephemDir,       'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
+  LALregSTRINGUserVar(stat,     ephemYear,      'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  LALregBOOLUserVar(stat,       SignalOnly,     'S', UVAR_OPTIONAL, "Signal only flag");
+  LALregBOOLUserVar(stat,       EstimSigParam,  'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
+  LALregREALUserVar(stat,       Fthreshold,     'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
+  LALregINTUserVar(stat,        Dterms,         't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
+  LALregSTRINGUserVar(stat,     outputLabel,    'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
+  LALregSTRINGUserVar(stat,     outputFstat,     0,  UVAR_OPTIONAL, "Output-file for the F-statistic field over the parameter-space");
+  LALregBOOLUserVar(stat,       openDX,          0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
   LALregSTRINGUserVar(stat,     workingDir,     'w', UVAR_OPTIONAL, "Directory to be made the working directory.");
-  LALregBOOLUserVar(stat,	searchNeighbors, 0,  UVAR_OPTIONAL, "Refine skyregion to neighboring points of original center.");
-  LALregBOOLUserVar(stat,	doCheckpointing, 0,  UVAR_OPTIONAL, "Do checkpointing and resume for previously checkpointed state.");
-  LALregBOOLUserVar(stat,	expLALDemod, 	 0,  UVAR_OPTIONAL, "Use new experimental LALDemod-version.");
+  LALregBOOLUserVar(stat,       searchNeighbors, 0,  UVAR_OPTIONAL, "Refine skyregion to neighboring points of original center.");
+  LALregBOOLUserVar(stat,       doCheckpointing, 0,  UVAR_OPTIONAL, "Do checkpointing and resume for previously checkpointed state.");
+  LALregBOOLUserVar(stat,       expLALDemod,     0,  UVAR_OPTIONAL, "Use new experimental LALDemod-version.");
 
-  LALregREALUserVar(stat, 	startTime, 	 0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time <  this value. Default:");
-  LALregREALUserVar(stat, 	endTime, 	 0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time >= this value. Default:");
+  LALregREALUserVar(stat,       startTime,       0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time <  this value. Default:");
+  LALregREALUserVar(stat,       endTime,         0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time >= this value. Default:");
 #if BOINC_COMPRESS
-  LALregBOOLUserVar(stat,	useCompression,  0,  UVAR_OPTIONAL, "BOINC: use compression for download/uploading data");
+  LALregBOOLUserVar(stat,       useCompression,  0,  UVAR_OPTIONAL, "BOINC: use compression for download/uploading data");
 #endif
 
   DETATCHSTATUSPTR (stat);
@@ -976,41 +976,41 @@ int EstimateSignalParameters(INT4 * maxIndex)
       detA = A1*A4-A2*A3;
 
       h0mle = 0.5*pow(
-		      pow(((A1-A4)*(A1-A4)+(A2+A3)*(A2+A3)),0.25)+
-		      pow(((A1+A4)*(A1+A4)+(A2-A3)*(A2-A3)),0.25)
-		      ,2);
+                      pow(((A1-A4)*(A1-A4)+(A2+A3)*(A2+A3)),0.25)+
+                      pow(((A1+A4)*(A1+A4)+(A2-A3)*(A2-A3)),0.25)
+                      ,2);
 
       h0mleSq = pow(h0mle,2.0);
       ampratio=Asq/h0mleSq;
 
 
       if(ampratio<0.25-error_tol||ampratio>2.0+error_tol) {
-	fprintf(stderr,
-		"Imaginary Cos[iota]; cannot compute parameters\n"
-		"in the EstimateSignalParameters routine\n"
-		"in ComputeFStatistic code\n"
-		"Now exiting...\n");
-	/* 	  break; */
-	return 1;
+        fprintf(stderr,
+                "Imaginary Cos[iota]; cannot compute parameters\n"
+                "in the EstimateSignalParameters routine\n"
+                "in ComputeFStatistic code\n"
+                "Now exiting...\n");
+        /*        break; */
+        return 1;
       }
 
       if(fabs(ampratio-0.25)<error_tol) {
-	mu_mle =0.0;
+        mu_mle =0.0;
       } else if(fabs(ampratio-2.0)<error_tol) {
-	mu_mle = 1.0;
+        mu_mle = 1.0;
       } else {
-	mu_mle = sqrt(-3.0+2.0*sqrt(2.0+ampratio));
+        mu_mle = sqrt(-3.0+2.0*sqrt(2.0+ampratio));
       }
 
       if(detA<0) 
-	mu_mle = - 1.0*mu_mle;
+        mu_mle = - 1.0*mu_mle;
 
 
       if(Asq*Asq < 4.0*detA*detA)
-	{
-	  fprintf(stderr,"Imaginary beta; cannot compute parameters");
-	  break;
-	}
+        {
+          fprintf(stderr,"Imaginary beta; cannot compute parameters");
+          break;
+        }
 
       /* Compute MLEs of psi and Phi0 up to sign of Cos[2*Phi0] */
       /* Make psi and Phi0 always in -Pi/2 to Pi/2 */ 
@@ -1020,15 +1020,15 @@ int EstimateSignalParameters(INT4 * maxIndex)
 
 
       A1test=h0mle*(0.5*(1+mu_mle*mu_mle)*cos(2.0*psi_mle)*cos(2.0*Phi0_mle)
-		    -mu_mle*sin(2.0*psi_mle)*sin(2.0*Phi0_mle));
+                    -mu_mle*sin(2.0*psi_mle)*sin(2.0*Phi0_mle));
 
       /* Determine the sign of Cos[2*Phi0] */
       if(A1*A1test<0) {
-	if(Phi0_mle>0) {
-	  Phi0_mle=Phi0_mle - LAL_PI/2.0;
-	} else {
-	  Phi0_mle=Phi0_mle + LAL_PI/2.0;
-	}
+        if(Phi0_mle>0) {
+          Phi0_mle=Phi0_mle - LAL_PI/2.0;
+        } else {
+          Phi0_mle=Phi0_mle + LAL_PI/2.0;
+        }
       }
 
 
@@ -1036,70 +1036,70 @@ int EstimateSignalParameters(INT4 * maxIndex)
       /* Reconstruct A1,A2,A3,A4. Compare them with the original values. */
 
       A1test=h0mle*(0.5*(1+mu_mle*mu_mle)*cos(2.0*psi_mle)*cos(2.0*Phi0_mle)
-		    -mu_mle*sin(2.0*psi_mle)*sin(2.0*Phi0_mle));
+                    -mu_mle*sin(2.0*psi_mle)*sin(2.0*Phi0_mle));
       A2test=h0mle*(0.5*(1+mu_mle*mu_mle)*sin(2.0*psi_mle)*cos(2.0*Phi0_mle)
-		    +mu_mle*cos(2.0*psi_mle)*sin(2.0*Phi0_mle));
+                    +mu_mle*cos(2.0*psi_mle)*sin(2.0*Phi0_mle));
       A3test=h0mle*(-0.5*(1+mu_mle*mu_mle)*cos(2.0*psi_mle)*sin(2.0*Phi0_mle)
-		    -mu_mle*sin(2.0*psi_mle)*cos(2.0*Phi0_mle));
+                    -mu_mle*sin(2.0*psi_mle)*cos(2.0*Phi0_mle));
       A4test=h0mle*(-0.5*(1+mu_mle*mu_mle)*sin(2.0*psi_mle)*sin(2.0*Phi0_mle)
-		    +mu_mle*cos(2.0*psi_mle)*cos(2.0*Phi0_mle));
+                    +mu_mle*cos(2.0*psi_mle)*cos(2.0*Phi0_mle));
 
 
       fprintf(stderr,"LALDemod_Estimate output: "
               "A1=%20.15f A2=%20.15f A3=%20.15f A4=%20.15f\n"
-	      ,A1,A2,A3,A4);
+              ,A1,A2,A3,A4);
       fprintf(stderr,"Reconstructed from MLE: "
               "A1=%20.15f A2=%20.15f A3=%20.15f A4=%20.15f !!!!\n\n",
-	      A1test,A2test,A3test,A4test);
+              A1test,A2test,A3test,A4test);
       fflush(stderr);
 
 
       if(fabs(A1-A1test)>fabs(A1)/(10e5)){ 
-	fprintf(stderr,"Something is wrong with Estimate A1\n");
-	fprintf(stderr,"Frequency index %d, %lf (Hz),A1=%f,A1test=%f\n",
-		irec,uvar_Freq+irec*GV.dFreq,A1,A1test);
-	fprintf(stderr,"relative error Abs((A1-A1test)/A1)=%lf\n",
-		fabs(A1-A1test)/fabs(A1));
-	return 1;
+        fprintf(stderr,"Something is wrong with Estimate A1\n");
+        fprintf(stderr,"Frequency index %d, %lf (Hz),A1=%f,A1test=%f\n",
+                irec,uvar_Freq+irec*GV.dFreq,A1,A1test);
+        fprintf(stderr,"relative error Abs((A1-A1test)/A1)=%lf\n",
+                fabs(A1-A1test)/fabs(A1));
+        return 1;
       }
       if(fabs(A2-A2test)>fabs(A2)/(10e5)){ 
-	fprintf(stderr,"Something is wrong with Estimate A2\n");
-	fprintf(stderr,"Frequency index %d, %lf (Hz),A2=%f,A2test=%f\n",
-		irec,uvar_Freq+irec*GV.dFreq,A2,A2test);
-	fprintf(stderr,"relative error Abs((A2-A2test)/A2)=%lf\n",
-		fabs(A2-A2test)/fabs(A2));
-	return 1;
+        fprintf(stderr,"Something is wrong with Estimate A2\n");
+        fprintf(stderr,"Frequency index %d, %lf (Hz),A2=%f,A2test=%f\n",
+                irec,uvar_Freq+irec*GV.dFreq,A2,A2test);
+        fprintf(stderr,"relative error Abs((A2-A2test)/A2)=%lf\n",
+                fabs(A2-A2test)/fabs(A2));
+        return 1;
       }
       if(fabs(A3-A3test)>fabs(A3)/(10e5)){ 
-	fprintf(stderr,"Something is wrong with Estimate A3\n");
-	fprintf(stderr,"Frequency index %d, %lf (Hz),A3=%f,A3test=%f\n",
-		irec,uvar_Freq+irec*GV.dFreq,A3,A3test);
-	fprintf(stderr,"relative error Abs((A3-A3test)/A3)=%lf\n",
-		fabs(A3-A3test)/fabs(A3));
-	return 1;
+        fprintf(stderr,"Something is wrong with Estimate A3\n");
+        fprintf(stderr,"Frequency index %d, %lf (Hz),A3=%f,A3test=%f\n",
+                irec,uvar_Freq+irec*GV.dFreq,A3,A3test);
+        fprintf(stderr,"relative error Abs((A3-A3test)/A3)=%lf\n",
+                fabs(A3-A3test)/fabs(A3));
+        return 1;
       }
       if(fabs(A4-A4test)>fabs(A4)/(10e5)){ 
-	fprintf(stderr,"Something is wrong with Estimate A4\n");
-	fprintf(stderr,"Frequency index %d, %lf (Hz),A4=%f,A4test=%f\n",
-		irec,uvar_Freq+irec*GV.dFreq,A1,A1test);
-	fprintf(stderr,"relative error Abs((A4-A4test)/A4)=%lf\n",
-		fabs(A4-A4test)/fabs(A4));
-	return 1;
+        fprintf(stderr,"Something is wrong with Estimate A4\n");
+        fprintf(stderr,"Frequency index %d, %lf (Hz),A4=%f,A4test=%f\n",
+                irec,uvar_Freq+irec*GV.dFreq,A1,A1test);
+        fprintf(stderr,"relative error Abs((A4-A4test)/A4)=%lf\n",
+                fabs(A4-A4test)/fabs(A4));
+        return 1;
       }
 
       
       /* Reconstruct F. Compare it with the original value. */
       Ftest=(A*(A1*A1+A3*A3)+B*(A2*A2+A4*A4)+2.0*C*(A1*A2+A3*A4))/
-	4.0*4.0/GV.SFTno;
+        4.0*4.0/GV.SFTno;
 
 
       if(fabs(Fstat.F[irec] - Ftest)> fabs(Ftest)/10e5){ 
-	fprintf(stderr,"Something is wrong with Estimate in F\n");
-	fprintf(stderr,"Frequency index %d, %lf (Hz),F=%f,Ftest=%f\n",
-		irec,uvar_Freq+irec*GV.dFreq,Fstat.F[irec],Ftest);
-	fprintf(stderr,"relative error Abs((F-Ftest)/Ftest)=%lf\n",
-		fabs(Fstat.F[irec]-Ftest)/fabs(Ftest));
-	return 1;
+        fprintf(stderr,"Something is wrong with Estimate in F\n");
+        fprintf(stderr,"Frequency index %d, %lf (Hz),F=%f,Ftest=%f\n",
+                irec,uvar_Freq+irec*GV.dFreq,Fstat.F[irec],Ftest);
+        fprintf(stderr,"relative error Abs((F-Ftest)/Ftest)=%lf\n",
+                fabs(Fstat.F[irec]-Ftest)/fabs(Ftest));
+        return 1;
       }
 #endif
 
@@ -1111,7 +1111,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       /* For the real data, we need to multiply long(2.0) */
       /* Because we use running median to estimate the S_h. */
       /* if(GV.SignalOnly!=1) 
-	h0mle=h0mle*sqrt(medianbias);
+        h0mle=h0mle*sqrt(medianbias);
       */
       /* medianbias is 1 when GV.SignalOnly==1 */
       h0mle=h0mle*sqrt(medianbias);
@@ -1121,11 +1121,11 @@ int EstimateSignalParameters(INT4 * maxIndex)
       hp=(1.0+mu_mle*mu_mle)*h0mle/2.0;
       hc=mu_mle*h0mle;
       ds=GV.SFTno*GV.tsft/2.0*(hp*hp*((A+B)/2.0+(A-B)/2.0*cos(4.0*psi_mle)
-				   +C*sin(4.0*psi_mle))
-			    +hc*hc*((A+B)/2.0-(A-B)/2.0*cos(4.0*psi_mle)
-				    -C*sin(4.0*psi_mle)));
+                                   +C*sin(4.0*psi_mle))
+                            +hc*hc*((A+B)/2.0-(A-B)/2.0*cos(4.0*psi_mle)
+                                    -C*sin(4.0*psi_mle)));
       fprintf(stderr,"A=%f,B=%f,C=%f,f=%f,h0=%f,F=%f\n",
-	      A,B,C,uvar_Freq+irec*GV.dFreq,h0mle,Fstat.F[irec]*medianbias);
+              A,B,C,uvar_Freq+irec*GV.dFreq,h0mle,Fstat.F[irec]*medianbias);
       }
 #endif
 
@@ -1197,8 +1197,8 @@ int writeFaFb(INT4 *maxIndex)
 
     fprintf(fp,"%10d\n",N);
     fprintf(fp,"%22.12f %22.12f\n",
-	    uvar_Freq+maxIndex[irec]*GV.dFreq,
-	    Fstat.F[maxIndex[irec]]*bias*bias);
+            uvar_Freq+maxIndex[irec]*GV.dFreq,
+            Fstat.F[maxIndex[irec]]*bias*bias);
     fprintf(fp,"%22.12f %22.12f\n",uvar_Freq + index * GV.dFreq, GV.dFreq);
     fprintf(fp,"%22.12f %22.12f %22.12f\n",amc.A,amc.B,amc.C);
 
@@ -1239,22 +1239,22 @@ int writeFaFb(INT4 *maxIndex)
       fprintf(fp,"%22.16f %22.16f "
                  "%E %20.17f %20.17f "
                  "%22.16f %22.16f %22.16f %22.16f %22.16f %22.16f %22.16f\n",
-	      uvar_Freq+index*GV.dFreq,Fstat.F[index]*bias*bias,
-	      DemodParams->spinDwn[0], Alpha, Delta,
-	      Fstat.Fa[index].re/sqrt(GV.SFTno)*bias,
-	      Fstat.Fa[index].im/sqrt(GV.SFTno)*bias,
-	      Fstat.Fb[index].re/sqrt(GV.SFTno)*bias,
-	      Fstat.Fb[index].im/sqrt(GV.SFTno)*bias,
-	      amc.A,amc.B,amc.C);
+              uvar_Freq+index*GV.dFreq,Fstat.F[index]*bias*bias,
+              DemodParams->spinDwn[0], Alpha, Delta,
+              Fstat.Fa[index].re/sqrt(GV.SFTno)*bias,
+              Fstat.Fa[index].im/sqrt(GV.SFTno)*bias,
+              Fstat.Fb[index].re/sqrt(GV.SFTno)*bias,
+              Fstat.Fb[index].im/sqrt(GV.SFTno)*bias,
+              amc.A,amc.B,amc.C);
 #else
       /* Freqency, Re[Fa],Im[Fa],Re[Fb],Im[Fb], F */
       fprintf(fp,"%22.16f %22.12f %22.12f %22.12f %22.12f %22.12f\n",
-	      uvar_Freq+index*GV.dFreq,
-	      Fstat.Fa[index].re/sqrt(GV.SFTno)*bias,
-	      Fstat.Fa[index].im/sqrt(GV.SFTno)*bias,
-	      Fstat.Fb[index].re/sqrt(GV.SFTno)*bias,
-	      Fstat.Fb[index].im/sqrt(GV.SFTno)*bias,
-	      Fstat.F[index]*bias*bias);
+              uvar_Freq+index*GV.dFreq,
+              Fstat.Fa[index].re/sqrt(GV.SFTno)*bias,
+              Fstat.Fa[index].im/sqrt(GV.SFTno)*bias,
+              Fstat.Fb[index].re/sqrt(GV.SFTno)*bias,
+              Fstat.Fb[index].im/sqrt(GV.SFTno)*bias,
+              Fstat.F[index]*bias*bias);
 #endif
 
 
@@ -1399,8 +1399,8 @@ int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum)
       j1=j1+1;
       mean=mean+R;
       if( R > max){
-	max=R;
-	imax=k;
+        max=R;
+        imax=k;
       }
     }/*  end j loop over points of i-th cluster  */
     /*  and start again to compute variance */
@@ -1421,18 +1421,18 @@ int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum)
       int l;
       int howmany2=0;
       int howmany=sprintf((char *)tmpline, "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
-			 fr, Alpha, Delta, N, mean, std, max);
+                         fr, Alpha, Delta, N, mean, std, max);
       
       if (howmany <= 0) {
-	fprintf(stderr,"writeFLines couldn't print to Fstats-file placeholder!\n");
-	return 4;
+        fprintf(stderr,"writeFLines couldn't print to Fstats-file placeholder!\n");
+        return 4;
       }
       
       howmany2=fwrite(tmpline, 1, howmany, fpstat);
       
       if (howmany2!=howmany) {
-	fprintf(stderr,"writeFLines couldn't print to Fstats-file!\n");
-	return 4;
+        fprintf(stderr,"writeFLines couldn't print to Fstats-file!\n");
+        return 4;
       }
       
       /* update bytecount */
@@ -1440,7 +1440,7 @@ int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum)
       
       /* update checksum sum */
       for (l=0; l<howmany; l++)
-	localchecksum+=(int)tmpline[l];
+        localchecksum+=(int)tmpline[l];
       
     } /* if fpstat */
     
@@ -1485,71 +1485,71 @@ int ReadSFTData(void)
 
       /* seek to fileno'th SFT k bytes in */
       if (uvar_mergedSFTFile){
-	if (fseek(fp,k,SEEK_SET)) {
-	  fprintf(stderr,"Unable to seek to the start of %s !\n",GV.filelist[fileno]);
-	  return 1;
-	}
+        if (fseek(fp,k,SEEK_SET)) {
+          fprintf(stderr,"Unable to seek to the start of %s !\n",GV.filelist[fileno]);
+          return 1;
+        }
       }
       else {
-	if (!(fp=fopen(GV.filelist[fileno],"rb"))) {
-	  fprintf(stderr,"Weird... %s doesn't exist!\n",GV.filelist[fileno]);
-	  return 1;
-	}
+        if (!(fp=fopen(GV.filelist[fileno],"rb"))) {
+          fprintf(stderr,"Weird... %s doesn't exist!\n",GV.filelist[fileno]);
+          return 1;
+        }
       }
 
       /* Read in the header from the file */
       errorcode=fread((void*)&header,sizeof(header),1,fp);
       if (errorcode!=1) 
-	{
-	  fprintf(stderr,"No header in data file %s\n",GV.filelist[fileno]);
-	  return 1;
-	}
+        {
+          fprintf(stderr,"No header in data file %s\n",GV.filelist[fileno]);
+          return 1;
+        }
 
       if (reverse_endian)
-	swapheader(&header);
+        swapheader(&header);
       
       if (header.endian!=1.0)
-	{
-	  fprintf(stderr,"First object in file %s is not (double)1.0!\n",GV.filelist[fileno]);
-	  fprintf(stderr,"The file might be corrupted\n\n");
-	  return 2;
-	}
+        {
+          fprintf(stderr,"First object in file %s is not (double)1.0!\n",GV.filelist[fileno]);
+          fprintf(stderr,"The file might be corrupted\n\n");
+          return 2;
+        }
     
       /* Check that the time base is positive */
       if (header.tbase<=0.0)
-	{
-	  fprintf(stderr,"Timebase %f from data file %s non-positive!\n",
-		  header.tbase,GV.filelist[fileno]);
-	  return 3;
-	}
+        {
+          fprintf(stderr,"Timebase %f from data file %s non-positive!\n",
+                  header.tbase,GV.filelist[fileno]);
+          return 3;
+        }
         
       /* Check that are frequency bins needed are in data set */
       if (GV.ifmin<header.firstfreqindex || 
-	  GV.ifmax>header.firstfreqindex+header.nsamples) 
-	{
-	  fprintf(stderr,"Freq index range %d->%d not in %d to %d (file %s)\n",
-		GV.ifmin,GV.ifmax,header.firstfreqindex,
-		  header.firstfreqindex+header.nsamples,GV.filelist[fileno]);
-	  return 4;
-	}
+          GV.ifmax>header.firstfreqindex+header.nsamples) 
+        {
+          fprintf(stderr,"Freq index range %d->%d not in %d to %d (file %s)\n",
+                GV.ifmin,GV.ifmax,header.firstfreqindex,
+                  header.firstfreqindex+header.nsamples,GV.filelist[fileno]);
+          return 4;
+        }
 
       /* Move forward in file */
       offset=(GV.ifmin-header.firstfreqindex)*2*sizeof(REAL4);
       errorcode=fseek(fp,offset,SEEK_CUR);
       if (errorcode) 
-	{
-	  perror(GV.filelist[fileno]);
-	  fprintf(stderr,"Can't get to offset %d in file %s\n",offset,GV.filelist[fileno]);
-	  return 5;
-	}
+        {
+          perror(GV.filelist[fileno]);
+          fprintf(stderr,"Can't get to offset %d in file %s\n",offset,GV.filelist[fileno]);
+          return 5;
+        }
 
 
       /* determine if THIS SFT is in the range of times of those which
-	 we need to use.  If so, read the data into arrays, else
-	 ignore it.  For my first CVS commit I will not indent this
-	 correctly so that the differences are obvious. A later commit
-	 will just clean up the indentation but make no changes to the
-	 actual non-whitespace code. */
+         we need to use.  If so, read the data into arrays, else
+         ignore it.  For my first CVS commit I will not indent this
+         correctly so that the differences are obvious. A later commit
+         will just clean up the indentation but make no changes to the
+         actual non-whitespace code. */
       thisSFTtime=(REAL8)header.gps_sec+(1.e-9)*(REAL8)header.gps_nsec;
       if (uvar_startTime<=thisSFTtime && thisSFTtime<uvar_endTime) {
 
@@ -1565,17 +1565,17 @@ int ReadSFTData(void)
       /* Fill in actual SFT data, and housekeeping */
       errorcode=fread((void*)(SFTData[fileno]->fft->data->data), sizeof(COMPLEX8), ndeltaf, fp);
       if (errorcode!=ndeltaf){
-	perror(GV.filelist[fileno]);
-	fprintf(stderr, "The SFT data was truncated.  Only read %d not %d complex floats\n", (int)errorcode, ndeltaf);
-	return 6;
+        perror(GV.filelist[fileno]);
+        fprintf(stderr, "The SFT data was truncated.  Only read %d not %d complex floats\n", (int)errorcode, ndeltaf);
+        return 6;
       }
       /* reverse byte order if needed */
       if (reverse_endian) {
-	unsigned int cnt;
-	for (cnt=0; cnt<ndeltaf; cnt++) {
-	  swap4((char *)&(SFTData[fileno]->fft->data->data[cnt].re));
-	  swap4((char *)&(SFTData[fileno]->fft->data->data[cnt].im));
-	}
+        unsigned int cnt;
+        for (cnt=0; cnt<ndeltaf; cnt++) {
+          swap4((char *)&(SFTData[fileno]->fft->data->data[cnt].re));
+          swap4((char *)&(SFTData[fileno]->fft->data->data[cnt].im));
+        }
       }
       
       SFTData[fileno]->fft->epoch=timestamps[fileno];
@@ -1586,9 +1586,9 @@ int ReadSFTData(void)
       }
 
       if (uvar_mergedSFTFile)
-	k+=sizeof(header)+header.nsamples*sizeof(COMPLEX8);
+        k+=sizeof(header)+header.nsamples*sizeof(COMPLEX8);
       else
-	fclose(fp);     /* close file */
+        fclose(fp);     /* close file */
       
     }
   return 0;  
@@ -1627,24 +1627,24 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
    */
   if (!uvar_mergedSFTFile && (uvar_startTime>-1.0e308 || uvar_endTime<1.0e308)) {
     LALPrintError ( "\nThe --startTime and --endTIme options may ONLY be used\n"
-		    "with merged SFT files, specified with the -B option.\n"
-		    "Try ./ComputeFStatistic -h \n\n");
+                    "with merged SFT files, specified with the -B option.\n"
+                    "Try ./ComputeFStatistic -h \n\n");
     ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
   }
   
   if(!uvar_DataDir && !uvar_mergedSFTFile)
     {
       LALPrintError ( "\nMust specify 'DataDir' OR 'mergedSFTFile'\n"
-		      "No SFT directory specified; input directory with -D option.\n"
-		      "No merged SFT file specified; input file with -B option.\n"
-		      "Try ./ComputeFStatistic -h \n\n");
+                      "No SFT directory specified; input directory with -D option.\n"
+                      "No merged SFT file specified; input file with -B option.\n"
+                      "Try ./ComputeFStatistic -h \n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
     }
 
   if(uvar_DataDir && uvar_mergedSFTFile)
     {
       LALPrintError ( "\nCannot specify both 'DataDir' and 'mergedSFTfile'.\n"
-		      "Try ./ComputeFStatistic -h \n\n" );
+                      "Try ./ComputeFStatistic -h \n\n" );
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
 
@@ -1726,16 +1726,16 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     if (!boinc_resolve_filename("earth.zip", zippedname,sizeof(zippedname))) {
       /* if there is, unzip it into the current directory */
       if ((boinczipret=boinc_zip(UNZIP_IT, zippedname, "./"))) {
-	fprintf(stderr, "Error in unzipping file %s to earth.  Return value %d\n", zippedname, boinczipret);
-	boinc_finish(COMPUTEFSTAT_EXIT_CANTUNZIP);
+        fprintf(stderr, "Error in unzipping file %s to earth.  Return value %d\n", zippedname, boinczipret);
+        boinc_finish(COMPUTEFSTAT_EXIT_CANTUNZIP);
       }
     }
     /* see if there is a softlink to sun.zip */
     if (!boinc_resolve_filename("sun.zip", zippedname, sizeof(zippedname))) {
       /* if there is, unzip it into the current directory */
       if ((boinczipret=boinc_zip(UNZIP_IT, zippedname, "./"))) {
-	fprintf(stderr, "Error in unzipping file %s to sun.  Return value %d\n", zippedname, boinczipret);
-	boinc_finish(COMPUTEFSTAT_EXIT_CANTUNZIP);
+        fprintf(stderr, "Error in unzipping file %s to sun.  Return value %d\n", zippedname, boinczipret);
+        boinc_finish(COMPUTEFSTAT_EXIT_CANTUNZIP);
       }
     }
   }
@@ -1764,46 +1764,46 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
       /* prepare memory for another filename */
       if ( (cfg->filelist = (CHAR**)LALRealloc( cfg->filelist, (fileno+1) * sizeof(CHAR*))) == NULL) {
-	ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+        ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
       }
       /* store a "file name" composed of merged name + block number */
       sprintf(tmp, "%s (block %d)", uvar_mergedSFTFile, ++blockno);
       if ( (cfg->filelist[fileno] = (CHAR*)LALCalloc (1, strlen(tmp)+1)) == NULL) {
-	ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+        ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
       }
       strcpy(cfg->filelist[fileno],tmp);
       
       /* check that data is correct endian order and swap if needed */
       if (-1 == reverse_endian) {
-	if (header.endian==1.0)
-	  reverse_endian=0;
-	else
-	  reverse_endian=1;
+        if (header.endian==1.0)
+          reverse_endian=0;
+        else
+          reverse_endian=1;
       }
       
       if (reverse_endian)
-	swapheader(&header);
+        swapheader(&header);
 
       if (header.endian!=1.0) {
-	fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[fileno]);
-	fprintf(stderr,"The file might be corrupted\n\n");
-	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+        fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[fileno]);
+        fprintf(stderr,"The file might be corrupted\n\n");
+        ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
       
       /* if this is the first SFT, save initial time */
       if (fileno==0) {
-	cfg->Ti=header.gps_sec;
-	starttime.gpsSeconds = header.gps_sec;
-	starttime.gpsNanoSeconds = header.gps_nsec;
+        cfg->Ti=header.gps_sec;
+        starttime.gpsSeconds = header.gps_sec;
+        starttime.gpsNanoSeconds = header.gps_nsec;
       }
       /* increment file no and pointer to the start of the next header */
       thisSFTtime=(REAL8)header.gps_sec+(1.e-9)*(REAL8)header.gps_nsec;
       if (uvar_startTime<=thisSFTtime && thisSFTtime<uvar_endTime) {
-	fileno++;
-	last_time_used=header.gps_sec;
+        fileno++;
+        last_time_used=header.gps_sec;
       }
       else
-	LALFree(cfg->filelist[fileno]);
+        LALFree(cfg->filelist[fileno]);
 
       k=header.nsamples*8;
       fseek(fp,k,SEEK_CUR);
@@ -1834,8 +1834,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     
     if(globbuf.gl_pathc==0)
       {
-	LALPrintError ("\nNo SFTs in directory %s ... Exiting.\n\n", uvar_DataDir);
-	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+        LALPrintError ("\nNo SFTs in directory %s ... Exiting.\n\n", uvar_DataDir);
+        ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
     /* prepare memory for all filenames */
     if ( (cfg->filelist = (CHAR**)LALCalloc(globbuf.gl_pathc, sizeof(CHAR*))) == NULL) {
@@ -1843,11 +1843,11 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     }
     while ((UINT4)fileno < (UINT4)globbuf.gl_pathc) 
       {
-	if ( (cfg->filelist[fileno] = (CHAR*)LALCalloc(1, strlen(globbuf.gl_pathv[fileno])+1)) == NULL) {
-	  ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-	}
-	strcpy(cfg->filelist[fileno],globbuf.gl_pathv[fileno]);
-	fileno++;
+        if ( (cfg->filelist[fileno] = (CHAR*)LALCalloc(1, strlen(globbuf.gl_pathv[fileno])+1)) == NULL) {
+          ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+        }
+        strcpy(cfg->filelist[fileno],globbuf.gl_pathv[fileno]);
+        fileno++;
       }
     globfree(&globbuf);
 #endif
@@ -1862,16 +1862,16 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
     if (errorcode!=1) 
       {
-	LALPrintError ("\nNo header in data file %s\n\n", cfg->filelist[0]);
-	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+        LALPrintError ("\nNo header in data file %s\n\n", cfg->filelist[0]);
+        ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
 
     /* check that data is correct endian order and swap if needed */
     if (-1 == reverse_endian) {
       if (header.endian==1.0)
-	reverse_endian=0;
+        reverse_endian=0;
       else
-	reverse_endian=1;
+        reverse_endian=1;
     }
     
     if (reverse_endian)
@@ -1880,9 +1880,9 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     /* check that data is correct endian order */
     if (header.endian!=1.0)
       {
-	fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[0]);
-	fprintf(stderr,"The file might be corrupted\n\n");
-	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+        fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[0]);
+        fprintf(stderr,"The file might be corrupted\n\n");
+        ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
     fclose(fp);
     
@@ -1897,8 +1897,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     errorcode=fread((void*)&header,sizeof(header),1,fp);
     if (errorcode!=1) 
       {
-	fprintf(stderr,"No header in data file %s\n",cfg->filelist[fileno-1]);
-	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+        fprintf(stderr,"No header in data file %s\n",cfg->filelist[fileno-1]);
+        ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
     if (reverse_endian)
       swapheader(&header);
@@ -1906,9 +1906,9 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     /* check that data is correct endian order */
     if (header.endian!=1.0)
       {
-	fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[fileno-1]);
-	fprintf(stderr,"The file might be corrupted\n\n");
-	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+        fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[fileno-1]);
+        fprintf(stderr,"The file might be corrupted\n\n");
+        ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
     fclose(fp);
 
@@ -2005,63 +2005,63 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     /* some consistency checks on input to help catch errors */
     if ( !useGridFile && !(haveSkyRegion || haveAlphaDelta) )
       {
-	LALPrintError ("\nNeed sky-region: either use (Alpha,Delta) or skyRegion!\n\n");
-	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+        LALPrintError ("\nNeed sky-region: either use (Alpha,Delta) or skyRegion!\n\n");
+        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       }
     if ( haveSkyRegion && haveAlphaDelta )
       {
-	LALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta) OR skyRegion!\n\n");
-	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+        LALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta) OR skyRegion!\n\n");
+        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       }
     if ( useGridFile && !haveGridFile )
       {
-	LALPrintError ("\nERROR: gridType=FILE, but no skyGridFile specified!\n\n");
-	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);	
+        LALPrintError ("\nERROR: gridType=FILE, but no skyGridFile specified!\n\n");
+        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);  
       }
     if ( !useGridFile && haveGridFile )
       {
-	LALWarning (status, "\nWARNING: skyGridFile was specified but not needed ... will be ignored\n");
+        LALWarning (status, "\nWARNING: skyGridFile was specified but not needed ... will be ignored\n");
       }
     if ( useGridFile && (haveSkyRegion || haveAlphaDelta) )
       {
-	LALWarning (status, "\nWARNING: We are using skyGridFile, but sky-region was also specified ... will be ignored!\n");
+        LALWarning (status, "\nWARNING: We are using skyGridFile, but sky-region was also specified ... will be ignored!\n");
       }
     if ( !useMetric && haveMetric) 
       {
-	LALWarning (status, "\nWARNING: Metric was specified for non-metric grid... will be ignored!\n");
+        LALWarning (status, "\nWARNING: Metric was specified for non-metric grid... will be ignored!\n");
       }
     if ( useMetric && !haveMetric) 
       {
-	LALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
-	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
+        LALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
+        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
       }
 
     /* pre-process template-related input */
     if (haveSkyRegion)
       {
-	cfg->skyRegion = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
-	strcpy (cfg->skyRegion, uvar_skyRegion);
+        cfg->skyRegion = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
+        strcpy (cfg->skyRegion, uvar_skyRegion);
       }
-    else if (haveAlphaDelta)	/* parse this into a sky-region */
+    else if (haveAlphaDelta)    /* parse this into a sky-region */
       {
-	REAL8 eps = 1.0e-9;
-	REAL8 a, d, Da, Dd;
-	a = uvar_Alpha;
-	d = uvar_Delta;
-	Da = uvar_AlphaBand + eps;	/* slightly push outwards to make sure boundary-points are included */
-	Dd = uvar_DeltaBand + eps;
-	/* consistency check either one point given or a 2D region! */
-	ASSERT ( (Da && Dd)  || ((Da == 0) && (Dd == 0.0)), status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+        REAL8 eps = 1.0e-9;
+        REAL8 a, d, Da, Dd;
+        a = uvar_Alpha;
+        d = uvar_Delta;
+        Da = uvar_AlphaBand + eps;      /* slightly push outwards to make sure boundary-points are included */
+        Dd = uvar_DeltaBand + eps;
+        /* consistency check either one point given or a 2D region! */
+        ASSERT ( (Da && Dd)  || ((Da == 0) && (Dd == 0.0)), status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       
-	cfg->skyRegion = (CHAR*)LALMalloc (512); /* should be enough for max 4 points... */
-	if ( (Da == 0) || (Dd == 0) ) 	/* only one point */
-	  sprintf (cfg->skyRegion, "(%.16f, %.16f)", a, d);
-	else				/* or a rectangle */
-	  sprintf (cfg->skyRegion, "(%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f)", 
-		   a, d, 
-		   a + Da, d, 
-		   a + Da, d + Dd,
-		   a, d + Dd );
+        cfg->skyRegion = (CHAR*)LALMalloc (512); /* should be enough for max 4 points... */
+        if ( (Da == 0) || (Dd == 0) )   /* only one point */
+          sprintf (cfg->skyRegion, "(%.16f, %.16f)", a, d);
+        else                            /* or a rectangle */
+          sprintf (cfg->skyRegion, "(%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f)", 
+                   a, d, 
+                   a + Da, d, 
+                   a + Da, d + Dd,
+                   a, d + Dd );
       }
     
 
@@ -2180,9 +2180,9 @@ WriteFStatLog (LALStatus *stat, char *argv[])
     fclose (fplog);
     
     sprintf (command, "ident %s | sort -u >> %s", argv[0], fname);
-    system (command);	/* we currently don't check this. If it fails, we assume that */
-    			/* one of the system-commands was not available, and */
-    			/* therefore the CVS-versions will simply not be logged */
+    system (command);   /* we currently don't check this. If it fails, we assume that */
+                        /* one of the system-commands was not available, and */
+                        /* therefore the CVS-versions will simply not be logged */
 
     LALFree (fname);
 
@@ -2379,7 +2379,7 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
 /*    check that ReturnMaxN is sensible */
   if (ReturnMaxN>GV.FreqImax){
     fprintf(stderr,"PrintTopValues() WARNING: resetting ReturnMaxN=%d to %d\n",
-	    ReturnMaxN, GV.FreqImax);
+            ReturnMaxN, GV.FreqImax);
     ReturnMaxN=GV.FreqImax;
   }
 
@@ -2444,18 +2444,18 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
     /*    print out the top ones */
     for (ntop=0; ntop<ReturnMaxN; ntop++)
       if (Fstat.F[indexes[ntop]]>TwoFthr){
-	err=fprintf(fpmax, "%20.10f %10.8f %10.8f %20.15f\n",
-		    uvar_Freq+indexes[ntop]*GV.dFreq,
-		    Alpha, Delta, 2.0*log2*Fstat.F[indexes[ntop]]);
-	if (err<=0) {
-	  fprintf(stderr,"PrintTopValues couldn't print to Fmax!\n");
-	  LALFree(indexes);
-	  return 3;
-	}
+        err=fprintf(fpmax, "%20.10f %10.8f %10.8f %20.15f\n",
+                    uvar_Freq+indexes[ntop]*GV.dFreq,
+                    Alpha, Delta, 2.0*log2*Fstat.F[indexes[ntop]]);
+        if (err<=0) {
+          fprintf(stderr,"PrintTopValues couldn't print to Fmax!\n");
+          LALFree(indexes);
+          return 3;
+        }
       }
       else
-	/*        Since array sorted, as soon as value too small we can break */
-	break;
+        /*        Since array sorted, as soon as value too small we can break */
+        break;
   }
 #endif
   
@@ -2492,7 +2492,7 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
 #ifdef FILE_FMAX_DEBG    
 /*    print the output */
   err=fprintf(fpmax,"%10.5f %10.8f %10.8f    %d %10.5f %10.5f %10.5f\n",uvar_Freq,
-	      Alpha, Delta, GV.FreqImax-N, mean, std, 2.0*log2*Fstat.F[indexes[0]]);
+              Alpha, Delta, GV.FreqImax-N, mean, std, 2.0*log2*Fstat.F[indexes[0]]);
 #endif
   LALFree(indexes);
 #ifdef FILE_FMAX_DEBG    
@@ -2747,7 +2747,7 @@ NormaliseSFTDataRngMdn(LALStatus *stat)
   TRY ( LALDCreateVector(stat->statusPtr, &Sp, (UINT4)nbins), stat);
   TRY ( LALDCreateVector(stat->statusPtr, &RngMdnSp, (UINT4)nbins), stat);
 
-  nbins=(INT2)nbins;	/* RP: What the heck is this????? (FIXME) */
+  nbins=(INT2)nbins;    /* RP: What the heck is this????? (FIXME) */
 
   if( (N = (REAL8 *) LALCalloc(nbins,sizeof(REAL8))) == NULL) {
     ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
@@ -2761,15 +2761,15 @@ NormaliseSFTDataRngMdn(LALStatus *stat)
     {
       /* Set to zero the values */
       for (j=0;j<nbins;j++){
-	RngMdnSp->data[j] = 0.0;
-	Sp->data[j]       = 0.0;
+        RngMdnSp->data[j] = 0.0;
+        Sp->data[j]       = 0.0;
       }
       
       /* loop over SFT data to estimate noise */
       for (j=0;j<nbins;j++){
-	xre=SFTData[i]->fft->data->data[j].re;
-	xim=SFTData[i]->fft->data->data[j].im;
-	Sp->data[j]=((REAL8)xre)*((REAL8)xre)+((REAL8)xim)*((REAL8)xim);
+        xre=SFTData[i]->fft->data->data[j].re;
+        xim=SFTData[i]->fft->data->data[j].im;
+        Sp->data[j]=((REAL8)xre)*((REAL8)xre)+((REAL8)xim)*((REAL8)xim);
       }
       
       /* Compute running median */
@@ -2779,41 +2779,41 @@ NormaliseSFTDataRngMdn(LALStatus *stat)
       /* substitute the line profiles value in RngMdnSp */
       Ntot=0;
       if (highSpLines != NULL){
-	for (il=0;il<highSpLines->Nclusters;il++){
-	  Ntot=Ntot+highSpLines->NclustPoints[il];
-	}
-	for (j=0;j<Ntot;j++){
-	  m=highSpLines->Iclust[j];
-	  RngMdnSp->data[m]=RngMdnSp->data[m]*highSpLines->clusters[j];	
-	}
+        for (il=0;il<highSpLines->Nclusters;il++){
+          Ntot=Ntot+highSpLines->NclustPoints[il];
+        }
+        for (j=0;j<Ntot;j++){
+          m=highSpLines->Iclust[j];
+          RngMdnSp->data[m]=RngMdnSp->data[m]*highSpLines->clusters[j]; 
+        }
       }
 
       /*Compute Normalization factor*/
       /* for signal only case as well */  
       for (lpc=0;lpc<nbins;lpc++){
-	N[lpc]=1.0/sqrt(2.0*RngMdnSp->data[lpc]);
+        N[lpc]=1.0/sqrt(2.0*RngMdnSp->data[lpc]);
       }
       
       if(uvar_SignalOnly == 1){
-	B=(1.0*GV.nsamples)/(1.0*GV.tsft);
-	deltaT=1.0/(2.0*B);
-	norm=deltaT/sqrt(GV.tsft);
-	for (lpc=0;lpc<nbins;lpc++){
-	  N[lpc]=norm;
-	}
+        B=(1.0*GV.nsamples)/(1.0*GV.tsft);
+        deltaT=1.0/(2.0*B);
+        norm=deltaT/sqrt(GV.tsft);
+        for (lpc=0;lpc<nbins;lpc++){
+          N[lpc]=norm;
+        }
       }
       
       /*  loop over SFT data to normalise it (with N) */
       /*  also compute Sp1, average normalized PSD */
       /*  and the sum of the PSD in the band, SpSum */
       for (j=0;j<nbins;j++){
-	xre=SFTData[i]->fft->data->data[j].re;
-	xim=SFTData[i]->fft->data->data[j].im;
-	xreNorm=N[j]*xre; 
-	ximNorm=N[j]*xim; 
-	SFTData[i]->fft->data->data[j].re = xreNorm;    
-	SFTData[i]->fft->data->data[j].im = ximNorm;
-	Sp1[j]=Sp1[j]+xreNorm*xreNorm+ximNorm*ximNorm;
+        xre=SFTData[i]->fft->data->data[j].re;
+        xim=SFTData[i]->fft->data->data[j].im;
+        xreNorm=N[j]*xre; 
+        ximNorm=N[j]*xim; 
+        SFTData[i]->fft->data->data[j].re = xreNorm;    
+        SFTData[i]->fft->data->data[j].im = ximNorm;
+        Sp1[j]=Sp1[j]+xreNorm*xreNorm+ximNorm*ximNorm;
       }
       
     } /* end loop over SFTs*/
@@ -2888,9 +2888,9 @@ void use_boinc_filename0(char *orig_name ) {
   char resolved_name[512];
   if (boinc_resolve_filename(orig_name, resolved_name, sizeof(resolved_name))) {
     fprintf(stderr, 
-	    "Can't resolve file \"%s\"\n"
-	    "If running a non-BOINC test, create [INPUT] or touch [OUTPUT] file\n",
-	    orig_name);
+            "Can't resolve file \"%s\"\n"
+            "If running a non-BOINC test, create [INPUT] or touch [OUTPUT] file\n",
+            orig_name);
 
     boinc_finish(COMPUTEFSTAT_EXIT_BOINCRESOLVE);
   }
@@ -2902,9 +2902,9 @@ void use_boinc_filename1(char **orig_name ) {
   char resolved_name[512];
   if (boinc_resolve_filename(*orig_name, resolved_name, sizeof(resolved_name))) {
     fprintf(stderr, 
-	    "Can't resolve file \"%s\"\n"
-	    "If running a non-BOINC test, create [INPUT] or touch [OUTPUT] file\n",
-	    *orig_name);
+            "Can't resolve file \"%s\"\n"
+            "If running a non-BOINC test, create [INPUT] or touch [OUTPUT] file\n",
+            *orig_name);
     boinc_finish(COMPUTEFSTAT_EXIT_BOINCRESOLVE);
   }
   LALFree(*orig_name);
@@ -2989,15 +2989,15 @@ void worker() {
     } else {
       boinczipret=boinc_zip(ZIP_IT, zipname , Outputfilename);
       if (boinczipret) {
-	fprintf(stderr, "Error in zipping file %s to temp.zip. Return value %d. not zipping output.\n",
-		Outputfilename, boinczipret);
-	/* boinc_finish(COMPUTEFSTAT_EXIT_CANTZIP); */
+        fprintf(stderr, "Error in zipping file %s to temp.zip. Return value %d. not zipping output.\n",
+                Outputfilename, boinczipret);
+        /* boinc_finish(COMPUTEFSTAT_EXIT_CANTZIP); */
       } else {
-	boinczipret=boinc_rename(zipname, Outputfilename);
-	if (boinczipret) {
-	  fprintf(stderr, "Error in renaming file %s to %s. rename() returned %d. not zipping output.\n",
-		  zipname, Outputfilename, boinczipret);
-	  /* boinc_finish(COMPUTEFSTAT_EXIT_CANTRENAME); */
+        boinczipret=boinc_rename(zipname, Outputfilename);
+        if (boinczipret) {
+          fprintf(stderr, "Error in renaming file %s to %s. rename() returned %d. not zipping output.\n",
+                  zipname, Outputfilename, boinczipret);
+          /* boinc_finish(COMPUTEFSTAT_EXIT_CANTRENAME); */
         }
       }
     }
@@ -3088,10 +3088,10 @@ int main(int argc, char *argv[]){
 
 #ifdef _WIN32
   boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED |
-			 BOINC_DIAG_HEAPCHECKENABLED |
-			 BOINC_DIAG_ARCHIVESTDERR |
-			 BOINC_DIAG_REDIRECTSTDERR |
-			 BOINC_DIAG_TRACETOSTDERR);
+                         BOINC_DIAG_HEAPCHECKENABLED |
+                         BOINC_DIAG_ARCHIVESTDERR |
+                         BOINC_DIAG_REDIRECTSTDERR |
+                         BOINC_DIAG_TRACETOSTDERR);
 #endif
 
   /* boinc_init() or boinc_init_graphics() needs to be run before any
@@ -3145,8 +3145,8 @@ void sighandler(int sig){
 #endif
   */
 
-  LALStatus *mystat = &global_status;	  /* the only place in the universe where we're
-					   * allowed to use the global_status struct !! */
+  LALStatus *mystat = &global_status;     /* the only place in the universe where we're
+                                           * allowed to use the global_status struct !! */
   /* lets start by ignoring ANY further occurences of this signal
      (hopefully just in THIS thread, if truly implementing POSIX threads */
   
@@ -3158,12 +3158,12 @@ void sighandler(int sig){
       killcounter ++;
 
       if ( killcounter >= 4 )
-	{
-	  fprintf (stderr, "APP DEBUG: got 4th kill-signal, guess you mean it. Exiting now\n");
-	  boinc_finish(COMPUTEFSTAT_EXIT_USER);
-	}
+        {
+          fprintf (stderr, "APP DEBUG: got 4th kill-signal, guess you mean it. Exiting now\n");
+          boinc_finish(COMPUTEFSTAT_EXIT_USER);
+        }
       else
-	return;
+        return;
 
     } /* termination signals */
 
@@ -3196,17 +3196,17 @@ void sighandler(int sig){
 /** Check presence and consistency of checkpoint-file and use to set loopcounter if valid.
 
  *  The name of the checkpoint-file is <fname>.ckp
- *  @param[OUT] loopcounter	number of completed loops (refers to main-loop in main())
+ *  @param[OUT] loopcounter     number of completed loops (refers to main-loop in main())
  *  @param[OUT] checksum        checksum of file (up the bytecounter bytes)
- *  @param[OUT] bytecounter	bytes nominally written to fstats file (for consistency-check)
- *  @param[IN]  fstat_fname	Name of Fstats-file. 
+ *  @param[OUT] bytecounter     bytes nominally written to fstats file (for consistency-check)
+ *  @param[IN]  fstat_fname     Name of Fstats-file. 
  */
 void
 getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long *bytecounter, const CHAR *fstat_fname, const CHAR *ckpfn)
 {
   FILE *fp;
-  UINT4 lcount; 	/* loopcounter */
-  long bcount;		/* and bytecounter read from ckp-file */
+  UINT4 lcount;         /* loopcounter */
+  long bcount;          /* and bytecounter read from ckp-file */
   long flen;
   char lastnewline='\0';
   UINT4 cksum;           /* as read for .ckp file */
@@ -3222,7 +3222,7 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
   ASSERT ( ckpfn, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
 
   /* if anything goes wrong in here: start main-loop from beginning  */
-  *loopcounter = 0;	
+  *loopcounter = 0;     
   *bytecounter = 0;
   
   /* try opening checkpoint-file read-only */
@@ -3249,7 +3249,7 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
 
 
   /* seek to end of fstats file */
-  if (fseek( fp, 0, SEEK_END)) {	/* something gone wrong seeking .. */
+  if (fseek( fp, 0, SEEK_END)) {        /* something gone wrong seeking .. */
     if (lalDebugLevel) LALPrintError ("broken fstats-file.\nStarting main-loop from beginning.\n");
     goto exit;
   }
@@ -3269,7 +3269,7 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
   
   /* compute checksum */
   computecksum=0;
-  if (fseek( fp, 0, SEEK_SET)) {	/* something gone wrong seeking .. */
+  if (fseek( fp, 0, SEEK_SET)) {        /* something gone wrong seeking .. */
     if (lalDebugLevel) LALPrintError ("broken fstats-file.\nStarting main-loop from beginning.\n");
     goto exit;
   }
@@ -3305,20 +3305,20 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
 
 #ifdef FILE_AMCOEFFS
 void PrintAMCoeffs (REAL8 Alpha, REAL8 Delta, AMCoeffs* amc) {
-	UINT4 i;
-	FILE*fp;
-	fp=fopen("AMCoeffs.dump","a");
-	if (fp==NULL) return;
-	fprintf(fp,"Alpha=%20.17f, Delta=%20.17f\n", Alpha, Delta);
-	fprintf(fp,"a:\n");
-	for(i=0;i<amc->a->length;i++)
-		fprintf(fp,"%20.17f\n",amc->a->data[i]);
-	fprintf(fp,"b:\n");
-	for(i=0;i<amc->b->length;i++)
-		fprintf(fp,"%20.17f\n",amc->b->data[i]);
-	fprintf(fp,"A=%20.17f, B=%20.17f, C=%20.17f, D=%20.17f\n\n",
-		amc->A, amc->B, amc->C, amc->D);
-	fclose(fp);
+        UINT4 i;
+        FILE*fp;
+        fp=fopen("AMCoeffs.dump","a");
+        if (fp==NULL) return;
+        fprintf(fp,"Alpha=%20.17f, Delta=%20.17f\n", Alpha, Delta);
+        fprintf(fp,"a:\n");
+        for(i=0;i<amc->a->length;i++)
+                fprintf(fp,"%20.17f\n",amc->a->data[i]);
+        fprintf(fp,"b:\n");
+        for(i=0;i<amc->b->length;i++)
+                fprintf(fp,"%20.17f\n",amc->b->data[i]);
+        fprintf(fp,"A=%20.17f, B=%20.17f, C=%20.17f, D=%20.17f\n\n",
+                amc->A, amc->B, amc->C, amc->D);
+        fclose(fp);
 }
 #endif
 
@@ -3328,20 +3328,20 @@ void OrigLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 { 
 
   INT4 alpha,i;                 /* loop indices */
-  REAL8	*xSum=NULL, *ySum=NULL;	/* temp variables for computation of fs*as and fs*bs */
-  INT4 s;		        /* local variable for spinDwn calcs. */
-  REAL8	xTemp;	                /* temp variable for phase model */
-  REAL8	deltaF;	                /* width of SFT band */
-  INT4	k, k1;	                /* defining the sum over which is calculated */
-  REAL8 *skyConst;	        /* vector of sky constants data */
-  REAL8 *spinDwn;	        /* vector of spinDwn parameters (maybe a structure? */
-  INT4	spOrder;	        /* maximum spinDwn order */
-  REAL8	x;		        /* local variable for holding x */
-  REAL8	realXP, imagXP; 	/* temp variables used in computation of */
-  REAL8	realP, imagP;	        /* real and imaginary parts of P, see CVS */
-  INT4	nDeltaF;	        /* number of frequency bins per SFT band */
-  INT4	sftIndex;	        /* more temp variables */
-  REAL8	y;		        /* local variable for holding y */
+  REAL8 *xSum=NULL, *ySum=NULL; /* temp variables for computation of fs*as and fs*bs */
+  INT4 s;                       /* local variable for spinDwn calcs. */
+  REAL8 xTemp;                  /* temp variable for phase model */
+  REAL8 deltaF;                 /* width of SFT band */
+  INT4  k, k1;                  /* defining the sum over which is calculated */
+  REAL8 *skyConst;              /* vector of sky constants data */
+  REAL8 *spinDwn;               /* vector of spinDwn parameters (maybe a structure? */
+  INT4  spOrder;                /* maximum spinDwn order */
+  REAL8 x;                      /* local variable for holding x */
+  REAL8 realXP, imagXP;         /* temp variables used in computation of */
+  REAL8 realP, imagP;           /* real and imaginary parts of P, see CVS */
+  INT4  nDeltaF;                /* number of frequency bins per SFT band */
+  INT4  sftIndex;               /* more temp variables */
+  REAL8 y;                      /* local variable for holding y */
   REAL8 realQ, imagQ;
   REAL8 *sinVal,*cosVal;        /*LUT values computed by the routine do_trig_lut*/
   INT4  res;                    /*resolution of the argument of the trig functions: 2pi/res.*/
@@ -3392,7 +3392,7 @@ void OrigLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
     xSum[alpha]=0.0;
     ySum[alpha]=0.0;
     for(s=0; s<spOrder;s++) {
-      xSum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+2+2*s]; 	
+      xSum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+2+2*s];      
       ySum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+1+2*s];
     }
   }
@@ -3411,82 +3411,82 @@ void OrigLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
     /* Loop over SFTs that contribute to F-stat for a given frequency */
     for(alpha=0;alpha<params->SFTno;alpha++)
       {
-	REAL8 tsin, tcos, tempFreq;
-	COMPLEX8 *Xalpha=input[alpha]->fft->data->data;
-	REAL4 a = params->amcoe->a->data[alpha];
-	REAL4 b = params->amcoe->b->data[alpha];
+        REAL8 tsin, tcos, tempFreq;
+        COMPLEX8 *Xalpha=input[alpha]->fft->data->data;
+        REAL4 a = params->amcoe->a->data[alpha];
+        REAL4 b = params->amcoe->b->data[alpha];
 
-	xTemp=f*skyConst[tempInt1[alpha]]+xSum[alpha];
+        xTemp=f*skyConst[tempInt1[alpha]]+xSum[alpha];
 
-	realXP=0.0;
-	imagXP=0.0;
-	      
-	/* find correct index into LUT -- pick closest point */
-	tempFreq=xTemp-(INT4)xTemp;
-	index=(INT4)(tempFreq*res+0.5);
-	      
-	{
-	  REAL8 d=LAL_TWOPI*(tempFreq-(REAL8)index/(REAL8)res);
-	  REAL8 d2=0.5*d*d;
-	  REAL8 ts=sinVal[index];
-	  REAL8 tc=cosVal[index];
-		
-	  tsin=ts+d*tc-d2*ts;
-	  tcos=tc-d*ts-d2*tc-1.0;
-	}
-		     
-	tempFreq=LAL_TWOPI*(tempFreq+params->Dterms-1);
-	k1=(INT4)xTemp-params->Dterms+1;
-	/* Loop over terms in dirichlet Kernel */
-	for(k=0;k<2*params->Dterms;k++)
-	  {
-	    COMPLEX8 Xalpha_k;
-	    x=tempFreq-LAL_TWOPI*(REAL8)k;
-	    realP=tsin/x;
-	    imagP=tcos/x;
+        realXP=0.0;
+        imagXP=0.0;
+              
+        /* find correct index into LUT -- pick closest point */
+        tempFreq=xTemp-(INT4)xTemp;
+        index=(INT4)(tempFreq*res+0.5);
+              
+        {
+          REAL8 d=LAL_TWOPI*(tempFreq-(REAL8)index/(REAL8)res);
+          REAL8 d2=0.5*d*d;
+          REAL8 ts=sinVal[index];
+          REAL8 tc=cosVal[index];
+                
+          tsin=ts+d*tc-d2*ts;
+          tcos=tc-d*ts-d2*tc-1.0;
+        }
+                     
+        tempFreq=LAL_TWOPI*(tempFreq+params->Dterms-1);
+        k1=(INT4)xTemp-params->Dterms+1;
+        /* Loop over terms in dirichlet Kernel */
+        for(k=0;k<2*params->Dterms;k++)
+          {
+            COMPLEX8 Xalpha_k;
+            x=tempFreq-LAL_TWOPI*(REAL8)k;
+            realP=tsin/x;
+            imagP=tcos/x;
 
-	    /* If x is small we need correct x->0 limit of Dirichlet kernel */
-	    if(fabs(x) < SMALL) 
-	      {
-		realP=1.0;
-		imagP=0.0;
-	      }	 
+            /* If x is small we need correct x->0 limit of Dirichlet kernel */
+            if(fabs(x) < SMALL) 
+              {
+                realP=1.0;
+                imagP=0.0;
+              }  
  
-	    sftIndex=k1+k-params->ifmin;
+            sftIndex=k1+k-params->ifmin;
 
-	    /* these four lines compute P*xtilde */
-	    Xalpha_k=Xalpha[sftIndex];
-	    realXP += Xalpha_k.re*realP;
-	    realXP -= Xalpha_k.im*imagP;
-	    imagXP += Xalpha_k.re*imagP;
-	    imagXP += Xalpha_k.im*realP;
-	  }
+            /* these four lines compute P*xtilde */
+            Xalpha_k=Xalpha[sftIndex];
+            realXP += Xalpha_k.re*realP;
+            realXP -= Xalpha_k.im*imagP;
+            imagXP += Xalpha_k.re*imagP;
+            imagXP += Xalpha_k.im*realP;
+          }
       
-	y=-LAL_TWOPI*(f*skyConst[tempInt1[alpha]-1]+ySum[alpha]);
+        y=-LAL_TWOPI*(f*skyConst[tempInt1[alpha]-1]+ySum[alpha]);
 
-	realQ = cos(y);
-	imagQ = sin(y);
+        realQ = cos(y);
+        imagQ = sin(y);
 
-	/* implementation of amplitude demodulation */
-	{
-	  REAL8 realQXP = realXP*realQ-imagXP*imagQ;
-	  REAL8 imagQXP = realXP*imagQ+imagXP*realQ;
-	  Fa.re += a*realQXP;
-	  Fa.im += a*imagQXP;
-	  Fb.re += b*realQXP;
-	  Fb.im += b*imagQXP;
-	}
+        /* implementation of amplitude demodulation */
+        {
+          REAL8 realQXP = realXP*realQ-imagXP*imagQ;
+          REAL8 imagQXP = realXP*imagQ+imagXP*realQ;
+          Fa.re += a*realQXP;
+          Fa.im += a*imagQXP;
+          Fb.re += b*realQXP;
+          Fb.im += b*imagQXP;
+        }
     }      
 
     FaSq = Fa.re*Fa.re+Fa.im*Fa.im;
     FbSq = Fb.re*Fb.re+Fb.im*Fb.im;
     FaFb = Fa.re*Fb.re+Fa.im*Fb.im;
-	  	  	
+                        
     Fs->F[i] = (4.0/(M*D))*(B*FaSq + A*FbSq - 2.0*C*FaFb);
     if (params->returnFaFb)
       {
-	Fs->Fa[i] = Fa;
-	Fs->Fb[i] = Fb;
+        Fs->Fa[i] = Fa;
+        Fs->Fb[i] = Fb;
       }
 
 
@@ -3504,9 +3504,9 @@ void OrigLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 } /* OrigLALDemod() */
 
 
-#define LD_SMALL	(1.0e-9 / LAL_TWOPI)
-#define OOTWOPI		(1.0 / LAL_TWOPI)
-#define LUT_RES		64	/* resolution of lookup-table */
+#define LD_SMALL        (1.0e-9 / LAL_TWOPI)
+#define OOTWOPI         (1.0 / LAL_TWOPI)
+#define LUT_RES         64      /* resolution of lookup-table */
 
 /* <lalVerbatim file="LALDemodCP"> */
 void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
@@ -3514,18 +3514,18 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 { 
 
   INT4 alpha,i;                 /* loop indices */
-  REAL8	*xSum=NULL, *ySum=NULL;	/* temp variables for computation of fs*as and fs*bs */
-  INT4 s;		        /* local variable for spinDwn calcs. */
-  REAL8	xTemp;	                /* temp variable for phase model */
-  REAL8	deltaF;	                /* width of SFT band */
-  INT4	k1;	                /* defining the sum over which is calculated */
+  REAL8 *xSum=NULL, *ySum=NULL; /* temp variables for computation of fs*as and fs*bs */
+  INT4 s;                       /* local variable for spinDwn calcs. */
+  REAL8 xTemp;                  /* temp variable for phase model */
+  REAL8 deltaF;                 /* width of SFT band */
+  INT4  k1;                     /* defining the sum over which is calculated */
   UINT4 k;
-  REAL8 *skyConst;	        /* vector of sky constants data */
-  REAL8 *spinDwn;	        /* vector of spinDwn parameters (maybe a structure? */
-  INT4	spOrder;	        /* maximum spinDwn order */
-  REAL8	realXP, imagXP; 	/* temp variables used in computation of */
-  INT4	nDeltaF;	        /* number of frequency bins per SFT band */
-  INT4	sftIndex;	        /* more temp variables */
+  REAL8 *skyConst;              /* vector of sky constants data */
+  REAL8 *spinDwn;               /* vector of spinDwn parameters (maybe a structure? */
+  INT4  spOrder;                /* maximum spinDwn order */
+  REAL8 realXP, imagXP;         /* temp variables used in computation of */
+  INT4  nDeltaF;                /* number of frequency bins per SFT band */
+  INT4  sftIndex;               /* more temp variables */
   REAL8 realQ, imagQ;
   INT4 *tempInt1;
   UINT4 index;
@@ -3566,10 +3566,10 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   if ( firstCall )
     {
       for (k=0; k <= LUT_RES; k++)
-	{
-	  sinVal[k] = sin( (LAL_TWOPI*k)/LUT_RES );
-	  cosVal[k] = cos( (LAL_TWOPI*k)/LUT_RES );
-	}
+        {
+          sinVal[k] = sin( (LAL_TWOPI*k)/LUT_RES );
+          cosVal[k] = cos( (LAL_TWOPI*k)/LUT_RES );
+        }
       firstCall = 0;
     }
 
@@ -3582,7 +3582,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
     xSum[alpha]=0.0;
     ySum[alpha]=0.0;
     for(s=0; s<spOrder;s++) {
-      xSum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+2+2*s]; 	
+      xSum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+2+2*s];      
       ySum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+1+2*s];
     }
   }
@@ -3601,160 +3601,160 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
     /* Loop over SFTs that contribute to F-stat for a given frequency */
     for(alpha=0;alpha<params->SFTno;alpha++)
       {
-	REAL8 tempFreq0, tempFreq1;
-	REAL4 tsin, tcos;
-	COMPLEX8 *Xalpha=input[alpha]->fft->data->data;
-	REAL4 a = params->amcoe->a->data[alpha];
-	REAL4 b = params->amcoe->b->data[alpha];
-	REAL8 x,y;
-	REAL4 realP, imagP;	        /* real and imaginary parts of P, see CVS */
+        REAL8 tempFreq0, tempFreq1;
+        REAL4 tsin, tcos;
+        COMPLEX8 *Xalpha=input[alpha]->fft->data->data;
+        REAL4 a = params->amcoe->a->data[alpha];
+        REAL4 b = params->amcoe->b->data[alpha];
+        REAL8 x,y;
+        REAL4 realP, imagP;             /* real and imaginary parts of P, see CVS */
 
-	/* NOTE: sky-constants are always positive!!
-	 * this can be seen from there definition (-> documentation)
-	 * we will use this fact in the following! 
-	 */
-	xTemp= f * skyConst[ tempInt1[ alpha ] ] + xSum[ alpha ];	/* >= 0 !! */
-	
-	/* this will now be assumed positive, but we double-check this to be sure */
-	if ( xTemp < 0 )
-	  {
-	    fprintf (stderr, "The assumption xTemp >= 0 failed ... that should not be possible!!\n");
-	    fprintf (stderr, "DEBUG: loop=%d, xTemp=%f, f=%f, alpha=%d, tempInt1[alpha]=%d\n", 
-		     i, xTemp, f, alpha, tempInt1[alpha]);
-	    fprintf (stderr, "DEBUG: skyConst[ tempInt1[ alpha ] ] = %f, xSum[ alpha ]=%f\n",
-		     skyConst[ tempInt1[ alpha ] ], xSum[ alpha ]);
-	    fprintf (stderr, "\n*** PLEASE report this bug to pulgroup@gravity.phys.uwm.edu *** \n\n");
+        /* NOTE: sky-constants are always positive!!
+         * this can be seen from there definition (-> documentation)
+         * we will use this fact in the following! 
+         */
+        xTemp= f * skyConst[ tempInt1[ alpha ] ] + xSum[ alpha ];       /* >= 0 !! */
+        
+        /* this will now be assumed positive, but we double-check this to be sure */
+        if ( xTemp < 0 )
+          {
+            fprintf (stderr, "The assumption xTemp >= 0 failed ... that should not be possible!!\n");
+            fprintf (stderr, "DEBUG: loop=%d, xTemp=%f, f=%f, alpha=%d, tempInt1[alpha]=%d\n", 
+                     i, xTemp, f, alpha, tempInt1[alpha]);
+            fprintf (stderr, "DEBUG: skyConst[ tempInt1[ alpha ] ] = %f, xSum[ alpha ]=%f\n",
+                     skyConst[ tempInt1[ alpha ] ], xSum[ alpha ]);
+            fprintf (stderr, "\n*** PLEASE report this bug to pulgroup@gravity.phys.uwm.edu *** \n\n");
 
-	    exit (COMPUTEFSTAT_EXIT_DEMOD);
-	  }
+            exit (COMPUTEFSTAT_EXIT_DEMOD);
+          }
 
-	/* find correct index into LUT -- pick closest point */
-	tempFreq0 = xTemp - (UINT4)xTemp;  /* lies in [0, +1) by definition */
+        /* find correct index into LUT -- pick closest point */
+        tempFreq0 = xTemp - (UINT4)xTemp;  /* lies in [0, +1) by definition */
 
-	index = (UINT4)( tempFreq0 * LUT_RES + 0.5 );	/* positive! */
-	{
-	  REAL8 d=LAL_TWOPI*(tempFreq0 - (REAL8)index/(REAL8)LUT_RES);
-	  REAL8 d2=0.5*d*d;
-	  REAL8 ts=sinVal[index];
-	  REAL8 tc=cosVal[index];
-		
-	  tsin = ts+d*tc-d2*ts;
-	  tcos = tc-d*ts-d2*tc-1.0;
-	}
+        index = (UINT4)( tempFreq0 * LUT_RES + 0.5 );   /* positive! */
+        {
+          REAL8 d=LAL_TWOPI*(tempFreq0 - (REAL8)index/(REAL8)LUT_RES);
+          REAL8 d2=0.5*d*d;
+          REAL8 ts=sinVal[index];
+          REAL8 tc=cosVal[index];
+                
+          tsin = ts+d*tc-d2*ts;
+          tcos = tc-d*ts-d2*tc-1.0;
+        }
 
-	y = - LAL_TWOPI * ( f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ] );
-	realQ = cos(y);
-	imagQ = sin(y);
+        y = - LAL_TWOPI * ( f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ] );
+        realQ = cos(y);
+        imagQ = sin(y);
 
-	/*
-	REAL8 yTemp = f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ];
-	REAL8 yRem = yTemp - (UINT4)yTemp;
+        /*
+        REAL8 yTemp = f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ];
+        REAL8 yRem = yTemp - (UINT4)yTemp;
 
-	index = (UINT4)( yRem * LUT_RES + 0.5 );
-	{
-	  REAL8 d = LAL_TWOPI*(yRem - (REAL8)index/(REAL8)LUT_RES);
-	  REAL8 d2=0.5*d*d;
-	  REAL8 ts = sinVal[index];
-	  REAL8 tc = cosVal[index];
-		
-	  imagQ = ts + d * tc - d2 * ts;
-	  imagQ = -imagQ;
-	  realQ = tc - d * ts - d2 * tc;
-	}
-	*/
+        index = (UINT4)( yRem * LUT_RES + 0.5 );
+        {
+          REAL8 d = LAL_TWOPI*(yRem - (REAL8)index/(REAL8)LUT_RES);
+          REAL8 d2=0.5*d*d;
+          REAL8 ts = sinVal[index];
+          REAL8 tc = cosVal[index];
+                
+          imagQ = ts + d * tc - d2 * ts;
+          imagQ = -imagQ;
+          realQ = tc - d * ts - d2 * tc;
+        }
+        */
 
-	k1 = (UINT4)xTemp - params->Dterms + 1;
+        k1 = (UINT4)xTemp - params->Dterms + 1;
 
-	sftIndex = k1 - params->ifmin;
+        sftIndex = k1 - params->ifmin;
 
-	tempFreq1 = tempFreq0 + params->Dterms - 1; 	/* positive if Dterms > 1 (trivial) */
+        tempFreq1 = tempFreq0 + params->Dterms - 1;     /* positive if Dterms > 1 (trivial) */
 
-	x = LAL_TWOPI * tempFreq1;	/* positive! */
+        x = LAL_TWOPI * tempFreq1;      /* positive! */
 
-	/* we branch now (instead of inside the central loop)
-	 * depending on wether x can ever become SMALL in the loop or not, 
-	 * because it requires special treatment in the Dirichlet kernel
-	 */
-	if ( tempFreq0 < LD_SMALL ) 
-	  {
+        /* we branch now (instead of inside the central loop)
+         * depending on wether x can ever become SMALL in the loop or not, 
+         * because it requires special treatment in the Dirichlet kernel
+         */
+        if ( tempFreq0 < LD_SMALL ) 
+          {
 
-	    realXP=0.0;
-	    imagXP=0.0;
+            realXP=0.0;
+            imagXP=0.0;
 
-	    /* Loop over terms in Dirichlet Kernel */
-	    for(k=0; k < klim ; k++)
-	      {
-		COMPLEX8 Xalpha_k = Xalpha[sftIndex];
-		sftIndex ++;
-		/* If x is small we need correct x->0 limit of Dirichlet kernel */
-		if( fabs(x) <  SMALL) 
-		  {
-		    realXP += Xalpha_k.re;
-		    imagXP += Xalpha_k.im;
-		  }	 
-		else
-		  {
-		    realP = tsin / x;
-		    imagP = tcos / x;
-		    /* these four lines compute P*xtilde */
-		    realXP += Xalpha_k.re * realP;
-		    realXP -= Xalpha_k.im * imagP;
-		    imagXP += Xalpha_k.re * imagP;
-		    imagXP += Xalpha_k.im * realP;
-		  }
-		
-		tempFreq1 --;
-		x = LAL_TWOPI * tempFreq1;
-		
-	      } /* for k < klim */
+            /* Loop over terms in Dirichlet Kernel */
+            for(k=0; k < klim ; k++)
+              {
+                COMPLEX8 Xalpha_k = Xalpha[sftIndex];
+                sftIndex ++;
+                /* If x is small we need correct x->0 limit of Dirichlet kernel */
+                if( fabs(x) <  SMALL) 
+                  {
+                    realXP += Xalpha_k.re;
+                    imagXP += Xalpha_k.im;
+                  }      
+                else
+                  {
+                    realP = tsin / x;
+                    imagP = tcos / x;
+                    /* these four lines compute P*xtilde */
+                    realXP += Xalpha_k.re * realP;
+                    realXP -= Xalpha_k.im * imagP;
+                    imagXP += Xalpha_k.re * imagP;
+                    imagXP += Xalpha_k.im * realP;
+                  }
+                
+                tempFreq1 --;
+                x = LAL_TWOPI * tempFreq1;
+                
+              } /* for k < klim */
 
-	  } /* if x could become close to 0 */
-	else
-	  {
-	    COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
+          } /* if x could become close to 0 */
+        else
+          {
+            COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
 
-	    realXP=0.0;
-	    imagXP=0.0;
+            realXP=0.0;
+            imagXP=0.0;
 
-	    /* Loop over terms in dirichlet Kernel */
-	    for(k=0; k < klim ; k++)
-	      {
-		REAL4 xinv = (REAL4)OOTWOPI / (REAL4)tempFreq1;
-		COMPLEX8 Xa = *Xalpha_k;
-		Xalpha_k ++;
-		tempFreq1 --;
-		
-		realP = tsin * xinv;
-		imagP = tcos * xinv;
-		/* these four lines compute P*xtilde */
-		realXP += Xa.re * realP - Xa.im * imagP;
-		imagXP += Xa.re * imagP + Xa.im * realP;
+            /* Loop over terms in dirichlet Kernel */
+            for(k=0; k < klim ; k++)
+              {
+                REAL4 xinv = (REAL4)OOTWOPI / (REAL4)tempFreq1;
+                COMPLEX8 Xa = *Xalpha_k;
+                Xalpha_k ++;
+                tempFreq1 --;
+                
+                realP = tsin * xinv;
+                imagP = tcos * xinv;
+                /* these four lines compute P*xtilde */
+                realXP += Xa.re * realP - Xa.im * imagP;
+                imagXP += Xa.re * imagP + Xa.im * realP;
 
-	      } /* for k < klim */
+              } /* for k < klim */
 
-	  } /* if x cannot be close to 0 */
-	
+          } /* if x cannot be close to 0 */
+        
 
-	/* implementation of amplitude demodulation */
-	{
-	  REAL8 realQXP = realXP*realQ-imagXP*imagQ;
-	  REAL8 imagQXP = realXP*imagQ+imagXP*realQ;
-	  Fa.re += a*realQXP;
-	  Fa.im += a*imagQXP;
-	  Fb.re += b*realQXP;
-	  Fb.im += b*imagQXP;
-	}
+        /* implementation of amplitude demodulation */
+        {
+          REAL8 realQXP = realXP*realQ-imagXP*imagQ;
+          REAL8 imagQXP = realXP*imagQ+imagXP*realQ;
+          Fa.re += a*realQXP;
+          Fa.im += a*imagQXP;
+          Fb.re += b*realQXP;
+          Fb.im += b*imagQXP;
+        }
     }      
 
     FaSq = Fa.re*Fa.re+Fa.im*Fa.im;
     FbSq = Fb.re*Fb.re+Fb.im*Fb.im;
     FaFb = Fa.re*Fb.re+Fa.im*Fb.im;
-	  	  	
+                        
     Fs->F[i] = (4.0/(M*D))*(B*FaSq + A*FbSq - 2.0*C*FaFb);
     if (params->returnFaFb)
       {
-	Fs->Fa[i] = Fa;
-	Fs->Fb[i] = Fb;
+        Fs->Fa[i] = Fa;
+        Fs->Fb[i] = Fb;
       }
 
 
