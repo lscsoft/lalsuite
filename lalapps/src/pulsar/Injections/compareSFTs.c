@@ -61,6 +61,7 @@ static const LALStatus empty_status;
 CHAR *uvar_sftBname1;
 CHAR *uvar_sftBname2;
 INT4 uvar_debug;
+BOOLEAN uvar_verbose;
 BOOLEAN uvar_help;
 
 /*----------------------------------------------------------------------
@@ -81,7 +82,7 @@ main(int argc, char *argv[])
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
 
   /* register all user-variables */
-  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
+  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'd'), &status);
   LAL_CALL (initUserVars (&status), &status);	  
 
   /* read cmdline & cfgfile  */	
@@ -114,50 +115,58 @@ main(int argc, char *argv[])
 
   LAL_CALL (subtractSFTVectors (&status, &diffs, SFTs1, SFTs2), &status);
 
-  for (i=0; i < mymax(SFTs1->length, SFTs2->length); i++)
+  if ( uvar_verbose)
     {
-      REAL4 d1, d2, d3;
-      REAL4 scalar, norm1, norm2, normdiff;
-      printf ("i=%02d: ", i);
-      LAL_CALL( scalarProductSFT(&status, &norm1, &(SFTs1->data[i]), &(SFTs1->data[i]) ), &status);
-      norm1 = sqrt(norm1);
-      LAL_CALL( scalarProductSFT(&status, &norm2, &(SFTs2->data[i]), &(SFTs2->data[i]) ), &status);
-      norm2 = sqrt(norm2);
-      LAL_CALL( scalarProductSFT(&status, &scalar, &(SFTs1->data[i]), &(SFTs2->data[i]) ), &status);
-      
-      LAL_CALL( scalarProductSFT(&status, &normdiff, &(diffs->data[i]), &(diffs->data[i]) ), &status);
-
-      d1 = (norm1 - norm2)/norm1;
-      d2 = 1.0 - scalar / (norm1*norm2);
-      d3 = normdiff / (norm1*norm1 + norm2*norm2 );
-
-      printf (" (|x|-|y|)/|x| = %10.3e, 1 - x.y/(|x| |y|) = %10.3e, |x - y|^2/(|x|^2+|y|^2)) = %10.3e\n", d1, d2, d3);
-
-    }
+      for (i=0; i < mymax(SFTs1->length, SFTs2->length); i++)
+	{
+	  REAL4 d1, d2, d3;
+	  REAL4 scalar, norm1, norm2, normdiff;
+	  printf ("i=%02d: ", i);
+	  LAL_CALL( scalarProductSFT(&status, &norm1, &(SFTs1->data[i]), &(SFTs1->data[i]) ), &status);
+	  norm1 = sqrt(norm1);
+	  LAL_CALL( scalarProductSFT(&status, &norm2, &(SFTs2->data[i]), &(SFTs2->data[i]) ), &status);
+	  norm2 = sqrt(norm2);
+	  LAL_CALL( scalarProductSFT(&status, &scalar, &(SFTs1->data[i]), &(SFTs2->data[i]) ), &status);
+	  
+	  LAL_CALL( scalarProductSFT(&status, &normdiff, &(diffs->data[i]), &(diffs->data[i]) ), &status);
+	  
+	  d1 = (norm1 - norm2)/norm1;
+	  d2 = 1.0 - scalar / (norm1*norm2);
+	  d3 = normdiff / (norm1*norm1 + norm2*norm2 );
+	  
+	  printf (" (|x|-|y|)/|x| = %10.3e, 1 - x.y/(|x| |y|) = %10.3e, |x - y|^2/(|x|^2+|y|^2)) = %10.3e\n", d1, d2, d3);
+	} /* for i < SFTs->length */
+    } /* if verbose */
 
   /* COMBINED measures */
   {
-    REAL4 norm1, norm2, normdiff, scalar;
-    REAL4 d1, d2, d3;
+    REAL4 ret;
+    REAL8 norm1, norm2, normdiff, scalar;
+    REAL8 d1, d2, d3;
 
 
-    LAL_CALL( scalarProductSFTVector (&status, &norm1, SFTs1, SFTs1 ), &status);
-    norm1 = sqrt(norm1);
-    LAL_CALL( scalarProductSFTVector (&status, &norm2, SFTs2, SFTs2 ), &status);
-    norm2 = sqrt(norm2);
+    LAL_CALL( scalarProductSFTVector (&status, &ret, SFTs1, SFTs1 ), &status);
+    norm1 = sqrt( (REAL8)ret );
 
-    LAL_CALL( scalarProductSFTVector (&status, &scalar, SFTs1, SFTs2 ), &status);
-      
-    LAL_CALL( scalarProductSFTVector(&status, &normdiff, diffs, diffs ), &status);
+    LAL_CALL( scalarProductSFTVector (&status, &ret, SFTs2, SFTs2 ), &status);
+    norm2 = sqrt( (REAL8)ret );
+
+    LAL_CALL( scalarProductSFTVector (&status, &ret, SFTs1, SFTs2 ), &status);
+    scalar = (REAL8) ret;
+
+    LAL_CALL( scalarProductSFTVector(&status, &ret, diffs, diffs ), &status);
+    normdiff = (REAL8) ret;
 
     d1 = (norm1 - norm2)/norm1;
     d2 = 1.0 - scalar / (norm1*norm2);
     d3 = normdiff / ( norm1*norm1 + norm2*norm2);
 
-    printf ("\nTOTAL: (|x|-|y|)/|x| = %10.3e, 1 - x.y/(|x| |y|) = %10.3e, |x - y|^2/(|x|^2+|y|^2) = %10.3e\n", d1, d2, d3);
+    if ( uvar_verbose )
+      printf ("\nTOTAL: (|x|-|y|)/|x| = %10.3e, 1 - x.y/(|x| |y|) = %10.3e, |x - y|^2/(|x|^2+|y|^2) = %10.3e\n", d1, d2, d3);
+    else
+      printf ("%10.3e", d3);
 
   } /* combined total measures */
-
 
 
   /* free memory */
@@ -182,11 +191,13 @@ initUserVars (LALStatus *stat)
 
   /* set some defaults */
   uvar_debug = lalDebugLevel;
+  uvar_verbose = FALSE;
 
   /* now register all our user-variable */
 
   LALregSTRINGUserVar(stat, sftBname1,	'1', UVAR_REQUIRED, "Path and basefilename for SFTs1");
   LALregSTRINGUserVar(stat, sftBname2,	'2', UVAR_REQUIRED, "Path and basefilename for SFTs2");
+  LALregBOOLUserVar(stat,   verbose,	'v', UVAR_OPTIONAL, "Verbose output of differences");
   LALregBOOLUserVar(stat,   help,	'h', UVAR_HELP,     "Print this help/usage message");
 
   DETATCHSTATUSPTR (stat);
