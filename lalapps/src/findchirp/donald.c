@@ -221,7 +221,7 @@ int main(int argc, char **argv)
     FILE  *fp = NULL;                      /* generic file pointer                 */
     FILE  *fpout = NULL;                      /* generic file pointer                 */
     char   vetoline[1024],filename[1024];
-    int    i,pass=0,numIFO=1, dummyMask, j;
+    int    i,pass=0,numIFO=1, dummyMask, j, printRaw=0;
     vetoParams *veto_entry=NULL, *thisentry=NULL;
     candParams candidates;
     timeWindow *thiswindow=NULL,*vwindows=NULL, *awindows=NULL;
@@ -294,6 +294,15 @@ int main(int argc, char **argv)
             if ( argc > arg + 1 ) {
                 arg++;
                 coincidence_window = atof(argv[arg++]);
+            }else{
+                fprintf(stderr,  USAGE, *argv );
+                return RESPONSEC_EARG;
+            }
+        }
+        else if ( !strcmp( argv[arg], "--raw" ) ) {
+            if ( argc > arg + 1 ) {
+                arg++;
+                printRaw = 1;
             }else{
                 fprintf(stderr,  USAGE, *argv );
                 return RESPONSEC_EARG;
@@ -409,22 +418,23 @@ int main(int argc, char **argv)
         /******************************************************************** 
          * Print out the list of events that were found
          ********************************************************************/
-        sprintf(filename,"triggers-%s.dat",ifo[i].ifoname);
-        if ( ( fp = fopen( filename, "w" ) ) == NULL ) {
-            fprintf(stderr,  USAGE, *argv );
-            return RESPONSEC_EFILE;
+        if(printRaw){
+            sprintf(filename,"triggers-%s.dat",ifo[i].ifoname);
+            if ( ( fp = fopen( filename, "w" ) ) == NULL ) {
+                fprintf(stderr,  USAGE, *argv );
+                return RESPONSEC_EFILE;
+            }
+            j=0;
+            thisCEvent = ifo[i].eventhead;
+            while ((thisCEvent) != NULL){
+                j++;
+                fprintf(fp,"%i %f %f %f %f %f\n",j,(*thisCEvent).time,
+                        (*thisCEvent).snr,(*thisCEvent).chisq,
+                        (*thisCEvent).eff_distance,(*thisCEvent).mchirp);
+                thisCEvent = (*thisCEvent).next_event;
+            }
+            fclose(fp);
         }
-        j=0;
-        thisCEvent = ifo[i].eventhead;
-        while ((thisCEvent) != NULL){
-            j++;
-            fprintf(fp,"%i %f %f %f %f %f\n",j,(*thisCEvent).time,
-                    (*thisCEvent).snr,(*thisCEvent).chisq,
-                    (*thisCEvent).eff_distance,(*thisCEvent).mchirp);
-            thisCEvent = (*thisCEvent).next_event;
-        }
-        fclose(fp);
-
 
         /******************************************************************** 
          * Read in list of injection events and apply vetoes to them.
@@ -433,7 +443,7 @@ int main(int argc, char **argv)
         if (!(strcmp(ifo[i].ifoname,"H1"))){
             calfudge = 1.11/0.87;
         }
-        fprintf(fpout,"Using calibration fudge factor %f for %s\n",
+        fprintf(fpout,"# Using calibration fudge factor %f for %s\n",
                 calfudge, ifo[i].ifoname);
         buildEventList( &(ifo[i].Ieventhead), ifo[i].vwindows, 
                 ifo[i].candidates, INJECTIONS, 0, calfudge);
@@ -441,21 +451,23 @@ int main(int argc, char **argv)
         /******************************************************************** 
          * Print out the list of events that were found
          ********************************************************************/
-        sprintf(filename,"injections-%s.dat",ifo[i].ifoname);
-        if ( ( fp = fopen( filename, "w" ) ) == NULL ) {
-            fprintf(stderr,  USAGE, *argv );
-            return RESPONSEC_EFILE;
+        if(printRaw){
+            sprintf(filename,"injections-%s.dat",ifo[i].ifoname);
+            if ( ( fp = fopen( filename, "w" ) ) == NULL ) {
+                fprintf(stderr,  USAGE, *argv );
+                return RESPONSEC_EFILE;
+            }
+            j=0;
+            thisIEvent = ifo[i].Ieventhead;
+            while ((thisIEvent) != NULL){
+                j++;
+                fprintf(fp,"%i %f %f %f %f %f\n",j,(*thisIEvent).time,
+                        (*thisIEvent).snr,(*thisIEvent).chisq,
+                        (*thisIEvent).eff_distance,(*thisIEvent).mchirp);
+                thisIEvent = (*thisIEvent).next_event;
+            }
+            fclose(fp);
         }
-        j=0;
-        thisIEvent = ifo[i].Ieventhead;
-        while ((thisIEvent) != NULL){
-            j++;
-            fprintf(fp,"%i %f %f %f %f %f\n",j,(*thisIEvent).time,
-                    (*thisIEvent).snr,(*thisIEvent).chisq,
-                    (*thisIEvent).eff_distance,(*thisIEvent).mchirp);
-            thisIEvent = (*thisIEvent).next_event;
-        }
-        fclose(fp);
     }
 
     /*************************************************************************
@@ -472,7 +484,7 @@ int main(int argc, char **argv)
      * Search for events in multiple instruments
      *
      *************************************************************************/
-    fprintf(fpout,"# Looking for coincidences\n"); fflush(fpout);
+    fprintf(fpout,"# Looking for coincident triggers\n"); fflush(fpout);
     LALSortTriggers(&status,ifo,numIFO);
     fprintf(fpout,"# Delta M is %e \n",delm); fflush(fpout);
     buildMultiInspiralEvents(&multInspEv, coincident_times, ifo, numIFO, 
@@ -488,6 +500,7 @@ int main(int argc, char **argv)
     }
     fclose(fp);
 
+    fprintf(fpout,"# Looking for coincident injections\n"); fflush(fpout);
     buildMultiInspiralEvents(&multInspEv, coincident_times, ifo, numIFO, 
             INJECTIONS, dummyStart, delm, distance, coincidence_window);
 

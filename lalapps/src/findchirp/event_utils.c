@@ -293,6 +293,7 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
     const MetaioParseEnv candEnv = &candParseEnv;
     vetoParams *thisentry=NULL;
     candEvent  *thisCEvent=NULL, *prevCEvent=NULL;
+    float distfudge = 1.0, snrfudge = 1.0;
 
     if (injectflag == INJECTIONS){
         if ( (status = MetaioOpen( candEnv, candidates.injectfile)) !=0 ){
@@ -300,12 +301,16 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
             MetaioAbort( candEnv ); 
             exit(2);
         }
+        snrfudge = calfudge;
+        distfudge = 1.0;
     }else{
         if ( (status = MetaioOpen( candEnv, candidates.triggerfile)) !=0 ){
             fprintf(stderr, "Error opening trigger file %s\n", candidates.triggerfile );
             MetaioAbort( candEnv ); 
             exit(2);
         }
+        snrfudge = 1.0;
+        distfudge = calfudge;
     }
 
 
@@ -345,9 +350,9 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
             break;
         }
 
-        snrVtemp = calfudge * candEnv->ligo_lw.table.elt[iVetoSNR].data.real_4;  
+        snrVtemp = snrfudge * candEnv->ligo_lw.table.elt[iVetoSNR].data.real_4;  
         chiVtemp = candEnv->ligo_lw.table.elt[iCandCHISQ].data.real_4;  
-        edistVtemp = candEnv->ligo_lw.table.elt[iCandEDIST].data.real_4;  
+        edistVtemp = distfudge * candEnv->ligo_lw.table.elt[iCandEDIST].data.real_4;  
         mchirpVtemp = candEnv->ligo_lw.table.elt[iCandMCHIRP].data.real_4;  
         mass1Vtemp = candEnv->ligo_lw.table.elt[iCandMASS1].data.real_4;  
         mass2Vtemp = candEnv->ligo_lw.table.elt[iCandMASS2].data.real_4;  

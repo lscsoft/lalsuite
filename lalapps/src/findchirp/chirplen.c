@@ -1,8 +1,8 @@
+/* Author: Duncan Brown */
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <lal/LALConstants.h>
-
 
 int main ( int argc, char *argv[] )
 {
@@ -22,13 +22,13 @@ int main ( int argc, char *argv[] )
   M = m1 + m2;
   eta = ( m1 * m2 ) / ( M * M );
   m = 2 * ( m1 > m2 ? m2 : m1 );
-  fprintf( stdout, "eta = %f\tm = %f\n", eta, m );
+  fprintf( stdout, "eta = %f\tm = %f\n", eta, M );
 
-  c0 = 5*m*LAL_MTSUN_SI/(256*eta);
+  c0 = 5*M*LAL_MTSUN_SI/(256*eta);
   c2 = 743.0/252.0 + eta*11.0/3.0;
   c3 = -32*LAL_PI/3;
   c4 = 3058673.0/508032.0 + eta*(5429.0/504.0 + eta*617.0/72.0);
-  x  = pow(LAL_PI*m*LAL_MTSUN_SI*fmin, 1.0/3.0);
+  x  = pow(LAL_PI*M*LAL_MTSUN_SI*fmin, 1.0/3.0);
   x2 = x*x;
   x3 = x*x2;
   x4 = x2*x2;
