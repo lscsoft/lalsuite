@@ -1632,12 +1632,12 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
       case 'k':
 	       /* high pass knee filter frequency  */
-	       highPassFreq= atoi(optarg);
+	       highPassFreq= atof(optarg);
 	       break;
                           
       case 'p':
 	       /* high pass filter attenuation  */
-	       highPassAt = atoi(optarg);
+	       highPassAt = atof(optarg);
 	       break;
 
       case 'P':
