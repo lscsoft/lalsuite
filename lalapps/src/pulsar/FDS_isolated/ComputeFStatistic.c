@@ -61,7 +61,7 @@ RCSID( "$Id$");
 /* for getpid() */
 #include <sys/types.h>
 #include <unistd.h>
-
+int boincmain(int argc, char *argv[]);
 typedef int bool;
 extern int boinc_init(bool standalone);
 extern int boinc_finish(int);
@@ -78,9 +78,8 @@ extern int boinc_finish_graphics();
 /* for current search position, used in starsphere.C revision 4.6 or greater */
 extern float search_RAdeg;
 extern float search_DEdeg;
-
+extern double fraction_done;
 #endif /* USE_BOINC */
-
 
 /*----------------------------------------------------------------------*/
 /* Error-codes */
@@ -157,7 +156,6 @@ int reverse_endian=-1;          /**< endian order of SFT data.  -1: unknown, 0: 
 
 /*----------------------------------------------------------------------*/
 /* local prototypes */
-
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *stat);
 INT4 ReadSFTData (void);
@@ -207,7 +205,11 @@ DopplerScanState emptyScan;
  * Calculate the F-statistic over a given portion of the parameter-space
  * and write a list of 'candidates' into a file(default: 'Fstats').
  */
+#if USE_BOINC
+int boincmain(int argc, char *argv[])
+#else
 int main(int argc,char *argv[]) 
+#endif
 {
   LALStatus status = blank_status;	/* initialize status */
 
@@ -223,29 +225,8 @@ int main(int argc,char *argv[])
   FILE *fpOut=NULL;
   UINT4 loopcounter;
 
-
   lalDebugLevel = 0 ;  
   vrbflg = 1;	/* verbose error-messages */
-
-#if USE_BOINC
-  /* boinc_init() needs to be run before any boinc_api functions are used */
-  boinc_init(FALSE);
-
-#if !NO_BOINC_GRAPHICS
-  boinc_init_graphics();
-#endif
-
-#if USE_BOINC_DEBUG
-  {
-    char commandstring[256];
-    /* char *cmd_name = argv[0]; */
-    pid_t process_id=getpid();
-    sprintf(commandstring,"ddd %s %d &","../../projects/ein*/einstein*" ,process_id);
-    system(commandstring);
-    sleep(20);
-  }
-#endif /*USE_BOINC_DEBUG*/
-#endif /*USE_BOINC*/
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
@@ -354,7 +335,7 @@ int main(int argc,char *argv[])
       if ( (fpOut = fopen (uvar_outputFstat, "w")) == NULL)
 	{
 	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
-	  exit(-1);
+	  return 1;
 	}
       if ( uvar_openDX )	/* prepend openDX header */
 	{
@@ -466,38 +447,42 @@ int main(int argc,char *argv[])
 
       loopcounter ++;
 #if USE_BOINC
-      boinc_fraction_done(((double)loopcounter)/((double)thisScan.numGridPoints));
+      {
+	double local_fraction_done=((double)loopcounter)/((double)thisScan.numGridPoints);
+	if (local_fraction_done<0.0)
+	  local_fraction_done=0.0;
+	if (local_fraction_done>1.0)
+	  local_fraction_done=1.0;
+	boinc_fraction_done(local_fraction_done);
+#if !NO_BOINC_GRAPHICS
+	/* pass variable externally to graphics routines */
+	fraction_done=local_fraction_done;
+#endif
+      }
 #endif
       if (lalDebugLevel) LALPrintError ("Search progress: %5.1f%%", 
 					(100.0* loopcounter / thisScan.numGridPoints));
     } /*  while SkyPos */
-
+  
   if (uvar_outputFstat && fpOut)
     fclose (fpOut);
 
   if (lalDebugLevel) LALPrintError ("\nSearch finished.\n");
-
+  
 #ifdef FILE_FMAX  
   fclose(fpmax);
 #endif
 #ifdef FILE_FSTATS  
   fclose(fpstat);
 #endif
-
+  
   /* Free DopplerScan-stuff (grid) */
   LAL_CALL ( FreeDopplerScan(&status, &thisScan), &status);
-
+  
   LAL_CALL ( Freemem(&status), &status);
-
-#if USE_BOINC
-#if !NO_BOINC_GRAPHICS
-  boinc_finish_graphics();
-#endif
-  boinc_finish(0);
-#endif
-
+  
   return 0;
-
+  
 } /* main() */
 
 
@@ -674,7 +659,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
 	  fprintf(stderr,"in ComputeFStatistic code");
 	  fprintf(stderr,"Now exitting...");
 	  /* 	  break; */
-	  exit(1);
+	  return 1;
 	}
 
       if(fabs(ampratio-0.25)<error_tol) {
@@ -743,7 +728,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
 		irec,uvar_Freq+irec*GV.dFreq,A1,A1test);
 	fprintf(stderr,"relative error Abs((A1-A1test)/A1)=%lf\n",
 		fabs(A1-A1test)/fabs(A1));
-	exit(1);
+	return 1;
       }
       if(fabs(A2-A2test)>fabs(A2)/(10e5)){ 
 	fprintf(stderr,"Something is wrong with Estimate A2\n");
@@ -751,7 +736,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
 		irec,uvar_Freq+irec*GV.dFreq,A2,A2test);
 	fprintf(stderr,"relative error Abs((A2-A2test)/A2)=%lf\n",
 		fabs(A2-A2test)/fabs(A2));
-	exit(1);
+	return 1;
       }
       if(fabs(A3-A3test)>fabs(A3)/(10e5)){ 
 	fprintf(stderr,"Something is wrong with Estimate A3\n");
@@ -759,7 +744,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
 		irec,uvar_Freq+irec*GV.dFreq,A3,A3test);
 	fprintf(stderr,"relative error Abs((A3-A3test)/A3)=%lf\n",
 		fabs(A3-A3test)/fabs(A3));
-	exit(1);
+	return 1;
       }
       if(fabs(A4-A4test)>fabs(A4)/(10e5)){ 
 	fprintf(stderr,"Something is wrong with Estimate A4\n");
@@ -767,7 +752,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
 		irec,uvar_Freq+irec*GV.dFreq,A1,A1test);
 	fprintf(stderr,"relative error Abs((A4-A4test)/A4)=%lf\n",
 		fabs(A4-A4test)/fabs(A4));
-	exit(1);
+	return 1;
       }
 
       
@@ -782,7 +767,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
 		irec,uvar_Freq+irec*GV.dFreq,Fstat.F[irec],Ftest);
 	fprintf(stderr,"relative error Abs((F-Ftest)/Ftest)=%lf\n",
 		fabs(Fstat.F[irec]-Ftest)/fabs(Ftest));
-	exit(1);
+	return 1;
       }
 #endif
 
@@ -2532,7 +2517,7 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
    /*
    if( nbins < windowSize ) {
      fprintf( stderr, "The frequency band has too small bins compared to the now hard-coded window size (= %d) used in EstimateFloor().\n", windowSize );
-     exit(1);
+     return 1;
    }
    */
 
@@ -2667,7 +2652,11 @@ void swapheader(struct headertag *thisheader) {
 void use_boinc_filename0(char *orig_name ) {
   char resolved_name[512];
   if (boinc_resolve_filename(orig_name, resolved_name, sizeof(resolved_name))) {
-    fprintf(stderr, "Can't resolve file %s\n", orig_name);
+    fprintf(stderr, 
+	    "Can't resolve file \"%s\"\n"
+	    "If running a non-BOINC test, create [INPUT] or touch [OUTPUT] file\n",
+	    orig_name);
+
     boinc_finish(2);
   }
   strcpy(orig_name, resolved_name);
@@ -2677,7 +2666,10 @@ void use_boinc_filename0(char *orig_name ) {
 void use_boinc_filename1(char **orig_name ) {
   char resolved_name[512];
   if (boinc_resolve_filename(*orig_name, resolved_name, sizeof(resolved_name))) {
-    fprintf(stderr, "Can't resolve file %s\n", *orig_name);
+    fprintf(stderr, 
+	    "Can't resolve file \"%s\"\n"
+	    "If running a non-BOINC test, create [INPUT] or touch [OUTPUT] file\n",
+	    *orig_name);
     boinc_finish(2);
   }
   LALFree(*orig_name);
@@ -2685,4 +2677,35 @@ void use_boinc_filename1(char **orig_name ) {
   strcpy(*orig_name, resolved_name);
   return;
 }
+
+int main(int argc, char *argv[]){
+  int returnvalue;
+
+  /* boinc_init() needs to be run before any boinc_api functions are used */
+  boinc_init(FALSE);
+#if !NO_BOINC_GRAPHICS
+  boinc_init_graphics();
+#endif
+#if USE_BOINC_DEBUG
+  {
+    char commandstring[256];
+    /* char *cmd_name = argv[0]; */
+    pid_t process_id=getpid();
+    sprintf(commandstring,"ddd %s %d &","../../projects/ein*/einstein*" ,process_id);
+    system(commandstring);
+    sleep(20);
+  }
+#endif /*USE_BOINC_DEBUG*/
+  
+  /* do computation */
+  returnvalue=boincmain(argc, argv);
+  
+#if !NO_BOINC_GRAPHICS
+  boinc_finish_graphics();
+#endif
+  boinc_finish(returnvalue);
+  return 0;
+}
+
+
 #endif /*USE_BOINC*/
