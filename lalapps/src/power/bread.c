@@ -457,23 +457,23 @@ static SnglBurstTable *free_this_event(SnglBurstTable *event)
 }
 
 
-static SnglBurstTable *trim_event_list(SnglBurstTable *event, struct options_t options)
+static SnglBurstTable **trim_event_list(SnglBurstTable **list, struct options_t options)
 {
-	SnglBurstTable *head;
+	SnglBurstTable *event;
 
-	while(event && !keep_this_event(event, options))
-		event = event->next;
-	head = event;
+	while(*list && !keep_this_event(*list, options))
+		*list = free_this_event(*list);
 
-	if(event)
-		while(event->next) {
-			if(keep_this_event(event->next, options))
-				event = event->next;
-			else
-				event->next = free_this_event(event->next);
-		}
+	if(!*list)
+		return(list);
 
-	return(head);
+	for(event = *list; event->next; ) {
+		if(keep_this_event(event->next, options))
+			event = event->next;
+		else
+			event->next = free_this_event(event->next);
+	}
+	return(&event->next);
 }
 
 
@@ -580,7 +580,7 @@ int main(int argc, char **argv)
 	 * Do any requested cuts
 	 */
 
-	burstEventList = trim_event_list(burstEventList, options);
+	trim_event_list(&burstEventList, options);
 
 	if(options.verbose)
 		fprintf(stderr, "Total no. of triggers %ld\n", count_events(burstEventList));
