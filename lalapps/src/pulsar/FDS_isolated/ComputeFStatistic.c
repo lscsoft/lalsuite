@@ -3,7 +3,7 @@
  * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
  * Implements the so-called "F-statistic" as introduced in JKS98.
  *                                                                          
- * \author                 Y. Ioth, M.A. Papa, X. Siemens, R.Prix, B. Machenschalk
+ * \author                 B. Allen, Y. Ioth, B. Machenschalk, M.A. Papa, R.Prix, X. Siemens
  *                                                                          
  *                 Albert Einstein Institute/UWM - started September 2002   
  *********************************************************************************/
