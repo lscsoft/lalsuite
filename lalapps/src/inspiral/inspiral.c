@@ -36,7 +36,7 @@ UINT8  gpsStartTimeNS   = 0;            /* input data GPS start time ns */
 LIGOTimeGPS gpsStartTime;               /* input data GPS start time    */
 UINT8  gpsEndTimeNS     = 0;            /* input data GPS end time ns   */
 LIGOTimeGPS gpsEndTime;                 /* input data GPS end time      */
-INT4  safety = -1;                      /* saftety margin on input data */
+INT4  padData = 0;                      /* saftety margin on input data */
 CHAR  *fqChanName       = NULL;         /* name of data channel         */
 CHAR  *frInCacheName    = NULL;         /* cache file containing frames */
 INT4  numPoints         = -1;           /* points in a segment          */
@@ -45,7 +45,7 @@ INT4  ovrlap            = -1;           /* overlap between segments     */
 CHAR  site[2];                          /* single character site code   */
 CHAR  ifo[3];                           /* two character ifo code       */
 CHAR *channelName = NULL;               /* channel string               */
-INT4  inputDataLength = 0;              /* number of points in input    */
+UINT4 inputDataLength = 0;              /* number of points in input    */
 
 /* data conditioning parameters */
 INT4   sampleRate       = -1;           /* sample rate of filter data   */
@@ -104,6 +104,7 @@ int main( int argc, char *argv[] )
   DataSegmentVector            *dataSegVec = NULL;
 
   /* structures for preconditioning */
+  ResampleTSParams              resampleParams;
   LALWindowParams               wpars;
   AverageSpectrumParams         avgSpecParams;
 
@@ -140,6 +141,9 @@ int main( int argc, char *argv[] )
   INT4  inserted;
   INT4  currentLevel;
   CHAR  fname[256];
+  REAL8 inputLengthNS;
+  UINT4 numInputPoints;
+  const REAL8 epsilon = 1.0e-8;
 
 
   /*
@@ -171,7 +175,9 @@ int main( int argc, char *argv[] )
   if ( ! *comment )
   {
     snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
-  } else {
+  } 
+  else 
+  {
     snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
   }
@@ -180,52 +186,54 @@ int main( int argc, char *argv[] )
   savedEvents.snglInspiralTable = NULL;
 
 
-  /* 
+  /*
    *
-   * create and populate findchip initialization structure 
+   * create a (possibly heirarcical) template bank
    *
    */
 
 
-  if ( ! ( fcInitParams = (FindChirpInitParams *) 
-        LALCalloc( 1, sizeof(FindChirpInitParams) ) ) )
+  /* read in the template bank from a ligo lw xml file */
+  numTmplts = InspiralTmpltBankFromLIGOLw( &bankHead, bankFileName,
+      startTemplate, stopTemplate );
+  if ( numTmplts < 0 )
   {
-    fprintf( stderr, "could not allocate memory for findchirp init params\n" );
+    fprintf( stderr, "error: unable to read templates from %s\n", 
+        bankFileName );
     exit( 1 );
   }
-  fcInitParams->numPoints      = numPoints;
-  fcInitParams->numSegments    = numSegments;
-  fcInitParams->numChisqBins   = numChisqBins;
-  fcInitParams->createRhosqVec = writeRhosq;
-  fcInitParams->ovrlap         = ovrlap;
+  else if ( numTmplts == 0 )
+  {
+    fprintf( stdout, "no templates found in template bank file: %s\n"
+        "exiting without searching for events.\n", bankFileName );
+    goto cleanexit;
+  }
+
+  if ( vrbflg ) fprintf( stdout, "parsed %d templates from %s\n", 
+      numTmplts, bankFileName );
+
+  /* create the linked list of template nodes for coarse templates */
+  for ( bankCurrent = bankHead; bankCurrent; bankCurrent = bankCurrent->next )
+  {
+    LAL_CALL( LALFindChirpCreateTmpltNode( &status, 
+          bankCurrent, &tmpltCurrent ), &status );
+    if ( !tmpltHead ) tmpltHead = tmpltCurrent;
+  }
 
 
   /*
    *
-   * read in the input data
+   * read in the input data channel
    *
    */
 
 
-  /* create storage for the input data */
+  /* set the params of the input data time series */
   memset( &chan, 0, sizeof(REAL4TimeSeries) );
-  LAL_CALL( LALSCreateVector( &status, &(chan.data), inputDataLength ), 
-      &status );
-  memset( &spec, 0, sizeof(REAL4FrequencySeries) );
-  LAL_CALL( LALSCreateVector( &status, &(spec.data), numPoints / 2 + 1 ), 
-      &status );
-  memset( &resp, 0, sizeof(COMPLEX8FrequencySeries) );
-  LAL_CALL( LALCCreateVector( &status, &(resp.data), numPoints / 2 + 1 ), 
-      &status );
-
-  /* set the time series parameters of the input data */
   chan.epoch = gpsStartTime;
-  memcpy( &(spec.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
-  memcpy( &(resp.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
-  chan.deltaT = 1.0 / (REAL8) sampleRate;
-  memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
+  chan.epoch.gpsSeconds -= padData; /* subtract pad seconds from start */
 
-  /* read the data channel time series from frames */
+  /* open a frame cache or files, seek to required epoch and set chan name */
   if ( frInCacheName )
   {
     LAL_CALL( LALFrCacheImport( &status, &frInCache, frInCacheName), &status );
@@ -237,40 +245,95 @@ int main( int argc, char *argv[] )
   }
   LAL_CALL( LALFrSeek( &status, &(chan.epoch), frStream ), &status );
   frChan.name = fqChanName;
-  frChan.type = ADCDataChannel;
+
+  /* determine the sample rate of the raw data and allocate enough memory */
   LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
       &status );
+
+  /* determine the number of points to get and create storage forr the data */
+  inputLengthNS = 
+    (REAL8) ( gpsEndTimeNS - gpsStartTimeNS + 2000000000LL * padData );
+  chan.deltaT *= 1.0e9;
+  numInputPoints = (UINT4) floor( inputLengthNS / chan.deltaT );
+  LAL_CALL( LALSCreateVector( &status, &(chan.data), numInputPoints ), 
+      &status );
+
+  if ( vrbflg ) fprintf( stdout, "input channel %s has sample interval "
+      "(deltaT) = %e\nreading %d points from frame stream\n", fqChanName, 
+      chan.deltaT / 1.0e9, numInputPoints );
+
+  /* read the data channel time series from frames */
+  LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
+      &status );
+
+  /* close the frame file stream and destroy the cache */
   LAL_CALL( LALFrClose( &status, &frStream ), &status );
-  if ( frInCacheName )
+  if ( frInCacheName ) LAL_CALL( LALDestroyFrCache( &status, &frInCache ), 
+      &status );
+
+  /* write the raw channel data as read in from the frame files */
+  if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+      &chan, "ct", "RAW" );
+
+  if ( vrbflg ) fprintf( stdout, "read channel %s from frame stream\n"
+      "got %d points with deltaT %e starting at GPS time %d sec %d ns\n", 
+      chan.name, chan.data->length, chan.deltaT, 
+      chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
+
+  /* set the time series parameters of the input data */
+  memset( &resampleParams, 0, sizeof(ResampleTSParams) );
+  resampleParams.deltaT = 1.0 / (REAL8) sampleRate;
+  memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
+
+  /* if the input and requested sample rates differ, downsample the data */
+  if ( ! ( fabs( resampleParams.deltaT - chan.deltaT ) < epsilon ) )
   {
-    LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );
+    if (vrbflg) fprintf( stdout, "resampling input data from %e to %e\n",
+        chan.deltaT, resampleParams.deltaT );
+
+    LAL_CALL( LALResampleREAL4TimeSeries( &status, &chan, &resampleParams ),
+        &status );
+
+    if ( vrbflg ) fprintf( stdout, "channel %s resampled:\n"
+        "%d points with deltaT %e starting at GPS time %d sec %d ns\n", 
+        chan.name, chan.data->length, chan.deltaT, 
+        chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
+
+    /* write the resampled channel data as read in from the frame files */
+    if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+        &chan, "ct", "RESAMP" );
   }
 
-  if ( writeRawData )
-  {
-    outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &chan, "ct", "RAW" );
-  }
 
-  /* create the data segment vector */
-  LAL_CALL( LALInitializeDataSegmentVector( &status, &dataSegVec,
-        &chan, &spec, &resp, fcInitParams ), &status );
+  /*
+   *
+   * generate the response function for the requested time
+   *
+   */
 
-  /* set the parameters of the response to match the data and spectrum */
-  resp.epoch = chan.epoch;
-  resp.deltaF = 1.0 / ((REAL8) numPoints * chan.deltaT) ;
+
+  /* create storage for the response function */
+  memset( &resp, 0, sizeof(COMPLEX8FrequencySeries) );
+  LAL_CALL( LALCCreateVector( &status, &(resp.data), numPoints / 2 + 1 ), 
+      &status );
+  memcpy( &(spec.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
+  memcpy( &(resp.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
+
+  /* set the parameters of the response to match the data */
+  resp.epoch = gpsStartTime;
+  resp.deltaF = (REAL8) sampleRate / (REAL8) numPoints;
   resp.f0 = 0.0;
   resp.sampleUnits = strainPerCount;
+  strcpy( resp.name, chan.name );
 
   /* generate the response function for the current time */
+  if ( vrbflg ) fprintf( stdout, "generating response at time %d sec %d ns\n",
+      resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds );
   LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, ifo ),
       &status );
 
-  if ( writeResponse )
-  {
-    strcpy( resp.name, chan.name );
-    outFrame = fr_add_proc_COMPLEX8FrequencySeries( outFrame, 
-        &resp, "strain/ct", "RESPONSE" );
-  }
+  if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
+      outFrame, &resp, "strain/ct", "RESPONSE" );
 
 
   /*
@@ -297,18 +360,15 @@ int main( int argc, char *argv[] )
       fprintf( stderr, "error: cannot read injection file" );
       exit( 1 );
     }
-    
+
     /* inject the signals, preserving the channel name (Tev mangles it) */
     LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", chan.name );
     LAL_CALL( LALFindChirpInjectSignals( &status, &chan, injections, &resp ),
         &status );
     LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", tmpChName );
 
-    if ( vrbflg )
-    {
-      fprintf( stdout, "injected %d signals from %s into %s\n", 
-          numInjections, injectionFile, chan.name );
-    }
+    if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n", 
+        numInjections, injectionFile, chan.name );
 
     while ( injections )
     {
@@ -318,61 +378,15 @@ int main( int argc, char *argv[] )
     }
   }
 
-  
-  /*
+
+  /* 
    *
-   * create a (possibly heirarcical) template bank
-   *
-   */
-
-
-  /* read in the template bank from a ligo lw xml file */
-  numTmplts = InspiralTmpltBankFromLIGOLw( &bankHead, bankFileName,
-      startTemplate, stopTemplate );
-  if ( numTmplts < 1 )
-  {
-    fprintf( stderr, "error: unable to read templates from %s\n", 
-        bankFileName );
-    exit( 1 );
-  }
-  if ( vrbflg )
-  {
-    fprintf( stdout, "parsed %d templates from %s\n", numTmplts, bankFileName );
-  }
-
-
-  /* create the linked list of template nodes for coarse templates */
-  for ( bankCurrent = bankHead; bankCurrent; bankCurrent = bankCurrent->next )
-  {
-    LAL_CALL( LALFindChirpCreateTmpltNode( &status, 
-          bankCurrent, &tmpltCurrent ), &status );
-
-    if ( !tmpltHead ) tmpltHead = tmpltCurrent;
-  }
-
-
-
-  /*
-   *
-   * data conditioning initialization and pre-conditioning of data
+   * high pass the data, removed pad from time series and check length of data
    *
    */
 
 
-  /* create the findchirp data storage */
-  LAL_CALL( LALCreateFindChirpSegmentVector( &status, &fcSegVec, 
-        fcInitParams ), &status );
-
-  /* initialize findchirp stationary phase routines */
-  LAL_CALL( LALFindChirpSPDataInit( &status, &fcDataParams, fcInitParams ), 
-      &status );
-  LAL_CALL( LALFindChirpSPTemplateInit( &status, &fcTmpltParams, 
-        fcInitParams ), &status );
-
-  fcDataParams->invSpecTrunc = invSpecTrunc * sampleRate;
-  fcDataParams->fLow = fLow;
-
-  /* high pass the data to get a prevent bleeding of low frequences in psd */
+  /* iir filter to remove low frequencies from data channel */
   if ( highPass )
   {
     PassBandParamStruc highpassParam;
@@ -382,9 +396,83 @@ int main( int argc, char *argv[] )
     highpassParam.a1 = 0.1;
     highpassParam.a2 = -1.0;
 
+    if ( vrbflg ) fprintf( stdout, "highpassing data above %e\n", 
+        highPassFreq );
+
     LAL_CALL( LALButterworthREAL4TimeSeries( &status, &chan, &highpassParam ),
         &status );
   }
+
+  /* remove pad from requested data from start and end of time series */
+  if ( padData )
+  {
+    memmove( chan.data->data, chan.data->data + padData * sampleRate, 
+        chan.data->length - padData * sampleRate );
+    LALRealloc( chan.data->data, 
+        (chan.data->length - 2 * padData * sampleRate) * sizeof(REAL4) );
+    chan.data->length -= 2 * padData * sampleRate;
+  }
+  if ( vrbflg ) fprintf( stdout, "after removal of %d second padding at "
+      "start and end:\ndata channel sample interval (deltaT) = %e\n"
+      "data channel length = %d\n", padData , chan.deltaT , chan.data->length );
+
+  if ( writeFilterData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+      &chan, "ct", "FILTER" );
+
+  /* check data length */
+  if ( chan.data->length != inputDataLength )
+  {
+    fprintf( stderr, "error: computed channel length and requested\n"
+        "input data length do not match:\nchan.data->length = %d\n"
+        "inputDataLength = %d\nyou have found a bug in the code.\n",
+        chan.data->length, inputDataLength );
+    exit( 1 );
+  }
+
+
+  /* 
+   *
+   * create and populate findchip initialization structure 
+   *
+   */
+
+
+  if ( ! ( fcInitParams = (FindChirpInitParams *) 
+        LALCalloc( 1, sizeof(FindChirpInitParams) ) ) )
+  {
+    fprintf( stderr, "could not allocate memory for findchirp init params\n" );
+    exit( 1 );
+  }
+  fcInitParams->numPoints      = numPoints;
+  fcInitParams->numSegments    = numSegments;
+  fcInitParams->numChisqBins   = numChisqBins;
+  fcInitParams->createRhosqVec = writeRhosq;
+  fcInitParams->ovrlap         = ovrlap;
+
+  /* create the data segment vector */
+  memset( &spec, 0, sizeof(REAL4FrequencySeries) );
+  LAL_CALL( LALSCreateVector( &status, &(spec.data), numPoints / 2 + 1 ), 
+      &status );
+  LAL_CALL( LALInitializeDataSegmentVector( &status, &dataSegVec,
+        &chan, &spec, &resp, fcInitParams ), &status );
+
+
+  /*
+   *
+   * power spectrum estimation and data conditioning
+   *
+   */
+
+
+  /* create the findchirp data storage */
+  LAL_CALL( LALCreateFindChirpSegmentVector( &status, &fcSegVec, 
+        fcInitParams ), &status );
+
+  /* initialize data conditioning routines */
+  LAL_CALL( LALFindChirpSPDataInit( &status, &fcDataParams, fcInitParams ), 
+      &status );
+  fcDataParams->invSpecTrunc = invSpecTrunc * sampleRate;
+  fcDataParams->fLow = fLow;
 
   /* compute the windowed power spectrum for the data channel */
   avgSpecParams.window = NULL;
@@ -393,17 +481,20 @@ int main( int argc, char *argv[] )
   {
     case 0:
       avgSpecParams.method = useMean;
+      if ( vrbflg ) fprintf( stdout, "computing mean psd\n" );
       break;
     case 1:
       avgSpecParams.method = useMedian;
+      if ( vrbflg ) fprintf( stdout, "computing median psd\n" );
       break;
   }
-   
+
   wpars.type = Hann;
   wpars.length = numPoints;
   if ( badMeanPsd )
   {
     avgSpecParams.overlap = 0;
+    if ( vrbflg ) fprintf( stdout, "computing mean psd without overlap\n" );
   }
   else
   {
@@ -416,14 +507,11 @@ int main( int argc, char *argv[] )
       &status );
   LAL_CALL( LALDestroyREAL4Window( &status, &(avgSpecParams.window) ), 
       &status );
+  strcpy( spec.name, chan.name );
 
   /* write the spectrum data to a file */
-  if ( writeSpectrum )
-  {
-    strcpy( spec.name, chan.name );
-    outFrame = fr_add_proc_REAL4FrequencySeries( outFrame, 
-        &spec, "ct/sqrtHz", "PSD" );
-  }
+  if ( writeSpectrum ) outFrame = fr_add_proc_REAL4FrequencySeries( outFrame, 
+      &spec, "ct/sqrtHz", "PSD" );
 
 
   /*
@@ -432,6 +520,12 @@ int main( int argc, char *argv[] )
    *
    */
 
+
+  if ( vrbflg ) fprintf( stdout, "initializing findchirp\n" );
+
+  /* initialize the template functions */
+  LAL_CALL( LALFindChirpSPTemplateInit( &status, &fcTmpltParams, 
+        fcInitParams ), &status );
 
   fcDataParams->dynRange = fcTmpltParams->dynRange = 
     pow( 2.0, dynRangeExponent );
@@ -463,10 +557,7 @@ int main( int argc, char *argv[] )
    */
 
 
-  if ( writeFilterData )
-  {
-    outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &chan, "ct", "FILTER" );
-  }
+  if ( vrbflg ) fprintf( stdout, "findchirp conditioning data\n" );
   LAL_CALL( LALFindChirpSPData (&status, fcSegVec, dataSegVec, fcDataParams),
       &status );
 
@@ -492,12 +583,10 @@ int main( int argc, char *argv[] )
       /* filter data segment */ 
       if ( fcSegVec->data[i].level == tmpltCurrent->tmpltPtr->level )
       {
-        if ( vrbflg )
-        {
-          fprintf( stdout, "filtering segment %d againt template %e,%e\n",
-              fcSegVec->data[i].number, 
-              fcFilterInput->tmplt->mass1, fcFilterInput->tmplt->mass2 );
-        }
+        if ( vrbflg ) fprintf( stdout, 
+            "filtering segment %d againt template %e,%e\n", 
+            fcSegVec->data[i].number, 
+            fcFilterInput->tmplt->mass1, fcFilterInput->tmplt->mass2 );
 
         fcFilterInput->segment = fcSegVec->data + i;
         LAL_CALL( LALFindChirpFilterSegment( &status, 
@@ -533,19 +622,14 @@ int main( int argc, char *argv[] )
       /*  test if filter returned any events */
       if ( eventList )
       {
-        if ( vrbflg )
-        {
-          fprintf( stdout, "segment %d rang template %e,%e\n",
-              fcSegVec->data[i].number,
-              fcFilterInput->tmplt->mass1, fcFilterInput->tmplt->mass2 );
-        }
+        if ( vrbflg ) fprintf( stdout, "segment %d rang template %e,%e\n",
+            fcSegVec->data[i].number,
+            fcFilterInput->tmplt->mass1, fcFilterInput->tmplt->mass2 );
 
         if ( tmpltCurrent->tmpltPtr->fine != NULL && inserted == 0 )
         {
-          if ( vrbflg )
-          {
-            fprintf( stdout, "inserting fine templates into list\n" );
-          }
+          if ( vrbflg ) fprintf( stdout, 
+              "inserting fine templates into list\n" );
 
           tmpltInsert = tmpltCurrent;
           inserted = 1;
@@ -561,10 +645,8 @@ int main( int argc, char *argv[] )
         }
         else if ( ! tmpltCurrent->tmpltPtr->fine )
         {
-          if ( vrbflg )
-          {
-            fprintf( stdout, "***>  dumping events  <***\n" );
-          }
+          if ( vrbflg ) fprintf( stdout, "***>  dumping events  <***\n" );
+
           if ( ! savedEvents.snglInspiralTable )
           {
             savedEvents.snglInspiralTable = eventList;
@@ -576,10 +658,8 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          if ( vrbflg )
-          {
-            fprintf( stdout, "already inserted fine templates, skipping\n" ); 
-          }
+          if ( vrbflg ) fprintf( stdout, 
+              "already inserted fine templates, skipping\n" ); 
 
           fcSegVec->data[i].level += 1;
         } 
@@ -609,10 +689,7 @@ int main( int argc, char *argv[] )
           }
         }
 
-        if ( vrbflg )
-        {
-          fprintf( stdout, "removing inserted fine templates\n" );
-        }
+        if ( vrbflg ) fprintf( stdout, "removing inserted fine templates\n" ); 
 
         while ( tmpltCurrent->tmpltPtr->level == currentLevel )
         {
@@ -630,11 +707,14 @@ int main( int argc, char *argv[] )
 
   /*
    *
-   * free the structures used by findchirp
+   * free memory used by filtering code
    *
    */
 
 
+  if ( vrbflg ) fprintf( stdout, "freeing memory\n" );
+
+  /* free memory used by findchirp */
   LAL_CALL( LALFindChirpChisqVetoFinalize( &status, 
         fcFilterParams->chisqParams, fcInitParams->numChisqBins ), 
       &status );
@@ -648,17 +728,9 @@ int main( int argc, char *argv[] )
       &status );
   LAL_CALL( LALDestroyFindChirpSegmentVector( &status, &fcSegVec ),
       &status );
-
   LALFree( fcInitParams );
 
-
-  /*
-   *
-   * free the template bank
-   *
-   */
-
-
+  /* free the template bank */
   while ( bankHead )
   {
     bankCurrent = bankHead;
@@ -666,22 +738,13 @@ int main( int argc, char *argv[] )
     LALFree( bankCurrent );
     bankCurrent = NULL;
   }
-
   /* destroy linked list of template nodes */
   while ( tmpltHead )
   {
     LAL_CALL( LALFindChirpDestroyTmpltNode( &status, &tmpltHead ), &status );
   }
-  
 
-
-  /*
-   *
-   * free the data storage
-   *
-   */
-
-
+  /* free the data storage */
   LAL_CALL( LALFinalizeDataSegmentVector( &status, &dataSegVec ), &status );
   LAL_CALL( LALSDestroyVector( &status, &(chan.data) ), &status );
   LAL_CALL( LALSDestroyVector( &status, &(spec.data) ), &status );
@@ -695,6 +758,10 @@ int main( int argc, char *argv[] )
    */
 
 
+cleanexit:
+
+  if ( vrbflg ) fprintf( stdout, "writing result data to disk\n" );
+
   /* write the output frame */
   if ( writeRawData || writeFilterData || writeResponse || writeSpectrum ||
       writeRhosq || writeChisq )
@@ -706,7 +773,6 @@ int main( int argc, char *argv[] )
     FrameWrite( outFrame, frOutFile );
     FrFileOEnd( frOutFile );
   }
-
 
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
@@ -759,15 +825,14 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
 
   /* free the rest of the memory, check for memory leaks and exit */
-  if ( injectionFile )
-  {
-    LALFree( injectionFile );
-  }
-  LALFree( calCacheName );
-  LALFree( frInCacheName );
-  LALFree( bankFileName );
-  LALFree( channelName );
-  LALFree( fqChanName );
+  if ( injectionFile ) LALFree( injectionFile ); 
+  if ( calCacheName ) LALFree( calCacheName );
+  if ( frInCacheName ) LALFree( frInCacheName );
+  if ( bankFileName ) LALFree( bankFileName );
+  if ( channelName ) LALFree( channelName );
+  if ( fqChanName ) LALFree( fqChanName );
+
+  if ( vrbflg ) fprintf( stdout, "checking memory leaks and exiting\n" );
   LALCheckMemoryLeaks();
   exit( 0 );
 }
@@ -821,8 +886,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"comment",                 required_argument, 0,                's'},
     {"enable-high-pass",        required_argument, 0,                't'},
     {"frame-cache",             required_argument, 0,                'u'},
-    {"injection-file",          required_argument, 0,                'w'},
     {"bank-file",               required_argument, 0,                'v'},
+    {"injection-file",          required_argument, 0,                'w'},
+    {"pad-data",                required_argument, 0,                'x'},
     {"debug-level",             required_argument, 0,                'z'},
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
@@ -852,7 +918,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     int option_index = 0;
 
     c = getopt_long( argc, argv, 
-        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:z:", 
+        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:z:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1251,6 +1317,19 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           memcpy( injectionFile, optarg, ifnamelen );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
+        break;
+
+      case 'x':
+        padData = (UINT4) atoi( optarg );
+        if ( padData < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "number of seconds to pad from input data"
+              "must be greater than 0: (%d specified)\n", 
+              long_options[option_index].name, numSegments );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", numSegments );
         break;
 
       case 'z':

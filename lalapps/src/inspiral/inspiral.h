@@ -37,6 +37,7 @@
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
 #include <lal/FrameStream.h>
+#include <lal/ResampleTimeSeries.h>
 #include <lal/FrameCalibration.h>
 #include <lal/Window.h>
 #include <lal/TimeFreqFFT.h>
