@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = TestConstructPLUT TestDriveHough TestHoughMap TestPeak2PHMD
+check_PROGRAMS = TestConstructPLUT TestDriveHough TestHoughMap TestPeak2PHMD TestNDConstructPLUT TestDriveNDHough TestNDHoughMap TestNDPeak2PHMD
 TestConstructPLUT_SOURCES =  TestConstructPLUT.c
 TestConstructPLUT_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 TestDriveHough_SOURCES = TestDriveHough.c
