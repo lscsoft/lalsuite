@@ -474,12 +474,13 @@ int main(int argc,char *argv[]) {
   
   /* print out the SSB time corresponding to first detector GPS,
      useful for analysis and checking */
+  /*
   error("\n"
 	"    Starting time is GPS  = %d.%09d\n"
 	"    Params defined at SSB = %d.%09d by file %s\n",
 	timestamps[0].gpsSeconds, timestamps[0].gpsNanoSeconds,
 	spinorbit.spinEpoch.gpsSeconds, spinorbit.spinEpoch.gpsNanoSeconds, inDataFilename);
-  
+  */
   /* These define the start and end of an interpolation table.  Set
      epoch at least the light travel time EARLIER than the SSB time of
      the first timestamp, so that the interpolation table goes beyond the
@@ -936,6 +937,8 @@ int prepare_timeSeries(LALStatus* status) {
   timeSeries->data = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
   
   timeSeries->data->length = B*Tsft*2;
+
+
   timeSeries->data->data = (REAL4 *)LALMalloc(timeSeries->data->length*sizeof(REAL4));
   timeSeries->deltaT=Tsft/timeSeries->data->length;
 
@@ -1001,6 +1004,7 @@ int make_and_add_time_domain_noise(LALStatus* status) {
   for (i = 0; i < numPoints; ++i)
     timeSeries->data->data[i]+=sigma*v1->data[i];
 
+
   /* destroy randpar*/
   LALDestroyRandomParams (status, &randpar);
   
@@ -1022,7 +1026,7 @@ int read_timestamps(LALStatus* status,REAL8 startattime) {
   if (startattime==-1.0) {
     /* Read */
     if (!(fp=fopen(timestampsname,"r"))) {
-      syserror("Unable to find file %s\n",timestampsname);
+      syserror("Unable to find timestampsname file %s\n",timestampsname);
       return 1;
     }
     
@@ -1061,7 +1065,7 @@ int write_modulated_amplitudes_file(LALStatus* status){
 
   
   if (!(fp=fopen(filename,"w"))) {
-    syserror("Unable to find file %s\n",filename);
+    syserror("Unable to find file %s in write_modulated_amplitudes_file routine\n",filename);
     return 1;
   }
 
@@ -1082,6 +1086,8 @@ int write_modulated_amplitudes_file(LALStatus* status){
     
   }
   
+  fclose(fp);
+
   return 0;
 }
 
@@ -1124,6 +1130,8 @@ int make_filelist(LALStatus* status) {
 
 int read_and_add_freq_domain_noise(LALStatus* status, int iSFT) {
 
+  INT4 myRound(REAL8);
+
   FILE *fp;
   REAL4 norm;
   size_t errorcode;
@@ -1143,7 +1151,7 @@ int read_and_add_freq_domain_noise(LALStatus* status, int iSFT) {
 
   /* open FIRST file and get info from it*/
   if (!(fp=fopen(filelist[iSFT],"r"))){
-    syserror("Unable to open file %s\n", filelist[iSFT]);
+    syserror("Unable to open the fisrt SFT file file %s\n", filelist[iSFT]);
     return 1;
   }
   /* read in the header from the file */
@@ -1172,7 +1180,7 @@ int read_and_add_freq_domain_noise(LALStatus* status, int iSFT) {
   }
 
   /* seek to position */
-  if (0 != fseek(fp, (fmin*Tsft - header.firstfreqindex) * 4.0 * 2, SEEK_CUR)){
+  if (0 != fseek(fp, myRound((fmin*Tsft - header.firstfreqindex) * 4.0 * 2.0), SEEK_CUR)){
     syserror("file too short (could'n fssek to position\n");
     return 1;
   }
@@ -1207,6 +1215,37 @@ int read_and_add_freq_domain_noise(LALStatus* status, int iSFT) {
 }
 
 
+/*-----------------------------------------------------------------*/
+/* myRound function.                                              
+   This function returns the nearest integer to x; 
+   myRound(x) = sign(x) * {floor(|x|)+step(|x|-floor(|x|)-0.5)}
+   step(x) = 1 if x>=0
+             0 if x<0   
+   Temporal replacement.  The C99 "round" is unavailable now...
+   Yousuke, 07-Mar-2004 
+*/
+/*-----------------------------------------------------------------*/
+INT4 myRound(REAL8 x)
+{
+  REAL8 sign=1.0;
+  REAL8 roundedValue=0.0;
+  REAL8 remainder=0.0;
+
+  if(x<0) sign=-1.0;
+  roundedValue= floor(sign*x);
+  remainder=sign*x-roundedValue;
+  if(remainder>=0.5) 
+    roundedValue=roundedValue+1.0;
+  roundedValue=sign*roundedValue;
+
+  return (INT4) roundedValue;
+}
+/*-----------------------------------------------------------------*/
+/*                                                                 */
+/*-----------------------------------------------------------------*/
+
+
+
 
 
 
@@ -1235,7 +1274,7 @@ int write_SFTS(LALStatus* status, int iSFT){
   strcat(filename,filenumber);
   fp=fopen(filename,"w");
   if (fp==NULL) {
-    syserror("Unable to find file %s\n",filename);
+    syserror("Unable to find the SFT data file %s\n",filename);
     return 1;
   }
 
@@ -1606,7 +1645,7 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
   
   /* Open input data file */
   if (!(fp=fopen(inDataFilename,"r"))) {
-    syserror("Unable to find file %s\n",inDataFilename);
+    syserror("Unable to find the inDataFilename file %s\n",inDataFilename);
     return 1;
   }
   
