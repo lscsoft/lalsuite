@@ -482,7 +482,8 @@ int main( int argc, char *argv[])
       LAL_CALL( LALFrSeek(&stat, &(mdcSeries.epoch), stream), &stat);
 
       /* get the mdc signal data */
-      LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &mdcSeries, &mdcchannelIn, stream), &stat);
+      LAL_CALL(LALFrGetREAL4TimeSeries( &stat, &mdcSeries, &mdcchannelIn, stream), &stat);
+
 
       /* write diagnostic info to disk */
       if ( printData ){
@@ -529,23 +530,24 @@ int main( int argc, char *argv[])
      * DO THE SEARCH                                                    *
      *******************************************************************/
     while ( params->currentSegment < params->initParams->numSegments )
-    {
-      UINT4                tmpDutyCycle=0;
-        UINT4                dumCurrentSeg=params->currentSegment;
-        SnglBurstTable      *tmpEvent     = NULL;
-
-        /* count the segments to analyze */
-        for ( tmpDutyCycle=0 ; tmpDutyCycle < params->initParams->segDutyCycle && 
-                dumCurrentSeg < params->initParams->numSegments ; tmpDutyCycle++ )
-        {
-            dumCurrentSeg++;
-        }
-                
-        /* tell operator how we are doing */
-        if (verbose){
-            fprintf(stdout,"Analyzing segments %i -- %i\n", params->currentSegment,
-                    params->currentSegment + tmpDutyCycle - 1);
-        }
+      {
+	UINT4                tmpDutyCycle=0;
+	UINT4                dumCurrentSeg=params->currentSegment;
+	SnglBurstTable      *tmpEvent     = NULL;
+	
+	/* count the segments to analyze */
+	for ( tmpDutyCycle=0 ; tmpDutyCycle < params->initParams->segDutyCycle && 
+		dumCurrentSeg < params->initParams->numSegments ; tmpDutyCycle++ )
+	  {
+	    dumCurrentSeg++;
+	  }
+	
+	/* tell operator how we are doing */
+	if (verbose)
+	  {
+	    fprintf(stdout,"Analyzing segments %i -- %i\n", params->currentSegment,
+		    params->currentSegment + tmpDutyCycle - 1);
+	  }
 
         /* This is the main engine of the excess power method */ 
         LAL_CALL( EPSearch (&stat, params, &tmpEvent, tmpDutyCycle), &stat);
@@ -578,7 +580,7 @@ int main( int argc, char *argv[])
     }
 
     /* compute the start time for the next chunk */
-    tmpOffset = (REAL8)(numPoints - 3 * params->ovrlap)/((REAL8) sampleRate);
+    tmpOffset = (REAL8)(numPoints - 2 * params->ovrlap)/((REAL8) sampleRate);
     LAL_CALL( LALFloatToInterval(&stat, &tmpInterval, 
           &tmpOffset), &stat );
     LAL_CALL( LALIncrementGPS(&stat, &(tmpEpoch), &(tmpEpoch), 
