@@ -183,7 +183,7 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
   /* other variables used */
   REAL8             deltaF;
   RandomParams     *randParams=NULL;
-  INT4              seed;         
+  INT4              seed=123; /*Initialize seed for generating random numbers*/  
   
   /* vector for storing random numbers */ 
   REAL4Vector      *gaussdevsX1=NULL;
