@@ -23,11 +23,11 @@
 #include <glob.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lalapps.h>
 #include <processtable.h>
-#include "ligolwbank.h"
 
 RCSID( "$Id$" );
 

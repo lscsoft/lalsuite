@@ -43,6 +43,7 @@
 #include <lal/BandPassTimeSeries.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
@@ -50,7 +51,6 @@
 
 #include "tmpltbank.h"
 #include "inspiralfrutils.h"
-#include "ligolwbank.h"
 
 RCSID( "$Id$" );
 #define CVS_REVISION "$Revision$"

@@ -23,7 +23,6 @@
 #include <lal/LIGOMetadataUtils.h>
 #include <lalapps.h>
 #include <processtable.h>
-#include "ligolwbank.h"
 
 RCSID("$Id$");
 
