@@ -30,7 +30,7 @@ We start with the definition of the chirp times $\tau_{0}$ and $\tau_{3}$,
 \end{equation}
 and
 \begin{equation}
-\tau_{3} = \frac{1}{8 (\pi^{2} f_{a}^{3} )^{1/3} m^{2/3} \eta}
+\tau_{3} = \frac{1}{8 (\pi^{2} f_{a}^{5} )^{1/3} m^{2/3} \eta}
 \end{equation}
  These equations may be inverted to yield
 \begin{equation}
@@ -39,7 +39,7 @@ m = \frac{5}{32 \pi^{2} f_{a}} \frac{\tau_{3}}{\tau_{0}}
 and
 \begin{equation}
 \eta = \left( \frac{2 \pi^{2}}{25 f_{a}^{3}} \frac{\tau_{0}^{2}}{\tau_{3}^{5}}
-\right)^{5}\end{equation}
+\right)^{1/3}\end{equation}
 The individual masses may be calculated as follows.  We have
 
 \begin{equation}
