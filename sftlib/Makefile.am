@@ -5,7 +5,6 @@
 
 @SET_MAKE@
 
-
 lib_LIBRARIES = libSFTReferenceLibrary.a
 
 libSFTReferenceLibrary_a_SOURCES = SFTReferenceLibrary.c \
@@ -16,21 +15,16 @@ bin_PROGRAMS =  SFTvalidate  \
 		SFTdumpheader \
 		SFTdumpall
 
-SFTvalidate_SOURCES =  SFTReferenceLibrary.c \
-                       SFTReferenceLibrary.h \
-                       SFTvalidate.c
+SFTvalidate_SOURCES =  SFTvalidate.c
 
-SFTwrite_SOURCES =     SFTReferenceLibrary.c \
-                       SFTReferenceLibrary.h \
-	               SFTwrite.c
+SFTwrite_SOURCES =     SFTwrite.c
 
-SFTdumpheader_SOURCES = SFTReferenceLibrary.c \
-                        SFTReferenceLibrary.h \
-		        SFTdumpheader.c
+SFTdumpheader_SOURCES = SFTdumpheader.c
 
-SFTdumpall_SOURCES =      SFTReferenceLibrary.c \
-                       SFTReferenceLibrary.h \
-		       SFTdumpall.c
+SFTdumpall_SOURCES =  SFTdumpall.c
+
+LDADD = $(lib_LIBRARIES)	
+
 docsdir=$(docdir)
 
 docs_DATA       =      README \
