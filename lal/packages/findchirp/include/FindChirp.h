@@ -9,6 +9,22 @@
  *-----------------------------------------------------------------------
  */
 
+#if 0
+<lalVerbatim file="FindChirpHV">
+Author: Allen, B., Brown, D. A. and Creighton, J. D. E.
+$Id$
+</lalVerbatim> 
+
+<lalLaTeX>
+
+\section{Header \texttt{FindChirp.h}}
+\label{s:FindChirp.h}
+
+Provides routines to filter IFO data for binary inspiral chirps.
+
+</lalLaTeX>
+#endif
+
 #ifndef _FINDCHIRP_H
 #define _FINDCHIRP_H
 
@@ -26,6 +42,12 @@ extern "C" {
 
 NRCSID (FINDCHIRPH, "$Id$");
 
+#if 0
+<lalLaTeX> 
+\subsection*{Error codes} 
+</lalLaTeX>
+#endif
+/* <lalErrTable> */
 #define FINDCHIRP_ENULL 1
 #define FINDCHIRP_ENNUL 2
 #define FINDCHIRP_EALOC 3
@@ -38,8 +60,6 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRP_EFREE 12
 #define FINDCHIRP_ERHOT 15
 #define FINDCHIRP_ECHIT 16
-
-
 #define FINDCHIRP_MSGENULL "Null pointer"
 #define FINDCHIRP_MSGENNUL "Non-null pointer"
 #define FINDCHIRP_MSGEALOC "Memory allocation error"
@@ -52,7 +72,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRP_MSGEFREE "Memory free error"
 #define FINDCHIRP_MSGERHOT "Rhosq threshold is zero or negative"
 #define FINDCHIRP_MSGECHIT "Chisq threshold is zero or negative"
-
+/* </lalErrTable> */
 
 
 /*
@@ -281,6 +301,12 @@ LALFindChirpFilterSegment (
     FindChirpFilterParams      *params
     );
 
+
+#if 0
+<lalLaTeX>
+\vfill{\footnotesize\input{FindChirpHV}}
+</lalLaTeX> 
+#endif
 
 #ifdef  __cplusplus
 }

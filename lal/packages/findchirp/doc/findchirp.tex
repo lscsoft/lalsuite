@@ -1,0 +1,251 @@
+\chapter{Package \texttt{findchirp}}
+
+This package contains LAL routines for searching for binary inspiral chirps.
+
+For convenience in dealing with dimensional quantities, we introduce
+the {\it Solar Mass} $M_\odot$ and the {\it Solar Time} $T_\odot$
+defined by
+\begin{eqnarray}
+M_\odot &=& 1.989 \times 10^{33} \> {\rm grams}\\
+T_\odot &=& \left( {G \over c^3} \right) M_\odot = 4.925491 \times
+10^{-6} \> {\rm sec}.
+\end{eqnarray}
+The \verb|findchirp| functions measure masses in units of $M_\odot$ 
+and times in units of seconds.
+
+\section{Conventions used for Discrete Quantities}
+
+We use the following conventions for the discrete Fourier transform and 
+its inverse. If $h(t_j) \equiv h_j$ is a time domain quantity sampled at
+$N$ discrete points with a sampling interval $\Delta t$, then its Fourier 
+transform $H(f_k)$ is
+\begin{equation}
+H(f_k) = \Delta t \sum_{j=0}^{N-1} h_j e^{2\pi ijk/N}
+\end{equation}
+and the discrete Fourier transform of $h_j$ is defined to be
+\begin{equation}
+H_k = \sum_{j=0}^{N-1} h_j e^{2\pi ijk/N}.
+\end{equation}
+The inverse Fourier transform is 
+\begin{eqnarray}
+\nonumber
+h_j &=& \frac{1}{N\Delta t} \sum_{k=0}^{N-1} H(f_k) e^{-2\pi ijk/N} \\
+h_j &=& \frac{1}{N} \sum_{k=0}^{N-1} H_k e^{-2\pi ijk/N}
+\end{eqnarray}
+since $\Delta f = (N\Delta t)^{-1}$.
+
+We define the discrete one-sided power spectrum $S_k$ to by
+\begin{equation}
+\langle \tilde{n}_k \tilde{n}^\ast_{k'} \rangle = S_k \delta_{kk'}
+\end{equation}
+and so
+\begin{equation}
+S(f_k) = \frac{\Delta t}{N} S_k
+\end{equation}
+
+\section{Wiener (optimal) Filtering}
+
+The technique of {\it optimal filtering} is a well-studied and
+well-understood technique which can be used to search for
+characteristic signals (in our case, chirps) buried in detector noise.
+In order to establish notation, we present a brief review of the optimal 
+filtering technique.
+
+Suppose that the detector output is a dimensionless strain $h(t)$.
+We denote by ${C}(t)$ the waveform of the signal (i.e.,
+the chirp) which we hope to find, hidden in detector noise, in the
+signal stream $h(t)$.  Since we would like to know about chirps which
+start at different possible times $t_0$, we'll take ${C}(t) =
+\alpha T(t-t_0)$ where $T(t)$ is the canonically normalized waveform 
+of a chirp which enters the sensitivity band of the interferometer at 
+time $t=0$. The constant $\alpha$ quantifies the strength of the signal
+we wish to extract as compared to an otherwise identical signal of 
+canonical strength (we will discuss how this canonical normalization
+is defined shortly). In other words, $T(t)$ contains all the 
+information about the chirp we are searching for apart from the 
+arrival time and the strength, which are given by $t_0$ and $\alpha$ 
+respectively. For the moment, we will ignore the fact that 
+the chirps come in two different phase ``flavors".
+
+We will construct a signal $S$, which is a number defined by
+\begin{equation}
+S = \int_{-\infty}^\infty dt \;h(t) Q(t),
+\end{equation}
+where $Q(t)$ is an optimal filter function in time domain, which we
+will shortly determine in a way that maximizes the signal-to-noise
+ratio $S/N$ or SNR.  We will assume that $Q$ is a real function of
+time.
+
+We assume that $Q(t)$ is a real function of time and write the 
+signal $S$ as
+\begin{eqnarray}
+\nonumber
+S &=& \int_{-\infty}^\infty dt  \int_{-\infty}^\infty df  \int_{-\infty}^\infty df'
+{\rm e}^{-2 \pi i f t+2 \pi i f' t} \tilde h(f) \tilde Q^* (f')\\
+\nonumber
+&=& 
+\int_{-\infty}^\infty df  \int_{-\infty}^\infty df'
+\delta(f-f') \tilde h(f) \tilde Q^* (f')\\
+&=& 
+\int_{-\infty}^\infty df \tilde h(f) \tilde Q^* (f).
+\end{eqnarray}
+This final expression gives the signal value $S$ written in the
+frequency domain, rather than in the time domain.
+
+Now we can ask about the expected value of $S$, which we denote 
+$\langle S \rangle$. This is the average of $S$ over an ensemble of 
+detector output streams, each one of which contains an identical 
+chirp signal $C(t)$ but different realizations of the noise:
+\begin{equation}
+h(t) = C(t) + n(t).
+\end{equation}
+So for each different realization, $C(t)$ is exactly the same function,
+but $n(t)$ varies from each realization to the next.  We will assume
+that the noise has zero mean value, and that the phases are randomly
+distributed, so that $\langle \tilde n(f) \rangle=0$.  We can then take
+the expectation value of the signal in the frequency domain, obtaining
+\begin{equation}
+\langle S \rangle = \int_{-\infty}^\infty df \langle \tilde h(f)
+\rangle \tilde Q^*(f) = \int_{-\infty}^\infty df \tilde C(f) \tilde
+Q^*(f).
+\end{equation}
+We now define the {\it noise} $N$ to be the difference between the
+signal value and its mean for any given element of the ensemble:
+\begin{equation}
+\label{e:noise}
+N \equiv S-\langle S \rangle = \int_{-\infty}^\infty df \tilde n(f) \tilde Q^* (f).
+\end{equation}
+The expectation value of $N$ clearly vanishes by definition, so
+$\langle N \rangle=0$.  The expected value of $N^2$ is non-zero,
+however.   It may be calculated from the (one-sided) strain noise power
+spectrum of the detector $S_h(f)$, which is defined by
+\begin{equation}
+\label{e:nspec}
+\langle \tilde n(f) \tilde n^*(f') \rangle = {1 \over 2} S_h(|f|) \delta(f-f'),
+\end{equation}
+and has the property that 
+\begin{equation}
+\langle n^2(t) \rangle = \int_0^\infty S_h(f) \; df.
+\end{equation}
+We can now find the expected value of $N^2$, by squaring equation (\ref{e:noise}),
+taking the expectation value, and using (\ref{e:nspec}), obtaining
+\begin{eqnarray}
+\nonumber
+\langle N^2 \rangle &= & \int_{-\infty}^\infty df \int_{-\infty}^\infty
+df' \tilde Q^*(f) \langle \tilde n(f)   \tilde n^*(f') \rangle \tilde
+Q(f') \\
+\nonumber
+& = & {1 \over 2} \int_{-\infty}^\infty df \; S_h(|f|) |\tilde Q(f) |^2\\
+\label{e:n2}
+& = &  \int_{0}^\infty df \; S_h(f) |\tilde Q(f) |^2.
+\end{eqnarray}
+There is a nice way to write the formulae for the expected signal and
+the expected noise-squared.  We introduce an ``inner product" defined
+for any pair of (complex) functions $A(f)$ and $B(f)$.  The inner
+product is a complex number denoted by $(A,B)$ and is defined by
+\begin{equation}
+\label{e:definprod}
+(A,B) = \int_{-\infty}^\infty df \; {A(f) B^*(f) S_h(|f|)}.
+\end{equation}
+Because $S_h$ is positive, this inner product has the property that $(A,A)
+\ge 0$ for all functions $A(f)$, vanishing if and only if $A=0$.  This
+inner product is what a mathematician would call a ``positive definite
+norm"; it has all the properties of an ordinary dot product of vectors
+in three-dimensional Cartesian space.
+
+In terms of this inner product, we can now write the expected signal, and the expected
+noise-squared, as
+\begin{equation}
+\langle S \rangle = ({\tilde C \over S_h},\tilde Q)
+\quad {\rm and} \quad \langle N^2 \rangle = {1 \over 2} (\tilde Q, \tilde Q).
+\end{equation}
+(Note that whenever $S_h$ appears inside the inner product, it refers
+to the function $S_h(|f|)$ rather than $S_h(f)$.) Now the question is,
+how do we choose the optimal filter function $Q$ so that the expected
+signal is as large as possible, and the expected noise-squared is as
+small as possible?  The answer is easy! Recall Schwarz's inequality for
+inner products asserts that
+\begin{equation}
+        (A,B)^2 \le (A,A)(B,B),
+\end{equation}
+the two sides being equal if (and only if) $A$ is proportional to $B$.
+So, to maximize the signal-to-noise ratio 
+\begin{equation}
+\label{e:sovern}
+\left( {S \over N} \right)^2 ={\langle S \rangle^2 \over \langle N^2
+\rangle} = 2 { ({\tilde C \over S_h},\tilde Q)^2 \over (\tilde Q,
+\tilde Q)}
+\end{equation}
+we choose
+\begin{equation}
+\tilde Q(f) \propto {\tilde C(f) \over S_h(|f|)} = 
+\alpha {\tilde T(f) \over S_h(|f|)} \; {\rm e}^{2 \pi i f t_0}.
+\end{equation}
+The signal-to-noise ratio defined by equation (\ref{e:sovern}) is normalized
+in a way that is generally accepted and used.  Note that the definition is
+independent of the normalization of the optimal filter $\tilde Q$, since
+that quantity appears quadratically in both the numerator and denominator.
+However if we wish to speak about ``Signal" values rather than about
+signal-to-noise values, then the normalization of $\tilde Q$ is relevant.
+If we choose the constant of proportionality to be $2 \alpha^{-1}$,
+(i.e. set $\alpha = 2$, for reasons we will discuss shortly) then we
+can express the template in terms of the canonical waveform,
+\begin{equation}
+\label{e:optimal}
+        \tilde{Q}(f)=2 \> \frac{\tilde{T}(f)}{S_h(|f|)} {\rm e}^{2\pi i f t_0}
+\end{equation}
+Going back to the definition of our signal $S$, you will notice that the
+signal $S$ for ``arrival time offset" $t_0$ is given by
+\begin{eqnarray}
+\nonumber
+S &=& \int_{-\infty}^\infty df \; \tilde h(f) \tilde Q^* (f) \\
+\label{e:lag}
+  &=& 2 \int_{-\infty}^\infty df \; { \tilde h(f) \tilde T^* (f) 
+\over S_h(|f|)} \; {\rm e}^{- 2 \pi i f t_0}.
+\end{eqnarray}
+Given a template $\tilde T$ and the signal $\tilde h$, the signal
+values can be easily evaluated for any choice of arrival times $t_0$ by
+means of a Fourier transform (or FFT, in numerical work).  Thus, it is
+not really necessary to construct a different filter for each possible
+arrival time; one can filter data for all possible choices of arrival
+time with a single FFT.
+
+The signal-to-noise ratio for this optimally-chosen filter can be
+determined by substituting the optimal filter (\ref{e:optimal}) into
+equation (\ref{e:sovern}), obtaining
+\begin{equation}
+\nonumber
+\left( {S \over N} \right)^2 = 
+ 2 \int_{-\infty}^\infty df {| \tilde C(f) |^2 \over S_h(|f|)} =
+ 4 \int_{0}^\infty df { | \tilde C(f) |^2 \over S_h(f)} = 2 \alpha^2 
+ \left(\frac{\tilde{T}}{S_h(|f|)},\frac{\tilde{T}}{S_h(|f|)}\right).
+\end{equation}
+You will notice that the signal-to-noise ratio $S/N$ in
+(\ref{e:sovern}) is independent of the overall normalization of the
+filter $Q$:  if we make $Q$ bigger by a factor of ten, both the
+expected signal and the expected noise increase by exactly the same
+amount.  For this reason, we can specify the normalization of the 
+filter as we wish. Furthermore, it is obvious from (\ref{e:optimal}) 
+that normalizing the optimal filter is equivalent to specifying the
+normalization of the canonical signal waveform. It is traditional
+(for example in Cutler and Flanagan \cite{cutler:1994})
+to choose 
+\begin{equation}
+\label{e:cfnorm}
+   \left(\frac{\tilde{T}}{S_h(|f|)},\frac{\tilde{T}}{S_h(|f|)}
+   \right)=\frac{1}{2}.
+\end{equation}
+With this normalization, 
+the expected value of the squared noise is
+\begin{equation}
+\langle N^2 \rangle = {1 \over 2} (\tilde Q,\tilde Q) = {1 \over 2} \>
+\left( 2 \frac{\tilde{T}}{S_h(|f|)},2 \frac{\tilde{T}}{S_h(|f|)}
+   \right) = 1
+\end{equation}
+and the signal-to-noise ratio takes the simple form
+\begin{equation}
+\left(\frac{S}{N}\right)^2 = \alpha^2.
+\end{equation}
+
+\newpage\input{FindChirpH}
+
