@@ -159,7 +159,7 @@ int main ()
 #include <lal/LALConfig.h>
 #include <lal/LALStdlib.h>
 #include <lal/Integrate.h>
-#include "../include/AstroOmega.h"
+#include <lal/AstroOmega.h>
 
 NRCSID (ASTROOMEGAC, "$Id$");
 
@@ -220,7 +220,7 @@ static void dAstroOmega (LALStatus *s, REAL8 *domegaz, REAL8 z, void *p)
  {
   AstroOmegaParams params;
   AstroOmegaSourceParams sourcep; 
-  AstroOmegaCosmoParams cosmop;
+  /*AstroOmegaCosmoParams cosmop;*/
   REAL8LALSDensity *SDensitySource;
   REAL8 Rc, dEgw, nu, nuz;
   
