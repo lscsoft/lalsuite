@@ -23,7 +23,7 @@ void LALCreateFCTPlan(LALStatus* const status,
                       LALFCTPlan** plan_ptr,
                       const LALCreateFCTPlanInput* const in)
 {
-    UINT4 i = 0;
+    INT4 i = 0;
     
     INITSTATUS(status, "LALCreateFCTPlan", LALFCTINTERFACEC);
     
@@ -154,7 +154,7 @@ void LALFCTSetDataCubes(LALStatus* const status,
 
     for (i = 0; i < plan->num_data_cubes; ++i)
     {
-        UINT4 j = 0;
+        INT4 j = 0;
         for (j = 0; j < plan->fctPlan->number_of_dimensions; ++j)
         {
             ASSERT(in->data_cube[i].start_locations[j] >= 0, status,
