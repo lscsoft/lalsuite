@@ -16,7 +16,7 @@
 #define FRAMELEN 16
 
 /* Maximum length of the path to a frame file */
-#define FILENAMEMAX 66
+#define FILENAMEMAX 128
 
 /* Number of nodes on cluster (approximate number of jobs desired) */
 #define NODES 296
