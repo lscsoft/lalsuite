@@ -343,17 +343,6 @@ LALModCreateTFTiling (
   ASSERT(tfTiling != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
   ASSERT(*tfTiling == NULL, status, LAL_NNULL_ERR, LAL_NNULL_MSG);
 
-  /* 
-   *
-   *  Make sure that input parameters are reasonable, compatible etc.
-   *
-   */
-
-  ASSERT(input->overlapFactor > 1, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-  ASSERT(input->length > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-  ASSERT(input->deltaF > 0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-  ASSERT(input->flow >= 0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-
   /*
    *
    *  compute some parameters 
@@ -396,7 +385,7 @@ LALModCreateTFTiling (
   *currentTile = NULL;
 
   /* allocate memory for vector of pointers to TF planes 
-   * HAVE TO CHANGE TO REAL8TFPLANE : saikat
+   * WILL CHANGE TO REAL8TFPLANE : saikat
    */
   (*tfTiling)->tfp = (COMPLEX8TimeFrequencyPlane **) 
        LALMalloc (numPlanes*sizeof(COMPLEX8TimeFrequencyPlane *));
@@ -552,7 +541,7 @@ LALModCreateTFTiling (
 	    }
 	  deltat = 2*deltat;
 	};  /* while (deltat .. */
-    } /* for(i=.. */
+    } 
 
     /* printf("no. of tile in the plane = %d\n",tileCount);*/
 
