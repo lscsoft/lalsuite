@@ -523,10 +523,9 @@ int cpySnglToMultiInspiral(multiInspiral *thisMEvent, candEvent *myevent, int if
 }
 
 int buildMultiInspiralEvents(multiInspiral **multInspEv, int *coincident_times,
-        snglIFO *ifo, int numIFO, int injectflag, double dummyStart, float delm)
+        snglIFO *ifo, int numIFO, int injectflag, double dummyStart, float delm,
+        float distance, float coincidence_window)
 {
-    float coincidence_window = COINWINDOW;
-    float distance = H1L1DISTANCE;
     int i, numEvents=0, first=1,dummyMask;
     candEvent *thisCEvent=NULL, *myevent=NULL;
     multiInspiral *thisMEvent;

@@ -281,6 +281,24 @@ int main(int argc, char **argv)
                 return RESPONSEC_EARG;
             }
         }
+        else if ( !strcmp( argv[arg], "--distance" ) ) {
+            if ( argc > arg + 1 ) {
+                arg++;
+                distance = atof(argv[arg++]);
+            }else{
+                fprintf(stderr,  USAGE, *argv );
+                return RESPONSEC_EARG;
+            }
+        }
+        else if ( !strcmp( argv[arg], "--dtime" ) ) {
+            if ( argc > arg + 1 ) {
+                arg++;
+                coincidence_window = atof(argv[arg++]);
+            }else{
+                fprintf(stderr,  USAGE, *argv );
+                return RESPONSEC_EARG;
+            }
+        }
         /* Check for unrecognized options. */
         else if ( argv[arg][0] == '-' ) {
             fprintf(stderr,  USAGE, *argv );
@@ -452,7 +470,7 @@ int main(int argc, char **argv)
     fprintf(fpout,"# Looking for coincidences\n"); fflush(fpout);
     LALSortTriggers(&status,ifo,numIFO);
     buildMultiInspiralEvents(&multInspEv, coincident_times, ifo, numIFO, 
-            TRIGGERS, dummyStart, delm);
+            TRIGGERS, dummyStart, delm, distance, coincidence_time);
 
     fp = fopen("triggers.dat","w");
     printInspiralEvents(fp,&ifo[0], 3, TRIGGERS);
@@ -465,7 +483,7 @@ int main(int argc, char **argv)
     fclose(fp);
 
     buildMultiInspiralEvents(&multInspEv, coincident_times, ifo, numIFO, 
-            INJECTIONS, dummyStart, delm);
+            INJECTIONS, dummyStart, delm, distance, coincidence_time);
 
     fp = fopen("injections.dat","w");
     printInspiralEvents(fp,&ifo[0], 3, INJECTIONS);
