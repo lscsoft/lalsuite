@@ -59,6 +59,13 @@ RCSID( "$Id$" );
 "                           the shell from expanding the pattern.\n"\
 "   --output FILE         write all results to the LIGO lightweight FILE\n"\
 "   --comment STRING      add the comment STRING to the process_params table\n"\
+"\n" \
+"\n" \
+"SORTING OPTIONS.\n" \
+"\n" \
+"\n" \
+"   --snr-threshold SNR   discard all events that have a signal-to-noise\n"\
+"                           ration less than SNR.\n"\
 "\n"
 
 
@@ -114,6 +121,7 @@ int main ( int argc, char *argv[] )
   char *inputFileName = NULL;
   char *outputFileName = NULL;
   CHAR comment[LIGOMETA_COMMENT_MAX];
+  REAL4 snr = 0;
   struct option long_options[] =
   {
     /* these options set a flag */
@@ -123,6 +131,7 @@ int main ( int argc, char *argv[] )
     {"output",                  required_argument, 0,                'o'},
     {"minimum-match",           required_argument, 0,                'm'},
     {"debug-level",             required_argument, 0,                'z'},
+    {"snr-threshold",           required_argument, 0,                's'},
     {"help",                    no_argument,       0,                'h'},
     {0, 0, 0, 0}
   };
@@ -205,6 +214,19 @@ int main ( int argc, char *argv[] )
         {
           LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
+        break;
+
+      case 's':
+        snr = (REAL4) atof( optarg );
+        if ( snr <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "threshold must be > 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, snr );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", snr );
         break;
 
       case 'i':
@@ -321,6 +343,54 @@ int main ( int argc, char *argv[] )
 
   if ( vrbflg ) fprintf( stdout, "parsed %d sngl_inspiral rows from %s\n", 
       numEvents, inputFileName );
+
+
+  /*
+   *
+   * discard template that are less than the snr threshold
+   *
+   */
+
+
+  if ( eventHead )
+  {
+    SnglInspiralTable *tmpEventHead;
+    prevEvent = tmpEventHead = NULL;
+    if ( snr )
+    {
+      int numSnrEvents = 0;
+      if ( vrbflg ) fprintf( stdout, "discarding events with snr < %e... ",
+          snr );
+      thisEvent = eventHead;
+      while ( thisEvent )
+      {
+        if ( thisEvent->snr >= snr )
+        {
+          ++numSnrEvents;
+          if ( ! tmpEventHead )
+          {
+            prevEvent = tmpEventHead = thisEvent;
+          }
+          else
+          {
+            prevEvent = prevEvent->next = thisEvent;
+          }
+          thisEvent = thisEvent->next;
+        }
+        else
+        {
+          SnglInspiralTable *discard = thisEvent;
+          thisEvent = thisEvent->next;
+          LALFree( discard );
+        }
+      }
+      if ( (eventHead = tmpEventHead) ) prevEvent->next = NULL;
+      numEvents = numSnrEvents;
+      if ( vrbflg ) fprintf( stdout, "done\n" );
+    }
+  }
+  
+  if ( ! numEvents ) goto cleanexit;
 
   
   /*
