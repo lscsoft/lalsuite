@@ -916,7 +916,7 @@ void LALInspiralSpinModulateWaveForInjection(
 
 
 /*  <lalLaTeX>
-\newpage\input{LALSTPNWaveformC}
+%% \newpage\input{LALSTPNWaveformC}
 </lalLaTeX>  */
 void 
 LALSTPNWaveformForInjection (
