@@ -218,7 +218,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 psdTempLength;
   INT4 windowPSDLength;
   INT4 filterLength;
-  INT4 numPointInf, numPointSup;
+  INT4 numFMin, numFMax;
   LALWindowParams winparPSD;
   AverageSpectrumParams specparPSD;
   REAL4FrequencySeries psdTemp1, psdTemp2, psd1, psd2;
@@ -502,9 +502,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   windowPSDLength = (UINT4)(resampleRate / deltaF);
   overlapPSDLength = windowPSDLength / 2;
   psdTempLength = (windowPSDLength / 2) + 1;
-  numPointInf = (UINT4)(fMin / deltaF);
-  numPointSup = (UINT4)(fMax / deltaF);
-  filterLength = numPointSup - numPointInf + 1;
+  numFMin = (UINT4)(fMin / deltaF);
+  numFMax = (UINT4)(fMax / deltaF);
+  filterLength = numFMax - numFMin + 1;
 
   specparPSD.method = useMean;
   specparPSD.overlap = overlapPSDLength;
@@ -900,7 +900,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     /* get appropriate band */
     for (i = 0; i < filterLength; i++)
-      mask.data->data[i] = maskTemp->data[i + numPointInf];
+      mask.data->data[i] = maskTemp->data[i + numFMin];
 
     if (test_flag)
       LALSPrintFrequencySeries(&mask, "mask.dat");
@@ -1092,7 +1092,7 @@ INT4 main(INT4 argc, CHAR *argv[])
               for (i = 0; i < filterLength; i++)
               {
                 response1.data->data[i] = responseTemp1.data->data[i + \
-                                          numPointInf];
+                                          numFMin];
               }
             }
 
@@ -1134,7 +1134,7 @@ INT4 main(INT4 argc, CHAR *argv[])
               for (i = 0; i < filterLength; i++)
               {
                 response2.data->data[i] = responseTemp2.data->data[i + \
-                                          numPointInf];
+                                          numFMin];
               }
             }
 
@@ -1284,7 +1284,7 @@ INT4 main(INT4 argc, CHAR *argv[])
             for (i = 0; i < filterLength; i++)
             {
               response1.data->data[i] = responseTemp1.data->data[i + \
-                                        numPointInf];
+                                        numFMin];
             }
           }
 
@@ -1327,7 +1327,7 @@ INT4 main(INT4 argc, CHAR *argv[])
             for (i = 0; i < filterLength; i++)
             {
               response2.data->data[i] = responseTemp2.data->data[i + \
-                                        numPointInf];
+                                        numFMin];
             }
           }
 
@@ -1523,8 +1523,8 @@ INT4 main(INT4 argc, CHAR *argv[])
             /* reduce to the optimal filter frequency range */
             for (i = 0; i < filterLength; i++)
             {
-              psd1.data->data[i] =  psdTemp1.data->data[i + numPointInf];
-              psd2.data->data[i] =  psdTemp2.data->data[i + numPointInf];
+              psd1.data->data[i] =  psdTemp1.data->data[i + numFMin];
+              psd2.data->data[i] =  psdTemp2.data->data[i + numFMin];
             }
 
             /* print */
