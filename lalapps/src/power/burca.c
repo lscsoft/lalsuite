@@ -357,7 +357,7 @@ int main(int argc, char **argv)
                             LALCalloc(1, sizeof(SnglBurstTable) );
                         prevEvent->next = outEvent;
                     }
-                    memcpy( outEvent, currentTrigger[1], sizeof(SnglBurstTable));
+                    memcpy( outEvent, currentTrigger[0], sizeof(SnglBurstTable));
                     prevEvent = outEvent;
                     outEvent = outEvent->next = NULL;
                 }
@@ -373,10 +373,10 @@ int main(int argc, char **argv)
      * open output xml file
      *****************************************************************/
     LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfileName), &stat);
-    LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_inspiral_table), &stat);
+    LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_burst_table), &stat);
     myTable.snglBurstTable = coincidentEvents;
     LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable,
-                    sngl_inspiral_table), &stat);
+                    sngl_burst_table), &stat);
     LAL_CALL( LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
     LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
 
