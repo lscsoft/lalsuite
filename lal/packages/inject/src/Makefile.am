@@ -9,7 +9,8 @@ libinject_la_SOURCES =	\
 	CelestialCoordinates.c		TerrestrialCoordinates.c \
 	SkyCoordinates.c		SimulateSB.c \
 	SimulateInspiral.c              SimulatePopcorn.c \
-        StochasticMC.c                  GenerateBurst.c
+        StochasticMC.c                  GenerateBurst.c\
+	GenerateInspiral.c
 ## Hack to get this working for now... change later
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include -I$(srcdir)/../../date/include
 #INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include

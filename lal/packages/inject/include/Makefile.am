@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = Inject.h SimulateCoherentGW.h SimulateSB.h GeneratePPNInspiral.h GenerateTaylorCW.h GenerateSpinOrbitCW.h SkyCoordinates.h SimulateInspiral.h SimulatePopcorn.h GenerateBurst.h StochasticMC.h
+pkginclude_HEADERS = Inject.h SimulateCoherentGW.h SimulateSB.h GeneratePPNInspiral.h GenerateTaylorCW.h GenerateSpinOrbitCW.h SkyCoordinates.h SimulateInspiral.h SimulatePopcorn.h GenerateBurst.h StochasticMC.h GenerateInspiral.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 all-local: include-link
