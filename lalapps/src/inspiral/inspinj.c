@@ -29,7 +29,7 @@
 
 #define USAGE \
 "lalapps_inspinj --gps-start-time gpsStartTime --gps-end-time gpsEndTime \n"\
-"    --seed seed [--datafile inspsrcs.dat]\n"
+"    --time-step timeStep --seed seed [--datafile inspsrcs.dat]\n"
 
 int snprintf(char *str, size_t size, const  char  *format, ...);
 
@@ -527,7 +527,7 @@ int main( int argc, char *argv[] )
   /* getopt arguments */
   struct option long_options[] =
   {
-    /* parameters used to generate calibrated power spectrum */
+    {"help",                          no_argument, 0,                'h'},
     {"source-file",             required_argument, 0,                'f'},
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
@@ -560,7 +560,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:s:", long_options, &option_index );
+        "ha:b:f:s:t:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -668,6 +668,11 @@ int main( int argc, char *argv[] )
             snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, "%e", tstep );
             /* ADD_PROCESS_PARAM( "int", "%ld", gendt ); */
         }
+        break;
+
+      case 'h':
+        fprintf( stderr, USAGE );
+        exit( 0 );
         break;
 
       case '?':
