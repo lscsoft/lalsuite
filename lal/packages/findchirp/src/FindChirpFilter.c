@@ -471,7 +471,8 @@ LALFindChirpFilterSegment (
           thisEvent->f_final = (REAL4) input->fcTmplt->tmplt.fFinal;
 
           /* set the type of the template used in the analysis */
-          thisEvent->search = searchName;
+          memcpy( thisEvent->search, searchName, 
+              LIGOMETA_SEARCH_MAX * sizeof(CHAR) );
 
           /* set snrsq, chisq, sigma and effDist for this event */
           if ( input->segment->chisqBinVec->length )
@@ -575,7 +576,8 @@ LALFindChirpFilterSegment (
     thisEvent->f_final = (REAL4) input->fcTmplt->tmplt.fFinal;
 
     /* set the type of the template used in the analysis */
-    thisEvent->search = searchName;
+    memcpy( thisEvent->search, searchName, 
+        LIGOMETA_SEARCH_MAX * sizeof(CHAR) );
 
     /* set snrsq, chisq, sigma and effDist for this event */
     if ( input->segment->chisqBinVec->length )
