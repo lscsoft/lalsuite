@@ -141,6 +141,7 @@ if ( lalDebugLevel & LALERROR )                                      \
 }                                                                    \
 else (void)(0)
 
+#include <lal/LALConstants.h>
 #include <lal/LALDemod.h>
 
 NRCSID(LALDEMODTESTC, "$Id$");
@@ -205,9 +206,6 @@ int main(int argc, char **argv)
 	INT4 ipwMax;
 	INT2 tmp=0;
 	INT2 arg;
-
-        /* ADDED BY JOLIEN: set lalTDBHook to function tdb */
-        lalTDBHook = tdb;
 
 	/* Parse command line options */	
 	arg=1;
@@ -741,7 +739,7 @@ void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot, CHAR *sw)
 	/* The lab measures GPS time, but we set t_GPS =0 at first instant of 1998*/
 	REAL8 AU = 1.49597870e13/2.99792458e10;
 	REAL8 RE = 6.37814e8/2.99792458e10;
-	REAL8 eps = (23.0 + 26.0/60 + 21.488/3600)*M_PI/180;
+	REAL8 eps = (23.0 + 26.0/60 + 21.488/3600)*LAL_PI/180;
 	/*    printf("eps is %lf \n",eps); */
 	phi0=2.86e0;
 	psi0=4.12e0;
@@ -760,14 +758,14 @@ void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot, CHAR *sw)
 	y=(sine*sind+cose*cosd*sina)/cosb;
 	lam=atan2(y,x);
 	/*  printf("beta, lam are (rad) %lf  %lf \n", beta, lam);  */
-	phi=phi0+2*M_PI*t_GPS/3.15576e7;
-	psi=psi0+2*M_PI*t_GPS/8.64e4;
+	phi=phi0+2*LAL_PI*t_GPS/3.15576e7;
+	psi=psi0+2*LAL_PI*t_GPS/8.64e4;
 	tdiff_day=RE*cosd*cos(psi-alpha);
 	tdiff_yr=AU*cosb*cos(phi-lam);
 	tdiff=tdiff_day+tdiff_yr;
 	T_bary=t_GPS+tdiff;
-	Tdot_bary=1.e0-RE*cosd*sin(psi-alpha)*2*M_PI/8.64e4 		
-		-AU*cosb*sin(phi-lam)*2*M_PI/3.15576e7;
+	Tdot_bary=1.e0-RE*cosd*sin(psi-alpha)*2*LAL_PI/8.64e4 		
+		-AU*cosb*sin(phi-lam)*2*LAL_PI/3.15576e7;
 	
 	/* switch to turn mod off/on */
 	/* note that 'off' negates the function of the code! */

@@ -163,7 +163,7 @@ LALCoherentMetric( LALStatus        *stat,
 		   REAL8Vector      *lambda,
 		   MetricParamStruc *params )
 { /* </lalVerbatim> */
-  UINT4 s;          /* The number of parameters. */
+  UINT4 s = 0;      /* The number of parameters. */
   UINT4 i, j, k, l; /* Indecies. */
   REAL8 dt;         /* The sampling interval, in s. */
   REAL8 f0;         /* The frequency scale, lambda->data[0]. */

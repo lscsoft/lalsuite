@@ -35,7 +35,6 @@ values are calculated using the analytical formulae given in the
 
 \subsubsection*{Uses}
 \begin{verbatim}
-lalTDBHook
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -45,12 +44,13 @@ lalTDBHook
 </lalLaTeX> */
 
 #include <math.h>
+#include <lal/LALConstants.h>
 #include <lal/ComputeSky.h>
 
 NRCSID (COMPUTESKYC, "$Id ComputeSky.c $");
 
-/* ADDED BY JOLIEN: define lalTDBHook to NULL -- must be set by program */
-void ( *lalTDBHook )( REAL8 , REAL8 , REAL8, REAL8 *, REAL8 *, CHAR * ) = NULL;
+static void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot, CHAR *sw);
+
 
 /* <lalVerbatim file="ComputeSkyCP"> */
 void ComputeSky	(LALStatus	*status, 
@@ -75,13 +75,6 @@ ATTATCHSTATUSPTR(status);
 /* Check for non-negativity of sky positions in SkyCoh[] */
 ASSERT(iSkyCoh>=0, status, COMPUTESKYH_ENEGA, COMPUTESKYH_MSGENEGA);
 
-/* ADDED BY JOLIEN: Make sure that lalTDBHook is not NULL */
-if ( ! lalTDBHook )
-{
-  ABORT( status, 666, "lalTDBHook must be set to a tdb-type function" );
-}
-
-
 /* Check to make sure sky positions are loaded */
 ASSERT(params->skyPos!=NULL, status, COMPUTESKYH_ENULL, COMPUTESKYH_MSGENULL);
 ASSERT(params->skyPos!=NULL, status, COMPUTESKYH_ENULL, COMPUTESKYH_MSGENULL);
@@ -102,13 +95,13 @@ ASSERT(skyConst!=NULL, status, COMPUTESKYH_ENNUL, COMPUTESKYH_MSGENNUL);
 /* calculation of Barycenter.c parameters */
 		t0=(REAL8)params->tGPS[0].gpsSeconds*1.0+(REAL8)params->tGPS[0].gpsNanoSeconds*1.0E-9;
 	
-	lalTDBHook(params->skyPos[iSkyCoh], params->skyPos[iSkyCoh+1], t0, &tB0, &tDot, params->sw);
+	tdb(params->skyPos[iSkyCoh], params->skyPos[iSkyCoh+1], t0, &tB0, &tDot, params->sw);
 	
 	for (n=0; n<params->mObsSFT; n++) 
 	{
 		t=(REAL8)(params->tGPS[n].gpsSeconds)+(REAL8)(params->tGPS[n].gpsNanoSeconds)*1.0E-9+0.5*params->tSFT; 
 	
-		lalTDBHook(params->skyPos[iSkyCoh], params->skyPos[iSkyCoh+1], t, &tBary, &tDot,params->sw);
+		tdb(params->skyPos[iSkyCoh], params->skyPos[iSkyCoh+1], t, &tBary, &tDot,params->sw);
 		
 		dTbary = tBary-tB0;		
 
@@ -126,3 +119,78 @@ ASSERT(skyConst!=NULL, status, COMPUTESKYH_ENNUL, COMPUTESKYH_MSGENNUL);
 	RETURN(status);
 }
 
+
+/* internal routine to convert detector time to barycentric time */
+/* Note: this routine will be replaced by Barycenter(), written  */
+/* by C. Cutler, Albert-Einstein-Institut.  			 */
+
+static void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot, CHAR *sw) 
+{
+
+	/*RA alpha and DEC delta have their usual meanings, but units 
+  are radians, not hours or degrees */
+
+	REAL8 tdiff;
+	REAL8 tdiff_day;
+	REAL8 tdiff_yr; 
+	REAL8 beta;
+	REAL8 x;
+	REAL8 y; 
+	REAL8 lam;
+	REAL8 phi0;
+	REAL8 psi0; 
+	REAL8 phi = 0;
+	REAL8 psi = 0;
+	REAL8 cose;
+	REAL8 sine;
+	REAL8 sind; 
+	REAL8 cosd;
+	REAL8 sina;
+	REAL8 cosa;
+	REAL8 cosb;
+
+	/*phi0 and psi0 given location and orientation, resp., of Earth at t_GPS =0 */
+	REAL8 T_bary, Tdot_bary = 0;
+	/* T_bary (what we want to know) is pulse emission time in TDB coords.*/
+	/* The lab measures GPS time, but we set t_GPS =0 at first instant of 1998*/
+	REAL8 AU = 1.49597870e13/2.99792458e10;
+	REAL8 RE = 6.37814e8/2.99792458e10;
+	REAL8 eps = (23.0 + 26.0/60 + 21.488/3600)*LAL_PI/180;
+	/*    printf("eps is %lf \n",eps); */
+	phi0=2.86e0;
+	psi0=4.12e0;
+	/* Those values of phi0 and psi0 are completely made up */
+
+	/* Now converting from equatorial to ecliptic coords. */
+	sine=sin(eps);
+	cose=cos(eps);
+	sind=sin(delta);
+	cosd=cos(delta);
+	sina=sin(alpha);
+	cosa=cos(alpha);
+	beta=cose*sind-sine*cosd*sina;
+	cosb=sqrt(1.0-beta*beta);
+	x=cosd*cosa/cosb;
+	y=(sine*sind+cose*cosd*sina)/cosb;
+	lam=atan2(y,x);
+	/*  printf("beta, lam are (rad) %lf  %lf \n", beta, lam);  */
+	phi=phi0+2*LAL_PI*t_GPS/3.15576e7;
+	psi=psi0+2*LAL_PI*t_GPS/8.64e4;
+	tdiff_day=RE*cosd*cos(psi-alpha);
+	tdiff_yr=AU*cosb*cos(phi-lam);
+	tdiff=tdiff_day+tdiff_yr;
+	T_bary=t_GPS+tdiff;
+	Tdot_bary=1.e0-RE*cosd*sin(psi-alpha)*2*LAL_PI/8.64e4 		
+		-AU*cosb*sin(phi-lam)*2*LAL_PI/3.15576e7;
+	
+	/* switch to turn mod off/on */
+	/* note that 'off' negates the function of the code! */
+	if(sw!=NULL){
+	*T=T_bary; 
+ 	*Tdot=Tdot_bary;}
+	
+	else {
+	*T=t_GPS;
+	*Tdot=1.0;}
+	
+}
