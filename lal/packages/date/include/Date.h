@@ -249,8 +249,8 @@ This structure stores pointers to a \texttt{LALDetector} and a
 structures for passing to functions.  The fields are:
 
 \begin{description}
-\item{\texttt{LALDetector *pDetector}} Pointer to a detector
-\item{\texttt{LIGOTimeGPS *pGps}} Pointer to a GPS time structure
+\item{\verb+LALDetector *p_detector+} Pointer to a detector
+\item{\verb+LIGOTimeGPS *p_gps+} Pointer to a GPS time structure
 \end{description}
 
 </lalLaTeX> */
@@ -278,8 +278,8 @@ detector and a pointer to a date.  This is another convenience
 structure, used in calling \texttt{LALLMST1()}.  The fields are:
 
 \begin{description}
-\item{\texttt{LALDetector *pDetector}} Pointer to a detector
-\item{\texttt{LALDate *pDate}} Pointer to a date
+\item{\verb+LALDetector *p_detector+} Pointer to a detector
+\item{\verb+LALDate *p_date+} Pointer to a date
 \end{description}
 
 </lalLaTeX> */
