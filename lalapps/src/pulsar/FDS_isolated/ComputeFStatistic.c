@@ -3481,6 +3481,11 @@ void OrigLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
  
             sftIndex=k1+k-params->ifmin;
 
+	    if(sftIndex<0){
+	      fprintf(stderr,"ERROR! sftIndex = %d < 0 in OrigLALDemod\nalpha=%d, k=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+		      sftIndex, alpha, k, xTemp, params->Dterms,params->ifmin);
+	    }
+
             /* these four lines compute P*xtilde */
             Xalpha_k=Xalpha[sftIndex];
             realXP += Xalpha_k.re*realP;
@@ -3693,6 +3698,11 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         k1 = (UINT4)xTemp - params->Dterms + 1;
 
         sftIndex = k1 - params->ifmin;
+
+	if(sftIndex<0){
+	      fprintf(stderr,"ERROR! sftIndex = %d < 0 in TestLALDemod\nalpha=%d, k=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+		      sftIndex, alpha, xTemp, params->Dterms,params->ifmin);
+	}
 
         tempFreq1 = tempFreq0 + params->Dterms - 1;     /* positive if Dterms > 1 (trivial) */
 
