@@ -297,7 +297,10 @@ the geoid.
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
+/* Hack until date header is installed first...
 #include <lal/Date.h>
+*/
+#include "Date.h"
 #include <lal/Sort.h>
 #include <lal/SkyCoordinates.h>
 

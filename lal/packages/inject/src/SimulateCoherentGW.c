@@ -128,7 +128,10 @@ LALWarning()
 #include <lal/LALError.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
+/* Hack until date header is installed first...
 #include <lal/Date.h>
+*/
+#include "Date.h"
 #include <lal/VectorOps.h>
 #include <lal/SimulateCoherentGW.h>
 
