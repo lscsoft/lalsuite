@@ -113,15 +113,15 @@ and DIRNAME is a directory number to place output job files.
 For example:
 mkdir /scratch/ballen/S2-L1.60-lists
 
-./lalapps_make_job_input_data S2-H1.60 S2.LHO.full.sorted /scratch/ballen/S2-H1.60-lists/
-./lalapps_make_job_input_data S2-H2.60 S2.LHO.full.sorted /scratch/ballen/S2-H2.60-lists/
-./lalapps_make_job_input_data S2-L1.60 S2.LLO.full.sorted /scratch/ballen/S2-L1.60-lists/
+./lalapps_make_job_input_data S2-H1.60 S2.LHO.full.sorted /scratch2/ballen/S2-H1.60-lists/
+./lalapps_make_job_input_data S2-H2.60 S2.LHO.full.sorted /scratch2/ballen/S2-H2.60-lists/
+./lalapps_make_job_input_data S2-L1.60 S2.LLO.full.sorted /scratch2/ballen/S2-L1.60-lists/
 
 to use RDS data, use:
 
-./lalapps_make_job_input_data S2-H1.60 S2.LHO.RDS.sorted /scratch/ballen/S2-H1.60-lists/
-./lalapps_make_job_input_data S2-H2.60 S2.LHO.RDS.sorted /scratch/ballen/S2-H2.60-lists/
-./lalapps_make_job_input_data S2-L1.60 S2.LLO.RDS.sorted /scratch/ballen/S2-L1.60-lists/
+./lalapps_make_job_input_data S2-H1.60 S2.LHO.RDS.sorted /scratch2/ballen/S2-H1.60-lists/
+./lalapps_make_job_input_data S2-H2.60 S2.LHO.RDS.sorted /scratch2/ballen/S2-H2.60-lists/
+./lalapps_make_job_input_data S2-L1.60 S2.LLO.RDS.sorted /scratch2/ballen/S2-L1.60-lists/
 
 
 The output of this is a set of files containing paths to the data that
