@@ -147,6 +147,7 @@ int main( int argc, char *argv[] )
   REAL8 inputLengthNS;
   UINT4 numInputPoints;
   const REAL8 epsilon = 1.0e-8;
+  UINT4 resampleChan = 0;
 
 
   /*
@@ -245,29 +246,11 @@ int main( int argc, char *argv[] )
   /* set the time series parameters of the input data and resample params */
   memset( &resampleParams, 0, sizeof(ResampleTSParams) );
   resampleParams.deltaT = 1.0 / (REAL8) sampleRate;
-  if ( resampFiltType == 0 )
-  {
-    resampleParams.filterType = LDASorderTen;
-  }
-  else if ( resampFiltType == 1 )
-  {
-    resampleParams.filterType = defaultButterworth;
-  }
 
   /* set the params of the input data time series */
   memset( &chan, 0, sizeof(REAL4TimeSeries) );
   chan.epoch = gpsStartTime;
   chan.epoch.gpsSeconds -= padData; /* subtract pad seconds from start */
-  if ( resampleParams.filterType == LDASorderTen )
-  {
-    /* get the time series ten sample points later */
-    INT8 rawStartTimeNS;
-    LAL_CALL( LALGPStoINT8( &status, &rawStartTimeNS, &(chan.epoch) ), 
-        &status );
-    rawStartTimeNS += (INT8) (1.0e9 * 10.0 / (REAL8) sampleRate);
-    LAL_CALL( LALINT8toGPS( &status, &(chan.epoch), &rawStartTimeNS ), 
-        &status );
-  }
 
   /* open a frame cache or files, seek to required epoch and set chan name */
   if ( frInCacheName )
@@ -285,6 +268,28 @@ int main( int argc, char *argv[] )
   /* determine the sample rate of the raw data and allocate enough memory */
   LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
       &status );
+
+  /* determine if we need to resample the channel */
+  if ( fabs( resampleParams.deltaT - chan.deltaT ) < epsilon )
+  {
+    resampleChan = 1;
+
+    if ( resampFiltType == 0 )
+    {
+      INT8 rawStartTimeNS;
+      resampleParams.filterType = LDASorderTen;
+      /* get the time series ten sample points later */
+      LAL_CALL( LALGPStoINT8( &status, &rawStartTimeNS, &(chan.epoch) ), 
+          &status );
+      rawStartTimeNS += (INT8) (1.0e9 * 10.0 / (REAL8) sampleRate);
+      LAL_CALL( LALINT8toGPS( &status, &(chan.epoch), &rawStartTimeNS ), 
+          &status );
+    }
+    else if ( resampFiltType == 1 )
+    {
+      resampleParams.filterType = defaultButterworth;
+    }
+  }
 
   /* determine the number of points to get and create storage forr the data */
   inputLengthNS = 
@@ -372,13 +377,7 @@ int main( int argc, char *argv[] )
     }
 
     /* determine if we need a higher resolution response to do the injections */
-    if ( fabs( resampleParams.deltaT - chan.deltaT ) < epsilon )
-    {
-      /* the data is already at the correct sample rate, just do injections */
-      injRespPtr = &resp;
-      memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
-    }
-    else
+    if ( resampleChan )
     {
       /* we need a different resolution of response function for injections */
       REAL8 ratioDeltaT = 
@@ -407,6 +406,12 @@ int main( int argc, char *argv[] )
 
       if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
           outFrame, &resp, "strain/ct", "RESPONSE_INJ" );
+    }
+    else
+    {
+      /* the data is already at the correct sample rate, just do injections */
+      injRespPtr = &resp;
+      memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
     }
 
     /* inject the signals, preserving the channel name (Tev mangles it) */
@@ -441,8 +446,7 @@ int main( int argc, char *argv[] )
    */
 
 
-  /* if the input and requested sample rates differ, downsample the data */
-  if ( ! ( fabs( resampleParams.deltaT - chan.deltaT ) < epsilon ) )
+  if ( resampleChan )
   {
     if (vrbflg) fprintf( stdout, "resampling input data from %e to %e\n",
         chan.deltaT, resampleParams.deltaT );
