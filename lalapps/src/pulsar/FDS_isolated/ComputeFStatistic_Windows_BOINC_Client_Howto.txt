@@ -253,6 +253,7 @@ make && make install
 # LALAPPS #
 ###########
 
+cd /work
 cvs -d ":pserver:anonymous@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft"\
  co lalapps
 
