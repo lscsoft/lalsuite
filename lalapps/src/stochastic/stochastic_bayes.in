@@ -161,15 +161,18 @@ ifo1 = cp.get('detectors','detector-one')
 ifo2 = cp.get('detectors','detector-two')
 
 # get the min/max frequency
-f_min = float(cp.get('frequency','f-min'))
-f_max = float(cp.get('frequency','f-max'))
+f_min = int(cp.get('frequency','f-min'))
+f_max = int(cp.get('frequency','f-max'))
 
 # get the band over which to loop
-f_band = float(cp.get('frequency','f-band'))
+f_band = int(cp.get('frequency','f-band'))
 
 # check that f_band is an integer multiple of f_max - f_min
-if (((f_max - f_min)/f_band) - (int(f_max - f_min)/int(f_band))) != 0:
+if (float(f_max - f_min)/float(f_band) - (f_max - f_min)/f_band) != 0:
   sys.exit("f-band must be a mutliple of f_max - f_max")
+
+# get range of minimum frequencies over which to search
+min_range = range(f_min, f_max, f_band)
 
 # create all the LSCdataFind jobs to run in sequence
 prev_df = None
@@ -206,25 +209,31 @@ for seg in data:
 
   # set up stochastic job
   for chunk in seg:
-    stoch = stochastic.StochasticNode(stoch_job)
-    stoch.set_start(chunk.start())
-    stoch.set_end(chunk.end())
-    stoch.set_ifo_one(ifo1)
-    stoch.set_ifo_two(ifo2)
-    stoch.set_cache_one(df1.get_output())
-    stoch.set_cache_two(df2.get_output())
-    stoch.set_calibration_one(ifo1,chunk.start())
-    stoch.set_calibration_two(ifo2,chunk.start())
+    # loop over band
+    for i in min_range:
+      min = float(i)
+      max = float(i + f_band)
+      stoch = stochastic.StochasticNode(stoch_job)
+      stoch.set_start(chunk.start())
+      stoch.set_end(chunk.end())
+      stoch.set_ifo_one(ifo1)
+      stoch.set_ifo_two(ifo2)
+      stoch.set_cache_one(df1.get_output())
+      stoch.set_cache_two(df2.get_output())
+      stoch.set_calibration_one(ifo1,chunk.start())
+      stoch.set_calibration_two(ifo2,chunk.start())
+      stoch.set_f_min(min)
+      stoch.set_f_max(max)
 
-    # add dependancy on LSCdataFind jobs, if required
-    if do_datafind:
-      stoch.add_parent(df1)
-      if ifo1[0] != ifo2[0]:
-        stoch.add_parent(df2)
+      # add dependancy on LSCdataFind jobs, if required
+      if do_datafind:
+        stoch.add_parent(df1)
+        if ifo1[0] != ifo2[0]:
+          stoch.add_parent(df2)
 
-    # add stochastic node
-    if do_stochastic:
-      dag.add_node(stoch)
+      # add stochastic node
+      if do_stochastic:
+        dag.add_node(stoch)
 
 # write out the DAG
 dag.write_sub_files()
