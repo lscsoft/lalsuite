@@ -84,8 +84,12 @@ for bandnumber=1:Nbands;
        small = find( CH<0.945);
        if (length(small) ~= 0) 
          h0min = h0vect(length(small));
-       else 
-         h0min = 0.7*h0vect(1);
+	 else 
+            if (h0vect(1) < 0.95)
+              h0min = h0vect(1);
+            else
+              h0min = 0.7*h0vect(1);
+            end 
        end 
        large = find( CH > 0.955);
        h0max = h0vect(large(1));
