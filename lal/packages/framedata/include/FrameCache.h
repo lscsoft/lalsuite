@@ -45,6 +45,7 @@ NRCSID( FRAMECACHEH, "$Id$" );
 #define FRAMECACHEH_EIEIO  8
 #define FRAMECACHEH_ELINE 16
 #define FRAMECACHEH_EPATH 32
+#define FRAMECACHEH_ENFRM 64
 
 #define FRAMECACHEH_MSGENULL "Null pointer"
 #define FRAMECACHEH_MSGENNUL "Non-null pointer"
@@ -52,6 +53,7 @@ NRCSID( FRAMECACHEH, "$Id$" );
 #define FRAMECACHEH_MSGEIEIO "Import/export I/O error"
 #define FRAMECACHEH_MSGELINE "Input line too long"
 #define FRAMECACHEH_MSGEPATH "Invalid path"
+#define FRAMECACHEH_MSGENFRM "No frame files"
 /**** </lalErrTable> */
 
 /**** <lalLaTeX>

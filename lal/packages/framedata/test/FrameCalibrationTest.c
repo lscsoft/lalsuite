@@ -26,32 +26,35 @@
  *
  * \subsubsection*{Description}
  *
- * For each GPS time in the array \verb+calTime+, this program attemps to
- * generate a calibration for that time. It reads a frame cahce file
- * named \verb+L-CAL-gpstimerange.catalog+, where \verb+gpstimerange+ is
+ * For each interferometer in the array \verb+ifoCode+ the program does the
+ * following: For each GPS time in the array \verb+calTime+, an attempt is
+ * made to generate a calibration for that time. It reads a frame cache file
+ * named \verb+ifo-CAL_V03-gpstimerange.catalog+, where \verb+ifo+ is the
+ * interferometer obtained from the array \verb+ifoCode+, \verb+gpstimerange+ is
  * obtained from the array \verb+cacheTime+. Even elements of the array
  * \verb+calTime+ use the first element of the array \verb+cacheTime+ and odd
  * elements the second. This is done to allow the developer to test a range of
  * GPS times and catalogs quickly.
  *
- * The GPS times for which calibrations are attempted are 714313260,
- * 729925000, 714962262, 729925450 and 800000000. The catalog times are
- * 714240000-715609980 and 729925200-729928800.
+ * The GPS times for which calibrations are attempted are 729331981, 729332039,
+ * 729332040, 729332041, 729332099 and 800000000. The catalog times are
+ * 729273600-734367600 and 729273600-734367600.
  *
- * Since this test requires LIGO science data, the required calibration 
- * frame files are not distributed with LAL, however they can be obtained 
- * via rsync from Caltech. The files required are:
+ * The test uses that calibration data files
  * \begin{verbatim}
- * L-CAL_REF-715388533-64.gwf
- * L-CAL_FAC-714240000-1369980.gwf
- * L-CAL_REF-729907747-64.gwf
- * L-SenseMonitor_L1_M-729925200-3600.gwf
+ * H-CAL_FAC_V03-729273600-5094000.gwf
+ * H-CAL_REF_V03-734073939-64.gwf
+ * L-CAL_FAC_V03-729273600-5094000.gwf
+ * L-CAL_REF_V03-731488397-64.gwf
  * \end{verbatim}
- * In order to run the test, these files should be placed under the framedata
- * test directory before running make check.
  * 
- * If the required calibration data is missing, then the test is not executed.
- *
+ * FIXME: the following test is not yet implemented: waiting for Steve's
+ * change to add the return of the actual values used.
+ * The returned values of $\alpha$ and $\alpha\beta$ are checked against the
+ * values obtained from the files S2 version 3 calibration factor files 
+ * \verb+H1AlphaBeta.txt+ and \verb+L1AlphaBeta.txt+ which can be found on the
+ * calibration home page.
+ * 
  * \subsubsection*{Exit codes}
  * \begin{tabular}{|c|l|}
  * \hline
@@ -88,10 +91,15 @@
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 1; } else ((void)0)
 
-#define CHANNEL "L1:LSC-AS_Q"
-#define CAL_CATALOG "L-CAL-%s.cache"
+#define CLEARSTATUS( stat ) \
+  LALFree( stat.statusPtr ); \
+  stat.statusPtr = NULL; \
+  stat.statusCode = 0;
 
-INT4 lalDebugLevel =  LALINFO;
+#define CHANNEL "%s:LSC-AS_Q"
+#define CAL_CATALOG "%s-CAL-V03-%s.cache"
+
+INT4 lalDebugLevel = 1;
 
 extern char *optarg;
 extern int   optind;
@@ -106,19 +114,25 @@ ParseOptions (int argc, char *argv[]);
 
 int main( int argc, char *argv[] )
 {
-  UINT4 i;
+  UINT4 i, j;
+  const REAL4 tiny = 1e-6;
 
-  INT4  calTime[] = { 714241541, 729925000, 714962262, 729925450, 800000000 };
-  CHAR  cacheTime[][21] = { "714240000-715609980", "729925200-729928800" };
-
+  CHAR  ifoCode[][3] = { "H1", "L1" };
+  INT4  calTime[] = { 729331981, 729332039, 729332040, 729332041, 729332099, 
+    800000000 };
+  CHAR  cacheTime[][21] = { "729273600-734367600", "729273600-734367600" };
+  COMPLEX8 H1AlphaBeta[] = { {0.9883124570783, 0}, {0.9883124570783, 0}, 
+    {1.123396433694, 0}, {1.123396433694, 0}, {1.123396433694, 0}, {0, 0} };
+  COMPLEX8 L1AlphaBeta[] = { {0, 0}, {0, 0}, {0.6041572088741, 0}, 
+    {0.6041572088741, 0}, {0.6041572088741, 0}, {0, 0} };
+    
   static LALStatus      status;
   const CHAR            calCacheName[LALNameLength];
   FrCache              *calCache = NULL;
   UINT4                 numPoints = 262144;
   UINT4                 sampleRate = 4096;
-  CHAR                  ifo[3];
   CHAR                  outFile[LALNameLength];
-  LIGOTimeGPS duration	= {0,0};
+  LIGOTimeGPS           duration = {0,0};
 
 
   COMPLEX8FrequencySeries       response;
@@ -134,70 +148,82 @@ int main( int argc, char *argv[] )
   /* set the parameters of the response function to generate */
   response.deltaF = (REAL8) sampleRate / (REAL8) numPoints;
   response.sampleUnits = strainPerCount;
-  strncpy( response.name, CHANNEL, LALNameLength * sizeof(CHAR) );
 
-  /* determine the ifo from the channel name */
-  strncpy( ifo, response.name, 2 * sizeof(CHAR) );
-  ifo[2] = '\0';
-
-  for ( i = 0; i < sizeof(calTime) / sizeof(*calTime); ++i )
+  /* loop over the three interferometers */
+  for ( j = 0; j < sizeof(ifoCode) / sizeof(*ifoCode); ++j )
   {
-    /* set the time of the calibration and the frame cahche file to use */
-    LALSnprintf( calCacheName, LALNameLength * sizeof(CHAR), CAL_CATALOG,
-        cacheTime[i % 2] );
-    response.epoch.gpsSeconds = calTime[i];
-    if ( verbose )
-    {
-      fprintf( stdout, "Calibration for GPS time %d from %s\n",
-          response.epoch.gpsSeconds, calCacheName );
-      fflush( stdout );
-    }
+    LALSnprintf( response.name, LALNameLength * sizeof(CHAR), 
+        CHANNEL, ifoCode[j] );
 
-    /* create the response function */
-    LALExtractFrameResponse( &status, &response, calCacheName, ifo, &duration );
-    if ( status.statusCode == FRAMECALIBRATIONH_EOREF )
+    for ( i = 0; i < sizeof(calTime) / sizeof(*calTime); ++i )
     {
+      /* set the time of the calibration and the frame cahche file to use */
+      LALSnprintf( calCacheName, LALNameLength * sizeof(CHAR), CAL_CATALOG,
+          ifoCode[j], cacheTime[i % 2] );
+      response.epoch.gpsSeconds = calTime[i];
       if ( verbose )
       {
-        LALPrintError( "%s\n", status.statusDescription );
-      }
-      return 77;
-    }
-    else if ( status.statusCode == FRAMECALIBRATIONH_ECREF ||
-        status.statusCode == FRAMECALIBRATIONH_ECFAC )
-    {
-      if ( verbose )
-      {
-        LALPrintError( " %s\n", status.statusDescription );
-      }
-    }
-    else if ( status.statusCode == -1 && status.statusPtr &&
-        ( status.statusPtr->statusCode == CALIBRATIONH_ETIME ||
-          status.statusPtr->statusCode == CALIBRATIONH_EZERO ||
-          status.statusPtr->statusCode == FRAMESTREAMH_EDONE ) )
-    {
-      if ( verbose )
-      {
-        LALPrintError( "%s\n", status.statusPtr->statusDescription );
-      }
-      LALFree( status.statusPtr );
-      status.statusPtr = NULL;
-    }
-    else
-    {
-      TESTSTATUS( &status );
-
-      /* print out the response function */
-      if ( verbose )
-      {
-        fprintf( stdout, "Calibration updated\n" );
+        fprintf( stdout, "Calibration for GPS time %d from %s\n",
+            response.epoch.gpsSeconds, calCacheName );
         fflush( stdout );
       }
-      if ( output )
+
+      /* create the response function */
+      LALExtractFrameResponse( &status, &response, calCacheName, ifoCode[j], 
+          &duration );
+      if ( status.statusCode == -1 && status.statusPtr )
       {
-        LALSnprintf( outFile, LALNameLength * sizeof(CHAR),
-            "Response-%s-%d.txt", ifo, response.epoch.gpsSeconds );
-        LALCPrintFrequencySeries( &response, outFile );
+        if ( status.statusPtr->statusCode == FRAMESTREAMH_EDONE &&
+            calTime[i] == 800000000 )
+        {
+          /* no calibration for this time */
+          if ( verbose )
+          {
+            fprintf( stderr, "OK: No calibration for 800000000\n" );
+            LALPrintError( "OK: %s\n", status.statusPtr->statusDescription );
+          }
+          CLEARSTATUS( status );
+        }
+        else if ( status.statusPtr->statusCode == CALIBRATIONH_EZERO &&
+            ! strncmp( ifoCode[j], "L1", 2 * sizeof(CHAR) ) && 
+            (calTime[i] == 729331981 || calTime[i] == 729332039) )
+        {
+          /* alpha is zero at this time */
+          if ( verbose )
+          {
+            fprintf( stderr, "OK: Cal is zero for L1 at 729332039\n" );
+            LALPrintError( "OK: %s\n", status.statusPtr->statusDescription );
+          }
+          CLEARSTATUS( status );
+        }
+        else
+        {
+          /* some other error */
+          TESTSTATUS( &status );
+        }
+      }
+      else
+      {
+        TESTSTATUS( &status );
+
+        /* FIXME check that the values match the expected ones          */
+        /* H1AlphaBeta[i] and L1AlphaBeta[i] give the correct values    */
+        /* for this i, so we need to check that the returned values     */
+        /* match the expected ones up to tiny. Need to if on j to get   */
+        /* the correct ifo                                              */
+
+        /* print out the response function */
+        if ( verbose )
+        {
+          fprintf( stdout, "Calibration updated\n" );
+          fflush( stdout );
+        }
+        if ( output )
+        {
+          LALSnprintf( outFile, LALNameLength * sizeof(CHAR),
+              "Response-%s-%d.txt", ifoCode[j], response.epoch.gpsSeconds );
+          LALCPrintFrequencySeries( &response, outFile );
+        }
       }
     }
   }
@@ -240,6 +266,7 @@ ParseOptions (int argc, char *argv[])
 
       case 'v': /* verbose */
         ++verbose;
+        lalDebugLevel |= LALWARNING | LALINFO;
         break;
 
       case 'h':

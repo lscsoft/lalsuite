@@ -1,9 +1,11 @@
 ## Process this file with automake to produce Makefile.in
-FRAMEFILES = F-TEST-600000000-60.gwf F-TEST-600000060-60.gwf F-TEST-600000120-60.gwf 
+FRAMEFILES = F-TEST-600000000-60.gwf F-TEST-600000060-60.gwf F-TEST-600000120-60.gwf \
+H-CAL_FAC_V03-729273600-5094000.gwf H-CAL_REF_V03-734073939-64.gwf \
+L-CAL_FAC_V03-729273600-5094000.gwf L-CAL_REF_V03-731488397-64.gwf
 
 if FRAME
 check_PROGRAMS   = FrameStreamTest Read40mData ReadGEOData ReadLHOData MakeFrames FrameCacheTest FrameCalibrationTest
-TESTS            = FrameCacheTest.sh FrameStreamTest
+TESTS            = FrameCacheTest.sh FrameStreamTest FrameCalibrationTest
 else
 check_PROGRAMS   =
 TESTS            = NoTest
@@ -16,7 +18,7 @@ noinst_DATA = catalog.test
 
 EXTRA_DIST = NoTest FrameDataTest.c SpecBufferTest.c DataBufferTest.c \
         mkcatalog.sh FrameCacheTest.sh $(FRAMEFILES) \
-        L-CAL-714240000-715609980.cache L-CAL-729925200-729928800.cache
+        H1-CAL-V03-729273600-734367600.cache L1-CAL-V03-729273600-734367600.cache
 
 LDADD = $(top_builddir)/packages/framedata/src/liblalframe.la $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
