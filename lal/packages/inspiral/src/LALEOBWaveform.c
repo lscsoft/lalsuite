@@ -45,7 +45,11 @@ for details on how the initial conditions are chosen, when the
 waveform is terminated and so on). 
 No quasi-normal mode oscillations are added to the plunge signal
 so the waveform is terminated around $2.8\,M$.
-
+\subsection*{3PN vs 2PN}
+At 3PN, two additional parameters exist namely OmegaS and Zeta2. 
+The first parameters should be set to zero. If the  second parameter
+is also set to zero then the waveform correponds to the standard 
+waveforms. 
 \subsubsection*{Algorithm}
 A fourth order Runge-Kutta is used to solve the differential equations.
 
@@ -58,10 +62,15 @@ A fourth order Runge-Kutta is used to solve the differential equations.
    LALDBisectionFindRoot
    LALRungeKutta4
    LALHCapDerivatives
+   LALHCapDerivatives3PN
    LALlightRingRadius
+   LALlightRingRadius3PN
    LALpphiInit
+   LALpphiInit3PN
    LALprInit
+   LALprInit3PN
    LALrOfOmega
+   LALrOfOmega3PN
 \end{verbatim}
 
 \subsubsection*{Notes}
