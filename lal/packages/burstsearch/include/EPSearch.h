@@ -105,7 +105,6 @@ typedef struct
 tagEPDataSegmentVector
 {
   UINT4                         length;
-  REAL4TimeSeries              *series;
 }
 EPDataSegmentVector;
 

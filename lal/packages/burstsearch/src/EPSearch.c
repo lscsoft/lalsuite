@@ -694,48 +694,6 @@ void EPConditionData(
      */
 
     /****************************************************************
-     *
-     * I think memory allocation could be substantially reduced once the 
-     * INT2 -> REAL4 since we dont need to allocate this memory,  rather we
-     * just use the wrapperAPI's data.  This should be ok.  I need to check
-     * that the wrapperAPI does not destroy the memory until it cleans up at
-     * the end of an analysis. -- PRB 08/14/01
-     *
-     ****************************************************************/
-
-    for ( i = 0; i < dataSegVec->length; ++i )
-    {
-        /* point to current segment */
-        REAL4TimeSeries *dummySeries = dataSegVec->series + i;
-        INT4 ptsPerSeg = 2 * params->initParams->numPoints;
-
-        /* copy the ifodmro */
-        for ( j = 0; j < ptsPerSeg ; ++j)
-        {
-            dummySeries->data->data[j] = (REAL4) dummyData[j];
-        }
-        dummySeries->data->length = ptsPerSeg;
-        dummyData += (params->initParams->numPoints - params->ovrlap);
-
-
-        strncpy( dummySeries->name, INPUTNAME_CHANNEL, 
-                LALNameLength * sizeof(CHAR) );
-        dummySeries->deltaT = series->deltaT;
-
-        {
-            INT8 dummyNS = 0;
-
-            dummyNS = dataTimeNS + (INT8) (1e9 * 
-                    (params->initParams->numPoints - params->ovrlap) 
-                    * i * dummySeries->deltaT);
-
-	    LALINT8toGPS(status->statusPtr, &dummySeries->epoch, &dummyNS);
-        }
-
-        dummySeries->f0 = 0.0;
-    }
-
-    /****************************************************************
      * 
      * clean up and return
      *

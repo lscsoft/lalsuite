@@ -38,23 +38,6 @@ LALCreateEPDataSegmentVector (
   vectorPtr = *vector = (EPDataSegmentVector *) LALMalloc (sizeof(EPDataSegmentVector));
   vectorPtr->length = params->numSegments;
 
-  vectorPtr->series = LALMalloc(params->numSegments * sizeof(*vectorPtr->series));
-  if ( !vectorPtr->series )
-  {
-    LALFree( vectorPtr );
-    vectorPtr = NULL;
-    ABORT( status, EPDATA_EALOC, EPDATA_MSGEALOC );
-  }
-
-  for (i = 0; i < (INT4)vectorPtr->length ; ++i)
-  {
-    strncpy( vectorPtr->series[i].name, "anonymous", LALNameLength * sizeof(CHAR) );
-    vectorPtr->series[i].data = NULL;
-
-    LALCreateVector (status->statusPtr, &vectorPtr->series[i].data, 2 * params->numPoints);
-    CHECKSTATUSPTR (status);
-  }
-
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
@@ -75,14 +58,6 @@ LALDestroyEPDataSegmentVector (
 
   ASSERT (*vector, status, 
       EPDATA_ENULL, EPDATA_MSGENULL);
-
- for (i = 0; i < (INT4)(*vector)->length; ++i)
-  {
-    LALDestroyVector (status->statusPtr, &(*vector)->series[i].data);
-    CHECKSTATUSPTR (status);
-  }
-
-  LALFree ((*vector)->series);
 
   LALFree (*vector);
   *vector = NULL;
