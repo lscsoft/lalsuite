@@ -172,7 +172,7 @@ LALGPStoUTC (LALStatus                *status,
     }
   
   /* system gmtime does take leap seconds into account */
-  if (tmputc.tm_sec == (time_t)60)
+  if (tmputc.tm_sec == 60)
     {
       LALInfo(status, "gmtime_r() takes leap seconds into account");
       
@@ -260,20 +260,27 @@ LALGPStoUTC (LALStatus                *status,
   RETURN (status);
 } /* END: LALGPStoUTC() */
 
-static time_t days_in_year(const LALDate *p_utcDate)
+static int days_in_year(const LALDate *p_utcDate)
 {
-  time_t year = p_utcDate->unixDate.tm_year + 1900;
+  int year = p_utcDate->unixDate.tm_year + 1900;
 
-  if ((year % 100  == 0) && (year % 400 == 0))
-    return 366;
+  /* Deal with the years ending with '00: only multiples of 400 are leap */
+  if (year % 100  == 0)
+    {
+      if (year % 400 == 0)
+        return 366;
+      else
+        return 365;
+    }
 
+  /* non-'00' years */
   if (year % 4 == 0)
     return 366;
 
   return 365;
 }
 
-static time_t days_in_month(const LALDate *p_utcDate)
+static int days_in_month(const LALDate *p_utcDate)
 {
   time_t month = p_utcDate->unixDate.tm_mon;
 
@@ -307,9 +314,9 @@ static time_t days_in_month(const LALDate *p_utcDate)
 
 typedef struct leap_sec
 {
-  time_t    year;       /* year - 1900 */
-  time_t    mon;        /* 0 through 11 */
-  time_t    leapsec;
+  int    year;       /* year - 1900 */
+  int    mon;        /* 0 through 11 */
+  INT4   leapsec;
 }
 leap_sec_t;
 
@@ -346,31 +353,35 @@ LALUTCtoGPS (LALStatus                *status,
              const LALDate            *p_utcDate,
              const LALLeapSecAccuracy *p_accuracy)
 { /* </lalVerbatim> */
-  time_t secs_gps;
-  time_t ddays = 0;
-  time_t dsecs = 0;
+  INT4 secs_gps;
+  int ddays = 0;
+  int dsecs = 0;
   LALDate tmpdate;
   static LALDate gpsref;
   int i = 0;
   char infostr[256];
   static const int nleaps = sizeof(leap_sec_data)/sizeof(leap_sec_t);
 
-  gpsref.unixDate.tm_sec = 0;
-  gpsref.unixDate.tm_min = 0;
+  /* When GPS began */
+  gpsref.unixDate.tm_sec  = 0;
+  gpsref.unixDate.tm_min  = 0;
   gpsref.unixDate.tm_hour = 0;
   gpsref.unixDate.tm_mday = 6;
-  gpsref.unixDate.tm_mon = 0;
+  gpsref.unixDate.tm_mon  = 0;
   gpsref.unixDate.tm_year = 80;
   gpsref.unixDate.tm_wday = 0;
   gpsref.unixDate.tm_yday = 0;
 
-  sprintf(infostr, "Date given: %d-%d-%d %d:%d:%d %d\n",
-          p_utcDate->unixDate.tm_year+1900, p_utcDate->unixDate.tm_mon+1,
-          p_utcDate->unixDate.tm_mday, p_utcDate->unixDate.tm_hour,
-          p_utcDate->unixDate.tm_min, p_utcDate->unixDate.tm_sec,
-          p_utcDate->residualNanoSeconds);
+  if (lalDebugLevel >= 8)
+    {
+      sprintf(infostr, "Date given: %d-%d-%d %d:%d:%d %d\n",
+              p_utcDate->unixDate.tm_year+1900, p_utcDate->unixDate.tm_mon+1,
+              p_utcDate->unixDate.tm_mday, p_utcDate->unixDate.tm_hour,
+              p_utcDate->unixDate.tm_min, p_utcDate->unixDate.tm_sec,
+              p_utcDate->residualNanoSeconds);
 
-  LALInfo(status, infostr);
+      LALInfo(status, infostr);
+    }
 
   INITSTATUS(status, "LALUTCtoGPS", GPSTOUTCC);
 
@@ -383,7 +394,14 @@ LALUTCtoGPS (LALStatus                *status,
   ASSERT (p_utcDate != (LALDate *)NULL, status,
           DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
+  ASSERT (p_utcDate->unixdate.tm_year < 80 ||
+          (p_utcDate->unixDate.tm_year == 80 &&
+           p_utcDate->unixDate.tm_mon == 0 &&
+           p_utcDate->unixDate.tm_day < 6), status,
+          DATEH_EGPSDATETOOEARLY, DATEH_MSGEGPSDATETOOEARLY);
 
+
+  /* For dates before the beginning of GPS */
   if ((p_utcDate->unixDate.tm_year < 80) ||
       (p_utcDate->unixDate.tm_year == 80 && p_utcDate->unixDate.tm_mon == 0 &&
        p_utcDate->unixDate.tm_mday < 6))
