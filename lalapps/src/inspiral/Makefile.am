@@ -22,18 +22,20 @@ endif
 else
 bin_PROGRAMS = 
 endif
-bin_SCRIPTS = lalapps_inspiral_pipe
+bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_pipe_bkgr
 
 pythonlibdir = ${prefix}/lib/python
 pythonlib_SCRIPTS = inspiral.py
 
 lalapps_inspiral_pipe: inspiral_pipe.in
 	sed s+@PYTHONLIBDIR@+${pythonlibdir}+g inspiral_pipe.in > lalapps_inspiral_pipe 
+lalapps_inspiral_pipe_bkgr: inspiral_pipe_bkgr.in
+	sed s+@PYTHONLIBDIR@+${pythonlibdir}+g inspiral_pipe_bkgr.in > lalapps_inspiral_pipe_bkgr
 
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(TRIGTOTMPLTSRC) $(PRINTINSPIRALSRC) \
              $(INCASRC) inspiral_pipe.in s2_dag.ini \
-             $(COHERESRC) $(SCRIPTS)
+             $(COHERESRC) $(SCRIPTS) inspiral_pipe_bkgr.in
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
