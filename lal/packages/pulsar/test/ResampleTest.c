@@ -445,7 +445,7 @@ main( int argc, char **argv )
     }
 
     /* Generate power spectrum of output. */
-    SUB( LALEstimateForwardRealFFTPlan( &stat, &plan, m, 0 ), &stat );
+    SUB( LALCreateForwardRealFFTPlan( &stat, &plan, m, 0 ), &stat );
     SUB( LALSCreateVector( &stat, &PSOut, m/2 + 1 ), &stat );
     SUB( LALRealPowerSpectrum( &stat, PSOut, output.data, plan ),
 	 &stat );
