@@ -460,6 +460,7 @@ LALInspiralChooseModel(
          case TaylorF1:
          case TaylorF2:
          case SpinTaylorT3:
+      case SpinTaylor:
             ak->vn = ak->vlso = vlso = ak->vlsoT0;
             f->dEnergy = dEt0;
             f->flux = Ft0;
@@ -485,7 +486,9 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
-         case SpinTaylorT3:
+         case SpinTaylorT3: 
+         case SpinTaylor:
+
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
             f->dEnergy = dEt2;
             f->flux = Ft2;
@@ -511,7 +514,8 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
-         case SpinTaylorT3:
+         case SpinTaylorT3: 
+         case SpinTaylor:
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
             f->dEnergy = dEt2;
             f->flux = Ft3;
@@ -542,6 +546,7 @@ LALInspiralChooseModel(
          case TaylorF1:
          case TaylorF2:
          case SpinTaylorT3:
+         case SpinTaylor:
 /* 
    The value vlsoT4 is too large and doesn't work sometimes;
    so we use vlsoT2.
@@ -576,6 +581,7 @@ LALInspiralChooseModel(
          case TaylorF1:
          case TaylorF2:
          case SpinTaylorT3:
+         case SpinTaylor:
 /* 
    The value vlsoT4 is too large and doesn't work with 2.5 PN
    Taylor approximant; so we use vlsoT2.
@@ -611,6 +617,7 @@ LALInspiralChooseModel(
          case TaylorF1:
          case TaylorF2:
          case SpinTaylorT3:
+      case SpinTaylor:
 /* 
    vlsoT6 is as yet undetermined and vlsoT4 is too large in 
    certain cases (TaylorT2 crashes for (1.4,10)); using vlsoT2;
@@ -646,6 +653,7 @@ LALInspiralChooseModel(
          case TaylorF1:
          case TaylorF2:
          case SpinTaylorT3:
+      case SpinTaylor:
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
             f->dEnergy = dEt6;
             f->flux = Ft7;
@@ -681,6 +689,7 @@ LALInspiralChooseModel(
    case PadeF1:
    case TaylorF2:
    case SpinTaylorT3:
+   case SpinTaylor:
      ak->flso = pow(ak->vlso,3.)/(LAL_PI * ak->totalmass);
      
      if (ak->fn) {
@@ -718,8 +727,6 @@ LALInspiralChooseModel(
  case BCV:
  case BCVSpin:
    ak->tn = 100.;
-   break;
- case SpinTaylor:
    break;
 }
    DETATCHSTATUSPTR(status);

@@ -509,7 +509,7 @@ CHAR message[256];
 
   if (params->order == threePN)
     mparams->wdotorb[(int)(threePN+1)] = ak.ST[(int)(threePN+1)];
- if (params->order == threePointFivePN)
+  if (params->order == threePointFivePN)
     mparams->wdotorb[8] = ak.ST[8];
 
 
