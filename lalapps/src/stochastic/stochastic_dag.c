@@ -84,8 +84,7 @@ UINT8 startTime = 0;
 UINT8 stopTime = 0;
 INT4 intervalDuration = -1;
 INT4 segmentDuration = -1;
-INT4 calibDuration;
-INT4 calibOffset;
+INT4 calibOffset = -1;
 CHAR *frameCache1 = NULL;
 CHAR *frameCache2 = NULL;
 CHAR *calCache1 = NULL;
@@ -2214,6 +2213,17 @@ void parseOptions(INT4 argc, CHAR *argv[])
       case 'c':
         /* calibration time offset */
         calibOffset = atoi(optarg);
+
+        /* check */
+        if (calibOffset < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Calibration offset shoule be greater than zero: " \
+              "(%d specified)\n", long_options[option_index].name, \
+              calibOffset);
+          exit(1);
+        }
+
         break;
 
       case 'b':
@@ -2437,6 +2447,13 @@ void parseOptions(INT4 argc, CHAR *argv[])
     exit(1);
   }
 
+  /* calibration offset */
+  if (calibOffset == -1)
+  {
+    fprintf(stderr, "--calibration-offset must be specified\n");
+    exit(1);
+  }
+
   /* high pass filter */
   if (high_pass_flag)
   {
@@ -2576,6 +2593,14 @@ void parseOptions(INT4 argc, CHAR *argv[])
   {
     fprintf(stderr, "Invalid hann duration (%d); must be less than, or " \
         "equal to segment\nduration (%d)\n", hannDuration, segmentDuration);
+    exit(1);
+  }
+
+  /* calibration offset */
+  if (calibOffset > segmentDuration)
+  {
+    fprintf(stderr, "Invalid calibration offset (%d); must be less than, " \
+        "or equal to segment\nduration (%d)\n", calibOffset, segmentDuration);
     exit(1);
   }
 
