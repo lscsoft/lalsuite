@@ -200,6 +200,8 @@ def double_inca(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
     inca.add_var_opt('dt',dt)
     inca.add_var_opt('kappa',kappa)
     inca.add_var_opt('epsilon',epsilon)
+    inca.add_var_opt('parameter-test',cp.get('coincidence-parameters',
+      'parameter-test'))
 
     # add all IFO A master chunks that overlap with segment to input
     for done in ifo_a_analyzed:
