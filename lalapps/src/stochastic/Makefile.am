@@ -13,7 +13,7 @@ bin_SCRIPTS = lalapps_stochastic_pipe lalapps_stochastic_bayes
 bin_PROGRAMS = lalapps_olapredfcn $(STOCHPROGRAM) ${STOPPPROGRAM}
 if FRAME
 if LALFRAME
-lalapps_stochastic_SOURCES = stochastic.c helper.c stochastic.h
+lalapps_stochastic_SOURCES = stochastic.c
 endif
 endif
 if LALMETAIO
