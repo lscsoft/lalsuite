@@ -325,9 +325,9 @@ int main( int argc, char *argv[] ) {
 
    /* Read in ephemeris data from files: */
    eph = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-   eph->ephiles.earthEphemeris = "earth03.dat";
-   eph->ephiles.sunEphemeris = "sun03.dat";
-   eph->leap = 14; /* Ben: Is this right for 2003? Automate. */
+   eph->ephiles.earthEphemeris = "earth00-04.dat";
+   eph->ephiles.sunEphemeris = "sun00-04.dat";
+   eph->leap = 14; /* Ben: automate this. */
 
 
    LALInitBarycenter( &status, eph );
