@@ -138,6 +138,7 @@ int main( int argc, char *argv[] )
   DataSegmentVector            *dataSegVec = NULL;
 
   /* structures for preconditioning */
+  LALWindowParams               wpars;
   AverageSpectrumParams         avgSpecParams;
 
   /* findchirp data structures */
@@ -361,8 +362,10 @@ int main( int argc, char *argv[] )
       avgSpecParams.method = useMedian;
       break;
   }
+   
+  wpars.type = Hann;
   LAL_CALL( LALCreateREAL4Window( &status, &(avgSpecParams.window),
-        numPoints, Hann ), &status );
+        &wpars ), &status );
   LAL_CALL( LALREAL4AverageSpectrum( &status, &spec, &chan, &avgSpecParams ),
       &status );
   LAL_CALL( LALDestroyREAL4Window( &status, &(avgSpecParams.window) ), 
