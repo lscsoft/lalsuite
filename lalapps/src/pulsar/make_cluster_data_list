@@ -25,7 +25,7 @@ then
 fi
 
 run=$1
-datalist=$1-alldata
+datalist=alldata
 
 # If needed, construct a list of all data on the cluster
 if ! [ -f $datalist ] ; then
