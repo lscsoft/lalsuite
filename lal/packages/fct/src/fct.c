@@ -47,11 +47,12 @@ void* fct_calloc(size_t nmemb, size_t size)
 }
 
 STORAGE_CLASS
-void  fct_free(void* p)
+void fct_free(void* p)
 {
   if (fct_free_hook != 0)
   {
-    return fct_free_hook(p);
+    fct_free_hook(p);
+    return;
   }
   
   free(p);
@@ -757,8 +758,6 @@ void fct_calculate(fct_plan *plan,
   fct_free(pk_real);
   fct_free(pk_imag);
   fct_free(work_space); 
-
-  return;
 }
 	    
 
@@ -791,7 +790,7 @@ void fct_destroy_plan(fct_plan *plan, fct_status* const status)
     }
     current = next;
   }
-
+  fct_free(plan);
 }
 
 

@@ -230,7 +230,7 @@ fct_plan            *fct_init_plan               (int data_length,
   the FCT using fct_add_indicies.
   
   The returned value is a pointer to an fct_plan_ structure which is
-  allocated on the heap. The pointer must be freed by the caller.*/
+  allocated on the heap. The pointer is freed by calling fct_destroy_plan */
 
 STORAGE_CLASS
 void                fct_set_units                (fct_plan *plan,

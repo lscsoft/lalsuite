@@ -1009,13 +1009,7 @@ main(int argc, char **argv)
 
     LALFree(status);
 
-    /*
-      For some reason this tells me I have a memory leak.
-      I suspect it's in some part of the library...
-    */
-#if 0
     LALCheckMemoryLeaks();
-#endif
 
     return 0;
 }
