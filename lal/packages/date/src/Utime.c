@@ -207,12 +207,14 @@ LALUtime ( LALStatus                *status,
 { /* </lalVerbatim> */
   /* latest time for which this routine will work: 2002-Mar-31 23:59:00 */
   /* 24 leap seconds because of the two interpolated ones: 1970-Jan-1 and
-   *  1970-Jan-22 */
+   * 1970-Jan-22 */
   const INT4   maxtested = (24*365 + 8*366 + 2*31 + 28)*SECS_PER_DAY - 60 + 24;
   /* number of times leap seconds occur */
   const INT4   numleaps = sizeof(leaps)/sizeof(time_t);
   time_t       tmptime;
-  LALUnixDate *tmputc;
+  LALUnixDate  tmputc;
+  char         tmpstamp[32];
+  CHAR         infostr[128];
   INT4         i;
 
   LALLeapSecAccuracy  acc = LALLEAPSEC_LOOSE;
@@ -237,9 +239,11 @@ LALUtime ( LALStatus                *status,
   */
   if (lalDebugLevel > 0)
     {
-      fprintf(stderr, "LALUtime: info: maxtested = %ld\n", maxtested);
-      tmptime = maxtested - 24;  /* kill leap secs */
-      fprintf(stderr, "                %s\n", asctime(gmtime(&tmptime)));
+      /* kill leap secs since we're using gmtime_r() */
+      tmptime = maxtested - 24;
+      asctime_r(gmtime_r(&tmptime, &tmputc), tmpstamp);
+      sprintf(infostr, "maxtested = %ld; %s\n", maxtested, tmpstamp);
+      LALInfo(status, infostr);
     }
     
   /*
@@ -253,31 +257,25 @@ LALUtime ( LALStatus                *status,
    * Check for broken gmtime(). If not broken, use gmtime().
    */
 
-  /* a leap second was added at the end of 1998-Dec-31;
-   * this is about 29 years from Unix reference time, plus 24 leap seconds;
-   * We check by calling gmtime() on 1998-Dec-31 23:59:59, and then adding
-   * one second and calling gmtime() again.  If gmtime takes care of leap
-   * seconds, the second call will result in a date that is still in
-   * 1998. (This code was written on 2001-Aug-8, and the latest leap second
-   * was the one at the end of Dec 1998. */
+  /* a leap second was added at the end of 1998-Dec-31; this is about 29
+   * years from Unix reference time, plus 24 leap seconds; We check by
+   * calling gmtime() on 1998-Dec-31 23:59:60.  If gmtime takes care of
+   * leap seconds, the tm_sec should read 60. (This code was written on
+   * 2001-Aug-8, and the latest leap second was the one at the end of Dec
+   * 1998. */
 
   /* 1998-Dec-31 23:59:59 */
-  tmptime = (22*365 + 7*366 + 7*31 + 4*30 + 28)* SECS_PER_DAY - 1 + 24;
-  tmputc  = gmtime(&tmptime);
+  tmptime = (22*365 + 7*366 + 7*31 + 4*30 + 28)* SECS_PER_DAY + 24;
+  gmtime_r(&tmptime, &tmputc);
 
-  if (lalDebugLevel > 0)
-    {
-      fprintf(stderr, "LALUtime: info: tmputc = %s\n", asctime(tmputc));
-    }
+  sprintf(infostr, "tmputc = %s\n", asctime_r(&tmputc, tmpstamp));
+  LALInfo(status, infostr);
+
 
   /* system gmtime does take leap seconds into account */
-  if (tmputc->tm_year == (time_t)98)
+  if (tmputc.tm_sec == (time_t)60)
     {
-      if (lalDebugLevel > 0)
-        {
-          fprintf(stderr, "LALUtime: info:  gmtime() takes leap seconds ");
-          fprintf(stderr, "into account\n");
-        }
+      LALInfo(status, "gmtime_r() takes leap seconds into account");
       
       /* check that date requested is not later than 2002-Mar-31 23:59:59,
        * which is when the next possible leap second will be. IERS has
@@ -304,46 +302,30 @@ LALUtime ( LALStatus                *status,
           /* check accuracy param */
           if (*accuracy == LALLEAPSEC_STRICT)  /* strict accuracy */
             {
-              if (lalDebugLevel > 0)
-                {
-                  fprintf(stderr,
-                          "LALUtime: error: may be missing leap seconds\n");
-                }
-
-              /*
-               * DIE
-               */
+              LALWarning(status, "may be missing leap seconds");
             }
           else if (*accuracy == LALLEAPSEC_LOOSE) /* loose accuracy */
             {
-              if (lalDebugLevel > 0)
-                {
-                  fprintf(stderr,
-                          "LALUtime: warning: maybe missing leap seconds\n");
-                }
+              LALWarning(status, "may be missing leap seconds");
             }
         }
 
       /* compute date struct */
       tmptime = unixtime->unixSeconds;
-      tmputc = gmtime(&tmptime);
-      utc->unixDate.tm_sec   = tmputc->tm_sec;
-      utc->unixDate.tm_min   = tmputc->tm_min;
-      utc->unixDate.tm_hour  = tmputc->tm_hour;
-      utc->unixDate.tm_mday  = tmputc->tm_mday;
-      utc->unixDate.tm_mon   = tmputc->tm_mon;
-      utc->unixDate.tm_year  = tmputc->tm_year;
-      utc->unixDate.tm_wday  = tmputc->tm_wday;
-      utc->unixDate.tm_yday  = tmputc->tm_yday;
+      gmtime_r(&tmptime, &tmputc);
+      utc->unixDate.tm_sec   = tmputc.tm_sec;
+      utc->unixDate.tm_min   = tmputc.tm_min;
+      utc->unixDate.tm_hour  = tmputc.tm_hour;
+      utc->unixDate.tm_mday  = tmputc.tm_mday;
+      utc->unixDate.tm_mon   = tmputc.tm_mon;
+      utc->unixDate.tm_year  = tmputc.tm_year;
+      utc->unixDate.tm_wday  = tmputc.tm_wday;
+      utc->unixDate.tm_yday  = tmputc.tm_yday;
       utc->unixDate.tm_isdst = 0;    /* always ignore tm_isdst field */
     }
   else /* system gmtime() does NOT take leap secs into account */
     {
-      if (lalDebugLevel > 0)
-        {
-          fprintf(stderr, "LALUtime: info: gmtime() does not figure in ");
-          fprintf(stderr, "leap seconds\n");
-        }
+      LALInfo(status, "gmtime_r() does not figure in leap seconds");
       
       /* fix up leap seconds */
       tmptime = unixtime->unixSeconds;
@@ -354,29 +336,29 @@ LALUtime ( LALStatus                *status,
       if (tmptime == (leaps[i] + i - 1))
         {
           tmptime -= i;
-          tmputc   = gmtime(&tmptime);
+          gmtime_r(&tmptime, &tmputc);
           utc->unixDate.tm_sec   = 60;
-          utc->unixDate.tm_min   = tmputc->tm_min;
-          utc->unixDate.tm_hour  = tmputc->tm_hour;
-          utc->unixDate.tm_mday  = tmputc->tm_mday;
-          utc->unixDate.tm_mon   = tmputc->tm_mon;
-          utc->unixDate.tm_year  = tmputc->tm_year;
-          utc->unixDate.tm_wday  = tmputc->tm_wday;
-          utc->unixDate.tm_yday  = tmputc->tm_yday;
+          utc->unixDate.tm_min   = tmputc.tm_min;
+          utc->unixDate.tm_hour  = tmputc.tm_hour;
+          utc->unixDate.tm_mday  = tmputc.tm_mday;
+          utc->unixDate.tm_mon   = tmputc.tm_mon;
+          utc->unixDate.tm_year  = tmputc.tm_year;
+          utc->unixDate.tm_wday  = tmputc.tm_wday;
+          utc->unixDate.tm_yday  = tmputc.tm_yday;
           utc->unixDate.tm_isdst = 0;
         }
       else
         {
           tmptime -= (i - 1);
-          tmputc   = gmtime(&tmptime);
-          utc->unixDate.tm_sec   = tmputc->tm_sec;
-          utc->unixDate.tm_min   = tmputc->tm_min;
-          utc->unixDate.tm_hour  = tmputc->tm_hour;
-          utc->unixDate.tm_mday  = tmputc->tm_mday;
-          utc->unixDate.tm_mon   = tmputc->tm_mon;
-          utc->unixDate.tm_year  = tmputc->tm_year;
-          utc->unixDate.tm_wday  = tmputc->tm_wday;
-          utc->unixDate.tm_yday  = tmputc->tm_yday;
+          gmtime_r(&tmptime, &tmputc);
+          utc->unixDate.tm_sec   = tmputc.tm_sec;
+          utc->unixDate.tm_min   = tmputc.tm_min;
+          utc->unixDate.tm_hour  = tmputc.tm_hour;
+          utc->unixDate.tm_mday  = tmputc.tm_mday;
+          utc->unixDate.tm_mon   = tmputc.tm_mon;
+          utc->unixDate.tm_year  = tmputc.tm_year;
+          utc->unixDate.tm_wday  = tmputc.tm_wday;
+          utc->unixDate.tm_yday  = tmputc.tm_yday;
           utc->unixDate.tm_isdst = 0;
         }
     }

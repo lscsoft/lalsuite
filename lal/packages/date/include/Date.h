@@ -61,12 +61,14 @@ NRCSID (DATEH, "$Id$");
 #define DATEH_EDATETOOEARLY 3
 #define DATEH_ERANGE        4
 #define DATEH_EBUFFTOOSMALL 5
+#define DATEH_EASCTIMEFAIL  6
 
 #define DATEH_MSGENULLINPUT "Input is NULL"
 #define DATEH_MSGENULLOUTPUT "Output is NULL"
 #define DATEH_MSGEDATETOOEARLY "Date too early: Julian Day can only be computed for dates >= 1900-03-01"
 #define DATEH_MSGERANGE "Input time out of range: 0 <= utc seconds <= 946684823"
 #define DATEH_MSGEBUFFTOOSMALL "Output timestamp string too small: min. size = 26"
+#define DATEH_MSGEASCTIMEFAIL "asctime_r() failed"
     
 
 /* </lalErrTable>

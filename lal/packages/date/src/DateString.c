@@ -23,10 +23,12 @@ given the date in an \texttt{LALDate} structure.  A date and time in
 ISO 8601 format looks like 2001-03-04 17:03:52 for March 4, 2001,
 5:03:52 pm.  The advantage of this format, besides avoiding Y2K
 issues, is that a numerical-order sort of dates will result in a
-chronologically ordered sort.  This routine is an interface to the
-standard Unix function \texttt{strftime(3C)}.
+chronologically ordered sort.  This routine is a replacement for
+\texttt{strftime(3c)}.
 
 \subsubsection*{Algorithms}
+
+Trivial.
 
 \subsubsection*{Uses}
 
