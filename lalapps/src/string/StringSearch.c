@@ -294,7 +294,7 @@ int AddInjections(struct CommandLineArgsTag CLA)
     LALFree(thisEvent);
   }
 
-  LALDestroyCOMPLEX8FrequencySeries(&stat, response);
+  LALDestroyCOMPLEX8FrequencySeries(&status, response);
 
   return 0;
 }
