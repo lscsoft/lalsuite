@@ -130,21 +130,37 @@
       <Column Name="sim_inspiralgroup:sim_inspiral:latitude" Type="real_4"/>
       <Column Name="sim_inspiralgroup:sim_inspiral:inclination" Type="real_4"/>
       <Column Name="sim_inspiralgroup:sim_inspiral:coa_phase" Type="real_4"/>
-      <Column Name="sim_inspiralgroup:sim_inspiral:polarization" Type="real_4"/>
-      <Column Name="sim_inspiralgroup:sim_inspiral:eff_dist_h" Type="real_4"/>
-      <Column Name="sim_inspiralgroup:sim_inspiral:eff_dist_l" Type="real_4"/>
-      <Column Name="sim_inspiralgroup:sim_inspiral:eff_dist_g" Type="real_4"/>
-      <Column Name="sim_inspiralgroup:sim_inspiral:eff_dist_t" Type="real_4"/>
-      <Column Name="sim_inspiralgroup:sim_inspiral:eff_dist_v" Type="real_4"/>
-      <Column Name="sim_inspiralgroup:sim_inspiral:simulation_id" Type="ilwd:char"/>
-      <Stream Name="sim_inspiralgroup:sim_inspiral:table" Type="Local" Delimiter=",">
-         "process:process_id:0","GeneratePPNtwoPN",729273613,0,729273612,998227760,729273612,994513400,1,0,1,0,1,0,1.6175260586695899e+00,"M33",1.000000e+1,1.000000e+01,2.500000e-01,1.00000e+02,4.097160e-01,5.349434e-01,1.791432e-01,2.040999e+00,8.858610e-01,1.717248e+00,1.666386e+00,1.6,1.6,1.6,"sim_inspiral:simulation_id:0",
-         "process:process_id:0","EOBtwoPN",729273618,0,729273612,998227760,729273612,994513400,1,0,1,0,1,0,1.6175260586695899e+00,"M33",3.000000e+0,1.000000e+01,2.500000e-01,8.400000e-01,4.097160e-01,5.349434e-01,1.791432e-01,2.040999e+00,8.858610e-01,1.717248e+00,1.666386e+00,1.6,1.6,1.6,"sim_inspiral:simulation_id:0",
-         "process:process_id:0","EOBthreePN",729273623,0,729273612,998227760,729273612,994513400,1,0,1,0,1,0,1.6175260586695899e+00,"M33",1.000000e+01,1.000000e+01,2.500000e-01,100,4.097160e-01,5.349434e-01,1.791432e-01,2.040999e+00,8.858610e-01,1.717248e+00,1.666386e+00,1.6,1.6,1.6,"sim_inspiral:simulation_id:0",
-         "process:process_id:0","SpinTaylorthreePN",729273628,0,729273612,998227760,729273612,994513400,1,0,1,0,1,0,1.6175260586695899e+00,"M33",1.000000e+1,1.000000e+01,2.500000e-01,8.400000e-01,4.097160e-01,5.349434e-01,1.791432e-01,2.040999e+00,8.858610e-01,1.717248e+00,1.666386e+00,1.6,1.6,1.6,"sim_inspiral:simulation_id:0",
-         "process:process_id:0","TaylorT3twoPN",729273633,0,729273612,998227760,729273612,994513400,1,0,1,0,1,0,1.6175260586695899e+00,"M33",1.000000e+01,1.000000e+01,2.500000e-01,8.400000e-01,4.097160e-01,5.349434e-01,1.791432e-01,2.040999e+00,8.858610e-01,1.717248e+00,1.666386e+00,1.6,1.6,1.6,"sim_inspiral:simulation_id:0",
-         "process:process_id:0","TaylorT3twoPN",729273638,0,729273612,998227760,729273612,994513400,1,0,1,0,1,0,1.6175260586695899e+00,"M33",1.000000e+01,1.000000e+01,2.500000e-01,8.400000e-01,4.097160e-01,5.349434e-01,1.791432e-01,2.040999e+00,8.858610e-01,1.717248e+00,1.666386e+00,1.6,1.6,1.6,"sim_inspiral:simulation_id:0",
-         "process:process_id:0","SpinTaylorthreePN",729273643,0,729273612,998227760,729273612,994513400,1,0,1,0,1,0,1.6175260586695899e+00,"M33",3.000000e+00,1.000000e+01,2.500000e-01,8.400000e-01,4.097160e-01,5.349434e-01,1.791432e-01,2.040999e+00,8.858610e-01,1.717248e+00,1.666386e+00,1.6,1.6,1.6,"sim_inspiral:simulation_id:0",
-      </Stream>
+    <Column Name="sim_inspiralgroup:sim_inspiral:polarization" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:psi0" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:psi3" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:alpha" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:alpha1" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:alpha2" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:alpha3" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:alpha4" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:alpha5" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:alpha6" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:beta" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:spin1x" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:spin1y" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:spin1z" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:spin2x" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:spin2y" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:spin2z" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:theta0" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:phi0" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:fLower" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:fFinal" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:mchirp" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:eff_dist_h" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:eff_dist_l" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:eff_dist_g" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:eff_dist_t" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:eff_dist_v" Type="real_4"/>
+    <Column Name="sim_inspiralgroup:sim_inspiral:simulation_id" Type="ilwd:char"/>
+    <Stream Name="sim_inspiralgroup:sim_inspiral:table" Type="Local" Delimiter=",">
+         "process:process_id:0","SpinTaylorthreePN",729273643,190590858,729274314,205365247,729274314,199892108,0,0,0,0,0,0,1.8128344995694028e+00,"",1.847545e+01,2.512821e+00,1.053909e-01,7.668929e+00,-3.659891e-01,4.816029e+00,1.736583e+00,4.566989e-01,4.315120e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,2.624530e-01,6.711494e-01,2.470389e-01,0.000000e+00,0.000000e+00,0.000000e+00,1.00000e+00,0.00000e+00,6.500000e+01,0.000000e+00,0.000000e+00,2.403964e+01,2.710890e+01,0.000000e+00,0.000000e+00,0.000000e+00,"sim_inspiral:simulation_id:0",
+         "process:process_id:0","GeneratePPNtwoPN",729273613,190590858,729274314,205365247,729274314,199892108,0,0,0,0,0,0,1.8128344995694028e+00,"",1.847545e+01,2.512821e+00,1.053909e-01,7.668929e+00,-3.659891e-01,4.816029e+00,1.736583e+00,4.566989e-01,4.315120e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,2.624530e-01,6.711494e-01,2.470389e-01,0.300000e+00,0.300000e+00,0.300000e+00,0.300000e+00,0.300000e+00,4.000000e+01,0.000000e+00,0.000000e+00,2.403964e+01,2.710890e+01,1.000000e+00,2.000000e+00,3.00000e+00,"sim_inspiral:simulation_id:0",
+  </Stream>
    </Table>
 </LIGO_LW>
