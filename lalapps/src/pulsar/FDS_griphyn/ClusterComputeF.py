@@ -1,14 +1,130 @@
-import sys
-from getopt import getopt
-from ClusterComputeFUtils import *
+#!/usr/bin/env @PYTHONPROG@
 
+"""
+Perform a coherent isolated pulsar search over a narrow frequency band
+on a set of sky patches, using a GRID-enabled system.
+"""
 # Constants
+versionN = 1.0
+sharedDir = "."
+sftList = "sftList.txt"
+sftPath = "sftPath.txt"
 basename = "nbSFT"
+dagname = "ClusterComputeF.dag"
 
-# Parameter defaults
+import sys
+import getopt
+from ClusterComputeFUtils import *
+from pipeline import *
+
+def usage():
+  """
+  Print a usage message to stdout.
+  """
+  msg = """\
+NAME
+       ClusterComputeF
+
+SYNOPSIS
+       ClusterComputeF [options]... listfile
+
+DESCRIPTION
+       Constructs and submits a DAGMan job to Condor that performs a
+       coherent pulsar search on a set of sky patches.  The sky
+       patches are listed in a file specified by the command-line
+       argument, while other parameters of the search are specified by
+       the command line options.
+
+       The sky patch list file consists of any number of lines
+       specifying N-vertex polygons (alpha,delta) in right ascension
+       and declination, where each line is of the form:
+
+              -R (alpha1,delta1),...,(alphaN,deltaN)
+
+       The number of vertecies N may vary from line to line. No
+       whitespace is permitted within or between coordinate pairs.
+       Alternatively, lines may specify patches by a position
+       (alpha,delta) and interval (Dalpha,Ddelta) in right ascension
+       and declination, by taking the form:
+
+              -a alpha -d delta -z Dalpha -c Ddelta
+
+       Lines of each form may be interspersed within a listfile.  For
+       a given DAGMan job, each sky patch is uniquely identified by
+       its line number within the listfile, and will be analyzed as a
+       separate Condor job.
+
+       The other command-line options permitted [and their defaults]
+       are:
+
+       -h, --help
+              print this help message
+
+       -s, --start=START
+              start at GPS time START (seconds) [0]
+
+       -e, --end=END
+              end at GPS time END (seconds) [86400]
+
+       -i, --instrument=IFO
+              specify detector (H1, H2, L1 or G) [H1]
+
+       -f, --frequency=FREQ
+              start at frequency FREQ (Hertz) [1200.0]
+
+       -b, --bandwidth=BAND
+              cover frequency bandwidth BAND (Hertz) [1.0]
+
+       -d, --spindown=SPIN
+	      search up from SPIN spindown (Hertz^2) [0.0]
+
+       -p, --spinband=SBAND
+	      search up to SPIN+SBAND (Hertz^2) [0.0]
+
+       -m, --metric=CODE
+	      specify metric computation method [1]:
+	             0 = none
+		     1 = PtoleMetric
+		     2 = CoherentMetric
+
+       -x, --mismatch=MAX
+	      set maximum mismatch to MAX [0.02]
+
+       -t, --threshold=THRESH
+	      set F-statistic threshold to THRESH [10.0]
+
+       -l, --liststart=LSTART
+	      skip first LSTART patches in list [0]
+
+       -n, --num=NUM
+	      search NUM patches from list (negative means search all
+	      remaining patches) [-1]
+
+       -r, --rls-server=SERVER
+              specify name of RLS server for collecting data
+
+       -c, --calibration=TYPE
+              select calibration type for input data [Funky]
+
+       -v, --calibration-version=VERSION
+              select version number for calibration [3]
+
+       -V, --version
+              print version number of this script to stderr and exit
+
+"""
+  print msg
+
+# Options and their defaults
+shortopts = "hs:e:i:f:b:d:p:m:x:t:l:n:r:c:v:V"
+longopts = [ "help", "start=", "end=", "instrument=", "frequency=",
+             "bandwidth=", "spindown=", "spinband=", "metric=",
+             "mismatch=", "threshold=", "liststart=", "num=",
+             "rls-server=", "calibration=", "calibration-version=",
+             "version" ]
 start = 0
 end = 86400
-instrument = 1
+instrument = "H1"
 frequency = 1200.0
 bandwidth = 1.0
 spindown  = 0.0
@@ -18,203 +134,170 @@ mismatch = 0.02
 threshold = 10.0
 liststart = 0
 num = -1
+rls_server = "rls://hydra.phys.uwm.edu"
+calibration = "Funky"
+calibration_version = 3
 
-# Command-line options
-short_args = "hs:e:f:b:t:i:l:n:p:"
-long_args = [ "help", "start=", "end=", "frequency=", "bandwidth=", \
-	      "threshold=", "instrument=", "liststart=", "num=", \
-	      "spindown=" ]
-usage = "\nusage: python %s [options] listfile\n\n" % sys.argv[0] \
-	+ "arguments:\n" \
-	+ "  listfile                list of RA and DEC pairs to search\n\n" \
-	+ "options:\n" \
-	+ "  -h, --help              print this help message\n" \
-	+ "  -s, --start=START       start at GPS time START (s) [0]\n" \
-	+ "  -e, --end=END           end at GPS time END (s) [86400]\n" \
-	+ "  -i, --instrument=CODE   0 = GEO, 1 = LLO 2 = LHO, 3 = Rome\n" \
-	+ "  -f, --frequency=FREQ    start at frequency FREQ (Hz) [1200.0]\n" \
-	+ "  -b, --bandwidth=BAND    cover frequency bandwidth BAND (Hz) [1.0]\n" \
-	+ "  -d, --spindown=SPIN     search up from SPIN spindown (Hz^2) [0.0]\n" \
-	+ "  -p, --spinband=SBAND    search up to SPIN+SBAND (Hz^2) [0.0]\n" \
-	+ "  -m, --metric=MCODE      0 = none, 1 = PtoleMetric, 2 = CoherentMetric [1]\n" \
-	+ "  -x, --mismatch=MAX      maximum mismatch is MAX [0.02]\n" \
-	+ "  -t, --threshold=THRESH  set F-statistic threshold to THRESH [10.0]\n" \
-	+ "  -l, --liststart=LSTART  skip first LSTART points in list [0]\n" \
-	+ "  -n, --num=NUM           search NUM points from list [-1]\n"
-options, args = getopt( sys.argv[1:], short_args, long_args )
-for opt in options:
-	if opt[0] == "-h" or opt[0] == "--help":
-		print usage
-		sys.exit( 0 )
-	elif opt[0] == "-s" or opt[0] == "--start":
-		start = long( opt[1] )
-	elif opt[0] == "-e" or opt[0] == "--end":
-		end = long( opt[1] )
-	elif opt[0] == "-i" or opt[0] == "--instrument":
-		instrument = int( opt[1] )
-	elif opt[0] == "-f" or opt[0] == "--frequency":
-		frequency = double( opt[1] )
-	elif opt[0] == "-b" or opt[0] == "--bandwidth":
-		bandwidth = double( opt[1] )
-	elif opt[0] == "-d" or opt[0] == "--spindown":
-		spindown = float( opt[1] )
-	elif opt[0] == "-p" or opt[0] == "--spinband":
-		spinband = float( opt[1] )
-	elif opt[0] == "-m" or opt[0] == "--metric":
-		metric = int( opt[1] )
-	elif opt[0] == "-x" or opt[0] == "--mismatch":
-		mismatch = float( opt[1] )
-	elif opt[0] == "-t" or opt[0] == "--threshold":
-		threshold = float( opt[1] )
-	elif opt[0] == "-l" or opt[0] == "--liststart":
-		liststart = int( opt[1] )
-	elif opt[0] == "-n" or opt[0] == "--num":
-		num = int( opt[1] )
-	else:
-		print "%s: Unrecognized option %s" % ( sys.argv[0], opt[0] )
-		print "%s --help          for usage information" % sys.argv[0]
-		sys.exit( 2 )
+# Parse command line
+try:
+  options, args = getopt.getopt( sys.argv[1:], shortopts, longopts )
+except getopt.GetoptError:
+  print >>sys.stderr, sys.argv[0] + ": Error parsing command line"
+  print >>sys.stderr, "Use " + sys.argv[0] + " --help for usage"
+  sys.exit( 2 )
+
+for opt, value in options:
+  if opt in ( "-h", "--help" ):
+    usage()
+    sys.exit( 0 )
+  elif opt in ( "-s", "--start" ):
+    start = long( value )
+  elif opt in ( "-e", "--end" ):
+    end = long( value )
+  elif opt in ( "-i", "--instrument" ):
+    instrument = int( value )
+  elif opt in ( "-f", "--frequency" ):
+    frequency = double( value )
+  elif opt in ( "-b", "--bandwidth" ):
+    bandwidth = double( value )
+  elif opt in ( "-d", "--spindown" ):
+    spindown = float( value )
+  elif opt in ( "-p", "--spinband" ):
+    spinband = float( value )
+  elif opt in ( "-m", "--metric" ):
+    metric = int( value )
+  elif opt in ( "-x", "--mismatch" ):
+    mismatch = float( value )
+  elif opt in ( "-t", "--threshold" ):
+    threshold = float( value )
+  elif opt in ( "-l", "--liststart" ):
+    liststart = int( value )
+  elif opt in ( "-n", "--num" ):
+    num = int( value )
+  elif opt in ( "-c", "--calibration" ):
+    calibration = value
+  elif opt in ( "-v", "--calibration-version" ):
+    calibration_version = int( value )
+  elif opt in ( "-V", "--version" ):
+    print >>sys.stderr, versionN
+    sys.exit( 0 )
+  else:
+    print >>sys.stderr, sys.argv[0] + ": Unrecognized option " + opt
+    print >>sys.stderr, "Use " + sys.argv[0] + " --help for usage"
+    sys.exit( 2 )
 if len( args ) < 1:
-	print "%s: Missing argument" % sys.argv[0]
-	print "%s --help          for usage information" % sys.argv[0]
-	sys.exit( 2 )
+  print >>sys.stderr, sys.argv[0] + ": Missing argument"
+  print >>sys.stderr, "Use " + sys.argv[0] + " --help for usage"
+  sys.exit( 2 )
 
 
-
-### Get names of cluster shared directory and node local temp directory
-sharedDir = "/home/teviet/scratch/"
-localDir = "/home/teviet/tmp/"
-
-
-### Create script to query metadata catalogue for names of SFT files
-### for timespan and instrument in question.
-
-### Create script to query local data replicator for locations of
-### local SFTs and/or URLs of remote SFTs.
-
-### Create script to move remote SFTs to sharedDir, and make list of
-### all SFTs.
-sftList = "sftList.txt"
-
+# Get interferometer code from name
+if instrument == "H1" or instrument == "H2":
+  ifocode = 2
+elif instrument == "L1":
+  ifocode = 1
+elif instrument == "G":
+  ifocode = 0
+else:
+  print >>sys.stderr, sys.argv[0] + " - unrecognized instrument " + \
+        instrument
+  sys.exit( 1 )
 
 ### Get name of directory where ephemerides are stored, and year of ephemeris
 ephemDir = "."
 year = getyearstr( ephemDir, start, end )
 if year == "":
-	print "%s - no ephemerides for GPS times %i-%i" % ( sys.argv[0], start, end )
-	sys.exit(1)
+  print >>sys.stderr, sys.argv[0] + " - no ephemerides for GPS " \
+        "times %i-%i" % ( start, end )
+  sys.exit(1)
 
-# Create script to distribute data to nodes
-fp = open( "copyData.sh", "w" )
-fp.write( "#! /bin/sh\n" )
-fp.write( "cp " + sharedDir + basename + "* " + localDir + "\n" )
-fp.close()
+# Get list of sky patches from input file
+patches = skyPatches()
+try:
+  patches.read( args[0], liststart, num )
+except EOFError:
+  print >>sys.stderr, sys.argv[0] + " - only %i patches read " \
+        "(%i requested) -- continuing anyway" % \
+        ( len( patches.list ), num )
+try:
+  patches.check()
+except Warning, inst:
+  print >>sys.stderr, str( inst )
+num = len( patches.list )
 
-# Create script to return results from nodes
-fp = open( "returnData.sh", "w" )
-fp.write( "#! /bin/sh\n" )
-fp.write( "rm " + localDir + basename + "*\n" )
-fp.write( "mv " + localDir + "*.out" + " " + sharedDir + "\n" )
-fp.close()
+# Create SFT search job.
+searchJob = CondorDAGJob( "vanilla", "lalapps_QueryMetadataLFN" )
+searchJob.set_sub_file(                 "QueryMetadataLFN.sub" )
+searchJob.set_stdout_file( sharedDir + "/QueryMetadataLFN.out" )
+searchJob.set_stderr_file( sharedDir + "/QueryMetadataLFN.err" )
+searchJob.add_opt( "calibration", calibration )
+searchJob.add_opt( "calibration-version", "%i" % calibration_version )
+searchJob.add_opt( "instrument", instrument )
+searchJob.add_opt( "gps-start-time", "%i" % start )
+searchJob.add_opt( "gps-end-time",   "%i" % end )
+searchJob.add_opt( "output", sharedDir + "/" + sftList )
 
-# Create SFT extraction Condor script
-fp = open( "extractSFTband.sub", "w" )
-fp.write( "executable = extractSFTband\n" )
-fp.write( "arguments =" )
-fp.write( " -i " + sftList )
-fp.write( " -o " + basename )
-fp.write( " -f %f" % frequency )
-fp.write( " -b %f" % bandwidth )
-fp.write( "\n" )
-fp.write( "universe = standard\n" )
-fp.write( "notification = Never\n" )
-fp.write( "log = ClusterComputeF.log\n" )
-fp.write( "queue\n" )
-fp.close()
+# Create SFT collection job.
+collectJob = CondorDAGJob( "vanilla", "lalapps_GatherLFN" )
+collectJob.set_sub_file(                 "GatherLFN.sub" )
+collectJob.set_stdout_file( sharedDir + "/GatherLFN.out" )
+collectJob.set_stderr_file( sharedDir + "/GatherLFN.err" )
+collectJob.add_opt( "input",  sharedDir + "/" + sftList )
+collectJob.add_opt( "server", rls_server )
+collectJob.add_opt( "bucket", sharedDir )
+collectJob.add_opt( "output", sharedDir + "/" + sftPath )
 
-# Create F-statistic computation Condor script
-fp = open( "ComputeFStatistic.sub", "w" )
-fp.write( "executable = ComputeFStatistic\n" )
-fp.write( "arguments =" )
-fp.write( " -I %i" % instrument )
-fp.write( " -f %f" % frequency )
-fp.write( " -b %f" % bandwidth )
-fp.write( " -s %f" % spindown )
-fp.write( " -m %f" % spinband )
-fp.write( " -M %i" % metric )
-fp.write( " -X %f" % mismatch )
-fp.write( " $(area)" )
-fp.write( " -D " + localDir )
-fp.write( " -i " + basename )
-fp.write( " -E " + ephemDir )
-fp.write( " -y " + year )
-fp.write( " -F %f" % threshold )
-fp.write( "\n" )
-fp.write( "universe = standard\n" )
-fp.write( "notification = Never\n" )
-fp.write( "output = $(number).out\n" )
-fp.write( "log = ClusterComputeF.log\n" )
-fp.write( "queue\n" )
-fp.close()
+# Create SFT extraction job
+extractJob = CondorDAGJob( "standard",   "narrowBandExtract" )
+extractJob.set_sub_file(                 "narrowBandExtract.sub" )
+extractJob.set_stdout_file( sharedDir + "/narrowBandExtract.out" )
+extractJob.set_stderr_file( sharedDir + "/narrowBandExtract.err" )
+extractJob.add_opt( "frequency", "%f" % frequency )
+extractJob.add_opt( "bandwidth", "%f" % bandwidth )
+extractJob.add_opt( "input",  sftPath )
+extractJob.add_opt( "output", sharedDir + "/" + basename )
 
-# Get list of areas to search
-areas = []
-fpList = open( args[0], "r" )
-if liststart < 0:
-	liststart = 0
-for i in range( 0, liststart ):
-	fpList.readline()
-if num > 0:
-	for i in range( 0, num ):
-		line = fpList.readline()
-		if len( line ) > 0:
-			areas = areas + [line]
-		else:
-			i = num
-	if num > len( areas ):
-		print "%s: Only %i areas read from %s" % \
-		      ( sys.argv[0], len( areas ), args[0] )
-else:
-	i = 1
-	while i:
-		line = fpList.readline()
-		if len( line ) > 0:
-			areas = areas + [line]
-		else:
-			i = 0
-fpList.close()
-num = len( areas )
+# Create ComputeFStatistic job
+computeJob = CondorDAGJob( "standard",   "ComputeFStatistic" )
+computeJob.set_sub_file(                 "ComputeFStatistic.sub" )
+computeJob.set_stdout_file( sharedDir + "/ComputeFStatistic-$(node).out" )
+computeJob.set_stderr_file( sharedDir + "/ComputeFStatistic-$(node).err" )
+computeJob.add_short_opt( "I", "%i" % ifocode )
+computeJob.add_short_opt( "f", "%f" % frequency )
+computeJob.add_short_opt( "b", "%f" % bandwidth )
+computeJob.add_short_opt( "s", "%f" % spindown )
+computeJob.add_short_opt( "m", "%f" % spinband )
+computeJob.add_short_opt( "M", "%i" % metric )
+computeJob.add_short_opt( "X", "%f" % mismatch )
+computeJob.add_short_opt( "F", "%f" % threshold )
+computeJob.add_short_opt( "D", sharedDir )
+computeJob.add_short_opt( "i", basename )
+computeJob.add_short_opt( "E", ephemDir )
+computeJob.add_short_opt( "y", year )
 
-# Create DAG
-fp = open( "ClusterComputeF.dag", "w" )
-### DAG jobs to migrate data here?
-fp.write( "JOB extract extractSFTband.sub\n" )
-for i in range( liststart, liststart + num ):
-	fp.write( "JOB compute%i ComputeFStatistic.sub\n" % i )
-for i in range( liststart, liststart + num ):
-	fp.write( "SCRIPT PRE  compute%i copyData.sh\n" % i )
-	fp.write( "SCRIPT POST compute%i returnData.sh\n" % i )
-fp.write( "\nPARENT extract CHILD " )
-for i in range( liststart, liststart + num ):
-	fp.write( "compute%i " % i )
-fp.write( "\n\n" )
+# Create ClusterComputeF DAG
+dag = CondorDAG( "ClusterComputeF.log" )
+dag.set_dag_file( dagname )
+searchNode = CondorDAGNode( searchJob )
+dag.add_node( searchNode )
+collectNode = CondorDAGNode( collectJob )
+collectNode.add_parent( searchNode )
+dag.add_node( collectNode )
+extractNode = CondorDAGNode( extractJob )
+extractNode.add_parent( collectNode )
+dag.add_node( extractNode )
 for i in range( 0, num ):
-	fp.write( "VARS compute%i" % ( i + liststart ) )
-	fp.write( " number=\"%i\"" % ( i + liststart ) )
-	fp.write( " area=\"" )
-	for c in areas[i]:
-		if c == '"':
-			fp.write( "\\\"" )
-		elif c == '\n':
-			pass
-		else:
-			fp.write( c )
-	fp.write( "\"\n" )
-#	fp.write( " area=\"%s\"" % areas[i] )
-fp.close()
+  computeNode =  CondorDAGNode( computeJob )
+  computeNode.add_macro( "node", "%06i" % ( i + liststart ) )
+  computeNode.add_var_arg( patches.list[i] )
+  computeNode.add_parent( extractNode )
+  # finalizeNode.add_parent( computeNode )
+  dag.add_node( computeNode )
 
 # Execute Condor job
-del areas
-print "%s: Submitting jobs %i through %i" % \
-      ( sys.argv[0], liststart, liststart + num - 1 )
-#execlp( "condor_submit_dag", "ClusterComputeF.dag" )
+del patches
+dag.write_sub_files()
+dag.write_dag()
+print sys.argv[0] + " - Submitting jobs %i through %i" % \
+      ( liststart, liststart + num - 1 )
+#execlp( "condor_submit_dag", dagname )
