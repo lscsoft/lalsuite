@@ -1884,8 +1884,8 @@ static void readDataPair(LALStatus *status,
   FrStream *frStreamTwo = NULL;
   FrChanIn frChanInOne;
   FrChanIn frChanInTwo;
-  REAL4TimeSeries dataStreamOne;
-  REAL4TimeSeries dataStreamTwo;
+  REAL4TimeSeries *dataStreamOne;
+  REAL4TimeSeries *dataStreamTwo;
   ResampleTSParams resampleParams;
   LIGOTimeGPS bufferStartTime;
   UINT8 startTime;
@@ -1913,10 +1913,6 @@ static void readDataPair(LALStatus *status,
   frChanInTwo.type = ADCDataChannel;
   frChanInOne.type = ADCDataChannel;
 
-  /* initial data structures */
-  dataStreamOne.epoch = bufferStartTime;
-  dataStreamTwo.epoch = bufferStartTime;
-
   /* set resample parameters */
   resampleParams.deltaT = 1.0 / (REAL8)resampleRate;
   resampleParams.filterType = defaultButterworth;
@@ -1927,12 +1923,10 @@ static void readDataPair(LALStatus *status,
   }
 
   /* allocate memory for first raw stream */
-  dataStreamOne.data = NULL;
-  LALSCreateVector(status->statusPtr, &(dataStreamOne.data), \
-      sampleRate * (params->duration + (2 * buffer)));
+  LALCreateREAL4TimeSeries(status->statusPtr, &dataStreamOne, \
+      "dataStreamOne", bufferStartTime, 0, 1./(REAL8)sampleRate, \
+      lalADCCountUnit, sampleRate * (params->duration + (2 * buffer)));
   CHECKSTATUSPTR( status );
-  memset(dataStreamOne.data->data, 0, \
-      dataStreamOne.data->length * sizeof(*dataStreamOne.data->data));
 
   if (vrbflg)
   {
@@ -1957,7 +1951,7 @@ static void readDataPair(LALStatus *status,
   /* read first channel */
   LALFrSeek(status->statusPtr, &(bufferStartTime), frStreamOne);
   CHECKSTATUSPTR( status );
-  LALFrGetREAL4TimeSeries(status->statusPtr, &dataStreamOne, \
+  LALFrGetREAL4TimeSeries(status->statusPtr, dataStreamOne, \
       &frChanInOne, frStreamOne);
   CHECKSTATUSPTR( status );
 
@@ -1970,7 +1964,7 @@ static void readDataPair(LALStatus *status,
     }
 
     /* resample */
-    LALResampleREAL4TimeSeries(status->statusPtr, &dataStreamOne, \
+    LALResampleREAL4TimeSeries(status->statusPtr, dataStreamOne, \
         &resampleParams);
     CHECKSTATUSPTR( status );
   }
@@ -1981,12 +1975,10 @@ static void readDataPair(LALStatus *status,
   }
 
   /* allocate memory for second raw stream */
-  dataStreamTwo.data = NULL;
-  LALSCreateVector(status->statusPtr, &(dataStreamTwo.data), \
-      sampleRate * (params->duration + (2 * buffer)));
+  LALCreateREAL4TimeSeries(status->statusPtr, &dataStreamTwo, \
+      "dataStreamTwo", bufferStartTime, 0, 1./(REAL8)sampleRate, \
+      lalADCCountUnit, sampleRate * (params->duration + (2 * buffer)));
   CHECKSTATUSPTR( status );
-  memset(dataStreamTwo.data->data, 0, \
-      dataStreamTwo.data->length * sizeof(*dataStreamTwo.data->data));
 
   if (strcmp(params->frameCacheOne, params->frameCacheTwo) == 0)
   {
@@ -1999,7 +1991,7 @@ static void readDataPair(LALStatus *status,
     /* read in second channel */
     LALFrSeek(status->statusPtr, &(bufferStartTime), frStreamOne);
     CHECKSTATUSPTR( status );
-    LALFrGetREAL4TimeSeries(status->statusPtr, &dataStreamTwo, \
+    LALFrGetREAL4TimeSeries(status->statusPtr, dataStreamTwo, \
         &frChanInTwo, frStreamOne);
     CHECKSTATUSPTR( status );
 
@@ -2046,7 +2038,7 @@ static void readDataPair(LALStatus *status,
     /* read in second channel */
     LALFrSeek(status->statusPtr, &(bufferStartTime), frStreamTwo);
     CHECKSTATUSPTR( status );
-    LALFrGetREAL4TimeSeries(status->statusPtr, &dataStreamTwo, \
+    LALFrGetREAL4TimeSeries(status->statusPtr, dataStreamTwo, \
         &frChanInTwo, frStreamTwo);
     CHECKSTATUSPTR( status );
 
@@ -2069,14 +2061,14 @@ static void readDataPair(LALStatus *status,
     }
 
     /* resample */
-    LALResampleREAL4TimeSeries(status->statusPtr, &dataStreamTwo, \
+    LALResampleREAL4TimeSeries(status->statusPtr, dataStreamTwo, \
         &resampleParams);
     CHECKSTATUSPTR( status );
   }
 
   /* build output */
-  strncpy(streamPair->streamOne->name,dataStreamOne.name, LALNameLength);
-  strncpy(streamPair->streamTwo->name,dataStreamTwo.name, LALNameLength);
+  strncpy(streamPair->streamOne->name, dataStreamOne->name, LALNameLength);
+  strncpy(streamPair->streamTwo->name, dataStreamTwo->name, LALNameLength);
   streamPair->streamOne->epoch.gpsSeconds = startTime;
   streamPair->streamTwo->epoch.gpsSeconds = startTime;
   streamPair->streamOne->epoch.gpsNanoSeconds = 0;
@@ -2085,22 +2077,22 @@ static void readDataPair(LALStatus *status,
   streamPair->streamTwo->deltaT = 1./(REAL8)resampleRate;
   streamPair->streamOne->f0 = 0;
   streamPair->streamTwo->f0 = 0;
-  streamPair->streamOne->sampleUnits = dataStreamOne.sampleUnits;
-  streamPair->streamTwo->sampleUnits = dataStreamTwo.sampleUnits;
+  streamPair->streamOne->sampleUnits = dataStreamOne->sampleUnits;
+  streamPair->streamTwo->sampleUnits = dataStreamTwo->sampleUnits;
 
   /* remove buffer, and hence corruption due to resampling */
   for (i = 0; i < params->duration * resampleRate; i++)
   {
     streamPair->streamOne->data->data[i] = \
-      dataStreamOne.data->data[i + (resampleRate * buffer)];
+      dataStreamOne->data->data[i + (resampleRate * buffer)];
     streamPair->streamTwo->data->data[i] = \
-      dataStreamTwo.data->data[i + (resampleRate * buffer)];
+      dataStreamTwo->data->data[i + (resampleRate * buffer)];
   }
 
   /* clean up */
-  LALSDestroyVector(status->statusPtr, &(dataStreamOne.data));
+  LALDestroyREAL4TimeSeries(status->statusPtr, dataStreamOne);
   CHECKSTATUSPTR( status );
-  LALSDestroyVector(status->statusPtr, &(dataStreamTwo.data));
+  LALDestroyREAL4TimeSeries(status->statusPtr, dataStreamTwo);
   CHECKSTATUSPTR( status );
 
   /* return status */
