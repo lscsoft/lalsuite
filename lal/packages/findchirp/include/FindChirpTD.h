@@ -28,7 +28,6 @@ and generate binary inspiral chirps using time domain waveforms.
 #include <lal/FindChirpTD.h>
 \end{verbatim}
 
-\input{FindChirpTDHDoc}
 </lalLaTeX>
 #endif
 
@@ -70,6 +69,8 @@ NRCSID (FINDCHIRPTDH, "$Id$");
 #define FINDCHIRPTDH_EDIVZ 11
 #define FINDCHIRPTDH_EMAPX 12
 #define FINDCHIRPTDH_ELONG 13
+#define FINDCHIRPTDH_EEMTY 14
+#define FINDCHIRPTDH_ESMPL 15
 #define FINDCHIRPTDH_MSGENULL "Null pointer"
 #define FINDCHIRPTDH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPTDH_MSGEALOC "Memory allocation error"
@@ -83,6 +84,8 @@ NRCSID (FINDCHIRPTDH, "$Id$");
 #define FINDCHIRPTDH_MSGEDIVZ "Attempting to divide by zero"
 #define FINDCHIRPTDH_MSGEMAPX "Mismatch in waveform approximant"
 #define FINDCHIRPTDH_MSGELONG "Time domain template too long"
+#define FINDCHIRPTDH_MSGEEMTY "Could not find end of chirp in xfacVec"
+#define FINDCHIRPTDH_MSGESMPL "Waveform sampling interval is too large"
 /* </lalErrTable> */
 
 #if 0
