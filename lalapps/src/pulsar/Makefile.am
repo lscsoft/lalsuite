@@ -1,14 +1,15 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 
+SUBDIRS = FDS_isolated
+
 if FRAME
 FRAMEPROGS = lalapps_make_job_input_data lalapps_make_sfts
 else
 FRAMEPROGS = 
 endif
 
-bin_PROGRAMS = $(FRAMEPROGS) lalapps_ComputeFStatistic
-lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c ComputeFStatistic.h
+bin_PROGRAMS = $(FRAMEPROGS) 
 
 if FRAME
 #lalapps_stripAdc_SOURCES = stripAdc.c lalDebugLevel.c
@@ -22,7 +23,6 @@ make_cluster_data_list \
 make_job_input_data.c \
 make_sfts.c \
 README \
-README_ComputeFStatistic \
 SFT.00000 \
 SFT.00001 \
 SFT.00002 \
