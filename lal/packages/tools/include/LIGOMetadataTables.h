@@ -296,6 +296,7 @@ tagSnglInspiralTable
   CHAR          search[LIGOMETA_SEARCH_MAX];
   CHAR          channel[LIGOMETA_CHANNEL_MAX];
   LIGOTimeGPS   end_time;
+  REAL8         end_time_gmst;
   LIGOTimeGPS   impulse_time;
   REAL8         template_duration;
   REAL8         event_duration;
@@ -337,6 +338,7 @@ tagMultiInspiralTable
   CHAR          ifos[LIGOMETA_IFOS_MAX];
   CHAR          search[LIGOMETA_SEARCH_MAX];
   LIGOTimeGPS   end_time;
+  REAL8         end_time_gmst;
   LIGOTimeGPS   impulse_time;
   REAL4         amplitude;
   REAL4         eff_distance;
@@ -383,7 +385,7 @@ tagSimInspiralTable
   LIGOTimeGPS    geocent_end_time;
   LIGOTimeGPS    h_end_time;
   LIGOTimeGPS    l_end_time;
-  REAL4          end_time_gmst;
+  REAL8          end_time_gmst;
   CHAR           source[LIGOMETA_SOURCE_MAX];
   REAL4          mtotal;
   REAL4          eta;
