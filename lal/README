@@ -92,7 +92,7 @@ replacing USERNAME with your lscsoft user name (or anonymous):
   cd ${LAL_LOCATION}/src
   cvs -d :pserver:USERNAME@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft checkout lal
 
-This will create a directory called lal the directory ${LAL_LOCATION}
+This will create a directory called lal the directory ${LAL_LOCATION}/src
 which contains the contents of the LAL CVS archive.
 
 
