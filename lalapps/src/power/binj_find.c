@@ -400,8 +400,7 @@ int main(int argc, char **argv)
      * only --noplayground option:05/23/2004 Saikat]
      */
 
-    if ( noplayground && !(isPlayground(tmpSimBurst->l_peak_time.gpsSeconds,
-             tmpSimBurst->l_peak_time.gpsSeconds ))  )
+    if ( noplayground  )
       {
 	/* connect results to linked list */
 	if (currentSimBurst == NULL)
