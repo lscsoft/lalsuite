@@ -302,6 +302,7 @@ AC_DEFUN(LAL_CHECK_MPI,
           -I*) MPICPPFLAGS="$MPICPPFLAGS $mpiarg" ;;
           -L*) MPILDFLAGS="$MPILDFLAGS $mpiarg" ;;
           -l*) MPILDFLAGS="$MPILDFLAGS $mpiarg" ;;
+          -pthread) MPILDFLAGS="$MPILDFLAGS -lpthread" ;;
           -Wl*) MPICFLAGS="$MPICFLAGS $mpiarg" ;;
         esac
       done
