@@ -46,22 +46,24 @@ INT4 lalDebugLevel = 0;
 int
 main(int argc, char **argv)
 {
-  INT4 arg;
   /* top-level status structure */
   static LALStatus status;     
   static InspiralCoarseBankIn coarseIn;
   static InspiralTemplateList *list1, *list2;
 
+  static RectangleIn RectIn;
+  static RectangleOut RectOut;
   void *noisemodel = LALLIGOIPsd;
 
-  UINT4   j, numPSDpts=262144;
+  UINT4   j, valid, numPSDpts=262144;
   FILE *fpr;
-  INT4 nlist;
+  INT4 nlist1, nlist2;
 /* Number of templates is nlist */
 
 
   fpr = fopen("BCVTemplates.out", "w");
-  nlist = 0;
+  nlist1 = 0;
+  nlist2 = 0;
   coarseIn.HighGM =6.; 
   coarseIn.LowGM = 3.;
   coarseIn.fLower = 40.L;
@@ -95,8 +97,8 @@ main(int argc, char **argv)
   coarseIn.approximant = BCV;
   coarseIn.space       = Psi0Psi3;
   
-  LALInspiralCreateCoarseBank(&status, &list1, &nlist, coarseIn);
-  for (j=0; j<nlist; j++)
+  LALInspiralCreateCoarseBank(&status, &list1, &nlist1, coarseIn);
+  for (j=0; j<nlist1; j++)
   {
 	  fprintf(fpr, "%e %e %e %e\n", 
 			  list1[j].params.psi0, 
@@ -108,9 +110,9 @@ main(int argc, char **argv)
   coarseIn.approximant  = TaylorT1;
   coarseIn.space	= Tau0Tau3;
 
-  LALInspiralCreateCoarseBank(&status, &list2, &nlist, coarseIn);
+  LALInspiralCreateCoarseBank(&status, &list2, &nlist2, coarseIn);
     
-  for (j=0; j<nlist; j++)
+  for (j=0; j<nlist2; j++)
   {
 	  fprintf(fpr, "%e %e %e %e\n", 
 			  list2[j].params.t0, 
@@ -122,22 +124,14 @@ main(int argc, char **argv)
 		
   fprintf(fpr, "&\n");
 
-  coarseIn.approximant = SpinTaylorT3;
-  LALInspiralCreateCoarseBank(&status, &list2, &nlist, coarseIn);
-  {
-    UINT4 j;
-    UINT4 valid;
-  
-    static RectangleIn RectIn;
-    static RectangleOut RectOut;
-
+  /* Print rectagles*/
   
     RectIn.dx = sqrt(2.0 * (1. - coarseIn.mmCoarse)/list1[0].metric.g00 );
     RectIn.dy = sqrt(2.0 * (1. - coarseIn.mmCoarse)/list1[0].metric.g11 );
     RectIn.theta = list1[0].metric.theta;
     
     /* Print out the template parameters */
-    for (j=0; j<nlist; j++)
+    for (j=0; j<nlist1; j++)
     {
 	/*
 	Retain only those templates that have meaningful masses:
@@ -160,10 +154,12 @@ main(int argc, char **argv)
 		fprintf(fpr, "&\n");
 	}
     }
-  }
+  
   /* Free the list, and exit. */
   if (list1 != NULL) LALFree (list1);
   if (list2 != NULL) LALFree (list2);
   LALDDestroyVector( &status, &(coarseIn.shf.data) );
   LALCheckMemoryLeaks();
+  fclose(fpr);
+  return 0;
 }

@@ -160,5 +160,8 @@ int main ( void ) {
          p.chirpMass,
          p.tC);
    }
+
+
+   fclose(fpr);
    return 0;
 }

@@ -95,7 +95,7 @@ main ( void )
       fprintf(fpr, "\n");
   }
   }
-
+  fclose(fpr);
   LALFree(params);
   LALDDestroyVector(&status, &(psd.data) );
   LALCheckMemoryLeaks();

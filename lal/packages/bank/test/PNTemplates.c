@@ -55,7 +55,6 @@ GetInspiralMoments (
 int
 main(int argc, char **argv)
 {
-  INT4 arg;
   static LALStatus status;     /* top-level status structure */
   static InspiralTemplate params;
   UINT4   numPSDpts=262144;
@@ -203,6 +202,7 @@ main(int argc, char **argv)
 	}
     }
   }
+  fclose(fpr);
   /* Free the list, and exit. */
   if (list != NULL) LALFree (list);
   LALDDestroyVector(&status, &(shf.data) );

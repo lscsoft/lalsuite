@@ -162,6 +162,8 @@ main(int argc, char **argv)
 	}
     }
   }
+
+  fclose(fpr);
   /* Free the list, and exit. */
   if (list1 != NULL) LALFree (list1);
   if (list2 != NULL) LALFree (list2);

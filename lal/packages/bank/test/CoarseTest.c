@@ -204,6 +204,7 @@ main ( void )
      fineList = NULL;
      flist = 0;
   }
+  fclose(fpr);
   LALDDestroyVector(&status, &(coarseIn->shf.data) );
   if (fineList!=NULL) LALFree(fineList);
   if (coarseList!=NULL) LALFree(coarseList);

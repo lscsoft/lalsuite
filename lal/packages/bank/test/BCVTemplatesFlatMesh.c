@@ -374,6 +374,8 @@ main(int argc, char **argv)
     }
   }
 
+
+  fclose(fp);
   /* Free the mesh, and exit. */
   SUB( LALSDestroyVectorSequence( &status, &mesh ), &status );
   LALDDestroyVector(&status, &shf.data);

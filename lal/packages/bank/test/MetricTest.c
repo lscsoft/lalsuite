@@ -143,7 +143,7 @@ main()
               fprintf(fpr,"\n");
     }
   }
-
+  fclose(fpr);
   LALDDestroyVector(&status, &(shf.data));
   LALCheckMemoryLeaks();
   return 0;
