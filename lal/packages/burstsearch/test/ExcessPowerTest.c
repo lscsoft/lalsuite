@@ -50,7 +50,7 @@ NRCSID (MAIN, "$Id$");
 extern char *optarg;
 extern int   optind;
 
-INT4 lalDebugLevel = 0;   /* set to 2 to get full status information for tests */
+INT4 lalDebugLevel = 2;   /* set to 2 to get full status information for tests */
 INT4 verbose    = 1;
 
 
@@ -346,7 +346,6 @@ main (int argc, char *argv[])
    *                                                                       *
    *                                                                       * 
    *************************************************************************/
-
 
   if (verbose || lalDebugLevel)
   {

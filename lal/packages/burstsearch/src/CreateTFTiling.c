@@ -264,8 +264,9 @@ LALCreateTFTiling (
 		      *currentTile = (TFTile *) LALMalloc(sizeof(TFTile));
 
 		      /*  Make sure that the allocation was succesful */
-		      ASSERT (*currentTile, status, EXCESSPOWERH_EMALLOC, 
-			      EXCESSPOWERH_MSGEMALLOC); 
+                      if ( ! (*currentTile) ){
+                        ABORT(status, EXCESSPOWERH_ETILES, EXCESSPOWERH_MSGETILES);
+                      }
 
 		      /* assign the various fields */
 		      (*currentTile)->fstart=fstart;

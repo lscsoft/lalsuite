@@ -841,20 +841,24 @@ Create a data structure of type \verb+TFTiling+ (time-frequency tiling).
 
 \subsubsection*{Description}
 
-The routine \verb+CreateTFTiling()+ takes as input a pointer \verb+input+ to a
-data structure of type \verb+CreateTFTilingIn+, which consists of the
+The routine \verb+LALCreateTFTiling()+ takes as input a pointer \verb+input+
+to a data structure of type \verb+CreateTFTilingIn+, which consists of the
 following elements.
 
-The routine \verb+CreateTFTiling()+ has an
-input/output parameter \verb+tfTiling+ of type \verb+TFTiling**+.  On exit
-from \verb+CreateTFTiling+, the pointer \verb+*tfTiling+ will point to the
-newly created \verb+TFTiling+ structure.  The routine \verb+CreateTFTiling+
-also assigns memory for and creates the $p+1$ time frequency planes and the
-$p+1$ \verb+ComplexDFTParams+ structures, and the linked list of TF tiles.
+The routine \verb+CreateTFTiling()+ has an input/output parameter
+\verb+tfTiling+ of type \verb+TFTiling**+.  On exit from
+\verb+CreateTFTiling+, the pointer \verb+*tfTiling+ will point to the newly
+created \verb+TFTiling+ structure.  The routine \verb+CreateTFTiling+ also
+assigns memory for and creates the $p+1$ time frequency planes and the $p+1$
+\verb+ComplexDFTParams+ structures, and the linked list of TF tiles.
 
 \subsubsection*{Uses}
 
 \subsubsection*{Notes}
+A failure to allocate memory for some element of the linked list of tiles
+causes \verb+LALCreateTFTiling+ to abort with error code
+\verb+EXCESSPOWERH_ETILES+.  A developer should call \verb+LALDestroyTFTiling+
+to free the partially allocated list.   
 
 \vfill{\footnotesize\input{CreateTFTilingCV}}
 
