@@ -2505,13 +2505,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-filter-data",       no_argument,       &writeFilterData,  1 },
-#if 0
     {"write-response",          no_argument,       &writeResponse,    1 },
-#endif
     {"write-spectrum",          no_argument,       &writeSpectrum,    1 },
     {"write-snrsq",             no_argument,       &writeRhosq,       1 },
     {"write-chisq",             no_argument,       &writeChisq,       1 },
+#if 0
     {"write-zdata",             no_argument,       &writeZData,       1 },
+#endif
     {0, 0, 0, 0}
   };
   int c;
