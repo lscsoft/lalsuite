@@ -2,7 +2,11 @@
 SUBDIRS = include packages doc lib
 #CLEANFILES = $(top_builddir)/include/*.h
 EXTRA_DIST = README.bugs README.contrib acconfig.h \
+  lal-config.in lal.pc.in \
   misc/doc.mk misc/dvi.mk misc/include.mk misc/main.tex.in
+bin_SCRIPTS = lal-config
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = lal.pc
 
 
 # cvs-clean: more than maintainer-clean, this cleans

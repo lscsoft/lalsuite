@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: LAL
+Description: LSC Algorithm Library
+Version: @VERSION@
+Libs: @LAL_LIBS@
+Cflags: @LAL_CFLAGS@

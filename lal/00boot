@@ -176,13 +176,21 @@ if test "${fftw3}" = "false"; then
 fi
 
 dnl Checks for optional libraries and header files.
+LAL_CFLAGS="-I$includedir/lal"
 if test "${frame}" = "true"; then
   AC_DEFINE(LAL_FRAME_ENABLED,1,Define if using Frame library)
   LAL_CHECK_FRAMELIB
+  LAL_FRAME_ENABLED="yes"
+else
+  LAL_FRAME_ENABLED="no"
 fi
 if test "${mpi}" = "true"; then
   AC_DEFINE(LAL_MPI_ENABLED,1,Define if using MPI)
   LAL_CHECK_MPI
+  LAL_MPI_ENABLED="yes"
+  LAL_CFLAGS="$LAL_CFLAGS $MPICFLAGS $MPICPPFLAGS"
+else
+  LAL_MPI_ENABLED="no"
 fi
 if test "${lal_pthread_lock}" = "true"; then
   AC_CHECK_HEADERS(pthread.h, break)
@@ -191,6 +199,13 @@ fi
 LALLIBADD="$LIBS"
 LIBS="$lal_save_LIBS"
 AC_SUBST(LALLIBADD)
+LAL_LIBADD="$LIBS $LALLIBADD"
+LAL_LIBS="-L$libdir -llal $LAL_LIBADD"
+AC_SUBST(LAL_LIBADD)
+AC_SUBST(LAL_LIBS)
+AC_SUBST(LAL_CFLAGS)
+AC_SUBST(LAL_MPI_ENABLED)
+AC_SUBST(LAL_FRAME_ENABLED)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -255,14 +270,16 @@ PKGLIST="$lal_pkg_list"
 AC_SUBST(PKGLIST)
 AC_SUBST(LIBLISTBASE)
 AC_SUBST(LIBLISTMPI)
-AC_SUBST(LIBLISTMPI)
 AC_SUBST(LIBLISTFRAME)
 AC_SUBST(LIBLISTMPIFRAME)
 EOF
 
 # Output
 cat >> configure.in <<\EOF
+AC_OUTPUT_COMMANDS([chmod +x lal-config])
 AC_OUTPUT([ \
+  lal.pc \
+  lal-config \
   Makefile \
   doc/Makefile \
   doc/laldoc/Makefile \

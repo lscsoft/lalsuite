@@ -1,0 +1,123 @@
+#! /bin/sh
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+exec_prefix_set=no
+
+my_lal_libs=-llal
+lal_mpi_enabled=@LAL_MPI_ENABLED@
+lal_frame_enabled=@LAL_FRAME_ENABLED@
+
+usage()
+{
+    cat <<EOF
+Usage: lal-config [OPTIONS] [LIBRARIES]
+Options:
+        [--prefix[=DIR]]
+        [--exec-prefix[=DIR]]
+        [--version]
+        [--libs]
+        [--cflags]
+        [--mpi-enabled]
+        [--frame-enabled]
+Libraries:
+        lal
+        lalsupport
+        lalframe
+EOF
+    exit $1
+}
+
+if test $# -eq 0; then
+        usage 1 1>&2
+fi
+
+while test $# -gt 0; do
+    case "$1" in
+    -*=*) optarg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+    *) optarg= ;;
+    esac
+
+    case "$1" in
+    --prefix=*)
+	prefix=$optarg
+        if test $exec_prefix_set = no ; then
+          exec_prefix=$optarg
+        fi
+	;;
+    --prefix)
+	echo $prefix
+	;;
+    --exec-prefix=*)
+        exec_prefix=$optarg
+        exec_prefix_set=yes
+        ;;
+    --exec-prefix)
+	echo $exec_prefix
+	;;
+    --version)
+	echo @VERSION@
+	exit 0
+	;;
+    --cflags)
+        echo_cflags=yes
+        ;;
+    --libs)
+        echo_libs=yes
+        ;;
+    --mpi-enabled)
+        echo $lal_mpi_enabled
+        ;;
+    --frame-enabled)
+        echo $lal_frame_enabled
+        ;;
+    lal)
+        lib_lal=yes
+        ;;
+    lalsupport)
+        lib_lalsupport=yes
+        ;;
+    lalframe)
+        if test "$lal_frame_enabled" = "yes" ; then
+          lib_lalframe=yes
+        else
+          echo "LAL was not compiled with frame support!" 1>&2
+          exit 1
+        fi
+        ;;
+    --help)
+	usage 0
+	;;
+    *)
+	usage 1 1>&2
+	exit 1
+	;;
+    esac
+    shift
+done
+
+if test "$echo_prefix" = "yes"; then
+  echo $prefix
+fi
+
+if test "$echo_exec_prefix" = "yes"; then
+  echo $exec_prefix
+fi
+
+if test "$echo_cflags" = "yes"; then
+  echo @LAL_CFLAGS@
+fi
+
+if test "$lib_lalsupport" = "yes"; then
+  my_lal_libs="-llalsupport $my_lal_libs"
+fi
+
+if test "$lib_lalframe" = "yes"; then
+  my_lal_libs="-llalframe $my_lal_libs"
+fi
+
+if test "$echo_libs" = "yes"; then
+  echo -L@libdir@ $my_lal_libs @LAL_LIBADD@
+fi
+
+exit 0

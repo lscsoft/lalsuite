@@ -1,0 +1,47 @@
+.TH LAL 1 "LSC Algorithm Library" "LSC"
+.SH NAME
+lal-config - script to get information about the installed version of LAL
+.SH SYNOPSIS
+.B lal-config
+[\-\-prefix\fI[=DIR]\fP] [\-\-exec\-prefix\fI[=DIR]\fP] [\-\-version] [\-\-libs] [\-\-cflags] [\-\-mpi\-enabled] [\-\-frame\-enabled]
+.SH DESCRIPTION
+.PP
+\fIlal-config\fP is a tool that is used to configure to determine
+the compiler and linker flags that should be used to compile
+and link programs that use \fILAL\fP. It is also used internally
+to the .m4 macros for GNU autoconf that will be included with \fILAL\fP
+in the future.
+.
+.SH OPTIONS
+.l
+\fIlal-config\fP accepts the following options:
+.TP 8
+.B  \-\-version
+Print the currently installed version of \fILAL\fP on the standard output.
+.TP 8
+.B  \-\-libs
+Print the linker flags that are necessary to link a \fILAL\fP program.
+.TP 8
+.B  \-\-cflags
+Print the compiler flags that are necessary to compile a \fILAL\fP program.
+.TP 8
+.B  \-\-prefix=PREFIX
+If specified, use PREFIX instead of the installation prefix that \fILAL\fP
+was built with when computing the output for the \-\-cflags and
+\-\-libs options. This option is also used for the exec prefix
+if \-\-exec\-prefix was not specified. This option must be specified
+before any \-\-libs or \-\-cflags options.
+.TP 8
+.B  \-\-exec\-prefix=PREFIX
+If specified, use PREFIX instead of the installation exec prefix that
+\fILAL\fP was built with when computing the output for the \-\-cflags
+and \-\-libs options.  This option must be specified before any
+\-\-libs or \-\-cflags options.
+.TP 8
+.B  \-\-mpi\-enabled
+If specified, use indicate if LAL has been compiled with MPI support.
+.TP 8
+.B  \-\-frame\-enabled
+If specified, use indicate if LAL has been compiled with FrameL support.
+.SH SEE ALSO
+.BR gtk-config (1)

@@ -2,9 +2,11 @@
 
 SUBDIRS = laldoc autodoc
 
+man_MANS = lal.3 lal-config.1
+
 INSTALLFILES = lalspec.dvi lalspec.ps lalspec.pdf lsd.dvi lsd.ps lsd.pdf
 DISTCLEANFILES = $(INSTALLFILES)
-EXTRA_DIST = ligodcc.cls lalspec.tex lsd.tex lal.sty \
+EXTRA_DIST = $(man_MANS) ligodcc.cls lalspec.tex lsd.tex lal.sty \
              lsdFigDirStructure.eps merger.eps \
              lsdFigDirStructure.pdf merger.pdf
 
