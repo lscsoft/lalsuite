@@ -58,8 +58,7 @@ If that is the case, \texttt{exist} will contain the value 1, 0 else.
 
 \subsubsection*{Uses}
 
-\noindent For each module it is not needed to allocate some memory for the structure \texttt{sky},
- this is done in the code.
+																																																		\noindent For each module it is not needed to allocate memory for the structure \texttt{sky}, this is done in the code. The only array needed for \texttt{LALComputeTripleAnnuli} is an array \texttt{sky} of pointers to \texttt{INT2Vector}  with 4 elements.
 
 \subsubsection*{Notes}
 %% Any relevant notes.
