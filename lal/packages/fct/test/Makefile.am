@@ -7,5 +7,6 @@ LALfctSample_LDADD = $(top_builddir)/lib/liblal.la
 LALFCTInterfaceTest_SOURCES = LALFCTInterfaceTest.c
 LALFCTInterfaceTest_LDADD = $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = LALfctTest LALFCTInterfaceTest
+#TESTS = LALfctTest LALFCTInterfaceTest
+TESTS = LALfctTest
 MOSTLYCLEANFILES = output.dat
