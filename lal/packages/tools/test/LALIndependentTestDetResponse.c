@@ -37,6 +37,7 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 10/14/04 gam: Update definition of gamma when angle between arms, zeta, != pi/2.
 10/14/04 gam: Change input RA, DEC and orientation angle (polarization angle) in config file to be in radians.
 10/14/04 gam: Use independent detector geometry values when doing independent calculation.
+10/15/04 gam: Fix bug M_PI not defined when configuring lal with --with-gcc-flags.
               WARNING: LHO AND LLO VALUES WERE TAKEN FROM OTHER LIGO SOURCES; GEO VALUES ARE NOT INDEPENDENT BUT TAKEN FROM LAL
 */
 
@@ -63,11 +64,8 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
      "NOTE: This program can only support filenames up to 25 characters\n" \
      "      in length in the config file (this is the string length so includes\n" \
      "      the directories in the name as well), but the configFile entered at\n" \
-     "      the command line can be as long as you like.\n" \
-     "      To change this you can edit the parameter valueSize in the source\n" \
-     "      code, but make sure the none of the comments in the config file start\n" \
-     "      before the new value, or extend past the line size of 80 characters.\n"
-
+     "      the command line can be as long as you like.\n"
+          
 #define usage( program ) fprintf( stdout, usgfmt, program )
 
 /* 10/13/04 gam; independent values for pi/2, pi, and 2pi */
@@ -147,9 +145,9 @@ int main( int argc, char *argv[] )
   LALFrDetector testFrDetector;
 
   /* 10/14/04 gam; for independent values for detector geometry: */
-  REAL8 indXArmAzimuthRadians;
-  REAL8 indVertexLongitudeRadians;
-  REAL8 indVertexLatitudeRadians;
+  REAL8 indXArmAzimuthRadians = 0.0;
+  REAL8 indVertexLongitudeRadians = 0.0;
+  REAL8 indVertexLatitudeRadians = 0.0;
   
   /* Vectors For Results */
   REAL8Vector *fPlus=NULL, *fCross=NULL;
@@ -868,6 +866,8 @@ Jan 2000 */
 
    /* convert to fractions of a day and to radians */
    gmst = fmod( gmst / ( 24.0 * 3600.0 ), 1.0 ); /* fraction of day */
-   gmst *= 2.0 * M_PI; /* radians */
+   /* gmst *= 2.0 * M_PI; */ /* radians */ /* 10/15/04 gam */
+   gmst *= ((REAL8)LALIND_TWOPI); /* radians */
+   
    return gmst;
 }
