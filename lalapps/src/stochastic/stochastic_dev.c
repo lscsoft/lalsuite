@@ -56,7 +56,7 @@ RCSID ("$Id$");
 #define CVS_ID "$Id$"
 #define CVS_REVISION "$Revision$"
 #define CVS_DATE "$Date$"
-#define PROGRAM_NAME "lalapps_stochastic"
+#define PROGRAM_NAME "lalapps_stochastic_dev"
 
 /* variables for getopt options parsing */
 char *optarg;
@@ -76,7 +76,6 @@ INT4 resampleRate = 1024;
 REAL8 deltaF = 0.25;
 
 /* data parameters */
-LIGOTimeGPS gpsStartTime;
 UINT8 startTime;
 UINT8 endTime;
 INT4 streamDuration = 60;
@@ -129,6 +128,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 	REAL8 y;
 	REAL8 varTheo;
 
+	/* time variables */
+	LIGOTimeGPS gpsStartTime;
+	LIGOTimeGPS gpsSegmentStart;
+
 	/* input data streams */
 	INT4 numSegments;
 	INT4 streamLength;
@@ -164,7 +167,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 	COMPLEX8FrequencySeries responseOne;
 	COMPLEX8FrequencySeries responseTwo;
 	INT4 respLength;
-	LIGOTimeGPS gpsCalTime;
 	LIGOTimeGPS duration;
 	LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
@@ -242,6 +244,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* parse command line options */
 	parseOptions(argc, argv);
+
+	/* set start time */
+	gpsStartTime.gpsSeconds = startTime;
+	gpsStartTime.gpsNanoSeconds = 0;
 
 	/* open output file */
 	LALSnprintf(outputFilename, LALNameLength, "stoch-%s%s-%d-%d.dat", 
@@ -324,8 +330,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 	strncpy(segmentTwo.name, "segmentTwo", LALNameLength);
 	segmentOne.sampleUnits = streamOne.sampleUnits;
 	segmentTwo.sampleUnits = streamTwo.sampleUnits;
-	segmentOne.epoch = gpsStartTime;
-	segmentTwo.epoch = gpsStartTime;
 	segmentOne.deltaT = 1./(REAL8)resampleRate;
 	segmentTwo.deltaT = 1./(REAL8)resampleRate;
 	segmentOne.f0 = 0;
@@ -433,16 +437,12 @@ INT4 main(INT4 argc, CHAR *argv[])
 	respLength = (UINT4)(fMax / deltaF) + 1;
 	duration.gpsSeconds = 0;
 	duration.gpsNanoSeconds = 0;
-	gpsCalTime.gpsSeconds = startTime;
-	gpsCalTime.gpsNanoSeconds = 0;
 
 	/* set metadata fields for response functions */
 	strncpy(responseTempOne.name, "responseTempOne", LALNameLength);
 	strncpy(responseTempTwo.name, "responseTempTwo", LALNameLength);
 	responseTempOne.sampleUnits = countPerAttoStrain;
 	responseTempTwo.sampleUnits = countPerAttoStrain;
-	responseTempOne.epoch = gpsCalTime;
-	responseTempTwo.epoch = gpsCalTime;
 	responseTempOne.deltaF = deltaF;
 	responseTempTwo.deltaF = deltaF;
 	responseTempOne.f0 = 0;
@@ -471,8 +471,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 	strncpy(responseTwo.name, "responseTwo", LALNameLength);
 	responseOne.sampleUnits = countPerAttoStrain;
 	responseTwo.sampleUnits = countPerAttoStrain;
-	responseOne.epoch = gpsCalTime;
-	responseTwo.epoch = gpsCalTime;
 	responseOne.deltaF = deltaF;
 	responseTwo.deltaF = deltaF;
 	responseOne.f0 = fMin;
@@ -834,7 +832,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* set metadata fields for optimal filter */
 	strncpy(optFilter.name, "optFilter", LALNameLength);
-	optFilter.epoch = gpsCalTime;
 	optFilter.deltaF = deltaF;
 	optFilter.f0 = fMin;
 
@@ -858,7 +855,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* set metadata fields for CC spectrum */
 	strncpy(ccSpectrum.name, "ccSpectrum", LALNameLength);
-	ccSpectrum.epoch = gpsCalTime;
 	ccSpectrum.deltaF = deltaF;
 	ccSpectrum.f0 = fMin;
 
@@ -919,10 +915,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 	for (j = 0; j < numSegments; j++)
 	{
 		/* define segment epoch */
-		gpsStartTime.gpsSeconds = startTime + (j * segmentShift);
-		gpsCalTime.gpsSeconds = gpsStartTime.gpsSeconds;
-		segmentOne.epoch = gpsStartTime;
-		segmentTwo.epoch = gpsStartTime;
+		gpsSegmentStart.gpsSeconds = startTime + (j * segmentShift);
+		gpsSegmentStart.gpsNanoSeconds = 0;
+		segmentOne.epoch = gpsSegmentStart;
+		segmentTwo.epoch = gpsSegmentStart;
 
 		if (vrbflg)
 		{
@@ -994,8 +990,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 
 		/* compute response function */
-		responseTempOne.epoch = gpsCalTime;
-		responseTempTwo.epoch = gpsCalTime;
+		responseTempOne.epoch = gpsSegmentStart;
+		responseTempTwo.epoch = gpsSegmentStart;
 		LAL_CALL( LALExtractFrameResponse(&status, &responseTempOne, calCacheOne, \
 					ifoOne, &duration), &status );
 		LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwo, calCacheTwo, \
@@ -1064,7 +1060,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 
 		/* build optimal filter */
-		optFilter.epoch = gpsCalTime;
+		optFilter.epoch = gpsSegmentStart;
 		LAL_CALL( LALStochasticOptimalFilter(&status, &optFilter, &optFilterIn, \
 					&normLambda), &status );
 
@@ -1106,7 +1102,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 
 		/* output to file */
-		fprintf(out, "%d %e %e\n", gpsStartTime.gpsSeconds, sqrt(varTheo), y);
+		fprintf(out, "%d %e %e\n", gpsSegmentStart.gpsSeconds, sqrt(varTheo), y);
 	}
 
 	/* close output file */
