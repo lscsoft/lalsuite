@@ -275,7 +275,7 @@ static int getline(char *line, int max, FILE *file)
 
 
 /*
- * Function tests if the given interval contains any playground data.
+ * Test if the given interval contains any playground data.
  * FIXME: check if doing S2 or S3
  */
 
@@ -331,11 +331,11 @@ static SnglBurstTable *select_event(LALStatus *stat, SimBurstTable *injection, S
 
 static int keep_this_injection(SimBurstTable *injection, struct options_t options)
 {
-	if (options.minCentralfreqFlag && !(injection->freq > options.minCentralfreq))
+	if(options.minCentralfreqFlag && !(injection->freq > options.minCentralfreq))
 		return(FALSE);
-	if (options.maxCentralfreqFlag && !(injection->freq < options.maxCentralfreq))
+	if(options.maxCentralfreqFlag && !(injection->freq < options.maxCentralfreq))
 		return(FALSE);
-	if (options.playground && !contains_playground(injection->l_peak_time.gpsSeconds, injection->l_peak_time.gpsSeconds))
+	if(options.playground && !contains_playground(injection->l_peak_time.gpsSeconds, injection->l_peak_time.gpsSeconds))
 		return(FALSE);
 
 	return(TRUE);
@@ -354,23 +354,23 @@ static void free_injections(SimBurstTable *list)
 		list = free_this_injection(list);
 }
 
-static SimBurstTable *trim_injection_list(SimBurstTable *injection, struct options_t options)
+static SimBurstTable **trim_injection_list(SimBurstTable **list, struct options_t options)
 {
-	SimBurstTable *head;
+	SimBurstTable *injection = *list;
 
 	while(injection && !keep_this_injection(injection, options))
 		injection = free_this_injection(injection);
-	head = injection;
 
-	if(injection)
-		while(injection->next) {
-			if(keep_this_injection(injection->next, options))
-				injection = injection->next;
-			else
-				injection->next = free_this_injection(injection->next);
-		}
+	if(!injection)
+		return(list);
 
-	return(head);
+	while(injection->next) {
+		if(keep_this_injection(injection->next, options))
+			injection = injection->next;
+		else
+			injection->next = free_this_injection(injection->next);
+	}
+	return(&injection->next);
 }
 
 
@@ -388,22 +388,19 @@ static SimBurstTable *read_injection_list(LALStatus *stat, char *filename, INT4 
 	SimBurstTable *list = NULL;
 	SimBurstTable **addpoint = &list;
 
-	if (options.verbose)
+	if(options.verbose)
 		fprintf(stderr, "Reading in SimBurst Table\n");
 
-	if (!(infile = fopen(filename, "r")))
+	if(!(infile = fopen(filename, "r")))
 		LALPrintError("Could not open input file\n");
 
-	while (getline(line, MAXSTR, infile)) {
+	while(getline(line, MAXSTR, infile)) {
 		if (options.verbose)
 			fprintf(stderr, "Working on file %s\n", line);
 
 		LAL_CALL(LALSimBurstTableFromLIGOLw(stat, addpoint, line, start_time, end_time), stat);
 
-		*addpoint = trim_injection_list(*addpoint, options);
-
-		while (*addpoint)
-			addpoint = &(*addpoint)->next;
+		addpoint = trim_injection_list(addpoint, options);
 	}
 
 	fclose(infile);
@@ -422,7 +419,7 @@ static SimBurstTable **extract_injections(LALStatus *stat, SimBurstTable **addpo
 
 	for(; injection; injection = injection->next) {
 		LAL_CALL(LALGPStoINT8(stat, &peaktime, &injection->l_peak_time), stat);
-		if ((start < peaktime) && (peaktime < end)) {
+		if((start < peaktime) && (peaktime < end)) {
 			*addpoint = LALMalloc(sizeof(**addpoint));
 			**addpoint = *injection;
 			addpoint = &(*addpoint)->next;
@@ -545,37 +542,37 @@ static INT8 read_search_summary_start_end(LALStatus *stat, char *filename, INT8 
 
 static int keep_this_event(SnglBurstTable *event, struct options_t options)
 {
-	if (options.maxConfidenceFlag && !(event->confidence < options.maxConfidence))
+	if(options.maxConfidenceFlag && !(event->confidence < options.maxConfidence))
 		return(FALSE);
 
-	if (options.minDurationFlag && !(event->duration > options.minDuration))
+	if(options.minDurationFlag && !(event->duration > options.minDuration))
 		return(FALSE);
 
-	if (options.maxDurationFlag && !(event->duration < options.maxDuration))
+	if(options.maxDurationFlag && !(event->duration < options.maxDuration))
 		return(FALSE);
 
-	if (options.minCentralfreqFlag && !(event->central_freq > options.minCentralfreq))
+	if(options.minCentralfreqFlag && !(event->central_freq > options.minCentralfreq))
 		return(FALSE);
 
-	if (options.maxCentralfreqFlag && !(event->central_freq < options.maxCentralfreq))
+	if(options.maxCentralfreqFlag && !(event->central_freq < options.maxCentralfreq))
 		return(FALSE);
 
-	if (options.maxBandwidthFlag && !(event->bandwidth < options.maxBandwidth))
+	if(options.maxBandwidthFlag && !(event->bandwidth < options.maxBandwidth))
 		return(FALSE);
 
-	if (options.minAmplitudeFlag && !(event->amplitude > options.minAmplitude))
+	if(options.minAmplitudeFlag && !(event->amplitude > options.minAmplitude))
 		return(FALSE);
 
-	if (options.maxAmplitudeFlag && !(event->amplitude < options.maxAmplitude))
+	if(options.maxAmplitudeFlag && !(event->amplitude < options.maxAmplitude))
 		return(FALSE);
 
-	if (options.minSnrFlag && !(event->snr > options.minSnr))
+	if(options.minSnrFlag && !(event->snr > options.minSnr))
 		return(FALSE);
 
-	if (options.maxSnrFlag && !(event->snr < options.maxSnr))
+	if(options.maxSnrFlag && !(event->snr < options.maxSnr))
 		return(FALSE);
 
-	if (options.playground && !(contains_playground(event->start_time.gpsSeconds, event->start_time.gpsSeconds)))
+	if(options.playground && !(contains_playground(event->start_time.gpsSeconds, event->start_time.gpsSeconds)))
 		return(FALSE);
 
 	return(TRUE);
@@ -594,23 +591,23 @@ static void free_events(SnglBurstTable *list)
 		list = free_this_event(list);
 }
 
-static SnglBurstTable *trim_event_list(SnglBurstTable *event, struct options_t options)
+static SnglBurstTable **trim_event_list(SnglBurstTable **list, struct options_t options)
 {
-	SnglBurstTable *head;
+	SnglBurstTable *event = *list;
 
 	while(event && !keep_this_event(event, options))
-		event = event->next;
-	head = event;
+		event = free_this_event(event);
 
-	if(event)
-		while(event->next) {
-			if(keep_this_event(event->next, options))
-				event = event->next;
-			else
-				event->next = free_this_event(event->next);
-		}
+	if(!event)
+		return(list);
 
-	return(head);
+	while(event->next) {
+		if(keep_this_event(event->next, options))
+			event = event->next;
+		else
+			event->next = free_this_event(event->next);
+	}
+	return(&event->next);
 }
 
 
@@ -644,10 +641,7 @@ static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT8 *
 
 		LAL_CALL(LALSnglBurstTableFromLIGOLw(stat, eventaddpoint, line), stat);
 
-		*eventaddpoint = trim_event_list(*eventaddpoint, options);
-
-		while(*eventaddpoint)
-			eventaddpoint = &(*eventaddpoint)->next;
+		eventaddpoint = trim_event_list(eventaddpoint, options);
 	}
 
 	free_injections(*injection);
