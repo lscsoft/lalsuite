@@ -344,6 +344,14 @@ LALTamaCoincidenceTest(
 
 
 /* coinc inspiral */
+void
+LALCreateTwoIFOCoincList(
+    LALStatus                  *status,
+    CoincInspiralTable        **coincOutput,
+    SnglInspiralTable          *snglInput,
+    SnglInspiralAccuracy       *errorParams
+    );
+
 
 void
 LALSnglInspiralLookup(

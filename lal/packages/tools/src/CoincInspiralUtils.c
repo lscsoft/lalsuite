@@ -42,6 +42,7 @@ NRCSID( COINCINSPIRALUTILSC, "$Id$" );
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{CoincInspiralUtilsCP}
+\idx{LALCreateTwoIFOCoincList()}
 \idx{LALSnglInspiralLookup()}
 \idx{LALAddSnglInspiralToCoinc()}
 \idx{LALCreateNewCoinc()}
@@ -66,6 +67,95 @@ NRCSID( COINCINSPIRALUTILSC, "$Id$" );
 
 </lalLaTeX>
 #endif
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+void
+LALCreateTwoIFOCoincList(
+    LALStatus                  *status,
+    CoincInspiralTable        **coincOutput,
+    SnglInspiralTable          *snglInput,
+    SnglInspiralAccuracy       *errorParams
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable            *currentTrigger[2];
+  INT8                          currentTriggerNS[2];
+  CoincInspiralTable           *coincHead = NULL;
+  CoincInspiralTable           *thisCoinc = NULL;
+  INT4                          maxTC = 0;
+  INT4                          numEvents = 0;
+
+  INITSTATUS( status, "LALCreateTwoIFOCoincList", COINCINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  ASSERT( coincOutput, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  ASSERT( ! *coincOutput, status, 
+      LIGOMETADATAUTILSH_ENNUL, LIGOMETADATAUTILSH_MSGENNUL );
+
+  memset( currentTriggerNS, 0, 2 * sizeof(INT8) );
+  memset( currentTrigger, 0, 2 * sizeof(SnglInspiralTable *) );
+
+  maxTC = errorParams->dt + 44;
+  
+  for ( currentTrigger[0] = snglInput; currentTrigger[0]->next;
+      currentTrigger[0] = currentTrigger[0]->next)
+  {
+
+    /* calculate the time of the trigger */
+    LALGPStoINT8( status->statusPtr, &currentTriggerNS[0], 
+        &(currentTrigger[0]->end_time) );
+
+    /* set next trigger for comparison */
+    currentTrigger[1] = currentTrigger[0]->next;
+    LALGPStoINT8( status->statusPtr, &currentTriggerNS[1], 
+          &(currentTrigger[1]->end_time) );
+
+    while ( (currentTriggerNS[1] - currentTriggerNS[0]) < maxTC )
+    {
+      /* check that triggers pass coincidence test */
+      LALCompareSnglInspiral( status->statusPtr, currentTrigger[0], 
+          currentTrigger[1], errorParams );
+
+      /* test whether we have coincidence */
+      if ( errorParams->match )
+      {
+        LALInfo( status, "Found double coincident trigger,");
+        /* create a 2 IFO coinc and store */
+        if ( ! coincHead  )
+        {
+          coincHead = thisCoinc = (CoincInspiralTable *) 
+            LALCalloc( 1, sizeof(CoincInspiralTable) );
+        }
+        else
+        {
+          thisCoinc = thisCoinc->next = (CoincInspiralTable *) 
+            LALCalloc( 1, sizeof(CoincInspiralTable) );
+        }
+
+        /* Add the two triggers to the coinc */
+        LALAddSnglInspiralToCoinc( status->statusPtr, &thisCoinc,
+            currentTrigger[0] );
+        LALAddSnglInspiralToCoinc( status->statusPtr, &thisCoinc,
+            currentTrigger[1] );
+
+        ++numEvents;
+
+      }
+
+      /* scroll on to the next sngl inspiral */
+      currentTrigger[1] = currentTrigger[1]->next;
+      LALGPStoINT8( status->statusPtr, &currentTriggerNS[1], 
+            &(currentTrigger[1]->end_time) );
+
+    }
+  }
+
+  *coincOutput = coincHead;
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+} 
 
 
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
@@ -135,20 +225,27 @@ LALAddSnglInspiralToCoinc(
     )
 /* </lalVerbatim> */
 {
-  CoincInspiralTable  *coincInspiral;
+  CoincInspiralTable  *coincInspiral = NULL;
+  EventIDColumn       *eventId = NULL;
+  
   INITSTATUS( status, "LALAddSnglInspiralToCoinc", COINCINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coincPtr, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( *coincPtr, status, 
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
   ASSERT( snglInspiral, status, 
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
 
 
   coincInspiral = *coincPtr;
-
+ 
+  /* allocate memory for new coinc if it doesn't exist */
+  if (! coincInspiral )
+  {
+    coincInspiral = (CoincInspiralTable *) 
+      LALCalloc( 1, sizeof(CoincInspiralTable) );
+  }
+  
   switch ( (snglInspiral->ifo)[0] ) 
   {
     case 'G':
@@ -189,6 +286,24 @@ LALAddSnglInspiralToCoinc(
   }
 
   ++(coincInspiral->numIfos);
+
+  /* create an eventId for the single, populate it with the single and coinc */
+  if ( ! snglInspiral->event_id )
+  {
+    eventId = (EventIDColumn *) LALCalloc( 1, sizeof(EventIDColumn) );
+    snglInspiral->event_id = eventId;
+  }
+  else
+  {
+     for( eventId = snglInspiral->event_id; eventId->next; 
+         eventId = eventId->next);
+     eventId = eventId->next = (EventIDColumn *) 
+         LALCalloc( 1, sizeof(EventIDColumn) );
+  }
+  eventId->snglInspiralTable = snglInspiral;
+  eventId->coincInspiralTable = coincInspiral;
+
+  *coincPtr = coincInspiral;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -289,3 +404,6 @@ LALSnglInspiralCoincTest(
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
+
+
+
