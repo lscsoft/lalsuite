@@ -3018,6 +3018,8 @@ int main(int argc, char *argv[]){
   globargc=argc;
   globargv=argv;
 
+
+#ifndef _WIN32
   /* install signal-handler for SIGTERM, SIGINT and SIGABRT(?) 
    * NOTE: it is critical to catch SIGINT, because a user
    * pressing Ctrl-C under boinc should not directly kill the
@@ -3025,7 +3027,7 @@ int main(int argc, char *argv[]){
    * should wait for the client to send <quit/> and cleanly exit. 
    */
   boinc_set_signal_handler(SIGTERM, sighandler);
-  boinc_set_signal_handler(SIGINT, sighandler);
+  boinc_set_signal_handler(SIGINT,  sighandler);
   boinc_set_signal_handler(SIGABRT, sighandler);
 
   /* install signal handler (for ALL threads) for catching
@@ -3034,13 +3036,20 @@ int main(int argc, char *argv[]){
   if ( !skipsighandler )
     {
       boinc_set_signal_handler(SIGSEGV, sighandler);
-      boinc_set_signal_handler(SIGFPE, sighandler);
-      boinc_set_signal_handler(SIGILL, sighandler);
-#ifndef _MSC_VER
-      boinc_set_signal_handler(SIGBUS, sighandler);
-#endif
+      boinc_set_signal_handler(SIGFPE,  sighandler);
+      boinc_set_signal_handler(SIGILL,  sighandler);
+      boinc_set_signal_handler(SIGBUS,  sighandler);
     } /* if !skipsighandler */
-  
+#else /* WIN32 */
+  signal(SIGTERM, sighandler);
+  signal(SIGINT,  sighandler);
+  signal(SIGABRT, sighandler);
+  if ( !skipsighandler ) {
+      signal(SIGSEGV, sighandler);
+      signal(SIGFPE,  sighandler);
+      signal(SIGILL,  sighandler);
+  }
+#endif /* WIN32 */
   
 #if (BOINC_GRAPHICS == 1)
   set_search_pos_hook = set_search_pos;
