@@ -2630,16 +2630,18 @@ int main(int argc, char *argv[]){
 void sighandler(int sig){
   void *array[64];
   size_t size;
+  
+#if 1
   sigset_t signalset;
-
-  LALStatus *mystat = &global_status;	  /* the only place in the universe where we're
-					   * allowed to use the global_status struct !! */
-
-  /* lets start by ignoring ANY further occurences of this signal
-     (hopefully just in THIS thread, if truly implementing POSIX threads m */
   sigemptyset(&signalset);
   sigaddset(&signalset, sig);
   pthread_sigmask(SIG_BLOCK, &signalset, NULL);
+#endif
+
+  LALStatus *mystat = &global_status;	  /* the only place in the universe where we're
+					   * allowed to use the global_status struct !! */
+  /* lets start by ignoring ANY further occurences of this signal
+     (hopefully just in THIS thread, if truly implementing POSIX threads */
   
   fprintf(stderr, "Application caught signal %d\n", sig);
   if (mystat)
