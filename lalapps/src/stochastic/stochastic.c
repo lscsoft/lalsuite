@@ -127,6 +127,13 @@ REAL4 highPassFreq = 40.;
 REAL4 highPassAt ;
 INT4  highPassOrder = 6;
 
+REAL4 geoScaleFactor = 1.e18;
+
+/* geo high pass filter parameters */
+REAL4 geoHighPassFreq = 70.;
+INT4  geoHighPassOrder = 8;
+REAL4 geoHighPassAt = 0.1;
+
 /* number of bins for frequency masking */ 
 INT4 maskBin = 1;
 
@@ -1050,262 +1057,315 @@ INT4 main(INT4 argc, CHAR *argv[])
               interLoop = interLoop + segLoop;
               break;
              }
- 
-            else
-	     { 
               
-               /* store in memory */
-               for (i = 0; i < segmentPadLength; i ++)
-                {
-	         segPad1[segLoop]->data[i] = segmentPad1.data->data[i];
-                 segPad2[segLoop]->data[i] = segmentPad2.data->data[i];
-                }       
+            /* store in memory */
+            for (i = 0; i < segmentPadLength; i ++)
+             {
+	      segPad1[segLoop]->data[i] = segmentPad1.data->data[i];
+              segPad2[segLoop]->data[i] = segmentPad2.data->data[i];
+             }       
     
-               /* compute response functions */
-      
-               gpsCalibTime.gpsSeconds = gpsStartTime.gpsSeconds  + calibOffset;
-               responseTemp1.epoch = responseTemp2.epoch = gpsCalibTime;
-
-               if (verbose_flag)
+            /* compute response functions */
+            gpsCalibTime.gpsSeconds = gpsStartTime.gpsSeconds  + calibOffset;
+            response1.epoch  = response2.epoch  = gpsCalibTime;
+  
+            if (strncmp(ifo1, "G1", 2) == 0)
+              
+	     {
+              for (i = 0; i < filterLength; i++)
                 {
-                 fprintf(stdout, "request response functions at GPS time %d\n",gpsCalibTime.gpsSeconds );
+                 response1.data->data[i].re = 1.; 
+                 response1.data->data[i].im = 0.;
+                } 
+             }
+            else
+             {
+              responseTemp1.epoch = gpsCalibTime;
+              if (verbose_flag)
+                {
+                 fprintf(stdout, "request GPS time %d for ifo 1\n",gpsCalibTime.gpsSeconds );
                 }
                memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );     
-               calfacts.ifo = ifo1;          
+               calfacts.ifo = ifo1;       
                LAL_CALL( LALFrCacheImport( &status, &calibCache, calCache1 ), &status );
-               LAL_CALL( LALExtractFrameResponse( &status, &responseTemp1, calibCache,
+               LAL_CALL( LALExtractFrameResponse( &status, &responseTemp1, calCache1,
                                                   &calfacts), &status );
-               LAL_CALL( LALDestroyFrCache( &status, &calibCache), &status );
-
+               LAL_CALL( LALDestroyFrCache( &status, &calibCache), &status ); 
+      
                /* skip segment if data not found or corrupted with 0 values */   
                if ((status.statusCode !=0)||(responseTemp1.data==NULL))
-		 {
-		   clear_status(&status);
-		   firstpass = 1; pathology = 1;
-		   interLoop = interLoop + segLoop;
-		   break;
-                 }
-
-               memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
-               calfacts.ifo = ifo2;
-               LAL_CALL( LALFrCacheImport( &status, &calibCache, calCache2 ), &status );
-               LAL_CALL( LALExtractFrameResponse(&status, &responseTemp2, calibCache,
-                                                  &calfacts), &status );
-               LAL_CALL( LALDestroyFrCache( &status, &calibCache), &status );
-                
-               /* skip segment if data not found or corrupted with 0 values */    
-               if ((status.statusCode !=0)||(responseTemp2.data==NULL))
-                {
-                 clear_status(&status);
-                 firstpass = 1; pathology = 1;
-                 interLoop = interLoop + segLoop;
-                 break;
-                }
-                else
-		 { 
-                 
-                  /* reduce to the optimal filter frequency range */
-                  if (verbose_flag)
-	           {
-	            fprintf(stdout, "reduce to optimal filter range\n");
-	           }
-
-                  response1.epoch = response2.epoch = gpsCalibTime;
-                  for (i = 0; i < filterLength; i++)
-                   {
-                    response1.data->data[i] = responseTemp1.data->data[i + numPointInf];
-                    response2.data->data[i] = responseTemp2.data->data[i + numPointInf];
-                   }
-
-                  /* store in memory */
-      
-                  for (i = 0; i < filterLength ; i++)
-                   {
-	            resp1[segLoop]->data[i] = response1.data->data[i];
-                    resp2[segLoop]->data[i] = response2.data->data[i];
-                   }   
-          
-                 /* convert response function for use in the MC routine */
-                 if (inject_flag)
-                  {
-                   MCresponse1.epoch = MCresponse2.epoch = gpsCalibTime;      
-                 
-                   LAL_CALL( LALResponseConvert(&status, &MCresponse1, &responseTemp1), &status );
-                   LAL_CALL( LALResponseConvert(&status, &MCresponse2, &responseTemp2), &status );
-	
-                   /* force DC to be 0 and nyquist to be real */
-                   MCresponse1.data->data[0].re = MCresponse2.data->data[0].re = 0.;
-                   MCresponse1.data->data[0].im = MCresponse2.data->data[0].im = 0.;
-                   MCresponse1.data->data[MCfreqLength-1].im = 0;
-                   MCresponse2.data->data[MCfreqLength-1].im = 0.;
-         
-                   /* store in memory */
-
-                   for (i = 0; i < MCfreqLength ; i++)
-	            {
-	             MCresp1[segLoop]->data[i] = MCresponse1.data->data[i];
-                     MCresp2[segLoop]->data[i] = MCresponse2.data->data[i];
-                    }             
-		   }
-		}
-	     }
-	   }
-	  
-          if (pathology==1) 
-            {
-              if (verbose_flag)
-		{fprintf(stdout, "\n \n BREAK\n \n");}
-              pathology = 0; firstpass = 1; 
-              continue;
-            }
-	  else {firstpass = 0;}
-    
-
-         }
-	  /* if firstpass = 0, shift data and read extra segment */ 
-	 else
-	   {
-	    lal_errhandler = LAL_ERR_RTRN;
-            if (verbose_flag)
-	     {
-              fprintf(stdout, "Shift Segment\n interval %d out of %d\n", interLoop, numIntervals);
-	     }
-            /* shift segments */
-            for (segLoop = 0; segLoop < numSegments - 1; segLoop++)
-	      {
-		for (i = 0; i < segmentPadLength; i ++)
-		  {
-	            segPad1[segLoop]->data[i] = segPad1[segLoop + 1]->data[i];
-	            segPad2[segLoop]->data[i] = segPad2[segLoop + 1]->data[i];
-                  }
-                for (i = 0; i < filterLength; i++)
-		  {
-                    resp1[segLoop]->data[i] = resp1[segLoop + 1]->data[i];
-	            resp2[segLoop]->data[i] = resp2[segLoop + 1]->data[i];
-
-                    if (inject_flag)
-                     {
-                      MCresp1[segLoop]->data[i] = MCresp1[segLoop + 1]->data[i];
-	              MCresp2[segLoop]->data[i] = MCresp2[segLoop + 1]->data[i];
-                     } 
-		  }
-	      }
-                 
-	   /* read extra segment */
-	   
-           gpsStartTime.gpsSeconds = startTime + (interLoop + numSegments - 1)  * segmentDuration;
-           gpsStartPadTime.gpsSeconds = gpsStartTime.gpsSeconds - padData;
-           streamParams.startTime = gpsStartPadTime.gpsSeconds;
-
-           if (verbose_flag)
-	     {
-	       fprintf( stdout, "read end segment at GPS %d... \n",gpsStartPadTime.gpsSeconds);
-             }
-
-           LAL_CALL(readDataPair(&status, &streamPair, &streamParams), &status);
-           /* skip segment if data not found or corrupted with 0 values */    
-           if (status.statusCode !=0)
-            {
-             clear_status(&status);
-             firstpass = 1; 
-             interLoop = interLoop + (numSegments -1);
-             continue;
-             }
-
-           else
-	     {
-	       firstpass = 0; pathology = 0; 
-              /* store in memory */
-              for (i = 0; i < segmentPadLength ; i++)
-               {
-	        segPad1[numSegments-1]->data[i] = segmentPad1.data->data[i];
-                segPad2[numSegments-1]->data[i] = segmentPad2.data->data[i];
-               }
-
-              /* compute extra response function */
-         
-              gpsCalibTime.gpsSeconds = gpsStartTime.gpsSeconds + calibOffset;
-              responseTemp1.epoch = responseTemp2.epoch = gpsCalibTime;
-
-              if (verbose_flag)
-	       {
-	        fprintf( stdout, "compute end response function at GPS %d... \n",gpsCalibTime.gpsSeconds);
-               }
-              memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
-              calfacts.ifo = ifo1;
-              LAL_CALL( LALFrCacheImport( &status, &calibCache, calCache1 ), &status );
-              LAL_CALL( LALExtractFrameResponse( &status, &responseTemp1, calibCache,
-                                                 &calfacts), &status );
-              LAL_CALL( LALDestroyFrCache( &status, &calibCache), &status );
-              /* skip segment if data not found or corrupted with 0 values */
-
-              if ((status.statusCode !=0)||(responseTemp1.data==NULL))
 		{
-		  clear_status(&status);
-		  firstpass = 1;
-		  interLoop = interLoop + (numSegments - 1);
-		  continue;
-		}
-
-              memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
-              calfacts.ifo = ifo2;
-              LAL_CALL( LALFrCacheImport( &status, &calibCache, calCache2 ), &status );
-              LAL_CALL( LALExtractFrameResponse( &status, &responseTemp2, calibCache,
-                                                 &calfacts), &status );
-              LAL_CALL( LALDestroyFrCache( &status, &calibCache), &status );
-
-              /* skip segment if data not found or corrupted with 0 values */    
-   
-              if ((status.statusCode !=0)||(responseTemp2.data==NULL))
+		 clear_status(&status);
+		 firstpass = 1; pathology = 1;
+		 interLoop = interLoop + segLoop;
+		 break;
+                }
+ 
+               /* reduce to the optimal filter frequency range */
+            
+               for (i = 0; i < filterLength; i++)
+                {
+                 response1.data->data[i] = responseTemp1.data->data[i + numPointInf];
+                }
+	     }   
+               
+                
+             if (strncmp(ifo2, "G1", 2) == 0)
+	      {
+               for (i = 0; i < filterLength; i++)
+                {
+                 response2.data->data[i].re = 1.; 
+                 response2.data->data[i].im = 0.;
+                } 
+              }
+             else
+	      {
+               responseTemp2.epoch = gpsCalibTime;
+               if (verbose_flag)
+                {
+                 fprintf(stdout, "request GPS time %d for ifo 2\n",gpsCalibTime.gpsSeconds );
+                }
+               memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );     
+               calfacts.ifo = ifo2;       
+               LAL_CALL( LALFrCacheImport( &status, &calibCache, calCache2 ), &status );
+               LAL_CALL( LALExtractFrameResponse( &status, &responseTemp2, calCache2,
+                                                  &calfacts), &status );
+               LAL_CALL( LALDestroyFrCache( &status, &calibCache), &status ); 
+      
+               /* skip segment if data not found or corrupted with 0 values */   
+               if ((status.statusCode !=0)||(responseTemp2.data==NULL))
+		{
+	         clear_status(&status);
+		 firstpass = 1; pathology = 1;
+		 interLoop = interLoop + segLoop;
+		 break;
+                }
+ 
+               /* reduce to the optimal filter frequency range */
+        
+               for (i = 0; i < filterLength; i++)
+                {
+                 response2.data->data[i] = responseTemp2.data->data[i + numPointInf];
+                }
+	      }   
+	     
+                
+             /* store in memory */
+             for (i = 0; i < filterLength ; i++)
+              {
+	       resp1[segLoop]->data[i] = response1.data->data[i];
+               resp2[segLoop]->data[i] = response2.data->data[i];
+              }   
+          
+              /* convert response function for use in the MC routine */
+              if (inject_flag)
                {
-                clear_status(&status);
-                firstpass = 1; 
-                interLoop = interLoop + (numSegments - 1);
-                continue;
-               }
-              else
-	       {
-		 pathology = 0;
-                /* reduce to the optimal filter frequency range */
-                response1.epoch = response2.epoch = gpsCalibTime;
-                for (i = 0; i < filterLength; i++)
-                 {
-                  response1.data->data[i] = responseTemp1.data->data[i + numPointInf];
-                  response2.data->data[i] = responseTemp2.data->data[i + numPointInf];
-                 }
-
+                MCresponse1.epoch = MCresponse2.epoch = gpsCalibTime;      
+                 
+                LAL_CALL( LALResponseConvert(&status, &MCresponse1, &responseTemp1), &status );
+                LAL_CALL( LALResponseConvert(&status, &MCresponse2, &responseTemp2), &status );
+	
+                /* force DC to be 0 and nyquist to be real */
+                MCresponse1.data->data[0].re = MCresponse2.data->data[0].re = 0.;
+                MCresponse1.data->data[0].im = MCresponse2.data->data[0].im = 0.;
+                MCresponse1.data->data[MCfreqLength-1].im = 0;
+                MCresponse2.data->data[MCfreqLength-1].im = 0.;
+         
                 /* store in memory */
 
-                for (i = 0; i < filterLength ; i++)
-                 {
-	          resp1[numSegments-1]->data[i] = response1.data->data[i];
-                  resp2[numSegments-1]->data[i] = response2.data->data[i];
-                 } 
-          
-                /* convert response function for use in the MC routine */
+                for (i = 0; i < MCfreqLength ; i++)
+	         {
+                  MCresp1[segLoop]->data[i] = MCresponse1.data->data[i];
+                  MCresp2[segLoop]->data[i] = MCresponse2.data->data[i];
+                 }             
+	        }
+	     }
+	 
+       
+	  
+         if (pathology==1) 
+          {
+           if (verbose_flag)
+	    {fprintf(stdout, "\n \n BREAK\n \n");}
+           pathology = 0; firstpass = 1; 
+           continue;
+          }
+	 else {firstpass = 0;}
+	 }
+
+      
+	  /* if firstpass = 0, shift data and read extra segment */ 
+       	else
+	  {
+	  lal_errhandler = LAL_ERR_RTRN;
+          if (verbose_flag)
+	   {
+             fprintf(stdout, "Shift Segment\n interval %d out of %d\n", interLoop, numIntervals);
+	   }
+            /* shift segments */
+          for (segLoop = 0; segLoop < numSegments - 1; segLoop++)
+	    {
+	     for (i = 0; i < segmentPadLength; i ++)
+	      {
+	       segPad1[segLoop]->data[i] = segPad1[segLoop + 1]->data[i];
+	       segPad2[segLoop]->data[i] = segPad2[segLoop + 1]->data[i];
+              }
+             for (i = 0; i < filterLength; i++)
+	      {
+               resp1[segLoop]->data[i] = resp1[segLoop + 1]->data[i];
+	       resp2[segLoop]->data[i] = resp2[segLoop + 1]->data[i];
+
                 if (inject_flag)
                  {
-                  MCresponse1.epoch = MCresponse2.epoch = gpsCalibTime;      
+                  MCresp1[segLoop]->data[i] = MCresp1[segLoop + 1]->data[i];
+	          MCresp2[segLoop]->data[i] = MCresp2[segLoop + 1]->data[i];
+                 } 
+	       }
+	      }
+                 
+	  /* read extra segment */
+	   
+          gpsStartTime.gpsSeconds = startTime + (interLoop + numSegments - 1)  * segmentDuration;
+          gpsStartPadTime.gpsSeconds = gpsStartTime.gpsSeconds - padData;
+          streamParams.startTime = gpsStartPadTime.gpsSeconds;
+
+          if (verbose_flag)
+	   {
+	    fprintf( stdout, "read end segment at GPS %d... \n",gpsStartPadTime.gpsSeconds);
+           }
+
+          LAL_CALL(readDataPair(&status, &streamPair, &streamParams), &status);
+          /* skip segment if data not found or corrupted with 0 values */    
+          if (status.statusCode !=0)
+           {
+            clear_status(&status);
+            firstpass = 1; 
+            interLoop = interLoop + (numSegments -1);
+            continue;
+            }
+ 
+          /* store in memory */
+          for (i = 0; i < segmentPadLength ; i++)
+           {
+	    segPad1[numSegments-1]->data[i] = segmentPad1.data->data[i];
+            segPad2[numSegments-1]->data[i] = segmentPad2.data->data[i];
+           }
+
+          /* compute extra response function */
+         
+          gpsCalibTime.gpsSeconds = gpsStartTime.gpsSeconds + calibOffset;
+          response1.epoch  = response2.epoch = gpsCalibTime;
+
+          if (strncmp(ifo1, "G1", 2) == 0) 
+	   {
+            for (i = 0; i < filterLength; i++)
+	      {
+               response1.data->data[i].re = 1.; 
+               response1.data->data[i].im = 0.;
+              } 
+           }
+          else
+           {
+            responseTemp1.epoch = gpsCalibTime;
+            if (verbose_flag)
+             {
+              fprintf(stdout, "request GPS time %d for ifo 1\n",gpsCalibTime.gpsSeconds );
+             }
+            memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );     
+            calfacts.ifo = ifo1;       
+            LAL_CALL( LALFrCacheImport( &status, &calibCache, calCache1 ), &status );
+            LAL_CALL( LALExtractFrameResponse( &status, &responseTemp1, calCache1,
+                                               &calfacts), &status );
+            LAL_CALL( LALDestroyFrCache( &status, &calibCache), &status ); 
+      
+            /* skip segment if data not found or corrupted with 0 values */   
+            if ((status.statusCode !=0)||(responseTemp1.data==NULL))
+	     {
+	      clear_status(&status);
+	      firstpass = 1; pathology = 1;
+	      interLoop = interLoop + segLoop;
+	      break;
+              }
+ 
+            /* reduce to the optimal filter frequency range */
+            for (i = 0; i < filterLength; i++)
+             {
+              response1.data->data[i] = responseTemp1.data->data[i + numPointInf];
+             }
+           }   
+	  
+               
+                
+          if (strncmp(ifo2, "G1", 2) == 0)
+	   {
+            for (i = 0; i < filterLength; i++)
+	      {
+               response1.data->data[i].re = 1.; 
+               response1.data->data[i].im = 0.;
+              } 
+           }
+	  else
+	   {
+            responseTemp2.epoch = gpsCalibTime;
+            if (verbose_flag)
+             {
+              fprintf(stdout, "request GPS time %d for ifo 2\n",gpsCalibTime.gpsSeconds );
+             }
+            memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );     
+            calfacts.ifo = ifo2;       
+            LAL_CALL( LALFrCacheImport( &status, &calibCache, calCache2 ), &status );
+            LAL_CALL( LALExtractFrameResponse( &status, &responseTemp2, calCache2,
+                                               &calfacts), &status );
+            LAL_CALL( LALDestroyFrCache( &status, &calibCache), &status ); 
+      
+            /* skip segment if data not found or corrupted with 0 values */   
+            if ((status.statusCode !=0)||(responseTemp2.data==NULL))
+	     {
+	      clear_status(&status);
+	      firstpass = 1; pathology = 1;
+	      interLoop = interLoop + segLoop;
+	      break;
+              }
+ 
+            /* reduce to the optimal filter frequency range */
+            response2.epoch  = gpsCalibTime;
+            for (i = 0; i < filterLength; i++)
+             {
+              response2.data->data[i] = responseTemp2.data->data[i + numPointInf];
+             }
+            }   
+    
+     
+           /* store in memory */
+
+           for (i = 0; i < filterLength ; i++)
+            {
+             resp1[numSegments-1]->data[i] = response1.data->data[i];
+             resp2[numSegments-1]->data[i] = response2.data->data[i];
+             } 
+         
+           /* convert response function for use in the MC routine */
+           if (inject_flag)
+            {
+             MCresponse1.epoch = MCresponse2.epoch = gpsCalibTime;      
              
-	          LAL_CALL( LALResponseConvert(&status, &MCresponse1, &responseTemp1), &status );
-	          LAL_CALL( LALResponseConvert(&status, &MCresponse2, &responseTemp2), &status );
+             LAL_CALL( LALResponseConvert(&status, &MCresponse1, &responseTemp1), &status );
+	     LAL_CALL( LALResponseConvert(&status, &MCresponse2, &responseTemp2), &status );
             
-                  /* force DC to be 0 and nyquist to be real */
-                  MCresponse1.data->data[0].re = MCresponse2.data->data[0].re = 0.;
-                  MCresponse1.data->data[0].im = MCresponse2.data->data[0].im = 0.;
-                  MCresponse1.data->data[MCfreqLength-1].im = 0;
-                  MCresponse2.data->data[MCfreqLength-1].im = 0.;
-            
-                  /* store in memory */
-                 for (i = 0; i < MCfreqLength ; i++)
-	          {
-	           MCresp1[numSegments-1]->data[i] = MCresponse1.data->data[i];
-                   MCresp2[numSegments-1]->data[i] = MCresponse2.data->data[i];
-                  }             
-		 }
-	       }                    
+             /* force DC to be 0 and nyquist to be real */
+             MCresponse1.data->data[0].re = MCresponse2.data->data[0].re = 0.;
+             MCresponse1.data->data[0].im = MCresponse2.data->data[0].im = 0.;
+             MCresponse1.data->data[MCfreqLength-1].im = 0;
+             MCresponse2.data->data[MCfreqLength-1].im = 0.;
+           
+            /* store in memory */
+            for (i = 0; i < MCfreqLength ; i++)
+             {
+              MCresp1[numSegments-1]->data[i] = MCresponse1.data->data[i];
+              MCresp2[numSegments-1]->data[i] = MCresponse2.data->data[i];
+              }             
 	     }
-	   }
+	 }
        
          /* initialize average PSDs */
 	 for (i = 0; i < filterLength; i++)
@@ -1750,6 +1810,9 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"hpf-frequency", required_argument, 0, 'k'},
       {"hpf-attenuation", required_argument, 0, 'p'},
       {"hpf-order", required_argument, 0, 'P'},
+      {"geo-hpf-frequency", required_argument, 0, 'K'},
+      {"geo-hpf-attenuation", required_argument, 0, 'q'},
+      {"geo-hpf-order", required_argument, 0, 'Q'},
       {"ifo-one", required_argument, 0, 'i'},
       {"ifo-two", required_argument, 0, 'I'},
       {"frame-cache-one", required_argument, 0, 'd'},
@@ -1774,7 +1837,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
     int option_index = 0;
 
     c = getopt_long(argc, argv, 
-                  "ht:T:L:l:A:a:f:F:w:k:p:P:i:I:d:D:r:R:c:b:o:g:N:S:U:V:W:z:v",
+                  "ht:T:L:l:A:a:f:F:w:k:p:P:K:q:Q:i:I:d:D:r:R:c:b:o:g:N:S:U:V:W:z:v",
  		   long_options, &option_index);
 
     if (c == -1)
@@ -1858,6 +1921,20 @@ void parseOptions(INT4 argc, CHAR *argv[])
 	       highPassOrder = atoi(optarg);
 	       break;
 
+      case 'K':
+	       /* GEO high pass knee filter frequency  */
+	       geoHighPassFreq= atof(optarg);
+	       break;
+                          
+      case 'q':
+	       /*GEO high pass filter attenuation  */
+	       geoHighPassAt = atof(optarg);
+	       break;
+
+      case 'Q':
+	       /* GEO high pass filter order  */
+	       geoHighPassOrder = atoi(optarg);
+	       break;
       case 'i':
 	       /* ifo for first stream */
 	       strncpy(ifo1, optarg, LALNameLength);
@@ -1877,6 +1954,11 @@ void parseOptions(INT4 argc, CHAR *argv[])
 		{
 		 site1 = 1;
 		 strncpy(channel1, "L1:LSC-AS_Q", LALNameLength);
+	        }
+               else if (strncmp(ifo1, "G1", 2) == 0)
+		{
+		 site1 = 3;
+		 strncpy(channel1, "G1:DER_DATA_H", LALNameLength);
 	        }
 	       else
 		{
@@ -1906,6 +1988,11 @@ void parseOptions(INT4 argc, CHAR *argv[])
 		  site2 = 1;
 		  strncpy(channel2, "L1:LSC-AS_Q", LALNameLength);
 		 }
+                else if (strncmp(ifo2, "G1", 2) == 0)
+		{
+		 site1 = 3;
+		 strncpy(channel2, "G1:DER_DATA_H", LALNameLength);
+	        }
 		 else
 		  {
 		   fprintf(stderr, "Second IFO not recognised...\n");
@@ -1913,6 +2000,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 		  }
 
 		 break;
+     
 
 	case 'd':
          	 /* data cache one */
@@ -2054,12 +2142,14 @@ void displayUsage(INT4 exitcode)
 
 
 
+
 /* function to read data in frames */
 void readDataPair(LALStatus *status,
 		  StreamPair *streamPair,
 		  ReadDataPairParams *params)
  {
   /* counters */
+  UINT4 j;
   INT4 i;
 
   /* variables */
@@ -2068,12 +2158,14 @@ void readDataPair(LALStatus *status,
   FrCache *frCache2 = NULL;
   FrStream *frStream2 = NULL;
   FrChanIn frChanIn1, frChanIn2;
+  REAL8TimeSeries dataStreamGeo;
   REAL4TimeSeries dataStream1, dataStream2;
   ResampleTSParams resampleParams;
   LIGOTimeGPS bufferStartTime;
   UINT8 startTime;
   INT4 buffer;
   INT4 resampleRate, sampleRate;
+  PassBandParamStruc geoHighpassParam;
 
   /* read parameters */
   startTime = params->startTime;
@@ -2096,7 +2188,7 @@ void readDataPair(LALStatus *status,
   frChanIn1.type = ADCDataChannel;
 
   /* initial data structures */
-  dataStream1.epoch =  dataStream2.epoch = bufferStartTime;
+  dataStream1.epoch =  dataStream2.epoch  = bufferStartTime;
 
   if (verbose_flag)
    { fprintf(stdout, "Allocating memory for raw data streams...\n");}
@@ -2114,6 +2206,17 @@ void readDataPair(LALStatus *status,
   memset( dataStream2.data->data, 0, 
           dataStream2.data->length * sizeof(*dataStream2.data->data));
 
+  if ((strncmp(ifo1, "G1", 2) == 0)||(strncmp(ifo2, "G1", 2) == 0))
+   {
+    dataStreamGeo.epoch  = bufferStartTime;
+    dataStreamGeo.data = NULL;
+    LALDCreateVector( status->statusPtr, &(dataStreamGeo.data),
+                    sampleRate * (params->duration + (2 * buffer)));
+    CHECKSTATUSPTR (status);	
+    memset( dataStreamGeo.data->data, 0, 
+          dataStreamGeo.data->length * sizeof(*dataStreamGeo.data->data));
+
+   }
   if (verbose_flag)
    { fprintf(stdout, "Opening first frame cache...\n");}
 
@@ -2122,9 +2225,6 @@ void readDataPair(LALStatus *status,
   CHECKSTATUSPTR (status);
   LALFrCacheOpen(status->statusPtr, &frStream1, frCache1);
   CHECKSTATUSPTR (status);
-  /* the code fails if the data path is missing in the cache file*/
-  LALFrSetMode( status->statusPtr, 0, frStream1 );
-  CHECKSTATUSPTR (status);
 	
   if (verbose_flag)
    { fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn1.name);}
@@ -2132,9 +2232,47 @@ void readDataPair(LALStatus *status,
   /* read first channel */
   LALFrSeek(status->statusPtr, &(bufferStartTime), frStream1);
   CHECKSTATUSPTR (status);
-  LALFrGetREAL4TimeSeries(status->statusPtr,
+  if (strncmp(ifo1, "G1", 2) == 0)
+   {
+    LALFrGetREAL8TimeSeries(status->statusPtr,
+                          &dataStreamGeo,&frChanIn1, frStream1);
+    CHECKSTATUSPTR (status);
+    /* high pass the GEO data  */      
+       
+    geoHighpassParam.nMax = geoHighPassOrder;
+    geoHighpassParam.f1 = -1.0;
+    geoHighpassParam.f2 = (REAL8) geoHighPassFreq;
+    geoHighpassParam.a1 = -1.0;
+    geoHighpassParam.a2 = (REAL8)(1.0 - geoHighPassAt);
+
+    LALButterworthREAL8TimeSeries( status->statusPtr, &dataStreamGeo, 
+          &geoHighpassParam);
+    CHECKSTATUSPTR (status);
+      
+    /* cast the GEO data to REAL4 in the channel time series       */
+    /* which already has the correct amount of memory allocated */
+    for ( j = 0 ; j < dataStream1.data->length ; ++j )
+     {
+      dataStream1.data->data[j] = geoScaleFactor * (REAL4) (dataStreamGeo.data->data[j]);
+     }
+    
+     /* re-copy the data paramaters from the GEO channel to input data channel */
+       LALSnprintf( dataStream1.name, LALNameLength * sizeof(CHAR), "%s", dataStreamGeo.name );
+       dataStream1.epoch          = dataStreamGeo.epoch;
+       dataStream1.deltaT         = dataStreamGeo.deltaT;
+       dataStream1.f0             = dataStreamGeo.f0;
+       dataStream1.sampleUnits    = dataStreamGeo.sampleUnits; 
+    /* free the REAL8 GEO input data */
+    LALDDestroyVector( status->statusPtr, &dataStreamGeo.data );
+    CHECKSTATUSPTR (status);
+    dataStreamGeo.data = NULL;
+   }
+   else 
+    {
+     LALFrGetREAL4TimeSeries(status->statusPtr,
                           &dataStream1,&frChanIn1, frStream1);
-  CHECKSTATUSPTR (status);
+     CHECKSTATUSPTR (status);
+    }
   if (strcmp(params->frameCache1, params->frameCache2) == 0)
    {
     if (verbose_flag)
@@ -2174,18 +2312,48 @@ void readDataPair(LALStatus *status,
     CHECKSTATUSPTR (status);
     LALFrCacheOpen(status->statusPtr, &frStream2, frCache2);
     CHECKSTATUSPTR (status);
-    /* the code fails if the data path is missing in the cache file*/
-    LALFrSetMode( status->statusPtr, 0, frStream2 );
-    CHECKSTATUSPTR (status);
     if (verbose_flag)
      { fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn2.name);}
 
     /* read in second channel */
     LALFrSeek(status->statusPtr, &(bufferStartTime), frStream2);
-    CHECKSTATUSPTR (status);		
-    LALFrGetREAL4TimeSeries(status->statusPtr, &dataStream2,
-                            &frChanIn2, frStream2);
     CHECKSTATUSPTR (status);	
+    if (strncmp(ifo2, "G1", 2) == 0)
+     {
+      LALFrGetREAL8TimeSeries(status->statusPtr,
+                          &dataStreamGeo,&frChanIn2, frStream2);
+      CHECKSTATUSPTR (status);
+      /* high pass the GEO data  */      
+       
+      geoHighpassParam.nMax = geoHighPassOrder;
+      geoHighpassParam.f1 = -1.0;
+      geoHighpassParam.f2 = (REAL8) geoHighPassFreq;
+      geoHighpassParam.a1 = -1.0;
+      geoHighpassParam.a2 = (REAL8)(1.0 - geoHighPassAt);
+
+      LALButterworthREAL8TimeSeries( status->statusPtr, &dataStreamGeo, 
+            &geoHighpassParam);
+      CHECKSTATUSPTR (status);
+      
+      /* cast the GEO data to REAL4 in the channel time series       */
+      /* which already has the correct amount of memory allocated */
+      for ( j = 0 ; j < dataStream2.data->length ; ++j )
+       {
+        dataStream2.data->data[j] = geoScaleFactor * (REAL4) (dataStreamGeo.data->data[j]);
+       }
+    
+      /* free the REAL8 GEO input data */
+      LALDDestroyVector( status->statusPtr, &dataStreamGeo.data );
+      CHECKSTATUSPTR (status);
+      dataStreamGeo.data = NULL;
+     }
+    else 
+     {
+      LALFrGetREAL4TimeSeries(status->statusPtr,
+                           &dataStream2,&frChanIn2, frStream2);
+      CHECKSTATUSPTR (status);
+     }
+
     if (verbose_flag)
      { fprintf(stdout, "Closing second frame cache...\n");}
 
