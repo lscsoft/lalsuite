@@ -199,6 +199,7 @@ int polka(int argc,char *argv[]);
 #define COMPUTEFSTAT_EXIT_NOPOLKADEL     19  /* no // found in command line */
 #define COMPUTEFSTAT_EXIT_USER     	 20  /* user asked for exit */
 #define COMPUTEFSTAT_EXIT_DEMOD     	 21  /* error in LAL-Demod */
+#define COMPUTEFSTAT_EXIT_SIGNAL	 22   /* exited on signal */
 #define COMPUTEFSTAT_EXIT_LALCALLERROR  100  /* this is added to the LAL status to get BOINC exit value */
 
 /*----------------------------------------------------------------------
@@ -3164,7 +3165,7 @@ void sighandler(int sig){
   /* lets start by ignoring ANY further occurences of this signal
      (hopefully just in THIS thread, if truly implementing POSIX threads */
   
-  fprintf(stdout, "APP DEBUG: Application caught signal %d\n", sig); fflush(stdout);
+  fprintf(stderr, "APP DEBUG: Application caught signal %d\n", sig);
 
   /* ignore TERM interrupts once  */
   if ( sig == SIGTERM || sig == SIGINT )
@@ -3201,7 +3202,7 @@ void sighandler(int sig){
 #endif /* __GLIBC__ */
   /* sleep a few seconds to let the OTHER thread(s) catch the signal too... */
   sleep(5);
-  boinc_finish(4321);
+  boinc_finish(COMPUTEFSTAT_EXIT_SIGNAL);
   return;
 } /* sighandler */
 #endif /*USE_BOINC*/
