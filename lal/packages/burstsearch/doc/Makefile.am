@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-DOCSOURCEFILES = burstsearch.tex sequence.tex frequencyseries.tex timeseries.tex
+DOCSOURCEFILES = burstsearch.tex
 MOSTLYCLEANFILES = .dvi-dep
 CLEANFILES = main.dvi main.pdf main.ps
 EXTRA_DIST = $(DOCSOURCEFILES)

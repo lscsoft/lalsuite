@@ -5,9 +5,20 @@ libtools_la_SOURCES = \
   CreateDetector.c DetResponse.c ComputeTransfer.c CoherentEstimation.c \
   ResampleTimeSeries.c SnglInspiralUtils.c SnglBurstUtils.c \
   ComputeCalibrationFactors.c LIGOMetadataUtils.c \
-  MakeTemplateBank.c NDTemplateBank.c ComputeStrain.c
+  MakeTemplateBank.c NDTemplateBank.c ComputeStrain.c \
+  Sequence.c TimeSeries.c FrequencySeries.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+MAINTAINERCLEANFILES = FrequencySeries.c Sequence.c TimeSeries.c
+EXTRA_DIST = FrequencySeries.m4 Sequence.m4 TimeSeries.m4
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+
+FrequencySeries.c : FrequencySeries.m4
+	cd $(srcdir) && m4 FrequencySeries.m4 > FrequencySeries.c
+Sequence.c : Sequence.m4
+	cd $(srcdir) && m4 Sequence.m4 > Sequence.c
+TimeSeries.c : TimeSeries.m4
+	cd $(srcdir) && m4 TimeSeries.m4 > TimeSeries.c
+
 @DVIMKFILE@
