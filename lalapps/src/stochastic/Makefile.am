@@ -1,28 +1,32 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 
+if FRAME
 if LALFRAME
-LALFRAMEPROGRAMS = lalapps_stochastic
-lalapps_stochastic_SOURCES = stochastic.c helper.c stochastic.h
+STOCHPROGRAM = lalapps_stochastic
+endif
+endif
 if LALMETAIO
-LALMETAIOFRAMEPROGRAMS = lalapps_stopp
+STOPPPROGRAM = lalapps_stopp
+endif
+bin_SCRIPTS = lalapps_stochastic_pipe lalapps_stochastic_bayes
+bin_PROGRAMS = lalapps_olapredfcn $(STOCHPROGRAM) ${STOPPPROGRAM}
+if FRAME
+if LALFRAME
+lalapps_stochastic_SOURCES = stochastic.c helper.c stochastic.h
+endif
+endif
+if LALMETAIO
 lalapps_stopp_SOURCES = stopp.c
-else
-LALMETAIOFRAMEPROGRAMS =
 endif
-else
-LALFRAMEPROGRAMS =
-endif
-
-bin_PROGRAMS = lalapps_olapredfcn $(LALFRAMEPROGRAMS) \
-${LALMETAIOFRAMEPROGRAMS}
-
 lalapps_olapredfcn_SOURCES = olapredfcn.c olapredfcn.h olapredfcn_args.c \
                              olapredfcn_bars.c
-
-bin_SCRIPTS = lalapps_stochastic_pipe lalapps_stochastic_bayes
 pythonlibdir = ${prefix}/lib/python
 pythonlib_SCRIPTS = stochastic.py
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+MOSTLYCLEANFILES = *stochastic*.xml *ccSpectra*.gwf
+CLEANFILES = python_config.sed lalapps_stochastic_pipe lalapps_stochastic_bayes
 
 python_config.sed:
 	-rm -f python_config.sed
@@ -36,7 +40,3 @@ lalapps_stochastic_pipe: stochastic_pipe.in python_config.sed
 lalapps_stochastic_bayes: stochastic_bayes.in python_config.sed
 	sed -f python_config.sed stochastic_bayes.in > lalapps_stochastic_bayes
 	chmod +x lalapps_stochastic_bayes
-
-CLEANFILES = python_config.sed lalapps_stochastic_pipe lalapps_stochastic_bayes
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
