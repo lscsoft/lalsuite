@@ -280,15 +280,17 @@ int main(int argc,char *argv[])
 #if USE_BOINC
   lal_errhandler = BOINC_ERR_EXIT;
 
-  /* install signal handler for catching SEGV etc */
+  /* install signal handler for catching Segmentation violations,
+     floating point exceptions, Bus violations and Illegal instructions */
   sig_stat=&status;
   if (signal(SIGSEGV, sighandler)==SIG_IGN)
     signal(SIGSEGV, SIG_IGN);
   if (signal(SIGFPE, sighandler)==SIG_IGN)
     signal(SIGFPE, SIG_IGN);
-  if (signal(SIGUSR1, sighandler)==SIG_IGN)
-    signal(SIGUSR1, SIG_IGN);
-
+  if (signal(SIGBUS, sighandler)==SIG_IGN)
+    signal(SIGBUS, SIG_IGN);
+  if (signal(SIGILL, sighandler)==SIG_IGN)
+    signal(SIGILL, SIG_IGN);
 #else
   lal_errhandler = LAL_ERR_EXIT;
 #endif
