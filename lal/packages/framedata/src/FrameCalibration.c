@@ -179,7 +179,6 @@ LALExtractFrameResponse(
   CalibrationUpdateParams       calfacts;
 
   LIGOTimeGPS                   seekEpoch;
-  REAL8				epoch, first_cal;
   UINT4				length;
   REAL8				duration_real;
   const REAL8                   fuzz = 0.1 / 16384.0;
