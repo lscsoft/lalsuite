@@ -91,7 +91,13 @@ CHAR  *calCacheName     = NULL;         /* location of calibration data */
 /* template bank generation parameters */
 REAL4   minMass         = -1;           /* minimum component mass       */
 REAL4   maxMass         = -1;           /* maximum component mass       */
-REAL4   minMatch        = -1;           /* minimun requested match      */
+REAL4   psi0Min         = 0;            /* minimum value of psi0        */
+REAL4   psi0Max         = 0;            /* maximum value of psi0        */
+REAL4   psi3Min         = 0;            /* minimum value of psi3        */
+REAL4   psi3Max         = 0;            /* maximum value of psi3        */
+REAL4   alpha           = 0;            /* BCV amplitude correction     */
+INT4    maxFcutTmplts   = -1;           /* num tmplts in fcut direction */
+REAL4   minMatch        = -1;           /* minimum requested match      */
 REAL4   fUpper          = -1;           /* upper frequency cutoff       */
 Order   order;                          /* post-Newtonian order         */
 Approximant approximant;                /* approximation method         */
@@ -463,6 +469,12 @@ int main ( int argc, char *argv[] )
   bankIn.mMin          = (REAL8) minMass;
   bankIn.mMax          = (REAL8) maxMass;
   bankIn.MMax          = bankIn.mMax * 2.0;
+  bankIn.psi0Min       = (REAL8) psi0Min;
+  bankIn.psi0Max       = (REAL8) psi0Max;
+  bankIn.psi3Min       = (REAL8) psi3Min;
+  bankIn.psi3Max       = (REAL8) psi3Max;
+  bankIn.numFcutTemplates = (UINT4) maxFcutTmplts;
+  bankIn.alpha         = (REAL8) alpha;
   bankIn.mmCoarse      = (REAL8) minMatch;
   bankIn.mmFine        = 0.99; /* doesn't matter since no fine bank yet */
   bankIn.fLower        = (REAL8) fLow;
@@ -509,6 +521,10 @@ int main ( int argc, char *argv[] )
     tmplt->tau4   = (REAL4) coarseList[0].params.t4;
     tmplt->tau5   = (REAL4) coarseList[0].params.t5;
     tmplt->ttotal = (REAL4) coarseList[0].params.tC;
+    tmplt->psi0   = (REAL4) coarseList[0].params.psi0;
+    tmplt->psi3   = (REAL4) coarseList[0].params.psi3;
+    tmplt->f_cut  = (REAL4) coarseList[0].params.fendBCV;
+
     for ( i = 1; i < numCoarse; ++i )
     {
       tmplt = tmplt->next = (SnglInspiralTable *)
@@ -528,6 +544,9 @@ int main ( int argc, char *argv[] )
       tmplt->tau4   = (REAL4) coarseList[i].params.t4;
       tmplt->tau5   = (REAL4) coarseList[i].params.t5;
       tmplt->ttotal = (REAL4) coarseList[i].params.tC;
+      tmplt->psi0   = (REAL4) coarseList[i].params.psi0;
+      tmplt->psi3   = (REAL4) coarseList[i].params.psi3;
+      tmplt->f_cut  = (REAL4) coarseList[i].params.fendBCV;
     }
   }
 
@@ -683,6 +702,14 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "\n"\
 "  --minimum-mass MASS          set minimum component mass of bank to MASS\n"\
 "  --maximum-mass MASS          set maximum component mass of bank to MASS\n"\
+"\n"\
+"  --minimum-psi0 PSI0          set minimum range of BCV parameter psi0 to PSI0\n"\
+"  --maximum-psi0 PSI0          set maximum range of BCV parameter psi0 to PSI0\n"\
+"  --minimum-psi3 PSI3          set minimum range of BCV parameter psi3 to PSI3\n"\
+"  --maximum-psi3 PSI3          set maximum range of BCV parameter psi3 to PSI3\n"\
+"  --maximum-fcut-tmplts N      maximum number of tmplts in fcut direction is N\n"\
+"  --alpha ALPHA                set BCV amplitude correction to ALPHA\n"\
+"\n"\
 "  --minimal-match M            generate bank with minimal match M\n"\
 "\n"\
 "  --order ORDER                set post-Newtonian order of the waveform to ORDER\n"\
@@ -692,7 +719,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "                                 (TaylorT1|TaylorT2|TaylorT3|TaylorF1|TaylorF2|\n"\
 "                                 PadeT1|PadeT2|EOB|BCV|SpinTaylorT3)\n"\
 "  --space SPACE                grid up template bank with mass parameters SPACE\n"\
-"                                 (Tau0Tau2|Tau0Tau3)\n"\
+"                                 (Tau0Tau2|Tau0Tau3|Psi0Psi3)\n"\
 "\n"\
 "  --write-raw-data             write raw data to a frame file\n"\
 "  --write-response             write the computed response function to a frame\n"\
@@ -726,10 +753,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"debug-level",             required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
-    {"resample-filter",         required_argument, 0,                'R'},
+    {"resample-filter",         required_argument, 0,                'r'},
     /* template bank generation parameters */
     {"minimum-mass",            required_argument, 0,                'A'},
     {"maximum-mass",            required_argument, 0,                'B'},
+    {"minimum-psi0",            required_argument, 0,                'P'},
+    {"maximum-psi0",            required_argument, 0,                'Q'},
+    {"minimum-psi3",            required_argument, 0,                'R'},
+    {"maximum-psi3",            required_argument, 0,                'S'},
+    {"maximum-fcut-tmplts",     required_argument, 0,                'U'},
+    {"alpha",                   required_argument, 0,                'T'},
     {"minimal-match",           required_argument, 0,                'C'},
     {"high-frequency-cutoff",   required_argument, 0,                'D'},
     {"order",                   required_argument, 0,                'E'},
@@ -747,6 +780,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   UINT4   haveOrder       = 0;
   UINT4   haveApprox      = 0;
   UINT4   haveSpace       = 0;
+  UINT4   havePsi0Min     = 0;
+  UINT4   havePsi0Max     = 0;
+  UINT4   havePsi3Min     = 0;
+  UINT4   havePsi3Max     = 0;
+  UINT4   haveAlpha       = 0;
+
 
   /*
    *
@@ -762,7 +801,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:c:d:e:g:h:i:j:p:s:t:u:x:z:A:B:C:D:E:F:G:R:Z:", 
+        "a:b:c:d:e:g:h:i:j:p:s:t:u:x:z:A:B:P:Q:R:S:U:T:C:D:E:F:G:r:Z:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -954,7 +993,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
-      case 'R':
+      case 'r':
         if ( ! strcmp( "ldas", optarg ) )
         {
           resampFiltType = 0;
@@ -1069,6 +1108,81 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "float", "%e", maxMass );
         break;
         
+      case 'P':
+        psi0Min = (REAL4) atof( optarg );
+        if ( psi0Min <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "miniumum value of psi0 must be > 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, psi0Min );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", psi0Min );
+        havePsi0Min = 1;
+        break;
+        
+      case 'Q':
+        psi0Max = (REAL4) atof( optarg );
+        if ( psi0Max <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "maximum value of psi0 must be > 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, psi0Max );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", psi0Max );
+        havePsi0Max = 1;
+        break;
+
+      case 'R':
+        psi3Min = (REAL4) atof( optarg );
+        if ( psi0Min <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "miniumum value of psi3 must be < 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, psi3Min );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", psi3Min );
+        havePsi3Min = 1;
+        break;
+        
+      case 'S':
+        psi3Max = (REAL4) atof( optarg );
+        ADD_PROCESS_PARAM( "float", "%e", psi3Max );
+        havePsi3Max = 1;
+        break;
+
+      case 'U':
+        maxFcutTmplts = (INT4) atof( optarg );
+        if ( maxFcutTmplts < 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "number of templates in f_cut direction must be >= 0"
+              "(%d specified)\n",
+              long_options[option_index].name, maxFcutTmplts );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", maxFcutTmplts );
+        break;
+
+      case 'T':
+        alpha = (REAL4) atof( optarg );
+        if ( alpha < -1 || alpha > 1 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "value of alpha must be the range [0:1]"
+              "(%f specified)\n",
+              long_options[option_index].name, alpha );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", alpha );
+        haveAlpha = 1;
+        break;
+
       case 'C':
         minMatch = (REAL4) atof( optarg );
         if ( minMatch <= 0 )
@@ -1199,17 +1313,21 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'G':
         if ( ! strcmp( "Tau0Tau2", optarg ) )
         {
-          approximant = Tau0Tau2;
+          space = Tau0Tau2;
         }
         else if ( ! strcmp( "Tau0Tau3", optarg ) )
         {
-          approximant = Tau0Tau3;
+          space = Tau0Tau3;
+        }
+        else if ( ! strcmp( "Psi0Psi3", optarg ) )
+        {
+          space = Psi0Psi3;
         }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "unknown order specified: "
-              "%s (must be one of: Tau0Tau2 or Tau0Tau3)\n", 
+              "unknown space specified: "
+              "%s (must be one of: Tau0Tau2, Tau0Tau3 or Psi0Psi3)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -1349,27 +1467,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     exit( 1 );
   }
 
-  /* check that the bank parameters have been specified */
-  if ( minMass < 0 )
-  {
-    fprintf( stderr, "--minimum-mass must be specified\n" );
-    exit( 1 );
-  }
-  if ( maxMass < 0 )
-  {
-    fprintf( stderr, "--maximum-mass must be specified\n" );
-    exit( 1 );
-  }
-  if ( minMatch < 0 )
-  {
-    fprintf( stderr, "--minimal-match must be specified\n" );
-    exit( 1 );
-  }
-  if ( fUpper < 0 )
-  {
-    fprintf( stderr, "--high-frequency-cutoff must be specified\n" );
-    exit( 1 );
-  }
+  /* check that the bank type has been specified */
   if ( ! haveOrder )
   {
     fprintf( stderr, "--order must be specified\n" );
@@ -1383,6 +1481,77 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( ! haveSpace )
   {
     fprintf( stderr, "--space must be specified\n" );
+    exit( 1 );
+  }
+
+  /* check that the correct range parameters have been given for the bank */
+  if ( approximant == BCV )
+  {
+    if ( ! havePsi0Min )
+    {
+      fprintf( stderr, "--minimum-psi0 must be specified\n" );
+      exit( 1 );
+    }
+    if ( ! havePsi0Max )
+    {
+      fprintf( stderr, "--maximum-psi0 must be specified\n" );
+      exit( 1 );
+    }
+    if ( ! havePsi3Min )
+    {
+      fprintf( stderr, "--minimum-psi3 must be specified\n" );
+      exit( 1 );
+    }
+    if ( ! havePsi3Max )
+    {
+      fprintf( stderr, "--maximum-psi3 must be specified\n" );
+      exit( 1 );
+    }
+    if ( ! haveAlpha )
+    {
+      fprintf( stderr, "--alpha must be specified\n" );
+      exit( 1 );
+    }
+    if ( maxFcutTmplts < 0 )
+    {
+      fprintf( stderr, "--maximum-fcut-tmplts must be specified\n" );
+      exit( 1 );
+    }
+
+    if ( psi3Max <= psi3Min )
+    {
+      fprintf( stdout, "invalid argument to --maximum-psi3:\n"
+          "maximum value of psi3 must be greater than minimum value of psi3: "
+          "(%f specified)\n",
+          psi3Max );
+      exit( 1 );
+    }
+
+    minMass = maxMass = 0;
+  }
+  else
+  {
+    if ( minMass < 0 )
+    {
+      fprintf( stderr, "--minimum-mass must be specified\n" );
+      exit( 1 );
+    }
+    if ( maxMass < 0 )
+    {
+      fprintf( stderr, "--maximum-mass must be specified\n" );
+      exit( 1 );
+    }
+  }
+
+  /* check that the bank parameters have been specified */
+  if ( minMatch < 0 )
+  {
+    fprintf( stderr, "--minimal-match must be specified\n" );
+    exit( 1 );
+  }
+  if ( fUpper < 0 )
+  {
+    fprintf( stderr, "--high-frequency-cutoff must be specified\n" );
     exit( 1 );
   }
   
