@@ -12,8 +12,8 @@ backgrounds.
 
 \clearpage
 \section{Program \prog{lalapps\_stochastic\_pipe}}
-\label{program:stochastic-pipeline}
-\idx[Program]{stochastic\_pipeline.py}
+\label{program:lalapps-stochastic-pipe}
+\idx[Program]{lalapps\_stochastic\_pipe}
 
 \begin{entry}
 \item[Name]
@@ -71,8 +71,8 @@ Adam Mercer
 
 \clearpage
 \section{Program \prog{lalapps\_stochastic\_bayes}}
-\label{program:stochastic-pipeline}
-\idx[Program]{stochastic\_pipeline.py}
+\label{program:lalapps-stochastic-bayes}
+\idx[Program]{lalapps\_stochastic\_bayes}
 
 \begin{entry}
 \item[Name]
@@ -281,9 +281,44 @@ Set the knee frequency for the GEO high pass filter to \parm{N}
 Set the attenuation coefficient for the GEO high pass filter to \parm{N}
 \item[\option{--geo-hpf-order} \parm{N}]
 Set the GEO high pass filter order to \parm{N}
-
 \end{entry}
 
 \item[Author] 
 Adam Mercer, Tania Regimbau
+\end{entry}
+
+\clearpage
+\section{Program \prog{lalapps\_stopp}}
+\label{program:lalapps-stopp}
+\idx[Program]{lalapps\_stopp}
+
+\begin{entry}
+\item[Name]
+\prog{lalapps\_stopp} --- Stochastic Post Processing.
+
+\item[Synopsis]
+\prog{lalapps\_stopp} \parm{options} \parm{xml files}\newline \hspace*{0.5in}
+\option{--help} \newline \hspace*{0.5in}
+\option{--version} \newline \hspace*{0.5in}
+\option{--text} \newline \hspace*{0.5in}
+\option{--output} \parm{FILE}
+
+\item[Description] \prog{lalapps\_stopp}
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\option{--help}]
+Display usage information
+\item[\option{--version}]
+Display version information
+\item[\option{--text}]
+Output file as text
+\item[\option{--output} \parm{FILE}]
+write output data to \parm{FILE}
+\end{entry}
+
+\item[Example]
+
+\item[Author]
+Adam Mercer
 \end{entry}
