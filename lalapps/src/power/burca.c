@@ -35,7 +35,7 @@ RCSID("$Id$");
 --drho-plus dRhoPlus --drho-minus dRhoMinus --dt deltat \
 --outfile outfilename --noplayground [--help]\n"
 
-
+         
 /****************************************************************************
  * FUNCTION TESTS IF TRIGGER IS IN PLAYGROUND DATA
  ***************************************************************************/
@@ -57,7 +57,7 @@ static int isPlayground(INT4 gpsStart, INT4 gpsEnd){
     return FALSE;
 }
 
-
+ 
 /************************************************************************************
  * The main program
  ***********************************************************************************/
