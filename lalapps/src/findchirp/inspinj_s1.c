@@ -324,6 +324,7 @@ int inj_params( double *injPar )
 
 #define UNITS "msun,none,m,rad,rad,rad,rad,rad"
 struct time_list { long long tinj; struct time_list *next; };
+int lalDebugLevel = 0;
 
 int main( int argc, char *argv[] )
 {
