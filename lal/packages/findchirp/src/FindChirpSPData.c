@@ -530,11 +530,11 @@ LALFindChirpSPData (
     }
 
     /* set output frequency series parameters */
-    fcSeg->data->epoch  = dataSeg->data->epoch;
-    fcSeg->data->f0     = dataSeg->data->f0;
+    fcSeg->data->epoch  = dataSeg->real4Data->epoch;
+    fcSeg->data->f0     = dataSeg->real4Data->f0;
     fcSeg->data->deltaF = 1.0 / 
-      ( (REAL8) dataSeg->data->data->length * dataSeg->data->deltaT ) ;
-    fcSeg->deltaT       = dataSeg->data->deltaT;
+      ( (REAL8) dataSeg->real4Data->data->length * dataSeg->real4Data->deltaT ) ;
+    fcSeg->deltaT       = dataSeg->real4Data->deltaT;
     fcSeg->number       = dataSeg->number;;
 
 
