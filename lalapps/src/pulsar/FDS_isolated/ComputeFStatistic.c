@@ -50,6 +50,7 @@ RCSID( "$Id$");
 
 BOOLEAN FILE_FSTATS = 1;
 /*
+#define FINDFWHM
 #define FILE_FMAX
 #define FILE_FLINES
 #define FILE_FTXT 
@@ -2410,6 +2411,32 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
 /*    Normalize */
   TwoFthr*=0.5/log2;
 
+#ifdef FINDFWHM /* Find the full-width-at-half-maximum */
+  {INT4 ic;
+  REAL8 leftEdgeFreq=0.0, rightEdgeFreq=10000.0, outlierFWHM=0.0;
+  REAL8 leftEdgeTwoF=0.0, rightEdgeTwoF=0.0, maximumTwoF=0.0;
+
+  ic=0;
+  while( Fstat.F[ic] <= 0.5 * Fstat.F[indexes[0]] ) {
+    ic++;
+  } 
+  if( ic==0 ) {fprintf(stderr,"Warning: Search frequency band may be too small to cover the outlier.\n");}
+  leftEdgeTwoF = Fstat.F[ic];
+  leftEdgeFreq = uvar_Freq+ic*GV.dFreq;
+
+  ic=GV.FreqImax-1;
+  while( Fstat.F[ic] <= 0.5 * Fstat.F[indexes[0]] ) {
+    ic--;
+  } 
+  if( ic==GV.FreqImax-1 ) {fprintf(stderr,"Warning: Search frequency band may be too small to cover the outlier.\n");}
+  rightEdgeTwoF = Fstat.F[ic];
+  rightEdgeFreq = uvar_Freq+ic*GV.dFreq;
+  maximumTwoF= Fstat.F[indexes[0]];
+  outlierFWHM = rightEdgeFreq - leftEdgeFreq;
+  fprintf(stdout,"%15.9f %22.6f %15.9f %22.6f %22.6f %15.9f\n",leftEdgeFreq,leftEdgeTwoF,rightEdgeFreq,rightEdgeTwoF,maximumTwoF,outlierFWHM);
+  }
+#endif
+
 #ifdef FILE_FMAX
   {
     INT4 ntop,err;
@@ -2543,6 +2570,7 @@ EstimateFLines(LALStatus *stat)
     F1->data[j]=Fstat.F[j];
     FloorF1->data[j]=1.0;
   }
+
   
   F1->length=nbins;
   FloorF1->length=nbins;
