@@ -1,5 +1,5 @@
 /*  <lalVerbatim file="LALEOBWaveformCV">
-Author: Sathyaprakash, B. S.
+Author: Sathyaprakash, B. S., Cokelaer T.
 $Id$
 </lalVerbatim>  */
 
@@ -25,6 +25,17 @@ Module to generate effective-one-body waveforms.
 \item {\tt signal2:} Output containing the $\pi/2$-phase inspiral waveform.
 \item {\tt params:} Input containing binary chirp parameters.
 \end{itemize}
+
+\input{LALEOBWaveformForInjectionCP}
+\index{\verb&LALEOBWaveformForInjection()&}
+\begin{itemize}
+\item {\tt inject_hc:} Output containing the 0-phase inspiral waveform.
+\item {\tt inject_hp:} Output containing the $\pi/2$-phase inspiral waveform.
+\item {\tt inject_phase:} Output containing the phase of inspiral waveform.
+\item {\tt inject_freq:} Output containing the frequency of inspiral waveform.
+\item {\tt params:} Input containing binary chirp parameters.
+\end{itemize}
+
 
 \subsubsection*{Description}
 By solving four coupled ordinary differential equations in
@@ -72,7 +83,7 @@ typedef struct tagrOfOmegaIn {
 } rOfOmegaIn;
 
 typedef struct tagPr3In {
-  REAL8 eta, omegaS, omega, vr,r,q;
+  REAL8 eta, zeta2, omegaS, omega, vr,r,q;
   InspiralDerivativesIn in3copy; 
 } pr3In;
 
@@ -84,7 +95,7 @@ static void LALrOfOmega (LALStatus *status, REAL8 *x, REAL8 r, void *params);
 
 static void LALHCapDerivatives3PN(REAL8Vector *values, REAL8Vector *dvalues, void *funcParams);
 static void LALprInit3PN(LALStatus *status, REAL8 *pr , REAL8 , void  *params);
-static void LALpphiInit3PN(REAL8 *phase, REAL8 r, REAL8 eta);
+static void LALpphiInit3PN(REAL8 *phase, REAL8 r, REAL8 eta, REAL8 omegaS);
 static void LALlightRingRadius3PN(LALStatus *status, REAL8 *x, REAL8 r, void *params);
 static void LALrOfOmega3PN (LALStatus *status, REAL8 *x, REAL8 r, void *params);
 static void LALvr3PN(REAL8 *vr, void *params);
@@ -245,11 +256,12 @@ LALHCapDerivatives(
 LALpphiInit3PN(
 	    REAL8 *phase,
 	    REAL8 r,
-	    REAL8 eta
+	    REAL8 eta,
+	    REAL8 omegaS
 	    )
 {
   REAL8 u, u2, u3,  a4, a4p4eta, a4peta2, NA, DA, A, dA;
-  REAL8 omegaS = 0;
+  
 
   u = 1./r;
   u2 = u*u;
@@ -325,10 +337,17 @@ void
 omegaofr3PN (
 	     REAL8 *x,
 	     REAL8 r, 
-	     REAL8 eta) 
+	     void *params) 
 {
-   REAL8 u, u2, u3, a4, a4p4eta, a4peta2, NA, DA, A, dA;
-   REAL8   omegaS = 0;
+   REAL8 u, u2, u3, a4, a4p4eta, a4peta2, eta, NA, DA, A, dA;
+   REAL8   omegaS;
+
+//include a status here ?
+   pr3In *ak;
+   ak = (pr3In *) params;
+   omegaS = ak->omegaS;
+   eta = ak->eta;
+
    u = 1./r;
    u2 = u*u;
    u3 = u2*u;
@@ -359,7 +378,7 @@ LALrOfOmega3PN(
   eta = rofomegain->eta;
 
   omega1 = rofomegain->omega;
-  omegaofr3PN(&omega2,r, eta);
+  omegaofr3PN(&omega2,r, params);
   *x = -omega1 + omega2;
 
 }
@@ -410,9 +429,9 @@ LALHCapDerivatives3PN(
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
-
-   zeta2 = 0;
-   omegaS = 0;
+   zeta2 = ak->coeffs->zeta2;
+   omegaS = ak->coeffs->omegaS;
+   
    r = values->data[0];
    s = values->data[1];
    p = values->data[2];
@@ -691,7 +710,7 @@ switch (params->order)
        break;
      case threePN:
      case threePointFivePN:
-       LALpphiInit3PN(&q,r,eta);
+       LALpphiInit3PN(&q,r,eta, params->OmegaS);
        rootIn.function = LALprInit3PN;
        rootIn.xmax = 5;
        rootIn.xmin = -10;
@@ -969,7 +988,7 @@ Userful for debugging: Make sure a solution for r exists.
        break;
      case threePN:
      case threePointFivePN:
-       LALpphiInit3PN(&q,r,eta);
+       LALpphiInit3PN(&q,r,eta, params->OmegaS);
        rootIn.function = LALprInit3PN;
        rootIn.xmax = 5;
        rootIn.xmin = -10;
@@ -978,7 +997,8 @@ Userful for debugging: Make sure a solution for r exists.
        pr3in.eta = eta;
        pr3in.omegaS = params->OmegaS;
        pr3in.r = r;
-       pr3in.q = q; 
+       pr3in.q = q;
+       pr3in.zeta2 = params->Zeta2;
        pr3in.omega = omega;
        LALvr3PN(&pr3in.vr,(void *) &pr3in);
        /* then we compute the initial value of p */
@@ -1063,6 +1083,301 @@ Record the final cutoff frequency of BD Waveforms for record keeping
       count++;
    }
 
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
+   LALFree(dummy.data);
+}
+
+
+/*=========================================================*/
+/*=========================================================*/
+/*======INJECTION =========================================*/
+/*=========================================================*/
+
+/*  <lalVerbatim file="LALEOBWaveformCP"> */
+void 
+LALEOBWaveformForInjection (
+			    LALStatus        *status,
+			    REAL4Vector      *inject_hc,
+			    REAL4Vector      *inject_hp,
+			    REAL4Vector      *inject_phase,
+			    REAL4Vector      *inject_freq,
+			    InspiralTemplate *params
+			    ) 
+{ 
+  /* </lalVerbatim> */
+  INT4 count, nn=4;
+  REAL8 amp, eta, m, rn, r, rOld, s, p, q, dt, t, h1, h2, v, omega, f;
+  REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
+  TofVIn in1;
+  InspiralPhaseIn in2;
+  InspiralDerivativesIn in3;
+  rk4In in4;
+  pr3In pr3in; 
+  void *funcParams;
+  expnCoeffs ak;
+  expnFunc func;
+  rOfOmegaIn rofomegain;
+  DFindRootIn rootIn;
+  /* 2 Additional lines of code to convert the EOB frequency 
+     into physical frequency for the inject package */
+  REAL8 unitHz; 
+  unitHz = (params->mass1 +params->mass2) *LAL_MTSUN_SI*(REAL8)LAL_PI;
+
+  INITSTATUS(status, "LALEOBWaveformTemplates", LALEOBWAVEFORMTEMPLATESC);
+  ATTATCHSTATUSPTR(status);
+
+  ASSERT(inject_hc,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(inject_hp,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(inject_hc->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(inject_hp->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  
+  ASSERT(inject_phase,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(inject_freq,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(inject_freq->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(inject_phase->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  
+
+  ASSERT(params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(params->nStartPad >= 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->nEndPad >= 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->fLower > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->tSampling > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->totalMass > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
+  LALInspiralSetup (status->statusPtr, &ak, params);
+  CHECKSTATUSPTR(status);
+  LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
+  CHECKSTATUSPTR(status);
+
+  ASSERT(ak.totalmass/LAL_MTSUN_SI > 0.4, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(ak.totalmass/LAL_MTSUN_SI < 100, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  
+  /* Allocate all the memory required to dummy and then point the various
+     arrays to dummy - this makes it easier to handle memory failures */
+  
+  dummy.length = nn * 6;
+  
+  values.length = dvalues.length = newvalues.length =
+    yt.length = dym.length = dyt.length = nn;
+  
+  if (!(dummy.data = (REAL8 * ) LALMalloc(sizeof(REAL8) * nn * 6))) {
+    ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
+  }
+
+  values.data = &dummy.data[0];
+  dvalues.data = &dummy.data[nn];
+  newvalues.data = &dummy.data[2*nn];
+  yt.data = &dummy.data[3*nn];
+  dym.data = &dummy.data[4*nn];
+  dyt.data = &dummy.data[5*nn];
+  
+  dt = 1./params->tSampling;
+  eta = ak.eta;
+  m = ak.totalmass;
+  
+  t = 0.0;
+  in1.t = t;
+  in1.t0 = ak.t0;
+  in1.v0 = ak.v0;
+  in1.vlso = ak.vlso;
+  in1.totalmass = ak.totalmass;
+  in1.dEnergy = func.dEnergy;
+  in1.flux = func.flux;
+  in1.coeffs = &ak;
+
+  LALInspiralVelocity(status->statusPtr, &v, &in1);
+  CHECKSTATUSPTR(status);
+  
+  omega = pow(v,3.);
+  f = omega/(LAL_PI*m);
+  
+  in2.v0 = ak.v0;
+  in2.phi0 = params->startPhase;
+  in2.dEnergy = func.dEnergy;
+  in2.flux = func.flux;
+  in2.coeffs = &ak;
+  LALInspiralPhasing1(status->statusPtr, &s, v, &in2);
+  CHECKSTATUSPTR(status);
+  s = s/2.;
+  
+  rofomegain.eta = eta;
+  rofomegain.omega = omega;
+  
+  
+  rootIn.xacc = 1.0e-16;
+  switch (params->order)
+    {
+    case twoPN:
+    case twoPointFivePN:
+      rootIn.function = LALlightRingRadius;
+      break;
+    case threePN:
+      rootIn.function = LALlightRingRadius3PN;
+      break;
+    default:
+      fprintf(stderr, "There are no EOB waveforms implemented at order %d\n", params->order);
+      exit(0);
+    }
+  rootIn.xmax = 2.;
+  rootIn.xmin = 4.;
+  funcParams = (void *) &rofomegain;
+
+  LALDBisectionFindRoot(status->statusPtr, &rn, &rootIn, funcParams);
+  CHECKSTATUSPTR(status);
+  
+  switch (params->order)
+    {
+    case twoPN:
+    case twoPointFivePN:
+      rootIn.function = LALrOfOmega;
+      break;
+    case threePN:
+      rootIn.function = LALrOfOmega3PN;
+      break;
+    default:
+      fprintf(stderr, "There are no EOB waveforms implemented at order %d\n", params->order);
+      exit(0);
+    }
+  rootIn.xmax = 100.;
+  rootIn.xmin = 6.;
+  LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, funcParams);
+  CHECKSTATUSPTR(status);
+  
+  params->rInitial = r;
+  params->vInitial = v;
+  params->rLightRing = rn;
+  
+  in3.totalmass = ak.totalmass;
+  in3.dEnergy = func.dEnergy;
+  in3.flux = func.flux;
+  in3.coeffs = &ak;
+  funcParams = (void *) &in3;
+
+
+  switch (params->order)
+    {
+    case twoPN:
+    case twoPointFivePN:
+      LALpphiInit(&q, r, eta);
+      LALprInit(&p, r, &in3);
+      in4.function = LALHCapDerivatives;
+      break;
+    case threePN:
+    case threePointFivePN:
+      LALpphiInit3PN(&q,r,eta, params->OmegaS);
+      rootIn.function = LALprInit3PN;
+      rootIn.xmax = 5;
+      rootIn.xmin = -10;
+      /* first we compute vr (we need coeef->Fp6) */
+      pr3in.in3copy = in3; 
+      pr3in.eta = eta;
+      pr3in.omegaS = params->OmegaS;
+      pr3in.r = r;
+      pr3in.q = q; 
+      pr3in.zeta2 = params->Zeta2;
+      pr3in.omega = omega;
+      LALvr3PN(&pr3in.vr,(void *) &pr3in);
+      /* then we compute the initial value of p */
+      LALDBisectionFindRoot(status->statusPtr, &p, &rootIn,(void *) &pr3in );
+      CHECKSTATUSPTR(status);
+      in4.function = LALHCapDerivatives3PN;
+      break;
+    default:
+      fprintf(stderr, "There are no EOB waveforms at order %d\n", params->order);
+      exit(0);
+    }
+
+
+  values.data[0] = r;
+  values.data[1] = s;
+  values.data[2] = p;
+  values.data[3] = q;
+  
+  
+  in4.function = LALHCapDerivatives;
+  in4.y = &values;
+  in4.h = dt/m;
+  in4.n = nn;
+  in4.yt = &yt;
+  in4.dym = &dym;
+  in4.dyt = &dyt;
+
+  
+  t = 0.0;
+  count = 0;
+  while (count < params->nStartPad) 
+    {
+      *(inject_hc->data + count) = 
+	*(inject_hp->data + count) = 
+	*(inject_phase ->data +count) =
+	*(inject_freq->data +count) = 0.;
+      count++;
+    }
+         
+    CHECKSTATUSPTR(status);
+         
+
+  t = 0.0;
+  rOld = r+0.1;
+  while (r>=rn && r<rOld) {
+    ASSERT(count< (INT4)inject_hc->length, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+    rOld = r;
+         
+ 
+    if (params->order<threePN) LALHCapDerivatives(&values, &dvalues, funcParams);
+    else  LALHCapDerivatives3PN(&values, &dvalues, funcParams);
+    CHECKSTATUSPTR(status);
+         
+
+
+    
+    v = pow(omega, oneby3);
+    amp = params->signalAmplitude *v*v;
+    h1 = amp * cos(2.*s);
+    h2 = amp * cos(2.*s + LAL_PI_2);  
+         
+
+    *(inject_hc->data + count) = (REAL4) amp;
+    *(inject_hp->data + count) = (REAL4) amp;
+    *(inject_phase->data + count) = (REAL8) (2.*s);
+    *(inject_freq->data + count) = (REAL4) omega / unitHz;
+         
+
+    omega = dvalues.data[1];
+    in4.dydx = &dvalues;
+    in4.x = t/m;
+    LALRungeKutta4(status->statusPtr, &newvalues, &in4, funcParams);
+    CHECKSTATUSPTR(status);
+         
+
+    
+    r = values.data[0] = newvalues.data[0];
+    s = values.data[1] = newvalues.data[1];
+    p = values.data[2] = newvalues.data[2];
+    q = values.data[3] = newvalues.data[3];
+    
+    t = (++count-params->nStartPad) * dt;
+
+   }  
+  
+  /*----------------------------------------------------------------- 
+    Record the final cutoff frequency of BD Waveforms for record keeping 
+    -----------------------------------------------------------------*/
+
+
+  params->rFinal = rOld;
+  params->fFinal = pow(v,3.)/(LAL_PI*m);
+  params->vFinal = v;
+    while (count < (INT4)inject_hc->length) 
+    {
+      *(inject_hc->data + count) = 
+	*(inject_hp->data + count) = 
+	*(inject_phase ->data +count) =
+	*(inject_freq->data +count) =0.;
+      count++;
+    }
+  
    DETATCHSTATUSPTR(status);
    RETURN(status);
    LALFree(dummy.data);

@@ -438,6 +438,7 @@ tagInspiralTemplate
    REAL8 rLightRing;
    REAL8 OmegaS;
    REAL8 Theta;
+   REAL8 Zeta2;
    InputMasses massChoice;
    Order order;
    Approximant approximant;
@@ -532,7 +533,7 @@ tagexpnCoeffs {
    /* symmetric mass ratio, total mass, component masses*/
    REAL8 eta, totalmass, m1, m2;
    /* unknown 3PN parameters, euler constant*/
-   REAL8 lambda, theta, EulerC, omegaS;
+   REAL8 lambda, theta, EulerC, omegaS, zeta2;
 
    /* initial and final values of frequency, time, velocity; lso
     values of velocity and frequency; final phase.*/
@@ -822,6 +823,14 @@ void LALEOBWaveformTemplates(
      LALStatus *status,
      REAL4Vector *signal1,
      REAL4Vector *signal2,
+     InspiralTemplate *params);
+
+void LALEOBWaveformForInjection(
+     LALStatus *status,
+     REAL4Vector *,
+     REAL4Vector *,
+     REAL4Vector *,
+     REAL4Vector *,
      InspiralTemplate *params);
 
 /*  <lalLaTeX>
