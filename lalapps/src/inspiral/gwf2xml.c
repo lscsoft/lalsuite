@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------------- 
  * 
- * File Name: frame2xml.c
+ * File Name: gwf2xml.c
  *
  * Author: Fairhurst, S
  *
@@ -25,7 +25,7 @@
 
 
 #define USAGE \
-"Usage: inputOutput [options]\n"\
+"Usage: gwf2xml [options]\n"\
   "\n"\
   "  --help                 display this message\n"\
   "  --input FILE           read input data from frame FILE\n"\
@@ -172,7 +172,7 @@ int main( int argc, char *argv[] )
       {"help",                    no_argument,            0,              'h'},
       {"input",                   required_argument,      0,              'i'},
       {"output",                  required_argument,      0,              'o'},
-      {"snr-threshold",            required_argument,      0,              's'},
+      {"snr-threshold",           required_argument,      0,              's'},
       {0, 0, 0, 0}
     };
     int c;
