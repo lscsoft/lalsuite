@@ -967,6 +967,9 @@ void LALStochasticMCDsoSplice (LALStatus *status,
     /* generate whitened simulated SB data */     
     LALSSSimStochBGTimeSeries(status->statusPtr, &SBOutput, &SBInput, &SBParams);
 
+		/* initialise m */
+		m = 0;
+
 		if (loop%2==0)
 		{
 			m = (UINT4)(loop/2);
