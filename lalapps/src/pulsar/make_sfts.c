@@ -79,7 +79,7 @@ RealFFTPlan *pfwd = NULL;
 
 /* Need prototype: this is POSIX not ANSI, sigh */
 #include <unistd.h>
-int gethostname(char *name, size_t len);
+/* int gethostname(char *name, size_t len); */
 
 /* This is an error handler that prints a bit of extra info */
 void pout(char *fmt, ...)  
