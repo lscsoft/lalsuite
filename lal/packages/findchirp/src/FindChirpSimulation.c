@@ -228,9 +228,9 @@ LALFindChirpInjectSignals (
 
 
     /* input fields */
-    ppnParams.mTot = thisEvent->mtotal;
+    ppnParams.mTot = thisEvent->mass1 + thisEvent->mass2;
     ppnParams.eta  = thisEvent->eta;
-    ppnParams.d    = thisEvent->distance;
+    ppnParams.d    = thisEvent->distance * 1.0e6 * LAL_PC_SI;
     ppnParams.inc  = thisEvent->inclination;
     ppnParams.phi  = thisEvent->coa_phase;
 

@@ -389,7 +389,6 @@ tagSimInspiralTable
   CHAR           source[LIGOMETA_SOURCE_MAX];
   REAL4          mass1;
   REAL4          mass2;
-  REAL4          mtotal;
   REAL4          eta;
   REAL4          distance;
   REAL4          longitude;

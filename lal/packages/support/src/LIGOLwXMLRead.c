@@ -1022,16 +1022,17 @@ SimInspiralTableFromLIGOLw (
     {"l_end_time_ns",	    -1, 6},
     {"end_time_gmst",	    -1,	7},
     {"source",		    -1, 8},
-    {"mtotal",              -1, 9},
-    {"eta",                 -1, 10},
-    {"distance",            -1, 11},
-    {"longitude",           -1, 12},
-    {"latitude",            -1, 13},
-    {"inclination",         -1, 14},
-    {"coa_phase",           -1, 15},
-    {"polarization",        -1, 16},
-    {"eff_dist_h",	    -1, 17},
-    {"eff_dist_l",	    -1, 18},
+    {"mass1",               -1, 9},
+    {"mass2",               -1, 10},
+    {"eta",                 -1, 11},
+    {"distance",            -1, 12},
+    {"longitude",           -1, 13},
+    {"latitude",            -1, 14},
+    {"inclination",         -1, 15},
+    {"coa_phase",           -1, 16},
+    {"polarization",        -1, 17},
+    {"eff_dist_h",	    -1, 18},
+    {"eff_dist_l",	    -1, 19},
     {NULL,                   0, 0}
   };
 
@@ -1145,41 +1146,45 @@ SimInspiralTableFromLIGOLw (
 	  }
 	  else if ( tableDir[j].idx == 9 )
 	  {
-	    thisSim->mtotal = r4colData;
+	    thisSim->mass1 = r4colData;
           }
-          else if ( tableDir[j].idx == 10 )
-          {
-            thisSim->eta = r4colData;
+	  else if ( tableDir[j].idx == 10 )
+	  {
+	    thisSim->mass2 = r4colData;
           }
           else if ( tableDir[j].idx == 11 )
           {
-	    thisSim->distance = r4colData;
+            thisSim->eta = r4colData;
           }
           else if ( tableDir[j].idx == 12 )
           {
-            thisSim->longitude = r4colData;
+	    thisSim->distance = r4colData;
           }
           else if ( tableDir[j].idx == 13 )
           {
-            thisSim->latitude = r4colData;
+            thisSim->longitude = r4colData;
           }
           else if ( tableDir[j].idx == 14 )
           {
-            thisSim->inclination = r4colData;
+            thisSim->latitude = r4colData;
           }
           else if ( tableDir[j].idx == 15 )
           {
-            thisSim->coa_phase = r4colData;
+            thisSim->inclination = r4colData;
           }
           else if ( tableDir[j].idx == 16 )
           {
+            thisSim->coa_phase = r4colData;
+          }
+          else if ( tableDir[j].idx == 17 )
+          {
             thisSim->polarization = r4colData;
           }
-	  else if ( tableDir[j].idx == 17 )
+	  else if ( tableDir[j].idx == 18 )
           {
             thisSim->eff_dist_h = r4colData;
           }
-	  else if ( tableDir[j].idx == 18 )
+	  else if ( tableDir[j].idx == 19 )
           {
             thisSim->eff_dist_l = r4colData;
           }
