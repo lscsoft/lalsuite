@@ -18,8 +18,8 @@ define(`FUNC',`format(`%sArrayFactoriesTest',TYPECODE)')
 
 void FUNC ( void )
 {
-  UINT4          dims[3]    = { 1, 2, 4 };
-  UINT4          dbad[3]    = { 1, 0, 4 };
+  static UINT4   dims[3]    = { 1, 2, 4 };
+  static UINT4   dbad[3]    = { 1, 0, 4 };
   UINT4Vector    dimLength  = { 3, dims };
   UINT4Vector    badLength1 = { 3, NULL };
   UINT4Vector    badLength2 = { 0, dims };
