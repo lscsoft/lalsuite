@@ -368,6 +368,17 @@ extern "C" {
 #define SUMM_VALUE_ROW \
 "         \"%s\",\"process:process_id:0\",%d,%d,%d,%d,\"%s\",\"%s\",%e,\"%s\""
 
+#define LIGOLW_XML_SIM_INST_PARAMS \
+"   <Table Name=\"sim_inst_paramsgroup:sim_inst_params:table\">\n" \
+"      <Column Name=\"sim_inst_paramsgroup:sim_inst_params:simulation_id\" Type=\"ilwd:char\"/>\n" \
+"      <Column Name=\"sim_inst_paramsgroup:sim_inst_params:name\" Type=\"lstring\"/>\n" \
+"      <Column Name=\"sim_inst_paramsgroup:sim_inst_params:comment\" Type=\"lstring\"/>\n" \
+"      <Column Name=\"sim_inst_paramsgroup:sim_inst_params:value\" Type=\"real_8\"/>\n" \
+"      <Stream Name=\"sim_inst_paramsgroup:sim_inst_params:table\" Type=\"Local\" Delimiter=\",\">\n"
+
+#define SIM_INST_PARAMS_ROW \
+"         \"sim_inst:simulation_id:0\",\"%s\",\"%s\",\"%22.16e\""
+
 #ifdef  __cplusplus
 #pragma {
 }

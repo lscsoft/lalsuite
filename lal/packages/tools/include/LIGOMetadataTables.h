@@ -74,6 +74,8 @@ NRCSID( LIGOMETADATATABLESH, "$Id$" );
 #define LIGOMETA_SOURCE_MAX 17
 #define LIGOMETA_WAVEFORM_MAX 25
 #define LIGOMETA_COORDINATES_MAX 16
+#define LIGOMETA_SIMINSTPARAMS_NAME_MAX 25
+#define LIGOMETA_SIMINSTPARAMS_COMM_MAX 65
 
 #if 0
 <lalLaTeX>
@@ -104,7 +106,8 @@ typedef enum
   multi_inspiral_table,
   sim_inspiral_table,
   sim_burst_table,
-  summ_value_table
+  summ_value_table,
+  sim_inst_params_table,
 }
 MetadataTableType;
 /*</lalVerbatim> */
@@ -514,6 +517,26 @@ SummValueTable;
 
 Document table.
 
+\subsubsection*{Type \texttt{SimInstParamsTable}}
+
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
+typedef struct
+tagSimInstParamsTable
+{
+  struct tagSimInstParamsTable *next;
+  CHAR          name[LIGOMETA_SIMINSTPARAMS_NAME_MAX];
+  CHAR          comment[LIGOMETA_SIMINSTPARAMS_COMM_MAX];
+  REAL8         value;
+}
+SimInstParamsTable;
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+
+Document table.
+
 \subsubsection*{Type \texttt{MetadataTable}}
 
 </lalLaTeX>
@@ -533,6 +556,7 @@ tagMetadataTable
   SimBurstTable         *simBurstTable;
   SnglTransdataTable    *snglTransdataTable;
   SummValueTable        *summValueTable;
+  SimInstParamsTable    *simInstParamsTable;
 }
 MetadataTable;
 /* </lalVerbatim> */

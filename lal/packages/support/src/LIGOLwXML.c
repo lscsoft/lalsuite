@@ -171,6 +171,9 @@ LALBeginLIGOLwXMLTable (
     case summ_value_table:
       fprintf( xml->fp, LIGOLW_XML_SUMM_VALUE );
       break;
+    case sim_inst_params_table:
+      fprintf( xml->fp, LIGOLW_XML_SIM_INST_PARAMS );
+      break;
     default:
       ABORT( status, LIGOLWXMLH_EUTAB, LIGOLWXMLH_MSGEUTAB );
   }
@@ -478,6 +481,18 @@ LALWriteLIGOLwXMLTable (
             tablePtr.summValueTable->comment
             );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
+      }
+      break;
+    case sim_inst_params_table:
+      while( tablePtr.simInstParamsTable )
+      {
+        FIRST_TABLE_ROW
+        fprintf( xml->fp, SIM_INST_PARAMS_ROW,
+            tablePtr.simInstParamsTable->name,
+            tablePtr.simInstParamsTable->comment,
+            tablePtr.simInstParamsTable->value
+            );
+        tablePtr.simInstParamsTable = tablePtr.simInstParamsTable->next;
       }
       break;
     default:
