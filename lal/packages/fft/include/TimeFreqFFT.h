@@ -133,7 +133,7 @@ to compute the power spectra.
 \item[\texttt{AvgSpecMethod method}] The method of computing the average
 as describe above.
 
-\item[\texttt{RealFFTPlan }] The FFT plan to be used in the computation
+\item[\texttt{RealFFTPlan *plan}] The FFT plan to be used in the computation
 of the power spectrum.
 
 \end{description}
