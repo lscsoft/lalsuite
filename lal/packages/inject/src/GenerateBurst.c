@@ -52,6 +52,8 @@ LALSnprintf()
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GenerateBurst.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/RealFFT.h>
+
 
 NRCSID( GENERATEBURSTC, "$Id$" );
 
@@ -105,6 +107,8 @@ LALGenerateBurst(
   {
     ABORT(stat, GENERATEBURSTH_EMEM, GENERATEBURSTH_MSGEMEM );
   }
+  /* notice the factor of 2 in the definition of n confusingly makes injections 
+     twice as long as the variable duration */
 
   /* start time of data is peak time duration */
   TRY( LALFloatToInterval( stat->statusPtr, &dummyInterval, &duration ), stat );
@@ -272,15 +276,75 @@ LALGenerateBurst(
           &(simBurst->geocent_peak_time), &startTime ), stat );
     TRY( LALIntervalToFloat( stat->statusPtr, &t0, 
           &dummyInterval ), stat );
-    for ( i = 0; i < n; i++ )
+
+    /* I use the simburst table as follows: The duration is still
+       dtplus+dtminus; hpeak is the amplitude of the cusp, not the
+       value of the strain at the peak, t0 is the central time of the
+       cusp, which introduces a phase into the waveform. The low
+       frequency cutoff will be fixed at 10Hz there's nothing special
+       about 10Hz except that it low compared to the ferquecny at which
+       we should be high-passing the data; the high frequency cutoff
+       is given by f0 */
     {
-      t = i * dt;
-      gtime = fabs( t - t0 );
-      *fData++   = 0.0;
-      *phiData++ = 0.0;
-      *aData++ = hpeak * (pow ( pow(duration,2)+pow(1/f0,2),1./6.) -
-			  pow ( pow(gtime,2)   +pow(1/f0,2),1./6.) ); 
-      *aData++   = 0;
+      REAL4Vector *vector = NULL;
+      COMPLEX8Vector *vtilde = NULL;
+      REAL4 dfreq=1/(2*duration); /* the factor of two here is becaus the length of injections 
+				     is actually twice the value of the variable duration */
+      RealFFTPlan *rplan=NULL;
+      REAL4 flow=10;
+
+      /* create vector that will hold frequency domain template */
+      TRY( LALCCreateVector( stat->statusPtr, &vtilde, n / 2 + 1 ), stat );
+
+      for (i=0; i < vtilde->length-1; i++)
+	{
+	  REAL4 freq=i*dfreq;
+          /* Set the FD template */
+	  vtilde->data[i].re = hpeak *  pow((sqrt(1+pow(flow,2)*pow(freq,-2))),-4) * 2 * 1/(1+exp(freq/f0)) * pow(freq,-4.0/3.0); 
+
+	  vtilde->data[i].im = vtilde->data[i].re * sin(-LAL_TWOPI*freq*duration);
+	  vtilde->data[i].re = vtilde->data[i].re * cos(-LAL_TWOPI*freq*duration);
+	}
+
+      /* set dc to zero */
+      vtilde->data[0].re = 0;
+      vtilde->data[0].im = 0;
+      /* set nyquist to zero */
+      vtilde->data[vtilde->length - 1].re = 0;
+      vtilde->data[vtilde->length - 1].im = 0;
+
+      /* Create vector to store h(t) */
+      TRY( LALSCreateVector( stat->statusPtr, &vector, n ), stat );
+
+      /* Create fft plan */
+      TRY( LALCreateReverseRealFFTPlan( stat->statusPtr, &rplan, n, 0 ), stat );
+      /* Reverse FFT */
+      TRY( LALReverseRealFFT( stat->statusPtr, vector, vtilde,  rplan), stat );
+
+      /* multiply times dfreq to make sure units are correct */
+      for ( i = 0 ; i < vector->length; i++ )
+	vector->data[i] *= dfreq;
+ 
+      /* make sure injection starts precisely at 0 */
+      for ( i = 0 ; i < vector->length; i++ )
+	vector->data[i] -= vector->data[0]; 
+
+/*       for ( i = 0 ; i < vector->length; i++ ) */
+/* 	fprintf(stdout,"%e\n",vector->data[i]); */
+/*       fflush(stdout); */
+
+      for ( i = 0; i < n; i++ )
+	{
+	  *fData++   = 0.0;
+	  *phiData++ = 0.0;
+	  *aData++ = vector->data[i];
+	  *aData++ = 0;
+	}
+
+      /* free the data */
+      TRY( LALSDestroyVector( stat->statusPtr, &vector ), stat );
+      TRY( LALCDestroyVector( stat->statusPtr, &vtilde ), stat );
+      TRY( LALDestroyRealFFTPlan( stat->statusPtr, &rplan ), stat );
     }
   }
   else
