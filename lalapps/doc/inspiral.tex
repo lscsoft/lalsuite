@@ -1029,67 +1029,95 @@ Jolien Creighton, Patrick Brady, Duncan Brown
 \begin{verbatim}
 lalapps_inspfrinj [options]
  
-  --help                     display this message
-  --verbose                  print progress information
-  --version                  print version information and exit
-  --debug-level LEVEL        set the LAL debug level to LEVEL
-  --user-tag STRING          set the process_params usertag to STRING
-  --comment STRING           set the process table comment to STRING
+  --help                    display this message
+  --verbose                 print progress information
+  --version                 print version information and exit
+  --debug-level LEVEL       set the LAL debug level to LEVEL
+  --user-tag STRING         set the process_params usertag to STRING
+  --comment STRING          set the process table comment to STRING
  
-  --gps-start-time SEC       GPS second of data start time
-  --gps-start-time-ns NS     GPS nanosecond of data start time
-  --gps-end-time SEC         GPS second of data end time
-  --gps-end-time-ns NS       GPS nanosecond of data end time
+  --gps-start-time SEC      GPS second of data start time
+  --gps-start-time-ns NS    GPS nanosecond of data start time
+  --gps-end-time SEC        GPS second of data end time
+  --gps-end-time-ns NS      GPS nanosecond of data end time
  
-  --frame-cache              obtain frame data from LAL frame cache FILE
-  --calibration-cache FILE   obtain calibration from LAL frame cache FILE
-  --channel-name CHAN        read data from interferometer channel CHAN
+  --frame-cache             obtain frame data from LAL frame cache FILE
+  --calibration-cache FILE  obtain calibration from LAL frame cache FILE
+  --calibrated-data TYPE    calibrated data of TYPE real_4 or real_8
+  --num-resp-points N       num points to determine response function (4194304)
+  --channel-name CHAN       read data from interferometer channel CHAN
  
-  --injection-file FILE      inject simulated inspiral signals from FILE
-  --inject-overhead          inject signals from overhead detector
-  --inject-safety SEC        inject signals ending up to SEC after gps end time
+  --injection-file FILE     inject simulated inspiral signals from FILE
+  --inject-overhead         inject signals from overhead detector
+  --inject-safety SEC       inject signals ending up to SEC after gps end time
  
-  --write-raw-data           write out the raw frame files
-  --write-inj-only           write out frames containing only injections
-  --write-raw-plus-inj       write out frames containing raw data with inj
+  --write-raw-data          write out the raw frame files
+  --write-inj-only          write out frames containing only injections
+  --write-raw-plus-inj      write out frames containing raw data with inj
  
-  --output-frame-length SEC  write out data in frames of length SEC
+  --output-frame-length SEC write out data in frames of length SEC
+  --output-file-name OUTPUT set output file names to OUTPUT-GPSTIME-LENGTH.gwf
+                   if not set, default to IFO-INSPFRINJ-GPSTIME-LENGTH.gwf
  
-  --ifo  IFO                 specify the IFO (only if not reading frames)
-  --sample-rate              data sample rate (only if not reading frames)
+  --ifo  IFO                specify the IFO (only if not reading frames)
+  --sample-rate             data sample rate (only if not reading frames)
 \end{verbatim}
 
 \item[Description] 
-\verb$lalapps_frinspinj$
 
-performs inspiral injections into frame files.  This code is essentially
-a copy of those parts of \verb$lalapps_inspiral$ responsible for reading
-in the data and performing the injections.  The injection details
-are contained in a \verb$sim_inspiral$ table of a LIGO lightweight xml
-file.  The code operates in two different ways.  If a \verb$frame-cache$
-file is specified, then the raw data is read in and the injections
-added.  In this case, the output frames can contain any of the
-following: raw data, injection only and raw plus injection.  If no input
-frame data is given, it is necessary to specify the sample rate for the
-output data.  In this case, only the injection only frame can be
-written.
+\verb$lalapps_frinspinj$ performs inspiral injections into frame files.
+This code is essentially a copy of those parts of
+\verb$lalapps_inspiral$ responsible for reading in the data and
+performing the injections.  The injection details are read in from the 
+\verb$sim_inspiral$ table of a LIGO lightweight xml file.  
+
+The code operates in two different ways.  If a \verb$frame-cache$ file
+is specified, then the raw data is read in.  This data can either be
+uncalibrated, in which case a calibration cache must be specified, or
+calibrated, in which case the \verb$--calibrated-data$ flag must be set.
+At present the code only works with real 4 data.  The injection data is
+then calculated from the signals in the \verb$sim_inspiral$ table.  The
+response function is either unity for strain data or is computed from
+the calibration cache.  When working with uncalibrated data, the number
+of points used to determine the response function will have an effect,
+albeit minor, on the injection signals.  By default, the value
+\verb$--num-resp-points$ is set to 4194304.  This matches the value
+used by lalapps\_inspiral when working with 256 second segments and a
+channel sampled at 16384 Hz.  The output frames can contain any of
+the following: raw data, injection only and raw plus injection.  
+
+If no input frame data is given, the code can produce strain data
+injections for the relevant interferometer.  In this case, it is
+necessary to specify the sample rate for the output data.  Since no
+input data is read in, the output data can only contain the injection
+only channel.
 
 The output of \verb$lalapps_frinspinj$ is an xml file and one or several
 frame files.  The xml file contains
 \verb$process$, \verb$process_params$, \verb$search_summary$ and
-\verb$sim_inspiral$ tables and is named:
+\verb$sim_inspiral$ tables and is named (unless set on the command line):
 \begin{center}
-\texttt{IFO-INSPFRINJ\_\_USERTAG-GPSSTARTTIME-DURATION.xml}\\
+\texttt{IFO-INSPFRINJ\_USERTAG-GPSSTARTTIME-DURATION.xml}\\
 \end{center}
 where \texttt{GPSSTARTTIME} and \texttt{DURATION} are the start time and
-duration passed to the code.
-The \verb$sim_inspiral$ table contains a
-list of all injections which were performed into the specified data.
-The length of output frame files is specified by
-\verb$output-frame-length$.  The output frames are named:
+duration passed to the code.  If \verb$--output-file-name$ is set to
+\verb$OUTPUT$ on the command line, the xml will be named
 \begin{center}
-\texttt{IFO-INSPFRINJ\_\_USERTAG-FRAMESTARTTIME-FRAMELENGTH.gwf}\\
+\texttt{OUTPUT\_USERTAG-GPSSTARTTIME-DURATION.xml}.\\
 \end{center}
+The \verb$sim_inspiral$ table contains a list of all injections which
+were performed into the specified data.  The length of output frame
+files is specified by \verb$output-frame-length$.  Unless otherwise set
+on the command line, output frames are named: 
+\begin{center}
+\texttt{IFO-INSPFRINJ\_USERTAG-FRAMESTARTTIME-FRAMELENGTH.gwf}\\
+\end{center}
+The channels stored in the output frame are determined by which of
+\verb$--write-raw-data$, \verb$--write-inj-only$ and
+\verb$--write-raw-plus-inj$ are selected.  The channel names are
+\verb$CHAN$, \verb$CHAN_INSP_INJ_ONLY$ and
+\verb$CHAN_RAW_PLUS_INSP_INJ$.  In the case where no input data is
+given, the single output channel name is \verb$IFO:STRAIN_INSP_INJ_ONLY$.
 
 \item[Example]
 \begin{verbatim}
