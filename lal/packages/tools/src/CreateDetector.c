@@ -387,7 +387,7 @@ NRCSID( CREATEDETECTORC, "$Id$" );
         \begin{array}{c}
         -3.94640898771\times 10^6 \\
          3.36625903242\times 10^6\\
-         3.69915069189times 10^6
+         3.69915069189\times 10^6
         \end{array}
       \right)
       $
