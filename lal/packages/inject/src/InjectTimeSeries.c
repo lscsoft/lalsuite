@@ -120,11 +120,11 @@ LALSI2InjectTimeSeries( LALStatus       *stat,
     BOOLEAN unitsOK;
     LALUnitPair pair;
 
-    pair.unitOne = signal->sampleUnits;
-    pair.unitTwo = lalADCCountUnit;
+    pair.unitOne = &(signal->sampleUnits);
+    pair.unitTwo = &lalADCCountUnit;
     TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
     ASSERT( unitsOK, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
-    pair.unitOne = output->sampleUnits;
+    pair.unitOne = &(output->sampleUnits);
     TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
     ASSERT( unitsOK, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
     LALSnprintf( newName, LALNameLength, "%s plus %s", output->name,
@@ -248,11 +248,11 @@ LALSSInjectTimeSeries( LALStatus       *stat,
     BOOLEAN unitsOK;
     LALUnitPair pair;
 
-    pair.unitOne = signal->sampleUnits;
-    pair.unitTwo = lalADCCountUnit;
+    pair.unitOne = &(signal->sampleUnits);
+    pair.unitTwo = &lalADCCountUnit;
     TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
     ASSERT( unitsOK, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
-    pair.unitOne = output->sampleUnits;
+    pair.unitOne = &(output->sampleUnits);
     TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
     ASSERT( unitsOK, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
     LALSnprintf( newName, LALNameLength, "%s plus %s", output->name,

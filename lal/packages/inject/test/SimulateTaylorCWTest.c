@@ -531,11 +531,14 @@ main(int argc, char **argv)
   /* Set up units for the above structures. */
   {
     RAT4 negOne = { -1, 0 }; /* -1 as a rational number */
-    LALUnitPair pair;        /* structure for defining response units */
-    output.sampleUnits = pair.unitOne = lalADCCountUnit;
-    pair.unitTwo = lalStrainUnit;
-    SUB( LALUnitRaise( &stat, &(pair.unitTwo), &(pair.unitTwo),
+    LALUnit unit;            /* structures for defining response units */
+    LALUnitPair pair;
+    output.sampleUnits = lalADCCountUnit;
+    pair.unitOne = &lalADCCountUnit;
+    pair.unitTwo = &lalStrainUnit;
+    SUB( LALUnitRaise( &stat, &unit, pair.unitTwo,
                        &negOne ), &stat );
+    pair.unitTwo = &unit;
     SUB( LALUnitMultiply( &stat, &(detector.transfer->sampleUnits),
                           &pair ), &stat );
   }

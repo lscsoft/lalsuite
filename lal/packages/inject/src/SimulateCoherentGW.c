@@ -302,24 +302,24 @@ LALSimulateCoherentGW( LALStatus        *stat,
     BOOLEAN unitsOK;
     LALUnitPair pair;
 
-    pair.unitOne = signal->f->sampleUnits;
-    pair.unitTwo = lalHertzUnit;
+    pair.unitOne = &(signal->f->sampleUnits);
+    pair.unitTwo = &lalHertzUnit;
     TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
     ASSERT( unitsOK, stat, SIMULATECOHERENTGWH_EUNIT,
 	    SIMULATECOHERENTGWH_MSGEUNIT );
-    pair.unitOne = signal->phi->sampleUnits;
-    pair.unitTwo = lalDimensionlessUnit;
+    pair.unitOne = &(signal->phi->sampleUnits);
+    pair.unitTwo = &lalDimensionlessUnit;
     TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
     ASSERT( unitsOK, stat, SIMULATECOHERENTGWH_EUNIT,
 	    SIMULATECOHERENTGWH_MSGEUNIT );
     if( signal->shift ) {
-      pair.unitOne = signal->shift->sampleUnits;
+      pair.unitOne = &(signal->shift->sampleUnits);
       TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
       ASSERT( unitsOK, stat, SIMULATECOHERENTGWH_EUNIT,
 	      SIMULATECOHERENTGWH_MSGEUNIT );
     }
-    pair.unitOne = signal->a->sampleUnits;
-    pair.unitTwo = detector->transfer->sampleUnits;
+    pair.unitOne = &(signal->a->sampleUnits);
+    pair.unitTwo = &(detector->transfer->sampleUnits);
     TRY( LALUnitMultiply( stat->statusPtr, &(output->sampleUnits),
 			  &pair ), stat );
     LALSnprintf( output->name, LALNameLength, "response to %s",

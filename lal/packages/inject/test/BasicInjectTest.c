@@ -410,11 +410,14 @@ main(int argc, char **argv)
   /* Set up units. */
   {
     RAT4 negOne = { -1, 0 };
+    LALUnit unit;
     LALUnitPair pair;
-    output.sampleUnits = pair.unitOne = lalADCCountUnit;
-    pair.unitTwo = lalStrainUnit;
-    SUB( LALUnitRaise( &stat, &(pair.unitTwo), &(pair.unitTwo),
+    output.sampleUnits = lalADCCountUnit;
+    pair.unitOne = &lalADCCountUnit;
+    pair.unitTwo = &lalStrainUnit;
+    SUB( LALUnitRaise( &stat, &unit, pair.unitTwo,
 		       &negOne ), &stat );
+    pair.unitTwo = &unit;
     SUB( LALUnitMultiply( &stat, &(detector.transfer->sampleUnits),
 			  &pair ), &stat );
   }
