@@ -601,7 +601,6 @@ LALInspiralChooseModel(
             f->dEnergy = dEp4;
             f->flux = Fp4;
             break;
-            break;
          case DJS:
          case INSPA:
          case IRSPA:
