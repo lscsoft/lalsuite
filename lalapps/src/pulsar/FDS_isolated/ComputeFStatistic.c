@@ -623,7 +623,10 @@ int main(int argc,char *argv[])
   fclose(fpmax);
 #endif
 
-  if (fpstat) fclose(fpstat);
+  if (fpstat) {
+    fprintf(fpstat, "DONE\n");
+    fclose(fpstat);
+  }
 
   /* remove checkpoint-file */
   remove (ckp_fname);
