@@ -295,7 +295,7 @@ int main( int argc, char *argv[])
      */
 
     tmpEpoch = options.startEpoch;
-    for(usedNumPoints = 0; (totalNumPoints - usedNumPoints) > (int) (2 * params->windowShift * (frameSampleRate / targetSampleRate)); usedNumPoints += numPoints - 2 * params->windowShift * (frameSampleRate / targetSampleRate)) {
+    for(usedNumPoints = 0; (totalNumPoints - usedNumPoints) > (int) (2 * options.FilterCorruption * (frameSampleRate / targetSampleRate)); usedNumPoints += numPoints - 2 * options.FilterCorruption * (frameSampleRate / targetSampleRate)) {
 
       /* tell operator how we are doing */
       if(options.verbose)
@@ -563,7 +563,7 @@ int main( int argc, char *argv[])
       }
 
       /* Finally call condition data */
-      LAL_CALL( EPConditionData( &stat, &series, minFreq, 1.0/targetSampleRate, resampFiltType, params->windowShift, params), &stat);
+      LAL_CALL( EPConditionData( &stat, &series, minFreq, 1.0/targetSampleRate, resampFiltType, options.FilterCorruption, params), &stat);
 
       /* add information about times to summary table */
       {
@@ -617,7 +617,7 @@ int main( int argc, char *argv[])
  
 
 		/* compute the start time for the next chunk */
-		tmpOffset = (numPoints - 2.0 * params->windowShift * frameSampleRate / targetSampleRate) / (REAL8) frameSampleRate;
+		tmpOffset = (numPoints - 2.0 * options.FilterCorruption * frameSampleRate / targetSampleRate) / (REAL8) frameSampleRate;
 		LAL_CALL(LALFloatToInterval(&stat, &tmpInterval, &tmpOffset), &stat);
 		LAL_CALL(LALIncrementGPS(&stat, &tmpEpoch, &tmpEpoch, &tmpInterval), &stat);
 
