@@ -57,6 +57,8 @@ LALFindChirpCreateTmpltNode (
 
   LALI4CreateVector( status->statusPtr, &((*tmpltNode)->segmentIdVec),
       tmplt->segmentIdVec->length );
+  memset( (*tmpltNode)->segmentIdVec->data, 0,
+      tmplt->segmentIdVec->length * sizeof(INT4) );
   BEGINFAIL( status )
   {
     LALFree( tmpltNode );
