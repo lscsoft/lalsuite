@@ -56,7 +56,8 @@ typedef struct {
   INT4 Tf;        /* GPS seconds of last SFT */
   CHAR filelist[MAXFILES][MAXFILENAMELENGTH];
 
-  LALDetector Detector;              /* Our detector*/
+  LALDetector Detector;         /* Our detector*/
+  EphemerisData *edat;		/* ephemeris data */
 
 } ConfigVariables;
   

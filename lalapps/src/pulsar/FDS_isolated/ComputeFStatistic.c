@@ -750,29 +750,16 @@ int writeFaFb(INT4 *maxIndex)
 void CreateDemodParams (LALStatus *status)
 {
   CSParams *csParams  = NULL;        /* ComputeSky parameters */
-  BarycenterInput baryinput;         /* Stores detector location and other barycentering data */
-  EphemerisData *edat=NULL;          /* Stores earth/sun ephemeris data for barycentering */
+  AMCoeffsParams *amParams;
   EarthState earth;
   EmissionTime emit;
-  AMCoeffsParams *amParams;
   LIGOTimeGPS *midTS=NULL;           /* Time stamps for amplitude modulation coefficients */
-  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-  INT4 leap;
+  BarycenterInput baryinput;         /* Stores detector location and other barycentering data */
   INT4 k;
 
   INITSTATUS (status, "CreateDemodParams", rcsid);
   ATTATCHSTATUSPTR (status);
   
-  edat=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = GV.EphemEarth;     
-  (*edat).ephiles.sunEphemeris = GV.EphemSun;         
-
-  TRY (LALLeapSecs(status->statusPtr,&leap,&timestamps[0],&formatAndAcc), status);
-  (*edat).leap=leap;
-
-  /* Reads in ephemeris files */
-  TRY (LALInitBarycenter(status->statusPtr, edat), status);               
- 
   /* Detector location: MAKE INTO INPUT!!!!! */
   baryinput.site.location[0]=GV.Detector.location[0]/LAL_C_SI;
   baryinput.site.location[1]=GV.Detector.location[1]/LAL_C_SI;
@@ -791,17 +778,17 @@ void CreateDemodParams (LALStatus *status)
 /* Fill up AMCoeffsParams structure */
   amParams->baryinput = &baryinput;
   amParams->earth = &earth; 
-  amParams->edat = edat;
+  amParams->edat = GV.edat;
   amParams->das->pDetector = &GV.Detector; 
   amParams->das->pSource->equatorialCoords.latitude = Delta;
   amParams->das->pSource->equatorialCoords.longitude = Alpha;
   amParams->das->pSource->orientation = 0.0;
   amParams->das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
   amParams->polAngle = amParams->das->pSource->orientation ; /* These two have to be the same!!!!!!!!!*/
-  amParams->leapAcc=formatAndAcc.accuracy;
+  amParams->leapAcc = LALLEAPSEC_STRICT;
 
  /* Mid point of each SFT */
-   midTS = (LIGOTimeGPS *)LALCalloc(GV.SFTno,sizeof(LIGOTimeGPS));
+   midTS = (LIGOTimeGPS *)LALCalloc(GV.SFTno, sizeof(LIGOTimeGPS));
    for(k=0; k<GV.SFTno; k++)
      { 
        REAL8 teemp=0.0;
@@ -818,7 +805,7 @@ void CreateDemodParams (LALStatus *status)
   csParams->skyPos=(REAL8 *)LALMalloc(2*sizeof(REAL8));
   csParams->mObsSFT=GV.SFTno;     /* Changed this from GV.mobssft !!!!!! */
   csParams->tSFT=GV.tsft;
-  csParams->edat=edat;
+  csParams->edat = GV.edat;
   csParams->baryinput=&baryinput;
   csParams->spinDwnOrder=1;
   csParams->skyPos[0]=Alpha;
@@ -850,10 +837,6 @@ void CreateDemodParams (LALStatus *status)
   LALFree(amParams->das->pSource);
   LALFree(amParams->das);
   LALFree(amParams);
-
-  LALFree(edat->ephemE);
-  LALFree(edat->ephemS);
-  LALFree(edat);
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1059,8 +1042,8 @@ int ReadSFTData(void)
 	  return 4;
 	}
       /* Put time stamps from file into array */
-      timestamps[fileno].gpsSeconds=header.gps_sec;
-      timestamps[fileno].gpsNanoSeconds=header.gps_nsec;
+      timestamps[fileno].gpsSeconds = header.gps_sec;
+      timestamps[fileno].gpsNanoSeconds = header.gps_nsec;
 
       /* Move forward in file */
       offset=(GV.ifmin-header.firstfreqindex)*2*sizeof(REAL4);
@@ -1108,6 +1091,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   size_t errorcode;
   INT4 fileno=0;   
   glob_t globbuf;
+  LIGOTimeGPS starttime;
 
   INITSTATUS (status, "SetGlobalVariables", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1251,7 +1235,10 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     }
   fclose(fp);
 
-  cfg->Ti=header.gps_sec;  /* INITIAL TIME */
+  /* INITIAL TIME */
+  starttime.gpsSeconds = header.gps_sec;
+  starttime.gpsNanoSeconds = header.gps_nsec;
+  cfg->Ti = header.gps_sec; 
 
   /* open LAST file and get info from it*/
   fp=fopen(cfg->filelist[fileno-1],"r");
@@ -1286,7 +1273,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     
   /* if user has not input demodulation frequency resolution; set to 1/Tobs */
   if( !LALUserVarWasSet (&uvar_df1dot) ) 
-    uvar_df1dot=1.0/(2.0*header.tbase*cfg->SFTno*(cfg->Tf-cfg->Ti));
+    uvar_df1dot=1.0/(2.0*header.tbase*cfg->SFTno*(cfg->Tf - cfg->Ti));
 
   if (LALUserVarWasSet (&uvar_f1dotBand) && (uvar_f1dotBand != 0) )
     cfg->SpinImax=(int)(uvar_f1dotBand/uvar_df1dot+.5)+1;  /*Number of spindown values to calculate F for */
@@ -1350,6 +1337,24 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 		 a, d + Dd );
     } /* if !uvar_skyRegion */
   /* ----------------------------------------------------------------------*/
+  /*
+   * initialize Ephemeris-data 
+   */
+  {
+    LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
+    INT4 leap;
+
+    cfg->edat = LALCalloc(1, sizeof(EphemerisData));
+    cfg->edat->ephiles.earthEphemeris = cfg->EphemEarth;
+    cfg->edat->ephiles.sunEphemeris = cfg->EphemSun;
+
+    TRY (LALLeapSecs (status->statusPtr, &leap, &starttime, &formatAndAcc), status);
+    cfg->edat->leap = leap;
+
+    TRY (LALInitBarycenter(status->statusPtr, cfg->edat), status);               
+  }
+  /*------------------------------------------------------------*/
+
 
   /* Tell the user what we have arrived at */
 #ifdef DEBG_SGV
@@ -1459,6 +1464,11 @@ void Freemem(LALStatus *status)
   if (highFLines->Iclust) LALFree(highFLines->Iclust);
   if (highFLines->NclustPoints) LALFree(highFLines->NclustPoints);
 
+
+  /* Free ephemeris data */
+  LALFree(GV.edat->ephemE);
+  LALFree(GV.edat->ephemS);
+  LALFree(GV.edat);
 
   DETATCHSTATUSPTR (status);
 
