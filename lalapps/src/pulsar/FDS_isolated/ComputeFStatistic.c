@@ -3,9 +3,9 @@
  * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
  * Implements the so-called "F-statistic" as introduced in JKS98.
  *                                                                          
- * \author                 B. Allen, Y. Ioth, B. Machenschalk, M.A. Papa, R.Prix, X. Siemens
+ * \author  B. Allen, Y. Ioth, B. Machenschalk, M.A. Papa, R.Prix, X. Siemens
  *                                                                          
- *                 Albert Einstein Institute/UWM - started September 2002   
+ *          Albert Einstein Institute/UWM - started September 2002   
  *********************************************************************************/
 #include "config.h"
 
@@ -396,10 +396,12 @@ int main(int argc,char *argv[])
   long fstat_bytecounter;
   UINT4 checksum=0;             /* Checksum of fstats file contents */
 
-  /* set LAL error-handler */
+  INT4 fstats_completed = FALSE; /* did we find a completed fstats file? */
+
 #if USE_BOINC
   CHAR resfname[256];   /* buffer for boinc-resolving config-file name */
 
+  /* set LAL error-handler */
   lal_errhandler = BOINC_ERR_EXIT;
 #else
   lal_errhandler = LAL_ERR_EXIT;
@@ -577,12 +579,13 @@ int main(int argc,char *argv[])
     if(!fseek(fpstat,-6,SEEK_END))
       if(fread(done,6,1,fpstat)==1)
         if(strncmp(done,"%DONE",5)==0){
-          fclose(fpstat);
           fprintf(stderr,"detected finished Fstat file - aborting Fstat run %d\n",cfsRunNo);
-          return(0);
+	  fstats_completed = TRUE;
         }
     fclose(fpstat);
   }
+
+  if (!fstats_completed) {
 #endif /* RUN_POLKA */
 
   /* Checkpointed information is retrieved from checkpoint-file (if found) */
@@ -775,15 +778,6 @@ int main(int argc,char *argv[])
       loopcounter ++;           /* number of *completed* loops */
 
     } /*  while SkyPos */
-  
-  if (uvar_outputFstat && fpOut)
-    fclose (fpOut);
-
-  if (lalDebugLevel) LALPrintError ("\nSearch finished.\n");
-  
-#ifdef FILE_FMAX  
-  fclose(fpmax);
-#endif
 
   if (fpstat) {
     /* this is our marker indicating 'finished'.  What appears in the file is:
@@ -792,6 +786,19 @@ int main(int argc,char *argv[])
     fprintf(fpstat, "%%DONE\n");
     fclose(fpstat);
   }
+
+#ifdef RUN_POLKA
+  } /* if (!fstats_completed)
+#endif  
+
+  if (uvar_outputFstat && fpOut)
+    fclose (fpOut);
+
+  if (lalDebugLevel) LALPrintError ("\nSearch finished.\n");
+  
+#ifdef FILE_FMAX  
+  fclose(fpmax);
+#endif
 
 #ifndef RUN_POLKA
   /* remove checkpoint-file */
