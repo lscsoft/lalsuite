@@ -32,7 +32,7 @@ h[k]  &    k = 0, 1, \cdots, N-1 \\
 before being Fourier transformed via
 \begin{equation}
 \widetilde{h}[\ell] := \sum_{\ell=-(N-1)}^{N-1} 
-\delta t\,h[k]\,e^{-2\pi k\ell/(2N-1)}
+\delta t\,h[k]\,e^{i2\pi k\ell/(2N-1)}
 \ .
 \end{equation}
 

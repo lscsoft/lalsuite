@@ -71,19 +71,16 @@ the corresponding checks in the code are made using the ASSERT macro):
 \item \textit{zero frequency spacing}
 \item negative start frequency
 \item length mismatch between overlap reduction function and output series
-\item length mismatch between overlap reduction function and overlap reduction function
 \item length mismatch between overlap reduction function and gravitational-wave spectrum
 \item length mismatch between overlap reduction function and first inverse noise PSD
 \item length mismatch between overlap reduction function and second inverse noise PSD
 \item length mismatch between overlap reduction function and first half-whitened inverse noise PSD
 \item length mismatch between overlap reduction function and second half-whitened inverse noise PSD
-\item frequency spacing mismatch between overlap reduction function and overlap reduction function
 \item frequency spacing mismatch between overlap reduction function and gravitational-wave spectrum
 \item frequency spacing mismatch between overlap reduction function and first inverse noise PSD
 \item frequency spacing mismatch between overlap reduction function and second inverse noise PSD
 \item frequency spacing mismatch between overlap reduction function and first half-whitened inverse noise PSD
 \item frequency spacing mismatch between overlap reduction function and second half-whitened inverse noise PSD
-\item start frequency mismatch between overlap reduction function and overlap reduction function
 \item start frequency mismatch between overlap reduction function and gravitational-wave spectrum
 \item start frequency mismatch between overlap reduction function and first inverse noise PSD
 \item start frequency mismatch between overlap reduction function and second inverse noise PSD

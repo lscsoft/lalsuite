@@ -29,7 +29,7 @@ struct DirichletParameters
 \index{\texttt{DirichletParameters}}
 
 \noindent
-Contains parameters that specify the Dirichlet kernel $\cal{D}_N(x)$.
+Contains parameters that specify the Dirichlet kernel $\mathcal{D}_N(x)$.
 The fields are:
  
 \begin{description}

@@ -66,7 +66,7 @@ The overlap reduction function for a pair of identical detectors is a
 maximum when they are co\"{\i}ncident and co\"{a}ligned detectors; it
 decreases when the detectors are shifted apart (so there is a phase
 shift between the signals in the two detectors), or rotated out of
-coalignment (so the detectors are sensitive to different
+co\"{a}lignment (so the detectors are sensitive to different
 polarizations).  The overlap reduction function arises naturally when
 calculating the cross-correlated signal due to an isotropic and
 unpolarized stochastic gravity-wave background.
@@ -192,7 +192,7 @@ Defining $\gamma(f)$ as we do allows us to use the formulas from, e.g.,
 /**************************************** <lalLaTeX file="OverlapReductionFunctionCB">
 \bibitem{stochastic:Flanagan:1993}
   \'{E}.~\'{E}.~Flanagan, ``The Sensitivity of Ligo to a Stochastic
-  Background, and its Dependance on the Detector Orientations''
+  Background, and its Dependence on the Detector Orientations''
   Phys.\ Rev.\ D.\ {\bf 48}, 2389 (1993);
   \href{http://www.arXiv.org/abs/astro-ph/9305029}{astro-ph/9305029}
 % \bibitem{stochastic:Allen:1997}

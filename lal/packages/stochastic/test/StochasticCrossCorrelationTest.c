@@ -63,12 +63,15 @@ the corresponding checks in the code are made using the ASSERT macro):
 It then verifies that the correct cross-correlation statistic (value
 and units) is generated for each of the following simple test cases:
 \begin{enumerate}
-\item $Q(f) = \frac{f(N\,\delta f - f)}{(N\,\delta f/2)^2}$;
-  $h_1(f)=f^2+if$, $h_2(f)=f^{-2}-if^{-1}$.  The expected result in
+\item $\widetilde{Q}(f) = \frac{f(N\,\delta f - f)}{(N\,\delta
+    f/2)^2}$; $\widetilde{\bar{h}}_1(f)=f^2+if$,
+  $\widetilde{\bar{h}}_2(f)=f^{-2}-if^{-1}$.  The expected result in
   this case is zero.
-\item $Q(f) = 1$ for $300\,\textrm{Hz}<f<500\,\textrm{Hz}$, 0
-  otherwise; $h_1(f)=1-h_2(f)=f/800\,\textrm{Hz}$.  With $f_0=\delta
-  f=80\,\textrm{Hz}$ and $N=9$, the expected value is $116.8$.
+\item $\widetilde{Q}(f) = 1$ for
+  $300\,\textrm{Hz}<f<500\,\textrm{Hz}$, 0 otherwise;
+  $\widetilde{\bar{h}}_1(f)=1-\widetilde{\bar{h}}_2(f)=f/800\,\textrm{Hz}$.
+  With $f_0=\delta f=80\,\textrm{Hz}$ and $N=9$, the expected value is
+  $116.8$.
 \end{enumerate}
 For each successful test
 (both of these valid data and the invalid ones described above), it

@@ -38,13 +38,14 @@ None.
 None.
 
 \subsubsection*{Notes}
-The Dirichlet kernel is needed for a rigorous (i.e., exact) calculation
-of the standard cross-correlation statistic, evaluated in discrete time.
-However, \texttt{LALOptimal()} as currently implemented does not make
-use of the Dirichlet kernel;
-in \texttt{LALOptimal()}, one works in the large observation time
-continuum limit approximation, for which ${\cal D}_N(x)$ can effectively
-be replaced by a Dirac delta function.
+The Dirichlet kernel is needed for a rigorous (i.e., exact)
+calculation of the standard cross-correlation statistic, evaluated in
+discrete time.  However, \texttt{LALStochasticOptimalFilter()} and
+other routines in the \texttt{stochastic} package, as currently
+implemented, do not make use of the Dirichlet kernel; these routines
+are expected to be used in the large observation time continuum limit
+approximation, for which ${\cal D}_N(x)$ can effectively be replaced
+by a Dirac delta function.
 
 \vfill{\footnotesize\input{DirichletCV}}
 

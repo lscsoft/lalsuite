@@ -36,7 +36,7 @@ Fourier transform normalized to approximate the continuous Fourier
 transform:
 \begin{equation}
 \widetilde{Q}[\ell] := \sum_{k=-(N-1)}^{N-1} \delta t\,
-Q[k]\, e^{-2\pi k\ell/(2N-1)}
+Q[k]\, e^{i2\pi k\ell/(2N-1)}
 \end{equation}
 the asterisk indicates complex conjugation, and the overbar indicates
 zero-padding:

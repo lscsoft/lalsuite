@@ -43,7 +43,7 @@ illustrated in Fig.~\ref{stochastic:f:CrossCorrFlowchart}.
 }
 \put(150,85){\vector(0,1){15}}
 \put(150,85){\line(0,1){25}}
-\put(152,95){$\widetilde{Q}$}
+\put(152,95){$\widetilde{Q}^{\scriptstyle{\rm W}}$}
 \put(100,55)
 {
   \framebox(190,30)
@@ -312,16 +312,16 @@ $\Omega_{\scriptstyle{\rm GW}}(f)$ of the stochastic gravitational-wave
 background.
 \item[\texttt{COMPLEX8FrequencySeries *halfWhitenedInverseNoisePSD1}]
  The reciprocal
-$1/P_1^{\scriptstyle{\rm W}}(f)
+$1/P_1^{\scriptstyle{\rm HW}}(f)
 =1/(\tilde{R_1}(f)P_1(f))
 =\tilde{R_1}(f)^* / P_1^{\scriptstyle{\rm W}}(f)$ of the
 half-whitened noise power spectral density for the first detector.
 \item[\texttt{COMPLEX8FrequencySeries *halfWhitenedInverseNoisePSD2}]
  The reciprocal
-$1/P_2^{\scriptstyle{\rm W}}(f)
+$1/P_2^{\scriptstyle{\rm HW}}(f)
 =1/(\tilde{R_2}(f)P_2(f))
 =\tilde{R_2}(f)^* / P_2^{\scriptstyle{\rm W}}(f)$ of the
-half-whitened noise power spectral density for the first detector.
+half-whitened noise power spectral density for the second detector.
 \item[\texttt{REAL4FrequencySeries *unWhitenedInverseNoisePSD1}]
  The reciprocal
 $1/P_1(f)=|\tilde{R_1}(f)|^2/P_1^{\scriptstyle{\rm W}}(f)$ of the
@@ -454,7 +454,7 @@ at reference frequency.
 The number of points in the output frequency series.
 
 \item[\texttt{REAL8 f0}]
-The heterodyning frequency of the output frequency series.
+The start frequency of the output frequency series.
 
 \item[\texttt{REAL8 deltaF}]
 The frequency spacing of the output frequency series.
@@ -465,7 +465,7 @@ The frequency spacing of the output frequency series.
 typedef struct tagStochasticOmegaGWParameters {
   REAL4     alpha;    /* exponent in power law: omegaGW(f) = f^alpha */
   UINT4     length;   /* length of vector containing omegaGW(f) values */
-  REAL8     f0;       /* heterodyning frequency */
+  REAL8     f0;       /* start frequency */
   REAL8     deltaF;   /* frequency spacing */
   REAL4     fRef;    /* reference normalization frequency */
   REAL4     omegaRef; /* refenence omega coefficent for normalization */
@@ -502,7 +502,7 @@ output for the overlap reduction function.  The fields are:
 The number of points in the output frequency series.
 
 \item[\texttt{REAL8 f0}]
-The heterodyning frequency of the output frequency series.
+The start frequency of the output frequency series.
 
 \item[\texttt{REAL8 deltaF}]
 The frequency spacing of the output frequency series.
@@ -512,7 +512,7 @@ The frequency spacing of the output frequency series.
 
 typedef struct tagOverlapReductionFunctionParameters {
   UINT4     length;   /* length of vector containing overlap red function */
-  REAL8     f0;       /* heterodyning frequency */
+  REAL8     f0;       /* start frequency */
   REAL8     deltaF;   /* frequency spacing for overlap reduction function */
 }
 OverlapReductionFunctionParameters;

@@ -29,7 +29,7 @@ where
 is the critical density needed to close the universe.  Since the value
 of $\rho_{\scriptstyle{\rm crit}}$ depends on the observed value of the
 Hubble constant $H_0$, it is traditional to remove this experimental
-uncertainly from the definition by working with
+uncertainty from the definition by working with
 ${h_{100}}^2\Omega_{\scriptstyle{\rm GW}}$, where $h_{100}$ is the Hubble
 constant divided by
 $100\,\textrm{km}\,\textrm{s}^{-1}\,\textrm{Mpc}^{-1}$.

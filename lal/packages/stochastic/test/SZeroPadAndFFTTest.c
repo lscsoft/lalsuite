@@ -25,7 +25,7 @@ Options:
 \subsubsection*{Description}
 
 This program tests the routine \texttt{LALSZeroPadAndFFT()}, which
-zero-pads and fourier transforms a real time series of length $N$ to
+zero-pads and Fourier transforms a real time series of length $N$ to
 produce a complex frequency series of length $N$.
 
 First, it tests that the correct error codes 
