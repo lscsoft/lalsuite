@@ -40,6 +40,8 @@ REAL4TimeSeries *cut_time_series(LALStatus *status,
     REAL4TimeSeries *input, LIGOTimeGPS start, LIGOTimeGPS end);
 void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
     CHAR *ifoOne, CHAR *ifoTwo, LIGOTimeGPS time, INT4 duration);
+REAL4TimeSeries *rectangular_window(LALStatus *status, REAL8 deltaT,
+    REAL8 f0, INT4 length);
 
 #ifdef  __cplusplus
 }
