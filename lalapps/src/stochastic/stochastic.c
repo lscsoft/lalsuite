@@ -823,14 +823,14 @@ static REAL4FrequencySeries *frequency_mask(LALStatus *status,
   epoch.gpsSeconds = 0;
   epoch.gpsNanoSeconds = 0;
 
-  /* allocate memory for frequency mask */
-  LAL_CALL(LALCreateREAL4FrequencySeries(status, &mask, \
-        "mask", epoch, 0, deltaF, lalDimensionlessUnit, \
-        length + (INT4)(f0/deltaF)), status);
-
   /* extra bins */
   nBins = (bins - 1) / 2;
   numFMin = (INT4)(f0 / deltaF);
+
+  /* allocate memory for frequency mask */
+  LAL_CALL(LALCreateREAL4FrequencySeries(status, &mask, \
+        "mask", epoch, 0, deltaF, lalDimensionlessUnit, \
+        length + numFMin), status);
 
   /* set all values to 1 */
   for (i = 0; i < length; i++)
