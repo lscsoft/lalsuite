@@ -2,7 +2,7 @@
  * 
  * File Name: TwoInterfFindChirpFilter.c
  *
- * Author: Bose, S.
+ * Author: Bose, S., Brown, D. A., and Noel, J. S.
  * 
  * Revision: $Id$
  * 
@@ -22,6 +22,7 @@
 #include <lal/TwoInterfFindChirp.h>
 #include <lal/PrintVector.h>
 #include <lal/PrintFTSeries.h>
+#include <lal/SkyCoordinates.h>
 
 double rint(double x);
 
@@ -31,12 +32,51 @@ static REAL4 cartesianInnerProduct(REAL4 x[3], REAL4 y[3])
 {
   return x[0] * y[0] + x[1] * y[1] + x[2] * y[2];
 }
+
+void
+FindBaseLine( 
+	     LALStatus       *status,
+             SkyPosition     *baseLine,
+	     const LALDetectorPair *detectors,
+	     LIGOTimeGPS     *gpsTime
+	     )
+{
+  EarthPosition    earthBaseLine;
+
+  INITSTATUS( status, "FindBaseLine", TWOINTERFFINDCHIRPFILTERC );
+  ATTATCHSTATUSPTR( status );
+  
+  ASSERT( baseLine, status, TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );  
+  ASSERT( detectors, status, TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );  
+  ASSERT( gpsTime,   status, TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );  
+  
+  memset(&earthBaseLine, 0, sizeof(EarthPosition));
+  memset(baseLine,       0, sizeof(SkyPosition));
+  
+  earthBaseLine.x = detectors->detectorTwo.location[0] 
+    - detectors->detectorOne.location[0];
+  earthBaseLine.y = detectors->detectorTwo.location[1] 
+    - detectors->detectorOne.location[1];
+  earthBaseLine.z = detectors->detectorTwo.location[2] 
+    - detectors->detectorOne.location[2];
+  
+  baseLine->system  = COORDINATESYSTEM_EQUATORIAL;
+  
+  TRY( LALGeocentricToGeodetic  ( status->statusPtr, &earthBaseLine ), status );
+  TRY( LALGeographicToEquatorial( status->statusPtr, baseLine, 
+				  &earthBaseLine.geodetic, gpsTime), status);
+  
+  /* normal exit */
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
+
 void
 LALCreateTwoInterfFindChirpInputVector (
-    LALStatus                             *status,
-    TwoInterfFindChirpFilterInputVector  **vector,
-    TwoInterfFindChirpInitParams          *params
-    )
+					LALStatus                             *status,
+					TwoInterfFindChirpFilterInputVector  **vector,
+					TwoInterfFindChirpInitParams          *params
+					)
 {
   UINT4                                    i;
   TwoInterfFindChirpFilterInputVector     *vectorPtr;
@@ -570,8 +610,13 @@ LALTwoInterfFindChirpFilterSegment (
     TwoInterfFindChirpFilterParams        *params
     )
 {
-  UINT4                          j, m, n;
+  //UINT4                          j, m, n;
+
+  UINT4 j, maxLagPts, n;
+
   UINT4                          k=0;
+  UINT4                          startIndex1, startIndex2;
+  UINT4                          endIndex1, endIndex2;
   UINT4                          deltaEventIndex;
   UINT4                          twoInterfEventId = 0; 
   UINT4                          ignoreIndex[2];
@@ -585,7 +630,7 @@ LALTwoInterfFindChirpFilterSegment (
   REAL4                          modqsq1;
   REAL4                          modqsq2;
   REAL4                          rhosq = 0;
-  REAL4                          twoInterfRhosqThresh = 0;
+  REAL4                          twoInterfRhosqThresh;
   BOOLEAN                        haveChisq1    = 0;
   BOOLEAN                        haveChisq2    = 0;
   UINT4                          numPoints; 
@@ -597,10 +642,11 @@ LALTwoInterfFindChirpFilterSegment (
   COMPLEX8                      *inputData2   = NULL;
   COMPLEX8                      *tmpltSignal1  = NULL;
   COMPLEX8                      *tmpltSignal2  = NULL;
-  TwoInterfInspiralEvent        *thisEvent    = NULL; 
-  InspiralEvent                 *eventIn1 = NULL;
-  InspiralEvent                 *eventIn2 = NULL;
-  
+  TwoInterfInspiralEvent        *thisEvent; 
+  BOOLEAN                        unresolvedEvent = 0;
+
+  SkyPosition                   baseline;
+
   INITSTATUS( status, "LALTwoInterFindChirpFilter", 
 	      TWOINTERFFINDCHIRPFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -717,7 +763,7 @@ LALTwoInterfFindChirpFilterSegment (
       ASSERT( params->paramsVec->filterParams[1].chisqVec->data, status,
 	      TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
     }
-  
+
   /* check that the input structure exists */
   ASSERT( input, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
@@ -763,10 +809,15 @@ LALTwoInterfFindChirpFilterSegment (
   inputData2 = input->filterInput[1].segment->data->data->data;
   tmpltSignal1 = input->filterInput[0].fcTmplt->data->data;
   tmpltSignal2 = input->filterInput[1].fcTmplt->data->data;
-
-  /*CHECK: only detector 1 specific; to be generalized later*/
+  
+  /* sampling rate of detector 1 data should match that in detector 2 */
+  if ( !(params->paramsVec->filterParams[0].deltaT ==
+	 params->paramsVec->filterParams[0].deltaT)) 
+    {
+      ABORT( status, TWOINTERFFINDCHIRPH_EDTZO, TWOINTERFFINDCHIRPH_MSGEDTZO );
+    }
   deltaT = params->paramsVec->filterParams[0].deltaT; 
- 
+
   /* calculate separation vector between sites */
   for ( j=0; j<3; j++) {
     s[j] = (REAL4) ( params->detectors->detectorOne.location[j] -
@@ -777,9 +828,14 @@ LALTwoInterfFindChirpFilterSegment (
   
   /* light-travel time between sites (in seconds) */
   maxLag = distance / LAL_C_SI;
-  m = ( maxLag / deltaT ) ;
-  
-  /* number of points in a segment from either detector 1 or detector 2 */
+  maxLagPts = (UINT4) ( maxLag / deltaT ) ;
+ 
+  /* number of points in detector 1 segment should match that in detector 2 */
+  if ( !(params->paramsVec->filterParams[0].qVec->length == 
+	 params->paramsVec->filterParams[1].qVec->length)) 
+    {
+      ABORT( status, TWOINTERFFINDCHIRPH_ENUMZ, TWOINTERFFINDCHIRPH_MSGENUMZ );
+    }
   numPoints = params->paramsVec->filterParams[0].qVec->length;
   
   /*
@@ -795,7 +851,7 @@ LALTwoInterfFindChirpFilterSegment (
     REAL4 m1 = input->filterInput[0].tmplt->mass1;
     REAL4 m2 = input->filterInput[0].tmplt->mass2;
     REAL4 fmin = input->filterInput[0].segment->fLow;
-    REAL4 m = 2 * ( m1 > m2 ? m2 : m1 );
+    REAL4 m =  m1+m2;
     REAL4 c0 = 5*m*LAL_MTSUN_SI/(256*eta);
     REAL4 c2 = 743.0/252.0 + eta*11.0/3.0;
     REAL4 c3 = -32*LAL_PI/3;
@@ -840,46 +896,11 @@ LALTwoInterfFindChirpFilterSegment (
   }
   
   /*timeIndex ranges of data being filtered*/
-  /* #if 0 */
-  if ( ignoreIndex[1] > ignoreIndex[0] )
-    {
-      if (ignoreIndex[1] > ignoreIndex[0] +m -1 )
-	{
-	  fprintf( stdout, "filtering detector 1 data from timeIndex %d to %d\n",
-		   ignoreIndex[0] - m, numPoints - ignoreIndex[0] + m -1);
-	  fprintf( stdout, "filtering detector 2 data from timeIndex %d to %d\n",
-		   ignoreIndex[1] , numPoints - ignoreIndex[1] -1);
-	  fflush( stdout );
-	}      
-      else 
-	{
-	  fprintf( stdout, "filtering detector 1 data from timeIndex %d to %d\n",
-		   ignoreIndex[0] , numPoints - ignoreIndex[0] -1 );
-	  fprintf( stdout, "filtering detector 2 data from timeIndex %d to %d\n",
-		   ignoreIndex[1] , numPoints - ignoreIndex[1] -1);
-	  fflush( stdout );
-	}
-    }
-  else
-    {
-      if (ignoreIndex[0] > ignoreIndex[1] + m - 1 )
-	{
-	  fprintf( stdout, "filtering detector 1 data from timeIndex %d to %d\n",
-		   ignoreIndex[0], numPoints - ignoreIndex[0] -1 );
-	  fprintf( stdout, "filtering detector 2 data from timeIndex %d to %d\n",
-		   ignoreIndex[0] - m , numPoints - ignoreIndex[0] + m -1);
-	  fflush( stdout );
-	}      
-      else 
-	{
-	  fprintf( stdout, "filtering detector 1 data from timeIndex %d to %d\n",
-		   ignoreIndex[0], numPoints - ignoreIndex[0] - 1);
-	  fprintf( stdout, "filtering detector 2 data from timeIndex %d to %d\n",
-		   ignoreIndex[1], numPoints - ignoreIndex[1] - 1);
-	  fflush( stdout );
-	}
-    }
-  /* #endif */
+  fprintf( stdout, "filtering detector 1 data from timeIndex %d to %d\n",
+	   startIndex1 = ignoreIndex[0], endIndex1 = numPoints - ignoreIndex[0]);
+  fprintf( stdout, "filtering detector 2 data from timeIndex %d to %d\n",
+	   startIndex2 = ignoreIndex[1], endIndex2 = numPoints - ignoreIndex[1]);
+  fflush( stdout );
   
   /*
    *
@@ -964,7 +985,7 @@ LALTwoInterfFindChirpFilterSegment (
 			params->paramsVec->filterParams[1].qtildeVec, 
 			params->paramsVec->filterParams[1].invPlan );
   CHECKSTATUSPTR( status );
-  
+ 
   /* 
    *
    * calculate signal to noise squared 
@@ -1018,37 +1039,19 @@ LALTwoInterfFindChirpFilterSegment (
       for ( j = 0; j < numPoints; ++j )
 	{
 	  REAL4 modqsq = q2[j].re * q2[j].re + q2[j].im * q2[j].im;
-	  params->paramsVec->filterParams[1].rhosqVec->data->data[j] = norm1 * modqsq;
+	  params->paramsVec->filterParams[1].rhosqVec->data->data[j] = norm2 * modqsq;
 	}
     }
   
   twoInterfRhosqThresh = params->twoInterfRhosqThresh;
 
-  if ( ignoreIndex[0] < ignoreIndex[1] )
+/* look for an events in the filter output */
+  for ( j = startIndex1; j < endIndex1; ++j ) 
     {
-      UINT4          temp;
-      
-      temp = ignoreIndex[0];
-      ignoreIndex[0] = ignoreIndex[1];
-      ignoreIndex[1] = temp;
-    }
-
-  /* look for an events in the filter output */
-  for ( j = ignoreIndex[0] ; j < numPoints - ignoreIndex[0] ; ++j ) 
-    {
-      for ( k = (( j < m+1 ) ? 0 : ( j - m )) ; k < (( (j + m ) < numPoints) ? (j + m+1) : numPoints) ; ++k )
+      for ( k = ((j < startIndex2+maxLagPts) ? startIndex2 : (j-maxLagPts)) ; k < (( (j + maxLagPts+1) < endIndex2) ? (j + maxLagPts+1) : endIndex2) ; ++k )
 	{
 	  REAL4                  rhosq1;
 	  REAL4                  rhosq2;
-	  
-	  if ( ignoreIndex[0] < ignoreIndex[1] )
-	    {
-	      UINT4          temp;
-	      
-	      temp = k;
-	      k = j;
-	      j = temp;
-	    }
 	  
 	  modqsq1 = ( q1[j].re * q1[j].re + q1[j].im * q1[j].im );
 	  modqsq2 = ( q2[k].re * q2[k].re + q2[k].im * q2[k].im );
@@ -1056,7 +1059,7 @@ LALTwoInterfFindChirpFilterSegment (
 	  rhosq1  = norm1 * modqsq1;
 	  rhosq2  = norm2 * modqsq2;
 	  
-	  rhosq = 0.5 * ( rhosq1 + rhosq2 );
+	  rhosq = ( rhosq1 + rhosq2 )/sqrt(2);
 
 	  /* if full snrsq vector is required, store the snrsq */
 	  
@@ -1066,6 +1069,10 @@ LALTwoInterfFindChirpFilterSegment (
 			LALNameLength * sizeof(CHAR),
 			"%s:twoInterfRhosq:output", 
 			input->filterInput[0].segment->data->name );
+	      params->twoInterfRhosqVec->deltaT 
+		= input->filterInput[0].segment->deltaT;
+	      if ( rhosq > params->twoInterfRhosqVec->data->data[j] )
+		params->twoInterfRhosqVec->data->data[j] = rhosq;
 	      if ( ignoreIndex[0] > ignoreIndex[1] )
 		{
 		  memcpy( &(params->twoInterfRhosqVec->epoch), 
@@ -1078,14 +1085,13 @@ LALTwoInterfFindChirpFilterSegment (
 			   &(input->filterInput[1].segment->data->epoch), 
 			   sizeof(LIGOTimeGPS) );
 		}
-	      params->twoInterfRhosqVec->deltaT 
-		= input->filterInput[0].segment->deltaT;
-	      if ( rhosq > params->twoInterfRhosqVec->data->data[j] )
-		params->twoInterfRhosqVec->data->data[j] = rhosq;
 	    }
 	  
 	  /* if snrsq exceeds threshold at any point */
-	  if ( rhosq > twoInterfRhosqThresh )
+	  if ( rhosq > twoInterfRhosqThresh
+	       && rhosq1 > params->paramsVec->filterParams[0].rhosqThresh
+	       && rhosq2 > params->paramsVec->filterParams[1].rhosqThresh
+	       )
 	    {
 	      /* compute chisq vector for detector 1 if it does not exist */
 	      if ( ! haveChisq1   && input->filterInput[0].segment->chisqBinVec->length )
@@ -1108,51 +1114,49 @@ LALTwoInterfFindChirpFilterSegment (
 		  /* XXX this should be passed in from the bank XXX */;
 #if 0
 		  params->paramsVec->filterParams[0].chisqParams->bankMatch=0.97;
-#endif
-	  
+#endif	  
 		  /* compute the chisq threshold for detector 1 */
 
-		  LALFindChirpChisqVeto ( status->statusPtr, 
+		  LALTwoInterfFindChirpChisqVeto ( status->statusPtr, 
 					  params->paramsVec->filterParams[0].chisqVec, 
 					  params->paramsVec->filterParams[0].chisqInput, 
 					  params->paramsVec->filterParams[0].chisqParams );
 		  CHECKSTATUSPTR (status); 
 		  
 		  haveChisq1 =1;
-		  
-		  /* compute chisq vector for detector 2 if it does not exist*/
-		  if ( ! haveChisq2   && input->filterInput[1].segment->chisqBinVec->length )
-		    {
-		      memset( params->paramsVec->filterParams[1].chisqVec->data, 0, 
-			      params->paramsVec->filterParams[1].chisqVec->length 
-			      * sizeof(REAL4) );
-		      
-		      /* pointers to chisq input for detector 2 */
-		      params->paramsVec->filterParams[1].chisqInput->qtildeVec 
-			= params->paramsVec->filterParams[1].qtildeVec;
-		      params->paramsVec->filterParams[1].chisqInput->qVec      
-			= params->paramsVec->filterParams[1].qVec;
-		      
-		      /* pointer to the chisq bin vector in segment of detector2 */
-		      params->paramsVec->filterParams[1].chisqParams->chisqBinVec 
-			= input->filterInput[1].segment->chisqBinVec;
-		      params->paramsVec->filterParams[1].chisqParams->norm   
-			= norm2;
-		      /* XXX this should be passed in from the bank XXX */;
-#if 0
-		      params->paramsVec->filterParams[1].chisqParams->bankMatch=0.97;
-#endif
-	   
-		      /* compute the chisq threshold for detector 2 */
+		}		  
 
-		      LALFindChirpChisqVeto ( status->statusPtr, 
-						    params->paramsVec->filterParams[1].chisqVec, 
-						    params->paramsVec->filterParams[1].chisqInput, 
-						    params->paramsVec->filterParams[1].chisqParams );
-		      CHECKSTATUSPTR (status); 
-		      
-		      haveChisq2 =1;
-		    }
+	      /* compute chisq vector for detector 2 if it does not exist*/
+	      if ( ! haveChisq2   && input->filterInput[1].segment->chisqBinVec->length )
+		{
+		  memset( params->paramsVec->filterParams[1].chisqVec->data, 0, 
+			  params->paramsVec->filterParams[1].chisqVec->length 
+			  * sizeof(REAL4) );
+		  
+		  /* pointers to chisq input for detector 2 */
+		  params->paramsVec->filterParams[1].chisqInput->qtildeVec 
+		    = params->paramsVec->filterParams[1].qtildeVec;
+		  params->paramsVec->filterParams[1].chisqInput->qVec      
+		    = params->paramsVec->filterParams[1].qVec;
+		  
+		  /* pointer to the chisq bin vector in segment of detector2 */
+		  params->paramsVec->filterParams[1].chisqParams->chisqBinVec 
+		    = input->filterInput[1].segment->chisqBinVec;
+		  params->paramsVec->filterParams[1].chisqParams->norm   
+		    = norm2;
+		  /* XXX this should be passed in from the bank XXX */;
+#if 0
+		  params->paramsVec->filterParams[1].chisqParams->bankMatch=0.97;
+#endif		  
+		  /* compute the chisq threshold for detector 2 */
+		  
+		  LALTwoInterfFindChirpChisqVeto ( status->statusPtr, 
+					  params->paramsVec->filterParams[1].chisqVec, 
+					  params->paramsVec->filterParams[1].chisqInput, 
+					  params->paramsVec->filterParams[1].chisqParams );
+		  CHECKSTATUSPTR (status); 
+		  
+		  haveChisq2 =1;
 		}
 	      
 	      /* if we don't have a chisq or the chisq drops below 
@@ -1164,7 +1168,28 @@ LALTwoInterfFindChirpFilterSegment (
 		       params->paramsVec->filterParams[1].chisqVec->data[k] 
 		       < params->paramsVec->filterParams[1].chisqThresh ) )
 		{
-		  if ( ! *eventList )
+
+		  if ( unresolvedEvent ) {
+		    /*  current rhosq peak falls within boundaries of last chirp, so it is treated as being
+		     *  the same event 
+                     */
+
+		    if (rhosq > thisEvent->snrsq) {
+		      /* if this is the same event, update the maximum */
+		      thisEvent->eventIn1->timeIndex = j;
+		      thisEvent->eventIn1->snrsq     = rhosq1;
+		      thisEvent->eventIn2->timeIndex = k;
+		      thisEvent->eventIn2->snrsq     = rhosq2;
+		      
+		      thisEvent->timeIndex = j;		      
+		      thisEvent->snrsq = rhosq;
+		    }
+		    /* if the rhosq value was less than previous values for this event, it is ignored */
+		  }
+
+		  else { /* no events left unresolved => this is a new event */
+
+		    if ( ! *eventList )
 		    {
 		      /* if this is the first event, start the list */
 		      thisEvent = *eventList = (TwoInterfInspiralEvent *) 
@@ -1174,290 +1199,226 @@ LALTwoInterfFindChirpFilterSegment (
 			  ABORT( status, TWOINTERFFINDCHIRPH_EALOC, 
 				 TWOINTERFFINDCHIRPH_MSGEALOC );
 			}
-		      thisEvent->twoInterfId = twoInterfEventId++;
-		      		      
-		      /*allocate memory to each detector event struct*/
-		      eventIn1 = thisEvent->eventIn1=(InspiralEvent *) 
-			LALCalloc( 1, sizeof(InspiralEvent) );
-		      eventIn2 = thisEvent->eventIn1=(InspiralEvent *) 
-			LALCalloc( 1, sizeof(InspiralEvent) );
-		      
-		      /* record the segment id that the event was found in */
-		      eventIn1->segmentNumber 
-			= input->filterInput[0].segment->number;
-		      eventIn2->segmentNumber 
-			= input->filterInput[1].segment->number;
 
-		      thisEvent->segmentNumber
-			= input->filterInput[0].segment->number;
-
-		      /* stick minimal data into the event */
-		      eventIn1->timeIndex = j;
-		      eventIn1->snrsq     = rhosq1;
-		      eventIn2->timeIndex = k;
-		      eventIn2->snrsq     = rhosq2;
-
-		      thisEvent->timeIndex = j;
-		      thisEvent->snrsq = rhosq;
 		    }
-		  else if(params->paramsVec->filterParams[0].maximiseOverChirp 
-			  && j < eventIn1->timeIndex + deltaEventIndex 
-			  && rhosq > thisEvent->snrsq 
-			  && params->paramsVec->filterParams[1].maximiseOverChirp
-			  && k < eventIn2->timeIndex+deltaEventIndex
-			  )
-		    {
-		      /* if this is the same event, update the maximum */
-		      eventIn1->timeIndex = j;
-		      eventIn1->snrsq     = rhosq1;
-		      eventIn2->timeIndex = k;
-		      eventIn2->snrsq     = rhosq2;
-		    
-		      thisEvent->timeIndex = j;		      
-		      thisEvent->snrsq = rhosq;
-		    }
-		  else if ( j > eventIn1->timeIndex +deltaEventIndex ||
-			    ! params->paramsVec->filterParams[0].maximiseOverChirp 
-			    || k > eventIn2->timeIndex + deltaEventIndex ||
-			    ! params->paramsVec->filterParams[1].maximiseOverChirp  )
-		    {
-		      /* clean up this event */
-		      TwoInterfInspiralEvent *lastEvent;
-		      INT8                    timeNS1;
-		      INT8                    timeNS2;
-		      
-		      /* set the event LIGO GPS time of the event 
-			 for detector 1 */
-		      timeNS1 = 1000000000L * 
-			(INT8) (input->filterInput[0].segment->data->epoch.gpsSeconds);
-		      timeNS1 += 
-			(INT8) (input->filterInput[0].segment->data->epoch.gpsNanoSeconds);
-		      timeNS1 += 
-			(INT8) (1e9 * (eventIn1->timeIndex)*deltaT);
-		      eventIn1->time.gpsSeconds = 
-			(INT4) (timeNS1/1000000000L);
-		      eventIn1->time.gpsNanoSeconds = 
-			(INT4) (timeNS1%1000000000L);
-		      
-		      thisEvent->time.gpsSeconds 
-			= (INT4) (timeNS1/1000000000L);
-		      thisEvent->time.gpsNanoSeconds 
-			= (INT4) (timeNS1%1000000000L);		      
-		      
-		      /* set the event LIGO GPS time of the event 
-			 for detector 2 */
-		      timeNS2 = 1000000000L * 
-			(INT8) (input->filterInput[1].segment->data->epoch.gpsSeconds);
-		      timeNS2 += 
-			(INT8) (input->filterInput[1].segment->data->epoch.gpsNanoSeconds);
-		      timeNS2 += 
-			(INT8) (1e9 * (eventIn2->timeIndex)*deltaT);
-		      eventIn2->time.gpsSeconds = 
-			(INT4) (timeNS2/1000000000L);
-		      eventIn2->time.gpsNanoSeconds = 
-			(INT4) (timeNS2%1000000000L);
-		      
-		      /* set the impuse time for the event */
-		      timeNS1 -= chirpTimeNS;
-		      eventIn1->impulseTime.gpsSeconds = (INT4) (timeNS1/1000000000L);
-		      eventIn1->impulseTime.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
-		      
-		      thisEvent->impulseTime.gpsSeconds = (INT4) (timeNS1/1000000000L);
-		      thisEvent->impulseTime.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
-		      timeNS2 -= chirpTimeNS;
-		      eventIn1->impulseTime.gpsSeconds = (INT4) (timeNS2/1000000000L);
-		      eventIn1->impulseTime.gpsNanoSeconds = (INT4) (timeNS2%1000000000L);
-		      
-		      /* record the ifo and channel name for the event */
-		      strncpy( eventIn1->ifoName, input->filterInput[0].segment->data->name, 
-			       2 * sizeof(CHAR) );
-		      strncpy( eventIn1->channel, input->filterInput[0].segment->data->name + 3,
-			       (LALNameLength - 3) * sizeof(CHAR) );
-
-		      strncpy( eventIn2->ifoName, input->filterInput[1].segment->data->name, 
-			       2 * sizeof(CHAR) );
-		      strncpy( eventIn2->channel, input->filterInput[1].segment->data->name + 3,
-			       (LALNameLength - 3) * sizeof(CHAR) );
-		      
-		      /* copy the template into the event */
-		      memcpy( &(thisEvent->tmplt), input->filterInput[0].tmplt, 
-			      sizeof(InspiralTemplate) );
-		      thisEvent->tmplt.next = NULL;
-		      thisEvent->tmplt.fine = NULL;
-		      
-		      /* set snrsq, chisq, sigma and effDist for this event */
-		      if ( input->filterInput[0].segment->chisqBinVec->length )
-			{
-			  eventIn1->chisq =  
-			    params->paramsVec->filterParams[0].chisqVec->data[eventIn1->timeIndex];
-			  eventIn1->numChisqBins =  
-			    input->filterInput[0].segment->chisqBinVec->length - 1;
-			}
-		      else
-			{
-			  eventIn1->chisq = 0;
-			  eventIn1->numChisqBins = 0;
-			}
-		      if ( input->filterInput[1].segment->chisqBinVec->length)
-			
-			{
-			  eventIn2->chisq = 
-			    params->paramsVec->filterParams[1].chisqVec->data[eventIn2->timeIndex];  
-			  eventIn2->numChisqBins = 
-			    input->filterInput[1].segment->chisqBinVec->length - 1;
-			}
-		      else
-			{
-			  eventIn2->chisq = 0;
-			  eventIn2->numChisqBins = 0;
-			}
-		      eventIn1->sigma= sqrt(norm1* 
-					    input->filterInput[0].segment->segNorm*
-					    input->filterInput[0].segment->segNorm*
-					    input->filterInput[0].fcTmplt->tmpltNorm );
-		      eventIn2->sigma= sqrt(norm2* 
-					    input->filterInput[1].segment->segNorm*
-					    input->filterInput[1].segment->segNorm*
-					    input->filterInput[1].fcTmplt->tmpltNorm );
-		      eventIn1->effDist = 
-			(input->filterInput[0].fcTmplt->tmpltNorm * input->filterInput[0].segment->segNorm * 
-			 input->filterInput[0].segment->segNorm)*norm1 / eventIn1->snrsq;
-		      eventIn1->effDist = sqrt( eventIn1->effDist );
-		      
-		      eventIn2->effDist = 
-			(input->filterInput[1].fcTmplt->tmpltNorm * input->filterInput[1].segment->segNorm * 
-			 input->filterInput[1].segment->segNorm)*norm2 / eventIn2->snrsq;
-		      eventIn2->effDist = sqrt( eventIn2->effDist );
-		      
-		      /* allocate memory for the newEvent */
-		      lastEvent = thisEvent;
-		      
-		      lastEvent->next = thisEvent = (TwoInterfInspiralEvent *) 
+		    else { /* there are previous events (though they are resolved) */
+		     
+		      /* advance the list pointer to a new event structure */
+		      thisEvent->next = (TwoInterfInspiralEvent *) 
 			LALCalloc( 1, sizeof(TwoInterfInspiralEvent) );
-		      if ( ! lastEvent->next )
+		      if ( ! thisEvent->next )
 			{
-			  ABORT( status, TWOINTERFFINDCHIRPH_EALOC, TWOINTERFFINDCHIRPH_MSGEALOC );
+			  ABORT( status, TWOINTERFFINDCHIRPH_EALOC, 
+				 TWOINTERFFINDCHIRPH_MSGEALOC );
 			}
-		      thisEvent->twoInterfId = twoInterfEventId++;
 		      
-		      /* stick minimal data into the event */
-		      eventIn1->timeIndex = j;
-		      eventIn1->snrsq     = rhosq1;
-		      eventIn2->timeIndex = j;
-		      eventIn2->snrsq     = rhosq2;
-
-		      thisEvent->timeIndex = j;
-		      thisEvent->snrsq = rhosq;
+		      thisEvent = thisEvent->next;
 		    }
+
+		    /* record event number */
+		    thisEvent->twoInterfId = twoInterfEventId++;
+
+		    /* allocate memory for associated single detector events */
+		    thisEvent->eventIn1 = (InspiralEvent *) 
+		      LALCalloc( 1, sizeof(InspiralEvent) );
+
+		    thisEvent->eventIn2 = (InspiralEvent *) 
+		      LALCalloc( 1, sizeof(InspiralEvent) );
+
+		    if ( ! ( thisEvent->eventIn1 && thisEvent->eventIn2) )
+		      {
+			ABORT( status, TWOINTERFFINDCHIRPH_EALOC, 
+			       TWOINTERFFINDCHIRPH_MSGEALOC );
+		      }
+
+		    /* record the segment id that the event was found in */
+		    thisEvent->eventIn1->segmentNumber 
+		      = input->filterInput[0].segment->number;
+		    thisEvent->eventIn2->segmentNumber 
+		      = input->filterInput[1].segment->number;
+		    
+		    thisEvent->segmentNumber
+		      = input->filterInput[0].segment->number;
+		    
+		    /* stick minimal data into the event */
+		    thisEvent->eventIn1->timeIndex = j;
+		    thisEvent->eventIn1->snrsq     = rhosq1;
+		    thisEvent->eventIn2->timeIndex = k;
+		    thisEvent->eventIn2->snrsq     = rhosq2;
+		    
+		    thisEvent->timeIndex = j;
+		    thisEvent->snrsq = rhosq;
+
+		    /* set flag to finalize this chirp later */
+		    unresolvedEvent = 1;
+
+		  } /* done creating a new event */
+
+		} /* done processing event which passed chissq test */
+
+	    } /* done processing event which passed rhosq test */
+
+	  if ( unresolvedEvent ) {
+	    
+	    /* determine whether we are done processing the current chirp */
+	    if ( ! (params->paramsVec->filterParams[0].maximiseOverChirp 
+		    && params->paramsVec->filterParams[1].maximiseOverChirp)
+		 ||
+		 
+		 ( (j == thisEvent->eventIn1->timeIndex + deltaEventIndex ||
+		    j == endIndex1 - 1 /* was j == endIndex1 */ )
+		   && 
+		   ( 
+		    /* k == thisEvent->eventIn2->timeIndex + deltaEventIndex || */
+		    k == ( ((j + maxLagPts+1) < endIndex2) ? (j + maxLagPts) : endIndex2-1)
+		    /* was k == endIndex2 */
+		    )
+		   )
+		 )
+	      {
+		/* finalize the event fields for the current chirp */
+
+		INT8                    timeNS1;
+		INT8                    timeNS2;
+		
+		/* set the event LIGO GPS time of the event 
+		   for detector 1 */
+		timeNS1 = 1000000000L * 
+		  (INT8) (input->filterInput[0].segment->data->epoch.gpsSeconds);
+		timeNS1 += 
+		  (INT8) (input->filterInput[0].segment->data->epoch.gpsNanoSeconds);
+		timeNS1 += 
+		  (INT8) (1e9 * (thisEvent->eventIn1->timeIndex)*deltaT);
+		thisEvent->eventIn1->time.gpsSeconds = 
+		  (INT4) (timeNS1/1000000000L);
+		thisEvent->eventIn1->time.gpsNanoSeconds = 
+		  (INT4) (timeNS1%1000000000L);
+		
+		thisEvent->time.gpsSeconds 
+		  = (INT4) (timeNS1/1000000000L);
+		thisEvent->time.gpsNanoSeconds 
+		  = (INT4) (timeNS1%1000000000L);		      
+		
+		/* set the event LIGO GPS time of the event 
+		   for detector 2 */
+		timeNS2 = 1000000000L * 
+		  (INT8) (input->filterInput[1].segment->data->epoch.gpsSeconds);
+		timeNS2 += 
+		  (INT8) (input->filterInput[1].segment->data->epoch.gpsNanoSeconds);
+		timeNS2 += 
+		  (INT8) (1e9 * (thisEvent->eventIn2->timeIndex)*deltaT);
+		thisEvent->eventIn2->time.gpsSeconds = 
+		  (INT4) (timeNS2/1000000000L);
+		thisEvent->eventIn2->time.gpsNanoSeconds = 
+		  (INT4) (timeNS2%1000000000L);
+		
+		/* set the impulse time for the event */
+		timeNS1 -= chirpTimeNS;
+		thisEvent->eventIn1->impulseTime.gpsSeconds = (INT4) (timeNS1/1000000000L);
+		thisEvent->eventIn1->impulseTime.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+		
+		thisEvent->impulseTime.gpsSeconds = (INT4) (timeNS1/1000000000L);
+		thisEvent->impulseTime.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+
+		timeNS2 -= chirpTimeNS;
+		thisEvent->eventIn2->impulseTime.gpsSeconds = (INT4) (timeNS2/1000000000L);
+		thisEvent->eventIn2->impulseTime.gpsNanoSeconds = (INT4) (timeNS2%1000000000L);
+		
+		/* record the ifo and channel name for the event */
+		strncpy( thisEvent->eventIn1->ifoName, input->filterInput[0].segment->data->name, 
+			 2 * sizeof(CHAR) );
+		strncpy( thisEvent->eventIn1->channel, input->filterInput[0].segment->data->name + 3,
+			 (LALNameLength - 3) * sizeof(CHAR) );
+		
+		strncpy( thisEvent->eventIn2->ifoName, input->filterInput[1].segment->data->name, 
+			 2 * sizeof(CHAR) );
+		strncpy( thisEvent->eventIn2->channel, input->filterInput[1].segment->data->name + 3,
+			 (LALNameLength - 3) * sizeof(CHAR) );
+		
+		/* copy the template into the event */
+		memcpy( &(thisEvent->tmplt), input->filterInput[0].tmplt, 
+			sizeof(InspiralTemplate) );
+		thisEvent->tmplt.next = NULL;
+		thisEvent->tmplt.fine = NULL;
+		
+		/* set snrsq, chisq, sigma and effDist for this event */
+		if ( input->filterInput[0].segment->chisqBinVec->length )
+		  {
+		    thisEvent->eventIn1->chisq =  
+		      params->paramsVec->filterParams[0].chisqVec->data[thisEvent->eventIn1->timeIndex];
+		    thisEvent->eventIn1->numChisqBins =  
+		      input->filterInput[0].segment->chisqBinVec->length - 1;
+		  }
+		else
+		  {
+		    thisEvent->eventIn1->chisq = 0;
+		    thisEvent->eventIn1->numChisqBins = 0;
+		  }
+
+		if ( input->filterInput[1].segment->chisqBinVec->length)
+		  
+		  {
+		    thisEvent->eventIn2->chisq = 
+		      params->paramsVec->filterParams[1].chisqVec->data[thisEvent->eventIn2->timeIndex];  
+		    thisEvent->eventIn2->numChisqBins = 
+		      input->filterInput[1].segment->chisqBinVec->length - 1;
+		  }
+		else
+		  {
+		    thisEvent->eventIn2->chisq = 0;
+		    thisEvent->eventIn2->numChisqBins = 0;
+		  }
+		thisEvent->eventIn1->sigma= sqrt(norm1* 
+						 input->filterInput[0].segment->segNorm*
+						 input->filterInput[0].segment->segNorm*
+						 input->filterInput[0].fcTmplt->tmpltNorm );
+		thisEvent->eventIn2->sigma= sqrt(norm2* 
+						 input->filterInput[1].segment->segNorm*
+						 input->filterInput[1].segment->segNorm*
+						 input->filterInput[1].fcTmplt->tmpltNorm );
+		thisEvent->eventIn1->effDist = 
+		  (input->filterInput[0].fcTmplt->tmpltNorm * input->filterInput[0].segment->segNorm * 
+		   input->filterInput[0].segment->segNorm) * norm1 / thisEvent->eventIn1->snrsq;
+		thisEvent->eventIn1->effDist = sqrt( thisEvent->eventIn1->effDist );
+		
+		thisEvent->eventIn2->effDist = 
+		  (input->filterInput[1].fcTmplt->tmpltNorm * input->filterInput[1].segment->segNorm * 
+		   input->filterInput[1].segment->segNorm) * norm2/ thisEvent->eventIn2->snrsq;
+		thisEvent->eventIn2->effDist = sqrt( thisEvent->eventIn2->effDist );
+		
+		/* Compute orientation of the detector-pair's baseline */
+		
+		TRY (FindBaseLine( status->statusPtr, &baseline,
+				   params->detectors, &thisEvent->time), status);
+
+		thisEvent->twoInterfAxisRa  = (REAL4) baseline.longitude;
+		thisEvent->twoInterfAxisDec = (REAL4) baseline.latitude;
+
+		thisEvent->sigma =thisEvent->eventIn1->sigma;
+		thisEvent->effDist =thisEvent->eventIn1->effDist;
+		thisEvent->timeIndex2 =thisEvent->eventIn2->timeIndex;
+		
+		thisEvent->chisq1 = thisEvent->eventIn1->chisq;
+		thisEvent->chisq2 = thisEvent->eventIn2->chisq;
+	
+		{
+		  INT4  delayPts = (INT4) thisEvent->timeIndex2 - (INT4)thisEvent->timeIndex;
+		  REAL4 delay = delayPts * deltaT;
+
+		  thisEvent->twoInterfAngle   = acos(LAL_C_SI * delay / distance);
+		    
 		}
-	    }
-	}
-    }
-  
-  /* 
-   *
-   * clean up the last event if there is one
-   *
-   */
-  
-  
-  if ( thisEvent )
-    {
-      INT8           timeNS1;
-      INT8           timeNS2;
-      
-      /* set the event LIGO GPS time of the event in detector 1 */
-      timeNS1 = 1000000000L * 
-	(INT8) (input->filterInput[0].segment->data->epoch.gpsSeconds);
-      timeNS1 += (INT8) (input->filterInput[0].segment->data->epoch.gpsNanoSeconds);
-      timeNS1 += (INT8) (1e9 * (eventIn1->timeIndex) * deltaT);
-      eventIn1->time.gpsSeconds = (INT4) (timeNS1/1000000000L);
-      eventIn1->time.gpsNanoSeconds 
-	= (INT4) (timeNS1%1000000000L);
-      
-      /* set the event LIGO GPS time of the event in detector 2 */
-      timeNS2 = 1000000000L * 
-	(INT8) (input->filterInput[1].segment->data->epoch.gpsSeconds);
-      timeNS2 += (INT8) (input->filterInput[1].segment->data->epoch.gpsNanoSeconds);
-      timeNS2 += (INT8) (1e9 * (eventIn2->timeIndex) * deltaT);
-      eventIn2->time.gpsSeconds = (INT4) (timeNS2/1000000000L);
-      eventIn2->time.gpsNanoSeconds 
-	= (INT4) (timeNS2%1000000000L);
-   
-      /* set the impuse time for the event in detector 1 */
-      timeNS1 -= chirpTimeNS;
-      eventIn1->impulseTime.gpsSeconds = (INT4) (timeNS1/1000000000L);
-      eventIn1->impulseTime.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
-      	    
-      thisEvent->time.gpsSeconds 
-	= (INT4) (timeNS1/1000000000L);/*CHECK:hardwired to
-					 detector 1*/
-      thisEvent->time.gpsNanoSeconds 
-	= (INT4) (timeNS1%1000000000L);/*CHECK:hardwired to
-							 detector 1*/
-		      
-      /* set the impuse time for the event in detector 2 */
-      timeNS2 -= chirpTimeNS;
-      eventIn2->impulseTime.gpsSeconds = (INT4) (timeNS2/1000000000L);
-      eventIn2->impulseTime.gpsNanoSeconds = (INT4) (timeNS2%1000000000L);
-      
-      /* record the ifo name for the event detector 1*/
-      strncpy( eventIn1->ifoName, input->filterInput[0].segment->data->name, 
-	       2 * sizeof(CHAR) );
-      strncpy( eventIn1->channel, input->filterInput[0].segment->data->name + 3,
-	       (LALNameLength - 3) * sizeof(CHAR) );
-      
-      /* record the ifo name for the event detector 2*/
-      strncpy( eventIn2->ifoName, input->filterInput[1].segment->data->name, 
-	       2 * sizeof(CHAR) );
-      strncpy( eventIn2->channel, input->filterInput[1].segment->data->name + 3,
-	       (LALNameLength - 3) * sizeof(CHAR) );
-      memcpy( &(thisEvent->tmplt), input->filterInput[0].tmplt, 
-	      sizeof(InspiralTemplate) );
-      
-      /* set snrsq, chisq, sigma and effDist for this event */
-      if ( input->filterInput[0].segment->chisqBinVec->length ||
-	   input->filterInput[1].segment->chisqBinVec->length)
-	{
-	  eventIn1->chisq =  
-	    params->paramsVec->filterParams[0].chisqVec->data[eventIn1->timeIndex];
-	  eventIn2->chisq = 
-	    params->paramsVec->filterParams[1].chisqVec->data[eventIn2->timeIndex];          
-	}
-      else
-	{
-	  eventIn1->chisq        = 0;
-	  eventIn1->numChisqBins = 0;
 
-	  eventIn2->chisq        = 0;
-	  eventIn2->numChisqBins = 0;
-	}
+		unresolvedEvent = 0;
 
-      eventIn1->sigma   = sqrt( norm1 * input->filterInput[0].segment->segNorm * 
-				 input->filterInput[0].segment->segNorm * 
-				input->filterInput[0].fcTmplt->tmpltNorm );
-      eventIn1->effDist = 
-	(input->filterInput[0].fcTmplt->tmpltNorm * input->filterInput[0].segment->segNorm * 
-	 input->filterInput[0].segment->segNorm)*norm1 / eventIn1->snrsq;
-      eventIn1->effDist = sqrt( eventIn1->effDist );
-      eventIn1->numChisqBins = input->filterInput[0].segment->chisqBinVec->length - 1;
-      
-      eventIn2->sigma   = sqrt( norm1 * input->filterInput[0].segment->segNorm * 
-				 input->filterInput[0].segment->segNorm * 
-				input->filterInput[0].fcTmplt->tmpltNorm );
-      eventIn2->effDist = 
-	(input->filterInput[0].fcTmplt->tmpltNorm * input->filterInput[0].segment->segNorm * 
-	 input->filterInput[0].segment->segNorm)*norm2 / eventIn2->snrsq;
-      eventIn2->effDist = sqrt( eventIn2->effDist );
-      eventIn2->numChisqBins = input->filterInput[0].segment->chisqBinVec->length - 1;
-      
-      thisEvent->snrsq = 0.5* ( eventIn1->snrsq + eventIn2->snrsq );
+	      } /* done finalizing/resolving the event */
 
-      LALFree( eventIn1 );
-      LALFree( eventIn2 );
+	  } /* done with case of having an unresolved event */
 
-    }
-  
+	} /* done looping over k (second interferometer time index) */
+
+    } /* done looping over j (first interferometer time index) */
+
   /* normal exit */
   DETATCHSTATUSPTR( status );
   RETURN( status );
