@@ -236,6 +236,7 @@ int main( int argc, char *argv[] )
   REAL4FrequencySeries          spec;
   COMPLEX8FrequencySeries       resp;
   DataSegmentVector            *dataSegVec = NULL;
+  COMPLEX8TimeSeries           *coherentInputData = NULL;
 
   /* structures for preconditioning */
   COMPLEX8FrequencySeries       injResp;
@@ -265,6 +266,7 @@ int main( int argc, char *argv[] )
   INT4                          numEvents   = 0;
   SnglInspiralTable            *event       = NULL;
   SnglInspiralTable            *eventList   = NULL;
+  SnglInspiralTable            *tempTmplt   = NULL;
   MetadataTable                 savedEvents;
 
   /* output data */
@@ -284,6 +286,7 @@ int main( int argc, char *argv[] )
   INT4  inserted;
   INT4  currentLevel;
   CHAR  fname[FILENAME_MAX];
+  CHAR cdataStr[LALNameLength];
   REAL8 inputLengthNS;
   UINT4 numInputPoints;
   const REAL8 epsilon = 1.0e-8;
@@ -298,6 +301,9 @@ int main( int argc, char *argv[] )
   CHAR tmpChName[LALNameLength];
   REAL8 inputDeltaT;
   REAL8 dynRange = 1.0;
+  REAL8 trigTime = 0.0;
+  REAL8 lowerBound = 0.0;
+  REAL8 upperBound = 0.0;
 
   /* random number generator parameters */
   RandomParams *randParams = NULL;
@@ -1897,27 +1903,42 @@ int main( int argc, char *argv[] )
                 fcFilterParams->rhosqVec, "none", snrsqStr );
           }
 
-          if ( writeCData )
+          if ( writeCData && ! strcmp(ifo,tmpltCurrent->tmpltPtr->ifo) )
           {
-#if 0
-            COMPLEX8TimeSeries coherentInputData;
-            memset( &coherentInputData, 0, sizeof(COMPLEX8TimeSeries) );
+	    trigTime = tmpltCurrent->tmpltPtr->end_time.gpsSeconds + 1e-9 * tmpltCurrent->tmpltPtr->end_time.gpsNanoSeconds;
+	    lowerBound = gpsStartTime.gpsSeconds + numPoints/(4 * sampleRate );
+	    upperBound = gpsEndTime.gpsSeconds - numPoints/(4 * sampleRate );
 
-            LALFindChirpCreateCoherentInput( LALStatus *status,
+	    if( trigTime < lowerBound || trigTime > upperBound )
+	      {
+		fprintf(stderr,"The trigger time (from the input template bank) is not within the bounds of uncorrupt data - exiting...\n");
+		exit( 1 );
+	      }
+ 
+	    tempTmplt = (SnglInspiralTable *) 
+                 LALCalloc(1, sizeof(SnglInspiralTable) );
+	    tempTmplt->event_id = (EventIDColumn *) 
+                 LALCalloc(1, sizeof(EventIDColumn) );
+	    tempTmplt->mass1 = tmpltCurrent->tmpltPtr->mass1;
+	    tempTmplt->end_time.gpsSeconds = tmpltCurrent->tmpltPtr->end_time.gpsSeconds;
+	    tempTmplt->end_time.gpsNanoSeconds = tmpltCurrent->tmpltPtr->end_time.gpsNanoSeconds;
+	    tempTmplt->event_id->id = tmpltCurrent->tmpltPtr->event_id->id;
+ 
+           LALFindChirpCreateCoherentInput( &status,
                   &coherentInputData, fcFilterParams->cVec, 
-                  SnglInspiralTable tmplt, corruptedDataLength );
+                  tempTmplt, 2.0, numPoints / 4 );
 
-            outFrame = fr_add_proc_COMPLEX8TimeSeries( outFrame,
-                coherentInputData, "none", NULL );
-
-            LALCDestoryVector( coherentInputData->data );
-#endif
-            CHAR cdataStr[LALNameLength];
-            LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
-                "CData_%d", nCDataFr++ );
-            strcpy( fcFilterParams->cVec->name, chan.name );
-            outFrame = fr_add_proc_COMPLEX8TimeSeries( outFrame, 
-                fcFilterParams->cVec, "none", cdataStr );
+	    if( coherentInputData )
+	      {
+		LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
+		       "CData_%d", nCDataFr++ );
+		strcpy( coherentInputData->name, chan.name );
+		outFrame = fr_add_proc_COMPLEX8TimeSeries( outFrame,
+		       coherentInputData, "none", cdataStr );
+		LAL_CALL( LALCDestroyVector( &status, 
+                       &(coherentInputData->data) ), &status );
+		coherentInputData = NULL;
+	      }
           }
 
           if ( writeChisq )
