@@ -25,7 +25,8 @@ config.status : configure
 
 build : config.status
 	dh_testdir
-	$(MAKE) 
+	$(MAKE)
+	$(MAKE) dvi
 
 
 clean :
