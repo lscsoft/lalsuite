@@ -421,44 +421,44 @@ InspiralToffInput;
 /* <lalVerbatim file="LALExpnCoeffsH">  */
 typedef struct {
    int ieta;
-   // coefficients in the Taylor expansion of new energy function
+   /* coefficients in the Taylor expansion of new energy function*/
    double eTaN, eTa1, eTa2, eTa3;
-   // coefficients in the Pade expression of new energy function
+   /* coefficients in the Pade expression of new energy function*/
    double ePaN, ePa1, ePa2, ePa3;
-   // coefficients in the Taylor expansion of usual energy function
+   /* coefficients in the Taylor expansion of usual energy function*/
    double ETaN, ETa1, ETa2, ETa3;
-   // coefficients in the Taylor expansion of the derivative of the 
-   // usual energy function
+   /* coefficients in the Taylor expansion of the derivative of the 
+    usual energy function*/
    double dETaN, dETa1, dETa2, dETa3;
 
-   // Taylor expansion coefficients of energy flux
+   /* Taylor expansion coefficients of energy flux*/
    double FTaN, FTa1, FTa2, FTa3, FTa4, FTa5, FTa6, FTa7, FTl6;
-   // Taylor expansion coefficients of factored flux
+   /* Taylor expansion coefficients of factored flux*/
    double fTaN, fTa1, fTa2, fTa3, fTa4, fTa5, fTa6, fTa7;
-   // Coefficients of the corresponding P-approximant
+   /* Coefficients of the corresponding P-approximant*/
    double fPaN, fPa1, fPa2, fPa3, fPa4, fPa5, fPa6, fPa7;
 
-   // Taylor expansion coefficents in t(v)
+   /* Taylor expansion coefficents in t(v)*/
    double tvaN, tva2, tva3, tva4, tva5, tva6, tva7, tvl6; 
-   // Taylor expansion coefficents in phi(v)
+   /* Taylor expansion coefficents in phi(v)*/
    double pvaN, pva2, pva3, pva4, pva5, pva6, pva7, pvl6; 
-   // Taylor expansion coefficents in phi(t)
+   /* Taylor expansion coefficents in phi(t)*/
    double ptaN, pta2, pta3, pta4, pta5, pta6, pta7, ptl6; 
-   // Taylor expansion coefficents in f(t)
+   /* Taylor expansion coefficents in f(t)*/
    double ftaN, fta2, fta3, fta4, fta5, fta6, fta7, ftl6; 
 
-   // Taylor expansion coefficents in f(t)
+   /* Taylor expansion coefficents in f(t)*/
    double samplingrate, samplinginterval;
-   // symmetric mass ratio, total mass, component masses
+   /* symmetric mass ratio, total mass, component masses*/
    double eta, totalmass, m1, m2;
-   // unknown 3PN parameters, euler constant
+   /* unknown 3PN parameters, euler constant*/
    double lambda, theta, EulerC, omegaS;
 
-   // initial and final values of frequency, time, velocity; lso
-   // values of velocity and frequency; final phase.
+   /* initial and final values of frequency, time, velocity; lso
+    values of velocity and frequency; final phase.*/
    double f0, fn, t0, tn, v0, vn, vf, vlso, flso, phiC;
 
-   // last stable orbit and pole defined by various Taylor and P-approximants
+   /* last stable orbit and pole defined by various Taylor and P-approximants*/
    double vlsoT0, vlsoT2, vlsoT4, vlsoT6;
    double vlsoP0, vlsoP2, vlsoP4, vlsoP6;
    double vpoleP4, vpoleP6;

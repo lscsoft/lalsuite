@@ -204,8 +204,9 @@ LALInspiralFindLoudestEvent
           eventlist->max = z;
           eventlist->bin = i;
           eventlist->eventTime = (double) i * dt;
-	  // The following line needs to be amended appropriately after
-	  // confirming what eventTime_ns stands for
+	  /* The following line needs to be amended appropriately after
+	     confirming what eventTime_ns stands for
+	  */
           eventlist->eventTime_ns = (double) i * dt * 2.;
           eventlist->phase = atan2(y,x);
        }
@@ -213,7 +214,7 @@ LALInspiralFindLoudestEvent
        if (z>findeventsin->Threshold) (*nEvents)++;
    }
 
-   // eventlist->max /= filter1.length;
+   /* eventlist->max /= filter1.length; */
    LALFree(filter1.data);
    LALFree(filter2.data);
    LALFree(output1.data);

@@ -64,9 +64,10 @@ LALColoredNoise
    for (i=1; i<nby2; i++) 
    {
       j = n-i;
-      // Since fftw requires n and NOT n/2, I presume we
-      // don't need the factor 2 in the normalisation
-      // x = sqrt(2. * psd.data[i] / length);
+      /* Since fftw requires n and NOT n/2, I presume we
+         don't need the factor 2 in the normalisation
+         x = sqrt(2. * psd.data[i] / length);
+      */
       x = sqrt(psd.data[i] / length);
       noisy->data[i] *= x;
       noisy->data[j] *= x;

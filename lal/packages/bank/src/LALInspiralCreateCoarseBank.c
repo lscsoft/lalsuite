@@ -229,9 +229,9 @@ LALInspiralCreateCoarseBank(
 /* Number of templates is nlist */
   *nlist = 0;
 
-  // Set the elements of the metric and tempPars structures in 
-  // conformity with the coarseIn structure
-  //
+  /* Set the elements of the metric and tempPars structures in 
+   conformity with the coarseIn structure
+  */ 
   if (! (tempPars = (InspiralTemplate *)LALMalloc(sizeof(InspiralTemplate))) )
   {
 	  ABORT (status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
@@ -240,8 +240,8 @@ LALInspiralCreateCoarseBank(
   LALInspiralSetParams(status->statusPtr, tempPars, coarseIn);
   CHECKSTATUSPTR(status);
 
-  // Identify the boundary of search and parameters for the first lattice point 
-  //
+  /* Identify the boundary of search and parameters for the first lattice point */
+
   LALInspiralSetSearchLimits(status->statusPtr, &bankPars, coarseIn);
   CHECKSTATUSPTR(status);
   tempPars->totalMass = coarseIn.MMax;
@@ -252,26 +252,26 @@ LALInspiralCreateCoarseBank(
   LALInspiralParameterCalc(status->statusPtr, tempPars);
   CHECKSTATUSPTR(status);
 
-  // Get the moments of the PSD integrand and other parameters
-  // required in the computation of the metric
-  //
+  /* Get the moments of the PSD integrand and other parameters
+   required in the computation of the metric
+  */
   GetInspiralMoments (status->statusPtr, &moments, &coarseIn.shf, tempPars);
   CHECKSTATUSPTR(status);
 
 
-  // compute the metric at this point, update bankPars and add the params to the list
+  /* compute the metric at this point, update bankPars and add the params to the list */
 	  
   LALInspiralComputeMetric(status->statusPtr, &metric, tempPars, &moments);
   CHECKSTATUSPTR(status);
 	  
   LALInspiralUpdateParams(status->statusPtr, &bankPars, metric, coarseIn.mmCoarse);
-  // printf("%e %e %e dx0=%e dx1=%e\n", metric.g00, metric.g11, metric.theta, bankPars.dx0, bankPars.dx1);
+  /* printf("%e %e %e dx0=%e dx1=%e\n", metric.g00, metric.g11, metric.theta, bankPars.dx0, bankPars.dx1); */
   CHECKSTATUSPTR(status);
   
-  // Let's add the first template to the template list
-  // On failure realloc() returns a NULL to outlist, hence there is
-  // no need to explicitly free the outlist 
-  //
+  /* Let's add the first template to the template list
+   On failure realloc() returns a NULL to outlist, hence there is
+   no need to explicitly free the outlist 
+  */
   if (!(*list = (InspiralTemplateList*) 
 			  LALRealloc(*list, sizeof(InspiralTemplateList)*(*nlist+1)))) {
 	  LALFree(tempPars);
@@ -283,11 +283,11 @@ LALInspiralCreateCoarseBank(
   (*list)[*nlist].metric = metric; 
   ++(*nlist); 
 
-  // First lay templates along the equal mass curve; i.e. eta=1/4. 
-  // Choose the constant and the index converting the chirp times to
-  // one another along the curve depending on whether the templates
-  // are laid along the tau0-tau2 or tau0-tau3 space
-  //
+  /* First lay templates along the equal mass curve; i.e. eta=1/4. 
+   Choose the constant and the index converting the chirp times to
+   one another along the curve depending on whether the templates
+   are laid along the tau0-tau2 or tau0-tau3 space
+  */
 
   switch (coarseIn.space) {
   case Tau0Tau2:
@@ -317,8 +317,8 @@ LALInspiralCreateCoarseBank(
       bankPars.x0 = x02;
       bankPars.x1 = x12;
     }
-    // If this is a valid point add it to our list 
-    //
+    /* If this is a valid point add it to our list */
+
     LALInspiralValidTemplate(status->statusPtr, &validPars, bankPars, coarseIn); 
     CHECKSTATUSPTR(status);
     if (validPars) {
@@ -327,12 +327,12 @@ LALInspiralCreateCoarseBank(
       LALInspiralComputeMetric(status->statusPtr, &metric, tempPars, &moments);
       CHECKSTATUSPTR(status);
       LALInspiralUpdateParams(status->statusPtr, &bankPars, metric, coarseIn.mmCoarse);
-      // printf("%e %e %e dx0=%e dx1=%e\n", metric.g00, metric.g11, metric.theta, bankPars.dx0, bankPars.dx1);
+      /* printf("%e %e %e dx0=%e dx1=%e\n", metric.g00, metric.g11, metric.theta, bankPars.dx0, bankPars.dx1); */
       CHECKSTATUSPTR(status);
-      //
-      // On failure realloc() returns a NULL to outlist, hence there is
-      // no need to explicitly free the outlist 
-      //
+      /*
+       On failure realloc() returns a NULL to outlist, hence there is
+       no need to explicitly free the outlist 
+      */
       if (!(*list = (InspiralTemplateList*) 
 			      LALRealloc(*list, sizeof(InspiralTemplateList)*(*nlist+1)))) 
       {
@@ -346,19 +346,19 @@ LALInspiralCreateCoarseBank(
     }
   }
   
-  // Begin with the parameters found at the first lattice point 
-  //
+  /* Begin with the parameters found at the first lattice point */
+
   bankPars = bankParsOld;
   
-  // Loop along x1 and x0 coordinates until maximum values are reached
+  /* Loop along x1 and x0 coordinates until maximum values are reached */
   while (bankPars.x1 <= bankPars.x1Max) 
   {
 
-    // step along the tau0 axis until the boundary is reached 
+    /* step along the tau0 axis until the boundary is reached */
 
     while (bankPars.x0 <= bankPars.x0Max) 
     {
-    // If this is a valid point add it to our list
+    /* If this is a valid point add it to our list */
 
       LALInspiralValidTemplate(status->statusPtr, &validPars, bankPars, coarseIn); 
       CHECKSTATUSPTR(status);
@@ -369,7 +369,7 @@ LALInspiralCreateCoarseBank(
 	LALInspiralComputeMetric(status->statusPtr, &metric, tempPars, &moments);
 	CHECKSTATUSPTR(status);
 	LALInspiralUpdateParams(status->statusPtr, &bankPars, metric, coarseIn.mmCoarse);
-	// printf("%e %e %e dx0=%e dx1=%e\n", metric.g00, metric.g11, metric.theta, bankPars.dx0, bankPars.dx1);
+	/* printf("%e %e %e dx0=%e dx1=%e\n", metric.g00, metric.g11, metric.theta, bankPars.dx0, bankPars.dx1); */
 	CHECKSTATUSPTR(status);
 	if (!(*list = (InspiralTemplateList*) 
 				LALRealloc(*list, sizeof(InspiralTemplateList)*(*nlist+1)))) 
@@ -386,13 +386,13 @@ LALInspiralCreateCoarseBank(
     }
     bankPars = bankParsOld;
     bankPars.x1 += bankPars.dx1;
-    // Find the t0 coordinate of the next template close to the t2/t3 axis 
-    //
+    /* Find the t0 coordinate of the next template close to the t2/t3 axis */
+
     LALInspiralNextTemplate(status->statusPtr, &bankPars, metric);
     CHECKSTATUSPTR(status);
 
-    // Hop along t0-axis until t0 is inside the region of interest or quit 
-    //
+    /* Hop along t0-axis until t0 is inside the region of interest or quit */
+
     LALInspiralValidTemplate(status->statusPtr, &validPars, bankPars, coarseIn);
     CHECKSTATUSPTR(status);
     while (validPars==0 && bankPars.x0 < bankPars.x0Max) {
@@ -441,15 +441,15 @@ GetInspiralMoments (
    moments->a42 = 5429.L/5376.L * pow ( 25.L * LAL_PI/2.L, 1.L/3.L);
    moments->a43 = 1.5293365L/1.0838016L * pow(5.L/(4.L*pow(LAL_PI,4.L)), 1.L/3.L);
    
-   // setup the input structure needed in the computation of the moments
-   //
+   /* setup the input structure needed in the computation of the moments */
+
    in.shf = psd;
    in.shf->deltaF /= params->fLower;
    in.xmin = params->fLower/params->fLower;
    in.xmax = params->fCutoff/params->fLower;
 
-   // First compute the norm
-   //
+   /* First compute the norm */
+
    in.norm = 1.L;
    in.ndx = 7.L/3.L; 
    LALInspiralMoments(status->statusPtr, &moments->j[7], in); 
@@ -465,8 +465,8 @@ GetInspiralMoments (
 	   fprintf(stderr, "j7=%e\n", moments->j[7]);
    }
 
-   // Normalised moments of the noise PSD from 1/3 to 17/3. 
-   //
+   /* Normalised moments of the noise PSD from 1/3 to 17/3. */
+
    for (k=1; k<=17; k++)
    {
 	   in.ndx = (REAL8) k /3.L; 

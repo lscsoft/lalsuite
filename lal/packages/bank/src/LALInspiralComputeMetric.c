@@ -316,28 +316,28 @@ LALFree
  
 </lalLaTeX>  */
 
-//
-//	Created: 7.9.96.
-//	Author: B.S.Sathyaprakash, Caltech, Cardiff University.
-//	Purpose: To compute the metric and the template bank
-//              parameters, corresponding to 2PN chirps.
-//	Revision History: Updates 15.7.97; 31.8.97.; 18.3.99; 25.05.02
-//       First C version October 2000.
-//       Major revision in May 2002: Direct computation in (tau0, tau3)
-//       space avoid (m, eta) space. This means the code won't create
-//       template parameters in (tau0, tau2) space. An interface to the
-//       old code will have to be provided, if that is necessary.
-//
-//	Dependencies: moments.f, inverse.f transform.f (not needed in the version of 02/05)
-//	Outputs:
-//	    det: Determinant of the metric. (not in versions after 02/05)
-//	    g00: 
-//	    g11: 
-//	  theta: Angle which the t0-axis makes with semi-major (dx0) axis.
-//         srate: The minimal sampling rate required (computed but not outputted.
-//	Notes: Owen and Sathyaprakash (Caltech collaboration notes).
-//              Also Sathyaprakash, note from October 2000, May 24/25, 2002.
-//
+/*
+	Created: 7.9.96.
+	Author: B.S.Sathyaprakash, Caltech, Cardiff University.
+	Purpose: To compute the metric and the template bank
+              parameters, corresponding to 2PN chirps.
+	Revision History: Updates 15.7.97; 31.8.97.; 18.3.99; 25.05.02
+        First C version October 2000.
+        Major revision in May 2002: Direct computation in (tau0, tau3)
+        space avoid (m, eta) space. This means the code won't create
+        template parameters in (tau0, tau2) space. An interface to the
+        old code will have to be provided, if that is necessary.
+
+	Dependencies: moments.f, inverse.f transform.f (not needed in the version of 02/05)
+	Outputs:
+	    det: Determinant of the metric. (not in versions after 02/05)
+	    g00: 
+	    g11: 
+	  theta: Angle which the t0-axis makes with semi-major (dx0) axis.
+         srate: The minimal sampling rate required (computed but not outputted.
+	Notes: Owen and Sathyaprakash (Caltech collaboration notes).
+              Also Sathyaprakash, note from October 2000, May 24/25, 2002.
+*/
 
 #include <stdlib.h>
 #include <lal/LALInspiralBank.h>
@@ -366,8 +366,8 @@ LALInspiralComputeMetric
 )
 { /* </lalVerbatim> */
 
-   // const UINT4 Dim = 2;
-   // const UINT4 Order = 5;
+   /* const UINT4 Dim = 2;*/
+   /* const UINT4 Order = 5;*/
 
    static REAL8 Psi[Dim][Order];
    static REAL8 g[Dim][Dim];
@@ -385,18 +385,19 @@ LALInspiralComputeMetric
    ASSERT (params->t0 > 0.L, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
    ASSERT (params->t3 > 0.L, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
 
-   // use the order of the waveform to compute the metric
-   // summation below will be carried out up to PNorder
-   //
+   /* use the order of the waveform to compute the metric
+    summation below will be carried out up to PNorder
+   */
+   
    PNorder = params->order;
    if (PNorder < 2 || PNorder >4)
    {
      ABORT( status, 999, "Inappropriate PN order in InspiralComputeMetric" );
    }
 
-   // 
-   // Setting up \Psi_{mn} coefficients 
-   //
+    
+   /* Setting up \Psi_{mn} coefficients  */
+
    InspiralComputeMetricGetPsiCoefficients(Psi, params, moments);
 
    for (m=0; m<Dim; m++)
@@ -422,27 +423,29 @@ LALInspiralComputeMetric
    }
    }
 
-   //
-   // The minimum sampling rate for given MM is
-   // srate = 2 * LAL_PI * f0 sqrt( (moments.j[1] - moments.j[4]*moments.j[4]) / (2.0*(1.-MM)));
-   //
+   /* The minimum sampling rate for given MM is
+    srate = 2 * LAL_PI * f0 sqrt( (moments.j[1] - moments.j[4]*moments.j[4]) / (2.0*(1.-MM)));
+    */
+   
 
-   // The calculation above gives the metric in coordinates 
-   // (t0=2\pi f_0 \tau0, t3=2\pi f_0 \tau3).  Re-scale metric 
-   // coefficients to get metric in (tau0, tau3) coordinates
-   //
+   /* The calculation above gives the metric in coordinates 
+    (t0=2\pi f_0 \tau0, t3=2\pi f_0 \tau3).  Re-scale metric 
+    coefficients to get metric in (tau0, tau3) coordinates
+    */
+   
    a = g[0][0] * pow(2.*LAL_PI*params->fLower,2.); 
    b = g[0][1] * pow(2.*LAL_PI*params->fLower,2.); 
    c = g[1][1] * pow(2.*LAL_PI*params->fLower,2.); 
 
 
      
-   // if (lalDebugLevel==1) 
-   // { 
-	   // printf("%e %e\n", params->t0, params->t3 ); 
-	   // printf("%e %e\n", a, b ); 
-	   // printf("%e %e\n", b, c); 
-   // }
+   /* if (lalDebugLevel==1) 
+    { 
+	    printf("%e %e\n", params->t0, params->t3 ); 
+	    printf("%e %e\n", a, b ); 
+	    printf("%e %e\n", b, c); 
+    }
+    */
    
    
    det = a * c - b * b;
@@ -462,10 +465,11 @@ LALInspiralComputeMetric
    }
 
 
-   // if (lalDebugLevel==1) 
-   // {
-      // fprintf(stderr, "%e %e %e %e\n", det, metric->g00, metric->g11, metric->theta);
-   // }
+   /* if (lalDebugLevel==1) 
+    {
+       fprintf(stderr, "%e %e %e %e\n", det, metric->g00, metric->g11, metric->theta);
+    }
+    */
 
    DETATCHSTATUSPTR(status);
    RETURN(status);

@@ -200,8 +200,9 @@ LALInspiralFindEvents
           (*eventlist)[*nEvents].max = z;
           (*eventlist)[*nEvents].bin = i;
           (*eventlist)[*nEvents].eventTime = (double) i * dt;
-	  // The following line needs to be amended appropriately after
-	  // confirming what eventTime_ns stands for
+	  /* The following line needs to be amended appropriately after
+	     confirming what eventTime_ns stands for
+	  */
           (*eventlist)[*nEvents].eventTime_ns = (double) i * dt * 2.;
           (*eventlist)[*nEvents].phase = atan2(y,x);
           (*nEvents)++;

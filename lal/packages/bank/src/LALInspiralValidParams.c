@@ -150,9 +150,9 @@ void LALInspiralValidParams(LALStatus            *status,
   {
 	  ABORT (status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
   }
-//
-// First set the chirp times of Pars to be as in bankParams 
-//
+/*
+ First set the chirp times of Pars to be as in bankParams 
+*/
 
   Pars->t0 = bankParams.x0;
   Pars->fLower = coarseIn.fLower;
