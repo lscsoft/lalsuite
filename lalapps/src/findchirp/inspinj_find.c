@@ -21,7 +21,8 @@ RCSID("$Id$");
 "Usage: %s --input infile [--inject injectfile]\n" \
 "--outfile outfile[--snrstar snrstar] [--sort] [--noplayground]\n" \
 "[--deltat dt] [--help]  [--cluster clust]\n" \
-"[--clusteralgorithm clusterchoice] [--missedinjections missedfile]\n"
+"[--clusteralgorithm clusterchoice] [--missedinjections missedfile]\n" \
+"[--hardware starttime]\n"
 
 #define INSPINJFIND_EARG   1
 #define INSPINJFIND_EROW   2
@@ -108,9 +109,11 @@ int main(int argc, char **argv)
     Clusterchoice	     clusterchoice;
     INT4		     saveMissedInjections=FALSE;
     INT4		     coincidence = FALSE;
+    INT4		     hardware = FALSE;
 	
     INT8		     simTime;
     INT8		     inspiralTime;
+    INT8		     starttime;
     
     REAL4                    snrstar=0.0;
     INT4                     clust=0;
@@ -192,12 +195,13 @@ int main(int argc, char **argv)
 	    {"outfile",		required_argument,  0,	'c'},
 	    {"snrstar",		required_argument,  0,	'd'},
 	    {"sort",		no_argument,	    0,	'e'},
-	    {"noplayground",	required_argument,  0,	'f'},
+	    {"noplayground",	no_argument,	    0,	'f'},
 	    {"deltat",		required_argument,  0,  'g'},
 	    {"help",		no_argument,	    0,	'h'},    
 	    {"cluster",		required_argument,  0,	'j'},
 	    {"clusteralgorithm",required_argument,  0,	'k'},
 	    {"missedinjections",required_argument,  0,	'l'},
+	    {"hardware",	required_argument,  0,	'm'},
 	    {0, 0, 0, 0}
 	};
 	/* getopt_long stores the option index here. */
@@ -341,6 +345,18 @@ int main(int argc, char **argv)
 	    {
 		return INSPINJFIND_EARG;
 	    }
+
+	case 'm':
+	    /* if they are hardware injections, then need to pass in the start
+	     * time of the injections.  The inject file is assumed to contain a 
+	     * list of the hardware injections, where the time is the time after
+	     * starting injection that the coalescence occured */
+	    {
+		starttime = atol( optarg );
+		hardware = TRUE;
+	    }
+	    break;
+	    
 	}   
     }
 
@@ -450,7 +466,15 @@ int main(int argc, char **argv)
 	   	    
 	    /* copy event into linked list element */
 	    memcpy(currentSimEvent, &simEvent, sizeof(SimInspiralTable) );
-            
+    
+	    /* if the injections are hardware, then add the starttime time to the 
+	     * time contained in sim_inspiral table */
+	    if ( hardware == TRUE )
+	    {
+		currentSimEvent->geocent_end_time.gpsSeconds = starttime +
+		    currentSimEvent->geocent_end_time.gpsSeconds;
+	    }
+
 	    /* point to the next event */
 	    currentSimEvent->next = NULL;
 	    if (prevSimEvent != NULL) prevSimEvent->next = currentSimEvent;
@@ -532,8 +556,9 @@ int main(int argc, char **argv)
 		 * during the times searched in the input files */
 		if( numInjects != 0)
 		{
-		    while (currentSimEvent->geocent_end_time.gpsSeconds <
-			   searchSummaryTable.out_end_time.gpsSeconds)
+		    while (!( currentSimEvent == NULL) &&
+			currentSimEvent->geocent_end_time.gpsSeconds < 
+			searchSummaryTable.out_end_time.gpsSeconds)
 		    {
 			/*  check if injection is before file start time */
 			if (currentSimEvent->geocent_end_time.gpsSeconds < 
