@@ -1,4 +1,5 @@
 usr/bin/lal-config
+usr/doc
 usr/include
 usr/lib/*a
 usr/lib/pkgconfig
