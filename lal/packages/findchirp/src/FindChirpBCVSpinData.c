@@ -329,6 +329,27 @@ LALFindChirpBCVSpinData (
 		}
   	}
 
+
+     /* set output frequency series parameters */
+        strncpy( fcSeg->data->name, dataSeg->chan->name, LALNameLength );
+	                                                                                                                             
+        fcSeg->data->epoch.gpsSeconds     = dataSeg->chan->epoch.gpsSeconds;
+        fcSeg->data->epoch.gpsNanoSeconds = dataSeg->chan->epoch.gpsNanoSeconds;
+			                                                                                                                             
+        fcSeg->data->f0     = dataSeg->chan->f0;
+        fcSeg->data->deltaF = 1.0 /
+ 	       ( (REAL8) dataSeg->chan->data->length * dataSeg->chan->deltaT ) ;
+						                                                                                                                             
+	fcSeg->deltaT       = dataSeg->chan->deltaT;
+        fcSeg->number       = dataSeg->number;
+								                                                                                                                             
+        /* store low frequency cutoff and invSpecTrunc in segment */
+        fcSeg->fLow         = params->fLow;
+        fcSeg->invSpecTrunc = params->invSpecTrunc;
+										                                                                                                                             
+  } /* end of loop over data segments */
+  
+	
     	/*
      	 *
      	 * compute inverse power spectrum
@@ -448,25 +469,6 @@ LALFindChirpBCVSpinData (
     		}
 	}
 		
-   	/* set output frequency series parameters */
-    	strncpy( fcSeg->data->name, dataSeg->chan->name, LALNameLength ); 
-
-    	fcSeg->data->epoch.gpsSeconds     = dataSeg->chan->epoch.gpsSeconds;
-    	fcSeg->data->epoch.gpsNanoSeconds = dataSeg->chan->epoch.gpsNanoSeconds;
-
-    	fcSeg->data->f0     = dataSeg->chan->f0;
-    	fcSeg->data->deltaF = 1.0 /
-    	( (REAL8) dataSeg->chan->data->length * dataSeg->chan->deltaT ) ;
-
-    	fcSeg->deltaT       = dataSeg->chan->deltaT;
-    	fcSeg->number       = dataSeg->number;
-
-    	/* store low frequency cutoff and invSpecTrunc in segment */
-    	fcSeg->fLow         = params->fLow;
-    	fcSeg->invSpecTrunc = params->invSpecTrunc;
-
-  } /* end of loop over data segments */
-
   if (doTest ==1)
   {
   	fclose (fpDataIn);
