@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
 
   } else {
     
-    if(getFrameData(times, CACHEFILENAME, &Nsymbols, &symbols)) {
+    if(getFrameData(times, dataserver, &Nsymbols, &symbols)) {
       fprintf(stderr,"ERROR: can't get frame data\n");
       return 1;
     }

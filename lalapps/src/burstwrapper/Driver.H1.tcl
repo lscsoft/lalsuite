@@ -118,6 +118,9 @@ set TFCdelta "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"
 # Run parameters
 #######################################################
 
+# set when frame types are not changing
+#set FastCache 1
+
 # number of nodes
 set NNodes 4
 

@@ -67,6 +67,7 @@ proc dataDownload { URL { outFile -1 } } {
 ################################
 set injAmpTmp $injAmp
 set LOCALFILE 0
+set FastCacheDone 0
 
 if { [ regexp {LOCAL:(.*)} $PrebinFile junk ZeFile ] } {
 
@@ -901,6 +902,11 @@ if { [ catch { exec burstdso $dataserver framequery.txt algorithms.txt filterpar
 
  file copy -force algorithms.txt framequery.txt filterparams.txt responsefiles.txt $PrebinFile
 
+ file rename $PrebinFile/algorithms.txt $PrebinFile/algorithms.$start_time.txt
+ file rename $PrebinFile/framequery.txt $PrebinFile/framequery.$start_time.txt
+ file rename $PrebinFile/filterparams.txt $PrebinFile/filterparams.$start_time.txt
+ file rename $PrebinFile/responsefiles.txt $PrebinFile/responsefiles.$start_time.txt
+
  if { [ catch { exec ./subst burstdso.condor tmp1 TIMES $start_time } cout ] } {
     puts $cout
     exit 1
@@ -912,11 +918,48 @@ regsub -all "/" $ZeFile "\\/" rZeFile
         exit 1
  }
 
-if { [ catch { exec /bin/bash --login -c "echo $PrebinFile ; cd $PrebinFile ; buildcache $dataserver $PrebinFile/framequery.txt" } cout ] } {
-         puts $cout
-         exit 1
- }
+if { [ info exists FastCache ] == 0 } {
+    if { [ catch { exec /bin/bash --login -c "echo $PrebinFile ; cd $PrebinFile ; buildcache $dataserver $PrebinFile/framequery.$start_time.txt" } cout ] } {
+	puts $cout
+	exit 1
+    }
 
+    file rename $PrebinFile/FrCacheFile $PrebinFile/FrCacheFile.$start_time
+
+} else {
+    if { $FastCacheDone == 0 } {
+
+	puts "Creating cache..."
+
+	if { [ file exists $PrebinFile/FrCacheFile.txt ] } {
+	    file delete $PrebinFile/FrCacheFile.txt
+	}
+
+	if { [ catch { exec BuildCache.tcl $dataType $env(LSC_DATAGRID_CLIENT_LOCATION) $dataserver $IFO $FType $PrebinFile/FrCacheFile.txt } cout ] } {
+	    puts $cout
+	    exit 1
+	}
+	if { [ catch { exec BuildCache.tcl $dataType $env(LSC_DATAGRID_CLIENT_LOCATION) $dataserver $IFO CAL_FAC_V03_$IFO2 $PrebinFile/FrCacheFile.txt } cout ] } {
+	    puts $cout
+	    exit 1
+	}
+	if { [ catch { exec BuildCache.tcl $dataType $env(LSC_DATAGRID_CLIENT_LOCATION) $dataserver $IFO CAL_REF_V03_$IFO2 $PrebinFile/FrCacheFile.txt } cout ] } {
+	    puts $cout
+	    exit 1
+	}
+	if { [ catch { exec BuildCache.tcl $dataType $env(LSC_DATAGRID_CLIENT_LOCATION) $dataserver $IFO $MDCFrames $PrebinFile/FrCacheFile.txt } cout ] } {
+	    puts $cout
+	    exit 1
+	}
+	
+	set FastCacheDone 1
+
+	puts "done"
+    }
+
+    file copy $PrebinFile/FrCacheFile.txt $PrebinFile/FrCacheFile.$start_time.txt
+}
+    
 
  if { [ catch { exec /bin/bash --login -c "condor_submit tmp" } cout ] } {
      puts $cout

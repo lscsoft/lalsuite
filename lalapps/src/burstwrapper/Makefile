@@ -32,3 +32,6 @@ burstdso : $(OBJS) burstdso.o
 
 buildcache : buildcache.o 
 	$(CXX) $(CXXFLAGS) -o buildcache buildcache.o 
+
+clean :
+	rm *.o burstdso buildcache
