@@ -160,7 +160,8 @@ int testDRunningMedian(LALStatus *stat, REAL8Sequence *input, UINT4 length, LALR
 
     /* compare results */
     if(median != medians->data[i]) {
-      printf("ERROR: index:%d median:%f running median:%f mismatch\n", i, median, medians->data[i]);
+      printf("ERROR: index:%d median:% 22.15e running median:% 22.15e mismatch:% 22.15e\n", 
+             i, median, medians->data[i], median - medians->data[i]);
       LALFree(index_block);
       LALFree(medians);
       LALFree(input);
