@@ -18,6 +18,7 @@ int
 main(int argc, char **argv)
 {
   static LALStatus s;
+  UINT4            num_ra, num_dec;
   gridding_t       g;
   LIGOTimeGPS      gps;
   LALLeapSecAccuracy acc = LALLEAPSEC_LOOSE;
@@ -30,7 +31,9 @@ main(int argc, char **argv)
   
   init_gridding(&g);
   
-  make_gridding(&s, &g, 24, DETRESP_REGGRID, 24, DETRESP_REGGRID, &gps);
+  num_ra = 24;
+  num_dec = 11;
+  make_gridding(&s, &g, num_ra, DETRESP_REGGRID, num_dec, DETRESP_REGGRID, &gps);
   
   print_gridding(&g, (char *)NULL);
   
@@ -40,11 +43,27 @@ main(int argc, char **argv)
   
   printf("RUN 2\n");
   
-  init_gridding(&g);
+  gps.gpsSeconds = 748349233; /* Autumnal Equi. 2003 */
   
-  make_gridding(&s, &g, 24, DETRESP_IRRGRID, 24, DETRESP_REGGRID, &gps);
+  num_ra = 100;
+  num_dec = 51;
+  make_gridding(&s, &g, num_ra, DETRESP_IRRGRID, num_dec, DETRESP_REGGRID, &gps);
   
-  print_gridding(&g, (char *)NULL);
+  print_gridding(&g, "autumn2003.dat");
+
+  cleanup_gridding(&s, &g);
+  
+  printf("\n*   *   *   *   *   *   *   *   *   *\n");
+  
+  printf("RUN 3\n");
+  
+  gps.gpsSeconds = 756111853; /* Winter Sols. 2003 */
+  
+  num_ra = 100;
+  num_dec = 51;
+  make_gridding(&s, &g, num_ra, DETRESP_IRRGRID, num_dec, DETRESP_REGGRID, &gps);
+  
+  print_gridding(&g, "winter2003.dat");
 
   cleanup_gridding(&s, &g);
 

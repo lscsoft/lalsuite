@@ -36,7 +36,7 @@ static
 UINT4 
 irr_grid_ra(LALStatus *s, REAL8Vector *ra_grid, REAL8 earth_phi)
 {
-  REAL8Vector *g;
+  REAL8Vector *g = NULL;
   UINT4 num_grid = ra_grid->length;
   UINT4 num_grid_4 = num_grid / 4;
   UINT4 num_grid_2 = num_grid_4 * 2;
@@ -69,6 +69,13 @@ irr_grid_ra(LALStatus *s, REAL8Vector *ra_grid, REAL8 earth_phi)
       g->data[num_grid_2 + i] = g->data[i] + (REAL8)LAL_PI;
       g->data[num_grid - i - 1] = -g->data[i] + (REAL8)LAL_PI;
     }
+  }
+  
+  if (lalDebugLevel > 2)
+  {
+    printf("irr_grid_ra (sin(ra)):\n");
+    for (i = 0; i < num_grid; ++i)
+      printf("\t% e\n", sin(g->data[i]));
   }
   
   /* shift the computed grid above, and fill in the RA grid */
@@ -193,6 +200,7 @@ cleanup_gridding(LALStatus *s, gridding_t *g)
   
   LALDDestroyVector(s, &(g->dec));
 
+  init_gridding(g);
 } /* END: cleanup_gridding() */
 
 /*
@@ -219,52 +227,59 @@ void
 print_gridding(gridding_t *g, char *fn)
 {
   UINT4 i, j;
+  FILE *outfile = NULL;
   
+  if (fn != NULL)
+    outfile = xfopen(fn, "wo");
+  else
+    outfile = stdout;
+    
   switch (g->ra_geom)
   {
     case DETRESP_REGGRID:
-      printf("ra_geom =\tREGULAR\n");
+      fprintf(outfile, "ra_geom =\tREGULAR\n");
       break;
     case DETRESP_IRRGRID:
-      printf("ra_geom =\tIRREGULAR\n");
+      fprintf(outfile, "ra_geom =\tIRREGULAR\n");
       break;
     case DETRESP_VARGRID:
-      printf("ra_geom =\tVARIABLE\n");
+      fprintf(outfile, "ra_geom =\tVARIABLE\n");
       break;
     default:
-      printf("ra_geom =\t???\n");
+      fprintf(outfile, "ra_geom =\t???\n");
   }
   
   switch (g->dec_geom)
   {
     case DETRESP_REGGRID:
-      printf("dec_geom =\tREGULAR\n");
+      fprintf(outfile, "dec_geom =\tREGULAR\n");
       break;
     case DETRESP_IRRGRID:
-      printf("dec_geom =\tIRREGULAR\n");
+      fprintf(outfile, "dec_geom =\tIRREGULAR\n");
       break;
     case DETRESP_VARGRID:
-      printf("dec_geom =\tVARIABLE\n");
+      fprintf(outfile, "dec_geom =\tVARIABLE\n");
       break;
     default:
-      printf("dec_geom =\t???\n");
+      fprintf(outfile, "dec_geom =\t???\n");
   }
   
-  printf("Declination:\n");
+  fprintf(outfile, "Declination (deg):\n");
   for (i = 0; i < g->dec->length; ++i)
-    printf("\t% 20.14e Pi\n", g->dec->data[i]/(double)LAL_PI);
-  printf("\n");
+    fprintf(outfile, "\t% 20.14e\n", g->dec->data[i]/(double)LAL_PI*180.);
+  fprintf(outfile, "\n");
     
-  printf("Right Ascencion:\n");
+  fprintf(outfile, "Right Ascencion (h):\n");
   if (g->ra_geom == DETRESP_REGGRID || g->ra_geom == DETRESP_IRRGRID)
   {
     for (i = 0; i < g->ra->length; ++i)
-      printf("\t% 20.14e h\n", g->ra->data[i]/(double)LAL_PI * 12.);
+      fprintf(outfile, "\t% 20.14e\n", g->ra->data[i]/(double)LAL_PI * 12.);
   }
   else
   {
-    printf("RSN\n");
+    fprintf(outfile, "RSN\n");
   }
-  
+
+  fclose(outfile);  
 } /* END: print_gridding() */
 
