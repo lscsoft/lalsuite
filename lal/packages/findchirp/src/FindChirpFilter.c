@@ -607,7 +607,8 @@ LALFindChirpFilterSegment (
     memset( params->rhosqVec->data, 0, numPoints * sizeof( REAL4 ) );
 
   /* normalisation */
-  norm = 4.0 * (deltaT / (REAL4)numPoints) / input->segment->segNorm;
+  params->norm = norm = 
+    4.0 * (deltaT / (REAL4)numPoints) / input->segment->segNorm;
 
   /* normalised threhold */
   modqsqThresh = params->rhosqThresh / norm;

@@ -27,6 +27,7 @@ LALFindChirpMaster (
   UINT4                         i;
   UINT4                         numTmpltExch = params->numTmpltExch;
   InspiralEvent                *thisEvent    = NULL;
+  InspiralEvent                *lastEvent    = NULL;
   InspiralTemplate             *fineBank     = NULL;
   InspiralTemplateNode         *thisTmplt    = NULL;
   InspiralTemplateNode         *tmpltInsert  = NULL;
@@ -60,7 +61,11 @@ LALFindChirpMaster (
 
   if ( *(params->numSlaves) )
   {
-    ExchParams *thisExch = NULL;
+    ExchParams *thisExch;
+
+waitForExch:
+
+    thisExch = NULL;
 
     /* wait for a request from a slave */
     LALInitializeExchange( status->statusPtr, &thisExch, 
@@ -80,6 +85,10 @@ LALFindChirpMaster (
 
 
       case ExchInspiralTemplate:
+
+#if 0
+        fprintf( stderr, "master: ExchInspiralTemplate\n" );
+#endif
 
         /* if there are any templates left send them to the slave */
         if ( params->tmpltCurrent )
@@ -162,9 +171,14 @@ LALFindChirpMaster (
 
       case ExchInspiralEvent:
 
+#if 0
+        fprintf( stderr, "master: ExchInspiralEvent\n" );
+#endif
+
         /* recieve a linked list of inspiral events from a slave */
         LALExchangeInspiralEventList( status->statusPtr, eventList, thisExch );
         CHECKSTATUSPTR( status );
+
 
 
         /*
@@ -174,37 +188,84 @@ LALFindChirpMaster (
          */
 
 
-        /* this is a dog: i should think of a better way to do this     */
-
-        /* we are guaranteed that a the linked list of events will      */
-        /* come from only _one_ template and _one_ data segment         */
-        /* so we can just look at the first event in the list for       */
-        /* the information that we need (template id and segment id)    */
-        thisEvent = *eventList;
-        tmpltInsert = params->tmpltCurrent;
-
-        /* look for a template that matches the template of the event */
-        for ( thisTmplt = params->tmpltHead; thisTmplt; 
-            thisTmplt = thisTmplt->next )
+        /* don't do a heriarical search if we just want the loudest event */
+        if ( ! (params->inspiralDebugFlag == 2) )
         {
-          if ( thisEvent->tmplt.number == thisTmplt->tmpltPtr->number )
+          /* this is a dog: i should think of a better way to do this     */
+
+          /* we are guaranteed that a the linked list of events will      */
+          /* come from only _one_ template and _one_ data segment         */
+          /* so we can just look at the first event in the list for       */
+          /* the information that we need (template id and segment id)    */
+          thisEvent = *eventList;
+          tmpltInsert = params->tmpltCurrent;
+
+          /* look for a template that matches the template of the event */
+          for ( thisTmplt = params->tmpltHead; thisTmplt; 
+              thisTmplt = thisTmplt->next )
           {
-            /* insert the fine bank into the list to filter */
-            for ( fineBank = thisTmplt->tmpltPtr->fine; fineBank;
-                fineBank = fineBank->next )
+            if ( thisEvent->tmplt.number == thisTmplt->tmpltPtr->number )
             {
-              LALFindChirpCreateTmpltNode( status->statusPtr, 
-                  fineBank, &tmpltInsert );
-              CHECKSTATUSPTR( status );
+              /* insert the fine bank into the list to filter */
+              for ( fineBank = thisTmplt->tmpltPtr->fine; fineBank;
+                  fineBank = fineBank->next )
+              {
+                LALFindChirpCreateTmpltNode( status->statusPtr, 
+                    fineBank, &tmpltInsert );
+                CHECKSTATUSPTR( status );
 
-              /* set the id of the segment to filter against this template */
-              tmpltInsert->segmentIdVec->data[thisEvent->segmentNumber] = 1;
+                /* set the id of the segment to filter against this template */
+                tmpltInsert->segmentIdVec->data[thisEvent->segmentNumber] = 1;
 
-              /* increase the count of the number of templates */
-              params->numTmplts++;
+                /* increase the count of the number of templates */
+                params->numTmplts++;
+              }
             }
           }
         }
+        else if ( params->inspiralDebugFlag == 2 )
+        {
+          /* look for the loudest event in the list of events returned */
+
+          thisEvent = *eventList;
+
+          while ( thisEvent )
+          {
+#if 0
+            fprintf( stderr, "search master: searching for loudest event...\n" );
+#endif
+
+            /* save a copy of the loudest event */
+            if ( thisEvent->snrsq > params->loudestEvent->snrsq )
+            {
+#if 0
+              fprintf( stderr, "search master: found a new loudest event!\n" );
+#endif
+              memcpy( params->loudestEvent, thisEvent, sizeof(InspiralEvent) );
+            }
+
+            /* free the events */
+            lastEvent = thisEvent;
+            thisEvent = thisEvent->next;
+            LALFree( lastEvent );
+            lastEvent = NULL;
+          }
+
+          /* make sure no events are returned to the wrapperAPI */
+          *eventList = NULL;
+
+
+          /* now finalize the exchange and go back to the wait for the */
+          /* next exchange request from a slave: oh this is so bad.... */
+          /* but is speeds up the code by an order of magnitude...     */
+          /* at the expense of a goto...                               */
+          LALFinalizeExchange (status->statusPtr, &thisExch);
+          CHECKSTATUSPTR(status);
+
+          goto waitForExch;
+
+        }
+
 
         break;
 
@@ -217,6 +278,10 @@ LALFindChirpMaster (
 
 
       case ExchFinished:
+
+#if 0
+        fprintf( stderr, "master: ExchInspiralFinished\n" );
+#endif
 
         /* decrement the number of active slaves */
         --*(params->numSlaves);
@@ -269,8 +334,19 @@ LALFindChirpMaster (
     /* tell the wrapperAPI that we are finished */
     *(params->fracRemaining) = 0.0;
     *(params->notFinished)   = 0;
+
+    if ( params->inspiralDebugFlag == 2 )
+    {
+      /* return the loudest event on the final return to the wrapperAPI */
+      *eventList = (InspiralEvent *) LALCalloc( 1, sizeof(InspiralEvent) );
+      memcpy( *eventList, params->loudestEvent, sizeof(InspiralEvent) );
+    }
   }
 
+
+#if 0
+  fprintf( stderr, "master: returning to ApplySearch\n" );
+#endif
 
   /* normal exit */
   DETATCHSTATUSPTR (status);

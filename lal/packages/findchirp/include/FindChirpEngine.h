@@ -130,6 +130,7 @@ tagFindChirpSlaveParams
   FindChirpSPTmpltParams       *tmpltParams;
   FindChirpFilterParams        *filterParams;
   FindChirpFilterInput         *filterInput;
+  InspiralEvent                *loudestEvent;
 }
 FindChirpSlaveParams;
 

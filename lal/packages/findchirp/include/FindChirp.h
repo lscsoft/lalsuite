@@ -164,6 +164,7 @@ tagFindChirpFilterParams
   REAL4                         deltaT;
   REAL4                         rhosqThresh;
   REAL4                         chisqThresh;
+  REAL4                         norm;
   BOOLEAN                       computeNegFreq;
   COMPLEX8Vector               *qVec;
   COMPLEX8Vector               *qtildeVec;

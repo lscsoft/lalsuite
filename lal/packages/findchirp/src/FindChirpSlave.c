@@ -18,7 +18,7 @@ LALFindChirpSlave (
     LALStatus                  *status, 
     BOOLEAN                    *notFinished,
     FindChirpSegmentVector     *fcSegVec,
-    FindChirpSlaveParams        *params 
+    FindChirpSlaveParams       *params 
     )
 {
   InitExchParams                initExchParams;
@@ -166,8 +166,9 @@ LALFindChirpSlave (
             params->filterInput, params->filterParams );
         CHECKSTATUSPTR( status );
 
-        /* if the filter returned any events, send them to the serach master */
-        if ( eventList )
+        /* if the filter returned any events and we don't want the just the */
+        /* loudest event, send them to the serach master                    */
+        if ( eventList && ! (params->inspiralDebugFlag == 2) )
         {
           InspiralEvent *event;
 
@@ -192,7 +193,38 @@ LALFindChirpSlave (
             current = eventList;
             eventList = eventList->next;
             LALFree( current );
+            current = NULL;
           }
+        } 
+        else if ( eventList && (params->inspiralDebugFlag == 2) )
+        {
+          InspiralEvent *thisEvent = eventList;
+          InspiralEvent *lastEvent;
+
+          while ( thisEvent )
+          {
+#if 0
+            fprintf( stderr, "slave: searching for loudest event...\n" );
+#endif
+
+            /* save a copy of the loudest event */
+            if ( thisEvent->snrsq > params->loudestEvent->snrsq )
+            {
+#if 0
+              fprintf( stderr, "slave: found a new loudest event!\n" );
+#endif
+              memcpy( params->loudestEvent, thisEvent, sizeof(InspiralEvent) );
+            }
+
+            /* free the events */
+            lastEvent = thisEvent;
+            thisEvent = thisEvent->next;
+            LALFree( lastEvent );
+            lastEvent = NULL;
+          }
+
+          /* make sure no events are returned to the wrapperAPI */
+          eventList = NULL;
 
         } /* end if... eventList */
 
@@ -201,6 +233,26 @@ LALFindChirpSlave (
     } /* end loop over data segments */
 
   } /* end loop over linked list */
+
+
+  if ( params->inspiralDebugFlag == 2 )
+  {
+    /* send the loudest event to that search master */
+#if 0
+    fprintf( stderr, "slave: sending loudest event to master\n" );
+#endif
+
+    LALInitializeExchange( status->statusPtr, &thisExch, 
+        &exchInspiralEvents, &initExchParams );
+    CHECKSTATUSPTR( status );
+
+    LALExchangeInspiralEvent( status->statusPtr, params->loudestEvent, thisExch );
+    CHECKSTATUSPTR( status );
+
+    LALFinalizeExchange( status->statusPtr, &thisExch );
+    CHECKSTATUSPTR( status );
+  }
+    
 
   LALFindChirpDestroyInspiralBank( status->statusPtr, &bankHead );
   CHECKSTATUSPTR( status );
