@@ -193,7 +193,7 @@ and \texttt{LIGOTimeUnix} times.  The fields are:
 
 \begin{description}
 \item{\texttt{INT4 seconds}} Integral part of the time interval
-\item{\texttt{INT4 nanoSeconds}} Residual nanoseconds (\textit{i.e.}
+\item{\texttt{INT8 nanoSeconds}} Residual nanoseconds (\textit{i.e.}
   fractional part, in nanoseconds)
 \end{description}
 
@@ -206,7 +206,7 @@ typedef struct
 tagLALTimeInterval
 {
     INT4 seconds;
-    INT4 nanoSeconds;
+    INT8 nanoSeconds;
 }
 LALTimeInterval;
 
@@ -377,6 +377,19 @@ LALUTCtoGPS (LALStatus                *status,
              LIGOTimeGPS              *pGpsTime,
              const LALDate            *pUtcDate,
              const LALLeapSecAccuracy *pAccuracy);
+
+/* The following is from S.J. Berukoff, included at his request */
+/* <lalLaTeX>
+\newpage\input{GPStoFloatC}
+</lalLaTeX> */
+void LALGPStoFloat (LALStatus *,
+                     REAL8     *, 
+                     LIGOTimeGPS *);
+
+void LALFloatToGPS(LALStatus *, 
+                   LIGOTimeGPS *, 
+                   REAL8 *);
+
 
 
 #ifdef  __cplusplus
