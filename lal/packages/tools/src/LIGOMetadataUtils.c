@@ -107,11 +107,11 @@ LALPlaygroundInSearchSummary (
   INITSTATUS( status, "LALPlaygroundInSearchSummary", LIGOMETADATAUTILSC );
   ATTATCHSTATUSPTR( status );
 
-  ASSERT( status, ssTable, 
+  ASSERT( ssTable, status,
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( inPlayTime, ssTable, 
+  ASSERT( ssTable, status,
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( outPlayTime, ssTable, 
+  ASSERT( ssTable, status,
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
 
   LALGPStoINT8( status->statusPtr, &startNS, &(ssTable->in_start_time) );
