@@ -573,7 +573,7 @@ tagInputClusterWavelet
   UINT4 minClusterSize;
   UINT4 maxClusterSize;
   ClusterWavelet *w;
-  Wavelet *original;
+  /*Wavelet *original;*/
 }
 InputClusterWavelet;
 
@@ -592,6 +592,21 @@ tagOutputClusterWavelet
   ClusterWavelet *w;
 }
 OutputClusterWavelet;
+
+
+typedef struct
+tagInputReuseClusterWavelet
+{
+  BOOLEAN aura;
+  UINT4 minClusterSize;
+  UINT4 maxClusterSize;
+  ClusterWavelet *w;
+  ClusterWavelet *another;
+  /*  Wavelet *original;
+      Wavelet *originalAnother;*/
+}
+InputReuseClusterWavelet;
+
 
 typedef struct
 tagInputGetClusterParameters
@@ -694,6 +709,11 @@ void
 LALClusterWavelet(LALStatus *status,
 		  OutputClusterWavelet **output,
 		  InputClusterWavelet *input);
+
+void
+LALReuseClusterWavelet(LALStatus *status,
+                       OutputClusterWavelet **output,
+                       InputReuseClusterWavelet *input);
 
 void
 LALSetAmplitudesWavelet(LALStatus *status,

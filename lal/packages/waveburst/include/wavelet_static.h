@@ -31,6 +31,8 @@ static void _print2DintArray(int ***a, FILE *out, int n1, int n2);
 static int _clusterMain(ClusterWavelet *wavelet);
 static int _clusterR(ClusterWavelet *wavelet, int k);
 
+static int _duplicateClusterStructure(OutputClusterWavelet *output, InputReuseClusterWavelet *input);
+
 static BOOLEAN _allocateWavelet(Wavelet **wavelet);
 
 static double _percentile(Wavelet *wavelet, double nonZeroFraction, 
@@ -1475,11 +1477,13 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
     w->pMask[k]->amplitudeOriginal=-1.0;
     w->pMask[k]->amplitude=w->wavelet->data->data->data[S.start+S.step*j];
     w->pMask[k]->amplitudeOriginal=original->data->data->data[S.start+S.step*j];
-    if(w->pMask[k]->amplitude>=2*nj)
+    if(w->pMask[k]->amplitude>=2*w->wavelet->data->data->length-1)
       {
 	w->pMask[k]->amplitude=0.0;
 	w->pMask[k]->amplitudeOriginal=0.0;
 	w->pMask[k]->core=FALSE;
+	w->wavelet->data->data->data[S.start+S.step*j]=0.0;
+	original->data->data->data[S.start+S.step*j]=0.0;
       }
 
     w->pMask[k]->neighborsCount=0;
@@ -1927,9 +1931,13 @@ static int _compareAbs(const void *a, const void *b)
 {
   REAL4 **A=(REAL4 **)a;
   REAL4 **B=(REAL4 **)b;
-  if(fabs(**A) < fabs(**B)) return -1;
-  if((**A) == (**B)) return 0;
-  if((**A) > (**B)) return 1;
+
+  REAL4 AA=fabs(**A);
+  REAL4 BB=fabs(**B);
+
+  if(AA < BB) return -1;
+  if(AA == BB) return 0;
+  if(AA > BB) return 1;
   return -2;
   
 }
@@ -2021,7 +2029,7 @@ static void _clusterProperties(ClusterWavelet *w)
 	      b/=w->norm50[w->pMask[w->cList[i][j]]->frequency];
 	      if(a>0) w->correlation[i]++;
 	      if(a<0) w->correlation[i]--;
-	      w->likelihood[i]+=log(fabs(a));
+	      w->likelihood[i]+=log(fabs(a)*w->nonZeroFractionAfterPercentile);
 	      w->power[i]+=b*b;
 	      if(w->maxAmplitude[i]<fabs(a)) w->maxAmplitude[i]=fabs(a);
 
@@ -3269,6 +3277,87 @@ static void _inverseFWT(Wavelet *w, int level, int layer, const double *pLPF, co
    LALFree(temp);
 }
 
+
+static int _duplicateClusterStructure(OutputClusterWavelet *output, InputReuseClusterWavelet *input)
+{
+  int i,j;
+  Slice S;
+
+  output->w->pMaskCount=input->another->pMaskCount;
+  output->w->clusterCount=input->another->clusterCount;
+  output->w->clusterCountFinal=input->another->clusterCountFinal;
+  output->w->clusterType=input->another->clusterType;
+  output->w->simulationType=input->another->simulationType;
+  output->w->delta_t=input->another->delta_t;
+  output->w->delta_f=input->another->delta_f;
+
+  output->w->coreSize=NULL;
+  output->w->correlation=NULL;
+  output->w->likelihood=NULL;
+  output->w->power=NULL;
+  output->w->maxAmplitude=NULL;
+  output->w->relativeStartTime=NULL;
+  output->w->relativeStopTime=NULL;
+  output->w->duration=NULL;
+  output->w->absoluteStartTime=NULL;
+  output->w->absoluteStopTime=NULL;
+  output->w->startFrequency=NULL;
+  output->w->stopFrequency=NULL;
+  output->w->bandwidth=NULL;
+  output->w->blobs=NULL;
+  
+  output->w->pMask=(PixelWavelet**)LALCalloc(output->w->pMaskCount,sizeof(PixelWavelet*));
+
+  for(i=0;i<output->w->pMaskCount;i++)
+    {
+      output->w->pMask[i]=(PixelWavelet*)LALMalloc(sizeof(PixelWavelet));
+      _copyPixel(output->w->pMask[i],input->another->pMask[i]);
+      _getSliceF(output->w->pMask[i]->frequency,input->another->wavelet,&S);
+      output->w->pMask[i]->amplitude=
+	output->w->wavelet->data->data->data[S.start+S.step*output->w->pMask[i]->time];
+      output->w->pMask[i]->amplitudeOriginal=
+	output->w->original->data->data->data[S.start+S.step*output->w->pMask[i]->time];
+      if(output->w->pMask[i]->amplitude>=2*input->w->wavelet->data->data->length-1)
+	{
+	  output->w->pMask[i]->amplitude=0.0;
+	  output->w->pMask[i]->amplitudeOriginal=0.0;
+	  output->w->pMask[i]->core=FALSE;
+	  output->w->wavelet->data->data->data[S.start+S.step*output->w->pMask[i]->time]=0.0;
+	  output->w->original->data->data->data[S.start+S.step*output->w->pMask[i]->time]=0.0;
+	}
+      if(output->w->pMask[i]->amplitude==0.0)
+	{
+	  output->w->pMask[i]->amplitude=0.0;
+          output->w->pMask[i]->amplitudeOriginal=0.0;
+          output->w->pMask[i]->core=FALSE;
+          output->w->wavelet->data->data->data[S.start+S.step*output->w->pMask[i]->time]=0.0;
+          output->w->original->data->data->data[S.start+S.step*output->w->pMask[i]->time]=0.0;
+	}
+      else
+	{
+	  output->w->pMask[i]->core=TRUE;
+	}
+    }
+
+  output->w->volumes=(UINT4*)LALCalloc(output->w->clusterCount,sizeof(UINT4));
+  output->w->sCuts=(UINT4*)LALCalloc(output->w->clusterCount,sizeof(UINT4));
+  output->w->cList=(UINT4**)LALCalloc(output->w->clusterCount,sizeof(UINT4*));
+  for(i=0;i<output->w->clusterCount;i++)
+    {
+      output->w->volumes[i]=input->another->volumes[i];
+      output->w->sCuts[i]=input->another->sCuts[i];
+      output->w->cList[i]=(UINT4*)LALCalloc(output->w->volumes[i],sizeof(UINT4));
+      for(j=0;j<output->w->volumes[i];j++)
+	{
+	  output->w->cList[i][j]=input->another->cList[i][j];
+	}
+    }
+
+  output->w->nonZeroFractionAfterSetMask=
+    ((REAL4)_countNonZeroes(output->w->wavelet->data))/((REAL4)output->w->wavelet->data->data->length);
+  output->w->nonZeroFractionAfterClustering=output->w->nonZeroFractionAfterSetMask;
+  return output->w->nonZeroFractionAfterSetMask;
+}
 
 
 #endif

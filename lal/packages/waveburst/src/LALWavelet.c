@@ -731,27 +731,47 @@ LALClusterWavelet(LALStatus *status,
         ABORT( status, LALWAVELETH_ENULLP, LALWAVELETH_MSGENULLP );
   }
   _assignClusterWavelet(&((*output)->w),input->w);
-  /*   _assignWavelet(&((*output)->w->original),input->original);*/
-
-/*   printf("LALClusterWavelet: after assign\n");fflush(stdout); */
 
   (*output)->w->nonZeroFractionAfterSetMask = 
     _setMask((*output)->w, input->minClusterSize, input->aura);
 
-  /*   printf("LALClusterWavelet: after setMask\n");fflush(stdout); */
-
   ncluster=_clusterMain((*output)->w);
 
-  /*   printf("LALClusterWavelet: after clusterMain\n");fflush(stdout); */
-
   _clusterProperties((*output)->w);
-
-  /*  printf("LALClusterWavelet: after clusterProperties\n");fflush(stdout); */
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
 }
+
+
+
+/******** <lalVerbatim file="LALWaveletCP"> ********/
+void
+LALReuseClusterWavelet(LALStatus *status,
+		       OutputClusterWavelet **output,
+		       InputReuseClusterWavelet *input)
+     /******** </lalVerbatim> ********/
+{
+  INITSTATUS( status, "LALReuseClusterWavelet", LALWAVELETC );
+  ATTATCHSTATUSPTR (status);
+
+  if(output==NULL || (*output)==NULL || input==NULL || input->w==NULL){
+    ABORT( status, LALWAVELETH_ENULLP, LALWAVELETH_MSGENULLP );
+  }
+
+  _assignClusterWavelet(&((*output)->w),input->w);
+
+  (*output)->w->nonZeroFractionAfterSetMask =
+    _duplicateClusterStructure(*output, input);
+
+  _clusterProperties((*output)->w);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+}
+
 
 /******** <lalVerbatim file="LALWaveletCP"> ********/
 void
