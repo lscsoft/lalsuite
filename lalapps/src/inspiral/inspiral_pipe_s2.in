@@ -53,24 +53,21 @@ class AnalyzedIFOData:
   def get_dag_node(self):
     return self.__dag_node
 
-def triggers_in_segment(chunk,seg):
+def chunk_in_segment(chunk,seg):
   if ( 
-    chunk.trig_start() >= seg.start() and chunk.trig_start() <= seg.end() 
+    chunk.start() >= seg.start() and chunk.start() <= seg.end() 
     ) or (
-    chunk.trig_end() >= seg.start() and chunk.trig_end() <= seg.end()
+    chunk.end() >= seg.start() and chunk.end() <= seg.end()
     ):
     return 1
   else:
     return 0
 
-def triggers_overlap(chunk1,chunk2):
+def chunks_overlap(chunk1,chunk2):
   if ( 
-    chunk1.trig_start() >= chunk2.trig_start() and \
-    chunk1.trig_start <= chunk2.trig_end()
+    chunk1.start() >= chunk2.start() and chunk1.start() <= chunk2.end()
     ) or (
-    chunk1.trig_end() >= chunk2.trig_start() and \
-    chunk1.trig_end() <= chunk2.trig_end()
-    ):
+    chunk1.end() >= chunk2.start() and chunk1.end() <= chunk2.end()):
     return 1
   else:
     return 0
@@ -359,25 +356,12 @@ l1_data.make_chunks(length,overlap,playground_only)
 h1_data.make_chunks(length,overlap,playground_only,slide_sec)
 h2_data.make_chunks(length,overlap,playground_only,slide_sec)
 
-# set the default trig start time to 64 seconds into the segment
-for data_set in [l1_data, h1_data, h2_data]:
-  for seg in data_set:
-    for chunk in seg:
-      chunk.set_trig_start(chunk.start()+overlap/2)
-
 l1_data.make_chunks_from_unused(
   length,overlap/2,playground_only,overlap/2)
 h1_data.make_chunks_from_unused(
   length,overlap/2,playground_only,overlap/2,slide_sec)
 h2_data.make_chunks_from_unused(
   length,overlap/2,playground_only,overlap/2,slide_sec)
-
-# set the default trig end time 64 seconds before the end of the segment
-for data_set in [l1_data, h1_data, h2_data]:
-  for seg in data_set:
-    for chunk in seg:
-      chunk.set_trig_end(chunk.end()-overlap/2)
-
 print "done"
 
 ##############################################################################
@@ -433,7 +417,7 @@ for seg in l1_data:
     # now loop over all the L1 data that we need to filter
     for seg_to_do in l1_lho_data:
       #if the current chunk is in one of the segments we need to filter
-      if triggers_in_segment(chunk,seg_to_do):
+      if chunk_in_segment(chunk,seg_to_do):
         # make sure we have done one and only one datafind for the segment
         if not done_df_for_seg:
           df = inspiral.DataFindNode(df_job)
@@ -458,10 +442,6 @@ for seg in l1_data:
         insp.set_end(chunk.end())
         insp.add_var_opt('snr-threshold',l1_snr)
         insp.add_var_opt('chisq-threshold',l1_chisq)
-        if chunk.start() < seg_to_do.start():
-          chunk.set_trig_start(seg_to_do.start())
-        if chunk.end() > seg_to_do.end():
-          chunk.set_trig_end(seg_to_do.end())
         insp.add_var_opt('trig-start-time',chunk.trig_start())
         insp.add_var_opt('trig-end-time',chunk.trig_end())
         insp.set_ifo('L1')
@@ -488,7 +468,7 @@ for seg in h1_data:
     # now loop over all the L1 data that we need to filter
     for seg_to_do in l1_lho_data:
       #if the current chunk is in one of the segments we need to filter
-      if triggers_in_segment(chunk,seg_to_do):
+      if chunk_in_segment(chunk,seg_to_do):
         # make sure we have done one and only one datafind for the segment
         if not done_df_for_seg:
           df = inspiral.DataFindNode(df_job)
@@ -511,10 +491,10 @@ for seg in h1_data:
         trigbank = inspiral.TrigToTmpltNode(trig_job)
         trigbank.make_trigbank(chunk,'L1','H1',usertag)
         for l1_done in l1_chunks_analyzed:
-          if triggers_overlap(chunk,l1_done.get_chunk()):
+          if chunks_overlap(chunk,l1_done.get_chunk()):
             trigbank.add_var_arg(l1_done.get_dag_node().get_output())
             if do_inspiral: trigbank.add_parent(l1_done.get_dag_node())
-            if do_h1_trigbank: dag.add_node(trigbank)
+        if do_h1_trigbank: dag.add_node(trigbank)
         # analyze the H1 master chunk with this triggered template bank
         if slide_sec:
           insp = inspiral.InspiralNode(h_insp_job)
@@ -525,10 +505,6 @@ for seg in h1_data:
         insp.set_ifo('H1')
         insp.add_var_opt('snr-threshold',h1_snr)
         insp.add_var_opt('chisq-threshold',h1_chisq)
-        if chunk.start() < seg_to_do.start():
-          chunk.set_trig_start(seg_to_do.start())
-        if chunk.end() > seg_to_do.end():
-          chunk.set_trig_end(seg_to_do.end())
         insp.add_var_opt('trig-start-time',chunk.trig_start())
         insp.add_var_opt('trig-end-time',chunk.trig_end())
         insp.set_cache(df.get_output())
@@ -554,7 +530,7 @@ for seg in h2_data:
     # now loop over all the L1 data that we need to filter
     for seg_to_do in l1_lho_data:
       #if the current chunk is in one of the segments we need to filter
-      if triggers_in_segment(chunk,seg_to_do):
+      if chunk_in_segment(chunk,seg_to_do):
         # make sure we have done one and only one datafind for the segment
         if not done_df_for_seg:
           df = inspiral.DataFindNode(df_job)
@@ -577,10 +553,10 @@ for seg in h2_data:
         trigbank = inspiral.TrigToTmpltNode(trig_job)
         trigbank.make_trigbank(chunk,'L1','H2',usertag)
         for l1_done in l1_chunks_analyzed:
-          if triggers_overlap(chunk,l1_done.get_chunk()):
+          if chunks_overlap(chunk,l1_done.get_chunk()):
             trigbank.add_var_arg(l1_done.get_dag_node().get_output())
             if do_inspiral: trigbank.add_parent(l1_done.get_dag_node())
-            if do_h2_trigbank: dag.add_node(trigbank)
+        if do_h2_trigbank: dag.add_node(trigbank)
         # analyze the H2 master chunk with this triggered template bank
         if slide_sec:
           insp = inspiral.InspiralNode(h_insp_job)
@@ -591,10 +567,6 @@ for seg in h2_data:
         insp.set_ifo('H2')
         insp.add_var_opt('snr-threshold',h2_snr)
         insp.add_var_opt('chisq-threshold',h2_chisq)
-        if chunk.start() < seg_to_do.start():
-          chunk.set_trig_start(seg_to_do.start())
-        if chunk.end() > seg_to_do.end():
-          chunk.set_trig_end(seg_to_do.end())
         insp.add_var_opt('trig-start-time',chunk.trig_start())
         insp.add_var_opt('trig-end-time',chunk.trig_end())
         insp.set_cache(df.get_output())
@@ -621,12 +593,12 @@ for seg in l1_h1_data:
   inca.add_var_opt('epsilon',cp.get('pipeline','lh-epsilon'))
   # add all L1 master segments that overlap with segment to input
   for l1_done in l1_chunks_analyzed:
-    if triggers_in_segment(l1_done.get_chunk(),seg):
+    if chunk_in_segment(l1_done.get_chunk(),seg):
       inca.add_var_arg(l1_done.get_dag_node().get_output())
       if do_inspiral: inca.add_parent(l1_done.get_dag_node())
   # add all H1 master segments that overlap with segment to input
   for h1_done in h1_chunks_analyzed:
-    if triggers_in_segment(h1_done.get_chunk(),seg):
+    if chunk_in_segment(h1_done.get_chunk(),seg):
       inca.add_var_arg(h1_done.get_dag_node().get_output())
       if do_h1_inspiral: inca.add_parent(h1_done.get_dag_node())
   if do_l1h1_coinc: dag.add_node(inca)
@@ -645,12 +617,12 @@ for seg in l1_h2_data:
   inca.add_var_opt('epsilon',cp.get('pipeline','lh-epsilon'))
   # add all L1 master segments that overlap with segment to input
   for l1_done in l1_chunks_analyzed:
-    if triggers_in_segment(l1_done.get_chunk(),seg):
+    if chunk_in_segment(l1_done.get_chunk(),seg):
       inca.add_var_arg(l1_done.get_dag_node().get_output())
       if do_inspiral: inca.add_parent(l1_done.get_dag_node())
   # add all H2 master segments that overlap with segment to input
   for h2_done in h2_chunks_analyzed:
-    if triggers_in_segment(h2_done.get_chunk(),seg):
+    if chunk_in_segment(h2_done.get_chunk(),seg):
       inca.add_var_arg(h2_done.get_dag_node().get_output())
       if do_h1_inspiral: inca.add_parent(h2_done.get_dag_node())
   if do_l1h2_coinc: dag.add_node(inca)
@@ -672,12 +644,12 @@ for seg in l1_h1_h2_data:
   inca1.add_var_opt('epsilon',cp.get('pipeline','lh-epsilon'))
   # add all L1 master segments that overlap with segment to input
   for l1_done in l1_chunks_analyzed:
-    if triggers_in_segment(l1_done.get_chunk(),seg):
+    if chunk_in_segment(l1_done.get_chunk(),seg):
       inca1.add_var_arg(l1_done.get_dag_node().get_output())
       if do_inspiral: inca1.add_parent(l1_done.get_dag_node())
   # add all H1 master segments that overlap with segment to input
   for h1_done in h1_chunks_analyzed:
-    if triggers_in_segment(h1_done.get_chunk(),seg):
+    if chunk_in_segment(h1_done.get_chunk(),seg):
       inca1.add_var_arg(h1_done.get_dag_node().get_output())
       if do_h1_inspiral: inca1.add_parent(h1_done.get_dag_node())
   # do the second inca to get the H1 triggers that are in H2 or can't be seen

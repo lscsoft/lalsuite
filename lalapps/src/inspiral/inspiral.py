@@ -288,8 +288,15 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     dest_ifo = the name of the ifo that the templates will be used for
     usertag = usertag to tag the output filename with
     """
-    self.set_start(chunk.start())
-    self.set_end(chunk.end())
+    if chunk.trig_start():
+      self.set_start(chunk.trig_start())
+    else:
+      self.set_start(chunk.start())
+    if chunk.trig_end():
+      self.set_end(chunk.trig_end())
+    else:
+      self.set_end(chunk.end())
+
     outfile = dest_ifo + '-TRIGBANK_' + source_ifo
     if usertag:
       outfile += '_' + usertag 
