@@ -19,17 +19,17 @@ Options:
   -v             verbose: print extra information
   -d level       set lalDebugLevel to level
   -n length      frequency series contain length points
-  -w filename    read whitened noise PSD from file filename
-  -f filename    read whitening filter from file filename 
-  -u filename    print unwhitened inverse noise PSD to file filename
-  -m filename    print half-whitened inverse noise PSD to file filename
+  -w filename    read uncalibrated noise PSD from file filename
+  -f filename    read response function from file filename 
+  -u filename    print calibrated inverse noise PSD to file filename
+  -m filename    print half-calibrated inverse noise PSD to file filename
 \end{verbatim}
 
 \subsubsection*{Description}
 
 This program tests the function \texttt{LALStochasticInverseNoise()},
-which outputs an unwhitened and "half-whitened" inverse noise spectra
-from a whitened data stream and a whitening filter.
+which outputs an uncalibrated and "half-calibrated" inverse noise spectra
+from a uncalibrated data stream and a response function.
 
 First, it tests that the correct error codes 
 (\textit{cf.}\ Sec.~\ref{stochastic:s:StochasticCrossCorrelation.h})
@@ -39,35 +39,35 @@ the corresponding checks in the code are made using the ASSERT macro):
 \begin{itemize}
 \item \textit{null pointer to output structure}
 \item \textit{null pointer to input structure}
-\item \textit{null pointer to whitened noise}
-\item \textit{null pointer to whitening filter}
-\item \textit{null pointer to unwhitened inverse noise}
-\item \textit{null pointer to half-whitened inverse noise}
-\item \textit{null pointer to data member of whitened noise}
-\item \textit{null pointer to data member of whitening filter}
-\item \textit{null pointer to data member of unwhitened inverse noise}
-\item \textit{null pointer to data member of half-whitened inverse noise}
-\item \textit{null pointer to data member of data member of whitened noise}
-\item \textit{null pointer to data member of data member of whitening filter}
-\item \textit{null pointer to data member of data member of unwhitened inverse noise}
-\item \textit{null pointer to data member of data member of half-whitened inverse noise}
+\item \textit{null pointer to uncalibrated noise}
+\item \textit{null pointer to response function}
+\item \textit{null pointer to calibrated inverse noise}
+\item \textit{null pointer to half-calibrated inverse noise}
+\item \textit{null pointer to data member of uncalibrated noise}
+\item \textit{null pointer to data member of response function}
+\item \textit{null pointer to data member of calibrated inverse noise}
+\item \textit{null pointer to data member of half-calibrated inverse noise}
+\item \textit{null pointer to data member of data member of uncalibrated noise}
+\item \textit{null pointer to data member of data member of response function}
+\item \textit{null pointer to data member of data member of calibrated inverse noise}
+\item \textit{null pointer to data member of data member of half-calibrated inverse noise}
 \item \textit{zero length}
 \item \textit{negative frequency spacing}
 \item \textit{zero frequency spacing}
 \item negative start frequency
-\item length mismatch between whitened noise and whitening filter
-\item length mismatch between whitened noise and unwhitened inverse noise
-\item length mismatch between whitened noise and half-whitened inverse noise
-\item frequency spacing mismatch between whitened noise and whitening filter
-\item start frequency mismatch between whitened noise and whitening filter
+\item length mismatch between uncalibrated noise and response function
+\item length mismatch between uncalibrated noise and calibrated inverse noise
+\item length mismatch between uncalibrated noise and half-calibrated inverse noise
+\item frequency spacing mismatch between uncalibrated noise and response function
+\item start frequency mismatch between uncalibrated noise and response function
 \end{itemize}
 
-It then verifies that the correct unwhitened and half-whitened inverse
+It then verifies that the correct uncalibrated and half-calibrated inverse
 noise are generated for a simple test case:
 \begin{enumerate}
-\item $\tilde{R}(f)=(1+i)f^2$, $P^{\scriptstyle{\rm W}}(f)=f^3$.  The
-  expected results are $1/P(f)=2f$, $1/P^{\scriptstyle{\rm
-      HW}}(f)=(1-i)f^{-1}$.
+\item $\tilde{R}(f)=(1+i)f^2$, $P(f)=f^3$.  The
+  expected results are $1/P^{\scriptstyle{\rm C}}(f)=2f$, 
+  $1/P^{\scriptstyle{\rm HC}}(f)=(1-i)f^{-1}$.
 \end{enumerate}
 
 For each successful test (both of these valid data and the invalid ones
@@ -233,12 +233,12 @@ int main(int argc, char *argv[])
   complexBadData  = wFilter;
 
   /******** Set Testing  Units ********/
-  /* whitening filter */
+  /* response function */
   wFilter.sampleUnits = lalDimensionlessUnit;
   wFilter.sampleUnits.unitNumerator[LALUnitIndexADCCount] = 1;
   wFilter.sampleUnits.unitNumerator[LALUnitIndexStrain] = -1;
   
-  /* whitened noise */
+  /* uncalibrated noise */
   wNoise.sampleUnits = lalDimensionlessUnit;
   wNoise.sampleUnits.unitNumerator[LALUnitIndexADCCount] = 2;
   wNoise.sampleUnits.unitNumerator[LALUnitIndexSecond] = 1;
@@ -281,10 +281,10 @@ int main(int argc, char *argv[])
     return code;
   }
 
-  input.whitenedNoisePSD = &wNoise;
-  input.whiteningFilter = &wFilter;
-  output.unWhitenedInverseNoisePSD = &invNoise;
-  output.halfWhitenedInverseNoisePSD = &hwInvNoise;
+  input.unCalibratedNoisePSD = &wNoise;
+  input.responseFunction = &wFilter;
+  output.calibratedInverseNoisePSD = &invNoise;
+  output.halfCalibratedInverseNoisePSD = &hwInvNoise;
 
  /* TEST INVALID DATA HERE -------------------------------------- */
 
@@ -314,7 +314,7 @@ int main(int argc, char *argv[])
     printf("  PASS: null pointer to output structure results in error:\n \"%s\"\n",STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     
     /* test behavior for null pointer to wNoise member of input structure */ 
-    input.whitenedNoisePSD = NULL;
+    input.unCalibratedNoisePSD = NULL;
     LALStochasticInverseNoise(&status, &output, &input);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
 			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
@@ -323,11 +323,11 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    printf("  PASS: null pointer to whitened noise results in error:\n       \"%s\"\n",
+    printf("  PASS: null pointer to uncalibrated noise results in error:\n       \"%s\"\n",
 	   STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    input.whitenedNoisePSD = &wNoise;
+    input.unCalibratedNoisePSD = &wNoise;
     /* test behavior for null pointer to wFitler member of input structure */
-    input.whiteningFilter = NULL;
+    input.responseFunction = NULL;
     LALStochasticInverseNoise(&status, &output, &input);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
 			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
@@ -336,11 +336,11 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    printf("  PASS: null pointer to whitening filter results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    input.whiteningFilter = &wFilter;
+    printf("  PASS: null pointer to response function results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    input.responseFunction = &wFilter;
     
     /* test behavior for null pointer to invNoise member of output structure */
-    output.unWhitenedInverseNoisePSD = NULL;
+    output.calibratedInverseNoisePSD = NULL;
     LALStochasticInverseNoise(&status, &output, &input);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
 			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
@@ -349,12 +349,12 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    printf("  PASS: null pointer to unwhitened inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    output.unWhitenedInverseNoisePSD = &invNoise;
+    printf("  PASS: null pointer to calibrated inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    output.calibratedInverseNoisePSD = &invNoise;
     
-    /* test behavior for null pointer to half-whitened inverse noise member */
+    /* test behavior for null pointer to half-calibrated inverse noise member */
     /* of output structure */
-    output.halfWhitenedInverseNoisePSD = NULL;
+    output.halfCalibratedInverseNoisePSD = NULL;
     LALStochasticInverseNoise(&status, &output, &input);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
 			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
@@ -363,11 +363,11 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    printf("  PASS: null pointer to half-whitened inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    output.halfWhitenedInverseNoisePSD = &hwInvNoise;
+    printf("  PASS: null pointer to half-calibrated inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    output.halfCalibratedInverseNoisePSD = &hwInvNoise;
     
     /* test behavior for null pointer to data member of wnoise */
-    input.whitenedNoisePSD = &realBadData;
+    input.unCalibratedNoisePSD = &realBadData;
     LALStochasticInverseNoise(&status, &output, &input);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
 			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
@@ -376,11 +376,11 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    printf("  PASS: null pointer to data member of whitened noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    input.whitenedNoisePSD = &wNoise;
+    printf("  PASS: null pointer to data member of uncalibrated noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    input.unCalibratedNoisePSD = &wNoise;
     
     /* test behavior for null pointer to data member of wFilter */
-    input.whiteningFilter = &complexBadData;
+    input.responseFunction = &complexBadData;
     LALStochasticInverseNoise(&status, &output, &input);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
 			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
@@ -389,11 +389,11 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    printf("  PASS: null pointer to data member of whitening filter results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    input.whiteningFilter = &wFilter;
+    printf("  PASS: null pointer to data member of response function results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    input.responseFunction = &wFilter;
     
     /* test behavior for null pointer to data member of invNoise  */
-    output.unWhitenedInverseNoisePSD = &realBadData;
+    output.calibratedInverseNoisePSD = &realBadData;
     LALStochasticInverseNoise(&status, &output, &input);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
 			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
@@ -402,12 +402,12 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    printf("  PASS: null pointer to data member of unwhitened inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    output.unWhitenedInverseNoisePSD = &invNoise;
+    printf("  PASS: null pointer to data member of calibrated inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    output.calibratedInverseNoisePSD = &invNoise;
     
-    /* test behavior for null pointer to data member of half-whitened */
+    /* test behavior for null pointer to data member of half-calibrated */
     /* inverse noise */
-    output.halfWhitenedInverseNoisePSD = &complexBadData;
+    output.halfCalibratedInverseNoisePSD = &complexBadData;
     LALStochasticInverseNoise(&status, &output, &input);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
 			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
@@ -416,8 +416,8 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    printf("  PASS: null pointer to data member of half-whitened noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    output.halfWhitenedInverseNoisePSD = &hwInvNoise;
+    printf("  PASS: null pointer to data member of half-calibrated noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    output.halfCalibratedInverseNoisePSD = &hwInvNoise;
     
     /* Create a vector for testing REAL4 null data-data pointers */
     LALSCreateVector(&status, &(realBadData.data), STOCHASTICINVERSENOISETESTC_LENGTH);
@@ -431,7 +431,7 @@ int main(int argc, char *argv[])
     realBadData.data->data = NULL;
     
     /* test behavior for null pointer to data-data member of wNoise */
-    input.whitenedNoisePSD = &realBadData;
+    input.unCalibratedNoisePSD = &realBadData;
     LALStochasticInverseNoise(&status, &output, &input);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
 			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
@@ -440,11 +440,11 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    printf("  PASS: null pointer to data-data member of whitened noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    input.whitenedNoisePSD = &wNoise;
+    printf("  PASS: null pointer to data-data member of uncalibrated noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    input.unCalibratedNoisePSD = &wNoise;
     
     /* test behavior for null pointer to data-data member of invNoise */
-    output.unWhitenedInverseNoisePSD = &realBadData;
+    output.calibratedInverseNoisePSD = &realBadData;
     LALStochasticInverseNoise(&status, &output, &input);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
 			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
@@ -453,8 +453,8 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    printf("  PASS: null pointer to data-data member of unwhitened inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    output.unWhitenedInverseNoisePSD = &invNoise;
+    printf("  PASS: null pointer to data-data member of calibrated inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    output.calibratedInverseNoisePSD = &invNoise;
     
     /* Create a vector for testing COMPLEX8 null data-data pointers */ 
     LALCCreateVector(&status, &(complexBadData.data), STOCHASTICINVERSENOISETESTC_LENGTH);
@@ -468,7 +468,7 @@ int main(int argc, char *argv[])
     complexBadData.data->data = NULL;
     
     /* test behavior for null pointer to data-data member of wFilter */
-    input.whiteningFilter = &complexBadData;
+    input.responseFunction = &complexBadData;
     LALStochasticInverseNoise(&status, &output, &input);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
 			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
@@ -477,11 +477,11 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    printf("  PASS: null pointer to data-data member of whitening filter results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    input.whiteningFilter = &wFilter;
+    printf("  PASS: null pointer to data-data member of response function results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    input.responseFunction = &wFilter;
     
     /* test behavior for null pointer to data-data member of hwInvNoise */
-    output.halfWhitenedInverseNoisePSD = &complexBadData;
+    output.halfCalibratedInverseNoisePSD = &complexBadData;
     LALStochasticInverseNoise(&status, &output, &input);
     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
 			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
@@ -490,8 +490,8 @@ int main(int argc, char *argv[])
     {
       return code;
     }
-    printf("  PASS: null pointer to data-data member of half-whitened inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    output.halfWhitenedInverseNoisePSD = &hwInvNoise;
+    printf("  PASS: null pointer to data-data member of half-calibrated inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    output.halfCalibratedInverseNoisePSD = &hwInvNoise;
     
     /** clean up **/
     realBadData.data->data = sPtr;
@@ -600,7 +600,7 @@ int main(int argc, char *argv[])
   {
     return code;
   }
-  printf("  PASS: length mismatch between whitened noise and whitening filter results in error:\n       \"%s\"\n",
+  printf("  PASS: length mismatch between uncalibrated noise and response function results in error:\n       \"%s\"\n",
 	 STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   wFilter.data->length = STOCHASTICINVERSENOISETESTC_LENGTH;
   
@@ -615,7 +615,7 @@ int main(int argc, char *argv[])
   {
     return code;
   }
-   printf("  PASS: length mismatch between whitened inverse noise and unwhitened inverse noise results in error:\n       \"%s\"\n",
+   printf("  PASS: length mismatch between calibrated inverse noise and calibrated inverse noise results in error:\n       \"%s\"\n",
           STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
    invNoise.data->length = STOCHASTICINVERSENOISETESTC_LENGTH;
 
@@ -630,7 +630,7 @@ int main(int argc, char *argv[])
    {
        return code;
    }
-   printf("  PASS: length mismatch between whtiened inverse noise and half-whitened inverse noise results in error:\n       \"%s\"\n",
+   printf("  PASS: length mismatch between whtiened inverse noise and half-calibrated inverse noise results in error:\n       \"%s\"\n",
           STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
    hwInvNoise.data->length = STOCHASTICINVERSENOISETESTC_LENGTH;
 
@@ -644,7 +644,7 @@ int main(int argc, char *argv[])
    {
        return code;
    }
-   printf("  PASS: initial frequency mismatch between whitened noise and whitening filter results in error:\n       \"%s\"\n",
+   printf("  PASS: initial frequency mismatch between uncalibrated noise and response function results in error:\n       \"%s\"\n",
           STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
    wFilter.f0 = STOCHASTICINVERSENOISETESTC_F0;
 
@@ -659,7 +659,7 @@ int main(int argc, char *argv[])
    {
        return code;
    }
-   printf("  PASS: frequency spacing mismatch between whitened noise and whitening filter results in error:\n       \"%s\"\n",
+   printf("  PASS: frequency spacing mismatch between uncalibrated noise and response function results in error:\n       \"%s\"\n",
           STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
    wFilter.deltaF = STOCHASTICINVERSENOISETESTC_DELTAF;
 
@@ -677,12 +677,12 @@ int main(int argc, char *argv[])
    }
 
    /* fill inverse noise input and output */
-   input.whitenedNoisePSD      = &(wNoise);
-   input.whiteningFilter                 = &(wFilter);
-   output.unWhitenedInverseNoisePSD         = &(invNoise);
-   output.halfWhitenedInverseNoisePSD       = &(hwInvNoise);
+   input.unCalibratedNoisePSD      = &(wNoise);
+   input.responseFunction                 = &(wFilter);
+   output.calibratedInverseNoisePSD         = &(invNoise);
+   output.halfCalibratedInverseNoisePSD       = &(hwInvNoise);
    
-   /*calculate the unwhitened inverse noise and half-whitened inverse noise*/
+   /*calculate the calibrated inverse noise and half-calibrated inverse noise*/
    LALStochasticInverseNoise(&status, &output, &input );
    if ( ( code = CheckStatus (&status, 0 , "",
 			      STOCHASTICINVERSENOISETESTC_EFLS,
@@ -694,7 +694,7 @@ int main(int argc, char *argv[])
    if (optVerbose) 
    {
      printf("  Valid Data Test:\n");
-     printf("  Checking half-whitened inverse noise...\n");
+     printf("  Checking half-calibrated inverse noise...\n");
    }
    /* check output f0 */
    if (optVerbose)
@@ -837,10 +837,10 @@ int main(int argc, char *argv[])
       return STOCHASTICINVERSENOISETESTC_EFLS;
     }
   }
-  /****** check valid unwhitened inverse noise *******/
+  /****** check valid calibrated inverse noise *******/
    if (optVerbose) 
    {
-     printf("  Checking unwhitened inverse noise...\n");
+     printf("  Checking calibrated inverse noise...\n");
    }
    /* check output f0 */
    if (optVerbose)
@@ -1058,12 +1058,12 @@ int main(int argc, char *argv[])
     LALCReadFrequencySeries(&status, &wFilter, optWFilterFile);
     
     /* fill inverse noise input and output */
-    input.whitenedNoisePSD = &(wNoise);
-    input.whiteningFilter            = &(wFilter);
-    output.unWhitenedInverseNoisePSD    = &(invNoise);
-    output.halfWhitenedInverseNoisePSD  = &(hwInvNoise);
+    input.unCalibratedNoisePSD = &(wNoise);
+    input.responseFunction            = &(wFilter);
+    output.calibratedInverseNoisePSD    = &(invNoise);
+    output.halfCalibratedInverseNoisePSD  = &(hwInvNoise);
 
-    /*calculate the unwhitened inverse noise and half-whitened inverse noise*/
+    /*calculate the calibrated inverse noise and half-calibrated inverse noise*/
     LALStochasticInverseNoise(&status, &output, &input );
     if ( ( code = CheckStatus (&status, 0 , "", 
 			       STOCHASTICINVERSENOISETESTC_EUSE,
@@ -1073,13 +1073,13 @@ int main(int argc, char *argv[])
     }
 
     /* print output files */
-    LALSPrintFrequencySeries(output.unWhitenedInverseNoisePSD, 
+    LALSPrintFrequencySeries(output.calibratedInverseNoisePSD, 
                              optInvNoiseFile);
-    printf("====== Unwhitened Inverse Noise PSD Written to File %s ======\n",
+    printf("====== Calibrated Inverse Noise PSD Written to File %s ======\n",
 	   optInvNoiseFile);
-    LALCPrintFrequencySeries(output.halfWhitenedInverseNoisePSD,
+    LALCPrintFrequencySeries(output.halfCalibratedInverseNoisePSD,
                              optHWInvNoiseFile);
-    printf("===== Half-Whitened Inverse Noise PSD Written to File %s =====\n",
+    printf("===== Half-Calibrated Inverse Noise PSD Written to File %s =====\n",
 	   optHWInvNoiseFile);
 
 
@@ -1135,10 +1135,10 @@ static void Usage (const char *program, int exitcode)
   fprintf (stderr, "  -v             verbose: print extra information\n");
   fprintf (stderr, "  -d level       set lalDebugLevel to level\n");
   fprintf (stderr, "  -n length      frequency series contain length points\n");
-  fprintf (stderr, "  -w filename    read whitened noise PSD from file filename\n");
-  fprintf (stderr, "  -f filename    read whitening filter from file filename \n");
-  fprintf (stderr, "  -u filename    print unwhitened inverse noise PSD to file filename\n");
-  fprintf (stderr, "  -m filename    print half-whitened inverse noise PSD to file filename\n");
+  fprintf (stderr, "  -w filename    read uncalibrated noise PSD from file filename\n");
+  fprintf (stderr, "  -f filename    read response function from file filename \n");
+  fprintf (stderr, "  -u filename    print calibrated inverse noise PSD to file filename\n");
+  fprintf (stderr, "  -m filename    print half-calibrated inverse noise PSD to file filename\n");
   exit (exitcode);
 }
 
@@ -1168,15 +1168,15 @@ ParseOptions (int argc, char *argv[])
         optLength = atoi (optarg);
         break;
         
-      case 'w': /* specify whitened noise file */
+      case 'w': /* specify uncalibrated noise file */
         strncpy (optWNoiseFile, optarg, LALNameLength);
         break;
         
-      case 'f': /* specify whitening filter file */
+      case 'f': /* specify response function file */
         strncpy (optWFilterFile, optarg, LALNameLength);
         break;
         
-      case 'u': /* specify unwhitened inverse noise file */
+      case 'u': /* specify calibrated inverse noise file */
         strncpy (optInvNoiseFile, optarg, LALNameLength);
         break;
 

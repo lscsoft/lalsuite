@@ -27,45 +27,49 @@ cross-correlation statistic
 \begin{eqnarray} 
 Y
 &:=&\int_{t_0}^{t_0+T} dt_1\int_{t_0}^{t_0+T} dt_2\,
-h_1(t_1)\, Q(t_1-t_2)\, h_2(t_2) \nonumber \\
+w_1(t_1)\, h_1(t_1)\, Q(t_1-t_2)\, w_2(t_2)\, h_2(t_2) \nonumber \\
 &\approx& \sum_{j=0}^{N-1}\delta t\sum_{k=0}^{N-1}\delta t\,
-h_1[j]\, Q[j-k]\, h_2[k] \nonumber \\
-&=& \sum_{\ell=-(N-1)}^{N-1} \delta f\,
+w_1[j]\, h_1[j]\, Q[j-k]\, w_2[j]\, h_2[k] \nonumber \\
+&=& \sum_{\ell=0}^{M-1} \delta f\,
 \widetilde{\bar{h}}_{1}[\ell]^* \,\widetilde{Q}[\ell]\,
 \widetilde{\bar{h}}_{2}[\ell],
 \label{stochastic:e:ymax}
 \end{eqnarray}
 %
 where the sampling period is $\delta t=T/N$, the frequency spacing is
-$\delta f = [(2N-1)\delta t]^{-1}$, the tilde indicates a discrete
+$\delta f = [M\delta t]^{-1}$, the tilde indicates a discrete
 Fourier transform normalized to approximate the continuous Fourier
 transform:
 \begin{equation}
-\widetilde{Q}[\ell] := \sum_{k=-(N-1)}^{N-1} \delta t\,
-Q[k]\, e^{-i2\pi k\ell/(2N-1)}
+\widetilde{Q}[\ell] := \sum_{k=0}^{N-1} \delta t\,
+Q[k]\, e^{-i2\pi k\ell/M}
 \end{equation}
 the asterisk indicates complex conjugation, and the overbar indicates
-zero-padding:
+windowing and zero-padding:
 % 
 \begin{equation}
 \bar{h}[k]=\ 
 \left\{ \begin{array}{cl} 
-h[k]  &    k = 0, 1, \ldots, N-1 \\ 
-0     &    k = -1, -2, \ldots, -(N-1) 
+w[k]\,h[k]  &    k = 0, \ldots, N-1 \\ 
+0     &    k = N, \ldots, M-1
 \end{array} 
 \right. 
 \end{equation} 
 % 
 which is needed because the range of indices for $h[k]$ and $Q[k]$ do
-not match.
+not match.  $M$ should be at least $2N-1$, but may be chosen to be,
+\textit{e.g.}, $2M$ for convenience.
 %
 The inputs to \texttt{LALStochasticCrossCorrelationStatistic()} are
-the zero-padded, FFTed data streams $\widetilde{\bar{h}}_{1}[\ell]$
-and $\widetilde{\bar{h}}_{2}[\ell]$, along with the optimal filter
-$\widetilde{Q}[\ell]$.  Since the underlying time series are real, the
-input series only need to include the values for $\ell=0,\ldots,N-1$,
-with the elements corresponding to negative indices determined by
-complex conjugation.  This allows $Y$ to be computed as
+the (windowed) zero-padded, FFTed data streams
+$\widetilde{\bar{h}}_{1}[\ell]$ and $\widetilde{\bar{h}}_{2}[\ell]$,
+along with the optimal filter $\widetilde{Q}[\ell]$.  Since the
+underlying time series are real, the input series only need to include
+the values for $\ell=0,\ldots,P-1$ (where
+$P=\left[\frac{M+1}{2}\right]$ is the number of independent elements
+in the frequency series) with the elements corresponding to negative
+frequencies determined by complex conjugation.  This allows $Y$ to be
+computed as
 \begin{equation}
 Y=\ 
 \delta f\ 
@@ -73,7 +77,7 @@ Y=\
 \widetilde{\bar{h}}_{1}[0]\ 
 \widetilde{Q}[0]\ 
 \widetilde{\bar{h}}_{2}[0]+\ 
-2\sum_{\ell=1}^{N-1}\ 
+2\sum_{\ell=1}^{P-1}\ 
 {\mathrm{Re}} \left\{
 \widetilde{\bar{h}}_{1}[\ell]^* \ 
 \widetilde{Q}[\ell]\ 
@@ -86,15 +90,21 @@ Y=\
 The routine \texttt{LALStochasticCrossCorrelationStatistic()} is
 designed for analyzing non-heterodyned data, so if the input FFTed
 datasets have a positive start frequency, and thus represent a range
-of frequencies $f_0\le f< f_0 + (N-1)\delta f$, it is assumed that
+of frequencies $f_0\le f< f_0 + (P-1)\delta f$, it is assumed that
 they were produced by discarding frequencies below $f_0$ from a longer
 frequency series, which was still the Fourier transform of a real time
 series.  In this case the cross-correlation statistic is calculated
-as 
+as\footnote{Note that the $P$th frequency bin is not treated
+  specially, as would be expected for the Nyquist frequency.  This is
+  the appropriate behavior if $M$ is an odd number (so that there is
+  no Nyquist bin) or if, as a result of coarse-graining, the Nyquist
+  bin has been removed from $\widetilde{Q}$.  At any rate, if there's
+  a significant contribution to the cross-correlation statistic from
+  the Nyquist frequency, something is wrong.}
 \begin{eqnarray}
 Y&=&\ 
 \delta f\ 
-2\sum_{\ell=0}^{N-1}\ 
+2\sum_{\ell=0}^{P-1}\ 
 {\mathrm{Re}} \left\{
 \widetilde{\bar{h}}_{1}[\ell]^* \ 
 \widetilde{Q}[\ell]\ 
@@ -102,9 +112,9 @@ Y&=&\
 \right\} \nonumber
 \\
 &\approx&
-\int_{-f_0-(N-1)\delta f}^{-f_0} df\ 
+\int_{-f_0-P\delta f}^{-f_0} df\ 
 \widetilde{h}_1(f)^*\ \widetilde{Q}(f)\ \widetilde{h}_2(f)
-+ \int_{f_0}^{f_0+(N-1)\delta f} df\ 
++ \int_{f_0}^{f_0+P\delta f} df\ 
 \widetilde{h}_1(f)^*\ \widetilde{Q}(f)\ \widetilde{h}_2(f)
 \label{stochastic:e:bandlimited}
 \end{eqnarray}
@@ -115,7 +125,7 @@ the optimal filter is more coarsely sampled (for instance, if it
 varies in frequency too slowly to warrant the finer resolution), the
 data streams will be multiplied in the frequency domain and their
 product coarse-grained
-(cf.~Sec\ref{stochastic:ss:CoarseGrainFrequencySeries.c}) to the
+(cf.~Sec.~\ref{stochastic:ss:CoarseGrainFrequencySeries.c}) to the
 optimal filter resolution before calculating
 (\ref{stochastic:e:bandlimited}).
 
@@ -131,21 +141,21 @@ In the case of heterodyned data, one wishes to calculate
 \begin{eqnarray} 
 Y
 &:=&\int_{t_0}^{t_0+T} dt_1\int_{t_0}^{t_0+T} dt_2\,
-h_1(t_1)^*\, Q(t_1-t_2)\, h_2(t_2) \nonumber \\
+w_1(t_1)\, h_1(t_1)^*\, Q(t_1-t_2)\, w_2(t_2)\, h_2(t_2) \nonumber \\
 &\approx& \sum_{j=0}^{N-1}\delta t\sum_{k=0}^{N-1}\delta t\,
-h_1[j]^*\, Q[j-k]\, h_2[k] \nonumber \\
-&=& \sum_{\ell=-(N-1)}^{N-1} \delta f\,
+w_1[k]\, h_1[j]^*\, Q[j-k]\, w_2[k]\, h_2[k] \nonumber \\
+&=& \sum_{\ell=0}^{M-1} \delta f\,
 \widetilde{\bar{h}}_{1}[\ell]^* \,\widetilde{Q}[\ell]\,
 \widetilde{\bar{h}}_{2}[\ell],
 \label{stochastic:e:ymaxhet}
 \end{eqnarray}
 %
 In this case, the Fourier transforms of the zero-padded data streams
-have $2N-1$ independent elements, which must all be included in the sum,
+have $M$ independent elements, which must all be included in the sum,
 which is calculated as
 \begin{equation}
 Y=\ 
-\sum_{\ell=0}^{2N-2}\ 
+\sum_{\ell=0}^{M-1}\ 
 \widetilde{\bar{h}}_{1}[\ell]^* \ 
 \widetilde{Q}[\ell]\ 
 \widetilde{\bar{h}}_{2}[\ell] 
@@ -178,7 +188,7 @@ and returns it as a frequency series.
 
 The function \texttt{LALStochasticCrossCorrelationSpectrum()}
 calculates the integrand (\ref{stochastic:e:ccspec}) as follows: First
-it calculate $\widetilde{\bar{h}}_{1}[\ell]^* \ 
+it calculates $\widetilde{\bar{h}}_{1}[\ell]^* \, 
 \widetilde{\bar{h}}_{2}[\ell]$ with
 \texttt{LALCCVectorMultiplyConjugate()} and matches the resolution of
 the result to that of \verb+input->optimalFilter+ with
@@ -234,10 +244,10 @@ LALUnitMultiply()
 \item The output units are constructed by combining the input units,
   but under normal circumstances the units will be as follows:
   \begin{eqnarray}
-    {} [\widetilde{Q}^{\scriptstyle{\rm W}}] &=& \textrm{count}^{-2} \\
+    {} [\widetilde{Q}] &=& \textrm{count}^{-2} \\
     {} [\widetilde{\bar{h}}_{1,2}] &=& \textrm{count}\,\textrm{Hz}^{-1} \\
     {} [Y(f)] &:=& [\widetilde{\bar{h}}_1] 
-    [\widetilde{Q}^{\scriptstyle{\rm W}}]  [\widetilde{\bar{h}}_2]
+    [\widetilde{Q}]  [\widetilde{\bar{h}}_2]
     = \textrm{s}^2 \\
     {} [Y] &:=& [Y(f)]\, \textrm{Hz}^{-1} = \textrm{s}
   \end{eqnarray}

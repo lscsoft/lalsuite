@@ -21,9 +21,9 @@ As described in Section~\ref{stochastic:ss:StochasticOptimalFilter.c},
 the optimal filter for stochastic searches is defined as
 %
 \begin{equation}\label{stochastic:e:Q}
-\widetilde{Q}(f)=\lambda\,
+\widetilde{Q}{}^{\scriptstyle{\rm C}}(f)=\lambda\,
 \frac{\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)}
-{|f|^3\,P_1(f)\,P_2(f)}
+{|f|^3\,P^{\scriptstyle{\rm C}}_1(f)\,P^{\scriptstyle{\rm C}}_2(f)}
 \end{equation}
 %
 The normalization constant $\lambda$ is chosen so that the expected mean
@@ -32,7 +32,7 @@ value of the cross-correlation statistic is \cite{stochastic:Allen:1999}
 \mu = \frac{3 {H_0}^2}{20\pi^2}\, T \,\overline{w_1w_2}
 \int_{-\infty}^{\infty} df\, |f|^{-3}\,
 \gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f) 
-\widetilde{Q}(f) = \Omega_{\scriptstyle{\rm R}} T
+\widetilde{Q}{}^{\scriptstyle{\rm C}}(f) = \Omega_{\scriptstyle{\rm R}} T
 \label{stochastic:e:mu}
 \end{equation}
 where $T$ is the integration time
@@ -49,7 +49,7 @@ value at
                {3\,{H_0}^2 \overline{w_1w_2}}
 \left(
       \int_{-\infty}^\infty \frac{df}{f^6} 
-      \frac{[\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)]^2}{P_1(f)P_2(f)}
+      \frac{[\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)]^2}{P^{\scriptstyle{\rm C}}_1(f)P^{\scriptstyle{\rm C}}_2(f)}
 \right)^{-1}
 \end{equation}
 
@@ -59,13 +59,13 @@ cross-correlation statistic, since
 \begin{eqnarray}
   \frac{\sigma^2}{T} 
   &=& \frac{\overline{(w_1w_2)^2}}{4}\int_{-\infty}^{\infty} df
-  \, P_1(f)\, P_2(f)\,
+  \, P^{\scriptstyle{\rm C}}_1(f)\, P^{\scriptstyle{\rm C}}_2(f)\,
   \left(
-    \widetilde{Q}(f)
+    \widetilde{Q}{}^{\scriptstyle{\rm C}}(f)
   \right)^2
   = \frac{\lambda}{4} \overline{(w_1w_2)^2} 
 \int_{-\infty}^{\infty} \frac{df}{|f|^3}\,\gamma(f)\,
-  \Omega_{\scriptstyle{\rm GW}}(f)\,\widetilde{Q}(f) 
+  \Omega_{\scriptstyle{\rm GW}}(f)\,\widetilde{Q}{}^{\scriptstyle{\rm C}}(f) 
   \nonumber
   \\
 \label{stochastic:e:variance}
@@ -73,7 +73,7 @@ cross-correlation statistic, since
 \,\Omega_{\scriptstyle{\rm R}} \,\lambda
 \end{eqnarray}
 where we have used (\ref{stochastic:e:Q}) to replace one of the two
-factors of $\widetilde{Q}(f)$ and (\ref{stochastic:e:mu}) to replace
+factors of $\widetilde{Q}{}^{\scriptstyle{\rm C}}(f)$ and (\ref{stochastic:e:mu}) to replace
 the integral.
 
 \texttt{LALStochasticOptimalFilterNormalization()} uses
@@ -101,7 +101,7 @@ heterodyned data, the integral is approximated by the sum
 \left(
   \delta f\sum_{k=0}^{N-1}
   (f_0 + k\,\delta f)^{-6}
-  \frac{(\gamma[k]\,\Omega_{\scriptstyle{\rm GW}}[k])^2}{P_1[k]P_2[k]}
+  \frac{(\gamma[k]\,\Omega_{\scriptstyle{\rm GW}}[k])^2}{P^{\scriptstyle{\rm C}}_1[k]P^{\scriptstyle{\rm C}}_2[k]}
 \right)^{-1}
 \nonumber
 \\
@@ -109,11 +109,11 @@ heterodyned data, the integral is approximated by the sum
 \frac{20\pi^2\, \Omega_{\scriptstyle{\rm R}}}{3\,{H_0}^2}
 \left(
       \int_{f_0}^{f_0+N\delta f} \frac{df}{f^6} 
-      \frac{[\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)]^2}{P_1(f)P_2(f)}
+      \frac{[\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)]^2}{P^{\scriptstyle{\rm C}}_1(f)P^{\scriptstyle{\rm C}}_2(f)}
 \right)^{-1}
 \end{eqnarray}
 (Leaving out frequencies outside the band is equivalent to assuming
-one or both of the noise PSDs $P_{1,2}(f)$ blows up outside that
+one or both of the noise PSDs $P^{\scriptstyle{\rm C}}_{1,2}(f)$ blows up outside that
 range.)
 
 In the case of non-heterodyned data with $f_0=0$, we calculate
@@ -123,7 +123,7 @@ In the case of non-heterodyned data with $f_0=0$, we calculate
 \left(
   \delta f\, 2\ {\mathrm{Re}}  \sum_{k=0 \scriptstyle{\rm or } 1}^{N-1}
   (k\,\delta f)^{-6}
-  \frac{(\gamma[k]\,\Omega_{\scriptstyle{\rm GW}}[k])^2}{P_1[k]P_2[k]}
+  \frac{(\gamma[k]\,\Omega_{\scriptstyle{\rm GW}}[k])^2}{P^{\scriptstyle{\rm C}}_1[k]P^{\scriptstyle{\rm C}}_2[k]}
 \right)^{-1}
 \end{equation}
 which includes negative frequencies as well.  The difference
@@ -158,21 +158,22 @@ LALUnitCompare()
 \item The units of the input series are checked for consistency; since
   \cite{stochastic:Allen:1999}
   \begin{equation}
-    \langle\widetilde{h}_1(f)^*\widetilde{h}_2(f')\rangle
+    \langle\widetilde{h}{}^{\scriptstyle{\rm C}}_1(f)^*
+    \widetilde{h}{}^{\scriptstyle{\rm C}}_2(f')\rangle
     = \frac{3H_0^2}{20\pi^2}\delta(f-f')
     \gamma(|f|)\Omega_{\scriptstyle{\rm GW}}(|f|)
   \end{equation}
   and
   \begin{equation}
     \langle\widetilde{h}_i(f)^*\widetilde{h}_i(f')\rangle
-    = \delta(f-f')P_i(f)
+    = \delta(f-f')P^{\scriptstyle{\rm C}}_i(f)
     \,
   \end{equation}
   we demand that, up to powers of ten,
   \begin{equation}
     ([\gamma][\Omega_{\scriptstyle{\rm GW}}])^2
     =([\widetilde{h}_1][\widetilde{h}_2][T]^{-2})^2
-    =[P_1][P_2][T]^{-2}
+    =[P^{\scriptstyle{\rm C}}_1][P^{\scriptstyle{\rm C}}_2][T]^{-2}
   \end{equation}
 \item This routine, like all those in the \texttt{stochastic} package,
   uses with single precision arithmetic, consistent with the accuracy
@@ -195,14 +196,14 @@ LALUnitCompare()
   \begin{equation}
     ([\gamma][\Omega_{\scriptstyle{\rm GW}}])^2
     =([\widetilde{h}_1][\widetilde{h}_2][T]^{-2})^2
-    =[P_1][P_2][T]^{-2}
+    =[P^{\scriptstyle{\rm C}}_1][P^{\scriptstyle{\rm C}}_2][T]^{-2}
   \end{equation}
   \begin{eqnarray}
     {} [\gamma] &=& \textrm{strain}^{2} \\
     {} [\Omega_{\scriptstyle{\rm GW}}] &=& 1 \\
-    {} [1/P_{1,2}] &=& 10^{36}\,\textrm{Hz}\,\textrm{strain}^{-2} \\
+    {} [1/P^{\scriptstyle{\rm C}}_{1,2}] &=& 10^{36}\,\textrm{Hz}\,\textrm{strain}^{-2} \\
     {} [\lambda] &=&
-    10^{36}\, [P_1]\,[P_2]
+    10^{36}\, [P^{\scriptstyle{\rm C}}_1]\,[P^{\scriptstyle{\rm C}}_2]
     \,[\gamma]^{-2}\,[\Omega_{\scriptstyle{\rm GW}}]^{-1}\,\textrm{s}^{-3}
     =  10^{-36}\,\textrm{s}^{-1}\\
     {} [\sigma^2/T] &=&

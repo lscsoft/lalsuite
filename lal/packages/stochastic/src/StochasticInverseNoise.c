@@ -7,9 +7,9 @@ $Id$
 \subsection{Module \texttt{StochasticInverseNoise.c}}
 \label{stochastic:ss:StochasticInverseNoise.c}
 
-Calculates the values of the unwhitened and half-whitened inverse
-noise power spectra from the whitened noise power spectrum and the
-whitening filter (frequency-domain instrument response).
+Calculates the values of the calibrated and half-calibrated inverse
+noise power spectra from the uncalibrated noise power spectrum and the
+frequency-domain instrument response function
 
 \subsubsection*{Prototypes}
 \idx{LALStochasticInverseNoise()}
@@ -18,39 +18,38 @@ whitening filter (frequency-domain instrument response).
 \subsubsection*{Description}
 
 As described in Sec.~\ref{stochastic:ss:StochasticOptimalFilter.c},
-the most convenient combinations of the noise $P^{\scriptstyle{\rm
-    W}}(f)$ (defined by $\langle h^{\scriptstyle{\rm
-    W}}(f)h^{\scriptstyle{\rm
-    W}}(f')^*\rangle=\delta(f-f')P^{\scriptstyle{\rm W}}(f)$) and
-instrument response (known in the frequency domain as the whitening
-filter) $\widetilde{R}(f)=h^{\scriptstyle{\rm W}}(f)/h(f)$ to use in
-constructing an optimal filter are the inverse half-whitened power
+the most convenient combinations of the noise $P(f)$ (defined by $\langle h(f)h(f')^*\rangle=\delta(f-f')P(f)$) and
+instrument response 
+$\widetilde{R}(f)=h(f)/h(f)$ to use in
+constructing an optimal filter are the inverse half-calibrated power
 spectral density
 \begin{equation}
-  \label{stochastic:e:halfWhitenedPSD}
-  \frac{1}{P^{\scriptstyle{\rm HW}}(f)}=\frac{1}{\widetilde{R}(f)\,P(f)}
-  =\frac{\widetilde{R}(f)^*}{P^{\scriptstyle{\rm W}}(f)}
+  \label{stochastic:e:halfCalibratedPSD}
+  \frac{1}{P^{\scriptstyle{\rm HC}}(f)}=\frac{1}{\widetilde{R}(f)
+  \,P^{\scriptstyle{\rm C}}(f)}
+  =\frac{\widetilde{R}(f)^*}{P(f)}
 \end{equation}
-and the inverse unwhitened PSD
+and the inverse calibrated PSD
 \begin{equation}
-  \label{stochastic:e:unWhitenedPSD}
-  \frac{1}{P(f)}
-  =\frac{|\widetilde{R}(f)|^2}{P^{\scriptstyle{\rm W}}(f)}
+  \label{stochastic:e:calibratedPSD}
+  \frac{1}{P^{\scriptstyle{\rm C}}(f)}
+  =\frac{|\widetilde{R}(f)|^2}{P(f)}
 \end{equation}
 The function \texttt{LALStochasticInverseNoise()} takes in a
-\texttt{REAL4FrequencySeries} describing the whitened PSD
-$P^{\scriptstyle{\rm W}}(f)$ along with a
+\texttt{REAL4FrequencySeries} describing the uncalibrated PSD
+$P(f)$ along with a
 \texttt{COMPLEX8FrequencySeries} describing the frequency-domain
 response $\widetilde{R}(f)$, and outputs a
-\texttt{REAL4FrequencySeries} describing the unwhitened inverse PSD
-$1/P(f)$ along with a \texttt{COMPLEX8FrequencySeries} describing the
-half-whitened inverse PSD $1/P^{\scriptstyle{\rm HW}}(f)$.
+\texttt{REAL4FrequencySeries} describing the calibrated inverse PSD
+$1/P^{\scriptstyle{\rm C}}(f)$
+along with a \texttt{COMPLEX8FrequencySeries} describing the
+half-calibrated inverse PSD $1/P^{\scriptstyle{\rm HC}}(f)$.
 
 \subsubsection*{Algorithm}
 
 The output series are filled according to a straightforward
 implemementation of
-(\ref{stochastic:e:halfWhitenedPSD}-\ref{stochastic:e:unWhitenedPSD}).
+(\ref{stochastic:e:halfCalibratedPSD}-\ref{stochastic:e:calibratedPSD}).
 The DC components, if included in the series, are set to zero.
 
 \subsubsection*{Uses}
@@ -62,17 +61,19 @@ strncpy()
 
 \subsubsection*{Notes}
 \begin{itemize}
-\item Note that although $P(f)$ and $P^{\scriptstyle{\rm W}}(f)$
-  are real, $P^{\scriptstyle{\rm HW}}(f)$ is \emph{complex}.
+\item Note that although $P^{\scriptstyle{\rm C}}(f)$
+ and $P(f)$
+  are real, $P^{\scriptstyle{\rm HC}}(f)$ is \emph{complex}.
 \item The output units are constructed by combining the input units,
   but under normal circumstances the units will be as follows:
   \begin{eqnarray}
-    {} [P^{\scriptstyle{\rm W}}] &=& \textrm{count}^{2}\, \textrm{Hz}^{-1}\\
+    {} [P] &=& \textrm{count}^{2}\, \textrm{Hz}^{-1}\\
     {} [\widetilde{R}] &=& 10^{18}\,\textrm{strain}^{-1}\,\textrm{count} \\
-    {} [1/P] &:=& [\widetilde{R}]^2 [P^{\scriptstyle{\rm W}}]
+    {} [1/P^{\scriptstyle{\rm C}}] 
+    &:=& [\widetilde{R}]^2 [P]
     = 10^{36}\,\textrm{Hz}\,\textrm{strain}^{-2} \\
-    {} [1/P^{\scriptstyle{\rm HW}}] 
-    &:=&  [\widetilde{R}] [P^{\scriptstyle{\rm W}}]
+    {} [1/P^{\scriptstyle{\rm HC}}] 
+    &:=&  [\widetilde{R}] [P]
     = 10^{18}\,\textrm{Hz}\,\textrm{strain}^{-1}\,\textrm{count}^{-1}
   \end{eqnarray}
 \end{itemize}
@@ -91,10 +92,10 @@ strncpy()
 #include <lal/Units.h>
 #include <string.h>
 
-#define invNoise output->unWhitenedInverseNoisePSD
-#define hwInvNoise output->halfWhitenedInverseNoisePSD
-#define wNoise input->whitenedNoisePSD
-#define wFilter input->whiteningFilter
+#define invNoise output->calibratedInverseNoisePSD
+#define hwInvNoise output->halfCalibratedInverseNoisePSD
+#define wNoise input->unCalibratedNoisePSD
+#define wFilter input->responseFunction
 
 NRCSID(STOCHASTICINVERSENOISEC, "$Id$");
 
@@ -110,7 +111,7 @@ LALStochasticInverseNoise( LALStatus                          *status,
   UINT4          length;
 
   REAL4          *sPtrPW, *sPtrIP, *sStopPtr;
-  COMPLEX8       *cPtrR, *cPtrIPHW;
+  COMPLEX8       *cPtrR, *cPtrIPHC;
 
   RAT4        power;
   LALUnitPair unitPair;
@@ -211,26 +212,26 @@ LALStochasticInverseNoise( LALStatus                          *status,
 
   /*---------------Valid data here---------------*/
   
-  strncpy(invNoise->name,"Unwhitened invserse noise PSD",LALNameLength);
-  strncpy(hwInvNoise->name,"Half-whitened invserse noise PSD",LALNameLength);
+  strncpy(invNoise->name,"Calibrated invserse noise PSD",LALNameLength);
+  strncpy(hwInvNoise->name,"half-calibrated invserse noise PSD",LALNameLength);
 
   /* unit structure manipulation */
 
-  /* Find units of whitened inverse power spectrum */
+  /* Find units of uncalibrated inverse power spectrum */
   power.numerator = -1;
   power.denominatorMinusOne = 0;
   TRY(LALUnitRaise(status->statusPtr, &wInvNoiseUnits, 
 		   &(wNoise->sampleUnits), &power)
       , status);
 
-  /* multiply by whitening filter units to get half-whitened inv noise units */
+  /* multiply by response function units to get half-calibrated inv noise units */
   unitPair.unitOne = &(wFilter->sampleUnits);
   unitPair.unitTwo = &wInvNoiseUnits;
   TRY(LALUnitMultiply(status->statusPtr, &(hwInvNoise->sampleUnits),
                       &unitPair)
       , status);
 
-  /* multiply by whitening filter units to get unwhitened inv noise units */
+  /* multiply by response function units to get calibrated inv noise units */
   unitPair.unitTwo = &(hwInvNoise->sampleUnits);
   TRY(LALUnitMultiply(status->statusPtr, &(invNoise->sampleUnits),
                       &unitPair)
@@ -248,7 +249,7 @@ LALStochasticInverseNoise( LALStatus                          *status,
       sPtrPW = wNoise->data->data + 1;
       cPtrR = wFilter->data->data + 1;
       sPtrIP = invNoise->data->data + 1;
-      cPtrIPHW = hwInvNoise->data->data + 1;
+      cPtrIPHC = hwInvNoise->data->data + 1;
   } /* if (f0 == 0) */
   else
   {
@@ -256,18 +257,18 @@ LALStochasticInverseNoise( LALStatus                          *status,
     sPtrPW = wNoise->data->data;
     cPtrR = wFilter->data->data;
     sPtrIP = invNoise->data->data;
-    cPtrIPHW = hwInvNoise->data->data;
+    cPtrIPHC = hwInvNoise->data->data;
   }
 
 
   for ( ;
         sPtrPW < sStopPtr ;
-        ++sPtrPW, ++cPtrR, ++sPtrIP, ++cPtrIPHW )
+        ++sPtrPW, ++cPtrR, ++sPtrIP, ++cPtrIPHC )
   {
     *sPtrIP = ( cPtrR->re*cPtrR->re + cPtrR->im*cPtrR->im ) / *sPtrPW;
-    cPtrIPHW->re = cPtrR->re / *sPtrPW;
+    cPtrIPHC->re = cPtrR->re / *sPtrPW;
     /* minus sign because of complex conjugate */
-    cPtrIPHW->im = - cPtrR->im / *sPtrPW; 
+    cPtrIPHC->im = - cPtrR->im / *sPtrPW; 
   }
 
   DETATCHSTATUSPTR(status);

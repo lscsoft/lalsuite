@@ -18,15 +18,15 @@ standard cross-correlation statistic.
 
 As described in
 \cite{stochastic:Allen:1997,stochastic:Allen:1999,stochastic:Finn:2001},
-the optimal filter $\widetilde{Q}(f)$ which maximizes the ratio of the
+the optimal filter $\widetilde{Q}^{\scriptstyle{\rm C}}(f)$ which maximizes the ratio of the
 mean $\mu=\langle Y\rangle$ to the standard deviation
 $\sigma=\sqrt{\langle (Y-\mu)^2\rangle}$ of the cross-correlation
 statistic (\ref{stochastic:e:ymax}) is
 %
 \begin{equation}
-\widetilde{Q}(f)=\lambda\,
+\widetilde{Q}^{\scriptstyle{\rm C}}(f)=\lambda\,
 \frac{\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)}
-{|f|^3\,P_1(f)\,P_2(f)}
+{|f|^3\,P^{\scriptstyle{\rm C}}_1(f)\,P^{\scriptstyle{\rm C}}_2(f)}
 \end{equation}
 %
 where $\lambda$ is a normalization constant, $\gamma(f)$ is the
@@ -34,77 +34,72 @@ overlap reduction function (\textit{cf}
 Sec.~\ref{stochastic:ss:OverlapReductionFunction.c}) for the two
 detectors, $\Omega_{\scriptstyle{\rm GW}}(f)$ is the stochastic
 gravitational wave background strength (\textit{cf}
-Sec.~\ref{stochastic:ss:OverlapReductionFunction.c}), and $P_i(f)$ is
+Sec.~\ref{stochastic:ss:OverlapReductionFunction.c}), and $P^{\scriptstyle{\rm C}}_i(f)$ is
 the power spectral density ($\langle
-h_i(f)h_i(f')^*\rangle=\delta(f-f')P_i(f)$)
-% (Fourier transform of the auto-correlation function
-% $C_{ii}(\tau):=\langle h_i(t+\tau)h_i(t)\rangle$) 
+h^{\scriptstyle{\rm C}}_i(f)h^{\scriptstyle{\rm C}}_i(f')^*\rangle=\delta(f-f')P^{\scriptstyle{\rm C}}_i(f)$)
 for the $i$th detector.
 
 However, in practice, the data stream coming out of the $i$th detector
-is not the strain $h_i(t)=h_{ab}(t,\vec{x}_i)d^{ab}$, but that
+is not the strain $h^{\scriptstyle{\rm C}}_i(t)=h_{ab}(t,\vec{x}_i)d^{ab}$, but that
 convolved with an instrumental response function $R_i(\tau)$ to
-produce a ``whitened''\footnote{So named because the instrumental
-  response is often tuned to give $h^{\scriptstyle{\rm W}}$ a lower
-  dynamic range, for which reason $\widetilde{R}(f)$ is referred to as
-  a ``whitening filter''.} data stream
+produce an ``uncalibrated'' data stream
 \begin{equation}
-h_i^{\scriptstyle{\rm W}}(t) = \int_0^{\infty} d\tau\, R_i(\tau)\,
-h_i(t-\tau)
+h_i(t) = \int_0^{\infty} d\tau\, R_i(\tau)\,
+h^{\scriptstyle{\rm C}}_i(t-\tau)
 \end{equation}
 which has the simpler frequency-domain representation
 \begin{equation}
-\widetilde{h}_i^{\scriptstyle{\rm W}}(f) 
+\widetilde{h}_i(f) 
 =  \widetilde{R}_i(f)\, \widetilde{h}_i(f)
 \end{equation}
 If we want to calculate the cross-correlation statistic $Y$ using the
-whitened detector output, the expression is
+uncalibrated detector output, the expression is
 \begin{equation}
 Y
 = \int_{-\infty}^{\infty} df\,
 \left(
-  \frac{\widetilde{\bar{h}}{}^{\scriptstyle{\rm W}}_{1}(f)}
+  \frac{\widetilde{\bar{h}}{}_{1}(f)}
   {\widetilde{R}_{1}(f)}
 \right)^*
 \,
-\widetilde{Q}(f)\,
+\widetilde{Q}^{\scriptstyle{\rm C}}(f)\,
 \left(
-  \frac{\widetilde{\bar{h}}{}^{\scriptstyle{\rm W}}_{2}(f)}
+  \frac{\widetilde{\bar{h}}{}_{2}(f)}
   {\widetilde{R}_{2}(f)}
 \right)
 = \int_{-\infty}^{\infty} df\,
-\widetilde{\bar{h}}{}^{\scriptstyle{\rm W}}_{1}(f) ^*
+\widetilde{\bar{h}}{}_{1}(f) ^*
 \,
-\widetilde{Q}^{\scriptstyle{\rm W}}(f)\,
-\widetilde{\bar{h}}{}^{\scriptstyle{\rm W}}_{2}(f)
+\widetilde{Q}(f)\,
+\widetilde{\bar{h}}{}_{2}(f)
 \end{equation}
-where the ``whitened optimal filter'' is
+where the ``uncalibrated optimal filter'' is
 \begin{eqnarray}
 \label{stochastic:e:QW}
-\widetilde{Q}^{\scriptstyle{\rm W}}(f)
-&=&\frac{\widetilde{Q}(f)}{\widetilde{R}_1(f)^*\widetilde{R}_2(f)}
-=\lambda\,\left(\frac{1}{\widetilde{R}_1(f)^*P_1(f)}\right)
+\widetilde{Q}(f)
+&=&\frac{\widetilde{Q}^{\scriptstyle{\rm C}}(f)}{\widetilde{R}_1(f)^*\widetilde{R}_2(f)}
+=\lambda\,\left(\frac{1}{\widetilde{R}_1(f)^*P^{\scriptstyle{\rm C}}_1(f)}\right)
 \frac{\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)}
-{|f|^3}\left(\frac{1}{\widetilde{R}_2(f)P_2(f)}\right)
+{|f|^3}\left(\frac{1}{\widetilde{R}_2(f)P^{\scriptstyle{\rm C}}_2(f)}\right)
 \nonumber
 \\
 &=&\lambda\,
 \frac{\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)}
-{|f|^3\,P^{\scriptstyle{\rm HW}}_1(f)^*\,P^{\scriptstyle{\rm HW}}_2(f)}
+{|f|^3\,P^{\scriptstyle{\rm HC}}_1(f)^*\,P^{\scriptstyle{\rm HC}}_2(f)}
 \ ,
 \end{eqnarray}
-where $P^{\scriptstyle{\rm HW}}_i(f)=\widetilde{R}_i(f)\,P_i(f)$ is the
-``half-whitened'' PSD.  (The whitened PSD is 
-$P^{\scriptstyle{\rm W}}_i(f)=|\widetilde{R}_i(f)|^2\,P_i(f)$.)
+where $P^{\scriptstyle{\rm HC}}_i(f)=\widetilde{R}_i(f)\,P^{\scriptstyle{\rm C}}_i(f)$ is the
+``half-calibrated'' PSD.  (The uncalibrated PSD is 
+$P_i(f)=|\widetilde{R}_i(f)|^2\,P^{\scriptstyle{\rm C}}_i(f)$.)
 
 \texttt{LALStochasticOptimalFilter()} generates a complex frequency
-series containing the whitened optimal filter
-$\widetilde{Q}^{\scriptstyle{\rm W}}(f)$, taking as inputs real
+series containing the uncalibrated optimal filter
+$\widetilde{Q}(f)$, taking as inputs real
 frequency series representing the overlap reduction function
 $\gamma(f)$ and the stochastic gravitational wave background spectrum
 ${h_{100}}^2\Omega_{\scriptstyle{\rm GW}}(f)$, as well as complex
-frequency series representing the half-whitened (inverse) PSDs
-$\{1/P^{\scriptstyle{\rm HW}}_i(f)|i=1,2\}$, and as a real parameter
+frequency series representing the half-calibrated (inverse) PSDs
+$\{1/P^{\scriptstyle{\rm HC}}_i(f)|i=1,2\}$, and as a real parameter
 the normalization constant $\lambda$.
 
 \subsubsection*{Algorithm}
@@ -136,9 +131,9 @@ LALUnitCompare()
   evaluated in discrete time \cite{stochastic:Finn:2001}; see also
   Sec.~\ref{stochastic:ss:Dirichlet.c}) may be replaced by Dirac delta
   functions.
-\item Although $Q(f)$ is real by construction, the whitened optimal
-  filter $\widetilde{Q}^{\scriptstyle{\rm W}}(f)$ will in general be
-  complex because the whitening filters $\widetilde{R}_i(f)$ for the
+\item Although $Q^{\scriptstyle{\rm C}}(f)$ is real by construction, the uncalibrated optimal
+  filter $\widetilde{Q}(f)$ will in general be
+  complex because the response functions $\widetilde{R}_i(f)$ for the
   two sites will be different.
 \item The expected units for the inputs and output of this function
   are as follows (although the actual output units will be constructed
@@ -147,12 +142,12 @@ LALUnitCompare()
     {} [\lambda] &=& 10^{-36}\,\textrm{s}^{-1}\\
     {} [\gamma] &=& \textrm{strain}^{2} \\
     {} [\Omega_{\scriptstyle{\rm GW}}] &=& 1 \\
-    {} [1/P^{\scriptstyle{\rm HW}}_{1,2}] 
+    {} [1/P^{\scriptstyle{\rm HC}}_{1,2}] 
     &=& 10^{18}\,\textrm{Hz}\,\textrm{strain}^{-1}\,\textrm{count}^{-1} \\
-    {} [\widetilde{Q}^{\scriptstyle{\rm W}}] &:=&
+    {} [\widetilde{Q}] &:=&
     [\lambda] [\gamma][\Omega_{\scriptstyle{\rm GW}}]
-    \left[\frac{1}{P^{\scriptstyle{\rm HW}}_1}\right]
-    \left[\frac{1}{P^{\scriptstyle{\rm HW}}_2}\right]
+    \left[\frac{1}{P^{\scriptstyle{\rm HC}}_1}\right]
+    \left[\frac{1}{P^{\scriptstyle{\rm HC}}_2}\right]
     \,\textrm{s}^3
     =
     \textrm{count}^{-2}
@@ -252,13 +247,13 @@ LALStochasticOptimalFilter(
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* half-whitened inverse noise 1 of input */
-  ASSERT(input->halfWhitenedInverseNoisePSD1 != NULL, status, 
+  /* half-calibrated inverse noise 1 of input */
+  ASSERT(input->halfCalibratedInverseNoisePSD1 != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* half-whitened inverse noise 2 of input */
-  ASSERT(input->halfWhitenedInverseNoisePSD2 != NULL, status, 
+  /* half-calibrated inverse noise 2 of input */
+  ASSERT(input->halfCalibratedInverseNoisePSD2 != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
@@ -272,13 +267,13 @@ LALStochasticOptimalFilter(
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* data member of half-whitened inverse noise 1 */
-  ASSERT(input->halfWhitenedInverseNoisePSD1->data != NULL, status, 
+  /* data member of half-calibrated inverse noise 1 */
+  ASSERT(input->halfCalibratedInverseNoisePSD1->data != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* data member of half-whitened inverse noise 2 */
-  ASSERT(input->halfWhitenedInverseNoisePSD2->data != NULL, status, 
+  /* data member of half-calibrated inverse noise 2 */
+  ASSERT(input->halfCalibratedInverseNoisePSD2->data != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
@@ -297,13 +292,13 @@ LALStochasticOptimalFilter(
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* data-data member of half whitened inverse noise 1 */
-  ASSERT(input->halfWhitenedInverseNoisePSD1->data->data != NULL, status, 
+  /* data-data member of half calibrated inverse noise 1 */
+  ASSERT(input->halfCalibratedInverseNoisePSD1->data->data != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* data-data member of half whitened inverse noise 2 */
-  ASSERT(input->halfWhitenedInverseNoisePSD2->data->data != NULL, status, 
+  /* data-data member of half calibrated inverse noise 2 */
+  ASSERT(input->halfCalibratedInverseNoisePSD2->data->data != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
@@ -346,13 +341,13 @@ LALStochasticOptimalFilter(
          STOCHASTICCROSSCORRELATIONH_EMMLEN,
          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
-  if (input->halfWhitenedInverseNoisePSD1->data->length != length) 
+  if (input->halfCalibratedInverseNoisePSD1->data->length != length) 
   {
     ABORT(status,
          STOCHASTICCROSSCORRELATIONH_EMMLEN,
          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
-  if (input->halfWhitenedInverseNoisePSD2->data->length != length) 
+  if (input->halfCalibratedInverseNoisePSD2->data->length != length) 
   {
     ABORT(status,
          STOCHASTICCROSSCORRELATIONH_EMMLEN,
@@ -372,13 +367,13 @@ LALStochasticOptimalFilter(
          STOCHASTICCROSSCORRELATIONH_EMMFMIN,
          STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
-  if (input->halfWhitenedInverseNoisePSD1->f0 != f0) 
+  if (input->halfCalibratedInverseNoisePSD1->f0 != f0) 
   {
     ABORT(status,
          STOCHASTICCROSSCORRELATIONH_EMMFMIN,
          STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
-  if (input->halfWhitenedInverseNoisePSD2->f0 != f0) 
+  if (input->halfCalibratedInverseNoisePSD2->f0 != f0) 
   {
     ABORT(status,
          STOCHASTICCROSSCORRELATIONH_EMMFMIN,
@@ -392,13 +387,13 @@ LALStochasticOptimalFilter(
          STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
          STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
-  if (input->halfWhitenedInverseNoisePSD1->deltaF != deltaF) 
+  if (input->halfCalibratedInverseNoisePSD1->deltaF != deltaF) 
   {
     ABORT(status,
          STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
          STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
-  if (input->halfWhitenedInverseNoisePSD2->deltaF != deltaF) 
+  if (input->halfCalibratedInverseNoisePSD2->deltaF != deltaF) 
   {
     ABORT(status,
          STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
@@ -440,8 +435,8 @@ LALStochasticOptimalFilter(
   /* Now we need to set the Optimal Filter Units equal to the units of */
   /* lambda*gamma*Omega*f^-3*P1HW^-1*P2HW^-1) */
 
-  unitPair.unitOne = &(input->halfWhitenedInverseNoisePSD1->sampleUnits);
-  unitPair.unitTwo = &(input->halfWhitenedInverseNoisePSD2->sampleUnits);
+  unitPair.unitOne = &(input->halfCalibratedInverseNoisePSD1->sampleUnits);
+  unitPair.unitTwo = &(input->halfCalibratedInverseNoisePSD2->sampleUnits);
   TRY( LALUnitMultiply(status->statusPtr, &tmpUnit1, &unitPair)
        , status );
   /* tmpUnit1 now holds the units of P1HW^-1*P2HW^-1 */
@@ -486,8 +481,8 @@ LALStochasticOptimalFilter(
     
     omega = input->omegaGW->data->data[i];
     gamma = input->overlapReductionFunction->data->data[i];
-    p1HWInv = input->halfWhitenedInverseNoisePSD1->data->data[i];
-    p2HWInv = input->halfWhitenedInverseNoisePSD2->data->data[i];
+    p1HWInv = input->halfCalibratedInverseNoisePSD1->data->data[i];
+    p2HWInv = input->halfCalibratedInverseNoisePSD2->data->data[i];
     
     cPtrOptimalFilter = &(optimalFilter->data->data[i]);
     

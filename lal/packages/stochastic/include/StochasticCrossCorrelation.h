@@ -11,7 +11,7 @@ Provides prototype and error code information for the modules needed
 to calculate the standard optimally-filtered cross-correlation
 statistic for stochastic background searches, given a pair of data
 segments, along with appropriate representations of the detector
-transfer function and the (whitened) power spectral density of the
+transfer function and the (uncalibrated) power spectral density of the
 noise in each detector.  The relationship among these modules is
 illustrated in Fig.~\ref{stochastic:f:CrossCorrFlowchart}.
 
@@ -30,8 +30,8 @@ illustrated in Fig.~\ref{stochastic:f:CrossCorrFlowchart}.
 }
 \put(80,85){\vector(0,1){15}}
 \put(80,85){\line(0,1){25}}
-\put(82,95){$\widetilde{\bar{h}}{}^{\scriptstyle{\rm W}}_{1,2}$}
-\put(-37,65){$h^{\scriptstyle{\rm W}}_{1,2}$}
+\put(82,95){$\widetilde{\bar{h}}{}_{1,2}$}
+\put(-37,65){$h_{1,2}$}
 \put(-17,68){\vector(1,0){15}}
 \put(-17,68){\line(1,0){25}}
 \put(5,55)
@@ -43,7 +43,7 @@ illustrated in Fig.~\ref{stochastic:f:CrossCorrFlowchart}.
 }
 \put(150,85){\vector(0,1){15}}
 \put(150,85){\line(0,1){25}}
-\put(152,95){$\widetilde{Q}^{\scriptstyle{\rm W}}$}
+\put(152,95){$\widetilde{Q}$}
 \put(100,55)
 {
   \framebox(190,30)
@@ -94,14 +94,14 @@ illustrated in Fig.~\ref{stochastic:f:CrossCorrFlowchart}.
 }
 \put(125,-80){\line(0,1){135}}
 \put(125,-80){\vector(0,1){100}}
-%\put(107,40){$({P^{\scriptstyle{\rm HW}}_{1,2}})^{-1}$}
-\put(127,20){$\frac{1}{P^{\scriptstyle{\rm HW}}_{1,2}}$}
-%\put(117,40){$\frac{\tilde{R}_{1,2}}{P_{1,2}}$}
+%\put(107,40){$({P^{\scriptstyle{\rm HC}}_{1,2}})^{-1}$}
+\put(127,20){$\frac{1}{P^{\scriptstyle{\rm HC}}_{1,2}}$}
+%\put(117,40){$\frac{\tilde{R}_{1,2}}{P^{\scriptstyle{\rm C}}_{1,2}}$}
 \put(330,-80){\line(0,1){80}}
 \put(330,-80){\vector(0,1){45}}
-% \put(142,40){${P_{1,2}}^{-1}$}
-\put(332,-35){$\frac{1}{P_{1,2}}$}
-%\put(142,40){$\frac{|\tilde{R}_{1,2}|^2}{P_{1,2}}$}
+% \put(142,40){${P^{\scriptstyle{\rm C}}_{1,2}}^{-1}$}
+\put(332,-35){$\frac{1}{P^{\scriptstyle{\rm C}}_{1,2}}$}
+%\put(142,40){$\frac{|\tilde{R}_{1,2}|^2}{P^{\scriptstyle{\rm C}}_{1,2}}$}
 \put(115,-110)
 {
   \framebox(225,30)
@@ -112,7 +112,7 @@ illustrated in Fig.~\ref{stochastic:f:CrossCorrFlowchart}.
 \put(73,-108){$\tilde{R}_{1,2}$}
 \put(93,-105){\vector(1,0){15}}
 \put(93,-105){\line(1,0){25}}
-\put(73,-90){$P^{\scriptstyle{\rm W}}_{1,2}$}
+\put(73,-90){$P_{1,2}$}
 \put(93,-87){\vector(1,0){15}}
 \put(93,-87){\line(1,0){25}}
 \end{picture}
@@ -121,11 +121,11 @@ illustrated in Fig.~\ref{stochastic:f:CrossCorrFlowchart}.
   the modules dependent on \texttt{StochasticCrossCorrelation.h},
   which are used to calculate the cross-correlation statistic $Y$
   and its theoretical variance per unit time $\sigma^2/T$ from
-  (whitened) stretches of data $h^{\scriptstyle{\rm W}}_1(t)$,
-  $h^{\scriptstyle{\rm W}}_2(t)$, from two detectors, using metadata
-  on the power spectral densities $P^{\scriptstyle{\rm W}}_1(f)$,
-  $P^{\scriptstyle{\rm W}}_2(f)$ and transfer functions (whitening
-  filters) $\tilde{R}_1(f)$, $\tilde{R}_2(f)$ for each detector.
+  (uncalibrated) stretches of data $h_1(t)$,
+  $h_2(t)$, from two detectors, using metadata
+  on the power spectral densities $P_1(f)$,
+  $P_2(f)$ and transfer functions $\tilde{R}_1(f)$, 
+  $\tilde{R}_2(f)$ for each detector.
   \texttt{CrossCorr} represents the module
   \texttt{StochasticCrossCorrelation.c} 
   (Sec.~\ref{stochastic:ss:StochasticCrossCorrelation.c})
@@ -475,18 +475,18 @@ sites.
 \item[\texttt{REAL4FrequencySeries *omegaGW}] The spectrum 
 $\Omega_{\scriptstyle{\rm GW}}(f)$ of the stochastic gravitational-wave
 background.
-\item[\texttt{COMPLEX8FrequencySeries *halfWhitenedInverseNoisePSD1}]
+\item[\texttt{COMPLEX8FrequencySeries *halfCalibratedInverseNoisePSD1}]
  The reciprocal
-$1/P_1^{\scriptstyle{\rm HW}}(f)
+$1/P_1^{\scriptstyle{\rm HC}}(f)
 =1/(\tilde{R_1}(f)P_1(f))
-=\tilde{R_1}(f)^* / P_1^{\scriptstyle{\rm W}}(f)$ of the
-half-whitened noise power spectral density for the first detector.
-\item[\texttt{COMPLEX8FrequencySeries *halfWhitenedInverseNoisePSD2}]
+=\tilde{R_1}(f)^* / P_1(f)$ of the
+half-calibrated noise power spectral density for the first detector.
+\item[\texttt{COMPLEX8FrequencySeries *halfCalibratedInverseNoisePSD2}]
  The reciprocal
-$1/P_2^{\scriptstyle{\rm HW}}(f)
+$1/P_2^{\scriptstyle{\rm HC}}(f)
 =1/(\tilde{R_2}(f)P_2(f))
-=\tilde{R_2}(f)^* / P_2^{\scriptstyle{\rm W}}(f)$ of the
-half-whitened noise power spectral density for the second detector.
+=\tilde{R_2}(f)^* / P_2(f)$ of the
+half-calibrated noise power spectral density for the second detector.
 \end{description}
 
 *********************************************************** </lalLaTeX> */
@@ -494,8 +494,8 @@ half-whitened noise power spectral density for the second detector.
 typedef struct tagStochasticOptimalFilterInput {
   REAL4FrequencySeries     *overlapReductionFunction;
   REAL4FrequencySeries     *omegaGW;
-  COMPLEX8FrequencySeries  *halfWhitenedInverseNoisePSD1;
-  COMPLEX8FrequencySeries  *halfWhitenedInverseNoisePSD2;
+  COMPLEX8FrequencySeries  *halfCalibratedInverseNoisePSD1;
+  COMPLEX8FrequencySeries  *halfCalibratedInverseNoisePSD2;
 } StochasticOptimalFilterInput;
 
 /********** <lalVerbatim file="StochasticCrossCorrelationHPOF"> *********/
@@ -566,12 +566,12 @@ $\Omega_{\scriptstyle{\rm GW}}(f)$ of the stochastic gravitational-wave
 background.
 \item[\texttt{REAL4FrequencySeries *inverseNoisePSD1}]
  The reciprocal
-$1/P_1(f)=|\tilde{R_1}(f)|^2/P_1^{\scriptstyle{\rm W}}(f)$ of the
-unwhitened noise power spectral density for the first detector.
+$1/P_1(f)=|\tilde{R_1}(f)|^2/P_1(f)$ of the
+ununcalibrated noise power spectral density for the first detector.
 \item[\texttt{REAL4FrequencySeries *inverseNoisePSD2}]
  The reciprocal
-$1/P_2(f)=|\tilde{R_2}(f)|^2/P_2^{\scriptstyle{\rm W}}(f)$ of the
-unwhitened noise power spectral density for the second detector.
+$1/P_2(f)=|\tilde{R_2}(f)|^2/P_2(f)$ of the
+ununcalibrated noise power spectral density for the second detector.
 \end{description}
 
 *********************************************************** </lalLaTeX> */
@@ -648,22 +648,22 @@ Contains the outputs of \texttt{LALStochasticInverseNoise()}.
 The fields are:
  
 \begin{description}
-\item[\texttt{REAL4FrequencySeries *unWhitenedInverseNoisePSD}]
+\item[\texttt{REAL4FrequencySeries *calibratedInverseNoisePSD}]
 The reciprocal
-$1/P(f)=|\tilde{R}(f)|^2/P^{\scriptstyle{\rm W}}(f)$ of the
-unwhitened noise power spectral density.
+$1/P^{\scriptstyle{\rm C}}(f)=|\tilde{R}(f)|^2/P(f)$ of the
+ununcalibrated noise power spectral density.
 
-\item[\texttt{COMPLEX8FrequencySeries *halfWhitenedInverseNoisePSD}]
+\item[\texttt{COMPLEX8FrequencySeries *halfCalibratedInverseNoisePSD}]
 The reciprocal \\
-$1/P^{\scriptstyle{\rm HW}}(f)=\tilde{R}(f)^* / P^{\scriptstyle{\rm W}}(f)$
-of the half-whitened noise power spectral density.
+$1/P^{\scriptstyle{\rm HC}}(f)=\tilde{R}(f)^* / P(f)$
+of the half-calibrated noise power spectral density.
 \end{description}
 
 *********************************************************** </lalLaTeX> */
 
 typedef struct tagStochasticInverseNoiseOutput {
-  REAL4FrequencySeries     *unWhitenedInverseNoisePSD;
-  COMPLEX8FrequencySeries  *halfWhitenedInverseNoisePSD;
+  REAL4FrequencySeries     *calibratedInverseNoisePSD;
+  COMPLEX8FrequencySeries  *halfCalibratedInverseNoisePSD;
 } StochasticInverseNoiseOutput;
 
 /********************************************************** <lalLaTeX>
@@ -675,19 +675,19 @@ Contains the inputs to \texttt{LALStochasticInverseNoise()}.
 The fields are:
  
 \begin{description}
-\item[\texttt{REAL4FrequencySeries *whitenedNoisePSD}]
-The power spectral density $P^{\scriptstyle{\rm W}}(f)$ of the noise
+\item[\texttt{REAL4FrequencySeries *unCalibratedNoisePSD}]
+The power spectral density $P(f)$ of the noise
 contribution to the detector output.
 
-\item[\texttt{COMPLEX8FrequencySeries *whiteningFilter}]
+\item[\texttt{COMPLEX8FrequencySeries *responseFunction}]
 The frequency-domain reponse function $\tilde{R}(f)$.
 \end{description}
 
 *********************************************************** </lalLaTeX> */
 
 typedef struct tagStochasticInverseNoiseInput {
-  REAL4FrequencySeries     *whitenedNoisePSD ;
-  COMPLEX8FrequencySeries  *whiteningFilter;
+  REAL4FrequencySeries     *unCalibratedNoisePSD ;
+  COMPLEX8FrequencySeries  *responseFunction;
 } StochasticInverseNoiseInput;
 
 /********** <lalVerbatim file="StochasticCrossCorrelationHPIN"> *********/

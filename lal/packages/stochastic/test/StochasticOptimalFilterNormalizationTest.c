@@ -79,12 +79,13 @@ It then verifies that the correct optimal filter is generated
 is satisfied) for each of the following simple test cases (with
 $f_0=0$, $f_{\scriptstyle{\rm R}}=1$, $\delta f=1$ and $N=8$):
 \begin{enumerate}
-\item $\gamma(f) = h_{100}^2\Omega_{\scriptstyle{\rm GW}}(f) = P_1(f) 
-  =P_2(f)=P^{\scriptstyle{\rm HW}}_1(f)=P^{\scriptstyle{\rm HW}}_2(f)=1$;   
+\item $\gamma(f) = h_{100}^2\Omega_{\scriptstyle{\rm GW}}(f) 
+  = P^{\scriptstyle{\rm C}}_1(f) 
+  = P^{\scriptstyle{\rm C}}_2(f) = 1$;
   The expected results in this case are $\lambda=3.079042427975$,
   $\sigma^2\,T^{-1}=4.822422518205$
-\item $\gamma(f) = P_1(f) = P_2(f) = P^{\scriptstyle{\rm HW}}_1(f)
-  = P^{\scriptstyle{\rm HW}}_2(f)=1$;
+\item $\gamma(f) = P^{\scriptstyle{\rm C}}_1(f) 
+  = P^{\scriptstyle{\rm C}}_2(f) = 1$;
   $h_{100}^2\Omega_{\scriptstyle{\rm GW}}(f)=f^3$.
   The expected results in this case are $\lambda=.4474881517327$,
   $\sigma^2\,T^{-1}=.700859760794$

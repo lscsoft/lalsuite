@@ -23,8 +23,8 @@ length as the optimal filter via
 \begin{equation}
 \bar{h}[k]=\ 
 \left\{ \begin{array}{cl} 
-w[k] h[k]  &    k = 0, 1, \cdots, N-1 \\ 
-0     &    k = -1, -2, \cdots, -(N-1) 
+w[k] h[k]  &    k = 0, \ldots, N-1 \\ 
+0     &    k = N \ldots, M-1 
 \end{array} 
 \right. 
 \end{equation} 
@@ -32,20 +32,20 @@ w[k] h[k]  &    k = 0, 1, \cdots, N-1 \\
 (where $w[k]$ is a windowing function)
 before being Fourier transformed via
 \begin{equation}
-\widetilde{h}[\ell] := \sum_{\ell=-(N-1)}^{N-1} 
-\delta t\,h[k]\,e^{-i2\pi k\ell/(2N-1)}
+\widetilde{h}[\ell] := \sum_{\ell=0}^{M-1} 
+\delta t\,h[k]\,e^{-i2\pi k\ell/M}
 \ .
 \end{equation}
 
 \texttt{LALSZeroPadAndFFT()} performs this operaton on a
 \texttt{REAL4TimeSeries} of length $N$, zero-padding it to length
-$2N-1$ and Fourier-transforming it into a
-\texttt{COMPLEX8FrequencySeries} of length $N$.
+$M$ and Fourier-transforming it into a
+\texttt{COMPLEX8FrequencySeries} of length $[M/2]+1$.
 
 \texttt{LALCZeroPadAndFFT()} performs this operaton on a
 \texttt{COMPLEX8TimeSeries} of length $N$, zero-padding it to length
-$2N-1$ and Fourier-transforming it into a
-\texttt{COMPLEX8FrequencySeries} of length $2N-1$.
+$M$ and Fourier-transforming it into a
+\texttt{COMPLEX8FrequencySeries} of length $M$.
 
 \subsubsection*{Algorithm}
 
@@ -87,11 +87,14 @@ strncpy()
 approximation of a continuous Fourier transorm, which makes it $\delta
 t$ times the discrete Fourier transform.
 
-\item The Fourier transform of a series of $2N-1$ points is calculated
-with the FFTW \cite{stochastic:Frigo:1998} (via the interfaces in the
-\texttt{fft} package), which is efficient for products of small
-primes, so $N$ should be chosen so that $2N-1$ is a power of 3 or
-other suitable number.
+\item The Fourier transform of a series of $M$ points is calculated
+  with the FFTW \cite{stochastic:Frigo:1998} (via the interfaces in
+  the \texttt{fft} package), which is efficient for products of small
+  primes, so $M$ should be chosen to have this property.  The minimum
+  value, $2N-1$, is odd and can thus be at best a power of 3.
+  Additionally, if $2N-1$ is a convenient number, $N$ will likely not
+  be, which is one reason it might be convenient to work with $M=2N$
+  instead.
 
 \item \texttt{LALCZeroPadAndFFT()} inherits its behavior from
   \texttt{LALTimeFreqComplexFFT()}, which currently does not use the
@@ -195,15 +198,15 @@ LALSZeroPadAndFFT(LALStatus                *status,
   {
     /* check that pointer to data member of window function is non-null */
     ASSERT(parameters->window->data != NULL, status, 
-	   STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-	   STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+           STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
     /* check that window function is same length as input time series */
     if ( parameters->window->length != length )
     {
       ABORT(  status,
-	      STOCHASTICCROSSCORRELATIONH_EMMLEN,
-	      STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+              STOCHASTICCROSSCORRELATIONH_EMMLEN,
+              STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
     }
   }
 
@@ -273,7 +276,7 @@ LALSZeroPadAndFFT(LALStatus                *status,
     {
       TRY(LALSDestroyVector(status->statusPtr, &(hBar.data)), status);
       ABORT(status, STOCHASTICCROSSCORRELATIONH_EMEMORY,
-	    STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
+            STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
     }
   }
   else 
@@ -281,9 +284,9 @@ LALSZeroPadAndFFT(LALStatus                *status,
     /* window data */
     sStopPtr = input->data->data + input->data->length;
     for ( sPtr = input->data->data, hBarPtr = hBar.data->data,
-	    windowPtr = parameters->window->data ;
-	  sPtr < sStopPtr ;
-	  ++sPtr, ++hBarPtr, ++windowPtr )
+            windowPtr = parameters->window->data ;
+          sPtr < sStopPtr ;
+          ++sPtr, ++hBarPtr, ++windowPtr )
     {
       *(hBarPtr) = *(sPtr) * *(windowPtr);
     }
@@ -296,7 +299,7 @@ LALSZeroPadAndFFT(LALStatus                *status,
   {
     TRY(LALSDestroyVector(status->statusPtr, &(hBar.data)), status);
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMEMORY,
-	  STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
+          STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
   }
   
   /* take DFT */
@@ -384,14 +387,14 @@ LALCZeroPadAndFFT(LALStatus                *status,
   {
     /* check that pointer to data member of window function is non-null */
     ASSERT(parameters->window->data != NULL, status, 
-	   STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-	   STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+           STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     
     /* check that window function is same length as input time series */
     if ( parameters->window->length != length ) {
       ABORT(  status,
-	      STOCHASTICCROSSCORRELATIONH_EMMLEN,
-	      STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+              STOCHASTICCROSSCORRELATIONH_EMMLEN,
+              STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
     }
   }    
 
@@ -453,7 +456,7 @@ LALCZeroPadAndFFT(LALStatus                *status,
     {
       TRY(LALCDestroyVector(status->statusPtr, &(hBar.data)), status);
       ABORT(status, STOCHASTICCROSSCORRELATIONH_EMEMORY,
-	    STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
+            STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
     }
   }
   else 
@@ -461,9 +464,9 @@ LALCZeroPadAndFFT(LALStatus                *status,
     /* window data */
     cStopPtr = input->data->data + input->data->length;
     for ( cPtr = input->data->data, hBarPtr = hBar.data->data,
-	    windowPtr = parameters->window->data ;
-	  cPtr < cStopPtr ;
-	  ++cPtr, ++hBarPtr, ++windowPtr )
+            windowPtr = parameters->window->data ;
+          cPtr < cStopPtr ;
+          ++cPtr, ++hBarPtr, ++windowPtr )
     {
       hBarPtr->re = cPtr->re * *(windowPtr);
       hBarPtr->im = cPtr->im * *(windowPtr);
@@ -477,7 +480,7 @@ LALCZeroPadAndFFT(LALStatus                *status,
   {
     TRY(LALCDestroyVector(status->statusPtr, &(hBar.data)), status);
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMEMORY,
-	  STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
+          STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
   }
 
   /* take DFT */
