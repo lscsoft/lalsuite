@@ -58,7 +58,7 @@ NRCSID( COHERENTINSPIRALINPUTC, "$Id$");
 double rint(double x);
 double modf( double value, double *integerPart );
 
-static void
+void
 LALFindChirpCreateCoherentInput( 
      LALStatus                  *status,
      COMPLEX8TimeSeries         **coherentInputData,
@@ -116,9 +116,6 @@ LALFindChirpCreateCoherentInput(
 
   /* Get necessary info from input structures */
 
-  cohInputData = *coherentInputData = (COMPLEX8TimeSeries *)
-    LALCalloc(1, sizeof(COMPLEX8TimeSeries) );
-
   end_time = tmplt->end_time;
   eventID  = tmplt->event_id->id;
   numPoints = input->data->length;
@@ -139,12 +136,16 @@ LALFindChirpCreateCoherentInput(
     {
       /* The coherent chunk is outside of the corrupted data */
 
+      cohInputData = *coherentInputData = (COMPLEX8TimeSeries *)
+	LALCalloc(1, sizeof(COMPLEX8TimeSeries) );
+
       INT4 fullCohSegLength = 0;
       fullCohSegLength = 2*cohSegLength/deltaT;
 
       LALCCreateVector(status->statusPtr, &(cohInputData->data), fullCohSegLength);
       CHECKSTATUSPTR( status );
       /* store C-data snippet and its associated info */
+      memcpy(cohInputData->name, input->name, LALNameLength * sizeof(CHAR) ); 
       memcpy(cohInputData->data->data, &(input->data->data[cohSegStart]), 2*cohSegLength/deltaT);
       cohInputData->deltaT = deltaT;
       tempTime = inputEpochSeconds + inputEpochNanoSeconds*1.0e-9 + cohSegStart*deltaT;
@@ -161,6 +162,9 @@ LALFindChirpCreateCoherentInput(
     {
       /* The coherent chunk is in corrupted data at the end of the segment */
 
+      cohInputData = *coherentInputData = (COMPLEX8TimeSeries *)
+	LALCalloc(1, sizeof(COMPLEX8TimeSeries) );
+
       INT4 overlap          = 0;
       INT4 fullCohSegLength = 0;
 
@@ -169,6 +173,7 @@ LALFindChirpCreateCoherentInput(
 
       LALCCreateVector( status->statusPtr, &(cohInputData->data), fullCohSegLength );
       CHECKSTATUSPTR( status );
+      memcpy(cohInputData->name, input->name, LALNameLength * sizeof(CHAR) );
       memcpy( cohInputData->data->data, &(input->data->data[cohSegStart]),fullCohSegLength);
       /* store C-data snippet and its associated info */
       cohInputData->deltaT = deltaT;
@@ -181,6 +186,9 @@ LALFindChirpCreateCoherentInput(
     {
       /* The coherent chunk is in corrupted data at the start of the segment */
 
+      cohInputData = *coherentInputData = (COMPLEX8TimeSeries *)
+	LALCalloc(1, sizeof(COMPLEX8TimeSeries) );
+
       INT4 overlap          = 0;
       INT4 fullCohSegLength = 0;
 
@@ -190,12 +198,17 @@ LALFindChirpCreateCoherentInput(
       LALCCreateVector( status->statusPtr, &(cohInputData->data), fullCohSegLength );
       CHECKSTATUSPTR( status );
       /* store C-data snippet and its associated info */
+      memcpy(cohInputData->name, input->name, LALNameLength * sizeof(CHAR) );
       memcpy( cohInputData->data->data, &(input->data->data[cohSegStart + overlap]), fullCohSegLength);
       cohInputData->deltaT = deltaT;
       tempTime = inputEpochSeconds + inputEpochNanoSeconds*1.0e-9 + (cohSegStart + overlap)*deltaT;
       fracpart = modf(tempTime, &intpart);
       cohInputData->epoch.gpsSeconds = (INT4) intpart;
       cohInputData->epoch.gpsNanoSeconds = (INT4) (fracpart*1.0e9); 
+    }
+  else
+    {
+      /* return a null pointer cohInputData */
     }
   /* normal exit */
   DETATCHSTATUSPTR( status );
