@@ -369,3 +369,230 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
   RETURN(status);
 
 } /* LALSCoarseGrainFrequencySeries() */
+
+/* <lalVerbatim file="CoarseGrainFrequencySeriesCP"> */
+void
+LALCCoarseGrainFrequencySeries(LALStatus                      *status,
+                               COMPLEX8FrequencySeries        *output,
+                               const COMPLEX8FrequencySeries  *input,
+                               const FrequencySamplingParams  *params)
+/* </lalVerbatim> */
+{
+  UINT4         lengthCoarse, lengthFine;
+  REAL8         f0Coarse, f0Fine;
+  REAL8         fMinCoarse, fMinFine;
+  REAL8         deltaFCoarse, deltaFFine;
+  REAL4         offset, resRatio;
+  LALUnitPair   unitPair1, unitPair2;
+
+  UINT4         k, l;
+  UINT4         lMin, lMax;
+  REAL4         lamMin, lamMax;
+  COMPLEX8      value;
+
+  /* initialize status structure */
+  INITSTATUS( status, "LALCCoarseGrainFrequencySeries",
+              COARSEGRAINFREQUENCYSERIESC );
+  ATTATCHSTATUSPTR(status);
+
+  /* checks for null pointers: */
+
+  /*    output series */
+  ASSERT(output != NULL, status,
+         COARSEGRAINFREQUENCYSERIESH_ENULLP,
+         COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
+
+  /*    data member of output series */
+  ASSERT(output->data != NULL, status,
+         COARSEGRAINFREQUENCYSERIESH_ENULLP,
+         COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
+
+  /*    data member of data member of output series */
+  ASSERT(output->data->data != NULL, status,
+         COARSEGRAINFREQUENCYSERIESH_ENULLP,
+         COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
+
+  /*    input series */
+  ASSERT(input != NULL, status,
+         COARSEGRAINFREQUENCYSERIESH_ENULLP,
+         COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
+
+  /*    data member of input series */
+  ASSERT(input->data != NULL, status, 
+         COARSEGRAINFREQUENCYSERIESH_ENULLP,
+         COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
+
+  /*    data member of data member of input series */
+  ASSERT(input->data->data != NULL, status, 
+         COARSEGRAINFREQUENCYSERIESH_ENULLP,
+         COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
+
+  /*    parameter structure */
+  ASSERT(params != NULL, status, 
+         COARSEGRAINFREQUENCYSERIESH_ENULLP,
+         COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
+
+  /* extract coarse-grained parameters  */
+  lengthCoarse = params->length;
+  f0Coarse     = params->f0;
+  deltaFCoarse = params->deltaF;
+  fMinCoarse = f0Coarse || f0Coarse - deltaFCoarse / 2.0;
+
+  /* extract fine-grained parameters */
+  lengthFine   = input->data->length;
+  f0Fine       = input->f0;
+  deltaFFine   = input->deltaF;
+  fMinFine = f0Fine || f0Fine - deltaFFine / 2.0;
+
+  /* check for legality of values */
+
+  /*    length must be positive */
+
+  ASSERT(lengthCoarse != 0, status,
+         COARSEGRAINFREQUENCYSERIESH_EZEROLEN,
+         COARSEGRAINFREQUENCYSERIESH_MSGEZEROLEN);
+
+  ASSERT(lengthFine != 0, status,
+         COARSEGRAINFREQUENCYSERIESH_EZEROLEN,
+         COARSEGRAINFREQUENCYSERIESH_MSGEZEROLEN);
+
+  /*    start frequency must not be negative */
+
+  if (fMinCoarse < 0.0)
+  {
+    ABORT( status,
+         COARSEGRAINFREQUENCYSERIESH_ENEGFMIN,
+         COARSEGRAINFREQUENCYSERIESH_MSGENEGFMIN );
+  }
+
+  if (fMinFine < 0.0)
+  {
+    ABORT( status,
+         COARSEGRAINFREQUENCYSERIESH_ENEGFMIN,
+         COARSEGRAINFREQUENCYSERIESH_MSGENEGFMIN );
+  }
+
+  /*    frequency spacing must be positive */
+
+  ASSERT(deltaFCoarse > 0.0, status, 
+         COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
+         COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF);
+
+  ASSERT(deltaFFine > 0.0, status, 
+         COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
+         COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF);
+
+  /* check for length mismatch */
+
+  if (output->data->length != lengthCoarse) 
+  {
+    ABORT(status,
+         COARSEGRAINFREQUENCYSERIESH_EMMLEN,
+         COARSEGRAINFREQUENCYSERIESH_MSGEMMLEN);
+  }
+
+  /* Calculate coarse-graining parameters */
+
+  offset = ( f0Coarse - f0Fine ) / deltaFFine;
+
+  resRatio = deltaFCoarse /deltaFFine;
+
+  /* Check that coarse-graining makes sense */
+
+  /* make sure minimum frequency in coarse-grained series is not
+     less than minimum frequency in fine-grained series */
+  if ( fMinCoarse < fMinFine )
+  {   
+    ABORT( status,
+           COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
+           COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
+  }
+
+  /* make sure maximum frequency in coarse-grained series is not
+     more than maximum frequency in fine-grained series */
+  if ( offset + resRatio * ( (REAL4) lengthCoarse - 0.5 ) 
+       > lengthFine - 0.5 )
+  {
+    ABORT( status,
+           COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
+           COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
+  } 
+
+  if (f0Coarse == 0.0) 
+  {
+    /* DC component */
+    
+    lamMax = (resRatio / 2.0) - 0.5 ;
+    lMax = (UINT4) floor(lamMax);
+
+    if ( lamMax != (REAL4) lMax )
+    {
+      value.re = ( lamMax - (REAL4) lMax ) * input->data->data[lMax+1].re;
+    }
+    else {
+      value.re = 0.0;
+    }
+
+    for ( l = 1 ; l <= lMax ; ++l) 
+    {
+      value.re += input->data->data[l].re;
+    }
+
+    output->data->data[0].re = ( input->data->data[0].re + 2.0 * value.re )
+      / resRatio;
+
+    /* :TODO: ?  check that imaginary parts of DC vanish? */
+
+    k = 1;
+  }
+  else 
+  {
+    k = 0; 
+  }
+
+  for ( ; k < lengthCoarse ; ++k )
+  {
+    lamMin = offset + ( (REAL4) k - 0.5 ) * resRatio + 0.5 ;
+    lMin = (UINT4) ceil(lamMin);
+
+    if ( lamMin != (REAL4) lMin ) {
+      value.re = ( (REAL4) lMin - lamMin ) * input->data->data[lMin-1].re;
+      value.im = ( (REAL4) lMin - lamMin ) * input->data->data[lMin-1].im;
+    }
+    else 
+    {
+      value.re = value.im = 0.0;
+    }
+
+    lamMax = offset + ( (REAL4) k + 0.5 ) * resRatio - 0.5 ;
+    lMax = (UINT4) floor(lamMax);    
+
+    for ( l = lMin ; l <= lMax ; ++l) 
+    {
+      value.re += input->data->data[l].re;
+      value.im += input->data->data[l].im;
+    }
+
+    if ( lamMax != (REAL4) lMax ) {
+      value.re += ( lamMax - (REAL4) lMax ) * input->data->data[lMax+1].re;
+      value.im += ( lamMax - (REAL4) lMax ) * input->data->data[lMax+1].im;
+    }
+
+    output->data->data[k].re = value.re / resRatio;
+    output->data->data[k].im = value.im / resRatio;
+    
+  }
+
+
+  
+  /* Set output properties */  
+  output->sampleUnits = input->sampleUnits;
+  strncpy( output->name, input->name, LALNameLength );
+  output->f0 = f0Coarse;
+  output->deltaF = deltaFCoarse;
+  output->epoch = input->epoch;
+  
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+} /* LALCCoarseGrainFrequencySeries() */

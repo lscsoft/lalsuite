@@ -690,7 +690,34 @@ int main( int argc, char *argv[] )
          * STOCHASTICCROSSCORRELATIONTESTC_FLIM/4);
     goodFilter.data->data[i].im = 0.0;
   }
+
+  /************************* BEGIN KLUDGE *****************/
+
+  printf("got here\n");
+
+  badFilter = goodFilter;
+  badFilter.data = NULL;
+
+  LALCCreateVector(&status, &(badFilter.data),
+		   STOCHASTICCROSSCORRELATIONTESTC_LENGTH);
   
+  printf("got here\n");
+
+  LALStochasticCrossCorrelationSpectrum(&status, &badFilter, &input);
+  printf("got here\n");
+  if ( code = CheckStatus(&status, 0 , "",
+                          STOCHASTICCROSSCORRELATIONTESTC_EFLS,
+                          STOCHASTICCROSSCORRELATIONTESTC_MSGEFLS) ) 
+  {
+    return code;
+  }
+
+  printf("got here\n");
+
+  LALCDestroyVector(&status, &(badFilter.data));
+
+  /************************* END KLUDGE *****************/
+
   LALStochasticCrossCorrelationStatistic(&status, &output, &input);
   if ( code = CheckStatus(&status, 0 , "",
                           STOCHASTICCROSSCORRELATIONTESTC_EFLS,

@@ -98,6 +98,12 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
 			       const REAL4FrequencySeries     *input,
 			       const FrequencySamplingParams  *params);
 
+void
+LALCCoarseGrainFrequencySeries(LALStatus                        *status,
+			       COMPLEX8FrequencySeries          *output,
+			       const COMPLEX8FrequencySeries    *input,
+			       const FrequencySamplingParams    *params);
+
 #ifdef  __cplusplus
 }
 #endif /* C++ protection */
