@@ -33,7 +33,7 @@
      * This may be called as NULL.  If it is called with a value this function will check
      * to see if the MathNDPointList has the correct number of templates.  If it does not
      * a warning will be printed. \\
-     \\\texttt{PointSize} REAL4 $\epsilon[0,1]$ which specifies the relative size of each
+     \\\texttt{pointSize} REAL4 $\epsilon[0,1]$ which specifies the relative size of each
      * point to the final display area.  (e.g. 1 would fill the enire plot.)  This may be
      * called as NULL and a calculated value will be assigned.  (Its only a rough guess)
      </lalLaTeX>
@@ -93,7 +93,7 @@ void
 LALMathNDPlot( LALStatus *stat,
                MathNDPointList *first,
                INT4 *ntiles,
-               REAL4 *PointSize)
+               REAL4 *pointSize)
 /* </lalVerbatim>*/
 {
   FILE *nb;                             /* pointer to the notebook file */
@@ -118,10 +118,10 @@ LALMathNDPlot( LALStatus *stat,
     ABORT(stat, LALMATHEMATICAH_EFILE, LALMATHEMATICAH_MSGEFILE);
   
   /* Appropriately handle the inputs for ntiles and pointsize to assure
-     that a propter PointSize is chosen.  Also print a warning if the 
+     that a propter pointSize is chosen.  Also print a warning if the 
      length of the MathNDPointList is not equal in length to the parameter
      ntiles passed to this function. */
-  if (!PointSize){
+  if (!pointSize){
     if (!ntiles){
       list=first;
       while(list->next){
@@ -148,8 +148,8 @@ LALMathNDPlot( LALStatus *stat,
   }
                                                                                                                                                 
   else{
-    if ((*PointSize <= 0.0) || (*PointSize >= 1.0)) {
-      printf("\nIllegal value of PointSize; it must be between 0 and 1.\n");
+    if ((*pointSize <= 0.0) || (*pointSize >= 1.0)) {
+      printf("\nIllegal value of pointSize; it must be between 0 and 1.\n");
       printf("The default value of 0.02 will be used");
       PtSize = 0.02;
     }
@@ -247,7 +247,7 @@ LALMathNDPlot( LALStatus *stat,
           while(list->next)
           {
             fprintf(nb, ",{GrayLevel[%f], Point[{%f,%f,%f}]}",
-                    list->GrayLevel, list->coordinates->data[x], list->coordinates->data[y], list->coordinates->data[z]);
+                    list->grayLevel, list->coordinates->data[x], list->coordinates->data[y], list->coordinates->data[z]);
             if (jflag%2) fprintf(nb,"\n");
             ++jflag;
             list = list->next;

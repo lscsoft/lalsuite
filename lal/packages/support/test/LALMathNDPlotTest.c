@@ -117,7 +117,7 @@ int main(){
           list->coordinates->data[1] = loopy;
           list->coordinates->data[2] = loopz;
           list->coordinates->data[3] = loopw;
-          list->GrayLevel = 0.0;
+          list->grayLevel = 0.0;
           ntiles++;
           if ((list = list->next = (MathNDPointList *) LALCalloc(1, sizeof(MathNDPointList))) == NULL){
             LALError(&stat, LALMATHNDPLOTTESTC_MSGEMEM);
@@ -137,7 +137,7 @@ int main(){
         list->coordinates->data[1] = loopy;
         list->coordinates->data[2] = 2;
         list->coordinates->data[3] = loopw;
-        list->GrayLevel = 1.0;
+        list->grayLevel = 1.0;
         ntiles++;
         if ((list = list->next = (MathNDPointList *) LALCalloc(1, sizeof(MathNDPointList))) == NULL){
           LALError(&stat, LALMATHNDPLOTTESTC_MSGEMEM);
@@ -168,7 +168,7 @@ int main(){
           list->coordinates->data[1] = loopy;
           list->coordinates->data[2] = loopz;
           list->coordinates->data[3] = loopw;
-          list->GrayLevel = 0.0;
+          list->grayLevel = 0.0;
           ntiles++;
           if ((list = list->next = (MathNDPointList *) LALCalloc(1, sizeof(MathNDPointList))) == NULL){
             LALError(&stat, LALMATHNDPLOTTESTC_MSGEMEM);

@@ -1,99 +1,66 @@
-/*_______________________________________________________________________________________
- * 
- * File Name: LALMath3DPlot.c
+/* <lalVerbatim file="LALMath3DPlotCV">
+ * Author: Hanna, C. R.
+ * $Id$
+ * </lalVerbatim> */ 
+
+/* <lalLaTeX>
+ * \subsection{Module \texttt{LALMath3DPlot.c}}
+ * \label{ss:LALMath3DPlot}
  *
- * Author: Hanna C. R.
- * 
- * Revision: $Id$
- * 
- *_______________________________________________________________________________________
- */
-
-
-/* ------------------------------------- AUTO-DOC ------------------------------------ */
-/* ----------------------------------------------------------------------------------- */
-
-
-/*<lalVerbatim file="LALMath3DPlotCV">
-Author: Hanna, C. R.
-$Id$
-  </lalVerbatim>*/ 
-
-/*SUBSECTION - MODULE - "LALMath3DPlot.c" ------------------------------------ <lalLaTeX>
-  \subsection{Module \texttt{LALMath3DPlot.c}}
-  \label{ss:LALMath3DPlot}
-  </lalLaTeX> */
- 
-  /* SUBSUBSECTION - PROTOTYPES - "LALMath3DPlot()" -------------------------- <lalLaTeX>
-     \subsubsection{Prototypes}
-     \input{LALMath3DPlotCP}
-     \idx{LALMath3DPlot()}
-     \noindent\texttt{*stat} LALStatus structure pointer\\
-     \\\texttt{*first} Math3DPointList stucture pointer\\ 
-     \\\texttt{*ntiles} INT4 pointer to the number of templates you \emph{plan} to plot.  
-     * This may be called as NULL.  If it is called with a value this function will check
-     * to see if the Math3DPointList has the correct number of templates.  If it does not
-     * a warning will be printed. \\
-     \\\texttt{PointSize} REAL4 $\epsilon[0,1]$ which specifies the relative size of each 
-     * point to the final display area.  (e.g. 1 would fill the enire plot.)  This may be
-     * called as NULL and a calculated value will be assigned.  (Its only a rough guess)
-     </lalLaTeX>
-     END SUBSUBSECTION - PROTOTYPES "LALMath3DPlot()" -------------------------------- */
-
-  /* SUBSUBSECTION - DESCRIPTION --------------------------------------------- <lalLaTeX>
-     \subsubsection{Description}
-   * This module contains a function for plotting 3D template banks by creating a 
-   * \MATHEMATICA notebook.  The notebook renders the templates as points in a three 
-   * dimensional lattice.  The plot is animated so the user can see the template bank from 
-   * different perspectives.  See figure 1.1.
-     </lalLaTeX> 
-     END SUBSUBSECTION - DESCRIPTION ------------------------------------------------- */
-
-  /* FIGURE - "LALMathematicaHplot1" ----------------------------------------- <lalLaTeX>
-     \begin{figure}
-     \begin{center}
-     \includegraphics[width=0.5\textwidth]{LALMathematicaHplot1}
-     \end{center}
-     \caption{Here is an example template bank produced by running InspiralSpinBankTest.c
-              to generate roughly 5000 templates.  Currently the plot doesn't show the 
-              contour of the templates; it renders them as spheres.  In the case of 
-              metrics with disimilar scales along the principle directions you will 
- 	      notice considerable space between points accordingly.}
-     \end{figure}
-     </lalLaTeX>
-     END - FIGURE -------------------------------------------------------------------- */
-
-  /* SUBSUBSECTION - NOTES --------------------------------------------------- <lalLaTeX>
-     \subsubsection{Notes}
-     \begin{itemize}
-   * \item The output of this function is ``Math3DNotebook.nb" and will appear in the 
-   * directory of the program that called this function.
-   * \item Exported \MATHEMATICA graphics  will appear in 
-   * your home directory for unix users and in the $\backslash$Mathematica directory for 
-   * Windows users unless you have another path configured in your \MATHEMATICA 
-   * installation. It is necessary to change the file name within the notebook to avoid 
-   * overwriting previous files.
-     \end{itemize}
-     </lalLaTeX>
-     END SUBSUBSECTION - NOTES ------------------------------------------------------- */
-     
-/*END - SUBSECTION - MODULE - LALMath3DPlot.c" --------------------------------------- */
-
-/*<lalLaTeX>  
-\vfill{\footnotesize\input{LALMath3DPlotCV}}
-</lalLaTeX>*/
-
-
-/* -------------------------------------END AUTO DOC --------------------------------- */
-/* ----------------------------------------------------------------------------------- */
+ * \subsubsection{Prototypes}
+ * \input{LALMath3DPlotCP}
+ * \idx{LALMath3DPlot()}
+ * \noindent\texttt{*stat} LALStatus structure pointer\\
+ * \\\texttt{*first} Math3DPointList stucture pointer\\ 
+ * \\\texttt{*ntiles} INT4 pointer to the number of templates you
+ * \emph{plan} to plot.  This may be called as NULL.  If it is called with a
+ * value this function will check to see if the Math3DPointList has the
+ * correct number of templates.  If it does not a warning will be printed.
+ * \\
+ * \\\texttt{pointSize} REAL4 $\epsilon[0,1]$ which specifies the relative
+ * size of each point to the final display area.  (e.g. 1 would fill the
+ * entire plot.)  This may be called as NULL and a calculated value will be
+ * assigned.  (It's only a rough guess)
+ *
+ * \subsubsection{Description}
+ * This module contains a function for plotting 3D template banks by
+ * creating a \MATHEMATICA notebook.  The notebook renders the templates as
+ * points in a three dimensional lattice.  The plot is animated so the user
+ * can see the template bank from different perspectives.  See figure 1.1.
+ *
+ * \begin{figure}
+ * \begin{center}
+ * \includegraphics[width=0.5\textwidth]{LALMathematicaHplot1}
+ * \end{center}
+ * \caption{Here is an example template bank produced by running
+ * InspiralSpinBankTest.c to generate roughly 5000 templates.  Currently the
+ * plot doesn't show the contour of the templates; it renders them as
+ * spheres.  In the case of metrics with disimilar scales along the
+ * principle directions you will notice considerable space between points
+ * accordingly.}
+ * \end{figure}
+ *
+ *  \subsubsection{Notes}
+ *  \begin{itemize}
+ * \item The output of this function is ``Math3DNotebook.nb" and will appear
+ * in the directory of the program that called this function.
+ * \item Exported \MATHEMATICA graphics  will appear in your home directory
+ * for unix users and in the $\backslash$Mathematica directory for Windows
+ * users unless you have another path configured in your \MATHEMATICA
+ * installation. It is necessary to change the file name within the notebook
+ * to avoid overwriting previous files.
+ * \end{itemize}
+ *
+ *\vfill{\footnotesize\input{LALMath3DPlotCV}}
+ * </lalLaTeX> */
 
 
 #include <lal/LALConfig.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/LALMalloc.h>
+#include <lal/LALMathematica.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/LALStdlib.h>
-#include <lal/LALMathematica.h>
 
 #define INSTRUCTIONS 	fprintf(nb, "This notebook will produce an animated 3D plot of your template bank.  See the next section to change any user variables before evaluating.  The cells of this notebook must be evaluated sequentially.  If you wish to evaluate the entire notebook at once press Ctrl+A then press Shift+Enter in most operating systems.")
 
@@ -105,7 +72,7 @@ void
 LALMath3DPlot( LALStatus *stat, 
                Math3DPointList *first, 
                INT4 *ntiles,
-               REAL4 *PointSize) 
+               REAL4 *pointSize) 
 /* </lalVerbatim>*/
 {
   FILE *nb; 				/* pointer to the notebook file */
@@ -123,7 +90,7 @@ LALMath3DPlot( LALStatus *stat,
   if ((nb = fopen("Math3DNotebook.nb", "w")) == NULL)
     ABORT(stat, LALMATHEMATICAH_EFILE, LALMATHEMATICAH_MSGEFILE);
  
-  if (!PointSize){
+  if (!pointSize){
     if (!ntiles){
       list=first;
       while(list->next){
@@ -150,8 +117,8 @@ LALMath3DPlot( LALStatus *stat,
   }
 
   else{
-    if ((*PointSize <= 0.0) || (*PointSize >= 1.0)) {
-      printf("\nIllegal value of PointSize; it must be between 0 and 1.\n");
+    if ((*pointSize <= 0.0) || (*pointSize >= 1.0)) {
+      printf("\nIllegal value of pointSize; it must be between 0 and 1.\n");
       printf("The default value of 0.02 will be used");
       PtSize = 0.02;
     }
@@ -250,7 +217,7 @@ LALMath3DPlot( LALStatus *stat,
           while(list->next) 
           {
             fprintf(nb, ",{GrayLevel[%f], Point[{%f,%f,%f}]}",
-                    list->GrayLevel, list->x, list->y, list->z);
+                    list->grayLevel, list->x, list->y, list->z);
             if (jflag%2) fprintf(nb,"\n");
             ++jflag;
             list = list->next;

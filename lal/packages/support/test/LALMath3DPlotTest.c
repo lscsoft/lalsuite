@@ -113,7 +113,7 @@ int main(){
         list->x = loopx;
         list->y = loopy;
         list->z = loopz;
-        list->GrayLevel = 0.0;
+        list->grayLevel = 0.0;
         ntiles++;
         if ((list = list->next = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
           LALError(&stat, LALMATH3DPLOTTESTC_MSGEMEM);
@@ -129,7 +129,7 @@ int main(){
       list->x = loopx;
       list->y = loopy;
       list->z = 2;
-      list->GrayLevel = 1.0;
+      list->grayLevel = 1.0;
       ntiles++;
       if ((list = list->next = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
         LALError(&stat, LALMATH3DPLOTTESTC_MSGEMEM);
@@ -151,7 +151,7 @@ int main(){
 	list->x = loopx;
         list->y = loopy;
         list->z = loopz;
-        list->GrayLevel = 0.0;
+        list->grayLevel = 0.0;
         ntiles++;
         if ((list = list->next = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
           LALError(&stat, LALMATH3DPLOTTESTC_MSGEMEM);
