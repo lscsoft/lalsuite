@@ -781,9 +781,24 @@ LALInspiralCreateBCVBank (
   }
 
   nlistOld = *nlist;
-  LALInspiralBCVFcutBank( status->statusPtr, 
-      list, nlist, coarseIn);
-  CHECKSTATUSPTR( status );
+  /* If coarseIn.lowGM == - 1 then LowGM is  unphysical. Hence, we use a 
+   * Regular grid in cutoff frequency which is independant of LowGM or HighGM
+   * and which lays between Flower and Fsampling/2
+   *
+   * If coarseIn.LowGM > 0 it means that we want to use a bank where
+   * the cutoff frequency has some physical values betwwen Low and
+   * HighGM */
+  if (coarseIn.LowGM  == -1)
+  {
+	  LALInspiralBCVRegularFcutBank( status->statusPtr, 
+	      list, nlist, coarseIn);
+	  CHECKSTATUSPTR( status )};
+  else
+  {
+	  LALInspiralBCVFcutBank( status->statusPtr, 
+	      list, nlist, coarseIn);
+	  CHECKSTATUSPTR( status );
+  }
 
   if ( lalDebugLevel & LALINFO ) 
   {
@@ -992,3 +1007,65 @@ PSItoMasses (
         pow(LAL_PI * params->fLower, fiveBy3));
   }
 }
+
+
+
+/*  <lalVerbatim file="LALInspiralBCVRegularFcutBankCP"> */
+void 
+LALInspiralBCVRegularFcutBank (
+    LALStatus            *status, 
+    InspiralTemplateList **list, 
+    UINT4                *NList, 
+    InspiralCoarseBankIn coarseIn
+    ) 
+/*  </lalVerbatim>  */
+{  
+  /* no restriction of  physical masses. 
+   * And regular layer of templates in the Frequency dimension */
+  UINT4 i,nf, nlist, j, ndx;
+  REAL8 fendBCV;
+
+  INITSTATUS( status, "LALInspiralBCVFcutBank", LALINSPIRALCREATECOARSEBANKC );
+
+  nf = coarseIn.numFcutTemplates;
+  ndx = nlist = *NList;
+  
+  for ( j = 0; j < nlist; ++j )
+  {     
+      for ( i = 1; i <=nf; ++i )
+      {
+	fendBCV = (*list)[j].params.fLower 
+		+ i * ((*list)[j].params.tSampling/2.0 - (*list)[j].params.fLower) / nf ;
+        ++ndx;
+
+	*list = (InspiralTemplateList *) 
+        LALRealloc( *list, ndx * sizeof(InspiralTemplateList) );
+        if ( ! *list )
+          {
+            ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+          }
+         memset( *list + ndx - 1, 0, sizeof(InspiralTemplate) );
+         (*list)[ndx-1] = (*list)[j];
+         (*list)[ndx-1].params.fFinal = fendBCV;
+         (*list)[ndx-1].metric = (*list)[0].metric;
+         (*list)[ndx-1].nLayer = i;
+      }
+  }
+    
+  
+  for ( j = nlist; j < ndx; ++j )
+  {
+    (*list)[j-nlist] = (*list)[j];
+  }
+
+ *NList = ndx - nlist;
+  *list = LALRealloc( *list, *NList * sizeof(InspiralTemplateList) );
+  if ( ! *list )
+  {
+    ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+  }
+
+  RETURN( status );
+}
+
+
