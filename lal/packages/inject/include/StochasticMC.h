@@ -88,7 +88,7 @@ extern "C" {
 
 
  void
- LALStochasticMC( LALStatus                  *status,
+ LALStochasticMCDso( LALStatus                  *status,
 		  SSSimStochBGOutput         *output, 
 		  StochasticMCInput          *input,
 		  StochasticMCParams         *params );
@@ -98,6 +98,19 @@ void
 		       SSSimStochBGOutput         *output, 
 		       StochasticMCSInput         *input,
 		       StochasticMCParams         *params ); 
+
+ void
+ LALStochasticMCDsoSplice( LALStatus                  *status,
+		  SSSimStochBGOutput         *output, 
+		  StochasticMCInput          *input,
+		  StochasticMCParams         *params );
+
+void
+ LALStochasticMCStandSplice( LALStatus                  *status,
+		       SSSimStochBGOutput         *output, 
+		       StochasticMCSInput         *input,
+		       StochasticMCParams         *params );
+
   
 #ifdef  __cplusplus
 }
