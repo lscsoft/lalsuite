@@ -1320,42 +1320,28 @@ cleanexit:
     }
     else
     {
-      CHAR  thisIFO[LIGOMETA_IFO_MAX];
-      CHAR  otherIFO[LIGOMETA_IFO_MAX];
-      
-      strncpy( thisIFO, ifoName[j], LIGOMETA_IFO_MAX * sizeof(CHAR) );
-
-      if ( j == 0 )
-      {
-	strncpy( otherIFO, ifoName[1], LIGOMETA_IFO_MAX * sizeof(CHAR) );	
-      }
-      else if ( j == 1 )
-      {
-	strncpy( otherIFO, ifoName[0], LIGOMETA_IFO_MAX * sizeof(CHAR) );
-      }
-      
       if ( userTag && ifoTag )
       {
-        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s_%s_%s-%d-%d.xml", 
-	    thisIFO, otherIFO, ifoTag, userTag, startCoincidence, 
+        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s_%s-%d-%d.xml", 
+	    ifoName[j], ifoTag, userTag, startCoincidence, 
 	    endCoincidence - startCoincidence );
       }
       else if ( userTag && !ifoTag )
       {
-	LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s_%s-%d-%d.xml", 
-	    thisIFO, otherIFO, userTag, startCoincidence, 
+	LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", 
+	    ifoName[j], userTag, startCoincidence, 
 	    endCoincidence - startCoincidence );
       }
       else if ( !userTag && ifoTag )
       {
-	LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s_%s-%d-%d.xml", 
-	    thisIFO, otherIFO, ifoTag, startCoincidence, 
+	LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", 
+	    ifoName[j], ifoTag, startCoincidence, 
 	    endCoincidence - startCoincidence );
       }
       else
       {
-        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", thisIFO,
-	    otherIFO, startCoincidence, endCoincidence - startCoincidence );
+        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA-%d-%d.xml", ifoName[j],
+	    startCoincidence, endCoincidence - startCoincidence );
       }
 
       xmlFileName = fileName;
