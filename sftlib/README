@@ -25,7 +25,7 @@ both flavors.  This produces a set of good and a set of bad SFTs.  The
 good SFTs are:
 SFT-test[1234567] and SFT-good
 and the bad SFTs are
-SFT-bad[123456789]
+SFT-bad[123456789] and SFT-bad1[0-4]
 
 You can use ./SFTvalidate to see what's wrong with the bad SFTs, for
 example ./SFTvalidate SFT-bad3 .

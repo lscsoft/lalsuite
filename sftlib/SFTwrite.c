@@ -12,10 +12,6 @@ void dosystem(const char *command);
 void modify_bytes(const char *filename, int byte_offset, const char *new_value, int nbytes);
 int isbigendian(void);
 void modify_checksum(const char *filename, unsigned long long newchecksumle, unsigned long long newchecksumbe);
-void swap2(char *location);
-void swap4(char *location);
-void swap8(char *location);
-
 
 /* function definitions */
 int isbigendian(void){
@@ -96,7 +92,9 @@ void modify_checksum(const char *filename, unsigned long long newchecksumle, uns
 int main(void) {
   FILE *fp;
   float data[]={1.0, 0.0, 2.0, -1.0, 3.0, -2.0, 4.0, -3.0};
-  
+  int tmp;
+  double dtmp;
+
   printerror(WriteSFT(fp=openfile("SFT-test1"), 12345,          6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, "test1", data)); fclose(fp);
   printerror(WriteSFT(fp=openfile("SFT-test2"), 12345+60,       6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, "test2", data)); fclose(fp);
   printerror(WriteSFT(fp=openfile("SFT-test3"), 12345+60+60,    6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, "test3", data)); fclose(fp);
@@ -131,6 +129,32 @@ int main(void) {
   printerror(WriteSFT(fp=openfile("SFT-bad9"), 12345,          6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, "test567", data)); fclose(fp);
   modify_bytes("SFT-bad9", 55, "8", 1);
   modify_checksum("SFT-bad9", 8104828364422822013ULL, 6488197905334075682ULL);
+  /* GPS nsec too big/small */
+  tmp=1000000000;
+  dosystem("cat SFT-test1 > SFT-bad10");
+  modify_bytes("SFT-bad10", 12, (char *)&tmp, 4);
+  modify_checksum("SFT-bad10",14553276594141125530ULL, 0ULL);
+  tmp=-1;
+  dosystem("cat SFT-test1 > SFT-bad11");
+  modify_bytes("SFT-bad11", 12, (char *)&tmp, 4);
+  modify_checksum("SFT-bad11",9905878389211410491ULL, 0ULL);
+  /* first frequency index negative */
+  tmp=-1;
+  dosystem("cat SFT-test1 > SFT-bad12");
+  modify_bytes("SFT-bad12", 24, (char *)&tmp, 4);
+  modify_checksum("SFT-bad12",5605290681458522985ULL, 0ULL);
+  /* number of samples negative */
+  tmp=-1;
+  dosystem("cat SFT-test1 > SFT-bad13");
+  modify_bytes("SFT-bad13", 28, (char *)&tmp, 4);
+  modify_checksum("SFT-bad13", 14214363586458317283ULL, 0ULL);
+  /* time base not positive */
+  dtmp=-60.0;
+  dosystem("cat SFT-test1 > SFT-bad14");
+  modify_bytes("SFT-bad14", 16, (char *)&dtmp, 8);
+  modify_checksum("SFT-bad14", 9944972421627148413ULL, 0ULL);
+
+
 
   printf("To test SFTs, do for example:\n"
 	 "./SFTvalidate SFT-good SFT-test[1234567]\n"
@@ -143,6 +167,11 @@ int main(void) {
 	 "./SFTvalidate SFT-bad7\n"
 	 "./SFTvalidate SFT-bad8\n"
 	 "./SFTvalidate SFT-bad9\n"
+	 "./SFTvalidate SFT-bad10\n"
+	 "./SFTvalidate SFT-bad11\n"
+	 "./SFTvalidate SFT-bad12\n"
+	 "./SFTvalidate SFT-bad13\n"
+	 "./SFTvalidate SFT-bad14\n"
 	 "(checking exit status after each command) or you can also try\n"
 	 "./SFTdumpheader SFT-good SFT-test[1234567]\n"
 	 "./SFTdumpheader SFT-bad1\n"
@@ -154,6 +183,11 @@ int main(void) {
 	 "./SFTdumpheader SFT-bad7\n"
 	 "./SFTdumpheader SFT-bad8\n"
 	 "./SFTdumpheader SFT-bad9\n"
+	 "./SFTdumpheader SFT-bad10\n"
+	 "./SFTdumpheader SFT-bad11\n"
+	 "./SFTdumpheader SFT-bad12\n"
+	 "./SFTdumpheader SFT-bad13\n"
+	 "./SFTdumpheader SFT-bad14\n"
 	 "or you can also replace SFTdumpheader with SFTdumpall.\n");
 
   return 0;

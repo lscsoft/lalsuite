@@ -379,7 +379,15 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
     retval=SFTEBADCOMMENT;
     goto error;
   }
-  
+
+  /* check that number of samples is 1 or greater.  We do this check
+     before calculating CRC since the number of values to CRC check
+     must be known first */
+  if (header.nsamples<=0){
+    retval=SFTENSAMPLESNOTPOS;
+    goto error;
+  }
+
   /* validate crc64 checksum ??  Do this BEFORE other checks since if
      a problem occurs it is more likely file corruption than a bad
      SFT */
@@ -426,6 +434,10 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
      
     /* check that checksum is consistent */
     if (crc != crc64save) {
+#ifdef SFTDEVEL
+      printf("CRC64 computes as %llu\n", crc);
+      printf("CRC64 in SFT is   %llu\n", crc64save);
+#endif
       retval=SFTEBADCRC64;
       goto error;
     }
@@ -467,12 +479,6 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
     goto error;
   }
 
-  /* check that number of samples is 1 or greater */
-  if (header.nsamples<=0){
-    retval=SFTENSAMPLESNOTPOS;
-    goto error;
-  }
-  
   /* check that detector type is known */
   if (header.version!=1 && unknownDetector(header.detector))
     return SFTEINSTRUMENTUNKNOWN;
