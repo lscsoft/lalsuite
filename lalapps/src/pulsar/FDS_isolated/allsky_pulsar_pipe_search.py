@@ -154,20 +154,20 @@ cfstat_args=' '.join(['./lalapps_ComputeFStatistic','-f',str(freq),'-b',str(floa
 #execute ComputeFStatistic code on first ifo
 print 'running: ',cfstat_args
 os.system(cfstat_args)
-FstatsFileName1=''.join(['Fstats','-',ifo,'-',str(freq)])
+FstatsFileName1=''.join(['Fstats','-',ifo,'-',str(freq+float(wings))])
 
 #second ifo
 ifo=ifo2
 data=data2
 
 # define command line for run on second ifo
-cfstat_args=' '.join(['./lalapps_ComputeFStatistic','-f',str(freq),'-b',freq_band,\
+cfstat_args=' '.join(['./lalapps_ComputeFStatistic','-f',str(freq),'-b',str(float(freq_band)+2*float(wings)),\
                       '-I',ifo,'-r',df,a_search,d_search,\
                       '-D',data,'-E . -y 00-04 -F',Fth,'-o',''.join(['-',ifo,'-',str(freq)])])
 #execute ComputeFStatistic code on second ifo
 print 'running: ',cfstat_args
 os.system(cfstat_args)
-FstatsFileName2=''.join(['Fstats','-',ifo,'-',str(freq)])
+FstatsFileName2=''.join(['Fstats','-',ifo,'-',str(freq+float(wings))])
 
 # gzip fstats files and copy them to starting dir
 zip_fstats1=''.join(['gzip ',FstatsFileName1])
