@@ -370,12 +370,9 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 
 void parse_command_line_debug(
 	int argc,
-	char *argv[],
-	EPSearchParams *params,
-	MetadataTable *procparams
+	char *argv[]
 )
 {
-	ProcessParamsTable **paramaddpoint = &procparams->processParamsTable;
 	int c;
 	int option_index;
 	struct option long_options[] = {
@@ -384,22 +381,18 @@ void parse_command_line_debug(
 	};
 
 	/*
-	 * Find end of process params table
+	 * Find and parse only the debug level command line options.  Must jump
+	 * through this hoop, because we cannot call set_debug_level() after
+	 * any calls to LALMalloc() and friends.
 	 */
 
-	while(*paramaddpoint)
-		paramaddpoint = &(*paramaddpoint)->next;
-
-	/*
-	 * Find and parse only the debug level command line options
-	 */
-
-	opterr = 1;	/* silence error messages */
-	do switch(c = getopt_long(argc, argv, "", long_options, &option_index)) {
+	opterr = 0;	/* silence error messages */
+	optind = 0;	/* start scanning from argv[0] */
+	do switch(c = getopt_long(argc, argv, "-", long_options, &option_index)) {
 
 		case 'D':
+		/* only set the debug level in this pass */
 		set_debug_level(optarg);
-		ADD_PROCESS_PARAM("string", "%s", optarg);
 		default:
 		break;
 	} while(c != -1);
@@ -469,13 +462,6 @@ void parse_command_line(
 	};
 
 	/*
-	 * Find end of process params table
-	 */
-
-	while(*paramaddpoint)
-		paramaddpoint = &(*paramaddpoint)->next;
-
-	/*
 	 * Set parameter defaults.
 	 */
 
@@ -523,6 +509,7 @@ void parse_command_line(
 	 */
 
 	opterr = 1;	/* enable error messages */
+	optind = 0;	/* start scanning from argv[0] */
 	do switch(c = getopt_long(argc, argv, "", long_options, &option_index)) {
 		case 'A':
 		params->tfTilingInput.length = atoi(optarg);
@@ -536,19 +523,20 @@ void parse_command_line(
 
 		case 'B':
 		options.calCacheFile = optarg;
-		ADD_PROCESS_PARAM("string", "%s", options.calCacheFile);
+		ADD_PROCESS_PARAM("string", "%s", optarg);
 		break;
 
 		case 'C':
 		params->channelName = optarg;
-		channelIn.name = params->channelName;
+		channelIn.name = optarg;
 		channelIn.type = ADCDataChannel;
-		memcpy(ifo, channelIn.name, sizeof(ifo) - 1);
-		ADD_PROCESS_PARAM("string", "%s", params->channelName);
+		memcpy(ifo, optarg, sizeof(ifo) - 1);
+		ADD_PROCESS_PARAM("string", "%s", optarg);
 		break;
 
 		case 'D':
-		/* ignore --debug-level */
+		/* only add --debug-level to params table in this pass */
+		ADD_PROCESS_PARAM("string", "%s", optarg);
 		break;
 
 		case 'E':
@@ -573,7 +561,7 @@ void parse_command_line(
 
 		case 'G':
 		cachefile = optarg;
-		ADD_PROCESS_PARAM("string", "%s", cachefile);
+		ADD_PROCESS_PARAM("string", "%s", optarg);
 		break;
 
 		case 'H':
@@ -652,7 +640,7 @@ void parse_command_line(
 
 		case 'P':
 		injectionFile = optarg;
-		ADD_PROCESS_PARAM("string", "%s", injectionFile);
+		ADD_PROCESS_PARAM("string", "%s", optarg);
 		break;
 
 		case 'Q':
@@ -667,7 +655,7 @@ void parse_command_line(
 
 		case 'R':
 		mdcCacheFile = optarg;
-		ADD_PROCESS_PARAM("string", "%s", mdcCacheFile);
+		ADD_PROCESS_PARAM("string", "%s", optarg);
 		break;
 
 		case 'S':
@@ -677,9 +665,9 @@ void parse_command_line(
 			args_are_bad = TRUE;
 		} else {
 			mdcparams->channelName = optarg;
-			mdcchannelIn.name = mdcparams->channelName;
+			mdcchannelIn.name = optarg;
 			mdcchannelIn.type = ADCDataChannel;
-			ADD_PROCESS_PARAM("string", "%s", mdcparams->channelName);
+			ADD_PROCESS_PARAM("string", "%s", optarg);
 		}
 		break;
 
@@ -823,7 +811,7 @@ void parse_command_line(
 
 		case 'h':
 		options.comment = optarg;
-		ADD_PROCESS_PARAM("string", "%s", options.comment);
+		ADD_PROCESS_PARAM("string", "%s", optarg);
 		break;
 
 		case 'i':
@@ -1333,7 +1321,7 @@ int main( int argc, char *argv[])
 	memset(&stat, 0, sizeof(stat));
 	lal_errhandler = LAL_ERR_EXIT;
 	set_debug_level("3");
-	/*parse_command_line_debug(argc, argv, &params, &procparams);*/
+	parse_command_line_debug(argc, argv);
 
 	/* create the process and process params tables */
 	procTable.processTable = LALCalloc(1, sizeof(ProcessTable));
