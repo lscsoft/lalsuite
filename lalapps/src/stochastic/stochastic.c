@@ -964,7 +964,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   ccIn.responseFunctionTwo = &responseTwo;
   ccIn.optimalFilter = &optFilter;
 
-  /*** DONE HERE WITH ALLOCATION ***/
+  if (verbose_flag)
+    fprintf(stdout, "Done with memory allocation...\n");
 
   if (overlap_hann_flag)
     N = 2;
@@ -2766,7 +2767,7 @@ void readDataPair(LALStatus *status,
   frChanInOne.type = ADCDataChannel;
 
   /* initial data structures */
-  dataStreamOne.epoch =  dataStreamTwo.epoch  = bufferStartTime;
+  dataStreamOne.epoch = dataStreamTwo.epoch = bufferStartTime;
 
   if (verbose_flag)
     fprintf(stdout, "Allocating memory for raw data streams...\n");
