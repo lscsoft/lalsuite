@@ -725,7 +725,7 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
 	if (maxBin - lineBin - rightWingBins - k > 0)
 	  inData = sft->data->data + lineBin - minBin + rightWingBins + k + 1;
 	else
-	  inData = sft->data->data + maxBin;
+	  inData = sft->data->data + length - 1;
 
 	tempDataRe[k] = inData->re;
 	tempDataIm[k] = inData->im;
@@ -791,7 +791,7 @@ void CleanCOMPLEX16SFT (LALStatus                 *status,
 		       LineNoiseInfo              *lineInfo)
 {/*   *********************************************  </lalVerbatim> */
   /* function to clean the SFT based on the line information read earlier */
-
+  /* note: don't use this yet... the lal sftIO functions for complex16 are not there yet */
   INT4     nLines, count, leftCount, rightCount, lineBin, minBin, maxBin, k;
   INT4     leftWingBins, rightWingBins, length;
   REAL8    deltaF, f0, tBase;
@@ -805,7 +805,7 @@ void CleanCOMPLEX16SFT (LALStatus                 *status,
 
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "CleanCOMPLEX8SFT", SFTBINC);
+  INITSTATUS (status, "CleanCOMPLEX16SFT", SFTBINC);
   ATTATCHSTATUSPTR (status);   
  
   /*   Make sure the arguments are not NULL: */ 

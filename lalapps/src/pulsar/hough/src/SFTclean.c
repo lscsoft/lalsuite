@@ -58,7 +58,7 @@ INT4 lalDebugLevel=0;
 #define BANDFREQ 300.0
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 
-#define USAGE "Usage: %s [-d debuglevel] \n [-H harmonics file name] \n [-i input sft dir]\n [-o output sft dir] \n [-f start frequency] \n [-b bandwidth] \n [-h print usage] \n"
+#define USAGE "Usage: %s \n [-d debuglevel] \n [-H harmonics file name] \n [-i input sft dir]\n [-o output sft dir] \n [-f start frequency] \n [-b bandwidth] \n [-h print usage] \n"
 
 
 /* Usage format string. */
@@ -105,13 +105,10 @@ char *lalWatch;
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
 int main(int argc, char *argv[]){ 
   static LALStatus       status;  /* LALStatus pointer */ 
-  static SFTHeader1      header;
-  static SFTtype         *sft=NULL;
-  static SFTVector       *sftvect=NULL;
-  static LineNoiseInfo  lines;
+  static SFTtype         *sft;
+  static LineNoiseInfo   lines;
   static LineHarmonicsInfo harmonics; 
   
-  CHAR *fname;
   CHAR *linefname;           /* file with line noise info */
   CHAR *harmonicfname;        /* file with harmonics info */
   CHAR *inputSFTDir;    /* directory for unclean sfts */
@@ -119,10 +116,9 @@ int main(int argc, char *argv[]){
   INT4 j, arg;                         /* Argument counter */
   INT4 nLines, count1, nHarmonicSets;
   INT4 mObsCoh;  
-  REAL8 fStart, fBand, timeBase, deltaF;
-  INT8 fStartBin, fBandBin;  
+  REAL8 fStart, fBand;
   CHAR filelist[MAXFILES][MAXFILENAMELENGTH];
-  CHAR tempstr1[256], tempstr2[256], command[256]; 
+  CHAR tempstr1[256], tempstr2[256]; 
 
   /* set defaults */
   linefname = LINEFILE;
@@ -243,16 +239,43 @@ int main(int argc, char *argv[]){
     }
 
 
-  strcpy(command, inputSFTDir);
-  strcat(command, "/SFT");
-  SUB( LALReadSFTfiles( &status, &sftvect, fStart, fStart + fBand, command), &status);
-  mObsCoh = sftvect->length;
+{ 
+    CHAR     command[256];
+    glob_t   globbuf;
+    INT4    j;
+     
+    strcpy(command, inputSFTDir);
+    strcat(command, "/*SFT*.*");
+    
+    globbuf.gl_offs = 1;
+    glob(command, GLOB_ERR, NULL, &globbuf);
+    
+    if(globbuf.gl_pathc==0)
+      {
+	fprintf(stderr,"No SFTs in directory %s ... Exiting.\n", inputSFTDir);
+	return 1;  /* stop the program */
+      }
+    
+    /* we will read up to a certain number of SFT files, but not all 
+       if there are too many ! */ 
+    mObsCoh = (MAXFILES < globbuf.gl_pathc) ? MAXFILES : globbuf.gl_pathc ;
+    
+    /* Remember to do the following: 
+       globfree(&globbuf); after reading the file names. The file names are 
+       globbuf.gl_pathv[fileno]   that one can copy into whatever as:
+       strcpy(filelist[fileno],globbuf.gl_pathv[fileno]);  */
+    
+    for (j=0; j < mObsCoh; j++){
+      strcpy(filelist[j],globbuf.gl_pathv[j]);
+    }
+    globfree(&globbuf);	
+  }
 
 
   for (j=0; j < mObsCoh; j++)
     { 
-      sft = sftvect[j].data;
-
+      sft=NULL;
+      SUB (LALReadSFTfile (&status, &sft, fStart, fStart + fBand, filelist[j]), &status);
       /* clean the sft */
       if (nLines > 0)
 	SUB( CleanCOMPLEX8SFT( &status, sft, 2, &lines), &status);
@@ -285,7 +308,7 @@ int main(int argc, char *argv[]){
       LALFree(harmonics.rightWing);
     }
 
-  LALDestroySFTVector (&status, &sftvect);
+  LALDestroySFTtype (&status, &sft);
 
   LALCheckMemoryLeaks(); 
 
@@ -294,6 +317,16 @@ int main(int argc, char *argv[]){
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+
+
+
+
+
+
+
+
+
 
 
 
