@@ -16,6 +16,7 @@ __version__ = '$Revision$'[11:-2]
 import string
 import exceptions
 import pipeline
+import os
 
 
 class StochasticError(exceptions.Exception):
@@ -194,6 +195,44 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     file = calibration file to use.
     """
     self.add_var_opt('frame-cache-two', file)
+
+  def set_calibration_one(self,ifo,start):
+    """
+    Set the path to the calibration cache file for the given IFO. During
+    S2, the Hanford 2km IFO had two calibration epochs, so if the start
+    time is during S2, we use the correct cache file.
+    """
+    cal_path = self.job().get_config('calibration','path')
+
+    if (ifo == 'H2'):
+      if start < int(self.job().get_config('calibration','H2-cal-epoch-boundary')):
+        cal_file = self.job().get_config('calibration','H2-1')
+      else:
+        cal_file = self.job().get_config('calibration','H2-2')
+    else:
+      cal_file = self.job().get_config('calibration',ifo)
+
+    cal = os.path.join(cal_path,cal_file)
+    self.add_var_opt('calibration-cache-one',cal)
+
+  def set_calibration_two(self,ifo,start):
+    """
+    Set the path to the calibration cache file for the given IFO. During
+    S2, the Hanford 2km IFO had two calibration epochs, so if the start
+    time is during S2, we use the correct cache file.
+    """
+    cal_path = self.job().get_config('calibration','path')
+
+    if (ifo == 'H2'):
+      if start < int(self.job().get_config('calibration','H2-cal-epoch-boundary')):
+        cal_file = self.job().get_config('calibration','H2-1')
+      else:
+        cal_file = self.job().get_config('calibration','H2-2')
+    else:
+      cal_file = self.job().get_config('calibration',ifo)
+
+    cal = os.path.join(cal_path,cal_file)
+    self.add_var_opt('calibration-cache-two',cal)			
 
   def get_output(self):
     """
