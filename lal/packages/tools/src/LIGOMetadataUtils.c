@@ -489,19 +489,19 @@ LALCheckOutTimeFromSearchSummary (
     {
       /* there is a gap in the searched data between unsearchedStart
 	 and outStart */
-      ABORT( status, LIGOMETADATAUTILSH_ESSGAP, LIGOMETADATAUTILSH_MSGESSGAP );
+      ABORT( status, LIGOMETADATAUTILSH_ESGAP, LIGOMETADATAUTILSH_MSGESGAP );
     }
     else if ( outStartNS < unsearchedStartNS )    
     {
       /* there is a region of data which was searched twice */
-      ABORT( status, LIGOMETADATAUTILSH_ESSDUB, LIGOMETADATAUTILSH_MSGESSDUB );
+      ABORT( status, LIGOMETADATAUTILSH_ESDUB, LIGOMETADATAUTILSH_MSGESDUB );
     }
   }
 
   /* check that we got to the end of the requested time */
   if ( unsearchedStartNS < outEndNS )
   {
-    ABORT( status, LIGOMETADATAUTILSH_ESSGAP, LIGOMETADATAUTILSH_MSGESSGAP );
+    ABORT( status, LIGOMETADATAUTILSH_ESGAP, LIGOMETADATAUTILSH_MSGESGAP );
   }
 
   /* free memory allocated in LALIfoScanSearchSummary */
