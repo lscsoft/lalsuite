@@ -4,11 +4,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % load the file with all the maximun numbercount per frequency already cleaned
-NC=load('AllSkyMax_4k_H1_0.005c');
+%NC=load('AllSkyMax_4k_H1_0.005c');
+NC=load('/home/badkri/S2results/CLEAN_L1');
 
 %the directory where the MC results are placed
-DirectoryMC = '/local_data/badkri/S2-xxx/MC_allsky/';
-Detector = 'H1';
+%DirectoryMC = '/local_data/badkri/S2-xxx/MC_allsky/';
+%Detector = 'H1';
+DirectoryMC = '/home/badkri/MCresults/';
+Detector = 'L1_coarse';
 
 fileoutput1 = strcat(Detector,'_CofH');
 fid1 = fopen(fileoutput1, 'w');
@@ -67,7 +70,7 @@ for bandnumber=1:Nbands;
      %getting the confidence level for each h0 value
      for h0num=1:nh0
        x=Ncount(:, h0num+1);
-       kkcount = find(x>Nmax(bn));
+       kkcount = find(x>maxNC);
        CH(h0num) = length(kkcount)/length(x);
        fprintf(fid1,' %d %d ', h0vect(h0num), CH(h0num) );
      end
@@ -82,7 +85,7 @@ for bandnumber=1:Nbands;
        large = find( CH > 0.955);
        h0max = h0vect(large(1));
      end
-     fprintf(fid2,'%d %d', h0min, h0max );
+     fprintf(fid2,'%d %d ', h0min, h0max );
 
      %%%%%%%%%%%%%%%%%getting 95% upper limit
       h01=h0vect(1);
@@ -114,7 +117,7 @@ for bandnumber=1:Nbands;
          slope = (h02 - h01)/(CL2 -CL1);
          UL = h01 + slope * (0.95 - CL1);
       end
-      fprintf(fid2,'%d \n', UL );
+      fprintf(fid2,' %d \n', UL );
  
   else
     for h0num=1:nh0
