@@ -7,7 +7,7 @@ VectorIndexRangeC.m4 VectorIndexRangeBaseC.m4
 MATRIXSRCS = MatrixDivide.c MatrixMultiply.c MatrixPower.c MiscMatlab.c 
 libvectorops_la_SOURCES = VectorMultiply.c VectorPolar.c $(MATRIXSRCS) VectorIndexRange.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-MAINTAINERCLEANFILES = $(MATRIXSRCS)
+MAINTAINERCLEANFILES = $(MATRIXSRCS) VectorIndexRange.c
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep

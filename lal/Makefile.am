@@ -31,3 +31,4 @@ cvs-clean: maintainer-clean
 	rm -f config.status
 	rm -f config.log
 	rm -f config.h.in
+	rm -f configure.ac
