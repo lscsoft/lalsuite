@@ -1079,7 +1079,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* output to file */
-    fprintf(out, "%d %e %e\n", gpsSegmentBStart.gpsSeconds, sqrt(varTheo), y);
+    fprintf(out, "%d %e %e\n", gpsSegmentBStart.gpsSeconds, y, sqrt(varTheo));
   }
 
   /* close output file */
