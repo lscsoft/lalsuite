@@ -19,6 +19,8 @@
 
 #include <FrameL.h>
 
+#include <lalapps.h>
+
 #include <lal/AVFactories.h>
 #include <lal/Calibration.h>
 #include <lal/ComplexFFT.h>
@@ -49,6 +51,7 @@
 #include "stochasticPipeline.h"
 
 NRCSID (PIPELINEC, "$Id$");
+RCSID ("$Id$");
 
 #define CVS_REVISION "$Revision$"
 #define CVS_DATE "$Date$"
@@ -58,7 +61,7 @@ NRCSID (PIPELINEC, "$Id$");
 char *optarg;
 int optind;
 
-/* fixed parameters for the stochastic search */ 
+/* fixed parameters for the stochastic search */
 
 /* sampling parameters */
 INT4 sampleRate = 16384;
@@ -107,9 +110,6 @@ CHAR channelTwo[LALNameLength] = "H2:LSC-AS_Q";
 CHAR ifoOne[LALNameLength] = "H1";
 CHAR ifoTwo[LALNameLength] = "H2";
 
-/* lal debug level */
-int lalDebugLevel = LALINFO;
-
 INT4 main(INT4 argc, CHAR *argv[])
 {
 	/* parse command line options */
@@ -120,6 +120,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* status pointer */
 	LALStatus status;
 	status.statusPtr = NULL;
+
+	/* error handler */
+	lal_errhandler = LAL_ERR_EXIT;
+	set_debug_level( "7" );
 
 	/* output file */
 	FILE *out;
@@ -134,7 +138,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 		exit(1);
 	}
 
-	/* counters */       
+	/* counters */
 	INT4 i, segLoop;
 
 	/* results parameters */
@@ -185,8 +189,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* allocate memory for data streams */
 	streamOne.data = NULL;
 	streamTwo.data = NULL;
-	LALSCreateVector(&status, &(streamOne.data), streamLength);
-	LALSCreateVector(&status, &(streamTwo.data), streamLength);
+	LAL_CALL( LALSCreateVector(&status, &(streamOne.data), streamLength), \
+			&status );
+	LAL_CALL( LALSCreateVector(&status, &(streamTwo.data), streamLength), \
+			&status );
 	memset(streamOne.data->data, 0, \
 			streamOne.data->length * sizeof(*streamOne.data->data));
 	memset(streamTwo.data->data, 0, \
@@ -216,7 +222,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* simulated output structures */
 	REAL4TimeSeries SimStochBGOne;
-	REAL4TimeSeries SimStochBGTwo; 
+	REAL4TimeSeries SimStochBGTwo;
 
 	/* set parameter structure for monte carlo simulations */
 	MCparams.lengthSegment = calibDuration * resampleRate;
@@ -236,12 +242,12 @@ INT4 main(INT4 argc, CHAR *argv[])
 	MCparams.omegaRef = omegaRef;
 	MCparams.alpha = alpha;
 	MCparams.siteOne = siteOne;
-	MCparams.siteTwo = siteTwo; 
+	MCparams.siteTwo = siteTwo;
 
 	/* set input structure for monte carlo simulations */
-	MCinput.ifoOne = ifoOne; 
+	MCinput.ifoOne = ifoOne;
 	MCinput.ifoTwo = ifoTwo;
-	MCinput.calCacheOne = calCacheOne; 
+	MCinput.calCacheOne = calCacheOne;
 	MCinput.calCacheTwo = calCacheTwo;
 	UINT4 MCLength = MCparams.numSegment * MCparams.lengthSegment;
 
@@ -252,16 +258,22 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* allocate memory for monte carlo */
 	SimStochBGOne.data = NULL;
-	LALSCreateVector(&status, &(SimStochBGOne.data), MCLength);
+	LAL_CALL( LALSCreateVector(&status, &(SimStochBGOne.data), MCLength), \
+			&status );
 	SimStochBGTwo.data = NULL;
-	LALSCreateVector(&status, &(SimStochBGTwo.data), MCLength);
+	LAL_CALL( LALSCreateVector(&status, &(SimStochBGTwo.data), MCLength), \
+			&status );
+	memset(SimStochBGOne.data->data, 0, \
+			SimStochBGOne.data->length * sizeof(*SimStochBGOne.data->data));
+	memset(SimStochBGTwo.data->data, 0, \
+			SimStochBGTwo.data->length * sizeof(*SimStochBGTwo.data->data));
 
 	/* output structure for LALStochasticMC */
 	MCoutput.SSimStochBG1 = &SimStochBGOne;
 	MCoutput.SSimStochBG2 = &SimStochBGTwo;
 
 	/* data structures for segments */
-	INT4 segmentLength; 
+	INT4 segmentLength;
 	REAL4TimeSeries segmentOne;
 	REAL4TimeSeries segmentTwo;
 
@@ -288,8 +300,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* allocate memory for data segments */
 	segmentOne.data = NULL;
 	segmentTwo.data = NULL;
-	LALSCreateVector(&status, &(segmentOne.data), segmentLength);
-	LALSCreateVector(&status, &(segmentTwo.data), segmentLength);
+	LAL_CALL( LALSCreateVector(&status, &(segmentOne.data), segmentLength), \
+			&status );
+	LAL_CALL( LALSCreateVector(&status, &(segmentTwo.data), segmentLength), \
+			&status );
 	memset(segmentOne.data->data, 0, \
 			segmentOne.data->length * sizeof(*segmentOne.data->data));
 	memset(segmentTwo.data->data, 0, \
@@ -299,7 +313,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	INT4 overlapPSDLength;
 	INT4 psdTempLength;
 	INT4 windowPSDLength;
-	INT4 filterLength; 
+	INT4 filterLength;
 	INT4 numPointInf;
 	INT4 numPointSup;
 	LALWindowParams winparPSD;
@@ -338,8 +352,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* allocate memory for PSDs */
 	psdTempOne.data = NULL;
 	psdTempTwo.data = NULL;
-	LALCreateVector(&status, &(psdTempOne.data), psdTempLength);
-	LALCreateVector(&status, &(psdTempTwo.data), psdTempLength);
+	LAL_CALL( LALCreateVector(&status, &(psdTempOne.data), psdTempLength), \
+			&status );
+	LAL_CALL( LALCreateVector(&status, &(psdTempTwo.data), psdTempLength), \
+			&status );
 	memset(psdTempOne.data->data, 0, \
 			psdTempOne.data->length * sizeof(*psdTempOne.data->data));
 	memset(psdTempTwo.data->data, 0, \
@@ -350,7 +366,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	strncpy(psdOne.name, "psdOne", LALNameLength);
 	strncpy(psdTwo.name, "psdTwo", LALNameLength);
 	psdOne.deltaF = deltaF;
-	psdTwo.deltaF = deltaF; 
+	psdTwo.deltaF = deltaF;
 	psdOne.f0 = fMin;
 	psdTwo.f0 = fMin;
 	psdOne.sampleUnits = psdUnits;
@@ -361,11 +377,11 @@ INT4 main(INT4 argc, CHAR *argv[])
 		fprintf(stdout, "Allocating memory for reduced frequency band PSDs...\n");
 	}
 
-	/* allocate memory for reduced frequency band PSDs  */
+	/* allocate memory for reduced frequency band PSDs */
 	psdOne.data = NULL;
 	psdTwo.data = NULL;
-	LALCreateVector(&status, &psdOne.data, filterLength);
-	LALCreateVector(&status, &psdTwo.data, filterLength);
+	LAL_CALL( LALCreateVector(&status, &psdOne.data, filterLength), &status );
+	LAL_CALL( LALCreateVector(&status, &psdTwo.data, filterLength), &status );
 	memset (psdOne.data->data, 0, \
 			psdOne.data->length * sizeof(*psdOne.data->data));
 	memset( psdTwo.data->data, 0, \
@@ -387,7 +403,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 	}
 
 	/* create fft plan */
-	LALCreateForwardRealFFTPlan(&status, &specparPSD.plan, windowPSDLength, 0);
+	LAL_CALL (LALCreateForwardRealFFTPlan(&status, &specparPSD.plan, \
+				windowPSDLength, 0), &status );
 
 	if (PRINT)
 	{
@@ -395,16 +412,17 @@ INT4 main(INT4 argc, CHAR *argv[])
 	}
 
 	/* create window for PSD estimation */
-	LALCreateREAL4Window(&status, &specparPSD.window, &winparPSD);
+	LAL_CALL( LALCreateREAL4Window(&status, &specparPSD.window, &winparPSD), \
+			&status );
 
 	/* response functions */
 	COMPLEX8FrequencySeries responseTempOne;
 	COMPLEX8FrequencySeries responseTempTwo;
 	COMPLEX8FrequencySeries responseOne;
 	COMPLEX8FrequencySeries responseTwo;
-	UINT4 respLength;
+	INT4 respLength;
 	LIGOTimeGPS gpsCalTime;
-	LIGOTimeGPS duration; 
+	LIGOTimeGPS duration;
 	LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
 	/* set parameters for response functions */
@@ -434,8 +452,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* allocate memory for response functions */
 	responseTempOne.data = NULL;
 	responseTempTwo.data = NULL;
-	LALCCreateVector(&status, &(responseTempOne.data), respLength);
-	LALCCreateVector(&status, &(responseTempTwo.data), respLength);
+	LAL_CALL( LALCCreateVector(&status, &(responseTempOne.data), respLength), \
+			&status );
+	LAL_CALL( LALCCreateVector(&status, &(responseTempTwo.data), respLength), \
+			&status );
 	memset(responseTempOne.data->data, 0, \
 			responseTempOne.data->length * sizeof(*responseTempOne.data->data));
 	memset(responseTempTwo.data->data, 0, \
@@ -444,7 +464,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* reduced frequency band response functions */
 	/* set metadata fields for reduced frequency band response functions */
 	strncpy(responseOne.name, "responseOne", LALNameLength);
-	strncpy(responseTwo.name, "responseTwo", LALNameLength);    
+	strncpy(responseTwo.name, "responseTwo", LALNameLength);
 	responseOne.sampleUnits = countPerAttoStrain;
 	responseTwo.sampleUnits = countPerAttoStrain;
 	responseOne.epoch = gpsCalTime;
@@ -463,8 +483,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* allocate memory for reduced frequency band response functions */
 	responseOne.data = NULL;
 	responseTwo.data = NULL;
-	LALCCreateVector(&status, &(responseOne.data), filterLength);
-	LALCCreateVector(&status, &(responseTwo.data), filterLength);
+	LAL_CALL( LALCCreateVector(&status, &(responseOne.data), filterLength), \
+			&status );
+	LAL_CALL( LALCCreateVector(&status, &(responseTwo.data), filterLength), \
+			&status );
 	memset(responseOne.data->data, 0, \
 			responseOne.data->length * sizeof(*responseOne.data->data));
 	memset(responseTwo.data->data, 0, \
@@ -477,10 +499,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 	COMPLEX8FrequencySeries halfCalPSDTwo;
 
 	/* units for inverse noise */
-	LALUnit calPSDUnit = {36,{0,0,-1,0,0,-2,0},{0,0,0,0,0,0,0}}; 
+	LALUnit calPSDUnit = {36,{0,0,-1,0,0,-2,0},{0,0,0,0,0,0,0}};
 	LALUnit halfCalPSDUnit = {18,{0,0,0,0,0,-1,-1},{0,0,0,0,0,0,0}};
 
-	/* set metadata fields for inverse noise structures */ 
+	/* set metadata fields for inverse noise structures */
 	strncpy(calInvPSDOne.name, "calInvPSDOne", LALNameLength);
 	strncpy(calInvPSDTwo.name, "calInvPSDTwo", LALNameLength);
 	calInvPSDOne.sampleUnits = calPSDUnit;
@@ -494,7 +516,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	halfCalPSDOne.deltaF = deltaF;
 	halfCalPSDTwo.deltaF = deltaF;
 	halfCalPSDOne.f0 = fMin;
-	halfCalPSDTwo.f0 = fMin; 
+	halfCalPSDTwo.f0 = fMin;
 	halfCalPSDOne.sampleUnits = halfCalPSDUnit;
 	halfCalPSDTwo.sampleUnits = halfCalPSDUnit;
 
@@ -505,17 +527,21 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* allocate memory for inverse noise */
 	calInvPSDOne.data = NULL;
-	calInvPSDTwo.data = NULL;      
-	LALCreateVector(&status, &(calInvPSDOne.data), filterLength);
-	LALCreateVector(&status, &(calInvPSDTwo.data), filterLength);
+	calInvPSDTwo.data = NULL;
+	LAL_CALL( LALCreateVector(&status, &(calInvPSDOne.data), filterLength), \
+			&status );
+	LAL_CALL( LALCreateVector(&status, &(calInvPSDTwo.data), filterLength), \
+			&status );
 	memset(calInvPSDOne.data->data, 0, \
 			calInvPSDOne.data->length * sizeof(*calInvPSDOne.data->data));
 	memset(calInvPSDTwo.data->data, 0, \
 			calInvPSDTwo.data->length * sizeof(*calInvPSDTwo.data->data));
 	halfCalPSDOne.data = NULL;
 	halfCalPSDTwo.data = NULL;
-	LALCCreateVector(&status, &(halfCalPSDOne.data), filterLength);
-	LALCCreateVector(&status, &(halfCalPSDTwo.data), filterLength);
+	LAL_CALL( LALCCreateVector(&status, &(halfCalPSDOne.data), filterLength), \
+			&status );
+	LAL_CALL( LALCCreateVector(&status, &(halfCalPSDTwo.data), filterLength), \
+			&status );
 	memset(halfCalPSDOne.data->data, 0, \
 			halfCalPSDOne.data->length * sizeof(*halfCalPSDOne.data->data));
 	memset(halfCalPSDTwo.data->data, 0, \
@@ -542,7 +568,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* window for segment data streams */
 	REAL4TimeSeries dataWindow;
 
-	/* set window parameters for segment data streams */	
+	/* set window parameters for segment data streams */
 	strncpy(dataWindow.name, "dataWindow", LALNameLength);
 	dataWindow.sampleUnits = lalDimensionlessUnit;
 	dataWindow.deltaT = 1./resampleRate;
@@ -555,7 +581,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* allocate memory for segment window */
 	dataWindow.data = NULL;
-	LALSCreateVector(&status, &(dataWindow.data), segmentLength);
+	LAL_CALL( LALSCreateVector(&status, &(dataWindow.data), segmentLength), \
+			&status );
 	memset(dataWindow.data->data, 0, \
 			dataWindow.data->length * sizeof(*dataWindow.data->data));
 
@@ -580,31 +607,31 @@ INT4 main(INT4 argc, CHAR *argv[])
 		REAL4Vector *hannWindow;
 
 		/* allocate memory for hann window */
-		hannWindow = NULL; 
-		LALSCreateVector(&status, &hannWindow, hannLength);
+		hannWindow = NULL;
+		LAL_CALL( LALSCreateVector(&status, &hannWindow, hannLength), &status );
 		memset(hannWindow->data, 0, \
 				hannWindow->length * sizeof(*hannWindow->data));
 
 		/* generate hann window */
-		LALWindow(&status, hannWindow, &hannParams); 
+		LAL_CALL( LALWindow(&status, hannWindow, &hannParams), &status );
 
 		/* construct Tukey window */
 		for (i = 0; i < hannLength / 2; i++)
 		{
-			dataWindow.data->data[i] = hannWindow->data [i];
+			dataWindow.data->data[i] = hannWindow->data[i];
 		}
 		for (i = segmentLength - (hannLength / 2); i < segmentLength; i++)
 		{
 			dataWindow.data->data[i] = \
 				hannWindow->data[i - segmentLength + hannLength];
 		}
-	} 
+	}
 
 	/* save window */
-	if (PRINT) 
-	{ 
-		LALSPrintTimeSeries(&dataWindow,"dataWindow.dat"); 
-	}    
+	if (PRINT)
+	{
+		LALSPrintTimeSeries(&dataWindow, "dataWindow.dat");
+	}
 
 	/* zeropad and fft structures */
 	SZeroPadAndFFTParameters zeroPadParams;
@@ -615,11 +642,12 @@ INT4 main(INT4 argc, CHAR *argv[])
 	UINT4 fftDataLength;
 
 	/* zeropad lengths */
-	zeroPadLength = 2 * segmentLength; 
+	zeroPadLength = 2 * segmentLength;
 	fftDataLength = (zeroPadLength / 2) + 1;
 
 	/* create fft plan */
-	LALCreateForwardRealFFTPlan(&status, &fftDataPlan, zeroPadLength, 0);
+	LAL_CALL( LALCreateForwardRealFFTPlan(&status, &fftDataPlan, \
+				zeroPadLength, 0), &status );
 
 	/* set metadata fields for zeropad ffts */
 	strncpy(hBarTildeOne.name, "hBarTildeOne", LALNameLength);
@@ -633,12 +661,14 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* allocate memory for zeropad */
 	hBarTildeOne.data = NULL;
 	hBarTildeTwo.data = NULL;
-	LALCCreateVector(&status, &(hBarTildeOne.data), fftDataLength); 
-	LALCCreateVector(&status, &(hBarTildeTwo.data), fftDataLength);
+	LAL_CALL( LALCCreateVector(&status, &(hBarTildeOne.data), fftDataLength), \
+			&status );
+	LAL_CALL( LALCCreateVector(&status, &(hBarTildeTwo.data), fftDataLength), \
+			&status );
 	memset(hBarTildeOne.data->data, 0, \
 			hBarTildeOne.data->length * sizeof(*hBarTildeOne.data->data));
 	memset(hBarTildeTwo.data->data, 0, \
-			hBarTildeTwo.data->length * sizeof(*hBarTildeTwo.data->data));	
+			hBarTildeTwo.data->length * sizeof(*hBarTildeTwo.data->data));
 
 	/* set zeropad parameters */
 	zeroPadParams.fftPlan = fftDataPlan;
@@ -667,7 +697,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* allocate memory for overlap reduction function */
 	overlap.data = NULL;
-	LALCreateVector(&status, &(overlap.data), filterLength);
+	LAL_CALL( LALCreateVector(&status, &(overlap.data), filterLength), &status );
 	memset(overlap.data->data, 0, \
 			overlap.data->length * sizeof(*overlap.data->data));
 
@@ -686,7 +716,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 	}
 
 	/* generate overlap reduction function */
-	LALOverlapReductionFunction(&status, &overlap, &detectors, &ORFparams);
+	LAL_CALL (LALOverlapReductionFunction(&status, &overlap, &detectors, \
+				&ORFparams), &status );
 
 	/* save */
 	if (PRINT)
@@ -711,7 +742,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* allocate memory for spectrum */
 	omegaGW.data = NULL;
-	LALCreateVector(&status, &(omegaGW.data), filterLength);
+	LAL_CALL( LALCreateVector(&status, &(omegaGW.data), filterLength), &status );
 	memset(omegaGW.data->data, 0, \
 			omegaGW.data->length * sizeof(*omegaGW.data->data));
 
@@ -729,7 +760,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	}
 
 	/* generage omegaGW */
-	LALStochasticOmegaGW(&status, &omegaGW, &omegaGWParams);
+	LAL_CALL( LALStochasticOmegaGW(&status, &omegaGW, &omegaGWParams), &status );
 
 	/* frequency mask */
 	if (mask)
@@ -752,8 +783,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 		/* allocate memory for frequency mask */
 		mask.data = NULL;
 		maskTemp = NULL;
-		LALCreateVector(&status, &(mask.data), filterLength);
-		LALCreateVector(&status, &maskTemp, respLength);
+		LAL_CALL( LALCreateVector(&status, &(mask.data), filterLength), &status );
+		LAL_CALL( LALCreateVector(&status, &maskTemp, respLength), &status );
 		memset(mask.data->data, 0, \
 				mask.data->length * sizeof(*mask.data->data));
 		memset(maskTemp->data, 0, \
@@ -786,7 +817,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 			fprintf(stdout, "Masking multiples of 60 Hz...\n");
 		}
 
-		/* remove multiples of 60 Hz */   
+		/* remove multiples of 60 Hz */
 		for (i = 0; i < respLength; i += (UINT4)(60 / deltaF))
 		{
 			maskTemp->data[i] = 0.;
@@ -817,7 +848,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	}
 
 	/* save */
-	if (PRINT) 
+	if (PRINT)
 	{
 		LALSPrintFrequencySeries(&omegaGW, "omegaGW.dat");
 	}
@@ -863,7 +894,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* allocate memory for optimal filter */
 	optFilter.data = NULL;
-	LALCCreateVector(&status, &(optFilter.data), filterLength);
+	LAL_CALL( LALCCreateVector(&status, &(optFilter.data), filterLength), \
+			&status );
 	memset(optFilter.data->data, 0, \
 			optFilter.data->length * sizeof(*optFilter.data->data));
 
@@ -877,7 +909,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	StochasticCrossCorrelationInput ccIn;
 	BOOLEAN epochsMatch;
 	REAL4WithUnits ccStat;
-	COMPLEX8FrequencySeries ccSpectrum;;
+	COMPLEX8FrequencySeries ccSpectrum;
 
 	/* set metadata fields for CC spectrum */
 	strncpy(ccSpectrum.name, "ccSpectrum", LALNameLength);
@@ -886,8 +918,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 	ccSpectrum.f0 = fMin;
 
 	/* allocate memory for CC spectrum*/
-	ccSpectrum.data = NULL;  
-	LALCCreateVector(&status, &(ccSpectrum.data), filterLength);
+	ccSpectrum.data = NULL;
+	LAL_CALL( LALCCreateVector(&status, &(ccSpectrum.data), filterLength), \
+			&status );
 	memset(ccSpectrum.data->data, 0, \
 			ccSpectrum.data->length * sizeof(*ccSpectrum.data->data));
 
@@ -909,9 +942,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 	readDataPair(&status, &streamPair, &streamParams);
 
 	/* save */
-	if (PRINT) 
-	{ 
-		LALSPrintTimeSeries(&streamOne, "stream1.dat"); 
+	if (PRINT)
+	{
+		LALSPrintTimeSeries(&streamOne, "stream1.dat");
 		LALSPrintTimeSeries(&streamTwo, "stream2.dat");
 	}
 
@@ -945,19 +978,19 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 
 		/* clean up */
-		LALDestroyVector(&status, &SimStochBGOne.data);
-		LALDestroyVector(&status, &SimStochBGTwo.data);
+		LAL_CALL( LALDestroyVector(&status, &SimStochBGOne.data), &status );
+		LAL_CALL( LALDestroyVector(&status, &SimStochBGTwo.data), &status );
 	}
 
 	/* output the results */
-	if (PRINT) 
-	{ 
-		LALSPrintTimeSeries(&streamOne, "signal1.dat"); 
+	if (PRINT)
+	{
+		LALSPrintTimeSeries(&streamOne, "signal1.dat");
 		LALSPrintTimeSeries(&streamTwo, "signal2.dat");
-	} 
+	}
 
 	/*
-	 ** loop over segments  **
+	 ** loop over segments **
 	 */
 
 	if (PRINT)
@@ -989,9 +1022,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 
 		/* output the results */
-		if (PRINT) 
-		{ 
-			LALSPrintTimeSeries(&segmentOne, "segment1.dat"); 
+		if (PRINT)
+		{
+			LALSPrintTimeSeries(&segmentOne, "segment1.dat");
 			LALSPrintTimeSeries(&segmentTwo, "segment2.dat");
 		}
 
@@ -1001,12 +1034,14 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 
 		/* zero pad and fft */
-		LALSZeroPadAndFFT(&status, &hBarTildeOne, &segmentOne, &zeroPadParams);
-		LALSZeroPadAndFFT(&status, &hBarTildeTwo, &segmentTwo, &zeroPadParams);
+		LAL_CALL( LALSZeroPadAndFFT(&status, &hBarTildeOne, &segmentOne, \
+					&zeroPadParams), &status );
+		LAL_CALL( LALSZeroPadAndFFT(&status, &hBarTildeTwo, &segmentTwo, \
+					&zeroPadParams), &status );
 
 		/* save */
 		if (PRINT)
-		{ 
+		{
 			LALCPrintFrequencySeries(&hBarTildeOne, "hBarTilde1.dat");
 			LALCPrintFrequencySeries(&hBarTildeTwo, "hBarTilde2.dat");
 		}
@@ -1017,8 +1052,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 
 		/* compute uncalibrated PSDs */
-		LALREAL4AverageSpectrum(&status, &psdTempOne, &segmentOne, &specparPSD);
-		LALREAL4AverageSpectrum(&status, &psdTempTwo, &segmentTwo, &specparPSD);
+		LAL_CALL( LALREAL4AverageSpectrum(&status, &psdTempOne, &segmentOne, \
+					&specparPSD), &status );
+		LAL_CALL( LALREAL4AverageSpectrum(&status, &psdTempTwo, &segmentTwo, \
+					&specparPSD), &status );
 
 		if (PRINT)
 		{
@@ -1033,9 +1070,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 
 		/* output the results */
-		if (PRINT) 
-		{ 
-			LALSPrintFrequencySeries(&psdOne, "psd1.dat"); 
+		if (PRINT)
+		{
+			LALSPrintFrequencySeries(&psdOne, "psd1.dat");
 			LALSPrintFrequencySeries(&psdTwo, "psd2.dat");
 		}
 
@@ -1047,10 +1084,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 		/* compute response function */
 		responseTempOne.epoch = gpsCalTime;
 		responseTempTwo.epoch = gpsCalTime;
-		LALExtractFrameResponse(&status, &responseTempOne, calCacheOne, \
-				ifoOne, &duration);
-		LALExtractFrameResponse(&status, &responseTempTwo, calCacheTwo, \
-				ifoTwo, &duration);
+		LAL_CALL( LALExtractFrameResponse(&status, &responseTempOne, calCacheOne, \
+				ifoOne, &duration), &status );
+		LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwo, calCacheTwo, \
+				ifoTwo, &duration), &status );
 
 		if (PRINT)
 		{
@@ -1060,7 +1097,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 		/* reduce to the optimal filter frequency range */
 		responseOne.epoch = gpsCalTime;
-		responseTwo.epoch = gpsCalTime ;
+		responseTwo.epoch = gpsCalTime;
 		for (i = 0; i < filterLength; i++)
 		{
 			responseOne.data->data[i] = responseTempOne.data->data[i + numPointInf];
@@ -1068,9 +1105,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 
 		/* output the results */
-		if (PRINT) 
+		if (PRINT)
 		{
-			LALCPrintFrequencySeries(&responseOne, "response1.dat"); 
+			LALCPrintFrequencySeries(&responseOne, "response1.dat");
 			LALCPrintFrequencySeries(&responseTwo, "response2.dat");
 		}
 
@@ -1080,14 +1117,14 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 
 		/* compute inverse calibrate and half calibrated PSDs */
-		LALStochasticInverseNoise(&status, &inverseNoiseOutOne, \
-				&inverseNoiseInOne);
-		LALStochasticInverseNoise(&status, &inverseNoiseOutTwo, \
-				&inverseNoiseInTwo);
+		LAL_CALL( LALStochasticInverseNoise(&status, &inverseNoiseOutOne, \
+				&inverseNoiseInOne), &status );
+		LAL_CALL( LALStochasticInverseNoise(&status, &inverseNoiseOutTwo, \
+				&inverseNoiseInTwo), &status );
 
 		/* save */
-		if (PRINT) 
-		{ 
+		if (PRINT)
+		{
 			LALSPrintFrequencySeries(&calInvPSDOne, "inPSD1.dat");
 			LALSPrintFrequencySeries(&calInvPSDTwo, "inPSD2.dat");
 			LALCPrintFrequencySeries(&halfCalPSDOne, "hInPSD1.dat");
@@ -1100,8 +1137,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 
 		/* compute variance and normalisation for optimal filter */
-		LALStochasticOptimalFilterNormalization(&status, &normOutput, \
-				&normInput, &normParams);
+		LAL_CALL( LALStochasticOptimalFilterNormalization(&status, &normOutput, \
+				&normInput, &normParams), &status );
 		lambda = (REAL8)(normLambda.value * \
 				pow(10.,normLambda.units.powerOfTen));
 		varTheo = (REAL8)(segmentDuration * normSigma.value * \
@@ -1123,7 +1160,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 		/* build optimal filter */
 		optFilter.epoch = gpsCalTime;
-		LALStochasticOptimalFilter(&status, &optFilter, &optFilterIn, &normLambda);
+		LAL_CALL( LALStochasticOptimalFilter(&status, &optFilter, &optFilterIn, \
+					&normLambda), &status );
 
 		/* save */
 		if (PRINT)
@@ -1137,8 +1175,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 
 		/* cc spectrum */
-		LALStochasticCrossCorrelationSpectrum(&status, &ccSpectrum, &ccIn, \
-				epochsMatch);
+		LAL_CALL( LALStochasticCrossCorrelationSpectrum(&status, &ccSpectrum, \
+					&ccIn, epochsMatch), &status );
 
 		/* save */
 		if (PRINT)
@@ -1151,9 +1189,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 			fprintf(stdout, "Generating cross correlation statistic...\n");
 		}
 
-		/* cc statistic */ 
-		LALStochasticCrossCorrelationStatistic(&status, &ccStat, &ccIn, \
-				epochsMatch);
+		/* cc statistic */
+		LAL_CALL( LALStochasticCrossCorrelationStatistic(&status, &ccStat, &ccIn, \
+				epochsMatch), &status );
 
 		y = (REAL8)(ccStat.value * pow(10.,ccStat.units.powerOfTen));
 		yWhitenedSum += y * inVarTheo;
@@ -1174,34 +1212,34 @@ INT4 main(INT4 argc, CHAR *argv[])
 	fprintf(stdout, "h_0^2 omega = %f\n\n", pointEstimate);
 
 	/* cleanup */
-	LALDestroyRealFFTPlan(&status, &(specparPSD.plan));
-	LALDestroyRealFFTPlan(&status, &fftDataPlan);
-	LALDestroyVector(&status, &(streamOne.data));
-	LALDestroyVector(&status, &(streamTwo.data));
-	LALDestroyVector(&status, &(segmentOne.data));
-	LALDestroyVector(&status, &(segmentTwo.data));
-	LALDestroyVector(&status, &(psdTempOne.data));
-	LALDestroyVector(&status, &(psdTempTwo.data));
-	LALDestroyVector(&status, &(psdOne.data));
-	LALDestroyVector(&status, &(psdTwo.data));
-	LALCDestroyVector(&status, &(responseOne.data));
-	LALCDestroyVector(&status, &(responseTwo.data));
-	LALCDestroyVector(&status, &(responseTempOne.data));
-	LALCDestroyVector(&status, &(responseTempTwo.data));
-	LALDestroyVector(&status, &(calInvPSDOne.data));
-	LALDestroyVector(&status, &(calInvPSDTwo.data));
-	LALCDestroyVector(&status, &(halfCalPSDOne.data));
-	LALCDestroyVector(&status, &(halfCalPSDTwo.data)); 
-	LALDestroyVector(&status, &(overlap.data));
-	LALDestroyVector(&status, &(omegaGW.data));
-	LALDestroyVector(&status, &(dataWindow.data));
+	LAL_CALL( LALDestroyRealFFTPlan(&status, &(specparPSD.plan)), &status );
+	LAL_CALL( LALDestroyRealFFTPlan(&status, &fftDataPlan), &status );
+	LAL_CALL( LALDestroyVector(&status, &(streamOne.data)), &status );
+	LAL_CALL( LALDestroyVector(&status, &(streamTwo.data)), &status );
+	LAL_CALL( LALDestroyVector(&status, &(segmentOne.data)), &status );
+	LAL_CALL( LALDestroyVector(&status, &(segmentTwo.data)), &status );
+	LAL_CALL( LALDestroyVector(&status, &(psdTempOne.data)), &status );
+	LAL_CALL( LALDestroyVector(&status, &(psdTempTwo.data)), &status );
+	LAL_CALL( LALDestroyVector(&status, &(psdOne.data)), &status );
+	LAL_CALL( LALDestroyVector(&status, &(psdTwo.data)), &status );
+	LAL_CALL( LALCDestroyVector(&status, &(responseOne.data)), &status );
+	LAL_CALL( LALCDestroyVector(&status, &(responseTwo.data)), &status );
+	LAL_CALL( LALCDestroyVector(&status, &(responseTempOne.data)), &status );
+	LAL_CALL( LALCDestroyVector(&status, &(responseTempTwo.data)), &status );
+	LAL_CALL( LALDestroyVector(&status, &(calInvPSDOne.data)), &status );
+	LAL_CALL( LALDestroyVector(&status, &(calInvPSDTwo.data)), &status );
+	LAL_CALL( LALCDestroyVector(&status, &(halfCalPSDOne.data)), &status );
+	LAL_CALL( LALCDestroyVector(&status, &(halfCalPSDTwo.data)), &status );
+	LAL_CALL( LALDestroyVector(&status, &(overlap.data)), &status );
+	LAL_CALL( LALDestroyVector(&status, &(omegaGW.data)), &status );
+	LAL_CALL( LALDestroyVector(&status, &(dataWindow.data)), &status );
 	/*
-	LALDestroyVector(&status, &(mask.data));
-	LALDestroyVector(&status, &maskTemp);
-	LALDestroyVector(&status, &hannWindow);
+	LAL_CALL( LALDestroyVector(&status, &(mask.data)), &status );
+	LAL_CALL( LALDestroyVector(&status, &maskTemp), &status );
+	LAL_CALL( LALDestroyVector(&status, &hannWindow), &status );
 	*/
-	LALCDestroyVector(&status, &(hBarTildeOne.data));
-	LALCDestroyVector(&status, &(hBarTildeTwo.data));
+	LAL_CALL( LALCDestroyVector(&status, &(hBarTildeOne.data)), &status );
+	LAL_CALL( LALCDestroyVector(&status, &(hBarTildeTwo.data)), &status );
 
 	/* close output file */
 	fclose(out);
@@ -1215,7 +1253,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 	while(1)
 	{
 		INT4 c = -1;
-		c = getopt(argc, argv, "ht:T:l:a:f:F:w:i:I:d:D:r:R:mo:g:kv");
+		c = getopt(argc, argv, "ht:T:l:a:f:F:w:i:I:d:D:r:R:mo:g:kvz:");
 		if (c == -1)
 		{
 			/* end of options, break loop */
@@ -1338,11 +1376,11 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			case 'R':
 				/* calibration cache two */
 				strncpy(calCacheTwo, optarg, LALNameLength);
-				break; 
+				break;
 
 			case 'm':
 				/* injection */
-				simulData = 1;;
+				simulData = 1;
 				break;
 
 			case 'o':
@@ -1363,6 +1401,11 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			case 'v':
 				/* verbose */
 				PRINT = 1;
+				break;
+
+			case 'z':
+				/* set debug level */
+				set_debug_level( optarg );
 				break;
 
 			default:
@@ -1402,6 +1445,7 @@ void displayUsage(INT4 exitcode)
 	fprintf(stderr, " -g seed             seed\n");
 	fprintf(stderr, " -k                  apply frequency masking\n");
 	fprintf(stderr, " -v                  verbose mode\n");
+	fprintf(stderr, " -z debugLevel       set lalDebugLevel\n");
 
 	exit(exitcode);
 }
