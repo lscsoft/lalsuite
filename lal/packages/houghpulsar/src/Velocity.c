@@ -33,8 +33,8 @@ like.
 The function \verb@LALDetectorVel@ finds the velocity of a given detector at a
 given time. It is basically a wrapper for LALBarycenter.
 The output is of the form \verb@REAL8  v[3]@, and the input is a
-time \verb@LIGOTimeGPS  *time@, the detector \verb@LALDetector detector, 
-and the ephemeris \verb@EphemerisData *edat from LALInitBarycenter
+time \verb@LIGOTimeGPS  *time@, the detector \verb@LALDetector detector@, 
+and the ephemeris \verb@EphemerisData *edat@ from LALInitBarycenter
 
 The function \verb@LALAvgDetectorVel@ outputs the
    average velocity \verb@REAL8 v[3]@ of the detector during a time interval by using
