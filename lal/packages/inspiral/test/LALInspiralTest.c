@@ -78,77 +78,84 @@ int main (void) {
    static REAL8 dt;
    UINT4 n, i;
 
-   params.approximant=EOB;
    params.OmegaS = 0.;
    params.Theta = 0.;
    params.ieta=1; 
-   params.mass1=10.; 
+   params.mass1=5.; 
    params.mass2=10.; 
    params.startTime=0.0; 
-   params.startPhase=0.;
+   params.startPhase=0.0;
    params.fLower=40.0; 
-   params.fCutoff=1000.0;
+   params.fCutoff=2000.00;
    params.tSampling=4096.0;
    params.order=4;
+   params.approximant=TaylorT3;
    params.signalAmplitude=1.0;
    params.nStartPad=0;
-   params.nEndPad=0;
+   params.nEndPad=1000;
    params.massChoice=m1Andm2;
    params.distance = 1.e8 * LAL_PC_SI/LAL_C_SI;
    dt = 1./params.tSampling;
 
+   params.psi0 = 132250.;
+   params.psi3 = -1014.2;
+   params.alpha = 0.528;
+   params.fendBCV = 868.7;
+
    LALInspiralWaveLength(&status, &n, params);
    LALInspiralParameterCalc(&status, &params);
    fprintf(stderr, "Testing Inspiral Signal Generation Codes:\n");
-   fprintf(stderr, "Signal length=%d, t0=%e, t2=%e, m1=%e, m2=%e, fLower=%e, fUpper=%e\n", n, params.t0, params.t2, params.mass1, params.mass2, params.fLower, params.fCutoff);
+   fprintf(stderr, "Signal length=%d, m1=%e, m2=%e, fLower=%e, fUpper=%e\n", 
+		   n, params.mass1, params.mass2, params.fLower, params.fCutoff);
    LALCreateVector(&status, &signal1, n);
    LALCreateVector(&status, &signal2, n);
 
-   params.psi0 = 72639.;
-   params.psi3 = -768.78;
-   params.alpha = 0.766;
-   params.fendBCV = 331.4;
-   params.approximant = BCV;
-			   
-   if (params.approximant==TaylorF1 || params.approximant==TaylorF2 || params.approximant==BCV) 
+   for (params.approximant=0; params.approximant<=8; params.approximant++)
    {
-	static RealFFTPlan *revp;
-	LALInspiralWave(&status, signal1, &params);
-	/*
-	   REPORTSTATUS(&status);
-	 */
-	LALCreateReverseRealFFTPlan(&status, &revp, n, 0);
-	LALREAL4VectorFFT(&status, signal2, signal1, revp);
-	LALDestroyRealFFTPlan (&status, &revp);
-	printf_timeseries(signal1->length, signal2->data, dt, params.startTime);
+	   for (params.order=0; params.order<8; params.order++)
+	   {
+		   /* if (params.approximant !=6 && params.order !=1)  */
+		   {
+			   if (params.approximant==TaylorF1 || 
+			       params.approximant==TaylorF2 || 
+			       params.approximant==PadeF1 || 
+			       params.approximant==BCV)
+			   {
+				   static RealFFTPlan *revp;
+				   LALInspiralWave(&status, signal1, &params);
+				   /*
+				   REPORTSTATUS(&status);
+				   */
+		   
+				   LALCreateReverseRealFFTPlan(&status, &revp, n, 0);
+				   LALREAL4VectorFFT(&status, signal2, signal1, revp);
+				   LALDestroyRealFFTPlan (&status, &revp);
+			   }
+			   else
+			   {
+				   LALInspiralWave(&status, signal2, &params);
+				   /*
+				    * REPORTSTATUS(&status);
+				    * static RealFFTPlan *fwdp;
+				    * LALCreateForwardRealFFTPlan(&status, &fwdp, n, 0);
+				    * LALInspiralWaveTemplates (&status, signal1, signal2, &params); 
+				    * LALDestroyRealFFTPlan (&status, &fwdp); 
+				    *
+				    */
+			   }
+			
+			   if (params.approximant==7 && params.order==4)
+				   printf_timeseries(signal1->length, signal2->data, dt, params.startTime);
+				   
+			   fprintf(stderr, "approximant=%d order=%d,", params.approximant, params.order);
+			   if (status.statusCode) 
+				   fprintf(stderr, " not available\n");
+			   else 
+				   fprintf(stderr, " successful\n");
+		   }
+	   }
    }
-   else
-   {
-	LALInspiralWave(&status, signal2, &params);
-	/*
-	   REPORTSTATUS(&status);
-	 */
-	printf_timeseries(signal1->length, signal2->data, dt, params.startTime);
-   }
-			 
-   fprintf(stderr, "approximant=%d order=%d,", params.approximant, params.order);
-
-   if (status.statusCode) 
-	   fprintf(stderr, " not available\n");
-   else 
-	   fprintf(stderr, " successful\n");
-   /* 
-    * static RealFFTPlan *fwdp;
-    * LALCreateForwardRealFFTPlan(&status, &fwdp, n, 0);
-    */
-   /* 
-    * LALInspiralWaveTemplates (&status, signal1, signal2, &params); 
-    * LALDestroyRealFFTPlan (&status, &fwdp); 
-    *
-    */
-   /* 
-    * printf_timeseries(signal1->length, signal1->data, dt, params.startTime);
-    */
+   
    LALDestroyVector(&status, &signal2);
    LALDestroyVector(&status, &signal1);
    LALCheckMemoryLeaks();
