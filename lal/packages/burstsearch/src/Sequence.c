@@ -175,6 +175,8 @@ void LALCutREAL4Sequence(
 	INITSTATUS(status, "LALCutREAL4Sequence", SEQUENCEC);
 
 	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(input != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(first + length <= input->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
 	*output = XLALCutREAL4Sequence(input, first, length);
 
@@ -184,25 +186,26 @@ void LALCutREAL4Sequence(
 }
 
 
-REAL4Sequence *XLALShrinkREAL4Sequence(
+void *XLALShrinkREAL4Sequence(
 	REAL4Sequence *sequence,
 	size_t first,
 	size_t length
 )
 {
-	if(sequence && sequence->data) {
-		memmove(sequence->data, sequence->data + first, length * sizeof(*sequence->data));
-		realloc(sequence->data, length * sizeof(*sequence->data));
-		sequence->length = length;
-	}
+	if(!sequence || !sequence->data)
+		return(NULL);
 
-	return(sequence);
+	memmove(sequence->data, sequence->data + first, length * sizeof(*sequence->data));
+	sequence->data = LALRealloc(sequence->data, length * sizeof(*sequence->data));
+	sequence->length = length;
+
+	return(sequence->data);
 }
 
 
 void LALShrinkREAL4Sequence(
 	LALStatus *status,
-	REAL4Sequence **sequence,
+	REAL4Sequence *sequence,
 	size_t first,
 	size_t length
 )
@@ -210,10 +213,9 @@ void LALShrinkREAL4Sequence(
 	INITSTATUS(status, "LALCutREAL4Sequence", SEQUENCEC);
 
 	ASSERT(sequence != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(first + length <= sequence->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
-	*sequence = XLALShrinkREAL4Sequence(*sequence, first, length);
-
-	ASSERT(*sequence != NULL, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	ASSERT(XLALShrinkREAL4Sequence(sequence, first, length), status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 
 	RETURN(status);
 }
