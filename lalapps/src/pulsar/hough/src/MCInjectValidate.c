@@ -44,6 +44,19 @@ Input shoud be from
 #define VALIDATEOUT "./validate.asc"
 #define VALIDATEIN  "./outHM1/skypatch_1/HM1templates"
 
+#define TRUE (1==1)
+#define FALSE (1==0)
+
+BOOLEAN uvar_help;
+INT2 uvar_ifo;
+CHAR *uvar_earthEphemeris;
+CHAR *uvar_sunEphemeris;
+CHAR *uvar_SFTdir;
+CHAR *uvar_fnameIn;
+CHAR *uvar_fnameOut;
+REAL8 uvar_peakThreshold;
+INT4 uvar_blocksRngMed;
+
 /******************************************************
  *  Assignment of Id string using NRCSID()
  */
@@ -61,42 +74,31 @@ int main(int argc, char *argv[]){
   static REAL8Vector          timeDiffV;
   static REAL8Vector          foft;
   static HoughPulsarTemplate  pulsarTemplate;
-
   SFTVector  *inputSFTs  = NULL;  
-
   EphemerisData   *edat = NULL;
   CHAR  *earthEphemeris = NULL; 
   CHAR  *sunEphemeris = NULL;
-  
   REAL8 *alphaVec=NULL;
   REAL8 *deltaVec=NULL;
   REAL8 *freqVec=NULL;
   REAL8 *spndnVec=NULL;
-
   static REAL8PeriodoPSD   periPSD;
   static UCHARPeakGram     pg1;
-    
   UINT4  msp; /*number of spin-down parameters */
   INT4   ifo;
-
-  
-  
   CHAR   *SFTdir = NULL; /* the directory where the SFT  could be */
   CHAR   *fnameOut = NULL;               /* The output prefix filename */
   CHAR   *fnameIn = NULL;  
   UINT4  numberCount, index;
   UINT8  nTemplates;   
   UINT4   mObsCoh, nfSizeCylinder;
-  
   REAL8  peakThreshold, normalizeThr;
   REAL8  fmin, fmax, fWings, timeBase;
   UINT2  blocksRngMed;
   REAL8  threshold;
-
   UINT4  sftlength; 
   INT4   sftFminBin;
   UINT4 loopId, tempLoopId;
-  
   FILE  *fpOut = NULL;
   
 
@@ -104,27 +106,47 @@ int main(int argc, char *argv[]){
   /******************************************************************/
   /*    Set up the default parameters.      */
   /* ****************************************************************/
-  msp = 1; /*only one spin-down */
   
+  lalDebugLevel = 0;
 
-  peakThreshold = THRESHOLD;
+  SUB( LALGetDebugLevel( &status, argc, argv, 'v'), &status);
+
+  msp = 1; /*only one spin-down */
   nfSizeCylinder = NFSIZE;
  
   detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF]; /* default */
-  ifo = IFO;
   
-  if (ifo ==1) detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  if (ifo ==2) detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
-  if (ifo ==3) detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
+  uvar_ifo = IFO;
+  if (uvar_ifo ==1) detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  if (uvar_ifo ==2) detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
+  if (uvar_ifo ==3) detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
  
-  earthEphemeris = EARTHEPHEMERIS;
-  sunEphemeris = SUNEPHEMERIS;
-  
-  SFTdir = SFTDIRECTORY;
-  fnameOut = VALIDATEOUT;
-  fnameIn = VALIDATEIN;
-  blocksRngMed = BLOCKSRNGMED;
-  SUB( LALRngMedBias( &status, &normalizeThr, blocksRngMed ), &status ); 
+  uvar_help = FALSE;
+  uvar_peakThreshold = THRESHOLD;
+  uvar_earthEphemeris = EARTHEPHEMERIS;
+  uvar_sunEphemeris = SUNEPHEMERIS;
+  uvar_SFTdir = SFTDIRECTORY;
+  uvar_fnameOut = VALIDATEOUT;
+  uvar_fnameIn = VALIDATEIN;
+  uvar_blocksRngMed = BLOCKSRNGMED;
+  SUB( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
+
+  /* register user input variables */
+  LALregBOOLUserVar( &status, help, 'h', UVAR_HELP, "Print this message");  
+  LALregINTUserVar( &status, ifo, 'i', UVAR_OPTIONAL, "Detector" );
+  LALregSTRINGUserVar( &status, earthEphemeris, 'E', UVAR_REQUIRED, "Earth Ephemeris file");
+  LALregSTRINGUserVar( &status, sunEphemeris, 'S', UVAR_REQUIRED, "Sun Ephemeris file");
+  LALregSTRINGUserVar( &status, SFTdir, 'D', UVAR_REQUIRED, "SFT Directory");
+  LALregSTRINGUserVar( &status, fnameIn, 'T', UVAR_OPTIONAL, "Input template file");
+  LALregSTRINGUserVar( &status, fnameOut, 'o', UVAR_OPTIONAL, "Output filename");
+  LALregINTUserVar( &status, blocksRngMed, 'w', UVAR_OPTIONAL, "RngMed block size");
+  LALregREALUserVar( &status, peakThreshold, 't', UVAR_OPTIONAL, "Peak selection threshold");
+
+  /* read all command line variables */
+  SUB( LALUserVarReadAllInput(&status, argc, argv), &status);
+  /* exit if help was required */
+  if (uvar_help)
+    exit(0);
 
   /*****************************************************************/
   /*    Parse argument list.  i stores the current position.       */
@@ -203,7 +225,7 @@ int main(int argc, char *argv[]){
 	  return DRIVEHOUGHCOLOR_EARG;
 	}
       }
-      /* Parse output file prefix option. */
+      /* Parse output file option. */
       else if ( !strcmp( argv[arg], "-o" ) ) {
 	if ( argc > arg + 1 ) {
 	  arg++;
