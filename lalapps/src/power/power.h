@@ -22,6 +22,7 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
+#include <lal/ExcessPower.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/Random.h>
