@@ -1,16 +1,16 @@
 1. Basic summary:  
 
-ComputeStackSlideSums inputs blocks of frequency domain data for a sequence of times from SFTs, stacks the power for each frequency for each SFT, slides to correct for doppler shifts and intrinsic frequency evolution, and sums.  Depending on how certain command line arguments are set, the code outputs xml tables with process, event, and summary information and/or the sums in ascii format. It can also output an estimate of the PSD for each input SFT.
+ComputeStackSlideSums inputs blocks of frequency domain data for a sequence of times from SFTs, stacks the power for each frequency for each SFT, slides to correct for doppler shifts and intrinsic frequency evolution, and sums.  Depending on how certain command line arguments are set, the code outputs xml tables with process, event, and summary information and/or the sums in ascii format. It can be configured to search input data over a parameter space for candidate signals or the loudest event, or to software inject fake signals into the input data and perform a Monte Carlo simulation. It can also output an estimate of the PSD for each input SFT.
 
 The driver script for running the code is runComputeStackSlideSUM.tclsh. This script requires that you have tclshexe in your path. This will be true if you have installed and set up ligotools. Run this script with no command line arguments and with the -h option to learn how to use it.
 
-The driver script, along with a template_file and a job_file sets up the command line arguments for ComputeStackSlideSums. See README_CommandLineArguments for a complete description of the command line arguments. Note that README_CommandLineArguments also acts as an example tcl resource file for setting these arguments (which can be used in place of the driver script).
+The driver script, along with a template_file and a job_file sets up the command line arguments for ComputeStackSlideSums. See README_CommandLineArguments for a complete description of the command line arguments. Note that README_CommandLineArguments also acts as an example tcl resource file for setting these arguments (which could be used in place of the driver script).
 
-The driver script first sources the template_file and then the job_file it is given. Thus set filter parameters that change often in the template_file and the rest in a corresponding job_file. The job_file must set FILTERPARAMS, which is a space delimited list of all the command line arguments for ComputeStackSlideSums, except sun_edat_file ,earth_edat_file, sft_path_pattern, and output_file. The runComputeStackSlideSUM.tclsh script appends these to the end of $FILTERPARAMS.
+The driver script first sources the template_file and then the job_file it is given. Thus set filter parameters that change often in the template_file and the rest in a corresponding job_file. The job_file must set FILTERPARAMS, which is a space delimited list of all the command line arguments for ComputeStackSlideSums, except sun_edat_file, earth_edat_file, sft_path_pattern, and output_file. The runComputeStackSlideSUM.tclsh script appends these to the end of $FILTERPARAMS.
 
 2. How to build the code:  
 
-a. Run "make -f Makefile_ComputeStackSlideSumsCondor" or "make -f Makefile_ComputeStackSlideSumsCondor" to build ComputeStackSlideSums.
+a. Run "make -f Makefile_ComputeStackSlideSums" or "make -f Makefile_ComputeStackSlideSumsCondor" to build ComputeStackSlideSums.
 
 b. If this does not work, check the following:
 
@@ -46,8 +46,4 @@ c. StackSlide.c and StackSlide.h: Contains the core algorithm functions; as appr
 
 d. testPulsar.params:  Sets source parameters for an example pulsar.  Used in the test in Step 4 above.
 
-e. sun00-04.dat and earth00-04.dat:  Files from LAL with ephemeris data.  Used in the test in Step 4 above.
-
-f. SFT.nnnnn:  Files with test SFT data in the PULG group format.
-
-g. Makefile and Makefile_ComputeStackSlideSums: The file used by "make" for building ComputeStackSlideSums. Makefile_ComputeStackSlideSums is just a backup of Makefile.
+e. Makefile_ComputeStackSlideSums and Makefile_ComputeStackSlideSumsCondor: files to use with  "make -f" for building ComputeStackSlideSums.

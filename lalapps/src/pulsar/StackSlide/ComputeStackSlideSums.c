@@ -38,6 +38,7 @@
 /* 05/26/04 gam; Continue work on Monto Carlo code. */
 /* 05/26/04 gam; Change finishedSUMs to finishedSUMs; add startSUMs; defaults are TRUE; use to control I/O during Monte Carlo */
 /* 05/26/04 gam; Add whichMCSUM = which Monte Carlo SUM; default is -1. */
+/* 05/28/04 gam; Use LALUniformDeviate from LAL utilities package (include <lal/Random.h>) to generate random mismatch during Monte Carlo. */
 
 /*********************************************/
 /*                                           */
@@ -51,6 +52,7 @@
 /* #define DEBUG_MONTECARLOSFT_DATA */
 /* #define PRINT_MONTECARLOSFT_DATA */
 /* #define PRINTCOMPARISON_INPUTVSMONTECARLOSFT_DATA */
+/* #define DEBUG_RANDOMTRIALPARAMETERS */
 /*********************************************/
 /*                                           */
 /* END SECTION: define preprocessor flags    */
@@ -571,8 +573,8 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
   REAL4TimeSeries *signal = NULL;
   LIGOTimeGPS GPSin;            /* reference-time for pulsar parameters at the detector; will convert to SSB! */
   LALDetector cachedDetector;
-  REAL8 cosIota;               /* cosine of inclination angle iota of the source */
-  REAL8 h_0;                   /* Source amplitude */  
+  REAL8 cosIota;                    /* cosine of inclination angle iota of the source */
+  REAL8 h_0 = params->threshold4;   /* Source amplitude */
   SFTParams *pSFTParams = NULL;
   LIGOTimeGPSVector timestamps;
   SFTVector *outputSFTs = NULL;
@@ -591,8 +593,22 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
   REAL8 f0SUM = 0.0;                        /* 05/26/04 gam */
   REAL8 bandSUM = 0.0;                      /* 05/26/04 gam */
   INT4 nBinsPerSUM = 0;                     /* 05/26/04 gam */
-  INT4 nBinsPerSUMm1 = -1;                  /* 05/26/04 gam */
-                 
+  INT4 nBinsPerSUMm1 = -1;                  /* 05/26/04 gam */  
+  INT4 seed=0; /* 05/28/04 gam; next 14 are for computing random mismatch */
+  REAL4 randval;
+  RandomParams *randPar=NULL;
+  FILE *fpRandom;
+  INT4 rndCount;
+  REAL8 cosTmpDEC;
+  REAL8 tmpDeltaRA;
+  REAL8 DeltaRA = params->stksldSkyPatchData->deltaRA;
+  REAL8 DeltaDec = params->stksldSkyPatchData->deltaDec;
+  REAL8 DeltaFDeriv1 = params->deltaFDeriv1;
+  REAL8 DeltaFDeriv2 = params->deltaFDeriv2;
+  REAL8 DeltaFDeriv3 = params->deltaFDeriv3;
+  REAL8 DeltaFDeriv4 = params->deltaFDeriv4;
+  REAL8 DeltaFDeriv5 = params->deltaFDeriv5;
+
   INITSTATUS( status, "RunStackSlideMonteCarloSimulation", COMPUTESTACKSLIDESUMSC );
   ATTATCHSTATUSPTR(status);
   
@@ -669,12 +685,11 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
   /* Allocate memory for PulsarSignalParams and initialize */
   pPulsarSignalParams = (PulsarSignalParams *)LALMalloc(sizeof(PulsarSignalParams));
   pPulsarSignalParams->pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
+  pPulsarSignalParams->pulsar.spindown = NULL;
   if (params->numSpinDown > 0) {
     LALDCreateVector(status->statusPtr, &(pPulsarSignalParams->pulsar.spindown),((UINT4)params->numSpinDown));
     CHECKSTATUSPTR (status);
-  } else {
-    pPulsarSignalParams->pulsar.spindown = NULL;
-  }  
+  }
   pPulsarSignalParams->orbit = NULL; 
   pPulsarSignalParams->transfer = NULL;  
   /* Set up pulsar site */
@@ -730,8 +745,20 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
   } else {
      /* TO DO: MAYBE SHOULD ABORT ?? */
   }
-    
-  /* 05/26/04 gam; MAIN MONTE CARLO LOOP OVER PARAMETER SPACE STARTS HERE */
+  
+  /* 05/28/04 gam; Initial seed and randPar to use LALUniformDeviate to generate random mismatch during Monte Carlo. */
+  fpRandom = fopen("/dev/urandom","r");
+  rndCount = fread(&seed, sizeof(INT4),1, fpRandom);
+  fclose(fpRandom);
+  /* seed = 1234; */ /* Test value */
+  LALCreateRandomParams(status->statusPtr, &randPar, seed);
+  CHECKSTATUSPTR (status);
+  
+  /*********************************************************/
+  /*                                                       */
+  /* START SECTION: MONTE CARLO LOOP OVER PARAMETER SPACE  */
+  /*                                                       */
+  /*********************************************************/
   for(kSUM=0;kSUM<numSUMsTotal;kSUM++) {
   
     params->whichMCSUM = kSUM; /* keep track in StackSlideApplySearch of which SUM we are injecting into. */  
@@ -740,29 +767,56 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
     i = kSUM/numFreqDerivIncludingNoSpinDown;   /* index to params->skyPosData for this SUM; */
     j = kSUM % numFreqDerivIncludingNoSpinDown; /* index to params->freqDerivData for this SUM; */
     params->skyPosData[0][0] = savSkyPosData[i][0];
-    params->skyPosData[0][1] = savSkyPosData[i][1];
-    pPulsarSignalParams->pulsar.position.longitude = params->skyPosData[0][0];
-    pPulsarSignalParams->pulsar.position.latitude = params->skyPosData[0][1];
+    params->skyPosData[0][1] = savSkyPosData[i][1];        
+    LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status); /* 05/28/04 gam */
+    pPulsarSignalParams->pulsar.position.latitude = params->skyPosData[0][1] + (((REAL8)randval) - 0.5)*DeltaDec;
+    cosTmpDEC = cos(savSkyPosData[i][1]);
+    if (cosTmpDEC != 0.0) {
+          tmpDeltaRA = DeltaRA/cosTmpDEC;
+    } else {
+          tmpDeltaRA = 0.0; /* We are at a celestial pole */
+    }
+    LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status); /* 05/28/04 gam */
+    pPulsarSignalParams->pulsar.position.longitude = params->skyPosData[0][0] + (((REAL8)randval) - 0.5)*tmpDeltaRA;
+    /* pPulsarSignalParams->pulsar.position.longitude = params->skyPosData[0][0];
+    pPulsarSignalParams->pulsar.position.latitude = params->skyPosData[0][1]; */
+    #ifdef DEBUG_RANDOMTRIALPARAMETERS
+        fprintf(stdout,"kSUM = %i, search RA = %23.10e, inject RA = %23.10e \n",kSUM,params->skyPosData[0][0],pPulsarSignalParams->pulsar.position.longitude);
+        fprintf(stdout,"kSUM = %i, search DEC = %23.10e, inject DEC = %23.10e \n",kSUM,params->skyPosData[0][1],pPulsarSignalParams->pulsar.position.latitude);
+        fflush(stdout);      
+    #endif
+
     if (params->numSpinDown > 0) {
       for(k=0;k<params->numSpinDown;k++) {
         params->freqDerivData[0][k] = savFreqDerivData[j][k];
-        pPulsarSignalParams->pulsar.spindown->data[k] = params->freqDerivData[0][k];
+        LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status); /* 05/28/04 gam */
+        if (k == 0) {
+          pPulsarSignalParams->pulsar.spindown->data[k] = params->freqDerivData[0][k] + (((REAL8)randval) - 0.5)*DeltaFDeriv1;
+        } else if (k == 1) {
+          pPulsarSignalParams->pulsar.spindown->data[k] = params->freqDerivData[0][k] + (((REAL8)randval) - 0.5)*DeltaFDeriv2;
+        } else if (k == 2) {
+          pPulsarSignalParams->pulsar.spindown->data[k] = params->freqDerivData[0][k] + (((REAL8)randval) - 0.5)*DeltaFDeriv3;
+        } else if (k == 3) {
+          pPulsarSignalParams->pulsar.spindown->data[k] = params->freqDerivData[0][k] + (((REAL8)randval) - 0.5)*DeltaFDeriv4;
+        } else if (k == 4) {
+          pPulsarSignalParams->pulsar.spindown->data[k] = params->freqDerivData[0][k] + (((REAL8)randval) - 0.5)*DeltaFDeriv5;
+        } /* END if (k == 0) ELSE ... */
+        /* pPulsarSignalParams->pulsar.spindown->data[k] = params->freqDerivData[0][k]; */
+        #ifdef DEBUG_RANDOMTRIALPARAMETERS
+          fprintf(stdout,"kSUM = %i, search fDeriv[%i] = %23.10e, inject fDeriv[%i] = %23.10e \n",kSUM,k,params->freqDerivData[0][k],k,pPulsarSignalParams->pulsar.spindown->data[k]);
+          fflush(stdout);      
+        #endif
       }
     }
-    
-    pPulsarSignalParams->pulsar.psi = 0.0;
-      
-    cosIota = 1.0;
-    h_0 = params->threshold4;
-    pPulsarSignalParams->pulsar.aPlus = 0.5*h_0*(1.0 + cosIota*cosIota);
-    pPulsarSignalParams->pulsar.aCross = h_0*cosIota;
-  
-    pPulsarSignalParams->pulsar.phi0 = 0.0;
-    
+        
     LALConvertGPS2SSB(status->statusPtr,&(pPulsarSignalParams->pulsar.tRef), GPSin, pPulsarSignalParams);
     CHECKSTATUSPTR (status);
     
-    /* 05/26/04 gam; MAIN MONTE CARLO LOOP OVER FREQUENCIES STARTS HERE */
+    /****************************************************/
+    /*                                                  */
+    /* START SECTION: MONTE CARLO LOOP OVER FREQUENCIES */
+    /*                                                  */
+    /****************************************************/    
     for(iFreq=0;iFreq<nBinsPerSUM;iFreq++) {
     
       if (iFreq > 0) {
@@ -772,26 +826,55 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
       if ((kSUM == numSUMsTotalm1) && (iFreq == nBinsPerSUMm1)) {
           params->finishSUMs = 1;  /* This is the last injection */
       }
-       
-      /* pPulsarSignalParams->pulsar.f0 = params->f0SUM + params->bandSUM/4.0; */
-      pPulsarSignalParams->pulsar.f0 = f0SUM + iFreq*params->dfSUM;
-      
+
+      /* get random value for psi */
+      LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status); /* 05/28/04 gam */
+      pPulsarSignalParams->pulsar.psi = (randval - 0.5) * ((REAL4)LAL_PI_2);
+      /* pPulsarSignalParams->pulsar.psi = 0.0; */
+    
+      /* get random value for cosIota */
+      LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status); /* 05/28/04 gam */
+      cosIota = 2.0*((REAL8)randval) - 1.0;
+      /* cosIota = 1.0; */
+
+      /* h_0 is fixed equal to params->threshold4 above; get A_+ and A_x from h_0 and random cosIota */
+      pPulsarSignalParams->pulsar.aPlus = (REAL4)(0.5*h_0*(1.0 + cosIota*cosIota));
+      pPulsarSignalParams->pulsar.aCross = (REAL4)(h_0*cosIota);
+
+      /* get random value for phi0 */
+      LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status); /* 05/28/04 gam */
+      pPulsarSignalParams->pulsar.phi0 = ((REAL8)randval) * ((REAL8)LAL_TWOPI);
+      /* pPulsarSignalParams->pulsar.phi0 = 0.0; */
+
+      pPulsarSignalParams->pulsar.f0 = f0SUM + iFreq*params->dfSUM; /* We add in the mismatch after adjusting params->f0SUM */
       /* check whether we are outputing just the loudest events */
       if ( ((params->outputEventFlag & 2) > 0) && (params->thresholdFlag <= 0) ) {
         params->f0SUM = pPulsarSignalParams->pulsar.f0;
       } else {
         /* TO DO: MAYBE SHOULD ABORT ABOVE AND ALWAY SET params->f0SUM as above ?? */
       }
+      /* Now add mismatch to pPulsarSignalParams->pulsar.f0 */
+      LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status); /* 05/28/04 gam */
+      pPulsarSignalParams->pulsar.f0 = pPulsarSignalParams->pulsar.f0 + (((REAL8)randval) - 0.5)*params->dfSUM;
+      
+      #ifdef DEBUG_RANDOMTRIALPARAMETERS
+        fprintf(stdout,"iFreq = %i, inject h_0 = %23.10e \n",iFreq,h_0);
+        fprintf(stdout,"iFreq = %i, inject cosIota = %23.10e, A_+ = %23.10e, A_x = %23.10e \n",iFreq,cosIota,pPulsarSignalParams->pulsar.aPlus,pPulsarSignalParams->pulsar.aCross);
+        fprintf(stdout,"iFreq = %i, inject psi = %23.10e \n",iFreq,pPulsarSignalParams->pulsar.psi);
+        fprintf(stdout,"iFreq = %i, inject phi0 = %23.10e \n",iFreq,pPulsarSignalParams->pulsar.phi0);
+        fprintf(stdout,"iFreq = %i, search f0 = %23.10e, inject f0 = %23.10e \n",iFreq,f0SUM + iFreq*params->dfSUM,pPulsarSignalParams->pulsar.f0);
+        fflush(stdout);
+      #endif
       #ifdef DEBUG_MONTECARLOTIMEDOMAIN_DATA
         fprintf(stdout,"iFreq = %i, params->f0SUM = %23.10e, pPulsarSignalParams->pulsar.f0 = %23.10e \n",iFreq,params->f0SUM,pPulsarSignalParams->pulsar.f0);
         fprintf(stdout,"nBinsPerSUM = %i, params->nBinsPerSUM = %i\n",nBinsPerSUM,params->nBinsPerSUM);
         fflush(stdout);	
       #endif
-            
+
       signal = NULL; /* Call LALGeneratePulsarSignal to generate signal */
       LALGeneratePulsarSignal(status->statusPtr, &signal, pPulsarSignalParams);
       CHECKSTATUSPTR (status);
-  
+
       #ifdef DEBUG_MONTECARLOTIMEDOMAIN_DATA
         fprintf(stdout,"signal->deltaT = %23.10e \n",signal->deltaT);
         fprintf(stdout,"signal->epoch.gpsSeconds = %i \n",signal->epoch.gpsSeconds);
@@ -805,7 +888,7 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
           fflush(stdout);
         }
       #endif
-    
+
       outputSFTs = NULL; /* Call LALSignalToSFTs to generate outputSFTs with injection data */
       LALSignalToSFTs(status->statusPtr, &outputSFTs, signal, pSFTParams);
       CHECKSTATUSPTR (status);
@@ -862,11 +945,21 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
       CHECKSTATUSPTR (status);
         
     } /* END for(iFreq=0;iFreq<nBinsPerSUM;iFreq++) */
-    /* 05/26/04 gam; MAIN MONTE CARLO LOOP OVER FREQUENCIES STARTS HERE */
-
+    /****************************************************/
+    /*                                                  */
+    /* END SECTION: MONTE CARLO LOOP OVER FREQUENCIES   */
+    /*                                                  */
+    /****************************************************/
   } /* END for(kSUM=0;kSUM<numSUMsTotal;kSUM++) */
-  /* 05/26/04 gam; MAIN MONTE CARLO LOOP OVER PARAMETER SPACE ENDS HERE */
+  /*********************************************************/
+  /*                                                       */
+  /* END SECTION: MONTE CARLO LOOP OVER PARAMETER SPACE    */
+  /*                                                       */
+  /*********************************************************/
 
+  LALDestroyRandomParams(status->statusPtr, &randPar); /* 05/28/04 gam */
+  CHECKSTATUSPTR (status);
+  
   LALFree(pSFTParams);
       
   if (params->numSpinDown > 0) {

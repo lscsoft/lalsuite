@@ -13,6 +13,7 @@
 /*               (Should allocate memory for this in the future.)                    */
 /* 05/07/04 gam; add alternative to using glob */
 /* 05/11/04 gam; Add code to software inject signals into the SFTs for Monte Carlo simulations */
+/* 05/28/04 gam; Use LALUniformDeviate from LAL utilities package (include <lal/Random.h>) to generate random mismatch during Monte Carlo. */
 
 #ifndef _COMPUTESTACKSLIDESUMS_H
 #define _COMPUTESTACKSLIDESUMS_H
@@ -49,8 +50,9 @@
 /* #include <lal/RealFFT.h> */ /* 05/11/04 gam; not needed */
 #include <lal/LALConstants.h>
 #include <lal/Units.h>
-/* 05/11/04 gam; next is needed to inject signals for Monte Carlo simulations. */
+/* 05/11/04 gam; 05/28/04 gam; next two are needed to inject signals for Monte Carlo simulations. */
 #include <lal/GeneratePulsarSignal.h>
+#include <lal/Random.h>
 #include <errno.h>
 #include "DriveStackSlide.h"
 /*********************************************/
