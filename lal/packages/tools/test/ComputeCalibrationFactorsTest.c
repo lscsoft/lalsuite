@@ -461,6 +461,7 @@ int ReadFiles(struct CommandLineArgsTag CLA)
       /* print usage/help message */
       fprintf(stdout,"All arguments are required. They are:\n");
       fprintf(stdout,"\t-f\tFLOAT\t Calibration line frequency in Hz.\n");
+      fprintf(stdout,"\t-k\tFLOAT\t Darm to etmx output matrix value.\n");
       fprintf(stdout,"\t-F\tSTRING\t Name of frame cache file.\n");
       fprintf(stdout,"\t-r\tSTRING\t Name of response function file.\n");
       fprintf(stdout,"\t-c\tSTRING\t Name of sensing function file.\n");
