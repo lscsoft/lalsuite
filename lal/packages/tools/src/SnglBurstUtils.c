@@ -202,7 +202,8 @@ LALCompareSnglBurst(
     )
 /* </lalVerbatim> */
 {
-  INT8 ta, tb;
+  INT8 ta1, ta2, tb1, tb2;
+  REAL4 fa1, fa2, fb1, fb2;
   REAL4 dm1, dm2;
   REAL4 sigmaRatio;
 
@@ -211,12 +212,24 @@ LALCompareSnglBurst(
 
   params->match=0;
 
-  LALGPStoINT8( status->statusPtr, &ta, &(aPtr->start_time) );
-  LALGPStoINT8( status->statusPtr, &tb, &(bPtr->start_time) );
+  LALGPStoINT8( status->statusPtr, &ta1, &(aPtr->start_time) );
+  LALGPStoINT8( status->statusPtr, &tb1, &(bPtr->start_time) );
 
-  if( labs(ta-tb) < params->dtime ){
-    params->match = 1;
-  }
+  ta2 = ta1 + ( NANOSEC * aPtr->duration );
+  tb2 = tb1 + ( NANOSEC * bPtr->duration );
+  fa1 = (aPtr->central_freq) - 0.5*(aPtr->bandwidth);
+  fa2 = (aPtr->central_freq) + 0.5*(aPtr->bandwidth);
+  fb1 = (bPtr->central_freq) - 0.5*(bPtr->bandwidth);
+  fb2 = (bPtr->central_freq) + 0.5*(bPtr->bandwidth);
+  
+
+   if((tb1 >= ta1 && tb1 <= ta2) || (tb2 >= ta1 && tb2 <= ta2))
+     {
+       if((fb1 >= fa1 && fb1 <= fa2) || (fb2 >= fa1 && fb2 <= fa2))
+	 {
+       params->match = 1;
+	 }
+     }
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
