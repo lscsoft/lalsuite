@@ -240,6 +240,7 @@ This is a structure needed to generate solve the differential equation
   \item {magS1:} The constant magnitudes of the primary.
   \item {magS2:} The constant magnitudes of the secondary.
   \item {NCap[3]:} Source direction (unit vector) in detector coordinate system.
+  \item {spin1[3]:} Spin of the larger body.
   \item {M:} Total mass of the binary (in seconds).
   \item {fourM1Plus:} = $(4 m_1+3 m_2)/(2 m_1 M^3)$ (all masses expressed in seconds).
   \item {fourM2Plus:} = $(4 m_2+3 m_1)/(2 m_2 M^3)$ (all masses expressed in seconds).
@@ -356,7 +357,8 @@ typedef enum {
   EOB,
   DJS,
   INSPA,
-  IRSPA
+  IRSPA,
+  SpinTaylorT3
  } Approximant;
 /* </lalVerbatim>  */
 
@@ -450,6 +452,7 @@ tagInspiralACSTParams
 	REAL8 magS1;           
 	REAL8 magS2;
 	REAL8 NCap[3];         
+	REAL8 spin1[3];         
 	REAL8 M;               
 	REAL8 fourM1Plus;      
 	REAL8 fourM2Plus;      
@@ -1005,7 +1008,7 @@ void LALInspiralWave3Templates (
    InspiralTemplate *params);
 
 /*  <lalLaTeX>
-%\newpage\input{LALInspiralSpinModulatedWaveC}
+\newpage\input{LALInspiralSpinningBHBinaryC}
 </lalLaTeX>  */
 
 void 
@@ -1014,57 +1017,6 @@ LALInspiralSpinModulatedWave(
 		REAL4Vector      *signal, 
 		InspiralTemplate *in);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralFrequency3C}
-</lalLaTeX>  */
-
-void LALInspiralFrequency3_0PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralFrequency3_1PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralFrequency3_2PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralFrequency3_3PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralFrequency3_4PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralFrequency3_5PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralFrequency3_6PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralFrequency3_7PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak);
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralPhasing3C}
@@ -1124,7 +1076,7 @@ void LALRungeKutta4(
   rk4In *,
   void *);
 /*  <lalLaTeX>
-%\newpage\input{LALStationaryPhaseApprox1C}
+\newpage\input{LALInspiralStationaryPhaseApprox1C}
 </lalLaTeX>  */
 void 
 LALInspiralStationaryPhaseApprox1 (
@@ -1428,7 +1380,7 @@ void LALInspiralPhasing3_7PN (
    expnCoeffs *ak);
 
 /*  <lalLaTeX>
-%\newpage\input{LALStationaryPhaseApprox2C}
+\newpage\input{LALInspiralStationaryPhaseApprox2C}
 </lalLaTeX>  */
 void 
 LALInspiralStationaryPhaseApprox2 (
