@@ -714,7 +714,7 @@ signals and tests for time coincidence.
 [\verb$--cluster$ \textsc{clust}] 
 [\verb$--clusteralgorithm$ \textsc{clusterchoice}] 
 [\verb$--missedinjections$ \textsc{missedfile}]\newline
-[\verb$--help$]
+[\verb$--hardware$ \textsc{starttime}] [\verb$--help$]\newline
  
 
 
@@ -796,6 +796,13 @@ injections occuring during during the times of the input files and
 within the playground (unless \texttt{--noplayground} is specified)
 are given.
  
+\item[\texttt{--hardware} \textsc{starttime}]  Optional.  The
+\textsc{starttime} should be the gps start time of the hardware
+injections in seconds.  In this case, the \textsc{injectfile} is
+expected to contain a list of the hardware injections, where the time
+given is the time after the start of injections that the coalescence
+occurs. 
+
 \item[\texttt{--help}] Optional.  Print a help message.
 \end{entry}
 
