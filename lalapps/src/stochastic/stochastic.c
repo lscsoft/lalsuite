@@ -75,7 +75,6 @@ static int overlap_hann_flag = 0;
 static int verbose_flag = 0;
 static int test_flag = 0;
 static int post_analysis_flag = 0;
-static int condor_flag = 0;
 static int recenter_flag = 0;
 
 /* parameters for the stochastic search */
@@ -93,10 +92,10 @@ INT4 intervalDuration = 180;
 INT4 segmentDuration = 60;
 INT4 calibDuration = 60;
 INT4 calibOffset = 29;
-CHAR frameCache1[200] = "S3PlayCachefiles/H-751957182.cache";
-CHAR frameCache2[200] = "S3PlayCachefiles/L-751957182.cache";
-CHAR calCache1[200] = "calibration/H1-CAL-V02-751651244-757699245.cache";
-CHAR calCache2[200] = "calibration/L1-CAL-V02-751651248-757699249.cache";
+CHAR *frameCache1 = NULL;
+CHAR *frameCache2 = NULL;
+CHAR *calCache1 = NULL;
+CHAR *calCache2 = NULL;
 CHAR channel1[LALNameLength]= "H1:LSC-AS_Q";
 CHAR channel2[LALNameLength]= "L1:LSC-AS_Q";
 CHAR ifo1[LALNameLength] = "H1";
@@ -283,17 +282,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* parse command line options */
   parseOptions(argc, argv);
-
-  /* read parameters into input parameter file */
-  if (condor_flag)
-  {
-    fscanf(stdin,"%lld\n", &startTime);
-    fscanf(stdin,"%lld\n", &endTime);
-    fscanf(stdin,"%s\n%s\n", frameCache1, frameCache2);
-    fscanf(stdin,"%s\n%s\n", calCache1, calCache2);
-    if (inject_flag)
-      seed = 2 * NLoop * seed;
-  }
 
   if ((sampleRate == resampleRate)&&(high_pass_flag == 0))
     padData = 0;
@@ -1771,6 +1759,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
   */
 
+  /* free calloc'd memory */
+  free(frameCache1);
+  free(frameCache2);
+  free(calCache1);
+  free(calCache2);
+
   return 0;
 }
 
@@ -1839,7 +1833,6 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"post-analysis", no_argument, &post_analysis_flag,1},
       {"verbose", no_argument, &verbose_flag, 1},
       {"test", no_argument, &test_flag, 1},
-      {"condor", no_argument, &condor_flag,1},
       {"recenter", no_argument, &recenter_flag,1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'h'},
@@ -1880,6 +1873,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
     /* getopt_long stores the option here */
     int option_index = 0;
+    size_t optarg_len;
 
     c = getopt_long(argc, argv, \
         "ht:T:L:l:A:a:f:F:w:k:p:P:K:q:Q:i:I:d:D:r:R:c:b:o:g:N:S:U:V:W:z:v", \
@@ -1958,7 +1952,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
         break;
 
       case 'L':
-        /* duration */
+        /* interval duration */
         intervalDuration = atoi(optarg);
 
         /* check */
@@ -1973,7 +1967,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
         break;
 
       case 'l':
-        /* duration */
+        /* segment duration */
         segmentDuration = atoi(optarg);
 
         /* check */
@@ -2228,7 +2222,9 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
       case 'd':
         /* data cache one */
-        strncpy(frameCache1, optarg, 200);
+        optarg_len = strlen(optarg) + 1;
+        frameCache1 = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        strncpy(frameCache1, optarg, optarg_len);
 
         /* check that file exists */
         if ( stat(frameCache1, &fileStatus) == -1)
@@ -2243,7 +2239,9 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
       case 'D':
         /* data cache two */
-        strncpy(frameCache2, optarg, 200);
+        optarg_len = strlen(optarg) + 1;
+        frameCache2 = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        strncpy(frameCache2, optarg, optarg_len);
 
         /* check that file exists */
         if ( stat(frameCache2, &fileStatus) == -1)
@@ -2258,7 +2256,9 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
       case 'r':
         /* calibration cache one */
-        strncpy(calCache1, optarg, 200);
+        optarg_len = strlen(optarg) + 1;
+        calCache1 = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        strncpy(calCache1, optarg, optarg_len);
 
         /* check that file exists */
         if ( stat(calCache1, &fileStatus) == -1)
@@ -2273,7 +2273,9 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
       case 'R':
         /* calibration cache two */
-        strncpy(calCache2, optarg, 200);
+        optarg_len = strlen(optarg) + 1;
+        calCache2 = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        strncpy(calCache2, optarg, optarg_len);
 
         /* check that file exists */
         if ( stat(calCache2, &fileStatus) == -1)
