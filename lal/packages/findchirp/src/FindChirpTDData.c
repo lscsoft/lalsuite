@@ -19,6 +19,20 @@ $Id$
 \subsection{Module \texttt{FindChirpTDData.c}}
 \label{ss:FindChirpTDData.c}
 
+Time domain filtering code.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{FindChirpTDDataCP}
+
+\subsubsection*{Description}
+
+\subsubsection*{Algorithm}
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
 \vfill{\footnotesize\input{FindChirpTDDataCV}}
 </lalLaTeX> 
 #endif
@@ -64,6 +78,7 @@ LALFindChirpTDData (
     case TaylorT1:
     case TaylorT2:
     case TaylorT3:
+    case GeneratePPN:
       /* store the input approximant */
       approx = params->approximant;
       break;

@@ -26,6 +26,7 @@ form that can be used by the \texttt{FindChirpFilter()} function.
 \vspace{0.1in}
 \input{FindChirpTDTemplateCP}
 \idx{LALFindChirpTDTemplate()}
+\idx{LALFindChirpTDNormalize()}
 
 The function \texttt{LALFindChirpTDTemplate()} creates a time domain template
 template using the inspiral package.
@@ -48,6 +49,7 @@ LALDestroyVector()
 </lalLaTeX> 
 #endif
 
+#include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/DataBuffer.h>
@@ -71,10 +73,15 @@ LALFindChirpTDTemplate (
   UINT4         j;
   UINT4         waveLength;
   UINT4         numPoints;
+  REAL4        *xfac;
   REAL8         deltaF;
+  REAL8         deltaT;
   REAL8         sampleRate;
   const REAL4   cannonDist = 1.0; /* Mpc */
   CHAR          infomsg[512];
+  PPNParamStruc ppnParams;
+  CoherentGW    waveform;
+
 
   INITSTATUS( status, "LALFindChirpTDTemplate", FINDCHIRPTDTEMPLATEC );
   ATTATCHSTATUSPTR( status );
@@ -118,75 +125,182 @@ LALFindChirpTDTemplate (
   switch ( params->approximant )
   {
     case TaylorT1:
-    case TaylorT2:
-    case TaylorT3:
+      LALInfo( status, "Generating template using TaylorT1" );
       break;
+      
+    case TaylorT2:
+      LALInfo( status, "Generating template using TaylorT2" );
+      break;
+      
+    case TaylorT3:
+      LALInfo( status, "Generating template using TaylorT3" );
+      break;
+      
+    case GeneratePPN:
+      LALInfo( status, "Generating template using GeneratePPN" );
+      break;
+
     default:
       ABORT( status, FINDCHIRPTDH_EMAPX, FINDCHIRPTDH_MSGEMAPX );
       break;
   }
   
+  /* store deltaT and zero out the time domain waveform vector */
+  deltaT = params->deltaT;
+  xfac = params->xfacVec->data;
+  numPoints =  params->xfacVec->length;
+  memset( xfac, 0, numPoints * sizeof(REAL4) );
+
+  ASSERT( numPoints == (2 * (fcTmplt->data->length - 1)), status,
+      FINDCHIRPTDH_EMISM, FINDCHIRPTDH_MSGEMISM );
+  
+
+  /* choose the time domain template */
+  if ( params->approximant == GeneratePPN )
+  {
+
+
+    /*
+     *
+     * generate the waveform using LALGeneratePPNInspiral() from inject
+     *
+     */
+
+
+
+    /* input parameters */
+    memset( &ppnParams, 0, sizeof(PPNParamStruc) );
+    ppnParams.deltaT = deltaT;
+    ppnParams.mTot = tmplt->mass1 + tmplt->mass2;
+    ppnParams.eta = tmplt->mass1 * tmplt->mass2 /
+      ( ppnParams.mTot * ppnParams.mTot );
+    ppnParams.d = 1.0;
+    ppnParams.fStartIn = params->fLow;
+    ppnParams.fStopIn = -1.0 / 
+      (6.0 * sqrt(6.0) * LAL_PI * ppnParams.mTot * LAL_MTSUN_SI);
+
+    /* generate waveform amplitude and phase */
+    memset( &waveform, 0, sizeof(CoherentGW) );
+    LALGeneratePPNInspiral( status->statusPtr, &waveform, &ppnParams );
+    CHECKSTATUSPTR( status );
+
+    /* print termination information and check sampling */
+    LALInfo( status, ppnParams.termDescription );
+    if ( ppnParams.dfdt > 2.0 )
+    {
+      ABORT( status, FINDCHIRPTDH_ESMPL, FINDCHIRPTDH_MSGESMPL );
+    }
+    if ( waveform.a->data->length > numPoints )
+    {
+      ABORT( status, FINDCHIRPTDH_ELONG, FINDCHIRPTDH_MSGELONG );
+    }
+
+    /* compute h(t) */
+    for ( j = 0; j < waveform.a->data->length; ++j )
+    {
+      xfac[j] = 
+        waveform.a->data->data[2*j] * cos( waveform.phi->data->data[j] );
+    }
+
+    /* free the memory allocated by LALGeneratePPNInspiral() */
+    LALSDestroyVectorSequence( status->statusPtr, &(waveform.a->data) );
+    CHECKSTATUSPTR( status );
+
+    LALSDestroyVector( status->statusPtr, &(waveform.f->data) );
+    CHECKSTATUSPTR( status );
+
+    LALDDestroyVector( status->statusPtr, &(waveform.phi->data) );
+    CHECKSTATUSPTR( status );
+
+    LALFree( waveform.a );
+    LALFree( waveform.f );
+    LALFree( waveform.phi );
+    
+    /* waveform parameters needed for findchirp filter */
+    tmplt->approximant = params->approximant;
+    tmplt->tC = ppnParams.tc;
+    tmplt->fFinal = ppnParams.fStop;
+    
+    fcTmplt->tmpltNorm = params->dynRange / ( cannonDist * 1.0e6 * LAL_PC_SI );
+    fcTmplt->tmpltNorm *= fcTmplt->tmpltNorm;
+  }
+  else
+  {
+
+
+    /*
+     *
+     * generate the waveform by calling LALInspiralWave() from inspiral
+     *
+     */
+
+
+    /* set up additional template parameters */
+    deltaF = 1.0 / ((REAL8) numPoints * deltaT);
+    sampleRate = 1.0 / deltaT;
+    tmplt->approximant     = params->approximant;
+    tmplt->order           = twoPN;
+    tmplt->massChoice      = m1Andm2;
+    tmplt->tSampling       = sampleRate;
+    tmplt->fLower          = params->fLow;
+    tmplt->fCutoff         = sampleRate / 2.0 - deltaF;
+    tmplt->signalAmplitude = 1.0;
+
+    /* compute the tau parameters from the input template */
+    LALInspiralParameterCalc( status->statusPtr, tmplt );
+    CHECKSTATUSPTR( status );
+
+    /* determine the length of the chirp in sample points */
+    LALInspiralWaveLength( status->statusPtr, &waveLength, *tmplt );
+    CHECKSTATUSPTR( status );
+
+    if ( waveLength > numPoints )
+    {
+      ABORT( status, FINDCHIRPTDH_ELONG, FINDCHIRPTDH_MSGELONG );
+    }
+
+    /* generate the chirp in the time domain */
+    LALInspiralWave( status->statusPtr, params->xfacVec, tmplt );
+    CHECKSTATUSPTR( status );
+
+    /* template dependent normalization */
+    fcTmplt->tmpltNorm  = 2 * tmplt->mu;
+    fcTmplt->tmpltNorm *= 2 * LAL_MRSUN_SI / ( cannonDist * 1.0e6 * LAL_PC_SI );
+    fcTmplt->tmpltNorm *= params->dynRange;
+    fcTmplt->tmpltNorm *= fcTmplt->tmpltNorm;
+  }
+
 
   /*
    *
-   * compute the time domain template
+   * create the frequency domain findchirp template
    *
    */
 
-  
-  /* set up additional template parameters */
-  numPoints = 2 * (fcTmplt->data->length + 1);
-  deltaF = 1.0 / ((REAL8) numPoints * params->deltaT);
-  sampleRate = 1.0 / params->deltaT;
-  tmplt->approximant     = params->approximant;
-  tmplt->order           = twoPN;
-  tmplt->massChoice      = m1Andm2;
-  tmplt->tSampling       = sampleRate;
-  tmplt->fLower          = params->fLow;
-  tmplt->fCutoff         = sampleRate / 2.0 - deltaF;
-  tmplt->signalAmplitude = 1.0;
-  
-  /* compute the tau parameters from the input template */
-  LALInspiralParameterCalc( status->statusPtr, tmplt );
-  CHECKSTATUSPTR( status );
-
-  /* determine the length of the chirp in sample points */
-  LALInspiralWaveLength( status->statusPtr, &waveLength, *tmplt );
-  CHECKSTATUSPTR( status );
-
-  if ( waveLength > params->xfacVec->length )
-  {
-    ABORT( status, FINDCHIRPTDH_ELONG, FINDCHIRPTDH_MSGELONG );
-  }
-
-  /* generate the chirp in the time domain */
-  LALInspiralWave( status->statusPtr, params->xfacVec, tmplt );
-  CHECKSTATUSPTR( status );
 
   /* shift chirp to end of vector so it is the correct place for the filter */
-  j = params->xfacVec->length;
-  while ( params->xfacVec->data[--j] == 0 )
+  j = numPoints - 1;
+  while ( xfac[j] == 0 )
   {
-    /* search for the end of the chirp */
+    /* search for the end of the chirp but don't fall off the array */
+    if ( --j == 0 )
+    {
+      ABORT( status, FINDCHIRPTDH_EEMTY, FINDCHIRPTDH_MSGEEMTY );
+    }
   }
   ++j;
-  memmove( params->xfacVec->data + params->xfacVec->length - j, 
-      params->xfacVec->data,
-      j * sizeof( *params->xfacVec->data ) );
-  memset( params->xfacVec->data, 0, 
-      ( params->xfacVec->length - j ) * sizeof( *params->xfacVec->data ) );
+  memmove( xfac + numPoints - j, xfac, j * sizeof( *xfac ) );
+  memset( xfac, 0, ( numPoints - j ) * sizeof( *xfac ) );
 
   /* fft chirp */
   LALForwardRealFFT( status->statusPtr, fcTmplt->data, params->xfacVec, 
       params->fwdPlan );
   CHECKSTATUSPTR( status );
 
-  /* template dependent normalization */
-  fcTmplt->tmpltNorm  = 2 * tmplt->mu;
-  fcTmplt->tmpltNorm *= 2 * LAL_MRSUN_SI / ( cannonDist * 1.0e6 * LAL_PC_SI );
-  fcTmplt->tmpltNorm *= params->dynRange;
-  fcTmplt->tmpltNorm *= fcTmplt->tmpltNorm;
+  /* copy the template parameters to the findchirp template structure */
+  memcpy( &(fcTmplt->tmplt), tmplt, sizeof(InspiralTemplate) );
 
+  /* print the template normalization constant */
   if ( lalDebugLevel & LALINFO )
   {
     LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg), 
@@ -194,8 +308,6 @@ LALFindChirpTDTemplate (
     LALInfo( status, infomsg );
   }
 
-  /* copy the template parameters to the finchirp template structure */
-  memcpy( &(fcTmplt->tmplt), tmplt, sizeof(InspiralTemplate) );
 
   /* normal exit */
   DETATCHSTATUSPTR( status );
@@ -246,6 +358,7 @@ LALFindChirpTDNormalize(
     case TaylorT1:
     case TaylorT2:
     case TaylorT3:
+    case GeneratePPN:
       break;
     default:
       ABORT( status, FINDCHIRPTDH_EMAPX, FINDCHIRPTDH_MSGEMAPX );
