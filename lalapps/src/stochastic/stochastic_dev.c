@@ -224,7 +224,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALDetectorPair detectors;
   REAL4FrequencySeries *overlap;
   OverlapReductionFunctionParameters ORFparams;
-  LALUnit overlapUnit = {0,{0,0,0,0,0,2,0},{0,0,0,0,0,0,0}};
 
   /* frequency mask structures */
   REAL4FrequencySeries *mask;
@@ -550,7 +549,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* allocate memory for overlap reduction function */
   LAL_CALL(LALCreateREAL4FrequencySeries(&status, &overlap, \
-        "overlap", gpsStartTime, fMin, deltaF, overlapUnit, \
+        "overlap", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
         filterLength), &status);
 
   /* set parameters for overlap reduction function */
