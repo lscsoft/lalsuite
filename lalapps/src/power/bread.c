@@ -527,12 +527,12 @@ static int output_txt_file(FILE *fpout, SnglBurstTable *snglBursts){
   SnglBurstTable *thisEvent=NULL;
 
   thisEvent = snglBursts;
-  fprintf(fpout,"# %s\n",thisEvent->ifo);
+  /*fprintf(fpout,"# %s\n",thisEvent->ifo);
   fprintf(fpout,"# start_time,start_time_ns,peak_time,peak_time_ns,duration,central_freq,bandwidth,snr,confidence\n");
-  fflush(fpout);
+  fflush(fpout);*/
 
   while ( thisEvent ){
-    fprintf(fpout,"%d,%d,%d,%d,%f,%f,%f,%f,%e\n",
+    fprintf(fpout,"%d %d %d %d %f %f %f %f %e\n",
 	    thisEvent->start_time.gpsSeconds,
 	    thisEvent->start_time.gpsNanoSeconds,
 	    thisEvent->peak_time.gpsSeconds,
