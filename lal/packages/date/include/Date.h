@@ -576,6 +576,16 @@ LALCompareGPS (LALStatus *status,
                const LIGOTimeGPS *pGPS2); /* input: GPS2 */
 
 
+/* This function returns the current GPS time according to the system clock */
+/* <lalLaTeX>
+\newpage\input{GPSTimeNowC}
+</lalLaTeX> */
+void
+LALGPSTimeNow (
+    LALStatus           *status,
+    LIGOTimeGPS         *gpstime,
+    const LALLeapSecAccuracy  *accuracy
+    );
 
 #ifdef  __cplusplus
 }

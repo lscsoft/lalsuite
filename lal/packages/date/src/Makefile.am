@@ -5,7 +5,7 @@ libdate_la_SOURCES = Julian.c \
                      DateString.c LMST1.c \
                      SecsToLALDate.c date_value.h TimeDelay.c \
                      TimeDelayFromEarthCenter.c GPStoFloat.c \
-                     GPStoINT8.c IncrementGPS.c
+                     GPStoINT8.c IncrementGPS.c GPSTimeNow.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
