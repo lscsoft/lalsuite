@@ -15,6 +15,7 @@ int main(int argc, char *argv[])
 {
   static LALStatus    status;
   LIGOTimeGPS         gpsTime = {0, 0};
+  LIGOTimeGPS         tmpGps  = {0, 0};
   LALDate             utcDate;
   LALLeapSecAccuracy  accuracy = LALLEAPSEC_LOOSE; /* prevent ABORT */
   CHARVector         *timestamp = NULL;
@@ -239,9 +240,8 @@ int main(int argc, char *argv[])
     {
       if (status.statusCode == DATEH_ERANGEGPSABS) /* expected error */
         {
-          sprintf(infostr, "failed with status code %d as expected",
+          fprintf(stderr, "failed with status code %d as expected",
                   DATEH_ERANGEGPSABS);
-          LALInfo(&status, infostr);
           REPORTSTATUS(&status);
         }
       else /* some other error */
@@ -265,9 +265,8 @@ int main(int argc, char *argv[])
     {
       if (status.statusCode == DATEH_ERANGEGPSABS) /* expected error */
         {
-          sprintf(infostr, "failed with status code %d as expected",
+          fprintf(stderr, "failed with status code %d as expected",
                   DATEH_ERANGEGPSABS);
-          LALInfo(&status, infostr);
           REPORTSTATUS(&status);
         }
       else /* some other error */
@@ -279,6 +278,49 @@ int main(int argc, char *argv[])
         }
     }
 
+  /*
+   * Now, let's try converting GPS to UTC and back
+   */
+  gpsTime.gpsSeconds     = 701654354;
+  gpsTime.gpsNanoSeconds = 0;
+
+  LALGPStoUTC(&status, &utcDate, &gpsTime, &accuracy);
+  if (status.statusCode && lalDebugLevel > 0)
+    {
+      fprintf(stderr, "TestGPStoUTC: LALGPStoUTC() failed, line %i, %s\n",
+              __LINE__, LALTESTGPSTOUTCC);
+      REPORTSTATUS(&status);
+      return status.statusCode;
+    }
+
+  LALUTCtoGPS(&status, &tmpGps, &utcDate, &accuracy);
+  if (status.statusCode && lalDebugLevel > 0)
+    {
+      fprintf(stderr,
+              "TestUTCtoGPS: error in LALUTCtoGPS, line %i, %s\n",
+              __LINE__, LALTESTGPSTOUTCC);
+      REPORTSTATUS(&status);
+      return status.statusCode;
+    }
+
+  if (lalDebugLevel > 0)
+    {
+      fprintf(stderr, "\tgpsTime = {%d, %d}\n", gpsTime.gpsSeconds,
+              gpsTime.gpsNanoSeconds);
+      fprintf(stderr, "\ttmpGps  = {%d, %d}\n", tmpGps.gpsSeconds,
+              tmpGps.gpsNanoSeconds);
+    }
+
+
+  if (tmpGps.gpsSeconds     != gpsTime.gpsSeconds ||
+      tmpGps.gpsNanoSeconds != gpsTime.gpsNanoSeconds)
+    {
+      fprintf(stderr,
+              "TestGPStoUTC: conversion from GPS to UTC and back to GPS failed, line %i, %s\n", __LINE__, LALTESTGPSTOUTCC);
+      REPORTSTATUS(&status);
+      return 1;
+    }
+  
 
   
   /*
