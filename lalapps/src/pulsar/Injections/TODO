@@ -1,19 +1,12 @@
 TODO
 -----
 
-* prepare a "test suite" for pulsar-signal generation
+* prepare a "test suite" for pulsar-signal generation & Cie.
 	--> test-check final SFTs against makefakedata_v2
-
-* write some documentation
 
 * understand why we throw away the last freqency-bin in FFT -> SFT ?
 
 * do MEASURE the FFTW-plan, and allow some plan-buffering!
-
-* check if timestamps-asked for == timestamps-delivered... 
-	(i.e. timestamps consistent with sampling of time-series?)
-
-* move LALNormalizeSkyPosition() into LAL (+add documentation + tests)
 
 done
 ----
@@ -32,3 +25,14 @@ done
 
 * complete LALSignalToSFTs() (missing: add noise-SFTs)
 	(done)
+
+* write some documentation
+ (done, in LAL)
+
+* check if timestamps-asked for == timestamps-delivered... 
+	(i.e. timestamps consistent with sampling of time-series?)
+  -> warning should be printed now, if lalDebugLevel>0, otherwise
+     the SFTs simply get "nudged" (cf. documentation).
+
+* move LALNormalizeSkyPosition() into LAL (+add documentation + tests)
+  (done, currently in GeneratePulsarSignal.c)
