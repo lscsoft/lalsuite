@@ -71,7 +71,9 @@ void initUserVars (LALStatus *stat);
 void read_timestamps (LALStatus* stat, LIGOTimeGPSVector **timestamps, const CHAR *fname);
 void InitMakefakedata (LALStatus *stat, ConfigVars_t *GV, int argc, char *argv[]);
 
+
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
+extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 
 /*----------------------------------------------------------------------*/
 static const PulsarSignalParams empty_params;
@@ -117,15 +119,16 @@ int
 main(int argc, char *argv[]) 
 {
   LALStatus status = empty_status;	/* initialize status */
+  ConfigVars_t GV = empty_GV;
   PulsarSignalParams params = empty_params;
   SFTParams sftParams = empty_sftParams;
   SFTVector *SFTs = NULL;
   REAL4TimeSeries *Tseries = NULL;
-  ConfigVars_t GV = empty_GV;
+
   CHAR *fname = NULL;
   UINT4 i;
 
-  lalDebugLevel = 3;
+  lalDebugLevel = 0;
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
@@ -175,7 +178,6 @@ main(int argc, char *argv[])
    * generate the heterodyned time-series 
    *----------------------------------------*/
   LAL_CALL (LALGeneratePulsarSignal (&status, &Tseries, &params), &status );
-
 
   if (lalDebugLevel >= 3)
     {  
@@ -332,12 +334,11 @@ InitMakefakedata (LALStatus *stat,
     GV->startTime = GV->timestamps->data[0];
       
   /* if no ref-time was given, use start-time instead */
-  if (!UVARwasSet(&uvar_refTime))
+  if (!UVARwasSet(&uvar_refTime)) 
     GV->refTime = GV->startTime;
   else {
     TRY ( LALFloatToGPS (stat->statusPtr, &(GV->refTime), &uvar_refTime), stat);
   }
-
 
   /* get leap-seconds since start of GPS-time */
   TRY ( LALLeapSecs (stat->statusPtr, &leapSecs,  &(GV->startTime), &leapParams), stat);
@@ -350,6 +351,7 @@ InitMakefakedata (LALStatus *stat,
   edat.ephiles.earthEphemeris = earthdata;
   edat.ephiles.sunEphemeris   = sundata;
   edat.leap = (INT2) leapSecs;
+
   /* Init ephemerides */  
   TRY( LALInitBarycenter (stat->statusPtr, &edat), stat);   
   LALFree (earthdata);
