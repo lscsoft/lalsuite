@@ -18,6 +18,12 @@ import os
 from glue import pipeline
 
 
+def version():
+  """
+  Return version
+  """
+  print "$Id$"
+
 class StochasticError(exceptions.Exception):
   def __init__(self, args=None):
     self.args = args

@@ -84,6 +84,7 @@ log_path = None
 for o, a in opts:
   if o in ("-v", "--version"):
     print "$Id$"
+    stochastic.version()
     sys.exit(0)
   elif o in ("-h", "--help"):
     usage()
