@@ -334,41 +334,48 @@ take:
 
 \begin{enumerate}
 \item The template normalization squared (in \texttt{LALFindChirpBCVTemplate}):
-	\\
-\texttt{tmpltNorm} = $d^2 \Big ( \frac{5\mu}{96 M_{\odot}}\Big ) \Big ( \frac{M}        {\pi^2 M_{\odot}} \Big )^{2/3} T_{\odot}^{-1/3}  
-        \Big (\frac{2 T_{\odot} c}{1 Mpc} \Big )^2.$
+\begin{equation}
+\mathtt{tmpltNorm} = d^2 \Big ( \frac{5\mu}{96 M_{\odot}}\Big ) \Big ( \frac{M}        {\pi^2 M_{\odot}} \Big )^{2/3} T_{\odot}^{-1/3}  
+        \Big (\frac{2 T_{\odot} c}{1 Mpc} \Big )^2.
+\end{equation}
 \item The exponential $e^{i \psi'}$ (in \texttt{LALFindChirpBCVTemplate}).
 \item The BCV Moments (in \texttt{LALFindChirpBCVData}): \\
-\texttt{I73} = $\sum_{k=0}^{N/2} \frac{4 k^{-7/3}}{|dR|^2 S_v(|f_k|)}$ \\
-\texttt{I53} = $\sum_{k=0}^{N/2} \frac{4 k^{-5/3}}{|dR|^2 S_v(|f_k|)}$ \\
-\texttt{I1} = $\sum_{k=0}^{N/2} \frac{4 k^{-1}}{|dR|^2 S_v(|f_k|)}.$ \\
+\begin{eqnarray}
+\mathtt{I73} &=& \sum_{k=0}^{N/2} \frac{4 k^{-7/3}}{|dR|^2 S_v(|f_k|)} \\
+\mathtt{I53} &=& \sum_{k=0}^{N/2} \frac{4 k^{-5/3}}{|dR|^2 S_v(|f_k|)} \\
+\mathtt{I1} &=& \sum_{k=0}^{N/2} \frac{4 k^{-1}}{|dR|^2 S_v(|f_k|)}. \\
+\end{eqnarray}
 These quantities should be multiplied by $(\Delta t /N)$ (b/c of the FT) and
-by (\texttt{tmpltNorm}) (b/c of the template), but that is taken
+by ($\mathtt{tmpltNorm}$) (b/c of the template), but that is taken
 care of in the calculation of the SNR.
-\item The BCV normalization factors (in \texttt{LALFindChirpBCVData}):\\
-\texttt{a1} = (\texttt{I73}$)^{-1/2}$ \\
-\texttt{b2} = (\texttt{I1} - (\texttt{I53}${}^2$/\texttt{I73})
-	$)^{-1/2}$ \\
-\texttt{b1} = -(\texttt{I53}/\texttt{I73})  \texttt{b2}. \\
-Again, these should be multiplied by $[(\Delta t/N)^{-1/2}$ (\texttt{tmpltNorm}
-$)^{-1/2}]$ 
+\item The BCV normalization factors (in \texttt{LALFindChirpBCVData}):
+\begin{eqnarray}
+\mathtt{a1} &=& (\mathtt{I73})^{-1/2} \\
+\mathtt{b2} &=& \Big( \mathtt{I1} - \frac{\mathtt{I53}^2}{\mathtt{I73}}
+	\Big )^{-1/2} \\
+\mathtt{b1} &=& -\frac{\mathtt{I53}}{\mathtt{I73}}  \mathtt{b2}. \\
+\end{eqnarray}
+Again, these should be multiplied by $[(\Delta t/N)^{-1/2} \mathtt{tmpltNorm}
+)^{-1/2}]$ 
 but that is taken care of later.
-%\item The two FTs required for the calculation of the SNR (in 
-%	\texttt{LALFindChirpBCVFilter}):
-%qj &=&\sum_{k=0}^{N/2}e^{2 \pi i j k/N} \frac{(dR \tilde{v}_k^{\ast}) 
-%	\: \texttt{a1} \: k^{-7/6} e^{i \psi'} }{ |dR|^2 S_v(|f_k|) } \\
-%q^{{}_{BCV}}_j &=& \sum_{k=0}^{N/2}e^{ 2 \pi i j k/N} \frac{(dR \tilde{v}_k 
-%^{\ast})( \texttt{b1} \:k^{-7/6} + \texttt{b2}\: k^{-1/2} ) e^{i \psi'}}
-%	{|dR|^2 S_v(|f_k|)} \\
-%up to the appropriate normalization factors, namely $(\texttt{tmpltNorm}) 
-%^{1/2}( \Delta t/N)$
+\item The two FTs required for the calculation of the SNR (in 
+	\texttt{LALFindChirpBCVFilter}):
+\begin{eqnarray}
+qj &=&\sum_{k=0}^{N/2}e^{2 \pi i j k/N} \frac{(dR \tilde{v}_k^{\ast}) 
+	\: \mathtt{a1} \: k^{-7/6} e^{i \psi'} }{ |dR|^2 S_v(|f_k|) } \\
+q^{{}_{BCV}}_j &=& \sum_{k=0}^{N/2}e^{ 2 \pi i j k/N} \frac{(dR \tilde{v}_k 
+^{\ast})( \mathtt{b1} \:k^{-7/6} + \mathtt{b2}\: k^{-1/2} ) e^{i \psi'}}
+	{|dR|^2 S_v(|f_k|)} \\
+\end{eqnarray}
+up to the appropriate normalization factors, namely $(\mathtt{tmpltNorm}) 
+^{1/2}( \Delta t/N)$
 \item The SNR (in \texttt{LALFindChirpBCVFilter}):
 \begin{equation}
 \rho^2(t_j) = \Big ( \frac{\Delta t}{N} \Big ) \bigg \{ \frac{1}{2} 
 	\sqrt{ |q_j|^2 + |q^{{}_{BCV}}_j|^2 + 2 \Im (q_j q^{{}_{BCV}\ast}_j) } +
 	\frac{1}{2}\sqrt{|q_j|^2+|q^{{}_{BCV}}_j|^2 - 
 	2 \Im (q_j q^{{}_{BCV} \ast}_j) }
-	\bigg \} 
+	\bigg \}. 
 \end{equation}
 \end{enumerate}
 
