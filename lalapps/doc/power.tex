@@ -1,0 +1,150 @@
+\section{Program \texttt{lalapps\_power}}
+\label{program:lalapps-power}
+\idx[Program]{lalapps\_power}
+
+\begin{entry}
+
+\item[Name]
+\verb$lal_power$ --- runs excess power code on chunks of (simulated) data.
+
+\item[Synopsis]
+\verb$lal_power$ \verb$--npts$ \textsc{npts} \verb$--nseg$ \textsc{nseg}
+\verb$--olap$ \textsc{olap} \verb$--olapfctr$ \textsc{olapfctr}
+$\backslash$ \newline \hspace*{0.25in}
+\verb$--minfbin$ \textsc{minfbin} \verb$--mintbin$ \textsc{mintbin} 
+\verb$--flow$ \textsc{flow} \verb$--delf$ \textsc{delf} 
+\verb$--lngth$ \textsc{lngth} 
+$\backslash$ \newline \hspace*{0.25in}
+\verb$--nsigma$ \textsc{nsigma}
+\verb$--alphdef$ \textsc{alphdef}  \verb$--segdcle$ \textsc{segdcle} 
+\verb$--threshold$ \textsc{threshold} 
+$\backslash$ \newline \hspace*{0.25in}
+\verb$--etomstr$ \textsc{etomstr}
+\verb$--channel$ \textsc{channel} \verb$--simtype$ \textsc{simtype} 
+\verb$--spectype$ \textsc{spectype} 
+$\backslash$ \newline \hspace*{0.25in}
+\verb$--window$ \textsc{window} \verb$--epoch$ \textsc{sec} \textsc{nsec} 
+\verb$--numpts$ \textsc{numpts} [\verb$--printSpectrum$] 
+$\backslash$ \newline \hspace*{0.25in}
+[\verb$--noise$ \textsc{var} \textsc{seed}] [\verb$--outfile$ \textsc{outfile}]
+
+\item[Description] 
+\verb$lal_power$ runs the excess power code from LAL on a chunk of
+real or simulated data.    Consider searching  for signals with the
+following properties:
+\begin{itemize}
+\item Maximum signal time duration $T=2^a$ seconds where $a$ is a
+positive or negative integer;  the sampling rate of the data stream is
+taken assummed $\mbox{\texttt{srate}} = 2^b$ Hz.
+
+\item The frequency band of the signal is between $f_{\mathrm{low}}$
+Hz and ${f_{\mathrm{high}}}$ Hz.  Current versions of the code
+expect ${f_{\mathrm{high}}}-{f_{\mathrm{low}}}=2^d$ Hz where
+$d$ is an integer. 
+
+\item Minimum time duration,
+
+\item Minimum frequency bandwidth.
+\end{itemize}
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--npts}  \textsc{npts}] Number of data points in a
+segment is determined by
+\[
+\mbox{\textsc{npts}} = (T \times \mbox{\textsc{srate}}) \; .
+\]  
+
+\item[\texttt{--nseg} \textsc{nseg}] Number of overlapping segments into
+which data should be divided for filtering;  must be an integer. 
+
+\item[\texttt{--olap} \textsc{olap}] Number of points overlap between
+segments.  This is an argument for completeness,  but in general it
+should be $\textsc{npts}/2$.
+
+\item[\texttt{--olapfctr} \textsc{olapfctr}] Amount of overlap between
+neighboring TF tiles; must be an integer.  A reasonable value for this
+parameter is $3$.  See LAL \texttt{burstsearch} package for details.  
+
+\item[\texttt{--minfbin} \textsc{minfbin}] Smallest extent in frequency of
+TF tiles to search;  must be an integer.  A reasonable value for this
+parameter is $2$.   The product $\mbox{\textsc{minfbin}} \times
+\mbox{\textsc{mintbin}}$ is the minimum time-frequency volume to
+be searched.  See LAL \texttt{burstsearch} package for details.
+
+\item[\texttt{--mintbin} \textsc{mintbin}] Smallest extent in time of TF
+tiles to search;  must be an integer. A reasonable value for this
+parameter is $2$.   The product $\mbox{\textsc{minfbin}} \times
+\mbox{\textsc{mintbin}}$ is the minimum time-frequency volume to
+be searched.  See LAL \texttt{burstsearch} package for details.
+
+\item[\texttt{--flow} \textsc{flow}] Lowest frequency in Hz to be searched;
+a real number.  This is obviously $f_{\mathrm{low}}$ Hz from our
+description of the desired signal parameters above.
+
+\item[\texttt{--delf} \textsc{delf}] This input should be set to $1/T$ Hz but
+it is ignored by the current version of the code;
+a real number.
+
+\item[\texttt{--lngth} \textsc{lngth}] may be determined by the following
+formula
+\[
+\mbox{\textsc{lngth}} = T \times ({f_{\mathrm{high}} - f_{\mathrm{low}}}) .
+\]
+This is an integer which determines the maximum frequency bandwidth
+over which a signal is expected.  
+
+\item[\texttt{--nsigma} \textsc{nsigma}] threshold number of sigma;
+a real number.
+Currently see LAL \texttt{burstsearch} package for details.
+
+\item[\texttt{--alphdef} --\textsc{alphdef}] default alpha value for tiles
+with sigma < numSigmaMin;
+a real number. Currently see LAL \texttt{burstsearch}
+package for details.
+
+\item[\texttt{--segdcle} \textsc{segdcle}] Number of segments analyzed
+at a time;  must be an integer.  The current code uses
+\textsc{segdcle} overlapping segments to compute the average (or
+median) power spectral estimate for use inside the code.
+
+\item[\texttt{--threshold} \textsc{threshold}] Identify events with alpha
+less than this;
+a real number.  Currently see LAL \texttt{burstsearch} package for
+details.
+
+\item[\texttt{--etomstr} \textsc{etomstr}] Number of events to be
+accepted from a search over \textsc{npts} of data;  must be an
+integer.
+
+\item[\texttt{--channel} \textsc{channel}] The name used to identify the
+data to be analyzed;  a character string matching
+the channel name in the frame files,  e.g. \texttt{H2:LSC-AS\_Q}.
+
+\item[\texttt{--simtype} \textsc{simtype}] Type of simulation. Set it to 0,
+although it is ignored in the current version of the code.
+
+\item[\texttt{--spectype} \textsc{spectype}] Spectrum estimator for whitening
+data;  a character string [\texttt{useMean}, \texttt{useMedian}].
+
+\item[\texttt{--window} \textsc{window}] Type of window to use on the data;
+must be an integer.  [Possible values are:  0=Rectangular, 1=Hann,
+2=Welch, 3=Bartlett, 4=Parzen, 5=Papoulis, 6=Hamming.]
+\end{entry}
+
+
+\item[Example]
+To run the program,  type:
+\begin{verbatim}
+lalapps_power --npts 2048 --nseg 719 --olap 1024 --olapfctr 3 \
+    --minfbin 2 --mintbin 2 --flow 100.0 --delf 1.0 --lngth 512 --nsigma 2.0 \
+    --alphdef 0.5 --segdcle 32 --threshold 1.0e-13 --etomstr 10 \
+    --channel S1:LSC-AS_Q --simtype 0 --spectype useMedian --window 2 \
+    --epoch  693768279 0 --numpts 1048576 --printSpectrum --noise 1 11 \
+    --outfile sim-inj.xml
+\end{verbatim}
+
+\item[Author]
+Patrick Brady
+
+\end{entry}
