@@ -1,10 +1,10 @@
 /************************************ <lalVerbatim file="DopplerScanCV">
-Author: Prix, Reinhard,  Owen, B. J.,   Jones, D. I.  
+Author: Prix, Reinhard
 $Id$
 ************************************* </lalVerbatim> */
 
-/* some parts of this file are based on code from PtoleMeshTest, which
-   is why I've included Ben & Ian in the Author-list */
+/* some parts of this file are based on code from PtoleMeshTest, written
+   by Ben Owen and Ian Jones */
 
 /********************************************************** <lalLaTeX>
 \subsection{Module \texttt{DopplerScan}
@@ -49,108 +49,140 @@ NRCSID( DOPPLERSCANC, "$Id$" );
 /* the SkyScanner can be in one of the following states */
 enum {
   STATE_IDLE,   	/* not initialized yet */
-  STATE_MANUAL,		/* initialized: 'manual' stepping (i.e. Alpha + i*dAlpha, ...) */
-  STATE_GRID,    	/* use pre-calculated template-grid */
-  STATE_FINISHED
+  STATE_READY,		/* initialized and ready */
+  STATE_FINISHED,
+  STATE_LAST
 };
 
+#define MIN(x,y) (x < y ? x : y)
+#define MAX(x,y) (x > y ? x : y)
+
+#define TRUE (1==1)
+#define FALSE (1==0)
 
 extern INT4 lalDebugLevel;
 
-void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *scan );
-void getMetric( LALStatus *status, REAL4 g[3], REAL4 skypos[2], void *scan );
-void gridStandarizeOrder ( DopplerScanState *scan );
+static INT2 useMetric;		/* we make this global as it's used in a few places here */
 
-void printGrid (LALStatus *stat, DopplerScanState *scan, BOOLEAN printEllipses);
+void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params );
+void getMetric( LALStatus *status, REAL4 g[3], REAL4 skypos[2], void *params );
 
+void printGrid (LALStatus *stat, DopplerScanGrid *grid, SkyRegion *region, TwoDMeshParamStruc *meshpar);
+void ConvertTwoDMesh2Grid ( LALStatus *stat, DopplerScanGrid **grid, TwoDMeshNode *mesh2d, SkyRegion *region );
+
+BOOLEAN pointInPolygon ( SkyPosition *point, SkyRegion *polygon );
+
+void gridFlipOrder ( TwoDMeshNode *grid );
 
 /*----------------------------------------------------------------------*/
 /* <lalVerbatim file="DopplerScanCP"> */
 void
 InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit init)
 { /* </lalVerbatim> */
+  TwoDMeshNode *mesh2d = NULL;
+  DopplerScanGrid *node, *last;
+  static TwoDMeshParamStruc meshpar;
+  static PtoleMetricIn metricpar;
+  SkyPosition point;
+  BOOLEAN finished;
+  
 
   INITSTATUS( stat, "DopplerScanInit", DOPPLERSCANC );
 
   ATTATCHSTATUSPTR( stat ); /* prepare for call of LAL-subroutines */
 
-  /* This traps coding errors in the calling routine. */
-  ASSERT( scan != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );  	/* don't expect output! */
-
   scan->state = STATE_IDLE;  /* uninitialized */
 
-  scan->Alpha = init.Alpha;
-  scan->AlphaBand = init.AlphaBand;
-  scan->Delta = init.Delta;
-  scan->DeltaBand = init.DeltaBand;
+  /* several functions here need that info, so the easiest is to make this global */
+  useMetric = init.useMetric;
 
-  /* check if there's any scanning of doppler-positions required at all or if it's only one point */
-  if ( (scan->AlphaBand == 0.0) && (scan->DeltaBand == 0) )
-    { 
-      scan->state = STATE_MANUAL;  /* no grid required here */
-      
-      DETATCHSTATUSPTR (stat);
-      RETURN( stat );
-    }
-  
-  /* make sure Bands are always positive (for safty in griding-routines) */
-  if ( scan->AlphaBand < 0 )
-    {
-      scan->Alpha += scan->AlphaBand;
-      scan->AlphaBand = - scan->AlphaBand;
-    }
-  if ( scan->DeltaBand < 0 )
-    {
-      scan->Delta += scan->DeltaBand;
-      scan->DeltaBand = - scan->DeltaBand;
-    }
+  /* This traps coding errors in the calling routine. */
+  ASSERT ( scan != NULL, stat, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL );  
 
-  /* check consistency of bounds for the sky-region */
-  /*  FIXME: actually that's nonsense, as the region might stretch across this coordinate "cut" */
-  if ( (scan->Alpha < 0) || (scan->Alpha >= LAL_TWOPI) || (fabs(scan->Delta) > LAL_PI_2) 
-       ||(scan->Alpha + scan->AlphaBand >= LAL_TWOPI) || (scan->Delta + scan->DeltaBand > LAL_PI_2) )
-    {
-      ABORT (stat, DOPPLERSCANH_ESKYPARAM, DOPPLERSCANH_MSGESKYPARAM );
-    }
-
-
-  if (init.skyRegion) {
-    TRY (ParseSkyRegion (stat->statusPtr, &(scan->skyRegion), init.skyRegion ), stat);
+  /* trap some abnormal input */
+  if (init.skyRegion == NULL) {
+    ABORT (stat,  DOPPLERSCANH_ENULL ,  DOPPLERSCANH_MSGENULL );
   }
 
-  /* init stuff for metric grid stepping */
-  scan->grid = NULL;  /* for metric sky-grid: first node */
+  scan->grid = NULL;  
   scan->gridNode = NULL;
 
-  scan->useMetric = init.useMetric;
+  TRY (ParseSkyRegion (stat->statusPtr, &(scan->skyRegion), init.skyRegion ), stat);
 
-  if (init.flipTiling)
-    scan->internalOrder = ORDER_ALPHA_DELTA;
-  else
-    scan->internalOrder = ORDER_DELTA_ALPHA;   /* this is the default for _tiling_ */
-  
-    
-  switch (scan->useMetric)      
+  /* treat special case: only one point given */
+  if (scan->skyRegion.numVertices == 1)
+    useMetric = LAL_METRIC_NONE;	/* make sure we don't try to use metric here */
+  else if (scan->skyRegion.numVertices == 2)	/* this is an anomaly! */
+    {
+      ABORT (stat, DOPPLERSCANH_E2DSKY, DOPPLERSCANH_MSGE2DSKY);
+    }
+
+  /* some general mesh-settings are needed in any case (metric or not) */
+  meshpar.getRange = getRange;
+      
+  meshpar.domain[0] = scan->skyRegion.lowerLeft.longitude;
+  meshpar.domain[1] = scan->skyRegion.upperRight.longitude;
+
+  meshpar.rangeParams = (void*) &(scan->skyRegion); 
+
+  switch (useMetric)      
     {
     case LAL_METRIC_NONE:	/* manual stepping */
-  
       scan->dAlpha = fabs(init.dAlpha);
       scan->dDelta = fabs(init.dDelta);
-      scan->AlphaCounter = scan->DeltaCounter = 0;
+  
+      /* ok now we manually set up the complete grid */
+      scan->grid = LALCalloc (1, sizeof(DopplerScanGrid)); 	/* get head of the grid-list */
+      scan->gridNode = scan->grid;
 
-      /* we *need* a 2-dimensional sky-path for now: */
-      if (scan->AlphaBand * scan->DeltaBand == 0.0)
+      node = scan->grid;
+      last = node;
+
+      point = scan->skyRegion.lowerLeft;
+
+      finished = FALSE;
+
+      /* if only one point is given, we're done */
+      if (scan->skyRegion.numVertices == 1)
 	{
-	  ABORT( stat, DOPPLERSCANH_E2DSKY, DOPPLERSCANH_MSGE2DSKY );
+	  node->alpha = point.longitude;
+	  node->delta = point.latitude;
+	  scan->numGridPoints = 1;
+	  break;
 	}
       
-      /* again: we need both or none! */
-      if (scan->dAlpha * scan->dDelta == 0.0)
+      scan->numGridPoints = 0;
+      while (!finished)
 	{
-	  ABORT( stat, DOPPLERSCANH_E2DSTEP, DOPPLERSCANH_MSGE2DSTEP);
-	}
+	  if (pointInPolygon ( &point, &(scan->skyRegion) ) )
+	    {
+	      node->alpha = point.longitude;
+	      node->delta = point.latitude;
+	      scan->numGridPoints ++;
+	      /* prepare next node */
+	      node->next = LALCalloc (1, sizeof(DopplerScanGrid));
+	      last = node;
+	      node = node->next;
+	    }
+
+	  point.latitude += scan->dDelta;
+
+	  if (point.latitude > scan->skyRegion.upperRight.latitude)
+	    {
+	      point.latitude = scan->skyRegion.lowerLeft.latitude;
+	      point.longitude += scan->dAlpha;
+	    } 
+	  if (point.longitude >= scan->skyRegion.upperRight.longitude + scan->dAlpha)
+	    {
+	      finished = TRUE;
+	      break;
+	    } 
+	}; /* while !finished */
+
       
-      scan->state = STATE_MANUAL;
+      /* ok, we allocated a node too much, so get rid of it */
+      last->next = NULL;
+      LALFree (node);
       
       break;
 	  
@@ -158,63 +190,46 @@ InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit init)
     case LAL_METRIC_COHERENT:
 
       /* Prepare call of TwoDMesh(): the mesh-parameters */
-      scan->meshpar.mThresh = init.metricMismatch;
-      scan->meshpar.nIn = 1e6;  	/* maximum nodes in mesh */ /*  FIXME: hardcoded */
+      meshpar.mThresh = init.metricMismatch;
+      meshpar.nIn = 1e6;  	/* maximum nodes in mesh */ /*  FIXME: hardcoded */
       
       /* helper-function: range and metric */
-      scan->meshpar.getRange = getRange;
-      scan->meshpar.getMetric = getMetric;
+      meshpar.getMetric = getMetric;
       
-      /* on the level of DopplerScan we fixed the "standard order"
-       * to be ORDER_ALPHA_DELTA, but the meshing+metric functions
-       * might need to use the ORDER_DELTA_ALPHA (as is the case for
-       * Teviet's TwoDMesh() functions... therefore we have to keep track
-       * of the order and put it into normal order after mesh-generation
-       * is completed.
-       */
-      if (scan->internalOrder == ORDER_ALPHA_DELTA)  /* this is the "standard order" */
-	{
-	  scan->meshpar.domain[0] = scan->Alpha;
-	  scan->meshpar.domain[1] = scan->Alpha + scan->AlphaBand;
-	}
-      else   
-	{
-	  scan->meshpar.domain[0] = scan->Delta;
-	  scan->meshpar.domain[1] = scan->Delta + scan->DeltaBand;
-	}
-      
-      scan->ptoleMetricPar.position.system = COORDINATESYSTEM_EQUATORIAL;
+      metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
       /* currently, CreateVector's are broken as they don't allow length=0 */
-      /*      TRY( LALSCreateVector( stat->statusPtr, &(scan->ptoleMetricPar.spindown), 0 ), stat ); 	*/
+      /*      TRY( LALSCreateVector( stat->statusPtr, &(scan->MetricPar.spindown), 0 ), stat ); 	*/
       /* FIXME: replace when fixed in LAL */
-      scan->ptoleMetricPar.spindown = LALMalloc ( sizeof(REAL4Vector) );
-      scan->ptoleMetricPar.spindown->length=0;
-      scan->ptoleMetricPar.spindown->data=NULL;
+      metricpar.spindown = LALMalloc ( sizeof(REAL4Vector) );
+      metricpar.spindown->length=0;
+      metricpar.spindown->data=NULL;
 
-      scan->ptoleMetricPar.epoch = init.obsBegin;
-      scan->ptoleMetricPar.duration = init.obsDuration;
-      scan->ptoleMetricPar.maxFreq = init.fmax;
-      scan->ptoleMetricPar.site = init.Detector.frDetector;
+      metricpar.epoch = init.obsBegin;
+      metricpar.duration = init.obsDuration;
+      metricpar.maxFreq = init.fmax;
+      metricpar.site = init.Detector.frDetector;
 
       scan->grid = NULL;      
-      /* both getMetric and getRange now take the ScanState as parameter */
-      scan->meshpar.metricParams = (void *) scan;	 
-      scan->meshpar.rangeParams = (void*) scan; 
-      
+
+      meshpar.metricParams = (void *) &(metricpar);
+
       /* finally: create the mesh! (ONLY 2D for now!) */
-      TRY( LALCreateTwoDMesh( stat->statusPtr, &(scan->grid), &(scan->meshpar) ), stat);
-      
-      /* make sure alpha and delta are in "standard order" in the grid */
-      gridStandarizeOrder ( scan );
-      
-      scan->gridNode = scan->grid; 	/* init to first node in list */
-      
-      scan->state = STATE_GRID;  /* we are set for a metric-grid scan */
-      
-      if (lalDebugLevel)
+      TRY( LALCreateTwoDMesh( stat->statusPtr, &mesh2d, &meshpar ), stat);
+
+      /* convert this 2D-mesh into our grid-structure, including clipping to the skyRegion */
+
+      TRY (ConvertTwoDMesh2Grid ( stat->statusPtr, &(scan->grid), mesh2d, &(scan->skyRegion) ), stat);
+      scan->numGridPoints = 0;
+      node = scan->grid;
+      while (node)
 	{
-	  TRY( printGrid (stat->statusPtr, scan, 1), stat );
+	  scan->numGridPoints ++;
+	  node = node->next;
 	}
+	
+      TRY (LALDestroyTwoDMesh ( stat->statusPtr,  &mesh2d, 0), stat);
+
+      scan->gridNode = scan->grid; 	/* init to first node in list */
       
       break;
 
@@ -224,6 +239,21 @@ InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit init)
 
     } /* switch (useMetric) */
 
+  LALPrintError ("\nFinal Scan-grid has %d nodes\n", scan->numGridPoints);
+      
+  if (lalDebugLevel)
+    {
+      TRY( printGrid (stat->statusPtr, scan->grid, &(scan->skyRegion), &meshpar ), stat);
+    }
+
+  if (metricpar.spindown) {
+    /* FIXME: this is currently broken in LAL, as length=0 is not allowed */
+    /*    TRY (LALSDestroyVector ( stat->statusPtr, &(scan->MetricPar.spindown) ), stat); */
+    LALFree (metricpar.spindown);
+    metricpar.spindown = NULL;
+  }
+
+  scan->state = STATE_READY;
 
   /* clean up */
   DETATCHSTATUSPTR (stat);
@@ -238,7 +268,7 @@ InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit init)
 void
 FreeDopplerScan (LALStatus *stat, DopplerScanState *scan)
 { /* </lalVerbatim> */
-
+  DopplerScanGrid *node, *next;
   INITSTATUS( stat, "FreeDopplerScan", DOPPLERSCANC);
   ATTATCHSTATUSPTR (stat);
 
@@ -250,24 +280,20 @@ FreeDopplerScan (LALStatus *stat, DopplerScanState *scan)
   else if ( scan->state != STATE_FINISHED )
     LALWarning (stat, "freeing unfinished DopplerScan.");
 
-  if ( scan->grid ) {
-    TRY (LALDestroyTwoDMesh ( stat->statusPtr,  &(scan->grid), 0), stat);
-  }
+  if ( (node=scan->grid) ) {
+    while (node)
+      {
+	next = node->next;
+	LALFree (node);
+	node = next;
+      } /* while node */
+  } /* if grid!= NULL */
+
   scan->grid = scan->gridNode = NULL;
 
-  if (scan->skyRegion.data)
-    LALFree (scan->skyRegion.data);
-  scan->skyRegion.data = NULL;
-
-  if (scan->lambda) {
-    TRY (LALDDestroyVector ( stat->statusPtr,  &(scan->lambda) ), stat);
-  }
-  if (scan->ptoleMetricPar.spindown) {
-    /* FIXME: this is currently broken in LAL, as length=0 is not allowed */
-    /*    TRY (LALSDestroyVector ( stat->statusPtr, &(scan->ptoleMetricPar.spindown) ), stat); */
-    LALFree (scan->ptoleMetricPar.spindown);
-    scan->ptoleMetricPar.spindown = NULL;
-  }
+  if (scan->skyRegion.vertices)
+    LALFree (scan->skyRegion.vertices);
+  scan->skyRegion.vertices = NULL;
     
   scan->state = STATE_IDLE;
 
@@ -294,44 +320,15 @@ NextDopplerPos( LALStatus *stat, DopplerPosition *pos, DopplerScanState *scan)
     case STATE_IDLE:
       ABORT( stat, DOPPLERSCANH_ENOINIT, DOPPLERSCANH_MSGENOINIT );
       break;
-      
-    case STATE_MANUAL: /* "manual" stepping through templates: Alpha + dAlpha ...*/
 
-      pos->skypos.longitude = scan->Alpha + scan->AlphaCounter * scan->dAlpha;
-      pos->skypos.latitude = scan->Delta + scan->DeltaCounter * scan->dDelta;
-
-      pos->spindowns.length = 0; /*  FIXME: not done in here YET */
-
-      /* prepare next step: 'loop' over alpha and delta */ 
-      scan->DeltaCounter ++;
-
-      /* this funny-looking procedure mimics the old for-loops */
-      if ( pos->skypos.latitude >= scan->Delta + scan->DeltaBand )
-	{
-	  scan->DeltaCounter = 0;
-	  scan->AlphaCounter ++;
-	}
-      if (pos->skypos.longitude  >= scan->Alpha + scan->AlphaBand + scan->dAlpha )
-	{
-	  scan->state = STATE_FINISHED;  
-	  pos->finished = 1;
-	}
-
-      break;
-
-    case STATE_GRID:  /* use pre-determined template-grid */
+    case STATE_READY:  
       /* sanity check: this should NEVER happen! */
       if (scan->gridNode == NULL) {
 	ABORT ( stat, DOPPLERSCANH_EGRIDCRPT, DOPPLERSCANH_MSGEGRIDCRPT );
       }
 
-      /* for now we don't use submeshes */
-      if (scan->gridNode->subMesh)
-	LALWarning ( stat, "The grid contains a sub-mesh: this is currently ignored!" );
-
-      /* NOTE: the grid is assumed to be in "standard order": ORDER_ALPHA_DELTA */
-      pos->skypos.longitude = scan->gridNode->x;
-      pos->skypos.latitude =  scan->gridNode->y;
+      pos->skypos.longitude = scan->gridNode->alpha;
+      pos->skypos.latitude =  scan->gridNode->delta;
 
       pos->spindowns.length = 0; /*  FIXME */
 
@@ -369,7 +366,7 @@ NextDopplerPos( LALStatus *stat, DopplerPosition *pos, DopplerScanState *scan)
  *----------------------------------------------------------------------*/
 void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params )
 {
-  DopplerScanState *scan = params;
+  SkyRegion *region = (SkyRegion*)params;
   REAL4 nix;
 
   /* Set up shop. */
@@ -379,16 +376,9 @@ void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params )
   nix = x;	/* avoid compiler warning */
   
   /* for now: we return the fixed y-range, indendent of x */
-  if (scan->internalOrder == ORDER_ALPHA_DELTA)
-    {
-      y[0] = scan->Delta;
-      y[1] = scan->Delta + scan->DeltaBand;
-    }
-  else
-    {
-      y[0] = scan->Alpha;
-      y[1] = scan->Alpha + scan->AlphaBand;
-    }
+  y[0] = region->lowerLeft.latitude;
+  y[1] = region->upperRight.latitude;
+
 
   /* Clean up and leave. */
   /*   DETATCHSTATUSPTR( stat ); */
@@ -400,45 +390,31 @@ void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params )
 /* ----------------------------------------------------------------------
  * This is a wrapper for the metric function as required by TwoDMesh. 
  *
- * NOTE: at the moment only PtoleMetric() is supported
  *
- * NOTE2: this will be called by TwoDMesh(), therefore
+ * NOTE: this will be called by TwoDMesh(), therefore
  * skypos is in internalOrder, which is not necessarily ORDER_ALPHA_DELTA!!
  * 
  *----------------------------------------------------------------------*/
 void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
 {
   INT2 dim;  	/* dimension of (full) parameter space (incl. freq) */
-  DopplerScanState *scan = params;
   REAL8Vector   *metric = NULL;  /* for output of metric */
-  REAL4 lon, lat;
+  PtoleMetricIn *metricpar = (PtoleMetricIn*) params;
 
   /* Set up shop. */
   INITSTATUS( stat, "getMetric", DOPPLERSCANC );
   ATTATCHSTATUSPTR( stat );
-
 
   /* currently we use only f0, alpha, delta: -> 3D metric */
   dim = 3;
 
   TRY( LALDCreateVector( stat->statusPtr, &metric, dim*(dim+1)/2 ), stat );
 
-  /* Translate input. */
-  if (scan->internalOrder == ORDER_DELTA_ALPHA)
-    {
-      lat = skypos[0];
-      lon = skypos[1];
-    }
-  else
-    {
-      lon = skypos[0];
-      lat = skypos[1];
-    }
-
   /* Call the metric function. (Ptole or Coherent, which is handled by wrapper) */
-  scan->ptoleMetricPar.position.longitude = lon;
-  scan->ptoleMetricPar.position.latitude =  lat;
-  TRY ( LALMetricWrapper( stat->statusPtr, metric, &(scan->ptoleMetricPar), scan->useMetric ), stat);
+  metricpar->position.longitude = skypos[0];
+  metricpar->position.latitude =  skypos[1];
+
+  TRY ( LALMetricWrapper( stat->statusPtr, metric, metricpar, useMetric), stat);
 
   BEGINFAIL( stat )
     TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
@@ -456,17 +432,8 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
 #define INDEX_AD (1 + 2*(2+1)/2)	/* g_ad */
 
   /* Translate output. Careful about the coordinate-order here!! */
-  if (scan->internalOrder == ORDER_ALPHA_DELTA )
-    {
-      g[0] = metric->data[INDEX_AA]; /* gxx */
-      g[1] = metric->data[INDEX_DD]; /* gyy */
-    }
-  else
-    {
-      g[0] = metric->data[INDEX_DD]; /* gxx */
-      g[1] = metric->data[INDEX_AA]; /* gyy */
-    }
-
+  g[0] = metric->data[INDEX_AA]; /* gxx */
+  g[1] = metric->data[INDEX_DD]; /* gyy */
   g[2] = metric->data[INDEX_AD]; /* gxy = g21: 1 + 2*(2+1)/2 = 4; */
  
   /* Clean up and leave. */
@@ -482,16 +449,18 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
 #define SPOKES 60  /* spokes for ellipse-plots */
 #define NUM_SPINDOWN 0       /* Number of spindown parameters */
 
-void printGrid (LALStatus *stat, DopplerScanState *scan, BOOLEAN plotEllipses)
+void 
+printGrid (LALStatus *stat, DopplerScanGrid *grid, SkyRegion *region, TwoDMeshParamStruc *meshpar)
 {
   FILE *fp = NULL;
-  TwoDMeshNode *node;
+  DopplerScanGrid *node;
   REAL8Vector  *metric = NULL;   /* Parameter-space metric: for plotting ellipses */
   REAL8 gaa, gad, gdd, angle, smaj, smin;
   REAL8 alpha, delta;
-  REAL8 mismatch = scan->meshpar.mThresh;
-  INT2 set, i;
-  INT2 dim;
+  REAL8 mismatch = meshpar->mThresh;
+  UINT4 set, i;
+  UINT4 dim;
+  PtoleMetricIn *metricPar = (PtoleMetricIn*)meshpar->metricParams;
   CHAR *xmgrHeader = 
     "@version 50103\n"
     "@title \"Sky-grid\"\n"
@@ -501,7 +470,7 @@ void printGrid (LALStatus *stat, DopplerScanState *scan, BOOLEAN plotEllipses)
     "@world ymax 3.2\n"
     "@xaxis label \"alpha\"\n"
     "@yaxis label \"delta\"\n";
-  
+
   /* Set up shop. */
   INITSTATUS( stat, "printGrid", DOPPLERSCANC );
   ATTATCHSTATUSPTR( stat );
@@ -509,16 +478,7 @@ void printGrid (LALStatus *stat, DopplerScanState *scan, BOOLEAN plotEllipses)
   /* currently we use only f0, alpha, delta: -> 3D metric */
   dim = 3;
 
-  if (scan->useMetric == LAL_METRIC_PTOLE)
-    fp = fopen ("mesh_ptole.agr", "w");
-  else if (scan->useMetric == LAL_METRIC_COHERENT)
-    fp = fopen ("mesh_coherent.agr", "w");
-  else /* manual stepping: nothing to print here */
-    {
-      DETATCHSTATUSPTR( stat );
-      RETURN (stat);
-    }
-
+  fp = fopen ("mesh_debug.agr", "w");
 
   if( !fp ) {
     ABORT ( stat, DOPPLERSCANH_ESYS, DOPPLERSCANH_MSGESYS );
@@ -526,26 +486,47 @@ void printGrid (LALStatus *stat, DopplerScanState *scan, BOOLEAN plotEllipses)
   
   fprintf (fp, xmgrHeader);
 
-  /* plot boundary + grid-points using this LAL function */
-  TRY (LALXMGRPlotMesh( stat->statusPtr, scan->grid, fp, &scan->meshpar ), stat);
+  set = 0;
 
-  if (plotEllipses)
+  /* Plot boundary. */
+  fprintf( fp, "@target s%d\n@type xy\n", set );
+
+  for( i = 0; i < region->numVertices; i++ )
     {
-      /* make a good guess at which set we're standing at now, say 2 */
-      set = 10;
+      fprintf( fp, "%e %e\n", region->vertices[i].longitude, region->vertices[i].latitude );
+    }
+  fprintf (fp, "%e %e\n", region->vertices[0].longitude, region->vertices[0].latitude ); /* close contour */
+
+  set ++;
+
+  /* Plot mesh points. */
+  fprintf( fp, "@s%d symbol 9\n@s%d symbol size 0.33\n", set, set );
+  fprintf( fp, "@s%d line type 0\n", set );
+  fprintf( fp, "@target s%d\n@type xy\n", set );
+
+  for( node = grid; node; node = node->next )
+  {
+    fprintf( fp, "%e %e\n", node->alpha, node->delta );
+  }
+
+
+  if (metricPar)
+    {
+      set++;
+
       /* plot ellipses (we need metric for that) */
       TRY( LALDCreateVector( stat->statusPtr, &metric, dim*(dim+1)/2 ), stat);
-      node = scan->grid;
+      node = grid;
       while (node)
 	{
-	  alpha =  node->x;
-	  delta =  node->y;
+	  alpha =  node->alpha;
+	  delta =  node->delta;
+
 	  /* Get the metric at this skypos */
+	  metricPar->position.longitude = alpha;
+	  metricPar->position.latitude  = delta;
 
-	  scan->ptoleMetricPar.position.longitude = alpha;
-	  scan->ptoleMetricPar.position.latitude  = delta;
-
-	  TRY( LALMetricWrapper( stat->statusPtr, metric, &(scan->ptoleMetricPar), scan->useMetric ), stat);
+	  TRY( LALMetricWrapper( stat->statusPtr, metric, metricPar, useMetric ), stat);
 
 	  TRY( LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
 
@@ -559,7 +540,6 @@ void printGrid (LALStatus *stat, DopplerScanState *scan, BOOLEAN plotEllipses)
 	  /* Semiminor axis from smaller eigenvalue of metric. */
 	  smaj = gaa+gdd - sqrt( pow(gaa-gdd,2) + pow(2*gad,2) );
 	  smaj = sqrt(2.0* mismatch /smaj);
-	  
 	  
 	  /* Angle of semimajor axis with "horizontal" (equator). */
 	  angle = atan2( gad, mismatch /smaj/smaj-gdd );
@@ -593,17 +573,6 @@ void printGrid (LALStatus *stat, DopplerScanState *scan, BOOLEAN plotEllipses)
       TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
 
     } /* if plotEllipses */
-
-  /* do some post-processing on the grace-file: if internalOrder is not standardOrder
-   * we have to flip the axes of the boundary-drawing ;)
-   */
-  if (scan->internalOrder != ORDER_ALPHA_DELTA)
-    {
-      fprintf (fp, "&\n@copy g0.s0 to g0.s1\n");
-      fprintf (fp, "@s1.x = s0.y\n");
-      fprintf (fp, "@s1.y = s0.x\n");
-      fprintf (fp, "@move g0.s1 to g0.s0\n");
-    }
       
   fclose(fp);
 
@@ -613,18 +582,14 @@ void printGrid (LALStatus *stat, DopplerScanState *scan, BOOLEAN plotEllipses)
 } /* printGrid */
 
 /*-------------------------------------------------------------------------
- * put alpha and delta into "standard order" in the grid: ORDER_ALPHA_DELTA
+ * flip x and y in grid
  *------------------------------------------------------------------------*/
 void
-gridStandarizeOrder ( DopplerScanState *scan )
+gridFlipOrder ( TwoDMeshNode *grid )
 {
   REAL4 tmp;
-  TwoDMeshNode *node = scan->grid;
+  TwoDMeshNode *node = grid;
 
-  if (scan->internalOrder == ORDER_ALPHA_DELTA)
-    return; /* nothing to do here */
-
-  /* otherwise: flip x <--> y */
   while (node)
     {
       tmp = node->x;
@@ -646,54 +611,7 @@ gridStandarizeOrder ( DopplerScanState *scan )
 
   return;
 
-}  /* gridStandarizeOrder() */
-
-
-/*----------------------------------------------------------------------
- * parse a string into a list of sky-positions: the expected format is
- *   " (ra1, dec1), (ra2, dec2), (ra3, dec3), ... "
- *----------------------------------------------------------------------*/
-void
-ParseSkyRegion (LALStatus *stat, SkyPositionVector *skylist, const CHAR *input)
-{
-  const CHAR *pos;
-  UINT4 i;
-
-  INITSTATUS( stat, "ParseSkyRegion", DOPPLERSCANC );
-
-  ASSERT (skylist != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
-  ASSERT (skylist->data == NULL, stat, DOPPLERSCANH_ENONULL,  DOPPLERSCANH_MSGENONULL);
-  ASSERT (input != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
-
-  /* count number of entries (by # of opening parantheses) */
-  pos = input;
-  skylist->length = 0;
-  while ( (pos = strchr (pos, '(')) != NULL )
-    {
-      skylist->length ++;
-      pos ++;
-    }
-  
-  if ( (skylist->data = LALMalloc (skylist->length * sizeof (SkyPosition))) == NULL) {
-    ABORT (stat, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
-  }
-
-  pos = input;
-  for (i = 0; i < skylist->length; i++)
-    {
-      if ( sscanf (pos, "(%" LAL_REAL8_FORMAT ", %" LAL_REAL8_FORMAT ")", 
-		   &(skylist->data[i].longitude), &(skylist->data[i].latitude) ) != 2) {
-	ABORT (stat, DOPPLERSCANH_ESKYREGION, DOPPLERSCANH_MSGESKYREGION);
-      }
-      
-      pos = strchr (pos + 1, '(');
-
-    } /* for skylist-length */
-
-
-  RETURN (stat);
-
-} /* ParseSkyRegion() */
+}  /* gridFlipOrder() */
 
 /*----------------------------------------------------------------------
  * this is a "wrapper" to provide a uniform interface to PtoleMetric() 
@@ -701,9 +619,10 @@ ParseSkyRegion (LALStatus *stat, SkyPositionVector *skylist, const CHAR *input)
  *
  * the parameter structure of PtoleMetric() was used, because it's more compact
  *----------------------------------------------------------------------*/
+/* <lalVerbatim file="DopplerScanCP"> */
 void
 LALMetricWrapper (LALStatus *stat, REAL8Vector *metric, PtoleMetricIn *input, LALMetricType type)
-{
+{ /* </lalVerbatim> */
   static MetricParamStruc params;
   static PulsarTimesParamStruc spinParams;
   static PulsarTimesParamStruc baryParams;
@@ -793,3 +712,181 @@ LALMetricWrapper (LALStatus *stat, REAL8Vector *metric, PtoleMetricIn *input, LA
   RETURN (stat);
 
 } /* LALMetricWrapper() */
+
+
+/*----------------------------------------------------------------------
+ * function for checking if a given point lies inside or outside a given
+ * polygon, which is specified by a list of points in a SkyPositionVector
+ *
+ * NOTE: the list of points must not close on itself, the last point
+ * is automatically assumed to be connected to the first 
+ * 
+ * Alorithm: count the number of intersections of rays emanating to the right
+ * from the point with the lines of the polygon: even=> outside, odd=> indside
+ *
+ * Return : TRUE or FALSE
+ *----------------------------------------------------------------------*/
+BOOLEAN
+pointInPolygon ( SkyPosition *point, SkyRegion *polygon )
+{
+  UINT4 i;
+  UINT4 N;
+  BOOLEAN inside = 0;
+  SkyPosition *vertex;
+  REAL8 xinter;
+
+  if (!point || !polygon || !polygon->vertices || (polygon->numVertices < 3) )
+    return 0;
+
+  vertex = polygon->vertices;
+  N = polygon->numVertices; 	/* num of vertices = num of edges */
+
+  for (i=0; i < N; i++)
+    {
+      /* pre-select candidate edges */
+      if ( (point->latitude >=  MIN(vertex[i].latitude,  vertex[(i+1) % N].latitude) ) &&
+	   (point->latitude < MAX(vertex[i].latitude,  vertex[(i+1) % N].latitude) ) &&
+	   (point->longitude <= MAX(vertex[i].longitude, vertex[(i+1) % N].longitude)) )
+	{
+	  /* now calculate the actual intersection point of the horizontal ray with the edge in question*/
+	  xinter = vertex[i].longitude 
+	    + (point->latitude - vertex[i].latitude)*(vertex[(i+1)%N].longitude-vertex[i].longitude)
+	    / (vertex[(i+1)%N].latitude-vertex[i].latitude);
+
+	  /* intersection lies to the right of point */
+	  if (point->longitude <
+ xinter)	
+	    inside = !inside; /* flip state */
+
+	} /* for candidate edges */
+
+    } /* for sides of polygon */
+
+  return inside;
+  
+} /* pointInPolygon() */
+
+
+/*----------------------------------------------------------------------
+ * parse a string into a SkyRegion structure: the expected string-format is
+ *   " (ra1, dec1), (ra2, dec2), (ra3, dec3), ... "
+ *----------------------------------------------------------------------*/
+/* <lalVerbatim file="DopplerScanCP"> */
+void
+ParseSkyRegion (LALStatus *stat, SkyRegion *region, const CHAR *input)
+{ /* </lalVerbatim> */
+  const CHAR *pos;
+  UINT4 i;
+
+  INITSTATUS( stat, "ParseSkyRegion", DOPPLERSCANC );
+
+  ASSERT (region != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT (region->vertices == NULL, stat, DOPPLERSCANH_ENONULL,  DOPPLERSCANH_MSGENONULL);
+  ASSERT (input != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+
+  region->numVertices = 0;
+  region->lowerLeft.longitude = LAL_TWOPI;
+  region->lowerLeft.latitude = LAL_PI;
+  region->upperRight.longitude = 0;
+  region->upperRight.latitude = 0;
+
+  /* count number of entries (by # of opening parantheses) */
+  pos = input;
+  while ( (pos = strchr (pos, '(')) != NULL )
+    {
+      region->numVertices ++;
+      pos ++;
+    }
+
+  if (region->numVertices == 0) {
+    ABORT (stat, DOPPLERSCANH_ESKYREGION, DOPPLERSCANH_MSGESKYREGION);
+  }
+    
+  
+  /* allocate list of vertices */
+  if ( (region->vertices = LALMalloc (region->numVertices * sizeof (SkyPosition))) == NULL) {
+    ABORT (stat, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+  }
+
+  /* and parse list of vertices from input-string */
+  pos = input;
+  for (i = 0; i < region->numVertices; i++)
+    {
+      if ( sscanf (pos, "(%" LAL_REAL8_FORMAT ", %" LAL_REAL8_FORMAT ")", 
+		   &(region->vertices[i].longitude), &(region->vertices[i].latitude) ) != 2) 
+	{
+	  ABORT (stat, DOPPLERSCANH_ESKYREGION, DOPPLERSCANH_MSGESKYREGION);
+	}
+
+      /* keep track of min's and max's to get the bounding square */
+      region->lowerLeft.longitude = MIN (region->lowerLeft.longitude, region->vertices[i].longitude);
+      region->lowerLeft.latitude  = MIN (region->lowerLeft.latitude, region->vertices[i].latitude);
+
+      region->upperRight.longitude = MAX (region->upperRight.longitude, region->vertices[i].longitude);
+      region->upperRight.latitude  =  MAX (region->upperRight.latitude, region->vertices[i].latitude);
+
+
+      pos = strchr (pos + 1, '(');
+
+    } /* for numVertices */
+
+  RETURN (stat);
+
+} /* ParseSkyRegion() */
+
+/*----------------------------------------------------------------------
+ * Translate a TwoDMesh into a DopplerScanGrid using a SkyRegion for clipping
+ *----------------------------------------------------------------------*/
+void 
+ConvertTwoDMesh2Grid ( LALStatus *stat, DopplerScanGrid **grid, TwoDMeshNode *mesh2d, SkyRegion *region )
+{
+  TwoDMeshNode *node2d;
+  DopplerScanGrid *head, *node, *last;
+  SkyPosition point;
+
+  INITSTATUS( stat, "ConvertTwoDMesh2Grid", DOPPLERSCANC );
+
+  ASSERT ( *grid == NULL, stat, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL );
+  ASSERT (region, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT (mesh2d, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+
+  if ( (head = (DopplerScanGrid*) LALCalloc (1, sizeof(DopplerScanGrid) )) == NULL) {
+    ABORT ( stat, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM );
+  }
+  
+  node = head;
+
+  node2d = mesh2d;
+  
+  while (node2d)
+    {
+      point.longitude = node2d->x;
+      point.latitude = node2d->y;
+      
+      if (pointInPolygon (&point, region) )
+	{
+	  node->alpha = node2d->x;
+	  node->delta = node2d->y;
+
+	  if ( (node->next = (DopplerScanGrid*) LALCalloc (1, sizeof(DopplerScanGrid) )) == NULL) {
+	    ABORT ( stat, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM );
+	  }
+	  last = node;
+	  node = node->next;
+
+	} /* if point in polygon */
+
+      node2d = node2d->next;
+
+    } /* while node2d */
+  
+  /* we allocated one too many */
+  last->next = NULL;
+  LALFree (node);
+
+  
+  *grid = head;		/* return the final grid */
+
+  RETURN (stat);
+
+} /* ConvertTwoDMesh2Grid() */

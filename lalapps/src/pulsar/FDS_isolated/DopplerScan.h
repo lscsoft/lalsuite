@@ -25,13 +25,13 @@ standards for LAL headers.
 
 #include <lal/LALDatatypes.h>
 #include <lal/SkyCoordinates.h>
-#include <lal/TwoDMesh.h>
 #include <lal/PtoleMetric.h>
 #include <lal/StackMetric.h>
 
-#ifdef  __cplusplus   /* C++ protection. */
-extern "C" {
-#endif
+/* C++ protection. */
+/* #ifdef  __cplusplus    */
+/* extern "C" { */
+/* #endif */
 
 NRCSID( DOPPLERSCANH, "$Id$" );
 
@@ -54,7 +54,7 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 #define DOPPLERSCANH_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define DOPPLERSCANH_MSGENOINIT 	"NextDopplerPos() called without prior initialization by InitDopplerScan()"
 #define DOPPLERSCANH_MSGESYS		"System call failed (probably file IO)"
-#define DOPPLERSCANH_MSGE2DSKY		"Cannot deal with 1-D sky-regions"
+#define DOPPLERSCANH_MSGE2DSKY		"Either need one sky-point or a polygon. (2 sky-points where given)"
 #define DOPPLERSCANH_MSGE2DSTEP		"If not using the metric, you need to specify _both_ dDelta and dAlpha"
 #define DOPPLERSCANH_MSGEGRIDCRPT	"Unexpected NULL in grid-list. This points to a bug in the code... "
 #define DOPPLERSCANH_MSGESKYPARAM	"Invalid sky region! We need 0<= alpha < 2Pi and -Pi/2 <= delta <= PI/2"
@@ -67,23 +67,19 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 
 /* this structure is handed over to InitDopplerScan() */  
 typedef struct {
-  REAL8 Alpha;
-  REAL8 dAlpha;
-  REAL8 AlphaBand;
-  REAL8 Delta;
+  REAL8 dAlpha;		/* step-sizes for manual stepping */
   REAL8 dDelta;
-  REAL8 DeltaBand;
   
   INT2 useMetric;   	/* 0 = manual, 1 = PtoleMetric, 2 = CoherentMetric */
   REAL8 metricMismatch;
   LIGOTimeGPS obsBegin; /* start-time of time-series */
-  REAL4 obsDuration;	/* length of time-series in seconds */
-  REAL4 fmax; 		/* max frequency of search */
+  REAL8 obsDuration;	/* length of time-series in seconds */
+  REAL8 fmax; 		/* max frequency of search */
   LALDetector Detector; /* Our detector*/
-  BOOLEAN flipTiling;	/* use non-standard internal grid order? ORDER_DELTA_ALPHA */
 
   CHAR *skyRegion;	/* string containing a list of sky-positions (ra,dec) which describe a sky-region */
 } DopplerScanInit;
+
 
 typedef struct {
   SkyPosition skypos;
@@ -93,56 +89,35 @@ typedef struct {
 
 
 typedef struct {
-  UINT4 length;
-  SkyPosition *data;
-} SkyPositionVector;
+  UINT4 numVertices;
+  SkyPosition *vertices;
+  SkyPosition lowerLeft;
+  SkyPosition upperRight;
+} SkyRegion;
 
+/* general scan-grid */
+typedef struct tagDopplerScanGrid {
+  REAL8 freq;
+  REAL8 alpha;
+  REAL8 delta;
+  REAL8Vector spindowns;
+  struct tagDopplerScanGrid *next;
+} DopplerScanGrid;
 
 /* this structure reflects the internal state of DopplerScan */
 typedef struct {
-  INT2 state;  /* idle, manual, grid, or finished */
+  INT2 state;  			/* idle, ready or finished */
 
-  REAL8 Alpha;
-  REAL8 Delta;
-  REAL8 AlphaBand;
-  REAL8 DeltaBand;
-  REAL8 dAlpha;
+  REAL8 dAlpha;			/* step-sizes for manual stepping */
   REAL8 dDelta;
 
-  /* these are ONLY used for manual sky-stepping: */
-  INT8 AlphaCounter;  /* loop counters for manual stepping */
-  INT8 DeltaCounter;
+  SkyRegion skyRegion; 		/* polygon (and bounding square) defining sky-region  */
 
-  SkyPositionVector skyRegion; 
-
-  /* these are used for the metric sky-grid: */
-  INT2 useMetric;		/* MANUAL, PTOLE_METRIC or COHERENT_METRIC */
-  INT2 internalOrder;		/* coord-order used internally in mesh-function: ORDER_ALPHA_DELTA or ORDER_DELTA_ALPHA */
-
-  /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   * !! NOTE: independently if the mesh+metric internals
-   *  the grid HAS to be in "standard order", which we fix as  
-   *  x = alpha, y = delta
-   *!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
-  TwoDMeshNode	*grid; 		/* head of linked list of nodes */  
-  TwoDMeshNode  *gridNode;	/* pointer to current grid-node in grid */
-
-  PtoleMetricIn ptoleMetricPar;	/* input parameters needed for PtoleMetric() */
-  MetricParamStruc coherentMetricPar; /* input params for CoherentMetric() */
-  PulsarTimesParamStruc baryParams; /* used by CoherentMetric() */
-  REAL8Vector *lambda;		/* doppler params for CoherentMetric() */
-
-  TwoDMeshParamStruc meshpar;	/* input params for the 2D mesh */
-
+  UINT4 numGridPoints;		/* how many grid-points */
+  DopplerScanGrid *grid; 	/* head of linked list of nodes */  
+  DopplerScanGrid *gridNode;	/* pointer to current grid-node in grid */
 } DopplerScanState;
 
-/* the meshing+metric functions might use a different grid-coordinate order
- * than our "standard order", which we fixed as ORDER_ALPHA_DELTA
- */
-enum {
-  ORDER_ALPHA_DELTA,
-  ORDER_DELTA_ALPHA
-};
 
 typedef enum
 {
@@ -163,7 +138,7 @@ void InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit i
 void NextDopplerPos ( LALStatus *stat, DopplerPosition *pos, DopplerScanState *scan);
 void FreeDopplerScan (LALStatus *stat, DopplerScanState *scan);
 
-void ParseSkyRegion (LALStatus *stat, SkyPositionVector *skylist, const CHAR *input);
+void ParseSkyRegion (LALStatus *stat, SkyRegion *region, const CHAR *input);
 
 void LALMetricWrapper (LALStatus *stat, REAL8Vector *metric, PtoleMetricIn *input, LALMetricType type);
 
@@ -171,7 +146,9 @@ void LALMetricWrapper (LALStatus *stat, REAL8Vector *metric, PtoleMetricIn *inpu
 \newpage\input{LALSampleTestC}
 ******************************************************* </lalLaTeX> */
 
-#ifdef  __cplusplus
-}
-#endif  /* C++ protection. */
+/* #ifdef  __cplusplus */
+/* } */
+/* #endif   */  
+/* C++ protection. */
+
 #endif  /* Double-include protection. */
