@@ -160,12 +160,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* data structures for segments */
   INT4 segmentLength;
   INT4 segmentShift;
-  REAL4TimeSeries segmentOneA;
-  REAL4TimeSeries segmentOneB;
-  REAL4TimeSeries segmentOneC;
-  REAL4TimeSeries segmentTwoA;
-  REAL4TimeSeries segmentTwoB;
-  REAL4TimeSeries segmentTwoC;
+  REAL4TimeSeries *segmentOneA;
+  REAL4TimeSeries *segmentOneB;
+  REAL4TimeSeries *segmentOneC;
+  REAL4TimeSeries *segmentTwoA;
+  REAL4TimeSeries *segmentTwoB;
+  REAL4TimeSeries *segmentTwoC;
 
   /* data structures for PSDs */
   PSDEstimatorInput psdInputOne;
@@ -348,50 +348,29 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* set length for data segments */
   segmentLength = segmentDuration * resampleRate;
 
-  /* set metadata fields for data segments */
-  strncpy(segmentOneA.name, "segmentOneA", LALNameLength);
-  strncpy(segmentOneB.name, "segmentOneB", LALNameLength);
-  strncpy(segmentOneC.name, "segmentOneC", LALNameLength);
-  strncpy(segmentTwoA.name, "segmentTwoA", LALNameLength);
-  strncpy(segmentTwoB.name, "segmentTwoB", LALNameLength);
-  strncpy(segmentTwoC.name, "segmentTwoC", LALNameLength);
-  segmentOneA.sampleUnits = streamOne->sampleUnits;
-  segmentOneB.sampleUnits = streamOne->sampleUnits;
-  segmentOneC.sampleUnits = streamOne->sampleUnits;
-  segmentTwoA.sampleUnits = streamTwo->sampleUnits;
-  segmentTwoB.sampleUnits = streamTwo->sampleUnits;
-  segmentTwoC.sampleUnits = streamTwo->sampleUnits;
-  segmentOneA.deltaT = 1./(REAL8)resampleRate;
-  segmentOneB.deltaT = 1./(REAL8)resampleRate;
-  segmentOneC.deltaT = 1./(REAL8)resampleRate;
-  segmentTwoA.deltaT = 1./(REAL8)resampleRate;
-  segmentTwoB.deltaT = 1./(REAL8)resampleRate;
-  segmentTwoC.deltaT = 1./(REAL8)resampleRate;
-  segmentOneA.f0 = 0;
-  segmentOneB.f0 = 0;
-  segmentOneC.f0 = 0;
-  segmentTwoA.f0 = 0;
-  segmentTwoB.f0 = 0;
-  segmentTwoC.f0 = 0;
-
   if (vrbflg)
   {
     fprintf(stdout, "Allocating memory for data segments...\n");
   }
 
-  /* allocate memory for data segments */
-  segmentOneA.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-  segmentOneB.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-  segmentOneC.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-  segmentTwoA.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-  segmentTwoB.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-  segmentTwoC.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-  segmentOneA.data->length = segmentLength;
-  segmentOneB.data->length = segmentLength;
-  segmentOneC.data->length = segmentLength;
-  segmentTwoA.data->length = segmentLength;
-  segmentTwoB.data->length = segmentLength;
-  segmentTwoC.data->length = segmentLength;
+  LAL_CALL(LALCreateREAL4TimeSeries(&status, &segmentOneA, "segmentOneA", \
+        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
+        segmentLength), &status);
+  LAL_CALL(LALCreateREAL4TimeSeries(&status, &segmentOneB, "segmentOneB", \
+        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
+        segmentLength), &status);
+  LAL_CALL(LALCreateREAL4TimeSeries(&status, &segmentOneC, "segmentOneC", \
+        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
+        segmentLength), &status);
+  LAL_CALL(LALCreateREAL4TimeSeries(&status, &segmentTwoA, "segmentTwoA", \
+        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
+        segmentLength), &status);
+  LAL_CALL(LALCreateREAL4TimeSeries(&status, &segmentTwoB, "segmentTwoB", \
+        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
+        segmentLength), &status);
+  LAL_CALL(LALCreateREAL4TimeSeries(&status, &segmentTwoC, "segmentTwoC", \
+        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
+        segmentLength), &status);
 
   /* set PSD window length */
   windowPSDLength = (UINT4)(resampleRate / deltaF);
@@ -442,12 +421,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   psdParams.window = NULL;
 
   /* set psd inputs */
-  psdInputOne.segmentA = &segmentOneA;
-  psdInputOne.segmentC = &segmentOneC;
+  psdInputOne.segmentA = segmentOneA;
+  psdInputOne.segmentC = segmentOneC;
   psdInputOne.responseA = &responseOneA;
   psdInputOne.responseC = &responseOneC;
-  psdInputTwo.segmentA = &segmentTwoA;
-  psdInputTwo.segmentC = &segmentTwoC;
+  psdInputTwo.segmentA = segmentTwoA;
+  psdInputTwo.segmentC = segmentTwoC;
   psdInputTwo.responseA = &responseTwoA;
   psdInputTwo.responseC = &responseTwoC;
   psdEstParams.psdTempLength = psdTempLength;
@@ -977,12 +956,12 @@ INT4 main(INT4 argc, CHAR *argv[])
     gpsSegmentCStart.gpsSeconds = startTime + (j * segmentShift) + \
       (2 * segmentDuration);
     gpsSegmentCStart.gpsNanoSeconds = 0;
-    segmentOneA.epoch = gpsSegmentAStart;
-    segmentOneB.epoch = gpsSegmentBStart;
-    segmentOneC.epoch = gpsSegmentCStart;
-    segmentTwoA.epoch = gpsSegmentAStart;
-    segmentTwoB.epoch = gpsSegmentBStart;
-    segmentTwoC.epoch = gpsSegmentCStart;
+    segmentOneA->epoch = gpsSegmentAStart;
+    segmentOneB->epoch = gpsSegmentBStart;
+    segmentOneC->epoch = gpsSegmentCStart;
+    segmentTwoA->epoch = gpsSegmentAStart;
+    segmentTwoB->epoch = gpsSegmentBStart;
+    segmentTwoC->epoch = gpsSegmentCStart;
 
     if (vrbflg)
     {
@@ -992,23 +971,27 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     /* build interval */
     LAL_CALL(LALCutREAL4TimeSeries(&status, &intervalOne, streamOne, \
-        (j * segmentShift * resampleRate), intervalLength), &status);
+          (j * segmentShift * resampleRate), intervalLength), &status);
     LAL_CALL(LALCutREAL4TimeSeries(&status, &intervalTwo, streamTwo, \
-        (j * segmentShift * resampleRate), intervalLength), &status);
+          (j * segmentShift * resampleRate), intervalLength), &status);
 
     /* build segments */
-    segmentOneA.data->data = streamOne->data->data + \
-      (resampleRate * j * segmentShift);
-    segmentOneB.data->data = streamOne->data->data + \
-      (resampleRate * ((j * segmentShift) + segmentDuration));
-    segmentOneC.data->data = streamOne->data->data + \
-      (resampleRate * ((j * segmentShift) + (2 * segmentDuration)));
-    segmentTwoA.data->data = streamTwo->data->data + \
-      (resampleRate * j * segmentShift);
-    segmentTwoB.data->data = streamTwo->data->data + \
-      (resampleRate * ((j * segmentShift) + segmentDuration));
-    segmentTwoC.data->data = streamTwo->data->data + \
-      (resampleRate * ((j * segmentShift) + (2 * segmentDuration)));
+    LAL_CALL(LALCutREAL4TimeSeries(&status, &segmentOneA, streamOne, \
+          (resampleRate * j * segmentShift), segmentLength), &status);
+    LAL_CALL(LALCutREAL4TimeSeries(&status, &segmentOneB, streamOne, \
+          (resampleRate * ((j * segmentShift) + segmentDuration)), \
+          segmentLength), &status);
+    LAL_CALL(LALCutREAL4TimeSeries(&status, &segmentOneC, streamOne, \
+          (resampleRate * ((j * segmentShift) + (2 * segmentDuration))), \
+          segmentLength), &status);
+    LAL_CALL(LALCutREAL4TimeSeries(&status, &segmentTwoA, streamTwo, \
+          (resampleRate * j * segmentShift), segmentLength), &status);
+    LAL_CALL(LALCutREAL4TimeSeries(&status, &segmentTwoB, streamTwo, \
+          (resampleRate * ((j * segmentShift) + segmentDuration)), \
+          segmentLength), &status);
+    LAL_CALL(LALCutREAL4TimeSeries(&status, &segmentTwoC, streamTwo, \
+          (resampleRate * ((j * segmentShift) + (2 * segmentDuration))), \
+          segmentLength), &status);
 
     /* output the results */
     if (debug_flag)
@@ -1021,22 +1004,22 @@ INT4 main(INT4 argc, CHAR *argv[])
       LALSPrintTimeSeries(intervalTwo, debugFilename);
       LALSnprintf(debugFilename, LALNameLength, "%d-segment1a.dat", \
           gpsSegmentAStart.gpsSeconds);
-      LALSPrintTimeSeries(&segmentOneA, debugFilename);
+      LALSPrintTimeSeries(segmentOneA, debugFilename);
       LALSnprintf(debugFilename, LALNameLength, "%d-segment1b.dat", \
           gpsSegmentBStart.gpsSeconds);
-      LALSPrintTimeSeries(&segmentOneB, debugFilename);
+      LALSPrintTimeSeries(segmentOneB, debugFilename);
       LALSnprintf(debugFilename, LALNameLength, "%d-segment1c.dat", \
           gpsSegmentCStart.gpsSeconds);
-      LALSPrintTimeSeries(&segmentOneC, debugFilename);
+      LALSPrintTimeSeries(segmentOneC, debugFilename);
       LALSnprintf(debugFilename, LALNameLength, "%d-segment2a.dat", \
           gpsSegmentAStart.gpsSeconds);
-      LALSPrintTimeSeries(&segmentTwoA, debugFilename);
+      LALSPrintTimeSeries(segmentTwoA, debugFilename);
       LALSnprintf(debugFilename, LALNameLength, "%d-segment2b.dat", \
           gpsSegmentBStart.gpsSeconds);
-      LALSPrintTimeSeries(&segmentTwoB, debugFilename);
+      LALSPrintTimeSeries(segmentTwoB, debugFilename);
       LALSnprintf(debugFilename, LALNameLength, "%d-segment2c.dat", \
           gpsSegmentCStart.gpsSeconds);
-      LALSPrintTimeSeries(&segmentTwoC, debugFilename);
+      LALSPrintTimeSeries(segmentTwoC, debugFilename);
     }
 
     if (vrbflg)
@@ -1045,9 +1028,9 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* zero pad and fft */
-    LAL_CALL(LALSZeroPadAndFFT(&status, &hBarTildeOne, &segmentOneB, \
+    LAL_CALL(LALSZeroPadAndFFT(&status, &hBarTildeOne, segmentOneB, \
           &zeroPadParams), &status);
-    LAL_CALL(LALSZeroPadAndFFT(&status, &hBarTildeTwo, &segmentTwoB, \
+    LAL_CALL(LALSZeroPadAndFFT(&status, &hBarTildeTwo, segmentTwoB, \
           &zeroPadParams), &status);
 
     /* save */
@@ -1141,8 +1124,8 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* set epoch */
-    calInvPSDOne->epoch = segmentOneB.epoch;
-    calInvPSDTwo->epoch = segmentOneB.epoch;
+    calInvPSDOne->epoch = segmentOneB->epoch;
+    calInvPSDTwo->epoch = segmentOneB->epoch;
 
     /* estimate psds */
     LAL_CALL(psdEstimator(&status, calInvPSDOne, psdInputOne, \
@@ -1240,16 +1223,16 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* cleanup */
   LAL_CALL(LALDestroyRealFFTPlan(&status, &(psdParams.plan)), &status);
   LAL_CALL(LALDestroyRealFFTPlan(&status, &fftDataPlan), &status);
-  LALFree(segmentOneA.data);
-  LALFree(segmentOneB.data);
-  LALFree(segmentOneC.data);
-  LALFree(segmentTwoA.data);
-  LALFree(segmentTwoB.data);
-  LALFree(segmentTwoC.data);
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, streamOne), &status);
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, streamTwo), &status);
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, intervalOne), &status);
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, intervalTwo), &status);
+  LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentOneA), &status);
+  LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentOneB), &status);
+  LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentOneC), &status);
+  LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentTwoA), &status);
+  LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentTwoB), &status);
+  LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentTwoC), &status);
   LALFree(psdOne.data);
   LALFree(psdTwo.data);
   LAL_CALL(LALDestroyVector(&status, &(psdTempOne.data)), &status);
