@@ -103,7 +103,7 @@ INT4 fMax = -1;
 /* omegaGW parameters */
 REAL4 alpha = 0;
 REAL4 fRef = 100;
-REAL4 omegaRef = 1;
+REAL4 omega0 = 1;
 
 /* monte carlo parameters */
 REAL4 scaleFactor = -1;
@@ -484,7 +484,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     parametersOmega.deltaF = MCdeltaF;
     parametersOmega.alpha = alpha;
     parametersOmega.fRef = fRef;
-    parametersOmega.omegaRef = omegaRef;
+    parametersOmega.omegaRef = omega0;
 
     /* allocate memory */
     MComegaGW.data = NULL;
@@ -882,7 +882,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* set omegaGW parameters */
   omegaGWParams.alpha = alpha;
   omegaGWParams.fRef = fRef;
-  omegaGWParams.omegaRef = omegaRef;
+  omegaGWParams.omegaRef = omega0;
   omegaGWParams.length = filterLength;
   omegaGWParams.f0 = fMin;
   omegaGWParams.deltaF = deltaF;
@@ -2088,14 +2088,14 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
       case 'O':
         /* omega 0 */
-        omegaRef = atof(optarg);
+        omega0 = atof(optarg);
 
         /* check */
-        if (omegaRef <= 0)
+        if (omega0 <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "Omega_0 is less than or equal to 0: (%f specified)\n", \
-              long_options[option_index].name, omegaRef);
+              long_options[option_index].name, omega0);
         }
 
         break;
