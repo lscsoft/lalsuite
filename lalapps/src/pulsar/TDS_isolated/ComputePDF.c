@@ -5,7 +5,7 @@
 /*                                                                               */
 /*                       University of Glasgow - last modified 26/03/2004        */
 /*********************************************************************************/
-
+$Id$
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
