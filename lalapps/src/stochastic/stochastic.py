@@ -151,8 +151,8 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     if not self.get_start() or not self.get_end() or not self.get_ifo_one() or not self.get_ifo_two():
       raise StochasticError, "Start time, end time, ifo one or ifo two has not been set"
-    out = 'stoch-' + self.get_ifo_one() + self.get_ifo_two() + '-'
-    out = out + str(self.get_start()) + '-' + str(self.get_stop())
-    return out + '.dat'
+    out = self.get_ifo_one() + self.get_ifo_two() + '-'
+    out = out + "stochastic" + '-' + str(self.get_start()) + '-' + str(self.get_stop())
+    return out + '.xml'
 
 # vim: et
