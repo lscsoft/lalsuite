@@ -105,14 +105,20 @@ NRCSID (DATEH, "$Id$");
 #define GPSTOLMST1_ENULLINPUT 1
 #define GPSTOLMST1_ENULLOUTPUT 2
 
-#define GPSTOLMST1_MSGENULLINPUT "Input is NULL"
-#define GPSTOLMST1_MSGENULLOUTPUT "Output is NULL"
-    
+#define GPSTOGMST1_ENULLINPUT 1
+#define GPSTOGMST1_ENULLOUTPUT 2    
+
 #define LMST1_MSGENULLINPUT "Input is NULL"
 #define LMST1_MSGENULLOUTPUT "Output is NULL"
     
 #define GMST1_MSGENULLINPUT "Input is NULL"
 #define GMST1_MSGENULLOUTPUT "Output is NULL"
+
+#define GPSTOLMST1_MSGENULLINPUT "Input is NULL"
+#define GPSTOLMST1_MSGENULLOUTPUT "Output is NULL"
+    
+#define GPSTOGMST1_MSGENULLINPUT "Input is NULL"
+#define GPSTOGMST1_MSGENULLOUTPUT "Output is NULL"    
 
 /*
  * Enumerated type to specify units for the return value

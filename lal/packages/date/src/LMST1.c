@@ -163,20 +163,20 @@ void LALGPStoGMST1( LALStatus         *status,
     LIGOTimeUnix    unixTime;
     LALDate         date;
     
-    INITSTATUS (status, "LALGPStoLMST1", LMST1C);
+    INITSTATUS (status, "LALGPStoGMST1", LMST1C);
 
     
     /*
      * Check pointer to input variables
      */
     ASSERT (p_gps != (LIGOTimeGPS *)NULL, status,
-            GPSTOLMST1_ENULLINPUT, GPSTOLMST1_MSGENULLINPUT);
+            GPSTOGMST1_ENULLINPUT, GPSTOGMST1_MSGENULLINPUT);
 
     /*
      * Check pointer to output variable
      */
     ASSERT (p_gmst != (REAL8 *)NULL, status,
-            GPSTOLMST1_ENULLOUTPUT, GPSTOLMST1_MSGENULLOUTPUT);
+            GPSTOGMST1_ENULLOUTPUT, GPSTOGMST1_MSGENULLOUTPUT);
 
     /*
      * Convert GPS to date-time structure
@@ -210,6 +210,7 @@ LALLMST1 (LALStatus             *status,
 	REAL8 day = 0;
     REAL8 longitude =
         place_and_date->detector->frDetector.vertexLongitudeDegrees;
+
 
     INITSTATUS (status, "LALLMST1", LMST1C);
 
