@@ -255,6 +255,7 @@ for (i = 0; i < dataSegVec->length; ++i)
 {
 fcSeg = & (fcSegVec->data[i]);
 }
+
 /*
    *
    * point local pointers to input and output pointers
@@ -277,8 +278,8 @@ fcSeg = & (fcSegVec->data[i]);
   /* template and data */
   inputData     = input->segment->data->data->data;
  /* inputDataBCV  = input->segment->dataBCV->data->data;*/
-  tmpltSignal   = input->fcTmplt->data->data;
-  templateNorm  = input->fcTmplt->tmpltNorm;   /* this is expPsi */
+  tmpltSignal   = input->fcTmplt->data->data;  /* this is expPsi */
+  templateNorm  = input->fcTmplt->tmpltNorm;   
   deltaT        = params->deltaT;
 
 
@@ -305,7 +306,7 @@ fcSeg = & (fcSegVec->data[i]);
 
 fprintf (stdout, "fcSeg->data->data->length: %d \n", fcSeg->data->data->length);
 
-Beta = 0.1;
+Beta = 1.0;
 
 fprintf (stdout, "Beta: %e \n", Beta);
 
@@ -512,9 +513,13 @@ fprintf (stdout, "qtildeBCVSpin2[k].im = %e \n", qtildeBCVSpin2[k].im);*/
     }
    }
  
+
+
 /*fprintf (stdout, "after qtilde calc. in FindChirpBCVSpinFilter \n");*/
-
-
+ for ( k = 0; k < numPoints; ++k )
+{
+fprintf (fpWvtIm, "%d\t%e\n", k, qtilde[k].re);
+}
    /* 
     *
     * inverse fft to get q, qBCVSpin1 and qBCVSpin2
