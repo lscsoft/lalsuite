@@ -9,7 +9,7 @@ clusterTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 #TESTS =  setMaskTest clusterTest LALGetLayerWaveletTest
 TESTS =  clusterTest LALGetLayerWaveletTest
-TESTS_ENVIRONMENT = LAL_DATA_PATH=$(srcdir)
+TESTS_ENVIRONMENT = 1>/dev/null LAL_DATA_PATH=$(srcdir)
 EXTRA_DIST = test_getLayer.dat wavelet1.dat params_getLayer0.dat layer0.dat  \
         test_setMask.dat setMask_1_0_2.in params_1_0_2.dat setMask_1_0_2.out \
         test_cluster.dat params cluster_1_0_2.in cluster_1_0_2.out

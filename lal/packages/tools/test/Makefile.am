@@ -35,6 +35,7 @@ TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResp
 else
 TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse LALIndTestDetRes.sh ComputeTransferTest
 endif
+TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null
 MOSTLYCLEANFILES = .dvi-dep PrintVector.* transfer.out \
 	ff_diff_plus.txt ff_rms_diff_plus_vs_fudge.txt \
 	ff_rms_diff_cros_vs_fudge.txt ff_local_cros.txt ff_lal_cros.txt \

@@ -12,6 +12,7 @@ AvgSpecTest_SOURCES = AvgSpecTest.c
 AvgSpecTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = RingTest RingSearchTest LALRingDownTest LALWienerTest AvgSpecTest
+TESTS_ENVIRONMENT = 1>/dev/null
 MOSTLYCLEANFILES = .dvi-dep *.out *.dat snr-*
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep

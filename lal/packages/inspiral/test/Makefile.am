@@ -14,6 +14,7 @@ LALInspiralSpinningBHBinariesTest_LDADD = $(top_builddir)/packages/support/src/l
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 #TESTS = LALInspiralTest ChirpSpace LALInspiralTestOne LALInspiralSpinningBHBinariesTest LALSTPNWaveformTest 
 TESTS = GenerateInspiralWaveform ChirpSpace LALInspiralTest LALInspiralSpinningBHBinariesTest
+TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null
 MOSTLYCLEANFILES = .dvi-dep
 CLEANFILES = *.dat
 DISTCLEANFILES = *.tex

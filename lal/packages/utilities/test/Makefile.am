@@ -43,6 +43,7 @@ TESTS = RandomTest MersenneRandomTest FindRootTest IntegrateTest \
   DetInverseTest LALRunningMedianTest RngMedBiasTest \
   SCoarseGrainFrequencySeriesTest  DCoarseGrainFrequencySeriesTest \
   CCoarseGrainFrequencySeriesTest  ZCoarseGrainFrequencySeriesTest
+TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null
 MOSTLYCLEANFILES = .dvi-dep PrintVector.* *.out
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep

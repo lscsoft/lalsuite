@@ -22,6 +22,7 @@ TFTransformTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = SlopeETGTest StdBurstOutput TFClustersETGTest ThresholdsTest TFTransformTest
+TESTS_ENVIRONMENT = 1>/dev/null
 MOSTLYCLEANFILES = .dvi-dep PrintVector.*
 DISTCLEANFILES = *.tex
 EXTRA_DIST = ExcessPowerTest.c

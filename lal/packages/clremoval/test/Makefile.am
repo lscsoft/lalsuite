@@ -4,7 +4,7 @@ CLRTest_SOURCES = CLRTest.c
 CLRTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = CLRTest
-TESTS_ENVIRONMENT = LAL_DATA_PATH=$(srcdir)
+TESTS_ENVIRONMENT = 1>/dev/null LAL_DATA_PATH=$(srcdir)
 noinst_DATA = CLRindata.asc
 EXTRA_DIST = $(DATA)
 MOSTLYCLEANFILES = .dvi-dep CLRoutdata.asc
