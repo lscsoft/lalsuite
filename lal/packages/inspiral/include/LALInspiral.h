@@ -853,7 +853,7 @@ void LALInspiralPhasing3_7PN (
    REAL8 *phase,
    REAL8 td,
    expnCoeffs *ak);
-=======
+
 void LALRungeKutta4(
   LALStatus *,
   REAL8Vector *,
