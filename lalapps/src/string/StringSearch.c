@@ -151,6 +151,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 /* Reads raw data */
 int ReadData(struct CommandLineArgsTag CLA);
 
+/* Adds injections if an xml injection file is given */
+int AddInjections(struct CommandLineArgsTag CLA);
+
 /* High pass filters and casts data to REAL4 */
 int ProcessData(struct CommandLineArgsTag CLA);
 
@@ -170,7 +173,8 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA);
 int FindStringBurst(struct CommandLineArgsTag CLA);
 
 /* Computes the average spectrum  */
-int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 m, SnglBurstTable **thisEvent);
+int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, 
+	       INT4 i, INT4 m, SnglBurstTable **thisEvent);
 
 /* Computes the average spectrum  */
 int OutputEvents();
@@ -204,27 +208,39 @@ int main(int argc,char *argv[])
  
  if (ReadData(CommandLineArgs)) return 2;
 
- if (ProcessData(CommandLineArgs)) return 3;
+ if(CommandLineArgs.InjectionFile != NULL) 
+   {
+     if (AddInjections(CommandLineArgs)) return 3;
+   }
+
+ if (ProcessData(CommandLineArgs)) return 4;
  
- if (DownSample()) return 4;
+ if (DownSample()) return 5;
 
- if (AvgSpectrum(CommandLineArgs)) return 5;
+ if (AvgSpectrum(CommandLineArgs)) return 6;
  
- if (CreateStringFilter(CommandLineArgs)) return 6;
+ if (CreateStringFilter(CommandLineArgs)) return 7;
  
- if (CreateTemplateBank(CommandLineArgs)) return 7;
+ if (CreateTemplateBank(CommandLineArgs)) return 8;
 
- if (FindStringBurst(CommandLineArgs)) return 8;
+ if (FindStringBurst(CommandLineArgs)) return 9;
 
- if (OutputEvents()) return 9;
+ if (OutputEvents()) return 10;
 
- if (FreeMem()) return 10;
+ if (FreeMem()) return 12;
 
  return 0;
 }
 
 /************************************* MAIN PROGRAM ENDS *************************************/
 
+/*******************************************************************************/
+
+int AddInjections(struct CommandLineArgsTag CLA)
+{
+
+  return 0;
+}
 
 /*******************************************************************************/
 
@@ -244,7 +260,6 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param,
 
 /*******************************************************************************/
 
-
 int OutputEvents()
 {
     
@@ -254,8 +269,8 @@ int OutputEvents()
 
   snprintf(outfilename, sizeof(outfilename)-1, "%s-STRINGSEARCH-%d-%d.xml", ifo,
 	   searchsumm.searchSummaryTable->in_start_time.gpsSeconds,
-	   searchsumm.searchSummaryTable->in_end_time.gpsSeconds - searchsumm.searchSummaryTable->in_start_time.gpsSeconds);
-
+	   searchsumm.searchSummaryTable->in_end_time.gpsSeconds - 
+	   searchsumm.searchSummaryTable->in_start_time.gpsSeconds);
   outfilename[sizeof(outfilename)-1] = '\0';
 
 
@@ -286,7 +301,6 @@ int OutputEvents()
   LALEndLIGOLwXMLTable(&status, &xml);
 
   LALCloseLIGOLwXMLFile(&status, &xml);
-
   
   /* free event list, process table, search summary and process params */
   while ( events )
@@ -362,7 +376,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 
 	  /* Now copy stuff into event */
 	  strncpy( (*thisEvent)->ifo, CLA.ChannelName, sizeof(ifo)-1 );
-	  strncpy( (*thisEvent)->search, "STRINGSEARCH", sizeof( (*thisEvent)->search ) );
+	  strncpy( (*thisEvent)->search, "StringCusp", sizeof( (*thisEvent)->search ) );
 	  strncpy( (*thisEvent)->channel, CLA.ChannelName, sizeof( (*thisEvent)->channel ) );
 
 	  (*thisEvent)->start_time.gpsSeconds     = timeNS / 1000000000;
