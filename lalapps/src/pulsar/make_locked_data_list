@@ -1,13 +1,16 @@
 #!/bin/bash
 
 # This script makes lists of desired locked segments
-
+export total=0
 
 make_segment_list(){
     fname=$1-$2segments.txt
     tbase=$3
     ofile=$1-$2.$tbase
     tail -n +3 $fname | awk '{x=int($3/'$tbase'); if ( x > 0 ) print x , $1+int(($2-$1-'$tbase'*x)/2),'$tbase'  }' >  $ofile
+
+    lines=`cat $ofile | awk '{print $1+last; last+=$1}' | tail -1`
+    echo $lines "segments for $2"
 }
 
 
