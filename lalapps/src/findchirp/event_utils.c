@@ -1284,11 +1284,15 @@ LALClusterSnglInspiralTable (
 
   /**************************************************************************
    *   The present clustering choices are
-   *  clusterchoice = 0     replace previous event if current event has 
-   *			    higher SNR AND lower chi squared.		
+   *  clusterchoice = snr_and_chisq     replace previous event if current 
+   *  					event has higher SNR AND lower chisq.	
    *  
-   *  clusterchoice = 1	    replace previous event if current event has 
-   *			    higher (SNR)^2 / (chi squared).
+   *  clusterchoice = snrsq_over_chisq	replace previous event if current 
+   *  					event has higher 
+   *  					(SNR)^2 / (chi squared).
+   *
+   *  clusterchoice = snr		replace previous event if current
+   *  					event has higher SNR.
    **************************************************************************/
   
   INITSTATUS (status, "LALClusterSnglInspiralTable", EVENT_UTILSC);
@@ -1314,7 +1318,8 @@ LALClusterSnglInspiralTable (
 		    (thisEvent->chisq < prevEvent->chisq)) ||
 		((clusterchoice == snrsq_over_chisq) &&
 		    (thisEvent->snr)*(thisEvent->snr)/(thisEvent->chisq) > 
-		    (prevEvent->snr)*(prevEvent->snr)/(prevEvent->chisq)) )
+		    (prevEvent->snr)*(prevEvent->snr)/(prevEvent->chisq)) ||
+		((clusterchoice == snr) && (thisEvent->snr > prevEvent->snr)))
 	  {
               memcpy( prevEvent, thisEvent, sizeof(SnglInspiralTable));
           }

@@ -128,7 +128,7 @@ int main(int argc, char **argv)
   INT4                  fileCounter=0;
   BOOLEAN               playground=TRUE;
   INT4                  cluster=FALSE;
-  Clusterchoice	        clusterchoice;
+  Clusterchoice	        clusterchoice=snr;
   INT4		        saveMissedInjections=FALSE;
   INT4		        coincidence = FALSE;
   INT4		        hardware = FALSE;
@@ -330,13 +330,17 @@ int main(int argc, char **argv)
           else if ( ! strcmp( "snrsq_over_chisq", optarg) )
           {
             clusterchoice = snrsq_over_chisq;
-          }	    
+          }
+	  else if ( ! strcmp( "snr", optarg) )
+          {
+            clusterchoice = snr;
+          }	
           else
           {
             fprintf( stderr, "invalid argument to  --%s:\n"
                 "unknown clustering specified:\n "
                 "%s (must be one of: snr_and_chisq, \n"
-                "   snrsq_over_chisq)\n",
+                "   snrsq_over_chisq or snr)\n",
                 long_options[option_index].name, optarg);
             exit( 1 );
           }
