@@ -154,8 +154,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* data structures for intevals */
   INT4 numIntervals;
   INT4 intervalLength;
-  REAL4TimeSeries intervalOne;
-  REAL4TimeSeries intervalTwo;
+  REAL4TimeSeries *intervalOne;
+  REAL4TimeSeries *intervalTwo;
 
   /* data structures for segments */
   INT4 segmentLength;
@@ -338,22 +338,12 @@ INT4 main(INT4 argc, CHAR *argv[])
     fprintf(stdout, "Allocating memory for data intervals...\n");
   }
 
-  /* set metadata fields for data intervals */
-  strncpy(intervalOne.name, "intervalOne", LALNameLength);
-  strncpy(intervalTwo.name, "intervalTwo", LALNameLength);
-  intervalOne.sampleUnits = streamOne->sampleUnits;
-  intervalTwo.sampleUnits = streamOne->sampleUnits;
-  intervalOne.deltaT = 1./(REAL8)resampleRate;
-  intervalTwo.deltaT = 1./(REAL8)resampleRate;
-  intervalOne.f0 = 0;
-  intervalTwo.f0 = 0;
-
-
-  /* allocate memory for data intervals */
-  intervalOne.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-  intervalTwo.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-  intervalOne.data->length = intervalLength;
-  intervalTwo.data->length = intervalLength;
+  LAL_CALL(LALCreateREAL4TimeSeries(&status, &intervalOne, "intervalOne", \
+        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
+        intervalLength), &status);
+  LAL_CALL(LALCreateREAL4TimeSeries(&status, &intervalTwo, "intervalTwo", \
+        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
+        intervalLength), &status);
 
   /* set length for data segments */
   segmentLength = segmentDuration * resampleRate;
@@ -975,8 +965,8 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* define interval epoch */
     gpsIntervalStart.gpsSeconds = startTime + (j * segmentShift);
     gpsIntervalStart.gpsNanoSeconds = 0;
-    intervalOne.epoch = gpsIntervalStart;
-    intervalTwo.epoch = gpsIntervalStart;
+    intervalOne->epoch = gpsIntervalStart;
+    intervalTwo->epoch = gpsIntervalStart;
 
     /* define segment epoch */
     gpsSegmentAStart.gpsSeconds = startTime + (j * segmentShift);
@@ -1001,10 +991,10 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* build interval */
-    intervalOne.data->data = streamOne->data->data + (j * \
-        segmentShift * resampleRate);
-    intervalTwo.data->data = streamTwo->data->data + (j * \
-        segmentShift * resampleRate);
+    LAL_CALL(LALCutREAL4TimeSeries(&status, &intervalOne, streamOne, \
+        (j * segmentShift * resampleRate), intervalLength), &status);
+    LAL_CALL(LALCutREAL4TimeSeries(&status, &intervalTwo, streamTwo, \
+        (j * segmentShift * resampleRate), intervalLength), &status);
 
     /* build segments */
     segmentOneA.data->data = streamOne->data->data + \
@@ -1025,10 +1015,10 @@ INT4 main(INT4 argc, CHAR *argv[])
     {
       LALSnprintf(debugFilename, LALNameLength, "%d-interval1.dat", \
           gpsIntervalStart.gpsSeconds);
-      LALSPrintTimeSeries(&intervalOne, debugFilename);
+      LALSPrintTimeSeries(intervalOne, debugFilename);
       LALSnprintf(debugFilename, LALNameLength, "%d-interval2.dat", \
           gpsIntervalStart.gpsSeconds);
-      LALSPrintTimeSeries(&intervalTwo, debugFilename);
+      LALSPrintTimeSeries(intervalTwo, debugFilename);
       LALSnprintf(debugFilename, LALNameLength, "%d-segment1a.dat", \
           gpsSegmentAStart.gpsSeconds);
       LALSPrintTimeSeries(&segmentOneA, debugFilename);
@@ -1250,8 +1240,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* cleanup */
   LAL_CALL(LALDestroyRealFFTPlan(&status, &(psdParams.plan)), &status);
   LAL_CALL(LALDestroyRealFFTPlan(&status, &fftDataPlan), &status);
-  LALFree(intervalOne.data);
-  LALFree(intervalTwo.data);
   LALFree(segmentOneA.data);
   LALFree(segmentOneB.data);
   LALFree(segmentOneC.data);
@@ -1260,6 +1248,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALFree(segmentTwoC.data);
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, streamOne), &status);
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, streamTwo), &status);
+  LAL_CALL(LALDestroyREAL4TimeSeries(&status, intervalOne), &status);
+  LAL_CALL(LALDestroyREAL4TimeSeries(&status, intervalTwo), &status);
   LALFree(psdOne.data);
   LALFree(psdTwo.data);
   LAL_CALL(LALDestroyVector(&status, &(psdTempOne.data)), &status);
