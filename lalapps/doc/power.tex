@@ -705,4 +705,105 @@ job to be \textsc{string}. May also be specified on the command line as
 \item[Author] 
 Jolien Creighton, Patrick Brady, Duncan Brown
 \end{entry}
+\clearpage
 
+\subsection{Program \texttt{lalapps\_bread}}
+\label{program:lalapps-bread}
+\idx[Program]{lalapps\_bread}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_bread$ -- reads in triggers from multiple xml files into one single xml file 
+
+\item[Synopsis]
+\verb$lalapps_bread$ 
+[\verb$--help$]
+\verb$--input$ \textsc{infile} 
+\verb$--outfile$ \textsc{filename} 
+[\verb$--max-confidence$ \textsc{maximum conf}]
+[\verb$--noplayground$]
+[\verb$--sort$]
+[\verb$--min-duration$ \textsc{min dur}]
+[\verb$--max-duration$ \textsc{max dur}]
+[\verb$--min-centralfreq$ \textsc{min centralfreq}]
+[\verb$--max-centralfreq$ \textsc{max centralfreq}]
+[\verb$--max-bandwidth$ \textsc{max bw}]
+[\verb$--min-bandwidth$ \textsc{min bw}]
+[\verb$--min-amplitude$ \textsc{min amp}]
+[\verb$--max-amplitude$ \textsc{max amp}]
+[\verb$--min-snr$ \textsc{min snr}]
+[\verb$--max-snr$ \textsc{max snr}]
+[\verb$--verbose$]
+
+\item[Description] 
+\verb$lalapps_bread$
+reads in triggers from multiple xml files, does any requested cuts
+specified by the user and then writes the triggers in a single xml 
+file.  
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--help}] Print a help message.
+
+\item[\texttt{--input} \textsc{infile}]
+The infile should be a txt file, say file.txt which
+will contain the list of xml files. \verb$lalapps_bread$ reads 
+in triggers from those xml files which are listed in file.txt
+
+\item[\texttt{--outfile} \textsc{filename}]
+\verb$lalapps_bread$ writes all the triggers out in one single xml file, specified by filename
+
+\item[\texttt{--max-confidence} \textsc{maximum conf}]
+Optional. Reads in only the triggers with confidence less than the value specified by maximum conf
+
+\item[\texttt{--noplayground}]
+Optional. By default only triggers lying inside the playground are read. If this option is 
+specified then all the triggers will be read. 
+
+\item[\texttt{--sort}]
+Not properly implemented yet. Now the triggers are always sorted in time before being written
+out.
+
+\item[\texttt{--min-duration} \textsc{min dur}]
+Optional. Reads in only the triggers with duration more than the duration specified by min dur
+
+\item[\texttt{--min-duration} \textsc{max dur}]
+Optional. Reads in only the triggers with duration less than the duration specified by max dur
+
+\item[\texttt{--min-centralfreq} \textsc{min centralfreq}]
+Optional. Reads in only the triggers with central freq above the frequency specified by min centralfreq
+
+\item[\texttt{--max-centralfreq} \textsc{max centralfreq}]
+Optional. Reads in only the triggers with central freq below the frequency specified by max centralfreq
+
+\item[\texttt{--min-bandwidth} \textsc{min bandwidth}]
+Optional. Reads in only the triggers with bandwidth more than the bandwidth specified by min bandwidth.
+
+\item[\texttt{--max-bandwidth} \textsc{max bandwidth}]
+Optional. Reads in only the triggers with bandwidth less than the bandwidth specified by max bandwidth.
+
+\item[\texttt{--min-amplitude} \textsc{min amplitude}]
+Optional. Reads in only the triggers with amplitude more than the amplitude specified by min amplitude.
+
+\item[\texttt{--max-amplitude} \textsc{max amplitude}]
+Optional. Reads in only the triggers with amplitude less than the amplitude specified by max amplitude.
+
+\item[\texttt{--min-snr} \textsc{min snr}]
+Optional. Reads in only the triggers with snr more than the snr specified by min snr.
+
+\item[\texttt{--max-snr} \textsc{max snr}]
+Optional. Reads in only the triggers with snr less than the snr specified by max snr.
+
+\item[\texttt{--verbose}]
+Optional. Prints out detailed message as the program runs including the total no. of triggers.
+
+\end{entry}
+
+\item[Example]
+\begin{verbatim}
+lalapps_bread --input H1.txt --outfile H1.xml --max-confidence -50 --verbose
+\end{verbatim}
+
+\item[Author] 
+Patrick Brady, Saikat Ray Majumder
+\end{entry}
