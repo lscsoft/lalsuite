@@ -361,7 +361,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	  duration = GV.ht_proc.deltaT * ( (p-1) - pstart );
 
 	  /* Now copy stuff into event */
-	  strncpy( (*thisEvent)->ifo, CLA.ChannelName, sizeof( ifo-1 ) );
+	  strncpy( (*thisEvent)->ifo, CLA.ChannelName, sizeof(ifo)-1 );
 	  strncpy( (*thisEvent)->search, "STRINGSEARCH", sizeof( (*thisEvent)->search ) );
 	  strncpy( (*thisEvent)->channel, CLA.ChannelName, sizeof( (*thisEvent)->channel ) );
 
