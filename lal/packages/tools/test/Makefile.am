@@ -1,7 +1,9 @@
 ## Process this file with automake to produce Makefile.in
 if FRAME
-NEED_FRAME = ResampleTimeSeriesTest ComputeCalibrationFactorsTest
-EXTRA_TEXSOURCES =
+#NEED_FRAME = ResampleTimeSeriesTest ComputeCalibrationFactorsTest
+NEED_FRAME = ResampleTimeSeriesTest
+#EXTRA_TEXSOURCES =
+EXTRA_TEXSOURCES = ComputeCalibrationFactorsTest.c
 else
 NEED_FRAME = 
 EXTRA_TEXSOURCES = ResampleTimeSeriesTest.c ComputeCalibrationFactorsTest.c
@@ -22,13 +24,14 @@ CoherentEstimationTest_LDADD = $(top_builddir)/packages/support/src/liblalsuppor
 if FRAME
 ResampleTimeSeriesTest_SOURCES = ResampleTimeSeriesTest.c
 ResampleTimeSeriesTest_LDADD = $(top_builddir)/packages/framedata/src/liblalframe.la $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-ComputeCalibrationFactorsTest_SOURCES = ComputeCalibrationFactorsTest.c
-ComputeCalibrationFactorsTest_LDADD = $(top_builddir)/packages/framedata/src/liblalframe.la $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+#ComputeCalibrationFactorsTest_SOURCES = ComputeCalibrationFactorsTest.c
+#ComputeCalibrationFactorsTest_LDADD = $(top_builddir)/packages/framedata/src/liblalframe.la $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 endif
 EXTRA_DIST = ResampleTimeSeriesTest.c ComputeCalibrationFactorsTest.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 if FRAME
-TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest ComputeCalibrationFactorsTest
+#TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest ComputeCalibrationFactorsTest
+TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest
 else
 TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest
 endif

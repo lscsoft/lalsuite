@@ -207,6 +207,7 @@ main(int argc, char **argv)
   if (list != NULL) LALFree (list);
   LALDDestroyVector(&status, &(shf.data) );
   LALCheckMemoryLeaks();
+  return 0;
 }
 
 
