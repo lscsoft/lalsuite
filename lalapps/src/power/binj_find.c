@@ -9,7 +9,6 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/BurstSearch.h>
 #include <lalapps.h>
 
 RCSID("$Id$");

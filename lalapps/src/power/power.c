@@ -4,7 +4,6 @@
 #include <string.h>
 
 #include <lal/AVFactories.h>
-#include <lal/BurstSearch.h>
 #include <lal/Date.h>
 #include <lal/EPSearch.h>
 #include <lal/ExcessPower.h>
@@ -155,10 +154,10 @@ static void print_usage(char *program)
 "Usage:  %s <option> [...]\n" \
 "The following options are recognized.  Options not surrounded in [] are\n" \
 "required.\n" \
-"	[--cluster]\n" \
 "	 --bandwidth <bandwidth>\n" \
 "	[--calibration-cache <cache file>]\n" \
 "	 --channel-name <string>\n" \
+"	[--cluster]\n" \
 "	[--debug-level <level>]\n" \
 "	 --default-alpha <alpha>\n" \
 "	 --event-limit <count>\n" \
@@ -311,10 +310,10 @@ void parse_command_line(
 	ProcessParamsTable *proc_param = procparams->processParamsTable;
 	LALStatus stat = blank_status;
 	struct option long_options[] = {
-		{"cluster",             no_argument, &options.cluster,    TRUE},
 		{"bandwidth",           required_argument, NULL,           'A'},
 		{"calibration-cache",   required_argument, NULL,           'B'},
 		{"channel-name",        required_argument, NULL,           'C'},
+		{"cluster",             no_argument, &options.cluster,    TRUE},
 		{"debug-level",         required_argument, NULL,           'D'},
 		{"default-alpha",       required_argument, NULL,           'E'},
 		{"event-limit",         required_argument, NULL,           'F'},
