@@ -122,8 +122,6 @@ INT4  highPassOrder = 6;
 /* number of bins for frequency masking */ 
 INT4 maskBin = 0;
 
-/* set as 1 if data are downsampled, 0 otherwise */ 
-INT4 padData = 1;
 
 
 INT4 main(INT4 argc, CHAR *argv[])
@@ -148,6 +146,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 numSegments;
   INT4 segmentLength;
   INT4 segmentShift;
+  INT4 padData;
   ReadDataPairParams streamParams;
   StreamPair streamPair;
   REAL4TimeSeries segment1,segmentTemp1,segment2,segmentTemp2;
@@ -258,7 +257,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 
   /* read parameters into input parameter file */
-  if (condor_flag == 1)
+  if (condor_flag)
    { 
      fscanf(stdin,"%d\n",&startTime, &startTime);
      fscanf(stdin,"%d\n",&stopTime, &stopTime);
@@ -279,6 +278,10 @@ INT4 main(INT4 argc, CHAR *argv[])
     numSegments = 2 * numSegments - 1;
     segmentShift = segmentDuration / 2;
    }
+  
+  if (sampleRate == resampleRate) 
+    {padData = 0;}
+  else {padData = 1;}
 
   /* set length for data segments */
   segmentLength = segmentDuration * resampleRate;
