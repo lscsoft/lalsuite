@@ -182,7 +182,7 @@ int TranslateREAL4Sequence( translation_direction Direction,
       REAL4Sequence*	user =
 	(REAL4Sequence*)malloc( sizeof( REAL4Sequence ) );
 
-      strcpy( (char *)AuxData, dc.name( ).c_str( ) );
+      //      strcpy( (char *)AuxData, dc.name( ).c_str( ) );
       user->length = dc.size( );
       user->data = (REAL4*)calloc( sizeof(REAL4), dc.size( ) );
       std::copy( &( dc[ 0 ] ), &( dc[ dc.size( ) ] ), user->data );

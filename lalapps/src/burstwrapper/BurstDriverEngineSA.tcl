@@ -627,13 +627,13 @@ foreach l1 $SegmentList {
 			    append dcwave "\t\thpf = respfilt(ihpt,h1resp,h1gain,h1cavfacf,h1oloopf);\n"
 			    append dcwave $hpfilters
 			    append dcwave "\t\thpfr = float(hpf);\n"
-			    set st1 "\t\toutput(hpfr,_,_,$ff"
+			    set st1 "\t\toutput(hpfr,_,_,$ff \[REAL4Sequence\]"
 			    append dcwave [ append st1 "_p,$ff" "_p);\n" ]
 			} else {
 
 			    ## no plus polarization
 			    ## add zeros
-			    set st1 "\t\toutput(zero,_,_,$ff"
+			    set st1 "\t\toutput(zero,_,_,$ff \[REAL4Sequence\]"
 			    append dcwave [ append st1 "_p,$ff" "_p);\n" ]
 			}
 
@@ -644,13 +644,13 @@ foreach l1 $SegmentList {
 			    append dcwave "\t\thcf = respfilt(ihct,h1resp,h1gain,h1cavfacf,h1oloopf);\n"
 			    append dcwave $hcfilters
 			    append dcwave "\t\thcfr = float(hcf);\n"
-			    set st1 "\t\toutput(hcfr,_,_,$ff"
+			    set st1 "\t\toutput(hcfr,_,_,$ff \[REAL4Sequence\]"
 			    append dcwave [ append st1 "_c,$ff" "_c);\n" ]
 			} else {
 
 			    ## no cross polarization
 			    ## add zeros
-			    set st1 "\t\toutput(zero,_,_,$ff"
+			    set st1 "\t\toutput(zero,_,_,$ff \[REAL4Sequence\]"
 			    append dcwave [ append st1 "_c,$ff" "_c);\n" ]
 			}
 
@@ -721,11 +721,11 @@ foreach l1 $SegmentList {
 				    append dcwave "\t\thpf = respfilt(ihpt,h1resp,h1gain,h1cavfacf,h1oloopf);\n"
 				    append dcwave $hpfilters
 				    append dcwave "\t\thpfr = float(hpf);\n"
-				    set st1 "\t\toutput(hpfr,_,_,$w"
+				    set st1 "\t\toutput(hpfr,_,_,$w \[REAL4Sequence\]"
 				    append dcwave [ append st1 "_p,$w" "_p);\n" ]
 				} else {
 				    ## zeros
-				    set st1 "\t\toutput(zero,_,_,$w"
+				    set st1 "\t\toutput(zero,_,_,$w \[REAL4Sequence\]"
 				    append dcwave [ append st1 "_p,$w" "_p);\n" ]
 				}
 
@@ -735,11 +735,11 @@ foreach l1 $SegmentList {
 				    append dcwave "\t\thcf = respfilt(ihct,h1resp,h1gain,h1cavfacf,h1oloopf);\n"
 				    append dcwave $hcfilters
 				    append dcwave "\t\thcfr = float(hcf);\n"
-				    set st1 "\t\toutput(hcfr,_,_,$w"
+				    set st1 "\t\toutput(hcfr,_,_,$w \[REAL4Sequence\]"
 				    append dcwave [ append st1 "_c,$w" "_c);\n" ]
 				} else {
 				    ## zeros
-				    set st1 "\t\toutput(zero,_,_,$w"
+				    set st1 "\t\toutput(zero,_,_,$w \[REAL4Sequence\]"
 				    append dcwave [ append st1 "_c,$w" "_c);\n" ]
 				}
 				
@@ -1089,6 +1089,11 @@ foreach l1 $SegmentList {
 			## define frame query
 			set frqueryREF "$CALREFTYPE $IFO $caltimes proc($IFO2:CAL-CAV_GAIN!0!7000.0001!) h1gain\n$CALREFTYPE $IFO $caltimes proc($IFO2:CAL-RESPONSE!0!7000.0001!) h1resp"
 		     
+
+			## alpha times
+	                set cst [ expr $start_time - 60 ]
+        	        set cet [ expr $etime + 60 ]
+                	set ctimes $cst-$cet
 
 			## get alpha's/beta's
 			set frqueryFAC "$FTypeCALFAC $IFO $ctimes proc($IFO2:CAL-OLOOP_FAC) h1oloop\n$FTypeCALFAC $IFO $ctimes proc($IFO2:CAL-CAV_FAC) h1cavfac"
