@@ -884,6 +884,8 @@ setupGlobals(LALStatus* const status, int argc, char **argv)
 	/* delta */
 	2.0/tseries_length
     };
+    
+    LALFCTSetOversamplingFactorInput setOfac = { 0, 0 };
 
     UINT8 output_data_size = 0;
 
@@ -966,6 +968,15 @@ setupGlobals(LALStatus* const status, int argc, char **argv)
     
     /* Set up the plan and output area */
     LALCreateFCTPlan(status, &fctPlan, &planIn);
+    
+    setOfac.ofac = 1;
+    setOfac.dim = 1;
+    LALFCTSetOversamplingFactor(status, &setOfac, fctPlan);
+
+    setOfac.ofac = 1;
+    setOfac.dim = 2;
+    LALFCTSetOversamplingFactor(status, &setOfac, fctPlan);
+
     LALFCTSetUnits(status, &setUnitsIn, fctPlan);
 
     /*
