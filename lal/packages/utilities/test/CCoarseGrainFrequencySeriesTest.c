@@ -67,6 +67,7 @@ $$
   43+i\left(\frac{1}{42}+\frac{2}{43}+\frac{1}{44}\right)
 \right\}
 $$
+% '
 \end{itemize}
 For each successful test (both of these valid data and the invalid
 ones described above), it prints ``\texttt{PASS}'' to standard output;
@@ -142,12 +143,16 @@ fabs()
 #include <lal/ReadFTSeries.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/Units.h>
+#include <lal/Random.h>
+#include <lal/TimeFreqFFT.h>
 
 #include "CheckStatus.h"
 
 NRCSID(CCOARSEGRAINFREQUENCYSERIESTESTC, "$Id$");
 
 #define CCOARSEGRAINFREQUENCYSERIESTESTC_TOL           1e-6
+
+#define CCOARSEGRAINFREQUENCYSERIESTESTC_RANTOL           1e-5
 
 #define CCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC      1234
 #define CCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS       56789
@@ -172,6 +177,14 @@ NRCSID(CCOARSEGRAINFREQUENCYSERIESTESTC, "$Id$");
 #define CCOARSEGRAINFREQUENCYSERIESTESTC_F04        41.0
 #define CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH4    2
 
+#define CCOARSEGRAINFREQUENCYSERIESTESTC_TSDT     (1.0 / 1024.0)
+#define CCOARSEGRAINFREQUENCYSERIESTESTC_TSLEN     16384
+
+#define CCOARSEGRAINFREQUENCYSERIESTESTC_FMIN     50
+#define CCOARSEGRAINFREQUENCYSERIESTESTC_FMAX     500
+
+#define CCOARSEGRAINFREQUENCYSERIESTESTC_RESRATIO 9.14
+
 #define CCOARSEGRAINFREQUENCYSERIESTESTC_TRUE     1
 #define CCOARSEGRAINFREQUENCYSERIESTESTC_FALSE    0
 
@@ -185,6 +198,8 @@ UINT4 optInLength    = 0;
 UINT4 optOutLength   = 0;
 REAL8 optDeltaF     = -1.0;
 REAL8 optF0       = 0.0;
+
+INT4 optSeed = 1682;
 
 CHAR optInputFile[LALNameLength] = "";
 CHAR optOutputFile[LALNameLength] = "";
@@ -252,6 +267,15 @@ main( int argc, char *argv[] )
    CHARVector             *unitString;
 
    FrequencySamplingParams     params;
+
+   COMPLEX8               coarseTotal, fineTotal;
+   COMPLEX8               cError;
+   const COMPLEX8         cZero = {0,0};
+   REAL4TimeSeries        timeSeries;
+
+   RealFFTPlan            *fftPlan;
+
+   RandomParams           *randomParams;
 
    ParseOptions( argc, argv );
 
@@ -1183,6 +1207,203 @@ main( int argc, char *argv[] )
 
    LALCheckMemoryLeaks();
 
+   /*-------Test #4-------*/
+
+   strncpy(timeSeries.name,"Random test data",LALNameLength);
+   timeSeries.deltaT = CCOARSEGRAINFREQUENCYSERIESTESTC_TSDT;
+   timeSeries.f0 = 0.0;
+   timeSeries.sampleUnits = lalDimensionlessUnit;
+   timeSeries.epoch = goodOutput.epoch;
+
+   timeSeries.data = NULL;
+
+   LALSCreateVector(&status, &(timeSeries.data),
+		    CCOARSEGRAINFREQUENCYSERIESTESTC_TSLEN );
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
+   {
+     return code;
+   }
+
+   goodInput.data = NULL;
+
+   LALCCreateVector(&status, &(goodInput.data),
+		    ( CCOARSEGRAINFREQUENCYSERIESTESTC_TSLEN / 2 + 1 ) );
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
+   {
+     return code;
+   }
+
+   /* construct plan */ 
+   fftPlan = NULL;
+
+   LALCreateForwardRealFFTPlan(&status, &fftPlan, 
+			       CCOARSEGRAINFREQUENCYSERIESTESTC_TSLEN,
+			       CCOARSEGRAINFREQUENCYSERIESTESTC_FALSE);
+   if ( ( code = CheckStatus( &status, 0 , "", 
+			      CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			      CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS ) ) )
+   {
+     return code;
+   }
+
+   LALCreateRandomParams( &status, &randomParams, optSeed );
+
+   /* fill time series with normal deviates */
+
+   LALNormalDeviates( &status, timeSeries.data, randomParams );
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
+   {
+     return code;
+   }
+
+   LALTimeFreqRealFFT( &status, &goodInput, &timeSeries, fftPlan );
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
+   {
+     return code;
+   }
+
+   for ( i = 0 ;
+	 i * goodInput.deltaF <= CCOARSEGRAINFREQUENCYSERIESTESTC_FMIN ;
+	 ++i )
+   {
+     goodInput.data->data[i] = cZero;
+   }
+
+   for ( i = CCOARSEGRAINFREQUENCYSERIESTESTC_FMAX / goodInput.deltaF ; 
+	 i < goodInput.data->length ;
+	 ++i )
+   {
+     goodInput.data->data[i] = cZero;
+   }
+
+   fineTotal = cZero;
+   for ( i = 0 ; i < goodInput.data->length ; ++i )
+   {
+     fineTotal.re += goodInput.data->data[i].re;
+     fineTotal.im += goodInput.data->data[i].im;
+   }
+   fineTotal.re *= goodInput.deltaF;
+   fineTotal.im *= goodInput.deltaF;
+
+   params.deltaF 
+     = goodInput.deltaF * CCOARSEGRAINFREQUENCYSERIESTESTC_RESRATIO;
+   params.f0  = CCOARSEGRAINFREQUENCYSERIESTESTC_FMIN - params.deltaF;
+   params.length = (CCOARSEGRAINFREQUENCYSERIESTESTC_FMAX - params.f0) 
+                   / params.deltaF + 3;
+
+   goodOutput.data = NULL;
+   LALCCreateVector(&status, &(goodOutput.data),
+		    params.length );
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
+   {
+     return code;
+   }
+
+   /* coarse grain */
+   LALCCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
+   if ( ( code = CheckStatus( &status, 0 , "",
+			      CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			      CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
+   {
+     return code;
+   }
+
+   coarseTotal = cZero;
+   for ( i = 0 ; i < goodOutput.data->length ; ++i )
+   {
+     coarseTotal.re += goodOutput.data->data[i].re;
+     coarseTotal.im += goodOutput.data->data[i].im;
+   }
+   coarseTotal.re *= goodOutput.deltaF;
+   coarseTotal.im *= goodOutput.deltaF;
+
+   cError.re = ( (coarseTotal.re - fineTotal.re) * fineTotal.re
+		 + (coarseTotal.im - fineTotal.im) * fineTotal.im )
+               / ( fineTotal.re * fineTotal.re + fineTotal.im * fineTotal.im );
+   cError.im = ( (coarseTotal.im - fineTotal.im) * fineTotal.re
+		 - (coarseTotal.re - fineTotal.re) * fineTotal.im )
+               / ( fineTotal.re * fineTotal.re + fineTotal.im * fineTotal.im );
+
+   if (optVerbose)
+   {
+     printf("Integral of fine-grained frequency series = %g + %g i\n",
+	    fineTotal.re, fineTotal.im);
+     printf("Integral of coarse-grained frequency series = %g + %g i\n",
+	    coarseTotal.re, coarseTotal.im);
+     printf( "Fractional error is %e + % e i\n",
+	     cError.re, cError.im );
+
+     LALSPrintTimeSeries( &timeSeries, "ccg_TimeSeries.dat" );
+     LALCPrintFrequencySeries( &goodInput, "ccg_fgFreqSeries.dat" );
+     LALCPrintFrequencySeries( &goodOutput, "ccg_cgFreqSeries.dat" );
+   }
+
+   if ( cError.re * cError.re + cError.im * cError.im
+	> ( CCOARSEGRAINFREQUENCYSERIESTESTC_RANTOL 
+	    * CCOARSEGRAINFREQUENCYSERIESTESTC_RANTOL ) 
+      )
+   {
+     printf("  FAIL: Valid data test #4 \n");
+     if (optVerbose)
+     {
+       printf("Exiting with error: %s\n",
+	      CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+     }
+     return CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
+   }
+
+   LALDestroyRandomParams( &status, &randomParams );
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
+   {
+     return code;
+   }
+
+   LALDestroyRealFFTPlan(&status, &fftPlan);
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
+   {
+     return code;
+   }
+
+   LALSDestroyVector(&status, &(timeSeries.data));
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
+   {
+     return code;
+   }
+
+   LALCDestroyVector(&status, &(goodInput.data));
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
+   {
+     return code;
+   }
+
+   LALCDestroyVector(&status, &(goodOutput.data));
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
+   {
+     return code;
+   }
+   
+   LALCheckMemoryLeaks();
+
    printf("PASS: all tests\n");
 
    /**************** Process User-Entered Data, If Any **************/
@@ -1270,6 +1491,7 @@ Usage (const char *program, int exitcode)
   fprintf (stderr, "  -q             quiet: run silently\n");
   fprintf (stderr, "  -v             verbose: print extra information\n");
   fprintf (stderr, "  -d level       set lalDebugLevel to level\n");
+  fprintf (stderr, "  -s ranseed        use random number seed ranseed\n");
   fprintf (stderr, "  -i filename    read fine grained series from file filename\n");
   fprintf (stderr, "  -o filename    print coarse grained series to file filename\n");
   fprintf (stderr, "  -n length      input series contains length points\n"); 
@@ -1293,7 +1515,7 @@ ParseOptions (int argc, char *argv[])
   {
     int c = -1;
 
-    c = getopt (argc, argv, "hqvd:i:o:n:m:e:f:");
+    c = getopt (argc, argv, "hqvd:s:i:o:n:m:e:f:");
     if (c == -1)
     {
       break;
@@ -1324,7 +1546,11 @@ ParseOptions (int argc, char *argv[])
       case 'f': /* specify start frequency */
         optF0 = atof (optarg);
         break;
-      
+
+      case 's': /* set random number seed */
+        optSeed = atoi (optarg);
+        break;
+
       case 'd': /* set debug level */
         lalDebugLevel = atoi (optarg);
         break;
