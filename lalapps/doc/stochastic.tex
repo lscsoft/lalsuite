@@ -7,6 +7,11 @@
 \input{olapredfcn}
 
 \clearpage
+\section{Running the LALApps Stochastic Pipeline Under Condor}
+
+This section is under construction...
+
+\clearpage
 \section{Program \prog{lalapps\_stochastic\_pipe}}
 \label{program:lalapps-stochastic-pipe}
 \idx[Program]{lalapps\_stochastic\_pipe}
@@ -359,6 +364,22 @@ the optimal filter.
 \end{entry}
 
 \item[Example]
+\prog{lalapps\_stochastic} is generally run as part of a DAG, as created
+by \prog{lalapps\_stochastic\_pipe} or
+\prog{lalapps\_stochastic\_bayes}, however an example usage can be seen
+below.
+
+\begin{verbatim}
+> lalapps_stochastic --debug-level 33 --verbose \
+>   --gps-start-time 752242398 --gps-end-time 752242758 \
+>   --interval-duration 180 --segment-duration 60 \
+>   --resample-rate 1024 --f-min 50 --f-max 250 --ifo-one H1 \
+>   --ifo-two H2 --channel-one LSC-AS_Q --channel-two LSC-AS_Q \
+>   --frame-cache-one H1.cache --frame-cache-two H2.cache \
+>   --calibration-cache-one H1-CAL-V02-751651244-757699245.cache \
+>   --calibration-cache-two H2-CAL-V02-751651244-757699245.cache \
+>   --calibration-offset 0 --hann-duration 1 --cc-spectra
+\end{verbatim}
 
 \item[Author] 
 Adam Mercer, Tania Regimbau
@@ -397,6 +418,9 @@ write output data to \parm{FILE}
 \end{entry}
 
 \item[Example]
+\prog{lalapps\_stopp} is generally run as part of a DAG, as created by
+\prog{lalapps\_stochastic\_pipe}, however an example usage can be seen
+below.
 
 \begin{verbatim}
 > lalapps_stopp --output S3-H1L1-STOCHASTIC.xml \
