@@ -15,6 +15,7 @@ import sys
 import os
 import time
 import getopt
+import shutil
 from ClusterComputeFUtils import *
 from pipeline import *
 
@@ -269,6 +270,16 @@ fp = open( outputDir + "version", "w" )
 fp.write( str( versionN ) + "\n" )
 fp.close()
 
+# copy patches file into the outputDir
+patchesPath = args[0]
+shutil.copyfile(patchesPath, os.path.join(outputDir, patchesPath))
+
+# change working directory into the outputDir so that the DAG file and
+# all sub files go there.
+os.chdir( outputDir )
+
+
+
 ### Get name of directory where ephemerides are stored, and year of ephemeris
 #ephemDir = "."
 #year = getyearstr( ephemDir, start, end )
@@ -301,7 +312,7 @@ except Exception, e:
 
 # create job to search metadata catalog for wide-band SFTs
 searchJob = CondorDAGJob( "scheduler", "lalapps_QueryMetadataLFN" )
-searchJob.set_sub_file(                "QueryMetadataLFN.sub" )
+searchJob.set_sub_file( "QueryMetadataLFN.sub" )
 searchJob.set_stdout_file( outputDir + "QueryMetadataLFN.out" )
 searchJob.set_stderr_file( outputDir + "QueryMetadataLFN.err" )
 searchJob.add_opt( "calibration", calibration )
