@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.2
 """
-inspiral_pipe_s3_geo.in - S2 inspiral analysis pipeline script
+inspiral_pipe_geo.in - GEO single IFO analysis pipeline
 
 $Id$
 
@@ -9,8 +9,9 @@ GEO S3 data with lalapps.
 
 The example geo.ini file can be also found in this directory.
 This python script will create only tmplate bank and inspiral jobs!
-The cache file is hardcoded "GEOS3_hoft_all.cache", this cache file 
-contains path to frame files on explorer cluster at Cardiff.
+
+This script does not use LSCdataFind but passed the option to --cache-file
+to all jobs so they can obtain the frame data cache.
 """
 
 __author__ = 'Stas Babak <babak@astro.cf.ac.uk>'
@@ -23,8 +24,7 @@ import sys, os, copy
 import getopt, re, string
 import tempfile
 import ConfigParser
-#sys.path.append('/geopptools/stow_pkgs/lalapps/lib/python')
-sys.path.append('/home/stas/S3GL/lib/python')
+sys.path.append('@PYTHONLIBDIR@')
 
 # import the modules we need to build the pipeline
 import pipeline, inspiral
@@ -103,7 +103,7 @@ def analyze_ifo(ifo_data,ifo_name,tmplt_job,insp_job,snr,chisq,pad,dag,usertag=N
       bank.set_start(chunk.start())
       bank.set_end(chunk.end())
       bank.set_ifo(ifo_name)
-      bank.set_cache("GEOS3_hoft_all.cache")
+      bank.set_cache(cache_file)
       dag.add_node(bank)
       # make an inspiral job for the master chunk
       insp = inspiral.InspiralNode(insp_job)
@@ -114,7 +114,7 @@ def analyze_ifo(ifo_data,ifo_name,tmplt_job,insp_job,snr,chisq,pad,dag,usertag=N
       insp.add_var_opt('trig-start-time',chunk.trig_start())
       insp.add_var_opt('trig-end-time',chunk.trig_end())
       insp.set_ifo(ifo_name)
-      insp.set_cache("GEOS3_hoft_all.cache")
+      insp.set_cache(cache_file)
       insp.set_bank(bank.get_output())
       insp.add_parent(bank)
       dag.add_node(insp)
@@ -142,6 +142,7 @@ Usage: lalapps_inspiral_pipe [options]
   -j, --injections FILE    add simulated inspirals from sim_inspiral in FILE
   -f, --config-file FILE   use configuration file FILE
   
+  -c, --cache-file FILE    use the frame cache file FILE for all jobs
 
   -P, --priority PRIO      run jobs with condor priority PRIO
 
@@ -150,7 +151,7 @@ Usage: lalapps_inspiral_pipe [options]
 
 ##############################################################################
 # pasrse the command line options to figure out what we should do
-shortop = "hvu:pl:j:f:P:"
+shortop = "hvu:pl:j:f:c:P:"
 longop = [
   "help",
   "version",
@@ -159,6 +160,7 @@ longop = [
   "log-path=",
   "injections=",
   "config-file=",
+  "cache-file=",
   "priority="
   ]
 
@@ -173,6 +175,7 @@ inj_file = None
 condor_prio = None
 log_path = None
 config_file = None
+cache_file = None
 playground_only = 0
 
 for o, a in opts:
@@ -196,6 +199,8 @@ for o, a in opts:
     condor_prio = a
   elif o in ("-l", "--log-path"):
     log_path = a
+  elif o in ("-c", "--cache-file"):
+    cache_file = a
   elif o in ("-f", "--config-file"):
     config_file = a
   else:
@@ -206,6 +211,11 @@ for o, a in opts:
 if not log_path:
   print >> sys.stderr, "No log file path specified."
   print >> sys.stderr, "Use --log-path PATH to specify a location."
+  sys.exit(1)
+
+if not cache_file:
+  print >> sys.stderr, "No frame cache file specified."
+  print >> sys.stderr, "Use --cache-file FILE to specify location."
   sys.exit(1)
 
 if not config_file:
@@ -418,24 +428,3 @@ if playground_only:
       f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), seg.dur()))
     f.close()
 #sys.exit(0)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
