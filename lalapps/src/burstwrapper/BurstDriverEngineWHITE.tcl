@@ -798,11 +798,16 @@ set framequery "$frqueryFAC\n$frqueryREF\n$frqueryMDC"
 
 # algorithm
 set NNData [ expr int(($etime-$start_time)*16384) ]
-set Seed "-[ clock clicks ]"
+set Seed [ clock clicks ]
 
-set algorithms "$MDCalgo
-                x1 = gasdev($NNData,$Seed);
-                x = tseries(x1,16384.0,$start_time,0);
+
+set algorithms "
+                seed = value($Seed);
+                mone = sub(0,1);
+                seed = mul(seed,mone);
+                x1 = gasdev($NNData,seed);
+                x0 = tseries(x1,16384.0,$start_time,0);
+                $MDCalgo
                 gwchn = double(x);
                 $dcfilters
                 gwchns = slice(gwchn,$sliceStart,$Ndata,1);
