@@ -87,7 +87,8 @@
 /* 05/26/04 gam; Change finishedSUMs to finishedSUMs; add startSUMs; defaults are TRUE; use to control I/O during Monte Carlo */
 /* 05/26/04 gam; Add whichMCSUM = which Monte Carlo SUM; default is -1. */
 /* 07/09/04 gam; If using running median, use LALRngMedBias to set params->normalizationParameter to correct bias in the median. */
- 
+/* 08/02/04 gam; if (params->testFlag & 4) > 0 ComputeSky uses reference time: params->timeStamps[0].gpsSeconds, params->timeStamps[0].gpsNanoSeconds */
+
 /*********************************************/
 /*                                           */
 /* START SECTION: define preprocessor flags  */
@@ -485,6 +486,7 @@ void StackSlideInitSearch(
     	fprintf(stdout,"set testFlag           %23d; #46 INT2 specify test case.\n", params->testFlag); /* 05/11/04 gam */
     	fprintf(stdout,"# if ((testFlag & 1) > 0) output Hough number counts instead of power; use threshold5 for Hough cutoff.\n"); /* 05/11/04 gam */
     	fprintf(stdout,"# if ((testFlag & 2) > 0) inject fake signals and run Monte Carlo Simulation; use threshold4 for h_0.\n");   /* 05/11/04 gam */
+    	fprintf(stdout,"# if ((testFlag & 4) > 0) use LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs instead of LALGeneratePulsarSignal and LALSignalToSFTs during Monte Carlo Simulations. See LAL inject package.\n"); /* 08/02/04 gam */
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set numSUMsPerCall     %23d; #47 INT4 nuber of SUMs to produce each call to StackSlide (currently unused). \n", params->numSUMsPerCall);
     	fprintf(stdout,"\n");
@@ -1938,8 +1940,13 @@ void StackSlideApplySearch(
   stksldParams->nBinsPerSUM = params->nBinsPerSUM;
   stksldParams->numSTKs = params->numSTKs;
   stksldParams->dfSUM = params->dfSUM;
-  stksldParams->gpsStartTimeSec = params->gpsStartTimeSec;
-  stksldParams->gpsStartTimeNan = params->gpsStartTimeNan;
+  if ( (params->testFlag & 4) > 0 ) {
+    stksldParams->gpsStartTimeSec = (UINT4)params->timeStamps[0].gpsSeconds;     /* 08/02/04 gam */
+    stksldParams->gpsStartTimeNan = (UINT4)params->timeStamps[0].gpsNanoSeconds; /* 08/02/04 gam */
+  } else {
+    stksldParams->gpsStartTimeSec = params->gpsStartTimeSec;
+    stksldParams->gpsStartTimeNan = params->gpsStartTimeNan;
+  }
   stksldParams->timeStamps = params->timeStamps;
   stksldParams->numSpinDown = params->numSpinDown;
   stksldParams->edat = params->edat;

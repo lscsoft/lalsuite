@@ -47,6 +47,7 @@
 /* 06/01/04 gam; For now fix DeltaRA, DeltaDec,and DeltaFDeriv1 to default values when finding mismatch during Monte Carlo */
 /* 07/14/04 gam; add option to use function LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs; see LAL inject packge GeneratePulsarSignal.c and .h */
 /* 07/19/04 gam; if (params->testFlag & 4) > 0 use LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs for Monte Carlo simulations */
+/* 08/02/04 gam; if (params->testFlag & 4) > 0 ComputeSky uses reference time GPSin: params->timeStamps[0].gpsSeconds, params->timeStamps[0].gpsNanoSeconds */
   
 /*********************************************/
 /*                                           */
@@ -800,6 +801,8 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
      pSFTandSignalParams->pSFTParams = pSFTParams;
      pSFTandSignalParams->nSamples = GV.nsamples;
      pPulsarSignalParams->samplingRate = 2.0*params->bandBLK; /* can set samplingRate to exactly 2.0*bandBLK when using LALFastGeneratePulsarSFTs */
+     GPSin.gpsSeconds = params->timeStamps[0].gpsSeconds;         /* 08/02/04 gam */
+     GPSin.gpsNanoSeconds = params->timeStamps[0].gpsNanoSeconds; /* 08/02/04 gam */
   } else { 
      pSkyConstAndZeroPsiAMResponse = NULL;
      pSFTandSignalParams = NULL;

@@ -85,6 +85,7 @@ set normalizationParameter  0.0000000000000000e+00; #45 REAL4 see uses below.
 set testFlag                                 0; #46 INT2 specify test case.
 # if ((testFlag & 1) > 0) output Hough number counts instead of power; use threshold5 for Hough cutoff.
 # if ((testFlag & 2) > 0) inject fake signals and run Monte Carlo Simulation; use threshold4 for h_0.
+# if ((testFlag & 4) > 0) use LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs instead of LALGeneratePulsarSignal and LALSignalToSFTs during Monte Carlo Simulations. See LAL inject package.
 
 set numSUMsPerCall                           1; #47 INT4 nuber of SUMs to produce each call to StackSlide (currently unused). 
 
