@@ -181,9 +181,10 @@ int main(int argc,char *argv[])
 
 #ifdef FILE_FMAX  
   /*   open file */
-  strcpy(Fmaxfilename,"Fmax");
+  Fmaxfilename[0] = '\0';
   if (uvar_outputLabel)
     strcat(Fmaxfilename,uvar_outputLabel);
+  strcat(Fmaxfilename,"Fmax");
   if (!(fpmax=fopen(Fmaxfilename,"w"))){
     fprintf(stderr,"in Main: unable to open Fmax file\n");
     return 2;
@@ -191,9 +192,10 @@ int main(int argc,char *argv[])
 #endif
 #ifdef FILE_FSTATS  
   /*      open file */
-  strcpy(Fstatsfilename,"Fstats");
+  Fstatsfilename[0] = '\0';
   if ( LALUserVarWasSet(&uvar_outputLabel) )
     strcat(Fstatsfilename,uvar_outputLabel);
+  strcat(Fstatsfilename,"Fstats");
   if (!(fpstat=fopen(Fstatsfilename,"w"))){
     fprintf(stderr,"in Main: unable to open Fstats file\n");
     return 2;
@@ -377,7 +379,7 @@ initUserVars (LALStatus *stat)
   LALregREALUserVar(stat, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
   LALregBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message");
   LALregSTRINGUserVar(stat,	skyRegion, 	'R', UVAR_OPTIONAL, "Specify sky-region by polygon");
-  LALregSTRINGUserVar(stat,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
+  LALregSTRINGUserVar(stat,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be prepended to all output file-names");
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -412,9 +414,10 @@ int EstimateSignalParameters(INT4 * maxIndex)
 #endif
 
 
-  strcpy(Paramfilename,"ParamMLE");
+  Paramfilename[0] = '\0';
   if (uvar_outputLabel)
     strcat(Paramfilename,uvar_outputLabel);
+  strcat(Paramfilename,"ParamMLE");
   
   if(!(fpMLEParam=fopen(Paramfilename,"w")))
     fprintf(stderr,"Error in EstimateSignalParameters: unable to open the file");
@@ -629,10 +632,11 @@ int writeFaFb(INT4 *maxIndex)
   FILE * fp;
   REAL8 bias=1.0;
   CHAR FaFbfilename[256];
-  
-  strcpy(FaFbfilename,"FaFb");
+
+  FaFbfilename[0] = '\0';
   if (uvar_outputLabel)
     strcat(FaFbfilename,uvar_outputLabel);
+  strcat(FaFbfilename,"FaFb");
   sprintf(noiseswitch,"%02d", uvar_SignalOnly);
   strcat(FaFbfilename,noiseswitch);
 
