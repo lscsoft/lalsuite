@@ -279,6 +279,7 @@ Usage: lalapps_inspiral_pipe [options]
   -o, --tama-overlap       analyze only times in coincidence with TAMA
   -L, --ligo-analysis      perform the ligo analysis
   -t, --tama-coincidence   test for coincidence between LIGO and TAMA triggers
+  -O, --tama-output        output data in text format for TAMA exchange
   -j, --injections FILE    add simulated inspirals from sim_inspiral in FILE
 
   -P, --priority PRIO      run jobs with condor priority PRIO
@@ -898,12 +899,13 @@ ligo_inca_nodes.sort(compare_start)
 
 # create a sorted list of all the ligo-tama inca nodes 
 # for H1-H2 double time, we just use H1 triggers.
-ligo_tama_inca_nodes = []
-for inca_nodes in [l1t1_inca_nodes,h1t1_inca_nodes,h2t1_inca_nodes,
-  h1h2t1_inca2_nodes]:
-  for inca_node in inca_nodes:
-    ligo_tama_inca_nodes.append(inca_node)
-ligo_tama_inca_nodes.sort(compare_start)
+if tama_coincidence:
+  ligo_tama_inca_nodes = []
+  for inca_nodes in [l1t1_inca_nodes,h1t1_inca_nodes,h2t1_inca_nodes,
+    h1h2t1_inca2_nodes]:
+    for inca_node in inca_nodes:
+      ligo_tama_inca_nodes.append(inca_node)
+  ligo_tama_inca_nodes.sort(compare_start)
 
 
 if ligo_analysis:
@@ -928,7 +930,7 @@ if tama_coincidence:
     playground_only,usertag,tama_output)
   sire_segs(h1t1_inca_nodes,'output_a','H1-INCA_H1T1',sire_job,dag,
     playground_only,usertag,tama_output)
-  sire_segs(h1t1_inca_nodes,'output_b','T1-INCA_1T1',sire_job,dag,
+  sire_segs(h1t1_inca_nodes,'output_b','T1-INCA_H1T1',sire_job,dag,
     playground_only,usertag,tama_output)
   sire_segs(h2t1_inca_nodes,'output_a','H2-INCA_H2T1',sire_job,dag,
     playground_only,usertag,tama_output)
