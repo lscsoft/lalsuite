@@ -22,7 +22,7 @@ def version():
   """
   Return version
   """
-  print "$Id$"
+  return __version__
 
 class StochasticError(exceptions.Exception):
   def __init__(self, args=None):
