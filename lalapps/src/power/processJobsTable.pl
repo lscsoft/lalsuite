@@ -168,7 +168,7 @@ if ($returnCode){
 
 $t = localtime();
 print "Completed run at $t\n";
-print LOG "Completed run at $t\n";
+print LOG "Submitted run at $t\n";
 close LOG;		
 									
 
@@ -209,7 +209,7 @@ sub f_processJobsTable {
 		my ($statusCode, $startSec, $stopSec, $framecache, $outfile)  = ($fields[0],$fields[2],$fields[3],$fields[4],$fields[5]);
 
 		if ($statusCode eq "P"){
-			print LOG "Adding $startSec - $stopSec to submit file.";
+			print LOG "Adding $startSec - $stopSec to submit file\n.";
 			f_writeJobToCondorSubmitFile($startSec,  $stopSec, $framecache, $outfile);
 			$submitCondor = 1;
 			$statusCode = "R";

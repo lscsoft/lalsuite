@@ -27,11 +27,14 @@ use strict;
 # use f_getDateYYMMDD to get current date
 my $DATE = f_getDateYYMMDD();
 
-my $TIME_CHUNK_SIZE = 8192;
+my $TIME_CHUNK_SIZE = 600;
 my $TIME_CHUNK_MIN_SIZE = 16;
 
 my $DATA_SET_NAME = "S2H1v02";
-my $DATA_QUALITY_FILE = "/scratch/power/input/S2H1v02_segs.txt";
+my $DATA_QUALITY_FILE = "/scratch/power/input/$DATA_SET_NAME" . "_segs.txt";
+
+#To allow data outside of playground, set USE_PLAYGROUND to 0
+my $USE_PLAYGROUND =1;
 my $PLAYGROUND_FILE  = "/scratch/power/input/s2-playground.txt";
 
 #path for CACHE_FILES
@@ -41,6 +44,7 @@ my $CACHE_PATH = "/scratch/power/cache";
 my $OUTPUT_PATH = "/scratch/power/tests";
 my $OUTPUT_FILE_ROOT  =  "search$DATE-EPOCH";
 my $JOBS_TABLE = "power_jobs_$DATE.tbl";
+my $LOG = "create.log";
 
 my $INSTRUMENT = "H";	
 my $TYPE = "RDS_R_L1";
@@ -50,6 +54,8 @@ my $TYPE = "RDS_R_L1";
 #  MAIN
 #-----------------------------------------------------------------------------------
 
+
+my $startTime = time();
 #get the next runNumber as string NNN
 my $runNum = f_getRunNumber($OUTPUT_PATH,$DATE);
 
@@ -58,6 +64,10 @@ my $runNum = f_getRunNumber($OUTPUT_PATH,$DATE);
  
  #set the path for all program output files
  my $runPath = "$OUTPUT_PATH/$DATE-$runNum";
+
+open LOG, ">$runPath/$LOG";
+my $t = localtime();
+print LOG "Start time: $t\n";
  
 #if the jobs table exists, move it to a backup file
 if (-f "$runPath/$JOBS_TABLE"){ rename "$runPath/$JOBS_TABLE", "$runPath/$JOBS_TABLE.bak";}
@@ -82,8 +92,11 @@ f_createJobsForGoodData (
 									$TIME_CHUNK_SIZE,
 									$playgroundSeconds);
 
+my $totalTime = time() - $startTime;
+print "Completed in 	$totalTime seconds.\n";
+print LOG "Completed in $totalTime seconds\n.";
 print "The jobs table for run $DATE-$runNum has been created. \n\n".
-			"To submit the jobs to condor, run:\n\n processJobsTable.pl $DATE $runNum\n\n";									
+			"To submit the jobs to condor, run:\n\n processJobsTable.pl $DATE $runNum\n\n";
 
 #-----------------------------------------------------------------------------------
 #  f_createJobsForGoodData
@@ -119,19 +132,19 @@ sub f_createJobsForGoodData {
 		$chunkStart = $startSecond;
 		
 		#advance chunkStart to the first second in playground
-		while( not exists(${$playgroundSecondsHash}{$chunkStart}) and $chunkStart < $stopSecond){ 
+		while( $USE_PLAYGROUND and not exists(${$playgroundSecondsHash}{$chunkStart}) and $chunkStart < $stopSecond){ 
 			$chunkStart++;
 		}
 		
 		#Loop through data quality file chunk
 		for($chunkStop=$chunkStart; $chunkStop < $stopSecond; $chunkStop++){
 			#print "chunksize = ", $chunkStop - $chunkStart , "\n";
-			if(not exists ${$playgroundSecondsHash}{$chunkStop}  or  ($chunkStop - $chunkStart)  >= $maxChunkSize ){
+			if(($USE_PLAYGROUND and not exists ${$playgroundSecondsHash}{$chunkStop})  or  ($chunkStop - $chunkStart)  >= $maxChunkSize ){
 				
 				f_processChunk($runPath,$chunkStart, $chunkStop);
 				
 				#fast forward to the next good second 
-				while(not exists(${$playgroundSecondsHash}{$chunkStop}) and $chunkStop < $stopSecond){ 
+				while(($USE_PLAYGROUND and not exists ${$playgroundSecondsHash}{$chunkStop})and $chunkStop < $stopSecond){ 
 					$chunkStop++;
 				}
 				
@@ -159,13 +172,14 @@ sub f_createJobsForGoodData {
 sub  f_processChunk {
 	my ($runPath,$startSec, $stopSec) = @_;
 	
+	my $duration = $stopSec - $startSec;
 	#print "Processing chunk $startSec, $stopSec.\n";
 	#make sure chunk is larger than minimum size
 	if($stopSec - $startSec > $TIME_CHUNK_MIN_SIZE){
 	
 		#build output file string
 		my $outfile = "$runPath/xml/$OUTPUT_FILE_ROOT$startSec-$stopSec.xml";
-		my $framecache = "$CACHE_PATH/$startSec-$stopSec";
+		my $framecache = "$CACHE_PATH/$INSTRUMENT-$startSec-$duration";
 		
 		f_findData($startSec,  $stopSec,$framecache);
 		f_writeJobsTable($runPath,$startSec,  $stopSec, $framecache, $outfile, $JOBS_TABLE);
@@ -292,11 +306,9 @@ sub f_getRunNumber {
 	my ($path, $date) = @_;
 	opendir PATH, $path	;
 	
-	#get a bottom to top list of the files that end with -XXX
-	my @dirs = reverse sort grep /$-\d{3}/, readdir PATH;
-	#my @tmp = reverse sort readdir PATH;
-	#foreach(@tmp){print "dir: $_\n";}
-	
+	#get a bottom to top list of the files that end with DATE-XXX
+	my $searchString = $date . '-\d{3}';
+	my @dirs = reverse sort grep /$\$searchString/, readdir PATH;
 	closedir PATH;
 	
 	if(scalar @dirs > 0){
@@ -304,7 +316,7 @@ sub f_getRunNumber {
 		my $maxNum = $parts[0];
 		my $nextNum = $maxNum + 1;
 		
-		#make sure nextNum is like NNN not NN or N
+		#make sure nextNum is like NNN, not NN or N
 		while(length($nextNum) < 3){ $nextNum = "0" . $nextNum;}
 		
 		return $nextNum;

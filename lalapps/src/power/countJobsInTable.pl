@@ -10,15 +10,16 @@
 use strict;
 
 # Check to make sure date of table is included as arg
-my $USAGE = "\nusage: countJobsTable.pl  YYMMDD \n\n";
-if(! $ARGV[0])
+my $USAGE = "\nusage: countJobsTable.pl  YYMMDD RUN_NUM \n\n";
+if(! $ARGV[1])
 {
 	die $USAGE;
 }
-
 #my $DATE = f_getDateYYMMDD();
 my $DATE =$ARGV[0];	
-my $JOBS_TABLE = "/scratch/power/power_jobs_$DATE.tbl";
+
+my $runNum = $ARGV[1];
+my $JOBS_TABLE = "/scratch/power/tests/$DATE-$runNum/power_jobs_$DATE.tbl";
 
 print "Counting jobs in table $JOBS_TABLE.\n";	
 open TABLE, "$JOBS_TABLE" or die "Couldn't open $JOBS_TABLE.\n";
