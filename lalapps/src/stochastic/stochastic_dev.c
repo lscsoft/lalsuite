@@ -1271,7 +1271,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   " --filter-omega0 N             omega_0\n"
 
 /* parse command line options */
-void parseOptions(INT4 argc, CHAR *argv[])
+static void parseOptions(INT4 argc, CHAR *argv[])
 {
   int c = -1;
 
@@ -1908,7 +1908,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 }
 
 /* function to read data in frames */
-void readDataPair(LALStatus *status,
+static void readDataPair(LALStatus *status,
     StreamPair *streamPair,
     ReadDataPairParams *params)
 {
