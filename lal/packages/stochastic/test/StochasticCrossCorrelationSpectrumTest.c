@@ -63,7 +63,7 @@ the corresponding checks in the code are made using the ASSERT macro):
 It then verifies that the correct cross-correlation statistic (value
 and units) is generated for the following simple test case:
 $\widetilde{Q}(f) = x(1-x)$; $\widetilde{\bar{h}}_1(f)=x^2+ix$,
-  $\widetilde{\bar{h}}_2(f)=x^{-2}-ix^{-1}$, with $x=400\,\textrm{Hz}$
+  $\widetilde{\bar{h}}_2(f)=x^{-2}-ix^{-1}$, with $x=f/400\,\textrm{Hz}$.
   The expected result in this case is $Y(f)=-i(2-x)(x^2+2)$.
 For each successful test
 (this valid data test and the invalid ones described above), it

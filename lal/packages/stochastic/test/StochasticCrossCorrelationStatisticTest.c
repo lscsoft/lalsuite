@@ -65,7 +65,7 @@ It then verifies that the correct cross-correlation statistic (value
 and units) is generated for each of the following simple test cases:
 \begin{enumerate}
 \item $\widetilde{Q}(f) = x(1-x)$; $\widetilde{\bar{h}}_1(f)=x^2+ix$,
-  $\widetilde{\bar{h}}_2(f)=x^{-2}-ix^{-1}$, with $x=400\,\textrm{Hz}$
+  $\widetilde{\bar{h}}_2(f)=x^{-2}-ix^{-1}$, with $x=f/400\,\textrm{Hz}$.
   The expected result in this case is zero.
 \item $\widetilde{Q}(f) = 1$ for
   $300\,\textrm{Hz}<f<500\,\textrm{Hz}$, 0 otherwise;

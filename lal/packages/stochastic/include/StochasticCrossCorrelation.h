@@ -702,7 +702,7 @@ LALOverlapReductionFunction(
 
 \newpage\input{StochasticCrossCorrelationC}
 \newpage\input{StochasticCrossCorrelationStatisticTestC}
-% \newpage\input{StochasticHeterodynedCrossCorrelationStatisticTestC}
+\newpage\input{StochasticHeterodynedCrossCorrelationStatisticTestC}
 \newpage\input{StochasticCrossCorrelationSpectrumTestC}
 \newpage\input{ZeroPadAndFFTC}
 \newpage\input{SZeroPadAndFFTTestC}

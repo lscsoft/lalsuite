@@ -7,10 +7,6 @@ $Id$
 \subsection{Program \texttt{StochasticHeterodynedCrossCorrelationStatisticTest.c}}
 \label{stochastic:ss:StochasticHeterodynedCrossCorrelationStatisticTest.c}
 
-{\bf {\Large WARNING} The functionality of this module has been expanded
-and modified, so the tests and  documentation are not yet complete
-and/or correct.}
-
 A program to test \texttt{LALStochasticHeterodynedCrossCorrelationStatistic()}.
 
 \subsubsection*{Usage}
@@ -72,7 +68,7 @@ and units) is generated for each of the following simple test cases:
     f/2)^2}$; $\widetilde{\bar{h}}_1(f)=f^2+if$,
   $\widetilde{\bar{h}}_2(f)=f^{-2}-if^{-1}$.  With $f_0=\delta
   f=80\,\textrm{Hz}$ and $N=9$, the expected value is
-  $-1706.68\overline{703}i$
+  $-1248i$.
 \item $\widetilde{Q}(f) = 1$ for
   $300\,\textrm{Hz}<f<500\,\textrm{Hz}$, 0 otherwise;
   $\widetilde{\bar{h}}_1(f)=1-\widetilde{\bar{h}}_2(f)=f/800\,\textrm{Hz}$.
@@ -162,7 +158,7 @@ NRCSID (STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC, "$Id$");
 #define STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_WINMIN   300.0
 #define STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_WINMAX   500.0
 #define STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_FLIM     800.0
-#define STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP1     -15.6
+#define STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP1   -1248.0
 #define STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP2      58.4
 
 #define STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE     1
@@ -685,7 +681,7 @@ int main( int argc, char *argv[] )
       + i * STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_DELTAF;
     x = f
       / (STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_FLIM / 2.0);
-    printf ("%f\n",x);
+    /* printf ("%f\n",x); */
     goodData1.data->data[i].re = x*x;
     goodData1.data->data[i].im = x;
     goodData2.data->data[i].re = 1.0/goodData1.data->data[i].re;
@@ -693,11 +689,11 @@ int main( int argc, char *argv[] )
     goodFilter.data->data[i].re 
       = x * (2-x);
     goodFilter.data->data[i].im = 0.0;
-    printf ("%f + %f i    %f + %f i    %f + %f i\n",
+    /*    printf ("%f + %f i    %f + %f i    %f + %f i\n",
 	    goodData1.data->data[i].re, goodData1.data->data[i].im,
 	    goodData2.data->data[i].re, goodData2.data->data[i].im,
 	    goodFilter.data->data[i].re, goodFilter.data->data[i].im
-	    );
+	    ); */
   }
 
   LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
@@ -714,10 +710,10 @@ int main( int argc, char *argv[] )
 	   output.value.im,
 	   STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP1);
   }
-  if ( ( fabs(output.value.re)/STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_DELTAF
+  if ( ( fabs(output.value.re/STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP1)
 	 > STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TOL ) 
-       || ( fabs(output.value.im - STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP1)
-	    / STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_DELTAF
+       || ( fabs((output.value.im - STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP1)
+		 / STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP1)
 	    > STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TOL )
        )
   {
