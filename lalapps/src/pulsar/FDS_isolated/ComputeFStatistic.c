@@ -59,7 +59,7 @@ REAL8 uvar_Spin;
 REAL8 uvar_dSpin 	= 0.0;
 REAL8 uvar_SpinBand;
 REAL8 uvar_Fthreshold 	= 10.0;
-INT4 uvar_EphemYear	= -1;
+CHAR *uvar_EphemYear	= NULL;
 INT4 uvar_Metric 	=  LAL_METRIC_NONE;	
 REAL8 uvar_metricMismatch = 0.02;
 CHAR *uvar_skyRegion	= NULL;
@@ -83,7 +83,7 @@ UserVariable uvars[] = {
   regUserVar (dDelta, 	UVAR_REAL8,'g', "Resolution in delta (equatorial coordinates) in radians"),
   regUserVar (DataDir, 	UVAR_CHAR, 'D', "Directory where SFT's are located"),
   regUserVar (EphemDir, UVAR_CHAR, 'E', "Directory where Ephemeris files are located"),
-  regUserVar (EphemYear,UVAR_INT4, 'y', "Year of ephemeris files to be used"),
+  regUserVar (EphemYear,UVAR_CHAR, 'y', "Year (or range of years) of ephemeris files to be used"),
   regUserVar (IFO, 	UVAR_INT4, 'I', "Detector, must be set to 0=GEO, 1=LLO, 2=LHO or 3=Roman Bar"),
   regUserVar (SignalOnly,UVAR_BOOL,'S', "Signal only flag"),
   regUserVar (Spin, 	UVAR_REAL8,'s', "Starting spindown parameter"),
@@ -1057,7 +1057,6 @@ SetGlobalVariables(ConfigVariables *cfg)
 {
 
   CHAR command[512];
-  CHAR tmp[50];
   FILE *fp;
   size_t errorcode;
   REAL8 df;                         /* freq resolution */
@@ -1083,7 +1082,7 @@ SetGlobalVariables(ConfigVariables *cfg)
       fprintf(stderr,"Try ./ComputeFStatistic -h \n");
       exit(-1);
     }      
-  if(uvar_EphemYear == -1)
+  if(uvar_EphemYear == NULL)
     {
       fprintf(stderr,"No ephemeris year (earth??.dat, sun??.dat) directory specified; input year with -y option.\n");
       fprintf(stderr,"Try ./ComputeFStatistic -h \n");
@@ -1125,13 +1124,12 @@ SetGlobalVariables(ConfigVariables *cfg)
 
   strcpy(cfg->EphemEarth,uvar_EphemDir);
   strcat(cfg->EphemEarth,"/earth");
-  sprintf (tmp, "%02d", uvar_EphemYear);
-  strcat(cfg->EphemEarth, tmp);
+  strcat(cfg->EphemEarth, uvar_EphemYear);
   strcat(cfg->EphemEarth,".dat");
 
   strcpy(cfg->EphemSun,uvar_EphemDir);
   strcat(cfg->EphemSun,"/sun");
-  strcat(cfg->EphemSun, tmp);
+  strcat(cfg->EphemSun, uvar_EphemYear);
   strcat(cfg->EphemSun,".dat");
 
   /* *** Make sure the e-files are really there *** */
