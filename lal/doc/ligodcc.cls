@@ -2,7 +2,7 @@
 \ProvidesClass{ligodcc}
 \RequirePackage{array}
 \RequirePackage{calc}
-\RequirePackage{geometry}
+\RequirePackage[letterpaper]{geometry}
 \RequirePackage{times}
 %\RequirePackage{vmargin}
 \newcommand\@ligodccptsize{2}
