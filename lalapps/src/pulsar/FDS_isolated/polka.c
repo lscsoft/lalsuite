@@ -307,10 +307,12 @@ int main(int argc,char *argv[])
 	      CC[k].f2, CC[k].Alpha2, CC[k].Delta2,
 	      CC[k].F2, CC[k].fa2, CC[k].fa);
     }
-  fclose(fpOut);
 #if USE_BOINC
+  /* write end marker */
+  fprintf("%%DONE\n");	
   Outputfilename=PolkaCommandLineArgs.OutputFile;
 #endif
+  fclose(fpOut);
 
   LALFree(indices1F);
   LALFree(indices2F);
