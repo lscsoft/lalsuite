@@ -48,6 +48,7 @@ typedef struct VetoFile_struct {
   double winPos;
   float snrRatio;
   int colS, colNS, colDur, colSnr;
+  int colDurType, colSnrType;
   double tLast, tLastNeg, tLastPos;
   float lastSnr;
   int readit;
@@ -496,9 +497,17 @@ int main( int argc, char **argv )
 
       /*-- It is OK for the duration column to be absent --*/
       vFile->colDur = MetaioFindColumn( vFile->env, "duration" );
+      if ( vFile->colDur >= 0 ) {
+	vFile->colDurType = 
+	        vFile->env->ligo_lw.table.col[vFile->colDur].data_type;
+      }
 
       /*-- It is OK for the SNR column to be absent --*/
       vFile->colSnr = MetaioFindColumn( vFile->env, "snr" );
+      if ( vFile->colSnr >= 0 ) {
+	vFile->colSnrType =
+	        vFile->env->ligo_lw.table.col[vFile->colSnr].data_type;
+      }
 
     }
 
@@ -746,13 +755,21 @@ int main( int argc, char **argv )
 	    /*-- Get veto time, etc. --*/
 	    table = &(vFile->env->ligo_lw.table);
 	    if ( vFile->colDur >= 0 ) {
-	      dur = table->elt[vFile->colDur].data.real_8;
+	      if ( vFile->colDurType == METAIO_TYPE_REAL_8 ) {
+		dur = table->elt[vFile->colDur].data.real_8;
+	      } else {
+		dur = (double) table->elt[vFile->colDur].data.real_4;
+	      }
 	    } else {
 	      dur = 0.0;
 	    }
 
 	    if ( vFile->colSnr >= 0 ) {
-	      vFile->lastSnr = table->elt[vFile->colSnr].data.real_4;
+	      if ( vFile->colSnrType == METAIO_TYPE_REAL_8 ) {
+		vFile->lastSnr = (float) table->elt[vFile->colSnr].data.real_8;
+	      } else {
+		vFile->lastSnr = table->elt[vFile->colSnr].data.real_4;
+	      }
 	    } else {
 	      vFile->lastSnr = 1.0;
 	    }
