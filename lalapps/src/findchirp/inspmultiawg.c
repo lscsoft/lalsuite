@@ -498,7 +498,6 @@ main(int argc, char **argv)
   {
     PPNParamStruc ppnParams;       /* wave generation parameters */
     REAL4 m1, m2, dist, inc, phic; /* unconverted parameters */
-    REAL4 phii;
     CoherentGW waveform,*wf;       /* amplitude and phase structure */
     REAL4TimeSeries signal;        /* GW signal */
     REAL8 time;                    /* length of GW signal */
