@@ -79,6 +79,7 @@ int main ( int argc, char *argv[] )
   /* counters and other variables */
   INT4 i, j;
   INT4 numTmplts = 0;
+  INT4 numTmpltsWritten = 0;
   INT4 numPerFile = 0;
   CHAR *gpsHyphen;
   char outBankFileName[FILENAME_MAX];
@@ -383,7 +384,7 @@ int main ( int argc, char *argv[] )
   /* compute the number of templates per output file */
   numPerFile = ( numTmplts + 1 )/ numOutBanks;
   thisTmplt = inputBank.snglInspiralTable;
-  if ( vrbflg ) fprintf( stdout, "writing %d templates per file\n", 
+  if ( vrbflg ) fprintf( stdout, "writing around %d templates per file\n", 
       numPerFile );
 
   for ( i = 0; i < numOutBanks; ++i )
@@ -417,6 +418,7 @@ int main ( int argc, char *argv[] )
 
     /* write the templates to the file */
     outputBank.snglInspiralTable = thisTmplt;
+    numTmpltsWritten = 0;
 
     if ( thisTmplt )
     {
@@ -438,6 +440,7 @@ int main ( int argc, char *argv[] )
 
     while ( outputBank.snglInspiralTable )
     {
+      ++numTmpltsWritten;
       tmpTmplt = outputBank.snglInspiralTable;
       outputBank.snglInspiralTable = outputBank.snglInspiralTable->next;
       LALFree( tmpTmplt );
@@ -445,7 +448,7 @@ int main ( int argc, char *argv[] )
 
     LAL_CALL( LALCloseLIGOLwXMLFile( &status, &xmlStream), &status );
 
-    if ( vrbflg ) fprintf( stdout, "%d templates\n", 0 );
+    if ( vrbflg ) fprintf( stdout, "%d templates\n", numTmpltsWritten );
   }
 
   LALCheckMemoryLeaks();
