@@ -21,6 +21,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/LALConstants.h>
+#include <lal/ReadNoiseSpectrum.h>
 #include <lal/SeqFactories.h>
 #include <lal/Units.h>
 #include <lal/Date.h>
@@ -47,6 +48,7 @@ RCSID("$Id$");
 "Usage: %s [options] [LIGOLW XML input files]\n\n"\
 "  --help                    display this message\n"\
 "  --version                 print version information and exit\n"\
+"  --machine                 prints space delimeted output\n"\
 "  --debug-level LEVEL       set the LAL debug level to LEVEL\n"\
 "  --m1 m1                   mass of 1st binary element in Msun\n"\
 "  --m2 m2                   mass of 2nd binary element in Msun\n"\
@@ -58,6 +60,8 @@ RCSID("$Id$");
 
 int verbose = 0;
 int machine = 0;
+int chisqFlag = 0;
+int printWaveform = 0;
 
 int main ( int argc, char *argv[] )
 {
@@ -77,15 +81,23 @@ int main ( int argc, char *argv[] )
   REAL4Vector              *phiPPN=NULL;
   CoherentGW                waveform;      /* amplitude and phase structure */
   INT4                      phiOrder=0;
+  CHAR                     *waveFile=NULL;
+
+  /* power spectrum and chisqr information */
+  CHAR                     *specFile=NULL;
+  REAL4                      numChisqBins=0.0;
 
   /* getopt arguments */
   struct option long_options[] =
   {
     {"verbose",                 no_argument,       &verbose,          1 },
     {"machine",                 no_argument,       &machine,          1 },
+    {"flow",			required_argument, 0,		     'f'},
     {"m1",			required_argument, 0,		     'm'},
     {"m2",			required_argument, 0,		     'n'},
-    {"flow",			required_argument, 0,		     'f'},
+    {"specfile",                required_argument, 0,                'o'},
+    {"chisq-bins",              required_argument, 0,                'p' },
+    {"wavefile",                required_argument, 0,                'q'},
     {"help",                    no_argument,       0,                'h'}, 
     {"debug-level",             required_argument, 0,                'z'},
     {"version",                 no_argument,       0,                'V'},
@@ -109,9 +121,10 @@ int main ( int argc, char *argv[] )
   {
     /* getopt_long stores long option here */
     int option_index = 0;
+    int optarg_len = 0;
 
     c = getopt_long_only( argc, argv, 
-        "m:n:f:hz:V", long_options, 
+        "f:m:n:o:p:hz:V", long_options, 
 	&option_index );
 
     /* detect the end of the options */
@@ -136,6 +149,11 @@ int main ( int argc, char *argv[] )
         }
         break;
 
+      case 'f':
+        /* flow */
+        fstart=atof(optarg);
+        break;
+
       case 'm':
         /* mass1 */
         m1=atof(optarg);
@@ -146,9 +164,23 @@ int main ( int argc, char *argv[] )
         m2=atof(optarg);
         break;
 
-      case 'f':
-        /* flow */
-        fstart=atof(optarg);
+      case 'o':
+        optarg_len = strlen( optarg ) + 1;
+        specFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( specFile, optarg, optarg_len );
+        break;
+ 
+      case 'p':
+        /* number of chisq bins */
+        numChisqBins=atof(optarg);
+        chisqFlag = 1;
+        break;
+
+      case 'q':
+        optarg_len = strlen( optarg ) + 1;
+        waveFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( waveFile, optarg, optarg_len );
+        printWaveform = 1;
         break;
 
       case 'h':
@@ -163,8 +195,8 @@ int main ( int argc, char *argv[] )
 
       case 'V':
         /* print version information and exit */
-        fprintf( stdout, "Inspiral Coincidence and Triggered Bank Generator\n" 
-            "Patrick Brady, Duncan Brown and Steve Fairhurst\n"
+        fprintf( stdout, "Compute some basic properties of inspiral signals\n" 
+            "Patrick Brady and Duncan Brown\n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
         exit( 0 );
@@ -179,6 +211,15 @@ int main ( int argc, char *argv[] )
         fprintf( stderr, "Error: Unknown error while parsing options\n" );
         fprintf( stderr, USAGE, argv[0] );
         exit( 1 );
+    }
+  }
+
+  /* if the chisq is to be computed,  check we have everything */
+  if ( chisqFlag ){
+    if ( numChisqBins <= 0.0 || !(specFile) ){
+      fprintf(stderr, "Computing chisq bin boundaries:\n");
+      fprintf(stderr, "Need both numChisqBins and specFile\n");
+      exit(1);
     }
   }
   
@@ -257,10 +298,12 @@ int main ( int argc, char *argv[] )
    * Print out the information that's wanted for the inspiral group
    *******************************************************************/
   if (machine) {
+    
     fprintf( stdout, "%e %e %e %e %e %e\n", m1, m2,
         ppnParams.fStart, ppnParams.fStop, ppnParams.tc, 
         (float)(0.5/LAL_PI) * (waveform.phi->data->data[waveform.phi->data->length-1] 
                                - waveform.phi->data->data[0]) );
+  
   } else {
 
     fprintf( stdout, "fStart according to Tev = %e Hz\n", ppnParams.fStart );
@@ -269,23 +312,72 @@ int main ( int argc, char *argv[] )
     fprintf( stdout, "Ncycle according to Tev = %f \n", 
         (float)(0.5/LAL_PI) * (waveform.phi->data->data[waveform.phi->data->length-1] 
                                - waveform.phi->data->data[0]));
+  
+  }
+
+  /***********************************************************************
+   * Compute the chisq bin boundaries if requested
+   ***********************************************************************/
+  if ( chisqFlag ){
+    REAL4FrequencySeries spectrum;
+    REAL4 df = 0.125;
+    REAL4 freq = 0.0;
+    REAL4 sum = 0.0;
+    REAL4 chisqSum = 0.0;
+    REAL4 norm = 0.0;
+    INT4 k = 0;
+
+    spectrum.f0 = ppnParams.fStart;
+    spectrum.deltaF = df;
+    spectrum.data = NULL;
+
+    LAL_CALL( LALCreateVector( &stat, &(spectrum.data), 
+          1 + (INT4)( (ppnParams.fStop - ppnParams.fStart)/spectrum.deltaF ) ), 
+        &stat );
+
+    LAL_CALL( LALReadNoiseSpectrum( &stat, &spectrum, specFile), &stat);
+
+    sum = 0.0;
+    norm = (spectrum.data->data[0] * spectrum.data->data[0]);
+    for ( k=0 ; k<spectrum.data->length ; k++){
+      freq = spectrum.f0 + k * df;
+      sum += norm * pow(freq, -7.0/3.0) / 
+        (spectrum.data->data[k] * spectrum.data->data[k]);
+    }
+
+    chisqSum = 0.0;
+    for ( k=0 ; k<spectrum.data->length ; k++){
+      freq = spectrum.f0 + k * df;
+      chisqSum += norm * pow(freq, -7.0/3.0) 
+        / (spectrum.data->data[k] * spectrum.data->data[k]);
+      if ( chisqSum/sum >= 1.0/numChisqBins ){
+        fprintf(stdout,"%f ",freq);
+        chisqSum = 0.0;
+      }
+    }
+    if ( chisqSum > 0.0 ){
+      fprintf(stdout,"%f ",freq);
+    }
   }
 
   /**********************************************************************
-   *
    * Print out the waveform information
-   *
-   **********************************************************************
-  for(i = 0; i<waveform.phi->data->length ; i++)
-  {
-    float tmper =  0.5/LAL_PI;
-    fprintf(stdout,"%e %e\n", i*ppnParams.deltaT, tmper * waveform.phi->data->data[i] );
+   **********************************************************************/
+  if ( printWaveform ){
+    FILE *fpout=NULL;
+
+    fpout = fopen(waveFile,"w");
+
+    for(i = 0; i<waveform.phi->data->length ; i++)
+    {
+      float tmper =  0.5/LAL_PI;
+      fprintf(fpout,"%e %e %e\n", i*ppnParams.deltaT, 
+          waveform.f->data->data[i] ,
+          tmper * waveform.phi->data->data[i] );
+    }
+
+    fclose(fpout);
   }
-    */
-
-  
-    
-
 
   return 0;
 }
