@@ -175,6 +175,33 @@ int main(int argc,char *argv[])
       }
     }
 
+  /* write factors */
+  {
+    char fname[256], fnumber[16];
+    int p;
+    FILE *fpFACTORS;
+
+    strcpy(fname,"factors-");
+    sprintf(fnumber,"%09d",InputData.AS_Q.epoch.gpsSeconds);
+    strcat(fname,fnumber);
+    fpFACTORS=fopen(fname,"w");
+    if (fpFACTORS==NULL) {
+      fprintf(stderr,"Unable to open factors file %s\n",fname);
+      return 1;
+    }
+
+    for (p=0; p<(int)OutputData.alphabeta.data->length;p++)
+      {
+	fprintf(fpFACTORS,"%d %e %e %e %e %e %e\n",
+		(int)(InputData.AS_Q.epoch.gpsSeconds+p*OutputData.alpha.deltaT),
+		OutputData.alphabeta.data->data[p].re,OutputData.alphabeta.data->data[p].im,
+		OutputData.alpha.data->data[p].re,OutputData.alpha.data->data[p].im,
+		OutputData.beta.data->data[p].re,OutputData.beta.data->data[p].im
+		);
+      }
+    fclose(fpFACTORS);
+  }
+  
   if(FreeMem()) return 8;
 
   return 0;
