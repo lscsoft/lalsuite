@@ -8,6 +8,7 @@
  *
  * History:   Created by Sintes May 14, 2001
  *            Modified by Badri Krishnan Feb 2003
+ *            Modified by Sintes May 2003
  *
  *-----------------------------------------------------------------------
  *
@@ -39,13 +40,21 @@ Function for tiling  the sky-patch (on the projected plane).
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{PatchGridD}
-\index{\verb&LALHOUGHPatchGrid()&}
+\index{\verb&LALHOUGHComputeSizePar()&}
+\index{\verb&LALHOUGHComputeNDSizePar()&}
+\index{\verb&LALHOUGHFillPatchGrid()&}
+%\index{\verb&LALHOUGHPatchGrid()&}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Description}
 
-This  is a {\sc provisional} routine for tiling a  sky-pacth
+This  is a {\sc provisional}final now ? routine for tiling a  sky-pacth
 on the projected plane.
+
+Patch size specified by user
+
+==doc needs to be updated ==
+
 The reason to call it  {\sc provisional}  is because
 the size of the patch depends on the grid used in the 
 demodulation stage. Neighbour sky-patches should not be separated
@@ -110,41 +119,272 @@ y-direction.
 </lalLaTeX> */
 
 
+
 #include <lal/LUT.h>
+
+
 
 NRCSID (PATCHGRIDC, "$Id$");
 
-/* <lalVerbatim file="PatchGridD"> */
-void LALHOUGHPatchGrid (LALStatus      *status,
-                   HOUGHPatchGrid      *out,  /* */
-                   HOUGHResolutionPar  *in1)  /* information */
-{ /* </lalVerbatim> */
 
-  /* vvvvvvvvvvvvvv */
-  /* to be modified */
-  /* ^^^^^^^^^^^^^^ */
+/*
+ * The functions that make up the guts of this module
+ */
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/* ******************************* <lalVerbatim file="PatchGridD"> */
+void LALHOUGHComputeSizePar (LALStatus  *status, /* demodulated case */
+                   HOUGHSizePar        *out,
+                   HOUGHResolutionPar  *in1
+                   )
+{ /*   *********************************************  </lalVerbatim> */
+
+
+  INT8    f0Bin;        /* corresponding freq. bin  */
+  REAL8   deltaF;    /* frequency resolution  df=1/TCOH*/
+  UINT2   pixelFactor; /* number of pixel that fit in the thinnest annulus*/
+  REAL8   pixErr;   /* for validity of LUT as PIXERR */
+  REAL8   linErr;   /* as LINERR circle ->line */
+  REAL8   vTotC;    /* estimate value of v-total/C as VTOT */
+
+  REAL8   deltaX; /* pixel size in the projected plane */
+  REAL8   deltaY;
+  UINT2   xSide;    /* number of pixels in the x direction (projected plane)*/
+  UINT2   ySide;    /* number of pixels in the y direction */
+  UINT2   maxSide;    /* number of pixels in the y direction */
+  
+  UINT2   maxNBins;    /* maximum number of bins affecting the patch. For
+                               memory allocation */
+  REAL8   patchSizeX;  /* size of sky patch projected */
+  REAL8   patchSizeY;  /* size of sky patch prijected */
+  REAL8   patchSkySizeX;     /* Size of sky patch in radians */
+  REAL8   patchSkySizeY;
 
   /* --------------------------------------------- */
+  INITSTATUS (status, "LALHOUGHComputeSizePar", PATCHGRIDC);
+  ATTATCHSTATUSPTR (status); 
+
+  /*   Make sure the arguments are not NULL: */ 
+  ASSERT (out, status, LUTH_ENULL, LUTH_MSGENULL);
+  ASSERT (in1 , status, LUTH_ENULL, LUTH_MSGENULL);
+
+  patchSkySizeX = in1->patchSkySizeX;
+  patchSkySizeY = in1->patchSkySizeY;
+  
+ /* Make sure the user chose a sky patch smaller that pi of the sky */ 
+  ASSERT (patchSkySizeX > 0.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (patchSkySizeX <= LAL_PI,status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (patchSkySizeY > 0.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (patchSkySizeY <= LAL_PI,status, LUTH_EVAL, LUTH_MSGEVAL);
+  
+  pixelFactor = in1->pixelFactor;
+  pixErr = in1->pixErr;
+  linErr = in1->linErr;
+  
+  /* Make sure the parameters make sense */ 
+  ASSERT (pixelFactor > 1, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (pixErr < 1.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (linErr < 1.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (pixErr > 0.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (linErr > 0.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+
+  f0Bin  = in1->f0Bin;
+  deltaF = in1->deltaF;
+  vTotC  = in1->vTotC;
+  
+  ASSERT (f0Bin  > 0, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (deltaF > 0.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (vTotC  > 0.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (vTotC  < 0.001, status, LUTH_EVAL, LUTH_MSGEVAL);
+
+  /*  ************ THIS IS FOR THE DEMODULATED CASE ONLY ***********   */
+  out->deltaF = deltaF;
+  out->f0Bin = f0Bin;
+  
+  deltaX = deltaY = 1.0/(vTotC *pixelFactor * f0Bin);
+  out->deltaX = deltaX;
+  out->deltaY = deltaY;
+  
+  patchSizeX = 4.0 * tan(0.25*patchSkySizeX);
+  patchSizeY = 4.0 * tan(0.25*patchSkySizeY);
+  xSide = out->xSide = ceil( patchSizeX/deltaX );
+  ySide = out->ySide = ceil( patchSizeY/deltaY );
+  maxSide =  MAX( xSide , ySide );
+
+  /* the max number of bins that can fit in the diagonal and a bit more
+      1.41->1.5  */
+  maxNBins = out->maxNBins = ceil( (1.5* maxSide)/pixelFactor);
+
+  /* maximum number of borders affecting the patch +1. Each Bin has up to 4
+  borders, but they are common (they share 2 with the next bin). Depending on
+  the orientation could be equal to maxNBins. In other cases twice  maxNBins.
+  Here we are very conservative*/
+
+  out->maxNBorders = 1 + 2*maxNBins;
+  
+  /* LUT validity */
+  /* From equation: nFreqValid = pixErr/(pixelFactor* vTotC * 0.5 * maxSide * deltaX); 
+      or the same is */
+  out->nFreqValid = (pixErr * 2 * f0Bin)/(pixelFactor * maxNBins);
+
+  /* max. angle (rad.) from the pole to consider a circle as a line in the projected plane */
+  /* epsilon ~ 2/radius circle; radius ~h*h/(2b), epsilon = 4b/(h*h) */
+  
+  out->epsilon=8.0* linErr/(maxSide*deltaX*maxSide) ;
+  
+ /* -------------------------------------------   */
+    
+			       
+  DETATCHSTATUSPTR (status);
+  
+  /* normal exit */
+  RETURN (status);
+}
+
+
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/* ******************************* <lalVerbatim file="PatchGridD"> */
+void LALHOUGHComputeNDSizePar (LALStatus  *status, /* non-demod. case */
+                   HOUGHSizePar        *out,
+                   HOUGHResolutionPar  *in1
+                   )
+{ /*   *********************************************  </lalVerbatim> */
+
+  INT8    f0Bin;        /* corresponding freq. bin  */
+  REAL8   deltaF;    /* frequency resolution  df=1/TCOH*/
+  UINT2   pixelFactor; /* number of pixel that fit in the thinnest annulus*/
+  REAL8   pixErr;   /* for validity of LUT as PIXERR */
+  REAL8   linErr;   /* as LINERR circle ->line */
+  REAL8   vTotC;    /* estimate value of v-total/C as VTOT */
+
+  REAL8   deltaX; /* pixel size in the projected plane */
+  REAL8   deltaY;
+  UINT2   xSide;    /* number of pixels in the x direction (projected plane)*/
+  UINT2   ySide;    /* number of pixels in the y direction */
+  UINT2   maxDopplerBin;  
+  UINT2   maxSide;    /* number of pixels in the y direction */
+  
+  UINT2   maxNBins;    /* maximum number of bins affecting the patch. For
+                               memory allocation */
+  REAL8   patchSizeX;  /* size of sky patch projected */
+  REAL8   patchSizeY;  /* size of sky patch prijected */
+  REAL8   patchSkySizeX;     /* Size of sky patch in radians */
+  REAL8   patchSkySizeY;
+
+  /* --------------------------------------------- */
+  INITSTATUS (status, "LALHOUGHComputeSizePar", PATCHGRIDC);
+  ATTATCHSTATUSPTR (status); 
+
+  /*   Make sure the arguments are not NULL: */ 
+  ASSERT (out, status, LUTH_ENULL, LUTH_MSGENULL);
+  ASSERT (in1 , status, LUTH_ENULL, LUTH_MSGENULL);
+
+  patchSkySizeX = in1->patchSkySizeX;
+  patchSkySizeY = in1->patchSkySizeY;
+  
+ /* Make sure the user chose a sky patch smaller that pi of the sky */ 
+  ASSERT (patchSkySizeX > 0.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (patchSkySizeX <= LAL_PI,status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (patchSkySizeY > 0.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (patchSkySizeY <= LAL_PI,status, LUTH_EVAL, LUTH_MSGEVAL);
+  
+  pixelFactor = in1->pixelFactor;
+  pixErr = in1->pixErr;
+  linErr = in1->linErr;
+  
+  /* Make sure the parameters make sense */ 
+  ASSERT (pixelFactor > 1, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (pixErr < 1.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (linErr < 1.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (pixErr > 0.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (linErr > 0.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+
+  f0Bin  = in1->f0Bin;
+  deltaF = in1->deltaF;
+  vTotC  = in1->vTotC;
+  
+  ASSERT (f0Bin  > 0, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (deltaF > 0.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (vTotC  > 0.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (vTotC  < 0.001, status, LUTH_EVAL, LUTH_MSGEVAL);
+
+  /*  ************ THIS IS FOR THE *NON* DEMODULATED CASE ONLY ***********   */
+  out->deltaF = deltaF;
+  out->f0Bin = f0Bin;
+  
+  deltaX = deltaY = 1.0/(vTotC *pixelFactor * f0Bin);
+  out->deltaX = deltaX;
+  out->deltaY = deltaY;
+  
+  patchSizeX = 4.0 * tan(0.25*patchSkySizeX);
+  patchSizeY = 4.0 * tan(0.25*patchSkySizeY);
+  xSide = out->xSide = ceil( patchSizeX/deltaX );
+  ySide = out->ySide = ceil( patchSizeY/deltaY );
+  maxSide =  MAX( xSide , ySide );
+
+  /* the max number of bins that can fit in the full sky  */
+  maxDopplerBin = floor( f0Bin * vTotC +0.5);
+  
+  maxNBins = out->maxNBins = 1+ 2* maxDopplerBin;
+
+  /* maximum number of borders affecting the patch +1. Each Bin has up to 4
+  borders, but they are common (they share 2 with the next bin). Depending on
+  the orientation could be equal to maxNBins. In other cases twice  maxNBins.
+  Here we are very conservative*/
+
+  out->maxNBorders = 1 + 2*maxNBins;
+  
+  /* LUT validity */
+  if(maxDopplerBin < 2){
+    /* the answer is infinity more or less */
+    out->nFreqValid = f0Bin;
+  }
+  else {
+    REAL8 num, den;
+    num =  maxDopplerBin *maxDopplerBin;
+    den = (maxDopplerBin -1)*(maxDopplerBin -1);
+    out->nFreqValid =pixErr/(pixelFactor*vTotC)*sqrt(num/den -1.0);
+  }
+  
+  /* max. angle (rad.) from the pole to consider a circle as a line in the projected plane */
+  /* epsilon ~ 2/radius circle; radius ~h*h/(2b), epsilon = 4b/(h*h) */
+  
+  out->epsilon=8.0* linErr/(maxSide*deltaX*maxSide) ;
+  
+ /* -------------------------------------------   */
+    
+			       
+  DETATCHSTATUSPTR (status);
+  
+  /* normal exit */
+  RETURN (status);
+}
+
+
+
+
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/*  *********************************<lalVerbatim file="PatchGridD"> */
+void LALHOUGHFillPatchGrid (LALStatus      *status,
+                   HOUGHPatchGrid      *out,  /* */
+                   HOUGHSizePar        *in1)  
+{ /* ***********************************************</lalVerbatim> */
+
+  REAL8   deltaX;
+  REAL8   deltaY;
+  UINT2   xSide;    /* number of pixels in the x direction (projected plane)*/
+  UINT2   ySide;    /* number of pixels in the y direction */
 
   INT4    i;
-  REAL8   f0; /* frequency to construct grid */
-  REAL8   deltaF;  /* df=1/TCOH */
-  REAL8   minWidthRatio;
-  /*(min annuli width in this search)/(min annuli width in 1 year) 
-    [1.0, 25.0]*/
-  REAL8   deltaX;
   REAL8   xMin, xMax, x1;
-  REAL8   patchSizeX, patchSizeY;  /* Size of sky patch in radians */
-  UINT2   xSide;
-  REAL8   *xCoord;
-
-  REAL8   deltaY;
   REAL8   yMin, yMax, y1;
-  UINT2   ySide;
-  REAL8   *yCoord;
+  REAL8   *xCoord;
+  REAL8   *yCoord; 
   /* --------------------------------------------- */
 
-  INITSTATUS (status, "LALHOUGHPatchGrid", PATCHGRIDC);
+  INITSTATUS (status, "LALHOUGHFillPatchGrid", PATCHGRIDC);
   ATTATCHSTATUSPTR (status); 
 
   /*   Make sure the arguments are not NULL: */ 
@@ -152,58 +392,27 @@ void LALHOUGHPatchGrid (LALStatus      *status,
   ASSERT (in1, status, LUTH_ENULL, LUTH_MSGENULL);
   ASSERT (out->xCoor, status, LUTH_ENULL, LUTH_MSGENULL);
   ASSERT (out->yCoor, status, LUTH_ENULL, LUTH_MSGENULL);
-  /* Make sure the patch contains some pixels */
-  ASSERT (out->xSideMax, status, LUTH_ESIZE, LUTH_MSGESIZE);
-  ASSERT (out->ySideMax, status, LUTH_ESIZE, LUTH_MSGESIZE);
-  
-  ASSERT (in1->minWidthRatio >= 1.0, status, LUTH_EVAL, LUTH_MSGEVAL);
-  ASSERT (in1->minWidthRatio <= 25.0,status, LUTH_EVAL, LUTH_MSGEVAL);
 
-  /* Make sure the user chose a sky patch smaller that 1/6 of the sky */ 
-  ASSERT (in1->patchSizeX >= 0.0, status, LUTH_EVAL, LUTH_MSGEVAL);
-  ASSERT (in1->patchSizeX <= 1.447,status, LUTH_EVAL, LUTH_MSGEVAL);
-  ASSERT (in1->patchSizeY >= 0.0, status, LUTH_EVAL, LUTH_MSGEVAL);
-  ASSERT (in1->patchSizeY <= 1.447,status, LUTH_EVAL, LUTH_MSGEVAL);
-  /* -------------------------------------------   */
-  /* The size of the patch depends on the grid used for the 
-     demodulation part. Neigbour sky-patches should not be separated,
-     nor overlapping too much.
-     The patch size here considers only v_epicicle, f0 & deltaF:
-                  side == deltaF/f0 * c/v_epi
-     But the patch-size should be valid for a certain frequency range. 
-     Note:  The above equation  will be used ONLY if the user did 
-            not specify the sky-patch size      */
- /*  ------------------------------------------ */
+  xCoord = out->xCoor;
+  yCoord = out->yCoor;
 
-  f0 = out->f0 = in1->f0;
-  deltaF = out->deltaF = in1->deltaF;
-  patchSizeX = out->patchSizeX = in1->patchSizeX;
-  patchSizeY = out->patchSizeY = in1->patchSizeY;
-  minWidthRatio = out->minWidthRatio = in1->minWidthRatio;
+  xSide = out->xSide;
+  ySide = out->ySide;
 
-  deltaX =  out->deltaX =  deltaF * minWidthRatio/ (f0 * VTOT*PIXELFACTORX );
-  deltaY =  out->deltaY =  deltaF * minWidthRatio/ (f0 * VTOT*PIXELFACTORY );
-
-
-  if ( patchSizeX*patchSizeY ) {
-      xSide = out->xSide = floor( patchSizeX/deltaX );
-      ySide = out->ySide = floor( patchSizeY/deltaY );
-  } else {
-      xSide =  out->xSide =  VTOT * PIXELFACTORX / ( VEPI * minWidthRatio);
-      ySide =  out->ySide =  VTOT * PIXELFACTORY / ( VEPI * minWidthRatio);
-      patchSizeX = out->patchSizeX = xSide*deltaX;
-      patchSizeY = out->patchSizeY = ySide*deltaY;
-  }
-
-  /* -------------------------------------------   */
-  /* check for size mismatch */
-  ASSERT (xSide <= out->xSideMax, status, LUTH_ESZMM, LUTH_MSGESZMM);
-  ASSERT (ySide <= out->ySideMax, status, LUTH_ESZMM, LUTH_MSGESZMM);
   /* Make sure there are physical pixels in that patch */
   ASSERT (xSide, status, LUTH_EVAL, LUTH_MSGEVAL);
   ASSERT (ySide, status, LUTH_EVAL, LUTH_MSGEVAL);
   
-  
+  deltaX = out->deltaX = in1->deltaX;
+  deltaY = out->deltaY = in1->deltaY;
+
+  /* Make sure pixel sizes are positive definite */
+  ASSERT (deltaX > 0.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (deltaY > 0.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+
+  out->f0 = in1->f0Bin * in1->deltaF;
+  out->deltaF = in1->deltaF;
+ 
   /* -------------------------------------------   */
   /* Calculation of the patch limits with respect to the centers of the 
      last pixels.  Note xSide and ySide are integers */
@@ -214,12 +423,8 @@ void LALHOUGHPatchGrid (LALStatus      *status,
   yMin = out->yMin = -yMax;  
 
   /* -------------------------------------------   */  
-  /* Coordiantes of the pixel centers, in the projected plane */ 
- 
-  /*  xCoord = &(*out).xCoor[0];  or &(out->xCoor[0]) or out->xCoor */
-  xCoord = out->xCoor;
-  yCoord = out->yCoor;
 
+  /* Coordiantes of the pixel centers, in the projected plane */ 
   x1=xMin;
   for (i=0;i<xSide;++i){
     xCoord[i] = x1;
@@ -239,3 +444,12 @@ void LALHOUGHPatchGrid (LALStatus      *status,
   /* normal exit */
   RETURN (status);
 }
+
+
+
+
+
+
+
+
+
