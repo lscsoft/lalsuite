@@ -90,6 +90,9 @@ typedef struct tagCurve
   CHAR junction; /* =1 if the curve has a junction and =0 if no junction */ 
   INT4 *row; /* the row coordinates of the n points */
   INT4 *col; /* the column coordinates of the n points */
+  REAL4 *depth; /* the "height" of the pixel in the TF map corresponding 
+		  to (col[i],row[i]) */
+  REAL4 totalPower; /* resulting numberical intergration along ridge */
 } Curve;
 
 typedef struct tagTrackSearchStore  /* Structure for storage space for the algorithm */

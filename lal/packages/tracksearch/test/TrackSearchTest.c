@@ -19,12 +19,14 @@ int main( void )
   FILE *fp;
   unsigned char dummy;
   char stringd[256];
-  
+
+  /**/static void OutputInvertedMap(TimeFreqRep, TrackSearchParams);
+
   /* set the parameters */
-  params.sigma=2; 
-  params.high = 3.0;
-  params.low=1;
-  params.low = params.high/3;
+  params.sigma=2;  /* 2 */
+  params.high = 1; /* 3.0 */
+  params.low= 3; /* 1 */
+  params.low = params.high/3; /* ? */
   /* open an input pgm file */
   fp = LALOpenDataFile("a.pgm");
   fgets(stringd,255,fp);
@@ -46,6 +48,9 @@ int main( void )
       *(in.map[i] + j) = maxVal - dummy;
     }
   }
+  /* Added static function to write out in.map structure */
+  /* in is of type timefreqrep */
+  printf("MaxVal = %d \n",maxVal);
   fclose(fp);
   /* set the allocFlag so that space can be allocated */
   params.allocFlag=1;
@@ -61,9 +66,9 @@ int main( void )
   for(i=0;i<out.numberOfCurves;i++){
     if(out.curves[i].n>5){
       cnt++;
-      printf(" curve number = %d, length =  %d\n",cnt,out.curves[i].n);
+      printf(" curve number = %d, length =  %d, power = %4.2e\n",cnt,out.curves[i].n,out.curves[i].totalPower);
       for(j=0;j<out.curves[i].n;j++){
-	printf("%d %d \n",out.curves[i].row[j],out.curves[i].col[j]);
+	printf("%d %d %4.4e\n",out.curves[i].row[j],out.curves[i].col[j],out.curves[i].depth[j]);
 	*(in.map[out.curves[i].row[j]] + out.curves[i].col[j]) = cnt;
       }
     }
@@ -73,6 +78,7 @@ int main( void )
   for(i=0;i<out.numberOfCurves;i++){
     LALFree(out.curves[i].row);
     LALFree(out.curves[i].col);
+    LALFree(out.curves[i].depth); /* added cwt */
   }
   if(out.curves!=NULL)
     LALFree(out.curves);
@@ -83,13 +89,4 @@ int main( void )
   REPORTSTATUS(&status);
   return(0);
 }
-
-
-
-
-
-
-
-
-
 
