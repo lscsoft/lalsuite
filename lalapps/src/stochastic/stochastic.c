@@ -2995,6 +2995,7 @@ static void readDataPair(LALStatus *status,
   LAL_CALL(LALDestroyREAL8TimeSeries(status, dataStreamGEO), status);
 }
 
+/* read a time series */
 static REAL4TimeSeries *get_time_series(LALStatus *status,
   CHAR *ifo,
   CHAR *cacheFile,
@@ -3021,19 +3022,19 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
   else
     series = get_ligo_data(status, stream, channel, start, end);
 
-	/* Check for missing data */
-	if (stream->state & LAL_FR_GAP)
+  /* Check for missing data */
+  if (stream->state & LAL_FR_GAP)
   {
     fprintf(stderr, "Gap in data detected between GPS times %d s and %d s\n", \
         start.gpsSeconds, end.gpsSeconds);
-		LAL_CALL(LALDestroyREAL4TimeSeries(status, series), status);
-		series = NULL;
-	}
+    LAL_CALL(LALDestroyREAL4TimeSeries(status, series), status);
+    series = NULL;
+  }
 
-	/* Clean up */
-	LAL_CALL(LALFrClose(status, &stream), status);
+  /* Clean up */
+  LAL_CALL(LALFrClose(status, &stream), status);
 
-	return(series);
+  return(series);
 }
 
 /* read a LIGO time series */
