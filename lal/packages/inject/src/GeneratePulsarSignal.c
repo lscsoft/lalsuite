@@ -413,12 +413,20 @@ LALSignalToSFTs (LALStatus *stat,
       thisSFT->deltaF = 1.0 / params->Tsft;	/* frequency-spacing */
 
       /* ok, issue at least a warning if we have "nudged" an SFT-timestamp */
-      if (lalDebugLevel)
+      if (lalDebugLevel >= 3)
 	{
 	  REAL8 diff;
 	  TRY ( LALDeltaFloatGPS (stat->statusPtr, &diff, &(timestamps->data[iSFT]), &tmpTime), stat);
-	  if (diff != 0)
-	    LALPrintError ("Warning: timestamp %d had to be 'nudged' by %e s to fit with time-series\n", iSFT, diff);
+	  if (diff != 0) 
+	    {
+	      LALPrintError ("Warning: timestamp %d had to be 'nudged' by %e s to fit with time-series\n", iSFT, diff);
+	      /* double check if magnitude of nudging seems reasonable .. */
+	      if ( fabs(diff) >= signal->deltaT ) 
+		{
+		  LALPrintError ("WARNING: nudged by more than deltaT=%e... this sounds wrong! (We better stop)\n");
+		  ABORT (stat, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL );
+		}
+	    } /* if nudging */
 	} /* if lalDebugLevel */
 
       /* the central step: FFT the ith time-stretch into an SFT-slot */
