@@ -1270,6 +1270,9 @@ LALFindChirpBCVSpinData (
   COMPLEX8             *resp;
 
   COMPLEX8             *outputData;
+  COMPLEX8             *outputData1;
+  COMPLEX8             *outputData2;
+  COMPLEX8             *outputData3;
   COMPLEX8             *outputDataBCV;
 
   UINT4                *chisqBin    = NULL;
@@ -1303,10 +1306,22 @@ LALFindChirpBCVSpinData (
 
 /*code*/
 
-    /* 
-     * moments necessary for the calculation of
-     * the BCVSpin normalization parameters
-     */
+/* compute strain */
+    for ( k = 0; k < fcSeg->data->data->length; ++k )
+    {
+      REAL4 p = outputData[k].re;
+      REAL4 q = outputData[k].im;
+      REAL4 x = resp[k].re * params->dynRange;
+      REAL4 y = resp[k].im * params->dynRange;
+
+      outputData[k].re =  p*x - q*y;
+      outputData[k].im =  p*y + q*x;
+    }
+
+/* 
+ * moments necessary for the calculation of
+ * the BCVSpin normalization parameters
+ */
     
     for ( k = 1; k < fcSeg->data->data->length; ++k )
     {
@@ -1328,11 +1343,25 @@ LALFindChirpBCVSpinData (
     denominator = I*M  +  0.5*pow(I,2) - pow(J,2);
     denominator1 = sqrt ( 0.25 * pow(I,3) + M*(pow(J,2) - pow(K,2)) - 0.5*(pow(J,2) + pow(K,2)) - I*(pow(L,2) + pow(M,2)) + 2*J*K*L );
 
-    fcSeg->a1 = amp[k] * 1.0 / sqrt(I) ;
+    fcSeg->a1 = 1.0 / sqrt(I) ;
     
-    fcSeg->b2 = amp[k]/sqrt(denominator) * (I * cos(Beta * amp[k]) -  J);
+    fcSeg->b1 = 1.0 /sqrt(denominator) * (I * cos(Beta * amp[k]) -  J);
     
-    fcSeg->b1 = amp[k]/denominator1 * ( sin(Beta * amp[k]) - (I*L - J*K)*cos(Beta * amp[k])/denominator + (J*L - K*M + 0.5*I*K)/denominator );
+    fcSeg->b2 = 1.0 /denominator1 * ( sin(Beta * amp[k]) - (I*L - J*K)*cos(Beta * amp[k])/denominator + (J*L - K*M + 0.5*I*K)/denominator );
+    /* note that these quntities need to be multiplied by amp[k] to match definitions in documentation */
+
+    /*
+     *
+     * conditioning data for FindChirpFilter.c
+     * note lack of exponential terms
+     * Also, amp[k] factor now included
+     *
+     */
+
+    outputData1[k].re *= fcSeg->a1 * amp[k] * wtilde[k].re;
+    outputData2[k].re *= fcSeg->b1 * amp[k] * wtilde[k].re;
+    outputData3[k].re *= fcSeg->b2 * amp[k] * wtilde[k].re;
+
 
  DETATCHSTATUSPTR( status );
  RETURN( status );

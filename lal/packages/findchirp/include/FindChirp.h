@@ -364,7 +364,6 @@ FindChirpTemplate;
 \subsubsection*{Structure \texttt{FindChirpTemplate}}
 \idx[Type]{FindChirpTemplate}
 
-\input{FindChirpHFindChirpTemplate}
 
 \noindent This structure provides contains the frequency domain representation
 of the cosine phase inspiral template $\tilde{h_c}(f)$.
