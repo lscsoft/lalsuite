@@ -14,7 +14,7 @@
 
 
 /************************************ <lalVerbatim file="LALHoughHV">
-Author: Sintes, A.M., 
+Author: Sintes, A.M., Krishnan, B.
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -95,6 +95,22 @@ for a given (null or) residual spin-down parameters.  The fields are:
 \end{description}
 
 \begin{verbatim}
+struct UINT8FrequencyIndexVectorSequence
+\end{verbatim}
+\index{\texttt{UINT8FrequencyIndexVectorSequence}}
+
+\noindent This structure stores a set of frequency-index vectors. Every set 
+corresponds to a different spin-down residual value. There will thus be as many 
+sets as many spin-down residuals one wants to search over with the hough stage.
+The fields are:
+
+\begin{description}
+\item[\texttt{UINT4                       length}]        Number of elements.
+\item[\texttt{UINT4                       vectorLength}]  Frequency resolution.
+\item[\texttt{UINT8FrequencyIndexVector   *freqIndV}]     The frequency indexes.
+\end{description}
+
+\begin{verbatim}
 struct HOUGHPeakGramVector
 \end{verbatim}
 \index{\texttt{HOUGHPeakGramVector}}
@@ -145,7 +161,7 @@ indexes.  The fields are:
 \begin{description}
 \item[\texttt{UINT4       nfSize }]   Number of different frequencies.
 \item[\texttt{UINT4       length }]  Number of elements for each frequency.
-\item[\texttt{UINT8       fBinMin }]   Present minimum frequency bin.
+\item[\texttt{UINT8       fBinMin }]   Frequency index of the smallest intrisic freq.in buffer
 \item[\texttt{REAL8       deltaF }]  Frequency resolution.
 \item[\texttt{UINT4       breakLine }]   Mark $\in$[0, \texttt{nfSize}) \, (of the circular
 buffer) pointing to the starting of the \texttt{fBinMin} line.
@@ -177,6 +193,7 @@ spin-down parameter,
 
 %%%%%%%%%%Test program. %%
 \newpage\input{TestDriveHoughC}
+\newpage\input{TestDriveNDHoughC}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -284,6 +301,12 @@ typedef struct tagUINT8FrequencyIndexVector{
   UINT8      *data;   /* the frequency indexes */
 } UINT8FrequencyIndexVector;  
 
+typedef struct tagUINT8FrequencyIndexVectorSequence{
+  UINT4                          length;        /* number of elements */
+  UINT4                          vectorLength;  /* frequency resolution */
+  UINT8FrequencyIndexVector      *freqIndV;     /* the frequency indexes */
+} UINT8FrequencyIndexVectorSequence;
+
 typedef struct tagHOUGHPeakGramVector{
   UINT4             length; /* number of elements */
   HOUGHPeakGram     *pg;    /* the Peakgrams */
@@ -302,7 +325,7 @@ typedef struct tagHOUGHMapTotalVector{
 typedef struct tagPHMDVectorSequence{
   UINT4       nfSize;    /* number of different frequencies */
   UINT4       length;    /* number of elements for each frequency */
-  UINT8       fBinMin;   /* present minimum frequency bin */
+  UINT8       fBinMin;   /* frequency index of smallest intr.freq. in circ. buffer */
   REAL8       deltaF;    /* frequency resolution */
   UINT4       breakLine; /* mark [0,nfSize) (of the circular buffer)
 			    pointing to the starting of the fBinMin line */

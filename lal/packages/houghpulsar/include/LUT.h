@@ -2,18 +2,18 @@
  *
  * File Name: LUT.h
  *
- * Authors: Sintes, A.M.,  Papa, M.A., 
+ * Authors: Sintes, A.M.,  Papa, M.A., Krishnan, B.
  *
  * Revision: $Id$
  *
  * History:   Created by Sintes May 11, 2001
- *
+ *            Modified by Badri Krishnan Feb 2003
  *-----------------------------------------------------------------------
  */
 
 
 /************************************ <lalVerbatim file="LUTHV">
-Author: Sintes, A.M.,  Papa, M.A.,  
+Author: Sintes, A.M.,  Papa, M.A.,  Krishnan, B.
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -257,9 +257,10 @@ constructed.
 is the coherent integration time used in teh demodulation procedure.
 \item[\texttt{INT4    nFreqValid }] Number of frequencies where the {\sc lut} is
 valid.
-\item[\texttt{INT2    iniBin }]  First bin affecting the patch with respect to
+\item[\texttt{INT4    iniBin }]  First bin affecting the patch with respect to
 \verb@f0@.
-\item[\texttt{INT2    nBin }]  Exact number of bins affecting the patch.
+\item[\texttt{INT4    nBin }]  Exact number of bins affecting the patch.
+\item[\texttt{INT4    offset }]  Frequency bin corresponding to center of patch measured with respect to \texttt{f0Bin} (zero in modulated case)
 \item[\texttt{UINT2   maxNBins}] Maximum number of bins affecting the patch (for
                                memory allocation purposes).
 \item[\texttt{UINT2   maxNBorders}]  Maximum number of borders affecting the
@@ -277,8 +278,10 @@ struct HOUGHPatchGrid
 \noindent This structure stores patch-frequency {\it grid} information. The fields are:
 
 \begin{description}
-\item[\texttt{REAL8   f0 }]  Frequency to construct grid 
-\item[\texttt{REAL8   deltaF }]  Frequency resolution: \texttt{df=1/TCOH}
+\item[\texttt{REAL8   f0 }]  Frequency to construct grid.
+\item[\texttt{REAL8   deltaF }]  Frequency resolution: \texttt{df=1/TCOH}.
+\item[\texttt{REAL8   patchSizeX }] Patch size in radians along x-axis.
+\item[\texttt{REAL8   patchSizeY }] Patch size in radians along y-axis.
 \item[\texttt{REAL8   minWidthRatio }]  Ratio between the minimum  annulus width
 for this search, and the minimun  annulus width for  1 year integration time.
 This value should be in the interval  [1.0, 25.0].
@@ -312,6 +315,8 @@ The fields are:
 \begin{description}
 \item[\texttt{REAL8   f0 }]  Frequency at which construct the grid.
 \item[\texttt{REAL8   deltaF }]  Frequency resolution: \texttt{df=1/TCOH}.
+\item[\texttt{REAL8   patchSizeX }] Patch size in radians along x-axis.
+\item[\texttt{REAL8   patchSizeY }] Patch size in radians along y-axis. 
 \item[\texttt{REAL8   minWidthRatio }] Ratio between the minimum  annulus width
 for this search and the minimun  annulus width for one year integration time.
 This value should be in the interval  [1.0, 25.0].
@@ -384,6 +389,8 @@ coordinates are assumed to be with respect to the same reference system. The fie
 \item[\texttt{REAL8               deltaF }]: Frequency resolution: \texttt{df=1/TCOH}.
 \item[\texttt{REAL8UnitPolarCoor  skyPatch }]:  $N_{center}$ (alpha, delta):
 position of the center of the patch.
+\item[\texttt{REAL8   patchSizeX }] Patch size in radians along x-axis.
+\item[\texttt{REAL8   patchSizeY }] Patch size in radians along y-axis.
 \item[\texttt{REAL8Cart3Coor      veloC }]:  $v(t)/c$ (x,y,z): Relative detector
 velocity 
 \item[\texttt{REAL8Cart3Coor      positC }]: $(x(t)-x(t0))/c$ (x,y,z): Position
@@ -410,10 +417,12 @@ struct HOUGHParamPLUT
 sphere, $\xi$(alpha,delta) in the rotated coordinates. 
 \item[\texttt{REAL8            cosDelta }] $\Delta \cos(\phi)$ corresponding to
 one annulus.
+\item[\texttt{INT4             offset }] Frequency bin corresponding to center of patch; measured w.r.t. \texttt{f0Bin}.
+\item[\texttt{INT4             nFreqValid }] Number of frequency bins for which the LUT is valid.
 \item[\texttt{REAL8            cosPhiMax0 }] $\max(\cos(\phi))$ of the
-\texttt{f0Bin}
+\texttt{f0Bin}.
 \item[\texttt{REAL8            cosPhiMin0 }]  $\min(\cos(\phi))$ of the
-\texttt{f0Bin}
+\texttt{f0Bin}.
 \item[\texttt{REAL8            epsilon }] maximum angle (distance in radians) from the pole 
 to consider  a circle as a line in the projected plane.
 \end{description}
@@ -425,10 +434,12 @@ to consider  a circle as a line in the projected plane.
 \newpage\input{StereographicC}
 \newpage\input{PatchGridC}
 \newpage\input{ParamPLUTC}
+\newpage\input{NDParamPLUTC}
 \newpage\input{ConstructPLUTC}
 
 %%%%%%%%%%Test program. %%
 \newpage\input{TestConstructPLUTC}
+\newpage\input{TestNDConstructPLUTC}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -552,14 +563,16 @@ NRCSID (LUTH, "$Id$");
 /* the ratio (longitudinal patch size)/(width thinnest annuli) = 100.  */
 /* 100 => TO BE CHANGED DEPENDING ON DETECTOR */
 
-#define SIDEX   (100* PIXELFACTORX)
-#define SIDEY   (100* PIXELFACTORY)
+#define SIZEFACTOR 10
+
+#define SIDEX   (100* PIXELFACTORX* SIZEFACTOR)
+#define SIDEY   (100* PIXELFACTORY* SIZEFACTOR)
 
 /* Maximun number of bins that can affect a patch */
-#define MAX_N_BINS     150
+#define MAX_N_BINS     (150* SIZEFACTOR)
 
 /* Maximun number of borders in a patch */
-#define MAX_N_BORDERS  208
+#define MAX_N_BORDERS  (208* SIZEFACTOR)
 
 
 
@@ -568,8 +581,8 @@ NRCSID (LUTH, "$Id$");
  */
  
 
-/* typedef INT2 COORType; */
-typedef  UCHAR COORType;  
+typedef INT4 COORType; 
+  /* typedef  UCHAR COORType; */  
 
 typedef struct tagHOUGHBorder{
   INT4  yUpper;    /* upper y pixel affected by this border */
@@ -599,8 +612,9 @@ typedef struct tagHOUGHptfLUT{
   INT8    f0Bin;      /* freq. bin for which it has been constructed */
   REAL8   deltaF;     /* df=1/TCOH */
   INT4    nFreqValid; /* number of frequencies where the LUT is valid */
-  INT2    iniBin;     /* first bin affecting the patch with respect to f0 */
-  INT2    nBin;       /* number of bins affecting the patch */ 
+  INT4    iniBin;     /* first bin affecting the patch with respect to f0 */
+  INT4    nBin;       /* number of bins affecting the patch */
+  INT4    offset;      /* freq. bin (wrt f0Bin) containing center of patch  */ 
   UINT2   maxNBins;    /* maximum number of bins affecting the patch. For
                                memory allocation */
   UINT2   maxNBorders; /* maximum number of borders affecting the patch. For
@@ -614,6 +628,8 @@ typedef struct tagHOUGHptfLUT{
 typedef struct tagHOUGHPatchGrid{
   REAL8   f0;         /* frequency to construct grid */
   REAL8   deltaF;     /* df=1/TCOH */
+  REAL8   patchSizeX;     /* Size of sky patch in radians */
+  REAL8   patchSizeY;
   REAL8   minWidthRatio; /* (min annuli width in this search)/(min annuli 
 			    width in 1 year)  [1.0, 25.0] */
   REAL8   deltaX;
@@ -635,6 +651,8 @@ typedef struct tagHOUGHPatchGrid{
 typedef struct tagHOUGHResolutionPar{
   REAL8   f0;            /* frequency to construct grid */
   REAL8   deltaF;        /* df=1/TCOH */
+  REAL8   patchSizeX;     /* Size of sky patch in radians */
+  REAL8   patchSizeY;
   REAL8   minWidthRatio; /* (min annuli width in this search)/(min annuli 
 			    width in 1 year)  [1.0, 25.0] */
 } HOUGHResolutionPar;
@@ -665,6 +683,8 @@ typedef struct tagHOUGHParamPLUT{
   REAL8            deltaF;  /* df=1/TCOH */
   REAL8UnitPolarCoor   xi;  /* xi{alpha,delta} in rotated coordinates */
   REAL8            cosDelta;    /* Delta cos(phi) for one annulus */
+  INT4             offset;
+  INT4             nFreqValid; 
   REAL8            cosPhiMax0;
   REAL8            cosPhiMin0;
   REAL8            epsilon; /* max. angle (rad.) from the pole to consider
@@ -676,6 +696,8 @@ typedef struct tagHOUGHDemodPar{
   /* all coordinates with respect the same reference system */
   REAL8               deltaF;   /*   df=1/TCOH */
   REAL8UnitPolarCoor  skyPatch; /*   N_center {alpha, delta} */
+  REAL8               patchSizeX; /* Patch Size information */
+  REAL8               patchSizeY;
   REAL8Cart3Coor      veloC;    /*   v(t)/c {x,y,z} */
   REAL8Cart3Coor      positC;   /*   (x(t)-x(t0))/c {x,y,z} */
   REAL8               timeDiff; /*   T(t)-T(t0) */
@@ -701,6 +723,12 @@ void LALHOUGHPatchGrid (LALStatus      *status,
 		   );
 
 void LALHOUGHParamPLUT (LALStatus   *status,
+                   HOUGHParamPLUT   *out,  /* parameters needed build LUT*/
+		   INT8             f0Bin, /* freq. bin to construct LUT */
+                   HOUGHDemodPar    *par  /* demodulation parameters */
+			);
+
+void LALNDHOUGHParamPLUT (LALStatus   *status,
                    HOUGHParamPLUT   *out,  /* parameters needed build LUT*/
 		   INT8             f0Bin, /* freq. bin to construct LUT */
                    HOUGHDemodPar    *par  /* demodulation parameters */
@@ -750,3 +778,14 @@ void LALHOUGHConstructPLUT(LALStatus       *status,
 #endif
 
 #endif     /* Close double-include protection _LUT_H */
+
+
+
+
+
+
+
+
+
+
+

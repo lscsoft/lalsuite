@@ -93,6 +93,8 @@ LALHOUGHIntegrHD2HT()
 
 
 
+/* #include <../include/LALHough.h> */
+
 
 #include <lal/LALHough.h>
 

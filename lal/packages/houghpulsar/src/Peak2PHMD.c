@@ -110,7 +110,7 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
   pgI = pg->fBinIni;
   pgF = pg->fBinFin;
   /* bounds of interval to look at in the peakgram */
-  firstBin = (phmd->fBin)+(lut->iniBin);
+  firstBin = (phmd->fBin) + (lut->iniBin) + (lut->offset);
   lastBin  = firstBin + (lut->nBin)-1;
 
  /* Make sure peakgram f-interval and phmd.fBin+lut are compatible */
@@ -145,7 +145,7 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
     UCHAR  test1;
 
     nBinPos = (lut->iniBin) + (lut->nBin) -1;
-    shiftPeak = pgI - (phmd->fBin);
+    shiftPeak = pgI - (phmd->fBin) - (lut->offset);
 
    /* -------------------------------------------------------------------   */
    /* searching for the initial peak to look at */

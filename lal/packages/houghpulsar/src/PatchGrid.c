@@ -2,12 +2,12 @@
  *
  * File Name: PatchGrid.c
  *
- * Authors: Sintes, A.M., 
+ * Authors: Sintes, A.M., Krishnan, B.
  *
  * Revision: $Id$
  *
  * History:   Created by Sintes May 14, 2001
- *            Modified...
+ *            Modified by Badri Krishnan Feb 2003
  *
  *-----------------------------------------------------------------------
  *
@@ -24,7 +24,7 @@
  */
 
 /************************************ <lalVerbatim file="PatchGridCV">
-Author: Sintes, A. M. 
+Author: Sintes, A. M., Krishnan, B.
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -134,6 +134,7 @@ void LALHOUGHPatchGrid (LALStatus      *status,
     [1.0, 25.0]*/
   REAL8   deltaX;
   REAL8   xMin, xMax, x1;
+  REAL8   patchSizeX, patchSizeY;  /* Size of sky patch in radians */
   UINT2   xSide;
   REAL8   *xCoord;
 
@@ -157,24 +158,42 @@ void LALHOUGHPatchGrid (LALStatus      *status,
   
   ASSERT (in1->minWidthRatio >= 1.0, status, LUTH_EVAL, LUTH_MSGEVAL);
   ASSERT (in1->minWidthRatio <= 25.0,status, LUTH_EVAL, LUTH_MSGEVAL);
+
+  /* Make sure the user chose a sky patch smaller that 1/6 of the sky */ 
+  ASSERT (in1->patchSizeX >= 0.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (in1->patchSizeX <= 1.447,status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (in1->patchSizeY >= 0.0, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (in1->patchSizeY <= 1.447,status, LUTH_EVAL, LUTH_MSGEVAL);
   /* -------------------------------------------   */
   /* The size of the patch depends on the grid used for the 
      demodulation part. Neigbour sky-patches should not be separated,
      nor overlapping too much.
      The patch size here considers only v_epicicle, f0 & deltaF:
                   side == deltaF/f0 * c/v_epi
-     But the patch-size should be valid for a certain frequency range. */
+     But the patch-size should be valid for a certain frequency range. 
+     Note:  The above equation  will be used ONLY if the user did 
+            not specify the sky-patch size      */
  /*  ------------------------------------------ */
 
   f0 = out->f0 = in1->f0;
   deltaF = out->deltaF = in1->deltaF;
+  patchSizeX = out->patchSizeX = in1->patchSizeX;
+  patchSizeY = out->patchSizeY = in1->patchSizeY;
   minWidthRatio = out->minWidthRatio = in1->minWidthRatio;
 
   deltaX =  out->deltaX =  deltaF * minWidthRatio/ (f0 * VTOT*PIXELFACTORX );
-  xSide =  out->xSide =  VTOT * PIXELFACTORX / ( VEPI * minWidthRatio);
-  
   deltaY =  out->deltaY =  deltaF * minWidthRatio/ (f0 * VTOT*PIXELFACTORY );
-  ySide =  out->ySide =  VTOT * PIXELFACTORY / ( VEPI * minWidthRatio);
+
+
+  if ( patchSizeX*patchSizeY ) {
+      xSide = out->xSide = floor( patchSizeX/deltaX );
+      ySide = out->ySide = floor( patchSizeY/deltaY );
+  } else {
+      xSide =  out->xSide =  VTOT * PIXELFACTORX / ( VEPI * minWidthRatio);
+      ySide =  out->ySide =  VTOT * PIXELFACTORY / ( VEPI * minWidthRatio);
+      patchSizeX = out->patchSizeX = xSide*deltaX;
+      patchSizeY = out->patchSizeY = ySide*deltaY;
+  }
 
   /* -------------------------------------------   */
   /* check for size mismatch */
@@ -183,7 +202,7 @@ void LALHOUGHPatchGrid (LALStatus      *status,
   /* Make sure there are physical pixels in that patch */
   ASSERT (xSide, status, LUTH_EVAL, LUTH_MSGEVAL);
   ASSERT (ySide, status, LUTH_EVAL, LUTH_MSGEVAL);
-
+  
   
   /* -------------------------------------------   */
   /* Calculation of the patch limits with respect to the centers of the 

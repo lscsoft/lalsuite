@@ -1,8 +1,8 @@
 /*-----------------------------------------------------------------------
  *
- * File Name: ParamPLUT.c
+ * File Name: NDParamPLUT.c
  *
- * Authors: Sintes, A.M., Krishnan, B.,
+ * Authors: Sintes, A.M., Krishnan, B., 
  *
  * Revision: $Id$
  *
@@ -12,7 +12,7 @@
  *-----------------------------------------------------------------------
  *
  * NAME
- * ParamPLUT.c
+ * NDParamPLUT.c
  *
  * SYNOPSIS
  *
@@ -23,32 +23,32 @@
  *-----------------------------------------------------------------------
  */
 
-/************************************ <lalVerbatim file="ParamPLUTCV">
-Author: Sintes, A. M., Krishnan, B.
+/************************************ <lalVerbatim file="NDParamPLUTCV">
+Author: Sintes, A. M. and Krishnan, B.
 $Id$
 ************************************* </lalVerbatim> */
 
 
 /* <lalLaTeX>
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Module \texttt{ParamPLUT.c}}
-\label{ss:ParamPLUT.c}
+\subsection{Module \texttt{NDParamPLUT.c}}
+\label{ss:NDParamPLUT.c}
 Function that calculates the parameters needed for generating the look-up-table.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Prototypes}
 \vspace{0.1in}
-\input{ParamPLUTD}
-\index{\verb&LALHOUGHParamPLUT()&}
+\input{NDParamPLUTD}
+\index{\verb&LALNDHOUGHParamPLUT()&}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Description}
 This routine calculates the parameters needed for generating the look-up-table.
 It is valid for all cases in which the Hough transform 
  master equation is of the form: 
-$f(t)$-\verb@f0@ = $\vec\xi \cdot (\hat n-\hat N)$, or
+$f(t)$-\verb@f0@ = $\vec\xi \cdot \hat n$, or
 equivalently,
-$\cos(\phi)$ = ($f(t)-$\verb@f0@ + $\vec\xi \cdot\hat N$)/$\vert\vec\xi\vert$.
+$\cos(\phi)$ = ($f(t)-$\verb@f0@)/$\vert\vec\xi\vert$.
 $\vec\xi$, hereafter \verb@xi@, is calculated according to the demodulation procedure used in a 
  first stage.\\
  
@@ -75,7 +75,7 @@ spin-down parameter.
 \end{description}
 \end{description}
 
-The output \verb@*out@ of type \verb@HOUGHParamPLUT@ contains
+The output \verb@*out@ of type \verb@NDHOUGHParamPLUT@ contains
 all the parameters needed to build the look-up-table for constructing
 the partial Hough maps. Those are:
 \begin{description}
@@ -85,6 +85,9 @@ the partial Hough maps. Those are:
 sphere, xi(alpha,delta) in the rotated coordinates. 
 \item[\texttt{out->cosDelta }]: $\Delta \cos(\phi)$ corresponding to
 one annulus: \verb@deltaF/|xi|@.
+\item[\texttt{out->offset}]: Frequency bin corresponding to center of patch 
+(it is zero in the demodulated case).
+\item[\texttt{out->nFreqValid}]: Number offrequency bins for which LUT is valid.   
 \item[\texttt{out->cosPhiMax0 }]: $\max(\cos(\phi))$ of the
 \texttt{f0Bin}  : \verb@(xi*N +deltaF/2)/|xi|@.
 \item[\texttt{out->cosPhiMin0 }]:  $\min(\cos(\phi))$ of the
@@ -102,7 +105,7 @@ LALRotatePolarU()
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Notes}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{ParamPLUTCV}}
+\vfill{\footnotesize\input{NDParamPLUTCV}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 </lalLaTeX> */
 
@@ -110,13 +113,13 @@ LALRotatePolarU()
 
 #include <lal/LUT.h>
 
-NRCSID (PARAMPLUTC, "$Id$");
+NRCSID (NDPARAMPLUTC, "$Id$");
 
-/* <lalVerbatim file="ParamPLUTD"> */
-void LALHOUGHParamPLUT (LALStatus    *status,
-                   HOUGHParamPLUT    *out,  /* parameters needed build LUT*/
+/* <lalVerbatim file="NDParamPLUTD"> */
+void LALNDHOUGHParamPLUT (LALStatus  *status,
+                   HOUGHParamPLUT  *out,  /* parameters needed build LUT*/
 		   INT8              f0Bin, /* freq. bin to construct LUT */
-                   HOUGHDemodPar     *par)  /* demodulation parameters */
+                   HOUGHDemodPar   *par)  /* demodulation parameters */
 { /* </lalVerbatim> */
 
   /* --------------------------------------------- */
@@ -125,7 +128,7 @@ void LALHOUGHParamPLUT (LALStatus    *status,
   REAL8   patchSizeX, patchSizeY;
   REAL8   deltaF;  /*  df=1/TCOH  */
   REAL8   delta;
-  REAL8   vFactor, xFactor;
+  REAL8   vFactor;
   REAL8   xiX, xiY, xiZ;
   REAL8   modXi,invModXi;
   REAL8UnitPolarCoor   xiInit; 
@@ -133,9 +136,11 @@ void LALHOUGHParamPLUT (LALStatus    *status,
   REAL8   *spinF;
   REAL8   timeDiff;    /*  T(t)-T(t0) */
   REAL8   timeDiffProd; 
+  REAL8   freqOffset;
+  INT4    offset;
   /* --------------------------------------------- */
 
-  INITSTATUS (status, "LALHOUGHParamPLUT", PARAMPLUTC);
+  INITSTATUS (status, "LALNDHOUGHParamPLUT", NDPARAMPLUTC);
   ATTATCHSTATUSPTR (status); 
 
   /*   Make sure the arguments are not NULL: */ 
@@ -169,7 +174,6 @@ void LALHOUGHParamPLUT (LALStatus    *status,
   /* *********** xi calculation *****************  */
 
   vFactor = f0;
-  xFactor = 0.0;
 
   spinOrder = par->spin.length;
  
@@ -180,17 +184,16 @@ void LALHOUGHParamPLUT (LALStatus    *status,
     spinF = par->spin.data;
 
     for (i=0; i<spinOrder; ++i ){
-      xFactor += spinF[i] * timeDiffProd * (i+1.0);
       timeDiffProd *= timeDiff;
       vFactor += spinF[i] * timeDiffProd;
     }
   }
 
-  xiX = vFactor * (par->veloC.x) + xFactor * (par->positC.x);
-  xiY = vFactor * (par->veloC.y) + xFactor * (par->positC.y);
-  xiZ = vFactor * (par->veloC.z) + xFactor * (par->positC.z);
+  xiX = vFactor * (par->veloC.x);
+  xiY = vFactor * (par->veloC.y);
+  xiZ = vFactor * (par->veloC.z);
 
-  /* -------------------------------------------   */
+  /* -------------------------------------------   */         
   /* ***** convert xi into Polar coordinates ***** */
 
   modXi = sqrt(xiX*xiX + xiY*xiY + xiZ*xiZ);
@@ -220,13 +223,15 @@ void LALHOUGHParamPLUT (LALStatus    *status,
   
   /* -------------------------------------------   */
   delta = out->xi.delta;
-  
   out->cosDelta = deltaF*invModXi;
-  out->cosPhiMax0 = deltaF*0.5*invModXi -sin(delta);
-  out->cosPhiMin0 = (out->cosPhiMax0) -(out->cosDelta); 
-
-  out->offset = 0;
   
+
+  freqOffset = -modXi * sin(delta);
+  offset = out->offset = floor( 0.5 + freqOffset/deltaF );
+  out->cosPhiMax0 = invModXi * (offset + 0.5) * deltaF;
+  out->cosPhiMin0 = invModXi * (offset - 0.5) * deltaF;
+
+
   /* nFreqValid = PIXERR / (patchSize * VTOT) */
   /* take patchSize to be the largest of PatchSizeX and patchSizeY) */
   if ( patchSizeX > patchSizeY ) {
@@ -244,6 +249,17 @@ void LALHOUGHParamPLUT (LALStatus    *status,
   /* normal exit */
   RETURN (status);
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

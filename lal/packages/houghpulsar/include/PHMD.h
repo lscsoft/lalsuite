@@ -14,7 +14,7 @@
 
 
 /************************************ <lalVerbatim file="PHMDHV">
-Author: Sintes, A.M., 
+Author: Sintes, A.M., Krishnan, B.
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -108,6 +108,7 @@ containing the edge effects  when clipping on a finite patch.
 
 %%%%%%%%%%Test program. %%
 \newpage\input{TestPeak2PHMDC}
+\newpage\input{TestNDPeak2PHMDC}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

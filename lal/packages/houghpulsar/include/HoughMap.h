@@ -15,7 +15,7 @@
 
 
 /************************************ <lalVerbatim file="HoughMapHV">
-Author: Sintes, A.M., 
+Author: Sintes, A.M., Krishnan, B.
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -117,6 +117,7 @@ The number of elements to allocate is \verb@ySide*xSide@.
 
 %%%%%%%%%%Test program. %%
 \newpage\input{TestHoughMapC}
+\newpage\input{TestNDHoughMapC}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -218,10 +219,12 @@ NRCSID (HOUGHMAPH, "$Id$");
  */
   
 /*  Hough Map derivative pixel type */
-typedef CHAR  HoughDT;
+/* typedef CHAR  HoughDT; */
+typedef INT2  HoughDT;
 
 /* Total Hough Map pixel type */
-typedef UCHAR HoughTT;
+/* typedef UCHAR HoughTT; */
+typedef UINT2 HoughTT;
   /* Depending of the number of maps to accumulate, */
   /* if needed change both types  to INT2 or UINT2  */
 

@@ -2,12 +2,12 @@
  *
  * File Name: ConstructPLUT.c
  *
- * Authors: Sintes, A.M., 
+ * Authors: Sintes, A.M., Krishnan, B.
  *
  * Revision: $Id$
  *
  * History:   Created by Sintes June 7, 2001
- *
+ *            Modified by Badri Krishnan Feb 2003
  *-----------------------------------------------------------------------
  */
 
@@ -16,7 +16,7 @@
  */
 
 /************************************ <lalVerbatim file="ConstructPLUTCV">
-Author: Sintes, A. M. 
+Author: Sintes, A. M., Krishnan, B.
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -274,7 +274,9 @@ void LALHOUGHConstructPLUT(LALStatus       *status,
 
   lut->deltaF = par->deltaF;
   lut->f0Bin  = f0Bin;
-  lut->nFreqValid = PIXERR * f0Bin *VEPI/VTOT;
+  
+  lut->nFreqValid = par->nFreqValid;
+  /* lut->nFreqValid = PIXERR * f0Bin *VEPI/VTOT; */
 
   /* -------------------------------------------   */
   
@@ -312,8 +314,8 @@ void LALHOUGHConstructPLUT(LALStatus       *status,
 /***************************************************************/
 
 static void  PLUTInitialize(HOUGHptfLUT  *lut){
-  UINT2  i;
-  UINT2 maxNBins;
+  UINT4  i;
+  UINT4 maxNBins;
   
   maxNBins = lut->maxNBins;
   
@@ -399,16 +401,17 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
   /*    variables that need to be calculated before       */
   /********************************************************/
 
-  REAL8 cosDelta;   /* = df/|xi|                         */
-  REAL8 cosPhiMax0; /* = (xi*N +df/2)/|xi|               */
-  REAL8 cosPhiMin0; /* = cosPhiMax0-deltaCos             */
-  REAL8 alpha;      /* = xi.alpha in the rotated coordinates */
-  REAL8 delta;      /* = xi.delta                        */
-  REAL8 epsilon;    /* = LINERR *8.0d-8 * f0/df          */
+  REAL8 cosDelta;   /* = df/|xi|                                             */
+  REAL8 cosPhiMax0; /* max val of cosPhi of freq bin containing patch center */
+  REAL8 cosPhiMin0; /* mix val of cosPhi of freq bin containing patch center */
+  REAL8 alpha;      /* = xi.alpha in the rotated coordinates                 */
+  REAL8 delta;      /* = xi.delta                                            */
+  REAL8 epsilon;    /* = 8 * LINERR/(f0Bin * VTOT * patchSize^2)             */
+                   
 
   /********************************************************/
-  UINT2 maxNBins;
-  UINT2 maxNBorders;
+  UINT4 maxNBins;
+  UINT4 maxNBorders;
   
   INT4 lastBorder =0;  /* counter of the last build border */ 
   INT4 currentBin =0;  /* counter of the bin studied       */
@@ -443,6 +446,11 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
   cosPhiMax0 = par->cosPhiMax0;
   cosPhiMin0 = par->cosPhiMin0; 
   epsilon = par->epsilon;
+
+  /********************************************************/
+
+  /* Copy value of offset */
+  lut->offset = par->offset;
   
   /********************************************************/
 
@@ -648,10 +656,10 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
   /* set iniBin,nBin  etc */
   /********************************************************/
 
-  lut->nBin = currentBin+1;
-  lut->iniBin = nBinPos-currentBin;
+  lut->nBin = currentBin + 1;
+  lut->iniBin = nBinPos - currentBin;
 
-   return;
+  return;
 }
 
 /* end of the subroutine*/

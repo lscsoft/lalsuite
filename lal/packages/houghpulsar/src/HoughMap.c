@@ -76,7 +76,6 @@ integrating each row (x-direction).
 
 
 
-
 #include <lal/HoughMap.h>
 
 NRCSID (HOUGHMAPC, "$Id$");
