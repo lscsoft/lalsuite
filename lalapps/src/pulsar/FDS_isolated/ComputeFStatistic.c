@@ -2494,7 +2494,7 @@ EstimateFLines(LALStatus *stat)
   INT4 nbins=GV.FreqImax;                /* Number of bins in F */
   REAL8Vector *F1=NULL; 
   REAL8Vector *FloorF1=NULL;             /* Square of SFT */
-  REAL4 THR=10.0;
+  REAL8 THR=10.0;
   
   REAL8 dmp;
 
