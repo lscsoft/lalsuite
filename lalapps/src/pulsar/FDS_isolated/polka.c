@@ -314,7 +314,6 @@ int main(int argc,char *argv[])
   LALFree(indices1F);
   LALFree(indices2F);
   LALFree(indices2f);
-  LALFree(indicesCCfa);
 
   /* freeing a CList is a bit tedious, so we use a macro */
 #define freeCList(x) do { LALFree((x).f); LALFree((x).Alpha); LALFree((x).Delta); LALFree((x).F); LALFree((x).fa); } while(0)
@@ -333,6 +332,8 @@ int main(int argc,char *argv[])
   
   if (numCoincidences != 0){ 
     LALFree ( CC );
+    LALFree(indicesCCfa);
+
   }
   
   LALCheckMemoryLeaks(); 
