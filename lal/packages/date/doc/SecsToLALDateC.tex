@@ -1,0 +1,115 @@
+%%% $Id$
+
+
+\section{Module \texttt{SecsToLALDate.c}}
+
+\subsection{Prototypes}
+\begin{verbatim}
+void
+SecsToLALDate(Status  *status,
+              LALDate *date,
+              REAL8    seconds)
+\end{verbatim}
+
+\subsection{Description}
+
+This routine converts a time of day in decimal seconds since 0h (midnight)
+to an LALDate structure.  Of course, the date information is not present.
+
+\subsection{Operating Instructions}
+
+A simple example:
+
+\begin{verbatim}
+#include <stdlib.h>
+#include "LALStdlib.h"
+#include "Date.h"
+
+INT4 debuglevel = 2;
+
+NRCSID (TESTLMSTC, "Id");
+
+int
+main(int argc, char *argv[])
+{
+    LALDate date;
+    LALDate mstdate;
+    REAL8   gmstsecs;
+    CHAR    timestamp[64], tmpstr[64];
+    Status  status = {0};
+
+    
+    INITSTATUS(&status, "TestLMST", TESTLMSTC);
+
+    printf("TEST of GMST1 routine\n");
+    printf("=====================\n");
+
+    /*
+     * Check against the Astronomical Almanac:
+     * For 1994-11-16 0h UT - Julian Date 2449672.5, GMST 03h 39m 21.2738s
+     */
+    date.unixDate.tm_sec  = 0;
+    date.unixDate.tm_min  = 0;
+    date.unixDate.tm_hour = 0;
+    date.unixDate.tm_mday = 16;
+    date.unixDate.tm_mon  = 10;
+    date.unixDate.tm_year = 94;
+
+    GMST1(&status, &gmstsecs, &date, MST_SEC);
+    SecsToLALDate(&status, &mstdate, gmstsecs);
+    strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
+    sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
+    strcat(timestamp, tmpstr+1); /* remove leading 0 */
+    
+    printf("gmst = %s\n", timestamp);
+    printf("    expect: 03h 39m 20.6222s \n");
+
+    return(0);
+}
+
+\end{verbatim}
+
+\subsubsection{Arguments}
+
+\paragraph{\texttt{SecsToLALDate}}
+
+\subparagraph{Inputs}
+
+\begin{itemize}
+    \item \texttt{seconds}: A \texttt{REAL8} containing decimal number of
+    seconds since 0h (midnight) to be converted to an \texttt{LALDate}
+    structure.
+\end{itemize}
+
+\subparagraph{Outputs}
+
+\begin{itemize}
+    \item \texttt{date}: A pointer to an \texttt{LALDate} structure
+    containing the converted time.
+\end{itemize}
+
+\subsubsection{Error Conditions}
+\begin{tabular}{|c|l|l|}
+  \hline
+  Status & Status       & Explanation \\
+  code   & description  &             \\
+  \hline
+  \tt 1  & \tt Null pointer & Pointer to output data is NULL. \\
+  \hline
+\end{tabular}
+
+\subsection{Algorithm}
+
+\subsection{Accuracy}
+
+\subsection{Tests}
+
+\subsection{Uses}
+
+\subsection{Notes}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "Date"
+%%% End: 

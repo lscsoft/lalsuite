@@ -1,0 +1,249 @@
+%%% $Id$
+\section{Module \texttt{LMST1.c}}
+
+\subsection{Prototypes}
+\begin{verbatim}
+void
+GMST1 (Status        *status,
+       REAL8         *gmst,
+       const LALDate *date,
+       INT4           outunits)
+
+void
+LMST1 (Status        *status,
+       REAL8         *lmst,
+       const LALDate *date,
+       REAL8          longitude,
+       INT4           outunits)
+\end{verbatim}
+
+\subsection{Description}
+
+The routines in this module compute Mean Sidereal Time in a choice of
+units: seconds, hours, degrees, or radians. \texttt{GMST1} computes GMST1,
+and \texttt{LMST1} computes LMST1.  LMST1 is offset from GMST1 by
+the longitude of the observing post.
+
+\subsection{Operating Instructions}
+Here is a simple example:
+
+\begin{verbatim}
+#include <stdlib.h>
+#include "LALStdlib.h"
+#include "Date.h"
+
+INT4 debuglevel = 2;
+
+NRCSID (TESTLMSTC, "Id");
+
+int
+main(int argc, char *argv[])
+{
+    LALDate date;
+    LALDate mstdate;
+    REAL8   gmsthours, lmsthours;
+    REAL8   gmstsecs;
+    REAL8   longitude;
+    time_t  timer;
+    CHAR    timestamp[64], tmpstr[64];
+    Status  status = {0};
+
+    if (argc == 1)
+    {
+        /*
+         * Print help message and exit
+         */
+        printf("Usage: TestUTCtoGPS debug_level -- debug_level = [0,1,2]\n");
+        return 0;
+    }
+
+    if (argc == 2)
+        debuglevel = atoi(argv[1]);
+
+    INITSTATUS(&status, "TestLMST", TESTLMSTC);
+
+    printf("TEST of GMST1 routine\n");
+    printf("=====================\n");
+
+    /*
+     * Check against the Astronomical Almanac:
+     * For 1994-11-16 0h UT - Julian Date 2449672.5, GMST 03h 39m 21.2738s
+     */
+    date.unixDate.tm_sec  = 0;
+    date.unixDate.tm_min  = 0;
+    date.unixDate.tm_hour = 0;
+    date.unixDate.tm_mday = 16;
+    date.unixDate.tm_mon  = 10;
+    date.unixDate.tm_year = 94;
+
+    longitude = 0.; /* Greenwich */
+    GMST1(&status, &gmsthours, &date, MST_HRS);
+    LMST1(&status, &lmsthours, &date, longitude, MST_HRS);
+
+    GMST1(&status, &gmstsecs, &date, MST_SEC);
+    SecsToLALDate(&status, &mstdate, gmstsecs);
+    strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
+    sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
+    strcat(timestamp, tmpstr+1); /* remove leading 0 */
+    
+    printf("gmsthours = %f = %s\n", gmsthours, timestamp);
+    printf("    expect: 3.655728 = 03h 39m 20.6222s \n");
+    /* printf("lmsthours = %f\n", lmsthours); */
+
+    return(0);
+}
+\end{verbatim}
+
+
+\subsubsection{Arguments}
+
+\paragraph{\texttt{GMST1}}
+
+\subparagraph{Inputs}
+
+\begin{itemize}
+
+   \item \texttt{date}: A pointer to an \texttt{LALDate} structure
+     containing Gregorian date and UTC time for which to compute GMST1.
+
+   \item \texttt{outunits}: An integer defining the units in which GMST1
+     are to be expressed.  Preprocessor macros are defined in \texttt{Date.h}
+     for selecting the units for MST1, which are passed in the argument
+     \texttt{outunits}.  The following table lists the macros:
+%
+    \begin{center}
+         \begin{tabular}{|c|l|}
+           \hline 
+           \verb MST_SEC & seconds \\
+           \verb MST_HRS & hours   \\
+           \verb MST_DEG & degrees \\
+           \verb MST_RAD & radians \\
+           \hline
+         \end{tabular}
+       \end{center}
+%
+\end{itemize}
+
+\subparagraph{Outputs}
+
+\begin{itemize}
+  \item \texttt{gmst}: A pointer to a \texttt{REAL8} containing GMST1 in
+    requested units.
+\end{itemize}
+
+\paragraph{\texttt{LMST1}}
+
+\subparagraph{Inputs}
+
+\begin{itemize}
+
+   \item \texttt{date}: A pointer to an \texttt{LALDate} structure
+     containing Gregorian date and UTC time for which to compute LMST1.
+
+   \item \texttt{longitude}: A \texttt{REAL8} with the longitude of the
+     observing station in decimal degrees (\textit{i.e.} as stored in a
+     \texttt{GeodeticCoords} structure (see module \texttt{AM}).
+
+   \item \texttt{outunits}: An integer defining the units in which LMST1
+     are to be expressed.  Preprocessor macros are defined in \texttt{Date.h}
+     for selecting the units for MST1, which are passed in the argument
+     \texttt{outunits}.  The following table lists the macros:
+%
+    \begin{center}
+         \begin{tabular}{|c|l|}
+           \hline 
+           \verb MST_SEC & seconds \\
+           \verb MST_HRS & hours   \\
+           \verb MST_DEG & degrees \\
+           \verb MST_RAD & radians \\
+           \hline
+         \end{tabular}
+       \end{center}
+%
+\end{itemize}
+
+\subparagraph{Outputs}
+
+\begin{itemize}
+  \item \texttt{lmst}: A pointer to a \texttt{REAL8} containing the LMST1 in
+    requested units.
+\end{itemize}
+
+
+\subsubsection{Error Conditions}
+
+\paragraph{\texttt{LMST1}}
+
+\subparagraph{}
+
+\begin{tabular}{|c|l|l|}
+  \hline
+  Status & Status       & Explanation \\
+  code   & description  &             \\
+  \hline
+  \tt 1  & \tt Null pointer & Pointer to input data is NULL. \\
+  \hline
+\end{tabular}
+
+\paragraph{\texttt{GMST1}}
+
+\subparagraph{}
+
+\begin{tabular}{|c|l|l|}
+  \hline
+  Status & Status       & Explanation \\
+  code   & description  &             \\
+  \hline
+  \tt 1  & \tt Null pointer & Pointer to input data is NULL. \\
+  \hline
+\end{tabular}
+
+\subsection{Algorithm}
+
+The formula used to compute GMST1 at 0h UT1 is from the \textit{Explanatory
+Supplement to the Astronomical Almanac}, Ch.~2, Sec.~24 \cite{esaa:1992},
+and also in Section B of the \textit{Astronomical Almanac}.  The formula is
+%
+\begin{eqnarray*}
+    {\text{GMST at $0^{h}$ UT}} & = & 24\ 110^{s}\!.548\ 41 + 8\ 640\ 184^{s}\!.812\ 866 T_{U} \\
+ & & + 0^{s}\!.093\ 104 T_{U}^{2} - 6^{s}\!.2\times10^{-6} T_{U}^{3}
+\end{eqnarray*}
+%
+where $T_{U} = (\mathrm{JD} - 2\ 451\ 545.0)/36\ 525$.  To compute GMST at
+some other time UT, the Mean Sidereal Time interval is added to the GMST
+computed above.  The Mean Sidereal Time interval is obtained by multiplying
+the UT time interval by $1.002737909350795 + 5.9006\times10^{-11}T_{U} +
+5.9\times10^{-15}T_{U}^{2}$.
+
+
+\subsection{Accuracy}
+This implementation for computing GMST1 is accurate to about 1 sidereal
+second.  To compute accurate locations of celestial objects, what is needed
+is the Apparent Sidereal Time, which differs from Mean Sidereal Time by the
+Equation of the Equinoxes:
+%
+\begin{eqnarray*}
+  GAST = GMST + \textrm{equation of equinoxes}
+\end{eqnarray*}
+%
+where the equation of equinoxes $= \frac{1}{15}(\Delta\psi \cos\epsilon +
+0^{"}\!.002\ 64 \sin\Omega + 0^{"}\!.000\ 063 \sin
+2\Omega$, and $\Delta\psi$ is the total nutation in longitude, $\epsilon$
+is the mean obliquity of th eecliptic and $\Omega$ is the mean longitude of
+the ascending node of the Moon.  The Equation of the Equinoxes is tabulated
+in the \textit{Astronomical Almanac}, and can be interpolated.  It can also
+be computed using software from the US Naval Observatory
+(\texttt{http://aa.usno.navy.mil/AA/}). For the year 2000, the Equation of
+the Equinoxes goes to an absolute maximum of about 1 sidereal second.
+
+\subsection{Tests}
+
+\subsection{Uses}
+
+\subsection{Notes}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "Date"
+%%% End: 

@@ -1,0 +1,252 @@
+%%% $Id$
+\section{Module \texttt{Julian.c}}
+
+\subsection{Prototypes}
+\begin{verbatim}
+void
+JulianDay (Status        *status,
+           INT4          *jDay,
+           const LALDate *date)
+
+void
+ModJulianDay (Status        *status,
+              REAL8         *modJDay,
+              const LALDate *date)
+
+void
+JulianDate (Status        *status,
+            REAL8         *jDate,
+            const LALDate *date)
+
+void
+ModJulianDate (Status        *status,
+               REAL8         *modJDate,
+               const LALDate *date)
+\end{verbatim}
+
+
+\subsection{Description}
+
+These routines compute Julian Day, Modified Julian Day, Julian Date, and
+Modified Julian Date for a given Gregorian date and time UTC.  Julian Day
+and Modified Julian Day are integer number of days; Julian Date and
+Modified Julian Date are decimal number of days.
+
+\subsection{Operating Instructions}
+See Section~\ref{sec:dateh:datatypes} for the definitions of the
+data structures used.  Suppose we would like to get the Julian Date for
+today.  The following program would accomplish this:
+
+\begin{verbatim}
+#include "LALStdlib.h"
+#include "Date.h"
+
+INT4 debuglevel = 2;
+
+NRCSID (TESTJULIANDAYC, "Id");
+
+int
+main(int argc, char *argv[])
+{
+    time_t        now;
+    LALUnixDate  *ltime;
+    Status        status = {0};
+    LALDate       date;
+    REAL8         jDate;
+
+    INITSTATUS (&status, "TestJulianDay", TESTJULIANDAYC);
+
+    /*
+     * Get current local time
+     */
+    time(&now);
+    ltime = localtime(&now);
+
+    /*
+     * Assign local time to LALDate structure 
+     */
+    date.unixDate.tm_sec  = ltime->tm_sec;
+    date.unixDate.tm_min  = ltime->tm_min;
+    date.unixDate.tm_hour = ltime->tm_hour;
+    date.unixDate.tm_mday = ltime->tm_mday;
+    date.unixDate.tm_mon  = ltime->tm_mon;
+    date.unixDate.tm_year = ltime->tm_year;
+    date.unixDate.tm_wday = ltime->tm_wday;
+    date.unixDate.tm_yday = ltime->tm_yday;
+    date.unixDate.tm_isdst = ltime->tm_isdst;
+
+    /*
+     * Convert to Julian Date
+     */
+    JulianDate(&status, &jDate, &date);
+    printf("\tJulian Date                = %10.1f\n", jDate);
+
+    return 0;
+}
+
+
+\end{verbatim}
+
+\subsubsection{Arguments}
+
+\paragraph{\texttt{JulianDay}}
+
+\subparagraph{Inputs}
+
+\begin{itemize}
+    \item \texttt{date}: pointer to \texttt{LALDate} structure containing the
+    Gregorian date for which the Julian day number is to be computed.
+\end{itemize}
+
+\subparagraph{Outputs}
+
+\begin{itemize}
+    \item \texttt{jDay}: pointer to \texttt{INT4} variable containing the
+    Julian Day number.
+\end{itemize}
+
+
+\paragraph{\texttt{ModJulianDay}}
+
+\subparagraph{Inputs}
+
+\begin{itemize}
+    \item \texttt{date}: pointer to \texttt{LALDate} structure containing
+    the Gregorian date for which the Modified Julian Day number is to be
+    computed.
+\end{itemize}
+
+\subparagraph{Outputs}
+
+\begin{itemize}
+    \item \texttt{modJDay}: pointer to \texttt{INT4} variable containing
+    the Modified Julian Day number.
+\end{itemize}
+
+\paragraph{\texttt{JulianDate}}
+
+\subparagraph{Inputs}
+
+\begin{itemize}
+    \item \texttt{date}: A pointer to \texttt{LALDate} structure containing
+    the Gregorian date and UTC time for which the Julian Date is to be
+    computed.
+\end{itemize}
+
+\subparagraph{Outputs}
+
+\begin{itemize}
+    \item \texttt{jDate}: A pointer to \texttt{REAL8} variable containing the
+    Julian Date.
+\end{itemize}
+
+\paragraph{\texttt{ModJulianDate}}
+
+\subparagraph{Inputs}
+
+\begin{itemize}
+    \item \texttt{date}: A pointer to \texttt{LALDate} structure containing
+    the Gregorian date and UTC time for which the Modified Julian Date is
+    to be computed.
+\end{itemize}
+
+\subparagraph{Outputs}
+
+\begin{itemize}
+    \item \texttt{modJDate}: A pointer to \texttt{REAL8} variable containing
+    the Julian Date.
+\end{itemize}
+
+\subsubsection{Error Conditions}
+
+\subsubsection{JulianDay}
+\begin{tabular}{|c|l|l|}
+  \hline
+  Status & Status       & Explanation \\
+  code   & description  &             \\
+  \hline
+  \tt 1  & \tt Null pointer & Pointer to input data is NULL. \\
+  \tt 2  & \tt Date too early & Julian Day can only be computed \\
+         &                    & for dates after 1900-Mar-01 \\
+  \hline
+\end{tabular}
+
+\subsubsection{ModJulianDay}
+\begin{tabular}{|c|l|l|}
+  \hline
+  Status & Status       & Explanation \\
+  code   & description  &             \\
+  \hline
+  \tt 1  & \tt Null pointer & Pointer to input data is NULL. \\
+  \hline
+\end{tabular}
+
+\subsubsection{JulianDate}
+\begin{tabular}{|c|l|l|}
+  \hline
+  Status & Status       & Explanation \\
+  code   & description  &             \\
+  \hline
+  \tt 1  & \tt Null pointer & Pointer to input data is NULL. \\
+  \hline
+\end{tabular}
+
+\subsubsection{ModJulianDate}
+\begin{tabular}{|c|l|l|}
+  \hline
+  Status & Status       & Explanation \\
+  code   & description  &             \\
+  \hline
+  \tt 1  & \tt Null pointer & Pointer to input data is NULL. \\
+  \hline
+\end{tabular}
+
+\subsection{Algorithm}
+
+Julian Days and Dates are measured from the Julian Epoch: 1 Jan 4713BCE
+12:00 GMT = 4713 BC Jan 01d.5 GMT.  Julian Date is the time elapsed since
+the Julian epoch, measured in days and fractions of a day.  There are some
+complications, including the length of a Tropical Year, the Gregorian
+correction to the calendar, and leap years. See \cite{green:1985} and
+\cite{esaa:1992} for details.
+
+The algorithm for computing the Julian Day number used here is due to
+Van~Flandern and Pulkkinen \cite{vfp:1979}.  It is valid only for dates
+since 1900-Mar.
+%
+\begin{equation}
+  jd = 367 * y - 7 * (y + (m + 9)/12)/4 + 275 * m/9 + d + 1721014
+\end{equation}
+%
+where $y$ is the year, $m$ is the month (1-12), and $d$ is the day of the
+month (1-31).  The Modified Julian Day is given by:
+%
+\begin{equation}
+  mjd = jd - 2400000.5
+\end{equation}
+%
+To compute the Julian Date and the Modified Julian Date, the time of day is
+converted into fractions of a day, and added to the Julian Day.
+
+
+\subsection{Accuracy}
+
+\subsection{Tests}
+
+\subsection{Uses}
+
+% Dependencies, LAL or otherwise
+
+\subsection{Notes}
+
+
+  
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "Date"
+%%% End: 
+

@@ -1,0 +1,70 @@
+%%% $Id$
+% Is this file is meant to be standalone or included in another?
+% Should arrange that it is included with the wrapper setting headers,
+% etc. 
+\documentclass{article}
+\usepackage{amssymb}
+\usepackage{amstext}
+\usepackage{amsfonts}
+\begin{document}
+
+\title{Package \texttt{Date}}
+\author{David Chin \texttt{<dwchin@umich.edu>}}
+\date{2000-May-23}
+\maketitle
+
+This package covers LAL routines for manipulating date and time
+information.  It is organized under a single header file, \verb@Date.h@,
+which provides all the necessary declarations for using the date and time
+routines. 
+
+\include{DateH}
+
+\include{JulianC}
+
+\include{UtoGPSC}
+
+\include{UtimeC}
+
+\include{LMST1C}
+
+\include{SecsToLALDateC}
+
+\include{DateStringC}
+
+\begin{thebibliography}{0}
+\bibitem{ptvf:1992}
+  W. H. Press, S. A. Teukolsky, W. T. Vetterling, and B. P. Flannery,
+  \textit{Numerical Recipes in C: The Art of Scientific Computing}, 2nd ed.
+  (Cambridge University Press, Cambridge, 1992).
+
+\bibitem{vfp:1979}
+  T. C. Van Flandern, and K. F. Pulkkinen, 
+  \textit{Astrophysical Journal  Supplement Series}, \textbf{41},
+  391-411, 1979 Nov.
+  
+\bibitem{esaa:1992}
+  \textit{Explanatory Supplement to the Astronomical Almanac} (University
+  Science Books, Mill Valley, 1992)
+  
+\bibitem{green:1985}
+  R.M. Green, \textit{Spherical Astronomy} (Cambridge University Press,
+  Cambridge, 1985)
+  
+\bibitem{grasp:194}
+  B. Allen, \textit{et al.}, GRASP Release 1.9.4 (University of Wisconsin
+  - Milwaukee, Milwaukee, 1999)
+  
+\bibitem{iso8601}
+  \textit{International Standard ISO 8601} (International Organization for
+  Standardization, Switzerland, 1988)
+  
+\end{thebibliography}
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
+
