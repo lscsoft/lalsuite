@@ -86,7 +86,6 @@ EPSearchParams *mdcparams;          /* mdc search param                    */
 CHAR ifo[3];                        /* two character interferometer        */
 CHAR *cachefile;                    /* name of file with frame cache info  */
 CHAR *dirname;                      /* name of directory with frames       */
-INT4 totalNumPoints;                /* total number of points to analyze   */
 INT4 frameSampleRate;               /* sample rate of the frame data       */
 INT4 targetSampleRate;              /* sample rate after resampling        */
 
@@ -116,12 +115,25 @@ static size_t min(size_t a, size_t b)
  * Compare two GPS times.
  */
 
-static int CompareGPS(LALStatus *stat, LIGOTimeGPS gps1, LIGOTimeGPS gps2)
+static int CompareGPS(LALStatus *stat, LIGOTimeGPS *gps1, LIGOTimeGPS *gps2)
 {
 	LALGPSCompareResult result;
-
-	LAL_CALL(LALCompareGPS(stat, &result, &gps1, &gps2), stat);
+	LAL_CALL(LALCompareGPS(stat, &result, gps1, gps2), stat);
 	return(result);
+}
+
+
+/*
+ * Return the difference between two GPS times as REAL8.
+ */
+
+static REAL8 DeltaGPStoFloat(LALStatus *stat, LIGOTimeGPS *stop, LIGOTimeGPS *start)
+{
+	LALTimeInterval i;
+	REAL8 d;
+	LAL_CALL(LALDeltaGPS(stat, &i, stop, start), stat);
+	LAL_CALL(LALIntervalToFloat(stat, &d, &i), stat);
+	return(d);
 }
 
 
@@ -277,21 +289,6 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 }
 
 
-static INT8 DeltaGPStoINT8(LALStatus *stat, LIGOTimeGPS *stop, LIGOTimeGPS *start)
-{
-	LALTimeInterval deltainterval;
-	LIGOTimeGPS deltagps;
-	INT8 deltaNS;
-
-	LAL_CALL(LALDeltaGPS(stat, &deltainterval, stop, start), stat);
-	deltagps.gpsSeconds = deltainterval.seconds;
-	deltagps.gpsNanoSeconds = deltainterval.nanoSeconds;
-	LAL_CALL(LALGPStoINT8(stat, &deltaNS, &deltagps), stat);
-
-	return(deltaNS);
-}
-
-
 void parse_command_line( 
 	int argc, 
 	char *argv[], 
@@ -384,7 +381,6 @@ void parse_command_line(
 	printSpectrum = FALSE;
 	resampFiltType = -1;
 	targetSampleRate = 0;
-	totalNumPoints = 0;
 	whiteNoise = FALSE;
 
 	/*
@@ -743,7 +739,6 @@ void parse_command_line(
 
 	LAL_CALL(LALINT8toGPS(&stat, &options.startEpoch, &gpsStartTimeNS), &stat);
 	LAL_CALL(LALINT8toGPS(&stat, &options.stopEpoch, &gpsStopTimeNS), &stat);
-	totalNumPoints = DeltaGPStoINT8(&stat, &options.stopEpoch, &options.startEpoch) * frameSampleRate / 1000000000L;
 
 	/*
 	 * Convert the amount of available RAM to a limit on the length of a
@@ -773,7 +768,7 @@ void parse_command_line(
 	params->printSpectrum = printSpectrum;
 
 	if(options.verbose) {
-		fprintf(stderr, "%s: available RAM limits analysis to %d samples at a time\n", argv[0], options.maxSeriesLength);
+		fprintf(stderr, "%s: available RAM limits analysis to %d samples\n", argv[0], options.maxSeriesLength);
 		fprintf(stderr, "%s: using --psd-average-points %d\n", argv[0], options.PSDAverageLength);
 	}
 }
@@ -797,17 +792,19 @@ static REAL4TimeSeries *get_geo_data(
 {
 	PassBandParamStruc highpassParam;
 	REAL4TimeSeries *series;
-	REAL8TimeSeries *geoSeries;
+	REAL8TimeSeries *geo;
 	size_t i;
 
 	/* create and initialize the time series vector */
-	LAL_CALL(LALCreateREAL8TimeSeries(stat, &geoSeries, chname, start, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, lengthlimit), stat);
+	LAL_CALL(LALCreateREAL8TimeSeries(stat, &geo, chname, start, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, lengthlimit), stat);
 
 	/* get the data */
-	LAL_CALL(LALFrGetREAL8TimeSeries(stat, geoSeries, &channelIn, stream), stat);
-	geoSeries->epoch = start;
-	LAL_CALL(LALFrSeek(stat, &geoSeries->epoch, stream), stat);
-	LAL_CALL(LALFrGetREAL8TimeSeries(stat, geoSeries, &channelIn, stream), stat);
+	if(options.verbose)
+		fprintf(stderr, "reading %u samples at GPS time %u.%09u s\n", geo->data->length, start.gpsSeconds, start.gpsNanoSeconds);
+	LAL_CALL(LALFrGetREAL8TimeSeries(stat, geo, &channelIn, stream), stat);
+	geo->epoch = start;
+	LAL_CALL(LALFrSeek(stat, &geo->epoch, stream), stat);
+	LAL_CALL(LALFrGetREAL8TimeSeries(stat, geo, &channelIn, stream), stat);
 
 	/* high pass filter before casting REAL8 to REAL4 */
 	highpassParam.nMax = 4;
@@ -815,13 +812,13 @@ static REAL4TimeSeries *get_geo_data(
 	highpassParam.f1 = -1.0;
 	highpassParam.a2 = 0.1;
 	highpassParam.a1 = -1.0;
-	LAL_CALL(LALButterworthREAL8TimeSeries(stat, geoSeries, &highpassParam), stat);
+	LAL_CALL(LALButterworthREAL8TimeSeries(stat, geo, &highpassParam), stat);
 
 	/* copy data into a REAL4 time series */
-	LAL_CALL(LALCreateREAL4TimeSeries(stat, &series, geoSeries->name, geoSeries->epoch, geoSeries->f0, geoSeries->deltaT, geoSeries->sampleUnits, geoSeries->data->length), stat);
+	LAL_CALL(LALCreateREAL4TimeSeries(stat, &series, geo->name, geo->epoch, geo->f0, geo->deltaT, geo->sampleUnits, geo->data->length), stat);
 	for(i = 0; i < series->data->length; i++)
-		series->data->data[i] = geoSeries->data->data[i];
-	LAL_CALL(LALDestroyREAL8TimeSeries(stat, geoSeries), stat);
+		series->data->data[i] = geo->data->data[i];
+	LAL_CALL(LALDestroyREAL8TimeSeries(stat, geo), stat);
 
 	return(series);
 }
@@ -841,6 +838,8 @@ static REAL4TimeSeries *get_ligo_data(
 	LAL_CALL(LALCreateREAL4TimeSeries(stat, &series, chname, start, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, lengthlimit), stat);
 
 	/* get the data */
+	if(options.verbose)
+		fprintf(stderr, "reading %u samples at GPS time %u.%09u s\n", series->data->length, start.gpsSeconds, start.gpsNanoSeconds);
 	LAL_CALL(LALFrGetREAL4TimeSeries(stat, series, &channelIn, stream), stat);
 	series->epoch = start;
 	LAL_CALL(LALFrSeek(stat, &series->epoch, stream), stat);
@@ -943,7 +942,7 @@ static COMPLEX8FrequencySeries *generate_response(
 	LAL_CALL(LALCreateCOMPLEX8FrequencySeries(stat, &response, channelIn.name, epoch, 0.0, (REAL8) frameSampleRate / (REAL8) length, strainPerCount, length / 2 + 1), stat);
 
 	if(options.verbose) 
-		fprintf(stderr, "generating response at time %d sec %d ns\n", response->epoch.gpsSeconds, response->epoch.gpsNanoSeconds );
+		fprintf(stderr, "generating response at GPS time %u.%09u s\n", response->epoch.gpsSeconds, response->epoch.gpsNanoSeconds );
 
 	/* getting the response is handled differently for geo */
 	if(geodata)
@@ -1174,8 +1173,8 @@ int main( int argc, char *argv[])
 	LALLeapSecAccuracy        accuracy = LALLEAPSEC_LOOSE;
 	EPSearchParams            params;
 	LIGOTimeGPS               epoch;
+	LIGOTimeGPS               boundepoch;
 	LALTimeInterval           overlapInterval;
-	int                       usedNumPoints;
 	INT4                      numPoints;
 	CHAR                      outfilename[256];
 	REAL4TimeSeries          *series = NULL;
@@ -1217,12 +1216,19 @@ int main( int argc, char *argv[])
 	searchsumm.searchSummaryTable->in_start_time = options.startEpoch;
 	searchsumm.searchSummaryTable->in_end_time = options.stopEpoch;
 
-	/* determine the time by which input time series overlap */
+	/* determine the input time series overlap correction */
 	/* LAL spec makes us pass a pointer... sigh */
 	{
-	REAL8 overlap = (REAL8) options.FilterCorruption / targetSampleRate;
+	REAL8 overlap = 0.0;
 	LAL_CALL(LALFloatToInterval(&stat, &overlapInterval, &overlap), &stat);
+	if(options.verbose)
+		fprintf(stderr, "time series overlap correction is %u.%09u s\n", overlapInterval.seconds, overlapInterval.nanoSeconds);
 	}
+
+	/* determine the outer loop's upper bound */
+	LAL_CALL(LALAddFloatToGPS(&stat, &boundepoch, &options.stopEpoch, (REAL8) -2.0 * options.FilterCorruption / targetSampleRate), &stat);
+	if(options.verbose)
+		fprintf(stderr, "series epochs must be less than %u.%09u s\n", boundepoch.gpsSeconds, boundepoch.gpsNanoSeconds);
 
 
 	/*
@@ -1234,36 +1240,29 @@ int main( int argc, char *argv[])
 	 * small enough to fit in RAM.
 	 */
 
-	epoch = options.startEpoch;
-	for(usedNumPoints = 0; usedNumPoints < totalNumPoints - 2 * options.FilterCorruption * frameSampleRate / targetSampleRate; usedNumPoints += numPoints - 2 * options.FilterCorruption * frameSampleRate / targetSampleRate) {
-		/* tell operator how we are doing */
-		if(options.verbose)
-			fprintf(stderr, "%i points analysed && %i points left\n", usedNumPoints, totalNumPoints - usedNumPoints);
-
+	for(epoch = options.startEpoch; CompareGPS(&stat, &epoch, &boundepoch) < 0;) {
 		/* compute the number of points to use in this run */
-		numPoints = min(options.maxSeriesLength, (totalNumPoints - usedNumPoints));
-		if(options.verbose)
-			fprintf(stderr, "reading %i points...\n", numPoints);
+		numPoints = min(options.maxSeriesLength, DeltaGPStoFloat(&stat, &options.stopEpoch, &epoch) * frameSampleRate);
 
 		/*
-		 * Get the data
+		 * Get the data, or create an empty time series of 1s if
+		 * the operation fails (eg. no input files were specified).
 		 */
 
 		series = get_time_series(&stat, dirname, cachefile, epoch, options.stopEpoch, numPoints, &params);
+		if(!series) {
+			size_t i;
+			LAL_CALL(LALCreateREAL4TimeSeries(&stat, &series, params.channelName, epoch, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, numPoints), &stat);
+			for(i = 0; i < series->data->length; i++)
+				series->data->data[i] = 1.0;
+		}
 
 		/*
 		 * Add white noise to the time series if requested
 		 */
 
-		if(whiteNoise) {
-			if(!series) {
-				size_t i;
-				LAL_CALL(LALCreateREAL4TimeSeries(&stat, &series, params.channelName, epoch, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, numPoints), &stat);
-				for(i = 0; i < series->data->length; i++)
-					series->data->data[i] = 1.0;
-			}
+		if(whiteNoise)
 			makeWhiteNoise(&stat, series, options.seed, options.noiseAmpl);
-		}
 
 		/*
 		 * Write diagnostic info to disk
@@ -1309,7 +1308,7 @@ int main( int argc, char *argv[])
 		LAL_CALL(EPConditionData(&stat, series, params.tfTilingInput.flow, 1.0 / targetSampleRate, resampFiltType, options.FilterCorruption, &params), &stat);
 
 		if(options.verbose)
-			fprintf(stderr, "Got %i points to analyse after conditioning\n", series->data->length);
+			fprintf(stderr, "Got %u samples (%.9f s) to analyse after conditioning\n", series->data->length, series->data->length * series->deltaT);
 
 		/*
 		 * Store the start and end times of the data that actually
@@ -1329,6 +1328,11 @@ int main( int argc, char *argv[])
 
 		/*
 		 * Reset for next run
+		 *
+		 * Advancing the epoch by the post-conditioning series length
+		 * provides exactly the overlap needed to account for
+		 * conditioning corruption.  The explicit overlap adjustment
+		 * must not include this.
 		 */
 
 		LAL_CALL(LALAddFloatToGPS(&stat, &epoch, &epoch, series->data->length * series->deltaT), &stat);
