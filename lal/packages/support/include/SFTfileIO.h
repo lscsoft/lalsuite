@@ -135,6 +135,7 @@ NRCSID (SFTFILEIOH, "$Id$");
 #define SFTFILEIOH_EMEM 	14
 #define SFTFILEIOH_EGLOB 	15
 #define SFTFILEIOH_ECOPYSIZE	16
+#define SFTFILEIOH_EDIFFLENGTH  17
 
 #define SFTFILEIOH_MSGENULL 	"Null pointer"
 #define SFTFILEIOH_MSGEFILE 	"Error in file-IO"
@@ -147,6 +148,7 @@ NRCSID (SFTFILEIOH, "$Id$");
 #define SFTFILEIOH_MSGEMEM 	"Out of memory"
 #define SFTFILEIOH_MSGEGLOB 	"Failed to get filelist from directory/pattern"
 #define SFTFILEIOH_MSGECOPYSIZE	"Target SFT-struct has not enough frequency-bins for copying"
+#define SFTFILEIOH_MSGEDIFFLENGTH "Sorry, can only read SFTs of identical length (currently)"
 
 /* </lalErrTable>  */
 
