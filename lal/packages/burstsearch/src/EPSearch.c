@@ -303,7 +303,7 @@ EPSearch(
 )
 /******** </lalVerbatim> ********/
 { 
-	int                       start_sample, i, j;
+	int                       start_sample, i;
 	COMPLEX8FrequencySeries  *fseries;
 	RealDFTParams            *dftparams = NULL;
 	LALWindowParams           winParams;
@@ -314,7 +314,6 @@ EPSearch(
 	TFTiling                 *tfTiling = NULL;
 	REAL4                    *normalisation;
 	INT4                     tileStartShift;
-	FILE                     *fp;
 
 	INITSTATUS(status, "EPSearch", EPSEARCHC);
 	ATTATCHSTATUSPTR(status);
