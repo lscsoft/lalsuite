@@ -12,6 +12,7 @@
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
+#include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
 
 double rint(double x);

@@ -10,6 +10,7 @@
  */
 
 #include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
 #include <lal/DataBuffer.h>
 #include <lal/FindChirp.h>
 

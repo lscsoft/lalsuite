@@ -9,6 +9,8 @@
  *-----------------------------------------------------------------------
  */
 
+#include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
 #include <lal/FindChirpEngine.h>
 
 NRCSID( FINDCHIRPSLAVEC, "$Id$" );
@@ -254,7 +256,7 @@ LALFindChirpSlave (
     )
 {
   UINT4                         i, j, k;
-  UINT4                        *filterSegment    = NULL;
+  INT4                         *filterSegment    = NULL;
   InspiralTemplate             *tmpltBankHead    = NULL;
   InspiralTemplate             *currentTmplt     = NULL;
   InspiralTemplateNode         *tmpltNodeHead    = NULL;
@@ -271,7 +273,9 @@ LALFindChirpSlave (
   INITSTATUS( status, "FindChirpSlave", FINDCHIRPSLAVEC );
   ATTATCHSTATUSPTR( status );
 
+#if 0
   umask( 0 );
+#endif
 
   /*
    * 
