@@ -112,9 +112,9 @@ LALGetInspiralParams( LALStatus                  *stat,
   }
 
   /* Compute Galactic geocentric Cartesian coordinates. */
-  x = LAL_DGALCORE_SI + input->rho*cos( input->lGal );
-  y = input->rho*sin( input->lGal );
-  z = input->z;
+  x = LAL_DGALCORE_SI + input->rho*1e3*LAL_PC_SI*cos( input->lGal );
+  y = input->rho*1e3*LAL_PC_SI*sin( input->lGal );
+  z = input->z*1e3*LAL_PC_SI;
 
   /* Compute Galactic geocentric spherical coordinates. */
   max = x;
