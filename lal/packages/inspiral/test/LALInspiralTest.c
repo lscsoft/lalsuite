@@ -96,7 +96,7 @@ int main (void) {
    params.OmegaS = 0.;
    params.Theta = 0.;
    params.ieta=1; 
-   params.mass1=5.; 
+   params.mass1=10.; 
    params.mass2=10.; 
    params.startTime=0.0; 
    params.startPhase=0.0;
@@ -125,7 +125,7 @@ int main (void) {
    LALCreateVector(&status, &signal1, n);
    LALCreateVector(&status, &signal2, n);
 
-   for (params.approximant=0; params.approximant<=8; params.approximant++)
+   for (params.approximant=2; params.approximant<3; params.approximant++)
    {
 	   for (params.order=0; params.order<8; params.order++)
 	   {
@@ -159,7 +159,9 @@ int main (void) {
 				    */
 			   }
 			
+			   /*
 			   if (params.approximant==7 && params.order==4)
+			   */
 				   printf_timeseries(signal1->length, signal2->data, dt, params.startTime);
 				   
 			   fprintf(stderr, "approximant=%d order=%d,", params.approximant, params.order);

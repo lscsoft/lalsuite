@@ -139,11 +139,12 @@ LALInspiralWave3 (
   timeIn.ak = ak;
   rootIn.function = &LALInspiralFrequency3Wrapper;
   rootIn.xmin = c1*params->tC/2.;
-  rootIn.xmax = c1*params->tC;
+  rootIn.xmax = c1*params->tC*2.;
   rootIn.xacc = 1.e-6;
   pars = (void*) &timeIn;
   /* tc is the instant of coalescence */
   LALDBisectionFindRoot (status->statusPtr, &tc, &rootIn, pars);
+  CHECKSTATUSPTR(status);
 
   tc /= c1;
 
@@ -205,6 +206,7 @@ LALInspiralWave3 (
     td = c1*(tc-t);
     func.phasing3(status->statusPtr, &phase, td, &ak);
     CHECKSTATUSPTR(status);
+  
     func.frequency3(status->statusPtr, &f, td, &ak);
     CHECKSTATUSPTR(status); 
   }

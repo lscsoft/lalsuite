@@ -45,7 +45,7 @@ int main (void) {
    static REAL8 dt;
    UINT4 n, i;
 
-   params.approximant=EOB;
+   params.approximant=TaylorT3;
    params.OmegaS = 0.;
    params.Theta = 0.;
    params.ieta=1; 
@@ -53,10 +53,10 @@ int main (void) {
    params.mass2=5; 
    params.startTime=0.0; 
    params.startPhase=0.;
-   params.fLower=30.0; 
+   params.fLower=40.0; 
    params.fCutoff=2000.0;
    params.tSampling=4096.0;
-   params.order=5;
+   params.order=6;
    params.signalAmplitude=1.0;
    params.nStartPad=0;
    params.nEndPad=0;
