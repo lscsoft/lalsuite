@@ -565,7 +565,10 @@ LALFindChirpBCVTemplate (
 	}
 
       /* compute approximate sine and cosine of psi1 */
-      expPsi[k].im = - sin(psi1);
+      /* XXX The sign of this is different than the SP filtering
+       * because the data is conjugated instead of the template in the
+       * BCV code */
+      expPsi[k].im =   sin(psi1);
       expPsi[k].re =   cos(psi1);
       /* XXX work needed here... expensive computation method */
     }
