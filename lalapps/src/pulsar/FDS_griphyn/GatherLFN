@@ -459,22 +459,28 @@ for lfn in lfnMoveList:
         print "LFN %s now at %s" % (lfn, localurl)
         localPathList.append(localurl)
                 
-                
-for p in localPathList:
-        print p
-
-
-
-
-
-
-
-
 # close connection to RLS 
-del myRLS        
+try:
+        del myRLS        
+except Exception, e:
+        pass
+                
+if not outputPath:
+        f = sys.stdout
+else:
+        path = os.path.abspath(outputPath)
+        try:
+                f = open(path, "w")
+        except Exception, e:
+                print >>sys.stderr, "Unable to open file %s for writing: %s" % (path, e)
+                sys.exit(1)
+
+for p in localPathList:
+        print >>f, p
+
+if f != sys.stdout: f.close()
 
 
 # exit nicely
 sys.exit(0)
-
 
