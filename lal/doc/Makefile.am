@@ -9,7 +9,7 @@ EXTRA_DIST = lsd.tex lal.sty \
              lsdFigDirStructure.eps schedule.eps \
              lsdFigDirStructure.pdf schedule.pdf
 
-pkgdocdir=@prefix@/doc/@PACKAGE@-@VERSION@
+pkgdocdir=${prefix}/doc/@PACKAGE@-@VERSION@
 
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(pkgdocdir)
