@@ -1275,22 +1275,8 @@ LALFindChirpFilterSegment (
     thisEvent->impulse_time = thisEvent->end_time;
 
     /* record the coalescence phase of the chirp */
-    if ( q[timeIndex].re == 0 )
-    {
-      if ( q[timeIndex].im >= 0 )
-      {
-        thisEvent->coa_phase = LAL_PI / 2.0;
-      }
-      else
-      {
-        thisEvent->coa_phase = - LAL_PI / 2.0;
-      }
-    }
-    else
-    {
-      thisEvent->coa_phase = (REAL4) 
-        atan( q[timeIndex].im / q[timeIndex].re );
-    }
+    thisEvent->coa_phase = (REAL4)
+        atan2( q[timeIndex].im, q[timeIndex].re );
 
     /* copy the template into the event */
     thisEvent->mass1  = (REAL4) input->tmplt->mass1;
