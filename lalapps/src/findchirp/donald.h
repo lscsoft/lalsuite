@@ -2,7 +2,7 @@
 #define H1L1DISTANCE 0.020
 #define COINWINDOW 0.011
 
-#define MAXSTR       256
+#define MAXSTR       1024
 
 #define RESPONSEC_ENORM  0
 #define RESPONSEC_ESUB   1
