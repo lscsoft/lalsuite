@@ -66,6 +66,7 @@ typedef struct {
   CHAR DataDir[MAXFILENAMELENGTH];
   CHAR EphemDir[MAXFILENAMELENGTH];
   CHAR BaseName[MAXFILENAMELENGTH];
+  CHAR outputString[20];
 
   INT2 useMetric;	/* use metric grid or "manual" stepping : 0 = manual, 1 = PtoleMetric, 2 = CoherentMetric */
   REAL8 metricMismatch;	/* maximum allowed mismatch for metric grid */

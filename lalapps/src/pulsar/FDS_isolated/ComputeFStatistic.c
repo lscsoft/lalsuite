@@ -80,6 +80,7 @@ INT4 EstimateFloor(REAL8Vector *Sp, INT2 windowSize, REAL8Vector *SpFloor);
 int compare(const void *ip, const void *jp);
 INT4 writeFaFb(INT4 *maxIndex);
 
+
 /*----------------------------------------------------------------------
  * MAIN
  *----------------------------------------------------------------------*/
@@ -88,6 +89,8 @@ int main(int argc,char *argv[])
   INT4 *maxIndex=NULL; /*  array that contains indexes of maximum of each cluster */
   DopplerPosition dopplerpos;
   DopplerScanInit scanInit;
+  CHAR Fstatsfilename[256];         /* Fstats file name*/
+  CHAR Fmaxfilename[256];           /* Fmax file name*/
 
   SetInputDefaults ( &(userInput) ); 	/* provide all default-settings for input variables */
 
@@ -110,14 +113,18 @@ int main(int argc,char *argv[])
 
 #ifdef FILE_FMAX  
   /*   open file */
-  if (!(fpmax=fopen("Fmax","w"))){
+  strcpy(Fmaxfilename,"Fmax");
+  strcat(Fmaxfilename,userInput.outputString);
+  if (!(fpmax=fopen(Fmaxfilename,"w"))){
     fprintf(stderr,"in Main: unable to open Fmax file\n");
     return 2;
   }
 #endif
 #ifdef FILE_FSTATS  
   /*      open file */
-  if (!(fpstat=fopen("Fstats","w"))){
+  strcpy(Fstatsfilename,"Fstats");
+  strcat(Fstatsfilename,userInput.outputString);
+  if (!(fpstat=fopen(Fstatsfilename,"w"))){
     fprintf(stderr,"in Main: unable to open Fstats file\n");
     return 2;
   }
@@ -281,15 +288,17 @@ int EstimateSignalParameters(INT4 * maxIndex)
   REAL8 error_tol=1.0/pow(10,14);
   REAL8 norm;
   FILE * fpMLEParam;
-
+  CHAR Paramfilename[256];
 
 #ifdef DEBG_ESTSIGPAR
   REAL8 Ftest;
   REAL8 A2test,A3test,A4test;
 #endif
 
+  strcpy(Paramfilename,"ParamMLE");
+  strcat(Paramfilename,userInput.outputString);
 
-  if(!(fpMLEParam=fopen("ParamMLE.txt","w")))
+  if(!(fpMLEParam=fopen(Paramfilename,"w")))
      fprintf(stderr,"Error in EstimateSignalParameters: unable to open the file");
 
 
@@ -495,28 +504,30 @@ int writeFaFb(INT4 *maxIndex)
 {
   INT4 irec,jrec;
   INT4 index,krec=0;
-  CHAR filebasename[]="FaFb"; /* Base of the output file name */
   CHAR filename[256];         /* Base of the output file name */
   CHAR noiseswitch[16];
   CHAR clusterno[16];
   INT4 N;
   FILE * fp;
   REAL8 bias=1.0;
+  CHAR FaFbfilename[256];
 
+  strcpy(FaFbfilename,"FaFb");
+  strcat(FaFbfilename,userInput.outputString);
   sprintf(noiseswitch,"%02d",userInput.SignalOnly);
-  strcat(filebasename,noiseswitch);
+  strcat(FaFbfilename,noiseswitch);
 
   /*
   if(GV.SignalOnly!=1) 
     bias=sqrt(medianbias);
   */
   /* medianbias=1 if GV.SignalOnly==1 */
-  bias=sqrt(medianbias);
 
+  bias=sqrt(medianbias);
 
   for (irec=0;irec<highFLines->Nclusters;irec++){
     sprintf(clusterno,".%03d",irec+1);
-    strcpy(filename,filebasename);
+    strcpy(filename,FaFbfilename);
     strcat(filename,clusterno);
 
     if((fp=fopen(filename,"w"))==NULL) {
@@ -1947,6 +1958,7 @@ SetInputDefaults ( UserInput *input )
   input->BaseName[0] = '\0';
   input->EphemYear = -1;
 
+  input->outputString[0] = '\0';
 
   return;
 
@@ -2072,7 +2084,7 @@ ReadCmdlineInput (int argc, char *argv[], UserInput *input)
   INT4 c; 
   INT4 option_index = 0;
 
-  const char *optstring = "a:b:c:D:d:E:e:F:f:g:hI:i:l:M:m:pr:Ss:t:v:X:xy:z:";
+  const char *optstring = "a:b:c:D:d:E:e:F:f:g:hI:i:l:M:m:o:pr:Ss:t:v:X:xy:z:";
   struct option long_options[] =
     {
       {"Freq", 			required_argument, 0, 	'f'},
@@ -2097,6 +2109,7 @@ ReadCmdlineInput (int argc, char *argv[], UserInput *input)
       {"BaseName",		required_argument,0, 	'i'},
       {"Fthreshold", 		required_argument, 0, 	'F'},
       {"useMetric", 		required_argument, 0, 	'M'},
+      {"outputString", 		required_argument, 0, 	'o'},
       {"metricMismatch",	required_argument, 0, 	'X'},
       {"help", 			no_argument, 0, 	'h'},
       {0, 0, 0, 0}
@@ -2126,6 +2139,7 @@ ReadCmdlineInput (int argc, char *argv[], UserInput *input)
     "\t --BaseName(-i)\t\tSTRING\tThe base name of the input  file you want to read.(Default is *SFT* )\n"
     "\t --useMetric(-M)\tINT2\tUse a metric template grid, with metric type 1 = PtoleMetric, 2 = CoherentMetric\n"
     "\t --metricMismatch(-X)\tFLOAT\tMaximal mismatch for metric tiling (Default: 0.02)\n"
+    "\t --outputString(-o)\tSTRING\tString that will be appended to names of output files Fstats, FaFb, ParamMLE.txt and Fmax\n"
     "\t -v\t\t\tINT2\tSet lalDebugLevel (Default=0)\n"
     "\t -C\t\t\tSTRING\tThe name of a config-file to read\n"
     "\n\t --help(-h)\t\t\tPrint this message.\n\n"
@@ -2217,13 +2231,21 @@ ReadCmdlineInput (int argc, char *argv[], UserInput *input)
 	  /* use-metric */
 	  input->useMetric = atoi (optarg);
 	  break;
-
 	case 'X':
 	  input->metricMismatch = atof (optarg);
 	  break;
-	  
 	case 'v':
 	  lalDebugLevel = atoi (optarg);
+	  break;
+
+	case 'o':
+	  /* e-file directory */
+	  if (strlen (optarg) > sizeof(input->outputString)-1)
+	    {
+	      LALPrintError ("Ouput string for Fmax, Fstats etc... too long: -o %s\n ", optarg);
+	      exit(1);
+	    }
+	  strcpy (input->outputString, optarg);
 	  break;
 
 	case 'E':
