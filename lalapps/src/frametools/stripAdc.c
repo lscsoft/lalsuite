@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
    for (i = 0; i < in.nChannels; i++)
    {
     grepCtr = 0;
-    sprintf(command,"grep '%s' adc_lho.txt", in.channel[i]);
+    sprintf(command,"grep '%s' adcerr_lho.txt", in.channel[i]);
     ifp1 = popen(command, "r");
     while (fscanf(ifp1,"%s", stringTemp) != EOF)
     {
