@@ -85,7 +85,8 @@ int main(int argc, char **argv)
     FILE                     *fpin=NULL;
     FILE                     *fpout=NULL;
     INT4                     fileCounter=0;
-    BOOLEAN                  playground=TRUE;
+    BOOLEAN                  playground=FALSE;
+    BOOLEAN                  noplayground=FALSE;
     INT4                     sort=FALSE;
     INT4                     pass=TRUE;
 
@@ -171,7 +172,8 @@ int main(int argc, char **argv)
 	    {"max-snr",         required_argument,  0,  'm'},
 	    {"trig-start-time", required_argument,  0,  'q'},
 	    {"trig-stop-time",  required_argument,  0,  'r'},
-	    {"noplayground",	no_argument,        0,	'n'},
+	    {"playground",	no_argument,        0,	'n'},
+	    {"noplayground",	no_argument,        0,	's'},
 	    {"help",		no_argument,	    0,	'o'}, 
 	    {"sort",		no_argument,	    0,	'p'},
 	    {0, 0, 0, 0}
@@ -299,7 +301,14 @@ int main(int argc, char **argv)
 	case 'n':
 	    /* don't restrict to the playground data */
 	    {
-		playground = FALSE;
+		playground = TRUE;
+	    }
+	    break;
+
+	case 's':
+	    /* don't restrict to the playground data */
+	    {
+		noplayground = TRUE;
 	    }
 	    break;
     
@@ -394,7 +403,7 @@ int main(int argc, char **argv)
     currentEvent = tmpEvent = burstEventList = NULL;
     if (verbose_flag)
       {
-	fpout = fopen("./EPjobstartstop.dat","a");
+	fpout = fopen("./EPjobstartstop.dat","w");
 	fprintf(fpout,"#This file contains the start & stop times of all jobs that succeded\n" );
       }
     while ( getline(line, MAXSTR, fpin) ){
@@ -410,16 +419,16 @@ int main(int argc, char **argv)
 
       /*Read the searchsummary table */
       SearchSummaryTableFromLIGOLw( &searchSummary, line);
-      tmpStartTime=searchSummary->out_start_time.gpsSeconds;
-      tmpEndTime=searchSummary->out_end_time.gpsSeconds;
+      tmpStartTime=searchSummary->in_start_time.gpsSeconds;
+      tmpEndTime=searchSummary->in_end_time.gpsSeconds;
       /*write out the start and stop time */
       if (verbose_flag)
 	{
 	  fprintf(fpout,"%d  %d  %d\n",tmpStartTime,tmpEndTime,tmpEndTime-tmpStartTime );
-	} 
-      /*total time analysed */
-      timeAnalyzed += (tmpEndTime-tmpStartTime);
-
+	
+	  /*total time analysed */
+	  timeAnalyzed += (tmpEndTime-tmpStartTime);
+	}
       while (searchSummary)
 	{
 	  SearchSummaryTable *thisEvent;
@@ -454,7 +463,7 @@ int main(int argc, char **argv)
     /* print out the total time analysed */
       if (verbose_flag)
 	{
-	  fprintf(fpout,"%d\n",timeAnalyzed);
+	  fprintf(fpout,"#Total time analysed= %d\n",timeAnalyzed);
 	  fclose(fpout);
 	}
     /****************************************************************
@@ -512,10 +521,14 @@ int main(int argc, char **argv)
         pass = FALSE;
 
       /* check if trigger starts in playground */
-      if ( playground && !(isPlayground(tmpEvent->start_time.gpsSeconds,
-              tmpEvent->start_time.gpsSeconds)) )
+      if ( playground && !(isPlayground(tmpEvent->peak_time.gpsSeconds,
+              tmpEvent->peak_time.gpsSeconds)) )
         pass = FALSE;
 
+      if ( noplayground && (isPlayground(tmpEvent->peak_time.gpsSeconds,
+              tmpEvent->peak_time.gpsSeconds))  )
+	pass = FALSE;
+	
       /* set it for output if it passes */  
       if ( pass )
       {
@@ -538,7 +551,7 @@ int main(int argc, char **argv)
       tmpEvent = tmpEvent->next;
       pass = TRUE;
     }
-
+    
     tmpEvent = outEventList;
     while( tmpEvent )
       {
