@@ -6,6 +6,7 @@
 #include <math.h>
 #include <string.h>
 #include <FrameL.h>
+#include <unistd.h>
 
 RCSID( "getFrameData.c" );
 NRCSID( GETFRAMEDATAC, "getFrameData.c" );
@@ -180,14 +181,26 @@ int getFrameData(char *fQuery,
 	    fprintf(stderr,"Can't create temp file\n");
 	    return 1;
 	  }
-	  close(fid);
 
-	  sprintf(cmd,"grep %s %s > %s",type,dataserver,tname);
+	  /* must "grep" for the right frame type */
+	  {
+	    FILE *in;
+	    char buf[2048];
+	    if((in=fopen(dataserver,"r"))==NULL) {
+	      fprintf(stderr,"Can't open %s\n",dataserver);
+	      return 1;
+	    }
+	    
+	    while(fgets(buf,2048,in)) {
+	      if(strstr(buf,type)) {
+		write(fid,buf,strlen(buf));
+	      }
+	    }
 
-	  if(system(cmd)) {
-	    fprintf(stderr,"ERROR: %s failed\n",cmd);
-	    return 1;
+	    fclose(in);
 	  }
+
+	  close(fid);
 
 	  /* get the data */
 	  LAL_CALL( LALFrCacheImport( &stat, &frameCache, tname ), &stat );
