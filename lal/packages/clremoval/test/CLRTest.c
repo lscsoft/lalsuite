@@ -104,6 +104,7 @@ couple of minutes.
 
 </lalLaTeX> */
 
+#include <lal/LALStdio.h>
 #include <lal/CLR.h>
 
 NRCSID (MAIN, "$Id$");
@@ -189,12 +190,12 @@ int main ( void )
   /* insert here your own data from a given file/frame */
   
   strcpy(filename,"CLRindata.asc\0");
-  in_file = fopen(filename,"r");
+  in_file = LALOpenDataFile(filename);
   for (i = 0; i < (int)n; ++i) {
     number = fscanf(in_file, "%f\n", &dummy );  
     x->data[i] = dummy;
   }
-  fclose(in_file);
+  LALFclose(in_file);
   
   /* --------------------------------------------------- */
   /*          what the program should do                 */
