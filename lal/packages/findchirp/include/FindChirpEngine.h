@@ -228,6 +228,7 @@ FindChirpSimulationParams;
 typedef struct
 tagFindChirpStandardCandle
 {
+  CHAR                          ifo[2];
   InspiralTemplate              tmplt;
   REAL4                         rhosq;
   REAL4                         sigmasq;
