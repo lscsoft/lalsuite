@@ -103,7 +103,7 @@ LALIncrementGPS (LALStatus             *status,
 
   tmp_gps.gpsSeconds += pDeltaT->seconds;
 
-  if (tmp_gps.gpsNanoSeconds + pDeltaT->nanoSeconds > oneBillion)
+  if (tmp_gps.gpsNanoSeconds + pDeltaT->nanoSeconds >= oneBillion)
     {
       ++(tmp_gps.gpsSeconds);
       tmp_gps.gpsNanoSeconds += (pDeltaT->nanoSeconds - oneBillion);
