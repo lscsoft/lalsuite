@@ -73,7 +73,7 @@ int main(int argc, char **argv)
 
     INT4                      nFreqBins=0;
     INT8                      *freqHistData=NULL;
-
+    INT8                      *freqHistData=NULL;
     size_t len;
 
     struct MetaioParseEnvironment triggerParseEnv;
@@ -156,8 +156,11 @@ int main(int argc, char **argv)
      *****************************************************************/
     if ( freqHistogram ){
         nFreqBins = (INT4)( (fstop-fstart)/df );
-        freqHistData = (INT8 *) LALCalloc(nFreqBins , sizeof(INT8));
+	/*        freqHistData = (INT8 *) LALCalloc(nFreqBins , sizeof(INT8));*/
     }
+
+    freqHistData = (INT8 *) LALCalloc(800 , sizeof(INT8));
+    plgrnd= (INT8 *) LALCalloc(800 , sizeof(INT8));
 
     /*****************************************************************
      * OPEN FILE WITH LIST OF XML FILES (one file per line)
@@ -165,10 +168,10 @@ int main(int argc, char **argv)
     if ( !(fpin = fopen(inputfile,"r")) ){
         LALPrintError("Could not open input file\n");
     }
-    
+    j=1;
     while ( getline(line, MAXSTR, fpin) ){
         fprintf(stderr,"Processing file %s\n",line);
-    
+	plgrnd[j]=j;
     /******************************************************************
      * OPEN XML FILE AND READ IT
      *****************************************************************/
@@ -204,11 +207,12 @@ int main(int argc, char **argv)
         /* require the confidence to exceed threshold */
         if ( tmpConfidence < logThreshold ){
             if (freqHistogram){
-                freqHistData[(INT4)(tmpFreq/df)] += 1;
+	      if (fstart<tmpFreq<fstop){
+                freqHistData[j] += 1;
             }
         }
     }
-
+    }
     /********************************************************************
      * SPIT OUT THE RESULTS
      *******************************************************************/
