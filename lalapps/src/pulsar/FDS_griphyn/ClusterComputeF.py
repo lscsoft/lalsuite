@@ -17,7 +17,7 @@ import time
 import getopt
 import shutil
 from ClusterComputeFUtils import *
-from pipeline import *
+from glue.pipeline import *
 
 def usage():
   """

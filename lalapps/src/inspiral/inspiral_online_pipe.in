@@ -22,7 +22,8 @@ import urlparse
 sys.path.append('@PYTHONLIBDIR@')
 
 # import the modules we need to build the pipeline
-import pipeline, inspiral, mkcal
+from glue import pipeline
+import inspiral, mkcal
 
 def usage():
   msg = """\

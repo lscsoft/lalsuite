@@ -29,7 +29,8 @@ import ConfigParser
 sys.path.append('@PYTHONLIBDIR@')
 
 # import the modules we need to build the pipeline
-import pipeline, inspiral
+from glue import pipeline
+import inspiral
 
 ##############################################################################
 # some functions to make life easier later

@@ -27,7 +27,7 @@ import ConfigParser
 sys.path.append('@PYTHONLIBDIR@')
 
 # import the lalapps pipeline modules
-import pipeline
+from glue import pipeline
 import stochastic
 
 # program usage

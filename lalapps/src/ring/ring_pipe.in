@@ -20,7 +20,8 @@ import ConfigParser
 sys.path.append('@PYTHONLIBDIR@')
 
 # import the modules we need to build the pipeline
-import pipeline, ring
+from glue import pipeline
+import ring
 
 def usage():
   msg = """\
