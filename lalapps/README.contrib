@@ -1,0 +1,120 @@
+INSTRUCTIONS FOR CONTRIBUTORS
+
+LALApps is rather free-form. The golden rule is:
+
+  Your code must be ANSI C 89 for maximum portability
+
+If you like uniformity, I recommend that you copy what is already there.  If
+you like to do your own thing, that's fine too.  Here are the essential
+instructions.
+
+
+1. Sources:
+
+   Put your sources in a subdirectory, hereafter src/myprogdir, of the src
+   subdirectory.  Sources include all your .c files and all your .h files.
+   As a general rule, bundle a bunch of programs that are related (e.g., using
+   the same source files or pertaining to the same search type) into a single
+   subdirectory.
+
+   If you have created a new subdirectory within the src subdirectory, edit
+   the file src/Makefile.am to add the new directory (myprogdir) to the SUBDIRS
+   line.  Copy the file src/example/Makefile.am to src/myprogdir and edit it
+   to build the new program (see below).  Also add the new Makefile
+   (src/myprogdir/Makefile) to the AC_OUTPUT command at the end of the
+   configure.in file (in the top lalapps directory).
+
+   Edit the file src/myprogdir/Makefile.am so that your program is built.  The
+   program that is built should have a name like lalapps_myprog.  This is so
+   that you don't clobber another program that somewhat may have installed with
+   the same name.  Suppose your sources are myprog.c and myprog.h.  Then the
+   Makefile.am should have the line
+
+     lalapps_myprog_SOURCES = myprog.c myprog.h
+
+   Finally, be sure to add lalapps_myprog to the bin_PROGRAMS variable.
+
+   Note that the file src/myprogdir/Makefile.am should have a line like:
+
+     INCLUDES = -I$(top_srcdir)/src
+
+   if you need to include config.h, or the lines
+
+     INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+     LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+
+   if you are also using the lalapps routines.
+
+
+2. Documentation:
+
+   Documentation is essential if you want anyone to use your program.  The
+   documentation is located in the doc subdirectory.
+   
+   The way to document your program is to write a texfile to be included in the
+   lalapps texfile lalapps.tex.  You would write a texfile called myprog.tex.
+   It should start with:
+
+     \section{Program \texttt{lalapps\_myprog}}
+     \idx[Program]{lalapps\_myprog}
+
+   and go from there.
+
+   Then you need to get lalapps.tex to include it.  Down near the bottom of
+   the file lalapps.tex you should add the line
+
+     \include{myprog}
+
+   (the location is obvious).
+
+   Finally, edit the Makefile.am so that myprog.tex appears as one of the
+   TEXSOURCEFILES.
+
+   If you have figures, make sure that you have both a pdf and eps version.
+   If you only have an eps figure, myfig.eps, create a pdf version using the
+   command
+
+     epstopdf myfig
+
+   To load the figure in the documentation, use the LaTeX command
+
+     \includegraphics{myfig}
+
+   (note: no extension).  Also be sure that myfig.eps and myfig.pdf both appear
+   in the TEXSOURCEFILES line of Makefile.am.
+
+
+3. Manual pages: (optional)
+
+   If you want a man page installed for your program, put it in the man
+   subdirectory.  Also add it to the MANS line in the Makefile.am.
+
+
+4. Make sure it works:
+
+   Try building the program using
+
+     make
+
+   the documentation using
+
+     make dvi
+
+   and installing everything using
+
+     make install
+
+   then clean everything up using
+
+     make cvs-clean
+
+   If one of these things fails, and it is because of something you did,
+   fix it before committing your changes to the cvs repository.
+
+   If everything works, then you can add your files to the cvs repository.  Use
+   cvs add to add each file that is needed.  Then do a cvs commit to actually
+   put them in.
+
+   If you are really paranoid, checkout a brand new copy of lalapps from the
+   cvs repository and make sure that things work.  This will let you know if
+   you forgot to add a critical file.
