@@ -192,6 +192,9 @@ main(int argc, char *argv[])
  
     } /* for i < nLines1 */
 
+  if (diff_found)
+    fprintf(stderr,"FStat files differ!\n");
+
   LAL_CALL ( LALDestroyParsedDataFile ( &status, &Fstats1), &status);
   LAL_CALL ( LALDestroyParsedDataFile ( &status, &Fstats2), &status);
   LAL_CALL ( LALDestroyUserVars (&status), &status);
