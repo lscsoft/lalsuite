@@ -205,7 +205,7 @@ LALCompareSnglInspiral (
     dm1 = fabsf( aPtr->mass1 - bPtr->mass1 );
     dm2 = fabsf( aPtr->mass2 - bPtr->mass2 );
 
-    if ( dm1 < params->dm && dm2 < params->dm )
+    if ( dm1 <= params->dm && dm2 <= params->dm )
     {
       sigmaRatio = sqrt(bPtr->sigmasq / aPtr->sigmasq);
 
