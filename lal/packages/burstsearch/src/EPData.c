@@ -24,7 +24,6 @@ LALCreateEPDataSegmentVector (
 {
   INT4                  i;
   EPDataSegmentVector    *vectorPtr;
-  EPDataSegment          *segPtr;
 
   INITSTATUS (status, "LALCreateEPDataSegmentVector", EPDATAC);
   ATTATCHSTATUSPTR (status);
@@ -39,9 +38,8 @@ LALCreateEPDataSegmentVector (
   vectorPtr = *vector = (EPDataSegmentVector *) LALMalloc (sizeof(EPDataSegmentVector));
   vectorPtr->length = params->numSegments;
 
-  segPtr = vectorPtr->data = (EPDataSegment *) 
-    LALMalloc (params->numSegments*sizeof(EPDataSegment));
-  if ( !segPtr )
+  vectorPtr->series = LALMalloc(params->numSegments * sizeof(*vectorPtr->series));
+  if ( !vectorPtr->series )
   {
     LALFree( vectorPtr );
     vectorPtr = NULL;
@@ -50,14 +48,10 @@ LALCreateEPDataSegmentVector (
 
   for (i = 0; i < (INT4)vectorPtr->length ; ++i)
   {
-    segPtr[i].data = (REAL4TimeSeries *) 
-      LALMalloc (sizeof(REAL4TimeSeries));
+    strncpy( vectorPtr->series[i].name, "anonymous", LALNameLength * sizeof(CHAR) );
+    vectorPtr->series[i].data = NULL;
 
-    strncpy( segPtr[i].data->name, "anonymous", LALNameLength * sizeof(CHAR) );
-    segPtr[i].data->data        = NULL;
-
-    LALCreateVector (status->statusPtr, 
-        &segPtr[i].data->data, 2 * params->numPoints);
+    LALCreateVector (status->statusPtr, &vectorPtr->series[i].data, 2 * params->numPoints);
     CHECKSTATUSPTR (status);
   }
 
@@ -74,7 +68,6 @@ LALDestroyEPDataSegmentVector (
     )
 {
   INT4                  i;
-  EPDataSegment        *segPtr;
 
   INITSTATUS (status, "LALDestroyEPDataSegmentVector", EPDATAC);
   ATTATCHSTATUSPTR (status);
@@ -83,17 +76,13 @@ LALDestroyEPDataSegmentVector (
   ASSERT (*vector, status, 
       EPDATA_ENULL, EPDATA_MSGENULL);
 
-  segPtr = (*vector)->data;
-  
  for (i = 0; i < (INT4)(*vector)->length; ++i)
   {
-    LALDestroyVector (status->statusPtr, &segPtr[i].data->data);
+    LALDestroyVector (status->statusPtr, &(*vector)->series[i].data);
     CHECKSTATUSPTR (status);
-
-    LALFree (segPtr[i].data);
   }
 
-  LALFree (segPtr);
+  LALFree ((*vector)->series);
 
   LALFree (*vector);
   *vector = NULL;

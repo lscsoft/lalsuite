@@ -101,20 +101,11 @@ NRCSID (EPSEARCHH, "$Id$");
 #define INPUTNAME_SPECTRUM  "spectrum"
 #define INPUTNAME_RESPONSE  "response"
 
-
-
-typedef struct
-tagEPDataSegment
-{
-  REAL4TimeSeries              *data;
-}
-EPDataSegment;
-
 typedef struct
 tagEPDataSegmentVector
 {
   UINT4                         length;
-  EPDataSegment                  *data;
+  REAL4TimeSeries              *series;
 }
 EPDataSegmentVector;
 

@@ -706,33 +706,33 @@ void EPConditionData(
     for ( i = 0; i < dataSegVec->length; ++i )
     {
         /* point to current segment */
-        EPDataSegment *dummySegment = dataSegVec->data + i;
+        REAL4TimeSeries *dummySeries = dataSegVec->series + i;
         INT4 ptsPerSeg = 2 * params->initParams->numPoints;
 
         /* copy the ifodmro */
         for ( j = 0; j < ptsPerSeg ; ++j)
         {
-            dummySegment->data->data->data[j] = (REAL4) dummyData[j];
+            dummySeries->data->data[j] = (REAL4) dummyData[j];
         }
-        dummySegment->data->data->length = ptsPerSeg;
+        dummySeries->data->length = ptsPerSeg;
         dummyData += (params->initParams->numPoints - params->ovrlap);
 
 
-        strncpy( dummySegment->data->name, INPUTNAME_CHANNEL, 
+        strncpy( dummySeries->name, INPUTNAME_CHANNEL, 
                 LALNameLength * sizeof(CHAR) );
-        dummySegment->data->deltaT = series->deltaT;
+        dummySeries->deltaT = series->deltaT;
 
         {
             INT8 dummyNS = 0;
 
             dummyNS = dataTimeNS + (INT8) (1e9 * 
                     (params->initParams->numPoints - params->ovrlap) 
-                    * i * dummySegment->data->deltaT);
+                    * i * dummySeries->deltaT);
 
-	    LALINT8toGPS(status->statusPtr, &dummySegment->data->epoch, &dummyNS);
+	    LALINT8toGPS(status->statusPtr, &dummySeries->epoch, &dummyNS);
         }
 
-        dummySegment->data->f0 = 0.0;
+        dummySeries->f0 = 0.0;
     }
 
     /****************************************************************
