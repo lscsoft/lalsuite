@@ -9,6 +9,66 @@
  *-----------------------------------------------------------------------
  */
 
+#if 0
+<lalVerbatim file="FindChirpChisqCV">
+Author: Anderson, W. G., and Brown D. A.
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+\subsection{Module \texttt{FindChirpChisq.c}}
+\label{ss:FindChirpChisq.c}
+
+Module to implement the $\chi^2$ veto.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{FindChirpChisqCP}
+\idx{LALFindChirpChisqVetoInit()}
+\idx{LALFindChirpChisqVetoFinalize()}
+\idx{LALFindChirpChisqVeto()}
+
+\subsubsection*{Description}
+
+The function \texttt{LALFindChirpChisqVetoInit()} takes as input the number of
+bins required to contruct the $\chi^2$ veto and the number of points a data
+segment as a parameter. The pointer \texttt{*params} must contain the
+address of a structure of type \texttt{FindChirpChisqParams} for which storage
+has already been allocated.  On exit this structure will be populated with the
+correct values for execution of the function \texttt{LALFindChirpChisqVeto()}.
+The workspace arrays and the inverse FFTW plan used by the veto will be
+created.
+
+The function \texttt{LALFindChirpChisqVetoFinalize()} takes the address of a
+structure of type \texttt{FindChirpChisqParams} which has been populated by
+\texttt{LALFindChirpChisqVetoInit()} as input. It takes the number of bins
+required to contruct the $\chi^2$ veto and as a parameter. On exit all memory
+allocated by the \texttt{LALFindChirpChisqVetoInit()} will be freed.
+
+The function \texttt{LALFindChirpChisqVeto()} perfoms a $\chi^2$ veto on 
+an entire data segment using the algorithm described below. On exit the
+vector \texttt{chisqVec} contains the value $\chi^2(t_j)$ for the data
+segment.
+
+\subsubsection*{Algorithm}
+
+chisq algorithm here
+
+\subsubsection*{Uses}
+\begin{verbatim}
+LALCreateReverseComplexFFTPlan()
+LALDestroyComplexFFTPlan()
+LALCCreateVector()
+LALCDestroyVector()
+LALCOMPLEX8VectorFFT()
+\end{verbatim}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{FindChirpChisqCV}}
+</lalLaTeX>
+#endif
+
 #include <stdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -19,6 +79,7 @@
 
 NRCSID (FINDCHIRPCHISQC, "$Id$");
 
+#pragma <lalVerbatim file="FindChirpChisqCP">
 void
 LALFindChirpChisqVetoInit (
     LALStatus                  *status,
@@ -26,6 +87,7 @@ LALFindChirpChisqVetoInit (
     UINT4                       numChisqBins,
     UINT4                       numPoints
     )
+#pragma </lalVerbatim>
 {
   UINT4                         l, m;
 
@@ -121,12 +183,14 @@ LALFindChirpChisqVetoInit (
 }
 
 
+#pragma <lalVerbatim file="FindChirpChisqCP">
 void
 LALFindChirpChisqVetoFinalize (
     LALStatus                  *status,
     FindChirpChisqParams       *params,
     UINT4                       numChisqBins
     )
+#pragma </lalVerbatim>
 {
   UINT4                         l;
 
@@ -193,13 +257,15 @@ LALFindChirpChisqVetoFinalize (
 }
 
 
+#pragma <lalVerbatim file="FindChirpChisqCP">
 void
 LALFindChirpChisqVeto (
     LALStatus                  *status,
     REAL4Vector                *chisqVec,
     FindChirpChisqInput        *input,
     FindChirpChisqParams       *params
-                      )
+    )
+#pragma </lalVerbatim>
 {
   UINT4                 j, l;
   UINT4                 numPoints;

@@ -119,19 +119,19 @@ and the inverse Fourier transform to be
 h(t)=\int_{-\infty}^\infty dt\,\tilde{h}(f)\, e^{2 \pi i f t}.
 \end{equation}
 If the function $h(t)$ is sampled at $N$ consecitive points with sampling
-interval $\Delta$, that is
+interval $\Delta t$, that is
 \begin{equation}
-h_j \equiv h(t_j)\ ,\quad t_j = j\Delta,
+h_j \equiv h(t_j)\ ,\quad t_j = j\Delta t,
 \end{equation}
 we only have $N$ input values, so we can only produce $N$ independent values
 for the Fourier transform. Further, we can only produce values in the interval
 $(-f_c,f_c)$ where $f_c$ is the Nyquist critical frequency
 \begin{equation}
-f_c = \frac{1}{2\Delta}.
+f_c = \frac{1}{2\Delta t}.
 \end{equation}
 We compute estimates of the Fourier transform at the $N + 1$ discrete values
 \begin{equation}
-f_k \equiv \frac{k}{N\Delta}\quad k = -\frac{N}{2},\ldots,\frac{N}{2}.
+f_k \equiv \frac{k}{N\Delta t}\quad k = -\frac{N}{2},\ldots,\frac{N}{2}.
 \end{equation}
 There are only $N$ independent values here as the extremevales of $k$
 correspond to the upper and lower limites of the Nyquist critical frequency
@@ -139,8 +139,8 @@ range and are equal. We now proceed to define the discrete Fourier transform.
 Consider
 \begin{eqnarray}
 \tilde{h}(f_k) &=& \int_{-\infty}^\infty dt\,h(t)\, e^{-2 \pi i f t} \\
-&\approx& \sum_{j=0}^{N-1} \Delta h(t_j) e^{-2 \pi i f_k t_j} \\
-&\approx& \Delta \sum_{j=0}^{N-1} h_j e^{-2 \pi i j k / N} .
+&\approx& \sum_{j=0}^{N-1} \Delta t\, h(t_j) e^{-2 \pi i f_k t_j} \\
+&\approx& \Delta t \sum_{j=0}^{N-1} h_j e^{-2 \pi i j k / N} .
 \end{eqnarray}
 According to T010095, we define the discrete Fourier transform (DFT) to be
 \begin{equation}
@@ -148,7 +148,7 @@ According to T010095, we define the discrete Fourier transform (DFT) to be
 \end{equation}
 and then we can recover $\tilde{h}(f_k)$ by
 \begin{equation}
-\tilde{h}(f_k) = \Delta \tilde{h}_k.
+\tilde{h}(f_k) = \Delta t\, \tilde{h}_k.
 \end{equation}
 The inverse Fourier transform is
 \begin{equation}
@@ -156,14 +156,14 @@ h(t)=\int_{-\infty}^\infty dt\,\tilde{h}(f)\, e^{2 \pi i f t} .
 \end{equation}
 Using
 \begin{equation}
-\Delta f = f_{k+1} - f_k = \frac{k+1}{N\Delta} - \frac{k}{N\Delta} =
-\frac{1}{N\Delta}
+\Delta f = f_{k+1} - f_k = \frac{k+1}{N\Delta t} - \frac{k}{N\Delta t} =
+\frac{1}{N\Delta t}
 \end{equation}
 we may write
 \begin{eqnarray}
 h(t_j) &\approx& \sum_{k=0}^{N-1} \tilde{h}(f_k) e^{2 \pi i f_k t_j / N}
 \Delta f \\
-&=& \sum_{k=0}^{N-1} \Delta \tilde{h}_k e^{2 \pi i j k / N}\frac{1}{N\Delta}
+&=& \sum_{k=0}^{N-1} \Delta \tilde{h}_k e^{2 \pi i j k / N}\frac{1}{N\Delta t}
 \\
 &=& \frac{1}{N} \sum_{k=0}^{N-1} \tilde{h}_k e^{2 \pi i j k / N}
 \end{eqnarray}
@@ -195,12 +195,12 @@ which gives
 \begin{equation}
 \label{findchirp:eq:ospsddef}
 \left\langle\tilde{n}_k \tilde{n}_{k'}^\ast\right\rangle = 
-\frac{N}{2\Delta}\ospsd\delta_{kk'}
+\frac{N}{2\Delta t}\ospsd\delta_{kk'}
 \end{equation}
 which defines \ospsd in terms of the discrete frequency domain quantities.
 Parsevals theorem becomes
 \begin{equation}
-\Delta \sum_{j=0}^{N-1} |h_j|^2 
+\Delta t \sum_{j=0}^{N-1} |h_j|^2 
 = \sum_{k=0}^{[N/2]} S\left(\left|f_k\right|\right),
 \end{equation}
 the power spectral density having units of $\textrm{time}\times U^2$. The
@@ -210,14 +210,18 @@ the standards document T010095%
 \begin{equation}
 \ospsd = \left\{
 \begin{array}{ll}
-\frac{\Delta}{N} | \tilde{h}_0 |^2 & k = 0, \\
+\frac{\Delta t}{N} | \tilde{h}_0 |^2 & k = 0, \\
 \\
-\frac{\Delta}{N} \left[ | \tilde{h}_k |^2 + | \tilde{h}_{N-k} |^2 \right] &
+\frac{\Delta t}{N} \left[ | \tilde{h}_k |^2 + | \tilde{h}_{N-k} |^2 \right] &
 k\neq 0.
 \end{array}
 \right.
 \end{equation}
 
-\newpage
-\input{FindChirpH}
-\input{FindChirpViewH}
+\newpage\input{FindChirpH}
+\newpage\input{FindChirpChisqH}
+\newpage\input{FindChirpSPH}
+\newpage\input{FindChirpEngineH}
+%\newpage\input{FindChirpExch.h}
+\newpage\input{TwoInterfFindChirpH}
+\newpage\input{FindChirpViewH}

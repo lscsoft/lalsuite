@@ -16,11 +16,21 @@ $Id$
 </lalVerbatim> 
 
 <lalLaTeX>
-
 \section{Header \texttt{FindChirpEngine.h}}
-\label{s:FindChirp.h}
+\label{s:FindChirpEngine.h}
 
-Provides routines to filter IFO data for binary inspiral chirps.
+Provides functions to drive the filtering functions in the package
+\texttt{findchirp}. Contains the functions necessary to execute a flat
+or heirarchical inspiral search using the LDAS \texttt{wrapperAPI} or
+the LALapps program \texttt{findchirp}.
+
+\subsection*{Synopsis}
+
+\begin{verbatim}
+#include <lal/FindChirpEngine.h>
+\end{verbatim}
+
+\input{FindChirpEngineHDoc}
 
 </lalLaTeX>
 #endif
@@ -49,6 +59,7 @@ Provides routines to filter IFO data for binary inspiral chirps.
 
 #ifdef  __cplusplus
 extern "C" {
+#pragma }
 #endif
 
 
@@ -91,15 +102,14 @@ NRCSID (FINDCHIRPENGINEHH, "$Id$");
 /* </lalErrTable> */
 
 
-typedef struct
-tagInspiralTemplateNode
-{
-  struct tagInspiralTemplateNode       *next;
-  struct tagInspiralTemplateNode       *prev;
-  InspiralTemplate                     *tmpltPtr;
-}
-InspiralTemplateNode;
+#if 0
+<lalLaTeX>
+\subsection*{Types}
+</lalLaTeX>
+#endif
 
+/* --- enumeraion type for simulations ----------------------------------- */
+#pragma <lalVerbatim file="FindChirpEngineHFindChirpSimulationType">
 typedef enum
 {
   fcNoSim,
@@ -110,6 +120,75 @@ typedef enum
   fcBankMinimalMatch
 }
 FindChirpSimulationType;
+#pragma </lalVerbatim>
+#if 0
+<lalLaTeX>
+\subsubsection*{Enumeration Type \texttt{FindChirpSimulationType}}
+\idx[Type]{FindChirpSimulationType}
+
+\input{FindChirpEngineHFindChirpSimulationType}
+
+\noindent This enumaration type lists the possible types of simulation
+that can be performed by the \texttt{FindChirpEngine} functions.  The choices
+are:
+
+\begin{description}
+\item[\texttt{fcNoSim}] A regular data analysis run; no simulation performed.
+
+\item[\texttt{fcCreateRhosqVec}] Create a vector contain the statistic
+$\rho^2(t_j)$ when filtering.
+
+\item[\texttt{fcGaussianNoise}] Replace the input data in the
+\texttt{DataSegmentVector} with Gaussian noise and a simulated LIGO I response
+function.
+
+\item[\texttt{fcGaussianNoiseInject}] Replace the input data in the
+\texttt{DataSegmentVector} with Gaussian noise and a simulated LIGO I response
+function. Inject random signals into the data as descibed by the
+\texttt{FindChirpSimulationParams}.
+
+\item[\texttt{fcGaussianNoiseInject}] Inject random signals into the input
+data as descibed by the \texttt{FindChirpSimulationParams}.
+
+\item[\texttt{fcBankMinimalMatch}] Perform a bank minimal match simulation
+using the parameters in the \texttt{FindChirpSimulationParams} structure.
+\end{description}
+</lalLaTeX>
+#endif
+
+
+/* --- structure for managing a list of inspiral templates --------------- */
+#pragma <lalVerbatim file="FindChirpEngineHInspiralTemplateNode">
+typedef struct
+tagInspiralTemplateNode
+{
+  struct tagInspiralTemplateNode       *next;
+  struct tagInspiralTemplateNode       *prev;
+  InspiralTemplate                     *tmpltPtr;
+}
+InspiralTemplateNode;
+#pragma </lalVerbatim>
+#if 0
+<lalLaTeX>
+\subsubsection*{Structure \texttt{InspiralTemplateNode}}
+\idx[Type]{InspiralTemplateNode}
+
+\input{FindChirpEngineHInspiralTemplateNode}
+
+\noindent This structure provides a method of constucting doubly linked
+lists of \texttt{InspiralTemplate} structures. The fields are:
+
+\begin{description}
+\item[\texttt{struct tagInspiralTemplateNode *next}] The next structure in
+the linked list.
+
+\item[\texttt{struct tagInspiralTemplateNode *prev}] The previous structure in
+the linked list.
+
+\item[\texttt{InspiralTemplate *tmpltPtr}] A pointer to an \texttt{InspiralTemplate} structure.
+\end{description}
+</lalLaTeX>
+#endif
 
 typedef struct
 tagFindChirpSimulationParams

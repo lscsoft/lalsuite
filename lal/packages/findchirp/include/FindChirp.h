@@ -54,7 +54,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 
 #if 0
 <lalLaTeX> 
-\newpage\subsection*{Error codes} 
+\subsection*{Error codes} 
 </lalLaTeX>
 #endif
 /* <lalErrTable> */
@@ -100,6 +100,7 @@ NRCSID (FINDCHIRPH, "$Id$");
  *
  */
 
+
 #if 0
 <lalLaTeX>
 \subsubsection*{Input and output data structures}
@@ -107,6 +108,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #endif
   
 /* --- structure for describing a binary insipral event ------------------ */
+#pragma <lalVerbatim file="FindChirpHInspiralEvent">
 typedef struct
 tagInspiralEvent
 {
@@ -123,10 +125,13 @@ tagInspiralEvent
   struct tagInspiralEvent      *next;
 }
 InspiralEvent;
+#pragma </lalVerbatim>
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{InspiralEvent}}
 \idx[Type]{InspiralEvent}
+
+\input{FindChirpHInspiralEvent}
 
 \noindent This structure describes inspiral events found by \texttt{findchirp}.
 The fields are:
@@ -167,6 +172,7 @@ interferometer name (e.g. L1, H2, etc.)
 #endif
 
 /* --- vector of DataSegment, as defined the framedata package ----------- */
+#pragma <lalVerbatim file="FindChirpHDataSegmentVector">
 typedef struct
 tagDataSegmentVector
 {
@@ -174,10 +180,13 @@ tagDataSegmentVector
   DataSegment                  *data;
 }
 DataSegmentVector;
+#pragma </lalVerbatim>
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{DataSegmentVector}}
 \idx[Type]{DataSegmentVector}
+
+\input{FindChirpHDataSegmentVector}
 
 \noindent This structure provides a LAL like vector structure for the
 \texttt{DataSegment} structure defined in the package \texttt{framedata}
@@ -192,6 +201,7 @@ vector
 #endif
 
 /* --- processed data segment used by FindChirp filter routine ----------- */
+#pragma <lalVerbatim file="FindChirpHFindChirpSegment">
 typedef struct
 tagFindChirpSegment
 {
@@ -204,10 +214,13 @@ tagFindChirpSegment
   UINT4                         number;
 }
 FindChirpSegment;
+#pragma </lalVerbatim>
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{FindChirpSegment}}
 \idx[Type]{FindChirpSegment}
+
+\input{FindChirpHFindChirpSegment}
 
 \noindent This structure contains the conditioned input data and its
 parameters for the \texttt{FindChirpFilter()} function.
@@ -239,6 +252,7 @@ the \texttt{DataSegment} from which the conditioned data was computed.
 #endif
 
 /* --- vector of FindChirpSegment defined above -------------------------- */
+#pragma <lalVerbatim file="FindChirpHFindChirpSegmentVector">
 typedef struct
 tagFindChirpSegmentVector
 {
@@ -246,10 +260,13 @@ tagFindChirpSegmentVector
   FindChirpSegment             *data;
 }
 FindChirpSegmentVector;
+#pragma </lalVerbatim>
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{FindChirpSegmentVector}}
 \idx[Type]{FindChirpSegmentVector}
+
+\input{FindChirpHFindChirpSegmentVector}
 
 \noindent This structure provides a LAL like vector structure for the
 \texttt{FindChirpSegment} structure defined above.
@@ -264,6 +281,7 @@ the vector
 #endif
 
 /* --- structure to contain an inspiral template ------------------------- */
+#pragma <lalVerbatim file="FindChirpHFindChirpTemplate">
 typedef struct
 tagFindChirpTemplate
 {
@@ -271,10 +289,13 @@ tagFindChirpTemplate
   REAL4                         tmpltNorm;
 }
 FindChirpTemplate;
+#pragma </lalVerbatim>
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{FindChirpTemplate}}
 \idx[Type]{FindChirpTemplate}
+
+\input{FindChirpHFindChirpTemplate}
 
 \noindent This structure provides contains the frequency domain representation
 of the cosine phase inspiral template $\tilde{h_c}(f)$.
@@ -305,6 +326,7 @@ normalisation constant $\sigma$.
   
 
 /* --- parameter structure for all init funtions ------------------------- */
+#pragma <lalVerbatim file="FindChirpHFindChirpInitParams">
 typedef struct
 tagFindChirpInitParams
 {
@@ -314,10 +336,13 @@ tagFindChirpInitParams
   BOOLEAN                       createRhosqVec;
 }
 FindChirpInitParams;
+#pragma </lalVerbatim>
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{FindChirpInitParams}}
 \idx[Type]{FindChirpInitParams}
+
+\input{FindChirpHFindChirpInitParams}
 
 \noindent This structure provides the essential information for the
 filter initialisation and memory allocation functions used in the
@@ -343,6 +368,7 @@ for this vector if the flag is set to 1.
 
 
 /* --- parameter structure for the filtering function -------------------- */
+#pragma <lalVerbatim file="FindChirpHFindChirpFilterParams">
 typedef struct
 tagFindChirpFilterParams
 {
@@ -360,10 +386,13 @@ tagFindChirpFilterParams
   FindChirpChisqInput          *chisqInput;
 }
 FindChirpFilterParams;
+#pragma </lalVerbatim>
 #if 0
 <lalLaTeX>
-\subsubsection*{Structure \texttt{FindChirpInitParams}}
-\idx[Type]{FindChirpInitParams}
+\subsubsection*{Structure \texttt{FindChirpFilterParams}}
+\idx[Type]{FindChirpFilterParams}
+
+\input{FindChirpHFindChirpFilterParams}
 
 \noindent This structure provides the parameters used by the
 \texttt{FindChirpFilterSegment()} function.
@@ -437,6 +466,7 @@ structure for \texttt{FindChirpChisqVeto()} function. Must not be NULL if
 
 
 /* --- input to the filtering functions --------------------------------- */
+#pragma <lalVerbatim file="FindChirpHFindChirpFilterInput">
 typedef struct
 tagFindChirpFilterInput
 {
@@ -445,10 +475,13 @@ tagFindChirpFilterInput
   FindChirpSegment             *segment;
 }
 FindChirpFilterInput;
+#pragma </lalVerbatim>
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{FindChirpFilterInput}}
 \idx[Type]{FindChirpSegmentVector}
+
+\input{FindChirpHFindChirpFilterInput}
 
 \noindent This structure groups the input data required for the 
 \texttt{FindChirpFilterSegment()} function into a single structure.

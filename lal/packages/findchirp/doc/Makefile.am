@@ -1,7 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 DOCSOURCEFILES = findchirp.tex \
-                 FindChirpHDoc.tex \
-                 FindChirpSPHDoc.tex FindChirpSPDataCDoc.tex
+                 FindChirpHDoc.tex FindChirpChisqHDoc.tex \
+                 FindChirpSPHDoc.tex FindChirpSPDataCDoc.tex \
+                 FindChirpEngineHDoc.tex
 MOSTLYCLEANFILES = .dvi-dep
 CLEANFILES = main.dvi main.pdf main.ps
 EXTRA_DIST = $(DOCSOURCEFILES)

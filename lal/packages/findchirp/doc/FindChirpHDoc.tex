@@ -153,8 +153,22 @@ and then
 x(t) &=& \Re z(t) \\
 y(t) &=& \Im z(t)
 \end{eqnarray}
-so the filter output becomes
+so the statistic $\rho(t)$ can be written as
 \begin{equation}
 \rho(t) = \frac{1}{\sigma} \sqrt{x^2(t) + y^2(t)} 
-= \frac{1}{\sigma} \sqrt{|z^2(t)|}
+= \frac{1}{\sigma} \sqrt{|z^2(t)|}.
 \end{equation}
+In fact the statistic that we use in \texttt{findchirp} to threshold events on
+is the signal to noise squared, $\rho^2 (t)$, which is
+\begin{equation}
+\rho^2(t) = \frac{1}{\sigma^2} \left|z^2(t)\right|.
+\end{equation}
+We can then compare this statistic to some pre-assigned threshold and decide
+whether or not events are present in the data or construct a veto statistic
+as desired.
+
+The modules under this header provide a way to constuct the statistic
+$\rho^2(t)$ from data pre-conditioned using other functions from the
+\texttt{findchirp} package and to perform a comparison with the pre-assigned
+thresold to generate events, calling the \texttt{FindChirpChisq} function to
+perform a $\chi^2$ veto on the events, if requested.

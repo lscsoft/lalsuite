@@ -19,8 +19,8 @@ $Id$
 \subsection{Module \texttt{FindChirpMemory.c}}
 \label{ss:FindChirpMemory.c}
 
-Memory management functions for creating and destroying storage for input
-data.
+Memory management functions for creating and destroying input data and 
+workspace memory for the \texttt{FindChirpFilter()} function.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}

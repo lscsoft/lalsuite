@@ -9,7 +9,6 @@
  *-----------------------------------------------------------------------
  */
 
-
 #if 0
 <lalVerbatim file="FindChirpSPHV">
 Author: Brown, D. A.
@@ -17,40 +16,22 @@ $Id$
 </lalVerbatim> 
 
 <lalLaTeX>
-
 \section{Header \texttt{FindChirpSP.h}}
 \label{s:FindChirpSP.h}
 
-Provides routines to filter IFO data for binary inspiral chirps generated
-using the stationary phase approximation. 
+Provides structures and functions to condition interferometer data
+and generate binary inspiral chirps using the stationary phase approximation.
+
 \subsection*{Synopsis}
+
 \begin{verbatim}
-#include "FindChirpSP.h"
+#include <lal/FindChirpSP.h>
 \end{verbatim}
 
-\noindent This header provides routines necessary to filter IFO 
-data contained in a \verb|DataSegment| structure for binary inspiral 
-chirps generated using the stationary phase approximation. 
-
-In order to increase efficency, the filtering algorithm is divided 
-into three parts:
-\begin{itemize}
-\item Those that are independent of the template and need to be calculated
-      once per data segment.
-
-\item Those that need to be done once per template.
-
-\item Those that need to be done once for each data segment for each
-      template.
-\end{itemize}
-The template independent functions are contained in the module
-\verb|FindChirpSPData.c| and template dependent functions are in
-the module \verb|FindChirpSPTemplate.c|.
-
 \input{FindChirpSPHDoc}
-
 </lalLaTeX>
 #endif
+
 
 #ifndef _FINDCHIRPSPH_H
 #define _FINDCHIRPSPH_H
@@ -63,7 +44,11 @@ the module \verb|FindChirpSPTemplate.c|.
 
 #ifdef  __cplusplus
 extern "C" {
+#pragma }
 #endif
+
+
+NRCSID (FINDCHIRPSPH, "$Id$");
 
 #if 0
 <lalLaTeX> 
@@ -94,7 +79,14 @@ extern "C" {
 /* </lalErrTable> */
 
 
+#if 0
+<lalLaTeX>
+\subsection*{Types}
+</lalLaTeX>
+#endif
 
+/* --- the parameter structure for the data conditioning function -------- */
+#pragma <lalVerbatim file="FindChirpSPHFindChirpSPDataParams">
 typedef struct
 tagFindChirpSPDataParams
 {
@@ -111,7 +103,72 @@ tagFindChirpSPDataParams
   UINT4                         invSpecTrunc;
 }
 FindChirpSPDataParams;
+#pragma </lalVerbatim>
+#if 0
+<lalLaTeX>
+\subsubsection*{Structure \texttt{FindChirpSPDataParams}}
+\idx[Type]{FindChirpSPDataParams}
 
+\input{FindChirpSPHFindChirpSPDataParams}
+
+\noindent This structure contains the parameters needed to call the
+\texttt{FindChirpSPData()} function. It should be initialized by
+\texttt{FindChirpSPDataInit()} and destroyed by
+\texttt{FindChirpSPDataFinalize()}. The fields are:
+
+\begin{description}
+\item[\texttt{REAL4Vector *ampVec}] A vector containing the frequency domain
+quantity $k/N$, where $k$ is the frequency series index and $N$ is the number
+of points in a data segment.
+
+\item[\texttt{REAL4Vector *fwdPlan}] An FFTW plan used to transform the
+time domain interferometer data $v(t_j)$ into its DFT $\tilde{v}_k$.
+
+\item[\texttt{REAL4Vector *fwdPlan}] An FFTW plan used to transform the
+dimensionless frequency domain interferometer strain $\tilde{w}_k$ into 
+the quantity $N w(t_j)$ to allow time domain trunction of the inverse 
+power spectrum.
+
+\item[\texttt{REAL4Vector *vVec}] {\color{red} FIXME} A vector to contain
+the time domain interferometer output $v(t_j)$. This is obsolete since LIGO
+gives us $v(t_j)$ as floats. The 40m prototype gave integers which needed to
+be cast to floats.
+
+\item[\texttt{REAL4Vector *wVec}] A vector used as workspace when truncating
+the imverse power spectrum in the time domain.
+
+\item[\texttt{COMPLEX8Vector *wtildeVec}] A which on exit from
+\texttt{FindChirpSPData()} contains the inverse of the strain one sided power
+spectral density, after trunction in the time domain, that is
+$ \tilde{w}_k = {1}/{\ospsd}$.
+
+\item[\texttt{REAL4Vector *tmpltPowerVec}] A vector which on exit from
+\texttt{FindChirpSPData()} contains the quantity
+\begin{equation}
+\mathtt{tmpltPower[k]} = \frac{f^{-7/3}}{\ospsd}
+\end{equation}
+
+\item[\texttt{REAL4 deltaT}] {\color{red} FIXME} The sampling interval 
+$\Delta t$. Should be a \texttt{REAL8} or derived from the input time series
+\texttt{chan}.
+
+\item[\texttt{REAL4 fLow}] The low frequency cutoff for the algorithm. All
+data is zero below this frequency.
+
+\item[\texttt{REAL4 dynRange}] A dynamic range factor which cancells from
+the filter output (if set correctly in \texttt{FindChirpSPTmplt()} as well).
+This allows quantities to be stored in the range of \texttt{REAL4} rather
+than \texttt{REAL8}.
+
+\item[\texttt{UINT4 invSpecTrunc}] The length to which to truncate the inverse
+power spectral density of the data in the time domain. If set to zero, no
+truncation is performed.
+\end{description}
+</lalLaTeX>
+#endif
+
+/* --- vector of DataSegment, as defined the framedata package ----------- */
+#pragma <lalVerbatim file="FindChirpSPHFindChirpSPTmpltParams">
 typedef struct
 tagFindChirpSPTmpltParams
 {
@@ -121,7 +178,48 @@ tagFindChirpSPTmpltParams
   REAL4Vector                  *xfacVec;
 }
 FindChirpSPTmpltParams;
+#pragma </lalVerbatim>
+#if 0
+<lalLaTeX>
+\subsubsection*{Structure \texttt{FindChirpSPTmpltParams}}
+\idx[Type]{FindChirpSPTmpltParams}
 
+\input{FindChirpSPHFindChirpSPTmpltParams}
+
+\noindent This structure contains the parameters for generation of
+stationary phase templates by the function \texttt{FindChirpSPTmplt()}
+It should be initialized by \texttt{FindChirpSPTmpltInit()} and destroyed by
+\texttt{FindChirpSPTmpltFinalize()}. The fields are:
+
+\begin{description}
+\item[\texttt{REAL4 *deltaT}] {\color{red} FIXME} The sampling interval 
+$\Delta t$. Should be a \texttt{REAL8}.
+
+\item[\texttt{REAL4 fLow}] The low frequency cutoff for the algorithm. All
+data is zero below this frequency.
+
+\item[\texttt{REAL4 dynRange}] A dynamic range factor which cancells from
+the filter output (if set correctly in \texttt{FindChirpSPData()} as well).
+This allows quantities to be stored in the range of \texttt{REAL4} rather
+than \texttt{REAL8}.
+
+\item[\texttt{REAL4Vector *xfacVec}] A vector containing the frequency 
+domain quantity $k^{-7/6}$.
+\end{description}
+</lalLaTeX>
+#endif
+
+#if 0
+<lalLaTeX>
+\vfill{\footnotesize\input{FindChirpSPHV}}
+</lalLaTeX> 
+#endif
+
+#if 0
+<lalLaTeX>
+\newpage\input{FindChirpSPDataC}
+</lalLaTeX>
+#endif
 
 void
 LALFindChirpSPDataInit (
@@ -144,6 +242,11 @@ LALFindChirpSPDataFinalize (
     FindChirpSPDataParams     **output
     );
 
+#if 0
+<lalLaTeX>
+\newpage\input{FindChirpSPTemplateC}
+</lalLaTeX>
+#endif
 
 void
 LALFindChirpSPTemplateInit (
@@ -168,14 +271,8 @@ LALFindChirpSPTemplateFinalize (
 
 
 #ifdef  __cplusplus
+#pragma {
 }
 #endif
-
-/*
-<lalLaTeX>
-\vfill{\footnotesize\input{FindChirpSPHV}}
-\newpage\input{FindChirpSPDataC}
-</lalLaTeX> 
-*/
 
 #endif /* _FINDCHIRPSPH_H */

@@ -9,6 +9,56 @@
  *-----------------------------------------------------------------------
  */
 
+#if 0 
+<lalVerbatim file="FindChirpSPTemplateCV">
+Author: Brown, D. A.
+$Id$
+</lalVerbatim> 
+
+<lalLaTeX>
+\subsection{Module \texttt{FindChirpSPTemplate.c}}
+\label{ss:FindChirpSPTemplat.c}
+
+Provides functions to create stationary phase inspiral templates in a
+form that can be used by the \texttt{FindChirpFilter()} function.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{FindChirpSPTemplateCP}
+\idx{LALFindChirpSPTemplateInit()}
+\idx{LALFindChirpSPTemplateFinalize()}
+\idx{LALFindChirpSPTemplate()}
+
+The function \texttt{LALFindChirpSPTemplateInit()} takes as input the address
+of a structure of type \texttt{FindChirpInitParams} containing the correct
+values to intialize a search. It creates a structure of type
+\texttt{FindChirpSPTmpltParams} as described above and returns its address.
+
+The function \texttt{LALFindChirpSPTemplateFinalize()} takes as the address
+of a structure of type \texttt{FindChirpSPTmpltParams} destroys this 
+structure and sets the address to NULL.
+
+The function \texttt{LALFindChirpSPTemplate()} creates the stationary phase
+template as described by the algorithm below.
+
+\subsubsection*{Algorithm}
+
+Blah.
+
+\subsubsection*{Uses}
+\begin{verbatim}
+LALCalloc()
+LALFree()
+LALCreateVector()
+LALDestroyVector()
+\end{verbatim}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{FindChirpSPDataCV}}
+</lalLaTeX> 
+#endif
+
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/DataBuffer.h>
@@ -19,12 +69,14 @@
 
 NRCSID (FINDCHIRPSPTEMPLATEC, "$Id$");
 
+#pragma <lalVerbatim file="FindChirpSPTemplateCP">
 void
 LALFindChirpSPTemplateInit (
     LALStatus                  *status,
     FindChirpSPTmpltParams    **output,
     FindChirpInitParams        *params
     )
+#pragma </lalVerbatim>
 {
   UINT4                         k;
   FindChirpSPTmpltParams       *outputPtr;
@@ -92,11 +144,13 @@ LALFindChirpSPTemplateInit (
 
 
 
+#pragma <lalVerbatim file="FindChirpSPTemplateCP">
 void
 LALFindChirpSPTemplateFinalize (
     LALStatus                  *status,
     FindChirpSPTmpltParams    **output
     )
+#pragma </lalVerbatim>
 {
   FindChirpSPTmpltParams       *outputPtr;
 
@@ -142,6 +196,7 @@ LALFindChirpSPTemplateFinalize (
 
 
 
+#pragma <lalVerbatim file="FindChirpSPTemplateCP">
 void
 LALFindChirpSPTemplate (
     LALStatus                  *status,
@@ -149,6 +204,7 @@ LALFindChirpSPTemplate (
     InspiralTemplate           *tmplt,
     FindChirpSPTmpltParams     *params
     )
+#pragma </lalVerbatim>
 {
   UINT4         numPoints  = 0;
   REAL4         deltaF     = 0.0;
