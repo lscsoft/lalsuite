@@ -484,6 +484,8 @@ LALSimulateCoherentGW( LALStatus        *stat,
     if ( polResponse.pScalar )
       LALFree( polResponse.pScalar );
     TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
+    ABORT( stat, SIMULATECOHERENTGWH_EMEM,
+	   SIMULATECOHERENTGWH_MSGEMEM );
   }
   memset( polResponse.pPlus, 0, sizeof(REAL4TimeSeries) );
   memset( polResponse.pCross, 0, sizeof(REAL4TimeSeries) );
@@ -692,9 +694,11 @@ LALSimulateCoherentGW( LALStatus        *stat,
 	    ( phiOff + TCENTRE( i )*phiDt < 0.0 ) )
       i++;
   }
-  if ( i >= (INT4)( output->data->length ) )
+  if ( i >= (INT4)( output->data->length ) ) {
     LALWarning( stat, "Signal starts after the end of the output"
 		" time series." );
+    i = (INT4)( output->data->length );
+  }
 
   /* Compute final value of i, ensuring that we will never index
      signal->a or signal->phi above their range. */
@@ -717,9 +721,11 @@ LALSimulateCoherentGW( LALStatus        *stat,
 	    ( phiOff + TCENTRE( n )*phiDt >= nMax ) )
       n--;
   }
-  if ( n < 0 )
+  if ( n < 0 ) {
     LALWarning( stat, "Signal ends before the start of the output"
 		" time series." );
+    n = 0;
+  }
 
   /* Compute the values of i for which signal->f is given. */
   if ( signal->f ) {

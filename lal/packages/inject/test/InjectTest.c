@@ -5,6 +5,8 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 
+\providecommand{\lessim}{\stackrel{<}{\scriptstyle\sim}}
+
 \subsection{Program \texttt{InjectTest.c}}
 \label{ss:InjectTest.c}
 
@@ -12,7 +14,8 @@ Injects an inspiral signal into detector noise.
 
 \subsubsection*{Usage}
 \begin{verbatim}
-InjectTest [-s sourcefile] [-t transferfile] [-i infile | -o outfile] [-d debuglevel] [-r randomseed]
+InjectTest [-s sourcefile] [-e earthfile sunfile] [-r randomseed]
+           [-d debuglevel] [-h] indxfile
 \end{verbatim}
 
 \subsubsection*{Description}
@@ -20,60 +23,105 @@ InjectTest [-s sourcefile] [-t transferfile] [-i infile | -o outfile] [-d debugl
 This program generates Galactic inspiral waveform signals and injects
 them into ADC data.  The following option flags are accepted:
 \begin{itemize}
-\item[\texttt{-s}] Reads Galactic source positions and masses from the
-file \verb@sourcefile@, whose format is given below.  If not
-specified, masses are chosen randomly between 1 and 2$M_\odot$, and
-are placed at the Galactic core.
-\item[\texttt{-t}] Specifies an index file \verb@transferfile@ giving
-the names and epochs of data files containing the instrument transfer
-function (ADC counts per unit strain).  If not specified, a fake
-internal whitening filter is used.
-\item[\texttt{-i}] Specifies an index file \verb@infile@ giving the
-names and timespans of data files containing the instrument output.
-If not specified, a single stretch of Gaussian noise will be generated
-internally and injected.
-\item[\texttt{-o}] Used only if a \verb@-i@ option was \emph{not}
-given, this option specifies an output file \verb@outfile@ where the
-simulated data will be written.  If the \verb@-i@ option \emph{was}
-given, the injected data will be written to files with names derived
-from the input data files.  If neither \verb@-i@ nor \verb@-o@ is
-specified, the injection routines are exercised but the simulated data
-is discarded.
-\item[\texttt{-d}] Sets the debug level to \verb@debuglevel@.  If not
-specified, level 0 is assumed.
+\item[\texttt{-s}] Reads source data from the file \verb@sourcefile@,
+whose format is given below.  If not specified, no injections are
+performed.
+\item[\texttt{-e}] Specifies ephemeris files giving the location of
+the Earth and Sun with respect to a barycentric reference point for
+arrival times, whose format is as required by
+\verb@LALInitBarycenter()@ in the \verb@support@ package.  If not
+specified, the Earth's centre is treated as the barycentric reference
+point (this is not consistent for long signal durations).
 \item[\texttt{-r}] Sets the random number seed to \verb@randomseed@.
 If not specified, the seed is gerenated from the current time.
+\item[\texttt{-d}] Sets the debug level to \verb@debuglevel@.  If not
+specified, level 0 is assumed.
+\item[\texttt{-h}] Prints out the usage message and exits.
 \end{itemize}
+After parsing these recognized options, there must be one remaining
+argument: the name of an index file \verb@indxfile@ specifying the
+data input and output files, along with detector information
+associated with each file; the format is given below.
 
 \paragraph{Format for \texttt{sourcefile}:} The source file consists
-of four columns of floating-point numbers, representing the distance
-$\rho$ of the system from the Galactic axis in kpc, the height $z$
-above (or below) the Galactic plane in kpc, and the two binary masses
-in Solar masses.  All are read in as \verb@REAL4@.
+of one or more lines, each representing a particular source to be
+injected.  Each line consists of the name of a routine for generating
+a waveform, followed by a set of numerical arguments required for
+setting the parameters for that generator.  The generators currently
+supported are as follows:
+\begin{verbatim}
+LALGeneratePPNInspiral tc m1 m2 d inc ra dec psi phic fi ff
+LALGenerateTaylorCW    t0 t1 t2 a1 a2 ra dec psi phi0 f0 [f1 [...]]
+LALGenerateSpinOrbitCW t0 t1 t2 a1 a2 ra dec psi phi0 f0 [f1 [...]] arg udot rp e
+\end{verbatim}
+where \verb@tc@ is the time of coalescence, \verb@t0@ is a reference
+time where system properties are specified, \verb@t1@ and \verb@t2@
+are start and stop times for the signal (all given as \verb@INT8@ GPS
+nanoseconds), \verb@m1@ and \verb@m2@ are the component masses of a
+binary system (\verb@REAL4@ solar masses), \verb@d@ is the distance to
+the system (\verb@REAL4@ Mpc), \verb@inc@ is the inclination of the
+system (\verb@REAL4@ degrees), \verb@a1@ and \verb@a2@ are intrinsic
+GW amplitudes of the + and $\times$ polarizations (\verb@REAL4@
+strain), \verb@ra@ and \verb@dec@ are the right ascension and
+declination of the system (\verb@REAL8@ degrees), \verb@psi@ is the
+polarization angle of the system (\verb@REAL4@ degrees), \verb@phic@
+is the wave phase at coalescence (\verb@REAL4@ degrees), \verb@phi0@
+is the wave phase at the reference time (\verb@REAL8@ degrees),
+\verb@fi@ and \verb@ff@ are the start and stop frequencies of the
+waveform (\verb@REAL4@ Hz), \verb@f0@ is the wave frequency at the
+reference time (\verb@REAL8@ Hz),
+\verb@f1@$,\ldots,$\verb@f@${}_k,\ldots$ are the (optional)
+frequency-normalized spindown coefficience (\verb@REAL8@ s${}^{-k}$),
+\verb@arg@ is the argument of the source's orbital periapsis
+(\verb@REAL4@ degrees), \verb@udot@ is the orbital angular speed of
+the source at periapsis (\verb@REAL4@ Hz), \verb@rp@ is the normalized
+projected orbital periapsis distance $(r_p/c)\sin i$ of the source
+(\verb@REAL4@ s), and \verb@e@ is the orbital eccentricity of the
+source (\verb@REAL4@),
 
-\paragraph{Format for \texttt{infile}:} The input file index consists
-of four columns.  The first is a character string specifying the name
-of a file containing ADC data, the second is an \verb@INT8@ specifying
-the GPS start time (epoch) of the data set in nanoseconds, the third
-is a \verb@UINT4@ specifying the length of the data file, and the
-fourth is a \verb@REAL8@ specifying the sampling interval in seconds.
+\paragraph{Format for \texttt{indxfile}:} The index file consists
+of one or more lines, each representing a stretch of data to be
+injected.  Each line consists of four strings: The site name, the
+response function file name, the input file name, and the output file
+name (which may be the same as the input).  These are treated as
+follows:
 
-The ADC data files pointed to by \verb@infile@ are a single column of
-\verb@INT2@ data giving the ADC output at each time sample.
+The detector name may be one of \verb@LHO@, \verb@LLO@, \verb@VIRGO@,
+\verb@GEO600@, \verb@TAMA300@, or \verb@CIT40@.  Additionally, a name
+of \verb@-@ represents a fictitious detector with a fixed location in
+the barycentric frame, and responding purely to the signal's +
+polarization.
 
-\paragraph{Format for \texttt{transferfile}:} The transfer function
-file index consists of four columns.  The first is a character string
-specifying the name of a file containing a transfer function, the
-second is an \verb@INT8@ specifying the GPS epoch when the transfer
-function was taken (or when it is most valid) in nanoseconds, the
-third is a \verb@REAL8@ specifying the starting frequency of the
-transfer function data in hertz, and the fourth is a \verb@REAL8@
-specifying the frequency sampling interval in hertz.
+The response function file name should give the location of a readable
+file relative to the current execution directory, which will be read
+using the routine \verb@LALCReadFSeries()@; see \verb@StreamInput.h@
+for discussion of the file format.  It should have a
+\verb@sampleUnits@ field set to \verb@"strain count^-1"@, but
+incorrect units will generate only a warning.  A response file name of
+\verb@-@ specifies a unit response (i.e.\ raw strain is injected into
+the data); note that this means that actual response files named
+\verb@-@ are not permitted.
 
-The transfer function data files pointed to by \verb@transferfile@
-consist of two columns of \verb@REAL4@ data, giving the real and
-imaginary parts of the transfer function (in ADC counts per unit
-strain) at each frequency sample.
+The input file name should give the location of a readable file
+relative to the current execution directory, which will be read using
+the routine \verb@LALSReadTimeSeries()@; see \verb@StreamInput.h@ for
+discussion of the file format.  It should have a \verb@sampleUnits@
+field set to \verb@"count"@, but incorrect units will generate only a
+warning.  The input file name may be replaced with a \verb@-@ followed
+by 4 whitespace-delimited numerical tokens
+\verb@- epoch npt dt sigma@, indicating that a time series will be
+generated starting at (\verb@INT8@) \verb@epoch@ GPS nanoseconds,
+consisting of (\verb@UINT4@) \verb@npt@ points sampled at
+(\verb@REAL8@) \verb@dt@ second intervals having Gaussian random noise
+with rms value (\verb@REAL4@) \verb@sigma@ ADC counts.  Again, an
+actual input file named \verb@-@ is therefore not permitted.
+
+The output file name should give the location relative to the current
+execution directory, where the injected data will be written using the
+routine \verb@LALSWriteTSeries()@; see \verb@StreamInput.h@ for
+discussion of the file format.  A name of \verb@-@ specifies writing
+to standard output (\emph{not} to a file named \verb@-@).  To suppress
+output, specify \verb@/dev/null@ as the output file.
 
 \subsubsection*{Exit codes}
 ****************************************** </lalLaTeX><lalErrTable> */
@@ -83,7 +131,6 @@ strain) at each frequency sample.
 #define INJECTTESTC_EVAL  3
 #define INJECTTESTC_EFILE 4
 #define INJECTTESTC_EMEM  5
-#define INJECTTESTC_EOVER 6
 
 #define INJECTTESTC_MSGENORM "Normal exit"
 #define INJECTTESTC_MSGESUB  "Subroutine failed"
@@ -91,81 +138,157 @@ strain) at each frequency sample.
 #define INJECTTESTC_MSGEVAL  "Input argument out of valid range"
 #define INJECTTESTC_MSGEFILE "Could not open file"
 #define INJECTTESTC_MSGEMEM  "Out of memory"
-#define INJECTTESTC_MSGEOVER "Detector ADC files overlap in time"
 /******************************************** </lalErrTable><lalLaTeX>
 
 \subsubsection*{Algorithm}
 
-The general structure of the routine is as follows, assuming
-\emph{all} input file options \verb@-s@, \verb@-t@, and \verb@-i@ have
-been specified.
-\begin{enumerate}
-\item The file \verb@infile@ is read and the earliest start time and
-latest stop time are determined.  The start time for the first
-injected signal is offset \emph{backwards} from the earliest data
-start time by a random amount.
-\item The file \verb@sourcefile@ is read, and the first set of source
-parameters is sent to \verb@LALGetInspiralParams()@ and
-\verb@GeneratePPNInspiral@ to generate a waveform.  The total timespan
-of the waveform is determined.
-\item The file \verb@transferfile@ is read, and the transfer function
-file nearest to the midpoint of the waveform is determined.  That file
-is then read in, and used with \verb@LALSimulateCoherentGW()@ to
-generate a simulated detector output.
-\item From the list in \verb@infile@, the set of data files that
-overlap with the waveform is determined.  These files are read in and
-injected using the function \verb@LALSI2InjectTimeSeries()@.
-\item The injected data are written to output files whose names are
-derived from the input data files by adding a \verb@.sim@ extension.
-The last of the datasets is kept in memory and not written, since
-subsequent inspiral injections may also overlap with it.
-\item The start time for the next signal is determined by adding a
-random amount to the end of the previous signal, and steps 2--5 are
-repeated.  This continues until either the latest stop time is passed,
-or the sourcelist in \verb@sourcefile@ is exhausted.
-\item The last dataset remaining in memory is written to its output
-file.
-\end{enumerate}
+The program first reads \verb@sourcefile@ using
+\verb@LALCHARReadVector()@, parses its arguments with
+\verb@LALCreateTokenList()@, and generates a linked list of
+\verb@CoherentGW@ structures containing the waveforms to be injected:
+see below for a discussion of how the various generators' input lines
+are parsed.  Blank lines are ignored, as are comments (a \verb@#@ or
+\verb@%@ character causes the remainder of the line to be ignored).
+The waveforms will be held in memory together for the rest of the
+injection procedure; if this taxes the available system memory, break
+up \verb@sourcefile@ and run the program on each separate file, using
+the output from each run as the input for the next.
 
-The negative time offset for the first signal is a random number
-between 0 and 5~minutes.  The time offset between signals is a random
-number between 1 and 2~minutes.  These are set by \verb@#define@d
-constants.
+Once all the waveforms have been generated, the program starts reading
+\verb@indxfile@: for each stretch of data specified, it reads in the
+input file and response function file using \verb@LALSReadTSeries()@
+and \verb@LALSReadFSeries()@, inverts the response function to get a
+transfer function, simulates and injects the waveforms using
+\verb@LALSimulateCoherentGW()@ and \verb@LALSSInjectTimeSeries()@, and
+writes the resulting time series to the output file using
+\verb@LALSWriteTSeries()@.  If a given stretch of data has the same
+response function file name as the previous one, then the previous
+transfer function is reused rather than re-reading and re-inverting
+the data; thus, one should naturally arrange \verb@indxfile@ so that
+data stretches using the same response function are listed
+consecutively.
 
-If no \verb@infile@ is specified, a 1024~second 1024~Hz ADC datastream
-is generated internally and populated with white Gaussian noise having
-a variance $\sigma^2=10$.  These numbers can also be changed by
-changing \verb@#define@d constants.  The injected data is written to a
-file only if an \verb@outfile@ was specified with the \verb@-o@
-option.
+\paragraph{\texttt{LALGeneratePPNInspiral}:} Most arguments are parsed
+from the corresponding tokens using the functions in
+\verb@StringConvert.c@.  However, two input parameters require some
+nontrivial computation.  First, the generator requires a start time,
+while \verb@sourcefile@ specifies a coalescence time.  The solution is
+to generate a waveform with an arbitrary start time (in this case zero
+GPS seconds), take the returned coalescence time, and adjust the start
+time accordingly.  Second, \verb@sourcefile@ does not specify a
+sampling interval to be used in the generated waveform.  Here the
+solution is to estimate an appropriate interval from the requested
+termination frequency or from the point of post-Newtonian breakdown
+for the specified masses.  If a nonzero termination frequency $f$ is
+specified (either positive or negative), then the maximum rate of
+change of frequency in the (post${}^0$-)Newtonian approximation is
+$\dot{f}_\mathrm{max}=1.8\pi^{8/3}\tau^{5/3}f^{11/3}$, where
+$\tau=Gm_\mathrm{tot}/c^3$ is the relativistic minimum timescale of
+the system.  As explained in \verb@GeneratePPNInspiral.c@, for linear
+interpolation of the waveform to be accurate to within $\pi/2$
+radians, we would like $\Delta f\Delta t\lessim2$ over any sampling
+interval.  This implies that $\Delta
+t\approx\sqrt{2/\dot{f}_\mathrm{max}}$, or:
+$$
+\Delta t \approx 0.1403\tau^{-5/6}f^{-11/6} \;.
+$$
+If the maximum frequency is given as zero (i.e.\ unspecified) or
+positive, then an additional constraint is imposed by the guaranteed
+post-Newtonian breakdown at or before $r=2Gm_\mathrm{tot}/c^2$, giving
+$\dot{f}_\mathrm{max}=(2\sqrt{2}/40\pi)\tau^{-2}$.  This implies that:
+$$
+\Delta t_\mathrm{min} \approx 7.697\tau \;,
+$$
+and we can write the previous expression as $\Delta t = \max\{\Delta
+t_\mathrm{min}, 0.7685(\Delta t_\mathrm{min})^{-5/6}f^{-11/6}\}$.
+When the waveform is actually generated, the maximum value of $\Delta
+f\Delta t$ is returned, and, if greater than 2, $\Delta t$ is reduced
+accordingly and the waveform regenerated.
 
-If no \verb@sourcefile@ is specified, an unlimited number of source
-parameters are generated randomly.  Each source is positioned at the
-Galactic core (but with random inclination, phase, and polarization to
-ensure a varying amplitude), with masses uniformly and randomly
-distributed between 1 and 2$M_\odot$.
+\paragraph{\texttt{LALGenerateTaylorCW}:} Most arguments are parsed
+from the corresponding tokens using the routines in
+\verb@StringConvert.c@.  However, two input parameters require
+computation.  First, the base frequency $f_0$ and spindown terms
+$f_1,\ldots f_N$ need to be transformed from the reference time to the
+start time, by the following formula:
+\begin{eqnarray}
+f_{0\mathrm{(start)}} & = & f_0\left( 1+\sum_{k=1}^N f_k t^k \right)
+	\;,\nonumber\\
+f_{j\mathrm{(start)}} & = & \frac{\sum_{k=j}^N{j \choose k}f_k t^{k-j}}
+	{1+\sum_{k=1}^N f_k t^k} \;,\nonumber
+\end{eqnarray}
+where $t=t_\mathrm{start}-t_\mathrm{ref}$ is the time shift.  These
+calculations are done to double precision; even so, one is advised to
+specify the frequency and spindown terms at a reference time that is
+not too far from the times being considered.  Roughly speaking, for
+phases to be accurate within a fraction of a cycle, this means that
+$1+\sum_k|f_k\tau^k|\ll10^{15}/|f_0\tau|$, where $\tau$ is the larger
+of $t_\mathrm{start}-t_\mathrm{ref}$ and
+$t_\mathrm{stop}-t_\mathrm{ref}$.
 
-If no \verb@transferfile@ is specified, a simple white bandpass from
-40~Hz to 600~Hz is used.  Obviously this is not partiucularly
-realistic, and I may improve upon it, but you should really just feed
-in your favourite transfer function with the \verb@-t@ option.
+Second, the program must choose an appropriate sampling interval for
+the waveforms, such that the maximum $\Delta f\Delta t$ over any
+interval is less than 2.  This is fairly straightforward; one simply
+takes:
+$$
+\Delta t \approx \left( 0.5 f_0 \sum_{k=1}^N k|f_k T^{k-1}|
+	\right)^{-1/2} \;,
+$$
+where $T=t_\mathrm{stop}-t_\mathrm{start}$ is the total signal length.
+If this gives $\Delta t>T$ (as for instance when there are no nonzero
+spindown terms), then $\Delta t$ is set equal to $T$.
+
+\paragraph{\texttt{LALGenerateSpinOrbitCW}:} Most arguments are parsed
+from the corresponding tokens using the routines in
+\verb@StringConvert.c@.  The reference time is assumed to correspond
+to the orbital epoch of the system, and the conversion from reference
+time to start time discussed above is performed automatically within
+the \verb@LALGenerateSpinOrbitCW()@ function.  However, the program
+still needs to choose an appropriate sampling interval for the
+waveforms, such that the maximum $\Delta f\Delta t$ over any interval
+is less than 2.  We simply take the formula for $\Delta t$ above and
+add to the spindown terms a Doppler modulation at least as large as
+the maximum possible orbital acceleration, to get:
+$$
+\Delta t \approx \left( 0.5 f_0 \left[ \dot{\upsilon}_p^2 r_p\sin i/c +
+	\sum_{k=1}^N k|f_k T^{k-1}| \right] \right)^{-1/2} \;,
+$$
+where $\dot{\upsilon}_p$ is the angular speed at periapsis, $r_p\sin
+i/c$ is the projected, normalized periapsis distance, and
+$T=t_\mathrm{stop}-t_\mathrm{start}$ is the total signal length.  If
+this gives $\Delta t>T$ then $\Delta t$ is set equal to $T$.
 
 \subsubsection*{Uses}
 \begin{verbatim}
 lalDebugLevel
-LALPrintError()                 LALCheckMemoryLeaks()
 LALMalloc()                     LALFree()
+LALCreateRandomParams()         LALDestroyRandomParams()
+LALCreateTokenList()            LALDestroyTokenList()
+LALCHARCreateVector()           LALCHARDestroyVector()
+LALCCreateVector()              LALCDestroyVector()
+LALDCreateVector()              LALDDestroyVector()
+LALSDestroyVector()             LALSDestroyVectorSequence()
+LALCReadFSeries()               LALSReadTSeries()
+LALCHARReadVector()             LALSWriteTSeries()
+LALCCVectorDivide()             LALNormalDeviates()
+LALUnitRaise()                  LALUnitMultiply()
+LALUnitCompare()                LALStringToI8()
+LALStringToS()                  LALStringToD()
+LALGeneratePPNInspiral()        LALGenerateTaylorCW()
+LALGenerateSpinOrbitCW()        LALSimulateCoherentGW()
+LALSSInjectTimeSeries()         LALInitBarycenter()
+LALSnprintf()                   LALPrintError()
+LALCheckMemoryLeaks()
 \end{verbatim}
 
 \subsubsection*{Notes}
-
-Under development.  At present it doesn't do anything; it just exits.
 
 \vfill{\footnotesize\input{InjectTestCV}}
 
 ******************************************************* </lalLaTeX> */
 
 #include <math.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -174,52 +297,29 @@ Under development.  At present it doesn't do anything; it just exits.
 #include <lal/Units.h>
 #include <lal/Sort.h>
 #include <lal/Random.h>
+#include <lal/VectorOps.h>
+#include <lal/StringInput.h>
+#include <lal/StreamInput.h>
+#include <lal/StreamOutput.h>
+#include <lal/LALInitBarycenter.h>
 #include <lal/Inject.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GeneratePPNInspiral.h>
-#include <lal/StreamInput.h>
+#include <lal/GenerateTaylorCW.h>
+#include <lal/GenerateSpinOrbitCW.h>
 
 NRCSID( INJECTTESTC, "$Id$" );
 
 /* Default parameter settings. */
 int lalDebugLevel = 0;
 
-/* Some global constants. */
-#define NAMELENGTH (1024) /* maximum length of a file name */
-#define NPARAM (4)        /* number of source parameters in sourcefile */
-
-/* Range of random initial offset (nanoseconds). */
-#define INIT_OFFSET_MIN   (-30000000000LL)
-#define INIT_OFFSET_RANGE (30000000000LL)
-
-/* Range of random offset between signals (nanoseconds). */
-#define OFFSET_MIN   (30000000000LL)
-#define OFFSET_RANGE (30000000000LL)
-
-/* Range of randomly-generated masses. */
-#define M_MIN   (1.0)
-#define M_RANGE (1.0)
-
-/* Parameters of internally-generated data segments. */
-/*#define EPOCH   (662342400000000000LL)  start of third millenium, UTC */
-#define EPOCH   (315187200000000000LL) /* about Jan. 1, 1990 */
-#define DELTAT  (0.0009765625)
-#define NPTS_T  (65536)
-#define SIGMASQ (10.0)
-
-/* Parameters of internally-generated transfer function. */
-#define F0     (50.0)
-#define DELTAF (400.0)
-#define NPTS_F (2)
-#define TRANS  (1.0e20)
-
-/* Other waveform parameters. */
-#define FSTART   (40.0)
-#define FSTOP    (600.0)
-#define DTSAMPLE (0.01)
+#define MSGLEN 1024  /* Max. length of warning/info messages */
+#define FMAX (1.0e9) /* Max. frequency we will ever use (Hz) */
+#define WHITESPACE " \f\n\r\t\v" /* list of whitespace characters */
 
 /* Usage format string. */
-#define USAGE "Usage: %s [-s sourcefile] [-d debuglevel]\n"
+#define USAGE "Usage: %s [-s sourcefile] [-e earthfile sunfile]\n"   \
+"\t[-r randomseed] [-d debuglevel] [-h] indxfile\n"
 
 /* Macros for printing errors and testing subroutines. */
 #define ERROR( code, msg, statement )                                \
@@ -227,9 +327,19 @@ do                                                                   \
 if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
   LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
-		 "        %s %s\n", (code), *argv, __FILE__,         \
+		 "        %s %s\n", (code), program, __FILE__,       \
 		 __LINE__, INJECTTESTC, statement ? statement :      \
                  "", (msg) );                                        \
+}                                                                    \
+while (0)
+
+#define WARNING( statement )                                         \
+do                                                                   \
+if ( lalDebugLevel & LALWARNING )                                    \
+{                                                                    \
+  LALPrintError( "Warning[0]: program %s, file %s, line %d, %s\n"    \
+		 "        %s\n", program, __FILE__, __LINE__,        \
+		 INJECTTESTC, (statement) );                         \
 }                                                                    \
 while (0)
 
@@ -238,7 +348,7 @@ do                                                                   \
 if ( lalDebugLevel & LALINFO )                                       \
 {                                                                    \
   LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
-		 "        %s\n", *argv, __FILE__, __LINE__,          \
+		 "        %s\n", program, __FILE__, __LINE__,        \
 		 INJECTTESTC, (statement) );                         \
 }                                                                    \
 while (0)
@@ -249,7 +359,7 @@ if ( (func), (statusptr)->statusCode )                               \
 {                                                                    \
   ERROR( INJECTTESTC_ESUB, INJECTTESTC_MSGESUB,                      \
          "Function call \"" #func "\" failed:" );                    \
-  return INJECTTESTC_ESUB;                                           \
+  exit( INJECTTESTC_ESUB );                                          \
 }                                                                    \
 while (0)
 
@@ -261,61 +371,91 @@ if ( ( (val) <= (lower) ) || ( (val) > (upper) ) )                   \
          "Value of " #val " out of range:" );                        \
   LALPrintError( #val " = %f, range = (%f,%f]\n", (REAL8)(val),      \
                  (REAL8)(lower), (REAL8)(upper) );                   \
-  return INJECTTESTC_EVAL;                                           \
+  exit( INJECTTESTC_EVAL );                                          \
 }                                                                    \
 while (0)
+
+/* A macro for parsing a numerical token in a string.  The variables
+   token, endptr, and ok must already exist within the scope of the
+   macro call. */
+#define PARSETOKEN( parser, variable )                               \
+do {                                                                 \
+  if ( ok ) {                                                        \
+    if ( *(++token) ) {                                              \
+      CHAR *endptr;                                                  \
+      SUB( (parser)( stat, (variable), *token, &endptr ), stat );    \
+      ok = ( *endptr == '\0' );                                      \
+    } else                                                           \
+      ok = 0;                                                        \
+  }                                                                  \
+} while (0)
+
 
 /* A global pointer for debugging. */
 #ifndef NDEBUG
 char *lalWatch;
 #endif
 
+/* Some more global constants (set once and used at all levels). */
+char *program;
+LALUnit countsPerStrainUnit, strainPerCountUnit;
+
+/* A linked list of CoherentGW structures. */
+typedef struct tagCoherentGWNode {
+  CoherentGW waveform;
+  struct tagCoherentGWNode *next;
+} CoherentGWNode;
+
+
 /* A function to convert INT8 nanoseconds to LIGOTimeGPS. */
 void
 I8ToLIGOTimeGPS( LIGOTimeGPS *output, INT8 input );
+
+/* Function to parse source lines to generate various waveform. */
+INT4
+GenerateWaveform( LALStatus      *stat,
+		  CoherentGWNode *head,
+		  TokenList      *tokens,
+		  const CHAR     *tag,
+		  RandomParams   *randParams );
+
+/* Function to inject sources into each input file. */
+INT4
+InjectWaveforms( LALStatus        *stat,
+		 CoherentGWNode   *head,
+		 TokenList        *tokens,
+		 const CHAR       *tag,
+		 RandomParams     *randParams,
+		 DetectorResponse *detector,
+		 CHARVector       **prevResponse );
+
+/* Function to compute the combination of two numbers. */
+UINT4
+choose( UINT4 a, UINT4 b );
 
 
 int
 main(int argc, char **argv)
 {
   /* Command-line parsing variables. */
-  int arg;                   /* command-line argument counter */
-  static LALStatus stat;     /* status structure */
-  CHAR *sourcefile = NULL;   /* name of sourcefile */
-  CHAR *transferfile = NULL; /* name of transferfile */
-  CHAR *infile = NULL;       /* name of infile */
-  CHAR *outfile = NULL;      /* name of outfile */
-  INT4 seed = 0;             /* random number seed */
+  int arg;                         /* command-line argument counter */
+  static LALStatus stat;           /* status structure */
+  CHAR *sourcefile = NULL;         /* name of source file */
+  CHAR *earthfile = NULL;          /* name of earth ephemeris file */
+  CHAR *sunfile = NULL;            /* name of sun ephemeris file */
+  CHAR *indxfile = NULL;           /* name of index file */
+  INT4 seed = 0;                   /* random number seed */
 
-  /* Input file reading variables. */
-  FILE *fp;             /* generic file pointer */
-  UINT4 i;              /* generic index over file lines */
-  CHARVectorSequence *inImage = NULL; /* character image of infile */
-  UINT4 inLength;       /* number of lines of infile */
-  REAL8 *deltaT;        /* array of sampling rates for each input file */
-  INT8 *tStart, *tStop; /* arrays of start and stop times */
-  CHARVectorSequence *transferImage = NULL; /* image of transferfile */
-  UINT4 transferLength; /* number of lines of transferfile */
-  INT8 *epoch;          /* array of epochs for each transfer function file */
-  REAL8 *f0, *deltaF;   /* arrays giving frequency samples for each file */
-  REAL4VectorSequence *sourceList = NULL; /* contents of sourcefile */
-  UINT4 sourceLength;   /* number of lines of sourcefile */
+  CoherentGWNode head;             /* head of list of waveforms */
+  CHAR msg[MSGLEN];                /* warning or info messages */
+  DetectorResponse detector;       /* detector site geometry */
+  CHARVector *prevResponse = NULL; /* previous response filename */
+  RandomParams *randParams = NULL; /* random parameters */
 
-  /* Other global variables. */
-  INT4Vector *idx = NULL;      /* index ordering input files */
-  INT4 *id;                    /* pointer to idx->data */
-  RandomParams *params = NULL; /* parameters of pseudorandom sequence */
-  INT8 tInitial, tFinal; /* earliest and latest possible inject times */
-  INT8 t, tEnd;          /* start and stop time of current signal */
-  UINT4 nOut, nSource;   /* current source and output file numbers */
-  DetectorResponse detector; /* the detector in question */
-  INT2TimeSeries output;     /* detector ACD output */
-  CHAR outname[NAMELENGTH];  /* name of current output file */
-
-  /* Meaningless initializations to shut gcc up. */
-  deltaT = f0 = deltaF = NULL;
-  epoch = NULL;
-  transferLength = 0;
+  UINT4 i;                         /* current position in line */
+  UINT4 lineno;                    /* current line number */
+  UINT4 seriesno;                  /* number of time series written */
+  FILE *fp;                        /* generic file pointer */
 
   /*******************************************************************
    *                                                                 *
@@ -323,6 +463,7 @@ main(int argc, char **argv)
    *                                                                 *
    *******************************************************************/
 
+  program = *argv;
   arg = 1;
   while ( arg < argc ) {
     /* Parse source file option. */
@@ -330,51 +471,19 @@ main(int argc, char **argv)
       if ( argc > arg + 1 ) {
 	arg++;
 	sourcefile = argv[arg++];
-      }else{
+      } else {
 	ERROR( INJECTTESTC_EARG, INJECTTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
         return INJECTTESTC_EARG;
       }
     }
-    /* Parse transfer file option. */
-    else if ( !strcmp( argv[arg], "-t" ) ) {
-      if ( argc > arg + 1 ) {
+    /* Parse ephemeris file option. */
+    else if ( !strcmp( argv[arg], "-e" ) ) {
+      if ( argc > arg + 2 ) {
 	arg++;
-	transferfile = argv[arg++];
-      }else{
-	ERROR( INJECTTESTC_EARG, INJECTTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
-        return INJECTTESTC_EARG;
-      }
-    }
-    /* Parse input file option. */
-    else if ( !strcmp( argv[arg], "-i" ) ) {
-      if ( argc > arg + 1 ) {
-	arg++;
-	infile = argv[arg++];
-      }else{
-	ERROR( INJECTTESTC_EARG, INJECTTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
-        return INJECTTESTC_EARG;
-      }
-    }
-    /* Parse output file option. */
-    else if ( !strcmp( argv[arg], "-o" ) ) {
-      if ( argc > arg + 1 ) {
-	arg++;
-	outfile = argv[arg++];
-      }else{
-	ERROR( INJECTTESTC_EARG, INJECTTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
-        return INJECTTESTC_EARG;
-      }
-    }
-    /* Parse debug level option. */
-    else if ( !strcmp( argv[arg], "-d" ) ) {
-      if ( argc > arg + 1 ) {
-	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
-      }else{
+	earthfile = argv[arg++];
+	sunfile = argv[arg++];
+      } else {
 	ERROR( INJECTTESTC_EARG, INJECTTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
         return INJECTTESTC_EARG;
@@ -385,422 +494,193 @@ main(int argc, char **argv)
       if ( argc > arg + 1 ) {
 	arg++;
 	seed = atoi( argv[arg++] );
-      }else{
+      } else {
 	ERROR( INJECTTESTC_EARG, INJECTTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
         return INJECTTESTC_EARG;
       }
     }
-    /* Check for unrecognized options. */
-    else if ( argv[arg][0] == '-' ) {
-      ERROR( INJECTTESTC_EARG, INJECTTESTC_MSGEARG, 0 );
+    /* Parse debug level option. */
+    else if ( !strcmp( argv[arg], "-d" ) ) {
+      if ( argc > arg + 1 ) {
+	arg++;
+	lalDebugLevel = atoi( argv[arg++] );
+      } else {
+	ERROR( INJECTTESTC_EARG, INJECTTESTC_MSGEARG, 0 );
+        LALPrintError( USAGE, *argv );
+        return INJECTTESTC_EARG;
+      }
+    }
+    /* Parse help option. */
+    else if ( !strcmp( argv[arg], "-h" ) ) {
       LALPrintError( USAGE, *argv );
-      return INJECTTESTC_EARG;
+      INFO( INJECTTESTC_MSGENORM );
+      return INJECTTESTC_ENORM;
+    }
+    /* Get index file name. */
+    else {
+      if ( argc == arg + 1 ) {
+	indxfile = argv[arg++];
+      } else {
+	ERROR( INJECTTESTC_EARG, INJECTTESTC_MSGEARG, 0 );
+        LALPrintError( USAGE, *argv );
+        return INJECTTESTC_EARG;
+      }
     }
   } /* End of argument parsing loop. */
 
+  /* Make sure that the index file was specified.  If it isn't, print
+     a warning but exit normally (since all test programs should
+     return normally when run without arguments). */
+  if ( !indxfile ) {
+    WARNING( "No index file given (exiting)" );
+    INFO( INJECTTESTC_MSGENORM );
+    return INJECTTESTC_ENORM;
+  }
+
+  /* Initialize random parameters here, in case any future waveform
+     generators will require it (none do at present). */
+  SUB( LALCreateRandomParams( &stat, &randParams, seed ), &stat );
+
 
   /*******************************************************************
    *                                                                 *
-   * Read input files, and store data to arrays.                     *
+   * Read sourcefile, and create waveforms.                          *
    *                                                                 *
    *******************************************************************/
 
-  /* First, set up fields of output and transfer functions. */
-  output.data = NULL;
-  detector.transfer = (COMPLEX8FrequencySeries *)
-    LALMalloc( sizeof(COMPLEX8FrequencySeries) );
-  if ( !(detector.transfer) ) {
+  /* Set up list and start reading file. */
+  memset( &head, 0, sizeof(CoherentGWNode) );
+  if ( sourcefile ) {
+    UINT4 sourceno = 0; /* source number */
+    if ( ( fp = fopen( sourcefile, "r" ) ) == NULL ) {
+      ERROR( INJECTTESTC_EFILE, "- " INJECTTESTC_MSGEFILE, sourcefile );
+      return INJECTTESTC_EFILE;
+    }
+
+    /* Read a line, skipping over comments. */
+    lineno = 0;
+    while ( !feof( fp ) ) {
+      CHARVector *line = NULL;  /* input line */
+      TokenList *tokens = NULL; /* input line parsed into tokens */
+      SUB( LALCHARReadVector( &stat, &line, fp ), &stat );
+      lineno++;
+      for ( i = 0; i < line->length; i++ )
+	if ( line->data[i] == '%' || line->data[i] == '#' ) {
+	  line->data[i] = '\0';
+	  i = line->length;
+	}
+      SUB( LALCreateTokenList( &stat, &tokens, line->data,
+			       WHITESPACE ), &stat );
+      SUB( LALCHARDestroyVector( &stat, &line ), &stat );
+
+      /* If line isn't blank, generate a waveform with it. */
+      if ( tokens->nTokens > 0 ) {
+	LALSnprintf( msg, MSGLEN, "%s line %i:", sourcefile, lineno );
+	if ( !GenerateWaveform( &stat, &head, tokens, msg,
+				randParams ) )
+	  sourceno++;
+      }
+
+      /* Done parsing line. */
+      SUB( LALDestroyTokenList( &stat, &tokens ), &stat );
+    }
+
+    /* Done parsing sourcefile. */
+    fclose( fp );
+    LALSnprintf( msg, MSGLEN, "%s: Parsed %i lines, generated %i"
+		 " sources", sourcefile, lineno, sourceno );
+    INFO( msg );
+  }
+
+
+  /*******************************************************************
+   *                                                                 *
+   * Read index file, and perform injections.                        *
+   *                                                                 *
+   *******************************************************************/
+
+  /* First, set up ephemeris data. */
+  memset( &detector, 0, sizeof(DetectorResponse) );
+  if ( earthfile && sunfile ) {
+    if ( !( detector.ephemerides = (EphemerisData *)
+	    LALMalloc( sizeof(EphemerisData) ) ) ) {
+      ERROR( INJECTTESTC_EMEM, INJECTTESTC_MSGEMEM, 0 );
+      return INJECTTESTC_EMEM;
+    }
+    memset( detector.ephemerides, 0, sizeof(EphemerisData) );
+    detector.ephemerides->ephiles.earthEphemeris = earthfile;
+    detector.ephemerides->ephiles.sunEphemeris = sunfile;
+    SUB( LALInitBarycenter( &stat, detector.ephemerides ), &stat );
+  }
+
+  /* Set up (dummy) initial response function and filename, and
+     transfer function units. */
+  if ( !( detector.transfer = (COMPLEX8FrequencySeries *)
+	  LALMalloc( sizeof(COMPLEX8FrequencySeries) ) ) ) {
     ERROR( INJECTTESTC_EMEM, INJECTTESTC_MSGEMEM, 0 );
     return INJECTTESTC_EMEM;
   }
-  detector.transfer->data = NULL;
-
-  /* Set up units. */
+  memset( detector.transfer, 0, sizeof(COMPLEX8FrequencySeries) );
+  SUB( LALCCreateVector( &stat, &(detector.transfer->data), 1 ),
+       &stat );
   {
-    RAT4 negOne = { -1, 0 };
+    RAT4 negOne;
     LALUnit unit;
     LALUnitPair pair;
-    output.sampleUnits = lalADCCountUnit;
+    negOne.numerator = -1;
+    negOne.denominatorMinusOne = 0;
+    SUB( LALUnitRaise( &stat, &unit, &lalStrainUnit, &negOne ),
+	 &stat );
     pair.unitOne = &lalADCCountUnit;
-    pair.unitTwo = &lalStrainUnit;
-    SUB( LALUnitRaise( &stat, &unit, pair.unitTwo,
-		       &negOne ), &stat );
     pair.unitTwo = &unit;
-    SUB( LALUnitMultiply( &stat, &(detector.transfer->sampleUnits),
-			  &pair ), &stat );
-  }
-
-  /* Read infile and store the data in structures. */
-  if ( infile ) {
-    UINT4 vectorLength; /* length of each line */
-
-    if ( ( fp = fopen( infile, "r" ) ) == NULL ) {
-      ERROR( INJECTTESTC_EFILE, INJECTTESTC_MSGEFILE, infile );
-      return INJECTTESTC_EFILE;
-    }
-    SUB( LALCHARReadVectorSequence( &stat, &inImage, fp ), &stat );
-    fclose( fp );
-
-    /* Create lists of start, stop, and sample times. */
-    inLength = inImage->length;
-    vectorLength = inImage->vectorLength;
-    tStart = (INT8 *)LALMalloc( inLength*sizeof(INT8) );
-    tStop = (INT8 *)LALMalloc( inLength*sizeof(INT8) );
-    deltaT = (REAL8 *)LALMalloc( inLength*sizeof(REAL8) );
-    if ( !( tStart && tStop && deltaT ) ) {
-      ERROR( INJECTTESTC_EMEM, INJECTTESTC_MSGEMEM, 0 );
-      return INJECTTESTC_EMEM;
-    }
-    for ( i = 0; i < inLength; i++ ) {
-      UINT4 length; /* number of points in the data file */
-      if ( 3 > sscanf( inImage->data + i*vectorLength,
-		       "%*s %Li %u %lf\n", tStart + i, &length,
-		       deltaT + i ) )
-	inLength = i;
-      else
-	tStop[i] = tStart[i] + (INT8)( length*deltaT[i] );
-    }
-
-    /* Sort start and stop times, and make sure they don't overlap. */
-    {
-      REAL8Vector *start = NULL;
-      SUB( LALDCreateVector( &stat, &start, inLength ), &stat );
-      for ( i = 0; i < inLength; i++ )
-	start->data[i] = (REAL8)( tStart[i] );
-      SUB( LALI4CreateVector( &stat, &idx, inLength ), &stat );
-      SUB( LALDHeapIndex( &stat, idx, start ), &stat );
-      SUB( LALDDestroyVector( &stat, &start ), &stat );
-      id = idx->data;
-      for ( i = 0; i < inLength - 1; i++ )
-	if ( tStart[id[i+1]] < tStop[id[i]] ) {
-	  ERROR( INJECTTESTC_EOVER, INJECTTESTC_MSGEOVER, 0 );
-	  return INJECTTESTC_EOVER;
-	}
-      tInitial = tStart[id[0]];
-      tFinal = tStop[id[inLength-1]];
-    }
-
-    /* Read first input file. */
-    {
-      CHAR fname[NAMELENGTH];           /* input file name */
-      INT2VectorSequence *input = NULL; /* input data */
-      sscanf( inImage->data + id[0]*inImage->vectorLength, "%s",
-	      fname );
-      if ( ( fp = fopen( fname, "r" ) ) == NULL ) {
-	ERROR( INJECTTESTC_EFILE, INJECTTESTC_MSGEFILE, fname );
-	return INJECTTESTC_EFILE;
-      }
-      SUB( LALI2ReadVectorSequence( &stat, &input, fp ), &stat );
-      fclose( fp );
-      SUB( LALI2CreateVector( &stat, &(output.data), input->length ),
-	   &stat );
-      memcpy( output.data->data, input->data,
-	      input->length*sizeof(INT2) );
-      SUB( LALI2DestroyVectorSequence( &stat, &input ), &stat );
-      I8ToLIGOTimeGPS( &(output.epoch), tStart[id[0]] );
-      output.deltaT = deltaT[id[0]];
-      LALSnprintf( outname, NAMELENGTH, "%s.sim", fname );
-    }
-  }
-
-  /* If there's no infile, set parameters from #defined constants. */
-  else {
-    inLength = 1;
-    id = (INT4 *)LALMalloc( sizeof(UINT4) );
-    tStart = (INT8 *)LALMalloc( sizeof(INT8) );
-    tStop = (INT8 *)LALMalloc( sizeof(INT8) );
-    if ( !( tStart && tStop ) ) {
-      ERROR( INJECTTESTC_EMEM, INJECTTESTC_MSGEMEM, 0 );
-      return INJECTTESTC_EMEM;
-    }
-    *id = 0;
-    *tStart = tInitial = EPOCH;
-    *tStop = tFinal = EPOCH + (1000000000LL)*(INT8)( NPTS_T*DELTAT );
-  }
-
-  /* Read transferfile and store the data in structures. */
-  if ( transferfile ) {
-    UINT4 vectorLength; /* length of each line */
-
-    if ( ( fp = fopen( transferfile, "r" ) ) == NULL ) {
-      ERROR( INJECTTESTC_EFILE, INJECTTESTC_MSGEFILE, transferfile );
-      return INJECTTESTC_EFILE;
-    }
-    SUB( LALCHARReadVectorSequence( &stat, &transferImage, fp ),
+    SUB( LALUnitMultiply( &stat, &countsPerStrainUnit, &pair ),
 	 &stat );
-    fclose( fp );
+    SUB( LALUnitRaise( &stat, &strainPerCountUnit,
+		       &countsPerStrainUnit, &negOne ), &stat );
+  }
+  SUB( LALCHARCreateVector( &stat, &prevResponse, 1 ), &stat );
+  prevResponse->data[0] = '\0';
 
-    /* Create lists of epochs, and start and sample frequencies. */
-    transferLength = transferImage->length;
-    vectorLength = transferImage->vectorLength;
-    epoch = (INT8 *)LALMalloc( transferLength*sizeof(INT8) );
-    f0 = (REAL8 *)LALMalloc( transferLength*sizeof(REAL8) );
-    deltaF = (REAL8 *)LALMalloc( transferLength*sizeof(REAL8) );
-    if ( !( epoch && f0 && deltaF ) ) {
-      ERROR( INJECTTESTC_EMEM, INJECTTESTC_MSGEMEM, 0 );
-      return INJECTTESTC_EMEM;
-    }
-    for ( i = 0; i < transferLength; i++ )
-      if ( 3 > sscanf( transferImage->data + i*vectorLength,
-		       "%*s %Li %lf %lf\n", epoch + i, f0 + i,
-		       deltaF + i ) )
-	transferLength = i;
+
+  /* Now start reading index file. */
+  if ( ( fp = fopen( indxfile, "r" ) ) == NULL ) {
+    ERROR( INJECTTESTC_EFILE, "- " INJECTTESTC_MSGEFILE, indxfile );
+    return INJECTTESTC_EFILE;
   }
 
+  /* Read a line, skipping over comments. */
+  lineno = 0;
+  seriesno = 0;
+  while ( !feof( fp ) ) {
+    CHARVector *line = NULL;  /* input line */
+    TokenList *tokens = NULL; /* input line parsed into tokens */
 
-  /* Read sourcelist to an array. */
-  if ( sourcefile ) {
-    if ( ( fp = fopen( sourcefile, "r" ) ) == NULL ) {
-      ERROR( INJECTTESTC_EFILE, INJECTTESTC_MSGEFILE, sourcefile );
-      return INJECTTESTC_EFILE;
+    SUB( LALCHARReadVector( &stat, &line, fp ), &stat );
+    lineno++;
+    for ( i = 0; i > line->length; i++ )
+      if ( line->data[i] == '%' || line->data[i] == '#' ) {
+	line->data[i] = '\0';
+	i = line->length;
+      }
+    SUB( LALCreateTokenList( &stat, &tokens, line->data, WHITESPACE ),
+	 &stat );
+    SUB( LALCHARDestroyVector( &stat, &line ), &stat );
+
+    /* If line isn't blank, use it to perform injections. */
+    if ( tokens->nTokens ) {
+      LALSnprintf( msg, MSGLEN, "%s line %i:", indxfile, lineno );
+      if ( !InjectWaveforms( &stat, &head, tokens, msg, randParams,
+			     &detector, &prevResponse ) )
+	seriesno++;
     }
-    SUB( LALSReadVectorSequence( &stat, &sourceList, fp ), &stat );
-    fclose( fp );
-    sourceLength = sourceList->length;
-  } else {
-    sourceLength = (UINT4)( -1 );
+    SUB( LALDestroyTokenList( &stat, &tokens ), &stat );
   }
 
-
-  /* Generate random parameters and initial start time. */
-  {
-    REAL4 frac; /* random number between 0 and 1 */
-    SUB( LALCreateRandomParams( &stat, &params, seed ), &stat );
-    SUB( LALUniformDeviate( &stat, &frac, params ), &stat );
-    t = tInitial + INIT_OFFSET_MIN + (INT8)( INIT_OFFSET_RANGE*frac );
-  }
-  /* Generate random initial data, if necessary. */
-  if ( !infile ) {
-    REAL4Vector *deviates = NULL; /* Gaussian random input */
-
-    SUB( LALI2CreateVector( &stat, &(output.data), NPTS_T ), &stat );
-    SUB( LALSCreateVector( &stat, &deviates, NPTS_T ), &stat );
-    SUB( LALNormalDeviates( &stat, deviates, params ), &stat );
-    for ( i = 0; i < NPTS_T; i++ )
-      output.data->data[i] = (INT2)( SIGMASQ*deviates->data[i] );
-    SUB( LALSDestroyVector( &stat, &deviates ), &stat );
-    I8ToLIGOTimeGPS( &(output.epoch), *tStart );
-    output.deltaT = DELTAT;
-    if ( outfile )
-      LALSnprintf( outname, NAMELENGTH, "%s", outfile );
-    else
-      outname[0] = '\0';
-  }
-
-
-  /* Stub to specify the detector. */
-  detector.site = NULL;
-
-
-  /*******************************************************************
-   *                                                                 *
-   * Start injecting sources.                                        *
-   *                                                                 *
-   *******************************************************************/
-
-  nSource = 0;
-  nOut = 0;
-  while ( ( nOut < inLength ) && ( nSource < sourceLength ) &&
-	  ( t < tFinal ) ) {
-    CoherentGW waveform;              /* gravitational waveform */
-    REAL4TimeSeries signal;           /* detector response */
-
-    /* Compute the waveform. */
-    {
-      GalacticInspiralParamStruc position; /* location of source */
-      PPNParamStruc ppnParams;             /* parameters of source */
-
-      /* Get the source position. */
-      if ( sourcefile ) {
-	position.rho = sourceList->data[NPARAM*nSource];
-	position.z = sourceList->data[NPARAM*nSource + 1];
-	SUB( LALUniformDeviate( &stat, &(position.lGal), params ),
-	     &stat );
-	position.lGal *= LAL_TWOPI;
-	position.m1 = sourceList->data[NPARAM*nSource + 2];
-	position.m2 = sourceList->data[NPARAM*nSource + 3];
-      } else {
-	position.rho = 0.0;
-	position.z = 0.0;
-	position.lGal = 0.0;
-	SUB( LALUniformDeviate( &stat, &(position.m1), params ),
-	     &stat );
-	SUB( LALUniformDeviate( &stat, &(position.m2), params ),
-	     &stat );
-	position.m1 = M_MIN + M_RANGE*position.m1;
-	position.m2 = M_MIN + M_RANGE*position.m2;
-      }
-
-      /* Set up input parameters. */
-      SUB( LALGetInspiralParams( &stat, &ppnParams, &position,
-				 params ), &stat );
-      ppnParams.fStartIn = FSTART;
-      ppnParams.fStopIn = FSTOP;
-      ppnParams.ppn = NULL;
-      ppnParams.lengthIn = 0;
-      ppnParams.deltaT = DTSAMPLE;
-      I8ToLIGOTimeGPS( &(ppnParams.epoch), t );
-      memset( &waveform, 0, sizeof(CoherentGW) );
-
-
-      /* DEBUG:
-      printf( "t=%4i m1=%f m2=%f mTot=%f eta=%f\n",
-	      (INT4)( ( t - EPOCH )/1000000000LL ), position.m1,
-	      position.m2, ppnParams.mTot, ppnParams.eta );
-      */
-
-
-      /* Generate waveform. */
-      SUB( LALGeneratePPNInspiral( &stat, &waveform, &ppnParams ),
-	   &stat );
-      if ( ppnParams.dfdt > 2.0 ) {
-	INFO( "Waveform sampling interval may be too large." );
-      }
-
-      /* Determine end of generated waveform. */
-      tEnd = t + (INT8)( 1.0e9 * waveform.a->deltaT
-			 * waveform.a->data->length ) + 1;
-    }
-
-
-    /* Get the nearest transfer function. */
-    if ( transferfile ) {
-      CHAR fname[NAMELENGTH]; /* name of nearest transfer fn file */
-      INT8 tDiff1 = abs( t - epoch[0] ); /* epoch of closest file */
-      INT4 k = 0;                        /* index of nearest file */
-      REAL4VectorSequence *function = NULL; /* transfer function */
-      for ( i = 1; i < transferLength; i++ ) {
-	INT8 tDiff2 = abs( t - epoch[i] );
-	if ( tDiff2 < tDiff1 ) {
-	  tDiff1 = tDiff2;
-	  k = i;
-	}
-      }
-      sscanf( transferImage->data + k*transferImage->vectorLength,
-	      "%s", fname );
-      if ( ( fp = fopen( fname, "r" ) ) == NULL ) {
-	ERROR( INJECTTESTC_EFILE, INJECTTESTC_MSGEFILE, fname );
-	return INJECTTESTC_EFILE;
-      }
-      SUB( LALSReadVectorSequence( &stat, &function, fp ), &stat );
-      fclose( fp );
-      SUB( LALCCreateVector( &stat, &(detector.transfer->data),
-			     function->length ), &stat );
-      memcpy( detector.transfer->data->data, function->data,
-	      2*function->length*sizeof(REAL4) );
-      SUB( LALSDestroyVectorSequence( &stat, &function ), &stat );
-      I8ToLIGOTimeGPS( &(detector.transfer->epoch), epoch[k] );
-      detector.transfer->f0 = f0[k];
-      detector.transfer->deltaF = deltaF[k];
-    }
-
-    /* If there is no transferfile, make up a transfer function. */
-    else {
-      I8ToLIGOTimeGPS( &(detector.transfer->epoch), EPOCH );
-      detector.transfer->f0 = F0;
-      detector.transfer->deltaF = DELTAF;
-      SUB( LALCCreateVector( &stat, &(detector.transfer->data),
-			     NPTS_F ), &stat );
-      for ( i = 0; i < NPTS_F; i++ ) {
-	detector.transfer->data->data[i].re = TRANS;
-	detector.transfer->data->data[i].im = 0.0;
-      }
-    }
-
-
-    /* DEBUG:
-    if ( nSource == 1 ) {
-      FILE *fptest = fopen( "test.wav", "w" );
-      for ( i = 0; i < waveform.a->data->length; i++ )
-	fprintf( fptest, "%10.3e %10.3e %10.3e\n",
-		 waveform.a->data->data[2*i],
-		 waveform.a->data->data[2*i+1],
-		 waveform.phi->data->data[i] );
-      fclose( fptest );
-    }
-    */
-
-
-    /* Compute detector response. */
-    signal.epoch = waveform.a->epoch;
-    signal.deltaT = DELTAT;
-    signal.data = NULL;
-    SUB( LALSCreateVector( &stat, &(signal.data), (UINT4)
-			   (waveform.a->data->length*DTSAMPLE/DELTAT) + 1 ),
-	 &stat );
-    SUB( LALSimulateCoherentGW( &stat, &signal, &waveform, &detector ),
-	 &stat );
-    SUB( LALCDestroyVector( &stat, &(detector.transfer->data) ),
-	 &stat );
-    SUB( LALSDestroyVectorSequence( &stat, &(waveform.a->data) ),
-	 &stat );
-    SUB( LALSDestroyVector( &stat, &(waveform.f->data) ), &stat );
-    SUB( LALDDestroyVector( &stat, &(waveform.phi->data) ), &stat );
-
-
-
-    /* DEBUG:
-    if ( nSource == 1 ) {
-      FILE *fptest = fopen( "test.sig", "w" );
-      for ( i = 0; i < signal.data->length; i++ )
-	fprintf( fptest, "%10.3e\n", signal.data->data[i] );
-      fclose( fptest );
-    }
-    */
-
-
-    /* Inject signal into detector output. */
-    SUB( LALSI2InjectTimeSeries( &stat, &output, &signal, params ),
-	 &stat );
-    while ( ( nOut < inLength ) && ( tEnd > tStop[id[nOut]] ) ) {
-
-      /* Write data to output file. */
-      if ( outname[0] != '\0' ) {
-	if ( ( fp = fopen( outname, "w" ) ) == NULL ) {
-	  ERROR( INJECTTESTC_EFILE, INJECTTESTC_MSGEFILE, outname );
-	  return INJECTTESTC_EFILE;
-	}
-	for ( i = 0; i < output.data->length; i++ )
-	  fprintf( fp, "%6i\n", output.data->data[i] );
-	fclose( fp );
-	outname[0] = '\0';
-      }
-      nOut++;
-
-      /* Read data from input file. */
-      if ( nOut < inLength ) {
-	CHAR fname[NAMELENGTH];           /* input file name */
-	INT2VectorSequence *input = NULL; /* input data */
-	SUB( LALI2DestroyVector( &stat, &(output.data) ), &stat );
-	sscanf( inImage->data + id[nOut]*inImage->vectorLength, "%s",
-		fname );
-	if ( ( fp = fopen( fname, "r" ) ) == NULL ) {
-	  ERROR( INJECTTESTC_EFILE, INJECTTESTC_MSGEFILE, fname );
-	  return INJECTTESTC_EFILE;
-	}
-	SUB( LALI2ReadVectorSequence( &stat, &input, fp ), &stat );
-	fclose( fp );
-	SUB( LALI2CreateVector( &stat, &(output.data),
-				input->length ), &stat );
-	memcpy( output.data->data, input->data,
-		input->length*sizeof(INT2) );
-	SUB( LALI2DestroyVectorSequence( &stat, &input ), &stat );
-	I8ToLIGOTimeGPS( &(output.epoch), tStart[id[nOut]] );
-	output.deltaT = deltaT[id[nOut]];
-	LALSnprintf( outname, NAMELENGTH, "%s.sim", fname );
-      }
-    }
-
-    /* Signal injection is done, so move on to the next source. */
-    SUB( LALSDestroyVector( &stat, &(signal.data) ), &stat );
-    nSource++;
-    {
-      REAL4 frac; /* random number between 0 and 1 */
-      SUB( LALUniformDeviate( &stat, &frac, params ), &stat );
-      t = tEnd + OFFSET_MIN + (INT8)( OFFSET_RANGE*frac );
-    }
-  }
+  fclose( fp );
+  LALSnprintf( msg, MSGLEN, "%s: Parsed %i lines, wrote %i time"
+	       " series out", indxfile, lineno, seriesno );
+  INFO( msg );
 
 
   /*******************************************************************
@@ -809,44 +689,33 @@ main(int argc, char **argv)
    *                                                                 *
    *******************************************************************/
 
-  /* Print remaining output data. */
-  if ( outname[0] != '\0' ) {
-    if ( ( fp = fopen( outname, "w" ) ) == NULL ) {
-      ERROR( INJECTTESTC_EFILE, INJECTTESTC_MSGEFILE, outname );
-      return INJECTTESTC_EFILE;
-    }
-    for ( i = 0; i < output.data->length; i++ )
-      fprintf( fp, "%6i\n", output.data->data[i] );
-    fclose( fp );
-  }
-
-  /* Destroy remaining memory. */
-  SUB( LALDestroyRandomParams( &stat, &params ), &stat );
-  SUB( LALI2DestroyVector( &stat, &(output.data) ), &stat );
+  /* Clean up memory. */
+  SUB( LALCHARDestroyVector( &stat, &prevResponse ), &stat );
+  SUB( LALCDestroyVector( &stat, &(detector.transfer->data) ),
+       &stat );
   LALFree( detector.transfer );
-
-  if ( infile ) {
-    SUB( LALCHARDestroyVectorSequence( &stat, &inImage ), &stat );
-    SUB( LALI4DestroyVector( &stat, &idx ), &stat );
-    LALFree( deltaT );
-  } else {
-    LALFree( id );
-  }
-  LALFree( tStart );
-  LALFree( tStop );
-
-  if ( transferfile ) {
-    SUB( LALCHARDestroyVectorSequence( &stat, &transferImage ),
-	 &stat );
-    LALFree( epoch );
-    LALFree( f0 );
-    LALFree( deltaF );
-  }
-
-  if ( sourcefile ) {
-    SUB( LALSDestroyVectorSequence( &stat, &sourceList ), &stat );
+  if ( detector.ephemerides )
+    LALFree( detector.ephemerides );
+  SUB( LALDestroyRandomParams( &stat, &randParams ), &stat );
+  {
+    CoherentGWNode *here = head.next;
+    while ( here ) {
+      CoherentGWNode *last = here;
+      here = here->next;
+      SUB( LALSDestroyVectorSequence( &stat, &(last->waveform.a->data) ),
+	   &stat );
+      SUB( LALSDestroyVector( &stat, &(last->waveform.f->data) ),
+	   &stat );
+      SUB( LALDDestroyVector( &stat, &(last->waveform.phi->data) ),
+	   &stat );
+      LALFree( last->waveform.a );
+      LALFree( last->waveform.f );
+      LALFree( last->waveform.phi );
+      LALFree( last );
+    }
   }
 
+  /* Exit. */
   LALCheckMemoryLeaks();
   INFO( INJECTTESTC_MSGENORM );
   return INJECTTESTC_ENORM;
@@ -861,4 +730,669 @@ I8ToLIGOTimeGPS( LIGOTimeGPS *output, INT8 input )
   output->gpsSeconds = (INT4)( s );
   output->gpsNanoSeconds = (INT4)( input - 1000000000LL*s );
   return;
+}
+
+
+/* Function to parse source lines to generate various waveform. */
+INT4
+GenerateWaveform( LALStatus      *stat,
+		  CoherentGWNode *head,
+		  TokenList      *tokens,
+		  const CHAR     *tag,
+		  RandomParams   *randParams )
+{
+  CoherentGWNode *here = head;   /* current waveform in list */
+  CHAR msg[MSGLEN];              /* warning messages */
+  BOOLEAN ok = 1;                /* whether current line is okay */
+  CHAR **token = tokens->tokens; /* handle to current token */
+
+  /* At present none of the generators use random data.  This line is
+     to keep gcc from complaining about unused variables. */
+  randParams = randParams;
+
+  /* Jump to last source in linked list. */
+  while ( here->next )
+    here = here->next;
+
+  /* Generate PPN inspiral waveform. */
+  if ( !strcmp( *token, "LALGeneratePPNInspiral" ) ) {
+    INT8 t1, t2;  /* times to coalescence (nanoseconds) */
+    REAL8 dt;     /* sample interval (s) */
+    REAL4 m1, m2; /* component binary masses (solar) */
+    PPNParamStruc params; /* PPN inspiral parameters */
+    memset( &params, 0, sizeof(PPNParamStruc) );
+
+    if ( tokens->nTokens < 12 ) {
+      LALSnprintf( msg, MSGLEN, "%s Need at least 11 arguments for"
+		   " generator %s, got %i (skipping line)", tag,
+		   *token, tokens->nTokens - 1 );
+      WARNING( msg );
+      return 1;
+    }
+
+    /* Parse input line. */
+    PARSETOKEN( LALStringToI8, &t1 );
+    PARSETOKEN( LALStringToS, &m1 );
+    PARSETOKEN( LALStringToS, &m2 );
+    PARSETOKEN( LALStringToS, &(params.d) );
+    PARSETOKEN( LALStringToS, &(params.inc) );
+    PARSETOKEN( LALStringToD, &(params.position.longitude) );
+    PARSETOKEN( LALStringToD, &(params.position.latitude) );
+    PARSETOKEN( LALStringToS, &(params.psi) );
+    PARSETOKEN( LALStringToS, &(params.phi) );
+    PARSETOKEN( LALStringToS, &(params.fStartIn) );
+    PARSETOKEN( LALStringToS, &(params.fStopIn) );
+    if ( !ok ) {
+      LALSnprintf( msg, MSGLEN, "%s Error parsing argument %i"
+		   " (skipping line)", tag,
+		   (UINT4)( token - tokens->tokens ) );
+      WARNING( msg );
+      return 1;
+    }
+
+    /* Perform necessary input conversions. */
+    params.mTot = m1 + m2;
+    params.eta = m1*m2/params.mTot/params.mTot;
+    params.d *= 1000000.0*LAL_PC_SI;
+    params.psi *= LAL_PI/180.0;
+    params.inc *= LAL_PI/180.0;
+    params.phi *= LAL_PI/180.0;
+    params.position.longitude *= LAL_PI/180.0;
+    params.position.latitude *= LAL_PI/180.0;
+    params.position.system = COORDINATESYSTEM_EQUATORIAL;
+
+    /* Estimate sampling interval. */
+    dt = 7.697*params.mTot / LAL_MTSUN_SI;
+    if ( params.fStop != 0.0 )
+      params.deltaT = 0.7685*pow( dt, -5.0/6.0 )
+	*pow( fabs( params.fStop ), -11.0/6.0 );
+    if ( params.fStop < 0.0 || params.deltaT < dt )
+      params.deltaT = dt;
+
+    /* Generate waveform.  Repeat if dfdt is too large. */
+    if ( !( here->next = (CoherentGWNode *)
+	    LALMalloc( sizeof(CoherentGWNode) ) ) ) {
+      ERROR( INJECTTESTC_EMEM, INJECTTESTC_MSGEMEM, 0 );
+      exit( INJECTTESTC_EMEM );
+    }
+    here = here->next;
+    do {
+      memset( here, 0, sizeof(CoherentGWNode) );
+      SUB( LALGeneratePPNInspiral( stat, &(here->waveform), &params ),
+	   stat );
+      if ( params.dfdt > 2.0 ) {
+	dt = sqrt( 2.0/params.dfdt );
+	if ( dt > 0.5 )
+	  dt = 0.5;
+	params.deltaT *= dt;
+	SUB( LALSDestroyVectorSequence( stat, &(here->waveform.a->data) ),
+	     stat );
+	SUB( LALSDestroyVector( stat, &(here->waveform.f->data) ),
+	     stat );
+	SUB( LALDDestroyVector( stat, &(here->waveform.phi->data) ),
+	     stat );
+	LALFree( here->waveform.a );
+	LALFree( here->waveform.f );
+	LALFree( here->waveform.phi );
+      }
+    } while ( params.dfdt > 2.0 );
+
+    /* Match the coalescence time. */
+    t2 = (INT8)( params.tc );
+    params.tc -= t2;
+    t2 *= 1000000000LL;
+    t2 += (INT8)( ( 1.0e9 )*params.tc );
+    I8ToLIGOTimeGPS( &(here->waveform.a->epoch), t1 - t2 );
+    here->waveform.f->epoch = here->waveform.phi->epoch
+      = here->waveform.a->epoch;
+  }
+
+
+  /* Generate Taylor-parametrized continuous waveform. */
+  else if ( !strcmp( *token, "LALGenerateTaylorCW" ) ) {
+    UINT4 i, nSpin;   /* index over and number of spindown terms */
+    INT8 t0, t1, t2;  /* reference, start, and stop times (ns) */
+    REAL8 t, dt;      /* series length and sample interval (s) */
+    REAL8 dfFac;      /* estimated maximum fdot/f0 (Hz) */
+    TaylorCWParamStruc params; /* Taylor CW parameters */
+    memset( &params, 0, sizeof(PPNParamStruc) );
+
+    if ( tokens->nTokens < 11 ) {
+      LALSnprintf( msg, MSGLEN, "%s Need at least 10 arguments for"
+		   " generator %s, got %i (skipping line)", tag,
+		   *token, tokens->nTokens - 1 );
+      WARNING( msg );
+      return 1;
+    }
+
+    /* Allocate spindown parameters. */
+    nSpin = tokens->nTokens - 11;
+    if ( nSpin ) {
+      SUB( LALDCreateVector( stat, &(params.f), nSpin ), stat );
+    }
+
+    /* Parse input line. */
+    PARSETOKEN( LALStringToI8, &t0 );
+    PARSETOKEN( LALStringToI8, &t1 );
+    PARSETOKEN( LALStringToI8, &t2 );
+    PARSETOKEN( LALStringToS, &(params.aPlus) );
+    PARSETOKEN( LALStringToS, &(params.aCross) );
+    PARSETOKEN( LALStringToD, &(params.position.longitude) );
+    PARSETOKEN( LALStringToD, &(params.position.latitude) );
+    PARSETOKEN( LALStringToS, &(params.psi) );
+    PARSETOKEN( LALStringToD, &(params.phi0) );
+    PARSETOKEN( LALStringToD, &(params.f0) );
+    for ( i = 0; i < nSpin; i++ ) {
+      PARSETOKEN( LALStringToD, params.f->data + i );
+    }
+    if ( !ok ) {
+      LALSnprintf( msg, MSGLEN, "%s Error parsing argument %i"
+		   " (skipping line)", tag,
+		   (UINT4)( token - tokens->tokens ) );
+      WARNING( msg );
+      return 1;
+    }
+    if ( t2 <= t1 ) {
+      LALSnprintf( msg, MSGLEN, "%s Stop time precedes start time"
+		   " (skipping line)", tag );
+      WARNING( msg );
+      return 1;
+    }
+
+    /* Perform necessary input conversions. */
+    params.psi *= LAL_PI/180.0;
+    params.phi0 *= LAL_PI/180.0;
+    params.position.longitude *= LAL_PI/180.0;
+    params.position.latitude *= LAL_PI/180.0;
+    params.position.system = COORDINATESYSTEM_EQUATORIAL;
+
+    /* Shift reference time to start of waveform. */
+    I8ToLIGOTimeGPS( &(params.epoch), t1 );
+    t = (1.0e-9)*(REAL8)( t1 - t0 );
+    if ( nSpin ) {
+      REAL8 tN = 1.0;   /* t raised to various powers */
+      REAL8 fFac = 1.0; /* fractional change in frequency */
+      REAL8 tFac = 1.0; /* time integral of fFac */
+      REAL8 *fData = params.f->data; /* spindown coeficients */
+      for ( i = 0; i < nSpin; i++ ) {
+	UINT4 j;        /* index over remaining spindown terms */
+	REAL8 tM = 1.0; /* t raised to various powers */
+	fFac += fData[i]*( tN *= t );
+	tFac += fData[i]*tN/( i + 2.0 );
+	for ( j = i + 1; j < nSpin; j++ )
+	  fData[i] += choose( j + 1, i + 1 )*fData[j]*( tM *= t );
+      }
+      params.phi0 += LAL_TWOPI*params.f0*t*tFac;
+      params.f0 *= fFac;
+      for ( i = 0; i < nSpin; i++ )
+	fData[i] /= fFac;
+    }
+
+    /* Estimate sampling interval. */
+    t = params.deltaT = (1.0e-9)*(REAL8)( t2 - t1 );
+    params.length = 2;
+    if ( nSpin ) {
+      REAL8 tN = 1.0;    /* t raised to various powers */
+      REAL8 *fData = params.f->data; /* spindown coeficients */
+      dfFac = 0.0;
+      for ( i = 0; i < nSpin; i++ )
+	dfFac += i*fabs( fData[i]*( tN *= t ) );
+      if ( dfFac > 0.0 ) {
+	dt = sqrt( 2.0/( params.f0*dfFac ) );
+	if ( dt < params.deltaT ) {
+	  params.deltaT = dt;
+	  params.length = (UINT4)( t/params.deltaT ) + 1;
+	}
+      }
+    }
+
+    /* Generate waveform.  Repeat if dfdt is too large. */
+    if ( !( here->next = (CoherentGWNode *)
+	    LALMalloc( sizeof(CoherentGWNode) ) ) ) {
+      ERROR( INJECTTESTC_EMEM, INJECTTESTC_MSGEMEM, 0 );
+      exit( INJECTTESTC_EMEM );
+    }
+    here = here->next;
+    do {
+      memset( here, 0, sizeof(CoherentGWNode) );
+      SUB( LALGenerateTaylorCW( stat, &(here->waveform), &params ),
+	   stat );
+      if ( params.dfdt > 2.0 ) {
+	dt = sqrt( 2.0/params.dfdt );
+	if ( dt > 0.5 )
+	  dt = 0.5;
+	params.deltaT *= dt;
+	params.length = (UINT4)( t/params.deltaT ) + 1;
+	SUB( LALSDestroyVectorSequence( stat, &(here->waveform.a->data) ),
+	     stat );
+	SUB( LALSDestroyVector( stat, &(here->waveform.f->data) ),
+	     stat );
+	SUB( LALDDestroyVector( stat, &(here->waveform.phi->data) ),
+	     stat );
+	LALFree( here->waveform.a );
+	LALFree( here->waveform.f );
+	LALFree( here->waveform.phi );
+      }
+    } while ( params.dfdt > 2.0 );
+
+    /* Deallocate spindown parameters. */
+    if ( nSpin ) {
+      SUB( LALDDestroyVector( stat, &(params.f) ), stat );
+    }
+  }
+
+
+  /* Generate Taylor-parametrized and Doppler-modulated
+     continuous waveform. */
+  else if ( !strcmp( *token, "LALGenerateSpinOrbitCW" ) ) {
+    UINT4 i, nSpin;   /* index over and number of spindown terms */
+    INT8 t0, t1, t2;  /* reference, start, and stop times (ns) */
+    REAL8 t, dt;      /* series length and sample interval (s) */
+    REAL8 dfFac;      /* estimated maximum fdot/f0 (Hz). */
+    SpinOrbitCWParamStruc params; /* Taylor CW parameters */
+    memset( &params, 0, sizeof(PPNParamStruc) );
+
+    if ( tokens->nTokens < 15 ) {
+      LALSnprintf( msg, MSGLEN, "%s Need at least 14 arguments for"
+		   " generator %s, got %i (skipping line)", tag,
+		   *token, tokens->nTokens - 1 );
+      WARNING( msg );
+      return 1;
+    }
+
+    /* Allocate spindown parameters. */
+    nSpin = tokens->nTokens - 15;
+    if ( nSpin ) {
+      SUB( LALDCreateVector( stat, &(params.f), nSpin ), stat );
+    }
+
+    /* Parse input line. */
+    PARSETOKEN( LALStringToI8, &t0 );
+    PARSETOKEN( LALStringToI8, &t1 );
+    PARSETOKEN( LALStringToI8, &t2 );
+    PARSETOKEN( LALStringToS, &(params.aPlus) );
+    PARSETOKEN( LALStringToS, &(params.aCross) );
+    PARSETOKEN( LALStringToD, &(params.position.longitude) );
+    PARSETOKEN( LALStringToD, &(params.position.latitude) );
+    PARSETOKEN( LALStringToS, &(params.psi) );
+    PARSETOKEN( LALStringToD, &(params.phi0) );
+    PARSETOKEN( LALStringToD, &(params.f0) );
+    for ( i = 0; i < nSpin; i++ ) {
+      PARSETOKEN( LALStringToD, params.f->data + i );
+    }
+    PARSETOKEN( LALStringToD, &(params.omega) );
+    PARSETOKEN( LALStringToD, &(params.angularSpeed) );
+    PARSETOKEN( LALStringToD, &(params.rPeriNorm) );
+    PARSETOKEN( LALStringToD, &(params.oneMinusEcc) );
+    if ( !ok ) {
+      LALSnprintf( msg, MSGLEN, "%s Error parsing argument %i"
+		   " (skipping line)", tag,
+		   (UINT4)( token - tokens->tokens ) );
+      WARNING( msg );
+      return 1;
+    }
+    if ( t2 <= t1 ) {
+      LALSnprintf( msg, MSGLEN, "%s Stop time precedes start time"
+		   " (skipping line)", tag );
+      WARNING( msg );
+      return 1;
+    }
+
+    /* Perform necessary input conversions. */
+    params.psi *= LAL_PI/180.0;
+    params.phi0 *= LAL_PI/180.0;
+    params.position.longitude *= LAL_PI/180.0;
+    params.position.latitude *= LAL_PI/180.0;
+    params.position.system = COORDINATESYSTEM_EQUATORIAL;
+    params.oneMinusEcc = 1.0 - params.oneMinusEcc;
+    I8ToLIGOTimeGPS( &(params.epoch), t1 );
+    I8ToLIGOTimeGPS( &(params.spinEpoch), t0 );
+    params.orbitEpoch = params.spinEpoch;
+
+    /* Estimate sampling interval. */
+    t = params.deltaT = (1.0e-9)*(REAL8)( t2 - t1 );
+    params.length = 2;
+    dfFac = fabs( params.angularSpeed*params.angularSpeed*
+		  params.rPeriNorm );
+    if ( nSpin ) {
+      REAL8 tN = 1.0;    /* t raised to various powers */
+      REAL8 *fData = params.f->data; /* spindown coeficients */
+      for ( i = 0; i < nSpin; i++ )
+	dfFac += i*fabs( fData[i]*( tN *= t ) );
+    }
+    if ( dfFac > 0.0 ) {
+      dt = sqrt( 2.0/( params.f0*dfFac ) );
+      if ( dt < params.deltaT ) {
+	params.deltaT = dt;
+	params.length = (UINT4)( t/params.deltaT ) + 1;
+      }
+    }
+
+    /* Generate waveform.  Repeat if dfdt is too large. */
+    if ( !( here->next = (CoherentGWNode *)
+	    LALMalloc( sizeof(CoherentGWNode) ) ) ) {
+      ERROR( INJECTTESTC_EMEM, INJECTTESTC_MSGEMEM, 0 );
+      exit( INJECTTESTC_EMEM );
+    }
+    here = here->next;
+    do {
+      memset( here, 0, sizeof(CoherentGWNode) );
+      SUB( LALGenerateSpinOrbitCW( stat, &(here->waveform), &params ),
+	   stat );
+      if ( params.dfdt > 2.0 ) {
+	dt = sqrt( 2.0/params.dfdt );
+	if ( dt > 0.5 )
+	  dt = 0.5;
+	params.deltaT *= dt;
+	params.length = (UINT4)( t/params.deltaT ) + 1;
+	SUB( LALSDestroyVectorSequence( stat, &(here->waveform.a->data) ),
+	     stat );
+	SUB( LALSDestroyVector( stat, &(here->waveform.f->data) ),
+	     stat );
+	SUB( LALDDestroyVector( stat, &(here->waveform.phi->data) ),
+	     stat );
+	LALFree( here->waveform.a );
+	LALFree( here->waveform.f );
+	LALFree( here->waveform.phi );
+      }
+    } while ( params.dfdt > 2.0 );
+
+    /* Deallocate spindown parameters. */
+    if ( nSpin ) {
+      SUB( LALDDestroyVector( stat, &(params.f) ), stat );
+    }
+  }
+
+
+  /* Generator method does not match one of the known types. */
+  else {
+    LALSnprintf( msg, MSGLEN, "%s Unknown generator %s"
+		 " (skipping line)", tag, *token );
+    WARNING( msg );
+    return 1;
+  }
+
+  return 0;
+}
+
+
+/* Function to inject sources into each input file. */
+INT4
+InjectWaveforms( LALStatus        *stat,
+		 CoherentGWNode   *head,
+		 TokenList        *tokens,
+		 const CHAR       *tag,
+		 RandomParams     *randParams,
+		 DetectorResponse *detector,
+		 CHARVector       **prevResponse )
+{
+  UINT4 sourceno = 0;       /* number of sources injected */
+  CHAR name[LALNameLength]; /* name of time series */
+  CHAR msg[MSGLEN];         /* warning messages */
+  CHAR **token;             /* handle to current token */
+  BOOLEAN ok;               /* whether current line is okay */
+  CoherentGWNode *here;     /* current source in list */
+  REAL4TimeSeries input;    /* input data */
+  memset( &input, 0, sizeof(REAL4TimeSeries) );
+
+  /* Line must have 4 arguments iff input is read from a file, and
+     8 arguments iff input is generated randomly. */
+  token = tokens->tokens + 2;
+  ok = ( tokens->nTokens == 4 && strcmp( *token, "-" ) )
+    || ( tokens->nTokens == 8 && !strcmp( *token, "-" ) );
+  if ( !ok ) {
+    LALSnprintf( msg, MSGLEN, "%s Unreognized number of tokens"
+		 " (skipping line)", tag );
+    WARNING( msg );
+    return 1;
+  }
+
+  /* Set detector location. */
+  token = tokens->tokens;
+  if ( !strcmp( *token, "-" ) )
+    detector->site = NULL;
+  else if ( !strcmp( *token, "LHO" ) )
+    detector->site = (LALDetector *)
+      ( lalCachedDetectors + LALDetectorIndexLHODIFF );
+  else if ( !strcmp( *token, "LLO" ) )
+    detector->site = (LALDetector *)
+      ( lalCachedDetectors + LALDetectorIndexLLODIFF );
+  else if ( !strcmp( *token, "VIRGO" ) )
+    detector->site = (LALDetector *)
+      ( lalCachedDetectors + LALDetectorIndexVIRGODIFF );
+  else if ( !strcmp( *token, "GEO600" ) )
+    detector->site = (LALDetector *)
+      ( lalCachedDetectors + LALDetectorIndexGEO600DIFF );
+  else if ( !strcmp( *token, "TAMA300" ) )
+    detector->site = (LALDetector *)
+      ( lalCachedDetectors + LALDetectorIndexTAMA300DIFF );
+  else if ( !strcmp( *token, "CIT40" ) )
+    detector->site = (LALDetector *)
+      ( lalCachedDetectors + LALDetectorIndexCIT40DIFF );
+  else {
+    LALSnprintf( msg, MSGLEN, "%s Unreognized detector %s"
+		 " (skipping line)", tag, *token );
+    WARNING( msg );
+    return 1;
+  }
+
+  /* Get transfer function, if necessary. */
+  token = tokens->tokens + 1;
+  if ( strcmp( *token, (*prevResponse)->data ) ) {
+    COMPLEX8FrequencySeries transfer; /* transfer function */
+    memset( &transfer, 0, sizeof(COMPLEX8FrequencySeries) );
+
+    /* Check if a unit response was requested. */
+    if ( !strcmp( *token, "-" ) ) {
+      transfer.f0 = 0.0;
+      transfer.deltaF = FMAX;
+      SUB( LALCCreateVector( stat, &(transfer.data), 2 ), stat );
+      transfer.data->data[0].re = transfer.data->data[1].re = 1.0;
+      transfer.data->data[0].im = transfer.data->data[1].im = 0.0;
+      transfer.sampleUnits = countsPerStrainUnit;
+    }
+
+    /* Otherwise, read response from a file. */
+    else {
+      BOOLEAN unitsOK;                 /* whether read units are right */
+      UINT4 i;                         /* generic index over data */
+      LALUnitPair pair;                /* input for unit comparison */
+      COMPLEX8Vector *unity = NULL;    /* complex 1's */
+      FILE *fp = fopen( *token, "r" ); /* response file */
+      if ( !fp ) {
+	LALSnprintf( msg, MSGLEN, "%s Response file %s not found"
+		     " (skipping line)", tag, *token );
+	WARNING( msg );
+	return 1;
+      }
+      SUB( LALCReadFSeries( stat, &transfer, fp ), stat );
+      fclose( fp );
+      if ( transfer.data == NULL ) {
+	LALSnprintf( msg, MSGLEN, "%s Response file %s has no data"
+		     " (skipping line)", tag, *token );
+	WARNING( msg );
+	return 1;
+      }
+      if ( transfer.deltaF <= 0.0 ) {
+	LALSnprintf( msg, MSGLEN, "%s Response file %s has bad"
+		     " metadata (skipping line)", tag, *token );
+	WARNING( msg );
+	SUB( LALCDestroyVector( stat, &(transfer.data) ), stat );
+	return 1;
+      }
+
+      /* Invert response function to get transfer function. */
+      SUB( LALCCreateVector( stat, &unity, transfer.data->length ),
+	   stat );
+      for ( i = 0; i < unity->length; i++ ) {
+	unity->data[i].re = 1.0;
+	unity->data[i].im = 0.0;
+      }
+      SUB( LALCCVectorDivide( stat, transfer.data, unity,
+			      transfer.data ), stat );
+      SUB( LALCDestroyVector( stat, &unity ), stat );
+
+      /* Check input file units. */
+      pair.unitOne = &strainPerCountUnit;
+      pair.unitOne = &(transfer.sampleUnits);
+      SUB( LALUnitCompare( stat, &unitsOK, &pair ), stat );
+      if ( !unitsOK ) {
+	LALSnprintf( msg, MSGLEN, "%s Response file %s has incorrect"
+		     " units (ignoring units)", tag, *token );
+	WARNING( msg );
+      }
+      transfer.sampleUnits = countsPerStrainUnit;
+    }
+
+    /* Copy new transfer function (and filename). */
+    SUB( LALCDestroyVector( stat, &(detector->transfer->data) ),
+	 stat );
+    memcpy( detector->transfer, &transfer,
+	    sizeof(COMPLEX8FrequencySeries) );
+    SUB( LALCHARDestroyVector( stat, prevResponse ), stat );
+    SUB( LALCHARCreateVector( stat, prevResponse,
+			      strlen( *token ) + 1 ), stat );
+    memcpy( (*prevResponse)->data, *token, strlen( *token ) + 1 );
+  }
+
+  /* Check if simulated noise was requested. */
+  token = tokens->tokens + 2;
+  if ( !strcmp( *token, "-" ) ) {
+    INT8 epoch;  /* time series epoch */
+    UINT4 npt;   /* time series length */
+    UINT4 i;     /* index over data */
+    REAL4 sigma; /* RMS time series value */
+
+    PARSETOKEN( LALStringToI8, &epoch );
+    PARSETOKEN( LALStringToU4, &npt );
+    PARSETOKEN( LALStringToD, &(input.deltaT) );
+    PARSETOKEN( LALStringToS, &sigma );
+    if ( !ok ) {
+      LALSnprintf( msg, MSGLEN, "%s Error parsing noise argument %i"
+		   " (skipping line)", tag,
+		   (UINT4)( token - tokens->tokens - 2 ) );
+      WARNING( msg );
+      return 1;
+    }
+    I8ToLIGOTimeGPS( &(input.epoch), epoch );
+    SUB( LALSCreateVector( stat, &(input.data), npt ), stat );
+    SUB( LALNormalDeviates( stat, input.data, randParams ), stat );
+    for ( i = 0; i < npt; i++ )
+      input.data->data[i] *= sigma;
+    input.sampleUnits = lalADCCountUnit;
+    if ( sigma != 0.0 )
+      LALSnprintf( input.name, LALNameLength, "Simulated noise" );
+    else
+      input.name[0] = '\0';
+  }
+
+  /* Otherwise, read data from input file. */
+  else {
+    BOOLEAN unitsOK;  /* whether read units are right */
+    LALUnitPair pair; /* input for unit comparison */
+    FILE *fp = fopen( *token, "r" );
+    if ( !fp ) {
+      LALSnprintf( msg, MSGLEN, "%s Input file %s not found"
+		   " (skipping line)", tag, *token );
+      WARNING( msg );
+      return 1;
+    }
+    SUB( LALSReadTSeries( stat, &input, fp ), stat );
+    fclose( fp );
+    if ( input.data == NULL ) {
+      LALSnprintf( msg, MSGLEN, "%s Input file %s has no data"
+		   " (skipping line)", tag, *token );
+      WARNING( msg );
+      return 1;
+    }
+    if ( input.deltaT <= 0.0 ) {
+      LALSnprintf( msg, MSGLEN, "%s Input file %s has bad metadata"
+		   " (skipping line)", tag, *token );
+      WARNING( msg );
+      SUB( LALSDestroyVector( stat, &(input.data) ), stat );
+      return 1;
+    }
+
+    /* Check units. */
+    pair.unitOne = &lalADCCountUnit;
+    pair.unitTwo = &(input.sampleUnits);
+    SUB( LALUnitCompare( stat, &unitsOK, &pair ), stat );
+    if ( !unitsOK ) {
+      LALSnprintf( msg, MSGLEN, "%s Input file %s has incorrect units"
+		   " (ignoring units)", tag, *token );
+      WARNING( msg );
+      input.sampleUnits = lalADCCountUnit;
+      input.sampleUnits = strainPerCountUnit;
+    }
+  }
+
+  /* Simulate and inject signals. */
+  here = head->next;
+  LALSnprintf( name, LALNameLength, "%s", input.name );
+  while ( here ) {
+    REAL4TimeSeries output = input;
+    output.data = NULL;
+    SUB( LALSCreateVector( stat, &(output.data), input.data->length ),
+	 stat );
+    SUB( LALSimulateCoherentGW( stat, &output, &(here->waveform),
+				detector ), stat );
+    SUB( LALSSInjectTimeSeries( stat, &input, &output ), stat );
+    SUB( LALSDestroyVector( stat, &(output.data) ), stat );
+    here = here->next;
+    sourceno++;
+  }
+
+  /* Give the output a name. */
+  if ( sourceno == 0 ) {
+    LALSnprintf( input.name, LALNameLength, "%s", name );
+  } else if ( sourceno == 1 ) {
+    if ( strlen( name ) )
+      LALSnprintf( input.name, LALNameLength,
+		   "%s + 1 injected signal", name );
+    else
+      LALSnprintf( input.name, LALNameLength, "1 injected signal" );
+  } else {
+    if ( strlen( name ) )
+      LALSnprintf( input.name, LALNameLength,
+		   "%s + %i injected signals", name, sourceno );
+    else
+      LALSnprintf( input.name, LALNameLength, "%i injected signals",
+		   sourceno );
+  }
+
+  /* Write output to stdout or to requested output file. */
+  token = tokens->tokens + tokens->nTokens - 1;
+  if ( !strcmp( *token, "-" ) ) {
+    SUB( LALSWriteTSeries( stat, stdout, &input ), stat );
+  } else {
+    FILE *fp = fopen( *token, "w" );
+    if ( !fp ) {
+      LALSnprintf( msg, MSGLEN, "%s Output file %s could not be"
+		   " opened (skipping line)", tag, *token );
+      WARNING( msg );
+      SUB( LALSDestroyVector( stat, &(input.data) ), stat );
+      return 1;
+    }
+    SUB( LALSWriteTSeries( stat, fp, &input ), stat );
+    fclose( fp );
+  }
+
+  /* We're done for this line; free input data. */
+  SUB( LALSDestroyVector( stat, &(input.data) ), stat );
+  return 0;
+}
+
+
+/* Function to compute the combination of two numbers. */
+UINT4
+choose( UINT4 a, UINT4 b )
+{
+  UINT4 numer = 1;
+  UINT4 denom = 1;
+  UINT4 index = b + 1;
+  while ( --index ) {
+    numer *= a - b + index;
+    denom *= index;
+  }
+  return numer/denom;
 }

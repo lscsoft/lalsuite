@@ -391,7 +391,7 @@ LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
 
     /* Compute source emission time, phase, and frequency. */
     phi = t = tPow =
-      vDotAvg*( e + LAL_TWOPI*nOrb - ecc*sine ) + spinOff;
+      ( e + LAL_TWOPI*nOrb - ecc*sine )/vDotAvg + spinOff;
     f = 1.0;
     for ( j = 0; j < nSpin; j++ ) {
       f += fSpin[j]*tPow;

@@ -411,7 +411,7 @@ LALGenerateHyperbolicSpinOrbitCW( LALStatus             *stat,
 
     /* Compute source emission time, phase, and frequency. */
     phi = t = tPow =
-      vDotAvg*( ecc*sinhe - e ) + spinOff;
+      ( ecc*sinhe - e )/vDotAvg + spinOff;
     f = 1.0;
     for ( j = 0; j < nSpin; j++ ) {
       f += fSpin[j]*tPow;

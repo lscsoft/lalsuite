@@ -244,8 +244,10 @@ LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
   phi0 = params->phi0;
   argument = params->omega;
   oneBy12vDot = 0.5/vDot6;
-  vpCosOmega = vp*cos( argument );
-  vpSinOmega = vp*sin( argument );
+  cosOmegaBy2 = 0.5*cos( argument );
+  twoSinOmega = 2.0*sin( argument );
+  vpCosOmega = 2.0*vp*cosOmegaBy2;
+  vpSinOmega = 0.5*vp*twoSinOmega;
   vpSinOmega2 = vpSinOmega*vpSinOmega;
   pBy3 = sqrt( 4.0*( 1.0 + vpCosOmega ) - vpSinOmega2 );
   p32 = pBy3*pBy3*pBy3;

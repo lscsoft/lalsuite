@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = InjectTest BasicInjectTest GeneratePPNInspiralTest SimulateTaylorCWTest SimulateSBTest
+check_PROGRAMS = BasicInjectTest InjectTest GeneratePPNInspiralTest SimulateTaylorCWTest SimulateSBTest
 InjectTest_SOURCES = InjectTest.c
 InjectTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 BasicInjectTest_SOURCES = BasicInjectTest.c
@@ -11,7 +11,7 @@ SimulateTaylorCWTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.
 SimulateSBTest_SOURCES = SimulateSBTest.c CheckStatus.c
 SimulateSBTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = InjectTest BasicInjectTest GeneratePPNInspiralTest SimulateTaylorCWTest SimulateSBTest
+TESTS = BasicInjectTest GeneratePPNInspiralTest SimulateTaylorCWTest SimulateSBTest
 EXTRA_DIST = CheckStatus.c CheckStatus.h
 MOSTLYCLEANFILES = .dvi-dep WHITENED-SB*
 DISTCLEANFILES = *.tex
