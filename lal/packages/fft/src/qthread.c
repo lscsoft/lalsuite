@@ -35,7 +35,7 @@ enum { NEVER = 0, IN_PROGRESS = 1, DONE = 2 };
 int pthread_once(pthread_once_t * once_control, void (*init_routine)(void))
 {
   /* call the function init_routine() if once_control is not set to done */
-  if ( lalDebugLevel | 4 )
+  if ( lalDebugLevel & 4 )
     fprintf( stdout, "calling pthread_once(%p,%p)\n", 
         once_control, init_routine );
 
@@ -66,7 +66,7 @@ int pthread_key_create (pthread_key_t * key, destr_function destr)
 {
   int i;
 
-  if ( lalDebugLevel | 4 )
+  if ( lalDebugLevel & 4 )
     fprintf( stdout, "calling pthread_key_create(%p,%p)\n", key, destr );
 
   for ( i = 0; i < PTHREAD_KEYS_MAX; i++ ) 
@@ -90,7 +90,7 @@ int pthread_key_create (pthread_key_t * key, destr_function destr)
 /* delete a key */
 int pthread_key_delete(pthread_key_t key)
 {
-  if ( lalDebugLevel | 4 )
+  if ( lalDebugLevel & 4 )
     fprintf( stdout, "calling pthread_key_delete(%d)\n", key );
 
   if ( key >= PTHREAD_KEYS_MAX || ! pthread_keys[key].in_use ) 
@@ -110,7 +110,7 @@ int pthread_key_delete(pthread_key_t key)
 /* set key value */
 int pthread_setspecific(pthread_key_t key, const void * pointer)
 {
-  if ( lalDebugLevel | 4 )
+  if ( lalDebugLevel & 4 )
     fprintf( stdout, "calling pthread_setspecific(%d,%p)\n", key, pointer );
 
   if ( key >= PTHREAD_KEYS_MAX || ! pthread_keys[key].in_use )
@@ -125,7 +125,7 @@ int pthread_setspecific(pthread_key_t key, const void * pointer)
 /* get key value */
 void * pthread_getspecific(pthread_key_t key)
 {
-  if ( lalDebugLevel | 4 )
+  if ( lalDebugLevel & 4 )
     fprintf( stdout, "calling pthread_getspecific(%d)\n", key );
 
   if ( key >= PTHREAD_KEYS_MAX || ! pthread_keys[key].in_use ) 
