@@ -45,6 +45,7 @@ RCSID ("$Id");
 
 #if USE_BOINC
 #include "boinc_api.h"
+#include "filesys.h"
 
 #define fopen boinc_fopen
 extern CHAR *Outputfilename;
