@@ -956,7 +956,14 @@ if do_sire:
     if do_h2 and do_l1 and len(h2_l1_double_data):
       sire_segs(h2_l1_double_coinc_nodes,'output','H2L1-SIRE',sire_job,
         sire_clust_job,dag,usertag)
- 
+
+  if do_three_ifo:
+  # a clustered and unclustered sire for each of the double IFO configs
+    if do_h1 and do_h2 and do_l1 and len(h1_h2_l1_triple_data):
+      sire_segs(h1_h2_l1_triple_coinc_nodes,'output','H1H2L1-SIRE',sire_job,
+        sire_clust_job,dag,usertag)
+      
+
 print "done"
   
 ##############################################################################
