@@ -1666,10 +1666,11 @@ INT4 main(INT4 argc, CHAR *argv[])
         /* save */
         if (verbose_flag)
         {
-          fprintf(stdout, "interval %d:", interLoop + 1);
-          fprintf(stdout, "GPS time = %d: y = %e, sigmaTheo = %e, " \
-              "varTheo = %e\n", gpsStartTime.gpsSeconds, y, \
-              sqrt(varTheo), varTheo);
+          fprintf(stdout, "interval %d:\n", interLoop + 1);
+          fprintf(stdout, "GPS time = %d\n", gpsStartTime.gpsSeconds);
+          fprintf(stdout, "y = %e\n", y);
+          fprintf(stdout, "sigmaTheo = %e\n", sqrt(varTheo));
+          fprintf(stdout, "varTheo = %e\n", varTheo);
         }
 
         if (post_analysis_flag)
