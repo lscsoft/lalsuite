@@ -44,7 +44,7 @@ Y arm active.  The response tensor is given by
 $d^{ab}=\frac{1}{2}u_Y^au_Y^b$.
 \item[\texttt{LALIFOCOMMDETECTOR}] An interferometer in common mode.  The
 response tensor is given by $d^{ab}=\frac{1}{2} (u_X^au_X^b+u_Y^au_Y^b)$.
-\item[\texttt{LALIFOCYLBARDETECTOR}] A cylindrical bar detector.  In this case the 
+\item[\texttt{LALCYLBARDETECTOR}] A cylindrical bar detector.  In this case the 
 ``X arm'' is actually the symmetry axis of the bar, and the ``Y arm''
 is ignored.  The response tensor is 
 $d^{ab}=u_X^au_X^b$.
@@ -190,7 +190,7 @@ LALIFODIFFDETECTOR
 LALIFOXARMDETECTOR
 LALIFOYARMDETECTOR
 LALIFOCOMMDETECTOR
-LALIFOCYLBARDETECTOR
+LALCYLBARDETECTOR
 LAL_PI_180
 LAL_AWGS84_SI
 LAL_BWGS84_SI
@@ -466,7 +466,7 @@ void LALCreateDetector( LALStatus       *status,
     printf("xArm = (%g, %g, %g)\n", xArm[0], xArm[1], xArm[2]);
   }
 
-  if (type != LALIFOXARMDETECTOR && type != LALIFOCYLBARDETECTOR)
+  if (type != LALIFOXARMDETECTOR && type != LALCYLBARDETECTOR)
   {
     getCartesianComponents ( yArm,
 			     cos(input->yArmAltitudeRadians),
@@ -529,7 +529,7 @@ void LALCreateDetector( LALStatus       *status,
 	}
       }
       break;
-    case LALIFOCYLBARDETECTOR:
+    case LALCYLBARDETECTOR:
       for ( i=0; i<3; ++i )
       {
 	output->response[i][i] 

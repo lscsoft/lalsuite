@@ -166,7 +166,7 @@ NRCSID (DETECTORSITEH, "$Id$");
 \index{\texttt{LALIFOXARMDETECTOR}}
 \index{\texttt{LALIFOYARMDETECTOR}}
 \index{\texttt{LALIFOCOMMDETECTOR}}
-\index{\texttt{LALIFOCYLBARDETECTOR}}
+\index{\texttt{LALCYLBARDETECTOR}}
 
 Since data from bars as well as interferometers can be written to
    frames, we need an additional piece of information to interpret the
@@ -182,7 +182,7 @@ The possible values are:
   \item[\texttt{LALIFOXARMDETECTOR}] Interferometer in one-armed mode (X arm)
   \item[\texttt{LALIFOYARMDETECTOR}] Interferometer in one-armed mode (Y arm)
   \item[\texttt{LALIFOCOMMDETECTOR}] Interferometer in common mode
-  \item[\texttt{LALIFOCYLBARDETECTOR}]  Cylindrical bar
+  \item[\texttt{LALCYLBARDETECTOR}]  Cylindrical bar
 %  \item[\texttt{SPHEREMONO}] Resonant sphere in $\ell=0$ mode
 %  \item[\texttt{SPHEREQUAD0}] Resonant sphere in $\ell=2$, $m=0$ mode
 %  \item[\texttt{SPHEREQUAD1S}] Resonant sphere in $\ell=2$, 
@@ -203,7 +203,7 @@ typedef enum {
   LALIFOXARMDETECTOR,      /* IFO in one-armed mode (X arm) */
   LALIFOYARMDETECTOR,      /* IFO in one-armed mode (Y arm) */
   LALIFOCOMMDETECTOR,      /* IFO in common mode */
-  LALIFOCYLBARDETECTOR,       /* Cylindrical Bar */
+  LALCYLBARDETECTOR,       /* Cylindrical Bar */
   /* SPHEREMONO,    Resonant Sphere in l=0 mode */
   /* SPHEREQUAD0,   Resonant sphere in l=2, m=0 mode */
   /* SPHEREQUAD1S,  Resonant sphere in l=2, m=+/-1 (sine) mode */
