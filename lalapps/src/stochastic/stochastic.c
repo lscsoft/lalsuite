@@ -2995,6 +2995,151 @@ static void readDataPair(LALStatus *status,
   LAL_CALL(LALDestroyREAL8TimeSeries(status, dataStreamGEO), status);
 }
 
+static REAL4TimeSeries *get_time_series(LALStatus *status,
+  CHAR *ifo,
+  CHAR *cacheFile,
+  CHAR *channel,
+  LIGOTimeGPS start,
+  LIGOTimeGPS end)
+{
+  /* variables */
+  REAL4TimeSeries *series;
+  FrStream *stream = NULL;
+  FrCache *frameCache = NULL;
+
+  /* Open frame stream */
+  LAL_CALL(LALFrCacheImport(status, &frameCache, cacheFile), status);
+  LAL_CALL(LALFrCacheOpen(status, &stream, frameCache), status);
+  LAL_CALL(LALDestroyFrCache(status, &frameCache), status);
+
+  /* Turn on checking for missing data */
+  stream->mode = LAL_FR_VERBOSE_MODE;
+
+  /* Get the data */
+  if (strncmp(ifo, "G1", 2) == 0)
+    series = get_geo_data(status, stream, channel, start, end);
+  else
+    series = get_ligo_data(status, stream, channel, start, end);
+
+	/* Check for missing data */
+	if (stream->state & LAL_FR_GAP)
+  {
+    fprintf(stderr, "Gap in data detected between GPS times %d s and %d s\n", \
+        start.gpsSeconds, end.gpsSeconds);
+		LAL_CALL(LALDestroyREAL4TimeSeries(status, series), status);
+		series = NULL;
+	}
+
+	/* Clean up */
+	LAL_CALL(LALFrClose(status, &stream), status);
+
+	return(series);
+}
+
+/* read a LIGO time series */
+static REAL4TimeSeries *get_ligo_data(LALStatus *status,
+    FrStream *stream,
+    CHAR *channel,
+    LIGOTimeGPS start,
+    LIGOTimeGPS end)
+{
+  /* variables */
+  REAL4TimeSeries *series;
+  FrChanIn channelIn;
+  size_t length;
+
+  /* set channelIn */
+  channelIn.name = channel;
+  channelIn.type = ADCDataChannel;
+
+  /* create and initialise time series */
+  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, channel, start, 0, 0, \
+        lalADCCountUnit, 0), status);
+
+  /* get the series meta data */
+  LAL_CALL(LALFrGetREAL4TimeSeriesMetadata(status, series, &channelIn, \
+        stream), status);
+
+  /* resize series to the correct number of samples */
+  length = DeltaGPStoFloat(status, &end, &start) / series->deltaT;
+  LAL_CALL(LALResizeREAL4TimeSeries(status, series, 0, length), status);
+
+  /* seek to and read data */
+  LAL_CALL(LALFrSeek(status, &start, stream), status);
+  LAL_CALL(LALFrGetREAL4TimeSeries(status, series, &channelIn, stream), status);
+
+  /* return */
+  return(series);
+}
+
+/* read and high pass filter a GEO time series */
+static REAL4TimeSeries *get_geo_data(LALStatus *status,
+    FrStream *stream,
+    CHAR *channel,
+    LIGOTimeGPS start,
+    LIGOTimeGPS end)
+{
+  /* variables */
+  PassBandParamStruc highPassParam;
+  REAL4TimeSeries *series;
+  REAL8TimeSeries *geo;
+  FrChanIn channelIn;
+  size_t length;
+  size_t i;
+
+  /* set channelIn */
+  channelIn.name = channel;
+  channelIn.type = ADCDataChannel;
+
+  /* create and initialise time series */
+  LAL_CALL(LALCreateREAL8TimeSeries(status, &geo, channel, start, 0, 0, \
+        lalADCCountUnit, 0), status);
+
+  /* get the series meta data */
+  LAL_CALL(LALFrGetREAL8TimeSeriesMetadata(status, geo, &channelIn, \
+        stream), status);
+
+  /* resize series to the correct number of samples */
+  length = DeltaGPStoFloat(status, &end, &start) / series->deltaT;
+  LAL_CALL(LALResizeREAL8TimeSeries(status, geo, 0, length), status);
+
+  /* seek to and read data */
+  LAL_CALL(LALFrSeek(status, &start, stream), status);
+  LAL_CALL(LALFrGetREAL8TimeSeries(status, geo, &channelIn, stream), status);
+
+  /* high pass filter before casting to a REAL4 */
+  highPassParam.nMax = geoHighPassOrder;
+  highPassParam.f1 = -1;
+  highPassParam.f2 = geoHighPassFreq;
+  highPassParam.a1 = -1;
+  highPassParam.a2 = geoHighPassAtten;
+  LAL_CALL(LALButterworthREAL8TimeSeries(status, geo, &highPassParam), status);
+
+  /* cast as a REAL4 */
+  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, geo->name, geo->epoch, \
+        geo->f0, geo->deltaT, geo->sampleUnits, geo->data->length), status);
+  for (i = 0; i < series->data->length; i++)
+    series->data->data[i] = (REAL4)geo->data->data[i];
+
+  /* destroy geo series */
+  LAL_CALL(LALDestroyREAL8TimeSeries(status, geo), status);
+
+  /* return */
+  return(series);
+}
+
+/* return the difference between two GPS times as REAL8 */
+static REAL8 DeltaGPStoFloat(LALStatus *status,
+    LIGOTimeGPS *end,
+    LIGOTimeGPS *start)
+{
+	LALTimeInterval i;
+	REAL8 d;
+	LAL_CALL(LALDeltaGPS(status, &i, end, start), status);
+	LAL_CALL(LALIntervalToFloat(status, &d, &i), status);
+	return(d);
+}
+
 /*
  * vim: et
  */
