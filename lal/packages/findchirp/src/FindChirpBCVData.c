@@ -72,8 +72,10 @@ LALFindChirpBCVData (
   REAL4                 increment;
   REAL4                 nextBin;
   REAL4                 partSum;
+#if 0
   REAL4                 Power  = 0.0 ;
   REAL4                 PowerBCV = 0.0 ;
+#endif
   REAL4                 I73 = 0.0;
   REAL4                 I53 = 0.0;
   REAL4                 I1 = 0.0;
@@ -380,9 +382,9 @@ LALFindChirpBCVData (
 
 #if 0
     fcSeg->segNorm = 0.0;
-#endif
     Power    = 0.0;
     PowerBCV = 0.0;
+#endif
     I73 = 0.0;
     I53 = 0.0;
     I1 = 0.0;
@@ -423,18 +425,13 @@ LALFindChirpBCVData (
       fcSeg->b1->data[k] = - I53 * fcSeg->b2->data[k] / I73 ;
     }
 
-#if 0
-    fcSeg->a1->data[k] = 1.0 / sqrt(I73) ;
-    fcSeg->b2->data[k] = 1.0 / sqrt( I1 - I53*I53/I73 ) ;
-    fcSeg->b1->data[k] = - I53 * fcSeg->b2 / I73 ;
-#endif
 
     for ( k = 1; k < fcSeg->data->data->length; ++k )
     {
       tmpltPower[k]    = amp[k] * sqrt(wtilde[k].re);
-      Power += tmpltPower[k]; 
+      /* Power += tmpltPower[k]; */
       tmpltPowerBCV[k] = ampBCV[k] * sqrt(wtilde[k].re);
-      PowerBCV += tmpltPowerBCV[k] ; 
+      /* PowerBCV += tmpltPowerBCV[k] ; */ 
     }
 
     for ( k = cut; k < fcSeg->data->data->length; ++k )
