@@ -641,7 +641,7 @@ class AnalysisNode(CondorDAGNode):
     if ( self.__LHO2k.match(self.__ifo) and 
       (self.__start >= 729273613) and (self.__start <= 734367613) ):
       if self.__start < int(
-        self.__cp.get('calibration','H2-cal-epoch-boundary')):
+        self.job().get_config('calibration','H2-cal-epoch-boundary')):
         cal_file = self.job().get_config('calibration','H2-1')
       else:
         cal_file = self.job().get_config('calibration','H2-2')
