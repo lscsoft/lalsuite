@@ -66,7 +66,7 @@ RCSID("$Id$");
 "  --v1-triggers             input triggers from V1\n"\
 "\n"\
 "  --parameter-test TEST    set the desired parameters to test coincidence\n"\
-"                            for inca: (m1_and_m2|psi0_and_psi3|mchirp_and_eta)\n"\
+"                           for inca: (m1_and_m2|psi0_and_psi3|mchirp_and_eta)\n"\
 "  --dm Dm                   mass coincidence window (default 0)\n"\
 "  --dpsi0 Dpsi0             psi0 coincidence window\n"\
 "  --dpsi3 Dpsi3             psi3 coincidence window\n"\
@@ -90,12 +90,21 @@ LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
 LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
 LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
+int g1_trig = 0;
+int h1_trig = 0;
+int h2_trig = 0;
+int l1_trig = 0;
+int t1_trig = 0;
+int v1_trig = 0;
+
+
 int main( int argc, char *argv[] )
 {
   static LALStatus      status;
   LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
   extern int vrbflg;
+
   LALPlaygroundDataMask dataType;
   INT4  startCoincidence = -1;
   LIGOTimeGPS startCoinc = {0,0};
@@ -108,28 +117,19 @@ int main( int argc, char *argv[] )
   CHAR  fileName[FILENAME_MAX];
 
   INT8  currentTriggerNS[MAXIFO];
+  INT4  haveCoinc[MAXIFO];
   INT4  numEvents = 0;
   INT4  numIFO;
   INT4  numTriggers = 0;
   INT4  inStartTime = -1;
   INT4  inEndTime = -1;
 
-  INT4  g1_trig = 0;
-  INT4  h1_trig = 0;
-  INT4  h2_trig = 0;
-  INT4  l1_trig = 0;
-  INT4  t1_trig = 0;
-  INT4  v1_trig = 0;
-
-  INT4  knownIFO = 0;
   INT8  maxTC = 0;
-  
+
   SnglInspiralTable    *inspiralEventList = NULL;
   SnglInspiralTable    *thisInspiralTrigger = NULL;
   SnglInspiralTable    *currentTrigger[MAXIFO];
   CoincInspiralTable   *currentCoincCand[MAXIFO];
-  INT4  have_triple_coinc = 0;
-  INT4  have_quad_coinc = 0;
   INT4  haveTest = 0;
   INT4  haveDataType = 0;
 
@@ -150,8 +150,8 @@ int main( int argc, char *argv[] )
   MetadataTable         proctable;
   MetadataTable         processParamsTable;
   MetadataTable         searchsumm;
-  MetadataTable		searchSummvarsTable;
-  MetadataTable		summValueTable;
+  MetadataTable   searchSummvarsTable;
+  MetadataTable   summValueTable;
   MetadataTable         inspiralTable;
   ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       xmlStream;
@@ -172,7 +172,7 @@ int main( int argc, char *argv[] )
     {"dm",                      required_argument, 0,                'm'},
     {"dpsi0",                   required_argument, 0,                'p'},
     {"dpsi3",                   required_argument, 0,                'P'},
-    {"dmchirp",			required_argument, 0,                'c'},
+    {"dmchirp",                 required_argument, 0,                'c'},
     {"deta",                    required_argument, 0,                'n'},
     {"dt",                      required_argument, 0,                't'},
     {"gps-start-time",          required_argument, 0,                'q'},
@@ -202,9 +202,9 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-	&accuracy ), &status );
+        &accuracy ), &status );
   LAL_CALL( populate_process_table( &status, proctable.processTable, 
-	PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
   this_proc_param = processParamsTable.processParamsTable = 
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
@@ -214,10 +214,10 @@ int main( int argc, char *argv[] )
     calloc( 1, sizeof(SearchSummaryTable) );
 
   memset( &errorParams, 0, sizeof(SnglInspiralAccuracy) );
-  memset( inspiralEventList, 0, MAXIFO * sizeof(SnglInspiralTable *) );
   memset( currentTrigger, 0, MAXIFO * sizeof(SnglInspiralTable *) );
   memset( currentCoincCand, 0, MAXIFO * sizeof(CoincInspiralTable *) );
   memset( currentTriggerNS, 0, MAXIFO * sizeof(INT8) );
+  memset( haveCoinc, 0, MAXIFO * sizeof(INT4) );
 
   /* parse the arguments */
   while ( 1 )
@@ -228,8 +228,8 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-	"c:hm:n:p:q:r:s:t:z:A:D:P:V:Z:", long_options, 
-	&option_index );
+        "c:hm:n:p:q:r:s:t:z:A:D:P:V:Z:", long_options, 
+        &option_index );
 
     /* detect the end of the options */
     if ( c == -1 )
@@ -240,220 +240,220 @@ int main( int argc, char *argv[] )
     switch ( c )
     {
       case 0:
-	/* if this option set a flag, do nothing else now */
-	if ( long_options[option_index].flag != 0 )
-	{
-	  break;
-	}
-	else
-	{
-	  fprintf( stderr, "Error parsing option %s with argument %s\n",
-	      long_options[option_index].name, optarg );
-	  exit( 1 );
-	}
-	break;
+        /* if this option set a flag, do nothing else now */
+        if ( long_options[option_index].flag != 0 )
+        {
+          break;
+        }
+        else
+        {
+          fprintf( stderr, "Error parsing option %s with argument %s\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        break;
 
       case 'A':
-	/* set the parameter test */
-	if ( ! strcmp( "m1_and_m2", optarg ) )
-	{
-	  errorParams.test = m1_and_m2;
-	}
-	else if ( ! strcmp( "psi0_and_psi3", optarg ) )
-	{
-	  errorParams.test = psi0_and_psi3;
-	}
-	else if ( ! strcmp( "mchirp_and_eta", optarg ) )
-	{
-	  errorParams.test = mchirp_and_eta;
-	}
-	else
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "unknown test specified: "
-	      "%s (must be m1_and_m2, psi0_and_psi3 or mchirp_and_eta)\n",
-	      long_options[option_index].name, optarg );
-	  exit( 1 );
-	}
-	haveTest = 1;
-	ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;
+        /* set the parameter test */
+        if ( ! strcmp( "m1_and_m2", optarg ) )
+        {
+          errorParams.test = m1_and_m2;
+        }
+        else if ( ! strcmp( "psi0_and_psi3", optarg ) )
+        {
+          errorParams.test = psi0_and_psi3;
+        }
+        else if ( ! strcmp( "mchirp_and_eta", optarg ) )
+        {
+          errorParams.test = mchirp_and_eta;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown test specified: "
+              "%s (must be m1_and_m2, psi0_and_psi3 or mchirp_and_eta)\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        haveTest = 1;
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
 
       case 'm':
-	/* mass errors allowed */
-	errorParams.dm = atof(optarg);
-	ADD_PROCESS_PARAM( "float", "%s", optarg );
-	break;
+        /* mass errors allowed */
+        errorParams.dm = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       case 'p':
-	/* psi0 errors allowed */
-	errorParams.dpsi0 = atof(optarg);
-	ADD_PROCESS_PARAM( "float", "%s", optarg );
-	break;
+        /* psi0 errors allowed */
+        errorParams.dpsi0 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       case 'P':
-	/* psi3 errors allowed */
-	errorParams.dpsi3 = atof(optarg);
-	ADD_PROCESS_PARAM( "float", "%s", optarg );
-	break;
+        /* psi3 errors allowed */
+        errorParams.dpsi3 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       case 'c':
-	/* chirp mass errors allowed */
-	errorParams.dmchirp = atof(optarg);
-	ADD_PROCESS_PARAM( "float", "%s", optarg );
-	break;
+        /* chirp mass errors allowed */
+        errorParams.dmchirp = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       case 'n':
-	/* mass ratio, eta, errors allowed */
-	errorParams.deta = atof(optarg);
-	ADD_PROCESS_PARAM( "float", "%s", optarg );
-	break;
+        /* mass ratio, eta, errors allowed */
+        errorParams.deta = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       case 't':
-	/* time coincidence window, argument is in milliseconds */
-	errorParams.dt = atof(optarg) * 1000000LL;
-        maxTC = errorParams.dt;	
-	ADD_PROCESS_PARAM( "float", "%s", optarg );
-	break;
+        /* time coincidence window, argument is in milliseconds */
+        errorParams.dt = atof(optarg) * 1000000LL;
+        maxTC = errorParams.dt; 
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       case 'q':
-	/* start time coincidence window */
-	gpstime = atol( optarg );
-	if ( gpstime < 441417609 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "GPS start time is prior to " 
-	      "Jan 01, 1994  00:00:00 UTC:\n"
-	      "(%ld specified)\n",
-	      long_options[option_index].name, gpstime );
-	  exit( 1 );
-	}
-	if ( gpstime > 999999999 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "GPS start time is after " 
-	      "Sep 14, 2011  01:46:26 UTC:\n"
-	      "(%ld specified)\n", 
-	      long_options[option_index].name, gpstime );
-	  exit( 1 );
-	}
-	startCoincidence = (INT4) gpstime;
-	ADD_PROCESS_PARAM( "int", "%ld", startCoincidence );
-	break;
+        /* start time coincidence window */
+        gpstime = atol( optarg );
+        if ( gpstime < 441417609 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GPS start time is prior to " 
+              "Jan 01, 1994  00:00:00 UTC:\n"
+              "(%ld specified)\n",
+              long_options[option_index].name, gpstime );
+          exit( 1 );
+        }
+        if ( gpstime > 999999999 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GPS start time is after " 
+              "Sep 14, 2011  01:46:26 UTC:\n"
+              "(%ld specified)\n", 
+              long_options[option_index].name, gpstime );
+          exit( 1 );
+        }
+        startCoincidence = (INT4) gpstime;
+        ADD_PROCESS_PARAM( "int", "%ld", startCoincidence );
+        break;
 
       case 'r':
-	/* end time coincidence window */
-	gpstime = atol( optarg );
-	if ( gpstime < 441417609 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "GPS start time is prior to " 
-	      "Jan 01, 1994  00:00:00 UTC:\n"
-	      "(%ld specified)\n",
-	      long_options[option_index].name, gpstime );
-	  exit( 1 );
-	}
-	if ( gpstime > 999999999 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "GPS start time is after " 
-	      "Sep 14, 2011  01:46:26 UTC:\n"
-	      "(%ld specified)\n", 
-	      long_options[option_index].name, gpstime );
-	  exit( 1 );
-	}
-	endCoincidence = (INT4) gpstime;
-	ADD_PROCESS_PARAM( "int", "%ld", endCoincidence );
-	break;
+        /* end time coincidence window */
+        gpstime = atol( optarg );
+        if ( gpstime < 441417609 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GPS start time is prior to " 
+              "Jan 01, 1994  00:00:00 UTC:\n"
+              "(%ld specified)\n",
+              long_options[option_index].name, gpstime );
+          exit( 1 );
+        }
+        if ( gpstime > 999999999 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GPS start time is after " 
+              "Sep 14, 2011  01:46:26 UTC:\n"
+              "(%ld specified)\n", 
+              long_options[option_index].name, gpstime );
+          exit( 1 );
+        }
+        endCoincidence = (INT4) gpstime;
+        ADD_PROCESS_PARAM( "int", "%ld", endCoincidence );
+        break;
 
       case 's':
-	/* comment */
-	if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "comment must be less than %d characters\n",
-	      long_options[option_index].name, LIGOMETA_COMMENT_MAX );
-	  exit( 1 );
-	}
-	else
-	{
-	  LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
-	}
-	break;
+        /* comment */
+        if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "comment must be less than %d characters\n",
+              long_options[option_index].name, LIGOMETA_COMMENT_MAX );
+          exit( 1 );
+        }
+        else
+        {
+          LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+        }
+        break;
 
       case 'D':
-	/* type of data to analyze */
-	if ( ! strcmp( "playground_only", optarg ) )
-	{
-	  dataType = playground_only;
-	}
-	else if ( ! strcmp( "exclude_play", optarg ) )
-	{
-	  dataType = exclude_play;
-	}
-	else if ( ! strcmp( "all_data", optarg ) )
-	{
-	  dataType = all_data;
-	}
-	else
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "unknown data type, %s, specified: "
-	      "(must be playground_only, exclude_play or all_data)\n",
-	      long_options[option_index].name, optarg );
-	  exit( 1 );
-	}
-	haveDataType = 1;
-	ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;
+        /* type of data to analyze */
+        if ( ! strcmp( "playground_only", optarg ) )
+        {
+          dataType = playground_only;
+        }
+        else if ( ! strcmp( "exclude_play", optarg ) )
+        {
+          dataType = exclude_play;
+        }
+        else if ( ! strcmp( "all_data", optarg ) )
+        {
+          dataType = all_data;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown data type, %s, specified: "
+              "(must be playground_only, exclude_play or all_data)\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        haveDataType = 1;
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
 
 
       case 'h':
-	/* help message */
-	fprintf( stderr, USAGE , argv[0]);
-	exit( 1 );
-	break;
+        /* help message */
+        fprintf( stderr, USAGE , argv[0]);
+        exit( 1 );
+        break;
 
       case 'z':
-	set_debug_level( optarg );
-	ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;
+        set_debug_level( optarg );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
 
       case 'Z':
-	/* create storage for the usertag */
-	optarg_len = strlen(optarg) + 1;
-	userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-	memcpy( userTag, optarg, optarg_len );
+        /* create storage for the usertag */
+        optarg_len = strlen(optarg) + 1;
+        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( userTag, optarg, optarg_len );
 
-	this_proc_param = this_proc_param->next = (ProcessParamsTable *)
-	  calloc( 1, sizeof(ProcessParamsTable) );
-	LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
-	    PROGRAM_NAME );
-	LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
-	LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-	LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-	    optarg );
-	break;
+        this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+          calloc( 1, sizeof(ProcessParamsTable) );
+        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+            PROGRAM_NAME );
+        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
+        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+            optarg );
+        break;
 
 
       case 'V':
-	/* print version information and exit */
-	fprintf( stdout, "Inspiral Coincidence and Triggered Bank Generator\n" 
-	    "Patrick Brady, Duncan Brown and Steve Fairhurst\n"
-	    "CVS Version: " CVS_ID_STRING "\n"
-	    "CVS Tag: " CVS_NAME_STRING "\n" );
-	exit( 0 );
-	break;
+        /* print version information and exit */
+        fprintf( stdout, "Inspiral Coincidence and Triggered Bank Generator\n" 
+            "Patrick Brady, Duncan Brown and Steve Fairhurst\n"
+            "CVS Version: " CVS_ID_STRING "\n"
+            "CVS Tag: " CVS_NAME_STRING "\n" );
+        exit( 0 );
+        break;
 
       case '?':
-	fprintf( stderr, USAGE , argv[0]);
-	exit( 1 );
-	break;
+        fprintf( stderr, USAGE , argv[0]);
+        exit( 1 );
+        break;
 
       default:
-	fprintf( stderr, "Error: Unknown error while parsing options\n" );
-	fprintf( stderr, USAGE, argv[0] );
-	exit( 1 );
+        fprintf( stderr, "Error: Unknown error while parsing options\n" );
+        fprintf( stderr, USAGE, argv[0] );
+        exit( 1 );
     }
   }
 
@@ -470,6 +470,10 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
+  /* set the gps times startCoinc and endCoinc */
+  startCoinc.gpsSeconds = startCoincidence;
+  endCoinc.gpsSeconds = endCoincidence;
+
   if ( ! haveTest )
   {
     fprintf( stderr, "Error: --parameter-test must be specified\n" );
@@ -480,8 +484,14 @@ int main( int argc, char *argv[] )
   if ( ! haveDataType )
   {
     fprintf( stderr, "Error: --data-type must be specified\n");
+    exit(1);
   }
 
+  if ( ! maxTC )
+  {
+    fprintf( stderr, "Error: --dt must be specified\n");
+    exit(1);
+  }
 
   numIFO = 0;
   if ( g1_trig )
@@ -494,22 +504,22 @@ int main( int argc, char *argv[] )
     LALSnprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, "H1" ); 
     numIFO++;
   }
-  if ( g1_trig )
+  if ( h2_trig )
   {
     LALSnprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, "H2" ); 
     numIFO++;
   }
-  if ( g1_trig )
+  if ( l1_trig )
   {
     LALSnprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, "L1" ); 
     numIFO++;
   }
-  if ( g1_trig )
+  if ( t1_trig )
   {
     LALSnprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, "T1" ); 
     numIFO++;
   }
-  if ( g1_trig )
+  if ( v1_trig )
   {
     LALSnprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, "V1" ); 
     numIFO++;
@@ -519,7 +529,7 @@ int main( int argc, char *argv[] )
   if ( numIFO < 2 )
   {
     fprintf( stderr, "Must specify at least two IFOs to do coincidence\n"
-	"%d specified\n", numIFO );
+        "%d specified\n", numIFO );
     exit ( 1 );
   }
 
@@ -529,14 +539,14 @@ int main( int argc, char *argv[] )
   {
     LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
     LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, 
-	" " );
+        " " );
   } 
   else 
   {
     LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
-	"%s", comment );
+        "%s", comment );
     LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
-	"%s", comment );
+        "%s", comment );
   }
 
   /*
@@ -561,146 +571,131 @@ int main( int argc, char *argv[] )
       /* if the named input file does not exist, exit with an error */
       if ( stat( argv[i], &infileStatus ) == -1 )
       {
-	fprintf( stderr, "Error opening input file %s\n", argv[i] );
-	perror( "failed to stat() file" );
-	exit( 1 );
+        fprintf( stderr, "Error opening input file %s\n", argv[i] );
+        perror( "failed to stat() file" );
+        exit( 1 );
       }
 
       if ( vrbflg ) fprintf( stdout, 
-	  "storing input file name %s in search summvars table\n", argv[i] );
+          "storing input file name %s in search summvars table\n", argv[i] );
 
       if ( ! inputFiles )
       {
-	inputFiles = thisInputFile = (SearchSummvarsTable *)
-	  LALCalloc( 1, sizeof(SearchSummvarsTable) );
+        inputFiles = thisInputFile = (SearchSummvarsTable *)
+          LALCalloc( 1, sizeof(SearchSummvarsTable) );
       }
       else
       {
-	thisInputFile = thisInputFile->next = (SearchSummvarsTable *)
-	  LALCalloc( 1, sizeof(SearchSummvarsTable) );
+        thisInputFile = thisInputFile->next = (SearchSummvarsTable *)
+          LALCalloc( 1, sizeof(SearchSummvarsTable) );
       }
       LALSnprintf( thisInputFile->name, LIGOMETA_NAME_MAX, 
-	  "input_file" );
+          "input_file" );
       LALSnprintf( thisInputFile->string, LIGOMETA_NAME_MAX, 
-	  "%s", argv[i] );      
+          "%s", argv[i] );      
 
 
       /* read in the search summary and store */ 
       if ( vrbflg ) fprintf( stdout, 
-	  "reading search_summary table from file: %s\n", argv[i] );
+          "reading search_summary table from file: %s\n", argv[i] );
 
       haveSearchSum = SearchSummaryTableFromLIGOLw( &inputSummary, argv[i] );
 
       if ( haveSearchSum < 1 || ! inputSummary )
       {
-	if ( vrbflg ) 
-	  fprintf( stdout, "no valid search_summary table, continuing\n" );
+        if ( vrbflg ) 
+          fprintf( stdout, "no valid search_summary table, continuing\n" );
       }
       else
       {
-	/* store the search summary table in searchSummList list */
-	if ( !searchSummList )
-	{
-	  searchSummList = thisSearchSumm = inputSummary;
-	}
-	else
-	{
-	  thisSearchSumm = thisSearchSumm->next = inputSummary;
-	}
-	inputSummary = NULL;
+        /* store the search summary table in searchSummList list */
+        if ( !searchSummList )
+        {
+          searchSummList = thisSearchSumm = inputSummary;
+        }
+        else
+        {
+          thisSearchSumm = thisSearchSumm->next = inputSummary;
+        }
+        inputSummary = NULL;
       }
 
 
       /* read in the summ_value table and store */
       if ( vrbflg ) fprintf( stdout, 
-	  "reading summ_value table from file: %s\n", argv[i] );
+          "reading summ_value table from file: %s\n", argv[i] );
 
-      haveSummValue = SummValueTableFromLIGOLw( &thisSummValue, argv[i] );
+      haveSummValue = SummValueTableFromLIGOLw( &inputSummValue, argv[i] );
 
       if ( haveSummValue < 1 || ! inputSummValue )
       {
-	if ( vrbflg ) fprintf( stdout, 
-	    "Unable to read summ_value table from %s\n", argv[i] );
+        if ( vrbflg ) fprintf( stdout, 
+            "Unable to read summ_value table from %s\n", argv[i] );
       }
       else
       {
-	/* store the summ value table in summValueList list */
-	if ( !searchSummList )
-	{
-	  summValueList = thisSummValue = inputSummValue;
-	}
-	else
-	{
-	  thisSummValue = thisSummValue->next = inputSummValue;
-	}
-	inputSummValue = NULL;
+        /* store the summ value table in summValueList list */
+        if ( !summValueList )
+        {
+          summValueList = thisSummValue = inputSummValue;
+        }
+        else
+        {
+          thisSummValue = thisSummValue->next = inputSummValue;
+        }
+        inputSummValue = NULL;
+
+        /* scroll to the end of the linked list of summValues */
+        for ( ; thisSummValue->next; thisSummValue = thisSummValue->next );
       }
 
-      /* scroll to the end of the linked list of summValues */
-      for ( ; thisSummValue; thisSummValue = thisSummValue->next );
 
 
       /* read in the triggers */
       if ( vrbflg ) 
-	fprintf( stdout, "reading triggers from file: %s\n", argv[i] );
+        fprintf( stdout, "reading triggers from file: %s\n", argv[i] );
 
       numFileTriggers = 
-	LALSnglInspiralTableFromLIGOLw( &inputData, argv[i], 0, -1 );
+        LALSnglInspiralTableFromLIGOLw( &inputData, argv[i], 0, -1 );
 
       if ( numFileTriggers < 0 )
       {
-	fprintf( stderr, "error: unable to read sngl_inspiral table from %s\n", 
-	    argv[i] );
-	exit( 1 );
+        fprintf( stderr, "error: unable to read sngl_inspiral table from %s\n", 
+            argv[i] );
+        exit( 1 );
       }
       else if ( numFileTriggers > 0 )
       {
 
-	if ( vrbflg ) 
-	  fprintf( stdout, "got %d sngl_inspiral rows from %s for ifo %s\n", 
-	      numFileTriggers, argv[i], inputData->ifo );
+        if ( vrbflg ) 
+          fprintf( stdout, "got %d sngl_inspiral rows from %s\n", 
+              numFileTriggers, argv[i] );
 
-	/* check that the triggers were from one of the requested ifos */
-	for ( j = 0; j < numIFO ; ++j )
-	{
-	  if ( ! strncmp( ifoName[j], inputData->ifo, LIGOMETA_IFO_MAX ) )
-	  {
-	    knownIFO = 1;
-	  }
-	}
-	if ( !knownIFO )
-	{
-	  /* catch an unknown ifo name among the input files */
-	  fprintf( stderr, "Error: unknown interferometer %s\n", 
-	      inputData->ifo );
-	  exit( 1 );
-	}
+        /* store them */
+        if ( ! inspiralEventList )
+        {
+          /* store the head of the linked list */
+          inspiralEventList = thisInspiralTrigger = inputData;
+        }
+        else
+        {
+          /* append to the end of the linked list and set current    */
+          /* trigger to the first trigger of the list being appended */
+          thisInspiralTrigger = thisInspiralTrigger->next = inputData;
+        }
 
-	/* store them */
-	if ( ! inspiralEventList )
-	{
-	  /* store the head of the linked list */
-	  inspiralEventList = thisInspiralTrigger = inputData;
-	}
-	else
-	{
-	  /* append to the end of the linked list and set current    */
-	  /* trigger to the first trigger of the list being appended */
-	  thisInspiralTrigger = thisInspiralTrigger->next = inputData;
-	}
+        /* scroll to the end of the linked list of triggers */
+        for ( ; thisInspiralTrigger->next; thisInspiralTrigger = 
+            thisInspiralTrigger->next );
 
-	/* scroll to the end of the linked list of triggers */
-	for ( ; thisInspiralTrigger; thisInspiralTrigger = 
-	    thisInspiralTrigger->next );
-
-	if ( vrbflg ) fprintf( stdout, "added %d triggers to list\n",
-	    numFileTriggers );
-	numTriggers += numFileTriggers;
+        if ( vrbflg ) fprintf( stdout, "added %d triggers to list\n",
+            numFileTriggers );
+        numTriggers += numFileTriggers;
       }
       else
       {
-	if ( vrbflg ) 
-	  fprintf( stdout, "%s contains no triggers, skipping\n", argv[i] );
+        if ( vrbflg ) 
+          fprintf( stdout, "%s contains no triggers, skipping\n", argv[i] );
       }
     }
   }
@@ -716,18 +711,18 @@ int main( int argc, char *argv[] )
 
   /* check that we have read in data for all the requested times
      in all the requested instruments */
-  for ( j = 0; j < numIFO ; ++j )
-  {
+  /* for ( j = 0; j < numIFO ; ++j )
+     {
 
-    LAL_CALL( LALCheckOutTimeFromSearchSummary ( &status, searchSummList, 
-	  ifoName[j], &startCoinc, &endCoinc ), &status);
-  }
-
+     LAL_CALL( LALCheckOutTimeFromSearchSummary ( &status, searchSummList, 
+     ifoName[j], &startCoinc, &endCoinc ), &status);
+     }
+   */
   if ( ! inspiralEventList )
   {
     /* no triggers, so no coincidences can be found */
     if ( vrbflg ) fprintf( stdout,
-	"No triggers read in so no coincidences can befound\n" );
+        "No triggers read in so no coincidences can befound\n" );
 
     goto cleanexit;
   }
@@ -735,13 +730,13 @@ int main( int argc, char *argv[] )
   /* time sort the triggers */
   if ( vrbflg ) fprintf( stdout, "Sorting triggers\n" );
   LAL_CALL( LALSortSnglInspiral( &status, &(inspiralEventList),
-	LALCompareSnglInspiralByTime ), &status );
+        LALCompareSnglInspiralByTime ), &status );
 
   /* keep only triggers within the requested interval */
   if ( vrbflg ) fprintf( stdout, 
       "Discarding triggers outside requested interval\n" );
   LAL_CALL( LALTimeCutSingleInspiral( &status, &inspiralEventList,
-	&startCoinc, &endCoinc), &status );
+        &startCoinc, &endCoinc), &status );
 
 
   /* keep play/non-play/all triggers */
@@ -752,20 +747,19 @@ int main( int argc, char *argv[] )
   else if ( dataType == all_data && vrbflg ) fprintf( stdout, 
       "Keeping all triggers\n" );
   LAL_CALL( LALPlayTestSingleInspiral( &status, &inspiralEventList,
-	&dataType ), &status );
+        &dataType ), &status );
 
   /* scroll to the end of the linked list of triggers, counting triggers */
-  for (numTriggers = 0 ; thisInspiralTrigger; ++numTriggers,
+  thisInspiralTrigger = inspiralEventList;
+  for (numTriggers = 0 ; thisInspiralTrigger->next; ++numTriggers,
       thisInspiralTrigger = thisInspiralTrigger->next );
   if ( vrbflg ) fprintf( stdout, 
       "%d remaining triggers after time and data type cut.\n", numTriggers );
 
 
-
-
   /* 
    *  
-   * check for coincidence between triggers
+   * check for two IFO coincidence
    *
    */
 
@@ -776,329 +770,353 @@ int main( int argc, char *argv[] )
 
   /* loop over the time sorted list of triggers */
   for ( currentTrigger[0] = inspiralEventList; currentTrigger[0];
-      currentTrigger[0] = currentTrigger[0]->next);
+      currentTrigger[0] = currentTrigger[0]->next)
   { 
+    /* clear the currentCoincCand structure */
+    memset( currentCoincCand[0], 0, sizeof(CoincInspiralTable) );
+
     /* calculate the time of the trigger */
     LAL_CALL( LALGPStoINT8( &status, &currentTriggerNS[0], 
-	 &(currentTrigger[0]->end_time) ), &status );
-    
-	
-    /* add the current trigger to the 1 IFO coinc table */
-    currentCoincCand[0] = NULL;
-    LAL_CALL( LALAddSnglInspiralToCoinc( &status, &currentCoincCand[0], 
-	  currentTrigger[0]), &status);
+          &(currentTrigger[0]->end_time) ), &status );
 
-    /* loop over the 2nd coincidence candidates */
-    currentTrigger[1] = currentTrigger[0]->next; 
-    LAL_CALL( LALGPStoINT8( &status, &currentTriggerNS[1], 
-	  &(currentTrigger[1]->end_time) ), &status );
+    /* add the current trigger to the 1 IFO coinc table */
+    LAL_CALL( LALAddSnglInspiralToCoinc( &status, &currentCoincCand[0], 
+          currentTrigger[0]), &status);
+
+    currentTriggerNS[1] = currentTriggerNS[0];
 
     /* loop over triggers within coincidence window looking for 
        double coincident events */
     while ( (currentTriggerNS[1] - currentTriggerNS[0]) < maxTC )
     {
       LAL_CALL (LALSnglInspiralCoincTest( &status, currentCoincCand[0], 
-	    currentTrigger[1], &errorParams ), &status );
+            currentTrigger[1], &errorParams ), &status );
 
       /* test whether we have coincidence */
       if ( errorParams.match )
       {
-	/* create a 2 IFO coinc  */
-	LAL_CALL( LALCreateNewCoinc( &status, &currentCoincCand[1], 
-	      currentCoincCand[0], currentTrigger[1] ), &status ); 
+        if ( vrbflg ) fprintf ( stdout, "Found double coincident trigger,");
+        /* create a 2 IFO coinc and store */
+        LAL_CALL( LALCreateNewCoinc( &status, &currentCoincCand[1], 
+              currentCoincCand[0], currentTrigger[1] ), &status );
+        ++numEvents[1];
 
 
-	/* loop over the 3rd coincidence candidates */
-	currentTrigger[2] = currentTrigger[1]->next; 
-	LAL_CALL( LALGPStoINT8( &status, &currentTriggerNS[2], 
-	      &(currentTrigger[2]->end_time) ), &status );
-
-	/* we don't yet have a triple coincident trigger */
-	have_triple_coinc = 0;
-
-	/* loop over triggers within coincidence window looking for 
-	   triple coincident events */
-	while ( (currentTriggerNS[2] - currentTriggerNS[0]) < maxTC )
-	{
-	  LAL_CALL (LALSnglInspiralCoincTest( &status, currentCoincCand[1], 
-		currentTrigger[2], &errorParams ), &status );
-
-	  /* test whether we have coincidence */
-	  if ( errorParams.match )
-	  {
-	    have_triple_coinc = 1;
-
-
-	    /* create a 3 IFO coinc  */
-	    LAL_CALL( LALCreateNewCoinc( &status, &currentCoincCand[2], 
-		  currentCoincCand[1], currentTrigger[2] ), &status ); 
-
-
-	    /* loop over the 4th coincidence candidates */
-	    currentTrigger[3] = currentTrigger[2]->next; 
-	    LAL_CALL( LALGPStoINT8( &status, &currentTriggerNS[3], 
-		  &(currentTrigger[3]->end_time) ), &status );
-
-	    /* we don't yet have a quadruple event */
-	    have_quad_coinc = 0;
-
-	    /* loop over triggers within coincidence window looking for 
-	       quadruple coincident events */
-	    while ( (currentTriggerNS[3] - currentTriggerNS[0]) < maxTC )
-	    {
-	      LAL_CALL (LALSnglInspiralCoincTest( &status, currentCoincCand[2], 
-		    currentTrigger[3], &errorParams ), &status );
-
-	      /* test whether we have coincidence */
-	      if ( errorParams.match )
-	      {
-		have_quad_coinc = 1;
-
-		/* create a 4 IFO coinc  */
-		LAL_CALL( LALCreateNewCoinc( &status, &currentCoincCand[3], 
-		      currentCoincCand[2], currentTrigger[3] ), &status ); 
-
-		/* Only going to 4-fold coincidence, store coinc inspiral*/
-		if ( vrbflg ) fprintf ( stdout, 
-		    "Storing quadruple coincident trigger\n");
-	        ++numEvents;
-
-		if ( prevCoincInspiral )
-		{
-		  prevCoincInspiral = prevCoincInspiral->next = 
-		    currentCoincCand[3];
-		}
-		else
-		{
-		  coincInspiralList = prevCoincInspiral = currentCoincCand[3];
-		}
-	      }
-	      /* move on to the next 4-fold coincidence candidate */
-	      currentTrigger[3] = currentTrigger[3]->next;
-
-	    } /* end of 4 fold coincidence loop */
-
-	    /* we have a triple coincident event */
-	    if ( vrbflg ) fprintf ( stdout,
-		"Found triple coincident trigger,");
-
-	    if ( !have_quad_coinc )
-	    {
-	      /* save the triple coincident trigger */
-	      if ( vrbflg ) fprintf ( stdout,"storing.\n");
-	      ++numEvents;
-
-	      if ( prevCoincInspiral )
-	      {
-		prevCoincInspiral = prevCoincInspiral->next = 
-		  currentCoincCand[2];
-	      }
-	      else
-	      {
-		coincInspiralList = prevCoincInspiral = currentCoincCand[2];
-	      }
-	    }
-	    else
-	    {
-	      if ( vrbflg ) fprintf ( stdout, 
-		  "not storing since already in a quad\n");
-	      LALFree( currentCoincCand[2] );
-	      currentCoincCand[2] = NULL;
-	    }
-	  }
-	  /* move on to the next 3-fold coincidence candidate */
-	  currentTrigger[2] = currentTrigger[2]->next;
-
-	} /* end of 3 fold coincidence loop */
-
-	/* we have a double coincident event */
-	if ( vrbflg ) fprintf ( stdout,
-	    "Found double coincident trigger,");
-
-	if ( !have_triple_coinc )
-	{
-	  /* save the double coincident trigger */
-	  if ( vrbflg ) fprintf ( stdout,"storing.\n");
-	  ++numEvents;
-
-	  if ( prevCoincInspiral )
-	  {
-	    prevCoincInspiral = prevCoincInspiral->next = 
-	      currentCoincCand[1];
-	  }
-	  else
-	  {
-	    coincInspiralList = prevCoincInspiral = currentCoincCand[1];
-	  }
-	}
-	else
-	{
-	  if ( vrbflg ) fprintf ( stdout, 
-	      "not storing since already in a triple\n");
-	  LALFree( currentCoincCand[1] );
-	  currentCoincCand[1] = NULL;
-	}
+        if ( prevCoincInspiral )
+        {
+          prevCoincInspiral = prevCoincInspiral->next = 
+            currentCoincCand[1];
+        }
+        else
+        {
+          coincInspiralList = prevCoincInspiral = currentCoincCand[1];
+        }
       }
-
-      /* move on to the next 3-fold coincidence candidate */
-      currentTrigger[2] = currentTrigger[2]->next;
-
-    } /* end of the double coincidence loop */
-
-  } /* end of the single coincidence loop */
+      else
 
 
-  /* free the memory for the 1 IFO coinc table */
-  LALFree( currentCoincCand[0] );
 
-  /*
-   *
-   * write the output xml file
-   *
-   */
+
+
+
+
+
+
+
+
+
+        /* loop over the 3rd coincidence candidates */
+        currentTrigger[2] = currentTrigger[1]->next; 
+      LAL_CALL( LALGPStoINT8( &status, &currentTriggerNS[2], 
+            &(currentTrigger[2]->end_time) ), &status );
+
+      /* we don't yet have a triple coincident trigger */
+      haveCoinc[2] = 0;
+
+      /* loop over triggers within coincidence window looking for 
+         triple coincident events */
+      while ( (currentTriggerNS[2] - currentTriggerNS[0]) < maxTC )
+      {
+        LAL_CALL (LALSnglInspiralCoincTest( &status, currentCoincCand[1], 
+              currentTrigger[2], &errorParams ), &status );
+
+        /* test whether we have coincidence */
+        if ( errorParams.match )
+        {
+          haveCoinc[2] = 1;
+
+
+          /* create a 3 IFO coinc  */
+          LAL_CALL( LALCreateNewCoinc( &status, &currentCoincCand[2], 
+                currentCoincCand[1], currentTrigger[2] ), &status ); 
+
+
+          /* loop over the 4th coincidence candidates */
+          currentTrigger[3] = currentTrigger[2]->next; 
+          LAL_CALL( LALGPStoINT8( &status, &currentTriggerNS[3], 
+                &(currentTrigger[3]->end_time) ), &status );
+
+          /* we don't yet have a quadruple event */
+          haveCoinc[3] = 0;
+
+          /* loop over triggers within coincidence window looking for 
+             quadruple coincident events */
+          while ( (currentTriggerNS[3] - currentTriggerNS[0]) < maxTC )
+          {
+            LAL_CALL (LALSnglInspiralCoincTest( &status, 
+                  currentCoincCand[2], currentTrigger[3], &errorParams ), 
+                &status );
+
+            /* test whether we have coincidence */
+            if ( errorParams.match )
+            {
+              haveCoinc[3] = 1;
+
+              /* create a 4 IFO coinc  */
+              LAL_CALL( LALCreateNewCoinc( &status, &currentCoincCand[3], 
+                    currentCoincCand[2], currentTrigger[3] ), &status ); 
+
+              /* Only going to 4-fold coincidence, store coinc inspiral*/
+              if ( vrbflg ) fprintf ( stdout, 
+                  "Storing quadruple coincident trigger\n");
+              ++numEvents;
+
+              if ( prevCoincInspiral )
+              {
+                prevCoincInspiral = prevCoincInspiral->next = 
+                  currentCoincCand[3];
+              }
+              else
+              {
+                coincInspiralList = prevCoincInspiral = currentCoincCand[3];
+              }
+            }
+            /* move on to the next 4-fold coincidence candidate */
+            currentTrigger[3] = currentTrigger[3]->next;
+
+          } /* end of 4 fold coincidence loop */
+
+          /* we have a triple coincident event */
+          if ( vrbflg ) fprintf ( stdout,
+              "Found triple coincident trigger,");
+
+          if ( !haveCoinc )
+          {
+            /* save the triple coincident trigger */
+            if ( vrbflg ) fprintf ( stdout,"storing.\n");
+            ++numEvents;
+
+            if ( prevCoincInspiral )
+            {
+              prevCoincInspiral = prevCoincInspiral->next = 
+                currentCoincCand[2];
+            }
+            else
+            {
+              coincInspiralList = prevCoincInspiral = currentCoincCand[2];
+            }
+          }
+          else
+          {
+            if ( vrbflg ) fprintf ( stdout, 
+                "not storing since already in a quad\n");
+            LALFree( currentCoincCand[2] );
+            currentCoincCand[2] = NULL;
+          }
+        }
+        /* move on to the next 3-fold coincidence candidate */
+        currentTrigger[2] = currentTrigger[2]->next;
+
+      } /* end of 3 fold coincidence loop */
+
+      /* we have a double coincident event */
+      if ( vrbflg ) fprintf ( stdout,
+          "Found double coincident trigger,");
+
+      if ( !haveCoinc[2] )
+      {
+        /* save the double coincident trigger */
+        if ( vrbflg ) fprintf ( stdout,"storing.\n");
+        ++numEvents;
+
+        if ( prevCoincInspiral )
+        {
+          prevCoincInspiral = prevCoincInspiral->next = 
+            currentCoincCand[1];
+        }
+        else
+        {
+          coincInspiralList = prevCoincInspiral = currentCoincCand[1];
+        }
+      }
+      else
+      {
+        if ( vrbflg ) fprintf ( stdout, 
+            "not storing since already in a triple\n");
+        LALFree( currentCoincCand[1] );
+        currentCoincCand[1] = NULL;
+      }
+    }
+
+    /* move on to the next 3-fold coincidence candidate */
+    currentTrigger[2] = currentTrigger[2]->next;
+
+  } /* end of the double coincidence loop */
+
+} /* end of the single coincidence loop */
+
+
+/* free the memory for the 1 IFO coinc table */
+LALFree( currentCoincCand[0] );
+
+/*
+ *
+ * write the output xml file
+ *
+ */
 
 
 cleanexit:
 
-  /* search summary entries: nevents is from primary ifo */
-  if ( inStartTime > 0 && inEndTime > 0 )
-  {
-    searchsumm.searchSummaryTable->in_start_time.gpsSeconds = inStartTime;
-    searchsumm.searchSummaryTable->in_end_time.gpsSeconds = inEndTime;
-  }
-  searchsumm.searchSummaryTable->out_start_time.gpsSeconds = 
-    inStartTime > startCoincidence ? inStartTime : startCoincidence;
-  searchsumm.searchSummaryTable->out_end_time.gpsSeconds = 
-    inEndTime < endCoincidence ? inEndTime : endCoincidence;
-  searchsumm.searchSummaryTable->nnodes = 1;
+/* search summary entries: nevents is from primary ifo */
+if ( inStartTime > 0 && inEndTime > 0 )
+{
+  searchsumm.searchSummaryTable->in_start_time.gpsSeconds = inStartTime;
+  searchsumm.searchSummaryTable->in_end_time.gpsSeconds = inEndTime;
+}
+searchsumm.searchSummaryTable->out_start_time.gpsSeconds = 
+inStartTime > startCoincidence ? inStartTime : startCoincidence;
+searchsumm.searchSummaryTable->out_end_time.gpsSeconds = 
+inEndTime < endCoincidence ? inEndTime : endCoincidence;
+searchsumm.searchSummaryTable->nnodes = 1;
 
-  if ( vrbflg ) fprintf( stdout, "writing output file... " );
+if ( vrbflg ) fprintf( stdout, "writing output file... " );
 
-  if ( userTag )
-  {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", 
-	ifoName[0], userTag, startCoincidence, 
-	endCoincidence - startCoincidence );
-  }
-  else
-  {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-INCA-%d-%d.xml", ifoName[0],
-	startCoincidence, endCoincidence - startCoincidence );
-  }
-  searchsumm.searchSummaryTable->nevents = numTriggers;
+if ( userTag )
+{
+  LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml", 
+      ifoName[0], userTag, startCoincidence, 
+      endCoincidence - startCoincidence );
+}
+else
+{
+  LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA-%d-%d.xml", ifoName[0],
+      startCoincidence, endCoincidence - startCoincidence );
+}
+searchsumm.searchSummaryTable->nevents = numTriggers;
 
-  memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName), 
-      &status );
+memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
+LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName), 
+    &status );
 
-  /* write process table */
+/* write process table */
 
-  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
-      ifoName[0], ifoName[1] );
+LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
+    ifoName[0], ifoName[1] );
 
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
-	&accuracy ), &status );
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
-      &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 
-	process_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
+      &accuracy ), &status );
+LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
+    &status );
+LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 
+      process_table ), &status );
+LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
-  /* write process_params table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
-	process_params_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, processParamsTable, 
-	process_params_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+/* write process_params table */
+LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
+      process_params_table ), &status );
+LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, processParamsTable, 
+      process_params_table ), &status );
+LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
-  /* write search_summary table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
-	search_summary_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, searchsumm, 
-	search_summary_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+/* write search_summary table */
+LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
+      search_summary_table ), &status );
+LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, searchsumm, 
+      search_summary_table ), &status );
+LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
-  /* write the search_summvars tabls */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
-	search_summvars_table), &status );
-  searchSummvarsTable.searchSummvarsTable = inputFiles;
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, searchSummvarsTable,
-	search_summvars_table), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
+/* write the search_summvars tabls */
+LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
+      search_summvars_table), &status );
+searchSummvarsTable.searchSummvarsTable = inputFiles;
+LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, searchSummvarsTable,
+      search_summvars_table), &status );
+LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
 
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
-	summ_value_table), &status );
-  summValueTable.summValueTable = summValueList;
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, summValueTable,
-	summ_value_table), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
+LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
+      summ_value_table), &status );
+summValueTable.summValueTable = summValueList;
+LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, summValueTable,
+      summ_value_table), &status );
+LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
 
-  /* write the sngl_inspiral table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
-	sngl_inspiral_table), &status );
-  inspiralTable.snglInspiralTable = inspiralEventList;
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, inspiralTable,
-	sngl_inspiral_table), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
+/* write the sngl_inspiral table */
+LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
+      sngl_inspiral_table), &status );
+inspiralTable.snglInspiralTable = inspiralEventList;
+LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, inspiralTable,
+      sngl_inspiral_table), &status );
+LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
 
-  LAL_CALL( LALCloseLIGOLwXMLFile( &status, &xmlStream), &status );
+LAL_CALL( LALCloseLIGOLwXMLFile( &status, &xmlStream), &status );
 
-  if ( vrbflg ) fprintf( stdout, "done\n" );
-
-
-  /*
-   *
-   * clean up the memory that has been allocated 
-   *
-   */
+if ( vrbflg ) fprintf( stdout, "done\n" );
 
 
-  if ( vrbflg ) fprintf( stdout, "freeing memory... " );
-
-  free( proctable.processTable );
-  free( searchsumm.searchSummaryTable );
-
-  while ( processParamsTable.processParamsTable )
-  {
-    this_proc_param = processParamsTable.processParamsTable;
-    processParamsTable.processParamsTable = this_proc_param->next;
-    free( this_proc_param );
-  }
-
-  while ( inputFiles )
-  {
-    thisInputFile = inputFiles;
-    inputFiles = thisInputFile->next;
-    LALFree( thisInputFile );
-  }
-
-  while ( summValueList )
-  {
-    thisSummValue = summValueList;
-    summValueList = summValueList->next;
-    LALFree( thisSummValue );
-  }
-
-  while ( inspiralEventList )
-  {
-    thisInspiralTrigger = inspiralEventList;
-    inspiralEventList = inspiralEventList->next;
-    LALFree( thisInspiralTrigger );
-  }
-
-  while ( coincInspiralList )
-  {
-    prevCoincInspiral = coincInspiralList;
-    coincInspiralList = coincInspiralList->next;
-    LALFree( prevCoincInspiral );
-  }
+/*
+ *
+ * clean up the memory that has been allocated 
+ *
+ */
 
 
-  if ( userTag ) free( userTag );
+if ( vrbflg ) fprintf( stdout, "freeing memory... " );
 
-  if ( vrbflg ) fprintf( stdout, "done\n" );
+free( proctable.processTable );
+free( searchsumm.searchSummaryTable );
 
-  LALCheckMemoryLeaks();
+while ( processParamsTable.processParamsTable )
+{
+  this_proc_param = processParamsTable.processParamsTable;
+  processParamsTable.processParamsTable = this_proc_param->next;
+  free( this_proc_param );
+}
 
-  exit( 0 );
+while ( inputFiles )
+{
+  thisInputFile = inputFiles;
+  inputFiles = thisInputFile->next;
+  LALFree( thisInputFile );
+}
+
+while ( summValueList )
+{
+  thisSummValue = summValueList;
+  summValueList = summValueList->next;
+  LALFree( thisSummValue );
+}
+
+while ( inspiralEventList )
+{
+  thisInspiralTrigger = inspiralEventList;
+  inspiralEventList = inspiralEventList->next;
+  LALFree( thisInspiralTrigger );
+}
+
+while ( coincInspiralList )
+{
+  prevCoincInspiral = coincInspiralList;
+  coincInspiralList = coincInspiralList->next;
+  LALFree( prevCoincInspiral );
+}
+
+
+if ( userTag ) free( userTag );
+
+if ( vrbflg ) fprintf( stdout, "done\n" );
+
+LALCheckMemoryLeaks();
+
+exit( 0 );
 }
