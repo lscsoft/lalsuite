@@ -1192,6 +1192,31 @@ INT4 main(INT4 argc, CHAR *argv[])
   return 0;
 }
 
+#define USAGE \
+  "Usage: pipeline [options]\n"\
+  " --help                        print this message\n"\
+  " --version                     display version\n"\
+  " --verbose                     verbose mode\n"\
+  " --debug-level N               set lalDebugLevel\n"\
+  " --gps-start-time N            GPS start time\n"\
+  " --gps-end-time N              GPS end time\n"\
+  " --segment-duration N          segment duration\n"\
+  " --sample-rate N               sample rate\n"\
+  " --resample-rate N             resample rate\n"\
+  " --f-min N                     minimal frequency\n"\
+  " --f-max N                     maximal frequency\n"\
+  " --ifo-one IFO                 ifo for first stream\n"\
+  " --ifo-two IFO                 ifo for second stream\n"\
+  " --frame-cache-one FILE        cache file for first stream\n"\
+  " --frame-cache-two FILE        cache file for second stream\n"\
+  " --calibration-cache-one FILE  first stream calibration cache\n"\
+  " --calibration-cache-two FILE  second stream calibration cache\n"\
+  " --apply-mask                  apply frequency masking\n"\
+  " --mask-bin N                  number of bins to mask\n"\
+  " --overlap-hann                overlaping hann windows\n"\
+  " --hann-duration N             hann duration\n"\
+  " --high-pass-filter            perform high pass filtering\n"
+
 /* parse command line options */
 void parseOptions(INT4 argc, CHAR *argv[])
 {
@@ -1255,7 +1280,8 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
       case 'h':
         /* HELP!!! */
-        displayUsage(0);
+        fprintf(stdout, USAGE);
+        exit(0);
         break;
 
       case 'b':
@@ -1436,54 +1462,27 @@ void parseOptions(INT4 argc, CHAR *argv[])
         exit(0);
         break;
 
+      case '?':
+        exit(1);
+        break;
+
       default:
-        displayUsage(1);
+        fprintf(stderr, "Unknown error while parsing options\n");
+        exit(1);
     }
   }
 
   if (optind < argc)
   {
-    displayUsage(1);
+    fprintf(stderr, "Extraneous command line arguments:\n");
+    while(optind < argc)
+    {
+      fprintf(stderr, "%s\n", argv[optind++]);
+    }
+    exit(1);
   }
 
   return;
-}
-
-/* display program usage */
-void displayUsage(INT4 exitcode)
-{
-  fprintf(stderr, "Usage: pipeline [options]\n");
-  fprintf(stderr, "Options:\n");
-  fprintf(stderr, " --help                        print this message\n");
-  fprintf(stderr, " --version                     display version\n");
-  fprintf(stderr, " --verbose                     verbose mode\n");
-  fprintf(stderr, " --debug-level LEVEL           set lalDebugLevel\n");
-  fprintf(stderr, " --gps-start-time SEC          GPS start time\n");
-  fprintf(stderr, " --gps-end-time SEC            GPS end time\n");
-  fprintf(stderr, " --segment-duration SEC        segment duration\n");
-  fprintf(stderr, " --sample-rate F               sample rate\n");
-  fprintf(stderr, " --resample-rate F             resample rate\n");
-  fprintf(stderr, " --f-min F                     minimal frequency\n");
-  fprintf(stderr, " --f-max F                     maximal frequency\n");
-  fprintf(stderr, " --hann-duration SEC           hann duration\n");
-  fprintf(stderr, " --ifo-one IFO                 ifo for first stream\n");
-  fprintf(stderr, " --ifo-two IFO                 ifo for second stream\n");
-  fprintf(stderr, " --frame-cache-one FILE        cache file for first " \
-      "stream\n");
-  fprintf(stderr, " --frame-cache-two FILE        cache file for second " \
-      "stream\n");
-  fprintf(stderr, " --calibration-cache-one FILE  " \
-      "first stream calibration cache\n");
-  fprintf(stderr, " --calibration-cache-two FILE  " \
-      "second stream calibration cache\n");
-  fprintf(stderr, " --apply-mask                  apply frequency masking\n");
-  fprintf(stderr, " --mask-bin                    number of bins to mask\n");
-  fprintf(stderr, " --overlap-hann                overlaping hann windows " \
-      "for data windowing\n");
-  fprintf(stderr, " --high-pass-filter            perform high pass " \
-      "filtering\n");
-
-  exit(exitcode);
 }
 
 /* function to read data in frames */
