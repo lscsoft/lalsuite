@@ -30,7 +30,7 @@
 #define SRATE 16384
 
 /* Flag to initiate graceful shutdown, set by sighandler */
-volatile int shutdown = 0;
+volatile int shutdown_pulsar_injection = 0;
 int npulsars=0;
 float data[BLOCKSIZE];
 float total[BLOCKSIZE];
@@ -94,7 +94,7 @@ void sighandler(int sig){
   
   if (sig==SIGTERM) {
     syserror(0, "received SIGTERM, initiating graceful shutdown...\n");
-    shutdown = 1;
+    shutdown_pulsar_injection = 1;
   }
   
   if (sig!=SIGCHLD) 
@@ -487,7 +487,7 @@ int main(int argc, char *argv[]){
   }
   
   /* now read data blocks unless a SIGTERM has set shutdown */
-  while (!shutdown) {
+  while (!shutdown_pulsar_injection) {
     int num=0;
     int line;
     int tdelt=gpstime-tfiducial;
