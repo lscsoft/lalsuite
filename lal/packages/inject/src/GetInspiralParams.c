@@ -15,7 +15,7 @@ Computes the input parameters for a PPN inspiral.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{GetInspiralParamsCP}
-\idx{LALGalacticInspiralParams()}
+\idx{LALGetInspiralParams()}
 
 \subsubsection*{Description}
 
@@ -23,10 +23,13 @@ This function takes a Galactic location and pair of masses from
 \verb@*input@ and uses them to set the \verb@PPNParamStruc@ fields
 \verb@output->position@, \verb@output->mTot@, \verb@output->eta@, and
 \verb@output->d@.  The fields \verb@output->psi@, \verb@output->inc@,
-and \verb@output->phi@ are set randomly and uniformly using the random
-sequence specified by \verb@*params@; if \verb@*params@=\verb@NULL@ a
-new sequence is started internally using the current execution time as
-a seed. The field \verb@input->geocentEndTime@ is ignored by this routine.
+and \verb@output->phi@ are set randomly to reflect a uniform
+distribution in solid angle (that is, cosine of inclination is uniform
+between $-1$ and 1, other angles are uniform between 0 and $2\pi$).
+The routine uses the random sequence specified by \verb@*params@ when
+given, but if \verb@*params@=\verb@NULL@ a new sequence is started
+internally using the current execution time as a seed. The field
+\verb@input->geocentEndTime@ is ignored by this routine.
 
 The other \verb@PPNParamStruc@ input fields are not touched by this
 routine, and must be specified externally before generating a waveform
@@ -164,7 +167,7 @@ LALGetInspiralParams( LALStatus                  *stat,
     BEGINFAIL( stat )
       TRY( LALDestroyRandomParams( stat->statusPtr, &localParams ),
 	   stat );
-      ENDFAIL( stat );
+    ENDFAIL( stat );
   LALUniformDeviate( stat->statusPtr, &inc, localParams );
   if ( params )
     CHECKSTATUSPTR( stat );
@@ -172,10 +175,11 @@ LALGetInspiralParams( LALStatus                  *stat,
     BEGINFAIL( stat )
       TRY( LALDestroyRandomParams( stat->statusPtr, &localParams ),
 	   stat );
-      ENDFAIL( stat );
+    ENDFAIL( stat );
   output->psi = LAL_TWOPI*psi;
   output->phi = LAL_TWOPI*phi;
-  output->inc = LAL_TWOPI*inc;
+  inc = 2.0*inc - 1.0;
+  output->inc = acos( inc );
 
   /* Set output masses. */
   output->mTot = mTot;
