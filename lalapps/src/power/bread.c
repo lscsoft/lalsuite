@@ -457,18 +457,18 @@ static SnglBurstTable *free_this_event(SnglBurstTable *event)
 
 static SnglBurstTable *trim_event_list(SnglBurstTable *event, struct options_t options)
 {
-	SnglBurstTable *head, *tmp;
+	SnglBurstTable *head, *prev;
 
 	while(event && !keep_this_event(event, options))
 		event = event->next;
 	head = event;
 
 /* FIXME: don't check the first event again */
-	for(tmp = event; event; event = tmp->next) {
+	for(prev = event; event; event = prev->next) {
 		if(keep_this_event(event, options))
-			tmp = event;
+			prev = event;
 		else
-			tmp->next = free_this_event(event);
+			prev->next = free_this_event(event);
 	}
 
 	return(head);
