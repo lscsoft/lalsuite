@@ -116,6 +116,7 @@ but care should be taken if DC is relevant when this function is used.
 ******************************************************* </lalLaTeX> */
 
 #include <math.h>
+#include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/Calibration.h>
@@ -302,7 +303,8 @@ LALUpdateCalibration(
   UINT4 n;
   UINT4 i;
   UINT4 length = 0;
-  
+  CHAR  warnMsg[512];
+
   INITSTATUS( status, "LALUpdateCalibration", COMPUTETRANSFERC );
   ATTATCHSTATUSPTR( status );
 
@@ -401,12 +403,13 @@ LALUpdateCalibration(
  
   /* compute the sum of the calibration factors */
   a.re = a.im = ab.re = ab.im = 0;
+  length = 0;
   do
   {
     COMPLEX8 this_a;
     COMPLEX8 this_ab;
     
-    if ( i > params->sensingFactor->data->length )
+    if ( i > params->sensingFactor->data->length - 1 )
     {
       ABORT( status, CALIBRATIONH_ETIME, CALIBRATIONH_MSGETIME );
     }
@@ -422,11 +425,18 @@ LALUpdateCalibration(
           (params->epoch.gpsSeconds < CAL_S2END ) )
       {
         /* if the zero is during S2 print a warning... */
-        LALWarning( status, "Zero calibration factor found during S2" );
+        LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+            "Zero calibration factors found during S2 at GPS %10.9f",
+            first_cal + (REAL8) i * params->sensingFactor->deltaT );
+        LALWarning( status, warnMsg );
       }
       else
       {
         /* ...or abort if we are outside S2 */
+        LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+            "Zero calibration factor found at GPS %10.9f",
+            first_cal + (REAL8) i * params->sensingFactor->deltaT );
+        LALWarning( status, warnMsg );
         ABORT( status, CALIBRATIONH_EZERO, CALIBRATIONH_MSGEZERO );
       }
     }
@@ -449,8 +459,15 @@ LALUpdateCalibration(
       (epoch + duration) );
 
   /* if all the calibration factors are zero the abort */
-  if ( ! length )
+  if ( ! length || 
+      (fabs( a.re ) < tiny && fabs( a.im ) < tiny) ||
+      (fabs( ab.re ) < tiny && fabs( ab.im ) < tiny) )
   {
+    LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+        "Got %d calibration samples\nalpha and/or beta are zero:\n"
+        "a.re = %e\ta.im = %e\nab.re = %e\tab.im = %e",
+        length, a.re, a.im, ab.re, ab.im );
+    LALWarning( status, warnMsg );
     ABORT( status, CALIBRATIONH_EZERO, CALIBRATIONH_MSGEZERO );
   }
   
@@ -459,6 +476,12 @@ LALUpdateCalibration(
   a.im /= length;
   ab.re /= length;
   ab.im /= length;
+
+  LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+      "Got %d calibration samples\n"
+      "a.re = %e\ta.im = %e\nab.re = %e\tab.im = %e",
+      length, a.re, a.im, ab.re, ab.im );
+  LALInfo( status, warnMsg );
 
   for ( i = 0; i < n; ++i )
   {
