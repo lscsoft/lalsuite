@@ -36,8 +36,8 @@ $\backslash$ \newline \hspace*{0.25in}
 $\backslash$ \newline \hspace*{0.25in}
 \verb$--window$ \textsc{window} \verb$--start_time$ \textsc{sec} 
 \verb$--start_time_ns$ \textsc{nsec} 
-\verb$--numpts$ \textsc{numpts} [\verb$--printSpectrum$] 
 $\backslash$ \newline \hspace*{0.25in}
+\verb$--numpts$ \textsc{numpts} [\verb$--printSpectrum$] 
 \verb$--srate$ \textsc{srate} 
 $\backslash$ \newline \hspace*{0.25in}
 [\verb$--noise$ \textsc{var}] [\verb$--seed$ \textsc{seed}] 
@@ -287,3 +287,92 @@ simtest-693768375-41.xml
 Patrick Brady
 
 \end{entry}
+\clearpage
+
+\subsection{Program \texttt{lalapps\_burca}}
+\label{program:lalapps-burca}
+\idx[Program]{lalapps\_burca}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_burca$ --- program does burst coincidence analysis.
+
+\item[Synopsis]
+\verb$lalapps_burca$ 
+\verb$--ifo-a$ \textsc{trigfile.a} \verb$--ifo-b$ \textsc{trigfile.b} 
+[\verb$--start-time$ \textsc{startcoincidence}]
+$\backslash$ \newline \hspace*{0.25in}
+[\verb$--stop-time$ \textsc{endcoincidence}] 
+[\verb$--drhoplus$ \textsc{drhoplus}] [\verb$--drhominus$ \textsc{drhominus}] 
+$\backslash$ \newline \hspace*{0.25in}
+[\verb$--dt$ \textsc{deltat}] 
+\verb$--outfile$ \textsc{outfile} [\verb$--noplayground$] 
+[\verb$--help$]
+
+\item[Description] 
+\verb$lalapps_burca$ performs coincidence on triggers from the burst
+search code.  (At present it works for only two interferometers.) It
+must be called with at least one input file from each instrument. The
+default behavior outputs triggers during playground times to the file
+\textsc{outfile};  to obtain all triggers,  use the
+\verb$--noplayground$ flag.     
+%Events can also be clustered
+%within \textsc{msec} msec or a template bank for triggered searches
+%can be constructed.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--ifo-a} \textsc{trigfile.a}] Required.  LIGO lightweight
+XML file with triggers from interferometer A.  This argument can be
+called multiple times.  Triggers are sorted \emph{after} all files
+have been read in. 
+
+\item[\texttt{--ifo-b} \textsc{trigfile.b}] Required.  LIGO lightweight
+XML file with triggers from interferometer B.  This argument can be
+called multiple times.  Triggers are sorted \emph{after} all files
+have been read in. 
+
+\item[\texttt{--start-time} \textsc{startcoincidence}] Optional.  Look for
+coincident triggers with start times after \textsc{startcoincidence}.
+If not supplied,  the $\textsc{startcoincidence} = 0$.
+
+\item[\texttt{--stop-time} \textsc{endcoincidence}]  Optional. Look for
+coincident triggers with start times before \textsc{endcoincidence}.
+If not supplied,  then $\textsc{endcoincidence} = 977788813$, i.e.
+00:00 Dec 31, 2010 UTC.
+
+\item[\texttt{--drhoplus} \textsc{drhoplus}] Optional.  \textbf{Not yet
+implemented.}
+
+\item[\texttt{--drhominus} \textsc{drhominus}] Optional. \textbf{Not yet
+implemented.}
+
+\item[\texttt{--dt} \textsc{deltat}] Optional. Accept triggers as coincident if
+their start times agree within \textsc{deltat} in msec.  If not supplied,  then 
+$\textsc{deltat} = 0$.
+
+\item[\texttt{--outfile} \textsc{outfile}] Required.  Name of the file
+to be used for output.  The output format is LIGO lightweight XML with
+only a \texttt{sngl\_burst} table.
+
+\item[\texttt{--noplayground}] Optional.  Record all triggers.  The
+default behaviour returns only those triggers which lie in the
+playground data set.  
+
+\item[\texttt{--cluster} \textsc{msec}] Optional.  \textbf{Not yet
+implemented.}  Cluster triggers within \textsc{msec} msec window.
+
+\item[\texttt{--help}] Optional.  Print a help message.
+\end{entry}
+
+\item[Example]
+\begin{verbatim}
+lalapps_burca --ifo-a L-POWER-734357353-1024.xml \
+--ifo-b H-POWER-734357353-1024.xml --dt 10 --outfile my.xml \
+--start-time 734357353  --stop-time 734358353 --noplayground
+\end{verbatim}
+\item[Author] 
+Patrick Brady
+\end{entry}
+\clearpage
+
