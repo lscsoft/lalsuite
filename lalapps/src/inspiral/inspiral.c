@@ -301,10 +301,31 @@ int main( int argc, char *argv[] )
     /* if there are no tmplts, store the time we would have analyzed and exit */
     fprintf( stdout, "no templates found in template bank file: %s\n"
         "exiting without searching for events.\n", bankFileName );
-    searchsumm.searchSummaryTable->out_start_time.gpsSeconds = 
-      gpsStartTime.gpsSeconds + (numPoints / (4 * sampleRate));
-    searchsumm.searchSummaryTable->out_end_time.gpsSeconds = 
-      gpsEndTime.gpsSeconds - (numPoints / (4 * sampleRate));
+
+    if ( trigStartTimeNS )
+    {
+      LAL_CALL( LALINT8toGPS( &status, 
+            &(searchsumm.searchSummaryTable->out_start_time), 
+            &trigStartTimeNS ), &status );
+    }
+    else
+    {
+      searchsumm.searchSummaryTable->out_start_time.gpsSeconds = 
+        gpsStartTime.gpsSeconds + (numPoints / (4 * sampleRate));
+    }
+  
+    if ( trigEndTimeNS )
+    {
+      LAL_CALL( LALINT8toGPS( &status, 
+            &(searchsumm.searchSummaryTable->out_end_time), 
+            &trigEndTimeNS ), &status );
+    }
+    else
+    {
+      searchsumm.searchSummaryTable->out_end_time.gpsSeconds = 
+        gpsEndTime.gpsSeconds - (numPoints / (4 * sampleRate));
+    }
+
     goto cleanexit;
   }
 
@@ -670,12 +691,29 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALFloatToGPS( &status, 
         &(searchsumm.searchSummaryTable->out_start_time), &tsLength ), 
       &status );
+
+  if ( trigStartTimeNS )
+  {
+    /* override with trigger start time */
+    LAL_CALL( LALINT8toGPS( &status, 
+          &(searchsumm.searchSummaryTable->out_start_time), 
+          &trigStartTimeNS ), &status );
+  }
+
   LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ), 
       &status );
   tsLength += chan.deltaT * ((REAL8) chan.data->length - (REAL8) (numPoints/4));
   LAL_CALL( LALFloatToGPS( &status, 
         &(searchsumm.searchSummaryTable->out_end_time), &tsLength ), 
       &status );
+
+  if ( trigEndTimeNS )
+  {
+    /* override with trigger end time */
+    LAL_CALL( LALINT8toGPS( &status, 
+          &(searchsumm.searchSummaryTable->out_end_time), 
+          &trigEndTimeNS ), &status );
+  }
 
 
   /* 
