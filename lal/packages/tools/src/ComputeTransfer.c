@@ -33,7 +33,7 @@ T(f) = c_{\mathrm{gain}}
 where 
 \begin{equation}
 \textrm{zero}(f,z) = \left\{ \begin{array}{ll}
-1 + i f / z & \textrm{ when } z\neq 0 \\
+(i f / z) - 1 & \textrm{ when } z\neq 0 \\
 i f & \textrm{ when } z = 0
 \end{array}
 \right.
@@ -41,7 +41,7 @@ i f & \textrm{ when } z = 0
 and 
 \begin{equation}
 \textrm{pole}(f,p) = \left\{ \begin{array}{ll}
-\frac{1}{1 + i f / p} & \textrm{ when } p \neq 0 \\
+\frac{1}{(i f / p) + 1} & \textrm{ when } p \neq 0 \\
 \frac{1}{i f} & \textrm{ when } p = 0
 \end{array}
 \right.
@@ -139,7 +139,7 @@ LALComputeTransfer( LALStatus                 *stat,
     /* loop over zeroes */
     for (i = 0 ; i < calrec->zeros->length ; i++)
     {
-      factor.re = calrec->zeros->data[i];
+      factor.re = (- calrec->zeros->data[i]);
       factor.im = f;
       product( &dummy, &dummyC, &factor);
       dummyC.re=dummy.re;
@@ -149,7 +149,7 @@ LALComputeTransfer( LALStatus                 *stat,
     /* loop over poles */
     for (i = 0 ; i < calrec->poles->length ; i++)
     {
-      factor.re = calrec->poles->data[i];
+      factor.re = (calrec->poles->data[i]);
       factor.im = f;
       ratio( &dummy, &dummyC, &factor);
       dummyC.re=dummy.re;
