@@ -147,6 +147,92 @@ XLALIFONumber(
   }
 }
 
+/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+void 
+XLALReturnIFO( 
+    char                *ifo,
+    InterferometerNumber IFONumber 
+    )
+/* </lalVerbatim> */
+{
+  switch( IFONumber )
+  {
+    case LAL_IFO_G1:
+      LALSnprintf( ifo, LIGOMETA_COMMENT_MAX, "G1");
+      break;
+
+    case LAL_IFO_H1:
+      LALSnprintf( ifo, LIGOMETA_COMMENT_MAX, "H1");
+      break;
+
+    case LAL_IFO_H2:
+      LALSnprintf( ifo, LIGOMETA_COMMENT_MAX, "H2");
+      return "H2";
+      break;
+
+    case LAL_IFO_L1:
+      LALSnprintf( ifo, LIGOMETA_COMMENT_MAX, "L1");
+      return "L1";
+      break;
+
+    case LAL_IFO_T1:
+      LALSnprintf( ifo, LIGOMETA_COMMENT_MAX, "T1");
+      return "T1";
+      break;
+
+    case LAL_IFO_V1:
+      LALSnprintf( ifo, LIGOMETA_COMMENT_MAX, "V1");
+      return "V1";
+      break;
+
+    default:
+      /* Invalid Detector Site */
+      return NULL;
+  }
+}
+
+
+/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+void
+XLALReturnDetector(
+    LALDetector           *det,
+    InterferometerNumber   IFONumber 
+    )
+/* </lalVerbatim> */
+{
+  switch( IFONumber )
+  {
+    case LAL_IFO_G1:
+      *det = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+      break;
+
+    case LAL_IFO_H1:
+      *det = lalCachedDetectors[LALDetectorIndexLHODIFF];
+      break;
+
+    case LAL_IFO_H2:
+      *det = lalCachedDetectors[LALDetectorIndexLHODIFF];
+      break;
+
+    case LAL_IFO_L1:
+      *det = lalCachedDetectors[LALDetectorIndexLLODIFF];
+      break;
+
+    case LAL_IFO_T1:
+      *det = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
+      break;
+
+    case LAL_IFO_V1:
+      *det = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+      break;
+
+    default:
+      /* Invalid Detector Site */
+      memset(det, 0, sizeof(LALDetector) );
+  }
+}
+
+
 
 static INT8 PlaygroundOverlap( INT8 seg_end, INT8 seg_length )
 {
