@@ -21,11 +21,11 @@ bin_PROGRAMS = lalapps_ComputeFStatisticBinary lalapps_GenerateBinaryMesh \
 EXTRA_DIST = clusters.h
 
 lalapps_ComputeFStatisticBinary_SOURCES = ComputeFStatisticBinary_v2.c ReadWriteBinaryHeader_v1.c \
-	ComputeFStatisticBinary_v2.h GenerateBinaryMesh_v1.h $(isolated_src) \
-	clusters.c 
+	ComputeFStatisticBinary_v2.h clusters.c ${isolated_src} GenerateBinaryMesh_v1.h
 
 lalapps_GenerateBinaryMesh_SOURCES = GenerateBinaryMesh_v1.c OrbitalParameterConversion_v1.c \
-	ReadWriteBinaryHeader_v1.c GenerateBinaryMesh_v1.h 
+	ReadWriteBinaryHeader_v1.c PeriapseShift_v1.c ReadSourceFile_v1.c \
+	GenerateBinaryMesh_v1.h ReadSourceFile_v1.h PeriapseShift_v1.h
 
 lalapps_MakeSubMesh_SOURCES = MakeSubMesh_v1.c ReadWriteBinaryHeader_v1.c \
 	OrbitalParameterConversion_v1.c GenerateBinaryMesh_v1.h
