@@ -96,7 +96,7 @@ void LALComputeAM (LALStatus          *status,
       LALBarycenter(status->statusPtr, &emit, params->baryinput, &earth);
       
       /* Compute F_plus, F_cross */
-      LALComputeDetAMResponse(status->statusPtr, &response, params->das, &(emit.te));
+      LALComputeDetAMResponse(status->statusPtr, &response, params->das, params->baryinput->tgps );
       
       /*  Compute a, b from JKS eq 10,11
        *  a = zeta * (F_plus*cos(2\psi)-F_cross*sin(2\psi))
