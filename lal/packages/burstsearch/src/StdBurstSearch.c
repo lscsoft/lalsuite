@@ -562,6 +562,9 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	  }
 
 	  bandwidth = (REAL4)sdur / (data->data->deltaT * (REAL4)bptr->nTime);
+	} else {
+
+	  bandwidth = 0.0;
 
 	}
 
