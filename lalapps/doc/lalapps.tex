@@ -54,6 +54,12 @@
 \newcommand\lalapps{\textsc{lalapps}}  
 \newcommand\ligotools{\textsc{ligotools}}  
 
+\newcommand{\prog}[1]{\texttt{#1}}
+\newcommand{\function}[1]{\texttt{#1}}
+\newcommand{\option}[1]{\texttt{#1}}
+\newcommand{\parm}[1]{$<$\textit{#1}$>$}
+
+
 \bibliographystyle{lalapps}
 
 \makeindex
@@ -480,13 +486,6 @@ This is the source code for the program \verb$lalapps_hello$:
 \end{indented}
 
 \newpage
-\input{pipeline-module}
-
-\clearpage
-\chapter{LALApps programs}
-
-This chapter describes the programs that are part of the LALApps package.
-
 
 %%
 %% INCLUDE YOUR DOCUMENTATION BELOW
@@ -495,11 +494,12 @@ This chapter describes the programs that are part of the LALApps package.
 \include{hello}
 \include{animate}
 \include{calibration}
+\input{python}
+\include{power}
 \include{findchirp}
 \include{inspiral}
-\include{power}
-\include{stochastic}
 \include{ring}
+\include{stochastic}
 
 \backmatter
 
