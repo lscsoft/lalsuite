@@ -500,7 +500,8 @@ XLALClusterSnglBurstTable(
 void
 LALClusterSnglBurstTable(
 	LALStatus       *status,
-	SnglBurstTable  *list
+	SnglBurstTable  *list,
+	int (*testfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *)
 );
 
 #if 0

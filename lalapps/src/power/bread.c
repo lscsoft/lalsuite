@@ -597,7 +597,7 @@ int main(int argc, char **argv)
 	 */
 
 	if(options.cluster)
-		LAL_CALL(LALClusterSnglBurstTable(&stat, burstEventList), &stat);
+		LAL_CALL(LALClusterSnglBurstTable(&stat, burstEventList, XLALSnglBurstClusterTest), &stat);
 
 
 	/*
