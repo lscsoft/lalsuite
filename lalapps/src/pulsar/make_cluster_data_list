@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# This script makes a list of all the data on the cluster, listed by
+# Site location (LLO/LHO) and by data type (full/RDS).
+
+parse_and_sort(){
+    if [ -f $run.$1.$2.sorted ] ; then
+	return 0
+    fi
+    parselist=$1/$2/$3
+# sort into time order
+    egrep "*$parselist*" $datalist | sort -t '/' +6 > $run.$1.$2.sorted
+}
+
+# Parse command line
+if [ $# -ne 1 ]
+then
+  echo "Usage: $0  SCIENCE-RUN-NUMBER"
+  echo "Examples:"
+  echo "$0 S1"
+  echo "$0 S2"
+  exit
+fi
+
+run=$1
+datalist=$1-alldata
+
+# If needed, construct a list of all data on the cluster
+if ! [ -f $datalist ] ; then
+	uplim=296
+	count=0
+	while [ $count -lt $uplim ] ; do
+		let count+=1
+		slavename=`printf "s%03d" $count`
+		find /netdata/$slavename -name "*.gwf" >> $datalist
+	done
+fi
+
+# now parse out the correct data set
+parse_and_sort  LLO  RDS  $run
+parse_and_sort  LLO  full $run
+parse_and_sort  LHO  RDS  $run
+parse_and_sort  LHO  full $run
