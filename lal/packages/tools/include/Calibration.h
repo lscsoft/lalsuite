@@ -200,20 +200,33 @@ CalibrationUpdateParams;
 
 typedef
 struct StrainOutTag {
-  REAL8TimeSeries h;   /* pointer to the timeseries containing h(t) */
-  COMPLEX16TimeSeries alpha; /* pointer to the alpha time series */
-  COMPLEX16TimeSeries beta;  /* pointer to the beta time series */
+  REAL8TimeSeries h;         /* timeseries containing h(t) */
+  COMPLEX16TimeSeries alpha; /* alpha time series */
+  COMPLEX16TimeSeries beta;  /* beta time series */
 } StrainOut;
                                                                                                                                
 typedef
 struct StrainInTag {
-  REAL4TimeSeries AS_Q ;   /* pointer to the timeseries containing ASQ */
-  REAL4TimeSeries DARM ;   /* pointer to the timeseries containing DARM_CTRL */
-  REAL4TimeSeries EXC ;    /* pointer to the timeseries containing the excitation */
-  COMPLEX16 Do;  /* digital filter at cal line frequency */
-  COMPLEX16 Go;  /* OLG at cal line frequency */
-  REAL8 f;      /* calibration line frequency */
-  REAL4 To;     /* factors integration time */
+  REAL4TimeSeries AS_Q ;   /* timeseries containing ASQ */
+  REAL4TimeSeries DARM ;   /* timeseries containing DARM_CTRL */
+  REAL4TimeSeries EXC ;    /* timeseries containing the excitation */
+  COMPLEX16 Do;            /* digital filter at cal line frequency */
+  COMPLEX16 Go;            /* OLG at cal line frequency */
+  REAL8 f;                 /* calibration line frequency */
+  REAL4 To;                /* factors integration time */
+  REAL8IIRFilter *Cinv;    /* Filters for inverse of sensing function */
+  INT4 CinvUSF;            /* Upsampling factor for sensing function */
+  INT4 CinvDelay;          /* Overall inverse sensing function delay */
+  REAL8IIRFilter *AA;      /* Filters for analog actuation function */
+  INT4 AADelay;            /* Overall analog actuation function delay */
+  REAL8IIRFilter *AX;      /* Digital filters for x arm actuation function */
+  REAL8IIRFilter *AY;      /* Digital filters for y arm actuation function */
+  REAL8IIRFilter *G;       /* Digital servo filters */
+  INT4 NCinv;              /* Numbers of filters of each type */
+  INT4 NAA;
+  INT4 NAX;
+  INT4 NAY;
+  INT4 NG;
 } StrainIn;
 
 typedef
@@ -268,14 +281,36 @@ int XLALhROverAlpha(REAL8TimeSeries *hR, StrainOut *output);
 int XLALhCTimesBeta(REAL8TimeSeries *hC, StrainOut *output);
 int XLALUpsamplehR(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor);
 
-void XLALMakeFilters(
+void XLALReadFilters(
+     LALStatus *status, 
+     REAL8IIRFilter **Cinv, 
+     REAL8IIRFilter **G,
+     REAL8IIRFilter **AA,
+     REAL8IIRFilter **AX,
+     REAL8IIRFilter **AY,
+     char *fname,
+     int GPS,
+     int *USF,
+     int *NC, 
+     int *NG, 
+     int *NAA, 
+     int *NAX, 
+     int *NAY, 
+     int *CD, 
+     int *AAD);
+
+void XLALWriteFilters(
      LALStatus *status, 
      REAL8IIRFilter *Cinv, 
      REAL8IIRFilter *G,
      REAL8IIRFilter *AA,
      REAL8IIRFilter *AX,
-     REAL8IIRFilter *AY
-     );
+     REAL8IIRFilter *AY,
+     char *fname,
+     int GPS,
+     int USF,
+     int NC, int NG, int NAA, int NAX, int NAY, int CD, int AAD);
+
 
 #ifdef  __cplusplus
 #pragma { /** to match the next brace **/
