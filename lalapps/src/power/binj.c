@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------------- 
  * 
- * File Name: inspinj.c
+ * File Name: binj.c
  *
  * Author: Brady, P. R., Brown, D. A. and Crieghton, J. D. E.
  * 
@@ -30,6 +30,9 @@
 #include <lal/TimeDelay.h>
 #include <lalapps.h>
 #include <processtable.h>
+
+int snprintf(char *str, size_t size, const  char  *format, ...);
+
 
 #define USAGE \
 "lalapps_binj [options]\n"\
@@ -62,6 +65,10 @@ RCSID( "$Id$" );
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "binj"
+
+#define TRUE      1
+#define FALSE     0
+
 
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
 this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
@@ -254,7 +261,7 @@ int main( int argc, char *argv[] ){
   int rand_seed = 1;
   RandomParams *randParams=NULL;
   REAL4 deviate=0.0;
-
+  REAL4 iamp;
   /* waveform */
   CHAR waveform[LIGOMETA_WAVEFORM_MAX];
   INT4   use_quality=0;
@@ -270,6 +277,9 @@ int main( int argc, char *argv[] ){
   REAL4  log_hpeakMax=0.0;
   REAL4  logAmpRange=0.0;
 
+  /* Need to set this to true if one wants to use MDC signals*/
+  INT4 mdcFlag =FALSE;
+ 
   /* site end time */
   CHAR                  coordinates[LIGOMETA_COORDINATES_MAX];
   INT4                  useZenith=0;
@@ -289,6 +299,7 @@ int main( int argc, char *argv[] ){
   MetadataTable         proctable;
   MetadataTable         procparams;
   MetadataTable         injections;
+  MetadataTable         mdcinjections;
   ProcessParamsTable   *this_proc_param=NULL;
   LIGOLwXMLStream       xmlfp;
 
@@ -315,6 +326,7 @@ int main( int argc, char *argv[] ){
     {"freq",                    required_argument, 0,                'y'},
     {"hpeak",                   required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
+    {"mdcFlag",                 no_argument,        &mdcFlag,      TRUE },
     {0, 0, 0, 0}
   };
   int c;
@@ -581,6 +593,7 @@ int main( int argc, char *argv[] ){
 
     /* make injection times at intervals of 100/pi seconds */
     ninj = 1;
+    iamp = 1.0;
     freq = flow;
     while ( 1 )
     {
@@ -653,8 +666,28 @@ int main( int argc, char *argv[] ){
       /* compute amplitude information */
       if(useRandomStrain)
       {
-        LAL_CALL( LALUniformDeviate ( &status, &deviate, randParams ), &status);
-        hpeak = pow(10, logAmpRange * deviate + log_hpeakMin);
+	/* LAL_CALL( LALUniformDeviate ( &status, &deviate, randParams ), &status);
+	   hpeak = pow(10, logAmpRange * deviate + log_hpeakMin);*/
+	if (iamp == 1.0 ){
+	hpeak = pow(10,-19);
+	iamp++;
+	}
+	else if( iamp == 2.0 ){
+	  hpeak = (REAL4)2.0*pow(10,-19);
+	  iamp++;
+	}
+	else if (iamp == 3.0 ){
+	  hpeak = (REAL4)3.0*pow(10,-19);
+	  iamp++;
+	}
+	else if (iamp == 4.0 ){
+	  hpeak = (REAL4)3.3*pow(10,-18);
+	  iamp++;
+	}
+	else if (iamp == 5.0 ){
+	  hpeak = (REAL4)5.3*pow(10,-17);
+	  iamp = 1.0;
+	}
       }
 
       /* deal with the intrinsic signal parameters */
@@ -699,8 +732,118 @@ int main( int argc, char *argv[] ){
 
     }
 
+    /* if using the MDC signal frames for injections:
+     * then read in the ascii file of inj. parameters
+     * and write a sim burst table out of that. However
+     * currently all the fields are not filled.[20040430: SKRM]
+     */
+    if (mdcFlag )
+      {
+	INT4   n = 0;
+	INT4   nn, x, rc;
+	CHAR mdcSimfile[20];
+	FILE *fp;
+	float *fHp,*fHx,*fLp,*fLx,*theta,*phi,*psi,*hrss;
+	float *gg,*hh,*ii,*jj,*kk,*ll,*mm,*rr;
+	int *gps,*tH,*tL,*tauHL;
+	int *cc,*dd,*ee,*ff;
+	char **waveform;
+	char *qq, *y;
+	
+	SimBurstTable *this_mdcsim_burst=NULL;
+     
+	/*read in the ascii file containing the injection parameters 
+	 *the ascii file is assumed to be present in the working dir. 
+	 */
+	snprintf(mdcSimfile,20,"mdcsim_%d.dat",1);
+	fp = fopen(mdcSimfile,"r");
+	if ( fp == NULL ){
+	  fprintf(stdout,"Error:Must have file mdcsim_1.dat in the working dir.\n");
+	  exit ( 1 );
+	}
+	while (fscanf(fp,"%*d %*d %*d %*d %*e %*e %*e %*e %*e %*e %*e %*s %*e")!= EOF)
+	  ++n;
+	rewind(fp);
+
+	gps = cc = (int*)malloc(n*sizeof(int));
+	tH = dd = (int*)malloc(n*sizeof(int));
+	tL = ee = (int*)malloc(n*sizeof(int));
+	tauHL = ff = (int*)malloc(n*sizeof(int));
+	fHp = gg = (float*)malloc(n*sizeof(float));
+	fHx = hh = (float*)malloc(n*sizeof(float));
+	fLp = ii = (float*)malloc(n*sizeof(float));
+	fLx = jj = (float*)malloc(n*sizeof(float));
+	theta = kk = (float*)malloc(n*sizeof(float));
+	phi = ll = (float*)malloc(n*sizeof(float));
+	psi = mm = (float*)malloc(n*sizeof(float));
+	hrss = rr = (float*)malloc(n*sizeof(float));
+	qq = (char*)malloc((n*10)*sizeof(char)); /*memory allocation may need to be 
+						  *changed if the name of waveform
+						  *changes in the mdc file 
+						  */
+	waveform = (char**)malloc(n*10*sizeof(char));
+
+	/* reads in the diff. parameters from the text file */
+	nn = 0;
+	while ((rc = fscanf(fp,"%d %d %d %d %e %e %e %e %e %e %e %s %e", cc++, 
+			    dd++, ee++, ff++, gg++, hh++, ii++, jj++, kk++, 
+			    ll++, mm++, qq, rr++)) == 13) 
+	  {
+	    waveform[nn++] = qq; /* scans the name of the waveform */
+	    qq = qq + 10;
+	    continue;
+	  }
+
+	if(rc != EOF)
+	  printf("ERROR READING FILE\n");
+
+	fclose(fp);
+
+	/* create the first injection */
+	this_mdcsim_burst = mdcinjections.simBurstTable = (SimBurstTable *)
+	  calloc( 1, sizeof(SimBurstTable) );
+	/*create the corresponding simburst table */
+	for(x=0;x<n;x++)
+	  {
+	    this_mdcsim_burst->h_peak_time.gpsSeconds=gps[x] + 0.5;/* peak time at LHO */
+	    this_mdcsim_burst->h_peak_time.gpsNanoSeconds=tH[x];
+	    this_mdcsim_burst->l_peak_time.gpsSeconds=gps[x] + 0.5;/* peak time at LLO */
+	    this_mdcsim_burst->l_peak_time.gpsNanoSeconds=tL[x];
+	    this_mdcsim_burst->longitude=phi[x];
+	    this_mdcsim_burst->latitude=theta[x];
+	    this_mdcsim_burst->polarization=psi[x];
+	    this_mdcsim_burst->hrss=hrss[x];
+
+	    /*rip off the frequency from the name of the waveform */
+	    waveform[x] = waveform[x] + 2;
+	    y = (char*)malloc(10*sizeof(char));
+	    strncpy(y,waveform[x],3);
+	    this_mdcsim_burst->freq = atof(y); /*freq of the SineGaussian*/
+	    free(y);
+	    this_mdcsim_burst = this_mdcsim_burst->next = (SimBurstTable *)
+          calloc( 1, sizeof(SimBurstTable) );
+	  }
+
+
+	free(gps);
+	free(tH);
+	free(tL);
+	free(tauHL);
+	free(fHp);
+	free(fHx);
+	free(fLp);
+	free(fLx);
+	free(theta);
+	free(phi);
+	free(psi);
+	free(hrss);
+      }
+
+
+
     memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
 
+    if(!mdcFlag){/* these tables are written when mdc signals are not used */
     if ( userTag )
     {
       LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
@@ -759,6 +902,19 @@ int main( int argc, char *argv[] ){
       ligo_tama_output(fpout,injections.simBurstTable);
       fclose(fpout);
     }
+    }
+    /* this is used when mdc frames are used */
+    if( mdcFlag )
+      {
+	LALSnprintf( fname, sizeof(fname), "HL-MDCSG10_%d.xml",1 );
+	LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname), &status );
+	LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_burst_table ), 
+		  &status );
+	LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, mdcinjections, 
+					  sim_burst_table ), &status );
+	LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
+	LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
+      }
 
     return 0;
 }
