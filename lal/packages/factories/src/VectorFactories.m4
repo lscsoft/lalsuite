@@ -46,7 +46,11 @@ Create/destroy $\langle\mbox{datatype}\rangle$Vector objects.
 \subsubsection*{Description}
 
 The \texttt{CreateVector} family of functions create a
-$\langle\mbox{datatype}\rangle$\texttt{Vector} of the appropriate dimensions.
+$\langle\mbox{datatype}\rangle$\texttt{Vector} of the appropriate
+dimensions.
+
+The \texttt{ResizeVector} family of functions changes the amount of
+storage allocated by the \texttt{CreateVector} functions.
 
 The \texttt{DestroyVector} family of functions return the storage allocated by
 the \texttt{CreateVector} functions to the system.
@@ -74,48 +78,60 @@ NRCSID( VECTORFACTORIESC, "$Id$" );
 
 define(`TYPECODE',`Z')
 include(`CreateVector.m4')
+include(`ResizeVector.m4')
 include(`DestroyVector.m4')
 
 define(`TYPECODE',`C')
 include(`CreateVector.m4')
+include(`ResizeVector.m4')
 include(`DestroyVector.m4')
 
 define(`TYPECODE',`D')
 include(`CreateVector.m4')
+include(`ResizeVector.m4')
 include(`DestroyVector.m4')
 
 define(`TYPECODE',`S')
 include(`CreateVector.m4')
+include(`ResizeVector.m4')
 include(`DestroyVector.m4')
 
 define(`TYPECODE',`I2')
 include(`CreateVector.m4')
+include(`ResizeVector.m4')
 include(`DestroyVector.m4')
 
 define(`TYPECODE',`I4')
 include(`CreateVector.m4')
+include(`ResizeVector.m4')
 include(`DestroyVector.m4')
 
 define(`TYPECODE',`I8')
 include(`CreateVector.m4')
+include(`ResizeVector.m4')
 include(`DestroyVector.m4')
 
 define(`TYPECODE',`U2')
 include(`CreateVector.m4')
+include(`ResizeVector.m4')
 include(`DestroyVector.m4')
 
 define(`TYPECODE',`U4')
 include(`CreateVector.m4')
+include(`ResizeVector.m4')
 include(`DestroyVector.m4')
 
 define(`TYPECODE',`U8')
 include(`CreateVector.m4')
+include(`ResizeVector.m4')
 include(`DestroyVector.m4')
 
 define(`TYPECODE',`CHAR')
 include(`CreateVector.m4')
+include(`ResizeVector.m4')
 include(`DestroyVector.m4')
 
 define(`TYPECODE',`')
 include(`CreateVector.m4')
+include(`ResizeVector.m4')
 include(`DestroyVector.m4')

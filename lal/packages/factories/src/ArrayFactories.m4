@@ -73,44 +73,55 @@ NRCSID( ARRAYFACTORIESC, "$Id$" );
 
 define(`TYPECODE',`Z')
 include(`CreateArray.m4')
+include(`ResizeArray.m4')
 include(`DestroyArray.m4')
 
 define(`TYPECODE',`C')
 include(`CreateArray.m4')
+include(`ResizeArray.m4')
 include(`DestroyArray.m4')
 
 define(`TYPECODE',`D')
 include(`CreateArray.m4')
+include(`ResizeArray.m4')
 include(`DestroyArray.m4')
 
 define(`TYPECODE',`S')
 include(`CreateArray.m4')
+include(`ResizeArray.m4')
 include(`DestroyArray.m4')
 
 define(`TYPECODE',`I2')
 include(`CreateArray.m4')
+include(`ResizeArray.m4')
 include(`DestroyArray.m4')
 
 define(`TYPECODE',`I4')
 include(`CreateArray.m4')
+include(`ResizeArray.m4')
 include(`DestroyArray.m4')
 
 define(`TYPECODE',`I8')
 include(`CreateArray.m4')
+include(`ResizeArray.m4')
 include(`DestroyArray.m4')
 
 define(`TYPECODE',`U2')
 include(`CreateArray.m4')
+include(`ResizeArray.m4')
 include(`DestroyArray.m4')
 
 define(`TYPECODE',`U4')
 include(`CreateArray.m4')
+include(`ResizeArray.m4')
 include(`DestroyArray.m4')
 
 define(`TYPECODE',`U8')
 include(`CreateArray.m4')
+include(`ResizeArray.m4')
 include(`DestroyArray.m4')
 
 define(`TYPECODE',`')
 include(`CreateArray.m4')
+include(`ResizeArray.m4')
 include(`DestroyArray.m4')

@@ -6,8 +6,8 @@ libfactories_la_SOURCES = \
   ArrayFactories.c ArraySequenceFactories.c
 MAINTAINERCLEANFILES = $(libfactories_la_SOURCES)
 EXTRA_DIST = \
-  VectorFactories.m4 CreateVector.m4 DestroyVector.m4 \
-  ArrayFactories.m4 CreateArray.m4 DestroyArray.m4 \
+  VectorFactories.m4 CreateVector.m4 ResizeVector.m4 DestroyVector.m4 \
+  ArrayFactories.m4 CreateArray.m4 ResizeArray.m4 DestroyArray.m4 \
   VectorSequenceFactories.m4 CreateVectorSequence.m4 DestroyVectorSequence.m4 \
   ArraySequenceFactories.m4 CreateArraySequence.m4 DestroyArraySequence.m4
 

@@ -1,3 +1,4 @@
+/* -*- C -*- */
 dnl $Id$
 ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')')
 ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')')
@@ -13,7 +14,9 @@ ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`VTYPE',`format(`%sVector',TYPE)')
 define(`CFUNC',`format(`LAL%sCreateVector',TYPECODE)')
+define(`RFUNC',`format(`LAL%sResizeVector',TYPECODE)')
 define(`DFUNC',`format(`LAL%sDestroyVector',TYPECODE)')
+define(`PRINTVEC',`format(`LAL%sPrintVector',TYPECODE)')
 define(`FUNC',`format(`%sVectorFactoriesTest',TYPECODE)')
 
 
@@ -21,7 +24,7 @@ static void FUNC ( void )
 {
   const  UINT4   length = 16;
   static LALStatus  status;
-  static VTYPE  *vector;
+  static VTYPE  *vector = ( VTYPE * )NULL;
   static VTYPE   vstore;
 
 
@@ -34,11 +37,87 @@ static void FUNC ( void )
 
   CFUNC ( &status, &vector, length );
   TestStatus( &status, CODES( 0 ), 1 );
+  
+  if (verbose)
+    {
+      printf("VFT line %d:\n", __LINE__);
+      printf("  vector->length = %d\n", vector->length);
+    }
+  
+  memset( vector->data, 0, length*sizeof( TYPE ) );
+
+  if (verbose)
+    {
+      PRINTVEC ( vector );
+    }
+  
+
+  /* Resize up */
+  RFUNC ( &status, &vector, length*3 );
+  TestStatus( &status, CODES( 0 ), 1 );
+  
+  if (verbose)
+    {
+      printf("VFT line %d:\n", __LINE__);
+      printf("  vector->length = %d\n", vector->length);
+    }
+
+
+  memset( vector->data, 0, length*sizeof( TYPE ) );
+  
+  if (verbose)
+    {
+      PRINTVEC ( vector );
+    }
+
+  /* Resize down */
+  RFUNC ( &status, &vector, length*2 );
+  TestStatus( &status, CODES( 0 ), 1 );
+
+  if (verbose)
+    {
+      printf("VFT line %d:\n", __LINE__);
+      printf("  vector->length = %d\n", vector->length);
+      PRINTVEC ( vector );
+    }
+
+  /* Destroy */
+  DFUNC ( &status, &vector );
+  TestStatus( &status, CODES( 0 ), 1 );
+  
+  if (verbose)
+    {
+      printf("VFT line %d:\n", __LINE__);
+      printf("  vector = %#x\n", (unsigned int)vector);
+    }
+
+  LALCheckMemoryLeaks();
+  
+  /* Check the resize function with create/destroy */
+  RFUNC ( &status, &vector, length );
+  TestStatus( &status, CODES( 0 ), 1 );
+
+  if (verbose)
+    {
+      printf("VFT line %d:\n", __LINE__);
+      printf("  vector->length = %d\n", vector->length);
+    }
 
   memset( vector->data, 0, length*sizeof( TYPE ) );
 
-  DFUNC ( &status, &vector );
-  TestStatus( &status, CODES( 0 ), 1 );
+  if (verbose)
+    {
+      PRINTVEC ( vector );
+    }
+
+  RFUNC ( &status, &vector, 0 );
+  TestStatus( &status, CODES( 0 ), 1);
+
+  if (verbose)
+    {
+      printf("VFT line %d:\n", __LINE__);
+      printf("  vector = %#x\n", (unsigned int)vector);
+    }
 
   LALCheckMemoryLeaks();
 
@@ -53,9 +132,18 @@ static void FUNC ( void )
 
   if ( ! lalNoDebug )
   {
+    if (verbose)
+      {
+        printf("VFT line %d\n", __LINE__);
+        printf("  vector = %#x\n", (unsigned int)vector);
+      }
+    
     CFUNC ( &status, &vector, 0 );
     TestStatus( &status, CODES( AVFACTORIESH_ELENGTH ), 1 );
 
+    RFUNC ( &status, &vector, 0 );
+    TestStatus( &status, CODES( AVFACTORIESH_ELENGTH ), 1 );
+    
     DFUNC ( &status, NULL );
     TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
 
@@ -78,7 +166,7 @@ static void FUNC ( void )
 #endif
 
   LALCheckMemoryLeaks();
-  printf( "PASS: tests of CFUNC and DFUNC \n" );
+  printf( "PASS: tests of CFUNC, RFUNC, and DFUNC \n" );
           
   return;
 }

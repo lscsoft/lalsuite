@@ -12,6 +12,7 @@ ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`VTYPE',`format(`%sArray',TYPE)')
 define(`CFUNC',`format(`LAL%sCreateArray',TYPECODE)')
+define(`RFUNC',`format(`LAL%sResizeArray',TYPECODE)')
 define(`DFUNC',`format(`LAL%sDestroyArray',TYPECODE)')
 define(`FUNC',`format(`%sArrayFactoriesTest',TYPECODE)')
 
@@ -42,6 +43,36 @@ static void FUNC ( void )
 
   memset( array->data, 0, dims[0]*dims[1]*dims[2]*sizeof( TYPE ) );
 
+  /* resize up */
+  /*
+   * dimLength.data[0] *= 2;
+   * dimLength.data[1] *= 3;
+   * dimLength.data[2] *= 4;
+  */
+  dims[0] *= 2;
+  dims[1] *= 3;
+  dims[2] *= 4;
+  RFUNC ( &status, &array, &dimLength );
+  TestStatus( &status, CODES( 0 ), 1 );
+  
+  memset( array->data, 0, dims[0]*dims[1]*dims[2]*sizeof( TYPE ) );
+  
+  /* resize down */
+  dims[0] /= 2;
+  dims[1] /= 3;
+  dims[2] /= 2;
+  RFUNC ( &status, &array, &dimLength );
+  TestStatus( &status, CODES( 0 ), 1 );
+  
+  memset( array->data, 0, dims[0]*dims[1]*dims[2]*sizeof( TYPE ) );
+  
+  /* resize down again */
+  dims[2] /= 2;
+  RFUNC ( &status, &array, &dimLength );
+  TestStatus( &status, CODES( 0 ), 1 );
+  
+  memset( array->data, 0, dims[0]*dims[1]*dims[2]*sizeof( TYPE ) );
+  
   DFUNC ( &status, &array );
   TestStatus( &status, CODES( 0 ), 1 );
 
@@ -62,10 +93,19 @@ static void FUNC ( void )
     CFUNC ( &status, &array, &badLength1 );
     TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
 
+    RFUNC ( &status, &array, &badLength1 );
+    TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
+
     CFUNC ( &status, &array, &badLength2 );
     TestStatus( &status, CODES( AVFACTORIESH_ELENGTH ), 1 );
 
+    RFUNC ( &status, &array, &badLength2 );
+    TestStatus( &status, CODES( AVFACTORIESH_ELENGTH ), 1 );
+
     CFUNC ( &status, &array, &badLength3 );
+    TestStatus( &status, CODES( AVFACTORIESH_ELENGTH ), 1 );
+
+    RFUNC ( &status, &array, &badLength3 );
     TestStatus( &status, CODES( AVFACTORIESH_ELENGTH ), 1 );
     LALCheckMemoryLeaks();
 
@@ -75,12 +115,24 @@ static void FUNC ( void )
     CFUNC ( &status, NULL, &dimLength );
     TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
 
+    RFUNC ( &status, NULL, &badLength1 );
+    TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
+
     DFUNC ( &status, &array );
     TestStatus( &status, CODES( AVFACTORIESH_EUPTR ), 1 );
 
     array = &astore;
     CFUNC ( &status, &array, &dimLength );
     TestStatus( &status, CODES( AVFACTORIESH_EUPTR ), 1 );
+
+    RFUNC ( &status, &array, &badLength1 );
+    TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1);
+
+    RFUNC ( &status, &array, &badLength2 );
+    TestStatus( &status, CODES( AVFACTORIESH_ELENGTH ), 1);
+
+    RFUNC ( &status, &array, &badLength3 );
+    TestStatus( &status, CODES( AVFACTORIESH_ELENGTH ), 1);
 
     DFUNC ( &status, &array );
     TestStatus( &status, CODES( AVFACTORIESH_EDPTR ), 1 );
@@ -100,7 +152,7 @@ static void FUNC ( void )
 #endif
 
   LALCheckMemoryLeaks();
-  printf( "PASS: tests of CFUNC and DFUNC \n" );
+  printf( "PASS: tests of CFUNC, RFUNC, and DFUNC \n" );
           
   return;
 }

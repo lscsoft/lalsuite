@@ -38,6 +38,7 @@ Options:
 \begin{verbatim}
 lalDebugLevel
 TYPECODECreateVector()
+TYPECODEResizeVector()
 TYPECODEDestroyVector()
 \end{verbatim}
 
@@ -52,6 +53,7 @@ TYPECODEDestroyVector()
 #include <string.h>
 
 #include <lal/LALConfig.h>
+#include <lal/PrintVector.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
