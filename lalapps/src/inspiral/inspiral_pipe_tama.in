@@ -810,6 +810,25 @@ print "done"
 if tama_coincidence:
   print "Converting triggers to LIGO Lw xml format...",
   sys.stdout.flush()
+    
+  # write out all tama triggers as TAMA-INSPIRAL- ...
+  tama_data_analyzed = []
+  for seg in t_data:
+    tama2lw = inspiral.Tama2LigoLwNode(tama2lw_job)
+    tama2lw.set_start(seg.start())
+    tama2lw.set_end(seg.end())
+    infile = cp.get('input','tama-triggers')
+    tama2lw.set_input(infile)
+    outfile = 'TAMA-INSPIRAL'
+    if usertag:
+      outfile += '_' + usertag 
+    outfile += '-' + str(seg.start()) + '-' + str(seg.end() - seg.start()) + \
+      '.xml'
+    tama2lw.set_output(outfile)
+    dag.add_node(tama2lw)
+    tama_data_analyzed.append(AnalyzedTAMAData(seg,tama2lw))
+
+  # write out tama triggers in LIGO-TAMA times as T1-INSPIRAL- ...
   ligo_tama_data = copy.deepcopy(ligo_data)
   ligo_tama_data.intersection(t_data)
   tama_segs_analyzed = []
@@ -968,6 +987,9 @@ if ligo_analysis:
 
 if tama_coincidence:
   # a sire that contains all the TAMA triggers.
+  sire_segs(tama_data_analyzed,'output','TAMA-INSPIRAL',sire_job,dag,
+    playground_only,usertag,tama_output)
+  # a sire that contains all the TAMA triggers in LIGO-TAMA times
   sire_segs(tama_segs_analyzed,'output','T1-INSPIRAL',sire_job,dag,
     playground_only,usertag,tama_output)
   # a sire for all the coincidence configurations
@@ -1025,8 +1047,13 @@ if inj_file:
   
   if tama_coincidence:
     # sire to find all TAMA triggers coincident with injections.
+    sire_segs(tama_data_analyzed,'output','TAMA-INSPIRAL',
+	sire_inj_job,dag,playground_only,usertag,tama_output,inj_file)
+    # a sire that contains all the TAMA triggers coincident with injections
+    # in LIGO-TAMA times
     sire_segs(tama_segs_analyzed,'output','T1-INSPIRAL',
 	sire_inj_job,dag,playground_only,usertag,tama_output,inj_file)
+
     # sires to find all LT coincident triggers coincident with injections.
     sire_segs(l1t1_inca_nodes,'output_a','L1-INCA_L1T1',sire_inj_job,dag,
       playground_only,usertag,tama_output,inj_file)
@@ -1053,8 +1080,13 @@ if inj_file:
     # clustered sires to find loudest triggers coincident with injections:
     cluster = 1
     # TAMA triggers coincident with injections.
-    sire_segs(tama_segs_analyzed,'output','T1-INSPIRAL',sire_cl_inj_job,
-      dag,playground_only,usertag,tama_output,inj_file,cluster)
+    sire_segs(tama_data_analyzed,'output','TAMA-INSPIRAL',sire_cl_inj_job,dag,
+      playground_only,usertag,tama_output,inj_file,cluster)
+    # a sire that contains all the TAMA triggers coincident with injections
+    # in LIGO-TAMA times
+    sire_segs(tama_segs_analyzed,'output','T1-INSPIRAL',sire_cl_inj_job,dag,
+      playground_only,usertag,tama_output,inj_file,cluster)
+
     # sires to find all LT coincident triggers coincident with injections.
     sire_segs(l1t1_inca_nodes,'output_a','L1-INCA_L1T1',sire_cl_inj_job,dag,
       playground_only,usertag,tama_output,inj_file,cluster)
