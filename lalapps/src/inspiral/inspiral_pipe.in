@@ -147,7 +147,7 @@ if usertag:
   cp.set('pipeline','user-tag',usertag)
 else:
   try:
-    cp.get('pipeline','user-tag')
+    usertag = string.strip(cp.get('pipeline','user-tag'))
   except:
     usertag = None
 
