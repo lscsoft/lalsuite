@@ -69,6 +69,13 @@ BOOLEAN FILE_FSTATS = 1;
 #define NO_BOINC_GRAPHICS 0
 #endif
 
+/* compress earth and sun files and output Fstats file, using zip.
+   This is BOINC-only code */
+#ifndef BOINC_COMPRESS
+#define BOINC_COMPRESS 0
+#endif
+
+
 #if USE_BOINC
 #define BOINC_DIAG_DUMPCALLSTACKENABLED     0x00000001L
 #define BOINC_DIAG_HEAPCHECKENABLED         0x00000002L
@@ -94,6 +101,9 @@ BOOLEAN FILE_FSTATS = 1;
 #include "boinc_api.h"
 #include "filesys.h"
 #include "diagnostics.h"
+#if BOINC_COMPRESS
+#include "boinc_zip.h"
+#endif
 
 #if !NO_BOINC_GRAPHICS
 #include "graphics_api.h"
@@ -150,6 +160,9 @@ void sighandler(int sig);
 #define COMPUTEFSTAT_EXIT_WRITEFAFB      13  /* writeFaFb failed */
 #define COMPUTEFSTAT_EXIT_ESTSIGPAR      14  /* EstimateSignalParameters failed */
 #define COMPUTEFSTAT_EXIT_NOMEM          15  /* out of memory */
+#define COMPUTEFSTAT_EXIT_CANTZIP        16  /* unable to zip Fstats file */
+#define COMPUTEFSTAT_EXIT_CANTUNZIP      17  /* unable to zip Fstats file */
+#define COMPUTEFSTAT_EXIT_CANTRENAME     18  /* unable to zip Fstats file */
 #define COMPUTEFSTAT_EXIT_LALCALLERROR  100  /* this is added to the LAL status to get BOINC exit value */
 
 /*----------------------------------------------------------------------
@@ -308,6 +321,10 @@ int BOINC_ERR_EXIT(LALStatus  *stat, const char *func, const char *file, const i
  * Calculate the F-statistic over a given portion of the parameter-space
  * and write a list of 'candidates' into a file(default: 'Fstats').
  */
+
+CHAR Fstatsfilename[256]; 		/* Fstats file name*/
+
+ 
 #if USE_BOINC
 int boincmain(int argc, char *argv[])
 #else
@@ -317,7 +334,6 @@ int main(int argc,char *argv[])
   LALStatus *stat = &global_status;
 
   INT4 *maxIndex=NULL; 			/*  array that contains indexes of maximum of each cluster */
-  CHAR Fstatsfilename[256]; 		/* Fstats file name*/
   CHAR ckp_fname[260];			/* filename of checkpoint-file */
   INT4 spdwn;				/* counter over spindown-params */
   DopplerScanInit scanInit;		/* init-structure for DopperScanner */
@@ -1543,13 +1559,43 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   /*----------------------------------------------------------------------
    * set up and check ephemeris-file locations, and SFT input data
    */
-
+  
 #if USE_BOINC
   strcat(cfg->EphemEarth,"earth");
-  strcat(cfg->EphemSun,"sun");
+  strcat(cfg->EphemSun,"sun");  
+  
+#if BOINC_COMPRESS
+  /* logic: look for files 'earth.zip' and 'sun,zip'.  If found, use
+     boinc_resolve() to get the 'real' file name and then unzip */
+  {
+    char zippedname[256];
+    int boinczipret;
+    
+    /* see if there is a softlink to earth.zip */
+    if (!boinc_resolve_filename("earth.zip", zippedname,sizeof(zippedname))) {
+      /* if there is, unzip it into the current directory */
+      if ((boinczipret=boinc_zip(UNZIP_IT, zippedname, "earth"))) {
+	fprintf(stderr, "Error in unzipping file %s to earth.  Return value %d\n", zippedname, boinczipret);
+	boinc_finish(COMPUTEFSTAT_EXIT_CANTUNZIP);
+      }
+    }
+    /* see if there is a softlink to sun.zip */
+    if (!boinc_resolve_filename("sun.zip", zippedname, sizeof(zippedname))) {
+      /* if there is, unzip it into the current directory */
+      if ((boinczipret=boinc_zip(UNZIP_IT, zippedname, "sun"))) {
+	fprintf(stderr, "Error in unzipping file %s to sun.  Return value %d\n", zippedname, boinczipret);
+	boinc_finish(COMPUTEFSTAT_EXIT_CANTUNZIP);
+      }
+    }
+  }
+#endif
+  /* resolve the name of the original unzipped file.  Does nothing if
+     files are NOT softlinks */
   use_boinc_filename0(cfg->EphemEarth);
   use_boinc_filename0(cfg->EphemSun);
-#else 
+  
+#else  /* not USE_BOINC */
+  
   if (LALUserVarWasSet (&uvar_ephemDir) )
     {
       sprintf(cfg->EphemEarth, "%s/earth%s.dat", uvar_ephemDir, uvar_ephemYear);
@@ -2663,12 +2709,30 @@ char **globargv=NULL;
 
 void worker() {
   int retval=boincmain(globargc,globargv);
+
+#if BOINC_COMPRESS
+  /* compress the file if it exists */
+  if (!retval) {
+    int boinczipret;
+    boinczipret=boinc_zip(ZIP_IT, "temp.zip" , Fstatsfilename);
+    if (boinczipret) {
+      fprintf(stderr, "Error in zipping file %s to temp.zip.  Return value %d\n", Fstatsfilename, boinczipret);
+      boinc_finish(COMPUTEFSTAT_EXIT_CANTZIP);
+    }
+    if ((boinczipret=boinc_rename("temp.zip", Fstatsfilename))) {
+      fprintf(stderr, "Error in renaming file temp.zip to %s.  rename() returned %d\n", Fstatsfilename, boinczipret);
+      boinc_finish(COMPUTEFSTAT_EXIT_CANTRENAME);
+    }
+  }
+#endif
+  
   boinc_finish(retval);
+
   return;
 }
 
 int main(int argc, char *argv[]){
-  
+
   globargc=argc;
   globargv=argv;
 
