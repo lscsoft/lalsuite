@@ -109,7 +109,7 @@ typedef enum
 {
   useUnity,
   useMean,
-  useMedian,
+  useMedian
 } 
 AvgSpecMethod;
 
