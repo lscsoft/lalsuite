@@ -4,10 +4,10 @@ check_PROGRAMS  = SendRecvTest ExchangeTest
 TESTS           = CommTest@MPITYPE@
 else
 check_PROGRAMS  =
-TESTS           =
+TESTS           = NoTest
 endif
 
-EXTRA_DIST      = CommTestMPICH CommTestLAM SendRecvTest.c ExchangeTest.c
+EXTRA_DIST      = NoTest CommTestMPICH CommTestLAM SendRecvTest.c ExchangeTest.c
 
 SendRecvTest_SOURCES = SendRecvTest.c
 SendRecvTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
