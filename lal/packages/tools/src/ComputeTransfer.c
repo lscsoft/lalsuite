@@ -377,50 +377,56 @@ LALUpdateCalibration(
   output->sensingFunction->epoch = params->epoch;
 
   /* locate correct values of a and ab */
-  TRY( LALGPStoFloat( status->statusPtr, &epoch, &(params->epoch)), status );
+  TRY( LALGPStoFloat( status->statusPtr, &epoch, &(params->epoch)), 
+      status );
   TRY( LALGPStoFloat( status->statusPtr, &first_cal,
     &(params->sensingFactor->epoch)), status );
-  TRY( LALGPStoFloat( status->statusPtr, &duration, &(params->duration)), status );
+  TRY( LALGPStoFloat( status->statusPtr, &duration, &(params->duration)), 
+      status );
 
   dt = epoch - first_cal;
   if ( dt + params->sensingFactor->deltaT  < 0 )
   {
     ABORT( status, CALIBRATIONH_ETIME, CALIBRATIONH_MSGETIME );
   }
-  /* first point AT or AFTER requested time */
+  /* XXX first point AT or AFTER requested time XXX */
   i = ceil( dt / params->sensingFactor->deltaT );
   
   /* determine how many values of alpha we need to average */
-  length = (UINT4)ceil((epoch + duration - first_cal) / (params->sensingFactor->deltaT));
+  length = (UINT4) ceil((epoch + duration - first_cal) / 
+      (params->sensingFactor->deltaT));
   length = (length > 0) ? length : 1;
-  last = i + length - 1;
+  last = i + length;
    
   if ( last >= params->sensingFactor->data->length )
   {
     ABORT( status, CALIBRATIONH_ETIME, CALIBRATIONH_MSGETIME );
   }
-  a.re = 0;
-  a.im = 0;
-  ab.re = 0;
-  ab.im = 0;
-  while ( i <= last )
+  
+  /* compute the sum of the calibration factors */
+  a.re = a.im = ab.re = ab.im = 0;
+  for ( /* i is already initialized */; i < last; ++i )
   {
-    a.re = a.re + (params->sensingFactor->data->data[i]).re;
-    a.im = a.im + (params->sensingFactor->data->data[i]).im;
-    ab.re = ab.re + (params->openLoopFactor->data->data[i]).re;
-    ab.im = ab.im + (params->openLoopFactor->data->data[i]).im;
-    if ( fabs( a.re ) < tiny && fabs( a.im ) < tiny )
+    COMPLEX8 this_a = params->sensingFactor->data->data[i];
+    COMPLEX8 this_ab = params->openLoopFactor->data->data[i];
+
+    if ( fabs( this_a.re ) < tiny && fabs( this_a.im ) < tiny ||
+        fabs( this_ab.re ) < tiny && fabs( this_ab.im ) < tiny )
     {
       ABORT( status, CALIBRATIONH_EZERO, CALIBRATIONH_MSGEZERO );
     }
-    i++;
+
+    a.re += this_a.re;
+    a.im += this_a.im;
+    ab.re += this_ab.re;
+    ab.im += this_ab.im;
   }
-  a.re = a.re/length;
-  a.im = a.im/length;
-  ab.re = ab.re/length;
-  ab.im = ab.im/length;
   
-  
+  /* compute the mean of the calibration factors from the sum */
+  a.re /= length;
+  a.im /= length;
+  ab.re /= length;
+  ab.im /= length;
 
   for ( i = 0; i < n; ++i )
   {
