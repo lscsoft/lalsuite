@@ -190,9 +190,9 @@ typedef struct
 
 void
 KeepHighestValues(InspiralWaveOverlapOut in , 
-		  INT4 j,
+		  INT4 j,INT4 l , double frequency,
 		  InspiralWaveOverlapOut *out, 
-		  REAL8 *omax, INT4 *jmax);
+		  INT4 *jmax, INT4 *lmax, double *fMax);
 
 
 void 
@@ -293,7 +293,7 @@ void
 PrintResults(
 	    InspiralTemplate       bank,
 	    InspiralTemplate       injected,
-	    InspiralWaveOverlapOut overlapout);
+	    InspiralWaveOverlapOut overlapout, double a, int b);
 
 extern int lalDebugLevel=1;
 
@@ -302,12 +302,11 @@ main (int argc, char **argv )
 {
 
    /* --- Variables ---*/
-  double frequency;
-  INT4 nn, nby2, l;
+  INT4 nn, nby2, l, lmax;
   INT4	i, j=0,n, k;
   INT4 jmax, nlist, kMin;
-  REAL8 df, omax, frac, fendBCV;
-  REAL4  amplitude;
+  REAL8 df,  frac, fendBCV, fMax;
+
    REAL4Vector  signal, correlation;
    void   			*noisemodel = LALLIGOIPsd;
    /*   void   			*noisemodel = LALVIRGOPsd;*/
@@ -580,7 +579,7 @@ main (int argc, char **argv )
 			 &Filter2,
 			 matrix,
 			 otherIn);
-       PrintResults(list[1].params, randIn.param,overlapout);
+       PrintResults(list[1].params, randIn.param,overlapout, list[1].params.fFinal, 1);
        j = nlist +1;
      }
    
@@ -649,7 +648,7 @@ main (int argc, char **argv )
 	       
 	       /*  fend ? */
 	       
-	       for (l = 0; l< coarseIn.numFcutTemplates; l++)
+	       for (l = 0; l< (INT4)coarseIn.numFcutTemplates; l++)
 		 {
 		   if (coarseIn.numFcutTemplates == 1) 
 		     frac = 1;
@@ -696,17 +695,15 @@ main (int argc, char **argv )
 					 matrix,
 					 otherIn);
 			   
-		       KeepHighestValues(overlapout, j, &overlapoutmax, &omax, &jmax);
-		       
+		       KeepHighestValues(overlapout, j, l, fendBCV, 
+					 &overlapoutmax, &jmax, &lmax, &fMax);
 		     }
 		 }		 	     	       
 	       break;
 	     case InQuadrature:
 	       if (coarseIn.approximant ==BCV)
 		 {
-		   
-		   
-		   for (l = 0; l< coarseIn.numFcutTemplates; l++)
+		   for (l = 0; l< (INT4)coarseIn.numFcutTemplates; l++)
 		     {
 		       if (coarseIn.numFcutTemplates == 1) 
 			 frac = 1;
@@ -720,30 +717,30 @@ main (int argc, char **argv )
 			 {			   
 			   
 			   overlapin.param.fFinal = fendBCV;
-			   
 			   for (i=0; i<(INT4)signal.length; i++) correlation.data[i] = 0.;	   	   	  
-			   
 			   
 			   LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
 			   
-			   KeepHighestValues(overlapout, j, &overlapoutmax, &omax, &jmax);
+			   KeepHighestValues(overlapout, j, l, fendBCV, 
+					     &overlapoutmax, &jmax, &lmax, &fMax);
+
 			 }
 		     }
 		 }
 	       else
 		 {
 		   /* SHOULD be replace by flso of the template in the bank*/
-		   list[j].params.fFinal   = 1./LAL_PI/pow(6, 1.5)/(list[j].params.mass1+list[j].params.mass2)/LAL_MTSUN_SI;
+		   fendBCV   = 1./LAL_PI/pow(6, 1.5)/(list[j].params.mass1+list[j].params.mass2)/LAL_MTSUN_SI;
 		   
-		   overlapin.param.fFinal  = randIn.param.fFinal;
-		   overlapin.param.fCutoff = randIn.param.fFinal;
+		   overlapin.param.fFinal  = fendBCV;
+		   overlapin.param.fCutoff = fendBCV;
 		   
 		   for (i=0; i<(INT4)signal.length; i++) correlation.data[i] = 0.;	   	   	  
 		   
 		   
 		   LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
-		   
-		   KeepHighestValues(overlapout, j, &overlapoutmax, &omax, &jmax);		     		     
+		   KeepHighestValues(overlapout, j, l, fendBCV, &overlapoutmax,  &jmax, &lmax, &fMax);
+
 		 }
 		   
 		   
@@ -756,8 +753,7 @@ main (int argc, char **argv )
 			list[j].params.psi0,
 			list[j].params.psi3, 
 			overlapout.max,
-			randIn.param.fFinal, 
-			list[j].params.fFinal);
+			fMax, randIn.param.fFinal);
 	       
 	     }/*end of the bank process*/
 
@@ -767,20 +763,18 @@ main (int argc, char **argv )
 
        
        LALInspiralParameterCalc(&status, &list[jmax].params);
-       PrintResults(list[jmax].params, randIn.param, overlapoutmax);
+       PrintResults(list[jmax].params, randIn.param, overlapoutmax, fMax, lmax);
        /* we might want to maximize the optimal psi0-psi3 over a frequency range*/
        if (coarseIn.approximant==BCV &&  otherIn.FMaximization)
 	 {
-	   for (frequency = list[jmax].params.fLower ;
-		frequency < 600;
-		frequency+=5)
+	   for (fendBCV = list[jmax].params.fLower ;
+		fendBCV < 800;
+		fendBCV+=10)
 	     {	   
 	       /* we need fcutoff in LALMatrix*/
-	       list[jmax].params.fCutoff = frequency;
-	       list[jmax].params.fFinal = frequency;
+	       	       
 	       
-	       
-	       k = floor(list[j].params.fFinal / df);
+	       k = floor(fendBCV / df);
 	       matrix.a21 = VectorA21.data[k];
 	       matrix.a11 = VectorA11.data[k];
 	       matrix.a22 = VectorA22.data[k];
@@ -800,8 +794,8 @@ main (int argc, char **argv )
 	       
 	       
 	       
-	       overlapin.param.fFinal = list[jmax].params.fFinal;
-	       overlapin.param.fCutoff = list[jmax].params.fFinal;
+	       overlapin.param.fFinal = fendBCV;
+	       overlapin.param.fCutoff = fendBCV;
 	       
 	       otherIn.PrintOverlap = 0;
 	       otherIn.PrintFilter = 0;
@@ -814,13 +808,14 @@ main (int argc, char **argv )
 				 &Filter2,
 				 matrix,
 				 otherIn
-				 
 				 );
-	       PrintResults(list[jmax].params, randIn.param,overlapout);
-	       KeepHighestValues(overlapout, j, &overlapoutmax, &omax, &jmax);
+
+	       PrintResults(list[jmax].params, randIn.param,overlapout, fendBCV, 1);
+	       
+	       KeepHighestValues(overlapout, j, l, fendBCV, &overlapoutmax, &jmax, &lmax, &fMax);
 
 	     }
-	   PrintResults(list[jmax].params, randIn.param, overlapoutmax);
+	   PrintResults(list[jmax].params, randIn.param, overlapoutmax, fendBCV, 1);
 	     
 	 }
        
@@ -1376,9 +1371,9 @@ void Help(InspiralCoarseBankIn   coarseIn,
 
 void
 KeepHighestValues(InspiralWaveOverlapOut in , 
-		  INT4 j,
+		  INT4 j, INT4 l, double frequency,
 		  InspiralWaveOverlapOut *out, 
-		  REAL8 *omax, INT4 *jmax)
+		  INT4 *jmax, INT4 *lmax, double *fMax)
 {
   if (in.max > out->max)
     { 
@@ -1387,6 +1382,8 @@ KeepHighestValues(InspiralWaveOverlapOut in ,
       out->alpha  = in.alpha;
       out->bin   = in.bin;
       *jmax       = j;
+      *lmax = l;
+      *fMax = frequency;
     }
 }
 
@@ -1394,24 +1391,15 @@ void
 PrintResults(
 	    InspiralTemplate       bank,
 	    InspiralTemplate       injected,
-	    InspiralWaveOverlapOut overlapout)
+	    InspiralWaveOverlapOut overlapout,
+	    double fendBCV,
+	    int layer)
 {
   
-  fprintf(stdout, "%e  %e %e %e %e %e %e %e %e %e %e %e %e %e\n", 
-	  bank.psi0, 
-	  injected.psi0, 
-	  bank.psi3,
-	  injected.psi3, 
-	  bank.fFinal,
-	  injected.fFinal,
-	  bank.totalMass,
-	  injected.totalMass,
-	  injected.mass1,
-	  injected.mass2,
-	  overlapout.max, 
-	  overlapout.phase,
-	  overlapout.alpha,
-	  overlapout.alpha*pow(bank.fFinal,2./3.));
+  fprintf(stdout, "%e %e %e %e   ", bank.psi0, injected.psi0, bank.psi3, injected.psi3);
+  fprintf(stdout, "%e %e    %e %e   ", fendBCV, injected.fFinal, bank.totalMass, injected.totalMass);
+  fprintf(stdout, "%e %e    %e %e ", injected.mass1, injected.mass2, overlapout.max, overlapout.phase);
+  fprintf(stdout, "%e %e   %d\n", overlapout.alpha, overlapout.alpha*pow(fendBCV,2./3.), layer);
 }
 
 
