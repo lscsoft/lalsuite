@@ -2234,7 +2234,7 @@ int main( int argc, char *argv[] )
   /* write the summ_value table with the standard candle distance */
   if ( ! bankSim )
   {
-    if ( approximant == TaylorT2 )
+    if ( approximant == TaylorF2 )
     {
       if ( vrbflg ) fprintf( stdout, "  summ_value table...\n" );
       ADD_SUMM_VALUE( "inspiral_effective_distance", "1.4_1.4_8", 
