@@ -280,7 +280,7 @@ LALModComputeExcessPower (
 	  COMPLEX8 sumz;
 	  sumz.re = 0.0;
 	  sumz.im = 0.0;
-	  for(ii=k1; ii<=k2; ii++)
+	  for(ii=k1; ii<k2; ii++)
 	    {
 	      INT4 offset = j*nf;
 	      COMPLEX8 z;
