@@ -418,9 +418,6 @@ LALREAL4AverageSpectrum (
     AverageSpectrumParams       *params
     )
 {
-  INITSTATUS (status, "LALREAL4AverageSpectrum", TIMEFREQFFTC);
-  ATTATCHSTATUSPTR (status);
-
   UINT4                 i, j, k;          /* seg, ts and freq counters       */
   UINT4                 numSeg;           /* number of segments in average   */
   UINT4                 fLength;          /* length of requested power spec  */
@@ -435,6 +432,9 @@ LALREAL4AverageSpectrum (
   LALUnit               unit;
   LALUnitPair           pair;
   RAT4                  negRootTwo = { -1, 1 };
+
+  INITSTATUS (status, "LALREAL4AverageSpectrum", TIMEFREQFFTC);
+  ATTATCHSTATUSPTR (status);
 
   /* check the input and output data pointers are non-null */
   ASSERT( fSeries, status,
