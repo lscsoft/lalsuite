@@ -1,11 +1,46 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: RandomTest.c
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------
- */
+#if 0 /* autodoc block */
+
+<lalVerbatim file="RandomTestCV">
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+
+\subsection{Program \texttt{RandomTest.c}}
+\label{ss:RandomTest.c}
+
+Tests the routines in \verb+Random.h+.  Outputs random numbers to a file.
+
+\subsection*{Usage}
+\begin{verbatim}
+RandomTest [options]
+Options:
+  -h         print this message
+  -q         quiet: run silently
+  -v         verbose: print extra information
+  -d level   set lalDebugLevel to level
+  -o         output random numbers to files
+\end{verbatim}
+
+\subsubsection*{Description}
+\subsubsection*{Exit codes}
+\begin{tabular}{|c|l|}
+\hline
+ Code & Explanation                   \\
+\hline
+\tt 0 & Success, normal exit.         \\
+\tt 1 & Subroutine failed.            \\
+\hline
+\end{tabular}
+
+\subsubsection*{Uses}
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{RandomTestCV}}
+
+</lalLaTeX>
+
+#endif /* autodoc block */
 
 #include <stdio.h>
 #include <string.h>
@@ -169,7 +204,7 @@ main (int argc, char *argv[])
   }
 
   LALCreateRandomParams (&status, &randpar, 0);
-  TestStatus (&status, CODES(RANDOM_ENNUL), 1);
+  TestStatus (&status, CODES(RANDOMH_ENNUL), 1);
 
   /* null pointer error */
 
@@ -179,25 +214,25 @@ main (int argc, char *argv[])
   }
 
   LALCreateRandomParams (&status, NULL, 0);
-  TestStatus (&status, CODES(RANDOM_ENULL), 1);
+  TestStatus (&status, CODES(RANDOMH_ENULL), 1);
 
   LALDestroyRandomParams (&status, NULL);
-  TestStatus (&status, CODES(RANDOM_ENULL), 1);
+  TestStatus (&status, CODES(RANDOMH_ENULL), 1);
 
   {
     RandomParams *tmp = NULL;
     LALDestroyRandomParams (&status, &tmp);
   }
-  TestStatus (&status, CODES(RANDOM_ENULL), 1);
+  TestStatus (&status, CODES(RANDOMH_ENULL), 1);
 
   LALUniformDeviate (&status, NULL, randpar);
-  TestStatus (&status, CODES(RANDOM_ENULL), 1);
+  TestStatus (&status, CODES(RANDOMH_ENULL), 1);
   
   LALUniformDeviate (&status, vector->data, NULL);
-  TestStatus (&status, CODES(RANDOM_ENULL), 1);
+  TestStatus (&status, CODES(RANDOMH_ENULL), 1);
 
   LALNormalDeviates (&status, NULL, randpar);
-  TestStatus (&status, CODES(RANDOM_ENULL), 1);
+  TestStatus (&status, CODES(RANDOMH_ENULL), 1);
 
   {
     REAL4Vector tmp;
@@ -205,10 +240,10 @@ main (int argc, char *argv[])
     tmp.data   = NULL;
     LALNormalDeviates (&status, &tmp, randpar);
   }
-  TestStatus (&status, CODES(RANDOM_ENULL), 1);
+  TestStatus (&status, CODES(RANDOMH_ENULL), 1);
   
   LALNormalDeviates (&status, vector, NULL);
-  TestStatus (&status, CODES(RANDOM_ENULL), 1);
+  TestStatus (&status, CODES(RANDOMH_ENULL), 1);
 
   /* vector length error */
 
@@ -223,7 +258,7 @@ main (int argc, char *argv[])
     tmp.data   = (REAL4 *)1;
     LALNormalDeviates (&status, &tmp, randpar);
   }
-  TestStatus (&status, CODES(RANDOM_ESIZE), 1);
+  TestStatus (&status, CODES(RANDOMH_ESIZE), 1);
   
 
   /*

@@ -1,11 +1,91 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: Integrate.c
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------
- */
+#if 0  /* autodoc block */
+
+<lalVerbatim file="IntegrateCV">
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+\subsection{Module \texttt{Integrate.c}}
+\label{ss:Integrate.c}
+
+Functions for generating random numbers.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{IntegrateCP}
+\index{\texttt{LALSRombergIntegrate()}}
+\index{\texttt{LALDRombergIntegrate()}}
+
+\subsubsection*{Description}
+
+The routine \verb+LALSRombergIntegrate+ performs the integral specified by the
+structure \verb+input+ and the result is returned as \verb+result+.  Any
+additional parameters (other than the integration variable $x$) can be passed
+as \verb+params+.  The routine \verb+LALSRombergIntegrate+ does not use
+\verb+params+ but just passes it to the integrand.  The routine
+\verb+LALDRombergIntegrate+ is the same but for double precision.
+
+\subsubsection*{Operating Instructions}
+
+The following program performs the integral $\int_0^2F(x)dx$ where
+$F(x)=x^4\log(x+\sqrt{x^2+1})$.
+
+\begin{verbatim}
+#include <math.h>
+#include <lal/LALStdlib.h>
+#include <lal/Integrate.h>
+
+static void F( LALStatus *s, REAL4 *y, REAL4 x, void *p )
+{
+  REAL4 x2 = x*x;
+  REAL4 x4 = x2*x2;
+  INITSTATUS( s, "F", "Function F()" );
+  ASSERT( !p, s, 1, "Non-null pointer" );
+  *y = x4 * log( x + sqrt( x2 + 1 ) );
+  RETURN( s );
+}
+
+int main ()
+{
+  const REAL4       epsilon = 1e-6;
+  const long double expect  = 8.153364119811650205L;
+  static LALStatus  status;
+  SIntegrateIn      intinp;
+  REAL4             result;
+
+  intinp.function = F;
+  intinp.xmin     = 0;
+  intinp.xmax     = 2;
+  intinp.type     = ClosedInterval;
+
+  LALSRombergIntegrate( &status, &result, &intinp, NULL );
+  if ( fabs( result - expect ) > epsilon * fabs( expect ) )
+  {
+    /* integration did not achieve desired accuracy --- exit failure */
+    return 1;
+  }
+
+  return 0;
+}
+\end{verbatim}
+
+\subsubsection*{Algorithm}
+
+This is an implementation of the Romberg integrating function \verb+qromb+ in
+Numerical Recipes~\cite{ptvf:1992}.
+
+\subsubsection*{Uses}
+
+These routines use the functions \verb+LALSPolynomialInterpolation()+ and
+\verb+LALDPolynomialInterpolation()+.
+
+\subsubsection*{Notes}
+\vfill{\footnotesize\input{IntegrateCV}}
+
+</lalLaTeX>
+
+#endif /* autodoc block */
+
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -32,7 +112,7 @@ DIntegralState;
 
 static void
 STrapezoid (
-    LALStatus         *status,
+    LALStatus      *status,
     SIntegralState *output,
     SIntegrateIn   *input,
     void           *params
@@ -212,7 +292,7 @@ SMidpoint (
 
     case InfiniteDomainPow:
       ASSERT ((b > 0 && a > 0) || (b < 0 && a < 0), status,
-              INTEGRATE_EIDOM, INTEGRATE_MSGEIDOM);
+              INTEGRATEH_EIDOM, INTEGRATEH_MSGEIDOM);
       ChangeOfVariables = SEqualsInvX;
       xmax = 1/a;
       xmin = 1/b;
@@ -225,7 +305,7 @@ SMidpoint (
       break;
 
     default: /* unrecognized type */
-      ABORT (status, INTEGRATE_ETYPE, INTEGRATE_MSGETYPE);
+      ABORT (status, INTEGRATEH_ETYPE, INTEGRATEH_MSGETYPE);
   }
 
   if (output->refinement)
@@ -352,7 +432,7 @@ DMidpoint (
 
     case InfiniteDomainPow:
       ASSERT ((b > 0 && a > 0) || (b < 0 && a < 0), status,
-              INTEGRATE_EIDOM, INTEGRATE_MSGEIDOM);
+              INTEGRATEH_EIDOM, INTEGRATEH_MSGEIDOM);
       ChangeOfVariables = DEqualsInvX;
       xmax = 1/a;
       xmin = 1/b;
@@ -365,7 +445,7 @@ DMidpoint (
       break;
 
     default: /* unrecognized type */
-      ABORT (status, INTEGRATE_ETYPE, INTEGRATE_MSGETYPE);
+      ABORT (status, INTEGRATEH_ETYPE, INTEGRATEH_MSGETYPE);
   }
 
   if (output->refinement)
@@ -414,14 +494,15 @@ DMidpoint (
 
 
 
+/* <lalVerbatim file="IntegrateCP"> */
 void
 LALSRombergIntegrate (
-    LALStatus       *status,
+    LALStatus    *status,
     REAL4        *result,
     SIntegrateIn *input,
     void         *params
     )
-{
+{ /* </lalVerbatim> */
   const REAL4 epsilon = 1e-6;
   enum { MaxSteps     = 20 };
   enum { Order        = 4  };
@@ -436,11 +517,11 @@ LALSRombergIntegrate (
   INITSTATUS (status, "LALSRombergIntegrate", INTEGRATEC);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (result, status, INTEGRATE_ENULL, INTEGRATE_MSGENULL);
-  ASSERT (input,  status, INTEGRATE_ENULL, INTEGRATE_MSGENULL);
-  ASSERT (input->function,  status, INTEGRATE_ENULL, INTEGRATE_MSGENULL);
+  ASSERT (result, status, INTEGRATEH_ENULL, INTEGRATEH_MSGENULL);
+  ASSERT (input,  status, INTEGRATEH_ENULL, INTEGRATEH_MSGENULL);
+  ASSERT (input->function,  status, INTEGRATEH_ENULL, INTEGRATEH_MSGENULL);
   ASSERT (input->xmax > input->xmin, status,
-          INTEGRATE_EIDOM, INTEGRATE_MSGEIDOM);
+          INTEGRATEH_EIDOM, INTEGRATEH_MSGEIDOM);
 
   switch (input->type)
   {
@@ -459,7 +540,7 @@ LALSRombergIntegrate (
       break;
 
     default: /* unrecognized type */
-      ABORT (status, INTEGRATE_ETYPE, INTEGRATE_MSGETYPE);
+      ABORT (status, INTEGRATEH_ETYPE, INTEGRATEH_MSGETYPE);
   }
 
   stepSize[0] = 1;
@@ -495,18 +576,19 @@ LALSRombergIntegrate (
     stepSize[state.refinement + 1] = refineFactor*stepSize[state.refinement];
   }
 
-  ABORT (status, INTEGRATE_EMXIT, INTEGRATE_MSGEMXIT);
+  ABORT (status, INTEGRATEH_EMXIT, INTEGRATEH_MSGEMXIT);
 }
 
 
+/* <lalVerbatim file="IntegrateCP"> */
 void
 LALDRombergIntegrate (
-    LALStatus       *status,
+    LALStatus    *status,
     REAL8        *result,
     DIntegrateIn *input,
     void         *params
     )
-{
+{ /* </lalVerbatim> */
   const REAL8 epsilon = 1e-15;
   enum { MaxSteps     = 20 };
   enum { Order        = 4  };
@@ -521,11 +603,11 @@ LALDRombergIntegrate (
   INITSTATUS (status, "LALDRombergIntegrate", INTEGRATEC);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (result, status, INTEGRATE_ENULL, INTEGRATE_MSGENULL);
-  ASSERT (input,  status, INTEGRATE_ENULL, INTEGRATE_MSGENULL);
-  ASSERT (input->function,  status, INTEGRATE_ENULL, INTEGRATE_MSGENULL);
+  ASSERT (result, status, INTEGRATEH_ENULL, INTEGRATEH_MSGENULL);
+  ASSERT (input,  status, INTEGRATEH_ENULL, INTEGRATEH_MSGENULL);
+  ASSERT (input->function,  status, INTEGRATEH_ENULL, INTEGRATEH_MSGENULL);
   ASSERT (input->xmax > input->xmin, status,
-          INTEGRATE_EIDOM, INTEGRATE_MSGEIDOM);
+          INTEGRATEH_EIDOM, INTEGRATEH_MSGEIDOM);
 
   switch (input->type)
   {
@@ -544,7 +626,7 @@ LALDRombergIntegrate (
       break;
 
     default: /* unrecognized type */
-      ABORT (status, INTEGRATE_ETYPE, INTEGRATE_MSGETYPE);
+      ABORT (status, INTEGRATEH_ETYPE, INTEGRATEH_MSGETYPE);
   }
 
   stepSize[0] = 1;
@@ -580,5 +662,5 @@ LALDRombergIntegrate (
     stepSize[state.refinement + 1] = refineFactor*stepSize[state.refinement];
   }
 
-  ABORT (status, INTEGRATE_EMXIT, INTEGRATE_MSGEMXIT);
+  ABORT (status, INTEGRATEH_EMXIT, INTEGRATEH_MSGEMXIT);
 }

@@ -1,11 +1,46 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: FindRootTest.c
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------
- */
+#if 0 /* autodoc block */
+
+<lalVerbatim file="FindRootTestCV">
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+
+\subsection{Program \texttt{FindRootTest.c}}
+\label{ss:FindRootTest.c}
+
+Tests the routines in \verb+FindRoot.h+.
+
+\subsection*{Usage}
+\begin{verbatim}
+FindRootTest [options]
+Options:
+  -h         print this message
+  -q         quiet: run silently
+  -v         verbose: print extra information
+  -d level   set lalDebugLevel to level
+\end{verbatim}
+
+\subsubsection*{Description}
+\subsubsection*{Exit codes}
+\begin{tabular}{|c|l|}
+\hline
+ Code & Explanation                   \\
+\hline
+\tt 0 & Success, normal exit.         \\
+\tt 1 & Subroutine failed.            \\
+\hline
+\end{tabular}
+
+\subsubsection*{Uses}
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{FindRootTestCV}}
+
+</lalLaTeX>
+
+#endif /* autodoc block */
+
 
 #include <stdio.h>
 #include <string.h>
@@ -229,32 +264,32 @@ main (int argc, char *argv[])
   }
 
   LALSBracketRoot (&status, NULL, &y_0);
-  TestStatus (&status, CODES(FINDROOT_ENULL), 1);
+  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
   LALDBracketRoot (&status, NULL, &yy0);
-  TestStatus (&status, CODES(FINDROOT_ENULL), 1);
+  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
 
   LALSBisectionFindRoot (&status, NULL, &sinput, &y_0);
-  TestStatus (&status, CODES(FINDROOT_ENULL), 1);
+  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
   LALDBisectionFindRoot (&status, NULL, &dinput, &yy0);
-  TestStatus (&status, CODES(FINDROOT_ENULL), 1);
+  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
 
   LALSBisectionFindRoot (&status, &sroot, NULL, &y_0);
-  TestStatus (&status, CODES(FINDROOT_ENULL), 1);
+  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
   LALDBisectionFindRoot (&status, &droot, NULL, &yy0);
-  TestStatus (&status, CODES(FINDROOT_ENULL), 1);
+  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
 
   sinput.function = NULL;
   dinput.function = NULL;
 
   LALSBracketRoot (&status, &sinput, &y_0);
-  TestStatus (&status, CODES(FINDROOT_ENULL), 1);
+  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
   LALDBracketRoot (&status, &dinput, &yy0);
-  TestStatus (&status, CODES(FINDROOT_ENULL), 1);
+  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
 
   LALSBisectionFindRoot (&status, &sroot, &sinput, &y_0);
-  TestStatus (&status, CODES(FINDROOT_ENULL), 1);
+  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
   LALDBisectionFindRoot (&status, &droot, &dinput, &yy0);
-  TestStatus (&status, CODES(FINDROOT_ENULL), 1);
+  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
 
   /* invalid initial domain error for BracketRoot() */
 
@@ -271,9 +306,9 @@ main (int argc, char *argv[])
   dinput.xmax     = 5;
 
   LALSBracketRoot (&status, &sinput, &y_0);
-  TestStatus (&status, CODES(FINDROOT_EIDOM), 1);
+  TestStatus (&status, CODES(FINDROOTH_EIDOM), 1);
   LALDBracketRoot (&status, &dinput, &yy0);
-  TestStatus (&status, CODES(FINDROOT_EIDOM), 1);
+  TestStatus (&status, CODES(FINDROOTH_EIDOM), 1);
 
   /* maximum iterations exceeded error */
 
@@ -290,9 +325,9 @@ main (int argc, char *argv[])
   dinput.xmax     = 1e-18;
 
   LALSBracketRoot (&status, &sinput, &y_0);
-  TestStatus (&status, CODES(FINDROOT_EMXIT), 1);
+  TestStatus (&status, CODES(FINDROOTH_EMXIT), 1);
   LALDBracketRoot (&status, &dinput, &yy0);
-  TestStatus (&status, CODES(FINDROOT_EMXIT), 1);
+  TestStatus (&status, CODES(FINDROOTH_EMXIT), 1);
 
   y_0             = -1;
   sinput.xmin     = 0;
@@ -304,9 +339,9 @@ main (int argc, char *argv[])
   dinput.xacc     = 2e-38;
 
   LALSBisectionFindRoot (&status, &sroot, &sinput, &y_0);
-  TestStatus (&status, CODES(FINDROOT_EMXIT), 1);
+  TestStatus (&status, CODES(FINDROOTH_EMXIT), 1);
   LALDBisectionFindRoot (&status, &droot, &dinput, &yy0);
-  TestStatus (&status, CODES(FINDROOT_EMXIT), 1);
+  TestStatus (&status, CODES(FINDROOTH_EMXIT), 1);
 
   /* root not bracketed error in BisectionFindRoot() */
 
@@ -323,9 +358,9 @@ main (int argc, char *argv[])
   dinput.xacc     = 1e-6;
 
   LALSBisectionFindRoot (&status, &sroot, &sinput, &y_0);
-  TestStatus (&status, CODES(FINDROOT_EBRKT), 1);
+  TestStatus (&status, CODES(FINDROOTH_EBRKT), 1);
   LALDBisectionFindRoot (&status, &droot, &dinput, &yy0);
-  TestStatus (&status, CODES(FINDROOT_EBRKT), 1);
+  TestStatus (&status, CODES(FINDROOTH_EBRKT), 1);
 
   return 0;
 }

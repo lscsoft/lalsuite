@@ -8,18 +8,25 @@
  * 
  *-----------------------------------------------------------------------*/
 
-/* <lalLaTeX>
+/*
+
+<lalVerbatim file="SortTestCV">
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
 
 \subsection{Program \texttt{SortTest.c}}
+\label{ss:SortTest.c}
 
 A program to test sorting routines.
 
-\subsubsection{Usage}
+\subsubsection*{Usage}
 \begin{verbatim}
 SortTest [-s seed] [-d [debug-level]]
 \end{verbatim}
 
-\subsubsection{Description}
+\subsubsection*{Description}
 
 This test program creates rank and index arrays for an unordered list
 of numbers, and then sorts the list.  The data for the list are
@@ -33,10 +40,19 @@ the seed is taken from the processor clock.  The \verb@-d@ option
 increases the default debug level from 0 to 1, or sets it to the
 specified value \verb@debug-level@.
 
+\subsubsection*{Exit codes}
+\begin{tabular}{|c|l|}
+\hline
+ Code & Explanation                   \\
+\hline
+\tt 0 & Success, normal exit.         \\
+\tt 1 & Subroutine failed.            \\
+\hline
+\end{tabular}
 
-\subsubsection{Algorithm}
+\subsubsection*{Algorithm}
 
-\subsubsection{Uses}
+\subsubsection*{Uses}
 \begin{verbatim}
 lalDebugLevel
 CreateI4Vector()
@@ -49,7 +65,9 @@ LALUniformDeviate()
 LALPrintError()
 \end{verbatim}
 
-\subsubsection{Notes}
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{SortTestCV}}
 
 </lalLaTeX> */
 

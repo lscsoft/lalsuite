@@ -1,11 +1,46 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: IntegrateTest.c
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------
- */
+#if 0 /* autodoc block */
+
+<lalVerbatim file="InterpolateTestCV">
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+
+\subsection{Program \texttt{InterpolateTest.c}}
+\label{ss:InterpolateTest.c}
+
+Tests the routines in \verb+Interpolate.h+.
+
+\subsection*{Usage}
+\begin{verbatim}
+InterpolateTest [options]
+Options:
+  -h         print this message
+  -q         quiet: run silently
+  -v         verbose: print extra information
+  -d level   set lalDebugLevel to level
+\end{verbatim}
+
+\subsubsection*{Description}
+\subsubsection*{Exit codes}
+\begin{tabular}{|c|l|}
+\hline
+ Code & Explanation                   \\
+\hline
+\tt 0 & Success, normal exit.         \\
+\tt 1 & Subroutine failed.            \\
+\hline
+\end{tabular}
+
+\subsubsection*{Uses}
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{InterpolateTestCV}}
+
+</lalLaTeX>
+
+#endif /* autodoc block */
+
 
 #include <stdio.h>
 #include <string.h>
@@ -154,25 +189,25 @@ int main (int argc, char *argv[])
 
   printf ("\nNull pointer:\r");
   LALSPolynomialInterpolation (&status, NULL, -0.3, &sintpar);
-  TestStatus (&status, CODES(INTERPOLATE_ENULL), 1);
+  TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
   LALDPolynomialInterpolation (&status, NULL, -0.3, &dintpar);
-  TestStatus (&status, CODES(INTERPOLATE_ENULL), 1);
+  TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
   printf ("Null pointer check passed.\n");
 
   printf ("\nNull pointer:\r");
   LALSPolynomialInterpolation (&status, &sintout, -0.3, NULL);
-  TestStatus (&status, CODES(INTERPOLATE_ENULL), 1);
+  TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
   LALDPolynomialInterpolation (&status, &dintout, -0.3, NULL);
-  TestStatus (&status, CODES(INTERPOLATE_ENULL), 1);
+  TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
   printf ("Null pointer check passed.\n");
 
   sintpar.x = NULL;
   dintpar.x = NULL;
   printf ("\nNull pointer:\r");
   LALSPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
-  TestStatus (&status, CODES(INTERPOLATE_ENULL), 1);
+  TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
   LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
-  TestStatus (&status, CODES(INTERPOLATE_ENULL), 1);
+  TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
   printf ("Null pointer check passed.\n");
 
   sintpar.x = x->data;
@@ -181,9 +216,9 @@ int main (int argc, char *argv[])
   dintpar.y = NULL;
   printf ("\nNull pointer:\r");
   LALSPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
-  TestStatus (&status, CODES(INTERPOLATE_ENULL), 1);
+  TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
   LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
-  TestStatus (&status, CODES(INTERPOLATE_ENULL), 1);
+  TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
   printf ("Null pointer check passed.\n");
 
   sintpar.y = y->data;
@@ -192,9 +227,9 @@ int main (int argc, char *argv[])
   dintpar.n = 1;
   printf ("\nInvalid size:\r");
   LALSPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
-  TestStatus (&status, CODES(INTERPOLATE_ESIZE), 1);
+  TestStatus (&status, CODES(INTERPOLATEH_ESIZE), 1);
   LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
-  TestStatus (&status, CODES(INTERPOLATE_ESIZE), 1);
+  TestStatus (&status, CODES(INTERPOLATEH_ESIZE), 1);
   printf ("Invalid size check passed.\n");
 
   x->data[1]  = x->data[0]  = 2;
@@ -203,9 +238,9 @@ int main (int argc, char *argv[])
   dintpar.n = 3;
   printf ("\nZero divide:\r");
   LALSPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
-  TestStatus (&status, CODES(INTERPOLATE_EZERO), 1);
+  TestStatus (&status, CODES(INTERPOLATEH_EZERO), 1);
   LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
-  TestStatus (&status, CODES(INTERPOLATE_EZERO), 1);
+  TestStatus (&status, CODES(INTERPOLATEH_EZERO), 1);
   printf ("Zero divide check passed.\n");
 
 

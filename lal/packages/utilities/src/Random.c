@@ -1,11 +1,75 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: Random.c
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------
- */
+#if 0  /* autodoc block */
+
+<lalVerbatim file="RandomCV">
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+\subsection{Module \texttt{Random.c}}
+\label{ss:Random.c}
+
+Functions for generating random numbers.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{RandomCP}
+\index{\texttt{LALCreateRandomParams()}}
+\index{\texttt{LALDestroyRandomParams()}}
+\index{\texttt{LALUniformDeviate()}}
+\index{\texttt{LALNormalDeviates()}}
+
+\subsubsection*{Description}
+
+The routines \verb+LALCreateRandomParams()+ and \verb+LALDestroyRandomParams()+
+create and destroy a parameter structure for the generation of random
+variables.  The creation routine requires a random number seed \verb+seed+.
+If the seed is zero then a seed is generated using the current time.
+
+The routine \verb+LALUniformDeviate()+ returns a single random deviate
+distributed uniformly between zero and unity.  
+
+The routine \verb+LALNormalDeviates()+ fills a vector with normal (Gaussian)
+deviates with zero mean and unit variance.
+
+\subsubsection*{Operating Instructions}
+
+\begin{verbatim}
+static LALStatus     status;
+static RandomParams *params;
+static REAL4Vector  *vector;
+UINT4 i;
+INT4 seed = 0;
+
+LALCreateVector( &status, &vector, 9999 );
+LALCreateRandomParams( &status, &params, seed );
+
+/* fill vector with uniform deviates */
+for ( i = 0; i < vector->length; ++i )
+{
+  LALUniformDeviate( &status, vector->data + i, params );
+}
+
+/* fill vector with normal deviates */
+LALNormalDeviates( &status, vector, params );
+
+LALDestroyRandomParams( &status, &params );
+LALDestroyVector( &status, &vector );
+\end{verbatim}
+
+\subsubsection*{Algorithm}
+
+This is an implementation of the random number generators \verb+ran1+ and
+\verb+gasdev+ described in Numerical Recipes~\cite{ptvf:1992}.
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+\vfill{\footnotesize\input{RandomCV}}
+
+</lalLaTeX>
+
+#endif /* autodoc block */
+
 
 #include <time.h>
 #include <math.h>
@@ -33,22 +97,23 @@ BasicRandom (INT4 i)
   return i;
 }
 
+/* <lalVerbatim file="RandomCP"> */
 void
 LALCreateRandomParams (
-    LALStatus        *status,
+    LALStatus     *status,
     RandomParams **params,
     INT4           seed
     )
-{
+{ /* </lalVerbatim> */
   INT4 n;
 
   INITSTATUS (status, "LALCreateRandomParams", RANDOMC);
 
-  ASSERT (params, status, RANDOM_ENULL, RANDOM_MSGENULL);
-  ASSERT (!*params, status, RANDOM_ENNUL, RANDOM_MSGENNUL);
+  ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
+  ASSERT (!*params, status, RANDOMH_ENNUL, RANDOMH_MSGENNUL);
 
   *params = (RandomParams *) LALMalloc (sizeof(RandomParams));
-  ASSERT (*params, status, RANDOM_ENULL, RANDOM_MSGENULL);
+  ASSERT (*params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
 
   while (seed == 0)
   {
@@ -77,16 +142,17 @@ LALCreateRandomParams (
   RETURN (status);
 }
 
+/* <lalVerbatim file="RandomCP"> */
 void
 LALDestroyRandomParams (
-    LALStatus        *status,
+    LALStatus     *status,
     RandomParams **params
     )
-{
+{ /* </lalVerbatim> */
   INITSTATUS (status, "LALDestroyRandomParams", RANDOMC);
 
-  ASSERT (params, status, RANDOM_ENULL, RANDOM_MSGENULL);
-  ASSERT (*params, status, RANDOM_ENULL, RANDOM_MSGENULL);
+  ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
+  ASSERT (*params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
 
   LALFree (*params);
   *params = NULL;
@@ -95,20 +161,21 @@ LALDestroyRandomParams (
 }
 
 
+/* <lalVerbatim file="RandomCP"> */
 void
 LALUniformDeviate (
-    LALStatus       *status,
+    LALStatus    *status,
     REAL4        *deviate,
     RandomParams *params
     )
-{
+{ /* </lalVerbatim> */
   INT4 ndiv;
   INT4 n;
 
   INITSTATUS (status, "LALUniformDeviate", RANDOMC);
 
-  ASSERT (deviate, status, RANDOM_ENULL, RANDOM_MSGENULL);
-  ASSERT (params, status, RANDOM_ENULL, RANDOM_MSGENULL);
+  ASSERT (deviate, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
+  ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
 
   ndiv = 1 + (m - 1)/(sizeof(params->v)/sizeof(INT4));
   n    = params->y/ndiv;
@@ -126,23 +193,24 @@ LALUniformDeviate (
 }
 
 
+/* <lalVerbatim file="RandomCP"> */
 void
 LALNormalDeviates (
-    LALStatus       *status,
+    LALStatus    *status,
     REAL4Vector  *deviates,
     RandomParams *params
     )
-{
+{ /* </lalVerbatim> */
   REAL4 *data;
   INT4   half;
 
   INITSTATUS (status, "LALNormalDeviates", RANDOMC);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (params, status, RANDOM_ENULL, RANDOM_MSGENULL);
-  ASSERT (deviates, status, RANDOM_ENULL, RANDOM_MSGENULL);
-  ASSERT (deviates->data, status, RANDOM_ENULL, RANDOM_MSGENULL);
-  ASSERT (deviates->length > 0, status, RANDOM_ESIZE, RANDOM_MSGESIZE);
+  ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
+  ASSERT (deviates, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
+  ASSERT (deviates->data, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
+  ASSERT (deviates->length > 0, status, RANDOMH_ESIZE, RANDOMH_MSGESIZE);
 
   data = deviates->data;
   half = deviates->length/2;

@@ -1,11 +1,47 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: IntegrateTest.c
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------
- */
+#if 0 /* autodoc block */
+
+<lalVerbatim file="IntegrateTestCV">
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+
+\subsection{Program \texttt{IntegrateTest.c}}
+\label{ss:IntegrateTest.c}
+
+Tests the routines in \verb+Integrate.h+ by performing a suite of numerical
+integrations and checking the accuracy of the results.
+
+\subsection*{Usage}
+\begin{verbatim}
+IntegrateTest [options]
+Options:
+  -h         print this message
+  -q         quiet: run silently
+  -v         verbose: print extra information
+  -d level   set lalDebugLevel to level
+\end{verbatim}
+
+\subsubsection*{Description}
+\subsubsection*{Exit codes}
+\begin{tabular}{|c|l|}
+\hline
+ Code & Explanation                   \\
+\hline
+\tt 0 & Success, normal exit.         \\
+\tt 1 & Subroutine failed.            \\
+\hline
+\end{tabular}
+
+\subsubsection*{Uses}
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{IntegrateTestCV}}
+
+</lalLaTeX>
+
+#endif /* autodoc block */
+
 
 #include <stdio.h>
 #include <string.h>
@@ -518,16 +554,16 @@ int main (int argc, char *argv[])
 
   printf ("\nNull pointer:\r");
   LALSRombergIntegrate (&status, NULL, &sintinp, &count);
-  TestStatus (&status, CODES(INTEGRATE_ENULL), 1);
+  TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
   LALDRombergIntegrate (&status, NULL, &dintinp, &count);
-  TestStatus (&status, CODES(INTEGRATE_ENULL), 1);
+  TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
   printf ("Null pointer check passed.\n");
 
   printf ("\nNull pointer:\r");
   LALSRombergIntegrate (&status, &sresult, NULL, &count);
-  TestStatus (&status, CODES(INTEGRATE_ENULL), 1);
+  TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
   LALDRombergIntegrate (&status, &dresult, NULL, &count);
-  TestStatus (&status, CODES(INTEGRATE_ENULL), 1);
+  TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
   printf ("Null pointer check passed.\n");
 
   printf ("\nNull pointer:\r");
@@ -540,9 +576,9 @@ int main (int argc, char *argv[])
   dintinp.xmax     = 2;
   dintinp.type     = ClosedInterval;
   LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
-  TestStatus (&status, CODES(INTEGRATE_ENULL), 1);
+  TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
   LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
-  TestStatus (&status, CODES(INTEGRATE_ENULL), 1);
+  TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
   printf ("Null pointer check passed.\n");
 
   printf ("\nInvalid domain:\r");
@@ -555,9 +591,9 @@ int main (int argc, char *argv[])
   dintinp.xmax     = 0;
   dintinp.type     = ClosedInterval;
   LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
-  TestStatus (&status, CODES(INTEGRATE_EIDOM), 1);
+  TestStatus (&status, CODES(INTEGRATEH_EIDOM), 1);
   LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
-  TestStatus (&status, CODES(INTEGRATE_EIDOM), 1);
+  TestStatus (&status, CODES(INTEGRATEH_EIDOM), 1);
   printf ("Invalid domain check passed.\n");
 
   printf ("\nUnknown integral type:\r");
@@ -570,9 +606,9 @@ int main (int argc, char *argv[])
   dintinp.xmax     = 2;
   dintinp.type     = 999;
   LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
-  TestStatus (&status, CODES(INTEGRATE_ETYPE), 1);
+  TestStatus (&status, CODES(INTEGRATEH_ETYPE), 1);
   LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
-  TestStatus (&status, CODES(INTEGRATE_ETYPE), 1);
+  TestStatus (&status, CODES(INTEGRATEH_ETYPE), 1);
   printf ("Unknown integral type check passed.\n");
 
   printf ("\nMaximum iterations exceeded:\r");
@@ -586,10 +622,10 @@ int main (int argc, char *argv[])
   dintinp.type     = ClosedInterval;
   count            = 13;   /* count is now used as a random number seed */
   LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
-  TestStatus (&status, CODES(INTEGRATE_EMXIT), 1);
+  TestStatus (&status, CODES(INTEGRATEH_EMXIT), 1);
   count = 1;
   LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
-  TestStatus (&status, CODES(INTEGRATE_EMXIT), 1);
+  TestStatus (&status, CODES(INTEGRATEH_EMXIT), 1);
   printf ("Maximum iterations exceeded check passed.\n");
 
   printf ("\nRecursive error:\r");

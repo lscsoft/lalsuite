@@ -8,18 +8,30 @@
  *
  *-----------------------------------------------------------------------*/
 
-/* <lalLaTeX>
+/*
+ 
+<lalVerbatim file="HeapSortCV">
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
 
 \subsection{Module \texttt{HeapSort.c}}
 
 Sorts, indexes, or ranks vector elements using the heap sort
 algorithm.
 
-\subsubsection{Prototypes}
+\subsubsection*{Prototypes}
 \vspace{0.1in}
-\input{HeapSortD}
+\input{HeapSortCP}
+\index{\texttt{LALSHeapSort()}}
+\index{\texttt{LALSHeapIndex()}}
+\index{\texttt{LALSHeapRank()}}
+\index{\texttt{LALDHeapSort()}}
+\index{\texttt{LALDHeapIndex()}}
+\index{\texttt{LALDHeapRank()}}
 
-\subsubsection{Description}
+\subsubsection*{Description}
 
 These routines sort a vector \verb@*data@ (of type \verb@REAL4Vector@
 or \verb@REAL8Vector@) into ascending order using the in-place
@@ -50,7 +62,7 @@ index[rank[j]] = j
 rank[index[i]] = i
 \end{verbatim}
 
-\subsubsection{Algorithm}
+\subsubsection*{Algorithm}
 
 These routines use the standard heap sort algorithm described in
 Sec.~8.3 of Ref.~\cite{ptvf:1992}.
@@ -67,13 +79,14 @@ algorithms are $N\log_2(N)$ algorithms, regardless of the ordering of
 the initial dataset.
 
 
-\subsubsection{Uses}
+\subsubsection*{Uses}
 \begin{verbatim}
 LALI4CreateVector()
 LALI4DestroyVector()
 \end{verbatim}
 
-\subsubsection{Notes}
+\subsubsection*{Notes}
+\vfill{\footnotesize\input{HeapSortCV}}
 
 </lalLaTeX> */
 
@@ -83,7 +96,7 @@ LALI4DestroyVector()
 
 NRCSID(HEAPSORTC,"$Id$");
 
-/* <lalVerbatim file="HeapSortD"> */
+/* <lalVerbatim file="HeapSortCP"> */
 void LALSHeapSort(LALStatus      *stat,
 	       REAL4Vector *vector)
 { /* </lalVerbatim> */
@@ -97,8 +110,8 @@ void LALSHeapSort(LALStatus      *stat,
   INITSTATUS(stat,"LALSHeapSort",HEAPSORTC);
 
   /* Make sure all pointers are valid. */
-  ASSERT(vector,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(vector->data,stat,SORT_ENUL,SORT_MSGENUL);
+  ASSERT(vector,stat,SORTH_ENUL,SORTH_MSGENUL);
+  ASSERT(vector->data,stat,SORTH_ENUL,SORTH_MSGENUL);
 
   n=vector->length;
   data=vector->data;
@@ -142,7 +155,7 @@ void LALSHeapSort(LALStatus      *stat,
 }
 
 
-/* <lalVerbatim file="HeapSortD"> */
+/* <lalVerbatim file="HeapSortCP"> */
 void LALSHeapIndex(LALStatus      *stat,
 		INT4Vector  *idx,
 		REAL4Vector *vector)
@@ -160,11 +173,11 @@ void LALSHeapIndex(LALStatus      *stat,
 
   /* Make sure all pointers are valid, and the idx vector is of the
      same length as the data vector. */
-  ASSERT(vector,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(idx,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(vector->data,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(idx->data,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(vector->length==idx->length,stat,SORT_ELEN,SORT_MSGELEN);
+  ASSERT(vector,stat,SORTH_ENUL,SORTH_MSGENUL);
+  ASSERT(idx,stat,SORTH_ENUL,SORTH_MSGENUL);
+  ASSERT(vector->data,stat,SORTH_ENUL,SORTH_MSGENUL);
+  ASSERT(idx->data,stat,SORTH_ENUL,SORTH_MSGENUL);
+  ASSERT(vector->length==idx->length,stat,SORTH_ELEN,SORTH_MSGELEN);
 
   n=vector->length;
   data=vector->data;
@@ -216,7 +229,7 @@ void LALSHeapIndex(LALStatus      *stat,
 }
 
 
-/* <lalVerbatim file="HeapSortD"> */
+/* <lalVerbatim file="HeapSortCP"> */
 void LALSHeapRank(LALStatus      *stat,
 	       INT4Vector  *rank,
 	       REAL4Vector *vector)
@@ -231,11 +244,11 @@ void LALSHeapRank(LALStatus      *stat,
 
   /* Make sure all pointers are valid, and the rank vector is of the
      same length as the data vector. */
-  ASSERT(vector,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(rank,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(vector->data,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(rank->data,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(vector->length==rank->length,stat,SORT_ELEN,SORT_MSGELEN);
+  ASSERT(vector,stat,SORTH_ENUL,SORTH_MSGENUL);
+  ASSERT(rank,stat,SORTH_ENUL,SORTH_MSGENUL);
+  ASSERT(vector->data,stat,SORTH_ENUL,SORTH_MSGENUL);
+  ASSERT(rank->data,stat,SORTH_ENUL,SORTH_MSGENUL);
+  ASSERT(vector->length==rank->length,stat,SORTH_ELEN,SORTH_MSGELEN);
 
   /* Make the temporary idx vector. */
   TRY(LALI4CreateVector(stat->statusPtr,&idx,vector->length),stat);
@@ -256,7 +269,7 @@ void LALSHeapRank(LALStatus      *stat,
 }
 
 
-/* <lalVerbatim file="HeapSortD"> */
+/* <lalVerbatim file="HeapSortCP"> */
 void LALDHeapSort(LALStatus      *stat,
 	       REAL8Vector *vector)
 { /* </lalVerbatim> */
@@ -270,8 +283,8 @@ void LALDHeapSort(LALStatus      *stat,
   INITSTATUS(stat,"LALDHeapSort",HEAPSORTC);
 
   /* Make sure all pointers are valid. */
-  ASSERT(vector,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(vector->data,stat,SORT_ENUL,SORT_MSGENUL);
+  ASSERT(vector,stat,SORTH_ENUL,SORTH_MSGENUL);
+  ASSERT(vector->data,stat,SORTH_ENUL,SORTH_MSGENUL);
 
   n=vector->length;
   data=vector->data;
@@ -315,7 +328,7 @@ void LALDHeapSort(LALStatus      *stat,
 }
 
 
-/* <lalVerbatim file="HeapSortD"> */
+/* <lalVerbatim file="HeapSortCP"> */
 void LALDHeapIndex(LALStatus      *stat,
 		INT4Vector  *idx,
 		REAL8Vector *vector)
@@ -333,11 +346,11 @@ void LALDHeapIndex(LALStatus      *stat,
 
   /* Make sure all pointers are valid, and the idx vector is of the
      same length as the data vector. */
-  ASSERT(vector,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(idx,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(vector->data,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(idx->data,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(vector->length==idx->length,stat,SORT_ELEN,SORT_MSGELEN);
+  ASSERT(vector,stat,SORTH_ENUL,SORTH_MSGENUL);
+  ASSERT(idx,stat,SORTH_ENUL,SORTH_MSGENUL);
+  ASSERT(vector->data,stat,SORTH_ENUL,SORTH_MSGENUL);
+  ASSERT(idx->data,stat,SORTH_ENUL,SORTH_MSGENUL);
+  ASSERT(vector->length==idx->length,stat,SORTH_ELEN,SORTH_MSGELEN);
 
   n=vector->length;
   data=vector->data;
@@ -391,7 +404,7 @@ void LALDHeapIndex(LALStatus      *stat,
 }
 
 
-/* <lalVerbatim file="HeapSortD"> */
+/* <lalVerbatim file="HeapSortCP"> */
 void LALDHeapRank(LALStatus      *stat,
 	       INT4Vector  *rank,
 	       REAL8Vector *vector)
@@ -406,11 +419,11 @@ void LALDHeapRank(LALStatus      *stat,
 
   /* Make sure all pointers are valid, and the rank vector is of the
      same length as the data vector. */
-  ASSERT(vector,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(rank,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(vector->data,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(rank->data,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(vector->length==rank->length,stat,SORT_ELEN,SORT_MSGELEN);
+  ASSERT(vector,stat,SORTH_ENUL,SORTH_MSGENUL);
+  ASSERT(rank,stat,SORTH_ENUL,SORTH_MSGENUL);
+  ASSERT(vector->data,stat,SORTH_ENUL,SORTH_MSGENUL);
+  ASSERT(rank->data,stat,SORTH_ENUL,SORTH_MSGENUL);
+  ASSERT(vector->length==rank->length,stat,SORTH_ELEN,SORTH_MSGELEN);
 
   /* Make the temporary idx vector. */
   TRY(LALI4CreateVector(stat->statusPtr,&idx,vector->length),stat);

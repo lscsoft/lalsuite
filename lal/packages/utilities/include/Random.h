@@ -1,11 +1,27 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: Random.h
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------
- */
+#if 0 /* autodoc block */
+
+<lalVerbatim file="RandomHV">
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+
+\section{Header \texttt{Random.h}}
+\label{s:Random.h}
+
+Generates random numbers.
+
+\subsection*{Synopsis}
+\begin{verbatim}
+#include <lal/Random.h>
+\end{verbatim}
+
+\noindent This header covers the routines for generating random numbers.
+
+</lalLaTeX>
+
+#endif /* autodoc block */
+
 
 #ifndef _RANDOM_H
 #define _RANDOM_H
@@ -19,13 +35,44 @@ extern "C" {
 
 NRCSID (RANDOMH, "$Id$");
 
-#define RANDOM_ENULL 1
-#define RANDOM_ENNUL 2
-#define RANDOM_ESIZE 4
+#if 0 /* autodoc block */
 
-#define RANDOM_MSGENULL "Null pointer"
-#define RANDOM_MSGENNUL "Non-null pointer"
-#define RANDOM_MSGESIZE "Invalid size"
+<lalLaTeX>
+\subsection*{Error conditions}
+\input{RandomHErrTab}
+</lalLaTeX>
+
+<lalErrTable file="RandomHErrTab">
+
+#endif /* autodoc block */
+
+#define RANDOMH_ENULL 1
+#define RANDOMH_ENNUL 2
+#define RANDOMH_ESIZE 4
+
+#define RANDOMH_MSGENULL "Null pointer"
+#define RANDOMH_MSGENNUL "Non-null pointer"
+#define RANDOMH_MSGESIZE "Invalid size"
+
+#if 0 /* autodoc block */
+
+</lalErrTable>
+
+<lalLaTeX>
+
+\subsection*{Structures}
+
+\begin{verbatim}
+typedef struct tagRandomParams RandomParams;
+\end{verbatim}
+
+This structure contains the parameters necessary for generating the current
+sequence of random numbers (based on the initial seed).  The contents should
+not be manually adjusted.
+
+</lalLaTeX>
+
+#endif /* autodoc block */
 
 typedef struct
 tagRandomParams
@@ -35,6 +82,14 @@ tagRandomParams
   INT4 v[32];
 }
 RandomParams;
+
+#if 0 /* autodoc block */
+
+<lalLaTeX>
+\newpage\input{RandomC}
+</lalLaTeX>
+
+#endif /* autodoc block */
 
 void
 LALCreateRandomParams (
@@ -62,6 +117,14 @@ LALNormalDeviates (
     REAL4Vector  *deviates,
     RandomParams *params
     );
+
+#if 0 /* autodoc block */
+
+<lalLaTeX>
+\newpage\input{RandomTestC}
+</lalLaTeX>
+
+#endif /* autodoc block */
 
 
 #ifdef  __cplusplus

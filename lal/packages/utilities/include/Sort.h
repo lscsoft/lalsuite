@@ -8,9 +8,16 @@
  * 
  *-----------------------------------------------------------------------*/
 
-/* <lalLaTeX>
+/*
+
+<lalVerbatim file="SortHV">
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
 
 \section{Header \texttt{Sort.h}}
+\label{s:Sort.h}
 
 Provides routines for sorting, indexing, and ranking real vector
 elements.
@@ -36,30 +43,24 @@ NRCSID(SORTH,"$Id$");
 
 /* <lalLaTeX>
 
-\subsection{Error conditions}
-\begin{tabular}{|c|l|l|}
-\hline
-status & status                      & Explanation                      \\
- code  & description                 &                                  \\
-\hline
-\tt 1  & \tt Null pointer            & Missing a required pointer.      \\
-\tt 2  & \tt Length mismatch         & Vectors are of different length. \\
-\tt 3  & \tt Memory allocation error & Could not allocate memory.       \\
-\hline
-\end{tabular}
+\subsection*{Error conditions}
+\input{SortHErrTab}
+</lalLaTeX>
 
-</lalLaTeX> */
+<lalErrTable file="SortHErrTab"> */
 
-#define SORT_ENUL 1
-#define SORT_ELEN 2
-#define SORT_EMEM 3
+#define SORTH_ENUL 1
+#define SORTH_ELEN 2
+#define SORTH_EMEM 3
 
-#define SORT_MSGENUL "Null pointer"
-#define SORT_MSGELEN "Length mismatch"
-#define SORT_MSGEMEM "Memory allocation error"
+#define SORTH_MSGENUL "Null pointer"
+#define SORTH_MSGELEN "Length mismatch"
+#define SORTH_MSGEMEM "Memory allocation error"
 
-/* <lalLaTeX>
-\subsection{Structures}
+/* </lalErrTable>
+
+<lalLaTeX>
+\subsection*{Structures}
 </lalLaTeX> */
 
 /* Function prototypes. */
