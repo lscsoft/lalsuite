@@ -208,7 +208,7 @@ int main(int argc, char **argv)
 	  ClearStatus(&status);
 	  /*print */
 	  for (i=0; i<waveform.f->data->length; i++) 
-	  printf("%e\n",waveform.f->data->data[i]); 
+	  printf("%e\n",waveform.a->data->data[i]); 
  	  printf("&\n"); 
 
 
@@ -497,29 +497,73 @@ int  ParametersParse(LALStatus *status,
 
  
 
-
-  switch (params->inspiral.approximant)
+  if(params->method ==0){	
+    switch (params->inspiral.approximant)
+      {
+      case PadeT1:
+	params->inspiral.ieta=1;
+	params->inspiral.mass1=m1;
+	params->inspiral.mass2=m2;
+	params->inspiral.startTime=0.0;
+	params->inspiral.startPhase=0.0;
+	params->inspiral.nStartPad=0;
+	params->inspiral.nEndPad=0;
+	params->inspiral.signalAmplitude = 1.; 
+	params->inspiral.distance = d*LAL_PC_SI * 1e6; 
+	params->inspiral.fLower=fi;
+	params->inspiral.fCutoff=ff;
+	params->inspiral.tSampling=sampling;
+	params->inspiral.order=order;
+	params->inspiral.inclination = inc *LAL_PI /180;      
+	params->inspiral.massChoice=m1Andm2;
+	if (deltaT!=0) 
+	  params->inspiral.tSampling = 1./ deltaT;
+	else
+	  params->inspiral.tSampling = sampling;
+	params->inspiral.fendBCV = fbcv;
+	params->inspiral.alpha   = alpha;
+	break;
+      case BCVSpin:
+      case SpinTaylorT3:
+      case EOB:
+	params->inspiral.ieta=1;
+	params->inspiral.mass1=m1;
+	params->inspiral.mass2=m2;
+	params->inspiral.startTime=0.0;
+	params->inspiral.startPhase=0.0;
+	params->inspiral.nStartPad=0;
+	params->inspiral.nEndPad=0;
+	params->inspiral.signalAmplitude = 1.; 
+	params->inspiral.distance = d*LAL_PC_SI * 1e6; 
+	params->inspiral.fLower=fi;
+	params->inspiral.fCutoff=ff;
+	params->inspiral.tSampling=sampling;
+	params->inspiral.order=order;
+	params->inspiral.inclination = inc *LAL_PI /180;      
+	params->inspiral.massChoice=m1Andm2;
+	if (deltaT!=0) 
+	  params->inspiral.tSampling = 1./ deltaT;
+	else
+	  params->inspiral.tSampling = sampling;
+	params->inspiral.OmegaS = omegas;
+	params->inspiral.Theta  = theta;
+	params->inspiral.Zeta2  = zeta2;
+	break;
+      default:      
+	break;
+      }
+  }
+  else {
+    switch(params->method)
     {
     case PPN:
-      params->ppn.epoch.gpsSeconds   = params->ppn.epoch.gpsNanoSeconds = 0;
-      params->ppn.position.latitude  = dec* LAL_PI/180.0;
-      params->ppn.position.longitude = ra* LAL_PI/180.0;
-      params->ppn.position.system    = COORDINATESYSTEM_EQUATORIAL;
-      params->ppn.psi = psi* LAL_PI/180.0;
+          
+      params->ppn.deltaT = deltaT      ; /*a definir dans FindChirpSimulation avec sampling du channel*/
 
-      params->ppn.mTot = m1 +m2;
-      params->ppn.eta =   m1*m2   /( params->ppn.mTot*params->ppn.mTot );
-      params->ppn.d = d * LAL_PC_SI*1e6;
-      params->ppn.inc = inc * LAL_PI/180.0;
-      params->ppn.phi = phic * LAL_PI/180.0;
-      if (deltaT!=0) 
-	params->ppn.deltaT = deltaT      ;
-	  else
-	params->ppn.deltaT = 1./ sampling;
-      params->ppn.fStartIn = fi ;
-      params->ppn.fStopIn = ff;;
-      params->ppn.lengthIn = INTERFACETEST_LENGTHIN;  /* taille maximale du signal en points*/
+     
+      params->ppn.lengthIn = INTERFACETEST_LENGTHIN;  /? semble eter nulle dans FindChirpSimul/
       params->ppn.ppn = NULL;
+
       break;
     case SpinOrbitCW: 
       params->socw.epoch.gpsSeconds = params->socw.epoch.gpsNanoSeconds = 0;
@@ -581,84 +625,8 @@ int  ParametersParse(LALStatus *status,
       for (i=0; i<params->taylorcw.f->length; i++)
 	params->taylorcw.f->data[i] = fdata[i];	  
       break;
-    case TaylorT1:  case TaylorT2: case TaylorT3:
-      params->inspiral.ieta=1;
-      params->inspiral.mass1=m1;
-      params->inspiral.mass2=m2;
-      params->inspiral.startTime=0.0;
-      params->inspiral.startPhase=0.0;
-      params->inspiral.nStartPad=0;
-      params->inspiral.nEndPad=0;
-      params->inspiral.signalAmplitude = 1.; 
-      params->inspiral.distance = d*LAL_PC_SI * 1e6; 
-      params->inspiral.fLower=fi;
-      params->inspiral.fCutoff=ff;
-      params->inspiral.tSampling=sampling;
-      params->inspiral.order=order;
-      params->inspiral.inclination = inc *LAL_PI /180;      
-      params->inspiral.massChoice=m1Andm2;
-      if (deltaT!=0) 
-	params->inspiral.tSampling = 1./ deltaT;
-      else
-	params->inspiral.tSampling = sampling;
-      break;     
-    case TaylorF1:
-    case TaylorF2:
-    case PadeF1:
-    case BCV:
-    case PadeT1:
-      params->inspiral.ieta=1;
-      params->inspiral.mass1=m1;
-      params->inspiral.mass2=m2;
-      params->inspiral.startTime=0.0;
-      params->inspiral.startPhase=0.0;
-      params->inspiral.nStartPad=0;
-      params->inspiral.nEndPad=0;
-      params->inspiral.signalAmplitude = 1.; 
-      params->inspiral.distance = d*LAL_PC_SI * 1e6; 
-      params->inspiral.fLower=fi;
-      params->inspiral.fCutoff=ff;
-      params->inspiral.tSampling=sampling;
-      params->inspiral.order=order;
-      params->inspiral.inclination = inc *LAL_PI /180;      
-      params->inspiral.massChoice=m1Andm2;
-      if (deltaT!=0) 
-	params->inspiral.tSampling = 1./ deltaT;
-      else
-	params->inspiral.tSampling = sampling;
-      params->inspiral.fendBCV = fbcv;
-      params->inspiral.alpha   = alpha;
-      break;
-    case BCVSpin:
-    case SpinTaylorT3:
-    case EOB:
-      params->inspiral.ieta=1;
-      params->inspiral.mass1=m1;
-      params->inspiral.mass2=m2;
-      params->inspiral.startTime=0.0;
-      params->inspiral.startPhase=0.0;
-      params->inspiral.nStartPad=0;
-      params->inspiral.nEndPad=0;
-      params->inspiral.signalAmplitude = 1.; 
-      params->inspiral.distance = d*LAL_PC_SI * 1e6; 
-      params->inspiral.fLower=fi;
-      params->inspiral.fCutoff=ff;
-      params->inspiral.tSampling=sampling;
-      params->inspiral.order=order;
-      params->inspiral.inclination = inc *LAL_PI /180;      
-      params->inspiral.massChoice=m1Andm2;
-      if (deltaT!=0) 
-	params->inspiral.tSampling = 1./ deltaT;
-      else
-	params->inspiral.tSampling = sampling;
-      params->inspiral.OmegaS = omegas;
-      params->inspiral.Theta  = theta;
-      params->inspiral.Zeta2  = zeta2;
-      break;
-    default:      
-      break;
+    }
   }
-
 
 
 
