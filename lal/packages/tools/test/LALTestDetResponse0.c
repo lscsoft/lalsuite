@@ -100,21 +100,21 @@ LALSource   src_0_45_c;
 /* this #if is so I can use Emacs's hide-ifdef-mode to make this
    block invisible, making this file a little easier to scroll through */
 #if 1
-static void REAL4VectorSubtraction(REAL4Vector * pA,
+/* static void REAL4VectorSubtraction(REAL4Vector * pA,
                                    REAL4Vector * pB,
-                                   REAL4Vector *pAminusB);
-static REAL4 REAL4VectorRMS(REAL4Vector *pVector);
+                                   REAL4Vector *pAminusB); */
+/*static REAL4 REAL4VectorRMS(REAL4Vector *pVector); */
 static void PrintLALDetector(LALDetector * const detector);
 static void PrintDetResponse(const LALDetAMResponse * const response,
                              const char * const title);
 
 
-static void make_me_an_Sarray_sequence(LALStatus *status,
+/* static void make_me_an_Sarray_sequence(LALStatus *status,
                                        REAL4ArraySequence **sequence,
-                                       UINT4 rows, UINT4 cols, UINT4 length);
+                                       UINT4 rows, UINT4 cols, UINT4 length); */
 
-static void print_diagnostics(LALStatus * const status,
-                              REAL4ArraySequence *sequence);
+/* static void print_diagnostics(LALStatus * const status,
+                              REAL4ArraySequence *sequence); */
 
 
 static BOOLEAN almost_equal_real4_p(REAL4 a, REAL4 b, REAL4 tolerance);
@@ -132,7 +132,7 @@ static BOOLEAN vector_ok_p(LALDR_3Vector * computed,
                            REAL8 tolerance);
 
 static BOOLEAN vector_relative_ok_p(LALDR_3Vector * computed,
-                                    LALDR_3Vector * expected,
+                                    const LALDR_3Vector * expected,
                                     REAL8 tolerance);
 
 static void print_m_results_maybe(const char * title,
@@ -162,10 +162,10 @@ static BOOLEAN detresponse_ok_p(LALStatus * status,
 static void handle_detresponse_test(BOOLEAN passed_p, int line);
 
 static BOOLEAN frdetector_ok_p(LALFrDetector * computed,
-                               LALFrDetector * expected);
+                               const LALFrDetector * expected);
 
 static BOOLEAN detector_ok_p(LALDetector * computed,
-                             LALDetector * expected);
+                             const LALDetector * expected);
 #endif
 
 static REAL8 deg_to_rad(REAL8 degrees)
@@ -285,6 +285,7 @@ LALDR_Set33Matrix(LALDR_33Matrix * matrix,
 
 
 
+#if 0 /* NOT USED */
 /*
  * Copy matrix source to matrix target
  */
@@ -299,6 +300,7 @@ LALDR_Copy33Matrix(LALDR_33Matrix * target, LALDR_33Matrix * source)
 
   return;
 } /* END: LALDR_Copy33Matrix() */
+#endif
 
 
 
@@ -387,6 +389,7 @@ LALDR_Add33Matrix(LALDR_33Matrix * result,
 
 
 
+#if 0 /* NOT USED */
 /*
  * Subtract matrices (M1 - M2)
  */
@@ -403,6 +406,7 @@ LALDR_Subtract33Matrix(LALDR_33Matrix * result,
 
   return;
 }
+#endif
 
 
 
@@ -432,6 +436,7 @@ LALDR_Transpose33Matrix(LALDR_33Matrix * transpose,
 
 
 
+#if 0 /* NOT USED */
 /*
  * The L2 norm of a matrix
  */
@@ -449,10 +454,12 @@ LALDR_L2Norm33Matrix(LALDR_33Matrix * matrix)
 
     return l2norm;
 }
+#endif
     
 
 
 
+#if 0 /* NOT USED */
 /*
  * The RMS norm of a matrix: RMS sum of all elements.
  */
@@ -470,9 +477,11 @@ LALDR_RMSNorm33Matrix(LALDR_33Matrix * matrix)
 
     return rmsnorm;
 }
+#endif
 
 
 
+#if 0 /* NOT USED */
 /*
  * The "infinity" norm of a matrix: max over all elems
  */
@@ -489,6 +498,7 @@ LALDR_InfNorm33Matrix(LALDR_33Matrix * matrix)
     
     return infnorm;
 }
+#endif
 
 
 
@@ -592,6 +602,7 @@ LALDR_Print3Vector(LALDR_3Vector * vector,
 
 
 
+#if 0 /* NOT USED */
 /*
  * Returns a rotation matrix representing rotation by angle "theta" about
  * axis "axis"
@@ -635,6 +646,7 @@ LALDR_EulerRotation(LALDR_33Matrix * rotationMatrix,
   return;
 }
 #endif
+#endif
 
 
 REAL4 skygrid_avg(const skygrid_t response);
@@ -662,7 +674,7 @@ typedef enum
   {
     gwpol_scalar = 0,
     gwpol_plus  = 1,
-    gwpol_cross = 2,
+    gwpol_cross = 2
   }
 GWPolarization;
 
@@ -680,7 +692,7 @@ int  xfclose(FILE *stream);
 /* wrapped laldr_strlcpy() to guarantee NUL termination */
 char *laldr_strlcpy(char *dst, const char *src, size_t len);
 
-static int local_strncasecmp(const char *, const char *, size_t);
+/* static int local_strncasecmp(const char *, const char *, size_t); */
 
 /*
  * Test modules
@@ -795,13 +807,9 @@ int main(int argc, char *argv[])
   static LALStatus  status;
   LALSource         pulsar;
   LALFrDetector     frdet;    /* Framelib detector info */
-  LALFrDetector     frdet_bad;
   LALDetector       detector;
-  LALDetector       detector_bad;
   LIGOTimeGPS       gps;
   LALDate           utcDate;
-  REAL8             lmst1;
-  LALPlaceAndGPS    det_and_gps;
   LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
   LALGPSandAcc      gps_and_acc;
   LALDetAndSource   det_and_pulsar;
@@ -1793,6 +1801,7 @@ int main(int argc, char *argv[])
 } /* END: main() */
 
 
+#if 0 /* NOT USED */
 /*
  * subtracts two REAL4Vectors; user must do all allocation beforehand
  */
@@ -1817,7 +1826,9 @@ static void REAL4VectorSubtraction(REAL4Vector *pA,
 
     return;
 }
+#endif
 
+#if 0 /* NOT USED */
 static REAL4 REAL4VectorRMS(REAL4Vector *pVector)
 {
   UINT4 i;
@@ -1832,6 +1843,7 @@ static REAL4 REAL4VectorRMS(REAL4Vector *pVector)
 
   return sqrt(result);
 }
+#endif
 
 
 static void
@@ -1949,7 +1961,7 @@ static BOOLEAN vector_ok_p(LALDR_3Vector * computed,
 
 
 static BOOLEAN vector_relative_ok_p(LALDR_3Vector * computed,
-                                    LALDR_3Vector * expected,
+                                    const LALDR_3Vector * expected,
                                     REAL8 tolerance)
 {
   /* do this term-by-term rather than using a metric. bah. */
@@ -2236,7 +2248,7 @@ static void PrintDetResponse(const LALDetAMResponse * const response,
 
 
 static BOOLEAN frdetector_ok_p(LALFrDetector * computed,
-                               LALFrDetector * expected)
+                               const LALFrDetector * expected)
 {
   /* let's not bother with comparing the name */
 
@@ -2267,7 +2279,7 @@ static BOOLEAN frdetector_ok_p(LALFrDetector * computed,
 
 
 static BOOLEAN detector_ok_p(LALDetector * computed,
-                             LALDetector * expected)
+                             const LALDetector * expected)
 {
   LALDR_33Matrix tmp_computed;
   LALDR_33Matrix tmp_expected;
@@ -2426,6 +2438,7 @@ void skygrid_scalar_mult(skygrid_t result, const skygrid_t a, REAL4 b)
     result[i] = b * a[i];
 }
 
+#if 0 /* NOT USED */
 /*
  * only handle 2-dimensional arrays
  */
@@ -2446,9 +2459,11 @@ static void make_me_an_Sarray_sequence(LALStatus *status,
 
   LALSCreateArraySequence(status, sequence, &params);
 }
+#endif
 
 
 
+#if 0 /* NOT USED */
 static void print_diagnostics(LALStatus * const status,
                               REAL4ArraySequence *sequence)
 {
@@ -2463,6 +2478,7 @@ static void print_diagnostics(LALStatus * const status,
              sequence->dimLength->data[i]);
     }
 }
+#endif
 
 
 FILE *xfopen(const char *path, const char *mode)
@@ -2639,7 +2655,7 @@ void setup_global_detectors(LALStatus *status)
 
 BOOLEAN passed_special_locations_tests_p(LALStatus *status)
 {
-
+  status = NULL;
   return TRUE;
 }
 
@@ -3422,6 +3438,7 @@ BOOLEAN passed_almost_equal_tests_p(void)
 
 
 
+#if 0
 static int local_strncasecmp(const char * a, const char * b, size_t maxlen)
 {
   char tmp_a[LALNameLength];
@@ -3439,3 +3456,4 @@ static int local_strncasecmp(const char * a, const char * b, size_t maxlen)
 
   return strncmp(tmp_a, tmp_b, maxlen);
 }
+#endif
