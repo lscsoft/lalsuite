@@ -6,6 +6,7 @@
 /**** <lalLaTeX>
  * 
  * \section{Header \texttt{Ring.h}}
+ * \label{sec:Ring.h}
  *
  * Black hole ringdown waveform generation.
  *
