@@ -165,6 +165,8 @@ LALFindChirpChisqVetoInit (
   {
     TRY( LALDestroyComplexFFTPlan( status->statusPtr,
           &(params->plan) ), status );
+    TRY( LALCDestroyVector( status->statusPtr,
+	  &(params->qtildeBinVec) ), status );
   }
   ENDFAIL( status );
 
@@ -176,6 +178,8 @@ LALFindChirpChisqVetoInit (
   {
     TRY( LALCDestroyVector( status->statusPtr, 
            &(params->qtildeBinVec) ), status );
+    TRY( LALCDestroyVector( status->statusPtr,
+           &(params->qtildeBinVecBCV) ), status );
     TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
           &(params->plan) ), status );
     ABORT( status, FINDCHIRPCHISQH_EALOC, FINDCHIRPCHISQH_MSGEALOC );
@@ -194,6 +198,8 @@ LALFindChirpChisqVetoInit (
       LALFree( params->qBinVecPtr );
       TRY( LALCDestroyVector( status->statusPtr, 
             &(params->qtildeBinVec) ), status );
+      TRY( LALCDestroyVector( status->statusPtr,
+            &(params->qtildeBinVecBCV) ), status );
       TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
             &(params->plan) ), status );
     }
@@ -206,6 +212,8 @@ LALFindChirpChisqVetoInit (
     LALCalloc( 1, numChisqBins * sizeof(COMPLEX8Vector*) );
   if ( ! params->qBinVecPtrBCV )
   {
+    TRY( LALCDestroyVector( status->statusPtr,
+           &(params->qtildeBinVec) ), status );	    
     TRY( LALCDestroyVector( status->statusPtr,
            &(params->qtildeBinVecBCV) ), status );
     TRY( LALDestroyComplexFFTPlan( status->statusPtr,
@@ -223,7 +231,14 @@ LALFindChirpChisqVetoInit (
         TRY( LALCDestroyVector( status->statusPtr,
               params->qBinVecPtrBCV + m ), status );
       }
+      for ( m = 0; m < l ; ++m )
+      {
+        TRY( LALCDestroyVector( status->statusPtr,
+              params->qBinVecPtr + m ), status );
+      }
       LALFree( params->qBinVecPtrBCV );
+      TRY( LALCDestroyVector( status->statusPtr,
+            &(params->qtildeBinVec) ), status );
       TRY( LALCDestroyVector( status->statusPtr,
             &(params->qtildeBinVecBCV) ), status );
       TRY( LALDestroyComplexFFTPlan( status->statusPtr,
@@ -236,6 +251,7 @@ LALFindChirpChisqVetoInit (
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
+
 
 
 /* <lalVerbatim file="FindChirpChisqCP"> */
