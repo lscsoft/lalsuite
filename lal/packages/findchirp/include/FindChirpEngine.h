@@ -86,6 +86,7 @@ NRCSID (FINDCHIRPENGINEHH, "$Id$");
 #define FINDCHIRPENGINEH_ESEGZ 12
 #define FINDCHIRPENGINEH_EUSIM 13
 #define FINDCHIRPENGINEH_EWAVL 14
+#define FINDCHIRPENGINEH_EHETR 15
 #define FINDCHIRPENGINEH_MSGENULL "Null pointer"
 #define FINDCHIRPENGINEH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPENGINEH_MSGENUMZ "Data segment length is zero"
@@ -100,6 +101,7 @@ NRCSID (FINDCHIRPENGINEHH, "$Id$");
 #define FINDCHIRPENGINEH_MSGESEGZ "Number of data segments is zero"
 #define FINDCHIRPENGINEH_MSGEUSIM "Unkown simulation type requested"
 #define FINDCHIRPENGINEH_MSGEWAVL "Simulated waveform is longer than dataseg"
+#define FINDCHIRPENGINEH_MSGEHETR "Attempting to simulate heterodyned GW"
 /* </lalErrTable> */
 
 
