@@ -288,6 +288,12 @@ gravitational field.  For this reason we will ignore the undulation of
 the geoid.
 
 \subsubsection*{Uses}
+\begin{verbatim}
+LALGPStoU()
+LALUtime()
+LALGMST1()
+LALDHeapSort()
+\end{verbatim}
 
 \subsubsection*{Notes}
 
