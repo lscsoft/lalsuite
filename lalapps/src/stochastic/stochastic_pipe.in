@@ -141,7 +141,7 @@ if condor_prio:
 
 # get the pad and chunk lengths from the values in the ini file
 min_length = 60
-length = cp.get('input','max_length')
+length = int(cp.get('input','max_length'))
 
 # read science segs that are greater or equal to a chunk from the input file
 data = pipeline.ScienceData()
