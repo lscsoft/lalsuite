@@ -20,13 +20,12 @@
 #include <lal/LALDatatypes.h>
 
 INT4 lalDebugLevel=3;
-static LALStatus status;
 
 REAL8 alpha,delta;
 REAL8 sma,period,ecc,argperi;
 INT4 tperisec,tperins;
 INT4 tsft,start,nsft,starttime,reftime,tobs;
-REAL8 fmin,band,sigma;
+REAL8 f_min,band,sigma;
 CHAR noisedir[256],efiles[56],basename[256],yr[256],ifo[256],stamps[256],outfile[256];
 REAL8 phi,psi,cosiota,f0,h0;
 REAL8 f1dot,f2dot,f3dot;
@@ -102,7 +101,7 @@ int GenTimeStamps()
   tsft=60; /* t */
   sprintf(stamps," "); /* T */
   nsft=0; /* N */
-  fmin=540.0; /* f */
+  f_min=540.0; /* f */
   band=100.0; /* b */
   starttime=0; /* S */
   reftime=0; /* r */
@@ -138,7 +137,7 @@ int GenTimeStamps()
                 {"f0", required_argument, 0, 'F'},
                 {"tsft", required_argument, 0, 't'},
                 {"nsft", required_argument, 0, 'N'},
-		{"fmin", required_argument, 0, 'f'},
+		{"f_min", required_argument, 0, 'f'},
                 {"band", required_argument, 0, 'b'},
 		{"stamps", required_argument, 0, 's'},
                 {"start", required_argument, 0, 'S'},
@@ -196,7 +195,7 @@ int GenTimeStamps()
       nsft=atoi(optarg);
       break;
     case 'f':
-      fmin=atof(optarg);
+      f_min=atof(optarg);
       break;
     case 'b':
       band=atof(optarg);
@@ -276,7 +275,7 @@ int GenTimeStamps()
       fprintf(stdout,"\t--f0       FLOAT\t Gravitational wave frequency in Hz [DEFAULT=600.0]\n");
       fprintf(stdout,"\t--tsft     INTEGER\t Time basefile of SFT's in seconds [DEFAULT=60]\n");
       fprintf(stdout,"\t--nsft     INTEGER\t Number of SFT's to generate [DEFAULT=0]\n");
-      fprintf(stdout,"\t--fmin     FLOAT\t Minimum generation frequency in Hz [DEFAULT=40.0] \n");
+      fprintf(stdout,"\t--f_min     FLOAT\t Minimum generation frequency in Hz [DEFAULT=40.0] \n");
       fprintf(stdout,"\t--band     FLOAT\t Bandwidth to be generated in Hz [DEFAULT=10.0]\n");
       fprintf(stdout,"\t--stamps   STRING\t Location and name of timestamps file [DEFAULT=NULL]\n");
       fprintf(stdout,"\t--start    INTEGER\t GPS Start time of observation [DEFAULT=0]\n");
@@ -343,7 +342,7 @@ int OutputConfigFile()
   fprintf(fp,"detector\t= %s\t\t\t# Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME\n",ifo);
   fprintf(fp,"ephemDir\t= %s\t\t\t# directory containing ephemeris files\n",efiles);
   fprintf(fp,"nTsft\t\t= %d\t\t\t# number of SFTs to calculate\n",nsft);
-  fprintf(fp,"fmin\t\t= %6.12f\t# lowest SFT-frequency in Hz\n",fmin);
+  fprintf(fp,"f_min\t\t= %6.12f\t# lowest SFT-frequency in Hz\n",f_min);
   fprintf(fp,"Band\t\t= %6.12f\t# SFT frequency band in Hz\n",band);
   fprintf(fp,"longitude\t= %6.12f\t# source longitude (in_radians)\n",alpha);
   fprintf(fp,"latitude\t= %6.12f\t# source latitude (in radians)\n",delta);
