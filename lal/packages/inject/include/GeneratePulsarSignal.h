@@ -67,6 +67,21 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 
 /*************************************************** </lalErrTable> */
 
+/* FIXME: need to document them here */
+/* put those back from LALDatatypes.h, where Jolien didn't want them..*/
+/* we also need a bunch of FFTs */
+typedef struct {
+  UINT4 			length;	
+  COMPLEX8FrequencySeries 	*data;	
+} COMPLEX8FrequencySeriesVector;
+
+/* and a bunch of timestamps */
+typedef struct {
+  UINT4 	length;
+  LIGOTimeGPS 	*data;
+} LIGOTimeGPSVector;
+
+
 /*************************************************** 
 <lalLaTeX>
 
@@ -162,6 +177,8 @@ typedef struct {
   SFTVector *noiseSFTs;		 /* noise SFTs to be added (can be NULL) */
 } SFTParams;
 /* </lalVerbatim> */
+
+
 
   
 /********************************************************** <lalLaTeX>

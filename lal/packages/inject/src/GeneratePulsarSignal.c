@@ -93,6 +93,7 @@ LALSDestroyVectorSequence()     LALPrintError()
 \verb+Tsft * Band+ being an integer, so that the number of
 time-samples per SFT is even. This follows \verb+makefakedata_v2+.
 
+
 Furthermore, if the timestamps for SFT-creation passed to
 \verb+LALSignalToSFTs()+ do not fit exactly on a time-step of the
 input time-series, it will be "nudged" to the closest one.
@@ -100,11 +101,13 @@ If \verb+lalDebugLevel>0+, a warning will be printed about this.
 The user could also see this effect in the actual timestamps of the
 SFTs returned.
 
+
 The FFTW-"plan" is currently created using the \verb+ESTIMATE+ flag,
 which is fast but only yields an approximate plan. Better results
-might be achieve by using \verb+MEASURE+ and an appropriate buffering
-of the resulting plan (which doesn't change provided the SFT-length is
-the same).
+might be achieved by using \verb+MEASURE+ and an appropriate buffering
+of the resulting plan (which doesnt change provided the SFT-length is
+the same). Measuring the plan takes longer but might lead to
+substantial speedups for many FFTs, which seems the most likely situation.
 
 \vfill{\footnotesize\input{GeneratePulsarSignalCV}}
 

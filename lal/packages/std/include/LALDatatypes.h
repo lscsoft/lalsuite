@@ -1402,18 +1402,6 @@ tagCOMPLEX16FrequencySeries
 }
 COMPLEX16FrequencySeries;
 
-/* we also need a bunch of FFTs */
-typedef struct {
-  UINT4 			length;	
-  COMPLEX8FrequencySeries 	*data;	
-} COMPLEX8FrequencySeriesVector;
-
-/* and a bunch of timestamps */
-typedef struct {
-  UINT4 	length;
-  LIGOTimeGPS 	*data;
-} LIGOTimeGPSVector;
-
 /* <lalLaTeX>
 
 \vspace{2ex}
