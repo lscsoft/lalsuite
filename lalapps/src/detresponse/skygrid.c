@@ -121,16 +121,26 @@ void init_ephemeris(LALStatus *status, EphemerisData *p_ephemeris_data)
   p_ephemeris_data->ephiles.earthEphemeris = (char *)xcalloc(PathNameLength, sizeof(char));
   p_ephemeris_data->ephiles.sunEphemeris = (char *)xcalloc(PathNameLength, sizeof(char));
   
-  if(args_info.earth_ephemeris_given){
-	  (void)mystrlcpy(p_ephemeris_data->ephiles.earthEphemeris, args_info.earth_ephemeris_arg, PathNameLength);
-  	  } else {
-	  (void)mystrlcpy(p_ephemeris_data->ephiles.earthEphemeris, earthdat_path, PathNameLength);
-	  }
-  if(args_info.sun_ephemeris_given){
-	  (void)mystrlcpy(p_ephemeris_data->ephiles.sunEphemeris, args_info.sun_ephemeris_arg, PathNameLength);
-	  } else {
-	  (void)mystrlcpy(p_ephemeris_data->ephiles.sunEphemeris, sundat_path, PathNameLength);
-	  }
+  if (args_info.earth_ephemeris_given)
+  {
+    (void)mystrlcpy(p_ephemeris_data->ephiles.earthEphemeris, 
+                    args_info.earth_ephemeris_arg, PathNameLength);
+  }
+  else 
+  {
+    (void)mystrlcpy(p_ephemeris_data->ephiles.earthEphemeris, earthdat_path, PathNameLength);
+  }
+  
+  if(args_info.sun_ephemeris_given)
+  {
+    (void)mystrlcpy(p_ephemeris_data->ephiles.sunEphemeris, 
+                    args_info.sun_ephemeris_arg, PathNameLength);
+  } 
+  else 
+  {
+    (void)mystrlcpy(p_ephemeris_data->ephiles.sunEphemeris, sundat_path, PathNameLength);
+  }
+  
   LALInitBarycenter(status, p_ephemeris_data);
 } /* END: init_ephemeris() */
 

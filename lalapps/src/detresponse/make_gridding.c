@@ -72,7 +72,7 @@ irr_grid_ra(LALStatus *s, REAL8Vector *ra_grid, REAL8 earth_phi)
   }
   
   /* shift the computed grid above, and fill in the RA grid */
-  offset = (UINT4)rint(earth_phi / twopi_num_grid); /* offset */
+  offset = (UINT4)rint(earth_phi / twopi_num_grid);
   for (i = 0; i < num_grid; ++i)
     ra_grid->data[modulo_sum(i, offset, num_grid)] = g->data[i];
   
@@ -81,25 +81,17 @@ irr_grid_ra(LALStatus *s, REAL8Vector *ra_grid, REAL8 earth_phi)
   return num_grid;
 }
 
-void 
-zero_gridding(LALStatus *s, gridding_t *g)
-{
-  UINT4 i;
-  
-  if (g->ra == NULL || g->dec == NULL)
-  {
-    exit(11);
-  }
-  
-  for (i = 0; i < g->ra->length; ++i)
-    g->ra->data[i] = 0.;
-    
-  for (i = 0; i < g->dec->length; ++i)
-    g->dec->data[i] = 0.;
-}
 
 void 
-init_gridding(LALStatus *s, gridding_t *g, 
+init_gridding(gridding_t *g)
+{
+  g->ra = NULL;
+  g->ra_irr = NULL;
+  g->dec = NULL;
+} /* END: init_gridding() */
+
+void 
+make_gridding(LALStatus *s, gridding_t *g, 
               UINT4 num_ra, gridding_geom_t ra_geom, 
               UINT4 num_dec, gridding_geom_t dec_geom,
               LIGOTimeGPS *gps)
@@ -150,18 +142,129 @@ init_gridding(LALStatus *s, gridding_t *g,
       
       earth_phi = earth_location(s, gps, &ephemerides);
       
+      if (num_ra != irr_grid_ra(s, g->ra, earth_phi))
+      {
+        fprintf(stderr, "Error in irr_grid_ra()\n");
+        exit(13);
+      }
+      
       cleanup_ephemeris(s, &ephemerides);
     }
   }
   else
   {
-    xcalloc(sizeof(REAL8Vector**), g->dec->length);
+    g->ra_irr = (REAL8Vector**)xcalloc(sizeof(REAL8Vector**), g->dec->length);
     
     for (j = 0; j < g->dec->length; ++j)
     {
       i = (UINT4)rint(sin(g->dec->data[j]));
       LALDCreateVector(s, &(g->ra_irr[j]), i);
+    
+      /* the gridding at each Dec is regular */
+      for (i = 0; i < (g->ra_irr[j])->length; ++i)
+        (g->ra_irr[j])->data[i] = pi_num_ra * (1. + 2.*(REAL8)i);
     }
   }
   
-}
+} /* END: init_gridding() */
+
+
+/*
+ * deallocate gridding
+ */
+void 
+cleanup_gridding(LALStatus *s, gridding_t *g)
+{
+  UINT4 j;
+  
+  if (g->ra_geom == DETRESP_VARGRID)
+  {
+    for (j = 0; j < g->dec->length; ++j)
+    {
+      LALDDestroyVector(s, &(g->ra_irr[j]));
+      g->ra_irr[j] = NULL;
+    }
+    free(g->ra_irr);
+  }
+  else
+  {
+    LALDDestroyVector(s, &(g->ra));
+  }
+  
+  LALDDestroyVector(s, &(g->dec));
+
+} /* END: cleanup_gridding() */
+
+/*
+ * Fill gridding with zeros
+ */
+void 
+zero_gridding(LALStatus *s, gridding_t *g)
+{
+  UINT4 i;
+  
+  if (g->ra == NULL || g->dec == NULL)
+  {
+    exit(11);
+  }
+  
+  for (i = 0; i < g->ra->length; ++i)
+    g->ra->data[i] = 0.;
+    
+  for (i = 0; i < g->dec->length; ++i)
+    g->dec->data[i] = 0.;
+} /* END: zero_gridding() */
+
+void 
+print_gridding(gridding_t *g, char *fn)
+{
+  UINT4 i, j;
+  
+  switch (g->ra_geom)
+  {
+    case DETRESP_REGGRID:
+      printf("ra_geom =\tREGULAR\n");
+      break;
+    case DETRESP_IRRGRID:
+      printf("ra_geom =\tIRREGULAR\n");
+      break;
+    case DETRESP_VARGRID:
+      printf("ra_geom =\tVARIABLE\n");
+      break;
+    default:
+      printf("ra_geom =\t???\n");
+  }
+  
+  switch (g->dec_geom)
+  {
+    case DETRESP_REGGRID:
+      printf("dec_geom =\tREGULAR\n");
+      break;
+    case DETRESP_IRRGRID:
+      printf("dec_geom =\tIRREGULAR\n");
+      break;
+    case DETRESP_VARGRID:
+      printf("dec_geom =\tVARIABLE\n");
+      break;
+    default:
+      printf("dec_geom =\t???\n");
+  }
+  
+  printf("Declination:\n");
+  for (i = 0; i < g->dec->length; ++i)
+    printf("\t% 20.14e Pi\n", g->dec->data[i]/(double)LAL_PI);
+  printf("\n");
+    
+  printf("Right Ascencion:\n");
+  if (g->ra_geom == DETRESP_REGGRID || g->ra_geom == DETRESP_IRRGRID)
+  {
+    for (i = 0; i < g->ra->length; ++i)
+      printf("\t% 20.14e h\n", g->ra->data[i]/(double)LAL_PI * 12.);
+  }
+  else
+  {
+    printf("RSN\n");
+  }
+  
+} /* END: print_gridding() */
+
