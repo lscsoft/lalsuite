@@ -1345,7 +1345,7 @@ int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum)
     if (fpstat) {
       int i;
       int howmany2=0;
-      int howmany=sprintf((char *)tmpline, "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %10.5f\n",
+      int howmany=sprintf((char *)tmpline, "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
 			 fr, Alpha, Delta, N, mean, std, max);
       
       if (howmany <= 0) {
