@@ -62,7 +62,7 @@ make install || fail
 
 ## Now LAL has been built and installed.  To use LAL you may want to set
 ## various environment variables.  If you are using a Bourne shell, put
-## the following in your "./profile" file:
+## the following in your ".profile" file:
 #ignore
 if 0; then
 #/ignore
@@ -70,6 +70,17 @@ if 0; then
 LAL_LOCATION=<value of "LAL_PREFIX">
 export LAL_LOCATION
 . $LAL_LOCATION/etc/lal-user-env.sh
+#/verbatim
+#ignore
+if 0; then
+#/ignore
+## If you are using a C shell, put the following in your ".login" file:
+#ignore
+if 0; then
+#/ignore
+#verbatim
+setenv LAL_LOCATION <value of "LAL_PREFIX">
+source $LAL_LOCATION/etc/lal-user-env.csh
 #/verbatim
 #ignore
 if 0; then
