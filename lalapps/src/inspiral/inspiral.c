@@ -37,6 +37,7 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/Date.h>
+#include <lal/Units.h>
 
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
@@ -70,7 +71,7 @@ extern int vrbflg;                      /* verbocity of lal function    */
 /* input data parameters */
 UINT8  gpsStartTimeNS   = 0;            /* input data GPS start time    */
 UINT8  gpsEndTimeNS     = 0;            /* input data GPS end time      */
-CHAR  *fqChanName      = NULL;          /* name of data channel         */
+CHAR  *fqChanName       = NULL;         /* name of data channel         */
 INT4  numPoints         = -1;           /* points in a segment          */
 INT4  numSegments       = -1;           /* number of segments           */
 INT4  ovrlap            = -1;           /* overlap between segments     */
@@ -116,10 +117,8 @@ int main( int argc, char *argv[] )
   LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
   /* frame input data */
-#if 0
-  FrStream                     *frStream       = NULL;
-  FrChanIn                     *frChan         = NULL;
-#endif
+  FrStream     *frStream      = NULL;
+  FrChanIn     frChan;
 
   /* raw input data storage */
   REAL4TimeSeries               chan;
@@ -220,11 +219,25 @@ int main( int argc, char *argv[] )
       &status );
   memcpy( &(spec.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
   memcpy( &(resp.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
+  chan.deltaT = 1.0 / (REAL8) sampleRate;
+  chan.sampleUnits = lalADCCountUnit;
   
-  /* create the data segment vector and findchirp segment vector */
+  /* create the data segment vector */
   LAL_CALL( LALInitializeDataSegmentVector( &status, &dataSegVec,
         &chan, &spec, &resp, fcInitParams ), &status );
+
   /* read the data channel time series from frames */
+  LAL_CALL( LALFrOpen( &status, &frStream, NULL, "*.gwf" ), &status );
+  LAL_CALL( LALFrSeek( &status, &(chan.epoch), frStream ), &status );
+  frChan.name = fqChanName;
+  frChan.type = ADCDataChannel;
+  LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream );
+  if ( status.statusCode != FRAMESTREAMH_EDONE )
+  {
+    lal_errhandler( &status, "LALFrGetREAL4TimeSeries", __FILE__, __LINE__,
+        rcsid );
+  }
+  LAL_CALL( LALFrClose( &status, &frStream ), &status );
 
   /* call the magic calibration function to get the calibration */
   
@@ -368,10 +381,13 @@ int main( int argc, char *argv[] )
   /* free the rest of the memory, check for memory leaks and exit */
   LALFree( fqChanName );
   LALFree( channelName );
+  LALFree( rhosqStr );
+  LALFree( chisqStr );
   LALCheckMemoryLeaks();
   exit( 0 );
 }
 
+/* ------------------------------------------------------------------------- */
 
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
@@ -934,3 +950,31 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 }
 
 #undef ADD_PROCESS_PARAM
+
+/* --- function to graph an array of REAL4 ------------------------------ */
+void
+graphREAL4 (
+    REAL4      *array, 
+    INT4        n,
+    INT4        spacing
+           ) 
+{
+  FILE *fp;
+  INT4 i;
+
+  /* open a file for writing */
+  if ( !(fp = fopen( "temp.graph", "w" )) )
+  {
+    printf( "couldn't open file\n" );
+  }
+
+  /* print data into the file */
+  for ( i = 0; i < n; ++i )
+    fprintf( fp, "%d\t%e\n", i, array[i * spacing] );
+
+  /* close the file */
+  fclose( fp );
+
+  return;
+}
+
