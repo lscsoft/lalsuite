@@ -1820,7 +1820,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   " --test-trial N                trail to test\n"\
   " --geo-hpf-frequency N         GEO high pass filter knee frequency\n"\
   " --geo-hpf-attenuation N       GEO high pass filter attenuation\n"\
-  " --geo-hpf-order N             GEO high pass filter order\n"
+  " --geo-hpf-order N             GEO high pass filter order\n"\
+  " --alpha N                     exponent on filter spectrum\n"\
+  " --f-ref N                     reference frequency for filter spectrum\n"\
+  " --omega0 N                    reference omega_0 for filter spectrum\n"
 
 /* parse command line options */
 static void parseOptions(INT4 argc, CHAR *argv[])
@@ -1882,6 +1885,9 @@ static void parseOptions(INT4 argc, CHAR *argv[])
       {"test-trial", required_argument, 0, 'G'},
       {"debug-level", required_argument, 0, 'H'},
       {"version", no_argument, 0, 'I'},
+      {"alpha", required_argument, 0, 'J'},
+      {"f-ref", required_argument, 0, 'K'},
+      {"omega0", required_argument, 0, 'L'},
       {0, 0, 0, 0}
     };
 
@@ -2432,6 +2438,41 @@ static void parseOptions(INT4 argc, CHAR *argv[])
         exit(0);
         break;
 
+      case 'J':
+        /* filter spectrum exponent */
+        alpha = atof(optarg);
+        break;
+
+      case 'K':
+        /* filter reference frequency */
+        fRef = atof(optarg);
+
+        /* check */
+        if (fRef < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Reference frequency must be greater than 0: " \
+              "(%f specified)\n", long_options[option_index].name, fRef);
+          exit(1);
+        }
+
+        break;
+
+      case 'L':
+        /* filter reference omega */
+        omegaRef = atof(optarg);
+
+        /* check */
+        if (omegaRef <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Reference omega_0 must be positive: (%f specified)\n", \
+              long_options[option_index].name, omegaRef);
+          exit(1);
+        }
+
+        break;
+
       case '?':
         exit(1);
         break;
@@ -2710,6 +2751,22 @@ static void parseOptions(INT4 argc, CHAR *argv[])
   {
     fprintf(stderr, "Invalid frequency band; maximum frequency (%d Hz) is " \
         "before minimum\nfrequency (%d Hz)\n", fMax, fMin);
+    exit(1);
+  }
+
+  /* filter reference frequency less than min */
+  if (fRef < fMin)
+  {
+    fprintf(stderr, "Reference frequency (%f Hz) is less than minimum " \
+        "frequency (%d Hz)\n", fRef, fMin);
+    exit(1);
+  }
+
+  /* filter reference frequency greater than max */
+  if (fRef > fMax)
+  {
+    fprintf(stderr, "Reference frequency (%f Hz) is less than maximum " \
+        "frequency (%d Hz)\n", fRef, fMax);
     exit(1);
   }
 
