@@ -21,14 +21,14 @@
 
 NRCSID (TWOINTERFFINDCHIRPSPDATAC, "$Id$");
 
-#pragma <lalVerbatim file="TwoInterfFindChirpSPDataCP">
+/* <lalVerbatim file="TwoInterfFindChirpSPDataCP"> */
 void
 LALTwoInterfFindChirpSPDataInit (
     LALStatus                                 *status,
     TwoInterfFindChirpSPDataParamsVector     **vector,
     TwoInterfFindChirpInitParams              *params
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   UINT4                                        j;
   UINT4                                        k;
@@ -201,13 +201,13 @@ LALTwoInterfFindChirpSPDataInit (
 
 
 
-#pragma <lalVerbatim file="TwoInterfFindChirpSPDataCP">
+/* <lalVerbatim file="TwoInterfFindChirpSPDataCP"> */
 void
 LALTwoInterfFindChirpSPDataFinalize (
     LALStatus                                 *status,
     TwoInterfFindChirpSPDataParamsVector     **vector
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   UINT4                                        i;
   TwoInterfFindChirpSPDataParamsVector        *vectorPtr;
@@ -287,14 +287,14 @@ LALTwoInterfFindChirpSPDataFinalize (
 }
 
 
-#pragma <lalVerbatim file="TwoInterfFindChirpSPDataCP">
+/* <lalVerbatim file="TwoInterfFindChirpSPDataCP"> */
 void
 LALTwoInterfFindChirpSPData (
     LALStatus                                    *status, 
     TwoInterfFindChirpSegmentVector              *twoInterfFcSegVec, 
     TwoInterfDataSegmentVector                   *twoInterfDataSegVec, 
     TwoInterfFindChirpSPDataParamsVector         *twoInterfDataParamsVec)
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   UINT4                                  n; 
   FindChirpSPDataParams                 *params[2];

@@ -79,7 +79,7 @@ LALCOMPLEX8VectorFFT()
 
 NRCSID (FINDCHIRPCHISQC, "$Id$");
 
-#pragma <lalVerbatim file="FindChirpChisqCP">
+/* <lalVerbatim file="FindChirpChisqCP"> */
 void
 LALFindChirpChisqVetoInit (
     LALStatus                  *status,
@@ -87,7 +87,7 @@ LALFindChirpChisqVetoInit (
     UINT4                       numChisqBins,
     UINT4                       numPoints
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   UINT4                         l, m;
 
@@ -183,14 +183,14 @@ LALFindChirpChisqVetoInit (
 }
 
 
-#pragma <lalVerbatim file="FindChirpChisqCP">
+/* <lalVerbatim file="FindChirpChisqCP"> */
 void
 LALFindChirpChisqVetoFinalize (
     LALStatus                  *status,
     FindChirpChisqParams       *params,
     UINT4                       numChisqBins
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   UINT4                         l;
 
@@ -257,7 +257,7 @@ LALFindChirpChisqVetoFinalize (
 }
 
 
-#pragma <lalVerbatim file="FindChirpChisqCP">
+/* <lalVerbatim file="FindChirpChisqCP"> */
 void
 LALFindChirpChisqVeto (
     LALStatus                  *status,
@@ -265,7 +265,7 @@ LALFindChirpChisqVeto (
     FindChirpChisqInput        *input,
     FindChirpChisqParams       *params
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   UINT4                 j, l;
   UINT4                 numPoints;

@@ -81,13 +81,13 @@ NRCSID( INCREMENTGPSC, "$Id$" );
 static const INT4 oneBillion = 1000000000;
 
 /* Increment a GPS time */
-#pragma <lalVerbatim file="IncrementGPSCP">
+/* <lalVerbatim file="IncrementGPSCP"> */
 void
 LALIncrementGPS (LALStatus             *status,
                  LIGOTimeGPS           *pIncrementedGPS, /* output */
                  const LIGOTimeGPS     *pInitialGPS, /* input: GPS time */
                  const LALTimeInterval *pDeltaT) /* input: interval to increment by */
-#pragma </lalVerbatim>
+/*  </lalVerbatim> */
 {
   LIGOTimeGPS tmp_gps;
 
@@ -118,13 +118,13 @@ LALIncrementGPS (LALStatus             *status,
 
 
 /* Decrement a GPS time */
-#pragma <lalVerbatim file="IncrementGPSCP">
+/* <lalVerbatim file="IncrementGPSCP"> */
 void
 LALDecrementGPS (LALStatus             *status,
                  LIGOTimeGPS           *pDecrementedGPS, /* output */
                  const LIGOTimeGPS     *pInitialGPS, /* input: GPS time */
                  const LALTimeInterval *pDeltaT) /* input: interval to decrement by */
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   LIGOTimeGPS         deltaT_gps;
   LIGOTimeGPS         tmp_gps;    /* tmp so that we can use a call like:
@@ -177,13 +177,13 @@ LALDecrementGPS (LALStatus             *status,
 
 
 /* Return GPS1 - GPS2 */
-#pragma <lalVerbatim file="IncrementGPSCP">
+/* <lalVerbatim file="IncrementGPSCP"> */
 void
 LALDeltaGPS (LALStatus         *status,
              LALTimeInterval   *pDeltaGPS, /* output: GPS1 - GPS2 */
              const LIGOTimeGPS *pGPS1, /* input: GPS1 */
              const LIGOTimeGPS *pGPS2) /* input: GPS2 */
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   INITSTATUS( status, "LALDeltaGPS", INCREMENTGPSC );
   ATTATCHSTATUSPTR(status);
@@ -279,7 +279,7 @@ LALDeltaGPS (LALStatus         *status,
 
 
 
-#pragma <lalVerbatim file="IncrementGPSCP">
+/* <lalVerbatim file="IncrementGPSCP"> */
 void
 LALCompareGPS(LALStatus           *status,
               LALGPSCompareResult *pResult, /* output: -1 => GPS1 < GPS2
@@ -287,7 +287,7 @@ LALCompareGPS(LALStatus           *status,
                                                         1 => GPS1 > GPS2 */
               const LIGOTimeGPS   *pGPS1, /* input: GPS1 */
               const LIGOTimeGPS   *pGPS2) /* input: GPS2 */
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   INITSTATUS( status, "LALCompareGPS", INCREMENTGPSC );
   ATTATCHSTATUSPTR(status);

@@ -49,14 +49,14 @@ wrong by the same amount.
 
 NRCSID( GPSTIMENOWC, "$Id$" );
 
-#pragma <lalVerbatim file="GPSTimeNowCP">
+/* <lalVerbatim file="GPSTimeNowCP"> */
 void
 LALGPSTimeNow (
     LALStatus           *status,
     LIGOTimeGPS         *gpstime,
     const LALLeapSecAccuracy  *accuracy
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   time_t ticks;
   LALDate laldate;

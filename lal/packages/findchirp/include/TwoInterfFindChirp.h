@@ -180,7 +180,7 @@ interferometer name (e.g. L1, H2, etc.)
 #endif
 
 /* structure for describing a binary insipral event */
-#pragma <lalVerbatim file="TwoInterfFindChirpHTwoInterfInspiralEvent">
+/* <lalVerbatim file="TwoInterfFindChirpHTwoInterfInspiralEvent"> */
 typedef struct
 tagTwoInterfInspiralEvent
 {
@@ -196,7 +196,7 @@ tagTwoInterfInspiralEvent
   struct tagTwoInterfInspiralEvent      *next;
 }
 TwoInterfInspiralEvent;
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{TwoInterfInspiralEvent}}
@@ -245,7 +245,7 @@ a linked list of network events.
 
 /* --- vector of DataSegmentVector, as defined in the 
    findchirp/framedata packages --------- */
-#pragma <lalVerbatim file="TwoInterfFindChirpHTwoInterfDataSegmentVector">
+/* <lalVerbatim file="TwoInterfFindChirpHTwoInterfDataSegmentVector"> */
 typedef struct
 tagTwoInterfDataSegmentVector
 {
@@ -253,7 +253,7 @@ tagTwoInterfDataSegmentVector
   DataSegmentVector            *data;
 }
 TwoInterfDataSegmentVector;
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{TwoInterfDataSegmentVector}}
@@ -276,7 +276,7 @@ in a network (in this case 2).
 #endif
 
 /* vector of FindChirpSegmentVector defined in the finchirp package */
-#pragma <lalVerbatim file="TwoInterfFindChirpSegmentVector">
+/* <lalVerbatim file="TwoInterfFindChirpSegmentVector"> */
 typedef struct
 tagTwoInterfFindChirpSegmentVector
 {
@@ -284,7 +284,7 @@ tagTwoInterfFindChirpSegmentVector
   FindChirpSegmentVector       *data;
 }
 TwoInterfFindChirpSegmentVector;
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{TwoInterfFindChirpSegmentVector}}
@@ -313,7 +313,7 @@ in a network (in this case 2).
  */
 
 /* parameter structure for all init functions */
-#pragma <lalVerbatim file="FindChirpHFindChirpInitParams">
+/* <lalVerbatim file="FindChirpHFindChirpInitParams"> */
 typedef struct
 tagTwoInterfFindChirpInitParams
 {
@@ -325,7 +325,7 @@ tagTwoInterfFindChirpInitParams
   BOOLEAN                       createTwoInterfRhosqVec;
 }
 TwoInterfFindChirpInitParams;
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{TwoInterfFindChirpInitParams}}
@@ -365,7 +365,7 @@ Memory is only allocated for this vector if the flag is set to 1.
 #endif
 
 /* parameter structure for the filtering function */
-#pragma <lalVerbatim file="TwoInterfFindChirpHTwoInterfFindChirpFilterParamsVector">
+/* <lalVerbatim file="TwoInterfFindChirpHTwoInterfFindChirpFilterParamsVector"> */
 typedef struct
 tagTwoInterfFindChirpFilterParamsVector
 {
@@ -373,7 +373,7 @@ tagTwoInterfFindChirpFilterParamsVector
   FindChirpFilterParams        *filterParams;
 }
 TwoInterfFindChirpFilterParamsVector;
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{TwoInterfFindChirpFilterParams}}
@@ -395,7 +395,7 @@ in a network (in this case 2).
 #endif
 
 /* parameter structure for the filtering function */
-#pragma <lalVerbatim file="TwoInterfFindChirpHTwoInterfFindChirpFilterParams">
+/* <lalVerbatim file="TwoInterfFindChirpHTwoInterfFindChirpFilterParams"> */
 typedef struct
 tagTwoInterfFindChirpFilterParams
 {
@@ -405,7 +405,7 @@ tagTwoInterfFindChirpFilterParams
   REAL4TimeSeries                         *twoInterfRhosqVec;
 }
 TwoInterfFindChirpFilterParams;
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{TwoInterfFindChirpFilterParams}}

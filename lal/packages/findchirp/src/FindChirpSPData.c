@@ -36,14 +36,14 @@ $Id$
 
 NRCSID (FINDCHIRPSPDATAC, "$Id$");
 
-#pragma <lalVerbatim file="FindChirpSPDataCP">
+/* <lalVerbatim file="FindChirpSPDataCP"> */
 void
 LALFindChirpSPDataInit (
     LALStatus                  *status,
     FindChirpSPDataParams     **output,
     FindChirpInitParams        *params
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   FindChirpSPDataParams        *dataParamPtr;
   REAL4                        *amp;
@@ -198,13 +198,13 @@ LALFindChirpSPDataInit (
 
 
 
-#pragma <lalVerbatim file="FindChirpSPDataCP">
+/* <lalVerbatim file="FindChirpSPDataCP"> */
 void
 LALFindChirpSPDataFinalize (
     LALStatus                  *status,
     FindChirpSPDataParams     **output
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   FindChirpSPDataParams        *dataParamPtr;
 
@@ -277,7 +277,7 @@ LALFindChirpSPDataFinalize (
 }
 
 
-#pragma <lalVerbatim file="FindChirpSPDataCP">
+/* <lalVerbatim file="FindChirpSPDataCP"> */
 void
 LALFindChirpSPData (
     LALStatus                  *status,
@@ -285,7 +285,7 @@ LALFindChirpSPData (
     DataSegmentVector          *dataSegVec,
     FindChirpSPDataParams      *params
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   UINT4                 i, j, k; 
   UINT4                 cut;

@@ -48,14 +48,14 @@ This modules contains two routines, one of which converts from
 
 NRCSID( GPSTOINT8C, "$Id$" );
 
-#pragma <lalVerbatim file="GPStoINT8CP">
+/* <lalVerbatim file="GPStoINT8CP"> */
 void
 LALINT8toGPS ( 
     LALStatus          *status,
     LIGOTimeGPS        *output, 
     const INT8         *input 
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   INT8 s = (*input) / 1000000000LL;
 
@@ -68,14 +68,14 @@ LALINT8toGPS (
 }
 
 /*----------------------------------------------------------------------*/
-#pragma <lalVerbatim file="GPStoINT8CP">
+/* <lalVerbatim file="GPStoINT8CP"> */
 void
 LALGPStoINT8 ( 
     LALStatus          *status,
     INT8               *output, 
     const LIGOTimeGPS  *input 
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   INITSTATUS( status, "LALGPStoINT8", GPSTOINT8C );
   

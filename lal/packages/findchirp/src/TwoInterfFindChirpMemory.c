@@ -152,13 +152,13 @@ LALCreateTwoInterfDataSegmentVector (
   RETURN( status );
 }
 
-#pragma <lalVerbatim file="TwoInterfFindChirpMemoryCP">
+/* <lalVerbatim file="TwoInterfFindChirpMemoryCP"> */
 void
 LALDestroyTwoInterfDataSegmentVector (
     LALStatus                           *status,
     TwoInterfDataSegmentVector         **vector
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   UINT4                          i;
   UINT4                          j;
@@ -229,14 +229,14 @@ LALDestroyTwoInterfDataSegmentVector (
 }
 
 
-#pragma <lalVerbatim file="TWOINTERFFindChirpMemoryCP">
+/* <lalVerbatim file="TWOINTERFFindChirpMemoryCP"> */
 void
 LALCreateTwoInterfFindChirpSegmentVector (
     LALStatus                           *status,
     TwoInterfFindChirpSegmentVector    **vector,
     TwoInterfFindChirpInitParams        *params
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   UINT4                                  i;
   UINT4                                  j;
@@ -355,13 +355,13 @@ LALCreateTwoInterfFindChirpSegmentVector (
   RETURN( status );
 }
 
-#pragma <lalVerbatim file="TwoInterfFindChirpMemoryCP">
+/* <lalVerbatim file="TwoInterfFindChirpMemoryCP"> */
 void
 LALDestroyTwoInterfFindChirpSegmentVector (
     LALStatus                           *status,
     TwoInterfFindChirpSegmentVector    **vector
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   UINT4                               i;
   UINT4                               j;

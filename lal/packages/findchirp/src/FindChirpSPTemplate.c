@@ -69,14 +69,14 @@ LALDestroyVector()
 
 NRCSID (FINDCHIRPSPTEMPLATEC, "$Id$");
 
-#pragma <lalVerbatim file="FindChirpSPTemplateCP">
+/* <lalVerbatim file="FindChirpSPTemplateCP"> */
 void
 LALFindChirpSPTemplateInit (
     LALStatus                  *status,
     FindChirpSPTmpltParams    **output,
     FindChirpInitParams        *params
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   UINT4                         k;
   FindChirpSPTmpltParams       *outputPtr;
@@ -144,13 +144,13 @@ LALFindChirpSPTemplateInit (
 
 
 
-#pragma <lalVerbatim file="FindChirpSPTemplateCP">
+/* <lalVerbatim file="FindChirpSPTemplateCP"> */
 void
 LALFindChirpSPTemplateFinalize (
     LALStatus                  *status,
     FindChirpSPTmpltParams    **output
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   FindChirpSPTmpltParams       *outputPtr;
 
@@ -196,7 +196,7 @@ LALFindChirpSPTemplateFinalize (
 
 
 
-#pragma <lalVerbatim file="FindChirpSPTemplateCP">
+/* <lalVerbatim file="FindChirpSPTemplateCP"> */
 void
 LALFindChirpSPTemplate (
     LALStatus                  *status,
@@ -204,7 +204,7 @@ LALFindChirpSPTemplate (
     InspiralTemplate           *tmplt,
     FindChirpSPTmpltParams     *params
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   UINT4         numPoints  = 0;
   REAL4         deltaF     = 0.0;

@@ -33,14 +33,14 @@ double rint(double x);
 NRCSID (FINDCHIRPFILTERC, "$Id$");
 
 
-#pragma <lalVerbatim file="FindChirpFilterCP">
+/* <lalVerbatim file="FindChirpFilterCP"> */
 void
 LALCreateFindChirpInput (
     LALStatus                  *status,
     FindChirpFilterInput      **output,
     FindChirpInitParams        *params
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   FindChirpFilterInput         *outputPtr;
 
@@ -112,13 +112,13 @@ LALCreateFindChirpInput (
 
 
 
-#pragma <lalVerbatim file="FindChirpFilterCP">
+/* <lalVerbatim file="FindChirpFilterCP"> */
 void
 LALDestroyFindChirpInput (
     LALStatus                  *status,
     FindChirpFilterInput      **output
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   FindChirpFilterInput         *outputPtr;
 
@@ -166,14 +166,14 @@ LALDestroyFindChirpInput (
 }
     
 
-#pragma <lalVerbatim file="FindChirpFilterCP">
+/* <lalVerbatim file="FindChirpFilterCP"> */
 void
 LALFindChirpFilterInit (
     LALStatus                  *status,
     FindChirpFilterParams     **output,
     FindChirpInitParams        *params
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   FindChirpFilterParams        *outputPtr;
 
@@ -352,13 +352,13 @@ LALFindChirpFilterInit (
 
 
 
-#pragma <lalVerbatim file="FindChirpFilterCP">
+/* <lalVerbatim file="FindChirpFilterCP"> */
 void
 LALFindChirpFilterFinalize (
     LALStatus                  *status,
     FindChirpFilterParams     **output
                            )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   FindChirpFilterParams        *outputPtr;
 
@@ -461,7 +461,7 @@ LALFindChirpFilterFinalize (
 
 
 
-#pragma <lalVerbatim file="FindChirpFilterCP">
+/* <lalVerbatim file="FindChirpFilterCP"> */
 void
 LALFindChirpFilterSegment (
     LALStatus                  *status,
@@ -469,7 +469,7 @@ LALFindChirpFilterSegment (
     FindChirpFilterInput       *input,
     FindChirpFilterParams      *params
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   UINT4                 j, k;
   UINT4                 numPoints;
