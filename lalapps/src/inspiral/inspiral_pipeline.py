@@ -34,7 +34,7 @@ class ScienceSegment:
     self.chunks = []
     self.segpad = segpad
     self.startpad = self.start - self.segpad
-    self.endpad = self.end - self.segpad
+    self.endpad = self.end + self.segpad
   def createchunks(self,length,overlap):
     dur = self.duration
     start = self.start
