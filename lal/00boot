@@ -13,7 +13,7 @@ version=0.10
 
 # Base (non-conditionally-compiled) packages:
 #lal_pkg_list_base="support tools sample hello factories vectorops utilities stats inject date tdfilter window fft timefreq clremoval stochastic inspiral noisemodels bank pulsar fct burstsearch tracksearch tfclusters slopefilters"
-lal_pkg_list_base="support tools sample hello factories vectorops utilities stats inject date tdfilter window fft clremoval stochastic inspiral noisemodels bank findchirp pulsar houghpulsar fct burstsearch tracksearch tfclusters slopefilters"
+lal_pkg_list_base="support tools sample hello factories vectorops utilities stats inject date tdfilter window fft clremoval stochastic inspiral noisemodels bank ring findchirp pulsar houghpulsar fct burstsearch tracksearch tfclusters slopefilters"
 
 # Packages compiled only with --enable-mpi
 lal_pkg_list_mpi="comm"
