@@ -45,8 +45,10 @@ This is the approach used in the numerical input routines in
 The routines in \verb@StreamSequenceInput.c@ are less robust but much
 more efficient: they use \verb@fscanf()@ to parse the input stream
 directly.  They are intended primarily for test programs that may need
-to read large datafiles of undetermined length.
-
+to read large datafiles of undetermined length.  The routines in
+\verb@StreamSeriesInput.c@ and \verb@StreamGridInput.c@ also parse the
+input stream directly using \verb@fscanf()@, to avoid potentially
+crippling computational overhead.
 
 ******************************************************* </lalLaTeX> */
 
@@ -54,6 +56,7 @@ to read large datafiles of undetermined length.
 #define _STREAMINPUT_H
 
 #include <lal/LALStdlib.h>
+#include <lal/Grid.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,7 +84,7 @@ NRCSID(STREAMINPUTH,"$Id$");
 #define STREAMINPUTH_MSGELEN  "No numbers were read"
 #define STREAMINPUTH_MSGESLEN "Not enough numbers read to fill sequence"
 #define STREAMINPUTH_MSGEVLEN "Could not determine complex vectorLength"
-#define STREAMINPUTH_MSGEDLEN "No dimLength given"
+#define STREAMINPUTH_MSGEDLEN "Dimension lengths inconsistent or not given"
 #define STREAMINPUTH_MSGEDIM  "Inconsistent or non-positive arrayDim value"
 #define STREAMINPUTH_MSGEFMT  "Badly formatted number"
 #define STREAMINPUTH_MSGEBUF  "BUFFSIZE not a multiple of largest complex type size"
@@ -279,6 +282,30 @@ void
 LALCReadFSeries( LALStatus *stat, COMPLEX8FrequencySeries *series, FILE *stream );
 void
 LALZReadFSeries( LALStatus *stat, COMPLEX16FrequencySeries *series, FILE *stream );
+
+/* <lalLaTeX>
+\newpage\input{StreamGridInputC}
+</lalLaTeX> */
+void
+LALI2ReadGrid( LALStatus *stat, INT2Grid **grid, FILE *stream );
+void
+LALI4ReadGrid( LALStatus *stat, INT4Grid **grid, FILE *stream );
+void
+LALI8ReadGrid( LALStatus *stat, INT8Grid **grid, FILE *stream );
+void
+LALU2ReadGrid( LALStatus *stat, UINT2Grid **grid, FILE *stream );
+void
+LALU4ReadGrid( LALStatus *stat, UINT4Grid **grid, FILE *stream );
+void
+LALU8ReadGrid( LALStatus *stat, UINT8Grid **grid, FILE *stream );
+void
+LALSReadGrid( LALStatus *stat, REAL4Grid **grid, FILE *stream );
+void
+LALDReadGrid( LALStatus *stat, REAL8Grid **grid, FILE *stream );
+void
+LALCReadGrid( LALStatus *stat, COMPLEX8Grid **grid, FILE *stream );
+void
+LALZReadGrid( LALStatus *stat, COMPLEX16Grid **grid, FILE *stream );
 
 /* <lalLaTeX>
 \newpage\input{StreamInputTestC}

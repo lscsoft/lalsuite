@@ -17,10 +17,10 @@ stream.
 \end{verbatim}
 
 \noindent This header provides prototypes for routines that write the
-contents of LAL time and frequency series structures to a file (or
-other I/O) stream, in a standard format.  The routines do not provide
-a system-level interface to create files and open or close file
-streams; they simply assume that they have been passed an open,
+contents of LAL time/frequency series structures or grid structures to
+a file (or other I/O) stream, in a standard format.  The routines do
+not provide a system-level interface to create files and open or close
+file streams; they simply assume that they have been passed an open,
 writeable stream.  Nonetheless, because they involve I/O stream
 manipulation, these routines are placed in the \verb@lalsupport@
 library rather than in \verb@lal@ proper.
@@ -31,6 +31,7 @@ library rather than in \verb@lal@ proper.
 #define _STREAMOUTPUT_H
 
 #include <lal/LALStdlib.h>
+#include <lal/Grid.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -144,6 +145,30 @@ void
 LALCWriteFSeries( LALStatus  *stat, FILE *stream, COMPLEX8FrequencySeries *series );
 void
 LALZWriteFSeries( LALStatus  *stat, FILE *stream, COMPLEX16FrequencySeries *series );
+
+/* <lalLaTeX>
+\newpage\input{StreamGridOutputC}
+</lalLaTeX> */
+void
+LALI2WriteGrid( LALStatus  *stat, FILE *stream, INT2Grid *grid );
+void
+LALI4WriteGrid( LALStatus  *stat, FILE *stream, INT4Grid *grid );
+void
+LALI8WriteGrid( LALStatus  *stat, FILE *stream, INT8Grid *grid );
+void
+LALU2WriteGrid( LALStatus  *stat, FILE *stream, UINT2Grid *grid );
+void
+LALU4WriteGrid( LALStatus  *stat, FILE *stream, UINT4Grid *grid );
+void
+LALU8WriteGrid( LALStatus  *stat, FILE *stream, UINT8Grid *grid );
+void
+LALSWriteGrid( LALStatus  *stat, FILE *stream, REAL4Grid *grid );
+void
+LALDWriteGrid( LALStatus  *stat, FILE *stream, REAL8Grid *grid );
+void
+LALCWriteGrid( LALStatus  *stat, FILE *stream, COMPLEX8Grid *grid );
+void
+LALZWriteGrid( LALStatus  *stat, FILE *stream, COMPLEX16Grid *grid );
 
 #ifdef __cplusplus
 }

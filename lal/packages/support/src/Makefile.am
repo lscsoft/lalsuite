@@ -4,36 +4,44 @@ noinst_LTLIBRARIES = libsupport.la
 lib_LTLIBRARIES = liblalsupport.la
 
 libsupport_la_SOURCES = LALStd.c LALVersion.c LALMalloc.c LALError.c \
-  StringToken.c StringConvert.c
+  StringToken.c StringConvert.c Grid.c
 
 liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \
   PrintTimeSeries.c ReadFrequencySeries.c ReadTimeSeries.c \
   StreamVectorInput.c StreamVectorSequenceInput.c StreamSequenceInput.c \
   StreamSeriesInput.c StreamSeriesOutput.c \
+  StreamGridInput.c StreamGridOutput.c \
   LALInitBarycenter.c LALXMGRInterface.c \
   LIGOLwXML.c
 
 MAINTAINERCLEANFILES = PrintVector.c PrintFrequencySeries.c PrintTimeSeries.c \
-  ReadFrequencySeries.c ReadTimeSeries.c \
+  ReadFrequencySeries.c ReadTimeSeries.c Grid.c \
   StreamVectorInput.c StreamVectorSequenceInput.c StreamSequenceInput.c \
-  StreamSeriesInput.c StreamSeriesOutput.c
+  StreamSeriesInput.c StreamSeriesOutput.c \
+  StreamGridInput.c StreamGridOutput.c
 
 EXTRA_DIST = PrintVector.m4 LALPrintVector.m4 \
              PrintTimeSeries.m4 LALPrintTimeSeries.m4 \
 	     PrintFrequencySeries.m4 LALPrintFrequencySeries.m4\
 	     ReadFrequencySeries.m4 LALReadFrequencySeries.m4\
              snprintf_LICENSE.txt snprintf_README \
+             Grid.m4 LALCreateDestroyGrid.m4 \
              ReadTimeSeries.m4 LALReadTimeSeries.m4 \
              StreamVectorInput.m4 LALReadVector.m4 \
              StreamVectorSequenceInput.m4 LALReadVectorSequence.m4 \
              StreamSequenceInput.m4 LALReadSequence.m4 LALReadComplexSequence.m4 \
              StreamSeriesInput.m4 LALReadSeries.m4 \
-             StreamSeriesOutput.m4 LALWriteSeries.m4
+             StreamSeriesOutput.m4 LALWriteSeries.m4 \
+             StreamGridInput.m4 LALReadGrid.m4 \
+             StreamGridOutput.m4 LALWriteGrid.m4
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+
+Grid.c: Grid.m4 LALCreateDestroyGrid.m4
+	cd $(srcdir) && m4 Grid.m4 > Grid.c
 
 PrintVector.c: PrintVector.m4 LALPrintVector.m4
 	cd $(srcdir) && m4 PrintVector.m4 > PrintVector.c
@@ -64,3 +72,9 @@ StreamSeriesInput.c: StreamSeriesInput.m4 LALReadSeries.m4
 
 StreamSeriesOutput.c: StreamSeriesOutput.m4 LALWriteSeries.m4
 	cd $(srcdir) && m4 StreamSeriesOutput.m4 > StreamSeriesOutput.c
+
+StreamGridInput.c: StreamGridInput.m4 LALReadGrid.m4
+	cd $(srcdir) && m4 StreamGridInput.m4 > StreamGridInput.c
+
+StreamGridOutput.c: StreamGridOutput.m4 LALWriteGrid.m4
+	cd $(srcdir) && m4 StreamGridOutput.m4 > StreamGridOutput.c
