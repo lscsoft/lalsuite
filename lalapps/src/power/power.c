@@ -1573,7 +1573,7 @@ int main( int argc, char *argv[])
 	 */
 
 	if(options.cluster)
-		LAL_CALL(LALClusterSnglBurstTable(&stat, burstEvent, XLALSnglBurstClusterTest), &stat);
+		LAL_CALL(LALClusterSnglBurstTable(&stat, burstEvent, XLALCompareSnglBurstByPeakTimeAndFreq), &stat);
 	LAL_CALL(LALSortSnglBurst(&stat, &burstEvent, XLALCompareSnglBurstByStartTimeAndLowFreq), &stat);
 
 	/*
