@@ -810,6 +810,12 @@ LALClustersPowerThreshold (
   ASSERT ( out->f == NULL, status, TFCLUSTERSH_ENNULLP, TFCLUSTERSH_MSGENNULLP);
   ASSERT ( out->P == NULL, status, TFCLUSTERSH_ENNULLP, TFCLUSTERSH_MSGENNULLP);
 
+  if(dir->alpha >= 1) {
+    LALCopyCList(status->statusPtr, out, in);
+    CHECKSTATUSPTR (status);
+    DETATCHSTATUSPTR (status);
+    RETURN (status); 
+  }
 
   out->nclusters = 0;
   out->t = out->f = NULL;
