@@ -163,6 +163,7 @@ void sighandler(int sig);
 #define COMPUTEFSTAT_EXIT_CANTZIP        16  /* unable to zip Fstats file */
 #define COMPUTEFSTAT_EXIT_CANTUNZIP      17  /* unable to zip Fstats file */
 #define COMPUTEFSTAT_EXIT_CANTRENAME     18  /* unable to zip Fstats file */
+#define COMPUTEFSTAT_EXIT_NOPOLKADEL     19  /* no // found in command line */
 #define COMPUTEFSTAT_EXIT_LALCALLERROR  100  /* this is added to the LAL status to get BOINC exit value */
 
 /*----------------------------------------------------------------------
@@ -2798,10 +2799,17 @@ void worker() {
   int a1,a2,retval;
   /* find first // delimiter */ 
   for(a1=0;(a1<globargc)&&(strncmp(globargv[a1],"//",3);a1++);
-  retval=boincmain(a1,globargv);
+  if(a1==globargc)
+	  retval=COMPUTEFSTAT_EXIT_NOPOLKADEL;
+  else
+	  retval=boincmain(a1,globargv);
   if !(retval){
-    for(a2=a1+1;(a2<globargc)&&(strncmp(globargv[a2],"//",3);a2++);
-    retval=boincmain(a2-a1-1,&(globargv[a1+1]));
+    /* find second // delimiter */ 
+	for(a2=a1+1;(a2<globargc)&&(strncmp(globargv[a2],"//",3);a2++);
+    if(a2==globargc)
+  	  retval=COMPUTEFSTAT_EXIT_NOPOLKADEL;
+    else
+      retval=boincmain(a2-a1-1,&(globargv[a1+1]));
     if !(retval)
       retval=polka(globargv-a2-1,&(globargv[a2+1]));
   }
