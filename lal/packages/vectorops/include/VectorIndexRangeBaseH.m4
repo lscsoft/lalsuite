@@ -13,11 +13,18 @@ ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')')
 ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')')
 define(`VTYPE',`format(`%sVector',TYPE)')
 define(`F1',`format(`LAL%sVectorIndexRange',TYPECODE)')
+define(`VPAIRTYPE',`format(`%sVectorPair',TYPE)')
+define(`F2',`format(`LAL%sVectorIndexHole',TYPECODE)')
 */
 
 
 void F1 ( LALStatus *status,
           VTYPE    **result,
           VTYPE     *v,
+          const UINT4Vector *indexVector );
+          
+void F2 ( LALStatus  *status,
+          VPAIRTYPE  *result_pair,
+          VTYPE      *v,
           const UINT4Vector *indexVector );
          

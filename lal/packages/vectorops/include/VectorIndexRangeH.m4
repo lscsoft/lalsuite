@@ -10,6 +10,10 @@ $Id$
  *
  * Routines to slice up vectors/sequences by
  * specifying starting and ending indices, inclusive.
+ * \texttt{VectorIndexHole()}
+ * is "complementary" to \texttt{VectorIndexRange()}, in the sense that
+ * it returns the two segments of the vector that would remain after
+ * \texttt{VectorIndexRange()} acts.
  *
  * \subsection*{Synopsis}
  * \begin{verbatim}
@@ -61,6 +65,43 @@ NRCSID( VECTORINDEXRANGEH, "$Id$" );
 #define VECTORINDEXRANGEH_MSGELNTH "Vector/Array of Improper Length"
 #define VECTORINDEXRANGEH_MSGENNUL "Non-Null Pointer that should be NULL"
 /**** </lalErrTable> ****/
+
+/* typedefs */
+
+define(`TYPECODE',`CHAR')
+include(`VectorPairTypedefsBase.m4')
+
+define(`TYPECODE',`I2')
+include(`VectorPairTypedefsBase.m4')
+
+define(`TYPECODE',`I4')
+include(`VectorPairTypedefsBase.m4')
+
+define(`TYPECODE',`I8')
+include(`VectorPairTypedefsBase.m4')
+
+define(`TYPECODE',`U2')
+include(`VectorPairTypedefsBase.m4')
+
+define(`TYPECODE',`U4')
+include(`VectorPairTypedefsBase.m4')
+
+define(`TYPECODE',`U8')
+include(`VectorPairTypedefsBase.m4')
+
+define(`TYPECODE',`S')
+include(`VectorPairTypedefsBase.m4')
+
+define(`TYPECODE',`D')
+include(`VectorPairTypedefsBase.m4')
+
+define(`TYPECODE',`C')
+include(`VectorPairTypedefsBase.m4')
+
+define(`TYPECODE',`Z')
+include(`VectorPairTypedefsBase.m4')
+
+/* Function protos */
 
 define(`TYPECODE',`CHAR')
 include(`VectorIndexRangeBaseH.m4')

@@ -76,6 +76,9 @@ usage(char **argv);
 static void
 test_status(LALStatus *status, const char *expected_codes, int exit_code);
 
+static void
+trail_status_maybe(LALStatus *status);
+
 int
 main(int argc, char **argv)
 {
@@ -84,14 +87,25 @@ main(int argc, char **argv)
   UINT4            iter;
   REAL4Vector     *x = NULL;
   REAL4Vector     *y = NULL;
+  REAL4Vector     *z = NULL;
+  REAL4VectorPair  vector_pair;
   UINT4Vector     *index_range = NULL;
   BOOLEAN          result_ok_p = TRUE;
   int              retval = 1;
 
+  if (argc > 1)
+    {
+      lalDebugLevel = atoi(argv[1]);
+      verbose_p = TRUE;
+    }
+
+  trail_status_maybe(&status);
+
   LALU4CreateVector(&status, &index_range, 2);
   test_status(&status, CODES(0), 1);
+  trail_status_maybe(&status);
 
-  index_range->data[0] = 16;
+  index_range->data[0] = 32;
   index_range->data[1] = 48;
   if (lalDebugLevel & 8)
     {
@@ -113,8 +127,11 @@ main(int argc, char **argv)
         printf("x->data[%.2d] = % 7.13e\n", iter, x->data[iter]);
     }
 
-  if (verbose_p)
+  if (lalDebugLevel & 8)
     printf("* * * * * * * * * * * *\n");
+
+  trail_status_maybe(&status);
+  
   /*
   LALSCreateVector(&status, &y, 1); 
   test_status(&status, CODES(0), 1); 
@@ -123,26 +140,137 @@ main(int argc, char **argv)
   
   LALSVectorIndexRange(&status, &y, x, index_range);
   test_status(&status, CODES(0), 1);
+  trail_status_maybe(&status);
 
   if (verbose_p)
     {
       printf(" - - - - - - - -\n");
-      printf("y = %#x\n", y);
+      printf("y = %#x\n", (unsigned int)y);
       printf("y->length = %d\n", y->length);
     }
 
   for (iter = 0; iter < y->length; ++iter)
     {
       if (lalDebugLevel & 8)
-        printf("y->data[%.2d] = % 7.13e\n", iter, y->data[iter]);
+        printf("y->data[%.2d] = % 7.13e; x->data[%.2d] = % 7.13e\n",
+               iter, y->data[iter], iter, x->data[iter]);
       result_ok_p = result_ok_p &&
         (y->data[iter] == x->data[iter + index_range->data[0]]);
     }
 
+  trail_status_maybe(&status);
+
+  if (!result_ok_p)
+    {
+      if (verbose_p)
+        fprintf(stderr, "%s: LAL*VectorIndexRange() failed: line %d\n",
+                argv[0], __LINE__);
+      goto end;
+    }
+
+  if (verbose_p)
+    {
+      printf("*-*-*-*-*-*-*\n");
+      printf("trivial range:\n");
+    }
+  
+  /* test trivial range */
+  index_range->data[0] = 32;
+  index_range->data[1] = 32;
+  LALSVectorIndexRange(&status, &y, x, index_range);
+  for (iter = 0; iter < y->length; ++iter)
+    {
+      if (lalDebugLevel & 8)
+        printf("y->data[%.2d] = % 7.13e; x->data[%.2d] = % 7.13e\n",
+               iter, y->data[iter], iter, x->data[iter]);
+      result_ok_p = result_ok_p &&
+        (y->data[iter] == x->data[iter + index_range->data[0]]);
+    }
+
+  if (!result_ok_p)
+    {
+      if (verbose_p)
+        fprintf(stderr, "%s: LAL*VectorIndexRange() failed: line %d\n",
+                argv[0], __LINE__);
+      goto end;
+    }
+    
+  if (verbose_p)
+    {
+      printf("\n");
+      printf("*********************\n");
+    }
+
+  /*
+   * VectorIndexHole
+   */
+  LALSDestroyVector(&status, &y);
+  test_status(&status, CODES(0), 1);  
+  
+  vector_pair.head = &y;
+  vector_pair.tail = &z;
+
+  LALSVectorIndexHole(&status, &vector_pair, x, index_range);
+
+  if (lalDebugLevel & 8)
+    {
+      printf("y->length = %d\n", y->length);
+      printf("z->length = %d\n", z->length);
+      printf("\n");
+    }
+
+  
+  for (iter = 0; iter < y->length; ++iter)
+    {
+      if (lalDebugLevel & 8)
+        printf("y->data[%.2d] = % 7.13e; x->data[%.2d] = % 7.13e\n",
+               iter, y->data[iter], iter, x->data[iter]);
+      result_ok_p = result_ok_p && (y->data[iter] == x->data[iter]);
+    }
+
+  if (!result_ok_p)
+    {
+      if (verbose_p)
+        fprintf(stderr, "%s: LAL*VectorIndexHole() failed: line %d\n",
+                argv[0], __LINE__);
+      goto end;
+    }
+
+  for (iter = 0; iter < z->length; ++iter)
+    {
+      if (lalDebugLevel & 8)
+        printf("z->data[%.2d] = % 7.13e; x->data[%.2d] = % 7.13e\n",
+               iter, z->data[iter], iter, x->data[iter]);
+      result_ok_p = result_ok_p &&
+        (z->data[iter] == x->data[iter + index_range->data[1] + 1]);
+    }
+
+  if (!result_ok_p)
+    {
+      if (verbose_p)
+        fprintf(stderr, "%s: LAL*VectorIndexHole() failed: line %d\n",
+                argv[0], __LINE__);
+      goto end;
+    }
+
+  if (lalDebugLevel & 8)
+    {
+      printf("y->length = %d\n", y->length);
+      printf("z->length = %d\n", z->length);
+      printf("\n");
+    }
+
+  /*
+   * Housekeeping
+   */
+ end:
   LALSDestroyVector(&status, &x);
   test_status(&status, CODES(0), 1);
 
   LALSDestroyVector(&status, &y);
+  test_status(&status, CODES(0), 1);
+
+  LALSDestroyVector(&status, &z);
   test_status(&status, CODES(0), 1);
 
   LALU4DestroyVector(&status, &index_range);
@@ -206,6 +334,26 @@ test_status( LALStatus *status, const char *expected_codes, int exit_code )
   else
     {
       return;
+    }
+}
+
+static void
+trail_status_maybe(LALStatus *status)
+{
+  if (lalDebugLevel & 15)
+    {
+      printf("TRAIL STATUS:\n");
+      printf("  status = %#x\n", (unsigned int)status);
+      if (status)
+        printf("  status->statusPtr = %#x\n",
+               (unsigned int)(status->statusPtr));
+      printf("\n");
+      
+      if (status)
+        {
+          REPORTSTATUS(status);
+          trail_status_maybe(status->statusPtr);
+        }
     }
 }
 
