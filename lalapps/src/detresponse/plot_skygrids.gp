@@ -71,7 +71,7 @@ splot 'int_whole_sky_sum.txt' matrix
 
 
 set palette model RGB 
-
+set terminal png
 set output "whole_sky_cross.png"
 set title "Cross"
 splot 'whole_sky_cross.txt' matrix
