@@ -52,7 +52,6 @@ CreateRandomPPNParamStruc (
   REAL4         mDiff      = mMax - mMin;
   REAL4         cannonDist = 1.0e6;       /* cannonical distance in pc */
   REAL4         fmin       = 25.0;
-  REAL4         fmax       = 500.0;
 
   INITSTATUS( status, "CreateRandomPPNParamStruc", FINDCHIRPSLAVEC );
   ATTATCHSTATUSPTR( status );
@@ -79,7 +78,7 @@ CreateRandomPPNParamStruc (
   params->phi = 0.0;
   params->d = cannonDist * LAL_PC_SI;
   params->fStartIn = fmin;
-  params->fStopIn = fmax;
+  params->fStopIn = 0; /* terminate on condition not frequency */
 
   /* ppn parameter */
   params->ppn = NULL;
@@ -536,9 +535,10 @@ LALFindChirpSlave (
 
 #if 0
           /* XXX force the params to be a for 1.4,1.4 chirp for testing */
-          mass1 = mass2 = 1.4;
+          mass1 = 1.2;
+          mass2 = 2.0;
           ppnParams.mTot = mass1 + mass2;
-          ppnParams.eta = mass1*mass2/( ppnParams.mTot*ppnParams.mTot );
+          ppnParams.eta = mass1 * mass2 / ( ppnParams.mTot * ppnParams.mTot );
 #endif
 
           /* set the parameters in the loudest event structure          */
@@ -923,6 +923,10 @@ LALFindChirpSlave (
                   loudestEvent[i].chisq   = thisEvent->chisq;
                   loudestEvent[i].sigma   = thisEvent->sigma;
                   loudestEvent[i].effDist = thisEvent->effDist;
+
+                  /* XXX remove these two lines XXX */
+                  loudestEvent[i].tmplt.t0 = thisEvent->tmplt.mass1;
+                  loudestEvent[i].tmplt.t2 = thisEvent->tmplt.mass2;
                 }
 
                 eventList = eventList->next;
