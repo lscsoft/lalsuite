@@ -556,6 +556,7 @@ static void *PopAlloc( void *p, const char *func )
   pthread_mutex_lock( &mut );
   if ( ! ( node = allocList ) ) /* empty allocation list */
   {
+    pthread_mutex_unlock( &mut );
     lalRaiseHook( SIGSEGV, "%s error: alloc %p not found\n", func, p );
     return NULL;
   }
@@ -572,6 +573,7 @@ static void *PopAlloc( void *p, const char *func )
     }
     if ( ! node->next ) /* bottom of list reached */
     {
+      pthread_mutex_unlock( &mut );
       lalRaiseHook( SIGSEGV, "%s error: alloc %p not found\n", func, p );
       return NULL;
     }
@@ -602,6 +604,7 @@ static void *ModAlloc( void *p, void *q, size_t n, const char *func,
   pthread_mutex_lock( &mut );
   if ( ! ( node = allocList ) ) /* empty allocation list */
   {
+    pthread_mutex_unlock( &mut );
     lalRaiseHook( SIGSEGV, "%s error: alloc %p not found\n", func, p );
     return NULL;
   }
@@ -609,6 +612,7 @@ static void *ModAlloc( void *p, void *q, size_t n, const char *func,
   {
     if ( ! ( node = node->next ) )
     {
+      pthread_mutex_unlock( &mut );
       lalRaiseHook( SIGSEGV, "%s error: alloc %p not found\n", func, p );
       return NULL;
     }

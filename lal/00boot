@@ -218,6 +218,13 @@ AC_DEFINE_UNQUOTED(LAL_CONFIGURE_DATE, "$lal_configure_date", [LAL Configure Dat
 AC_DEFINE_UNQUOTED(LAL_CVS_TAG, "$lal_cvs_tag", [LAL CVS Tag])
 AC_DEFINE_UNQUOTED(LAL_PREFIX, "$prefix", [LAL Install Prefix])
 
+if test "$lal_pthread_lock" = "true" ; then
+  ACX_PTHREAD( , [AC_MSG_ERROR([don't know how to compile posix threads])])
+  LIBS="$PTHREAD_LIBS $LIBS"
+  CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+  CC="$PTHREAD_CC"
+fi
+
 dnl Checks for programs.
 AC_PROG_AWK
 AC_PROG_CC
@@ -604,6 +611,7 @@ EOF
 rm -f acinclude.m4 acconfig.h || fail "removing acinclude.m4 acconfig.h"
 cat misc/lal.m4 > acinclude.m4 || fail "creating acinclude.m4"
 cat misc/lallibtool.m4 >> acinclude.m4 || fail "creating acinclude.m4"
+cat misc/acx_pthread.m4 >> acinclude.m4 || fail "creating acinclude.m4"
 
 if test "$AUTOCONF25" = "yes"; then
   cat misc/pkg.m4 >> acinclude.m4 || fail "creating acinclude.m4"
