@@ -281,8 +281,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   OverlapReductionFunctionParameters ORFparams;
 
   /* frequency mask structures */
-  REAL4FrequencySeries mask;
-  REAL4Vector *maskTemp;
+  REAL4FrequencySeries *mask;
   INT4 Nbin;
 
   /* structures for optimal filter normalisation */
@@ -753,28 +752,20 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* extra bins */
     Nbin = (maskBin - 1) / 2;
 
-    /* set metadata fields for frequency mask */
-    strncpy(mask.name, "mask", LALNameLength);
-    mask.deltaF = deltaF;
-    mask.f0 = fMin;
-    mask.sampleUnits = lalDimensionlessUnit;
-
     if (vrbflg)
       fprintf(stdout, "Allocating memory for frequency mask...\n");
 
     /* allocate memory for frequency mask */
-    mask.data = maskTemp = NULL;
-    LAL_CALL(LALCreateVector(&status, &(mask.data), filterLength), &status);
-    LAL_CALL(LALCreateVector(&status, &maskTemp, respLength), &status);
-    memset(mask.data->data, 0, mask.data->length * sizeof(*mask.data->data));
-    memset(maskTemp->data, 0, maskTemp->length * sizeof(*maskTemp->data));
+    LAL_CALL(LALCreateREAL4FrequencySeries(&status, &mask, \
+          "mask", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
+          respLength), &status);
 
     if (vrbflg)
       fprintf(stdout, "Generating frequency mask...\n");
 
     /* set all values to 1 */
     for (i = 0; i < respLength; i++)
-      maskTemp->data[i] = 1.;
+      mask->data->data[i] = 1;
 
     if (vrbflg)
       fprintf(stdout, "Masking multiples of 16 Hz...\n");
@@ -782,13 +773,14 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* remove multiples of 16 Hz */
     for (i = 0; i < respLength; i += (UINT4)(16 / deltaF))
     {
-      maskTemp->data[i]= 0;
+      mask->data->data[i]= 0;
+
       for (j = 0; j < Nbin; j++)
       {
         if ((i + 1 + j) < respLength)
-          maskTemp->data[i + 1 + j]= 0;
+          mask->data->data[i + 1 + j]= 0;
         if ((i - 1 - j) > 0 )
-          maskTemp->data[i - 1 - j]= 0;
+          mask->data->data[i - 1 - j]= 0;
       }
     }
 
@@ -798,13 +790,14 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* remove multiples of 60 Hz */
     for (i = 0; i < respLength; i += (UINT4)(60 / deltaF))
     {
-      maskTemp->data[i] = 0;
+      mask->data->data[i] = 0;
+
       for (j = 0; j < Nbin; j ++)
       {
         if ((i + 1 + j) < respLength)
-          maskTemp->data[i + 1 + j]= 0;
+          mask->data->data[i + 1 + j]= 0;
         if ((i - 1 - j) > 0 )
-          maskTemp->data[i - 1 - j]= 0;
+          mask->data->data[i - 1 - j]= 0;
       }
     }
 
@@ -812,15 +805,15 @@ INT4 main(INT4 argc, CHAR *argv[])
       fprintf(stdout, "Getting appropriate frequency band for mask...\n");
 
     /* get appropriate band */
-    for (i = 0; i < filterLength; i++)
-      mask.data->data[i] = maskTemp->data[i + numFMin];
+    LAL_CALL(LALShrinkREAL4FrequencySeries(&status, mask, numFMin, \
+          filterLength), &status);
 
     if (vrbflg)
       fprintf(stdout, "Applying frequency mask to spectrum..\n");
 
     /* apply mask to omegaGW */
     for (i = 0; i < filterLength; i++)
-      omegaGW->data->data[i] *= mask.data->data[i];
+      omegaGW->data->data[i] *= mask->data->data[i];
   }
 
   /* set normalisation parameters */
@@ -1673,8 +1666,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALDestroyVector(&status, &(dataWindow.data)), &status);
   if (apply_mask_flag)
   {
-    LAL_CALL(LALDestroyVector(&status, &(mask.data)), &status);
-    LAL_CALL(LALDestroyVector(&status, &maskTemp), &status);
+    LAL_CALL(LALDestroyREAL4FrequencySeries(&status, mask), &status);
   }
   if (hannDuration != 0)
   {
