@@ -55,7 +55,7 @@ LALCreateFindChirpInput (
    * check that the arguments are reasonable
    *
    */
-  
+
 
   /* make sure the output handle exists, but points to a null pointer */
   ASSERT( output, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );  
@@ -105,7 +105,7 @@ LALCreateFindChirpInput (
     *output = NULL;
   }
   ENDFAIL( status );
-  
+
 
   /* normal exit */
   DETATCHSTATUSPTR( status );
@@ -248,7 +248,7 @@ LALFindChirpFilterInit (
     LALFree( outputPtr );
     *output = NULL;
     ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-   }
+  }
 
 
   /*
@@ -259,7 +259,6 @@ LALFindChirpFilterInit (
 
 
   /* create plan for optimal filter */
-
   LALCreateReverseComplexFFTPlan( status->statusPtr,
       &(outputPtr->invPlan), params->numPoints, 0 );
   BEGINFAIL( status )
@@ -278,8 +277,8 @@ LALFindChirpFilterInit (
   BEGINFAIL( status )
   {
     TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-        &(outputPtr->invPlan) ), status );
-    
+          &(outputPtr->invPlan) ), status );
+
     LALFree( outputPtr->chisqInput );
     LALFree( outputPtr->chisqInputBCV );
     LALFree( outputPtr->chisqParams );
@@ -290,59 +289,56 @@ LALFindChirpFilterInit (
 
 
   /* create additional workspace vector for optimal BCV filter: time domain */
-
   if ( params->approximant == BCV ) 
-    { 
-      LALCCreateVector( status->statusPtr, &(outputPtr->qVecBCV),
-			params->numPoints );
-      BEGINFAIL( status )
-	{
-	  TRY( LALDestroyComplexFFTPlan( status->statusPtr,
-					 &(outputPtr->invPlan) ), status );
+  { 
+    LALCCreateVector( status->statusPtr, &(outputPtr->qVecBCV),
+        params->numPoints );
+    BEGINFAIL( status )
+    {
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+            &(outputPtr->invPlan) ), status );
 
-	  LALFree( outputPtr->chisqInput );
-	  LALFree( outputPtr->chisqInputBCV );
-	  LALFree( outputPtr->chisqParams );
-	  LALFree( outputPtr );
-	  *output = NULL;
-	}
-      ENDFAIL( status );
-    } 
+      LALFree( outputPtr->chisqInput );
+      LALFree( outputPtr->chisqInputBCV );
+      LALFree( outputPtr->chisqParams );
+      LALFree( outputPtr );
+      *output = NULL;
+    }
+    ENDFAIL( status );
+  } 
+  else if ( params->approximant == BCVSpin )
+  {
+    /* workspace vector for optimal BCVSpin filter: time domain */
+    LALCCreateVector( status->statusPtr, &(outputPtr->qVecBCVSpin1),
+        params->numPoints );
+    BEGINFAIL( status )
+    {
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+            &(outputPtr->invPlan) ), status );
 
- if ( params->approximant == BCVSpin )
-   {
-/*create additional workspace vector for optimal BCVSpin filter: time domain */
-     LALCCreateVector( status->statusPtr, &(outputPtr->qVecBCVSpin1),
-		       params->numPoints );
-     BEGINFAIL( status )
-       {
-	 TRY( LALDestroyComplexFFTPlan( status->statusPtr,
-					&(outputPtr->invPlan) ), status );
+      LALFree( outputPtr->chisqInput );
+      LALFree( outputPtr->chisqInputBCV );
+      LALFree( outputPtr->chisqParams );
+      LALFree( outputPtr );
+      *output = NULL;
+    }
+    ENDFAIL( status );
 
-	 LALFree( outputPtr->chisqInput );
-	 LALFree( outputPtr->chisqInputBCV );
-	 LALFree( outputPtr->chisqParams );
-	 LALFree( outputPtr );
-	 *output = NULL;
-       }
-     ENDFAIL( status );
+    LALCCreateVector( status->statusPtr, &(outputPtr->qVecBCVSpin2),
+        params->numPoints );
+    BEGINFAIL( status )
+    {
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+            &(outputPtr->invPlan) ), status );
 
-
-     LALCCreateVector( status->statusPtr, &(outputPtr->qVecBCVSpin2),
-		       params->numPoints );
-     BEGINFAIL( status )
-       {
-	 TRY( LALDestroyComplexFFTPlan( status->statusPtr,
-					&(outputPtr->invPlan) ), status );
-
-	 LALFree( outputPtr->chisqInput );
-	 LALFree( outputPtr->chisqInputBCV );
-	 LALFree( outputPtr->chisqParams );
-	 LALFree( outputPtr );
-	 *output = NULL;
-       }
-     ENDFAIL( status );
-   }
+      LALFree( outputPtr->chisqInput );
+      LALFree( outputPtr->chisqInputBCV );
+      LALFree( outputPtr->chisqParams );
+      LALFree( outputPtr );
+      *output = NULL;
+    }
+    ENDFAIL( status );
+  }
 
   /* create workspace vector for optimal filter: freq domain */
   LALCCreateVector( status->statusPtr, &(outputPtr->qtildeVec), 
@@ -353,8 +349,8 @@ LALFindChirpFilterInit (
         status );
 
     TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-        &(outputPtr->invPlan) ), status );
-    
+          &(outputPtr->invPlan) ), status );
+
     LALFree( outputPtr->chisqInput );
     LALFree( outputPtr->chisqInputBCV );
     LALFree( outputPtr->chisqParams );
@@ -365,68 +361,65 @@ LALFindChirpFilterInit (
 
 
   /* create workspace vector for optimal filter: freq domain */
-
   if ( params->approximant == BCV ) 
-    {  
-      LALCCreateVector( status->statusPtr, &(outputPtr->qtildeVecBCV),
-			params->numPoints );
-      BEGINFAIL( status )
-	{
-	  TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
-	       status );
+  {  
+    LALCCreateVector( status->statusPtr, &(outputPtr->qtildeVecBCV),
+        params->numPoints );
+    BEGINFAIL( status )
+    {
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
+          status );
 
-	  TRY( LALDestroyComplexFFTPlan( status->statusPtr,
-					 &(outputPtr->invPlan) ), status );
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+            &(outputPtr->invPlan) ), status );
 
-	  LALFree( outputPtr->chisqInput );
-	  LALFree( outputPtr->chisqInputBCV );
-	  LALFree( outputPtr->chisqParams );
-	  LALFree( outputPtr );
-	  *output = NULL;
-	}
-      ENDFAIL( status );
-    } 
+      LALFree( outputPtr->chisqInput );
+      LALFree( outputPtr->chisqInputBCV );
+      LALFree( outputPtr->chisqParams );
+      LALFree( outputPtr );
+      *output = NULL;
+    }
+    ENDFAIL( status );
+  } 
+  else if ( params->approximant == BCVSpin )
+  {
+    /* create workspace vector for optimal filter: freq domain */
+    LALCCreateVector( status->statusPtr, &(outputPtr->qtildeVecBCVSpin1),
+        params->numPoints );
+    BEGINFAIL( status )
+    {
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
+          status );
 
- if ( params->approximant == BCVSpin )
-   {
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+            &(outputPtr->invPlan) ), status );
 
-     /* create workspace vector for optimal filter: freq domain */
-     LALCCreateVector( status->statusPtr, &(outputPtr->qtildeVecBCVSpin1),
-		       params->numPoints );
-     BEGINFAIL( status )
-       {
-	 TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
-	      status );
+      LALFree( outputPtr->chisqInput );
+      LALFree( outputPtr->chisqInputBCV );
+      LALFree( outputPtr->chisqParams );
+      LALFree( outputPtr );
+      *output = NULL;
+    }
+    ENDFAIL( status );
 
-	 TRY( LALDestroyComplexFFTPlan( status->statusPtr,
-					&(outputPtr->invPlan) ), status );
+    LALCCreateVector( status->statusPtr, &(outputPtr->qtildeVecBCVSpin2),
+        params->numPoints );
+    BEGINFAIL( status )
+    {
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
+          status );
 
-	 LALFree( outputPtr->chisqInput );
-	 LALFree( outputPtr->chisqInputBCV );
-	 LALFree( outputPtr->chisqParams );
-	 LALFree( outputPtr );
-	 *output = NULL;
-       }
-     ENDFAIL( status );
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+            &(outputPtr->invPlan) ), status );
 
-     LALCCreateVector( status->statusPtr, &(outputPtr->qtildeVecBCVSpin2),
-		       params->numPoints );
-     BEGINFAIL( status )
-       {
-	 TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
-	      status );
-
-	 TRY( LALDestroyComplexFFTPlan( status->statusPtr,
-					&(outputPtr->invPlan) ), status );
-
-	 LALFree( outputPtr->chisqInput );
-	 LALFree( outputPtr->chisqInputBCV );
-	 LALFree( outputPtr->chisqParams );
-	 LALFree( outputPtr );
-	 *output = NULL;
-       }
-     ENDFAIL( status );
-   }
+      LALFree( outputPtr->chisqInput );
+      LALFree( outputPtr->chisqInputBCV );
+      LALFree( outputPtr->chisqParams );
+      LALFree( outputPtr );
+      *output = NULL;
+    }
+    ENDFAIL( status );
+  }
 
   /* create workspace vector for chisq filter */
   LALCreateVector (status->statusPtr, &(outputPtr->chisqVec), 
@@ -443,8 +436,8 @@ LALFindChirpFilterInit (
         status );
 
     TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-        &(outputPtr->invPlan) ), status );
-    
+          &(outputPtr->invPlan) ), status );
+
     LALFree( outputPtr->chisqInput );
     LALFree( outputPtr->chisqInputBCV );
     LALFree( outputPtr->chisqParams );
@@ -482,7 +475,7 @@ LALFindChirpFilterInit (
 
 
       TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-          &(outputPtr->invPlan) ), status );
+            &(outputPtr->invPlan) ), status );
 
       LALFree( outputPtr->chisqInput );
       LALFree( outputPtr->chisqInputBCV );
@@ -533,7 +526,7 @@ LALFindChirpFilterFinalize (
    *
    */
 
-  
+
   /* local pointer to output structure */
   outputPtr = *output;
 
@@ -553,45 +546,45 @@ LALFindChirpFilterFinalize (
   LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) );
   CHECKSTATUSPTR( status );
 
-   if (outputPtr->qVecBCV) 
-     { 
-  LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) );
-  CHECKSTATUSPTR( status );
-     } 
+  if (outputPtr->qVecBCV) 
+  { 
+    LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) );
+    CHECKSTATUSPTR( status );
+  } 
 
   if (outputPtr->qVecBCVSpin1)
-    {
-  LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCVSpin1) );
-  CHECKSTATUSPTR( status );
-    }
+  {
+    LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCVSpin1) );
+    CHECKSTATUSPTR( status );
+  }
 
   if (outputPtr->qVecBCVSpin2)  
-    { 
-  LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCVSpin2) ); 
-  CHECKSTATUSPTR( status );
-    }
+  { 
+    LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCVSpin2) ); 
+    CHECKSTATUSPTR( status );
+  }
 
   /* destroy workspace vector for optimal filter: freq domain */
   LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVec) );
   CHECKSTATUSPTR( status );
 
   if  (outputPtr->qtildeVecBCV) 
-    { 
-  LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVecBCV) );
-  CHECKSTATUSPTR( status );
-    }
+  { 
+    LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVecBCV) );
+    CHECKSTATUSPTR( status );
+  }
 
- if (outputPtr->qtildeVecBCVSpin1)  
-    { 
-  LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVecBCVSpin1) );
-  CHECKSTATUSPTR( status ); 
-    }
+  if (outputPtr->qtildeVecBCVSpin1)  
+  { 
+    LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVecBCVSpin1) );
+    CHECKSTATUSPTR( status ); 
+  }
 
- if (outputPtr->qtildeVecBCVSpin2)  
-    { 
-  LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVecBCVSpin2) );
-  CHECKSTATUSPTR( status );
-    }
+  if (outputPtr->qtildeVecBCVSpin2)  
+  { 
+    LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVecBCVSpin2) );
+    CHECKSTATUSPTR( status );
+  }
 
   /* destroy workspace vector for chisq filter */
   LALDestroyVector( status->statusPtr, &(outputPtr->chisqVec) );
@@ -607,7 +600,7 @@ LALFindChirpFilterFinalize (
 
   /* parameter structure */
   LALFree( outputPtr->chisqParams );
-  
+
   /* input structures */
   LALFree( outputPtr->chisqInput );
   LALFree( outputPtr->chisqInputBCV );
