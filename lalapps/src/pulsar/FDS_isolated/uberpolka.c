@@ -67,6 +67,11 @@ extern double *fraction_done_hook;
 int finite(double);
 #endif
 
+#define UBERPOLKA_EXIT_ERRCLINE 31
+#define UBERPOLKA_EXIT_READCND  32
+#define UBERPOLKA_EXIT_FCTEST   33
+#define UBERPOLKA_EXIT_OUTFAIL  34
+
 struct PolkaCommandLineArgsTag 
 {
   char *FstatsFile1; /* Names of Fstat files to be read in */
@@ -145,12 +150,18 @@ int main(int argc,char *argv[])
   lalDebugLevel = 0;
 
   /* Reads command line arguments */
-  if (ReadCommandLine(argc,argv,&PolkaCommandLineArgs)) return 1;
+  if (ReadCommandLine(argc,argv,&PolkaCommandLineArgs)) {
+    fprintf(stderr,"ReadCommandLine failed\n");
+    return UBERPOLKA_EXIT_ERRCLINE;
+  }
 
   MaxAngularDistance=sqrt(pow(PolkaCommandLineArgs.DeltaAlpha,2)+pow(PolkaCommandLineArgs.DeltaDelta,2))+1e-8;
 
   /* Reads in candidare files, set CLength1 and CLength2 */
-  if (ReadCandidateFiles(PolkaCommandLineArgs)) return 2;
+  if (ReadCandidateFiles(PolkaCommandLineArgs)) {
+    fprintf(stderr,"ReadCandidateFiles failed\n");
+    return UBERPOLKA_EXIT_READCND;
+  }
 
   if (CLength1 != 0 && CLength2 != 0 )
     {
@@ -208,11 +219,17 @@ int main(int argc,char *argv[])
                           /* Now p points to first coincident event in the second list */
                           
                           /* Now loop over candidates found in the second list and do the fine coincidence test */
-                          if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) return 3;
+                          if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) {
+                            fprintf(stderr,"FineCoincidenceTest failed\n");
+                            return UBERPOLKA_EXIT_FCTEST;
+                          }
                           while ( (int)p->iCand <  (int)CLength2-1 &&  !compareCIStructs(p, p+1) )
                             { 
                               p++;
-                              if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) return 3;
+                              if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) {
+                                fprintf(stderr,"FineCoincidenceTest failed in loop\n");
+                                return UBERPOLKA_EXIT_FCTEST;
+                              }
                             }
 
                         }/* check that besearch was non-null */
@@ -231,7 +248,10 @@ int main(int argc,char *argv[])
     }/* check that we have candidates in both files */
   
   /* Ouput candidates */
-  if (OutputCoincidences( PolkaCommandLineArgs )) return 4;
+  if (OutputCoincidences( PolkaCommandLineArgs )) {
+    fprintf(stderr,"OutputCoincidences failed");
+    return UBERPOLKA_EXIT_OUTFAIL;
+  }
   
   if(CLength1) LALFree(SortedC1);
   if(CLength2) LALFree(SortedC2);
