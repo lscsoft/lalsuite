@@ -2,7 +2,7 @@
  * 
  * File Name: FindChirpExch.c
  *
- * Author: Allen, B. and Creighton, J. D. E.
+ * Author: Allen, B., Brown, D. A. and Creighton, J. D. E.
  * 
  * Revision: $Id$
  * 
@@ -20,7 +20,8 @@ LALInitializeExchange (
     LALStatus      *status,
     ExchParams **exchParamsOut,
     ExchParams  *exchParamsInp,
-    INT4         myProcNum
+    InitExchParams *params
+    /* INT4         myProcNum */
     )
 {
   MPIMessage hello; /* initialization message */
@@ -42,7 +43,7 @@ LALInitializeExchange (
     /* initialize communications */
 
     hello.msg    = exchParamsInp->exchObjectType;
-    hello.source = myProcNum;
+    hello.source = params->myProcNum;
 
     /*
      * just use send field as a means to communicate number of objects:
@@ -64,7 +65,7 @@ LALInitializeExchange (
     }
 
     /* send off the communications */
-    LALMPISendMsg (status->statusPtr, &hello, dest);
+    LALMPISendMsg (status->statusPtr, &hello, dest, params->mpiComm);
     CHECKSTATUSPTR (status);
 
     /* copy the input structure to the output structure */
@@ -72,19 +73,26 @@ LALInitializeExchange (
     (*exchParamsOut)->send           = exchParamsInp->send;
     (*exchParamsOut)->numObjects     = exchParamsInp->numObjects;
     (*exchParamsOut)->partnerProcNum = exchParamsInp->partnerProcNum;
+
+    /* copy the communicator from the parameter structure */
+    (*exchParamsOut)->myProcNum      = params->myProcNum;
+    (*exchParamsOut)->mpiComm        = params->mpiComm;
   }
   else /* I am waiting for someone else to initialize the exchange */
   {
     /* wait for incoming message */
-    LALMPIRecvMsg (status->statusPtr, &hello);
+    LALMPIRecvMsg (status->statusPtr, &hello, params->mpiComm);
     CHECKSTATUSPTR (status);
 
     /* the message contains all the information needed */
-
     (*exchParamsOut)->exchObjectType = hello.msg;
     (*exchParamsOut)->send           = (hello.send < 0);
     (*exchParamsOut)->numObjects     = abs(hello.send) - 1;
     (*exchParamsOut)->partnerProcNum = hello.source;
+
+    /* copy the communicator from the parameter structure */
+    (*exchParamsOut)->myProcNum      = params->myProcNum;
+    (*exchParamsOut)->mpiComm        = params->mpiComm;
   }
 
   DETATCHSTATUSPTR (status);
@@ -115,7 +123,8 @@ LALFinalizeExchange (
     goodbye.length = 1;
     goodbye.data   = &magic;
 
-    LALMPISendINT2Vector (status->statusPtr, &goodbye, dest);
+    LALMPISendINT2Vector (status->statusPtr, &goodbye, dest, 
+        (*exchParams)->mpiComm);
     CHECKSTATUSPTR (status);
   }
   else
@@ -126,7 +135,8 @@ LALFinalizeExchange (
     goodbye.length = 1;
     goodbye.data   = &myMagic;
 
-    LALMPIRecvINT2Vector (status->statusPtr, &goodbye, source);
+    LALMPIRecvINT2Vector (status->statusPtr, &goodbye, source,
+        (*exchParams)->mpiComm);
     CHECKSTATUSPTR (status);
 
     ASSERT (goodbye.data[0] == magic, status, 
@@ -169,21 +179,24 @@ LALExchangeDataSegment (
     box.data   = (CHAR *) segment;
 
     /* send box (this sends too much, but it is simple) */
-    LALMPISendCHARVector (status->statusPtr, &box, dest);
+    LALMPISendCHARVector (status->statusPtr, &box, dest, exchParams->mpiComm);
     CHECKSTATUSPTR (status);
 
     /* send pointer fields of data segment */
 
     /* data */
-    LALMPISendINT2TimeSeries (status->statusPtr, segment->data, dest);
+    LALMPISendINT2TimeSeries (status->statusPtr, segment->data, dest,
+        exchParams->mpiComm);
     CHECKSTATUSPTR (status);
 
     /* spec */
-    LALMPISendREAL4FrequencySeries (status->statusPtr, segment->spec, dest);
+    LALMPISendREAL4FrequencySeries (status->statusPtr, segment->spec, dest,
+        exchParams->mpiComm);
     CHECKSTATUSPTR (status);
 
     /* resp */
-    LALMPISendCOMPLEX8FrequencySeries (status->statusPtr, segment->resp, dest);
+    LALMPISendCOMPLEX8FrequencySeries (status->statusPtr, segment->resp, dest,
+        exchParams->mpiComm);
     CHECKSTATUSPTR (status);
   }
   else /* I am receiving */
@@ -195,7 +208,8 @@ LALExchangeDataSegment (
     box.data   = (CHAR *) &tmpSegment;
 
     /* receive box */
-    LALMPIRecvCHARVector (status->statusPtr, &box, source);
+    LALMPIRecvCHARVector (status->statusPtr, &box, source,
+        exchParams->mpiComm);
     CHECKSTATUSPTR (status);
 
     /* set relevant fields */
@@ -207,22 +221,24 @@ LALExchangeDataSegment (
     /* receive remaining fields */
 
     /* data */
-    LALMPIRecvINT2TimeSeries (status->statusPtr, segment->data, source);
+    LALMPIRecvINT2TimeSeries (status->statusPtr, segment->data, source,
+        exchParams->mpiComm);
     CHECKSTATUSPTR (status);
 
     /* spec */
-    LALMPIRecvREAL4FrequencySeries (status->statusPtr, segment->spec, source);
+    LALMPIRecvREAL4FrequencySeries (status->statusPtr, segment->spec, source,
+        exchParams->mpiComm);
     CHECKSTATUSPTR (status);
 
     /* resp */
-    LALMPIRecvCOMPLEX8FrequencySeries (status->statusPtr, segment->resp, source);
+    LALMPIRecvCOMPLEX8FrequencySeries (status->statusPtr, segment->resp, source,
+        exchParams->mpiComm);
     CHECKSTATUSPTR (status);
   }
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
-
 
 void
 LALExchangeInspiralBankIn (
@@ -249,7 +265,7 @@ LALExchangeInspiralBankIn (
     INT4 dest = exchParams->partnerProcNum;
 
     /* send box */
-    LALMPISendCHARVector (status->statusPtr, &box, dest);
+    LALMPISendCHARVector (status->statusPtr, &box, dest, exchParams->mpiComm);
     CHECKSTATUSPTR (status);
   }
   else /* I am receiving */
@@ -257,7 +273,7 @@ LALExchangeInspiralBankIn (
     INT4 source = exchParams->partnerProcNum;
 
     /* receive box */
-    LALMPIRecvCHARVector (status->statusPtr, &box, source);
+    LALMPIRecvCHARVector (status->statusPtr, &box, source, exchParams->mpiComm);
     CHECKSTATUSPTR (status);
   }
 
@@ -291,7 +307,7 @@ LALExchangeInspiralTemplate (
     INT4 dest = exchParams->partnerProcNum;
 
     /* send box */
-    LALMPISendCHARVector (status->statusPtr, &box, dest);
+    LALMPISendCHARVector (status->statusPtr, &box, dest, exchParams->mpiComm);
     CHECKSTATUSPTR (status);
   }
   else /* I am receiving */
@@ -299,7 +315,7 @@ LALExchangeInspiralTemplate (
     INT4 source = exchParams->partnerProcNum;
 
     /* receive box */
-    LALMPIRecvCHARVector (status->statusPtr, &box, source);
+    LALMPIRecvCHARVector (status->statusPtr, &box, source, exchParams->mpiComm);
     CHECKSTATUSPTR (status);
   }
 
@@ -333,7 +349,7 @@ LALExchangeInspiralEvent (
     INT4 dest = exchParams->partnerProcNum;
 
     /* send box */
-    LALMPISendCHARVector (status->statusPtr, &box, dest);
+    LALMPISendCHARVector (status->statusPtr, &box, dest, exchParams->mpiComm);
     CHECKSTATUSPTR (status);
   }
   else /* I am receiving */
@@ -341,11 +357,10 @@ LALExchangeInspiralEvent (
     INT4 source = exchParams->partnerProcNum;
 
     /* receive box */
-    LALMPIRecvCHARVector (status->statusPtr, &box, source);
+    LALMPIRecvCHARVector (status->statusPtr, &box, source, exchParams->mpiComm);
     CHECKSTATUSPTR (status);
   }
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
-

@@ -2,7 +2,7 @@
  * 
  * File Name: FindChirpExch.h
  *
- * Author: Allen, B. and Creighton, J. D. E.
+ * Author: Allen, B., Brown, D. A. and Creighton, J. D. E.
  * 
  * Revision: $Id$
  * 
@@ -36,6 +36,7 @@ NRCSID (FINDCHIRPEXCHH, "$Id$");
 typedef enum
 {
   ExchDataSegment,
+  ExchFindChirpSegment,
   ExchInspiralBankIn,
   ExchInspiralTemplate,
   ExchInspiralEvent,
@@ -50,8 +51,20 @@ tagExchParams
   INT4           send;
   INT4           numObjects;
   INT4           partnerProcNum;
+  INT4           myProcNum;
+  MPI_Comm       mpiComm;
 }
 ExchParams;
+
+typedef struct
+tagInitExchParams
+{
+  INT4           myProcNum;
+  MPI_Comm       mpiComm;
+}
+InitExchParams;
+
+
 
 typedef enum
 {
@@ -129,14 +142,13 @@ tagInspiralEvent
 InspiralEvent;
 
 
-
-
 void
 LALInitializeExchange (
     LALStatus      *status,
     ExchParams **exchParamsOut,
     ExchParams  *exchParamsInp,
-    INT4         myProcNum
+    InitExchParams *params
+    /* INT4         myProcNum */
     );
 
 void
@@ -172,7 +184,6 @@ LALExchangeInspiralEvent (
     InspiralEvent *event,
     ExchParams    *exchParams
     );
-
 
 #ifdef  __cplusplus
 }

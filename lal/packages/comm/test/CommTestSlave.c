@@ -37,7 +37,7 @@ Slave (LALStatus *status, MPIId id)
   message.msg    = MPISVector;
   message.send   = 1;
   message.source = id.myId;
-  LALMPISendMsg (status->statusPtr, &message, 0);
+  LALMPISendMsg (status->statusPtr, &message, 0, MPI_COMM_WORLD);
   CHECKSTATUSPTR (status);
 
   for (i = 0; i < vector->length; ++i)
@@ -46,7 +46,7 @@ Slave (LALStatus *status, MPIId id)
   }
 
   printf ("Slave %d sending REAL4Vector to master\n", id.myId);
-  LALMPISendREAL4Vector (status->statusPtr, vector, 0);
+  LALMPISendREAL4Vector (status->statusPtr, vector, 0, MPI_COMM_WORLD);
   CHECKSTATUSPTR (status);
 
   LALSDestroyVector (status->statusPtr, &vector);

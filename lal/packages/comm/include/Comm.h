@@ -2,7 +2,7 @@
  * 
  * File Name: Comm.h
  *
- * Author: Allen, B. and Creighton, J. D. E.
+ * Author: Allen, B., Brown D. A. and Creighton, J. D. E.
  * 
  * Revision: $Id$
  * 
@@ -12,9 +12,9 @@
 #ifndef _COMM_H
 #define _COMM_H
 
+#include <mpi.h>
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
-#include <mpi.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -54,6 +54,7 @@ tagMPIDebugParams
   CHAR *progName;
   INT4  delay;
   INT4  myId;
+  MPI_Comm mpiComm;
 }
 MPIDebugParams;
 
@@ -110,7 +111,8 @@ void
 LALMPIExportEnvironment (
     LALStatus     *status,
     const CHAR *env,
-    INT4        myId
+    INT4        myId,
+    MPI_Comm    mpiComm
     );
 
 void
@@ -122,7 +124,8 @@ LALMPIDebug (
 void
 LALMPIKillScript (
     LALStatus  *status,
-    MPIId   *id
+    MPIId   *id,
+    MPI_Comm    mpiComm
     );
 
 
@@ -130,139 +133,175 @@ void
 LALMPISendMsg (
     LALStatus     *status,
     MPIMessage *msg,
-    INT4        dest
+    INT4        dest,
+    MPI_Comm    mpiComm
     );
 
 void
 LALMPIRecvMsg (
     LALStatus     *status,
-    MPIMessage *msg
+    MPIMessage *msg,
+    MPI_Comm    mpiComm
     );
 
 void
 LALMPISendCHARVector (
     LALStatus     *status,
     CHARVector *vector,
-    INT4        dest
+    INT4        dest,
+    MPI_Comm    mpiComm
     );
 
 void
 LALMPIRecvCHARVector (
     LALStatus     *status,
     CHARVector *vector,
-    INT4        source
+    INT4        source,
+    MPI_Comm    mpiComm
     );
 
 void
 LALMPISendINT2Vector (
     LALStatus     *status,
     INT2Vector *vector,
-    INT4        dest
+    INT4        dest,
+    MPI_Comm    mpiComm
     );
 
 void
 LALMPIRecvINT2Vector (
     LALStatus     *status,
     INT2Vector *vector,
-    INT4        source
+    INT4        source,
+    MPI_Comm    mpiComm
+    );
+
+void
+LALMPISendINT4Vector (
+    LALStatus     *status,
+    INT4Vector *vector,
+    INT4        dest,
+    MPI_Comm    mpiComm
+    );
+
+void
+LALMPIRecvINT4Vector (
+    LALStatus     *status,
+    INT4Vector *vector,
+    INT4        source,
+    MPI_Comm    mpiComm
     );
 
 void
 LALMPISendREAL4Vector (
     LALStatus      *status,
     REAL4Vector *vector,
-    INT4         dest
+    INT4         dest,
+    MPI_Comm    mpiComm
     );
 
 void
 LALMPIRecvREAL4Vector (
     LALStatus      *status,
     REAL4Vector *vector,
-    INT4         source
+    INT4         source,
+    MPI_Comm    mpiComm
     );
 
 void
 LALMPISendCOMPLEX8Vector (
     LALStatus         *status,
     COMPLEX8Vector *vector,
-    INT4            dest
+    INT4            dest,
+    MPI_Comm    mpiComm
     );
 
 void
 LALMPIRecvCOMPLEX8Vector (
     LALStatus         *status,
     COMPLEX8Vector *vector,
-    INT4            source
+    INT4            source,
+    MPI_Comm    mpiComm
     );
 
 void
 LALMPISendINT2TimeSeries (
     LALStatus         *status,
     INT2TimeSeries *series,
-    INT4            dest
+    INT4            dest,
+    MPI_Comm    mpiComm
     );
 
 void
 LALMPIRecvINT2TimeSeries (
     LALStatus         *status,
     INT2TimeSeries *series,
-    INT4            source
+    INT4            source,
+    MPI_Comm    mpiComm
     );
 
 void
 LALMPISendREAL4TimeSeries (
     LALStatus          *status,
     REAL4TimeSeries *series,
-    INT4             dest
+    INT4             dest,
+    MPI_Comm    mpiComm
     );
 
 void
 LALMPIRecvREAL4TimeSeries (
     LALStatus          *status,
     REAL4TimeSeries *series,
-    INT4             source
+    INT4             source,
+    MPI_Comm    mpiComm
     );
 
 void
 LALMPISendCOMPLEX8TimeSeries (
     LALStatus             *status,
     COMPLEX8TimeSeries *series,
-    INT4                dest
+    INT4                dest,
+    MPI_Comm    mpiComm
     );
 
 void
 LALMPIRecvCOMPLEX8TimeSeries (
     LALStatus             *status,
     COMPLEX8TimeSeries *series,
-    INT4                source
+    INT4                source,
+    MPI_Comm    mpiComm
     );
 
 void
 LALMPISendREAL4FrequencySeries (
     LALStatus               *status,
     REAL4FrequencySeries *series,
-    INT4                  dest
+    INT4                  dest,
+    MPI_Comm    mpiComm
     );
 
 void
 LALMPIRecvREAL4FrequencySeries (
     LALStatus               *status,
     REAL4FrequencySeries *series,
-    INT4                  source
+    INT4                  source,
+    MPI_Comm    mpiComm
     );
 
 void
 LALMPISendCOMPLEX8FrequencySeries (
     LALStatus                  *status,
     COMPLEX8FrequencySeries *series,
-    INT4                     dest
+    INT4                     dest,
+    MPI_Comm    mpiComm
     );
 
 void
 LALMPIRecvCOMPLEX8FrequencySeries (
     LALStatus                  *status,
     COMPLEX8FrequencySeries *series,
-    INT4                     source
+    INT4                     source,
+    MPI_Comm    mpiComm
     );
 
 

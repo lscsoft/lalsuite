@@ -42,16 +42,17 @@ main (int argc, char *argv[])
   MPI_Get_processor_name (id.procName, &id.nameLen);
 
   /* write kill script */
-  LALMPIKillScript (&stat, &id);
+  LALMPIKillScript (&stat, &id, MPI_COMM_WORLD);
 
   /* debugging example */
   if (0)
   {
-    LALMPIExportEnvironment (&stat, "DISPLAY", id.myId);
+    LALMPIExportEnvironment (&stat, "DISPLAY", id.myId, MPI_COMM_WORLD);
     debug.debugger = id.myId == 0 ? "ddd" : NULL ; /* attatch ddd to master */
     debug.progName = argv[0];
     debug.delay    = 15;
     debug.myId     = id.myId;
+    debug.mpiComm  = MPI_COMM_WORLD;
     LALMPIDebug (&stat, &debug);
   }
 

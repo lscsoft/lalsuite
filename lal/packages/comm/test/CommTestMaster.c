@@ -38,7 +38,7 @@ Master (LALStatus *status, MPIId id)
 
   while (--numProcs > 0)
   {
-    LALMPIRecvMsg (status->statusPtr, &message);
+    LALMPIRecvMsg (status->statusPtr, &message, MPI_COMM_WORLD);
     CHECKSTATUSPTR (status);
 
     printf ("Master received message code %d from slave %d\n",
@@ -48,7 +48,8 @@ Master (LALStatus *status, MPIId id)
     {
       case MPISVector:
 
-        LALMPIRecvREAL4Vector (status->statusPtr, vector, message.source);
+        LALMPIRecvREAL4Vector (status->statusPtr, vector, 
+            message.source, MPI_COMM_WORLD);
         CHECKSTATUSPTR (status);
 
         ASSERT (message.send == 1, status, 99, "Master expects to receive");

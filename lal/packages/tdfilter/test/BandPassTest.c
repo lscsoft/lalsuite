@@ -117,12 +117,20 @@ INT4 main(INT4 argc, CHAR **argv)
   params.nMax=NMAX;
 
   /* Create the time series. */
+  /*
+   * OMITTED
+   *
   series.name="Impulse";
+   */
   series.epoch.gpsSeconds=0.0;
   series.epoch.gpsNanoSeconds=0.0;
   series.deltaT=1.0;
   series.f0=0.0;
+  /*
+   * OMITTED
+   *
   series.sampleUnits=NULL;
+   */
   series.data=NULL;
   LALSCreateVector(&stat,&(series.data),NPOINTS);
   if(stat.statusCode){

@@ -25,6 +25,7 @@ void
 Master (LALStatus *status, MPIId id)
 {
   CHAR                    *framePath;
+  InitExchParams           initExchParams;
   DataBuffer              *buffer = NULL;
   DataBufferPar            bufferPar;
   DataSegment             *segment;
@@ -62,15 +63,9 @@ Master (LALStatus *status, MPIId id)
     segment[i].resp =
       (COMPLEX8FrequencySeries *) LALMalloc (sizeof(COMPLEX8FrequencySeries));
 
-    segment[i].data->name        = "anonymous";
-    segment[i].data->data        = NULL;
-    segment[i].data->sampleUnits = NULL;
-    segment[i].spec->name        = "anonymous";
-    segment[i].spec->data        = NULL;
-    segment[i].spec->sampleUnits = NULL;
-    segment[i].resp->name        = "anonymous";
-    segment[i].resp->data        = NULL;
-    segment[i].resp->sampleUnits = NULL;
+    segment[i].data->data = NULL;
+    segment[i].spec->data = NULL;
+    segment[i].resp->data = NULL;
 
     LALI2CreateVector (status->statusPtr, &segment[i].data->data, numPoints);
     CHECKSTATUSPTR (status);
@@ -79,15 +74,6 @@ Master (LALStatus *status, MPIId id)
     CHECKSTATUSPTR (status);
 
     LALCCreateVector (status->statusPtr, &segment[i].resp->data, numPoints/2 + 1);
-    CHECKSTATUSPTR (status);
-    
-    LALCHARCreateVector (status->statusPtr, &segment[i].data->sampleUnits, 128);
-    CHECKSTATUSPTR (status);
-
-    LALCHARCreateVector (status->statusPtr, &segment[i].spec->sampleUnits, 128);
-    CHECKSTATUSPTR (status);
-
-    LALCHARCreateVector (status->statusPtr, &segment[i].resp->sampleUnits, 128);
     CHECKSTATUSPTR (status);
   }
 
@@ -126,13 +112,15 @@ Master (LALStatus *status, MPIId id)
 
 
   numProcs = id.numProcs;
+  initExchParams.mpiComm = MPI_COMM_WORLD;
 
   while (numProcs > 1)
   {
     ExchParams *thisExch = NULL;
 
     printf ("\nMaster: waiting for request... ");
-    LALInitializeExchange (status->statusPtr, &thisExch, NULL, id.myId);
+    initExchParams.myProcNum = id.myId;
+    LALInitializeExchange (status->statusPtr, &thisExch, NULL, &initExchParams);
     CHECKSTATUSPTR (status);
     printf ("got request %d from slave %d\n",
             (INT4) thisExch->exchObjectType, thisExch->partnerProcNum);
@@ -318,15 +306,6 @@ Master (LALStatus *status, MPIId id)
 
   for (i = 0; i < numSegments; ++i)
   {
-    LALCHARDestroyVector (status->statusPtr, &segment[i].data->sampleUnits);
-    CHECKSTATUSPTR (status);
-
-    LALCHARDestroyVector (status->statusPtr, &segment[i].spec->sampleUnits);
-    CHECKSTATUSPTR (status);
-
-    LALCHARDestroyVector (status->statusPtr, &segment[i].resp->sampleUnits);
-    CHECKSTATUSPTR (status);
-
     LALI2DestroyVector (status->statusPtr, &segment[i].data->data);
     CHECKSTATUSPTR (status);
 

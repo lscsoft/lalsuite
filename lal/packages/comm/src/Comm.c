@@ -2,7 +2,7 @@
  * 
  * File Name: Comm.h
  *
- * Author: Allen, B. and Creighton, J. D. E.
+ * Author: Allen, B., Brown, D. A. and Creighton, J. D. E.
  * 
  * Revision: $Id$
  * 
@@ -14,8 +14,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <lal/Comm.h>
 #include <lal/LALStdlib.h>
+#include <lal/Comm.h>
 
 NRCSID (COMMC, "$Id$");
 
@@ -23,7 +23,8 @@ void
 LALMPIExportEnvironment (
     LALStatus     *status,
     const CHAR *env,
-    INT4        myId
+    INT4        myId,
+    MPI_Comm    mpiComm
     )
 {
   CHAR command[256];
@@ -48,13 +49,13 @@ LALMPIExportEnvironment (
     sprintf (command, "export %s=%s", env, var);
 
     /* broadcast it */
-    code = MPI_Bcast (command, sizeof(command), MPI_CHAR, 0, MPI_COMM_WORLD);
+    code = MPI_Bcast (command, sizeof(command), MPI_CHAR, 0, mpiComm);
     ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
   }
   else
   {
     /* get environment variable string */
-    code = MPI_Bcast (command, sizeof(command), MPI_CHAR, 0, MPI_COMM_WORLD);
+    code = MPI_Bcast (command, sizeof(command), MPI_CHAR, 0, mpiComm);
     ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
 
     /* set environment variable */
@@ -107,7 +108,7 @@ LALMPIDebug (
   }
 
   /* synchronize */
-  code = MPI_Barrier (MPI_COMM_WORLD);
+  code = MPI_Barrier (params->mpiComm);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
 
   DETATCHSTATUSPTR (status);
@@ -118,7 +119,8 @@ LALMPIDebug (
 void
 LALMPIKillScript (
     LALStatus  *status,
-    MPIId   *id
+    MPIId   *id,
+    MPI_Comm    mpiComm
     )
 {
   MPI_Status mpiStatus;
@@ -145,13 +147,13 @@ LALMPIKillScript (
       CHAR procName[MPI_MAX_PROCESSOR_NAME];
 
       code = MPI_Recv (&procId, sizeof(INT4), MPI_BYTE, slave,
-                       MPIMisc, MPI_COMM_WORLD, &mpiStatus);
+                       MPIMisc, mpiComm, &mpiStatus);
       ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
       ASSERT (mpiStatus.MPI_ERROR == MPI_SUCCESS, status,
               COMM_EMPIE, COMM_MSGEMPIE);
 
       code = MPI_Recv (procName, MPI_MAX_PROCESSOR_NAME, MPI_BYTE, slave,
-                       MPIMisc, MPI_COMM_WORLD, &mpiStatus);
+                       MPIMisc, mpiComm, &mpiStatus);
       ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
       ASSERT (mpiStatus.MPI_ERROR == MPI_SUCCESS, status,
               COMM_EMPIE, COMM_MSGEMPIE);
@@ -165,11 +167,11 @@ LALMPIKillScript (
   else /* I am a slave */
   {
     code = MPI_Send (&procId, sizeof(INT4), MPI_BYTE, 0,
-                     MPIMisc, MPI_COMM_WORLD);
+                     MPIMisc, mpiComm);
     ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
 
     code = MPI_Send (id->procName, MPI_MAX_PROCESSOR_NAME, MPI_BYTE, 0,
-                     MPIMisc, MPI_COMM_WORLD);
+                     MPIMisc, mpiComm);
     ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
   }
 
@@ -183,7 +185,8 @@ void
 LALMPISendMsg (
     LALStatus     *status,
     MPIMessage *msg,
-    INT4        dest
+    INT4        dest,
+    MPI_Comm    mpiComm
     )
 {
   INT4 code;
@@ -192,7 +195,7 @@ LALMPISendMsg (
   INITSTATUS (status, "LALMPISendMsg", COMMC);
 
   size = sizeof(MPIMessage);
-  code = MPI_Send (msg, size, MPI_BYTE, dest, MPIMsg, MPI_COMM_WORLD);
+  code = MPI_Send (msg, size, MPI_BYTE, dest, MPIMsg, mpiComm);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
 
   RETURN (status);
@@ -202,7 +205,8 @@ LALMPISendMsg (
 void
 LALMPIRecvMsg (
     LALStatus     *status,
-    MPIMessage *msg
+    MPIMessage *msg,
+    MPI_Comm    mpiComm
     )
 {
   MPI_Status mpiStatus;
@@ -213,7 +217,7 @@ LALMPIRecvMsg (
 
   size = sizeof(MPIMessage);
   code = MPI_Recv (msg, size, MPI_BYTE, MPI_ANY_SOURCE, MPIMsg,
-                   MPI_COMM_WORLD, &mpiStatus);
+                   mpiComm, &mpiStatus);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
   ASSERT (mpiStatus.MPI_ERROR == MPI_SUCCESS, status,
           COMM_EMPIE, COMM_MSGEMPIE);
@@ -235,7 +239,8 @@ void
 LALMPISendCHARVector (
     LALStatus     *status,
     CHARVector *vector,
-    INT4        dest
+    INT4        dest,
+    MPI_Comm    mpiComm
     )
 {
   INT4 code;
@@ -250,13 +255,13 @@ LALMPISendCHARVector (
   /* send the vector structure */
   size = sizeof(CHARVector);
   code = MPI_Send (vector, size, MPI_BYTE, dest, MPICHARVector,
-                   MPI_COMM_WORLD);
+                   mpiComm);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
 
   /* send the vector data */
   size = vector->length*sizeof(CHAR);
   code = MPI_Send (vector->data, size, MPI_BYTE, dest, MPICHARVectorData,
-                   MPI_COMM_WORLD);
+                   mpiComm);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
 
   RETURN (status);
@@ -267,7 +272,8 @@ void
 LALMPIRecvCHARVector (
     LALStatus     *status,
     CHARVector *vector,
-    INT4        source
+    INT4        source,
+    MPI_Comm    mpiComm
     )
 {
   MPI_Status mpiStatus;
@@ -284,7 +290,7 @@ LALMPIRecvCHARVector (
   /* receive temporary vector structure to check */
   size = sizeof(CHARVector);
   code = MPI_Recv (&tmpVec, size, MPI_BYTE, source, MPICHARVector,
-                   MPI_COMM_WORLD, &mpiStatus);
+                   mpiComm, &mpiStatus);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
   ASSERT (mpiStatus.MPI_ERROR == MPI_SUCCESS, status,
           COMM_EMPIE, COMM_MSGEMPIE);
@@ -296,13 +302,14 @@ LALMPIRecvCHARVector (
   /* receive the vector data */
   size = vector->length*sizeof(CHAR);
   code = MPI_Recv (vector->data, size, MPI_BYTE, source, MPICHARVectorData,
-                   MPI_COMM_WORLD, &mpiStatus);
+                   mpiComm, &mpiStatus);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
   ASSERT (mpiStatus.MPI_ERROR == MPI_SUCCESS, status,
           COMM_EMPIE, COMM_MSGEMPIE);
 
   RETURN (status);
 }
+
 
 
 /* Send/Recv INT2Vector: */
@@ -312,7 +319,8 @@ void
 LALMPISendINT2Vector (
     LALStatus     *status,
     INT2Vector *vector,
-    INT4        dest
+    INT4        dest,
+    MPI_Comm    mpiComm
     )
 {
   INT4 code;
@@ -326,13 +334,13 @@ LALMPISendINT2Vector (
 
   /* send the vector structure */
   size = sizeof(INT2Vector);
-  code = MPI_Send (vector, size, MPI_BYTE, dest, MPII2Vector, MPI_COMM_WORLD);
+  code = MPI_Send (vector, size, MPI_BYTE, dest, MPII2Vector, mpiComm);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
 
   /* send the vector data */
   size = vector->length*sizeof(INT2);
   code = MPI_Send (vector->data, size, MPI_BYTE, dest, MPII2VectorData,
-                   MPI_COMM_WORLD);
+                   mpiComm);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
 
   RETURN (status);
@@ -343,7 +351,8 @@ void
 LALMPIRecvINT2Vector (
     LALStatus     *status,
     INT2Vector *vector,
-    INT4        source
+    INT4        source,
+    MPI_Comm    mpiComm
     )
 {
   MPI_Status mpiStatus;
@@ -360,7 +369,7 @@ LALMPIRecvINT2Vector (
   /* receive temporary vector structure to check */
   size = sizeof(INT2Vector);
   code = MPI_Recv (&tmpVec, size, MPI_BYTE, source, MPII2Vector,
-                   MPI_COMM_WORLD, &mpiStatus);
+                   mpiComm, &mpiStatus);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
   ASSERT (mpiStatus.MPI_ERROR == MPI_SUCCESS, status,
           COMM_EMPIE, COMM_MSGEMPIE);
@@ -372,13 +381,91 @@ LALMPIRecvINT2Vector (
   /* receive the vector data */
   size = vector->length*sizeof(INT2);
   code = MPI_Recv (vector->data, size, MPI_BYTE, source, MPII2VectorData,
-                   MPI_COMM_WORLD, &mpiStatus);
+                   mpiComm, &mpiStatus);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
   ASSERT (mpiStatus.MPI_ERROR == MPI_SUCCESS, status,
           COMM_EMPIE, COMM_MSGEMPIE);
 
   RETURN (status);
 }
+
+/* Send/Recv INT4Vector: */
+
+
+void
+LALMPISendINT4Vector (
+    LALStatus     *status,
+    INT4Vector *vector,
+    INT4        dest,
+    MPI_Comm    mpiComm
+    )
+{
+  INT4 code;
+  INT4 size;
+
+  INITSTATUS (status, "LALMPISendINT4Vector", COMMC);
+
+  ASSERT (vector, status, COMM_ENULL, COMM_MSGENULL);
+  ASSERT (vector->data, status, COMM_ENULL, COMM_MSGENULL);
+  ASSERT (vector->length, status, COMM_ESIZE, COMM_MSGESIZE);
+
+  /* send the vector structure */
+  size = sizeof(INT4Vector);
+  code = MPI_Send (vector, size, MPI_BYTE, dest, MPII4Vector, mpiComm);
+  ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
+
+  /* send the vector data */
+  size = vector->length*sizeof(INT4);
+  code = MPI_Send (vector->data, size, MPI_BYTE, dest, MPII4VectorData,
+                   mpiComm);
+  ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
+
+  RETURN (status);
+}
+
+
+void
+LALMPIRecvINT4Vector (
+    LALStatus     *status,
+    INT4Vector *vector,
+    INT4        source,
+    MPI_Comm    mpiComm
+    )
+{
+  MPI_Status mpiStatus;
+  INT2Vector tmpVec;
+  INT4       code;
+  INT4       size;
+
+  INITSTATUS (status, "LALMPIRecvINT4Vector", COMMC);
+
+  ASSERT (vector, status, COMM_ENULL, COMM_MSGENULL);
+  ASSERT (vector->data, status, COMM_ENULL, COMM_MSGENULL);
+  ASSERT (vector->length, status, COMM_ESIZE, COMM_MSGESIZE);
+
+  /* receive temporary vector structure to check */
+  size = sizeof(INT4Vector);
+  code = MPI_Recv (&tmpVec, size, MPI_BYTE, source, MPII4Vector,
+                   mpiComm, &mpiStatus);
+  ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
+  ASSERT (mpiStatus.MPI_ERROR == MPI_SUCCESS, status,
+          COMM_EMPIE, COMM_MSGEMPIE);
+
+  /* make sure vector lengths agree */
+  ASSERT (vector->length == tmpVec.length, status,
+          16, "Exchange size mismatch");
+
+  /* receive the vector data */
+  size = vector->length*sizeof(INT4);
+  code = MPI_Recv (vector->data, size, MPI_BYTE, source, MPII4VectorData,
+                   mpiComm, &mpiStatus);
+  ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
+  ASSERT (mpiStatus.MPI_ERROR == MPI_SUCCESS, status,
+          COMM_EMPIE, COMM_MSGEMPIE);
+
+  RETURN (status);
+}
+
 
 
 /* Send/Recv REAL4Vector: */
@@ -388,7 +475,8 @@ void
 LALMPISendREAL4Vector (
     LALStatus      *status,
     REAL4Vector *vector,
-    INT4         dest
+    INT4         dest,
+    MPI_Comm    mpiComm
     )
 {
   INT4 code;
@@ -402,13 +490,13 @@ LALMPISendREAL4Vector (
 
   /* send the vector structure */
   size = sizeof(REAL4Vector);
-  code = MPI_Send (vector, size, MPI_BYTE, dest, MPISVector, MPI_COMM_WORLD);
+  code = MPI_Send (vector, size, MPI_BYTE, dest, MPISVector, mpiComm);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
 
   /* send the vector data */
   size = vector->length*sizeof(REAL4);
   code = MPI_Send (vector->data, size, MPI_BYTE, dest, MPISVectorData,
-                   MPI_COMM_WORLD);
+                   mpiComm);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
 
   RETURN (status);
@@ -419,7 +507,8 @@ void
 LALMPIRecvREAL4Vector (
     LALStatus      *status,
     REAL4Vector *vector,
-    INT4         source
+    INT4         source,
+    MPI_Comm    mpiComm
     )
 {
   MPI_Status  mpiStatus;
@@ -436,7 +525,7 @@ LALMPIRecvREAL4Vector (
   /* receive temporary vector structure to check */
   size = sizeof(REAL4Vector);
   code = MPI_Recv (&tmpVec, size, MPI_BYTE, source, MPISVector,
-                   MPI_COMM_WORLD, &mpiStatus);
+                   mpiComm, &mpiStatus);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
   ASSERT (mpiStatus.MPI_ERROR == MPI_SUCCESS, status,
           COMM_EMPIE, COMM_MSGEMPIE);
@@ -448,7 +537,7 @@ LALMPIRecvREAL4Vector (
   /* receive the vector data */
   size = vector->length*sizeof(REAL4);
   code = MPI_Recv (vector->data, size, MPI_BYTE, source, MPISVectorData,
-                   MPI_COMM_WORLD, &mpiStatus);
+                   mpiComm, &mpiStatus);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
   ASSERT (mpiStatus.MPI_ERROR == MPI_SUCCESS, status,
           COMM_EMPIE, COMM_MSGEMPIE);
@@ -464,7 +553,8 @@ void
 LALMPISendCOMPLEX8Vector (
     LALStatus         *status,
     COMPLEX8Vector *vector,
-    INT4            dest
+    INT4            dest,
+    MPI_Comm    mpiComm
     )
 {
   INT4 code;
@@ -478,13 +568,13 @@ LALMPISendCOMPLEX8Vector (
 
   /* send the vector structure */
   size = sizeof(COMPLEX8Vector);
-  code = MPI_Send (vector, size, MPI_BYTE, dest, MPICVector, MPI_COMM_WORLD);
+  code = MPI_Send (vector, size, MPI_BYTE, dest, MPICVector, mpiComm);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
 
   /* send the vector data */
   size = vector->length*sizeof(COMPLEX8);
   code = MPI_Send (vector->data, size, MPI_BYTE, dest, MPICVectorData,
-                   MPI_COMM_WORLD);
+                   mpiComm);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
 
   RETURN (status);
@@ -495,7 +585,8 @@ void
 LALMPIRecvCOMPLEX8Vector (
     LALStatus         *status,
     COMPLEX8Vector *vector,
-    INT4            source
+    INT4            source,
+    MPI_Comm    mpiComm
     )
 {
   MPI_Status     mpiStatus;
@@ -512,7 +603,7 @@ LALMPIRecvCOMPLEX8Vector (
   /* receive temporary vector structure to check */
   size = sizeof(COMPLEX8Vector);
   code = MPI_Recv (&tmpVec, size, MPI_BYTE, source, MPICVector,
-                   MPI_COMM_WORLD, &mpiStatus);
+                   mpiComm, &mpiStatus);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
   ASSERT (mpiStatus.MPI_ERROR == MPI_SUCCESS, status,
           COMM_EMPIE, COMM_MSGEMPIE);
@@ -524,7 +615,7 @@ LALMPIRecvCOMPLEX8Vector (
   /* receive the vector data */
   size = vector->length*sizeof(COMPLEX8);
   code = MPI_Recv (vector->data, size, MPI_BYTE, source, MPICVectorData,
-                   MPI_COMM_WORLD, &mpiStatus);
+                   mpiComm, &mpiStatus);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
   ASSERT (mpiStatus.MPI_ERROR == MPI_SUCCESS, status,
           COMM_EMPIE, COMM_MSGEMPIE);
@@ -547,7 +638,8 @@ void
 LALMPISendINT2TimeSeries (
     LALStatus          *status,
     INT2TimeSeries *series,
-    INT4             dest
+    INT4             dest,
+    MPI_Comm    mpiComm
     )
 {
   INT4 code;
@@ -557,28 +649,18 @@ LALMPISendINT2TimeSeries (
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
-  /* ASSERT (series->name, status, 1, "Null pointer"); */
   ASSERT (series->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->length, status, COMM_ESIZE, COMM_MSGESIZE);
-  ASSERT (series->sampleUnits, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->data, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->length, status, COMM_ESIZE, COMM_MSGESIZE);
 
   /* send the series structure */
   size = sizeof(INT2TimeSeries);
   code = MPI_Send (series, size, MPI_BYTE, dest, MPII2TimeSeries,
-                   MPI_COMM_WORLD);
+                   mpiComm);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
 
-  /* not sure how to send name --- ignore it! */
-
-  /* send sampleUnits vector */
-  LALMPISendCHARVector (status->statusPtr, series->sampleUnits, dest);
-  CHECKSTATUSPTR (status);
-
   /* send data vector */
-  LALMPISendINT2Vector (status->statusPtr, series->data, dest);
+  LALMPISendINT2Vector (status->statusPtr, series->data, dest, mpiComm);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
@@ -590,48 +672,35 @@ void
 LALMPIRecvINT2TimeSeries (
     LALStatus         *status,
     INT2TimeSeries *series,
-    INT4            source
+    INT4            source,
+    MPI_Comm    mpiComm
     )
 {
-  MPI_Status     mpiStatus;
-  INT2TimeSeries tmpSer;
-  INT4            code;
-  INT4            size;
+  MPI_Status  mpiStatus;
+  INT2Vector *tmpVec;
+  INT4        code;
+  INT4        size;
 
   INITSTATUS (status, "LALMPIRecvINT2TimeSeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
-  /* ASSERT (series->name, status, 1, "Null pointer"); */
   ASSERT (series->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->length, status, COMM_ESIZE, COMM_MSGESIZE);
-  ASSERT (series->sampleUnits, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->data, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->length, status, COMM_ESIZE, COMM_MSGESIZE);
 
-  /* receive temporary time series structure */
-  size = sizeof(INT2TimeSeries);
-  code = MPI_Recv (&tmpSer, size, MPI_BYTE, source, MPII2TimeSeries,
-                   MPI_COMM_WORLD, &mpiStatus);
+  /* receive time series structure */
+  tmpVec = series->data;
+  size   = sizeof(INT2TimeSeries);
+  code   = MPI_Recv (series, size, MPI_BYTE, source, MPII2TimeSeries,
+                     mpiComm, &mpiStatus);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
   ASSERT (mpiStatus.MPI_ERROR == MPI_SUCCESS, status,
           COMM_EMPIE, COMM_MSGEMPIE);
-
-  /* set the appropriate fields */
-  series->epoch  = tmpSer.epoch;
-  series->f0     = tmpSer.f0;
-  series->deltaT = tmpSer.deltaT;
-
-  /* don't know what to do with name... */
-  series->name   = "anonymous";
-
-  /* receive sampleUnits vector */
-  LALMPIRecvCHARVector (status->statusPtr, series->sampleUnits, source);
-  CHECKSTATUSPTR (status);
+  series->data = tmpVec;
 
   /* receive data vector */
-  LALMPIRecvINT2Vector (status->statusPtr, series->data, source);
+  LALMPIRecvINT2Vector (status->statusPtr, series->data, source, mpiComm);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
@@ -647,7 +716,8 @@ void
 LALMPISendREAL4TimeSeries (
     LALStatus          *status,
     REAL4TimeSeries *series,
-    INT4             dest
+    INT4             dest,
+    MPI_Comm    mpiComm
     )
 {
   INT4 code;
@@ -657,28 +727,18 @@ LALMPISendREAL4TimeSeries (
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
-  /* ASSERT (series->name, status, 1, "Null pointer"); */
   ASSERT (series->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->length, status, COMM_ESIZE, COMM_MSGESIZE);
-  ASSERT (series->sampleUnits, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->data, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->length, status, COMM_ESIZE, COMM_MSGESIZE);
 
   /* send the series structure */
   size = sizeof(REAL4TimeSeries);
   code = MPI_Send (series, size, MPI_BYTE, dest, MPISTimeSeries,
-                   MPI_COMM_WORLD);
+                   mpiComm);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
 
-  /* not sure how to send name --- ignore it! */
-
-  /* send sampleUnits vector */
-  LALMPISendCHARVector (status->statusPtr, series->sampleUnits, dest);
-  CHECKSTATUSPTR (status);
-
   /* send data vector */
-  LALMPISendREAL4Vector (status->statusPtr, series->data, dest);
+  LALMPISendREAL4Vector (status->statusPtr, series->data, dest, mpiComm);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
@@ -690,48 +750,35 @@ void
 LALMPIRecvREAL4TimeSeries (
     LALStatus          *status,
     REAL4TimeSeries *series,
-    INT4             source
+    INT4             source,
+    MPI_Comm    mpiComm
     )
 {
-  MPI_Status      mpiStatus;
-  REAL4TimeSeries tmpSer;
-  INT4            code;
-  INT4            size;
+  MPI_Status   mpiStatus;
+  REAL4Vector *tmpVec;
+  INT4         code;
+  INT4         size;
 
   INITSTATUS (status, "LALMPIRecvREAL4TimeSeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
-  /* ASSERT (series->name, status, 1, "Null pointer"); */
   ASSERT (series->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->length, status, COMM_ESIZE, COMM_MSGESIZE);
-  ASSERT (series->sampleUnits, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->data, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->length, status, COMM_ESIZE, COMM_MSGESIZE);
 
-  /* receive temporary time series structure */
-  size = sizeof(REAL4TimeSeries);
-  code = MPI_Recv (&tmpSer, size, MPI_BYTE, source, MPISTimeSeries,
-                   MPI_COMM_WORLD, &mpiStatus);
+  /* receive time series structure */
+  tmpVec = series->data;
+  size   = sizeof(REAL4TimeSeries);
+  code   = MPI_Recv (series, size, MPI_BYTE, source, MPISTimeSeries,
+                     mpiComm, &mpiStatus);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
   ASSERT (mpiStatus.MPI_ERROR == MPI_SUCCESS, status, COMM_EMPIE,
           COMM_MSGEMPIE);
-
-  /* set the appropriate fields */
-  series->epoch  = tmpSer.epoch;
-  series->f0     = tmpSer.f0;
-  series->deltaT = tmpSer.deltaT;
-
-  /* don't know what to do with name... */
-  series->name   = "anonymous";
-
-  /* receive sampleUnits vector */
-  LALMPIRecvCHARVector (status->statusPtr, series->sampleUnits, source);
-  CHECKSTATUSPTR (status);
+  series->data = tmpVec;
 
   /* receive data vector */
-  LALMPIRecvREAL4Vector (status->statusPtr, series->data, source);
+  LALMPIRecvREAL4Vector (status->statusPtr, series->data, source, mpiComm);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
@@ -746,7 +793,8 @@ void
 LALMPISendCOMPLEX8TimeSeries (
     LALStatus             *status,
     COMPLEX8TimeSeries *series,
-    INT4                dest
+    INT4                dest,
+    MPI_Comm    mpiComm
     )
 {
   INT4 code;
@@ -756,28 +804,18 @@ LALMPISendCOMPLEX8TimeSeries (
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
-  /* ASSERT (series->name, status, 1, "Null pointer"); */
   ASSERT (series->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->length, status, COMM_ESIZE, COMM_MSGESIZE);
-  ASSERT (series->sampleUnits, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->data, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->length, status, COMM_ESIZE, COMM_MSGESIZE);
 
   /* send the series structure */
   size = sizeof(COMPLEX8TimeSeries);
   code = MPI_Send (series, size, MPI_BYTE, dest, MPICTimeSeries,
-                   MPI_COMM_WORLD);
+                   mpiComm);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
 
-  /* not sure how to send name --- ignore it! */
-
-  /* send sampleUnits vector */
-  LALMPISendCHARVector (status->statusPtr, series->sampleUnits, dest);
-  CHECKSTATUSPTR (status);
-
   /* send data vector */
-  LALMPISendCOMPLEX8Vector (status->statusPtr, series->data, dest);
+  LALMPISendCOMPLEX8Vector (status->statusPtr, series->data, dest, mpiComm);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
@@ -789,48 +827,35 @@ void
 LALMPIRecvCOMPLEX8TimeSeries (
     LALStatus             *status,
     COMPLEX8TimeSeries *series,
-    INT4                source
+    INT4                source,
+    MPI_Comm    mpiComm
     )
 {
-  MPI_Status         mpiStatus;
-  COMPLEX8TimeSeries tmpSer;
-  INT4               code;
-  INT4               size;
+  MPI_Status      mpiStatus;
+  COMPLEX8Vector *tmpVec;
+  INT4            code;
+  INT4            size;
 
   INITSTATUS (status, "LALMPIRecvCOMPLEX8TimeSeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
-  /* ASSERT (series->name, status, 1, "Null pointer"); */
   ASSERT (series->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->length, status, COMM_ESIZE, COMM_MSGESIZE);
-  ASSERT (series->sampleUnits, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->data, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->length, status, COMM_ESIZE, COMM_MSGESIZE);
 
   /* receive temporary time series structure */
-  size = sizeof(COMPLEX8TimeSeries);
-  code = MPI_Recv (&tmpSer, size, MPI_BYTE, source, MPICTimeSeries,
-                   MPI_COMM_WORLD, &mpiStatus);
+  tmpVec = series->data;
+  size   = sizeof(COMPLEX8TimeSeries);
+  code   = MPI_Recv (series, size, MPI_BYTE, source, MPICTimeSeries,
+                     mpiComm, &mpiStatus);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
   ASSERT (mpiStatus.MPI_ERROR == MPI_SUCCESS, status,
           COMM_EMPIE, COMM_MSGEMPIE);
-
-  /* set the appropriate fields */
-  series->epoch  = tmpSer.epoch;
-  series->f0     = tmpSer.f0;
-  series->deltaT = tmpSer.deltaT;
-
-  /* don't know what to do with name... */
-  series->name   = "anonymous";
-
-  /* receive sampleUnits vector */
-  LALMPIRecvCHARVector (status->statusPtr, series->sampleUnits, source);
-  CHECKSTATUSPTR (status);
+  series->data = tmpVec;
 
   /* receive data vector */
-  LALMPIRecvCOMPLEX8Vector (status->statusPtr, series->data, source);
+  LALMPIRecvCOMPLEX8Vector (status->statusPtr, series->data, source, mpiComm);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
@@ -853,7 +878,8 @@ void
 LALMPISendREAL4FrequencySeries (
     LALStatus               *status,
     REAL4FrequencySeries *series,
-    INT4                  dest
+    INT4                  dest,
+    MPI_Comm    mpiComm
     )
 {
   INT4 code;
@@ -863,28 +889,18 @@ LALMPISendREAL4FrequencySeries (
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
-  /* ASSERT (series->name, status, 1, "Null pointer"); */
   ASSERT (series->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->length, status, COMM_ESIZE, COMM_MSGESIZE);
-  ASSERT (series->sampleUnits, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->data, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->length, status, COMM_ESIZE, COMM_MSGESIZE);
 
   /* send the series structure */
   size = sizeof(REAL4FrequencySeries);
   code = MPI_Send (series, size, MPI_BYTE, dest, MPISFrequencySeries,
-                   MPI_COMM_WORLD);
+                   mpiComm);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
 
-  /* not sure how to send name --- ignore it! */
-
-  /* send sampleUnits vector */
-  LALMPISendCHARVector (status->statusPtr, series->sampleUnits, dest);
-  CHECKSTATUSPTR (status);
-
   /* send data vector */
-  LALMPISendREAL4Vector (status->statusPtr, series->data, dest);
+  LALMPISendREAL4Vector (status->statusPtr, series->data, dest, mpiComm);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
@@ -896,48 +912,35 @@ void
 LALMPIRecvREAL4FrequencySeries (
     LALStatus               *status,
     REAL4FrequencySeries *series,
-    INT4                  source
+    INT4                  source,
+    MPI_Comm    mpiComm
     )
 {
-  MPI_Status           mpiStatus;
-  REAL4FrequencySeries tmpSer;
-  INT4                 code;
-  INT4                 size;
+  MPI_Status   mpiStatus;
+  REAL4Vector *tmpVec;
+  INT4         code;
+  INT4         size;
 
   INITSTATUS (status, "LALMPIRecvREAL4FrequencySeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
-  /* ASSERT (series->name, status, 1, "Null pointer"); */
   ASSERT (series->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->length, status, COMM_ESIZE, COMM_MSGESIZE);
-  ASSERT (series->sampleUnits, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->data, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->length, status, COMM_ESIZE, COMM_MSGESIZE);
 
-  /* receive temporary time series structure */
-  size = sizeof(REAL4FrequencySeries);
-  code = MPI_Recv (&tmpSer, size, MPI_BYTE, source, MPISFrequencySeries,
-                   MPI_COMM_WORLD, &mpiStatus);
+  /* receive time series structure */
+  tmpVec = series->data;
+  size   = sizeof(REAL4FrequencySeries);
+  code   = MPI_Recv (series, size, MPI_BYTE, source, MPISFrequencySeries,
+                     mpiComm, &mpiStatus);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
   ASSERT (mpiStatus.MPI_ERROR == MPI_SUCCESS, status,
           COMM_EMPIE, COMM_MSGEMPIE);
-
-  /* set the appropriate fields */
-  series->epoch  = tmpSer.epoch;
-  series->f0     = tmpSer.f0;
-  series->deltaF = tmpSer.deltaF;
-
-  /* don't know what to do with name... */
-  series->name   = "anonymous";
-
-  /* receive sampleUnits vector */
-  LALMPIRecvCHARVector (status->statusPtr, series->sampleUnits, source);
-  CHECKSTATUSPTR (status);
+  series->data = tmpVec;
 
   /* receive data vector */
-  LALMPIRecvREAL4Vector (status->statusPtr, series->data, source);
+  LALMPIRecvREAL4Vector (status->statusPtr, series->data, source, mpiComm);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
@@ -952,7 +955,8 @@ void
 LALMPISendCOMPLEX8FrequencySeries (
     LALStatus                  *status,
     COMPLEX8FrequencySeries *series,
-    INT4                     dest
+    INT4                     dest,
+    MPI_Comm    mpiComm
     )
 {
   INT4 code;
@@ -962,28 +966,18 @@ LALMPISendCOMPLEX8FrequencySeries (
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
-  /* ASSERT (series->name, status, 1, "Null pointer"); */
   ASSERT (series->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->length, status, COMM_ESIZE, COMM_MSGESIZE);
-  ASSERT (series->sampleUnits, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->data, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->length, status, COMM_ESIZE, COMM_MSGESIZE);
 
   /* send the series structure */
   size = sizeof(COMPLEX8FrequencySeries);
   code = MPI_Send (series, size, MPI_BYTE, dest, MPICFrequencySeries,
-                   MPI_COMM_WORLD);
+                   mpiComm);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
 
-  /* not sure how to send name --- ignore it! */
-
-  /* send sampleUnits vector */
-  LALMPISendCHARVector (status->statusPtr, series->sampleUnits, dest);
-  CHECKSTATUSPTR (status);
-
   /* send data vector */
-  LALMPISendCOMPLEX8Vector (status->statusPtr, series->data, dest);
+  LALMPISendCOMPLEX8Vector (status->statusPtr, series->data, dest, mpiComm);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);
@@ -995,48 +989,35 @@ void
 LALMPIRecvCOMPLEX8FrequencySeries (
     LALStatus                  *status,
     COMPLEX8FrequencySeries *series,
-    INT4                     source
+    INT4                     source,
+    MPI_Comm    mpiComm
     )
 {
-  MPI_Status              mpiStatus;
-  COMPLEX8FrequencySeries tmpSer;
-  INT4                    code;
-  INT4                    size;
+  MPI_Status      mpiStatus;
+  COMPLEX8Vector *tmpVec;
+  INT4            code;
+  INT4            size;
 
   INITSTATUS (status, "LALMPIRecvCOMPLEX8FrequencySeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
-  /* ASSERT (series->name, status, 1, "Null pointer"); */
   ASSERT (series->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->data, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (series->data->length, status, COMM_ESIZE, COMM_MSGESIZE);
-  ASSERT (series->sampleUnits, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->data, status, COMM_ENULL, COMM_MSGENULL);
-  ASSERT (series->sampleUnits->length, status, COMM_ESIZE, COMM_MSGESIZE);
 
   /* receive temporary time series structure */
-  size = sizeof(COMPLEX8FrequencySeries);
-  code = MPI_Recv (&tmpSer, size, MPI_BYTE, source, MPICFrequencySeries,
-                   MPI_COMM_WORLD, &mpiStatus);
+  tmpVec = series->data;
+  size   = sizeof(COMPLEX8FrequencySeries);
+  code   = MPI_Recv (series, size, MPI_BYTE, source, MPICFrequencySeries,
+                     mpiComm, &mpiStatus);
   ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
   ASSERT (mpiStatus.MPI_ERROR == MPI_SUCCESS, status,
           COMM_EMPIE, COMM_MSGEMPIE);
-
-  /* set the appropriate fields */
-  series->epoch  = tmpSer.epoch;
-  series->f0     = tmpSer.f0;
-  series->deltaF = tmpSer.deltaF;
-
-  /* don't know what to do with name... */
-  series->name   = "anonymous";
-
-  /* receive sampleUnits vector */
-  LALMPIRecvCHARVector (status->statusPtr, series->sampleUnits, source);
-  CHECKSTATUSPTR (status);
+  series->data = tmpVec;
 
   /* receive data vector */
-  LALMPIRecvCOMPLEX8Vector (status->statusPtr, series->data, source);
+  LALMPIRecvCOMPLEX8Vector (status->statusPtr, series->data, source, mpiComm);
   CHECKSTATUSPTR (status);
 
   DETATCHSTATUSPTR (status);

@@ -602,6 +602,62 @@ tagLIGOTimeGPS
 }
 LIGOTimeGPS;
 
+/* <lalLaTeX>
+
+\vspace{2ex}
+\begin{verbatim}
+LALUnit
+\end{verbatim}
+This structure stores units in the mksA system (plus Kelvin, Strain,
+and ADC Count).  It also stores an overall power-of-ten scaling factor.
+The fields are:
+\begin{description}
+\item[\texttt{INT2 powerOfTen}] The power $p$ of ten scaling factor.
+\item[\texttt{INT2 unitNumerator[LALNumUnits]}] Array of unit numerators,
+  $N_i$, $i=0\ldots\textrm{LALNumUnits}-1$.
+\item[\texttt{INT2 unitDenominatorMinusOne[LALNumUnits]}] Array of unit
+  denominators-minus-one, $D_i$, $i=0\ldots\textrm{LALNumUnits}-1$.
+\end{description}
+Thus, the units are given by
+\begin{equation}
+  10^p\times\textrm{m}^{N_0/(1+D_0)}\times\textrm{kg}^{N_1/(1+D_1)}
+  \times\textrm{s}^{N_2/(1+D_2)}\times\textrm{A}^{N_3/(1+D_3)}
+  \times\textrm{K}^{N_4/(1+D_4)}\times\textrm{strain}^{N_5/(1+D_5)}
+  \times\textrm{count}^{N_6/(1+D_6)}
+\end{equation}
+The indexes of the units can be specified using the constants
+\texttt{LALUnitIndexMeter},
+\texttt{LALUnitIndexKiloGram},
+\texttt{LALUnitIndexSecond},
+\texttt{LALUnitIndexAmpere},
+\texttt{LALUnitIndexKelvin},
+\texttt{LALUnitIndexStrain},
+\texttt{LALUnitIndexADCCount},
+while \texttt{LALNumUnits} is the total number of units.
+
+</lalLaTeX> */
+
+enum
+{
+  LALUnitIndexMeter,
+  LALUnitIndexKiloGram,
+  LALUnitIndexSecond,
+  LALUnitIndexAmpere,
+  LALUnitIndexKelvin,
+  LALUnitIndexStrain,
+  LALUnitIndexADCCount,
+  LALNumUnits
+};
+
+typedef struct
+tagLALUnit
+{
+  INT2  powerOfTen;
+  INT2  unitNumerator[LALNumUnits];
+  UINT2 unitDenominatorMinusOne[LALNumUnits];
+}
+LALUnit;
+
 
 /* <lalLaTeX>
 
@@ -619,28 +675,30 @@ sinusoid of some frequency $f_0$, low-pass filtered, and resampled, in
 order to extract the behaviour in a small bandwidth about $f_0$.  The
 fields are:
 \begin{description}
-\item[\texttt{CHAR *name}] The name of the data series (i.e.\ the type
-of data being sampled).
+\item[\texttt{CHAR name[LALNameLength]}] The name of the data series (i.e.\
+the type of data being sampled).
 \item[\texttt{LIGOTimeGPS epoch}] The start time $t_0$ of the data
 series.
 \item[\texttt{REAL8 deltaT}] The sampling interval $\Delta t$, in
 seconds.
 \item[\texttt{REAL8 f0}] The heterodyning frequency $f_0$, in hertz.
-\item[\texttt{CHARVector *sampleUnits}] The physical units of the
+\item[\texttt{LALUnit sampleUnits}] The physical units of the
 quantity being sampled.
 \item[\texttt{<datatype>Sequence *data}] The sequence of sampled data.
 \end{description}
 
 </lalLaTeX> */
 
+enum { LALNameLength = 64 };
+
 typedef struct
 tagINT2TimeSeries
 {
-  CHAR         *name;
+  CHAR          name[LALNameLength];
   LIGOTimeGPS   epoch;
   REAL8         deltaT;
   REAL8         f0;
-  CHARVector   *sampleUnits;
+  LALUnit       sampleUnits;
   INT2Sequence *data;
 }
 INT2TimeSeries;
@@ -648,11 +706,11 @@ INT2TimeSeries;
 typedef struct
 tagUINT2TimeSeries
 {
-  CHAR          *name;
+  CHAR           name[LALNameLength];
   LIGOTimeGPS    epoch;
   REAL8          deltaT;
   REAL8          f0;
-  CHARVector    *sampleUnits;
+  LALUnit        sampleUnits;
   UINT2Sequence *data;
 }
 UINT2TimeSeries;
@@ -660,11 +718,11 @@ UINT2TimeSeries;
 typedef struct
 tagINT4TimeSeries
 {
-  CHAR         *name;
+  CHAR          name[LALNameLength];
   LIGOTimeGPS   epoch;
   REAL8         deltaT;
   REAL8         f0;
-  CHARVector   *sampleUnits;
+  LALUnit       sampleUnits;
   INT4Sequence *data;
 }
 INT4TimeSeries;
@@ -672,11 +730,11 @@ INT4TimeSeries;
 typedef struct
 tagUINT4TimeSeries
 {
-  CHAR          *name;
+  CHAR           name[LALNameLength];
   LIGOTimeGPS    epoch;
   REAL8          deltaT;
   REAL8          f0;
-  CHARVector    *sampleUnits;
+  LALUnit        sampleUnits;
   UINT4Sequence *data;
 }
 UINT4TimeSeries;
@@ -684,11 +742,11 @@ UINT4TimeSeries;
 typedef struct
 tagINT8TimeSeries
 {
-  CHAR         *name;
+  CHAR          name[LALNameLength];
   LIGOTimeGPS   epoch;
   REAL8         deltaT;
   REAL8         f0;
-  CHARVector   *sampleUnits;
+  LALUnit       sampleUnits;
   INT8Sequence *data;
 }
 INT8TimeSeries;
@@ -696,11 +754,11 @@ INT8TimeSeries;
 typedef struct
 tagUINT8TimeSeries
 {
-  CHAR          *name;
+  CHAR           name[LALNameLength];
   LIGOTimeGPS    epoch;
   REAL8          deltaT;
   REAL8          f0;
-  CHARVector    *sampleUnits;
+  LALUnit        sampleUnits;
   UINT8Sequence *data;
 }
 UINT8TimeSeries;
@@ -708,11 +766,11 @@ UINT8TimeSeries;
 typedef struct
 tagREAL4TimeSeries
 {
-  CHAR          *name;
+  CHAR           name[LALNameLength];
   LIGOTimeGPS    epoch;
   REAL8          deltaT;
   REAL8          f0;
-  CHARVector    *sampleUnits;
+  LALUnit        sampleUnits;
   REAL4Sequence *data;
 }
 REAL4TimeSeries;
@@ -720,11 +778,11 @@ REAL4TimeSeries;
 typedef struct
 tagREAL8TimeSeries
 {
-  CHAR          *name;
+  CHAR           name[LALNameLength];
   LIGOTimeGPS    epoch;
   REAL8          deltaT;
   REAL8          f0;
-  CHARVector    *sampleUnits;
+  LALUnit        sampleUnits;
   REAL8Sequence *data;
 }
 REAL8TimeSeries;
@@ -732,11 +790,11 @@ REAL8TimeSeries;
 typedef struct
 tagCOMPLEX8TimeSeries
 {
-  CHAR             *name;
+  CHAR              name[LALNameLength];
   LIGOTimeGPS       epoch;
   REAL8             deltaT;
   REAL8             f0;
-  CHARVector       *sampleUnits;
+  LALUnit           sampleUnits;
   COMPLEX8Sequence *data;
 }
 COMPLEX8TimeSeries;
@@ -744,11 +802,11 @@ COMPLEX8TimeSeries;
 typedef struct
 tagCOMPLEX16TimeSeries
 {
-  CHAR              *name;
+  CHAR               name[LALNameLength];
   LIGOTimeGPS        epoch;
   REAL8              deltaT;
   REAL8              f0;
-  CHARVector        *sampleUnits;
+  LALUnit            sampleUnits;
   COMPLEX16Sequence *data;
 }
 COMPLEX16TimeSeries;
@@ -764,12 +822,12 @@ Like \verb@<datatype>TimeSeries@, above, except that the sampled data
 are of type type \verb@<datatype>Vector@ (where \verb@<datatype>@ can
 be any primitive datatype).  The fields are:
 \begin{description}
-\item[\texttt{CHAR *name}] The name of the data series (i.e.\ the type
-of data being sampled).
+\item[\texttt{CHAR name[LALNameLength]}] The name of the data series (i.e.\
+the type of data being sampled).
 \item[\texttt{LIGOTimeGPS epoch}] The start time of the data series.
 \item[\texttt{REAL8 deltaT}] The sampling interval, in seconds.
 \item[\texttt{REAL8 f0}] The heterodyning frequency, in hertz.
-\item[\texttt{CHARVector *sampleUnits}] The physical units of the
+\item[\texttt{LALUnit sampleUnits}] The physical units of the
 quantity being sampled.
 \item[\texttt{<datatype>VectorSequence *data}] The sequence of sampled
 data.
@@ -780,11 +838,11 @@ data.
 typedef struct
 tagINT2TimeVectorSeries
 {
-  CHAR                *name;
+  CHAR                 name[LALNameLength];
   LIGOTimeGPS          epoch;
   REAL8                deltaT;
   REAL8                f0;
-  CHARVector          *sampleUnits;
+  LALUnit              sampleUnits;
   INT2VectorSequence  *data;
 }
 INT2TimeVectorSeries;
@@ -792,11 +850,11 @@ INT2TimeVectorSeries;
 typedef struct
 tagUINT2TimeVectorSeries
 {
-  CHAR                *name;
+  CHAR                 name[LALNameLength];
   LIGOTimeGPS          epoch;
   REAL8                deltaT;
   REAL8                f0;
-  CHARVector          *sampleUnits;
+  LALUnit              sampleUnits;
   UINT2VectorSequence *data;
 }
 UINT2TimeVectorSeries;
@@ -804,11 +862,11 @@ UINT2TimeVectorSeries;
 typedef struct
 tagINT4TimeVectorSeries
 {
-  CHAR                *name;
+  CHAR                 name[LALNameLength];
   LIGOTimeGPS          epoch;
   REAL8                deltaT;
   REAL8                f0;
-  CHARVector          *sampleUnits;
+  LALUnit              sampleUnits;
   INT4VectorSequence  *data;
 }
 INT4TimeVectorSeries;
@@ -816,11 +874,11 @@ INT4TimeVectorSeries;
 typedef struct
 tagUINT4TimeVectorSeries
 {
-  CHAR                *name;
+  CHAR                 name[LALNameLength];
   LIGOTimeGPS          epoch;
   REAL8                deltaT;
   REAL8                f0;
-  CHARVector          *sampleUnits;
+  LALUnit              sampleUnits;
   UINT4VectorSequence *data;
 }
 UINT4TimeVectorSeries;
@@ -828,11 +886,11 @@ UINT4TimeVectorSeries;
 typedef struct
 tagINT8TimeVectorSeries
 {
-  CHAR                *name;
+  CHAR                 name[LALNameLength];
   LIGOTimeGPS          epoch;
   REAL8                deltaT;
   REAL8                f0;
-  CHARVector          *sampleUnits;
+  LALUnit              sampleUnits;
   INT8VectorSequence  *data;
 }
 INT8TimeVectorSeries;
@@ -840,11 +898,11 @@ INT8TimeVectorSeries;
 typedef struct
 tagUINT8TimeVectorSeries
 {
-  CHAR                *name;
+  CHAR                 name[LALNameLength];
   LIGOTimeGPS          epoch;
   REAL8                deltaT;
   REAL8                f0;
-  CHARVector          *sampleUnits;
+  LALUnit              sampleUnits;
   UINT8VectorSequence *data;
 }
 UINT8TimeVectorSeries;
@@ -852,11 +910,11 @@ UINT8TimeVectorSeries;
 typedef struct
 tagREAL4TimeVectorSeries
 {
-  CHAR                *name;
+  CHAR                 name[LALNameLength];
   LIGOTimeGPS          epoch;
   REAL8                deltaT;
   REAL8                f0;
-  CHARVector          *sampleUnits;
+  LALUnit              sampleUnits;
   REAL4VectorSequence *data;
 }
 REAL4TimeVectorSeries;
@@ -864,11 +922,11 @@ REAL4TimeVectorSeries;
 typedef struct
 tagREAL8TimeVectorSeries
 {
-  CHAR                *name;
+  CHAR                 name[LALNameLength];
   LIGOTimeGPS          epoch;
   REAL8                deltaT;
   REAL8                f0;
-  CHARVector          *sampleUnits;
+  LALUnit              sampleUnits;
   REAL8VectorSequence *data;
 }
 REAL8TimeVectorSeries;
@@ -876,11 +934,11 @@ REAL8TimeVectorSeries;
 typedef struct
 tagCOMPLEX8TimeVectorSeries
 {
-  CHAR                    *name;
+  CHAR                     name[LALNameLength];
   LIGOTimeGPS              epoch;
   REAL8                    deltaT;
   REAL8                    f0;
-  CHARVector              *sampleUnits;
+  LALUnit                  sampleUnits;
   COMPLEX8VectorSequence  *data;
 }
 COMPLEX8TimeVectorSeries;
@@ -888,11 +946,11 @@ COMPLEX8TimeVectorSeries;
 typedef struct
 tagCOMPLEX16TimeVectorSeries
 {
-  CHAR                     *name;
+  CHAR                      name[LALNameLength];
   LIGOTimeGPS               epoch;
   REAL8                     deltaT;
   REAL8                     f0;
-  CHARVector               *sampleUnits;
+  LALUnit                   sampleUnits;
   COMPLEX16VectorSequence  *data;
 }
 COMPLEX16TimeVectorSeries;
@@ -908,12 +966,12 @@ Like \verb@<datatype>TimeSeries@, above, except that the sampled data
 are of type type \verb@<datatype>Array@ (where \verb@<datatype>@ can
 be any primitive datatype).  The fields are:
 \begin{description}
-\item[\texttt{CHAR *name}] The name of the data series (i.e.\ the type
-of data being sampled).
+\item[\texttt{CHAR name[LALNameLength]}] The name of the data series (i.e.\
+the type of data being sampled).
 \item[\texttt{LIGOTimeGPS epoch}] The start time of the data series.
 \item[\texttt{REAL8 deltaT}] The sampling interval, in seconds.
 \item[\texttt{REAL8 f0}] The heterodyning frequency, in hertz.
-\item[\texttt{CHARVector *sampleUnits}] The physical units of the
+\item[\texttt{LALUnit sampleUnits}] The physical units of the
 quantity being sampled.
 \item[\texttt{<datatype>ArraySequence *data}] The sequence of sampled
 data.
@@ -924,11 +982,11 @@ data.
 typedef struct
 tagINT2TimeArraySeries
 {
-  CHAR               *name;
+  CHAR                name[LALNameLength];
   LIGOTimeGPS         epoch;
   REAL8               deltaT;
   REAL8               f0;
-  CHARVector         *sampleUnits;
+  LALUnit             sampleUnits;
   INT2ArraySequence  *data;
 }
 INT2TimeArraySeries;
@@ -936,11 +994,11 @@ INT2TimeArraySeries;
 typedef struct
 tagUINT2TimeArraySeries
 {
-  CHAR               *name;
+  CHAR                name[LALNameLength];
   LIGOTimeGPS         epoch;
   REAL8               deltaT;
   REAL8               f0;
-  CHARVector         *sampleUnits;
+  LALUnit             sampleUnits;
   UINT2ArraySequence *data;
 }
 UINT2TimeArraySeries;
@@ -948,11 +1006,11 @@ UINT2TimeArraySeries;
 typedef struct
 tagINT4TimeArraySeries
 {
-  CHAR               *name;
+  CHAR                name[LALNameLength];
   LIGOTimeGPS         epoch;
   REAL8               deltaT;
   REAL8               f0;
-  CHARVector         *sampleUnits;
+  LALUnit             sampleUnits;
   INT4ArraySequence  *data;
 }
 INT4TimeArraySeries;
@@ -960,11 +1018,11 @@ INT4TimeArraySeries;
 typedef struct
 tagUINT4TimeArraySeries
 {
-  CHAR               *name;
+  CHAR                name[LALNameLength];
   LIGOTimeGPS         epoch;
   REAL8               deltaT;
   REAL8               f0;
-  CHARVector         *sampleUnits;
+  LALUnit             sampleUnits;
   UINT4ArraySequence *data;
 }
 UINT4TimeArraySeries;
@@ -972,11 +1030,11 @@ UINT4TimeArraySeries;
 typedef struct
 tagINT8TimeArraySeries
 {
-  CHAR               *name;
+  CHAR                name[LALNameLength];
   LIGOTimeGPS         epoch;
   REAL8               deltaT;
   REAL8               f0;
-  CHARVector         *sampleUnits;
+  LALUnit             sampleUnits;
   INT8ArraySequence  *data;
 }
 INT8TimeArraySeries;
@@ -984,11 +1042,11 @@ INT8TimeArraySeries;
 typedef struct
 tagUINT8TimeArraySeries
 {
-  CHAR               *name;
+  CHAR                name[LALNameLength];
   LIGOTimeGPS         epoch;
   REAL8               deltaT;
   REAL8               f0;
-  CHARVector         *sampleUnits;
+  LALUnit             sampleUnits;
   UINT8ArraySequence *data;
 }
 UINT8TimeArraySeries;
@@ -996,11 +1054,11 @@ UINT8TimeArraySeries;
 typedef struct
 tagREAL4TimeArraySeries
 {
-  CHAR               *name;
+  CHAR                name[LALNameLength];
   LIGOTimeGPS         epoch;
   REAL8               deltaT;
   REAL8               f0;
-  CHARVector         *sampleUnits;
+  LALUnit             sampleUnits;
   REAL4ArraySequence *data;
 }
 REAL4TimeArraySeries;
@@ -1008,11 +1066,11 @@ REAL4TimeArraySeries;
 typedef struct
 tagREAL8TimeArraySeries
 {
-  CHAR               *name;
+  CHAR                name[LALNameLength];
   LIGOTimeGPS         epoch;
   REAL8               deltaT;
   REAL8               f0;
-  CHARVector         *sampleUnits;
+  LALUnit             sampleUnits;
   REAL8ArraySequence *data;
 }
 REAL8TimeArraySeries;
@@ -1020,11 +1078,11 @@ REAL8TimeArraySeries;
 typedef struct
 tagCOMPLEX8TimeArraySeries
 {
-  CHAR                  *name;
+  CHAR                   name[LALNameLength];
   LIGOTimeGPS            epoch;
   REAL8                  deltaT;
   REAL8                  f0;
-  CHARVector            *sampleUnits;
+  LALUnit                sampleUnits;
   COMPLEX8ArraySequence *data;
 }
 COMPLEX8TimeArraySeries;
@@ -1032,11 +1090,11 @@ COMPLEX8TimeArraySeries;
 typedef struct
 tagCOMPLEX16TimeArraySeries
 {
-  CHAR                   *name;
+  CHAR                    name[LALNameLength];
   LIGOTimeGPS             epoch;
   REAL8                   deltaT;
   REAL8                   f0;
-  CHARVector             *sampleUnits;
+  LALUnit                 sampleUnits;
   COMPLEX16ArraySequence *data;
 }
 COMPLEX16TimeArraySeries;
@@ -1056,15 +1114,15 @@ f, \ldots , f_0+l\Delta f$.  Essentially this is a
 frequencies, the timestamp of the spectrum, and the type of data being
 sampled.  The fields are:
 \begin{description}
-\item[\texttt{CHAR *name}] The name of the data series (i.e.\ the type
-of data being sampled).
+\item[\texttt{CHAR name[LALNameLength]}] The name of the data series (i.e.\
+the type of data being sampled).
 \item[\texttt{LIGOTimeGPS epoch}] The start time of the \emph{time}
 series from which the spectrum was calculated.
 \item[\texttt{REAL8 f0}] The lowest frequency $f_0$ being sampled, in
 hertz.
 \item[\texttt{REAL8 deltaF}] The frequency sampling interval $\Delta
 f$, in hertz.
-\item[\texttt{CHARVector *sampleUnits}] The physical units of the
+\item[\texttt{LALUnit sampleUnits}] The physical units of the
 quantity being sampled.
 \item[\texttt{<datatype>Sequence *data}] The sequence of sampled data.
 \end{description}
@@ -1074,11 +1132,11 @@ quantity being sampled.
 typedef struct
 tagINT2FrequencySeries
 {
-  CHAR         *name;
+  CHAR          name[LALNameLength];
   LIGOTimeGPS   epoch;
   REAL8         f0;
   REAL8         deltaF;
-  CHARVector   *sampleUnits;
+  LALUnit       sampleUnits;
   INT2Sequence *data;
 }
 INT2FrequencySeries;
@@ -1086,11 +1144,11 @@ INT2FrequencySeries;
 typedef struct
 tagUINT2FrequencySeries
 {
-  CHAR          *name;
+  CHAR           name[LALNameLength];
   LIGOTimeGPS    epoch;
   REAL8          f0;
   REAL8          deltaF;
-  CHARVector    *sampleUnits;
+  LALUnit        sampleUnits;
   UINT2Sequence *data;
 }
 UINT2FrequencySeries;
@@ -1098,11 +1156,11 @@ UINT2FrequencySeries;
 typedef struct
 tagINT4FrequencySeries
 {
-  CHAR         *name;
+  CHAR          name[LALNameLength];
   LIGOTimeGPS   epoch;
   REAL8         f0;	
   REAL8         deltaF;
-  CHARVector   *sampleUnits;
+  LALUnit       sampleUnits;
   INT4Sequence *data;
 }
 INT4FrequencySeries;
@@ -1110,11 +1168,11 @@ INT4FrequencySeries;
 typedef struct
 tagUINT4FrequencySeries
 {
-  CHAR          *name;
+  CHAR           name[LALNameLength];
   LIGOTimeGPS    epoch;
   REAL8          f0;	
   REAL8          deltaF;
-  CHARVector    *sampleUnits;
+  LALUnit        sampleUnits;
   UINT4Sequence *data;
 }
 UINT4FrequencySeries;
@@ -1122,11 +1180,11 @@ UINT4FrequencySeries;
 typedef struct
 tagINT8FrequencySeries
 {
-  CHAR         *name;
+  CHAR          name[LALNameLength];
   LIGOTimeGPS   epoch;
   REAL8         f0;
   REAL8         deltaF;
-  CHARVector   *sampleUnits;
+  LALUnit       sampleUnits;
   INT8Sequence *data;
 }
 INT8FrequencySeries;
@@ -1134,11 +1192,11 @@ INT8FrequencySeries;
 typedef struct
 tagUINT8FrequencySeries
 {
-  CHAR          *name;
+  CHAR           name[LALNameLength];
   LIGOTimeGPS    epoch;
   REAL8          f0;
   REAL8          deltaF;
-  CHARVector    *sampleUnits;
+  LALUnit        sampleUnits;
   UINT8Sequence *data;
 }
 UINT8FrequencySeries;
@@ -1146,11 +1204,11 @@ UINT8FrequencySeries;
 typedef struct
 tagREAL4FrequencySeries
 {
-  CHAR          *name;
+  CHAR           name[LALNameLength];
   LIGOTimeGPS    epoch;
   REAL8          f0;	
   REAL8          deltaF;
-  CHARVector    *sampleUnits;
+  LALUnit        sampleUnits;
   REAL4Sequence *data;
 }
 REAL4FrequencySeries;
@@ -1158,11 +1216,11 @@ REAL4FrequencySeries;
 typedef struct
 tagREAL8FrequencySeries
 {
-  CHAR          *name;
+  CHAR           name[LALNameLength];
   LIGOTimeGPS    epoch;
   REAL8          f0;
   REAL8          deltaF;
-  CHARVector    *sampleUnits;
+  LALUnit        sampleUnits;
   REAL8Sequence *data;
 }
 REAL8FrequencySeries;
@@ -1170,11 +1228,11 @@ REAL8FrequencySeries;
 typedef struct
 tagCOMPLEX8FrequencySeries
 {
-  CHAR             *name;
+  CHAR              name[LALNameLength];
   LIGOTimeGPS       epoch;
   REAL8             f0;	
   REAL8             deltaF;
-  CHARVector       *sampleUnits;
+  LALUnit           sampleUnits;
   COMPLEX8Sequence *data;
 }
 COMPLEX8FrequencySeries;
@@ -1182,11 +1240,11 @@ COMPLEX8FrequencySeries;
 typedef struct
 tagCOMPLEX16FrequencySeries
 {
-  CHAR              *name;
+  CHAR               name[LALNameLength];
   LIGOTimeGPS        epoch;
   REAL8              f0;	
   REAL8              deltaF;
-  CHARVector        *sampleUnits;
+  LALUnit            sampleUnits;
   COMPLEX16Sequence *data;
 }
 COMPLEX16FrequencySeries;
@@ -1215,7 +1273,7 @@ $\zeta$, and the $w$-plane representation $\zeta(f\Delta t)=\tan(\pi
 f\Delta t)$, which maps the Nyquist interval onto the positive real
 axis in $\zeta$.  The fields of \verb@<datatype>ZPGFilter@ are:
 \begin{description}
-\item[\texttt{CHAR *name}] The name of the filter or transfer
+\item[\texttt{CHAR name[LALNameLength]}] The name of the filter or transfer
 function.  This should also mention its complex frequency
 representation.
 \item[\texttt{REAL8 deltaT}] The sampling time or reference timescale
@@ -1233,7 +1291,7 @@ the poles $p_k$ of the filter.
 typedef struct
 tagCOMPLEX8ZPGFilter
 {
-  CHAR           *name;
+  CHAR            name[LALNameLength];
   REAL8           deltaT;
   COMPLEX8Vector *zeros;
   COMPLEX8Vector *poles;
@@ -1244,7 +1302,7 @@ COMPLEX8ZPGFilter;
 typedef struct
 tagCOMPLEX16ZPGFilter
 {
-  CHAR            *name;
+  CHAR             name[LALNameLength];
   REAL8            deltaT;
   COMPLEX16Vector *zeros;
   COMPLEX16Vector *poles;

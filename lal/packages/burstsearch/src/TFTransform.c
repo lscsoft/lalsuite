@@ -304,8 +304,12 @@ LALComputeFrequencySeries (
   ASSERT(timeSeries->deltaT > 0.0, status, TFTRANSFORM_EPOSARG, 
          TFTRANSFORM_MSGEPOSARG);
   freqSeries->deltaF = 1/((REAL8)(timeSeries->data->length)*timeSeries->deltaT); 
+  /* 
+   * OMITTED
+   *
   freqSeries->name = timeSeries->name;
-  freqSeries->sampleUnits = timeSeries->sampleUnits; /* fix this later */
+  freqSeries->sampleUnits = timeSeries->sampleUnits;
+   */
 
 
   /* compute normalization factor */
@@ -388,8 +392,8 @@ LALCreateTFPlane (
    *  Fill some of the fields with nominal values pending the 
    *  allocation of correct values for these fields.
    */
-  (*tfp)->name = NULL;
-  (*tfp)->sampleUnits=NULL;
+  /* (*tfp)->name = NULL; */
+  /* (*tfp)->sampleUnits=NULL; */
   (*tfp)->epoch.gpsSeconds=0;
   (*tfp)->epoch.gpsNanoSeconds=0;
   (*tfp)->data = NULL;    /* until allocated below */
@@ -622,8 +626,12 @@ LALTimeSeriesToTFPlane (
    * to the TFplane structure
    *
    */
-  tfp->sampleUnits = timeSeries->sampleUnits; /* is this correct?
-						 check later */ 
+
+  /*
+   * OMITTED
+   *
+  tfp->sampleUnits = timeSeries->sampleUnits;
+   */
 
 
   /* 
@@ -834,8 +842,11 @@ LALFreqSeriesToTFPlane (
    * to the TFplane structure
    *
    */
-  tfp->sampleUnits = freqSeries->sampleUnits; /* is this correct?
-						 check later */ 
+  /*
+   * OMITTED
+   *
+  tfp->sampleUnits = freqSeries->sampleUnits;
+   */
   tfp->epoch = freqSeries->epoch;
 
   /* the parameter input->startT is not used by this function */

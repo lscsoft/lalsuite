@@ -111,8 +111,12 @@ main (int argc, char *argv[])
     tseries.epoch.gpsNanoSeconds=0;
     tseries.deltaT = 0.001;  /* 1 kHz sampling */
     tseries.f0 = 0.0;
+    /*
+     * OMITTED
+     *
     tseries.name = NULL;
     tseries.sampleUnits=NULL;
+     */
     tseries.data=NULL;
 
     LALSCreateVector (&status, &(tseries.data), ntotT);
@@ -548,8 +552,12 @@ main (int argc, char *argv[])
     fseries.epoch.gpsNanoSeconds=0;
     fseries.deltaF = 1.0;
     fseries.f0 = 0.0;
+    /*
+     * OMITTED
+     *
     fseries.name = NULL;
     fseries.sampleUnits=NULL;
+     */
     fseries.data=NULL;
 
     LALCCreateVector( &status, &(fseries.data), 1000);
@@ -686,8 +694,12 @@ main (int argc, char *argv[])
     fseries.epoch.gpsNanoSeconds=0;
     fseries.deltaF = 1.0;
     fseries.f0 = 0.0;
+    /*
+     * OMITTED
+     *
     fseries.name = NULL;
     fseries.sampleUnits=NULL;
+     */
     fseries.data=NULL;
 
     LALCCreateVector( &status, &(fseries.data), 1000);
@@ -847,8 +859,12 @@ main (int argc, char *argv[])
     fseries.epoch.gpsNanoSeconds=0;
     fseries.deltaF = 1.0;
     fseries.f0 = 0.0;
+    /*
+     * OMITTED
+     *
     fseries.name = NULL;
     fseries.sampleUnits=NULL;
+     */
     fseries.data=NULL;
 
     LALCCreateVector( &status, &(fseries.data), 1000);
@@ -926,8 +942,12 @@ main (int argc, char *argv[])
     fseries.epoch.gpsNanoSeconds=0;
     fseries.deltaF = 1.0;
     fseries.f0 = 0.0;
+    /*
+     * OMITTED
+     *
     fseries.name = NULL;
     fseries.sampleUnits=NULL;
+     */
     fseries.data=NULL;
 
     LALCCreateVector( &status, &(fseries.data), 1000);
@@ -1013,8 +1033,12 @@ main (int argc, char *argv[])
     fseries.epoch.gpsNanoSeconds=0;
     fseries.deltaF = 1.0;
     fseries.f0 = 0.0;
+    /*
+     * OMITTED
+     *
     fseries.name = NULL;
     fseries.sampleUnits=NULL;
+     */
     fseries.data=NULL;
 
     LALCCreateVector( &status, &(fseries.data), 1000);

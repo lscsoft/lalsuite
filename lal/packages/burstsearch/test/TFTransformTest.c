@@ -125,8 +125,12 @@ main (int argc, char *argv[])
   tseries.epoch.gpsNanoSeconds=0;
   tseries.deltaT = 0.001;  /* 1 kHz sampling */
   tseries.f0 = 0.0;
+  /*
+   * OMITTED
+   *
   tseries.name = NULL;
   tseries.sampleUnits=NULL;
+   */
   tseries.data=NULL;
 
 
