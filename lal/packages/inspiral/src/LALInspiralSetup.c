@@ -354,6 +354,7 @@ void LALInspiralSetup (LALStatus *status,
    {
       case newtonian:
       case onePN:
+      case oneHalfPN:
       case onePointFivePN:
       case twoPN:
       case twoPointFivePN:

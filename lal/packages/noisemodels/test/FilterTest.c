@@ -66,6 +66,7 @@ LALInspiralParameterCalc
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/RealFFT.h>
+#include <lal/AVFactories.h>
  
 void printf_timeseries (INT4 n, REAL4 *signal, REAL8 delta, REAL8 t0);
 

@@ -51,6 +51,7 @@ brackets):
 #include <stdio.h>
 #include <lal/LALInspiral.h>
 #include <lal/RealFFT.h>
+#include <lal/AVFactories.h>
 INT4 lalDebugLevel=1;
 
 void printf_timeseries (int n, float *signal, double delta, double t0) ;
@@ -70,7 +71,7 @@ void printf_timeseries (int n, float *signal, double delta, double t0)
 }
 
 
-int main () {
+int main (void) {
    static REAL4Vector *signal1, *signal2;
    static LALStatus status;
    InspiralTemplate params;
@@ -105,7 +106,7 @@ int main () {
 
    if (params.approximant==TaylorF2)
    {
-      static RealFFTPlan *fwdp,*revp;
+      static RealFFTPlan *revp;
 /*
       LALCreateForwardRealFFTPlan(&status, &fwdp, n, 0);
 */

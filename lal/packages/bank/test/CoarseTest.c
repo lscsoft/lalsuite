@@ -42,6 +42,7 @@ LALCheckMemoryLeaks
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
+#include <lal/AVFactories.h>
 
 INT4 lalDebugLevel=0;
 
