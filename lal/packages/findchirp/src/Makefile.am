@@ -8,7 +8,8 @@ FINDCHIRPSOURCES = FindChirpMemory.c FindChirpFilter.c \
   FindChirpChisq.c FindChirpSPData.c FindChirpSPTemplate.c \
   FindChirpTmplt.c FindChirpLinkedList.c FindChirpSimulation.c
 TWOINTERFFINDCHIRPSOURCES = TwoInterfFindChirpFilter.c \
-  TwoInterfFindChirpMemory.c TwoInterfFindChirpSPData.c
+  TwoInterfFindChirpMemory.c TwoInterfFindChirpSPData.c \
+  TwoInterfFindChirpChisq.c
 
 libfindchirp_la_SOURCES = $(FINDCHIRPSOURCES) $(TWOINTERFFINDCHIRPSOURCES)
 
