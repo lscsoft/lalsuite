@@ -234,7 +234,7 @@ int main(int argc,char *argv[])
 	  if (cosAngularDistance  >  1.0) cosAngularDistance =  1.0;
 	  if (cosAngularDistance  < -1.0) cosAngularDistance = -1.0;
 
-	  AngularDistance=acos((float) cosAngularDistance);
+	  AngularDistance=acos(cosAngularDistance);
 
 	  difff=fabs(f1 - CList2.f[indices2f[f]]);
 
