@@ -55,6 +55,10 @@ extern CHAR *Outputfilename;
 extern double *fraction_done_hook;
 #endif
 
+/* this is defined in C99 and *should* be in math.h.  Long term
+   protect this with a HAVE_FINITE */
+int finite(double);
+
 struct PolkaCommandLineArgsTag 
 {
   char *FstatsFile1; /* Names of Fstat files to be read in */
@@ -539,7 +543,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
   UINT4 i;
   INT4 j, uplim;
   UINT4 numlines;
-  REAL8 dmp, epsilon=1e-5;
+  REAL8 epsilon=1e-5;
   char line1[256];
   FILE *fp;
   INT4 read;
@@ -622,7 +626,9 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
     }
   while(i < numlines && fgets(line1,sizeof(line1),fp))
     {
+      REAL8 dmp1, dmp2, dmp3;
       char newline='\0';
+      CandidateList *cl=&(*CList)[i];
 
       if (strlen(line1)==0 || line1[strlen(line1)-1] != '\n') {
 	LALPrintError(
@@ -633,26 +639,38 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
 	return 1;
       }
       
-      (*CList)[i].Ctag=0;
-      (*CList)[i].CtagCounter=-1;
+      cl->Ctag=0;
+      cl->CtagCounter=-1;
 
       read = sscanf (line1, 
                      "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
                      " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT "%c", 
-                     &((*CList)[i].f), &((*CList)[i].Alpha), &((*CList)[i].Delta), &dmp, &dmp, &dmp, &((*CList)[i].F), &newline );
+                     &(cl->f), &(cl->Alpha), &(cl->Delta), &dmp1, &dmp2, &dmp3, &(cl->F), &newline );
 
       /* check that values that are read in are sensible */
-      if ( (*CList)[i].f < 0.0 || (*CList)[i].F < 0.0 || 
-	   (*CList)[i].Alpha < -epsilon || (*CList)[i].Alpha > LAL_TWOPI + epsilon ||
-	   (*CList)[i].Delta < -LAL_PI/2.0-epsilon || (*CList)[i].Delta > LAL_PI/2.0+epsilon)
-	{
+      if (
+	  cl->f < 0.0                             ||
+	  cl->F < 0.0                             ||
+	  cl->Alpha < -epsilon                    ||
+	  cl->Alpha > LAL_TWOPI + epsilon         ||
+	  cl->Delta < -LAL_PI/2.0-epsilon         ||
+	  cl->Delta > LAL_PI/2.0+epsilon          ||									
+	  !finite(cl->f)                          ||
+	  !finite(cl->Alpha)                      ||
+	  !finite(cl->Delta)                      ||
+	  !finite(dmp1)                           ||
+	  !finite(dmp2)                           ||
+	  !finite(dmp3)                           ||
+	  !finite(cl->F)
+	  ) {
 	  LALPrintError(
 		  "Line %d of file %s has invalid values.\n"
 		  "First 255 chars are:\n"
 		  "%s\n"
 		  "1st and 7th field should be positive.\n" 
 		  "2nd field should lie between 0 and %1.15f.\n" 
-		  "3rd field should lie between %1.15f and %1.15f.\n",
+		  "3rd field should lie between %1.15f and %1.15f.\n"
+		  "All fields should be finite\n",
 		  i+1, fname, line1, (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
 	  LALFree ((*CList));
 	  fclose(fp);
