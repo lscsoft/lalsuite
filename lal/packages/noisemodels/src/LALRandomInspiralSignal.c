@@ -191,6 +191,8 @@ LALRandomInspiralSignal
 	     {
 	       
 	     case bhns:
+	       ASSERT(randIn->mMin<=3 && randIn->mMax>=3, status, 10,
+		      "if bhns requested, mass1 must be <= 3 solar mass and mass2 >= 3 solar mass\n");
 	       randIn->param.mass1 = randIn->mMin + 
 		 (3 - randIn->mMin) * epsilon1;
 	       randIn->param.mass2 = 3  + 
@@ -258,7 +260,20 @@ LALRandomInspiralSignal
 		   	epsilon2 = (float) random()/(float)RAND_MAX;
 	       }
 	       break;  
-	     case t02: 
+
+	     case fixedMasses: /* the user has already given individual masses*/
+ 	       randIn->param.massChoice = m1Andm2;
+ 	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+ 	       break;
+ 	     case fixedPsi: /* the user has already given psi0/psi3*/
+ 	       randIn->param.massChoice = psi0Andpsi3;
+ 	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+ 	       break;
+ 	     case fixedTau: /* the user has already given tau0/tau3*/
+ 	       randIn->param.massChoice=t03;
+ 	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+ 	       break;
+      	     case t02: 
 	       /* chirptimes t0 and t2 are required in a specified range */
 	       randIn->param.t0 = randIn->t0Min + (randIn->t0Max - randIn->t0Min)*epsilon1;
 	       randIn->param.t2 = randIn->tnMin + (randIn->tnMax - randIn->tnMin)*epsilon2;
