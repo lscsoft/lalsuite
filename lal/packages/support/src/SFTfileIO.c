@@ -708,7 +708,8 @@ find_files (const CHAR *globdir)
   intptr_t dir;
   struct _finddata_t *entry;
 #endif
-  CHAR *dname, *ptr1, *ptr2;
+  CHAR *dname;
+  const CHAR *ptr1, *ptr2;
   CHAR fpattern[512];
   size_t dirlen;
   CHAR **filelist = NULL; 
@@ -724,7 +725,7 @@ find_files (const CHAR *globdir)
 #endif
 
   if (ptr1) 
-    dirlen = (size_t)(ptr1 - globdir) + 1;
+    dirlen = (size_t)(ptr1 - globdir)+1;
   else
     dirlen = 2;   /* for "." */
 
@@ -739,7 +740,10 @@ find_files (const CHAR *globdir)
     strcpy (dname, ".");
   
   /* copy the rest as a substring for matching */
-  ptr2 = ptr1 + 1;
+  if (ptr1)
+    ptr2 = ptr1 + 1;
+  else
+    ptr2 = globdir;
   strcpy (fpattern, ptr2);
 
 #ifndef _MSC_VER
