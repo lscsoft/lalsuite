@@ -196,20 +196,13 @@ LALMathNDPlot( LALStatus *stat,
         fprintf(nb, "frames\t= 30;");
       END_INPUTCELL;
       BEG_INPUTCELL;
-        fprintf(nb, "frames\t= 30;");
-      END_INPUTCELL;
-      BEG_INPUTCELL;
         fprintf(nb, "FrameTime\t= 0.2;");
       END_INPUTCELL;
-      BEG_INPUTCELL; /* This needs to have N-labels */
-        fprintf(nb, "XAxisLabel := \"Psi01\"");
-      END_INPUTCELL;
-      BEG_INPUTCELL;
-        fprintf(nb, "YAxisLabel := \"Psi03\"");
-      END_INPUTCELL;
-      BEG_INPUTCELL;
-        fprintf(nb, "ZAxisLabel := \"Beta\"");
-      END_INPUTCELL;
+      for(counter = 1; counter <= dim; counter++){
+        BEG_INPUTCELL; /* This needs to have N-labels */
+          fprintf(nb, "X%iAxisLabel := \"x%i\"", counter, counter);
+        END_INPUTCELL;
+        }
       BEG_TEXTCELL;
         fprintf(nb, "AnimationSize:\tThe size of the final animation in PIXELS x PIXELS\n");
         fprintf(nb, "StillSize:\t\tThe size of the final still image in PIXELS x PIXELS\n");
@@ -224,9 +217,7 @@ LALMathNDPlot( LALStatus *stat,
         fprintf(nb, "FrameTime:\t\tSets the delay time in seconds between each frame in the animated gif\n");
         fprintf(nb, "\t\t\tApplications seem to interpret this differently.  You may have to adjust this setting\n");
         fprintf(nb, "\t\t\tbased on the intended application of the animations.\n");
-        fprintf(nb, "XAxisLabel:\t\tSets the X-axis label\n");
-        fprintf(nb, "XAxisLabel:\t\tSets the Y-axis label\n");
-        fprintf(nb, "XAxisLabel:\t\tSets the Z-axis label");
+        fprintf(nb, "XiAxisLabel:\t\tSets the Xi-axis label\n");
       END_TEXTCELL_;
     END_GROUPCELLC;
     /* begin iterations of permutations */
@@ -236,8 +227,8 @@ LALMathNDPlot( LALStatus *stat,
     BEG_GROUPCELL;
       BEG_GROUPCELL;
         BEG_SECTIONCELL;
-          fprintf(nb, "Point List (%i,%i,%i)", (x+1), (y+1), (z+1));
-        END_SECTIONCELL;
+          fprintf(nb, "Point List (x%i,x%i,x%i)", (x+1), (y+1), (z+1));
+        END_SECTIONCELL; 
         BEG_INPUTCELL;
           fprintf(nb, "TILES%i%i%i  = \n", (x+1), (y+1), (z+1));
           fprintf(nb, "Graphics3D[{PointSize[PtSize]");
@@ -255,12 +246,13 @@ LALMathNDPlot( LALStatus *stat,
       END_GROUPCELLC;
       BEG_GROUPCELL;
         BEG_SECTIONCELL;
-          fprintf(nb, "Image generation (%i,%i,%i)", (x+1), (y+1), (z+1));
+          fprintf(nb, "Image generation (x%i,x%i,x%i)", (x+1), (y+1), (z+1));
         END_SECTIONCELL;
         BEG_INPUTCELL;
           fprintf(nb, "still%i%i%i = Show[TILES%i%i%i, Background-> RGBColor[.93, .91, .89], ViewPoint -> {1, 1.3, 2.4}, ",
                   (x+1), (y+1), (z+1), (x+1), (y+1), (z+1));
-          fprintf(nb, "ImageSize->StillSize, Axes->True, AxesLabel->{XAxisLabel, YAxisLabel, ZAxisLabel}];\n");
+          fprintf(nb, "ImageSize->StillSize, Axes->True, AxesLabel->{X%iAxisLabel, X%iAxisLabel, X%iAxisLabel}];\n",
+                  (x+1), (y+1), (z+1));
         END_INPUTCELL;
         BEG_INPUTCELL;
           fprintf(nb, "Do[tile%i%i%i[T]=Show[TILES%i%i%i, Background -> RGBColor[.93, .91, .89], ",
@@ -273,7 +265,7 @@ LALMathNDPlot( LALStatus *stat,
       END_GROUPCELLC;
       BEG_GROUPCELL;
         BEG_SECTIONCELL;
-          fprintf(nb, "Animation Generation (%i,%i,%i)", (x+1), (y+1), (z+1));
+          fprintf(nb, "Animation Generation (x%i,x%i,x%i)", (x+1), (y+1), (z+1));
         END_SECTIONCELL;
         BEG_INPUTCELL;
           fprintf(nb, "images%i%i%i = Evaluate[Table[tile%i%i%i[j], {j, 0, 2 frames, 1}]];\n",

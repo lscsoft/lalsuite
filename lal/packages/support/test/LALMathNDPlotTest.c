@@ -49,7 +49,7 @@
     \subsubsection{Notes}
     \begin{itemize}
   * \item It is likely unreasonable to plot more than 5 dimensions because the number of
-  * projections is N!/(3!2!).
+  * projections is N!/(3!(N-3)!).
     \end{itemize}
     </lalLaTeX>
     END - SUBSUBSECTION - NOTES - "LALMathNDPlotTest.c" --------------------------- */

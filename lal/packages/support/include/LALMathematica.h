@@ -115,6 +115,7 @@
     \subsection*{Types} 
     \input{LALMathematicaHT}
     \idx[Type]{Math3DPointList}
+    \idx[Type]{MathNDPointList}
     \noindent
   * The Math3DPointList type is used by \texttt{Math3DPlot.c} as an input structure to 
   * plot 3-dimensional template banks.  It is a linked list and has parameters for each 
