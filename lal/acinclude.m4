@@ -229,12 +229,12 @@ AC_DEFUN(LAL_CHECK_FRAMELIB,
         lal_check_framelib_save_LIBS="$LIBS"
         AC_CHECK_LIB(Frame, FrLibIni, ,
           [AC_MSG_ERROR(couldn't find Frame library for --enable-frame)] )
-        AC_MSG_CHECKING([whether Frame library version >= 4.00])
+        AC_MSG_CHECKING([whether Frame library version >= 6.00])
         AC_TRY_RUN([#include "FrameL.h"
-          int main() { return FRAMELIB_VERSION < 4.00 ? 1 : 0 ; }],
+          int main() { return FRAMELIB_VERSION < 6.00 ? 1 : 0 ; }],
           AC_MSG_RESULT(yes),
           [AC_MSG_RESULT(no)
-            AC_MSG_ERROR(FrameL.h not found or FRAMELIB_VERSION < 4.00)],
+            AC_MSG_ERROR(FrameL.h not found or FRAMELIB_VERSION < 6.00)],
           AC_MSG_RESULT(unknown))
         LIBS="$lal_check_framelib_save_LIBS"
   fi
