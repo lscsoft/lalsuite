@@ -20,10 +20,7 @@ using the --with-gcc-flags configure option.
 
 
 To modify an existing package, you can access the LAL CVS archive using a
-pserver.  However, you will need a username and password to be able to modify
-the CVS archive.  Contact the software coordinator,
-Alan Wiseman <agw@gravity.phys.uwm.edu>,
-to obtain a username/password, along with instructions.
+pserver as described in the LAL README file.
 
 The following rules will assist in maintaining a stable LAL:
 
@@ -46,20 +43,22 @@ The following rules will assist in maintaining a stable LAL:
 
 *******************************************************************************
 
-To add an additional package, you must submit the package as a tar-ball to
-the software coordinator,
-Alan Wiseman <agw@gravity.phys.uwm.edu>,
-to be added to the CVS archive.  (Only the librarian should add directories
-to the CVS archive.)
+To add a new package to LAL (i.e. a directory at the level lal/packages),
+follow the instructions below.
 
+* Note: Only the LAL librarian is allowed to add packages (since this involves
+adding directories). Once a package has been added, you can modify the code in
+it and add additional contents withing the package as normal via CVS.
 
-This file tells you how to develop a new package for submission.  To do this
-you will need automake installed on your system. This is available from
+Contact the LAL librarian, Jolien Creighton <jolien@gravity.phys.uwm.edu>
+prior to add the package to CVS. You should send the librarian a tar file of
+the package you wish to add.
 
-ftp://ftp.gnu.org/software/automake
+This file tells you how to develop a new package for submission. It is assumed
+that you already have m4, aclocal, autoheader, automake, and autoconf
+installed.
 
 This example shows how to add a package called "mypackage" to LAL.
-
 
 (1)  Create a directory mypackage in the packages subdirectory of your lal
      source distribution:
