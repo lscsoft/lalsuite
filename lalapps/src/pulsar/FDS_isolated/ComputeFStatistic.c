@@ -637,7 +637,8 @@ int main(int argc,char *argv[])
 #endif
 
   if (fpstat) {
-    fprintf(fpstat, "DONE\n");
+    /* this is our marker indicating 'finished' */
+    fprintf(fpstat, "0000000\n");
     fclose(fpstat);
   }
 
