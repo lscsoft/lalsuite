@@ -80,19 +80,19 @@ done
 
 
 ## Find an echo that accepts -n
-ECHO=${ECHO:-echo}
-if test ! "`$ECHO -n a`" = "a" ; then
-  echo "*** Warning: echo does not support -n"
-  echo "*** make sure /usr/ucb is ahead of /usr/bin in PATH"
-  echo "*** or set variable ECHO to an echo that supports -n"
-  echo "*** trying /usr/ucb/echo..."
-  ECHO=/usr/ucb/echo
-  if test ! "`$ECHO -n a`" = "a" ; then
-    echo "*** Error: could not find an appropriate echo!"
-    exit 1
-  fi
-  echo "*** using $ECHO"
-fi
+#ECHO=${ECHO:-echo}
+#if test ! "`$ECHO -n a`" = "a" ; then
+#  echo "*** Warning: echo does not support -n"
+#  echo "*** make sure /usr/ucb is ahead of /usr/bin in PATH"
+#  echo "*** or set variable ECHO to an echo that supports -n"
+#  echo "*** trying /usr/ucb/echo..."
+#  ECHO=/usr/ucb/echo
+#  if test ! "`$ECHO -n a`" = "a" ; then
+#    echo "*** Error: could not find an appropriate echo!"
+#    exit 1
+#  fi
+#  echo "*** using $ECHO"
+#fi
 
 ## Here is the stuff to make configure.in
 
@@ -207,27 +207,35 @@ fi
 EOF
 
 # Substitutions
-$ECHO -n "LIBLISTBASE='" >> configure.in
+#$ECHO -n "LIBLISTBASE='" >> configure.in
+printf "LIBLISTBASE='" >> configure.in
 for pkg in $lal_pkg_list_base ; do
-  $ECHO -n "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
+#  $ECHO -n "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
+  printf "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
 done
 echo "'" >> configure.in
 
-$ECHO -n "LIBLISTMPI='" >> configure.in
+#$ECHO -n "LIBLISTMPI='" >> configure.in
+printf "LIBLISTMPI='" >> configure.in
 for pkg in $lal_pkg_list_mpi ; do
-  $ECHO -n "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
+#  $ECHO -n "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
+  printf "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
 done
 echo "'" >> configure.in
 
-$ECHO -n "LIBLISTFRAME='" >> configure.in
+#$ECHO -n "LIBLISTFRAME='" >> configure.in
+printf "LIBLISTFRAME='" >> configure.in
 for pkg in $lal_pkg_list_frame ; do
-  $ECHO -n "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
+#  $ECHO -n "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
+  printf "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
 done
 echo "'" >> configure.in
 
-$ECHO -n "LIBLISTMPIFRAME='" >> configure.in
+#$ECHO -n "LIBLISTMPIFRAME='" >> configure.in
+printf "LIBLISTMPIFRAME='" >> configure.in
 for pkg in $lal_pkg_list_mpi_frame ; do
-  $ECHO -n "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
+#  $ECHO -n "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
+  printf "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
 done
 echo "'" >> configure.in
 
