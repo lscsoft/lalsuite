@@ -136,12 +136,90 @@ gps_start2 = int(sgps_start2)
 sNpolka = cp.get('mc-params','Npolka')
 Npolka = int(sNpolka)
 
+Ninjmax=600
+
 # -------------------------------------------------------------------------------- #
 
 # ------------------------- Set up working directory ----------------------------- # 
 
 # name of local work directory
 subdir=''.join([local_work_dir,'/','ul-run.',str(job_id)])
+
+#define this ere because it enters in confidence.data file name
+freq=float(start_freq) + float(job_id) * float(coincidence_band) * Npolka
+
+
+#=============
+#check that the results (Confidence.data) file is not already existent
+# if it is, open and the file check that it has the "%DONE" flag
+# if it does, exit
+# if it does not, read-in the previous injection(s) parameters and
+# take it from there
+#=============
+
+res_out=''.join([starting_dir,'/confidence_data/Confidence.data-',str(freq)])
+print '====='
+print res_out
+print '====='
+cont=1
+confidence=0.0
+
+if os.path.exists(res_out):
+  print 'file exists! reading ...'
+  Cdata_file=open(res_out,mode='r')
+  Cdata_file.seek(-6,2)
+  done=Cdata_file.read(5)
+  endOfFile=Cdata_file.tell()
+  Cdata_file.close()
+  
+  if done == "%DONE":
+    print 'Confidence.data-',str(freq),' already exists, thus exiting...\n '
+    sys.exit(0)
+  #endif the file is complete.  
+
+  Cdata_file=open(res_out,mode='r')
+  line_list=Cdata_file.readlines()
+  length=len(line_list)
+  print 'length=',length
+  print line_list
+  if length > 0:
+    print 'reading line...'
+    line=line_list[length-1]
+    print line
+    [sNinj,stol,sh0,sdh0,sconfidence]=line.split(None,5)
+    confidence=float(sconfidence)
+    dh0=float(sdh0)
+    h0=float(sh0)
+  #endif there is a line -- we get here only if there are only data lines
+  #and we are reading the last line
+
+  if length > 1:
+    line=line_list[length-3]
+    [sNinjOLD,stolOLD,sh0OLD,sdh0OLD,sconfidenceOLD]=line.split(None,5)
+    confidenceOLD=float(sconfidenceOLD)
+    if abs(confidence-c0) < tol:
+      if Ninj < Ninjmax:
+        Ninj=Ninj*2
+        tol=tol/math.sqrt(2.0)
+        cont=1
+      else: cont=0
+    if confidence > c0:
+      if confidenceOLD < c0:
+        dh0=dh0/2
+      h0=h0-dh0
+    if confidence < c0:
+      if confidenceOLD > c0:
+        dh0=dh0/2
+      h0=h0+dh0
+
+  #endif there are 2 lines in the file -- we get here only the only lines
+  #are data lines.
+  Cdata_file.close()
+
+   
+#endif coincidence.data exists
+print 'Ninj,tolerance,dh0= ',Ninj,tol,dh0
+
 
 # check that we've got all the polka files that we need
 
@@ -296,8 +374,6 @@ print ' *  *  * '
 # -------------------------------------------------------------------------------- #
 
 # --------------------------- MC injection loop  --------------------------------- # 
-cont=1
-confidence=0.0
 
 
 while cont:
@@ -506,7 +582,7 @@ while cont:
     # if the results are smaller than our threshold or they are
     # not coincident in frequency   
     if F1 < Fth or F2 < Fth or abs(f1-f2) > float(freq_window):  
-      print '%Maximum event is too small or not freq. coincident:', F1, F2,  abs(f1-f2)
+      #print '%Maximum event is too small or not freq. coincident:', F1, F2,  abs(f1-f2)
       os.system('rm -rf signal1')
       os.system('rm -rf signal2')            
       sys.stdout.flush()
@@ -528,7 +604,7 @@ while cont:
       #print ' '
 
       if Ifa > fa:
-        print '%Joint false alarm is too large:',Ifa,'Target was:',fa
+        #print '%Joint false alarm is too large:',Ifa,'Target was:',fa
         os.system('rm -rf signal1')
         os.system('rm -rf signal2')            
         sys.stdout.flush()
@@ -802,13 +878,13 @@ while cont:
     #end if injected signals are in coincidence  
     #increment i, independently of whether fa was big enough 
     i=i+1
-    print 'counter,i= ',counter,i
+    #print 'counter,i= ',counter,i
     inj_out=''.join(['Injection.data-',str(freq)])
     #print 'injection data file',inj_out
-    inj_data_file=open(inj_out,mode='a')
-    print >>inj_data_file,f0,alpha,delta,alphaT,deltaT,sf1,sf2,float(sF1),2*float(sF1th), float(sF2), 2*float(sF2th),h0,i+1,counter,float(counter)/float(i+1)
-    inj_data_file.close()
-    shutil.copy(inj_out,starting_dir)
+    #inj_data_file=open(inj_out,mode='a')
+    #print >>inj_data_file,f0,alpha,delta,alphaT,deltaT,sf1,sf2,float(sF1),2*float(sF1th), float(sF2), 2*float(sF2th),h0,i+1,counter,float(counter)/float(i+1)
+    #inj_data_file.close()
+    #shutil.copy(inj_out,starting_dir)
   
   #end i-th injection, next injection
   
@@ -818,13 +894,13 @@ while cont:
       # first ifo
   res_out=''.join(['Confidence.data-',str(freq)])
   outCdata_file=open(res_out,mode='a')
-  print >>outCdata_file,Ninj,tol,h0,confidence
+  print >>outCdata_file,Ninj,tol,h0,dh0,confidence
   outCdata_file.close()
   shutil.copy(res_out,starting_dir)
    
   print 'confidence =',confidence  
   if abs(confidence-c0) < tol:
-    if Ninj < 10000:
+    if Ninj < Ninjmax:
       Ninj=Ninj*2
       tol=tol/math.sqrt(2.0)
       cont=1
@@ -838,8 +914,16 @@ while cont:
         dh0=dh0/2
       h0=h0+dh0
 
-print 'Ninj,tolerance,dh0= ',Ninj,tol,dh0                
-inj_data_file.close()
+print 'Ninj,tolerance,dh0= ',Ninj,tol,dh0
+
+# reopen file to insert the "DONE" flag
+res_out=''.join(['Confidence.data-',str(freq)])
+outCdata_file=open(res_out,mode='a')
+print >>outCdata_file,'%DONE'
+outCdata_file.close()
+
+#inj_data_file.close()
+copydir=''.join([starting_dir,'/confidence_data/'])
 shutil.copy(inj_out,starting_dir)
 
 
