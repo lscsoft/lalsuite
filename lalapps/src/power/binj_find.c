@@ -323,8 +323,8 @@ int main(int argc, char **argv)
 
     if ( ! outputFile || ! inputFile || ! injectionFile || ! outSnglFile)
     {
-    	LALPrintError( "Input file, injection file, output trig. file and output inj. file 
-            names must be specified\n" );
+    	LALPrintError( "Input file, injection file, output trig. file and output inj. file "
+"            names must be specified\n" );
 	return BINJ_FIND_EARG;
     }
 
