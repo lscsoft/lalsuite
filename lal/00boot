@@ -309,6 +309,8 @@ m4 FrameSeries.m4 > FrameSeries.c
 cd ../../..
 
 cd packages/pulsar/test
+/bin/sh ephemtoilwd.sh earth98.dat > earth98.ilwd
+/bin/sh ephemtoilwd.sh sun98.dat > sun98.ilwd
 /bin/sh ephemtoilwd.sh earth99.dat > earth99.ilwd
 /bin/sh ephemtoilwd.sh sun99.dat > sun99.ilwd
 /bin/sh ephemtoilwd.sh earth00.dat > earth00.ilwd
