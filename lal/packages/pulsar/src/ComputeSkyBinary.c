@@ -61,13 +61,14 @@ NRCSID (COMPUTESKYBINARYC, "$Id$");
 static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps);
 static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f);
 static void Ft(LALStatus *status, REAL8 *tr, REAL8 t, void *tr0);
-REAL8 a;      /* semi major axis */
-REAL8 Period;    /* Period */
-REAL8 ecc;    /* eccentricity */
-REAL8 parg;   /* argument of periapse */
-LIGOTimeGPS Tperi;  /* Time of periapse passage as measured in SSB frame */
-REAL8 p,q;    /* coeficients of phase model */
-REAL8 E;      /* eccentric anomoly */
+
+static REAL8 a;      /* semi major axis */
+static REAL8 Period;    /* Period */
+static REAL8 ecc;    /* eccentricity */
+static REAL8 parg;   /* argument of periapse */
+static LIGOTimeGPS Tperi;  /* Time of periapse passage as measured in SSB frame */
+static REAL8 p,q;    /* coeficients of phase model */
+static REAL8 E;      /* eccentric anomoly */
 
 /* <lalVerbatim file="ComputeSkyBinaryCP"> */
 void ComputeSkyBinary	(LALStatus	*status, 
@@ -79,27 +80,17 @@ void ComputeSkyBinary	(LALStatus	*status,
 
 	INT4	m, n, nP;
 	REAL8	t;
-	REAL8   dTsource;
 	REAL8	dTbary;
 	REAL8   dTbarySP;
 	REAL8	tBary;
 	REAL8	tB0;
-	REAL8   Tperifloat;
-	REAL8   Tperi0new;
 	REAL8   Tperi0;
 	REAL8   dTperi;
-	REAL8   dTbin;
 	REAL8   dTcoord;
 	REAL8   Tdotbin;
 	REAL8   basedTperi;
-	BarycenterInput baryinput;
-	EmissionTime  emit;  
-	LIGOTimeGPS tGPS;
-	EarthState earth;
-	EphemerisData *edat = NULL;
 	DFindRootIn input;
-	REAL8 tr0, t0;
-	REAL8 T0Source;
+	REAL8 tr0;
 
  INITSTATUS (status, "ComputeSkyBinary", COMPUTESKYBINARYC);
  ATTATCHSTATUSPTR(status);
@@ -253,12 +244,12 @@ static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f)
   tgps->gpsNanoSeconds = (INT4)temp4;
 }
 
-static void Ft(LALStatus *status, REAL8 *tr, REAL8 E, void *tr0)
+static void Ft(LALStatus *status, REAL8 *tr, REAL8 lE, void *tr0)
 {
   INITSTATUS(status, "Ft", "Function Ft()");
   ASSERT(tr0,status, 1, "Null pointer");
   /* this is the function relating the observed time since periapse in the SSB to the eccentric anomoly E */
-  *tr = *(REAL8 *)tr0*(-1.0) + (Period/LAL_TWOPI)*(E+(p*sin(E))+q*(cos(E)-1.0));
+  *tr = *(REAL8 *)tr0*(-1.0) + (Period/LAL_TWOPI)*(lE+(p*sin(lE))+q*(cos(lE)-1.0));
   RETURN(status);
 }
                        
