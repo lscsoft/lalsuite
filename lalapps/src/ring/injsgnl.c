@@ -113,7 +113,7 @@ int inject_signal( REAL4TimeSeries *series, int injectSignalType,
       LALFree( thisInject );
     }
 
-    LAL_CALL( LALCDestroyVector( &status, &response->data ), &status );
+    XLALDestroyCOMPLEX8Vector( response->data );
     LALFree( response );
   }
 

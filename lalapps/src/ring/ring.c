@@ -39,14 +39,12 @@ static REAL4FrequencySeries *ring_get_invspec(
     struct ring_params      *params
     );
 static RingTemplateBank *ring_get_bank( struct ring_params *params );
-static UINT4 *ring_get_tmpltnums(
-    UINT4              *numtmplts,
-    RingTemplateBank   *bank,
-    struct ring_params *params
-    );
-static UINT4 *ring_get_sgmntnums(
-    UINT4              *numsgmnts,
-    struct ring_params *params
+static RingDataSegments *ring_get_segments(
+    REAL4TimeSeries         *channel,
+    COMPLEX8FrequencySeries *response,
+    REAL4FrequencySeries    *invspec,
+    REAL4FFTPlan            *fwdplan,
+    struct ring_params      *params
     );
 static int is_in_list( int i, const char *list );
 static void ring_cleanup(
@@ -57,10 +55,7 @@ static void ring_cleanup(
     COMPLEX8FrequencySeries *response,
     REAL4FrequencySeries    *invspec,
     RingTemplateBank        *bank,
-    UINT4                   *tmpltnums,
-    UINT4                   *sgmntnums,
-    UINT4                    numsgmnts,
-    COMPLEX8FrequencySeries *segments,
+    RingDataSegments        *segments,
     SnglBurstTable          *events
     );
 
@@ -75,11 +70,7 @@ int main( int argc, char **argv )
   COMPLEX8FrequencySeries *response  = NULL;
   REAL4FrequencySeries    *invspec   = NULL;
   RingTemplateBank        *bank      = NULL;
-  UINT4                    numsgmnts;
-  UINT4                   *sgmntnums = NULL;
-  UINT4                    numtmplts;
-  UINT4                   *tmpltnums = NULL;
-  COMPLEX8FrequencySeries *segments  = NULL;
+  RingDataSegments        *segments  = NULL;
   SnglBurstTable          *events    = NULL;
 
   /* set error handlers to abort on error */
@@ -108,24 +99,18 @@ int main( int argc, char **argv )
   /* create the template bank */
   bank = ring_get_bank( params );
 
-  /* get template and segment numbers to do */
-  tmpltnums = ring_get_tmpltnums( &numtmplts, bank, params );
-  sgmntnums = ring_get_sgmntnums( &numsgmnts, params );
-
   /* create the segments to do */
-  segments = compute_data_segments( numsgmnts, sgmntnums, channel, invspec,
-      response, params->segmentDuration, params->strideDuration, fwdplan );
+  segments = ring_get_segments( channel, response, invspec, fwdplan, params );
 
   /* filter the data against the bank of templates */
-  events = ring_filter( segments, numsgmnts, bank, numtmplts, tmpltnums,
-      invspec, fwdplan, revplan, params );
+  events = ring_filter( segments, bank, invspec, fwdplan, revplan, params );
 
   /* output the results */
   ring_output_events( events, procpar, params );
 
   /* cleanup */
   ring_cleanup( procpar, fwdplan, revplan, channel, response, invspec, bank,
-      tmpltnums, sgmntnums, numsgmnts, segments, events );
+      segments, events );
   LALCheckMemoryLeaks();
 
   return 0;
@@ -190,12 +175,11 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
           params->randomSeed, 1.0 );
     else if ( params->geoData )
       channel = get_frame_data_dbl_convert( params->dataCache, params->channel,
-          LAL_ADC_CHAN, &params->startTime, params->duration,
-          params->strainData, params->geoHighpassFrequency, params->geoScale );
+          &params->startTime, params->duration, params->strainData,
+          params->geoHighpassFrequency, params->geoScale );
     else
       channel = get_frame_data( params->dataCache, params->channel,
-          LAL_ADC_CHAN, &params->startTime, params->duration,
-          params->strainData );
+          &params->startTime, params->duration, params->strainData );
     if ( params->writeRawData ) /* write raw data */
       write_REAL4TimeSeries( channel );
 
@@ -268,98 +252,98 @@ static REAL4FrequencySeries *ring_get_invspec(
 static RingTemplateBank *ring_get_bank( struct ring_params *params )
 {
   RingTemplateBank *bank = NULL;
+
   if ( params->getBank )
   {
-    LALStatus status = blank_status;
-    LAL_CALL( LALCreateRingTemplateBank( &status, &bank, &params->bankParams ),
-        &status );
+    /* get the complete bank */
+    bank = XLALCreateRingTemplateBank( &params->bankParams );
+
+    /* if todo list empty then use the full bank */
+    if ( params->templatesToDoList && strlen( params->templatesToDoList ) )
+    {
+      UINT4 count = 0;
+      UINT4 tmplt;
+
+      /* loop over templates in full bank and re-insert the desired ones
+       * at the beginning of the bank; simultaneously count the number */
+      for ( tmplt = 0; tmplt < bank->numTmplt; ++tmplt )
+        if ( is_in_list( tmplt, params->templatesToDoList ) )
+          bank->tmplt[count++] = bank->tmplt[tmplt];
+      
+      /* reallocate memory to the (possibly) smaller size */
+      if ( count )
+      {
+        bank->numTmplt = count;
+        bank->tmplt = LALRealloc( bank->tmplt,
+            bank->numTmplt * sizeof( *bank->tmplt ) );
+      }
+      else /* no templates: return an NULL bank */
+      {
+        LALFree( bank->tmplt );
+        LALFree( bank );
+        bank = NULL;
+      }
+    }
+
     if ( params->writeBank ) /* write template bank */
       write_bank( bank );
   }
+
   return bank;
 }
 
 
-static UINT4 *ring_get_tmpltnums(
-    UINT4              *numtmplts,
-    RingTemplateBank   *bank,
-    struct ring_params *params
+static RingDataSegments *ring_get_segments(
+    REAL4TimeSeries         *channel,
+    COMPLEX8FrequencySeries *response,
+    REAL4FrequencySeries    *invspec,
+    REAL4FFTPlan            *fwdplan,
+    struct ring_params      *params
     )
 {
-  UINT4 *tmpltnums = NULL;
-  UINT4  count = 0;
-  UINT4  tmplt;
-
-  /* if todo list is empty then do them all */
-  if ( ! params->templatesToDoList || ! strlen( params->templatesToDoList ) )
-  {
-    *numtmplts = bank->numTmplt;
-    return NULL;
-  }
-
-  /* first count the number of templates to do */
-  for ( tmplt = 0; tmplt < bank->numTmplt; ++tmplt )
-    if ( is_in_list( tmplt, params->templatesToDoList ) )
-      ++count;
-    else
-      continue; /* skip this template: it is not in todo list */
-  
-  *numtmplts = count;
-
-  /* now get the template numbers */
-  if ( count )
-  {
-    UINT4 *thistmpltnum;
-    thistmpltnum = tmpltnums = LALCalloc( count, sizeof( *tmpltnums ) );
-
-    for ( tmplt = 0; tmplt < bank->numTmplt; ++tmplt )
-      if ( is_in_list( tmplt, params->templatesToDoList ) )
-        *thistmpltnum++ = tmplt;
-  }
-
-  return tmpltnums;
-}
-
-
-static UINT4 *ring_get_sgmntnums(
-    UINT4              *numsgmnts,
-    struct ring_params *params
-    )
-{
-  UINT4 *sgmntnums = NULL;
-  UINT4  count = 0;
+  RingDataSegments *segments = NULL;
   UINT4  sgmnt;
+
+  segments = LALCalloc( 1, sizeof( *segments ) );
 
   /* TODO: trig start/end time condition */
 
   /* if todo list is empty then do them all */
   if ( ! params->segmentsToDoList || ! strlen( params->segmentsToDoList ) )
   {
-    *numsgmnts = params->numOverlapSegments;
-    return NULL;
+    segments->numSgmnt = params->numOverlapSegments;
+    segments->sgmnt = LALCalloc( segments->numSgmnt, sizeof(*segments->sgmnt) );
+    for ( sgmnt = 0; sgmnt < params->numOverlapSegments; ++sgmnt )
+      compute_data_segment( &segments->sgmnt[sgmnt], sgmnt, channel, invspec,
+          response, params->segmentDuration, params->strideDuration, fwdplan );
   }
-
-  /* first count the number of segments to do */
-  for ( sgmnt = 0; sgmnt < params->numOverlapSegments; ++sgmnt )
-    if ( is_in_list( sgmnt, params->segmentsToDoList ) )
-      ++count;
-    else
-      continue; /* skip this segment: it is not in todo list */
-  
-  *numsgmnts = count;
-
-  /* now get the segment numbers */
-  if ( count )
+  else  /* only do the segments in the todo list */
   {
-    UINT4 *thissgmntnum;
-    thissgmntnum = sgmntnums = LALCalloc( count, sizeof( *sgmntnums ) );
-
+    UINT4 count;
+    
+    /* first count the number of segments to do */
+    count = 0;
     for ( sgmnt = 0; sgmnt < params->numOverlapSegments; ++sgmnt )
       if ( is_in_list( sgmnt, params->segmentsToDoList ) )
-        *thissgmntnum++ = sgmnt;
+        ++count;
+      else
+        continue; /* skip this segment: it is not in todo list */
+
+    if ( ! count ) /* no segments to do */
+      return NULL;
+
+    segments->numSgmnt = count;
+    segments->sgmnt = LALCalloc( segments->numSgmnt, sizeof(*segments->sgmnt) );
+  
+    count = 0;
+    for ( sgmnt = 0; sgmnt < params->numOverlapSegments; ++sgmnt )
+      if ( is_in_list( sgmnt, params->segmentsToDoList ) )
+        compute_data_segment( &segments->sgmnt[count++], sgmnt, channel,
+            invspec, response, params->segmentDuration, params->strideDuration,
+            fwdplan );
   }
 
-  return sgmntnums;
+  return segments;
 }
 
 
@@ -371,14 +355,10 @@ static void ring_cleanup(
     COMPLEX8FrequencySeries *response,
     REAL4FrequencySeries    *invspec,
     RingTemplateBank        *bank,
-    UINT4                   *tmpltnums,
-    UINT4                   *sgmntnums,
-    UINT4                    numsgmnts,
-    COMPLEX8FrequencySeries *segments,
+    RingDataSegments        *segments,
     SnglBurstTable          *events
     )
 {
-  LALStatus status = blank_status;
   while ( events )
   {
     SnglBurstTable *thisEvent;
@@ -389,31 +369,28 @@ static void ring_cleanup(
   if ( segments )
   {
     UINT4 sgmnt;
-    for ( sgmnt = 0; sgmnt < numsgmnts; ++sgmnt )
-      LAL_CALL( LALCDestroyVector( &status, &segments[sgmnt].data ), &status );
+    for ( sgmnt = 0; sgmnt < segments->numSgmnt; ++sgmnt )
+      XLALDestroyCOMPLEX8Vector( segments->sgmnt[sgmnt].data );
+    LALFree( segments->sgmnt );
     LALFree( segments );
   }
-  if ( sgmntnums )
-    LALFree( sgmntnums );
-  if ( tmpltnums )
-    LALFree( tmpltnums );
   if ( bank )
   {
-    LAL_CALL( LALDestroyRingTemplateBank( &status, &bank ), &status );
+    XLALDestroyRingTemplateBank( bank );
   }
   if ( invspec )
   {
-    LAL_CALL( LALSDestroyVector( &status, &invspec->data ), &status );
+    XLALDestroyREAL4Vector( invspec->data );
     LALFree( invspec );
   }
   if ( response )
   {
-    LAL_CALL( LALCDestroyVector( &status, &response->data ), &status );
+    XLALDestroyCOMPLEX8Vector( response->data );
     LALFree( response );
   }
   if ( channel )
   {
-    LAL_CALL( LALSDestroyVector( &status, &channel->data ), &status );
+    XLALDestroyREAL4Vector( channel->data );
     LALFree( channel );
   }
   if ( revplan )

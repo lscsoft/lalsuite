@@ -45,18 +45,14 @@ static SnglBurstTable * find_events(
 
 
 SnglBurstTable * ring_filter(
-    COMPLEX8FrequencySeries  *segments,
-    UINT4                     numSegments,
+    RingDataSegments         *segments,
     RingTemplateBank         *bank,
-    UINT4                     numTemplates,
-    UINT4                    *templateNumbers,
     REAL4FrequencySeries     *invSpectrum,
     REAL4FFTPlan             *fwdPlan,
     REAL4FFTPlan             *revPlan,
     struct ring_params       *params
     )
 {
-  LALStatus                status = blank_status;
   SnglBurstTable          *events = NULL; /* head of linked list of events */
   REAL4TimeSeries          signal;
   REAL4TimeSeries          result;
@@ -79,50 +75,35 @@ SnglBurstTable * ring_filter(
 
   signal.deltaT = 1.0/params->sampleRate;
   signal.sampleUnits = lalStrainUnit;
-  LAL_CALL( LALSCreateVector( &status, &signal.data, segmentLength ), &status );
-
-  LAL_CALL( LALCCreateVector( &status, &stilde.data, segmentLength/2 + 1 ),
-      &status );
-
   rtilde.deltaF = 1.0 / params->segmentDuration;
-  LAL_CALL( LALCCreateVector( &status, &rtilde.data, segmentLength/2 + 1 ),
-      &status );
-
-  LAL_CALL( LALSCreateVector( &status, &result.data, segmentLength ), &status );
+  signal.data = XLALCreateREAL4Vector( segmentLength );
+  stilde.data = XLALCreateCOMPLEX8Vector( segmentLength/2 + 1 );
+  rtilde.data = XLALCreateCOMPLEX8Vector( segmentLength/2 + 1 );
+  result.data = XLALCreateREAL4Vector( segmentLength );
 
   /* loop over all elements in the template bank */
-  for ( tmplt = 0; tmplt < numTemplates; ++tmplt )
+  for ( tmplt = 0; tmplt < bank->numTmplt; ++tmplt )
   {
-    RingTemplateInput *thisTmplt;
-    UINT4 tmpltNumber;
+    RingTemplateInput *thisTmplt = bank->tmplt + tmplt;
     UINT4 numEvents = 0;
     REAL8 sigma;
 
-    if ( templateNumbers )
-      tmpltNumber = templateNumbers[tmplt];
-    else
-      tmpltNumber = tmplt;
-
-    thisTmplt = bank->tmplt + tmpltNumber;
-
     /* make template and fft it */
-    LAL_CALL( LALComputeRingTemplate( &status, &signal, thisTmplt ), &status );
-    LALSnprintf( signal.name, sizeof(signal.name), "TMPLT_%u", tmpltNumber );
-    LAL_CALL( LALTimeFreqRealFFT( &status, &stilde, &signal, fwdPlan ),
-        &status );
-    LALSnprintf( stilde.name, sizeof(stilde.name), "TMPLT_%u_FFT",
-        tmpltNumber );
+    XLALComputeRingTemplate( &signal, thisTmplt );
+    LALSnprintf( signal.name, sizeof(signal.name), "TMPLT_%u", tmplt );
+    XLALREAL4TimeFreqFFT( &stilde, &signal, fwdPlan );
+    LALSnprintf( stilde.name, sizeof(stilde.name), "TMPLT_%u_FFT", tmplt );
 
     /* compute sigma for this template */
     sigma = sqrt( compute_template_variance( &stilde, invSpectrum,
           params->dynRangeFac ) );
 
     /* loop over segments */
-    for ( sgmnt = 0; sgmnt < numSegments; ++sgmnt )
+    for ( sgmnt = 0; sgmnt < bank->numTmplt; ++sgmnt )
     {
       /* filter the segment with the template */
-      filter_segment_template( &result, &rtilde, &stilde, &segments[sgmnt],
-          revPlan );
+      filter_segment_template( &result, &rtilde, &stilde,
+          &segments->sgmnt[sgmnt], revPlan );
 
       /* search through results for threshold crossings and record events */
       events = find_events( events, &numEvents, &result, sigma,
@@ -140,17 +121,17 @@ SnglBurstTable * ring_filter(
     }
     params->numEvents += numEvents;
     verbose( "found %u event%s in template %u\n", numEvents,
-        numEvents == 1 ? "" : "s", tmpltNumber );
+        numEvents == 1 ? "" : "s", tmplt );
   }
 
   verbose( "found %u event%s\n", params->numEvents,
       params->numEvents == 1 ? "" : "s" );
 
   /* cleanup */
-  LAL_CALL( LALSDestroyVector( &status, &result.data ), &status );
-  LAL_CALL( LALCDestroyVector( &status, &rtilde.data ), &status );
-  LAL_CALL( LALCDestroyVector( &status, &stilde.data ), &status );
-  LAL_CALL( LALSDestroyVector( &status, &signal.data ), &status );
+  XLALDestroyREAL4Vector( result.data );
+  XLALDestroyCOMPLEX8Vector( rtilde.data );
+  XLALDestroyCOMPLEX8Vector( stilde.data );
+  XLALDestroyREAL4Vector( signal.data );
 
   return events;
 }
@@ -184,7 +165,6 @@ static int filter_segment_template(
     REAL4FFTPlan             *plan
     )
 {
-  LALStatus status = blank_status;
   char *s;
 
   /* name of rtilde */
@@ -198,13 +178,12 @@ static int filter_segment_template(
     *s = 0; /* it does: terminate here */
 
   /* multiply segment by filter and store in fft of result */
-  LAL_CALL( LALCCVectorMultiplyConjugate( &status, rtilde->data, segment->data,
-        stilde->data ), &status );
+  XLALCCVectorMultiplyConjugate( rtilde->data, segment->data, stilde->data );
   XLALUnitMultiply( &rtilde->sampleUnits, &segment->sampleUnits, &stilde->sampleUnits );
   rtilde->epoch = segment->epoch;
 
   /* inverse fft to obtain result */
-  LAL_CALL( LALFreqTimeRealFFT( &status, result, rtilde, plan ), &status );
+  XLALREAL4FreqTimeFFT( result, rtilde, plan );
   result->epoch = rtilde->epoch;
 
   return 0;

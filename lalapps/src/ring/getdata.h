@@ -17,7 +17,6 @@ REAL4TimeSeries * get_simulated_data(
 REAL4TimeSeries * get_frame_data(
     const char  *cacheName,
     const char  *channelName,
-    int          channelType,
     LIGOTimeGPS *epoch,
     REAL8        duration,
     int          strainData
@@ -26,7 +25,6 @@ REAL4TimeSeries * get_frame_data(
 REAL4TimeSeries * get_frame_data_dbl_convert(
     const char  *cacheName,
     const char  *channelName,
-    int          channelType,
     LIGOTimeGPS *epoch,
     REAL8        duration,
     int          strainData,
@@ -35,10 +33,10 @@ REAL4TimeSeries * get_frame_data_dbl_convert(
     );
 
 REAL4TimeSeries * fr_get_REAL4TimeSeries( const char *channelName,
-    int channelType, LIGOTimeGPS *epoch, REAL8 duration, FrStream *stream );
+    LIGOTimeGPS *epoch, REAL8 duration, FrStream *stream );
 
 REAL8TimeSeries * fr_get_REAL8TimeSeries( const char *channelName,
-    int channelType, LIGOTimeGPS *epoch, REAL8 duration, FrStream *stream );
+    LIGOTimeGPS *epoch, REAL8 duration, FrStream *stream );
 
 int resample_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 sampleRate );
 int highpass_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 frequency );

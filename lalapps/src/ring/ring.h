@@ -66,6 +66,13 @@ struct ring_params {
   int          writeFilterOutput;
 };
 
+typedef struct tagRingDataSegments
+{
+  UINT4                    numSgmnt;
+  COMPLEX8FrequencySeries *sgmnt;
+}
+RingDataSegments;
+
 /* routines in ring_option */
 int ring_parse_options( struct ring_params *params, int argc, char **argv );
 int ring_params_sanity_check( struct ring_params *params );
@@ -86,11 +93,8 @@ int write_bank( RingTemplateBank *bank );
 
 /* routines in ring_filter */
 SnglBurstTable * ring_filter(
-    COMPLEX8FrequencySeries  *segments,
-    UINT4                     numSegments,
+    RingDataSegments         *segments,
     RingTemplateBank         *bank,
-    UINT4                     numTemplates,
-    UINT4                    *templateNumbers,
     REAL4FrequencySeries     *invSpectrum,
     REAL4FFTPlan             *fwdPlan,
     REAL4FFTPlan             *revPlan,

@@ -15,8 +15,6 @@
 
 RCSID( "$Id$" );
 
-static FrChanIn blank_chanin;
-
 REAL4TimeSeries * get_simulated_data(
     const char  *channelName,
     LIGOTimeGPS *epoch,
@@ -27,7 +25,6 @@ REAL4TimeSeries * get_simulated_data(
     REAL4        simScale
     )
 {
-  LALStatus        status = blank_status;
   RandomParams    *ranpar = NULL;
   REAL4TimeSeries *series;
   UINT4 npoints;
@@ -42,11 +39,10 @@ REAL4TimeSeries * get_simulated_data(
 
   npoints = duration * sampleRate;
 
-  LAL_CALL( LALSCreateVector( &status, &series->data, npoints ), &status );
-  LAL_CALL( LALCreateRandomParams( &status, &ranpar, simSeed ),
-      &status );
-  LAL_CALL( LALNormalDeviates( &status, series->data, ranpar ), &status );
-  LAL_CALL( LALDestroyRandomParams( &status, &ranpar ), &status );
+  series->data = XLALCreateREAL4Vector( npoints );
+  ranpar = XLALCreateRandomParams( simSeed );
+  XLALNormalDeviates( series->data, ranpar );
+  XLALDestroyRandomParams( ranpar );
 
   /* set metadata */
   LALSnprintf( series->name, sizeof( series->name ), "%s_SIM", channelName );
@@ -67,13 +63,11 @@ REAL4TimeSeries * get_simulated_data(
 REAL4TimeSeries * get_frame_data(
     const char  *cacheName,
     const char  *channelName,
-    int          channelType,
     LIGOTimeGPS *epoch,
     REAL8        duration,
     int          strainData
     )
 {
-  LALStatus        status = blank_status;
   FrCache         *cache  = NULL;
   FrStream        *stream = NULL;
   int              mode   = LAL_FR_VERBOSE_MODE;
@@ -82,19 +76,18 @@ REAL4TimeSeries * get_frame_data(
   verbose( "get data from cache file %s\n", cacheName );
 
   /* open the data cache and use it to get a frame stream */
-  LAL_CALL( LALFrCacheImport( &status, &cache, cacheName ), &status );
-  LAL_CALL( LALFrCacheOpen( &status, &stream, cache ), &status );
-  LAL_CALL( LALDestroyFrCache( &status, &cache ), &status );
+  cache  = XLALFrImportCache( cacheName );
+  stream = XLALFrCacheOpen( cache );
+  XLALFrDestroyCache( cache );
 
   /* set the mode of the frame stream */
-  LAL_CALL( LALFrSetMode( &status, mode, stream ), &status );
+  XLALFrSetMode( stream, mode );
 
   /* read the series */
-  series = fr_get_REAL4TimeSeries( channelName, channelType, epoch, duration,
-      stream );
+  series = fr_get_REAL4TimeSeries( channelName, epoch, duration, stream );
 
   /* close the frame stream */
-  LAL_CALL( LALFrClose( &status, &stream ), &status );
+  XLALFrClose( stream );
 
   /* if this is strain data, correct the units */
   if ( strainData )
@@ -106,7 +99,6 @@ REAL4TimeSeries * get_frame_data(
 REAL4TimeSeries * get_frame_data_dbl_convert(
     const char  *cacheName,
     const char  *channelName,
-    int          channelType,
     LIGOTimeGPS *epoch,
     REAL8        duration,
     int          strainData,
@@ -116,7 +108,6 @@ REAL4TimeSeries * get_frame_data_dbl_convert(
 {
   REAL4TimeSeries *series;
   REAL8TimeSeries *dblser;
-  LALStatus        status = blank_status;
   FrCache         *cache  = NULL;
   FrStream        *stream = NULL;
   int              mode   = LAL_FR_VERBOSE_MODE;
@@ -125,19 +116,18 @@ REAL4TimeSeries * get_frame_data_dbl_convert(
   verbose( "get data from cache file %s\n", cacheName );
 
   /* open the data cache and use it to get a frame stream */
-  LAL_CALL( LALFrCacheImport( &status, &cache, cacheName ), &status );
-  LAL_CALL( LALFrCacheOpen( &status, &stream, cache ), &status );
-  LAL_CALL( LALDestroyFrCache( &status, &cache ), &status );
+  cache  = XLALFrImportCache( cacheName );
+  stream = XLALFrCacheOpen( cache );
+  XLALFrDestroyCache( cache );
 
   /* set the mode of the frame stream */
-  LAL_CALL( LALFrSetMode( &status, mode, stream ), &status );
+  XLALFrSetMode( stream, mode );
 
   /* read double-precision series */
-  dblser = fr_get_REAL8TimeSeries( channelName, channelType, epoch, duration,
-      stream );
+  dblser = fr_get_REAL8TimeSeries( channelName, epoch, duration, stream );
 
   /* close the frame stream */
-  LAL_CALL( LALFrClose( &status, &stream ), &status );
+  XLALFrClose( stream );
 
   /* highpass the double-precision series */
   highpass_REAL8TimeSeries( dblser, dblHighPassFreq );
@@ -153,8 +143,7 @@ REAL4TimeSeries * get_frame_data_dbl_convert(
   series->sampleUnits = dblser->sampleUnits;
 
   /* scale and copy data */
-  LAL_CALL( LALSCreateVector( &status, &series->data, dblser->data->length ),
-      &status );
+  series->data = XLALCreateREAL4Vector( dblser->data->length );
   for ( j = 0; j < series->data->length; ++j )
     series->data->data[j] = (REAL4)( dblScale * dblser->data->data[j] );
 
@@ -167,10 +156,8 @@ REAL4TimeSeries * get_frame_data_dbl_convert(
 
 
 REAL4TimeSeries * fr_get_REAL4TimeSeries( const char *channelName,
-    int channelType, LIGOTimeGPS *epoch, REAL8 duration, FrStream *stream )
+    LIGOTimeGPS *epoch, REAL8 duration, FrStream *stream )
 {
-  LALStatus        status = blank_status;
-  FrChanIn         chanin = blank_chanin; 
   REAL4TimeSeries *series;
   REAL8 srate;
   UINT4 npoints;
@@ -184,40 +171,34 @@ REAL4TimeSeries * fr_get_REAL4TimeSeries( const char *channelName,
   {
     verbose( "seek to gps time %d.%09d\n", epoch->gpsSeconds,
         epoch->gpsNanoSeconds );
-    LAL_CALL( LALFrSeek( &status, epoch, stream ), &status );
+    XLALFrSeek( stream, epoch );
     series->epoch = *epoch;
   }
 
   strncpy( series->name, channelName, sizeof( series->name ) - 1 );
-  chanin.name = channelName;
-  chanin.type = channelType;
 
   /* call first time to get sample rate */
-  LAL_CALL( LALFrGetREAL4TimeSeries( &status, series, &chanin, stream ),
-      &status );
+  XLALFrGetREAL4TimeSeriesMetadata( series, stream );
 
   /* compute sample rate and number of points to request */
   srate   = 1.0/series->deltaT;
   npoints = floor( duration*srate + 0.5 ); /* round to nearest integer */
 
   /* create the data */
-  LAL_CALL( LALSCreateVector( &status, &series->data, npoints ), &status );
+  series->data = XLALCreateREAL4Vector( npoints );
 
   /* now get the data */
   verbose( "read %g seconds of data (%u points at sample rate %g Hz)\n",
       duration, npoints, srate );
-  LAL_CALL( LALFrGetREAL4TimeSeries( &status, series, &chanin, stream ),
-      &status );
+  XLALFrGetREAL4TimeSeries( series, stream );
 
   return series;
 }
 
 
 REAL8TimeSeries * fr_get_REAL8TimeSeries( const char *channelName,
-    int channelType, LIGOTimeGPS *epoch, REAL8 duration, FrStream *stream )
+    LIGOTimeGPS *epoch, REAL8 duration, FrStream *stream )
 {
-  LALStatus        status = blank_status;
-  FrChanIn         chanin = blank_chanin; 
   REAL8TimeSeries *series;
   REAL8 srate;
   UINT4 npoints;
@@ -231,30 +212,26 @@ REAL8TimeSeries * fr_get_REAL8TimeSeries( const char *channelName,
   {
     verbose( "seek to gps time %d.%09d\n", epoch->gpsSeconds,
         epoch->gpsNanoSeconds );
-    LAL_CALL( LALFrSeek( &status, epoch, stream ), &status );
+    XLALFrSeek( stream, epoch );
     series->epoch = *epoch;
   }
 
   strncpy( series->name, channelName, sizeof( series->name ) - 1 );
-  chanin.name = channelName;
-  chanin.type = channelType;
 
   /* call first time to get sample rate */
-  LAL_CALL( LALFrGetREAL8TimeSeries( &status, series, &chanin, stream ),
-      &status );
+  XLALFrGetREAL8TimeSeriesMetadata( series, stream );
 
   /* compute sample rate and number of points to request */
   srate   = 1.0/series->deltaT;
   npoints = floor( duration*srate + 0.5 ); /* round to nearest integer */
 
   /* create the data */
-  LAL_CALL( LALDCreateVector( &status, &series->data, npoints ), &status );
+  series->data = XLALCreateREAL8Vector( npoints );
 
   /* now get the data */
   verbose( "read %g seconds of data (%u points at sample rate %g Hz)\n",
       duration, npoints, srate );
-  LAL_CALL( LALFrGetREAL8TimeSeries( &status, series, &chanin, stream ),
-      &status );
+  XLALFrGetREAL8TimeSeries( series, stream );
 
   return series;
 }

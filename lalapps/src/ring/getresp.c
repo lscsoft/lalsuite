@@ -52,7 +52,6 @@ COMPLEX8FrequencySeries * get_impulse_response(
     )
 {
   COMPLEX8FrequencySeries *response;
-  LALStatus status = blank_status;
   UINT4 npoints;
   UINT4 k;
 
@@ -66,8 +65,7 @@ COMPLEX8FrequencySeries * get_impulse_response(
   response->deltaF      = 1.0/dataDuration;
   response->epoch       = *epoch;
   response->sampleUnits = strainPerCount;
-  LAL_CALL( LALCCreateVector( &status, &response->data, npoints/2 + 1 ),
-      &status );
+  response->data        = XLALCreateCOMPLEX8Vector( npoints/2 + 1 );
 
   for ( k = 0; k < response->data->length; ++k )
   {
@@ -110,19 +108,18 @@ COMPLEX8FrequencySeries * get_frame_response(
   response->deltaF      = 1.0/dataDuration;
   response->epoch       = *epoch;
   response->sampleUnits = strainPerCount;
-  LAL_CALL( LALCCreateVector( &status, &response->data, npoints/2 + 1 ),
-      &status );
+  response->data        = XLALCreateCOMPLEX8Vector( npoints/2 + 1 );
 
   verbose("obtaining calibration information from cache file %s\n", cacheName);
 
-  LAL_CALL( LALFrCacheImport( &status, &cache, cacheName ), &status );
+  cache = XLALFrImportCache( cacheName );
 
   refResponse = get_reference_response_function( cache, ifoName );
   refSensing  = get_reference_sensing_function( cache, ifoName );
   alpha       = get_cavity_gain_factor( cache, epoch, ifoName );
   alphabeta   = get_open_loop_gain_factor( cache, epoch, ifoName );
 
-  LAL_CALL( LALDestroyFrCache( &status, &cache ), &status );
+  XLALFrDestroyCache( cache );
 
   strncpy( ifo, ifoName, 2 );
   ifo[2] = 0;
@@ -153,13 +150,13 @@ COMPLEX8FrequencySeries * get_frame_response(
   }
 
   /* cleanup memory in reference functions */
-  LAL_CALL( LALCDestroyVector( &status, &alphabeta->data ), &status );
+  XLALDestroyCOMPLEX8Vector( alphabeta->data );
   LALFree( alphabeta );
-  LAL_CALL( LALCDestroyVector( &status, &alpha->data ), &status );
+  XLALDestroyCOMPLEX8Vector( alpha->data );
   LALFree( alpha );
-  LAL_CALL( LALCDestroyVector( &status, &refSensing->data ), &status );
+  XLALDestroyCOMPLEX8Vector( refSensing->data );
   LALFree( refSensing );
-  LAL_CALL( LALCDestroyVector( &status, &refResponse->data ), &status );
+  XLALDestroyCOMPLEX8Vector( refResponse->data );
   LALFree( refResponse );
 
   return response;
@@ -170,11 +167,9 @@ COMPLEX8FrequencySeries * get_reference_response_function( FrCache *calCache,
     const char *ifoName )
 {
   COMPLEX8FrequencySeries *refResponse;
-  LALStatus                status   = blank_status;
   FrCache                 *refCache = NULL;
   FrCacheSieve             sieve    = blank_sieve;
   FrStream                *stream   = NULL;
-  FrChanIn                 chanin;
 
   refResponse = LALCalloc( 1, sizeof( *refResponse ) );
   if ( ! refResponse )
@@ -182,17 +177,14 @@ COMPLEX8FrequencySeries * get_reference_response_function( FrCache *calCache,
 
   LALSnprintf( refResponse->name, sizeof( refResponse->name ),
       "%s:CAL-RESPONSE", ifoName );
-  chanin.name = refResponse->name;
-  chanin.type = LAL_PROC_CHAN;
 
   sieve.dscRegEx = "CAL_REF";
-  LAL_CALL( LALFrCacheSieve( &status, &refCache, calCache, &sieve ), &status );
-  LAL_CALL( LALFrCacheOpen( &status, &stream, refCache ), &status );
-  LAL_CALL( LALFrGetCOMPLEX8FrequencySeries( &status, refResponse, &chanin,
-        stream ), &status );
+  refCache = XLALFrSieveCache( calCache, &sieve );
+  stream = XLALFrCacheOpen( refCache );
+  XLALFrGetCOMPLEX8FrequencySeries( refResponse, stream );
   refResponse->sampleUnits = strainPerCount;
-  LAL_CALL( LALFrClose( &status, &stream ), &status );
-  LAL_CALL( LALDestroyFrCache( &status, &refCache ), &status );
+  XLALFrClose( stream );
+  XLALFrDestroyCache( refCache );
 
   return refResponse;
 }
@@ -201,11 +193,9 @@ COMPLEX8FrequencySeries * get_reference_sensing_function( FrCache *calCache,
     const char *ifoName )
 {
   COMPLEX8FrequencySeries *refSensing;
-  LALStatus                status   = blank_status;
   FrCache                 *refCache = NULL;
   FrCacheSieve             sieve    = blank_sieve;
   FrStream                *stream   = NULL;
-  FrChanIn                 chanin;
 
   refSensing = LALCalloc( 1, sizeof( *refSensing ) );
   if ( ! refSensing )
@@ -213,17 +203,14 @@ COMPLEX8FrequencySeries * get_reference_sensing_function( FrCache *calCache,
 
   LALSnprintf( refSensing->name, sizeof( refSensing->name ),
       "%s:CAL-CAV_GAIN", ifoName );
-  chanin.name = refSensing->name;
-  chanin.type = LAL_PROC_CHAN;
 
   sieve.dscRegEx = "CAL_REF";
-  LAL_CALL( LALFrCacheSieve( &status, &refCache, calCache, &sieve ), &status );
-  LAL_CALL( LALFrCacheOpen( &status, &stream, refCache ), &status );
-  LAL_CALL( LALFrGetCOMPLEX8FrequencySeries( &status, refSensing, &chanin,
-        stream ), &status );
+  refCache = XLALFrSieveCache( calCache, &sieve );
+  stream = XLALFrCacheOpen( refCache );
+  XLALFrGetCOMPLEX8FrequencySeries( refSensing, stream );
   refSensing->sampleUnits = lalDimensionlessUnit;
-  LAL_CALL( LALFrClose( &status, &stream ), &status );
-  LAL_CALL( LALDestroyFrCache( &status, &refCache ), &status );
+  XLALFrClose( stream ); 
+  XLALFrDestroyCache( refCache );
 
   return refSensing;
 }
@@ -232,31 +219,24 @@ COMPLEX8TimeSeries * get_cavity_gain_factor( FrCache *calCache,
     LIGOTimeGPS *epoch, const char *ifoName )
 {
   COMPLEX8TimeSeries *alpha;
-  LALStatus       status   = blank_status;
   FrCache        *facCache = NULL;
   FrCacheSieve    sieve    = blank_sieve;
   FrStream       *stream   = NULL;
-  FrChanIn        chanin;
 
   sieve.dscRegEx = "CAL_FAC";
-  alpha = LALCalloc( 1, sizeof( *alpha ) );
-  if ( ! alpha )
-    return NULL;
-  /* only want one point */
-  LAL_CALL( LALCCreateVector( &status, &alpha->data, 1 ), &status );
+
+  alpha       = LALCalloc( 1, sizeof( *alpha ) );
+  alpha->data = XLALCreateCOMPLEX8Vector( 1 );  /* only 1 point */
 
   LALSnprintf( alpha->name, sizeof( alpha->name ), "%s:CAL-CAV_FAC", ifoName );
-  chanin.name = alpha->name;
-  chanin.type = LAL_PROC_CHAN;
 
-  LAL_CALL( LALFrCacheSieve( &status, &facCache, calCache, &sieve ), &status );
-  LAL_CALL( LALFrCacheOpen( &status, &stream, facCache ), &status );
-  LAL_CALL( LALFrSeek( &status, epoch, stream ), &status );
-  LAL_CALL( LALFrGetCOMPLEX8TimeSeries( &status, alpha, &chanin, stream ),
-      &status );
+  facCache = XLALFrSieveCache( calCache, &sieve );
+  stream = XLALFrCacheOpen( facCache );
+  XLALFrSeek( stream, epoch );
+  XLALFrGetCOMPLEX8TimeSeries( alpha, stream );
   alpha->sampleUnits = lalDimensionlessUnit;
-  LAL_CALL( LALFrClose( &status, &stream ), &status );
-  LAL_CALL( LALDestroyFrCache( &status, &facCache ), &status );
+  XLALFrClose( stream );
+  XLALFrDestroyCache( facCache );
 
   return alpha;
 }
@@ -265,32 +245,24 @@ COMPLEX8TimeSeries * get_open_loop_gain_factor( FrCache *calCache,
     LIGOTimeGPS *epoch, const char *ifoName )
 {
   COMPLEX8TimeSeries *alphabeta;
-  LALStatus       status   = blank_status;
   FrCache        *facCache = NULL;
   FrCacheSieve    sieve    = blank_sieve;
   FrStream       *stream   = NULL;
-  FrChanIn        chanin;
 
   sieve.dscRegEx = "CAL_FAC";
   alphabeta = LALCalloc( 1, sizeof( *alphabeta ) );
-  if ( ! alphabeta )
-    return NULL;
-  /* only want one point */
-  LAL_CALL( LALCCreateVector( &status, &alphabeta->data, 1 ), &status );
+  alphabeta->data = XLALCreateCOMPLEX8Vector( 1 ); /* only 1 point */
 
   LALSnprintf( alphabeta->name, sizeof( alphabeta->name ),
       "%s:CAL-OLOOP_FAC", ifoName );
-  chanin.name = alphabeta->name;
-  chanin.type = LAL_PROC_CHAN;
 
-  LAL_CALL( LALFrCacheSieve( &status, &facCache, calCache, &sieve ), &status );
-  LAL_CALL( LALFrCacheOpen( &status, &stream, facCache ), &status );
-  LAL_CALL( LALFrSeek( &status, epoch, stream ), &status );
-  LAL_CALL( LALFrGetCOMPLEX8TimeSeries( &status, alphabeta, &chanin, stream ),
-      &status );
+  facCache = XLALFrSieveCache( calCache, &sieve );
+  stream = XLALFrCacheOpen( facCache );
+  XLALFrSeek( stream, epoch );
+  XLALFrGetCOMPLEX8TimeSeries( alphabeta, stream );
   alphabeta->sampleUnits = lalDimensionlessUnit;
-  LAL_CALL( LALFrClose( &status, &stream ), &status );
-  LAL_CALL( LALDestroyFrCache( &status, &facCache ), &status );
+  XLALFrClose( stream );
+  XLALFrDestroyCache( facCache );
 
   return alphabeta;
 }

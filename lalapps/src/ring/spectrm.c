@@ -45,7 +45,6 @@ REAL4FrequencySeries *compute_average_spectrum(
     )
 {
   LALStatus status = blank_status;
-  LALWindowParams winpar;
   REAL4Window  *window  = NULL;
   REAL4FrequencySeries *spectrum;
   UINT4 segmentLength;
@@ -54,14 +53,10 @@ REAL4FrequencySeries *compute_average_spectrum(
   segmentLength  = floor( segmentDuration/series->deltaT + 0.5 );
   segmentStride  = floor( strideDuration/series->deltaT + 0.5 );
 
-  spectrum = LALCalloc( 1, sizeof( *spectrum ) );
-  LAL_CALL( LALSCreateVector(&status, &spectrum->data, segmentLength/2 + 1),
-      &status );
+  spectrum       = LALCalloc( 1, sizeof( *spectrum ) );
+  spectrum->data = XLALCreateREAL4Vector( segmentLength/2 + 1 );
 
-  winpar.length = segmentLength;
-  winpar.type   = Welch;
-
-  LAL_CALL( LALCreateREAL4Window( &status, &window, &winpar ), &status );
+  window = XLALCreateWelchREAL4Window( segmentLength );
 
   if ( whiteSpectrum )
   {
@@ -87,7 +82,7 @@ REAL4FrequencySeries *compute_average_spectrum(
   LALSnprintf( spectrum->name, sizeof( spectrum->name ),
       "%s_SPEC", series->name );
 
-  LAL_CALL( LALDestroyREAL4Window( &status, &window ), &status );
+  XLALDestroyREAL4Window( window );
 
   return spectrum;
 }

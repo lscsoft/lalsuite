@@ -4,9 +4,9 @@
 #include <lal/LALDatatypes.h>
 #include <lal/RealFFT.h>
 
-COMPLEX8FrequencySeries * compute_data_segments(
-    UINT4                     numSegments,
-    UINT4                    *segmentNumbers,
+int compute_data_segment(
+    COMPLEX8FrequencySeries  *segment,
+    UINT4                     segmentNumber,
     REAL4TimeSeries          *series,
     REAL4FrequencySeries     *invspec,
     COMPLEX8FrequencySeries  *response,
