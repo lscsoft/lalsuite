@@ -204,6 +204,7 @@ void LALWriteSFTfile (LALStatus  *status, const SFTtype *sft, const CHAR *outfna
 void LALReadSFTfile (LALStatus *status, SFTtype **sft, REAL8 fmin, REAL8 fmax, const CHAR *fname);
 void LALReadSFTfiles (LALStatus *status,SFTVector **sftvect, REAL8 fmin, REAL8 fmax, const CHAR *glob);
 
+void dump_SFT (FILE *fp, const SFTtype *sft, INT4 format);
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

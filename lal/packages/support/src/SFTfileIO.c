@@ -79,7 +79,6 @@ static void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
 
 void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
-void dump_SFT (const SFTtype *sft, FILE *fp);
 void LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname);
 
 /* number of bytes in SFT-header v1.0 */
@@ -686,27 +685,6 @@ endian_swap(CHAR * pdata, size_t dsize, size_t nelements)
 
 } /* endian swap */
 
-endian_swap_1(CHAR * pdata, size_t dsize)
-{
-  UINT4 i, j, indx;
-  CHAR tempbyte;
-
-  if (dsize <= 1) return;
-
-  indx = dsize;
-  for (j=0; j<dsize/2; j++)
-    {
-      tempbyte = pdata[j];
-      indx = indx - 1;
-      pdata[j] = pdata[indx];
-      pdata[indx] = tempbyte;
-    }
-  
-  return;
-
-} /* endian swap */
-
-
 /*----------------------------------------------------------------------
  * glob() has been reported to fail under condor, so we use our own
  * function to get a filelist from a directory, using a sub-pattern.
@@ -952,9 +930,12 @@ LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
 } /* write_SFT() */
 
 
-/* dump an SFT into a text-file */
-void dump_SFT (const SFTtype *sft, FILE *fp)
+/* dump an SFT into a text-file 
+ * format: 0 = openDX (include header), 1 = xmgrace (no header)
+ */
+void dump_SFT (FILE *fp, const SFTtype *sft, INT4 format)
 {
+
   REAL4 valre, valim;
   UINT4 i;
   REAL8 Tsft, freqBand;
@@ -971,6 +952,19 @@ void dump_SFT (const SFTtype *sft, FILE *fp)
 
   norm = (REAL4)( Tsft / nsamples);
 
+  /* if openDX format: add a header with number of points..*/
+  if ( format == 0)
+    {
+      fprintf (fp, "points = %d\n", nsamples);
+      fprintf (fp, "format = ascii\n");
+      fprintf (fp, "field = field0\n");
+      fprintf (fp, "structure = 2-vector\n");
+      fprintf (fp, "type = float\n");
+      fprintf (fp, "dependency = positions\n");
+      fprintf (fp, "positions = regular, %f, %f \n", f0, df);
+      fprintf(fp, "end\n\n");
+    }
+
   for (i=0; i < nsamples; i++)
     {
       ff = f0 + i*df;
@@ -981,7 +975,10 @@ void dump_SFT (const SFTtype *sft, FILE *fp)
       else
 	P_k = 2.0 * sqrt(valre*valre + valim*valim);
 
-      fprintf(fp, "%f %e %e %e\n", ff, valre, valim, P_k );
+      if (format == 1) /* xmgrace */
+	fprintf (fp, "%f %e %e %e\n", ff, valre, valim, P_k );
+      else if (format == 0) /* openDX */
+	fprintf (fp, "%e %e\n", valre, valim);
         
     } /* for i < nsamples */
   
