@@ -11,6 +11,7 @@ libtools_la_SOURCES = \
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MAINTAINERCLEANFILES = FrequencySeries.c Sequence.c TimeSeries.c
 EXTRA_DIST = FrequencySeries.m4 Sequence.m4 TimeSeries.m4 MakeTemplateBank.c
+EXTRA_TEXSOURCES = MakeTemplateBank.c
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
