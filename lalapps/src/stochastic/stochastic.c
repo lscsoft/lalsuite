@@ -886,6 +886,37 @@ static REAL4FrequencySeries *frequency_mask(LALStatus *status,
   return(mask);
 }
 
+/* wrapper function for performing zero pad and fft */
+static COMPLEX8FrequencySeries *zero_pad_and_fft(LALStatus *status,
+    REAL4TimeSeries *series,
+    REAL8 deltaF,
+    INT4 length,
+    REAL4Window *window)
+{
+  /* variables */
+  COMPLEX8FrequencySeries *zero_pad;
+  RealFFTPlan *plan = NULL;
+  SZeroPadAndFFTParameters zero_pad_params;
+
+  /* create fft plan */
+  plan = XLALCreateForwardREAL4FFTPlan(2 * series->data->length, 0);
+
+  /* allocate memory */
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(status, &zero_pad, "zero_pad", \
+        series->epoch, 0, deltaF, lalDimensionlessUnit, length), status);
+
+  /* set zeropad parameters */
+  zero_pad_params.fftPlan = plan;
+  zero_pad_params.window = window->data;
+  zero_pad_params.length = 2 * series->data->length;
+
+  /* zero pad and fft */
+  LAL_CALL(LALSZeroPadAndFFT(status, zero_pad, series, &zero_pad_params), \
+      status);
+
+  return(zero_pad);
+}
+
 /* display usage information */
 static void display_usage()
 {
@@ -1895,12 +1926,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL4FrequencySeries *calInvPsdTwo = NULL;
 
   /* zeropad and fft structures */
-  SZeroPadAndFFTParameters zeroPadParams;
-  RealFFTPlan *fftDataPlan = NULL;
-  COMPLEX8FrequencySeries *hBarTildeOne;
-  COMPLEX8FrequencySeries *hBarTildeTwo;
-  UINT4 zeroPadLength;
-  UINT4 fftDataLength;
+  COMPLEX8FrequencySeries *hBarTildeOne = NULL;
+  COMPLEX8FrequencySeries *hBarTildeTwo = NULL;
 
   /* overlap reduction function */
   REAL4FrequencySeries *overlap;
@@ -2146,24 +2173,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* create window for data */
   dataWindow = data_window(seriesOne->deltaT, segmentLength, hannDuration);
-
-  /* zeropad lengths */
-  zeroPadLength = 2 * segmentLength;
-  fftDataLength = (zeroPadLength / 2) + 1;
-
-  /* create fft plan */
-  fftDataPlan = XLALCreateForwardREAL4FFTPlan(zeroPadLength, 0);
-
-  if (vrbflg)
-    fprintf(stdout, "Allocating memory for zeropad...\n");
-
-  /* allocate memory for zeropad */
-  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &hBarTildeOne, \
-        "hBarTildeOne", gpsStartTime, 0, deltaF, lalDimensionlessUnit, \
-        fftDataLength), &status);
-  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &hBarTildeTwo, \
-        "hBarTildeTwo", gpsStartTime, 0, deltaF, lalDimensionlessUnit, \
-        fftDataLength), &status);
 
   /* quantities needed to build the optimal filter */
 
@@ -2495,16 +2504,11 @@ INT4 main(INT4 argc, CHAR *argv[])
         segmentTwo->data->data[i] = segTwo[segMiddle]->data[i];
       }
 
-      /* set zeropad parameters */
-      zeroPadParams.fftPlan = fftDataPlan;
-      zeroPadParams.window = dataWindow->data;
-      zeroPadParams.length = zeroPadLength;
-
       /* zero pad and fft */
-      LAL_CALL(LALSZeroPadAndFFT(&status, hBarTildeOne, segmentOne, \
-            &zeroPadParams), &status);
-      LAL_CALL(LALSZeroPadAndFFT(&status, hBarTildeTwo, segmentTwo, \
-            &zeroPadParams), &status);
+      hBarTildeOne = zero_pad_and_fft(&status, segmentOne, deltaF, \
+          segmentLength + 1, dataWindow);
+      hBarTildeTwo = zero_pad_and_fft(&status, segmentTwo, deltaF, \
+          segmentLength + 1, dataWindow);
 
       /* set CC inputs */
       ccIn.hBarTildeOne = hBarTildeOne;
@@ -2733,7 +2737,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* cleanup */
   XLALDestroyREAL4TimeSeries(segmentOne);
   XLALDestroyREAL4TimeSeries(segmentTwo);
-  XLALDestroyREAL4FFTPlan(fftDataPlan);
   XLALDestroyREAL4FrequencySeries(psdTempOne);
   XLALDestroyREAL4FrequencySeries(psdTempTwo);
   XLALDestroyREAL4FrequencySeries(psdOne);
