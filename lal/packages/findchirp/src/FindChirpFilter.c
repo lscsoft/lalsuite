@@ -711,11 +711,19 @@ LALFindChirpFilterSegment (
   /* we threshold on the "modified" chisq threshold computed from       */
   /*   chisqThreshFac = delta^2 * norm / p                              */
   /*   rho^2 = norm * modqsq                                            */
-  /* so we threshold on                                                 */
-  /*    chisq < chisqThresh * ( 1 + modqsq * chisqThreshFac )           */
+  /*                                                                    */
+  /* So we actually threshold on                                        */
+  /*                                                                    */
+  /*    r^2 < chisqThresh * ( 1 + modqsq * chisqThreshFac )             */
+  /*                                                                    */
   /* which is the same as thresholding on                               */
-  /*    chisq < chisqThresh * ( 1 + rho^2 * delta^2 / p )               */
-  /* the raw chisq is stored in the database. this quantity is chisq    */
+  /*    r^2 < chisqThresh * ( 1 + rho^2 * delta^2 / p )                 */
+  /* and since                                                          */
+  /*    chisq = p r^2                                                   */
+  /* this is equivalent to thresholding on                              */
+  /*    chisq < chisqThresh * ( p + rho^2 delta^2 )                     */
+  /*                                                                    */
+  /* The raw chisq is stored in the database. this quantity is chisq    */
   /* distributed with 2p-2 degrees of freedom.                          */
   mismatch = 1.0 - input->tmplt->minMatch;
   chisqThreshFac = norm * mismatch * mismatch / (REAL4) numChisqBins;
