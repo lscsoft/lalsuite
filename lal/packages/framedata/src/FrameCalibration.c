@@ -22,9 +22,9 @@
  * constructs a response function (as a frequency series) from this
  * information.  If the fourth argument is non-\texttt{NULL} then this
  * string specifies the detector (H1, H2, L1, etc.) for which the calibration
- * is required.  If the fifth argument is non-\texttt{NULL} then the 
+ * is required.  If the fifth argument is non-zero then the 
  * calibration will be averaged over the \texttt{duration}.  If the 
- * \texttt{duration} is not specified, then the first calibration at or after
+ * \texttt{duration} is set to zero, then the first calibration at or after
  * the start time is used.  Certain fields of the output should be set before 
  * this routine is called.  In particular: 
  * \begin{enumerate}
