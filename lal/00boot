@@ -1,4 +1,4 @@
-#!/bin/sh -v
+#!/bin/sh
 
 ## This is a script for the software librarian to use to generate neccessary
 ## files from the minimal set in the cvs archive.

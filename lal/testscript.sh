@@ -9,7 +9,7 @@
 
 TAR="gtar"
 MAKE="gmake"
-TOPDIR=`pwd`
+TOPDIR="`pwd`"
 LOG="$TOPDIR/testscript.log"
 
 # Configure arguments for various tests:
@@ -101,7 +101,9 @@ test4() {
 
 rm -f $LOG
 
-echo "*** `date`: Start fresh" | tee $LOG
+MESSAGE="*** `date`: Start fresh"
+echo "$MESSAGE" > $LOG
+echo "$MESSAGE"
 
 rm -rf tmp
 
@@ -117,18 +119,22 @@ fi
 
 # Perform tests of CVS archive
 
-echo "*** `date`: Perform tests of CVS archive"
+MESSAGE="*** `date`: Perform tests of CVS archive"
+echo "$MESSAGE" >> $LOG
+echo "$MESSAGE"
 
 BUILDDIR='.'
-test0 >> $LOG 2>&1 || exit 1
-test1 >> $LOG 2>&1 || exit 1
-test2 >> $LOG 2>&1 || exit 1
-test3 >> $LOG 2>&1 || exit 1
-test4 >> $LOG 2>&1 || exit 1
+echo "*** `date`:   test0" ; test0 >> $LOG 2>&1 || exit 1
+echo "*** `date`:   test1" ; test1 >> $LOG 2>&1 || exit 1
+echo "*** `date`:   test2" ; test2 >> $LOG 2>&1 || exit 1
+echo "*** `date`:   test3" ; test3 >> $LOG 2>&1 || exit 1
+echo "*** `date`:   test4" ; test4 >> $LOG 2>&1 || exit 1
 
 # Make a distribution extract it
 
-echo "*** `date`: Create and extract distribution"
+MESSAGE="*** `date`: Create and extract distribution"
+echo "$MESSAGE" >> $LOG
+echo "$MESSAGE"
 
 ./configure >> $LOG 2>&1 || exit 1
 make dist >> $LOG 2>&1 || exit 1
@@ -139,31 +145,37 @@ cd tmp >> $LOG 2>&1 || exit 1
 
 # Perform tests of distribution
 
-echo "*** `date`: Perform tests of distribution"
+MESSAGE="*** `date`: Perform tests of distribution"
+echo "$MESSAGE" >> $LOG
+echo "$MESSAGE"
 
 BUILDDIR='.'
-test0 >> $LOG 2>&1 || exit 1
-test1 >> $LOG 2>&1 || exit 1
-test2 >> $LOG 2>&1 || exit 1
-test3 >> $LOG 2>&1 || exit 1
-test4 >> $LOG 2>&1 || exit 1
+echo "*** `date`:   test0" ; test0 >> $LOG 2>&1 || exit 1
+echo "*** `date`:   test1" ; test1 >> $LOG 2>&1 || exit 1
+echo "*** `date`:   test2" ; test2 >> $LOG 2>&1 || exit 1
+echo "*** `date`:   test3" ; test3 >> $LOG 2>&1 || exit 1
+echo "*** `date`:   test4" ; test4 >> $LOG 2>&1 || exit 1
 
 # Perform tests in sub-directory
 
-echo "*** `date`: Perform tests of distribution in subdirectory"
+MESSAGE="*** `date`: Perform tests of distribution in subdirectory"
+echo "$MESSAGE" >> $LOG
+echo "$MESSAGE"
 
 mkdir tmp && cd tmp || exit 1
 
 BUILDDIR='..'
-test0 >> $LOG 2>&1 || exit 1
-test1 >> $LOG 2>&1 || exit 1
-test2 >> $LOG 2>&1 || exit 1
-test3 >> $LOG 2>&1 || exit 1
-test4 >> $LOG 2>&1 || exit 1
+echo "*** `date`:   test0" ; test0 >> $LOG 2>&1 || exit 1
+echo "*** `date`:   test1" ; test1 >> $LOG 2>&1 || exit 1
+echo "*** `date`:   test2" ; test2 >> $LOG 2>&1 || exit 1
+echo "*** `date`:   test3" ; test3 >> $LOG 2>&1 || exit 1
+echo "*** `date`:   test4" ; test4 >> $LOG 2>&1 || exit 1
 
 # Clean up
 
-echo "*** `date`: Clean-up"
+MESSAGE="*** `date`: Clean-up"
+echo "$MESSAGE" >> $LOG
+echo "$MESSAGE"
 
 cd .. || exit 1
 rm -rf tmp || exit 1
@@ -176,12 +188,14 @@ rm -rf /tmp/doc/lal-*.*
 
 # Successful test
 
+MESSAGE="*** `date`: Finished"
+echo "$MESSAGE" >> $LOG
+echo "$MESSAGE"
+
 echo "******************************************************"
 echo "*                                                    *"
 echo "* Congratulations: LAL has been successfully tested! *"
 echo "*                                                    *"
 echo "******************************************************"
-echo `date`
 
 exit 0
-
