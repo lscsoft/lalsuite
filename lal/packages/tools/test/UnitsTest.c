@@ -49,28 +49,17 @@ LALUnitCompare()
 
 #include <stdlib.h>
 
-#ifndef _LALSTDLIB_H
-#include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
+#include <lal/LALStdlib.h>
+#include <lal/Units.h>
+#include <lal/AVFactories.h>
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
 #endif
 
-#ifndef _UNITS_H
-#include "Units.h"
-#ifndef _UNITS_H
-#define _UNITS_H
-#endif
-#endif
-
-#ifndef _AVFACTORIES_H
-#include "AVFactories.h"
-#ifndef _AVFACTORIES_H
-#define _AVFACTORIES_H
-#endif
-#endif
-
+#ifdef HAVE_GETOPT_H
 #include <getopt.h>
+#endif
 
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)

@@ -71,12 +71,7 @@ A four-byte rational number, used as a parameter structure for
 #ifndef _UNITS_H
 #define _UNITS_H
 
-#ifndef _LALSTDLIB_H
-#include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
+#include <lal/LALStdlib.h>
 
 #ifdef  __cplusplus
 extern "C" {
