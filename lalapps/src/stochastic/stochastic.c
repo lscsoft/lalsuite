@@ -299,6 +299,7 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
   ResampleTSParams params;
   size_t difference;
   size_t length;
+  PassBandParamStruc filterParam;
 
   /* calculate time difference */
   difference = delta_gps_to_float(status, end, start);
@@ -310,7 +311,12 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
     end.gpsSeconds += buffer;
   }
 
-  /* set resample parameters */
+  /* set high pass filter parameters */
+  filterParam.nMax = highPassOrder;
+  filterParam.f1 = -1;
+  filterParam.f2 = highPassFreq;
+  filterParam.a1 = -1;
+  filterParam.a2 = highPassAtten;
  
   if (vrbflg)
     fprintf(stdout, "Opening frame cache \"%s\"...\n", cacheFile);
@@ -353,6 +359,19 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
 
     /* resample */
     LAL_CALL(LALResampleREAL4TimeSeries(status, series, &params), status);
+  }
+
+  /* high pass fitering */
+  if (high_pass_flag)
+  {
+    if (vrbflg)
+    {
+      fprintf(stdout, "Applying high pass filter to \"%s\"...\n", \
+          series->name);
+    }
+
+    LAL_CALL(LALButterworthREAL4TimeSeries(status, series, \
+          &filterParam), status);
   }
 
   /* remove resample buffer */
@@ -1704,9 +1723,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* window for segment data streams */
   REAL4TimeSeries *dataWindow;
 
-  /* high pass filtering */
-  PassBandParamStruc highpassParam;
-
   /* response functions */
   COMPLEX8FrequencySeries *responseTempOne;
   COMPLEX8FrequencySeries *responseTempTwo;
@@ -2046,16 +2062,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* create window for data */
   dataWindow = data_window(&status, seriesOne->deltaT, 0, \
       segmentLength, hannDuration);
-
-  /* structure for high pass filtering */
-  if (high_pass_flag)
-  {
-    highpassParam.nMax = highPassOrder;
-    highpassParam.f1 = -1;
-    highpassParam.f2 = highPassFreq;
-    highpassParam.a1 = -1;
-    highpassParam.a2 = highPassAtten;
-  }
 
   /* zeropad lengths */
   zeroPadLength = 2 * segmentLength;
@@ -2409,15 +2415,6 @@ INT4 main(INT4 argc, CHAR *argv[])
             segmentOne->data->data[i] = segOne[segLoop]->data[i];
             segmentTwo->data->data[i] = segTwo[segLoop]->data[i];
           }
-        }
-
-        /* high pass fitering */
-        if (high_pass_flag)
-        {
-          LAL_CALL(LALButterworthREAL4TimeSeries(&status, segmentOne, \
-                &highpassParam), &status);
-          LAL_CALL(LALButterworthREAL4TimeSeries(&status, segmentTwo, \
-                &highpassParam), &status);
         }
 
         /* store in memory */
