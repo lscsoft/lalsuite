@@ -278,9 +278,18 @@ LALFindChirpInjectSignals (
     /* clear the waveform structure */
     memset( &waveform, 0, sizeof(CoherentGW) );
 
-    LALGeneratePPNInspiral( status->statusPtr, &waveform, &ppnParams );
-    CHECKSTATUSPTR( status );
-    LALInfo( status, ppnParams.termDescription );
+
+     LALGeneratePPNInspiral( status->statusPtr, &waveform, &ppnParams );
+     /* For future injection, replace previous line bu the following:
+      * LALGenerateInspiral( status->statusPtr, &waveform, thisEvent , &ppnParams);
+      * */
+     CHECKSTATUSPTR( status );
+     LALInfo( status, ppnParams.termDescription );
+     
+
+
+
+
 
     if ( ppnParams.dfdt > 2.0 ) 
     {
