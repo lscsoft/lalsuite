@@ -103,19 +103,26 @@ ResampleTSFilter resampFiltType;
  * ============================================================================
  */
 
-/* return the smaller of two size_t variables. */
+/*
+ * Return the smaller of two size_t variables.
+ */
+
 static size_t min(size_t a, size_t b)
 {
 	return(a < b ? a : b);
 }
 
-/* compare two GPS times */
-static int LIGOTimeGPSlt(LALStatus *stat, LIGOTimeGPS gps1, LIGOTimeGPS gps2)
+
+/*
+ * Compare two GPS times.
+ */
+
+static int CompareGPS(LALStatus *stat, LIGOTimeGPS gps1, LIGOTimeGPS gps2)
 {
 	LALGPSCompareResult result;
 
 	LAL_CALL(LALCompareGPS(stat, &result, &gps1, &gps2), stat);
-	return(result < 0);
+	return(result);
 }
 
 
@@ -1061,6 +1068,11 @@ static SnglBurstTable **analyze_series(
 		options.PSDAverageLength = window_commensurate(series->data->length, params->windowLength, params->windowShift);
 		if(options.verbose)
 			fprintf(stderr, "Warning: PSD average length exceeds available data --- reducing PSD average length to %d samples\n", options.PSDAverageLength);
+		if(!options.PSDAverageLength) {
+			if(options.verbose)
+				fprintf(stderr, "Warning: cowardly refusing to analyze 0 samples... skipping series\n");
+			return(addpoint);
+		}
 	}
 
 	for(i = 0; i < series->data->length - overlap; i += options.PSDAverageLength - overlap) {
