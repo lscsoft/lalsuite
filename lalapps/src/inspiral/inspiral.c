@@ -3252,6 +3252,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
   else if ( ! highPass )
   {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+	calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
