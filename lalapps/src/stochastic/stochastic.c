@@ -2152,20 +2152,6 @@ void parse_options(INT4 argc, CHAR *argv[])
     exit(1);
   }
 
-  /* if a resample buffer is required, is the total duration greater
-   * than the interval duration */
-  if ((resampleRate) || (high_pass_flag))
-  {
-    if ((endTime - startTime - 2) < intervalDuration)
-    {
-      fprintf(stderr, "Not enough data specified between start (%d) and "\
-          "end (%d) times,\nfor specified interval duration (%d), when "
-          "resample buffer is considered\n", startTime, endTime, \
-          intervalDuration);
-      exit(1);
-    }
-  }
-
   /* min frequency same as max */
   if (fMin == fMax)
   {
