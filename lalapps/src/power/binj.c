@@ -37,6 +37,13 @@
 "  --gps-start-time TIME    start injections at GPS time TIME (729273613)\n"\
 "  --gps-end-time TIME      end injections at GPS time TIME (734367613)\n"\
 "  --time-step STEP         space injections STEP / pi seconds appart (2630)\n"\
+"  --coordinates COORDS     coordinate system to use for injections\n"\
+"  --flow FLOW              first frequency of injection (150.0)\n"\
+"  --fhigh FHIGH            only inject frequencies smaller than FHIGH (1000.0)\n"\
+"  --deltaf DELF            spacing of injections frequencies (0.0)\n"\
+"  --quality Q              quality factor for SG waveforms TAU=Q/(sqrt(2) pi F)\n"\
+"  --tau TAU                duration of SG waveforms.  Q overrides TAU setting\n"\
+"  --hpeak HPEAK            amplitude of SG injection in strain units\n"\
 "  --seed SEED              seed random number generator with SEED (1)\n"\
 "  --waveform NAME          set waveform type to NAME (SineGaussian)\n"\
 "  --user-tag STRING        set the usertag to STRING\n"\
@@ -211,8 +218,13 @@ int main( int argc, char *argv[] ){
 
   /* waveform */
   CHAR waveform[LIGOMETA_WAVEFORM_MAX];
+  INT4   use_quality=0;
   REAL4  tau=0.1;
+  REAL4  quality=0;
   REAL4  freq=150.0;
+  REAL4  flow=150.0;
+  REAL4  fhigh=1000.0;
+  REAL4  deltaf=0.0;
   REAL4  hpeak=1.0e-20;
 
   /* site end time */
@@ -245,13 +257,17 @@ int main( int argc, char *argv[] ){
     {"help",                          no_argument, 0,                'h'},
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
-    {"time-step",               required_argument, 0,                't'},
+    {"coordinates",             required_argument, 0,                'c'},
+    {"flow",                    required_argument, 0,                'd'},
+    {"fhigh",                   required_argument, 0,                'e'},
+    {"deltaf",                  required_argument, 0,                'f'},
+    {"quality",                 required_argument, 0,                'g'},
     {"seed",                    required_argument, 0,                's'},
+    {"time-step",               required_argument, 0,                't'},
     {"waveform",                required_argument, 0,                'w'},
     {"tau",                     required_argument, 0,                'x'},
     {"freq",                    required_argument, 0,                'y'},
     {"hpeak",                   required_argument, 0,                'z'},
-    {"coordinates",             required_argument, 0,                'c'},
     {"user-tag",                required_argument, 0,                'Z'},
     {0, 0, 0, 0}
   };
@@ -360,6 +376,27 @@ int main( int argc, char *argv[] ){
         this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%ld", gpsinput );
         break;
 
+      case 'd':
+        flow = atof( optarg );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", flow );
+        break;
+
+      case 'e':
+        fhigh = atof( optarg );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", fhigh );
+        break;
+
+      case 'f':
+        deltaf = atof( optarg );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", deltaf );
+        break;
+
+      case 'g':
+        quality = atof( optarg );
+        use_quality = 1;
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", deltaf );
+        break;
+
       case 's':
         rand_seed = atoi( optarg );
         this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%d", rand_seed );
@@ -466,11 +503,16 @@ int main( int argc, char *argv[] ){
 
   /* make injection times at intervals of 100/pi seconds */
   ninj = 1;
+  freq = flow;
   while ( 1 )
   {
     long tsec;
     long tnan;
     double gmst;
+
+    /* compute tau if quality was specified */
+    if (use_quality) 
+      tau = quality / ( sqrt(2.0) * LAL_PI * freq);
 
     tinj += (long long)( 1e9 * meanTimeStep );
     if ( tinj > 1000000000LL * gpsEndTime )
@@ -545,6 +587,10 @@ int main( int argc, char *argv[] ){
     site_time += time_diff;
     LAL_CALL( LALFloatToGPS( &status, &(this_sim_burst->l_peak_time),
           &site_time ), &status );
+
+    /* increment to next frequency and test it's still in band */
+    freq += deltaf;
+    if ( freq > fhigh ) freq=flow;
   
   }
 
