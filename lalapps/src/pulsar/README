@@ -13,6 +13,8 @@ modifications.
 
 *********************************************************************
 
+================================================================================
+
 STEP 0
 GENERATE LIST OF ALL LIGO DATA ON THE CLUSTER
 
@@ -26,18 +28,19 @@ S1-alldata.]
 
 This script does two things.
 
-First, it looks over all the nodes on the cluster, looking under
-/netdata for any files of type *.gwf.  These file names are combined
-into a single text file called S1-alldata, where S1 will be replaced
-by the run name.
+First, it loops over all the nodes on the cluster, looking under
+/netdata/sXXX for any files of type *.gwf.  These file names are
+combined into a single text file called S1-alldata, where S1 will be
+replaced by the run name.
 
-Second, it makes four lists of data (S1.LLO.full, S1.LLO.RDS,
-S1.LHO.full, S1.LHO.RDS) which are sorted by GPS time.  S1 is replaced
-by the run name.
+Second, it makes four lists of data (S1.LLO.full.sorted,
+S1.LLO.RDS.sorted, S1.LHO.full.sorted, S1.LHO.RDS.sorted) which are
+sorted by GPS time.  S1 is replaced by the run name.
 
-INPUTS:  listing of files under /netdata/s001 - /netdata/s296
+INPUTS:  listing of "*.gwf" files under /netdata/s001 - /netdata/s296
 OUTPUTS: S1-alldata, S1.LLO.full.sorted,  S1.LHO.full.sorted, S1.LLO.RDS.sorted,  S1.LHO.RDS.sorted
 
+================================================================================
 
 STEP 1:
 GENERATE A LIST OF ALL THE LOCKED SEGMENTS TO MAKE SFTS
@@ -81,12 +84,21 @@ denotes 7 segments of length 1200 seconds.
 INPUTS:  S1-H1segments.txt, S1-H2segments.txt, S1-L1segments.txt
 OUTPUTS: S1-H1.60,S1-H2.60, S1-L1.60
 
+================================================================================
 
-
-STEP 3:
+STEP 2:
 
 The next step is to make a listing (in "just the right format") of
 where the SFT-making code can find the data that it needs.  Do do
 this, first create an directory to contain the output (lists of files
 and times)
 mkdir S1-H1.60-lists S1-H2.60-lists S1-L1.60-lists 
+
+Then run the executable
+./lalapps_make_job_input_data FILE1 FILE2 DIRNAME
+where FILE1 contains segment numbers, start times, and SFT length
+and FILE2  contains ordered frame file names
+and DIRNAME is a directory number to place output job files.
+
+For example
+./lalapps_make_job_input_data S1-H1.60 S1.LHO.full.sorted S1-H1.60-lists

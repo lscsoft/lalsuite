@@ -21,6 +21,9 @@
 /* Number of nodes on cluster (approximate number of jobs desired) */
 #define NODES 296
 
+/* If nonzero, you want to have a fixed number of segments per job */
+#define SEGSPERJOB 3
+
 char filenames[FN][FILENAMEMAX+1],printed[FN];
 int starttimes[FN];
 int nseg[N],tseg[N],tbase[N];
@@ -116,11 +119,19 @@ int main(int argc, char* argv[]) {
      spread the pain equally over the different nodes. */
   for (i=0;i<locksegs;i++){
     for (k=0;k<nseg[i];k++){
-      if (segno%SFTPERJOB==0){
+      int startat=(totalsegs*jobno)/NODES;
+      
+      if (
+#if (SEGSPERJOB)
+	  (segno%SEGSPERJOB)==0
+#else
+	  segno==startat
+#endif
+	  ){
 	/* clear any lists of printed files first... */
 	int j0,j1;
 	char fname[256];
-
+	
 	j0=j-2;
 	if (j0<0)
 	  j0=0;
