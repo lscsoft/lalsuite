@@ -23,7 +23,6 @@ $Id$
 #include <lal/LALStdio.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOMetadataUtils.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/GeneratePPNInspiral.h>
@@ -50,7 +49,7 @@ Provides a set of utilities for manipulating \texttt{snglInspiralTable}s.
 \idx{LALClusterSnglInspiralTable()}
 \idx{LALTimeCutSingleInspiral()}
 \idx{LALalphaFCutSingleInspiral()}
-\idx{LALIfoScanSingleInspiral()}
+\idx{LALIfoCutSingleInspiral()}
 \idx{LALPlayTestSingleInspiral()}
 \idx{LALCreateTrigBank()}
 \idx{LALIncaCoincidenceTest()}
@@ -103,10 +102,9 @@ and before the \texttt{endTime}.
 tables and returns only those triggers which have alphaF values below a
 specific alphaFcut. It is relevant for the BCV search only.
 
-\texttt{LALIfoScanSingleInspiral()} scans through a linked list of single
+\texttt{LALIfoCutSingleInspiral()} scans through a linked list of single
 inspiral tables and returns those which are from the requested \texttt{ifo}.
-The \texttt{output} is a pointer to the head of a linked list of single
-inspiral tables for the specified instrument.
+On input, \texttt{eventHead} is a pointer to the head of a linked list of single inspiral tables.  On output, this list contains only single inspirals from the requested \texttt{ifo}.
 
 \texttt{LALIfoCountSingleInspiral()} scans through a linked list of single
 inspiral tables and counts the number which are from the requested IFO.  
@@ -647,7 +645,7 @@ LALClusterSnglInspiralTable (
 
       /* otherwise just dump this event from cluster */
       prevEvent->next = thisEvent->next;
-      LALFree( thisEvent );
+      LALFreeSnglInspiral ( status->statusPtr, &thisEvent );
       thisEvent = prevEvent->next;
     }
     else 
@@ -714,7 +712,7 @@ LALTimeCutSingleInspiral(
     else
     {
       /* discard this template */
-      LALFree( tmpEvent );
+      LALFreeSnglInspiral ( status->statusPtr, &tmpEvent );
     }
   }
   *eventHead = inspiralEventList; 
@@ -772,7 +770,7 @@ LALalphaFCutSingleInspiral(
     else
     {
       /* discard this template */
-      LALFree( tmpEvent );
+      LALFreeSnglInspiral ( status->statusPtr, &tmpEvent );
     }
   }
   *eventHead = inspiralEventList; 
@@ -786,51 +784,56 @@ LALalphaFCutSingleInspiral(
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 void
-LALIfoScanSingleInspiral(
+LALIfoCutSingleInspiral(
     LALStatus                  *status,
-    SnglInspiralTable         **output,
-    SnglInspiralTable          *input,
+    SnglInspiralTable         **eventHead,
     CHAR                       *ifo
     )
 /* </lalVerbatim> */
 {
+  SnglInspiralTable    *eventList = NULL;
+  SnglInspiralTable    *prevEvent = NULL;
   SnglInspiralTable    *thisEvent = NULL;
 
   INITSTATUS( status, "LALIfoScanSingleInspiral", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
-  /* check that output is null and input non-null */
-  ASSERT( output, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( !(*output), status, 
-      LIGOMETADATAUTILSH_ENNUL, LIGOMETADATAUTILSH_MSGENNUL );
-  ASSERT( input, status, 
+  /* check that eventHead is non-null */
+  ASSERT( eventHead, status, 
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
 
   /* Scan through a linked list of sngl_inspiral tables and return a
      pointer to the head of a linked list of tables for a specific IFO */
 
-  for( thisEvent = input; thisEvent; thisEvent = thisEvent->next );
+  thisEvent = *eventHead;
+  
+  while ( thisEvent )
   {
-    SnglInspiralTable *keptEvent = NULL;
+    SnglInspiralTable *tmpEvent = thisEvent;
+    thisEvent = thisEvent->next;
 
-    if ( !strcmp(thisEvent->ifo, ifo) ) 
+    if ( ! strcmp( tmpEvent->ifo, ifo ) )
     {
-      /* IFOs match so write this entry to the output table */
-      if ( ! output  )
+      /* ifos match so keep this event */
+      if ( ! eventList  )
       {
-        *output = keptEvent = (SnglInspiralTable *) 
-          LALCalloc( 1, sizeof(SnglInspiralTable) );
+        eventList = tmpEvent;
       }
       else
       {
-        keptEvent = keptEvent->next = (SnglInspiralTable *) 
-          LALCalloc( 1, sizeof(SnglInspiralTable) );
+        prevEvent->next = tmpEvent;
       }
-      keptEvent = thisEvent;
-      keptEvent->next = NULL;
+      tmpEvent->next = NULL;
+      prevEvent = tmpEvent;
+    }
+    else
+    {
+      /* discard this template */
+      LALFreeSnglInspiral ( status->statusPtr, &tmpEvent );
     }
   }
+  *eventHead = eventList; 
+
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -929,7 +932,7 @@ LALPlayTestSingleInspiral(
       else
       {
         /* discard this template */
-        LALFree( tmpEvent );
+        LALFreeSnglInspiral ( status->statusPtr, &tmpEvent );
       }
     }
     *eventHead = inspiralEventList; 
@@ -1028,7 +1031,7 @@ LALCreateTrigBank(
           (prevEvent->mass2 == eventHandle[i]->mass2) ) 
       {
         /* discard the event as it is a duplicate */
-        LALFree( eventHandle[i] );
+        LALFreeSnglInspiral( status->statusPtr, &(eventHandle[i]) );
         LALInfo( status, "-" );
       }
       else
@@ -1044,7 +1047,7 @@ LALCreateTrigBank(
           (prevEvent->psi3 == eventHandle[i]->psi3) )
       {
         /* discard the event as it is a duplicate */
-        LALFree( eventHandle[i] );
+        LALFreeSnglInspiral( status->statusPtr, &(eventHandle[i]) );
         LALInfo( status, "-" );
       }
       else
@@ -1333,7 +1336,7 @@ LALTamaCoincidenceTest(
       }
 
       /* reset the list of time coincident triggers to null */
-      LALFree( timeCoincHead );
+      LALFreeSnglInspiral( status->statusPtr, &timeCoincHead );
       timeCoincHead = NULL;
     }
     /* go back to saved current IFO B trigger */

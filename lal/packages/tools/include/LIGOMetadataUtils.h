@@ -437,10 +437,9 @@ LALalphaFCutSingleInspiral(
     );
 
 void
-LALIfoScanSingleInspiral(
+LALIfoCutSingleInspiral(
     LALStatus                  *status,
-    SnglInspiralTable         **output,
-    SnglInspiralTable          *input,
+    SnglInspiralTable         **eventHead,
     CHAR                       *ifo
     );
 
