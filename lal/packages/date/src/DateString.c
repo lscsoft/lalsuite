@@ -117,7 +117,7 @@ LALDateString (LALStatus     *status,
    * AVOID STRFTIME() since it causes seg faults on Solaris.  We give
    * the locale-specific day name.
    */
-  if (date->unixDate.tm_mon >= 10) {
+  if (date->unixDate.tm_mon >= 9) {
     sprintf(tmpmon, "%2d", date->unixDate.tm_mon + 1);
   } else {
     sprintf(tmpmon, "0%1d", date->unixDate.tm_mon + 1);
