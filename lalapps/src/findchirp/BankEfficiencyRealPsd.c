@@ -115,7 +115,7 @@ main (  int argc, char **argv )
    randIn.mMax = 20.0;
    randIn.param.fLower = 60;
    randIn.param.alpha = 0;  
-   randIn.param.fendBCV = 300;
+   randIn.param.fFinal = 300;
    randIn.type = 0;
    randIn.SignalAmp = 10.0;
    randIn.param.approximant = PadeT1;
@@ -293,7 +293,7 @@ main (  int argc, char **argv )
 	   tmpltList[i].params.startPhase = randIn.param.startPhase;
 	   tmpltList[i].params.nEndPad = randIn.param.nEndPad;
 	   tmpltList[i].params.tSampling = randIn.param.tSampling;
-	   tmpltList[i].params.fendBCV = randIn.param.fendBCV;
+	   tmpltList[i].params.fFinal = randIn.param.fFinal;
 	   tmpltList[i].params.massChoice = psi0Andpsi3;
 	   tmpltList[i].params.approximant = BCV;
    }
@@ -308,7 +308,7 @@ main (  int argc, char **argv )
 			   tmpltList[i].params.psi0, 
 			   tmpltList[i].params.psi3, 
 			   tmpltList[i].params.totalMass, 
-			   tmpltList[i].params.fendBCV);
+			   tmpltList[i].params.fFinal);
    }
 
 /* REPORTSTATUS(&status); */
@@ -353,7 +353,7 @@ main (  int argc, char **argv )
       {
      	      overlapin.param = tmpltList[j].params;
 	      if (overlapin.param.approximant==BCV) 
-		      overlapin.param.fCutoff = tmpltList[j].params.fendBCV;
+		      overlapin.param.fCutoff = tmpltList[j].params.fFinal;
 	      else
 		      overlapin.param.fCutoff = randIn.param.fCutoff;
 
