@@ -1803,6 +1803,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
   */
 
+  /* free calloc'd memory */
   free(frameCache1);
   free(frameCache2);
   free(calCache1);
