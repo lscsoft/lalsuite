@@ -79,9 +79,9 @@ RCSID( "$Id$" );
 extern int vrbflg;                      /* verbocity of lal function    */
 
 /* input data parameters */
-UINT8  gpsStartTimeNS   = 0;            /* input data GPS start time ns */
+INT8  gpsStartTimeNS   = 0;             /* input data GPS start time ns */
 LIGOTimeGPS gpsStartTime;               /* input data GPS start time    */
-UINT8  gpsEndTimeNS     = 0;            /* input data GPS end time ns   */
+INT8  gpsEndTimeNS     = 0;             /* input data GPS end time ns   */
 LIGOTimeGPS gpsEndTime;                 /* input data GPS end time      */
 INT4  padData = 0;                      /* saftety margin on input data */
 CHAR  *fqChanName       = NULL;         /* name of data channel         */
@@ -95,6 +95,7 @@ UINT4 inputDataLength = 0;              /* number of points in input    */
 REAL4 minimalMatch = -1;                /* override bank minimal match  */
 
 /* data conditioning parameters */
+INT4   slideData        = 0;            /* slide data for time shifting */
 INT4   resampFiltType   = -1;           /* low pass filter used for res */
 INT4   sampleRate       = -1;           /* sample rate of filter data   */
 INT4   highPass         = -1;           /* enable high pass on raw data */
@@ -118,6 +119,8 @@ INT4  eventCluster      = -1;           /* perform chirplen clustering  */
 
 /* output parameters */
 CHAR  *userTag          = NULL;         /* string the user can tag with */
+INT8   trigStartTimeNS  = 0;            /* write triggers only after    */
+INT8   trigEndTimeNS    = 0;            /* write triggers only before   */
 int    enableOutput     = -1;           /* write out inspiral events    */
 int    writeRawData     = 0;            /* write the raw data to a file */
 int    writeFilterData  = 0;            /* write post injection data    */
@@ -356,7 +359,8 @@ int main( int argc, char *argv[] )
   /* set the params of the input data time series */
   memset( &chan, 0, sizeof(REAL4TimeSeries) );
   chan.epoch = gpsStartTime;
-  chan.epoch.gpsSeconds -= padData; /* subtract pad seconds from start */
+  chan.epoch.gpsSeconds -= padData;   /* subtract pad seconds from start */
+  chan.epoch.gpsSeconds -= slideData; /* subtract slide seconds from start */
 
   /* open a frame cache or files, seek to required epoch and set chan name */
   if ( frInCacheName )
@@ -456,7 +460,7 @@ int main( int argc, char *argv[] )
       &status );
 
   /* set the parameters of the response to match the data */
-  resp.epoch = gpsStartTime;
+  resp.epoch = chan.epoch;
   resp.deltaF = (REAL8) sampleRate / (REAL8) numPoints;
   resp.sampleUnits = strainPerCount;
   strcpy( resp.name, chan.name );
@@ -470,6 +474,10 @@ int main( int argc, char *argv[] )
   if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
       outFrame, &resp, "strain/ct", "RESPONSE" );
 
+
+  /* slide the channel back to the fake time for background studies */
+  chan.epoch.gpsSeconds += slideData;
+  
 
   /*
    *
@@ -513,7 +521,7 @@ int main( int argc, char *argv[] )
       memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
       LAL_CALL( LALCCreateVector( &status, &(injResp.data), 
             rawNumPoints / 2 + 1 ), &status );
-      injResp.epoch = gpsStartTime;
+      injResp.epoch = resp.epoch;
       injResp.deltaF = 1.0 / ( rawNumPoints * chan.deltaT );
       injResp.sampleUnits = strainPerCount;
       strcpy( injResp.name, chan.name );
@@ -851,12 +859,35 @@ int main( int argc, char *argv[] )
     /* loop over data segments */
     for ( i = 0; i < fcSegVec->length ; ++i )
     {
+      INT8 fcSegStartTimeNS;
+      INT8 fcSegEndTimeNS;
+
+      LAL_CALL( LALGPStoINT8( &status, &fcSegStartTimeNS, 
+            &(fcSegVec->data[i].data->epoch) ), &status );
+      fcSegEndTimeNS = fcSegStartTimeNS + (INT8)
+        ( (REAL8) fcSegVec->data[i].data->data->length * 
+          1e9 * fcSegVec->data[i].deltaT );
+     
+      /* skip segment if it is not contained in the trig start or end times */
+      if ( (trigStartTimeNS && (trigStartTimeNS > fcSegEndTimeNS)) || 
+          (trigEndTimeNS && (trigEndTimeNS < fcSegStartTimeNS)) )
+      { 
+        if ( vrbflg ) fprintf( stdout, 
+            "skipping segment %d/%d [%lld-%lld] (outside trig time)\n", 
+            fcSegVec->data[i].number, fcSegVec->length, 
+            fcSegStartTimeNS, fcSegEndTimeNS );
+
+        continue;
+      }
+      
       /* filter data segment */ 
       if ( fcSegVec->data[i].level == tmpltCurrent->tmpltPtr->level )
       {
         if ( vrbflg ) fprintf( stdout, 
-            "filtering segment %d/%d againt template %d/%d (%e,%e)\n", 
+            "filtering segment %d/%d [%lld-%lld] "
+            "againt template %d/%d (%e,%e)\n", 
             fcSegVec->data[i].number,  fcSegVec->length,
+            fcSegStartTimeNS, fcSegEndTimeNS,
             tmpltCurrent->tmpltPtr->number, numTmplts,
             fcFilterInput->tmplt->mass1, fcFilterInput->tmplt->mass2 );
 
@@ -889,6 +920,14 @@ int main( int argc, char *argv[] )
               &chisqts, "none", chisqStr );
         }
 
+      }
+      else
+      {
+        if ( vrbflg ) fprintf( stdout, "skipping segment %d/%d [%lld-%lld] "
+            "(segment level %d, template level %d)\n", 
+            fcSegVec->data[i].number, fcSegVec->length, 
+            fcSegStartTimeNS, fcSegEndTimeNS,
+            fcSegVec->data[i].level, tmpltCurrent->tmpltPtr->level );
       }
 
       /*  test if filter returned any events */
@@ -1137,20 +1176,71 @@ cleanexit:
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
   }
 
-  /* sort the inspiral events by time and write the events to the output xml */
+  /* write the sngl_inspiral triggers to the output xml */
   if ( savedEvents.snglInspiralTable )
   {
-    /*  before writing to a file */
+    SnglInspiralTable *tmpEventHead = NULL;
+    SnglInspiralTable *lastEvent = NULL;
+
+    /* sort the inspiral events by time */
     if ( vrbflg ) fprintf( stdout, "sorting events by time... " );
     LAL_CALL( LALSortSnglInspiral( &status, &(savedEvents.snglInspiralTable),
           LALCompareSnglInspiralByTime), &status );
     if ( vrbflg ) fprintf( stdout, "done\n" );
+
+    /* discard any triggers outside the trig start/end time window */
+    event = savedEvents.snglInspiralTable;
+    if ( trigStartTimeNS || trigEndTimeNS )
+    {
+      if ( vrbflg ) fprintf( stdout, 
+          "discarding triggers outside trig start/end time... " );
+
+      while ( event )
+      {
+        INT8 trigTimeNS;
+        LAL_CALL( LALGPStoINT8( &status, &trigTimeNS, &(event->end_time) ), 
+            &status );
+
+        if ( ! ( ! trigTimeNS || (trigTimeNS >= trigStartTimeNS) ) && 
+            ( ! trigEndTimeNS || (trigTimeNS < trigEndTimeNS) ) )
+        {
+          /* throw this trigger away */
+          SnglInspiralTable *tmpEvent = event;
+
+          if ( lastEvent )
+          {
+            lastEvent->next = event->next;
+          }
+
+          /* increment the linked list by one and free the event */
+          event = event->next;
+          LALFree( tmpEvent );
+        }
+        else 
+        {
+          /* store the first event as the head of the new linked list */
+          if ( ! tmpEventHead ) tmpEventHead = event;
+
+          /* save the last event and increment the linked list by one */
+          lastEvent = event;
+          event = event->next;
+        }
+      }
+
+      savedEvents.snglInspiralTable = tmpEventHead;
+
+      if ( vrbflg ) fprintf( stdout, "done\n" );
+    }
     
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sngl_inspiral_table ), 
-        &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, 
-          sngl_inspiral_table ), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+    /* if we haven't thrown all the triggers away, write sngl_inspiral table */
+    if ( savedEvents.snglInspiralTable )
+    {
+      LAL_CALL( LALBeginLIGOLwXMLTable( &status, 
+            &results, sngl_inspiral_table ), &status );
+      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, 
+            sngl_inspiral_table ), &status );
+      LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+    }
   }
   while ( savedEvents.snglInspiralTable )
   {
@@ -1200,6 +1290,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --gps-end-time SEC           GPS second of data end time\n"\
 "  --gps-end-time-ns NS         GPS nanosecond of data end time\n"\
 "  --pad-data T                 pad the data start and end time by T seconds\n"\
+"  --slide-data T               slide data start epoch by T seconds\n"\
 "\n"\
 "  --frame-cache                obtain frame data from LAL frame cache FILE\n"\
 "  --calibration-cache FILE     obtain calibration from LAL frame cache FILE\n"\
@@ -1235,6 +1326,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "\n"\
 "  --enable-output              write the results to a LIGO LW XML file\n"\
 "  --disable-output             do not write LIGO LW XML output file\n"\
+"  --trig-start-time SEC        only output triggers after GPS time SEC\n"\
+"  --trig-end-time SEC          only output triggers before GPS time SEC\n"\
 "\n"\
 "  --write-raw-data             write raw data to a frame file\n"\
 "  --write-filter-data          write data that is passed to filter to a frame\n"\
@@ -1263,6 +1356,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"gps-end-time-ns",         required_argument, 0,                'B'},
     {"channel-name",            required_argument, 0,                'c'},
     {"segment-length",          required_argument, 0,                'd'},
+    {"trig-start-time",         required_argument, 0,                'C'},
+    {"trig-end-time",           required_argument, 0,                'D'},
     {"number-of-segments",      required_argument, 0,                'e'},
     {"segment-overlap",         required_argument, 0,                'f'},
     {"sample-rate",             required_argument, 0,                'g'},
@@ -1285,6 +1380,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"bank-file",               required_argument, 0,                'v'},
     {"injection-file",          required_argument, 0,                'w'},
     {"pad-data",                required_argument, 0,                'x'},
+    {"slide-data",              required_argument, 0,                'X'},
     {"debug-level",             required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
@@ -1363,7 +1459,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                 long_options[option_index].name, gstartt );
             exit( 1 );
           }
-          gpsStartTimeNS += (UINT8) gstartt * 1000000000LL;
+          gpsStartTimeNS += (INT8) gstartt * 1000000000LL;
           ADD_PROCESS_PARAM( "int", "%ld", gstartt );
         }
         break;
@@ -1386,7 +1482,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                 long_options[option_index].name, gstarttns );
             exit( 1 );
           }
-          gpsStartTimeNS += (UINT8) gstarttns;
+          gpsStartTimeNS += (INT8) gstarttns;
           ADD_PROCESS_PARAM( "int", "%ld", gstarttns );
         }
         break;
@@ -1412,7 +1508,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                 long_options[option_index].name, gendt );
             exit( 1 );
           }            
-          gpsEndTimeNS += (UINT8) gendt * 1000000000LL;
+          gpsEndTimeNS += (INT8) gendt * 1000000000LL;
           ADD_PROCESS_PARAM( "int", "%ld", gendt );
         }
         break;
@@ -1436,7 +1532,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                 long_options[option_index].name, gendtns );
             exit( 1 );
           }            
-          gpsEndTimeNS += (UINT8) gendtns;
+          gpsEndTimeNS += (INT8) gendtns;
           ADD_PROCESS_PARAM( "int", "%ld", gendtns );
         }
         break;
@@ -1480,6 +1576,58 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "int", "%d", numPoints );
+        break;
+
+      case 'C':
+        {
+          long int gstartt = atol( optarg );
+          if ( gstartt < 441417609 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS start time is prior to " 
+                "Jan 01, 1994  00:00:00 UTC:\n"
+                "(%ld specified)\n",
+                long_options[option_index].name, gstartt );
+            exit( 1 );
+          }
+          if ( gstartt > 999999999 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS start time is after " 
+                "Sep 14, 2011  01:46:26 UTC:\n"
+                "(%ld specified)\n", 
+                long_options[option_index].name, gstartt );
+            exit( 1 );
+          }
+          trigStartTimeNS = (INT8) gstartt * 1000000000LL;
+          ADD_PROCESS_PARAM( "int", "%ld", gstartt );
+        }
+        break;
+
+      case 'D':
+        {
+          long int gendt = atol( optarg );
+          if ( gendt > 999999999 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS end time is after " 
+                "Sep 14, 2011  01:46:26 UTC:\n"
+                "(%ld specified)\n", 
+                long_options[option_index].name, gendt );
+            exit( 1 );
+          }
+          else if ( gendt < 441417609 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS end time is prior to " 
+                "Jan 01, 1994  00:00:00 UTC:\n"
+                "(%ld specified)\n", 
+                long_options[option_index].name, gendt );
+            exit( 1 );
+          }            
+          gpsEndTimeNS = (INT8) gendt * 1000000000LL;
+          ADD_PROCESS_PARAM( "int", "%ld", gendt );
+        }
         break;
 
       case 'e':
@@ -1743,7 +1891,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'x':
-        padData = (UINT4) atoi( optarg );
+        padData = (INT4) atoi( optarg );
         if ( padData < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1753,6 +1901,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "int", "%d", padData );
+        break;
+
+      case 'X':
+        slideData = (INT4) atoi( optarg );
+        ADD_PROCESS_PARAM( "int", "%d", slideData );
         break;
 
       case 'z':
@@ -1886,6 +2039,26 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     exit( 1 );
   }
 
+  /* check trigger generation time is within input time */
+  if ( trigStartTimeNS )
+  {
+    if ( trigStartTimeNS < gpsStartTimeNS )
+    {
+      fprintf( stderr, 
+          "trigStartTimeNS = %lld\nis less than gpsStartTimeNS = %lld", 
+          trigStartTimeNS, gpsStartTimeNS );
+    }
+  }
+  if ( trigEndTimeNS )
+  {
+    if ( trigEndTimeNS > gpsEndTimeNS )
+    {
+      fprintf( stderr, 
+          "trigEndTimeNS = %lld\nis greater than gpsEndTimeNS = %lld", 
+          trigEndTimeNS, gpsEndTimeNS );
+    }
+  }
+
   /* check validity of data length parameters */
   if ( numPoints < 0 )
   {
@@ -1930,9 +2103,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   /* check validity of input data length */
   inputDataLength = numPoints * numSegments - ( numSegments - 1 ) * ovrlap;
   {
-    UINT8 gpsChanIntervalNS = gpsEndTimeNS - gpsStartTimeNS;
-    UINT8 inputDataLengthNS = (UINT8) inputDataLength * 1000000000LL / 
-      (UINT8) sampleRate;
+    INT8 gpsChanIntervalNS = gpsEndTimeNS - gpsStartTimeNS;
+    INT8 inputDataLengthNS = (INT8) inputDataLength * 1000000000LL / 
+      (INT8) sampleRate;
 
     if ( inputDataLengthNS != gpsChanIntervalNS )
     {
@@ -2025,32 +2198,3 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 }
 
 #undef ADD_PROCESS_PARAM
-
-/* --- function to graph an array of REAL4 ------------------------------ */
-#if 1
-void
-graphREAL4 (
-    REAL4      *array, 
-    INT4        n,
-    INT4        spacing
-    ) 
-{
-  FILE *fp;
-  INT4 i;
-
-  /* open a file for writing */
-  if ( !(fp = fopen( "temp.graph", "w" )) )
-  {
-    printf( "couldn't open file\n" );
-  }
-
-  /* print data into the file */
-  for ( i = 0; i < n; ++i )
-    fprintf( fp, "%d\t%e\n", i, array[i * spacing] );
-
-  /* close the file */
-  fclose( fp );
-
-  return;
-}
-#endif

@@ -38,6 +38,7 @@ Usage: lalapps_inspiral_pipe [options]
   -C, --coincidence        run lalapps_inca on the triggers from both IFOs
 
   -j, --injections         add simulated inspirals from injection file
+  -s, --slide-data T       slide the data by T secs for background estimation
 
   -p, --playground-only    only create chunks that overlap with playground
   -P, --priority PRIO      run jobs with condor priority PRIO
@@ -48,7 +49,7 @@ Usage: lalapps_inspiral_pipe [options]
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvdtiTICpju:P:f:l:"
+shortop = "hvdtiTICpjs:u:P:f:l:"
 longop = [
   "help",
   "version",
@@ -59,6 +60,7 @@ longop = [
   "triggered-inspiral",
   "coincidence",
   "injections",
+  "slide-data="
   "playground-only",
   "user-tag=",
   "priority=",
@@ -80,6 +82,7 @@ do_trigbank = None
 do_triginsp = None
 do_coinc = None
 do_inj = None
+slide_data = 0
 usertag = None
 playground_only = 0
 condor_prio = None
@@ -107,6 +110,8 @@ for o, a in opts:
     do_coinc = 1
   elif o in ("-j", "--injections"):
     do_inj = 1
+  elif o in ("-s", "--slide-data"):
+    slide_data = int(a)
   elif o in ("-u", "--user-tag"):
     usertag = a
   elif o in ("-p", "--playground-only"):
@@ -215,10 +220,17 @@ o = int(cp.get('inspiral', 'segment-overlap'))
 length = ( n * s - ( s - 1 ) * o ) / r
 overlap = o / r
 
-# read the science segments from the input file and create the chunks
+# read science segs that are greater or equal to a chunk from the input file
 data = pipeline.ScienceData()
-data.read(cp.get('input','segments'))
+data.read(cp.get('input','segments'),length)
+
+# if we are doing a background analysis, slide the science segments 
+if slide_data:
+  data.slide(slide_data)
+
+# create the chunks from the (possible slid) science segments
 data.make_chunks(length,overlap,playground_only)
+#data.make_chunks_from_unused(length,overlap/2,playground_only,overlap/2)
 
 # get the order of the ifos to filter
 ifo1 = cp.get('pipeline','ifo1')
@@ -246,8 +258,8 @@ for seg in data:
   df2 = inspiral.DataFindNode(df_job)
   if not first_df2:
     first_df2 = df2
-  df2.set_start(seg.start() - pad)
-  df2.set_end(seg.end() + pad)
+  df2.set_start(seg.start() - pad - abs(slide_data))
+  df2.set_end(seg.end() + pad + abs(slide_data))
   df2.set_ifo(ifo2)
   if prev_df2: 
     df2.add_parent(prev_df2)
@@ -277,10 +289,13 @@ for seg in data:
     insp1 = inspiral.InspiralNode(insp_job)
     insp1.set_start(chunk.start())
     insp1.set_end(chunk.end())
-    insp1.set_ifo(ifo1)
+    insp1.add_var_opt('trig-start-time',chunk.trig_start())
     insp1.add_var_opt('snr-threshold',ifo1_snr)
+    insp1.set_ifo(ifo1)
     insp1.set_cache(df1.get_output())
     insp1.set_bank(bank.get_output())
+    if slide_data:
+      insp2.add_var_opt('slide-data',0)
 
     if do_tmpltbank:
       insp1.add_parent(bank)
@@ -298,7 +313,6 @@ for seg in data:
       trigbank.set_output(ifo2 + '-TRIGBANK_' + ifo1 + '-' + str(chunk.start())
         + '-' + str(chunk.dur()) + '.xml')
 
-
     if do_inspiral:
       trigbank.add_parent(insp1)
     if do_trigbank:
@@ -309,8 +323,11 @@ for seg in data:
     insp2.set_end(chunk.end())
     insp2.set_ifo(ifo2)
     insp2.add_var_opt('snr-threshold',ifo2_snr)
+    insp2.add_var_opt('trig-start-time',chunk.trig_start())
     insp2.set_cache(df2.get_output())
     insp2.set_bank(trigbank.get_output())
+    if slide_data:
+      insp2.add_var_opt('slide-data',slide_data)
 
     if do_datafind:
       insp2.add_parent(df2)
@@ -402,7 +419,6 @@ for seg in data:
   print >> log_fh, seg
   for chunk in seg:
     print >> log_fh, chunk
-  print >> log_fh, seg.unused(), 'seconds remaining'
 
 sys.exit(0)
 
