@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 noinst_LTLIBRARIES = libfindchirp.la
 
-if FRAMEANDMPI
+if MPI
 libfindchirp_la_SOURCES = FindChirpExch.c \
                           FindChirpMemory.c \
                           FindChirpFilter.c \

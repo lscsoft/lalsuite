@@ -11,13 +11,14 @@ PKG_FRAME =
 endif
 
 if MPI
-PKG_MPI = $(top_builddir)/packages/comm/src/libcomm.la
+PKG_MPI = $(top_builddir)/packages/comm/src/libcomm.la                 \
+          $(top_builddir)/packages/findchirp/src/libfindchirp.la
 else
 PKG_MPI = 
 endif
 
 if FRAMEANDMPI
-PKG_FRAMEANDMPI = $(top_builddir)/packages/findchirp/src/libfindchirp.la
+PKG_FRAMEANDMPI = 
 else
 PKG_FRAMEANDMPI = 
 endif
