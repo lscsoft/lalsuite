@@ -13,9 +13,9 @@ __date__ = '$Date$'
 __version__ = '$Revision$'[11:-2]
 
 # append the lalapps python modules to the install path
+import sys, os
 sys.path.append('@PYTHONLIBDIR@')
 
-import sys, os
 import getopt, re
 import tempfile
 import pipeline, inspiral
