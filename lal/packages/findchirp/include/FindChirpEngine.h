@@ -102,11 +102,10 @@ InspiralTemplateNode;
 
 typedef enum
 {
-  gaussianNoise,
-  bankMinimalMatch,
-  gaussianNoiseInject,
-  realDataInject,
-  egregious
+  fcGaussianNoise = 2,
+  fcGaussianNoiseInject,
+  fcRealDataInject,
+  fcBankMinimalMatch
 }
 FindChirpSimulationType;
 
