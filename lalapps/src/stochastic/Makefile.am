@@ -2,7 +2,7 @@
 # $Id$
 
 if LALFRAME
-LALFRAMEPROGRAMS = lalapps_stochastic lalapps_stochastic_dev
+LALFRAMEPROGRAMS = lalapps_stochastic
 if LALMETAIO
 LALMETAIOFRAMEPROGRAMS = lalapps_stopp
 else
@@ -20,7 +20,6 @@ lalapps_olapredfcn_SOURCES = olapredfcn.c olapredfcn.h olapredfcn_args.c \
 
 if LALFRAME
 lalapps_stochastic_SOURCES = stochastic.c stochastic.h
-lalapps_stochastic_dev_SOURCES = stochastic_dev.c stochastic_dev.h
 endif
 
 if LALMETAIO
