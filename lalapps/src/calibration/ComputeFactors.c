@@ -594,7 +594,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"All arguments are required except -b. They are:\n");
       fprintf(stdout,"\t-f\tFLOAT\t Calibration line frequency in Hz.\n");
       fprintf(stdout,"\t-t\tFLOAT\t Time interval to calculate factors in seconds (>0.0005).\n");
-      fprintf(stdout,"\t-m\tFLOAT\t Fraction of the actuation seen by excitation channel (=1 if injected into darm,Gx/(Ky Gy- Kx Gx)...).\n");
+      fprintf(stdout,"\t-m\tFLOAT\t Fraction of the actuation seen by excitation channel (=-1 if injected into darm (eg S3, or Gx/(Ky Gy- Kx Gx)...).\n");
       fprintf(stdout,"\t-F\tSTRING\t Name of frame cache file.\n");
       fprintf(stdout,"\t-r\tSTRING\t Name of response function file.\n");
       fprintf(stdout,"\t-c\tSTRING\t Name of sensing function file.\n");
