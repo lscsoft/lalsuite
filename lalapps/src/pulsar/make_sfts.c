@@ -37,6 +37,12 @@
 /* IFO sample rate in Hz */
 #define SRATE 16384
 
+/* should we print the first 50 elements of various series */
+#define PRINT50
+
+/* should we use doubles for the time-domain filtering */
+#define TDDOUBLE
+
 /* debug level for LAL */
 INT4 lalDebugLevel = LALERROR | LALWARNING | LALINFO;
 
@@ -64,7 +70,7 @@ RealFFTPlan *pfwd = NULL;
 
 /* Need prototype: this is POSIX not ANSI, sigh */
 #include <unistd.h>
-/* int gethostname(char *name, size_t len); */
+int gethostname(char *name, size_t len);
 
 /* This is an error handler that prints a bit of extra info */
 void pout(char *fmt, ...)  
@@ -204,7 +210,6 @@ int deltatime(const char *instrument, int gpstime){
 
   /* value we should use if time range NOT found */
   return data[i][2];
-
 }
 
 /* check a number of bounary values of the timing correction */
@@ -290,10 +295,17 @@ void shifter(float *data, int length, int shift){
   
   /* free memory and return */
   LALFree(temp);
-
   return;
 }
 
+void print50(float *array, char *name){
+  int i;
+  printf("%s\n", name);
+  for (i=0; i<50; i++)
+    printf("%02d %f\n", i, array[i+176]);
+  fflush(stdout);
+  return;
+}
 
 int main(int argc,char *argv[]){
   static LALStatus status;
@@ -309,6 +321,11 @@ int main(int argc,char *argv[]){
   REAL8 window[WINLEN];
   char framelist[256];
   int opencount=0;
+
+#ifdef TDDOUBLE
+  /* for double-precision experiments */
+  static REAL8TimeSeries chand;
+#endif
 
   /* Control variable for run-time options */
   int doubledata=getenvval("DOUBLEDATA");
@@ -417,8 +434,8 @@ int main(int argc,char *argv[]){
   filterpar.a2 = 0.5;
   
 /* values that are 'not given' = out of range */
-  filterpar.f1 = 0.0;
-  filterpar.a1 = 0.0;
+  filterpar.f1 = -1.0;
+  filterpar.a1 = -1.0;
   
   /* Initialize frame library with correct file list */
   sprintf(framelist,"%s/jobdata.%05d.ffl",argv[2],jobnum);
@@ -435,7 +452,14 @@ int main(int argc,char *argv[]){
   chan.data = NULL;
   LALSCreateVector(&status, &chan.data, npts);
   TESTSTATUS(&status);
-  
+
+#ifdef TDDOUBLE
+  /* create structure to store channel data */
+  chand.data = NULL;
+  LALDCreateVector(&status, &chand.data, npts);
+  TESTSTATUS(&status);
+#endif
+
   /* Create vector to hold signal frequency series */
   LALCCreateVector(&status, &fvec, (UINT4)len2);
   TESTSTATUS(&status);
@@ -515,7 +539,18 @@ int main(int argc,char *argv[]){
       chan.deltaT = 1.0/SRATE;
       chan.epoch = epoch;
       chan.data->length = npts;
-      
+
+#ifdef TDDOUBLE
+      strcpy(chand.name, chname);
+      chand.deltaT = 1.0/SRATE;
+      chand.epoch = epoch;
+      chand.data->length = npts;
+#endif
+
+#ifdef PRINT50
+      print50(frvect->dataF, "FRAMEDATA");
+#endif
+
       /* copy data */
       for (i=0;i<npts;i++){
 	chan.data->data[i]=frvect->dataF[i];
@@ -525,14 +560,36 @@ int main(int argc,char *argv[]){
 #endif
       }
 
+#ifdef PRINT50
+      print50(chan.data->data, "LAL_TIMESERIES");
+#endif
+
       /* free framevec -- no longer needed */
       FrVectFree(frvect); 
       frvect=NULL;
+
+#ifdef TDDOUBLE
+      /* put into doubles */
+      for (i=0; i<npts; i++)
+	chand.data->data[i]=chan.data->data[i];
       
+      /* filter */
+      LALButterworthREAL8TimeSeries(&status, &chand, &filterpar);
+      TESTSTATUS(&status);
+      
+      /* and copy back */
+      for (i=0; i<npts; i++)
+	chan.data->data[i]=chand.data->data[i];
+#else
       /* apply high-pass Butterworth filter */
       LALButterworthREAL4TimeSeries(&status, &chan, &filterpar);
       TESTSTATUS(&status);
+#endif
       
+#ifdef PRINT50
+      print50(chan.data->data, "LAL_FILTERED");
+#endif
+
       /* Turn on windowing */
       if (windowdata){
 	/* window data.  Off portion */
@@ -547,7 +604,11 @@ int main(int argc,char *argv[]){
 	  chan.data->data[chan.data->length - 1 - i]  *= win;
 	}
       }
-      
+
+#ifdef PRINT50
+      print50(chan.data->data, "LAL_WINDOWED");
+#endif
+
       /* open SFT file for writing */
       fpsft=tryopen(sftname,"w");
       
@@ -564,7 +625,7 @@ int main(int argc,char *argv[]){
       }
       
 
-#if (1)
+#if (0)
       {
 	/* correct data for timing errors.  This is a bit of a hack.  We
 	   can do it either just before or just after the FFT. This is
@@ -572,7 +633,7 @@ int main(int argc,char *argv[]){
 	   the sample time.  Otherwise the correct way to do it is by
 	   modifying the FFT output by multiplying by exp(2pi i f dt).
 	   Here, we take the easy route, which gets it right to
-	   sufficient accuracty (60 us) for our purposes.  Note that
+	   sufficient accuracty (+- 30 us) for our purposes.  Note that
 	   there are a number of approximations built in to either way
 	   of doing it, all of which boil down to: it works if the
 	   timing errors are very small compared to the SFT time.
@@ -606,10 +667,19 @@ int main(int argc,char *argv[]){
       }
 #endif
 
+#ifdef PRINT50
+      print50(chan.data->data, "SHIFTED");
+#endif
+
       /* take forward FFT */
       LALForwardRealFFT(&status, fvec, chan.data, pfwd);
       TESTSTATUS(&status);
       
+#ifdef PRINT50
+      print50(chan.data->data, "FFT");
+      exit(0);
+#endif
+
       if (printfreqseries){
 	/* for debugging -- print freq series */
 	LALCPrintVector(fvec);
@@ -649,7 +719,12 @@ int main(int argc,char *argv[]){
   
   LALSDestroyVector( &status, &chan.data );
   TESTSTATUS( &status );
-  
+
+#ifdef TDDOUBLE
+  LALDDestroyVector( &status, &chand.data );
+  TESTSTATUS( &status );
+#endif
+
   LALCDestroyVector(&status, &fvec);
   TESTSTATUS( &status );
   
