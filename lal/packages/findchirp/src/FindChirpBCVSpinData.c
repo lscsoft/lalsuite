@@ -80,8 +80,8 @@ LALFindChirpBCVSpinData (
   REAL4		       *tmpltPowerBCV;
 
   REAL4Vector          *dataVec;
-  REAL4                *spec;
-  COMPLEX8             *resp;
+  REAL4                *spec = NULL;
+  COMPLEX8             *resp = NULL;
 
   COMPLEX8             *outputData;
 
@@ -91,8 +91,8 @@ LALFindChirpBCVSpinData (
 
   REAL8                 *ampBCVSpin2;
 
-  FindChirpSegment     *fcSeg;
-  DataSegment          *dataSeg;
+  FindChirpSegment     *fcSeg   = NULL;
+  DataSegment          *dataSeg = NULL;
   
   /*declaration*/
   INITSTATUS( status, "LALFindChirpBCVSpinData", FINDCHIRPBCVSPINDATAC );
