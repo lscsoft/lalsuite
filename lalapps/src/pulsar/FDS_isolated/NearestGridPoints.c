@@ -22,20 +22,27 @@
  * to introduce additional command line arguments to ComputeFStatistic. 
  * 
  * 
- * [3] Example usage: 
+ * [3] Example usage: This is painful. 
  * #define NEARESTGRIDPOINTS_ON
  *
  * #ifdef NEARESTGRIDPOINTS_ON
  *     void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit scanInit);
  * #endif
  *
- * #ifdef NEARESTGRIDPOINTS_ON
- *     LAL_CALL ( InitDopplerScanOnRefinedGrid ( &status, &thisScan, scanInit), &status );
- *     // NB: scanInit.skyRegion is freed within this function 
- * #else 
- *     LAL_CALL ( InitDopplerScan ( &status, &thisScan, scanInit), &status); 
- *     LALFree ( scanInit.skyRegion );
- * #endif
+ *
+ *#ifdef NEARESTGRIDPOINTS_ON
+ *   LAL_CALL ( InitDopplerScanOnRefinedGrid ( &status, &thisScan, &scanInit ), &status );
+ *#else 
+ *  if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
+ * LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status); 
+ *  if (lalDebugLevel) LALPrintError ("done.\n");
+ * if ( uvar_outputSkyGrid ) {
+ *   LALPrintError ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
+ *   LAL_CALL (writeSkyGridFile ( &status, thisScan.grid, uvar_outputSkyGrid, &scanInit), &status);
+ *   LALPrintError (" done.\n\n");
+ * }
+ *#endif
+ *
  *
  *
  *--------------------------------------------------------------------*/
@@ -67,12 +74,12 @@ NRCSID( NEARESTGRIDPOINTSC, "$Id$" );
 
 void RefineSkyRegion (LALStatus *status,  DopplerScanInit *scanInit, DopplerScanState *scanState,  SkyPosition *skyPosition, REAL8 *ratio);
 void ComputeCenterOfMass (LALStatus *status,  SkyPosition *skyPosition, SkyRegion *skyRegion);
-void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit scanInit);
+void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit *scanInit);
 
 void 
 InitDopplerScanOnRefinedGrid ( LALStatus *status, 
 			       DopplerScanState *theScan, /* output */ 
-			       DopplerScanInit scanInit   /* input */ )
+			       DopplerScanInit *scanInit   /* input */ )
 {
   UINT4 ic;
   INT4 targetNumGridPoints = 40; 
@@ -81,24 +88,30 @@ InitDopplerScanOnRefinedGrid ( LALStatus *status,
   REAL8 ratio = 0.75;
   REAL8 viscosity = 0.01;
   INT4 test = 0;
+  CHAR *tmpptr;
 
   SkyRegion tmpSkyRegion;
   SkyPosition centerOfMass;
-
+  DopplerScanInit *scanInitTmp;
 
   INITSTATUS( status, "InitDopplerScanOnRefinedGrid", NEARESTGRIDPOINTSC );
   ATTATCHSTATUSPTR( status );
   /* This traps coding errors in the calling routine. */
-  ASSERT ( &scanInit, status, NEARESTGRIDPOINTSH_ENULL , NEARESTGRIDPOINTSH_MSGENULL );  
+  ASSERT ( scanInit, status, NEARESTGRIDPOINTSH_ENULL , NEARESTGRIDPOINTSH_MSGENULL );  
   ASSERT ( theScan != NULL, status, NEARESTGRIDPOINTSH_ENONULL , NEARESTGRIDPOINTSH_MSGENONULL );  
 
+  /* copy the origianl scanInit to a temporal scanInitTmp. */
+  scanInitTmp = scanInit;
+  tmpptr = (CHAR *) LALMalloc( sizeof(CHAR) * ( strlen(scanInit->skyRegion) + 1 ) );
+  strcpy(tmpptr,scanInit->skyRegion);
+  scanInitTmp->skyRegion = tmpptr; 
 
-  TRY( InitDopplerScan ( status->statusPtr, theScan, &scanInit ), status );
+  TRY( InitDopplerScan ( status->statusPtr, theScan, scanInitTmp ), status );
 
   test = ( (INT4) theScan->numGridPoints ) - targetNumGridPoints;
 
   tmpSkyRegion.vertices = NULL; 
-  TRY( ParseSkyRegion ( status->statusPtr, &tmpSkyRegion, scanInit.skyRegion ), status );
+  TRY( ParseSkyRegion ( status->statusPtr, &tmpSkyRegion, scanInitTmp->skyRegion ), status );
   /* Compute a center of the mass, construct an initial sky polygon */
   TRY( ComputeCenterOfMass ( status->statusPtr, &centerOfMass, &tmpSkyRegion ), status );
   if ( status->statusCode ) {
@@ -128,13 +141,13 @@ InitDopplerScanOnRefinedGrid ( LALStatus *status,
 	  ratio -= trialCounter * viscosity;
       }
 	
-      RefineSkyRegion ( status->statusPtr, &scanInit, theScan, &centerOfMass, &ratio );
+      RefineSkyRegion ( status->statusPtr, scanInitTmp, theScan, &centerOfMass, &ratio );
       theScan->state = 2;
       BEGINFAIL( status )
 	TRY( FreeDopplerScan ( status->statusPtr, theScan ), status );
       ENDFAIL( status );
       TRY( FreeDopplerScan ( status->statusPtr, theScan ), status );
-      TRY( InitDopplerScan ( status->statusPtr, theScan, &scanInit), status );
+      TRY( InitDopplerScan ( status->statusPtr, theScan, scanInitTmp), status );
       test = theScan->numGridPoints - targetNumGridPoints;
       trialCounter++;
     }
@@ -152,7 +165,7 @@ InitDopplerScanOnRefinedGrid ( LALStatus *status,
 
 
   /* clean up */
-  LALFree(scanInit.skyRegion); 
+  LALFree( scanInitTmp->skyRegion );
   DETATCHSTATUSPTR (status);
   RETURN( status );
 } /* void InitDopplerScanOnRefinedGrid () */
@@ -287,7 +300,9 @@ RefineSkyRegion (LALStatus *status,
     ABORT (status,  NEARESTGRIDPOINTSH_EMEM ,  NEARESTGRIDPOINTSH_MSGEMEM );
   }
   scanInit->skyRegion = ptr;
+  /*
   memset(scanInit->skyRegion,'\0',strlen((scanInit->skyRegion)));
+  */
   strcpy(scanInit->skyRegion,tmpSkyRegion);
 
   LALFree(tmpstr);
