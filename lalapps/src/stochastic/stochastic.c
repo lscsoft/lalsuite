@@ -404,16 +404,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 	}
 
 	/* allocate memory for data segments */
-	segmentOne.data = NULL;
-	segmentTwo.data = NULL;
-	LAL_CALL( LALSCreateVector(&status, &(segmentOne.data), segmentLength), \
-			&status );
-	LAL_CALL( LALSCreateVector(&status, &(segmentTwo.data), segmentLength), \
-			&status );
-	memset(segmentOne.data->data, 0, \
-			segmentOne.data->length * sizeof(*segmentOne.data->data));
-	memset(segmentTwo.data->data, 0, \
-			segmentTwo.data->length * sizeof(*segmentTwo.data->data));
+	segmentOne.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
+	segmentTwo.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
+	segmentOne.data->length = segmentDuration * resampleRate;
+	segmentTwo.data->length = segmentDuration * resampleRate;
 
 	/* set PSD window length */
 	windowPSDLength = (UINT4)(resampleRate / deltaF);
@@ -1014,13 +1008,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 
 		/* build small segment */
-		for (i = 0; i < segmentLength ; i++)
-		{
-			segmentOne.data->data[i] = streamOne.data->data[i + \
-				(j * segmentShift * resampleRate)];
-			segmentTwo.data->data[i] = streamTwo.data->data[i + \
-				(j * segmentShift * resampleRate)];
-		}
+		segmentOne.data->data = streamOne.data->data + (j * \
+				segmentShift * resampleRate);
+		segmentTwo.data->data = streamTwo.data->data + (j * \
+				segmentShift * resampleRate);
 
 		/* simulate signal */
 		if (inject_flag)
@@ -1238,8 +1229,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 	LAL_CALL( LALDestroyRealFFTPlan(&status, &fftDataPlan), &status );
 	LAL_CALL( LALDestroyVector(&status, &(streamOne.data)), &status );
 	LAL_CALL( LALDestroyVector(&status, &(streamTwo.data)), &status );
-	LAL_CALL( LALDestroyVector(&status, &(segmentOne.data)), &status );
-	LAL_CALL( LALDestroyVector(&status, &(segmentTwo.data)), &status );
+	LALFree(segmentOne.data);
+	LALFree(segmentTwo.data);
 	LAL_CALL( LALDestroyVector(&status, &(psdTempOne.data)), &status );
 	LAL_CALL( LALDestroyVector(&status, &(psdTempTwo.data)), &status );
 	LAL_CALL( LALDestroyVector(&status, &(psdOne.data)), &status );
