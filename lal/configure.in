@@ -127,6 +127,11 @@ AC_OUTPUT( Makefile                               \
            packages/utilities/include/Makefile    \
            packages/utilities/src/Makefile        \
            packages/utilities/test/Makefile       \
+           packages/tdfilter/Makefile             \
+           packages/tdfilter/doc/Makefile         \
+           packages/tdfilter/include/Makefile     \
+           packages/tdfilter/src/Makefile         \
+           packages/tdfilter/test/Makefile        \
            packages/window/Makefile               \
            packages/window/doc/Makefile           \
            packages/window/include/Makefile       \

@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = std support hello factories vectorops utilities window fft \
+SUBDIRS = std support hello factories vectorops utilities tdfilter window fft \
         stochastic framedata comm findchirp
 
 EXTRA_DIST = \
