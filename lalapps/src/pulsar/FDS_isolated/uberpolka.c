@@ -517,7 +517,7 @@ int compareCPfa(const void *ip, const void *jp)
 
 int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA)
 {
-
+  
   if (ReadOneCandidateFile ( &SortedC1, CLA.FstatsFile1)) return 1;
   CLength1=CLength;
 
@@ -714,6 +714,18 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
 
   /* -- close candidate file -- */
   fclose(fp);     
+
+  /* Finally, check that candidates are in the correct order */
+  for (i=0;i<CLength-1;i++)
+    {
+      if(compareCdaf(*CList+i,*CList+i+1) != -1)
+	{
+	  fprintf(stderr, "Candidates in line %d and %d in Fstats file %s are not in the correct order. Exiting.\n", 
+		  i+1,i+2, fname);
+	  LALFree ((*CList));
+	  return 1;
+	}
+    }
 
   return 0;
 
