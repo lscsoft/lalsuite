@@ -1036,7 +1036,7 @@ static REAL4TimeSeries *get_ligo_data(
 	/* read the data */
 	LAL_CALL(LALFrSeek(stat, &start, stream), stat);
 	if(options.verbose)
-		fprintf(stderr, "get_ligo_data(): reading %u samples at GPS time %u.%09u s\n", series->data->length, start.gpsSeconds, start.gpsNanoSeconds);
+		fprintf(stderr, "get_ligo_data(): reading %u samples (%.9lf s) at GPS time %u.%09u s\n", series->data->length, series->data->length * series->deltaT, start.gpsSeconds, start.gpsNanoSeconds);
 	LAL_CALL(LALFrGetREAL4TimeSeries(stat, series, &channelIn, stream), stat);
 
 	return(series);
