@@ -70,7 +70,8 @@ typedef enum
   LAL_METRIC_NONE = 0,
   LAL_METRIC_PTOLE,		/* analytic ptolemaic approx for the metric */
   LAL_METRIC_COHERENT_PTOLE,	/* numerical 'exact' metric using ptole-timing */
-  LAL_METRIC_COHERENT_EPHEM	/* numerical exact metric using ephemeris-timing */
+  LAL_METRIC_COHERENT_EXACT,	/* numerical exact metric using ephemeris-timing */
+  LAL_METRIC_PSEUDO_ISOTROPIC
 } LALMetricType;
 
 /* this structure is handed over to InitDopplerScan() */  

@@ -373,7 +373,8 @@ initUserVars (LALStatus *stat)
   regREALUserVar(stat, 	df1dot, 	'e', UVAR_OPTIONAL, "Resolution for f1dot (default 1/(2*Tobs*Tsft*Nsft)");
   regBOOLUserVar(stat, 	EstimSigParam, 	'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
   regREALUserVar(stat, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
-  regINTUserVar(stat, 	metricType,	'M', UVAR_OPTIONAL, "Template metric: 0=none, 1 = Ptole-analytic, 2 = Ptole-numeric");
+  regINTUserVar(stat, 	metricType,	'M', UVAR_OPTIONAL, "Template metric: 0=none, 1 = Ptole-analytic,\n\
+                                    2 = Ptole-numeric 3=exact, 4=pseudo-isotropic");
   regREALUserVar(stat, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
   regINTUserVar(stat, 	debug, 		'v', UVAR_OPTIONAL, "Set lalDebugLevel");
   regBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message");

@@ -110,6 +110,7 @@ InitDopplerScan( LALStatus *stat,
   PtoleMetricIn metricpar = empty_metricpar;
   LALMetricType metricType;
   SkyPosition thisPoint;
+  REAL8 step_alpha, step_delta, cos_delta;
   getMetricParams_t getMetricParams;
 
   INITSTATUS( stat, "DopplerScanInit", DOPPLERSCANC );
@@ -159,7 +160,8 @@ InitDopplerScan( LALStatus *stat,
 
   switch (metricType)      
     {
-    case LAL_METRIC_NONE:	/* manual stepping */
+    case LAL_METRIC_NONE:		/* manual stepping */
+
       scan->dAlpha = fabs(init.dAlpha);
       scan->dDelta = fabs(init.dDelta);
   
@@ -200,10 +202,55 @@ InitDopplerScan( LALStatus *stat,
       scan->grid = head.next;	/* set result: could be NULL! */
 
       break;
+
+    case LAL_METRIC_PSEUDO_ISOTROPIC: 	/* variant of manual stepping: try to produce an isotropic mesh */
+      
+      /* ok now we manually set up the complete grid */
+      thisPoint = scan->skyRegion.lowerLeft;	/* start from lower-left corner */
+
+      step_delta = init.metricMismatch;	/* delta step-size is fixed */
+      cos_delta = cos (thisPoint.latitude);
+
+      node = &head;		/* start our grid with an empty head */
+
+      while (1)
+	{
+	  if (pointInPolygon ( &thisPoint, &(scan->skyRegion) ) )
+	    {
+	      /* prepare this node */
+	      node->next = LALCalloc (1, sizeof(DopplerScanGrid));
+	      if (node->next == NULL) {
+		ABORT (stat, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+	      }
+	      node = node->next;
+	      
+	      node->alpha = thisPoint.longitude;
+	      node->delta = thisPoint.latitude;
+	    } /* if pointInPolygon() */
 	  
+	  step_alpha = init.metricMismatch / cos_delta;	/* alpha stepsize depends on delta */
+
+	  thisPoint.longitude += step_alpha;
+	  if (thisPoint.longitude > scan->skyRegion.upperRight.longitude)
+	    {
+	      thisPoint.longitude = scan->skyRegion.lowerLeft.longitude;
+	      thisPoint.latitude += step_delta;	
+	      cos_delta = cos (thisPoint.latitude);
+	    } 
+
+	  /* this it the break-condition: are we done yet? */
+	  if (thisPoint.latitude > scan->skyRegion.upperRight.latitude)
+	    break;
+	  
+	} /* while(1) */
+
+      scan->grid = head.next;	/* set result: could be NULL! */
+
+      break;
+
     case LAL_METRIC_PTOLE:
     case LAL_METRIC_COHERENT_PTOLE:
-    case LAL_METRIC_COHERENT_EPHEM:
+    case LAL_METRIC_COHERENT_EXACT:
 
       /* Prepare call of TwoDMesh(): the mesh-parameters */
       meshpar.mThresh = init.metricMismatch;
@@ -698,7 +745,7 @@ LALMetricWrapper (LALStatus *stat,
       break;
 
     case LAL_METRIC_COHERENT_PTOLE:   /* use CoherentMetric + Ptolemaic timing */
-    case LAL_METRIC_COHERENT_EPHEM:   /* use CoherentMetric + ephemeris timing */
+    case LAL_METRIC_COHERENT_EXACT:   /* use CoherentMetric + ephemeris timing */
       nSpin = input->spindown->length;
 
       /* Set up constant parameters for barycentre transformation. */
