@@ -141,6 +141,13 @@ void Stereo2SkyLocation (LALStatus  *status,
 	     UINT2              yPos,
 	     HOUGHPatchGrid    *patch,
 	     HOUGHDemodPar     *parDem);
+	     
+void PrintHoughEvents (LALStatus       *status,
+        	      FILE            *fpEvents,
+	  	      INT4            houghThreshold,
+		      HOUGHMapTotal   *ht,
+	    	      HOUGHPatchGrid  *patch,
+	 	      HOUGHDemodPar   *parDem);	     
 
 void Periodo2PSDrng (LALStatus  *status,
            REAL8Periodogram1    *psd,
