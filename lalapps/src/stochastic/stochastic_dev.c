@@ -154,8 +154,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* data structures for intevals */
   INT4 numIntervals;
   INT4 intervalLength;
-  REAL4TimeSeries *intervalOne;
-  REAL4TimeSeries *intervalTwo;
 
   /* data structures for segments */
   INT4 segmentLength;
@@ -332,18 +330,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* set length for data intervals */
   intervalLength = intervalDuration * resampleRate;
-
-  if (vrbflg)
-  {
-    fprintf(stdout, "Allocating memory for data intervals...\n");
-  }
-
-  LAL_CALL(LALCreateREAL4TimeSeries(&status, &intervalOne, "intervalOne", \
-        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
-        intervalLength), &status);
-  LAL_CALL(LALCreateREAL4TimeSeries(&status, &intervalTwo, "intervalTwo", \
-        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
-        intervalLength), &status);
 
   /* set length for data segments */
   segmentLength = segmentDuration * resampleRate;
@@ -944,8 +930,6 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* define interval epoch */
     gpsIntervalStart.gpsSeconds = startTime + (j * segmentShift);
     gpsIntervalStart.gpsNanoSeconds = 0;
-    intervalOne->epoch = gpsIntervalStart;
-    intervalTwo->epoch = gpsIntervalStart;
 
     /* define segment epoch */
     gpsSegmentAStart.gpsSeconds = startTime + (j * segmentShift);
@@ -969,12 +953,6 @@ INT4 main(INT4 argc, CHAR *argv[])
           j + 1, numIntervals);
     }
 
-    /* build interval */
-    LAL_CALL(LALCutREAL4TimeSeries(&status, &intervalOne, streamOne, \
-          (j * segmentShift * resampleRate), intervalLength), &status);
-    LAL_CALL(LALCutREAL4TimeSeries(&status, &intervalTwo, streamTwo, \
-          (j * segmentShift * resampleRate), intervalLength), &status);
-
     /* build segments */
     LAL_CALL(LALCutREAL4TimeSeries(&status, &segmentOneA, streamOne, \
           (resampleRate * j * segmentShift), segmentLength), &status);
@@ -996,12 +974,6 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* output the results */
     if (debug_flag)
     {
-      LALSnprintf(debugFilename, LALNameLength, "%d-interval1.dat", \
-          gpsIntervalStart.gpsSeconds);
-      LALSPrintTimeSeries(intervalOne, debugFilename);
-      LALSnprintf(debugFilename, LALNameLength, "%d-interval2.dat", \
-          gpsIntervalStart.gpsSeconds);
-      LALSPrintTimeSeries(intervalTwo, debugFilename);
       LALSnprintf(debugFilename, LALNameLength, "%d-segment1a.dat", \
           gpsSegmentAStart.gpsSeconds);
       LALSPrintTimeSeries(segmentOneA, debugFilename);
@@ -1225,8 +1197,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALDestroyRealFFTPlan(&status, &fftDataPlan), &status);
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, streamOne), &status);
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, streamTwo), &status);
-  LAL_CALL(LALDestroyREAL4TimeSeries(&status, intervalOne), &status);
-  LAL_CALL(LALDestroyREAL4TimeSeries(&status, intervalTwo), &status);
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentOneA), &status);
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentOneB), &status);
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentOneC), &status);
