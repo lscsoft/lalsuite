@@ -41,7 +41,7 @@ lalapps_inspiral_pipe_s2: inspiral_pipe_s2.in
 pkgdata_DATA = BNSMasses.dat inspsrcs.dat
 
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
-             $(TRIGTOTMPLTSRC) $(SIRESRC) \
+             $(SIRESRC) \
              $(INCASRC) inspiral_pipe.in s2_dag.ini \
              $(COHERESRC) $(SCRIPTS) inspiral_pipe_bkgr.in \
              inspiral_pipe_s2.in inspiral_pipe.ini \
