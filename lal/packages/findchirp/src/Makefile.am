@@ -15,7 +15,8 @@ FINDCHIRPSOURCES = FindChirpMemory.c FindChirpLinkedList.c \
   FindChirpBCVSpinData.c FindChirpBCVSpinTemplate.c \
   FindChirpBCVSpinFilter.c FindChirpBCVSpinChisq.c \
   FindChirpSimulation.c FindChirpFilterOutputVeto.c \
-  FindChirpStoreEvent.c FindChirpClusterEvents.c 
+  FindChirpStoreEvent.c FindChirpClusterEvents.c \
+  FindChirpBCVCFilter.c
 
 libfindchirp_la_SOURCES = $(FINDCHIRPSOURCES)
 
