@@ -1773,7 +1773,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   " -h, --help                        print this message\n"\
   " -v, --version                     display version\n"\
   "     --verbose                     verbose mode\n"\
-  "     --debug                       save out intermediate products\n"\
   " -z, --debug-level N               set lalDebugLevel\n"\
   " -t, --gps-start-time N            GPS start time\n"\
   " -T, --gps-end-time N              GPS end time\n"\
