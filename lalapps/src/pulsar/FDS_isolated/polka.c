@@ -18,8 +18,8 @@
 #include <lal/LALMalloc.h>
 #include <lal/LALConstants.h>
 
-#define MAXCANDIDATES   5000000     /* Maximum # of allowed candidates */
-#define MAXCOINC   5000000     /* Maximum # of allowed coincident candidates */
+#define MAXCANDIDATES   3750000     /* Maximum # of allowed candidates */
+#define MAXCOINC   3750000          /* Maximum # of allowed coincident candidates */
 
 struct CommandLineArgsTag 
 {
@@ -206,6 +206,11 @@ int main(int argc,char *argv[])
 		  CC.fa[k]=CC.fa1[k]*CC.fa2[k];
 
 		  k++;
+		  if (k = MAXCOINC)
+		    {
+		      fprintf(stderr,"Too many coincident candidates! Exiting... \n");
+		      return 1;
+		    }
 		  
 		}
 	    }
