@@ -45,6 +45,8 @@ NRCSID( PULSARSIGNALH, "$Id$");
 #define PULSARSIGNALH_ESSBCONVERT	5
 #define PULSARSIGNALH_ESYS		6
 #define PULSARSIGNALH_ETIMEBOUND	7
+#define PULSARSIGNALH_ENUMSFTS		8
+#define PULSARSIGNALH_EINCONSBAND	9
 
 #define PULSARSIGNALH_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define PULSARSIGNALH_MSGENONULL	"Output pointer is not NULL"
@@ -52,7 +54,9 @@ NRCSID( PULSARSIGNALH, "$Id$");
 #define PULSARSIGNALH_MSGESAMPLING	"Waveform sampling interval too large."
 #define PULSARSIGNALH_MSGESSBCONVERT	"SSB->GPS iterative conversion failed"
 #define PULSARSIGNALH_MSGESYS		"System error, probably while File I/O"
-#define PULSARSIGNALH_MSGETIMEBOUND	"Timestamp outside of required time-interval"
+#define PULSARSIGNALH_MSGETIMEBOUND	"Timestamp outside of allowed time-interval"
+#define PULSARSIGNALH_MSGENUMSFTS	"Inconsistent number of SFTs in timestamps and noise-SFTs"
+#define PULSARSIGNALH_MSGEINCONSBAND	"Inconsistent values of sampling-rate and Tsft: number of samples is not integer!"
 
 /*************************************************** </lalErrTable> */
 
@@ -65,7 +69,8 @@ NRCSID( PULSARSIGNALH, "$Id$");
 /* New structures and types */
 
 typedef struct {
-  LIGOTimeGPS TRefSSB;	/* reference time for pulsar parameters (in SSB time!) if not given, startTimeGPS is used */
+  LIGOTimeGPS TRefSSB;	/* reference time for pulsar parameters (in SSB time!) */
+  			/* if ZERO, startTimeGPS is used instead */
   REAL8 Alpha;		/* source location in equatorial coordinates (in radians) */
   REAL8 Delta;
   REAL4 psi;            /* polarization angle (radians) at TRef */
@@ -84,28 +89,33 @@ typedef struct {
 } BinaryOrbitParams;
 
 typedef struct {
-  /* defining the actual pulsar-source */
-  PulsarSourceParams pulsar;
-  /* and its binary orbit if applicable (NULL if not) */
-  BinaryOrbitParams *orbit;
+  /* source-params */
+  PulsarSourceParams pulsar;	  /* defining the actual pulsar-source */
+  BinaryOrbitParams *orbit;	  /* and its binary orbit if applicable (NULL if not) */
+  
   /* characterize the detector */
-  COMPLEX8FrequencySeries *transferFunction;    /* frequency transfer function */
+  COMPLEX8FrequencySeries *transferFunction;    /* frequency transfer function */	
+  						/* --> FIXME do we need this? */
   LALDetector *site;        		   	/* detector location and orientation */  
   EphemerisData *ephemerides;  			/* Earth and Sun ephemerides */
   
   /* characterize the output time-series */
   LIGOTimeGPS startTimeGPS;     /* start time of output time series */
   UINT4 duration;           	/* length of time series in s*/
-  REAL8 samplingRate;		/* sampling rate of time-series (=2 * fmax) */
+  REAL8 samplingRate;		/* sampling rate of time-series (= 2 * frequency-Band) */
   REAL8 fHeterodyne;		/* heterodyning frequency for output time-series */
 } PulsarSignalParams;
 
+/* we need a type for a vector of timestamps */
+typedef struct {
+  UINT4 length;
+  LIGOTimeGPS *data;
+} TimestampVector;
+
 
 typedef struct {
-  REAL8 FreqBand;			/* frequency-band for the output SFT's */
   REAL8 Tsft;				/* length of an SFT in seconds */
-  UINT4 Nsft;				/* number of timestamps and noise-SFTs (if any) */
-  LIGOTimeGPS *timestamps;		/* timestamps to use for SFT's (can be NULL) */
+  TimestampVector *timestamps;		/* timestamps to use for SFT's (can be NULL) */
   COMPLEX8Vector *noiseSFTs;		/* noise SFTs to be added to the output (can be NULL) */
 } SFTParams;
 
@@ -122,17 +132,29 @@ typedef struct {
 typedef struct {
   LIGOTimeGPS	epoch; 
   REAL8		f0;	 
-  REAL8		deltaF;
-  COMPLEX8Vector *data;
-} SFTtype;
+  REAL8		deltaF; 
+  UINT4		length;		/* number of frequency-bins */
+  COMPLEX8 	*data;
+} basicSFT;
 
-/* now we need a whole vector of those, so we define a trivial 
- * (LAL-) "Vector"-type of SFTs
- */
+/* now we need a whole vector of those, so we define a 
+ * "Vector"-type of SFTs  */
 typedef struct {
-  UINT4 length;		/* number of SFTs */
-  SFTtype *SFTs;	/* array of SFTs */
+  UINT4 	numSFTs;	/* number of SFTs */
+  basicSFT 	**SFTlist;	/* array of SFTs */
 } SFTVector;
+
+
+/* this is the current SFT-header in the file-format for storing SFTs
+  struct headertag {
+    REAL8 endian;
+    INT4  gps_sec;
+    INT4  gps_nsec;
+    REAL8 tbase;
+    INT4  firstfreqindex;
+    INT4  nsamples;
+  } header;
+*/
 
 /* just for reference: this is the FrequencySeries type: 
  * { 
@@ -149,15 +171,17 @@ typedef struct {
 
 
 /* Function prototypes */
-void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, PulsarSignalParams *params);
-void AddSignalToSFTs (LALStatus *stat, SFTVector *outputSFTs, REAL4TimeSeries *signal, SFTParams *params);
+void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, const PulsarSignalParams *params);
+void LALSignalToSFTs (LALStatus *stat, SFTVector *outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params);
 
-void write_SFT (LALStatus *stat, SFTtype *sft, const CHAR *fname);
-void LALPrintR4TimeSeries (LALStatus *stat, REAL4TimeSeries *series, const CHAR *fname);
-void PrintGWSignal (LALStatus *stat, CoherentGW *signal, const CHAR *fname);
-void ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, PulsarSignalParams *params);
-void ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, PulsarSignalParams *params);
-void compare_SFTs (COMPLEX8Vector *sft1, COMPLEX8Vector *sft2);
+void write_SFT (LALStatus *stat, const basicSFT *sft, const CHAR *fname);
+void LALPrintR4TimeSeries (LALStatus *stat, const REAL4TimeSeries *series, const CHAR *fname);
+void PrintGWSignal (LALStatus *stat, const CoherentGW *signal, const CHAR *fname);
+void ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
+void ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
+void compare_SFTs (const basicSFT *sft1, const basicSFT *sft2);
+void LALCreateSFT (LALStatus *stat, basicSFT **outputSFT, UINT4 length);
+void LALDestroySFT (LALStatus *stat, basicSFT **inputSFT);
 
 /********************************************************** <lalLaTeX>
 \newpage\input{LALSampleTestC}

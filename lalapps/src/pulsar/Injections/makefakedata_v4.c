@@ -576,25 +576,25 @@ int main(int argc,char *argv[]) {
     ConvertGPS2SSB (&status, &time2, timestamps[0], &params);
 
     printf ("\nDEBUG: difference SSB-time: %e s\n", 
-	    1.0*(time1.gpsSeconds - time2.gpsSeconds) + (time1.gpsNanoSeconds - time2.gpsNanoSeconds)*1e-9 );
+	    1.0*(time1.gpsSeconds - time2.gpsSeconds) 
+	    + (time1.gpsNanoSeconds - time2.gpsNanoSeconds)*1e-9 );
 
 
     SUB (LALGeneratePulsarSignal (&status, &Tseries, &params), &status );
 
     SUB (LALPrintR4TimeSeries (&status, &Tseries, "test2.agr"), &status);
 
-    sftParams.FreqBand = Band;
+    /*    sftParams.FreqBand = Band; */ /* FIXME */
     sftParams.Tsft = Tsft;
-    sftParams.Nsft = 0; /* FIXME: not used yet */
     sftParams.timestamps = NULL;
     sftParams.noiseSFTs = NULL;
 
-    SUB (AddSignalToSFTs (&status, &SFTs, &Tseries, &sftParams), &status);
+    SUB ( LALSignalToSFTs (&status, &SFTs, &Tseries, &sftParams), &status);
 
-    for (i=0; i < SFTs.length; i++) 
+    for (i=0; i < SFTs.numSFTs; i++) 
       {
 	sprintf (fname, "SFT_comp.%05d", i);
-	write_SFT (&status, &(SFTs.SFTs[i]), fname);
+	write_SFT (&status, SFTs.SFTlist[i], fname);
       }
 
   }
@@ -662,17 +662,20 @@ int main(int argc,char *argv[]) {
 	return 1;  
 
       printf ("\nComparing SFT %d:", iSFT);
-      compare_SFTs (fvec, SFTs.SFTs[iSFT].data );
+      /*      compare_SFTs (fvec, SFTs.data[iSFT] ); */ /* FIXME */
     }
 
   } /* end of loop over different SFTs */
 
   /* free the stuff */
-  for (i=0; i < SFTs.length; i++) 
+  for (i=0; i < SFTs.numSFTs; i++) 
     {
-      SUB (LALCDestroyVector (&status, &(SFTs.SFTs[i].data) ), &status);
+      LALFree (SFTs.SFTlist[i]->data);
+      LALFree (SFTs.SFTlist[i]);
     }
-  LALFree ( SFTs.SFTs );
+
+  LALFree ( SFTs.SFTlist );
+  SFTs.SFTlist = NULL;
   
   LALFree (Tseries.data->data);
   LALFree (Tseries.data);

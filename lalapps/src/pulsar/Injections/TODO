@@ -1,13 +1,23 @@
 TODO
 -----
-* fix bug of zeroes in beginning/end of time-series
-	(-> see makefakedata_v2 for that)
+* check source-pos coordinates and "normalize" them if they 
+   are 'non-canonical' -> mention in documentation 
 
-* complete AddSignalToSFTs()
+* complete LALSignalToSFTs()
 
 * test-check final SFTs against makefakedata_v2
 
 * write some documentation
 
+* understand why we can throw away freqency-bin nr (n/2 +1) ?
+	(--> FFTW algorithm)
+
 done
 ----
+
+* fix bug of zeroes in beginning/end of time-series
+	(-> see makefakedata_v2 for that)
+  => used temporary fix now, but really should check LALSimulateCoherentGW()
+
+* turn timestamps completely into INT's for SFTs? (NO)
+ 
