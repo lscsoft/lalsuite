@@ -126,7 +126,7 @@ typedef struct {
 } StringVector;
 
 /* prototypes for internal helper functions */
-static StringVector *find_files (const CHAR *globdir);
+static StringVector *find_files (const CHAR *fpattern);
 static void DestroyStringVector (StringVector *strings);
 static void LALCopySFT (LALStatus *stat, SFTtype *dest, const SFTtype *src);
 static void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
@@ -238,27 +238,26 @@ LALReadSFTfile (LALStatus *stat,
 
 
 
-/* ----------------------------------------------------------------------
- * read a whole bunch of SFTs at once: given a file-pattern, read and 
- * return a vector of SFTs
+/** Read a bunch of SFTs matching a given glob-like file-pattern.
  *
- * the input-glob is a bit special: the file-part is interpreted as a 
- * match-string: so test1/thisdir/SFT  would match all "*SFT* files
- * in test1/thisdir/ !
- *
- *----------------------------------------------------------------------*/
+ * NOTE: this does not depend on glob, so it should be safe under condor.
+ */
 /* <lalVerbatim file="SFTfileIOCP"> */
 void
 LALReadSFTfiles (LALStatus *stat,
-		 SFTVector **sftvect,	/* output SFT vector */
-		 REAL8 fMin,		/* lower frequency-limit */
-		 REAL8 fMax,		/* upper frequency-limit */
-		 const CHAR *globdir)	/* "path/filepattern" */
+		 SFTVector **sftvect,	/**< output SFT vector */
+		 REAL8 fMin,	       	/**< lower frequency-limit */
+		 REAL8 fMax,		/**< upper frequency-limit */
+		 UINT4 wingBins,	/**< number of frequency-bins to be added left and right. */
+		 const CHAR *fpattern)	/**< path/filepattern */
 { /* </lalVerbatim> */
 
   UINT4 i, numSFTs;
   SFTVector *out = NULL;
-  SFTtype *sft = NULL;
+  SFTtype *oneSFT = NULL;
+  SFTHeader header;
+  REAL8 dFreq; 		/**< frequency spacing in SFT */
+  REAL8 fWing;		/**< frequency band to be added as "wings" to the 'physical band' */
   StringVector *fnames;
 
   INITSTATUS (stat, "LALReadSFTfiles", SFTFILEIOC);
@@ -266,36 +265,52 @@ LALReadSFTfiles (LALStatus *stat,
   
   ASSERT (sftvect, stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
   ASSERT (*sftvect == NULL, stat, SFTFILEIOH_ENONULL, SFTFILEIOH_MSGENONULL);
-  ASSERT (globdir,  stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (fpattern,  stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
   ASSERT (fMin <= fMax, stat, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
-
 
   /* make filelist 
    * NOTE: we don't use glob() as it was reported to fail under condor */
-  if ( (fnames = find_files (globdir)) == NULL) {
+  if ( (fnames = find_files (fpattern)) == NULL) {
     ABORT (stat, SFTFILEIOH_EGLOB, SFTFILEIOH_MSGEGLOB);
   }
 
-  numSFTs = fnames->length;
+  /* read header of first sft to determine Tsft, and therefore dfreq */
+  LALReadSFTheader(stat->statusPtr, &header, fnames->data[0]);
+  BEGINFAIL(stat) {
+    DestroyStringVector (fnames);    
+  } ENDFAIL(stat);
 
+  numSFTs = fnames->length;
+  dFreq = 1.0 / header.timeBase;
+  fWing = wingBins * dFreq;
+
+  /* main loop: load all SFTs and put them into the SFTvector */
   for (i=0; i < numSFTs; i++)
     {
-      LALReadSFTfile (stat->statusPtr, &sft, fMin, fMax, fnames->data[i]);
+      LALReadSFTfile (stat->statusPtr, &oneSFT, fMin-fWing, fMax+fWing, fnames->data[i]);
       BEGINFAIL (stat) {
+	DestroyStringVector (fnames);    
+	LALDestroySFTtype (stat->statusPtr, &oneSFT);
 	if (out) LALDestroySFTVector (stat->statusPtr, &out);
       } ENDFAIL (stat);
-      /* this is a bit tricky: first we need to read one SFT to know how
-       * many frequency-bins we need. 
-       * This also means: ALL our SFTs currently have to be of same length! */
-      if (out == NULL) {
-	LALCreateSFTVector (stat->statusPtr, &out, numSFTs, sft->data->length);
-      }
 
-      /* Check that SFTs have same length (current limitation) */
-      if ( sft->data->length != out->data->data->length)
+      /* after the first time we can allocate the output-vector, 
+       * as we now kpnow how many frequency-bins we need */
+      if (out == NULL)
 	{
+	  LALCreateSFTVector(stat->statusPtr, &out, numSFTs, oneSFT->data->length);
+	  BEGINFAIL(stat) {
+	    DestroyStringVector (fnames);    
+	    LALDestroySFTtype (stat->statusPtr, &oneSFT);
+	  } ENDFAIL(stat);
+	}
+
+      /* make sure all SFTs have same length */
+      if ( oneSFT->data->length != out->data->data->length)
+	{
+	  DestroyStringVector (fnames);    
+	  LALDestroySFTtype (stat->statusPtr, &oneSFT);
 	  LALDestroySFTVector (stat->statusPtr, &out);
-	  LALDestroySFTtype (stat->statusPtr, &sft);
 	  ABORT (stat, SFTFILEIOH_EDIFFLENGTH, SFTFILEIOH_MSGEDIFFLENGTH);
 	} /* if length(thisSFT) != common length */
 
@@ -303,14 +318,15 @@ LALReadSFTfiles (LALStatus *stat,
        * this is a bit complicated by the fact that it's a vector
        * of SFTtypes, not pointers: therefore we need to *COPY* the stuff !
        */
-      LALCopySFT (stat->statusPtr, &(out->data[i]), sft);
+      LALCopySFT (stat->statusPtr, &(out->data[i]), oneSFT);
       BEGINFAIL (stat) {
+	DestroyStringVector (fnames);    
+	LALDestroySFTtype (stat->statusPtr, &oneSFT);
 	LALDestroySFTVector (stat->statusPtr, &out);
-	LALDestroySFTtype (stat->statusPtr, &sft);
       } ENDFAIL (stat);
 
-      LALDestroySFTtype (stat->statusPtr, &sft);
-      sft = NULL;
+      LALDestroySFTtype (stat->statusPtr, &oneSFT);
+      oneSFT = NULL;	/* important for next call of LALReadSFTfile()! */
 
     } /* for i < numSFTs */
 
@@ -761,10 +777,7 @@ endian_swap(CHAR * pdata, size_t dsize, size_t nelements)
 
 /*----------------------------------------------------------------------
  * glob() has been reported to fail under condor, so we use our own
- * function to get a filelist from a directory, using a sub-pattern.
- *
- * This is not really a glob, but a "trick": the globdir is interpreted as
- *  "directory/pattern", ie. we actually match "directory/ *pattern*"
+ * function to get a filelist from a directory, using a glob-like pattern.
  *
  * looks pretty ugly with all the #ifdefs for the Microsoft C compiler
  *----------------------------------------------------------------------*/
