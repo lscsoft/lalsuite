@@ -231,7 +231,7 @@ main (  int argc, char **argv )
 	 {
 	   if (coarseIn.approximant == BCV)
 	     {      		   
-	       fprintf(stdout, "%e %e %e %e\n", list[i].params.psi0, list[i].params.psi3, list[i].params.totalMass, list[i].params.fendBCV);
+	       fprintf(stdout, "%e %e %e %e\n", list[i].params.psi0, list[i].params.psi3, list[i].params.totalMass, list[i].params.fFinal);
 	     } 
 	   else
 	     {
@@ -312,7 +312,7 @@ main (  int argc, char **argv )
 	   overlapin.param 	= list[j].params;
 	   /**/
 	   if (overlapin.param.approximant==BCV) 
-	     overlapin.param.fCutoff = list[j].params.fendBCV ;
+	     overlapin.param.fCutoff = list[j].params.fFinal ;
 	   else
 	     overlapin.param.fCutoff = randIn.param.fCutoff;
 	   
@@ -322,7 +322,7 @@ main (  int argc, char **argv )
 	   list[j].params.fFinal = overlapin.param.fFinal;
 	   
 	   if (otherIn.ambiguityFunction  == 1)
-	     printf("%lf %lf %lf %lf\n", list[j].params.psi0, list[j].params.psi3, list[j].params.fendBCV,overlapout.max);
+	     printf("%lf %lf %lf %lf\n", list[j].params.psi0, list[j].params.psi3, list[j].params.fFinal,overlapout.max);
 	   
 	   if (omax < overlapout.max) /*storing overlap here*/
 	     {
@@ -757,9 +757,9 @@ void SetDefault(InspiralCoarseBankIn *coarseIn,
       coarseIn->alpha = BANKEFFICIENCY_ALPHA;
       randIn->param.alpha = coarseIn->alpha;
     }
-  if(randIn->param.fendBCV  == -1)
+  if(randIn->param.fFinal  == -1)
     {
-      randIn->param.fendBCV = BANKEFFICIENCY_FENDBCV;
+      randIn->param.fFinal = BANKEFFICIENCY_FENDBCV;
     }
   if (randIn->type == -1)
     {

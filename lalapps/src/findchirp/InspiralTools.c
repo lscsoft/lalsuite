@@ -181,7 +181,6 @@ void Init2DummyInspiralTemplate(InspiralTemplate *params)
   params->eccentricity = -1;
   params->eta          = -1;
   params->fCutoff      = -1;
-  params->fendBCV      = -1;
   params->fFinal       = -1;
   params->fLower       = -1;
   params->ieta         = -1;
@@ -237,7 +236,6 @@ SetDefault(InspiralTemplate *params)
   params->eccentricity = INSPIRALTEMPLATE_ECCENTRICITY;
   /*  params->eta          = INSPIRALTEMPLATE_ETA;*/
   params->fCutoff      = INSPIRALTEMPLATE_FCUTOFF;
-  params->fendBCV      = INSPIRALTEMPLATE_FENDBCV;
   /*  params->fFinal       = INSPIRALTEMPLATE_FFINAL;*/
   params->fLower       = INSPIRALTEMPLATE_FLOWER;
   /*  params->ieta         = INSPIRALTEMPLATE_IETA;*/
@@ -355,7 +353,7 @@ ParseParameters(int argc,
 
        }
      else if (strcmp(argv[i],"-fbcv")==0)
-       params->fendBCV = atof(argv[++i]); 
+       params->fFinal = atof(argv[++i]); 
      else if (strcmp(argv[i], "-approximant")==0)
        {
 	 if (strcmp(argv[++i],"TaylorT1")==0)
@@ -430,7 +428,6 @@ PrintParams(InspiralTemplate params)
   printf("chirpmass  = %15.12f\n", params.chirpMass); 
   printf("psi0       = %15.12f\n",params.psi0);
   printf("psi3       = %15.12f\n ",params.psi3);
-  printf("fendBCV    = %15.12f\n",params.fendBCV);
   printf("alpha      = %15.12f\n",params.alpha);
   printf("alpha1     = %15.12f\n",params.alpha1);
   printf("alpha2     = %15.12f\n",params.alpha2);

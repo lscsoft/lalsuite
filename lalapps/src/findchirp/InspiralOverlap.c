@@ -119,11 +119,11 @@ main (  int argc, char **argv )
    tmpltParams.alpha = 0.669L;
    tmpltParams.psi0 = 224810.L;
    tmpltParams.psi3 = -867.58L;
-   tmpltParams.fendBCV = 764.5L;
+   tmpltParams.fFinal = 764.5L;
    params.alpha = tmpltParams.alpha;
    params.psi0 = tmpltParams.psi0;
    params.psi3 = tmpltParams.psi3;
-   params.fendBCV = tmpltParams.fendBCV;
+   params.fFinal = tmpltParams.fFinal;
 
 
    i=1;
@@ -163,7 +163,7 @@ main (  int argc, char **argv )
 	   else if (strcmp(argv[i],"-psi3")==0)
 		   tmpltParams.psi3 = atof(argv[++i]);
 	   else if (strcmp(argv[i],"-fcut")==0)
-		   tmpltParams.fendBCV = atof(argv[++i]);
+		   tmpltParams.fFinal = atof(argv[++i]);
 	   else if (strcmp(argv[i], "-approximant")==0 || (strcmp(argv[i], "-signal")==0))
 	   {
 		   if (strcmp(argv[++i],"TaylorT1")==0)
@@ -231,7 +231,7 @@ main (  int argc, char **argv )
 		   fprintf(stderr,"      -order : order of PN model (%7.2d) of template\n", params.order);
 		   fprintf(stderr,"       -psi0 : Max value of psi0 (%7.2f)\n", params.psi0);
 		   fprintf(stderr,"       -psi3 : Min value of psi3 (%7.2f)\n", params.psi3);
-		   fprintf(stderr,"       -fcut : Cutoff frequency for BCV (%7.2f)\n\n", params.fendBCV);
+		   fprintf(stderr,"       -fcut : Cutoff frequency for BCV (%7.2f)\n\n", params.fFinal);
 		   return 1;	
 
 	   }
@@ -385,7 +385,7 @@ PrintParams(InspiralTemplate params1, InspiralTemplate params2)
   printf("#chirpmass  = %7.2f %7.2f\n",params1.chirpMass,params2.chirpMass); 
   printf("#psi0       = %7.2f %7.2f\n",params1.psi0,params2.psi0);
   printf("#psi3       = %7.2f %7.2f\n",params1.psi3,params2.psi3);
-  printf("#fendBCV    = %7.2f %7.2f\n",params1.fendBCV,params2.fendBCV);
+  printf("#fendBCV    = %7.2f %7.2f\n",params1.fFinal,params2.fFinal);
   printf("#alpha      = %7.2f %7.2f\n",params1.alpha,params2.alpha);
   printf("#alpha1     = %7.2f %7.2f\n",params1.alpha1,params2.alpha1);
   printf("#alpha2     = %7.2f %7.2f\n",params1.alpha2,params2.alpha1);
