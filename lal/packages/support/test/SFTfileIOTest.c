@@ -255,7 +255,7 @@ int main(int argc, char *argv[]){
   printf ("Testing LALReadSFTfiles()\n");
 
   /* now re-read OUTFILE1 and OUTFILE2 using a pattern */
-  SUB (LALReadSFTfiles (&status, &sftvect, fmin, fmax, FPATTERN), &status);
+  SUB (LALReadSFTfiles (&status, &sftvect, fmin, fmax, 0, FPATTERN), &status);
   
   if(sftvect->length != 2)
     {
