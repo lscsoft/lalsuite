@@ -205,7 +205,7 @@ LALRandomInspiralSignal
 				   randIn->param.t3 = randIn->tnMin + (randIn->tnMax - randIn->tnMin)*epsilon2;
 				   LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
 				   break;
-			   case psi0psi3: 
+			   case psi0Andpsi3: 
 				   randIn->param.psi0 = randIn->psi0Min + (randIn->psi0Max - randIn->psi0Min)*epsilon1;
 				   randIn->param.psi3 = randIn->psi3Min + (randIn->psi3Max - randIn->psi3Min)*epsilon2;
 				   break;
@@ -254,7 +254,7 @@ LALRandomInspiralSignal
 				   }
 				   break;
 		   
-			   case psi0psi3: 
+			   case psi0Andpsi3: 
 				   valid = 1;
 				   break;
 			   case t04: 

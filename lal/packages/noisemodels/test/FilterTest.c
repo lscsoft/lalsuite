@@ -72,7 +72,7 @@ LALInspiralParameterCalc
 void  LALInspiralCreateFlatBank(LALStatus *status, REAL4VectorSequence *list, InspiralBankParams *bankParams);
 void printf_timeseries (INT4 n, REAL4 *signal, REAL8 delta, REAL8 t0);
 
-INT4 lalDebugLevel=1;
+INT4 lalDebugLevel=0;
      
 int 
 main ( void ) 
@@ -80,22 +80,27 @@ main ( void )
    REAL4VectorSequence *list=NULL;
    static LALStatus status;
    static InspiralBankParams bankParams;
+	   
    INT4 ntrials, i, j, nlist, jmax;
    REAL8 df, omax;
    REAL8 dt0, dt1, g00, g11, h00, h11, h01, ang, match;
    REAL4Vector signal, correlation;
    UINT4 numPSDpts = 1048576;
+   UINT4 numFcutTemplates=4;
    void *noisemodel = LALLIGOIPsd;
    static RandomInspiralSignalIn randIn;
    static InspiralWaveOverlapIn overlapin;
    static InspiralWaveOverlapOut overlapout, overlapoutmax;
    static CreateVectorSequenceIn in; 
-  REAL8FrequencySeries shf;
+   REAL8FrequencySeries shf;
    static InspiralMetric metric;
    RealFFTPlan *fwdp=NULL,*revp=NULL;
    FILE *FilterTest;
    FilterTest = fopen("FilterTest.out", "w");
 
+   static InspiralTemplateList *tmpltList=NULL;
+
+   LALInspiralBCVFcutBank( &status, &tmpltList, &nlist, numFcutTemplates) ;
    fprintf(stderr, "This test code does three things:\n");
    fprintf(stderr, "(a) Creates a filter bank at a certain minimal match\n");
    fprintf(stderr, "(b) Generates signals with random parmeters\n");
@@ -107,9 +112,12 @@ main ( void )
    bankParams.x0Min = 0.0;
    bankParams.x0Max = 2.5e5;
    bankParams.x1Min = -2.2e3;
-   bankParams.x1Max = 8.e2;
+   bankParams.x1Max = 0.0;
    bankParams.minimalMatch = 0.95;
 
+/*---------------------------------------------------------------------------*/
+/* Prepare parameters needed to create a verctor sequence to store BCV templates */
+/*---------------------------------------------------------------------------*/
    in.length = 1;
    in.vectorLength = 2;
    LALSCreateVectorSequence(&status, &list, &in);
@@ -166,18 +174,41 @@ main ( void )
    bankParams.metric = &metric;
    LALInspiralCreateFlatBank(&status, list, &bankParams);
    nlist = list->length;
-/* REPORTSTATUS(&status); */
-   if (nlist==0) exit(0);
+   printf("#nlist before=%d\n&\n", nlist);
+   tmpltList = (InspiralTemplateList *) LALMalloc (sizeof (InspiralTemplateList) * nlist);
+  
+   /* Print out the template parameters */
+	   
+   for (i=0; i<nlist; i++)
+   {
+	   /*
+	      Retain only those templates that have meaningful chirptimes:
+	    */
+		   
+	   tmpltList[i].params.psi0 = (REAL8) list->data[2*i];
+	   tmpltList[i].params.psi3 = (REAL8) list->data[2*i+1];
+	   tmpltList[i].params.fLower = randIn.param.fLower;
+	   tmpltList[i].params.nStartPad = randIn.param.nStartPad;
+	   tmpltList[i].params.startPhase = randIn.param.startPhase;
+	   tmpltList[i].params.nEndPad = randIn.param.nEndPad;
+	   tmpltList[i].params.tSampling= randIn.param.tSampling;
+   }
 
-   fprintf(stderr, "#Number of Coarse Bank Templates=%d\n",nlist);
+	   
+   LALInspiralBCVFcutBank( &status, &tmpltList, &nlist, numFcutTemplates) ;
+   fprintf(stderr, "#Number of Coarse Bank Templates after=%d\n",nlist);
    fprintf(FilterTest, "Number of Coarse Bank Templates=%d\n",nlist);
+   if (nlist==0) exit(0);
 
    for (i=0; i<nlist; i++)
    {
-	   int i2;
-	   i2=i*2;
-	   fprintf(FilterTest, "%e %e\n", list->data[i2], list->data[i2+1]);
+	   fprintf(FilterTest, "%e %e %e %e\n", 
+			   tmpltList[i].params.psi0, 
+			   tmpltList[i].params.psi3, 
+			   tmpltList[i].params.totalMass, 
+			   tmpltList[i].params.fendBCV);
    }
+	   
 
 /* REPORTSTATUS(&status); */
 
@@ -192,33 +223,44 @@ main ( void )
 /* REPORTSTATUS(&status); */
    overlapin.fwdp = randIn.fwdp = fwdp;
    overlapin.revp = revp;
-   ntrials=10;
-   fprintf(FilterTest, "#Signal Length=%d Number of sims=%d\n", signal.length, i);
+
+
    fprintf(stderr,"----------------------------------------------\n");
    fprintf(stderr, "   psi0             psi3        Overlap/SNR\n");
    fprintf(stderr,"----------------------------------------------\n");
+
+   ntrials=10;
+   fprintf(FilterTest, "#Signal Length=%d Number of sims=%d\n", signal.length, ntrials);
    fprintf(FilterTest, "   psi0            psi3        Overlap/SNR\n");
-   printf("psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n",
+   fprintf(FilterTest, "psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n",
 		   randIn.psi0Min,randIn.psi0Max,randIn.psi3Min,randIn.psi3Max);
-   while (ntrials--) {
+   fprintf(stderr, "psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n",
+		   randIn.psi0Min,randIn.psi0Max,randIn.psi3Min,randIn.psi3Max);
+   while (ntrials--) 
+   {
 	      
       int numTemplates=0;
       randIn.type = 0;
       /*
       randIn.param.massChoice = m1Andm2;
       */
-      randIn.param.massChoice = psi0psi3;
-      randIn.param.approximant = BCV;
+      randIn.param.massChoice = m1Andm2;
+      randIn.param.approximant = EOB;
       LALRandomInspiralSignal(&status, &signal, &randIn);
+      randIn.param.massChoice = psi0Andpsi3;
 /*
       LALREAL4VectorFFT(&status, &correlation, &signal, revp);
-      for (j=0; j<signal.length; j++) printf("%e\n", correlation.data[j]);
+      for (j=0; j<signal.length; j++) 
+      {
+	      printf("%e\n", correlation.data[j]);
+      }
       break;
       LALInspiralParameterCalc(&status, &randIn.param);
 */
+      /* We shall choose the cutoff at r=3M for EOB waveforms */
+      /*
       randIn.param.massChoice = m1Andm2;
       LALInspiralParameterCalc(&status, &randIn.param);
-      /* We shall choose the cutoff at r=3M for EOB waveforms */
       switch (randIn.param.approximant)
       {
 	   case EOB:
@@ -232,68 +274,61 @@ main ( void )
 	      break;
       }
       randIn.param.fendBCV = randIn.param.fCutoff;
+      */
 
-      randIn.param.approximant = BCV;
       overlapin.signal = signal;
       overlapin.param = randIn.param;
+      overlapin.param.approximant = BCV;
       jmax = 0;
       omax = 0.0;
-      for (j=0; j<nlist; j++) {
-	      int j2;
-	      j2 = j*2;
-/*-----------------------------------------------------------------------   
-   The "distance" between the random signal and the template
-   on the lattice can be computed using dt0 and dt1 and the metric
-------------------------------------------------------------------------*/
-         dt0 = -list->data[j2] + randIn.param.psi0;
-         dt1 = -list->data[j2+1] + randIn.param.psi3;
-/*-----------------------------------------------------------------------   
-   Compute the approximate match of the template and the
-   random signal using the metric; if that is larger than about 
-   50 % then compute the exact match by generating the template. 
-   (Sometime in the future we may want the following six lines 
-   to be replaced by a routine like this.
-   ApproximateMatch (status, &match, list[j], dt0, dt1);)
-------------------------------------------------------------------------*/
-         match = 1. - metric.G00*dt0*dt0 - metric.G11*dt1*dt1 - 2.*metric.G01*dt0*dt1;
-         /* if (match > bankParams.minimalMatch/2.) */
-	 {
-		 numTemplates++;
-		 overlapin.param.psi0 = list->data[j2];
-		 overlapin.param.psi3 = list->data[j2+1];
-		 LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
-		 if (omax < overlapout.max) {
-			 omax = overlapout.max;
-			 overlapoutmax = overlapout;
-			 jmax = j;
-		 }
-         }
-     }
-     j = 2*jmax;
-     printf("%e %e %e %e %e %d\n", list->data[j], list->data[j+1], randIn.param.mass1, randIn.param.mass2, omax, numTemplates);
-     fprintf(FilterTest,"%e %e %e %e %e %d\n", list->data[j], list->data[j+1], randIn.param.mass1, randIn.param.mass2, omax, numTemplates);
-     /*
-     printf("%e %e %e %e %e %d\n", list->data[j], list->data[j+1], randIn.param.psi0, randIn.param.psi3, omax, numTemplates);
-     fprintf(FilterTest,"%e %e %e %e %e %d\n", list->data[j], list->data[j+1], randIn.param.psi0, randIn.param.psi3, omax, numTemplates);
-     */
-   fflush(stdout);
+      for (j=0; j<nlist; j++) 
+      {
+     	      overlapin.param.psi0 = tmpltList[j].params.psi0;
+	      overlapin.param.psi3 = tmpltList[j].params.psi3;
+	      overlapin.param.fCutoff = tmpltList[j].params.fendBCV;
+	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
+	      fprintf(stderr, "%d %e %e %e\n", j, overlapin.param.psi0, overlapin.param.psi3, overlapout.max);
+	      if (omax < overlapout.max) 
+	      {
+		      omax = overlapout.max;
+		      overlapoutmax = overlapout;
+		      jmax = j;
+	      }
+      }
+      fprintf(stderr, "%e %e %e %e %e %e\n", 
+		      tmpltList[jmax].params.psi0, 
+		      tmpltList[jmax].params.psi3, 
+		      tmpltList[jmax].params.fendBCV, 
+		      randIn.param.mass1, 
+		      randIn.param.mass2, 
+		      omax);
+     
+      fprintf(FilterTest, "%e %e %e %e %e %e\n", 
+		      tmpltList[jmax].params.psi0, 
+		      tmpltList[jmax].params.psi3, 
+		      tmpltList[jmax].params.fendBCV, 
+		      randIn.param.mass1, 
+		      randIn.param.mass2, 
+		      omax);
+      fflush(stdout);
    }
    fclose(FilterTest);
-
+   
    /* destroy the plans, correlation and signal */
 
    /*
-   LALDDestroyVector( &status, &(shf.data) );
-   if (signal.data != NULL) LALFree(signal.data);
-   if (correlation.data != NULL) LALFree(correlation.data);
-   if (randIn.psd.data != NULL) LALFree(randIn.psd.data);
-   if (list!= NULL) LALFree(list);
-   LALDestroyRealFFTPlan(&status,&fwdp);   
-   LALDestroyRealFFTPlan(&status,&revp);
-
-   LALCheckMemoryLeaks();
-   */
+      LALDDestroyVector( &status, &(shf.data) );
+      if (signal.data != NULL) LALFree(signal.data);
+      if (correlation.data != NULL) LALFree(correlation.data);
+      if (randIn.psd.data != NULL) LALFree(randIn.psd.data);
+      if (list!= NULL) LALFree(list);
+      LALDestroyRealFFTPlan(&status,&fwdp);   
+      LALDestroyRealFFTPlan(&status,&revp);
+      LALCheckMemoryLeaks();
+    */
+   
    return(0);
+
 }
 
 void printf_timeseries (INT4 n, REAL4 *signal, double delta, double t0) 

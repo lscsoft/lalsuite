@@ -158,23 +158,62 @@ LALInspiralFindLoudestEvent
    }
 
    findeventsin->param.nStartPad = 0;
-   findeventsin->param.startPhase = LAL_PI_2;
-   LALInspiralWave(status->statusPtr, &output2, &findeventsin->param);
-   CHECKSTATUSPTR(status);
-   findeventsin->param.startPhase = 0.;
-   LALInspiralWave(status->statusPtr, &output1, &findeventsin->param);
-   CHECKSTATUSPTR(status);
-   if (findeventsin->displayTemplates)
+   switch (findeventsin->param.approximant)
    {
-      for (i=0;i<(INT4)output1.length;i++) 
-         printf("%e %e\n", i*dt, output1.data[i]);printf("&\n");
-      for (i=0;i<(INT4)output1.length;i++) 
-         printf("%e %e\n", i*dt, output2.data[i]);printf("&\n");
+	   case TaylorT1:
+	   case TaylorT2:
+	   case TaylorT3:
+	   case PadeT1:
+	   case EOB:
+	   case SpinTaylorT3:
+	   
+		   findeventsin->param.startPhase = LAL_PI_2;
+		   LALInspiralWave(status->statusPtr, &output2, &findeventsin->param);
+		   CHECKSTATUSPTR(status);
+		   findeventsin->param.startPhase = 0.;
+		   LALInspiralWave(status->statusPtr, &output1, &findeventsin->param);
+		   CHECKSTATUSPTR(status);
+	   
+		   if (findeventsin->displayTemplates)
+		   {
+			   for (i=0;i<(INT4)output1.length;i++) 
+				   printf("%e %e %e\n", i*dt, output1.data[i], output2.data[i]);printf("&\n");
+		   }
+		   LALREAL4VectorFFT(status->statusPtr, &filter1, &output1, findeventsin->fwdp);
+		   CHECKSTATUSPTR(status);
+		   LALREAL4VectorFFT(status->statusPtr, &filter2, &output2, findeventsin->fwdp);
+		   CHECKSTATUSPTR(status);
+		   break;
+	   
+	   case TaylorF1:
+	   case TaylorF2:
+	   case PadeF1:
+	   case BCV:
+	   
+		   findeventsin->param.startPhase = LAL_PI_2;
+		   LALInspiralWave(status->statusPtr, &filter2, &findeventsin->param);
+		   CHECKSTATUSPTR(status);
+		   findeventsin->param.startPhase = 0.;
+		   LALInspiralWave(status->statusPtr, &filter1, &findeventsin->param);
+		   CHECKSTATUSPTR(status);
+	   
+		   if (findeventsin->displayTemplates)
+		   {
+			   LALREAL4VectorFFT(status->statusPtr, &output1, &filter1, findeventsin->revp);
+			   CHECKSTATUSPTR(status);
+			   LALREAL4VectorFFT(status->statusPtr, &output2, &filter2, findeventsin->revp);
+			   CHECKSTATUSPTR(status);
+			   for (i=0;i<(INT4)output1.length;i++) 
+				   printf("%e %e %e\n", i*dt, output1.data[i], output2.data[i]);printf("&\n");
+		   
+			   LALREAL4VectorFFT(status->statusPtr, &filter1, &output1, findeventsin->fwdp);
+			   CHECKSTATUSPTR(status);
+			   LALREAL4VectorFFT(status->statusPtr, &filter2, &output2, findeventsin->fwdp);
+			   CHECKSTATUSPTR(status);
+		   }
+		   break;
    }
-   LALREAL4VectorFFT(status->statusPtr, &filter1, &output1, findeventsin->fwdp);
-   CHECKSTATUSPTR(status);
-   LALREAL4VectorFFT(status->statusPtr, &filter2, &output2, findeventsin->fwdp);
-   CHECKSTATUSPTR(status);
+   
    normin.psd = &(findeventsin->psd);
    normin.df = df;
    normin.fCutoff = findeventsin->param.fCutoff;
