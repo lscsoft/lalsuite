@@ -155,29 +155,31 @@ LALFindChirpMaster (
          */
 
 
-#if 0
+        /* fprintf( stderr, "event handler started\n" ); */
+
+        /* this is a dog: i should think of a better way to do this */
 
         /* loop through event list */
         for ( thisEvent = *eventList; thisEvent; 
             thisEvent = thisEvent->next )
         { 
-          fprintf( stderr, "searching event at %p\n", thisEvent );
           /* look for a template that matches the template id of the event */
+          /* fprintf( stderr, "searching event at %p\n", thisEvent ); */
           for ( thisTmplt = params->tmpltHead; thisTmplt; 
               thisTmplt = thisTmplt->next )
           {
-            fprintf( stderr, "searching tmplt at %p\n", thisTmplt );
             /* for each tmplt that we find, have we inserted that template? */
+            /* fprintf( stderr, "searching tmplt at %p\n", thisTmplt ); */
             if ( thisEvent->tmplt.number == thisTmplt->tmpltPtr->number && 
                 ! thisTmplt->inserted )
             {
               /* insert the fine bank into the list to filter */
-              fprintf( stderr, "inserting fine bank %p \n", 
-                  thisTmplt->tmpltPtr->fine );
+              /* fprintf( stderr, "inserting fine bank %p \n", */
+              /*    thisTmplt->tmpltPtr->fine ); */
               for ( fineBank = thisTmplt->tmpltPtr->fine; fineBank;
                   fineBank = fineBank->next )
               {
-                fprintf( stderr, "fine tmplt %p\n", fineBank );
+                /* fprintf( stderr, "fine tmplt %p\n", fineBank ); */
                 LALFindChirpCreateTmpltNode( status->statusPtr, 
                     fineBank, &(params->tmpltCurrent) );
                 CHECKSTATUSPTR( status );
@@ -190,9 +192,7 @@ LALFindChirpMaster (
           }
         }
 
-        fprintf( stderr, "event handler done\n" );
-
-#endif
+        /* fprintf( stderr, "event handler done\n" ); */
 
         break;
 

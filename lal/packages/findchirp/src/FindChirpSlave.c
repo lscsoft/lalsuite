@@ -138,6 +138,12 @@ LALFindChirpSlave (
 
     params->filterInput->tmplt = bankCurrent;
 
+    /* set the thresholds depending on the level of the template */
+    params->filterParams->rhosqThresh = 
+      params->rhosqThreshVec[bankCurrent->level];
+    params->filterParams->chisqThresh = 
+      params->chisqThreshVec[bankCurrent->level];
+
 
     /* 
      *
@@ -150,42 +156,52 @@ LALFindChirpSlave (
     {
       eventList = NULL;
 
-      params->filterInput->segment = fcSegVec->data + i;
-      
-      /* filter the data segment against the template */
-      LALFindChirpFilterSegment( status->statusPtr, &eventList, 
-          params->filterInput, params->filterParams );
-      CHECKSTATUSPTR( status );
-
-      /* if the filter returned any events, send them to the serach master */
-      if ( eventList )
+      /* if the heirarchical level of the data segment exceeds that of the */
+      /* template, filter it                                               */
+      if ( fcSegVec->data[i].level >= bankCurrent->level )
       {
-        InspiralEvent *event;
 
-        LALInitializeExchange( status->statusPtr, &thisExch, 
-            &exchInspiralEvents, &initExchParams );
+        params->filterInput->segment = fcSegVec->data + i;
+
+        /* filter the data segment against the template */
+        LALFindChirpFilterSegment( status->statusPtr, &eventList, 
+            params->filterInput, params->filterParams );
         CHECKSTATUSPTR( status );
 
-        /* exchange all the events returned by the filter */
-        for ( event = eventList; event; event = event->next )
+        /* if the filter returned any events, send them to the serach master */
+        if ( eventList )
         {
-          LALExchangeInspiralEvent( status->statusPtr, event, thisExch );
+          InspiralEvent *event;
+
+          LALInitializeExchange( status->statusPtr, &thisExch, 
+              &exchInspiralEvents, &initExchParams );
           CHECKSTATUSPTR( status );
-        }
 
-        LALFinalizeExchange( status->statusPtr, &thisExch );
-        CHECKSTATUSPTR( status );
+          /* exchange all the events returned by the filter */
+          for ( event = eventList; event; event = event->next )
+          {
+            LALExchangeInspiralEvent( status->statusPtr, event, thisExch );
+            CHECKSTATUSPTR( status );
+          }
 
-        /* free the events */
-        while ( eventList )
-        {
-          InspiralEvent *current;
-          current = eventList;
-          eventList = eventList->next;
-          LALFree( current );
-        }
+          LALFinalizeExchange( status->statusPtr, &thisExch );
+          CHECKSTATUSPTR( status );
 
-      }
+          /* free the events */
+          while ( eventList )
+          {
+            InspiralEvent *current;
+            current = eventList;
+            eventList = eventList->next;
+            LALFree( current );
+          }
+
+          /* increment the level of data segment */
+          fcSegVec->data[i].level++;
+
+        } /* end if... eventList */
+
+      } /* end if... filter */
 
     } /* end loop over data segments */
 

@@ -118,6 +118,8 @@ typedef struct
 tagFindChirpSlaveParams
 {
   MPI_Comm                     *mpiComm;
+  REAL4                        *chisqThreshVec;
+  REAL4                        *rhosqThreshVec;
   FindChirpSPDataParams        *dataParams;
   FindChirpSPTmpltParams       *tmpltParams;
   FindChirpFilterParams        *filterParams;
