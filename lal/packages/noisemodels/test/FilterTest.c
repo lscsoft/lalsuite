@@ -82,6 +82,8 @@ main ( void )
    REAL8 dt, df, t0, omax;
    REAL8 dt0, dt1, g00, g11, h00, h11, h01, ang, match;
    REAL4Vector signal, correlation;
+   UINT4 numPSDpts = 1048576;
+   void *noisemodel = LALLIGOIPsd;
         
    static RandomInspiralSignalIn randIn;
    InspiralWaveOverlapIn overlapin;
@@ -111,13 +113,18 @@ main ( void )
    coarseIn.fUpper = 1000;
    coarseIn.iflso = 0;
    coarseIn.tSampling = 2048.;
-   coarseIn.NoisePsd = LALLIGOIPsd;
    coarseIn.order = twoPN;
    coarseIn.approximant = TaylorT1;
    coarseIn.space = Tau0Tau2;
 /* minimum value of eta */
    coarseIn.etamin = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) /
       pow(coarseIn.MMax,2.);
+   /* fill the psd */
+   memset( &(coarseIn.shf), 0, sizeof(REAL8FrequencySeries) );
+   coarseIn.shf.f0 = 0;
+   LALDCreateVector( &status, &(coarseIn.shf.data), numPSDpts );
+   coarseIn.shf.deltaF = coarseIn.tSampling / (REAL8) coarseIn.shf.data->length;
+   LALNoiseSpectralDensity (&status, coarseIn.shf.data, noisemodel, coarseIn.shf.deltaF );
 
    fprintf(FilterTest, "#mMin mMax mmCoarse mmFine fLower fUpper tSampling method order approximant domain space\n");
    fprintf(FilterTest, "#%e %e %e %e %e %e %e %d %d %d\n", 
@@ -211,7 +218,7 @@ main ( void )
    correlation.data = (REAL4*) LALMalloc(sizeof(REAL4)*correlation.length);
    randIn.psd.data = (REAL8*) LALMalloc(sizeof(REAL8)*randIn.psd.length);
    df = randIn.param.tSampling/(float) signal.length;
-   LALNoiseSpectralDensity (&status, &randIn.psd, coarseIn.NoisePsd, df);
+   LALNoiseSpectralDensity (&status, &randIn.psd, noisemodel, df);
 /* REPORTSTATUS(&status); */
 
    overlapin.psd = randIn.psd;
@@ -286,6 +293,7 @@ main ( void )
    if (list!= NULL) LALFree(list);
    LALDestroyRealFFTPlan(&status,&fwdp);   
    LALDestroyRealFFTPlan(&status,&revp);
+   LALDDestroyVector( &status, &(coarseIn.shf.data) );
 
    LALCheckMemoryLeaks();
    return(0);

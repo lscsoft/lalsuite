@@ -54,6 +54,8 @@ main ( void )
    static INT4 i, j, nlist;
    static RectangleIn RectIn;
    static RectangleOut RectOut;
+   UINT4 numPSDpts = 1048476;
+   void *noisemodel = LALLIGOIPsd;
 
    coarseIn.mMin = 1.0;
    coarseIn.MMax = 40.0;
@@ -63,13 +65,18 @@ main ( void )
    coarseIn.fUpper = 2000;
    coarseIn.iflso = 0;
    coarseIn.tSampling = 4096.;
-   coarseIn.NoisePsd = LALLIGOIPsd;
    coarseIn.order = twoPN;
    coarseIn.space = Tau0Tau3;
    coarseIn.approximant = TaylorT1;
 /* minimum value of eta */
    coarseIn.etamin = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) /
       pow(coarseIn.MMax,2.);
+   /* fill the psd */
+   memset( &(coarseIn.shf), 0, sizeof(REAL8FrequencySeries) );
+   coarseIn.shf.f0 = 0;
+   LALDCreateVector( &status, &(coarseIn.shf.data), numPSDpts );
+   coarseIn.shf.deltaF = coarseIn.tSampling / (REAL8) coarseIn.shf.data->length;
+   LALNoiseSpectralDensity (&status, coarseIn.shf.data, noisemodel, coarseIn.shf.deltaF );
 
    LALInspiralCreateCoarseBank(&status, &coarseList, &nlist, coarseIn);
 
@@ -116,6 +123,8 @@ main ( void )
         RectOut.x5, RectOut.y5);
   }
   if (coarseList!=NULL) LALFree(coarseList);
+
+  LALDDestroyVector( &status, &(coarseIn.shf.data) );
   LALCheckMemoryLeaks();
   return(0);
 }

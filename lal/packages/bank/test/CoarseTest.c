@@ -56,6 +56,8 @@ main ( void )
    InspiralCoarseBankIn *coarseIn=NULL;
    InspiralFineBankIn   *fineIn=NULL;
    INT4 i, j, clist, flist;
+   UINT4 numPSDpts = 1048576;
+   void *noisemodel = LALLIGOIPsd;
 
    coarseIn = (InspiralCoarseBankIn *)LALMalloc(sizeof(InspiralCoarseBankIn));
    fineIn = (InspiralFineBankIn *)LALMalloc(sizeof(InspiralFineBankIn));
@@ -68,13 +70,19 @@ main ( void )
    coarseIn->fUpper = 1024L;
    coarseIn->iflso = 0;
    coarseIn->tSampling = 4000L;
-   coarseIn->NoisePsd = LALLIGOIPsd;
    coarseIn->order = twoPN;
    coarseIn->approximant = TaylorT1;
    coarseIn->space = Tau0Tau3;
 /* minimum value of eta */
    coarseIn->etamin = coarseIn->mMin * ( coarseIn->MMax - coarseIn->mMin) /
       pow(coarseIn->MMax,2.);
+   /* fill the psd */
+   memset( &(coarseIn->shf), 0, sizeof(REAL8FrequencySeries) );
+   coarseIn->shf.f0 = 0;
+   LALDCreateVector( status, &(coarseIn->shf.data), numPSDpts );
+   coarseIn->shf.deltaF = coarseIn->tSampling / (REAL8) coarseIn->shf.data->length;
+   LALNoiseSpectralDensity (status, coarseIn->shf.data, noisemodel, coarseIn->shf.deltaF );
+   
 
    coarseIn->iflso = 0.;
    LALInspiralCreateCoarseBank(status, &coarseList, &clist, *coarseIn);
@@ -115,6 +123,7 @@ main ( void )
      flist = 0;
   }
   if (fineList!=NULL) LALFree(fineList);
+  LALDDestroyVector( status, &(coarseIn->shf.data) );
   if (coarseList!=NULL) LALFree(coarseList);
   if (coarseIn!=NULL) LALFree(coarseIn);
   if (fineIn!=NULL) LALFree(fineIn);

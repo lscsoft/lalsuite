@@ -785,6 +785,9 @@ setupParamList(LALStatus* const status)
 {
     INT4 i = 0;
 
+    const UINT4 numPSDpts = 1048576;
+    void *noisemodel = LALLIGOIPsd;
+
     REAL8 t0_min = LAL_REAL8_MAX;
     REAL8 t0_max = 0.0;
     REAL8 t2_min = LAL_REAL8_MAX;
@@ -801,11 +804,6 @@ setupParamList(LALStatus* const status)
     coarseIn.fLower = fcutoff;
     coarseIn.fUpper = Nyq;
     coarseIn.tSampling = srate;
-    /* the detector structure member has been removed */
-    /* and replaced with the NoisePsd member          */
-    /*                          - duncan              */
-    /* coarseIn.detector = ligo;                      */
-    coarseIn.NoisePsd = LALLIGOIPsd;
     coarseIn.order = twoPN;
     coarseIn.approximant = TaylorT1;
     coarseIn.space = Tau0Tau3;
@@ -815,12 +813,23 @@ setupParamList(LALStatus* const status)
 	pow(coarseIn.MMax,2.0);
     coarseIn.iflso = 0;
 
+    /* the bank creation routines now take a frequency series containing */
+    /* the psd */
+    memset( &(coarseIn.shf), 0, sizeof(REAL8FrequencySeries) );
+    coarseIn.shf.f0 = 0;
+    LALDCreateVector( status, &(coarseIn.shf.data), numPSDpts );
+    coarseIn.shf.deltaF = coarseIn.tSampling / (REAL8) coarseIn.shf.data->length;
+    LALNoiseSpectralDensity (status, coarseIn.shf.data, noisemodel, coarseIn.shf.deltaF );
+
+
     /* LALInspiralCreateCoarseBank() now expects its second argument to */
     /* be a handle (pointer to a pointer) to a variable of type         */
     /* InspiralTemplateList. The pointer should be NULL on entry        */
     /*                                  - duncan                        */
     LALInspiralCreateCoarseBank(status, &templateList,
 				&NtemplateList, coarseIn);
+
+    LALDDestroyVector( status, &(coarseIn.shf.data) );
 
     testprintf("Generated %d sets of parameters\n", NtemplateList);
     

@@ -35,6 +35,8 @@ main (int argc, char *argv[])
   FindChirpCreateBankParams    *createBankParams;
 
   const UINT4                   numSegments = 7;
+  const UINT4                   numPts = 1048576;
+  UINT4                         k;
   
   /*
    *
@@ -52,15 +54,14 @@ main (int argc, char *argv[])
   }
 
   /* bank generation parameters */
-  bankIn->mMin          = 1.0;
-  bankIn->MMax          = 6.0;
+  bankIn->mMin          = 5.0;
+  bankIn->MMax          = 20.0;
   bankIn->mmCoarse      = 0.97;
   bankIn->mmFine        = 0.99;
   bankIn->fLower        = 40.;
   bankIn->fUpper        = 1000.0;
   bankIn->iflso         = 0;
   bankIn->tSampling     = 2048.;
-  bankIn->NoisePsd      = LALLIGOIPsd;
   bankIn->order         = twoPN;
   bankIn->approximant   = TaylorT2;
   bankIn->space         = Tau0Tau2;
@@ -79,6 +80,35 @@ main (int argc, char *argv[])
   createBankParams->numLevel = 0;
   createBankParams->numSegments = numSegments;
 
+
+  /*
+   *
+   * create a power spectrum for the bank
+   *
+   */
+
+
+  memset( &(bankIn->shf), 0, sizeof(REAL8FrequencySeries) );
+  bankIn->shf.f0 = 0.0;
+  bankIn->shf.deltaF = bankIn->tSampling / numPts;
+
+  LALDCreateVector( &stat, &(bankIn->shf.data), numPts );
+  REPORTSTATUS( &stat );
+  if ( stat.statusCode ) return stat.statusCode;
+
+  for( k = 0; k < bankIn->shf.data->length ; ++k )
+  {
+    REAL8 freq = (REAL8) k * bankIn->shf.deltaF;
+    if ( freq < bankIn->fLower )
+    {
+      LALLIGOIPsd( NULL, bankIn->shf.data->data + k, bankIn->fLower );
+    }
+    else
+    {
+      LALLIGOIPsd( NULL, bankIn->shf.data->data + k, freq );
+    }
+  }
+  
 
   /*
    *
@@ -107,6 +137,9 @@ main (int argc, char *argv[])
    */
 
 
+  LALDDestroyVector( &stat, &(bankIn->shf.data) );
+  REPORTSTATUS( &stat );
+  if ( stat.statusCode ) return stat.statusCode;
   LALFree( bankIn );
   LALFree( createBankParams );
 
@@ -165,4 +198,62 @@ PrintInspiralBank (
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
+}
+
+static void
+graphREAL4 (
+    REAL4      *array, 
+    INT4        n,
+    INT4        spacing
+           ) 
+{
+  FILE *fp;
+  INT4 i;
+
+  /* open a file for writing */
+  if ( !(fp = fopen( "temp.graph", "w" )) )
+  {
+    printf( "couldn't open file\n" );
+  }
+
+  /* print data into the file */
+  for ( i = 0; i < n; i++ )
+    fprintf( fp, "%d\t%e\n", i, array[i * spacing] );
+
+  /* close the file */
+  fclose( fp );
+
+  /* start up graphing program with data in the file */
+  /* system( "xmgr temp.graph 1>/dev/null 2>&1 &" ); */
+
+  return;
+}
+
+static void
+graphREAL8 (
+    REAL8      *array, 
+    INT4        n,
+    INT4        spacing
+           ) 
+{
+  FILE *fp;
+  INT4 i;
+
+  /* open a file for writing */
+  if ( !(fp = fopen( "temp.graph", "w" )) )
+  {
+    printf( "couldn't open file\n" );
+  }
+
+  /* print data into the file */
+  for ( i = 0; i < n; i++ )
+    fprintf( fp, "%d\t%e\n", i, array[i * spacing] );
+
+  /* close the file */
+  fclose( fp );
+
+  /* start up graphing program with data in the file */
+  /* system( "xmgr temp.graph 1>/dev/null 2>&1 &" ); */
+
+  return;
 }
