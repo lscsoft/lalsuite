@@ -39,7 +39,7 @@
 #include <lal/Window.h>
 #include <lal/IIRFilter.h>
 #include <lal/BandPassTimeSeries.h>
-
+#include "stochastic.h"
 NRCSID (FRAMESC, "$Id$");
 RCSID ("$Id$");
 
@@ -61,12 +61,12 @@ REAL8 deltaF = 0.25;
 
 /* data parameters */
 LIGOTimeGPS gpsStartTime;
-UINT8 startTime;
-UINT8 stopTime;
+UINT8 startTime = 751719579;
+UINT8 stopTime = 751720179;
 INT4 segmentDuration = 64;
 INT4 segmentShift = 60;
-CHAR frameCache1[100] = "cachefiles/H-730793097.cache";
-CHAR frameCache2[100] = "cachefiles/L-730793097.cache";
+CHAR frameCache1[100] = "S3cachefiles/H-751719578.cache";
+CHAR frameCache2[100] = "S3cachefiles/L-751719578.cache";
 CHAR channel1[LALNameLength]= "H1:LSC-AS_Q";
 CHAR channel2[LALNameLength]= "L1:LSC-AS_Q";
 CHAR ifo1[LALNameLength] = "H1";
@@ -86,12 +86,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALStatus status;
 
   /* frame parameters */
-  FrOutPar opar1, opar2;
+  FrOutPar opar1,  opar2;
 
   /* output file */
-  FILE *out;
-  CHAR outputFilename[LALNameLength];
-  CHAR frameName[LALNameLength];
+  CHAR frameDescription[LALNameLength];
+  CHAR frameSource1[LALNameLength], frameSource2[LALNameLength];;
   /* counters */
   INT4 i,j, segLoop;
 
@@ -99,7 +98,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* input data segment */
   INT4 numSegments;
   INT4 segmentLength;
-  INT4 segmentShift;
   INT4 padData = 0;
   INT4 buffer;
   ReadDataPairParams streamParams;
@@ -118,16 +116,15 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 
   /* read parameters into input parameter file */
- 
+   
   fscanf(stdin,"%d\n",&startTime, &startTime);
   fscanf(stdin,"%d\n",&stopTime, &stopTime);
   fscanf(stdin,"%s\n%s\n",&frameCache1,&frameCache2);
-   
+  
 
   /* get number of segments */
   buffer = (segmentDuration - segmentShift) / 2;
-  numSegments = (INT4)(stopTime - startTime + 2 * buffer) / segmentShift };
-  
+  numSegments = (INT4)(stopTime - startTime - 2 * buffer) / segmentShift;
 
   /* set length for data segments */
   segmentLength = segmentDuration * resampleRate;
@@ -170,45 +167,52 @@ INT4 main(INT4 argc, CHAR *argv[])
   streamPair.stream1 = &segment1;
   streamPair.stream2 = &segment2;
 
+  opar1.type= opar2.type = ADCDataChannel;
+  opar1.nframes = opar2.nframes = 1;
+  opar1.frame = opar2.frame = 0;
+  opar1.run = opar2.run = 0;  
+  LALSnprintf( frameSource1, LALNameLength, "%s%s",outputFilePath,ifo1);
+  opar1.source = frameSource1;
+  LALSnprintf( frameSource2, LALNameLength, "%s%s",outputFilePath,ifo2);
+  opar2.source = frameSource2;
   
-   
    /** loop over segments **/
         
    lal_errhandler = LAL_ERR_RTRN;
 
    for (segLoop = 0; segLoop < numSegments; segLoop++)
-    {
+     {
+
      /* define segment epoch */
      gpsStartTime.gpsSeconds = startTime + (segLoop * segmentShift);
      segment1.epoch = segment2.epoch = gpsStartTime;
- 
+     
 
      /* read data and downsample */
-     streamParams.startTime = gpsStartTime.gpsSeconds - buffer;
+     streamParams.startTime = gpsStartTime.gpsSeconds;
      LAL_CALL(readDataPair(&status, &streamPair, &streamParams), &status);
-       
+   
      /* skip segment if data not found or corrupted with 0 values */           
      if ((status.statusCode !=0)||
-          (segmentTemp1.data==NULL)||(segmentTemp2.data==NULL))
+          (segment1.data==NULL)||(segment2.data==NULL))
        {
 	clear_status(&status);
         if (segLoop < (numSegments - 1)) continue; 
 	else break;   
        }
+   
        
       /* set frame parameters */ 
-      LALSnprintf( frameName, LALNameLength, 
-                     "-%d-%d.gwf",(INT4)startTime,segmentDuration);
-      opar1 = { ifo1, frameName, ADCDataChannel, 1, 0, 0 };
-      opar2 = { ifo2, frameName, ADCDataChannel, 1, 0, 0 };  
-  
-      /* write to frames */
-      LAL_CALL(LALFrWriteINT4TimeSeries( &status,&(segment1.data),&opar1 ),&status);
-      LAL_CALL(LALFrWriteINT4TimeSeries( &status,&(segment2.data),&opar2 ),&status);
      
-      
+      LALSnprintf( frameDescription, LALNameLength, "%d-%d.gwf",(INT4)gpsStartTime.gpsSeconds,(INT4)segmentDuration);
+      opar1.description ="sgwb";
+      opar2.description = "sgwb";
+      LAL_CALL(LALFrWriteREAL4TimeSeries( &status,&segment1,&opar1 ),&status);
+      LAL_CALL(LALFrWriteREAL4TimeSeries( &status,&segment2,&opar2 ),&status);
      
-    }
+    
+     
+     }
        
    lal_errhandler = LAL_ERR_EXIT;
 
@@ -446,7 +450,7 @@ void readDataPair(LALStatus *status,
   sampleRate = params->sampleRate;
 
   /* initialise status pointer */
-  INITSTATUS( status, "readDataPair", STOCHASTICC );
+  INITSTATUS( status, "readDataPair", FRAMESC );
   ATTATCHSTATUSPTR( status );
 
   /* buffer start time */
