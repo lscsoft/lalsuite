@@ -18,6 +18,10 @@
 #include <time.h>
 #include <config.h>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846  /* pi */
+#endif
+
 #define PC  3.0856775807e16
 #define KPC ( 1e3 * PC )
 #define MPC ( 1e6 * PC )
