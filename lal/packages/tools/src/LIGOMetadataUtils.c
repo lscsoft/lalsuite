@@ -253,6 +253,7 @@ LALCompareSearchSummaryByInTime (
   INT8 tb = 0;
 
   /* determine the in start times */
+  memset( &status, 0, sizeof(LALStatus) );
   LALGPStoINT8( &status, &ta, &(aPtr->in_start_time) );
   LALGPStoINT8( &status, &tb, &(bPtr->in_start_time) );
 
@@ -267,6 +268,7 @@ LALCompareSearchSummaryByInTime (
   else
   {
     /* determine the in end times */ 
+    memset( &status, 0, sizeof(LALStatus) );
     LALGPStoINT8( &status, &ta, &( aPtr->in_end_time) );
     LALGPStoINT8( &status, &tb, &( bPtr->in_end_time) );
 
@@ -303,6 +305,7 @@ LALCompareSearchSummaryByOutTime (
   INT8 tb = 0;
 
   /* determine the out start times */
+  memset( &status, 0, sizeof(LALStatus) );
   LALGPStoINT8( &status, &ta, &(aPtr->out_start_time) );
   LALGPStoINT8( &status, &tb, &(bPtr->out_start_time) );
 
@@ -316,7 +319,8 @@ LALCompareSearchSummaryByOutTime (
   }
   else
   {
-    /* determine the out end times */ 
+    /* determine the out end times */
+    memset( &status, 0, sizeof(LALStatus) );
     LALGPStoINT8( &status, &ta, &(aPtr->out_end_time) );
     LALGPStoINT8( &status, &tb, &(bPtr->out_end_time) );
 
