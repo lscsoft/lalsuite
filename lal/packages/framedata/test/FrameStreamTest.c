@@ -48,7 +48,7 @@ int main( void )
   FrChanIn  chanin = { CHANNEL, ADCDataChannel };
   FrStream *stream = NULL;
   FrPos     frpos;
-  INT4TimeSeries chan;
+  static INT4TimeSeries chan; /* must zero the f0 field */
   LIGOTimeGPS epoch;
   CHAR *dirname = getenv( "LAL_FRAME_PATH" );
   INT4 file = 0;
