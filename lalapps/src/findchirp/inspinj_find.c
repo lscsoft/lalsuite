@@ -20,9 +20,11 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lalapps.h>
 #include <processtable.h>
 #include "event_utils.h"
+
 
 RCSID("$Id$");
 
@@ -103,7 +105,8 @@ static int isPlayground(INT4 gpsStart, INT4 gpsEnd){
   segMiddle = gpsStart + (INT4) (0.5 * (gpsEnd - gpsStart));
   segMiddle = (segMiddle - runStart)%playInterval;
 
-  if (segStart < 600 || segEnd < 600 || segMiddle < 600){
+  if (segStart < playLength || segEnd < playLength || segMiddle < playLength)
+  {
     return TRUE;
   }
 
@@ -145,23 +148,19 @@ int main(int argc, char **argv)
   CHAR		       *missedInjectionsFile=NULL;
 
   const CHAR           *searchSummaryName="search_summary";
-  const CHAR           *simInspiralName="sim_inspiral";
-  const CHAR           *snglInspiralName="sngl_inspiral";
-
-
+ 
   SearchSummaryIndex    searchSummaryIndex;
   SearchSummaryTable    searchSummaryTable;
 
-  SnglInspiralIndex     tableIndex;
-  SnglInspiralTable    *currentEvent=NULL,*prevEvent=NULL;
-  SnglInspiralTable     inspiralEvent,*inspiralEventList=NULL;
+  SnglInspiralTable    *inspiralEventList=NULL;
   SnglInspiralTable    *currentInspiralEvent=NULL,*prevInspiralEvent=NULL;
-
-  SimInspiralIndex	simIndex;
+  SnglInspiralTable   **inspiralHandle=NULL;
+      
   SimInspiralTable     *currentSimEvent=NULL,*prevSimEvent=NULL;
-  SimInspiralTable      simEvent,*simEventList=NULL;
+  SimInspiralTable     *simEventList=NULL;
   SimInspiralTable     *simEventMissed=NULL;
   SimInspiralTable     *prevSimEventMissed=NULL;
+  SimInspiralTable    **simHandle=NULL;
 
   MetadataTable         myTable;
   MetadataTable	        simFoundTable;
@@ -170,8 +169,12 @@ int main(int argc, char **argv)
   MetadataTable	        proctable;
   MetadataTable	        procparams;
   LIGOLwXMLStream       xmlStream;
+
   INT4		        numEvents = 0;
+  INT4			currentNumEvents = 0;
+  INT4			numKeptEvents = 0;
   INT4		        numInjects = 0; 
+  INT4			numPlayInjects = 0;
   INT4		        numKeptInjects = 0; 
   INT4		        numFound = 0;
 
@@ -407,8 +410,7 @@ int main(int argc, char **argv)
   /*******************************************************************
    * initialize things
    *******************************************************************/
-  memset( &inspiralEvent, 0, sizeof(inspiralEvent) );
-  memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
+    memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
 
 
   /*****************************************************************
@@ -421,85 +423,68 @@ int main(int argc, char **argv)
     /****************************************************************
      *  open xml file at injection table 
      ****************************************************************/
+    simHandle = &simEventList;
+    numInjects = SimInspiralTableFromLIGOLw( simHandle, injectfile, 0, 0 );
 
-    if ( (retVal = MetaioOpenTable( triggerEnv, 
-            injectfile, simInspiralName)) !=0 )
+    fprintf( stdout, "number of injections %d \n",numInjects);
+
+    if ( numInjects < 0 )
     {
-      fprintf(stderr, "Error opening injection file %s\n", injectfile );
-      MetaioAbort( triggerEnv ); 
-      exit(INSPINJFIND_EFILE);
+      fprintf( stderr, "error: unable to read sim_inspiral table from %s\n", 
+	injectfile );
+      exit( 1 );
     }
 
-    /* Locate the relevant columns in the injection table */
-    buildSimInspiralIndex(&stat, triggerEnv, &simIndex);
-
-    numInjects=0;
-    /* Loop over the injections */
-    while (1) 
+/*    if ( numInjects )
     {
-      /* get the next row */
-      retVal = MetaioGetRow(triggerEnv);
-      if ( retVal == -1 ) 
+      currentSimEvent = *simHandle;
+      while ( currentSimEvent->next )
       {
-        printf( "Error while getting row from file %s\n",line);
-        MetaioAbort( triggerEnv ); 
-        return INSPINJFIND_EROW;
-      } 
-      else if ( retVal == 0 ) 
-      {
-        /*-- Reached end of file --*/
-        break;
+        currentSimEvent = currentSimEvent->next;
       }
-
-      /* get the injection details */
-      getSimInspiralVars(&stat, triggerEnv, &simEvent, &simIndex);
-
-      /* check that the injection occured during playground time */
-      if ( ( playground ) && 
-          (simEvent.geocent_end_time.gpsSeconds - 729273613)%6370 > 600)
-      {
-        continue;
-      }
-
-      /* allocate memory for the injection */
-      if ( (simEventList) == NULL )
-      {
-        currentSimEvent = simEventList = (SimInspiralTable *) 
-          LALCalloc( 1 , sizeof(SimInspiralTable) );
-      }
-      else 
-      {
-        currentSimEvent = (SimInspiralTable *) 
-          LALCalloc( 1 , sizeof(SimInspiralTable) );
-      }
-
-
-      /* copy event into linked list element */
-      memcpy(currentSimEvent, &simEvent, sizeof(SimInspiralTable) );
-
-      /* if the injections are hardware, then add the starttime time to the 
-       * time contained in sim_inspiral table */
-      if ( hardware == TRUE )
-      {
-        currentSimEvent->geocent_end_time.gpsSeconds = starttime +
-          currentSimEvent->geocent_end_time.gpsSeconds;
-      }
-
-      /* point to the next event */
-      currentSimEvent->next = NULL;
-      if (prevSimEvent != NULL) prevSimEvent->next = currentSimEvent;
-      prevSimEvent = currentSimEvent;
-      currentSimEvent = currentSimEvent->next;
-
-      numInjects++;
     }
-
-    /* set currentSimEvent back to the beginning of the list */
+*/    
+    numPlayInjects = numInjects;
     currentSimEvent = simEventList;
-    prevSimEvent = NULL;
-    numKeptInjects = 0;
 
-    MetaioAbort(triggerEnv);
+    if (  playground || hardware )
+    {
+      numPlayInjects = 0;
+      while( currentSimEvent->next )
+      {
+	/* if the injections are hardware, then add the starttime time to the 
+	* time contained in sim_inspiral table */
+	if ( hardware )
+	{
+	  currentSimEvent->geocent_end_time.gpsSeconds = starttime +
+	    currentSimEvent->geocent_end_time.gpsSeconds;
+	}
+
+	if ( (playground) && 
+	  (currentSimEvent->geocent_end_time.gpsSeconds-729273613)%6370 > 600 ) 
+	{
+	  /* injection not in playground so ditch */
+	  currentSimEvent = currentSimEvent->next;
+	}
+	else
+	{
+	  /* keep injection */
+	  ++numPlayInjects;
+	  if (prevSimEvent == NULL)
+	  {
+	    simEventList = prevSimEvent = currentSimEvent;	
+	    currentSimEvent = currentSimEvent->next;
+	  }
+	  else
+	  {
+	    prevSimEvent = prevSimEvent->next = currentSimEvent;
+	    currentSimEvent = currentSimEvent->next;
+	  }
+	}
+      }
+      currentSimEvent = simEventList;   
+      prevSimEvent = NULL;
+    }
   }
 
 
@@ -517,7 +502,7 @@ int main(int argc, char **argv)
   /*****************************************************************
    * loop over the xml files
    *****************************************************************/
-  numEvents=0;
+  inspiralHandle = &inspiralEventList;
 
   while ( getline(line, MAXSTR, fpin) )
   {
@@ -541,7 +526,6 @@ int main(int argc, char **argv)
         fprintf(stderr,"Proceeding anyway\n");
       }
     }
-
     if ( !retVal )
     {
       /* get the search summary table */
@@ -564,7 +548,7 @@ int main(int argc, char **argv)
 
         /* if there are injections, keep only those which occur
          * during the times searched in the input files */
-        if( numInjects != 0)
+        if( numPlayInjects != 0)
         {
           while (!( currentSimEvent == NULL) &&
               currentSimEvent->geocent_end_time.gpsSeconds < 
@@ -620,79 +604,64 @@ int main(int argc, char **argv)
     /**************************************************************
      *  open xml file at inspiral table 
      **************************************************************/
+    currentNumEvents = 
+      SnglInspiralTableFromLIGOLw( inspiralHandle, line, 0, -1 );
 
-    if ( (retVal = MetaioOpenTable( triggerEnv, line, 
-            snglInspiralName)) !=0 )
+    if ( currentNumEvents < 0 )
     {
-      fprintf(stderr, "Error opening injection file %s\n", line );
-      MetaioAbort( triggerEnv ); 
-      exit(INSPINJFIND_EFILE);
+      fprintf( stderr, "error: unable to read sngl_inspiral table from %s\n", 
+	line );
+      exit( 1 );
     }
 
-    /* Locate the relevant columns in the inspiral table */
-    buildSnglInspiralIndex(&stat, triggerEnv, &tableIndex);
+    if ( currentNumEvents )
+    {
+      numEvents += currentNumEvents;
 
-    /* Loop over the triggers */
-    while (1) {
-
-      /* get the next row */
-      retVal = MetaioGetRow(triggerEnv);
-      if ( retVal == -1 ) {
-        printf( "Error while getting row from file %s\n",line);
-        MetaioAbort( triggerEnv ); 
-        return INSPINJFIND_EROW;
-      } else if ( retVal == 0 ) {
-        /*-- Reached end of file --*/
-        break;
-      }
-
-      /* get the inspiral event */
-      getSnglInspiralEvent(&stat, triggerEnv, 
-          &inspiralEvent, &tableIndex);
-
-      /* check for events and playground */
-      if ( ( playground ) && 
-          (inspiralEvent.end_time.gpsSeconds-729273613)%6370 >600 )
+      currentInspiralEvent = *inspiralHandle;
+      while ( currentInspiralEvent->next )
       {
-        continue;
+        currentInspiralEvent = currentInspiralEvent->next;
       }
-
-      /* check that event satisfies threshold */
-      if (inspiralEvent.snr < snrstar)
-      {
-        continue;
-      }
-
-      /* allocate memory for the inspiral event */
-      if ( (inspiralEventList) == NULL )
-      {
-        currentEvent=inspiralEventList= (SnglInspiralTable *) 
-          LALCalloc( 1, sizeof(SnglInspiralTable) );
-      }
-      else 
-      {
-        currentEvent = (SnglInspiralTable *) 
-          LALCalloc( 1, sizeof(SnglInspiralTable) );
-      }
-
-      /* copy event into linked list element */
-      memcpy(currentEvent, &inspiralEvent, sizeof(SnglInspiralTable) );
-
-      /* point to the next event */
-      currentEvent->next = NULL;
-      if (prevEvent != NULL) prevEvent->next = currentEvent;
-      prevEvent = currentEvent;
-      currentEvent = currentEvent->next;
-      numEvents++;
+      inspiralHandle = &(currentInspiralEvent->next);
     }
-
-    MetaioAbort(triggerEnv);
   }
 
+  currentInspiralEvent = inspiralEventList;
+  prevInspiralEvent = NULL;
+  
+  /* check for events and playground, and event satisfying SNR */
+  while( currentInspiralEvent->next ) 
+  {  
+    if ( (( playground ) && 
+          (currentInspiralEvent->end_time.gpsSeconds-729273613)%6370 > 600 )
+	    || ( currentInspiralEvent->snr < snrstar) )
+    {
+      /* conditions not satisfied so ditch trigger */
+      currentInspiralEvent = currentInspiralEvent->next;
+    }
+    else
+    {
+      /* keep trigger */
+      ++numKeptEvents;
+      if (prevInspiralEvent == NULL)
+      {
+	inspiralEventList = prevInspiralEvent = currentInspiralEvent;	
+	currentInspiralEvent = currentInspiralEvent->next;
+      }
+      else
+      {
+	prevInspiralEvent = prevInspiralEvent->next = currentInspiralEvent;
+	currentInspiralEvent = currentInspiralEvent->next;
+      }
+    }
+  }
+  
   /* sort the events */
-  LAL_CALL( LALSortSnglInspiral( &stat, &inspiralEventList,
-        *LALCompareSnglInspiralByTime), &stat);
+  LAL_CALL( LALSortSnglInspiral( &stat, &inspiralEventList, 
+    *LALCompareSnglInspiralByTime), &stat);
 
+  
 
   /* discard the remaining injections which occured after the last file */
   while (currentSimEvent != NULL) 
@@ -711,16 +680,14 @@ int main(int argc, char **argv)
     }
   }
 
-  fprintf( stdout, "number of unclustered events %d \n", numEvents);
-  fprintf( stdout, "number of injections in playground %d \n", numInjects);	
+  fprintf( stdout, "number of triggers %d \n", numEvents);
+  fprintf( stdout, "number of triggers in playground with good snr %d \n",
+      numKeptEvents);
+  fprintf( stdout, "number of injections %d \n",numInjects);
+  fprintf( stdout, "number of injections in playground %d \n", 
+      numPlayInjects);	
   fprintf( stdout, "number of relevant injections %d \n", numKeptInjects);
-  /*****************************************************************
-   * open output xml file
-   *****************************************************************/
-  LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfileName), &stat);
-
-
-
+  
   /*************************************************************
    * CHECK FOR COINCIDENCE OF ARRIVAL TIME BETWEEN INJECTIONS
    * AND FOUND INSPIRALS 
@@ -897,27 +864,6 @@ int main(int argc, char **argv)
         }
       }
     }
-
-
-    /* Write the found injections to the sim table */
-    LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, 
-          sim_inspiral_table),&stat);
-    simFoundTable.simInspiralTable = simEventList;
-    LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, simFoundTable, 
-          sim_inspiral_table), &stat);
-    LAL_CALL( LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
-
-
-    /* free the temporary memory containing the events */
-    while (simEventList)
-    {
-      SimInspiralTable *currentSimEvent;
-      currentSimEvent = simEventList;
-      simEventList = simEventList->next;
-      LALFree( currentSimEvent );
-    }
-
-
   }
   /*********************************************************************/
 
@@ -935,6 +881,13 @@ int main(int argc, char **argv)
     LAL_CALL( LALClusterSnglInspiralTable( &stat, inspiralEventList,
           clust, clusterchoice), &stat);
   }
+
+
+  /*****************************************************************
+   * open output xml file
+   *****************************************************************/
+  LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfileName), &stat);
+
 
   /* write out the process and process params tables */
   LAL_CALL( LALGPSTimeNow ( &stat, &(proctable.processTable->end_time),
@@ -965,6 +918,27 @@ int main(int argc, char **argv)
     procparams.processParamsTable = this_proc_param->next;
     LALFree( this_proc_param );
   }
+  
+  /* Write the found injections to the sim table */
+  if ( simEventList )
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, 
+          sim_inspiral_table),&stat);
+    simFoundTable.simInspiralTable = simEventList;
+    LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, simFoundTable, 
+          sim_inspiral_table), &stat);
+    LAL_CALL( LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
+  
+     /* free the temporary memory containing the events */
+    while (simEventList)
+    {
+      SimInspiralTable *currentSimEvent;
+      currentSimEvent = simEventList;
+      simEventList = simEventList->next;
+      LALFree( currentSimEvent );
+    }
+  }
+  
   /* Write the results to the inspiral table */
   if ( inspiralEventList )
   {
