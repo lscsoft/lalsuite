@@ -134,7 +134,7 @@ executable = %s
 arguments = --lal-cache \\
   --instrument $(site) --type %s \\
   --start $(frstart) --end $(frend)
-environment = LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH)
+environment = LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH);PYTHONPATH=$ENV(PYTHONPATH)
 log = %s
 error = datafind/frcache-$(site)-$(frstart)-$(frend).$(cluster).$(process).err
 output = cache/frcache-$(site)-$(frstart)-$(frend).out
