@@ -99,7 +99,7 @@ INT4 lalDebugLevel = 3;
 
 int main( void )
 {
-  LALStatus                status = {0};
+  static LALStatus status;
 
   COMPLEX16Vector   *zVector;
   COMPLEX8Vector    *cVector;

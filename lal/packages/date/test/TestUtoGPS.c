@@ -5,6 +5,7 @@
 /* $Id$ */
 
 extern char *tzname[2];
+struct tm *gmtime_r( const time_t *, struct tm * );
 
 INT4 lalDebugLevel = 2;
 
@@ -106,7 +107,7 @@ main(int argc, char *argv[])
     LIGOTimeGPS  gpstime;
     LIGOTimeUnix unixtime;
     time_t      tmptime;
-    LALStatus      status = {0};
+    static LALStatus status;
 
 
     if (argc == 1)

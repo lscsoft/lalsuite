@@ -86,7 +86,7 @@ ClearStatus( LALStatus *status );
 int
 main( int argc, char *argv[] )
 {
-  LALStatus status = { 0 };
+  static LALStatus status;
   LALStatus keep;
 
   ParseOptions( argc, argv );

@@ -29,6 +29,7 @@
 
 #include <config.h>
 
+/*
 #ifdef HAVE_SFFTW_H
 #include <sfftw.h>
 #elif HAVE_FFTW_H
@@ -36,10 +37,40 @@
 #else
 #error "don't have either sfftw.h or fftw.h"
 #endif
+*/
+
+/* don't actually include sfftw.h or fftw.h because these are broken */
+#ifndef HAVE_SFFTW_H
+#ifndef HAVE_FFTW_H
+#error "don't have either sfftw.h or fftw.h"
+#endif
+#endif
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/ComplexFFT.h>
+
+/* here are the nearly equivalent fftw prototypes */
+#ifndef FFTW_H
+typedef REAL4 fftw_real;
+typedef COMPLEX8 fftw_complex;
+typedef void *fftw_plan;
+typedef void *( *fftw_malloc_type_function )( size_t );
+typedef void  ( *fftw_free_type_function )( void * );
+fftw_plan fftw_create_plan( int, int, int );
+void fftw_destroy_plan( fftw_plan );
+void fftw_one( fftw_plan, fftw_complex *, fftw_complex * );
+extern fftw_malloc_type_function fftw_malloc_hook;
+extern fftw_free_type_function fftw_free_hook;
+#define FFTW_ESTIMATE       (0)
+#define FFTW_MEASURE        (1)
+#define FFTW_OUT_OF_PLACE   (0)
+#define FFTW_IN_PLACE       (8)
+#define FFTW_USE_WISDOM    (16)
+#define FFTW_THREADSAFE   (128)
+#define FFTW_FORWARD       (-1)
+#define FFTW_BACKWARD       (1)
+#endif
 
 NRCSID( COMPLEXFFTC, "$Id$" );
 

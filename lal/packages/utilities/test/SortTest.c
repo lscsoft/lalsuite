@@ -70,7 +70,7 @@ INT4 lalDebugLevel=0;
 
 int main(int argc, char **argv)
 {
-  LALStatus       stat={0};
+  static LALStatus stat;
   INT4         i;
   INT4         seed=0;
   INT4Vector   *index=NULL;

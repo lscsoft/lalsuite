@@ -84,7 +84,7 @@ INT4 lalDebugLevel = 3;
 
 int main( void )
 {
-  LALStatus                status = {0};
+  static LALStatus status;
 
   COMPLEX16Sequence   *zSequence;
   COMPLEX8Sequence    *cSequence;

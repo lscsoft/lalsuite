@@ -10,7 +10,7 @@ main(int argc, char *argv[])
 {
     time_t        now;
     LALUnixDate  *ltime;
-    LALStatus        status = {0};
+    static LALStatus status;
     LALDate       date;
     INT4          julian_day;
     REAL8         mod_julian_day;

@@ -47,7 +47,7 @@ NRCSID (MAIN, "$Id$");
 
 int main( void )
 {
-  LALStatus               status = {0};
+  static LALStatus status;
   
   REAL4Vector         *vector = NULL;
   REAL4Vector          dummy;

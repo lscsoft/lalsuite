@@ -109,7 +109,7 @@ INT4 lalDebugLevel=0;
 
 INT4 main(INT4 argc, CHAR **argv)
 {
-  LALStatus stat={0};          /* LALStatus pointer for subroutines. */
+  static LALStatus stat;    /* LALStatus pointer for subroutines. */
   BOOLEAN printout=0;       /* Whether output will be printed. */
   INT4 i;                   /* Index counter. */
   REAL4Vector *input1=NULL; /* A time series input vector. */

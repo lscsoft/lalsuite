@@ -20,7 +20,7 @@ main(int argc, char *argv[])
     CHARVector *tmpstamp = NULL;
     INT4        testid;
     INT4        dayofmonth, monthofyear;
-    LALStatus  status = {0};
+    static LALStatus  status;
 
     
     if (argc != 3)

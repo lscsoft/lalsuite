@@ -29,6 +29,7 @@
 
 #include <config.h>
 
+/*
 #ifdef HAVE_SRFFTW_H
 #include <srfftw.h>
 #elif HAVE_RFFTW_H
@@ -36,10 +37,50 @@
 #else
 #error "don't have either srfftw.h or rfftw.h"
 #endif
+*/
+
+/* don't actually include sfftw.h or fftw.h because these are broken */
+#ifndef HAVE_SRFFTW_H
+#ifndef HAVE_RFFTW_H
+#error "don't have either srfftw.h or rfftw.h"
+#endif
+#endif
 
 #include <lal/LALStdlib.h>
 #include <lal/SeqFactories.h>
 #include <lal/RealFFT.h>
+
+/* here are the nearly equivalent fftw prototypes */
+#ifndef FFTW_H
+typedef REAL4 fftw_real;
+typedef COMPLEX8 fftw_complex;
+typedef void *fftw_plan;
+typedef void *( *fftw_malloc_type_function )( size_t );
+typedef void  ( *fftw_free_type_function )( void * );
+fftw_plan fftw_create_plan( int, int, int );
+void fftw_destroy_plan( fftw_plan );
+void fftw_one( fftw_plan, fftw_complex *, fftw_complex * );
+extern fftw_malloc_type_function fftw_malloc_hook;
+extern fftw_free_type_function fftw_free_hook;
+#define FFTW_ESTIMATE       (0)
+#define FFTW_MEASURE        (1)
+#define FFTW_OUT_OF_PLACE   (0)
+#define FFTW_IN_PLACE       (8)
+#define FFTW_USE_WISDOM    (16)
+#define FFTW_THREADSAFE   (128)
+#define FFTW_FORWARD       (-1)
+#define FFTW_BACKWARD       (1)
+#endif
+
+#ifndef RFFTW_H
+typedef fftw_plan rfftw_plan;
+#define FFTW_REAL_TO_COMPLEX FFTW_FORWARD
+#define FFTW_COMPLEX_TO_REAL FFTW_BACKWARD
+rfftw_plan rfftw_create_plan( int, int, int );
+void rfftw_destroy_plan( rfftw_plan );
+void rfftw( rfftw_plan, int, fftw_real *, int, int, fftw_real *, int, int );
+void rfftw_one( rfftw_plan, fftw_real *, fftw_real * );
+#endif
 
 NRCSID (REALFFTC, "$Id$");
 
