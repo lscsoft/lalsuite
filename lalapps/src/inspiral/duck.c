@@ -2,7 +2,7 @@
  * 
  * File Name: inspinj_find.c
  *
- * Author: Fairhurst, S
+ * Author: Brady, P.R, Brown, D. A., and Fairhurst, S
  * 
  * Revision: $Id$
  * 
@@ -23,116 +23,103 @@
 #include <lal/LIGOLwXMLRead.h>
 #include <lalapps.h>
 #include <processtable.h>
-#include "event_utils.h"
-
 
 RCSID("$Id$");
 
-#define MAXSTR 2048
-
-/* Usage format string. */
-#define USAGE \
-"%s [options]\n"\
-"  --help                       display this message\n"\
-"  --input file                 read list of input XML files from file\n"\
-"  --inject file                read list of simulated injections from file\n"\
-"  --outfile file               write found injections to file\n"\
-"  --summary file		write out a summary file\n"\
-"  --missedinjections file      write missed injections to file\n"\
-"  --snrstar thresh             discard triggers with snr less than thresh\n"\
-"  --noplayground               use all data, not just playground\n"\
-"  --hardware gpstime           assume hardware injections starting at gpstime\n"\
-"  --deltat t                   trigger and injection time coinc window (ms)\n"\
-"  --cluster t                  cluster coincident triggers with t ms window\n"\
-"  --clusteralgorithm alg       use cluster algorithm alg\n"\
-"\n"
-
-#define INSPINJFIND_EARG   1
-#define INSPINJFIND_EROW   2
-#define INSPINJFIND_EFILE  3
-
-#define INSPINJFIND_MSGEARG   "Error parsing arguments"
-#define INSPINJFIND_MSGROW    "Error reading row from XML table"
-#define INSPINJFIND_MSGEFILE  "Could not open file"
-
-#define TRUE  1
-#define FALSE 0
-
-#define PROGRAM_NAME "inspinj_find"
+#define PROGRAM_NAME "duck"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
 
+#define USAGE \
+"Usage: lalapps_duck [options]\n\n"\
+"  --help                       display this message\n"\
+"  --verbose                    print progress information\n"\
+"  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
+"  --comment STRING             set the process table comment to STRING\n"\
+"\n Playground data:\n\n"\
+"  --playground-only            write triggers that are in playground\n"\
+"  --exclude-playground         write triggers that are NOT in playground\n"\
+"  --all-data                   write triggers for all times read in\n"\
+"\n Input data source:\n\n"\
+"  --glob GLOB                  use pattern GLOB to determine the input files\n"\
+"  --input FILE                 read list of input XML files from FILE\n"\
+"\n Output data destination:\n\n"\
+"  --output FILE                write output data to FILE\n"\
+"\n Clustering:\n\n"\
+"  --snr-threshold RHO          discard all triggers with snr less than RHO\n"\
+"  --cluster-algorithm CHOICE   use trigger clustering algorithm CHOICE\n"\
+"  --cluster T                  cluster triggers with T ms window\n"\
+"\n Injection analysis:\n\n"\
+"  --injection-file FILE        read injection parameters from FILE\n"\
+"  --delta-t T                  trigger and injection coincidence window (ms)\n"\
+"  --injection-summary FILE     write injection analysis summary to FILE\n"\
+"  --missed-injections FILE     write sim_inspiral for missed injections to FILE\n"\
+"  --hardware-injections GPS    assume hardware injections starting at GPS\n"
+
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
-  this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   calloc( 1, sizeof(ProcessParamsTable) ); \
   LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-  PROGRAM_NAME ); \
-  LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
-  long_options[option_index].name ); \
-  LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-  LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+   PROGRAM_NAME ); \
+   LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+     long_options[option_index].name ); \
+     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+     LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
+enum { play_only, not_play, all_data }
 
-static int getline(char *line, int max, FILE *fpin)
+int main( int argc, char *argv[] )
 {
-  int i;
-  CHAR tmpline[MAXSTR];
+  extern int vrbflg;
+  LALStatus stat = blank_status;
+  LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
+  enum { play_only, not_play, all_data } playground;
+  SnglInspiralClusterChoice clusterchoice;
 
-  for (i=0;i<MAXSTR;i++) { *(line+i) = '\0' ; }
-  if (fgets(tmpline, max, fpin) == NULL){
-    return 0;
-  }
-  else{
-    strncpy(line,tmpline,strlen(tmpline)-1);
-    return strlen(line);
-  }
-}
+  INT4  saveMissedInjections = 0;
+  INT4 
 
 
-/*****************************************************************************
- *
- * The main program
- *
- *****************************************************************************/
 
-int main(int argc, char **argv)
-{
-  static LALStatus      stat;
-  LALLeapSecAccuracy	accuracy = LALLEAPSEC_LOOSE;
-  INT4                  retVal=0;
+
+
+  INT4                  retVal=0; /* get rid of this */
+
+
+
   FILE                 *fpin=NULL;
-  FILE		       *fp=NULL;
-  INT4                  fileCounter=0;
-  BOOLEAN               playground=TRUE;
-  INT4                  cluster=FALSE;
-  Clusterchoice	        clusterchoice=snr;
-  INT4		        saveMissedInjections=FALSE;
-  INT4		        coincidence = FALSE;
-  INT4		        hardware = FALSE;
+  FILE                       *fp=NULL;
 
-  INT8		        simTime;
-  INT8		        inspiralTime;
-  INT8		        starttime;
+
+
+  INT4                  fileCounter=0;
+  INT4                        saveMissedInjections=FALSE;
+  INT4                        coincidence = FALSE;
+  INT4                        hardware = FALSE;
+
+  INT8                        simTime;
+  INT8                        inspiralTime;
+  INT8                        starttime;
   
 
   REAL4                 snrstar=0.0;
   INT4                  clust=0;
-  INT4		        dt = 20;
+  INT4                        dt = 20;
 
   CHAR                  inputfile[MAXSTR],line[MAXSTR];
 
   CHAR                 *outfileName=NULL;
-  CHAR		       *summaryName=NULL;
-  CHAR		       *injectfile=NULL;
-  CHAR		       *missedInjectionsFile=NULL;
+  CHAR                       *summaryName=NULL;
+  CHAR                       *injectfile=NULL;
+  CHAR                       *missedInjectionsFile=NULL;
 
   const CHAR           *searchSummaryName="search_summary";
  
   SearchSummaryIndex    searchSummaryIndex;
   SearchSummaryTable    searchSummaryTable;
-  LIGOTimeGPS		inPlay,outPlay,totalTimeGPS,searchTimeGPS;
-  INT8			outPlayInt =0, searchTime = 0, totalTime = 0;
+  LIGOTimeGPS                inPlay,outPlay,totalTimeGPS,searchTimeGPS;
+  INT8                        outPlayInt =0, searchTime = 0, totalTime = 0;
   SnglInspiralTable    *inspiralEventList=NULL;
   SnglInspiralTable    *currentInspiralEvent=NULL,*prevInspiralEvent=NULL;
   SnglInspiralTable   **inspiralHandle=NULL;
@@ -144,30 +131,30 @@ int main(int argc, char **argv)
   SimInspiralTable    **simHandle=NULL;
 
   MetadataTable         myTable;
-  MetadataTable	        simFoundTable;
-  MetadataTable	        simMissedTable;
+  MetadataTable                simFoundTable;
+  MetadataTable                simMissedTable;
   ProcessParamsTable   *this_proc_param;
-  MetadataTable	        proctable;
-  MetadataTable	        procparams;
+  MetadataTable                proctable;
+  MetadataTable                procparams;
   LIGOLwXMLStream       xmlStream;
 
-  INT4		        numEvents = 0;
-  INT4			currentNumEvents = 0;
-  INT4			numKeptEvents = 0;
-  INT4		        numInjects = 0; 
-  INT4			numPlayInjects = 0;
-  INT4		        numKeptInjects = 0; 
-  INT4		        numFound = 0;
+  INT4                        numEvents = 0;
+  INT4                        currentNumEvents = 0;
+  INT4                        numKeptEvents = 0;
+  INT4                        numInjects = 0; 
+  INT4                        numPlayInjects = 0;
+  INT4                        numKeptInjects = 0; 
+  INT4                        numFound = 0;
 
-  static int		verbose_flag;
+  static int                verbose_flag;
 
   struct MetaioParseEnvironment triggerParseEnv;
   const MetaioParseEnv triggerEnv = &triggerParseEnv;
 
-  int			c;
+  int                        c;
 
   /********************************************************************
-   * BEGIN PARSE ARGUMENTS						*
+   * BEGIN PARSE ARGUMENTS                                                *
    ********************************************************************/
 
   /* set up inital debugging values */
@@ -191,19 +178,19 @@ int main(int argc, char **argv)
     static struct option long_options[] = 
     {
       /* these options set a flag */
-      {"verbose",               no_argument,	&verbose_flag, 1 },
-      {"input",                 required_argument,  0,	'a'},
-      {"inject",                required_argument,  0,	'b'},
-      {"outfile",               required_argument,  0,	'c'},
-      {"snrstar",               required_argument,  0,	'd'},
-      {"summary",		required_argument,  0,	'e'},
-      {"noplayground",          no_argument,	    0,	'f'},
+      {"verbose",               no_argument,        &verbose_flag, 1 },
+      {"input",                 required_argument,  0,        'a'},
+      {"inject",                required_argument,  0,        'b'},
+      {"outfile",               required_argument,  0,        'c'},
+      {"snrstar",               required_argument,  0,        'd'},
+      {"summary",                required_argument,  0,        'e'},
+      {"noplayground",          no_argument,            0,        'f'},
       {"deltat",                required_argument,  0,  'g'},
-      {"help",                  no_argument,	    0,	'h'},    
-      {"cluster",               required_argument,  0,	'j'},
-      {"clusteralgorithm",      required_argument,  0,	'k'},
-      {"missedinjections",      required_argument,  0,	'l'},
-      {"hardware",              required_argument,  0,	'm'},
+      {"help",                  no_argument,            0,        'h'},    
+      {"cluster",               required_argument,  0,        'j'},
+      {"clusteralgorithm",      required_argument,  0,        'k'},
+      {"missedinjections",      required_argument,  0,        'l'},
+      {"hardware",              required_argument,  0,        'm'},
       {0, 0, 0, 0}
     };
 
@@ -239,7 +226,7 @@ int main(int argc, char **argv)
           sprintf(inputfile,"%s",optarg);
           ADD_PROCESS_PARAM( "string", "%s", inputfile );
         }
-        break;	
+        break;        
 
       case 'b':
         /* give name of file containing the injections */
@@ -267,7 +254,7 @@ int main(int argc, char **argv)
         break;
 
       case 'e':
-	/* summary file name */
+        /* summary file name */
         {
           summaryName = optarg;
           ADD_PROCESS_PARAM( "string", "%s", summaryName );
@@ -312,7 +299,7 @@ int main(int argc, char **argv)
       case 'k':
         /* choose the clustering algorithm, default is 0
          * options are detailed in event_utils.c */
-        {	
+        {        
           if ( ! strcmp( "snr_and_chisq", optarg ) )
           {
             clusterchoice = snr_and_chisq;
@@ -321,10 +308,10 @@ int main(int argc, char **argv)
           {
             clusterchoice = snrsq_over_chisq;
           }
-	  else if ( ! strcmp( "snr", optarg) )
+          else if ( ! strcmp( "snr", optarg) )
           {
             clusterchoice = snr;
-          }	
+          }        
           else
           {
             fprintf( stderr, "invalid argument to  --%s:\n"
@@ -375,7 +362,7 @@ int main(int argc, char **argv)
       fprintf ( stderr, "%s\n", argv[optind++] );
     }
     exit( 1 );
-  }	  
+  }          
 
 
 
@@ -412,7 +399,7 @@ int main(int argc, char **argv)
    ******************************************************************/ 
 
   if ( ! (injectfile == NULL))
-  {	
+  {        
 
     /****************************************************************
      *  open xml file at injection table 
@@ -424,7 +411,7 @@ int main(int argc, char **argv)
     if ( numInjects < 0 )
     {
       fprintf( stderr, "error: unable to read sim_inspiral table from %s\n", 
-	injectfile );
+        injectfile );
       exit( 1 );
     }
 
@@ -437,36 +424,36 @@ int main(int argc, char **argv)
       numPlayInjects = 0;
       while( currentSimEvent )
       {
-	/* if the injections are hardware, then add the starttime time to the 
-	* time contained in sim_inspiral table */
-	if ( hardware )
-	{
-	  currentSimEvent->geocent_end_time.gpsSeconds += starttime;
-	  currentSimEvent->h_end_time.gpsSeconds += starttime;
-	  currentSimEvent->l_end_time.gpsSeconds += starttime;	  
-	}
+        /* if the injections are hardware, then add the starttime time to the 
+        * time contained in sim_inspiral table */
+        if ( hardware )
+        {
+          currentSimEvent->geocent_end_time.gpsSeconds += starttime;
+          currentSimEvent->h_end_time.gpsSeconds += starttime;
+          currentSimEvent->l_end_time.gpsSeconds += starttime;          
+        }
 
-	if ( (playground) && 
-	  (currentSimEvent->geocent_end_time.gpsSeconds-729273613)%6370 > 600 ) 
-	{
-	  /* injection not in playground so ditch */
-	  currentSimEvent = currentSimEvent->next;
-	}
-	else
-	{
-	  /* keep injection */
-	  ++numPlayInjects;
-	  if (prevSimEvent == NULL)
-	  {
-	    simEventList = prevSimEvent = currentSimEvent;	
-	    currentSimEvent = currentSimEvent->next;
-	  }
-	  else
-	  {
-	    prevSimEvent = prevSimEvent->next = currentSimEvent;
-	    currentSimEvent = currentSimEvent->next;
-	  }
-	}
+        if ( (playground) && 
+          (currentSimEvent->geocent_end_time.gpsSeconds-729273613)%6370 > 600 ) 
+        {
+          /* injection not in playground so ditch */
+          currentSimEvent = currentSimEvent->next;
+        }
+        else
+        {
+          /* keep injection */
+          ++numPlayInjects;
+          if (prevSimEvent == NULL)
+          {
+            simEventList = prevSimEvent = currentSimEvent;        
+            currentSimEvent = currentSimEvent->next;
+          }
+          else
+          {
+            prevSimEvent = prevSimEvent->next = currentSimEvent;
+            currentSimEvent = currentSimEvent->next;
+          }
+        }
       }
       currentSimEvent = simEventList;   
       prevSimEvent = NULL;
@@ -523,29 +510,29 @@ int main(int argc, char **argv)
       /* check for events and playground */
       if ( playground )
       {
-	LAL_CALL( LALPlaygroundInSearchSummary(&stat, &searchSummaryTable,
-	      &inPlay, &outPlay), &stat);
-	LALGPStoINT8(&stat, &outPlayInt, &outPlay);
-	
-	if( outPlayInt == 0 )
-	{
-	  fprintf(stdout,"File %i %s: not in playground, continuing\n",
+        LAL_CALL( LALPlaygroundInSearchSummary(&stat, &searchSummaryTable,
+              &inPlay, &outPlay), &stat);
+        LALGPStoINT8(&stat, &outPlayInt, &outPlay);
+        
+        if( outPlayInt == 0 )
+        {
+          fprintf(stdout,"File %i %s: not in playground, continuing\n",
             fileCounter,line);
-	  continue;
-	}
-	else 
-	{
-	  searchTime =  outPlayInt;
-	}
+          continue;
+        }
+        else 
+        {
+          searchTime =  outPlayInt;
+        }
       }
       else
       {
-	searchTimeGPS.gpsSeconds = searchSummaryTable.out_end_time.gpsSeconds - 
-	  searchSummaryTable.out_start_time.gpsSeconds;
-	searchTimeGPS.gpsNanoSeconds = 
-	  searchSummaryTable.out_end_time.gpsNanoSeconds - 
-	    searchSummaryTable.out_start_time.gpsNanoSeconds;
-	LALGPStoINT8(&stat, &searchTime, &searchTimeGPS);
+        searchTimeGPS.gpsSeconds = searchSummaryTable.out_end_time.gpsSeconds - 
+          searchSummaryTable.out_start_time.gpsSeconds;
+        searchTimeGPS.gpsNanoSeconds = 
+          searchSummaryTable.out_end_time.gpsNanoSeconds - 
+            searchSummaryTable.out_start_time.gpsNanoSeconds;
+        LALGPStoINT8(&stat, &searchTime, &searchTimeGPS);
       }
 
       /* update the total search time */
@@ -555,48 +542,48 @@ int main(int argc, char **argv)
        * during the times searched in the input files */
       if( numPlayInjects != 0)
       {
-	while ( currentSimEvent && 
-	  currentSimEvent->geocent_end_time.gpsSeconds < 
+        while ( currentSimEvent && 
+          currentSimEvent->geocent_end_time.gpsSeconds < 
             searchSummaryTable.out_end_time.gpsSeconds)
-	{
-	  /*  check if injection is before file start time */
-	  if (currentSimEvent->geocent_end_time.gpsSeconds < 
+        {
+          /*  check if injection is before file start time */
+          if (currentSimEvent->geocent_end_time.gpsSeconds < 
                 searchSummaryTable.out_start_time.gpsSeconds)
-	  {
-	    /* discard the current injection */    
-	    if (prevSimEvent != NULL)
-	    {
-	      prevSimEvent->next = currentSimEvent->next;
-	      LALFree(currentSimEvent);
-	      currentSimEvent = prevSimEvent->next;
-	    }
-	    else
-	    {
-	      simEventList = simEventList->next;
-	      LALFree(currentSimEvent);
-	      currentSimEvent = simEventList;
-	    }
-	  }
-	  else 
-	  {
-	    /* keep the current injection */    
-	    numKeptInjects++;
-	    prevSimEvent = currentSimEvent;
-	    currentSimEvent = currentSimEvent->next;
-	  }
-	}		
+          {
+            /* discard the current injection */    
+            if (prevSimEvent != NULL)
+            {
+              prevSimEvent->next = currentSimEvent->next;
+              LALFree(currentSimEvent);
+              currentSimEvent = prevSimEvent->next;
+            }
+            else
+            {
+              simEventList = simEventList->next;
+              LALFree(currentSimEvent);
+              currentSimEvent = simEventList;
+            }
+          }
+          else 
+          {
+            /* keep the current injection */    
+            numKeptInjects++;
+            prevSimEvent = currentSimEvent;
+            currentSimEvent = currentSimEvent->next;
+          }
+        }                
       }    
-	  
+          
       /* check to see whether there are any events in the file */
       if ( searchSummaryTable.nevents == 0 )
       {
-	fprintf(stdout,"File %i %s: no events, continuing\n",
-	    fileCounter,line);
-	continue;
+        fprintf(stdout,"File %i %s: no events, continuing\n",
+            fileCounter,line);
+        continue;
       }
       else 
       {
-	fprintf(stdout,"File %i %s: processing\n", fileCounter,line);
+        fprintf(stdout,"File %i %s: processing\n", fileCounter,line);
       }
     }
     
@@ -613,7 +600,7 @@ int main(int argc, char **argv)
     if ( currentNumEvents < 0 )
     {
       fprintf( stderr, "error: unable to read sngl_inspiral table from %s\n", 
-	line );
+        line );
       exit( 1 );
     }
 
@@ -638,7 +625,7 @@ int main(int argc, char **argv)
   {  
     if ( (( playground ) && 
           (currentInspiralEvent->end_time.gpsSeconds-729273613)%6370 > 600 )
-	    || ( currentInspiralEvent->snr < snrstar) )
+            || ( currentInspiralEvent->snr < snrstar) )
     {
       /* conditions not satisfied so ditch trigger */
       currentInspiralEvent = currentInspiralEvent->next;
@@ -649,13 +636,13 @@ int main(int argc, char **argv)
       ++numKeptEvents;
       if (prevInspiralEvent == NULL)
       {
-	inspiralEventList = prevInspiralEvent = currentInspiralEvent;	
-	currentInspiralEvent = currentInspiralEvent->next;
+        inspiralEventList = prevInspiralEvent = currentInspiralEvent;        
+        currentInspiralEvent = currentInspiralEvent->next;
       }
       else
       {
-	prevInspiralEvent = prevInspiralEvent->next = currentInspiralEvent;
-	currentInspiralEvent = currentInspiralEvent->next;
+        prevInspiralEvent = prevInspiralEvent->next = currentInspiralEvent;
+        currentInspiralEvent = currentInspiralEvent->next;
       }
     }
   }
@@ -715,15 +702,15 @@ int main(int argc, char **argv)
       /* compute the end time in nanosec for the injection at the 
        * relevant detector */
       if( ! strcmp( "L1", currentInspiralEvent->ifo) )
-	{
-	   LALGPStoINT8(&stat, &simTime, &(currentSimEvent->l_end_time));
+        {
+           LALGPStoINT8(&stat, &simTime, &(currentSimEvent->l_end_time));
 
-	}
-	else if( ! strcmp( "H1", currentInspiralEvent->ifo) || 
-	    ! strcmp( "H2", currentInspiralEvent->ifo) )
-	{
-	  LALGPStoINT8(&stat, &simTime, &(currentSimEvent->h_end_time));
-	}
+        }
+        else if( ! strcmp( "H1", currentInspiralEvent->ifo) || 
+            ! strcmp( "H2", currentInspiralEvent->ifo) )
+        {
+          LALGPStoINT8(&stat, &simTime, &(currentSimEvent->h_end_time));
+        }
 
       /* compute the time in nanosec for the inspiral */
       LALGPStoINT8(&stat, &inspiralTime, 
@@ -762,7 +749,7 @@ int main(int argc, char **argv)
           {
             inspiralEventList = inspiralEventList->next;
             LALFree(currentInspiralEvent);
-            currentInspiralEvent = inspiralEventList;	
+            currentInspiralEvent = inspiralEventList;        
           }
         }
       }
@@ -789,8 +776,8 @@ int main(int argc, char **argv)
           else
           {
             prevSimEventMissed = simEventMissed = currentSimEvent;
-          }	
-          currentSimEvent = prevSimEvent->next;		    
+          }        
+          currentSimEvent = prevSimEvent->next;                    
         }
         else
         {
@@ -839,8 +826,8 @@ int main(int argc, char **argv)
           else
           {
             prevSimEventMissed = simEventMissed = currentSimEvent;
-          }	
-          currentSimEvent = prevSimEvent->next;		    
+          }        
+          currentSimEvent = prevSimEvent->next;                    
         }
         else
         {
@@ -865,7 +852,7 @@ int main(int argc, char **argv)
     {
       /* Remove all remaining inspiral events since they occur after 
        * the last recorded injection */
-      while ( currentInspiralEvent )	
+      while ( currentInspiralEvent )        
       {
         if ( prevInspiralEvent )
         {
@@ -877,7 +864,7 @@ int main(int argc, char **argv)
         {
           inspiralEventList = inspiralEventList->next;
           LALFree(currentInspiralEvent);
-          currentInspiralEvent = inspiralEventList;	
+          currentInspiralEvent = inspiralEventList;        
         }
       }
     }
@@ -889,7 +876,7 @@ int main(int argc, char **argv)
    * Now, cluster the events which were found to be coincident
    * (within the allowed window) with the injections.  Note, here it 
    * is natural to cluster with a time window  
-   *		    clust = 2 * dt
+   *                    clust = 2 * dt
    ******************************************************************/
 
   /* cluster the events */
@@ -925,7 +912,7 @@ int main(int argc, char **argv)
 
   /* write the process params table */
   LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, 
-        process_params_table ),	&stat );
+        process_params_table ),        &stat );
   LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, procparams, 
         process_params_table ), &stat );
   LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
@@ -1016,7 +1003,7 @@ int main(int argc, char **argv)
     if ( playground )
     {
       fprintf( fp, "number of triggers in playground with good snr %d \n",
-	  numKeptEvents);
+          numKeptEvents);
     }
     else
     {
@@ -1024,19 +1011,19 @@ int main(int argc, char **argv)
     }
     LALINT8toGPS(&stat, &totalTimeGPS, &totalTime);
     fprintf( fp, "amount of time analysed %d sec \n", 
-	totalTimeGPS.gpsSeconds);
+        totalTimeGPS.gpsSeconds);
     if( injectfile )
     {
       fprintf( fp, "number of injections %d \n", numInjects);
       if ( playground)
       {
-	fprintf( fp, "number of injections in playground %d \n", 
-	  numPlayInjects);	
+        fprintf( fp, "number of injections in playground %d \n", 
+          numPlayInjects);        
       }
       fprintf( fp, "number of injections in analysed data %d \n", 
-	  numKeptInjects);
+          numKeptInjects);
       fprintf( fp, "number of coincidences found within %d msec is %d\n", 
-	  dt, numFound);
+          dt, numFound);
       fprintf( fp, "efficiency %f \n", (1.0 * numFound) / numKeptInjects );
       fclose( fp ); 
     }
