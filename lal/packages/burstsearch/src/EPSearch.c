@@ -23,6 +23,8 @@ $Id$
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LALRCSID.h>
 #include <lal/ResampleTimeSeries.h>
+#include <lal/FrequencySeries.h>
+#include <lal/PrintFTSeries.h>
 
 NRCSID (EPSEARCHC, "$Id$");
 
@@ -222,8 +224,8 @@ EPSearch (
     COMPLEX8FrequencySeries  *fseries;
     RealDFTParams            *dftparams        = NULL;
     LALWindowParams           winParams;
-    AverageSpectrumParams    AverageSpecParams;
-    REAL4                    *AverageSpec;
+    AverageSpectrumParams     AverageSpecParams;
+    REAL4FrequencySeries     *AverageSpec;
     INT4                      nevents, dumevents;
 
     INITSTATUS (status, "EPSearch", EPSEARCHC);
@@ -252,8 +254,10 @@ EPSearch (
     params->numEvents=0;
 
     /* Compute the average spectrum */
-    AverageSpec = LALCalloc(fseries->data->length, sizeof(*AverageSpec));
-    ComputeAverageSpectrum(status->statusPtr, AverageSpec, params, tmpDutyCycle, params->epSegVec->data + params->currentSegment);
+    LALNewREAL4FrequencySeries(status->statusPtr, &AverageSpec, "", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, fseries->data->length);
+    CHECKSTATUSPTR(status);
+
+    ComputeAverageSpectrum(status->statusPtr, AverageSpec->data->data, params, tmpDutyCycle, params->epSegVec->data + params->currentSegment);
     CHECKSTATUSPTR(status);
 
     /* write diagnostic info to disk */
@@ -263,7 +267,7 @@ EPSearch (
         fp = fopen("./freqseries.dat","w");
         for (j=0 ; j<(INT4)fseries->data->length ; j++)
         {
-            fprintf(fp, "%f\t%g\n", j*fseries->deltaF, AverageSpec[j]);
+            fprintf(fp, "%f\t%g\n", j*fseries->deltaF, AverageSpec->data->data[j]);
         }    
         fclose(fp);
     }
@@ -292,7 +296,7 @@ EPSearch (
       for (j=0 ; j<(INT4)fseries->data->length ; j++)
       {
         REAL4 tmpVar;
-        tmpVar = sqrt( 2.0 / AverageSpec[j] );
+        tmpVar = sqrt( 2.0 / AverageSpec->data->data[j] );
         fseries->data->data[j].re *= tmpVar;
         fseries->data->data[j].im *= tmpVar;
       }
@@ -427,7 +431,7 @@ EPSearch (
     CHECKSTATUSPTR (status);
 
     /* destroy temporary spectrum */
-    LALFree(AverageSpec);
+    LALDestroyREAL4FrequencySeries(status->statusPtr, AverageSpec);
 
     /* destroy the dftparams for computing frequency series */
     LALDestroyRealDFTParams (status->statusPtr, &dftparams);
