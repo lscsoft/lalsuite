@@ -383,9 +383,7 @@ static int isPlayground(INT4 gpsStart, INT4 gpsEnd)
 
 
 /*
- * Trim unwanted events from the event list.  This is really sloppy.  We
- * just re-link the list, and don't bother freeing anything since we just
- * output the resulting table and exit anyway.
+ * Trim unwanted events from the event list.
  */
 
 static BOOLEAN keep_this_event(SnglBurstTable *event, struct options_t options)
@@ -449,6 +447,14 @@ static BOOLEAN keep_this_event(SnglBurstTable *event, struct options_t options)
 }
 
 
+static SnglBurstTable *free_this_event(SnglBurstTable *event)
+{
+	SnglBurstTable *next = event ? event->next : NULL;
+	LALFree(event);
+	return(next);
+}
+
+
 static SnglBurstTable *trim_event_list(SnglBurstTable *event, struct options_t options)
 {
 	SnglBurstTable *head, *tmp;
@@ -462,7 +468,7 @@ static SnglBurstTable *trim_event_list(SnglBurstTable *event, struct options_t o
 		if(keep_this_event(event, options))
 			tmp = event;
 		else
-			tmp->next = event->next;
+			tmp->next = free_this_event(event);
 	}
 
 	return(head);
