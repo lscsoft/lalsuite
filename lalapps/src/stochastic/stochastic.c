@@ -1611,7 +1611,86 @@ INT4 main(INT4 argc, CHAR *argv[])
     lal_errhandler = LAL_ERR_EXIT;
   }
 
-  /* delete empty first entry */
+  /* save out any flags to the process params table */
+  if (middle_segment_flag)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+                      calloc(1, sizeof(ProcessParamsTable));
+    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+        PROGRAM_NAME);
+    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+        "--middle-segment");
+    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+  }
+  if (inject_flag)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+                      calloc(1, sizeof(ProcessParamsTable));
+    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+        PROGRAM_NAME);
+    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+        "--inject");
+    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+  }
+  if (apply_mask_flag)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+                      calloc(1, sizeof(ProcessParamsTable));
+    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+        PROGRAM_NAME);
+    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+        "--apply-mask");
+    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+  }
+  if (high_pass_flag)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+                      calloc(1, sizeof(ProcessParamsTable));
+    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+        PROGRAM_NAME);
+    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+        "--high-pass-filter");
+    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+  }
+  if (overlap_hann_flag)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+                      calloc(1, sizeof(ProcessParamsTable));
+    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+        PROGRAM_NAME);
+    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+        "--overlap-hann");
+    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+  }
+  if (recentre_flag)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+                      calloc(1, sizeof(ProcessParamsTable));
+    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+        PROGRAM_NAME);
+    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+        "--recentre");
+    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+  }
+  if (vrbflg)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+                      calloc(1, sizeof(ProcessParamsTable));
+    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+        PROGRAM_NAME);
+    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+        "--verbose");
+    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+  }
+    
+  /* delete empty first entry in process params table */
   this_proc_param = procparams.processParamsTable;
   procparams.processParamsTable = procparams.processParamsTable->next;
   free(this_proc_param);
