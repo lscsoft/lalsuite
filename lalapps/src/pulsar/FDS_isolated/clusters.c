@@ -12,6 +12,22 @@
 #include "clusters.h"
 #include "rngmed.h"
 
+NRCSID( CLUSTERSC, "$Id$");
+
+/* a few error codes */
+#define CLUSTERSC_ENULL 		1
+#define CLUSTERSC_ENONULL		2
+#define CLUSTERSC_EMEM			3
+#define CLUSTERSC_ESYS      		4
+#define CLUSTERSC_ECLUSTER		5
+
+
+#define CLUSTERSC_MSGENULL 		"Arguments contained an unexpected null pointer"
+#define CLUSTERSC_MSGENONULL		"Input pointer was not NULL"
+#define CLUSTERSC_MSGEMEM		"Out of memory"
+#define CLUSTERSC_MSGESYS		"System call failed (probably file IO)"
+#define CLUSTERSC_MSGECLUSTER		"Something failed in cluster-detection"
+
 /*this code estimates the floor of a givendata set by the running median.*/
 int EstimateFloor(REAL8Vector *input, INT2 windowSize, REAL8Vector *output){
   /* input : vector (N points) over which the running median code is ran with a  */
@@ -65,8 +81,13 @@ int EstimateFloor(REAL8Vector *input, INT2 windowSize, REAL8Vector *output){
 
 
 
-/*Given a set of outliers and their parameters, this routine finds clusters defined by certain parameters. The main parameter of the cluster algorithm is Dmax: the maximum distance between points above threshold that belong to the same cluster. The other parameter is "smallblock"*/
-int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *output){
+/** Given a set of outliers and their parameters, this routine finds clusters defined by certain parameters. 
+ * The main parameter of the cluster algorithm is Dmax: the maximum distance between points above threshold 
+ * that belong to the same cluster. The other parameter is "smallblock"
+ */
+void
+DetectClusters(LALStatus *stat, ClustersInput *input, ClustersParams *clParams, Clusters *output)
+{
 
   INT4 Dist,Dmax;
   INT2 smallBlock;
@@ -82,6 +103,9 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
   REAL8 RngMdn,max1,max2;
 
   int k,i,i0,lpc,j,imax1,imax2,shift;
+
+  INITSTATUS( stat, "DetectClusters", CLUSTERSC);
+  ATTATCHSTATUSPTR (stat); 
 
   wings      = clParams->wings;
   smallBlock = clParams->smallBlock;
@@ -106,20 +130,16 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
   output->Nclusters=Nclust+1;
 
   /*  Now that we know how many clusters, allocate space for Iclust */
-  if (!(Iclust = (UINT4 *) LALCalloc(Nclust+1,sizeof(UINT4)))){
-    printf("Memory allocation failure in Iclust");
-    return 0;
+  if ( (Iclust = (UINT4 *) LALCalloc(Nclust+1, sizeof(UINT4))) == NULL) {
+    ABORT (stat, CLUSTERSC_EMEM, CLUSTERSC_MSGEMEM);
   }
   /*  Now that we know how many clusters, allocate space for NclustPoints */
-  if (!(NclustPoints = (UINT4 *) LALCalloc(Nclust+1,sizeof(UINT4)))){
-    printf("Memory allocation failure in NClustPoints");
-    return 0;
+  if ( (NclustPoints = (UINT4 *) LALCalloc(Nclust+1,sizeof(UINT4))) == NULL) {
+    ABORT (stat, CLUSTERSC_EMEM, CLUSTERSC_MSGEMEM);
   }  
-  /*  Now that we know how many clusters, allocate space 
-      for output->NclustPoints */
+  /*  Now that we know how many clusters, allocate space for output->NclustPoints */
   if (!(output->NclustPoints = (UINT4 *) LALRealloc(output->NclustPoints,(Nclust+1)*sizeof(UINT4)))){
-    printf("Memory allocation failure in output->NclustPoints");
-    return 0;
+    ABORT (stat, CLUSTERSC_EMEM, CLUSTERSC_MSGEMEM);
   }  
 
   /*  Populate Iclust and NclustPoints */
@@ -180,17 +200,14 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
   
 
   /*  Allocate space for output vectors */
-  if (!(output->clusters = (REAL8 *) LALRealloc(output->clusters,NtotCheck*sizeof(REAL8)))){
-    printf("Memory allocation failure in output->clusters");
+  if ( (output->clusters = (REAL8*)LALRealloc(output->clusters,NtotCheck*sizeof(REAL8))) == NULL) {
     LALFree(Iclust);
     LALFree(NclustPoints);
-    return 1;
+    ABORT (stat, CLUSTERSC_EMEM, CLUSTERSC_MSGEMEM);
   }
-   if (!(output->Iclust = (UINT4 *) LALRealloc(output->Iclust,NtotCheck*sizeof(UINT4)))){
-    printf("Memory allocation failure in output->Iclust");
-    return 0;
+  if ( (output->Iclust = (UINT4*)LALRealloc(output->Iclust,NtotCheck*sizeof(UINT4))) == NULL) {
+    ABORT (stat, CLUSTERSC_EMEM, CLUSTERSC_MSGEMEM);
   }
-
 
 
    /*  compute line profiles  */
@@ -221,13 +238,11 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
     /*  this profile) of the input data. */
     /*  RDMP1 will have the profile */
 
-    if (!(RDMP2 = (REAL8 *) LALCalloc(k,sizeof(REAL8)))){
-      printf("RDMP2 memory allocation failure");
-      return 0;
+    if ( (RDMP2 = (REAL8 *)LALCalloc(k,sizeof(REAL8))) == NULL) {
+      ABORT (stat, CLUSTERSC_EMEM, CLUSTERSC_MSGEMEM);
     }
-    if (!(RDMP1 = (REAL8 *) LALCalloc(output->NclustPoints[lpc],sizeof(REAL8)))){
-      printf("RDMP1 memory allocation failure");
-      return 0;
+    if ( (RDMP1 = (REAL8 *)LALCalloc(output->NclustPoints[lpc],sizeof(REAL8))) == NULL) {
+      ABORT (stat, CLUSTERSC_EMEM, CLUSTERSC_MSGEMEM);
     }
 
       /*  compute max of input data */
@@ -244,6 +259,20 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
       }
       
       rngmed(RDMP2, k, smallBlock, RDMP1);
+
+#if 0
+      int rngmed(const double *data, unsigned int lendata, unsigned int nblocks, double *medians);
+void
+LALDRunningMedian( LALStatus *status, REAL8Sequence *medians, REAL8Sequence *input, LALRunningMedianPar param);
+typedef struct tagLALRunningMedianPar
+{
+  UINT4 blocksize;
+}
+LALRunningMedianPar;
+
+#endif 
+
+
       
       /*  compute max of output data */
       max1=0;
@@ -297,20 +326,23 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
   }/* loop over clusters*/
 
   if (Ntot != NtotCheck){
-    fprintf(stderr,"Ntot not equal NtotCheck In DetectClusters\n");
+    LALPrintError("\nNtot not equal NtotCheck In DetectClusters\n\n");
     LALFree(Iclust);
     LALFree(NclustPoints);
     LALFree(output->Iclust);
     LALFree(output->NclustPoints);
     LALFree(output->clusters);
-    return 1;
+    ABORT (stat, CLUSTERSC_ECLUSTER, CLUSTERSC_MSGECLUSTER);
   }
    
   LALFree(Iclust);
   LALFree(NclustPoints);
 
-  return 0;
-}
+
+  DETATCHSTATUSPTR(stat);
+  RETURN(stat);
+
+} /* DetectClusters() */
 
 
 
