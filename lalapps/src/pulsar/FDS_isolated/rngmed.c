@@ -83,15 +83,15 @@ as checkpoints
      struct rngmed_val_index *index_block;
      struct node **checks,**node_addresses;    
      struct node *first_sequence,*last_sequence;
-     struct node *currentnode,*previousnode; 
-     struct node *leftnode, *rightnode;
-     struct node *reuse_next_sorted,*reuse_prev_sorted;
+     struct node *currentnode=NULL,*previousnode; 
+     struct node *leftnode=NULL, *rightnode=NULL;
+     struct node *reuse_next_sorted=NULL,*reuse_prev_sorted=NULL;
      struct node *dummy_node,*dummy_node1,*dummy_node2;
      int ncheckpts,stepchkpts;
      int nextchkptindx,*checks4shift;
      int nearestchk,midpoint,offset,numberoffsets;
-     int samplecount,k,counter_chkpt,chkcount,shiftcounter;
-     double nextsample,deletesample,dummy,*dummy_array;
+     int samplecount,k,counter_chkpt,chkcount=0,shiftcounter=0;
+     double nextsample,deletesample,dummy;
      int shift,dummy_int;
 
 /*-----------------------------------
@@ -103,7 +103,7 @@ as checkpoints
           printf("Could not allocate memory for index_block\n");
           return 1;
      }
-     for(k=0;k<nblocks;k++){
+     for(k=0;k<(int)nblocks;k++){
           index_block[k].data=data[k];
           index_block[k].index=k;
      }
@@ -115,7 +115,7 @@ as checkpoints
            printf("Could not allocate memory for sorted_indices\n");
            return 1;
      }
-     for(k=0;k<nblocks;k++){
+     for(k=0;k<(int)nblocks;k++){
          sorted_indices[k]=index_block[k].index; 
      }
 
@@ -179,7 +179,7 @@ in sequential order
      first_sequence->prev_sorted=NULL;
      first_sequence->data=data[0];
      previousnode=first_sequence;
-     for(samplecount=1;samplecount<nblocks;samplecount++){
+     for(samplecount=1;samplecount<(int)nblocks;samplecount++){
            currentnode=(struct node *)LALCalloc(1,sizeof(struct node));
            if(!currentnode){
                 printf("Could not create node \n");
@@ -204,7 +204,7 @@ the pointers to checkpoint nodes
      checks[0]=currentnode;
      nextchkptindx=stepchkpts;
      counter_chkpt=1;
-     for(samplecount=1;samplecount<nblocks;samplecount++){
+     for(samplecount=1;samplecount<(int)nblocks;samplecount++){
           dummy_node=node_addresses[(int)sorted_indices[samplecount]];
           currentnode->next_sorted=dummy_node;
           currentnode->prev_sorted=previousnode;
@@ -247,7 +247,7 @@ around the new incoming value.
 The right limit is always >
 the new value.
 ----------------------------------*/
-     for(samplecount=nblocks;samplecount<lendata;samplecount++){         
+     for(samplecount=nblocks;samplecount<(int)lendata;samplecount++){         
           nextsample=data[samplecount];
           if(nextsample>=checks[0]->data){
                   for(chkcount=1;chkcount<ncheckpts;chkcount++){

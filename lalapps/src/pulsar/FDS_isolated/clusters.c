@@ -25,7 +25,6 @@ int EstimateFloor(REAL8Vector *input, INT2 windowSize, REAL8Vector *output){
   UINT4 lpc;
   UINT4 nbins=input->length;
   REAL4 halfWindow;
-
   REAL8 *dmp;
 
   INT4 M;
@@ -95,7 +94,7 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
 	   we have found a new cluster.*/
   Nclust=0; /* number of clusters -1 */
   k=0;
-  for (i=0;i<input->outliers->Noutliers-1;i++){
+  for (i=0;i<(int)input->outliers->Noutliers-1;i++){
     Dist=input->outliers->outlierIndexes[i+1]-input->outliers->outlierIndexes[i];
     k++;
     if (Dist >= Dmax){
@@ -131,7 +130,7 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
             /* it is only if all outliers are neighbouring. */
   
   i0=0;
-  for (i=0;i< input->outliers->Noutliers-1;i++){
+  for (i=0;i<(int)input->outliers->Noutliers-1;i++){
     Dist=input->outliers->outlierIndexes[i+1]-input->outliers->outlierIndexes[i];
     k++;
     if (Dist >= Dmax){
@@ -252,7 +251,7 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
 	if (RDMP1[i] > max1){
 	  max1 = RDMP1[i];
 	  imax1 = i;
-	  if (imax1 == output->NclustPoints[lpc]-1)
+	  if (imax1 == (int)output->NclustPoints[lpc]-1)
 	    imax1=imax1-1;
 	}
       }
@@ -262,7 +261,7 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
       shift=(UINT4)((smallBlock+0.5)/2.0);
       if (shift > imax2)
 	shift=imax2;
-      if ((imax2-shift) > output->NclustPoints[lpc]-1)
+      if ((imax2-shift) > (int)output->NclustPoints[lpc]-1)
 	shift=imax2-output->NclustPoints[lpc]+1;
       RDMP1[imax2-shift]=RDMP2[imax2];
       
@@ -284,7 +283,7 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
 
     /*Fill-in the output structures */
     if (smallBlock == 1){
-      for (i=0;i< output->NclustPoints[lpc];i++){
+      for (i=0;i< (int)output->NclustPoints[lpc];i++){
 	/* for (i=0;i< output->Nclusters;i++){ */
 	j=i+Iclust[lpc]-lwing;
 	output->Iclust[Ntot]=j;
@@ -395,7 +394,7 @@ int ComputeOutliers(OutliersInput *input, OutliersParams *outliersParams, Outlie
   /*  rightwing : how many points on the right wing */
   rightwing = wings;
   iright = IDMP[NI-1]+ wings;
-  if (iright > (nbins-1)){
+  if (iright > (int)(nbins-1)){
     iright = nbins-1;
     rightwing = nbins - IDMP[NI-1]-1;
     /* ITOH */
@@ -403,7 +402,7 @@ int ComputeOutliers(OutliersInput *input, OutliersParams *outliersParams, Outlie
   }
 
   /*fill-in outlierIndexes, the wings and exit */
-  for (j=0;j<NI;j++){
+  for (j=0;j<(int)NI;j++){
     outliers->outlierIndexes[j] = IDMP[j];
   }
   
