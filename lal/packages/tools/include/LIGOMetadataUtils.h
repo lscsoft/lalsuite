@@ -452,6 +452,14 @@ LALIfoCountSingleInspiral(
     );
 
 void
+LALTimeSlideSingleInspiral(
+    LALStatus                  *status,
+    SnglInspiralTable          *input,
+    LIGOTimeGPS                *slideTime,
+    InterferometerNumber        skipIfo 
+    );
+
+void
 LALPlayTestSingleInspiral(
     LALStatus                  *status,
     SnglInspiralTable         **eventHead,

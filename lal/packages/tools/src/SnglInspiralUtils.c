@@ -108,7 +108,12 @@ On input, \texttt{eventHead} is a pointer to the head of a linked list of single
 
 \texttt{LALIfoCountSingleInspiral()} scans through a linked list of single
 inspiral tables and counts the number which are from the requested IFO.  
-This count is returned as.
+This count is returned as \texttt{numTrigs}.
+
+\texttt{LALTimeSlideSingleInspiral()} performs a time slide of
+\texttt{slideTime} on the triggers containted in the \texttt{triggerList}.
+The triggers from \texttt{skipIfo} are not slid.  If you want to slide all
+triggers, simply set \texttt{skipIfo = LAL_UNKNOWN_IFO}.
 
 \texttt{LALPlayTestSingleInspiral()} tests whether single inspiral events
 occured in playground or non-playground times.  It then returns the requested
@@ -876,6 +881,49 @@ LALIfoCountSingleInspiral(
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }  
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void
+LALTimeSlideSingleInspiral(
+    LALStatus                  *status,
+    SnglInspiralTable          *triggerList,
+    LIGOTimeGPS                *slideTime,
+    InterferometerNumber        skipIfo 
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable    *thisEvent = NULL;
+  INT8                  slideNS = 0;
+  INT8                  trigTimeNS = 0;
+  INITSTATUS( status, "LALTimeSlideSingleInspiral", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  /* time slide triggers by a time = slideTime, except those from the
+   * instrument skipIfo which are left untouched. If you want to slide 
+   * all triggers, simply set skipIfo = LAL_UNKNOWN_IFO */
+
+  
+  /* check that input non-null */
+  ASSERT( triggerList, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+
+  /* calculate the slide time in nanoseconds */
+  LALGPStoINT8( status->statusPtr, &slideNS, slideTime );
+
+  for( thisEvent = triggerList; thisEvent; thisEvent = thisEvent->next )
+  {
+    if ( skipIfo != XLALIFONumber(thisEvent->ifo) )
+    {
+      LALGPStoINT8( status->statusPtr, &trigTimeNS, &(thisEvent->end_time));
+      trigTimeNS += slideNS;
+      LALINT8toGPS( status->statusPtr, &(thisEvent->end_time), &trigTimeNS );
+    }     
+  }         
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}  
+
 
 
 
