@@ -192,7 +192,8 @@ LALFindChirpInjectSignals (
     ppnParams.epoch.gpsSeconds     = 0;
     ppnParams.epoch.gpsNanoSeconds = 0;
 
-    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg), 
+    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+        "Injected waveform parameters:\n"
         "ppnParams.mTot = %e\n"
         "ppnParams.eta = %e\n"
         "ppnParams.d = %e\n"
@@ -240,12 +241,15 @@ LALFindChirpInjectSignals (
     waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
 
     snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg), 
+        "Injected waveform timing:\n"
         "thisEvent->geocent_end_time.gpsSeconds = %d\n"
         "thisEvent->geocent_end_time.gpsNanoSeconds = %d\n"
+        "ppnParams.tc = %e\n"
         "waveformStartTime = %lld\n",
         thisEvent->geocent_end_time.gpsSeconds,
         thisEvent->geocent_end_time.gpsNanoSeconds,
-    waveformStartTime );
+        ppnParams.tc,
+        waveformStartTime );
     LALInfo( status, warnMsg );
 
     /* clear the signal structure */
