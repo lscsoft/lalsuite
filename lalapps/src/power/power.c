@@ -105,6 +105,7 @@ INT4               cluster       = FALSE;
 INT4               printSpectrum = FALSE;
 INT4               printData     = FALSE;
 INT4               whiteNoise    = FALSE;   /* insertion of Gaussian white noise */
+INT4               sineBurst     = FALSE;   /* insertion of shaped sine burst  */
 
 /* global variables */
 FrChanIn   channelIn;               /* channnel information               */
@@ -123,6 +124,11 @@ INT4       sampleRate    = 2048;    /* sample rate in Hz                  */
 /* data conditioning parameters */
 CHAR      *calCacheFile  = NULL;    /* name of the calibration cache file */
 
+
+REAL4                 sineFreq      = 100.0;   /* nominal frequency of sine burst */
+REAL4                 sineOffset    = 1.0;     /* sin-burst center in time series */
+REAL4                 sineAmpl      = 1.0;     /* peak amplitude of sine burst    */
+REAL4                 sineWidth     = 1.0;     /* width (in sigmas) of sine burst */
 
 
 int main( int argc, char *argv[])
@@ -155,11 +161,11 @@ int main( int argc, char *argv[])
 
    
     /* new application instance variables added 7/17/02 MSW */
-    BOOLEAN               sineBurst     = FALSE;   /* insertion of shaped sine burst  */
-    REAL4                 sineFreq      = 100.0;   /* nominal frequency of sine burst */
-    REAL4                 sineOffset    = 1.0;     /* sin-burst center in time series */
-    REAL4                 sineAmpl      = 1.0;     /* peak amplitude of sine burst    */
-    REAL4                 sineWidth     = 1.0;     /* width (in sigmas) of sine burst */
+    /* INT4                  sineBurst     = FALSE;    insertion of shaped sine burst  
+    REAL4                 sineFreq      = 100.0;    nominal frequency of sine burst 
+    REAL4                 sineOffset    = 1.0;     sin-burst center in time series 
+    REAL4                 sineAmpl      = 1.0;     peak amplitude of sine burst    
+    REAL4                 sineWidth     = 1.0;.     width (in sigmas) of sine burst */
 
     /* units and other things */
     const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
@@ -494,11 +500,14 @@ int initializeEPSearch(
         {"start_time",              required_argument, 0,                 'x'}, 
         {"start_time_ns",           required_argument, 0,                 'y'}, 
         {"srate",                   required_argument, 0,                 'z'}, 
-        {"sine",                    required_argument, 0,                 'A'}, 
+        {"sinFreq",                required_argument, 0,                 'A'}, 
         {"seed",                    required_argument, 0,                 'E'}, 
         {"threshold",               required_argument, 0,                 'B'}, 
         {"window",                  required_argument, 0,                 'C'}, 
         {"dbglevel",                required_argument, 0,                 'D'},
+	{"sinOffset",              required_argument, 0,                 'F'},
+	{"sinAmpl",                required_argument, 0,                 'G'},
+	{"sinWidth",               required_argument, 0,                 'H'},
         /* output options */
         {"printData",               no_argument,       &printData,         1 },
         {"printSpectrum",           no_argument,       &printData,         1 },
@@ -557,7 +566,7 @@ int initializeEPSearch(
         int option_index = 0;
 
         c = getopt_long_only( argc, argv, 
-                "a:b:c:d:e:f:g:i:h:j:k:l:m:n:o:p:q:r:s:t:u:v:x:y:z:A:E:B:C:D:",
+                "a:b:c:d:e:f:g:i:h:j:k:l:m:n:o:p:q:r:s:t:u:v:x:y:z:A:E:B:C:D:F:G:H:",
                 long_options, &option_index );
 
         /* detect the end of the options */
@@ -965,7 +974,21 @@ int initializeEPSearch(
                 }
                 break;
 
- 
+	    case 'A':
+	        /* inject Sine-Gaussians: set the freq. */
+	        {
+                  REAL4 tmpsineFreq = atof(optarg);
+		  sineBurst = TRUE;
+		  if (tmpsineFreq <= 0){
+		      fprintf(stderr,"invalid argument to --%s:\n",
+                              long_options[option_index].name);
+		      exit( 1 );
+		  }
+		  sineFreq = tmpsineFreq;
+		  ADD_PROCESS_PARAM( "float", "%e", tmpsineFreq );
+		}      
+		break;
+
             case 'E':
                 /* seed for noise simulations */
                 {
@@ -1018,6 +1041,45 @@ int initializeEPSearch(
                     ADD_PROCESS_PARAM( "int", "%d", atoi(optarg) ); 
                 }
                 break;
+
+            case 'F':
+	        /* set the offset for the injections */
+	        {
+                  REAL4 tmpsineOffset = atof(optarg);
+		  if (tmpsineOffset <= 0){
+		      fprintf(stderr,"invalid argument to --%s:\n",
+                              long_options[option_index].name);
+		      exit( 1 );
+		  }
+		  sineOffset = tmpsineOffset;
+		} 
+		break;
+
+            case 'G':
+	        /* set the amplitude of injections. */
+	        {
+                  REAL4 tmpsineAmpl = atof(optarg);
+		  if (tmpsineAmpl <= 0){
+		      fprintf(stderr,"invalid argument to --%s:\n",
+                              long_options[option_index].name);
+		      exit( 1 );
+		  }
+		  sineAmpl = tmpsineAmpl;
+		} 
+		break;
+
+            case 'H':
+	        /* set the Width of injections. */
+	        {
+                  REAL4 tmpsineWidth = atof(optarg);
+		  if (tmpsineWidth <= 0){
+		      fprintf(stderr,"invalid argument to --%s:\n",
+                              long_options[option_index].name);
+		      exit( 1 );
+		  }
+		  sineWidth = tmpsineWidth;
+		}
+		break;
 
             case '?':
                 exit( 1 );
