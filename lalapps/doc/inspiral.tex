@@ -491,11 +491,11 @@ Jolien Creighton (Duncan Brown and Patrick Brady)
 \end{entry}
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % PROGRAM:   snglInspiralReader
 % 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
 \subsection{Program \texttt{lalapps\_snglInspiralReader}}
 \label{program:lalapps-snglInspiralReader}
@@ -508,10 +508,11 @@ files of inspiral triggers allowing cuts and clustering.
 
 \item[Synopsis]
 \verb$lalapps_snglInspiralReader$ 
-\verb$--input$ \textsc{infile} \verb$--table$ \textsc{tablename} 
+\verb$--input$ \textsc{infile} \verb$--table$ \textsc{tablename}
+\newline 
 \verb$--outfile$ \textsc{outfile}
 [\verb$--snrstar$ \textsc{snrstar}] [\verb$--noplayground$] 
-[\verb$--sort$] [\verb$--cluster$ \textsc{msec}] 
+[\verb$--sort$] [\verb$--cluster$ \textsc{msec}] \newline
 [\verb$--clusterchoice$ \textsc{choicenumber}] [\verb$--help$]
 
 \item[Description] 
@@ -574,7 +575,7 @@ $(\textsc{snr})^{2}/\textsc{chisq}$ is exceeded by a subsequent event's.
 \begin{verbatim}
 lalapps_snglInspiralReader --input xmlfilelist \
 --table sngl_inspiral --outfile my.xml --snrstar 8.0 \
---sort --cluster 20 clusterchoice 1
+--sort --cluster 20 --clusterchoice 1
 \end{verbatim}
 
 \item[Author] 
@@ -783,4 +784,129 @@ from IFO A.
 Patrick Brady
 \end{entry}
 \clearpage
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% PROGRAM:   inspinj_find
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\clearpage
+\subsection{Program \texttt{lalapps\_inspinj\_find}}
+\label{program:lalapps-inspinj-find}
+\idx[Program]{lalapps\_inspinj\_find}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_inspinj_find$ --- compares LIGO lightweight XML files 
+containing inspiral triggers with an XML file containing injected
+signals and tests for time coincidence.
+
+
+\item[Synopsis]
+\verb$lalapps_inspinj_find$ 
+\verb$--input$ \textsc{infile} [\verb$--inject$ \textsc{injectfile}]
+\verb$--outfile$ \textsc{outfile} \newline
+[\verb$--snrstar$ \textsc{snrstar}]
+[\verb$--sort$] [\verb$--noplayground$] [\verb$--deltat$
+\textsc{dt}] \newline
+[\verb$--cluster$ \textsc{clust}] 
+[\verb$--clusterchoice$ \textsc{choicenumber}] 
+[\verb$--missedinjections$ \textsc{missedfile}]\newline
+[\verb$--help$]
+ 
+
+
+\item[Description] 
+\verb$lalapps_inspinj_find$ compares triggers from the inspiral
+search code with injections.  The \textsc{infile} should contain a
+list of the XML files containing the triggers; the format is one
+filename per line.  The triggers can be sorted, using the
+\verb$--sort$ flag.  To apply a cut on SNR,  use the flag  
+\verb$--snrstar$ \textsc{snrstar}:  only triggers with $\texttt{SNR} 
+> \textsc{snrstar}$ will be recorded.  If the file \textsc{injectfile}
+containing injections is provided then the program will compare the
+triggers with the injections, in which case the \verb$--sort$ flag is
+recommended unless you are certain that the triggers are time-ordered.
+Any trigger occuring within \textsc{dt} msec of an injection
+is retained.  Additionally, any injection which is coincident with one
+or more triggers is also retained.  The tables of triggers and
+injections are output to the file \textsc{outfile}.  Events can also
+be clustered within \textsc{clust} msec, after coincidence has
+been checked.  If \textsc{clust} is twice \textsc{dt}
+then only one trigger per inspiral will survive.  There is a choice of
+several clustering algorithms, which can be selected using
+\texttt{--clusterchoice}.  Finally, specifying \verb$--missedinjections$,
+creates a file \textsc{missedfile} containing a table of those
+injections which occured during the times of the input files, and in
+the playground, which were not coincident with any triggers.
+
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--input} \textsc{infile}] Required.  A file containing a
+list of LIGO lightweight XML files with triggers to be processed.  The
+format of \textsc{infile} is one file name per line.
+
+\item[\texttt{--inject} \textsc{injectfile}] Optional.  A file
+containing a list of inspiral events which were injected into the
+data.  The \textsc{injectfile} format is LIGO lightweight XML with a
+\texttt{sim\_inspiral} table. If this file is not specified, the
+program runs in the same way as \texttt{lalapps\_snglInspiralReader}.
+
+\item[\texttt{--outfile} \textsc{outfile}] Required.  Name of the file
+to be used for output.  The output format is LIGO lightweight XML with
+\texttt{sngl\_inspiral} and \texttt{sim\_inspiral} tables.
+
+\item[\texttt{--snrstar} \textsc{snrstar}] Optional.  A threshold cut
+on signal-to-noise.  Only triggers with $\textsc{snr} > \textsc{snrstar}$
+are checked for coincidence with the injections.
+
+\item[\texttt{--sort}] Optional.   Sort the triggers in time (before
+checking coincidence).  
+
+\item[\texttt{--noplayground}] Optional.  Record all triggers.  The
+default behaviour returns only those triggers which lie in the
+playground data set.  
+
+\item[\texttt{--deltat} \textsc{dt}] Optional.  This gives the maximum time
+difference \textsc{dt} allowed between the injection and trigger.  If
+not specified, the default is 20msec.  
+
+\item[\texttt{--cluster} \textsc{clust}] Optional.  Cluster triggers
+within \textsc{clust} msec window.   The clustering algorithm
+identifies the first trigger in a cluster, then displaces it if another 
+trigger within the clustering window satisfies the appropriate condition 
+(described below).
+
+\item[\texttt{--clusterchoice} \textsc{choicenumber}]  Optional.  This
+determines which condition will be used in clustering of the triggers.  
+The default is 0.  The choices are \textsc{choicenumber} $=0$ --- displace
+event if its \textsc{snr} is exceeded by an event with a smaller 
+\textsc{chisq}; \textsc{choicenumber} $=1$ --- displace event if the quantity
+$(\textsc{snr})^{2}/\textsc{chisq}$ is exceeded by a subsequent event's.
+
+\item[\texttt{--missedinjections} \textsc{missedfile}]  Optional.
+Output a \texttt{sim\_inspiral} table in \textsc{missedfile} containing
+all injections which were not coincident with a trigger.  Only
+injections occuring during during the times of the input files and
+within the playground (unless \texttt{--noplayground} is specified)
+are given.
+ 
+\item[\texttt{--help}] Optional.  Print a help message.
+\end{entry}
+
+\item[Example]
+\begin{verbatim}
+lalapps_inspinj_find --input xmlfilelist \
+--inject injections.xml --outfile my.xml --snrstar 8.0 \
+--coincidence 20 --sort --cluster 20 --clusterchoice 1 \
+--missedinjections missedinj.xml
+\end{verbatim}
+
+\item[Author] 
+Steve Fairhurst
+\end{entry}
+\clearpage
+
 
