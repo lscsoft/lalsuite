@@ -308,10 +308,9 @@ LALFindChirpInjectSignals (
     else
     {
       LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
-          "Unknown waveform; using LALGeneratePPNInspiral\n");
+          "Unknown injection waveform\n");
       LALInfo( status, warnMsg );
-      LALGeneratePPNInspiral( status->statusPtr, &waveform, &ppnParams );
-      CHECKSTATUSPTR( status );
+      ABORT( status, FINDCHIRPH_EWVFM, FINDCHIRPH_MSGEWVFM );
     }
 
     LALInfo( status, ppnParams.termDescription );
