@@ -1,13 +1,13 @@
-TODO
------
+TODO (makefakedatata_v4)
+-------------------------
+
+* allow binary-orbit input (should be trivial)
+
+* implement more  _v2 features, like writing of time-series...
+
 * double-check on "renormalization" for FFTs if using sub-set of bins
 
-* prepare a "test suite" for pulsar-signal generation & Cie.
-	--> test-check final SFTs against makefakedata_v2
-
 * understand why we throw away the last freqency-bin in FFT -> SFT ?
-
-* do MEASURE the FFTW-plan, and allow some plan-buffering!
 
 done
 ----
@@ -44,3 +44,10 @@ done
   (done, using code from makefakedata_v2)
 
 * use UserInput module and "clean-up" makefakedata_v4
+
+* do MEASURE the FFTW-plan, and allow some plan-buffering!
+  (does not seem to have much effect, maybe not worth it..?)
+
+* prepare a "test suite" for pulsar-signal generation & Cie.
+	--> test-check final SFTs against makefakedata_v2
+  (DONE: current agreement seems very good: ~1e-3-1e-4 on average)
