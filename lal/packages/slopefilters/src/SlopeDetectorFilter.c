@@ -324,16 +324,20 @@ LALSlopeDetectorFilter( LALStatus          *status,
 	   SLOPEDETECTORFILTERH_MSGEDATATOOSHORT );
   }
 
-  /* add checks that the input series is valid data, etc */
+  /* check that the number of taps is not zero */
+  if ( ntaps == 0 ) {
+    ABORT( status, SLOPEDETECTORFILTERH_EDIVBYZERO, 
+	   SLOPEDETECTORFILTERH_MSGEDIVBYZERO );
+  }
 
   /******* DO ANALYSIS ************/
 
+  nreal=(REAL4)ntaps;
   for(i=0;i<(datalength-ntaps+1);++i) {
     meanx=0;
     meant=0; 
     meanxt=0; 
     meantsquared=0;
-    nreal=(REAL4)ntaps;
     for(j=0;j<ntaps;++j) {
       tindex = (REAL4)j;
       meanx += datain[i+j]/nreal;
@@ -341,6 +345,13 @@ LALSlopeDetectorFilter( LALStatus          *status,
       meanxt += tindex*datain[i+j]/nreal;
       meantsquared += tindex*tindex/nreal;
     }
+
+    /* check that the denominator is not zero */
+    if ( (meantsquared - meant*meant) == 0 ) {
+      ABORT( status, SLOPEDETECTORFILTERH_EDIVBYZERO, 
+	     SLOPEDETECTORFILTERH_MSGEDIVBYZERO );
+    }
+    
     dataout[i] = (meanxt - meanx * meant) / ( meantsquared - meant * meant );
 
     /*these lines present for testing purposes only*/
