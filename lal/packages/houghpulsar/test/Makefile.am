@@ -31,8 +31,10 @@ TESTS =  TestConstructPLUT TestDriveHough TestHoughMap TestPeak2PHMD \
 	TestNDConstructPLUT TestDriveNDHough TestNDHoughMap TestNDPeak2PHMD \
 	TestStatistics TestVelocity
 
-TESTS_ENVIRONMENT = LAL_DATA_PATH=$(srcdir)
-noinst_DATA = ../../pulsar/test/earth03.dat ../../pulsar/test/sun03.dat
+
+TESTS_ENVIRONMENT = LAL_DATA_PATH=$(srcdir)/../../pulsar/test
+#TESTS_ENVIRONMENT = LAL_DATA_PATH=$(srcdir)
+#noinst_DATA = ../../pulsar/test/earth03.dat ../../pulsar/test/sun03.dat
 EXTRA_DIST = $(DATA)
 
 MOSTLYCLEANFILES = .dvi-dep OutHough.asc OutHistogram.asc

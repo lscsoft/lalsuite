@@ -2,7 +2,7 @@
 SUBDIRS = include packages doc lib
 #CLEANFILES = $(top_builddir)/include/*.h
 EXTRA_DIST = README.bugs README.contrib \
-  lal-config.in lal.pc.in ac* \
+  lal-config.in lal.pc.in acinclude.m4 aclocal.m4 \
   misc/doc.mk misc/dvi.mk misc/include.mk misc/main.tex.in \
   misc/lal.m4 misc/lallibtool.m4 misc/lalam15patch.m4 \
   misc/acconfig.h

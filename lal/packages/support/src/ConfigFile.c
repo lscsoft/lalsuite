@@ -89,7 +89,7 @@ The configfile-data should be freed at the end using\\
 LALCHARReadSequence()
 LALCreateTokenList()       LALDestroyTokenList()
 LALCalloc()                LALMalloc()             LALFree()  
-LALPrintError()            fopen()                 fclose()
+LALPrintError()            LALOpenDataFile()                 fclose()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -123,6 +123,7 @@ more convenient to use the \verb+UserInput+ infrastructure
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/LALStdio.h>
+#include <lal/FileIO.h>
 #include <lal/StreamInput.h>
 
 #include <lal/ConfigFile.h>
@@ -165,7 +166,7 @@ LALLoadConfigFile (LALStatus *stat,
   ASSERT (fname != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
 
 
-  if ( (fp = fopen(fname, "r")) == NULL) {
+  if ( (fp = LALOpenDataFile(fname)) == NULL) {
     LALPrintError ("Could not open config-file: `%s`\n", fname);
     ABORT (stat, CONFIGFILEH_EFILE, CONFIGFILEH_MSGEFILE);
   }

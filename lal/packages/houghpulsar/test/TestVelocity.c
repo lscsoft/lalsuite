@@ -103,8 +103,8 @@ INT4 lalDebugLevel=7;
 
 /* Locations of the earth and sun ephemeris data */
 
-#define EARTHDATA "../../pulsar/test/earth03.dat" 
-#define SUNDATA "../../pulsar/test/sun03.dat" 
+#define EARTHDATA "earth03.dat" 
+#define SUNDATA "sun03.dat" 
 
 /* Usage format string.  */
 #define USAGE "Usage: %s [-d debuglevel] [-a accuracy]\n"

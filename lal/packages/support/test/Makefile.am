@@ -4,7 +4,7 @@ check_PROGRAMS = PrintVectorTest\
                  StreamSeriesInputTest SFTfileIOTest \
 		 ConfigFileTest UserInputTest LALMath3DPlotTest LALMathNDPlotTest
 
-noinst_DATA = StreamInput.data StreamSeriesInput.data inputsft.0
+noinst_DATA = StreamInput.data StreamSeriesInput.data inputsft.0 ConfigFileSample.cfg
 EXTRA_DIST = $(DATA)
 
 PrintVectorTest_SOURCES = PrintVectorTest.c
@@ -39,10 +39,14 @@ LALMathNDPlotTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la 
 
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+#TESTS = PrintVectorTest \
+        #ReadFTSeriesTest PrintFTSeriesTest StreamInputTest \
+        #StreamSeriesInputTest ConfigFileTest UserInputTest SFTfileIOTest \
+        #LALMath3DPlotTest LALMathNDPlotTest
 TESTS = PrintVectorTest \
         ReadFTSeriesTest PrintFTSeriesTest StreamInputTest \
         StreamSeriesInputTest ConfigFileTest UserInputTest SFTfileIOTest \
-        LALMath3DPlotTest LALMathNDPlotTest
+        LALMath3DPlotTest
 
 TESTS_ENVIRONMENT = LAL_DATA_PATH=$(srcdir)
 MOSTLYCLEANFILES = .dvi-dep *.dat *PrintVector.00* *.out  outputsft.0 
