@@ -80,10 +80,6 @@ BOOLEAN FILE_FSTATS = 1;
 #define BOINC_COMPRESS 0
 #endif
 
-#ifndef BOINC_APP_GRAPHICS_LIB
-#define BOINC_APP_GRAPHICS_LIB "./libcfsBOINC.so"
-#endif
-
 /* Boinc diag constants */
 #define BOINC_DIAG_DUMPCALLSTACKENABLED     0x00000001L
 #define BOINC_DIAG_HEAPCHECKENABLED         0x00000002L
@@ -2943,22 +2939,47 @@ int main(int argc, char *argv[]){
 			 BOINC_DIAG_REDIRECTSTDERR |
 			 BOINC_DIAG_TRACETOSTDERR);
 #endif
-  
+
   /* boinc_init() or boinc_init_graphics() needs to be run before any
-     boinc_api functions are used */
+   * boinc_api functions are used */
+  
+  
 #if BOINC_GRAPHICS == 2
   {
-    void *handle = dlopen(BOINC_APP_GRAPHICS_LIB,  RTLD_NOW);
-    if(handle != NULL) {
-      set_search_pos_hook      = dlsym(handle,"set_search_pos");
-      fraction_done_hook       = dlsym(handle,"fraction_done");
-      boinc_init_graphics_hook = dlsym(handle,"boinc_init_graphics");
-    }
+    /* Try loading screensaver-graphics as a dynamic library. 
+     * The convention used for the name of the screensaver-lib is
+     * to use the name of the executable + ".so"
+     */
+    CHAR *graphics_lib=NULL;	/* name of screensaver lib we're trying to load */
+    CHAR *ptr;
+    /* figure out name of executable */
+    if ( (ptr = strrchr (argv[0], '/')) == NULL )
+      ptr = argv[0];
+    else
+      ptr ++;
+
+    graphics_lib = LALCalloc(1, strlen(ptr) + 10);
+    strcpy (graphics_lib, ptr);
+    strcat (graphics_lib, ".so");    
+    /* boinc-resolve it: could be a XML symlink */
+    use_boinc_filename1(&graphics_lib);
+
+    /* try to open dynamic screensaver-lib */
+    void *handle = dlopen(graphics_lib,  RTLD_NOW);
+
+    if(handle != NULL) 
+      {
+	set_search_pos_hook      = dlsym(handle,"set_search_pos");
+	fraction_done_hook       = dlsym(handle,"fraction_done");
+	boinc_init_graphics_hook = dlsym(handle,"boinc_init_graphics");
+	
+	fprintf (stderr, "Successfully loaded screensaver-library '%s'\n", graphics_lib);
+      }
     else
       {
-	fprintf (stderr, "dlopen() failed: %s\n--> Running without screensaver graphics.", dlerror());
+	fprintf (stderr, "dlopen() failed: %s\n--> Running without screensaver graphics.\n", dlerror());
       }
-    
+    LALFree (graphics_lib);
   }
 #endif
 #if BOINC_GRAPHICS
