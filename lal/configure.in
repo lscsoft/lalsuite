@@ -134,6 +134,11 @@ AC_OUTPUT( Makefile                               \
            packages/utilities/include/Makefile    \
            packages/utilities/src/Makefile        \
            packages/utilities/test/Makefile       \
+           packages/date/Makefile                 \
+           packages/date/doc/Makefile             \
+           packages/date/include/Makefile         \
+           packages/date/src/Makefile             \
+           packages/date/test/Makefile            \
            packages/tdfilter/Makefile             \
            packages/tdfilter/doc/Makefile         \
            packages/tdfilter/include/Makefile     \
@@ -159,6 +164,11 @@ AC_OUTPUT( Makefile                               \
            packages/stochastic/include/Makefile   \
            packages/stochastic/src/Makefile       \
            packages/stochastic/test/Makefile      \
+           packages/inspiral/Makefile             \
+           packages/inspiral/doc/Makefile         \
+           packages/inspiral/include/Makefile     \
+           packages/inspiral/src/Makefile         \
+           packages/inspiral/test/Makefile        \
            packages/framedata/Makefile            \
            packages/framedata/doc/Makefile        \
            packages/framedata/include/Makefile    \
@@ -174,5 +184,15 @@ AC_OUTPUT( Makefile                               \
            packages/findchirp/include/Makefile    \
            packages/findchirp/src/Makefile        \
            packages/findchirp/test/Makefile       \
+           packages/burstsearch/Makefile          \
+           packages/burstsearch/doc/Makefile      \
+           packages/burstsearch/include/Makefile  \
+           packages/burstsearch/src/Makefile      \
+           packages/burstsearch/test/Makefile     \
+           packages/tracksearch/Makefile          \
+           packages/tracksearch/doc/Makefile      \
+           packages/tracksearch/include/Makefile  \
+           packages/tracksearch/src/Makefile      \
+           packages/tracksearch/test/Makefile     \
          )
 
