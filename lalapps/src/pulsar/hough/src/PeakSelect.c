@@ -144,7 +144,7 @@ void LALSelectPeakWhiteNoise(LALStatus  *status,
     n = length;
     
     while (n-- >0){
-      if ( *in1 >= threshold){
+      if ( *in1 > threshold){
         *out = 1 ;
 	nPeaks++ ;
       } else {
@@ -338,7 +338,7 @@ void LALSelectPeakColorNoise(LALStatus  *status,
     n = length;
     
     while (n-- >0){
-      if ( *peri >= threshold * (*psd) ){
+      if ( *peri > threshold * (*psd) ){
         *out = 1 ;
 	nPeaks++ ;
       } else {

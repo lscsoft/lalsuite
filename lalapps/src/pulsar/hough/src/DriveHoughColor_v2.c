@@ -454,6 +454,7 @@ int main(int argc, char *argv[]){
     globfree(&globbuf);	
   }
 
+
   /* ****************************************************************/
   /*  computing the Hough threshold for a given false alarm  */
   /*   HoughThreshold = N*alpha +sqrt(2N alpha (1-alpha))*erfc-1(2 alpha_h) */
@@ -472,10 +473,11 @@ int main(int argc, char *argv[]){
     /* First check that false alarm is within bounds 
        and set it to something reasonable if not */
     if ( (houghFalseAlarm > 0.999)&&(houghFalseAlarm < 0.0) ) 
-      houghFalseAlarm = 0.00000001;
+      houghFalseAlarm =  FALSEALARM;
     erfcInv = gsl_cdf_ugaussian_Qinv (houghFalseAlarm)/sqrt(2);    
     houghThreshold = meanN + sigmaN*sqrt(2.0)*erfcInv;    
   }
+
 
   /* ****************************************************************/
   /*  Reading the first headerfile of the first SFT  */
