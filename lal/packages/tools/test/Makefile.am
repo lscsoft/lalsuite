@@ -1,10 +1,10 @@
 ## Process this file with automake to produce Makefile.in
 if FRAME
 NEED_FRAME = ResampleTimeSeriesTest ComputeCalibrationFactorsTest
-EXTRA_TEXSOURCES = ResampleTimeSeriesTest.c ComputeCalibrationFactorsText.c
+EXTRA_TEXSOURCES =
 else
 NEED_FRAME = 
-EXTRA_TEXSOURCES =
+EXTRA_TEXSOURCES = ResampleTimeSeriesTest.c ComputeCalibrationFactorsText.c
 endif
 check_PROGRAMS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest CoherentEstimationTest $(NEED_FRAME)
 UnitsTest_SOURCES = UnitsTest.c
