@@ -189,7 +189,7 @@ FrCache * XLALFrImportCache( const char *fname )
 
 
 FrCache * XLALFrSieveCache( FrCache *input, FrCacheSieve *params )
-{ /* </lalVerbatim> */
+{
   static const char *func = "XLALFrSieveCache";
   FrCache *cache;
 
@@ -520,6 +520,7 @@ void XLALFrDestroyCache( FrCache *cache )
  */
 
 
+/* <lalVerbatim file="FrameCacheCP"> */
 void LALFrCacheImport(
     LALStatus   *status,
     FrCache    **output,
