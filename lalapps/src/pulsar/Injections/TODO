@@ -1,12 +1,11 @@
 TODO (makefakedatata_v4)
 -------------------------
-* add possibility of generating Gaussian noise to add to signal
+
+* allow using Greg's optimized Signal-generator
 
 * implement more  _v2 features, like writing of time-series...
 
 * double-check on "renormalization" for FFTs if using sub-set of bins
-
-* understand why we throw away the last freqency-bin in FFT -> SFT ?
 
 done
 ----
@@ -53,3 +52,5 @@ done
 
 * allow binary-orbit input (should be trivial)
   (DONE, needs testing still)
+
+* add possibility of generating Gaussian noise to add to signal
