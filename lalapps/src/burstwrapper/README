@@ -1,0 +1,10 @@
+LAL Configure:
+ ./configure --prefix=/dso-test/jsylvest/LAL --enable-static --disable-mpi --with-extra-cppflags=-I/ldcg/include --with-extra-cflags=-fexceptions --with-extra-ldflags=-L/ldcg/lib --enable-frame --enable-fftw3
+
+LALAPPS Configure:
+./configure --prefix=/dso-test/jsylvest/LALAPPS --with-extra-ldflags=-L/ldcg/lib -L/dso-test/jsylvest/LAL/lib --with-extra-cppflags=-I/ldcg/include -I/dso-test/jsylvest/LAL/include --with-extra-cppflags=-I/ldcg/include -I/dso-test/jsylvest/LAL/include --enable-condor
+
+Datacond Configure:
+../configure --prefix=/dso-test/jsylvest/datacond//stow_pkgs/ldas-1.0.86 --with-ilwd --with-ospace=/ldcg --with-fftw3=/ldcg --with-odbc-dm=DB2 --disable-static
+
+
