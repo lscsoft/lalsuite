@@ -89,6 +89,7 @@ LALFindChirpFilterSegment (
 {
   UINT4                 j, k, kmax;
   UINT4                 numPoints;
+  UINT4                 firstEventIndex;
   UINT4                 deltaEventIndex;
   UINT4                 ignoreIndex;
   REAL4                 deltaT;
@@ -97,16 +98,14 @@ LALFindChirpFilterSegment (
   REAL4                 modqsqThresh;
   REAL4                 mismatch;
   REAL4                 chisqThreshFac;
-  /* REAL4                 modChisqThresh;*/
+  REAL4                 modChisqThresh;
   UINT4                 numChisqBins;
-  UINT4                 eventStartIdx = 0;
-  BOOLEAN               haveChisq     = 0;
+  BOOLEAN               haveEvent     = 0;
   COMPLEX8             *qtilde        = NULL;
   COMPLEX8             *q             = NULL;
   COMPLEX8             *inputData     = NULL;
   COMPLEX8             *tmpltSignal   = NULL;
   SnglInspiralTable    *thisEvent     = NULL;
-  LALMSTUnitsAndAcc     gmstUnits;
   CHAR                  searchName[LIGOMETA_SEARCH_MAX];
 
   INITSTATUS( status, "LALFindChirpFilter", FINDCHIRPFILTERC );
@@ -251,11 +250,6 @@ LALFindChirpFilterSegment (
   /* number of chisq bins is (length - 1) or 0 if there are no boundaries   */
   numChisqBins = input->segment->chisqBinVec->length ? 
     input->segment->chisqBinVec->length - 1 : 0;
-
-  /* set the gmst units and strictness */
-  gmstUnits.units = MST_HRS;
-  gmstUnits.accuracy = LALLEAPSEC_STRICT;
-
 
   /*
    *
@@ -405,7 +399,7 @@ LALFindChirpFilterSegment (
    }
  }
 
-  /* look for an events in the filter output */
+  /* look for an event in the filter output */
   for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )
   {
     REAL4 modqsq = q[j].re * q[j].re + q[j].im * q[j].im;
@@ -413,251 +407,47 @@ LALFindChirpFilterSegment (
     /* if snrsq exceeds threshold at any point */
     if ( modqsq > modqsqThresh )
     {
-      /* compute chisq vector if it does not exist and we want it */
-      if ( ! haveChisq  && input->segment->chisqBinVec->length )
-      {
-        memset( params->chisqVec->data, 0, 
-            params->chisqVec->length * sizeof(REAL4) );
-
-        /* pointers to chisq input */
-        params->chisqInput->qtildeVec = params->qtildeVec;
-        params->chisqInput->qVec      = params->qVec;
-
-        /* pointer to the chisq bin vector in the segment */
-        params->chisqParams->chisqBinVec = input->segment->chisqBinVec;
-        params->chisqParams->norm        = norm;
-
-        /* compute the chisq bin boundaries for this template */
-        if ( ! params->chisqParams->chisqBinVec->data )
-        {
-          LALFindChirpComputeChisqBins( status->statusPtr, 
-              params->chisqParams->chisqBinVec, input->segment, kmax );
-          CHECKSTATUSPTR( status );
-        }
-
-        /* compute the chisq threshold: this is slow! */
-        LALFindChirpChisqVeto( status->statusPtr, params->chisqVec, 
-            params->chisqInput, params->chisqParams );
-        CHECKSTATUSPTR (status); 
-
-        haveChisq = 1;
-      }
-
-      /* if we have don't have a chisq or the chisq drops below the       */
-      /* modified chisq threshold, start processing events                */
-      if ( ! input->segment->chisqBinVec->length ||
-          params->chisqVec->data[j] < 
-          (params->chisqThresh * ( 1.0 + modqsq * chisqThreshFac )) )
-      {
-        if ( ! *eventList )
-        {
-          /* store the start of the crossing */
-          eventStartIdx = j;
-
-          /* if this is the first event, start the list */
-          thisEvent = *eventList = (SnglInspiralTable *) 
-            LALCalloc( 1, sizeof(SnglInspiralTable) );
-          if ( ! thisEvent )
-          {
-            ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-          }
-
-          /* record the data that we need for the clustering algorithm */
-          thisEvent->end_time.gpsSeconds = j;
-          thisEvent->snr = modqsq;
-        }
-        else if ( params->maximiseOverChirp &&
-            j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
-            modqsq > thisEvent->snr )
-        {
-          /* if this is the same event, update the maximum */
-          thisEvent->end_time.gpsSeconds = j;
-          thisEvent->snr = modqsq;
-        }
-        else if ( j > thisEvent->end_time.gpsSeconds + deltaEventIndex ||
-            ! params->maximiseOverChirp )
-        {
-          /* clean up this event */
-          SnglInspiralTable *lastEvent;
-          INT8               timeNS;
-          INT4               timeIndex = thisEvent->end_time.gpsSeconds;
-
-          /* set the event LIGO GPS time of the event */
-          timeNS = 1000000000L * 
-            (INT8) (input->segment->data->epoch.gpsSeconds);
-          timeNS += (INT8) (input->segment->data->epoch.gpsNanoSeconds);
-          timeNS += (INT8) (1e9 * timeIndex * deltaT);
-          thisEvent->end_time.gpsSeconds = (INT4) (timeNS/1000000000L);
-          thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
-          LALGPStoGMST1( status->statusPtr, &(thisEvent->end_time_gmst),
-              &(thisEvent->end_time), &gmstUnits );
-          CHECKSTATUSPTR( status );
-
-          /* set the impuse time for the event */
-          thisEvent->template_duration = (REAL8) input->fcTmplt->tmplt.tC;
-
-          /* record the ifo and channel name for the event */
-          strncpy( thisEvent->ifo, input->segment->data->name, 
-              2 * sizeof(CHAR) );
-          strncpy( thisEvent->channel, input->segment->data->name + 3,
-              (LALNameLength - 3) * sizeof(CHAR) );
-          thisEvent->impulse_time = thisEvent->end_time;
-
-          /* record the coalescence phase of the chirp */
-          thisEvent->coa_phase = (REAL4) 
-            atan2( q[timeIndex].im, q[timeIndex].re ); 
-
-          /* copy the template into the event */
-          thisEvent->mass1   = (REAL4) input->fcTmplt->tmplt.mass1;
-          thisEvent->mass2   = (REAL4) input->fcTmplt->tmplt.mass2;
-          thisEvent->mchirp  = (REAL4) input->fcTmplt->tmplt.chirpMass;
-          thisEvent->eta     = (REAL4) input->fcTmplt->tmplt.eta;
-          thisEvent->tau0    = (REAL4) input->fcTmplt->tmplt.t0;
-          thisEvent->tau2    = (REAL4) input->fcTmplt->tmplt.t2;
-          thisEvent->tau3    = (REAL4) input->fcTmplt->tmplt.t3;
-          thisEvent->tau4    = (REAL4) input->fcTmplt->tmplt.t4;
-          thisEvent->tau5    = (REAL4) input->fcTmplt->tmplt.t5;
-          thisEvent->ttotal  = (REAL4) input->fcTmplt->tmplt.tC;
-          thisEvent->f_final = (REAL4) input->fcTmplt->tmplt.fFinal;
-
-          /* set the type of the template used in the analysis */
-          memcpy( thisEvent->search, searchName, 
-              LIGOMETA_SEARCH_MAX * sizeof(CHAR) );
-
-          /* set snrsq, chisq, sigma and effDist for this event */
-          if ( input->segment->chisqBinVec->length )
-          {
-            /* we store chisq distributed with 2p - 2 degrees of freedom */
-            /* in the database. params->chisqVec->data = r^2 = chisq / p */
-            /* so we multiply r^2 by p here to get chisq                 */
-            thisEvent->chisq = 
-              params->chisqVec->data[timeIndex] * (REAL4) numChisqBins;
-            thisEvent->chisq_dof = numChisqBins;
-          }
-          else
-          {
-            thisEvent->chisq     = 0;
-            thisEvent->chisq_dof = 0;
-          }
-          thisEvent->sigmasq = norm * input->segment->segNorm->data[kmax] * 
-            input->segment->segNorm->data[kmax] * input->fcTmplt->tmpltNorm;
-          thisEvent->eff_distance = 
-            (input->fcTmplt->tmpltNorm * input->segment->segNorm->data[kmax] * 
-             input->segment->segNorm->data[kmax]) / thisEvent->snr;
-          thisEvent->eff_distance = sqrt( thisEvent->eff_distance );
-
-          thisEvent->snr *= norm;
-          thisEvent->snr = sqrt( thisEvent->snr );
-
-          /* compute the time since the snr crossing */
-          thisEvent->event_duration = (REAL8) timeIndex - (REAL8) eventStartIdx;
-          thisEvent->event_duration *= (REAL8) deltaT;
-
-          /* store the start of the crossing */
-          eventStartIdx = j;
-
-          /* allocate memory for the newEvent */
-          lastEvent = thisEvent;
-
-          lastEvent->next = thisEvent = (SnglInspiralTable *) 
-            LALCalloc( 1, sizeof(SnglInspiralTable) );
-          if ( ! lastEvent->next )
-          {
-            ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-          }
-
-          /* stick minimal data into the event */
-          thisEvent->end_time.gpsSeconds = j;
-          thisEvent->snr = modqsq;
-        }
-      }
+      haveEvent = 1;        /* mark segment to have events    */
+      firstEventIndex = j;  /* PRB: don't know what this does */
+      break;
     }
   }
-
-
-  /* 
-   *
-   * clean up the last event if there is one
-   *
-   */
-
-
-  if ( thisEvent )
+      
+  /* compute chisq vector if we want it and there is an event */
+  if ( haveEvent && input->segment->chisqBinVec->length )
   {
-    INT8           timeNS;
-    INT4           timeIndex = thisEvent->end_time.gpsSeconds;
+    memset( params->chisqVec->data, 0, 
+        params->chisqVec->length * sizeof(REAL4) );
 
-    /* set the event LIGO GPS time of the event */
-    timeNS = 1000000000L * 
-      (INT8) (input->segment->data->epoch.gpsSeconds);
-    timeNS += (INT8) (input->segment->data->epoch.gpsNanoSeconds);
-    timeNS += (INT8) (1e9 * timeIndex * deltaT);
-    thisEvent->end_time.gpsSeconds = (INT4) (timeNS/1000000000L);
-    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
-    LALGPStoGMST1( status->statusPtr, &(thisEvent->end_time_gmst),
-        &(thisEvent->end_time), &gmstUnits );
-    CHECKSTATUSPTR( status );
+    /* pointers to chisq input */
+    params->chisqInput->qtildeVec = params->qtildeVec;
+    params->chisqInput->qVec      = params->qVec;
 
-    /* set the impuse time for the event */
-    thisEvent->template_duration = (REAL8) input->fcTmplt->tmplt.tC;
+    /* pointer to the chisq bin vector in the segment */
+    params->chisqParams->chisqBinVec = input->segment->chisqBinVec;
+    params->chisqParams->norm        = norm;
 
-    /* record the ifo name for the event */
-    strncpy( thisEvent->ifo, input->segment->data->name, 
-        2 * sizeof(CHAR) );
-    strncpy( thisEvent->channel, input->segment->data->name + 3,
-        (LALNameLength - 3) * sizeof(CHAR) );
-    thisEvent->impulse_time = thisEvent->end_time;
-
-    /* record the coalescence phase of the chirp */
-    thisEvent->coa_phase = (REAL4)
-        atan2( q[timeIndex].im, q[timeIndex].re );
-
-    /* copy the template into the event */
-    thisEvent->mass1   = (REAL4) input->fcTmplt->tmplt.mass1;
-    thisEvent->mass2   = (REAL4) input->fcTmplt->tmplt.mass2;
-    thisEvent->mchirp  = (REAL4) input->fcTmplt->tmplt.chirpMass;
-    thisEvent->eta     = (REAL4) input->fcTmplt->tmplt.eta;
-    thisEvent->tau0    = (REAL4) input->fcTmplt->tmplt.t0;
-    thisEvent->tau2    = (REAL4) input->fcTmplt->tmplt.t2;
-    thisEvent->tau3    = (REAL4) input->fcTmplt->tmplt.t3;
-    thisEvent->tau4    = (REAL4) input->fcTmplt->tmplt.t4;
-    thisEvent->tau5    = (REAL4) input->fcTmplt->tmplt.t5;
-    thisEvent->ttotal  = (REAL4) input->fcTmplt->tmplt.tC;
-    thisEvent->f_final = (REAL4) input->fcTmplt->tmplt.fFinal;
-
-    /* set the type of the template used in the analysis */
-    memcpy( thisEvent->search, searchName, 
-        LIGOMETA_SEARCH_MAX * sizeof(CHAR) );
-
-    /* set snrsq, chisq, sigma and effDist for this event */
-    if ( input->segment->chisqBinVec->length )
+    /* compute the chisq bin boundaries for this template */
+    if ( ! params->chisqParams->chisqBinVec->data )
     {
-      /* we store chisq distributed with 2p - 2 degrees of freedom */
-      /* in the database. params->chisqVec->data = r^2 = chisq / p */
-      /* so we multiply r^2 by p here to get chisq                 */
-      thisEvent->chisq = 
-        params->chisqVec->data[timeIndex] * (REAL4) numChisqBins;
-      thisEvent->chisq_dof = numChisqBins;
+      LALFindChirpComputeChisqBins( status->statusPtr, 
+          params->chisqParams->chisqBinVec, input->segment, kmax );
+      CHECKSTATUSPTR( status );
     }
-    else
-    {
-      thisEvent->chisq     = 0;
-      thisEvent->chisq_dof = 0;
-    }
-    thisEvent->sigmasq = norm * input->segment->segNorm->data[kmax] * 
-      input->segment->segNorm->data[kmax] * input->fcTmplt->tmpltNorm;
-    thisEvent->eff_distance = 
-      (input->fcTmplt->tmpltNorm * input->segment->segNorm->data[kmax] * 
-       input->segment->segNorm->data[kmax]) / thisEvent->snr;
-    thisEvent->eff_distance = sqrt( thisEvent->eff_distance );
-    thisEvent->snr *= norm;
-    thisEvent->snr = sqrt( thisEvent->snr );
 
-    /* compute the time since the snr crossing */
-    thisEvent->event_duration = (REAL8) timeIndex - (REAL8) eventStartIdx;
-    thisEvent->event_duration *= (REAL8) deltaT;
-  }    
+    /* compute the chisq threshold: this is slow! */
+    LALFindChirpChisqVeto( status->statusPtr, params->chisqVec, 
+        params->chisqInput, params->chisqParams );
+    CHECKSTATUSPTR (status); 
+  }
 
+  /* process events in the filter output */
+  if (haveEvent )
+  {
+    LALFindChirpClusterEvents( status->statusPtr, eventList, input,
+            params, q, kmax, numPoints, deltaEventIndex, ignoreIndex, 
+            norm, modqsqThresh, chisqThreshFac, numChisqBins, searchName );
+  }
 
   /*
    *
