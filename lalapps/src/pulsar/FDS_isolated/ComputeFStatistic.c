@@ -32,7 +32,8 @@ typedef int bool;
 int  boinc_init(bool standalone);
 int  boinc_finish(int);
 int  boinc_resolve_filename(const char*, char*, int len);
-
+int  boinc_init_graphics();
+int  boinc_finish_graphics();
 void use_boinc_filename1(char** orig_name);
 void use_boinc_filename0(char* orig_name);
 #endif /* USE_BOINC */
@@ -185,6 +186,7 @@ int main(int argc,char *argv[])
 #if USE_BOINC
   /* boinc_init() needs to be run before any boinc_api functions are used */
   boinc_init(FALSE);
+  boinc_init_graphics();
 #if USE_BOINC_DEBUG
   {
     char commandstring[256];
@@ -406,6 +408,7 @@ int main(int argc,char *argv[])
   LAL_CALL (Freemem(&status), &status);
 
 #if USE_BOINC
+  boinc_finish_graphics();
   boinc_finish(0);
 #endif
 
