@@ -104,6 +104,8 @@ int main(int argc, char *argv[]){
   BOOLEAN testBool;
   CHAR *string1 = NULL;
   CHARVector *string2 = NULL;
+  CHAR *string2b = NULL;
+  CHAR *string3 = NULL;
   INT4 someint;
   REAL8 somefloat;
   BOOLEAN wasRead = FALSE;
@@ -117,6 +119,9 @@ int main(int argc, char *argv[]){
 
   SUB (LALCHARCreateVector (&status, &string2, 35), &status);  
   SUB (LALReadConfigSTRINGNVariable(&status, string2,   cfgdata, "string2", &wasRead), &status);
+
+  SUB (LALReadConfigSTRINGVariable(&status, &string2b,   cfgdata, "string2", &wasRead), &status);
+  SUB (LALReadConfigSTRINGVariable(&status, &string3,   cfgdata, "string3", &wasRead), &status);
 
   SUB (LALReadConfigBOOLVariable   (&status, &testBool,  cfgdata, "testBool", &wasRead), &status);
 
@@ -137,11 +142,23 @@ int main(int argc, char *argv[]){
     ERROR (CONFIGFILETESTC_EINT, CONFIGFILETESTC_MSGEINT, 0);
     return (CONFIGFILETESTC_EINT);
   }
-  if ( !strcmp(string2->data, "this is also possible, and # here") ) {
+  if ( strcmp(string2->data, "this is also possible, and # here ") ) {
     LALPrintError ("read-in: '%s'\n", string2->data);
     ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
     return (CONFIGFILETESTC_ESTRING);
   }
+  if ( strcmp(string2b, "this is also possible, and # here does nothing ")) {
+    LALPrintError ("read-in: '%s'\n", string2b);
+    ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
+    return (CONFIGFILETESTC_ESTRING);
+  }
+  if ( strcmp(string3, "how about #quotes AND line-continuation?") ) {
+    LALPrintError ("read-in: '%s'\n", string3);
+    ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
+    return (CONFIGFILETESTC_ESTRING);
+  }
+
+  
   if ( testBool != 0 ) {
     ERROR (CONFIGFILETESTC_EBOOL, CONFIGFILETESTC_MSGEBOOL, 0);
     return (CONFIGFILETESTC_EBOOL);
@@ -149,6 +166,8 @@ int main(int argc, char *argv[]){
 
   LALFree (string1);
   LALCHARDestroyVector (&status, &string2);
+  LALFree (string2b);
+  LALFree (string3);
 
   LALCheckMemoryLeaks(); 
 
