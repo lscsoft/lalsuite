@@ -124,14 +124,13 @@ void LALGenerateInspiral(
 						)
 /* </lalVerbatim> */
 {
-  UINT4	order			= -1; 	/* 	Order of the model        */ 	
-  UINT4	approximant		= -1;	/* 	And its approximant value */		
-
-  InspiralTemplate      inspiralParams; /* if we want to use the inspiral
-					 package, we need to fill that 
-					 structure*/
-  	
-  CHAR msg[1024];  
+  UINT4			order		= -1; 	/* Order of the model        */
+  UINT4			approximant	= -1;	/* And its approximant value */
+  /* If we need to use the inspiral package, then we need to fill 
+   * the following structure */
+  InspiralTemplate      inspiralParams;        										
+  CHAR msg[1024]; 
+  
   INITSTATUS(status, "LALGenerateInspiral",GENERATEINSPIRALC);
   ATTATCHSTATUSPTR(status);
 
@@ -139,21 +138,23 @@ void LALGenerateInspiral(
      IN THE FINDCHIRP FILE OR INSPIRAL PACKAGE. */
   
   /* First, we need to know which approximant and which order to inject.
-   * They are provided by the xml injection file/ thisEvent structure 
-   * as string. However, we need them as integers to be used in the switch. So
-   * I wrote two functions to do the conversion.
+   * They are provided by the xml injection file and thisEvent structure 
+   * as a string such as "EOBtwoPN". However, we need the order  as an 
+   * integer to be used in the switch. So,  I wrote two functions to do 
+   * the conversion.
    * */
-  LALGenerateInspiralGetModelFromString(status->statusPtr,					
-					thisEvent->waveform,
+  LALGenerateInspiralGetModelFromString(status->statusPtr,
+		  			thisEvent->waveform,
 					&order,
-					&approximant);  
+					&approximant);
   CHECKSTATUSPTR(status);
 
   /* Well a priori, we do not need that anymore. Indeed it seems that 
    * it has been decided to put that switch within FindChirpSimulation. 
    * It means that we do enter in that file only for non PPN cases....
-   * Any way I keep it for the time being. It was working fine like that though.
-  /* --- switch for the model approximant  --- */
+   * Any way I keep it for the time being. It was working fine like
+   * that though.*/
+  /*   --- switch for the model approximant  --- */
   if  (approximant == PPN )
     {
       LALGenerateInspiralPopulatePPN(	status->statusPtr, 
@@ -170,9 +171,9 @@ void LALGenerateInspiral(
     {
       inspiralParams.approximant = approximant;
       inspiralParams.order       = order;
-      /* we fill ppnParams. Redundant with FindChirpSimulation.c but at 
+      /* We fill ppnParams. Redundant with FindChirpSimulation.c but at 
        * least we are sure to fill the structure. Later we can delete
-	* the equivalent part within FindChirpSimulation.  */      
+       * the equivalent part within FindChirpSimulation ...  */      
       LALGenerateInspiralPopulatePPN(	status->statusPtr, 
 		      			ppnParams, 
 					thisEvent);
@@ -183,7 +184,7 @@ void LALGenerateInspiral(
 						thisEvent, 
 						ppnParams);
       CHECKSTATUSPTR(status);      
-      /* some additional spin parameters ? Has to be checked. 
+      /* Some additional spin parameters ? Has to be checked. 
        * For the time being there is no way to use that with xml file injection anyway.
        * */
       LALGenerateInspiralPopulateInspiralSpin(	status ->statusPtr, 
@@ -197,7 +198,9 @@ void LALGenerateInspiral(
       CHECKSTATUSPTR(status);      
       /* If nothing has been computed, then we create a dummy waveform. 
        * Do we need to do that ? 
-       * maybe there is a better way to send a null waveform.*/
+       * maybe there is a better way to send a null waveform.
+       * or just abort ? but it is a pity to abort a job which has
+       * run for ages just becuase one waveform can not be injected ? */
       if (waveform->a == NULL) {	
 	LALWarning(status, "no waveform generated");
 	LALInspiralDummyWaveformForInjection (	status->statusPtr, 
@@ -244,10 +247,8 @@ void LALGenerateInspiral(
        	ppnParams->dfdt );     
   LALInfo( status, msg );
   
-  /*  if (approximant==SpinTaylorT3)  ComputeSpin(&inspiralParams);*/
-  
   DETATCHSTATUSPTR( status );
-  RETURN(status);
+  RETURN( status );
 }
 
 
@@ -355,8 +356,6 @@ void LALGenerateInspiralGetApproxFromString(LALStatus *status,
     {*approximant = TaylorT1;}}
   else if (  (ptr = strstr(thisEvent, 	"TaylorT2" ) ) ){
     {*approximant = TaylorT2;}}
-  else if (  (ptr = strstr(thisEvent, 	"SpinTaylorT3" ) ) ){
-    {*approximant = SpinTaylorT3;}}
   else if (  (ptr = strstr(thisEvent, 	"TaylorT3" ) ) ){
     {*approximant = TaylorT3;}}
   else if (  (ptr = strstr(thisEvent, 	"EOB" ) ) ){
@@ -425,7 +424,6 @@ void  LALGenerateInspiralPopulatePPN(LALStatus             *status,
 				     SimInspiralTable      *thisEvent)
 /* </lalVerbatim> */
 {
-  CHAR                  warnMsg[1024];
 
   INITSTATUS( 	status, 
 		" LALGenerateInspiralPopulatePPN", 
@@ -449,8 +447,8 @@ void  LALGenerateInspiralPopulatePPN(LALStatus             *status,
   ppnParams->position.latitude    = thisEvent->latitude;
   ppnParams->position.system      = COORDINATESYSTEM_EQUATORIAL;
   ppnParams->psi                  = thisEvent->polarization;
-  ppnParams->epoch.gpsSeconds     = 0;  
-  ppnParams->epoch.gpsNanoSeconds = 0;  
+  ppnParams->epoch.gpsSeconds     = 0;  /* Is it correct ? */ 
+  ppnParams->epoch.gpsNanoSeconds = 0;  /* Is it correct ? */
   
 
   DETATCHSTATUSPTR( status );
@@ -482,13 +480,13 @@ void LALGenerateInspiralPopulateInspiral(LALStatus		*status,
   inspiralParams->fCutoff	= 1./ (ppnParams->deltaT)/2.-1;  
 				/* 	-1 to be  in agreement with the 
 					inspiral assert.*/
-  inspiralParams->tSampling	 = 1./ (ppnParams->deltaT); /* sampling*/
+  inspiralParams->tSampling	  = 1./ (ppnParams->deltaT); /* sampling*/
   inspiralParams->signalAmplitude = 1.; 
-  inspiralParams->distance	 =  thisEvent->distance * LAL_PC_SI * 1e6;
+  inspiralParams->distance	  =  thisEvent->distance * LAL_PC_SI * 1e6;
   					/*distance in Mpc*/
-  inspiralParams->startTime	 =  0.0;
-  inspiralParams->startPhase	 =  thisEvent->coa_phase;
-  inspiralParams->startPhase = 0.0;
+  inspiralParams->startTime	  =  0.0;
+  inspiralParams->startPhase	  =  thisEvent->coa_phase;
+  inspiralParams->startPhase      = 0.0;
     
   inspiralParams->OmegaS = GENERATEINSPIRAL_OMEGAS;/* EOB 3PN contribution */
   inspiralParams->Theta	 = GENERATEINSPIRAL_THETA; /* EOB 3PN contribution */
