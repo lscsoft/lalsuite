@@ -656,7 +656,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
   if (i != numlines) {
     fprintf(stderr,
 	    "Read of file %s terminated after %d line but numlines=%d\n",
-	    i, numlines);
+	    fname, i, numlines);
     LALFree ((*CList));
     fclose(fp);
     return 1;
