@@ -411,7 +411,7 @@ LALFindChirpBCVSpinFilterSegment (
   /* will need to set up ignoreIndex and deltaEventIndex */
   /* for time being... */
   /* temporarily set chirpTime equal to 0.5 seconds */
-  chirpTime = 0.25;
+  chirpTime = 0.5;
   deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
   
   /* ignore corrupted data at start and end */
@@ -441,8 +441,8 @@ LALFindChirpBCVSpinFilterSegment (
   
   if (input->fcTmplt->tmplt.beta == 0.0)
   {
-          rhosqThresh = 69;
-	  modqsqThresh = 69;
+          rhosqThresh = 81;
+	  modqsqThresh = 81;
   	/*  fprintf (stdout, "beta = 0 so changing rhosq thresh = %e\n ", rhosqThresh);*/
   }
   
@@ -615,29 +615,6 @@ LALFindChirpBCVSpinFilterSegment (
               			"FindChirpBCVSpin" );
 
                 	/* commented out all chisq stuff */ 
-                        /* set snrsq,chisq, sigma and effDist for this event */
-                /*if ( input->segment->chisqBinVec->length )
-          	{ */
-            	/* we store chisq distributed with 2p - 2 degrees of freedom */
-            	/* in the database. params->chisqVec->data = r^2 = chisq / p */
-            	/* so we multiply r^2 by p here to get chisq                 */
-            	/* thisEvent->chisq =
-              	params->chisqVec->data[timeIndex] * (REAL4) numChisqBins;
-            	thisEvent->chisq_dof = 2 * numChisqBins;*/ /* double for BCV */
-          	/*}
-          	else
-          	{
-            	thisEvent->chisq     = 0;
-            	thisEvent->chisq_dof = 0;
-          	
-          	thisEvent->sigmasq = sqrt( norm / a1 );
-          	thisEvent->eff_distance =
-            	input->fcTmplt->tmpltNorm / norm / thisEvent->snr;
-          	thisEvent->eff_distance = sqrt( thisEvent->eff_distance ) /
-            	pow(params->deltaT, 1/6);
-                                                                                                                             
-          	thisEvent->snr *= norm;
-          	thisEvent->snr = sqrt( thisEvent->snr );*/
                                                                                                                              
           		/* compute the time since the snr crossing */
           		thisEvent->event_duration =
@@ -660,10 +637,29 @@ LALFindChirpBCVSpinFilterSegment (
           		/* stick minimal data into the event */
           		thisEvent->end_time.gpsSeconds = j;
           		thisEvent->snr = rho;
-                } 
-  	}
-  } 
 
+  			alpha1hat = q[j].re * invRho * normFac;
+                        alpha4hat = q[j].im * invRho * normFac;
+			alpha2hat = qBCVSpin1[j].re * invRho * normFac;
+			alpha5hat = qBCVSpin1[j].im * invRho * normFac;
+			alpha3hat = qBCVSpin2[j].re * invRho * normFac;
+			alpha6hat = qBCVSpin2[j].im * invRho * normFac;
+															                  /*                         fprintf (stdout, "alpha1hat = %e\n", alpha1hat);
+			fprintf (stdout, "alpha2hat = %e\n", alpha2hat);
+			fprintf (stdout, "alpha3hat = %e\n", alpha3hat);
+			fprintf (stdout, "alpha4hat = %e\n", alpha4hat);
+			fprintf (stdout, "alpha5hat = %e\n", alpha5hat);
+			fprintf (stdout, "alpha6hat = %e\n", alpha6hat);*/
+															                          		     thisEvent->alpha1 = alpha1hat;
+			thisEvent->alpha2 = alpha2hat;
+			thisEvent->alpha3 = alpha3hat;
+			thisEvent->alpha4 = alpha4hat;
+			thisEvent->alpha5 = alpha5hat;
+			thisEvent->alpha6 = alpha6hat;
+			
+  	        }
+        } 
+  }
 
  /*
   *
