@@ -70,6 +70,9 @@ ParseOptions (int argc, char *argv[]);
 static void
 TestStatus (Status *status, const char *expectedCodes, int exitCode);
 
+static void
+ClearStatus (Status *status);
+
 int
 main (int argc, char *argv[])
 {
@@ -314,6 +317,25 @@ TestStatus (Status *status, const char *ignored, int exitcode)
 
   fprintf (stderr, "\nExiting to system with code %d\n", exitcode);
   exit (exitcode);
+}
+
+
+/*
+ *
+ * ClearStatus ()
+ *
+ * Recursively applies DETATCHSTATUSPTR() to status structure to destroy
+ * linked list of statuses.
+ *
+ */
+void
+ClearStatus (Status *status)
+{
+  if (status->statusPtr)
+  {
+    ClearStatus      (status->statusPtr);
+    DETATCHSTATUSPTR (status);
+  }
 }
 
 
