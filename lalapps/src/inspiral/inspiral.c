@@ -14,6 +14,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <regex.h>
 
 #include <lalapps.h>
 #include <lal/LALConfig.h>
@@ -24,6 +30,10 @@
 #include "inspiralxml.h"
 
 RCSID( "$Id$" );
+
+#define PROGRAM_NAME "lalapps_inspiral"
+#define CVS_VERSION  "$Revision$"
+#define CVS_SOURCE   "$Source$"
 
 long long atoll(const char *nptr);
 
@@ -78,6 +88,8 @@ int    writeSpec        = 0;            /* write computed psd to file   */
 int    writeRhosq       = 0;            /* write rhosq time series      */
 int    writeChisq       = 0;            /* write chisq time series      */
 
+/* other parameters */
+char   process_comment[PROCESS_COMMENT_LEN];
 
 /*
  *
@@ -105,22 +117,23 @@ int main( int argc, char *argv[] )
   LALDate       laldate;
   LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
   CHAR          process_program[] = "lalapps_inspiral";
-  CHAR          process_version_str[] = "$Revision$";
-  CHAR          process_cvs_repository_str[] = "$Source$";
-  /* CHAR          process_cvs_entry_time_str[] = "$Date$"; */
-  CHAR          process_comment[] = "hello world";
+  /* CHAR         *process_version_str = NULL; */
+  /* CHAR         *process_cvs_repository_str = NULL; */
+  /* LIGOTimeGPS   process_cvs_entry_time; */
   INT4          process_isonline = 0;
   CHAR          process_node[] = "medusa";
   CHAR          process_username[] = "duncan";
   INT4          process_unix_procid = 9999;
   LIGOTimeGPS   process_start_time;
-  /* LIGOTimeGPS   process_end_time; */
+  LIGOTimeGPS   process_end_time;
   INT4          process_jobid = 0;
   CHAR          process_domain[] = "grid";
   
   /* output data files */
   char          resultFile[] = "results.xml";
+  char          outputFile[] = "output.xml";
   FILE         *resultFp     = NULL;
+  FILE         *outputFp     = NULL;
 
   /* input data parameters */
   UINT4         inputDataLength = 0;
@@ -145,32 +158,15 @@ int main( int argc, char *argv[] )
       LALUTCtoGPS( &status, &process_start_time, &laldate, &accuracy ),
       &status );
   
-  /* open the result file and write the header */
-  if ( ! (resultFp = fopen( resultFile, "w" )) )
+  /* open the output file */
+  if ( ! (outputFp = fopen( outputFile, "w" )) )
   {
-    perror( "could not open reult file for writing" );
+    perror( "could not open output file for writing" );
     exit( 1 );
   }
-  fprintf( resultFp, LIGO_LW_HEADER );
 
-  /* write the process table with a dummy job end time */
-  fprintf( resultFp, PROCESS_HEADER );
-  fprintf( resultFp, "         \"%s\",\"%s\",\"%s\",%d,"
-      "\"%s\",%d,\"%s\",\"%s\",%d,%d,800000000,%d,\"%s\","
-      "\"process:process_id:0\"\n",
-      process_program,
-      process_version_str,
-      process_cvs_repository_str,
-      500000000,
-      process_comment,
-      process_isonline,
-      process_node,
-      process_username,
-      process_unix_procid,
-      process_start_time.gpsSeconds,
-      process_jobid,
-      process_domain );
-  fprintf( resultFp, TABLE_FOOTER );
+  /* set the process comment to null */
+  memset( process_comment, 0, PROCESS_COMMENT_LEN * sizeof(CHAR) );
 
 
   /*
@@ -180,7 +176,7 @@ int main( int argc, char *argv[] )
    */
 
 
-  fprintf( resultFp, PROCESS_PARAMS_HEADER );
+  fprintf( outputFp, PROCESS_PARAMS_HEADER );
 
   while ( 1 )
   {
@@ -220,13 +216,14 @@ int main( int argc, char *argv[] )
       {"hierarchy-depth",         required_argument, 0,                'p'},
       {"rhosq-thresholds",        required_argument, 0,                'q'},
       {"chisq-thresholds",        required_argument, 0,                'r'},
+      {"comment",                 required_argument, 0,                's'},
       {0, 0, 0, 0}
     };
 
     /* getopt_long stores long option here */
     int option_index = 0;
 
-    c = getopt_long( argc, argv, "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:",
+    c = getopt_long( argc, argv, "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -260,7 +257,7 @@ int main( int argc, char *argv[] )
                 "Jan 01, 1994  00:00:00 UTC: %lld\n", gstartt );
             exit( 1 );
           }
-          fprintf( resultFp, PPARAMS "\"--%s\",\"int\",\"%lld\",\n", 
+          fprintf( outputFp, PPARAMS "\"--%s\",\"int\",\"%lld\",\n", 
               long_options[option_index].name, gstartt );
           gpsStartTimeNS = (UINT8) gstartt * 1000000000LL;
         }
@@ -275,7 +272,7 @@ int main( int argc, char *argv[] )
                 "Sep 14, 2011  01:46:26 UTC: %lld\n", gstopt );
             exit( 1 );
           }
-          fprintf( resultFp, PPARAMS "\"--%s\",\"int\",\"%lld\",\n", 
+          fprintf( outputFp, PPARAMS "\"--%s\",\"int\",\"%lld\",\n", 
               long_options[option_index].name, gstopt );
           gpsStopTimeNS = (UINT8) gstopt * 1000000000LL;
         }
@@ -287,7 +284,7 @@ int main( int argc, char *argv[] )
           channelName = (CHAR *) LALMalloc( ++chanlen );
           memcpy( channelName, optarg, chanlen );
         }
-        fprintf( resultFp, PPARAMS "\"--%s\",\"string\",\"%s\",\n", 
+        fprintf( outputFp, PPARAMS "\"--%s\",\"string\",\"%s\",\n", 
             long_options[option_index].name, channelName );
         break;
 
@@ -299,7 +296,7 @@ int main( int argc, char *argv[] )
               numPoints );
           exit( 1 );
         }
-        fprintf( resultFp, PPARAMS "\"--%s\",\"int\",\"%d\",\n", 
+        fprintf( outputFp, PPARAMS "\"--%s\",\"int\",\"%d\",\n", 
             long_options[option_index].name, numPoints );
         break;
 
@@ -310,7 +307,7 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid number data segments: %d\n", numSegments );
           exit( 1 );
         }
-        fprintf( resultFp, PPARAMS "\"--%s\",\"int\",\"%d\",\n", 
+        fprintf( outputFp, PPARAMS "\"--%s\",\"int\",\"%d\",\n", 
             long_options[option_index].name, numSegments );
         break;
 
@@ -321,7 +318,7 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid data segment overlap: %d\n", ovrlap );
           exit( 1 );
         }
-        fprintf( resultFp, PPARAMS "\"--%s\",\"int\",\"%d\",\n", 
+        fprintf( outputFp, PPARAMS "\"--%s\",\"int\",\"%d\",\n", 
             long_options[option_index].name, ovrlap );
         break;
 
@@ -332,7 +329,7 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid sample rate: %d\n", sampleRate );
           exit( 1 );
         }
-        fprintf( resultFp, PPARAMS "\"--%s\",\"int\",\"%d\",\n", 
+        fprintf( outputFp, PPARAMS "\"--%s\",\"int\",\"%d\",\n", 
             long_options[option_index].name, sampleRate );
         break;
 
@@ -349,7 +346,7 @@ int main( int argc, char *argv[] )
               fLow );
           exit( 1 );
         }
-        fprintf( resultFp, PPARAMS "\"--%s\",\"real\",\"%f\",\n", 
+        fprintf( outputFp, PPARAMS "\"--%s\",\"real\",\"%f\",\n", 
             long_options[option_index].name, fLow );
         break;
 
@@ -371,7 +368,7 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "unknown power spectrum type: %s\n", optarg );
           exit( 1 );
         }
-        fprintf( resultFp, PPARAMS "\"--%s\",\"string\",\"%s\",\n", 
+        fprintf( outputFp, PPARAMS "\"--%s\",\"string\",\"%s\",\n", 
             long_options[option_index].name, optarg );
         break;
 
@@ -383,13 +380,13 @@ int main( int argc, char *argv[] )
               ": %d\n", invSpecTrunc );
           exit( 1 );
         }
-        fprintf( resultFp, PPARAMS "\"--%s\",\"int\",\"%d\",\n", 
+        fprintf( outputFp, PPARAMS "\"--%s\",\"int\",\"%d\",\n", 
             long_options[option_index].name, invSpecTrunc );
         break;
 
       case 'l':
         dynRangeExponent = (REAL4) atof( optarg );
-        fprintf( resultFp, PPARAMS "\"--%s\",\"real\",\"%f\",\n", 
+        fprintf( outputFp, PPARAMS "\"--%s\",\"real\",\"%f\",\n", 
             long_options[option_index].name, dynRangeExponent );
         break;
           
@@ -401,7 +398,7 @@ int main( int argc, char *argv[] )
               startTemplate );
           exit( 1 );
         }
-        fprintf( resultFp, PPARAMS "\"--%s\",\"int\",\"%d\",\n", 
+        fprintf( outputFp, PPARAMS "\"--%s\",\"int\",\"%d\",\n", 
             long_options[option_index].name, startTemplate );
         break;
 
@@ -413,7 +410,7 @@ int main( int argc, char *argv[] )
               stopTemplate );
           exit( 1 );
         }
-        fprintf( resultFp, PPARAMS "\"--%s\",\"int\",\"%d\",\n", 
+        fprintf( outputFp, PPARAMS "\"--%s\",\"int\",\"%d\",\n", 
             long_options[option_index].name, stopTemplate );
         break;
 
@@ -425,7 +422,7 @@ int main( int argc, char *argv[] )
               numChisqBins );
           exit( 1 );
         }
-        fprintf( resultFp, PPARAMS "\"--%s\",\"int\",\"%d\",\n", 
+        fprintf( outputFp, PPARAMS "\"--%s\",\"int\",\"%d\",\n", 
             long_options[option_index].name, numChisqBins);
         break;
 
@@ -437,7 +434,7 @@ int main( int argc, char *argv[] )
               hierDepth );
           exit( 1 );
         }
-        fprintf( resultFp, PPARAMS "\"--%s\",\"int\",\"%d\",\n", 
+        fprintf( outputFp, PPARAMS "\"--%s\",\"int\",\"%d\",\n", 
             long_options[option_index].name, hierDepth );
         break;
 
@@ -447,7 +444,7 @@ int main( int argc, char *argv[] )
           rhosqStr = (char *) LALMalloc( ++rhosqlen );
           memcpy( rhosqStr, optarg, rhosqlen );
         }
-        fprintf( resultFp, PPARAMS "\"--%s\",\"string\",\"%s\",\n", 
+        fprintf( outputFp, PPARAMS "\"--%s\",\"string\",\"%s\",\n", 
             long_options[option_index].name, optarg );
         break;
 
@@ -457,8 +454,22 @@ int main( int argc, char *argv[] )
           chisqStr = (char *) LALMalloc( ++chisqlen );
           memcpy( chisqStr, optarg, chisqlen );
         }
-        fprintf( resultFp, PPARAMS "\"--%s\",\"string\",\"%s\",\n", 
+        fprintf( outputFp, PPARAMS "\"--%s\",\"string\",\"%s\",\n", 
             long_options[option_index].name, optarg );
+        break;
+
+      case 's':
+        if ( strlen( optarg ) > PROCESS_COMMENT_LEN - 1 )
+        {
+          fprintf( stderr, "--comment must be less than %d characters",
+              PROCESS_COMMENT_LEN );
+          exit( 1 );
+        }
+        else
+        {
+          strncpy( process_comment, optarg, 
+              PROCESS_COMMENT_LEN * sizeof(CHAR) );
+        }
         break;
 
       case '?':
@@ -478,7 +489,7 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "extraneous command line arguments:\n" );
     while ( optind < argc )
     {
-      printf ( "%s\n", argv[optind++] );
+      fprintf ( stderr, "%s\n", argv[optind++] );
     }
     exit( 1 );
   }
@@ -486,11 +497,11 @@ int main( int argc, char *argv[] )
   /* check band pass option */
   if ( bandPass == 1 )
   {
-    fprintf( resultFp, PPARAMS "\"--enable-band-pass\",\"int\",\"1\",\n" );
+    fprintf( outputFp, PPARAMS "\"--enable-band-pass\",\"int\",\"1\",\n" );
   }
   else if ( bandPass == 0 )
   {
-    fprintf( resultFp, PPARAMS "\"--disable-band-pass\",\"int\",\"1\",\n" );
+    fprintf( outputFp, PPARAMS "\"--disable-band-pass\",\"int\",\"1\",\n" );
   }
   else
   {
@@ -502,11 +513,11 @@ int main( int argc, char *argv[] )
   /* check event cluster option */
   if ( eventCluster == 1 )
   {
-    fprintf( resultFp, PPARAMS "\"--enable-event-cluster\",\"int\",\"1\",\n" );
+    fprintf( outputFp, PPARAMS "\"--enable-event-cluster\",\"int\",\"1\",\n" );
   }
   else if ( eventCluster == 0 )
   {
-    fprintf( resultFp, PPARAMS "\"--disable-event-cluster\",\"int\",\"1\",\n" );
+    fprintf( outputFp, PPARAMS "\"--disable-event-cluster\",\"int\",\"1\",\n" );
   }
   else
   {
@@ -517,11 +528,11 @@ int main( int argc, char *argv[] )
 
   if ( enableOutput == 1 )
   {
-    fprintf( resultFp, PPARAMS "\"--enable-output\",\"int\",\"1\"\n" );
+    fprintf( outputFp, PPARAMS "\"--enable-output\",\"int\",\"1\"\n" );
   }
   else if ( enableOutput == 0 )
   {
-    fprintf( resultFp, PPARAMS "\"--disable-output\",\"int\",\"1\"\n" );
+    fprintf( outputFp, PPARAMS "\"--disable-output\",\"int\",\"1\"\n" );
   }
   else
   {
@@ -531,7 +542,7 @@ int main( int argc, char *argv[] )
   }
 
   /* write the process_params table footer */
-  fprintf( resultFp, TABLE_FOOTER );
+  fprintf( outputFp, TABLE_FOOTER );
 
 
   /*
@@ -622,15 +633,165 @@ int main( int argc, char *argv[] )
   }
 
 
+
   /*
    *
-   * close the result file and exit sucessfully
+   * do something
    *
    */
 
 
+  sleep( 2 );
+
+  
+  /*
+   *
+   * close the output file, write the result file and exit sucessfully
+   *
+   */
+
+
+  /* close the output file now everything has been written to it */
+  fclose( outputFp );
+
+  /* get the job end gps time */
+  ticks = time( NULL );
+  gmtime_r( &ticks, &(laldate.unixDate) );
+  laldate.residualNanoSeconds = 0;
+  LAL_CALL(
+      LALUTCtoGPS( &status, &process_end_time, &laldate, &accuracy ),
+      &status );
+  
+  /* write the process table to a file */
+  if ( ! (resultFp = fopen( resultFile, "w" )) )
+  {
+    perror( "could not open result file for writing" );
+    exit( 1 );
+  }
+  fprintf( resultFp, LIGO_LW_HEADER );
+  fprintf( resultFp, PROCESS_HEADER );
+  if ( process_comment[0] )
+  {
+    fprintf( resultFp, PROCESS_COMMENT_HEADER );
+  }
+  fprintf( resultFp, PROCESS_STREAM_HEADER );
+  fprintf( resultFp, "         \"%s\",\"%s\",\"%s\",%d,"
+      "%d,\"%s\",\"%s\",%d,%d,%d,%d,\"%s\",",
+      process_program,
+      "process_version_str",
+      "process_cvs_repository_str",
+      500000000,
+      process_isonline,
+      process_node,
+      process_username,
+      process_unix_procid,
+      process_start_time.gpsSeconds,
+      process_end_time.gpsSeconds,
+      process_jobid,
+      process_domain );
+
+  if ( process_comment[0] )
+  {
+    fprintf( resultFp, "\"%s\",", process_comment );
+  }
+  fprintf( resultFp, "\"process:process_id:0\"\n" );
+  fprintf( resultFp, TABLE_FOOTER );
+  fclose( resultFp );
+
+  if ( enableOutput )
+  {
+    /* cat the contents of the output file into the result file */
+    int outpp, resup;
+    unsigned char *buf = (unsigned char *) malloc( 1024 );
+    unsigned char *bufptr;
+    ssize_t n_read, len, n_write, written;
+
+    if ( (outpp = open( outputFile, O_RDONLY )) < 1 )
+    {
+      fprintf( stderr, "error opening output file for concatenation\n" );
+      exit( 1 );
+    }
+    if ( (resup = open( resultFile, O_WRONLY|O_APPEND)) < 1 )
+    {
+      fprintf( stderr, "error opening output file for concatenation\n" );
+      exit( 1 );
+    }
+
+    while ( 1 )
+    {
+      /* read from output file, retrying if interrupted */
+      do
+      {
+        n_read = read( outpp, buf, 1024 );
+      }
+      while ( n_read < 0 && errno == EINTR );
+
+      if ( n_read < 0 )
+      {
+        perror( "error reading results from output file" );
+        exit( 1 );
+      }
+      
+      /* exit the loop on end of file */
+      if ( n_read == 0 )
+      {
+        free( buf );
+        close( outpp );
+        close( resup );
+        break;
+      }
+
+      /* write this block out */
+      len = n_read;
+      bufptr = buf;
+      written = 0;
+      while ( len > 0 )
+      {
+        n_write = write( resup, bufptr, len );
+        if ( n_write <= 0 )
+        {
+          if ( n_write == 0 )
+          {
+            errno = ENOSPC;
+          }
+	  if ( errno == EINTR )
+          {
+	    continue;
+          }
+          perror( "error writing results from output file" );
+          exit( 1 );
+        }
+        written += n_write;
+        bufptr += n_write;
+        len -= n_write;
+      }
+
+      /* check that wh have written all that we have read */
+      if ( written != n_read )
+      {
+        fprintf( stderr, "error reading/writing results from output file:"
+            "read = %d, written = %d\n", written, n_read );
+        exit( 1 );
+      }
+    }
+  }
+  
+  /* write the xml footer */
+  if ( ! (resultFp = fopen( resultFile, "a" )) )
+  {
+    perror( "could not open result file for appending" );
+    exit( 1 );
+  }
   fprintf( resultFp, LIGO_LW_FOOTER );
   fclose( resultFp );
 
+  /* delete the output file as we don't need it any more */
+  if ( unlink( outputFile ) )
+  {
+    perror( "could not delete output file" );
+    exit( 1 );
+  }
+
+  /* exit sucessfully */
   exit( 0 );
-}
+  }

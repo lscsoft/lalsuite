@@ -101,7 +101,6 @@
 "      <Column Name=\"processgroup:process:version\" Type=\"lstring\"/>\n" \
 "      <Column Name=\"processgroup:process:cvs_repository\" Type=\"lstring\"/>\n" \
 "      <Column Name=\"processgroup:process:cvs_entry_time\" Type=\"int_4s\"/>\n" \
-"      <Column Name=\"processgroup:process:comment\" Type=\"lstring\"/>\n" \
 "      <Column Name=\"processgroup:process:is_online\" Type=\"int_4s\"/>\n" \
 "      <Column Name=\"processgroup:process:node\" Type=\"lstring\"/>\n" \
 "      <Column Name=\"processgroup:process:username\" Type=\"lstring\"/>\n" \
@@ -110,6 +109,11 @@
 "      <Column Name=\"processgroup:process:end_time\" Type=\"int_4s\"/>\n" \
 "      <Column Name=\"processgroup:process:jobid\" Type=\"int_4s\"/>\n" \
 "      <Column Name=\"processgroup:process:domain\" Type=\"lstring\"/>\n" \
+
+#define PROCESS_COMMENT_HEADER \
+"      <Column Name=\"processgroup:process:comment\" Type=\"lstring\"/>\n"
+
+#define PROCESS_STREAM_HEADER \
 "      <Column Name=\"processgroup:process:process_id\" Type=\"ilwd:char\"/>\n" \
 "      <Stream Name=\"processgroup:process:table\" Type=\"Local\" Delimiter=\",\">\n"
 
