@@ -70,6 +70,7 @@ RCSID( "$Id$" );
 #define CANDLE_MASS2 1.4
 #define CANDLE_RHOSQ 64.0
 
+
 /*
  *
  * variables that control program behaviour
@@ -123,6 +124,18 @@ REAL4 snrThresh         = -1;           /* signal to noise thresholds   */
 REAL4 chisqThresh       = -1;           /* chisq veto thresholds        */
 INT4  eventCluster      = -1;           /* perform chirplen clustering  */
 Approximant approximant;                /* waveform approximant         */
+
+/* generic simulation parameters */
+enum { unset, urandom, user } randSeedType = unset;    /* sim seed type */
+INT4  randomSeed        = 0;            /* value of sim rand seed       */
+REAL4 gaussVar          = 64.0;         /* variance of gaussian noise   */
+INT4  gaussianNoise     = 0;            /* make input data gaussian     */
+
+/* template bank simulation params */
+INT4  bankSim           = 0;            /* number of template bank sims */
+Approximant bankSimApproximant;         /* waveform to test tmplt bank  */
+REAL4 bankMinMass       = -1;           /* minimum mass of injection    */
+REAL4 bankMaxMass       = -1;           /* maximum mass of injection    */
 
 /* output parameters */
 CHAR  *userTag          = NULL;         /* string the user can tag with */
@@ -207,7 +220,7 @@ int main( int argc, char *argv[] )
 
   /* counters and other variables */
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
-  UINT4 i;
+  UINT4 i, j, k;
   INT4  inserted;
   INT4  currentLevel;
   CHAR  fname[256];
@@ -218,6 +231,26 @@ int main( int argc, char *argv[] )
   REAL8 tsLength;
   INT8  durationNS	= 0;
   LIGOTimeGPS duration	= {0,0};
+  CHAR tmpChName[LALNameLength];
+  REAL8 inputDeltaT;
+
+  /* random number generator parameters */
+  RandomParams *randParams = NULL;
+
+  /* template bank simulation variables */
+  UINT4 cut = 0;
+  REAL4 psdMin = 0;
+  INT4  bankSimCount = 0;
+  SimInspiralTable bankInjection;
+  REAL4 matchNorm = 0;
+  const REAL8 psdScaleFac = 1.0e-40;
+  SnglInspiralTable *loudestEvent = NULL;
+  SnglInspiralTable *prevLoudestEvent = NULL;
+  SnglInspiralTable *loudestEventHead = NULL;
+  SimInstParamsTable *thisSimInstParams = NULL;
+  SimInstParamsTable *prevSimInstParams = NULL;
+  MetadataTable simResults;
+
 
 
   /*
@@ -442,7 +475,7 @@ int main( int argc, char *argv[] )
     (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
   LALSnprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
       "raw data sample rate" );
-  this_search_summvar->value = chan.deltaT;
+  this_search_summvar->value = inputDeltaT = chan.deltaT;
 
   /* determine if we need to resample the channel */
   if ( vrbflg )
@@ -466,7 +499,7 @@ int main( int argc, char *argv[] )
     }
   }
 
-  /* determine the number of points to get and create storage forr the data */
+  /* determine the number of points to get and create storage for the data */
   inputLengthNS = 
     (REAL8) ( gpsEndTimeNS - gpsStartTimeNS + 2000000000LL * padData );
   numInputPoints = (UINT4) floor( inputLengthNS / (chan.deltaT * 1.0e9) + 0.5 );
@@ -507,6 +540,85 @@ int main( int argc, char *argv[] )
 
   /*
    *
+   * create the random seed if it will be needed
+   *
+   */
+
+
+  if ( randSeedType != unset )
+  {
+    /* store the seed in the search summvars table */
+    this_search_summvar = this_search_summvar->next = 
+      (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
+    LALSnprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+        "template bank simulation seed" );
+
+    if ( randSeedType == urandom )
+    {
+      FILE   *fpRand = NULL;
+      INT4    randByte;
+
+      if ( vrbflg ) 
+        fprintf( stdout, "obtaining random seed from /dev/urandom: " );
+
+      randomSeed = 0;
+      fpRand = fopen( "/dev/urandom", "r" );
+      if ( fpRand )
+      {
+        for ( randByte = 0; randByte < 4 ; ++randByte )
+        {
+          INT4 tmpSeed = (INT4) fgetc( fpRand );
+          randomSeed += tmpSeed << ( randByte * 8 );
+        }
+        fclose( fpRand );
+      }
+      else
+      {
+        perror( "error obtaining random seed from /dev/urandom" );
+        exit( 1 );
+      }
+    }
+    else if ( randSeedType == user )
+    {
+      if ( vrbflg ) 
+        fprintf( stdout, "using user specified random seed: " );
+    }
+    else
+    {
+      /* should never get here */
+      fprintf( stderr, "error obtaining random seed\n" );
+      exit( 1 );
+    }
+
+    this_search_summvar->value = randomSeed;
+    if ( vrbflg ) fprintf( stdout, "%d\n", randomSeed );
+
+    /* create the tmplt bank random parameter structure */
+    LAL_CALL( LALCreateRandomParams( &status, &randParams, randomSeed ),
+        &status );
+  }
+
+  /* replace the input data with gaussian noise if necessary */
+  if ( gaussianNoise )
+  {
+    if ( vrbflg ) fprintf( stdout, 
+        "setting input data to gaussian noise with variance %e... ", gaussVar );
+    memset( chan.data->data, 0, chan.data->length * sizeof(REAL4) );
+    LAL_CALL( LALNormalDeviates( &status, chan.data, randParams ), &status );
+    for ( j = 0; j < chan.data->length; ++j )
+    {
+      chan.data->data[j] *= gaussVar;
+    }
+    if ( vrbflg ) fprintf( stdout, "done\n" );
+
+    /* write the raw channel data as read in from the frame files */
+    if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+        &chan, "ct", "RAW_GAUSSIAN" );
+  }
+
+
+  /*
+   *
    * generate the response function for the requested time
    *
    */
@@ -537,6 +649,21 @@ int main( int argc, char *argv[] )
   if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
       outFrame, &resp, "strain/ct", "RESPONSE" );
 
+  if ( gaussianNoise )
+  {
+    /* replace the response function with unity if */
+    /* we are filtering gaussian noise             */
+    if ( vrbflg ) fprintf( stdout, "setting response to unity... " );
+    for ( k = 0; k < resp.data->length; ++k )
+    {
+      resp.data->data[k].re = 1.0;
+      resp.data->data[k].im = 0;
+    }
+    if ( vrbflg ) fprintf( stdout, "done\n" );
+
+    if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
+        outFrame, &resp, "strain/ct", "RESPONSE_GAUSSIAN" );
+  }
 
   /* slide the channel back to the fake time for background studies */
   chan.epoch.gpsSeconds += slideData.gpsSeconds;
@@ -560,7 +687,6 @@ int main( int argc, char *argv[] )
     int  numInjections = 0;
     SimInspiralTable    *injections = NULL;
     SimInspiralTable    *thisInj = NULL;
-    CHAR tmpChName[LALNameLength];
 
     /* read in the injection data from XML */
     numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
@@ -605,6 +731,22 @@ int main( int argc, char *argv[] )
 
         if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
             outFrame, &injResp, "strain/ct", "RESPONSE_INJ" );
+
+        if ( gaussianNoise )
+        {
+          /* replace the response function with unity if */
+          /* we are filtering gaussian noise             */
+          if ( vrbflg ) fprintf( stdout, "setting response to unity... " );
+          for ( k = 0; k < injResp.data->length; ++k )
+          {
+            injResp.data->data[k].re = 1.0;
+            injResp.data->data[k].im = 0;
+          }
+          if ( vrbflg ) fprintf( stdout, "done\n" );
+
+          if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
+              outFrame, &injResp, "strain/ct", "RESPONSE_INJ_GAUSSIAN" );
+        }
       }
       else
       {
@@ -786,6 +928,7 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "could not allocate memory for findchirp init params\n" );
     exit( 1 );
   }
+
   fcInitParams->numPoints      = numPoints;
   fcInitParams->numSegments    = numSegments;
   fcInitParams->numChisqBins   = numChisqBins;
@@ -793,34 +936,27 @@ int main( int argc, char *argv[] )
   fcInitParams->ovrlap         = ovrlap;
   fcInitParams->approximant    = approximant;
 
-  /* create the data segment vector */
-  memset( &spec, 0, sizeof(REAL4FrequencySeries) );
-  LAL_CALL( LALSCreateVector( &status, &(spec.data), numPoints / 2 + 1 ), 
-      &status );
-  LAL_CALL( LALInitializeDataSegmentVector( &status, &dataSegVec,
-        &chan, &spec, &resp, fcInitParams ), &status );
-
 
   /*
    *
-   * power spectrum estimation and data conditioning
+   * power spectrum estimation
    *
    */
 
 
-  /* create the findchirp data storage */
-  LAL_CALL( LALCreateFindChirpSegmentVector( &status, &fcSegVec, 
-        fcInitParams ), &status );
-
-  /* initialize data conditioning routines */
+  /* initialize findchirp data conditioning routine */
   LAL_CALL( LALFindChirpSPDataInit( &status, &fcDataParams, fcInitParams ), 
       &status );
   fcDataParams->invSpecTrunc = invSpecTrunc * sampleRate;
   fcDataParams->fLow = fLow;
 
+  /* create storage for the power spectral estimate */
+  memset( &spec, 0, sizeof(REAL4FrequencySeries) );
+  LAL_CALL( LALSCreateVector( &status, &(spec.data), numPoints / 2 + 1 ), 
+      &status );
+
   /* compute the windowed power spectrum for the data channel */
   avgSpecParams.window = NULL;
-  avgSpecParams.plan   = fcDataParams->fwdPlan;
   switch ( specType )
   {
     case 0:
@@ -831,7 +967,14 @@ int main( int argc, char *argv[] )
       avgSpecParams.method = useMedian;
       if ( vrbflg ) fprintf( stdout, "computing median psd" );
       break;
+    case 2:
+      avgSpecParams.method = useUnity;
+      if ( vrbflg ) fprintf( stdout, "simulation gaussian noise psd" );
+      break;
   }
+
+  /* use the fft plan created by findchirp */
+  avgSpecParams.plan = fcDataParams->fwdPlan;
 
   wpars.type = Hann;
   wpars.length = numPoints;
@@ -855,9 +998,90 @@ int main( int argc, char *argv[] )
       &status );
   strcpy( spec.name, chan.name );
 
+  if ( specType == 2 )
+  {
+    /* multiply the unit power spectrum to get a gaussian psd */
+    REAL4 gaussVarSq = gaussVar * gaussVar;
+    if ( resampleChan )
+    {
+      /* reduce the variance as we have resampled the data */
+      gaussVarSq *= inputDeltaT / chan.deltaT;
+    }
+    for ( k = 0; k < spec.data->length; ++k )
+    {
+      spec.data->data[k] *= 2.0 * gaussVarSq * (REAL4) chan.deltaT;
+    }
+
+    if ( vrbflg ) 
+      fprintf( stdout, "set psd to constant value = %e\n", spec.data->data[0] );
+  }
+
   /* write the spectrum data to a file */
   if ( writeSpectrum ) outFrame = fr_add_proc_REAL4FrequencySeries( outFrame, 
-      &spec, "ct/sqrtHz", "PSD" );
+      &spec, "ct^2/Hz", "PSD" );
+
+
+  /*
+   *
+   * initialize the template bank simulation
+   *
+   */
+
+  
+  if ( bankSim )
+  {
+    if ( vrbflg ) fprintf( stdout, "initializing template bank simulation\n" );
+
+    /* clear the output table */
+    simResults.simInstParamsTable = NULL;
+
+    /* override the findchirp initialization parameters */
+    fcInitParams->numSegments  = 1;
+    fcInitParams->ovrlap       = 0;
+
+    /* set the thresholds and clustering option for the bank sim */
+    snrThresh    = 0;
+    chisqThresh  = LAL_REAL4_MAX;
+    eventCluster = 1;
+
+    /* set low frequency cutoff index of the psd and    */
+    /* the value the psd at cut                         */
+    cut = fLow / spec.deltaF > 1 ?  fLow / spec.deltaF : 1;
+    if ( vrbflg ) 
+      fprintf( stdout, "psd low frequency cutoff index = %d\n", cut );
+    
+    psdMin = spec.data->data[cut] * 
+      ( ( resp.data->data[cut].re * resp.data->data[cut].re +
+          resp.data->data[cut].im * resp.data->data[cut].im ) / psdScaleFac );
+
+    /* calibrate the input power spectrum, scale to the */
+    /* range of REAL4 and store the as S_v(f)           */
+    for ( k = 0; k < cut; ++k )
+    {
+      spec.data->data[k] = psdMin;
+    }
+    for ( k = cut; k < spec.data->length; ++k )
+    {
+      REAL4 respRe = resp.data->data[k].re;
+      REAL4 respIm = resp.data->data[k].im;
+      spec.data->data[k] = spec.data->data[k] *
+        ( ( respRe * respRe + respIm * respIm ) / psdScaleFac );
+    }
+
+    if ( writeSpectrum ) outFrame = fr_add_proc_REAL4FrequencySeries( outFrame, 
+        &spec, "strain^2/Hz", "PSD_SIM" );
+
+    /* set the response function to the sqrt of the inverse */ 
+    /* of the psd scale factor since S_h = |R|^2 S_v        */
+    for ( k = 0; k < resp.data->length; ++k )
+    {
+      resp.data->data[k].re = sqrt( psdScaleFac );
+      resp.data->data[k].im = 0;
+    }
+
+    if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
+        outFrame, &resp, "strain/ct", "RESPONSE_SIM" );
+  }
 
 
   /*
@@ -867,7 +1091,15 @@ int main( int argc, char *argv[] )
    */
 
 
-  if ( vrbflg ) fprintf( stdout, "initializing findchirp\n" );
+  if ( vrbflg ) fprintf( stdout, "initializing findchirp... " );
+
+  /* create the data segment vector from the input data */
+  LAL_CALL( LALInitializeDataSegmentVector( &status, &dataSegVec,
+        &chan, &spec, &resp, fcInitParams ), &status );
+
+  /* create the findchirp data storage */
+  LAL_CALL( LALCreateFindChirpSegmentVector( &status, &fcSegVec, 
+        fcInitParams ), &status );
 
   /* initialize the template functions */
   LAL_CALL( LALFindChirpSPTemplateInit( &status, &fcTmpltParams, 
@@ -896,41 +1128,148 @@ int main( int argc, char *argv[] )
   fcFilterParams->chisqThresh = chisqThresh;
   fcFilterParams->maximiseOverChirp = eventCluster;
 
+  if ( vrbflg ) fprintf( stdout, "done\n" );
+
 
   /*
    *
-   * condition data segments for filtering
+   * matched filtering engine
    *
    */
+  
+
+  /* begin loop over number of template bank simulation */
+  /* if we are not doing a template bank simulation,    */
+  /* this exectues the main part of the filtering code  */
+  /* just one (which is what we want to do)             */
+  bankSimCount = 0;
+  do
+  {
+    if ( bankSim )
+    {
+
+      if ( vrbflg ) 
+        fprintf( stdout, "bank simulation %d/%d\n", bankSimCount, bankSim );
 
 
-  if ( approximant == TaylorF2 )
-  {
-    if ( vrbflg ) fprintf( stdout, "findchirp conditioning data for SP\n" );
-    LAL_CALL( LALFindChirpSPData (&status, fcSegVec, dataSegVec, fcDataParams),
-        &status );
-  }
-  else if ( approximant == BCV )
-  {
-    if ( vrbflg ) fprintf( stdout, "findchirp conditioning data for BCV\n" );
-    LAL_CALL( LALFindChirpBCVData (&status, fcSegVec, dataSegVec, fcDataParams),
-        &status );
-  }
-  else if ( approximant == BCVSpin )
-  {
-    if ( vrbflg ) fprintf( stdout, 
-        "findchirp conditioning data for BCVSpin\n" );
-    LAL_CALL( LALFindChirpBCVSpinData (&status, fcSegVec, dataSegVec, 
-          fcDataParams), &status );
-  }
-  else
-  {
-    fprintf( stderr, "error: unknown waveform approximant for data\n" );
-    exit( 1 );
-  }
+    /*
+     *
+     * inject a random signal if we are doing a template bank simulation
+     *
+     */
 
-  /* compute the standard candle */
-  {
+      
+      if ( vrbflg ) fprintf( stdout, 
+          "zeroing data stream and adding random injection for bank sim... " );
+
+      /* zero out the input data segment and the injection params */
+      memset( chan.data->data, 0, chan.data->length * sizeof(REAL4) );
+      memset( &bankInjection, 0, sizeof(SimInspiralTable) );
+
+      /* generate random parameters for the injection */
+      LAL_CALL( LALUniformDeviate( &status, &(bankInjection.mass1), 
+            randParams ), &status );
+      bankInjection.mass1 *= (bankMaxMass - bankMinMass);
+      bankInjection.mass1 += bankMinMass;
+      LAL_CALL( LALUniformDeviate( &status, &(bankInjection.mass2), 
+            randParams ), &status );
+      bankInjection.mass2 *= (bankMaxMass - bankMinMass);
+      bankInjection.mass2 += bankMinMass;
+      bankInjection.eta = bankInjection.mass1 * bankInjection.mass2 /
+        ( ( bankInjection.mass1 + bankInjection.mass2 ) *
+        ( bankInjection.mass1 + bankInjection.mass2 ) );
+      
+      if ( bankSimApproximant == TaylorT2 )
+      {
+        LALSnprintf( bankInjection.waveform, LIGOMETA_WAVEFORM_MAX,
+            "GeneratePPNtwoPN" );
+      }
+      else
+      {
+        fprintf( stderr, 
+            "error: unknown waveform for bank simulation injection\n" );
+        exit( 1 );
+      }
+
+      /* set the injection distance to 1 Mpc */
+      bankInjection.distance = 1.0;
+
+      /* inject the signals, preserving the channel name (Tev mangles it) */
+      LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", 
+          dataSegVec->data->chan->name );
+      /* make sure the injection is hplus with no time delays */
+      dataSegVec->data->chan->name[0] = 'P';
+      LAL_CALL( LALFindChirpInjectSignals( &status, dataSegVec->data->chan, 
+            &bankInjection, &resp ), &status );
+      /* restore the saved channel name */
+      LALSnprintf( dataSegVec->data->chan->name,  
+          LALNameLength * sizeof(CHAR), "%s", tmpChName );
+      
+      /* write the channel data plus injection to the output frame file */
+      if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+          &chan, "ct", "SIM" );
+
+      if ( vrbflg ) fprintf( stdout, "done\n" );
+    }
+
+
+    /*
+     *
+     * condition data segments for filtering
+     *
+     */
+
+
+    if ( approximant == TaylorF2 )
+    {
+      if ( vrbflg ) fprintf( stdout, "findchirp conditioning data for SP\n" );
+      LAL_CALL( LALFindChirpSPData( &status, fcSegVec, dataSegVec, 
+            fcDataParams ), &status );
+    }
+    else if ( approximant == BCV )
+    {
+      if ( vrbflg ) fprintf( stdout, "findchirp conditioning data for BCV\n" );
+      LAL_CALL( LALFindChirpBCVData( &status, fcSegVec, dataSegVec, 
+            fcDataParams ), &status );
+    }
+    else if ( approximant == BCVSpin )
+    {
+      if ( vrbflg ) fprintf( stdout, 
+          "findchirp conditioning data for BCVSpin\n" );
+      LAL_CALL( LALFindChirpBCVSpinData( &status, fcSegVec, dataSegVec, 
+            fcDataParams ), &status );
+    }
+    else
+    {
+      fprintf( stderr, "error: unknown waveform approximant for data\n" );
+      exit( 1 );
+    }
+
+    if ( bankSim )
+    {
+      /* compute the minimal match normalization */
+      REAL4 *tmpltPower = fcDataParams->tmpltPowerVec->data;
+      COMPLEX8 *fcData = fcSegVec->data->data->data->data;
+
+      if ( vrbflg ) fprintf( stdout,
+          "computing minimal match normalization... " );
+      
+      matchNorm = 0;
+      
+      for ( k = 0; k < fcDataParams->tmpltPowerVec->length; ++k )
+      {
+        if ( tmpltPower[k] ) matchNorm += ( fcData[k].re * fcData[k].re +
+            fcData[k].im * fcData[k].im ) / tmpltPower[k];
+      }
+
+      matchNorm *= ( 4.0 * (REAL4) fcSegVec->data->deltaT ) / 
+        (REAL4) numPoints;
+
+      if ( vrbflg ) fprintf( stdout, "%e\n", matchNorm );
+    }
+    else
+    {
+      /* compute the standard candle */
       REAL4 cannonDist = 1.0; /* Mpc */
       REAL4 m  = (REAL4) candle.tmplt.totalMass;
       REAL4 mu = (REAL4) candle.tmplt.mu;
@@ -961,225 +1300,300 @@ int main( int argc, char *argv[] )
         fflush( stdout );
       }
     }
-  
-
-  /*
-   *
-   * hierarchial search engine
-   *
-   */
 
 
-  for ( tmpltCurrent = tmpltHead, inserted = 0; tmpltCurrent; 
-      tmpltCurrent = tmpltCurrent->next, inserted = 0 )
-  {
-    /*  generate template */
-    if ( approximant == TaylorF2 )
+    /*
+     *
+     * hierarchial search engine
+     *
+     */
+
+
+    for ( tmpltCurrent = tmpltHead, inserted = 0; tmpltCurrent; 
+        tmpltCurrent = tmpltCurrent->next, inserted = 0 )
     {
-      LAL_CALL( LALFindChirpSPTemplate( &status, fcFilterInput->fcTmplt, 
-            tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
-      fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
-    }
-    else if ( approximant == BCV )
-    {
-      LAL_CALL( LALFindChirpBCVTemplate( &status, fcFilterInput->fcTmplt, 
-            tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
-      fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
-    }
-    else if ( approximant == BCVSpin )
-    {
-      LAL_CALL( LALFindChirpBCVSpinTemplate( &status, fcFilterInput->fcTmplt,
-            tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
-      fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
-    }
-    else
-    {
-      fprintf( stderr, "error: unknown waveform approximant for template\n" );
-      exit( 1 );
-    }
-
-    /* loop over data segments */
-    for ( i = 0; i < fcSegVec->length ; ++i )
-    {
-      INT8 fcSegStartTimeNS;
-      INT8 fcSegEndTimeNS;
-
-      LAL_CALL( LALGPStoINT8( &status, &fcSegStartTimeNS, 
-            &(fcSegVec->data[i].data->epoch) ), &status );
-      fcSegEndTimeNS = fcSegStartTimeNS + (INT8)
-        ( (REAL8) numPoints * 1e9 * fcSegVec->data[i].deltaT );
-
-      /* skip segment if it is not contained in the trig start or end times */
-      if ( (trigStartTimeNS && (trigStartTimeNS > fcSegEndTimeNS)) || 
-          (trigEndTimeNS && (trigEndTimeNS < fcSegStartTimeNS)) )
-      { 
-        if ( vrbflg ) fprintf( stdout, 
-            "skipping segment %d/%d [%lld-%lld] (outside trig time)\n", 
-            fcSegVec->data[i].number, fcSegVec->length, 
-            fcSegStartTimeNS, fcSegEndTimeNS );
-
-        continue;
-      }
-      
-      /* filter data segment */ 
-      if ( fcSegVec->data[i].level == tmpltCurrent->tmpltPtr->level )
+      /*  generate template */
+      if ( approximant == TaylorF2 )
       {
-        if ( vrbflg ) fprintf( stdout, 
-            "filtering segment %d/%d [%lld-%lld] "
-            "against template %d/%d (%e,%e)\n", 
-            fcSegVec->data[i].number,  fcSegVec->length,
-            fcSegStartTimeNS, fcSegEndTimeNS,
-            tmpltCurrent->tmpltPtr->number, numTmplts,
-            fcFilterInput->tmplt->mass1, fcFilterInput->tmplt->mass2 );
-
-        fcFilterInput->segment = fcSegVec->data + i;
-
-        if ( approximant == TaylorF2 )
-        {
-          LAL_CALL( LALFindChirpFilterSegment( &status, 
-                &eventList, fcFilterInput, fcFilterParams ), &status );
-        }
-        else if ( approximant == BCV )
-        {
-          LAL_CALL( LALFindChirpBCVFilterSegment( &status,
-                &eventList, fcFilterInput, fcFilterParams ), &status );
-        }
-        else if ( approximant == BCVSpin )
-        {
-          LAL_CALL( LALFindChirpBCVSpinFilterSegment( &status,
-                &eventList, fcFilterInput, fcFilterParams, fcDataParams, 
-                fcSegVec, dataSegVec), &status );
-        } 
-        else
-        {
-          fprintf( stderr, "error: unknown waveform approximant for filter\n" );
-          exit( 1 );
-        }
-
-        if ( writeRhosq )
-        {
-          CHAR snrsqStr[LALNameLength];
-          LALSnprintf( snrsqStr, LALNameLength*sizeof(CHAR), 
-              "SNRSQ_%d", nRhosqFr++ );
-          strcpy( fcFilterParams->rhosqVec->name, chan.name );
-          outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
-              fcFilterParams->rhosqVec, "none", snrsqStr );
-        }
-
-        if ( writeChisq )
-        {
-          CHAR chisqStr[LALNameLength];
-          REAL4TimeSeries chisqts;
-          LALSnprintf( chisqStr, LALNameLength*sizeof(CHAR), 
-              "CHISQ_%d", nChisqFr++ );
-          chisqts.epoch = fcFilterInput->segment->data->epoch;
-          memcpy( &(chisqts.name), fcFilterInput->segment->data->name,
-              LALNameLength * sizeof(CHAR) );
-          chisqts.deltaT = fcFilterInput->segment->deltaT;
-          chisqts.data = fcFilterParams->chisqVec;
-          outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
-              &chisqts, "none", chisqStr );
-        }
-
+        LAL_CALL( LALFindChirpSPTemplate( &status, fcFilterInput->fcTmplt, 
+              tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
+        fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
+      }
+      else if ( approximant == BCV )
+      {
+        LAL_CALL( LALFindChirpBCVTemplate( &status, fcFilterInput->fcTmplt, 
+              tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
+        fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
+      }
+      else if ( approximant == BCVSpin )
+      {
+        LAL_CALL( LALFindChirpBCVSpinTemplate( &status, fcFilterInput->fcTmplt,
+              tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
+        fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
       }
       else
       {
-        if ( vrbflg ) fprintf( stdout, "skipping segment %d/%d [%lld-%lld] "
-            "(segment level %d, template level %d)\n", 
-            fcSegVec->data[i].number, fcSegVec->length, 
-            fcSegStartTimeNS, fcSegEndTimeNS,
-            fcSegVec->data[i].level, tmpltCurrent->tmpltPtr->level );
+        fprintf( stderr, "error: unknown waveform approximant for template\n" );
+        exit( 1 );
       }
 
-      /*  test if filter returned any events */
-      if ( eventList )
+      /* loop over data segments */
+      for ( i = 0; i < fcSegVec->length ; ++i )
       {
-        if ( vrbflg ) fprintf( stdout, 
-            "segment %d rang template [m (%e,%e)] [psi (%e,%e)]\n",
-            fcSegVec->data[i].number,
-            fcFilterInput->tmplt->mass1, fcFilterInput->tmplt->mass2,
-            fcFilterInput->tmplt->psi0, fcFilterInput->tmplt->psi3 );
+        INT8 fcSegStartTimeNS;
+        INT8 fcSegEndTimeNS;
 
-        if ( tmpltCurrent->tmpltPtr->fine != NULL && inserted == 0 )
+        LAL_CALL( LALGPStoINT8( &status, &fcSegStartTimeNS, 
+              &(fcSegVec->data[i].data->epoch) ), &status );
+        fcSegEndTimeNS = fcSegStartTimeNS + (INT8)
+          ( (REAL8) numPoints * 1e9 * fcSegVec->data[i].deltaT );
+
+        /* skip segment if it is not contained in the trig start or end times */
+        if ( (trigStartTimeNS && (trigStartTimeNS > fcSegEndTimeNS)) || 
+            (trigEndTimeNS && (trigEndTimeNS < fcSegStartTimeNS)) )
+        { 
+          if ( vrbflg ) fprintf( stdout, 
+              "skipping segment %d/%d [%lld-%lld] (outside trig time)\n", 
+              fcSegVec->data[i].number, fcSegVec->length, 
+              fcSegStartTimeNS, fcSegEndTimeNS );
+
+          continue;
+        }
+
+        /* filter data segment */ 
+        if ( fcSegVec->data[i].level == tmpltCurrent->tmpltPtr->level )
         {
           if ( vrbflg ) fprintf( stdout, 
-              "inserting fine templates into list\n" );
+              "filtering segment %d/%d [%lld-%lld] "
+              "against template %d/%d (%e,%e)\n", 
+              fcSegVec->data[i].number,  fcSegVec->length,
+              fcSegStartTimeNS, fcSegEndTimeNS,
+              tmpltCurrent->tmpltPtr->number, numTmplts,
+              fcFilterInput->tmplt->mass1, fcFilterInput->tmplt->mass2 );
 
-          tmpltInsert = tmpltCurrent;
-          inserted = 1;
-          fcSegVec->data[i].level += 1;
+          fcFilterInput->segment = fcSegVec->data + i;
 
-          for ( bankCurrent = tmpltCurrent->tmpltPtr->fine ; 
-              bankCurrent; bankCurrent = bankCurrent->next )
+          if ( approximant == TaylorF2 )
           {
-            LAL_CALL( LALFindChirpCreateTmpltNode( &status, 
-                  bankCurrent, &tmpltInsert ), &status );
+            LAL_CALL( LALFindChirpFilterSegment( &status, 
+                  &eventList, fcFilterInput, fcFilterParams ), &status );
           }
-
-        }
-        else if ( ! tmpltCurrent->tmpltPtr->fine )
-        {
-          if ( vrbflg ) fprintf( stdout, "***>  dumping events  <***\n" );
-
-          if ( ! savedEvents.snglInspiralTable )
+          else if ( approximant == BCV )
           {
-            savedEvents.snglInspiralTable = eventList;
+            LAL_CALL( LALFindChirpBCVFilterSegment( &status,
+                  &eventList, fcFilterInput, fcFilterParams ), &status );
           }
+          else if ( approximant == BCVSpin )
+          {
+            LAL_CALL( LALFindChirpBCVSpinFilterSegment( &status,
+                  &eventList, fcFilterInput, fcFilterParams, fcDataParams, 
+                  fcSegVec, dataSegVec), &status );
+          } 
           else
           {
-            event->next = eventList;
+            fprintf( stderr, 
+                "error: unknown waveform approximant for filter\n" );
+            exit( 1 );
           }
+
+          if ( writeRhosq )
+          {
+            CHAR snrsqStr[LALNameLength];
+            LALSnprintf( snrsqStr, LALNameLength*sizeof(CHAR), 
+                "SNRSQ_%d", nRhosqFr++ );
+            strcpy( fcFilterParams->rhosqVec->name, chan.name );
+            outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+                fcFilterParams->rhosqVec, "none", snrsqStr );
+          }
+
+          if ( writeChisq )
+          {
+            CHAR chisqStr[LALNameLength];
+            REAL4TimeSeries chisqts;
+            LALSnprintf( chisqStr, LALNameLength*sizeof(CHAR), 
+                "CHISQ_%d", nChisqFr++ );
+            chisqts.epoch = fcFilterInput->segment->data->epoch;
+            memcpy( &(chisqts.name), fcFilterInput->segment->data->name,
+                LALNameLength * sizeof(CHAR) );
+            chisqts.deltaT = fcFilterInput->segment->deltaT;
+            chisqts.data = fcFilterParams->chisqVec;
+            outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+                &chisqts, "none", chisqStr );
+          }
+
         }
         else
         {
+          if ( vrbflg ) fprintf( stdout, "skipping segment %d/%d [%lld-%lld] "
+              "(segment level %d, template level %d)\n", 
+              fcSegVec->data[i].number, fcSegVec->length, 
+              fcSegStartTimeNS, fcSegEndTimeNS,
+              fcSegVec->data[i].level, tmpltCurrent->tmpltPtr->level );
+        }
+
+        /*  test if filter returned any events */
+        if ( eventList )
+        {
           if ( vrbflg ) fprintf( stdout, 
-              "already inserted fine templates, skipping\n" ); 
+              "segment %d rang template [m (%e,%e)] [psi (%e,%e)]\n",
+              fcSegVec->data[i].number,
+              fcFilterInput->tmplt->mass1, fcFilterInput->tmplt->mass2,
+              fcFilterInput->tmplt->psi0, fcFilterInput->tmplt->psi3 );
 
-          fcSegVec->data[i].level += 1;
-        } 
-
-        /* save a pointer to the last event in the list and count the events */
-        ++numEvents;
-        while ( eventList->next )
-        {
-          eventList = eventList->next;
-          ++numEvents;
-        }
-        event = eventList;
-        eventList = NULL;
-      } /* end if ( events ) */
-
-      /* if going up a level, remove inserted nodes, reset segment levels */ 
-      if ( tmpltCurrent->next && (tmpltCurrent->next->tmpltPtr->level < 
-            tmpltCurrent->tmpltPtr->level) )
-      {
-        /* record the current number */
-        currentLevel = tmpltCurrent->tmpltPtr->level;
-
-        /* decrease segment filter levels if the have been increased */
-        for ( i = 0 ; i < fcSegVec->length; i++ )
-        {
-          if ( fcSegVec->data[i].level == currentLevel )
+          if ( tmpltCurrent->tmpltPtr->fine != NULL && inserted == 0 )
           {
-            fcSegVec->data[i].level -= 1;
+            if ( vrbflg ) fprintf( stdout, 
+                "inserting fine templates into list\n" );
+
+            tmpltInsert = tmpltCurrent;
+            inserted = 1;
+            fcSegVec->data[i].level += 1;
+
+            for ( bankCurrent = tmpltCurrent->tmpltPtr->fine ; 
+                bankCurrent; bankCurrent = bankCurrent->next )
+            {
+              LAL_CALL( LALFindChirpCreateTmpltNode( &status, 
+                    bankCurrent, &tmpltInsert ), &status );
+            }
+
           }
-        }
+          else if ( ! tmpltCurrent->tmpltPtr->fine )
+          {
+            if ( vrbflg ) fprintf( stdout, "***>  dumping events  <***\n" );
 
-        if ( vrbflg ) fprintf( stdout, "removing inserted fine templates\n" ); 
+            if ( ! savedEvents.snglInspiralTable )
+            {
+              savedEvents.snglInspiralTable = eventList;
+            }
+            else
+            {
+              event->next = eventList;
+            }
+          }
+          else
+          {
+            if ( vrbflg ) fprintf( stdout, 
+                "already inserted fine templates, skipping\n" ); 
 
-        while ( tmpltCurrent->tmpltPtr->level == currentLevel )
+            fcSegVec->data[i].level += 1;
+          } 
+
+          /* save a ptr to the last event in the list and count the events */
+          ++numEvents;
+          while ( eventList->next )
+          {
+            eventList = eventList->next;
+            ++numEvents;
+          }
+          event = eventList;
+          eventList = NULL;
+        } /* end if ( events ) */
+
+        /* if going up a level, remove inserted nodes, reset segment levels */ 
+        if ( tmpltCurrent->next && (tmpltCurrent->next->tmpltPtr->level < 
+              tmpltCurrent->tmpltPtr->level) )
         {
-          LAL_CALL( LALFindChirpDestroyTmpltNode( &status, &tmpltCurrent ),
-              &status );
-        }          
-      } /* end if up a level */
+          /* record the current number */
+          currentLevel = tmpltCurrent->tmpltPtr->level;
 
-    } /* end loop over data segments */
+          /* decrease segment filter levels if the have been increased */
+          for ( i = 0 ; i < fcSegVec->length; i++ )
+          {
+            if ( fcSegVec->data[i].level == currentLevel )
+            {
+              fcSegVec->data[i].level -= 1;
+            }
+          }
 
-  } /* end loop over linked list */
+          if ( vrbflg ) fprintf( stdout, "removing inserted fine templates\n" );
 
-  /* save the number of events in the search summary table */
-  searchsumm.searchSummaryTable->nevents = numEvents;
+          while ( tmpltCurrent->tmpltPtr->level == currentLevel )
+          {
+            LAL_CALL( LALFindChirpDestroyTmpltNode( &status, &tmpltCurrent ),
+                &status );
+          }          
+        } /* end if up a level */
+
+      } /* end loop over data segments */
+
+    } /* end loop over linked list */
+
+    if ( bankSim )
+    {
+      /* allocate memory for the loudest event over the template bank */
+      loudestEvent = (SnglInspiralTable *) 
+        LALCalloc( 1, sizeof(SnglInspiralTable) );
+
+      /* find the loudest snr over the template bank */
+      event = savedEvents.snglInspiralTable; 
+      while ( event )
+      {
+        SnglInspiralTable *tmpEvent = event;
+
+        if ( event->snr > loudestEvent->snr )
+        {
+          memcpy( loudestEvent, event, sizeof(SnglInspiralTable) );
+          loudestEvent->next = NULL;
+        }
+        
+        event = event->next;
+        LALFree( tmpEvent );
+      }
+      savedEvents.snglInspiralTable = NULL;
+
+      /* link the list of loudest events */
+      if ( ! loudestEventHead ) loudestEventHead = loudestEvent;
+      if ( prevLoudestEvent ) prevLoudestEvent->next = loudestEvent;
+      prevLoudestEvent = loudestEvent;
+
+      /* create sim_inst_params structure for mass1 */
+      thisSimInstParams = (SimInstParamsTable *) 
+        LALCalloc( 1, sizeof(SimInstParamsTable) );
+      LALSnprintf( thisSimInstParams->name, LIGOMETA_SIMINSTPARAMS_NAME_MAX,
+          "mass1" );
+      thisSimInstParams->value = bankInjection.mass1;
+
+      /* link the linked list */
+      if ( ! simResults.simInstParamsTable )
+        simResults.simInstParamsTable = thisSimInstParams;
+      if ( prevSimInstParams ) prevSimInstParams->next = thisSimInstParams;
+
+      /* create sim_inst_params structure for mass2 */
+      thisSimInstParams = thisSimInstParams->next = (SimInstParamsTable *) 
+        LALCalloc( 1, sizeof(SimInstParamsTable) );
+      LALSnprintf( thisSimInstParams->name, LIGOMETA_SIMINSTPARAMS_NAME_MAX,
+          "mass2" );
+      thisSimInstParams->value = bankInjection.mass2;
+
+      /* create sim_inst_params structure for minimal_match */
+      thisSimInstParams = thisSimInstParams->next = (SimInstParamsTable *) 
+        LALCalloc( 1, sizeof(SimInstParamsTable) );
+      LALSnprintf( thisSimInstParams->name, LIGOMETA_SIMINSTPARAMS_NAME_MAX,
+          "minimal_match" );
+      thisSimInstParams->value = 
+        loudestEvent->snr * loudestEvent->snr / matchNorm;
+
+      /* store the last created sim_inst_params table */
+      prevSimInstParams = thisSimInstParams;
+    }
+
+    ++bankSimCount;
+
+  } while ( bankSimCount < bankSim ); /* end loop over bank simulations */
+
+  if ( bankSim )
+  {
+    /* save the number of bank simulation in the search summary table */
+    searchsumm.searchSummaryTable->nevents = bankSim;
+
+    /* point the saved events to the linked list of loudest events */
+    savedEvents.snglInspiralTable = loudestEventHead;
+  }
+  else
+  {
+    /* save the number of events in the search summary table */
+    searchsumm.searchSummaryTable->nevents = numEvents;
+  }
 
 
   /*
@@ -1227,13 +1641,18 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALSDestroyVector( &status, &(spec.data) ), &status );
   LAL_CALL( LALCDestroyVector( &status, &(resp.data) ), &status );
 
+  /* free the random parameters structure */
+  if ( randSeedType != unset )
+  {
+    LAL_CALL( LALDestroyRandomParams( &status, &randParams ), &status );
+  }
+
 
   /*
    *
    * write the result results to disk
    *
    */
-
 
 
   if ( vrbflg ) fprintf( stdout, "writing frame data to disk\n" );
@@ -1302,8 +1721,8 @@ int main( int argc, char *argv[] )
     LALFree( this_search_summvar );
   }
 
-  /* write the summvalue table */
-  if ( numTmplts )
+  /* write the summ_value table with the standard candle distance */
+  if ( ! bankSim )
   {
     LALSnprintf( summvalue.summValueTable->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
@@ -1315,7 +1734,7 @@ int main( int argc, char *argv[] )
     LALSnprintf( summvalue.summValueTable->ifo, LIGOMETA_IFO_MAX, "%s", ifo );
     LALSnprintf( summvalue.summValueTable->name, LIGOMETA_SUMMVALUE_NAME_MAX, 
         "%s", "inspiral_effective_distance" );
-    LALSnprintf( summvalue.summValueTable->comment, LIGOMETA_SUMMVALUE_COMM_MAX, 
+    LALSnprintf( summvalue.summValueTable->comment, LIGOMETA_SUMMVALUE_COMM_MAX,
         "%s", "1.4_1.4_8" );
     summvalue.summValueTable->value = candle.effDistance;
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, summ_value_table ), 
@@ -1401,6 +1820,23 @@ int main( int argc, char *argv[] )
     LALFree( event );
   }
 
+  /* write the template bank simulation results to the xml */
+  if ( bankSim && simResults.simInstParamsTable )
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, 
+          &results, sim_inst_params_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, simResults, 
+          sim_inst_params_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+
+    while ( simResults.simInstParamsTable )
+    {
+      thisSimInstParams = simResults.simInstParamsTable;
+      simResults.simInstParamsTable = simResults.simInstParamsTable->next;
+      LALFree( thisSimInstParams );
+    }
+  }
+
   /* close the output xml file */
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
 
@@ -1466,7 +1902,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --enable-high-pass F         high pass data above F Hz using an IIR filter\n"\
 "  --high-pass-order O          set the order of the high pass filter to O\n"\
 "  --high-pass-attenuation A    set the attenuation of the high pass filter to A\n"\
-"  --spectrum-type TYPE         use PSD estimator TYPE (mean|median)\n"\
+"  --spectrum-type TYPE         use PSD estimator TYPE (mean|median|gaussian)\n"\
 "\n"\
 "  --segment-length N           set data segment length to N points\n"\
 "  --number-of-segments N       set number of data segments to N\n"\
@@ -1488,6 +1924,15 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --disable-output             do not write LIGO LW XML output file\n"\
 "  --trig-start-time SEC        only output triggers after GPS time SEC\n"\
 "  --trig-end-time SEC          only output triggers before GPS time SEC\n"\
+"\n"\
+"  --gaussian-noise VAR         replace data with gaussian noise of variance VAR\n"\
+"  --random-seed SEED           set random number seed for injections to SEED\n"\
+"                                 (urandom|integer)\n"\
+"\n"\
+"  --bank-simulation N          perform N injections to test the template bank\n"\
+"  --sim-approximant APX        set approximant of the injected waveform to APX\n"\
+"  --sim-minimum-mass M         set minimum mass of bank injected signal to M\n"\
+"  --sim-maximum-mass M         set maximum mass of bank injected signal to M\n"\
 "\n"\
 "  --write-raw-data             write raw data to a frame file\n"\
 "  --write-filter-data          write data that is passed to filter to a frame\n"\
@@ -1546,6 +1991,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"pad-data",                required_argument, 0,                'x'},
     {"slide-time",              required_argument, 0,                'X'},
     {"slide-time-ns",           required_argument, 0,                'Y'},
+    {"bank-simulation",         required_argument, 0,                'K'},
+    {"sim-approximant",         required_argument, 0,                'L'},
+    {"random-seed",             required_argument, 0,                'J'},
+    {"sim-minimum-mass",        required_argument, 0,                'U'},
+    {"sim-maximum-mass",        required_argument, 0,                'W'},
+    {"gaussian-noise",          required_argument, 0,                'G'},
     {"debug-level",             required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
@@ -1563,6 +2014,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   int c;
   INT4 haveDynRange = 0;
   INT4 haveApprox = 0;
+  INT4 haveBankSimApprox = 0;
   ProcessParamsTable *this_proc_param = procparams.processParamsTable;
   LALStatus             status = blank_status;
 
@@ -1581,7 +2033,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:M:n:o:p:F:q:r:R:s:t:H:T:I:u:v:w:x:z:Z:", 
+        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:M:n:o:p:F:"
+        "q:r:R:s:t:H:T:I:u:v:w:x:U:V:G:X:Y:K:L:z:Z:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1852,10 +2305,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'i':
         fLow = (REAL4) atof( optarg );
-        if ( fLow < 40 )
+        if ( fLow < 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
-              "low frequency cutoff is less than 40 Hz: "
+              "low frequency cutoff is less than 0 Hz: "
               "(%f Hz specified)\n",
               long_options[option_index].name, fLow );
           exit( 1 );
@@ -1877,11 +2330,17 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           specType = 0;
           badMeanPsd = 1;
         }
+        else if ( ! strcmp( "gaussian", optarg ) )
+        {
+          specType = 2;
+          fprintf( stderr,
+              "WARNING: replacing psd with white gaussian spectrum\n" );
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown power spectrum type: "
-              "%s (must be mean or median)\n", 
+              "%s (must be mean, median or gaussian)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -2140,6 +2599,92 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "int", "%d", slideData.gpsNanoSeconds );
         break;
 
+      case 'K':
+        bankSim = (INT4) atoi( optarg );
+        if ( bankSim < 1 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "number of template bank simulations"
+              "must be greater than 1: (%d specified)\n", 
+              long_options[option_index].name, bankSim );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", bankSim );
+        break;
+
+      case 'L':
+        if ( ! strcmp( "TaylorT2", optarg ) )
+        {
+          bankSimApproximant = TaylorT2;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown order specified: "
+              "%s (must be TaylorT2)\n", 
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        haveBankSimApprox = 1;
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case 'J':
+        if ( ! strcmp( "urandom", optarg ) )
+        {
+          randSeedType = urandom;
+        }
+        else
+        {
+          randSeedType = user;
+          randomSeed = (INT4) atoi( optarg );
+          ADD_PROCESS_PARAM( "int", "%d", randomSeed );
+        }
+        break;
+
+      case 'U':
+        bankMinMass = (REAL4) atof( optarg );
+        if ( bankMinMass <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "miniumum component mass must be > 0: "
+              "(%f solar masses specified)\n",
+              long_options[option_index].name, bankMinMass );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", bankMinMass );
+        break;
+
+      case 'W':
+        bankMaxMass = (REAL4) atof( optarg );
+        if ( bankMaxMass <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "maxiumum component mass must be > 0: "
+              "(%f solar masses specified)\n",
+              long_options[option_index].name, bankMaxMass );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", bankMaxMass );
+        break;
+
+      case 'G':
+        gaussVar = (REAL4) atof( optarg );
+        if ( gaussVar < 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "variance of gaussian noise must be >= 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, gaussVar );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", gaussVar );
+        gaussianNoise = 1;
+        fprintf( stderr,
+            "WARNING: replacing input data with white gaussian noise\n"
+            "WARNING: replacing response function with unity\n" );
+        break;
+
       case 'z':
         set_debug_level( optarg );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
@@ -2249,6 +2794,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         "--disable-event-cluster" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+  else if ( bankSim )
+  {
+    /* event cluster is not needed for template bank simulation */
+    fprintf( stderr, "WARNING: performing template bank testing\n" );
   }
   else
   {
@@ -2445,16 +2995,19 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     exit( 1 );
   }
 
-  /* check that the thresholds have been specified */
-  if ( snrThresh < 0 )
+  if ( ! bankSim )
   {
-    fprintf( stderr, "--snr-threshold must be specified\n" );
-    exit( 1 );
-  }
-  if ( chisqThresh < 0 )
-  {
-    fprintf( stderr, "--chisq-threshold must be specified\n" );
-    exit( 1 );
+    /* check that the thresholds have been specified */
+    if ( snrThresh < 0 )
+    {
+      fprintf( stderr, "--snr-threshold must be specified\n" );
+      exit( 1 );
+    }
+    if ( chisqThresh < 0 )
+    {
+      fprintf( stderr, "--chisq-threshold must be specified\n" );
+      exit( 1 );
+    }
   }
 
   /* check that the frame caches have been specified */
@@ -2472,6 +3025,43 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     fprintf( stderr, "--bank-file must be specified\n" );
     exit( 1 );
+  }
+
+  /* check that a random seed for gaussian noise generation has been given */
+  if ( gaussianNoise && randSeedType == unset )
+  {
+    fprintf( stderr, "--random-seed must be specified if "
+        "--gaussian-noise is given\n" );
+    exit( 1 );
+  }
+
+  /* check that if we are doing a bank sim that an approx has been given */
+  if ( bankSim )
+  {
+    if ( ! haveBankSimApprox )
+    {
+      fprintf( stderr, "--sim-approximant must be specified if "
+          "--bank-simulation is given\n" );
+      exit( 1 );
+    }
+    if ( randSeedType == unset )
+    {
+      fprintf( stderr, "--random-seed must be specified if "
+          "--bank-simulation is given\n" );
+      exit( 1 );
+    }
+    if ( bankMinMass < 0 )
+    {
+      fprintf( stderr, "--sim-minimum-mass must be specified if "
+          "--bank-simulation is given\n" );
+      exit( 1 );
+    }
+    if ( bankMaxMass < 0 )
+    {
+      fprintf( stderr, "--sim-maximum-mass must be specified "
+          "--bank-simulation is given\n" );
+      exit( 1 );
+    }
   }
 
   return 0;
