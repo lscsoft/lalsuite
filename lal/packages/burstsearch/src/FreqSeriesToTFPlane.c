@@ -469,8 +469,6 @@ LALModModFreqSeriesToTFPlane (
   REAL4          norm = 0.0;
   INT4           filterlen=0;
 
-  FILE *fp;
-  REAL4 zsum = 0;
 
   RealFFTPlan *pfwd = NULL;   /* FFTW uses a plan to assess best FFT method */
   RealFFTPlan *prev = NULL;   /* This one is for the reverse FFT */
@@ -510,27 +508,17 @@ LALModModFreqSeriesToTFPlane (
   ASSERT(tfp->params->deltaT>0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);  
 
   /* 
-   * delF is the frequency resoltion of the time-frequency plane.  It
-   * is directly related to the time resolution so that 
-   *    delT * delF = 1
+   * delF is the frequency resoltion of the time-frequency plane.  
+   * delT is the time resolution of the plane.
    * Note that the frequency resolution of the frequency series does
    * not have to be the same as delF.
    */
   delT = tfp->params->deltaT;
   delF = tfp->params->deltaF;
 
-  /*  printf("nt = %d  nf = %d delF = %f delT = %f \n",nt,nf,delF, delT);*/
   /* number of bins of the frequency series corresponding to delF */
   fseglength = (INT4)( 0.5 + delF/freqSeries->deltaF );  
-  /* printf("fseglength= %d \n",fseglength);*/
-  
-  /*
-   * Length of segments in freq domain must exceed number of time bins
-   * in final TF plane
-   */
-  /* ASSERT(fseglength >= nt, status, LAL_RANGE_ERR, LAL_RANGE_MSG);*/
-
-  
+   
   /* Input lowest frequency must be non-negative */
   ASSERT(freqSeries->f0 >= 0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
@@ -544,11 +532,10 @@ LALModModFreqSeriesToTFPlane (
 
   
   /* compute total number of data points to be used to construct TF plane */
-  /* ntotal = nf * fseglength;*/
-
+   ntotal = nf * fseglength;
   
   /* make sure have enough data points in freq series */
-  /*ASSERT(ntotal + flow1<= (INT4)freqSeries->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);*/
+  ASSERT(ntotal + flow1<= (INT4)freqSeries->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
 
   /* set the epoch of the TF plane */
@@ -576,11 +563,7 @@ LALModModFreqSeriesToTFPlane (
   dt = 1.0 / (((REAL4) numpts) * freqSeries->deltaF) ;
 
   /* number of points from peak of filter to first zero */
-  /*  filterlen =  (INT4) (delT/dt);*/
-
   filterlen = (INT4)(numpts/fseglength);
-
-  /*  filterlen = 8192;*/
 
   /* Create an FFTW plan for forward REAL FFT */
   LALCreateForwardRealFFTPlan( status->statusPtr, &pfwd, numpts, 0);
@@ -616,7 +599,6 @@ LALModModFreqSeriesToTFPlane (
       filter->data[j] = tmpValue;
       filter->data[numpts-j] = tmpValue;
     }
-
   
     /* PRB - Fourier transform the filter into the frequency domain */
     LALForwardRealFFT( status->statusPtr, tmp, filter, pfwd);
@@ -631,27 +613,24 @@ LALModModFreqSeriesToTFPlane (
 
       norm += (re*re + im*im);
     }
-    norm = sqrt(4.0 * norm);
-    */
-
+    norm = sqrt(4.0 * norm);*/
+    
   /* loop over different basis vectors in the frequency domain */
   for(i=0; i< nf; i++)
   {
+    normalisation[i] = 0.0;
+
     /* PRB - set all values below i * df to zero */
     for( j=0 ; j < i*fseglength ; j++)
     {
       REAL4 reFilter = 0.0;
       REAL4 imFilter = 0.0;
-      /*REAL4 reData = freqSeries->data->data[j].re*sqrt(1/psd->data->data[j]);
-	REAL4 imData = freqSeries->data->data[j].im*sqrt(1/psd->data->data[j]);*/
-
       REAL4 reData = freqSeries->data->data[j].re;
       REAL4 imData = freqSeries->data->data[j].im;
 
       fcorr->data[j].re = reFilter * reData + imFilter * imData;
       fcorr->data[j].im = reFilter * imData - imFilter * reData;
 
-      /*normalisation[i] += (1/psd->data->data[j])*(reFilter*reFilter + imFilter*imFilter);*/
       normalisation[i] += (reFilter*reFilter + imFilter*imFilter);
     }
 
@@ -659,18 +638,14 @@ LALModModFreqSeriesToTFPlane (
      * conjugate and any other relevant information */
     for(j = i * fseglength; (unsigned) j < freqSeries->data->length; j++)
     {
-      REAL4 reFilter = tmp->data[j-i*fseglength].re;
-      REAL4 imFilter = tmp->data[j-i*fseglength].im;
-      /*REAL4 reData = freqSeries->data->data[j].re*sqrt(1/psd->data->data[j]);
-	REAL4 imData = freqSeries->data->data[j].im*sqrt(1/psd->data->data[j]);*/
-
+      REAL4 reFilter = tmp->data[j-i*fseglength].re/sqrt(psd->data->data[j]);
+      REAL4 imFilter = tmp->data[j-i*fseglength].im/sqrt(psd->data->data[j]);
       REAL4 reData = freqSeries->data->data[j].re;
       REAL4 imData = freqSeries->data->data[j].im;
 
       fcorr->data[j].re = reFilter * reData + imFilter * imData;
       fcorr->data[j].im = reFilter * imData - imFilter * reData;
 
-      /*normalisation[i] += (1/psd->data->data[j])*(reFilter*reFilter + imFilter*imFilter);*/
       normalisation[i] += (reFilter*reFilter + imFilter*imFilter);
     }
 
@@ -719,8 +694,6 @@ LALModModFreqSeriesToTFPlane (
 	tfp->data[j*nf+i].im = 0.0;
       }
   }
-
-  /* printf("%f\n", zsum/sqrt(nf));*/
 
   /* Get rid of all temporary memory */
   LALDestroyRealFFTPlan( status->statusPtr, &pfwd ); 

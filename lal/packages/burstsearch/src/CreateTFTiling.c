@@ -358,7 +358,7 @@ LALModCreateTFTiling (
   fhigh = planeParams->fhigh;
 
   /* time duration to be searched for, this will determine the no. of time
-   * bins in the plane. This should be determined by windowlength:
+   * bins in the plane. 
    */
 
   timeDuration = planeParams->timeDuration;  

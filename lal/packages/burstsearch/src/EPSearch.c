@@ -306,6 +306,7 @@ EPSearch(
 	RealDFTParams            *dftparams = NULL;
 	LALWindowParams           winParams;
 	REAL4FrequencySeries     *AverageSpec;
+	REAL4FrequencySeries     *Psd;
 	REAL4TimeSeries          *cutTimeSeries;
 	SnglBurstTable          **EventAddPoint = burstEvent;
 	TFTiling                 *tfTiling = NULL;
@@ -331,6 +332,24 @@ EPSearch(
 	CHECKSTATUSPTR(status);
 	ComputeAverageSpectrum(status->statusPtr, AverageSpec, tseries, params);
 	CHECKSTATUSPTR(status);
+
+	LALCreateREAL4FrequencySeries(status->statusPtr, &Psd, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->windowLength / 2 + 1);
+	CHECKSTATUSPTR(status);
+	Psd->deltaF = AverageSpec->deltaF;
+	Psd->epoch = AverageSpec->epoch;
+	if(params->useOverWhitening){
+	  for(i=0; i<Psd->data->length;i++){
+	    Psd->data->data[i] = AverageSpec->data->data[i];
+	  }
+	}
+	else{
+    	  for(i=0; i<Psd->data->length;i++){
+	    Psd->data->data[i] = 1.0;
+	  }
+	}
+
+	if(params->printSpectrum)
+		print_real4fseries(Psd, "psd.dat");
 
 	if(params->printSpectrum)
 		print_real4fseries(AverageSpec, "average_spectrum.dat");
@@ -414,14 +433,13 @@ EPSearch(
 		  LALComputeTFPlanes(status->statusPtr, tfTiling, fseries, params->windowShift);
 		else{
 		  normalisation = LALMalloc(params->tfPlaneParams.freqBins * sizeof(REAL4));
-		  LALModComputeTFPlanes(status->statusPtr, tfTiling, fseries, params->windowShift, normalisation, AverageSpec);
+		  LALModComputeTFPlanes(status->statusPtr, tfTiling, fseries, params->windowShift, normalisation, Psd);
 		}
 		CHECKSTATUSPTR(status);
 	
                  /*
 		 * Search these planes.
 		 */
-
 		LALInfo(status->statusPtr, "Computing the excess power");
 		CHECKSTATUSPTR(status);
 		if (params->tfPlaneMethod == useMultipleTFPlane)
@@ -486,7 +504,8 @@ EPSearch(
 	CHECKSTATUSPTR(status);
 	LALDestroyREAL4FrequencySeries(status->statusPtr, AverageSpec);
 	CHECKSTATUSPTR(status);
-
+	LALDestroyREAL4FrequencySeries(status->statusPtr, Psd);
+	CHECKSTATUSPTR(status);
 	/*
 	 * Normal exit.
 	 */

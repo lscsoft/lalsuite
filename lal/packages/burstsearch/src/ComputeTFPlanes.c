@@ -128,8 +128,6 @@ LALModComputeTFPlanes (
       COMPLEX8TimeFrequencyPlane    **thisPlane;
       ComplexDFTParams              **thisDftParams;
       HorizontalTFTransformIn       transformparams;
-      int                           j;
-      FILE *fp;
 
       thisPlane = tfTiling->tfp;
       ASSERT(thisPlane, status, LAL_NULL_ERR, LAL_NULL_MSG);

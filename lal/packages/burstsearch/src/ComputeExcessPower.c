@@ -229,15 +229,15 @@ LALModComputeExcessPower (
       
 
   thisTile = tfTiling->firstTile;
-  
+
   while (thisTile != NULL)
     {
       COMPLEX8TimeFrequencyPlane *tfPlane;
-      REAL8 sum, sumalt;
+      REAL8 sum;
       REAL8 dof;
       REAL8 rho2;
       REAL8 numsigma;
-      REAL4 sumnorm;
+      REAL8 sumnorm;
 
       INT4 j;
       INT4 ii;
@@ -265,8 +265,6 @@ LALModComputeExcessPower (
       k1=thisTile->fstart;
       k2=thisTile->fend;
 
-      /*      printf(" k1 = %d k2 = %d t1 = %d t2 = %d\n", k1,k2,t1,t2);*/
-
       ASSERT((t1>=0) && (t1<=t2) && (t2<=nt), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
       ASSERT((k1>=0) && (k1<=k2) && (k2<=nf), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
     
@@ -276,7 +274,6 @@ LALModComputeExcessPower (
       /* printf("searching tile = %d whose dof = %f\n",count, dof);*/
 
       sum=0.0;
-      sumalt = 0.0;
       for(j=t1; j<t2; j+=(INT4)((t2-t1)/dof))
 	{
 	  COMPLEX8 sumz;
@@ -303,10 +300,12 @@ LALModComputeExcessPower (
       /* printf(" sum calculated for tile no %d\n", count );*/
       /*   count++;
       fp = fopen("power.dat","a");
-      if((dof == 2) && (count%4==0)){
-	fprintf(fp,"%f %f\n",dof,sum);
+      if((dof == 2) && (k1 == 0) && (k2 == 16) && (t1 == 0) && (t2 == 2) && (count==0)){
+	count++;
+	fprintf(fp,"%d %d %d %d %f %f %f\n",k1,k2,t1,t2,sumnorm,dof,sum);
       }
-      fclose(fp); */
+      fclose(fp); 
+      */
 
       /*
        *  need to compute an accurate value of likelihood only if
