@@ -130,8 +130,8 @@ tagFindChirpSlaveParams
 {
   UINT4                         dataConditioned;
   UINT4                        *inspiralDebugFlagPtr;
-  REAL4                        *chisqThreshVec;
   REAL4                        *rhosqThreshVec;
+  REAL4                        *chisqThreshVec;
   FILE                         *tmpltBankFilePtr;
   FILE                         *eventFilePtr;
   FindChirpSegmentVector       *fcSegVec;
@@ -140,6 +140,7 @@ tagFindChirpSlaveParams
   FindChirpFilterParams        *filterParams;
   FindChirpFilterInput         *filterInput;
   FindChirpSimulationParams    *simParams;
+  BOOLEAN                      *notFinished;
   BOOLEAN                       useMPI;
   void                         *mpiComm;
 }
@@ -187,14 +188,14 @@ void
 LALFindChirpMaster (
     LALStatus                  *status, 
     InspiralEvent             **eventList,
-    FindChirpMasterParams       *params 
+    FindChirpMasterParams      *params 
     );
 #endif /* LAL_MPI_ENABLED */
 
 void
 LALFindChirpSlave (
     LALStatus                  *status, 
-    BOOLEAN                    *notFinished,
+    InspiralEvent             **outputEventHandle,
     DataSegmentVector          *dataSegVec,
     FindChirpSlaveParams        *params 
     );
