@@ -2340,7 +2340,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
     exit(1);
   }
 
-  /* check for required arguments arguments */
+  /* check for required arguments */
 
   /* start time */
   if (startTime == 0)
