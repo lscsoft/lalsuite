@@ -171,7 +171,7 @@ typedef struct tagTaylorCWParamStruc {
 \newpage\input{GenerateTaylorCWC}
 </lalLaTeX> */
 void
-LALGenerateTaylorCW( LALStatus          *stat,
+LALGenerateTaylorCW( LALStatus          *,
 		     CoherentGW         *output,
 		     TaylorCWParamStruc *params );
 

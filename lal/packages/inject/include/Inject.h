@@ -115,13 +115,13 @@ NRCSID( INJECTH, "$Id$" );
 \newpage\input{InjectVectorC}
 </lalLaTeX> */
 void
-LALSI2InjectVector( LALStatus    *stat,
+LALSI2InjectVector( LALStatus    *,
 		    INT2Vector   *output,
 		    REAL4Vector  *signal,
 		    RandomParams *params );
 
 void
-LALSSInjectVector( LALStatus    *stat,
+LALSSInjectVector( LALStatus    *,
 		   REAL4Vector  *output,
 		   REAL4Vector  *signal );
 
@@ -129,13 +129,13 @@ LALSSInjectVector( LALStatus    *stat,
 \newpage\input{InjectTimeSeriesC}
 </lalLaTeX> */
 void
-LALSI2InjectTimeSeries( LALStatus       *stat,
+LALSI2InjectTimeSeries( LALStatus       *,
 			INT2TimeSeries  *output,
 			REAL4TimeSeries *signal,
 			RandomParams    *params );
 
 void
-LALSSInjectTimeSeries( LALStatus       *stat,
+LALSSInjectTimeSeries( LALStatus       *,
 		       REAL4TimeSeries *output,
 		       REAL4TimeSeries *signal );
 

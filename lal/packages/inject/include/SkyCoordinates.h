@@ -379,22 +379,22 @@ typedef struct tagConvertSkyParams {
 \newpage\input{CelestialCoordinatesC}
 </lalLaTeX> */
 void
-LALGalacticToEquatorial( LALStatus   *stat,
+LALGalacticToEquatorial( LALStatus   *,
 			 SkyPosition *output,
 			 SkyPosition *input );
 
 void
-LALEquatorialToGalactic( LALStatus   *stat,
+LALEquatorialToGalactic( LALStatus   *,
 			 SkyPosition *output,
 			 SkyPosition *input );
 
 void
-LALEclipticToEquatorial( LALStatus   *stat,
+LALEclipticToEquatorial( LALStatus   *,
 			 SkyPosition *output,
 			 SkyPosition *input );
 
 void
-LALEquatorialToEcliptic( LALStatus   *stat,
+LALEquatorialToEcliptic( LALStatus   *,
 			 SkyPosition *output,
 			 SkyPosition *input );
 
@@ -402,40 +402,40 @@ LALEquatorialToEcliptic( LALStatus   *stat,
 \newpage\input{TerrestrialCoordinatesC}
 </lalLaTeX> */
 void
-LALGeographicToEquatorial( LALStatus   *stat,
+LALGeographicToEquatorial( LALStatus   *,
 			   SkyPosition *output,
 			   SkyPosition *input,
 			   LIGOTimeGPS *gpsTime );
 
 void
-LALEquatorialToGeographic( LALStatus   *stat,
+LALEquatorialToGeographic( LALStatus   *,
 			   SkyPosition *output,
 			   SkyPosition *input,
 			   LIGOTimeGPS *gpsTime );
 
 void
-LALSystemToHorizon( LALStatus   *stat,
+LALSystemToHorizon( LALStatus   *,
 		    SkyPosition *output,
 		    SkyPosition *input,
 		    const SkyPosition *zenith );
 
 void
-LALHorizonToSystem( LALStatus   *stat,
+LALHorizonToSystem( LALStatus   *,
 		    SkyPosition *output,
 		    SkyPosition *input,
 		    const SkyPosition *zenith );
 
 void
-LALGeodeticToGeocentric( LALStatus *stat, EarthPosition *location );
+LALGeodeticToGeocentric( LALStatus *, EarthPosition *location );
 
 void
-LALGeocentricToGeodetic( LALStatus *stat, EarthPosition *location );
+LALGeocentricToGeodetic( LALStatus *, EarthPosition *location );
 
 /* <lalLaTeX>
 \newpage\input{SkyCoordinatesC}
 </lalLaTeX> */
 void
-LALConvertSkyCoordinates( LALStatus        *stat,
+LALConvertSkyCoordinates( LALStatus        *,
 			  SkyPosition      *output,
 			  SkyPosition      *input,
 			  ConvertSkyParams *params );

@@ -349,7 +349,7 @@ typedef struct tagGalacticInspiralParamStruc {
 \newpage\input{GeneratePPNInspiralC}
 </lalLaTeX> */
 void
-LALGeneratePPNInspiral( LALStatus     *stat,
+LALGeneratePPNInspiral( LALStatus     *,
 			CoherentGW    *output,
 			PPNParamStruc *params );
 
@@ -357,7 +357,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
 \newpage\input{GetInspiralParamsC}
 </lalLaTeX> */
 void
-LALGetInspiralParams( LALStatus                  *stat,
+LALGetInspiralParams( LALStatus                  *,
 		      PPNParamStruc              *output,
 		      GalacticInspiralParamStruc *input,
 		      RandomParams               *params );
