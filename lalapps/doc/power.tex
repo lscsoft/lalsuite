@@ -15,70 +15,50 @@ Put a summary of the excess power algorithm here .........
 
 \begin{enumerate}
 
-\item copy the dag script (\texttt{burstinjburca\_pipeline.py}, if you are running
-on the double coincident data with injections) from the power dir. to
-your working dir.:
-\begin{verbatim}
-cp ~/src/lalapps/src/power/burstinjburca_pipeline.py ./
-\end{verbatim}
+\item Make sure you have the dag script suited to your needs
+(For eg. \texttt{bursttripleifo\_pipeline.py} runs on triple coincident data
+with software injections )
 
-\item copy the corresponding input file to \texttt{burst\_dag.ini} in your working
-directory:
-\begin{verbatim}
-cp ~/src/lalapps/src/power/burstinjburca_dag.ini ./burst_dag.ini
-\end{verbatim}
+\item Make sure you have the right input file (For eg.\texttt{burstripleifot\_dag.ini} )
 
-\item now generate the data file with the relevant DQ
-flags using segwizard and name the file S2H1L1Science\_3.txt (if you
-want you can cp the file from one of my recent directories
-say \texttt{/scratch/saikat/realdata/poweburcainjec\_113003\_1} to your working
-dir. )
+\item Need to have a file containing the list of segmnets to be analyzed. 
+May use \texttt{segwizrd} for that.
 
-\item Now at this point you have two options:   a) to generate the
-framecache files using LALdataFind or,    b) to use the framecache
-files that I have already generated.
 \begin{enumerate}
 
-\item This describes the  steps to follow if you want to generate your
-own frame cache files:    
+\item Now here are the steps describing how to run the jobs: 
 
-1) run
-the dag script as follows:    ./burstinjburca\_pipeline.py -f
-burst\_dag.ini -p -l /people/patrick/log     ( the log files will be
-written in the dir. /people/saikat/log; nowfor the proper running of
-LALdataFind make sure that the environmentis set correctly in the dag
-script, the environment should be set asfollows:environment
-=LD\_LIBRARY\_PATH=$ENV(LD_LIBRARY_PATH);PYTHONPATH=$ENV(PYTHONPATH)
-)    
-
-2)then submit the dag:
+1) If you want to create the cache files run the dag script as follows: 
 \begin{verbatim}
-condor_submit_dag burst_dag.dag
+./bursttripleifo_pipeline.py -f bursttripleifo_dag.ini -p -l /people/saikat/log 
+\end{verbatim}    
+( the log files will be written in the dir /people/saikat/log )     
+
+2)The previous step will create a dag file \texttt{bursttripleifo\_dag.dag}
+Submit the dag:
+\begin{verbatim}
+condor_submit_dag bursttripleifo_dag.dag 
 \end{verbatim}
 
-\item  This now describes the steps if you want to use the frame cache
-fileswhich have already been generated:    
+\item  Now if you want to use the cache files from a previous run:    
 
-1) create a sim link to the relevant
-dir., for double coincident datado:
+1) Make sure you create a sim link to the relevant
+dir. containing the cache files. For eg.:
 \begin{verbatim}
-$ ln -s /scratch/saikat/realdata/H1L1_mod-dq_cache/ cache   
+ln -s /scratch/saikat/realdata/S2cachefiles cache   
 \end{verbatim}
 
-2) then run the
-script: 
+2) Run the script: 
 \begin{verbatim}
-$ ./burstinjburca_pipeline.py -f burst_dag.ini -p -c -l/people/patrick/log    
+ ./burstinjburca_pipeline.py -f burst_dag.ini -p -c -l /people/patrick/log    
 \end{verbatim}
-
-3) submit the dag:
+Note the extra flag \texttt{-c} which indicates that the LSCDataFind jobs are
+to be skipped.
+ 
+3) Submit the dag:
 \begin{verbatim}
-$ condor_submit_dag burst_dag.dag
+ condor_submit_dag bursttripleifo_dag.dag
 \end{verbatim}
-So, as far as I could think these are all.....,Now about
-the H1 plot, do we need to generate that plot before we can postour
-triggers? If not then I was tinking may be I'll do that plot once Iget
-back to Milwaukee. Does that sound o.k.? 
 \end{enumerate}
 \end{enumerate}
 
@@ -119,21 +99,25 @@ $\backslash$ \newline \hspace*{0.25in}
 \verb$--window$ \textsc{window} 
 \verb$--start_time$ \textsc{sec} 
 \verb$--start_time_ns$ \textsc{nsec} 
-\verb$--numpts$ \textsc{numpts} 
+\verb$--stop_time$ \textsc{sec}  
 $\backslash$ \newline \hspace*{0.25in}
+\verb$--stop_time_ns$ \textsc{nsec}
 \verb$--srate$ \textsc{srate} 
 [\verb$--printSpectrum$] 
 [\verb$--cluster$]
-[\verb$--noise$ \textsc{var}] 
-[\verb$--seed$ \textsc{seed}] 
+[\verb$--noise$ \textsc{var}]  
 $\backslash$ \newline \hspace*{0.25in}
+[\verb$--seed$ \textsc{seed}]
 [\verb$--calcache$ \textsc{calcache}] 
 [\verb$--injfile$ \textsc{injfile}] 
 [\verb$--comment$ \textsc{comment}]
+$\backslash$ \newline \hspace*{0.25in}
 [\verb$--dbglevel$ \textsc{dbglevel}]
-
+[\verb$--mdccache$ \textsc{mdccache}]
+[\verb$--mdcchannel$ \textsc{mdcchannel}]
+[\verb$--geodata$ \textsc{geofreq}]
 \item[Description] 
-\verb$lal_power$ runs the excess power code from LAL on a chunk of
+\verb$lalapps_power$ runs the excess power code from LAL on a chunk of
 real or simulated data.    Consider searching  for signals with the
 following properties:
 \begin{itemize}
@@ -181,8 +165,13 @@ segment is determined by
 \mbox{\textsc{npts}} = (T \times \mbox{\textsc{srate}}) \; .
 \]  
 
-\item[\texttt{--nseg} \textsc{nseg}] Number of overlapping segments into
-which data should be divided for filtering;  must be an integer. 
+\item[\texttt{--nseg} \textsc{nseg}] Number of segments over which the 
+code loops internally;  must be an integer. Note this is different from 
+\texttt{--segdcle}. The code fetches amount of data corresponding to
+\texttt{nseg} at a time and then runs on that data in a cylce given by
+\texttt{--segdcle}. Then it fetches the next \texttt{nseg} amount of 
+data and again repeats the loop. This goes on till the end time given
+by \texttt{stop\_time}(see below) is reached.   
 
 \item[\texttt{--olap} \textsc{olap}] Number of points overlap between
 segments.  This is an argument for completeness,  but in general it
@@ -255,6 +244,12 @@ data to avoid data corrupted by the low-pass filtering.
 \item[\texttt{--start\_time\_ns} \textsc{nsec}] The number of
 nanoseconds after \textsc{sec} for the time series read from frames. 
 
+\item[\texttt{--stop\_time} \textsc{sec}] The GPS time
+corresponding to the end of the time series read from frames.  
+
+\item[\texttt{--stop\_time\_ns} \textsc{nsec}] The number of
+nanoseconds after \textsc{sec} for the time series read from frames.
+
 \item[\texttt{--framecache} \textsc{frcache}] A LAL format frame
 cache file.    The \textsc{frcache} can be a filename in the local
 directory,  or a filename including absolute path.   These cache files
@@ -264,10 +259,20 @@ constructed by making calls to \emph{LALdataFind} on some systems.
 \item[\texttt{--calcache} \textsc{calcache}] A LAL format frame
 cache file.    The \textsc{calcache} can be a filename in the local
 directory,  or a filename including absolute path.   These cache files
-are explained in the \emph{framedata} package in LAL.   A calibration
+are explained in the \emph{framedata} package in LAL. A calibration
 cache file should give information for the frames needed to construct
 the relevant calibration information from the reference calibrations
 and the $\alpha$ and $\beta$ coefficients.   
+
+\item[\texttt{--geodata} \textsc{geofreq}] If the code is to run on GEO
+data instead of LIGO data. The argument corresponds to the high pass
+corner frequency. 
+
+\item[\texttt{--mdccache} \textsc{mdccache}] If one wants to use the 
+signal only MDC frames for injections.
+
+\item[\texttt{--mdcchannel} \textsc{mdcchannel}] This corresponds to 
+the channel of the signal only MDC frames. 
 
 \item[\texttt{--injfile} \textsc{injfile}]  A LIGO lightweight XML
 file containing a list of injections to be made.   The file should
@@ -285,21 +290,6 @@ data;  a character string [\texttt{useMean}, \texttt{useMedian}].
 \item[\texttt{--window} \textsc{window}] Type of window to use on the data;
 must be an integer.  [Possible values are:  0=Rectangular, 1=Hann,
 2=Welch, 3=Bartlett, 4=Parzen, 5=Papoulis, 6=Hamming.]
-
-\item[\texttt{--numpts} \textsc{numpts}] The number of points of data
-to be extracted from the frame files may be determined by the
-following formula
-\[
-\mbox{\textsc{numpts}} = \mbox{\textsc{nseg}} \times (
-\mbox{\textsc{npts}} - 
-\mbox{\textsc{olap}} ) + 3 \times
-\mbox{\textsc{olap}} \; .
-\]
-Notice that this appears to be $2 \times \textsc{olap}$ more points
-than you might expect.   Since the data stream is high-pass filtered
-internally,   the code ignores the first $\textsc{olap}$ points and
-requires that there be an extra $\textsc{olap}$ points at the end to
-avoid data corruption.
 
 \item[\texttt{--cluster}] Apply a clustering algorithm to tiles
 identified by the excess power code.  The result is reduction of
@@ -336,12 +326,15 @@ to turn off memory tracking completely,  then use 33.
 \item[Example]
 To run the program,  type:
 \begin{verbatim}
-lalapps_power --cluster --npts 4096 --nseg 64 --olap 2048 --olapfctr 3 \
---minfbin 2 --mintbin 2 --flow 60 --delf 1 --lngth 1024 --srate 4096 \   
---nsigma 2 --alphdef 0.5 --segdcle 32 --threshold 1.0e-05 --etomstr 100 \  
---channel L1:LSC-AS_Q  --simtype 0 --spectype useMedian --window 2 \
---start_time 731488397 --start_time_ns 0 --numpts 137216 --noiseamp 1 \
---seed 8 --comment test_this_again --dbglevel 33 --verbose
+ lalapps_power --npts 16384  --nseg 1200  --olap 8192   --olapfctr 3   --minfbin 2 \
+ --mintbin 2   --flow 130   --delf 1   --lngth 256   --nsigma 2   \
+ --alphdef 0.5   --segdcle 64   --threshold 1e-09   --etomstr 100 \
+ --channel H1:LSC-AS_Q   --simtype 0  --spectype useMedian  --window 2 \
+ --start_time 729332600    --start_time_ns 0 --stop_time 729332800  \
+ --stop_time_ns 0  --srate 16384   --framecache frcache-H-729332032-729333188.out \
+ --comment 040511 --verbose  --dbglevel 65 \
+ --calcache /ldas_outgoing/calibration/cache_files/H1-CAL-V03-729273600-734367600.cache \
+ --injfile HL-INJECTIONS_1_S20507043-729332032-1156.xml \
 \end{verbatim}
 
 \item[Author]
