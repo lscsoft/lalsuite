@@ -78,6 +78,7 @@ main(int argc, char *argv[])
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
 
   /* register all user-variables */
+  LAL_CALL (UVARgetDebugLevel (&status, argc, argv, 'd'), &status);
   LAL_CALL (initUserVars (&status), &status);	  
 
   /* read cmdline & cfgfile  */	
@@ -154,8 +155,7 @@ initUserVars (LALStatus *stat)
 
   regSTRINGUserVar(stat, sftBname1,	'1', UVAR_REQUIRED, "Path and basefilename for SFTs1");
   regSTRINGUserVar(stat, sftBname2,	'2', UVAR_REQUIRED, "Path and basefilename for SFTs2");
-  regINTUserVar(stat,    debug,		'v', UVAR_OPTIONAL, "set debug-level");
-  regBOOLUserVar(stat,   help,		'h', UVAR_HELP, "Print this help/usage message");
+  regBOOLUserVar(stat,   help,		'h', UVAR_HELP,     "Print this help/usage message");
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);

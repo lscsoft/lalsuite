@@ -94,7 +94,6 @@ CHAR *uvar_noiseDir;
 BOOLEAN uvar_doWindowing;
 BOOLEAN uvar_binaryoutput;
 BOOLEAN uvar_nomagic;
-INT4 uvar_debug;
 BOOLEAN uvar_help;
 REAL8 uvar_Tsft;
 INT4 uvar_nTsft;
@@ -136,16 +135,13 @@ main(int argc, char *argv[])
   /* ------------------------------ 
    * read user-input and set up shop
    *------------------------------*/
+  LAL_CALL (UVARgetDebugLevel (&status, argc, argv, 'v'), &status);
+
   LAL_CALL (InitMakefakedata (&status, &GV, argc, argv), &status);
 
   if (uvar_help)	/* help was called, do nothing here.. */
     return (0);
 
-  /* set debug-level */
-  if (UVARwasSet (&uvar_debug) )
-    lalDebugLevel = uvar_debug;
-  
-  
   /*----------------------------------------
    * fill the PulsarSignalParams struct 
    *----------------------------------------*/
@@ -399,7 +395,6 @@ initUserVars (LALStatus *stat)
   uvar_doWindowing = FALSE;
   uvar_binaryoutput = FALSE;
   uvar_nomagic = FALSE;
-  uvar_debug = lalDebugLevel;
   uvar_help = FALSE;
   uvar_Tsft = 1800;
   uvar_sigma = 0.0;
@@ -413,30 +408,26 @@ initUserVars (LALStatus *stat)
   regSTRINGUserVar(stat, outTDDFile,	't', UVAR_OPTIONAL, "Filename for output time-series");
   regSTRINGUserVar(stat, detector,     	'I', UVAR_REQUIRED, "Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME");
   regREALUserVar(stat,   startTime,	'G', UVAR_OPTIONAL, "Detector GPS time to start data");
-  regSTRINGUserVar(stat, timestampsFile, 0 , UVAR_OPTIONAL, "Timestamps file");
-  regREALUserVar(stat,   refTime, 	'S', UVAR_OPTIONAL, "Reference time tRef at which pulsar is defined");
+  regREALUserVar(stat,   refTime, 	'S', UVAR_OPTIONAL, "Reference time tRef (in UTC) at which pulsar is defined");
   regSTRINGUserVar(stat, ephemDir,	'E', UVAR_OPTIONAL, "Directory path for ephemeris files");
   regSTRINGUserVar(stat, noiseDir,	'D', UVAR_OPTIONAL, "Directory with noise-SFTs");
-  regBOOLUserVar(stat,   doWindowing, 	'w', UVAR_OPTIONAL, "Window data in time domain before doing FFT");
-  regBOOLUserVar(stat,   binaryoutput,	'b', UVAR_OPTIONAL, "Output time-domain data in IEEE754 binary format");
-  regBOOLUserVar(stat,   nomagic,	'm', UVAR_OPTIONAL, "DON'T output 1234.5 before time-domain binary samples");
-  regINTUserVar(stat,    debug,		'v', UVAR_OPTIONAL, "set debug-level");
+  regSTRINGUserVar(stat, timestampsFile, 0 , UVAR_OPTIONAL, "Timestamps file");
+  regREALUserVar(stat,   Tsft, 		 0 , UVAR_OPTIONAL, "SFT time baseline Tsft");
+  regINTUserVar(stat,    nTsft,		 0 , UVAR_REQUIRED, "Number of SFTs nTsft");
+  regREALUserVar(stat,   fmin,		 0 , UVAR_REQUIRED, "lowest frequency in output SFT");
+  regREALUserVar(stat,   Band,		 0 , UVAR_REQUIRED, "bandwidth of output SFT");
+  regREALUserVar(stat,   sigma,		 0 , UVAR_OPTIONAL, "noise variance sigma");
+  regREALUserVar(stat,   aPlus,		 0 , UVAR_REQUIRED, "Plus polarization amplitude aPlus");
+  regREALUserVar(stat,   aCross, 	 0 , UVAR_REQUIRED, "Cross polarization amplitude aCross");
+  regREALUserVar(stat,   psi,  		 0 , UVAR_REQUIRED, "Polarization angle psi");
+  regREALUserVar(stat,   phi0,		 0 , UVAR_REQUIRED, "Initial phase phi");
+  regREALUserVar(stat,   f0,  		 0 , UVAR_REQUIRED, "Pulsar frequency f0 at tRef");
+  regREALUserVar(stat,   latitude, 	 0 , UVAR_REQUIRED, "Declination [radians] delta of pulsar");
+  regREALUserVar(stat,   longitude,	 0 , UVAR_REQUIRED, "Right ascension [radians] alpha of pulsar");
+  regREALUserVar(stat,   f1dot,  	 0 , UVAR_OPTIONAL, "First spindown parameter f'");
+  regREALUserVar(stat,   f2dot,  	 0 , UVAR_OPTIONAL, "Second spindown parameter f''");
+  regREALUserVar(stat,   f3dot,  	 0 , UVAR_OPTIONAL, "Third spindown parameter f'''");
   regBOOLUserVar(stat,   help,		'h', UVAR_HELP    , "Print this help/usage message");
-  regREALUserVar(stat,   Tsft, 		'T', UVAR_OPTIONAL, "SFT time baseline Tsft");
-  regINTUserVar(stat,    nTsft,		'N', UVAR_REQUIRED, "Number of SFTs nTsft");
-  regREALUserVar(stat,   fmin,		'F', UVAR_REQUIRED, "lowest frequency in output SFT");
-  regREALUserVar(stat,   Band,		'B', UVAR_REQUIRED, "bandwidth of output SFT");
-  regREALUserVar(stat,   sigma,		's', UVAR_OPTIONAL, "noise variance sigma");
-  regREALUserVar(stat,   aPlus,		'A', UVAR_REQUIRED, "Plus polarization amplitude aPlus");
-  regREALUserVar(stat,   aCross, 	'x', UVAR_REQUIRED, "Cross polarization amplitude aCross");
-  regREALUserVar(stat,   psi,  		'P', UVAR_REQUIRED, "Polarization angle psi");
-  regREALUserVar(stat,   phi0,		'p', UVAR_REQUIRED, "Initial phase phi");
-  regREALUserVar(stat,   f0,  		'f', UVAR_REQUIRED, "Pulsar frequency f0 at tRef");
-  regREALUserVar(stat,   latitude, 	'a', UVAR_REQUIRED, "Declination [radians] delta of pulsar");
-  regREALUserVar(stat,   longitude,	'd', UVAR_REQUIRED, "Right ascension [radians] alpha of pulsar");
-  regREALUserVar(stat,   f1dot,  	'1', UVAR_OPTIONAL, "First spindown parameter f'");
-  regREALUserVar(stat,   f2dot,  	'2', UVAR_OPTIONAL, "Second spindown parameter f''");
-  regREALUserVar(stat,   f3dot,  	0, UVAR_OPTIONAL, "Third spindown parameter f'''");
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
