@@ -79,6 +79,19 @@ AC_DEFUN(LALAPPS_ENABLE_FRAME,
         ], [ frame=true ] )
 ])
 
+AC_DEFUN(LALAPPS_ENABLE_DATAFLOW,
+[AC_ARG_ENABLE(
+        frame,
+        [  --enable-dataflow       compile code that requires Frame library [default=yes] ],
+        [ case "${enableval}" in
+            yes) dataflow=true;;
+            no)  dataflow=false ;;
+            *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
+          esac
+        ], [ dataflow=false ] )
+])
+
+
 AC_DEFUN(LALAPPS_DISABLE_FRAME,
 [echo "**************************************************************"
  echo "*                                                            *"

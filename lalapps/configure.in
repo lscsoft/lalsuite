@@ -10,6 +10,7 @@ LALAPPS_WITH_EXTRA_LDFLAGS
 LALAPPS_WITH_EXTRA_LIBS
 LALAPPS_ENABLE_CONDOR
 LALAPPS_ENABLE_FRAME
+LALAPPS_ENABLE_DATAFLOW
 
 dnl Checks for programs.
 AC_PROG_AWK
@@ -40,6 +41,10 @@ if test "${frame}" = "true"; then
   AC_CHECK_LIB(Frame, FrLibIni, , LALAPPS_DISABLE_FRAME)
 fi
 rm -f confjunk.c
+if test "${dataflow}" = "true"; then
+  AC_CHECK_LIB(dataflow, MetaioOpen, , AC_MSG_ERROR(could not find the dataflow library))
+fi
+rm -f confjunk.c
 echo 'int lalDebugLevel=0;' > confjunk.c
 $CC -c confjunk.c
 dnl LALAPPS_CHECK_LAL
@@ -55,6 +60,9 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([lal/LALStdlib.h])
 if test "${frame}" = "true"; then
   AC_CHECK_HEADERS(FrameL.h, , LALAPPS_DISABLE_FRAME)
+fi
+if test "${dataflow}" = "true"; then
+  AC_CHECK_HEADERS(metaio.h, , AC_MSG_ERROR(could not find metaio.h))
 fi
 
 AM_CONDITIONAL(FRAME, test x$frame = xtrue)
