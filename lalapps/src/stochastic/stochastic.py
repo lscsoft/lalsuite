@@ -204,6 +204,25 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
                str(self.get_end()) + '.xml'
     return filename
 
+  def get_output_bayes(self):
+    """
+    Returns the file name of output from the stochastic bayesian search
+    code. This must be kept synchronized with the name of the output
+    file in stochastic.c.
+    """
+    if not self.get_start() or not self.get_end() or not \
+      self.get_ifo_one() or not self.get_ifo_two() or not \
+      self.get_f_min() or not self.get_f_max():
+        raise StochasticError, "Start time, end time, ifo one, ifo " \
+          "two, f_min or f_max has not been set"
+
+     filename = self.get_ifo_one() + self.get_ifo_two() + '-' + \
+                str(self.get_start()) + '-' str(self.get_end()) + '-' \
+                + str(self.get_f_min()) + '-' + str(self.get_f_max()) \
+                + '.xml'
+
+     return filename
+
 
 class StoppJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
