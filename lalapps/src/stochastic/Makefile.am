@@ -1,8 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 if LALFRAME
-LALFRAMEPROGRAMS = lalapps_stochastic lalapps_stochastic_dev\
-									 lalapps_stochastic_dag
+LALFRAMEPROGRAMS = lalapps_stochastic lalapps_stochastic_dev
 else
 LALFRAMEPROGRAMS =
 endif
