@@ -413,8 +413,8 @@ INT4 main(INT4 argc, CHAR *argv[])
      {fprintf(stdout, "Allocating memory for MC...\n");}
 
     MCdeltaT = 1.0 / resampleRate;
-    MCdeltaF = (REAL8)resampleRate / (REAL8)segmentLength;
-    MCfreqLength = segmentLength / 2 + 1;
+    MCdeltaF = (REAL8)resampleRate / (REAL8)segmentPadLength;
+    MCfreqLength = segmentPadLength / 2 + 1;
 
     /* create vectors to store the simulated signal */
     strncpy(SimStochBG1.name, "Whitened-SimulatedSB1",LALNameLength);
