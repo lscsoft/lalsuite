@@ -11,4 +11,4 @@ noinst_LTLIBRARIES = liblalapps.la
 liblalapps_la_SOURCES = lalapps.c lalapps.h getopt.c getopt1.c getopt.h \
                         processtable.c processtable.h $(FRAMESRCS)
 INCLUDES = -I$(top_srcdir)/src
-EXTRA_DIST = series.c series.h
+EXTRA_DIST = series.c series.h $(SCRIPTS)

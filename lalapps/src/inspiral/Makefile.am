@@ -36,7 +36,7 @@ lalapps_inspiral_pipe: inspiral_pipe.in
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(TRIGTOTMPLTSRC) $(PRINTINSPIRALSRC) \
              $(INCASRC) inspiral_pipe.in s2_dag.ini \
-             $(COHERESRC)
+             $(COHERESRC) $(SCRIPTS)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
