@@ -274,6 +274,16 @@ LALFindChirpBCVData (
     FindChirpSPDataParams      *params
     );
 
+void
+LALFindChirpBCVSpinData (
+    LALStatus                  *status,
+    FindChirpSegmentVector     *fcSegVec,
+    DataSegmentVector          *dataSegVec,
+    FindChirpSPDataParams      *params
+    );
+
+
+
 
 #if 0
 <lalLaTeX>
