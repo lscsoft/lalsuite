@@ -44,25 +44,30 @@ RCSID("$Id$");
 
 /* Usage format string. */
 #define USAGE \
-"Usage: %s [options] [LIGO_LW XML files]\n"\
-"\n[options] are:\n\n"\
-"  --verbose              print debugging information\n"\
-"  --no-playground        do not select triggers from playground\n"\
-"  --playground-only      only use triggers that are in playground (default)\n"\
-"  --ifo-a ifo_name       name of first ifo (e.g. L1, H1 or H2)\n"\
-"  --ifo-b ifo_name       name of second ifo (e.g. L1, H1 or H2)\n"\
-"  --drhoplus snr         positive signal to noise window (default 0)\n"\
-"  --drhominus snr        negative signal to noise windoe (default 0)\n"\
-"  --dm mass              mass coincidence window (default 0)\n"\
-"  --dt time              time coincidence window (milliseconds)\n"\
-"  --gps-start-time time  GPS start time for coincidence\n"\
-"  --gps-end-time time    GPS end time for coincidence\n"\
-"  --user-tag string      set the process params user tag\n"\
-"  --comment string       add a process table comment to the output\n"\
-"  --write-all-triggers   write duplicate triggers from IFO A\n" \
-"  --help                 display this message\n"\
-"  --debug-level level    set the LAL debug level\n"\
-"\n[LIGO_LW XML files] are a space separated list of the input trigger files.\n"
+"Usage: %s [options] [LIGOLW XML input files]\n\n"\
+"  --help                       display this message\n"\
+"  --verbose                    print progress information\n"\
+"  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
+"  --user-tag STRING            set the process_params usertag to STRING\n"\
+"  --comment STRING             set the process table comment to STRING\n"\
+"\n"\
+"  --gps-start-time SEC         GPS second of data start time\n"\
+"  --gps-start-time-ns NS       GPS nanosecond of data start time\n"\
+"\n"\
+"  --ifo-a ifo_name             name of first ifo (e.g. L1, H1 or H2)\n"\
+"  --ifo-b ifo_name             name of second ifo (e.g. L1, H1 or H2)\n"\
+"\n"\
+"  --drhoplus snr               positive signal to noise window (default 0)\n"\
+"  --drhominus snr              negative signal to noise windoe (default 0)\n"\
+"  --dm mass                    mass coincidence window (default 0)\n"\
+"  --dt time                    time coincidence window (milliseconds)\n"\
+"\n"\
+"  --no-playground              do not select triggers from playground\n"\
+"  --playground-only            only use triggers that are in playground\n"\
+"  --write-uniq-triggers        make sure triggers from IFO A are unique\n" \
+"\n"\
+"[LIGOLW XML input files] list of the input trigger files.\n"\
+"\n"
 
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
 this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
@@ -79,7 +84,7 @@ int main( int argc, char *argv[] )
   static LALStatus      status;
   LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
-  INT4  writeAllTrigs = 0;
+  INT4  writeUniqTrigs = 0;
   INT4  usePlayground = 1;
   INT4  verbose = 0;
   INT4  startCoincidence = -1;
@@ -116,7 +121,7 @@ int main( int argc, char *argv[] )
     {"verbose",                 no_argument,       &verbose,          1 },
     {"no-playground",           no_argument,       &usePlayground,    0 },
     {"playground-only",         no_argument,       &usePlayground,    1 },
-    {"write-all-triggers",      no_argument,       &writeAllTrigs,    1 },
+    {"write-uniq-triggers",     no_argument,       &writeUniqTrigs,   1 },
     {"ifo-a",                   required_argument, 0,                'a'},
     {"ifo-b",                   required_argument, 0,                'b'},
     {"drhoplus",                required_argument, 0,                'c'},
@@ -359,14 +364,14 @@ int main( int argc, char *argv[] )
   }
 
   /* store the write all trigs option */
-  if ( writeAllTrigs )
+  if ( writeUniqTrigs )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-        "--write-all-triggers" );
+        "--write-uniq-triggers" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
@@ -619,7 +624,7 @@ int main( int argc, char *argv[] )
           for ( j = 0; j < MAXIFO; ++j )
           {
             /* only record the triggers from the primary ifo once */
-            if ( writeAllTrigs || j || ( ! j && ! have_ifo_a_trigger ) )
+            if ( ! writeUniqTrigs || j || ( ! j && ! have_ifo_a_trigger ) )
             {
               if ( ! coincidentEvents[j] )
               {

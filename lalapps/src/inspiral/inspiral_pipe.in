@@ -24,7 +24,7 @@ import pipeline, inspiral
 
 def usage():
   msg = """\
-Usage: lalapps_inspiral_pipe [OPTIONS]
+Usage: lalapps_inspiral_pipe [options]
 
   -v, --version            print version information and exit
   -h, --help               display this message

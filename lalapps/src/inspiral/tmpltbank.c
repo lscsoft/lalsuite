@@ -39,6 +39,7 @@
 #include <lal/Window.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/IIRFilter.h>
+#include <lal/ResampleTimeSeries.h>
 #include <lal/BandPassTimeSeries.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
@@ -55,6 +56,7 @@ RCSID( "$Id$" );
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
+#define PROGRAM_NAME "tmpltbank"
 
 
 /*
@@ -650,6 +652,53 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
      long_options[option_index].name ); \
      LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
      LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+
+#define USAGE \
+"  --help                       display this message\n"\
+"  --verbose                    print progress information\n"\
+"  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
+"  --user-tag STRING            set the process_params usertag to STRING\n"\
+"  --comment STRING             set the process table comment to STRING\n"\
+"\n"\
+"  --gps-start-time SEC         GPS second of data start time\n"\
+"  --gps-end-time SEC           GPS second of data end time\n"\
+"  --pad-data T                 pad the data start and end time by T seconds\n"\
+"\n"\
+"  --frame-cache                obtain frame data from LAL frame cache FILE\n"\
+"  --calibration-cache FILE     obtain calibration from LAL frame cache FILE\n"\
+"  --channel-name CHAN          read data from interferometer channel CHAN\n"\
+"\n"\
+"  --sample-rate F              filter data at F Hz, downsampling if necessary\n"\
+"  --resample-filter TYPE       set resample filter to TYPE [ldas|butterworth]\n"\
+"\n"\
+"  --disable-high-pass          turn off the IIR highpass filter\n"\
+"  --enable-high-pass F         high pass data above F Hz using an IIR filter\n"\
+"  --spectrum-type TYPE         use PSD estimator TYPE [mean|median]\n"\
+"\n"\
+"  --segment-length N           set data segment length to N points\n"\
+"  --number-of-segments N       set number of data segments to N\n"\
+"\n"\
+"  --low-frequency-cutoff F     do not filter below F Hz\n"\
+"  --high-frequency-cutoff F    upper frequency cutoff in Hz\n"\
+"\n"\
+"  --minimum-mass MASS          set minimum component mass of bank to MASS\n"\
+"  --maximum-mass MASS          set maximum component mass of bank to MASS\n"\
+"  --minimal-match M            generate bank with minimal match M\n"\
+"\n"\
+"  --order ORDER                set post-Newtonian order of the waveform to ORDER\n"\
+"                                 (newtonian|oneHalfPN|onePN|onePointFivePN|\n"\
+"                                 twoPN|twoPointFive|threePN|threePointFivePN)\n"\
+"  --approximant APPROX         set approximant of the waveform to APPROX\n"\
+"                                 (TaylorT1|TaylorT2|TaylorT3|TaylorF1|TaylorF2|\n"\
+"                                 PadeT1|PadeT2|EOB|BCV|SpinTaylorT3)\n"\
+"  --space SPACE                grid up template bank with mass parameters SPACE\n"\
+"                                 (Tau0Tau2|Tau0Tau3)\n"\
+"\n"\
+"  --write-raw-data             write raw data to a frame file\n"\
+"  --write-response             write the computed response function to a frame\n"\
+"  --write-spectrum             write the uncalibrated psd to a frame\n"\
+"  --write-strain-spectrum      write the calibrated strain psd to a text file\n"\
+"\n"
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 {

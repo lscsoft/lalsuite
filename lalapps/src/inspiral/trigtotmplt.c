@@ -34,38 +34,16 @@ RCSID( "$Id$" );
 #define CVS_DATE "$Date$"
 
 #define USAGE \
-"lalapps_print_inspiral is a utility to read and write LIGO lightweight XML\n" \
-"files containing sngl_inspiral tables. It sorts the sngl_inspiral triggers\n"\
-"by time and perform additional cuts on them.\n" \
-"\n" \
-"Usage: lalapps_print_inspiral [OPTIONS]\n" \
-"\n" \
-"\n" \
-"PROGRAM OPTIONS.\n" \
-"\n" \
-"   --help                display this message\n" \
-"   --debug-level LEVEL   set the LAL debug level to the specified\n" \
-"                           value. Useful values are: NDEBUG, ERROR,\n" \
-"                           WARNING, INFO, TRACE, MEMINFO and MEMDBG\n" \
-"                           Due to the LAL memory checks, the code will\n"\
-"                           run very slowly if MEMDBG is enabled.\n" \
-"   --verbose             verbose operation\n" \
-"\n" \
-"\n" \
-"INPUT AND OUTPUT OPTIONS.\n" \
-"\n" \
-"   --input FILE          use all files that match the pattern GLOB as\n"\
-"                           input. This should usualy be quoted to prevent\n"\
-"                           the shell from expanding the pattern.\n"\
-"   --output FILE         write all results to the LIGO lightweight FILE\n"\
-"   --comment STRING      add the comment STRING to the process_params table\n"\
-"\n" \
-"\n" \
-"SORTING OPTIONS.\n" \
-"\n" \
-"\n" \
-"   --snr-threshold SNR   discard all events that have a signal-to-noise\n"\
-"                           ration less than SNR.\n"\
+"Usage: lalapps_print_inspiral [options]\n\n" \
+"  --help                       display this message\n"\
+"  --verbose                    print progress information\n"\
+"  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
+"\n"\
+"  --minimal-match M            set output bank minimal match with M\n"\
+"  --snr-threshold RHO          discard all triggers with snr less than RHO\n"\
+"\n"\
+"  --input FILE                 read triggers from FILE\n"\
+"  --output FILE                write template bank to FILE\n"\
 "\n"
 
 
@@ -125,16 +103,16 @@ int main ( int argc, char *argv[] )
   struct option long_options[] =
   {
     /* these options set a flag */
+    {"help",                    no_argument,       0,                'h'},
     {"verbose",                 no_argument,       &vrbflg,           1 },
-    {"comment",                 required_argument, 0,                'c'},
-    {"input",                   required_argument, 0,                'i'},
-    {"output",                  required_argument, 0,                'o'},
-    {"minimal-match",           required_argument, 0,                'm'},
     {"debug-level",             required_argument, 0,                'z'},
-    {"snr-threshold",           required_argument, 0,                's'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
-    {"help",                    no_argument,       0,                'h'},
+    {"comment",                 required_argument, 0,                'c'},
+    {"minimal-match",           required_argument, 0,                'm'},
+    {"snr-threshold",           required_argument, 0,                's'},
+    {"input",                   required_argument, 0,                'i'},
+    {"output",                  required_argument, 0,                'o'},
     {0, 0, 0, 0}
   };
   int i, numEvents, numUniq = 0;

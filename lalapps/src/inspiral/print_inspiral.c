@@ -37,53 +37,19 @@ RCSID( "$Id$" );
 #define CVS_DATE "$Date$"
 
 #define USAGE \
-"lalapps_print_inspiral is a utility to read and write LIGO lightweight XML\n" \
-"files containing sngl_inspiral tables. It sorts the sngl_inspiral triggers\n"\
-"by time and perform additional cuts on them.\n" \
+"Usage: lalapps_print_inspiral [options]\n" \
 "\n" \
-"Usage: lalapps_print_inspiral [OPTIONS]\n" \
-"\n" \
-"\n" \
-"PROGRAM OPTIONS.\n" \
-"\n" \
-"   --help                display this message\n" \
-"   --debug-level LEVEL   set the LAL debug level to the specified\n" \
-"                           value. Useful values are: NDEBUG, ERROR,\n" \
-"                           WARNING, INFO, TRACE, MEMINFO and MEMDBG\n" \
-"                           Due to the LAL memory checks, the code will\n"\
-"                           run very slowly if MEMDBG is enabled.\n" \
-"   --verbose             verbose operation\n" \
-"\n" \
-"\n" \
-"INPUT AND OUTPUT OPTIONS.\n" \
-"\n" \
-"   --input GLOB          use all files that match the pattern GLOB as\n"\
-"                           input. This should usualy be quoted to prevent\n"\
-"                           the shell from expanding the pattern.\n"\
-"   --output FILE         write all results to the LIGO lightweight FILE\n"\
-"   --comment STRING      add the comment STRING to the process_params table\n"\
-"\n" \
-"\n" \
-"SORTING OPTIONS.\n" \
-"\n" \
-"\n" \
-"   --playground          discard all events that are not in the S2\n"\
-"                           playground.\n"\
-"   --cluster WINDOW      apply the internal clustering algorithm with a\n"\
-"                           window size of WINDOW ms.\n"\
-"   --snr-threshold SNR   discard all events that have a signal-to-noise\n"\
-"                           ration less than SNR.\n"\
-"\n" \
-"\n" \
-"EXAMPLE USEAGE.\n" \
-"\n" \
-"For all the file that end in xml in the directory /home/duncan/results/\n"\
-"discards all non-playground events, all events with snr < 10 and cluster\n"\
-"with a 10 ms window time. Write output to the file triggers.xml:\n"\
-"\n" \
-"lalapps_print_inspiral --input \"/home/duncan/results/*.xml\"\n"\
-"                       --output triggers.xml --playground\n"\
-"                       --snr-threshold 10.0 --cluster 10\n"\
+"  --help                 display this message\n"\
+"  --verbose              print progress information\n"\
+"  --debug-level LEVEL    set the LAL debug level to LEVEL\n"\
+"  --comment STRING       set the process table comment to STRING\n"\
+"\n"\
+"  --playground           only write triggers that are in playground data\n"\
+"  --snr-threshold RHO    discard all triggers with snr less than RHO\n"\
+"  --cluster T            cluster triggers with T ms window\n"\
+"\n"\
+"   --input GLOB          use all files that match the pattern GLOB as input\n"\
+"   --output FILE         write triggers to FILE\n"\
 "\n"
 
 
@@ -154,16 +120,15 @@ int main ( int argc, char *argv[] )
   LIGOLwXMLStream       results;
   struct option long_options[] =
   {
-    /* these options set a flag */
+    {"help",                    no_argument,       0,                'h'},
     {"verbose",                 no_argument,       &vrbflg,           1 },
-    {"playground",              no_argument,       &playground,       1 },
+    {"debug-level",             required_argument, 0,                'z'},
     {"comment",                 required_argument, 0,                'c'},
+    {"playground",              no_argument,       &playground,       1 },
     {"cluster",                 required_argument, 0,                'C'},
     {"snr-threshold",           required_argument, 0,                's'},
     {"input",                   required_argument, 0,                'i'},
     {"output",                  required_argument, 0,                'o'},
-    {"debug-level",             required_argument, 0,                'z'},
-    {"help",                    no_argument,       0,                'h'},
     {0, 0, 0, 0}
   };
   

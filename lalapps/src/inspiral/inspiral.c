@@ -1185,7 +1185,61 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
           LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 #define USAGE \
-"lalapps_inspiral [options]\n\n"
+"lalapps_inspiral [options]\n\n"\
+"  --help                       display this message\n"\
+"  --verbose                    print progress information\n"\
+"  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
+"  --user-tag STRING            set the process_params usertag to STRING\n"\
+"  --comment STRING             set the process table comment to STRING\n"\
+"\n"\
+"  --gps-start-time SEC         GPS second of data start time\n"\
+"  --gps-start-time-ns NS       GPS nanosecond of data start time\n"\
+"  --gps-end-time SEC           GPS second of data end time\n"\
+"  --gps-end-time-ns NS         GPS nanosecond of data end time\n"\
+"  --pad-data T                 pad the data start and end time by T seconds\n"\
+"\n"\
+"  --frame-cache                obtain frame data from LAL frame cache FILE\n"\
+"  --calibration-cache FILE     obtain calibration from LAL frame cache FILE\n"\
+"  --channel-name CHAN          read data from interferometer channel CHAN\n"\
+"\n"\
+"  --injection-file FILE        inject simulated inspiral signals from FILE\n"\
+"\n"\
+"  --bank-file FILE             read template bank parameters from FILE\n"\
+"  --minimal-match M            override bank minimal match with M (sets delta)\n"\
+"  --start-template N           start filtering at template number N in bank\n"\
+"  --stop-templateN             stop filtering at template number N in bank\n"\
+"\n"\
+"  --sample-rate F              filter data at F Hz, downsampling if necessary\n"\
+"  --resample-filter TYPE       set resample filter to TYPE (ldas|butterworth)\n"\
+"\n"\
+"  --disable-high-pass          turn off the IIR highpass filter\n"\
+"  --enable-high-pass F         high pass data above F Hz using an IIR filter\n"\
+"  --spectrum-type TYPE         use PSD estimator TYPE (mean|median)\n"\
+"\n"\
+"  --segment-length N           set data segment length to N points\n"\
+"  --number-of-segments N       set number of data segments to N\n"\
+"  --segment-overlap N          overlap data segments by N points\n"\
+"\n"\
+"  --low-frequency-cutoff F     do not filter below F Hz\n"\
+"  --inverse-spec-length T      set length of inverse spectrum to T seconds\n"\
+"  --dynamic-range-exponent X   set dynamic range scaling to 2^X\n"\
+"\n"\
+"  --chisq-bins P               set number of chisq veto bins to P\n"\
+"  --snr-threshold RHO          set signal-to-noise threshold to RHO\n"\
+"  --chisq-threshold X          threshold on chi^2 < X * ( p + rho^2 * delta^2 )\n"\
+"  --enable-event-cluster       turn on maximization over chirp length\n"\
+"  --disable-event-cluster      turn off maximization over chirp length\n"\
+"\n"\
+"  --enable-output              write the results to a LIGO LW XML file\n"\
+"  --disable-output             do not write LIGO LW XML output file\n"\
+"\n"\
+"  --write-raw-data             write raw data to a frame file\n"\
+"  --write-filter-data          write data that is passed to filter to a frame\n"\
+"  --write-response             write the computed response function to a frame\n"\
+"  --write-spectrum             write the uncalibrated psd to a frame\n"\
+"  --write-snrsq                write the snr time series for each data segment\n"\
+"  --write-chisq                write the r^2 time series for each data segment\n"\
+"\n"
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 {
