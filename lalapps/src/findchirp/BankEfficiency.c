@@ -47,7 +47,7 @@ RCSID(  "$Id$");
 #define BANKEFFICIENCY_BANK          		BCV
 #define BANKEFFICIENCY_FLOWER       		  40.
 #define BANKEFFICIENCY_FUPPER       		1000.
-#define BANKEFFICIENCY_HIGHGM                   6
+#define BANKEFFICIENCY_HIGHGM                   6 
 #define BANKEFFICIENCY_IETA	                1
 #define BANKEFFICIENCY_LOWGM                    3
 #define BANKEFFICIENCY_SIGNALAMP      		10.
@@ -331,7 +331,9 @@ void BEGetMatrixFromVectors(REAL4Vector A11,
 			    BCVMaximizationMatrix *matrix2fill);
 
 
-
+/* print an error  message 
+ * */
+void BEPrintError(char *chaine);
 
 
 
@@ -649,7 +651,8 @@ main (int argc, char **argv )
 	break;
       case InQuadrature:
 	{	  
-	  for (i=0; i<signal.length; i++) correlation.data[i] = 0.;	   	   	  	 
+	  for (i=0; i<signal.length; i++) 
+		correlation.data[i] = 0.;	   	   	  	 
 	  
 	  LAL_CALL(LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin), &status);
 	  KeepHighestValues(overlapout, j, l, fendBCV, &overlapoutmax,  &jmax, &lmax, &fMax);
@@ -909,7 +912,9 @@ main (int argc, char **argv )
 
 
 
-/* --- Print function --- */
+/* ****************************************************************************
+ * Function to print a real4 vector in a file (wave1.dat)
+ * ****************************************************************************/
 void printf_timeseries (INT4 n, REAL4 *signal, double delta, double t0) 
 {
   int i=0;
@@ -937,6 +942,7 @@ void ParametersInitialization(	InspiralCoarseBankIn 	*coarseIn,
   InitRandomInspiralSignalIn(randIn);
   InitOtherParamIn(otherIn);
 }
+
 /* ****************************************************************************
  * CoarseIn initialization
  ***************************************************************************/
@@ -1035,7 +1041,9 @@ void InitOtherParamIn(OtherParamIn *otherIn)
 
 
 
-/* --- Function to parse user parameters --- */
+/* ***************************************************************************
+ *  Function to parse user parameters 
+ *  ************************************************************************ */
 void 
 ParseParameters(	int 			*argc, 
 			char 			**argv,
@@ -1176,49 +1184,53 @@ ParseParameters(	int 			*argc,
 
 
 
-/* --- Function to check validity of parsed parameters (TODO)--- */
+/* --- Function to check validity of some parsed parameters (TODO)--- */
 void CheckParams(InspiralCoarseBankIn coarseIn,
 		 RandomInspiralSignalIn randIn,
 		 OtherParamIn otherIn)
 {
-
   if (coarseIn.psi0Min <=0 ) {
-	  fprintf(stderr,"# Parameter Parse Error: psi0 Min must be > 0\n"); 
-      	  Help(coarseIn, randIn, otherIn);
-	  exit(0);
+  	BEPrintError("Psi0 must be > 0");
+	exit(0);
   }
   if (coarseIn.psi0Max <=0 ) {
-	  fprintf(stderr,"# Parameter Parse Error: psi0 Max must be > 0\n"); 
-      	  Help(coarseIn, randIn, otherIn);
+	  BEPrintError("psi0 Max must be > 0"); 
 	  exit(0);
   }
   if (coarseIn.psi3Max >=0 ) {
-	  fprintf(stderr,"# Parameter Parse Error: psi3 Max must be < 0\n"); 
-      	  Help(coarseIn, randIn, otherIn);
+	  BEPrintError("psi3 Max must be < 0"); 
 	  exit(0);
   }
   if (coarseIn.psi3Min >=0 ) {
-	  fprintf(stderr,"# Parameter Parse Error: psi3 Min must be < 0\n"); 
-      	  Help(coarseIn, randIn, otherIn);
-	  exit(0);
+	BEPrintError("psi3 Min must be < 0"); 
+	exit(0);
   }
   if (coarseIn.psi0Min > coarseIn.psi0Max
       || coarseIn.psi3Min > coarseIn.psi3Max){
-	fprintf(stderr, "psi range should be [psiMin psiMax]; take care of the sign. \n");
-      	Help(coarseIn, randIn, otherIn);
+	BEPrintError("psi range should be [psiMin psiMax]; take care of the sign. (i.e. -10 -2000 or 10 2000)\n");
       	exit(0);
     }
 
   if (coarseIn.approximant != BCV && otherIn.overlapMethod != InQuadrature)
     {
-      fprintf(stderr,"If the template are not BCV, the overlap method must be InQuadrature (use the \"--InQuadrature\" option)\n");
+      BEPrintError("If the template are not BCV, the overlap \nmethod must be InQuadrature (use the \"--InQuadrature\" option)\n");
       exit(0);
     }
 
 }
 
-
-
+void
+BEPrintError(char *chaine)
+{
+  fprintf(stderr,"|=============================================================|\n");
+  fprintf(stderr,"| BankEfficiency code						\n");
+  fprintf(stderr,"| Error while parsing parameters				\n");
+  fprintf(stderr,"|=============================================================|\n");
+  fprintf(stderr,"| %s \n",chaine);
+  fprintf(stderr,"|type BankEfficiency -h to get details\n");
+  fprintf(stderr,"|=============================================================|\n");
+  
+}
 
 
 
@@ -1239,38 +1251,57 @@ void Help(	InspiralCoarseBankIn   coarseIn,
   fprintf(stderr,"\nUSAGE:  [options]\n");
   fprintf(stderr,"The options are (with default values in brackets)\n");
   fprintf(stderr,"All options should be followed by a number except -quiet\n");
-  fprintf(stderr,"      --alpha-bank   : BCV amplitude correction parameter (%7.2f)\n",    BANKEFFICIENCY_ALPHABANK);
-  fprintf(stderr,"    --alpha-signal   : BCV amplitude correction parameter (%7.2f)\n",    BANKEFFICIENCY_ALPHASIGNAL);
-  fprintf(stderr,"              --fl   : lower frequency cutoff             (%7.2f) Hz\n", BANKEFFICIENCY_FLOWER);
-  fprintf(stderr,"          --HighGM   : Higher distance at which the coalescnce is stopped  (%7.2d)\n",    BANKEFFICIENCY_HIGHGM);
-  fprintf(stderr,"           --LowGM   : Lower distance at which the coalescence is stopped  (%7.2d)\n",    BANKEFFICIENCY_LOWGM);
-  fprintf(stderr,"            --mMin   : minimal mass of component stars    (%7.2f) Mo\n", BANKEFFICIENCY_MMIN);
-  fprintf(stderr,"            --mMax   : maximal mass of component stars    (%7.2f) Mo\n", BANKEFFICIENCY_MMAX);
-  fprintf(stderr,"              --mm   : minimal match for template bank    (%7.3f)\n",    BANKEFFICIENCY_MMCOARSE);
-  fprintf(stderr,"     --number-fcut   : number of layers in Fcut dimension (%7.2d)\n",    BANKEFFICIENCY_NFCUT);
-  fprintf(stderr,"          --ntrial   : number of trials                   (%d)\n",       BANKEFFICIENCY_NTRIALS);
-  fprintf(stderr,"      --psi0-range   : psi0 = [(%7.2f) - (%7.2f) ]\n", BANKEFFICIENCY_PSI0MIN, BANKEFFICIENCY_PSI0MAX);
-  fprintf(stderr,"      --psi3-range   : psi3 = [(%7.2f) - (%7.2f) ]\n", BANKEFFICIENCY_PSI3MAX, BANKEFFICIENCY_PSI3MIN);
-  fprintf(stderr,"           --quiet   : if this flag is present, the output is restricted to the minimum\n");
-  fprintf(stderr,"        --template   : PN model for template bank, e.g. BCV (%d)\n\n",   BANKEFFICIENCY_TEMPLATE);
-  fprintf(stderr,"            --seed   : seed for random generation         (%d)\n",       BANKEFFICIENCY_USEED);
-  fprintf(stderr,"          --signal   : model to inject in Monte-Carlo, e.g. EOB            (%d)\n",       BANKEFFICIENCY_SIGNAL);
-  fprintf(stderr,"    --signal-order   : order of PN model                                   (%7.2d)\n",    BANKEFFICIENCY_ORDER_SIGNAL);
-  fprintf(stderr," --simulation-type   : type of simulation, 0, 1 or 2      (%d)\n\n",     BANKEFFICIENCY_TYPE);
-  fprintf(stderr,"  --template-order   : order of signal to injec                            (%7.2d)\n",    BANKEFFICIENCY_ORDER_TEMPLATE);
-  fprintf(stderr,"--signal-amplitude   : amplitude of the signal                             (%7.2f)\n",    BANKEFFICIENCY_SIGNALAMP);
+  fprintf(stderr,"      --alpha-bank   : BCV amplitude correction parameter 			(%7.2f)\n", 
+	       	  BANKEFFICIENCY_ALPHABANK);
+  fprintf(stderr,"    --alpha-signal   : BCV amplitude correction parameter 			(%7.2f)\n",    
+		  BANKEFFICIENCY_ALPHASIGNAL);
+  fprintf(stderr,"              --fl   : lower frequency cutoff             			(%7.2f) Hz\n", 
+		  BANKEFFICIENCY_FLOWER);
+  fprintf(stderr,"        --fend-bcv   : Lower and highest values of bcv frequency cutoff 	(%7.2d, %7.2d)\n", 
+		  BANKEFFICIENCY_LOWGM, 
+		  BANKEFFICIENCY_HIGHGM);
+  fprintf(stderr,"      --mass-range   : minimal mass of component stars    			(%7.2f, %7.2f) Mo\n",
+		  BANKEFFICIENCY_MMIN, 
+		  BANKEFFICIENCY_MMAX);
+  fprintf(stderr,"              --mm   : minimal match for template bank    			(%7.3f)\n",   
+		  BANKEFFICIENCY_MMCOARSE);
+  fprintf(stderr,"     --number-fcut   : number of layers in Fcut dimension 			(%7.2d)\n",  
+		  BANKEFFICIENCY_NFCUT);
+  fprintf(stderr,"          --ntrial   : number of trials                   			(%d)\n",      
+		  BANKEFFICIENCY_NTRIALS);
+  fprintf(stderr,"      --psi0-range   : psi0 range in the bank					(%7.2f, %7.2f) \n", 
+		  BANKEFFICIENCY_PSI0MIN, 
+		  BANKEFFICIENCY_PSI0MAX);
+  fprintf(stderr,"      --psi3-range   : psi3 range in the bank 				(%7.2f, (%7.2f) \n", 
+		  BANKEFFICIENCY_PSI3MAX, 
+		  BANKEFFICIENCY_PSI3MIN);
+  fprintf(stderr,"        --template   : PN model for template bank, e.g. BCV 			(%d)\n\n",   
+		  BANKEFFICIENCY_TEMPLATE);
+  fprintf(stderr,"            --seed   : seed for random generation         			(%d)\n",      
+		  BANKEFFICIENCY_USEED);
+  fprintf(stderr,"          --signal   : model to inject in Monte-Carlo, e.g. EOB            	(%d)\n",      
+		  BANKEFFICIENCY_SIGNAL);
+  fprintf(stderr,"    --signal-order   : order of PN model                                   	(%7.2d)\n",    
+		  BANKEFFICIENCY_ORDER_SIGNAL);
+  fprintf(stderr," --simulation-type   : type of simulation, 0, 1 or 2      			(%d)\n\n",    
+		  BANKEFFICIENCY_TYPE);
+  fprintf(stderr,"  --template-order   : order of signal to injec                            	(%7.2d)\n",    
+		  BANKEFFICIENCY_ORDER_TEMPLATE);
+  fprintf(stderr,"--signal-amplitude   : amplitude of the signal                             	(%7.2f)\n",   
+		  BANKEFFICIENCY_SIGNALAMP);
 
 
 
   
   fprintf(stderr,"Verbose Options \n");
-  fprintf(stderr,"     --FMaximization     : Maximize over Ending frequency(%d)\n",    		BANKEFFICIENCY_FMAXIMIZATION);
+  fprintf(stderr,"     --check : For a given random waveform, we compute overlap with same parameter (should get overlap=1)\n");
+  fprintf(stderr,"     --FMaximization     : Maximize over Ending frequency (%d)\n",    		BANKEFFICIENCY_FMAXIMIZATION);
   fprintf(stderr,"     --PrintOverlap      : Print Overlap given by the best template (%d)\n",  BANKEFFICIENCY_PRINTOVERLAP);
   fprintf(stderr,"     --PrintFilter       : Print filters giving the best overlap template (%d)\n",    BANKEFFICIENCY_PRINTFILTER);
   fprintf(stderr,"     --print-ambiguity-function : print ambiguity function (bank overlap)(%d)\n", BANKEFFICIENCY_AMBIGUITYFUNCTION);
-  fprintf(stderr,"     --InQuadrature : Overlap is compute without alpha maximization\n");
-  fprintf(stderr,"     --check : For a given random waveform, we compute overlap with same parameter (should get overlap=1)\n");
-  fprintf(stderr,"  --InputPSD: to give the name of real PSD\n");
+  fprintf(stderr,"     --InQuadrature 	: Overlap is compute without alpha maximization\n");
+  fprintf(stderr,"     --quiet   	: if this flag is present, the output is restricted to the minimum\n");
+  fprintf(stderr,"     --InputPSD	: to give the name of real PSD\n");
   /*to avoid boring warning*/
   temp = coarseIn.approximant;
   temp =  randIn.useed;
@@ -1326,13 +1357,6 @@ PrintResults(	    	InspiralTemplate       	bank,
 	fprintf(stdout, "%e %e %d %d\n ", overlapout.alpha, overlapout.alpha*pow(fendBCV,2./3.), layer, overlapout.bin);
 }
 
-#if 0
-  fprintf(stdout, "%e %e ", bank.psi0, bank.psi3);  /*triggered */
-  fprintf(stdout, "%e %e    ", injected.psi0, injected.psi3);
-  fprintf(stdout, "%e %e %e %e   ", fendBCV,   injected.fFinal, bank.totalMass, injected.totalMass);
-  fprintf(stdout, "%e %e %e %e   ", injected.mass1, injected.mass2, overlapout.max, overlapout.phase);
-  fprintf(stdout, "%e %e %d %d\n ", overlapout.alpha, overlapout.alpha*pow(fendBCV,2./3.), layer, overlapout.bin);
-#endif
 }
 
 
@@ -1372,6 +1396,7 @@ void LALCreateMomentVector(LALStatus             *status,
   in.xmin 	= params->fLower;						/* Lower frequency of integral?	is it correct or should we put zero? 	*/
   in.xmax 	= params->tSampling/2.;						/* We dont' need to cut here		*/
   in.norm 	= 1./4.;							/* Some normalization			*/
+  in.norm*=psd->data->length*psd->data->length/2./2.;
 
   /* The minimum and maximum frequency */
   kMin = (UINT8) floor( (in.xmin - psd->f0) / psd->deltaF );
@@ -1414,13 +1439,11 @@ void LALCreateMomentVector(LALStatus             *status,
 void LALGetOrthogonalFilter2(	REAL4Vector *filter
 			)
 {
-  UINT4 
-	  i,
+  UINT4   i,
   	  n 	= filter->length,
 	  nby2  = filter->length / 2;
 	  
-  REAL4 
-	  temp;
+  REAL4	  temp;
   
   for (i = 1; i < nby2; i++)
     {
@@ -1441,12 +1464,10 @@ LALCreateVectorFreqPower(	 REAL4Vector 		*vector,
 				 INT4 			a,
 				 INT4 			b)
 {
-  INT4 
-	  i, 
+  INT4 	  i, 
   	  n 	= vector->length;						/* Length of the vector to create 	*/
 	  
-  REAL8 
-	  power = (REAL8)a / (REAL8)b ,						/* the frequency power			*/
+  REAL8   power = (REAL8)a / (REAL8)b ,						/* the frequency power			*/
  	  f,									/* La frequence				*/
 	  df 	= params.tSampling/(REAL8)n/2.;					/* sampling frequency			*/
 
@@ -1454,7 +1475,7 @@ LALCreateVectorFreqPower(	 REAL4Vector 		*vector,
   vector->data[0] = 0.;
   for( i = 1; i < n; i++)
     {
-      f = i *df; 
+      f = i * df; 
       /* Probably not efficient but this function is 
        * just called once at the beginning */
       vector->data[i] = pow(f, power);
@@ -1477,13 +1498,11 @@ LALCreateFilters(	REAL4Vector 		*Filter1,
 		 	double 			psi0,				/* change to real4 or real 8		*/
 		 	double 			psi3)				/* idem 				*/
 {
-  UINT4
-	  i,
+  UINT4	  i,
   	  n 	= Filter1->length,
 	  nby2 	= Filter1->length / 2;
 	  
-  REAL8 
-	  amplitude, 
+  REAL8   amplitude, 
   	  cos_phase, 
 	  sin_phase;
   
@@ -1726,9 +1745,8 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   while (overlapout->phase < -LAL_PI || overlapout->phase < 0 ) 
 	  overlapout->phase += LAL_PI;
 
-  overlapout->alpha = -(matrix.a22 * tan(phase)) 				/* Compute the final alpha parameter 	*/
-	  / (matrix.a11 + matrix.a21* tan(phase));				/* which optimize the overlap		*/	
- fprintf(stderr,"%e %e\n", overlapout->phase, overlapout->alpha); 
+  overlapout->alpha = -(matrix.a22 * tan(overlapout->phase)) 				/* Compute the final alpha parameter 	*/
+	  / (matrix.a11 + matrix.a21* tan(overlapout->phase));				/* which optimize the overlap		*/	
   /* The final template */
   #if 0
   phase 		= overlapout->phase;
