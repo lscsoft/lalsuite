@@ -70,10 +70,12 @@ pool with the \verb$condor_submit_dag$ command.
 \end{entry}
 
 \item[Example]
+Generate a DAG to run an inspiral search on the first IFO. The generated
+DAG is then submitted with \texttt{condor\_submit\_dag}
 \begin{verbatim}
 lalapps_inspiral_pipe --log-path /people/duncan/dag_logs \
---datafind --template-bank --inspiral --priority 10 \
---playground-only --config-file l1_s2.ini
+--datafind --template-bank --inspiral --playground-only \
+--config-file l1_s2.ini
 
 condor_submit_dag l1_s2.dag
 \end{verbatim}
@@ -290,8 +292,8 @@ Duncan Brown
 \verb$--ifo-a$ \textsc{IFOA} 
 \verb$--ifo-b$ \textsc{IFOB} \newline
 %
-[\verb$--drhoplus$ \textsc{$\delta\rho_{+}$}]
-[\verb$--drhominus$ \textsc{$\delta\rho_{-}$}]
+[\verb$--epsilon$ \textsc{$\epsilon$}]
+[\verb$--kappa$ \textsc{$\kappa$}]
 [\verb$--dm$ \textsc{$\delta m$}]
 [\verb$--dt$ \textsc{$\delta t$}] \newline
 %
@@ -331,9 +333,23 @@ If a \texttt{--user-tag} is not specified on the command line, the
 The default behavior outputs triggers during playground times only. To obtain
 those triggers that are not in the playground, use the \verb$--no-playground$
 flag.     
-%Events can also be clustered
-%within \textsc{msec} msec or a template bank for triggered searches
-%can be constructed.
+
+\texttt{lalapps\_inca} calls the LAL function
+\texttt{LALCompareSnglInspiral()} to test if two triggers are coincident. This
+first tests that the time of the triggers is coincidence to within $\delta t$.
+It then tests that both the template masses are coincident to within $\delta m$.
+It then tests to that
+\begin{equation}
+\frac{\left|D_\mathrm{IFOA} - D_\mathrm{IFOA}\right|}{D_\mathrm{IFOA}}
+< \frac{\epsion}{\rho_\mathrm{IFOB}} + \kappa.
+\end{equation}
+This is equivalent to testing that
+\begin{equation}
+\left|\rho_\mathrm{IFOB} - \hat{\rho}_\mathrm{IFOB}\right| 
+< \epsilon + \kappa\rho_\mathrm{IFOB}.
+\end{equation}
+If all three tests pass, the events are considered to be coincident and
+written to the output file.
 
 \item[Options]\leavevmode
 \begin{entry}
@@ -352,13 +368,13 @@ It must be a two letter IFO code e.g. \texttt{L1}, \texttt{H1}, etc.
 interfereometer to use as the interferometer B in the coincidence algorithm.
 It must be a two letter IFO code e.g. \texttt{L1}, \texttt{H1}, etc.
 
-\item[\texttt{--drhoplus} \textsc{$\delta\rho_+$}] Optional. Accept triggers
-with $\rho_B < (\sigma_B/\sigma_A) \rho_A + \delta\rho_+$ as possible
-coincidences.  If not supplied,  then $\delta\rho_+ = 0$.
+\item[\texttt{--epsilon} \textsc{$\epsilon$}] Optional. Set the value of
+$\epsilon$ in the effective distance test. If not given the default of
+$\epsilon = 2$ will be used.
 
-\item[\texttt{--drhominus} \textsc{$\delta\rho_-$}] Optional. Accept triggers
-with $\rho_B > (\sigma_B/\sigma_A) \rho_A - \delta\rho_-$ as possible
-coincidences.  If not supplied,  then $\delta\rho_- = 0$.
+\item[\texttt{--kappa} \textsc{$\kappa$}] Optional. Set the value of
+$\kappa$ in the effective distance test. If not given the default of
+$\kappa= 0.01$ will be used.
 
 \item[\texttt{--dm} \textsc{$\delta m$}] Optional. Accept triggers as
 coincident if both mass parameters agree within $\delta m$.  If not
@@ -373,11 +389,6 @@ coincident triggers with end times after \textsc{GPS seconds}.
 
 \item[\texttt{--gps-end-time} \textsc{GPS seconds}] Required.  Look for
 coincident triggers with end times before \textsc{GPS seconds}.
-
-%\item[\texttt{--cluster} \textsc{msec}] Optional.  Cluster triggers
-%within \textsc{msec} msec window.   The clustering algorithm
-%identifies the first trigger in a cluster,  then displaces it if its
-%\textsc{snr} is exceeded by an event with a smaller \textsc{chisq}.
 
 \item[\texttt{--write-uniq-triggers}] Optional.  The default behaviour is to
 only write all triggers from IFO A. However, a trigger from IFO A
@@ -463,7 +474,7 @@ from IFO A.
 \end{enumerate}
 
 \item[Author] 
-Patrick Brady, Duncan Brown
+Patrick Brady and Duncan Brown
 \end{entry}
 
 \clearpage

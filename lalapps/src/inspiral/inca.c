@@ -2,7 +2,7 @@
  * 
  * File Name: inca.c
  *
- * Author: Brady, P. R.
+ * Author: Brady, P. R. and Brown, D. A.
  * 
  * Revision: $Id$
  * 
@@ -41,7 +41,6 @@ RCSID("$Id$");
 #define INCA_MSGEFILE  "Could not open file"
 
 #define MAXIFO 2
-#define MSEC (1000000LL)
 
 /* Usage format string. */
 #define USAGE \
@@ -58,8 +57,8 @@ RCSID("$Id$");
 "  --ifo-a ifo_name             name of first ifo (e.g. L1, H1 or H2)\n"\
 "  --ifo-b ifo_name             name of second ifo (e.g. L1, H1 or H2)\n"\
 "\n"\
-"  --drhoplus snr               positive signal to noise window (default 0)\n"\
-"  --drhominus snr              negative signal to noise windoe (default 0)\n"\
+"  --epsilon error              set effective distance test epsilon (default 2)\n"\
+"  --kappa error                set effective distance test kappa (default 0.01)\n"\
 "  --dm mass                    mass coincidence window (default 0)\n"\
 "  --dt time                    time coincidence window (milliseconds)\n"\
 "\n"\
@@ -129,8 +128,8 @@ int main( int argc, char *argv[] )
     {"write-uniq-triggers",     no_argument,       &writeUniqTrigs,   1 },
     {"ifo-a",                   required_argument, 0,                'a'},
     {"ifo-b",                   required_argument, 0,                'b'},
-    {"drhoplus",                required_argument, 0,                'c'},
-    {"drhominus",               required_argument, 0,                'd'},
+    {"epsilon",                 required_argument, 0,                'e'},
+    {"kappa",                   required_argument, 0,                'k'},
     {"dm",                      required_argument, 0,                'm'},
     {"dt",                      required_argument, 0,                't'},
     {"gps-start-time",          required_argument, 0,                'q'},
@@ -177,6 +176,10 @@ int main( int argc, char *argv[] )
   memset( outEvent, 0, MAXIFO * sizeof(SnglInspiralTable *) );
   memset( numTriggers, 0, MAXIFO * sizeof(INT4) );
 
+  /* default values */
+  errorParams.epsilon = 2.0;
+  errorParams.kappa = 0.01;
+
   /* parse the arguments */
   while ( 1 )
   {
@@ -186,7 +189,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:c:d:m:t:q:r:s:hz:Z:", long_options, &option_index );
+        "a:b:e:k:m:t:q:r:s:hz:Z:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == -1 )
@@ -222,15 +225,31 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
-      case 'c':
-        /* SNR error upward */
-        errorParams.dRhoPlus = atof(optarg);
+      case 'e':
+        /* epsilon */
+        errorParams.epsilon = atof(optarg);
+        if ( errorParams.epsilon < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "epsilon must be non-negative: "
+              "(%s given)\n", 
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
-      case 'd':
-        /* SNR error downward */
-        errorParams.dRhoMinus = atof(optarg);
+      case 'k':
+        /* kappa */
+        errorParams.kappa = atof(optarg);
+        if ( errorParams.kappa < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "epsilon must be non-negative: "
+              "(%s given)\n", 
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
@@ -241,8 +260,8 @@ int main( int argc, char *argv[] )
         break;
 
       case 't':
-        /* time coincidence window */
-        errorParams.dtime = atof(optarg) * MSEC;
+        /* time coincidence window, argument is in milliseconds */
+        errorParams.dt = atof(optarg) * 1000000LL;
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
@@ -361,7 +380,7 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "Error: --gps-end-time must be specified\n" );
     exit( 1 );
   }
-    
+
   /* fill the comment, if a user has specified on, or leave it blank */
   if ( ! *comment )
   {
@@ -616,7 +635,7 @@ int main( int argc, char *argv[] )
       LAL_CALL( LALGPStoINT8( &status, &tb, &(currentTrigger[1]->end_time) ), 
           &status );
 
-      if ( tb > ta - errorParams.dtime )
+      if ( tb > ta - errorParams.dt )
       {
         /* we have reached the time coinicidence window */
         break;
@@ -642,7 +661,7 @@ int main( int argc, char *argv[] )
         LAL_CALL( LALGPStoINT8( &status, &tb, &(currentTrigger[1]->end_time) ), 
             &status );
 
-        if (tb > ta + errorParams.dtime )
+        if (tb > ta + errorParams.dt )
         {
           /* we are outside the time coincidence so move to the next event */
           break;
