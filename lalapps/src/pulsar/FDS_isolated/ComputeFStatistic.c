@@ -52,7 +52,7 @@ RCSID( "$Id$");
 /*----------------------------------------------------------------------
  * User-variables: provided either by default, config-file or command-line */
 INT4 uvar_Dterms;
-INT4 uvar_IFO;
+CHAR* uvar_IFO;
 BOOLEAN uvar_SignalOnly;
 BOOLEAN uvar_EstimSigParam;
 REAL8 uvar_Freq;
@@ -105,7 +105,7 @@ ConfigVariables GV;
 void CreateDemodParams (LALStatus *status);
 void AllocateMem (LALStatus *status);
 void SetGlobalVariables (LALStatus *status, ConfigVariables *cfg);
-void CreateDetector (LALStatus *status, LALDetector *Detector);
+void CreateNautilusDetector (LALStatus *status, LALDetector *Detector);
 void Freemem (LALStatus *status);
 
 INT4 EstimatePSDLines(LALStatus *status);
@@ -148,8 +148,9 @@ int main(int argc,char *argv[])
   REAL8 duration;
   FILE *fpOut;
   LALStatus status = blank_status;	/* initialize status */
-  
-  vrbflg = 1;
+
+  lalDebugLevel = 0;  
+  vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
@@ -261,7 +262,7 @@ int main(int argc,char *argv[])
 		{
 		  if ( Fstat.F[i] >= uvar_Fthreshold )
 		    fprintf(fpOut, "%20.10f %20.17f %20.17f %20.17f\n",
-			    uvar_Freq+ i*uvar_dFreq, Alpha, Delta, 2.0*medianbias*Fstat.F[i]);
+			    uvar_Freq+ i*GV.dFreq, Alpha, Delta, 2.0*medianbias*Fstat.F[i]);
 		}
 	    } /* if outputFstat */
 	  
@@ -367,7 +368,7 @@ initUserVars (LALStatus *stat)
   LALregINTUserVar(stat,	Dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
   LALregREALUserVar(stat, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
   LALregREALUserVar(stat, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
-  LALregREALUserVar(stat, 	dFreq, 		'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(8*Tsft*Nsft)");
+  LALregREALUserVar(stat, 	dFreq, 		'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(2*Tsft*Nsft)");
   LALregREALUserVar(stat, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
   LALregREALUserVar(stat, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
   LALregREALUserVar(stat, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
@@ -378,7 +379,7 @@ initUserVars (LALStatus *stat)
   LALregSTRINGUserVar(stat,	BaseName, 	'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
   LALregSTRINGUserVar(stat,	EphemDir, 	'E', UVAR_REQUIRED, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(stat,	EphemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
-  LALregINTUserVar(stat, 	IFO, 		'I', UVAR_REQUIRED, "Detector number: 0=GEO, 1=LLO, 2=LHO or 3=Roman Bar");
+  LALregSTRINGUserVar(stat, 	IFO, 		'I', UVAR_REQUIRED, "Detector: GEO(0), LLO(1), LHO(2), NAUTILUS(3), VIRGO(4), TAMA(5), CIT(6)");
   LALregBOOLUserVar(stat, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
   LALregREALUserVar(stat, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter f1dot");
   LALregREALUserVar(stat, 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search-band for f1dot");
@@ -534,7 +535,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(A1-A1test)>fabs(A1)/(10e5)){ 
 	fprintf(stderr,"Something is wrong with Estimate A1\n");
 	fprintf(stderr,"Frequency index %d, %lf (Hz),A1=%f,A1test=%f\n",
-		irec,uvar_Freq+irec*uvar_dFreq,A1,A1test);
+		irec,uvar_Freq+irec*GV.dFreq,A1,A1test);
 	fprintf(stderr,"relative error Abs((A1-A1test)/A1)=%lf\n",
 		fabs(A1-A1test)/fabs(A1));
 	exit(1);
@@ -542,7 +543,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(A2-A2test)>fabs(A2)/(10e5)){ 
 	fprintf(stderr,"Something is wrong with Estimate A2\n");
 	fprintf(stderr,"Frequency index %d, %lf (Hz),A2=%f,A2test=%f\n",
-		irec,uvar_Freq+irec*uvar_dFreq,A2,A2test);
+		irec,uvar_Freq+irec*GV.dFreq,A2,A2test);
 	fprintf(stderr,"relative error Abs((A2-A2test)/A2)=%lf\n",
 		fabs(A2-A2test)/fabs(A2));
 	exit(1);
@@ -550,7 +551,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(A3-A3test)>fabs(A3)/(10e5)){ 
 	fprintf(stderr,"Something is wrong with Estimate A3\n");
 	fprintf(stderr,"Frequency index %d, %lf (Hz),A3=%f,A3test=%f\n",
-		irec,uvar_Freq+irec*uvar_dFreq,A3,A3test);
+		irec,uvar_Freq+irec*GV.dFreq,A3,A3test);
 	fprintf(stderr,"relative error Abs((A3-A3test)/A3)=%lf\n",
 		fabs(A3-A3test)/fabs(A3));
 	exit(1);
@@ -558,7 +559,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(A4-A4test)>fabs(A4)/(10e5)){ 
 	fprintf(stderr,"Something is wrong with Estimate A4\n");
 	fprintf(stderr,"Frequency index %d, %lf (Hz),A4=%f,A4test=%f\n",
-		irec,uvar_Freq+irec*uvar_dFreq,A1,A1test);
+		irec,uvar_Freq+irec*GV.dFreq,A1,A1test);
 	fprintf(stderr,"relative error Abs((A4-A4test)/A4)=%lf\n",
 		fabs(A4-A4test)/fabs(A4));
 	exit(1);
@@ -573,7 +574,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(Fstat.F[irec] - Ftest)> fabs(Ftest)/10e5){ 
 	fprintf(stderr,"Something is wrong with Estimate in F\n");
 	fprintf(stderr,"Frequency index %d, %lf (Hz),F=%f,Ftest=%f\n",
-		irec,uvar_Freq+irec*uvar_dFreq,Fstat.F[irec],Ftest);
+		irec,uvar_Freq+irec*GV.dFreq,Fstat.F[irec],Ftest);
 	fprintf(stderr,"relative error Abs((F-Ftest)/Ftest)=%lf\n",
 		fabs(Fstat.F[irec]-Ftest)/fabs(Ftest));
 	exit(1);
@@ -602,7 +603,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
 			    +hc*hc*((A+B)/2.0-(A-B)/2.0*cos(4.0*psi_mle)
 				    -C*sin(4.0*psi_mle)));
       fprintf(stderr,"A=%f,B=%f,C=%f,f=%f,h0=%f,F=%f\n",
-	      A,B,C,uvar_Freq+irec*uvar_dFreq,h0mle,Fstat.F[irec]*medianbias);
+	      A,B,C,uvar_Freq+irec*GV.dFreq,h0mle,Fstat.F[irec]*medianbias);
       }
 #endif
 
@@ -611,7 +612,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       /* and Phi0_PULGROUPDOC is the one used in In.data. */
  
       /* medianbias is 1 if GV.SignalOnly==1 */
-      fprintf(fpMLEParam,"%16.8lf %22E", uvar_Freq + irec*uvar_dFreq, 2.0*medianbias*Fstat.F[irec]);
+      fprintf(fpMLEParam,"%16.8lf %22E", uvar_Freq + irec*GV.dFreq, 2.0*medianbias*Fstat.F[irec]);
 
 
       fprintf(fpMLEParam,"  %10.6f",(1.0+mu_mle*mu_mle)*h0mle/2.0);
@@ -674,9 +675,9 @@ int writeFaFb(INT4 *maxIndex)
 
     fprintf(fp,"%10d\n",N);
     fprintf(fp,"%22.12f %22.12f\n",
-	    uvar_Freq+maxIndex[irec]*uvar_dFreq,
+	    uvar_Freq+maxIndex[irec]*GV.dFreq,
 	    Fstat.F[maxIndex[irec]]*bias*bias);
-    fprintf(fp,"%22.12f %22.12f\n",uvar_Freq + index * uvar_dFreq, uvar_dFreq);
+    fprintf(fp,"%22.12f %22.12f\n",uvar_Freq + index * GV.dFreq, GV.dFreq);
     fprintf(fp,"%22.12f %22.12f %22.12f\n",amc.A,amc.B,amc.C);
 
 
@@ -716,7 +717,7 @@ int writeFaFb(INT4 *maxIndex)
       fprintf(fp,"%22.16f %22.16f "
                  "%E %20.17f %20.17f "
                  "%22.16f %22.16f %22.16f %22.16f %22.16f %22.16f %22.16f\n",
-	      uvar_Freq+index*uvar_dFreq,Fstat.F[index]*bias*bias,
+	      uvar_Freq+index*GV.dFreq,Fstat.F[index]*bias*bias,
 	      DemodParams->spinDwn[0], Alpha, Delta,
 	      Fstat.Fa[index].re/sqrt(GV.SFTno)*bias,
 	      Fstat.Fa[index].im/sqrt(GV.SFTno)*bias,
@@ -726,7 +727,7 @@ int writeFaFb(INT4 *maxIndex)
 #else
       /* Freqency, Re[Fa],Im[Fa],Re[Fb],Im[Fb], F */
       fprintf(fp,"%22.16f %22.12f %22.12f %22.12f %22.12f %22.12f\n",
-	      uvar_Freq+index*uvar_dFreq,
+	      uvar_Freq+index*GV.dFreq,
 	      Fstat.Fa[index].re/sqrt(GV.SFTno)*bias,
 	      Fstat.Fa[index].im/sqrt(GV.SFTno)*bias,
 	      Fstat.Fb[index].re/sqrt(GV.SFTno)*bias,
@@ -832,7 +833,7 @@ void CreateDemodParams (LALStatus *status)
 
   DemodParams->f0=uvar_Freq;
   DemodParams->imax=GV.FreqImax;
-  DemodParams->df=uvar_dFreq;
+  DemodParams->df=GV.dFreq;
 
   DemodParams->Dterms=uvar_Dterms;
   DemodParams->ifmin=GV.ifmin;
@@ -936,7 +937,7 @@ int writeFLines(INT4 *maxIndex){
     }/*  end j loop over points of i-th cluster  */
     var=var/N;
     std=sqrt(var);
-    fr=uvar_Freq + imax*uvar_dFreq;
+    fr=uvar_Freq + imax*GV.dFreq;
 #ifdef FILE_FSTATS  
 /*    print the output */
   err=fprintf(fpstat,"%16.12f %10.8f %10.8f    %d %10.5f %10.5f %10.5f\n",fr,
@@ -1086,9 +1087,9 @@ int ReadSFTData(void)
 	return 6;
       }
       SFTData[fileno]->fft->epoch=timestamps[fileno];
-      SFTData[fileno]->fft->f0=GV.ifmin*GV.df;
-      SFTData[fileno]->fft->deltaF=GV.df;
-      SFTData[fileno]->fft->data->length=ndeltaf;
+      SFTData[fileno]->fft->f0 = GV.ifmin / GV.tsft;
+      SFTData[fileno]->fft->deltaF = 1.0 / GV.tsft;
+      SFTData[fileno]->fft->data->length = ndeltaf;
 
       fclose(fp);     /* close file */
     
@@ -1105,7 +1106,6 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   CHAR command[512];
   FILE *fp;
   size_t errorcode;
-  REAL8 df;                         /* freq resolution */
   INT4 fileno=0;   
   glob_t globbuf;
 
@@ -1113,52 +1113,41 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   ATTATCHSTATUSPTR (status);
 
   /* do some sanity checks on the user-input before we proceed */
-  if(uvar_IFO == -1)
+  if (! LALUserVarWasSet(&uvar_IFO) )
     {
-      fprintf(stderr,"No IFO specified; input with -I option.\n");
-      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
-      exit(-1);
+      LALPrintError("No interferometer specified (option 'IFO')\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
-  if(uvar_DataDir == NULL)
+
+  if (uvar_DataDir == NULL)
     {
-      fprintf(stderr,"No SFT directory specified; input directory with -D option.\n");
-      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
-      exit(-1);
+      LALPrintError ("No SFT directory specified (option 'DataDir')\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
-  if(uvar_EphemDir == NULL)
+
+  if (uvar_EphemDir == NULL)
     {
-      fprintf(stderr,"No ephemeris data (earth??.dat, sun??.dat) directory specified; input directory with -E option.\n");
-      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
-      exit(-1);
+      LALPrintError ("No ephemeris directory specified (option 'EphemDir')\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
-  if(uvar_EphemYear == NULL)
+
+  if (uvar_EphemYear == NULL)
     {
-      fprintf(stderr,"No ephemeris year (earth??.dat, sun??.dat) directory specified; input year with -y option.\n");
-      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
-      exit(-1);
+      LALPrintError ("No ephemeris year specified (option 'EphemYear')\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
-  if(uvar_Freq == 0.0)
+
+  if( ! LALUserVarWasSet (&uvar_Freq))
     {
-      fprintf(stderr,"No search frequency specified; set with -f option.\n");
-      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
-      exit(-1);
-    }      
-  if(uvar_dDelta == 0.0)
-    {
-      fprintf(stderr,"Value of Delta resolution ( = 0.0) not allowed.\n");
-      exit(-1);
-    }      
-  if(uvar_dAlpha == 0.0)
-    {
-      fprintf(stderr,"Value of Alpha resolution ( = 0.0) not allowed.\n");
-      exit(-1);
+      LALPrintError ("No search frequency specified; (option 'Freq')\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
 
   /* don't allow negative bands (for safty in griding-routines) */
   if ( (uvar_AlphaBand < 0) ||  (uvar_DeltaBand < 0) )
     {
-      fprintf (stderr, "\nNegative value of sky-bands not allowed (alpha or delta)!\n");
-      exit(-1);
+      LALPrintError ("Negative value of sky-bands not allowed (alpha or delta)!\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
   strcpy(cfg->EphemEarth,uvar_EphemDir);
@@ -1188,14 +1177,10 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
       fclose(fp);
   /* ********************************************** */
 
-  strcpy(command,uvar_DataDir);
+  strcpy(command, uvar_DataDir);
   strcat(command,"/*");
-  /* this default-value needs to be set-up here */
-  if (uvar_BaseName == NULL) {
-    uvar_BaseName = LALMalloc (10);
-    strcpy (uvar_BaseName, "SFT");
-  }
-  strcat(command,uvar_BaseName);
+
+  strcat(command, uvar_BaseName);
   strcat(command,"*");
   
   globbuf.gl_offs = 1;
@@ -1224,12 +1209,27 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   cfg->SFTno=fileno; /* remember this is 1 more than the index value */
 
   /* initialize detector */
-  if(uvar_IFO == 0) cfg->Detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  if(uvar_IFO == 1) cfg->Detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
-  if(uvar_IFO == 2) cfg->Detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
-  if(uvar_IFO == 3) {
-    TRY (CreateDetector(status->statusPtr, &(cfg->Detector)), status);
-  }
+  if ( !strcmp (uvar_IFO, "GEO") || !strcmp (uvar_IFO, "0") ) 
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  else if ( !strcmp (uvar_IFO, "LLO") || ! strcmp (uvar_IFO, "1") ) 
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  else if ( !strcmp (uvar_IFO, "LHO") || !strcmp (uvar_IFO, "2") )
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  else if ( !strcmp (uvar_IFO, "NAUTILUS") || !strcmp (uvar_IFO, "3"))
+    {
+      TRY (CreateNautilusDetector (status->statusPtr, &(cfg->Detector)), status);
+    }
+  else if ( !strcmp (uvar_IFO, "VIRGO") || !strcmp (uvar_IFO, "4") )
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+  else if ( !strcmp (uvar_IFO, "TAMA") || !strcmp (uvar_IFO, "5") )
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
+  else if ( !strcmp (uvar_IFO, "CIT") || !strcmp (uvar_IFO, "6") )
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
+  else
+    {
+      LALPrintError ("Unknown detector. Allowed are 'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
 
   /* open FIRST file and get info from it*/
   fp=fopen(cfg->filelist[0],"r");
@@ -1276,11 +1276,13 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 
   cfg->tsft=header.tbase;  /* Time baseline of SFTs */
     
-  /* if user has not input demodulation frequency resolution; set to 1/Tobs */
-  if( !LALUserVarWasSet(&uvar_dFreq) ) 
-    uvar_dFreq=1.0/(2.0*header.tbase*cfg->SFTno);
+  /* if user has not input demodulation frequency resolution; set to 1/2*Tobs */
+  if( !LALUserVarWasSet (&uvar_dFreq) ) 
+    cfg->dFreq=1.0/(2.0*header.tbase*cfg->SFTno);
+  else
+    cfg->dFreq = uvar_dFreq;
 
-  cfg->FreqImax=(INT4)(uvar_FreqBand/uvar_dFreq+.5)+1;  /*Number of frequency values to calculate F for */
+  cfg->FreqImax=(INT4)(uvar_FreqBand/cfg->dFreq+.5)+1;  /*Number of frequency values to calculate F for */
     
   /* if user has not input demodulation frequency resolution; set to 1/Tobs */
   if( !LALUserVarWasSet (&uvar_df1dot) ) 
@@ -1292,10 +1294,6 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     cfg->SpinImax = 0;
 
   cfg->nsamples=header.nsamples;    /* # of freq. bins */
-
-  /* frequency resolution: used only for printing! */
-  df=(1.0)/(1.0*header.tbase);
-  cfg->df=df;
 
   cfg->ifmax=ceil((1.0+DOPPLERMAX)*(uvar_Freq+uvar_FreqBand)*cfg->tsft)+uvar_Dterms;
   cfg->ifmin=floor((1.0-DOPPLERMAX)*uvar_Freq*cfg->tsft)-uvar_Dterms;
@@ -1332,11 +1330,12 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
    * but we can live with that for now... */
   if (uvar_skyRegion == NULL)
     {
+      REAL8 eps = 1.0e-9;
       REAL8 a, d, Da, Dd;
       a = uvar_Alpha;
       d = uvar_Delta;
-      Da = uvar_AlphaBand;
-      Dd = uvar_DeltaBand;
+      Da = uvar_AlphaBand + eps;	/* slightly push outwards to make sure boundary-points are included */
+      Dd = uvar_DeltaBand + eps;
       /* consistency check either one point given or a 2D region! */
       ASSERT ( (Da && Dd)  || ((Da == 0) && (Dd == 0.0)), status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       
@@ -1375,20 +1374,21 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 
 /*******************************************************************************/
 
-void CreateDetector(LALStatus *status, LALDetector *Detector)
+void
+CreateNautilusDetector (LALStatus *status, LALDetector *Detector)
 {
-/*   LALDetector Detector;  */
+  /*   LALDetector Detector;  */
   LALFrDetector detector_params;
   LALDetectorType bar;
   LALDetector Detector1;
 
-  INITSTATUS (status, "CreateDetector", rcsid);
+  INITSTATUS (status, "CreateNautilusDetector", rcsid);
   ATTATCHSTATUSPTR (status);
 
 /*   detector_params=(LALFrDetector )LALMalloc(sizeof(LALFrDetector)); */
  
   bar=LALDETECTORTYPE_CYLBAR;
-  strcpy(detector_params.name,"NAUTILUS");
+  strcpy(detector_params.name, "NAUTILUS");
   detector_params.vertexLongitudeRadians=12.67*LAL_PI/180.0;
   detector_params.vertexLatitudeRadians=41.82*LAL_PI/180.0;
   detector_params.vertexElevation=300.0;
@@ -1396,13 +1396,13 @@ void CreateDetector(LALStatus *status, LALDetector *Detector)
   detector_params.xArmAzimuthRadians=44.0*LAL_PI/180.0;
 
   TRY (LALCreateDetector(status->statusPtr, &Detector1, &detector_params, bar), status);
-
+  
   *Detector=Detector1;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
-
-} /* CreateDetector() */
+  
+} /* CreateNautilusDetector() */
 
 /*******************************************************************************/
 
@@ -1552,7 +1552,7 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
   for (ntop=0; ntop<ReturnMaxN; ntop++)
     if (Fstat.F[indexes[ntop]]>TwoFthr){
       err=fprintf(fpmax, "%20.10f %10.8f %10.8f %20.15f\n",
-		  uvar_Freq+indexes[ntop]*uvar_dFreq,
+		  uvar_Freq+indexes[ntop]*GV.dFreq,
 		  Alpha, Delta, 2.0*log2*Fstat.F[indexes[ntop]]);
       if (err<=0) {
 	fprintf(stderr,"PrintTopValues couldn't print to Fmax!\n");
@@ -1835,7 +1835,7 @@ INT4 EstimateFLines(LALStatus *status)
   INT4 nbins=GV.FreqImax;                /* Number of points in F */
   REAL8Vector *F1=NULL; 
   REAL8Vector *FloorF1=NULL;                        /* Square of SFT */
-  /* INT2 windowSize=(0.01/uvar_dFreq);               0.1 is 1E-4*1000 */
+  /* INT2 windowSize=(0.01/GV.dFreq);               0.1 is 1E-4*1000 */
   INT2 windowSize=100;
   REAL4 THR=10.0;
   
@@ -1862,7 +1862,7 @@ INT4 EstimateFLines(LALStatus *status)
   /*  with ~ 10 h observation time */
   /*  0.0001 = 0.0002/2 */
   /*  let me put 0.005 */
-  dmp=0.5+0.0002/uvar_dFreq;
+  dmp=0.5+0.0002/GV.dFreq;
   wings=dmp;
 
 
@@ -1919,7 +1919,7 @@ INT4 EstimateFLines(LALStatus *status)
   outliersParams->Thr=THR/(2.0*medianbias);
   outliersParams->Floor = FloorF1;
   outliersParams->wings=wings; /*these must be the same as ClustersParams->wings */
-  outliersInput->ifmin=((uvar_Freq/uvar_dFreq)+0.5);
+  outliersInput->ifmin=((uvar_Freq/GV.dFreq)+0.5);
   outliersInput->data = F1;
 
   ComputeOutliers(outliersInput, outliersParams, outliers);
@@ -1931,7 +1931,7 @@ INT4 EstimateFLines(LALStatus *status)
      for (i=0;i<nbins;i++){ 
        REAL4 freq;
        REAL8 r0,r1;
-       freq=uvar_Freq + i*uvar_dFreq;
+       freq=uvar_Freq + i*GV.dFreq;
        r0=F1->data[i];
        r1=FloorF1->data[i];
        fprintf(outfile,"%f %E %E\n",freq,r0,r1);
@@ -2000,7 +2000,7 @@ INT4 EstimateFLines(LALStatus *status)
      REAL4 freq;
      REAL8 r0,r1,r2;
      j=SpLines->Iclust[i];
-     freq=(uvar_Freq+SpLines->Iclust[i]*uvar_dFreq);
+     freq=(uvar_Freq+SpLines->Iclust[i]*GV.dFreq);
      r0=F1->data[j];
      r1=FloorF1->data[j];
      r2=SpLines->clusters[i]*FloorF1->data[j];
@@ -2012,7 +2012,7 @@ INT4 EstimateFLines(LALStatus *status)
    for (i=0;i<nbins;i++){ 
      REAL4 freq;
      REAL8 r0,r1;
-     freq=uvar_Freq + i*uvar_dFreq;
+     freq=uvar_Freq + i*GV.dFreq;
      r0=F1->data[i];
      r1=FloorF1->data[i];
      fprintf(outfile,"%f %E %E\n",freq,r0,r1);
