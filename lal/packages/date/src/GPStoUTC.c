@@ -481,7 +481,8 @@ LALUTCtoGPS (LALStatus                *status,
   /*
    * Check that time asked for is not after last known leap sec
    * Use by: 2004-Dec-31 23:59:59 UTC
-   *
+   * Check bulletins such as the following to see if additiona ones are needed:
+   * http://hpiers.obspm.fr/eoppc/bul/bulc/bulletinc.dat
    * if date is later
    *    check accuracy param
    *        if anal accuracy
@@ -492,11 +493,11 @@ LALUTCtoGPS (LALStatus                *status,
    * // date is not later
    * do the conversion
    */
-  if (p_utcDate->unixDate.tm_year > 104 ||
-      (p_utcDate->unixDate.tm_year == 104 &&
-       (p_utcDate->unixDate.tm_mon > LALMONTH_DEC ||
-        (p_utcDate->unixDate.tm_mon == LALMONTH_DEC &&
-         p_utcDate->unixDate.tm_mday == 31 &&
+  if (p_utcDate->unixDate.tm_year > 105 ||
+      (p_utcDate->unixDate.tm_year == 105 &&
+       (p_utcDate->unixDate.tm_mon > LALMONTH_JUN ||
+        (p_utcDate->unixDate.tm_mon == LALMONTH_JUN &&
+         p_utcDate->unixDate.tm_mday == 30 &&
          p_utcDate->unixDate.tm_hour == 23 &&
          p_utcDate->unixDate.tm_min  == 59 &&
          p_utcDate->unixDate.tm_sec > 59))))
