@@ -106,6 +106,9 @@ main(int argc, char *argv[])
 {
     LIGOTimeGPS  gpstime;
     LIGOTimeUnix unixtime;
+    LALDate      date;
+    time_t       now;
+    CHARVector  *timestamp;
     time_t      tmptime;
     static LALStatus status;
 
@@ -121,6 +124,9 @@ main(int argc, char *argv[])
 
     if (argc == 2)
         lalDebugLevel = atoi(argv[1]);
+
+
+    LALCHARCreateVector(&status, &timestamp, (UINT4)128);
 
     printf("TEST Unix time and Unix to GPS conversion\n");
     printf("   and LALDateString\n");
@@ -139,6 +145,16 @@ main(int argc, char *argv[])
 
     printf("gpstime = %13d\n", gpstime.gpsSeconds);
     printf("\n");
+
+
+    time(&tmptime);
+    unixtime.unixSeconds = tmptime;
+    unixtime.unixNanoSeconds = 0;
+    LALUtime(&status, &date, &unixtime);
+    LALDateString(&status, timestamp, &date);
+    /*
+    printf("Current UTC time: %s\n", timestamp->data);
+    */
 
     printf("Various times, some which include leap second - look for '60' in the seconds field of the time:\n\n");
 

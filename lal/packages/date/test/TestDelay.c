@@ -100,6 +100,15 @@ int main( void )
 
   LALCreateDetector(&stat, &detector1, &frdet1, LALIFODIFFDETECTOR);
 
+  /*
+   * Expect the location vector to be (R, 0, 0): R = radius of Earth
+   *                                                 at Equator
+   */
+  printf("Det #1 location: (%7.4e, %7.4e, %7.4e)\n",
+         detector1.location[0], detector1.location[1],
+         detector1.location[2]);
+    
+
   strcpy(frdet2.name, "TEST IFO 2");
   frdet2.vertexLongitudeDegrees = 90.;
   frdet2.vertexLatitudeDegrees  = 0.;
@@ -139,6 +148,10 @@ int main( void )
     printf("X_EPS = %18.13e\n", (float)X_EPS);
     printf("H_PREC = %18.13e\n", (float)H_PREC);
   */
+
+  printf("delay      = %20.14e\n", delay);
+  printf("Rearth / c = %20.14e\n", (REAL8)LAL_REARTH_SI /
+         (REAL8)LAL_C_SI);
 
   if ((fabs(delay) - (REAL8)LAL_REARTH_SI / (REAL8)LAL_C_SI) < DOUBLE_EPSILON)
     return 0;
