@@ -645,8 +645,9 @@ tag<datatype>ArraySequence
 \noindent
 The discussion at the end of Section \ref{vectors}.
 
-\paragraph{The packing order or a VectorSequence of ArraySequence } \\
+\paragraph{The packing order or a VectorSequence of ArraySequence }
 \label{packingorderAS} 
+\medskip
 
 \noindent A vector sequence {\tt v} stores a sequence of
 $M$={\tt v->length} vectors
@@ -682,7 +683,7 @@ definitions are in {\tt LALDatatypes.h}.
 
 \subsubsection{Time}
 
-\paragraph{Time stamps } \\
+\paragraph{Time stamps } 
 
 There is a specific data structure to store GPS time. To indicate
 this, the time structure will have ``GPS" (or gps) in its name. 
@@ -709,7 +710,8 @@ LIGOTimeGPS gpsTimeList[10];	/* a list of 10 LIGOTimeGPS structures */
 \subsubsection{Sequences in time}
 
 
-\paragraph{{\texttt {TimeSeries}} } \\
+\paragraph{{\texttt {TimeSeries}} } 
+\medskip
 
 The structure {\tt TimeSeries} is used to represent a sequence of samples
 taken at uniformly spaced intervals of time. A {\tt TimeSeries} object has
@@ -758,9 +760,10 @@ tag<datatype>TimeSeries
 \end{verbatim}}
 
 
-\subparagraph{The {\texttt {name[]}} and {\texttt {LALUnit}} field 
-in structured data types } \\
+\subparagraph[LALUnit data type]{The {\texttt {name[]}} and {\texttt {LALUnit}} field 
+in structured data types }
 \label{name}
+\medskip
 
 The {\tt name} field will be an array at most {\tt LALNameLength} characters long.
 {\tt LALNameLength} will be set in {\tt LALDatatypes.h}.  Currently, the value is
@@ -803,7 +806,8 @@ LALUnit;
 \end{verbatim}}
 
 
-\paragraph{{\texttt {SequenceOfTimeSeries}}  {\bf (Not Implemented yet.)} } \\
+\paragraph{{\texttt {SequenceOfTimeSeries}}  {\bf (Not Implemented yet.)} } 
+\medskip
 
 The structure {\tt SequenceOfTimeSeries} is used to represent a sequence of
 time series, each of which starts at the same time, e.g. the two
@@ -864,8 +868,10 @@ tag<datatype>SequenceOfTimeSeries
 <datatype>TimeSeries;
 \end{verbatim}}
 
-\subparagraph{The packing order {\texttt {SequenceOfTimeSeries}} } \\
+\subparagraph{The packing order {\texttt {SequenceOfTimeSeries}} } 
 \label{packingorder}
+\medskip
+
 
 As an example of how the packing goes, consider two time series s0[t] and s1[t]:
 
@@ -886,7 +892,9 @@ data->data[2047]   = s1[1023] ;
 \end{verbatim}}
 
 
-\paragraph{{\texttt {TimeVectorSeries}}  } \\
+\paragraph{{\texttt {TimeVectorSeries}}  } 
+\medskip
+
 
 The structure {\tt TimeVectorSeries} is used to represent a sequence of
 vectors taken at uniformly spaced intervals of time. A
@@ -944,7 +952,9 @@ tag<datatype>TimeVectorSeries
 <datatype>TimeVectorSeries;
 \end{verbatim}}
 
-\paragraph{{\texttt {TimeArraySeries}} } \\
+\paragraph{{\texttt {TimeArraySeries}} } 
+\medskip
+
 
 The structure {\tt TimeArraySeries} is used to represent a sequence of
 arrays taken at uniformly spaced intervals of time. A {\tt TimeArraySeries}
@@ -1009,7 +1019,9 @@ tag<datatype>TimeArraySeries
 
 \subsubsection{Sequences in frequency}
 
-\paragraph{{\texttt {FrequencySeries}} } \\
+\paragraph{{\texttt {FrequencySeries}} } 
+\medskip
+
 
 The structure {\tt FrequencySeries} is used to represent result of a Fourier
 transformation on a {\tt TimeSeries} object. It may have both negative and
@@ -1083,7 +1095,9 @@ power-spectrum (one-sided real frequency series)
 \end{itemize}
 
 \paragraph{{\texttt {SequenceOfFrequencySeries}} {\bf (Not implemented
-yet.)} } \\
+yet.)} } 
+\medskip
+
 
 The structure SequenceOfFrequencySeries is used to represent result of
 a Fourier transformation on a {\tt SequenceOfTimeSeries} object. It
@@ -1144,7 +1158,9 @@ tag<datatype>SequenceOfFrequencySeries
 \end{verbatim}}
 
 
-\paragraph{{\texttt {FrequencyVectorSeries}} } \\
+\paragraph{{\texttt {FrequencyVectorSeries}} } 
+\medskip
+
 
 
 The structure {\tt FrequencyVectorSeries} is used to represent result of a
@@ -1208,7 +1224,9 @@ tag<datatype>SequenceOfFrequencySeries
 <datatype>TimeSeries;
 \end{verbatim}}
 
-\paragraph{{\texttt {FrequencyArraySeries}} {\bf (Not yet implemented)} } \\
+\paragraph{{\texttt {FrequencyArraySeries}} {\bf (Not yet implemented)} } 
+\medskip
+
 
 The structure FrequencyArraySeries is used to represent result of a
 Fourier transformation on a {\tt TimeArraySeries} object. It may have both
@@ -1318,7 +1336,9 @@ tag<datatype>TableSeries
 
 \subsubsection{{\texttt {TransferFunction}}}
 
-\paragraph{Frequency domain   {\bf (Not implemented yet.)} } \\
+\paragraph{Frequency domain   {\bf (Not implemented yet.)} } 
+\medskip
+
 
 The structure {\tt FTransferFunction} is used to represent $H[s]$:
 
@@ -1353,7 +1373,9 @@ tag<datatype>FTransferFunction
 <datatype>FTransferFunction;
 \end{verbatim}}
 
-\paragraph{Zero, poles and gain representation }  \\
+\paragraph{Zero, poles and gain representation } 
+\medskip
+
 
 The structure {\tt ZPGFilter} is used to represent a transfer functions as a
 list of zeroes, poles, and a gain.
@@ -1634,7 +1656,7 @@ subroutine calls; one of the subroutines must have lost it or set it
 to {\tt NULL}. \\
 \hline
 \end{tabular}
-\caption{Shows the negative values for the {\texttt {statusCode}} that have been
+\caption[Reserved negative status codes]{Shows the negative values for the {\texttt {statusCode}} that have been
 reserved for generic failures.}
 \label{statusCode}
 \end{center}
