@@ -113,10 +113,10 @@ char *asctime_r( const struct tm *, char * );
 
 
 /* UPDATEME */
-/* latest time for which this routine will work: 2004-06-30 23:59:59 UTC */
+/* latest time for which this routine will work: 2004-12-31 23:59:59 UTC */
 /* GPS for maxtestedGPS computed using tconvert (part of ligotools) by
    P. Shawhan */
-static const INT4 maxtestedGPS = 772675212;
+static const INT4 maxtestedGPS = 788572812;
 
 /*
  * Convert GPS seconds to UTC date-time contained in LALDate structure
@@ -131,7 +131,8 @@ LALGPStoUTC (LALStatus                *status,
                                                       accounting:
                                                       LALLEAPSEC_LOOSE, or LALLEAPSEC_STRICT */
 { /* </lalVerbatim> */
-  /* UPDATEME */
+  /* UPDATEME -- to update, add an entry at the end listing
+   * te Unix epoch time when a leap second is introduced */
   /* this is a table of Unix epoch times when leap
    * seconds were introduced */
   static const time_t leaps[]={
@@ -476,10 +477,10 @@ LALUTCtoGPS (LALStatus                *status,
              p_utcDate->unixDate.tm_mday >= 6))), status,
           DATEH_EGPSDATETOOEARLY, DATEH_MSGEGPSDATETOOEARLY);
 
-  /* UPDATEME */
+  /* UPDATEME -- to update, fix the first if() statement */
   /*
    * Check that time asked for is not after last known leap sec
-   * Use by: 2004-Jun-30 23:59:59 UTC
+   * Use by: 2004-Dec-31 23:59:59 UTC
    *
    * if date is later
    *    check accuracy param
@@ -493,9 +494,9 @@ LALUTCtoGPS (LALStatus                *status,
    */
   if (p_utcDate->unixDate.tm_year > 104 ||
       (p_utcDate->unixDate.tm_year == 104 &&
-       (p_utcDate->unixDate.tm_mon > LALMONTH_JUN ||
-        (p_utcDate->unixDate.tm_mon == LALMONTH_JUN &&
-         p_utcDate->unixDate.tm_mday == 30 &&
+       (p_utcDate->unixDate.tm_mon > LALMONTH_DEC ||
+        (p_utcDate->unixDate.tm_mon == LALMONTH_DEC &&
+         p_utcDate->unixDate.tm_mday == 31 &&
          p_utcDate->unixDate.tm_hour == 23 &&
          p_utcDate->unixDate.tm_min  == 59 &&
          p_utcDate->unixDate.tm_sec > 59))))
@@ -633,7 +634,8 @@ LALLeapSecs (LALStatus                    *status,
                                                                accuracy parameters */
 { /* </lalVerbatim> */
 
-  /* UPDATEME */
+  /* UPDATEME -- to update, add the new (GPS, TAI - UTC) entry at the end
+   *             see http://hpiers.obspm.fr/eoppc/bul/bulc/bulletinc.dat */
   /* Table of TAI-UTC */
   static const gps_leap_sec_t gpsLeaps[] =
     {
