@@ -397,8 +397,10 @@ LALTwoDMesh( LALStatus          *stat,
 	ABORT( stat, TWODMESHH_EWIDTH, TWODMESHH_MSGEWIDTH );
       }
       column.domain[1] = column.domain[0] + w1;
-      if ( column.domain[1] > params->domain[1] )
+      if ( column.domain[1] > params->domain[1] ) {
 	column.domain[1] = params->domain[1];
+	w1 = column.domain[1] - column.domain[0];
+      }
 
       /* Set remaining column parameters. */
       (params->getRange)( stat->statusPtr, column.rightRange,
@@ -533,7 +535,6 @@ LALTwoDColumn( LALStatus            *stat,
     here->x = position[0];
     here->dx = dx;
     here->next = here->subMesh = NULL;
-
     if ( params->nOut >= nIn ) {
       *tail = here;
       DETATCHSTATUSPTR( stat );
