@@ -72,12 +72,12 @@ static int condor_flag = 0;
 /* sampling parameters */
 INT4 sampleRate = 16384;
 INT4 resampleRate = 1024;
-REAL8 deltaF = 0.25;
+INT4 FFTDuration = 4; 
 INT4 numFFT = 10;
 /* data parameters */
 LIGOTimeGPS gpsStartTime, gpsCalibTime;
 UINT8 startTime = 730793098;
-UINT8 stopTime = 730793138;
+UINT8 stopTime = 730793198;
 CHAR frameCache1[100] = "cachefiles/H-730793097.cache";
 CHAR frameCache2[100] = "cachefiles/L-730793097.cache";
 CHAR channel1[LALNameLength]= "H1:LSC-AS_Q";
@@ -109,6 +109,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 overlapPSDLength;
   INT4 psdLength;
   INT4 windowPSDLength;
+  REAL8 deltaF;
   LALWindowParams winparPSD;
   AverageSpectrumParams specparPSD;
   REAL4FrequencySeries psd1,psd2;
@@ -137,7 +138,8 @@ INT4 main(INT4 argc, CHAR *argv[])
    {fprintf(stdout, "Calculating number of segments...\n");}
 
   /* get number of segments */
-  segmentDuration = numFFT * (1. / deltaF);
+  deltaF = (REAL8) (1. / FFTDuration);
+  segmentDuration = numFFT * FFTDuration;
   numSegments = (INT4)((stopTime - startTime) / segmentDuration );
 
   /* set length for data segments */
@@ -187,9 +189,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 
   /* set PSD window length */
-  windowPSDLength = (UINT4)(resampleRate / deltaF);
+  windowPSDLength = (resampleRate * FFTDuration);
 
   /* set parameters for PSD estimation */
+  psdLength = windowPSDLength / 2 + 1;
   if (overlap_hann_flag)
    { overlapPSDLength = windowPSDLength / 2;}
   else 
@@ -402,7 +405,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
      {
       /* options that set a flag */
       {"overlap-hann", no_argument, &overlap_hann_flag, 1},
-      {"condor", no_argument, &condor_flag,1},
+      {"condor", no_argument, &condor_flag, 1},
       {"verbose", no_argument, &verbose_flag, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'h'},
@@ -410,7 +413,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"gps-end-time", required_argument, 0, 'T'},
       {"sample-rate", required_argument, 0, 'A'},
       {"resample-rate", required_argument, 0, 'a'},
-      {"deltaF", required_argument, 0, 'f'},
+      {"FFT-duration", required_argument, 0, 'f'},
       {"number-FFT", required_argument, 0, 'n'},
       {"ifo-one", required_argument, 0, 'i'},
       {"ifo-two", required_argument, 0, 'I'},
@@ -471,13 +474,13 @@ void parseOptions(INT4 argc, CHAR *argv[])
 	       break;
 
       case 'f':
-	       /* frequency resolution */
-	       deltaF = atof(optarg);
+	       /*FFT duration */
+	       FFTDuration = atoi(optarg);
 	       break;                            
 
       case 'n':
                /* number of FFT */
-               deltaF = atoi(optarg);
+               FFTDuration = atoi(optarg);
                break;
                           
       case 'i':
@@ -580,7 +583,7 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " -T                    GPS stop time\n");
   fprintf(stderr, " -A                    sample rate\n");
   fprintf(stderr, " -a                    resample rate\n");
-  fprintf(stderr, " -f                    frequency resolution\n");
+  fprintf(stderr, " -f                    FFT Duration\n");
   fprintf(stderr, " -n                    number of FFTs\n");      
   fprintf(stderr, " --overlap-hann        use overlap window\n");             
   fprintf(stderr, " -i                    ifo for first stream\n");
