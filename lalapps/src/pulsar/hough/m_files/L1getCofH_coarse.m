@@ -71,7 +71,7 @@ for bandnumber=0:Nbands-1
   nMonteCarlos=length(Ncount0);
 
    for h0num=1:nh0
-     x=Ncount(:, h0num+1);
+     x=Ncount0(:, h0num+1);
      kkcount = find(x>Nmax(bn));
      CH(h0num) = length(kkcount)/nMonteCarlos;
    end
