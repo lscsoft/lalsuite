@@ -248,29 +248,14 @@ LALFindChirpBCVSpinFilterSegment (
  rootI           = sqrt(I);
  denominator     = I*M  +  0.5*pow(I,2) - pow(J,2);
  rootDenominator = sqrt(denominator);
- denominator1    = sqrt ( 0.25 * pow(I,3) + M*(pow(J,2) - 
-        pow(K,2)) - 0.5*(pow(J,2) + pow(K,2)) - I*(pow(L,2) + 
-        pow(M,2)) + 2*J*K*L );
+ denominator1    = sqrt ( 0.25 * pow(I,3) 
+	+ M*(pow(J,2) - pow(K,2)) 
+	- 0.5 *(pow(J,2) + pow(K,2)) 
+	- I * (pow(L,2) + pow(M,2)) 
+	+ 2*J*K*L );
 
 
-  /* 
-   * the calculation of the orthonormalised 
-   * amplitude vectors a1, a2, a3, put in a loop
-   *
-   */   
-
-
- for ( k = 1; k < fcSeg->data->data->length; ++k )
-  {
-  a1 = amp[k]/ rootI ;
-
-  a2 = amp[k]/rootDenominator * (I * cos(Beta * ampBCVSpin2[k]) -  J);
-
-  a3 = amp[k]/denominator1 * ( sin(Beta * ampBCVSpin2[k]) - 
-      (I*L - J*K)*cos(Beta * ampBCVSpin2[k])/denominator + 
-      (J*L - K*M + 0.5*I*K)/denominator );
-  }
-  
+ 
  
 
   /*
@@ -287,8 +272,7 @@ LALFindChirpBCVSpinFilterSegment (
   
   /*
    *
-   * compute qtilde, qtildeBCV, and q, qBCV 
-   * need to create qtildeBCVSpin, qBCVSpin
+   * compute qtilde, qtildeBCVSpin1 and qtildeBCVSpin2
    *
    * needs close checking
    *
@@ -303,7 +287,7 @@ LALFindChirpBCVSpinFilterSegment (
   for ( k = 1; k < numPoints/2; ++k )
   {
     REAL4 r        = inputData1[k].re;
-    REAL4 s        = 0.0 - inputData1[k].im;         /* note complex conjugate */
+    REAL4 s        = 0.0 - inputData1[k].im;       /* note complex conjugate */
    
     REAL4 x = tmpltSignal[k].re;
     REAL4 y = tmpltSignal[k].im;     
@@ -313,17 +297,31 @@ LALFindChirpBCVSpinFilterSegment (
     qtilde[k].im        = r * y + s * x ;
      
     
-    qtildeBCVSpin1[k]     = qtilde[k];
+    qtildeBCVSpin1[k] = qtilde[k];
     qtildeBCVSpin2[k] = qtilde[k]; 
 
-    qtilde[k].re         *= a1;
-    qtildeBCVSpin1[k].re *= a2;
-    qtildeBCVSpin2[k].re *= a3; 
+    /* real parts */
+    qtilde[k].re         *= amp[k]/ rootI ;                        /* A1 */
 
-    qtilde[k].im         *= a1;
-    qtildeBCVSpin1[k].im *= a2;
-    qtildeBCVSpin2[k].im *= a3; 
+    qtildeBCVSpin1[k].re *= amp[k]/ (rootDenominator * rootI);              
+    qtildeBCVSpin1[k].re *=(I * cos(Beta * ampBCVSpin2[k]) -  J);  /* A2 */
 
+    qtildeBCVSpin2[k].re *= (amp[k]/denominator1); 
+    qtildeBCVSpin2[k].re *= (sin(Beta * ampBCVSpin2[k])
+	    - ( (I*L - J*K) * cos(Beta * ampBCVSpin2[k]) / denominator)
+	    + ( (J*L - K*M + 0.5*I*K) / denominator ) );           /* A3 */
+
+
+    /* imaginary parts */
+    qtilde[k].im         *= amp[k]/ rootI ;                        /* A1 */
+
+    qtildeBCVSpin1[k].im *= amp[k]/(rootDenominator * rootI);  
+    qtildeBCVSpin1[k].im *= (I * cos(Beta * ampBCVSpin2[k]) -  J); /* A2 */
+ 
+    qtildeBCVSpin2[k].im *= (amp[k]/denominator1); 
+    qtildeBCVSpin2[k].im *= (sin(Beta * ampBCVSpin2[k])
+	    - ( (I*L - J*K) * cos(Beta * ampBCVSpin2[k]) / denominator)
+	    + ( (J*L - K*M + 0.5*I*K) / denominator ) );           /* A3 */
   }
 
   /* qtilde negative frequency only: not DC or nyquist */
@@ -345,21 +343,36 @@ LALFindChirpBCVSpinFilterSegment (
       qtildeBCVSpin1[k] = qtilde[k];
       qtildeBCVSpin2[k] = qtilde[k]; 
 
+      /* real parts */
+      qtilde[k].re         *= amp[k]/ rootI ;                        /* A1 */
+
+      qtildeBCVSpin1[k].re *= amp[k]/(rootDenominator * rootI);              
+      qtildeBCVSpin1[k].re *=(I * cos(Beta * ampBCVSpin2[k]) -  J);  /* A2 */
+
+      qtildeBCVSpin2[k].re *= (amp[k]/denominator1); 
+      qtildeBCVSpin2[k].re *= (sin(Beta * ampBCVSpin2[k])
+	    - ( (I*L - J*K) * cos(Beta * ampBCVSpin2[k]) / denominator)
+	    + ( (J*L - K*M + 0.5*I*K) / denominator ) );             /* A3 */
+
+      
+
+      /* imaginary parts */
+      qtilde[k].im         *= amp[k]/ rootI ;                        /* A1 */
+
+      qtildeBCVSpin1[k].im *= amp[k]/(rootDenominator * rootI);  
+      qtildeBCVSpin1[k].im *= (I * cos(Beta * ampBCVSpin2[k]) -  J); /* A2 */
+ 
+      qtildeBCVSpin2[k].im *= (amp[k]/denominator1); 
+      qtildeBCVSpin2[k].im *= (sin(Beta * ampBCVSpin2[k])
+	    - ( (I*L - J*K) * cos(Beta * ampBCVSpin2[k]) / denominator)
+	    + ( (J*L - K*M + 0.5*I*K) / denominator ) );             /* A3 */
      
-      qtilde[k].re         *= a1;
-      qtildeBCVSpin1[k].re *= a2;
-      qtildeBCVSpin2[k].re *= a3; 
-
-      qtilde[k].im         *= a1;
-      qtildeBCVSpin1[k].im *= a2;
-      qtildeBCVSpin2[k].im *= a3; 
-
     }
    }
  
    /* 
     *
-    * inverse fft to get q, qBCV and qBCVSpin 
+    * inverse fft to get q, qBCVSpin1 and qBCVSpin2
     *    
     */
 
