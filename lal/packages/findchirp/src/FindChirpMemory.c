@@ -61,34 +61,37 @@ LALCreateDataSegmentVector (
 
   /* create the ouput structure */
   vectorPtr = *vector = (DataSegmentVector *) 
-    LALMalloc( sizeof(DataSegmentVector) );
-  ASSERT( vectorPtr, status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
-  memset( vectorPtr, 0, sizeof(DataSegmentVector) );
+    LALCalloc( 1, sizeof(DataSegmentVector) );
+  if ( ! vectorPtr )
+  {
+    ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
+  }
 
   /* set the number of segments in the vector */
   vectorPtr->length = params->numSegments;
 
   /* allocate memory for an array of data segments */
   segPtr = vectorPtr->data = (DataSegment *) 
-    LALMalloc( vectorPtr->length * sizeof(DataSegment) );
+    LALCalloc( 1, vectorPtr->length * sizeof(DataSegment) );
   if ( !segPtr )
   {
     LALFree( vectorPtr );
     vectorPtr = NULL;
     ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
   }
-  memset( segPtr, 0, vectorPtr->length * sizeof(DataSegment) );
 
   /* create the individual DataSegments in the vector */
-  /* just give up if anything fails                   */
-  /* this should be cleaned up to prevent leaks       */
+  /* XXX just give up if anything fails               */
+  /* XXX this should be cleaned up to prevent leaks   */
   for (i = 0; i < vectorPtr->length; ++i)
   {
     /* ifodmro */
     segPtr[i].data = (INT2TimeSeries *) 
-      LALMalloc( sizeof(INT2TimeSeries) );
-    ASSERT( segPtr[i].data, status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
-    memset( segPtr[i].data, 0, sizeof(INT2TimeSeries) );
+      LALCalloc( 1, sizeof(INT2TimeSeries) );
+    if ( ! segPtr[i].data )
+    {
+      ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
+    }
 
     LALI2CreateVector (status->statusPtr, 
         &segPtr[i].data->data, params->numPoints);
@@ -96,9 +99,11 @@ LALCreateDataSegmentVector (
 
     /* as_q */
     segPtr[i].real4Data = (REAL4TimeSeries *) 
-      LALMalloc( sizeof(REAL4TimeSeries) );
-    ASSERT( segPtr[i].real4Data, status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
-    memset( segPtr[i].real4Data, 0, sizeof(REAL4TimeSeries) );
+      LALCalloc( 1, sizeof(REAL4TimeSeries) );
+    if ( ! segPtr[i].real4Data )
+    {
+      ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
+    }
 
     LALCreateVector (status->statusPtr, 
         &segPtr[i].real4Data->data, params->numPoints);
@@ -106,9 +111,11 @@ LALCreateDataSegmentVector (
 
     /* power spectrum */
     segPtr[i].spec = (REAL4FrequencySeries *) 
-      LALMalloc( sizeof(REAL4FrequencySeries) );
-    ASSERT( segPtr[i].spec, status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
-    memset( segPtr[i].spec, 0, sizeof(REAL4FrequencySeries) );
+      LALCalloc( 1, sizeof(REAL4FrequencySeries) );
+    if ( ! segPtr[i].spec )
+    {
+      ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
+    }
 
     LALCreateVector (status->statusPtr, 
         &segPtr[i].spec->data, params->numPoints/2 + 1);
@@ -116,9 +123,11 @@ LALCreateDataSegmentVector (
     
     /* response function */
     segPtr[i].resp = (COMPLEX8FrequencySeries *) 
-      LALMalloc( sizeof(COMPLEX8FrequencySeries) );
-    ASSERT( segPtr[i].resp, status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
-    memset( segPtr[i].resp, 0, sizeof(COMPLEX8FrequencySeries) );
+      LALCalloc( 1, sizeof(COMPLEX8FrequencySeries) );
+    if ( ! segPtr[i].resp )
+    {
+      ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
+    }
 
     LALCCreateVector (status->statusPtr, 
         &segPtr[i].resp->data, params->numPoints/2 + 1);
@@ -259,33 +268,37 @@ LALCreateFindChirpSegmentVector (
 
   /* create the output structure */
   vectorPtr = *vector = (FindChirpSegmentVector *) 
-    LALMalloc( sizeof(FindChirpSegmentVector) );
-  ASSERT( vectorPtr, status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
-  memset( vectorPtr, 0, sizeof(FindChirpSegmentVector) );
+    LALCalloc( 1, sizeof(FindChirpSegmentVector) );
+  if ( ! vectorPtr )
+  {
+    ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
+  }
 
   /* set the number of segments in the vector */
   vectorPtr->length = params->numSegments;
 
   /* allocate memory for an array of findchirp segments */
   segPtr = vectorPtr->data = (FindChirpSegment *) 
-    LALMalloc( vectorPtr->length * sizeof(FindChirpSegment) );
+    LALCalloc( 1, vectorPtr->length * sizeof(FindChirpSegment) );
   if ( !segPtr )
   {
     LALFree( vectorPtr );
     vectorPtr = NULL;
     ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
   }
-  memset( segPtr, 0, vectorPtr->length * sizeof(FindChirpSegment) );
 
   /* create the individual FindChirpSegments in the vector */
-  /* just give up if anything fails                        */
-  /* this should be cleaned up to prevent leaks            */
+  /* XXX just give up if anything fails                    */
+  /* XXX this should be cleaned up to prevent leaks        */
   for (i = 0; i < vectorPtr->length; ++i)
   {
     /* template independent part of filter */
     segPtr[i].data = (COMPLEX8FrequencySeries *)
-      LALMalloc( sizeof(COMPLEX8FrequencySeries));
-    memset( segPtr[i].data, 0, sizeof(COMPLEX8FrequencySeries) );
+      LALCalloc( 1, sizeof(COMPLEX8FrequencySeries));
+    if ( ! segPtr[i].data )
+    {
+      ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
+    }
 
     LALCCreateVector (status->statusPtr, 
         &segPtr[i].data->data, params->numPoints/2 + 1);

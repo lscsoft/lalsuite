@@ -231,7 +231,8 @@ LALExchangeInspiralEventList (
     do
     {
       /* create memory for the template */
-      eventCurrent = (InspiralEvent *) LALMalloc (sizeof(InspiralEvent));
+      eventCurrent = (InspiralEvent *) 
+        LALCalloc ( 1, sizeof(InspiralEvent) );
 
       /* make a note of the first node in the list to return */
       if ( *eventHead == NULL ) *eventHead = eventCurrent;
@@ -302,7 +303,8 @@ LALExchangeTemplateBank (
     do
     {
       /* create memory for the template */
-      tmpltCurrent = (InspiralTemplate *) LALMalloc (sizeof(InspiralTemplate));
+      tmpltCurrent = (InspiralTemplate *) 
+        LALCalloc ( 1, sizeof(InspiralTemplate) );
 
       /* make a note of the first node in the list to return */
       if ( *tmpltHead == NULL ) *tmpltHead = tmpltCurrent;

@@ -61,14 +61,11 @@ LALFindChirpSPTemplateInit (
 
   /* create the output structure */
   outputPtr = *output = (FindChirpSPTmpltParams *)
-    LALMalloc( sizeof(FindChirpSPTmpltParams) );
-  ASSERT( outputPtr, status, FINDCHIRPSP_EALOC, FINDCHIRPSP_MSGEALOC );
-  memset( outputPtr, 0, sizeof(FindChirpSPTmpltParams) );
-
-  /* don't need this because of the memset above */
-  /* outputPtr->deltaT    = 0.0; */
-  /* outputPtr->fLow      = 0.0; */
-  /* outputPtr->xfacVec   = NULL; */
+    LALCalloc( 1, sizeof(FindChirpSPTmpltParams) );
+  if ( ! outputPtr )
+  {
+    ABORT( status, FINDCHIRPSP_EALOC, FINDCHIRPSP_MSGEALOC );
+  }
 
   /* create the vector to store x^(-7/6) */
   LALCreateVector( status->statusPtr, &(outputPtr->xfacVec), 

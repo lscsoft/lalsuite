@@ -60,20 +60,21 @@ LALCreateFindChirpInput (
 
   /* create the output structure */
   outputPtr = *output = (FindChirpFilterInput *)
-    LALMalloc( sizeof(FindChirpFilterInput) );
-  ASSERT( outputPtr, status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
-  memset( outputPtr, 0, sizeof(FindChirpFilterInput) );
+    LALCalloc( 1, sizeof(FindChirpFilterInput) );
+  if ( ! outputPtr )
+  {
+    ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
+  }
 
   /* create memory for the chirp template structure */
   outputPtr->fcTmplt = (FindChirpTemplate *)
-    LALMalloc( sizeof(FindChirpTemplate) );
+    LALCalloc( 1, sizeof(FindChirpTemplate) );
   if ( !outputPtr->fcTmplt )
   {
     LALFree( *output );
     *output = NULL;
     ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
   }
-  memset( outputPtr->fcTmplt, 0, sizeof(FindChirpTemplate) );
 
   /* create memory for the chirp template data */
   LALCCreateVector (status->statusPtr, &(outputPtr->fcTmplt->data), 
@@ -188,24 +189,25 @@ LALFindChirpFilterInit (
 
   /* create the output structure */
   outputPtr = *output = (FindChirpFilterParams *)
-    LALMalloc( sizeof(FindChirpFilterParams) );
-  ASSERT( outputPtr, status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
-  memset( outputPtr, 0, sizeof(FindChirpFilterParams) );
+    LALCalloc( 1, sizeof(FindChirpFilterParams) );
+  if ( ! outputPtr )
+  {
+    ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
+  }
 
   /* create memory for the chisq parameters */
   outputPtr->chisqParams = (FindChirpChisqParams *)
-    LALMalloc( sizeof(FindChirpChisqParams) );
+    LALCalloc( 1, sizeof(FindChirpChisqParams) );
   if ( !outputPtr->chisqParams )
   {
     LALFree( outputPtr );
     *output = NULL;
     ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
   }
-  memset( outputPtr->chisqParams, 0, sizeof(FindChirpChisqParams) );
 
   /* create memory for the chisq input */
   outputPtr->chisqInput = (FindChirpChisqInput *)
-    LALMalloc( sizeof(FindChirpChisqInput) );
+    LALCalloc( 1, sizeof(FindChirpChisqInput) );
   if ( !outputPtr->chisqInput )
   {
     LALFree( outputPtr->chisqParams );
@@ -213,7 +215,6 @@ LALFindChirpFilterInit (
     *output = NULL;
     ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
   }
-  memset( outputPtr->chisqInput, 0, sizeof(FindChirpChisqInput) );
 
 
   /*
@@ -255,7 +256,8 @@ LALFindChirpFilterInit (
       params->numPoints );
   BEGINFAIL( status )
   {
-    TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ), status );
+    TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ), 
+        status );
 
     TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
         &(outputPtr->invPlan) ), status );
@@ -272,8 +274,10 @@ LALFindChirpFilterInit (
       params->numPoints);
   BEGINFAIL( status )
   {
-    TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVec) ), status );
-    TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ), status );
+    TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVec) ), 
+        status );
+    TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ), 
+        status );
 
     TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
         &(outputPtr->invPlan) ), status );
@@ -299,9 +303,12 @@ LALFindChirpFilterInit (
         params->numPoints);
     BEGINFAIL( status )
     {
-      TRY( LALDestroyVector (status->statusPtr, &(outputPtr->chisqVec) ), status ); 
-      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVec) ), status );
-      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ), status );
+      TRY( LALDestroyVector (status->statusPtr, &(outputPtr->chisqVec) ), 
+          status ); 
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVec) ), 
+          status );
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ), 
+          status );
 
       TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
           &(outputPtr->invPlan) ), status );
@@ -647,8 +654,11 @@ LALFindChirpFilterSegment (
         {
           /* if this is the first event, start the list */
           thisEvent = *eventList = (InspiralEvent *) 
-            LALMalloc( sizeof(InspiralEvent) );
-          memset( thisEvent, 0, sizeof(InspiralEvent) );
+            LALCalloc( 1, sizeof(InspiralEvent) );
+          if ( ! thisEvent )
+          {
+            ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
+          }
           thisEvent->id = eventId++;
 
           /* stick minimal data into the event */
@@ -691,8 +701,11 @@ LALFindChirpFilterSegment (
           lastEvent = thisEvent;
 
           lastEvent->next = thisEvent = (InspiralEvent *) 
-            LALMalloc( sizeof(InspiralEvent) );
-          memset( thisEvent, 0, sizeof(InspiralEvent) );
+            LALCalloc( 1, sizeof(InspiralEvent) );
+          if ( ! lastEvent->next )
+          {
+            ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
+          }
           thisEvent->id = eventId++;
 
           /* stick minimal data into the event */

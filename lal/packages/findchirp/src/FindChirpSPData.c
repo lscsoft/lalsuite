@@ -63,24 +63,12 @@ LALFindChirpSPDataInit (
 
   /* create the output structure */
   dataParamPtr = *output = (FindChirpSPDataParams *)
-    LALMalloc( sizeof(FindChirpSPDataParams) );
-  ASSERT( dataParamPtr, status, FINDCHIRPSP_EALOC, FINDCHIRPSP_MSGEALOC );
-  memset( dataParamPtr, 0, sizeof(FindChirpSPDataParams) );
+    LALCalloc( 1, sizeof(FindChirpSPDataParams) );
+  if ( ! dataParamPtr )
+  {
+    ABORT( status, FINDCHIRPSP_EALOC, FINDCHIRPSP_MSGEALOC );
+  }
 
-  /* should need this because of the memset above */
-  /* set contents to reasonable values */
-  /* dataParamPtr->ampVec        = NULL; */
-  /* dataParamPtr->fwdPlan       = NULL; */
-  /* dataParamPtr->invPlan       = NULL; */
-  /* dataParamPtr->vVec          = NULL; */
-  /* dataParamPtr->wVec          = NULL; */
-  /* dataParamPtr->wtildeVec     = NULL; */
-  /* dataParamPtr->tmpltPowerVec = NULL; */
-  /* dataParamPtr->deltaT        = 0; */
-  /* dataParamPtr->fLow          = 0; */
-  /* dataParamPtr->dynRange      = 0; */
-  /* dataParamPtr->invSpecTrunc  = 0; */
-  
 
   /*
    *
