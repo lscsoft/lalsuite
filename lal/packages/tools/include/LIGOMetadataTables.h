@@ -42,6 +42,30 @@ extern "C" {
 
 NRCSID( LIGOMETADATATABLESH, "$Id$" );
 
+/* defines for lengths of database table char arrays       */
+/* one longer than as defined in the SQL tables to allow   */
+/* strage of the terminating null need for the C %s format */
+#define LIGOMETA_PROGRAM_MAX 17
+#define LIGOMETA_VERSION_MAX 65
+#define LIGOMETA_CVS_REPOSITORY_MAX 257
+#define LIGOMETA_COMMENT_MAX 241
+#define LIGOMETA_NODE_MAX 65
+#define LIGOMETA_USERNAME_MAX 65
+#define LIGOMETA_DOMAIN_MAX 64
+#define LIGOMETA_IFOS_MAX 13
+#define LIGOMETA_PARAM_MAX 33
+#define LIGOMETA_TYPE_MAX 17
+#define LIGOMETA_VALUE_MAX 1025
+#define LIGOMETA_NAME_MAX 65
+#define LIGOMETA_STRING_MAX 257
+#define LIGOMETA_IFO_MAX 3
+#define LIGOMETA_SEARCH_MAX 25
+#define LIGOMETA_CHANNEL_MAX 65
+#define LIGOMETA_FRAMESETG_MAX 49
+#define LIGOMETA_SEGMENTG_MAX 49
+#define LIGOMETA_SUMMVALUE_NAME_MAX 129
+#define LIGOMETA_SUMMVALUE_COMM_MAX 81
+
 #if 0
 <lalLaTeX>
 \subsection*{Types}
@@ -83,20 +107,20 @@ typedef struct
 tagProcessTable
 {
   struct tagProcessTable *next;
-  CHAR          program[16];
-  CHAR          version[64];
-  CHAR          cvs_repository[256];
+  CHAR          program[LIGOMETA_PROGRAM_MAX];
+  CHAR          version[LIGOMETA_VERSION_MAX];
+  CHAR          cvs_repository[LIGOMETA_CVS_REPOSITORY_MAX];
   LIGOTimeGPS   cvs_entry_time;
-  CHAR          comment[240];
+  CHAR          comment[LIGOMETA_COMMENT_MAX];
   INT4          is_online;
-  CHAR          node[64];
-  CHAR          username[64];
+  CHAR          node[LIGOMETA_NODE_MAX];
+  CHAR          username[LIGOMETA_USERNAME_MAX];
   LIGOTimeGPS   start_time;
   LIGOTimeGPS   end_time;
   INT4          jobid;
-  CHAR          domain[64];
+  CHAR          domain[LIGOMETA_DOMAIN_MAX];
   INT4          unix_procid;
-  CHAR          ifos[12];
+  CHAR          ifos[LIGOMETA_IFOS_MAX];
 }
 ProcessTable;
 /* </lalVerbatim> */
@@ -114,10 +138,10 @@ typedef struct
 tagProcessParamsTable
 {
   struct tagProcessParamsTable *next;
-  CHAR          program[16];
-  CHAR          param[32];
-  CHAR          type[16];
-  CHAR          value[1024];
+  CHAR          program[LIGOMETA_PROGRAM_MAX];
+  CHAR          param[LIGOMETA_PARAM_MAX];
+  CHAR          type[LIGOMETA_TYPE_MAX];
+  CHAR          value[LIGOMETA_VALUE_MAX];
 }
 ProcessParamsTable;
 /* </lalVerbatim> */
@@ -138,7 +162,7 @@ typedef struct
 tagSearchSummaryTable
 {
   struct tagSearchSummaryTable *next;
-  CHAR          comment[240];
+  CHAR          comment[LIGOMETA_COMMENT_MAX];
   LIGOTimeGPS   in_start_time;
   LIGOTimeGPS   in_end_time;
   LIGOTimeGPS   out_start_time;
@@ -162,8 +186,8 @@ typedef struct
 tagSearchSummvarsTable
 {
   struct tagSearchSummvarsTable *next;
-  CHAR          name[64];
-  CHAR          string[256];
+  CHAR          name[LIGOMETA_NAME_MAX];
+  CHAR          string[LIGOMETA_STRING_MAX];
   REAL8         value;
 }
 SearchSummvarsTable;
@@ -182,9 +206,9 @@ typedef struct
 tagSnglBurstTable
 {
   struct tagSnglBurstTable *next;
-  CHAR          ifo[3];
-  CHAR          search[24];
-  CHAR          channel[65];
+  CHAR          ifo[LIGOMETA_IFO_MAX];
+  CHAR          search[LIGOMETA_SEARCH_MAX];
+  CHAR          channel[LIGOMETA_CHANNEL_MAX];
   LIGOTimeGPS   start_time;
   REAL4         duration;
   REAL4         central_freq;
@@ -209,9 +233,9 @@ typedef struct
 tagSnglInspiralTable
 {
   struct tagSnglInspiralTable *next;
-  CHAR          ifo[2];
-  CHAR          search[24];
-  CHAR          channel[64];
+  CHAR          ifo[LIGOMETA_IFO_MAX];
+  CHAR          search[LIGOMETA_SEARCH_MAX];
+  CHAR          channel[LIGOMETA_CHANNEL_MAX];
   LIGOTimeGPS   end_time;
   LIGOTimeGPS   impulse_time;
   REAL8         template_duration;
@@ -250,18 +274,18 @@ typedef struct
 tagSummValueTable
 {
   struct tagSummValueTable *next;
-  CHAR          program[16];
-  CHAR          frameset_group[48];
-  CHAR          segment_group[48];
+  CHAR          program[LIGOMETA_PROGRAM_MAX];
+  CHAR          frameset_group[LIGOMETA_FRAMESETG_MAX];
+  CHAR          segment_group[LIGOMETA_SEGMENTG_MAX];
   INT4          version;
   LIGOTimeGPS   start_time;
   LIGOTimeGPS   end_time;
-  CHAR          ifo[2];
-  CHAR          name[128];
+  CHAR          ifo[LIGOMETA_IFO_MAX];
+  CHAR          name[LIGOMETA_SUMMVALUE_NAME_MAX];
   REAL4         value;
   REAL4         error;
   INT4          intvalue;
-  CHAR          comment[80];
+  CHAR          comment[LIGOMETA_SUMMVALUE_COMM_MAX];
 }
 SummValueTable;
 /* </lalVerbatim> */
