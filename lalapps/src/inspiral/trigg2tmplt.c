@@ -271,6 +271,7 @@ int main ( int argc, char *argv[] )
    */
 
 
+  memset( &results, 0, sizeof(LIGOLwXMLStream) );
   outputTable.snglInspiralTable = eventHead;
   
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, outputFileName),
