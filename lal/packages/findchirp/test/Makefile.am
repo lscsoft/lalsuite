@@ -4,13 +4,15 @@
 #
 if MPI
 check_PROGRAMS  = 
-TESTS           = NoTest
+TESTS           = NoTest.sh
 else
 check_PROGRAMS  =
-TESTS           = NoTest
+TESTS           = NoTest.sh
 endif
 
-EXTRA_DIST      = NoTest FindChirpTmpltTest.c FindChirpSPTest.c
+EXTRA_DIST      = NoTest.sh FindChirpTmpltTest.c FindChirpSPTest.c
+
+EXTRA_TEXSOURCES = NoTest.sh
 
 #FindChirpTmpltTest_SOURCES = FindChirpTmpltTest.c
 #FindChirpTmpltTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
