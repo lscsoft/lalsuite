@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = Date.h TimeDelay.h
+pkginclude_HEADERS = Date.h TimeDelay.h SkyAnnulus.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 all-local: include-link
