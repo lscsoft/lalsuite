@@ -18,6 +18,40 @@ PtoleMeshTest
  
 \subsubsection*{Description}
 
+The \texttt{-b} option sets the beginning time of integration to the option
+argument. (Default is $7\times10^8$ seconds.)
+
+The \texttt{-c} option determins the center of the patch. (Default is the
+center of the globular cluster 47 Tuc.) This option is hardcoded to use
+equatorial coordinates and the argument should be given in hh:mm:ss:dd:mm:ss
+format.
+
+The \texttt{-e} option sets \texttt{lalDebugLevel} to the option argument.
+(Default is 1.)
+
+The \texttt{-f} option sets the maximum frequency of integration (in Hz) to the
+option argument. (The default value is 1000.)
+
+The \texttt{-i} option does not function at this time.
+
+The \texttt{-m} option sets the maximum mismatch of the mesh to the option
+argument. (Default is 0.02.)
+
+The \texttt{-n} option sets the maximum number of nodes in the mesh to the
+option argument. (Default is $10^6$.)
+
+The \texttt{-r} option sets the radius (in decimal degrees) of the circular sky
+patch. (The default value is set for the globular cluster 47 Tuc.) At the
+moment there is no option for another patch shape.
+
+The \texttt{-t} option sets the duration of integration, in seconds. (The
+default is $10^5$ seconds, which is of order one day but is not an integer
+multiple of anything astronomically important.)
+
+The \texttt{-x} option makes a plot of the mesh points on the sky patch using a
+system call to \texttt{xmgrace}. If \texttt{xmgrace} is not installed on your
+system, this option will not work. The plot goes to a file \texttt{mesh.agr}.
+
 \subsubsection*{Exit Codes}
 ************************************************ </lalLaTeX><lalErrTable> */
 #define PTOLEMESHTESTC_EMEM 1
