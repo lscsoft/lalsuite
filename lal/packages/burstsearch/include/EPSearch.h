@@ -122,21 +122,13 @@ tagEPDataSegmentVector
 }
 EPDataSegmentVector;
 
-/* enum added to control search method 7/18/02 MSW */
-typedef enum
-{
-  useMean,
-  useMedian,
-  useUnity
-} EPMethod;
-
 typedef struct
 tagEPInitParams
 {
   UINT4                         numPoints;
   UINT4                         numSegments;
   UINT4                         segDutyCycle;
-  EPMethod                      method;
+  AvgSpecMethod                 method;
 }
 EPInitParams;
 

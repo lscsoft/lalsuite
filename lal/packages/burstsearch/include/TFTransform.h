@@ -13,6 +13,7 @@ $Id$
 #include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
 #include <lal/LALRCSID.h>
+#include <lal/TimeFreqFFT.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
@@ -71,15 +72,6 @@ typedef struct tagTFPlaneParams
 TFPlaneParams;
 
 
-typedef struct tagRealDFTParams
-{
-  WindowType               windowType;
-  REAL4Vector              *window;
-  REAL4                    sumofsquares;
-  RealFFTPlan              *plan;
-}
-RealDFTParams;
-
 typedef struct tagComplexDFTParams
 {
   WindowType               windowType;
@@ -123,22 +115,6 @@ typedef struct tagHorizontalTFTransformIn
 HorizontalTFTransformIn;
 
 
-
-
-void
-LALCreateRealDFTParams ( 
-                     LALStatus                         *status, 
-                     RealDFTParams                  **dftParams, 
-                     LALWindowParams                   *params,
-                     INT2                           sign
-                     );
-
-
-void
-LALDestroyRealDFTParams (
-                      LALStatus                        *status, 
-                      RealDFTParams                 **dftParams
-                      );
 
 
 void

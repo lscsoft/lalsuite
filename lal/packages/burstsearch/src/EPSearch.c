@@ -18,6 +18,7 @@ $Id$
 #include <lal/EPData.h>
 #include <lal/Random.h>
 #include <lal/BandPassTimeSeries.h>
+#include <lal/TimeFreqFFT.h>
 #include <lal/LALRCSID.h>
 
 NRCSID (EPSEARCHC, "$Id$");
@@ -431,7 +432,7 @@ EPSearch (
 /* assumes inputs are positive, sorts in descending order    */
 /*************************************************************/
 
-REAL4 EPMedian(REAL4 *p, INT4 j, INT4 flength, INT4 numSegs, LALStatus *status)
+static REAL4 EPMedian(REAL4 *p, INT4 j, INT4 flength, INT4 numSegs, LALStatus *status)
 {
     /* p points to array of power spectra data over time slices */
     /* j is desired frequency offset into power spectra array   */
