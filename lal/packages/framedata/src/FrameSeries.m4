@@ -149,6 +149,7 @@ static struct FrVect *loadFrVect( FrStream *stream, const char *channel )
       adc = FrAdcDataRead( stream->file );
       if ( ! adc ) /* only happens if memory allocation error */
         return NULL;
+      adc->next = NULL;
       vect = FrVectReadNext( stream->file, tstart, chan );
       vect = FrVectCopy( vect );
       FrAdcDataFree( adc );
@@ -157,6 +158,7 @@ static struct FrVect *loadFrVect( FrStream *stream, const char *channel )
       sim = FrSimDataRead( stream->file );
       if ( ! sim ) /* only happens if memory allocation error */
         return NULL;
+      sim->next = NULL;
       vect = FrVectReadNext( stream->file, tstart, chan );
       vect = FrVectCopy( vect );
       FrSimDataFree( sim );
@@ -165,6 +167,7 @@ static struct FrVect *loadFrVect( FrStream *stream, const char *channel )
       proc = FrProcDataRead( stream->file );
       if ( ! proc ) /* only happens if memory allocation error */
         return NULL;
+      proc->next = NULL;
       vect = FrVectReadNext( stream->file, tstart, chan );
       vect = FrVectCopy( vect );
       FrProcDataFree( proc );
