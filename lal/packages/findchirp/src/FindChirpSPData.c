@@ -443,8 +443,6 @@ LALFindChirpSPData (
       FINDCHIRPSPH_EFLOW, FINDCHIRPSPH_MSGEFLOW );
   ASSERT( params->dynRange > 0, status,
       FINDCHIRPSPH_EDYNR, FINDCHIRPSPH_MSGEDYNR );
-  ASSERT( params->invSpecTrunc >= 0, status,
-      FINDCHIRPSPH_EISTN, FINDCHIRPSPH_MSGEISTN );
   
   /* check that the input exists */
   ASSERT( dataSegVec, status,
