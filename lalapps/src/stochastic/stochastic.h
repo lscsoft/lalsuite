@@ -44,6 +44,8 @@ REAL4TimeSeries *rectangular_window(LALStatus *status, REAL8 deltaT,
     REAL8 f0, INT4 length);
 REAL4TimeSeries *hann_window(LALStatus *status, REAL8 deltaT,
     REAL8 f0, INT4 length);
+REAL4TimeSeries *data_window(LALStatus *status, REAL8 deltaT,
+    REAL8 f0, INT4 length, INT4 hannDuration);
 
 #ifdef  __cplusplus
 }

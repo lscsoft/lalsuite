@@ -515,6 +515,60 @@ REAL4TimeSeries *hann_window(LALStatus *status,
   return(series);
 }
 
+/* function to return the data window */
+REAL4TimeSeries *data_window(LALStatus *status,
+    REAL8 deltaT,
+    REAL8 f0,
+    INT4 length,
+    INT4 hannDuration)
+{
+  /* variables */
+  REAL4TimeSeries *series;
+  REAL4TimeSeries *hann;
+  LIGOTimeGPS time;
+  INT4 hannLength;
+  INT4 i;
+
+  /* set time */
+  time.gpsSeconds = 0;
+  time.gpsNanoSeconds = 0;
+
+  /* get length of hann segment requested */
+  hannLength = (INT4)(hannDuration / deltaT);
+
+  if (hannLength == 0)
+  {
+    /* rectangular window requested */
+    series = rectangular_window(status, deltaT, f0, length);
+  }
+  else if (hannLength == length)
+  {
+    /* pure hann window requested */
+    series = hann_window(status, deltaT, f0, length);
+  }
+  else if ((hannLength > 0) && (hannLength < length))
+  {
+    series = rectangular_window(status, deltaT, f0, length);
+    hann = hann_window(status, deltaT, f0, hannLength);
+
+    /* construct tukey window */
+    for (i = 0; i < hannLength / 2; i++)
+      series->data->data[i] = hann->data->data[i];
+    for (i = hannLength / 2; i < hannLength; i++)
+      series->data->data[length - hannLength + i] = hann->data->data[i];
+
+    /* free memory for hann window */
+    LAL_CALL(LALDestroyREAL4TimeSeries(status, hann), status);
+  }
+  else
+  {
+    fprintf(stderr, "invalid hann length to data_window()...\n");
+    exit(1);
+  }
+
+  return(series);
+}
+
 /*
  * vim: et
  */

@@ -202,10 +202,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* window for segment data streams */
   REAL4TimeSeries *dataWindow;
 
-  /* hann window */
-  INT4 hannLength;
-  REAL4TimeSeries *hannWindow;
-
   /* high pass filtering */
   PassBandParamStruc highpassParam;
 
@@ -558,28 +554,14 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   if (vrbflg)
     fprintf(stdout, "Generating data segment window...\n");
-  dataWindow = rectangular_window(&status, seriesOne->deltaT, 0, \
-      segmentLength);
 
   if (overlap_hann_flag)
     hannDuration = segmentDuration;
 
-  if (hannDuration != 0)
-  {
-    /* generate pure Hann window */
-    hannLength = hannDuration * resampleRate;
-    hannWindow = hann_window(&status, seriesOne->deltaT, 0, hannLength);
- 
-    /* construct Tukey window */
-    for (i = 0; i < hannLength / 2; i++)
-      dataWindow->data->data[i] = hannWindow->data->data[i];
+  dataWindow = data_window(&status, seriesOne->deltaT, 0, \
+      segmentLength, hannDuration);
 
-    for (i = segmentLength - (hannLength / 2); i < segmentLength; i++)
-    {
-      dataWindow->data->data[i] = hannWindow->data->data[i - \
-                                 segmentLength + hannLength];
-    }
-  }
+  LALSPrintTimeSeries(dataWindow, "1.dat");
 
   /* structure for high pass filtering */
   if (high_pass_flag)
@@ -1308,10 +1290,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, overlap), &status);
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, omegaGW), &status);
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, dataWindow), &status);
-  if (hannDuration != 0)
-  {
-    LAL_CALL(LALDestroyREAL4TimeSeries(&status, hannWindow), &status);
-  }
   LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, hBarTildeOne), &status);
   LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, hBarTildeTwo), &status);
   if (inject_flag)
