@@ -138,10 +138,6 @@ LALPercentileWavelet( LALStatus *status,
     _percentile((*output)->out->wavelet, input->nonZeroFraction, 
 		FALSE, &(*output)->out->medians, &(*output)->out->norm50);
 
-  for(i=0;i<32;i++)
-    {
-      printf("LALPercentileWavelet: i=%d, norm=%f\n",i,(*output)->out->norm50[i]); fflush(stdout);
-    }
 
   if(fabs((*output)->out->nonZeroFractionAfterPercentile - input->nonZeroFraction) > maxError1)
     {
