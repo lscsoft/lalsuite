@@ -84,7 +84,6 @@ ProcessParamsTable *this_proc_param;
 /* parameters for the stochastic search */
 
 /* sampling parameters */
-INT4 sampleRate = -1;
 INT4 resampleRate = -1;
 REAL8 deltaF = 0.25;
 
@@ -319,7 +318,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* add a resample buffer, if required */
-  if ((sampleRate != resampleRate) || (high_pass_flag))
+  if ((resampleRate) || (high_pass_flag))
     padData = 1;
   else
     padData = 0;
@@ -1392,7 +1391,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   " --gps-end-time N              GPS end time\n"\
   " --interval-duration N         interval duration\n"\
   " --segment-duration N          segment duration\n"\
-  " --sample-rate N               sample rate\n"\
   " --resample-rate N             resample rate\n"\
   " --f-min N                     minimal frequency\n"\
   " --f-max N                     maximal frequency\n"\
@@ -1457,7 +1455,6 @@ void parse_options(INT4 argc, CHAR *argv[])
       {"gps-end-time", required_argument, 0, 'c'},
       {"interval-duration", required_argument, 0, 'd'},
       {"segment-duration", required_argument, 0, 'e'},
-      {"sample-rate", required_argument, 0, 'f'},
       {"resample-rate", required_argument, 0, 'g'},
       {"f-min", required_argument, 0, 'h'},
       {"f-max", required_argument, 0, 'i'},
@@ -1596,20 +1593,6 @@ void parse_options(INT4 argc, CHAR *argv[])
           exit(1);
         }
         ADD_PROCESS_PARAM("int", "%d", segmentDuration);
-        break;
-
-      case 'f':
-        /* sample rate */
-        sampleRate = atoi(optarg);
-        if (sampleRate < 2 || sampleRate > 16384 || sampleRate % 2)
-        {
-          fprintf(stderr, "Invalid argument to --%s:\n" \
-              "Sample rate must be a power of 2 between 2 and 16384: " \
-              "inclusive: (%d specified)\n", long_options[option_index].name, \
-              sampleRate);
-          exit(1);
-        }
-        ADD_PROCESS_PARAM("int", "%d", sampleRate);
         break;
 
       case 'g':
@@ -2052,12 +2035,7 @@ void parse_options(INT4 argc, CHAR *argv[])
     exit(1);
   }
 
-  /* sample rates */
-  if (sampleRate == -1)
-  {
-    fprintf(stderr, "--sample-rate must be specified\n");
-    exit(1);
-  }
+  /* resample rate */
   if (resampleRate == -1)
   {
     fprintf(stderr, "--resample-rate must be specified\n");
@@ -2247,14 +2225,6 @@ void parse_options(INT4 argc, CHAR *argv[])
     exit(1);
   }
 
-  /* resample rate greater than sample rate */
-  if (resampleRate > sampleRate)
-  {
-    fprintf(stderr, "Invalid resample rate (%d); must be less than sample " \
-        "rate (%d)\n", resampleRate, sampleRate);
-    exit(1);
-  }
-
   /* interval duration must be a least 3 times the segment duration */
   if ((intervalDuration / segmentDuration) < 3)
   {
@@ -2274,7 +2244,7 @@ void parse_options(INT4 argc, CHAR *argv[])
 
   /* if a resample buffer is required, is the total duration greater
    * than the interval duration */
-  if ((sampleRate != resampleRate) || (high_pass_flag))
+  if ((resampleRate) || (high_pass_flag))
   {
     if ((endTime - startTime - 2) < intervalDuration)
     {
