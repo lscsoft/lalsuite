@@ -45,7 +45,12 @@ RCSID( "$Id$" );
 #define usage( program ) fprintf( stderr, usgfmt, program )
 
 #ifndef LAL_FRAME_ENABLED
-int main( void ) { fputs( "LAL not frame-enabled\n", stderr ); return 77; }
+int main( void )
+{
+  lalDebugLevel = 0; /* do something with it so the linker picks it up */
+  fputs( "Disabled: LALApps compiled with non-frame-enabled LAL\n", stderr );
+  return 77;
+}
 #else
 
 extern char *optarg;
