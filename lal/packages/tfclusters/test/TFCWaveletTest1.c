@@ -47,14 +47,16 @@ Returns 0 on success, otherwise returns 1.
 NRCSID (MAIN, "$Id$");
 
 
+#include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/TFClusters.h>
 #include <lal/TFCWavelet.h>
 #include <lal/Random.h>
+#include <string.h>
 
 #define CHKST if(status.statusCode != 0) return -1
 
-int lalDebugLevel = 0; /* painfully slow if not zero, because of realloc function that is being used ad nauseum */
+int lalDebugLevel = LALMSGLVL3;
 
 
 
@@ -66,7 +68,6 @@ int main(int argc, char* argv[]) {
   CList clist, list;
   TFCWParams twav;
   TFPlaneParams tspec;
-  REAL4Vector wavelet;
   Spectrogram spower;
 
   RandomParams *params = NULL;
@@ -117,9 +118,12 @@ int main(int argc, char* argv[]) {
   tspec.timeBins = twav.timeBins = N / twav.minScale;
   tspec.freqBins = twav.freqBins = 9;
   tspec.deltaT = twav.deltaT = twav.minScale * tseries.deltaT;
-  wavelet.length = 4;
-  wavelet.data = daub2;
-  twav.wavelet = &wavelet;
+
+  twav.wavelet = NULL;
+  LALCreateVector( &status, &twav.wavelet, 4 );
+  CHKST;
+  memcpy( twav.wavelet->data, daub2,
+      twav.wavelet->length * sizeof( *twav.wavelet->data ) );
 
   tspec.flow = 1.0 / twav.maxScale;
 
@@ -187,6 +191,8 @@ int main(int argc, char* argv[]) {
   
   LALDestroyVector(&status, &vect);
   CHKST;
+
+  LALDestroyVector( &status, &twav.wavelet );
   
   return 0;
 

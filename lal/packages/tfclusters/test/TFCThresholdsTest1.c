@@ -6,7 +6,7 @@ NRCSID (MAIN, "$Id$");
 #include <lal/TFCThresholds.h>
 #define CHKST if(status.statusCode != 0) return -1
 
-int lalDebugLevel = 0;
+int lalDebugLevel = LALMSGLVL3;
 
 int main(int argc, char* argv[]) {
 

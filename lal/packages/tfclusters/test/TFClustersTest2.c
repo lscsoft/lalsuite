@@ -53,7 +53,7 @@ NRCSID (MAIN, "$Id$");
 
 #define CHKST if(status.statusCode != 0) return -1
 
-int lalDebugLevel = 0; /* painfully slow if not zero, because of realloc function that is being used ad nauseum */
+int lalDebugLevel = LALMSGLVL3 | LALNMEMDBG;
 
 
 int main(int argc, char* argv[]) {
