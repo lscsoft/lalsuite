@@ -246,7 +246,7 @@ inca_post_script = open( 'inca_post_script.sh', 'w' )
 run = cp.get('pipeline','run')
 inca_post_script.write("""#!/bin/sh
 cp ${1} /cluster/inspiral/%s/${1}
-ln -s /cluster/inspiral/%s/${1} /cluster/inspiral/%s/INSPIRAL_%s.xml
+ln -sf /cluster/inspiral/%s/${1} /cluster/inspiral/%s/INSPIRAL_%s.xml
 """ % (run, run, run, ifo) )
 inca_post_script.close()
 inca.set_post_script('inca_post_script.sh')
