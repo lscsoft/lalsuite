@@ -49,6 +49,7 @@ TESTS = PrintVectorTest \
         LALMath3DPlotTest
 
 TESTS_ENVIRONMENT = LAL_DATA_PATH=$(srcdir)
-MOSTLYCLEANFILES = .dvi-dep *.dat *PrintVector.00* *.out  outputsft.0 
+MOSTLYCLEANFILES = .dvi-dep *.dat *PrintVector.00* *.out  outputsft.0 \
+		   TestOutputSFT.0 TestOutputSFT.1 Math3DNotebook.nb
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep

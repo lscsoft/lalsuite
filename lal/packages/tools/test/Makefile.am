@@ -35,6 +35,10 @@ TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResp
 else
 TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest
 endif
-MOSTLYCLEANFILES = .dvi-dep PrintVector.* transfer.out
+MOSTLYCLEANFILES = .dvi-dep PrintVector.* transfer.out \
+	ff_diff_plus.txt ff_rms_diff_plus_vs_fudge.txt \
+	ff_rms_diff_cros_vs_fudge.txt ff_local_cros.txt ff_lal_cros.txt \
+	ff_local_plus.txt ff_lal_plus.txt ff_diff_cros.txt
+
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
