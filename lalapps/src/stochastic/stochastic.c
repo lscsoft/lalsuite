@@ -66,6 +66,7 @@ char *optarg;
 int optind;
 
 /* flags for getopt_long */
+static int middle_segment_flag = 0;
 static int inject_flag = 0;
 static int apply_mask_flag = 0;
 static int high_pass_flag = 0;
@@ -1431,9 +1432,11 @@ INT4 main(INT4 argc, CHAR *argv[])
 	     seg2[segLoop]->data[i] = segment2.data->data[i] ;
 	    }            
 	  
-
-           if (segLoop!= segMiddle)
-
+           
+           if ((middle_segment_flag == 0) && (segLoop == segMiddle))
+	    {if (verbose_flag)
+	      {fprintf(stdout, "ignoring middle segment..\n");}}
+           else
 	    {
              if (verbose_flag)
 	      { fprintf(stdout, "Estimating PSDs...\n");}
@@ -1484,7 +1487,7 @@ INT4 main(INT4 argc, CHAR *argv[])
                calPsd2->data[i] = calPsd2->data[i] + 1. / calInvPsd2.data->data[i] ;
 	      }
 	    }
-          }       
+	    }       
            
           /* average calibrated PSDs and take inverse */
 
@@ -1708,6 +1711,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
      {
       /* options that set a flag */
       {"inject", no_argument, &inject_flag, 1},
+      {"middle-segment", no_argument, &middle_segment_flag, 1},
       {"apply-mask", no_argument, &apply_mask_flag, 1},
       {"high-pass-filter", no_argument, &high_pass_flag, 1},
       {"overlap-hann", no_argument, &overlap_hann_flag, 1},
