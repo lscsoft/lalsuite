@@ -63,6 +63,7 @@ struct PolkaCommandLineArgsTag
   REAL8 DeltaDelta;  /* Size of coincidence window in radians */
   REAL8 fmin;        /* Minimum frequency of candidate in first IFO */
   REAL8 fmax;        /* Maximum frequency of candidate in first IFO */
+  UINT4 EAH;         /* Einstein at home flag for alternative output */ 
 } PolkaCommandLineArgs;
 
 typedef struct CandidateTag 
@@ -328,30 +329,68 @@ int main(int argc,char *argv[])
   for (i=0; i < numCoincidences; i++) 
     indicesCCfa[i]=i;
 
-  /* sort in increasing probability of joint false alarm */
-  qsort((void *)indicesCCfa, (size_t)numCoincidences, sizeof(int), compareCCfa);
-
   /* open and write the file */
 #if USE_BOINC
   if (boinc_resolve_filename(PolkaCommandLineArgs.OutputFile, resolved_filename, sizeof(resolved_filename))) {
-      fprintf(stderr,
-              "Can't resolve file \"%s\"\n"
-              "If running a non-BOINC test, create [INPUT] or touch [OUTPUT] file\n",
-              PolkaCommandLineArgs.OutputFile);
-      boinc_finish(2);
+    fprintf(stderr,
+	    "Can't resolve file \"%s\"\n"
+	    "If running a non-BOINC test, create [INPUT] or touch [OUTPUT] file\n",
+	    PolkaCommandLineArgs.OutputFile);
+    boinc_finish(2);
   }
   fpOut=fopen(resolved_filename,"w");
 #else
   fpOut=fopen(PolkaCommandLineArgs.OutputFile,"w"); 	 
 #endif
-  for (i=0; i < numCoincidences; i++) 
+  if (!PolkaCommandLineArgs.EAH)
     {
-      UINT4 k = indicesCCfa[i];  /* print out ordered by joint significance */
-      fprintf(fpOut,"%1.15le %le %le %le %le %1.15le %le %le %le %le %le\n",
-	      CC[k].f1, CC[k].Alpha1, CC[k].Delta1,
-	      CC[k].F1, CC[k].fa1,
-	      CC[k].f2, CC[k].Alpha2, CC[k].Delta2,
-	      CC[k].F2, CC[k].fa2, CC[k].fa);
+      /* sort in increasing probability of joint false alarm */
+      qsort((void *)indicesCCfa, (size_t)numCoincidences, sizeof(int), compareCCfa);
+      for (i=0; i < numCoincidences; i++) 
+	{
+	  UINT4 k = indicesCCfa[i];  /* print out ordered by joint significance */
+	  fprintf(fpOut,"%1.15le %le %le %le %le %1.15le %le %le %le %le %le\n",
+		  CC[k].f1, CC[k].Alpha1, CC[k].Delta1,
+		  CC[k].F1, CC[k].fa1,
+		  CC[k].f2, CC[k].Alpha2, CC[k].Delta2,
+		  CC[k].F2, CC[k].fa2, CC[k].fa);
+	}
+    }else{
+      fprintf(fpOut,"%%1\n");
+      {
+	int k=-1;    
+	for (i=0; i < CList1.length; i++)
+	  {
+	    if (CList1.Ctag[i]) 
+	      {
+		k++;
+		fprintf(fpOut,"%1.15le %le %le %le\n", CList1.f[i],CList1.Alpha[i],CList1.Delta[i],CList1.F[i]);
+		CList1.CtagCounter[i]=k;
+	      }
+	  }
+      }
+      fprintf(fpOut,"%%2\n");
+      {
+	int k=-1;
+	for (i=0; i < CList2.length; i++)
+	  {
+	    if (CList2.Ctag[i]) 
+	      {
+		k++;
+		fprintf(fpOut,"%1.15le %le %le %le\n", CList2.f[i],CList2.Alpha[i],CList2.Delta[i],CList2.F[i]);  
+		CList2.CtagCounter[i]=k;
+	      }    
+	  }
+      }
+      fprintf(fpOut,"%%coincidences\n");
+      /* sort in increasing probability of joint false alarm */
+      qsort((void *)indicesCCfa, (size_t)numCoincidences, sizeof(int), compareCPfa);
+      
+      for (i=0; i < numCoincidences; i++) 
+	{
+	  UINT4 k = indicesCCfa[i];  /* print out ordered by joint significance */
+	  fprintf(fpOut,"%d %d %le\n", CList1.CtagCounter[CP[k].c1],CList2.CtagCounter[CP[k].c2],CP[k].fa);
+	}
     }
 #if USE_BOINC
   /* write end marker */
@@ -359,48 +398,6 @@ int main(int argc,char *argv[])
   Outputfilename=resolved_filename;
 #endif
   fclose(fpOut);
-
-  fprintf(stdout,"%%1\n");
-  {
-    int k=-1;    
-    for (i=0; i < CList1.length; i++)
-      {
-	if (CList1.Ctag[i]) 
-	  {
-	    k++;
-	    fprintf(stdout,"%1.15le %le %le %le\n", CList1.f[i],CList1.Alpha[i],CList1.Delta[i],CList1.F[i]);
-	    CList1.CtagCounter[i]=k;
-	  }
-      }
-  }
-  fprintf(stdout,"%%2\n");
-  {
-    int k=-1;
-    for (i=0; i < CList2.length; i++)
-      {
-	if (CList2.Ctag[i]) 
-	  {
-	    k++;
-	    fprintf(stdout,"%1.15le %le %le %le\n", CList2.f[i],CList2.Alpha[i],CList2.Delta[i],CList2.F[i]);  
-	    CList2.CtagCounter[i]=k;
-	  }    
-      }
-  }
-  fprintf(stdout,"%%coincidences\n");
-  
-  /* I'm re-cycling this array here */
-  for (i=0; i < numCoincidences; i++) 
-    indicesCCfa[i]=i;
-  /* sort in increasing probability of joint false alarm */
-  qsort((void *)indicesCCfa, (size_t)numCoincidences, sizeof(int), compareCPfa);
-
-  for (i=0; i < numCoincidences; i++) 
-    {
-      UINT4 k = indicesCCfa[i];  /* print out ordered by joint significance */
-      fprintf(stdout,"%d %d %le\n", CList1.CtagCounter[CP[k].c1],CList2.CtagCounter[CP[k].c2],CP[k].fa);
-    }
-  fprintf(stdout,"%%DONE\n");
-
 
   LALFree(indices1F);
   LALFree(indices2F);
@@ -686,7 +683,7 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
   INT4 c; 
   INT4 option_index = 0;
 
-  const char *optstring = "h1:2:3:4:f:a:d:m:M:o:s:e:";
+  const char *optstring = "h1:2:3:4:f:a:d:m:M:o:s:e:b";
   struct option long_options[] =
     {
       {"fstatsfile1", 		required_argument, 0, 	'1'},
@@ -697,6 +694,7 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
       {"fmin",   		required_argument, 0, 	's'},
       {"fmax",   		required_argument, 0, 	'e'},
       {"outputfile", 		required_argument, 0, 	'o'},
+      {"EAHoutput", 		no_argument, 0, 	'b'},
       {"help", 			no_argument, 0, 	'h'},
       {0, 0, 0, 0}
     };
@@ -712,6 +710,7 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
   CLA->DeltaDelta=0;
   CLA->fmin=0;
   CLA->fmax=0;
+  CLA->EAH=0;
 
   /* reset gnu getopt */
   optind = 0;
@@ -763,6 +762,10 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
 	/* Spin down order */
 	CLA->DeltaDelta=atof(optarg);
 	break;
+      case 'b':
+	/* Spin down order */
+	CLA->EAH=1;
+	break;
       case 'h':
 	/* print usage/help message */
 	fprintf(stderr,"Arguments are (defaults):\n");
@@ -776,7 +779,8 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
 	fprintf(stderr,"\t--delta-window (-d)\tFLOAT\tDelta window in radians (0.0)\n");
 	fprintf(stderr,"\t--fmin (-s)\tFLOAT\t Minimum frequency of candidate in 1st IFO\n");
 	fprintf(stderr,"\t--fmax (-e)\tFLOAT\t Maximum frequency of candidate in 1st IFO\n");
-	fprintf(stderr,"\t--help        (-h)\tFLOAT\tThis message\n");
+	fprintf(stderr,"\t--EAHoutput (-b)\tFLAG\t Einstein at home output flag. \n");
+	fprintf(stderr,"\t--help        (-h)\t\tThis message\n");
 	exit(0);
 	break;
       default:
