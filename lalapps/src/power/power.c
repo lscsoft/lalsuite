@@ -1040,11 +1040,20 @@ static REAL4TimeSeries *get_time_series(
 	} else
 		return(NULL);
 
+	/* Turn on checking for missing data */
+	stream->mode = LAL_FR_VERBOSE_MODE;
+
 	/* Get the data */
 	if(geodata)
 		series = get_geo_data(stat, stream, params->channelName, start, end, lengthlimit, params->tfTilingInput.flow - 10.0);
 	else
 		series = get_ligo_data(stat, stream, params->channelName, start, end, lengthlimit);
+
+	/* Check for missing data */
+	if(stream->state | LAL_FR_GAP) {
+		fprintf(stderr, "Error: gap in data between GPS times %d.%09d s and %d.%09d s\n", start.gpsSeconds, start.gpsNanoSeconds, end.gpsSeconds, end.gpsNanoSeconds);
+		LAL_CALL(LALDestroyREAL4TimeSeries(stat, series), stat);
+	}
 
 	/* Clean up */
 	LAL_CALL(LALFrClose(stat, &stream), stat);
