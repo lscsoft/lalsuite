@@ -10,4 +10,4 @@ PrintFTSeriesTest_SOURCES = PrintFTSeriesTest.c
 PrintFTSeriesTest_LDADD = $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = LALVersionTest LALMallocTest PrintVectorTest
-MOSTLYCLEANFILES = *.dat *PrintVector.00*
+MOSTLYCLEANFILES = *.dat *PrintVector.00* *.out

@@ -54,12 +54,32 @@ int lalDebugLevel = 3;
 
 int raise (int sig);
 
-int main( void )
+int main( int argc, char *argv[] )
 {
+#if defined(NDEBUG) || defined(LAL_NDEBUG) /* debugging is turned off */
+  return 77; /* don't do any testing */
+#else
   int    *p;
   int    *q;
   int     i;
   size_t  n;
+
+  if ( lalNoDebug ) /* library was not compiled with debugging */
+    return 77; /* don't do any testing */
+
+  switch ( argc )
+  {
+    case 1:
+      if ( ! freopen( "LALMallocTest.out", "w", stderr ) ) return 1;
+      break;
+    case 2:
+      if ( strcmp( argv[1], "-" ) )
+        if ( ! freopen( argv[1], "w", stderr ) ) return 1;
+      break;
+    default:
+      fprintf( stderr, "Usage: %s [ - | filename ]\n", argv[0] );
+      return 1;
+  }
 
   fprintf (stderr, "Test 0: allocate and free an int\n");
   p = (int *) LALMalloc (sizeof(int));
@@ -160,6 +180,7 @@ int main( void )
   LALFree (p);
 
   return 0;
+#endif
 }
 
 int raise (int sig)

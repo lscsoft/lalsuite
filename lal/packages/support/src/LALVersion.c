@@ -20,6 +20,13 @@ const int   lalVersionMinor  = LAL_VERSION_MINOR;
 const char *lalConfigureArgs = LAL_CONFIGURE_ARGS;
 const char *lalConfigureDate = LAL_CONFIGURE_DATE;
 
+#if defined(NDEBUG) || defined(LAL_NDEBUG)
+const int lalNoDebug = 1;
+#else
+const int lalNoDebug = 0;
+#endif
+
+
 int
 LALsnprintf( char *str, size_t size, const char *fmt, ... )
 {
