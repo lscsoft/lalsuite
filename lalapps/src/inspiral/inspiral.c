@@ -1264,6 +1264,7 @@ int main( int argc, char *argv[] )
 
       matchNorm *= ( 4.0 * (REAL4) fcSegVec->data->deltaT ) / 
         (REAL4) numPoints;
+      matchNorm = sqrt( matchNorm );
 
       if ( vrbflg ) fprintf( stdout, "%e\n", matchNorm );
     }
