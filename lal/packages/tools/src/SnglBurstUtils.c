@@ -335,58 +335,52 @@ LALCompareSimBurstAndSnglBurst(
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 void
 LALClusterSnglBurstTable (
-    LALStatus        *status,
-    SnglBurstTable   *burstEvent,
-    INT4             *nevents
-    )
+	LALStatus        *status,
+	SnglBurstTable   *burstEvent,
+	INT4             *nevents
+)
 /* </lalVerbatim> */
 {
-  SnglBurstTable     *thisEvent=NULL,*prevEvent=NULL,*startEvent=NULL;
-  INT4 i, j;
-  INT4 numModEvent = 1;
+	SnglBurstTable *thisEvent = NULL;
+	SnglBurstTable *prevEvent = NULL;
+	SnglBurstTable *startEvent = NULL;
+	INT4 i, j;
+	INT4 numModEvent = 1;
 
+	INITSTATUS (status, "LALClusterSnglBurstTable", SNGLBURSTUTILSC);
+	ATTATCHSTATUSPTR (status);
 
-  INITSTATUS (status, "LALClusterSnglBurstTable", SNGLBURSTUTILSC);
-  ATTATCHSTATUSPTR (status);
+	startEvent = burstEvent;
+	thisEvent = burstEvent->next;
 
+	while (thisEvent != NULL) {
+		prevEvent = startEvent;
 
-  startEvent = burstEvent;
-  thisEvent = burstEvent->next;
+		for (i = numModEvent; i > 0; i--) {
+			if (ModifiedforClustering(prevEvent,thisEvent)) {
+				for (j = i; j > 1; j--)
+					prevEvent = prevEvent->next;
+				prevEvent->next = thisEvent->next;
+				LALFree(thisEvent);
+				break;
+			}
+			else
+				prevEvent = prevEvent->next;
+		}
 
-  while (thisEvent != NULL)
-  {
-    prevEvent = startEvent;
-    
-    for (i = numModEvent; i > 0; i--)
-      {   
-	if (ModifiedforClustering(prevEvent,thisEvent))
-	  {
-	    for (j = i; j > 1; j--)
-	      {
-		prevEvent = prevEvent->next;
-	      }
-	    prevEvent->next = thisEvent->next;
-	    LALFree(thisEvent);
-	    break;
-	  }
-	else
-	  prevEvent = prevEvent->next;
-      }
+		if (i == 0)
+			numModEvent++;
 
-    if (i == 0)
-      numModEvent++;
+		thisEvent = prevEvent->next;
+	}
 
-    thisEvent = prevEvent->next;    
-  }
-  
-  /* count the number of events in the modified list */
+	/* count the number of events in the modified list */
+	for (*nevents = 1; startEvent; startEvent = startEvent->next)
+		*nevents++;
 
-  for (*nevents = 1; startEvent; startEvent = startEvent->next)
-    *nevents++;
-
-  /* normal exit */
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+	/* normal exit */
+	DETATCHSTATUSPTR (status);
+	RETURN (status);
 }
 
 #undef NANOSEC
