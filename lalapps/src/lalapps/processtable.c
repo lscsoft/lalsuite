@@ -12,7 +12,6 @@
 #include <time.h>
 #include <lalapps.h>
 
-#include <lal/LALMalloc.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
