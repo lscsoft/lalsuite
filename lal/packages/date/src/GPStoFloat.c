@@ -54,6 +54,7 @@ into the \texttt{REAL8} values incurs an error of approximately 1.e-7.
 NRCSID(GPSTOFLOATC, "$Id$");
 
 
+double rint( double );
 static const INT4 oneBillion = 1000000000;
 
 /* <lalVerbatim file="GPStoFloatCP"> */
