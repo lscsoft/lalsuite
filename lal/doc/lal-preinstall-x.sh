@@ -109,7 +109,7 @@ make install || fail
 # build and install libframe
 #verbatim
 cd $LSCSOFT_SRCDIR/libframe-6.14 || fail
-./configure --prefix=$LSCSOFT_PREFIX --disable-ocatave || fail
+./configure --prefix=$LSCSOFT_PREFIX --disable-octave || fail
 make || fail
 make install || fail
 #/verbatim
