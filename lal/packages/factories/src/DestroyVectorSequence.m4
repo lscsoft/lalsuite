@@ -23,7 +23,7 @@ void XFUNC ( STYPE *vseq )
     XLAL_ERROR_VOID( "XFUNC", XLAL_EINVAL );
   if ( ! vseq->data && ( vseq->length || vseq->vectorLength ) )
     XLAL_ERROR_VOID( "XFUNC", XLAL_EINVAL );
-  if ( ! vseq->data )
+  if ( vseq->data )
     LALFree( vseq->data );
   vseq->data = NULL; /* leave lengths as they are to indicate freed vector */
   LALFree( vseq );
