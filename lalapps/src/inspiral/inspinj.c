@@ -1145,7 +1145,7 @@ int main( int argc, char *argv[] )
 	fprintf( fq, "Injections for joint LIGO-TAMA analysis \n" );
 	fprintf( fq, "geocentric end time  hanford end time   " );
 	fprintf( fq, "livingston end time   tama end time     " );
-	fprintf( fq, "  mtotal        eta        distance    " );
+	fprintf( fq, "  mtotal        eta      distance(kpc) " );
 	fprintf( fq, " longitude     latitude    " );
 	fprintf( fq, "inclination   coa_phase   polarization\n");
 	
@@ -1175,7 +1175,7 @@ int main( int argc, char *argv[] )
 	     ttime );
 	  fprintf( fq, "%12.6e %12.6e %12.6e %12.6e %13.6e",
 	      (this_sim_insp->mass1 + this_sim_insp->mass2), 
-	      this_sim_insp->eta, this_sim_insp->distance,
+	      this_sim_insp->eta, 1.0e+03 * this_sim_insp->distance,
 	      this_sim_insp->longitude, this_sim_insp->latitude );
 	  fprintf( fq, "%13.6e %12.6e %12.6e\n", 
 	      this_sim_insp->inclination, this_sim_insp->coa_phase,
