@@ -65,15 +65,231 @@ LALDRombergIntegrate
 #include <lal/LALInspiralBank.h>
 #include <lal/Integrate.h>
 
-NRCSID(LALINSPIRALMOMENTSC, "$Id$");
+NRCSID( LALINSPIRALMOMENTSC, "$Id$" );
 
-/*  <lalVerbatim file="LALInspiralMomentsCP"> */
+/* <lalVerbatim file="LALInspiralMomentsCP"> */
+void
+LALGetInspiralMoments (
+    LALStatus            *status,
+    InspiralMomentsEtc   *moments,
+    REAL8FrequencySeries *psd,
+    InspiralTemplate     *params 
+    )
+/* </lalVerbatim> */
+{
+  UINT4 k;
+  InspiralMomentsIn in;
 
-void LALInspiralMoments(LALStatus         *status,
-                        REAL8             *moment,
-                        InspiralMomentsIn pars)
-{ /* </lalVerbatim> */
+  INITSTATUS( status, "LALGetInspiralMoments", LALINSPIRALMOMENTSC );
+  ATTATCHSTATUSPTR( status );
 
+  ASSERT( params, status, 
+      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
+  ASSERT( params->fLower>0, status, 
+      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
+  ASSERT( moments, status, 
+      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
+  ASSERT( psd, status,
+      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
+
+  /* Constants needed in computing the moments */
+  moments->a01 = 3.L/5.L;
+  moments->a21 = 11.L * LAL_PI/12.L;
+  moments->a22 = 743.L/2016.L * pow(25.L/(2.L*LAL_PI*LAL_PI),1.L/3.L);
+  moments->a31 = -3.L/2.L;
+  moments->a41 = 617.L * LAL_PI * LAL_PI / 384.L;
+  moments->a42 = 5429.L/5376.L * pow(25.L*LAL_PI/2.L,1.L/3.L);
+  moments->a43 = 1.5293365L/1.0838016L * pow(5.L/(4.L*pow(LAL_PI,4.L)),1.L/3.L);
+
+  /* setup the input structure needed in the computation of the moments */
+  in.shf = psd;
+
+  /* Divide all frequencies by fLower, a scaling that is used in solving */
+  /* the moments integral                                                */
+  in.shf->f0 /= params->fLower;
+  in.shf->deltaF /= params->fLower;
+  in.xmin = params->fLower / params->fLower;
+  in.xmax = params->fCutoff / params->fLower;
+
+  /* First compute the norm and print if requested */
+  in.norm = 1.L;
+  in.ndx = 7.L/3.L; 
+  LALInspiralMoments( status->statusPtr, &moments->j[7], in ); 
+  CHECKSTATUSPTR( status );
+  in.norm = moments->j[7];
+
+  if ( lalDebugLevel & LALINFO )
+  {
+    LALPrintError( 
+        "a01=%e a21=%e a22=%e a31=%e a41=%e a42=%e a43=%e j7=%e\n", 
+        moments->a01, moments->a21, moments->a22, moments->a31, 
+        moments->a41, moments->a42, moments->a43, moments->j[7] );
+  }
+
+  /* Then compute the normalised moments of the noise PSD from 1/3 to 17/3. */
+  for ( k = 1; k <= 17; ++k )
+  {
+    in.ndx = (REAL8) k / 3.L; 
+    LALInspiralMoments( status->statusPtr, &moments->j[k], in );  
+    CHECKSTATUSPTR( status );
+
+    if ( lalDebugLevel & LALINFO ) 
+    {
+      LALPrintError( "j%1i=%e\n", k, moments->j[k] );
+    }
+  }
+
+  /* Moments are done: Rescale deltaF and f0 back to their original values */
+  in.shf->deltaF *= params->fLower;
+  in.shf->f0 *= params->fLower;
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
+
+
+void
+LALGetInspiralMomentsBCV (
+    LALStatus               *status,
+    InspiralMomentsEtcBCV   *moments,
+    REAL8FrequencySeries    *psd,
+    InspiralTemplate        *params 
+    )
+{
+  UINT4 k;
+  InspiralMomentsIn in;
+  double q;
+  long i;
+
+  INITSTATUS( status, "LALGetInspiralMomentsBCV", LALINSPIRALMOMENTSC );
+  ATTATCHSTATUSPTR( status );
+
+  /* doesn't seem to be needed. thomas, janvier 2004. I prefer to remove it for the moment.
+   *  The factor is not important in the case of SPA approximation but is important in BCV
+   *  case. Indeed on one hand we use quantity which are a ratio between two moments and
+   *  consequently a factor 1 or 2 is not important. Howver in the case of BCV, we might
+   *  use a moment alone. Thus a factor in the computation has an effect. */
+  
+  /*  for (i=0; i< psd->data->length ; i++)
+  {
+    psd->data->data[i] = psd->data->data[i] * 1e45;
+  }
+   */
+  in.shf = psd;  
+  in.xmin = params->fLower;
+  in.xmax = params->fCutoff;
+
+  /* First compute the norm */
+  in.norm = 1.L;
+  for ( k = 0; k <= 22; ++k )
+  {
+    if (k <= 17)
+    {
+      /* positive value*/
+      in.ndx = (REAL8)k / 3.L;
+    }
+    else
+    {
+      /* negative -1,-2 ...-6 */
+      in.ndx = (17.- (REAL8)k) /3.L;
+    }
+
+    LALInspiralMoments( status->statusPtr, &moments->i[k], in ); 
+    CHECKSTATUSPTR(status);
+  }
+
+  in.norm = moments->i[7] -2.*moments->alpha * moments->i[5] +    
+    moments->alpha * moments->alpha*moments->i[3];
+
+
+  /* 17 */
+  q = 2* moments->n0; /*=10/3 */
+  moments->M1[0][0] = (moments->i[17] -2.*moments->alpha * moments->i[15] +    
+      moments->alpha * moments->alpha*moments->i[13]) / in.norm;
+  /* 14 */
+  q = moments->n0 +moments->n15; 
+  moments->M1[0][1] = (moments->i[14] -2.*moments->alpha * moments->i[12] +    
+      moments->alpha * moments->alpha*moments->i[10]) / in.norm;
+  /* 11 */
+  q = 2 * moments->n15; 
+  moments->M1[1][1] = (moments->i[11] -2.*moments->alpha * moments->i[9] +    
+      moments->alpha * moments->alpha*moments->i[7]) / in.norm;
+
+  moments->M1[1][0]=moments->M1[0][1] ;
+
+  /*  12 */
+  q = moments->n0; 
+  moments->M2[0][0] = (moments->i[12] -2.*moments->alpha * moments->i[10] +    
+      moments->alpha * moments->alpha*moments->i[8]) / in.norm;   
+  /* 9 */
+  q = moments->n15; 
+
+  moments->M2[0][1] = (moments->i[9] -2.*moments->alpha * moments->i[7] +    
+      moments->alpha * moments->alpha*moments->i[5]) / in.norm;   
+  /*  9 */
+  q = moments->n0-1;   
+
+  moments->M2[1][0] = (moments->i[9] -2.*moments->alpha * moments->i[7] +    
+      moments->alpha * moments->alpha*moments->i[5]) / in.norm;
+  /*  6 */
+  q = moments->n15-1; 
+  moments->M2[1][1] = (moments->i[6] -2.*moments->alpha * moments->i[4] +    
+      moments->alpha * moments->alpha*moments->i[2]) / in.norm;
+
+  /* 7 */
+  q = 0; 
+  moments->M3[0][0] = (moments->i[7] -2.*moments->alpha * moments->i[5] +    
+      moments->alpha * moments->alpha*moments->i[3]) / in.norm;   
+  /* 4 */
+  q = -1; 
+  moments->M3[0][1] = (moments->i[4] -2.*moments->alpha * moments->i[2] +    
+      moments->alpha * moments->alpha*moments->i[0]) / in.norm;   
+  /* 1 */
+  q = -2; 
+  moments->M3[1][1] = (moments->i[1] -2.*moments->alpha * moments->i[-1] +    
+      moments->alpha * moments->alpha*moments->i[-3]) / in.norm;
+
+  moments->M3[1][0]=moments->M3[0][1] ;
+
+  if ( lalDebugLevel & LALINFO )
+  {
+    LALPrintError( "#M1=\n");
+    LALPrintError( "#%15.12lf %15.12lf \n# %15.12lf %15.12lf\n",
+        moments->M1[0][0],
+        moments->M1[0][1],
+        moments->M1[1][0],
+        moments->M1[1][1] );
+
+    LALPrintError( "#M2=\n" );
+    LALPrintError( "#%15.12lf %15.12lf \n# %15.12lf %15.12lf\n",
+        moments->M2[0][0],
+        moments->M2[0][1],
+
+        moments->M2[1][0],
+        moments->M2[1][1] );
+
+    LALPrintError( "#M3=\n" );     
+    LALPrintError( "#%15.12lf %15.12lf \n# %15.12lf %15.12lf\n",
+        moments->M3[0][0],
+        moments->M3[0][1],
+        moments->M3[1][0],
+        moments->M3[1][1] );
+  }
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="LALInspiralMomentsCP"> */
+void
+LALInspiralMoments(
+    LALStatus         *status,
+    REAL8             *moment,
+    InspiralMomentsIn  pars
+    )
+/* </lalVerbatim> */
+{
   REAL8 f;
   REAL8 momentTmp;
   REAL8 fMin;
@@ -83,23 +299,21 @@ void LALInspiralMoments(LALStatus         *status,
   UINT4 kMin;
   UINT4 kMax;
 
-  INITSTATUS (status, "LALInspiralMoments", LALINSPIRALMOMENTSC);
-  ATTATCHSTATUSPTR(status);
+  INITSTATUS( status, "LALInspiralMoments", LALINSPIRALMOMENTSC );
 
-  ASSERT (pars.shf, status, 
-      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-  ASSERT (pars.shf->data, status, 
-      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-  ASSERT (pars.shf->data->data, status, 
-      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+  ASSERT( pars.shf, status, 
+      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
+  ASSERT( pars.shf->data, status, 
+      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
+  ASSERT( pars.shf->data->data, status, 
+      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
 
   /* make sure that the minimum and maximum of the integral are within */
   /* the frequency series                                              */
-  fMax = pars.shf->f0 + (REAL8) pars.shf->data->length * 
-    pars.shf->deltaF;
+  fMax = pars.shf->f0 + (REAL8) pars.shf->data->length * pars.shf->deltaF;
   if ( pars.xmin < pars.shf->f0 || pars.xmax > fMax )
   {
-    ABORT( status, 999, "limits outside range of frequency series" );
+    ABORT( status, LALINSPIRALBANKH_EFRANGE, LALINSPIRALBANKH_MSGEFRANGE );
   }
 
   /* the minimum and maximum frequency where we have four points */
@@ -125,24 +339,33 @@ void LALInspiralMoments(LALStatus         *status,
     kMax = (UINT8) floor( (pars.xmax - pars.shf->f0) / deltaF );
   }
 
-  momentTmp = 0.;
   /* the first and last points of the integral */
+  momentTmp = 0.;
   f = pars.shf->f0 + (REAL8) kMin * deltaF;
-  if (pars.shf->data->data[kMin]) momentTmp  = pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMin] );
+  if( pars.shf->data->data[kMin] )
+  {
+    momentTmp = pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMin] );
+  }
   *moment = momentTmp;
 
   momentTmp = 0.;
   f = pars.shf->f0 + (REAL8) kMax * deltaF;
-  if (pars.shf->data->data[kMin]) momentTmp = pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMin] );
-  (*moment) += momentTmp;
-  /* In the following line we should have kMax */
-  /* Changed by Sathya on June 30, 2002  */
-  /*
+  if( pars.shf->data->data[kMin] )
+  {
+    momentTmp = pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMin] );
+  }
+  *moment += momentTmp;
+#if 0
+  In the following line we should have kMax
+  Changed by Sathya on June 30, 2002
   *moment += pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMin] );
-  */
+#endif
   momentTmp = 0.;
-  if (pars.shf->data->data[kMax]) momentTmp = pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMax] );
-  (*moment) += momentTmp;
+  if ( pars.shf->data->data[kMax] )
+  {
+    momentTmp = pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMax] );
+  }
+  *moment += momentTmp;
   kMin++;
   kMax--;
 
@@ -150,8 +373,11 @@ void LALInspiralMoments(LALStatus         *status,
   {
     momentTmp = 0.;
     f = pars.shf->f0 + (REAL8) k * deltaF;
-    if (pars.shf->data->data[k]) momentTmp = pow( f, -(pars.ndx) ) / pars.shf->data->data[k];
-    (*moment) += momentTmp;
+    if ( pars.shf->data->data[k] )
+    {
+      momentTmp = pow( f, -(pars.ndx) ) / pars.shf->data->data[k];
+    }
+    *moment += momentTmp;
   }
 
   *moment *= deltaF;
@@ -159,6 +385,5 @@ void LALInspiralMoments(LALStatus         *status,
   /* now divide the moment by the specified norm */
   *moment /= pars.norm;
 
-  DETATCHSTATUSPTR(status);
   RETURN (status);
 }

@@ -370,14 +370,6 @@ LALRalloc()
 #include <lal/SeqFactories.h>
 #include <lal/LALStdio.h>
 
-static void
-GetInspiralMoments 
-(
-   LALStatus            *status,
-   InspiralMomentsEtc   *moments,
-   REAL8FrequencySeries *psd,
-   InspiralTemplate     *params 
-);
 
 static void 
 PSItoMasses 
@@ -386,16 +378,6 @@ PSItoMasses
    UINT4 *valid
 );
 
-
-
-static void 
-LALInspiralCreatePNCoarseBank
-(
-   LALStatus            *status, 
-   InspiralTemplateList **list, 
-   INT4                 *nlist,
-   InspiralCoarseBankIn coarseIn
-);
 
 
 NRCSID(LALINSPIRALCREATECOARSEBANKC, "$Id$");
@@ -409,7 +391,8 @@ LALInspiralCreateCoarseBank(
 		INT4                 *nlist,
 		InspiralCoarseBankIn coarseIn) 
 {  /*  </lalVerbatim>  */
-  
+  INT4 i;  
+
 	INITSTATUS (status, "LALInspiralCreateCoarseBank", LALINSPIRALCREATECOARSEBANKC);
 	ATTATCHSTATUSPTR(status);
 
@@ -421,42 +404,59 @@ LALInspiralCreateCoarseBank(
 	ASSERT (coarseIn.fLower > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
 	ASSERT (coarseIn.tSampling > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
 	ASSERT (coarseIn.tSampling >= 2.*coarseIn.fUpper, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-	ASSERT ((INT4)coarseIn.space >= 0, status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
-	ASSERT ((INT4)coarseIn.space <= 1, status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
-  
-	switch (coarseIn.approximant)
-	{
-      		case BCV: 
-      			LALInspiralCreateBCVBank(status->statusPtr, list, nlist, coarseIn);
-      			break;
-      		case TaylorT1: 
-      		case TaylorT2: 
-      		case TaylorT3: 
-      		case TaylorF1: 
-      		case TaylorF2: 
-      		case PadeT1: 
-      		case PadeF1: 
-      		case EOB: 
-      			LALInspiralCreatePNCoarseBank(status->statusPtr, list, nlist, coarseIn);
-      			break;
-		default:
-			if ( lalDebugLevel&LALINFO ) 
-			{
-				LALInfo(status, "Invalid choice in coarseIn.approximant\n");
-				LALPrintError("\tInvalid choice in coarseIn.approximant\n");
-			}
-			break;
-	}
-      			
-	DETATCHSTATUSPTR(status);
-	RETURN (status);
 
+  
+
+switch( coarseIn.approximant )
+  {
+    case BCV: 
+      ASSERT( coarseIn.space == Psi0Psi3, status, 
+          LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
+      LALInspiralCreateBCVBank( status->statusPtr, list, nlist, coarseIn );
+      CHECKSTATUSPTR( status );
+      break;
+
+    case TaylorT1: 
+    case TaylorT2: 
+    case TaylorT3: 
+    case TaylorF1: 
+    case TaylorF2: 
+    case PadeT1: 
+    case PadeF1: 
+    case SpinTaylorT3:
+    case EOB: 
+      ASSERT( coarseIn.space == Tau0Tau2 || coarseIn.space == Tau0Tau3, status,
+          LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
+      LALInspiralCreatePNCoarseBank( status->statusPtr, list, nlist, coarseIn );
+      CHECKSTATUSPTR( status );
+      break;
+      
+    default:
+      ABORT( status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
+      break;
+  }
+
+  /* record the minimal match of the bank in the template and   */
+  /* set up the tmplts as a linked list so that it can be       */
+  /* manipulated easily by findchirp                            */
+  for ( i = 0; i < *nlist - 1 ; ++i )
+  {
+    (*list)[i].params.minMatch = (REAL4) coarseIn.mmCoarse;
+    (*list)[i].params.next     = &((*list)[i+1].params);
+    (*list)[i].params.fine     = NULL;
+  }
+  (*list)[i].params.minMatch = (REAL4) coarseIn.mmCoarse;
+  (*list)[i].params.next = NULL;
+  (*list)[i].params.fine = NULL;
+
+  DETATCHSTATUSPTR(status);
+  RETURN (status);
 }
 
 
 
 
-static void 
+void 
 LALInspiralCreatePNCoarseBank(
 		LALStatus            *status, 
 		InspiralTemplateList **list, 
@@ -468,7 +468,7 @@ LALInspiralCreatePNCoarseBank(
   InspiralTemplate *tempPars;
   InspiralMetric metric;
   InspiralMomentsEtc moments;
-  INT4 validPars, i;
+  INT4 validPars;
   REAL8 x01, x02, x11, x12, dist1, dist2, ndx1, ndx2, a25;
 
   INITSTATUS (status, "LALInspiralCreateCoarseBank", LALINSPIRALCREATECOARSEBANKC);
@@ -481,16 +481,19 @@ LALInspiralCreatePNCoarseBank(
   ndx1 = 0.0;
   ndx2 = 0.0;
   a25 = 0.0;
+
 /* Number of templates is nlist */
   *nlist = 0;
 
   /* Set the elements of the metric and tempPars structures in 
    conformity with the coarseIn structure
   */ 
-  if (! (tempPars = (InspiralTemplate *)LALMalloc(sizeof(InspiralTemplate))) )
+  if (! 
+      (tempPars = (InspiralTemplate *)LALCalloc(1, sizeof(InspiralTemplate))) )
   {
 	  ABORT (status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
   }
+
   metric.space = coarseIn.space;
   LALInspiralSetParams(status->statusPtr, tempPars, coarseIn);
   CHECKSTATUSPTR(status);
@@ -510,7 +513,7 @@ LALInspiralCreatePNCoarseBank(
   /* Get the moments of the PSD integrand and other parameters
    required in the computation of the metric
   */
-  GetInspiralMoments (status->statusPtr, &moments, &coarseIn.shf, tempPars);
+  LALGetInspiralMoments (status->statusPtr, &moments, &coarseIn.shf, tempPars);
   CHECKSTATUSPTR(status);
 
 
@@ -520,23 +523,23 @@ LALInspiralCreatePNCoarseBank(
   CHECKSTATUSPTR(status);
 	  
   LALInspiralUpdateParams(status->statusPtr, &bankPars, metric, coarseIn.mmCoarse);
-  /* printf("%e %e %e dx0=%e dx1=%e\n", metric.g00, metric.g11, metric.theta, bankPars.dx0, bankPars.dx1); */
   CHECKSTATUSPTR(status);
   
-  /* Let's add the first template to the template list
-   On failure realloc() returns a NULL to list, hence there is
-   no need to explicitly free list 
-  */
-  if (!(*list = (InspiralTemplateList*) 
-			  LALRealloc(*list, sizeof(InspiralTemplateList)*(*nlist+1)))) {
-	  LALFree(tempPars);
-	  ABORT (status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+  /* add the first template to the template list */
+  *list = (InspiralTemplateList*) 
+    LALRealloc( *list, sizeof(InspiralTemplateList) * (*nlist + 1) );
+  if ( ! *list )
+  {
+    LALFree( tempPars );
+    ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
   }
-	  
+  memset( *list + *nlist, 0, sizeof(InspiralTemplateList) );
+
   (*list)[*nlist].ID = *nlist; 
   (*list)[*nlist].params = *tempPars; 
   (*list)[*nlist].metric = metric; 
   ++(*nlist); 
+
 
   /* First lay templates along the equal mass curve; i.e. eta=1/4. 
    Choose the constant and the index converting the chirp times to
@@ -550,12 +553,15 @@ LALInspiralCreatePNCoarseBank(
     ndx2 = 1.L/ndx1;
     a25 = pow(64.L/5.L, ndx1)*(2435.L/8064.L)/pow(LAL_PI*coarseIn.fLower,.4L);
     break;
+
   case Tau0Tau3:
     a25 = LAL_PI_2 * pow(64.L/5.L, .4L)/pow(LAL_PI * coarseIn.fLower, .6L);
     ndx1 = 0.4L;
     ndx2 = 2.5L;
     break;
+
   case Psi0Psi3:
+    ABORT( status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
     break;
   }
   
@@ -567,50 +573,51 @@ LALInspiralCreatePNCoarseBank(
     x02 = pow(x12/a25,ndx2);
     dist1 = pow(bankPars.x0 - x01,2.L) + pow(bankPars.x1 - x11, 2.L);
     dist2 = pow(bankPars.x0 - x02,2.L) + pow(bankPars.x1 - x12, 2.L);
-    if (dist1 < dist2) {
-      bankPars.x0 = x01;
+    if (dist1 < dist2) 
+      {
+       bankPars.x0 = x01;
       bankPars.x1 = x11;
-    } else {
+    } 
+    else 
+      {
       bankPars.x0 = x02;
       bankPars.x1 = x12;
     }
     /* If this is a valid point add it to our list */
-
     LALInspiralValidTemplate(status->statusPtr, &validPars, bankPars, coarseIn); 
     CHECKSTATUSPTR(status);
+
     if (validPars) {
       LALInspiralComputeParams(status->statusPtr, tempPars, bankPars, coarseIn);
       CHECKSTATUSPTR(status);
       LALInspiralComputeMetric(status->statusPtr, &metric, tempPars, &moments);
       CHECKSTATUSPTR(status);
       LALInspiralUpdateParams(status->statusPtr, &bankPars, metric, coarseIn.mmCoarse);
-      /* printf("%e %e %e dx0=%e dx1=%e\n", metric.g00, metric.g11, metric.theta, bankPars.dx0, bankPars.dx1); */
       CHECKSTATUSPTR(status);
-      /*
-       On failure realloc() returns a NULL to outlist, hence there is
-       no need to explicitly free the outlist 
-      */
-      if (!(*list = (InspiralTemplateList*) 
-			      LALRealloc(*list, sizeof(InspiralTemplateList)*(*nlist+1)))) 
+     
+      *list = (InspiralTemplateList *) 
+        LALRealloc( *list, sizeof(InspiralTemplateList) * (*nlist + 1) );
+      if ( ! *list )
       {
-	      LALFree(tempPars);
-	      ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+        LALFree( tempPars );
+        ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
       }
+      memset( *list + *nlist, 0, sizeof(InspiralTemplateList) );
+
       (*list)[*nlist].ID = *nlist; 
       (*list)[*nlist].params = *tempPars; 
       (*list)[*nlist].metric = metric; 
       ++(*nlist); 
     }
   }
+
   
   /* Begin with the parameters found at the first lattice point */
-
   bankPars = bankParsOld;
   
   /* Loop along x1 and x0 coordinates until maximum values are reached */
   while (bankPars.x1 <= bankPars.x1Max) 
   {
-
     /* step along the tau0 axis until the boundary is reached */
 
     while (bankPars.x0 <= bankPars.x0Max) 
@@ -628,12 +635,16 @@ LALInspiralCreatePNCoarseBank(
 	LALInspiralUpdateParams(status->statusPtr, &bankPars, metric, coarseIn.mmCoarse);
 	/* printf("%e %e %e dx0=%e dx1=%e\n", metric.g00, metric.g11, metric.theta, bankPars.dx0, bankPars.dx1); */
 	CHECKSTATUSPTR(status);
-	if (!(*list = (InspiralTemplateList*) 
-				LALRealloc(*list, sizeof(InspiralTemplateList)*(*nlist+1)))) 
+
+        *list = (InspiralTemplateList *) 
+          LALRealloc( *list, sizeof(InspiralTemplateList) * (*nlist + 1) );
+        if ( ! *list )
         {
-		LALFree(tempPars);
-		ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
-	}
+          LALFree( tempPars );
+          ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+        }
+        memset( *list + *nlist, 0, sizeof(InspiralTemplateList) );
+
 	(*list)[*nlist].ID = *nlist; 
 	(*list)[*nlist].params = *tempPars; 
 	(*list)[*nlist].metric = metric; 
@@ -643,15 +654,15 @@ LALInspiralCreatePNCoarseBank(
     }
     bankPars = bankParsOld;
     bankPars.x1 += bankPars.dx1;
-    /* Find the t0 coordinate of the next template close to the t2/t3 axis */
 
+    /* Find the t0 coordinate of the next template close to the t2/t3 axis */
     LALInspiralNextTemplate(status->statusPtr, &bankPars, metric);
     CHECKSTATUSPTR(status);
 
     /* Hop along t0-axis until t0 is inside the region of interest or quit */
-
     LALInspiralValidTemplate(status->statusPtr, &validPars, bankPars, coarseIn);
     CHECKSTATUSPTR(status);
+
     while (validPars==0 && bankPars.x0 < bankPars.x0Max) {
       bankPars.x0 += bankPars.dx0;
       LALInspiralValidTemplate(status->statusPtr, &validPars, bankPars, coarseIn);
@@ -661,106 +672,10 @@ LALInspiralCreatePNCoarseBank(
   } 
   LALFree(tempPars);
 
-  /* record the minimal match of the bank in the template and   */
-  /* set up the tmplts as a linked list so that it can be       */
-  /* manipulated easily by findchirp                            */
-  for ( i = 0; i < *nlist - 1 ; ++i )
-  {
-    (*list)[i].params.minMatch = (REAL4) coarseIn.mmCoarse;
-    (*list)[i].params.next     = &((*list)[i+1].params);
-    (*list)[i].params.fine     = NULL;
-  }
-  (*list)[i].params.minMatch = (REAL4) coarseIn.mmCoarse;
-  (*list)[i].params.next = NULL;
-  (*list)[i].params.fine = NULL;
-
-  
+   
   DETATCHSTATUSPTR(status);
   RETURN (status);
 }
-
-
-
-
-
-
-
-
-static void
-GetInspiralMoments (
-		LALStatus            *status,
-		InspiralMomentsEtc   *moments,
-		REAL8FrequencySeries *psd,
-		InspiralTemplate     *params )
-{
-
-   UINT4 k;
-   InspiralMomentsIn in;
-
-   INITSTATUS (status, "GetInspiralMoments", LALINSPIRALCREATECOARSEBANKC);
-   ATTATCHSTATUSPTR(status);
-  
-   ASSERT (params, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-   ASSERT (params->fLower>0, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-   ASSERT (moments, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-   ASSERT (psd, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-
-   /* Constants needed in computing the moments */
-   moments->a01 = 3.L/5.L;
-   moments->a21 = 11.L * LAL_PI/12.L;
-   moments->a22 = 743.L/2016.L * pow(25.L/(2.L*LAL_PI*LAL_PI), 1.L/3.L);
-   moments->a31 = -3.L/2.L;
-   moments->a41 = 617.L * LAL_PI * LAL_PI / 384.L;
-   moments->a42 = 5429.L/5376.L * pow ( 25.L * LAL_PI/2.L, 1.L/3.L);
-   moments->a43 = 1.5293365L/1.0838016L * pow(5.L/(4.L*pow(LAL_PI,4.L)), 1.L/3.L);
-   
-   /* setup the input structure needed in the computation of the moments */
-
-   in.shf = psd;
-
-   /* Divide all frequencies by fLower, a scaling that is used in solving the
-    * moments integral */
-   in.shf->f0 /= params->fLower;
-   in.shf->deltaF /= params->fLower;
-   in.xmin = params->fLower/params->fLower;
-   in.xmax = params->fCutoff/params->fLower;
-	   
-   /* First compute the norm and print if requested */
-
-   in.norm = 1.L;
-   in.ndx = 7.L/3.L; 
-   LALInspiralMoments(status->statusPtr, &moments->j[7], in); 
-   CHECKSTATUSPTR(status);
-   in.norm = moments->j[7];
-
-   if (lalDebugLevel&LALINFO)
-   {
-	   LALPrintError ("a01=%e a21=%e a22=%e a31=%e a41=%e a42=%e a43=%e j7=%e\n", 
-			   moments->a01, moments->a21, moments->a22, moments->a31, 
-			   moments->a41, moments->a42, moments->a43, moments->j[7]);
-   }
-
-   /* Then compute the normalised moments of the noise PSD from 1/3 to 17/3. */
-
-   for (k=1; k<=17; k++)
-   {
-	   in.ndx = (REAL8) k /3.L; 
-	   LALInspiralMoments(status->statusPtr,&moments->j[k],in);  
-	   CHECKSTATUSPTR(status);
-	   if (lalDebugLevel&LALINFO) LALPrintError("j%1i=%e\n", k, moments->j[k]);
-   }
-   /* Moments are done: Rescale deltaF and f0 back to their original values */
-
-   in.shf->deltaF *= params->fLower;
-   in.shf->f0 *= params->fLower;
-  
-   DETATCHSTATUSPTR(status);
-   RETURN (status);
-}
-
-
-
-
 
 /*  <lalVerbatim file="LALInspiralCreateBCVBankCP"> */
 void 
@@ -796,10 +711,8 @@ LALInspiralCreateBCVBank(
   
 	if (lalDebugLevel&LALINFO) 
 	{
-		REAL8 dx0, dx1;
-
-		dx0 = sqrt(2.L * (1.L-coarseIn.mmCoarse)/metric.g00);
-		dx1 = sqrt(2.L * (1.L-coarseIn.mmCoarse)/metric.g11);
+		REAL8 dx0 = sqrt(2.L * (1.L-coarseIn.mmCoarse)/metric.g00);
+		REAL8 dx1 = sqrt(2.L * (1.L-coarseIn.mmCoarse)/metric.g11);
 		LALPrintError("G00=%e G01=%e G11=%e\n", metric.G00, metric.G01, metric.G11);
 		LALPrintError("g00=%e g11=%e theta=%e\n", metric.g00, metric.g11, metric.theta);
 		LALPrintError("dp0=%e dp1=%e\n", dx0, dx1);
@@ -815,48 +728,56 @@ LALInspiralCreateBCVBank(
 	in.length = 1;
 	in.vectorLength = 2;
 	LALSCreateVectorSequence(status->statusPtr, &tempList, &in);
+	CHECKSTATUSPTR( status );
+
 	tempList->vectorLength = 2;
 	LALInspiralCreateFlatBank(status->statusPtr, tempList, &bankParams);
+	CHECKSTATUSPTR( status );
+
 	*nlist = tempList->length;
-  
-	if (! (*list = (InspiralTemplateList *) LALMalloc (sizeof (InspiralTemplateList) * *nlist) ) )
-	{
-      		ABORT (status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
-	}
+	*list = (InspiralTemplateList *) 
+	  LALCalloc( *nlist, sizeof(InspiralTemplateList) );
+	if ( ! *list )
+	  {
+	    ABORT (status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+	  }
 	
-	for (j=0; j<*nlist; j++)
-	{
-		/*
-		   Retain only those templates that have meaningful chirptimes:
-		 */
-		(*list)[j].params.psi0 = (REAL8) tempList->data[2*j];
-		(*list)[j].params.psi3 = (REAL8) tempList->data[2*j+1];
-		(*list)[j].params.fLower = params.fLower;
-		(*list)[j].params.nStartPad = 0;
-		(*list)[j].params.nEndPad = 0;
-		(*list)[j].params.tSampling= coarseIn.tSampling;
-		(*list)[j].params.distance =  1.;
-		(*list)[j].params.signalAmplitude= 1.;
-		(*list)[j].params.approximant= BCV;
-		(*list)[j].params.massChoice= psi0Andpsi3;
-		(*list)[j].params.order= twoPN;
-		(*list)[j].metric = metric;
-		(*list)[j].params.alpha = coarseIn.alpha;
+for ( j = 0; j < *nlist; ++j )
+  {
+    /* Retain only those templates that have meaningful chirptimes:*/
+    (*list)[j].params.psi0 = (REAL8) tempList->data[2*j];
+    (*list)[j].params.psi3 = (REAL8) tempList->data[2*j+1];
+    (*list)[j].params.fLower = params.fLower;
+    (*list)[j].params.nStartPad = 0;
+    (*list)[j].params.nEndPad = 0;
+    (*list)[j].params.tSampling= coarseIn.tSampling;
+    (*list)[j].params.distance =  1.;
+    (*list)[j].params.signalAmplitude= 1.;
+    (*list)[j].params.approximant= BCV;
+    (*list)[j].params.massChoice= psi0Andpsi3;
+    (*list)[j].params.order= twoPN;
+    (*list)[j].metric = metric;
+    (*list)[j].params.alpha = coarseIn.alpha;
+  }
 
-	}
 
-	nlistOld = *nlist;
-	LALInspiralBCVFcutBank( status->statusPtr, list, nlist, coarseIn.numFcutTemplates) ;
+  nlistOld = *nlist;
+  LALInspiralBCVFcutBank( status->statusPtr, 
+      list, nlist, coarseIn.numFcutTemplates );
+  CHECKSTATUSPTR( status );
 
-	if (lalDebugLevel&LALINFO) 
-	{
-		LALPrintError("Templates before %d and after %d calling LALInspiralBCVBank\n", nlistOld, *nlist);
-	}
-    
-	LALSDestroyVectorSequence(status->statusPtr, &tempList);
+  if ( lalDebugLevel & LALINFO ) 
+  {
+    LALPrintError( 
+        "Templates before %d and after %d calling LALInspiralBCVBank\n", 
+        nlistOld, *nlist );
+  }
 
-	DETATCHSTATUSPTR(status);
-	RETURN (status);
+  LALSDestroyVectorSequence( status->statusPtr, &tempList );
+  CHECKSTATUSPTR( status );
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
 }
 
 
@@ -885,6 +806,7 @@ LALInspiralCreateFlatBank(
   metric = bankParams->metric;
   minimalMatch = bankParams->minimalMatch;
   LALInspiralUpdateParams(status->statusPtr, bankParams, *metric, minimalMatch);
+  CHECKSTATUSPTR( status );
 
   /* Construct the template bank */
 
@@ -934,31 +856,23 @@ LALInspiralBCVFcutBank(
 
   
 	INITSTATUS (status, "LALInspiralBCVFcutBank", LALINSPIRALCREATECOARSEBANKC);
-	ATTATCHSTATUSPTR(status);
 			  
 	nf=numFcutTemplates;
-
-
-	/* Obsolete but I keep those comments for later. 
-	 *
-	 * The allocation is inside the loop and allocate the exact number of structure 
-	 * related to the valid point in the bank. However if nlist is large (>5000) it is too 
-	 * long to compute. Thus It would be nice to put this ReAlloc outside the loop.
-	 * However sometimes it creates error.  Have to be done correctly. janvier 2004
-	*/
-	/*	if (!(*list = (InspiralTemplateList*) LALRealloc(*list, nlist * numFcutTemplates * sizeof(InspiralTemplateList)))) 
-	  {
-	    ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
-	    
-	 }
-	*/
-
 	ndx = nlist = *NList;
-	frac = (1.L - 1.L/pow(2.L, 1.5L)) / (nf-1.L);
+
+	if (nf==1)
+	{
+		frac = 1;
+	}
+	else
+	{
+		frac = (1.L - 1.L/pow(2.L, 1.5L)) / (nf-1.L);
+	}
+
+	
 	for (j=0; j<nlist; j++)
 	{
 		UINT4 valid=0;
-		/* Reaplce the following function by something more efficient ? */
 		PSItoMasses (&((*list)[j].params), &valid);
 		if (valid)
 		{
@@ -967,8 +881,10 @@ LALInspiralBCVFcutBank(
 
 			fMax = (*list)[j].params.fendBCV;
 			df = fMax * frac;
+			/* not used for the moment */
 			fMin = fMax * ( 1.L - (nf-1.L)*df);
-/*			fMin = (*list)[j].params.fLower;*/
+
+		
 			for (i=0; i<nf; i++)
 			{
 				fendBCV = fMax * (1.L - i * frac);
@@ -1008,43 +924,52 @@ LALInspiralBCVFcutBank(
 		ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
 	}
   
-	DETATCHSTATUSPTR(status);
 	RETURN (status);
 }
 
 
-static void PSItoMasses (InspiralTemplate *params, UINT4 *valid)
+static void
+PSItoMasses (
+    InspiralTemplate *params, 
+    UINT4            *valid
+    )
 {
-   
-	
-	if (params->psi0 <= 0.L || params->psi3 >= 0.L)
-	{
-		*valid = 0;
-	}
-	else
-	{
-		REAL4 totalMass, eta, eightBy3=8.L/3.L, twoBy3=2.L/3.L, fiveBy3 = 5.L/3.L;
+  if ( params->psi0 <= 0.L || params->psi3 >= 0.L )
+  {
+    *valid = 0;
+  }
+  else
+  {
+    REAL8 totalMass; 
+    REAL8 eta; 
+    REAL8 eightBy3 = 8.L/3.L;
+    REAL8 twoBy3=2.L/3.L;
+    REAL8 fiveBy3 = 5.L/3.L;
 
-		params->totalMass = -params->psi3/(16.L*LAL_PI * LAL_PI * params->psi0);
-		eta = params->eta = 3.L/(128.L * params->psi0 * pow(LAL_PI*params->totalMass, fiveBy3));
-		totalMass = params->totalMass;
-		params->fendBCV = 1.L/( LAL_PI * pow(3.L,1.5L) * params->totalMass );
-		params->totalMass /= LAL_MTSUN_SI;
-		*valid = 1;
-		/*
-		if (params->eta > 0.25L) 
-		{
-			*valid = 0;
-		}
-		else
-		{
-			LALInspiralParameterCalc(status->statusPtr, params);
-			*valid = 1;
-		}
-		*/
-		params->t0 = 5.0/(256.0*eta*pow(totalMass, fiveby3)*pow(LAL_PI * params->fLower, eightBy3));
-		params->t3 = LAL_PI/(8.0*eta*pow(totalMass, twoBy3)*pow(LAL_PI * params->fLower, fiveBy3));
-	}
-   
+    params->totalMass = -params->psi3/(16.L*LAL_PI * LAL_PI * params->psi0);
+    eta = params->eta = 
+      3.L/(128.L * params->psi0 * pow(LAL_PI*params->totalMass, fiveBy3));
+    totalMass = params->totalMass;
+    params->fendBCV = 1.L/( LAL_PI * pow(3.L,1.5L) * params->totalMass );
+    params->totalMass /= LAL_MTSUN_SI;
+    *valid = 1;
+
+#if 0
+    if (params->eta > 0.25L) 
+    {
+      *valid = 0;
+    }
+    else
+    {
+      LALInspiralParameterCalc( status->statusPtr, params );
+      CHECKSTATUSPTR( status );
+      *valid = 1;
+    }
+#endif
+
+    params->t0 = 5.0 / ( 256.0*eta*pow(totalMass, fiveby3) * 
+        pow(LAL_PI * params->fLower, eightBy3));
+    params->t3 = LAL_PI/(8.0*eta*pow(totalMass, twoBy3) * 
+        pow(LAL_PI * params->fLower, fiveBy3));
+  }
 }
-

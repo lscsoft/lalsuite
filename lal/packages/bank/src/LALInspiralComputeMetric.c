@@ -331,388 +331,229 @@ LALFree
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
 
-#define Dim 2
-#define Order 5
+#define METRIC_DIMENSION 2
+#define METRIC_ORDER 5
 
 static void 
-InspiralComputeMetricGetPsiCoefficients(
-		REAL8              Psi[2][5], 
-		InspiralTemplate   *params, 
-		InspiralMomentsEtc *moments);
-
-static void
-LALGetInspiralMomentsBCV (
-		          LALStatus               *status,
-			  InspiralMomentsEtcBCV   *moments,
-			  REAL8FrequencySeries    *psd,
-			  InspiralTemplate        *params );
-
-
+InspiralComputeMetricGetPsiCoefficients (
+    REAL8              Psi[METRIC_DIMENSION][METRIC_ORDER], 
+    InspiralTemplate   *params, 
+    InspiralMomentsEtc *moments
+    );
 
 NRCSID(LALINSPIRALCOMPUTEMETRICC, "$Id$");
 
 /* <lalVerbatim file="LALInspiralComputeMetricCP">  */
-
 void 
-LALInspiralComputeMetric
-(
-		LALStatus          *status,
-                InspiralMetric     *metric,
-                InspiralTemplate   *params,
-                InspiralMomentsEtc *moments
-)
-{ /* </lalVerbatim> */
+LALInspiralComputeMetric (
+    LALStatus          *status,
+    InspiralMetric     *metric,
+    InspiralTemplate   *params,
+    InspiralMomentsEtc *moments
+    )
+/* </lalVerbatim> */
+{
+  static REAL8 Psi[METRIC_DIMENSION][METRIC_ORDER];
+  static REAL8 g[METRIC_DIMENSION][METRIC_DIMENSION];
 
-   /* const UINT4 Dim = 2;*/
-   /* const UINT4 Order = 5;*/
+  REAL8 a, b, c, q, det;
+  UINT4 PNorder, m, n;
 
-   static REAL8 Psi[Dim][Order];
-   static REAL8 g[Dim][Dim];
+  INITSTATUS(status, "LALInspiralComputeMetric", LALINSPIRALCOMPUTEMETRICC );
 
-   REAL8 a, b, c, q, det/*, tmpa*/;
-   UINT4 PNorder, m, n;
+  ASSERT( metric, status, 
+      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
+  ASSERT( params, status, 
+      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
+  ASSERT( moments, status, 
+      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
+  ASSERT( params->t0 > 0.L, status, 
+      LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+  ASSERT( params->t3 > 0.L, status, 
+      LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
 
-   INITSTATUS (status, "LALInspiralComputeMetric", LALINSPIRALCOMPUTEMETRICC);
-   ATTATCHSTATUSPTR(status);
+  /* use the order of the waveform to compute the metric */
+  /* summation below will be carried out up to PNorder   */
+  if ( params->order != onePN && 
+      params->order != onePointFivePN &&
+      params->order != twoPN )
+  {
+    ABORT( status, LALINSPIRALBANKH_EORDER, LALINSPIRALBANKH_MSGEORDER );
+  }
+  PNorder = (UINT4) params->order;
 
-   ASSERT (metric,   status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-   ASSERT (params,   status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-   ASSERT (moments,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+  /* Setting up \Psi_{mn} coefficients  */
+  InspiralComputeMetricGetPsiCoefficients( Psi, params, moments );
 
-   ASSERT (params->t0 > 0.L, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-   ASSERT (params->t3 > 0.L, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+  for ( m = 0; m < METRIC_DIMENSION; m++ )
+  {
+    for ( n = m; n < METRIC_DIMENSION; n++ )
+    {
+      UINT4 k, l;
+      g[m][n] = 0.L;
 
-   /* use the order of the waveform to compute the metric
-    summation below will be carried out up to PNorder
-   */
-   
-   PNorder = params->order;
-   if (PNorder < 2 || PNorder >4)
-   {
-     ABORT( status, 999, "Inappropriate PN order in InspiralComputeMetric" );
-   }
+      for ( k = 0 ; k < PNorder; k++ )
+      {
+        for ( l = 0; l < PNorder; l++ )
+        { 
+          g[m][n] += Psi[m][k] * Psi[n][l] * (
+              moments->j[17-k-l] - moments->j[12-k] * moments->j[12-l]
+              - ( moments->j[9-k] - moments->j[4] * moments->j[12-k] )
+              * ( moments->j[9-l] - moments->j[4] * moments->j[12-l] )
+              / ( moments->j[1]   - moments->j[4] * moments->j[4]    )   
+              );
+        }
+      }
+      g[m][n] /= 2.;
+      g[n][m] = g[m][n];
+    }
+  }
 
-    
-   /* Setting up \Psi_{mn} coefficients  */
+#if 0 
+  The minimum sampling rate for given MM is
+    srate = 
+    2 * LAL_PI * f0 sqrt( (moments.j[1] - moments.j[4]*moments.j[4]) / 
+        (2.0*(1.-MM)));
+#endif
 
-   InspiralComputeMetricGetPsiCoefficients(Psi, params, moments);
-
-   for (m=0; m<Dim; m++)
-   {
-   for (n=m; n<Dim; n++)
-   {
-	   UINT4 k, l;
-	   g[m][n] = 0.L;
-
-	   for (k=0; k<PNorder; k++)
-	   {
-	   for (l=0; l<PNorder; l++)
-	   { 
-		   g[m][n] += Psi[m][k] * Psi[n][l] * 
-			   (    moments->j[17-k-l] - moments->j[12-k] * moments->j[12-l]
-			    - ( moments->j[9-k] - moments->j[4] * moments->j[12-k] )
-			    * ( moments->j[9-l] - moments->j[4] * moments->j[12-l] )
-			    / ( moments->j[1]   - moments->j[4] * moments->j[4]    )   );
-	   }
-	   }
-	   g[m][n] /= 2.;
-	   g[n][m] = g[m][n];
-   }
-   }
-
-   /* The minimum sampling rate for given MM is
-    srate = 2 * LAL_PI * f0 sqrt( (moments.j[1] - moments.j[4]*moments.j[4]) / (2.0*(1.-MM)));
-    */
-   
-
-   /* The calculation above gives the metric in coordinates 
-    (t0=2\pi f_0 \tau0, t3=2\pi f_0 \tau3).  Re-scale metric 
-    coefficients to get metric in (tau0, tau3) coordinates
-    */
-   
-   a = g[0][0] * pow(2.*LAL_PI*params->fLower,2.); 
-   b = g[0][1] * pow(2.*LAL_PI*params->fLower,2.); 
-   c = g[1][1] * pow(2.*LAL_PI*params->fLower,2.); 
+  /* The calculation above gives the metric in coordinates   */
+  /* (t0=2\pi f_0 \tau0, t3=2\pi f_0 \tau3). Re-scale metric */
+  /* coefficients to get metric in (tau0, tau3) coordinates  */
+  a = g[0][0] * pow(2.*LAL_PI*params->fLower,2.); 
+  b = g[0][1] * pow(2.*LAL_PI*params->fLower,2.); 
+  c = g[1][1] * pow(2.*LAL_PI*params->fLower,2.); 
 
 
-   /*
-    * The metric in tau0-tau2,3 space.
-    */
-   metric->G00 = a;
-   metric->G01 = b;
-   metric->G11 = c;
+  /* The metric in tau0-tau2,3 space. */
+  metric->G00 = a;
+  metric->G01 = b;
+  metric->G11 = c;
 
-   /*
-    * Diagonalize the metric.
-    */
-   det = a * c - b * b;
-   q = sqrt( (a-c)*(a-c) + 4. * b*b );
-   
-   metric->g00 = 0.5 * (a + c - q);
-   metric->g11 = 0.5 * (a + c + q);
+  /* Diagonalize the metric. */
+  det = a * c - b * b;
+  q = sqrt( (a-c)*(a-c) + 4. * b*b );
 
-   if (a==c)
-   {
-   
-	   metric->theta = LAL_PI/2.;
-   }
-   else
-   {
-	   /*
-	    * metric->theta = 0.5 * atan(2.*b/(a-c));
-	    *
-	    * We want to always measure the angle from the
-	    * semi-major axis to the tau0 axis which is given by
-	    * the following line as opposed to the line above
-	    */
-	   metric->theta = atan(b/(metric->g00 - c));
-   }
+  metric->g00 = 0.5 * (a + c - q);
+  metric->g11 = 0.5 * (a + c + q);
 
+  if ( a == c )
+  {
+    metric->theta = LAL_PI/2.;
+  }
+  else
+  {
+    /* metric->theta = 0.5 * atan(2.*b/(a-c));                  */
+    /* We want to always measure the angle from the             */
+    /* semi-major axis to the tau0 axis which is given by       */
+    /* the following line as opposed to the line above          */
+    metric->theta = atan( b / (metric->g00 - c) );
+  }
 
-   DETATCHSTATUSPTR(status);
-   RETURN(status);
+  RETURN( status );
 }
 
 static void 
-InspiralComputeMetricGetPsiCoefficients(
-		REAL8              Psi[2][5], 
-		InspiralTemplate   *params, 
-		InspiralMomentsEtc *moments)
+InspiralComputeMetricGetPsiCoefficients (
+    REAL8              Psi[METRIC_DIMENSION][METRIC_ORDER], 
+    InspiralTemplate   *params, 
+    InspiralMomentsEtc *moments
+    )
 {
+  REAL8 t1 = 2.L * LAL_PI * params->fLower * params->t0; 
+  REAL8 t2 = 2.L * LAL_PI * params->fLower * params->t3; 
 
-	REAL8 t1, t2;
+  Psi[0][0] = moments->a01;
+  Psi[0][1] = 0.L;
+  Psi[0][2] = moments->a21/t2 + moments->a22/3.L * pow(t2/t1,2.L/3.L);
+  Psi[0][3] = 0.L;
+  Psi[0][4] = moments->a41/(t2*t2) + moments->a42/(3.L* pow(t1*t1*t2,1.L/3.L)) 
+    - moments->a43/3.L * pow(t2/t1,4.L/3.L);
 
-	t1 = 2.L * LAL_PI * params->fLower * params->t0; 
-	t2 = 2.L * LAL_PI * params->fLower * params->t3; 
-
-	Psi[0][0] = moments->a01;
-	Psi[0][1] = 0.L;
-	Psi[0][2] = moments->a21/t2 + moments->a22/3.L * pow(t2/t1,2.L/3.L);
-	Psi[0][3] = 0.L;
-	Psi[0][4] = moments->a41/(t2*t2) + moments->a42/(3.L* pow(t1*t1*t2,1.L/3.L)) 
-		  - moments->a43/3.L * pow(t2/t1,4.L/3.L);
-
-	Psi[1][0] = 0.L;
-	Psi[1][1] = 0.L;
-	Psi[1][2] = -moments->a21*t1/pow(t2,2.L) + 2.L*moments->a22/3.L * pow(t1/t2,1.L/3.L);
-	Psi[1][3] =  moments->a31;
-	Psi[1][4] = - 2.L * moments->a41*t1 / pow(t2,3.L) - moments->a42/3.L* pow(t1/pow(t2,4.L),1.L/3.L) 
-		    + 4.L * moments->a43/3.L * pow(t2/t1,1.L/3.L);
-
+  Psi[1][0] = 0.L;
+  Psi[1][1] = 0.L;
+  Psi[1][2] = -moments->a21*t1/pow(t2,2.L) + 2.L * 
+    moments->a22/3.L * pow(t1/t2,1.L/3.L);
+  Psi[1][3] =  moments->a31;
+  Psi[1][4] = - 2.L * moments->a41*t1 / pow(t2,3.L) - 
+    moments->a42/3.L * pow(t1/pow(t2,4.L),1.L/3.L) + 
+    4.L * moments->a43/3.L * pow(t2/t1,1.L/3.L);
 }
 
 /* <lalVerbatim file="LALInspiralComputeMetricCP">  */
 void 
-LALInspiralComputeMetricBCV
-(
-  	LALStatus             *status,
-	InspiralMetric        *metric,
-	REAL8FrequencySeries  *psd,
-	InspiralTemplate      *params
-)
+LALInspiralComputeMetricBCV (
+    LALStatus             *status,
+    InspiralMetric        *metric,
+    REAL8FrequencySeries  *psd,
+    InspiralTemplate      *params
+    )
 { /* </lalVerbatim> */
+  REAL8 g[METRIC_DIMENSION][METRIC_DIMENSION];
+  InspiralMomentsEtcBCV moments;
+  REAL8 num;
+  REAL8 a, b, c, q, det;
 
-
-  static REAL8 g[Dim][Dim];
-  static InspiralMomentsEtcBCV moments;
-  double num;
-   
-  INITSTATUS (status, "LALInspiralComputeMetric", LALINSPIRALCOMPUTEMETRICC);
-  ATTATCHSTATUSPTR(status);
+  INITSTATUS( status, 
+      "LALInspiralComputeMetricBCV ", LALINSPIRALCOMPUTEMETRICC );
+  ATTATCHSTATUSPTR( status );
 
   moments.alpha = params->alpha;
   moments.n0 = 5.L/3.L;
   moments.n15 = 2.L/3.L;
 
-  LALGetInspiralMomentsBCV(status->statusPtr, &moments, psd, params);
+  LALGetInspiralMomentsBCV( status->statusPtr, &moments, psd, params );
+  CHECKSTATUSPTR( status );
 
   num =  moments.M3[0][0] *moments.M3[1][1] 
     - moments.M3[0][1] * moments.M3[1][0];
-  
 
   g[0][0] =moments.M2[0][0]*(moments.M3[1][1]*moments.M2[0][0]
-			     -moments.M3[0][1]*moments.M2[0][1])
+      -moments.M3[0][1]*moments.M2[0][1])
     +moments.M2[0][1]*(-moments.M3[0][1]*moments.M2[0][0]
-		       +moments.M3[0][0]*moments.M2[0][1]);
-  g[0][0] /=num;
+        +moments.M3[0][0]*moments.M2[0][1]);
+  g[0][0] /= num;
 
-   
+
   g[1][1] =moments.M2[0][1]*(moments.M3[1][1]*moments.M2[0][1]
-			     -moments.M3[0][1]*moments.M2[1][1])
+      -moments.M3[0][1]*moments.M2[1][1])
     +moments.M2[1][1]*(-moments.M3[0][1]*moments.M2[0][1]
-		       +moments.M3[0][0]*moments.M2[1][1]);
-  g[1][1]/=num;
-   
-   
+        +moments.M3[0][0]*moments.M2[1][1]);
+  g[1][1] /= num;
+
+
   g[0][1] = moments.M2[0][0]*(moments.M3[1][1]*moments.M2[0][1]
-			      -moments.M3[0][1]*moments.M2[1][1])
+      -moments.M3[0][1]*moments.M2[1][1])
     +moments.M2[0][1]*(-moments.M3[0][1]*moments.M2[0][1]
-		       +moments.M3[0][0]*moments.M2[1][1]);
-  g[0][1] /=num ;
-	         
-   metric->G00 = .5 *(moments.M1[0][0] - g[0][0] );
-   metric->G01 = .5 *(moments.M1[0][1] - g[0][1] );
-   metric->G11 = .5 *(moments.M1[1][1] - g[1][1] );
+        +moments.M3[0][0]*moments.M2[1][1]);
+  g[0][1] /= num ;
 
-   {
-	   double a, b, c, q, det;
-	   
-	   a = metric->G00;
-	   b = metric->G01;
-	   c = metric->G11;
-	   det = a * c - b * b;
-	   q = sqrt( (a-c)*(a-c) + 4. * b*b );
-	   metric->g00 = 0.5 * (a + c - q);
-	   metric->g11 = 0.5 * (a + c + q);
-	   if (a==c)
-	   {
-		   metric->theta = LAL_PI/2.;
-	   }
-	   else
-	   {
-		   /*
-		    * metric->theta = 0.5 * atan(2.*b/(a-c));
-		    *
-		    * We want to always measure the angle from the
-		    * semi-major axis to the tau0 axis which is given by
-		    * the following line as opposed to the line above
-		    */
-		   metric->theta = atan(b/(metric->g00 - c));
-	   }
-   }
-   DETATCHSTATUSPTR(status);
-   RETURN(status);
+  metric->G00 = .5 *(moments.M1[0][0] - g[0][0] );
+  metric->G01 = .5 *(moments.M1[0][1] - g[0][1] );
+  metric->G11 = .5 *(moments.M1[1][1] - g[1][1] );
+
+  a = metric->G00;
+  b = metric->G01;
+  c = metric->G11;
+  det = a * c - b * b;
+  q = sqrt( (a-c)*(a-c) + 4. * b*b );
+  metric->g00 = 0.5 * (a + c - q);
+  metric->g11 = 0.5 * (a + c + q);
+  if ( a == c )
+  { 
+    metric->theta = LAL_PI/2.;
+  }
+  else
+  {
+    /* metric->theta = 0.5 * atan(2.*b/(a-c));                  */
+    /* We want to always measure the angle from the             */
+    /* semi-major axis to the tau0 axis which is given by       */
+    /* the following line as opposed to the line above          */
+    metric->theta = atan(b/(metric->g00 - c));
+  }
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
 }
 
-
-static void
-LALGetInspiralMomentsBCV (
-		LALStatus               *status,
-		InspiralMomentsEtcBCV   *moments,
-		REAL8FrequencySeries    *psd,
-		InspiralTemplate        *params 
-		)
-{
-  
-  UINT4 k;
-  InspiralMomentsIn in;
-  double q;
-  long i;
-  
-  INITSTATUS (status, "LALInspiralComputeMetricBCV", LALINSPIRALCOMPUTEMETRICC);
-  ATTATCHSTATUSPTR(status);
-  
-  /* rewrite the following lines in proper way (normalisation factor) */
-  
-  
-  for (i=0; i< psd->data->length ; i++)
-    {
-      psd->data->data[i] =psd->data->data[i] * 1e45;
-    }
-
-   in.shf = psd;  
-   in.xmin = params->fLower;
-   in.xmax = params->fCutoff;
-
-  
-   /* First compute the norm */
-   
-   in.norm = 1.L;
-   for (k=0; k<=22; k++){
-     if (k<=17) /* positive value*/
-       in.ndx = (REAL8)k / 3.L;
-     else  /* negative -1,-2 ...-6 */
-       in.ndx = (17.- (REAL8)k) /3.L;
-     
-     LALInspiralMoments(status->statusPtr, &moments->i[k], in); 
-     
-     CHECKSTATUSPTR(status);
-   }
-   
-      
-   in.norm = moments->i[7] -2.*moments->alpha * moments->i[5] +    
-     moments->alpha * moments->alpha*moments->i[3];
-   
-  
-   /**/
-   /* 17 */
-   q = 2* moments->n0; /*=10/3 */
-   moments->M1[0][0] = (moments->i[17] -2.*moments->alpha * moments->i[15] +    
-			moments->alpha * moments->alpha*moments->i[13]) / in.norm;
-   /* 14 */
-   q = moments->n0 +moments->n15; 
-   moments->M1[0][1] = (moments->i[14] -2.*moments->alpha * moments->i[12] +    
-			moments->alpha * moments->alpha*moments->i[10]) / in.norm;
-   /* 11 */
-   q = 2 * moments->n15; 
-   moments->M1[1][1] = (moments->i[11] -2.*moments->alpha * moments->i[9] +    
-			moments->alpha * moments->alpha*moments->i[7]) / in.norm;
-  
-   moments->M1[1][0]=moments->M1[0][1] ;
-   
-   /*  12 */
-   q = moments->n0; 
-   moments->M2[0][0] = (moments->i[12] -2.*moments->alpha * moments->i[10] +    
-			moments->alpha * moments->alpha*moments->i[8]) / in.norm;   
-   /* 9 */
-   q = moments->n15; 
-
-   moments->M2[0][1] = (moments->i[9] -2.*moments->alpha * moments->i[7] +    
-			moments->alpha * moments->alpha*moments->i[5]) / in.norm;   
-   /*  9 */
-   q = moments->n0-1;   
-
-   moments->M2[1][0] = (moments->i[9] -2.*moments->alpha * moments->i[7] +    
-			moments->alpha * moments->alpha*moments->i[5]) / in.norm;
-   /*  6 */
-   q = moments->n15-1; 
-   moments->M2[1][1] = (moments->i[6] -2.*moments->alpha * moments->i[4] +    
-			moments->alpha * moments->alpha*moments->i[2]) / in.norm;
-   
-   /* 7 */
-   q = 0; 
-   moments->M3[0][0] = (moments->i[7] -2.*moments->alpha * moments->i[5] +    
-			moments->alpha * moments->alpha*moments->i[3]) / in.norm;   
-   /* 4 */
-   q = -1; 
-   moments->M3[0][1] = (moments->i[4] -2.*moments->alpha * moments->i[2] +    
-			moments->alpha * moments->alpha*moments->i[0]) / in.norm;   
-   /* 1 */
-   q = -2; 
-   moments->M3[1][1] = (moments->i[1] -2.*moments->alpha * moments->i[-1] +    
-			moments->alpha * moments->alpha*moments->i[-3]) / in.norm;
-   
-   moments->M3[1][0]=moments->M3[0][1] ;
-
-   if (lalDebugLevel&LALINFO)
-   {
-	   LALPrintError("#M1=\n");
-	   LALPrintError("#%15.12lf %15.12lf \n# %15.12lf %15.12lf\n",
-			   moments->M1[0][0],
-			   moments->M1[0][1],
-			   moments->M1[1][0],
-			   moments->M1[1][1] );
-     
-	   LALPrintError("#M2=\n");
-	   LALPrintError("#%15.12lf %15.12lf \n# %15.12lf %15.12lf\n",
-			   moments->M2[0][0],
-			   moments->M2[0][1],
-     
-			   moments->M2[1][0],
-			   moments->M2[1][1] );
-     
-	   LALPrintError("#M3=\n");     
-	   LALPrintError("#%15.12lf %15.12lf \n# %15.12lf %15.12lf\n",
-			   moments->M3[0][0],
-			   moments->M3[0][1],
-			   moments->M3[1][0],
-			   moments->M3[1][1] );
-   }
-
-   DETATCHSTATUSPTR(status);
-   RETURN(status);
-}
-
-#undef Dim
-#undef Order
-
+#undef METRIC_ORDER
+#undef METRIC_DIMENSION

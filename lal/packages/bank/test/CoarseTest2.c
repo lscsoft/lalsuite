@@ -43,7 +43,7 @@ LALInspiralCreateCoarseBank
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
 
-INT4 lalDebugLevel=0;
+INT4 lalDebugLevel=1;
 
 int
 main(int argc, char **argv)
@@ -94,6 +94,7 @@ main(int argc, char **argv)
   LALNoiseSpectralDensity (&status, coarseIn.shf.data, noisemodel, coarseIn.shf.deltaF );
 
   coarseIn.approximant = BCV;
+  coarseIn.space 	= Psi0Psi3;
   LALInspiralCreateCoarseBank(&status, &list1, &nlist1, coarseIn);
   for (j=0; j<nlist1; j++)
   {
@@ -106,6 +107,7 @@ main(int argc, char **argv)
 		
   fprintf(fpr, "&\n");
   coarseIn.approximant = TaylorT1;
+  coarseIn.space 	= Tau0Tau3;
   LALInspiralCreateCoarseBank(&status, &list2, &nlist2, coarseIn);
     
   for (j=0; j<nlist2; j++)

@@ -21,8 +21,6 @@ Header file for the template placement codes.
 
 </lalLaTeX> */
 
-
-
 #ifndef _LALINSPIRALBANK_H
 #define _LALINSPIRALBANK_H
 
@@ -48,19 +46,20 @@ NRCSID(LALINSPIRALBANKH, "$Id$" );
 </lalLaTeX>  */
 
 /* <lalErrTable> */
-
-#define LALINSPIRALBANKH_ENULL 1
-#define LALINSPIRALBANKH_EMEM  2
-#define LALINSPIRALBANKH_ECHOICE 3
-#define LALINSPIRALBANKH_EDIV0 4
-#define LALINSPIRALBANKH_ESIZE 8
-#define LALINSPIRALBANKH_MSGENULL "Arguments contained an unexpected null pointer"
-#define LALINSPIRALBANKH_MSGEMEM "Memory allocation failure"
+#define LALINSPIRALBANKH_ENULL      1
+#define LALINSPIRALBANKH_EMEM       2
+#define LALINSPIRALBANKH_ECHOICE    3
+#define LALINSPIRALBANKH_EDIV0      4
+#define LALINSPIRALBANKH_ESIZE      8
+#define LALINSPIRALBANKH_EFRANGE    16
+#define LALINSPIRALBANKH_EORDER     32
+#define LALINSPIRALBANKH_MSGENULL   "Null pointer"
+#define LALINSPIRALBANKH_MSGEMEM    "Memory allocation failure"
 #define LALINSPIRALBANKH_MSGECHOICE "Invalid choice for an input parameter"
-#define LALINSPIRALBANKH_MSGEDIV0 "Division by zero"
-#define LALINSPIRALBANKH_MSGESIZE "Invalid input range"
-
-
+#define LALINSPIRALBANKH_MSGEDIV0   "Division by zero"
+#define LALINSPIRALBANKH_MSGESIZE   "Invalid input range"
+#define LALINSPIRALBANKH_MSGEFRANGE "Limits outside range of frequency series"
+#define LALINSPIRALBANKH_MSGEORDER  "Inappropriate PN order"
 /* </lalErrTable> */
 
 /* <lalLaTeX>
@@ -253,224 +252,148 @@ Input and ouput structures to function LALRectangleVertices.
 \input{LALRectangleOutH}
 
 \end{enumerate}
-
-
-
-
-
 </lalLaTeX>  */
 
 
-
-
-/*  <lalVerbatim file="LALCoordinateSpaceH"> */
+/* <lalVerbatim file="LALCoordinateSpaceH"> */
 typedef enum
 {
-	Tau0Tau2, Tau0Tau3, Psi0Psi3
+  Tau0Tau2, 
+  Tau0Tau3, 
+  Psi0Psi3
 }
 CoordinateSpace;
-
 /*  </lalVerbatim>  */
 /*  <lalLaTeX> 
 \idx[Type]{CoordinateSpace} 
-   </lalLaTeX>  */
+</lalLaTeX>  */
 
-
-
-
-
-
-
-
-
-/*  <lalVerbatim file="LALInspiralBankMassRangeH"> */
+/* <lalVerbatim file="LALInspiralBankMassRangeH"> */
 typedef enum
 {
-	MinComponentMassMaxTotalMass,
-       	MinMaxComponentMass
+  MinComponentMassMaxTotalMass,
+  MinMaxComponentMass
 } 
 InspiralBankMassRange;
-
 /*  </lalVerbatim>  */
-
-
 /*  <lalLaTeX> 
 \idx[Type]{InspiralBankMassRange} 
 </lalLaTeX>  */
 
-
-
-
-
-
-/*  <lalVerbatim file="LALInspiralMetricH"> */
-
+/* <lalVerbatim file="LALInspiralMetricH"> */
 typedef struct 
 tagInspiralMetric 
 {
-	REAL8            G00;     
-	REAL8            G11;     
-	REAL8            G01;     
+  REAL8            G00;     
+  REAL8            G11;     
+  REAL8            G01;     
 
-	REAL8            g00;     
-	REAL8            g11;     
-	REAL8            theta;   
+  REAL8            g00;     
+  REAL8            g11;     
+  REAL8            theta;   
 
-	CoordinateSpace  space;   
+  CoordinateSpace  space;   
 } 
 InspiralMetric;
 /* </lalVerbatim>  */
-
 /*  <lalLaTeX> 
 \idx[Type]{InspiralMetric} 
 </lalLaTeX>  */
 
-
-
-
-
-
-
-
-
-/*  <lalVerbatim file="LALInspiralTemplateListH"> */
-
+/* <lalVerbatim file="LALInspiralTemplateListH"> */
 typedef struct
 tagInspiralTemplateList
 {
-	INT4              ID;
-	InspiralTemplate  params;              
-	InspiralMetric    metric;              
-	struct tagInspiralTemplateList *next;  
+  INT4              ID;
+  InspiralTemplate  params;              
+  InspiralMetric    metric;              
+  struct tagInspiralTemplateList *next;  
 }
 InspiralTemplateList;
 /* </lalVerbatim>  */
- 
 /*  <lalLaTeX>
 \idx[Type]{InspiralTemplateList}
 </lalLaTeX>  */
-
-
-
-
-
 
 /*  <lalVerbatim file="LALInspiralParamsH"> */
 typedef struct
 tagInspiralBankParams
 {
-	INT4           nparams;            
-	REAL8          minimalMatch;
-	REAL8          x0;                
-	REAL8          x1;
-	REAL8          dx0;
-	REAL8          dx1;
-	REAL8          x0Min;             
-	REAL8          x0Max;
-	REAL8          x1Min;
-	REAL8          x1Max;
-	InspiralMetric *metric;  
+  INT4           nparams;            
+  REAL8          minimalMatch;
+  REAL8          x0;                
+  REAL8          x1;
+  REAL8          dx0;
+  REAL8          dx1;
+  REAL8          x0Min;             
+  REAL8          x0Max;
+  REAL8          x1Min;
+  REAL8          x1Max;
+  InspiralMetric *metric;  
 }
 InspiralBankParams;
 /* </lalVerbatim>  */
- 
 /*  <lalLaTeX>
 \idx[Type]{InspiralBankParams}
 </lalLaTeX>  */
 
-
-
-
-
-
-
-
-
-
-
-
-/*  <lalVerbatim file="LALInspiralCoarseBankH"> */
-
+/* <lalVerbatim file="LALInspiralCoarseBankH"> */
 typedef struct
 tagInspiralCoarseBankIn
 {
-	InspiralBankMassRange         massRange;    
-	CoordinateSpace               space;          
-  
-	REAL8                         mMin;           
-	REAL8                         mMax;           
-	REAL8                         MMax;         
-	REAL8                         alpha;      
-	REAL8                         psi0Min;      
-	REAL8                         psi0Max;      
-	REAL8                         psi3Min;      
-	REAL8                         psi3Max;      
-	REAL8                         mmCoarse;      
-	REAL8                         mmFine;        
-	REAL8                         fLower;        
-	REAL8                         fUpper;        
-	REAL8                         tSampling;     
-	REAL8                         etamin;         
+  InspiralBankMassRange         massRange;    
+  CoordinateSpace               space;          
 
-	REAL8FrequencySeries          shf;
-  
-	INT4                          iflso;          
-	UINT4                         numFcutTemplates;
+  REAL8                         mMin;           
+  REAL8                         mMax;           
+  REAL8                         MMax;         
+  REAL8                         alpha;      
+  REAL8                         psi0Min;      
+  REAL8                         psi0Max;      
+  REAL8                         psi3Min;      
+  REAL8                         psi3Max;      
+  REAL8                         mmCoarse;      
+  REAL8                         mmFine;        
+  REAL8                         fLower;        
+  REAL8                         fUpper;        
+  REAL8                         tSampling;     
+  REAL8                         etamin;         
 
-	Order                         order;        
-	Approximant                   approximant;  
+  REAL8FrequencySeries          shf;
+
+  INT4                          iflso;          
+  UINT4                         numFcutTemplates;
+
+  Order                         order;        
+  Approximant                   approximant;  
 }
 InspiralCoarseBankIn;
 /* </lalVerbatim>  */
-
 /*  <lalLaTeX>
 \idx[Type]{InspiralCoarseBankIn}
 </lalLaTeX>  */
 
-
-
-
-
-
-
-
-
-
-
-
-
-/*  <lalVerbatim file="LALInspiralMomentsInH"> */
+/* <lalVerbatim file="LALInspiralMomentsInH"> */
 typedef struct 
 { 
-	REAL8                xmin;
-        REAL8                xmax;
-        REAL8                ndx; 
-	REAL8	             norm;
-	REAL8FrequencySeries *shf;
+  REAL8                xmin;
+  REAL8                xmax;
+  REAL8                ndx; 
+  REAL8	             norm;
+  REAL8FrequencySeries *shf;
 } 
 InspiralMomentsIn;
 /* </lalVerbatim>  */
-
 /*  <lalLaTeX>
 \idx[Type]{InspiralMomentsIn}
 </lalLaTeX>  */
 
-
-
-
-
-
-
-
-
-
-
-/*  <lalVerbatim file="LALInspiralFineBankInH"> */
+/* <lalVerbatim file="LALInspiralFineBankInH"> */
 typedef struct
 tagInspiralFineBankIn
 {
-	InspiralTemplateList templateList;
-	InspiralCoarseBankIn coarseIn;
+  InspiralTemplateList templateList;
+  InspiralCoarseBankIn coarseIn;
 } 
 InspiralFineBankIn;
 /*  </lalVerbatim>  */
@@ -478,22 +401,12 @@ InspiralFineBankIn;
 \idx[Type]{InspiralFineBankIn} 
 </lalLaTeX>  */
 
-
-
-
-
-
-
-
-
-
-
-/*  <lalVerbatim file="LALInspiralMomentsEtcH"> */
+/* <lalVerbatim file="LALInspiralMomentsEtcH"> */
 typedef struct
 tagInspiralMomentsEtc
 {
-	REAL8 a01, a21, a22, a31, a41, a42, a43;
-	REAL8 j[18];
+  REAL8 a01, a21, a22, a31, a41, a42, a43;
+  REAL8 j[18];
 } 
 InspiralMomentsEtc;
 /*  </lalVerbatim>  */
@@ -502,8 +415,7 @@ InspiralMomentsEtc;
 </lalLaTeX>  */
 
 
-
-/*  <lalVerbatim file="LALInspiralMomentsEtcBCVH"> */
+/* <lalVerbatim file="LALInspiralMomentsEtcBCVH"> */
 typedef struct
 tagInspiralMomentsEtcBCV
 {
@@ -516,9 +428,6 @@ tagInspiralMomentsEtcBCV
   REAL8 M1[2][2];
   REAL8 M2[2][2];
   REAL8 M3[2][2];
-
-
-
 } 
 InspiralMomentsEtcBCV;
 /*  </lalVerbatim>  */
@@ -526,224 +435,150 @@ InspiralMomentsEtcBCV;
 \idx[Type]{InspiralMomentsEtcBCV} 
 </lalLaTeX>  */
 
-
-
-
-
-
-
-
-
-
-
-
 /*  <lalVerbatim file="LALRectangleInH"> */
 typedef struct
 tagRectangleIn 
 {
-	   REAL8 x0, y0, dx, dy, theta;
+  REAL8 x0, y0, dx, dy, theta;
 }
 RectangleIn;
 /*  </lalVerbatim>  */
-
 /*  <lalLaTeX>
 \index{\texttt{RectangleIn}}
 </lalLaTeX>  */
-
-
-
-
-
-
-
-
-
-
 
 /*  <lalVerbatim file="LALRectangleOutH"> */
 typedef struct
 tagRectangleOut 
 {
-	   REAL8 x1, y1, x2, y2, x3, y3, x4, y4, x5, y5;
+  REAL8 x1, y1, x2, y2, x3, y3, x4, y4, x5, y5;
 }
 RectangleOut;
 /*  </lalVerbatim>  */
-
 /*  <lalLaTeX>
 \index{\texttt{RectangleOut}}
 </lalLaTeX>  */
-
-
-
-
-
-
-
-
-
-
 
 /*  <lalLaTeX>
 \vfill{\footnotesize\input{LALInspiralBankHV}}
 </lalLaTeX>  */
 
-/* Function prototypes */
 
+/* Function prototypes */
 /* <lalLaTeX>
 \newpage\input{LALInspiralCreateCoarseBankC}
 </lalLaTeX>  */
 
 void 
-LALInspiralCreateCoarseBank
-(
-   LALStatus              *status,
-   InspiralTemplateList   **list,
-   INT4                   *nlist,
-   InspiralCoarseBankIn   bankIn
-);
-
+LALInspiralCreateCoarseBank (
+    LALStatus              *status,
+    InspiralTemplateList   **list,
+    INT4                   *nlist,
+    InspiralCoarseBankIn   bankIn
+    );
 
 void 
-LALInspiralCreateBCVBank
-(
-   LALStatus            *status, 
-   InspiralTemplateList **list, 
-   INT4                 *nlist,
-   InspiralCoarseBankIn coarseIn
-);
+LALInspiralCreatePNCoarseBank (
+    LALStatus            *status, 
+    InspiralTemplateList **list, 
+    INT4                 *nlist,
+    InspiralCoarseBankIn coarseIn
+    );
 
 void 
-LALInspiralBCVFcutBank
-(
-   LALStatus            *status, 
-   InspiralTemplateList **list, 
-   UINT4                *NList, 
-   UINT4                numFcutTemplates
-);
-
+LALInspiralCreateBCVBank (
+    LALStatus            *status, 
+    InspiralTemplateList **list, 
+    INT4                 *nlist,
+    InspiralCoarseBankIn coarseIn
+    );
 
 void 
-LALInspiralCreateFlatBank
-(
-   LALStatus            *status, 
-   REAL4VectorSequence  *list, 
-   InspiralBankParams   *bankParams
-); 
+LALInspiralBCVFcutBank (
+    LALStatus            *status, 
+    InspiralTemplateList **list, 
+    UINT4                *NList, 
+    UINT4                numFcutTemplates
+    );
 
-
-
-
-
-
-
-
-
-
-
-
+void 
+LALInspiralCreateFlatBank (
+    LALStatus            *status, 
+    REAL4VectorSequence  *list, 
+    InspiralBankParams   *bankParams
+    ); 
 
 /* <lalLaTeX>
-\newpage\input{LALInspiralCreateFineBankC}
-</lalLaTeX>  */
+   \newpage\input{LALInspiralCreateFineBankC}
+   </lalLaTeX>  */
 
 void 
-LALInspiralCreateFineBank
-(
-   LALStatus              *status,
-   InspiralTemplateList   **outlist,
-   INT4                   *nlist,
-   InspiralFineBankIn     fineIn
-);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+LALInspiralCreateFineBank (
+    LALStatus              *status,
+    InspiralTemplateList   **outlist,
+    INT4                   *nlist,
+    InspiralFineBankIn     fineIn
+    );
 
 /* <lalLaTeX>
-\newpage\input{LALInspiralComputeMetricC}
-</lalLaTeX>  */
-
+   \newpage\input{LALInspiralComputeMetricC}
+   </lalLaTeX>  */
 void 
-LALInspiralComputeMetric
+LALInspiralComputeMetric (
+    LALStatus           *status,
+    InspiralMetric      *metric,
+    InspiralTemplate    *params,
+    InspiralMomentsEtc  *moments
+
+    );
+void 
+LALInspiralComputeMetricBCV
 (
-   LALStatus           *status,
-   InspiralMetric      *metric,
-   InspiralTemplate    *params,
-   InspiralMomentsEtc  *moments
+ LALStatus             *status,
+ InspiralMetric        *metric,
+ REAL8FrequencySeries  *psd,
+ InspiralTemplate      *params
 );
-
-
-
-
-
-
-
-
-
-
-
 
 /* <lalLaTeX>
 \newpage\input{LALInspiralLongestTemplateInBankC}
 </lalLaTeX>  */
 void
-LALInspiralLongestTemplateInBank
-(
-   LALStatus            *status, 
-   UINT4                *templateLength,
-   InspiralCoarseBankIn *coarseIn
-);
-
-
-
-
-
-
-
-
-
+LALInspiralLongestTemplateInBank (
+    LALStatus            *status, 
+    UINT4                *templateLength,
+    InspiralCoarseBankIn *coarseIn
+    );
 
 /* <lalLaTeX>
 \newpage\input{LALInspiralMomentsC}
 </lalLaTeX>  */
+void
+LALGetInspiralMoments (
+    LALStatus            *status,
+    InspiralMomentsEtc   *moments,
+    REAL8FrequencySeries *psd,
+    InspiralTemplate     *params 
+    );
+
+void
+LALGetInspiralMomentsBCV (
+    LALStatus               *status,
+    InspiralMomentsEtcBCV   *moments,
+    REAL8FrequencySeries    *psd,
+    InspiralTemplate        *params 
+    );
 
 void 
-LALInspiralMoments
-(
-   LALStatus         *status,
-   REAL8             *moment,
-   InspiralMomentsIn pars
-);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+LALInspiralMoments (
+    LALStatus         *status,
+    REAL8             *moment,
+    InspiralMomentsIn pars
+    );
 
 /* <lalLaTeX>
 \newpage\input{LALInspiralMomentsIntegrandC}
 </lalLaTeX>  */
-
 void 
 LALInspiralMomentsIntegrand
 (
@@ -753,110 +588,51 @@ LALInspiralMomentsIntegrand
    void   *pars
 );
 
-
-
-
-
-
-
-
-
-
-
 /*  <lalLaTeX>
 \newpage\input{LALInspiralSetSearchLimitsC}
 </lalLaTeX>  */
-
 void 
-LALInspiralSetSearchLimits
-(
-   LALStatus            *status,
-   InspiralBankParams   *bankParams,
-   InspiralCoarseBankIn coarseIn
-);
-
-
-
-
-
-
-
-
-
-
+LALInspiralSetSearchLimits (
+    LALStatus            *status,
+    InspiralBankParams   *bankParams,
+    InspiralCoarseBankIn coarseIn
+    );
 
 /* <lalLaTeX>
 \newpage\input{LALInspiralNextTemplateC}
 </lalLaTeX>  */
-
 void 
-LALInspiralNextTemplate
-(
+LALInspiralNextTemplate (
     LALStatus          *status, 
     InspiralBankParams *bankPars, 
     InspiralMetric      metric
-);            
+    );            
 
-
-
-
-
-
-
-
-
-
-      
 /*  <lalLaTeX>
 \newpage\input{LALInspiralComputeParamsC}
 </lalLaTeX>  */
-
 void 
-LALInspiralComputeParams
-(
-   LALStatus            *status,
-   InspiralTemplate     *pars,
-   InspiralBankParams   bankParams,
-   InspiralCoarseBankIn coarseIn
-);
-
-
-
-
-
-
-
-
-
-
+LALInspiralComputeParams (
+    LALStatus            *status,
+    InspiralTemplate     *pars,
+    InspiralBankParams   bankParams,
+    InspiralCoarseBankIn coarseIn
+    );
 
 /* <lalLaTeX>
 \newpage\input{LALInspiralValidParamsC}
 </lalLaTeX>  */
-
 void 
-LALInspiralValidParams
-(
-   LALStatus            *status,
-   INT4                 *valid,
-   InspiralBankParams   bankParams,
-   InspiralCoarseBankIn coarseIn
-);
-
-
-
-
-
-
-
-
-
-
+LALInspiralValidParams (
+    LALStatus            *status,
+    INT4                 *valid,
+    InspiralBankParams   bankParams,
+    InspiralCoarseBankIn coarseIn
+    );
 
 /* <lalLaTeX>
 \newpage\input{LALInspiralValidTemplateC}
 </lalLaTeX>  */
-
 void
 LALInspiralValidTemplate
 (
@@ -866,94 +642,42 @@ LALInspiralValidTemplate
    InspiralCoarseBankIn coarseIn
 );
 
-
-
-
-
-
-
-
-
-
-
 /* <lalLaTeX>
 \newpage\input{LALInspiralUpdateParamsC}
 </lalLaTeX>  */
-
 void 
-LALInspiralUpdateParams
-(
-   LALStatus          *status,
-   InspiralBankParams *bankParams,
-   InspiralMetric     metric,
-   REAL8              minimalMatch
-);
-
-
-
-
-
-
-
-
-
-
-
+LALInspiralUpdateParams (
+    LALStatus          *status,
+    InspiralBankParams *bankParams,
+    InspiralMetric     metric,
+    REAL8              minimalMatch
+    );
 
 /* <lalLaTeX>
 \newpage\input{LALMatrixTransformC}
 </lalLaTeX>  */
-
 void 
-LALMatrixTransform 
-(
-   LALStatus *status,
-   INT4      Dim,
-   REAL8     **trans,
-   REAL8     **buff1,
-   REAL8     **mm3
-);
-
-
-
-
-
-
-
-
-
-
-
-/* <lalLaTeX>
-\newpage\input{LALInspiralMomentsC}
-</lalLaTeX>  */
+LALMatrixTransform (
+    LALStatus *status,
+    INT4      Dim,
+    REAL8     **trans,
+    REAL8     **buff1,
+    REAL8     **mm3
+    );
 
 /* <lalLaTeX>
 \newpage\input{LALDeterminant3C}
 </lalLaTeX>  */
-
 void
-LALDeterminant3
-(
-   LALStatus *status, 
-   REAL8  *determinant, 
-   REAL8  **matrix
-);
-
-
-
-
-
-
-
-
-
-
+LALDeterminant3 (
+    LALStatus *status, 
+    REAL8  *determinant, 
+    REAL8  **matrix
+    );
 
 /* <lalLaTeX>
 \newpage\input{LALInverse3C}
 </lalLaTeX>  */
-
 void 
 LALInverse3
 (
@@ -962,38 +686,15 @@ LALInverse3
  REAL8     **matrix
 );
 
-
-
-
-
-
-
-
-
-
-
 /* <lalLaTeX>
 \newpage\input{LALInspiralSetParamsC}
 </lalLaTeX>  */
-
 void 
-LALInspiralSetParams
-(
-   LALStatus            *status, 
-   InspiralTemplate     *tempPars,
-   InspiralCoarseBankIn coarseIn
-);
-
-
-
-
-
-
-
-
-
-
-
+LALInspiralSetParams (
+    LALStatus            *status, 
+    InspiralTemplate     *tempPars,
+    InspiralCoarseBankIn coarseIn
+    );
 
 /* <lalLaTeX>
 \newpage\input{LALRectangleVerticesC}
@@ -1006,58 +707,18 @@ LALRectangleVertices
    RectangleOut *out,
    RectangleIn *in
 );
-
-
-
-
-
-
-
-
-
-
       
 /* <lalLaTeX>
 \newpage\input{CoarseTestC}
 </lalLaTeX> */
 
-
-
-
-
-
-
-
-
-
-
 /* <lalLaTeX>
 \newpage\input{CoarseTest2C}
 </lalLaTeX> */
 
-
-
-
-
-
-
-
-
-
-
 /* <lalLaTeX>
 \newpage\input{ChirpSpaceC}
 </lalLaTeX> */
-
-void 
-LALInspiralComputeMetricBCV
-(
- LALStatus             *status,
- InspiralMetric        *metric,
- REAL8FrequencySeries  *psd,
- InspiralTemplate      *params
-);
-
 
 #ifdef  __cplusplus
 }

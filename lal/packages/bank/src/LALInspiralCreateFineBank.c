@@ -128,8 +128,8 @@ void LALInspiralCreateFineBank(LALStatus            *status,
   /* number when the function is called                      */
   *nlist = 0;
 
-  tempPars = (InspiralTemplate *) LALMalloc(sizeof(InspiralTemplate));
-  bankPars = (InspiralBankParams *) LALMalloc(sizeof(InspiralBankParams));
+  tempPars = (InspiralTemplate *) LALCalloc(1, sizeof(InspiralTemplate));
+  bankPars = (InspiralBankParams *) LALCalloc(1, sizeof(InspiralBankParams));
   *tempPars = fineIn.templateList.params;
   switch (fineIn.coarseIn.space) {
     case Tau0Tau2:
@@ -182,6 +182,7 @@ void LALInspiralCreateFineBank(LALStatus            *status,
             ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
 	    outlist = NULL;
          }
+         memset( *outlist + *nlist, 0, sizeof(InspiralTemplateList) );
          (*outlist)[*nlist].params = *tempPars;
          ++(*nlist); 
        }

@@ -60,41 +60,45 @@ LALInspiralValidTemplate(
 {  /*  </lalVerbatim>  */
 
 
-  INITSTATUS (status, "LALInspiralValidTemplate", LALINSPIRALVALIDTEMPLATEC);
-  ATTATCHSTATUSPTR(status);
-  ASSERT (coarseIn.fLower > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+  INITSTATUS( status, "LALInspiralValidTemplate", LALINSPIRALVALIDTEMPLATEC );
+  ATTATCHSTATUSPTR( status );
+  
+  ASSERT( coarseIn.fLower > 0, status, 
+      LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
 
   *valid = 0;
-  if (bankParams.x0 <=0 || bankParams.x1 <=0)
+  if ( bankParams.x0 <=0 || bankParams.x1 <=0 )
   {
-	  DETATCHSTATUSPTR(status);
-	  RETURN(status);
+    LALInfo( status, "x0 or x1 is less than or equal to zero" );
+    DETATCHSTATUSPTR(status);
+    RETURN(status);
   }
-/* 
-  We have a valid template either if the template itself, or one
-  of the vertices of the 'ambiguity rectangle', is in the region of
-  interest
-*/
+  
+  /* We have a valid template either if the template itself, or one     */
+  /* of the vertices of the 'ambiguity rectangle', is in the region of  */
+  /* interest                                                           */
 
-  LALInspiralValidParams(status->statusPtr, valid, bankParams, coarseIn); 
-  CHECKSTATUSPTR(status);
+  LALInspiralValidParams( status->statusPtr, valid, bankParams, coarseIn ); 
+  CHECKSTATUSPTR( status );
 
-  if (*valid == 1) 
+  if ( *valid == 1 ) 
   {
     DETATCHSTATUSPTR(status);
     RETURN(status);
   }
 
   bankParams.x1 = bankParams.x1 - bankParams.dx1/2.;
-  LALInspiralValidParams(status->statusPtr, valid, bankParams, coarseIn); 
-  CHECKSTATUSPTR(status);
-  if (*valid == 1) 
+  
+  LALInspiralValidParams( status->statusPtr, valid, bankParams, coarseIn ); 
+  CHECKSTATUSPTR( status );
+  
+  if ( *valid == 1 ) 
   {
-    DETATCHSTATUSPTR(status);
-    RETURN(status);
+    DETATCHSTATUSPTR( status );
+    RETURN( status );
   }
 
-/*
+#if 0
   bankParams.x0 = bankParams.x0 - 2.*bankParams.dx0;
   LALInspiralValidParams(status->statusPtr, valid, bankParams, coarseIn); 
   CHECKSTATUSPTR(status);
@@ -119,8 +123,8 @@ LALInspiralValidTemplate(
     DETATCHSTATUSPTR(status);
     RETURN(status);
   }
-*/
+#endif
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
 }

@@ -91,6 +91,8 @@ main(int argc, char **argv)
   LALNoiseSpectralDensity (&status, coarseIn.shf.data, noisemodel, coarseIn.shf.deltaF );
 
   coarseIn.approximant = BCV;
+  coarseIn.space       = Psi0Psi3;
+  
   LALInspiralCreateCoarseBank(&status, &list1, &nlist, coarseIn);
   for (j=0; j<nlist; j++)
   {
@@ -101,7 +103,9 @@ main(int argc, char **argv)
 			  list1[j].params.fendBCV);
   }
   fprintf(fpr, "&\n");
-  coarseIn.approximant = TaylorT1;
+  coarseIn.approximant  = TaylorT1;
+  coarseIn.space	= Tau0Tau3;
+
   LALInspiralCreateCoarseBank(&status, &list2, &nlist, coarseIn);
     
   for (j=0; j<nlist; j++)

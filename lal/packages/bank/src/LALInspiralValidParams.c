@@ -124,90 +124,96 @@ NRCSID (LALINSPIRALVALIDPARAMSC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralValidParamsCP">  */
 
-void LALInspiralValidParams(LALStatus            *status,
-                            INT4                 *valid,
-                            InspiralBankParams   bankParams, 
-                            InspiralCoarseBankIn coarseIn)
-{  /*  </lalVerbatim>  */
+void LALInspiralValidParams(
+    LALStatus            *status,
+    INT4                 *valid,
+    InspiralBankParams   bankParams, 
+    InspiralCoarseBankIn coarseIn
+    )
+/* </lalVerbatim> */
+{
 
   InspiralTemplate *Pars=NULL;
 
-  INITSTATUS (status, "LALInspiralValidParams", LALINSPIRALVALIDPARAMSC);
-  ATTATCHSTATUSPTR(status);
-  ASSERT ((REAL8)coarseIn.fLower > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-  ASSERT ((INT4)coarseIn.space >= 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-  ASSERT ((INT4)coarseIn.space <= 1, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+  INITSTATUS( status, "LALInspiralValidParams", LALINSPIRALVALIDPARAMSC );
+  ATTATCHSTATUSPTR( status );
+  
+  ASSERT( coarseIn.fLower > 0.L, status, 
+      LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
 
   *valid = 0;
 
-  if (bankParams.x0 <=0 || bankParams.x1 <=0)
+  if ( bankParams.x0 <=0 || bankParams.x1 <=0 )
   {
-	  DETATCHSTATUSPTR(status);
-	  RETURN(status);
+    LALInfo( status, "x0 or x1 are less than or equal to zero" );
+    DETATCHSTATUSPTR( status );
+    RETURN( status );
   }
 
-  if ( !(Pars = (InspiralTemplate *) LALMalloc(sizeof(InspiralTemplate))))
+  Pars = (InspiralTemplate *) LALCalloc( 1, sizeof(InspiralTemplate) );
+  if ( ! Pars )
   {
-	  ABORT (status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+    ABORT (status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
   }
-/*
- First set the chirp times of Pars to be as in bankParams 
-*/
 
+  /* First set the chirp times of Pars to be as in bankParams */
   Pars->t0 = bankParams.x0;
   Pars->fLower = coarseIn.fLower;
-  switch (coarseIn.space) 
+  switch ( coarseIn.space ) 
   {
-     case Tau0Tau2:
-        Pars->t2 = bankParams.x1;
-        Pars->massChoice = t02;
-        break;
-     case Tau0Tau3:
-        Pars->t3 = bankParams.x1;
-        Pars->massChoice = t03;
-        break;
-   }
-
-/* Compute all the parameters, including masses, corresponding to (t0,t2/t3) */
-
-  LALInspiralParameterCalc(status->statusPtr, Pars); CHECKSTATUSPTR(status);
-
-/* If the masses are in the correct range accept as valid parameters */
-
-  switch (coarseIn.massRange) 
-  {
-  
-	  case MinComponentMassMaxTotalMass:
-		  if (
-				  Pars->mass1 >= coarseIn.mMin &&
-				  Pars->mass2 >= coarseIn.mMin &&
-				  Pars->totalMass <= coarseIn.MMax &&
-				  Pars->eta <= 0.25 && 
-				  Pars->eta >= coarseIn.etamin
-		     ) 
-		  {
-			  *valid = 1;
-		  }
-		  break;
-	  case MinMaxComponentMass:
-		  if (
-				  Pars->mass1 >= coarseIn.mMin &&
-				  Pars->mass2 >= coarseIn.mMin &&
-				  Pars->mass1 <= coarseIn.mMax &&
-				  Pars->mass2 <= coarseIn.mMax &&
-				  Pars->eta <= 0.25 && 
-				  Pars->eta >= coarseIn.etamin
-		     ) 
-		  {
-			  *valid = 1;
-		  }
-		  break;
-	  default:
-		  ABORT(status, 999, "Invalid choice for enum InspiralBankMassRange");
-		  break;
+    case Tau0Tau2:
+      Pars->t2 = bankParams.x1;
+      Pars->massChoice = t02;
+      break;
+    case Tau0Tau3:
+      Pars->t3 = bankParams.x1;
+      Pars->massChoice = t03;
+      break;
+    default:
+      ABORT( status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
   }
 
-  LALFree(Pars);
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  /* Compute all the parameters, including masses, */
+  /* corresponding to (t0,t2/t3)                   */
+  LALInspiralParameterCalc( status->statusPtr, Pars );
+  CHECKSTATUSPTR( status );
+
+  /* If the masses are in the correct range accept as valid parameters */
+  switch (coarseIn.massRange) 
+  {
+    case MinComponentMassMaxTotalMass:
+      if (
+          Pars->mass1 >= coarseIn.mMin &&
+          Pars->mass2 >= coarseIn.mMin &&
+          Pars->totalMass <= coarseIn.MMax &&
+          Pars->eta <= 0.25 && 
+          Pars->eta >= coarseIn.etamin
+         ) 
+      {
+        *valid = 1;
+      }
+      break;
+    
+    case MinMaxComponentMass:
+      if (
+          Pars->mass1 >= coarseIn.mMin &&
+          Pars->mass2 >= coarseIn.mMin &&
+          Pars->mass1 <= coarseIn.mMax &&
+          Pars->mass2 <= coarseIn.mMax &&
+          Pars->eta <= 0.25 && 
+          Pars->eta >= coarseIn.etamin
+         ) 
+      {
+        *valid = 1;
+      }
+      break;
+      
+    default:
+      ABORT(status, 999, "Invalid choice for enum InspiralBankMassRange");
+  }
+
+  LALFree( Pars );
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
 }
