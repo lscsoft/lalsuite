@@ -474,7 +474,7 @@ LALUTCtoGPS (LALStatus                *status,
 
   /*
    * Check that time asked for is not after last known leap sec
-   * Use by: 2002-Mar-31 23:59:00
+   * Use by: 2002-Sep-30 23:59:00
    *
    * if date is later
    *    check accuracy param
@@ -488,9 +488,9 @@ LALUTCtoGPS (LALStatus                *status,
    */
   if (p_utcDate->unixDate.tm_year > 102 ||
       (p_utcDate->unixDate.tm_year == 102 &&
-       (p_utcDate->unixDate.tm_mon > 2 ||
-        (p_utcDate->unixDate.tm_mon == 2 &&
-         p_utcDate->unixDate.tm_mday == 31 &&
+       (p_utcDate->unixDate.tm_mon > 9 ||
+        (p_utcDate->unixDate.tm_mon == 9 &&
+         p_utcDate->unixDate.tm_mday == 30 &&
          p_utcDate->unixDate.tm_hour == 23 &&
          p_utcDate->unixDate.tm_min  == 59 &&
          p_utcDate->unixDate.tm_sec > 0))))
