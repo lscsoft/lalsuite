@@ -198,6 +198,11 @@ void LALComputeCalibrationFactors(
 
   /* Adjust excitation for the fact that it does not see the entire actuation function */
 
+ 
+  DARM_CTRL.re -= EXC.re;
+  DARM_CTRL.im -= EXC.im;
+  
+
   EXC.re *= params->mu; 
   EXC.im *= params->mu; 
   
