@@ -415,8 +415,9 @@ int main(int argc, char **argv)
 
 	INT4 sort = FALSE;
 	size_t len = 0;
-	INT4 ndetected = 0;
-	INT4 ninjected = 0;
+	INT4 ndetected;
+	INT4 ninjected;
+	INT4 timeAnalyzed;
 	const long S2StartTime = 729273613;	/* Feb 14 2003 16:00:00 UTC */
 	const long S2StopTime = 734367613;	/* Apr 14 2003 15:00:00 UTC */
 
@@ -436,15 +437,14 @@ int main(int argc, char **argv)
 	INT8 burstStartTime = 0;
 
 	/* triggers */
-	SnglBurstTable *currentEvent;
+	SnglBurstTable *event;
 	SnglBurstTable *burstEventList = NULL;
 	SnglBurstTable *detectedTriggers = NULL;
 	SnglBurstTable **detTriggersAddPoint = &detectedTriggers;
-	INT4 timeAnalyzed;
 
 	/* injections */
+	SimBurstTable *injection;
 	SimBurstTable *simBurstList = NULL;
-	SimBurstTable *currentSimBurst = NULL;
 	SimBurstTable *detectedInjections = NULL;
 	SimBurstTable **detInjectionsAddPoint = &detectedInjections;
 
@@ -621,44 +621,45 @@ int main(int argc, char **argv)
 
 
   /*****************************************************************
-   * first event in list
+   * For each injection, search the entire trigger list for the best match (if
+   * any).
    *****************************************************************/
 
-	for (currentSimBurst = simBurstList; currentSimBurst; currentSimBurst = currentSimBurst->next) {
+	ninjected = ndetected = 0;
+	for (injection = simBurstList; injection; injection = injection->next) {
 		ninjected++;
 
 		/* convert injection time to INT8 */
-		LAL_CALL(LALGPStoINT8(&stat, &injPeakTime, &(currentSimBurst->l_peak_time)), &stat);
+		LAL_CALL(LALGPStoINT8(&stat, &injPeakTime, &injection->l_peak_time), &stat);
 
 		/* loop over the burst events */
-		for (currentEvent = burstEventList; currentEvent; currentEvent = currentEvent->next) {
-			/* comparison parameters */
+		for (event = burstEventList; event; event = event->next) {
 			SnglBurstAccuracy accParams;
 
-			/* convert start time to INT8 */
-			LAL_CALL(LALGPStoINT8(&stat, &burstStartTime, &(currentEvent->start_time)), &stat);
+			LAL_CALL(LALGPStoINT8(&stat, &burstStartTime, &event->start_time), &stat);
 
 			if (injPeakTime < burstStartTime)
 				break;
 
-			LAL_CALL(LALCompareSimBurstAndSnglBurst(&stat, currentSimBurst, currentEvent, &accParams), &stat);
+			LAL_CALL(LALCompareSimBurstAndSnglBurst(&stat, injection, event, &accParams), &stat);
 
-			if (accParams.match) {
-				ndetected++;
+			if (!accParams.match)
+				continue;
 
-				/* record the detected triggers */
-				*detTriggersAddPoint = LALCalloc(1, sizeof(**detTriggersAddPoint));
-				**detTriggersAddPoint = *currentEvent;
-				detTriggersAddPoint = &(*detTriggersAddPoint)->next;
-				*detTriggersAddPoint = NULL;
+			ndetected++;
 
-				/* record the detected injections */
-				*detInjectionsAddPoint = LALCalloc(1, sizeof(**detInjectionsAddPoint));
-				**detInjectionsAddPoint = *currentSimBurst;
-				detInjectionsAddPoint = &(*detInjectionsAddPoint)->next;
-				*detInjectionsAddPoint = NULL;
-				break;
-			}
+			/* record the detected triggers */
+			*detTriggersAddPoint = LALCalloc(1, sizeof(**detTriggersAddPoint));
+			**detTriggersAddPoint = *event;
+			detTriggersAddPoint = &(*detTriggersAddPoint)->next;
+			*detTriggersAddPoint = NULL;
+
+			/* record the detected injections */
+			*detInjectionsAddPoint = LALCalloc(1, sizeof(**detInjectionsAddPoint));
+			**detInjectionsAddPoint = *injection;
+			detInjectionsAddPoint = &(*detInjectionsAddPoint)->next;
+			*detInjectionsAddPoint = NULL;
+			break;
 		}
 	}
 
