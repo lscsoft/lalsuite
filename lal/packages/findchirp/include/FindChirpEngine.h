@@ -93,6 +93,7 @@ typedef struct
 tagInspiralTemplateNode
 {
   INT4                                  level;
+  INT4                                  inserted;
   struct tagInspiralTemplateNode       *next;
   struct tagInspiralTemplateNode       *prev;
   InspiralTemplate                     *tmpltPtr;
@@ -102,7 +103,7 @@ InspiralTemplateNode;
 typedef struct
 tagFindChirpMasterParams
 {
-  UINT4                         numCoarseExch;
+  UINT4                         numTmpltExch;
   MPI_Comm                     *mpiComm;
   UINT4                        *numSlaves;
   InspiralTemplateNode         *tmpltCurrent;
