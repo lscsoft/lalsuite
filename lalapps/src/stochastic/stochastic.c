@@ -1666,8 +1666,8 @@ INT4 main(INT4 argc, CHAR *argv[])
         /* save */
         if (verbose_flag)
         {
-          fprintf(stdout, "interval %d:", interLoop);
-          fprintf(stdout, "GPS time = %d: y = %e, sigmaTheo = %e s, " \
+          fprintf(stdout, "interval %d:", interLoop + 1);
+          fprintf(stdout, "GPS time = %d: y = %e, sigmaTheo = %e, " \
               "varTheo = %e\n", gpsStartTime.gpsSeconds, y, \
               sqrt(varTheo), varTheo);
         }
