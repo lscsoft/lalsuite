@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <math.h>
 
 #include <lal/LALDatatypes.h>
@@ -84,7 +85,7 @@ typedef struct CandidateListTag
   REAL4 Alpha;       /* longitude -> REAL4*/
   REAL4 Delta;       /* latitude -> REAL4 */
   REAL4 F;           /* Maximum value of F for the cluster -> REAL4*/
-  REAL4 fa;          /* false alarm probability for that candidate ->REAL4*/
+  REAL4 lfa;         /* log of false alarm probability for that candidate ->REAL4*/
   UINT4 iCand;
   UINT4 CtagCounter; /* contains the cumulative sum of coincident candidates so far */
   INT4  iFreq;       /* INT2 , delete? */
@@ -97,7 +98,7 @@ typedef struct CoincidentPairsTag
   UINT4 c1;             /* number in Fstats file that corresponds to first member of pair */
   UINT4 c2;             /* number in Fstats file that corresponds to second member of pair */
   /* REAL8 fa; */       /* joint false alarm for that pair */
-  REAL4 lfa;            /* ln of joint false alarm for that pair */
+  REAL4 lfa;            /* log of joint false alarm for that pair */
 } CoincidentPairs; /* ~ coninc */
 
 int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA);
@@ -409,14 +410,14 @@ int FineCoincidenceTest(CandidateList c1, CandidateList c2, struct PolkaCommandL
           SortedC1[c1.iCand].fa=(1+F1/2)*exp(-F1/2);
           SortedC2[c2.iCand].fa=(1+F2/2)*exp(-F2/2);
 
-          ln(a*exp(b)) == ln(exp(ln(a))*exp(b)) == ln(exp(ln(a)+b)) == ln(a)+b
+          log(a*exp(b)) == log(exp(log(a))*exp(b)) == log(exp(log(a)+b)) == log(a)+b
 	  */
-	  SortedC1[c1.iCand].lfa=ln(1+F1/2)-F1/2;
-          SortedC2[c2.iCand].lfa=ln(1+F2/2)-F2/2;
+	  SortedC1[c1.iCand].lfa=log(1+F1/2)-F1/2;
+          SortedC2[c2.iCand].lfa=log(1+F2/2)-F2/2;
           
           thisCP->c1=c1.iCand;
           thisCP->c2=c2.iCand;
-          thisCP->fa=exp(SortedC1[c1.iCand].lfa)*exp(SortedC2[c2.iCand].lfa);
+          thisCP->lfa=SortedC1[c1.iCand].lfa+SortedC2[c2.iCand].lfa;
 
         }
     }
