@@ -894,6 +894,7 @@ INT4 main(INT4 argc, CHAR *argv[])
    optFilterAvg.epoch = gpsStartTime;
    optFilterAvg.deltaF = deltaF;
    optFilterAvg.f0 = fMin;
+   optFilterAvg.sampleUnits = optFilter.sampleUnits;
  
    if (verbose_flag)
     { fprintf(stdout, "Allocating memory for optimal filter...\n");}
@@ -923,7 +924,6 @@ INT4 main(INT4 argc, CHAR *argv[])
    ccSpectrum.deltaF = deltaF;
    ccSpectrum.f0 = fMin;
 
-
    /* allocate memory for CC spectrum*/
    ccSpectrum.data = NULL;
    LAL_CALL( LALCCreateVector(&status, &(ccSpectrum.data), filterLength), 
@@ -936,7 +936,7 @@ INT4 main(INT4 argc, CHAR *argv[])
    ccIn.hBarTildeTwo = &hBarTilde2;
    ccIn.responseFunctionOne = &response1;
    ccIn.responseFunctionTwo = &response2;
-   ccIn.optimalFilter = &optFilter;
+   ccIn.optimalFilter = &optFilterAvg;
  	
    
 
@@ -1074,7 +1074,11 @@ INT4 main(INT4 argc, CHAR *argv[])
                        (INT4)startTime, (INT4)stopTime, MCLoop);
 
 	 /* initialize average optimal filter and variance */
-         optFilterAvg.data = NULL; 
+         for (i = 0; i < filterLength; i++)
+             {
+	      optFilterAvg.data->data[i] = 0.;
+             }
+
          varTheoAvg = 0.;
 
          for (segLoop = 0; segLoop < numSegments; segLoop++)
@@ -1140,7 +1144,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 	       }
 	     }
             
-
             if (high_pass_flag)
 	     {               
               LAL_CALL( LALButterworthREAL4TimeSeries( &status, &segment1, 
@@ -1196,20 +1199,30 @@ INT4 main(INT4 argc, CHAR *argv[])
                              pow(10.,normLambda.units.powerOfTen));
 	    varTheo = (REAL8)(segmentDuration * normSigma.value * 
                               pow(10.,normSigma.units.powerOfTen));
+
+            varTheoAvg = varTheoAvg + varTheo;
 	    
- 	   for (i = 0; i < filterLength; i++)
-	     {
-	       optFilterAvg.data->data[i] =  optFilterAvg.data->data[i] + optFilter.data->data[i];
-	     }
-           varTheoAvg = varTheoAvg + varTheo;
-	    
+            if (verbose_flag)
+	     {fprintf(stdout, "Generating optimal filter...\n");}
+
+	    /* build optimal filter */
+	    optFilter.epoch = gpsStartTime;
+	    LAL_CALL( LALStochasticOptimalFilterCal(&status, &optFilter, 
+                      &optFilterIn, &normLambda), &status );
+             
+ 	    for (i = 0; i < filterLength; i++)
+	      {
+	       optFilterAvg.data->data[i] =  
+                 optFilterAvg.data->data[i] + optFilter.data->data[i];
+	      }
+          	    
 	  }
 
 	  /* compute average optimal filter and theoretical variance  */
           
           for (i = 0; i < filterLength; i++)
 	     {
-	      optFilterAvg.data->data[i] = optFilterAvg.data->data[i] / numSegments;
+	      optFilterAvg.data->data[i] = optFilterAvg.data->data[i] / (REAL4)numSegments;
 	     }
 	  
 	  varTheoAvg = 	varTheoAvg / numSegments;
@@ -1238,8 +1251,16 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	   if (verbose_flag)
 	    { fprintf(stdout, "Generating cross correlation spectrum...\n");}
+           
 
 	   /* cc spectrum */
+
+            for (i = 0; i < filterLength; i++)
+             {
+              response1.data->data[i] = resp1[segLoop]->data[i];
+              response2.data->data[i] = resp2[segLoop]->data[i];
+             }
+
 	   LAL_CALL( LALStochasticCrossCorrelationSpectrumCal(&status, &ccSpectrum,
                      &ccIn, epochsMatch), &status );
 
