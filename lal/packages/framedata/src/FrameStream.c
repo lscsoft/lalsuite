@@ -87,6 +87,8 @@
  *
  **** </lalLaTeX> */
 
+#include <FrameL.h>
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -96,7 +98,6 @@
 #include <fnmatch.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <FrameL.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
