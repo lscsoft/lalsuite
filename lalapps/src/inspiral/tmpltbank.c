@@ -554,7 +554,7 @@ int main ( int argc, char *argv[] )
 
 
   /* write the output frame */
-  if ( writeRawData || writeResponse || writeSpectrum || writeStrainSpec )
+  if ( writeRawData || writeResponse || writeSpectrum )
   {
     LALSnprintf( fname, sizeof(fname), "%s-TMPLTBANK-%d-%d.gwf",
         ifo, gpsStartTime.gpsSeconds,
