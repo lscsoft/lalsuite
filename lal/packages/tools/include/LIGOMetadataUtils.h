@@ -52,6 +52,33 @@ NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 
 #include <lal/LIGOMetadataTables.h>
 
+
+/*
+ *
+ * inspiral specific structures 
+ *
+ */
+
+
+typedef struct
+tagSnglInspiralAccuracy
+{
+    INT4  match;
+    REAL4 dRhoPlus;
+    REAL4 dRhoMinus;
+    INT8  dtime;
+    REAL4 dm;
+}
+SnglInspiralAccuracy;
+
+
+/*
+ *
+ * burst specific structures 
+ *
+ */
+
+
 typedef struct
 tagSnglBurstAccuracy
 {
@@ -64,24 +91,48 @@ tagSnglBurstAccuracy
 }
 SnglBurstAccuracy;
 
+
+/*
+ *
+ * inspiral specific functions
+ *
+ */
+
+
 void
-LALSortSnglInspiral(
+LALSortSnglInspiral (
     LALStatus          *status,
     SnglInspiralTable **eventHead,
     int(*comparfunc)    (const void *, const void *)
     );
 
 int
-LALCompareSnglInspiralByMass(
+LALCompareSnglInspiralByMass (
     const void *a,
     const void *b
     );
 
 int
-LALCompareSnglInspiralByTime(
+LALCompareSnglInspiralByTime (
     const void *a,
     const void *b
     );
+
+void
+LALCompareSnglInspiral (
+    LALStatus                *status,
+    SnglInspiralTable        *aPtr,
+    SnglInspiralTable        *bPtr,
+    SnglInspiralAccuracy     *params
+    );
+
+
+/*
+ *
+ * burst specific functions
+ *
+ */
+
 
 void
 LALSortSnglBurst(
