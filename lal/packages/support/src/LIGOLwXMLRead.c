@@ -1812,10 +1812,10 @@ StochasticTableFromLIGOLw (
   }
 
   /* open the stochastic)table in the file file */
-  mioStatus = MetaioOpenTable(env, fileName, "stochastic_table");
+  mioStatus = MetaioOpenTable(env, fileName, "stochastic");
   if (mioStatus)
   {
-    fprintf(stderr, "error opening summ_value table from file %s\n", \
+    fprintf(stderr, "error opening stochastic table from file %s\n", \
 				fileName);
     return -1;
   }
