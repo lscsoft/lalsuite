@@ -109,9 +109,7 @@ static void ComputeAverageSpectrum(
 	LALStatus *status,
 	REAL4FrequencySeries *spectrum,
 	REAL4TimeSeries *tseries,
-	EPSearchParams *params,
-	INT4 numSegs,
-	EPDataSegment *segment
+	EPSearchParams *params
 )
 {
 	int i;
@@ -157,13 +155,12 @@ EPSearch (
         LALStatus               *status,
         REAL4TimeSeries         *tseries,
         EPSearchParams          *params,
-        SnglBurstTable         **burstEvent,
-        UINT4                    tmpDutyCycle
+        SnglBurstTable         **burstEvent
         )
 /******** </lalVerbatim> ********/
 { 
-    INT4                      i,j,freqcl;
-    EPDataSegment            *segment;
+    int                       start_sample;
+    INT4                      j,freqcl;
     SnglBurstTable           *currentEvent     = NULL;
     SnglBurstTable           *prevEvent        = NULL;
     COMPLEX8FrequencySeries  *fseries;
@@ -203,7 +200,7 @@ EPSearch (
     LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, fseries->data->length);
     CHECKSTATUSPTR(status);
 
-    ComputeAverageSpectrum(status->statusPtr, AverageSpec, tseries, params, tmpDutyCycle, params->epSegVec->data + params->currentSegment);
+    ComputeAverageSpectrum(status->statusPtr, AverageSpec, tseries, params);
     CHECKSTATUSPTR(status);
 
     /* write diagnostic info to disk */
@@ -219,14 +216,10 @@ EPSearch (
     }
 
     /* loop over data applying excess power method */
-    for ( i=0 ; i<(INT4)tmpDutyCycle ; i++)
+    for(start_sample = 0; start_sample <= tseries->data->length - (2.0/tseries->deltaT); start_sample += params->ovrlap)
     {
-
-      /* point segment to the segment to analyze */
-      /*      segment = params->epSegVec->data + params->currentSegment + i;*/
-
       /* Cut out two sec long time series */
-      LALCutREAL4TimeSeries(status->statusPtr, &cutTimeSeries, tseries,  i * params->ovrlap, (2.0 / tseries->deltaT));
+      LALCutREAL4TimeSeries(status->statusPtr, &cutTimeSeries, tseries,  start_sample, (2.0 / tseries->deltaT));
       CHECKSTATUSPTR (status);
 
       /* compute the DFT of input time series: NOTE:We are using
@@ -238,12 +231,6 @@ EPSearch (
       LALComputeFrequencySeries (status->statusPtr, fseries, 
           cutTimeSeries, dftparams);
       CHECKSTATUSPTR (status);
-
-      /* check that deltaF agrees with that of response */
-      /*  if ( fabs( segment->spec->deltaF - fseries->deltaF ) > 0.000001 )
-      {
-        ABORT (status, EXCESSPOWERH_EDELF, EXCESSPOWERH_MSGEDELF );
-	}*/
 
       /* normalize the data stream so that rms of Re or Im is 1 */
       for (j=0 ; j<(INT4)fseries->data->length ; j++)

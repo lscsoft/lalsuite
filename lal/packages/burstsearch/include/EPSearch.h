@@ -166,8 +166,7 @@ EPSearch (
             LALStatus               *status,
             REAL4TimeSeries         *tseries,
             EPSearchParams          *params,
-            SnglBurstTable         **burstEvent,
-            UINT4                    tmpDutyCyle
+            SnglBurstTable         **burstEvent
          );
 
 void EPInitSearch(
