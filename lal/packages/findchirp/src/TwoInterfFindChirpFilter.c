@@ -14,6 +14,7 @@
 
 #include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALStdio.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
@@ -33,7 +34,7 @@ static REAL4 cartesianInnerProduct(REAL4 x[3], REAL4 y[3])
   return x[0] * y[0] + x[1] * y[1] + x[2] * y[2];
 }
 
-void
+static void
 FindBaseLine( 
 	     LALStatus       *status,
              SkyPosition     *baseLine,
@@ -610,7 +611,7 @@ LALTwoInterfFindChirpFilterSegment (
     TwoInterfFindChirpFilterParams        *params
     )
 {
-  //UINT4                          j, m, n;
+  /* UINT4                          j, m, n; */
 
   UINT4 j, maxLagPts, n;
 
@@ -642,7 +643,7 @@ LALTwoInterfFindChirpFilterSegment (
   COMPLEX8                      *inputData2   = NULL;
   COMPLEX8                      *tmpltSignal1  = NULL;
   COMPLEX8                      *tmpltSignal2  = NULL;
-  TwoInterfInspiralEvent        *thisEvent; 
+  TwoInterfInspiralEvent        *thisEvent     = NULL; 
   BOOLEAN                        unresolvedEvent = 0;
 
   SkyPosition                   baseline;
@@ -1015,7 +1016,7 @@ LALTwoInterfFindChirpFilterSegment (
   /* if full snrsq vector is required, store the snrsq */
   if ( params->paramsVec->filterParams[0].rhosqVec ) 
     {
-      snprintf( params->paramsVec->filterParams[0].rhosqVec->name, LALNameLength * sizeof(CHAR),
+      LALSnprintf( params->paramsVec->filterParams[0].rhosqVec->name, LALNameLength * sizeof(CHAR),
 		"%s:rhosq:output", input->filterInput[0].segment->data->name );
       memcpy( &(params->paramsVec->filterParams[0].rhosqVec->epoch), &(input->filterInput[0].segment->data->epoch), 
 	      sizeof(LIGOTimeGPS) );
