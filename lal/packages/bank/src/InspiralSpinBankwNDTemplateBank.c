@@ -66,13 +66,14 @@
 #include <lal/LALConfig.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
+#include <lal/LALInspiralBank.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/LALStdlib.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/MatrixUtils.h>
 #include <lal/SeqFactories.h>
-#include <lal/InspiralBankGeneration.h>
+#include <lal/TemplateBankGeneration.h>
 
 
 NRCSID(INSPIRALSPINBANKWNDTEMPLATEBANKC, "$Id$");
