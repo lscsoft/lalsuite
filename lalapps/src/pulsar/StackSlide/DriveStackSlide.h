@@ -62,6 +62,12 @@
 /* 12/06/04 gam; get params->sampleRate, = effective sample rate, from the SFTs; calculate params->deltaT after reading SFTs. */
 /* 12/06/04 gam; add params->gpsEpochStartTimeNan; get gpsEpochStartTime, gpsEpochStartTimeNan, and gpsStartTime from command line; */
 /* 12/06/04 gam; change calibrationFlag to cosInclinationAngle */
+/* 02/25/05 gam; revise SECTION make SUMs:                                                           */
+/*               1. remove obsolete code                                                             */
+/*               2. clean up indentation                                                             */
+/*               3. break into smaller functions                                                     */
+/*               4. move loops for isolated case (params->binaryFlag == 0) into StackSlideIsolated.c */
+/*               5. use new StackSlide function for isolated case.                                   */
   
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
@@ -133,6 +139,7 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_EKEEPTHISNEVENTS 28
 #define DRIVESTACKSLIDEH_EOUTPUTREQUEST 29
 #define DRIVESTACKSLIDEH_ENORMPARAM 30
+#define DRIVESTACKSLIDEH_EUSERREQUESTEXIT 31
 
 #define DRIVESTACKSLIDEH_MSGENULL           "Null pointer"
 #define DRIVESTACKSLIDEH_MSGEGPSTINT        "Unexpected GPS time interval"
@@ -162,6 +169,7 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_MSGEKEEPTHISNEVENTS "2nd bit in outputEventFlag set to keep loudest but keepThisNumber was < 1!"
 #define DRIVESTACKSLIDEH_MSGEOUTPUTREQUEST   "Cannot set thresholdFlag < 1 and outputEventFlag to output everything!"
 #define DRIVESTACKSLIDEH_MSGENORMPARAM       "Cannot have normalizationParameter less than ln(2) or greater than 1 when using running median."
+#define DRIVESTACKSLIDEH_MSGEUSERREQUESTEXIT "Exiting at user request..."
 
 /* Limit on size of arrays holding channel names */
 /* #define dbNameLimit 256; */ /* Should be defined in LAL? */
@@ -427,21 +435,22 @@ typedef struct tagStackSlideSearchParams {
 
   /*Feb 14/05 vir: Added here a few entries addressing to the binary case, there will be an if in the command line options : if (binary) assign value to the following params*/
  
-INT2 binaryFlag;                   /* must be = 1 for binary and = 0 for isolated */
+  INT2 binaryFlag;                   /* must be = 1 for binary and = 0 for isolated */
 
-REAL8 alphaSX1;  /*Sco-X1 right ascension to be assigned to skyPos[0][0]*/
-REAL8 deltaSX1;  /*Sco-X1 declination to be assigned to skyPos[0][1]*/
-REAL8 OrbitalEccentricity; 
-UINT4 TperiapseSSBSec;     /*assumed periapse passage time in seconds. REMEMBER: SOMEWHERE YOU MUST STATE:*/
-UINT4 TperiapseSSBNanoSec; /* params->TperiapseSSB.gpsSeconds=params->TperiapseSSBSec and the same for NanoSec*/
-REAL8 ArgPeriapse; /*argument of periapse: angle between the periapse and the line of nodes*/
-REAL8 SMAcentral; /*central value of SemiMajor axis in parameter space to be used in a MC search*/
-/*REAL8 Tpericentral;*/ /*central value of last periapse passage before obs time starts to be used in a MC search*/
-REAL4 deltaTperi; /*half-uncertainty on T periapse*/
-REAL8 deltaSMA; /*half uncertainty on the semi Major axis*/
-INT4 nMaxSMA;  /*max number of template semi-major-axis in parameter space*/
-INT4 nMaxTperi;/* max numb of template Tperi in param space*/
-/*end of binary params*/
+  REAL8 alphaSX1;  /*Sco-X1 right ascension to be assigned to skyPos[0][0]*/
+  REAL8 deltaSX1;  /*Sco-X1 declination to be assigned to skyPos[0][1]*/
+  REAL8 OrbitalEccentricity; 
+  UINT4 TperiapseSSBSec;     /*assumed periapse passage time in seconds. REMEMBER: SOMEWHERE YOU MUST STATE:*/
+  UINT4 TperiapseSSBNanoSec; /* params->TperiapseSSB.gpsSeconds=params->TperiapseSSBSec and the same for NanoSec*/
+  REAL8 ArgPeriapse; /*argument of periapse: angle between the periapse and the line of nodes*/
+  REAL8 SMAcentral; /*central value of SemiMajor axis in parameter space to be used in a MC search*/
+  /*REAL8 Tpericentral;*/ /*central value of last periapse passage before obs time starts to be used in a MC search*/
+  REAL4 deltaTperi; /*half-uncertainty on T periapse*/
+  REAL8 deltaSMA; /*half uncertainty on the semi Major axis*/
+  INT4 nMaxSMA;  /*max number of template semi-major-axis in parameter space*/
+  INT4 nMaxTperi;/* max numb of template Tperi in param space*/
+  /*end of binary params*/
+  
     INT4    numSTKsPerSUM;             /* Number of STKs to use to make one SUM (Usually duration/tSTK) */
     INT4    numSUMsPerParamSpacePt;  /* Number of output SUMs per parameter space point = params->duration/params->tSUM. (Usually will = 1) */
     REAL8   tSUM;                      /* duration in seconds of output SUMs = tSTK*numSTKsPerSUM. (Usually = duration) */
@@ -708,6 +717,16 @@ void WeightSTKsIncludingBeamPattern(REAL4FrequencySeries **STKData,
            INT4 numSTKs, INT4 nBinsPerSTK, REAL8 tSTK);
 /* 11/01/04 gam; if (params->weightFlag & 8) > 0 rescale STKs with threshold5 to prevent dynamic range issues. */
 void RescaleSTKData(REAL4FrequencySeries **STKData, INT4 numSTKs, INT4 nBinsPerSTK,REAL4 RescaleFactor);
+/* 02/25/05 gam; utility for printing one SUM to a file */
+void printOneStackSlideSUM( const REAL4FrequencySeries *oneSUM,
+                  INT2                       outputSUMFlag,
+                  CHAR                       *outputFile,
+                  INT4                       kSUM,
+                  REAL8                      f0SUM,
+                  REAL8                      dfSUM,
+                  INT4                       nBinsPerSUM,
+                  INT4                       numSUMsTotal
+);
 void FindBinaryLoudest(REAL4FrequencySeries **SUMData, StackSlideParams *stksldParams);
 /*void StackSlideIsolated(	LALStatus *status, 
 			REAL4FrequencySeries **SUMData, 

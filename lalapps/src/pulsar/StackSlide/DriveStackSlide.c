@@ -105,6 +105,13 @@
 /* 12/06/04 gam; if (params->testFlag & 8) > 0 use fixed values for psi and cosIota during Monte Carlo simulations */
 /* 12/18/04 gam; Change LALSRunningMedian to LALSRunningMedian2 */
 /* 12/18/04 gam; Remove unused CVS_REVISION, CVS_DATE, and UNKNOWN. */
+/* 02/25/05 gam; if params->debugOptionFlag == 1 then exit after printing parameters */
+/* 02/25/05 gam; revise SECTION make SUMs:                                                           */
+/*               1. remove obsolete code                                                             */
+/*               2. clean up indentation                                                             */
+/*               3. break into smaller functions                                                     */
+/*               4. move loops for isolated case (params->binaryFlag == 0) into StackSlideIsolated.c */
+/*               5. use new StackSlide function for isolated case.                                   */
 
 /*********************************************/
 /*                                           */
@@ -113,7 +120,6 @@
 /*********************************************/
 /* #define INCLUDE_DEMOD_CODE */ /* GET CODE WORKING WITH STKS = PSDs FIRST */
 /* #define INCLUDE_TIMEFLOAT_CODE */
-#define INCLUDE_OUTPUTASCIISUMS_CODE
 #define INCLUDE_DEBUG_PARAMETERS_CODE
 #define INCLUDE_PRINT_PEAKS_TABLE_CODE
 #define INCLUDE_DEBUG_SKY_POSITIONS_CODE
@@ -131,6 +137,7 @@
 /* #define DEBUG_CALIBRATEBLKS */
 /* #define DEBUG_TESTCASE */
 /* #define INCLUDE_INTERNALLALINITBARYCENTER */
+/* #define DEBUG_BINARY_CODE */
 /*********************************************/
 /*                                           */
 /* END SECTION: define preprocessor flags    */
@@ -382,11 +389,11 @@ params->deltaSMA = 0;
 	}
   } /* end for (i=1; i<argc; i++)  */
  #ifdef DEBUG_INPUTBLK_CODE
-	fprintf(stdout,"\n\nparams->numBLKs = %i \n", params->numBLKs);
-	fprintf(stdout,"params->nBinsPerBLK = %i \n", params->nBinsPerBLK);
- 	fprintf(stdout,"params->f0BLK = %g \n", params->f0BLK);
-  	fprintf(stdout,"params->bandBLK = %g \n", params->bandBLK);
-   	fflush(stdout);
+    fprintf(stdout,"\n\nparams->numBLKs = %i \n", params->numBLKs);
+    fprintf(stdout,"params->nBinsPerBLK = %i \n", params->nBinsPerBLK);
+    fprintf(stdout,"params->f0BLK = %g \n", params->f0BLK);
+    fprintf(stdout,"params->bandBLK = %g \n", params->bandBLK);
+    fflush(stdout);
  #endif
   
   params->stksldSkyPatchData->debugOptionFlag = params->debugOptionFlag;
@@ -406,44 +413,47 @@ params->deltaSMA = 0;
   params->numSkyPosTotal = 0;     /* Total number of Sky positions to cover */
   params->numFreqDerivTotal = 0;  /* Total number of Frequency evolution models to cover */
   params->numParamSpacePts = 0;   /* Total number of points in the parameter space to cover */
-  /* if (params->parameterSpaceFlag < 2) */ /* 02/02/04 gam */
+
   if (params->parameterSpaceFlag == 0) {
-     /* params->numSkyPosTotal = params->stksldSkyPatchData->numRA*params->stksldSkyPatchData->numDec; */ /* 01/31/04 gam */
-     /* 01/31/04 gam; Note arg3 is 0; call CountOrAssignSkyPosData to count number sky positions on the 2-sphere = params->numSkyPosTotal */
      CountOrAssignSkyPosData(params->skyPosData,&(params->numSkyPosTotal),0,params->stksldSkyPatchData);
           
-     for(i=0;i<params->numSpinDown;i++)
-	{
-	        switch(i) {
-		   case  0: params->numFreqDerivTotal = params->numFDeriv1; break;
-		   case  1: params->numFreqDerivTotal *= params->numFDeriv2; break;
-		   case  2: params->numFreqDerivTotal *= params->numFDeriv3; break;
-		   case  3: params->numFreqDerivTotal *= params->numFDeriv4; break;
-		   case  4: params->numFreqDerivTotal *= params->numFDeriv5; break;
-		}
+     for (i=0;i<params->numSpinDown;i++) {
+         switch(i) {
+           case  0: params->numFreqDerivTotal = params->numFDeriv1; break;
+           case  1: params->numFreqDerivTotal *= params->numFDeriv2; break;
+           case  2: params->numFreqDerivTotal *= params->numFDeriv3; break;
+           case  3: params->numFreqDerivTotal *= params->numFDeriv4; break;
+           case  4: params->numFreqDerivTotal *= params->numFDeriv5; break;
+         }
      }
+     
      if (params->numSpinDown > 0) {
-	      if (params->binaryFlag==0){
-                    params->numParamSpacePts = params->numSkyPosTotal*params->numFreqDerivTotal;}
-	                   /*05/02/18 vir:*/ 
-	      else { params->numParamSpacePts = params->numSkyPosTotal*params->numFreqDerivTotal*params->nMaxSMA*params->nMaxTperi;}
-     }	/*end if numspindown > 0*/                
-   
-     else {
-	     if(params->binaryFlag==0){
-        params->numParamSpacePts = params->numSkyPosTotal;}
-/*05/02/18 vir:*/ else{ params->numParamSpacePts = params->numSkyPosTotal*params->nMaxSMA*params->nMaxTperi; 
-	     }}
+        /*05/02/18 vir:*/
+        if (params->binaryFlag==0) {
+           params->numParamSpacePts = params->numSkyPosTotal*params->numFreqDerivTotal;
+        } else { 
+           params->numParamSpacePts = params->numSkyPosTotal*params->numFreqDerivTotal*params->nMaxSMA*params->nMaxTperi;
+        }
+     } else {
+        /*05/02/18 vir:*/     
+        if (params->binaryFlag==0) {
+           params->numParamSpacePts = params->numSkyPosTotal; 
+        } else { 
+           params->numParamSpacePts = params->numSkyPosTotal*params->nMaxSMA*params->nMaxTperi;
+        }
+     }
   } else {
      ABORT( status, DRIVESTACKSLIDEH_EPARAMSPACEFLAG, DRIVESTACKSLIDEH_MSGEPARAMSPACEFLAG); /* 02/02/04 gam */
-  }
+  } /* END if (params->parameterSpaceFlag == 0) else ...*/  
   params->numSUMsTotal = params->numSUMsPerParamSpacePt*params->numParamSpacePts;  /* Total Number of Sums = numSUMsPerParamPt*numParamSpacePts */
- printf("numSUMstotal is %d\n",params->numSUMsTotal);
-
- #ifdef INCLUDE_DEBUG_PARAMETERS_CODE
-   /* 04/15/04 gam; Add INT2 params->debugOptionFlag; if (params->debugOptionFlag & 1) > 0 print commandline args to stdout */
+  #ifdef DEBUG_COMPUTED_PARAMETERS
+    fprintf(stdout,"numSUMstotal is %d\n",params->numSUMsTotal);
+    fflush(stdout);
+  #endif
+  
+  #ifdef INCLUDE_DEBUG_PARAMETERS_CODE
    if ((params->debugOptionFlag & 1) > 0 ) {
-        /* if above defined then the code prints out documentation for the command line arguments */ 
+        /* if above defined then the code prints out documentation for the command line arguments */
     	fprintf(stdout,"\n");
     	fprintf(stdout,"#Key to terminology: \n");
     	fprintf(stdout,"#BLKs: The input blocks of frequency domain data (e.g., from SFTs). \n");
@@ -452,10 +462,8 @@ params->deltaSMA = 0;
     	fprintf(stdout,"\n");
     	fprintf(stdout,"#Example command line arguments for ComputeStackSlide: \n");
     	fprintf(stdout,"\n");
-    	/* printf(stdout,"#(Note that sampleRate is not used in the StackSlide analysis; it is included to note deltaT and the Nyquist frequency.)\n");*/ /* 12/06/04 gam */
     	fprintf(stdout,"set gpsEpochStartTimeSec %23d; #1  UINT4 GPS seconds at the detector giving SSB epoch reference time.\n", params->gpsEpochStartTimeSec);
     	fprintf(stdout,"set gpsEpochStartTimeNan %23d; #2  UINT4 GPS nanoseconds at the detector giving SSB epoch reference time.\n", params->gpsEpochStartTimeNan);
-    	/* fprintf(stdout,"set sampleRate         %23.16e; #3  REAL8 time domain sample rate (deltaT = 1/sampleRate). \n", params->sampleRate); */ /* 12/06/04 gam */
     	fprintf(stdout,"set gpsStartTimeSec      %23d; #3  UINT4 analysis GPS start-time seconds at the detector. \n", params->gpsStartTimeSec);
     	fprintf(stdout,"set params->duration     %23.16e; #4  REAL8 analysis duration \n", params->duration);
     	fprintf(stdout,"\n");
@@ -611,8 +619,13 @@ params->deltaSMA = 0;
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set debugOptionFlag    %23d; #84 INT2 debugging information to print to stdout. \n", params->debugOptionFlag);
     	fprintf(stdout,"# if (debugOptionFlag & 1) > 0 then print command line arguments.\n");
+    	fprintf(stdout,"# if (debugOptionFlag == 1) then print command line arguments and abort!\n"); /* 02/25/05 gam */
     	fprintf(stdout,"# if (debugOptionFlag & 2) > 0 then print table with events.\n");
     	fprintf(stdout,"# if (debugOptionFlag & 4) > 0 then print sky positions with debugging information.\n");
+        /* 02/25/05 gam; if params->debugOptionFlag == 1 then exit after printing parameters */
+        if (params->debugOptionFlag == 1) {
+           ABORT( status, DRIVESTACKSLIDEH_EUSERREQUESTEXIT, DRIVESTACKSLIDEH_MSGEUSERREQUESTEXIT);
+        }
    } /* 04/15/04 gam; END if ((params->debugOptionFlag & 1) > 0 ) */
  #endif
  #ifdef DEBUG_COMPUTED_PARAMETERS
@@ -1771,44 +1784,24 @@ void StackSlideApplySearch(
       fflush(stdout);
   #endif
 
- /* Allocate memory for the SUMData structure */
- /* params->SUMData=(REAL4FrequencySeries **)LALMalloc(params->numSUMsTotal*sizeof(REAL4FrequencySeries *));
- for(i=0;i<params->numSUMsTotal;i++)
- {
-	params->SUMData[i]=(REAL4FrequencySeries *)LALMalloc(sizeof(REAL4FrequencySeries));
-	params->SUMData[i]->data=(REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
-	params->SUMData[i]->data->data=(REAL4 *)LALMalloc(params->nBinsPerSUM*sizeof(REAL4));
- } */
  /* 02/11/04 gam; Change code to process 1 SUM at a time to allow processing of millions of SUMs per job. */
  params->SUMData=(REAL4FrequencySeries **)LALMalloc(sizeof(REAL4FrequencySeries *));
  params->SUMData[0]=(REAL4FrequencySeries *)LALMalloc(sizeof(REAL4FrequencySeries));
  params->SUMData[0]->data=(REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
  params->SUMData[0]->data->data=(REAL4 *)LALMalloc(params->nBinsPerSUM*sizeof(REAL4));
  
- /* Allocate memory for the SUMStats structure to hold statistics about eadh sum */ /* 02/11/04 gam; comment out */
- /* params->SUMStats=(FreqSeriesPowerStats *)LALMalloc(params->numSUMsTotal*sizeof(FreqSeriesPowerStats)); */
 
-/* Add in first version of StackSlide written by Mike Landry */
-/* 01/06/04 gam; Now use version in StackSlide.c */
-
-/* 11/08/03 gam; Add in first version of StackSlide written by Mike Landry */
-  stksldParams = (StackSlideParams *)LALMalloc(1*sizeof(StackSlideParams));
+ stksldParams = (StackSlideParams *)LALMalloc(1*sizeof(StackSlideParams));
 {
   INT4 kSUM;
-  INT4 numFreqDerivIncludingNoSpinDown; /* 02/02/04 gam */
+  INT4 numFreqDerivIncludingNoSpinDown;            /* 02/02/04 gam */
   BarycenterInput baryinput;  
   LALDetector cachedDetector;
-  SnglStackSlidePeriodicTable *peakSav; /* 02/04/04 gam; needed to remember pointer to start peak linked list */
-  /* SnglStackSlidePeriodicTable *loudestPeak; */ /* 02/20/04 gam */ /* 02/09/04 gam; save loudest event */
-  REAL4 maxPower = 0;                       /* 02/09/04 gam; power in loudest event */
+  SnglStackSlidePeriodicTable *peakSav;            /* 02/04/04 gam; needed to remember pointer to start peak linked list */
+  REAL4 maxPower = 0;                              /* 02/09/04 gam; power in loudest event */
   SnglStackSlidePeriodicTable *loudestPeaksArray;  /* 02/17/04 gam; keep track of the loudest events */
   INT4 nBinsPerOutputEvent = 0;                    /* 02/17/04 gam */
-  INT4 totalEventCount = 0;     /* 02/04/04 gam; found a peak or a cluster of peaks; keep track of how many */  
-  #ifdef INCLUDE_OUTPUTASCIISUMS_CODE
-    FILE *outfp;          /* 02/11/04 gam; this and next two lines needed to output sums */
-    CHAR *baseOutputFile; /* 01/28/04 gam */
-    CHAR fileNumber[7];   /* 01/28/04 gam; Fixed size string that holds .00000, .00001, .00002, etc... */
-  #endif
+  INT4 totalEventCount = 0;                        /* 02/04/04 gam; found a peak or a cluster of peaks; keep track of how many */  
 
   /* 02/17/04 gam; check whether we are outputing just the loudest events */
   if ((params->outputEventFlag & 2) > 0) {
@@ -1817,7 +1810,6 @@ void StackSlideApplySearch(
       } else {
          outputLoudestFromSUMs = 1;   /* Output loudest directly from SUMs, without thresholds */
       }
-  /* else if (params->thresholdFlag < 1) 02/23/04 gam */
   } else if ( (params->thresholdFlag < 1) && (params->outputEventFlag > 0)  ) {
        ABORT( status, DRIVESTACKSLIDEH_EOUTPUTREQUEST, DRIVESTACKSLIDEH_MSGEOUTPUTREQUEST ); /* Cannot output all events if thresholds are not used */
   }
@@ -1826,16 +1818,13 @@ void StackSlideApplySearch(
   }
   if (outputLoudestFromPeaks || outputLoudestFromSUMs) {
        loudestPeaksArray = (SnglStackSlidePeriodicTable *)LALMalloc(params->keepThisNumber*sizeof(SnglStackSlidePeriodicTable));
-       /* InitializePeaksArray(loudestPeaksArray,params->keepThisNumber); */ /* 02/20/04 gam; moved after next line with new args */
        nBinsPerOutputEvent = params->nBinsPerSUM/params->keepThisNumber;
        InitializePeaksArray(loudestPeaksArray,params->keepThisNumber,params->f0SUM,params->dfSUM,nBinsPerOutputEvent); /* 02/20/04 gam */
        #ifdef INCLUDE_PRINT_PEAKS_TABLE_CODE
-        /* 04/15/04 gam */
-        /* if ((params->debugOptionFlag & 2) > 0 ) */ /* 05/26/04 gam */
-        if ( ((params->debugOptionFlag & 2) > 0) && params->startSUMs ) {
-          fprintf(stdout,"\nOnly kept one loudest event per %i bins for a total of %i events.\n",nBinsPerOutputEvent, params->keepThisNumber);
-          fflush(stdout);
-        }
+         if ( ((params->debugOptionFlag & 2) > 0) && params->startSUMs ) {
+           fprintf(stdout,"\nOnly kept one loudest event per %i bins for a total of %i events.\n",nBinsPerOutputEvent, params->keepThisNumber);
+           fflush(stdout);
+         }
        #endif         
   }
 
@@ -1849,13 +1838,6 @@ void StackSlideApplySearch(
     updateMeanStdDev = 1; /* 03/02/04 gam; default is false; set to 1 to update pw_mean_thissum, pw_stddev_thissum ignoring peak bins; update pwr_snr. */
   }    
 
-  /* 02/11/04 gam */
-  #ifdef INCLUDE_OUTPUTASCIISUMS_CODE
-         if (params->outputSUMFlag > 0 && params->numSUMsTotal > 1) {
-            baseOutputFile = (CHAR *) LALMalloc( (strlen(params->outputFile) + 7) * sizeof(CHAR) );
-         }
-  #endif
-           
   /* 02/02/04 gam; Fix bugs with handling case numSpinDown = 0 and numFreqDerivTotal = 0. */
   if (params->numFreqDerivTotal != 0) {
      numFreqDerivIncludingNoSpinDown = params->numFreqDerivTotal;
@@ -1864,10 +1846,6 @@ void StackSlideApplySearch(
   }
   
   /* 02/11/04 gam; Change code to process 1 SUM per job; move next 4 lines below */   
-  /*stksldParams->skyPosData = params->skyPosData;
-  stksldParams->freqDerivData = params->freqDerivData;  
-  stksldParams->numSkyPosTotal = params->numSkyPosTotal;    
-  stksldParams->numFreqDerivTotal = params->numFreqDerivTotal; */
   stksldParams->f0STK = params->f0STK;
   stksldParams->f0SUM = params->f0SUM;
   stksldParams->tSTK = params->tSTK;
@@ -1887,29 +1865,28 @@ void StackSlideApplySearch(
   stksldParams->edat = params->edat;
 
   /* Feb 14/05 vir*/
-stksldParams->binaryFlag = params->binaryFlag;
-stksldParams->OrbitalEccentricity=params->OrbitalEccentricity;
-stksldParams->ArgPeriapse=params->ArgPeriapse;
-/*stksldParams->SemiMajorAxis->params->SemiMajorAxis;*/
-stksldParams->TperiapseSSBSec=params->TperiapseSSBSec;
-stksldParams->TperiapseSSBNanoSec=params->TperiapseSSBNanoSec;
-stksldParams->deltaSMA=params->deltaSMA;
-stksldParams->SMAcentral=params->SMAcentral;
-stksldParams->nMaxSMA=params->nMaxSMA;
+  stksldParams->binaryFlag = params->binaryFlag;
+  stksldParams->OrbitalEccentricity=params->OrbitalEccentricity;
+  stksldParams->ArgPeriapse=params->ArgPeriapse;
+  /*stksldParams->SemiMajorAxis->params->SemiMajorAxis;*/
+  stksldParams->TperiapseSSBSec=params->TperiapseSSBSec;
+  stksldParams->TperiapseSSBNanoSec=params->TperiapseSSBNanoSec;
+  stksldParams->deltaSMA=params->deltaSMA;
+  stksldParams->SMAcentral=params->SMAcentral;
+  stksldParams->nMaxSMA=params->nMaxSMA;
 
-/*05/02/17 vir: stksldParams->nMaxSMA=params->nMaxSMA;*/
-/*05/02/17 vir: stksldParams->nMaxTperi=params->nMaxTperi;*/
-/*05/02/17 vir: stksldParams->ParamsSMA=(REAL8 *)LALMalloc((stksldParams->numSkyPosTotal*params->numSpinDown*params->nMaxSMA*params->nMaxTperi)*sizeof(REAL8));*/
-stksldParams->ParamsSMA=(REAL8 *)LALMalloc(params->numSUMsTotal*sizeof(REAL8));/*stores SMA for each sum in parameter space*/
-/*05/02/17 vir: stksldParams->ParamsTperi=(UINT4 *)LALMalloc((stksldParams->numSkyPosTotal*stksldParams->numSpinDown*params->nMaxSMA*params->nMaxTperi)*sizeof(UINT4));*/
+  /*05/02/17 vir: stksldParams->nMaxSMA=params->nMaxSMA;*/
+  /*05/02/17 vir: stksldParams->nMaxTperi=params->nMaxTperi;*/
+  /*05/02/17 vir: stksldParams->ParamsSMA=(REAL8 *)LALMalloc((stksldParams->numSkyPosTotal*params->numSpinDown*params->nMaxSMA*params->nMaxTperi)*sizeof(REAL8));*/
+  stksldParams->ParamsSMA=(REAL8 *)LALMalloc(params->numSUMsTotal*sizeof(REAL8));/*stores SMA for each sum in parameter space*/
+  /*05/02/17 vir: stksldParams->ParamsTperi=(UINT4 *)LALMalloc((stksldParams->numSkyPosTotal*stksldParams->numSpinDown*params->nMaxSMA*params->nMaxTperi)*sizeof(UINT4));*/
 
   /* 12/03/04 gam */
   if ( ( (params->testFlag & 1) > 0 ) || ( (params->weightFlag & 1) > 0 ) ) {
     stksldParams->divideSUMsByNumSTKs = 0; /* FALSE if Hough Test or PowerFlux weighting is done. */
   } else {
     stksldParams->divideSUMsByNumSTKs = 1; /* default is TRUE */
-  }  
-  /* stksldParams->patchNumber = params->patchNumber; 01/28/04 mrl */
+  }
   
   if (strstr(params->IFO, "LHO")) {
              cachedDetector = lalCachedDetectors[LALDetectorIndexLHODIFF];
@@ -1921,7 +1898,7 @@ stksldParams->ParamsSMA=(REAL8 *)LALMalloc(params->numSUMsTotal*sizeof(REAL8));/
              cachedDetector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
   } else if (strstr(params->IFO, "TAMA")) {
              cachedDetector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
-	       } else {
+  } else {
              /* "Invalid or null IFO" */
              ABORT( status, DRIVESTACKSLIDEH_EIFO, DRIVESTACKSLIDEH_MSGEIFO);
   }
@@ -1935,109 +1912,93 @@ stksldParams->ParamsSMA=(REAL8 *)LALMalloc(params->numSUMsTotal*sizeof(REAL8));/
     
   stksldParams->baryinput = &baryinput;
 
-  /* 11/08/03 gam; Add in first version of StackSlide written by Mike Landry */
-  /* 02/11/04 gam; Change code to process 1 SUM per job; Move into for loop over SUMs */
-  /* StackSlide(status->statusPtr,params->SUMData,params->STKData,stksldParams);
-  CHECKSTATUSPTR (status); */
+  pLALFindStackSlidePeakParams = (LALFindStackSlidePeakParams *)LALMalloc(sizeof(LALFindStackSlidePeakParams));
+  pLALFindStackSlidePeakParams->returnPeaks = 1; /* 03/02/04 gam; default case is true */
+  pLALFindStackSlidePeakParams->updateMeanStdDev = updateMeanStdDev; /* 03/02/04 gam */
+  pLALFindStackSlidePeakParams->vetoWidePeaks = vetoWidePeaks;       /* 02/20/04 gam */
+  pLALFindStackSlidePeakParams->vetoOverlapPeaks = vetoOverlapPeaks; /* 02/20/04 gam */
+  /* 08/30/04 gam; if (outputEventFlag & 4) > 0 set returnOneEventPerSUM to TRUE; only the loudest event from each SUM is then returned. */
+  if ( (params->outputEventFlag & 4) > 0 ) {
+     pLALFindStackSlidePeakParams->returnOneEventPerSUM = 1;
+  } else {
+     pLALFindStackSlidePeakParams->returnOneEventPerSUM = 0;
+  }
+  pLALFindStackSlidePeakParams->threshold1 = params->threshold1;
+  pLALFindStackSlidePeakParams->threshold2 = params->threshold2;
+  pLALFindStackSlidePeakParams->fracPwDrop = params->threshold3;    /* 02/20/04 gam; fraction minimum power in a cluster must be below subpeak to count as new peak */
+  pLALFindStackSlidePeakParams->maxWidthBins = params->maxWidthBins;                /* 02/20/04 gam */
+  pLALFindStackSlidePeakParams->ifMin = params->maxWidthBins;                       /* 02/20/04 gam */
+  pLALFindStackSlidePeakParams->ifMax = params->nBinsPerSUM - params->maxWidthBins; /* 02/20/04 gam */
+  pLALFindStackSlidePeakParams->skyPosData = params->skyPosData;  /* 02/04/04 gam; added this and next 2 lines */
+  pLALFindStackSlidePeakParams->freqDerivData = params->freqDerivData;
+  pLALFindStackSlidePeakParams->numSpinDown = params->numSpinDown;
     
-    /* 01/20/04 gam; Change findStackSlidePeaks to LALFindStackSlidePeaks; put params into struct */
-    /* 02/11/04 gam; Use power rather than amplitudes when finding peaks; params->threshold1,2,4 were already thresholds on power */
-    pLALFindStackSlidePeakParams = (LALFindStackSlidePeakParams *)LALMalloc(sizeof(LALFindStackSlidePeakParams));
-    /* pLALFindStackSlidePeakParams->thresholdFlag = params->thresholdFlag; */ /*  02/17/04 gam */
-    pLALFindStackSlidePeakParams->returnPeaks = 1; /* 03/02/04 gam; default case is true */
-    pLALFindStackSlidePeakParams->updateMeanStdDev = updateMeanStdDev; /* 03/02/04 gam */
-    pLALFindStackSlidePeakParams->vetoWidePeaks = vetoWidePeaks;       /* 02/20/04 gam */
-    pLALFindStackSlidePeakParams->vetoOverlapPeaks = vetoOverlapPeaks; /* 02/20/04 gam */
-    /* 08/30/04 gam; if (outputEventFlag & 4) > 0 set returnOneEventPerSUM to TRUE; only the loudest event from each SUM is then returned. */
-    if ( (params->outputEventFlag & 4) > 0 ) {
-       pLALFindStackSlidePeakParams->returnOneEventPerSUM = 1;
-    } else {
-       pLALFindStackSlidePeakParams->returnOneEventPerSUM = 0;
-    }
-    pLALFindStackSlidePeakParams->threshold1 = params->threshold1;
-    pLALFindStackSlidePeakParams->threshold2 = params->threshold2;
-    pLALFindStackSlidePeakParams->fracPwDrop = params->threshold3;    /* 02/20/04 gam; fraction minimum power in a cluster must be below subpeak to count as new peak */
-    pLALFindStackSlidePeakParams->maxWidthBins = params->maxWidthBins;                /* 02/20/04 gam */
-    pLALFindStackSlidePeakParams->ifMin = params->maxWidthBins;                       /* 02/20/04 gam */
-    pLALFindStackSlidePeakParams->ifMax = params->nBinsPerSUM - params->maxWidthBins; /* 02/20/04 gam */
-    /* pLALFindStackSlidePeakParams->maxWidth = params->threshold3; */
-    /* pLALFindStackSlidePeakParams->maxWidth = (REAL8)params->threshold3; */ /* 02/19/04 gam */
-    /* pLALFindStackSlidePeakParams->maxWidthBins = floor(params->threshold3*params->tEffSUM + 0.5); */ /*  02/17/04 gam; maxWidth in bins */
-    /* pLALFindStackSlidePeakParams->fracPwDrop = params->threshold4; */ /* 01/27/04 gam; fraction minimum power in a cluster must be below subpeak to count as new peak */
-    
-    pLALFindStackSlidePeakParams->skyPosData = params->skyPosData;  /* 02/04/04 gam; added this and next 2 lines */
-    pLALFindStackSlidePeakParams->freqDerivData = params->freqDerivData;
-    pLALFindStackSlidePeakParams->numSpinDown = params->numSpinDown;
-    
-    /* 03/02/04 gam; allocate and initialize output struct for LALFindStackSlidePeaks  */    
-    pLALFindStackSlidePeakOutputs = (LALFindStackSlidePeakOutputs *)LALMalloc(sizeof(LALFindStackSlidePeakOutputs));
-    pLALFindStackSlidePeakOutputs->pwMeanWithoutPeaks = &pwMeanWithoutPeaks;
-    pLALFindStackSlidePeakOutputs->pwStdDevWithoutPeaks = &pwStdDevWithoutPeaks;
-    pLALFindStackSlidePeakOutputs->binsWithoutPeaks = &binsWithoutPeaks;
-    pLALFindStackSlidePeakOutputs->acceptedEventCount = &acceptedEventCount;
-    pLALFindStackSlidePeakOutputs->rejectedEventCount = &rejectedEventCount;
+  /* 03/02/04 gam; allocate and initialize output struct for LALFindStackSlidePeaks  */    
+  pLALFindStackSlidePeakOutputs = (LALFindStackSlidePeakOutputs *)LALMalloc(sizeof(LALFindStackSlidePeakOutputs));
+  pLALFindStackSlidePeakOutputs->pwMeanWithoutPeaks = &pwMeanWithoutPeaks;
+  pLALFindStackSlidePeakOutputs->pwStdDevWithoutPeaks = &pwStdDevWithoutPeaks;
+  pLALFindStackSlidePeakOutputs->binsWithoutPeaks = &binsWithoutPeaks;
+  pLALFindStackSlidePeakOutputs->acceptedEventCount = &acceptedEventCount;
+  pLALFindStackSlidePeakOutputs->rejectedEventCount = &rejectedEventCount;
                         
-    /* 02/17/04 gam */
-    if (outputLoudestFromSUMs) {
-       pLALUpdateLoudestStackSlideParams = (LALUpdateLoudestStackSlideParams *)LALMalloc(sizeof(LALUpdateLoudestStackSlideParams));
-       pLALUpdateLoudestStackSlideParams->arraySize = params->keepThisNumber;
-       pLALUpdateLoudestStackSlideParams->nBinsPerOutputEvent = nBinsPerOutputEvent;
-       pLALUpdateLoudestStackSlideParams->ifMin = params->maxWidthBins;                       /* 02/20/04 gam */
-       pLALUpdateLoudestStackSlideParams->ifMax = params->nBinsPerSUM - params->maxWidthBins; /* 02/20/04 gam */
-       pLALUpdateLoudestStackSlideParams->skyPosData = params->skyPosData;
-       pLALUpdateLoudestStackSlideParams->freqDerivData = params->freqDerivData;
-       pLALUpdateLoudestStackSlideParams->numSpinDown = params->numSpinDown;
-       totalEventCount = params->keepThisNumber; /* 02/20/04 gam; this is fixed when output is from SUMs */
-    }
+  /* 02/17/04 gam */
+  if (outputLoudestFromSUMs) {
+     pLALUpdateLoudestStackSlideParams = (LALUpdateLoudestStackSlideParams *)LALMalloc(sizeof(LALUpdateLoudestStackSlideParams));
+     pLALUpdateLoudestStackSlideParams->arraySize = params->keepThisNumber;
+     pLALUpdateLoudestStackSlideParams->nBinsPerOutputEvent = nBinsPerOutputEvent;
+     pLALUpdateLoudestStackSlideParams->ifMin = params->maxWidthBins;                       /* 02/20/04 gam */
+     pLALUpdateLoudestStackSlideParams->ifMax = params->nBinsPerSUM - params->maxWidthBins; /* 02/20/04 gam */
+     pLALUpdateLoudestStackSlideParams->skyPosData = params->skyPosData;
+     pLALUpdateLoudestStackSlideParams->freqDerivData = params->freqDerivData;
+     pLALUpdateLoudestStackSlideParams->numSpinDown = params->numSpinDown;
+     totalEventCount = params->keepThisNumber; /* 02/20/04 gam; this is fixed when output is from SUMs */
+  }
     
-    /* 02/11/04 gam; Change code to process 1 SUM per job; start table for peaks above loop */
-    /* if (params->thresholdFlag > 0 && params->outputEventFlag > 0) */ /* 02/20/04 gam */
-    /* if (params->outputEventFlag > 0) */ /* 05/26/04 gam */
-    if ((params->outputEventFlag > 0) && params->startSUMs) {
-	/* Begin the stackslide periodic table. */
-	fprintf( params->xmlStream->fp, LIGOLW_XML_SNGL_LOCAL_STACKSLIDEPERIODIC );
-	params->xmlStream->first = 1;
-    }       
-    #ifdef INCLUDE_PRINT_PEAKS_TABLE_CODE
+  if ((params->outputEventFlag > 0) && params->startSUMs) {
+     /* Begin the stackslide periodic table. */
+     fprintf( params->xmlStream->fp, LIGOLW_XML_SNGL_LOCAL_STACKSLIDEPERIODIC );
+     params->xmlStream->first = 1;
+  }       
+  #ifdef INCLUDE_PRINT_PEAKS_TABLE_CODE
      /* 04/15/04 gam */
      /* if ((params->debugOptionFlag & 2) > 0 ) */ /* 05/26/04 gam */
      if ( ((params->debugOptionFlag & 2) > 0) && params->startSUMs ) {
        fprintf(stdout,"\n   Event_no   SUM_index         RA        DEC    freq_deriv1   frequency      power  pwr_snr   width_bins\n");
        fflush(stdout);
      }
-    #endif     
+  #endif     
     
-    /* 02/11/04 gam; Change code to process 1 SUM per job */ 
-    stksldParams->numSkyPosTotal = 1;
-    if (params->numFreqDerivTotal != 0) {
-         stksldParams->numFreqDerivTotal = 1;
-    } else {
-         stksldParams->numFreqDerivTotal = 0;
-    }
-    stksldParams->freqDerivData = NULL;
+  /* 02/11/04 gam; Change code to process 1 SUM per job */ 
+  stksldParams->numSkyPosTotal = 1;
+  if (params->numFreqDerivTotal != 0) {
+       stksldParams->numFreqDerivTotal = 1;
+  } else {
+       stksldParams->numFreqDerivTotal = 0;
+  }
+  stksldParams->freqDerivData = NULL;
     
-    /* 10/28/04 gam; weight STKs depending on value of params->weightFlag */
-    isav = -1;                             /* initialize */
-    weightSTKsIncludingBeamPattern = 0;    /* default value is False */
-    plusOrCross = 1;                       /* default value; 1 = get F_+, 0 = get F_x */
-    if ( (params->weightFlag & 1) > 0 )  { 
-       if ( ( (params->weightFlag & 2) > 0 ) || ( (params->weightFlag & 4) > 0 ) ) {
-            /* 10/28/04 gam; savSTKDATA for reuse with powerFlux style weighting of STKs for each sky position */ 
-            SaveSTKData(params->savSTKData, params->STKData, params->numSTKs, params->nBinsPerSTK);
-            weightSTKsIncludingBeamPattern = 1;
-            if ( (params->weightFlag & 2) > 0 ) {
-               plusOrCross = 1; /* get F_+ */
-            } else {
-               plusOrCross = 0; /* get F_x */
-            }               
-       } else {
-            /* Just need to apply weights once */       
-            WeightSTKsWithoutBeamPattern(params->STKData, params->inverseSquareMedians, params->sumInverseSquareMedians, params->numSTKs, params->nBinsPerSTK);
-       }
-    }
+  /* 10/28/04 gam; weight STKs depending on value of params->weightFlag */
+  isav = -1;                             /* initialize */
+  weightSTKsIncludingBeamPattern = 0;    /* default value is False */
+  plusOrCross = 1;                       /* default value; 1 = get F_+, 0 = get F_x */
+  if ( (params->weightFlag & 1) > 0 )  { 
+     if ( ( (params->weightFlag & 2) > 0 ) || ( (params->weightFlag & 4) > 0 ) ) {
+          /* 10/28/04 gam; savSTKDATA for reuse with powerFlux style weighting of STKs for each sky position */ 
+          SaveSTKData(params->savSTKData, params->STKData, params->numSTKs, params->nBinsPerSTK);
+          weightSTKsIncludingBeamPattern = 1;
+          if ( (params->weightFlag & 2) > 0 ) {
+             plusOrCross = 1; /* get F_+ */
+          } else {
+             plusOrCross = 0; /* get F_x */
+          }               
+     } else {
+          /* Just need to apply weights once */       
+          WeightSTKsWithoutBeamPattern(params->STKData, params->inverseSquareMedians, params->sumInverseSquareMedians, params->numSTKs, params->nBinsPerSTK);
+     }
+  }
     
-/*from here only isolated stuff*/
-    if(params->binaryFlag==0){
+ /* from here only isolated stuff */
+ if (params->binaryFlag==0) {
     
   /* 02/11/04 gam; Change code to process 1 SUM per job; Move for loop over SUMs here */
   for(kSUM=0;kSUM<params->numSUMsTotal;kSUM++) {
@@ -2072,63 +2033,13 @@ stksldParams->ParamsSMA=(REAL8 *)LALMalloc(params->numSUMsTotal*sizeof(REAL8));/
      /* 11/08/03 gam; Add in first version of StackSlide written by Mike Landry */     
     StackSlideOld(status->statusPtr,params->SUMData,params->STKData,stksldParams); /*Feb 05/14 vir*/
     CHECKSTATUSPTR (status);
-    #ifdef INCLUDE_OUTPUTASCIISUMS_CODE
-      /* 02/11/04 gam; Moved code to output one sum at a time */
-      if (params->outputSUMFlag > 0) {           
-	   /* outfp = fopen(params->outputFile, "w"); */ /* 01/28/04 gam */
-           /* 01/21/04 gam; if params->outputFlag == 1 then output just SUM power; if params->outputFlag == 2 output frequency and power. */
-           if ((params->outputSUMFlag & 1) > 0) {
-               /* 01/28/04 gam; if more than one SUM append .00000, .00001, .00002, etc... to outputFile name. */
-	       if (params->numSUMsTotal > 1) {
-  		  strcpy(baseOutputFile,params->outputFile);
-		  sprintf(fileNumber,".%05d",kSUM);
-		  strcat(baseOutputFile,fileNumber);
-	          outfp = fopen(baseOutputFile, "w");
-	       } else {
-	          outfp = fopen(params->outputFile, "w");
-	       }
-               for(k=0;k<params->nBinsPerSUM; k++) {
-                 /* 01/05/04 gam; format output of frequency and SUMs */
-	         /* fprintf(outfp,"%g  %g \n",params->f0SUM+(REAL8)k*params->dfSUM, params->SUMData[i]->data->data[k]); */
-	         fprintf(outfp,"%g \n",params->SUMData[0]->data->data[k]);
-	         fflush(outfp);
-	       }
-	       fclose(outfp); /* 01/28/04 gam */
-	   } else if ((params->outputSUMFlag & 2) > 0) {
-               /* 01/28/04 gam; if more than one SUM append .00000, .00001, .00002, etc... to outputFile name. */
-	       if (params->numSUMsTotal > 1) {
-  		  strcpy(baseOutputFile,params->outputFile);
-		  sprintf(fileNumber,".%05d",kSUM);
-		  strcat(baseOutputFile,fileNumber);
-	          outfp = fopen(baseOutputFile, "w");
-	       } else {
-	          outfp = fopen(params->outputFile, "w");
-	       }
-               for(k=0;k<params->nBinsPerSUM; k++) {
-                 /* 01/05/04 gam; format output of frequency and SUMs */
-	         /* fprintf(outfp,"%g  %g \n",params->f0SUM+(REAL8)k*params->dfSUM, params->SUMData[i]->data->data[k]); */
-	         fprintf(outfp,"%18.10f %g \n",params->f0SUM+(REAL8)k*params->dfSUM, params->SUMData[0]->data->data[k]);
-	         fflush(outfp);
-	       }
-	       fclose(outfp); /* 01/28/04 gam */
-	   }
-	   /* fclose(outfp); */ /* 01/28/04 gam */
-      }
-    #endif
-          
-    /* 02/11/04 gam; Change code to process 1 SUM per job; Move for loop over SUMs above */
-    /* for(kSUM=0;kSUM<params->numSUMsTotal;kSUM++) */
-    /* 02/04/04 gam; moved next 2 lines here; always compute i and j */
-    /* i = kSUM/numFreqDerivIncludingNoSpinDown;   */  /* 01/28/04 gam; index to params->skyPosData for this SUM; */
-    /* j = kSUM % numFreqDerivIncludingNoSpinDown; */ /* 01/28/04 gam; index to params->freqDerivData for this SUM; */
+    
+    /* 02/25/05 gam; utility for printing one SUM to a file */
+    if (params->outputSUMFlag > 0) {
+      printOneStackSlideSUM(params->SUMData[0],params->outputSUMFlag,params->outputFile,kSUM,params->f0SUM,params->dfSUM,params->nBinsPerSUM,params->numSUMsTotal);
+    }
 
-     #ifdef DEBUG_SUM_TEMPLATEPARAMS
-        /* 01/28/04 gam; Print info about template */
-        /* i = kSUM % params->numFreqDerivTotal; */ /* 02/02/04 gam */ /* 01/28/04 gam; index to params->freqDerivData for this SUM; */
-        /* k = kSUM/params->numFreqDerivTotal;   */ /* 02/02/04 gam */ /* 01/28/04 gam; index to params->skyPosData for this SUM; */
-        /* 02/02/04 gam; Fix bugs with handling case numSpinDown = 0 and numFreqDerivTotal = 0. */
-
-        /* fprintf(stdout,"\nTemplate parameters for SUM #%i:\n",kSUM); */ /* 02/02/04 gam */
+    #ifdef DEBUG_SUM_TEMPLATEPARAMS
         fprintf(stdout,"\nTemplate parameters for SUM #%i:\n",kSUM);	
         fprintf(stdout,"RA = %18.10f\n",params->skyPosData[i][0]);
         fprintf(stdout,"DEC = %18.10f\n",params->skyPosData[i][1]);
@@ -2136,18 +2047,10 @@ stksldParams->ParamsSMA=(REAL8 *)LALMalloc(params->numSUMsTotal*sizeof(REAL8));/
         {
            fprintf(stdout,"FREQDERIV%i = %18.10f\n",k+1,params->freqDerivData[j][k]);
         } /* END for(k=0;k<params->numSpinDown;k++) */          
-      #endif
-      /* Compute Stats for this SUM */ /* 02/11/04 gam; comment out */
-      /* ComputePowerStats( params->SUMData[kSUM]->data, &(params->SUMStats[kSUM]), params->SUMData[kSUM]->f0, params->SUMData[kSUM]->deltaF); */
-      #ifdef DEBUG_POWER_STATS      
-        /* fprintf(stdout,"params->SUMStats[%i].pwMax = %g \n",kSUM,params->SUMStats[kSUM].pwMax);
-        fprintf(stdout,"params->SUMStats[%i].freqPWMax = %18.10f \n",kSUM,params->SUMStats[kSUM].freqPWMax);
-        fprintf(stdout,"params->SUMStats[%i].pwMean = %g \n",kSUM,params->SUMStats[kSUM].pwMean);
-        fprintf(stdout,"params->SUMStats[%i].pwStdDev = %g \n",kSUM,params->SUMStats[kSUM].pwStdDev);
-        fflush(stdout); */
-      #endif
-      /* 01/21/04 gam; Call LALFindStackSlidePeaks only if thresholdFlag > 0 */
-      if (params->thresholdFlag > 0) {
+    #endif
+    
+    /* 01/21/04 gam; Call LALFindStackSlidePeaks only if thresholdFlag > 0 */
+    if (params->thresholdFlag > 0) {
          /* 02/04/04 gam; Initialize list */ /* 02/11/04 gam; initial params->peaks here: */
          params->peaks = (SnglStackSlidePeriodicTable *)LALMalloc(sizeof(SnglStackSlidePeriodicTable));      
          params->peaks->next = NULL;
@@ -2159,32 +2062,12 @@ stksldParams->ParamsSMA=(REAL8 *)LALMalloc(params->numSUMsTotal*sizeof(REAL8));/
          }
          pLALFindStackSlidePeakParams->iSky = i;
          pLALFindStackSlidePeakParams->iDeriv = j;
-         /* 01/14/04 gam; find peaks in SUMs */
-         /* findStackSlidePeaks(params->SUMData[kSUM],params->peaks, params->threshold1, params->threshold2); */
-         /* 01/20/04 gam; Change findStackSlidePeaks to LALFindStackSlidePeaks; put params into struct */
-         /* LALFindStackSlidePeaks(params->peaks, params->SUMData[kSUM],pLALFindStackSlidePeakParams); */ /* 02/04/04 gam */
-         /* LALFindStackSlidePeaks(&(params->peaks), params->SUMData[kSUM],pLALFindStackSlidePeakParams); */
-         /* LALFindStackSlidePeaks(&(params->peaks), params->SUMData[0], pLALFindStackSlidePeakParams); */ /* 02/11/04 gam */
          pLALFindStackSlidePeakOutputs->pntrToPeaksPntr = &(params->peaks);  /* 03/02/04 gam; added this and changed next line */
          LALFindStackSlidePeaks(pLALFindStackSlidePeakOutputs, params->SUMData[0], pLALFindStackSlidePeakParams);
-         /* 02/11/04 gam old end if (params->thresholdFlag > 0) was here */
-         /* 02/11/04 gam; old end for(kSUM=0;kSUM<params->numSUMsTotal;kSUM++) was here */
-
-         /* 02/04/04 gam; Output list of events */
-         /* if (params->thresholdFlag > 0) */
-
-         /* LIGOLwXMLStream *xmlStream; */ /* 02/09/04 gam */ /* 02/04/04 gam; this and next line are for xml output of peaks */ 
-         /* CHAR *xmlFile; */ /* 02/09/04 gam */
            
          params->peaks = peakSav->next;  /* Go back to the beginning of the list */
          LALFree(peakSav);               /* No longer need this place holder */
 
-         /* 02/04/04 gam; prepare to output results in xml;  Note that if outputFlag < 0 then do not output xml. */ 
-         /* 02/11/04 gam; moved start of table with peaks out of the peaks loop */
-         /* Run through list and deallocate */
-       
-         /* 02/11/04 gam; Use power rather than amplitudes when finding peaks; change amplitude to power, snr to pwr_snr */
-         /* 02/12/04 gam; Add freq_index to SnglStackSlidePeriodicTable */
          while (params->peaks) {
            peakSav = params->peaks;
            totalEventCount++;
@@ -2205,11 +2088,10 @@ stksldParams->ParamsSMA=(REAL8 *)LALMalloc(params->numSUMsTotal*sizeof(REAL8));/
                LALUpdateLoudestFromPeaks(loudestPeaksArray, params->peaks, nBinsPerOutputEvent);
            } else {
               #ifdef INCLUDE_PRINT_PEAKS_TABLE_CODE
-               /* 04/15/04 gam */
-               if ((params->debugOptionFlag & 2) > 0 ) {
-                fprintf(stdout,"%11i %11i %10.6f %10.6f %14.6e %11.6f %10.3f %8.3f %12i \n",totalEventCount,params->peaks->sum_no,params->peaks->sky_ra,params->peaks->sky_dec,params->peaks->fderiv_1,params->peaks->frequency,params->peaks->power,params->peaks->pwr_snr,params->peaks->width_bins);
-                fflush(stdout);
-               }
+                if ((params->debugOptionFlag & 2) > 0 ) {
+                  fprintf(stdout,"%11i %11i %10.6f %10.6f %14.6e %11.6f %10.3f %8.3f %12i \n",totalEventCount,params->peaks->sum_no,params->peaks->sky_ra,params->peaks->sky_dec,params->peaks->fderiv_1,params->peaks->frequency,params->peaks->power,params->peaks->pwr_snr,params->peaks->width_bins);
+                  fflush(stdout);
+                }
               #endif
               if (params->outputEventFlag > 0) {
                  /*  end previous row with comma */
@@ -2244,8 +2126,8 @@ stksldParams->ParamsSMA=(REAL8 *)LALMalloc(params->numSUMsTotal*sizeof(REAL8));/
            params->peaks = params->peaks->next;
            LALFree(peakSav);
          } /* end while (params->peaks) */
-      /* 02/11/04 gam; next is end if (params->thresholdFlag > 0) */       
-      } else if (outputLoudestFromSUMs) {
+    /* 02/11/04 gam; next is end if (params->thresholdFlag > 0) */       
+    } else if (outputLoudestFromSUMs) {
          /* 02/17/04 gam */
          if (params->whichMCSUM > 0) {
            pLALUpdateLoudestStackSlideParams->iSUM = params->whichMCSUM; /* 05/26/04 gam; this is the number of the Monte Carlo SUM. */
@@ -2255,62 +2137,59 @@ stksldParams->ParamsSMA=(REAL8 *)LALMalloc(params->numSUMsTotal*sizeof(REAL8));/
          pLALUpdateLoudestStackSlideParams->iSky = i;
          pLALUpdateLoudestStackSlideParams->iDeriv = j;              
          LALUpdateLoudestFromSUMs(loudestPeaksArray, params->SUMData[0], pLALUpdateLoudestStackSlideParams);
-      } /* end else if (outputLoudestFromSUMs) */
+    } /* end else if (outputLoudestFromSUMs) */
       
   } /* 02/11/04 gam; new end for(kSUM=0;kSUM<params->numSUMsTotal;kSUM++) */
     
-    }/* Feb/14/05 vir; end of if binaryFlag==0*/
+ }/* Feb/14/05 vir; end of if binaryFlag==0 */
 
-    /*Feb 14/05 vir: ADDED HERE BINARY CASE*/
+/*Feb 14/05 vir: ADDED HERE BINARY CASE*/
     
-if((params->binaryFlag & 1) == 1){
-	 
-	FILE *binaryfp; /* 05/02/17 vir: pointer to output file for sums*/
-        FILE *binaryLE;
-	char filename[]="myoutbinary.txt";
-	char filename2[]="outLE.txt";	
+if((params->binaryFlag & 1) == 1) {
+  FILE *binaryfp; /* 05/02/17 vir: pointer to output file for sums*/
+  FILE *binaryLE;
+  char filename[]="myoutbinary.txt";
+  char filename2[]="outLE.txt";	
 
-		for(kSUM=0;kSUM < params->numSUMsTotal;kSUM++) {
+  for(kSUM=0;kSUM < params->numSUMsTotal;kSUM++) {
     binaryLE=fopen(filename2, "w");
 
- i = kSUM/numFreqDerivIncludingNoSpinDown;   /* 01/28/04 gam; index to params->skyPosData for this SUM; */
+    i = kSUM/numFreqDerivIncludingNoSpinDown;   /* 01/28/04 gam; index to params->skyPosData for this SUM; */
     j = kSUM % numFreqDerivIncludingNoSpinDown; /* 01/28/04 gam; index to params->freqDerivData for this SUM; */    
     stksldParams->skyPosData = &(params->skyPosData[i]);
     if (params->numFreqDerivTotal != 0) {
          stksldParams->freqDerivData = &(params->freqDerivData[j]);
     }    
 
-
+    stksldParams->numSkyPosTotal=1;
+    stksldParams->skyPosData[0][0]=params->alphaSX1;
+    stksldParams->skyPosData[0][1]=params->deltaSX1;
     
-            stksldParams->numSkyPosTotal=1;
-	    stksldParams->skyPosData[0][0]=params->alphaSX1;
-	    stksldParams->skyPosData[0][1]=params->deltaSX1;
+    StackSlideBinary(status->statusPtr, stksldParams, params->STKData, params->SUMData);
 
-	    StackSlideBinary(status->statusPtr, stksldParams, params->STKData, params->SUMData);
+    if((params->nMaxSMA ==1)&&(params->nMaxTperi ==1)) {
+        binaryfp=fopen(filename, "w+");
 
-	     if((params->nMaxSMA ==1)&&(params->nMaxTperi ==1))
-      {	
-	binaryfp=fopen(filename, "w+");
-	
-	for (k=0; k< params->nBinsPerSUM ; k++)
-	 {
-	   fprintf(binaryfp,"%f %f\n", params->f0SUM + (REAL8)k*params->dfSUM, params->SUMData[0]->data->data[k]);/*05/02/17 vir*/
-         }
-	      }/* 05/02/17 vir: write sum on the file only for no mismatch*/
-    
+        for (k=0; k< params->nBinsPerSUM ; k++) {
+           fprintf(binaryfp,"%f %f\n", params->f0SUM + (REAL8)k*params->dfSUM, params->SUMData[0]->data->data[k]);/*05/02/17 vir*/
+        }
+    }/* 05/02/17 vir: write sum on the file only for no mismatch*/    
     else {
-	/*Look for loudest event in SUMData*/
-         /*05/02/17 vir: for mismatched params, output only the loudest event */
-      printf("the SemiMajorAxis is %f\n", stksldParams->SemiMajorAxis);
+       /*Look for loudest event in SUMData*/
+        /*05/02/17 vir: for mismatched params, output only the loudest event */
+       #ifdef DEBUG_BINARY_CODE
+         fprintf(stdout,"the SemiMajorAxis is %f\n", stksldParams->SemiMajorAxis);
+         fflush(stdout);
+       #endif
 
       FindBinaryLoudest(params->SUMData, stksldParams);
-fprintf(binaryLE,"%f %f %f\n",stksldParams->peakFreq, stksldParams->LoudestEvent,  stksldParams->ParamsSMA[kSUM]);
+      fprintf(binaryLE,"%f %f %f\n",stksldParams->peakFreq, stksldParams->LoudestEvent,  stksldParams->ParamsSMA[kSUM]);
     
-   }/*end of else deltaSMA > 0*/
+    }/*end of else deltaSMA > 0*/
 
-}/*end of for kSUM*/
-fclose(binaryLE);
-fclose(binaryfp);
+  }/*end of for kSUM*/
+  fclose(binaryLE);
+  fclose(binaryfp);
 
 }/*end of if binaryFlag==1*/
 
@@ -2414,12 +2293,6 @@ fclose(binaryfp);
           LALFree(loudestPeaksArray);
        }   
               
-       /* 02/11/04 gam */
-       #ifdef INCLUDE_OUTPUTASCIISUMS_CODE
-         if (params->outputSUMFlag > 0 && params->numSUMsTotal > 1) {
-               LALFree(baseOutputFile);
-         }
-      #endif
 }
 /* params->finishedSUMs = 1; */ /* 05/26/04 gam */  /* Set equal to true when all BLKS for this job have been created */
 
@@ -3497,6 +3370,53 @@ void RescaleSTKData(REAL4FrequencySeries **STKData, INT4 numSTKs, INT4 nBinsPerS
      }
 } /* END RescaleSTKData */
 
+/* 02/25/05 gam; utility for printing one SUM to a file */
+void printOneStackSlideSUM( const REAL4FrequencySeries *oneSUM,
+                  INT2                       outputSUMFlag,
+                  CHAR                       *outputFile,
+                  INT4                       kSUM,
+                  REAL8                      f0SUM,
+                  REAL8                      dfSUM,
+                  INT4                       nBinsPerSUM,
+                  INT4                       numSUMsTotal
+)
+{   
+    INT4 k;
+    FILE *outfp = NULL;
+    CHAR *baseOutputFile = NULL;  /* Used only if numSUMsTotal > 1 */
+    CHAR fileNumber[7];           /* Fixed size string that holds .00000, .00001, .00002, etc... */
+
+    /* set up the file name and open the file */
+    if (numSUMsTotal > 1) {
+       baseOutputFile = (CHAR *) LALMalloc( (strlen(outputFile) + 7) * sizeof(CHAR) );
+       strcpy(baseOutputFile,outputFile);
+       sprintf(fileNumber,".%05d",kSUM);
+       strcat(baseOutputFile,fileNumber);
+       outfp = fopen(baseOutputFile, "w");
+    } else {
+       outfp = fopen(outputFile, "w");
+    }
+
+    /* print out the data based on the outputSUMFlag option */
+    if ((outputSUMFlag & 1) > 0) {
+       for(k=0;k<nBinsPerSUM; k++) {
+           fprintf(outfp,"%g \n",oneSUM->data->data[k]);
+           fflush(outfp);
+       }
+    } else {
+       for(k=0;k<nBinsPerSUM; k++) {
+           fprintf(outfp,"%18.10f %g \n",f0SUM+(REAL8)k*dfSUM, oneSUM->data->data[k]);
+           fflush(outfp);
+       }
+    }
+   
+    /* close the file and clean up */
+    fclose(outfp);   
+    if (numSUMsTotal > 1) {
+       LALFree(baseOutputFile);
+    }
+} /* END void printOneSUM */
+
 /*Feb 14/05 vir */
 /*Start Function FindBinaryLoudest*/
 
@@ -3520,15 +3440,14 @@ void FindBinaryLoudest( REAL4FrequencySeries **SUMData, StackSlideParams *stksld
 	stksldParams->peakFreq=stksldParams->f0SUM + indexFreq*stksldParams->dfSUM; 
 	}
 	stksldParams->LoudestEvent=max;
-
-	/*printf("Loudest binary peak is %f and corr freq is %f SMA %f\n", max, stksldParams->peakFreq, stksldParams->SemiMajorAxis);*/
-
+       
+       #ifdef DEBUG_BINARY_CODE
+         fprintf(stdout, "Loudest binary peak is %f and corr freq is %f SMA %f\n", max, stksldParams->peakFreq, stksldParams->SemiMajorAxis);
+         fflush(stdout);
+       #endif
 }
 
-
 /*End function FindBinaryLoudest*/
-
-
 
 
 /******************************************/
@@ -3536,6 +3455,3 @@ void FindBinaryLoudest( REAL4FrequencySeries **SUMData, StackSlideParams *stksld
 /* END SECTION: internal functions        */
 /*                                        */
 /******************************************/
-
-/* Add in first version of StackSlide written by Mike Landry */
-/* 01/06/04 gam; Now use version in StackSlide.c */
