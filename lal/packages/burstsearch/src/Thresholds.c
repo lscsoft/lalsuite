@@ -11,9 +11,11 @@ NRCSID (THRESHOLDSC, "$Id$");
 
 #include <stdlib.h>
 #include <math.h>
+#include <gsl/gsl_cdf.h>
 #include <lal/FindRoot.h>
 #include <lal/LALConstants.h>
 #include <lal/LALErrno.h>
+#include <lal/LALGSL.h>
 #include <lal/LALStdlib.h>
 #include <lal/Thresholds.h>
 
@@ -215,94 +217,36 @@ LALChisqCdf (
    *
    */
 
-  REAL8 temp1;
-  REAL8 temp2;
-  REAL8 ww;
   REAL8 a;
   REAL8 x;
-  const INT2 maxloop=100;         /* maximum allowed number of iterations */
-  const REAL8 small = 3.0e-7;
-  const REAL8 small1 = 1.0e-30;
 
   INITSTATUS (status, "LALChisqCdf", THRESHOLDSC);
+  ATTATCHSTATUSPTR (status);
 
   /* check that arguments are reasonable */
   ASSERT(prob, status, LAL_NULL_ERR, LAL_NULL_MSG);
   ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
   /* Arguments chi2 and dof must be non-negative */
-  x = input->chi2/2.0;
-  a = input->dof/2.0;
+  x = input->chi2;
+  a = input->dof;
   ASSERT((x >= 0.0) && (a > 0.0), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
-  if (x < (a+1.0))
-    {
-      INT4 n;
-      REAL8 sum;
-      REAL8 del;
-      REAL8 temp3;
-      ww=logGamma(a);
-      if (x <= 0.0)
-	{
-	  temp1=0.0;
-	}
-      else 
-	{
-	  temp3=a;
-	  del=sum=1.0/a;
-	  n=1;
-	  do
-	    {
-	      ++temp3;
-	      del *= x/temp3;
-	      sum += del;
-	      n++;
-	    }
-	  while( (n<=maxloop) && (fabs(del) > fabs(sum)*small) );
-
-	  ASSERT(n < maxloop, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
-	  temp1=sum*exp(-x+a*log(x)-(ww));
-	}
-      *prob=temp1;
-    } 
-  else 
-    {
-      INT4 i;
-      REAL8 an,b,c,d,del,h;
-      ww=logGamma(a);
-      b=x+1.0-a;
-      c=1.0/small1;
-      d=1.0/b;
-      h=d;
-      i=1;
-      do
-	{
-	  an = -i*(i-a);
-	  b += 2.0;
-	  d=an*d+b;
-	  if (fabs(d) < small1) d=small1;
-	  c=b+an/c;
-	  if (fabs(c) < small1) c=small1;
-	  d=1.0/d;
-	  del=d*c;
-	  h *= del;
-	  if (fabs(del-1.0) < small) break;
-	  i++;
-	}
-      while( (i<=maxloop) && (fabs(del-1.0) > small) );
-
-      ASSERT(i < maxloop, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
-      temp2=exp(-x+a*log(x)-(ww))*h;
-      *prob= 1.0-temp2;
-    }
+  /* use GSL because our previous version sucked */
+  CALLGSL( *prob = gsl_cdf_chisq_P (x,a) , status);
+  CHECKSTATUSPTR (status);
 
   /* 
    *  check that final answer is a legal probability
    *  third test is necessary since there are some numbers x for 
    *  which (x>0.0) evaluates as TRUE but for which 1/x evaluates to inf
    */
-  ASSERT((*prob > 0.0) && (*prob < 1.0) && (1.0/(*prob) < LAL_REAL8_MAX), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  if ( !( (*prob >= 0.0) && (*prob <= 1.0) && 
+        ( 1.0/(*prob) < LAL_REAL8_MAX ) )){
+    ABORT(status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  }
 
+  DETATCHSTATUSPTR( status );
   RETURN (status);
 }
 
@@ -340,98 +284,36 @@ LALOneMinusChisqCdf (
    *  the function LALChisqCdf() except for the very end.
    */
 
-  REAL8 temp1;
-  REAL8 temp2;
-  REAL8 ww;
   REAL8 a;
   REAL8 x;
-  const INT2 maxloop=100;         /* maximum allowed number of iterations */
-  const REAL8 small = 3.0e-7;
-  const REAL8 small1 = 1.0e-30;
 
   INITSTATUS (status, "LALOneMinusChisqCdf", THRESHOLDSC);
+  ATTATCHSTATUSPTR (status);
 
   /* check that arguments are reasonable */
   ASSERT(prob, status, LAL_NULL_ERR, LAL_NULL_MSG);
   ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
   /* Arguments chi2 and dof must be non-negative */
-  x = input->chi2/2.0;
-  a = input->dof/2.0;
+  x = input->chi2;
+  a = input->dof;
   ASSERT((x >= 0.0) && (a > 0.0), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
-  if (x < (a+1.0))
-    {
-      INT4 n;
-      REAL8 sum;
-      REAL8 del;
-      REAL8 temp3;
-      ww=logGamma(a);
-      if (x <= 0.0)
-	{
-	  temp1=0.0;
-	}
-      else 
-	{
-	  temp3=a;
-	  del=sum=1.0/a;
-	  n=1;
-	  do
-	    {
-	      ++temp3;
-	      del *= x/temp3;
-	      sum += del;
-	      n++;
-	    }
-	  while( (n<=maxloop) && (fabs(del) > fabs(sum)*small) );
-
-	  ASSERT(n < maxloop, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
-	  temp1=sum*exp(-x+a*log(x)-(ww));
-	}
-      *prob=1.0-temp1;
-    } 
-  else 
-    {
-      INT4 i;
-      REAL8 an,b,c,d,del,h;
-      ww=logGamma(a);
-      b=x+1.0-a;
-      c=1.0/small1;
-      d=1.0/b;
-      h=d;
-      i=1;
-      do
-	{
-	  an = -i*(i-a);
-	  b += 2.0;
-	  d=an*d+b;
-	  if (fabs(d) < small1) d=small1;
-	  c=b+an/c;
-	  if (fabs(c) < small1) c=small1;
-	  d=1.0/d;
-	  del=d*c;
-	  h *= del;
-	  if (fabs(del-1.0) < small) break;
-	  i++;
-	}
-      while( (i<=maxloop) && (fabs(del-1.0) > small) );
-
-      ASSERT(i < maxloop, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
-      temp2=exp(-x+a*log(x)-(ww))*h;
-      *prob= temp2;
-    }
+  /* use GSL because our previous version sucked */
+  CALLGSL( *prob = gsl_cdf_chisq_Q (x,a) , status);
+  CHECKSTATUSPTR (status);
 
   /* 
    *  check that final answer is a legal probability
    *  third test is necessary since there are some numbers x for 
    *  which (x>0.0) evaluates as TRUE but for which 1/x evaluates to inf
    */
-  if ( !( (*prob > 0.0) && (*prob < 1.0) && ( 1.0/(*prob) < LAL_REAL8_MAX ) )){
-      *prob = LAL_REAL8_MIN;
-      /* if(lalDebugLevel&LALWARNING)
-          LALPrintError("\tThe probability is: %e\n",*prob); */
+  if ( !( (*prob >= 0.0) && (*prob <= 1.0) && 
+        ( 1.0/(*prob) < LAL_REAL8_MAX ) )){
+    ABORT(status, LAL_RANGE_ERR, LAL_RANGE_MSG);
   }
 
+  DETATCHSTATUSPTR( status );
   RETURN (status);
 }
 
@@ -543,8 +425,7 @@ LALChi2Threshold (
    *  falseAlarm = 1 - chisqCdf(chi2,dof)
    */  
 
-  REAL8              lnchi2Ans;
-  DFindRootIn        frInput; 
+  REAL8              fa,n;
 
   INITSTATUS (status, "LALChi2Threshold", THRESHOLDSC);
   ATTATCHSTATUSPTR (status);
@@ -556,30 +437,20 @@ LALChi2Threshold (
   /* Argument dof must be positive */
   ASSERT(input->dof > 0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
-
   /* Supplied false alarm probability must be between 0 and 1 */
-  ASSERT((input->falseAlarm > 0.0) && (input->falseAlarm < 1.0) , status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  ASSERT((input->falseAlarm > 0.0) && (input->falseAlarm < 1.0) , 
+      status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
+  /* input variables */
+  n=input->dof;
+  fa=input->falseAlarm;
 
-  /* Initialize input structure for DFindRoot() */
-  frInput.function = ChisqCdf1;
-  frInput.xmin = -2.0;
-  frInput.xmax = 2.0;
-  frInput.xacc = 1e-5;
- 
-  /* Now bracket and find the root */
-  LALDBracketRoot (status->statusPtr, &frInput, input );
-  CHECKSTATUSPTR (status);
-  
-  LALDBisectionFindRoot (status->statusPtr, &lnchi2Ans, 
-			      &frInput, input );
+  /* use GSL because our previous version sucked */
+  CALLGSL( *chi2 = gsl_cdf_chisq_Qinv (fa,n) , status);
   CHECKSTATUSPTR (status);
 
-  *chi2 = exp(lnchi2Ans);
-  
   DETATCHSTATUSPTR (status);
   RETURN (status);
-
 }
 
 
