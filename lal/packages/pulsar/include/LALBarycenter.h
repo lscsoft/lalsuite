@@ -36,6 +36,11 @@ for ``barycentering'' the measured astronomical time series.
 #include <lal/LALConstants.h>
 #include <lal/DetectorSite.h>
 
+#ifdef sun /* Protect against an annoying Solaris system constant */
+#undef sun
+#define LALBARYCENTERH_SUN 1
+#endif
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -336,27 +341,9 @@ void LALBarycenter(LALStatus *, EmissionTime *, BarycenterInput *, EarthState *)
 }
 #endif      /* Close C++ protection */
 
+#ifdef LALBARYCENTERH_SUN /* Close Solaris system constant protection */
+#undef LALBARYCENTERH_SUN
+#define sun 1
+#endif
+
 #endif      /* Close double-include protection */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
