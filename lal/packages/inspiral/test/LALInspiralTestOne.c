@@ -1,33 +1,265 @@
 /*  <lalVerbatim file="LALInspiralTestOneCV">
-Author: Sathyaprakash, B. S.
+Author: Sathyaprakash, B. S., Cokelaer T.
 $Id$
-$Name$
-$Author$
 </lalVerbatim>  */
 
 /*  <lalLaTeX>
 
-\subsection{Module \texttt{LALInspiralTestOne.c}}
-Test routine for wave generation codes. Exactly as in
-{\tt LALInspiralTest} except that this code tests only 
-one function as chosen by the user in {\tt Approximant}
-and {\tt Order}.
+\subsection{Test program \texttt{LALInspiralTestOne.c}}
+Test routine for wave generation codes. 
+
+To get some help just type the name of the executable and the option --h
+
+Basically, you can provide all the arguments from the InspiralTemplate structure such as
+--approximant, --order ....
 
 \vfill{\footnotesize\input{LALInspiralTestOneCV}}
 
 </lalLaTeX> */
 
+
+#define LALINSPIRALTESTONEC_ENORM 0
+#define LALINSPIRALTESTONEC_ESUB  1
+#define LALINSPIRALTESTONEC_EARG  2
+#define LALINSPIRALTESTONEC_EVAL  3
+#define LALINSPIRALTESTONEC_EFILE 4
+#define LALINSPIRALTESTONEC_EMEM  5
+
+#define LALINSPIRALTESTONEC_MSGENORM "Normal exit"
+#define LALINSPIRALTESTONEC_MSGESUB  "Subroutine failed"
+#define LALINSPIRALTESTONEC_MSGEARG  "Error parsing arguments"
+#define LALINSPIRALTESTONEC_MSGEVAL  "Input argument out of valid range"
+#define LALINSPIRALTESTONEC_MSGEFILE "Could not open file"
+#define LALINSPIRALTESTONEC_MSGEMEM  "Out of memory"
+
 #include <stdio.h>
 #include <lal/LALInspiral.h>
 #include <lal/RealFFT.h>
 #include <lal/AVFactories.h>
+
+NRCSID( LALINSPIRALTESTONEC, "$Id$" );
+
 INT4 lalDebugLevel=1;
+#define ERROR( code, msg, statement )                                \
+do                                                                   \
+if ( lalDebugLevel & LALERROR )                                      \
+{                                                                    \
+  LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
+		 "        %s %s\n", (code), program, __FILE__,       \
+		 __LINE__, LALINSPIRALTESTONEC, statement ? statement :  \
+                 "", (msg) );                                        \
+}                                                                    \
+while (0)
 
-void printf_timeseries (int n, float *signal, double delta, double t0) ;
+#define WARNING( statement )                                         \
+do                                                                   \
+if ( lalDebugLevel & LALWARNING )                                    \
+{                                                                    \
+  LALPrintError( "Warning[0]: program %s, file %s, line %d, %s\n"    \
+		 "        %s\n", program, __FILE__, __LINE__,        \
+		 LALINSPIRALTESTONEC, (statement) );                         \
+}                                                                    \
+while (0)
 
-void printf_timeseries (int n, float *signal, double delta, double t0) 
+#define INFO( statement )                                            \
+do                                                                   \
+if ( lalDebugLevel & LALINFO )                                       \
+{                                                                    \
+  LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
+		 "        %s\n", program, __FILE__, __LINE__,        \
+		 LALINSPIRALTESTONEC, (statement) );                         \
+}                                                                    \
+while (0)
+
+#define SUB( func, statusptr )                                       \
+do                                                                   \
+if ( (func), (statusptr)->statusCode )                               \
+{                                                                    \
+  ERROR( LALINSPIRALTESTONEC_ESUB, LALINSPIRALTESTONEC_MSGESUB,                      \
+         "Function call \"" #func "\" failed:" );                    \
+  exit( LALINSPIRALTESTONEC_ESUB );                                          \
+}                                                                    \
+while (0)
+
+typedef struct{
+  INT4 PrintParameters;
+} OtherParamIn;
+
+char *program;
+
+void printf_timeseries (UINT4 n, REAL4 *signal, REAL8 delta, REAL8 t0) ;
+void LALInspiralTestOneHelp();
+void ParseParameters(UINT4 *argc, CHAR **argv, OtherParamIn *otherIn);
+
+
+
+/* --- Main part --- */
+int main (int argc , char **argv) {
+  REAL4Vector *signal1 = NULL; /*storing waveforms */
+  REAL4Vector *signal2 = NULL; /*storing waveforms */
+  static LALStatus status;
+  InspiralTemplate params; /* the parameters */
+  REAL8 dt;                /* some sampling */
+
+  UINT4 n, i;
+
+  RealFFTPlan *revp =NULL;
+
+  COMPLEX8Vector *Signal1 =NULL;
+
+  OtherParamIn otherIn; /* some extra parameters to parse*/
+ 
+
+
+  program = *argv;
+
+
+  /* ---  we start real computation here --- */
+
+  otherIn.PrintParameters = 0; /* by default we don't print the parameters */
+  ParseParameters(&argc, argv, &otherIn);/*let's parse user parameters     */
+
+
+
+  SUB( LALInspiralITStructureSetDefault(&status, &params),
+       &status); /*  */
+  SUB( LALInspiralITStructureParseParameters(&status, argc, argv, &params), 
+       &status);/*parse user inspiral template parameters */
+
+
+  SUB( LALInspiralParameterCalc(&status, &params), 
+       &status);
+
+  if (otherIn.PrintParameters)
+    SUB( LALInspiralITStructurePrint(&status, params), 
+	 &status); 
+     
+  /* force those parameters */
+  params.massChoice = m1Andm2;
+  params.distance   = 1.e8 * LAL_PC_SI/LAL_C_SI;
+  params.ieta       = 0;  /* is it 1 or 0 ?*/
+
+  dt = 1./params.tSampling;
+  
+  SUB(  LALInspiralWaveLength(&status, &n, params), &status);
+  SUB(  LALInspiralParameterCalc(&status, &params), &status);
+
+
+  
+  if (otherIn.PrintParameters)
+    {
+      fprintf(stderr, "Testing Inspiral Signal Generation Codes:\n");
+      fprintf(stderr, "Signal length=%d, t0=%e, t2=%e, \n", n, params.t0, params.t2);
+    }
+  
+  SUB( LALCreateVector(&status, &signal1, n), &status);
+  SUB( LALCreateVector(&status, &signal2, n), &status);
+       
+
+  /* */
+  
+  switch (params.approximant){		   
+  case TaylorF1:
+  case TaylorF2:
+  case BCV:
+  case BCVSpin:
+    SUB( LALInspiralWave(&status, signal1, &params), &status);
+    SUB( LALCreateReverseRealFFTPlan(&status, &revp, n, 0), &status);
+        
+    SUB(   LALCCreateVector(&status, &Signal1, n/2+1), &status);
+    for (i=1; i<n/2; i++) 
+      {
+	Signal1->data[i].re = signal1->data[i];
+	Signal1->data[i].im = signal1->data[n-i];
+      }
+    Signal1->data[0].re = 0.;
+    Signal1->data[0].im = 0.;
+    Signal1->data[n/2].re = 0.;
+    Signal1->data[n/2].im = 0.;
+    
+    SUB( LALReverseRealFFT(&status, signal2, Signal1, revp), &status);
+    SUB( LALCDestroyVector (&status, &Signal1), &status);
+    printf_timeseries(signal2->length, signal2->data, dt, params.startTime);
+    
+    SUB( LALREAL4VectorFFT(&status, signal2, signal1, revp), &status);
+    SUB( LALDestroyRealFFTPlan (&status, &revp), &status);
+    printf_timeseries(signal2->length, signal2->data, dt, params.startTime);
+    break;
+  case SpinTaylorT3:
+  case TaylorT1:
+  case TaylorT2:
+  case TaylorT3:
+  case EOB:
+  case PadeT1:
+    LALInspiralWave(&status, signal2, &params);
+    printf_timeseries(signal2->length, signal2->data, dt, params.startTime);        
+    break;
+  case PadeF1:
+  case SpinTaylor:
+  default:
+	    fprintf(stderr, " not available\n");
+	    break;
+  }
+     
+  
+  LALDestroyVector(&status, &signal2);
+  LALDestroyVector(&status, &signal1);
+  LALCheckMemoryLeaks();
+  return 0;
+}
+
+
+
+
+
+void 
+ParseParameters(	UINT4 			*argc, 
+			CHAR 			**argv,
+			OtherParamIn    	*otherIn)
 {
-  int i=0;
+  INT4 		i = 1;
+  
+  while(i < *argc)
+    {
+      if ( strcmp(argv[i],	"--verbose") 	== 0 ) {
+	otherIn->PrintParameters = 1;
+      }
+      else if( strcmp(argv[i],	"--h") 	== 0 ) {
+	LALInspiralTestOneHelp(); }
+      else if( strcmp(argv[i],"-h") 	== 0 ) {
+	LALInspiralTestOneHelp();
+      }
+      else if( strcmp(argv[i],"-help") 	== 0 ) {
+	LALInspiralTestOneHelp();
+      } 
+      else if( strcmp(argv[i],"--help")	== 0 ) {
+	LALInspiralTestOneHelp();
+      }
+      
+      i++;
+    }
+  
+}
+
+
+
+void LALInspiralTestOneHelp()
+{
+
+  fprintf(stderr,"LALInspiralTestOne Help\n");
+  fprintf(stderr, "-----------------------------------------------\n");
+  fprintf(stderr, "--h for help\n");
+  fprintf(stderr, "--verbose to print Inspiral Template parameters\n");
+  fprintf(stderr, "-----------------------------------------------\n");
+  LALInspiralITStructureHelp();
+
+}
+
+
+
+void printf_timeseries (UINT4 n, REAL4 *signal, REAL8 delta, REAL8 t0) 
+{
+  UINT4 i=0;
   FILE *outfile1;
 
   outfile1=fopen("wave1.dat","a");
@@ -38,126 +270,4 @@ void printf_timeseries (int n, float *signal, double delta, double t0)
 
   fprintf(outfile1,"&\n");
   fclose(outfile1);
-}
-
-
-int main (int argc , char **argv) {
-   static REAL4Vector *signal1, *signal2;
-   static LALStatus status;
-   static InspiralTemplate params;
-   static REAL8 dt;
-   UINT4 n, i;
-
-   if (argc==1)
-     {
-       params.psi0 = 100000;
-       params.psi3 = -1000;
-       params.mass1= 10;
-       params.mass2= 10;          
-     }
-   else if (argc==3)
-     {
-       params.psi0 = atof(argv[1]);
-       params.psi3 = atof(argv[2]);
-       params.mass1= atof(argv[1]);
-       params.mass2= atof(argv[2]);
-     }
-   
-   params.approximant=EOB;
-   params.OmegaS = 0.;
-   params.Zeta2  = 0.; /*use by EOB @ 3PN*/
-   params.Theta  = 0.;
-   params.ieta   = 1; 
-   params.mass1  = 3; 
-   params.mass2  = 3; 
-   params.startTime=0.0; 
-   params.startPhase=0.;
-   params.fLower  = 20.0; 
-   params.fCutoff = 1000.0;
-   params.tSampling = 2048.0;
-   params.order = 4;
-   params.signalAmplitude=1.0;
-   params.nStartPad = 0;
-   params.nEndPad = 1200;
-   params.massChoice=m1Andm2;
-   params.distance = 1.e8 * LAL_PC_SI/LAL_C_SI;
-   dt = 1./params.tSampling;
-
-   LALInspiralWaveLength(&status, &n, params);
-  
-   LALInspiralParameterCalc(&status, &params);
-   fprintf(stderr, "Testing Inspiral Signal Generation Codes:\n");
-   fprintf(stderr, "Signal length=%d, t0=%e, t2=%e, m1=%e, m2=%e, fLower=%e, fUpper=%e\n", n, params.t0, params.t2, params.mass1, params.mass2, params.fLower, params.fCutoff);
-   LALCreateVector(&status, &signal1, n);
-   LALCreateVector(&status, &signal2, n);
-
-   
-   
-   params.alpha = 0.;
-   params.beta  = .5;
-   params.alpha1 = 0.3;
-   params.alpha2= 0.3;
-   
-   params.fFinal = 1000.;
-   params.approximant = BCV;
-			   
-   if (params.approximant==TaylorF1 || params.approximant==TaylorF2 || params.approximant==BCV  || params.approximant==BCVSpin) 
-   {
-	RealFFTPlan *revp = NULL;
-	COMPLEX8Vector *Signal1 = NULL;
-	LALInspiralWave(&status, signal1, &params);
-	/*
-	   REPORTSTATUS(&status);
-	 */
-	LALCreateReverseRealFFTPlan(&status, &revp, n, 0);
-
-	LALCCreateVector(&status, &Signal1, n/2+1);
-	for (i=1; i<n/2; i++) 
-	{
-		Signal1->data[i].re = signal1->data[i];
-		Signal1->data[i].im = signal1->data[n-i];
-	}
-	Signal1->data[0].re = 0.;
-	Signal1->data[0].im = 0.;
-	Signal1->data[n/2].re = 0.;
-	Signal1->data[n/2].im = 0.;
-
-	LALReverseRealFFT(&status, signal2, Signal1, revp);
-	LALCDestroyVector (&status, &Signal1);
-	printf_timeseries(signal2->length, signal2->data, dt, params.startTime);
-
-	LALREAL4VectorFFT(&status, signal2, signal1, revp);
-	LALDestroyRealFFTPlan (&status, &revp);
-	printf_timeseries(signal2->length, signal2->data, dt, params.startTime);
-   }
-   else
-   {
-	LALInspiralWave(&status, signal2, &params);
-	printf_timeseries(signal2->length, signal2->data, dt, params.startTime);
-	/*
-	   REPORTSTATUS(&status);
-	 */
-   }
-   fprintf(stderr, "approximant=%d order=%d,", params.approximant, params.order);
-
-   if (status.statusCode) 
-	   fprintf(stderr, " not available\n");
-   else 
-	   fprintf(stderr, " successful\n");
-   /* 
-    * static RealFFTPlan *fwdp;
-    * LALCreateForwardRealFFTPlan(&status, &fwdp, n, 0);
-    */
-   /* 
-    * LALInspiralWaveTemplates (&status, signal1, signal2, &params); 
-    * LALDestroyRealFFTPlan (&status, &fwdp); 
-    *
-    */
-   /* 
-    * printf_timeseries(signal1->length, signal1->data, dt, params.startTime);
-    */
-   LALDestroyVector(&status, &signal2);
-   LALDestroyVector(&status, &signal1);
-   LALCheckMemoryLeaks();
-   return 0;
 }

@@ -1,71 +1,79 @@
-/* [PURPOSE]
- * 	test file for the LALSTPNWaveform function. 
- * [USAGE]
- * 	change paramters in the file, compile and launch the executable
- * [INPUT]
- * 	none	
- * [OUTPUT]
- * 	write the waveform in the file wave1.dat
- * [COMPILATION]
- *      gcc  LALSTPNWaveformTest LALSTPNWaveformTest.c -L<lib lal directory> 
- *      -llal -I<include lal directory>
- * [AUTHORS]
- * 	Michele Vallisneri, Thomas Cokelaer, April 2004
- *
- * [COMMENTS]
- * 	we don't put that file into the Makefile.am. It is indeed a temporary 
- * 	test file dedicated to one function namely LALSTPNWaveformForInjection
- * */
+/* <lalVerbatim file="LALSTPNWaveformTestCV">
+Author: Cokelaer, T. and Vallisneri M.
+$Id: LALSTPNWaveformTest.c,v 1.1 2004/05/05 20:06:23 thomas Exp
+</lalVerbatim>*/
+
+
+
+/* <lalLaTeX>
+  
+
+\subsection{Test program \texttt{LALSTPNWaveformTest.c}}
+\label{ss:LALSTPNWaveformTest.c}
+
+Create a waveform based on SpinTaylor model (LALSTPNWaveform).
+
+\subsection*{Usage}
+Just change the InspiralTemplate strcuture parameters in the c file. 
+</lalLaTeX> */
+
+
+
+
+
 
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 
+NRCSID( LALSTPNWaveformTestC, "$Id: LALSTPNWaveformTest.c,v 1.1 2004/05/05 20:06:23 thomas Exp");
+
+
 int main(int argc, char **argv) {
-    static LALStatus mystatus;
-    CoherentGW thewaveform;
-    InspiralTemplate parameters;
-    FILE *outputfile;
-    int i,length;
-    double dt;
-    double a1,a2,phi,shift;
+    static LALStatus 	mystatus;
+    CoherentGW 		thewaveform;
+    InspiralTemplate 	parameters;
+    FILE 		*outputfile;
+    INT4 		i,length;
+    REAL8		dt;
+    REAL8 		a1, a2, phi, shift;
 
     /* --- first we fill the InspiralTemplate structure --- */
-    parameters.mass1 	= 14.0;
-    parameters.mass2 	= 10.0;
-    parameters.fCutoff 	= 1000;
-    parameters.fLower 	= 100.0;
-    parameters.approximant = SpinTaylorPN;
-    parameters.massChoice  = m1Andm2;
+    parameters.mass1 		= 14.0;
+    parameters.mass2 		= 10.0;
+    parameters.fCutoff 		= 1000.0;
+    parameters.fLower 		= 40.0;
+    parameters.approximant 	= SpinTaylor;
+    parameters.massChoice  	= m1Andm2;
     /* possible orders: newtonian, oneHalfPN, onePN, onePointFivePN,
        twoPN, twoPointFivePN, threePN, threePointFivePN */
 
     /* twoPointFivePN seems to have termination problems as well as 1 and .5*/
 
-    parameters.order = twoPN;
+    parameters.order 		= twoPN;
     
     parameters.distance 	= 1e10;
     parameters.tSampling 	= 4000;
     parameters.orbitTheta0 	= 1.5;
     parameters.orbitPhi0 	= 0.0;
 
-    parameters.spin1[0] 	= 0.0/sqrt(3.0);
-    parameters.spin1[1] 	= 0.0/sqrt(3.0);
-    parameters.spin1[2] 	= 0.0/sqrt(3.0);
+    parameters.spin1[0] 	= 0.3/sqrt(3.0);
+    parameters.spin1[1] 	= 0.86/sqrt(3.0);
+    parameters.spin1[2] 	= 1.53/sqrt(3.0);
 
-    parameters.spin2[0] 	= 0.0;
-    parameters.spin2[1] 	= 0.0;
-    parameters.spin2[2] 	= 0.0;
+    parameters.spin2[0] 	= 0.7;
+    parameters.spin2[1] 	= 0.86;
+    parameters.spin2[2] 	= 1.53;
 
     /* --- then the coherent structure --- */
-    thewaveform.a = 0;
-    thewaveform.f = 0;
-    thewaveform.phi = 0;
-    thewaveform.shift = 0;
+    thewaveform.a 	= 0;
+    thewaveform.f 	= 0;
+    thewaveform.phi 	= 0;
+    thewaveform.shift 	= 0;
 
     /* --- now we can call the injection function --- */
     LALSTPNWaveformForInjection(&mystatus,&thewaveform,&parameters);
-    REPORTSTATUS(&mystatus);
+
 
 
     /* --- and finally save in a file --- */
@@ -88,5 +96,6 @@ int main(int argc, char **argv) {
     }
 
     fclose(outputfile);
-return 0;
+
+    return 0;
 }
