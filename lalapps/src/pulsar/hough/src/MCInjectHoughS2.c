@@ -721,8 +721,8 @@ int main(int argc, char *argv[]){
     
   for(MCloopId=0; MCloopId < nMCloop; ++MCloopId){
 
-    controlN=1; /* checks if near template corresponds to max number count*/
-    controlNN=nh0;
+    controlN=nh0; /* checks if near template corresponds to max number count*/
+    controlNN=0;/* checks if near template corresponds to max number count*/
     controlNH=1;  /* checks if near template corresponds to max 
     		number count for the highest h0 value */
     
@@ -795,6 +795,8 @@ int main(int argc, char *argv[]){
       COMPLEX8 *signal1SFT;
       COMPLEX8 *sumSFT;
       
+      controlNN=0; 
+      
       numberCount=0;
       for(itemplate=0; itemplate<nTemplates; ++itemplate){
         numberCountV[itemplate]=0;
@@ -841,10 +843,12 @@ int main(int argc, char *argv[]){
       for (itemplate=0; itemplate<nTemplates; ++itemplate) {
          if( numberCountV[itemplate] > maxNumberCount ) {
 	   maxNumberCount = numberCountV[itemplate];
-	   controlN=0;
+	   controlNN=1;
 	   if (h0loop == (nh0-1)) controlNH=0;
 	 }
       }
+      controlN-=controlNN; /* substracts 1 every the near template was not the
+      best*/
       /******************************************************************/
       /* printing result in the proper file */
       /******************************************************************/
