@@ -53,6 +53,7 @@ RCSID("$Id$");
 "\n"\
 "Output data destination:\n"\
 "  --output FILE                write output data to FILE\n"\
+"  --tama-output FILE           write out text triggers for tama\n"\
 "  --summary-file FILE          write trigger analysis summary to FILE\n"\
 "\n"\
 "Playground data:\n"\
@@ -119,6 +120,7 @@ int main( int argc, char *argv[] )
   char *inputGlob = NULL;
   char *inputFileName = NULL;
   char *outputFileName = NULL;
+  char *tamaFileName = NULL;
   char *summFileName = NULL;
   REAL4 snrStar = -1;
   SnglInspiralClusterChoice clusterchoice = none;
@@ -130,7 +132,7 @@ int main( int argc, char *argv[] )
   int  enableTrigStartTime = 1;
 
   int j;
-  FILE *fp;
+  FILE *fp,*fq;
   glob_t globbedFiles;
   int numInFiles = 0;
   char **inFileNameList;
@@ -223,6 +225,7 @@ int main( int argc, char *argv[] )
       {"glob",                    required_argument,      0,              'g'},
       {"input",                   required_argument,      0,              'i'},
       {"output",                  required_argument,      0,              'o'},
+      {"tama-output",		  required_argument,	  0,		  'j'},
       {"summary-file",            required_argument,      0,              'S'},
       {"snr-threshold",           required_argument,      0,              's'},
       {"cluster-algorithm",       required_argument,      0,              'C'},
@@ -240,7 +243,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long ( argc, argv, "hzZ:c:g:i:o:S:s:c:Vt:I:T:m:H:D", 
+    c = getopt_long ( argc, argv, "hzZ:c:g:i:o:j:S:s:C:Vt:I:T:m:H:D", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -331,6 +334,14 @@ int main( int argc, char *argv[] )
         optarg_len = strlen( optarg ) + 1;
         outputFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( outputFileName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case 'j':
+	/* create storage of the TAMA file name */
+	optarg_len = strlen( optarg ) + 1;
+        tamaFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( tamaFileName, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
@@ -1342,12 +1353,34 @@ int main( int argc, char *argv[] )
           sngl_inspiral_table ), &stat );
     LAL_CALL( LALEndLIGOLwXMLTable( &stat, &xmlStream ), &stat);
 
+    if ( tamaFileName )
+    {
+      fq = fopen( tamaFileName, "w" );
+      fprintf( fq, "LIGO triggers from %s\n", eventHead->ifo );
+      fprintf( fq, "   trigger time       total mass     eta       " );
+      fprintf( fq, "   snr         chisq        eff dist\n" );
+    }
+    
     /* free the temporary memory containing the events */
     while ( eventHead )
     {
       thisEvent = eventHead;
       eventHead = eventHead->next;
+      /* write out the Tama file */
+      if ( tamaFileName )
+      {
+	REAL8 trigtime;
+	LAL_CALL( LALGPStoFloat( &stat, &trigtime, &(thisEvent->end_time) ),
+	   &stat );
+	fprintf( fq, "%20.9f %12.6e %12.6e %12.6e %12.6e %12.6e\n", trigtime, 
+	    (thisEvent->mass1 + thisEvent->mass2), thisEvent->eta,
+	    thisEvent->snr, thisEvent->chisq, thisEvent->eff_distance );
+      }
       LALFree( thisEvent );
+    }
+    if ( tamaFileName )
+    {
+      fclose( fq );
     }
   }
 
