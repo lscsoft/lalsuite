@@ -669,40 +669,41 @@ LALInspiralChooseModel(
       default:
          break;
    }
+   if (params->approximant !=BCV && params->approximant !=BCVSpin){
+   	   ak->flso = pow(ak->vlso,3.)/(LAL_PI * ak->totalmass);
+	   
+	   if (ak->fn) {
+	     	   vn = pow(LAL_PI * ak->totalmass * ak->fn, oneby3);
+	     	   ak->vn = (vn < vlso) ? vn :  vlso;
+	   } 
 
-   ak->flso = pow(ak->vlso,3.)/(LAL_PI * ak->totalmass);
-
-   if (ak->fn) {
-      vn = pow(LAL_PI * ak->totalmass * ak->fn, oneby3);
-      ak->vn = (vn < vlso) ? vn :  vlso;
-   } 
-
-   in1.t=0.0;
-   in1.v0=ak->v0;
-   in1.t0=ak->t0;
-   in1.vlso=ak->vlso;
-   in1.totalmass = ak->totalmass;
-   in1.dEnergy = f->dEnergy;
-   in1.flux = f->flux;
-   in1.coeffs = ak;
-   
-   in2 = (void *) &in1;      
-   
-   LALInspiralTofV(status->statusPtr, &tofv, ak->vn, in2);
-   CHECKSTATUSPTR(status);
-   
-   ak->tn = -tofv - ak->samplinginterval;
-   params->fCutoff = ak->fn = pow(ak->vn, 3.)/(LAL_PI * ak->totalmass);
-/*
-   for (v=0; v<ak->vn; v+=0.001) 
-   {
-      FtN = Ft0(v,ak);
-      printf("%e %e %e %e %e %e %e\n", v,
-         Ft2(v,ak)/FtN, Ft3(v,ak)/FtN, Ft4(v,ak)/FtN, Ft5(v,ak)/FtN,
-         Ft6(v,ak)/FtN, Ft7(v,ak)/FtN);
+	   in1.t=0.0;
+	   in1.v0=ak->v0;
+	   in1.t0=ak->t0;
+	   in1.vlso=ak->vlso;
+	   in1.totalmass = ak->totalmass;
+	   in1.dEnergy = f->dEnergy;
+	   in1.flux = f->flux;
+	   in1.coeffs = ak;
+	   
+	   in2 = (void *) &in1;      
+	   
+	   LALInspiralTofV(status->statusPtr, &tofv, ak->vn, in2);
+	   CHECKSTATUSPTR(status);
+	   
+	   ak->tn = -tofv - ak->samplinginterval;
+	   params->fCutoff = ak->fn = pow(ak->vn, 3.)/(LAL_PI * ak->totalmass);
+	/*
+	   for (v=0; v<ak->vn; v+=0.001) 
+	   {
+	      FtN = Ft0(v,ak);
+	      printf("%e %e %e %e %e %e %e\n", v,
+	         Ft2(v,ak)/FtN, Ft3(v,ak)/FtN, Ft4(v,ak)/FtN, Ft5(v,ak)/FtN,
+	         Ft6(v,ak)/FtN, Ft7(v,ak)/FtN);
+	   }
+	   exit(0); 
+	*/
    }
-   exit(0); 
-*/
    DETATCHSTATUSPTR(status);
    RETURN (status); 
 }
