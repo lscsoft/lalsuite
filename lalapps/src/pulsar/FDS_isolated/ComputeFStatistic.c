@@ -3551,7 +3551,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   REAL8 xTemp;                  /* temp variable for phase model */
   REAL8 deltaF;                 /* width of SFT band */
   INT4  k1;                     /* defining the sum over which is calculated */
-  UINT4 k;
+  UINT4 k=0;
   REAL8 *skyConst;              /* vector of sky constants data */
   REAL8 *spinDwn;               /* vector of spinDwn parameters (maybe a structure? */
   INT4  spOrder;                /* maximum spinDwn order */
@@ -3701,7 +3701,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
 	if(sftIndex<0){
 	      fprintf(stderr,"ERROR! sftIndex = %d < 0 in TestLALDemod\nalpha=%d, k=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
-		      sftIndex, alpha, xTemp, params->Dterms,params->ifmin);
+		      sftIndex, alpha, k, xTemp, params->Dterms, params->ifmin);
 	}
 
         tempFreq1 = tempFreq0 + params->Dterms - 1;     /* positive if Dterms > 1 (trivial) */
