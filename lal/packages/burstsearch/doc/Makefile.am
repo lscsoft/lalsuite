@@ -1,10 +1,10 @@
 ## Process this file with automake to produce Makefile.in
-TEXFILES = Thresholds.tex TFTransform.tex ExcessPower.tex
-DVIFILES = Thresholds.dvi TFTransform.dvi ExcessPower.dvi
-SUFFIXES = .tex .dvi
-MOSTLYCLEANFILES = *.log *.aux
-CLEANFILES = Thresholds.dvi TFTransform.dvi ExcessPower.dvi \
-             Thresholds.pdf TFTransform.pdf ExcessPower.pdf
-EXTRA_DIST = $(TEXFILES)
-dvi-local: $(DVIFILES)
-.tex.dvi:; @LATEX@ $< ; @LATEX@ $<
+PACKAGE = burstsearch 
+MOSTLYCLEANFILES = main.log main.ilg main.blg main.out
+CLEANFILES = main.aux main.bbl main.glo main.ind main.idx \
+             main.lof main.lot main.toc
+DISTCLEANFILES = main.dvi main.ps main.pdf
+EXTRA_DIST = main.tex $(srcdir)/$(PACKAGE)*
+
+dvi-local:
+	$(top_builddir)/doc/laldoc/ldoc-pkg.sh $(PACKAGE) $(srcdir) $(top_builddir) $(top_srcdir)

@@ -1,30 +1,7 @@
-/*-----------------------------------------------------------------------
- *
- * File Name: TFTransform.h
- *
- * Author: Eanna Flanagan
- *
- * Revision: $Id$ 
- *
- *-----------------------------------------------------------------------
- *
- * NAME
- * TFTransform.h
- *
- * SYNOPSIS
- * #include <lal/TFTransform.h>
- *
- * DESCRIPTION
- * Function to create a time frequency (TF) plane from a segment of data
- * either (i) by stacking Fourier transforms of subsegments of the data
- * in the time domain, or (ii) FFTing the entire data segment and performing
- * inverse FFTs of subsegments of the data in the frequency domain.
- *
- * DIAGNOSTICS
- *
- *-----------------------------------------------------------------------
- */
-
+/********************************** <lalVerbatim file="TFTransformHV">
+Author: Flanagan, E
+$Id$
+**************************************************** </lalVerbatim> */
 
 #ifndef _TFTRANSFORM_H
 #define _TFTRANSFORM_H
@@ -45,21 +22,19 @@ extern "C" {
 NRCSID (TFTRANSFORMH, "$Id$");
 
 
+/******** <lalErrTable file="TFTransformHErrTab"> ********/
 #define TFTRANSFORM_ENULLP       1
 #define TFTRANSFORM_EPOSARG      2
 #define TFTRANSFORM_EALLOCP      4
 #define TFTRANSFORM_EMALLOC      8
 #define TFTRANSFORM_EINCOMP      16
 
-
-
-
-
 #define TFTRANSFORM_MSGENULLP      "Null pointer"
 #define TFTRANSFORM_MSGEPOSARG     "Argument must be positive"
 #define TFTRANSFORM_MSGEALLOCP     "Pointer has already been allocated, should be null"
 #define TFTRANSFORM_MSGEMALLOC     "Malloc failure"
 #define TFTRANSFORM_MSGEINCOMP     "Incompatible arguments"
+/******** </lalErrTable> ********/
 
 
 

@@ -1,32 +1,10 @@
-/*-----------------------------------------------------------------------
- *
- * File Name: ExcessPower.h
- *
- * Author: Eanna Flanagan
- *
- * Revision: $Id$ 
- *
- *-----------------------------------------------------------------------
- *
- * NAME
- * ExcessPower.h
- *
- * SYNOPSIS
- * #include <lal/ExcessPower.h>
- *
- * DESCRIPTION
- * Error codes, typedefs, and protypes for the functions chisqCdf() and
- * related functions
- *
- * DIAGNOSTICS
- *
- *-----------------------------------------------------------------------
- */
-
+/********************************** <lalVerbatim file="ExcessPowerHV">
+Author: Flanagan, E
+$Id$
+**************************************************** </lalVerbatim> */
 
 #ifndef _EXCESSPOWER_H
 #define _EXCESSPOWER_H
-
 
 #include <lal/LALStdlib.h>
 #include <lal/LALDatatypes.h>
@@ -37,27 +15,25 @@
 extern "C" {
 #endif
 
-
 NRCSID (EXCESSPOWERH, "$Id$");
 
+/******** <lalErrTable file="ExcessPowerHErrTab"> ********/
+#define EXCESSPOWERH_ENULLP       1
+#define EXCESSPOWERH_EPOSARG      2
+#define EXCESSPOWERH_EPOW2        4
+#define EXCESSPOWERH_EMALLOC      8
+#define EXCESSPOWERH_EINCOMP      16
+#define EXCESSPOWERH_EORDER       32
+#define EXCESSPOWERH_ENONNULL     64
 
-#define EXCESSPOWER_ENULLP       1
-#define EXCESSPOWER_EPOSARG      2
-#define EXCESSPOWER_EPOW2        4
-#define EXCESSPOWER_EMALLOC      8
-#define EXCESSPOWER_EINCOMP      16
-#define EXCESSPOWER_EORDER       32
-#define EXCESSPOWER_ENONNULL     64
-
-
-#define EXCESSPOWER_MSGENULLP    "Null pointer"
-#define EXCESSPOWER_MSGEPOSARG   "Arguments must be non-negative"
-#define EXCESSPOWER_MSGEPOW2     "Length of supplied data must be a power of 2"
-#define EXCESSPOWER_MSGEMALLOC   "Malloc failure"
-#define EXCESSPOWER_MSGEINCOMP   "Incompatible arguments"
-#define EXCESSPOWER_MSGEORDER    "Routines called in illegal order"
-#define EXCESSPOWER_MSGENONNULL  "Null pointer expected"
-
+#define EXCESSPOWERH_MSGENULLP    "Null pointer"
+#define EXCESSPOWERH_MSGEPOSARG   "Arguments must be non-negative"
+#define EXCESSPOWERH_MSGEPOW2     "Length of supplied data must be a power of 2"
+#define EXCESSPOWERH_MSGEMALLOC   "Malloc failure"
+#define EXCESSPOWERH_MSGEINCOMP   "Incompatible arguments"
+#define EXCESSPOWERH_MSGEORDER    "Routines called in illegal order"
+#define EXCESSPOWERH_MSGENONNULL  "Null pointer expected"
+/******** </lalErrTable> ********/
 
 
 

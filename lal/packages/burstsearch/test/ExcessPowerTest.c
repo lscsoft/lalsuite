@@ -377,18 +377,18 @@ main (int argc, char *argv[])
       }
 
     LALAddWhiteNoise( &status, NULL, 1.0);
-    TestStatus( &status, CODES(EXCESSPOWER_ENULLP), 1);
+    TestStatus( &status, CODES(EXCESSPOWERH_ENULLP), 1);
 
     p = v->data;
     v->data=NULL;
     LALAddWhiteNoise( &status, v, 1.0);
-    TestStatus( &status, CODES(EXCESSPOWER_ENULLP), 1);
+    TestStatus( &status, CODES(EXCESSPOWERH_ENULLP), 1);
     v->data=p;
 
     ii=v->length;
     v->length=0;
     LALAddWhiteNoise( &status, v, 1.0);
-    TestStatus( &status, CODES(EXCESSPOWER_EINCOMP), 1);
+    TestStatus( &status, CODES(EXCESSPOWERH_EINCOMP), 1);
     v->length=ii;
 
     LALCDestroyVector (&status, &v);
@@ -418,13 +418,13 @@ main (int argc, char *argv[])
     params.length = 16;
   
     LALCreateTFTiling (&status, &tfTiling, NULL);
-    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
 
     LALCreateTFTiling (&status, NULL, &params);
-    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
 
     LALDestroyTFTiling (&status, &tfTiling);
-    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
 
 
     {
@@ -433,34 +433,34 @@ main (int argc, char *argv[])
       p = params.overlapFactor;
       params.overlapFactor=0;
       LALCreateTFTiling (&status, &tfTiling, &params);
-      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_EPOSARG), 1);
       params.overlapFactor=p;
 
       p = params.length;
       params.length=0;
       LALCreateTFTiling (&status, &tfTiling, &params);
-      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_EPOSARG), 1);
       params.length=17;
       LALCreateTFTiling (&status, &tfTiling, &params);
-      TestStatus (&status, CODES(EXCESSPOWER_EPOW2), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_EPOW2), 1);
       params.length=p;
 
       p = params.minFreqBins;
       params.minFreqBins=0;
       LALCreateTFTiling (&status, &tfTiling, &params);
-      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_EPOSARG), 1);
       params.minFreqBins=100;
       LALCreateTFTiling (&status, &tfTiling, &params);
-      TestStatus (&status, CODES(EXCESSPOWER_EINCOMP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_EINCOMP), 1);
       params.minFreqBins=p;
 
       p = params.minTimeBins;
       params.minTimeBins=0;
       LALCreateTFTiling (&status, &tfTiling, &params);
-      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_EPOSARG), 1);
       params.minTimeBins=100;
       LALCreateTFTiling (&status, &tfTiling, &params);
-      TestStatus (&status, CODES(EXCESSPOWER_EINCOMP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_EINCOMP), 1);
       params.minTimeBins=p;
     }
       
@@ -471,13 +471,13 @@ main (int argc, char *argv[])
       p=params.deltaF;
       params.deltaF=0.0;
       LALCreateTFTiling (&status, &tfTiling, &params);
-      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_EPOSARG), 1);
       params.deltaF=p;
       
       p=params.flow;
       params.flow=-1.0;
       LALCreateTFTiling (&status, &tfTiling, &params);
-      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_EPOSARG), 1);
       params.flow=p;
     }
 
@@ -485,17 +485,17 @@ main (int argc, char *argv[])
     TestStatus (&status, CODES(0), 1);
  
     LALCreateTFTiling (&status, &tfTiling, &params);
-    TestStatus (&status, CODES(EXCESSPOWER_ENONNULL), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_ENONNULL), 1);
 
     LALDestroyTFTiling (&status, NULL);
-    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
 
     {
       COMPLEX8TimeFrequencyPlane **p;
       p = tfTiling->tfp;
       tfTiling->tfp=NULL;
       LALDestroyTFTiling (&status, &tfTiling);
-      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
       tfTiling->tfp=p;
     }
 
@@ -504,7 +504,7 @@ main (int argc, char *argv[])
       p = tfTiling->firstTile;
       tfTiling->firstTile=NULL;
       LALDestroyTFTiling (&status, &tfTiling);
-      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
       tfTiling->firstTile=p;
     }
 
@@ -513,7 +513,7 @@ main (int argc, char *argv[])
       p = tfTiling->numPlanes;
       tfTiling->numPlanes=0;
       LALDestroyTFTiling (&status, &tfTiling);
-      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_EPOSARG), 1);
       tfTiling->numPlanes=p;
     }
 
@@ -567,17 +567,17 @@ main (int argc, char *argv[])
     /* now start checking errors */
 
     LALComputeTFPlanes( &status, tfTiling, NULL);
-    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
 
     LALComputeTFPlanes( &status, NULL, &locfseries);
-    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
 
     {
       COMPLEX8Vector *p;
       p = locfseries.data;
       locfseries.data=NULL;
       LALComputeTFPlanes( &status, tfTiling, &locfseries);
-      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
       locfseries.data=p;
     }
 
@@ -586,7 +586,7 @@ main (int argc, char *argv[])
       p = locfseries.data->data;
       locfseries.data->data=NULL;
       LALComputeTFPlanes( &status, tfTiling, &locfseries);
-      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
       locfseries.data->data=p;
     }
 
@@ -595,7 +595,7 @@ main (int argc, char *argv[])
       p=tfTiling->firstTile;
       tfTiling->firstTile=NULL;
       LALComputeTFPlanes( &status, tfTiling, &locfseries);
-      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
       tfTiling->firstTile=p;
     }
 
@@ -604,7 +604,7 @@ main (int argc, char *argv[])
       p = tfTiling->numPlanes;
       tfTiling->numPlanes=0;
       LALComputeTFPlanes( &status, tfTiling, &locfseries);
-      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_EPOSARG), 1);
       tfTiling->numPlanes=p;
     }
 
@@ -613,7 +613,7 @@ main (int argc, char *argv[])
       p = tfTiling->tfp;
       tfTiling->tfp=NULL;
       LALComputeTFPlanes( &status, tfTiling, &locfseries);
-      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
       tfTiling->tfp=p;
     }
 
@@ -622,7 +622,7 @@ main (int argc, char *argv[])
       p = tfTiling->dftParams;
       tfTiling->dftParams=NULL;
       LALComputeTFPlanes( &status, tfTiling, &locfseries);
-      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
       tfTiling->dftParams=p;
     }
 
@@ -639,14 +639,14 @@ main (int argc, char *argv[])
 	  p=*thisPlane;
 	  *thisPlane=NULL;
 	  LALComputeTFPlanes( &status, tfTiling, &locfseries);
-	  TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+	  TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
 	  *thisPlane=p;
 
 	  thisdftParams = tfTiling->dftParams+ii;
 	  p1=*thisdftParams;
 	  *thisdftParams=NULL;
 	  LALComputeTFPlanes( &status, tfTiling, &locfseries);
-	  TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+	  TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
 	  *thisdftParams=p1;
 	}
     }
@@ -706,7 +706,7 @@ main (int argc, char *argv[])
     TestStatus (&status, CODES(0), 1);
     
     LALComputeExcessPower( &status, tfTiling, &input);	
-    TestStatus (&status, CODES(EXCESSPOWER_EORDER), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_EORDER), 1);
 
     LALComputeTFPlanes( &status, tfTiling, &locfseries);
     TestStatus (&status, CODES(0), 1);
@@ -716,10 +716,10 @@ main (int argc, char *argv[])
     /* now start checking errors */
 
     LALComputeExcessPower( &status, NULL, &input);	
-    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
 
     LALComputeExcessPower( &status, tfTiling, NULL);	
-    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
 
 
     {
@@ -727,7 +727,7 @@ main (int argc, char *argv[])
       p = tfTiling->tfp;
       tfTiling->tfp=NULL;
       LALComputeExcessPower( &status, tfTiling, &input);
-      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
       tfTiling->tfp=p;
     }
 
@@ -736,7 +736,7 @@ main (int argc, char *argv[])
       p = tfTiling->dftParams;
       tfTiling->dftParams=NULL;
       LALComputeExcessPower( &status, tfTiling, &input);
-      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
       tfTiling->dftParams=p;
     }
 
@@ -745,7 +745,7 @@ main (int argc, char *argv[])
       p=tfTiling->firstTile;
       tfTiling->firstTile=NULL;
       LALComputeExcessPower( &status, tfTiling, &input);
-      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
       tfTiling->firstTile=p;
     }
 
@@ -754,7 +754,7 @@ main (int argc, char *argv[])
       p = tfTiling->numPlanes;
       tfTiling->numPlanes=0;
       LALComputeExcessPower( &status, tfTiling, &input);
-      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_EPOSARG), 1);
       tfTiling->numPlanes=p;
     }
 
@@ -771,19 +771,19 @@ main (int argc, char *argv[])
 	  p=*thisPlane;
 	  *thisPlane=NULL;
 	  LALComputeExcessPower( &status, tfTiling, &input);
-	  TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+	  TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
 	  *thisPlane=p;
 	  
 	  p2=(*thisPlane)->data;
 	  (*thisPlane)->data=NULL;
 	  LALComputeExcessPower( &status, tfTiling, &input);
-	  TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+	  TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
 	  (*thisPlane)->data=p2;
 
 	  p3=(*thisPlane)->params;
 	  (*thisPlane)->params=NULL;
 	  LALComputeExcessPower( &status, tfTiling, &input);
-	  TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+	  TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
 	  (*thisPlane)->params=p3;
 	}
     }
@@ -796,22 +796,22 @@ main (int argc, char *argv[])
       p = t->whichPlane;
       t->whichPlane=-1;
       LALComputeExcessPower( &status, tfTiling, &input);
-      TestStatus (&status, CODES(EXCESSPOWER_EINCOMP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_EINCOMP), 1);
       t->whichPlane = tfTiling->numPlanes;
       LALComputeExcessPower( &status, tfTiling, &input);
-      TestStatus (&status, CODES(EXCESSPOWER_EINCOMP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_EINCOMP), 1);
       t->whichPlane=p;
       
       p = tfPlane->params->timeBins;
       tfPlane->params->timeBins=0;
       LALComputeExcessPower( &status, tfTiling, &input);
-      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_EPOSARG), 1);
       tfPlane->params->timeBins=p;
 
       p = tfPlane->params->freqBins;
       tfPlane->params->freqBins=0;
       LALComputeExcessPower( &status, tfTiling, &input);
-      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_EPOSARG), 1);
       tfPlane->params->freqBins=p;
     }
     
@@ -874,7 +874,7 @@ main (int argc, char *argv[])
     TestStatus (&status, CODES(0), 1);
 
     LALComputeLikelihood( &status, &loclambda, tfTiling);	
-    TestStatus (&status, CODES(EXCESSPOWER_EORDER), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_EORDER), 1);
 
     LALComputeExcessPower( &status, tfTiling, &input);
     TestStatus (&status, CODES(0), 1);
@@ -883,17 +883,17 @@ main (int argc, char *argv[])
     /* now start checking errors */
 
     LALComputeLikelihood( &status, NULL, tfTiling);
-    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
 
     LALComputeLikelihood( &status, &loclambda, NULL);
-    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
 
     {
       TFTile *p;
       p=tfTiling->firstTile;
       tfTiling->firstTile=NULL;
       LALComputeLikelihood( &status, &loclambda, tfTiling);
-      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
       tfTiling->firstTile=p;
     }
 
@@ -960,7 +960,7 @@ main (int argc, char *argv[])
     TestStatus (&status, CODES(0), 1);
       
     LALCountEPEvents( &status, &locnumEvents, tfTiling, 0.01);
-    TestStatus (&status, CODES(EXCESSPOWER_EORDER), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_EORDER), 1);
 
     LALSortTFTiling( &status, tfTiling);
     TestStatus (&status, CODES(0), 1);
@@ -970,20 +970,20 @@ main (int argc, char *argv[])
 
 
     LALCountEPEvents( &status, NULL, tfTiling, 0.01);
-    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
 
     LALCountEPEvents( &status, &locnumEvents, NULL, 0.01);
-    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
 
     LALCountEPEvents( &status, &locnumEvents, tfTiling, 0.0);
-    TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_EPOSARG), 1);
 
     {
       TFTile *p;
       p=tfTiling->firstTile;
       tfTiling->firstTile=NULL;
       LALCountEPEvents( &status, &locnumEvents, tfTiling, 0.01);
-      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
       tfTiling->firstTile=p;
     }
 
@@ -1055,10 +1055,10 @@ main (int argc, char *argv[])
     TestStatus (&status, CODES(0), 1);
 
     LALSortTFTiling( &status, tfTiling);
-    TestStatus (&status, CODES(EXCESSPOWER_EORDER), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_EORDER), 1);
 
     LALPrintTFTileList( &status, stdout, tfTiling, 2);
-    TestStatus (&status, CODES(EXCESSPOWER_EORDER), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_EORDER), 1);
 
     LALComputeExcessPower( &status, tfTiling, &input);
     TestStatus (&status, CODES(0), 1);
@@ -1068,14 +1068,14 @@ main (int argc, char *argv[])
     /* now start checking errors */
 
     LALSortTFTiling( &status, NULL);
-    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
 
     {
       COMPLEX8TimeFrequencyPlane **p;
       p = tfTiling->tfp;
       tfTiling->tfp=NULL;
       LALSortTFTiling( &status, tfTiling);
-      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
       tfTiling->tfp=p;
     }
 
@@ -1084,7 +1084,7 @@ main (int argc, char *argv[])
       p = tfTiling->dftParams;
       tfTiling->dftParams=NULL;
       LALSortTFTiling( &status, tfTiling);
-      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
       tfTiling->dftParams=p;
     }
 
@@ -1093,7 +1093,7 @@ main (int argc, char *argv[])
       p=tfTiling->firstTile;
       tfTiling->firstTile=NULL;
       LALSortTFTiling( &status, tfTiling);
-      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
       tfTiling->firstTile=p;
     }
 
@@ -1102,7 +1102,7 @@ main (int argc, char *argv[])
       p = tfTiling->numPlanes;
       tfTiling->numPlanes=0;
       LALSortTFTiling( &status, tfTiling);
-      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_EPOSARG), 1);
       tfTiling->numPlanes=p;
     }
 
@@ -1117,17 +1117,17 @@ main (int argc, char *argv[])
       }
 
     LALPrintTFTileList( &status, NULL, tfTiling, 2);
-    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
 
     LALPrintTFTileList( &status, stdout, NULL, 2);
-    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+    TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
     
     {
       TFTile *p;
       p = tfTiling->firstTile;
       tfTiling->firstTile=NULL;
       LALPrintTFTileList( &status, stdout, tfTiling, 2);
-      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
       tfTiling->firstTile=p;
     }
 

@@ -1,0 +1,1369 @@
+\chapter{Package \texttt{burstsearch}}
+
+A set of functions to implement the excess power search technique which was
+suggested in Ref.~\cite{fh:1998} and later independently invented in
+Ref.~\cite{acdhp:1999}.  The implementation here is described in detail in
+Ref.~\cite{abcf:2000}. 
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Header \texttt{TFTransform.h}}
+\label{s:TFTransform.h}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent Provides routines to to compute time-frequency planes from either
+time-domain or frequency-domain data, for use in the excess
+power search technique.
+
+\subsection*{Synopsis}
+\begin{verbatim}
+#include "TFTransform.h"
+\end{verbatim}
+
+\noindent This package provides a suite for functions for computing time-frequency
+representations of data using stacked Fourier transforms.
+
+The first few functions simply combine together some of the functionality of
+the packages \verb+fft+ and \verb+Window+ in a convenient way.  They are
+designed to streamline the task of setting up structures to prepare for taking
+many discrete Fourier transforms (DFTs), including windows and ``plans'' for
+FFTW.
+
+A general description of the time-frequency (TF) transform provided by
+TFTransform is as follows.  Suppose that one starts with some data $h_j$, $0
+\le j < n$ in the time domain, with sampling time $\Delta t$, so that the data
+point $h_j$ corresponds to a time $t_j = t_{\rm start} + j \Delta t$.  Taking
+the standard DFT yields complex data
+\begin{equation}
+{\tilde h}_\gamma = \sum_{j=0}^{n-1} \, e^{2 \pi i j \gamma / n} \, h_j
+\label{standarddft}
+\end{equation}
+in the Fourier domain, for $0 \le \gamma \le [n/2]+1$.  Here the data point
+${\tilde h}_\gamma$ corresponds to a frequency $f_\gamma = \gamma \Delta f$,
+where $\Delta f= 1/(n \Delta t)$ is the frequency resolution.  
+
+
+Now suppose that we can factorize the number $n$ of data points as
+\begin{equation}
+n = 2 N_T N_F.
+\end{equation}
+Then, by a time-frequency plane we shall mean a set of $N_T N_F$ complex
+numbers $H_{I\Gamma}$ with $0 \le I < N_T$ and $0 \le \Gamma < N_F$, obtained
+by an invertible linear transformation from the original data, such  that the
+data point $H_{I\Gamma}$ corresponds approximately to a time $t_I = t_{\rm
+start} + I {\overline {\Delta t}}$ and to a frequency $f_\Gamma = \Gamma
+{\overline {\Delta f}}$.  Here $N_F$ is the number of frequency bins in the TF
+plane, and $N_T$ is the number of time bins.  The time resolution ${\overline
+{\Delta t}}$ and frequency resolution ${\overline {\Delta f}}$ are related by
+${\overline {\Delta t}} \ {\overline {\Delta f}} =1$, and are given by
+${\overline {\Delta t}} = 2 N_F \Delta t$ and ${\overline {\Delta f}} = N_T
+\Delta f$.  Note that there are many other ``time-frequency'' representations
+of data that are not of this type; see \cite{ab:1999}.
+
+
+There are many possible choices of linear transformations from the data $h_j$
+to data $H_{J\Gamma}$ satisfying the above properties.  Here we have
+implemented two simple choices.  The first choice consists of dividing the
+time-domain data $h_j$ into $N_T$ equal-sized chunks, each of length $n/N_T$,
+and then taking the forward DFT of each chunk.  Then, $H_{J\Gamma}$ is just
+the $\Gamma$th element of the $J$th chunk.  In terms of formulae this
+corresponds to
+\begin{equation}
+H_{J\Sigma} = \sum_{k=0}^{2 N_F-1} \, \exp \left[ 2 \pi i k \Sigma / (2
+N_F) \right] \, h_{2 N_F J + k},
+\label{verticalTFP}
+\end{equation}
+for $0 \le J < N_T$ and $0 \le \Sigma < N_F$.  We call this first type
+of TF plane a vertical TF plane, since it corresponds to a series of
+vertical lines if the time axis is horizontal and the frequency axis
+vertical. 
+
+The second type of TF plane is obtained by first taking a DFT of all the time
+domain data to obtain frequency domain data, then dividing the frequency
+domain data into $N_F$ equal-sized chunks, then taking the inverse DFT of each
+chunk.  We call the resulting TF plane a horizontal TF plane. In terms of
+formulae the TF plane elements are \begin{equation} H_{J\Sigma} =
+\sum_{\gamma=0}^{N_T-1} \, \exp \left[ -2 \pi i J \gamma / N_T \right] \,
+{\tilde h}_{N_T \Sigma + \gamma}, \label{horizontalTFP} \end{equation} for $0
+\le J < N_T$ and $0 \le \Sigma < N_F$, where ${\tilde h}_\gamma$ is given by
+Eq.\ (\ref{standarddft}).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection*{Error Conditions}
+\input{TFTransformHErrTab}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection*{Structures}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{struct \texttt{TFPlaneParams}}
+\index{\texttt{TFPlaneParams}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent Parameters needed to described a particular TF plane.
+
+\begin{description}
+\item[\texttt{INT4 timeBins}] Number of time bins $N_T$ in TF plane. 
+
+\item[\texttt{INT4 freqBins}] Number of freq bins $N_F$ in TF plane.
+
+\item[\texttt{REAL8 deltaT}] The time resolution ${\overline {\Delta t}}$ 
+of the TF plane in seconds, \texttt{deltaF} will always be 1/\texttt{deltaT}.
+
+\item[\texttt{REAL8 flow}] The lowest frequency $f_{\rm low}$ in the TF plane
+in Hertz [such that the data point $H_{J\Gamma}$ corresponds to a time $t_J =
+t_{\rm start} + J {\overline {\Delta t}}$ and to a frequency $f_\Gamma =
+f_{\rm low} + \Gamma {\overline {\Delta f}}$, in a slight generalization of
+the above correspondence].
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{struct \texttt{RealDFTParams}}
+\index{\texttt{RealDFTParams}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent 
+
+\begin{description}
+\item[\texttt{WindowType windowType}]
+\item[\texttt{REAL4Vector *window}]
+\item[\texttt{REAL4 sumofsquares}]
+\item[\texttt{RealFFTPlan *plan}]
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{struct \texttt{ComplexDFTParams}}
+\index{\texttt{ComplexDFTParams}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent 
+
+\begin{description}
+\item[\texttt{WindowType  windowType}]
+\item[\texttt{REAL4Vector   *window}]
+\item[\texttt{REAL4  sumofsquares}]
+\item[\texttt{ComplexFFTPlan  *plan}]
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{struct \texttt{COMPLEX8TimeFrequencyPlane}}
+\index{\texttt{COMPLEX8TimeFrequencyPlane}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent 
+This structure has some fields that also appear in the structures
+\verb+REAL4TimeSeries+ and \verb+COMPLEX8FrequencySeries+.
+
+\begin{description}
+\item[\texttt{CHAR  *name}] The name of the TF plane.
+
+\item[\texttt{LIGOTimeGPS   epoch}] The initial time $t_{\rm start}$ of the
+data used to generate the TF plane.
+
+\item[\texttt{CHARVector  *sampleUnits}] The units of the quantities $H_{J\Gamma}$.
+
+\item[\texttt{TFPlaneParams   *params}]  Parameters needed to generate the
+plane from input data.  (See above.)
+
+\item[\texttt{TFPlaneType   planeType}]  This is an enumerated type that can
+be either \verb+verticalPlane+ or \verb+horizontalPlane+, corresponding to the
+two types of TF plane. 
+
+\item[\texttt{COMPLEX8   *data}]  The $N_T \times N_F$ array of complex
+numbers $H_{J\Sigma}$.
+
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{struct \texttt{VerticalTFTransformIn}}
+\index{\texttt{VerticalTFTransformIn}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent 
+
+\begin{description}
+\item[\texttt{RealDFTParams  *dftParams}]
+\item[\texttt{INT4  startT}]
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{struct \texttt{HorizontalTFTransformIn}}
+\index{\texttt{HorizontalTFTransformIn}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent 
+
+\begin{description}
+\item[\texttt{ComplexDFTParams  *dftParams}]
+\item[\texttt{INT4  startT}]
+\end{description}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{CreateRealDFTParams.c}}
+\label{ss:CreateRealDFTParams.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Creates a structure of type \verb+RealDFTParams+,
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{CreateRealDFTParamsCP}
+\index{\texttt{LALCreateRealDFTParams()}}
+
+\subsubsection*{Description}
+
+The inputs to \verb+CreateDFTParams()+ consist of (i) a parameter
+\verb+winParams+ of type \verb+WindowParams*+ giving the length of the vectors
+to be Fourier  transformed and the type of windowing to be used, (ii) a
+pointer \verb+dftParams+ to a pointer to a \verb+RealDFTParams+ structure, and
+(iii) an integer \verb+sign+ specifying the direction of the transform, with
+$+1$ indicating forward transform and $-1$ indicating inverse transform.  On
+exit, \verb+*dftParams+ will point to the newly created structure.
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{CreateRealDFTParamsCV}}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{DestroyRealDFTParams.c}}
+\label{ss:DestroyRealDFTParams.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Destroys a structure of type \verb+RealDFTParams+,
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{DestroyRealDFTParamsCP}
+\index{\texttt{LALDestroyRealDFTParams()}}
+
+\subsubsection*{Description}
+
+On exit, \verb+*dftParams+ will be NULL.
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{DestroyRealDFTParamsCV}}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{CreateComplexDFTParams.c}}
+\label{ss:CreateComplexDFTParams.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Creates a structure of type \verb+ComplexDFTParams+,
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{CreateComplexDFTParamsCP}
+\index{\texttt{LALCreateComplexDFTParams()}}
+
+\subsubsection*{Description}
+
+The inputs to \verb+CreateComplexDFTParams()+ consist of (i) a parameter
+\verb+winParams+ of type \verb+WindowParams*+ giving the length of the vectors
+to be Fourier  transformed and the type of windowing to be used, (ii) a
+pointer \verb+dftParams+ to a pointer to a \verb+ComplexDFTParams+ structure, and
+(iii) an integer \verb+sign+ specifying the direction of the transform, with
+$+1$ indicating forward transform and $-1$ indicating inverse transform.  On
+exit, \verb+*dftParams+ will point to the newly created structure.
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{CreateComplexDFTParamsCV}}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{DestroyComplexDFTParams.c}}
+\label{ss:DestroyComplexDFTParams.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Destroys a structure of type \verb+ComplexDFTParams+,
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{DestroyComplexDFTParamsCP}
+\index{\texttt{LALDestroyComplexDFTParams()}}
+
+\subsubsection*{Description}
+
+On exit, \verb+*dftParams+ will be NULL.
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{DestroyComplexDFTParamsCV}}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{ComputeFrequencySeries.c}}
+\label{ss:ComputeFrequencySeries.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+It Fourier transforms the time series.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{ComputeFrequencySeriesCP}
+\index{\texttt{LALComputeFrequencySeries()}}
+
+\subsubsection*{Description}
+
+The routine \verb+ComputeFrequencySeries()+ takes as input a
+\verb+REAL4TimeSeries+ and a structure \verb+RealDFTParams+.  It Fourier
+transforms the time series according to the information (window and FFT plan)
+in the \verb+RealDFTParams+ structure, using \verb+FwdRealFFT()+.  It then
+multiplies the frequency domain data by a normalization factor which is
+$1/\sqrt{n}$ for rectangular windowing, where $n$ is the length of the time
+series, and returns the data as a \verb+COMPLEX8FrequencySeries+.  The length
+of the frequency series is $[n/2]+1$, where $[n/2]$ means $n/2$ rounded down
+to the nearest integer.  Appropriate values for the various fields in the
+\verb+COMPLEX8FrequencySeries+ structure (\verb+deltaF+ etc.~) are computed
+from the corresponding fields in the input \verb+REAL4TimeSeries+. 
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{ComputeFrequencySeriesCV}}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{CreateTFPlane.c}}
+\label{ss:CreateTFPlane.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Allocates the memory for a TF plane.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{CreateTFPlaneCP}
+\index{\texttt{LALCreateTFPlane()}}
+
+\subsubsection*{Description}
+
+The routine \verb+CreateTFPlane()+ allocates the memory for a TF plane.  It
+takes as input a pointer to a structure \verb+TFPlaneParams+.  The
+\verb+CreateTFPlane()+ routine returns a pointer to a structure
+\verb+COMPLEX8TimeFrequencyPlane+.    This routine allocates memory for all of
+these fields, and copies into the \verb+params+ structure the values of $N_F$,
+$N_T$, ${\overline {\Delta t}}$ and $f_{\rm low}$ from its input structure.
+It assigns nominal values to all the other fields in the
+\verb+COMPLEX8TimeFrequencyPlane+ structure. 
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{CreateTFPlaneCV}}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{DestroyTFPlane.c}}
+\label{ss:DestroyTFPlane.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Destroys a TF plane created with \texttt{CreateTFPlane()}.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{DestroyTFPlaneCP}
+\index{\texttt{LALDestroyTFPlane()}}
+
+\subsubsection*{Description}
+
+The routine \verb+DestroyTFPlane()+ frees all the memory associated with a
+\verb+COMPLEX8FrequencyPlane+ and destroys the TF plane.
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{DestroyTFPlaneCV}}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{TimeSeriesToTFPlane.c}}
+\label{ss:TimeSeriesToTFPlane.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+computes a TF plane from an input 
+\verb+REAL4TimeSeries+.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{TimeSeriesToTFPlaneCP}
+\index{\texttt{LALTimeSeriesToTFPlane()}}
+
+\subsubsection*{Description}
+
+The routine \verb+TimeSeriesToTFPlane()+ computes a TF plane from an input 
+\verb+REAL4TimeSeries+.  It takes as input a structure \verb+input+ of type
+\verb+VerticalTFTransformIn+ which consists of a structure \verb+dftParams+ of
+type \verb+RealDFTParams+ and an integer \verb+startT+ giving the 
+offset from the beginning of the time series at which to start the
+computation of the time frequency plane.  The other input is a pointer
+\verb+timeSeries+ to a \verb+REAL4TimeSeries+.  There is also an
+argument \verb+tfp+ which is a pointer to a
+\verb+COMPLEX8TimeFrequencyPlane+ which is both an input and an
+output.  The structure \verb+tfp->params+ (containing $N_T$, $N_F$,
+${\overline {\Delta t}}$ and $f_{\rm low}$) is an input, while the
+remaining fields of the structure \verb+*tfp+ are outputs.
+
+The input parameters to the routine \verb+TimeSeriesToTFPlane()+ are the
+parameters $N_T$, $N_F$, ${\overline {\Delta t}}$ and $f_{\rm low}$ of the TF
+plane (from \verb+tfp->params+), and also the parameters $\Delta t$ and $f_0$
+of the input time series.  The routine takes the data in the time domain
+starting at time $t_{\rm start}$ specified by the parameter \verb+startT+, and
+breaks it up into $N_T$ chunks of length $2 {\tilde N}_F$, where
+\begin{equation}
+{\tilde N}_F = { {\overline {\Delta t}} \over 2 \Delta t}.
+\end{equation}
+This choice of chunk-size is necessary so that the frequency resolution of the
+TF plane is $1/{\overline {\Delta t}}$.  The final time sample used is at the
+time $t = t_{\rm start} + (2 N_T {\tilde N}_F-1) \Delta t$; the input time
+series can extend beyond this.  After computing the DFT of each chunk, only
+$N_F$ frequency bins are retained and stored, namely the frequency bins from
+$f = f_{\rm low} - f_0$ to $f = f_{\rm low} - f_0 + {\overline {\Delta f}}
+N_F$, where ${\overline {\Delta f}} = 1 / {\overline {\Delta t}}$.  The input
+parameters must be such that the high end of this  frequency interval is
+smaller than the Nyquist frequency $1 / (2 \Delta t) = {\tilde N}_F {\overline
+{\Delta f}}$.  In particular, if $f_{\rm low} = f_0 =0$, then we must have
+$N_F \le {\tilde N}_F$.  The TF plane elements are computed according to the
+formula (\ref{verticalTFP}), except that they are multiplied by a
+normalization factor of $1/\sqrt{2 {\tilde N}_F}$.  [This normalization
+convention insures that if the input data is white noise with rms power 1 in
+each time bin, then the real and imaginary parts of the data points in the TF
+plane are also independent Gaussian random variables with rms value 1.]  
+ 
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{TimeSeriesToTFPlaneCV}}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{FreqSeriesToTFPlane.c}}
+\label{ss:FreqSeriesToTFPlane.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Computes a TF plane from an input \verb+COMPLEX8FrequencySeries+.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{FreqSeriesToTFPlaneCP}
+\index{\texttt{LALFreqSeriesToTFPlane()}}
+
+\subsubsection*{Description}
+
+The routine \verb+FreqSeriesToTFPlane()+ computes a TF plane from an input
+\verb+COMPLEX8FrequencySeries+.  It takes as input a structure \verb+input+ of
+type \verb+HorizontalTFTransformIn+ which consists of a structure
+\verb+dftParams+ of type \verb+ComplexDFTParams+ and an integer \verb+startT+,
+which is not used in the current implementation.  Another argument is a
+pointer \verb+freqSeries+ to the \verb+COMPLEX8FrequencySeries+.  Lastly there
+is a pointer \verb+tfp+ to a \verb+COMPLEX8FrequencyPlane+ which as before is
+both an input and an output; the fields $N_T$, $N_F$, ${\overline {\Delta t}}$
+and $f_{\rm low}$ are inputs and the remaining fields are outputs.
+
+
+The input parameters to the routine \verb+FreqSeriesToTFPlane()+ are the
+parameters $N_T$, $N_F$, ${\overline {\Delta t}}$ and $f_{\rm low}$ of the TF
+plane (from \verb+tfp->params+), and also the parameters $\Delta f$ and $f_0$
+of the input frequency series.  The routine takes the data in the frequency
+domain starting at frequency $f_{\rm low} - f_0$, breaks it up into $N_F$
+chunks of length ${\tilde N}_T$, and performs an inverse DFT on each chunk.
+The chunk size ${\tilde N}_T$ is given by
+\begin{equation}
+{\tilde N}_T =  1 /( \Delta f  {\overline {\Delta t}}),
+\end{equation}
+where the right hand side is rounded off to the nearest integer.  This choice
+of chunk-size is necessary so that the time resolution of the TF plane is
+${\overline {\Delta t}}$.  After computing the inverse DFT of each chunk, the
+first $N_T$ time bins out of the ${\tilde N}_T$ time bins are retained and
+stored, and the remainder are discarded.  The input parameters must be such
+that $N_T \le {\tilde N}_T$.  The input frequency series can extend beyond the
+highest frequency used which is $f_{\rm low} - f_0 + (N_F {\tilde N}_T
+-1){\Delta f}$.  The TF plane elements are computed according to the formula
+(\ref{horizontalTFP}), except that they are multiplied by a normalization
+factor of $1/\sqrt{{\tilde N}_T}$.  [This normalization convention insures
+that if the input data is white noise with rms power 1 in the real and
+imaginary parts of each frequency bin, then the real and imaginary parts of
+the data points in the TF plane are also independent Gaussian random variables
+with rms value 1.]  
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{FreqSeriesToTFPlaneCV}}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Header \texttt{ExcessPower.h}}
+\label{s:ExcessPower.h}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Provides routines to implement the excess power search method 
+described in \cite{abcf:2000}. 
+
+\subsection*{Synopsis}
+\begin{verbatim}
+#include "ExcessPower.h"
+\end{verbatim}
+
+This package provides a set of functions for implementing the excess power
+search method described in \cite{abcf:2000}.  We refer to that paper for the
+derivation of and motivation for the search method.  Here we give a brief
+description of the method.
+
+One starts with $N$ complex data points in the frequency domain, so the input
+to the search method is a \verb+COMPLEX8FrequencySeries+.  The current
+implementation requires that the input noise be white, and that the real and
+imaginary parts of each frequency bin have rms value 1, so frequency domain
+data should be multiplied by an appropriately normalized pre-whitening filter
+before being input to the routines in the \verb+ExcessPower+ package.  The
+implementation also requires that $N$ be a power of 2, so that $N =2^p$ for
+some $p$.  For each integer $i$ with $0 \le i \le p$, one performs a
+time-frequency transform of the data (see the package \verb+TFTransform+) to
+obtain a time-frequency plane with $N_T$ time bins and $N_F$ frequency bins,
+where
+\begin{equation}
+  N_T = 2^i \ \ \ , \ \ N_F = 2^{p-i}.
+  \label{tfplanes}
+\end{equation}
+One thus constructs of order $\log_2 N$ different time-frequency planes. 
+
+The $i$th time-frequency (TF) plane will consist of a $N_T \times N_F$ matrix
+of complex numbers $H_{J\Gamma}$.  The time resolution ${\overline {\Delta
+t}}^{(i)}$ and frequency resolution ${\overline {\Delta f}}^{(i)}$ of the
+$i$th plane will be given by
+\begin{equation}
+  {\overline {\Delta t}}^{(i)} = 2^{-i} {\overline {\Delta t}}^{(0)} \ \
+  \ , \ \ \ 
+  {\overline {\Delta f}}^{(i)} = 2^{i} {\overline {\Delta f}}^{(0)}.
+  \label{resolutions}
+\end{equation}
+We will call a submatrix of any one of these matrices a {\it time-frequency
+tile}.  A tile will be specified by giving the TF plane $i$, and by giving
+the initial and final times $J_1, J_2$ and initial and final frequencies
+$\Sigma_1$, $\Sigma_2$.  We will label tiles by ${\cal T}$, thus 
+\begin{equation}
+  {\cal T} \equiv (i,J_1,J_2,\Sigma_1,\Sigma_2).
+\end{equation}
+The tile ${\cal T}$ will consist
+of the complex numbers $H_{J\Sigma}$ with $J_1 \le J \le J_2$ and
+$\Sigma_1 \le \Sigma \le \Sigma_2$, so there will be 
+\begin{equation}
+  N_{\cal T} = (\Delta J+1) (\Delta \Sigma+1)
+\end{equation}
+complex numbers in all, where $\Delta J = J_2 - J_1$, $\Delta \Sigma =
+\Sigma_2 - \Sigma_1$. 
+
+
+For any given time-frequency tile ${\cal T}$ one computes the total power
+\begin{equation}
+  P_{\cal T} = \sum_{J = J_1}^{J_2} \ \sum_{\Sigma=\Sigma_1}^{\Sigma_2}
+  \ | H_{J\Sigma} |^2.
+  \label{power}
+\end{equation}
+In the absence of a signal, $P_{\cal T}$ will be distributed a chi-squared
+distribution with $2 N_{\cal T}$ degrees of freedom \cite{abcf:2000}, so we
+can compute from $P_{\cal T}$ a probability
+\begin{equation}
+  \alpha_{\cal T} = 1 - p(P_{\cal T},2 N_{\cal T}).
+  \label{alphadef}
+\end{equation}
+Here $p(\chi^2,n)$ is the cumulative distribution function for a chisquared
+distribution, given by
+\begin{equation}
+  p(\chi^2,n) = {1 \over \Gamma(n/2)} \int_0^{\chi^2/2} dx \, x^{n/2-1} e^{-x};
+\end{equation}
+see the package \verb+Thresholds+.  We compute the right hand side of Eq.\
+(\ref{alphadef}) using the routine \verb+OneMinusChisqCdf()+.  The expected
+power for any tile is $\langle P_{\cal T} \rangle = 2 N_{\cal T}$, so the {\it
+excess power} is
+\begin{equation}
+  \Delta P_{\cal T} = P_{\cal T} - 2 N_{\cal T}.
+  \label{ep}
+\end{equation}
+
+The essential idea of the search method is to search through time frequency
+tiles ${\cal T}$, and for each tile to compare the probability $\alpha_{\cal
+T}$ to some threshold value $\alpha_*$; tiles with $\alpha_{\cal T} \le
+\alpha_*$ will be selected as possible events.  Of course, the method will
+zero in on non-Gaussian noise events in the data as well as on genuine
+gravitational wave events; it is only when one coincidences between several
+detectors (using future versions of this package) that one can hope to
+detect genuine signals.  Thus, the current version of the package is useful
+mostly for characterizing the non-Gaussian noise in detector data.
+
+\subsubsection{Tricks for saving computation time}
+
+It would be computationally prohibitive as well as unnecessary to compute
+the probability $\alpha_{\cal T}$ for all possible TF tiles ${\cal
+T}$.  The strategy adopted to reduce the computational burden is
+twofold:  
+\begin{itemize}
+\item We compute the total power $P_{\cal T}$ only for a discrete set
+${\cal T}_j$ of all possible tiles that samples sufficiently finely
+the space of all possible tiles.
+\item For each tile ${\cal T}_j$, we compute the probability
+$\alpha_{\cal T}$ only if the quantity
+\begin{equation}
+n_{\cal T} \equiv {\Delta P_{\cal T} \over \sqrt{2 N_{\cal T}}}
+\label{nsigma}
+\end{equation}
+satisfies 
+\begin{equation}
+n_{\cal T} \ge N_{\rm min},
+\label{firstcut}
+\end{equation}
+where $N_{\rm min}$ is a fixed constant (eg 2 or 3).  The quantity $n_{\cal
+T}$ is roughly the ``number of sigma'' for the detection, and is much less
+costly to compute that $\alpha_{\cal T}$.  Since in realistic searches the
+threshold $\alpha_*$ will be very small, all tiles that qualify as events
+will have $n_{\cal T} \ge$ (a few), so computing $\alpha_{\cal T}$ only for
+tiles with $n_{\cal T} \ge N_{\rm min}$ saves a lot of computation time.
+[Note though that we cannot in general threshold on $n_{\cal T}$ as the
+precise value of the threshold would depend on $N_{\cal T}$].
+\end{itemize}
+
+The algorithm used to select the set of tiles ${\cal T}_j$ is as
+follows.  For each TF plane $i$, one loops through values of $J_1$
+and $\Delta J$ with
+\begin{equation}
+0 \le J_1 \le J_1 + \Delta J < N_T,
+\end{equation}
+where the step size for both $J_1$ and $\Delta J$ is
+\begin{equation}
+\delta J = 1 + \left[\Delta J / N_{\rm ov} \right].
+\end{equation}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection*{Error Conditions}
+\input{ExcessPowerHErrTab}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection*{Structures}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{struct \texttt{TFTile}}
+\index{\texttt{TFTile}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent This structure contains the parameters needed to describe a
+particular tile over the time-frequency volume to be searched.  Each
+\verb+TFTile+ will be the element of a linked list. 
+
+\begin{description}
+\item[\texttt{INT4 fstart}] First frequency bin in the tile denoted by
+$J_1$ above.
+
+\item[\texttt{INT4 fend}] Last frequency bin in the tile denoted by $J_2$
+above.
+
+\item[\texttt{INT4 tstart}] First time bin in the tile denoted by $\Sigma_1$
+above.
+
+\item[\texttt{INT4 tend}] Last time bin in the tile denoted by $\Sigma_2$
+above.
+
+\item[\texttt{INT4 whichPlane}] The time-frequency plane to which the tile
+     belongs.
+
+\item[\texttt{REAL8 excessPower}] The excess power $\Delta P_{\cal T}$ computed 
+for this time-frequency tile.
+
+\item[\texttt{REAL8 alpha}] The measure $\alpha_{\cal T}$ of the confidence
+associated with the power in this tile.
+
+\item[\texttt{REAL8 weight}] A real number which will be used in future
+versions of \verb+ExcessPower+ to compute the average (\ref{meanlikelihood}) 
+over all TF tiles more accurately.
+
+\item[\texttt{BOOLEAN firstCutFlag}] A boolean flag \verb+firstCutFlag+ which 
+is set to \verb+TRUE+ if the tile satisfies the criterion (\ref{firstcut}) 
+and thus passes the ``first cut'' in the data analysis.  
+
+\item[\texttt{struct tagTFTile *nextTile}] Pointer to the next tile in the
+     linked list.
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{struct \texttt{TFTiling}}
+\index{\texttt{TFTiling}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent This structure contains all the information needed to perform an
+excess power search:  a list of all tiles,  pointers to the time-frequency
+planes contructed from the input data stream,  and flags to indicate what
+stage of the search has been reached.
+
+\begin{description}
+\item[\texttt{TFTile *firstTile}] Pointer to the first tile in the linked list
+of tiles to be searched.  The \verb+TFTile+ structure describing
+time-frequency tiles is described above.
+
+\item[\texttt{INT4 numTiles}] Total number of tiles in the linked list pointed
+to by \texttt{*firstTile}.
+
+\item[\texttt{COMPLEX8TimeFrequencyPlane **tfp}] The quantities *(tfp+i) for $0 \le 
+i < p$ constitute a vector of pointers to the $p+1$ frequency planes.
+
+\item[\texttt{ComplexDFTParams **dftParams}] The quantities *(dftParams+i) for $0
+\le i < p$ constitute a vector of pointers to the $p+1$
+\verb+ComplexDFTParams+ structures (see package \verb+TFTransform+) used to
+compute the corresponding TF planes.  The idea is that these structures are
+set up once initially and then used to analyze many segments of data.
+
+\item[\texttt{INT4 numPlanes}] An integer \verb+numPlanes+ giving the total 
+number $p+1$ of time-frequency planes.
+
+\item[\texttt{BOOLEAN planesComputed}] Flag set to 1 if the time-frequency
+planes have been computed.
+
+\item[\texttt{BOOLEAN excessPowerComputed}] Flag set to 1 if the excess-power
+has been computed for each of the tiles and time-frequency planes.
+
+\item[\texttt{BOOLEAN tilesSorted}] Flag set to 1 if the tiles have been
+sorted from most significant to least significant.
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{struct \texttt{CreateTFTilingIn}}
+\index{\texttt{CreateTFTilingIn}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{description}
+\item[\texttt{INT4 overlapFactor}] The number of bins to overlap neighboring
+time-frequency tiles to reduce computational cost which was denoted $N_{\rm
+ov}$ above.
+
+\item[\texttt{INT4 minFreqBins}] The smallest extent in frequency of TF tiles
+to be searched over.  Only tiles with $\Delta \Sigma +1$ larger than this
+parameter will be included in the set of tiles generated.
+
+\item[\texttt{INT4 minTimeBins}] The smallest extent in time of TF tiles
+to be searched over.  Only tiles with $\Delta J +1$ larger than this
+parameter will be included in the set of tiles generated.
+
+\item[\texttt{REAL8 flow}] The lowest frequency in Hz to be searched.
+
+\item[\texttt{REAL8 deltaF}] A real number giving the frequency resolution of
+the first (trivial) TF plane, for which the number $N_T$ of time bins is $1$.
+
+\item[\texttt{INT4 length}] An integer \verb+length+ giving the length $N_F$
+of the first (trivial) TF plane, for which the number $N_T$ of time bins is
+$1$.
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{struct \texttt{ComputeExcessPowerIn}}
+\index{\texttt{ComputeExcessPowerIn}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{description}
+\item[\texttt{REAL8 numSigmaMin}] An integer $N_{\rm min}$,
+the minimum ``number of sigma'' in the first cut criterion
+(\ref{firstcut}). 
+
+\item[\texttt{REAL8 alphaDefault}] The value assigned to $\alpha_{\rm
+default}$. It should be of order unity, since the tiles will eventually be
+sorted (see below) in order of their $\alpha_{\cal T}$ values, and the
+interesting tiles will have very small values of $\alpha_{\cal T}$.  Aside
+from this, the exact value assigned to $\alpha_{\rm default}$  is unimportant.  
+\end{description}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{LALAddWhiteNoise.c}}
+\label{ss:LALAddWhiteNoise.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Adds white Gaussian noise to a \verb+COMPLEX8Vector+.  
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{AddWhiteNoiseCP}
+\index{\texttt{LALAddWhiteNoise()}}
+
+\subsubsection*{Description}
+It takes as an input parameter a real number \verb+noiseLevel+, and an
+input/output parameter \verb+v+ which is pointer to a \verb+COMPLEX8Vector+.
+On exit from the routine, the vector has been augmented by a random complex
+vector of which the real and imaginary parts of each element are independent,
+zero-mean Gaussian deviates with rms value \verb+noiseLevel+.
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{AddWhiteNoiseCV}}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{LALCreateTFTiling.c}}
+\label{ss:LALCreateTFTiling.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Create a data structure of type \verb+TFTiling+ (time-frequency tiling).
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{CreateTFTilingCP}
+\index{\texttt{LALCreateTFTiling()}}
+
+\subsubsection*{Description}
+
+The routine \verb+CreateTFTiling()+ takes as input a pointer \verb+input+ to a
+data structure of type \verb+CreateTFTilingIn+, which consists of the
+following elements.
+
+The routine \verb+CreateTFTiling()+ has an
+input/output parameter \verb+tfTiling+ of type \verb+TFTiling**+.  On exit
+from \verb+CreateTFTiling+, the pointer \verb+*tfTiling+ will point to the
+newly created \verb+TFTiling+ structure.  The routine \verb+CreateTFTiling+
+also assigns memory for and creates the $p+1$ time frequency planes and the
+$p+1$ \verb+ComplexDFTParams+ structures, and the linked list of TF tiles.
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{CreateTFTilingCV}}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{LALDestroyTFTiling.c}}
+\label{ss:LALDestroyTFTiling.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Destroy a data structure of type \verb+TFTiling+ (time-frequency tiling).
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{DestroyTFTilingCP}
+\index{\texttt{LALDestroyTFTiling()}}
+
+\subsubsection*{Description}
+
+When \verb+DestroyTFTiling()+ is called, \verb+*tfTiling+ should point to the
+structure to be destroyed, and on exit \verb+*tfTiling+ will be \verb+NULL+.
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{DestroyTFTilingCV}}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{LALComputeTFPlanes.c}}
+\label{ss:LALComputeTFPlanes.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Computes the $p+1$ time frequency transforms according to the parameters
+(\ref{tfplanes}) and (\ref{resolutions})
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{ComputeTFPlanesCP}
+\index{\texttt{LALComputeTFPlanes()}}
+
+\subsubsection*{Description}
+
+It takes as input a pointer \verb+freqSeries+ to a
+\verb+COMPLEX8FrequencySeries+, and as input/output a pointer \verb+tfTiling+
+to a \verb+TFTiling+ structure.  It computes the $p+1$ time frequency
+transforms according to the parameters (\ref{tfplanes}) and
+(\ref{resolutions}), using the routine \verb+FreqSeriesToTFPlane()+, and
+stores the resulting TF planes in the structure \verb+*tfTiling+.
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{ComputeTFPlanesCV}}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{LALComputeExcessPower.c}}
+\label{ss:LALComputeExcessPower.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Computes the excess power $\Delta P_{\cal T}$ for each tile.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{ComputeExcessPowerCP}
+\index{\texttt{LALComputeExcessPower()}}
+
+\subsubsection*{Description}
+
+This routine computes the excess power $\Delta
+P_{\cal T}$ for each tile, according to Eqs.\ (\ref{power}) and (\ref{ep}).
+It also computes for each tile the ``number of sigma'' parameter $n_{\cal T}$
+given by Eq.\ (\ref{nsigma}).  For those tiles which satisfy the first cut
+criterion (\ref{firstcut}), the routine computes the probability $\alpha_{\cal
+T}$ given by Eq.\ (\ref{alphadef}) and stores it in the field \verb+alpha+ of
+the TF tile.  For tiles which fail the first cut criterion, the field
+\verb+alpha+ is assigned a default value $\alpha_{\rm default}$.  The
+arguments of the routine are (i) an input/output argument consisting of a
+pointer \verb+tfTiling+ to a \verb+TFTiling+ structure, and (ii) a pointer
+\verb+input+ to a data structure of type \verb+ComputeExcessPowerIn+.  The
+routine \verb+ComputeExcessPower()+ must be called after calling
+\verb+ComputeTFPlanes()+; calling the routines out of sequence will give rise
+to an error.
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{ComputeExcessPowerCV}}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{LALSortTFTiling.c}}
+\label{ss:LALSortTFTiling.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Sorts the linked list of TF tiles in a \verb+TFTiling+ structure is
+sorted in order of increasing $\alpha_{\cal T}$.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{SortTFTilingCP}
+\index{\texttt{LALSortTFTiling()}}
+
+\subsubsection*{Description}
+
+The linked list of TF tiles in a \verb+TFTiling+ structure is sorted in order
+of increasing $\alpha_{\cal T}$ by the routine \verb+SortTFTiling()+, which
+has as an input/output argument a pointer \verb+tfTiling+ to the
+\verb+TFTiling+ structure.  After the routine \verb+SortTFTiling()+ is called,
+the linked list has as its first element the tile with the lowest value of
+$\alpha_{\cal T}$, and consequently the highest probability of being an event.
+The routine \verb+SortTFTiling()+ must be called after calling
+\verb+ComputeExcessPower()+; calling the routines out of sequence will give
+rise to an error.
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{SortTFTilingCV}}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{LALCountEPEvents.c}}
+\label{ss:LALCountEPEvents.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Returns the number $n_{\rm events}$ of tiles with $\alpha_{\cal T} \le
+\alpha_*$ where $\alpha_*$ is a user supplied threshold.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{CountEPEventsCP}
+\index{\texttt{LALCountEPEvents()}}
+
+\subsubsection*{Description}
+
+Next, the routine \verb+CountEPEvents()+ (count excess power events) allows
+the user to specify a threshold value $\alpha_*$ of the probability $\alpha$,
+and returns the number $n_{\rm events}$ of tiles with $\alpha_{\cal T} \le
+\alpha_*$.  Since the tiles have been sorted, the relevant tiles will be the
+first $n_{\rm events}$ tiles in the linked list.  This routine thus allows the
+user to perform the first of the two types of searches of Sec.\
+\ref{twomethods} above.  The input argument is a real number
+\verb+alphaThreshold+ or $\alpha_*$, and a pointer \verb+tfTiling+ to a
+\verb+TFTiling+ structure.  There is also an output parameter \verb+numEvents+
+of type \verb+INT4*+.  On exit, \verb+*numEvents+ is the number $n_{\rm
+events}$ of files that pass the threshold.  The routine \verb+CountEPEvents()+
+must be called after calling \verb+SortTFTiling()+; calling the routines out
+of sequence will give rise to an error.
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{CountEPEventsCV}}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{LALPrintTFTileList.c}}
+\label{ss:LALPrintTFTileList.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Outputs the details of a specified number of TF tiles to a file.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{PrintTFTileListCP}
+\index{\texttt{LALPrintTFTileList()}}
+
+\subsubsection*{Description}
+
+The routine \verb+PrintTFTileList()+ outputs the details of a specified number
+of TF tiles to a file.  Its input parameters are (i) an integer
+\verb+maxTiles+ giving the maximum number of tiles to be output, (ii) a
+pointer \verb+tfTiling+ to a \verb+TFTiling+ structure, and (iii) a pointer
+\verb+fp+ to a \verb+FILE+.  Information on each of the first \verb+maxTiles+
+tiles in the linked list are then output to the file in a text format.  The
+information includes:
+\begin{itemize}
+
+\item The index $i$ of the time-frequency plane
+to which the tile belongs.
+
+\item The tile's frequency and time intervals, both in absolute units
+(Hertz and seconds) and in bins on the time frequency plane.
+
+\item The number of degrees of freedom $2 N_{\cal T}$.
+
+\item The excess power $\Delta P_{\cal T}$.
+
+\item The probability $\alpha_{\cal T}$.  
+
+\item The ``effective number of sigma'', $z$, corresponding to the
+probability $\alpha_{\cal T}$, defined by ${\rm erfc}(z/\sqrt{2}) =
+\alpha_{\cal T}$.  This is useful for comparisons with matched
+filtering signal-to-noise ratios.
+
+\end{itemize}
+
+By calling this routine after calling \verb+SortTFTiling()+, and by
+passing to it the parameter $n_{\rm events}$ obtained from the routine
+\verb+CountEPEvents()+, one can obtain an ordered list of all tiles
+passing a specified threshold $\alpha_*$.
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{PrintTFTileListCV}}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{LALComputeLikelihood.c}}
+\label{ss:LALComputeLikelihood.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Computes the mean likelihood given in Eq.\ (\ref{meanlikelihood}).
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{ComputeLikelihoodCP}
+\index{\texttt{LALComputeLikelihood()}}
+
+\subsubsection*{Description}
+
+The last routine \verb+ComputeLikelihood()+ computes the mean likelihood given
+in Eq.\ (\ref{meanlikelihood}).  It takes as input a pointer \verb+tfTiling+
+to a \verb+TFTiling+ structure, and returns the mean likelihood ${\bar
+\Lambda}$ in the output parameter \verb+lambda+ of type \verb+REAL8*+.  It can
+only be called after calling \verb+ComputeExcessPower()+.  The routine
+actually returns not the value (\ref{meanlikelihood}) but instead the more
+approximate quantity  
+\begin{equation}
+{\bar \Lambda} = {1 \over N_{\rm tiles}} \, \sum_j^\prime \left[{2 N_{{\cal
+T}_j} \over (\Delta P_{{\cal T}_j})^2 } \right] \, {1 \over
+\alpha_{{\cal T}_j}},
+\label{meanlikelihood1}
+\end{equation}
+Here the notation $\sum^\prime$ means that the sum is taken only over those
+tiles that satisfy the first cut condition (\ref{firstcut}).  The reason that
+this approximation is justified is that reasonable thresholds ${\bar
+\Lambda}_*$ will be very large compared to unity, and the contribution of
+tiles with $n_{\cal T} \le N_{\rm min}$ to ${\bar \Lambda}$ is bounded above
+by a number of order unity.  In other words, tiles for which the probability
+$\alpha_{\cal T}$ is of order unity will contribute negligibly to the final
+value of the mean likelihood ${\bar \Lambda}$ for those data segments which
+exceed the threshold.  So, we can omit such tiles in computing the sum.
+[Clearly it does not matter if we compute ${\bar \Lambda}$ somewhat
+inaccurately for ${\bar \Lambda} \ll {\bar \Lambda}_*$.] 
+
+The routine \verb+ComputeLikelihood()+ must be called after calling
+\verb+ComputeExcessPower()+; calling the routines out of sequence will give
+rise to an error.  However, it does not require a prior execution of
+\verb+SortTFTiling()+ or of \verb+CountEPEvents()+.  
+
+The routine \verb+ComputeLikelihood()+ allows the user to the second type of
+search discussed in Sec.\ \ref{twomethods} above.  Namely, one can compute
+${\bar \Lambda}$ for successive segments of data in the time domain [whose
+fractional overlap could be taken to be $N_{\rm ov} / (N_{\rm ov} +1)$ say].
+Only those data segments with ${\bar \Lambda}$ above threshold are tagged for
+further analysis.  In this further analysis, one can examine the first few
+elements of the sorted linked list to find the most probable time-frequency
+windows for a putative event.  Or, in the likely scenario where one is using
+the \verb+ExcessPower+ routines to help characterize the non-Gaussian noise in
+detector data, one can amass statistics of the ``loudest'' TF tiles over many
+data segments, which could yield information as to the typical time-frequency
+characteristics of the most common/loudest non-Gaussian noise events.
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{ComputeLikelihoodCV}}
+
+
+
+
+%
+%
+%
+%
+%  THRESHOLDSH
+%
+%
+%
+%
+
+
+
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Header \texttt{Thresholds.h}}
+\label{s:Thresholds.h}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent Provides routines to compute thresholds and quantities related to
+thresholds for chi-squared and non-central chi-squared distributions
+\cite{ptvf:1992}, for use in the excess power search technique.
+
+\subsection*{Synopsis}
+\begin{verbatim}
+#include "Thresholds.h"
+\end{verbatim}
+
+\noindent This package provides a suite for functions for computing cumulative
+probability functions and thresholds for the chi-squared and non-central
+chi-squared distributions.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection*{Error Conditions}
+\input{ThresholdsHErrTab}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection*{Structures}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{struct \texttt{ChisqCdfIn}}
+\index{\texttt{ChisqCdfIn}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent Parameters needed to described a particular TF plane.
+
+\begin{description}
+\item[\texttt{REAL8     chi2}] value of $\chi^2$
+\item[\texttt{REAL8     dof}]  number of degrees of freedom
+\item[\texttt{REAL8     nonCentral}]  non-centrality parameter
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{struct \texttt{Chi2ThresholdIn}}
+\index{\texttt{Chi2ThresholdIn}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent Parameters needed to described a particular TF plane.
+
+\begin{description}
+\item[\texttt{REAL8     dof}]   number of degrees of freedom 
+\item[\texttt{REAL8     falseAlarm}]  false alarm probability 
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{struct \texttt{RhoThresholdIn}}
+\index{\texttt{RhoThresholdIn}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent Parameters needed to described a particular TF plane.
+
+\begin{description}
+\item[\texttt{REAL8     chi2}]   value of chi squared  
+\item[\texttt{REAL8     dof}]  number of degrees of freedom
+\item[\texttt{REAL8     falseDismissal}] false dismissal probability 
+\end{description}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{Thresholds.c}}
+\label{ss:Thresholds.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+This package provides a suite for functions for computing cumulative
+probability functions and thresholds for the chi-squared and
+non-central chi-squared distributions.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{ChisqCdfP}
+\index{\texttt{LALChisqCdf()}}
+\input{OneMinusChisqCdfP}
+\index{\texttt{LALOneMinusChisqCdf()}}
+\input{NoncChisqCdfP}
+\index{\texttt{LALNoncChisqCdf()}}
+\input{Chi2ThresholdP}
+\index{\texttt{LALChi2Threshold()}}
+\input{RhoThresholdP}
+\index{\texttt{LALRhoThreshold()}}
+
+\subsubsection*{Description}
+
+The routine \verb+ChisqCdf()+ computes as a function of $\chi^2$ the
+probability $p = p(\chi^2,n)$ that $x_1^2 + x_2^2 + \ldots + x_n^2 \le \chi^2$,
+where $x_1$, $x_2$, \ldots $x_n$ are independent Gaussian random
+variables of zero mean and unit variance, and $n$ is the number of
+degrees of freedom.  An integral expression for $p$ is
+$$
+p(\chi^2,n) = {1 \over \Gamma(n/2)} \int_0^{\chi^2/2} dx \, x^{n/2-1} e^{-x},
+$$
+where 
+$$
+\Gamma(n/2) \equiv \int_0^\infty dx \, x^{n/2-1} e^{-x}
+$$
+is the usual $\Gamma$ function.  \verb+ChisqCdf()+ takes as input a
+structure \verb+ChisqCdfIn+ which has elements \verb+chi2+ or
+$\chi^2$, \verb+dof+ or $n$, and \verb+nonCentral+ which is not used
+by \verb+ChisqCdf()+.  The probability $p$ is returned by the routine 
+in the output variable \verb+*prob+.
+
+
+The routine \verb+OneMinusChisqCdf()+ takes the same arguments as
+\verb+ChisqCdf()+ and computes $1-p$.  It is more accurate than
+\verb+ChisqCdf()+ when $p$ is very close to $1$.  The quantity $1-p$
+is returned in the output variable \verb+*prob+.
+
+
+The routine \verb+NoncChisqCdf()+ takes the same arguments
+\verb+ChisqCdf()+ and computes the non-central chi-squared
+distribution.  It computes as a function of $\chi^2$ the
+probability $p = p(\chi^2,n,\rho)$ that $(x_1+\rho)^2 + x_2^2 + \ldots
++ x_n^2 \le \chi^2$, 
+where $x_1$, $x_2$, \ldots $x_n$ are independent Gaussian random
+variables of zero mean and unit variance, $n$ is the number of
+degrees of freedom, and $\rho^2$ is called the non-centrality
+parameter.  It uses the series formula
+$$
+p(\chi^2,n,\rho) = \sum_{j=0}^\infty \, { \exp\left[ -{1 \over 2}
+\rho^2 \right] \over j!} \ \left( {\rho^2 \over 2} \right)^j \
+p(\chi^2,n+2j)
+$$
+and uses \verb+ChisqCdf()+.  The non-centrality parameter
+$\rho^2$ is passed to \verb+NoncChisqCdf()+ through the element
+\verb+nonCentral+ of the input structure \verb+ChisqCdfIn+.
+Again $p$ is returned in the output variable \verb+*prob+.
+
+
+
+The routine \verb+Chi2Threshold()+ returns the value $\chi^2 =
+\chi^2(\alpha,n)$ of $\chi^2$ such that 
+$$
+\alpha = 1 - p(\chi^2,n),
+$$
+where $\alpha$ is a false alarm probability and $n$ is the number of
+degrees of freedom.  \verb+Chi2Threshold()+ takes as input a
+structure \verb+Chi2ThresholdIn+ which has elements \verb+dof+ or
+$n$ and \verb+falseAlarm+ or $\alpha$.  The square $\chi^2$ of the
+threshold $\chi$ is returned by the routine in the output variable
+\verb+*chi2+. 
+
+
+
+
+The routine \verb+RhoThreshold()+ returns the value $\rho =
+\rho(\chi^2,n,\beta)$ of $\rho$ such that 
+$$
+\beta = p(\chi^2,n,\rho),
+$$
+where $\beta$ is a false dismissal probability and $n$ is the number
+of degrees of freedom.  \verb+RhoThreshold()+ takes as input a
+structure \verb+RhoThresholdIn+ which has elements \verb+chi2+ or
+$\chi^2$, \verb+dof+ or $n$, and \verb+falseDismissal+ or $\beta$.
+The result $\rho(\chi^2,n,\beta)$ is returned by the routine in the
+output variable \verb+*rho+. 
+
+
+Notes:
+\begin{enumerate}
+\item These are all double precision (REAL8) functions of double
+precision variables.
+\item The functions \verb+Chi2Threshold()+ and \verb+RhoThreshold()+
+use the routines \verb+BracketRootReal8()+ and
+\verb+BisectionFindRootReal8()+. 
+\item The definitions given above for $p(\chi^2,n)$ and
+$p(\chi^2,n,\rho)$ are for integral $n$ only.  However,
+the integral formulae serve to define these quantities for all
+positive real $n$, and the routines work for non-integral $n$.
+\end{enumerate}
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{ThresholdsCV}}
+
+
+
+
+
+
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{thebibliography}{0}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bibitem{ab:1999}
+Warren G. Anderson and R. Balasubramanian, \textit{Time-frequency
+detection of gravitational waves}, gr-qc/9905023, and references
+therein. 
+
+\bibitem{fh:1998}
+\'Eanna~\'E.~Flanagan and S. A. Hughes, Phys. Rev. D {\bf 57},
+4535-4565 (1998) (also gr-qc/9701039).  
+
+\bibitem{acdhp:1999}
+N. Arnaud, F. Cavalier, M. Davier, P. Hello, and T. Pradier,
+\textit{Triggers for the Detection of Gravitational Wave Bursts},
+gr-qc/9903035.  
+
+\bibitem{abcf:2000}
+Warren G. Anderson, Patrick R. Brady, Jolien D. E. Creighton and 
+{\'E}anna {\'E}. Flanagan, 
+\textit{An excess power statistic for detection of burst sources of
+gravitational radiation}, Phys Rev D., in preparation (gr-qc/2004???).
+For a short version see {\it ibid}, \textit{A power filter for the
+detection of burst sources of gravitational radiation in
+interferometric detectors}, gr-qc/0001044, submitted to
+Int. J. Modern. Phys. D. 
+
+\end{thebibliography}
+

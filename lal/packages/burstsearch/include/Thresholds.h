@@ -1,29 +1,7 @@
-/*-----------------------------------------------------------------------
- *
- * File Name: Thresholds.h
- *
- * Author: Eanna Flanagan
- *
- * Revision: $Id$ 
- *
- *-----------------------------------------------------------------------
- *
- * NAME
- * Thresholds.h
- *
- * SYNOPSIS
- * #include <lal/Thresholds.h>
- *
- * DESCRIPTION
- * Error codes, typedefs, and protypes for the functions related
- * to thresholds for chi-squared and non-central chi-squared
- * distributions
- * 
- *
- * DIAGNOSTICS
- *
- *-----------------------------------------------------------------------
- */
+/********************************** <lalVerbatim file="ThresholdsHV">
+Author: Flanagan, E
+$Id$
+**************************************************** </lalVerbatim> */
 
 
 #ifndef _THRESHOLDS_H
@@ -42,18 +20,19 @@ extern "C" {
 NRCSID (THRESHOLDSH, "$Id$");
 
 
-#define THRESHOLDS_ENULLP    1
-#define THRESHOLDS_EPOSARG   2
-#define THRESHOLDS_EMXIT     4
-#define THRESHOLDS_EBADPROB  8
-#define THRESHOLDS_ERANGE    16
+/******** <lalErrTable file="ThresholdsHErrTab"> ********/
+#define THRESHOLDSH_ENULLP    1
+#define THRESHOLDSH_EPOSARG   2
+#define THRESHOLDSH_EMXIT     4
+#define THRESHOLDSH_EBADPROB  8
+#define THRESHOLDSH_ERANGE    16
 
-
-#define THRESHOLDS_MSGENULLP    "Null pointer"
-#define THRESHOLDS_MSGEPOSARG   "Arguments must be non-negative"
-#define THRESHOLDS_MSGEMXIT     "Maximum iterations exceeded"
-#define THRESHOLDS_MSGEBADPROB  "Supplied probability must be between 0 and 1"
-#define THRESHOLDS_MSGERANGE    "Arguments too large, cannot obtain finite probability"
+#define THRESHOLDSH_MSGENULLP    "Null pointer"
+#define THRESHOLDSH_MSGEPOSARG   "Arguments must be non-negative"
+#define THRESHOLDSH_MSGEMXIT     "Maximum iterations exceeded"
+#define THRESHOLDSH_MSGEBADPROB  "Supplied probability must be between 0 and 1"
+#define THRESHOLDSH_MSGERANGE    "Arguments too large, cannot obtain finite probability"
+/******** </lalErrTable> ********/
 
 
 typedef struct tagChisqCdfIn
