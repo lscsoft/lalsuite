@@ -230,7 +230,7 @@ LALRingSearchConditionData(
     CHECKSTATUSPTR( status );
 
     memset( vector->data + params->invSpecTrunc / 2, 0,
-        ( vector->length - params->invSpecTrunc ) * sizeof( vector->data ) );
+        ( vector->length - params->invSpecTrunc ) * sizeof( *vector->data ) );
 
     LALRealPowerSpectrum( status->statusPtr, params->invSpectrum->data, vector,
         params->forwardPlan );
