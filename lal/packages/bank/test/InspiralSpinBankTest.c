@@ -198,7 +198,7 @@ int main( int argc, char *argv[] )
       list->x = tmplt->psi0;
       list->y = tmplt->psi3;
       list->z = tmplt->beta;
-      list->GrayLevel = 1.0*loop/ntiles;
+      list->grayLevel = 1.0*loop/ntiles;
       if( (list = list->next = (Math3DPointList *) LALCalloc( 1, sizeof(
           Math3DPointList ))) == NULL ) {
         LALError( &stat, INSPIRALSPINBANKTESTC_MSGEMEM );
