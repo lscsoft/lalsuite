@@ -2665,7 +2665,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   free(this_proc_param);
 
   /* set xml output file */
-  if (outputPath[0])
+  if (outputPath)
   {
     LALSnprintf(xmlFileName, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml",
         outputPath, baseName);
