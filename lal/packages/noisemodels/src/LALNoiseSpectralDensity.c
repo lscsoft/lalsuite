@@ -102,7 +102,7 @@ LALNoiseSpectralDensity
            fs = 30.;
    } else if(NoisePsd == LALLIGOIPsd) {
            s0 = 9.0e-46;
-           fs = 30.;
+           fs = 10.;
    } else if(NoisePsd == LALTAMAPsd) {
            s0 = 75.e-46;
            fs = 75.;

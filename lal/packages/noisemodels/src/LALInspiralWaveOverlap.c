@@ -31,7 +31,7 @@ LALInspiralWaveCorrelate
 </lalLaTeX>  */
 #include <lal/LALNoiseModels.h>
 
-static void LALInspiralGetOrthoNormalFilter(REAL4Vector *filter2, REAL4Vector *filter1);
+void LALInspiralGetOrthoNormalFilter(REAL4Vector *filter2, REAL4Vector *filter1);
 NRCSID (LALINSPIRALWAVEOVERLAPC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWaveOverlapCP"> */
@@ -210,7 +210,7 @@ LALInspiralWaveOverlap
  * and negative frequencies pairs arranged as in fftw: f[i] <->f[ n-i].
  */
 
-static void LALInspiralGetOrthoNormalFilter(REAL4Vector *filter2, REAL4Vector *filter1)
+void LALInspiralGetOrthoNormalFilter(REAL4Vector *filter2, REAL4Vector *filter1)
 {
 	int i,n,nby2;
 

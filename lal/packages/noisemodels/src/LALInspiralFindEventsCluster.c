@@ -171,9 +171,11 @@ LALInspiralFindEventsCluster
    }
 
    findeventsin->param.nStartPad = 0;
+   /*
    findeventsin->param.startPhase = LAL_PI_2;
    LALInspiralWave(status->statusPtr, &output2, &findeventsin->param);
    CHECKSTATUSPTR(status);
+   */
    findeventsin->param.startPhase = 0.;
    LALInspiralWave(status->statusPtr, &output1, &findeventsin->param);
    CHECKSTATUSPTR(status);
@@ -181,21 +183,29 @@ LALInspiralFindEventsCluster
    {
       for (i=0;i<(INT4)output1.length;i++) 
          printf("%e %e\n", i*dt, output1.data[i]);printf("&\n");
+      /*
       for (i=0;i<(INT4)output1.length;i++) 
          printf("%e %e\n", i*dt, output2.data[i]);printf("&\n");
+       */
    }
    LALREAL4VectorFFT(status->statusPtr, &filter1, &output1, findeventsin->fwdp);
    CHECKSTATUSPTR(status);
+   /*
    LALREAL4VectorFFT(status->statusPtr, &filter2, &output2, findeventsin->fwdp);
    CHECKSTATUSPTR(status);
+   */
    normin.psd = &(findeventsin->psd);
    normin.df = df;
    normin.fCutoff = findeventsin->param.fFinal;
    normin.samplingRate = findeventsin->param.tSampling;
    LALInspiralWaveNormaliseLSO(status->statusPtr, &filter1, &norm, &normin);
    CHECKSTATUSPTR(status);
+   /*
    LALInspiralWaveNormaliseLSO(status->statusPtr, &filter2, &norm, &normin);
    CHECKSTATUSPTR(status);
+   */
+   LALInspiralGetOrthoNormalFilter(&filter2, &filter1);
+
    corrin.df = df;
    corrin.psd = findeventsin->psd;
    corrin.revp = findeventsin->revp;
@@ -232,7 +242,7 @@ LALInspiralFindEventsCluster
       for (i=nBegin;i<nEnd;i++) 
          {
             x = pow ( pow( output1.data[i], 2.) + pow( output2.data[i], 2.), 0.5); 
-            printf("%16.12e %e\n", (findeventsin->currentGPSTime-715434100.) + i*dt+findeventsin->param.tC, x);
+            printf("%16.12e %e\n", findeventsin->currentGPSTime + i*dt+findeventsin->param.tC, x);
          }
          printf("&\n");   
    }
@@ -292,7 +302,10 @@ LALInspiralFindEventsCluster
 		{
 			ABORT(status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
 		}
+		if ( lalDebugLevel&LALINFO ) 
+		{
 		fprintf(stderr, "Triggering event %d with %d points and max at bin %d\n", (*nEvents)+1, numPoints, bin);
+		}
    
 		/*
 		scanf("%d\n", &numPoints);
