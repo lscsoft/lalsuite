@@ -26,7 +26,7 @@ int main(int argc,char *argv[])
 
   if (SetGlobalVariables(CommandLineArgs)) return 2;
 
-  if (ReadSFTData(CommandLineArgs)) return 3;
+  if (ReadSFTData()) return 3;
 
   if (NormaliseSFTData()) return 4;
 
@@ -72,7 +72,7 @@ int CreateDemodParams(struct CommandLineArgsTag CLA)
   strcpy(filenameS,CLA.efiles);
   strcat(filenameS,"/sun02.dat");
 
-  // *** Make sure the e-files are really there ***
+  /* *** Make sure the e-files are really there *** */
       fp=fopen(filenameE,"r");
       if (fp==NULL) 
 	{
@@ -87,7 +87,7 @@ int CreateDemodParams(struct CommandLineArgsTag CLA)
 	  return 1;
 	}
       fclose(fp);
-  // **********************************************
+  /* ********************************************** */
 
   edat=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
   (*edat).ephiles.earthEphemeris = filenameE;     
@@ -153,7 +153,7 @@ int CreateDemodParams(struct CommandLineArgsTag CLA)
    
    LALComputeAM(&status, &amc, midTS, amParams); 
 
-   //   LALComputeAM(&status, &amc, midTS, amParams); 
+   /*   LALComputeAM(&status, &amc, midTS, amParams);  */
 
 /* ComputeSky stuff*/
   csParams=(CSParams *)LALMalloc(sizeof(CSParams));
@@ -265,7 +265,7 @@ int NormaliseSFTData()
 
 /*******************************************************************************/
 
-int ReadSFTData(struct CommandLineArgsTag CLA)
+int ReadSFTData(void)
 {
   INT4 fileno=0,ndeltaf,offset;
   FILE *fp;
@@ -378,7 +378,7 @@ int SetGlobalVariables(struct CommandLineArgsTag CLA)
       return 1;
     }
 
-  while (fileno< globbuf.gl_pathc) 
+  while ((UINT4)fileno < globbuf.gl_pathc) 
     {
       strcpy(GV.filelist[fileno],globbuf.gl_pathv[fileno]);
       fileno++;
@@ -412,7 +412,7 @@ int SetGlobalVariables(struct CommandLineArgsTag CLA)
     }
   fclose(fp);
 
-  GV.Ti=header.gps_sec;  // INITIAL TIME
+  GV.Ti=header.gps_sec;  /* INITIAL TIME */
 
   /* open LAST file and get info from it*/
   fp=fopen(GV.filelist[fileno-1],"r");
@@ -433,10 +433,10 @@ int SetGlobalVariables(struct CommandLineArgsTag CLA)
     }
   fclose(fp);
 
-  GV.Tf=header.gps_sec+header.tbase;  // FINAL TIME
+  GV.Tf=header.gps_sec+header.tbase;  /* FINAL TIME */
 
 
-  GV.tsft=header.tbase;  // Time baseline of SFTs
+  GV.tsft=header.tbase;  /* Time baseline of SFTs */
     
   /* variables for starting demodulation frequency, band and resolution */
   GV.startingdemodfreq=CLA.startingdemodfreq;
@@ -444,10 +444,10 @@ int SetGlobalVariables(struct CommandLineArgsTag CLA)
   GV.demodfreqres=CLA.demodfreqres;
 
 
-  // if user has not input demodulation frequency resolution; set to 1/Tobs
+  /* if user has not input demodulation frequency resolution; set to 1/Tobs */
   if(CLA.demodfreqres == 0.0 ) GV.demodfreqres=1.0/(header.tbase*GV.SFTno);
 
-  GV.imax=(int)(GV.demodband/GV.demodfreqres+.5)+1;  //Number of frequency values to calculate F for
+  GV.imax=(int)(GV.demodband/GV.demodfreqres+.5)+1;  /*Number of frequency values to calculate F for */
 
   GV.nsamples=header.nsamples;    /* # of freq. bins */
 
@@ -475,7 +475,7 @@ int SetGlobalVariables(struct CommandLineArgsTag CLA)
 /*    fprintf(stdout,"# of points in SFT:    %d\n",GV.nsamples);  */
 
 
-   // allocate F-statistic array
+   /* allocate F-statistic array */
 
   F=(double *)LALMalloc(GV.imax*sizeof(double));
 

@@ -15,6 +15,9 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/Date.h>
 
+extern char *optarg;
+extern int optind, opterr, optopt;
+
 #define BUFFERSIZE 1024                                                                   
 
 /* Maximum fractional doppler shift */
@@ -23,8 +26,8 @@
 /* (Half the ) number of terms to keep in the Dirichlet kernel sum */
 #define NTERMS 32
 
-#define MAXFILES 40000         // Maximum # of files in a directory 
-#define MAXFILENAMELENGTH 256   // Maximum # of characters of a SFT filename
+#define MAXFILES 40000         /* Maximum # of files in a directory  */
+#define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */
 
 /* The command line arguments are not the actual search parameters that will be used, 
 just the ones that the user requested.  The actual parameters that
@@ -77,7 +80,7 @@ struct headertag {
 
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 int SetGlobalVariables(struct CommandLineArgsTag CLA);
-int ReadSFTData(struct CommandLineArgsTag CLA);
+int ReadSFTData(void);
 int CreateDemodParams(struct CommandLineArgsTag CLA);
 int NormaliseSFTData();
 int CreateDetector(LALDetector *Detector);
