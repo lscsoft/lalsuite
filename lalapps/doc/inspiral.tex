@@ -1016,6 +1016,94 @@ Jolien Creighton, Patrick Brady, Duncan Brown
 
 
 
+\clearpage
+\subsection{Program \texttt{lalapps\_inspfrinj}}
+\label{program:lalapps-inspfrinj}
+\idx[Program]{lalapps\_inspfrinj}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_inspfrinj$ --- performs inspiral injections into frame data.
+
+\item[Synopsis]
+\begin{verbatim}
+lalapps_inspfrinj [options]
+ 
+  --help                     display this message
+  --verbose                  print progress information
+  --version                  print version information and exit
+  --debug-level LEVEL        set the LAL debug level to LEVEL
+  --user-tag STRING          set the process_params usertag to STRING
+  --comment STRING           set the process table comment to STRING
+ 
+  --gps-start-time SEC       GPS second of data start time
+  --gps-start-time-ns NS     GPS nanosecond of data start time
+  --gps-end-time SEC         GPS second of data end time
+  --gps-end-time-ns NS       GPS nanosecond of data end time
+ 
+  --frame-cache              obtain frame data from LAL frame cache FILE
+  --calibration-cache FILE   obtain calibration from LAL frame cache FILE
+  --channel-name CHAN        read data from interferometer channel CHAN
+ 
+  --injection-file FILE      inject simulated inspiral signals from FILE
+  --inject-overhead          inject signals from overhead detector
+  --inject-safety SEC        inject signals ending up to SEC after gps end time
+ 
+  --write-raw-data           write out the raw frame files
+  --write-inj-only           write out frames containing only injections
+  --write-raw-plus-inj       write out frames containing raw data with inj
+ 
+  --output-frame-length SEC  write out data in frames of length SEC
+ 
+  --ifo  IFO                 specify the IFO (only if not reading frames)
+  --sample-rate              data sample rate (only if not reading frames)
+\end{verbatim}
+
+\item[Description] 
+\verb$lalapps_frinspinj$
+
+performs inspiral injections into frame files.  This code is essentially
+a copy of those parts of \verb$lalapps_inspiral$ responsible for reading
+in the data and performing the injections.  The injection details
+are contained in a \verb$sim_inspiral$ table of a LIGO lightweight xml
+file.  The code operates in two different ways.  If a \verb$frame-cache$
+file is specified, then the raw data is read in and the injections
+added.  In this case, the output frames can contain any of the
+following: raw data, injection only and raw plus injection.  If no input
+frame data is given, it is necessary to specify the sample rate for the
+output data.  In this case, only the injection only frame can be
+written.
+
+The output of \verb$lalapps_frinspinj$ is an xml file and one or several
+frame files.  The xml file contains
+\verb$process$, \verb$process_params$, \verb$search_summary$ and
+\verb$sim_inspiral$ tables and is named:
+\begin{center}
+\texttt{IFO-INSPFRINJ\_\_USERTAG-GPSSTARTTIME-DURATION.xml}\\
+\end{center}
+where \texttt{GPSSTARTTIME} and \texttt{DURATION} are the start time and
+duration passed to the code.
+The \verb$sim_inspiral$ table contains a
+list of all injections which were performed into the specified data.
+The length of output frame files is specified by
+\verb$output-frame-length$.  The output frames are named:
+\begin{center}
+\texttt{IFO-INSPFRINJ\_\_USERTAG-FRAMESTARTTIME-FRAMELENGTH.gwf}\\
+\end{center}
+
+\item[Example]
+\begin{verbatim}
+lalapps_frinspinj --gps-start-time 732758030  --gps-end-time 732760078 \
+  --frame-cache cache/L-732758022-732763688.cache --channel-name L1:LSC-AS_Q\	
+  --calibration-cache cache_files/L1-CAL-V03-729273600-734367600.cache \
+  --injection-file HL-INJECTIONS_4096-729273613-5094000.xml \
+  --inject-safety 50 --output-frame-length 16 \
+  --write-raw-data   --write-inj-only   --write-raw-plus-inj 
+\end{verbatim}
+
+\item[Author] 
+Steve Fairhurst
+\end{entry}
 
 
 
