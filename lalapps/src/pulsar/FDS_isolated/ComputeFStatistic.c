@@ -1129,16 +1129,6 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
       exit(-1);
     }
 
-  /* check consistency of bounds for the sky-region */
-  /*  FIXME: actually that's nonsense, as the region might stretch across this coordinate "cut" */
-  if ( (uvar_Alpha < 0) || (uvar_Alpha >= LAL_TWOPI) || (fabs(uvar_Delta) > LAL_PI_2) 
-       ||(uvar_Alpha + uvar_AlphaBand >= LAL_TWOPI) || (uvar_Delta + uvar_DeltaBand > LAL_PI_2) )
-    {
-      fprintf (stderr, "\nSorry, sky-region is not supposed to cross either 0-meridian or a pole!\n");
-      exit(-1);
-    }
-
-
   strcpy(cfg->EphemEarth,uvar_EphemDir);
   strcat(cfg->EphemEarth,"/earth");
   strcat(cfg->EphemEarth, uvar_EphemYear);
