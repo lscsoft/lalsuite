@@ -20,7 +20,7 @@
 #define TRUE             1
 #define NCHAR           31
 #define NCHARMAX       100
-#define NADC           100
+#define NADC           110
 #define NFILES          50
 #define COMPRESSION     -1
 
