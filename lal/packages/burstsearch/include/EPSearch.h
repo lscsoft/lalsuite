@@ -71,6 +71,7 @@ tagEPSearchParams
   CreateTFTilingIn             *tfTilingInput;
   TFTiling                     *tfTiling;
   ComputeExcessPowerIn         *compEPInput;
+  LALWindowParams               winParams;
 }
 EPSearchParams;
 

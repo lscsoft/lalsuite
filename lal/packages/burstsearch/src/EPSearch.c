@@ -58,7 +58,7 @@ EPSearch (
     ASSERT (burstEvent, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
 
     /* Set up the window parameters */
-    winParams.type=Rectangular;
+    winParams.type=params->winParams.type;
     winParams.length=params->ntotT;
 
     /* assign temporary memory for the frequency data */
@@ -239,6 +239,7 @@ EPSearch (
           /* build a burst event from TFTile */
           LALTFTileToBurstEvent(status->statusPtr, currentEvent, thisTile,
               tstartNS, params->tfTilingInput->flow); 
+          CHECKSTATUSPTR (status);
 
           /* point to the next event */
           currentEvent->nextEvent = NULL;
