@@ -69,11 +69,10 @@ NRCSID (FINDCHIRPDATATYPESH, "$Id$");
 \subsubsection*{Structure \texttt{FindChirpStandardCandle}}
 \idx[Type]{FindChirpStandardCandle}
 
-\noindent Struture used to contain the standard candle data for an inspiral 
-signal. The standard candle is typically the distance to which the 
-interferometer is sensitive to an optimally oriented inspiral with the masses
-stored in the \texttt{tmplt} structure at a signal-to-noise ratio given by
-\texttt{rhosq}.
+\noindent Struture used to contain a binary inspiral standard candle. 
+\texttt{distance} is the distance in Mpc at which an optimally oriented
+binary with the mass parameters stored in \texttt{tmplt} would produce
+the signal-to-noise ratio squared \texttt{rhosq}.
 
 </lalLaTeX>
 #endif
@@ -85,7 +84,7 @@ tagFindChirpStandardCandle
   InspiralTemplate              tmplt;
   REAL4                         rhosq;
   REAL4                         sigmasq;
-  REAL4                         effDistance;
+  REAL4                         distance;
 }
 FindChirpStandardCandle;
 /* </lalVerbatim> */
@@ -94,16 +93,16 @@ FindChirpStandardCandle;
 \begin{description}
 \item[\texttt{CHAR ifo[3]}] NULL terminated ifo name.
 
-\item[\texttt{InspiralTemplate tmplt}] Inspiral template used to compute the
+\item[\texttt{InspiralTemplate tmplt}] Binary parameters used to compute the
 standard candle.
 
-\item[\texttt{REAL4 rhosq}] The desired signal-to-noise ratio squared $\rho^2$
-of the candle in the data.
+\item[\texttt{REAL4 rhosq}] The signal-to-noise ratio squared $\rho^2$ of the
+candle.
 
 \item[\texttt{REAL4 sigmasq}] The variance of the matched filter $\sigma^2$ 
 for the data used to calculate the standard candle.
 
-\item[\texttt{REAL4 effDistance}] The distance at which an optimally oriented
+\item[\texttt{REAL4 distance}] The distance at which an optimally oriented
 inspiral with the masses given by \texttt{tmplt} would give the
 signal-to-noise ratio squared \texttt{rhosq}.  
 \end{description} 
@@ -111,14 +110,13 @@ signal-to-noise ratio squared \texttt{rhosq}.
 \subsubsection*{Structure \texttt{DataSegmentVector}}
 \idx[Type]{DataSegmentVector}
 
-\noindent Struture used to contain an array of \texttt{DataSegments}.
+\noindent Structure used to contain an array of \texttt{DataSegments}.
 \texttt{DataSegments} are defined in the header \texttt{DataBuffer.h} of the
-framedata package and contains an \texttt{INT4 number} used to identify the data
-segment as well as pointers to a data channel (\texttt{REAL4TimeSeries
-*chan}), a power spectral estimate (\texttt{REAL4FrequencySeries *spec})
-and a response function  (\texttt{COMPLEX8FrequencySeries *resp}). A vector
-of \texttt{DataSegmentVector} therefore contains all the input data from 
-the interferometer that findchirp needs.
+framedata package. Each \texttt{DataSegment} contains an \texttt{INT4 number}
+used to identify the data segment and pointers to a data channel
+(\texttt{REAL4TimeSeries *chan}), a power spectral estimate
+(\texttt{REAL4FrequencySeries *spec}) and a response function
+(\texttt{COMPLEX8FrequencySeries *resp}).
 
 </lalLaTeX>
 #endif
@@ -175,7 +173,7 @@ the linked list.
 \idx[Type]{FindChirpSegment}
 
 \noindent This structure contains the conditioned input data and its
-parameters and is one of the required inputs to the \texttt{FindChirpFilter()}
+parameters and is one of the inputs to the \texttt{FindChirpFilter()}
 function.
 
 </lalLaTeX>
@@ -211,39 +209,47 @@ FindChirpSegment;
 part of the matched filter correllation. The exact content of this structure 
 is determined by which data conditioning routine is called (stationary phase,
 time domain, BCV or spinning BCV). The data in this structure is denoted
-$\tilde{F}_k$. It typically contains 
+$\tilde{F}_k$. For frequency domain templates (FindChirpSP, BCV and
+BCVSpin) it contains:
 \begin{equation}
-\tilde{F}_k = \frac{d\tilde{v}_k f(k)}
-{d^2|R|^2S_v\left(\left|f_k\right|\right)}
+\tilde{F}_k = \frac{d\tilde{v}_k  \left(\frac{k}{N}\right)^{-\frac{7}{6}}}
+{d^2|R|^2S_v\left(\left|f_k\right|\right)}.
 \end{equation}
-where for stationary phase and BCV templates
+For time domain templates (GeneratePPN, TaylorT1, TaylorT2, TaylorT3, PadeT1,
+EOB) it contains
 \begin{equation}
-f(k) = \left(\frac{k}{N}\right)^{-\frac{7}{6}}
+\tilde{F}_k = \frac{d\tilde{v}_k}
+{d^2|R|^2S_v\left(\left|f_k\right|\right)}.
 \end{equation}
-and for time domain templates $f(k) \equiv 1$.
 
 \item[\texttt{COMPLEX8FrequencySeries *dataBCV}] Conditioned input data used
 only for the BCV templates.  The conditioning performed is as described in the
 documentation for the module \texttt{FindChirpBCVData.c}
 
 \item[\texttt{UINT4Vector *chisqBinVec}] A vector containing the indices of
-the boundaries of the bins of equal power for the $\chi^2$ veto.
+the boundaries of the bins of equal power for the $\chi^2$ veto for this
+segment.
 
 \item[\texttt{UINT4Vector *chisqBinVecBCV}] A vector containing the indices of
 the boundaries of the bins of equal power for the second contribution to the 
-$\chi^2$ statistic for the BCV templates.
+$\chi^2$ statistic for the BCV templates for this segment.
 
 \item[\texttt{REAL8 deltaT}] The time step $\Delta t$ of the input
 data channel used to create the \texttt{FindChirpSegment}.
 
 \item[\texttt{REAL4Vector *segNorm}] The quantity segment dependent
-normalization quantity $\mathcal{S(k)}$. This for stationary phase 
+normalization quantity $\mathcal{S}_k$. This for stationary phase 
 templates this is 
 \begin{equation}
-\mathcal{S}(k) = \sum_{k\prime=1}^{k} 
-\frac{\left(\frac{k\prime}{N}\right)^{-\frac{7}{3}}}{d^2|R|^2S_v\left(\left|f_k\prime\right|\right)}
+\mathcal{S}_k = \sum_{k^\prime=1}^{k} 
+\frac{\left(\frac{k^\prime}{N}\right)^{-\frac{7}{3}}}{d^2|R|^2S_v\left(\left|f_{k^\prime}\right|\right)}
 \end{equation}
-where $1 \le k \le N/2$. For time domain templates, this quantity is recomputed for each template, with $|h(f)|^2$ replacing $(k\prime/N)^{-7/3}$.
+where $1 \le k \le N/2$. For time domain templates, this quantity is 
+\begin{equation}
+\mathcal{S}_k = \sum_{k^\prime=1}^{k} 
+\frac{\tilde{h}_{k^\prime}{d^2|R|^2S_v\left(\left|f_{k^\prime}\right|\right)}
+\end{equation}
+and must be recomputed for each template.
 
 \item[\texttt{REAL4 a1}] BCV-template normalization parameter.
 
@@ -264,7 +270,7 @@ boundaries.
 \item[\texttt{REAL4Vector *tmpltPowerVecBCV}] Additional weighted template
 power for BCV templates.
 
-\item[\texttt{REAL4 flow}] The (frequency domain) low frequency cutoff for the
+\item[\texttt{REAL4 fLow}] The (frequency domain) low frequency cutoff for the
 matched filter, $f_\mathrm{low}$.
 
 \item[\texttt{UINT4 invSpecTrunc}] The number of points to which the inverse 
