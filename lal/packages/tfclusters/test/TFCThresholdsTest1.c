@@ -25,32 +25,24 @@ int main(int argc, char* argv[]) {
   params.bpp = 0.1;
   params.eGoal = 1e-3;
 
-  params.meanRe = (REAL4 *)LALMalloc(nFreq * sizeof(REAL4));
-  if(!params.meanRe) return 1;
+  params.P0 = (REAL8 *)LALMalloc(nFreq * sizeof(REAL8));
+  if(!params.P0) return 1;
 
-  params.meanIm = (REAL4 *)LALMalloc(nFreq * sizeof(REAL4));
-  if(!params.meanIm) return 1;
-
-  params.varRe = (REAL4 *)LALMalloc(nFreq * sizeof(REAL4));
-  if(!params.varRe) return 1;
-
-  params.varIm = (REAL4 *)LALMalloc(nFreq * sizeof(REAL4));
-  if(!params.varIm) return 1;
+  params.Q = (REAL8 *)LALMalloc(nFreq * sizeof(REAL8));
+  if(!params.Q) return 1;
 
   
   /* set dummy values */
   for(i=0;i<nFreq;i++) {
-    params.meanRe[i] = (REAL4)(i+1);
-    params.meanIm[i] = (REAL4)(nFreq-i);
-    params.varRe[i] = 0.25 * (REAL4)(1+i*i);
-    params.varIm[i] = 0.25 * (REAL4)(nFreq*nFreq+i*i);
+    params.P0[i] = (REAL4)(i+1);
+    params.Q[i] = 0.25 * (REAL4)(1+i*i);
   }
 
   LALTFCRiceThreshold(&status, rho, &params);
 
   if(status.statusCode != 0) return 1;
 
-  for(i=0;i<nFreq;i++) printf("%g\t%g\t%g\t%g\t->\t%g\n",params.meanRe[i], params.meanIm[i],params.varRe[i],params.varIm[i],rho[i]);
+  for(i=0;i<nFreq;i++) printf("%g\t%g\t->\t%g\n",params.P0[i], params.Q[i],rho[i]);
   
   return 0;
 }
