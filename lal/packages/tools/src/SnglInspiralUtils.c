@@ -59,10 +59,10 @@ Provides a set of utilities for manipulating \texttt{snglInspiralTable}s.
 
 \subsubsection*{Description}
 
-The function \texttt{LALFreeSnglInspiral()} frees the memory associated to a 
-linked list of single inspiral tables.  The single inspiral table may point to
-a linked list of EventIDColumns.  Thus, for each entry in the single inspiral
-it is necessary to free all associated event ids.
+The function \texttt{LALFreeSnglInspiral()} frees the memory associated to a
+single inspiral table.  The single inspiral table may point to a linked list of
+EventIDColumns.  Thus, it is necessary to free all event ids associated with
+the single inspiral.
 
 The function \texttt{LALSortSnglInspiral()} sorts a list of single inspiral
 tables.  The function simply calls qsort with the appropriate comparison
@@ -114,7 +114,7 @@ This count is returned as.
 
 \texttt{LALPlayTestSingleInspiral()} tests whether single inspiral events
 occured in playground or non-playground times.  It then returns the requested
-subset of events which occurred in the times specified by \texttt{dataType},
+subset of events which occurred in the times specified by \texttt{dataType}
 which must be one of \texttt{playground\_only}, \texttt{exclude\_play} or
 \texttt{all\_data}.  
 
@@ -158,24 +158,17 @@ LALFreeSnglInspiral (
     )
 /* </lalVerbatim> */
 {
-  SnglInspiralTable    *thisTrigger = NULL;
   EventIDColumn        *eventId;
 
   INITSTATUS( status, "LALFreeSnglInspiral", SNGLINSPIRALUTILSC );
-  
-  while ( *eventHead )
+  while ( (*eventHead)->event_id )
   {
-    thisTrigger = *eventHead;
-    *eventHead = (*eventHead)->next;
-    while ( thisTrigger->event_id )
-    {
-      /* free any associated event_id's */
-      eventId = thisTrigger->event_id;
-      thisTrigger->event_id = thisTrigger->event_id->next;
-      LALFree( eventId );
-    }
-    LALFree( thisTrigger );
+    /* free any associated event_id's */
+    eventId = (*eventHead)->event_id;
+    (*eventHead)->event_id = (*eventHead)->event_id->next;
+    LALFree( eventId );
   }
+  LALFree( *eventHead );
   RETURN( status );
 }
 
