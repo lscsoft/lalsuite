@@ -1,0 +1,31 @@
+#package "detresponse"
+#version "1.0"
+
+purpose "compute time series of detector response function (antenna pattern)"
+
+# options to describe source
+option "source-name"      N   "Name of source" string default="NONAME_SOURCE" no
+option "right-ascension"  r   "Right Ascension of source, in rad" double yes
+option "declination"      d   "Declination of source, in rad" double yes
+option "orientation"      o   "Orientation of source, in rad" double yes
+
+# options to specify detector
+#   at the moment, lal supports the following detectors and modes
+#   - LHO (LIGO Hanford), differential mode
+#   - LLO (LIGO Livingston), differential mode
+#   - VIRGO, differential mode
+#   - GEO (600m), differential mode
+#   - TAMA (300m), differential mode
+#   - CIT (40m), differential mode
+#   we shall use these strings as the detector names
+option "detector"         D   "Detector name" string yes
+
+# options to specify observation time
+option "start-time-sec"        s   "GPS seconds field of start time of observation" int yes
+option "start-time-nanosec"    n   "GPS nanoseconds field of start time of observation" int default="0" no
+option "nsample"               u   "number of samples" int yes
+option "sampling-interval"     i   "sampling time interval, in seconds" double yes
+
+# misc. options
+option "verbosity"             v   "verbosity level for debugging" int default="0" no
+option "debug"                 e   "debug level" int default="0" no

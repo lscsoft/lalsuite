@@ -86,4 +86,5 @@ AC_OUTPUT( 				\
 	src/pulsar/Makefile		\
 	src/inspiral/Makefile		\
 	src/zmsearch/Makefile		\
+	src/detresponse/Makefile	\
 )
