@@ -112,10 +112,9 @@ InspiralTmpltBankFromLIGOLw (
   mioStatus = MetaioOpenTable( env, fileName, "sngl_inspiral" );
   if ( mioStatus )
   {
-    fprintf( stderr, "error opening sngl_inspiral table from file %s\n", 
-        fileName );
+    fprintf( stdout, "no sngl_inspiral table in file %s\n", fileName );
     MetaioClose( env );
-    return -1;
+    return 0;
   }
 
   /* figure out the column positions of the template parameters */
