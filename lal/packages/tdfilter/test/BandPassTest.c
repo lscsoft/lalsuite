@@ -204,7 +204,7 @@ main(int argc, char **argv)
   }
 
   /* Create the time series. */
-  sprintf( series.name, "%s", "Impulse" );
+  LALSnprintf( series.name, LALNameLength, "%s", "Impulse" );
   series.deltaT = 1.0;
   SUB( LALSCreateVector( &stat, &(series.data), npts ), &stat );
   memset( series.data->data, 0, npts*sizeof(REAL4) );
