@@ -121,6 +121,9 @@ but care should be taken if DC is relevant when this function is used.
 #include <lal/Calibration.h>
 #include <lal/Units.h>
 
+#define CAL_S2START 729273613
+#define CAL_S2END 734367613
+
 NRCSID( COMPUTETRANSFERC, "$Id$" );
 
 static void product(COMPLEX8 *c,COMPLEX8 *a, COMPLEX8 *b) {
@@ -418,18 +421,42 @@ LALUpdateCalibration(
     if ( fabs( this_a.re ) < tiny && fabs( this_a.im ) < tiny ||
         fabs( this_ab.re ) < tiny && fabs( this_ab.im ) < tiny )
     {
-      ABORT( status, CALIBRATIONH_EZERO, CALIBRATIONH_MSGEZERO );
+      /* this is a hack for the broken S2 calibration frame data */
+      if ( (params->epoch.gpsSeconds >= CAL_S2START) && 
+          (params->epoch.gpsSeconds < CAL_S2END ) )
+      {
+        /* if the zero is during S2 print a warning... */
+        LALWarning( status, "Zero calibration factor found during S2" );
+      }
+      else
+      {
+        /* ...or abort if we are outside S2 */
+        ABORT( status, CALIBRATIONH_EZERO, CALIBRATIONH_MSGEZERO );
+      }
+    }
+    else
+    {
+      /* increment the count of factors if we are adding a non-zero value */
+      ++length;
     }
 
+    /* add this value to the sum */
     a.re += this_a.re;
     a.im += this_a.im;
     ab.re += this_ab.re;
     ab.im += this_ab.im;
-    length++;
-    i++;
+
+    /* increment the calibration factor index */
+    ++i;
   }
-  while ( (first_cal + i * params->sensingFactor->deltaT) < 
+  while ( (first_cal + (REAL8) i * params->sensingFactor->deltaT) < 
       (epoch + duration) );
+
+  /* if all the calibration factors are zero the abort */
+  if ( ! length )
+  {
+    ABORT( status, CALIBRATIONH_EZERO, CALIBRATIONH_MSGEZERO );
+  }
   
   /* compute the mean of the calibration factors from the sum */
   a.re /= length;
