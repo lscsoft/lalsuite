@@ -299,11 +299,12 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     self.add_var_opt('ifo-b', ifo)
 
-  def set_output(self,string):
+  def set_output(self, file):
     """
     Name the inca output file based on the standard naming convention with
     string at the start for the ifos.
+    file = prefix for inca output file.
     """
-    out = string + '-INCA-' + str(self.get_start()) + '-'
+    out = file + '-INCA-' + str(self.get_start()) + '-'
     out = out + str(self.get_end() - self.get_start()) + '.xml'
     pipeline.AnalysisNode.set_output(self,out)
