@@ -1257,11 +1257,13 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
+#ifndef _MSC_VER
   /* set the current working directory */
   if(chdir(uvar_workingDir) != 0){
     fprintf(stderr, "in Main: unable to change directory to %s\n", uvar_workingDir);
     return 2;
   }
+#endif
 
 #if USE_BOINC
   strcat(cfg->EphemEarth,"earth");
