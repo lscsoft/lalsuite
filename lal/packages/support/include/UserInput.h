@@ -40,6 +40,7 @@ NRCSID( USERINPUTH, "$Id$");
 #define USERINPUTH_EUNKNOWN	7
 #define USERINPUTH_ENOTSET	8
 #define USERINPUTH_EDEBUG	9
+#define USERINPUTH_EONECONFIG   10
 
 #define USERINPUTH_MSGENULL 	"Arguments contained an unexpected null pointer."
 #define USERINPUTH_MSGENONULL	"Output pointer is not NULL"
@@ -50,7 +51,7 @@ NRCSID( USERINPUTH, "$Id$");
 #define USERINPUTH_MSGEUNKNOWN	"Unknown user-variable"
 #define USERINPUTH_MSGENOTSET	"Required user-variable was not set"
 #define USERINPUTH_MSGEDEBUG	"lalDebugLevel can only be read before ANY mallocs(), even hidden.."
-
+#define USERINPUTH_MSGEONECONFIG "Currently one ONE config-file can be specified using '@'"
 /*************************************************** </lalErrTable> */
 
 /* <lalLaTeX> 
