@@ -361,7 +361,7 @@ LALGenerateEllipticSpinOrbitCW( LALStatus             *,
 				SpinOrbitCWParamStruc *params );
 
 /* <lalLaTeX>
-%\newpage\input{GenerateParabolicSpinOrbitCWC}
+\newpage\input{GenerateParabolicSpinOrbitCWC}
 </lalLaTeX> */
 void
 LALGenerateParabolicSpinOrbitCW( LALStatus             *,
