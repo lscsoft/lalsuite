@@ -9,9 +9,9 @@ Condor scripts:
 Power code tasks:
 ================
 
-*  Move the output to the end of power.c
-*  Add proctable to power.c
-*  Add ability to notch out lines
+*  Move the output to the end of power.c  [Testing]
+*  Add proctable to power.c  [Testing]
+*  Add ability to notch out lines  [Testing]
 *  Add ability to output spectrum, etc.
 *  Add ability to read in the calibration data
 *  Add ability to read in injection files
@@ -22,8 +22,8 @@ Power code tasks:
 snglBurstHistogram:
 ==================
 
-*  Modify time-freq output to produce 3-d plot
-*  Add ability to parse the xml files when proctable is present
+*  Modify time-freq output to produce 3-d plot [Done]
+*  Add ability to parse the xml files when proctable is present [Done]
 
 
 sngBurstCoincidence:
@@ -39,3 +39,10 @@ multiPower:
 ==========
 
 *  Develop a code to do multi-detector power searches
+
+
+burstInjections:
+===============
+
+* add ability to read in list of injections to make
+* add burstInject rouotine to LAL (needs response function)
