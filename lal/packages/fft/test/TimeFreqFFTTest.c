@@ -131,7 +131,7 @@ int main( int argc, char *argv[] )
   LALCreateReverseComplexFFTPlan( &status, &revComplexPlan, n, 0 );
   TestStatus( &status, CODES( 0 ), 1 );
 
-  LALCreateRandomParams( &status, &randpar, 0 );
+  LALCreateRandomParams( &status, &randpar, 100 );
   TestStatus( &status, CODES( 0 ), 1 );
 
 
@@ -200,16 +200,28 @@ int main( int argc, char *argv[] )
       y.deltaT = 1.0 / (REAL8) srate[sr];
       for ( vr = 0; vr < sizeof(var)/sizeof(*var) ; ++vr )
       {
+        REAL4 eps = 1e-6; /* very conservative fp precision */
         REAL4 Sfk = 2.0 * var[vr] * var[vr] * y.deltaT;
         REAL4 sfk = 0;
+        REAL4 lbn;
+        REAL4 sig;
+        REAL4 ssq;
+        REAL4 tol;
 
         /* create the data */
         LALNormalDeviates( &status, y.data, randpar );
         TestStatus( &status, CODES( 0 ), 1 );
+        ssq = 0;
         for ( j = 0; j < y.data->length; ++j )
         {
           y.data->data[j] *= var[vr];
+          ssq += y.data->data[j] * y.data->data[j];
         }
+        
+        /* compute tolerance for comparison */
+        lbn = log( y.data->length ) / log( 2 );
+        sig = sqrt( 2.5 * lbn * eps * eps * ssq / y.data->length );
+        tol = 5 * sig;
         
         /* compute the psd and find the average */
         LALREAL4AverageSpectrum( &status, &Y, &y, &avgSpecParams );
@@ -218,11 +230,12 @@ int main( int argc, char *argv[] )
         TestStatus( &status, CODES( 0 ), 1 );
 
         /* check the result */
-        if ( fabs(Sfk-sfk) > 1.0e-4 )
+        if ( fabs(Sfk-sfk) > tol )
         {
           fprintf( stderr, "FAIL: PSD estimate appears incorrect\n");
-          fprintf( stderr, "expected %e, got %e (difference = %e)\n", 
-              Sfk, sfk, fabs(Sfk-sfk) );
+          fprintf( stderr, "expected %e, got %e ", Sfk, sfk );
+          fprintf( stderr, "(difference = %e, tolerance = %e)\n", 
+              fabs(Sfk-sfk), tol );
           exit(2);
         }
 
