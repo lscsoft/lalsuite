@@ -353,7 +353,8 @@ def triple_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
 
 ##############################################################################
 # function to do sweep up data using sire  
-def sire_segs(segments,output,file_name,sire_job,dag,usertag=None,cluster=None,ifo_cut=None):
+def sire_segs(segments,output,file_name,sire_job,dag,do_input,usertag=None,
+  cluster=None,ifo_cut=None):
   """
   Do a sire to sweep up all the triggers of a specific kind
   
@@ -362,6 +363,7 @@ def sire_segs(segments,output,file_name,sire_job,dag,usertag=None,cluster=None,i
   file_name = output file name
   sire_job  = sire job to use for the analysis
   dag       = name of the dag
+  do_input  = whether the files to be sired were produced by this dag
   usertag   = the usertag to add to the output file name
   cluster   = whether we should add the cluster arguments
   ifo_cut   = keep triggers from only this ifo (if None, keep all)
@@ -381,7 +383,7 @@ def sire_segs(segments,output,file_name,sire_job,dag,usertag=None,cluster=None,i
   # add all the input files
   f = open(fname, 'w')
   for seg in segments:
-    sire.add_parent(seg.get_dag_node())
+    if do_input: sire.add_parent(seg.get_dag_node())
     if output == 'output':
       f.write('%s\n' % seg.get_dag_node().get_output())
     if output == 'output_a':
@@ -400,7 +402,7 @@ def sire_segs(segments,output,file_name,sire_job,dag,usertag=None,cluster=None,i
   else:
     sire.set_outputs(file_name,usertag)
 
-  dag.add_node(sire) 
+  if do_input: dag.add_node(sire) 
 
 ##############################################################################
 # help message
@@ -443,7 +445,7 @@ Usage: lalapps_inspiral_hipe [options]
 
 ##############################################################################
 # parse the command line options to figure out what we should do
-shortop = "hvu:ablSDTAdticBVCsP:f:l:o"
+shortop = "hvu:abLSDTAdticBVCsP:f:l:o"
 longop = [
   "help",
   "version",
@@ -511,7 +513,7 @@ for o, a in opts:
     do_h1 = 1
   elif o in ("-b", "--h2-data"):
     do_h2 = 1
-  elif o in ("-l", "--l1-data"):
+  elif o in ("-L", "--l1-data"):
     do_l1 = 1
   elif o in ("-S", "--one-ifo"):
     do_one_ifo = 1
@@ -765,7 +767,7 @@ elif play_data_mask == 'exclude_playground':
 
 elif play_data_mask == 'all_data':
   playground_only = 0
-  single_inca_job.add_opt('no-playground',' ')
+  single_inca_job.add_opt('all-data',' ')
   thinca_h1h2_job.add_opt('data-type','all_data')
   thinca_h1l1_job.add_opt('data-type','all_data')
   thinca_h2l1_job.add_opt('data-type','all_data')
@@ -1025,15 +1027,15 @@ if do_sire:
   
   if len(h1_chunks_analyzed):
     sire_segs(h1_chunks_analyzed,'output','H1-INSPIRAL',sire_clust_job,dag,
-      usertag,do_clust,'H1')
+      do_inspiral,usertag,do_clust,'H1')
 
   if len(h2_chunks_analyzed):
     sire_segs(h2_chunks_analyzed,'output','H2-INSPIRAL',sire_clust_job,dag,
-      usertag,do_clust,'H2')
+      do_inspiral,usertag,do_clust,'H2')
 
   if len(l1_chunks_analyzed):
     sire_segs(l1_chunks_analyzed,'output','L1-INSPIRAL',sire_clust_job,dag,
-      usertag,do_clust,'L1')
+      do_inspiral,usertag,do_clust,'L1')
 
 print "done"
 
@@ -1072,15 +1074,15 @@ if do_sire:
   if do_one_ifo:
     if do_h1 and len(h1_single_data):
       sire_segs(h1_single_coinc_nodes,'output_a','H1-SIRE_SINGLE_IFO',
-        sire_clust_job,dag,usertag,do_clust,'H1')
+        sire_clust_job,dag,do_coincidence,usertag,do_clust,'H1')
         
     if do_h2 and len(h2_single_data):
       sire_segs(h2_single_coinc_nodes,'output_a','H2-SIRE_SINGLE_IFO',
-        sire_clust_job,dag,usertag,do_clust,'H2')
+        sire_clust_job,dag,do_coincidence,usertag,do_clust,'H2')
         
     if do_l1 and len(l1_single_data):
       sire_segs(l1_single_coinc_nodes,'output_a','L1-SIRE_SINGLE_IFO',
-        sire_clust_job,dag,usertag,do_clust,'L1')
+        sire_clust_job,dag,do_coincidence,usertag,do_clust,'L1')
  
 print "done"
  
@@ -1124,33 +1126,33 @@ if do_sire:
   
     if do_h1 and do_h2 and len(h1_h2_double_data):
       sire_segs(h1_h2_double_coinc_nodes,'output','H1H2-SIRE',sire_job,
-        dag,usertag)
+        dag,do_coincidence,usertag)
   
       sire_segs(h1_h2_double_coinc_nodes,'output','H1-SIRE_H1H2',
-        sire_clust_job,dag,usertag,do_clust,'H1')
+        sire_clust_job,dag,do_coincidence,usertag,do_clust,'H1')
       sire_segs(h1_h2_double_coinc_nodes,'output','H2-SIRE_H1H2',
-        sire_clust_job,dag,usertag,do_clust,'H2')
+        sire_clust_job,dag,do_coincidence,usertag,do_clust,'H2')
         
   
 
     if do_h1 and do_l1 and len(h1_l1_double_data):
       sire_segs(h1_l1_double_coinc_nodes,'output','H1L1-SIRE',sire_job,
-        dag,usertag)
+        dag,do_coincidence,usertag)
   
       sire_segs(h1_l1_double_coinc_nodes,'output','H1-SIRE_H1L1',
-        sire_clust_job,dag,usertag,do_clust,'H1')
+        sire_clust_job,dag,do_coincidence,usertag,do_clust,'H1')
       sire_segs(h1_l1_double_coinc_nodes,'output','L1-SIRE_H1L1',
-        sire_clust_job,dag,usertag,do_clust,'L1')
+        sire_clust_job,dag,do_coincidence,usertag,do_clust,'L1')
 
      
     if do_h2 and do_l1 and len(h2_l1_double_data):
       sire_segs(h2_l1_double_coinc_nodes,'output','H2L1-SIRE',sire_job,
-        dag,usertag)
+        dag,do_coincidence,usertag)
   
       sire_segs(h1_l1_double_coinc_nodes,'output','H2-SIRE_H2L1',
-        sire_clust_job,dag,usertag,do_clust,'H2')
+        sire_clust_job,dag,do_coincidence,usertag,do_clust,'H2')
       sire_segs(h1_l1_double_coinc_nodes,'output','L1-SIRE_H2L1',
-        sire_clust_job,dag,usertag,do_clust,'L1')
+        sire_clust_job,dag,do_coincidence,usertag,do_clust,'L1')
 
 print "done"
 
@@ -1164,7 +1166,7 @@ print "setting up thinca jobs on three IFO data...",
 h1_h2_l1_triple_coinc_nodes = []
 h1_h2_l1_triple_coinc_nodes = triple_coinc(h1_chunks_analyzed,'H1',
   h2_chunks_analyzed,'H2',l1_chunks_analyzed,'L1',h1_h2_l1_triple_data,
-  thinca_h1h2l1_job,dag,do_coincidence,do_inspiral,usertag)
+  thinca_h1h2l1_job,dag,do_coincidence,do_coincidence,usertag)
 
 print "done"
 
@@ -1182,14 +1184,14 @@ if do_sire:
  
     if do_h1 and do_h2 and do_l1 and len(h1_h2_l1_triple_data):
       sire_segs(h1_h2_l1_triple_coinc_nodes,'output','H1H2L1-SIRE',sire_job,
-        dag,usertag)
+        dag,do_coincidence,usertag)
         
       sire_segs(h1_h2_l1_triple_coinc_nodes,'output','H1-SIRE_H1H2L1',
-        sire_clust_job,dag,usertag,do_clust,'H1')
+        sire_clust_job,dag,do_coincidence,usertag,do_clust,'H1')
       sire_segs(h1_h2_l1_triple_coinc_nodes,'output','H2-SIRE_H1H2L1',
-        sire_clust_job,dag,usertag,do_clust,'H2')
+        sire_clust_job,dag,do_coincidence,usertag,do_clust,'H2')
       sire_segs(h1_h2_l1_triple_coinc_nodes,'output','L1-SIRE_H1H2L1',
-        sire_clust_job,dag,usertag,do_clust,'L1')
+        sire_clust_job,dag,do_coincidence,usertag,do_clust,'L1')
 
 print "done"
 
@@ -1324,33 +1326,33 @@ if do_sire:
   
     if do_h1 and do_h2 and len(h1_h2_double_data):
       sire_segs(h1_h2_double_coinc,'output','H1H2-SIRE_VETO',sire_job,
-        dag,usertag)
+        dag,do_second_coinc,usertag)
   
       sire_segs(h1_h2_double_coinc,'output','H1-SIRE_VETO_H1H2',
-        sire_clust_job,dag,usertag,do_clust,'H1')
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'H1')
       sire_segs(h1_h2_double_coinc,'output','H2-SIRE_VETO_H1H2',
-        sire_clust_job,dag,usertag,do_clust,'H2')
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'H2')
         
   
 
     if do_h1 and do_l1 and len(h1_l1_double_data):
       sire_segs(h1_l1_double_coinc,'output','H1L1-SIRE_VETO',sire_job,
-        dag,usertag)
+        dag,do_second_coinc,usertag)
   
       sire_segs(h1_l1_double_coinc,'output','H1-SIRE_VETO_H1L1',
-        sire_clust_job,dag,usertag,do_clust,'H1')
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'H1')
       sire_segs(h1_l1_double_coinc_nodes,'output','L1-SIRE_VETO_H1L1',
-        sire_clust_job,dag,usertag,do_clust,'L1')
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'L1')
 
      
     if do_h2 and do_l1 and len(h2_l1_double_data):
       sire_segs(h2_l1_double_coinc,'output','H2L1-SIRE_VETO',sire_job,
-        dag,usertag)
+        dag,do_second_coinc,usertag)
   
       sire_segs(h1_l1_double_coinc_nodes,'output','H2-SIRE_VETO_H2L1',
-        sire_clust_job,dag,usertag,do_clust,'H2')
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'H2')
       sire_segs(h1_l1_double_coinc_nodes,'output','L1-SIRE_VETO_H2L1',
-        sire_clust_job,dag,usertag,do_clust,'L1')
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'L1')
 
 print "done"
 
@@ -1384,14 +1386,14 @@ if do_sire:
  
     if do_h1 and do_h2 and do_l1 and len(h1_h2_l1_triple_data):
       sire_segs(h1_h2_l1_triple_coinc,'output','H1H2L1-SIRE_VETO',sire_job,
-        dag,usertag)
+        dag,do_second_coinc,usertag)
         
       sire_segs(h1_h2_l1_triple_coinc,'output','H1-SIRE_VETO_H1H2L1',
-        sire_clust_job,dag,usertag,do_clust,'H1')
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'H1')
       sire_segs(h1_h2_l1_triple_coinc,'output','H2-SIRE_VETO_H1H2L1',
-        sire_clust_job,dag,usertag,do_clust,'H2')
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'H2')
       sire_segs(h1_h2_l1_triple_coinc,'output','L1-SIRE_VETO_H1H2L1',
-        sire_clust_job,dag,usertag,do_clust,'L1')
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'L1')
 
 print "done"
   
