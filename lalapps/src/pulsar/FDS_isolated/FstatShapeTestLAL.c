@@ -3,15 +3,34 @@ Author: Itoh, Yousuke
 $Id$
 ************************************* </lalVerbatim> */
 /*
- * !!!EXPERIMENTAL VERSION!!!
- *
- * Purposes are to make this code more modular to prepare for a 
- * possible future functionization of ComputeFstatistic and 
- * for c-code-based search pipelines including MC experiments.
- */
-/*
+  (1)Description of the algorithm:
+  See the GWDAW8 proceedings.
+    gr-qc/0408092
+    Title: Chi-square test on candidate events from CW signal coherent searches
+    Authors: Y. Itoh, M.A. Papa, B. Krishnan, X. Siemens
+    Comments: proceedings of GWDAW8, 2003 conference, 12pages, 6 figures
+ 
+  (2)Note:
+  This is a LALAppsified version of the original code FstatShapeTest.c.
+ 
+  Purposes are to make this code more modular to prepare for a 
+  possible future functionization of ComputeFstatistic and 
+  for c-code-based search pipelines including MC experiments.
+ 
+  (3)Example:
   ./FstatShapeTestLAL -o FaFb00.001 -t FaFb01.001 > FST.txt
-*/
+ 
+  (4)Validation:
+  Generate 10^4 signals of SNR = \sqrt{2F} ranging from sqrt(20) to ~ 30 with 
+  a Gaussian white noise, run ComputeFStatistic with the threshold on 2F being 20. 
+  The code reported 81748 outliers that includes statistical disturbances. The 
+  resulting veto statistics by the original FstatShapeTest are consistent with those 
+  by this LALAppsified code with a relative difference of 6x10^-8. 
+
+ */
+
+
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -269,7 +288,7 @@ INT4 main(INT4 argc, CHAR ** argv)
 
 
   /* Final result */
-  fprintf(stdout, "%14.9f %14.6g %5.1f %10.5f ",
+  fprintf(stdout, "%22.12f %22.12g %10.1f %22.12g ",
 	  clustInfoPair.ObsvCI.fmax, clustInfoPair.ObsvCI.FSmax, vetoStat.dof, vetoStat.vetoStatistic);
   if( cla.computeProbFlag ) {
     {
@@ -907,11 +926,11 @@ ReadData( LALStatus *status,
 	  FSTFstatPair *FaFbPair, /* output. Memory must be pre-allocated.  */
 	  FSTUserInput *cla       /* input = filenames */)
 {
-  UINT4 irec;
+  UINT4 irec = 0;
   CHAR buff[1024];
-  const UINT4 Nheadlines=4;
-  INT4 count;
-  CHAR *ptr;
+  const UINT4 Nheadlines = 4;
+  INT4 count = 0;
+  CHAR *ptr = NULL;
 
   FILE *fpobsv,*fptest;
 
