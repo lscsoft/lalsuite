@@ -94,6 +94,7 @@ void LALInspiralTiming2_0PN (LALStatus *status,
   REAL8 v, v8;
 
   INITSTATUS (status, "LALInspiralTiming2", LALINSPIRALTIMING2C);
+  ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -110,6 +111,7 @@ void LALInspiralTiming2_0PN (LALStatus *status,
   *toff = - toffIn->t + toffIn->tc
         + toffIn->tN / v8;
 
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 /*  <lalVerbatim file="LALInspiralTiming2CP"> */   
@@ -123,6 +125,7 @@ void LALInspiralTiming2_2PN (LALStatus *status,
   REAL8 v, v2, v8;
 
   INITSTATUS (status, "LALInspiralTiming2", LALINSPIRALTIMING2C);
+  ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -142,6 +145,7 @@ void LALInspiralTiming2_2PN (LALStatus *status,
         + toffIn->t2 * v2);
 
 
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 /*  <lalVerbatim file="LALInspiralTiming2CP"> */   
@@ -155,6 +159,7 @@ void LALInspiralTiming2_3PN (LALStatus *status,
   REAL8 v, v2, v3, v8;
 
   INITSTATUS (status, "LALInspiralTiming2", LALINSPIRALTIMING2C);
+  ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -175,6 +180,7 @@ void LALInspiralTiming2_3PN (LALStatus *status,
         + toffIn->t2 * v2
         + toffIn->t3 * v3);
 
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 /*  <lalVerbatim file="LALInspiralTiming2CP"> */   
@@ -188,6 +194,7 @@ void LALInspiralTiming2_4PN (LALStatus *status,
   REAL8 v, v2, v3, v4, v8;
 
   INITSTATUS (status, "LALInspiralTiming2", LALINSPIRALTIMING2C);
+  ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -210,6 +217,7 @@ void LALInspiralTiming2_4PN (LALStatus *status,
         + toffIn->t3 * v3
         + toffIn->t4 * v4);
 
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 /*  <lalVerbatim file="LALInspiralTiming2CP"> */   
@@ -223,6 +231,7 @@ void LALInspiralTiming2_5PN (LALStatus *status,
   REAL8 v, v2, v3, v4, v5, v8;
 
   INITSTATUS (status, "LALInspiralTiming2", LALINSPIRALTIMING2C);
+  ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -247,6 +256,7 @@ void LALInspiralTiming2_5PN (LALStatus *status,
         + toffIn->t4 * v4
         + toffIn->t5 * v5);
 
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 /*  <lalVerbatim file="LALInspiralTiming2CP"> */   
@@ -260,6 +270,7 @@ void LALInspiralTiming2_6PN (LALStatus *status,
   REAL8 v, v2, v3, v4, v5, v6, v8;
 
   INITSTATUS (status, "LALInspiralTiming2", LALINSPIRALTIMING2C);
+  ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -286,6 +297,7 @@ void LALInspiralTiming2_6PN (LALStatus *status,
         + toffIn->t5 * v5
         + (toffIn->t6 + toffIn->tl6 * log(v)) * v6);
 
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 /*  <lalVerbatim file="LALInspiralTiming2CP"> */   
@@ -299,6 +311,7 @@ void LALInspiralTiming2_7PN (LALStatus *status,
   REAL8 v, v2, v3, v4, v5, v6, v7, v8;
 
   INITSTATUS (status, "LALInspiralTiming2", LALINSPIRALTIMING2C);
+  ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -327,5 +340,6 @@ void LALInspiralTiming2_7PN (LALStatus *status,
         + (toffIn->t6 + toffIn->tl6 * log(v)) * v6
         + toffIn->t7 * v7);
 
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }

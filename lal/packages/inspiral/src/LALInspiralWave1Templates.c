@@ -54,7 +54,7 @@ void LALInspiralWave1Templates(LALStatus *status,
  { /* </lalVerbatim>  */
 
    INT4 n=2, count;
-   REAL8 amp, m, dt, t, v, p, h1, h2, f;
+   REAL8 amp, m, dt, t, v, p, h1, h2, f, fu, fHigh, piM;
    REAL8Vector dummy, values, dvalues, valuesNew, yt, dym, dyt;
    TofVIn in1;
    InspiralPhaseIn in2;
@@ -126,6 +126,14 @@ void LALInspiralWave1Templates(LALStatus *status,
    LALInspiralVelocity(status->statusPtr, &v, &in1);
    CHECKSTATUSPTR(status);
 
+   piM = LAL_PI * m;
+   f = (v*v*v)/piM;
+
+   fu = params->fCutoff;
+   if (fu) 
+      fHigh = (fu < ak.flso) ? fu : ak.flso; 
+   else 
+      fHigh = ak.flso;
    f = (v*v*v)/(LAL_PI*m);
 
    LALInspiralPhasing1(status->statusPtr, &p, v, &in2);
@@ -167,7 +175,9 @@ void LALInspiralWave1Templates(LALStatus *status,
       *(values.data) = v = *(valuesNew.data);
       *(values.data+1) = p = *(valuesNew.data+1);
       t = (++count-params->nStartPad) * dt;
-   } while (t < ak.tn);
+      f = v*v*v/piM;
+   } while (t < ak.tn && f<fHigh);
+   params->fFinal = f;
 
    while (count < (int)signal1->length) 
    {

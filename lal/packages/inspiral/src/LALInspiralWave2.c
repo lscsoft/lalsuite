@@ -316,6 +316,7 @@ void LALInspiralWave2(
     LALDBisectionFindRoot(status->statusPtr, &freq, &rootIn, funcParams);
     CHECKSTATUSPTR(status);
   } while (freq < fHigh && freq > fOld && toffIn.t < -tC);
+  params->fFinal = fOld;
 
   while (i<(INT4)output->length) 
   {

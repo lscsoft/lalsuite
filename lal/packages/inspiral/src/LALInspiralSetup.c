@@ -151,6 +151,7 @@ void LALInspiralSetup (LALStatus *status,
    REAL8 oneby6=1.0/6.0;
 
    INITSTATUS (status, "LALInspiralSetup", LALINSPIRALSETUPC);
+   ATTATCHSTATUSPTR(status);
 
    ASSERT (ak,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -346,6 +347,18 @@ void LALInspiralSetup (LALStatus *status,
            - 36865./3024.*ieta*eta*eta) * LAL_PI;
   ak->pvl6 = - 1712./21.;
 
+/*  
+   Expansion coefficients for the Fourier domain phase of the usual
+   stationary phase approximation
+*/
+   ak->pfaN = 3.L/(128.L * eta);
+   ak->pfa2 = 5.L*(743.L/84.L + 11.L* ieta*eta)/9.L;
+   ak->pfa3 = -16.L*LAL_PI;
+   ak->pfa4 = 5.L*(3058.673L/7.056L + 5429.L/7.L * ieta*eta 
+		   + 617.L * ieta * eta * eta)/72.L;
+   ak->pfa5 = 5.L/3.L * (7729.L/252.L + ieta*eta) * LAL_PI;
+   ak->pfl5 = 8.L/3.L * (38645.L/672.L + 15.L/8.L * ieta*eta) * LAL_PI;
+
 /* 
   Taylor coefficients of f(v)=(1-v/vpole)F(v) 
 */
@@ -373,7 +386,6 @@ void LALInspiralSetup (LALStatus *status,
    ak->fTa5 = ak->FTa5 - ak->FTa4/vpole;
    ak->fTa6 = ak->FTa6 - ak->FTa5/vpole;
    ak->fTa7 = ak->FTa7 - ak->FTa6/vpole;
-
 /* 
    Pade coefficients of f(v);  assumes that a0=1 => c0=1 
 */
@@ -489,6 +501,7 @@ void LALInspiralSetup (LALStatus *status,
    padecoeffs[3], padecoeffs[4], padecoeffs[5], padecoeffs[6], padecoeffs[7]);
 
 */
+   DETATCHSTATUSPTR(status);
    RETURN (status);
 
 }

@@ -77,11 +77,13 @@ void LALInspiralPhasing3_0PN (
 
   REAL8 theta5;
 
-  INITSTATUS (status, "LALInspiralPhasing3", LALINSPIRALPHASING3C);
+  INITSTATUS (status, "LALInspiralPhasing3_0PN", LALINSPIRALPHASING3C);
+  ATTATCHSTATUSPTR(status);
   ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
   theta5 = pow(td,-0.625);
   *phase = (ak->ptaN/theta5);
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 
@@ -96,7 +98,8 @@ void LALInspiralPhasing3_2PN (
 
   REAL8 theta,theta2,theta5;
 
-  INITSTATUS (status, "LALInspiralPhasing3", LALINSPIRALPHASING3C);
+  INITSTATUS (status, "LALInspiralPhasing3_2PN", LALINSPIRALPHASING3C);
+  ATTATCHSTATUSPTR(status);
   ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
   theta = pow(td,-0.125);
@@ -105,6 +108,7 @@ void LALInspiralPhasing3_2PN (
 
   *phase = (ak->ptaN/theta5) * (1. 
          + ak->pta2*theta2);
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 
@@ -119,7 +123,8 @@ void LALInspiralPhasing3_3PN (
 
   REAL8 theta,theta2,theta3,theta5;
 
-  INITSTATUS (status, "LALInspiralPhasing3", LALINSPIRALPHASING3C);
+  INITSTATUS (status, "LALInspiralPhasing3_3PN", LALINSPIRALPHASING3C);
+  ATTATCHSTATUSPTR(status);
   ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
   theta = pow(td,-0.125);
@@ -130,6 +135,7 @@ void LALInspiralPhasing3_3PN (
   *phase = (ak->ptaN/theta5) * (1. 
          + ak->pta2*theta2 
          + ak->pta3*theta3);
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 
@@ -144,7 +150,8 @@ void LALInspiralPhasing3_4PN (
 
   REAL8 theta,theta2,theta3,theta4,theta5;
 
-  INITSTATUS (status, "LALInspiralPhasing3", LALINSPIRALPHASING3C);
+  INITSTATUS (status, "LALInspiralPhasing3_4PN", LALINSPIRALPHASING3C);
+  ATTATCHSTATUSPTR(status);
   ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
   theta = pow(td,-0.125);
@@ -157,6 +164,7 @@ void LALInspiralPhasing3_4PN (
          + ak->pta2*theta2 
          + ak->pta3*theta3
          + ak->pta4*theta4);
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 
@@ -171,7 +179,8 @@ void LALInspiralPhasing3_5PN (
 
   REAL8 theta,theta2,theta3,theta4,theta5;
 
-  INITSTATUS (status, "LALInspiralPhasing3", LALINSPIRALPHASING3C);
+  INITSTATUS (status, "LALInspiralPhasing3_5PN", LALINSPIRALPHASING3C);
+  ATTATCHSTATUSPTR(status);
   ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
   theta = pow(td,-0.125);
@@ -185,6 +194,7 @@ void LALInspiralPhasing3_5PN (
          + ak->pta3*theta3
          + ak->pta4*theta4 
          + ak->pta5 * log(td/ak->tn) * theta5);
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 
@@ -199,7 +209,8 @@ void LALInspiralPhasing3_6PN (
 
   REAL8 theta,theta2,theta3,theta4,theta5,theta6;
 
-  INITSTATUS (status, "LALInspiralPhasing3", LALINSPIRALPHASING3C);
+  INITSTATUS (status, "LALInspiralPhasing3_6PN", LALINSPIRALPHASING3C);
+  ATTATCHSTATUSPTR(status);
   ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
   theta = pow(td,-0.125);
@@ -215,6 +226,7 @@ void LALInspiralPhasing3_6PN (
          + ak->pta4*theta4 
          + ak->pta5*log(td/ak->tn)*theta5
          +(ak->ptl6*log(td/256.) + ak->pta6)*theta6);
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 
@@ -229,7 +241,8 @@ void LALInspiralPhasing3_7PN (
 
   REAL8 theta,theta2,theta3,theta4,theta5,theta6,theta7;
 
-  INITSTATUS (status, "LALInspiralPhasing3", LALINSPIRALPHASING3C);
+  INITSTATUS (status, "LALInspiralPhasing3_7PN", LALINSPIRALPHASING3C);
+  ATTATCHSTATUSPTR(status);
   ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
   theta = pow(td,-0.125);
@@ -247,5 +260,6 @@ void LALInspiralPhasing3_7PN (
          + ak->pta5*log(td/ak->tn)*theta5
          +(ak->ptl6*log(td/256.) + ak->pta6)*theta6
          + ak->pta7*theta7);
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }

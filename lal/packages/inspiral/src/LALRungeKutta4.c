@@ -51,6 +51,7 @@ void LALRungeKutta4(LALStatus *status,
    REAL8 xh,hh,h6;
 
    INITSTATUS(status, "LALRungeKutta4", LALRUNGEKUTTA4C);
+   ATTATCHSTATUSPTR(status);
 
    ASSERT (yout, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (yout->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -84,5 +85,6 @@ void LALRungeKutta4(LALStatus *status,
          input->dyt->data[i] + 
          2.0*input->dym->data[i]);
 
+   DETATCHSTATUSPTR(status);
    RETURN (status);
 }

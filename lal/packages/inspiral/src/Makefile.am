@@ -29,7 +29,9 @@ LALInspiralDerivatives.c\
 LALRungeKutta4.c\
 LALEOBWaveform.c\
 LALEOBWaveformTemplates.c\
-LALUSPA.c
+LALInspiralStationaryPhaseApprox1.c\
+LALInspiralStationaryPhaseApprox2.c\
+LALInspiralSpinningBHBinary.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex

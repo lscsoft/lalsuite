@@ -59,6 +59,7 @@ void LALInspiralPhiofVIntegrand (LALStatus *status,
   PhiofVIntegrandIn *in;
 
   INITSTATUS (status, "LALInspiralPhiofVIntegrand", LALINSPIRALPHIOFVINTEGRANDC);
+  ATTATCHSTATUSPTR(status);
 
   ASSERT (integrand, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -69,6 +70,7 @@ void LALInspiralPhiofVIntegrand (LALStatus *status,
 
   *integrand = pow (v, 3.) * in->dEnergy(v,in->coeffs)/in->flux(v,in->coeffs);
 
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 
 

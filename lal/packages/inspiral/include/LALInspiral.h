@@ -177,56 +177,75 @@ The inspiral waveform parameter structure containing information about the
   \item \texttt { level:} (introduced by Duncan Brown?)
   \item \texttt { *segmentIdVec:} (introduced by Duncan Brown?)
   \item \texttt { number:} (introduced by Duncan Brown?)
-  \item \texttt { nStartPad:} Number of leading elements to be set to zero.
+  \item \texttt { nStartPad:} Number of leading elements to be set to zero (input).
   \item \texttt { nEndPad:} Number of trailing bins to be set to zero, the 
   resulting waveform will have at least this many bins zero at the end, probably
-  more since we always deal with an integer power of 2 array. 
-  \item \texttt { mass1:}  Mass of the primary in solar mass.
+  more since we always deal with an integer power of 2 array (input). 
+  \item \texttt { mass1:}  Mass of the primary in solar mass (input/output).
   \item \texttt { mass2:}  Mass of the secondary in solar mass 
-  (\texttt{mass1} need not be larger than \texttt{mass2}.
+  (\texttt{mass1} need not be larger than \texttt{mass2} (input/output).
   \item \texttt { spin1[3]:} Spin vector of the primary (currently not in use)
   \item \texttt { spin2[3]:} Spin vector of the secondary (currently not in use)
   \item \texttt { inclination:} Inclination of the orbit  (currently not in use)
   \item \texttt { eccentricity:} initial eccentricity of the orbit  (currently not in use)
-  \item \texttt { totalMass:} total mass of the binary $m=m_1+m_2$ in solar mass.
-  \item \texttt { eta:} symmetric mass ratio $\eta=m_1m_2/m^2.$
-  \item \texttt { chirpMass:} chirp mass of the binary $=\eta^{3/5} m$ in solar mass
-  \item \texttt { t0:} Newtonain chirp time in seconds.
-  \item \texttt { t2:} first post-Newtonian chirp time in seconds.
-  \item \texttt { t3:} 1.5 post-Newtonian chirp time in seconds.
-  \item \texttt { t4:} second post-Newtonian chirp time in seconds.
-  \item \texttt { t5:} 2.5 post-Newtonian chirp time in seconds.
-  \item \texttt { tC:} total chirp time seconds.
-  \item \texttt { mu:} reduced mass (in solar mass)
-  \item \texttt { fLower:} lower frequency cutoff of the detector in Hz
+  \item \texttt { totalMass:} total mass of the binary $m=m_1+m_2$ in solar mass (input/output).
+  \item \texttt { eta:} symmetric mass ratio $\eta=m_1m_2/m^2.$ (input/output). 
+  \item \texttt { chirpMass:} chirp mass of the binary $=\eta^{3/5} m$ in solar mass (output).
+  \item \texttt { t0:} Newtonain chirp time in seconds (input/output).
+  \item \texttt { t2:} first post-Newtonian chirp time in seconds (input/output).
+  \item \texttt { t3:} 1.5 post-Newtonian chirp time in seconds (input/output).
+  \item \texttt { t4:} second post-Newtonian chirp time in seconds (output).
+  \item \texttt { t5:} 2.5 post-Newtonian chirp time in seconds (output).
+  \item \texttt { tC:} total chirp time seconds (output).
+  \item \texttt { mu:} reduced mass (in solar mass) (input/output)
+  \item \texttt { fLower:} lower frequency cutoff of the detector in Hz (input)
   \item \texttt { fCutoff:} upper frequency cutoff in Hz to be used in generating the waveform.
   If the last stable orbit frequency is smaller than the upper cutoff it will be used
-  in terminating the waveform instead of fCutoff.
-  \item \texttt { tSampling:} Sampling rate in Hz
-  \item \texttt { startPhase:} starting phase of the waveform in radians
+  in terminating the waveform instead of fCutoff (input).
+  \item \texttt { tSampling:} Sampling rate in Hz (input)
+  \item \texttt { startPhase:} starting phase of the waveform in radians (input)
   \item \texttt { startTime:} starting time of the waveform (in sec); if different from zero, the
   waveform will start with an instantaneous frequency different from fLower and reach 
-  fLower at time (approximately) zero
-  \item \texttt { signalAmplitude:} dimensionless amplitude of the signal (currently unused.)
+  fLower at time (approximately) zero (input, not used in Stationary phase approximation)
+  \item \texttt { signalAmplitude:} dimensionless amplitude of the signal (input, currently unused.)
   \item \texttt { rInitial:} initial radial separation of the two, in units of total mass
-  bodies (used only in EOB waveforms)
-  \item \texttt { vInitial:} initial velocity parameter, in units of the speed of light
-  \item \texttt { rFinal:} final 'separation' between the bodies, in units of total mass
-  \item \texttt { vFinal:} final velocity parameter, in units of the speed of light
-  \item \texttt { rLightRing:} radial coordinate at the light ring, in units of total mass
+  bodies (used only in EOB waveforms) (output)
+  \item \texttt { vInitial:} initial velocity parameter, in units of the speed of light (output)
+  \item \texttt { rFinal:} final 'separation' between the bodies, in units of total mass (output)
+  \item \texttt { vFinal:} final velocity parameter, in units of the speed of light (output)
+  \item \texttt { fFinal:} final frequency reached, in units of Hz (output)
+  \item \texttt { rLightRing:} radial coordinate at the light ring, in units of total mass (output)
   \item \texttt { OmegaS:} The 3PN (unknown) parameter; calculated to be equal to zero
-  by Damour, Jaranowski and Schaffer.
+  by Damour, Jaranowski and Schaffer (input).
   \item \texttt { Theta:} The 3PN unknown flux parameter; likely to be around unity;
   most waveform generation routines take theta to be zero. Robustness of the EOB waveform
-	  has been demonstrated for $-2 < $ \texttt{Theta} $< 2.$
+	  has been demonstrated for $-2 < $ \texttt{Theta} $< 2.$ (input)
   \item \texttt { massChoice:} The pair of (mass) parameters given (see structure
-		  defining this member for more details).
-  \item \texttt { order:} Post-Newtonain order to be used in generating the wave.
-  \item \texttt { approximant:} Post-Newtonain approximant to be used in generating the wave.
+		  defining this member for more details) (input).
+  \item \texttt { order:} Post-Newtonain order to be used in generating the wave (input).
+  \item \texttt { approximant:} Post-Newtonain approximant to be used in generating the wave (input).
   \item \texttt { tagInspiralTemplate *next:} Linked list to the next coarse bank template 
   (currently not filled by inspiral or bank codes)
   \item \texttt { tagInspiralTemplate *fine:} Linked list to the next fine bank template
   (currently not filled by inspiral or bank codes)
+\end{itemize}
+
+\item \texttt{InspiralACSTParams:}
+\input{LALInspiralACSTParamsH} 
+This is a structure needed to generate solve the differential equation
+	giving the evolution of the orbital angular momentum and the
+	spin angular momenta in the case of spinning black hole binaries.
+\begin{itemize}
+  \item	\texttt {v:} parameter of 'integration': v=sqrt(M/r) 
+  \item {magS1:} The constant magnitudes of the primary.
+  \item {magS2:} The constant magnitudes of the secondary.
+  \item {NCap[3]:} Source direction (unit vector) in detector coordinate system.
+  \item {M:} Total mass of the binary (in seconds).
+  \item {fourM1Plus:} = $(4 m_1+3 m_2)/(2 m_1 M^3)$ (all masses expressed in seconds).
+  \item {fourM2Plus:} = $(4 m_2+3 m_1)/(2 m_2 M^3)$ (all masses expressed in seconds).
+  \item {oneBy2Mcube:} = $1/(2 M^3)$
+  \item {threeBy2Mcube:}  = $3/(2 M^3)$
+  \item {thirtytwoBy5etc:}=  $(32/5) \eta^2 M$
 \end{itemize}
 
 \item \texttt{InspiralToffInput:}
@@ -356,6 +375,11 @@ tagInspiralTemplate
   REAL8 mass2;
   REAL8 spin1[3];
   REAL8 spin2[3];
+  REAL8 sourceTheta;
+  REAL8 sourcePhi;
+  REAL8 orbitTheta0;
+  REAL8 orbitPhi0;
+  REAL8 distance; /* in seconds */
   REAL8 inclination;
   REAL8 eccentricity;
   REAL8 totalMass; 
@@ -378,6 +402,7 @@ tagInspiralTemplate
   REAL8 vInitial;
   REAL8 rFinal;
   REAL8 vFinal;
+  REAL8 fFinal;
   REAL8 rLightRing;
   REAL8 OmegaS;
   REAL8 Theta;
@@ -417,6 +442,27 @@ InspiralToffInput;
 \idx[Type]{InspiralToffInput}
 </lalLaTeX>  */
 
+/* <lalVerbatim file="LALInspiralACSTParamsH">  */
+typedef struct
+tagInspiralACSTParams
+{
+	REAL8 v;               
+	REAL8 magS1;           
+	REAL8 magS2;
+	REAL8 NCap[3];         
+	REAL8 M;               
+	REAL8 fourM1Plus;      
+	REAL8 fourM2Plus;      
+	REAL8 oneBy2Mcube;     
+	REAL8 threeBy2Mcube;   
+	REAL8 thirtytwoBy5etc;  
+} InspiralACSTParams;
+/* </lalVerbatim>  */
+
+/* <lalLaTeX>
+\idx[Type]{InspiralACSTParamsH}
+</lalLaTeX>  */
+
 
 /* <lalVerbatim file="LALExpnCoeffsH">  */
 typedef struct {
@@ -446,8 +492,10 @@ typedef struct {
    double ptaN, pta2, pta3, pta4, pta5, pta6, pta7, ptl6; 
    /* Taylor expansion coefficents in f(t)*/
    double ftaN, fta2, fta3, fta4, fta5, fta6, fta7, ftl6; 
+   /* Taylor expansion coefficents in psi(f) in the Fourier phase*/
+   double pfaN, pfa2, pfa3, pfa4, pfa5, pfa6, pfa7, pfl5; 
 
-   /* Taylor expansion coefficents in f(t)*/
+   /* sampling rate and interval*/
    double samplingrate, samplinginterval;
    /* symmetric mass ratio, total mass, component masses*/
    double eta, totalmass, m1, m2;
@@ -957,6 +1005,17 @@ void LALInspiralWave3Templates (
    InspiralTemplate *params);
 
 /*  <lalLaTeX>
+\newpage\input{LALInspiralSpinModulatedWaveC}
+</lalLaTeX>  */
+
+void 
+LALInspiralSpinModulatedWave(
+		LALStatus        *status, 
+		REAL4Vector      *signal, 
+		InspiralTemplate *in);
+/*  </lalLaTeX> */
+
+/*  <lalLaTeX>
 \newpage\input{LALInspiralFrequency3C}
 </lalLaTeX>  */
 
@@ -1065,16 +1124,27 @@ void LALRungeKutta4(
   REAL8Vector *,
   rk4In *,
   void *);
-
-void LALUSPA (
-   LALStatus *status, 
+/*  <lalLaTeX>
+\newpage\input{LALStationaryPhaseApprox1C}
+</lalLaTeX>  */
+void 
+LALInspiralStationaryPhaseApprox1 (
+   LALStatus *status,
    REAL4Vector *signal,
    InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALEOBWaveformC}
+</lalLaTeX>  */
 
 void LALEOBWaveform(
 	LALStatus *status,
 	REAL4Vector *signal,
 	InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALEOBWaveformTemplatesC}
+</lalLaTeX>  */
 
 void LALEOBWaveformTemplates(
 	LALStatus *status,
@@ -1358,6 +1428,14 @@ void LALInspiralPhasing3_7PN (
    REAL8 td,
    expnCoeffs *ak);
 
+/*  <lalLaTeX>
+\newpage\input{LALStationaryPhaseApprox2C}
+</lalLaTeX>  */
+void 
+LALInspiralStationaryPhaseApprox2 (
+   LALStatus *status,
+   REAL4Vector *signal,
+   InspiralTemplate *params);
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralTestC}

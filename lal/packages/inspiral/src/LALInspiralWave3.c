@@ -189,7 +189,7 @@ void LALInspiralWave3 (
 
   INT4 i, startShift, count;
   REAL8 dt, fu, ieta, eta, tc, totalMass, t, td, c1, phi0, phi;
-  REAL8 v, f, fHigh, amp, tmax, fold, phase;
+  REAL8 v, f, fHigh, amp, tmax, fOld, phase;
   expnFunc func;
   expnCoeffs ak;
 
@@ -267,16 +267,16 @@ void LALInspiralWave3 (
 
   count = 0;
   tmax = tc - dt;
-  fold = 0.0;
+  fOld = 0.0;
 
 /* We stop if any of the following conditions fail */
 
-  while (f<fHigh && t<tmax && f>fold) 
+  while (f<fHigh && t<tmax && f>fOld) 
   {
-    fold = f; 
+    fOld = f; 
     v = pow(f*LAL_PI*totalMass, oneby3);
     amp = v*v; 
-    output->data[i++] = (REAL4) params->signalAmplitude * amp * cos(phase+phi0);
+    output->data[i++] = (REAL4) (params->signalAmplitude * amp * cos(phase+phi0));
     ++count;
     t=count*dt;
     td = c1*(tc-t);
@@ -285,6 +285,7 @@ void LALInspiralWave3 (
     func.frequency3(status->statusPtr, &f, td, &ak);
     CHECKSTATUSPTR(status); 
   }
+  params->fFinal = fOld;
   
 /*
   fprintf(stderr, "%e %e\n", f, fHigh);

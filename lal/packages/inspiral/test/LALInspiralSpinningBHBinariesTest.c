@@ -72,85 +72,75 @@ void printf_timeseries (int n, float *signal, double delta, double t0)
 
 
 int main (void) {
-   static REAL4Vector *signal1, *signal2;
+   static REAL4Vector *signal1;
    static LALStatus status;
    InspiralTemplate params;
-   REAL8 dt;
-   UINT4 n, i;
+   REAL8 dt, mass1Sq, mass2Sq, spin1Frac, spin2Frac, spin1Theta, spin1Phi, spin2Theta, spin2Phi;
+   REAL8 dTheta, dPhi;
+   UINT4 n, i, count=0;
 
+   dTheta = LAL_PI_2/1.9;
+   dPhi = LAL_TWOPI/1.9;
    params.ieta=1; 
-   params.mass1=1.4; 
-   params.mass2=10.; 
+   params.mass1=10.0; 
+   params.mass2=1.40; 
    params.startTime=0.0; 
    params.startPhase=0.0;
    params.fLower=40.0; 
    params.fCutoff=2000.00;
    params.tSampling=4096.0;
+   params.signalAmplitude=1.0;
+   params.nStartPad=0;
+   params.nEndPad=1000;
    params.order=4;
    params.approximant=TaylorT3;
-   params.signalAmplitude=1.0;
-   params.nStartPad=1000;
-   params.nEndPad=1000;
    params.massChoice=m1Andm2;
+   params.OmegaS = 0.;
+   params.Theta = 0.;
+   params.sourceTheta = LAL_PI/6.L;
+   params.sourcePhi = LAL_PI/6.L;
    params.distance = 1.e8 * LAL_PC_SI/LAL_C_SI;
    dt = 1./params.tSampling;
+   spin1Frac = 0.9;
+   spin2Frac = 0.9;
+
+   mass1Sq = pow(params.mass1*LAL_MTSUN_SI,2.L);
+   mass2Sq = pow(params.mass2*LAL_MTSUN_SI,2.L);
 
    LALInspiralWaveLength(&status, &n, params);
    LALInspiralParameterCalc(&status, &params);
-   fprintf(stderr, "Testing Inspiral Signal Generation Codes:\n");
-   fprintf(stderr, "Signal length=%d, m1=%e, m2=%e, fLower=%e, fUpper=%e\n", n, params.mass1, params.mass2, params.fLower, params.fCutoff);
+   fprintf(stderr, "#signal length=%d\n", n);
    LALCreateVector(&status, &signal1, n);
-   LALCreateVector(&status, &signal2, n);
+   params.orbitTheta0 = 0.L;
+   params.orbitPhi0 = 0.L;
 
-   for (params.approximant=0; params.approximant<8; params.approximant++)
+   /*
+   for (params.orbitTheta0=0; params.orbitTheta0<LAL_PI_2; params.orbitTheta0+=dTheta)
+   for (params.orbitPhi0=0; params.orbitPhi0<LAL_TWOPI; params.orbitPhi0+=dPhi)
+   */
+   for (spin1Theta=0; spin1Theta<LAL_PI_2; spin1Theta+=dTheta)
+   for (spin1Phi=0; spin1Phi<LAL_TWOPI; spin1Phi+=dPhi)
+   for (spin2Theta=0; spin2Theta<LAL_PI_2; spin2Theta+=dTheta)
+   for (spin2Phi=0; spin2Phi<LAL_TWOPI; spin2Phi+=dPhi)
    {
-	   for (params.order=0; params.order<8; params.order++)
-	   {
-		   /* if (params.approximant !=6 && params.order !=1)  */
-		   {
-			   if (params.approximant==TaylorF1 || params.approximant==TaylorF2 || params.approximant==PadeF1)
-			   {
-				   static RealFFTPlan *revp;
-				   LALInspiralWave(&status, signal1, &params);
-				   /*
-				   REPORTSTATUS(&status);
-				   */
-		   
-				   LALCreateReverseRealFFTPlan(&status, &revp, n, 0);
-				   LALREAL4VectorFFT(&status, signal2, signal1, revp);
-				   LALDestroyRealFFTPlan (&status, &revp);
-			   }
-			   else
-			   {
-				   LALInspiralWave(&status, signal2, &params);
-				   /*
-				   REPORTSTATUS(&status);
-				   */
-			   }
-				   
-			   fprintf(stderr, "approximant=%d order=%d,", params.approximant, params.order);
-			   if (status.statusCode) 
-				   fprintf(stderr, " not available\n");
-			   else 
-				   fprintf(stderr, " successful\n");
-			   /* 
-			    * static RealFFTPlan *fwdp;
-			    * LALCreateForwardRealFFTPlan(&status, &fwdp, n, 0);
-			    */
-			   /* 
-			    * LALInspiralWaveTemplates (&status, signal1, signal2, &params); 
-			    * LALDestroyRealFFTPlan (&status, &fwdp); 
-			    *
-			    */
-		   }
-	   }
-   }
+	   fprintf(stderr, "%d %e %e %e %e %e %e\n",
+			   count++, params.orbitTheta0,params.orbitPhi0, spin1Theta,spin1Phi, spin2Theta,spin2Phi);
+	   params.spin1[0] =  mass1Sq * spin1Frac * sin(spin1Theta) * cos(spin1Phi);
+	   params.spin1[1] =  mass1Sq * spin1Frac * sin(spin1Theta) * sin(spin1Phi);
+	   params.spin1[2] =  mass1Sq * spin1Frac * cos(spin1Theta);
+	   params.spin2[0] =  mass2Sq * spin2Frac * sin(spin2Theta) * cos(spin2Phi);
+	   params.spin2[1] =  mass2Sq * spin2Frac * sin(spin2Theta) * sin(spin2Phi);
+	   params.spin2[2] =  mass2Sq * spin2Frac * cos(spin2Theta);
    
-   /* 
-    * printf_timeseries(signal1->length, signal1->data, dt, params.startTime);
-    */
-   LALDestroyVector(&status, &signal2);
+	   LALInspiralSpinModulatedWave(&status, signal1, &params);
+   
+	   /*
+	   printf_timeseries(signal1->length, signal1->data, dt, params.startTime);
+	    */
+   }
+
    LALDestroyVector(&status, &signal1);
    LALCheckMemoryLeaks();
+
    return 0;
 }

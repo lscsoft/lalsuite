@@ -483,10 +483,10 @@ LALInspiralChooseModel(
       switch (params->approximant) 
       {
          case TaylorT1:
-         case TaylorF1:
-         case TaylorF2:
          case TaylorT2:
          case TaylorT3:
+         case TaylorF1:
+         case TaylorF2:
             ak->vn = ak->vlso = vlso = ak->vlsoT0;
             f->dEnergy = dEt0;
             f->flux = Ft0;
@@ -497,10 +497,6 @@ LALInspiralChooseModel(
             break;
          case PadeT1:
          case PadeF1:
-            ak->vn = ak->vlso = vlso = ak->vlsoP0;
-            f->dEnergy = dEp0;
-            f->flux = Fp0;
-            break;
          case EOB:
          case DJS:
          case INSPA:
@@ -515,10 +511,10 @@ LALInspiralChooseModel(
       switch (params->approximant) 
       {
          case TaylorT1:
-         case TaylorF1:
-         case TaylorF2:
          case TaylorT2:
          case TaylorT3:
+         case TaylorF1:
+         case TaylorF2:
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
             f->dEnergy = dEt2;
             f->flux = Ft2;
@@ -543,28 +539,24 @@ LALInspiralChooseModel(
       switch (params->approximant) 
       {
          case TaylorT1:
-         case TaylorF1:
+         case TaylorT2:
          case TaylorT3:
+         case TaylorF1:
+         case TaylorF2:
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
             f->dEnergy = dEt2;
             f->flux = Ft3;
             f->phasing3 = &LALInspiralPhasing3_3PN;
             f->frequency3 = &LALInspiralFrequency3_3PN;
-            break;
-         case TaylorF2:
-         case TaylorT2:
-            ak->vn = ak->vlso = vlso = ak->vlsoT2;
-            f->dEnergy = dEt2;
-            f->flux = Ft3;
             f->phasing2 = &LALInspiralPhasing2_3PN;
             f->timing2 = &LALInspiralTiming2_3PN;
             break;
          case PadeT1:
-         case PadeF1:
             ak->vn = ak->vlso = vlso = ak->vlsoP0;
             f->dEnergy = dEp2;
             f->flux = Fp3;
             break;
+         case PadeF1:
          case EOB:
          case DJS:
          case INSPA:
@@ -579,10 +571,10 @@ LALInspiralChooseModel(
       switch (params->approximant) 
       {
          case TaylorT1:
-         case TaylorF1:
-         case TaylorF2:
          case TaylorT2:
          case TaylorT3:
+         case TaylorF1:
+         case TaylorF2:
 /* 
    The value vlsoT4 is too large and doesn't work sometimes;
    so we use vlsoT2.
@@ -596,12 +588,12 @@ LALInspiralChooseModel(
             f->frequency3 = &LALInspiralFrequency3_4PN;
             break;
          case PadeT1:
-         case PadeF1:
          case EOB:
             ak->vn = ak->vlso = vlso = ak->vlsoP4;
             f->dEnergy = dEp4;
             f->flux = Fp4;
             break;
+         case PadeF1:
          case DJS:
          case INSPA:
          case IRSPA:
@@ -615,10 +607,10 @@ LALInspiralChooseModel(
       switch (params->approximant) 
       {
          case TaylorT1:
-         case TaylorF1:
-         case TaylorF2:
          case TaylorT2:
          case TaylorT3:
+         case TaylorF1:
+         case TaylorF2:
 /* 
    The value vlsoT4 is too large and doesn't work with 2.5 PN
    Taylor approximant; so we use vlsoT2.
@@ -632,12 +624,12 @@ LALInspiralChooseModel(
             f->frequency3 = &LALInspiralFrequency3_5PN;
             break;
          case PadeT1:
-         case PadeF1:
          case EOB:
             ak->vn = ak->vlso = vlso = ak->vlsoP4;
             f->dEnergy = dEp4;
             f->flux = Fp5;
             break;
+         case PadeF1:
          case DJS:
          case INSPA:
          case IRSPA:
@@ -649,10 +641,10 @@ LALInspiralChooseModel(
       switch (params->approximant) 
       {
          case TaylorT1:
-         case TaylorF1:
-         case TaylorF2:
          case TaylorT2:
          case TaylorT3:
+         case TaylorF1:
+         case TaylorF2:
 /* 
    vlsoT6 is as yet undetermined and vlsoT4 is too large in 
    certain cases (TaylorT2 crashes for (1.4,10)); using vlsoT2;
@@ -666,12 +658,12 @@ LALInspiralChooseModel(
             f->frequency3 = &LALInspiralFrequency3_6PN;
             break;
          case PadeT1:
-         case PadeF1:
          case EOB:
             ak->vn = ak->vlso = vlso = ak->vlsoP6;
             f->dEnergy = dEp6;
             f->flux = Fp6;
             break;
+         case PadeF1:
          case DJS:
          case INSPA:
          case IRSPA:
@@ -683,10 +675,10 @@ LALInspiralChooseModel(
       switch (params->approximant) 
       {
          case TaylorT1:
-         case TaylorF1:
-         case TaylorF2:
          case TaylorT2:
          case TaylorT3:
+         case TaylorF1:
+         case TaylorF2:
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
             f->dEnergy = dEt6;
             f->flux = Ft7;
@@ -696,12 +688,12 @@ LALInspiralChooseModel(
             f->frequency3 = &LALInspiralFrequency3_7PN;
             break;
          case PadeT1:
-         case PadeF1:
          case EOB:
             ak->vn = ak->vlso = vlso = ak->vlsoP6;
             f->dEnergy = dEp6;
             f->flux = Fp7;
             break;
+         case PadeF1:
          case DJS:
          case INSPA:
          case IRSPA:

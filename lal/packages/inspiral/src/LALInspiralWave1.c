@@ -7,9 +7,9 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralWave1.c}}
 
-The code \texttt{LALInspiralWave1.c} generates an inspiral waveform using method \texttt{one} as outlined in the
-documentation for the function \texttt{InspiralWave}. This means that the integrals involving the energy
-and flux function are solved numerically.
+The code \texttt{LALInspiralWave1.c} generates an inspiral waveform corresponding to the 
+\texttt{approximant} \texttt{TaylorT1} and \texttt{PadeT1} as outlined in the
+documentation for the function \texttt{InspiralWave}. 
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -18,8 +18,8 @@ and flux function are solved numerically.
 
 \subsubsection*{Description}
 
-This function is called if the user has specified method \texttt{one} in the \texttt{enum} which is of type
-\texttt{enum Method}. This will be set in the input structure, which is of type \texttt{InspiralTemplate}.
+This function is called if the user has specified the \texttt{enum} \texttt{approximant} to be
+either \texttt{TaylorT1} or \texttt{PadeT1}.
 
 This means that the the gravitational wave phasing
 formula is solved as follows. The formula is
@@ -247,6 +247,7 @@ void LALInspiralWave1(LALStatus *status,
       t = (++count-params->nStartPad) * dt;
       f = v*v*v/piM;
    } while (t < ak.tn && f<fHigh);
+   params->fFinal = f;
 
    while (count < (int)signal->length) 
    {

@@ -48,7 +48,7 @@ $\mathcal{F}(v)$.
 #include <lal/LALInspiral.h>
 #include <lal/Integrate.h>
 
-NRCSID (INSPIRALPHASINGC, "$Id$"); 
+NRCSID (LALINSPIRALPHASING1C, "$Id$"); 
 
 /*  <lalVerbatim file="LALInspiralPhasing1CP"> */
 void LALInspiralPhasing1 (LALStatus *status,
@@ -64,7 +64,7 @@ void LALInspiralPhasing1 (LALStatus *status,
    REAL8 sign;
    REAL8 answer;
 
-   INITSTATUS (status, "LALInspiralPhasing1", INSPIRALPHASINGC);
+   INITSTATUS (status, "LALInspiralPhasing1", LALINSPIRALPHASING1C);
    ATTATCHSTATUSPTR (status);
 
    ASSERT (phiofv, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);

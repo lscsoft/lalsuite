@@ -88,7 +88,8 @@ void LALInspiralFrequency3_0PN (
 
   REAL8 theta,theta3;
 
-  INITSTATUS (status, "LALInspiralFrequency3", LALINSPIRALFREQUENCY3C);
+  INITSTATUS (status, "LALInspiralFrequency3_0PN", LALINSPIRALFREQUENCY3C);
+  ATTATCHSTATUSPTR(status);
 
   ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
@@ -97,6 +98,7 @@ void LALInspiralFrequency3_0PN (
 
   *frequency = theta3*ak->ftaN;
 
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 
@@ -111,7 +113,8 @@ void LALInspiralFrequency3_2PN (
 
   REAL8 theta,theta2,theta3;
 
-  INITSTATUS (status, "LALInspiralFrequency3", LALINSPIRALFREQUENCY3C);
+  INITSTATUS (status, "LALInspiralFrequency3_2PN", LALINSPIRALFREQUENCY3C);
+  ATTATCHSTATUSPTR(status);
 
   ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
@@ -123,6 +126,7 @@ void LALInspiralFrequency3_2PN (
              + ak->fta2*theta2);
                       
 
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 
@@ -137,7 +141,8 @@ void LALInspiralFrequency3_3PN (
 
   REAL8 theta,theta2,theta3;
 
-  INITSTATUS (status, "LALInspiralFrequency3", LALINSPIRALFREQUENCY3C);
+  INITSTATUS (status, "LALInspiralFrequency3_3PN", LALINSPIRALFREQUENCY3C);
+  ATTATCHSTATUSPTR(status);
 
   ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
@@ -148,6 +153,7 @@ void LALInspiralFrequency3_3PN (
   *frequency = theta3*ak->ftaN * (1.
              + ak->fta2*theta2
              + ak->fta3*theta3);
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 
@@ -162,7 +168,8 @@ void LALInspiralFrequency3_4PN (
 
   REAL8 theta,theta2,theta3,theta4;
 
-  INITSTATUS (status, "LALInspiralFrequency3", LALINSPIRALFREQUENCY3C);
+  INITSTATUS (status, "LALInspiralFrequency3_4PN", LALINSPIRALFREQUENCY3C);
+  ATTATCHSTATUSPTR(status);
 
   ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
@@ -175,6 +182,7 @@ void LALInspiralFrequency3_4PN (
              + ak->fta2*theta2
              + ak->fta3*theta3
              + ak->fta4*theta4);
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 
@@ -189,7 +197,8 @@ void LALInspiralFrequency3_5PN (
 
   REAL8 theta,theta2,theta3,theta4,theta5;
 
-  INITSTATUS (status, "LALInspiralFrequency3", LALINSPIRALFREQUENCY3C);
+  INITSTATUS (status, "LALInspiralFrequency3_5PN", LALINSPIRALFREQUENCY3C);
+  ATTATCHSTATUSPTR(status);
 
   ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
@@ -204,6 +213,7 @@ void LALInspiralFrequency3_5PN (
              + ak->fta3*theta3
              + ak->fta4*theta4
              + ak->fta5*theta5);
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 
@@ -218,7 +228,8 @@ void LALInspiralFrequency3_6PN (
 
   REAL8 theta,theta2,theta3,theta4,theta5,theta6;
 
-  INITSTATUS (status, "LALInspiralFrequency3", LALINSPIRALFREQUENCY3C);
+  INITSTATUS (status, "LALInspiralFrequency3_6PN", LALINSPIRALFREQUENCY3C);
+  ATTATCHSTATUSPTR(status);
 
   ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
@@ -235,6 +246,7 @@ void LALInspiralFrequency3_6PN (
              + ak->fta4*theta4
              + ak->fta5*theta5
              + (ak->fta6 + ak->ftl6*log(2.*theta))*theta6);
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 
@@ -249,7 +261,8 @@ void LALInspiralFrequency3_7PN (
 
   REAL8 theta,theta2,theta3,theta4,theta5,theta6,theta7;
 
-  INITSTATUS (status, "LALInspiralFrequency3", LALINSPIRALFREQUENCY3C);
+  INITSTATUS (status, "LALInspiralFrequency3_7PN", LALINSPIRALFREQUENCY3C);
+  ATTATCHSTATUSPTR(status);
 
   ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
@@ -268,5 +281,6 @@ void LALInspiralFrequency3_7PN (
              + ak->fta5*theta5
              + (ak->fta6 + ak->ftl6*log(theta))*theta6
              + ak->fta7*theta7);
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }

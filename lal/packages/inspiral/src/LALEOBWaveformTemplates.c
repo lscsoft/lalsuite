@@ -51,7 +51,7 @@ void LALEOBWaveformTemplates (LALStatus *status,
 { /* </lalVerbatim> */
 
    INT4 count, nn=4;
-   REAL8 amp, eta, m, rn, r, s, p, q, dt, t, h1, h2, v, omega, f;
+   REAL8 amp, eta, m, rn, r, rOld, s, p, q, dt, t, h1, h2, v, omega, f;
    REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
    TofVIn in1;
    InspiralPhaseIn in2;
@@ -208,8 +208,10 @@ Userful for debugging: Make sure a solution for r exists.
    }
 
    t = 0.0;
-   while (r>=rn) {
+   rOld = r+0.1;
+   while (r>=rn && r<rOld) {
       ASSERT(count< (INT4)signal1->length, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+      rOld = r;
       v = pow(omega, oneby3);
       amp = params->signalAmplitude *v*v;
       h1 = amp * cos(2.*s);
@@ -240,15 +242,17 @@ Userful for debugging: Make sure a solution for r exists.
 /*----------------------------------------------------------------- 
 Record the final cutoff frequency of BD Waveforms for record keeping 
 -----------------------------------------------------------------*/
-   params->rFinal = r;
+   params->rFinal = rOld;
+   params->fFinal = pow(v,3.)/(LAL_PI*m);
    params->vFinal = v;
-   f = pow(v,3.)/(LAL_PI*m);
    while (count < (INT4)signal1->length) 
    {
       *(signal1->data + count) = *(signal2->data + count) = 0.;
       count++;
    }
 
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
    LALFree(dummy.data);
 }
 

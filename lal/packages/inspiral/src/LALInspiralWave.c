@@ -133,30 +133,33 @@ void LALInspiralWave(LALStatus *status,
       case PadeT1:
            LALInspiralWave1(status->statusPtr, signal, params);
            CHECKSTATUSPTR(status);
-      break;
+	   break;
       case TaylorT2:
            LALInspiralWave2(status->statusPtr, signal, params);
            CHECKSTATUSPTR(status);
-      break;
+	   break;
       case TaylorT3:
            LALInspiralWave3(status->statusPtr, signal, params);
            CHECKSTATUSPTR(status);
-      break;
+	   break;
       case EOB:
            LALEOBWaveform(status->statusPtr, signal, params);
            CHECKSTATUSPTR(status);
-      break;
-      case TaylorF2:
-           LALUSPA(status->statusPtr, signal, params);
-           CHECKSTATUSPTR(status);
-      break;
+	   break;
       case TaylorF1:
+	   LALInspiralStationaryPhaseApprox1(status->statusPtr, signal, params); 
+           CHECKSTATUSPTR(status);
+	   break;
+      case TaylorF2:
+	   LALInspiralStationaryPhaseApprox2(status->statusPtr, signal, params); 
+           CHECKSTATUSPTR(status);
+	   break;
       case PadeF1:
       case INSPA:
       case IRSPA:
       case DJS:
            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
-      break;
+	   break;
    }
 
    DETATCHSTATUSPTR(status);

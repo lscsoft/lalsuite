@@ -48,7 +48,7 @@ void LALEOBWaveform (LALStatus *status,
 { /* </lalVerbatim> */
 
    INT4 count, nn=4;
-   REAL8 eta, m, rn, r, s, p, q, dt, t, h, v, omega, f;
+   REAL8 eta, m, rn, r, rOld, s, p, q, dt, t, h, v, omega, f;
    REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
    TofVIn in1;
    InspiralPhaseIn in2;
@@ -203,13 +203,15 @@ Userful for debugging: Make sure a solution for r exists.
    }
 
    t = 0.0;
-   while (r>=rn) {
+   rOld = r+0.1;
+   while (r>=rn && r<rOld) 
+   {
       ASSERT(count< (INT4)signal->length, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+      rOld = r;
       v = pow(omega, oneby3);
       h = params->signalAmplitude * v*v * cos(2.*s);
       *(signal->data + count) = (REAL4) h;
       LALHCapDerivatives(&values, &dvalues, funcParams);
-      CHECKSTATUSPTR(status);
       omega = dvalues.data[1];
       in4.dydx = &dvalues;
       in4.x = t/m;
@@ -232,9 +234,9 @@ Userful for debugging: Make sure a solution for r exists.
 /*----------------------------------------------------------------- 
 Record the final cutoff frequency of BD Waveforms for record keeping 
 -----------------------------------------------------------------*/
-   params->rFinal = r;
+   params->rFinal = rOld;
    params->vFinal = v;
-   f = pow(v,3.)/(LAL_PI*m);
+   params->fFinal = pow(v,3.)/(LAL_PI*m);
    while (count < (INT4)signal->length) 
    {
        *(signal->data + count) = 0.;
@@ -300,6 +302,7 @@ void LALrOfOmega (
    rOfOmegaIn *rofomegain;
 
    INITSTATUS(status, "LALrOfOmega", LALROFOMEGAC);
+   ATTATCHSTATUSPTR(status);
    rofomegain = (rOfOmegaIn *) params;
    eta = rofomegain->eta;
    omega = rofomegain->omega;
@@ -309,6 +312,7 @@ void LALrOfOmega (
    A = 1. - 2./r + 2.*eta/r3;
    z = r3 * A * A/(r3 - 3.*r2 + 5.*eta);
    *x = omega - sqrt((1.-3*eta/r2)/(r3 * (1. + 2*eta*(sqrt(z)-1.))));
+   DETATCHSTATUSPTR(status);
    RETURN(status);
 }
 
@@ -324,9 +328,11 @@ void LALlightRingRadius(
    rOfOmegaIn *rofomegain;
 
    INITSTATUS(status, "LALlightRingRadius", LALLIGHTRINGRADIUSC);
+   ATTATCHSTATUSPTR(status);
    rofomegain = (rOfOmegaIn *) params;
    eta = rofomegain->eta;
    *x = pow(r,3.) - 3.*r*r + 5.* eta;
+   DETATCHSTATUSPTR(status);
    RETURN(status);
 }
 

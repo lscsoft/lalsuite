@@ -175,6 +175,7 @@ void LALInspiralWave2Templates(
     LALDBisectionFindRoot(status->statusPtr, &freq, &rootIn, funcParams);
     CHECKSTATUSPTR(status);
   } while (freq < fHigh && freq > fOld && toffIn.t < -tC);
+  params->fFinal = fOld;
 
   while (i<(INT4)output1->length) 
   {
