@@ -278,7 +278,7 @@ LALGeneratePulsarSignal (LALStatus *stat,
 			 REAL4TimeSeries **signal, 	   /* output time-series */
 			 const PulsarSignalParams *params) /* input params */
 { /* </lalVerbatim> */
-SpinOrbitCWParamStruc sourceParams = emptyCWParams; 
+  SpinOrbitCWParamStruc sourceParams = emptyCWParams; 
   CoherentGW sourceSignal = emptySignal;
   DetectorResponse detector;
   REAL8 SSBduration;
@@ -303,7 +303,7 @@ SpinOrbitCWParamStruc sourceParams = emptyCWParams;
   sourceParams.phi0 = params->pulsar.phi0;
   sourceParams.f0 = params->pulsar.f0;
   /* set source position: make sure it's "normalized", i.e. [0<=alpha<2pi]x[-pi/2<=delta<=pi/2] */
-  TRY( LALNormalizeSkyPosition (stat->statusPtr, &(sourceParams.position), &(params->pulsar.position)), stat);
+  TRY( LALNormalizeSkyPosition(stat->statusPtr, &(sourceParams.position), &(params->pulsar.position)), stat);
 
   /* if pulsar is in binary-orbit, set binary parameters */
   if (params->orbit)
@@ -328,7 +328,7 @@ SpinOrbitCWParamStruc sourceParams = emptyCWParams;
     sourceParams.spinEpoch = params->pulsar.tRef;   /* pulsar reference-time in SSB frame (TDB) */
   else	/* if not given: use startTime converted to SSB as tRef ! */
     {
-      TRY (LALConvertGPS2SSB (stat->statusPtr, &tmpTime, params->startTimeGPS, params), stat);
+      TRY ( LALConvertGPS2SSB(stat->statusPtr, &tmpTime, params->startTimeGPS, params), stat);
       sourceParams.spinEpoch = tmpTime;
     }
 
@@ -344,16 +344,16 @@ SpinOrbitCWParamStruc sourceParams = emptyCWParams;
     sourceParams.deltaT = 60;	/* for isolated pulsars */
 
   /* start-time in SSB time */
-  TRY (LALConvertGPS2SSB (stat->statusPtr, &t0, params->startTimeGPS, params), stat);
+  TRY (LALConvertGPS2SSB(stat->statusPtr, &t0, params->startTimeGPS, params), stat);
   t0.gpsSeconds -= (UINT4)sourceParams.deltaT; /* start one time-step earlier to be safe */
 
   /* end time in SSB */
   t1 = params->startTimeGPS;
-  TRY ( LALAddFloatToGPS (stat->statusPtr, &t1, &t1, params->duration), stat);
-  TRY (LALConvertGPS2SSB (stat->statusPtr, &t1, t1, params), stat);	 /* convert time to SSB */
+  TRY ( LALAddFloatToGPS(stat->statusPtr, &t1, &t1, params->duration), stat);
+  TRY (LALConvertGPS2SSB(stat->statusPtr, &t1, t1, params), stat);	 /* convert time to SSB */
 
   /* get duration of source-signal */
-  TRY (LALDeltaFloatGPS (stat->statusPtr, &SSBduration, &t1, &t0), stat);
+  TRY (LALDeltaFloatGPS(stat->statusPtr, &SSBduration, &t1, &t0), stat);
   SSBduration += 2.0 * sourceParams.deltaT; /* add two time-steps to be safe */
 
   sourceParams.epoch = t0; 
@@ -364,17 +364,17 @@ SpinOrbitCWParamStruc sourceParams = emptyCWParams;
   sourceParams.f = NULL;
   if (params->pulsar.spindown)
     {
-      TRY ( LALDCreateVector (stat->statusPtr, &(sourceParams.f), params->pulsar.spindown->length), stat);
+      TRY ( LALDCreateVector(stat->statusPtr, &(sourceParams.f), params->pulsar.spindown->length), stat);
       for (i=0; i < sourceParams.f->length; i++)
 	sourceParams.f->data[i] = params->pulsar.spindown->data[i] / params->pulsar.f0;
     }
 
   /* finally, call the function to generate the source waveform */
-  TRY ( LALGenerateSpinOrbitCW (stat->statusPtr, &sourceSignal, &sourceParams), stat);
+  TRY ( LALGenerateSpinOrbitCW(stat->statusPtr, &sourceSignal, &sourceParams), stat);
 
   /* free spindown-vector right away, so we don't forget */
   if (sourceParams.f) {
-    TRY ( LALDDestroyVector (stat->statusPtr, &(sourceParams.f) ), stat);
+    TRY ( LALDDestroyVector(stat->statusPtr, &(sourceParams.f) ), stat);
   }
 
   /* check that sampling interval was short enough */
@@ -415,7 +415,7 @@ SpinOrbitCWParamStruc sourceParams = emptyCWParams;
   }
 
   /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
-  LALCreateVector (stat->statusPtr, &(output->data), (UINT4) ceil( params->samplingRate * params->duration) );
+  LALCreateVector(stat->statusPtr, &(output->data), (UINT4) ceil( params->samplingRate * params->duration) );
   BEGINFAIL(stat) {
     LALFree (output);
   } ENDFAIL(stat);
@@ -425,17 +425,17 @@ SpinOrbitCWParamStruc sourceParams = emptyCWParams;
   output->epoch = params->startTimeGPS;
 
   
-  TRY ( LALSimulateCoherentGW (stat->statusPtr, output, &sourceSignal, &detector ), stat );
+  TRY ( LALSimulateCoherentGW(stat->statusPtr, output, &sourceSignal, &detector ), stat );
 
 			       
   /*----------------------------------------------------------------------*/
   /* Free all allocated memory that is not returned */
-  TRY (LALSDestroyVectorSequence ( stat->statusPtr, &(sourceSignal.a->data)), stat);
-  LALFree ( sourceSignal.a );
-  TRY (LALSDestroyVector (stat->statusPtr, &(sourceSignal.f->data ) ), stat);
-  LALFree (sourceSignal.f);
-  TRY (LALDDestroyVector (stat->statusPtr, &(sourceSignal.phi->data )), stat);
-  LALFree (sourceSignal.phi);
+  TRY (LALSDestroyVectorSequence( stat->statusPtr, &(sourceSignal.a->data)), stat);
+  LALFree( sourceSignal.a );
+  TRY (LALSDestroyVector(stat->statusPtr, &(sourceSignal.f->data ) ), stat);
+  LALFree(sourceSignal.f);
+  TRY (LALDDestroyVector(stat->statusPtr, &(sourceSignal.phi->data )), stat);
+  LALFree(sourceSignal.phi);
 
   *signal = output;
 
@@ -495,7 +495,7 @@ LALSignalToSFTs (LALStatus *stat,
 
   /* if noiseSFTs are given: check they are consistent with signal! */
   if (params->noiseSFTs) {
-    TRY (checkNoiseSFTs (stat->statusPtr, params->noiseSFTs, f0, f0 + Band, deltaF), stat);
+    TRY (checkNoiseSFTs(stat->statusPtr, params->noiseSFTs, f0, f0 + Band, deltaF), stat);
   }
     
   /* make sure that number of timesamples/SFT is an integer (up to possible rounding errors */
@@ -512,13 +512,13 @@ LALSignalToSFTs (LALStatus *stat,
 
   /* get last possible start-time for an SFT */
   duration =  (UINT4) (1.0* signal->data->length * signal->deltaT +0.5); /* total duration rounded to seconds */
-  TRY ( LALAddFloatToGPS (stat->statusPtr, &tLast, &tStart, duration - params->Tsft), stat);
+  TRY ( LALAddFloatToGPS(stat->statusPtr, &tLast, &tStart, duration - params->Tsft), stat);
 
   /* for simplicity we _always_ work with timestamps. 
    * Therefore, we have to generate them now if none have been provided by the user. */
   if (params->timestamps == NULL)
     {
-      timestamps = make_timestamps (&tStart, duration, params->Tsft );
+      timestamps = make_timestamps(&tStart, duration, params->Tsft );
       if (timestamps == NULL) {
 	ABORT (stat, GENERATEPULSARSIGNALH_EMEM, GENERATEPULSARSIGNALH_MSGEMEM);
       }
@@ -527,7 +527,7 @@ LALSignalToSFTs (LALStatus *stat,
     {
       timestamps = params->timestamps;
       /* check that all timestamps lie within [tStart, tLast] */
-      if ( check_timestamp_bounds (timestamps, tStart, tLast) != 0) {
+      if ( check_timestamp_bounds(timestamps, tStart, tLast) != 0) {
 	ABORT (stat, GENERATEPULSARSIGNALH_ETIMEBOUND, GENERATEPULSARSIGNALH_MSGETIMEBOUND);
       }
     }
@@ -539,7 +539,7 @@ LALSignalToSFTs (LALStatus *stat,
   LALCreateSFTVector (stat->statusPtr, &sftvect, numSFTs, SFTlen);
   BEGINFAIL (stat) {
     if (params->timestamps == NULL)
-      LALDestroyTimestampVector (stat->statusPtr, &timestamps);
+      LALDestroyTimestampVector(stat->statusPtr, &timestamps);
   } ENDFAIL (stat);
 
   tPrev = tStart;	/* initialize */
@@ -551,7 +551,7 @@ LALSignalToSFTs (LALStatus *stat,
       thisSFT = &(sftvect->data[iSFT]);	/* point to current SFT-slot */
 
       /* find the start-bin for this SFT in the time-series */
-      TRY ( LALDeltaFloatGPS (stat->statusPtr, &delay, &(timestamps->data[iSFT]), &tPrev), stat);
+      TRY ( LALDeltaFloatGPS(stat->statusPtr, &delay, &(timestamps->data[iSFT]), &tPrev), stat);
       relIndexShift = (INT4) (delay / signal->deltaT + 0.5);	/* round properly: picks *closest* timestep (==> "nudging") !!  */
       totalIndex += relIndexShift;
 
@@ -559,7 +559,7 @@ LALSignalToSFTs (LALStatus *stat,
       timeStretch.data = signal->data->data + totalIndex;	/* point to the right sample-bin */
 
       /* fill the header of the i'th output SFT */
-      TRY ( LALAddFloatToGPS (stat->statusPtr, &tmpTime, &tPrev, relIndexShift * signal->deltaT), stat);
+      TRY ( LALAddFloatToGPS(stat->statusPtr, &tmpTime, &tPrev, relIndexShift * signal->deltaT), stat);
       thisSFT->epoch = tmpTime;			/* set the ACTUAL timestamp! (can be different from requested one ==> "nudging") */
       thisSFT->f0 = signal->f0;			/* minimum frequency */
       thisSFT->deltaF = 1.0 / params->Tsft;	/* frequency-spacing */
@@ -570,7 +570,7 @@ LALSignalToSFTs (LALStatus *stat,
       if (lalDebugLevel > 0)
 	{
 	  REAL8 diff;
-	  TRY ( LALDeltaFloatGPS (stat->statusPtr, &diff, &(timestamps->data[iSFT]), &tmpTime), stat);
+	  TRY ( LALDeltaFloatGPS(stat->statusPtr, &diff, &(timestamps->data[iSFT]), &tmpTime), stat);
 	  if (diff != 0) 
 	    {
 	      LALPrintError ("Warning: timestamp %d had to be 'nudged' by %e s to fit with time-series\n", iSFT, diff);
@@ -584,9 +584,9 @@ LALSignalToSFTs (LALStatus *stat,
 	} /* if lalDebugLevel */
 
       /* the central step: FFT the ith time-stretch into an SFT-slot */
-      LALForwardRealFFT (stat->statusPtr, thisSFT->data, &timeStretch, pfwd);
+      LALForwardRealFFT(stat->statusPtr, thisSFT->data, &timeStretch, pfwd);
       BEGINFAIL(stat) {
-	LALDestroySFTVector (stat->statusPtr, &sftvect);
+	LALDestroySFTVector(stat->statusPtr, &sftvect);
       } ENDFAIL(stat);
 
 
@@ -595,9 +595,9 @@ LALSignalToSFTs (LALStatus *stat,
 	   || (signal->epoch.gpsNanoSeconds != 0)
 	   || (thisSFT->epoch.gpsNanoSeconds != 0) )
 	{
-	  correct_phase (stat->statusPtr, thisSFT, signal->epoch);	/* theterodyne = signal->epoch!*/
+	  correct_phase(stat->statusPtr, thisSFT, signal->epoch);	/* theterodyne = signal->epoch!*/
 	  BEGINFAIL (stat) {
-	    LALDestroySFTVector (stat->statusPtr, &sftvect);
+	    LALDestroySFTVector(stat->statusPtr, &sftvect);
 	  } ENDFAIL (stat);
 	} /* if phase-correction necessary */
 
@@ -631,8 +631,8 @@ LALSignalToSFTs (LALStatus *stat,
   /* did we get timestamps or did we make them? */
   if (params->timestamps == NULL)
     {
-      LALFree (timestamps->data);
-      LALFree (timestamps);
+      LALFree(timestamps->data);
+      LALFree(timestamps);
       timestamps = NULL;
     }
 

@@ -93,21 +93,22 @@ detector-location and the time-series to be produced.
 
 </lalLaTeX> */
 /* <lalVerbatim> */
+/** input parameters to GeneratePulsarSignal(), defining the source and the time-series */
 typedef struct {
   /* source-parameters */
-  PulsarSourceParams pulsar;	/* defining the actual pulsar-source */
-  BinaryOrbitParams *orbit;	/* and its binary orbit (NULL if isolated pulsar) */
+  PulsarSourceParams pulsar;	/**< the actual pulsar-source */
+  BinaryOrbitParams *orbit;	/**< and its binary orbit (NULL if isolated pulsar) */
   
   /* characterize the detector */
-  COMPLEX8FrequencySeries *transfer; /* detector transfer function (NULL if not used) */	
-  LALDetector *site;		/* detector location and orientation */  
-  EphemerisData *ephemerides;	/* Earth and Sun ephemerides */
+  COMPLEX8FrequencySeries *transfer; /**< detector transfer function (NULL if not used) */	
+  LALDetector *site;		/**< detector location and orientation */  
+  EphemerisData *ephemerides;	/**< Earth and Sun ephemerides */
   
   /* characterize the output time-series */
-  LIGOTimeGPS startTimeGPS;     /* start time of output time series */
-  UINT4 duration;           	/* length of time series in seconds */
-  REAL8 samplingRate;		/* sampling rate of time-series (= 2 * frequency-Band) */
-  REAL8 fHeterodyne;		/* heterodyning frequency for output time-series */
+  LIGOTimeGPS startTimeGPS;     /**< start time of output time series */
+  UINT4 duration;           	/**< length of time series in seconds */
+  REAL8 samplingRate;		/**< sampling rate of time-series (= 2 * frequency-Band) */
+  REAL8 fHeterodyne;		/**< heterodyning frequency for output time-series */
 } PulsarSignalParams;
 /* </lalVerbatim> */
 /*<lalLaTeX>
@@ -118,10 +119,11 @@ Parameters defining the SFTs to be returned from \verb+LALSignalToSFTs()+.
 
 </lalLaTeX> */
 /* <lalVerbatim> */
+/** input parameters to LALSignalToSFTs() */
 typedef struct {
-  REAL8 Tsft;			 /* length of each SFT in seconds */
-  LIGOTimeGPSVector *timestamps; /* timestamps to produce SFTs for (can be NULL) */
-  SFTVector *noiseSFTs;		 /* noise SFTs to be added (can be NULL) */
+  REAL8 Tsft;			 /**< length of each SFT in seconds */
+  LIGOTimeGPSVector *timestamps; /**< timestamps to produce SFTs for (can be NULL) */
+  SFTVector *noiseSFTs;		 /**< noise SFTs to be added (can be NULL) */
 } SFTParams;
 /* </lalVerbatim> */
 

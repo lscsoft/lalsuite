@@ -48,15 +48,16 @@ NRCSID( PULSARDATATYPESH, "$Id$");
 /* put those back from LALDatatypes.h, where Jolien didn't want them..*/
 /* we also need a bunch of FFTs */
 /* <lalVerbatim> */
+/** a vector of 'SFTs', which are of type COMPLEX8FrequencySeries */
 typedef struct {
-  UINT4 			length;	
-  COMPLEX8FrequencySeries 	*data;	
+  UINT4 			length;		/**< number of SFTs */
+  COMPLEX8FrequencySeries 	*data;		/**< array of SFTs */
 } COMPLEX8FrequencySeriesVector;
 
-/* and a bunch of timestamps */
+/** a vector of 'timestamps' of type LIGOTimeGPS */
 typedef struct {
-  UINT4 	length;
-  LIGOTimeGPS 	*data;
+  UINT4 	length;	/**< number of timestamps */
+  LIGOTimeGPS 	*data;	/**< array of timestamps */
 } LIGOTimeGPSVector;
 /* </lalVerbatim> */
 /*<lalLaTeX>
@@ -67,14 +68,16 @@ Defines the astrophysical parameters of the pulsar.
 
 </lalLaTeX> */
 /* <lalVerbatim> */
+/** type defining the parameters of a pulsar-source of Gravitational waves */
 typedef struct {
-  LIGOTimeGPS tRef;	/* reference time of pulsar parameters (in SSB!) */
-  SkyPosition position;	/* source location (in radians) */
-  REAL4 psi;            /* polarization angle (radians) at tRef */
-  REAL4 aPlus, aCross;  /* polarization amplitudes at tRef */
-  REAL8 phi0;           /* initial phase (radians) at tRef */
-  REAL8 f0;             /* WAVE-frequency(!) at tRef (in Hz) */
-  REAL8Vector *spindown;/* wave-frequency spindowns at tRef (NOT f0-normalized!) */
+  LIGOTimeGPS tRef;	/**< reference time of pulsar parameters (in SSB!) */
+  SkyPosition position;	/**< source location (in radians) */
+  REAL4 psi;            /**< polarization angle (radians) at tRef */
+  REAL4 aPlus; 		/**< plus-polarization amplitude at tRef */
+  REAL4 aCross;  	/**< cross-polarization amplitude at tRef */
+  REAL8 phi0;           /**< initial phase (radians) at tRef */
+  REAL8 f0;             /**< WAVE-frequency(!) at tRef (in Hz) */
+  REAL8Vector *spindown;/**< wave-frequency spindowns at tRef (NOT f0-normalized!) */
 } PulsarSourceParams;
 /* </lalVerbatim> */
 /*<lalLaTeX>
@@ -85,12 +88,13 @@ Defines the astrophysical parameters of the binary orbit of the pulsar.
 
 </lalLaTeX> */
 /* <lalVerbatim> */
+/** type defining the orbital parameters of a binary pulsar */
 typedef struct {
-  LIGOTimeGPS orbitEpoch; /* time of periapsis passage (in SSB) */
-  REAL8 omega;            /* argument of periapsis (radians) */
-  REAL8 rPeriNorm;        /* projected, normalized periapsis (s) */
-  REAL8 oneMinusEcc;      /* 1 - orbital eccentricity */
-  REAL8 angularSpeed;     /* angular speed at periapsis (Hz) */
+  LIGOTimeGPS orbitEpoch; /**< time of periapsis passage (in SSB) */
+  REAL8 omega;            /**< argument of periapsis (radians) */
+  REAL8 rPeriNorm;        /**< projected, normalized periapsis (s) */
+  REAL8 oneMinusEcc;      /**< 1 - orbital eccentricity */
+  REAL8 angularSpeed;     /**< angular speed at periapsis (Hz) */
 } BinaryOrbitParams;
 /* </lalVerbatim> */
 /*<lalLaTeX>
