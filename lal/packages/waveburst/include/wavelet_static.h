@@ -1348,7 +1348,8 @@ static void _clusterProperties(ClusterWavelet *w)
 	    }
 	}
 
-      w->likelihood[i]/=w->coreSize[i];
+      /*      w->likelihood[i]/=w->coreSize[i];*/
+      w->correlation[i]/=w->coreSize[i];
       w->power[i]/=w->coreSize[i];
 
       x=_secNanToDouble(w->wavelet->data->epoch.gpsSeconds, 
