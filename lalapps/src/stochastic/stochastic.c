@@ -117,13 +117,11 @@ REAL4 fRef = 100;
 REAL4 omegaRef = 1;
 
 /* monte carlo parameters */
-/* at the moment the code cannot do monte carlo with overlapped Hann window */
 REAL4 scaleFactor = 1;
 INT4 seed = 1;
 INT4 NLoop = 1;
 
 /* window parameters */
-/* 60 s for pure Hann, 1 s for Tukey, 0s for rectangular window */
 INT4 hannDuration = 1;
 
 /* high pass filtering parameters */
@@ -131,9 +129,10 @@ REAL4 highPassFreq = 40;
 REAL4 highPassAtten = 0.25;
 INT4  highPassOrder = 6;
 
+/* GEO scale factor */
 REAL4 geoScaleFactor = 1e18;
 
-/* geo high pass filter parameters */
+/* GEO high pass filter parameters */
 REAL4 geoHighPassFreq = 70;
 INT4  geoHighPassOrder = 8;
 REAL4 geoHighPassAtten = 0.9;
@@ -151,8 +150,6 @@ CHAR *outputFilePath = NULL;
 
 INT4 main(INT4 argc, CHAR *argv[])
 {
-  /* variable declarations */
-
   /* status pointer */
   LALStatus status;
 
