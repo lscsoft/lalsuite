@@ -56,8 +56,9 @@ LALHO()
 
 *********************************************** </lalLaTeX> */
 #include <sys/types.h>
+#ifndef _MSC_VER
 #include <dirent.h>
-
+#endif
 #include <lal/FileIO.h>
 #include <lal/SFTfileIO.h>
 
@@ -693,6 +694,7 @@ endian_swap(CHAR * pdata, size_t dsize, size_t nelements)
  *  "directory/pattern", ie. we actually match "directory/ *pattern*"
  *
  *----------------------------------------------------------------------*/
+#ifndef _MSC_VER
 StringVector *
 find_files (const CHAR *globdir)
 {
@@ -779,7 +781,18 @@ find_files (const CHAR *globdir)
   return (ret);
 
 } /* find_files() */
-
+#else
+/* Windows dummy version */
+StringVector *
+find_files (const CHAR *globdir)
+{
+  static StringVector ret;
+  static CHAR * cpt;
+  cpt = globdir;
+  ret.length = 1;
+  ret.data = &cpt; 
+}
+#endif
 
 void
 DestroyStringVector (StringVector *strings)
