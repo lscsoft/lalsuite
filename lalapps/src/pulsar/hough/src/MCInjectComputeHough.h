@@ -25,7 +25,7 @@
 #include <lal/SFTfileIO.h>
 
 #include <lal/GeneratePulsarSignal.h> 
-#include "../driver/DriveHoughColor.h" /* proper path*/
+#include "./DriveHoughColor.h" /* proper path*/
 
 #ifdef TIMING
 #include "./timer/cycle_counter/Intel/GCC/cycle_counter.h" /* proper path*/
