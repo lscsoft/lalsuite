@@ -97,12 +97,12 @@ class InspiralPipeline:
     for sciseg in self.segments:
       total_science += sciseg.duration
       total_science_used += sciseg.used
-      num_chunks += length(sciseg.chunks)
+      num_chunks += len(sciseg.chunks)
     print >> log_fh, """\
 read %d science segments
 got %d seconds of science data of which %d seconds is usable
 created %d inspiral chunks for analysis
-""" % ( length(self.segments), total_science, total_science_used, num_chunks )
+""" % ( len(self.segments), total_science, total_science_used, num_chunks )
     log_fh.close()
 
   def frcachesub(self):
@@ -184,7 +184,7 @@ queue
     # jobs to generate the frame cache files
     for seg in self.segments:
       jobname = 'frcache_%s_%d_%d' % (site,seg.startpad,seg.endpad)
-      print >> dag_fh, 'JOB %s %s.frcache.condor' % (jobname,self.basename),
+      print >> dag_fh, 'JOB %s %s.frcache.sub' % (jobname,self.basename),
       if cache: print >> dag_fh, 'done',
       print >> dag_fh, '\nVARS %s site="%s" frstart="%s" frend="%s"' % (
       jobname, site, seg.startpad, seg.endpad )
@@ -198,7 +198,7 @@ queue
       parent = 'frcache_%s_%s_%s' % (site,seg.startpad,seg.endpad)
       for chunk in seg.chunks:
         jobname = 'tmpltbank_%s_%s_%s' % (ifo,chunk.start,chunk.end)
-        print >> dag_fh, 'JOB %s %s.tmpltbank.condor' % (jobname,self.basename),
+        print >> dag_fh, 'JOB %s %s.tmpltbank.sub' % (jobname,self.basename),
         if bank: print >> dag_fh, 'done',
         print >> dag_fh, """
 VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" channel="%s" calcache="%s"\
@@ -211,7 +211,7 @@ self.config['input'][string.lower(ifo) + '-cal'])
       for chunk in seg.chunks:
         parent = 'tmpltbank_%s_%s_%s' % (ifo,chunk.start,chunk.end)
         jobname = 'inspiral_%s_%s_%s' % (ifo,chunk.start,chunk.end)
-        print >> dag_fh, 'JOB %s %s.inspiral.condor' % (jobname,self.basename),
+        print >> dag_fh, 'JOB %s %s.inspiral.sub' % (jobname,self.basename),
         if inspiral: print >> dag_fh, 'done',
         print >> dag_fh, """
 VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" chunklen="%d" channel="%s" calcache="%s"\
@@ -303,6 +303,7 @@ except: pass
 pipeline = InspiralPipeline(config_file)
 pipeline.parsesegs()
 pipeline.createchunks()
+pipeline.status()
 pipeline.frcachesub()
 pipeline.banksub()
 pipeline.inspiralsub()
