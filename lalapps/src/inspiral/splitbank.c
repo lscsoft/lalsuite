@@ -50,23 +50,12 @@ RCSID( "$Id$" );
 "  --user-tag STRING         set the process_params usertag to STRING\n"\
 "  --comment STRING          set the process table comment to STRING\n"\
 "\n"\
-"  --input-bank FILE         read templates from FILE\n"\
-"  --number-of-banks N       split template bank into N files\n"
+"  --bank-file FILE          read template bank parameters from FILE\n"\
+"  --number-of-banks N       split template bank into N files\n"\
+"  --minimal-match M         set minimal match of triggered bank to M\n"\
 
-
-/*
- *
- * variables that control program behaviour
- *
- */
-
-
-/* debugging */
 extern int vrbflg;                      /* verbocity of lal function    */
 
-/* template bank generation parameters */
-CHAR    inputBankFile[4096];            /* name of the input template bank */
-INT4    numOutBanks = 0;                /* number of banks to split into   */
 
 int main ( int argc, char *argv[] )
 {
@@ -74,20 +63,31 @@ int main ( int argc, char *argv[] )
   LALStatus             status = blank_status;
   LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
+  /* template bank generation parameters */
+  CHAR   *bankFileName = NULL;
+  INT4    numOutBanks = 0;
+  REAL4   minMatch = -1;
+
   /* output data */
-  /* MetadataTable         inputBank; */
-  /* MetadataTable         outputBank; */
+  MetadataTable         inputBank;
+  MetadataTable         outputBank;
   MetadataTable         proctable;
   MetadataTable         procparams;
   ProcessParamsTable   *this_proc_param = NULL;
-  /* LIGOLwXMLStream       results; */
+  LIGOLwXMLStream       xmlStream;
 
   /* counters and other variables */
-  /* INT4 i; */
-  /* char fname[4096]; */
+  INT4 i, j;
+  INT4 numTmplts = 0;
+  INT4 numPerFile = 0;
+  CHAR *gpsHyphen;
+  char outBankFileName[FILENAME_MAX];
+  CHAR bankFileNameHead[FILENAME_MAX];
+  CHAR bankFileNameTail[FILENAME_MAX];
   CHAR comment[LIGOMETA_COMMENT_MAX];  
   CHAR *userTag = NULL;
-
+  SnglInspiralTable *thisTmplt = NULL;
+  SnglInspiralTable *tmpTmplt = NULL;
 
   /* getopt arguments */
   struct option long_options[] =
@@ -99,8 +99,9 @@ int main ( int argc, char *argv[] )
     {"comment",                 required_argument, 0,                's'},    
     {"help",                    no_argument,       0,                'h'}, 
     {"debug-level",             required_argument, 0,                'z'},
-    {"input-bank",              required_argument, 0,                'i'},
+    {"bank-file",               required_argument, 0,                'v'},
     {"number-of-banks",         required_argument, 0,                'n'},
+    {"minimal-match",           required_argument, 0,                'M'},
     {0, 0, 0, 0}
   };
   int c;
@@ -116,8 +117,6 @@ int main ( int argc, char *argv[] )
   lal_errhandler = LAL_ERR_EXIT;
   set_debug_level( "1" );
   setvbuf( stdout, NULL, _IONBF, 0 );
-
-  memset( inputBankFile, 0, sizeof(inputBankFile) * sizeof(*inputBankFile) );
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
@@ -144,7 +143,7 @@ int main ( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "i:n:VZ:hz:s:", 
+        "i:n:VZ:hz:s:M:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -169,9 +168,10 @@ int main ( int argc, char *argv[] )
         }
         break;
 
-      case 'i':
-        strncpy( inputBankFile, 
-            optarg, sizeof(inputBankFile) * sizeof(*inputBankFile) );
+      case 'v':
+        optarg_len = strlen( optarg ) + 1;
+        bankFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( bankFileName, optarg, optarg_len );
         LALSnprintf( procparams.processParamsTable->program, 
             LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
         LALSnprintf( procparams.processParamsTable->type, 
@@ -179,7 +179,7 @@ int main ( int argc, char *argv[] )
         LALSnprintf( procparams.processParamsTable->param, 
             LIGOMETA_PARAM_MAX, "--%s", long_options[option_index].name );
         LALSnprintf( procparams.processParamsTable->value, 
-            LIGOMETA_TYPE_MAX, "%s", optarg );
+            LIGOMETA_VALUE_MAX, "%s", optarg );
         break;
 
       case 'n':
@@ -192,19 +192,19 @@ int main ( int argc, char *argv[] )
               long_options[option_index].name, numOutBanks );
           exit( 1 );
         }
-        else if ( numOutBanks > 20 )
+        else if ( numOutBanks > 99 )
         {
           fprintf( stderr, 
-              "Warning: generating more than 20 banks is not reccomended!\n" );
+              "Warning: generating more than 99 banks is not reccomended!\n" );
         }
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
         LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
             "%s", PROGRAM_NAME );
+        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "int" );
         LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
             "--%s", long_options[option_index].name );
-        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "int" );
-        LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, "%d", 
+        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%d", 
             numOutBanks );
         break;
 
@@ -228,9 +228,9 @@ int main ( int argc, char *argv[] )
           calloc( 1, sizeof(ProcessParamsTable) );
         LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
             PROGRAM_NAME );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-            "--debug-level" );
         LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+            "--%s", long_options[option_index].name );
         LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
         break;
@@ -245,15 +245,36 @@ int main ( int argc, char *argv[] )
           calloc( 1, sizeof(ProcessParamsTable) );
         LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
             PROGRAM_NAME );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
         LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
         LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
         break;
 
+      case 'M':
+        minMatch = (REAL4) atof( optarg );
+        if ( minMatch <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "minimal match of bank must be > 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, minMatch );
+          exit( 1 );
+        }
+        this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+          calloc( 1, sizeof(ProcessParamsTable) );
+        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+            PROGRAM_NAME );
+        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "float" );
+        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s",
+            long_options[option_index].name );
+        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%e",
+            minMatch );
+        break;
+
       case 'V':
         /* print version information and exit */
-        fprintf( stdout, "Template Bank Splitter\n" 
+        fprintf( stdout, "Inspiral Template Bank Splitter\n" 
             "Duncan Brown <duncan@gravity.phys.uwm.edu>\n"
             "CVS Version: " CVS_ID_STRING "\n" );
         exit( 0 );
@@ -281,11 +302,10 @@ int main ( int argc, char *argv[] )
     exit( 1 );
   }
 
-
   /* check the values of the arguments */
-  if ( ! inputBankFile[0] )
+  if ( ! bankFileName )
   {
-    fprintf( stderr, "Error: --input-bank must be specified\n" );
+    fprintf( stderr, "Error: --bank-file must be specified\n" );
     exit( 1 );
   }
 
@@ -295,6 +315,139 @@ int main ( int argc, char *argv[] )
     exit( 1 );
   }
 
+  if ( minMatch < 0 )
+  {
+    fprintf( stderr, "Error: --minimal-match must be specified\n" );
+    exit( 1 );
+  }
 
-  return 0;
+
+  /*
+   *
+   * read in the template bank from the input file
+   *
+   */
+
+
+  /* read in the template bank from a ligo lw xml file */
+  inputBank.snglInspiralTable = NULL;
+  numTmplts = LALSnglInspiralTableFromLIGOLw( &(inputBank.snglInspiralTable), 
+      bankFileName, 0, -1 );
+  if ( numTmplts < 0 )
+  {
+    fprintf( stderr, "error: unable to read templates from %s\n", 
+        bankFileName );
+    exit( 1 );
+  }
+  
+  if ( vrbflg ) fprintf( stdout, "read %d templates from %s\n", 
+      numTmplts, bankFileName );
+
+  /* find the hypen just before the GPS start time of the bank */
+  gpsHyphen = NULL;
+  gpsHyphen = strstr( bankFileName, "-" );
+  if ( ! gpsHyphen )
+  {
+    fprintf( stderr, "Error: could not find first hypen in file name %s\n",
+        bankFileName );
+    exit( 1 );
+  }
+  gpsHyphen = strstr( gpsHyphen + 1, "-" );
+  if ( ! gpsHyphen )
+  {
+    fprintf( stderr, "Error: could not find second hypen in file name %s\n",
+        bankFileName );
+    exit( 1 );
+  }
+
+  /* store the name of the template bank file */
+  memcpy( bankFileNameHead, bankFileName, 
+      (size_t) gpsHyphen - (size_t) bankFileName < FILENAME_MAX ? 
+      (gpsHyphen - bankFileName) * sizeof(CHAR) : FILENAME_MAX * sizeof(CHAR) );
+  strncpy( bankFileNameTail, gpsHyphen + 1, FILENAME_MAX * sizeof(CHAR) );
+
+  if ( vrbflg )
+  {
+    fprintf( stdout, "head of bank file name is %s\n", bankFileNameHead );
+    fprintf( stdout, "tail of bank file name is %s\n", bankFileNameTail );
+  }
+
+  
+  /*
+   *
+   * write out the individual tempate bank files
+   *
+   */
+  
+
+  /* compute the number of templates per output file */
+  numPerFile = ( numTmplts + 1 )/ numOutBanks;
+  thisTmplt = inputBank.snglInspiralTable;
+  if ( vrbflg ) fprintf( stdout, "writing %d templates per file\n", 
+      numPerFile );
+
+  for ( i = 0; i < numOutBanks; ++i )
+  {
+    /* open the output xml file */
+    memset( outBankFileName, 0, FILENAME_MAX * sizeof(CHAR) );
+    LALSnprintf( outBankFileName, FILENAME_MAX * sizeof(CHAR), "%s_%2.2d-%s", 
+        bankFileNameHead, i, bankFileNameTail );
+    memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
+    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, outBankFileName), 
+        &status );
+
+    if ( vrbflg ) 
+      fprintf( stdout, "writing templates to %s... ", outBankFileName );
+
+    /* write process table */
+    LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
+          &accuracy ), &status );
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
+        &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 
+          process_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+    
+    /* write process_params table */
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
+          process_params_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, procparams, 
+          process_params_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+
+    /* write the templates to the file */
+    outputBank.snglInspiralTable = thisTmplt;
+
+    if ( thisTmplt )
+    {
+      LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
+            sngl_inspiral_table), &status );
+
+      for ( j = 0; j < numPerFile && thisTmplt->next; ++j )
+      {
+        thisTmplt = thisTmplt->next;
+      }
+      tmpTmplt = thisTmplt->next;
+      thisTmplt->next = NULL;
+      thisTmplt = tmpTmplt;
+
+      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputBank,
+            sngl_inspiral_table), &status );
+      LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
+    }
+
+    while ( outputBank.snglInspiralTable )
+    {
+      tmpTmplt = outputBank.snglInspiralTable;
+      outputBank.snglInspiralTable = outputBank.snglInspiralTable->next;
+      LALFree( tmpTmplt );
+    }
+
+    LAL_CALL( LALCloseLIGOLwXMLFile( &status, &xmlStream), &status );
+
+    if ( vrbflg ) fprintf( stdout, "%d templates\n", 0 );
+  }
+
+  LALCheckMemoryLeaks();
+  exit( 0 );
 }
