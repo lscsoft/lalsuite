@@ -171,7 +171,7 @@ $\backslash$ \newline \hspace*{0.25in}
 [\verb$--seed$ \textsc{seed}]
 [\verb$--calibration-cache$ \textsc{calcache}] 
 [\verb$--injfile$ \textsc{injfile}] 
-[\verb$--comment$ \textsc{comment}]
+[\verb$--user-tag$ \textsc{comment}]
 $\backslash$ \newline \hspace*{0.25in}
 [\verb$--dbglevel$ \textsc{dbglevel}]
 [\verb$--mdccache$ \textsc{mdccache}]
@@ -364,7 +364,7 @@ in the cluster.  [This is a protoype option.  Its behavior is not
 robustly tested.  Treat with care and look at the code to insure
 understanding.]
 
-\item[\texttt{--comment} \textsc{comment}] A user defined comment
+\item[\texttt{--user-tag} \textsc{comment}] A user defined comment
 string.  It should be less than 256 characters and should not contain
 spaces (replace spaces by underscores).  This string will appear in
 the name of the file to which output information is written.
@@ -398,7 +398,7 @@ To run the program,  type:
  --channel H1:LSC-AS_Q   --simtype 0  --spectype useMedian  --window 2 \
  --gps-start-time 729332600    --gps-start-time_ns 0 --gps-end-time 729332800  \
  --gps-end-time-ns 0  --sample-rate 16384   --frame-cache frcache-H-729332032-729333188.out \
- --comment 040511 --verbose  --dbglevel 65 \
+ --user-tag 040511 --verbose  --dbglevel 65 \
  --calibration-cache /ldas_outgoing/calibration/cache_files/H1-CAL-V03-729273600-734367600.cache \
  --injfile HL-INJECTIONS_1_S20507043-729332032-1156.xml \
 \end{verbatim}

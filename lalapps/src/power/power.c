@@ -59,7 +59,7 @@ int main( void )
     "[--mdccache        mdccache filename] \n"\
     "[--mdcchannel      mdcchannel] \n"\
     "[--geodata         high pass corner freq] \n"\
-    "[--comment         comment] \n"\
+    "[--user-tag        comment] \n"\
     "[--framedir        dirname] \n"\
     "[--printSpectrum] \n"\
     "[--verbose] \n"\
@@ -760,7 +760,7 @@ int initializeEPSearch(
         /* these options don't set a flag */
         {"alphdef",                 required_argument, 0,                 'a'}, 
         {"channel-name",            required_argument, 0,                 'b'}, 
-        {"comment",                 required_argument, 0,                 'c'}, 
+        {"user-tag",                required_argument, 0,                 'c'}, 
         {"delf",                    required_argument, 0,                 'd'}, 
         {"etomstr",                 required_argument, 0,                 'e'}, 
         {"flow",                    required_argument, 0,                 'f'}, 
