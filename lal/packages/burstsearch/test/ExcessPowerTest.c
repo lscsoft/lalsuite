@@ -1,0 +1,1277 @@
+/*----------------------------------------------------------------------- 
+ * 
+ * File Name: ExcessPowerTest.c
+ * 
+ * Author: Eanna Flanagan
+ * 
+ * Revision: $Id$
+ * 
+ *----------------------------------------------------------------------- 
+ * 
+ * NAME 
+ * main()
+ *
+ * SYNOPSIS 
+ * 
+ * DESCRIPTION 
+ * Test suite for functions in ExcessPower.c
+ * 
+ * DIAGNOSTICS
+ * Writes PASS or FAIL to stdout as tests are passed or failed.
+ *
+ * CALLS
+ *
+ * NOTES
+ *
+ *-----------------------------------------------------------------------
+ */
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+
+#include "LALStdlib.h"
+#include "SeqFactories.h"
+#include "RealFFT.h"
+#include "VectorOps.h"
+#include "Thresholds.h"
+#include "ExcessPower.h"
+#include "Random.h"
+
+
+#define _CODES(x) #x
+#define CODES(x) _CODES(x)
+
+
+NRCSID (MAIN, "$Id$");
+
+
+extern char *optarg;
+extern int   optind;
+
+INT4 debuglevel = 0;   /* set to 2 to get full status information for tests */
+INT4 verbose    = 1;
+
+
+static void
+Usage (const char *program, int exitflag);
+
+static void
+ParseOptions (int argc, char *argv[]);
+
+static void
+TestStatus (Status *status, const char *expectedCodes, int exitCode);
+
+
+static REAL4 ff(REAL4 w);   /* simple function used to construct a waveform */
+
+int
+main (int argc, char *argv[])
+{
+  static Status             status; 
+  
+  const INT4                ntot=512;
+  const REAL8               factor=1.1;        /* controls SNR of signal */
+
+  TFTiling                  *tfTiling=NULL;
+  COMPLEX8FrequencySeries   fseries;
+  REAL4TimeSeries           tseries;
+  ComputeExcessPowerIn      input;
+  INT4                      ntotT;
+  INT4                      ntotF;
+  INT4                      i;
+  INT4                      numEvents;
+  REAL8                     lambda;
+  REAL8                     snr2;
+
+  
+
+
+  /*
+   *
+   * Parse the command line options
+   *
+   */
+
+
+  ParseOptions (argc, argv);
+
+
+  /* 
+   *  
+   *  Set up input time series
+   *
+   */
+
+  {
+    ntotT = 2*ntot +2;
+   
+    tseries.epoch.gpsSeconds=0;
+    tseries.epoch.gpsNanoSeconds=0;
+    tseries.deltaT = 0.001;  /* 1 kHz sampling */
+    tseries.f0 = 0.0;
+    tseries.name = NULL;
+    tseries.sampleUnits=NULL;
+    tseries.data=NULL;
+
+    SCreateVector (&status, &(tseries.data), ntotT);
+    TestStatus (&status, CODES(0), 1);
+    
+    for(i=0; i< tseries.data->length; i++)
+      {
+	tseries.data->data[i] = factor * ff( (REAL4)(i)/ (REAL4)(ntotT));
+      };
+
+  }
+
+
+
+  /*
+   *
+   *  Take DFT of time series to give frequency series
+   *
+   */
+
+  {
+    RealDFTParams                   *dftparams1=NULL;
+    
+    ntotF = ntotT/2+1;
+    fseries.data=NULL;
+    CCreateVector( &status, &(fseries.data), ntotF);
+    TestStatus (&status, CODES(0), 1);
+      
+    {
+      LALWindowParams winParams;
+      winParams.type=Rectangular;
+      winParams.length=ntotT;
+      CreateRealDFTParams( &status, &dftparams1, &winParams, 1);
+      TestStatus (&status, CODES(0), 1);
+    }
+
+    if(verbose)
+      {
+	printf("Computing FFT of time domain data\n");
+      }
+    ComputeFrequencySeries ( &status, &fseries, &tseries, dftparams1);
+    TestStatus (&status, CODES(0), 1);
+
+    DestroyRealDFTParams (&status, &dftparams1);
+    TestStatus (&status, CODES(0), 1);
+        
+
+  }
+
+
+  /*
+   *
+   *   Compute matched filtering SNR
+   *
+   */
+
+  {
+    
+    snr2=0.0;
+    for(i=0;i<fseries.data->length;i++)
+      {
+	COMPLEX8 z=fseries.data->data[i];
+	snr2 += z.re*z.re + z.im*z.im;
+      }
+  }
+    
+
+
+  /*
+   *
+   *  Add white noise to frequency series
+   *
+   */
+  {
+
+    AddWhiteNoise (&status, fseries.data, 1.0);
+    TestStatus (&status, CODES(0), 1);
+
+    /*  
+     *  1st and last point must be purely real to be able to FFT back
+     *  to time domain, so ...
+     */
+    fseries.data->data[0].im=0.0;
+    fseries.data->data[ntotF-1].im=0.0;
+    
+  }
+
+
+
+  /*
+   *
+   *  DFT back to time domain to get modified data
+   * 
+   */
+  {
+    RealFFTPlan            *pinv = NULL;
+
+    EstimateInvRealFFTPlan (&status, &pinv, ntotT);
+    TestStatus (&status, CODES(0), 1);
+
+    InvRealFFT (&status, tseries.data, fseries.data, pinv);
+    TestStatus (&status, CODES(0), 1);
+
+    DestroyRealFFTPlan     (&status, &pinv);
+    TestStatus (&status, CODES(0), 1);
+
+    /* correct normalization to match original time domain data */
+    for(i=0; i<tseries.data->length; i++)
+      {
+	tseries.data->data[i] /= sqrt((REAL8)(ntotT));
+      }
+
+
+
+  }    
+
+
+  /*
+   *
+   *  set up TFTiling
+   *
+   */
+
+  {
+    CreateTFTilingIn          params;
+    
+    params.overlapFactor = 3;
+    params.minFreqBins = 1;
+    params.minTimeBins = 1;
+    params.flow = 0.0;
+    params.deltaF = fseries.deltaF;
+    params.length = ntot;
+  
+    CreateTFTiling (&status, &tfTiling, &params);
+    TestStatus (&status, CODES(0), 1);
+  }
+
+
+
+
+
+  /*
+   *
+   *  Now do the computations
+   *
+   */
+
+  input.numSigmaMin=2.0;
+  input.alphaDefault=0.5;
+
+  ComputeTFPlanes (&status, tfTiling, &fseries);
+  TestStatus (&status, CODES(0), 1);
+
+  ComputeExcessPower (&status, tfTiling, &input);
+  TestStatus (&status, CODES(0), 1);
+
+  ComputeLikelihood  (&status, &lambda, tfTiling);
+  TestStatus (&status, CODES(0), 1);
+
+  SortTFTiling (&status, tfTiling);
+  TestStatus (&status, CODES(0), 1);
+
+  CountEPEvents( &status, &numEvents, tfTiling, 0.000000001);
+  TestStatus (&status, CODES(0), 1);
+
+
+  if(verbose)
+    {
+    REAL8 sigma2;
+
+    /* 
+     *  if lambda<1 computation of effective number of sigma fails
+     *  so trap this
+     */
+
+    if(lambda<=1.0) 
+      {
+	sigma2 = 0.0;
+      }
+    else
+      {
+	Chi2ThresholdIn input;
+
+	input.dof = 1.0;
+	input.falseAlarm = 1.0 / lambda;
+	
+	Chi2Threshold (&status, &sigma2, &input);
+	TestStatus (&status, CODES(0), 1);
+      }
+
+    PrintTFTileList (&status, stdout, tfTiling, 4);
+    TestStatus (&status, CODES(0), 1);
+    printf("\n");
+    printf("  ***    Matched filtering SNR           : %f\n",sqrt(snr2));
+    printf("  ***    Number of tiles above threshold : %d out of %d\n",
+           numEvents,tfTiling->numTiles);
+    printf("  ***    Average likelihood              : %f\n",lambda);
+    printf("  ***    Effective number of sigma       : %f\n\n",sqrt(sigma2));
+    
+    }
+
+  /*
+   *
+   *  Clean up memory used
+   *
+   */
+
+
+  CDestroyVector (&status, &(fseries.data) );
+  TestStatus (&status, CODES(0), 1);
+
+  DestroyTFTiling (&status, &tfTiling);
+  TestStatus (&status, CODES(0), 1);
+
+  DestroyVector (&status, &(tseries.data) );
+  TestStatus (&status, CODES(0), 1);
+
+
+
+
+
+
+  /*************************************************************************
+   *                                                                       * 
+   *                                                                       *
+   *  Now check to make sure that correct error codes are generated.       *
+   *                                                                       *
+   *                                                                       * 
+   *************************************************************************/
+
+
+  if (verbose || debuglevel)
+  {
+    printf ("\n===== Check Errors =====\n");
+  }
+
+  /* 
+   *
+   *  Test function AddWhiteNoise()
+   *
+   */
+  {
+    COMPLEX8Vector *v=NULL;
+    INT4 i;
+    COMPLEX8 *p=NULL;
+
+    if (verbose)
+      {
+	printf ("\n--- Testing AddWhiteNoise() \n\n");
+      }
+    
+    CCreateVector( &status, &v, 10);
+    TestStatus (&status, CODES(0), 1);
+    for(i=0; i<10; i++)
+      {
+	v->data[i].re=0.0;
+	v->data[i].im=0.0;
+      }
+
+    AddWhiteNoise( &status, NULL, 1.0);
+    TestStatus( &status, CODES(EXCESSPOWER_ENULLP), 1);
+
+    p = v->data;
+    v->data=NULL;
+    AddWhiteNoise( &status, v, 1.0);
+    TestStatus( &status, CODES(EXCESSPOWER_ENULLP), 1);
+    v->data=p;
+
+    i=v->length;
+    v->length=0;
+    AddWhiteNoise( &status, v, 1.0);
+    TestStatus( &status, CODES(EXCESSPOWER_EINCOMP), 1);
+    v->length=i;
+
+    CDestroyVector (&status, &v);
+    TestStatus (&status, CODES(0), 1);
+  }
+
+
+
+  /* 
+   *
+   *  Test functions CreateTFTiling() and DestroyTFTiling()
+   *
+   */
+  {
+    CreateTFTilingIn          params;
+
+    if (verbose)
+      {
+	printf ("\n--- Testing CreateTFTiling() and DestroyTFTiling() \n\n");
+      }
+    
+    params.overlapFactor = 3;
+    params.minFreqBins = 1;
+    params.minTimeBins = 1;
+    params.flow = 0.0;
+    params.deltaF = 1.0;
+    params.length = 16;
+  
+    CreateTFTiling (&status, &tfTiling, NULL);
+    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+
+    CreateTFTiling (&status, NULL, &params);
+    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+
+    DestroyTFTiling (&status, &tfTiling);
+    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+
+
+    {
+      INT4 p;
+      
+      p = params.overlapFactor;
+      params.overlapFactor=0;
+      CreateTFTiling (&status, &tfTiling, &params);
+      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      params.overlapFactor=p;
+
+      p = params.length;
+      params.length=0;
+      CreateTFTiling (&status, &tfTiling, &params);
+      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      params.length=17;
+      CreateTFTiling (&status, &tfTiling, &params);
+      TestStatus (&status, CODES(EXCESSPOWER_EPOW2), 1);
+      params.length=p;
+
+      p = params.minFreqBins;
+      params.minFreqBins=0;
+      CreateTFTiling (&status, &tfTiling, &params);
+      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      params.minFreqBins=100;
+      CreateTFTiling (&status, &tfTiling, &params);
+      TestStatus (&status, CODES(EXCESSPOWER_EINCOMP), 1);
+      params.minFreqBins=p;
+
+      p = params.minTimeBins;
+      params.minTimeBins=0;
+      CreateTFTiling (&status, &tfTiling, &params);
+      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      params.minTimeBins=100;
+      CreateTFTiling (&status, &tfTiling, &params);
+      TestStatus (&status, CODES(EXCESSPOWER_EINCOMP), 1);
+      params.minTimeBins=p;
+    }
+      
+
+    {
+      REAL8 p;
+      
+      p=params.deltaF;
+      params.deltaF=0.0;
+      CreateTFTiling (&status, &tfTiling, &params);
+      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      params.deltaF=p;
+      
+      p=params.flow;
+      params.flow=-1.0;
+      CreateTFTiling (&status, &tfTiling, &params);
+      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      params.flow=p;
+    }
+
+    CreateTFTiling (&status, &tfTiling, &params);
+    TestStatus (&status, CODES(0), 1);
+ 
+    CreateTFTiling (&status, &tfTiling, &params);
+    TestStatus (&status, CODES(EXCESSPOWER_ENONNULL), 1);
+
+    DestroyTFTiling (&status, NULL);
+    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+
+    {
+      COMPLEX8TimeFrequencyPlane **p;
+      p = tfTiling->tfp;
+      tfTiling->tfp=NULL;
+      DestroyTFTiling (&status, &tfTiling);
+      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      tfTiling->tfp=p;
+    }
+
+    {
+      TFTile *p;
+      p = tfTiling->firstTile;
+      tfTiling->firstTile=NULL;
+      DestroyTFTiling (&status, &tfTiling);
+      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      tfTiling->firstTile=p;
+    }
+
+    {
+      INT4 p;
+      p = tfTiling->numPlanes;
+      tfTiling->numPlanes=0;
+      DestroyTFTiling (&status, &tfTiling);
+      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      tfTiling->numPlanes=p;
+    }
+
+    DestroyTFTiling (&status, &tfTiling);
+    TestStatus (&status, CODES(0), 1);
+  }
+
+
+
+
+  /* 
+   *
+   *  Test functions ComputeTFPlanes()
+   *
+   */
+  {
+    CreateTFTilingIn          params;
+    COMPLEX8FrequencySeries   fseries;
+
+    if (verbose)
+      {
+	printf ("\n--- Testing ComputeTFPlanes() \n\n");
+      }
+    
+    params.overlapFactor = 3;
+    params.minFreqBins = 1;
+    params.minTimeBins = 1;
+    params.flow = 0.0;
+    params.deltaF = 1.0;
+    params.length = 16;
+  
+    CreateTFTiling (&status, &tfTiling, &params);
+    TestStatus (&status, CODES(0), 1);
+
+    fseries.epoch.gpsSeconds=0;
+    fseries.epoch.gpsNanoSeconds=0;
+    fseries.deltaF = 1.0;
+    fseries.f0 = 0.0;
+    fseries.name = NULL;
+    fseries.sampleUnits=NULL;
+    fseries.data=NULL;
+
+    CCreateVector( &status, &(fseries.data), 1000);
+    TestStatus (&status, CODES(0), 1);
+    
+
+    /* now start checking errors */
+
+    ComputeTFPlanes( &status, tfTiling, NULL);
+    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+
+    ComputeTFPlanes( &status, NULL, &fseries);
+    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+
+    {
+      COMPLEX8Vector *p;
+      p = fseries.data;
+      fseries.data=NULL;
+      ComputeTFPlanes( &status, tfTiling, &fseries);
+      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      fseries.data=p;
+    }
+
+    {
+      COMPLEX8 *p;
+      p = fseries.data->data;
+      fseries.data->data=NULL;
+      ComputeTFPlanes( &status, tfTiling, &fseries);
+      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      fseries.data->data=p;
+    }
+
+    {
+      TFTile *p;
+      p=tfTiling->firstTile;
+      tfTiling->firstTile=NULL;
+      ComputeTFPlanes( &status, tfTiling, &fseries);
+      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      tfTiling->firstTile=p;
+    }
+
+    {
+      INT4 p;
+      p = tfTiling->numPlanes;
+      tfTiling->numPlanes=0;
+      ComputeTFPlanes( &status, tfTiling, &fseries);
+      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      tfTiling->numPlanes=p;
+    }
+
+    {
+      COMPLEX8TimeFrequencyPlane **p;
+      p = tfTiling->tfp;
+      tfTiling->tfp=NULL;
+      ComputeTFPlanes( &status, tfTiling, &fseries);
+      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      tfTiling->tfp=p;
+    }
+
+    {
+      ComplexDFTParams **p;
+      p = tfTiling->dftParams;
+      tfTiling->dftParams=NULL;
+      ComputeTFPlanes( &status, tfTiling, &fseries);
+      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      tfTiling->dftParams=p;
+    }
+
+    {
+      INT4 i;
+      COMPLEX8TimeFrequencyPlane **thisPlane;
+      ComplexDFTParams      **thisdftParams;
+      COMPLEX8TimeFrequencyPlane *p;
+      ComplexDFTParams *p1;
+            
+      for(i=0;i<tfTiling->numPlanes; i++)
+	{
+	  thisPlane = tfTiling->tfp+i;
+	  p=*thisPlane;
+	  *thisPlane=NULL;
+	  ComputeTFPlanes( &status, tfTiling, &fseries);
+	  TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+	  *thisPlane=p;
+
+	  thisdftParams = tfTiling->dftParams+i;
+	  p1=*thisdftParams;
+	  *thisdftParams=NULL;
+	  ComputeTFPlanes( &status, tfTiling, &fseries);
+	  TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+	  *thisdftParams=p1;
+	}
+    }
+
+    /* clean up */
+
+    CDestroyVector( &status, &(fseries.data));
+    TestStatus (&status, CODES(0), 1);
+
+    DestroyTFTiling (&status, &tfTiling);
+    TestStatus (&status, CODES(0), 1);
+  }
+
+
+
+
+
+
+
+  /* 
+   *
+   *  Test function ComputeExcessPower()
+   *
+   */
+  {
+    CreateTFTilingIn          params;
+    COMPLEX8FrequencySeries   fseries;
+
+    if (verbose)
+      {
+	printf ("\n--- Testing ComputeExcessPower() \n\n");
+      }
+    
+    params.overlapFactor = 3;
+    params.minFreqBins = 1;
+    params.minTimeBins = 1;
+    params.flow = 0.0;
+    params.deltaF = 1.0;
+    params.length = 16;
+  
+    CreateTFTiling (&status, &tfTiling, &params);
+    TestStatus (&status, CODES(0), 1);
+
+    fseries.epoch.gpsSeconds=0;
+    fseries.epoch.gpsNanoSeconds=0;
+    fseries.deltaF = 1.0;
+    fseries.f0 = 0.0;
+    fseries.name = NULL;
+    fseries.sampleUnits=NULL;
+    fseries.data=NULL;
+
+    CCreateVector( &status, &(fseries.data), 1000);
+    TestStatus (&status, CODES(0), 1);
+    
+    ComputeExcessPower( &status, tfTiling, &input);	
+    TestStatus (&status, CODES(EXCESSPOWER_EORDER), 1);
+
+    ComputeTFPlanes( &status, tfTiling, &fseries);
+    TestStatus (&status, CODES(0), 1);
+
+
+
+    /* now start checking errors */
+
+    ComputeExcessPower( &status, NULL, &input);	
+    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+
+    ComputeExcessPower( &status, tfTiling, NULL);	
+    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+
+
+    {
+      COMPLEX8TimeFrequencyPlane **p;
+      p = tfTiling->tfp;
+      tfTiling->tfp=NULL;
+      ComputeExcessPower( &status, tfTiling, &input);
+      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      tfTiling->tfp=p;
+    }
+
+    {
+      ComplexDFTParams **p;
+      p = tfTiling->dftParams;
+      tfTiling->dftParams=NULL;
+      ComputeExcessPower( &status, tfTiling, &input);
+      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      tfTiling->dftParams=p;
+    }
+
+    {
+      TFTile *p;
+      p=tfTiling->firstTile;
+      tfTiling->firstTile=NULL;
+      ComputeExcessPower( &status, tfTiling, &input);
+      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      tfTiling->firstTile=p;
+    }
+
+    {
+      INT4 p;
+      p = tfTiling->numPlanes;
+      tfTiling->numPlanes=0;
+      ComputeExcessPower( &status, tfTiling, &input);
+      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      tfTiling->numPlanes=p;
+    }
+
+    {
+      INT4 i;
+      COMPLEX8TimeFrequencyPlane **thisPlane;
+      COMPLEX8TimeFrequencyPlane *p;
+      COMPLEX8 *p2;
+      TFPlaneParams *p3;
+            
+      for(i=0;i<tfTiling->numPlanes; i++)
+	{
+	  thisPlane = tfTiling->tfp+i;
+	  p=*thisPlane;
+	  *thisPlane=NULL;
+	  ComputeExcessPower( &status, tfTiling, &input);
+	  TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+	  *thisPlane=p;
+	  
+	  p2=(*thisPlane)->data;
+	  (*thisPlane)->data=NULL;
+	  ComputeExcessPower( &status, tfTiling, &input);
+	  TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+	  (*thisPlane)->data=p2;
+
+	  p3=(*thisPlane)->params;
+	  (*thisPlane)->params=NULL;
+	  ComputeExcessPower( &status, tfTiling, &input);
+	  TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+	  (*thisPlane)->params=p3;
+	}
+    }
+
+    {
+      INT4 p;
+      TFTile *t=tfTiling->firstTile;
+      COMPLEX8TimeFrequencyPlane *tfPlane=*(tfTiling->tfp);
+
+      p = t->whichPlane;
+      t->whichPlane=-1;
+      ComputeExcessPower( &status, tfTiling, &input);
+      TestStatus (&status, CODES(EXCESSPOWER_EINCOMP), 1);
+      t->whichPlane = tfTiling->numPlanes;
+      ComputeExcessPower( &status, tfTiling, &input);
+      TestStatus (&status, CODES(EXCESSPOWER_EINCOMP), 1);
+      t->whichPlane=p;
+      
+      p = tfPlane->params->timeBins;
+      tfPlane->params->timeBins=0;
+      ComputeExcessPower( &status, tfTiling, &input);
+      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      tfPlane->params->timeBins=p;
+
+      p = tfPlane->params->freqBins;
+      tfPlane->params->freqBins=0;
+      ComputeExcessPower( &status, tfTiling, &input);
+      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      tfPlane->params->freqBins=p;
+    }
+    
+    /* clean up */
+
+    CDestroyVector( &status, &(fseries.data));
+    TestStatus (&status, CODES(0), 1);
+
+    DestroyTFTiling (&status, &tfTiling);
+    TestStatus (&status, CODES(0), 1);
+  }
+
+
+
+
+
+
+
+  /* 
+   *
+   *  Test function ComputeLikelihood()
+   *
+   */
+  {
+    CreateTFTilingIn          params;
+    COMPLEX8FrequencySeries   fseries;
+    REAL8                     lambda;
+
+    if (verbose)
+      {
+	printf ("\n--- Testing ComputeLikelihood() \n\n");
+      }
+    
+    params.overlapFactor = 3;
+    params.minFreqBins = 1;
+    params.minTimeBins = 1;
+    params.flow = 0.0;
+    params.deltaF = 1.0;
+    params.length = 16;
+  
+    CreateTFTiling (&status, &tfTiling, &params);
+    TestStatus (&status, CODES(0), 1);
+
+    fseries.epoch.gpsSeconds=0;
+    fseries.epoch.gpsNanoSeconds=0;
+    fseries.deltaF = 1.0;
+    fseries.f0 = 0.0;
+    fseries.name = NULL;
+    fseries.sampleUnits=NULL;
+    fseries.data=NULL;
+
+    CCreateVector( &status, &(fseries.data), 1000);
+    TestStatus (&status, CODES(0), 1);
+    
+    ComputeTFPlanes( &status, tfTiling, &fseries);
+    TestStatus (&status, CODES(0), 1);
+
+    ComputeLikelihood( &status, &lambda, tfTiling);	
+    TestStatus (&status, CODES(EXCESSPOWER_EORDER), 1);
+
+    ComputeExcessPower( &status, tfTiling, &input);
+    TestStatus (&status, CODES(0), 1);
+      
+
+    /* now start checking errors */
+
+    ComputeLikelihood( &status, NULL, tfTiling);
+    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+
+    ComputeLikelihood( &status, &lambda, NULL);
+    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+
+    {
+      TFTile *p;
+      p=tfTiling->firstTile;
+      tfTiling->firstTile=NULL;
+      ComputeLikelihood( &status, &lambda, tfTiling);
+      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      tfTiling->firstTile=p;
+    }
+
+    /* clean up */
+
+    CDestroyVector( &status, &(fseries.data));
+    TestStatus (&status, CODES(0), 1);
+
+    DestroyTFTiling (&status, &tfTiling);
+    TestStatus (&status, CODES(0), 1);
+  }
+
+
+
+
+
+
+
+
+  /* 
+   *
+   *  Test function CountEPEvents()
+   *
+   */
+  {
+    CreateTFTilingIn          params;
+    COMPLEX8FrequencySeries   fseries;
+    INT4                      numEvents;
+
+    if (verbose)
+      {
+	printf ("\n--- Testing CountEPEvents() \n\n");
+      }
+    
+    params.overlapFactor = 3;
+    params.minFreqBins = 1;
+    params.minTimeBins = 1;
+    params.flow = 0.0;
+    params.deltaF = 1.0;
+    params.length = 16;
+  
+    CreateTFTiling (&status, &tfTiling, &params);
+    TestStatus (&status, CODES(0), 1);
+
+    fseries.epoch.gpsSeconds=0;
+    fseries.epoch.gpsNanoSeconds=0;
+    fseries.deltaF = 1.0;
+    fseries.f0 = 0.0;
+    fseries.name = NULL;
+    fseries.sampleUnits=NULL;
+    fseries.data=NULL;
+
+    CCreateVector( &status, &(fseries.data), 1000);
+    TestStatus (&status, CODES(0), 1);
+    
+    ComputeTFPlanes( &status, tfTiling, &fseries);
+    TestStatus (&status, CODES(0), 1);
+
+    ComputeExcessPower( &status, tfTiling, &input);
+    TestStatus (&status, CODES(0), 1);
+      
+    CountEPEvents( &status, &numEvents, tfTiling, 0.01);
+    TestStatus (&status, CODES(EXCESSPOWER_EORDER), 1);
+
+    SortTFTiling( &status, tfTiling);
+    TestStatus (&status, CODES(0), 1);
+
+
+    /* now start checking errors */
+
+
+    CountEPEvents( &status, NULL, tfTiling, 0.01);
+    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+
+    CountEPEvents( &status, &numEvents, NULL, 0.01);
+    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+
+    CountEPEvents( &status, &numEvents, tfTiling, 0.0);
+    TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+
+    {
+      TFTile *p;
+      p=tfTiling->firstTile;
+      tfTiling->firstTile=NULL;
+      CountEPEvents( &status, &numEvents, tfTiling, 0.01);
+      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      tfTiling->firstTile=p;
+    }
+
+
+    /* clean up */
+
+    CDestroyVector( &status, &(fseries.data));
+    TestStatus (&status, CODES(0), 1);
+
+    DestroyTFTiling (&status, &tfTiling);
+    TestStatus (&status, CODES(0), 1);
+  }
+
+
+
+
+
+
+
+
+  /* 
+   *
+   *  Test functions SortTFTiling() and PrintTFTileList()
+   *
+   */
+  {
+    CreateTFTilingIn          params;
+    COMPLEX8FrequencySeries   fseries;
+    INT4                      i;
+
+    if (verbose)
+      {
+	printf ("\n--- Testing SortTFTiling() \n\n");
+      }
+    
+    params.overlapFactor = 3;
+    params.minFreqBins = 1;
+    params.minTimeBins = 1;
+    params.flow = 0.0;
+    params.deltaF = 1.0;
+    params.length = 16;
+  
+    CreateTFTiling (&status, &tfTiling, &params);
+    TestStatus (&status, CODES(0), 1);
+
+    fseries.epoch.gpsSeconds=0;
+    fseries.epoch.gpsNanoSeconds=0;
+    fseries.deltaF = 1.0;
+    fseries.f0 = 0.0;
+    fseries.name = NULL;
+    fseries.sampleUnits=NULL;
+    fseries.data=NULL;
+
+    CCreateVector( &status, &(fseries.data), 1000);
+    TestStatus (&status, CODES(0), 1);
+    
+    for(i=0; i<1000; i++)
+      {
+	fseries.data->data[i].re = 1.1;
+	fseries.data->data[i].im = 1.1;
+      }
+
+
+    ComputeTFPlanes( &status, tfTiling, &fseries);
+    TestStatus (&status, CODES(0), 1);
+
+    SortTFTiling( &status, tfTiling);
+    TestStatus (&status, CODES(EXCESSPOWER_EORDER), 1);
+
+    PrintTFTileList( &status, stdout, tfTiling, 2);
+    TestStatus (&status, CODES(EXCESSPOWER_EORDER), 1);
+
+    ComputeExcessPower( &status, tfTiling, &input);
+    TestStatus (&status, CODES(0), 1);
+
+    
+
+    /* now start checking errors */
+
+    SortTFTiling( &status, NULL);
+    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+
+    {
+      COMPLEX8TimeFrequencyPlane **p;
+      p = tfTiling->tfp;
+      tfTiling->tfp=NULL;
+      SortTFTiling( &status, tfTiling);
+      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      tfTiling->tfp=p;
+    }
+
+    {
+      ComplexDFTParams **p;
+      p = tfTiling->dftParams;
+      tfTiling->dftParams=NULL;
+      SortTFTiling( &status, tfTiling);
+      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      tfTiling->dftParams=p;
+    }
+
+    {
+      TFTile *p;
+      p=tfTiling->firstTile;
+      tfTiling->firstTile=NULL;
+      SortTFTiling( &status, tfTiling);
+      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      tfTiling->firstTile=p;
+    }
+
+    {
+      INT4 p;
+      p = tfTiling->numPlanes;
+      tfTiling->numPlanes=0;
+      SortTFTiling( &status, tfTiling);
+      TestStatus (&status, CODES(EXCESSPOWER_EPOSARG), 1);
+      tfTiling->numPlanes=p;
+    }
+
+
+
+
+
+
+    if (verbose)
+      {
+	printf ("\n--- Testing PrintTFTiling() \n\n");
+      }
+
+    PrintTFTileList( &status, NULL, tfTiling, 2);
+    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+
+    PrintTFTileList( &status, stdout, NULL, 2);
+    TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+    
+    {
+      TFTile *p;
+      p = tfTiling->firstTile;
+      tfTiling->firstTile=NULL;
+      PrintTFTileList( &status, stdout, tfTiling, 2);
+      TestStatus (&status, CODES(EXCESSPOWER_ENULLP), 1);
+      tfTiling->firstTile=p;
+    }
+
+    /* clean up */
+
+    CDestroyVector( &status, &(fseries.data));
+    TestStatus (&status, CODES(0), 1);
+
+    DestroyTFTiling (&status, &tfTiling);
+    TestStatus (&status, CODES(0), 1);
+  }
+
+
+
+
+
+
+
+  LALCheckMemoryLeaks ();
+
+  if(verbose)  printf("PASS: all tests\n");
+
+
+  
+  return 0;
+}
+
+
+
+
+static REAL4 ff(REAL4 w)
+{
+  /* simple waveform function used for testing */
+  REAL4 t,s,f;
+  REAL4 sigma = 0.4;
+  t = 2.0* (w - 0.5);
+  f = 70.0 + 30.0*t;
+  s = sin(f*t)*exp(-t*t/( 2.0 * sigma * sigma));
+  return(s);
+}
+
+
+
+
+/*
+ * TestStatus ()
+ *
+ * Routine to check that the status code status->statusCode agrees with one of
+ * the codes specified in the space-delimited string ignored; if not,
+ * exit to the system with code exitcode.
+ *
+ */
+static void
+TestStatus (Status *status, const char *ignored, int exitcode)
+{
+  char  str[64];
+  char *tok;
+
+  /*  if (verbose)
+  {
+    REPORTSTATUS (status);
+    }*/
+
+  if (strncpy (str, ignored, sizeof (str)))
+  {
+    if ((tok = strtok (str, " ")))
+    {
+      do
+      {
+        if (status->statusCode == atoi (tok))
+        {
+          return;
+        }
+      }
+      while ((tok = strtok (NULL, " ")));
+    }
+    else
+    {
+      if (status->statusCode == atoi (tok))
+      {
+        return;
+      }
+    }
+  }
+
+  fprintf (stderr, "\nExiting to system with code %d\n", exitcode);
+  exit (exitcode);
+}
+
+
+/*
+ * Usage ()
+ *
+ * Prints a usage message for program program and exits with code exitcode.
+ *
+ */
+static void
+Usage (const char *program, int exitcode)
+{
+  fprintf (stderr, "Usage: %s [options]\n", program);
+  fprintf (stderr, "Options:\n");
+  fprintf (stderr, "  -h         print this message\n");
+  fprintf (stderr, "  -q         quiet: run silently\n");
+  fprintf (stderr, "  -v         verbose: print extra information\n");
+  fprintf (stderr, "  -d level   set debuglevel to level\n");
+  exit (exitcode);
+}
+
+
+/*
+ * ParseOptions ()
+ *
+ * Parses the argc - 1 option strings in argv[].
+ *
+ */
+static void
+ParseOptions (int argc, char *argv[])
+{
+  while (1)
+  {
+    int c = -1;
+
+    c = getopt (argc, argv, "hqvd:");
+    if (c == -1)
+    {
+      break;
+    }
+
+    switch (c)
+    {
+      case 'd': /* set debug level */
+        debuglevel = atoi (optarg);
+        break;
+
+      case 'v': /* verbose */
+        ++verbose;
+        break;
+
+      case 'q': /* quiet: run silently (ignore error messages) */
+        freopen ("/dev/null", "w", stderr);
+        freopen ("/dev/null", "w", stdout);
+        break;
+
+      case 'h':
+        Usage (argv[0], 0);
+        break;
+
+      default:
+        Usage (argv[0], 1);
+    }
+
+  }
+
+  if (optind < argc)
+  {
+    Usage (argv[0], 1);
+  }
+
+  return;
+}
+
+
+
+
+
+
+
+
+
+
+

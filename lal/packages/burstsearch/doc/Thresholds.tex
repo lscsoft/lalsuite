@@ -1,0 +1,353 @@
+% This file is meant to be included in another 
+\documentclass{article}
+\begin{document}
+\section{Thresholds}
+
+\subsection{Purpose}
+
+Compute thresholds and quantities related to thresholds for
+chi-squared and non-central chi-squared distributions \cite{ptvf:1992},
+for use in the excess power search technique.
+
+ 
+\subsection{Synopsis}
+
+% Syntax: argument definitions, calling signature
+
+\begin{verbatim}
+#include "Thresholds.h"
+
+
+typedef struct tagChisqCdfIn
+{
+  REAL8     chi2;               /* value of chi squared          */
+  REAL8     dof;                /* number of degrees of freedom  */
+  REAL8     nonCentral;         /* non-centrality parameter      */
+}
+ChisqCdfIn;
+
+typedef struct tagChi2ThresholdIn
+{
+  REAL8     dof;                /* number of degrees of freedom  */
+  REAL8     falseAlarm;         /* false alarm probability       */
+}
+Chi2ThresholdIn;
+
+typedef struct tagRhoThresholdIn
+{
+  REAL8     chi2;               /* value of chi squared          */
+  REAL8     dof;                /* number of degrees of freedom  */
+  REAL8     falseDismissal;     /* false dismissal probability   */
+}
+RhoThresholdIn;
+
+
+void
+ChisqCdf (
+          Status                        *status,
+          REAL8                         *prob,
+          ChisqCdfIn                    *input
+          );
+
+void
+OneMinusChisqCdf (
+                  Status                *status,
+                  REAL8                 *prob,
+                  ChisqCdfIn            *input
+                  );
+
+void
+NoncChisqCdf (
+              Status                    *status,
+              REAL8                     *prob,
+              ChisqCdfIn                *input
+              );
+
+void
+Chi2Threshold (
+              Status                    *status,
+              REAL8                     *chi2,
+              Chi2ThresholdIn           *input
+               );
+
+void
+RhoThreshold (
+              Status                    *status,
+              REAL8                     *rho,
+              RhoThresholdIn            *input
+              );
+
+\end{verbatim}
+
+
+\subsection{Description}
+
+This package provides a suite for functions for computing cumulative
+probability functions and thresholds for the chi-squared and
+non-central chi-squared distributions.
+
+The routine \verb+ChisqCdf()+ computes as a function of $\chi^2$ the
+probability $p = p(\chi^2,n)$ that $x_1^2 + x_2^2 + \ldots + x_n^2 \le \chi^2$,
+where $x_1$, $x_2$, \ldots $x_n$ are independent Gaussian random
+variables of zero mean and unit variance, and $n$ is the number of
+degrees of freedom.  An integral expression for $p$ is
+$$
+p(\chi^2,n) = {1 \over \Gamma(n/2)} \int_0^{\chi^2/2} dx \, x^{n/2-1} e^{-x},
+$$
+where 
+$$
+\Gamma(n/2) \equiv \int_0^\infty dx \, x^{n/2-1} e^{-x}
+$$
+is the usual $\Gamma$ function.  \verb+ChisqCdf()+ takes as input a
+structure \verb+ChisqCdfIn+ which has elements \verb+chi2+ or
+$\chi^2$, \verb+dof+ or $n$, and \verb+nonCentral+ which is not used
+by \verb+ChisqCdf()+.  The probability $p$ is returned by the routine 
+in the output variable \verb+*prob+.
+
+
+The routine \verb+OneMinusChisqCdf()+ takes the same arguments as
+\verb+ChisqCdf()+ and computes $1-p$.  It is more accurate than
+\verb+ChisqCdf()+ when $p$ is very close to $1$.  The quantity $1-p$
+is returned in the output variable \verb+*prob+.
+
+
+The routine \verb+NoncChisqCdf()+ takes the same arguments
+\verb+ChisqCdf()+ and computes the non-central chi-squared
+distribution.  It computes as a function of $\chi^2$ the
+probability $p = p(\chi^2,n,\rho)$ that $(x_1+\rho)^2 + x_2^2 + \ldots
++ x_n^2 \le \chi^2$, 
+where $x_1$, $x_2$, \ldots $x_n$ are independent Gaussian random
+variables of zero mean and unit variance, $n$ is the number of
+degrees of freedom, and $\rho^2$ is called the non-centrality
+parameter.  It uses the series formula
+$$
+p(\chi^2,n,\rho) = \sum_{j=0}^\infty \, { \exp\left[ -{1 \over 2}
+\rho^2 \right] \over j!} \ \left( {\rho^2 \over 2} \right)^j \
+p(\chi^2,n+2j)
+$$
+and uses \verb+ChisqCdf()+.  The non-centrality parameter
+$\rho^2$ is passed to \verb+NoncChisqCdf()+ through the element
+\verb+nonCentral+ of the input structure \verb+ChisqCdfIn+.
+Again $p$ is returned in the output variable \verb+*prob+.
+
+
+
+The routine \verb+Chi2Threshold()+ returns the value $\chi^2 =
+\chi^2(\alpha,n)$ of $\chi^2$ such that 
+$$
+\alpha = 1 - p(\chi^2,n),
+$$
+where $\alpha$ is a false alarm probability and $n$ is the number of
+degrees of freedom.  \verb+Chi2Threshold()+ takes as input a
+structure \verb+Chi2ThresholdIn+ which has elements \verb+dof+ or
+$n$ and \verb+falseAlarm+ or $\alpha$.  The square $\chi^2$ of the
+threshold $\chi$ is returned by the routine in the output variable
+\verb+*chi2+. 
+
+
+
+
+The routine \verb+RhoThreshold()+ returns the value $\rho =
+\rho(\chi^2,n,\beta)$ of $\rho$ such that 
+$$
+\beta = p(\chi^2,n,\rho),
+$$
+where $\beta$ is a false dismissal probability and $n$ is the number
+of degrees of freedom.  \verb+RhoThreshold()+ takes as input a
+structure \verb+RhoThresholdIn+ which has elements \verb+chi2+ or
+$\chi^2$, \verb+dof+ or $n$, and \verb+falseDismissal+ or $\beta$.
+The result $\rho(\chi^2,n,\beta)$ is returned by the routine in the
+output variable \verb+*rho+. 
+
+
+Notes:
+\begin{enumerate}
+\item These are all double precision (REAL8) functions of double
+precision variables.
+\item The functions \verb+Chi2Threshold()+ and \verb+RhoThreshold()+
+use the routines \verb+BracketRootReal8()+ and
+\verb+BisectionFindRootReal8()+. 
+\item The definitions given above for $p(\chi^2,n)$ and
+$p(\chi^2,n,\rho)$ are for integral $n$ only.  However,
+the integral formulae serve to define these quantities for all
+positive real $n$, and the routines work for non-integral $n$.
+\end{enumerate}
+
+\subsection{Operating Instructions}
+
+% Detailed usage 
+
+\begin{verbatim}
+
+static Status status;
+
+{ 
+  /* use of ChisqCdf(), OneMinusChisqCdf(), and NoncChisqCdf() */
+  ChisqCdfIn         input;
+  REAL8              prob;
+
+  input.dof = 8.0;
+  input.chi2 = 2.0;
+  /* input.nonCentral not used by ChisqCdf() or OneMinusChisqCdf() */
+
+  ChisqCdf (&status, &prob, &input);
+  /* prob now contains required probability */
+  OneMinusChisqCdf (&status, &prob, &input)
+  /* prob is now 1 - (what it was before)   */
+
+  input.nonCentral = 1.0;
+  NoncChisqCdf (&status, &prob, &input);
+  /* prob now contains required probability */
+}
+
+{
+  /* use of Chi2Threshold()  */
+  Chi2ThresholdIn      input;
+  REAL8                chi2;
+
+  input.dof = 3.0;
+  input.falseAlarm = 1e-6;
+  Chi2Threshold (&status, &chi2, &input);
+  /* chi2 now contains required threshold */
+}
+
+{
+  /* use of RhoThreshold()  */
+  RhoThresholdIn       input;
+  REAL8                rho;
+
+  input.dof = 3.0;
+  input.falseDismissal = 0.5;
+  input.chi2 = 1.0;
+  RhoThreshold (&status, &rho, &input);
+  /* rho now contains required value */
+}
+
+
+
+
+\end{verbatim}
+
+\subsubsection{Arguments}
+
+% Describe meaning of each argument
+
+\begin{itemize}
+\item \texttt{status} is a universal status structure.  Its contents are
+assigned by the functions.
+\item \texttt{ChisqCdfIn} is a structure containing the input
+parameters for the functions \verb+ChisqCdf()+,
+\verb+OneMinusChisqCdf()+, and \verb+NoncChisqCdf()+.
+\item \texttt{Chi2ThresholdIn} is a structure containing the input
+parameters for the function \verb+Chi2Threshold()+.
+\item \texttt{RhoThresholdIn} is a structure containing the input
+parameters for the function \verb+RhoThreshold()+.
+\item \texttt{dof} is the number of degrees of freedom.  It can be any
+positive real number, and is represented as a REAL8.  It is an input
+argument to the functions \verb+ChisqCdf()+,
+\verb+OneMinusChisqCdf()+, \verb+NoncChisqCdf()+ as a member of the
+input structure \verb+ChisqCdfIn+.  It is also an input argument to
+the functions \verb+Chi2Threshold()+ and \verb+RhoThreshold()+ as a
+member of the input structures \verb+Chi2ThresholdIn+ and
+\verb+RhoThresholdIn+ respectively.
+\item \texttt{chi2} is the value of $\chi^2$.  It is an input
+argument to the functions \verb+ChisqCdf()+,
+\verb+OneMinusChisqCdf()+, \verb+NoncChisqCdf()+ as a member of the 
+input structure \verb+ChisqCdfIn+.  It is also an input argument to
+the function \verb+RhoThreshold()+ as a member of the input structure
+\verb+RhoThresholdIn+, and an output argument to the function
+\verb+Chi2Threshold()+. 
+\item \texttt{nonCentral} is the non-centrality parameter $\rho^2$.
+It is an input argument to the function \verb+NoncChisqCdf()+,
+as a member of the input structure \verb+ChisqCdfIn+.  
+\item \texttt{rho} is the square root of the non-centrality parameter
+$\rho^2$.  It is an output argument to the function
+\verb+RhoThreshold()+.
+\item \texttt{falseAlarm} is the false alarm probability $\alpha$.  It
+is an input parameter for \verb+Chi2Threshold()+ as a member of the
+input structure \verb+Chi2ThresholdIn+.
+\item \texttt{falseDismissal} is the false dismissal probability $\beta$.  It
+is an input parameter for \verb+RhoThreshold()+ as a member of the
+input structure \verb+RhoThresholdIn+.
+
+\end{itemize}
+
+\subsubsection{Options}
+
+None. 
+
+\subsubsection{Error conditions}
+
+% What constitutes an error condition? What do the error codes mean?
+
+These functions all set the universal status structure on return.
+Error conditions are described in the following table.
+
+\begin{table}
+\begin{tabular}{|r|l|p{2in}|}\hline
+status  & status          & Description\\
+code    & description     & \\\hline
+THRESHOLDS\_ENULLP 1   & Null pointer
+  & an argument is NULL or contains a NULL pointer\\
+THRESHOLDS\_EPOSARG 2   & Arguments must be non-negative
+  & Illegal zero or negative arguments encountered \\
+THRESHOLDS\_EMXIT 4   & Maximum iterations exceeded
+  & Error in internal computations\\
+THRESHOLDS\_EBADPROB 8  & Supplied probability must 
+  & probability outside legal range\\ 
+ \, & be between 0 and 1
+ & \, \\
+THRESHOLDS\_ERANGE 16  & Arguments too large,
+  & result is 0 or 1 to machine accuracy\\ 
+ \, & cannot obtain finite probability
+ & \, \\
+
+\hline
+\end{tabular}
+\caption{Error conditions for all THRESHOLDS functions}\label{tbl:CV}
+\end{table}
+                                
+\subsection{Algorithms}
+
+
+% Describe algorithm by which work is done
+
+\subsection{Accuracy}
+
+% For numerical routines address issues related to accuracy:
+% approximations, argument ranges, etc.
+
+
+\subsection{Tests}
+
+% Describe the tests that are part of the test suite
+
+\subsection{Uses}
+
+% What LAL, other routines does this one call?
+
+\begin{itemize}
+\item\texttt{BracketRootReal8()}
+\item\texttt{BisectionFindRootReal8()}
+\end{itemize}
+
+\subsection{Notes}
+
+\subsection{References}
+
+% Any references for algorithms, tests, etc.
+\begin{thebibliography}{0}
+
+\bibitem{ptvf:1992}
+  W. H. Press, S. A. Teukolsky, W. T. Vetterling, and B. P. Flannery,
+  \textit{Numerical Recipes in C: The Art of Scientific Computing}, 2nd ed.
+  (Cambridge University Press, Cambridge, England, 1992).
+\end{thebibliography}
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
+
