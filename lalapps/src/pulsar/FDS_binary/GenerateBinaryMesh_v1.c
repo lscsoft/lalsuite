@@ -24,6 +24,19 @@ LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
 INT4 leap;
 static LALStatus status;
 
+int FreeMem();
+int GenerateMesh(REAL4VectorSequence **,XYparameterspace *,Metric *);
+int SetupPspaceParams(RTparameterspace *,XYparameterspace *);
+int GenMetricComp(REAL8 *,REAL8 *,Metric *);
+int CheckRTBoundary(REAL8 *,LIGOTimeGPS *,RTparameterspace *);
+int ConvertMesh(REAL4VectorSequence **,RTMesh *,RTparameterspace *);
+int OutputRTMesh(RTMesh *,Metric *, RTparameterspace *);
+int ReadCommandLine(int argc,char *argv[]);
+int ConvertTperitoPhase();
+int SetupBaryInput();
+int CheckInput();
+int GetSSBTime(LIGOTimeGPS *, LIGOTimeGPS *);
+
 int main(int argc, char **argv){
   
   XYparameterspace XYspace;
@@ -158,12 +171,105 @@ int GenerateMesh(REAL4VectorSequence **XYmesh,XYparameterspace *XYspace,Metric *
   LALSDestroyVectorSequence(&status,&Corners);
   LALSDestroyVectorSequence(&status,&MatrixVec);
   LALSDestroyVectorSequence(&status,&InvMatrixVec);
+
+  /* check here if we have actually generated any points in XY space */
+  if ((*XYmesh)->length<1) {
+    fprintf(stderr,"ERROR : No points have been generated in the XY space\n");
+    fprintf(stderr,"        Space may be too small -> Could be a one filter target\n");
+    fprintf(stderr,"        Further investigation is required\n");
+    exit(1);
+  }
   
   return 0;
 
 }
 
 /***********************************************************************************/
+
+int SetupBaryInput()
+{
+
+  CHAR filenameE[256],filenameS[256];
+  FILE *fp;
+  
+  /* make the full file name/location for the ephemeris files */
+  strcpy(filenameE,CLA.ephemdir);
+  strcat(filenameE,"/earth");
+  strcat(filenameE,CLA.yr);
+  strcat(filenameE,".dat");
+  strcpy(filenameS,CLA.ephemdir);
+  strcat(filenameS,"/sun");
+  strcat(filenameS,CLA.yr);
+  strcat(filenameS,".dat");
+
+  /* open the ephemeris files to check they exist */
+  fp=fopen(filenameE,"r");
+  if (fp==NULL) 
+    {
+      fprintf(stderr,"Could not find %s\n",filenameE);
+      return 1;
+    }
+  fclose(fp);
+  fp=fopen(filenameS,"r");
+  if (fp==NULL) 
+    {
+      fprintf(stderr,"Could not find %s\n",filenameS);
+      return 1;
+    }
+  fclose(fp);
+
+  /* allocate memory for the ephemeris */
+  edat=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
+  (*edat).ephiles.earthEphemeris = filenameE;     
+  (*edat).ephiles.sunEphemeris = filenameS;   
+
+  /* set up leap second information */
+  LALLeapSecs(&status,&leap,&CLA.tstart,&formatAndAcc);
+  (*edat).leap=leap;
+
+  /* Read in ephemeris files */
+  LALInitBarycenter(&status,edat);             
+
+  /* setup chosen detector */
+  if(strcmp(CLA.ifo,"GEO")!=0) Detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  if(strcmp(CLA.ifo,"LLO")!=0) Detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
+  if(strcmp(CLA.ifo,"LHO")!=0) Detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
+ 
+  /* First job is to convert the observation start time from detector time to SSB time */
+  if (GetSSBTime(&CLA.tstart,&tstartSSB)) return 1;
+
+  return 0;
+
+}
+
+/***********************************************************************************/
+
+int GetSSBTime(LIGOTimeGPS *tdet, LIGOTimeGPS *tssb)
+{
+
+  BarycenterInput baryinput;         /* Stores detector location and other barycentering data */ 
+  EmissionTime emit;
+
+/* Detector location: MAKE INTO INPUT!!!!! */
+  baryinput.tgps.gpsSeconds=tdet->gpsSeconds;
+  baryinput.tgps.gpsNanoSeconds=tdet->gpsNanoSeconds;
+  baryinput.site.location[0]=Detector.location[0]/LAL_C_SI;
+  baryinput.site.location[1]=Detector.location[1]/LAL_C_SI;
+  baryinput.site.location[2]=Detector.location[2]/LAL_C_SI;
+  baryinput.alpha=CLA.RA;
+  baryinput.delta=CLA.dec;
+  baryinput.dInv=0.e0;
+
+  /* Setup barycentric time at start of observation (first timestamp) */
+  LALBarycenterEarth(&status,&earth,tdet,edat);
+  LALBarycenter(&status,&emit,&baryinput,&earth);
+  tssb->gpsSeconds=(emit.te.gpsSeconds);
+  tssb->gpsNanoSeconds=emit.te.gpsNanoSeconds;
+  
+  return 0;
+}
+
+/*******************************************************************************/
 
 int SetupPspaceParams(RTparameterspace *RTspace,XYparameterspace *XYspace)
 {
@@ -174,6 +280,8 @@ int SetupPspaceParams(RTparameterspace *RTspace,XYparameterspace *XYspace)
   /* values of X and Y. */
   
   LALTimeInterval interval;
+  RTPLocation RTPloc;
+  XYLocation XYloc;
   REAL8 intervalFLT;
   INT4 NorbCorrection;
   REAL8Vector *Xtemp=NULL;
@@ -215,12 +323,39 @@ int SetupPspaceParams(RTparameterspace *RTspace,XYparameterspace *XYspace)
   LALDCreateVector(&status,&Ytemp,TWODIM);
   LALDCreateVector(&status,&alpha_temp,TWODIM);
 
+  /* fill up RTP location structures */
+  RTPloc.period=CLA.period;
+  RTPloc.ecc=ECC;   /* this is set to zero in the header */
+  RTPloc.argp=ARGP; /* this is set to zero in the header */
+  RTPloc.tstartSSB.gpsSeconds=tstartSSB.gpsSeconds;
+  RTPloc.tstartSSB.gpsNanoSeconds=tstartSSB.gpsNanoSeconds;
+  
   /* convert all 4 corners of the RT space to corners in the XY space */
-  if (ConvertRTperitoXY(&(RTspace->sma_MIN),&(RTspace->tperi_MIN),&(Xtemp->data[0]),&(Ytemp->data[0]),&alpha_temp->data[0])) return 1;
-  if (ConvertRTperitoXY(&(RTspace->sma_MIN),&(RTspace->tperi_MAX),&(Xtemp->data[1]),&(Ytemp->data[1]),&alpha_temp->data[1])) return 2;
-  if (ConvertRTperitoXY(&(RTspace->sma_MAX),&(RTspace->tperi_MIN),&(Xtemp->data[2]),&(Ytemp->data[2]),&alpha_temp->data[2])) return 3;
-  if (ConvertRTperitoXY(&(RTspace->sma_MAX),&(RTspace->tperi_MAX),&(Xtemp->data[3]),&(Ytemp->data[3]),&alpha_temp->data[3])) return 4;
-
+  RTPloc.sma=RTspace->sma_MIN;
+  RTPloc.tperi.gpsSeconds=RTspace->tperi_MIN.gpsSeconds;
+  RTPloc.tperi.gpsNanoSeconds=RTspace->tperi_MIN.gpsNanoSeconds;
+  if (ConvertRTperitoXY(&RTPloc,&XYloc,&alpha_temp->data[0])) return 1;
+  Xtemp->data[0]=XYloc.X;
+  Ytemp->data[0]=XYloc.Y;
+  RTPloc.sma=RTspace->sma_MIN;
+  RTPloc.tperi.gpsSeconds=RTspace->tperi_MAX.gpsSeconds;
+  RTPloc.tperi.gpsNanoSeconds=RTspace->tperi_MAX.gpsNanoSeconds;
+  if (ConvertRTperitoXY(&RTPloc,&XYloc,&alpha_temp->data[1])) return 2;
+  Xtemp->data[1]=XYloc.X;
+  Ytemp->data[1]=XYloc.Y;						
+  RTPloc.sma=RTspace->sma_MAX;
+  RTPloc.tperi.gpsSeconds=RTspace->tperi_MIN.gpsSeconds;
+  RTPloc.tperi.gpsNanoSeconds=RTspace->tperi_MIN.gpsNanoSeconds;
+  if (ConvertRTperitoXY(&RTPloc,&XYloc,&alpha_temp->data[2])) return 3;
+  Xtemp->data[2]=XYloc.X;
+  Ytemp->data[2]=XYloc.Y;
+  RTPloc.sma=RTspace->sma_MAX;
+  RTPloc.tperi.gpsSeconds=RTspace->tperi_MAX.gpsSeconds;
+  RTPloc.tperi.gpsNanoSeconds=RTspace->tperi_MAX.gpsNanoSeconds;
+  if (ConvertRTperitoXY(&RTPloc,&XYloc,&alpha_temp->data[3])) return 3;
+  Xtemp->data[3]=XYloc.X;
+  Ytemp->data[3]=XYloc.Y;
+  
   /* initialise the XYspace bouondaries */
   for (i=0;i<4;i++) {
     XYspace->X_MAX=Xtemp->data[0];
@@ -257,7 +392,10 @@ int SetupPspaceParams(RTparameterspace *RTspace,XYparameterspace *XYspace)
   if ((alpha_MIN>LAL_PI)&&(alpha_MIN<3.0*LAL_PI/2.0)&&(alpha_MAX>3.0*LAL_PI/2.0)&&(alpha_MAX<LAL_TWOPI)) XYspace->Y_MIN=(-1.0)*RTspace->sma_MAX;
 
   /* find centre of XY space */
-  if (ConvertRTperitoXY(&(RTspace->sma_0),&(RTspace->tperi_0),&(XYspace->X_0),&(XYspace->Y_0),&dummy)) return 4;
+  RTPloc.sma=RTspace->sma_0;
+  RTPloc.tperi.gpsSeconds=RTspace->tperi_0.gpsSeconds;
+  RTPloc.tperi.gpsNanoSeconds=RTspace->tperi_0.gpsNanoSeconds;
+  if (ConvertRTperitoXY(&RTPloc,&XYloc,&dummy)) return 4;
 
   return 0;
 
@@ -348,12 +486,18 @@ int GenMetricComp(REAL8 *X,REAL8 *Y,Metric *XYMetric)
   /* Now we project out the frequency component */
   LALProjectMetric(&status,gMetric,0);
 
+  printf("generated metric gamma elements as %lf %lf\n",gMetric->data[2],gMetric->data[4]);
+  printf("generated metric gamma elements as %lf %lf\n",gMetric->data[4],gMetric->data[5]);
+
   /* put the now projected metric into the correct location */
   /* stored normally with redundancy because symmetric */
   XYMetric->element->data[0]=gMetric->data[2];
   XYMetric->element->data[1]=gMetric->data[4];
   XYMetric->element->data[2]=gMetric->data[4];
   XYMetric->element->data[3]=gMetric->data[5];
+
+  printf("generated metric gamma elements as %lf %lf\n",XYMetric->element->data[0],XYMetric->element->data[1]);
+  printf("generated metric gamma elements as %lf %lf\n",XYMetric->element->data[2],XYMetric->element->data[3]);
 
   /* copy the information to a temporary variable before hand */
   elementtemp->dimLength[0]=XYMetric->element->dimLength[0];
@@ -366,6 +510,12 @@ int GenMetricComp(REAL8 *X,REAL8 *Y,Metric *XYMetric)
   /* calculate the determinant of the matrix */
   LALDMatrixDeterminant(&status,&(XYMetric->determinant),(elementtemp));
  
+  /* big check here ! must stop if determinant is NOT positive */
+  if (XYMetric->determinant<=0.0) {
+    fprintf(stderr,"ERROR : metric determinant < 0.0 -> observation time span probably too low\n");
+    exit(1);
+  }   
+
   /* copy the metric information to the eigenvec variable beforehand */
   for (i=0;i<DIM;i++) {
     for (j=0;j<DIM;j++) {
@@ -378,13 +528,11 @@ int GenMetricComp(REAL8 *X,REAL8 *Y,Metric *XYMetric)
   LALDSymmetricEigenVectors(&status,XYMetric->eigenval,XYMetric->eigenvec);
 
   /* then put elements back into the metric structure */
-  XYMetric->element->data[0]=elementtemp->data[0];
-  XYMetric->element->data[1]=elementtemp->data[1];
-  XYMetric->element->data[2]=elementtemp->data[2];
-  XYMetric->element->data[3]=elementtemp->data[3];
   LALDDestroyVector(&status,&gMetric);
   LALDDestroyArray(&status,&elementtemp);
 
+  printf("generated metric gamma elements as %lf %lf\n",XYMetric->element->data[0],XYMetric->element->data[1]);
+  printf("generated metric gamma elements as %lf %lf\n",XYMetric->element->data[2],XYMetric->element->data[3]);
 
   return 0;
 
@@ -418,10 +566,8 @@ int ConvertMesh(REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparameterspace *RT
   /* this section coverts the XY mesh to a RT mesh and retains only those points */
   /* within the original RT boundary. */
   
-  REAL8 sma_temp;
-  REAL8 Xtemp;
-  REAL8 Ytemp;
-  LIGOTimeGPS tp_temp;
+  RTPLocation RTPloc;
+  XYLocation XYloc;
   LIGOTimeGPS *tperi_vec=NULL;
   REAL8Vector *sma_vec=NULL;
   UINT4 i,j;
@@ -439,19 +585,26 @@ int ConvertMesh(REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparameterspace *RT
   /* point the temp pointer to the alocated space */
   tperi_vec=RTmesh->tperi;
   
+  /* fill in the XY location structure */
+  XYloc.period=CLA.period;
+  XYloc.tstartSSB.gpsSeconds=tstartSSB.gpsSeconds;
+  XYloc.tstartSSB.gpsNanoSeconds=tstartSSB.gpsNanoSeconds;
+  XYloc.ecc=ECC;
+  XYloc.argp=ARGP;
+
   /* covert XY to RT mesh and trim */
   j=0;
   for (i=0;i<(*XYmesh)->length;i++) {
-    Xtemp=(REAL8)(*XYmesh)->data[i*2];
-    Ytemp=(REAL8)(*XYmesh)->data[i*2+1];
+    XYloc.X=(REAL8)(*XYmesh)->data[i*2];
+    XYloc.Y=(REAL8)(*XYmesh)->data[i*2+1];
     /* convert this point in XY space to RT space */
-    ConvertXYtoRTperi(&Xtemp,&Ytemp,&sma_temp,&tp_temp);
+    ConvertXYtoRTperi(&XYloc,&RTPloc);
     /* Now check if this RT point lies within the original boundaries */
     /* if it does save it to memory for later output */
-      if (CheckRTBoundary(&sma_temp,&tp_temp,RTspace)==1) {
-      sma_vec->data[j]=sma_temp;
-      tperi_vec[j].gpsSeconds=tp_temp.gpsSeconds;
-      tperi_vec[j].gpsNanoSeconds=tp_temp.gpsNanoSeconds;
+      if (CheckRTBoundary(&RTPloc.sma,&RTPloc.tperi,RTspace)==1) {
+      sma_vec->data[j]=RTPloc.sma;
+      tperi_vec[j].gpsSeconds=RTPloc.tperi.gpsSeconds;
+      tperi_vec[j].gpsNanoSeconds=RTPloc.tperi.gpsNanoSeconds;
       j++;
     }
   }
@@ -484,6 +637,7 @@ int ConvertMesh(REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparameterspace *RT
   /* this section simply outputs the final mesh to file including the header information */
 
   FILE *fp;
+  BinaryMeshFileHeader BMFheader;
   UINT4 i;
 
   fp=fopen(CLA.meshfile,"w");
@@ -491,30 +645,37 @@ int ConvertMesh(REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparameterspace *RT
     fprintf(stderr,"Unable to find file %s\n",CLA.meshfile);
   }
 
-  /* output the header information */
-  fprintf(fp,"Search_maximum_search_frequency_Hz                      %6.12f\n",CLA.fmax);
-  fprintf(fp,"Search_T_span_sec                                       %lf\n",CLA.tspan);
-  fprintf(fp,"Search_Tobs_start_GPS_sec                               %d\n",CLA.tstart.gpsSeconds);
-  fprintf(fp,"Search_Tobs_start_GPS_nano                              %d\n",CLA.tstart.gpsNanoSeconds);
-  fprintf(fp,"Search_number_of_filters                                %d\n",RTmesh->length);
-  fprintf(fp,"Search_template_mismatch                                %lf\n",CLA.mismatch);
-  fprintf(fp,"Source_projected_orbital_semi_major_axis_MIN_sec        %6.12f\n",RTspace->sma_MIN);
-  fprintf(fp,"Source_projected_orbital_semi_major_axis_MAX_sec        %6.12f\n",RTspace->sma_MAX);
-  fprintf(fp,"Source_SSB_periapse_passage_MIN_GPS_sec                 %d\n",RTspace->tperi_MIN.gpsSeconds);
-  fprintf(fp,"Source_SSB_periapse_passage_MIN_GPS_nanosec             %d\n",RTspace->tperi_MIN.gpsNanoSeconds);
-  fprintf(fp,"Source_SSB_periapse_passage_MAX_GPS_sec                 %d\n",RTspace->tperi_MAX.gpsSeconds);
-  fprintf(fp,"Source_SSB_periapse_passage_MAX_GPS_nanosec             %d\n",RTspace->tperi_MAX.gpsNanoSeconds);
-  fprintf(fp,"Source_orbital_eccentricity_MIN                         %6.12f\n",ECC);
-  fprintf(fp,"Source_orbital_eccentricity_MAX                         %6.12f\n",ECC);
-  fprintf(fp,"Source_argument_of_periapse_MIN_rad                     %6.12f\n",ARGP);
-  fprintf(fp,"Source_argument_of_periapse_MAX_rad                     %6.12f\n",ARGP);
-  fprintf(fp,"Source_orbital_period_MIN_sec                           %6.12f\n",CLA.period);
-  fprintf(fp,"Source_orbital_period_MAX_sec                           %6.12f\n",CLA.period);
-  /*fprintf(fp,"Search_XY_metric_XX_element                             %lf\n",XYMetric->element->data[0]);*/
-  /*fprintf(fp,"Search_XY_metric_XY_element                             %lf\n",XYMetric->element->data[1]);*/
-  /*fprintf(fp,"Search_XY_metric_YY_element                             %lf\n",XYMetric->element->data[3]);*/
-  fprintf(fp,"Search_template_generation_version                      v1\n");
-  fprintf(fp,"\n");
+  /* setup the header input */
+  BMFheader.fmax=CLA.fmax;
+  BMFheader.tspan=CLA.tspan;
+  BMFheader.tstart.gpsSeconds=CLA.tstart.gpsSeconds;
+  BMFheader.tstart.gpsNanoSeconds=CLA.tstart.gpsNanoSeconds;
+  BMFheader.Nfilters=RTmesh->length;
+  BMFheader.mismatch=CLA.mismatch;
+  BMFheader.sma_0=RTspace->sma_0;
+  BMFheader.sma_MIN=RTspace->sma_MIN;
+  BMFheader.sma_MAX=RTspace->sma_MAX;
+  BMFheader.tperi_0.gpsSeconds=RTspace->tperi_0.gpsSeconds;
+  BMFheader.tperi_0.gpsNanoSeconds=RTspace->tperi_0.gpsNanoSeconds;
+  BMFheader.tperi_MIN.gpsSeconds=RTspace->tperi_MIN.gpsSeconds;
+  BMFheader.tperi_MIN.gpsNanoSeconds=RTspace->tperi_MIN.gpsNanoSeconds;
+  BMFheader.tperi_MAX.gpsSeconds=RTspace->tperi_MAX.gpsSeconds;
+  BMFheader.tperi_MAX.gpsNanoSeconds=RTspace->tperi_MAX.gpsNanoSeconds;
+  BMFheader.ecc_MIN=ECC;
+  BMFheader.ecc_MAX=ECC;
+  BMFheader.argp_MIN=ARGP;
+  BMFheader.argp_MAX=ARGP;
+  BMFheader.period_MIN=CLA.period;
+  BMFheader.period_MAX=CLA.period;
+  BMFheader.metric_XX=XYMetric->element->data[0];
+  BMFheader.metric_XY=XYMetric->element->data[1];
+  BMFheader.metric_YY=XYMetric->element->data[3];
+  sprintf(BMFheader.version,"v1");
+  sprintf(BMFheader.det,CLA.ifo);
+  BMFheader.RA=CLA.RA;
+  BMFheader.dec=CLA.dec;
+
+  if (WriteMeshFileHeader(fp,&BMFheader)) return 1;
 
   /* output the filters in the form ready for a search */
   for (i=0;i<RTmesh->length;i++) {
@@ -680,169 +841,7 @@ int ConvertMesh(REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparameterspace *RT
   return errflg;
 }
 
-/*******************************************************************************/
-
-static void OrbPhaseFunc(LALStatus *status, REAL8 *y, REAL8 alpha, void *y0)
-{
-  INITSTATUS(status, "OrbPhaseFunc", "Function OrbPhaseFunc()");
-  ASSERT(y0,status, 1, "Null pointer");
-  /* this is the transendal function we need to solve to find the true initial phase */
-  *y = *(REAL8 *)y0*(-1.0) + alpha*(CLA.period/LAL_TWOPI)+sma_GLOBAL*sin(alpha);
-  RETURN(status);
-}
-
-/*******************************************************************************/
-
-int ConvertRTperitoXY(REAL8 *sma,LIGOTimeGPS *tperi,REAL8 *X,REAL8 *Y,REAL8 *alpha)
-{
-
-  /* this routine takes a point in RT space and converts it to XY space */
-  
- 
-  DFindRootIn input;
-  LALTimeInterval deltaT;
-  REAL8 deltaTorb;
-  REAL8 alphatemp;
-  REAL8 Xtemp;
-  REAL8 Ytemp;
-
-  /* calculate difference between the times using LAL functions */
-  LALDeltaGPS(&status,&deltaT,&tstartSSB,tperi);
-  LALIntervalToFloat(&status,&deltaTorb,&deltaT);
-
-  /* set global value of sma to current value of sma */
-  sma_GLOBAL=*sma;
-
-  /* begin root finding procedure */
-  input.function = OrbPhaseFunc;
-  input.xmin = 0.0;
-  input.xmax = LAL_TWOPI;
-  input.xacc = 1E-12;
-  /* expand domain until a root is bracketed */
-  LALDBracketRoot(&status,&input,&deltaTorb); 
-  /* bisect domain to find initial phase at observation start */
-  LALDBisectionFindRoot(&status,&alphatemp,&input,&deltaTorb); 
-
-  Xtemp=(sma_GLOBAL)*cos(alphatemp);
-  Ytemp=(sma_GLOBAL)*sin(alphatemp);
-
-  *X=Xtemp;
-  *Y=Ytemp;
-  *alpha=alphatemp;
-
-  return 0;
-
-}
-/****************************************************************************/
-
-int GetSSBTime(LIGOTimeGPS *tdet, LIGOTimeGPS *tssb)
-{
-
-  BarycenterInput baryinput;         /* Stores detector location and other barycentering data */
-
-/* Detector location: MAKE INTO INPUT!!!!! */
-  baryinput.tgps.gpsSeconds=tdet->gpsSeconds;
-  baryinput.tgps.gpsNanoSeconds=tdet->gpsNanoSeconds;
-  baryinput.site.location[0]=Detector.location[0]/LAL_C_SI;
-  baryinput.site.location[1]=Detector.location[1]/LAL_C_SI;
-  baryinput.site.location[2]=Detector.location[2]/LAL_C_SI;
-  baryinput.alpha=CLA.RA;
-  baryinput.delta=CLA.dec;
-  baryinput.dInv=0.e0;
-
-  /* Setup barycentric time at start of observation (first timestamp) */
-  LALBarycenterEarth(&status,&earth,tdet,edat);
-  LALBarycenter(&status,&emit,&baryinput,&earth);
-  tssb->gpsSeconds=(emit.te.gpsSeconds);
-  tssb->gpsNanoSeconds=emit.te.gpsNanoSeconds;
-  
-  return 0;
-}
-
-/*******************************************************************************/
-
-int SetupBaryInput()
-{
-
-  CHAR filenameE[256],filenameS[256];
-  FILE *fp;
-  
-  /* make the full file name/location for the ephemeris files */
-  strcpy(filenameE,CLA.ephemdir);
-  strcat(filenameE,"/earth");
-  strcat(filenameE,CLA.yr);
-  strcat(filenameE,".dat");
-  strcpy(filenameS,CLA.ephemdir);
-  strcat(filenameS,"/sun");
-  strcat(filenameS,CLA.yr);
-  strcat(filenameS,".dat");
-
-  /* open the ephemeris files to check they exist */
-  fp=fopen(filenameE,"r");
-  if (fp==NULL) 
-    {
-      fprintf(stderr,"Could not find %s\n",filenameE);
-      return 1;
-    }
-  fclose(fp);
-  fp=fopen(filenameS,"r");
-  if (fp==NULL) 
-    {
-      fprintf(stderr,"Could not find %s\n",filenameS);
-      return 1;
-    }
-  fclose(fp);
-
-  /* allocate memory for the ephemeris */
-  edat=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = filenameE;     
-  (*edat).ephiles.sunEphemeris = filenameS;         
-
-  /* set up leap second information */
-  LALLeapSecs(&status,&leap,&(CLA.tstart),&formatAndAcc);
-  (*edat).leap=leap;
-
-  /* Read in ephemeris files */
-  LALInitBarycenter(&status,edat);             
-
-  /* setup chosen detector */
-  if(strcmp(CLA.ifo,"GEO")!=0) Detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  if(strcmp(CLA.ifo,"LLO")!=0) Detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
-  if(strcmp(CLA.ifo,"LHO")!=0) Detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
- 
-  /* First job is to convert the observation start time from detector time to SSB time */
-  if (GetSSBTime(&(CLA.tstart),&tstartSSB)) return 1;
-
-  return 0;
-
-}
-
-/*******************************************************************************/
-
-int ConvertXYtoRTperi(REAL8 *X, REAL8 *Y, REAL8 *sma, LIGOTimeGPS *tperi)
-{
-
-  LALTimeInterval interval;
-  REAL8 alpha;
-  REAL8 Torb;
-  REAL8 Tlight;
-  REAL8 deltaT;
-
-  /* convert to R and alpha easily */
-  *sma=sqrt((*X)*(*X)+(*Y)*(*Y));
-  alpha=atan2(*Y,*X);
-  /* Convert alpha and R to time since periapse as measured in SSB */
-  Torb=alpha*(CLA.period)/LAL_TWOPI;
-  Tlight=*sma*sin(alpha);
-  deltaT=Torb+Tlight;
-  LALFloatToInterval(&status,&interval,&deltaT);
-  LALDecrementGPS(&status,tperi,&tstartSSB,&interval);
-  
-  return 0;
-
-}
-
-/*******************************************************************************/
+/************************************************************************/
 
 int CheckInput()
 {
