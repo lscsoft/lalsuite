@@ -436,19 +436,17 @@ int main(int argc, char **argv)
 	INT8 burstStartTime = 0;
 
 	/* triggers */
-	SnglBurstTable *tmpEvent = NULL, *currentEvent = NULL;
+	SnglBurstTable *currentEvent;
 	SnglBurstTable *burstEventList = NULL;
-	SnglBurstTable *detTrigList = NULL, *prevTrig = NULL;
+	SnglBurstTable *detectedTriggers = NULL;
+	SnglBurstTable **detTriggersAddPoint = &detectedTriggers;
 	INT4 timeAnalyzed;
 
 	/* injections */
 	SimBurstTable *simBurstList = NULL;
 	SimBurstTable *currentSimBurst = NULL;
-	SimBurstTable *injFoundList = NULL;
-	SimBurstTable *tmpInjFound = NULL, *prevInjFound = NULL;
-
-	/* comparison parameters */
-	SnglBurstAccuracy accParams;
+	SimBurstTable *detectedInjections = NULL;
+	SimBurstTable **detInjectionsAddPoint = &detectedInjections;
 
 	/* Table outputs */
 	MetadataTable myTable;
@@ -634,6 +632,8 @@ int main(int argc, char **argv)
 
 		/* loop over the burst events */
 		for (currentEvent = burstEventList; currentEvent; currentEvent = currentEvent->next) {
+			/* comparison parameters */
+			SnglBurstAccuracy accParams;
 
 			/* convert start time to INT8 */
 			LAL_CALL(LALGPStoINT8(&stat, &burstStartTime, &(currentEvent->start_time)), &stat);
@@ -646,30 +646,17 @@ int main(int argc, char **argv)
 			if (accParams.match) {
 				ndetected++;
 
-				/*write the detected triggers */
-				if (detTrigList == NULL) {
-					detTrigList = tmpEvent = (SnglBurstTable *) LALCalloc(1, sizeof(SnglBurstTable));
-					prevTrig = tmpEvent;
-				} else {
-					tmpEvent = (SnglBurstTable *) LALCalloc(1, sizeof(SnglBurstTable));
-					prevTrig->next = tmpEvent;
-				}
-				memcpy(tmpEvent, currentEvent, sizeof(SnglBurstTable));
-				prevTrig = tmpEvent;
-				tmpEvent = tmpEvent->next = NULL;
+				/* record the detected triggers */
+				*detTriggersAddPoint = LALCalloc(1, sizeof(**detTriggersAddPoint));
+				**detTriggersAddPoint = *currentEvent;
+				detTriggersAddPoint = &(*detTriggersAddPoint)->next;
+				*detTriggersAddPoint = NULL;
 
-				/* write the injected signals to an output file */
-				if (injFoundList == NULL) {
-					injFoundList = tmpInjFound = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
-					prevInjFound = tmpInjFound;
-				} else {
-					tmpInjFound = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
-					prevInjFound->next = tmpInjFound;
-				}
-				memcpy(tmpInjFound, currentSimBurst, sizeof(SimBurstTable));
-				prevInjFound = tmpInjFound;
-				tmpInjFound = tmpInjFound->next = NULL;
-
+				/* record the detected injections */
+				*detInjectionsAddPoint = LALCalloc(1, sizeof(**detInjectionsAddPoint));
+				**detInjectionsAddPoint = *currentSimBurst;
+				detInjectionsAddPoint = &(*detInjectionsAddPoint)->next;
+				*detInjectionsAddPoint = NULL;
 				break;
 			}
 		}
@@ -694,18 +681,18 @@ int main(int argc, char **argv)
 	LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
 	LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
 
-	/*List of injections which were detected */
+	/* List of injections which were detected */
 	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, injFoundFile), &stat);
 	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sim_burst_table), &stat);
-	myTable.simBurstTable = injFoundList;
+	myTable.simBurstTable = detectedInjections;
 	LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, myTable, sim_burst_table), &stat);
 	LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
 	LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
 
-	/*List of triggers corresponding to injection */
+	/* List of triggers corresponding to injection */
 	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, outSnglFile), &stat);
 	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sngl_burst_table), &stat);
-	myTable.snglBurstTable = detTrigList;
+	myTable.snglBurstTable = detectedTriggers;
 	LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, myTable, sngl_burst_table), &stat);
 	LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
 	LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
