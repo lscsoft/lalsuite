@@ -729,8 +729,6 @@ cleanexit:
 
   if ( verbose ) fprintf( stdout, "writing output file... " );
 
-
-
   for ( j = 0; j < MAXIFO; ++j )
   {
     if ( userTag )
@@ -759,7 +757,6 @@ cleanexit:
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 
           process_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
-    free( proctable.processTable );
 
     /* write process_params table */
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
@@ -800,6 +797,9 @@ cleanexit:
 
 
   if ( verbose ) fprintf( stdout, "freeing memory... " );
+
+  free( proctable.processTable );
+  free( searchsumm.searchSummaryTable );
 
   while( processParamsTable.processParamsTable )
   {
