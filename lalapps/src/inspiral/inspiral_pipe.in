@@ -146,6 +146,10 @@ except: pass
 try: os.mkdir('logs')
 except: pass
 
+# don't add datafind to the DAX
+if do_dax:
+  do_datafind = False
+
 # create the config parser object and read in the ini file
 cp = ConfigParser.ConfigParser()
 cp.read(config_file)
@@ -249,69 +253,83 @@ first_df2 = None
 insp_nodes = []
 
 for seg in data:
-  # find all the data
-  df1 = pipeline.LSCDataFindNode(df_job)
-  df1.set_start(seg.start() - pad)
-  df1.set_end(seg.end() + pad)
-  df1.set_observatory(ifo1[0])
-  if prev_df1: 
-    df1.add_parent(prev_df1)
+  if not do_dax:
+    # find all the data
+    df1 = pipeline.LSCDataFindNode(df_job)
+    df1.set_start(seg.start() - pad)
+    df1.set_end(seg.end() + pad)
+    df1.set_observatory(ifo1[0])
+    if prev_df1: 
+      df1.add_parent(prev_df1)
+  
+    df2 = pipeline.LSCDataFindNode(df_job)
+    if not first_df2:
+      first_df2 = df2
+    df2.set_start(seg.start() - pad)
+    df2.set_end(seg.end() + pad)
+    df2.set_observatory(ifo2[0])
+    if prev_df2: 
+      df2.add_parent(prev_df2)
+  
+    if do_datafind:
+      dag.add_node(df1)
+      if do_triginsp:
+        dag.add_node(df2)
 
-  df2 = pipeline.LSCDataFindNode(df_job)
-  if not first_df2:
-    first_df2 = df2
-  df2.set_start(seg.start() - pad)
-  df2.set_end(seg.end() + pad)
-  df2.set_observatory(ifo2[0])
-  if prev_df2: 
-    df2.add_parent(prev_df2)
-
-  if do_datafind:
-    dag.add_node(df1)
-    if do_triginsp:
-      dag.add_node(df2)
-
-  # if we are generating a DAX then we want to find data now so that we know
-  # before the DAX/DAG is run what the LFNs are that are involved
-  if do_dax:
-        # run equivalent of LSCdataFind to find LFNs only
-        try:
-            LSC_DATAFIND_SERVER = os.environ['LSC_DATAFIND_SERVER']
-        except:
-            print >>sys.stderr, "LSC_DATAFIND_SERVER not set in environment"
-            sys.exit(1)
-
-        cmd = "LSCdataFind --server %s %s --names-only" % (LSC_DATAFIND_SERVER, df1.get_cmd_line())
-
-        print ""
-        print "Finding instrument data files for segment"
-        print "     %s" % str(seg)
-        print "Running LSCdataFind now with command line"
-        print "     %s" % cmd
-        sys.stdout.flush()
-
-        job = popen2.Popen3(cmd, capturestderr=1, bufsize=1024*1024)
-        ret = job.poll()
-        while ret < 0:
-                time.sleep(1)
-                lines = job.fromchild.readlines()
-                ret = job.poll()
-
-        if ret:
-                err = job.childerr.readlines()
-                print >>sys.stderr, "Error running LSCdataFind with command line %s: %s" % (cmd, " ".join(err))
-
-        lfnList = [ s.strip() for s in lines ]
-        print "Found %d logical filenames" % len(lfnList)
-        print ""
-        sys.stdout.flush()
-
-  prev_df1 = df1
-  prev_df2 = df2
+    prev_df1 = df1
+    prev_df2 = df2
 
   seg_insp_nodes = []
 
   for chunk in seg:
+    if do_dax:
+      # if we are generating a DAX then we want to find data now so that we know
+      # before the DAX/DAG is run what the LFNs are that are involved
+
+      # construct an lscdata find query to find the data in a chunk
+      df1 = pipeline.LSCDataFindNode(df_job)
+      df1.set_start(chunk.start() - pad)
+      df1.set_end(chunk.end() + pad)
+      df1.set_observatory(ifo1[0])
+    
+      df2 = pipeline.LSCDataFindNode(df_job)
+      df2.set_start(chunk.start() - pad)
+      df2.set_end(chunk.end() + pad)
+      df2.set_observatory(ifo2[0])
+
+      # run equivalent of LSCdataFind to find LFNs only
+      try:
+        LSC_DATAFIND_SERVER = os.environ['LSC_DATAFIND_SERVER']
+      except:
+        print >>sys.stderr, "LSC_DATAFIND_SERVER not set in environment"
+        sys.exit(1)
+  
+      cmd = "LSCdataFind --server %s %s --names-only" % (LSC_DATAFIND_SERVER, df1.get_cmd_line())
+  
+      print ""
+      print "Finding instrument data files for segment"
+      print "     %s" % str(seg)
+      print "Running LSCdataFind now with command line"
+      print "     %s" % cmd
+      sys.stdout.flush()
+  
+      job = popen2.Popen3(cmd, capturestderr=1, bufsize=1024*1024)
+      ret = job.poll()
+      while ret < 0:
+        time.sleep(1)
+        lines = job.fromchild.readlines()
+        ret = job.poll()
+  
+      if ret:
+        err = job.childerr.readlines()
+        print >>sys.stderr, "Error running LSCdataFind with command line %s: %s" % (cmd, " ".join(err))
+  
+      lfnList = [ s.strip() for s in lines ]
+      print "Found %d logical filenames" % len(lfnList)
+      print ""
+      sys.stdout.flush()
+
+    # now continue to build the DAG or DAX
     bank = inspiral.TmpltBankNode(tmplt_job)
     bank.set_start(chunk.start())
     bank.set_end(chunk.end())
