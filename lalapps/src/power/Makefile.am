@@ -43,6 +43,6 @@ EXTRA_DIST = $(POWERSRCS) power_pipe.in power_pipe.ini
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-CLEANFILES = config_python.sed lalapps_power_pipe 
+CLEANFILES = python_config.sed lalapps_power_pipe 
 
 MOSTLYCLEANFILES = *POWER*.xml *POWER*.gwf 
