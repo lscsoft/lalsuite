@@ -877,7 +877,7 @@ int main( int argc, char *argv[] )
             }
 	    
 	    if ( slideDataNS && j == 1 && vrbflg)  fprintf( stdout, 
-		"Doing a time slide of %d sec %d nanosec on IFOB triggers",
+		"Doing a time slide of %d sec %d nanosec on IFOB triggers\n",
 		slideData.gpsSeconds, slideData.gpsNanoSeconds );	
 
             while ( currentTrigger[j]->next )
