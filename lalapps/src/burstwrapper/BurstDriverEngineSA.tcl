@@ -604,7 +604,7 @@ foreach l1 $SegmentList {
 			    set f "Zeros.ilwd"
 			    if { [ file exists $f ] } {
 				append responseFile "Zeros.ilwd push Zero\n"
-				append dcwave "\t\tzero = float(Zero)"
+				append dcwave "\t\tzero = float(Zero);\n"
 				set got0 1
 			    }
 			}
@@ -613,7 +613,7 @@ foreach l1 $SegmentList {
 			    set f "Zeros.ilwd"
 			    if { [ file exists $f ] } {
 				append responseFile "Zeros.ilwd push Zero\n"
-				append dcwave "\t\tzero = float(Zero)"
+				append dcwave "\t\tzero = float(Zero);\n"
 				set got0 1
 			    }
 			}
@@ -700,7 +700,7 @@ foreach l1 $SegmentList {
 				    set f "Zeros.ilwd"
 				    if { [ file exists $f ] } {
 					append responseFile "Zeros.ilwd push Zero\n"
-					append dcwave "\t\tzero = float(Zero)"
+					append dcwave "\t\tzero = float(Zero);\n"
 					set got0 1
 				    }
 				}
@@ -709,7 +709,7 @@ foreach l1 $SegmentList {
 				    set f "Zeros.ilwd"
 				    if { [ file exists $f ] } {
 					append responseFile "Zeros.ilwd push Zero\n"
-					append dcwave "\t\tzero = float(Zero)"
+					append dcwave "\t\tzero = float(Zero);\n"
 					set got0 1
 				    }
 				}

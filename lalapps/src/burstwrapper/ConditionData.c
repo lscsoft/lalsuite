@@ -38,7 +38,7 @@ int OutputSymbols(char *algorithms,
   buf = (char *)calloc(1+strlen(algorithms),sizeof(char));
 
 
-  /* copy first line of algorithms into buf
+  /* copy first line of algorithms into buf */
   p0 = algorithms;
   p1 = strchr(algorithms,'\n');
   if(p1) {
