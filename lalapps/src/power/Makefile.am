@@ -5,17 +5,20 @@ BURCASRC = burca.c
 BREADSRC = bread.c
 BINJSRC = binj.c
 BINJFINDSRC = binj_find.c
+GENCACHESRC = gencache.c
 
 if LALFRAME
 if LALMETAIO
 bin_PROGRAMS = lalapps_power lalapps_burca \
                lalapps_bread lalapps_binj \
-               lalapps_binj_find
+               lalapps_binj_find lalapps_gencache
 lalapps_power_SOURCES = $(POWERSRCS)
 lalapps_burca_SOURCES = $(BURCASRC)
 lalapps_bread_SOURCES = $(BREADSRC)
 lalapps_binj_SOURCES = $(BINJSRC)
 lalapps_binj_find_SOURCES = $(BINJFINDSRC)
+lalapps_gencache_SOURCES = $(GENCACHESRC)
+
 else
 bin_PROGRAMS = 
 endif
