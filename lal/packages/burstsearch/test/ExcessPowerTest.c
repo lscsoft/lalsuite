@@ -557,7 +557,7 @@ main (int argc, char *argv[])
     params.deltaF = 1.0;
     params.length = 16;
     params.maxTileBand = 64.0;
-  
+
     LALCreateTFTiling (&status, &tfTiling, &params);
     TestStatus (&status, CODES(0), 1);
 
