@@ -120,7 +120,7 @@ typedef struct tagSimPopcornParamsStruc {
 /*</lalLaTeX>*/
 /*<lalLaTeX>
 
-The following structure contains the simulated pair time series and \Omega spectrum
+The following structure contains the simulated pair time series and $\Omega$ spectrum
 \begin{verbatim}*/
 typedef struct tagSimPopcornOutputStruc {
   REAL4TimeSeries   *SimPopcorn0;  
