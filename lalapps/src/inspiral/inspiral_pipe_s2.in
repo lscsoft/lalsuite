@@ -59,7 +59,7 @@ def chunk_in_segment(chunk,seg):
     ) or (
     chunk.end() >= seg.start() and chunk.end() <= seg.end()
     ) or (
-    seg.start() >= chunk.start() and seg.end <= chunk.end() ):
+    seg.start() >= chunk.start() and seg.end() <= chunk.end() ):
     return 1
   else:
     return 0
