@@ -120,13 +120,13 @@ main (  int argc, char **argv )
   
    coarseIn.fLower = 40.L;
    coarseIn.fUpper = 1000.L;
-   coarseIn.tSampling = 4096.L;
+   coarseIn.tSampling = 2048.L;
    coarseIn.order = twoPN;
    coarseIn.space = Tau0Tau3;
    coarseIn.mmCoarse = 0.95;
    coarseIn.mmFine = 0.97;
    coarseIn.iflso = 0.0L;
-   coarseIn.mMin = 5.0;
+   coarseIn.mMin = 3.0;
    coarseIn.mMax = 20.0;
    coarseIn.MMax = coarseIn.mMax * 2.;
    coarseIn.massRange = MinMaxComponentMass; 
@@ -149,11 +149,12 @@ main (  int argc, char **argv )
    /*
    randIn.param.fendBCV = 300;
    */
+   randIn.param.ieta=1.0; 
    randIn.param.startTime=0.0; 
    randIn.param.startPhase=0.88189; 
-   randIn.param.nStartPad=2000;
+   randIn.param.nStartPad=1000;
    randIn.param.signalAmplitude = 1.0;
-   randIn.param.nEndPad = 2000;
+   randIn.param.nEndPad = 0;
 
    i=1;
    while(i <argc)
@@ -363,6 +364,7 @@ main (  int argc, char **argv )
       else
 	      randIn.param.massChoice = m1Andm2;
 
+      for (i=0; i<signal.length; i++) signal.data[i] = 0.;
       LALRandomInspiralSignal(&status, &signal, &randIn);
 
       overlapin.signal = signal;
@@ -377,6 +379,7 @@ main (  int argc, char **argv )
 	      else
 		      overlapin.param.fCutoff = randIn.param.fCutoff;
 
+	      for (i=0; i<signal.length; i++) correlation.data[i] = 0.;
 	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
               list[j].params.fFinal = overlapin.param.fFinal;
 	      
@@ -403,7 +406,7 @@ main (  int argc, char **argv )
 		      randIn.param.mass2,
 		      omax);
       else
-	      fprintf(stdout, "%e %e %e %e %e %e %e %e %e %e %e\n", 
+	      fprintf(stdout, "%16.12f %16.12f %16.12f %16.12f %e %e %e %e %e %e %e\n", 
 		      list[jmax].params.mass1, 
 		      randIn.param.mass1, 
                       list[jmax].params.mass2,
