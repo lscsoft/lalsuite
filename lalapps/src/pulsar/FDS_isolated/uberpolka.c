@@ -346,7 +346,7 @@ int OutputCoincidences(struct PolkaCommandLineArgsTag CLA)
   /* make the output filename known to teh boinc main() routine in ComputeFStatistic */
   Outputfilename=resolved_filename;
 #endif
-  fclose(fpOut);   fprintf(stderr,"waiting...\n"); sleep(20);
+  fclose(fpOut);
 
   if (numCoincidences != 0){ 
     LALFree ( CP );
