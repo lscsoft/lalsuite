@@ -69,10 +69,16 @@ LALDestroyRealFFTPlan
 #include <lal/RealFFT.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
- 
+#include <lalapps.h>
+
+
+NRCSID( INSPIRALOVERLAP, "$Id$");
+RCSID(  "$Id$");
+
+
 void printf_timeseries (INT4 n, REAL4 *signal, REAL8 delta, REAL8 t0);
 void PrintParams(InspiralTemplate params, InspiralTemplate parans);
-INT4 lalDebugLevel=1;
+
      
 int 
 main (  int argc, char **argv ) 
@@ -91,10 +97,10 @@ main (  int argc, char **argv )
    static InspiralTemplate tmpltParams, params;
    static InspiralWaveNormaliseIn normin;
    
-   
+   lalDebugLevel = 1; 
    quietFlag = 0;	
-   approx = PadeT1;
-   tmplt = BCV;
+   approx = TaylorF2;
+   tmplt = TaylorF2;
 
    params.approximant = approx;
    params.massChoice = m1Andm2;
@@ -245,8 +251,9 @@ main (  int argc, char **argv )
    overlapin.nEnd = 0;
    signal.length = 0.;
    params.approximant = EOB;
-   LALInspiralWaveLength (&status, &signal.length, params);
-   if (!quietFlag) fprintf(stdout, "signal length = %d\n", signal.length);
+   LAL_CALL(LALInspiralWaveLength (&status, &signal.length, params),&status);
+   if (!quietFlag) fprintf(stdout, "#signal length = %d\n", signal.length);
+
 
    correlation.length = signal.length;
    psdLength = signal.length/2 + 1;
@@ -254,16 +261,16 @@ main (  int argc, char **argv )
    correlation.data = (REAL4*) LALMalloc(sizeof(REAL4)*correlation.length);
    memset( &(shf), 0, sizeof(REAL8FrequencySeries) );
    shf.f0 = 0;
-   LALDCreateVector( &status, &(shf.data), psdLength );
+   LAL_CALL(LALDCreateVector( &status, &(shf.data), psdLength ),&status);
    shf.deltaF = params.tSampling / signal.length;
    df = params.tSampling/(float) signal.length;
-   LALNoiseSpectralDensity (&status, shf.data, noisemodel, df);
+   LAL_CALL(LALNoiseSpectralDensity (&status, shf.data, noisemodel, df),&status);
 
 /* 
  * Estimate the plans 
  */
-   LALCreateForwardRealFFTPlan(&status, &fwdp, signal.length, 0);
-   LALCreateReverseRealFFTPlan(&status, &revp, signal.length, 0);
+   LAL_CALL(LALCreateForwardRealFFTPlan(&status, &fwdp, signal.length, 0),&status);
+   LAL_CALL(LALCreateReverseRealFFTPlan(&status, &revp, signal.length, 0),&status);
 /* REPORTSTATUS(&status); */
    
    
@@ -273,15 +280,15 @@ main (  int argc, char **argv )
    else
 	   params.massChoice = m1Andm2;
 
-   LALInspiralParameterCalc (&status, &params);
+   LAL_CALL(LALInspiralParameterCalc (&status, &params),&status);
    if (params.approximant != BCV && params.approximant != TaylorF1 && params.approximant != TaylorF2 )
    {
-	   LALInspiralWave(&status, &correlation, &params);
-	   LALREAL4VectorFFT(&status, &signal, &correlation, fwdp);
+	   LAL_CALL(LALInspiralWave(&status, &correlation, &params),&status);
+	   LAL_CALL(LALREAL4VectorFFT(&status, &signal, &correlation, fwdp),&status);
    }
    else
    {
-	   LALInspiralWave(&status, &signal, &params);
+	   LAL_CALL(LALInspiralWave(&status, &signal, &params),&status);
    }
 
    normin.psd = shf.data;
@@ -292,7 +299,7 @@ main (  int argc, char **argv )
    normin.samplingRate = params.tSampling;
 
 
-   LALInspiralWaveNormaliseLSO(&status, &signal, &norm, &normin);
+   LAL_CALL(LALInspiralWaveNormaliseLSO(&status, &signal, &norm, &normin),&status);
    
 
    tmpltParams.approximant = tmplt;
@@ -304,7 +311,7 @@ main (  int argc, char **argv )
    {
 	   tmpltParams.massChoice = m1Andm2;
    }
-   LALInspiralParameterCalc(&status, &tmpltParams);
+   LAL_CALL(LALInspiralParameterCalc(&status, &tmpltParams),&status);
 
    overlapin.param = tmpltParams;
    overlapin.psd = *shf.data;
@@ -312,12 +319,13 @@ main (  int argc, char **argv )
    overlapin.fwdp = fwdp;
    overlapin.revp = revp;
    for (i=0; (UINT4) i<correlation.length; i++) correlation.data[i] = 0.;
-   LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
+   LAL_CALL(LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin),&status);
 
 
-   if (!quietFlag) for (i=0; (UINT4) i<correlation.length; i++) printf("%e\n", correlation.data[i]);
+   if (!quietFlag) for (i=0; (UINT4) i<correlation.length; i++) 
+     printf("%e\n", correlation.data[i]);
    if (tmplt == BCV)
-	   fprintf (stdout, "%d %d %e %e %e %e %e %e %e %e %e\n", 
+	   fprintf (stdout, "## %d %d %e %e %e %e %e %e %e %e %e\n", 
 			   tmpltParams.approximant,
 			   params.approximant,
 			   tmpltParams.psi0, 
@@ -331,7 +339,7 @@ main (  int argc, char **argv )
 			   overlapout.max
 		   );
    else
-	   fprintf (stdout, "%d %d %e %e %e %e %e %e %e %e %e %e\n", 
+	   fprintf (stdout, "## %d %d %e %e %e %e %e %e %e %e %e %e\n", 
 			   tmpltParams.approximant,
 			   params.approximant,
 			   tmpltParams.mass1, 
@@ -346,9 +354,9 @@ main (  int argc, char **argv )
 		   );
    /* destroy the plans, correlation and signal */
 
-      LALDDestroyVector( &status, &(shf.data) );
-      if (signal.data != NULL) LALFree(signal.data);
-      if (correlation.data != NULL) LALFree(correlation.data);
+      LAL_CALL(LALDDestroyVector( &status, &(shf.data) ),&status);
+      if (signal.data != NULL) LAL_CALL(LALFree(signal.data),&status);
+      if (correlation.data != NULL) LAL_CALL(LALFree(correlation.data),&status);
       LALDestroyRealFFTPlan(&status,&fwdp);   
       LALDestroyRealFFTPlan(&status,&revp);
       LALCheckMemoryLeaks();

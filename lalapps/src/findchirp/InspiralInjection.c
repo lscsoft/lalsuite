@@ -1,7 +1,13 @@
- /* **************************************
-  * * Author: Thomas Cokelaer.
-  * Documentatin in lalapps.pdf in ./doc
-  * *************************************/
+ /* *****************************************
+  * Author: Thomas Cokelaer.
+  * [PURPOSE] Inject inspiral waveform test
+  * [USAGE]   Just type the executable name
+  * [INPUT]   An xml file with injection data
+  * [OUTPUT]  Write a file "injection.dat"
+  * 
+  * Documentation in lalapps.pdf in ./doc
+  * **************************************** */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,58 +38,67 @@ RCSID(  "$Id$");
 
 
 /* Temporary version ; haven't taken care of units, time and so on 
- * for the time being */
-int main()
+ * for the time being.  */
+int
+main()
 {
   
-  const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
  
-  CHAR  *injectionFile = NULL;         
-  int  startTime, endTime;
-  UINT4 k;
+  /* input xml data */
+  CHAR  	*injectionFile	= NULL;         
 
-  LALStatus            status = blank_status;
-  SimInspiralTable    *injections = NULL;
-  UINT4 numPoints = 524288 * 2 / 16;
-  REAL8 sampling = 2048.;
+  /* some variables to create the data */
+  UINT4 	startTime;
+  UINT4		endTime;
+  UINT4 	k;
+  UINT4 	numPoints 	= 524288 * 2 / 16;
 
+  REAL8 	sampling	= 2048.;
 
+  LALStatus 	status 		= blank_status;
+
+  /* injection structure */
+  SimInspiralTable *injections 	= NULL;
+
+  /* the data */
   REAL4TimeSeries               ts;						/* A time series to store the injection */
   COMPLEX8FrequencySeries       fs;						/* A freq series to store the psd 	*/
 
-  FILE *output;
+  /* output data to check injection */
+  FILE		*output;
+
+
 
   /* --- MAIN --- */
   lalDebugLevel = 1;
 
   injectionFile = "injection.xml"; 						/* an xml file with the injection	*/
-  output = fopen("injection.dat","w");						/* an ascii file for results		*/
+  output 	= fopen("injection.dat","w");					/* an ascii file for results		*/
   
-  memset(&ts, 0 , sizeof(REAL4TimeSeries));					/* allocate memory 			*/
+  memset(&ts, 0, sizeof(REAL4TimeSeries));					/* allocate memory 			*/
   LAL_CALL( LALSCreateVector( &status, &(ts.data), numPoints), &status);	/* and ts null				*/
   memset( &fs, 0, sizeof(COMPLEX8FrequencySeries));				/* idem for fs				*/
   LAL_CALL( LALCCreateVector( &status, &(fs.data), numPoints / 2 + 1 ), 
     &status );
 
-  ts.epoch.gpsSeconds = 729273610;						/* gps time of the time series		*/
-  startTime = 729273610;							/* gps start time and end time of ..	*/	
-  endTime   = 729273713;							/* ..injection; should be in agreement..*/
+  ts.epoch.gpsSeconds 	= 729273610;						/* gps time of the time series		*/
+  startTime 		= 729273610;						/* gps start time and end time of ..	*/	
+  endTime   		= startTime + 100;					/* ..injection; should be in agreement..*/
   										/* ..with the xml file			*/ 
-  ts.sampleUnits = lalADCCountUnit;						/*  UNITY ?? 				*/
-  ts.deltaT = 1./sampling;							/* sampling				*/
-  fs.deltaF = sampling / numPoints;						/* idenm for fs*/
-  fs.sampleUnits = lalADCCountUnit;
+  ts.sampleUnits 	= lalADCCountUnit;					/*  UNITY ?? 				*/
+  ts.deltaT 		= 1./sampling;						/* sampling				*/
+  fs.deltaF 		= sampling / numPoints;					/* idem for fs				*/
+  fs.sampleUnits 	= lalADCCountUnit;
 
   /* --- the psd is flat for simplicity --- */		
-  for( k = 0 ; k< numPoints/2; k++)    {
+  for( k = 0 ; k< numPoints/2; k++){
       fs.data->data[k].re = 1.;
-      fs.data->data[k].im = 0;
+      fs.data->data[k].im = 0.;
     }
   /* --- and time series is zero --- */
-  for( k = 0 ; k< numPoints; k++)    {
+  for( k = 0 ; k< numPoints; k++){
       ts.data->data[k] = 0.;
     }
-
 
   /* --- injection is here --- */
   SimInspiralTableFromLIGOLw( &injections, 
@@ -91,13 +106,15 @@ int main()
 			      startTime,
 			      endTime);
 
-  LAL_CALL( LALFindChirpInjectSignals( &status, &ts, injections, &fs ), &status );
+  LAL_CALL( LALFindChirpInjectSignals( &status, &ts, injections, &fs ), 
+	&status );
 
-  /* --- let's print the results on the stdout ---*/
-  for (k=0; k<numPoints; k++)   {
-      fprintf(output,"%i %e\n", k,ts.data->data[k]);
+  /* --- let's print the results in the file ---*/
+  for (k=0; k<numPoints; k++){
+      fprintf(output,"%i %e\n", k, ts.data->data[k]);
     }
   fclose(output);
+
   return 0;
 }
 

@@ -1,7 +1,12 @@
 /* **************************************************
- * Author: Cokelaer, T. Mars 2004
- * Purpose : compute number of templates in a bank 
- * *************************************************/
+ * Author: Cokelaer, T. 
+ * 
+ * [Purpose] Compute number of templates in a bank 
+ * [USAGE]   Use -h option 
+ * [INPUT]   Use -h option
+ * [OUTPUT]  ascii on stdout
+ * [DOC]     In lalapps.pdf
+ * ************************************************ */
 
 #include <stdio.h>
 #include <lal/LALNoiseModels.h>
@@ -32,8 +37,9 @@ RCSID("");
 #define BANKNUMBEROFTEMPLATES_MSGEINPUT "Error reading file"
 #define BANKNUMBEROFTEMPLATES_MSGEMEM   "Out of memory"
 
-/* Some constantes to fill InspiralTemplate Structure, Bank structure and internal structure */
-/* Bank structure first: */
+/* Some constantes to fill InspiralTemplate Structure, Bank structure 
+ * and internal structure.
+ * The Bank structure first: */
 
 #define BANKNUMBEROFTEMPLATES_FLOWER       		  40.
 #define BANKNUMBEROFTEMPLATES_TSAMPLING    		2048.
@@ -168,9 +174,7 @@ main (int argc, char **argv )
 
 
 
-  /*lalDebugLevel = LALERROR;*/
   lalDebugLevel = 0;
-  /* --- Initialisation of parameters and variables --- */
 
   ParametersInitialization(&coarseIn,&randIn,&otherIn);
   ParseParameters(&argc,argv, &coarseIn, &randIn, &otherIn);			/* Read Parameters from user 		*/
