@@ -56,6 +56,7 @@ SFT-structs and SFT-vectors.
 Similarly, \verb+LALCreateTimestampVector()+ and
 \verb+LALDestroyTimestampVector()+ allocate and free a bunch of  
 GPS-timestamps respectively.
+\end{itemize}
 
 \subsubsection*{Algorithm}
 

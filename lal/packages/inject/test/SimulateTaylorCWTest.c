@@ -13,7 +13,8 @@ Generates a quasiperiodic waveform.
 \subsubsection*{Usage}
 \begin{verbatim}
 SimulateTaylorCWTest [-s sourcefile] [-r respfile] [-l site earthfile sunfile]
-                     [-o outfile] [-t sec nsec npt dt] [-d debuglevel]
+                     [-o outfile] [-t sec nsec npt dt] [-h hsec hnsec fh]
+                     [-d debuglevel]
 \end{verbatim}
 
 \subsubsection*{Description}
@@ -44,6 +45,11 @@ waveform: \verb@sec@ and \verb@nsec@ are integers specifying the start
 time in GPS seconds and nanoseconds, \verb@npt@ is the number of time
 samples generated, and \verb@dt@ is the sampling interval in seconds.
 If absent, \verb@-t 0 0 65536 9.765625e-4@ is assumed.
+\item[\texttt{-h}] Performs ``ideal heterodyning'' (phase subtraction)
+on the signal: \verb@hsec@ and \verb@hnsec@ are integers specifying an
+epoch of zero phase subtraction in GPS seconds and nanoseconds, and
+\verb@fh@ is the frequency of phase subtraction in Hz.  If absent, no
+heterodyning is performed.
 \item[\texttt{-d}] Sets the debug level to \verb@debuglevel@.  If
 absent, level 0 is assumed.
 \end{itemize}
@@ -143,7 +149,7 @@ output time series.
 lalDebugLevel
 LALPrintError()                 LALCheckMemoryLeaks()
 LALSCreateVector()              LALSDestroyVector()
-LALGenerateTaylorCW()        LALSDestroyVectorSequence()
+LALGenerateTaylorCW()           LALSDestroyVectorSequence()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -179,16 +185,19 @@ int lalDebugLevel = 0;
 #define DEC    (0.0)
 #define PSI    (0.0)
 #define F0     (100.0)
+#define FH     (0.0)
 #define PHI0   (0.0)
 #define SEC    (0)
 #define NSEC   (0)
+#define HSEC   (0)
+#define HNSEC  (0)
 #define DT     (0.0009765625)
 #define NPT    (65536)
 
 /* Usage format string. */
-#define USAGE "Usage: %s [-s sourcefile] [-o outfile]\n"             \
-"\t[-r respfile] [-l site earthfile sunfile]\n"                      \
-"\t[-t sec nsec npt dt] [-d debuglevel]\n"
+#define USAGE "Usage: %s [-s sourcefile] [-o outfile] [-r respfile]\n" \
+"\t[-l site earthfile sunfile] [-o outfile] [-t sec nsec npt dt]\n"    \
+"\t[-t hsec hnsec fh] [-d debuglevel]\n"
 
 /* Maximum output message length. */
 #define MSGLEN (1024)
@@ -269,17 +278,19 @@ int
 main(int argc, char **argv)
 {
   /* Command-line parsing variables. */
-  int arg;                     /* command-line argument counter */
-  static LALStatus stat;       /* status structure */
-  CHAR *sourcefile = NULL;     /* name of sourcefile */
-  CHAR *respfile = NULL;       /* name of respfile */
-  CHAR *outfile = NULL;        /* name of outfile */
-  CHAR *earthfile = NULL;      /* name of earthfile */
-  CHAR *sunfile = NULL;        /* name of sunfile */
-  CHAR *site = NULL;           /* name of detector site */
-  INT4 npt = NPT;              /* number of output samples */
-  INT4 sec = SEC, nsec = NSEC; /* GPS epoch of output */
-  REAL8 dt = DT;               /* output sampling interval */
+  int arg;                         /* command-line argument counter */
+  static LALStatus stat;           /* status structure */
+  CHAR *sourcefile = NULL;         /* name of sourcefile */
+  CHAR *respfile = NULL;           /* name of respfile */
+  CHAR *outfile = NULL;            /* name of outfile */
+  CHAR *earthfile = NULL;          /* name of earthfile */
+  CHAR *sunfile = NULL;            /* name of sunfile */
+  CHAR *site = NULL;               /* name of detector site */
+  INT4 npt = NPT;                  /* number of output samples */
+  INT4 sec = SEC, nsec = NSEC;     /* GPS epoch of output */
+  INT4 hsec = HSEC, hnsec = HNSEC; /* GPS heterodyning epoch */
+  REAL8 dt = DT;                   /* output sampling interval */
+  REAL8 fh = FH;                   /* heterodyning frequency */
 
   /* File reading variables. */
   FILE *fp = NULL;    /* generic file pointer */
@@ -363,6 +374,20 @@ main(int argc, char **argv)
         return SIMULATETAYLORCWTESTC_EARG;
       }
     }
+    /* Parse heterodyning option. */
+    else if ( !strcmp( argv[arg], "-h" ) ) {
+      if ( argc > arg + 4 ) {
+	arg++;
+	hsec = atoi( argv[arg++] );
+	hnsec = atoi( argv[arg++] );
+	fh = atof( argv[arg++] );
+      } else {
+	ERROR( SIMULATETAYLORCWTESTC_EARG,
+	       SIMULATETAYLORCWTESTC_MSGEARG, 0 );
+        LALPrintError( USAGE, *argv );
+        return SIMULATETAYLORCWTESTC_EARG;
+      }
+    }
     /* Parse debug level option. */
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
@@ -405,6 +430,7 @@ main(int argc, char **argv)
     SUB( LALSCreateVector( &stat, &(output.data), npt ), &stat );
     memset( output.data->data, 0, npt*sizeof(REAL4) );
     tStop = epochOut + 1000000000LL*(INT8)( dt*npt + 1.0 );
+    output.f0 = fh;
   }
   /* Adjust wave start and stop times so that they will almost
      certainly cover the output timespan even after barycentring. */
@@ -423,6 +449,8 @@ main(int argc, char **argv)
 	   SIMULATETAYLORCWTESTC_MSGEMEM, 0 );
     return SIMULATETAYLORCWTESTC_EMEM;
   }
+  detector.heterodyneEpoch.gpsSeconds = hsec;
+  detector.heterodyneEpoch.gpsNanoSeconds = hnsec;
   memset( detector.transfer, 0, sizeof(COMPLEX8FrequencySeries) );
   if ( respfile ) {
     REAL4VectorSequence *resp = NULL; /* response as vector sequence */

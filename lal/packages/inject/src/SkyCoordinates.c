@@ -28,10 +28,9 @@ required; the \verb@*params@ object must store any data fields
 required by these functions, or an error will occur.
 
 
-The function \verb+LALNormalizeSkyPosition()+ "normalizes" any given
+The function \verb+LALNormalizeSkyPosition()+ ``normalizes'' any given
 (spherical) sky-position (in radians), which means it projects the
 angles into $[0, 2\pi) \times [-\pi/2, \pi/2]$ if they lie outside.
-\end{itemize}
 
 
 \subsubsection*{Algorithm}
