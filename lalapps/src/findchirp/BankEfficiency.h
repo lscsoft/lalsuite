@@ -19,7 +19,9 @@
 
 #define MAXIFO 2
 #define BANKEFFICIENCY_PARAMS_ROW \
-"         %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%f,%f,%f,%f,%d,%d,"
+"         %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%f,%f,%f,%f,%d,%d,%d,"
+#define BANKEFFICIENCY_PARAMS_ROW_SPACE \
+"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %f %f %f %f %d %d %d"
 
 #define LIGOLW_XML_BANKEFFICIENCY \
 "   <Table Name=\"bankefficiencygroup:bankefficiency:table\">\n" \

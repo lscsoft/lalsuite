@@ -312,8 +312,7 @@ main (INT4 argc, CHAR **argv )
       
       /*	LALCreateRandomInjection(otherIn, randIn, signal);*/
       randIn.param.approximant    	= otherIn.signal;  			/* The waveform parameter for injection */
-      	randIn.param.fCutoff 		= coarseBankIn.fUpper; 			/* its cutoff frequency 		*/
-      /* What kind of parameters do we use ?*/
+      /*randIn.param.fCutoff 		= coarseBankIn.fUpper; 			      /* What kind of parameters do we use ?*/
       if (otherIn.signal == BCV) 
 	randIn.param.massChoice = psi0Andpsi3;
       else
@@ -2517,6 +2516,8 @@ BEPrintResultsXml( InspiralCoarseBankIn   coarseBankIn,
 	    trigger.fend_inject,
 	    trigger.totalMass_trigger,
 	    trigger.eta_trigger,
+	    trigger.totalMass_triggerC,
+	    trigger.eta_triggerC,
 	    trigger.mass1_inject,
 	    trigger.mass2_inject,
 	    trigger.rho_final,
@@ -2530,7 +2531,8 @@ BEPrintResultsXml( InspiralCoarseBankIn   coarseBankIn,
 	    trigger.alphaC,
 	    trigger.alpha_fC, 
 	    trigger.layerC,
-	    trigger.binC);
+	    trigger.binC,
+	    trigger.coaTime);
 	    
      if (trigger.ntrial == otherIn.ntrials){
        fprintf( xmlStream.fp, LIGOLW_XML_TABLE_FOOTER );
@@ -2572,7 +2574,7 @@ BEPrintResultsXml( InspiralCoarseBankIn   coarseBankIn,
 		trigger.alphaC,
 		trigger.alpha_fC, 
 		trigger.layerC,
-		trigger.binC);
+		trigger.binC, trigger.coaTime);
 	fprintf( xmlStream.fp, LIGOLW_XML_TABLE_FOOTER );
 	fprintf( xmlStream.fp, LIGOLW_XML_FOOTER );
       }
@@ -2605,7 +2607,7 @@ BEPrintResultsXml( InspiralCoarseBankIn   coarseBankIn,
 		  trigger.alphaC,
 		  trigger.alpha_fC, 
 		  trigger.layerC,
-		  trigger.binC);
+		  trigger.binC, trigger.coaTime);
 	}
      
       fclose( xmlStream.fp );
