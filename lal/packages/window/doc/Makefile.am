@@ -3,7 +3,7 @@ TEXFILES = Window.tex
 DVIFILES = Window.dvi
 SUFFIXES = .tex .dvi
 MOSTLYCLEANFILES = *.log *.aux
-CLEANFILES = *.dvi
-EXTRA_DIST = $(TEXFILES) Window.eps
+CLEANFILES = Window.dvi Window.pdf
+EXTRA_DIST = $(TEXFILES) WindowFig.eps WindowFig.pdf
 dvi-local: $(DVIFILES)
 .tex.dvi:; @LATEX@ $< ; @LATEX@ $<

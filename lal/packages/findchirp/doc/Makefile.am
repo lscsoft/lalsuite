@@ -3,7 +3,7 @@ TEXFILES = FindChirpExch.tex
 DVIFILES = FindChirpExch.dvi
 SUFFIXES = .tex .dvi
 MOSTLYCLEANFILES = *.log *.aux
-CLEANFILES = *.dvi
+CLEANFILES = FindChirpExch.dvi FindChirpExch.pdf
 EXTRA_DIST = $(TEXFILES)
 dvi-local: $(DVIFILES)
 .tex.dvi:; @LATEX@ $< ; @LATEX@ $<
