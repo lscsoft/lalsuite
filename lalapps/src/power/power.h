@@ -15,6 +15,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALConstants.h>
 #include <lal/FrameStream.h>
+#include <lal/FrameCalibration.h>
 #include <lal/EPData.h>
 #include <lal/EPSearch.h>
 #include <lal/BurstSearch.h>
@@ -27,6 +28,7 @@
 #include <lal/Units.h>
 #include <lal/IIRFilter.h>
 #include <lal/TimeFreqFFT.h>
+#include <lal/GenerateBurst.h>
 #include <lalapps.h>
 #include <processtable.h>
 

@@ -123,8 +123,9 @@ INT4       sampleRate    = 2048;    /* sample rate in Hz                  */
 
 /* data conditioning parameters */
 CHAR      *calCacheFile  = NULL;    /* name of the calibration cache file */
+CHAR      *injectionFile  = NULL;   /* file with list of injections       */
 
-
+/* parameters for the sine-gaussian injection testing */
 REAL4                 sineFreq      = 100.0;   /* nominal frequency of sine burst */
 REAL4                 sineOffset    = 1.0;     /* sin-burst center in time series */
 REAL4                 sineAmpl      = 1.0;     /* peak amplitude of sine burst    */
@@ -192,6 +193,10 @@ int main( int argc, char *argv[])
     /* parse arguments and fill procparams table */
     initializeEPSearch( argc, argv, &searchParams, &procparams);
 
+    params = (EPSearchParams *) searchParams;
+    params->printSpectrum = printSpectrum;
+    params->cluster = cluster;
+    
     /* create the search summary table */
     searchsumm.searchSummaryTable = (SearchSummaryTable *)
         LALCalloc( 1, sizeof(SearchSummaryTable) );
@@ -211,16 +216,12 @@ int main( int argc, char *argv[])
     memset( series.data->data, 0, series.data->length*sizeof(REAL4) );
     series.epoch.gpsSeconds     = epoch.gpsSeconds;
     series.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
-    strcpy(series.name, "Data");
+    strcpy(series.name, params->channelName);
     series.deltaT = 1.0/((REAL8) sampleRate);
     series.f0 = 0.0;
     series.sampleUnits = lalADCCountUnit;
-   
-    params = (EPSearchParams *) searchParams;
-    params->printSpectrum = printSpectrum;
-    params->cluster = cluster;
-    
 
+   
     /*******************************************************************
     * GET AND CONDITION THE DATA                                       *
     *******************************************************************/
@@ -260,26 +261,6 @@ int main( int argc, char *argv[])
         makeWhiteNoise(&stat, &series, noiseAmpl, seed);
     }
 
-    /* insert shaped sine burst into time series if specified 
-    if (sineBurst)
-    {
-      double deltaT  = series.deltaT;
-      long   length  = series.data->length;
-      long   index   = 0;
-      long   offset  = floor (sineOffset / deltaT);
-      double sigmaSq = sineWidth * sineWidth / deltaT / deltaT;
-      double incr    = 2.0 * 3.141593 * sineFreq * deltaT;
- 
-      for (index = 0; index < length; index++)
-      {
-        double sample = series.data->data[index];
-        sample += exp(-1.0 / 2.0 * (index - offset) * (index - offset) / sigmaSq)
-               * sineAmpl * sin(index * incr);
-        series.data->data[index] = sample;
-      }
-    }
-    */
-
     /* write diagnostic info to disk */
     if ( printData ){
       LALPrintTimeSeries( &series, "./timeseries.dat" );
@@ -305,9 +286,9 @@ int main( int argc, char *argv[])
           &stat );
     } 
 
-    /*****************************************************************/
-
-    /* Injections (10/13/03) */
+    /*****************************************************************
+     * Add injections into the time series:  UNTESTED
+     *****************************************************************/
     if( sineBurst )
     {
       SimBurstTable *injections = NULL;
@@ -315,10 +296,8 @@ int main( int argc, char *argv[])
        injections =  (SimBurstTable *)LALMalloc( sizeof(SimBurstTable) );
     
       /* Fill in the injection structure */
-      injections->geocent_start_time.gpsSeconds = 723345762;
-      injections->geocent_start_time.gpsNanoSeconds = 0;
-      injections->duration                       = 1.0;
-      injections->bandwidth                      = 100.0;
+      injections->geocent_peak_time.gpsSeconds = 723345762;
+      injections->geocent_peak_time.gpsNanoSeconds = 0;
       injections->longitude                      = 50.0;
       injections->latitude                       = 50.0;
       injections->hrss                           = sineAmpl;
@@ -331,14 +310,6 @@ int main( int argc, char *argv[])
       LAL_CALL( LALBurstInjectSignals( &stat, &series, injections, injRespPtr ), 
           &stat ); 
     }
-
-
-
-
-
-    /**********************************************************************/
-
-
 
     /* Finally call condition data */
     LAL_CALL( EPConditionData( &stat, &series, searchParams), &stat);
@@ -531,20 +502,22 @@ int initializeEPSearch(
         {"start_time",              required_argument, 0,                 'x'}, 
         {"start_time_ns",           required_argument, 0,                 'y'}, 
         {"srate",                   required_argument, 0,                 'z'}, 
-        {"sinFreq",                required_argument, 0,                 'A'}, 
+        {"sinFreq",                 required_argument, 0,                 'A'}, 
         {"seed",                    required_argument, 0,                 'E'}, 
         {"threshold",               required_argument, 0,                 'B'}, 
         {"window",                  required_argument, 0,                 'C'}, 
         {"dbglevel",                required_argument, 0,                 'D'},
-	{"sinOffset",              required_argument, 0,                 'F'},
-	{"sinAmpl",                required_argument, 0,                 'G'},
-	{"sinWidth",               required_argument, 0,                 'H'},
+	{"sinOffset",               required_argument, 0,                 'F'},
+	{"sinAmpl",                 required_argument, 0,                 'G'},
+	{"sinWidth",                required_argument, 0,                 'H'},
+        {"calcache",                required_argument, 0,                 'I'},
         /* output options */
         {"printData",               no_argument,       &printData,         1 },
         {"printSpectrum",           no_argument,       &printData,         1 },
         {0, 0, 0, 0}
     };
     int c;
+    size_t len=0;
     ProcessParamsTable *this_proc_param = procparams->processParamsTable;
     EPSearchParams     *params;
     LALStatus           stat = blank_status;
@@ -597,7 +570,7 @@ int initializeEPSearch(
         int option_index = 0;
 
         c = getopt_long_only( argc, argv, 
-                "a:b:c:d:e:f:g:i:h:j:k:l:m:n:o:p:q:r:s:t:u:v:x:y:z:A:E:B:C:D:F:G:H:",
+                "a:b:c:d:e:f:g:i:h:j:k:l:m:n:o:p:q:r:s:t:u:v:x:y:z:A:E:B:C:D:F:G:H:I:",
                 long_options, &option_index );
 
         /* detect the end of the options */
@@ -713,7 +686,7 @@ int initializeEPSearch(
             case 'g':
                 /* the frame cache file name */
                 {
-                    size_t len = strlen(optarg) + 1;
+                    len = strlen(optarg) + 1;
                     cachefile = (CHAR *) LALCalloc( len , sizeof(CHAR));
                     memcpy( cachefile, optarg, len);
                     ADD_PROCESS_PARAM( "string", "%s", optarg);
@@ -723,7 +696,7 @@ int initializeEPSearch(
             case 'i':
                 /* directory containing frames */
                 {
-                    size_t len = strlen(optarg) + 1;
+                    len = strlen(optarg) + 1;
                     dirname =  (CHAR *) LALCalloc( len , sizeof(CHAR));
                     memcpy( dirname, optarg, len);
                     ADD_PROCESS_PARAM( "string", "%s", optarg);
@@ -1109,10 +1082,26 @@ int initializeEPSearch(
 		      exit( 1 );
 		  }
 		  sineWidth = tmpsineWidth;
-		}
-		break;
+                }
+                break;
 
-            case '?':
+            case 'I':
+                /* create storage for the calibration frame cache name */
+                len = strlen( optarg ) + 1;
+                calCacheFile = (CHAR *) calloc( len, sizeof(CHAR));
+                memcpy( calCacheFile, optarg, len );
+                ADD_PROCESS_PARAM( "string", "%s", optarg );
+                break;
+
+             case 'J':
+                /* create storage for the calibration frame cache name */
+                len = strlen( optarg ) + 1;
+                injectionFile = (CHAR *) calloc( len, sizeof(CHAR));
+                memcpy( injectionFile, optarg, len );
+                ADD_PROCESS_PARAM( "string", "%s", optarg );
+                break;
+
+           case '?':
                 exit( 1 );
                 break;
 
