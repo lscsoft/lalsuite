@@ -67,17 +67,17 @@ struct gridding_tag
 gridding_t;
 
 
-void init_gridding(gridding_t *gridding);
+void init_gridding(gridding_t *p_gridding);
 
-void make_gridding(LALStatus *status, gridding_t *gridding, 
+void make_gridding(LALStatus *status, gridding_t *p_gridding, 
                    UINT4 num_ra, gridding_geom_t ra_geom, 
                    UINT4 num_dec, gridding_geom_t dec_geom,
-                   LIGOTimeGPS *gps);
+                   EphemerisData *p_ephem, LIGOTimeGPS *p_gps);
 
-void cleanup_gridding(LALStatus *status, gridding_t *gridding);
+void cleanup_gridding(LALStatus *status, gridding_t *p_gridding);
 
-void zero_gridding(LALStatus *status, gridding_t *gridding);
+void zero_gridding(LALStatus *status, gridding_t *p_gridding);
 
-void print_gridding(gridding_t *gridding, char *filename);
+void print_gridding(gridding_t *p_gridding, char *filename);
 
 #endif

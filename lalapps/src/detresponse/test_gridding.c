@@ -8,6 +8,8 @@
 
 #include "cmdline.h"
 #include "make_gridding.h"
+#include "skygrid.h"
+#include "util.h"
 #include <string.h>
 
 int lalDebugLevel = 7;
@@ -17,15 +19,18 @@ struct gengetopt_args_info args_info;
 int
 main(int argc, char **argv)
 {
-  static LALStatus s;
-  UINT4            num_ra, num_dec;
-  gridding_t       g;
-  LIGOTimeGPS      gps;
+  static LALStatus   s;
+  UINT4              num_ra, num_dec;
+  gridding_t         g;
+  LIGOTimeGPS        gps;
   LALLeapSecAccuracy acc = LALLEAPSEC_LOOSE;
+  EphemerisData      ephem;
 
   s.statusPtr = NULL;
   
   LALGPSTimeNow (&s, &gps, &acc); 
+  init_ephemeris(&s, &ephem);
+
   
   printf("RUN 1\n");
   
@@ -33,7 +38,8 @@ main(int argc, char **argv)
   
   num_ra = 24;
   num_dec = 11;
-  make_gridding(&s, &g, num_ra, DETRESP_REGGRID, num_dec, DETRESP_REGGRID, &gps);
+  make_gridding(&s, &g, num_ra, DETRESP_REGGRID, 
+                num_dec, DETRESP_REGGRID, &ephem, &gps);
   
   print_gridding(&g, (char *)NULL);
   
@@ -47,7 +53,8 @@ main(int argc, char **argv)
   
   num_ra = 100;
   num_dec = 51;
-  make_gridding(&s, &g, num_ra, DETRESP_IRRGRID, num_dec, DETRESP_REGGRID, &gps);
+  make_gridding(&s, &g, num_ra, DETRESP_IRRGRID, 
+                num_dec, DETRESP_REGGRID, &ephem, &gps);
   
   print_gridding(&g, "autumn2003.dat");
 
@@ -61,7 +68,8 @@ main(int argc, char **argv)
   
   num_ra = 100;
   num_dec = 51;
-  make_gridding(&s, &g, num_ra, DETRESP_IRRGRID, num_dec, DETRESP_REGGRID, &gps);
+  make_gridding(&s, &g, num_ra, DETRESP_IRRGRID, 
+                num_dec, DETRESP_REGGRID, &ephem, &gps);
   
   print_gridding(&g, "winter2003.dat");
 
@@ -75,11 +83,30 @@ main(int argc, char **argv)
   
   num_ra = 100;
   num_dec = 51;
-  make_gridding(&s, &g, num_ra, DETRESP_IRRGRID, num_dec, DETRESP_REGGRID, &gps);
+  make_gridding(&s, &g, num_ra, DETRESP_IRRGRID, 
+                num_dec, DETRESP_REGGRID, &ephem, &gps);
   
   print_gridding(&g, "spring2004.dat");
 
   cleanup_gridding(&s, &g);
+  
+  printf("\n*   *   *   *   *   *   *   *   *   *\n");
+
+  printf("RUN 5 - irregular gridding\n");
+  
+  init_gridding(&g);
+  
+  num_ra = 24;
+  num_dec = 11;
+  make_gridding(&s, &g, num_ra, DETRESP_VARGRID, 
+                num_dec, DETRESP_REGGRID, &ephem, &gps);
+  
+  print_gridding(&g, (char *)NULL);
+  
+  cleanup_gridding(&s, &g);
+  
+  
+  cleanup_ephemeris(&s, &ephem);
 
   LALCheckMemoryLeaks();
 
