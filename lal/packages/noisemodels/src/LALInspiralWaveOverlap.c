@@ -85,16 +85,33 @@ LALInspiralWaveOverlap
    }
 
    overlapin->param.nStartPad = 0;
-   overlapin->param.startPhase = LAL_PI_2;
-   LALInspiralWave(status->statusPtr, &output2, &overlapin->param);
-   CHECKSTATUSPTR(status);
-   overlapin->param.startPhase = 0.;
-   LALInspiralWave(status->statusPtr, &output1, &overlapin->param);
-   CHECKSTATUSPTR(status);
-   LALREAL4VectorFFT(status->statusPtr, &filter1, &output1, overlapin->fwdp);
-   CHECKSTATUSPTR(status);
-   LALREAL4VectorFFT(status->statusPtr, &filter2, &output2, overlapin->fwdp);
-   CHECKSTATUSPTR(status);
+   if (overlapin->param.approximant==TaylorT1 ||
+       overlapin->param.approximant==TaylorT2 ||
+       overlapin->param.approximant==TaylorT3 ||
+       overlapin->param.approximant==PadeT1 ||
+       overlapin->param.approximant==EOB ||
+       overlapin->param.approximant==SpinTaylorT3)
+   {
+	   overlapin->param.startPhase = LAL_PI_2;
+	   LALInspiralWave(status->statusPtr, &output2, &overlapin->param);
+	   CHECKSTATUSPTR(status);
+	   overlapin->param.startPhase = 0.;
+	   LALInspiralWave(status->statusPtr, &output1, &overlapin->param);
+	   CHECKSTATUSPTR(status);
+	   LALREAL4VectorFFT(status->statusPtr, &filter1, &output1, overlapin->fwdp);
+	   CHECKSTATUSPTR(status);
+	   LALREAL4VectorFFT(status->statusPtr, &filter2, &output2, overlapin->fwdp);
+	   CHECKSTATUSPTR(status);
+   }
+   else
+   {
+	   overlapin->param.startPhase = LAL_PI_2;
+	   LALInspiralWave(status->statusPtr, &filter2, &overlapin->param);
+	   CHECKSTATUSPTR(status);
+	   overlapin->param.startPhase = 0.;
+	   LALInspiralWave(status->statusPtr, &filter1, &overlapin->param);
+	   CHECKSTATUSPTR(status);
+   }
    normin.psd = &(overlapin->psd);
    normin.df = overlapin->param.tSampling / (REAL8) overlapin->signal.length;
    normin.fCutoff = overlapin->param.fCutoff;

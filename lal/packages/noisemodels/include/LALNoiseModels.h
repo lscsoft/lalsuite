@@ -144,6 +144,11 @@ tagRandomInspiralSignalIn
    REAL8 t0Max;      /* largest Newtonian chirp time */
    REAL8 tnMin;      /* smallest 1, 1.5 PN chirp time */
    REAL8 tnMax;      /* largest 1, 1.5 PN chirp time  */
+   /* min/max values of BCV parameters*/
+   REAL8 psi0Min;      /* smallest Newtonian psi-parameter */
+   REAL8 psi0Max;      /* largest Newtonian psi-parameter */
+   REAL8 psi3Min;      /* smallest 1.5 PN psi-parameter */
+   REAL8 psi3Max;      /* largest 1.5 PN psi-parameter */
 
 } 
 RandomInspiralSignalIn;

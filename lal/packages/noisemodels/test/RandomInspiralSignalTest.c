@@ -75,7 +75,7 @@ LALRandomInspiralSignal
  
 void printf_timeseries(INT4 n, REAL4 *signal, REAL8 delta, REAL8 t0, FILE *file);
 
-INT4 lalDebugLevel=0;
+INT4 lalDebugLevel=1;
      
 int 
 main ( void ) 
@@ -97,7 +97,7 @@ main ( void )
    REAL8 t0;
    REAL4Vector signal;
    REAL4Vector correlation;
-   RandomInspiralSignalIn randIn;
+   static RandomInspiralSignalIn randIn;
    InspiralWaveOverlapIn overlapin;
    InspiralWaveOverlapOut overlapout;
    RealFFTPlan *fwdp=NULL,*revp=NULL;
@@ -120,30 +120,40 @@ main ( void )
 
    overlapin.nBegin = 0;
    overlapin.nEnd = 0;
-   randIn.SignalAmp = 0.L;
-   randIn.NoiseAmp = 1.L;
+   randIn.SignalAmp = 10.L;
+   randIn.NoiseAmp = 1.;
    randIn.useed = 83275488;
-   randIn.mMin = 20.0;
-   randIn.mMax = 40.0;
+   randIn.mMin = 10.0;
+   randIn.mMax = 20.0;
    randIn.MMax = 2.*randIn.mMax;
    randIn.param.startTime=0.0; 
    randIn.param.startPhase=0.88189; 
-   randIn.param.nStartPad=1000;
+   randIn.param.nStartPad=3000;
    randIn.param.mass1 = randIn.mMin;
    randIn.param.mass2 = randIn.mMin;
    randIn.param.ieta = 1; 
    randIn.param.fLower = 40.;
-   randIn.param.fCutoff = 1000.;
-   randIn.param.tSampling = 4000.;
+   randIn.param.fCutoff = 2000.;
+   randIn.param.tSampling = 4096.;
    randIn.param.signalAmplitude = 1.0;
    randIn.param.nEndPad = 0;
    randIn.param.OmegaS = 0.0;
    randIn.param.Theta = 0.0;
-   randIn.param.order = twoPN;
    randIn.param.approximant = EOB;
+   randIn.param.order = twoPN;
    randIn.param.massChoice = m1Andm2;
    randIn.etaMin = randIn.mMin * ( randIn.MMax - randIn.mMin) /
       pow(randIn.MMax,2.);
+
+   randIn.param.psi0 = 72639.;
+   randIn.param.psi3 = -768.78;
+   randIn.param.alpha = 0.766;
+   randIn.param.fendBCV = 331.4;
+
+   randIn.psi0Min = 10000.L;
+   randIn.psi0Max = 100000.L;
+   randIn.psi3Min = -1000.L;
+   randIn.psi3Max = 1000.L;
 
    dt = 1./randIn.param.tSampling;
    t0 = 0.0;
@@ -166,7 +176,8 @@ main ( void )
    overlapin.revp = revp;
    file = fopen("RandomInspiralSignalTest.out", "w");
 
-   i=5;
+   randIn.param.approximant = BCV;
+   i=4;
    while (i--) {
 	   /*
       randIn.type = 0;
@@ -212,9 +223,9 @@ main ( void )
 
       */
       randIn.type = 2;
+      randIn.param.approximant = BCV;
+      randIn.param.massChoice = psi0psi3;
       LALRandomInspiralSignal(&status, &signal, &randIn);
-      fprintf(stderr, "m1=%e m2=%e t0=%e t2=%e \n",  
-		      randIn.param.mass1, randIn.param.mass2, randIn.param.t0, randIn.param.t2);
       if (TimeDomain)
       {
 	      LALREAL4VectorFFT(&status, &correlation, &signal, revp);
@@ -222,14 +233,18 @@ main ( void )
       }
       else
       {
-	      randIn.param.approximant = EOB;
-	      LALInspiralParameterCalc(&status, &randIn.param);
+	      if (randIn.param.approximant != BCV) LALInspiralParameterCalc(&status, &randIn.param);
 	      overlapin.signal = signal;
 	      overlapin.param = randIn.param;
-	      randIn.param.fCutoff = 1./(pow(6.,1.5) * LAL_PI * randIn.param.totalMass * LAL_MTSUN_SI);
+	      if (randIn.param.approximant !=BCV) 
+		      randIn.param.fCutoff = 1./(pow(6.,1.5) * LAL_PI * randIn.param.totalMass * LAL_MTSUN_SI);
+	      else
+		      randIn.param.fCutoff = randIn.param.fendBCV;
 	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
 	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
-	      fprintf(stderr, "phase_max=%e bin_max=%d overlap_max=%e\n",  
+	      fprintf(stderr, "m1=%e m2=%e t0=%e t2=%e psi0=%e psi3=%e phase_max=%e bin_max=%d overlap_max=%e\n",  
+			      randIn.param.mass1, randIn.param.mass2, randIn.param.t0, randIn.param.t2,
+			      randIn.param.psi0, randIn.param.psi3,
 			      overlapout.phase, overlapout.bin, overlapout.max);
       }
    }

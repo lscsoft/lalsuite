@@ -149,7 +149,7 @@ LALRandomInspiralSignal
    )
 {  /*  </lalVerbatim>  */
 
-   REAL8 e1, e2, norm;
+   REAL8 epsilon1, epsilon2, norm;
    REAL4Vector noisy, buff;
    AddVectorsIn addIn;
    INT4 valid;
@@ -177,35 +177,43 @@ LALRandomInspiralSignal
 	   valid = 0;
 	   while (!valid) 
 	   {
-		   e1 = random()/(float)RAND_MAX;
-		   e2 = random()/(float)RAND_MAX;
+		   epsilon1 = random()/(float)RAND_MAX;
+		   epsilon2 = random()/(float)RAND_MAX;
 		   switch (randIn->param.massChoice) 
 		   {
 			   case m1Andm2: 
 				   randIn->param.mass1 = randIn->mMin 
-					   + (randIn->mMax - randIn->mMin) * e1;
+					   + (randIn->mMax - randIn->mMin) * epsilon1;
 				   randIn->param.mass2 = randIn->mMin 
-					   + (randIn->mMax - randIn->mMin) * e2;
+					   + (randIn->mMax - randIn->mMin) * epsilon2;
+				   LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
 				   break;
 			   case totalMassAndEta: 
 				   randIn->param.mass1 = randIn->mMin 
-					   + (randIn->MMax - 2.*randIn->mMin) * e1;
+					   + (randIn->MMax - 2.*randIn->mMin) * epsilon1;
 				   randIn->param.mass2 = randIn->mMin 
-					   + (randIn->MMax - randIn->param.mass1 - randIn->mMin) * e2;
+					   + (randIn->MMax - randIn->param.mass1 - randIn->mMin) * epsilon2;
+				   LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
 				   break;
 			   case t02: 
-				   randIn->param.t0 = randIn->t0Min + (randIn->t0Max - randIn->t0Min)*e1;
-				   randIn->param.t2 = randIn->tnMin + (randIn->tnMax - randIn->tnMin)*e2;
+				   randIn->param.t0 = randIn->t0Min + (randIn->t0Max - randIn->t0Min)*epsilon1;
+				   randIn->param.t2 = randIn->tnMin + (randIn->tnMax - randIn->tnMin)*epsilon2;
+				   LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
 				   break;
 			   case t03: 
-				   randIn->param.t0 = randIn->t0Min + (randIn->t0Max - randIn->t0Min)*e1;
-				   randIn->param.t3 = randIn->tnMin + (randIn->tnMax - randIn->tnMin)*e2;
+				   randIn->param.t0 = randIn->t0Min + (randIn->t0Max - randIn->t0Min)*epsilon1;
+				   randIn->param.t3 = randIn->tnMin + (randIn->tnMax - randIn->tnMin)*epsilon2;
+				   LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
 				   break;
+			   case psi0psi3: 
+				   randIn->param.psi0 = randIn->psi0Min + (randIn->psi0Max - randIn->psi0Min)*epsilon1;
+				   randIn->param.psi3 = randIn->psi3Min + (randIn->psi3Max - randIn->psi3Min)*epsilon2;
+				   break;
+			   case t04: 
 			   default:
 				   ABORT (status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
 				   break;
 		   }
-		   LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
 		   /*
 		   printf("%e %e %e %e\n", randIn->param.t0, randIn->param.t3, randIn->param.mass1, randIn->param.mass2);
 		    */
@@ -246,8 +254,13 @@ LALRandomInspiralSignal
 				   }
 				   break;
 		   
+			   case psi0psi3: 
+				   valid = 1;
+				   break;
+			   case t04: 
                            default:
-                                   break; /* FIXME: TODO: Do Something Here!!!! */
+				   ABORT (status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
+                                   break; 
 		   }
 	   }
    }
@@ -260,10 +273,21 @@ LALRandomInspiralSignal
    switch (randIn->type) 
    {
       case 0:
-         LALInspiralWave(status->statusPtr, &buff, &randIn->param);
-         CHECKSTATUSPTR(status);
-         LALREAL4VectorFFT(status->statusPtr, signal, &buff, randIn->fwdp);
-         CHECKSTATUSPTR(status);
+	 if (randIn->param.approximant == BCV ||
+	     randIn->param.approximant == TaylorF1 ||
+	     randIn->param.approximant == TaylorF2 ||
+	     randIn->param.approximant == PadeF1)
+	 {
+		 LALInspiralWave(status->statusPtr, signal, &randIn->param);
+		 CHECKSTATUSPTR(status);
+	 }
+	 else
+	 {
+		 LALInspiralWave(status->statusPtr, &buff, &randIn->param);
+		 CHECKSTATUSPTR(status);
+		 LALREAL4VectorFFT(status->statusPtr, signal, &buff, randIn->fwdp);
+		 CHECKSTATUSPTR(status);
+	 }
 	 LALInspiralWaveNormaliseLSO(status->statusPtr, signal, &norm, &normin);
          CHECKSTATUSPTR(status);
          break;
@@ -304,10 +328,21 @@ LALRandomInspiralSignal
          LALColoredNoise(status->statusPtr, &noisy, randIn->psd);
          CHECKSTATUSPTR(status);
 
-         LALInspiralWave(status->statusPtr, signal, &randIn->param);
-         CHECKSTATUSPTR(status);
-         LALREAL4VectorFFT(status->statusPtr, &buff, signal, randIn->fwdp);
-         CHECKSTATUSPTR(status);
+	 if (randIn->param.approximant == BCV ||
+	     randIn->param.approximant == TaylorF1 ||
+	     randIn->param.approximant == TaylorF2 ||
+	     randIn->param.approximant == PadeF1)
+	 {
+		 LALInspiralWave(status->statusPtr, &buff, &randIn->param);
+		 CHECKSTATUSPTR(status);
+	 }
+	 else
+	 {
+		 LALInspiralWave(status->statusPtr, signal, &randIn->param);
+		 CHECKSTATUSPTR(status);
+		 LALREAL4VectorFFT(status->statusPtr, &buff, signal, randIn->fwdp);
+		 CHECKSTATUSPTR(status);
+	 }
 	 LALInspiralWaveNormaliseLSO(status->statusPtr, &buff, &norm, &normin);
          CHECKSTATUSPTR(status);
 
