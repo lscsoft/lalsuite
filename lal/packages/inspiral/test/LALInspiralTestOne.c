@@ -45,18 +45,18 @@ int main (void) {
    static REAL8 dt;
    UINT4 n, i;
 
-   params.approximant=TaylorF2;
+   params.approximant=EOB;
    params.OmegaS = 0.;
    params.Theta = 0.;
    params.ieta=1; 
-   params.mass1=10.; 
-   params.mass2=10.; 
+   params.mass1=5; 
+   params.mass2=5; 
    params.startTime=0.0; 
    params.startPhase=0.;
-   params.fLower=40.0; 
-   params.fCutoff=1000.0;
+   params.fLower=30.0; 
+   params.fCutoff=2000.0;
    params.tSampling=4096.0;
-   params.order=4;
+   params.order=5;
    params.signalAmplitude=1.0;
    params.nStartPad=0;
    params.nEndPad=0;
@@ -111,6 +111,7 @@ int main (void) {
    else
    {
 	LALInspiralWave(&status, signal2, &params);
+	printf_timeseries(signal2->length, signal2->data, dt, params.startTime);
 	/*
 	   REPORTSTATUS(&status);
 	 */

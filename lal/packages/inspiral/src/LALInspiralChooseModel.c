@@ -674,7 +674,7 @@ LALInspiralChooseModel(
    CHECKSTATUSPTR(status);
    
    ak->tn = -tofv - ak->samplinginterval;
-   ak->fn = pow(ak->vn, 3.)/(LAL_PI * ak->totalmass);
+   params->fCutoff = ak->fn = pow(ak->vn, 3.)/(LAL_PI * ak->totalmass);
 /*
    for (v=0; v<ak->vn; v+=0.001) 
    {
