@@ -787,9 +787,10 @@ int initializeEPSearch(
         {"spectype",                required_argument, 0,                 'v'}, 
         {"gps-start-time",          required_argument, 0,                 'x'}, 
         {"gps-start-time-ns",       required_argument, 0,                 'y'}, 
-        {"gps-end-time",           required_argument, 0,                 'X'}, 
-        {"gps-end-time-ns",        required_argument, 0,                 'Y'}, 
-        {"sample-rate",             required_argument, 0,                 'z'}, 
+        {"gps-end-time",            required_argument, 0,                 'X'}, 
+        {"gps-end-time-ns",         required_argument, 0,                 'Y'}, 
+        {"sample-rate",             required_argument, 0,                 'z'},
+	{"resample-filter",         required_argument, 0,                 'N'},
         {"sinFreq",                 required_argument, 0,                 'A'}, 
         {"seed",                    required_argument, 0,                 'E'}, 
         {"threshold",               required_argument, 0,                 'B'}, 
@@ -1322,6 +1323,29 @@ int initializeEPSearch(
                 }
                 ADD_PROCESS_PARAM( "int", "%d", sampleRate );
                 break;
+
+
+	    case 'N':
+	      if ( ! strcmp( "ldas", optarg ) )
+		{
+		  resampFiltType = 0;
+		}
+	      else if ( ! strcmp( "butterworth", optarg ) )
+		{
+		  resampFiltType = 1;
+		}
+	      else
+		{
+		  fprintf( stderr, "invalid argument to --%s:\n"
+			   "unknown resampling filter type: "
+			   "%s (must be ldas or butterworth)\n", 
+			   long_options[option_index].name, optarg );
+		  exit( 1 );
+		}
+	      ADD_PROCESS_PARAM( "string", "%s", optarg );
+	      break;
+	  
+
 
 	    case 'A':
 	        /* inject Sine-Gaussians: set the freq. */
