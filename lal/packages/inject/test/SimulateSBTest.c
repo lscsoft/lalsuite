@@ -337,6 +337,8 @@ int main( int argc, char *argv[] ){
 		      "\"%s\"\n", SIMULATESBH_MSGENULLP);
       
       /* test behavior for null pointer to input structure */
+      SBOutput.SSimStochBG1 = &whitenedSSimStochBG1;
+      SBOutput.SSimStochBG2 = &whitenedSSimStochBG2;
       LALSSSimStochBGTimeSeries(&status, &SBOutput, NULL, &SBParams);
       if ( code = CheckStatus(&status, SIMULATESBH_ENULLP, 
 			      SIMULATESBH_MSGENULLP,SIMULATESBTESTC_ECHK,
