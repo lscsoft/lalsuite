@@ -539,9 +539,8 @@ int main( int argc, char *argv[])
       for(start_sample = 0; start_sample < (int) (series.data->length - 3*params->windowShift); start_sample += psdAverageLength - 3 * params->windowShift) {
         REAL4TimeSeries *interval;
 
-	/* if the no. of points left is less than the psdAverageLength
-	 * then move the epoch back so that it can cut out
-	 * params->psdAvaregeLength of data 
+	/* if the no. of points left is less than the psdAverageLength then
+	 * move the epoch back so that it can cut out psdAvaregeLength of data 
 	 */
 
 	if(series.data->length - start_sample < psdAverageLength)
@@ -568,9 +567,6 @@ int main( int argc, char *argv[])
       LAL_CALL( LALIncrementGPS(&stat, &(tmpEpoch), &(tmpEpoch), 
             &tmpInterval), &stat );
 
-      /* increment by the no. of points that were used */
-      usedNumPoints += 
-      
      /* clean up memory from that run */
       LAL_CALL(LALSDestroyVector(&stat, &(series.data)), &stat);
       if(calCacheFile)
@@ -1268,7 +1264,7 @@ void initializeEPSearch(
 
 	psdAverageLength = ((psdAverageLength - (*params)->windowLength) / (*params)->windowShift) * (*params)->windowShift + (*params)->windowLength;
 	if(verbose)
-		fprintf(stderr, "%s: using %d for --psd-average-points\n", argv[0], psdAverageLength);
+		fprintf(stderr, "%s: using --psd-average-points %d\n", argv[0], psdAverageLength);
 
 	/*
 	 * Miscellaneous chores.
