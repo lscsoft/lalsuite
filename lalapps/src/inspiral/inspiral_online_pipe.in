@@ -240,10 +240,11 @@ for sinca in sinca_nodes:
   inca.add_parent(sinca)
   inca.add_var_arg(sinca.get_output_a())
 inca_post_script = open( 'inca_post_script.sh', 'w' )
+run = cp.get('pipeline','run')
 inca_post_script.write("""#!/bin/sh
 cp ${1} /cluster/inspiral/%s/${1}
 ln -s /cluster/inspiral/%s/${1} /cluster/inspiral/%s/INSPIRAL_%s.xml
-""" % (cp.get('pipeline','run'), cp.get('pipeline','run')), ifo )
+""" % (run, run, run, ifo) )
 inca_post_script.close()
 inca.set_post_script('inca_post_script.sh')
 inca.add_post_script_arg(inca.get_output_a())
