@@ -54,8 +54,8 @@ int main( void )
     "--gps-start-time-ns    start-nsec \n"\
     "--gps-stop-time        stop-sec \n"\
     "--gps-stop-time-ns     stop-nsec \n"\
-    "[--injfile         injection file] \n"\
-    "[--calibration-cache        calibration file] \n"\
+    "[--injection-file      injection file] \n"\
+    "[--calibration-cache   calibration file] \n"\
     "[--mdccache        mdccache filename] \n"\
     "[--mdcchannel      mdcchannel] \n"\
     "[--geodata         high pass corner freq] \n"\
@@ -794,7 +794,7 @@ int initializeEPSearch(
 	{"sinAmpl",                 required_argument, 0,                 'G'},
 	{"sinWidth",                required_argument, 0,                 'H'},
         {"calibration-cache",       required_argument, 0,                 'I'},
-        {"injfile",                 required_argument, 0,                 'J'},
+        {"injection-file",                 required_argument, 0,                 'J'},
 	/* geo data flag, argument is corner freq. of high pass filter */
 	{"geodata",		    required_argument, 0,		  'K'},
 	/* mdc data & channel information */
