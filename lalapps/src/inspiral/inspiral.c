@@ -1545,6 +1545,10 @@ int main( int argc, char *argv[] )
           }
           else if ( approximant == BCV )
           {
+            fcFilterInput->segment->tmpltPowerVec =
+              fcDataParams->tmpltPowerVec;
+            fcFilterInput->segment->tmpltPowerVecBCV =
+              fcDataParams->tmpltPowerVecBCV;
             LAL_CALL( LALFindChirpBCVFilterSegment( &status,
                   &eventList, fcFilterInput, fcFilterParams ), &status );
           }
