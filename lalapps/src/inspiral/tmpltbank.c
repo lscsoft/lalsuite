@@ -583,7 +583,7 @@ int main ( int argc, char *argv[] )
   {
     ProcessParamsTable *emptyPPtable = procparams.processParamsTable;
     procparams.processParamsTable = procparams.processParamsTable->next;
-    LALFree( emptyPPtable );
+    free( emptyPPtable );
   }
 
   /* write the process params table */
