@@ -1131,10 +1131,12 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 	     }
 	   }
+          if (pathology==1) {pathology = 0; continue;}
          }
 	  /* if firstpass = 0, shift data and read extra segment */ 
 	 else
 	   {
+	    lal_errhandler = LAL_ERR_RTRN;
             if (verbose_flag)
 	     {
 	      fprintf( stdout, "shift segments\n");
@@ -1176,9 +1178,9 @@ INT4 main(INT4 argc, CHAR *argv[])
            if ((status.statusCode !=0)||(segmentPad1.data==NULL)||(segmentPad2.data==NULL))
             {
              clear_status(&status);
-             firstpass = 1; pathology = 1;
+             firstpass = 1; 
              interLoop = interLoop + segLoop;
-             break;
+             continue;
              }
 
            else
@@ -1214,13 +1216,13 @@ INT4 main(INT4 argc, CHAR *argv[])
               if ((status.statusCode !=0)||(responseTemp1.data==NULL)||(responseTemp2.data==NULL))
                {
                 clear_status(&status);
-                firstpass = 1; pathology = 1;
+                firstpass = 1; 
                 interLoop = interLoop + segLoop;
-                break;
+                continue;
                }
               else
 	       {
-		 firstpass = 0; pathology = 1;
+		 firstpass = 0; pathology = 0;
                 /* reduce to the optimal filter frequency range */
                 response1.epoch = response2.epoch = gpsCalibTime;
                 for (i = 0; i < filterLength; i++)
