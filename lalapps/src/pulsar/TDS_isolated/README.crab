@@ -1,0 +1,85 @@
+$id:$
+
+Matthew Pitkin 26/03/04
+
+****************************************************************************
+README file for routines to perform timing noise heterodyning of Crab pulsar
+data.
+****************************************************************************
+
+The driver code CrabTNHeterodyne.c compiles with HeterodyneCrabPulsar.c and
+includes the header file HeterodyneCrabPulsar.h, which contains the structures
+and functions needed to perform the timing noise heterodyne of Crab pulsar data.
+Compile using:
+	gcc CrabTNHeterodyne.c HeterodyneCrabPulsar.c -o CrabTNHeterodyne 
+	-L/your_libs_dir -I/your_include_dir -llalsupport -llal -lm
+
+The driver executable CrabTNHeterodyne takes two command line input arguments:
+	-the input file name (being the outfine file produced by the initial
+	heterodyning from phi(t), and containing 3 lines - GPS time, real(Bk),
+	imaginary(Bk)).
+	-the output file name (can be called anything, and will contain 3 lines - GPS
+	time, real(Bk*exp(-i*deltaPhi)), imaginary(Bk*exp(-i*deltaPhi)). The filename
+	should really be consistent with the convention required for Rejean's
+	ComputePDF driver code).
+	
+The code requires 2 files to be within its directory:
+	-a file named B0531+21 (the Crab's pulsars name) which must contain:
+		f0 "f0 value used in initial heterodyning (Hz)"
+		f1 "f1 value used in initial heterodyning (s^-2)"
+		f2 "f2 value used in initial heterodyning"(s^-3)"
+		fepoch "frequency epoch used in initial heterodyning (GPS seconds)"
+		
+		e.g. for S3 the file B0531+21 is:-
+			f0      29.8102713888
+			f1      -3.736982E-10
+			f2      1.2426000000000000e-20
+			fepoch  726624013
+			
+	-a file named crab_ephemeris.txt, which contains the Crab ephemeris data as
+	found at http://www.jb.man.ac.uk/research/pulsar/crab.html. The format is 4
+	columns containing - 
+		o MJD (Modified Julian Date) of pulse arrival time
+		o Time of arrival of the peak of the first pulse after midnight on
+		corresponding MJD (s)
+		o Frequency of pulsar at that time (Hz)
+		o First frequency derivative (f1) at that time (10^-15 s^-2)
+		
+The code will also output to screen the first values of the frequency 
+derivatives it calculates as a sanity check. The phase corrections (modulo 2pi)
+applied in the timing noise heterodyne are also output to a file (DPhase.txt) as
+an extra check.
+		
+HeterodyneCrabPulsar.c functions:
+	o LALGetCrabEphemeris - this takes as arguments a LALStatus pointer, a
+	CrabSpindownParamsInput structure as its output, and a GetCrabEphemerisInput
+	structure as its input.
+	This function reads in the data from the crab_ephemeris.txt file, converts the
+	arrival times into GPS seconds (adding leap seconds at the appropriate times) 
+	and outputs vectors of arrival time, f0 and f1 in the CrabSpinDownParamsInput
+	structure. The number of lines in the ephemeris file is also output.
+	
+	o LALComputeFreqDerivatives - this takes as arguments a LALStatus pointer, a
+	CrabSpinDownParamsOutput structure as its output, and a
+	CrabSpindownParamsInput structure as its input.
+	This function uses a spline fit with phase, f0 and f1 as boundary conditions
+	to calculate the higher order frequency derivs (f2, f3, f4) which describe the
+	timing noise. Vectors containing the values of these freq derivs are then 
+	output.
+	
+	o LALSetSpindownParams - this takes as arguments a LALStatus pointer, a
+	ParamsForHeterodyne structure as its output, a CrabSpindownParamsOutput
+	structure as its input and a LIGOTimeGPS structure as the epoch of the data
+	point to be heterodyned. 
+	This function sets the correct values of the spin-down coefficients that
+	describe the Crab's phase at the time of the data point (Bk) value. These
+	values are output.
+	
+	o LALTimingNoiseHeterodyne - this takes as arguments a LALStatus pointer, a
+	TNHeterodyneOutput structure as its output, a TNHeterodyneInput structure as
+	its input, and a ParamsForHereterodyne structure containing the relevant
+	parameters.
+	This function calculates the phase difference between the phase of the initial
+	heterodyne (using f0, f1 and fepoch from the input file B0531+21) and the
+	phase containing the timing noise component (calculated using the values of
+	f0, f1, f2, f3 and f4 set with LALSetSpindownParams).
