@@ -62,6 +62,7 @@ RCSID("$Id$");
 "Clustering:\n"\
 "  --snr-threshold RHO          discard all triggers with snr less than RHO\n"\
 "  --cluster-algorithm CHOICE   use trigger clustering algorithm CHOICE\n"\
+"                               [ snr_and_chisq | snrsq_over_chisq | snr ]\n"\
 "  --cluster-time T             cluster triggers with T ms window\n"\
 "\n"\
 "Injection analysis:\n"\
