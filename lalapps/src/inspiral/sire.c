@@ -1105,10 +1105,26 @@ int main( int argc, char *argv[] )
           LAL_CALL( LALGPStoINT8( &stat, &simTime, 
                 &(thisSimEvent->h_end_time) ), &stat );
         }
+	else if ( ! strcmp( "G1", thisEvent->ifo ) )
+        {
+          LAL_CALL( LALGPStoINT8( &stat, &simTime, 
+                &(thisSimEvent->g_end_time) ), &stat );
+        }
+	else if ( ! strcmp( "T1", thisEvent->ifo ) )
+        {
+          LAL_CALL( LALGPStoINT8( &stat, &simTime, 
+                &(thisSimEvent->t_end_time) ), &stat );
+        }
+	else if ( ! strcmp( "V1", thisEvent->ifo ) )
+        {
+          LAL_CALL( LALGPStoINT8( &stat, &simTime, 
+                &(thisSimEvent->v_end_time) ), &stat );
+        }
         else
         {
           fprintf( stderr, "unknown detector found in event list: %s\n", 
               thisEvent->ifo );
+          fprintf( stderr, "Detector must be one of (G1|H1|H2|L1|T1|V1)\n");
           exit( 1 );
         }
 
