@@ -1674,7 +1674,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 filterLength;
   INT4 numFMin;
   INT4 numFMax;
-  LALWindowParams winparPSD;
   AverageSpectrumParams specparPSD;
   REAL4FrequencySeries *psdTempOne;
   REAL4FrequencySeries *psdTempTwo;
@@ -1982,13 +1981,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   if (vrbflg)
     fprintf(stdout, "Creating window for PSD estimation...\n");
 
-  /* set window parameters for PSD estimation */
-  winparPSD.length = psdWindowLength;
-  winparPSD.type = Hann;
-
   /* create window for PSD estimation */
-  LAL_CALL(LALCreateREAL4Window(&status, &specparPSD.window, &winparPSD), \
-      &status);
+  specparPSD.window = XLALCreateHannREAL4Window(psdWindowLength);
 
   if (vrbflg)
     fprintf(stdout, "Generating data segment window...\n");
