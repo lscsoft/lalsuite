@@ -70,38 +70,44 @@ Adam Mercer
 
 \clearpage
 \subsection{Program \texttt{lalapps\_stochastic}}
-\label{program:lalapps-stochastic}
-\idx[Program]{lalapps\_stochastic}
+\label{program:lalapps-stochastic-dev}
+\idx[Program]{lalapps\_stochastic\_dev}
 
 \begin{entry}
 \item[Name]
-\verb$lalapps_stochastic$ --- standalone stochastic analysis code.
+\verb$lalapps_stochastic_dev$ --- standalone stochastic analysis code.
 
 \item[Synopsis]
 \begin{verbatim}
  --help                        print this message
  --version                     display version
  --verbose                     verbose mode
- --debug-level LEVEL           set lalDebugLevel
- --gps-start-time SEC          GPS start time
- --gps-end-time SEC            GPS end time
- --segment-duration SEC        segment duration
- --resample-rate F             resample rate
- --f-min F                     minimal frequency
- --f-max F                     maximal frequency
- --hann-duration SEC           hann duration
+ --debug                       save out intermediate products
+ --debug-level N               set lalDebugLevel
+ --gps-start-time N            GPS start time
+ --gps-end-time N              GPS end time
+ --segment-duration N          segment duration
+ --sample-rate N               sample rate
+ --resample-rate N             resample rate
+ --f-min N                     minimal frequency
+ --f-max N                     maximal frequency
  --ifo-one IFO                 ifo for first stream
  --ifo-two IFO                 ifo for second stream
- --data-cache-one FILE         cache file for first stream
- --data-cache-two FILE         cache file for second stream
+ --frame-cache-one FILE        cache file for first stream
+ --frame-cache-two FILE        cache file for second stream
  --calibration-cache-one FILE  first stream calibration cache
  --calibration-cache-two FILE  second stream calibration cache
  --apply-mask                  apply frequency masking
- --inject                      inject a signal into the data
- --scale-factor N              scale factor for injection
- --seed N                      seed
- --overlap-hann                overlaping hann windows for data windowing
- --high-pass-filter            perform high pass filtering
+ --mask-bin N                  number of bins to mask
+ --overlap-hann                overlaping hann windows
+ --hann-duration N             hann duration
+ --high-pass-filter            apply high pass filtering
+ --hpf-frequency N             high pass filter knee frequency
+ --hpf-attenuation N           high pass filter attenuation
+ --hpf-order N                 high pass filter order
+ --filter-omega-alpha N        omega_gw exponent
+ --filter-omega-fref N         omega_gw reference frequency
+ --filter-omega0 N             omega_0
 \end{verbatim}
 
 \item[Description] \verb$lalapps_stochastic$ runs the standalone
