@@ -45,6 +45,7 @@
 #include <lal/IIRFilter.h>
 #include <lal/BandPassTimeSeries.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
