@@ -108,7 +108,7 @@ LALFloatToGPS( LALStatus   *stat,
     inTime = *p_flt_time;
 
   secs = (INT4) inTime;
-  ns  = (INT4) ( ( inTime - secs ) * oneBillion + 0.5);	 /* round properly! *
+  ns  = (INT4) ( ( inTime - secs ) * oneBillion + 0.5);	 /* round properly! */
 
   /* flip sign if time was negative */
   if ( *p_flt_time < 0)

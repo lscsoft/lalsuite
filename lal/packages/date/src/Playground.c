@@ -121,6 +121,11 @@ LALSegmentIsPlayground (
   INITSTATUS( status, "LALSegmentIsPlayground", PLAYGROUNDC );
   ATTATCHSTATUSPTR( status );
 
+  /* JC: THIS FUNCTION DOESN'T SEEM TO DO MUCH... I GUESS IT SHOULD DO SOMETHING*/
+  playground=NULL;
+  gpsStart=NULL;
+  gpsEnd=NULL;
+
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }

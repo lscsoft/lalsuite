@@ -248,7 +248,7 @@ void LALDRunningMedian( LALStatus *status,
     LALFree(sorted_indices);
     ABORT(status,LALRUNNINGMEDIANH_EMALOC2,LALRUNNINGMEDIANH_MSGEMALOC2);
   }
-  checks4shift = (INT4*)LALCalloc(ncheckpts,sizeof(INT4));
+  checks4shift = LALCalloc(ncheckpts,sizeof(INT4));
   if(!checks4shift){
     LALFree(sorted_indices);
     LALFree(checks);
@@ -657,7 +657,7 @@ void LALSRunningMedian( LALStatus *status,
     LALFree(sorted_indices);
     ABORT(status,LALRUNNINGMEDIANH_EMALOC2,LALRUNNINGMEDIANH_MSGEMALOC2);
   }
-  checks4shift = (INT4*)LALCalloc(ncheckpts,sizeof(INT4));
+  checks4shift = LALCalloc(ncheckpts,sizeof(INT4));
   if(!checks4shift){
     LALFree(sorted_indices);
     LALFree(checks);

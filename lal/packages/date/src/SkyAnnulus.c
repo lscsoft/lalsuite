@@ -110,7 +110,7 @@ LALComputeSingleAnnulus (
 
  
 
-  INT4 i,j, index;
+  INT4 i,j, myindex;
   REAL4 alpha, delta;
   REAL8 time1, time2;
   REAL8 dt, dtLow, dtUpp;
@@ -151,11 +151,11 @@ LALComputeSingleAnnulus (
       LALTimeDelay(status, &deltat, &tdtaas);
       
       /* check if deltat is in range of dt */
-      index=i+j*nx;
+      myindex=i+j*nx;
       if ( dtLow<deltat && deltat<dtUpp ) {
-	sky->data[index]=1;
+	sky->data[myindex]=1;
       } else {
-	sky->data[index]=0;
+	sky->data[myindex]=0;
       }
             
     }
@@ -184,7 +184,7 @@ LALComputeTripleAnnuli (
 
 
   
-  INT4 i,j, index;
+  INT4 i,j, myindex;
 
   INITSTATUS( status, "LALComputeTripleAnnuli", SKYANNULUSSC );
 
@@ -201,12 +201,12 @@ LALComputeTripleAnnuli (
   /* compute triple coincidence */
   for ( i=0;i<nx;i++ ) {
     for ( j=0;j<ny;j++ ) {
-      index=i+j*nx;
+      myindex=i+j*nx;
 
-      if ( sky[1]->data[index]==1 && sky[2]->data[index]==1 &&  sky[3]->data[index]==1 ) {
-	sky[0]->data[index]=1;
+      if ( sky[1]->data[myindex]==1 && sky[2]->data[myindex]==1 &&  sky[3]->data[myindex]==1 ) {
+	sky[0]->data[myindex]=1;
       } else {
-	sky[0]->data[index]=0;
+	sky[0]->data[myindex]=0;
       }
  
     }
@@ -236,7 +236,7 @@ LALExistTripleAnnuli(
 
 
   
-  INT4 i,j,index;
+  INT4 i,j,myindex;
   static INT2Vector* sky[4];
 
   INITSTATUS( status, "LALExistTripleAnnuli", SKYANNULUSSC );
@@ -250,9 +250,9 @@ LALExistTripleAnnuli(
   /* check result */
   for ( i=0;i<nx;i++ ) {
     for ( j=0;j<ny;j++ ) {
-      index=i+j*nx;
+      myindex=i+j*nx;
       
-      if (sky[0]->data[index]==1 ) {
+      if (sky[0]->data[myindex]==1 ) {
 	*exist=1;
 	continue;
       }
