@@ -889,8 +889,7 @@ if tama_coincidence:
     inca3.add_var_opt('ifo-b-snr-threshold',h2_snr)
     # add the triggers and parent relation from the H1/H2 inca
     for h1_h2_done in h1_h2_inca_nodes:
-      if ( h1_h2_done.get_chunk().start() == seg.start() and 
-        h1_h2_done.get_chunk().end() == seg.end() ):
+      if inspiral.overlap_test(h1_h2_done.get_chunk(),seg):
         if ligo_analysis: lt_inca2.add_parent(h1_h2_done.get_dag_node())
         lt_inca2.add_var_arg(h1_h2_done.get_dag_node().get_output_a())
         if ligo_analysis: inca3.add_parent(h1_h2_done.get_dag_node())
