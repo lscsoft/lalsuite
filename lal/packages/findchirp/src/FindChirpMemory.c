@@ -467,7 +467,7 @@ LALCreateFindChirpSegmentVector (
   ASSERT( params->numPoints > 0, 
       status, FINDCHIRPH_ENUMZ, FINDCHIRPH_MSGENUMZ );
 
-  if ( params->approximant != TaylorF2 || params->approximant != BCV )
+  if ( params->approximant != TaylorF2 && params->approximant != BCV )
   {
     ABORT( status, FINDCHIRPH_EUAPX, FINDCHIRPH_MSGEUAPX );
   }
