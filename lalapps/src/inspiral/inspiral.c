@@ -2095,7 +2095,7 @@ int main( int argc, char *argv[] )
       writeRhosq || writeChisq || writeZData )
 #endif
   if ( writeRawData || writeFilterData || writeResponse || writeSpectrum ||
-      writeRhosq || writeChisq || writeZData )
+      writeRhosq || writeChisq )
   {
     if ( outputPath[0] )
     {
