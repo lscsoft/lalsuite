@@ -95,6 +95,10 @@ FUNC (
         series->f0, series->deltaT, ncpy );
     if ( ! vect )
     {
+
+      FrVectFree(vect);
+      vect=NULL;
+ 
       ABORT( status, FRAMESTREAMH_EALOC, FRAMESTREAMH_MSGEALOC );
     }
     memcpy( vect->FRDATA, data, ncpy * sizeof( *series->data->data ) );
@@ -102,6 +106,10 @@ FUNC (
     FrameWrite( frame, frfile );
     data += ncpy;
     t += 1e9 * ncpy * series->deltaT;
+
+    FrVectFree(vect);
+    vect=NULL;
+
   }
 
   FrFileOEnd( frfile );
@@ -188,6 +196,10 @@ FSFUNC (
     if ( ! vect )
     {
       free( proc );
+
+      FrVectFree(vect); 
+      vect=NULL;
+
       ABORT( status, FRAMESTREAMH_EALOC, FRAMESTREAMH_MSGEALOC );
     }
     vect->startX[0] = series->f0;
@@ -207,6 +219,10 @@ FSFUNC (
     memcpy( vect->FRDATA, data, ncpy * sizeof( *series->data->data ) );
 
     FrameWrite( frame, frfile );
+
+    FrVectFree(vect); 
+    vect=NULL;
+
   }
 
   FrFileOEnd( frfile );
