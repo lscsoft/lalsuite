@@ -165,6 +165,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_EAPRX 21
 #define FINDCHIRPH_EUAPX 22
 #define FINDCHIRPH_ECHTZ 23
+#define FINDCHIRPH_ENUMZ 24
 #define FINDCHIRPH_MSGENULL "Null pointer"
 #define FINDCHIRPH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPH_MSGEALOC "Memory allocation error"
@@ -184,6 +185,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_MSGEAPRX "Incorrect waveform approximant"
 #define FINDCHIRPH_MSGEUAPX "Unknown waveform approximant"
 #define FINDCHIRPH_MSGECHTZ "Length of chirp is zero or negative"
+#define FINDCHIRPH_MSGENUMZ "Invalid number of segments"
 /* </lalErrTable> */
 
 
@@ -441,6 +443,151 @@ for this vector if the flag is set to 1.
 #endif
 
 
+/* --- the parameter structure for the data conditioning function -------- */
+/* <lalVerbatim file="FindChirpHFindChirpDataParams"> */
+typedef struct
+tagFindChirpDataParams
+{
+  REAL4Vector                  *ampVec;
+  REAL4Vector                  *ampVecBCV;
+  REAL4Vector                  *ampVecBCVSpin1;
+  REAL4Vector                  *ampVecBCVSpin2;
+  RealFFTPlan                  *fwdPlan;
+  RealFFTPlan                  *invPlan;
+  REAL4Vector                  *wVec;
+  COMPLEX8Vector               *wtildeVec;
+  REAL4Vector                  *tmpltPowerVec;
+  REAL4Vector                  *tmpltPowerVecBCV;
+  REAL4                         deltaT;
+  REAL4                         fLow;
+  REAL4                         dynRange;
+  UINT4                         invSpecTrunc;
+  Approximant                   approximant;
+}
+FindChirpDataParams;
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+\subsubsection*{Structure \texttt{FindChirpDataParams}}
+\idx[Type]{FindChirpDataParams}
+
+\input{FindChirpHFindChirpDataParams}
+
+\noindent This structure contains the parameters needed to call the
+\texttt{FindChirpSPData()} function. It should be initialized by
+\texttt{FindChirpDataInit()} and destroyed by
+\texttt{FindChirpDataFinalize()}. The fields are:
+
+\begin{description}
+\item[\texttt{REAL4Vector *ampVec}] A vector containing the frequency domain
+quantity $(k/N)^{-7/6}$, where $k$ is the frequency series index and $N$ is the
+number of points in a data segment.
+
+\item[\texttt{REAL4Vector *ampVecBCV}] A vector containing the frequency domain
+quantity $(k/N)^{-1/2}$, where $k$ is the frequency series index and $N$ is the
+number of points in a data segment.
+
+\item[\texttt{REAL4Vector *fwdPlan}] An FFTW plan used to transform the
+time domain interferometer data $v(t_j)$ into its DFT $\tilde{v}_k$.
+
+\item[\texttt{REAL4Vector *fwdPlan}] An FFTW plan used to transform the
+dimensionless frequency domain interferometer strain $\tilde{w}_k$ into 
+the quantity $N w(t_j)$ to allow time domain trunction of the inverse 
+power spectrum.
+
+\item[\texttt{REAL4Vector *vVec}] {\color{red} FIXME} A vector to contain
+the time domain interferometer output $v(t_j)$. This is obsolete since LIGO
+gives us $v(t_j)$ as floats. The 40m prototype gave integers which needed to
+be cast to floats.
+
+\item[\texttt{REAL4Vector *wVec}] A vector used as workspace when truncating
+the imverse power spectrum in the time domain.
+
+\item[\texttt{COMPLEX8Vector *wtildeVec}] A vector which on exit from
+\texttt{FindChirpSPData()} contains the inverse of the strain one sided power
+spectral density, after trunction in the time domain, that is
+$ \tilde{w}_k = {1}/{\ospsd}$.
+
+\item[\texttt{REAL4Vector *tmpltPowerVec}] A vector which on exit from
+\texttt{FindChirpSPData()} or from \texttt{FindChirpBCVData()} 
+contains the quantity
+\begin{equation}
+\mathtt{tmpltPower[k]} = \frac{f^{-7/3}}{\ospsd}
+\end{equation}
+
+\item[\texttt{REAL4Vector *tmpltPowerVecBCV}] A vector which on exit from
+\texttt{FindChirpBCVData()}  
+contains the quantity
+\begin{equation}
+\mathtt{tmpltPowerBCV[k]} = \frac{f^{-1}}{\ospsd}
+\end{equation}
+
+
+\item[\texttt{REAL4 deltaT}] {\color{red} FIXME} The sampling interval 
+$\Delta t$. Should be a \texttt{REAL8} or derived from the input time series
+\texttt{chan}.
+
+\item[\texttt{REAL4 fLow}] The low frequency cutoff for the algorithm. All
+data is zero below this frequency.
+
+\item[\texttt{REAL4 dynRange}] A dynamic range factor which cancells from
+the filter output (if set correctly in \texttt{FindChirpSPTmplt()} as well).
+This allows quantities to be stored in the range of \texttt{REAL4} rather
+than \texttt{REAL8}.
+
+\item[\texttt{UINT4 invSpecTrunc}] The length to which to truncate the inverse
+power spectral density of the data in the time domain. If set to zero, no
+truncation is performed.
+\end{description}
+</lalLaTeX>
+#endif
+
+/* --- vector of DataSegment, as defined the framedata package ----------- */
+/* <lalVerbatim file="FindChirpHFindChirpTmpltParams"> */
+typedef struct
+tagFindChirpTmpltParams
+{
+  REAL4                         deltaT;
+  REAL4                         fLow;
+  REAL4                         dynRange;
+  REAL4Vector                  *xfacVec;
+  Approximant                   approximant;
+}
+FindChirpTmpltParams;
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+\subsubsection*{Structure \texttt{FindChirpTmpltParams}}
+\idx[Type]{FindChirpTmpltParams}
+
+\input{FindChirpHFindChirpTmpltParams}
+
+\noindent This structure contains the parameters for generation of stationary
+phase templates by the function \texttt{FindChirpSPTmplt()},
+\texttt{FindChirpBCVTmplt()} or \texttt{FindChirpBCVSpinTmplt()}
+It should be initialized by \texttt{FindChirpTmpltInit()} and destroyed by
+\texttt{FindChirpTmpltFinalize()}. The fields are:
+
+\begin{description}
+\item[\texttt{REAL4 *deltaT}] {\color{red} FIXME} The sampling interval 
+$\Delta t$. Should be a \texttt{REAL8}.
+
+\item[\texttt{REAL4 fLow}] The low frequency cutoff for the algorithm. All
+data is zero below this frequency.
+
+\item[\texttt{REAL4 dynRange}] A dynamic range factor which cancells from
+the filter output (if set correctly in \texttt{FindChirpSPData()} as well).
+This allows quantities to be stored in the range of \texttt{REAL4} rather
+than \texttt{REAL8}.
+
+\item[\texttt{REAL4Vector *xfacVec}] A vector containing the frequency 
+domain quantity $k^{-7/6}$.
+\end{description}
+</lalLaTeX>
+#endif
+
+
+
 /* --- parameter structure for the filtering function -------------------- */
 /* <lalVerbatim file="FindChirpHFindChirpFilterParams"> */
 typedef struct
@@ -661,6 +808,61 @@ void
 LALDestroyFindChirpSegmentVector (
     LALStatus                  *status,
     FindChirpSegmentVector    **vector
+    );
+
+
+/*
+ *
+ * function prototypes for initialization, finalization of data functions
+ *
+ */
+
+
+#if 0
+<lalLaTeX>
+\newpage\input{FindChirpDataC}
+</lalLaTeX>
+#endif
+
+
+void
+LALFindChirpDataInit (
+    LALStatus                  *status,
+    FindChirpDataParams       **output,
+    FindChirpInitParams        *params
+    );
+
+void
+LALFindChirpDataFinalize (
+    LALStatus                  *status,
+    FindChirpDataParams       **output
+    );
+
+
+/*
+ *
+ * function prototypes for initialization, finalization of template functions
+ *
+ */
+
+
+#if 0
+<lalLaTeX>
+\newpage\input{FindChirpTemplateC}
+</lalLaTeX>
+#endif
+
+void
+LALFindChirpTemplateInit (
+    LALStatus                  *status,
+    FindChirpTmpltParams      **output,
+    FindChirpInitParams        *params
+    );
+
+void
+LALFindChirpTemplateFinalize (
+    LALStatus                  *status,
+    FindChirpTmpltParams      **output
     );
 
 

@@ -193,7 +193,7 @@ normalization). It is used only for the BCV templates.
 
 #if 0
 <lalLaTeX>
-\newpage\input{FindChirpChisqC}
+\newpage\input{FindChirpChisqInitC}
 </lalLaTeX>
 #endif
 
@@ -212,6 +212,12 @@ LALFindChirpChisqVetoFinalize (
     UINT4                       numChisqBins
     );
 
+#if 0
+<lalLaTeX>
+\newpage\input{FindChirpChisqC}
+</lalLaTeX>
+#endif
+
 void
 LALFindChirpChisqVeto (
     LALStatus                  *status,
@@ -219,16 +225,6 @@ LALFindChirpChisqVeto (
     FindChirpChisqInput        *input,
     FindChirpChisqParams       *params
     );
-
-void
-LALFindChirpBCVChisqVeto (
-    LALStatus                  *status,
-    REAL4Vector                *chisqVec,
-    FindChirpChisqInput        *input,
-    FindChirpChisqInput        *inputBCV,
-    FindChirpChisqParams       *params
-    );
-
 
 #ifdef  __cplusplus
 #pragma {
