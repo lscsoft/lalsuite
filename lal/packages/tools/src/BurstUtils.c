@@ -65,11 +65,6 @@ NRCSID( SNGLBURSTUTILSC, "$Id$" );
 
 
 
-/*
- * Sort a list of SnglBurstTable events into increasing order according to the
- * supplied comparison function.
- */
-
 /* <lalVerbatim file="BurstUtilsCP"> */
 REAL4
 XLALMergerFrequency(
@@ -98,6 +93,7 @@ XLALQnrFrequency(
 	return(fqnr);
 }
 
+/* <lalVerbatim file="BurstUtilsCP"> */
 REAL4
 XLALMergerEnergyFraction(
 	InspiralTemplate *params
@@ -111,6 +107,7 @@ XLALMergerEnergyFraction(
 	return(e_merger);
 }
 
+/* <lalVerbatim file="BurstUtilsCP"> */
 void 
 XLALMergerDuration(
 	InspiralTemplate *params,
