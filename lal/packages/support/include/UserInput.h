@@ -37,6 +37,8 @@ NRCSID( USERINPUTH, "$Id$");
 #define USERINPUTH_EOPT		4
 #define USERINPUTH_ENOUVARS	5
 #define USERINPUTH_EBOOL	6
+#define USERINPUTH_EUNKNOWN	7
+#define USERINPUTH_ENOTSET	8
 
 #define USERINPUTH_MSGENULL 	"Arguments contained an unexpected null pointer."
 #define USERINPUTH_MSGENONULL	"Output pointer is not NULL"
@@ -44,24 +46,10 @@ NRCSID( USERINPUTH, "$Id$");
 #define USERINPUTH_MSGEOPT	"Unknown command-line option encountered"
 #define USERINPUTH_MSGENOUVARS	"No user-variables have been registered!"
 #define USERINPUTH_MSGEBOOL	"Illegal BOOLEAN option-value"
+#define USERINPUTH_MSGEUNKNOWN	"Unknown user-variable"
+#define USERINPUTH_MSGENOTSET	"Required user-variable was not set"
+
 /*************************************************** </lalErrTable> */
-
-/****************************************************** <lalLaTeX>
-
-\subsection*{Constants}
-\idx[Type]{UserVarType}
-
-The following constants are used to define the C-type of a user-variable.
-</lalLaTeX> */
-/* <lalVerbatim> */
-typedef enum {
-  UVAR_BOOL,	/* boolean */
-  UVAR_INT4,	/* integer */
-  UVAR_REAL8,	/* float */
-  UVAR_STRING	/* string */
-} LALUserVarType;
-/* </lalVerbatim> */
-
 
 /* <lalLaTeX> 
 \subsection*{Macros}
@@ -83,21 +71,27 @@ regSTRINGUserVar(stat,name,option,help)
 Some examples of use:
 </lalLaTeX> */
 /* <lalVerbatim> 
-CHAR *uvar_inDataFilename;
+CHAR *uvar_inDataFilename = NULL;
 REAL8 uvar_startTime;
-BOOLEAN uvar_binaryoutput;
+BOOLEAN uvar_binaryoutput = FALSE;
 INT4 uvar_nTsft;
-regSTRINGUserVar(stat, inDataFilename,  'i', "Name of input parameter file");
-regREALUserVar(stat,   startTime,	'G', "Detector GPS time to start data");
-regBOOLUserVar(stat,   binaryoutput,	'b', "Output time-domain data in binary format");
-regINTUserVar(stat,    nTsft,		'N', "Number of SFTs nTsft");
+regSTRINGUserVar(stat, inDataFilename,  'i', UVAR_OPTIONAL, "Name of input parameter file");
+regREALUserVar(stat,   startTime,	'G', UVAR_REQUIRED, "Detector GPS time to start data");
+regBOOLUserVar(stat,   binaryoutput,	'b', UVAR_OPTIONAL, "Output time-domain data in binary format");
+regINTUserVar(stat,    nTsft,		'N', UVAR_REQUIRED, "Number of SFTs nTsft");
 </lalVerbatim> */
 
-#define regREALUserVar(stat,name,option,help) LALRegisterREALUserVar((stat), #name, option, help, &(uvar_ ## name))
-#define regINTUserVar(stat,name,option,help) LALRegisterINTUserVar((stat), #name, option, help, &(uvar_ ## name))
-#define regBOOLUserVar(stat,name,option,help)LALRegisterBOOLUserVar((stat), #name, option, help, &(uvar_ ## name))
-#define regSTRINGUserVar(stat,name,option,help) LALRegisterSTRINGUserVar((stat), #name, option, help, &(uvar_ ## name))
+#define regREALUserVar(stat,name,option,flag,help) \
+TRY(LALRegisterREALUserVar((stat)->statusPtr, #name, option, flag, help,&(uvar_ ## name)), stat)
 
+#define regINTUserVar(stat,name,option,flag,help) \
+TRY(LALRegisterINTUserVar((stat)->statusPtr, #name, option,flag, help,&(uvar_ ## name)), stat)
+
+#define regBOOLUserVar(stat,name,option,flag,help) \
+TRY(LALRegisterBOOLUserVar((stat)->statusPtr, #name, option, flag, help, &(uvar_ ## name)),stat)
+
+#define regSTRINGUserVar(stat,name,option,flag,help) \
+TRY(LALRegisterSTRINGUserVar((stat)->statusPtr, #name, option, flag, help, &(uvar_ ## name)),stat)
 
 /********************************************************** <lalLaTeX>
 \vfill{\footnotesize\input{UserInputHV}}
@@ -105,11 +99,46 @@ regINTUserVar(stat,    nTsft,		'N', "Number of SFTs nTsft");
 \newpage\input{UserInputTestC}
 ******************************************************* </lalLaTeX> */
 
+
+/* state-flags: required, has_default, was_set */
+typedef enum {
+  UVAR_OPTIONAL		= 0,	/* not required, and hasn't been set */
+  UVAR_REQUIRED 	= 1,	/* we require the user to set this variable */
+  UVAR_HELP		= 2,	/* special variable: trigger output of help-string */
+  UVAR_WAS_SET 		= (1<<7)/* flag that user-var has this set by user */
+} UserVarState;
+
+
 /* Function prototypes */
-void LALRegisterREALUserVar (LALStatus *stat, const CHAR *name, CHAR optchar, const CHAR *helpstr, REAL8 *cvar);
-void LALRegisterINTUserVar (LALStatus *stat,  const CHAR *name, CHAR optchar, const CHAR *helpstr, INT4 *cvar);
-void LALRegisterBOOLUserVar (LALStatus *stat, const CHAR *name, CHAR optchar, const CHAR *helpstr, BOOLEAN *cvar);
-void LALRegisterSTRINGUserVar (LALStatus *stat,const CHAR *name,CHAR optchar, const CHAR *helpstr, CHAR **cvar);
+void LALRegisterREALUserVar(LALStatus *stat, 
+			    const CHAR *name, 
+			    CHAR optchar, 
+			    UserVarState flag,
+			    const CHAR *helpstr, 
+			    REAL8 *cvar);
+
+void LALRegisterINTUserVar (LALStatus *stat,  
+			    const CHAR *name, 
+			    CHAR optchar, 
+			    UserVarState flag, 
+			    const CHAR *helpstr, 
+			    INT4 *cvar);
+
+void 
+LALRegisterBOOLUserVar (LALStatus *stat, 
+			const CHAR *name, 
+			CHAR optchar, 
+			UserVarState flag,
+			const CHAR *helpstr, 
+			BOOLEAN *cvar);
+
+void
+LALRegisterSTRINGUserVar (LALStatus *stat,
+			  const CHAR *name,
+			  CHAR optchar, 
+			  UserVarState flag,
+			  const CHAR *helpstr, 
+			  CHAR **cvar);
 
 void LALDestroyUserVars (LALStatus *stat);
 
@@ -118,6 +147,8 @@ void LALUserVarReadCmdline (LALStatus *stat, int argc, char *argv[]);
 void LALUserVarReadCfgfile (LALStatus *stat, const CHAR *cfgfile);
 
 void LALUserVarHelpString (LALStatus *stat, CHAR **helpstring);
+void LALUserVarCheckRequired (LALStatus *stat);
+INT4 UVARwasSet (void *cvar);
 
 
 #ifdef  __cplusplus
