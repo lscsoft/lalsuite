@@ -903,7 +903,7 @@ static COMPLEX8FrequencySeries *zero_pad_and_fft(LALStatus *status,
 }
 
 /* wrapper function for generating the cross correlation spectra */
-static COMPLEX8FrequencySeries *cc_spectra(LALStatus *status,
+static COMPLEX8FrequencySeries *cc_spectrum(LALStatus *status,
     COMPLEX8FrequencySeries *zero_pad_one,
     COMPLEX8FrequencySeries *zero_pad_two,
     COMPLEX8FrequencySeries *response_one,
@@ -932,6 +932,26 @@ static COMPLEX8FrequencySeries *cc_spectra(LALStatus *status,
         &cc_input, match), status);
 
   return(series);
+}
+
+/* helper function to generate cross correlation statistic from cross
+ * correlation spectra */
+static REAL8 cc_statistic(COMPLEX8FrequencySeries *cc_spectra)
+{
+  /* variables */
+  REAL8 cc_stat = 0;
+  UINT4 i;
+
+  /* sum up frequencies */
+  for (i = 0; i < cc_spectra->data->length; i++)
+  {
+    cc_stat += cc_spectra->data->data[i].re;
+  }
+
+  /* normalise */
+  cc_stat *= 2 * cc_spectra->deltaF;
+
+  return(cc_stat);
 }
 
 /* display usage information */
@@ -1963,9 +1983,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL4FrequencySeries *omegaGW;
 
   /* structures for CC spectrum and CC statistics */
-  StochasticCrossCorrelationCalInput ccIn;
   BOOLEAN epochsMatch = 1;
-  REAL4WithUnits ccStat;
   COMPLEX8FrequencySeries *ccSpectrum = NULL;
 
   /* error handler */
@@ -2493,18 +2511,11 @@ INT4 main(INT4 argc, CHAR *argv[])
       hBarTildeTwo = zero_pad_and_fft(&status, segmentTwo, deltaF, \
           segmentLength + 1, dataWindow);
 
-      /* set CC inputs */
-      ccIn.hBarTildeOne = hBarTildeOne;
-      ccIn.hBarTildeTwo = hBarTildeTwo;
-      ccIn.responseFunctionOne = responseOne;
-      ccIn.responseFunctionTwo = responseTwo;
-      ccIn.optimalFilter = optFilter;
-
       if (vrbflg)
         fprintf(stdout, "Generating cross correlation spectrum...\n");
 
       /* calculate cc spectrum */
-      ccSpectrum = cc_spectra(&status, hBarTildeOne, hBarTildeTwo, \
+      ccSpectrum = cc_spectrum(&status, hBarTildeOne, hBarTildeTwo, \
           responseOne, responseTwo, optFilter, epochsMatch);
 
       if (cc_spectra_flag)
@@ -2517,9 +2528,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       }
       
       /* cc statistic */
-      LAL_CALL(LALStochasticCrossCorrelationStatisticCal(&status, &ccStat, \
-            &ccIn, epochsMatch), &status);
-      y = (REAL8)(ccStat.value * pow(10., ccStat.units.powerOfTen));
+      y = cc_statistic(ccSpectrum);
 
       /* save */
       if (vrbflg)
