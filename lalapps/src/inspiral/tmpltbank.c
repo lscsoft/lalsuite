@@ -68,8 +68,9 @@ RCSID( "$Id$" );
 extern int vrbflg;                      /* verbocity of lal function    */
 
 /* parameters used to generate calibrated power spectrum */
-LIGOTimeGPS startTime = { 0, 0 };       /* input data GPS start time    */
-LIGOTimeGPS endTime = { 0, 0};          /* input data GPS end time      */
+LIGOTimeGPS gpsStartTime = { 0, 0 };    /* input data GPS start time    */
+LIGOTimeGPS gpsEndTime = { 0, 0};       /* input data GPS end time      */
+INT4  padData = 0;                      /* saftety margin on input data */
 CHAR  *fqChanName       = NULL;         /* name of data channel         */
 CHAR  *frInCacheName    = NULL;         /* cache file containing frames */
 INT4  numPoints         = -1;           /* points in a segment          */
@@ -78,6 +79,7 @@ CHAR  site[2];                          /* single character site code   */
 CHAR  ifo[3];                           /* two character ifo code       */
 CHAR *channelName = NULL;               /* channel string               */
 INT4  inputDataLength = 0;              /* number of points in input    */
+INT4   resampFiltType   = -1;           /* low pass filter used for res */
 INT4   sampleRate       = -1;           /* sample rate of filter data   */
 INT4   highPass         = -1;           /* enable high pass on raw data */
 REAL4  highPassFreq     = 0;            /* high pass frequency          */
@@ -125,6 +127,7 @@ int main ( int argc, char *argv[] )
   COMPLEX8FrequencySeries       resp;
 
   /* structures for preconditioning */
+  ResampleTSParams              resampleParams;
   LALWindowParams               wpars;
   AverageSpectrumParams         avgSpecParams;
 
@@ -149,6 +152,11 @@ int main ( int argc, char *argv[] )
   LALUnitPair pair;
   REAL8 respRe, respIm;
   REAL8 shf;
+  REAL8 inputLengthNS;
+  UINT4 numInputPoints;
+  const REAL8 epsilon = 1.0e-8;
+  UINT4 resampleChan = 0;
+
 
   /*
    *
@@ -190,30 +198,22 @@ int main ( int argc, char *argv[] )
 
   /*
    *
-   * read in the input data and compute a calibrated strain spectrum
+   * read in the input data channel
    *
    */
 
 
-  /* create storage for the input data */
+
+  /* set the time series parameters of the input data and resample params */
+  memset( &resampleParams, 0, sizeof(ResampleTSParams) );
+  resampleParams.deltaT = 1.0 / (REAL8) sampleRate;
+
+  /* set the params of the input data time series */
   memset( &chan, 0, sizeof(REAL4TimeSeries) );
-  LAL_CALL( LALSCreateVector( &status, &(chan.data), inputDataLength ), 
-      &status );
-  memset( &spec, 0, sizeof(REAL4FrequencySeries) );
-  LAL_CALL( LALSCreateVector( &status, &(spec.data), numPoints / 2 + 1 ), 
-      &status );
-  memset( &resp, 0, sizeof(COMPLEX8FrequencySeries) );
-  LAL_CALL( LALCCreateVector( &status, &(resp.data), numPoints / 2 + 1 ), 
-      &status );
+  chan.epoch = gpsStartTime;
+  chan.epoch.gpsSeconds -= padData; /* subtract pad seconds from start */
 
-  /* set the time series parameters of the input data */
-  chan.epoch = startTime;
-  memcpy( &(spec.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
-  memcpy( &(resp.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
-  chan.deltaT = 1.0 / (REAL8) sampleRate;
-  memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
-
-  /* read the data channel time series from frames */
+  /* open a frame cache or files, seek to required epoch and set chan name */
   if ( frInCacheName )
   {
     LAL_CALL( LALFrCacheImport( &status, &frInCache, frInCacheName), &status );
@@ -225,19 +225,99 @@ int main ( int argc, char *argv[] )
   }
   LAL_CALL( LALFrSeek( &status, &(chan.epoch), frStream ), &status );
   frChan.name = fqChanName;
-  frChan.type = ADCDataChannel;
+
+  /* determine the sample rate of the raw data and allocate enough memory */
   LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
       &status );
-  LAL_CALL( LALFrClose( &status, &frStream ), &status );
-  if ( frInCacheName )
+
+  /* determine if we need to resample the channel */
+  if ( vrbflg )
   {
-    LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );
+    fprintf( stdout, "resampleParams.deltaT = %e\n", resampleParams.deltaT );
+    fprintf( stdout, "chan.deltaT = %e\n", chan.deltaT );
+  }
+  if ( ! ( fabs( resampleParams.deltaT - chan.deltaT ) < epsilon ) )
+  {
+    resampleChan = 1;
+    if ( vrbflg )
+      fprintf( stdout, "input channel will be resampled\n" );
+
+    if ( resampFiltType == 0 )
+    {
+      resampleParams.filterType = LDASfirLP;
+    }
+    else if ( resampFiltType == 1 )
+    {
+      resampleParams.filterType = defaultButterworth;
+    }
   }
 
-  if ( writeRawData )
+  /* determine the number of points to get and create storage forr the data */
+  inputLengthNS = (REAL8) ( 1000000000LL * 
+      ( gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds + 2 * padData ) );
+  chan.deltaT *= 1.0e9;
+  numInputPoints = (UINT4) floor( inputLengthNS / chan.deltaT + 0.5 );
+  LAL_CALL( LALSCreateVector( &status, &(chan.data), numInputPoints ), 
+      &status );
+
+  if ( vrbflg ) fprintf( stdout, "input channel %s has sample interval "
+      "(deltaT) = %e\nreading %d points from frame stream\n", fqChanName, 
+      chan.deltaT / 1.0e9, numInputPoints );
+
+  /* read the data channel time series from frames */
+  LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
+      &status );
+  memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
+
+  /* close the frame file stream and destroy the cache */
+  LAL_CALL( LALFrClose( &status, &frStream ), &status );
+  if ( frInCacheName ) LAL_CALL( LALDestroyFrCache( &status, &frInCache ), 
+      &status );
+
+  /* write the raw channel data as read in from the frame files */
+  if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+      &chan, "ct", "RAW" );
+
+  if ( vrbflg ) fprintf( stdout, "read channel %s from frame stream\n"
+      "got %d points with deltaT %e\nstarting at GPS time %d sec %d ns\n", 
+      chan.name, chan.data->length, chan.deltaT, 
+      chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
+
+  /* resample the input data */
+  if ( resampleChan )
   {
-    outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &chan, "ct", "INPUT" );
+    if (vrbflg) fprintf( stdout, "resampling input data from %e to %e\n",
+        chan.deltaT, resampleParams.deltaT );
+
+    LAL_CALL( LALResampleREAL4TimeSeries( &status, &chan, &resampleParams ),
+        &status );
+
+    if ( vrbflg ) fprintf( stdout, "channel %s resampled:\n"
+        "%d points with deltaT %e\nstarting at GPS time %d sec %d ns\n", 
+        chan.name, chan.data->length, chan.deltaT, 
+        chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
+
+    /* write the resampled channel data as read in from the frame files */
+    if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+        &chan, "ct", "RAW_RESAMP" );
   }
+
+
+  /*
+   *
+   * compute a calibrated strain spectrum
+   *
+   */
+
+
+  /* create storage for the response and spectrum */
+  memset( &spec, 0, sizeof(REAL4FrequencySeries) );
+  LAL_CALL( LALSCreateVector( &status, &(spec.data), numPoints / 2 + 1 ), 
+      &status );
+  memset( &resp, 0, sizeof(COMPLEX8FrequencySeries) );
+  LAL_CALL( LALCCreateVector( &status, &(resp.data), numPoints / 2 + 1 ), 
+      &status );
+  resp.epoch = spec.epoch = gpsStartTime;
 
   /* high pass the data to get a prevent bleeding of low frequences in psd */
   if ( highPass )
@@ -252,6 +332,20 @@ int main ( int argc, char *argv[] )
     LAL_CALL( LALButterworthREAL4TimeSeries( &status, &chan, &highpassParam ),
         &status );
   }
+
+  /* remove pad from requested data from start and end of time series */
+  memmove( chan.data->data, chan.data->data + padData * sampleRate, 
+      (chan.data->length - 2 * padData * sampleRate) * sizeof(REAL4) );
+  LALRealloc( chan.data->data, 
+      (chan.data->length - 2 * padData * sampleRate) * sizeof(REAL4) );
+  chan.data->length -= 2 * padData * sampleRate;
+  chan.epoch.gpsSeconds += padData;
+
+  if ( vrbflg ) fprintf( stdout, "after removal of %d second padding at "
+      "start and end:\ndata channel sample interval (deltaT) = %e\n"
+      "data channel length = %d\nstarting at %d sec %d ns\n", 
+      padData , chan.deltaT , chan.data->length, 
+      chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
 
   /* compute the windowed power spectrum for the data channel */
   avgSpecParams.window = NULL;
@@ -289,7 +383,6 @@ int main ( int argc, char *argv[] )
   }
 
   /* set the parameters of the response to match the data and spectrum */
-  memcpy( &(resp.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
   resp.deltaF = spec.deltaF;
   resp.f0 = spec.f0;
   resp.sampleUnits = strainPerCount;
@@ -347,7 +440,10 @@ int main ( int argc, char *argv[] )
     outFrame = fr_add_proc_REAL8FrequencySeries( outFrame, 
         &(bankIn.shf), "strain/sqrtHz", "STRAIN_PSD" );
 #endif
-    LALDPrintFrequencySeries( &(bankIn.shf), "strainspectrum.txt" );
+    LALSnprintf( fname, sizeof(fname), "%s-TMPLTBANK-%d-%d.strainspec.txt",
+        site, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+    LALDPrintFrequencySeries( &(bankIn.shf), fname );
   }
 
   /* bank generation parameters */
@@ -368,8 +464,18 @@ int main ( int argc, char *argv[] )
     ( bankIn.MMax * bankIn.MMax );
 
   /* generate the template bank */
+  if ( vrbflg )
+  {
+    fprintf( stdout, "generating template bank parameters... " );
+    fflush( stdout );
+  }
   LAL_CALL( LALInspiralCreateCoarseBank( &status, &coarseList, &numCoarse, 
         bankIn ), &status );
+  if ( vrbflg )
+  {
+    fprintf( stdout, "done\n" );
+    fflush( stdout );
+  }
 
   /* convert the templates to sngl_inspiral structures for writing to XML */
   if ( numCoarse )
@@ -439,8 +545,8 @@ int main ( int argc, char *argv[] )
   if ( writeRawData || writeResponse || writeSpectrum || writeStrainSpec )
   {
     snprintf( fname, sizeof(fname), "%s-TMPLTBANK-%d-%d.gwf",
-        site, startTime.gpsSeconds,
-        endTime.gpsSeconds - startTime.gpsSeconds );
+        site, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
     frOutFile = FrFileONew( fname, 0 );
     FrameWrite( outFrame, frOutFile );
     FrFileOEnd( frOutFile );
@@ -449,8 +555,8 @@ int main ( int argc, char *argv[] )
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
   snprintf( fname, sizeof(fname), "%s-TMPLTBANK-%d-%d.xml",
-      site, startTime.gpsSeconds,
-      endTime.gpsSeconds - startTime.gpsSeconds );
+      site, gpsStartTime.gpsSeconds,
+      gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
 
   /* write the process table */
@@ -548,7 +654,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"comment",                 required_argument, 0,                's'},
     {"enable-high-pass",        required_argument, 0,                't'},
     {"frame-cache",             required_argument, 0,                'u'},
+    {"pad-data",                required_argument, 0,                'x'},
     {"debug-level",             required_argument, 0,                'z'},
+    {"resample-filter",         required_argument, 0,                'R'},
     /* template bank generation parameters */
     {"minimum-mass",            required_argument, 0,                'A'},
     {"maximum-mass",            required_argument, 0,                'B'},
@@ -583,7 +691,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     int option_index = 0;
 
     c = getopt_long( argc, argv, 
-        "a:b:c:d:e:g:h:i:j:p:s:t:u:z:A:B:C:D:E:F:G:", 
+        "a:b:c:d:e:g:h:i:j:p:s:t:u:x:z:A:B:C:D:E:F:G:R:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -629,8 +737,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                 long_options[option_index].name, gstartt );
             exit( 1 );
           }
-          startTime.gpsSeconds = (INT4) gstartt;
-          startTime.gpsNanoSeconds = 0;
+          gpsStartTime.gpsSeconds = (INT4) gstartt;
+          gpsStartTime.gpsNanoSeconds = 0;
           ADD_PROCESS_PARAM( "int", "%ld", gstartt );
         }
         break;
@@ -656,8 +764,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                 long_options[option_index].name, gendt );
             exit( 1 );
           }            
-          endTime.gpsSeconds = (INT4) gendt;
-          endTime.gpsNanoSeconds = 0;
+          gpsEndTime.gpsSeconds = (INT4) gendt;
+          gpsEndTime.gpsNanoSeconds = 0;
           ADD_PROCESS_PARAM( "int", "%ld", gendt );
         }
         break;
@@ -779,6 +887,26 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         }
         break;
 
+      case 'R':
+        if ( ! strcmp( "ldas", optarg ) )
+        {
+          resampFiltType = 0;
+        }
+        else if ( ! strcmp( "butterworth", optarg ) )
+        {
+          resampFiltType = 1;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown resampling filter type: "
+              "%s (must be ldas or butterworth)\n", 
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
       case 's':
         if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
         {
@@ -815,6 +943,19 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           memcpy( frInCacheName, optarg, frcnamelen );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
+        break;
+
+      case 'x':
+        padData = (UINT4) atoi( optarg );
+        if ( padData < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "number of seconds to pad from input data"
+              "must be greater than 0: (%d specified)\n", 
+              long_options[option_index].name, numSegments );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", numSegments );
         break;
 
       case 'z':
@@ -1025,21 +1166,21 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
 
   /* check validity of input data time */
-  if ( ! startTime.gpsSeconds )
+  if ( ! gpsStartTime.gpsSeconds )
   {
     fprintf( stderr, "--gps-start-time must be specified\n" );
     exit( 1 );
   }
-  if ( ! endTime.gpsSeconds )
+  if ( ! gpsEndTime.gpsSeconds )
   {
     fprintf( stderr, "--gps-end-time must be specified\n" );
     exit( 1 );
   }
-  if ( endTime.gpsSeconds <= startTime.gpsSeconds )
+  if ( gpsEndTime.gpsSeconds <= gpsStartTime.gpsSeconds )
   {
     fprintf( stderr, "invalid gps time range: "
         "start time: %d, end time %d\n",
-        startTime.gpsSeconds, endTime.gpsSeconds );
+        gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds );
     exit( 1 );
   }
 
@@ -1074,8 +1215,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   inputDataLength = numPoints * numSegments - ( numSegments - 1 ) * 
     (numPoints / 2);
   {
-    UINT8 gpsChanIntervalNS = endTime.gpsSeconds * 1000000000LL - 
-      startTime.gpsSeconds * 1000000000LL;
+    UINT8 gpsChanIntervalNS = gpsEndTime.gpsSeconds * 1000000000LL - 
+      gpsStartTime.gpsSeconds * 1000000000LL;
     UINT8 inputDataLengthNS = (UINT8) inputDataLength * 1000000000LL / 
       (UINT8) sampleRate;
 
@@ -1083,7 +1224,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {
       fprintf( stderr, "length of input data and data chunk do not match\n" );
       fprintf( stderr, "start time: %d, end time %d\n",
-          startTime.gpsSeconds, endTime.gpsSeconds );
+          gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds );
       fprintf( stderr, "gps channel time interval: %lld ns\n"
           "computed input data length: %lld ns\n", 
           gpsChanIntervalNS, inputDataLengthNS );
@@ -1095,6 +1236,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( fLow < 0 )
   {
     fprintf( stderr, "--low-frequency-cutoff must be specified\n" );
+    exit( 1 );
+  }
+  if ( resampFiltType < 0 )
+  {
+    fprintf( stderr, "--resample-filter must be specified\n" );
     exit( 1 );
   }
   if ( specType < 0 )

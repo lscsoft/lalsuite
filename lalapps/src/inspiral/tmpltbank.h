@@ -26,6 +26,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
+#include <lal/ResampleTimeSeries.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALInspiralBank.h>
 
