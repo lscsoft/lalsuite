@@ -22,7 +22,8 @@ endif
 else
 bin_PROGRAMS = 
 endif
-bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_pipe_bkgr
+bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_pipe_bkgr \
+              lalapps_inspiral_pipe_s2
 
 pythonlibdir = ${prefix}/lib/python
 pythonlib_SCRIPTS = inspiral.py
@@ -31,6 +32,8 @@ lalapps_inspiral_pipe: inspiral_pipe.in
 	sed s+@PYTHONLIBDIR@+${pythonlibdir}+g inspiral_pipe.in > lalapps_inspiral_pipe 
 lalapps_inspiral_pipe_bkgr: inspiral_pipe_bkgr.in
 	sed s+@PYTHONLIBDIR@+${pythonlibdir}+g inspiral_pipe_bkgr.in > lalapps_inspiral_pipe_bkgr
+lalapps_inspiral_pipe_s2: inspiral_pipe_s2.in
+	sed s+@PYTHONLIBDIR@+${pythonlibdir}+g inspiral_pipe_s2.in > lalapps_inspiral_pipe_s2
 
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(TRIGTOTMPLTSRC) $(SIRESRC) \
