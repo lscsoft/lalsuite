@@ -596,6 +596,30 @@ LALFindChirpSlave (
     }    
 
 
+    /*
+     *
+     * if we have a place to store the standard candle, create it
+     *
+     */
+
+
+    if ( params->candlePtr )
+    {
+      FindChirpStandardCandle   *candle = params->candlePtr;
+      REAL4 m  = (REAL4) candle->tmplt.totalMass;
+      REAL4 mu = (REAL4) candle->tmplt.mu;
+      REAL4 candleTmpltNorm = sqrt( (5.0*mu) / 96.0 ) *
+        pow( m / (LAL_PI*LAL_PI) , 1.0/3.0 ) *
+        pow( LAL_MTSUN_SI / (REAL4) params->tmpltParams->deltaT, -1.0/6.0 );
+
+      candle->sigmasq = 4.0 * ( (REAL4) params->tmpltParams->deltaT / 
+          (REAL4) params->filterInput->fcTmplt->data->length ) * 
+        candleTmpltNorm * params->fcSegVec->data->segNorm;
+      
+      candle->effDistance = sqrt( candle->sigmasq / candle->rhosq );
+    }
+
+
     /* 
      *
      * loop over linked list of template nodes 

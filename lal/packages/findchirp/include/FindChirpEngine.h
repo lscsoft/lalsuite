@@ -226,6 +226,16 @@ tagFindChirpSimulationParams
 FindChirpSimulationParams;
 
 typedef struct
+tagFindChirpStandardCandle
+{
+  InspiralTemplate              tmplt;
+  REAL4                         rhosq;
+  REAL4                         sigmasq;
+  REAL4                         effDistance;
+}
+FindChirpStandardCandle;
+
+typedef struct
 tagFindChirpSlaveParams
 {
   UINT4                         dataConditioned;
@@ -234,6 +244,7 @@ tagFindChirpSlaveParams
   REAL4                        *chisqThreshVec;
   FILE                         *tmpltBankFilePtr;
   FILE                         *eventFilePtr;
+  FindChirpStandardCandle      *candlePtr;
   FindChirpSegmentVector       *fcSegVec;
   FindChirpSPDataParams        *dataParams;
   FindChirpSPTmpltParams       *tmpltParams;
