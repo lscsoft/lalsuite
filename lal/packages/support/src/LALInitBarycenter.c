@@ -54,7 +54,11 @@ LALFree()
 #include <lal/LALInitBarycenter.h>
 		 
 NRCSID(LALINITBARYCENTERC,"$Id$");
-		 
+
+#define ERRMSGLEN 512
+CHAR errmsg[ERRMSGLEN];	/* string-buffer for more explicit error-messages */
+
+
 /* <lalVerbatim file="LALInitBarycenterCP"> */
 void 
 LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
@@ -82,11 +86,10 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
     /* CHECK THAT fp1 and fp2 are not NULL: */
     if ( ( fp1 == NULL ) || ( fp2 == NULL ) ) 
       {
-	CHAR msg[512];
-	LALSnprintf (msg, 512, "%s '%s'\n", LALINITBARYCENTERH_MSGEOPEN, 
+	LALSnprintf (errmsg, ERRMSGLEN, "%s '%s'\n", LALINITBARYCENTERH_MSGEOPEN, 
 		     fp1 == NULL ? edat->ephiles.earthEphemeris : edat->ephiles.sunEphemeris);
-	msg[511] = 0;
-	ABORT (stat, LALINITBARYCENTERH_EOPEN, msg);
+	errmsg[ERRMSGLEN-1] = 0;
+	ABORT (stat, LALINITBARYCENTERH_EOPEN, errmsg);
       }
     
 /*reading first line of each file */
