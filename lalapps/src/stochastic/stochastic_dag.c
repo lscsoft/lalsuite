@@ -1934,11 +1934,49 @@ void parseOptions(INT4 argc, CHAR *argv[])
       case 't':
         /* start time */
         startTime = atoi(optarg);
+
+        /* check */
+        if (startTime < 441217609)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "GPS start time is prior to 1 January 1994 00:00:00 UTC " \
+              "(%lld specified)\n", long_options[option_index].name, \
+              startTime);
+          exit(1);
+        }
+        if (startTime > 999999999)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "GPS start time is after 14 September 2011 01:46:26 UTC " \
+              "(%lld specified)\n", long_options[option_index].name, \
+              startTime);
+          exit(1);
+        }
+
         break;
 
       case 'T':
         /* stop time */
         stopTime = atoi(optarg);
+
+        /* check */
+        if (stopTime < 441217609)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "GPS end time is prior to 1 January 1994 00:00:00 UTC " \
+              "(%lld specified)\n", long_options[option_index].name, \
+              stopTime);
+          exit(1);
+        }
+        if (stopTime > 999999999)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "GPS end time is after 14 September 2011 01:46:26 UTC " \
+              "(%lld specified)\n", long_options[option_index].name, \
+              stopTime);
+          exit(1);
+        }
+
         break;
 
       case 'L':
@@ -2272,7 +2310,7 @@ void readDataPair(LALStatus *status,
     if (vrbflg)
     {
       fprintf(stdout, "Reading in channel \"%s\" from same cache...\n", \
-        frChanIn2.name);
+          frChanIn2.name);
     }
 
     /* read in second channel */
