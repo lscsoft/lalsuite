@@ -2546,15 +2546,21 @@ static void parseOptions(INT4 argc, CHAR *argv[])
   }
 
   /* calibration cache */
-  if (calCacheOne == NULL)
+  if (strncmp(ifoOne, "G1", 2) != 0)
   {
-    fprintf(stderr, "--calibration-cache-one must be specified\n");
-    exit(1);
+    if (calCacheOne == NULL)
+    {
+      fprintf(stderr, "--calibration-cache-one must be specified\n");
+      exit(1);
+    }
   }
-  if (calCacheTwo == NULL)
+  if (strncmp(ifoTwo, "G1", 2) != 0)
   {
-    fprintf(stderr, "--calibration-cache-two must be specified\n");
-    exit(1);
+    if (calCacheTwo == NULL)
+    {
+      fprintf(stderr, "--calibration-cache-two must be specified\n");
+      exit(1);
+    }
   }
 
   /* calibration offset */
