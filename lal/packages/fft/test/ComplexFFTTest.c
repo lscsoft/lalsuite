@@ -156,7 +156,7 @@ CheckErrorCodes()
 {
   enum { Size = 19 };
   const UINT4 size = Size;
-  Status          stat;
+  Status          stat = {};
   ComplexFFTPlan *plan;
   ComplexFFTPlan  aplan;
   COMPLEX8Vector  avec;
