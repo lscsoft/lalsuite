@@ -9,7 +9,7 @@ endif
 bin_PROGRAMS = lalapps_inspawgfile $(LALMETAIOPROGRAMS) \
                lalapps_random_bank  lalapps_effdist\
                lalapps_InspiralOverlap lalapps_inspiralDistance lalapps_DistanceVsMass \
-               lalapps_InspiralTools lalapps_BankNumberOfTemplates 
+               lalapps_BankNumberOfTemplates 
 
 
 lalapps_DistanceVsMass_SOURCES 		= DistanceVsMass.c
@@ -19,7 +19,6 @@ lalapps_random_bank_SOURCES 		= random_bank.c
 lalapps_effdist_SOURCES 		= effdist.c
 lalapps_BankNumberOfTemplates_SOURCES	= BankNumberOfTemplates.c
 lalapps_InspiralOverlap_SOURCES 	= InspiralOverlap.c 
-lalapps_InspiralTools_SOURCES 		= InspiralTools.c
 
 if LALMETAIO
 lalapps_exc_resp_SOURCES 		= exc_resp.c
@@ -34,6 +33,6 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 EXTRA_DIST = 	exc_resp.c ivana.c inspmultiawg.c chirplen.c \
 		BE_create_script.py BEAscii2xml.c BE_process_xml.py
 
-CLEANFILES = 	lalapps_BankEfficiency  lalapps_InspiralTools \
+CLEANFILES = 	lalapps_BankEfficiency  \
 		lalapps_BankNumberOfTemplates  lalapps_InspiralOverlap
 
