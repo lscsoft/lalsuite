@@ -513,7 +513,7 @@ files of inspiral triggers allowing cuts and clustering.
 \verb$--outfile$ \textsc{outfile}
 [\verb$--snrstar$ \textsc{snrstar}] [\verb$--noplayground$] 
 [\verb$--sort$] [\verb$--cluster$ \textsc{msec}] \newline
-[\verb$--clusterchoice$ \textsc{choicenumber}] [\verb$--help$]
+[\verb$--clusteralgorithm$ \textsc{clusterchoice}] [\verb$--help$]
 
 \item[Description] 
 \verb$lalapps_snglInspiralReader$ processes triggers from the inspiral
@@ -527,7 +527,7 @@ times to the file \textsc{outfile};  to obtain all triggers,  use the
 within \textsc{msec} msec,   in which case the \verb$--sort$ flag is
 recommended unless you are certain that the triggers are time-ordered.  
 There is a choice of several clustering algorithms, which can be selected
-using \textsc{choicenumber}.
+using \verb$--clusteralgorithm$.
 
 
 \item[Options]\leavevmode
@@ -561,12 +561,13 @@ identifies the first trigger in a cluster, then displaces it if another
 trigger within the clustering window satisfies the appropriate condition 
 (described below).
 
-\item[\texttt{--clusterchoice} \textsc{choicenumber}]  Optional.  This
-determines which condition will be used in clustering of the triggers.  
-The default is 0.  The choices are \textsc{choicenumber} $=0$ --- displace
-event if its \textsc{snr} is exceeded by an event with a smaller 
-\textsc{chisq}; \textsc{choicenumber} $=1$ --- displace event if the quantity
-$(\textsc{snr})^{2}/\textsc{chisq}$ is exceeded by a subsequent event's.
+\item[\texttt{--clusteralgorithm} \textsc{choicenumber}]  Optional.  This
+determines which condition will be used in clustering of the triggers.
+The current choices are \texttt{snr\_and\_chisq} --- displace event if
+its \textsc{snr} is exceeded by an event with a smaller
+\textsc{chisq}; \texttt{snrsq\_over\_chisq} --- displace event if the
+quantity $(\textsc{snr})^{2}/\textsc{chisq}$ is exceeded by a subsequent
+event's.  The default is \texttt{snr\_and\_chisq}.
 
 \item[\texttt{--help}] Optional.  Print a help message.
 \end{entry}
@@ -575,7 +576,7 @@ $(\textsc{snr})^{2}/\textsc{chisq}$ is exceeded by a subsequent event's.
 \begin{verbatim}
 lalapps_snglInspiralReader --input xmlfilelist \
 --table sngl_inspiral --outfile my.xml --snrstar 8.0 \
---sort --cluster 20 --clusterchoice 1
+--sort --cluster 20 --clusteralgorithm snrsq_over_chisq
 \end{verbatim}
 
 \item[Author] 
@@ -811,7 +812,7 @@ signals and tests for time coincidence.
 [\verb$--sort$] [\verb$--noplayground$] [\verb$--deltat$
 \textsc{dt}] \newline
 [\verb$--cluster$ \textsc{clust}] 
-[\verb$--clusterchoice$ \textsc{choicenumber}] 
+[\verb$--clusteralgorithm$ \textsc{clusterchoice}] 
 [\verb$--missedinjections$ \textsc{missedfile}]\newline
 [\verb$--help$]
  
@@ -836,7 +837,7 @@ be clustered within \textsc{clust} msec, after coincidence has
 been checked.  If \textsc{clust} is twice \textsc{dt}
 then only one trigger per inspiral will survive.  There is a choice of
 several clustering algorithms, which can be selected using
-\texttt{--clusterchoice}.  Finally, specifying \verb$--missedinjections$,
+\verb$--clusteralgorithm$.  Finally, specifying \verb$--missedinjections$,
 creates a file \textsc{missedfile} containing a table of those
 injections which occured during the times of the input files, and in
 the playground, which were not coincident with any triggers.
@@ -879,12 +880,13 @@ identifies the first trigger in a cluster, then displaces it if another
 trigger within the clustering window satisfies the appropriate condition 
 (described below).
 
-\item[\texttt{--clusterchoice} \textsc{choicenumber}]  Optional.  This
-determines which condition will be used in clustering of the triggers.  
-The default is 0.  The choices are \textsc{choicenumber} $=0$ --- displace
-event if its \textsc{snr} is exceeded by an event with a smaller 
-\textsc{chisq}; \textsc{choicenumber} $=1$ --- displace event if the quantity
-$(\textsc{snr})^{2}/\textsc{chisq}$ is exceeded by a subsequent event's.
+\item[\texttt{--clusteralgorithm} \textsc{choicenumber}]  Optional.  This
+determines which condition will be used in clustering of the triggers.
+The current choices are \texttt{snr\_and\_chisq} --- displace event if
+its \textsc{snr} is exceeded by an event with a smaller
+\textsc{chisq}; \texttt{snrsq\_over\_chisq} --- displace event if the
+quantity $(\textsc{snr})^{2}/\textsc{chisq}$ is exceeded by a subsequent
+event's.  The default is \texttt{snr\_and\_chisq}.
 
 \item[\texttt{--missedinjections} \textsc{missedfile}]  Optional.
 Output a \texttt{sim\_inspiral} table in \textsc{missedfile} containing
@@ -900,7 +902,7 @@ are given.
 \begin{verbatim}
 lalapps_inspinj_find --input xmlfilelist \
 --inject injections.xml --outfile my.xml --snrstar 8.0 \
---coincidence 20 --sort --cluster 20 --clusterchoice 1 \
+--coincidence 20 --sort --cluster 20 --clusteralgorithm snrsq_over_chisq \
 --missedinjections missedinj.xml
 \end{verbatim}
 
