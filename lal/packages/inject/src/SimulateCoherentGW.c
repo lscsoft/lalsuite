@@ -270,7 +270,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
   ASSERT( signal->phi->deltaT != 0.0, stat,
 	  SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
   aDt = output->deltaT / signal->a->deltaT;
-  phiDt = output->deltaT / signal->a->deltaT;
+  phiDt = output->deltaT / signal->phi->deltaT;
   ASSERT( aDt != 0.0, stat,
 	  SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
   ASSERT( phiDt != 0.0, stat,

@@ -123,11 +123,11 @@ waveform.
 \item[\texttt{REAL4 aPlus, aCross}] The polarization amplitudes $A_+$,
 $A_\times$, in dimensionless strain units.
 
-\item[\texttt{REAL4 phi0}] The wave phase at time $t_0$, in radians.
+\item[\texttt{REAL8 phi0}] The wave phase at time $t_0$, in radians.
 
-\item[\texttt{REAL4 f0}] The wave frequency at time $t_0$, in Hz.
+\item[\texttt{REAL8 f0}] The wave frequency at time $t_0$, in Hz.
 
-\item[\texttt{REAL4Vector *f}] The spin-normalized Taylor parameters
+\item[\texttt{REAL8Vector *f}] The spin-normalized Taylor parameters
 $f_k$, as defined in Eq.~\ref{eq:taylorcw-freq}, above.  If
 \verb@f@=\verb@NULL@, a monochromatic wave is generated.
 \end{description}
@@ -151,9 +151,9 @@ typedef struct tagTaylorCWParamStruc {
   REAL8 deltaT;         /* requested sampling interval (s) */
   UINT4 length;         /* length of time series */
   REAL4 aPlus, aCross;  /* polarization amplitudes */
-  REAL4 phi0;           /* initial phase */
-  REAL4 f0;             /* initial frequency */
-  REAL4Vector *f;       /* f0-normalized Taylor parameters */
+  REAL8 phi0;           /* initial phase */
+  REAL8 f0;             /* initial frequency */
+  REAL8Vector *f;       /* f0-normalized Taylor parameters */
 
   /* Output parameters. */
   REAL4 dfdt;           /* maximum value of df*dt over any timestep */

@@ -43,21 +43,22 @@ is written.
 waveform: \verb@sec@ and \verb@nsec@ are integers specifying the start
 time in GPS seconds and nanoseconds, \verb@npt@ is the number of time
 samples generated, and \verb@dt@ is the sampling interval in seconds.
-If absent, \verb@-t 0 0 1048576 9.765625e-4 0.0@ is assumed.
+If absent, \verb@-t 0 0 65536 9.765625e-4 0.0@ is assumed.
 \item[\texttt{-d}] Sets the debug level to \verb@debuglevel@.  If
 absent, level 0 is assumed.
 \end{itemize}
 
 \paragraph{Format for \texttt{sourcefile}:} The source file consists
 of any number of lines of data, each specifying a continuous waveform.
-Each line consists of 8 or more whitespace-delimited numerical fields:
-the GPS epoch where the frequency, phase, and Taylor coefficients are
-defined (\verb@INT8@ nanoseconds), the + and $\times$ wave amplitudes
-(\verb@REAL4@ strain) and polarization angle $\psi$ (\verb@REAL4@
-radians), the right ascension and declination (\verb@REAL4@ degrees),
-the initial frequency (\verb@REAL4@ Hz) and phase (\verb@REAL4@
-degrees), followed by zero or more Taylor coefficients $f_k$
-(\verb@REAL4@ Hz${}^k$).
+Each line consists of a GPS epoch where the frequency, phase, and
+Taylor coefficients are defined (\verb@INT8@ nanoseconds), followed by
+7 or more whitespace-delimited \verb@REAL8@ numbers: the + and
+$\times$ wave amplitudes (dimensionless strain) and polarization angle
+$\psi$ (degrees), the right ascension and declination (degrees), the
+initial frequency (Hz) and phase (degrees), followed by zero or more
+Taylor coefficients $f_k$ (Hz${}^k$).  Note that the wave amplitudes
+and polarization angle are read as \verb@REAL8@, but are later cast to
+\verb@REAL4@.
 
 \paragraph{Format for \texttt{respfile}:} The response function $R(f)$
 gives the real and imaginary components of the transformation
@@ -158,6 +159,7 @@ LALGenerateTaylorCW()        LALSDestroyVectorSequence()
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/VectorOps.h>
+#include <lal/DetectorSite.h>
 #include <lal/Units.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GenerateTaylorCW.h>
@@ -179,7 +181,7 @@ int lalDebugLevel = 0;
 #define SEC    (0)
 #define NSEC   (0)
 #define DT     (0.0009765625)
-#define NPT    (1048576) 
+#define NPT    (65536)
 
 /* Usage format string. */
 #define USAGE "Usage: %s [-s sourcefile] [-o outfile]\n"             \
@@ -381,7 +383,7 @@ main(int argc, char **argv)
   } /* End of argument parsing loop. */
 
   /* Make sure that values won't crash the system or anything. */
-  CHECKVAL( dt, LAL_REAL4_MIN, LAL_REAL4_MAX );
+  CHECKVAL( dt, LAL_REAL8_MIN, LAL_REAL8_MAX );
   CHECKVAL( npt, 0, 2147483647 );
 
 
@@ -567,25 +569,29 @@ main(int argc, char **argv)
     I8ToLIGOTimeGPS( &(params.epoch), tStart );
     params.position.system = COORDINATESYSTEM_EQUATORIAL;
     if ( sourcefile ) {
-      REAL4Vector *input = NULL; /* input parameters */
+      REAL8Vector *input = NULL; /* input parameters */
       ok &= ( fscanf( fp, "%lli", &epoch ) == 1 );
-      SUB( LALSReadVector( &stat, &input, fp ), &stat );
-      ok &= ( input->length > 6 );
+      if ( ok ) {
+	SUB( LALDReadVector( &stat, &input, fp ), &stat );
+	ok &= ( input->length > 6 );
+      }
       if ( ok ) {
 	params.aPlus = input->data[0];
 	params.aCross = input->data[1];
-	params.psi = input->data[2];
-	params.position.longitude = input->data[3];
-	params.position.latitude = input->data[4];
-	params.phi0 = input->data[5];
-	params.f0 = input->data[6];
+	params.psi = LAL_PI*input->data[2]/180.0;
+	params.position.longitude = LAL_PI*input->data[3]/180.0;
+	params.position.latitude = LAL_PI*input->data[4]/180.0;
+	params.f0 = input->data[5];
+	params.phi0 = input->data[6];
 	if ( input->length > 7 ) {
-	  SUB( LALSCreateVector( &stat, &(params.f),
+	  SUB( LALDCreateVector( &stat, &(params.f),
 				 input->length - 7 ), &stat );
 	  for ( i = 0; i < input->length - 7; i++ )
 	    params.f->data[i] = input->data[i+7];
 	}
       }
+      if ( input )
+	SUB( LALDDestroyVector( &stat, &input ), &stat );
     } else {
       params.aPlus = APLUS;
       params.aCross = ACROSS;
@@ -600,12 +606,12 @@ main(int argc, char **argv)
        time. */
     if ( params.f ) {
       UINT4 length = params.f->length; /* number of coefficients */
-      REAL4 t = (1.0e-9)*(REAL4)( tStart - epoch ); /* time shift */
-      REAL4 tN = 1.0;   /* t raised to various powers */
-      REAL4 fFac = 1.0; /* fractional change in frequency */
-      REAL4 *fData = params.f->data; /* pointer to coeficients */
+      REAL8 t = (1.0e-9)*(REAL4)( tStart - epoch ); /* time shift */
+      REAL8 tN = 1.0;   /* t raised to various powers */
+      REAL8 fFac = 1.0; /* fractional change in frequency */
+      REAL8 *fData = params.f->data; /* pointer to coeficients */
       for ( i = 0; i < length; i++ ) {
-	REAL4 tM = 1.0; /* t raised to various powers */
+	REAL8 tM = 1.0; /* t raised to various powers */
 	fFac += fData[i]*( tN *= t );
 	for ( j = i + 1; j < length; j++ )
 	  fData[i] += choose( j + 1, i + 1 )*fData[j]*( tM *= t );
@@ -624,9 +630,10 @@ main(int argc, char **argv)
       if ( params.f ) {
 	REAL4 tN = 1.0; /* t raised to various powers */
 	for ( i = 0; i < params.f->length; i++ ) {
-	  dtInv += fabs( params.f0*params.f->data[i] )*tN;
+	  dtInv += sqrt( (i+1)*fabs( params.f->data[i] )*tN );
 	  tN *= t;
 	}
+	dtInv *= 10.0*sqrt( fabs( params.f0 ) );
       }
       if ( dtInv < 1.0/t ) {
 	params.deltaT = t;
@@ -645,6 +652,8 @@ main(int argc, char **argv)
       SUB( LALSCreateVector( &stat, &(signal.data), npt ), &stat );
       SUB( LALSimulateCoherentGW( &stat, &signal, &waveform,
 				  &detector ), &stat );
+      if ( params.f )
+	SUB( LALDDestroyVector( &stat, &(params.f) ), &stat );
 
       /* Inject waveform into output. */
       sigData = signal.data->data;
@@ -691,7 +700,7 @@ main(int argc, char **argv)
     fprintf( fp, "# epoch = %lli\n", epoch );
     fprintf( fp, "# deltaT = %23.16e\n", output.deltaT );
     for ( i = 0; i < output.data->length; i++ )
-      fprintf( fp, "%8.1f\n", (REAL4)( output.data->data[i] ) );
+      fprintf( fp, "%10.3e\n", (REAL4)( output.data->data[i] ) );
     fclose( fp );
   }
 

@@ -110,12 +110,12 @@ LALGenerateTaylorCW( LALStatus          *stat,
   UINT4 n, i;          /* number of and index over samples */
   UINT4 nSpin = 0, j;  /* number of and index over spindown terms */
   REAL8 t, tPow, dt;   /* time, interval, and t raised to a power */
-  REAL4 f0, phi0;      /* initial phase and frequency */
-  REAL4 twopif0;       /* 2*pi*f0 */
+  REAL8 f0, phi0;      /* initial phase and frequency */
+  REAL8 twopif0;       /* 2*pi*f0 */
   REAL8 f, fPrev;      /* current and previous values of frequency */
   REAL4 df = 0.0;      /* maximum difference between f and fPrev */
   REAL8 phi;           /* current value of phase */
-  REAL4 *fSpin = NULL; /* pointer to Taylor coefficients */
+  REAL8 *fSpin = NULL; /* pointer to Taylor coefficients */
   REAL4 *fData;        /* pointer to frequency data */
   REAL8 *phiData;      /* pointer to phase data */
 

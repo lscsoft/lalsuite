@@ -281,11 +281,11 @@ indicating which coordinate system it is expressed in.  The fields
 are:
 
 \begin{description}
-\item[\texttt{REAL8 longitude}] The longitudinal coordinate, as
-defined above.
+\item[\texttt{REAL8 longitude}] The longitudinal coordinate (in
+radians), as defined above.
 
-\item[\texttt{REAL8 latitude}] The latitudinal coordinate, as defined
-above.
+\item[\texttt{REAL8 latitude}] The latitudinal coordinate (in
+radians), as defined above.
 
 \item[\texttt{CoordinateSystem system}] The coordinate system in which
 the latitude and longitude have been expressed.
