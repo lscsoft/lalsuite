@@ -133,6 +133,7 @@ NRCSID (SFTFILEIOH, "$Id$");
 #define SFTFILEIOH_EFREQBAND 	13
 #define SFTFILEIOH_EMEM 	14
 #define SFTFILEIOH_EGLOB 	15
+#define SFTFILEIOH_ECOPYSIZE	16
 
 #define SFTFILEIOH_MSGENULL 	"Null pointer"
 #define SFTFILEIOH_MSGEFILE 	"Error in file-IO"
@@ -144,6 +145,7 @@ NRCSID (SFTFILEIOH, "$Id$");
 #define SFTFILEIOH_MSGEFREQBAND "Required frequency-band is not in SFT"
 #define SFTFILEIOH_MSGEMEM 	"Out of memory"
 #define SFTFILEIOH_MSGEGLOB 	"Failed to get filelist from directory/pattern"
+#define SFTFILEIOH_MSGECOPYSIZE	"Target SFT-struct has not enough frequency-bins for copying"
 
 /* </lalErrTable>  */
 
@@ -196,7 +198,7 @@ typedef struct tagSFTHeader {
  */
 
 void LALReadSFTheader (LALStatus  *status, SFTHeader *header, const CHAR *fname); 
-void LALReadSFTtype (LALStatus  *status, SFTtype *sft, const CHAR *fname, INT4 fminBinIndex);
+void LALReadSFTdata (LALStatus  *status, SFTtype *sft, const CHAR *fname, INT4 fminBinIndex);
 void LALWriteSFTtoFile (LALStatus  *status, const SFTtype *sft, const CHAR *outfname);
 void LALReadSFTfile (LALStatus *status, SFTtype **sft, REAL8 fmin, REAL8 fmax, const CHAR *fname);
 void LALReadSFTfiles (LALStatus *status,SFTVector **sftvect, REAL8 fmin, REAL8 fmax, const CHAR *glob);
