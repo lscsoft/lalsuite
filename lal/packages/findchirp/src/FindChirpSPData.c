@@ -1244,3 +1244,25 @@ LALFindChirpBCVData (
   RETURN( status );
 }
 
+
+/*documenation later*/
+void
+LALFindChirpBCVSpinData (
+    LALStatus                  *status,
+    FindChirpSegmentVector     *fcSegVec,
+    DataSegmentVector          *dataSegVec,
+    FindChirpSPDataParams      *params
+    )
+
+{
+/*declaration*/
+ INITSTATUS( status, "LALFindChirpBCVSpinData", FINDCHIRPSPDATAC );
+ ATTATCHSTATUSPTR( status );
+
+
+/*code*/
+ 
+ DETATCHSTATUSPTR( status );
+ RETURN( status );
+
+}
