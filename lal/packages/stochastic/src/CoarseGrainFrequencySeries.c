@@ -228,13 +228,13 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
   lengthCoarse = params->length;
   f0Coarse     = params->f0;
   deltaFCoarse = params->deltaF;
-  fMinCoarse = f0Coarse || f0Coarse - deltaFCoarse / 2.0;
+  fMinCoarse = ( f0Coarse == 0.0 ? 0.0 : f0Coarse - deltaFCoarse / 2.0 );
 
   /* extract fine-grained parameters */
   lengthFine   = input->data->length;
   f0Fine       = input->f0;
   deltaFFine   = input->deltaF;
-  fMinFine = f0Fine || f0Fine - deltaFFine / 2.0;
+  fMinFine = ( f0Fine == 0.0 ? 0.0 : f0Fine - deltaFFine / 2.0 );
 
   /* check for legality of values */
 
@@ -287,9 +287,17 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
 
   offset = ( f0Coarse - f0Fine ) / deltaFFine;
 
-  resRatio = deltaFCoarse /deltaFFine;
+  resRatio = deltaFCoarse / deltaFFine;
 
   /* Check that coarse-graining makes sense */
+
+  /* make sure coarse-grained series is not finer than fine-grained */
+  if ( resRatio < 1.0 )
+  {   
+    ABORT( status,
+           COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
+           COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
+  }
 
   /* make sure minimum frequency in coarse-grained series is not
      less than minimum frequency in fine-grained series */
@@ -450,13 +458,13 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
   lengthCoarse = params->length;
   f0Coarse     = params->f0;
   deltaFCoarse = params->deltaF;
-  fMinCoarse = f0Coarse || f0Coarse - deltaFCoarse / 2.0;
+  fMinCoarse = ( f0Coarse == 0.0 ? 0.0 : f0Coarse - deltaFCoarse / 2.0 );
 
   /* extract fine-grained parameters */
   lengthFine   = input->data->length;
   f0Fine       = input->f0;
   deltaFFine   = input->deltaF;
-  fMinFine = f0Fine || f0Fine - deltaFFine / 2.0;
+  fMinFine = ( f0Fine == 0.0 ? 0.0 : f0Fine - deltaFFine / 2.0 );
 
   /* check for legality of values */
 
@@ -470,16 +478,6 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
          COARSEGRAINFREQUENCYSERIESH_EZEROLEN,
          COARSEGRAINFREQUENCYSERIESH_MSGEZEROLEN);
 
-  /* coarse-grained resolution must not be finer than fine-grained */
-  /* printf("res ratio %f/%f\n",deltaFCoarse,deltaFFine);*/
-
-  if (deltaFCoarse < deltaFFine)
-  {
-    ABORT( status,
-         COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
-         COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE);	 
-  }
-
   /*    start frequency must not be negative */
 
   if (fMinCoarse < 0.0)
@@ -490,7 +488,7 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
   }
 
   if (fMinFine < 0.0)
-  {
+  { 
     ABORT( status,
          COARSEGRAINFREQUENCYSERIESH_ENEGFMIN,
          COARSEGRAINFREQUENCYSERIESH_MSGENEGFMIN );
@@ -522,6 +520,14 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
   resRatio = deltaFCoarse /deltaFFine;
 
   /* Check that coarse-graining makes sense */
+
+  /* make sure coarse-grained series is not finer than fine-grained */
+  if ( resRatio < 1.0 )
+  {   
+    ABORT( status,
+           COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
+           COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
+  }
 
   /* make sure minimum frequency in coarse-grained series is not
      less than minimum frequency in fine-grained series */

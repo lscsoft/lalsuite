@@ -674,7 +674,7 @@ int main( int argc, char *argv[] )
   goodFilter.sampleUnits = dimensionless;
   goodFilter.sampleUnits.unitNumerator[LALUnitIndexStrain] = -1;
 
-  goodData1.f0 = goodData2.f0 = goodFilter.f0 = 1.0;
+  goodData1.f0 = goodData2.f0 = goodFilter.f0 = 41.0;
 
   goodData1.data->data[0].re = goodData1.data->data[0].im 
     = goodData2.data->data[0].re = goodData2.data->data[0].im 
