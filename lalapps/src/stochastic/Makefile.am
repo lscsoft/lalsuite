@@ -1,7 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 if LALFRAME
-LALFRAMEPROGRAMS = lalapps_stochastic lalapps_stochastic_dev
+LALFRAMEPROGRAMS = lalapps_stochastic lalapps_stochastic_dev\
+									 lalapps_stochastic_dag
 else
 LALFRAMEPROGRAMS =
 endif
@@ -11,6 +12,7 @@ lalapps_olapredfcn_SOURCES = olapredfcn.c olapredfcn.h olapredfcn_args.c \
 if LALFRAME
 lalapps_stochastic_SOURCES = stochastic.c stochastic.h
 lalapps_stochastic_dev_SOURCES = stochastic_dev.c stochastic_dev.h
+lalapps_stochastic_dag_SOURCES = stochastic_dag.c stochastic.h
 endif
 bin_SCRIPTS = lalapps_stochastic_pipe
 pythonlibdir = ${prefix}/lib/python
