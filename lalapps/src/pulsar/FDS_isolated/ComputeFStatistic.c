@@ -1106,7 +1106,7 @@ int ReadSFTData(void)
 	}
       }
       else {
-	if (!(fp=fopen(GV.filelist[fileno],"r"))) {
+	if (!(fp=fopen(GV.filelist[fileno],"rb"))) {
 	  fprintf(stderr,"Weird... %s doesn't exist!\n",GV.filelist[fileno]);
 	  return 1;
 	}
@@ -1262,7 +1262,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 #if USE_BOINC
     use_boinc_filename1(&(uvar_mergedSFTFile));
 #endif
-    if (!(fp=fp_mergedSFT=fopen(uvar_mergedSFTFile,"r"))){
+    if (!(fp=fp_mergedSFT=fopen(uvar_mergedSFTFile,"rb"))){
       fprintf(stderr,"Unable to open SFT file %s\n", uvar_mergedSFTFile);
       ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
     }
@@ -1366,7 +1366,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 
   if (!uvar_mergedSFTFile) {
     /* open FIRST file and get info from it*/
-    fp=fopen(cfg->filelist[0],"r");
+    fp=fopen(cfg->filelist[0],"rb");
     /* read in the header from the file */
     errorcode=fread((void*)&header,sizeof(header),1,fp);
     if (errorcode!=1) 
@@ -1391,7 +1391,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     cfg->Ti = header.gps_sec; 
     
     /* open LAST file and get info from it*/
-    fp=fopen(cfg->filelist[fileno-1],"r");
+    fp=fopen(cfg->filelist[fileno-1],"rb");
     /* read in the header from the file */
     errorcode=fread((void*)&header,sizeof(header),1,fp);
     if (errorcode!=1) 
