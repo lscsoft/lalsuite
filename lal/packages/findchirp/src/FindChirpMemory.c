@@ -519,6 +519,7 @@ LALCreateFindChirpSegmentVector (
         &segPtr[i].data->data, params->numPoints/2 + 1);
     CHECKSTATUSPTR (status);
 
+
     if ( params->approximant == BCV )
     {
       segPtr[i].dataBCV = (COMPLEX8FrequencySeries *)
@@ -532,6 +533,76 @@ LALCreateFindChirpSegmentVector (
           &segPtr[i].dataBCV->data, params->numPoints/2 + 1);
       CHECKSTATUSPTR (status);
     }
+
+    if ( params->approximant == BCV )
+    {
+      segPtr[i].a1 = NULL;
+#if 0
+      segPtr[i].a1 = (REAL4Vector *)
+        LALCalloc( 1, sizeof(REAL4Vector));
+      if ( ! segPtr[i].a1 )
+      {
+        ABORT(status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+      }
+#endif
+      LALCreateVector (status->statusPtr,
+          &segPtr[i].a1, vectorPtr->data->data->data->length + 1);
+      CHECKSTATUSPTR (status);
+
+
+      segPtr[i].b1 = NULL;
+#if 0
+      segPtr[i].b1 = (REAL4Vector *)
+        LALCalloc( 1, sizeof(REAL4Vector));
+      if ( ! segPtr[i].b1 )
+      {
+        ABORT(status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+      }
+#endif
+      LALCreateVector (status->statusPtr,
+          &segPtr[i].b1, vectorPtr->data->data->data->length + 1);
+      CHECKSTATUSPTR (status);
+
+      segPtr[i].b2 = NULL;
+#if 0
+      segPtr[i].b2 = (REAL4Vector *)
+        LALCalloc( 1, sizeof(REAL4Vector));
+      if ( ! segPtr[i].b2 )
+      {
+        ABORT(status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+      }
+#endif
+      LALCreateVector (status->statusPtr,
+         &segPtr[i].b2, vectorPtr->data->data->data->length + 1);
+      CHECKSTATUSPTR (status);
+
+      segPtr[i].tmpltPowerVec = NULL;
+#if 0
+      segPtr[i].tmpltPowerVec = (REAL4Vector *)
+        LALCalloc( 1, sizeof(REAL4Vector));
+      if ( ! segPtr[i].tmpltPowerVec )
+      {
+        ABORT(status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+      }
+#endif
+      LALCreateVector (status->statusPtr,
+       &segPtr[i].tmpltPowerVec, vectorPtr->data->data->data->length + 1);
+      CHECKSTATUSPTR (status);
+
+      segPtr[i].tmpltPowerVecBCV = NULL;
+#if 0
+      segPtr[i].tmpltPowerVecBCV = (REAL4Vector *)
+        LALCalloc( 1, sizeof(REAL4Vector));
+      if ( ! segPtr[i].tmpltPowerVecBCV )
+      {
+        ABORT(status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+      }
+#endif
+      LALCreateVector (status->statusPtr,
+       &segPtr[i].tmpltPowerVecBCV,vectorPtr->data->data->data->length+1); 
+      CHECKSTATUSPTR (status);
+    }
+
     
     /* chi squared frequency bins */
     if ( params->numChisqBins )
@@ -565,11 +636,13 @@ LALCreateFindChirpSegmentVector (
 
     if( params->approximant ==BCV )
     {
-      for ( k = 0; k < vectorPtr->data->data->data->length; ++k )
+      for ( k = 0; k < vectorPtr->data->data->data->length-1; ++k )
       {
         segPtr[i].a1->data[k] = 0.0;
         segPtr[i].b1->data[k] = 0.0;
         segPtr[i].b2->data[k] = 0.0;
+        segPtr[i].tmpltPowerVec->data[k] = 0.0;
+        segPtr[i].tmpltPowerVecBCV->data[k] = 0.0;
       }
     }
       
