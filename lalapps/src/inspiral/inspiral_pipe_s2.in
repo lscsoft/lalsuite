@@ -58,7 +58,8 @@ def chunk_in_segment(chunk,seg):
     chunk.start() >= seg.start() and chunk.start() <= seg.end() 
     ) or (
     chunk.end() >= seg.start() and chunk.end() <= seg.end()
-    ):
+    ) or (
+    seg.start() >= chunk.start() and seg.end <= chunk.end() ):
     return 1
   else:
     return 0
@@ -67,7 +68,9 @@ def chunks_overlap(chunk1,chunk2):
   if ( 
     chunk1.start() >= chunk2.start() and chunk1.start() <= chunk2.end()
     ) or (
-    chunk1.end() >= chunk2.start() and chunk1.end() <= chunk2.end()):
+    chunk1.end() >= chunk2.start() and chunk1.end() <= chunk2.end()
+    ) or (
+    chunk1.start() >= chunk2.start() and chunk1.end() <= chunk2.end() ):
     return 1
   else:
     return 0
