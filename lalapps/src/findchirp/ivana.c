@@ -744,8 +744,8 @@ int main( int argc, char **argv )
 	  timeBaseD = (double) timeBase;
 	  /*-- Modify all time ranges to be relative to the time base --*/
 	  for ( jRange=0; jRange<nRange; jRange++ ) {
-	    range[jRange].t1 -= (double) timeBase;
-	    range[jRange].t2 -= (double) timeBase;
+	    range[jRange].t1 -= timeBaseD;
+	    range[jRange].t2 -= timeBaseD;
 	  }
 	}
   
@@ -758,7 +758,7 @@ int main( int argc, char **argv )
 	if ( snrCand < snrcut || chisqCand > chisqcut ) continue;
 
 	pass = 1;
-	if ( debug >= 2 ) printf( "tCand is %.4lf\n", tCand );
+	if ( debug >= 2 ) printf( "tCand is %.4lf\n", timeBaseD+tCand );
 	break;
 
       }  /*-- End of loop over lines in .dat file --*/
@@ -795,8 +795,8 @@ int main( int argc, char **argv )
 	    timeBaseD = (double) timeBase;
 	    /*-- Modify all time ranges to be relative to the time base --*/
 	    for ( jRange=0; jRange<nRange; jRange++ ) {
-	      range[jRange].t1 -= (double) timeBase;
-	      range[jRange].t2 -= (double) timeBase;
+	      range[jRange].t1 -= timeBaseD;
+	      range[jRange].t2 -= timeBaseD;
 	    }
 	  }
 
@@ -822,7 +822,7 @@ int main( int argc, char **argv )
 	  if ( snrCand < snrcut || chisqCand > chisqcut ) continue;
 
 	  pass = 1;
-	  if ( debug >= 2 ) printf( "tCand is %.4lf\n", tCand );
+	  if ( debug >= 2 ) printf( "tCand is %.4lf\n", timeBaseD+tCand );
 	  break;
 
 	}  /*-- End block if we read a row successfully --*/
@@ -835,7 +835,7 @@ int main( int argc, char **argv )
     if ( tCand < tCandLast ) {
       printf( "Error: candidate event list is not properly sorted by time\n" );
       printf( "A candidate with time %f is followed by a candidate with time %f\n",
-	      (double)timeBase+tCandLast, (double)timeBase+tCand );
+	      timeBaseD+tCandLast, timeBaseD+tCand );
       AbortAll( candEnv, vetoFile, nvetofiles, outEnv );
       return 6;
     }
@@ -990,7 +990,7 @@ int main( int argc, char **argv )
 
 	  if ( debug >= 3 )
 	    printf( " vFile %2d has tLast=%.4lf, duration=%.4lf\n",
-		    ivfile, vFile->tLast, dur );
+		    ivfile, timeBaseD+vFile->tLast, dur );
 
 	}  /*-- End block if flag is set to read from this file --*/
 
@@ -1019,7 +1019,7 @@ int main( int argc, char **argv )
       if ( usevfile < 0 ) break;
 
       if ( debug >= 3 ) printf( " Times to use: %.3f, %.3f\n",
-				tUseNeg, tUsePos );
+				timeBaseD+tUseNeg, timeBaseD+tUsePos );
 
       /*-- Mark this veto file to be read again --*/
       vetoFile[usevfile].readit = 1;
@@ -1052,11 +1052,11 @@ int main( int argc, char **argv )
 	/*-- First, flush out the old veto cluster to the veto range file --*/
 	if ( vrfile && tDeadNeg > -2.0e9 ) {
 	  if ( debug >= 3 ) {
-	    printf( "Writing out veto range: %.6f %.6f\n", tDeadNeg,tDeadPos );
+	    printf( "Writing out veto range: %.6f %.6f\n",
+		    timeBaseD+tDeadNeg, timeBaseD+tDeadPos );
 	  }
 	  fprintf( vrfile, "%.6lf %.6lf\n",
-		   timeBaseD + (double) tDeadNeg,
-		   timeBaseD + (double) tDeadPos );
+		   timeBaseD+tDeadNeg, timeBaseD+tDeadPos );
 	}
 	  
 	tDeadNeg = tdead1;
@@ -1138,12 +1138,15 @@ int main( int argc, char **argv )
 	if ( snrCand < cSnrThresh[iveto] ) {
 	  pass = 0;
 	  if ( debug >= 1 ) printf( "Coinc: cand=%.4lf, veto=%.4lf to %.4lf\n",
-				    tCand, tVetoNeg[iveto], tVetoPos[iveto] );
+				    timeBaseD+tCand, timeBaseD+tVetoNeg[iveto],
+				    timeBaseD+tVetoPos[iveto] );
 	} else {
 	  if ( debug >= 1 ) printf( "Coinc but big SNR: cand=%.4lf (SNR=%.2f),"
 				    "veto=%.4lf to %.4lf (SNR thresh=%.2f)\n",
-				    tCand, snrCand, tVetoNeg[iveto],
-				    tVetoPos[iveto], cSnrThresh[iveto] );
+				    timeBaseD+tCand, snrCand,
+				    timeBaseD+tVetoNeg[iveto],
+				    timeBaseD+tVetoPos[iveto],
+				    cSnrThresh[iveto] );
 	}
 
       } else {
@@ -1200,22 +1203,22 @@ int main( int argc, char **argv )
       /*-- Flush out the last veto cluster (mod) to the veto range file --*/
       if ( vrfile ) {
 	if ( debug >= 3 ) {
-	  printf( "Writing out veto range: %.6f %.6lf\n", tDeadNeg,cRange->t2);
+	  printf( "Writing out veto range: %.6f %.6lf\n",
+		  timeBaseD+tDeadNeg, timeBaseD+cRange->t2);
 	}
 	fprintf( vrfile, "%.6lf %.6lf\n",
-		 timeBaseD + (double) tDeadNeg,
-		 timeBaseD + cRange->t2 );
+		 timeBaseD+tDeadNeg, timeBaseD+cRange->t2 );
       }
     }
   } else {
     /*-- Flush out the last veto cluster to the veto range file --*/
     if ( vrfile && tDeadNeg > 0.0 ) {
       if ( debug >= 3 ) {
-	printf( "Writing out veto range: %.6f %.6f\n", tDeadNeg,tDeadPos );
+	printf( "Writing out veto range: %.6f %.6f\n",
+		timeBaseD+tDeadNeg, timeBaseD+tDeadPos );
       }
       fprintf( vrfile, "%.6lf %.6lf\n",
-	       timeBaseD + (double) tDeadNeg,
-	       timeBaseD + (double) tDeadPos );
+	       timeBaseD+tDeadNeg, timeBaseD+tDeadPos );
     }
   }
 
