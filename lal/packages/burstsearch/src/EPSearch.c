@@ -67,10 +67,12 @@ static void ComputeAverageSpectrum(
 )
 {
 	LALWindowParams winParams;
-	AverageSpectrumParams spec_params = {};
+	AverageSpectrumParams spec_params;
 
 	INITSTATUS(status, "ComputeAverageSpectrum", EPSEARCHC);
 	ATTATCHSTATUSPTR(status);
+
+	memset(&spec_params, 0, sizeof(spec_params));
 
 	winParams.type = params->windowType;
 	winParams.length = params->windowLength;
@@ -156,16 +158,16 @@ static SnglBurstTable **TFTilesToSnglBurstTable(TFTile *tile, SnglBurstTable **a
  * Print a frequency series.
  */
 
-static void print_real4fseries(char *file, REAL4FrequencySeries *fseries)
+static void print_real4fseries(const REAL4FrequencySeries *fseries, const char *file)
 {
-	FILE *fp;
-	size_t i;
-
 #if 0
 	/* FIXME: why can't the linker find this function? */
 	LALSPrintFrequencySeries(fseries, file);
 #else
-	if(fp = fopen(file, "w")) {
+	FILE *fp = fopen(file, "w");
+	size_t i;
+
+	if(fp) {
 		for(i = 0; i < fseries->data->length; i++)
 			fprintf(fp, "%f\t%g\n", i * fseries->deltaF, fseries->data->data[i]);
 		fclose(fp);
@@ -173,16 +175,16 @@ static void print_real4fseries(char *file, REAL4FrequencySeries *fseries)
 #endif
 }
 
-static void print_complex8fseries(char *file, COMPLEX8FrequencySeries *fseries)
+static void print_complex8fseries(const COMPLEX8FrequencySeries *fseries, const char *file)
 {
-	FILE *fp;
-	size_t i;
-
 #if 0
 	/* FIXME: why can't the linker find this function? */
 	LALCPrintFrequencySeries(fseries, file);
 #else
-	if(fp = fopen(file, "w")) {
+	FILE *fp = fopen(file, "w");
+	size_t i;
+
+	if(fp) {
 		for(i = 0; i < fseries->data->length; i++)
 			fprintf(fp, "%f\t%g\n", i * fseries->deltaF, sqrt(fseries->data->data[i].re * fseries->data->data[i].re + fseries->data->data[i].im * fseries->data->data[i].im));
 		fclose(fp);
@@ -224,7 +226,6 @@ EPSearch(
 /******** </lalVerbatim> ********/
 { 
 	int                       start_sample;
-	INT4                      i, j;
 	COMPLEX8FrequencySeries  *fseries;
 	RealDFTParams            *dftparams = NULL;
 	LALWindowParams           winParams;
@@ -254,7 +255,7 @@ EPSearch(
 	CHECKSTATUSPTR(status);
 
 	if(params->printSpectrum)
-		print_real4fseries("average_spectrum.dat", AverageSpec);
+		print_real4fseries(AverageSpec, "average_spectrum.dat");
 
 	/*
 	 * Assign temporary memory for the frequency data.
@@ -301,7 +302,7 @@ EPSearch(
 		normalize_to_psd(fseries, AverageSpec);
 
 		if(params->printSpectrum)
-			print_complex8fseries("frequency_series.dat", fseries);
+			print_complex8fseries(fseries, "frequency_series.dat");
 
 		/*
 		 * Create time-frequency tiling of plane.
@@ -404,26 +405,24 @@ void EPConditionData(
 	REAL4             flow,
 	REAL8             resampledeltaT,
 	ResampleTSFilter  resampFiltType,
-	INT4              corruption,
-	EPSearchParams   *params
+	INT4              corruption
 )
 /* </lalVerbatim> */
 {
-	ResampleTSParams    resampleParams = {};
+	ResampleTSParams    resampleParams;
 	const REAL8         epsilon = 1.0e-8;
-	REAL4               fsafety;
 	PassBandParamStruc  highpassParam;
 
 	INITSTATUS (status, "LALConditionData", EPSEARCHC);
 	ATTATCHSTATUSPTR (status);
 
 	ASSERT(series != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(params != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
 	/*
 	 * Resample the time series if necessary
 	 */
 
+	memset(&resampleParams, 0, sizeof(resampleParams));
 	if(!(fabs(resampledeltaT - series->deltaT) < epsilon)) {
 		resampleParams.deltaT = resampledeltaT;
 		resampleParams.filterType = resampFiltType;
@@ -436,8 +435,7 @@ void EPConditionData(
 	 */
 
 	highpassParam.nMax = 4;
-	fsafety = params->tfTilingInput.flow - 10.0;
-	highpassParam.f2 = fsafety > 150.0 ? 150.0 : fsafety;
+	highpassParam.f2 = (flow - 10.0) > 150.0 ? 150.0 : (flow - 10.0);
 	highpassParam.f1 = -1.0;
 	highpassParam.a2 = 0.1;
 	highpassParam.a1 = -1.0;

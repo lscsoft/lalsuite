@@ -50,8 +50,7 @@ EPConditionData(
 	REAL4             flow,
 	REAL8             resampledeltaT,
 	ResampleTSFilter  resampleFiltType,
-	INT4              corruption,
-	EPSearchParams   *params
+	INT4              corruption
 );
 
 #ifdef  __cplusplus

@@ -191,7 +191,6 @@ LALModFreqSeriesToTFPlane (
   REAL4Vector        *snr    = NULL;
   COMPLEX8Vector     *tmp    = NULL;
   COMPLEX8Vector     *fcorr  = NULL;
-  REAL4              fac;
   INT4               i;
   INT4               j;
   INT4               numpts=0;
@@ -345,7 +344,7 @@ LALModFreqSeriesToTFPlane (
 
     /* PRB - The normalization constant */
     norm = 0.0;
-    for( j=0 ; j<freqSeries->data->length ; j++)
+    for(j = 0; (unsigned) j < freqSeries->data->length; j++)
     {
       REAL4 re = tmp->data[j].re;
       REAL4 im = tmp->data[j].im;
@@ -373,7 +372,7 @@ LALModFreqSeriesToTFPlane (
 
     /* PRB - Multiply the filter by the data.  Don't forget complex
      * conjugate and any other relevant information */
-    for( j = i*fseglength ; j<freqSeries->data->length ; j++ )
+    for(j = i * fseglength; (unsigned) j < freqSeries->data->length; j++)
     {
       REAL4 reFilter = tmp->data[j-i*fseglength].re;
       REAL4 imFilter = tmp->data[j-i*fseglength].im;
