@@ -11,6 +11,7 @@ make_segment_list(){
 
     lines=`cat $ofile | awk '{print $1+last; last+=$1}' | tail -1`
     echo $lines "segments for $2"
+    let total+=$lines
 }
 
 
@@ -32,4 +33,5 @@ tbase=$2
 make_segment_list $1 H1 $tbase
 make_segment_list $1 H2 $tbase
 make_segment_list $1 L1 $tbase
+echo $total Segments in all
 
