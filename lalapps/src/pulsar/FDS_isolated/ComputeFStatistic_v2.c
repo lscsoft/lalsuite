@@ -76,16 +76,17 @@ typedef struct {
 
 /** Local type for storing F-statistic output from NewLALDemod().
  * Note that length has to be the same for all vectors, anything else
- * has to be considered an error.
+ * is considered an error.
  */
 typedef struct {
-  REAL8 f0;		/**< lowest frequency in the band */
-  REAL8 dFreq;		/**< frequency-resolution */
   UINT4 length;		/**< number of frequency-bins */
+  REAL8 f0;		/**< lowest frequency in the band */
+  REAL8 fBand;		/**< user-requested frequency-band */
+  REAL8 df;		/**< frequency-resolution */
   REAL8Vector *F;	/**< Values of the F-statistic proper (F) over frequency-bins */
   COMPLEX16Vector *Fa;	/**< Values Fa over frequency-bins */
   COMPLEX16Vector *Fb;	/**< Values Fb */
-} FStatisticBand;
+} FStatisticVector;
 
 /** FIXME: OBSOLETE: used to hold result from LALDemod(). Only kept for the moment to make things work (FIXME)*/
 typedef struct {
@@ -143,6 +144,7 @@ CHAR *uvar_BaseName;
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
+REAL8 uvar_FstatMin;
 CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
 CHAR *uvar_workingDir;
@@ -184,25 +186,25 @@ void CreateDemodParams (LALStatus *stat, computeFStatPar *DemodPar, const Config
 void CreateNautilusDetector (LALStatus *status, LALDetector *Detector);
 void Freemem(LALStatus *status,  ConfigVariables *cfg);
 
-void EstimateFLines(LALStatus *status, const FStatisticBand *FBand);
+void EstimateFLines(LALStatus *status, const FStatisticVector *FVect);
 void NormaliseSFTDataRngMdn (LALStatus *status);
-INT4 writeFLines(INT4 *maxIndex);
+INT4 writeFLines(INT4 *maxIndex, REAL8 f0, REAL8 df);
 int compare(const void *ip, const void *jp);
 INT4 writeFaFb(INT4 *maxIndex);
 void WriteFStatLog (LALStatus *stat, CHAR *argv[]);
 
 
-void writeFBand(LALStatus *stat, const FStatisticBand *FBand, const CHAR *fname);
+void writeFVect(LALStatus *stat, const FStatisticVector *FVect, const CHAR *fname);
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 void 
 refineCOMPLEX16Vector (LALStatus *, COMPLEX16Vector **out, const COMPLEX16Vector *in, UINT4 newLen, UINT4 Dterms);
 
-void NewLALDemod (LALStatus *, FStatisticBand **FBand, const SFTVector *sfts, const computeFStatPar *params);
+void NewLALDemod (LALStatus *, FStatisticVector **FVect, const SFTVector *sfts, const computeFStatPar *params);
 
 void
 computeFStat(LALStatus *, 
-	     FStatisticBand **FBand,
+	     FStatisticVector **FVect,
 	     const SFTVector *sfts, 
 	     const computeFStatPar* params, 
 	     BOOLEAN useInterpolation);
@@ -249,7 +251,7 @@ int main(int argc,char *argv[])
   SkyPosition thisPoint;
   FILE *fpOut=NULL;
   UINT4 loopcounter;
-  FStatisticBand *FBand = NULL;		/* new type to store F-statistic results in a frequency-band */
+  FStatisticVector *FVect = NULL;		/* new type to store F-statistic results in a frequency-band */
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -374,7 +376,7 @@ int main(int argc,char *argv[])
       for (spdwn=0; spdwn <= GV.SpinImax; spdwn++)
 	{
 	  /* calculate F-statistic with given oversampling-factor */
-	  LAL_CALL( computeFStat (&status, &FBand, SFTvect, GV.CFSparams, uvar_useInterpolation), &status);
+	  LAL_CALL( computeFStat (&status, &FVect, SFTvect, GV.CFSparams, uvar_useInterpolation), &status);
 
 	  /* output F-stat at first loop: used for studying effects of interpolation */
 	  if (lalDebugLevel && (loopcounter==0) ) 
@@ -384,27 +386,30 @@ int main(int argc,char *argv[])
 		fname = va("F_D%d_%gx_interpolated_Order%d.dat", uvar_Dterms, uvar_overSampling, uvar_interpolationOrder);
 	      else
 		fname = va("F_D%d_%gx_oversampled.dat", uvar_Dterms, uvar_overSampling);
-	      LAL_CALL (writeFBand (&status, FBand, fname), &status);
+	      LAL_CALL (writeFVect (&status, FVect, fname), &status);
 	    }
 	  
-	  /* FIXME: to keep cluster-stuff working, we provide the "translation" from FBand back into old Fstats-struct */
-	  Fstat.F = FBand->F->data;
-	  Fstat.Fa = FBand->Fa->data;
-	  Fstat.Fb = FBand->Fb->data;
+	  /* FIXME: to keep cluster-stuff working, we provide the "translation" from FVect back into old Fstats-struct */
+	  Fstat.F  = FVect->F->data;
+	  Fstat.Fa = FVect->Fa->data;
+	  Fstat.Fb = FVect->Fb->data;
 	  
 	  /*  This fills-in highFLines */
 	  if (GV.FreqImax > 5) {
-	    LAL_CALL (EstimateFLines(&status, FBand), &status);
+	    LAL_CALL (EstimateFLines(&status, FVect), &status);
 	  }
 	  
 	  /* now, if user requested it, we output ALL F-statistic results */
 	  if ( fpOut )
 	    {
 	      UINT4 i;
-	      for(i=0;i < FBand->length ;i++)
+	      for(i=0;i < FVect->length ;i++)
 		{
-		  fprintf (fpOut, "%20.17f %20.17f %20.17f %20.17f\n", 
-			   FBand->f0 + i* FBand->dFreq, Alpha, Delta, 2.0*medianbias * FBand->F->data[i]);
+		  REAL8 FStat = medianbias * FVect->F->data[i];
+		  REAL8 freq = FVect->f0 + i* FVect->df;
+
+		  if ( FStat >= uvar_FstatMin )
+		    fprintf (fpOut, "%20.17f %20.17f %20.17f %20.17f\n", freq, Alpha, Delta, FStat);
 		}
 	      
 	    } /* if outputFstat */
@@ -415,7 +420,7 @@ int main(int argc,char *argv[])
 	      maxIndex=(INT4 *)LALMalloc(highFLines->Nclusters*sizeof(INT4));
 	      
 	      /*  for every cluster writes the information about it in file Fstats */
-	      if (writeFLines(maxIndex)){
+	      if (writeFLines(maxIndex, FVect->f0, FVect->df)){
 		fprintf(stderr, "%s: trouble making file Fstats\n", argv[0]);
 		return 6;
 	      }
@@ -432,11 +437,11 @@ int main(int argc,char *argv[])
 
 
       /* free Fstats-results from this skypos */
-      LAL_CALL (LALDDestroyVector (&status, &(FBand->F)), &status);
-      LAL_CALL (LALZDestroyVector (&status, &(FBand->Fa)), &status);
-      LAL_CALL (LALZDestroyVector (&status, &(FBand->Fb)), &status);
-      LALFree (FBand);
-      FBand = NULL;
+      LAL_CALL (LALDDestroyVector (&status, &(FVect->F)), &status);
+      LAL_CALL (LALZDestroyVector (&status, &(FVect->Fa)), &status);
+      LAL_CALL (LALZDestroyVector (&status, &(FVect->Fb)), &status);
+      LALFree (FVect);
+      FVect = NULL;
 
       loopcounter ++;
       if (lalDebugLevel) LALPrintError ("Search progress: %5.1f%%", 
@@ -448,9 +453,8 @@ int main(int argc,char *argv[])
 
   if (lalDebugLevel) LALPrintError ("\nSearch finished.\n");
 
-  /* properly terminate Fstats-file by 'DONE' marker: 
-   * for some reason we now seem to be using 0000000 for that... */
-  if (fpstat) fprintf(fpstat, "0000000\n");
+  /* properly terminate Fstats-file by 'DONE' marker: */ 
+  if (fpstat) fprintf(fpstat, "%%DONE\n");
   if (fpstat) fclose(fpstat);
 
   /* Free DopplerScan-stuff (grid) */
@@ -513,6 +517,7 @@ initUserVars (LALStatus *stat)
 
   uvar_outputFstat = NULL;
   uvar_openDX = FALSE;
+  uvar_FstatMin = 0.0;
 
   uvar_skyGridFile = NULL;
 
@@ -551,16 +556,17 @@ initUserVars (LALStatus *stat)
   LALregREALUserVar(stat, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
   LALregSTRINGUserVar(stat,	skyRegion, 	'R', UVAR_OPTIONAL, "Specify sky-region by polygon");
   LALregSTRINGUserVar(stat,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
-  LALregSTRINGUserVar(stat,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for the F-statistic field over the parameter-space");
   LALregSTRINGUserVar(stat,	skyGridFile,	 0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
   LALregSTRINGUserVar(stat,	outputSkyGrid,	 0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
-
-  LALregBOOLUserVar(stat,	openDX,	 	 0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
   LALregSTRINGUserVar(stat,     workingDir,     'w', UVAR_OPTIONAL, "Directory to be made the working directory, . is default");
-
+  /* more experimental and unofficial stuff follows here */
   LALregREALUserVar(stat, 	overSampling,	'r', UVAR_OPTIONAL, "Oversampling factor for frequency resolution.");
   LALregBOOLUserVar(stat,	useInterpolation, 0, UVAR_OPTIONAL, "Use Interpolation instead of LALDemod() for the oversampling.");
   LALregINTUserVar(stat, 	interpolationOrder,0,UVAR_OPTIONAL, "(Half the) number of terms to use in the interpolation.");
+  LALregSTRINGUserVar(stat,	outputFstat,	 0,  UVAR_OPTIONAL, "Output the F-statistic field over the parameter-space");
+  LALregREALUserVar(stat, 	FstatMin,	 0,  UVAR_OPTIONAL, "Minimum F-Stat value to written into outputFstat-file");
+  LALregBOOLUserVar(stat,	openDX,	 	 0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
+
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -648,7 +654,7 @@ CreateDemodParams (LALStatus *stat,
 /*  for every cluster writes the information about it in file Fstats */
 /*  precisely it writes: */
 /*  fr_max alpha delta N_points_of_cluster mean std max (of 2F) */
-int writeFLines(INT4 *maxIndex){
+int writeFLines(INT4 *maxIndex, REAL8 f0, REAL8 df){
 
   INT4 i,j,j1,j2,k,N;
   REAL8 max,log2,mean,var,std,R,fr;
@@ -690,7 +696,7 @@ int writeFLines(INT4 *maxIndex){
     }/*  end j loop over points of i-th cluster  */
     var=var/N;
     std=sqrt(var);
-    fr=uvar_Freq + imax*GV.dFreq;
+    fr = f0 + imax * df;
     /*    print the output */
     if (fpstat)
       err=fprintf(fpstat,"%16.12f %10.8f %10.8f    %d %10.5f %10.5f %10.5f\n",fr,
@@ -1209,14 +1215,14 @@ int compare(const void *ip, const void *jp)
  * These clusters get written in the global highFLines. 
  */
 void
-EstimateFLines(LALStatus *stat, const FStatisticBand *FBand)
+EstimateFLines(LALStatus *stat, const FStatisticVector *FVect)
 {
   INT4 i,j,Ntot;   
   UINT4 nbins;                	/**< Number of bins in F */
   REAL8Vector *F1=NULL; 
   REAL8Vector *FloorF1=NULL;             /* Square of SFT */
   REAL4 THR=10.0;
-  REAL8 dFreq;
+  REAL8 dFreq, f0, fBand;
   
   OutliersInput  *outliersInput;
   OutliersParams *outliersParams;
@@ -1231,8 +1237,9 @@ EstimateFLines(LALStatus *stat, const FStatisticBand *FBand)
   INITSTATUS( stat, "EstimateFLines", rcsid );
   ATTATCHSTATUSPTR (stat);
 
-  nbins = FBand->length;
-  dFreq = FBand->dFreq;
+  nbins = FVect->length;
+  dFreq = FVect->df;
+  f0 = FVect->f0;
 
   THR=uvar_Fthreshold;
 
@@ -1247,7 +1254,7 @@ EstimateFLines(LALStatus *stat, const FStatisticBand *FBand)
   /* loop over SFT data to estimate noise */
   for (j=0;j<nbins;j++)
     {
-      F1->data[j] = FBand->F->data[j];
+      F1->data[j] = FVect->F->data[j];
       FloorF1->data[j] = 1.0;
     }
   
@@ -1269,7 +1276,7 @@ EstimateFLines(LALStatus *stat, const FStatisticBand *FBand)
   outliersParams->Thr = THR/(2.0*medianbias);
   outliersParams->Floor = FloorF1;
   outliersParams->wings = wings; /*these must be the same as ClustersParams->wings */
-  outliersInput->ifmin = (INT4) ((uvar_Freq/GV.dFreq)+0.5);
+  outliersInput->ifmin = (INT4) ((f0 / dFreq) + 0.5);
   outliersInput->data = F1;
 
   /*find values of F above THR and populate outliers with them */
@@ -1449,7 +1456,7 @@ NormaliseSFTDataRngMdn(LALStatus *stat)
 #define SMALL	0.000000001
 #define LUT_RES 64
 void 
-NewLALDemod (LALStatus *stat, FStatisticBand **FBand, const SFTVector *sfts, const computeFStatPar *params) 
+NewLALDemod (LALStatus *stat, FStatisticVector **FVect, const SFTVector *sfts, const computeFStatPar *params) 
 { 
 
   INT4 alpha,i;                 /* loop indices */
@@ -1473,7 +1480,7 @@ NewLALDemod (LALStatus *stat, FStatisticBand **FBand, const SFTVector *sfts, con
   COMPLEX16 Fa, Fb;
   REAL8 f;
 
-  FStatisticBand *ret = NULL;	/* return-struct */
+  FStatisticVector *ret = NULL;	/* return-struct */
   UINT4 nBins;			/* number of frequency-bins */
 
   static REAL8 sinVal[ LUT_RES + 1 ];
@@ -1484,8 +1491,8 @@ NewLALDemod (LALStatus *stat, FStatisticBand **FBand, const SFTVector *sfts, con
   INITSTATUS( stat, "LALDemod", rcsid);
   ATTATCHSTATUSPTR (stat);
 
-  ASSERT ( FBand, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( *FBand == NULL, stat, COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
+  ASSERT ( FVect, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( *FVect == NULL, stat, COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
 
   nBins = params->imax;	/* number of frequency-bins to calculate Fstatistic for */
 
@@ -1498,13 +1505,14 @@ NewLALDemod (LALStatus *stat, FStatisticBand **FBand, const SFTVector *sfts, con
 
   /* prepare output-structure */
   /* FIXME: for now we're a bit sloppy with leaks in  case of errors  */
-  if ( (ret = (FStatisticBand*)LALCalloc(1, sizeof(FStatisticBand))) == NULL) {
+  if ( (ret = (FStatisticVector*)LALCalloc(1, sizeof(FStatisticVector))) == NULL) {
     ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
   TRY ( LALZCreateVector (stat->statusPtr, &(ret->Fa), nBins), stat);
   TRY ( LALZCreateVector (stat->statusPtr, &(ret->Fb), nBins), stat);
   ret->f0 = params->f0;
-  ret->dFreq = params->df;
+  ret->df = params->df;
+  ret->fBand = (params->imax-1) * params->df;
   ret->length = nBins;
 
   /* calculate trig-LUT only the first time we're called */
@@ -1635,7 +1643,7 @@ NewLALDemod (LALStatus *stat, FStatisticBand **FBand, const SFTVector *sfts, con
   LALFree(ySum);
   
   /* return result */
-  *FBand = ret;
+  *FVect = ret;
 
   DETATCHSTATUSPTR (stat);
   RETURN( stat );
@@ -1648,7 +1656,7 @@ NewLALDemod (LALStatus *stat, FStatisticBand **FBand, const SFTVector *sfts, con
  */
 void
 computeFStat (LALStatus *stat, 
-	      FStatisticBand **FBandOut, 	/**< output: (oversampled) Fa,Fb,Fstat */
+	      FStatisticVector **FVectOut, 	/**< output: (oversampled) Fa,Fb,Fstat */
 	      const SFTVector *sfts, 		/**< input: SFT-vector */
 	      const computeFStatPar *params, 	/**< antenna-pattern coefficients a,b,..*/
 	      BOOLEAN useInterpolation)		/**< use interpolation for oversampling? */
@@ -1662,19 +1670,19 @@ computeFStat (LALStatus *stat,
   REAL8 fact;
   COMPLEX16 *zFa, *zFb;
   REAL8 *xF;
-  FStatisticBand *FBand = NULL;
+  FStatisticVector *FVect = NULL;
 
   INITSTATUS( stat, "calcFStat", rcsid);
   ATTATCHSTATUSPTR (stat);  
 
-  ASSERT (FBandOut != NULL, stat,  COMPUTEFSTATC_ENULL,  COMPUTEFSTATC_MSGENULL);
-  ASSERT (*FBandOut == NULL, stat, COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
+  ASSERT (FVectOut != NULL, stat,  COMPUTEFSTATC_ENULL,  COMPUTEFSTATC_MSGENULL);
+  ASSERT (*FVectOut == NULL, stat, COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
   ASSERT (sfts != NULL, stat,  COMPUTEFSTATC_ENULL,  COMPUTEFSTATC_MSGENULL);
   ASSERT (params != NULL, stat,  COMPUTEFSTATC_ENULL,  COMPUTEFSTATC_MSGENULL);
   
-  TRY ( NewLALDemod (stat->statusPtr, &FBand, sfts, params), stat);
+  TRY ( NewLALDemod (stat->statusPtr, &FVect, sfts, params), stat);
 
-  nbins = FBand->Fa->length;
+  nbins = FVect->Fa->length;
 
   /* use 2x interpolationOrder bins for interpolation */
   if ( useInterpolation && (params->overSampling != 1) )
@@ -1682,34 +1690,36 @@ computeFStat (LALStatus *stat,
       /* increase number of bins accordingly */
       nbins =  (UINT4)( params->overSampling * nbins + 0.5);
 
-      TRY (refineCOMPLEX16Vector(stat->statusPtr, &FaRefined, FBand->Fa, nbins, uvar_interpolationOrder), stat);
-      TRY (refineCOMPLEX16Vector(stat->statusPtr, &FbRefined, FBand->Fb, nbins, uvar_interpolationOrder), stat);
+      TRY (refineCOMPLEX16Vector(stat->statusPtr, &FaRefined, FVect->Fa, nbins, uvar_interpolationOrder), stat);
+      TRY (refineCOMPLEX16Vector(stat->statusPtr, &FbRefined, FVect->Fb, nbins, uvar_interpolationOrder), stat);
 
-      if (FBand->F) {
-	TRY (LALDDestroyVector (stat->statusPtr, &(FBand->F)), stat);
+      if (FVect->F) {
+	TRY (LALDDestroyVector (stat->statusPtr, &(FVect->F)), stat);
       }
-      TRY ( LALZDestroyVector (stat->statusPtr, &(FBand->Fa)), stat);
-      TRY ( LALZDestroyVector (stat->statusPtr, &(FBand->Fb)), stat);
+      TRY ( LALZDestroyVector (stat->statusPtr, &(FVect->Fa)), stat);
+      TRY ( LALZDestroyVector (stat->statusPtr, &(FVect->Fb)), stat);
 
-      FBand->Fa = FaRefined;
-      FBand->Fb = FbRefined;
-      FBand->length = FaRefined->length;
-      FBand->dFreq /= params->overSampling;
+      FVect->Fa = FaRefined;
+      FVect->Fb = FbRefined;
+      FVect->df /= params->overSampling;
+      
+      /* truncate to original frequency-bounds */
+      FVect->length = FVect->fBand / FVect->df + 1;
 
     } /* if useInterpolation */
 
       
   /* calculate F-statistic from  Fa and Fb */
-  TRY (LALDCreateVector (stat->statusPtr, &(FBand->F), nbins), stat);
+  TRY (LALDCreateVector (stat->statusPtr, &(FVect->F), nbins), stat);
 
   fact = 4.0 / (params->SFTno * params->amcoe->D);
   At = fact * params->amcoe->A;
   Bt = fact * params->amcoe->B;
   Ct = fact * params->amcoe->C;
 
-  zFa = FBand->Fa->data;
-  zFb = FBand->Fb->data;
-  xF = FBand->F->data;
+  zFa = FVect->Fa->data;
+  zFb = FVect->Fb->data;
+  xF = FVect->F->data;
   for (i = 0; i < nbins; i++)
     {
       FaRe = (*zFa).re;
@@ -1726,7 +1736,7 @@ computeFStat (LALStatus *stat,
     } /* for i < nbins */
 
   /* return */
-  *FBandOut = FBand;
+  *FVectOut = FVect;
 
   DETATCHSTATUSPTR (stat);
   RETURN( stat );
@@ -1737,7 +1747,7 @@ computeFStat (LALStatus *stat,
 /** write out the F-statistic over the searched frequency-band.
  */
 void
-writeFBand(LALStatus *stat, const FStatisticBand *FBand, const CHAR *fname)
+writeFVect(LALStatus *stat, const FStatisticVector *FVect, const CHAR *fname)
 {
   FILE *fp;
   UINT4 i;
@@ -1746,7 +1756,7 @@ writeFBand(LALStatus *stat, const FStatisticBand *FBand, const CHAR *fname)
   INITSTATUS( stat, "LALDemod", rcsid);
   ATTATCHSTATUSPTR (stat);
 
-  ASSERT (FBand, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT (FVect, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
   ASSERT (fname, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
 
   if ( (fp = fopen(fname, "wb")) == NULL) 
@@ -1755,10 +1765,11 @@ writeFBand(LALStatus *stat, const FStatisticBand *FBand, const CHAR *fname)
       ABORT (stat, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
     }
 
-  for (i=0; i < FBand->length; i++) {
-    fi = FBand->f0 + 1.0*i*(FBand->dFreq);
-    fprintf (fp, "%20.17f %20.17f\n", fi, FBand->F->data[i]);
-  }
+  for (i=0; i < FVect->length; i++) {
+    fi = FVect->f0 + 1.0*i*(FVect->df);
+
+    fprintf (fp, "%20.17f %20.17f\n", fi, FVect->F->data[i]);
+  } /* for i < FVect->length */
 
   fclose (fp);
 
@@ -1797,7 +1808,7 @@ refineCOMPLEX16Vector (LALStatus *stat, COMPLEX16Vector **out, const COMPLEX16Ve
 
   TRY (LALZCreateVector (stat->statusPtr, &ret, newLen), stat);
 
-  for (k=0; k <= newLen - 1; k++)
+  for (k=0; k < newLen; k++)
     {
       Yk_Re = Yk_Im = 0;
 
