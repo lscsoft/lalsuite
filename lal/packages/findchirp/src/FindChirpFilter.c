@@ -239,15 +239,18 @@ LALFindChirpFilterInit (
   }
 
   /* create memory for the additional BCV chisq input */
-  outputPtr->chisqInputBCV = (FindChirpChisqInput *)
-    LALCalloc( 1, sizeof(FindChirpChisqInput) );
-  if ( !outputPtr->chisqInputBCV )
+  if ( params->approximant == BCV )
   {
-    LALFree( outputPtr->chisqInput );
-    LALFree( outputPtr->chisqParams );
-    LALFree( outputPtr );
-    *output = NULL;
-    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+    outputPtr->chisqInputBCV = (FindChirpChisqInput *)
+      LALCalloc( 1, sizeof(FindChirpChisqInput) );
+    if ( !outputPtr->chisqInputBCV )
+    {
+      LALFree( outputPtr->chisqInput );
+      LALFree( outputPtr->chisqParams );
+      LALFree( outputPtr );
+      *output = NULL;
+      ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+    }
   }
 
 
@@ -264,7 +267,10 @@ LALFindChirpFilterInit (
   BEGINFAIL( status )
   {
     LALFree( outputPtr->chisqInput );
-    LALFree( outputPtr->chisqInputBCV );
+    if ( outputPtr->chisqInputBCV )
+    {  
+      LALFree( outputPtr->chisqInputBCV );
+    }
     LALFree( outputPtr->chisqParams );
     LALFree( outputPtr );
     *output = NULL;
@@ -280,7 +286,10 @@ LALFindChirpFilterInit (
           &(outputPtr->invPlan) ), status );
 
     LALFree( outputPtr->chisqInput );
-    LALFree( outputPtr->chisqInputBCV );
+    if ( outputPtr->chisqInputBCV )
+    {
+     LALFree( outputPtr->chisqInputBCV );
+    }
     LALFree( outputPtr->chisqParams );
     LALFree( outputPtr );
     *output = NULL;
@@ -297,6 +306,8 @@ LALFindChirpFilterInit (
     {
       TRY( LALDestroyComplexFFTPlan( status->statusPtr,
             &(outputPtr->invPlan) ), status );
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ),
+            status );
 
       LALFree( outputPtr->chisqInput );
       LALFree( outputPtr->chisqInputBCV );
@@ -315,9 +326,14 @@ LALFindChirpFilterInit (
     {
       TRY( LALDestroyComplexFFTPlan( status->statusPtr,
             &(outputPtr->invPlan) ), status );
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ),
+            status );
 
       LALFree( outputPtr->chisqInput );
+      if ( outputPtr->chisqInputBCV )
+      {
       LALFree( outputPtr->chisqInputBCV );
+      }
       LALFree( outputPtr->chisqParams );
       LALFree( outputPtr );
       *output = NULL;
@@ -330,9 +346,16 @@ LALFindChirpFilterInit (
     {
       TRY( LALDestroyComplexFFTPlan( status->statusPtr,
             &(outputPtr->invPlan) ), status );
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ),
+            status );
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCVSpin1) ),
+            status );
 
       LALFree( outputPtr->chisqInput );
+      if ( outputPtr->chisqInputBCV )
+      {
       LALFree( outputPtr->chisqInputBCV );
+      }
       LALFree( outputPtr->chisqParams );
       LALFree( outputPtr );
       *output = NULL;
@@ -347,12 +370,30 @@ LALFindChirpFilterInit (
   {
     TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ), 
         status );
+    if ( outputPtr->qVecBCV )
+    {
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
+           status );
+    }
+    if ( outputPtr->qVecBCVSpin1 )
+    {
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCVSpin1) ),
+           status );
+    }
+    if ( outputPtr->qVecBCVSpin2 )
+    {
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCVSpin2) ),
+           status );
+    }
 
     TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
           &(outputPtr->invPlan) ), status );
 
     LALFree( outputPtr->chisqInput );
+    if ( outputPtr->chisqInputBCV )
+    {
     LALFree( outputPtr->chisqInputBCV );
+    }
     LALFree( outputPtr->chisqParams );
     LALFree( outputPtr );
     *output = NULL;
@@ -367,7 +408,11 @@ LALFindChirpFilterInit (
         params->numPoints );
     BEGINFAIL( status )
     {
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ),
+                    status );
       TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
+          status );
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVec) ),
           status );
 
       TRY( LALDestroyComplexFFTPlan( status->statusPtr,
@@ -388,14 +433,23 @@ LALFindChirpFilterInit (
         params->numPoints );
     BEGINFAIL( status )
     {
-      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ),
+          status );
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVec) ),
+          status );
+      TRY( LALCDestroyVector(status->statusPtr,&(outputPtr->qVecBCVSpin1)),
+          status );
+      TRY( LALCDestroyVector(status->statusPtr,&(outputPtr->qVecBCVSpin2)),
           status );
 
       TRY( LALDestroyComplexFFTPlan( status->statusPtr,
             &(outputPtr->invPlan) ), status );
 
       LALFree( outputPtr->chisqInput );
+      if ( outputPtr->chisqInputBCV )
+      {
       LALFree( outputPtr->chisqInputBCV );
+      }
       LALFree( outputPtr->chisqParams );
       LALFree( outputPtr );
       *output = NULL;
@@ -406,14 +460,25 @@ LALFindChirpFilterInit (
         params->numPoints );
     BEGINFAIL( status )
     {
-      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ),
+          status );
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVec) ),
+          status );
+      TRY( LALCDestroyVector(status->statusPtr,&(outputPtr->qVecBCVSpin1)),
+          status );
+      TRY( LALCDestroyVector(status->statusPtr,&(outputPtr->qVecBCVSpin2)),
+          status );
+      TRY( LALCDestroyVector(status->statusPtr,&(outputPtr->qtildeVecBCVSpin1)),
           status );
 
       TRY( LALDestroyComplexFFTPlan( status->statusPtr,
             &(outputPtr->invPlan) ), status );
 
       LALFree( outputPtr->chisqInput );
+      if ( outputPtr->chisqInputBCV )
+      {
       LALFree( outputPtr->chisqInputBCV );
+      }
       LALFree( outputPtr->chisqParams );
       LALFree( outputPtr );
       *output = NULL;
@@ -428,18 +493,50 @@ LALFindChirpFilterInit (
   {
     TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVec) ), 
         status );
-    TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVecBCV) ),
+    if ( outputPtr->qtildeVecBCV)
+    {
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVecBCV) ),
         status );
+    }
+    if ( outputPtr->qtildeVecBCVSpin1)
+    {
+      TRY( LALCDestroyVector( status->statusPtr,
+          &(outputPtr->qtildeVecBCVSpin1) ),
+          status );
+    }
+    if ( outputPtr->qtildeVecBCVSpin2)
+    {
+      TRY( LALCDestroyVector( status->statusPtr,
+          &(outputPtr->qtildeVecBCVSpin2) ),
+          status );
+    }
     TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ), 
         status );
-    TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
-        status );
+    if ( outputPtr->qVecBCV)
+    {
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
+          status );
+    }
+    if ( outputPtr->qVecBCVSpin1)
+    {
+       TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCVSpin1) ),
+            status );
+    }
+    if ( outputPtr->qVecBCVSpin2)
+    {
+       TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCVSpin2) ),
+            status );
+    }
+
 
     TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
           &(outputPtr->invPlan) ), status );
 
     LALFree( outputPtr->chisqInput );
-    LALFree( outputPtr->chisqInputBCV );
+    if ( outputPtr->chisqInputBCV )
+    {
+      LALFree( outputPtr->chisqInputBCV );
+    }
     LALFree( outputPtr->chisqParams );
     LALFree( outputPtr );
     *output = NULL;
@@ -464,21 +561,50 @@ LALFindChirpFilterInit (
     {
       TRY( LALDestroyVector (status->statusPtr, &(outputPtr->chisqVec) ), 
           status ); 
-      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVec) ), 
-          status );
-      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVecBCV) ),
-          status );
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVec) ),
+                    status );
+      if ( outputPtr->qtildeVecBCV )
+      {
+        TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVecBCV)), 
+            status );
+      }
+      if ( outputPtr->qtildeVecBCVSpin1 )
+      {
+        TRY( LALCDestroyVector( status->statusPtr, 
+              &(outputPtr->qtildeVecBCVSpin1)), status );
+      }
+      if ( outputPtr->qtildeVecBCVSpin2 )
+      {
+        TRY( LALCDestroyVector( status->statusPtr, 
+              &(outputPtr->qtildeVecBCVSpin2)), status );
+      }
       TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ), 
           status );
-      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
-          status );
+      if ( outputPtr->qVecBCV)
+      {
+        TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
+            status );
+      }
+      if ( outputPtr->qVecBCVSpin1)
+      {
+        TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCVSpin1) ),
+             status );
+      }
+      if ( outputPtr->qVecBCVSpin2)
+      {
+        TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCVSpin2) ),
+             status );
+      }
 
 
       TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
             &(outputPtr->invPlan) ), status );
 
       LALFree( outputPtr->chisqInput );
-      LALFree( outputPtr->chisqInputBCV );
+      if ( outputPtr->chisqInputBCV )
+      {
+        LALFree( outputPtr->chisqInputBCV );
+      }
       LALFree( outputPtr->chisqParams );
       LALFree( outputPtr );
       *output = NULL;
@@ -603,7 +729,10 @@ LALFindChirpFilterFinalize (
 
   /* input structures */
   LALFree( outputPtr->chisqInput );
-  LALFree( outputPtr->chisqInputBCV );
+  if ( outputPtr->chisqInputBCV )
+  {
+    LALFree( outputPtr->chisqInputBCV );
+  }
 
 
   /*
