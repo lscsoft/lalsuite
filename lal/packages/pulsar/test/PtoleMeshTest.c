@@ -40,7 +40,7 @@ argument. (Default is 0.02.)
 The \texttt{-n} option sets the maximum number of nodes in the mesh to the
 option argument. (Default is $10^6$.)
 
-The \texttt{-r} option sets the radius (in decimal degrees) of the circular sky
+The \texttt{-r} option sets the radius (in arcminutes) of the circular sky
 patch. (The default value is set for the globular cluster 47 Tuc.) At the
 moment there is no option for another patch shape.
 
@@ -144,7 +144,7 @@ int main( int argc, char **argv )
   radius = 30.9/60*LAL_PI_180;
 
   /* Parse command-line options. */
-  while( (opt = getopt( argc, argv, "b:c:e:f:i:m:n:t:x" )) != -1 )
+  while( (opt = getopt( argc, argv, "b:c:e:f:i:m:n:r:t:x" )) != -1 )
   {
     switch( opt )
     {
