@@ -2035,9 +2035,12 @@ void Freemem(LALStatus *status)
   LALFree(GV.edat->ephemE);
   LALFree(GV.edat->ephemS);
   LALFree(GV.edat);
+
+#if USE_BOINC
   /* free buffer used for fstat.  Its safe to do this because we already did fclose(fpstat) earlier */
   if (fstatbuff)
     LALFree(fstatbuff);
+#endif
   
   DETATCHSTATUSPTR (status);
 
