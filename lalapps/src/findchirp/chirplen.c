@@ -16,7 +16,7 @@
 
 int main ( int argc, char *argv[] )
 {
-  float m1,m2,M,eta,fmin,m,c0,c2,c3,c4,x,x2,x3,x4,x8,chirpTime,fmax;
+  float m1,m2,M,eta,fmin,c0,c2,c3,c4,x,x2,x3,x4,x8,chirpTime,fmax;
 
   if ( argc != 4 )
   {
@@ -31,10 +31,9 @@ int main ( int argc, char *argv[] )
 
   M = m1 + m2;
   eta = ( m1 * m2 ) / ( M * M );
-  m = 2 * ( m1 > m2 ? m2 : m1 );
   fprintf( stdout, "eta = %e\tm = %e\n", eta, M );
 
-  fmax = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * m * LAL_MTSUN_SI);
+  fmax = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * M * LAL_MTSUN_SI);
   fprintf( stdout, "isco freq = %e Hz", fmax );
 
   c0 = 5*M*LAL_MTSUN_SI/(256*eta);
