@@ -160,10 +160,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 segmentShift;
   INT4 padData;
   LIGOTimeGPS gpsStartPadTime, gpsCalibTime;
-  ReadDataPairParams streamParams;
-  StreamPair streamPair;
+  ReadDataPairParams intervalParams, extraParams;
+  StreamPair intervalPair, extraPair;
   REAL4TimeSeries segment1,segment2,segmentPad1, segmentPad2;
-  REAL4TimeSeries interval1,interval2;
+  REAL4TimeSeries interval1,interval2, extra1, extra2;
   REAL4Vector *seg1[100],*segPad1[100], *seg2[100], *segPad2[100];
 
   /* simulated signal structures */
@@ -328,6 +328,13 @@ INT4 main(INT4 argc, CHAR *argv[])
   interval1.deltaT = interval2.deltaT = 1./(REAL8)resampleRate;
   interval1.f0 = interval2.f0 = 0;
  
+  strncpy(extra1.name, "extra1", LALNameLength);
+  strncpy(extra2.name, "extra2", LALNameLength);
+  extra1.sampleUnits = extra2.sampleUnits = lalADCCountUnit;
+  extra1.epoch = extra2.epoch = gpsStartTime;
+  extra1.deltaT = extra2.deltaT = 1./(REAL8)resampleRate;
+  extra1.f0 = extra2.f0 = 0;
+
   strncpy(segmentPad1.name, "segmentPad1", LALNameLength);
   strncpy(segmentPad2.name, "segmentPad2", LALNameLength);
   segmentPad1.sampleUnits = segmentPad2.sampleUnits = lalADCCountUnit;
@@ -356,6 +363,16 @@ INT4 main(INT4 argc, CHAR *argv[])
           interval1.data->length * sizeof(*interval1.data->data));
   memset( interval2.data->data, 0,
           interval2.data->length * sizeof(*interval2.data->data));
+ 
+  extra1.data = extra2.data = NULL;
+  LAL_CALL( LALSCreateVector( &status, &(extra1.data), segmentPadLength),
+            &status );
+  LAL_CALL( LALSCreateVector( &status, &(extra2.data), segmentPadLength),
+            &status );
+  memset( extra1.data->data, 0,
+          extra1.data->length * sizeof(*extra1.data->data));
+  memset( extra2.data->data, 0,
+          extra2.data->length * sizeof(*extra2.data->data));
 
   segmentPad1.data = segmentPad2.data = NULL;
   LAL_CALL( LALSCreateVector( &status, &(segmentPad1.data), segmentPadLength), 
@@ -408,19 +425,34 @@ INT4 main(INT4 argc, CHAR *argv[])
   
   /* set segment input parameters */
   
-  streamParams.frameCache1 = frameCache1;
-  streamParams.frameCache2 = frameCache2;
-  streamParams.ifo1 = ifo1;
-  streamParams.ifo2 = ifo2;
-  streamParams.channel1 = channel1;
-  streamParams.channel2 = channel2;
-  streamParams.buffer = 0;
-  streamParams.sampleRate = sampleRate;
-  streamParams.resampleRate = resampleRate;
+  intervalParams.frameCache1 = frameCache1;
+  intervalParams.frameCache2 = frameCache2;
+  intervalParams.ifo1 = ifo1;
+  intervalParams.ifo2 = ifo2;
+  intervalParams.channel1 = channel1;
+  intervalParams.channel2 = channel2;
+  intervalParams.buffer = 0;
+  intervalParams.sampleRate = sampleRate;
+  intervalParams.resampleRate = resampleRate;
+  intervalParams.duration = intervalDuration + 2 * padData;
+
+  extraParams.frameCache1 = frameCache1;
+  extraParams.frameCache2 = frameCache2;
+  extraParams.ifo1 = ifo1;
+  extraParams.ifo2 = ifo2;
+  extraParams.channel1 = channel1;
+  extraParams.channel2 = channel2;
+  extraParams.buffer = 0;
+  extraParams.sampleRate = sampleRate;
+  extraParams.resampleRate = resampleRate;
+  extraParams.duration = segmentDuration + 2 * padData;
 
   /* set stream data structures */
-  streamPair.stream1 = &interval1;
-  streamPair.stream2 = &interval2;
+  intervalPair.stream1 = &interval1;
+  intervalPair.stream2 = &interval2;
+
+  extraPair.stream1 = &extra1;
+  extraPair.stream2 = &extra2;
 
   if (inject_flag)
    {
@@ -1025,9 +1057,9 @@ INT4 main(INT4 argc, CHAR *argv[])
       }
                   
     /* read data */
-    streamParams.duration = intervalDuration + 2 * padData;
-    streamParams.startTime = gpsStartPadTime.gpsSeconds;
-    LAL_CALL(readDataPair(&status, &streamPair, &streamParams), &status);
+ 
+    intervalParams.startTime = gpsStartPadTime.gpsSeconds;
+    LAL_CALL(readDataPair(&status, &intervalPair, &intervalParams), &status);
        
     /* skip segment if data not found or corrupted with 0 values */    
     /*       
@@ -1192,18 +1224,13 @@ INT4 main(INT4 argc, CHAR *argv[])
           calPsd1->data[i] = 0.;calPsd2->data[i] = 0.;
         }
 
-      /* set stream data structures to read data*/
-      streamParams.duration = segmentDuration + 2 * padData;
-      streamPair.stream1 = &segmentPad1;
-      streamPair.stream2 = &segmentPad2;
-
+      
       if (verbose_flag)
         {
           fprintf(stdout, "loop over %d jobs\n", numJobs);
         }
 
       /* loop over jobs (or segments to analyse) */
-      /* need more work to include overlapping Hann */
 
       for (jobLoop = 0; jobLoop < numJobs; jobLoop++)
 	{ 
@@ -1225,23 +1252,29 @@ INT4 main(INT4 argc, CHAR *argv[])
 	      }
 
             
-         
 	   /* read extra segment */
-      
+
            gpsStartTime.gpsSeconds = startTime + (jobLoop + numSegments - 1)  * segmentDuration;
            gpsStartPadTime.gpsSeconds = gpsStartTime.gpsSeconds - padData;
-           streamParams.startTime = gpsStartPadTime.gpsSeconds;
-           LAL_CALL(readDataPair(&status, &streamPair, &streamParams), &status);
+           extra1.epoch = extra2.epoch = gpsStartPadTime;           
+           extraParams.startTime = gpsStartPadTime.gpsSeconds;
 
+	   if (verbose_flag)
+             {
+               fprintf(stdout, "read GPS %d\n",gpsStartTime.gpsSeconds);
+             }
+
+           LAL_CALL(readDataPair(&status, &extraPair, &extraParams), &status);
+
+            
            /* store in memory */
            for (i = 0; i < segmentPadLength ; i++)
             {
-	     segPad1[numSegments]->data[i] = segmentPad2.data->data[i];
-             segPad2[numSegments]->data[i] = segmentPad2.data->data[i];
-             } 
+	     segPad1[numSegments-1]->data[i] = extra1.data->data[i];
+             segPad2[numSegments-1]->data[i] = extra2.data->data[i];
+            }
 
-           /* compute extra response function */
-         
+           /* compute extra response function */         
            gpsCalibTime.gpsSeconds = gpsStartTime.gpsSeconds + calibOffset;
            responseTemp1.epoch = responseTemp2.epoch = gpsCalibTime;
 
@@ -1271,8 +1304,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
            for (i = 0; i < filterLength ; i++)
             {
-	     resp1[numSegments]->data[i] = response1.data->data[i];
-             resp2[numSegments]->data[i] = response2.data->data[i];
+	     resp1[numSegments-1]->data[i] = response1.data->data[i];
+             resp2[numSegments-1]->data[i] = response2.data->data[i];
              } 
           
           
@@ -1521,7 +1554,7 @@ INT4 main(INT4 argc, CHAR *argv[])
             /* save */
 	   if (verbose_flag)
 	    {
-             fprintf(stdout, "interval %d\n", jobLoop);
+             fprintf(stdout, "job %d\n", jobLoop);
              fprintf(stdout, "varTheo = %e s\n", varTheo);
             }
 
@@ -1584,7 +1617,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	   y = (REAL8)(ccStat.value * pow(10.,ccStat.units.powerOfTen));
           
 	   if (verbose_flag)
-	    { fprintf(stdout, "segment %d: y = %e\n", segLoop, y);}
+	    { fprintf(stdout, "job %d: y = %e\n", jobLoop, y);}
 
 	   if (post_analysis_flag)
 	     {
@@ -1622,6 +1655,8 @@ INT4 main(INT4 argc, CHAR *argv[])
    LAL_CALL( LALDestroyRealFFTPlan(&status, &fftDataPlan), &status );
    LAL_CALL( LALDestroyVector(&status, &(interval1.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(interval2.data)), &status );
+   LAL_CALL( LALDestroyVector(&status, &(extra1.data)), &status );
+   LAL_CALL( LALDestroyVector(&status, &(extra2.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(segmentPad1.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(segmentPad2.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(segment1.data)), &status );
@@ -1636,6 +1671,7 @@ INT4 main(INT4 argc, CHAR *argv[])
    LAL_CALL( LALCDestroyVector(&status, &(responseTemp2.data)), &status );
    LAL_CALL( LALCDestroyVector(&status, &(response1.data)), &status );
    LAL_CALL( LALCDestroyVector(&status, &(response2.data)), &status );
+
    for (i = 0; i <numSegments; i++)
     {
       LAL_CALL( LALCDestroyVector(&status, &(resp1[i])), &status );
@@ -1645,6 +1681,8 @@ INT4 main(INT4 argc, CHAR *argv[])
       LAL_CALL( LALDestroyVector(&status, &(seg1[i])), &status );
       LAL_CALL( LALDestroyVector(&status, &(seg2[i])), &status );
     }
+   fprintf(stdout, "okay here\n");
+
    LAL_CALL( LALDestroyVector(&status, &(optFilter.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(calInvPsd1.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(calInvPsd2.data)), &status );
@@ -2150,7 +2188,7 @@ void readDataPair(LALStatus *status,
     CHECKSTATUSPTR (status);
 		
    }
-
+  
   /* resample */
   if (resampleRate != sampleRate)
    {
@@ -2166,9 +2204,7 @@ void readDataPair(LALStatus *status,
    CHECKSTATUSPTR (status);
    LALResampleREAL4TimeSeries(status->statusPtr, &dataStream2,&resampleParams);
    CHECKSTATUSPTR (status);
-		
-  }
-
+   }   
  /* build output */
  strncpy(streamPair->stream1->name,dataStream1.name, LALNameLength);
  strncpy(streamPair->stream2->name,dataStream2.name, LALNameLength);
