@@ -460,7 +460,7 @@ int main(int argc, char **argv)
                 {
                     /* this is a LAL function which compares events */
                     LAL_CALL( LALCompareSnglBurst(&stat, currentTrigger[0],
-                                tmpEvent, &accParams), &stat);
+                                tmpEvent, &accParams.match), &stat);
                 }
 
                 if (accParams.match )

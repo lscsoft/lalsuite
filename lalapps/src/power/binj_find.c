@@ -462,13 +462,13 @@ static void find_injections(LALStatus *stat, SimBurstTable *injection, SnglBurst
 
 		bestmatch = NULL;
 		for(event = triglist; event; event = event->next) {
-			SnglBurstAccuracy accParams;
+			int match;
 
 			/* if the injection's centre frequency and peak time
 			 * don't lie within the trigger's time-frequency
 			 * volume, move to next event */
-			LAL_CALL(LALCompareSimBurstAndSnglBurst(stat, injection, event, &accParams), stat);
-			if(!accParams.match)
+			LAL_CALL(LALCompareSimBurstAndSnglBurst(stat, injection, event, &match), stat);
+			if(!match)
 				continue;
 
 			/* compare this trigger to the best so far */

@@ -1308,31 +1308,6 @@ static SnglBurstTable **analyze_series(
 
 /*
  * ============================================================================
- *                              Event clustering
- * ============================================================================
- */
-
-static SnglBurstTable *cluster_events(LALStatus *stat, SnglBurstTable *event, int limit)
-{
-	int iterations = 0;
-	int events = 0;
-	int lastevents;
-
-	if(!event)
-		return(NULL);
-
-	do {
-		LAL_CALL(LALSortSnglBurst(stat, &event, XLALCompareSnglBurstByStartTimeAndLowFreq), stat);
-		lastevents = events;
-		LAL_CALL(LALClusterSnglBurstTable(stat, event, &events), stat);
-	} while((events != lastevents) && (++iterations < limit));
-
-	return(event);
-}
-
-
-/*
- * ============================================================================
  *                                   Output
  * ============================================================================
  */
@@ -1565,12 +1540,12 @@ int main( int argc, char *argv[])
 	}
 
 	/*
-	 * Cluster the events;  supply an arbitrary iteration limit of 500 on
-	 * the algorithm.
+	 * Cluster and sort the events.
 	 */
 
 	if(options.cluster)
-		burstEvent = cluster_events(&stat, burstEvent, 500);
+		LAL_CALL(LALClusterSnglBurstTable(&stat, burstEvent), &stat);
+	LAL_CALL(LALSortSnglBurst(&stat, &burstEvent, XLALCompareSnglBurstByStartTimeAndLowFreq), &stat);
 
 	/*
 	 * Output the results.
