@@ -25,7 +25,7 @@ LALFindChirpMaster (
 
   INT4                          myRank;
   UINT4                         i;
-  UINT4                         numCoarseExch = params->numCoarseExch;
+  UINT4                         numTmpltExch = params->numTmpltExch;
 
 
 
@@ -87,7 +87,7 @@ LALFindChirpMaster (
 
           /* count the number of templates to send */
           for ( tmpTmpltCurrent = params->tmpltCurrent, tmpNumTmplts = 0; 
-              tmpTmpltCurrent && tmpNumTmplts < numCoarseExch;
+              tmpTmpltCurrent && tmpNumTmplts < numTmpltExch;
               tmpTmpltCurrent = tmpTmpltCurrent->next )
           { 
             ++tmpNumTmplts;
@@ -124,8 +124,8 @@ LALFindChirpMaster (
         else /* no templates */
         {
           /* tell the slave that there are no templates */
-          numCoarseExch = 0;
-          LALExchangeUINT4( status->statusPtr, &numCoarseExch, thisExch );
+          numTmpltExch = 0;
+          LALExchangeUINT4( status->statusPtr, &numTmpltExch, thisExch );
           CHECKSTATUSPTR( status );
         }
 
@@ -144,6 +144,33 @@ LALFindChirpMaster (
         /* recieve a linked list of inspiral events from a slave */
         LALExchangeInspiralEventList( status->statusPtr, eventList, thisExch );
         CHECKSTATUSPTR( status );
+
+
+        /*
+         *
+         * this is the guts of the heirarchical search
+         *
+         */
+
+
+        /* ok... so we have an event list now what? */
+
+
+        /* work through the event list parsing for the template id */
+
+
+        /* for each id that we find, have we inserted that template? */
+
+        
+        /* if yes, skip it                                      */
+        /* if no, insert it in the list at the current template */
+        /* and increment the total number of templates          */
+
+
+        /* set the inserted flags */
+        
+
+        /* and carry on... */
 
         break;
 
