@@ -2463,10 +2463,6 @@ void parseOptions(INT4 argc, CHAR *argv[])
   free(channelOneTemp);
   free(channelTwoTemp);
 
-  printf("channelOne = %s\n", channelOne);
-  printf("channelTwo = %s\n", channelTwo);
-  exit(1);
-
   return;
 }
 
