@@ -1287,7 +1287,9 @@ LALFindChirpBCVSpinData (
   REAL4                 L = 0.0;
   REAL4                 M = 0.0;
 
-  REAL4                 Beta; /* Spin parameter */     
+  REAL4                 Beta; /* Spin parameter, initialise? */  
+  REAL4                 denominator;
+  REAL4                 denominator1;
 
   FindChirpSegment     *fcSeg;
   DataSegment          *dataSeg;
@@ -1314,10 +1316,24 @@ LALFindChirpBCVSpinData (
       K += 4.0 * amp[k] * amp[k] * wtilde[k].re * sin(Beta * amp[k] / ampBCV[k]);
       L += 4.0 * amp[k] * amp[k] * wtilde[k].re * sin(2 * Beta * amp[k] / ampBCV[k]);
       M += 4.0 * amp[k] * amp[k] * wtilde[k].re * cos(2 * Beta * amp[k] / ampBCV[k]);
-
     }
 
- 
+    /* 
+     * the calculation of the orthonormalised 
+     * amplitude vectors A1, A2, A3 (using Eirini's
+     * a1, b1, b2 for time being)
+     *
+     */   
+
+    denominator = I*M  +  0.5*pow(I,2) - pow(J,2);
+    denominator1 = sqrt ( 0.25 * pow(I,3) + M*(pow(J,2) - pow(K,2)) - 0.5*(pow(J,2) + pow(K,2)) - I*(pow(L,2) + pow(M,2)) + 2*J*K*L );
+
+    fcSeg->a1 = amp[k] * 1.0 / sqrt(I) ;
+    
+    fcSeg->b2 = amp[k]/sqrt(denominator) * (I * cos(Beta * amp[k]) -  J);
+    
+    fcSeg->b1 = amp[k]/denominator1 * ( sin(Beta * amp[k]) - (I*L - J*K)*cos(Beta * amp[k])/denominator + (J*L - K*M + 0.5*I*K)/denominator );
+
  DETATCHSTATUSPTR( status );
  RETURN( status );
 
