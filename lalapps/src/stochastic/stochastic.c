@@ -1539,12 +1539,6 @@ INT4 main(INT4 argc, CHAR *argv[])
              response2.data->data[i] = resp2[segMiddle]->data[i];
             }
           
-           /* print */
-           if ((test_flag)&&(interLoop==testInter)&&(MCLoop==testTrial))
-             {
-              LALCPrintFrequencySeries(&hBarTilde1, "response1.dat");
-	      LALCPrintFrequencySeries(&hBarTilde2, "response2.dat");
-             }
 
 	   LAL_CALL( LALStochasticCrossCorrelationSpectrumCal(&status, &ccSpectrum,
                      &ccIn, epochsMatch), &status );
