@@ -661,6 +661,7 @@ static REAL4FrequencySeries *optimal_filter(LALStatus *status,
   LAL_CALL(LALStochasticOptimalFilterNormalization(status, \
         &norm_output, &norm_input, &norm_params), status);
 
+  /* get theoretical sigma */
   *sigma = sqrt((REAL8)(segmentDuration * norm_variance.value * \
         pow(10, norm_variance.units.powerOfTen)));
 
