@@ -2813,6 +2813,7 @@ int main(int argc, char *argv[]){
   globargv=argv;
 
   /* boinc_init() needs to be run before any boinc_api functions are used */
+  boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED | BOINC_DIAG_REDIRECTSTDERR | BOINC_DIAG_TRACETOSTDERR);
   boinc_init();
 
 #if !NO_BOINC_GRAPHICS
