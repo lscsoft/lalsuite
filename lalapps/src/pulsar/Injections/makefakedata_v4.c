@@ -85,7 +85,8 @@ void ReadTimestamps (LALStatus* stat, LIGOTimeGPSVector **timestamps, const CHAR
 void InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[]);
 void AddGaussianNoise (LALStatus* status, REAL4TimeSeries *outSeries, REAL4TimeSeries *inSeries, REAL4 sigma);
 void GetOrbitalParams (LALStatus *stat, BinaryOrbitParams *orbit);
-void WriteMFDlog (LALStatus *stat, char *argv[]);
+void WriteMFDlog (LALStatus *stat, char *argv[], const char *logfile);
+
 
 void LoadTransferFunctionFromActuation(LALStatus *stat, COMPLEX8FrequencySeries **transfer, const CHAR *fname);
 
@@ -373,8 +374,10 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
   if (uvar_help) 	/* if help was requested, we're done */
     exit (0);
 
-  /* now low all user-input and code-versions */
-  TRY ( WriteMFDlog(stat->statusPtr, argv), stat);
+  /* if requested, log all user-input and code-versions */
+  if ( uvar_logfile ) {
+    TRY ( WriteMFDlog(stat->statusPtr, argv, uvar_logfile), stat);
+  }
 
   /* ---------- prepare vector of spindown parameters ---------- */
   {
@@ -690,9 +693,7 @@ InitUserVars (LALStatus *stat)
 
   uvar_TDDfile = NULL;
 
-#define DEFAULT_LOGFILE "makefakedata.log"
-  uvar_logfile = LALCalloc(1, strlen(DEFAULT_LOGFILE)+1);
-  strcpy (uvar_logfile, DEFAULT_LOGFILE);
+  uvar_logfile = NULL;
 
   /* ---------- register all our user-variable ---------- */
 
@@ -973,7 +974,7 @@ GetOrbitalParams (LALStatus *stat, BinaryOrbitParams *orbit)
  * <em>NOTE:</em> Currently this function only logs the user-input and code-versions.
  */
 void
-WriteMFDlog (LALStatus *stat, char *argv[])
+WriteMFDlog (LALStatus *stat, char *argv[], const char *logfile)
 {
     CHAR *logstr = NULL;
     CHAR command[512] = "";
@@ -981,6 +982,12 @@ WriteMFDlog (LALStatus *stat, char *argv[])
 
     INITSTATUS (stat, "WriteMFDlog", rcsid);
     ATTATCHSTATUSPTR (stat);
+
+    if ( logfile == NULL )
+      {
+	LALPrintError ("\nERROR: WriteMFDlog() called with NULL logfile-name\n\n");
+	ABORT( stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+      }
 
     if ( (fplog = fopen(uvar_logfile, "wb" )) == NULL) {
       LALPrintError ("\nFailed to open log-file '%f' for writing.\n\n", uvar_logfile);
