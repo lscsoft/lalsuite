@@ -71,7 +71,7 @@ void LALSHeapSort(LALStatus      *stat,
 	       REAL4Vector *vector);
 
 void LALSHeapIndex(LALStatus      *stat,
-		INT4Vector  *index,
+		INT4Vector  *indx,
 		REAL4Vector *vector);
 
 void LALSHeapRank(LALStatus      *stat,
@@ -82,7 +82,7 @@ void LALDHeapSort(LALStatus      *stat,
 	       REAL8Vector *vector);
 
 void LALDHeapIndex(LALStatus      *stat,
-		INT4Vector  *index,
+		INT4Vector  *indx,
 		REAL8Vector *vector);
 
 void LALDHeapRank(LALStatus      *stat,

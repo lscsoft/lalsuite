@@ -129,7 +129,7 @@ void LALWToZCOMPLEX8ZPGFilter(LALStatus            *stat,
   COMPLEX8Vector *gain=NULL; /* Vector of gain correction factors. */
   COMPLEX8Vector null;       /* A vector of zero length. */
   REAL4Vector *absGain=NULL; /* Magnitudes of gain corrections. */
-  INT4Vector *index=NULL;    /* Index array for sorting absGain. */
+  INT4Vector *idx=NULL;    /* Index array for sorting absGain. */
 
   INITSTATUS(stat,"LALWToZCOMPLEX8ZPGFilter",BILINEARTRANSFORMC);
   ATTATCHSTATUSPTR(stat);
@@ -314,20 +314,20 @@ void LALWToZCOMPLEX8ZPGFilter(LALStatus            *stat,
   TRY(LALSCreateVector(stat->statusPtr,&absGain,gain->length),stat);
   TRY(LALCVectorAbs(stat->statusPtr,absGain,gain),stat);
 
-  /* Now create an index vector that indexes the magnitudes from small
+  /* Now create an idx vector that indexes the magnitudes from small
      to large, and free the magnitude vector. */
-  TRY(LALI4CreateVector(stat->statusPtr,&index,gain->length),stat);
-  TRY(LALSHeapIndex(stat->statusPtr,index,absGain),stat);
+  TRY(LALI4CreateVector(stat->statusPtr,&idx,gain->length),stat);
+  TRY(LALSHeapIndex(stat->statusPtr,idx,absGain),stat);
   TRY(LALSDestroyVector(stat->statusPtr,&absGain),stat);
 
   /* Now multiply the gain alternately by small and large correction
      factors. */
   for(i=0,j=gain->length-1;i<j;i++,j--){
     /* Multiply the small and largest factors together. */
-    REAL4 ar=gain->data[index->data[i]].re;
-    REAL4 ai=gain->data[index->data[i]].im;
-    REAL4 br=gain->data[index->data[j]].re;
-    REAL4 bi=gain->data[index->data[j]].im;
+    REAL4 ar=gain->data[idx->data[i]].re;
+    REAL4 ai=gain->data[idx->data[i]].im;
+    REAL4 br=gain->data[idx->data[j]].re;
+    REAL4 bi=gain->data[idx->data[j]].im;
     REAL4 cr=ar*br-ai*bi;
     REAL4 ci=ar*bi+ai*br;
 
@@ -339,8 +339,8 @@ void LALWToZCOMPLEX8ZPGFilter(LALStatus            *stat,
   }
   if(i==j){
     /* Multiply by the remaining odd factor. */
-    REAL4 cr=gain->data[index->data[i]].re;
-    REAL4 ci=gain->data[index->data[i]].im;
+    REAL4 cr=gain->data[idx->data[i]].re;
+    REAL4 ci=gain->data[idx->data[i]].im;
     REAL4 br=filter->gain.re;
     REAL4 bi=filter->gain.im;
 
@@ -350,7 +350,7 @@ void LALWToZCOMPLEX8ZPGFilter(LALStatus            *stat,
 
   /* Free remaining temporary vectors, and exit. */
   TRY(LALCDestroyVector(stat->statusPtr,&gain),stat);
-  TRY(LALI4DestroyVector(stat->statusPtr,&index),stat);
+  TRY(LALI4DestroyVector(stat->statusPtr,&idx),stat);
   DETATCHSTATUSPTR(stat);
   RETURN(stat);
 }
@@ -372,7 +372,7 @@ void LALWToZCOMPLEX16ZPGFilter(LALStatus             *stat,
   COMPLEX16Vector *gain=NULL; /* Vector of gain correction factors. */
   COMPLEX16Vector null;       /* A vector of zero length. */
   REAL8Vector *absGain=NULL;  /* Magnitudes of gain corrections. */
-  INT4Vector *index=NULL;     /* Index array for sorting absGain. */
+  INT4Vector *idx=NULL;     /* Index array for sorting absGain. */
 
   INITSTATUS(stat,"LALWToZCOMPLEX16ZPGFilter",BILINEARTRANSFORMC);
   ATTATCHSTATUSPTR(stat);
@@ -557,18 +557,18 @@ void LALWToZCOMPLEX16ZPGFilter(LALStatus             *stat,
   TRY(LALDCreateVector(stat->statusPtr,&absGain,gain->length),stat);
   TRY(LALZVectorAbs(stat->statusPtr,absGain,gain),stat);
 
-  /* Now create an index vector that indexes the magnitudes from small
+  /* Now create an idx vector that indexes the magnitudes from small
      to large, and free the magnitude vector. */
-  TRY(LALI4CreateVector(stat->statusPtr,&index,gain->length),stat);
-  TRY(LALDHeapIndex(stat->statusPtr,index,absGain),stat);
+  TRY(LALI4CreateVector(stat->statusPtr,&idx,gain->length),stat);
+  TRY(LALDHeapIndex(stat->statusPtr,idx,absGain),stat);
   TRY(LALDDestroyVector(stat->statusPtr,&absGain),stat);
 
   /* Now multiply the gain alternately by small and large correction
      factors. */
   for(i=0,j=gain->length-1;i<j;i++,j--){
     /* Multiply by the small factor. */
-    REAL8 ar=gain->data[index->data[i]].re;
-    REAL8 ai=gain->data[index->data[i]].im;
+    REAL8 ar=gain->data[idx->data[i]].re;
+    REAL8 ai=gain->data[idx->data[i]].im;
     REAL8 gr=filter->gain.re;
     REAL8 gi=filter->gain.im;
 
@@ -576,8 +576,8 @@ void LALWToZCOMPLEX16ZPGFilter(LALStatus             *stat,
     filter->gain.im=gr*ai+gi*ar;
 
     /* Multiply by the large factor. */
-    ar=gain->data[index->data[j]].re;
-    ai=gain->data[index->data[j]].im;
+    ar=gain->data[idx->data[j]].re;
+    ai=gain->data[idx->data[j]].im;
     gr=filter->gain.re;
     gi=filter->gain.im;
 
@@ -586,8 +586,8 @@ void LALWToZCOMPLEX16ZPGFilter(LALStatus             *stat,
   }
   if(i==j){
     /* Multiply by the remaining odd factor. */
-    REAL8 ar=gain->data[index->data[i]].re;
-    REAL8 ai=gain->data[index->data[i]].im;
+    REAL8 ar=gain->data[idx->data[i]].re;
+    REAL8 ai=gain->data[idx->data[i]].im;
     REAL8 gr=filter->gain.re;
     REAL8 gi=filter->gain.im;
 
@@ -597,7 +597,7 @@ void LALWToZCOMPLEX16ZPGFilter(LALStatus             *stat,
 
   /* Free remaining temporary vectors, and exit. */
   TRY(LALZDestroyVector(stat->statusPtr,&gain),stat);
-  TRY(LALI4DestroyVector(stat->statusPtr,&index),stat);
+  TRY(LALI4DestroyVector(stat->statusPtr,&idx),stat);
   DETATCHSTATUSPTR(stat);
   RETURN(stat);
 }
