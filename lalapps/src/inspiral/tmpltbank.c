@@ -489,7 +489,8 @@ int main ( int argc, char *argv[] )
   bankIn.space         = space;
   bankIn.etamin        = bankIn.mMin * ( bankIn.MMax - bankIn.mMin) /
     ( bankIn.MMax * bankIn.MMax );
-
+  bankIn.LowGM  = 3.;
+  bankIn.HighGM = 6.;
   /* generate the template bank */
   if ( vrbflg )
   {
