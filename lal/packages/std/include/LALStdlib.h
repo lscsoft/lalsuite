@@ -1,5 +1,5 @@
 /************************************ <lalVerbatim file="LALStdlibHV">
-Author: Finn, L. S.
+Author: J. D. E. Creighton, T. D. Creighton
 $Id$
 ************************************* </lalVerbatim> */
 
