@@ -645,12 +645,12 @@ cleanexit:
 
   if ( userTag )
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d", ifoName[0],
+    LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", ifoName[0],
         userTag, startCoincidence, endCoincidence - startCoincidence );
   }
   else
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-INCA-%d-%d", ifoName[0],
+    LALSnprintf( fileName, FILENAME_MAX, "%s-INCA-%d-%d.xml", ifoName[0],
         startCoincidence, endCoincidence - startCoincidence );
   }
 
@@ -692,12 +692,12 @@ cleanexit:
   /* write secondary ifo events to another file */
   if ( userTag )
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d", ifoName[1],
+    LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", ifoName[1],
         userTag, startCoincidence, endCoincidence - startCoincidence );
   }
   else
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-INCA-%d-%d", ifoName[1],
+    LALSnprintf( fileName, FILENAME_MAX, "%s-INCA-%d-%d.xml", ifoName[1],
         startCoincidence, endCoincidence - startCoincidence );
   }
 
