@@ -8,7 +8,7 @@ $Id$
 \subsection{Program \texttt{BasicInjectTest.c}}
 \label{ss:BasicInjectTest.c}
 
-Injects an inspiral signal into detector noise.
+Injects inspiral signals into detector noise.
 
 \subsubsection*{Usage}
 \begin{verbatim}
@@ -166,7 +166,7 @@ int lalDebugLevel = 0;
 
 /* Global constants. */
 #define MSGLEN (256)    /* maximum length of warning/info messages */
-#define FSTART (20.0)   /* initial frequency of waveform */
+#define FSTART (30.0)   /* initial frequency of waveform */
 #define FSTOP  (2000.0) /* termination frequency of waveform */
 #define DELTAT (0.01)   /* sampling interval of amplitude and phase */
 
