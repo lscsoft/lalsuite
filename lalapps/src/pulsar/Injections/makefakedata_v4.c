@@ -440,10 +440,10 @@ InitMakefakedata (LALStatus *stat,
 	ABORT (stat, MAKEFAKEDATAC_ESUB, MAKEFAKEDATAC_MSGESUB);
       }
       strcpy (fpat, uvar_noiseDir);
-      strcat (fpat, "/SFT");		/* use search-pattern of makefakedata_v2 */
+      strcat (fpat, "/*SFT*");		/* use search-pattern of makefakedata_v2 */
       fmin = cfg->fmin_eff;
       fmax = fmin + uvar_Band;
-      TRY ( LALReadSFTfiles (stat->statusPtr, &(cfg->noiseSFTs), fmin, fmax, fpat), stat);
+      TRY ( LALReadSFTfiles (stat->statusPtr, &(cfg->noiseSFTs), fmin, fmax, 0, fpat), stat);
       LALFree (fpat);
     } /* if uvar_noisedir */
 

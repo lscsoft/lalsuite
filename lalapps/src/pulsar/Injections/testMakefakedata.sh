@@ -69,7 +69,7 @@ $oldcode $oldCL &> /dev/null
 echo "Running new code $newcode:"
 $newcode $newCL
 echo "comparison:"
-../compareSFTs -1 ./SFTtest_v2 -2 ./SFTtest_v4
+../compareSFTs -1 "./SFTtest_v2*" -2 "./SFTtest_v4*"
 
 
 cd ..

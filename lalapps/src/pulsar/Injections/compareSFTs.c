@@ -85,8 +85,8 @@ main(int argc, char *argv[])
     exit (0);
 
   /* now read in the two complete sft-vectors */
-  LAL_CALL (LALReadSFTfiles (&status, &SFTs1, 0, 0, uvar_sftBname1), &status);
-  LAL_CALL (LALReadSFTfiles (&status, &SFTs2, 0, 0, uvar_sftBname2), &status);
+  LAL_CALL (LALReadSFTfiles (&status, &SFTs1, 0, 0, 0, uvar_sftBname1), &status);
+  LAL_CALL (LALReadSFTfiles (&status, &SFTs2, 0, 0, 0, uvar_sftBname2), &status);
 
   if (SFTs1->length != SFTs2->length) {
     LALPrintError ("Warning: number of SFTs differ for SFTbname1 and SFTbname2!\n");
