@@ -1237,11 +1237,15 @@ INT4 main(INT4 argc, CHAR *argv[])
 	LAL_CALL( LALDestroyVector(&status, &(overlap.data)), &status );
 	LAL_CALL( LALDestroyVector(&status, &(omegaGW.data)), &status );
 	LAL_CALL( LALDestroyVector(&status, &(dataWindow.data)), &status );
-	/*
-	LAL_CALL( LALDestroyVector(&status, &(mask.data)), &status );
-	LAL_CALL( LALDestroyVector(&status, &maskTemp), &status );
-	LAL_CALL( LALDestroyVector(&status, &hannWindow), &status );
-	*/
+	if (applyMask)
+	{
+		LAL_CALL( LALDestroyVector(&status, &(mask.data)), &status );
+		LAL_CALL( LALDestroyVector(&status, &maskTemp), &status );
+	}
+	if (hannDuration != 0)
+	{
+		LAL_CALL( LALDestroyVector(&status, &hannWindow), &status );
+	}
 	LAL_CALL( LALCDestroyVector(&status, &(hBarTildeOne.data)), &status );
 	LAL_CALL( LALCDestroyVector(&status, &(hBarTildeTwo.data)), &status );
 
