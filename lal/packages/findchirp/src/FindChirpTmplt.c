@@ -13,6 +13,26 @@
 
 NRCSID( FINDCHIRPTMPLTC, "$Id$" );
 
+
+void
+LALFindChirpCreateInspiralBank (
+    LALStatus                  *status,
+    InspiralCoarseBankIn       *bankIn,
+    InspiralTemplate          **head
+    )
+{
+  INITSTATUS( status, "LALFindChirpCreateInspiralBank", FINDCHIRPTMPLTC );
+  ATTATCHSTATUSPTR( status );
+
+
+
+
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
+
+
 void
 LALFindChirpDestroyInspiralBank (
     LALStatus           *status,
@@ -21,7 +41,7 @@ LALFindChirpDestroyInspiralBank (
 {
   InspiralTemplate    *current;
 
-  INITSTATUS( status, "DestroyInspiralBank", FINDCHIRPTMPLTC );
+  INITSTATUS( status, "LALFindChirpDestroyInspiralBank", FINDCHIRPTMPLTC );
   ATTATCHSTATUSPTR( status );
 
   ASSERT( *head, status, FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
