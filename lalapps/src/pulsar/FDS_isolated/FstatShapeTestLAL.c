@@ -61,32 +61,38 @@ RCSID( "$Id$" );
 /*----------------------------------------------------------------------------------*/
 
 
-/* structure typedef */
+/*----------------------------------------------------------------------------------
+ Structure data type
+----------------------------------------------------------------------------------*/
+/* control parameters  */
 typedef struct tagFSTControlParameters {
-  INT4  nData; /* Number of bins where the veto signal and observed data overlapped. */
-  INT4  indexOffset;/* Starting frequencies bins difference between the observed data file and the veto signal file. */
-  INT4  indexStepO; /* Distance (in the unit of dFreq) of two neibouring frequency bins of the observed data file */
-  INT4  indexStepT; /* Distance (in the unit of dFreq) of two neibouring frequency bins of veto signal file */
-  AMCoeffs amc;     /* a(t), b(t), A coefficient of JKS = (a(t)||a(t)), B, C, and D. */
+  INT4  nData;       /* Number of bins where the veto signal and observed data overlapped. */
+  INT4  indexOffset; /* Starting frequencies bins difference between the observed data file and the veto signal file. */
+  INT4  indexStepO;  /* Distance (in the unit of dFreq) of two neibouring frequency bins of the observed data file */
+  INT4  indexStepT;  /* Distance (in the unit of dFreq) of two neibouring frequency bins of veto signal file */
+  AMCoeffs amc;      /* a(t), b(t), A coefficient of JKS = (a(t)||a(t)), B, C, and D. */
 } FSTControlParameters; 
 
+/* Files headers information */
 typedef struct tagFSTClustInfo {
-  INT4  nData; /* number of the data points in the cluster */
+  INT4  nData;     /* number of the data points in the cluster */
   REAL8 startFreq; /* starting frequency of the cluster */
   REAL8 deltaFreq; /* frequency resolution */
-  REAL8 fmax;  /* Frequency at which the maximum of F stat occurs. */
-  REAL8 FSmax; /* Maximum of the F Statistic in the cluster. */
-  AMCoeffs amc; /* a(t), b(t), A coefficient of JKS = (a(t)||a(t)), B, C, and D. */
-} FSTClustInfo; /* Files headers information */
+  REAL8 fmax;      /* Frequency at which the maximum of F stat occurs. */
+  REAL8 FSmax;     /* Maximum of the F Statistic in the cluster. */
+  AMCoeffs amc;    /* a(t), b(t), A coefficient of JKS = (a(t)||a(t)), B, C, and D. */
+} FSTClustInfo;    
 
+/* User input  */
 typedef struct tagFSTUserInput {
-  BOOLEAN computeProbFlag; /* compute probability or not */
-  const CHAR *dbglvl; /* lalDebugLevel */
-  REAL8 sigLevel; /* significance level for hypothesis test */
+  BOOLEAN computeProbFlag;  /* compute probability or not */
+  const CHAR *dbglvl;       /* lalDebugLevel */
+  REAL8 sigLevel;           /* significance level for hypothesis test */
   const CHAR *obsvdatafile; /* observed data filename */
   const CHAR *testdatafile; /* veto signal filename */
-} FSTUserInput; /* Variables user can specify. */
+} FSTUserInput;             /* Variables user can specify. */
 
+/* Frequency and Fa, Fb  */
 typedef struct tagFSTFstatPair {
   REAL8Vector *freqObsv; /* Frequency vector in the observed data file */
   REAL8Vector *freqTest; /* Frequency vector in the test data (= veto signal) file */
@@ -94,37 +100,55 @@ typedef struct tagFSTFstatPair {
   LALFstat *FaFbTest;    /* F, Fa, Fb of the test data file */
 } FSTFstatPair;
 
+/* pair of observed signal and veto signal  */
 typedef struct tagFSTClustInfoPair {
   FSTClustInfo ObsvCI;
   FSTClustInfo TestCI;
 } FSTClustInfoPair;
 
-
-
+/* resulting veto statistic  */
 typedef struct tagFSTFVetoStat {
   REAL8 vetoStatistic; /* veto statistic. This follows chi-square distribution in the perfectly matched case. */
   REAL8 dof;           /* degrees of freedom */
 } FSTFVetoStat;
 
-  /* function prototype */ 
-  void HandleComArg( LALStatus *, FSTUserInput *, INT4 argc, CHAR ** argv );
-  void ReadClusterInfo( LALStatus *, FSTClustInfoPair *, FSTUserInput * );
-  void ReadData( LALStatus *, FSTFstatPair *, FSTUserInput * );
-  void ComputeVetoStatistic( LALStatus *, 
-                             FSTFVetoStat *, /* output veto statistic and degrees of freedom. */ 
-			     FSTFstatPair *FaFbPair, /* input Fa Fb of observed data and veto signal. */
-			     FSTClustInfoPair *clustInfoPair /* input cluster information of observed data and veto signal. */);
-void LALChi2CDFP( LALStatus *, REAL8 *chi2cdfp, const REAL8 *data, const REAL8 *dof );
-void showHelp( LALStatus *status, FSTUserInput *cla );
 
-/* function prototype */ 
+/*----------------------------------------------------------------------------------
+ function prototype
+----------------------------------------------------------------------------------*/
+void showHelp( LALStatus *status, FSTUserInput *cla );
+void HandleComArg( LALStatus *, FSTUserInput *, INT4 argc, CHAR ** argv );
+
+/* Read file header information into FSTClusterInfoPair */
+void ReadClusterInfo( LALStatus *, FSTClustInfoPair *, FSTUserInput * );
+/* Read frequency, Fa Fb from files and store them in FSTFstatPair */
+void ReadData( LALStatus *, FSTFstatPair *, FSTUserInput * );
+/* Compute Veto statistic */
+void ComputeVetoStatistic( LALStatus *, 
+			   FSTFVetoStat *,                 /* output veto statistic and degrees of freedom. */ 
+			   FSTFstatPair *FaFbPair,         /* input Fa Fb of observed data and veto signal. */
+			   FSTClustInfoPair *clustInfoPair /* input cluster information of observed data and veto signal. */);
+
+/* Helper function: find local maxima of cluster */
 void SummitFinder( LALStatus *, REAL8Vector *output, FSTFstatPair *FaFbPair, REAL8 *threshold );
+/* Helper function: find offset between some local maxima of observed data and some local maxima of veto (test) signal */
 void ShiftData( LALStatus *, FSTClustInfo *test,  REAL8 *shift );
+/* Helper function: Reform observed and veto (test) signal to compare them */
 void RearrangeData( LALStatus *, FSTControlParameters *, FSTClustInfoPair * );
+/* Core routine: compute veto statistic */ 
 void ComputeVetoStatisticCore( LALStatus *, REAL8 *vetoStat, FSTFstatPair *FaFbPair, FSTControlParameters * );
+/* C99 round replacement */ 
 REAL8 myRound(REAL8);
+
+/* Compute chi-square P probability density */ 
+void LALChi2CDFP( LALStatus *, REAL8 *chi2cdfp, const REAL8 *data, const REAL8 *dof );
+/* Compute incomplete gamma function */ 
 void LALGammaInc( LALStatus *status, REAL8 *output, const REAL8 *input, const REAL8 *param );
+/* Compute natural logarithm of gamma function */ 
 void LALGammaLn( LALStatus *status, REAL8 *out, const REAL8 *in );
+
+/* defined in lalapps.h */
+extern INT4 vrbflg;
 
 /*-----------------------------------------------------------------*/
 /*                                                                 */
@@ -136,7 +160,7 @@ INT4 main(INT4 argc, CHAR ** argv)
 
   REAL8 probability = 0.0;  /* Confidence level = Chi-Square cumulative probability from 0 to data */
   BOOLEAN rejection = 0;    /* Reject the  hypothesis if 1. */
-  FSTUserInput cla; /* user input: command line arguments */
+  FSTUserInput cla;         /* user input: command line arguments */
 
   FSTClustInfoPair clustInfoPair;
   FSTFstatPair *FaFbPair;
@@ -146,6 +170,9 @@ INT4 main(INT4 argc, CHAR ** argv)
   /* exits with the returned status code if there is an error. */
   lal_errhandler = LAL_ERR_EXIT; 
   /* lal_errhandler = LAL_ERR_RTRN;  */
+  /* This make the code print out the error infos. See lalapps.h and .c */
+  vrbflg = 1;
+
 
 
   LAL_CALL( HandleComArg( &status, &cla, argc, argv ), &status );
@@ -252,7 +279,7 @@ INT4 main(INT4 argc, CHAR ** argv)
       rejection = 1; /* We reject the null hypothesis */
     }
     /* NOTE: The code calls chi2cdfp() that is an integral from 0 to x of 
-     *       chi2pdf(). Therefore, the probability here is "confidence". 
+     *       chi2pdf(). Therefore, the probability by chi2pdf() is "confidence". 
      *       The "significance" is "1 - confidence". 
      */
     fprintf(stdout, "%8.5e %d", 1.0 - probability, rejection);
@@ -337,25 +364,32 @@ showHelp( LALStatus *status,
 {
   INITSTATUS( status, "showHelp", rcsid );
 
-  fprintf(stderr,"Usage: FstatShapeTest [-hC] [-o <>][-t <>][-v <>][-l <>]\n");
+  fprintf(stderr,"Usage: FstatShapeTest [-hC] [-otls <>]\n");
   fprintf(stderr,
-	  "-o: <CHAR STRING: filename> File <filename> contains the observed data to be vetoed: [%s]\n",cla->obsvdatafile);
+	  "\t -o: <CHAR STRING: filename> File <filename> contains the observed data to be vetoed: [%s]\n",cla->obsvdatafile);
   fprintf(stderr,
-	  "-t: <CHAR STRING: filename> File <filename> contains the veto signal: [%s]\n",cla->testdatafile);
-  fprintf(stderr,"-l <CHAR:>: lalDebugLevel. [0]\n");
-  fprintf(stderr,"-C : Compute Probability assuming chi square ditributoin. [False]\n");
-  fprintf(stderr,"-h : Show this help\n");
+	  "\t -t: <CHAR STRING: filename> File <filename> contains the veto signal: [%s]\n",cla->testdatafile);
+  fprintf(stderr,"\t -l <CHAR:>: lalDebugLevel. [0]\n");
+  fprintf(stderr,"\t -s <REAL8:>: significance level. [0.01]\n");
+  fprintf(stderr,"\t -C : Compute Probability assuming chi square distribution. [False]\n");
+  fprintf(stderr,"\t -h : Show this help\n");
   fprintf(stderr,"Example: ./FstatShapeTest -o <ObservedDataFile> -t <VetoDataFile>\n");
   fprintf(stderr,"Output from left to right:\n");
-  fprintf(stderr,"(1) Frequency at which the maximum of F occurs\n");
-  fprintf(stderr,"(2) Maximum of F in the cluster\n");
-  fprintf(stderr,"(3) Degrees of freedom\n");
-  fprintf(stderr,"(4) Veto statistic\n");
-  fprintf(stderr,"[(5) Chi-square Q probability (\"Significance\" of the data)]\n");
-  fprintf(stderr,"[(6) If 0, the observed signal is consistent with the veto signal, \n");
-  fprintf(stderr,"with the significance level = %f.]\n", cla->sigLevel);
+  fprintf(stderr,"\t (1) Frequency at which the maximum of F occurs\n");
+  fprintf(stderr,"\t (2) Maximum of F in the cluster\n");
+  fprintf(stderr,"\t (3) Degrees of freedom\n");
+  fprintf(stderr,"\t (4) Veto statistic\n");
+  fprintf(stderr,"\t If \"-C\" is used\n");
+  fprintf(stderr,"\t [(5) Chi-square Q probability (\"Significance\" of the data)]\n");
+  fprintf(stderr,"\t [(6) If 0, the observed signal is consistent with the veto signal, \n");
+  fprintf(stderr,"\t with the significance level = %g.]\n", cla->sigLevel);
+  fprintf(stderr,"Expected File Format:\n");
+  fprintf(stderr,"\t (Number of points in cluster)\n");
+  fprintf(stderr,"\t (Freqnecy where maximum of F occurs) (Maximum of F)\n");
+  fprintf(stderr,"\t (Leftmost frequency in cluster) (Frequency resolution)\n");
+  fprintf(stderr,"\t (JKS A) (JKS B) (JKS C)\n");
+  fprintf(stderr,"\t (Frequency) (Re[Fa]) (Im[Fa]) (Re[Fb]) (Im[Fb])\n");
   exit(0);
-
   /* should not be here */
   RETURN( status );
 } /* void showHelp() */
@@ -365,7 +399,7 @@ showHelp( LALStatus *status,
 
 
 /*-----------------------------------------------------------------*/
-/*                                                                 */
+/* Read file header information into FSTClusterInfoPair            */
 /*-----------------------------------------------------------------*/
 void 
 ReadClusterInfo( LALStatus *status, 
@@ -383,6 +417,10 @@ ReadClusterInfo( LALStatus *status,
   REAL8 Fmaxo,Fmaxt;
   const REAL8 errorTol = LAL_REAL4_EPS;
   FILE *fpobsv, *fptest;
+
+
+  CHAR buff[1024];
+  CHAR *ptr;
 
   INITSTATUS( status, "ReadClusterInfo", rcsid );
   ASSERT ( cla, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
@@ -406,20 +444,24 @@ ReadClusterInfo( LALStatus *status,
     fprintf(stderr,"File open error in FstatShapeTest: %s\n",cla->obsvdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
-  if(fscanf(fpobsv,"%d",&nObsv)==EOF) {    
-    fprintf(stderr,"File format error in FstatShapeTest: %s\n",cla->obsvdatafile);
+  ptr = fgets(buff,sizeof(buff),fpobsv);
+  if(sscanf(ptr,"%d",&nObsv) != 1) {    
+    fprintf(stderr,"File format error in FstatShapeTest: %s, line 1 \n",cla->obsvdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
-  if(fscanf(fpobsv,"%lf %lf",&fmaxObsv,&Fmaxo)==EOF) {    
-    fprintf(stderr,"File format error in FstatShapeTest: %s\n",cla->obsvdatafile);
+  ptr = fgets(buff,sizeof(buff),fpobsv);
+  if(sscanf(ptr,"%lf %lf",&fmaxObsv,&Fmaxo) != 2) {    
+    fprintf(stderr,"File format error in FstatShapeTest: %s, line 2\n",cla->obsvdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
-  if(fscanf(fpobsv,"%lf %lf",&startFreqO,&deltaFreqO)==EOF) {    
-    fprintf(stderr,"File format error in FstatShapeTest: %s\n",cla->obsvdatafile);
+  ptr = fgets(buff,sizeof(buff),fpobsv);
+  if(sscanf(ptr,"%lf %lf",&startFreqO,&deltaFreqO) != 2) {    
+    fprintf(stderr,"File format error in FstatShapeTest: %s, line 3\n",cla->obsvdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
-  if(fscanf(fpobsv,"%lf %lf %lf",&Aobsv,&Bobsv,&Cobsv)==EOF) {    
-    fprintf(stderr,"File format error in FstatShapeTest: %s\n",cla->obsvdatafile);
+  ptr = fgets(buff,sizeof(buff),fpobsv);
+  if(sscanf(ptr,"%lf %lf %lf",&Aobsv,&Bobsv,&Cobsv) != 3) {    
+    fprintf(stderr,"File format error in FstatShapeTest: %s, line 4\n",cla->obsvdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
   fclose(fpobsv);
@@ -431,20 +473,24 @@ ReadClusterInfo( LALStatus *status,
     fprintf(stderr,"File open error in FstatShapeTest: %s\n",cla->testdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
-  if(fscanf(fptest,"%d",&nTest)==EOF) {    
-    fprintf(stderr,"File format error in FstatShapeTest: %s\n",cla->testdatafile);
+  ptr = fgets(buff,sizeof(buff),fptest);
+  if(sscanf(ptr,"%d",&nTest) != 1) {    
+    fprintf(stderr,"File format error in FstatShapeTest: %s, line 1\n",cla->testdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
-  if(fscanf(fptest,"%lf %lf",&fmaxTest,&Fmaxt)==EOF) {    
-    fprintf(stderr,"File format error in FstatShapeTest: %s\n",cla->obsvdatafile);
+  ptr = fgets(buff,sizeof(buff),fptest);
+  if(sscanf(ptr,"%lf %lf",&fmaxTest,&Fmaxt) != 2) {    
+    fprintf(stderr,"File format error in FstatShapeTest: %s, line 2\n",cla->obsvdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
-  if(fscanf(fptest,"%lf %lf",&startFreqT,&deltaFreqT)==EOF) {    
-    fprintf(stderr,"File format error in FstatShapeTest: %s\n",cla->obsvdatafile);
+  ptr = fgets(buff,sizeof(buff),fptest);
+  if(sscanf(ptr,"%lf %lf",&startFreqT,&deltaFreqT) != 2) {    
+    fprintf(stderr,"File format error in FstatShapeTest: %s, line 3\n",cla->obsvdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
-  if(fscanf(fptest,"%lf %lf %lf",&Atest,&Btest,&Ctest)==EOF) {    
-    fprintf(stderr,"File format error in FstatShapeTest: %s\n",cla->obsvdatafile);
+  ptr = fgets(buff,sizeof(buff),fptest);
+  if(sscanf(ptr,"%lf %lf %lf",&Atest,&Btest,&Ctest) != 3) {    
+    fprintf(stderr,"File format error in FstatShapeTest: %s, line 4\n",cla->obsvdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
   fclose(fptest);
@@ -469,12 +515,12 @@ ReadClusterInfo( LALStatus *status,
   }
   if( fabs(Bobsv-Btest) > Bobsv * errorTol) {
     fprintf(stderr,
-	    "Error: A of data is different from B of test.\n");
+	    "Error: B of data is different from B of test.\n");
     ABORT( status, FSTATSHAPETESTC_EODDDATA, FSTATSHAPETESTC_MSGEODDDATA );
   }
   if(fabs(Cobsv-Ctest)>fabs(Cobsv)*errorTol) { 
     fprintf(stderr,
-	    "Error: A of data is different from C of test.\n");
+	    "Error: C of data is different from C of test.\n");
     ABORT( status, FSTATSHAPETESTC_EODDDATA, FSTATSHAPETESTC_MSGEODDDATA );
   }
 
@@ -524,7 +570,7 @@ ReadClusterInfo( LALStatus *status,
 
 
 /*-----------------------------------------------------------------*/
-/*                                                                 */
+/* Compute Veto statistic                                          */
 /*-----------------------------------------------------------------*/
 void 
 ComputeVetoStatistic( LALStatus *status, 
@@ -654,7 +700,8 @@ ComputeVetoStatistic( LALStatus *status,
 
 
 /*-----------------------------------------------------------------*/
-                                                                    
+/* Helper function for ComputeVetoStatistic():                     */
+/*   Find local maxima of cluster                                  */                                                                    
 /*-----------------------------------------------------------------*/
 void 
 SummitFinder( LALStatus *status, 
@@ -689,7 +736,9 @@ SummitFinder( LALStatus *status,
 
 
 /*-----------------------------------------------------------------*/
-                                                                    
+/* Helper function for ComputeVetoStatistic()                      */
+/* find offset between some local maxima of observed data and some */
+/* local maxima of veto (test) signal                              */   
 /*-----------------------------------------------------------------*/
 void 
 ShiftData( LALStatus *status, 
@@ -722,7 +771,9 @@ ShiftData( LALStatus *status,
 
 
 /*-----------------------------------------------------------------*/
-  
+/* Helper function for ComputeVetoStatistic():                     */  
+/* Reform observed and veto (test) signal to compare them.         */
+/* Adjust the ndata, starting frequencies, and so on.              */
 /*-----------------------------------------------------------------*/
 void 
 RearrangeData( LALStatus *status, 
@@ -828,7 +879,7 @@ RearrangeData( LALStatus *status,
 } /* RearrangeData() */
 
 /*-----------------------------------------------------------------
- * Replacement for C99 round. 
+ * Replacement for C99 round(). 
  *-----------------------------------------------------------------*/
 REAL8 myRound( REAL8 x )
 {
@@ -849,18 +900,18 @@ REAL8 myRound( REAL8 x )
 
 
 /*-----------------------------------------------------------------*/
-/*                                                                 */
+/* Read frequency, Fa Fb from files and store them in FSTFstatPair */
 /*-----------------------------------------------------------------*/
-
 void 
 ReadData( LALStatus *status, 
 	  FSTFstatPair *FaFbPair, /* output. Memory must be pre-allocated.  */
 	  FSTUserInput *cla       /* input = filenames */)
 {
   UINT4 irec;
-  CHAR buff[500];
+  CHAR buff[1024];
   const UINT4 Nheadlines=4;
   INT4 count;
+  CHAR *ptr;
 
   FILE *fpobsv,*fptest;
 
@@ -887,7 +938,8 @@ ReadData( LALStatus *status,
 
   /* data input begin */
   for( irec = 0; irec < FaFbPair->freqObsv->length; irec++ ) {
-    count = fscanf(fpobsv,"%lf %lf %lf %lf %lf %lf",
+    ptr = fgets(buff,sizeof(buff),fpobsv);
+    count = sscanf(ptr,"%lf %lf %lf %lf %lf %lf",
 		   &(FaFbPair->freqObsv->data[irec]),
 		   &(FaFbPair->FaFbObsv->Fa[irec].re),
 		   &(FaFbPair->FaFbObsv->Fa[irec].im),
@@ -895,16 +947,20 @@ ReadData( LALStatus *status,
 		   &(FaFbPair->FaFbObsv->Fb[irec].im),
 		   &(FaFbPair->FaFbObsv->F[irec])
 		   );
-    if ( count == EOF ) break;
+    if ( (count != 6) || (count == EOF) ) break;
   }
+
   if( irec != FaFbPair->freqObsv->length ) {
-    fprintf(stderr,"Data read error\n");
+    fprintf(stderr,"Data read error: The length of the data is not consistent with that of the readable observed data file. \n");
+    if( count != 6 ) 
+      fprintf(stderr,"Error at line %u in the observed data file\n",irec + Nheadlines + 1);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
 
 
   for( irec = 0; irec < FaFbPair->freqTest->length; irec++ ) {
-    count = fscanf(fptest,"%lf %lf %lf %lf %lf %lf",
+    ptr = fgets(buff,sizeof(buff),fptest);
+    count = sscanf(ptr,"%lf %lf %lf %lf %lf %lf",
 		   &(FaFbPair->freqTest->data[irec]),
 		   &(FaFbPair->FaFbTest->Fa[irec].re),
 		   &(FaFbPair->FaFbTest->Fa[irec].im),
@@ -912,10 +968,13 @@ ReadData( LALStatus *status,
 		   &(FaFbPair->FaFbTest->Fb[irec].im),
 		   &(FaFbPair->FaFbTest->F[irec])
 		   );
-    if ( count == EOF ) break;
+    if ( (count != 6) || (count == EOF) ) break;
   }
   if( irec != FaFbPair->freqTest->length ) {
-    fprintf(stderr,"Data read error\n");
+    fprintf(stderr,"Data read error: The length of the data is not consistent with that of the readable test data. \n");
+    if( count != 6 ) 
+      fprintf(stderr,"Error at line %u in the veto signal file\n",
+	      irec + Nheadlines + 1);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
 
@@ -926,7 +985,8 @@ ReadData( LALStatus *status,
 } /* void ReadData()  */
 
 /*-----------------------------------------------------------------*/
-/*                                                                 */
+/* ComputeVetoStatistic() core routine:                            */
+/* Compute veto statistic                                          */ 
 /*-----------------------------------------------------------------*/
 void 
 ComputeVetoStatisticCore( LALStatus *status, 
