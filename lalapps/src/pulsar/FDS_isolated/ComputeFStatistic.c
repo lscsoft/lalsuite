@@ -173,7 +173,7 @@ int main(int argc,char *argv[])
   DopplerScanInit scanInit;
   LIGOTimeGPS t0, t1;
   REAL8 duration;
-  FILE *fpOut;
+  FILE *fpOut=NULL;
   LALStatus status = blank_status;	/* initialize status */
 
   lalDebugLevel = 0;  
