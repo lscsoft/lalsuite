@@ -32,28 +32,6 @@ NRCSID (EPDATAH, "$Id$");
 #define EPDATA_MSGENUMZ "Invalid number of points in segment"
 /******** </lalErrTable> ********/
 
-typedef struct
-tagEPDataSegment
-{
-  REAL4TimeSeries              *data;
-  REAL4FrequencySeries         *spec;
-  COMPLEX8FrequencySeries      *resp;
-  INT4                          endOfData;
-  INT4                          newLock;
-  INT4                          newCal;
-  INT4                          number;
-}
-EPDataSegment;
-
-
-typedef struct
-tagEPDataSegmentVector
-{
-  UINT4                         length;
-  EPDataSegment                  *data;
-}
-EPDataSegmentVector;
-
 void
 LALCreateEPDataSegmentVector (
     LALStatus                  *status,

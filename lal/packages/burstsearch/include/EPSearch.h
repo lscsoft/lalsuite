@@ -43,11 +43,41 @@ NRCSID (EPSEARCHH, "$Id$");
 /******** </lalErrTable> ********/
 
 typedef struct
+tagEPDataSegment
+{
+  REAL4TimeSeries              *data;
+  REAL4FrequencySeries         *spec;
+  COMPLEX8FrequencySeries      *resp;
+  INT4                          endOfData;
+  INT4                          newLock;
+  INT4                          newCal;
+  INT4                          number;
+}
+EPDataSegment;
+
+typedef struct
+tagEPDataSegmentVector
+{
+  UINT4                         length;
+  EPDataSegment                  *data;
+}
+EPDataSegmentVector;
+
+/* enum added to control search method 7/18/02 MSW */
+typedef enum
+{
+  useMean,
+  useMedian,
+  useUnity
+} EPMethod;
+
+typedef struct
 tagEPInitParams
 {
   UINT4                         numPoints;
   UINT4                         numSegments;
   UINT4                         segDutyCycle;
+  EPMethod                      method;
 }
 EPInitParams;
 
@@ -67,7 +97,7 @@ tagEPSearchParams
   INT4                          events2Master;     /* Added Erik Kats */
   CHAR                         *channelName;       /* Added Erik Kats */
   EPInitParams                 *initParams;
-  struct tagEPDataSegmentVector          *epSegVec;
+  EPDataSegmentVector          *epSegVec;
   CreateTFTilingIn             *tfTilingInput;
   TFTiling                     *tfTiling;
   ComputeExcessPowerIn         *compEPInput;
@@ -77,14 +107,26 @@ EPSearchParams;
 
 void
 EPSearch (
-		   LALStatus               *status,
-                   EPSearchParams          *params,
-                   BurstEvent             **burstEvent,
-                   UINT4                    tmpDutyCyle
-		   );
+            LALStatus               *status,
+            EPSearchParams          *params,
+            BurstEvent             **burstEvent,
+            UINT4                    tmpDutyCyle
+         );
 
+/************************************************************/
+/* new method added to obtain median of power spectrum data */
+/* M. Williamsen  7/17/02                                   */
+/************************************************************/
 
-
+REAL4
+EPMedian (
+            REAL4            *p,
+            INT4              j,
+            INT4              flength,
+            INT4              numSegs,
+            LALStatus        *status
+         );
+  
 #ifdef  __cplusplus
 }
 #endif  /* C++ protection. */
