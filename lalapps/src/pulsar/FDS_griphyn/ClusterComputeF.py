@@ -10,7 +10,6 @@ sftList = "sftList.txt"
 sftPath = "sftPath.txt"
 ephemerisList = "ephemerisList.txt"
 ephemerisPath = "ephemerisPath.txt"
-dagname = "ClusterComputeF.dag"
 
 import sys
 import os
@@ -122,6 +121,11 @@ DESCRIPTION
               then a frame file to hold the multiple frequency
               series data
 
+       -D, --dag-name
+              Basename of the generated DAG file. Default is
+              ClusterComputeF so that the DAG filename is
+              ClusterComputeF.dag
+
 
        Any input SFT data not present on the cluster will be placed in
        the cluster shared directory, which will be determined
@@ -147,12 +151,12 @@ DESCRIPTION
   print msg
 
 # Options and their defaults
-shortopts = "hs:e:i:f:b:d:p:m:x:t:l:n:r:c:q:v:Vz"
+shortopts = "hs:e:i:f:b:d:p:m:x:t:l:n:r:c:q:v:VzD:"
 longopts = [ "help", "start=", "end=", "instrument=", "frequency=",
              "bandwidth=", "spindown=", "spinband=", "metric=",
              "mismatch=", "threshold=", "liststart=", "num=",
              "rls-server=", "calibration=", "calibration-version=",
-             "version", "data-quality=", "mergedSFT" ]
+             "version", "data-quality=", "mergedSFT", "dag-name=" ]
 start = 0
 end = 86400
 instrument = "H1"
@@ -170,6 +174,7 @@ calibration = "Funky"
 calibration_version = 3
 data_quality=5
 mergedSFT = None
+dagname = "ClusterComputeF"
 
 # Parse command line
 try:
@@ -217,6 +222,8 @@ for opt, value in options:
     calibration_version = int( value )
   elif opt in ( "-z", "--mergedSFT" ):
     mergedSFT = True
+  elif opt in ( "-D", "--dag-name" ):
+    dagname = value
   elif opt in ( "-V", "--version" ):
     print >>sys.stderr, versionN
     sys.exit( 0 )
@@ -384,8 +391,8 @@ else:
         computeJob.add_short_opt( "i", os.path.basename(nbsftname))
 
 # Create ClusterComputeF DAG
-dag = CondorDAG( "ClusterComputeF.log" )
-dag.set_dag_file( dagname )
+dag = CondorDAG( dagname + ".log" )
+dag.set_dag_file( dagname + ".dag" )
 
 searchNode = CondorDAGNode( searchJob )
 searchNode.set_pre_script( "/bin/cp" )
@@ -425,4 +432,4 @@ print sys.argv[0] + " - Submitting jobs %i through %i" % \
       ( liststart, liststart + num - 1 )
 print "\t Shared directory: " + sharedDir
 print "\t Output directory: " + outputDir
-#execlp( "condor_submit_dag", dagname )
+#execlp( "condor_submit_dag", dagname + ".dag" )
