@@ -967,7 +967,7 @@ if do_sire:
         sire_clust_job,dag,usertag)
      
     if do_h2 and do_l1 and len(h2_l1_double_data):
-      sire_segs(h2_l1_double_inca_nodes,'output','H2L1-SIRE',sire_job,
+      sire_segs(h2_l1_double_coinc_nodes,'output','H2L1-SIRE',sire_job,
         sire_clust_job,dag,usertag)
  
 print "done"
