@@ -83,7 +83,7 @@ UINT8 startTime = 730793098;
 UINT8 stopTime = 730793158;
 INT4 segmentDuration = 60;
 INT4 calibDuration = 60;
-INT4 calibOffset = 0;
+INT4 calibOffset = 30;
 CHAR frameCache1[100] = "cachefiles/H-730793097.cache";
 CHAR frameCache2[100] = "cachefiles/L-730793097.cache";
 CHAR calCache1[100] = "calibration/H1-CAL-V03-729273600-734367600_smooth.cache";
@@ -92,12 +92,12 @@ CHAR channel1[LALNameLength]= "H1:LSC-AS_Q";
 CHAR channel2[LALNameLength]= "L1:LSC-AS_Q";
 CHAR ifo1[LALNameLength] = "H1";
 CHAR ifo2[LALNameLength] = "L1";
-INT4 site1 = 1;
-INT4 site2 = 0;
+INT4 site1 = 0;
+INT4 site2 = 1;
 
 /* frequency band */
-INT4 fMin = 64;
-INT4 fMax = 265;
+INT4 fMin = 50;
+INT4 fMax = 300;
 
 /* omegaGW parameters */
 REAL4 alpha = 0.0;
@@ -120,7 +120,7 @@ REAL4 highPassAt;
 INT4  highPassOrder = 6;
 
 /* number of bins for frequency masking */ 
-INT4 maskBin = 0;
+INT4 maskBin = 1;
 
 /* output file */
 CHAR outputFilePath[200] = "/usr1/tregimba/";
