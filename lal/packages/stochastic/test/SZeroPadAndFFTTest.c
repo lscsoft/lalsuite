@@ -13,7 +13,7 @@ Test suite for \texttt{LALSZeroPadANdFFT()}.
 \begin{verbatim}
 ./SZeroPadAndFFTTest
 Options:
-  -h             print this message
+  -h             print usage message
   -q             quiet: run silently
   -v             verbose: print extra information
   -d level       set lalDebugLevel to level
@@ -49,7 +49,7 @@ the corresponding checks in the code are made using the ASSERT macro):
 \item negative heterodyning frequency
 \item positive heterodyning frequency
 \item length mismatch between input series and output series
-\item length mismatch between input series and plan parameter
+% \item length mismatch between input series and plan parameter
 \end{itemize}
 
 It then verifies that the correct frequency series\footnote{The values
@@ -99,7 +99,7 @@ fabs()
 \item The length of the user-provided series must be specified, even
   though it could in principle be deduced from the input file, because
   the data sequences must be allocated before the
-  \texttt{LALCReadFrequencySeries()} function is called.
+  \texttt{LALSReadTimeSeries()} function is called.
 \item If one \texttt{filename} argument, but not both, is present,
   the user-specified data will be silently ignored.
 \end{itemize}
@@ -183,13 +183,14 @@ ParseOptions (int argc, char *argv[]);
  * going to need to modify fields of RealFFTPlan...
  * don't try this at home!
  */
+/* Actually, we don't need it -- JTW 
 struct tagRealFFTPlan
 {
   INT4  sign;
   UINT4 size;
   void* junk;
 };
-
+*/
 int 
 main( int argc, char *argv[] )
 {
@@ -386,7 +387,7 @@ main( int argc, char *argv[] )
 
      /* test behavior for zero length */
      goodInput.data->length = goodOutput.data->length = 0;
-     plan->size = -1;
+     /* plan->size = -1; */
      LALSZeroPadAndFFT(&status, &goodOutput, &goodInput, plan);
      if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EZEROLEN,
                              STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN,
@@ -400,7 +401,7 @@ main( int argc, char *argv[] )
      /* reassign valid length */
      goodInput.data->length = goodOutput.data->length 
        = SZEROPADANDFFTTESTC_LENGTH;
-     plan->size = SZEROPADANDFFTTESTC_FULLLENGTH;
+     /* plan->size = SZEROPADANDFFTTESTC_FULLLENGTH; */
 
      /* test behavior for negative time spacing */
      goodInput.deltaT = -SZEROPADANDFFTTESTC_DELTAT;

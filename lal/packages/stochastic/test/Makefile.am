@@ -2,7 +2,7 @@
 check_PROGRAMS =  StochasticCrossCorrelationTest  SZeroPadAndFFTTest \
                   StochasticOptimalFilterTest     StochasticOmegaGWTest \
                   OverlapReductionFunctionTest    StochasticInverseNoiseTest \
-                  DirichletTest
+                  DirichletTest              SCoarseGrainFrequencySeriesTest
 
 #                   SFalseAlarmTest       SFalseDismissalTest  \
 #                   DFalseAlarmTest       SFDismissalVsFAlarmTest \
@@ -38,12 +38,14 @@ StochasticInverseNoiseTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)
 # DFDismissalVsFAlarmTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 DirichletTest_SOURCES = DirichletTest.c
 DirichletTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+SCoarseGrainFrequencySeriesTest_SOURCES = SCoarseGrainFrequencySeriesTest.c CheckStatus.c
+SCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
 TESTS =	  StochasticCrossCorrelationTest         SZeroPadAndFFTTest \
           StochasticOptimalFilterTest           StochasticOmegaGWTest \
           OverlapReductionFunctionTest           StochasticInverseNoiseTest \
-          DirichletTest
+          DirichletTest                     SCoarseGrainFrequencySeriesTest
 
 #    SFalseAlarmTest       SFalseDismissalTest  \
 #           DFalseAlarmTest       SFDismissalVsFAlarmTest \

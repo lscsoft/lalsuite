@@ -107,16 +107,6 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
 \vfill{\footnotesize\input{CoarseGrainFrequencySeriesHV}}
 
 \newpage\input{CoarseGrainFrequencySeriesC}
-\newpage\input{CoarseGrainFrequencySeriesTestC}
-\newpage\input{ZeroPadAndFFTC}
-\newpage\input{SZeroPadAndFFTTestC}
-\newpage\input{StochasticOptimalFilterC}
-\newpage\input{StochasticOptimalFilterTestC}
-\newpage\input{StochasticInverseNoiseC}
-\newpage\input{StochasticInverseNoiseTestC}
-\newpage\input{StochasticOmegaGWC}
-\newpage\input{StochasticOmegaGWTestC}
-\newpage\input{OverlapReductionFunctionC}
-\newpage\input{OverlapReductionFunctionTestC}
+\newpage\input{SCoarseGrainFrequencySeriesTestC}
 
 *********************************************************** </lalLaTeX> */

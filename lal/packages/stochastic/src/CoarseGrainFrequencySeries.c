@@ -16,7 +16,112 @@ frequncy resolution.
 \index{\texttt{LALCCoarseGrainFrequencySeries()}}
 
 \subsubsection*{Description}
- 
+
+This function is designed to facilitate approximation of integrals
+such as
+$$
+\int g(f)\,h(f)\,df
+$$
+when $g(f)$ and $h(f)$ are sampled with different frequency
+resolutions.  If the frequency resolution were the same for both
+functions, e.g., a frequency spacing of $\delta f$ and a start
+frequency of $f_0$, so that the $k$th element corresponded to a
+frequency $f_k = f_0 + k\delta f$, the approximation would be defined
+as
+$$
+\int g(f)\,h(f)\,df \approx \delta f \sum_k g_k h_k
+$$
+whose contribution from the $k$th element is\footnote{It is
+  important to make the limits of integration symmetric about $f_k$ to
+  maintain reality conditions when dealing with Fourier transforms of
+  real quantities.}
+$$
+\int_{f_k-\delta f/2}^{f_k+\delta f/2} g(f)\,h(f)\,df \approx 
+\delta f g_k h_k
+\ .
+$$
+The central idea in our definitions of coarse graining will thus be
+the correspondence
+\begin{equation}
+  \label{stochastic:e:coarse}
+  h_k \approx \frac{1}{\delta f} 
+  \int_{f_k-\delta f/2}^{f_k+\delta f/2} h(f)\,df  
+\end{equation}
+
+The purpose of this function is to obtain a frequency series $\{h_k\}$
+with start frequency $f_0$ and frequency spacing $\delta f$ from a
+finer-grained frequency series $\{h'_\ell\}$ with start frequency
+$f'_0$ and frequency spacing $\delta f'$.  Focussing on the $k$th
+element of the coarse-grained series, which represents a frequency
+range from $f_k-\delta f/2$ to $f_k+\delta f/2$, we consider the
+elements of the fine-grained series whose frequency ranges overlap
+with this.  (Fig.~\ref{stochastic:f:coarse})
+\begin{figure}[htbp]
+  \begin{center}
+    \begin{picture}(200,60)(-50,0)
+      \put(-50,50){$\ell^{\scriptstyle{\rm min}}_k-1$}
+      \put(-10,50){\vector(1,0){20}}
+      \put(0,40){\framebox(20,20){}}
+      \put(20,40){\framebox(20,20){$\ell^{\scriptstyle{\rm min}}_k$}}
+      \put(40,40){\framebox(30,20){$\cdots$}}
+      \put(70,40){\framebox(20,20){$\ell^{\scriptstyle{\rm max}}_k$}}
+      \put(90,40){\framebox(20,20){}}
+      \put(120,50){\vector(-1,0){20}}      
+      \put(130,50){$\ell^{\scriptstyle{\rm min}}_k+1$}
+      \put(13,20){\framebox(90,20){$k$}}
+      \put(13,0){\framebox(20,20){$\lambda^{\scriptstyle{\rm min}}_k$}}
+      \put(83,0){\framebox(20,20){$\lambda^{\scriptstyle{\rm max}}_k$}}
+    \end{picture}
+  \end{center}  
+  \caption{Coarse graining a frequency series}
+  \label{stochastic:f:coarse}
+\end{figure}
+We define $\ell^{\scriptstyle{\rm min}}_k$ and $\ell^{\scriptstyle{\rm
+    min}}_k$ to be the indices of the first and last elements of
+$h'_\ell$ which overlap \emph{completely} with the frequency range
+corresponding to $h_k$.  These are most easily defined in terms of
+non-integer indices $\lambda^{\scriptstyle{\rm min}}_k$ and
+$\lambda^{\scriptstyle{\rm max}}_k$ which correspond to the locations
+of fine-grained elements which would exactly reach the edges of the
+coarse-grained element with index $k$.  These are defined by
+\begin{eqnarray*}
+  f_0 + \left(k-\frac{1}{2}\right) \delta f 
+  &=& f'_0 + \left(\lambda^{\scriptstyle{\rm min}}_k-\frac{1}{2}\right)
+  \delta f' \\
+  f_0 + \left(k+\frac{1}{2}\right) \delta f 
+  &=& f'_0 + \left(\lambda^{\scriptstyle{\rm max}}_k+\frac{1}{2}\right)
+  \delta f'
+\end{eqnarray*}
+or, defining the offset $\Omega=(f_0-f'_0)/\delta f'$ and the coarse
+graining ratio $\rho = \delta f / \delta f'$,
+\begin{eqnarray*}
+  \lambda^{\scriptstyle{\rm min}}_k &=& 
+  \Omega + \left(k-\frac{1}{2}\right) \rho + \frac{1}{2}\\
+  \lambda^{\scriptstyle{\rm max}}_k &=& 
+  \Omega + \left(k+\frac{1}{2}\right) \rho - \frac{1}{2}
+\ .
+\end{eqnarray*}
+Examination of Fig.~\ref{stochastic:f:coarse} shows that
+$\ell^{\scriptstyle{\rm min}}_k$ is the smallest integer not less than
+$\lambda^{\scriptstyle{\rm min}}_k$ and $\ell^{\scriptstyle{\rm
+    min}}_k$ is the largest integer not greater than
+$\lambda^{\scriptstyle{\rm min}}_k$.
+
+With these definitions, approximating the integral in
+(\ref{stochastic:e:coarse}) gives
+$$
+h_k = \frac{1}{\rho}
+\left(
+  (\ell^{\scriptstyle{\rm min}}_k - \lambda^{\scriptstyle{\rm min}}_k)
+  h'_{\ell^{\scriptscriptstyle{\rm min}}_k-1}
+  + \sum_{\ell=\ell^{\scriptscriptstyle{\rm min}}_k}
+  ^{\ell^{\scriptscriptstyle{\rm max}}_k}
+  h'_\ell
+  + (\lambda^{\scriptstyle{\rm max}}_k - \ell^{\scriptstyle{\rm max}}_k)
+  h'_{\ell^{\scriptscriptstyle{\rm max}}_k+1}
+\right)
+$$
+
 \subsubsection*{Algorithm}
 
 \subsubsection*{Uses}
@@ -39,6 +144,7 @@ frequncy resolution.
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
 #include <lal/CoarseGrainFrequencySeries.h>
+#include <math.h>
 
 NRCSID(COARSEGRAINFREQUENCYSERIESC, 
        "$Id$");
@@ -46,9 +152,9 @@ NRCSID(COARSEGRAINFREQUENCYSERIESC,
 /* <lalVerbatim file="CoarseGrainFrequencySeriesCP"> */
 void
 LALSCoarseGrainFrequencySeries(LALStatus                      *status,
-			       REAL4FrequencySeries           *output,
-			       const REAL4FrequencySeries     *input,
-			       const FrequencySamplingParams  *params)
+                               REAL4FrequencySeries           *output,
+                               const REAL4FrequencySeries     *input,
+                               const FrequencySamplingParams  *params)
 /* </lalVerbatim> */
 {
   UINT4         lengthCoarse, lengthFine;
@@ -60,8 +166,8 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
 
   UINT4         k, l;
   UINT4         lMin, lMax;
-  REAL4         ellMin, ellMax;
-  REAL4         yRe, yIm;
+  REAL4         lamMin, lamMax;
+  REAL4         value;
 
   /* initialize status structure */
   INITSTATUS( status, "LALSCoarseGrainFrequencySeries",
@@ -75,8 +181,13 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
          COARSEGRAINFREQUENCYSERIESH_ENULLP,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
 
-  /*    data member for output series */
+  /*    data member of output series */
   ASSERT(output->data != NULL, status,
+         COARSEGRAINFREQUENCYSERIESH_ENULLP,
+         COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
+
+  /*    data member of data member of output series */
+  ASSERT(output->data->data != NULL, status,
          COARSEGRAINFREQUENCYSERIESH_ENULLP,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
 
@@ -85,13 +196,18 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
          COARSEGRAINFREQUENCYSERIESH_ENULLP,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
 
-  /*    data member for input series */
+  /*    data member of input series */
   ASSERT(input->data != NULL, status, 
          COARSEGRAINFREQUENCYSERIESH_ENULLP,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
 
+  /*    data member of data member of input series */
+  ASSERT(input->data->data != NULL, status, 
+         COARSEGRAINFREQUENCYSERIESH_ENULLP,
+         COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
+
   /*    parameter structure */
-  ASSERT(input->data != NULL, status, 
+  ASSERT(params != NULL, status, 
          COARSEGRAINFREQUENCYSERIESH_ENULLP,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
 
@@ -167,8 +283,8 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
   if ( fMinCoarse < fMinFine )
   {   
     ABORT( status,
-	   COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
-	   COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
+           COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
+           COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
   }
 
   /* make sure maximum frequency in coarse-grained series is not
@@ -177,29 +293,70 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
        > lengthFine - 0.5 )
   {
     ABORT( status,
-	   COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
-	   COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
+           COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
+           COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
   } 
 
   if (f0Coarse == 0.0) 
   {
     /* DC component */
-    yRe =  input->data->data[0];
+    
+    lamMax = (resRatio / 2.0) - 0.5 ;
+    lMax = (UINT4) floor(lamMax);
 
-    ellMax = offset + ( resRatio - 1.0 ) / 2.0;
-    lMax = (UINT4) ellMax;
-
-    for ( l = 1 ; l > lMax ; ++l) 
+    if ( lamMax != (REAL4) lMax )
     {
-      yRe += input->data->data[l];
+      value = ( lamMax - (REAL4) lMax ) * input->data->data[lMax+1];
+    }
+    else {
+      value = 0.0;
     }
 
-    yRe += ( ellMax - (REAL4) lMax ) 
-      * input->data->data[lMax+1];
+    for ( l = 1 ; l <= lMax ; ++l) 
+    {
+      value += input->data->data[l];
+    }
 
-    output->data->data[0] = 2.0 * yRe;
+    output->data->data[0] = ( input->data->data[0] + 2.0 * value )
+      / resRatio;
 
+    k = 1;
   }
+  else 
+  {
+    k = 0; 
+  }
+
+  for ( ; k < lengthCoarse ; ++k )
+  {
+    lamMin = offset + ( (REAL4) k - 0.5 ) * resRatio + 0.5 ;
+    lMin = (UINT4) ceil(lamMin);
+
+    if ( lamMin != (REAL4) lMin ) {
+      value = ( (REAL4) lMin - lamMin ) * input->data->data[lMin-1];
+    }
+    else 
+    {
+      value = 0.0;
+    }
+
+    lamMax = offset + ( (REAL4) k + 0.5 ) * resRatio - 0.5 ;
+    lMax = (UINT4) floor(lamMax);    
+
+    for ( l = lMin ; l <= lMax ; ++l) 
+    {
+      value += input->data->data[l];
+    }
+
+    if ( lamMax != (REAL4) lMax ) {
+      value += ( lamMax - (REAL4) lMax ) * input->data->data[lMax+1];
+    }
+
+    output->data->data[k] = value / resRatio;
+    
+  }
+
+
   
   /* Set output properties */  
   output->sampleUnits = input->sampleUnits;
@@ -211,4 +368,4 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
-} /* LALCoarseGrainFrequencySeriesSpectrum() */
+} /* LALSCoarseGrainFrequencySeries() */
