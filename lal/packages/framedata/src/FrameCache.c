@@ -299,7 +299,8 @@ LALDestroyFrCache(
     memset( file, 0, sizeof( *file ) );
   }
 
-  LALFree( (*cache)->frameFiles );
+  if ( (*cache)->numFrameFiles ) 
+    LALFree( (*cache)->frameFiles );
   LALFree( *cache );
   *cache = NULL;
 
@@ -414,75 +415,82 @@ LALFrCacheSieve(
     ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
   }
   cache->numFrameFiles = n;
-  cache->frameFiles = LALCalloc( n, sizeof( *cache->frameFiles ) );
-  if ( ! cache->frameFiles )
+  if ( ! cache->numFrameFiles )
   {
-    LALFree( *output );
-    *output = NULL;
-    ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
+    cache->frameFiles = NULL;
   }
-
-  n = 0;
-  for ( i = 0; i < input->numFrameFiles; ++i )
+  else
   {
-    FrStat *file = input->frameFiles + i;
-    if ( params->earliestTime > 0 )
-      if ( params->earliestTime > file->startTime + file->duration )
-        continue; /* file is too early */
-    if ( params->latestTime > 0 )
-      if ( file->startTime <= 0 || params->latestTime < file->startTime )
-        continue; /* file is too late */
-    if ( params->srcRegEx )
-      if ( ! file->source || regexec( &srcReg, file->source, 0, NULL, 0 ) )
-        continue; /* source doesn't match regex */
-    if ( params->dscRegEx )
-      if ( ! file->description
-          || regexec( &dscReg, file->description, 0, NULL, 0 ) )
-      continue; /* description doesn't match regex */
-    if ( params->urlRegEx )
-      if ( ! file->source || regexec( &urlReg, file->source, 0, NULL, 0 ) )
-        continue; /* url doesn't match regex */
+    cache->frameFiles = LALCalloc( n, sizeof( *cache->frameFiles ) );
+    if ( ! cache->frameFiles )
+    {
+      LALFree( *output );
+      *output = NULL;
+      ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
+    }
 
-    /* copy frame file stat */
-    cache->frameFiles[n] = *file;
-    if ( file->source )
+    n = 0;
+    for ( i = 0; i < input->numFrameFiles; ++i )
     {
-      size_t size = strlen( file->source ) + 1;
-      cache->frameFiles[n].source = LALMalloc( size );
-      if ( ! cache->frameFiles[n].source )
+      FrStat *file = input->frameFiles + i;
+      if ( params->earliestTime > 0 )
+        if ( params->earliestTime > file->startTime + file->duration )
+          continue; /* file is too early */
+      if ( params->latestTime > 0 )
+        if ( file->startTime <= 0 || params->latestTime < file->startTime )
+          continue; /* file is too late */
+      if ( params->srcRegEx )
+        if ( ! file->source || regexec( &srcReg, file->source, 0, NULL, 0 ) )
+          continue; /* source doesn't match regex */
+      if ( params->dscRegEx )
+        if ( ! file->description
+            || regexec( &dscReg, file->description, 0, NULL, 0 ) )
+          continue; /* description doesn't match regex */
+      if ( params->urlRegEx )
+        if ( ! file->source || regexec( &urlReg, file->source, 0, NULL, 0 ) )
+          continue; /* url doesn't match regex */
+
+      /* copy frame file stat */
+      cache->frameFiles[n] = *file;
+      if ( file->source )
       {
-        TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-        ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
+        size_t size = strlen( file->source ) + 1;
+        cache->frameFiles[n].source = LALMalloc( size );
+        if ( ! cache->frameFiles[n].source )
+        {
+          TRY( LALDestroyFrCache( status->statusPtr, output ), status );
+          ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
+        }
+        memcpy( cache->frameFiles[n].source, file->source, size );
       }
-      memcpy( cache->frameFiles[n].source, file->source, size );
-    }
-    if ( file->description )
-    {
-      size_t size = strlen( file->description ) + 1;
-      cache->frameFiles[n].description = LALMalloc( size );
-      if ( ! cache->frameFiles[n].description )
+      if ( file->description )
       {
-        TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-        ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
+        size_t size = strlen( file->description ) + 1;
+        cache->frameFiles[n].description = LALMalloc( size );
+        if ( ! cache->frameFiles[n].description )
+        {
+          TRY( LALDestroyFrCache( status->statusPtr, output ), status );
+          ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
+        }
+        memcpy( cache->frameFiles[n].description, file->description, size );
       }
-      memcpy( cache->frameFiles[n].description, file->description, size );
-    }
-    if ( file->url )
-    {
-      size_t size = strlen( file->url ) + 1;
-      cache->frameFiles[n].url = LALMalloc( size );
-      if ( ! cache->frameFiles[n].url )
+      if ( file->url )
       {
-        TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-        ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
+        size_t size = strlen( file->url ) + 1;
+        cache->frameFiles[n].url = LALMalloc( size );
+        if ( ! cache->frameFiles[n].url )
+        {
+          TRY( LALDestroyFrCache( status->statusPtr, output ), status );
+          ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
+        }
+        memcpy( cache->frameFiles[n].url, file->url, size );
       }
-      memcpy( cache->frameFiles[n].url, file->url, size );
+      ++n;
     }
-    ++n;
+
+    qsort( cache->frameFiles, cache->numFrameFiles, 
+        sizeof( *cache->frameFiles ), FrStatCompare );
   }
-
-  qsort( cache->frameFiles, cache->numFrameFiles, sizeof( *cache->frameFiles ),
-      FrStatCompare );
 
   if ( params->srcRegEx ) regfree( &srcReg );
   if ( params->dscRegEx ) regfree( &dscReg );
@@ -535,7 +543,8 @@ LALFrCacheGenerate(
       nextdir = strchr( dirname, ':' );
       if ( nextdir )
         *nextdir++ = 0;
-      LALSnprintf( path, sizeof( path ) - 1, "%s/%s", *dirname ? dirname : ".", fnptrn );
+      LALSnprintf( path, sizeof( path ) - 1, "%s/%s", 
+          *dirname ? dirname : ".", fnptrn );
       glob( path, globflags, NULL, &g );
       globflags |= GLOB_APPEND;
     }
