@@ -14,7 +14,7 @@ version=3.0
 ## Add a new package here:
 
 # Base (non-conditionally-compiled) packages:
-lal_pkg_list_base="std tools sample hello factories vectorops utilities stats inject date tdfilter window fft clremoval stochastic inspiral noisemodels bank ring findchirp pulsar houghpulsar fct burstsearch tracksearch tfclusters slopefilters waveburst block"
+lal_pkg_list_base="std tools sample hello factories vectorops utilities stats inject date tdfilter window fft clremoval stochastic inspiral noisemodels bank ring findchirp pulsar houghpulsar burstsearch tracksearch tfclusters slopefilters waveburst block"
 
 # Packages compiled only with --enable-mpi
 lal_pkg_list_mpi="comm"
@@ -26,7 +26,7 @@ lal_pkg_list_frame="framedata"
 lal_pkg_list_frame_mpi=""
 
 # Packages that are omitted
-lal_pkg_list_omit="timefreq"
+lal_pkg_list_omit="fct timefreq"
 
 ## <<<< !!!!  Do not edit below here !!!! >>>> ##
 
