@@ -42,21 +42,20 @@
  * \begin{verbatim}
  * LALCalloc()
  * LALFree()
+ * LALGetInspiralMoments()
+ * LALSSymmetricEigenVectors()
  * \end{verbatim}
  *
  * \subsubsection*{Notes}
  *
- * Currently we use dummy functions for the metric and noise moments. These
- * should be updated, especially to account for real noise spectra.
+ * Currently we use a static function for the metric based on an
+ * approximation that is good only for large $\beta$. We should update it
+ * and put it out in the LAL namespace.
  *
  * The metric relies on approximations that make it valid only for a binary
  * system with a total mass $<15M\odot$ where the larger body's minimum mass
  * is at least twice the smaller body's maximum mass.  Using mass values
  * that violate these conditions will result in an error message.   
- *
- * The issue of linked lists vs.\ arrays needs to be seriously addressed. As
- * our experience with this code shows, multidimensional tiling of
- * complicated parameter regions demands the flexibility of linked lists.
  *
  * \vfill{\footnotesize\input{InspiralSpinBankCV}}
  *
