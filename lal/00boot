@@ -343,6 +343,7 @@ m4 MatrixDivide.m4 > MatrixDivide.c
 m4 MatrixMultiply.m4 > MatrixMultiply.c
 m4 MatrixPower.m4 > MatrixPower.c
 m4 MiscMatlab.m4 > MiscMatlab.c
+m4 VectorIndexRangeC.m4 > VectorIndexRange.c
 cd ../../..
 
 cd packages/stats/src
