@@ -1473,8 +1473,16 @@ cleanexit:
         &status );
 
     /* write process table */
-    LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
-        ifoName[0], ifoName[1] );
+    if ( trigBankFile )
+    {
+      LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", 
+          ifoName[0] );
+    }
+    else
+    {
+      LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
+          ifoName[0], ifoName[1] );
+    }
     LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
           &accuracy ), &status );
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
