@@ -294,6 +294,7 @@ LALWriteLIGOLwXMLTable (
         fprintf( xml->fp, SNGL_BURST_ROW,
             tablePtr.snglBurstTable->ifo,
             tablePtr.snglBurstTable->search,
+            tablePtr.snglBurstTable->channel,
             tablePtr.snglBurstTable->start_time.gpsSeconds,
             tablePtr.snglBurstTable->start_time.gpsNanoSeconds,
             tablePtr.snglBurstTable->duration,

@@ -197,6 +197,7 @@ extern "C" {
 "      <Column Name=\"sngl_burstgroup:sngl_burst:process_id\" Type=\"ilwd:char\"/>\n" \
 "      <Column Name=\"sngl_burstgroup:sngl_burst:ifo\" Type=\"lstring\"/>\n" \
 "      <Column Name=\"sngl_burstgroup:sngl_burst:search\" Type=\"lstring\"/>\n" \
+"      <Column Name=\"sngl_burstgroup:sngl_burst:channel\" Type=\"lstring\"/>\n" \
 "      <Column Name=\"sngl_burstgroup:sngl_burst:start_time\" Type=\"int_4s\"/>\n" \
 "      <Column Name=\"sngl_burstgroup:sngl_burst:start_time_ns\" Type=\"int_4s\"/>\n" \
 "      <Column Name=\"sngl_burstgroup:sngl_burst:duration\" Type=\"real_4\"/>\n" \
@@ -208,7 +209,7 @@ extern "C" {
 "      <Stream Name=\"sngl_burstgroup:sngl_burst:table\" Type=\"Local\" Delimiter=\",\">\n"
 
 #define SNGL_BURST_ROW \
-"         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%e,%e,%e,%e,%e,%e"
+"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%e,%e,%e,%e,%e,%e"
 
 #define LIGOLW_XML_SNGL_INSPIRAL \
 "   <Table Name=\"sngl_inspiralgroup:sngl_inspiral:table\">\n" \

@@ -182,9 +182,9 @@ typedef struct
 tagSnglBurstTable
 {
   struct tagSnglBurstTable *next;
-  CHAR          ifo[2];
+  CHAR          ifo[3];
   CHAR          search[24];
-  CHAR          channel[64];
+  CHAR          channel[65];
   LIGOTimeGPS   start_time;
   REAL4         duration;
   REAL4         central_freq;
