@@ -428,7 +428,7 @@ main(int argc, char **argv)
       REAL8 x = 0.0;
       REAL8 dx = deltat/dt;
       REAL8 xMax = waveform.a->data->length - 1;
-      REAL4 *phiData = waveform.phi->data->data;
+      REAL8 *phiData = waveform.phi->data->data;
       REAL4 *fData = waveform.f->data->data;
       REAL4 *aData = waveform.a->data->data;
       for ( ; x < xMax; x += dx, t += deltat ) {
@@ -457,7 +457,7 @@ main(int argc, char **argv)
   SUB( LALSDestroyVectorSequence( &stat, &(waveform.a->data) ),
        &stat );
   SUB( LALSDestroyVector( &stat, &(waveform.f->data) ), &stat );
-  SUB( LALSDestroyVector( &stat, &(waveform.phi->data) ), &stat );
+  SUB( LALDDestroyVector( &stat, &(waveform.phi->data) ), &stat );
   LALFree( waveform.a );
   LALFree( waveform.f );
   LALFree( waveform.phi );

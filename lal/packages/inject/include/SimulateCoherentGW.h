@@ -237,9 +237,11 @@ f/\dot{f}$ (provided $\tau\gg1/f$, as we have assumed).
 #include <lal/LALStdlib.h>
 #include <lal/DetectorSite.h>
 #include <lal/SkyCoordinates.h>
+#include <lal/LALBarycenter.h>
 
 #ifdef  __cplusplus
 extern "C" {
+#pragma }
 #endif
 
 NRCSID( SIMULATECOHERENTGWH, "$Id$" );
@@ -289,7 +291,7 @@ in dimensionless strain.
 \item[\texttt{REAL4TimeSeries *f}] A time-sampled sequence storing the
 instantaneous frequency $f(t)$, in Hz.
 
-\item[\texttt{REAL4TimeSeries *phi}] A time-sampled sequence storing
+\item[\texttt{REAL8TimeSeries *phi}] A time-sampled sequence storing
 the phase function $\phi(t)$, in radians.
 
 \item[\texttt{REAL4TimeSeries *shift}] A time-sampled sequence storing
@@ -314,7 +316,7 @@ typedef struct tagCoherentGW {
   REAL4TimeVectorSeries *h; /* sampled waveforms h_+, h_x */
   REAL4TimeVectorSeries *a; /* amplitudes A_+, A_x */
   REAL4TimeSeries *f;       /* instantaneous frequency */
-  REAL4TimeSeries *phi;     /* phase function */
+  REAL8TimeSeries *phi;     /* phase function */
   REAL4TimeSeries *shift;   /* polarization shift Phi */
 } CoherentGW;
 
@@ -336,13 +338,20 @@ counts per unit strain amplitude at any given frequency.
 polarization information, used to compute the polarization response
 and the propagation delay.  If absent, the response will be computed
 to the plus mode waveform with no time delay.
+
+\item[\texttt{EphemerisData *ephemerides}] A structure storing the
+positions, velocities, and accelerations of the Earth and Sun centres
+of mass, used to compute the propagation delay to the solar system
+barycentre.  If absent, the propagation delay will be computed to the
+Earth centre (rather than a true barycentre).
 \end{description}
 
 ******************************************************* </lalLaTeX> */
 
 typedef struct tagDetectorResponse {
   COMPLEX8FrequencySeries *transfer; /* frequency transfer function */
-  LALDetector *site;           /* detector location and orientation */
+  LALDetector *site;          /* detector location and orientation */
+  EphemerisData *ephemerides; /* Earth and Sun ephemerides */
 } DetectorResponse;
 
 
@@ -367,6 +376,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
 </lalLaTeX> */
 
 #ifdef  __cplusplus
+#pragma {
 }
 #endif
 

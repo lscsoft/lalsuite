@@ -302,7 +302,7 @@ FreqDiff( LALStatus *stat, REAL4 *y, REAL4 x, void *p )
 /* Definition of a data buffer list for storing the waveform. */
 typedef struct tagPPNInspiralBuffer {
   REAL4 a[2*BUFFSIZE];               /* amplitude data */
-  REAL4 phi[BUFFSIZE];               /* phase data */
+  REAL8 phi[BUFFSIZE];               /* phase data */
   REAL4 f[BUFFSIZE];                 /* frequency data */
   struct tagPPNInspiralBuffer *next; /* next buffer in list */
 } PPNInspiralBuffer;
@@ -356,7 +356,8 @@ LALGeneratePPNInspiral( LALStatus     *stat,
   REAL4 y, yStart, yMax; /* normalized frequency and its range */
   REAL4 yOld, dyMax;     /* previous timestep y, and maximum y - yOld */
   REAL4 x2, x3;          /* x^2 and x^3 */
-  REAL4 *a, *f, *phi;    /* pointers to generated data */
+  REAL4 *a, *f; /* pointers to generated amplitude and frequency data */
+  REAL8 *phi;   /* pointer to generated phase data */
   PPNInspiralBuffer *head, *here; /* pointers to buffered data */
 
   INITSTATUS( stat, "LALGeneratePPNInspiral", GENERATEPPNINSPIRALC );
@@ -737,15 +738,15 @@ LALGeneratePPNInspiral( LALStatus     *stat,
 	   GENERATEPPNINSPIRALH_MSGEMEM );
   }
   memset( output->f, 0, sizeof(REAL4TimeSeries) );
-  if ( ( output->phi = (REAL4TimeSeries *)
-	 LALMalloc( sizeof(REAL4TimeSeries) ) ) == NULL ) {
+  if ( ( output->phi = (REAL8TimeSeries *)
+	 LALMalloc( sizeof(REAL8TimeSeries) ) ) == NULL ) {
     FREELIST( head );
     LALFree( output->a ); output->a = NULL;
     LALFree( output->f ); output->f = NULL;
     ABORT( stat, GENERATEPPNINSPIRALH_EMEM,
 	   GENERATEPPNINSPIRALH_MSGEMEM );
   }
-  memset( output->phi, 0, sizeof(REAL4TimeSeries) );
+  memset( output->phi, 0, sizeof(REAL8TimeSeries) );
 
   /* Allocate the output data fields. */
   {
@@ -768,7 +769,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
       LALFree( output->f );   output->f = NULL;
       LALFree( output->phi ); output->phi = NULL;
     } ENDFAIL( stat );
-    LALSCreateVector( stat->statusPtr, &( output->phi->data ), n );
+    LALDCreateVector( stat->statusPtr, &( output->phi->data ), n );
     BEGINFAIL( stat ) {
       TRY( LALSDestroyVectorSequence( stat->statusPtr, &( output->a->data ) ),
 	   stat );
@@ -806,7 +807,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
       nCopy = n;
     memcpy( a, here->a, 2*nCopy*sizeof(REAL4) );
     memcpy( f, here->f, nCopy*sizeof(REAL4) );
-    memcpy( phi, here->phi, nCopy*sizeof(REAL4) );
+    memcpy( phi, here->phi, nCopy*sizeof(REAL8) );
     a += 2*nCopy;
     f += nCopy;
     phi += nCopy;

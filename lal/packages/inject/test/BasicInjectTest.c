@@ -631,7 +631,7 @@ main(int argc, char **argv)
       SUB( LALSDestroyVectorSequence( &stat, &( waveform.a->data ) ),
 	   &stat );
       SUB( LALSDestroyVector( &stat, &( waveform.f->data ) ), &stat );
-      SUB( LALSDestroyVector( &stat, &( waveform.phi->data ) ), &stat );
+      SUB( LALDDestroyVector( &stat, &( waveform.phi->data ) ), &stat );
       LALFree( waveform.a );
       LALFree( waveform.f );
       LALFree( waveform.phi );

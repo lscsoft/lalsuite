@@ -21,7 +21,7 @@ Computes the response of a detector to a coherent gravitational wave.
 
 This function takes a quasiperiodic gravitational waveform given in
 \verb@*signal@, and estimates the corresponding response of the
-detector whose polarization response and transfer function are
+detector whose position, orientation, and transfer function are
 specified in \verb@*detector@.  The result is stored in
 \verb@*output@.
 
@@ -38,29 +38,31 @@ coordinates, if necessary.
 \subsubsection*{Algorithm}
 
 The routine first accounts for the time delay between the detector and
-the centre of the Earth, based on the detector position information
-stored in \verb@*detector@ and the propagation direction specified in
-\verb@*signal@.  The propagation delay from the detector to the
-Earth's centre is computed for every minute of the desired output, and
-stored in an array; subsequently, the value of the delay for each
-output sample is determined by interpolating the two nearest points
-from the table.  This guarantees accurate timing information to within
+the solar system barycentre, based on the detector position
+information stored in \verb@*detector@ and the propagation direction
+specified in \verb@*signal@.  Values of the propagation delay are
+precomuted at fixed intervals and stored in a table, with the
+intervals $\Delta T_\mathrm{delay}$ chosen such that the value
+interpolated from adjacent table entries will never differ from the
+true value by more than $0.1\times$\verb@output->deltaT@:
 $$
-\Delta t \lessim \frac{\pi^2 R_\mathrm{Earth}}{2c}
-	\left(\frac{\mathrm{1~minute}}{\mathrm{1~day}}\right)^2
-	\sim 50\mathrm{ns} \; ,
+\Delta T_\mathrm{delay} \leq \sqrt{
+	\frac{0.8\times\mathtt{output->deltaT}}{\max\{a/c\}} } \; ,
 $$
-which is much less than the sampling interval of LIGO.
+where $\max\{a/c\}=1.32\times10^{-10}\mathrm{s}^{-1}$ is the maximum
+acceleration of an Earth-based detector in the barycentric frame.  The
+total propagation delay also includes Einstein and Shapiro delay, but
+these are more slowly varying and thus do not constrain the table
+spacing.
 
 Next, the polarization response functions of the detector
-$F_{+,\times}(\alpha,\delta)$ are computed for every minute of the
+$F_{+,\times}(\alpha,\delta)$ are computed for every 10~minutes of the
 signal's duration, using the position of the source in \verb@*signal@,
 the detector information in \verb@*detector@, and the function
 \verb@LALComputeDetAMResponseSeries()@.  Subsequently, the
 polarization functions are estimated for each output sample by
-interpolating these precomputed values.  Again, this guarantees a
-fractional accuracy of
-$\lessim(\pi^2/2)(1\mathrm{min}/1\mathrm{day})^2\sim2\times10^{-6}$.
+interpolating these precomputed values.  This guarantees that the
+interpolated value is accurate to $\sim0.1\%$.
 
 Next, the frequency response of the detector is estimated in the
 quasiperiodic limit as follows:
@@ -75,10 +77,10 @@ defined at that point in time, then $f$ is estimated by differencing
 the two nearest values of $\phi$, as $f\approx\Delta\phi/2\pi\Delta
 t$.  If \verb@signal->shift@ is not defined, then $\Phi$ is treated as
 zero.
-\item The complex transfer function of the detector at this frequency
+\item The complex transfer function of the detector the frequency $f$
 is found by interpolating \verb@detector->transfer@.  The amplitude of
-the transfer function is multiplied with $A_1$ and $A_2$, and the phase of the
-transfer function is added to $\phi$,
+the transfer function is multiplied with $A_1$ and $A_2$, and the
+phase of the transfer function is added to $\phi$,
 \item The plus and cross contributions $o_+$, $o_\times$ to the
 detector output are computed as in Eqs.~\ref{eq:quasiperiodic-hplus}
 and~\ref{eq:quasiperiodic-hcross} of \verb@SimulateCoherentGW.h@, but
@@ -137,14 +139,10 @@ LALUnwrapREAL4Angle()
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/TimeDelay.h>
+#include <lal/LALBarycenter.h>
 #include <lal/VectorOps.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
-
-#define POLDT   60 /* (integral) number of seconds between table
-		      entries for polarization response */
-#define DELAYDT 60 /* (integral) number of seconds between table
-		      entries for propagation delay */
 
 /* A macro that takes a detector time (in units of output->deltaT from
    output->epoch) and adds the propagation time interpolated from the
@@ -177,6 +175,8 @@ LALSimulateCoherentGW( LALStatus        *stat,
   INT4 nMax;          /* used to store limits on index ranges */
   INT4 fInit, fFinal; /* index range for which signal->f is defined */
   INT4 shiftInit, shiftFinal; /* ditto for signal->shift */
+  UINT4 dtDelayBy2;           /* delay table half-interval (s) */
+  UINT4 dtPolBy2 = 300;       /* polarization table half-interval (s) */
   REAL4 *outData;             /* pointer to output data */
   REAL8 delayMin, delayMax;   /* min and max values of time delay */
   SkyPosition source;         /* source sky position */
@@ -191,8 +191,8 @@ LALSimulateCoherentGW( LALStatus        *stat,
      where xOff is an offset and xDt is a relative sampling rate. */
   LALDetAMResponseSeries polResponse;
   REAL8Vector *delay = NULL;
-  REAL4 *aData, *fData, *phiData, *shiftData, *plusData, *crossData;
-  REAL8 *delayData;
+  REAL4 *aData, *fData, *shiftData, *plusData, *crossData;
+  REAL8 *phiData, *delayData;
   REAL8 aOff, fOff, phiOff, shiftOff, polOff, delayOff;
   REAL8 aDt, fDt, phiDt, shiftDt, polDt, delayDt;
 
@@ -363,14 +363,60 @@ LALSimulateCoherentGW( LALStatus        *stat,
   } 
 
   /* Generate the table of propagation delays. */
-  delayDt = output->deltaT/DELAYDT;
-  nMax = (UINT4)( output->data->length*output->deltaT/DELAYDT ) + 3;
+  dtDelayBy2 = (UINT4)( 38924.9*sqrt( output->deltaT ) );
+  delayDt = output->deltaT/( 2.0*dtDelayBy2 );
+  nMax = (UINT4)( output->data->length*delayDt ) + 3;
   TRY( LALDCreateVector( stat->statusPtr, &delay, nMax ), stat );
   delayData = delay->data;
-  if ( detector->site ) {
+
+  /* Compute delay from solar system barycentre. */
+  if ( detector->site && detector->ephemerides ) {
+    LIGOTimeGPS gpsTime;   /* detector time when we compute delay */
+    EarthState state;      /* Earth position info at that time */
+    BarycenterInput input; /* input structure to LALBarycenter() */
+    EmissionTime emit;     /* output structure from LALBarycenter() */
+
+    /* Arrange nested pointers, and set initial values. */
+    gpsTime = input.tgps = output->epoch;
+    gpsTime.gpsSeconds -= dtDelayBy2;
+    input.tgps.gpsSeconds -= dtDelayBy2;
+    input.site = *(detector->site);
+    input.alpha = source.longitude;
+    input.delta = source.latitude;
+    input.dInv = 0.0;
+    delayMin = delayMax = 1.1*LAL_AU_SI/( LAL_C_SI*output->deltaT );
+    delayMax *= -1;
+
+    /* Compute table. */
+    for ( i = 0; (UINT4)( i ) < nMax; i++ ) {
+      REAL8 tDelay; /* propagation time */
+      LALBarycenterEarth( stat->statusPtr, &state, &gpsTime,
+			  detector->ephemerides );
+      BEGINFAIL( stat )
+	TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
+      ENDFAIL( stat );
+      LALBarycenter( stat->statusPtr, &emit, &input, &state );
+      BEGINFAIL( stat )
+	TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
+      ENDFAIL( stat );
+      delayData[i] = tDelay = emit.deltaT/output->deltaT;
+      if ( tDelay < delayMin )
+	delayMin = tDelay;
+      if ( tDelay > delayMax )
+	delayMax = tDelay;
+      gpsTime.gpsSeconds += 2*dtDelayBy2;
+      input.tgps.gpsSeconds += 2*dtDelayBy2;
+    }
+  }
+
+  /* Compute delay from Earth centre. */
+  else if ( detector->site ) {
     LIGOTimeGPS gpsTime;     /* detector time when we compute delay */
     LALPlaceAndGPS event;    /* spacetime point where we compute delay */
     DetTimeAndASource input; /* input to time delay function */
+
+    LALInfo( stat, "Ephemeris field absent; computing propagation"
+	     " delays from Earth centre" );
 
     /* Arrange nested pointers, and set initial values. */
     event.p_detector = detector->site;
@@ -378,7 +424,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
     input.p_det_and_time = &event;
     input.p_source = &source;
     gpsTime = output->epoch;
-    gpsTime.gpsSeconds -= DELAYDT/2;
+    gpsTime.gpsSeconds -= dtDelayBy2;
     delayMin = delayMax = LAL_REARTH_SI / ( LAL_C_SI*output->deltaT );
     delayMin *= -1;
 
@@ -398,18 +444,21 @@ LALSimulateCoherentGW( LALStatus        *stat,
 	delayMin = tDelay;
       if ( tDelay > delayMax )
 	delayMax = tDelay;
-      gpsTime.gpsSeconds += DELAYDT;
+      gpsTime.gpsSeconds += 2*dtDelayBy2;
     }
-  } else {
-    LALInfo( stat, "Detector site absent; simulating h_plus with no"
-	     " propagation delays." );
+  }
+
+  /* No information from which to compute delays. */
+  else {
+    LALInfo( stat, "Detector site absent; simulating hplus with no"
+	     " propagation delays" );
     memset( delayData, 0, nMax*sizeof(REAL8) );
     delayMin = delayMax = 0.0;
   }
 
   /* Generate the table of polarization response functions. */
-  polDt = output->deltaT/POLDT;
-  nMax = (UINT4)( output->data->length*output->deltaT/POLDT ) + 3;
+  polDt = output->deltaT/( 2.0*dtPolBy2 );
+  nMax = (UINT4)( output->data->length*polDt ) + 3;
   memset( &polResponse, 0, sizeof( LALDetAMResponseSeries ) );
   LALSCreateVector( stat->statusPtr, &( polResponse.pPlus ), nMax );
   BEGINFAIL( stat )
@@ -444,8 +493,8 @@ LALSimulateCoherentGW( LALStatus        *stat,
     input.pSource = &polSource;
     input.pDetector = detector->site;
     params.epoch = output->epoch;
-    params.epoch.gpsSeconds -= POLDT/2;
-    params.deltaT = POLDT;
+    params.epoch.gpsSeconds -= dtPolBy2;
+    params.deltaT = 2.0*dtPolBy2;
     params.nSample = nMax;
 
     /* Compute table of responses. */
@@ -660,7 +709,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
     INT4 j;                 /* array index preceding x */
     REAL4 frac;             /* value of x - j */
     REAL4 a1, a2;           /* current signal amplitudes */
-    REAL4 phi = 0.0;        /* current signal phase */
+    REAL8 phi = 0.0;        /* current signal phase */
     REAL4 f = 0.0;          /* current signal frequency */
     REAL4 shift = 0.0;      /* current signal polarization shift */
     REAL4 aTrans, phiTrans; /* current values of the transfer function */
