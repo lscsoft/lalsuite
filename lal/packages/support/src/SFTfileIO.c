@@ -356,11 +356,20 @@ LALReadSFTfiles (LALStatus *stat,
 	if (out) LALDestroySFTVector (stat->statusPtr, &out);
       } ENDFAIL (stat);
       /* this is a bit tricky: first we need to read one SFT to know how
-       * many frequency-bins we need */
+       * many frequency-bins we need. 
+       * This also means: ALL our SFTs currently have to be of same length! */
       if (out == NULL) {
 	LALCreateSFTVector (stat->statusPtr, &out, numSFTs, sft->data->length);
       }
-	
+
+      /* Check that SFTs have same length (current limitation) */
+      if ( sft->data->length != out->data->data->length)
+	{
+	  LALDestroySFTVector (stat->statusPtr, &out);
+	  LALDestroySFTtype (stat->statusPtr, &sft);
+	  ABORT (stat, SFTFILEIOH_EDIFFLENGTH, SFTFILEIOH_MSGEDIFFLENGTH);
+	} /* if length(thisSFT) != common length */
+
       /* transfer the returned SFT into the SFTVector 
        * this is a bit complicated by the fact that it's a vector
        * of SFTtypes, not pointers: therefore we need to *COPY* the stuff !
