@@ -455,8 +455,8 @@ int main(int argc,char *argv[])
 	  /* now, if user requested it, we output ALL F-statistic results */
 	  if ((fpOut)&&(!uvar_binary)) 
 	    {
-	      printf("outputting isolated Fstat\n");
 	      INT4 i;
+	      printf("outputting isolated Fstat\n");
 	      for(i=0;i < GV.FreqImax ;i++)
 		{
 		  fprintf (fpOut, "%20.17f %20.17f %20.17f %20.17f\n", 
@@ -468,8 +468,8 @@ int main(int argc,char *argv[])
 	  /* BINARY-MOD - output binary search F-stat with binary params */
 	  if ((fpOut)&&(uvar_binary)) 
 	    {
-	      printf("printing binary output\n");
 	      INT4 i;
+	      printf("printing binary output\n");
 	      for(i=0;i < GV.FreqImax ;i++)
 		{
 		  fprintf (fpOut, "%6.12f %6.12f %12.12f %d %d %6.12f %6.12f %12.12f\n", 
