@@ -255,6 +255,8 @@ typedef struct FFTTag
 typedef struct DeFTPeriodogramTag
 {
   REAL8FrequencySeries *fft;
+  COMPLEX16FrequencySeries *fA;
+  COMPLEX16FrequencySeries *fB;
   ParameterSet par;
 } DeFTPeriodogram;
 

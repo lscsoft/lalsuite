@@ -967,10 +967,17 @@ int main(int argc, char **argv)
       xHat[i]=(DeFTPeriodogram *)LALMalloc(sizeof(DeFTPeriodogram));
       xHat[i]->fft=(REAL8FrequencySeries *) 	
 	LALMalloc(sizeof(REAL8FrequencySeries));
+      xHat[i]->fA=(COMPLEX16FrequencySeries *)LALMalloc(sizeof(COMPLEX16FrequencySeries));
+      xHat[i]->fB=(COMPLEX16FrequencySeries *)LALMalloc(sizeof(COMPLEX16FrequencySeries));      
       xHat[i]->fft->data=(REAL8Vector *)LALMalloc(sizeof(REAL8Vector));
       xHat[i]->fft->data->data=(REAL8 *)LALMalloc((UINT4)((if0Max-if0Min+1)*mCohSFT)*sizeof(REAL8));
       xHat[i]->fft->data->length=(UINT4)((if0Max-if0Min+1)*mCohSFT);
-      /*      LALDCreateVector(&status, &(xHat[i]->fft->data), (UINT4)((if0Max-if0Min+1)*mCohSFT));*/
+      xHat[i]->fA->data=(COMPLEX16Vector *)LALMalloc(sizeof(COMPLEX16Vector));
+      xHat[i]->fA->data->data=(COMPLEX16 *)LALMalloc((UINT4)((if0Max-if0Min+1)*mCohSFT)*sizeof(COMPLEX16));      
+      xHat[i]->fA->data->length=(UINT4)((if0Max-if0Min+1)*mCohSFT);
+      xHat[i]->fB->data=(COMPLEX16Vector *)LALMalloc(sizeof(COMPLEX16Vector));
+      xHat[i]->fB->data->data=(COMPLEX16 *)LALMalloc((UINT4)((if0Max-if0Min+1)*mCohSFT)*sizeof(COMPLEX16));      
+      xHat[i]->fB->data->length=(UINT4)((if0Max-if0Min+1)*mCohSFT);
     }
   
   for(k=0; k<mObsCoh; k++)
@@ -1022,6 +1029,12 @@ int main(int argc, char **argv)
       LALFree(xHat[i]->fft->data->data);
       LALFree(xHat[i]->fft->data);
       LALFree(xHat[i]->fft);
+      LALFree(xHat[i]->fA->data->data);
+      LALFree(xHat[i]->fA->data);
+      LALFree(xHat[i]->fA);
+      LALFree(xHat[i]->fB->data->data);
+      LALFree(xHat[i]->fB->data);
+      LALFree(xHat[i]->fB);
       LALFree(xHat[i]);
     }
   LALFree(xHat);

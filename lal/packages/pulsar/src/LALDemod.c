@@ -133,11 +133,9 @@ void LALDemod(LALStatus *stat,
   INT4 tempMCohSFT, tempif0Max, tempif0Min, tempifMin;
   INT4 *tempInt1;
   INT4 index;
-  COMPLEX16Vector *tempXhata = NULL;	  
-  COMPLEX16Vector *tempXhatb = NULL;
-  REAL8Vector *fA = NULL;
-  REAL8Vector *fB = NULL;
-  REAL8Vector *fAB = NULL;
+  REAL8 fA;
+  REAL8 fB;
+  REAL8 fAB;
 
   INITSTATUS(stat, "LALDemod", LALDEMODC);
   ATTATCHSTATUSPTR(stat);
@@ -186,15 +184,6 @@ void LALDemod(LALStatus *stat,
   ASSERT(xHat->fft!=NULL, stat, LALDEMODH_ENULL, LALDEMODH_MSGENULL);
   ASSERT(xHat->fft->data!=NULL, stat, LALDEMODH_ENULL, LALDEMODH_MSGENULL);
  
-  
-  /* Allocate memory for the temporary xHats */
-  LALZCreateVector(stat->statusPtr, &(tempXhata), xHat->fft->data->length);
-  LALZCreateVector(stat->statusPtr, &(tempXhatb), xHat->fft->data->length);
-
-  /* Allocate memory for the individual statistics */
-  LALDCreateVector(stat->statusPtr, &(fA), xHat->fft->data->length);
-  LALDCreateVector(stat->statusPtr, &(fB), xHat->fft->data->length);
-  LALDCreateVector(stat->statusPtr, &(fAB), xHat->fft->data->length);
   /* Allocate memory for LUTs. These are stored in "sinVal" and in "cosVal". 
      The integer "res" defines the resolution of the argument of the trig functions: 2pi/res. 
      The size of the LUT is res+1 in order to protect against rounding errors in the index 
@@ -213,9 +202,7 @@ void LALDemod(LALStatus *stat,
   /* setting some values */
   alpha1=iCoh*tempMCohSFT;
   alpha2=alpha1+tempMCohSFT;
-  /*
-    tempXhat=(COMPLEX16 *)LALMalloc((tempif0Max-tempif0Min)*tempMCohSFT*sizeof(COMPLEX16));
-  */
+ 
   /* this loop computes the values of the phase model */
   xSum=(REAL8 *)LALMalloc(tempMCohSFT*sizeof(REAL8));
   ySum=(REAL8 *)LALMalloc(tempMCohSFT*sizeof(REAL8));
@@ -239,10 +226,10 @@ void LALDemod(LALStatus *stat,
 	  COMPLEX16 tXb;
 	  
 	  xHatIndex++;
-  	  tXa.re = tempXhata->data[xHatIndex].re = 0.0; 
-  	  tXa.im = tempXhata->data[xHatIndex].im = 0.0; 
-  	  tXb.re = tempXhatb->data[xHatIndex].re = 0.0; 
-  	  tXb.im = tempXhatb->data[xHatIndex].im = 0.0;	   
+  	  tXa.re = xHat->fA->data->data[xHatIndex].re = 0.0; 
+  	  tXa.im = xHat->fA->data->data[xHatIndex].im = 0.0; 
+  	  tXb.re = xHat->fB->data->data[xHatIndex].re = 0.0; 
+  	  tXb.im = xHat->fB->data->data[xHatIndex].im = 0.0;	     	  
 	  
 	  for(alpha=alpha1;alpha<alpha2;alpha++)
 	    {
@@ -294,7 +281,6 @@ void LALDemod(LALStatus *stat,
 	     for(k=0;k<2*NTERM_COH_DIV_TWO;k++)
 	     {
 		 COMPLEX8 tempPtr2;
-
 		 
 		 x=tempFreq-LAL_TWOPI*(REAL8)k;
 		 /* Note that this is a problem if x is small and negative!!! */
@@ -333,28 +319,21 @@ void LALDemod(LALStatus *stat,
 	  /* Now, compute normalised periodograms for each statistic */
 	  /* |F_a|^2, |F_b|^2, Re[(F_a)(F_b}^*] */
 	  
-	  fA->data[xHatIndex] = oneOverSqrtMCohSFT*(tXa.re*tXa.re+tXa.im*tXa.im);
-	  fB->data[xHatIndex] = oneOverSqrtMCohSFT*(tXb.re*tXb.re+tXb.im*tXb.im);
-	  fAB->data[xHatIndex] = oneOverSqrtMCohSFT*(tXa.re*tXb.re+tXa.im*tXb.im);
+	  fA  = oneOverSqrtMCohSFT*(tXa.re*tXa.re+tXa.im*tXa.im);
+	  fB  = oneOverSqrtMCohSFT*(tXb.re*tXb.re+tXb.im*tXb.im);
+	  fAB = oneOverSqrtMCohSFT*(tXa.re*tXb.re+tXa.im*tXb.im);
 	  
 	  /* Compute statistic for this DeFT bin */
 	  /* F = 1/D * (B*|F_a|^2+A*|F_b|^2-2C*Re(F_a * F_b^*)) */
 	  xHat->fft->data->data[xHatIndex] = (1.0/params->amcoe->D) * 
-	    ((params->amcoe->B)*fA->data[xHatIndex] + 
-	    (params->amcoe->A)*fB->data[xHatIndex] -
-	    2*(params->amcoe->C)*fAB->data[xHatIndex]);
+	    ((params->amcoe->B)*fA + 
+	    (params->amcoe->A)*fB -
+	    2.0*(params->amcoe->C)*fAB);
 	}
     }
   
   /* Clean up */
   
-  LALZDestroyVector(stat->statusPtr, &tempXhata);
-  LALZDestroyVector(stat->statusPtr, &tempXhatb);
-
-  LALDDestroyVector(stat->statusPtr, &fA);
-  LALDDestroyVector(stat->statusPtr, &fB);
-  LALDDestroyVector(stat->statusPtr, &fAB);
-
   LALFree(tempInt1);
   LALFree(xSum);
   LALFree(ySum);
