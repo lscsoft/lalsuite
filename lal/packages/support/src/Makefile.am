@@ -22,6 +22,7 @@ libsupport_la_SOURCES = LALStd.c LALVersion.c LALMalloc.c LALError.c \
 
 liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \
   PrintTimeSeries.c ReadFrequencySeries.c ReadTimeSeries.c \
+  ReadNoiseSpectrum.c \
   StreamVectorInput.c StreamVectorSequenceInput.c StreamSequenceInput.c \
   StreamSeriesInput.c StreamSeriesOutput.c \
   StreamGridInput.c StreamGridOutput.c \
