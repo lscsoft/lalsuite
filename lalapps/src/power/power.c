@@ -46,16 +46,16 @@ int main( void )
     "--threshold        threshold\n"\
     "--etomstr          nevents \n"\
     "--framecache       filename \n"\
-    "--channel          channel \n"\
+    "--channel-name     channel \n"\
     "--simtype          simtype \n"\
     "--spectype         spectype \n"\
     "--window           window \n"\
-    "--start_time       start-sec \n"\
-    "--start_time_ns    start-nsec \n"\
-    "--stop_time        stop-sec \n"\
-    "--stop_time_ns     stop-nsec \n"\
+    "--gps-start-time       start-sec \n"\
+    "--gps-start-time-ns    start-nsec \n"\
+    "--gps-stop-time        stop-sec \n"\
+    "--gps-stop-time-ns     stop-nsec \n"\
     "[--injfile         injection file] \n"\
-    "[--calcache        calibration file] \n"\
+    "[--calibration-cache        calibration file] \n"\
     "[--mdccache        mdccache filename] \n"\
     "[--mdcchannel      mdcchannel] \n"\
     "[--geodata         high pass corner freq] \n"\
@@ -759,12 +759,12 @@ int initializeEPSearch(
         {"cluster",                 no_argument,       &cluster,           TRUE },
         /* these options don't set a flag */
         {"alphdef",                 required_argument, 0,                 'a'}, 
-        {"channel",                 required_argument, 0,                 'b'}, 
+        {"channel-name",            required_argument, 0,                 'b'}, 
         {"comment",                 required_argument, 0,                 'c'}, 
         {"delf",                    required_argument, 0,                 'd'}, 
         {"etomstr",                 required_argument, 0,                 'e'}, 
         {"flow",                    required_argument, 0,                 'f'}, 
-        {"framecache",              required_argument, 0,                 'g'}, 
+        {"frame-cache",             required_argument, 0,                 'g'}, 
         {"framedir",                required_argument, 0,                 'i'}, 
         {"help",                    no_argument,       0,                 'h'}, 
         {"lngth",                   required_argument, 0,                 'j'}, 
@@ -780,10 +780,10 @@ int initializeEPSearch(
         {"segdcle",                 required_argument, 0,                 't'}, 
         {"simtype",                 required_argument, 0,                 'u'}, 
         {"spectype",                required_argument, 0,                 'v'}, 
-        {"start_time",              required_argument, 0,                 'x'}, 
-        {"start_time_ns",           required_argument, 0,                 'y'}, 
-        {"stop_time",               required_argument, 0,                 'X'}, 
-        {"stop_time_ns",            required_argument, 0,                 'Y'}, 
+        {"gps-start-time",          required_argument, 0,                 'x'}, 
+        {"gps-start-time-ns",       required_argument, 0,                 'y'}, 
+        {"gps-stop-time",           required_argument, 0,                 'X'}, 
+        {"gps-stop-time-ns",        required_argument, 0,                 'Y'}, 
         {"sample-rate",             required_argument, 0,                 'z'}, 
         {"sinFreq",                 required_argument, 0,                 'A'}, 
         {"seed",                    required_argument, 0,                 'E'}, 
@@ -793,7 +793,7 @@ int initializeEPSearch(
 	{"sinOffset",               required_argument, 0,                 'F'},
 	{"sinAmpl",                 required_argument, 0,                 'G'},
 	{"sinWidth",                required_argument, 0,                 'H'},
-        {"calcache",                required_argument, 0,                 'I'},
+        {"calibration-cache",       required_argument, 0,                 'I'},
         {"injfile",                 required_argument, 0,                 'J'},
 	/* geo data flag, argument is corner freq. of high pass filter */
 	{"geodata",		    required_argument, 0,		  'K'},
