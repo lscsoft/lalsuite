@@ -2169,7 +2169,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
         /* ifo for first stream */
         optarg_len = strlen(optarg) + 1;
         ifoOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        memcpy(ifoOne, optarg, optarg_len);
+        strncpy(ifoOne, optarg, optarg_len);
 
         /* set site */
         if (strncmp(ifoOne, "H1", 2) == 0)
@@ -2200,7 +2200,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
         /* ifo for second stream */
         optarg_len = strlen(optarg) + 1;
         ifoTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        memcpy(ifoTwo, optarg, optarg_len);
+        strncpy(ifoTwo, optarg, optarg_len);
 
         /* set site */
         if (strncmp(ifoTwo, "H1", 2) == 0)
@@ -2232,7 +2232,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 4;
         channelOneTemp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         channelOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        memcpy(channelOneTemp, optarg, optarg_len);
+        strncpy(channelOneTemp, optarg, optarg_len);
         break;
 
       case 'Y':
@@ -2240,7 +2240,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 4;
         channelTwoTemp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         channelTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        memcpy(channelTwoTemp, optarg, optarg_len);
+        strncpy(channelTwoTemp, optarg, optarg_len);
         break;
 
       case 'd':
