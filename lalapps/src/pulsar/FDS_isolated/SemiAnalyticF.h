@@ -37,6 +37,7 @@ struct CommandLineArgsTag {
   int nTsft;
   int detector;
   char *timestamps;
+  int gpsStart;
   char *efiles;
   REAL8 phi;
   REAL8 psi;
@@ -49,6 +50,7 @@ struct CommandLineArgsTag {
 
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 int ReadTimeStamps(struct CommandLineArgsTag CLA);
+int MakeTimeStamps(struct CommandLineArgsTag CLA);
 int ComputeF(struct CommandLineArgsTag CLA);
 int CreateDetector(LALDetector *Detector);
 int Freemem(void);
