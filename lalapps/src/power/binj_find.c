@@ -254,8 +254,8 @@ static SimBurstTable *extract_injections(LALStatus *stat, SimBurstTable *injecti
 
 
 /*
- * Read trigger list, and trim injection list according to times that were
- * analyzed.
+ * Determine the start and end times of an analysis from the search summary
+ * table.
  */
 
 static INT4 read_search_summary_start_end(char *filename, INT4 *start, INT4 *end, FILE *fpout)
@@ -288,6 +288,11 @@ static INT4 read_search_summary_start_end(char *filename, INT4 *start, INT4 *end
 	return(*end - *start);
 }
 
+
+/*
+ * Read trigger list, and generate a new injection list from the injections
+ * that occur in the data that was analyzed.
+ */
 
 static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT4 *timeAnalyzed, SimBurstTable **injection, struct options_t options)
 {
@@ -433,13 +438,12 @@ int main(int argc, char **argv)
 	/* triggers */
 	SnglBurstTable *tmpEvent = NULL, *currentEvent = NULL;
 	SnglBurstTable *burstEventList = NULL;
-	SnglBurstTable *detEventList = NULL, *detTrigList = NULL, *prevTrig = NULL;
+	SnglBurstTable *detTrigList = NULL, *prevTrig = NULL;
 	INT4 timeAnalyzed;
 
 	/* injections */
 	SimBurstTable *simBurstList = NULL;
-	SimBurstTable *currentSimBurst = NULL, *tmpSimBurst = NULL;
-	SimBurstTable *injSimList = NULL, *prevSimBurst = NULL;
+	SimBurstTable *currentSimBurst = NULL;
 	SimBurstTable *injFoundList = NULL;
 	SimBurstTable *tmpInjFound = NULL, *prevInjFound = NULL;
 
@@ -622,28 +626,14 @@ int main(int argc, char **argv)
    * first event in list
    *****************************************************************/
 
-	currentEvent = detEventList = burstEventList;
 	for (currentSimBurst = simBurstList; currentSimBurst; currentSimBurst = currentSimBurst->next) {
 		ninjected++;
-
-		/* write the injected signals to an output file */
-		if (injSimList == NULL) {
-			injSimList = tmpSimBurst = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
-			prevSimBurst = tmpSimBurst;
-		} else {
-			tmpSimBurst = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
-			prevSimBurst->next = tmpSimBurst;
-		}
-		memcpy(tmpSimBurst, currentSimBurst, sizeof(SimBurstTable));
-		prevSimBurst = tmpSimBurst;
-		tmpSimBurst = tmpSimBurst->next = NULL;
 
 		/* convert injection time to INT8 */
 		LAL_CALL(LALGPStoINT8(&stat, &injPeakTime, &(currentSimBurst->l_peak_time)), &stat);
 
-
 		/* loop over the burst events */
-		while (currentEvent != NULL) {
+		for (currentEvent = burstEventList; currentEvent; currentEvent = currentEvent->next) {
 
 			/* convert start time to INT8 */
 			LAL_CALL(LALGPStoINT8(&stat, &burstStartTime, &(currentEvent->start_time)), &stat);
@@ -682,8 +672,6 @@ int main(int argc, char **argv)
 
 				break;
 			}
-
-			currentEvent = currentEvent->next;
 		}
 	}
 
@@ -701,7 +689,7 @@ int main(int argc, char **argv)
 
 	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, injmadeFile), &stat);
 	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sim_burst_table), &stat);
-	myTable.simBurstTable = injSimList;
+	myTable.simBurstTable = simBurstList;
 	LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, myTable, sim_burst_table), &stat);
 	LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
 	LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
