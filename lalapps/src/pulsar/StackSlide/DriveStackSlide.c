@@ -96,6 +96,7 @@
 /* 10/28/04 gam; if (params->weightFlag & 2) > 0 then include beam pattern F_+ in PowerFlux weights from running median. Must have (params->normalizationFlag & 4) > 0 */
 /* 10/28/04 gam; if (params->weightFlag & 4) > 0 then include beam pattern F_x in PowerFlux weights from running median. Must have (params->normalizationFlag & 4) > 0 */
 /* 10/28/04 gam; change unused params->windowFilterFlag to REAL8 params->orientationAngle used to find F_+ and F_x with weightFlag or MC with fixed polarization angle */
+/* 11/01/04 gam; if (params->weightFlag & 8) > 0 rescale STKs with threshold5 to prevent dynamic range issues. */
 
 /*********************************************/
 /*                                           */
@@ -462,7 +463,7 @@ void StackSlideInitSearch(
     	fprintf(stdout,"set threshold2         %23.16e; #33 REAL4 peak ends if power drops below this. \n", params->threshold2);
     	fprintf(stdout,"set threshold3         %23.16e; #34 REAL4 ratio peak height to valley depth that indicates a new peak rather than subpeak in a cluster. \n", params->threshold3); /* 01/20/04 gam */
     	fprintf(stdout,"set threshold4         %23.16e; #35 REAL4 unused (except when params->testFlag & 2 > 0; see below).\n", params->threshold4); /* 05/11/04 gam */ /* 01/27/04 gam */
-    	fprintf(stdout,"set threshold5         %23.16e; #36 REAL4 unused (except when params->testFlag & 1 > 0; see below).\n", params->threshold5); /* 05/11/04 gam */ /* 01/27/04 gam */
+    	fprintf(stdout,"set threshold5         %23.16e; #36 REAL4 unused (except when params->testFlag & 1 > 0 or params->weightFlag & 8 > 0; see below).\n", params->threshold5); /* 05/11/04 gam */ /* 01/27/04 gam */ /* 11/01/04 gam */
     	fprintf(stdout,"set maxWidthBins       %23d; #37 REAL4 maximum width in bins. \n", params->maxWidthBins); /* 02/20/04 gam */ /* 02/23/04 gam */
     	fprintf(stdout,"#The thresholdFlag rules are: \n");
     	fprintf(stdout,"# if (params->thresholdFlag <= 0) do not analyze SUMs for peaks about threshold,\n");
@@ -478,7 +479,8 @@ void StackSlideInitSearch(
     	fprintf(stdout,"#The weightFlag rules are: \n");        
     	fprintf(stdout,"# if (params->weightFlag & 1 > 0) use powerFlux style weights; must using running median (see normalizationFlag rules),\n");
     	fprintf(stdout,"# if (params->weightFlag & 2 > 0) include beam pattern F_+ in calculation of weights,\n");
-    	fprintf(stdout,"# if (params->weightFlag & 4 > 0) include beam pattern F_x in calculation of weights.\n");
+    	fprintf(stdout,"# if (params->weightFlag & 4 > 0) include beam pattern F_x in calculation of weights,\n");
+    	fprintf(stdout,"# if (params->weightFlag & 8 > 0) rescale STKs with threshold5 to prevent dynamic range issues.\n"); /* 11/01/04 gam */
     	fprintf(stdout,"\n");
     	/* fprintf(stdout,"set windowFilterFlag   %23d; #40 INT2 whether to window or filter data (< 0 already done, 0 no, 1 yes) \n", params->windowFilterFlag); */ /* 10/28/04 gam */
     	/* fprintf(stdout,"# Note that < 0 and 0 are only options currently supported. \n"); */ /* 10/28/04 gam */
@@ -1422,6 +1424,11 @@ void StackSlideApplySearch(
 
 	} /* END for(k=0;k<params->numBLKs;k++) */
 
+        /* 11/01/04 gam; if (params->weightFlag & 8) > 0 rescale STKs with threshold5 to prevent dynamic range issues. */
+        if ( (params->weightFlag & 8) > 0 )  {
+           RescaleSTKData(params->STKData, params->numSTKs, params->nBinsPerSTK, params->threshold5);
+        }
+        
         /* 04/15/04 gam; open file for output of PSD estimates for each SFT */
         if ( ((params->normalizationFlag & 16) > 0) && !((params->normalizationFlag & 2) > 0) ) {
             CHAR *psdFile;
@@ -3539,6 +3546,17 @@ void GetDetResponseTStampMidPts(LALStatus *stat, REAL4Vector *detResponseTStampM
     DETATCHSTATUSPTR(stat);
     RETURN(stat);
 }  
+
+/* 11/01/04 gam; if (params->weightFlag & 8) > 0 rescale STKs with threshold5 to prevent dynamic range issues. */
+void RescaleSTKData(REAL4FrequencySeries **STKData, INT4 numSTKs, INT4 nBinsPerSTK,REAL4 RescaleFactor)
+{
+     INT4 i,k;
+     for(k=0;k<numSTKs;k++) {
+         for(i=0;i<nBinsPerSTK;i++) {
+             STKData[k]->data->data[i] *= RescaleFactor; /* Multiply by RescaleFactor */
+         }
+     }
+} /* END RescaleSTKData */
 
 /******************************************/
 /*                                        */

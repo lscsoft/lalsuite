@@ -58,6 +58,7 @@
 /* 08/30/04 gam; if (outputEventFlag & 4) > 0 set returnOneEventPerSUM to TRUE; only the loudest event from each SUM is then returned. */
 /* 10/28/04 gam; if (params->weightFlag & 1) > 0 then use PowerFlux weights from running median. Must have (params->normalizationFlag & 4) > 0 */
 /* 10/28/04 gam; change unused params->windowFilterFlag to REAL8 params->orientationAngle used to find F_+ and F_x with weightFlag or MC with fixed polarization angle */
+/* 11/01/04 gam; if (params->weightFlag & 8) > 0 rescale STKs with threshold5 to prevent dynamic range issues. */
   
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
@@ -676,6 +677,8 @@ void WeightSTKsIncludingBeamPattern(REAL4FrequencySeries **STKData,
            REAL4Vector *sumInverseSquareMedians,
            REAL4Vector *detResponseTStampMidPts,
            INT4 numSTKs, INT4 nBinsPerSTK, REAL8 tSTK);
+/* 11/01/04 gam; if (params->weightFlag & 8) > 0 rescale STKs with threshold5 to prevent dynamic range issues. */
+void RescaleSTKData(REAL4FrequencySeries **STKData, INT4 numSTKs, INT4 nBinsPerSTK,REAL4 RescaleFactor);
 /******************************************/
 /*                                        */
 /* END SECTION: prototype declarations    */
