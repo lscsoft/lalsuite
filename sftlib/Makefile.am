@@ -3,7 +3,8 @@
 # $Id$
 #
 
-@SET_MAKE@
+srcdir = @srcdir@
+VPATH = @srcdir@
 
 lib_LIBRARIES = libSFTReferenceLibrary.a
 
@@ -25,17 +26,29 @@ SFTdumpall_SOURCES =  SFTdumpall.c
 
 LDADD = $(lib_LIBRARIES)	
 
-docsdir=$(docdir)
+#handling our documentation files
+docsdir=$(prefix)/doc
 
-docs_DATA       =      README \
+docname         = T040164-00
+
+docsources      =      README \
                        SFT_v2_specification \
                        SCCB_2004_09_09 \
-                       T040164-00.tex \
+                       $(docname).tex \
                        ligodcc.cls \
-                       pdfdraftcopy.sty
+                       pdfdraftcopy.sty 
 
-EXTRA_DIST      =      $(docs_DATA)
+docs_DATA       =      $(docname).pdf \
+                       $(docsources)
 
-CLEANFILES      =      SFT-test[1-7] SFT-bad[1-9] SFT-bad1[0-4] SFT-good
+#rule for our pdf documentation-file
+$(docname).pdf : $(docname).tex ligodcc.cls pdfdraftcopy.sty 
+	pdflatex $(docname).tex 
+	pdflatex $(docname).tex
+
+# add documentation-sources to distribution
+EXTRA_DIST      =      $(docsources)
+
+CLEANFILES      =      SFT-test[1-7] SFT-bad[1-9] SFT-bad1[0-4] SFT-good *.aux *.log $(docname).pdf
 
 TESTS		=      run_validate.sh
