@@ -51,8 +51,8 @@ RCSID( "$Id$");
 
 
 /* Pointer to function */
-typedef REAL8 (*FindRootFunction)(REAL8, void *);
-typedef REAL8 (*MonteCarloIntegrand)(REAL8 *, size_t, void *);
+typedef REAL8 (*FindRootFunction)(REAL8 input, void *Params);
+typedef REAL8 (*MonteCarloIntegrand)(REAL8 *inputs, size_t Dimension, void *Params);
 
 
 /* Structures */
