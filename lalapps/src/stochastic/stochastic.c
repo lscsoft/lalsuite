@@ -792,7 +792,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     {
       mask->data->data[i] = 0;
 
-      for (j = 0; j < Nbin; j ++)
+      for (j = 0; j < Nbin; j++)
       {
         if ((i + 1 + j) < respLength)
           mask->data->data[i + 1 + j]= 0;
@@ -814,6 +814,9 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* apply mask to omegaGW */
     for (i = 0; i < filterLength; i++)
       omegaGW->data->data[i] *= mask->data->data[i];
+
+    /* destroy frequency mask */
+    LAL_CALL(LALDestroyREAL4FrequencySeries(&status, mask), &status);
   }
 
   /* set normalisation parameters */
@@ -1664,10 +1667,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, overlap), &status);
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, omegaGW), &status);
   LAL_CALL(LALDestroyVector(&status, &(dataWindow.data)), &status);
-  if (apply_mask_flag)
-  {
-    LAL_CALL(LALDestroyREAL4FrequencySeries(&status, mask), &status);
-  }
   if (hannDuration != 0)
   {
     LAL_CALL(LALDestroyVector(&status, &hannWindow), &status );
