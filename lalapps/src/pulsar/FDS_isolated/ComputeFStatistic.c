@@ -579,7 +579,7 @@ int main(int argc,char *argv[])
     if(!fseek(fpstat,-6,SEEK_END))
       if(fread(done,6,1,fpstat)==1)
         if(strncmp(done,"%DONE",5)==0){
-          fprintf(stderr,"detected finished Fstat file - aborting Fstat run %d\n",cfsRunNo);
+          fprintf(stderr,"detected finished Fstat file - skipping Fstat run %d\n",cfsRunNo);
 	  fstats_completed = TRUE;
         }
     fclose(fpstat);
