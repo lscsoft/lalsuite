@@ -51,7 +51,7 @@ RCSID("$Id$");
 "Usage: %s [options] [LIGOLW XML input files]\n\n"\
 "  --help                    display this message\n"\
 "  --verbose                 print progress information\n"\
-"  --version                    print version information and exit\n"\
+"  --version                 print version information and exit\n"\
 "  --debug-level LEVEL       set the LAL debug level to LEVEL\n"\
 "  --user-tag STRING         set the process_params usertag to STRING\n"\
 "  --ifo-tag STRING          set the ifo-tag to STRING - for file naming\n"\
@@ -645,22 +645,32 @@ int main( int argc, char *argv[] )
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
-  /* store the playground argument in the process_params */
-  LALSnprintf( processParamsTable.processParamsTable->program, 
-      LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-  LALSnprintf( processParamsTable.processParamsTable->type, 
-      LIGOMETA_TYPE_MAX, "string" );
-  LALSnprintf( processParamsTable.processParamsTable->value, 
-      LIGOMETA_TYPE_MAX, " " );
-  if ( usePlayground )
+  if ( ! trigBankFile )
   {
-    LALSnprintf( processParamsTable.processParamsTable->param, 
-        LIGOMETA_PARAM_MAX, "--playground-only" );
+    /* store the playground argument in the process_params */
+    LALSnprintf( processParamsTable.processParamsTable->program, 
+        LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
+    LALSnprintf( processParamsTable.processParamsTable->type, 
+        LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( processParamsTable.processParamsTable->value, 
+        LIGOMETA_TYPE_MAX, " " );
+    if ( usePlayground )
+    {
+      LALSnprintf( processParamsTable.processParamsTable->param, 
+          LIGOMETA_PARAM_MAX, "--playground-only" );
+    }
+    else
+    {
+      LALSnprintf( processParamsTable.processParamsTable->param, 
+          LIGOMETA_PARAM_MAX, "--no-playground" );
+    }
   }
   else
   {
-    LALSnprintf( processParamsTable.processParamsTable->param, 
-        LIGOMETA_PARAM_MAX, "--no-playground" );
+    ProcessParamsTable *tmpProc = processParamsTable.processParamsTable;
+    processParamsTable.processParamsTable = 
+      processParamsTable.processParamsTable->next;
+    free( tmpProc );
   }
 
 
