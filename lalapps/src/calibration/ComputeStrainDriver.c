@@ -68,6 +68,7 @@ struct CommandLineArgsTag {
   char *FrCacheFile;       /* Frame cache file for corresponding time */
   char *exc_chan;          /* excitation channel name */    
   char *darm_chan;         /* darm channel name */ 
+  char *darmerr_chan;      /* darm_err  channel name */ 
   char *asq_chan;          /* asq channel name */
   char *filterfile;        /* file with filter coefficients */
 } CommandLineArgs;
@@ -191,16 +192,18 @@ int ReadData(struct CommandLineArgsTag CLA)
 FrPos pos1;
 
 static FrChanIn chanin_darm;
+static FrChanIn chanin_darmerr;
 static FrChanIn chanin_asq;
 static FrChanIn chanin_exc;
 
-
   chanin_asq.type  = ADCDataChannel;
   chanin_darm.type = ADCDataChannel;
+  chanin_darmerr.type = ADCDataChannel;
   chanin_exc.type  = ADCDataChannel;
 
   chanin_asq.name  = CLA.asq_chan;
   chanin_darm.name = CLA.darm_chan;
+  chanin_darmerr.name = CLA.darmerr_chan;
   chanin_exc.name  = CLA.exc_chan; 
 
   /* create Frame cache, open frame stream and delete frame cache */
@@ -226,11 +229,19 @@ static FrChanIn chanin_exc;
   TESTSTATUS( &status );
   LALFrGetREAL4TimeSeries(&status,&InputData.EXC,&chanin_exc,framestream);
   TESTSTATUS( &status );
+  LALFrSetPos(&status,&pos1,framestream);
+  TESTSTATUS( &status );
+  LALFrGetREAL4TimeSeries(&status,&InputData.DARM_ERR,&chanin_darmerr,framestream);
+  TESTSTATUS( &status );
+
+
 
   /* Allocate space for data vectors */
   LALSCreateVector(&status,&InputData.AS_Q.data,(UINT4)(duration/InputData.AS_Q.deltaT +0.5));
   TESTSTATUS( &status );
   LALSCreateVector(&status,&InputData.DARM.data,(UINT4)(duration/InputData.DARM.deltaT +0.5));
+  TESTSTATUS( &status );
+  LALSCreateVector(&status,&InputData.DARM_ERR.data,(UINT4)(duration/InputData.DARM_ERR.deltaT +0.5));
   TESTSTATUS( &status );
   LALSCreateVector(&status,&InputData.EXC.data,(UINT4)(duration/InputData.EXC.deltaT +0.5));
   TESTSTATUS( &status );
@@ -244,6 +255,11 @@ static FrChanIn chanin_exc;
   LALFrSetPos(&status,&pos1,framestream);
   TESTSTATUS( &status );
   LALFrGetREAL4TimeSeries(&status,&InputData.DARM,&chanin_darm,framestream);
+  TESTSTATUS( &status );
+
+  LALFrSetPos(&status,&pos1,framestream);
+  TESTSTATUS( &status );
+  LALFrGetREAL4TimeSeries(&status,&InputData.DARM_ERR,&chanin_darmerr,framestream);
   TESTSTATUS( &status );
 
   LALFrSetPos(&status,&pos1,framestream);
@@ -280,6 +296,10 @@ static FrChanIn chanin_exc;
 
   OutputData.alpha.deltaT=CLA.To;
   LALZCreateVector(&status,&OutputData.alpha.data,(UINT4)(duration/OutputData.alpha.deltaT +0.5));
+  TESTSTATUS( &status );
+
+  OutputData.alphabeta.deltaT=CLA.To;
+  LALZCreateVector(&status,&OutputData.alphabeta.data,(UINT4)(duration/OutputData.alphabeta.deltaT +0.5));
   TESTSTATUS( &status );
 
   OutputData.beta.deltaT=CLA.To;
@@ -864,6 +884,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"exc-channel",         required_argument, NULL,           'E'},
     {"asq-channel",         required_argument, NULL,           'A'},
     {"darm-channel",        required_argument, NULL,           'D'},
+    {"darmerr-channel",     required_argument, NULL,           'R'},
     {"gps-end-time",        required_argument, NULL,           's'},
     {"gps-start-time",      required_argument, NULL,           'e'},
     {"olg-re",              required_argument, NULL,           'i'},
@@ -877,7 +898,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"help",                no_argument, NULL,                 'h' },
     {0, 0, 0, 0}
   };
-  char args[] = "hrcuf:C:A:E:D:F:s:e:i:j:k:l:t:o:";
+  char args[] = "hrcuf:C:A:E:D:R:F:s:e:i:j:k:l:t:o:";
   
   /* Initialize default values */
   CLA->f=0.0;
@@ -886,6 +907,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->filterfile=NULL;
   CLA->exc_chan=NULL;
   CLA->darm_chan=NULL;
+  CLA->darmerr_chan=NULL;
   CLA->asq_chan=NULL;
   CLA->GPSStart=0;
   CLA->GPSEnd=0;
@@ -938,6 +960,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'D':
       /* name of darm channel */
       CLA->darm_chan=optarg;
+      break;    
+    case 'R':
+      /* name of darm channel */
+      CLA->darmerr_chan=optarg;
       break;    
     case 's':
       /* calibration line frequency */
@@ -996,6 +1022,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t-A\tSTRING\t AS_Q channel name (eg, L1:LSC-AS_Q).\n");
       fprintf(stdout,"\t-E\tSTRING\t Excitation channel name (eg, L1:LSC-ETMX_EXC_DAQ)\n");
       fprintf(stdout,"\t-D\tSTRING\t Darm channel name (eg, L1:LSC-DARM_CTRL)\n");
+      fprintf(stdout,"\t-R\tSTRING\t Darm ERR channel name (eg, L1:LSC-DARM_ERR)\n");
       fprintf(stdout,"\t-o\tINTEGER\t Size of wings in seconds.\n");
       fprintf(stdout,"\t-r\tFLAG\t Output residual strain only.\n");
       fprintf(stdout,"\t-c\tFLAG\t Output control strain only.\n");
@@ -1083,6 +1110,12 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
     }      
+   if(CLA->darmerr_chan == NULL)
+    {
+      fprintf(stderr,"No darm err channel specified.\n");
+      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      return 1;
+    }      
    if(CLA->asq_chan == NULL)
     {
       fprintf(stderr,"No asq channel specified.\n");
@@ -1114,6 +1147,8 @@ int FreeMem(void)
   LALSDestroyVector(&status,&InputData.AS_Q.data);
   TESTSTATUS( &status );
   LALSDestroyVector(&status,&InputData.DARM.data);
+  TESTSTATUS( &status );
+  LALSDestroyVector(&status,&InputData.DARM_ERR.data);
   TESTSTATUS( &status );
   LALSDestroyVector(&status,&InputData.EXC.data);
   TESTSTATUS( &status );
@@ -1169,6 +1204,8 @@ int FreeMem(void)
   LALZDestroyVector(&status,&OutputData.alpha.data);
   TESTSTATUS( &status );
   LALZDestroyVector(&status,&OutputData.beta.data);
+  TESTSTATUS( &status );
+  LALZDestroyVector(&status,&OutputData.alphabeta.data);
   TESTSTATUS( &status );
 
   LALCheckMemoryLeaks();
