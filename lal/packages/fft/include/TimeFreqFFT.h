@@ -223,6 +223,53 @@ int XLALCOMPLEX16FreqTimeFFT(
     COMPLEX16FFTPlan         *plan
     );
 
+int XLALREAL4ModifiedPeriodogram(
+    REAL4FrequencySeries        *periodogram,
+    REAL4TimeSeries             *tseries,
+    REAL4Window                 *window,
+    REAL4FFTPlan                *plan
+    );
+
+int XLALREAL4AverageSpectrumWelch(
+    REAL4FrequencySeries        *spectrum,
+    REAL4TimeSeries             *tseries,
+    UINT4                        seglen,
+    UINT4                        stride,
+    REAL4Window                 *window,
+    REAL4FFTPlan                *plan
+    );
+
+REAL8 XLALMedianBias( UINT4 nn );
+
+int XLALREAL4AverageSpectrumMedian(
+    REAL4FrequencySeries        *spectrum,
+    REAL4TimeSeries             *tseries,
+    UINT4                        seglen,
+    UINT4                        stride,
+    REAL4Window                 *window,
+    REAL4FFTPlan                *plan
+    );
+
+int XLALREAL4AverageSpectrumMedianMean(
+    REAL4FrequencySeries        *spectrum,
+    REAL4TimeSeries             *tseries,
+    UINT4                        seglen,
+    UINT4                        stride,
+    REAL4Window                 *window,
+    REAL4FFTPlan                *plan
+    );
+
+int XLALREAL4SpectrumInvertTruncate(
+    REAL4FrequencySeries        *spectrum,
+    REAL4                        lowfreq,
+    UINT4                        seglen,
+    UINT4                        trunclen,
+    REAL4FFTPlan                *fwdplan,
+    REAL4FFTPlan                *revplan
+    );
+
+
+
 
 void
 LALDestroyRealDFTParams (
