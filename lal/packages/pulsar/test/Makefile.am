@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest SkyMetricTest DirectedMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest HeterodynePulsarTest FitToPulsarTest PulsarCatTest
-#check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest LALDemodTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest HeterodynePulsarTest FitToPulsarTest PulsarCatTest
+check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest SkyMetricTest DirectedMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest HeterodynePulsarTest FitToPulsarTest PulsarCatTest
+#check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest LALDemodTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest HeterodynePulsarTest FitToPulsarTest PulsarCatTest
 pkgdata_DATA = eigen_Tf0-1e8_n-2.dat eigenInv_Tf0-1e8_n-2.dat \
   range_tauOverT-1e5_n-2.dat in.data \
   earth98.dat sun98.dat \
@@ -45,6 +45,10 @@ PtoleMetricTest_SOURCES = PtoleMetricTest.c
 PtoleMetricTest_LDADD = $(top_builddir)/lib/liblal.la
 PtoleMeshTest_SOURCES = PtoleMeshTest.c
 PtoleMeshTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+GeneralMetricTest_SOURCES = GeneralMetricTest.c
+GeneralMetricTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+GeneralMeshTest_SOURCES = GeneralMeshTest.c
+GeneralMeshTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 HeterodynePulsarTest_SOURCES = HeterodynePulsarTest.c
 HeterodynePulsarTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 FitToPulsarTest_SOURCES = FitToPulsarTest.c
@@ -52,10 +56,10 @@ FitToPulsarTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(
 PulsarCatTest_SOURCES = PulsarCatTest.c
 PulsarCatTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-#TESTS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest FitToPulsarTest LALDemodTest
+#TESTS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest FitToPulsarTest LALDemodTest
 TESTS = StackMetricTest FlatMeshTest TwoDMeshTest SkyMetricTest      \
   ResampleTest FoldAmplitudesTest LALBarycenterTest \
-  PtoleMetricTest PtoleMeshTest FitToPulsarTest PulsarCatTest
+  PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest FitToPulsarTest PulsarCatTest
 TESTS_ENVIRONMENT = LAL_DATA_PATH=$(srcdir)
 DISTCLEANFILES = *.tex
 MAINTAINERCLEANFILES = earth*.ilwd sun*.ilwd
