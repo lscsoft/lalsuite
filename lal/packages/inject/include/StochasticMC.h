@@ -13,7 +13,11 @@ Routine used by the stochastic DSO to do software injection.
 \begin{verbatim}
 #include <lal/StochasticMC.h>
 \end{verbatim}
+\noindent 
 
+\subsection*{Error conditions}
+\input{StochasticMCHE}
+\subsection*{Structures}
 </lalLaTeX>
 */
 #ifndef _STOCHASTICMC_H
@@ -49,7 +53,8 @@ extern "C" {
 #define STOCHASTICMCH_MSGENEGFMIN      "negative start frequency"
 #define STOCHASTICMCH_MSGEMMEPOCH      "Mismatch in epochs"
 #define STOCHASTICMCH_MSGEMMUNITS      "Mismatch in units"
-
+ 
+/************************************ </lalErrTable> */
 
   typedef struct tagStochasticMCInput {
     CalibrationFunctions         calfuncs1;
@@ -58,6 +63,12 @@ extern "C" {
     CalibrationUpdateParams      calfacts2 ;
   } StochasticMCInput;
 
+   typedef struct tagStochasticMCSInput {
+   CHAR *ifo1;
+    CHAR *ifo2;
+    CHAR *catalog1; 
+    CHAR *catalog2;
+  } StochasticMCSInput;
 
   typedef struct tagStochasticMCParams {
     UINT4 lengthseg;
@@ -81,6 +92,12 @@ extern "C" {
 		  SSSimStochBGOutput         *output, 
 		  StochasticMCInput          *input,
 		  StochasticMCParams         *params );
+
+void
+ LALStochasticMCStand( LALStatus                  *status,
+		       SSSimStochBGOutput         *output, 
+		       StochasticMCSInput         *input,
+		       StochasticMCParams         *params ); 
   
 #ifdef  __cplusplus
 }
