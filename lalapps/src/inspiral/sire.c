@@ -1242,7 +1242,7 @@ int main( int argc, char *argv[] )
         /* discard any remaining inspiral triggers -- including thisEvent */
         /* as we have run out of injections */
         tmpEvent = thisEvent;
-        prevEvent->next = NULL;
+	if ( prevEvent ) prevEvent->next = NULL;
         while ( tmpEvent )
         {
           thisEvent = tmpEvent;
