@@ -521,7 +521,7 @@ int main( int argc, char *argv[])
       tmpTime += series.deltaT * (REAL8) params->ovrlap;
       LAL_CALL( LALFloatToGPS( &stat, 
             &(searchsumm.searchSummaryTable->out_start_time), &tmpTime ), &stat );
-      tmpTime += series.deltaT * ((REAL8) series.data->length - (REAL8) params->ovrlap);
+      tmpTime += series.deltaT * ((REAL8) series.data->length - 2.0 * (REAL8) params->ovrlap);
       LAL_CALL( LALFloatToGPS( &stat, 
             &(searchsumm.searchSummaryTable->out_end_time), &tmpTime ), &stat );
     }
