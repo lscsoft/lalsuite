@@ -170,9 +170,12 @@ Most of them doesn't harm, but its at your own risk.
 cd /work
 wget ftp://ftp.fftw.org/pub/fftw/fftw-2.1.5.tar.gz
 tar -xzvf fftw-2.1.5.tar.gz
-cd fftw/fftw-2.1.5
+cd fftw-2.1.5
 export CFLAGS=-O2
-./configure --enable-float --disable-fortran --prefix=/work
+#the following makes MSC link to "thread-safe" libraries
+#Not needed for MinGW
+export LDFLAGS=/MD
+./configure --enable-float --disable-fortran --prefix=/work &&
 make && make install
 #Not needed for MinGW
 ( cd /work/lib ; for i in lib*.lib ; do
@@ -183,9 +186,12 @@ make && make install
 # LAL (CVS) #
 #############
 
-cd /work
+#do once for the lscsoft cvs 
 cvs -d ":pserver:anonymous@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft"\
  login
+
+cd /work
+rm -rf lal
 cvs -d ":pserver:anonymous@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft"\
  co lal
 cd lal
@@ -237,9 +243,13 @@ char *asctime_r(const struct tm *t, char *s) {
 #Not needed for MinGW
 cp /lib/libm.a /work/lib/m.lib
 
-./00boot
+#the following makes MSC link to "thread-safe" libraries
+#Not needed for MinGW
+export LDFLAGS=/MD
+
+./00boot &&
 ./configure --disable-fftw3 --with-extra-cppflags=-I/work/include\
---with-extra-libs=-L/work/lib --prefix=/work
+ --with-extra-libs=-L/work/lib --prefix=/work &&
 make && make install
 
 #rename libs
@@ -253,6 +263,7 @@ make && make install
 ###########
 
 cd /work
+rm -rf lalapps
 cvs -d ":pserver:anonymous@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft"\
  co lalapps
 
@@ -263,7 +274,11 @@ f=src/lalapps/Makefile.am
 cp $f $f.pt
 sed 's/processtable\..//g' $f.pt > $f
 
-./00boot
+#the following makes MSC link to "thread-safe" libraries
+#Not needed for MinGW
+export LDFLAGS=/MD
+
+./00boot &&
 ./configure --with-extra-cppflags='-I/work/include -DNOGLOB'\
  --with-extra-libs=-L/work/lib --prefix=/work
 
