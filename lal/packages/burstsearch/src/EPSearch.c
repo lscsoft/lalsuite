@@ -297,8 +297,7 @@ EPSearch (
       redummy=imdummy=0.0;
       for (j=0 ; j<(INT4)fseries->data->length ; j++)
       {
-        REAL4 tmpVar = sqrt( 4 * dummySegment->data->deltaT / 
-            dummySegment->spec->data->data[j] );
+        REAL4 tmpVar;
         tmpVar = sqrt( 2.0 / dummySpec[j] );
         fseries->data->data[j].re *= tmpVar;
         fseries->data->data[j].im *= tmpVar;

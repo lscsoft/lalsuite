@@ -332,7 +332,7 @@ The response function is resampled to the frequency resolution defined by the se
 The whole analysis segment is divided in 50\%-overlapping subsegments which are windowed, FFTed, squared and normalized, multiplied by the response function.
 ********* </lalLaTeX> ********/
 
-	  for(k=0;k<2*data->data->data->vectorLength / bptr->nTime; k++) {
+	  for(k=0;k<2*data->data->data->vectorLength / bptr->nTime - 1; k++) {
 
 	    memcpy(Dvec->data, data->data->data->data + k*bptr->nTime/2, Dvec->length * sizeof(REAL4));
 
