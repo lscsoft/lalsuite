@@ -1,0 +1,260 @@
+\section{Program \texttt{lalapps\_inspiral\_hipe}}
+\label{program:inspiral-hipe}
+\idx[Program]{inspiral\_hipe.in}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_inspiral_hipe$ --- python script to generate Condor DAGs to
+run the inspiral hierarchical pipeline.
+
+\item[Synopsis]
+\begin{verbatim}
+  -h, --help              display this message
+  -v, --version           print version information and exit
+  -u, --user-tag TAG      tag the job with TAG (overrides value in ini file)
+  
+  -a, --h1-data           analyze h1 data
+  -b, --h2-data           analyze h2 data
+  -l, --l1-data           analyze l1 data
+ 
+  -S, --one-ifo           analyze single ifo data
+  -D, --two-ifo           analyze two interferometer data
+  -T, --three-ifo         analyze three interferometer data
+   
+  -A, --analyze-all       analyze all ifos and all data (over-rides above)
+ 
+  -d, --datafind          run LSCdataFind to create frame cache files
+  -t, --template-bank     run lalapps_tmpltbank to generate template banks
+  -i, --inspiral          run lalapps_inspiral to generate triggers
+  -c, --coincidence       run lalapps_inca to test for coincidence
+  -s, --sire              do sires to sweep up triggers
+   
+  -P, --priority PRIO     run jobs with condor priority PRIO
+ 
+  -f, --config-file FILE  use configuration file FILE
+  -l, --log-path PATH     directory to write condor log file
+  -o, --output-segs       output the segment lists of analyzed data
+\end{verbatim}
+
+\item[Description] \verb$lalapps_inspiral_pipe$ generates a Condor DAG to run
+the hierarchical inspiral analysis pipeline.  The current pipeline is only a
+prototype, all the features are not yet implemented.  It currently works for
+the three LIGO interferometers.  
+
+The code reads in segment lists for the three instruments.  If one of the
+segment files is not specified or is empty, it is assumed that there is no data
+from that instrument.  From the segment files, the pipeline calculates three
+lists of single ifo segments, for H1, H2 and L1; three lists of double ifo
+segments, for H1-H2, H1-L1 and H2-L1; and one list of three ifo segments for
+H1-H2-L1.  The options \verb$--h1-data$, \verb$--h2-data$ and \verb$--l1-data$
+allow you to choose which of the interferometers' data to analyze.  Similarly,
+the \verb$--one-ifo$, \verb$--two-ifo$ and \verb$--three-ifo$ flags determine
+whether to analyze times during which one, two or three instruments
+respectively were operational.  If the \verb$--analyze-all$ flag is set, the
+pipeline will analyze all data from all instruments.  If the
+\verb$--output-segments$ option is chosen, the pipeline will output segment
+lists for the non-empty data types.  The file names are
+"h1\_l1\_segs\_analyzed.txt" etc, or if the analyis is restricted to
+playground, they are "h1\_l1\_play\_segs\_analyzed.txt".
+
+There are several steps of the pipeline which have been implemented to date.
+The full hierarchical pipeline will involve more steps than are currently
+available.  At present, the pipeline can perform the following parts of the
+search: \verb$--datafind$, \verb$--template-bank$, \verb$--inspiral$,
+\verb$--coincidence$ and \verb$--sire$.  Any or all of these options may be
+specified.  However, each step of the pipeline relies on results files
+produced by the previous step (and in the case of the \verb$inspiral$ step,
+both \verb$datafind$ and \verb$template-bank$ must have been run previously).
+
+
+The configuration file specifies the parameters needed to run the analysis jobs
+contained in the pipeline.  It is specified with the \verb$--config-file$
+option.  A typical .ini file is the following: 
+
+\input{hipeinifile}  
+
+The .ini file contains several sections.  The \verb$[condor]$ section contains
+the names of the executables which will run the various stages of the
+pipeline.  The \verb$[pipeline]$ section gives the CVS details of the
+pipeline, the usertag (which can be overwritten on the command line with the
+\verb$--user-tag$ option) and the \verb$playground-data-mask$ which must be
+set to one of \verb$playground_only$, \verb$exclude_playground$ or
+\verb$all_data$.  The \verb$input$ section contains the names of the segment
+files for the three interferometers, the name of the injection file and the
+channel name.  If any of the segment files are left blank, it is assumed that
+there are no segments for  that instrument.  Similarly,  a blank
+injection-file signifies that no injections are to be performed.
+
+The remaining sections set options for the various jobs to be run in the
+pipeline.  The options in the \verb$[datafind]$, \verb$[tmpltbank]$,
+\verb$[inspiral]$ and \verb$[inca]$ sections are added to every instance of
+the relevant executable.  Note that these options are set the same for all
+interferometers.  The options in the \verb$[data]$ section are added to all
+\verb$[inspiral]$ and \verb$[tmpltbank]$ jobs, and the \verb$[calibration]$
+information is used to determine the calibration data for these jobs.  In
+\verb$[inspiral-thresholds]$ section, the snr and chi squared thresholds for
+the various intererometers are set.  The \verb$[coincidence-parameters]$ are
+used to determine the ifo dependent arguments to be added to the inca
+coincidence jobs.  These give the timing and effective distance accuracies.
+The pipeline's final step is to run several sires to concatenate the triggers.
+It is currently set up to run two sires for each ifo and analysis type -- one
+without clustering and one using the clustering parameters specified in the
+\verb$[sire-parameters]$ section.  If it is an injection analysis, then sire
+will look for triggers coincident with injections.  The coincidence window is
+set by the \verb$injection-coincidence$ option in the \verb$[sire-parameters]$
+section.
+
+The science segments are read in from the segment files for each instrument.
+These science segments are split up into analysis chunks.  The analysis chunk
+size is determined from the number of data segments and their length and
+overlap specified in config file. Currently, we are using 256 second analysis
+segments.  We use 15 segments in a chunk, and overlap them by 128 seconds to
+give a chunk length of 2048 seconds.  The chunks are constructed for each of
+the interferometers independently.  Any science segment shorter than the
+length of a chunk is not analyzed.  Additionally, we cannot produce triggers
+for the first and last overlap/2 seconds of a science segment, due to the
+finite length of the inspiral templates.  We then construct segment lists of
+analyzable data for each of the seven types of data we may have (three single
+ifo, three double ifo and one triple ifo).  If the playground only option is
+specified, the segments are restricted to playground times.  We decide which
+chunks should be analyzed by testing for overlap between the chunk and the
+data we need to analyze.  Note that if the pipeline is restricted to
+playground data, then only the playground times are analyzed for triggers in
+the inspiral code.  This is done by setting the \verb$trig-start-time$ and
+\verb$trig-end-time$ for the inspiral jobs appropriately.
+
+Once the DAG file has been created it should be submitted to the Condor pool
+with the \verb$condor_submit_dag$ command.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--help}] Display a brief usage summary.
+\end{entry}
+  
+\begin{entry}
+\item[\texttt{--version}] Display the version information and exit.
+\end{entry}
+  
+\begin{entry}
+\item[\texttt{--user-tag} \textsc{usertag}] Set the user-tag to \textsc{usertag}.  This overrides the user-tag which may have been set in the ini file.  The usertag will be added to the names of the output files of the pipeline.
+\end{entry}
+  
+\begin{entry}
+\item[\texttt{--h1-data}] Analyze the H1 data, the times of which are
+determined from the \verb$h1-segments$ file specified in the ini file.  If not
+set, then no data when H1 was operational will be analyzed.
+\end{entry}
+
+\begin{entry}
+\item[\texttt{--h2-data}] Analyze the H2 data, the times of which are
+determined from the \verb$h2-segments$ file specified in the ini file.  If not
+set, then no data when H2 was operational will be analyzed.
+\end{entry}
+
+\begin{entry}
+\item[\texttt{--l1-data}] Analyze the L1 data, the times of which are
+determined from the \verb$l1-segments$ file specified in the ini file.  If not
+set, then no data when H1 was operational will be analyzed.
+\end{entry}
+
+\begin{entry}
+\item[\texttt{--one-ifo}] Analyze any times when one and only one instrument
+was operational.  Note that this option works together with the IFO options
+given above.  For example if \verb$--one-ifo$ and \verb$--h2-data$ were
+specified, then only the single IFO H2 times would be analyzed.
+\end{entry}
+
+\begin{entry}
+\item[\texttt{--two-ifo}] Analyze any times when two instruments were
+operational.  Note that this option works together with the IFO options given
+above.  For example if \verb$--two-ifo$, \verb$h1-data$ and \verb$--h2-data$
+were specified, then the times when only H1 and H2 were operational would be
+analyzed.  However, if only \verb$--two-ifo$ and \verb$h1-data$ were
+specified, no data would be analyzed.
+\end{entry}
+
+\begin{entry}
+\item[\texttt{--three-ifo}] Analyze any times when three instruments were
+operational.  Note that this option works together with the IFO options given
+above.  For example if \verb$--three-ifo$, \verb$h1-data$, \verb$--h2-data$
+and \verb$--l1-data$ were specified, then the times when all of H1, H2 and L1
+were operational would be analyzed.  Note that since the triple coincidence
+code isn't yet in place, the three ifo data is only run through template bank
+and inspiral.
+\end{entry}
+
+\begin{entry}
+\item[\texttt{--analyze-all}] Analyze all ifos and all data.  This is
+equivalent to setting all six of the options above.  Then, all the data is
+analyzed.
+\end{entry}
+
+\begin{entry}
+\item[\texttt{--datafind}] Run the datafind step of the pipeline.
+\end{entry}
+
+\begin{entry}
+\item[\texttt{--template-bank}] Run the template-bank step of the pipeline.
+Note that the template-bank jobs require the cache files created by datafind,
+so \verb$--datafind$ must either be run in the pipeline or have been run
+previously.
+\end{entry}
+
+\begin{entry}
+\item[\texttt{--inspiral}] Run the inspiral step of the pipeline.  Note that
+the inspiral jobs require the cache files created by datafind and template
+banks, so both \verb$--datafind$ and \verb$template-bank$ must either be run
+in the pipeline or have been run previously.
+\end{entry}
+
+\begin{entry}
+\item[\texttt{--coincidence}] Run the coincidence step of the pipeline.  Note
+that the inca jobs require the inspiral triggers created by inspiral, so that
+\verb$--inspiral$ must either be run in the pipeline or have been run
+previously.  For each single IFO segment, the coincidence step simply creates
+a file containing all the triggers in the time interval.  For two IFO
+segments, the coincidence step performs coincidence and outputs the double
+coincidence triggers in two files (one for each instrument).  For the three
+IFO segments, the coincidence step currently does nothing.  
+\end{entry} 
+
+\begin{entry}
+\item[\texttt{--sire}] Run the sire step of the pipeline.  This sweeps up the
+triggers from each of the seven types of data.  We get a file containing all
+the triggers from the each list single IFO data.  For a given combination of
+two active instruments (e.g. H1 and L1) we obtain two files, which contain the
+coincident triggers for each of the IFOS (H1 and L1 respectively).  Sire
+currently does not do anything for the triple coincident times.  Note that the
+sire jobs require the output of the inca jobs as input.  Therefore, the
+\verb$--coincidence$ step of the pipeline must either be run or have been run
+previously.
+\end{entry} 
+
+\begin{entry}
+\item[\texttt{--priority} \textsc{PRIO}] Set the condor priority \textsc{PRIO}
+of the condor jobs to be run in the pipeline.
+\end{entry} 
+
+\begin{entry}
+\item[\texttt{--config-file} \texttt{config\_file}] Set the name of the
+configuration file to be \textsc{config\_file}.  This is the which is used to
+determine the parameters for the pipeline.  This is a required argument.
+\end{entry} 
+ 
+\begin{entry}
+\item[\texttt{--log-path}] The directory in which to write the condor log
+file.  This should generally be a local directory of the condor submit
+machine.  This is a required argument.
+\end{entry} 
+
+\begin{entry}
+\item[\texttt{--output-segs}] Output the segment lists of analyzed data.  Up
+to seven files will be output, one for each of the types of interferometer
+data (H1, H2, L1, H1\_H2, H1\_L1, H2\_L1, H1\_H2\_L1).  Any segment lists
+which are non-empty will we written.
+\end{entry} 
+
+
+\item[Author] 
+Steve Fairhurst
+\end{entry}
