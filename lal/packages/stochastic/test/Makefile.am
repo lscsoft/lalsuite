@@ -70,7 +70,7 @@ TESTS =	  StochasticCrossCorrelationStatisticTest \
 
 #    SFalseAlarmTest       SFalseDismissalTest  \
 #           DFalseAlarmTest       SFDismissalVsFAlarmTest \
-#           DFalseDismissalTest   DFDismissalVsFAlarmTest \
+#           DFalseDismissalTest   DFDismissalVsFAlarmTest
 
 EXTRA_DIST = CheckStatus.c CheckStatus.h pipeline spectrum1.in spectrum2.in \
              response1.in response2.in
