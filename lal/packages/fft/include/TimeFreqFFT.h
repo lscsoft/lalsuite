@@ -7,7 +7,8 @@
  * \section{Header \texttt{TimeFreqFFT.h}}
  * \label{s:TimeFreqFFT.h}
  * 
- * Performs real-to-complex and complex-to-real FFTs.
+ * Performs real-to-complex, complex-to-real FFTs and average power
+ * spectrum estimation.
  * 
  * \subsection*{Synopsis}
  * \begin{verbatim}
@@ -15,7 +16,8 @@
  * \end{verbatim}
  * 
  * \noindent Perform time-to-frequency and frequency-to-time fast Fourier
- * transforms.
+ * transforms. Also provides a function to compute mean and median power
+ * spectra with user specified windowning.
  * 
  **** </lalLaTeX> */
 
@@ -48,7 +50,7 @@ NRCSID( TIMEFREQFFTH, "$Id$" );
 #define TIMEFREQFFTH_EMALLOC 64
 #define TIMEFREQFFTH_EINCOMP 128
 #define TIMEFREQFFTH_ENNUL 256
-#define TIMEFREQFFTH_EZSPC 512
+#define TIMEFREQFFTH_EZSEG 512
 #define TIMEFREQFFTH_EZOVR 1024
 #define TIMEFREQFFTH_EMISM 2048
 #define TIMEFREQFFTH_EUAVG 4096
@@ -69,6 +71,7 @@ NRCSID( TIMEFREQFFTH, "$Id$" );
 
 /**** </lalErrTable> */
 
+/* XXX this should be removed XXX */
 typedef struct tagRealDFTParams
 {
   WindowType               windowType;
@@ -78,25 +81,71 @@ typedef struct tagRealDFTParams
 }
 RealDFTParams;
 
+/* <lalLaTeX>
+\subsection*{Types}
+
+\subsubsection*{Enum type \texttt{AvgSpecMethod}}
+\idx[Type]{AvgSpecMethod}
+
+This type determines the method the type of average that will be used to
+compute the power sperum estimate by the \verb|LALREAL4AverageSpectrum()|
+function. The function computes a series of (possibly overlapping) power
+spectra and computes the average using one of the following methods:
+
+\begin{description}
+\item[\texttt{useUnity}] A constant PSD of value unity will be returned
+independent of the input data given. This is used for testing purposes.
+
+\item[\texttt{useMean}] The arithmetic mean of the individual power spectra 
+computed will be used to compute the output power spectrum.
+
+\item[\texttt{useMedian}] The median value of the individual power spectra 
+computed will be used to compute the output power spectrum.
+\end{description}
+
+</lalLaTeX> */
+
 typedef enum
 {
   useUnity,
   useMean,
   useMedian,
-} AvgSpecMethod;
+} 
+AvgSpecMethod;
 
-typedef enum
-{
-  noDetrend,
-  meanDetrend,
-} AvgSpecDetrend;
+/* <lalLaTeX>
+\subsubsection*{Structure \texttt{AvgerageSpectrumParams}}
+\idx[Type]{AverageSpectrumParams}
+
+This structure controls the behaviour of the \verb|LALREAL4AverageSpectrum()|
+function.
+
+\begin{description}
+\item[\texttt{REAL4Window *window}] The windowing function to use when
+computing the individual power spectra from the input time series. The
+input time series is broken into smaller time series to compute power spectra
+for the estimate. The legth of these time series is determined by the
+\texttt{length} parameter of the window vector.
+
+\item[\texttt{UINT4 overlap}] The overlap between sucessive time series used
+to compute the power spectra.
+
+\item[\texttt{AvgSpecMethod method}] The method of computing the average
+as describe above.
+
+\item[\texttt{RealFFTPlan }] The FFT plan to be used in the computation
+of the power spectrum.
+
+\end{description}
+
+</lalLaTeX> */
 
 typedef struct
 tagAverageSpectrumParams
 {
+  REAL4Window          *window;
   UINT4                 overlap;
   AvgSpecMethod         method;
-  REAL4Window          *window;
   RealFFTPlan          *plan;
 }
 AverageSpectrumParams;
@@ -106,6 +155,7 @@ AverageSpectrumParams;
  * \newpage\input{TimeFreqFFTTestC}
  **** </lalLaTeX> */
 
+/* XXX this should be removed XXX */
 void
 LALCreateRealDFTParams ( 
         LALStatus                         *status, 
@@ -114,6 +164,7 @@ LALCreateRealDFTParams (
         INT2                           sign
         );
 
+/* XXX this should be removed XXX */
 void
 LALDestroyRealDFTParams (
         LALStatus                        *status, 
