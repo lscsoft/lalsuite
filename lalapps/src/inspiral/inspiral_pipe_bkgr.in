@@ -252,10 +252,7 @@ trig_job.add_opt('ifo-a',ifo1)
 insp_nodes = []
 
 # create the base name of ifo 1 inspiral jobs
-if usertag:
-  ifo1_bn = ifo1 + '-INSPIRAL_' + usertag + '-'
-else:
-  ifo1_bn = ifo1 + '-INSPIRAL' + '-'
+ifo1_bn = ifo1 + '-INSPIRAL' + '-'
 
 # iterate over the data segments that have been slid
 for s_seg in s_data:
