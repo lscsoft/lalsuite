@@ -87,7 +87,8 @@ LALExtractFrameResponse(
     LALStatus               *status,
     COMPLEX8FrequencySeries *output,
     const CHAR              *catalog,
-    const CHAR              *ifo
+    const CHAR              *ifo,
+    LIGOTimeGPS		    *duration
     );
 
 #ifdef __cplusplus

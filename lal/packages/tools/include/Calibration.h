@@ -170,6 +170,7 @@ typedef struct
 tagCalibrationUpdateParams
 {
   LIGOTimeGPS epoch;
+  LIGOTimeGPS duration;
   COMPLEX8TimeSeries *openLoopFactor;
   COMPLEX8TimeSeries *sensingFactor;
 }
@@ -185,8 +186,9 @@ CalibrationUpdateParams;
  * used in updating the calibration functions described previously.
  * (The response function can be computed from the open-loop gain and the
  * sensing function.  It is simply $R(f)=[1+H(f)]/C(f)$.)  In addition, this
- * structure contains the present epoch to identify the particular pair of
- * factors (from those recorded in the time series) to use.
+ * structure contains the present epoch and the duration of the data to be 
+ * calibrated to identify the particular set of
+ * factors (from those recorded in the time series) to use.  
  *
  * \vfill{\footnotesize\input{CalibrationHV}}
  * \newpage\input{ComputeTransferC}

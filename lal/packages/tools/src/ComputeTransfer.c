@@ -33,7 +33,10 @@ lines yield two constants (as a slowly-varying function of time) that are
 used as coefficients to the reference response and sensing functions to
 compute the current response and sensing functions.  These coefficients are
 stored in time series in the parameter structure, along with the current
-epoch for which the calibration functions are to be computed.
+epoch and duration for which the calibration functions are to be computed.  If 
+the duration is zero, the calibration factors are the first ones at or after 
+the given epoch.  If the duration is non-zero, then the calibration factors are
+an average of all calibrations between epoch and epoch + duration.
 
 The routine \texttt{LALResponseConvert()} takes a given frequency series
 and converts it to a new frequency series by performing the following steps:
@@ -288,11 +291,17 @@ LALUpdateCalibration(
   COMPLEX8 *C0;
   COMPLEX8 a;
   COMPLEX8 ab;
+  REAL8 epoch;
+  REAL8 first_cal;
+  REAL8 duration;
   REAL4 dt;
   UINT4 n;
   UINT4 i;
-
+  UINT4	last;
+  UINT4 length;
+  
   INITSTATUS( status, "LALUpdateCalibration", COMPUTETRANSFERC );
+  ATTATCHSTATUSPTR( status );
 
   /* check input */
   ASSERT( input, status, CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
@@ -338,6 +347,8 @@ LALUpdateCalibration(
       CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
   ASSERT( params->openLoopFactor, status,
       CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( params->sensingFactor->deltaT, status,
+      CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
   ASSERT( params->sensingFactor->data, status,
       CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
   ASSERT( params->openLoopFactor->data, status,
@@ -365,24 +376,51 @@ LALUpdateCalibration(
   output->sensingFunction->data = save;
   output->sensingFunction->epoch = params->epoch;
 
-  /* locate correct value of a and ab -- ignore nanoseconds */
-  dt = params->epoch.gpsSeconds - params->sensingFactor->epoch.gpsSeconds;
-  if ( dt + ceil( params->sensingFactor->deltaT ) < 0 )
+  /* locate correct values of a and ab */
+  TRY( LALGPStoFloat( status->statusPtr, &epoch, &(params->epoch)), status );
+  TRY( LALGPStoFloat( status->statusPtr, &first_cal,
+    &(params->sensingFactor->epoch)), status );
+  TRY( LALGPStoFloat( status->statusPtr, &duration, &(params->duration)), status );
+
+  dt = epoch - first_cal;
+  if ( dt + params->sensingFactor->deltaT  < 0 )
   {
     ABORT( status, CALIBRATIONH_ETIME, CALIBRATIONH_MSGETIME );
   }
   /* first point AT or AFTER requested time */
   i = ceil( dt / params->sensingFactor->deltaT );
-  if ( i >= params->sensingFactor->data->length )
+  
+  /* determine how many values of alpha we need to average */
+  length = (UINT4)ceil((epoch + duration - first_cal) / (params->sensingFactor->deltaT));
+  length = (length > 0) ? length : 1;
+  last = i + length - 1;
+   
+  if ( last >= params->sensingFactor->data->length )
   {
     ABORT( status, CALIBRATIONH_ETIME, CALIBRATIONH_MSGETIME );
   }
-  a  = params->sensingFactor->data->data[i];
-  ab = params->openLoopFactor->data->data[i];
-  if ( fabs( a.re ) < tiny && fabs( a.im ) < tiny )
+  a.re = 0;
+  a.im = 0;
+  ab.re = 0;
+  ab.im = 0;
+  while ( i <= last )
   {
-    ABORT( status, CALIBRATIONH_EZERO, CALIBRATIONH_MSGEZERO );
+    a.re = a.re + (params->sensingFactor->data->data[i]).re;
+    a.im = a.im + (params->sensingFactor->data->data[i]).im;
+    ab.re = ab.re + (params->openLoopFactor->data->data[i]).re;
+    ab.im = ab.im + (params->openLoopFactor->data->data[i]).im;
+    if ( fabs( a.re ) < tiny && fabs( a.im ) < tiny )
+    {
+      ABORT( status, CALIBRATIONH_EZERO, CALIBRATIONH_MSGEZERO );
+    }
+    i++;
   }
+  a.re = a.re/length;
+  a.im = a.im/length;
+  ab.re = ab.re/length;
+  ab.im = ab.im/length;
+  
+  
 
   for ( i = 0; i < n; ++i )
   {
@@ -398,7 +436,7 @@ LALUpdateCalibration(
     tmp.re += 1;
     R[i] = cdiv( tmp, C[i] );
   }
-
+  DETATCHSTATUSPTR( status );
   RETURN( status );
 }
 
