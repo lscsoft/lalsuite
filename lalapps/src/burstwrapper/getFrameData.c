@@ -37,7 +37,7 @@ int getFrameData(char *fQuery,
 
   while(strlen(buf)) {
 
-    char type[256], IFO[256], channel[256], Times[256];
+    char type[256], IFO[256], channel[256], Times[256], File[1024];
     char *alias = (char *)calloc(256, sizeof(char));
     char *q, *T0, *T1;
 
@@ -66,7 +66,12 @@ int getFrameData(char *fQuery,
 
       /* Examine line
 	 Format: type IFO times channel alias */
-      sscanf(buf,"%s\t%s\t%s\t%s\t%s",type,IFO,Times,channel,alias);
+      if(sscanf(buf,"%s\t%s\t%s\t%s\t%s\t%s",type,IFO,File,Times,channel,alias) != 6) {
+	if(sscanf(buf,"%s\t%s\t%s\t%s\t%s",type,IFO,Times,channel,alias) != 5) {	
+	  fprintf(stderr,"Malformed frame query: %s\n",buf);
+	  return 1;
+	}
+      }
     
       q = strchr(Times,'-');
       if(!q) {

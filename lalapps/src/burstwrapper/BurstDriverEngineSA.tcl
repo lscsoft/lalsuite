@@ -69,10 +69,9 @@ set injAmpTmp $injAmp
 set LOCALFILE 0
 set FastCacheDone 0
 
+set EndSegTime 0
 set cjid 0
-if { [ file exists tmp.condor ] } {
-    file delete tmp.condor
-}
+set CondorFiles ""
 
 if { [ regexp {LOCAL:(.*)} $PrebinFile junk ZeFile ] } {
 
@@ -731,6 +730,7 @@ if { [ info exists ETGParameters ] == 0 } {
 
     if { $IFO2 == "H2" } {
 	set frqueryREF "CAL_REF_V03_$IFO2 $IFO /ldas_outgoing/mirror/frames/S2/LHO/cal/H-CAL_REF_V03_H2-${h2calstart}-64.gwf $caltimes proc($IFO2:CAL-CAV_GAIN!0!7000.0001!) h1gain\nCAL_REF_V03_$IFO2 $IFO /ldas_outgoing/mirror/frames/S2/LHO/cal/H-CAL_REF_V03_H2-${h2calstart}-64.gwf $caltimes proc($IFO2:CAL-RESPONSE!0!7000.0001!) h1resp"
+#	set frqueryREF "CAL_REF_V03_$IFO2 $IFO $caltimes proc($IFO2:CAL-CAV_GAIN!0!7000.0001!) h1gain\nCAL_REF_V03_$IFO2 $IFO $caltimes proc($IFO2:CAL-RESPONSE!0!7000.0001!) h1resp"
     } else {
 	set frqueryREF "CAL_REF_V03_$IFO2 $IFO $caltimes proc($IFO2:CAL-CAV_GAIN!0!7000.0001!) h1gain\nCAL_REF_V03_$IFO2 $IFO $caltimes proc($IFO2:CAL-RESPONSE!0!7000.0001!) h1resp "
     } 
@@ -945,24 +945,36 @@ puts "Creating condor job..."
 
 file copy -force algorithms.txt framequery.txt filterparams.txt responsefiles.txt $PrebinFile
 
-file rename $PrebinFile/algorithms.txt $PrebinFile/algorithms.$start_time.txt
-file rename $PrebinFile/framequery.txt $PrebinFile/framequery.$start_time.txt
-file rename $PrebinFile/filterparams.txt $PrebinFile/filterparams.$start_time.txt
-file rename $PrebinFile/responsefiles.txt $PrebinFile/responsefiles.$start_time.txt
+file rename -force $PrebinFile/algorithms.txt $PrebinFile/algorithms.$start_time.txt
+file rename -force $PrebinFile/framequery.txt $PrebinFile/framequery.$start_time.txt
+file rename -force $PrebinFile/filterparams.txt $PrebinFile/filterparams.$start_time.txt
+file rename -force $PrebinFile/responsefiles.txt $PrebinFile/responsefiles.$start_time.txt
 
-if { [ catch { exec ./subst burstdso.condor tmp1 TIMES $start_time } cout ] } {
-    puts $cout
-    exit 1
+if { [ string length $CondorFiles ] > 0 } {
+    set CondorFiles "$CondorFiles,algorithms.$start_time.txt,framequery.$start_time.txt,filterparams.$start_time.txt,responsefiles.$start_time.txt"
+} else {
+    set CondorFiles "algorithms.$start_time.txt,framequery.$start_time.txt,filterparams.$start_time.txt,responsefiles.$start_time.txt"
 }
-
-regsub -all "/" $ZeFile "\\/" rZeFile
-if { [ catch { exec ./subst tmp1 tmp IDIR $rZeFile } cout ] } {
-    puts $cout
-    exit 1
-}
-
 
 if { $cjid == 0 } {
+    exec echo "\#!/bin/bash\n\n" > tmp.condor
+    exec echo "export PATH=$env(PATH):\$PATH" >> tmp.condor
+    exec echo "export LD_LIBRARY_PATH=$env(LD_LIBRARY_PATH):\$LD_LIBRARY_PATH" >> tmp.condor
+    exec echo "export BURSTWRAPPER=$env(BURSTWRAPPER)" >> tmp.condor
+    exec echo "export X509_USER_PROXY=$env(X509_USER_PROXY)\n\n" >> tmp.condor
+
+    if { [ file exists tmp ] } {
+	file delete tmp
+    }
+
+    exec echo "universe = vanilla\n\nexecutable = IDIR/EXEC\n\nerror = job.EXEC.err\nlog = jobs.log\n\n\ninitialdir = IDIR\n\n" > tmp
+
+} 
+
+if { $EndSegTime < $start_time } {
+
+    set EndSegTime $end_time
+
     # create framequery for full segment
     set fid [ open $PrebinFile/framequery.$start_time.txt "r" ]
     while { [ eof $fid ] == 0 } {
@@ -974,12 +986,12 @@ if { $cjid == 0 } {
     }
     close $fid
 
-    if { [ catch { exec ./subst $PrebinFile/framequery.$start_time.txt sfquery.txt $T0 $start_time } cout ] } {
+    if { [ catch { exec subst $PrebinFile/framequery.$start_time.txt sfquery.txt $T0 $start_time } cout ] } {
 	    puts $cout
 	    exit 1
     }
     
-    if { [ catch { exec ./subst sfquery.txt $PrebinFile/sframequery.txt $T1 $end_time } cout ] } {
+    if { [ catch { exec subst sfquery.txt $PrebinFile/sframequery.txt $T1 $end_time } cout ] } {
 	    puts $cout
 	    exit 1
     }
@@ -989,18 +1001,73 @@ if { $cjid == 0 } {
 	puts $cout
 	exit 1
     }
-}
 
-file copy $PrebinFile/FrCacheFile $PrebinFile/FrCacheFile.$start_time
+    file copy -force $PrebinFile/FrCacheFile $PrebinFile/FrCacheFile.$start_time
 
+    set FrCFile FrCacheFile.$start_time
 
-if { $cjid == 0 } {
-    file copy tmp tmp.condor
+    set CondorFiles "$CondorFiles,FrCacheFile.$start_time"
+
+    set SegTime $start_time
 } else {
-    exec cat tmp >> tmp.condor
+    if { $cjid == 0 } {
+
+	set CondorFiles "$CondorFiles,FrCacheFile.$SegTime"
+	
+    }
 }
+
+
+exec echo "burstdso $FrCFile framequery.$start_time.txt algorithms.$start_time.txt filterparams.$start_time.txt responsefiles.$start_time.txt\n" >> tmp.condor
 
 incr cjid
+
+
+
+if { $cjid > $NCondorJobs } {
+    puts "*********************************************************************"
+    puts "*********************************************************************"
+    puts "Sending jobs to cluster"
+    puts "*********************************************************************"
+    puts "*********************************************************************"
+
+    file rename -force tmp.condor $PrebinFile/tmp.condor.$SegTime
+
+    exec echo "transfer_input_files = $CondorFiles" >> tmp
+
+
+    exec echo "when_to_transfer_output = ON_EXIT\n\ngetenv = True\n\nQueue\n\n" >> tmp
+
+
+    if { [ catch { exec subst tmp tmp2 EXEC tmp.condor.$SegTime } cout ] } {
+	puts $cout
+	exit 1
+    }
+
+    regsub -all "/" $ZeFile "\\/" rZeFile
+    if { [ catch { exec subst tmp2 tmp3 IDIR $rZeFile } cout ] } {
+	puts $cout
+	exit 1
+    }
+
+    
+
+    if { [ catch { exec /bin/bash --login -c "condor_submit tmp3" } cout ] } {
+	puts $cout
+	exit 1
+    }
+
+
+    file rename -force tmp3 tmp3.$SegTime
+
+    set cjid 0
+    set CondorFiles ""
+
+}
+
+
+
+
 
 }
 
@@ -1016,26 +1083,52 @@ incr start_time $duration
 #end loop over times within one segment:
 }
 
-if { [ info exists NoCondor ] == 0 && $cjid > 0} {
-    puts "Sending jobs to cluster"
-
-    if { [ catch { exec /bin/bash --login -c "condor_submit tmp.condor" } cout ] } {
-	puts $cout
-	exit 1
-    }
-
-#    file delete tmp.condor
-    file rename tmp.condor tmp.condor.$start_time
-    
-    set cjid 0
-    
-}
-
 # end if gotIFO, etc.
 }
 
 # end loop over segments:
 }
 
+
+# Run any left over jobs
+if { [ info exists NoCondor ] == 0 && $cjid > 0 } {
+    puts "*********************************************************************"
+    puts "*********************************************************************"
+    puts "Sending jobs to cluster"
+    puts "*********************************************************************"
+    puts "*********************************************************************"
+
+    file rename -force tmp.condor $PrebinFile/tmp.condor.$SegTime
+
+    exec echo "transfer_input_files = $CondorFiles" >> tmp
+
+
+    exec echo "when_to_transfer_output = ON_EXIT\n\ngetenv = True\n\nQueue\n\n" >> tmp
+
+
+    if { [ catch { exec subst tmp tmp2 EXEC tmp.condor.$SegTime } cout ] } {
+	puts $cout
+	exit 1
+    }
+
+    regsub -all "/" $ZeFile "\\/" rZeFile
+    if { [ catch { exec subst tmp2 tmp3 IDIR $rZeFile } cout ] } {
+	puts $cout
+	exit 1
+    }
+
+    
+
+    if { [ catch { exec /bin/bash --login -c "condor_submit tmp3" } cout ] } {
+	puts $cout
+	exit 1
+    }
+
+
+    file rename -force tmp3 tmp3.$SegTime
+
+    set cjid 0
+    set CondorFiles ""
+}
 
 puts "Normal exit"

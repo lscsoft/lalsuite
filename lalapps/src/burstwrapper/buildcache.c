@@ -34,6 +34,7 @@ int getFrameCache(char *fQuery,
   while(strlen(buf)) {
 
     char type[256], IFO[256], channel[256], Times[256];
+    char File[1024];
     char *alias = (char *)calloc(256, sizeof(char));
     char *q, *T0, *T1;
 
@@ -45,36 +46,85 @@ int getFrameCache(char *fQuery,
 
       /* Examine line
 	 Format: type IFO times channel alias */
-      sscanf(buf,"%s\t%s\t%s\t%s\t%s",type,IFO,Times,channel,alias);
-    
-      q = strchr(Times,'-');
-      if(!q) {
-	fprintf(stderr,"Times: T0-T1\n");
-	return 1;
-      } 
-      *q=0;
-      T0 = Times;
-      T1 = q+1;
+      if(sscanf(buf,"%s\t%s\t%s\t%s\t%s\t%s",type,IFO,File,Times,channel,alias) == 6) {
 
-      { /* get data */
+	/* explicit filename provided */       
+	FILE *out;
 	char tname[] = CACHEFILENAME;
-	char cmd[1024];
-	char *path;
-	char *p;
+	char *p1, *p2;
+	char tFile[1024];
 
-	/* find the data */
-	path = getenv("LSC_DATAGRID_CLIENT_LOCATION");
-	if(!path) {
-	  fprintf(stderr,"Environment variable LSC_DATAGRID_CLIENT_LOCATION not set\n");
+	strcpy(tFile,File);
+
+	p2 = strrchr(File,'.');
+	if(!p2) {
+	  fprintf(stderr,"Invalid filename: %s\n",File);
 	  return 1;
 	}
-      
-	sprintf(cmd,"source %s/setup.sh; %s/ldg-client/bin/LSCdataFind --server %s --observatory %s --type %s --gps-start-time %s --gps-end-time %s --url-type file --lal-cache >> %s", path, path, dataserver, IFO, type, T0, T1, tname);
-
-	if(system(cmd) == -1) {
-	  fprintf(stderr,"system call failed\n");
-	  perror("Error");
+	*p2 = 0;
+	p1 = strrchr(File,'-');
+	if(!p1) {
+	  fprintf(stderr,"2-Invalid filename: %s\n",File);
 	  return 1;
+	}
+	p1++;
+
+	q = strchr(Times,'-');
+	if(!q) {
+	  fprintf(stderr,"Times: T0-T1\n");
+	  return 1;
+	} 
+	*q=0;
+	T0 = Times;
+	T1 = q+1;
+
+	if((out = fopen(tname,"a"))==NULL) {
+	  fprintf(stderr,"Can't open %s\n",tname);
+	  return 1;
+	}
+	
+	fprintf(out,"%s %s %s %s file://localhost/%s\n",IFO,type,T0,p1,tFile);
+
+	fclose(out);
+
+      } else {
+
+	if(sscanf(buf,"%s\t%s\t%s\t%s\t%s",type,IFO,Times,channel,alias) != 5) {
+	  fprintf(stderr,"Malformed framequery\n");
+	  return 1;
+	}
+
+
+	q = strchr(Times,'-');
+	if(!q) {
+	  fprintf(stderr,"Times: T0-T1\n");
+	  return 1;
+	} 
+	*q=0;
+	T0 = Times;
+	T1 = q+1;
+
+	{ /* get data */
+	  char tname[] = CACHEFILENAME;
+	  char cmd[1024];
+	  char *path;
+	  char *p;
+
+	  /* find the data */
+	  path = getenv("LSC_DATAGRID_CLIENT_LOCATION");
+	  if(!path) {
+	    fprintf(stderr,"Environment variable LSC_DATAGRID_CLIENT_LOCATION not set\n");
+	    return 1;
+	  }
+      
+	  sprintf(cmd,"source %s/setup.sh; %s/ldg-client/bin/LSCdataFind --server %s --observatory %s --type %s --gps-start-time %s --gps-end-time %s --url-type file --lal-cache >> %s", path, path, dataserver, IFO, type, T0, T1, tname);
+
+	  if(system(cmd) == -1) {
+	    fprintf(stderr,"system call failed\n");
+	    perror("Error");
+	    return 1;
+	  }
+
 	}
 
       }

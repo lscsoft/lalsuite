@@ -1,14 +1,13 @@
 universe = vanilla
 
-executable = /dso-test/jsylvest/lalapps/src/burstwrapper/burstdso
+executable = IDIR/EXEC
 
-error = job.TIMES.err
+error = job.EXEC.err
 log = jobs.log
 
-arguments = FrCacheFile.TIMES framequery.TIMES.txt algorithms.TIMES.txt filterparams.TIMES.txt responsefiles.TIMES.txt
 
 initialdir = IDIR 
-transfer_input_files = FrCacheFile.TIMES,framequery.TIMES.txt,algorithms.TIMES.txt,filterparams.TIMES.txt,responsefiles.TIMES.txt
+FILES 
 when_to_transfer_output = ON_EXIT
 
 getenv = True
