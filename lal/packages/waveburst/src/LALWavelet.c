@@ -553,10 +553,21 @@ LALClusterWavelet(LALStatus *status,
   }
   _assignClusterWavelet(&((*output)->w),input->w);
   /*   _assignWavelet(&((*output)->w->original),input->original);*/
+
+/*   printf("LALClusterWavelet: after assign\n");fflush(stdout); */
+
   (*output)->w->nonZeroFractionAfterSetMask = 
     _setMask((*output)->w, input->minClusterSize, input->aura);
+
+/*   printf("LALClusterWavelet: after setMask\n");fflush(stdout); */
+
   ncluster=_clusterMain((*output)->w);
+
+/*   printf("LALClusterWavelet: after clusterMain\n");fflush(stdout); */
+
   _clusterProperties((*output)->w);
+
+/*   printf("LALClusterWavelet: after clusterProperties\n");fflush(stdout); */
 
   DETATCHSTATUSPTR(status);
   RETURN(status);

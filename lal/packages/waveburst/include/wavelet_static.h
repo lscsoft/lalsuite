@@ -537,6 +537,8 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
   }
 
 
+/*   printf("setMask: 1\n");fflush(stdout); */
+
   if(!nc || ni<3 || nPixel<2) 
     return (double)(nPixel)/((double)(w->wavelet->data->data->length));
 
@@ -672,7 +674,12 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
   }
 
   L = 0;
-  maxPixels=(int)(w->wavelet->data->data->length*w->nonZeroFractionAfterCoincidence);
+  /*  maxPixels=(int)(w->wavelet->data->data->length*w->nonZeroFractionAfterCoincidence);*/
+
+  maxPixels=w->wavelet->data->data->length;
+
+
+/*   printf("setMask: 2\n");fflush(stdout); */
 
 /*    printf("nonzerofraction after coincidence: %f\n",w->nonZeroFractionAfterCoincidence); fflush(stdout); */
 
@@ -711,9 +718,12 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
 	_pMaskPushBack(w, &pix);    
 	p[j] = ++L;                 
 
+/* 	printf("setMask: 2a\n");fflush(stdout); */
 
 	if(aura){                 
 	  pix.core = FALSE;       
+
+/* 	  printf("i=%d j=%d ni=%d nj=%d\n",i,j,ni,nj);fflush(stdout); */
 
 	  if(i>0 && j>0) { 
 	    *t=j-1; *f=i-1; 
@@ -736,6 +746,9 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
 	      FT[*f][*t] = ++L;
 	    }
 	  }
+
+/* 	  printf("setMask: 2b\n");fflush(stdout); */
+
 	  if(j>0)        { 
 	    *t=j-1; *f=i;   
 	    if(!FT[*f][*t]) {
@@ -764,6 +777,9 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
 	      FT[*f][*t] = ++L;
 	    }
 	  }
+
+/* 	  printf("setMask: 2c\n");fflush(stdout); */
+
 	  if(i<n && j<m) { 
 	    *t=j+1; *f=i+1; 
 	    if(!FT[*f][*t]) {
@@ -771,6 +787,9 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
 	      FT[*f][*t] = ++L;
 	    }
 	  }
+
+/* 	  printf("setMask: 2d\n");fflush(stdout); */
+
 	}             
       }
     }
@@ -778,6 +797,7 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
 
   nM = w->pMaskCount;
 
+/*   printf("setMask: 3\n");fflush(stdout); */
 
   for(k=0; k<nM; k++){
 
@@ -870,6 +890,8 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
 
   _destroy2DintArray(&FT,ni);
   _destroy2DintArray(&XY,ni);
+
+/*   printf("setMask: 4\n");fflush(stdout); */
 
 /*    printf("pMaskCount=%d maxPixels=%d\n",w->pMaskCount,maxPixels); fflush(stdout); */
 
