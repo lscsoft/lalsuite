@@ -795,6 +795,14 @@ int main( int argc, char **argv )
 
     }  /*-- End code branch for different kinds of input files --*/
 
+    /*-- Ensure that candidate times rise monotonically --*/
+    if ( tCand < tCandLast ) {
+      printf( "Error: candidate event list is not properly sorted by time\n" );
+      printf( "A candidate with time %f is followed by a candidate with time %f\n",
+	      (double)timeBase+tCandLast, (double)timeBase+tCand );
+      AbortAll( candEnv, vetoFile, nvetofiles, outEnv );
+      return 6;
+    }
 
     /*-- If no time range was specified by the user, set up a single range
       beginning at the time of the first candidate event; the end time will be
@@ -819,11 +827,18 @@ int main( int argc, char **argv )
     /*-- Check if candidate event falls between ranges (or beyond end of
       last range) --*/
     if ( tCand < cRange->t1 ) continue;
-    /*
+    /*-- (PSS 19 Mar 2004) This line has been commented out for a long time.
+         I think the reason I had commented it out was to process veto triggers
+         after the last candidate, for deadtime calculation purposes.  However,
+         it had the side effect of improperly including candidates after the
+         end of the final range in the statistics for the final range.  I am
+         leaving this commented out, and will modify the code elsewhere so that
+         candidates after the end of the final range are excluded from the
+         statistics.
     if ( tCand > cRange->t2 ) continue;
     */
 
-    if ( ! candeof ) cRange->nCand++;
+    if ( tCand <= cRange->t2 && ! candeof ) cRange->nCand++;
 
     /*-- Discard veto events in ring buffer which are too far in the past to
       be relevant --*/
@@ -1053,7 +1068,9 @@ int main( int argc, char **argv )
       /*-- Part of same candidate cluster --*/
     } else {
       /*-- New candidate cluster --*/
-      cRange->nClus++;
+      if ( tCand <= cRange->t2 ) {
+	cRange->nClus++;
+      }
       clusPass = 0;   /* Will be updated if any event in cluster passes --*/
     }
     tCandLast = tCand;
@@ -1103,7 +1120,9 @@ int main( int argc, char **argv )
     }
 
     /*-- Check whether the candidate event passes --*/
-    if (pass) {
+    if ( tCand > cRange->t2 ) {
+      /*-- Do not include this event in statistics --*/
+    } else if (pass) {
       cRange->nCandPass++;
       if ( clusPass == 0 ) {
 	cRange->nClusPass++;
