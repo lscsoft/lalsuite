@@ -114,7 +114,7 @@ INT4 lalDebugLevel=1;
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 #define MAXFILENAMELENGTH 256 /* maximum # of characters  of a SFT filename */
 
-#define IFO 1         /*  detector, 1:GEO, 2:LLO, 3:LHO */
+#define IFO 2         /*  detector, 1:GEO, 2:LLO, 3:LHO */
 #define THRESHOLD 1.6 /* thresold for peak selection, with respect to the
                               the averaged power in the search band */
 #define F0 250.0          /*  frequency to build the LUT and start search */
@@ -125,12 +125,12 @@ INT4 lalDebugLevel=1;
 #define PATCHSIZEY (LAL_PI*0.99)
 #define NFSIZE  21 /* n-freq. span of the cylinder, to account for spin-down
                           search */
-#define BLOCKSRNGMED 25 /* Running median window size */
+#define BLOCKSRNGMED 101 /* Running median window size */
 #define NH0 1 /* number of h0 values to be anlyzed */
 #define H0MIN 1.0e-23
 #define NMCLOOP 10 /* number of Monte-Carlos */
 
-#define SFTDIRECTORY "./data1"
+#define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs/"
 #define FILEOUT "./HoughMC"      /* prefix file output */
 
 /* to be removed ? */
