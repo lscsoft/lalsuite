@@ -106,6 +106,7 @@ FUNC (
   INT8		 tbeg;
   INT8           tend;
   REAL8          rate;
+  INT4           gap = 0;
 
   INITSTATUS( status, "FUNC", FRAMESERIESC );  
 
@@ -235,6 +236,7 @@ FUNC (
       series->epoch.gpsSeconds = vect->GTimeS;
       series->epoch.gpsNanoSeconds = vect->GTimeN;
 #endif
+      gap = 1; /* need to record this because next FrNext will erase! */
     }
 
     /* copy data */
@@ -270,6 +272,11 @@ FUNC (
     {
       stream->epoch = keep;
     }
+  }
+
+  if ( gap ) /* there was a gap in the data */
+  {
+    stream->state |= LAL_FR_GAP;
   }
 
   if ( stream->state & LAL_FR_ERR )
