@@ -165,7 +165,7 @@ LALStochasticCrossCorrelationStatistic(LALStatus                              *s
   LALUnitPair   unitPair1, unitPair2;
 
   /* initialize status structure */
-  INITSTATUS( status, "LALStochasticCrossCorrelation",
+  INITSTATUS( status, "LALStochasticCrossCorrelationStatistic",
               STOCHASTICCROSSCORRELATIONC );
   ATTATCHSTATUSPTR(status);
 
