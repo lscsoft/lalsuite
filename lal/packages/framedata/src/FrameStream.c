@@ -304,7 +304,7 @@ LALSFrameReadADCTimeSeries(
     )
 { /* </lalVerbatim> */
   char chan[128];
-  FrAdcData *adc;
+  struct FrAdcData *adc;
   size_t size;
 
   INITSTATUS( status, "LALSFrameReadADCTimeSeries", FRAMESTREAMC );  
@@ -367,7 +367,7 @@ LALI2FrameReadADCTimeSeries(
     )
 { /* </lalVerbatim> */
   char chan[128];
-  FrAdcData *adc;
+  struct FrAdcData *adc;
   size_t size;
 
   INITSTATUS( status, "LALI2FrameReadADCTimeSeries", FRAMESTREAMC );  
