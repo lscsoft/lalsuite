@@ -23,6 +23,10 @@ This can be done by running the script:
    ./make_cluster_data_list S1
 which takes a single argument, which is the name of the run.
 
+Note that you may get some "permission denied" errors if you don't
+have read permissions for all of the data.  This won't cause you any
+problems, unless you need access
+
 [Note: You can monitor the action of this script by using tail
 S1-alldata.]
 
