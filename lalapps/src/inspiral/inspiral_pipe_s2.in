@@ -122,7 +122,7 @@ def analyze_lho_ifo(l1_lho_data,l1_chunks_analyzed,ifo_data,ifo_name,
             df.set_start(seg.start() - pad)
             df.set_end(seg.end() + pad)
             if prev_df: df.add_parent(prev_df)
-            if not slide_time: dag.add_node(df)
+            if not slide_time or check_bkgr_dag: dag.add_node(df)
             prev_df = df
             done_df_for_seg = 1
           # make a trigbank for the master LHO chunk: to do this, we need
@@ -133,7 +133,7 @@ def analyze_lho_ifo(l1_lho_data,l1_chunks_analyzed,ifo_data,ifo_name,
             if chunks_overlap(chunk,max_slide,l1_done.get_chunk()):
               trigbank.add_var_arg(l1_done.get_dag_node().get_output())
               trigbank.add_parent(l1_done.get_dag_node())
-          if not slide_time: dag.add_node(trigbank)
+          if not slide_time or check_bkgr_dag: dag.add_node(trigbank)
           # analyze the LHO master chunk with this triggered template bank
           insp = inspiral.InspiralNode(insp_job)
           insp.set_start(chunk.start())
@@ -148,7 +148,7 @@ def analyze_lho_ifo(l1_lho_data,l1_chunks_analyzed,ifo_data,ifo_name,
           insp.set_bank(trigbank.get_output())
           insp.add_parent(df)
           insp.add_parent(trigbank)
-          if not slide_time: dag.add_node(insp)
+          if not slide_time or check_bkgr_dag: dag.add_node(insp)
           # store this chunk in the list of filtered L1 data
           chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
   
@@ -163,6 +163,7 @@ Usage: lalapps_inspiral_pipe [options]
   -h, --help               display this message
   -v, --version            print version information and exit
   -u, --user-tag TAG       tag the job with TAG (overrides value in ini file)
+  -c, --check-bkgr-dag     don't split dependencies for time slides
 
   -j, --injections FILE    add simulated inspirals from sim_inspiral in FILE
 
@@ -172,6 +173,7 @@ Usage: lalapps_inspiral_pipe [options]
 
   -P, --priority PRIO      run jobs with condor priority PRIO
 
+
   -l, --log-path PATH      directory to write condor log file
   -f, --config-file FILE   use configuration file FILE
 """
@@ -179,11 +181,12 @@ Usage: lalapps_inspiral_pipe [options]
 
 ##############################################################################
 # pasrse the command line options to figure out what we should do
-shortop = "hvu:j:P:s:x:y:l:f:"
+shortop = "hvu:cj:P:s:x:y:l:f:"
 longop = [
   "help",
   "version",
   "user-tag=",
+  "check-bkgr-dag",
   "injections=",
   "max-slide-time=",
   "slide-time=",
@@ -207,6 +210,7 @@ slide_time_ns = 0
 condor_prio = None
 log_path = None
 config_file = None
+check_bkgr_dag = None
 
 for o, a in opts:
   if o in ("-h", "--help"):
@@ -221,6 +225,8 @@ for o, a in opts:
     sys.exit(0)
   elif o in ("-u", "--user-tag"):
     usertag = a
+  elif o in ("-c", "--check-bkgr-dag"):
+    check_bkgr_dag = 1
   elif o in ("-j", "--injections"):
     inj_file = a
   elif o in ("-s", "--max-slide-time"):
@@ -460,7 +466,7 @@ for seg in l1_data:
           df.set_start(seg.start() - pad)
           df.set_end(seg.end() + pad)
           if prev_df: df.add_parent(prev_df)
-          if not slide_time: dag.add_node(df)
+          if not slide_time or check_bkgr_dag: dag.add_node(df)
           prev_df = df
           done_df_for_seg = 1
         # make a template bank job for the master L1 chunk
@@ -470,7 +476,7 @@ for seg in l1_data:
         bank.set_ifo('L1')
         bank.set_cache(df.get_output())
         bank.add_parent(df)
-        if not slide_time: dag.add_node(bank)
+        if not slide_time or check_bkgr_dag: dag.add_node(bank)
         # make an inspiral job for the master L1 chunk
         insp = inspiral.InspiralNode(l_insp_job)
         insp.set_start(chunk.start())
@@ -483,7 +489,7 @@ for seg in l1_data:
         insp.set_cache(df.get_output())
         insp.set_bank(bank.get_output())
         insp.add_parent(bank)
-        if not slide_time: dag.add_node(insp)
+        if not slide_time or check_bkgr_dag: dag.add_node(insp)
         # store this chunk in the list of filtered L1 data
         l1_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
 print "done"
@@ -556,12 +562,14 @@ for seg in l1_h1_data:
   for l1_done in l1_chunks_analyzed:
     if chunk_in_segment(l1_done.get_chunk(),seg):
       inca.add_var_arg(l1_done.get_dag_node().get_output())
-      if not slide_time: inca.add_parent(l1_done.get_dag_node())
+      if not slide_time or check_bkgr_dag: 
+        inca.add_parent(l1_done.get_dag_node())
   # add all H1 master segments that overlap with segment to input
   for h1_done in h1_chunks_analyzed:
     if chunk_in_segment(h1_done.get_chunk(),seg,slide_time):
       inca.add_var_arg(h1_done.get_dag_node().get_output())
-      if not slide_time: inca.add_parent(h1_done.get_dag_node())
+      if not slide_time or check_bkgr_dag:
+        inca.add_parent(h1_done.get_dag_node())
   dag.add_node(inca)
 print "done"
 
@@ -581,12 +589,14 @@ for seg in l1_h2_data:
   for l1_done in l1_chunks_analyzed:
     if chunk_in_segment(l1_done.get_chunk(),seg):
       inca.add_var_arg(l1_done.get_dag_node().get_output())
-      if not slide_time: inca.add_parent(l1_done.get_dag_node())
+      if not slide_time or check_bkgr_dag: 
+        inca.add_parent(l1_done.get_dag_node())
   # add all H2 master segments that overlap with segment to input
   for h2_done in l1_h2_chunks_analyzed:
     if chunk_in_segment(h2_done.get_chunk(),seg,slide_time):
       inca.add_var_arg(h2_done.get_dag_node().get_output())
-      if not slide_time: inca.add_parent(h2_done.get_dag_node())
+      if not slide_time or check_bkgr_dag: 
+        inca.add_parent(h2_done.get_dag_node())
   dag.add_node(inca)
 print "done"
 
@@ -617,12 +627,14 @@ for seg in l1_h1_h2_data:
   for l1_done in l1_chunks_analyzed:
     if chunk_in_segment(l1_done.get_chunk(),seg):
       inca1.add_var_arg(l1_done.get_dag_node().get_output())
-      if not slide_time: inca1.add_parent(l1_done.get_dag_node())
+      if not slide_time or check_bkgr_dag: 
+        inca1.add_parent(l1_done.get_dag_node())
   # add all H1 master segments that overlap with segment to input
   for h1_done in h1_chunks_analyzed:
     if chunk_in_segment(h1_done.get_chunk(),seg,slide_time):
       inca1.add_var_arg(h1_done.get_dag_node().get_output())
-      if not slide_time: inca1.add_parent(h1_done.get_dag_node())
+      if not slide_time or check_bkgr_dag: 
+        inca1.add_parent(h1_done.get_dag_node())
   # add the nodes to the dag
   dag.add_node(inca1)
   l1_h1_inca_nodes.append(AnalyzedIFOData(seg,inca1))
@@ -654,7 +666,7 @@ for seg in h2_data:
           df.set_start(seg.start() - pad)
           df.set_end(seg.end() + pad)
           if prev_df: df.add_parent(prev_df)
-          if not slide_time: dag.add_node(df)
+          if not slide_time or check_bkgr_dag: dag.add_node(df)
           prev_df = df
           done_df_for_seg = 1
         # make a trigbank for the master H2 chunk: to do this, we need
@@ -664,7 +676,8 @@ for seg in h2_data:
         for l1_h1_done in l1_h1_inca_nodes:
           if chunk_in_segment(chunk,l1_h1_done.get_chunk(),slide_time):
             trigbank.add_var_arg(l1_h1_done.get_dag_node().get_output_b())
-            if not slide_time: trigbank.add_parent(l1_h1_done.get_dag_node())
+            if not slide_time or check_bkgr_dag:
+              trigbank.add_parent(l1_h1_done.get_dag_node())
         # analyze the H2 master chunk with this triggered template bank
         insp = inspiral.InspiralNode(insp_job)
         insp.set_start(chunk.start())
@@ -677,7 +690,7 @@ for seg in h2_data:
         insp.add_var_opt('trig-end-time',chunk.trig_end())
         insp.set_cache(df.get_output())
         insp.set_bank(trigbank.get_output())
-        if not slide_time: insp.add_parent(df)
+        if not slide_time or check_bkgr_dag: insp.add_parent(df)
         dag.add_node(trigbank)
         insp.add_parent(trigbank)
         dag.add_node(insp)
