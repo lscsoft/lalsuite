@@ -1287,6 +1287,8 @@ LALFindChirpBCVSpinData (
   REAL4                 L = 0.0;
   REAL4                 M = 0.0;
 
+  REAL4                 Beta; /* Spin parameter */     
+
   FindChirpSegment     *fcSeg;
   DataSegment          *dataSeg;
 
@@ -1298,6 +1300,23 @@ LALFindChirpBCVSpinData (
 
 
 /*code*/
+
+    /* 
+     * moments necessary for the calculation of
+     * the BCVSpin normalization parameters
+     */
+    
+    for ( k = 1; k < fcSeg->data->data->length; ++k )
+    {
+      fcSeg->segNorm += amp[k] * amp[k] * wtilde[k].re ;                          /* for std-candle */
+      I += 4.0 * amp[k] * amp[k] * wtilde[k].re ;
+      J += 4.0 * amp[k] * amp[k] * wtilde[k].re * cos(Beta * amp[k] / ampBCV[k]); /* amp[k]/ampBCV[k] = f^-2/3  */
+      K += 4.0 * amp[k] * amp[k] * wtilde[k].re * sin(Beta * amp[k] / ampBCV[k]);
+      L += 4.0 * amp[k] * amp[k] * wtilde[k].re * sin(2 * Beta * amp[k] / ampBCV[k]);
+      M += 4.0 * amp[k] * amp[k] * wtilde[k].re * cos(2 * Beta * amp[k] / ampBCV[k]);
+
+    }
+
  
  DETATCHSTATUSPTR( status );
  RETURN( status );
