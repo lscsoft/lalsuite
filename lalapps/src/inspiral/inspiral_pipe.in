@@ -337,6 +337,12 @@ for o, a in opts:
   log_fh.write( o + ' ' + a + '\n' )
 log_fh.write( "\n" )
 log_fh.write( "Parsed " + str(len(data)) + " science segments\n" )
+total_data = 0
+for seg in data:
+  for chunk in seg:
+    total_data += len(chunk)
+print >> log_fh, "total data =", total_data
+print >> log_fh, "\n===========================================\n"
 print >> log_fh, data
 for seg in data:
   print >> log_fh, seg
