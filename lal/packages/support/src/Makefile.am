@@ -3,8 +3,7 @@ noinst_LTLIBRARIES = libsupport.la
 lib_LTLIBRARIES = liblalsupport.la
 
 libsupport_la_SOURCES = LALStd.c LALVersion.c LALMalloc.c LALError.c \
-  PrintVector.c PrintFrequencySeries.c PrintTimeSeries.c \
-  ReadFrequencySeries.c ReadTimeSeries.c
+  PrintVector.c PrintFrequencySeries.c PrintTimeSeries.c
 
 liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \
   PrintTimeSeries.c ReadFrequencySeries.c ReadTimeSeries.c
