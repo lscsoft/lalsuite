@@ -2323,6 +2323,16 @@ void parseOptions(INT4 argc, CHAR *argv[])
       case 'b':
         /* number of bins to mask for frequency mask */
         maskBin = atoi(optarg);
+
+        /* check */
+        if (maskBin <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Number of bins to mask must be greater than 0: " \
+              "(%d specified)\n", long_options[option_index].name, maskBin);
+          exit(1);
+        }
+
         break;
 
       case 'o':
@@ -2336,8 +2346,18 @@ void parseOptions(INT4 argc, CHAR *argv[])
         break;
 
       case 'N':
-        /* number of injection */
+        /* number of trials */
         NLoop = atoi(optarg);
+
+        /* check */
+        if (NLoop <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Number of trials to must be greater than 0: " \
+              "(%d specified)\n", long_options[option_index].name, NLoop);
+          exit(1);
+        }
+
         break;
 
       case 'S':
@@ -2360,16 +2380,46 @@ void parseOptions(INT4 argc, CHAR *argv[])
       case 'U':
         /* interval number for test */
         testInter = atoi(optarg);
+
+        /* check */
+        if (testInter < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Test interval must be positive: (%d specified)\n", \
+              long_options[option_index].name, testInter);
+          exit(1);
+        }
+
         break;
 
       case 'V':
         /* segment number for test */
         testSeg = atoi(optarg);
+
+        /* check */
+        if (testSeg < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Test segment must be positive: (%d specified)\n", \
+              long_options[option_index].name, testSeg);
+          exit(1);
+        }
+
         break;
 
       case 'W':
         /* trial  number for test */
         testTrial = atoi(optarg);
+
+        /* check */
+        if (testTrial < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Test trial must be positive: (%d specified)\n", \
+              long_options[option_index].name, testTrial);
+          exit(1);
+        }
+
         break;
 
       case 'z':
