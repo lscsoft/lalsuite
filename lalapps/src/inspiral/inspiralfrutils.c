@@ -9,6 +9,7 @@
  *-----------------------------------------------------------------------
  */
 
+#include "inspiralfrutils.h"
 
 /*
  *
@@ -27,7 +28,7 @@ FrameH *fr_add_proc_REAL4TimeSeries (
   char          chname[256];
   struct        series fdata;
 
-  snprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
+  LALSnprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
     fdata.name = chname;
     fdata.tbeg = chan->epoch;
     memset( &fdata.tend, 0, sizeof(LIGOTimeGPS) );
@@ -52,7 +53,7 @@ FrameH *fr_add_proc_REAL4FrequencySeries (
   char          chname[256];
   struct        series fdata;
 
-  snprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
+  LALSnprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
     fdata.name = chname;
     fdata.tbeg = chan->epoch;
     memset( &fdata.tend, 0, sizeof(LIGOTimeGPS) );
@@ -77,7 +78,7 @@ FrameH *fr_add_proc_COMPLEX8FrequencySeries (
   char          chname[256];
   struct        series fdata;
 
-  snprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
+  LALSnprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
     fdata.name = chname;
     fdata.tbeg = chan->epoch;
     memset( &fdata.tend, 0, sizeof(LIGOTimeGPS) );

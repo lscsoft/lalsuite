@@ -22,6 +22,16 @@
 
 #include <FrameL.h>
 
+#include <lal/LALConfig.h>
+#include <lal/LALStdio.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALError.h>
+#include <lal/LALDatatypes.h>
+#include <lal/AVFactories.h>
+#include <lal/LALConstants.h>
+
+#include "series.h"
+
 FrameH *fr_add_proc_REAL4TimeSeries ( 
     FrameH          *frame, 
     REAL4TimeSeries *chan,
