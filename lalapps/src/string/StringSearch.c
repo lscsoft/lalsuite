@@ -721,7 +721,6 @@ int ProcessData(struct CommandLineArgsTag CLA)
   GV.ht_proc.deltaT=GV.ht.deltaT; 
 
   /* destroy double precision vector */
-
   LALDDestroyVector(&status,&GV.ht.data); 
   TESTSTATUS( &status ); 
 
@@ -849,6 +848,18 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {0, 0, 0, 0}
   };
   char args[] = "hnckf:b:t:F:C:E:S:i:N:T:";
+
+  /* set up xml output stuff */
+  /* create the process and process params tables */
+  procTable.processTable = LALCalloc(1, sizeof(ProcessTable));
+  LALGPSTimeNow(&status, &(procTable.processTable->start_time), &accuracy);
+  populate_process_table(&status, procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE);
+  procparams.processParamsTable = NULL;
+  /* create the search summary table */
+  searchsumm.searchSummaryTable = LALCalloc(1, sizeof(SearchSummaryTable));
+  /* the number of nodes for a standalone job is always 1 */
+  searchsumm.searchSummaryTable->nnodes = 1;
+
 
   /* Initialize default values */
   CLA->flow=0.0;
@@ -1049,18 +1060,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       }    
   }
 
-  /* set up xml output stuff */
-  /* create the process and process params tables */
-  procTable.processTable = LALCalloc(1, sizeof(ProcessTable));
-  LALGPSTimeNow(&status, &(procTable.processTable->start_time), &accuracy);
-  populate_process_table(&status, procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE);
-  procparams.processParamsTable = NULL;
-  /* create the search summary table */
-  searchsumm.searchSummaryTable = LALCalloc(1, sizeof(SearchSummaryTable));
-  /* the number of nodes for a standalone job is always 1 */
-  searchsumm.searchSummaryTable->nnodes = 1;
   /* store the input start and end times */
-
   /* set the start and end time for the search summary */
   searchsumm.searchSummaryTable->in_start_time.gpsSeconds = CLA->GPSStart;
   searchsumm.searchSummaryTable->in_start_time.gpsNanoSeconds =0;
