@@ -211,8 +211,7 @@ void LALInspiralParameterCalc (LALStatus *status,
                 break;
 
         default:
-                fprintf(stderr, "InspiralParameterCalc: Allowed enum not chosen in 
-InspiralParameterCalc ... exiting\n");
+                fprintf(stderr, "InspiralParameterCalc: Allowed enum not chosen in InspiralParameterCalc ... exiting\n");
                 exit(0);
    }
    totalMass = totalMass*LAL_MTSUN_SI;
