@@ -1,0 +1,27 @@
+TODO
+-----
+
+* activate cvs-log for lalapps/pulsar
+
+* metric-stuff
+	- debug, compare
+	- write metric wrapper for Ptole and Coherent
+
+* work on more general tiling
+
+* specify sky-regions by lines (in progress)
+
+
+done
+----
+* use Coherent metric
+* deallocate grid-memory
+* print grid + metric infos for debugging
+* find round-off errors? (-> gcc O2, 1e-5, seems known)
+* use config-file
+
+Issues to discuss with Ben,Ian,Map,..
+----------------------------------------
+
+* Ben/Ian: adapt PtoleMetric parameter structure to Coherent metric?
+   (-> maybe a local wrapper will be good enough?!)
