@@ -7,23 +7,23 @@
 \verb$lalapps_inspinj$ --- produces inspiral injection data files.
 
 \item[Synopsis]
-\verb$lalapps_inspinj$ \quad
+\verb$lalapps_inspinj$ \newline
 %
-[\texttt{--help}]\quad
-\texttt{--source-file} \textsc{sfile} \quad
+[\texttt{--help}]\newline
+\texttt{--source-file} \textsc{sfile} \newline
 \texttt{--mass-file} \textsc{mfile}\newline
 %
-[\texttt{--gps-start-time} \textsc{tstart}]\quad 
+[\texttt{--gps-start-time} \textsc{tstart}]\newline 
 [\texttt{--gps-end-time} \textsc{tend}]\newline
 %
-[\texttt{--time-step} \textsc{tstep}]
+[\texttt{--time-step} \textsc{tstep}] \newline
 [\texttt{--time-interval} \textsc{tinterval}]\newline
 %
-[\texttt{--seed} \textsc{seed}]\quad
-[\texttt{--waveform} \textsc{wave}]\quad
+[\texttt{--seed} \textsc{seed}]\newline
+[\texttt{--waveform} \textsc{wave}]\newline
 [\texttt{--usertag} \textsc{tag}]\newline
 %
-[\texttt{--tama-output}]\quad
+[\texttt{--tama-output}]\newline
 [\texttt{--ilwd}]
 
 \item[Description] 
@@ -61,7 +61,8 @@ If a \texttt{--user-tag} is not specified on the command line, the
 
 \item[\texttt{--source-file} \textsc{sfile}]
 Optional. Data file containing spatial distribution of  extragalactic  objects.
-Default  is  the file \verb+inspsrcs.dat+ provided by LALApps.
+Default  is  the file \verb+inspsrcs.dat+ provided by LALApps. If that file is 
+empty, all signals are in the Milky Way.
 
 \item[\texttt{--mass-file} \textsc{mfile}]
 Optional. Data file containing mass pairs  for  the binary  neutron  star
