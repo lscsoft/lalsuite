@@ -1,11 +1,11 @@
 ## Process this file with automake to produce Makefile.in
 noinst_LTLIBRARIES = libfft.la
-if INTELFFT
 if QTHREAD
 QTHREADSRC = qthread.c
 else
 QTHREADSRC = 
 endif
+if INTELFFT
 libfft_la_SOURCES = IntelComplexFFT.c IntelRealFFT.c TimeFreqFFT.c $(QTHREADSRC)
 EXTRA_TEXSOURCES = ComplexFFT.c RealFFT.c FFTWMutex.c
 else
