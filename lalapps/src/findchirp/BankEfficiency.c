@@ -362,7 +362,7 @@ main (INT4 argc, CHAR **argv )
 		  /* The overlap given two filters and the input signal*/
 		  /*BEInitOverlapOutputIn(&OverlapOutputThisTemplate); */
 		  /*be sure rhomax = 0 and so on*/
-		  LAL_CALL(LALWaveOverlapBCV2(&status, 
+		  LAL_CALL(LALWaveOverlapBCV(&status, 
 					      &correlation, 
 					      &overlapin,
 					      &Filter1,

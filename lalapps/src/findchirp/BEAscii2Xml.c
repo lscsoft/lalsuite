@@ -37,8 +37,6 @@
 
 
 
-#define BANKEFFICIENCY_PARAMS_INPUT \
-"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %f %f %f %f %d %d %d"
 
 void BEAscii2XmlHelp(void);
 
@@ -91,13 +89,13 @@ main (int argc, char **argv )
     }
 
     fprintf(stderr,"Print the header of the xml file -- ");
-    fprintf(output, "%s", LIGOLW_XML_BANKEFFICIENCY);
+    PRINT_LIGOLW_XML_BANKEFFICIENCY(output);
     fprintf(stderr,"done\n");
   /* read ascii input and save in xml format */
     fprintf(stderr,"reading the ascii file -- ");
     do  
     {
-      fscanf(input1,BANKEFFICIENCY_PARAMS_INPUT,
+      fscanf(input1,BANKEFFICIENCY_PARAMS_ROW_SPACE,
 	     &trigger.psi0_trigger,
 	     &trigger.psi3_trigger,
 	     &trigger.psi0_triggerC,
@@ -124,11 +122,12 @@ main (int argc, char **argv )
 	     &trigger.alphaC,
 	     &trigger.alpha_fC, 
 	     &trigger.layerC,
-	     &trigger.binC, &trigger.coaTime
+	     &trigger.binC, 
+	     &trigger.coaTime,
+	     &trigger.snrAtCoaTime,
+	     &trigger.snrCAtCoaTime);
 
-
-	     );
-      if (start==0){
+     if (start==0){
 	      start+=1;
       }
       else 
@@ -162,7 +161,10 @@ main (int argc, char **argv )
 	      trigger.alphaC,
 	      trigger.alpha_fC, 
 	      trigger.layerC,
-	      trigger.binC, trigger.coaTime);
+	      trigger.binC, 
+	      trigger.coaTime,
+	      trigger.snrAtCoaTime,
+	      trigger.snrCAtCoaTime);
     }
    while(!feof(input1));
 
