@@ -7,9 +7,8 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralSpinningBHBinary.c}}
 
-The code \texttt{LALInspiralSpinningBHBinary.c} generates an inspiral waveform for two spinning
-compact stars using the formalism described in Apostolatos et al. Phys. Rev. D 49, 6274 (1994),
-Kidder, Will and Wiseman Phys. Rev. D. 47, 4183 (1993), Blanchet et al. Phys. Rev. Lett. (1998).
+This module generates the inspiral waveform from a binary consisting of
+two spinning compact stars. 
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -21,11 +20,14 @@ Kidder, Will and Wiseman Phys. Rev. D. 47, 4183 (1993), Blanchet et al. Phys. Re
 \end{itemize}
 
 \subsubsection*{Description}
-
+Using the formalism described in Apostolatos 
+et al \cite{ACST94} and Blanchet et al. \cite{BDIWW} this module computes
+the spin-modulated chirps from a pair of compact stars in orbit around
+each other. 
  
 \subsubsection*{Algorithm}
-This code uses a fourth-order Runge--Kutta algorithm to solve the integrals as a set of 
-eight, coupled first-order differential equations.
+This code uses a fourth-order Runge-Kutta algorithm to solve the differential
+equations as a set of nine, coupled first-order differential equations.
 
 \subsubsection*{Uses}
 

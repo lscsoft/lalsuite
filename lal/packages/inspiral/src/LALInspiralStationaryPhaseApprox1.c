@@ -4,11 +4,10 @@
 
 /**** <lalLaTeX>
  *
+ * %% A one-line description of the function(s) defined in this module.
  * \subsection{Module \texttt{LALInspiralStationaryPhaseApprox1.c}}
  * This module computes the stationary phase approximation to the
- * Fourier transform of a chirp waveform by solving the ODEs in
- * Equation (\ref{eq:frequencyDomainODE}).
- * %% A one-line description of the function(s) defined in this module.
+ * Fourier transform of a chirp waveform by integrating Eq.~\ref{eq:InspiralFourierPhase}. 
  *
  * \subsubsection*{Prototypes}
  * \input{LALInspiralStationaryPhaseApprox1CP}
@@ -24,12 +23,31 @@
  * %% this is the main place to document the module.
  * This module generates the Fourier domain waveform that is analogous of
  * the time-domain approximant {\tt TaylorT1.} Instead of re-expanding the
- * the energy and flux functions they are kept in tact and the equations
- * are solved numerically.
+ * the energy and flux functions they are kept in tact and the integral
+ * in Eq.~(\ref{eq:InspiralFourierPhase}) is solved numerically.
+ * The code returns the Fourier transform packed in the same way as fftw
+ * would for the Fourier transform of a real vector.  For a signal vector 
+ * of length {\tt n=signal->length} ({\tt n} even):
+ * \begin{itemize}
+ * \item {\tt signal->data[0]} is the {\it real} 0th frequency component of the Fourier transform.
+ * \item {\tt signal->data[n/2]} is the {\it real} Nyquist frequency component of the Fourier transform.
+ * \item {\tt signal->data[k]} and {\tt signal->data[n-k],} for {\tt k=1,\ldots, n/2-1,} are
+ * the real and imaginary parts of the Fourier transform at a frequency $k\Delta f=k/T,$ $T$ being
+ * the duration of the signal and $\Delta f=1/T$ is the frequency resolution.
+ * \end{itemize}
  *
  * \subsubsection*{Algorithm}
  *
  * %% A description of the method used to perform the calculation.
+ * The lal code {\tt LALDRomberIntegrate} is used to solve the 
+ * integral in Eq.~(\ref{eq:InspiralFourierPhase}).
+ * The reference points are chosen so that on inverse Fourier transforming
+ * the time-domain waveform will 
+ * \begin{itemize}
+ * \item be padded with zeroes in the first {\tt params->nStartPad} bins,
+ * \item begin with a phase shift of {\tt params->nStartPhase} radians,
+ * \item have an amplitude of ${\tt n} v^2.$ 
+ * \end{itemize}
  *
  * \subsubsection*{Uses}
  *
@@ -42,16 +60,12 @@
  * \subsubsection*{Notes}
  *
  * %% Any relevant notes.
- * The code returns the Fourier transform packed in the same way as fftw
- * would for the Fourier transform of a real vector.  For a signal vector 
- * of length {\tt n=signal->length} ({\tt n} even):
- * \begin{itemize}
- * \item {\tt signal->data[0]} is the {\it real} 0th frequency component of the Fourier transform.
- * \item {\tt signal->data[n/2]} is the {\it real} Nyquist frequency component of the Fourier transform.
- * \item {\tt signal->data[k]} and {\tt signal->data[n-k],} for {\tt k=1,\ldots, n/2-1,} are
- * the real and imaginary parts of the Fourier transform at a frequency $k\Delta f=k/T,$ $T$ being
- * the duration of the signal and $\Delta f=1/T$ is the frequency resolution.
- * \end{itemize}
+ * If it is required to compare the output of this module with a time domain
+ * signal one should use an inverse Fourier transform routine that packs data
+ * in the same way as fftw. Moreover, one should divide the resulting inverse
+ * Fourier transform by a factor ${\tt n}/2$ to be consistent with the 
+ * amplitude used in time-domain signal models.
+ *
  *
  *
  * \vfill{\footnotesize\input{LALInspiralStationaryPhaseApprox1CV}}
@@ -133,10 +147,9 @@ LALInspiralStationaryPhaseApprox1 (
     * coalescence will be the chirp time + the duration for which padding
     * is needed. Thus, in the equation below nStartPad occurs with a +ve sign.
     */
-   shft = LAL_PI*2.L * (params->nStartPad/params->tSampling + params->startTime);
-   phi =  params->startPhase - LAL_PI/4.L;
-   amp0 = params->signalAmplitude * ak.totalmass * pow(LAL_PI/12.L, 0.5L) * 
-          params->tSampling / (REAL8) signal->length; 
+   shft = LAL_PI*2.L * (ak.tn + params->nStartPad/params->tSampling + params->startTime);
+   phi =  params->startPhase + LAL_PI/4.L;
+   amp0 = params->signalAmplitude * ak.totalmass * pow(LAL_PI/12.L, 0.5L) * df;
 
    signal->data[0] = 0.;
    signal->data[nby2] = 0.;

@@ -736,10 +736,6 @@ void LALInspiralWave(
      REAL4Vector *signal,
      InspiralTemplate *params);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWaveTemplatesC}
-</lalLaTeX>  */
-
 void LALInspiralWaveTemplates(
      LALStatus *status,
      REAL4Vector *filter1,
@@ -756,10 +752,6 @@ void LALInspiralWave1(
      InspiralTemplate *params);
 
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWave1TemplatesC}
-</lalLaTeX>  */
-
 void LALInspiralWave1Templates(
      LALStatus *status,
      REAL4Vector *signal1,
@@ -775,10 +767,6 @@ void LALInspiralWave2(
      REAL4Vector *signal,
      InspiralTemplate *params);
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWave2TemplatesC}
-</lalLaTeX>  */
-
 void LALInspiralWave2Templates (
      LALStatus *status,
      REAL4Vector *signal1, 
@@ -793,10 +781,6 @@ void LALInspiralWave3 (
      LALStatus *status,
      REAL4Vector *signal, 
      InspiralTemplate *params);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWave3TemplatesC}
-</lalLaTeX>  */
 
 void LALInspiralWave3Templates (
      LALStatus *status,
@@ -828,10 +812,6 @@ void LALEOBWaveform(
      LALStatus *status,
      REAL4Vector *signal,
      InspiralTemplate *params);
-
-/*  <lalLaTeX>
-\newpage\input{LALEOBWaveformTemplatesC}
-</lalLaTeX>  */
 
 void LALEOBWaveformTemplates(
      LALStatus *status,
@@ -1165,33 +1145,6 @@ void LALInspiralFrequency3_7PN (
      REAL8 *frequency,
      REAL8 td,
      expnCoeffs *ak);
-
-void LALHCapDerivatives(
-     REAL8Vector *values,
-     REAL8Vector *dvalues,
-     void *funcParams);
-
-void LALprInit(
-     REAL8 *pr,
-     REAL8 r,
-     InspiralDerivativesIn *ak);
-
-void LALpphiInit(
-     REAL8 *phase,
-     REAL8 r,
-     REAL8 eta);
-
-void LALlightRingRadius(
-     LALStatus *status,
-     REAL8 *x,
-     REAL8 r,
-     void *params);
-
-void LALrOfOmega(
-     LALStatus *status,
-     REAL8 *x,
-     REAL8 r,
-     void *params);
 
 /*  <lalLaTeX>
 \newpage\input{LALRungeKutta4C}

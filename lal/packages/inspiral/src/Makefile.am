@@ -3,7 +3,6 @@ noinst_LTLIBRARIES = libinspiral.la
 libinspiral_la_SOURCES = \
 LALBCVWaveform.c\
 LALEOBWaveform.c\
-LALEOBWaveformTemplates.c\
 LALEtaTau02.c\
 LALEtaTau04.c\
 LALInspiralChooseModel.c\
@@ -23,13 +22,9 @@ LALInspiralTofVIntegrand.c\
 LALInspiralVelocity.c\
 LALInspiralWaveLength.c\
 LALInspiralWave.c\
-LALInspiralWaveTemplates.c\
 LALInspiralWave1.c\
-LALInspiralWave1Templates.c\
 LALInspiralWave2.c\
-LALInspiralWave2Templates.c\
 LALInspiralWave3.c\
-LALInspiralWave3Templates.c\
 LALInspiralDerivatives.c\
 LALPrintTimeseries.c\
 LALRungeKutta4.c

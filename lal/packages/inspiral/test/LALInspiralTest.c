@@ -10,23 +10,23 @@ Test routine for codes that generate inspiral waveform from non-spinning black
 hole binaries.  Time domain signals are returned when the {\tt approximant} is
 one of {\tt TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB, SpinTaylorT3}
 and frequency domain signals are returned when the {\tt approximant} is
-one of {\tt TaylorF1, TaylorF2, BCV.}
+one of {\tt TaylorF1, TaylorF2, BCV.} This code checks every available approximant
+at every order and reports whether or not there was any problem with the
+generation codes.
 
-First set the \texttt{InspiralTemplate} structure (example 
-given below).  Then, to measure the length of the array required first 
+To generate a waveform first set the \texttt{InspiralTemplate} structure (see
+below for an example).  Next, to measure the length of the array required 
 call the function\\
 \texttt{
 	LALInspiralWaveLength (\&status, \&n, params)
 	}\\
-The length will be returned in \texttt{n}. Then call the function \\
+The length will be returned in \texttt{n}. Finally, call the function \\
 \texttt{
 	LALInspiralWave(\&status, signal1, params);
 	}\\
 to generate the wave, which will be returned in \texttt{signal}.
-Example values of the parameters that can be set (with options in 
-brackets):
 
-
+Example values of the parameters that can be set (with options in brackets) is:
 \begin{verbatim}
    params.OmegaS = 0.;     (Unknown 3PN parameter in energy; shown to be 0 by DJS)
    params.Theta = 0.;      (Unknown 3PN parameter in flux; arbitrarily set to 0)

@@ -5,7 +5,7 @@ $Id$
 
 /*  <lalLaTeX>
 
-\subsection{Module \texttt{LALInspiralTest.c}}
+\subsection{Module \texttt{LALInspiralTestOne.c}}
 Test routine for wave generation codes. Exactly as in
 {\tt LALInspiralTest} except that this code tests only 
 one function as chosen by the user in {\tt Approximant}

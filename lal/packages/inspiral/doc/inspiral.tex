@@ -301,9 +301,9 @@ most efficiently computed by a pair of coupled, non-linear, ODE's:
 \label {eq:frequencyDomainODE}
 \end{equation}
 rather  than by numerically computing the integral in  
-Eqs.~(\ref{eq:InspiralFourierPhase}).
-This is what is implimented in {\tt LALInspiralStationaryPhaseApproximation1}
-and corresponds to \texttt{TaylorF1} in the enum \texttt{Approximant.}
+Eqs.~(\ref{eq:InspiralFourierPhase}).  However, the current implimentation 
+in {\tt LALInspiralStationaryPhaseApproximation1} solves the integral 
+and corresponds to \texttt{TaylorF1} in the  \texttt{enum Approximant.}
 
 \subsection{Amplitude in the Fourier domain}
 The derivative of the frequency that occurs in the
@@ -329,6 +329,7 @@ time-domain and Fourier domains signals and this code therefore uses the full
 PN expansion \cite{dis2}.
 
 \section{Effective one-body approach}
+\label{sec:EOB}
 \newcommand{\ww}{\widehat{\omega}}
 \newcommand{\wF}{\widehat{\cal F}}
 The entry \texttt{EOB} in the {\tt enum Approximant} corresponds to the 
@@ -408,6 +409,128 @@ at the light ring $r_{\rm lr}$ given by the solution to the equation,
 r_{\rm lr}^3 - 3 r_{\rm lr}^2 + 5 \eta = 0.
 \label{eq:LightRing}
 \end{equation}
+\section{Spinning Modulated Chirps}
+Waveforms from spinning black hole binaries at 2PN order can be
+generated using the choice {\tt SpinTaylorT3} in the {\tt enum
+Approximant.} Current implimentation closely follows Ref.~\cite{ACST94}.
+The orbital plane of a binary consisting of rapidly spinning compact
+objects precesses causing the polarization of the wave received at an
+antenna to continually change. This change depends on the source location
+on the sky and it might therefore be possible to resolve the direction
+to a source. It is therefore essential to specify the coordinate system 
+employed in the description of the waveform. As in Ref.~\cite{ACST94}
+the coordinate system is adapted to the detector with the x-y plane
+in the plane of the interferometer with the axes along the two arms.
+
+In the restricted post-Newtonian approximation the evolution of a binary 
+system comprising of two bodies of masses $m_1$ and $m_2,$ spins 
+${\mathbf S}_1=(s_1,\, \theta_1, \, \varphi_1)$ and 
+${\mathbf S}_2=(s_2,\, \theta_2, \, \varphi_2),$ orbital angular momentum
+${\mathbf L}=(L,\, \theta_0, \, \varphi_0),$ is governed by a 
+set of differential equations given by:
+\begin{eqnarray}
+\dot{\mathbf {L}} = 
+\left [ 
+\left ( \frac{4m_1+3m_2}{2m_1m^3} - \frac{3\,  {\mathbf S}_2 \cdot {\mathbf L}}{2\, L^2m^3} \right ) {\mathbf S}_1 + 
+\left ( \frac{4m_2+3m_1}{2m_2m^3} - \frac{3}{2}\frac{ {\mathbf S}_1 \cdot {\mathbf L}}{L^2m^3} \right ) {\mathbf S}_2 
+\right ] \times {\mathbf L} v^6 -\frac{32\eta^2 m}{5L} {\mathbf L} v^7,
+\label{eqn:precession1}
+\end{eqnarray}
+\begin{equation}
+\dot{ \mathbf  S}_1  = 
+\left [ \left ( \frac{4m_1+3m_2}{2m_1m^3} - \frac{3\, {\mathbf S}_2 \cdot {\mathbf L} }{2\, L^2m^3} 
+\right ) {\mathbf L} \times {\mathbf S}_1 + \frac{ {\mathbf S}_2 \times {\mathbf S}_1 }{2m^3} \right ] v^6,
+\label{eqn:precession2} 
+\end{equation}
+\begin{equation}
+\dot{ \mathbf  S}_2  = 
+\left [ \left ( \frac{4m_2+3m_1}{2m_2m^3} - \frac{3\, {\mathbf S}_1 \cdot {\mathbf L} }{2\, L^2m^3} 
+\right ) {\mathbf L} \times {\mathbf S}_2 + \frac{ {\mathbf S}_1 \times {\mathbf S}_2 }{2m^3} \right ] v^6.
+\label{eqn:precession3} 
+\end{equation}
+where as before $v=(\pi m f)^{1/3},$ $f$ is the gravitational wave frequency,
+$m = m_1+m_2$ is the total mass, and $\eta = m_1m_2/m^2$ is
+the (symmetric) mass ratio.  An overdot denotes the time-derivative.
+In the evolution of the orbital angular momentum we have included 
+the lowest order dissipative term [\,the second term containing 
+$v^7$ in Equation (\ref{eqn:precession1})\,] 
+while keeping the non-dissipative modulation effects
+caused by spin-orbit and spin-spin couplings
+[\,the first term within square brackets containing 
+$v^6$ in Equation (\ref{eqn:precession1})\,]. 
+The spins evolve non-dissipatively but their orientations change due to 
+spin-orbit and spin-spin couplings. 
+Though the non-dissipative terms are not responsible for
+gravitational wave emission, and therefore do not shrink the
+orbit, they cause to precess the orbit.
+
+In the absence of spins the antenna observes the same polarization at 
+all times; the amplitude and frequency of the signal both
+increase monotonically, giving rise to a chirping signal. 
+Precession of the orbit and spins cause modulations in the amplitude
+and phase of the signal and smear the signal's energy spectrum over a wide band.
+For this reason we shall call the spin modulated (sm) chirp, 
+a {\it smirch} (an anagram of {\it sm} and {\it chir}).
+
+The strain $h(t)$ produced by a smirch at the antenna is given by
+\begin{eqnarray}
+ h(t) & = & -A(t)\cos[\phi(t)+\varphi(t)],
+\label{eqn:waveform}
+\end{eqnarray}
+where $A(t)$ is the precession-modulated amplitude of the signal,
+$\phi(t)$ is its post-Newtonian carrier phase that
+increases monotonically and $\varphi(t)$ is the polarization phase caused 
+by the changing polarization of the wave relative to the antenna. (We have
+neglected the Thomas precession of the orbit which induces additional, but
+small, corrections in the phase.) For a source with position vector 
+${\mathbf N} = (D,\, \theta_S,\, \varphi_S)$ the amplitude is given by,
+\begin{equation}
+ A(t) = \frac{2\eta m v^2}{D}
+\left[ \left( 1 + (\hat {\mathbf L}\cdot \hat {\mathbf N})^2\right )^2 F_{+}^2(\theta_S,\varphi_S,\psi) 
+ + 4 \left ( \hat {\mathbf L}\cdot \hat {\mathbf N} \right )^2 F_\times^2(\theta_S,\varphi_S,\psi) \right]^{1/2}. 
+\label{eqn:amplitude}
+\end{equation}
+Here $\hat{\mathbf L} = {\mathbf L}/L,$ $\hat{\mathbf N} = {\mathbf N}/D$ ($D$ is the distance to 
+the source) and $\psi(t)$ is the precession-modulated polarization angle given by 
+\begin{equation}
+\tan \psi(t) = 
+\frac{\hat{\mathbf L}(t)\cdot\hat{\mathbf z} - (\hat{\mathbf L}(t)\cdot\hat{\mathbf N})
+(\hat{\mathbf z}\cdot\hat{\mathbf N})}
+{\hat{\mathbf N}\cdot(\hat{\mathbf L}(t)\times\hat{\mathbf z})}.
+\label{eqn:psi(t)}
+\end{equation} 
+Also, $F_+$ and $F_\times$ are the antenna beam pattern functions are given by
+\begin{equation}
+F_+(\theta_S,\varphi_S,\psi) = \frac{1}{2}\left(1+\cos^2\theta_S\right)\cos{2\phi_S}\cos{2\psi} 
+- \cos\theta_S\sin{2\phi_S}\sin{2\psi}, 
+\end{equation}
+\begin{equation}
+F_{\times}(\theta_S,\phi_S,\psi) = 
+\frac{1}{2}\left(1+\cos^2\theta_S\right)\cos{2\phi_S}\sin{2\psi}
++ \cos\theta_S\sin{2\phi_S}\sin{2\psi}.
+\end{equation}
+Next, the polarization phase $\varphi(t)$ is 
+\begin{equation}
+\tan \varphi(t) = 
+\frac{ 2 \hat {\mathbf L}(t) \cdot \hat {\mathbf N}\, F_\times(\theta_S,\varphi_S,\psi)}
+{\left [ 1 + \left ({\mathbf L}(t)\cdot {\mathbf N} \right )^2 \right ] F_{+}(\theta_S,\varphi_S,\psi)}.
+\label{eqn:varphi}
+\end{equation}
+And finally, for the carrier phase we use the post-Newtonian 
+expression, but without the spin-orbit and
+spin-spin couplings. These spin couplings modify the carrier phase 
+by amounts much smaller than the post-Newtonian effects.
+To second post-Newtonian order the carrier phase is given by
+\begin{equation}
+\phi(t) = 
+\frac{-2}{\eta\theta^5}\left[1+\left(\frac{3715}{8064}+\frac
+{55}{96}\eta\right)\theta^2-\frac{3\pi}{4}\theta^3 
++\left(\frac{9275495}{14450688}+\frac{284875}{258048}\eta+\frac{1855}{2048}\eta^2\right)\theta^4\right].
+\label{eqn:phi}
+\end{equation}
+where $\theta=[\eta (t_C-t)/(5m)]^{-1/8},$ $t_C$ being the time at which the two stars
+merge together and the gravitational wave frequency formally diverges.
+
 
 \newpage\input{LALInspiralH}
 \begin{thebibliography}{}
@@ -450,5 +573,10 @@ Phys.\ Rev.\ D {\bf 64}, 124013 (2002).
 A.\ Buonanno, Y.\ Chen, and M.\ Vallisneri,
 Phys.\ Rev. \ D {\bf 67,} 024016 (2003)
 gr-qc/0205122.
+
+\bibitem{ACST94} 
+T.A. Apostolatos, C. Cutler, G.J. Sussman
+and K.S. Thorne Phys. Rev. D {\bf 49,} 6274 (1994);
+T.A. Apostolatos Phys. Rev. D {\bf 50,} 605 (1996).
 
 \end{thebibliography}

@@ -5,9 +5,11 @@ $Id$
 
 /*  <lalLaTeX>
 
-\subsection{Module \texttt{LALInspiralWave.c}}
+\subsection{Module \texttt{LALInspiralWave.c} and \texttt{LALInspiralWaveTemplates.c}}
 
-Interface routine needed to generate all waveforms in this module. To generate a waveform 
+Interface routine needed to generate all waveforms in the {\tt inspiral} package. 
+
+To generate a waveform 
 a user is noramlly required to (a) choose the binary parameters, starting frequency, number of
 bins of leading and trailing zero-padding, etc., in the structure {\tt InspiralTemplate params}
 and (b) call the following three functions in the order given:
@@ -21,6 +23,15 @@ Either a time- or a frequency-domain signal is returned depending upon the
 \idx{LALInspiralWave()}
 \begin{itemize}
 \item {\tt signal:} Output containing the inspiral waveform.
+\item {\tt params:} Input containing binary chirp parameters.
+\end{itemize}
+
+\vspace{0.1in}
+\input{LALInspiralWaveTemplatesCP}
+\idx{LALInspiralWaveTemplates()}
+\begin{itemize}
+\item {\tt signal1:} Output containing the 0-phase inspiral waveform.
+\item {\tt signal2:} Output containing the $\pi/2$-phase inspiral waveform.
 \item {\tt params:} Input containing binary chirp parameters.
 \end{itemize}
 
@@ -49,6 +60,12 @@ $v_{\rm lso}^2 = x^{\rm lso}_{P_4},$ where $x^{\rm lso}_{P_4}$ is
 defined in Table \ref{table:energy}. In the case of {\tt EOB} approximant,
 defined only at orders greater than 2PN, the plunge waveform is 
 terminated at the light-ring orbit defined by Equation~(\ref{eq:LightRing}).
+
+In the case of {\tt LALInspiralWaveTemplates} {\tt *signla1} 
+contains the `0-phase' inspiral template and {\tt *signal2} contains 
+a signal that is $\pi/2$ out of phase with respect to {\tt *signal1.}
+Currently, a template pair is generated only for the following {\tt approximants:}
+{\tt TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB.}
 
 See the test codes for examples of how to generate different approximations.
 
@@ -154,6 +171,68 @@ LALInspiralWave(
 	   LALInspiralSpinModulatedWave(status->statusPtr, signal, params); 
            CHECKSTATUSPTR(status);
 	   break;
+   }
+
+   DETATCHSTATUSPTR(status);
+   RETURN (status);
+}
+
+
+NRCSID (LALINSPIRALWAVETEMPLATESC, "$Id$");
+
+/*  <lalVerbatim file="LALInspiralWaveTemplatesCP"> */
+void 
+LALInspiralWaveTemplates(
+   LALStatus        *status,
+   REAL4Vector      *signal1,
+   REAL4Vector      *signal2,
+   InspiralTemplate *params
+   )
+{ /* </lalVerbatim>  */
+
+   INITSTATUS(status, "LALInspiralWaveTemplates", LALINSPIRALWAVETEMPLATESC);
+   ATTATCHSTATUSPTR(status);
+
+   ASSERT (signal1->length >= 2, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT (signal2->length >= 2, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT (signal1,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (signal2,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (signal1->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (signal2->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+
+   ASSERT((INT4)params->approximant >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT((INT4)params->approximant <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT((INT4)params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
+   switch (params->approximant) 
+   {
+      case TaylorT1:
+      case PadeT1:
+           LALInspiralWave1Templates(status->statusPtr, signal1, signal2, params);
+           CHECKSTATUSPTR(status);
+      break;
+      case TaylorT2:
+           LALInspiralWave2Templates(status->statusPtr, signal1, signal2, params);
+           CHECKSTATUSPTR(status);
+      break;
+      case TaylorT3:
+           LALInspiralWave3Templates(status->statusPtr, signal1, signal2, params);
+           CHECKSTATUSPTR(status);
+      break;
+      case EOB:
+           LALEOBWaveformTemplates(status->statusPtr, signal1, signal2, params);
+           CHECKSTATUSPTR(status);
+      break;
+      case TaylorF1:
+      case TaylorF2:
+      case PadeF1:
+      case BCV:
+      case SpinTaylorT3:
+           ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+      break;
    }
 
    DETATCHSTATUSPTR(status);

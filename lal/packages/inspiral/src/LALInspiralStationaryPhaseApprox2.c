@@ -6,9 +6,10 @@
  *
  *
  * \subsection{Module \texttt{LALInspiralStationaryPhaseApprox2.c}}
- * This module computes the usual stationary phase approximation to the
- * Fourier transform of a chirp waveform.
  * %% A one-line description of the function(s) defined in this module.
+ * This module computes the usual stationary phase approximation to the
+ * Fourier transform of a chirp waveform
+ * given by Eq.~(\ref{eq:InspiralFourierPhase:f2}).
  *
  * \subsubsection*{Prototypes}
  * \input{LALInspiralStationaryPhaseApprox2CP}
@@ -41,16 +42,20 @@
  * The standard SPA is given by Eq.~(\ref{eq:InspiralFourierPhase:f2}).
  * We define a variable function pointer {\tt LALInspiralTaylorF2Phasing} and point
  * it to one of the {\texttt static} functions defined within this function
- * that explicitly calculate the Fourier phase at the PN order chosen by the user.
- * The function returns the Frequency domain waveform in the convention of fftw.
- * Morever the reference points are chosen so that on inverse Fourier transforming
- * the time-domain will 
+ * that explicitly calculates the Fourier phase at the PN order chosen by the user.
+ * The reference points are chosen so that on inverse Fourier transforming
+ * the time-domain waveform will 
  * \begin{itemize}
  * \item be padded with zeroes in the first {\tt params->nStartPad} bins,
  * \item begin with a phase shift of {\tt params->nStartPhase} radians,
  * \item have an amplitude of ${\tt n} v^2.$ 
  * \end{itemize}
  * \subsubsection*{Uses}
+ * \begin{verbatim} 
+   LALInspiralSetup 
+   LALInspiralChooseModel 
+   LALInspiralTaylorF2Phasing[0234567]PN
+ * \end{verbatim}
  *
  * %% List of any external functions called by this function.
  * \begin{verbatim}
@@ -149,7 +154,7 @@ LALInspiralStationaryPhaseApprox2 (
     * This code doesn't support non-zero start-time. i.e. params->startTime
     * should be necessarily zero.
     */
-   shft = 2.L*LAL_PI * (ak.tn + params->nStartPad/params->tSampling);
+   shft = 2.L*LAL_PI * (ak.tn + params->nStartPad/params->tSampling + params->startTime);
    phi =  params->startPhase + LAL_PI/4.L;
    amp0 = params->signalAmplitude * ak.totalmass * pow(LAL_PI/12.L, 0.5L) * df;
 /* 
