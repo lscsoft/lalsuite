@@ -34,101 +34,101 @@ documented in the LAL Software Documentation under the
 
 \item[Options]\leavevmode
 \begin{entry}
-\item[\texttt{-h}]
-  Print a help message.
-\item[\texttt{-q}]
-  Run silently (redirect standard input and error to \texttt{/dev/null}).
-\item[\texttt{-v}]
-  Run in verbose mode.
-\item[\texttt{-d} \textit{debugLevel}]
-  Set the LAL debug level to \textit{debugLevel}.
-\item[\texttt{-s} \textit{siteID1} \texttt{-t} \textit{siteID2}]
-  Use detector sites identified by \textit{siteID1} and
-  \textit{siteID2}; ID numbers between \texttt{LALNumCachedDetectors}
-  (defined in the \texttt{tools} package of LAL) refer to detectors
-  cached in the constant array \verb$lalCachedDetectors[]$.  (At this
-  point, these are all interferometers.)  Additionally, the five
-  resonant bar detectors of the IGEC collaboration can be specified.
-  The bar geometry data (summarized in table~\ref{table:cachedBars})
-  is used by the fucntion \verb$LALCreateDetector()$ from the
-  \texttt{tools} package of LAL to generate the Cartesian position
-  vector and response tensor which are used to calculate the overlap
-  reduction function.  The ID numbers for the bars depend on the value
-  of \texttt{LALNumCachedDetectors}; the correct ID numbers can be
-  obtained by with the command
+\item[\option{-h}]
+Print a help message.
+
+\item[\option{-q}]
+Run silently (redirect standard input and error to \texttt{/dev/null}).
+
+\item[\option{-v}]
+Run in verbose mode.
+
+\item[\option{-d}~\parm{debugLevel}]
+Set the LAL debug level to \parm{debugLevel}.
+
+\item[\option{-s}~\parm{siteID1}, \option{-t}~\parm{siteID2}]
+Use detector sites identified by \parm{siteID1} and \parm{siteID2}; ID
+numbers between \texttt{LALNumCachedDetectors} (defined in the
+\texttt{tools} package of LAL) refer to detectors cached in the constant
+array \texttt{lalCachedDetectors[]}.  (At this point, these are all
+interferometers.)  Additionally, the five resonant bar detectors of the
+IGEC collaboration can be specified. The bar geometry data (summarized
+in table~\ref{table:cachedBars}) is used by the function
+\texttt{LALCreateDetector()} from the \texttt{tools} package of LAL to
+generate the Cartesian position vector and response tensor which are
+used to calculate the overlap reduction function.  The ID numbers for
+the bars depend on the value of \texttt{LALNumCachedDetectors}; the
+correct ID numbers can be obtained by with the command
 \begin{verbatim}
-./lalapps_olapredfcn -h
+> lalapps_olapredfcn -h
 \end{verbatim}
-\item[\texttt{-a} \textit{azimuth1} \texttt{-b} \textit{azimuth2}]
-%
-  If \textit{siteID1} (\textit{siteID2}) is a bar detector, assume it
-  has an azimuth of \textit{azimuth1} (\textit{azimuth2}) degrees East
-  of North rather than the default IGEC orientation given in
-  table~\ref{table:cachedBars}.  Note that this convention, measuring
-  azimuth in degrees clockwise from North is not the same as that used
-  in LAL (which comes from the frame spec).  Note also that any
-  specified azimuth angle is ignored if the corresponding detector is
-  an interferometer.
-\item[\texttt{-f} \textit{fLow}]
-  Begin the frequency series at a frequency of \textit{fLow}\,Hz; if this
-  is omitted, the default value of 0\,Hz is used.
-\item[\texttt{-e} \textit{deltaF}]
-  Construct the frequency series with a frequency spacing of
-  \textit{deltaF}\,Hz
-\item[\texttt{-n} \textit{numPoints}]
-  Construct a frequency series with \textit{numPoints} points.
-\item[\texttt{-o} \textit{outfile}]
-  Write the output to file \textit{outfile}.  The format of this file
-  is that output by the routine \verb$LALPrintFrequencySeries()$ in
-  the \texttt{support} package of LAL, which consists of a header
-  describing metadata followed by two-column rows, each containing the
-  doublet $\{f,\gamma(f)\}$.
+
+\item[\option{-a}~\parm{azimuth1}, \option{-b}~\parm{azimuth2}]
+If \parm{siteID1} (\parm{siteID2}) is a bar detector, assume it has an
+azimuth of \parm{azimuth1} (\parm{azimuth2}) degrees East of North
+rather than the default IGEC orientation given in
+table~\ref{table:cachedBars}.  Note that this convention, measuring
+azimuth in degrees clockwise from North is not the same as that used in
+LAL (which comes from the frame spec).  Note also that any specified
+azimuth angle is ignored if the corresponding detector is an
+interferometer.
+
+\item[\option{-f}~\parm{fLow}]
+Begin the frequency series at a frequency of \parm{fLow}\,Hz; if this
+is omitted, the default value of 0\,Hz is used.
+
+\item[\option{-e}~\parm{deltaF}]
+Construct the frequency series with a frequency spacing of
+\parm{deltaF}\,Hz
+
+\item[\option{-n}~\parm{numPoints}]
+Construct a frequency series with \parm{numPoints} points.
+
+\item[\option{-o}~\parm{outfile}]
+Write the output to file \textit{outfile}. The format of this file is
+that output by the routine \texttt{LALPrintFrequencySeries()} in the
+\texttt{support} package of LAL, which consists of a header describing
+metadata followed by two-column rows, each containing the doublet
+$\{f,\gamma(f)\}$.
 \end{entry}
 
 \begin{table}[tbp]
-  \begin{center}
-    \begin{tabular}{|c|c|c|c|}
-\hline
-      Name & Longitude & Latitude & Azimuth
-\\ \hline
-\verb$AURIGA$ & $11^\circ56'54''$E & $45^\circ21'12''$N & N$44^\circ$E 
-\\ \hline
-\verb$NAUTILUS$ & $12^\circ40'21''$E & $41^\circ49'26''$N & N$44^\circ$E 
-\\ \hline
-\verb$EXPLORER$ & $6^\circ12'$E & $46^\circ27'$N & N$39^\circ$E 
-\\ \hline
-\verb$ALLEGRO$ & $91^\circ10'43.\!\!''766$W & $30^\circ24'45.\!\!''110$N 
-& N$40^\circ$W
-\\ \hline
-\verb$NIOBE$ & $115^\circ49'$E & $31^\circ56'$S & N$0^\circ$E 
-\\ \hline
-    \end{tabular}
-    \caption{Location and orientation data for the five IGEC resonant
-      bar detectors, stored in the \texttt{lalCachedBars[]}
-      array.  The data are taken from
-      \texttt{http://igec.lnl.infn.it/cgi-bin/browser.pl?Level=0,3,1}
-      except for the latitude and longitude of ALLEGRO, which were
-      taken from Finn \& Lazzarini, gr-qc/0104040.  Note that the
-      elevation above the WGS-84 reference ellipsoid and altitude
-      angle for each bar is not given, and therefore set to zero.}
-    \label{table:cachedBars}
-  \end{center}
+\begin{center}
+\begin{tabular}{|c|c|c|c|} \hline
+Name & Longitude & Latitude & Azimuth \\\hline
+AURIGA & $11^\circ56'54''$E & $45^\circ21'12''$N & N$44^\circ$E \\\hline
+NAUTILUS & $12^\circ40'21''$E & $41^\circ49'26''$N & N$44^\circ$E \\\hline
+EXPLORER & $6^\circ12'$E & $46^\circ27'$N & N$39^\circ$E \\\hline
+ALLEGRO & $91^\circ10'43.\!\!''766$W & $30^\circ24'45.\!\!''110$N & N$40^\circ$W \\\hline
+NIOBE & $115^\circ49'$E & $31^\circ56'$S & N$0^\circ$E \\\hline
+\end{tabular}
+\caption{Location and orientation data for the five IGEC resonant bar
+detectors, stored in the \texttt{lalCachedBars[]} array. The data are
+taken from
+\texttt{http://igec.lnl.infn.it/cgi-bin/browser.pl?Level=0,3,1}
+except for the latitude and longitude of ALLEGRO, which were taken from
+Finn \& Lazzarini, gr-qc/0104040.  Note that the elevation above the
+WGS-84 reference ellipsoid and altitude angle for each bar is not given,
+and therefore set to zero.}
+\label{table:cachedBars}
+\end{center}
 \end{table}
 
+\item[Example]
+To compute the overlap reduction function for LIGO Hanford and LIGO
+Livingston, with a resolution of 1\,Hz from 0\,Hz to 1024\,Hz:
 
-\item[Example usage]
-  To compute the overlap reduction function for LIGO Hanford and
-  LIGO Livingston, with a resolution of 1\,Hz from 0\,Hz to 1024\,Hz:
 \begin{verbatim}
-lalapps_olapredfcn -s 0 -t 1 -e 1 -n 1025 -o LHOLLO.dat
+> lalapps_olapredfcn -s 0 -t 1 -e 1 -n 1025 -o LHOLLO.dat
 \end{verbatim}
   
-  To compute the overlap reduction function for ALLEGRO in its optimal
-  orientation of $72.\!\!^\circ08$ West of South (see Finn \& Lazzarini,
-  gr-qc/0104040) and LIGO Livingston, with a resolution of 0.5\,Hz from
-  782.5\,Hz to 1032\,Hz (assuming \texttt{lalNumCachedBars} is 6):
+To compute the overlap reduction function for ALLEGRO in its optimal
+orientation of $72.\!\!^\circ08$ West of South (see Finn \& Lazzarini,
+gr-qc/0104040) and LIGO Livingston, with a resolution of 0.5\,Hz
+from 782.5\,Hz to 1032\,Hz (assuming \texttt{lalNumCachedBars} is 6):
+
 \begin{verbatim}
-lalapps_olapredfcn -s 9 -a 252.08 -t 1 -f 782.5 -e 0.5 -n 500 -o ALLEGROLHO.dat
+> lalapps_olapredfcn -s 9 -a 252.08 -t 1 -f 782.5 -e 0.5 -n 500 -o ALLEGROLHO.dat
 \end{verbatim}
 
 \item[Author]
