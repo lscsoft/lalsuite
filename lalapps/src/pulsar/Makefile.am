@@ -9,7 +9,9 @@ else
 FRAMEPROGS = 
 endif
 
-bin_PROGRAMS = $(FRAMEPROGS) 
+bin_PROGRAMS = $(FRAMEPROGS) SFTbinIOTest
+
+SFTbinIOTest_SOURCES = SFTbinIOTest.c SFTbinIO.c SFTbinIO.h 
 
 if FRAME
 #lalapps_stripAdc_SOURCES = stripAdc.c lalDebugLevel.c
