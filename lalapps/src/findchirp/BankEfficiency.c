@@ -14,6 +14,9 @@
 #include <lal/RealFFT.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
+#include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lalapps.h>
 
 NRCSID( BANKEFFICIENCYC, "$Id$");
@@ -78,7 +81,11 @@ RCSID(  "$Id$");
 #define BANKEFFICIENCY_FMAXIMIZATION      	0				/* Print SNR function of fendBCV	*/
 #define BANKEFFICIENCY_PRINTOVERLAP             0				/* Print Best Overlap 			*/
 #define BANKEFFICIENCY_PRINTFILTER              0				/* Print corresponding Filter		*/
+
 #define BANKEFFICIENCY_PRINTBANK		0				/* print the bank of template 		*/
+#define BANKEFFICIENCY_PRINTBANKOVERLAP		0				/* print the overlap of the templates	*/
+#define BANKEFFICIENCY_PRINTTEMPLATE    	0				/* print the  BCV final template	*/
+
 #define BANKEFFICIENCY_CHECK                    0				/* Just check that SNR=1 for identical parameters */
 #define BANKEFFICIENCY_RANDOMINJECTION		1				/* Type of injection: random  ?		*/		
 #define BANKEFFICIENCY_REGULARINJECTION		0				/* Type of injection: regular ?		*/		
@@ -147,7 +154,11 @@ typedef struct
   INT4 FMaximization;
   INT4 PrintOverlap;
   INT4 PrintFilter;
-  INT4 PrintBank;
+
+  INT4 PrintBankOverlap;							/* print match of each templates 	*/
+  INT4 PrintBank;								/* print bank of templates 		*/
+  INT4 PrintTemplate;  
+
   OverlapMethodIn overlapMethod;
   INT4 check;
   double m1,m2, psi0,psi3;
@@ -292,11 +303,22 @@ PrintBankOverlap(
 		 float 			*overlap,
 		 InspiralCoarseBankIn 	coarseIn);
 /* Print the bank */
-void
-PrintBank(
-	  InspiralCoarseBankIn coarse, 
-	  InspiralTemplateList **list,
-	  UINT4 nlist);
+void BEPrintBank(
+		 InspiralCoarseBankIn coarse, 
+		 InspiralTemplateList **list,
+		 UINT4 nlist);
+
+void BEPrintBankXml(
+		    InspiralTemplateList *coarseList,
+		    UINT4 numCoarse);
+
+void BEGetMatrixFromVectors( 
+			    REAL4Vector A11,
+			    REAL4Vector A21,
+			    REAL4Vector A22,
+			    UINT4 k,
+			    BCVMaximizationMatrix *matrix2fill
+			    );
 
 
 /* extern int lalDebugLevel=1; */
@@ -364,6 +386,7 @@ main (int argc, char **argv )
   static LALStatus 		status;
   BCVMaximizationMatrix 	matrix;
   FILE				*Finput;   
+  FILE                          *Foutput;
   FILE				*FileAmbiguityFunction;
   float 			*a;
   float 			*bankEfficiencyOverlapIn;
@@ -452,11 +475,17 @@ main (int argc, char **argv )
       break;
     }
 
-   
-   for (i=0; i< randIn.psd.length; i++)
-     {
-       randIn.psd.data[i] = coarseIn.shf.data->data[i];
-     }
+
+  /* --- save the psd in the file psd.dat --- */
+  Foutput= fopen("psd.dat","w");
+  for (i=1; i<(int)coarseIn.shf.data->length; i++)
+    fprintf(Foutput, "%lf %e\n",(float)i, coarseIn.shf.data->data[i]);  
+  fclose(Foutput);
+
+  /* --- and affect copy coarseIn.psd in randIn.psd --- */  
+  for (i=0; i< randIn.psd.length; i++){
+    randIn.psd.data[i] = coarseIn.shf.data->data[i];
+  }
   
   
   
@@ -471,8 +500,9 @@ main (int argc, char **argv )
      (list[il]).params.order = temporder;
 
   /* --- do we want to print the bank ? --- */
-  if (otherIn.PrintBank) PrintBank(coarseIn, &list, nlist);
-  
+  if (otherIn.PrintBank) BEPrintBank(coarseIn, &list, nlist);
+  if (otherIn.PrintBank) BEPrintBankXml(list,  nlist);/*xml format*/
+
   /* --- Estimate the fft's plans --- */
   LAL_CALL(LALCreateForwardRealFFTPlan(&status, &fwdp, signal.length, 0), &status);
   LAL_CALL(LALCreateReverseRealFFTPlan(&status, &revp, signal.length, 0), &status);
@@ -575,9 +605,11 @@ main (int argc, char **argv )
        overlapin.param.fCutoff = list[1].params.fFinal;
        
        k = floor(overlapin.param.fFinal / df);
-       matrix.a21 = VectorA21.data[k];
+       BEGetMatrixFromVectors(VectorA11, VectorA21, VectorA22, k, &matrix);
+
+       /*       matrix.a21 = VectorA21.data[k];
        matrix.a11 = VectorA11.data[k];
-       matrix.a22 = VectorA22.data[k];
+       matrix.a22 = VectorA22.data[k];*/
        switch(otherIn.overlapMethod)
 	 {
 	 case AlphaMaximization:
@@ -661,14 +693,6 @@ main (int argc, char **argv )
 	     LAL_CALL(LALGenerateWaveform(&status,&signal, &randIn), &status);
 	   }
 	 
-	 /*       for (kk = 0; kk<signal.length; kk++)
-	 {
-	   printf("%i %E\n", kk, signal.data[kk]);
-	 }
-	 */
-	 
-	 
-	 
 	 overlapin.signal = signal;
 	 jmax           = 0;
 	 overlapoutmax.max = 0.0;
@@ -727,9 +751,10 @@ main (int argc, char **argv )
 	       
 	       /* Extract some values for template creation*/
 	       k = floor(fendBCV / df);
-	       matrix.a21 = VectorA21.data[k];
-	       matrix.a11 = VectorA11.data[k];
-	       matrix.a22 = VectorA22.data[k];
+	       BEGetMatrixFromVectors(VectorA11, VectorA21, VectorA22, k, &matrix);
+	       /*   matrix.a21 = VectorA21.data[k];
+		    matrix.a11 = VectorA11.data[k];
+		    matrix.a22 = VectorA22.data[k];*/
 	       
 	       /* Template creation*/
 	       LAL_CALL(LALCreateFilters(&Filter1,
@@ -839,9 +864,8 @@ main (int argc, char **argv )
 	 
 	 
 	 /*Now print some results or other stuffs*/
-	 
-	 
-         PrintBankOverlap(&list, nlist ,  bankEfficiencyOverlapIn, coarseIn);
+	 if (otherIn.PrintBankOverlap) 
+	   PrintBankOverlap(&list, nlist ,  bankEfficiencyOverlapIn, coarseIn);
 	 
 	 LAL_CALL(LALInspiralParameterCalc(&status, &list[jmax].params), &status);
 	 PrintResults(list[jmax].params, randIn.param, overlapoutmax, fMax, list[jmax].nLayer);
@@ -856,9 +880,12 @@ main (int argc, char **argv )
 		 
 		 
 		 k = floor(fendBCV / df);
-		 matrix.a21 = VectorA21.data[k];
+	
+		 BEGetMatrixFromVectors(VectorA11, VectorA21, VectorA22, k, &matrix);
+
+		 /*	 matrix.a21 = VectorA21.data[k];
 		 matrix.a11 = VectorA11.data[k];
-		 matrix.a22 = VectorA22.data[k];
+		 matrix.a22 = VectorA22.data[k];*/
 		 
 		 /* Template creation*/
 		 LAL_CALL(LALCreateFilters(&Filter1,
@@ -942,11 +969,16 @@ main (int argc, char **argv )
 void printf_timeseries (INT4 n, REAL4 *signal, double delta, double t0) 
 {
   int i=0;
+ FILE *outfile1;
+  
+  outfile1=fopen("wave1.dat","a");
 
   do 
-     printf ("%e %e\n", i*delta+t0, *(signal+i));
+     fprintf (outfile1,"%e %e\n", i*delta+t0, *(signal+i));
   while (n-++i); 
-  printf("&\n");
+
+  fprintf(outfile1,"&\n");
+  fclose(outfile1);
 }
 
 /* ****************************************************************************
@@ -1020,6 +1052,7 @@ void InitRandomInspiralSignalIn(RandomInspiralSignalIn *randIn)
   randIn->psi3Max  	= BANKEFFICIENCY_PSI3MAX;	
   randIn->param.approximant 	= BANKEFFICIENCY_SIGNAL;			/* approximant of h, the signal		*/
   randIn->param.tSampling 	= BANKEFFICIENCY_TSAMPLING;			/* sampling 				*/
+  randIn->param.fCutoff		= BANKEFFICIENCY_TSAMPLING/2.-1;			/* sampling 				*/
   randIn->param.startTime       = BANKEFFICIENCY_STARTTIME; 
   randIn->param.startPhase      = BANKEFFICIENCY_STARTPHASE; 
   randIn->param.nStartPad       = BANKEFFICIENCY_NSTARTPHASE;
@@ -1043,7 +1076,11 @@ void InitOtherParamIn(OtherParamIn *otherIn)
   otherIn->PrintOverlap = BANKEFFICIENCY_PRINTOVERLAP;
   otherIn->PrintFilter  = BANKEFFICIENCY_PRINTFILTER;
   otherIn->overlapMethod= AlphaMaximization;
+
   otherIn->PrintBank    = BANKEFFICIENCY_PRINTBANK;
+ otherIn->PrintBankOverlap = BANKEFFICIENCY_PRINTBANKOVERLAP;
+  otherIn->PrintTemplate= BANKEFFICIENCY_PRINTTEMPLATE; 
+
   otherIn->check        = BANKEFFICIENCY_CHECK;
   otherIn->inputPSD     = NULL;
   otherIn->quietFlag 	= BANKEFFICIENCY_QUIETFLAG;
@@ -1108,9 +1145,11 @@ ParseParameters(	int 			*argc,
       else if ( strcmp(argv[i],	"--noise-amplitude")	==0)	     
     	      randIn->NoiseAmp = atof(argv[++i]);	
       else if ( strcmp(argv[i],	"--alpha-bank")	==0)	     
-    	      coarseIn->alpha = coarseIn->alpha;	
+    	      coarseIn->alpha = atof(argv[++i]);	
       else if ( strcmp(argv[i],	"--alpha-signal")==0)	     
-    	      randIn->param.alpha = coarseIn->alpha;	
+    	      randIn->param.alpha = atof(argv[++i]);
+      else if ( strcmp(argv[i],	"--freq-moment-bank")	==0)	     
+	coarseIn->fUpper = atof(argv[++i]);      
       else if ( strcmp(argv[i],	"--template-order")==0)     
 	      coarseIn->order = atoi(argv[++i]); 	
       else if ( strcmp(argv[i],	"--signal-order")==0) 
@@ -1139,7 +1178,9 @@ ParseParameters(	int 			*argc,
       else if ( strcmp(argv[i],"--print-ambiguity-function")==0) otherIn->ambiguityFunction 	= 1;
       else if ( strcmp(argv[i],"--FMaximization")	==0) 	 otherIn->FMaximization 	= 1;
       else if ( strcmp(argv[i],"--PrintOverlap")	==0)  	 otherIn->PrintOverlap 		= 1;
-      else if ( strcmp(argv[i],"--PrintFilter")		==0) 	 otherIn->PrintFilter 		= 1;
+      else if ( strcmp(argv[i],"--PrintFilter")		==0) 	 otherIn->PrintFilter 		= 1; 
+      else if ( strcmp(argv[i],"--print-bank-overlap")	==0)  	 otherIn->PrintBankOverlap 	= 1;
+      else if ( strcmp(argv[i],"--print-template")	==0)  	 otherIn->PrintTemplate 	= 1;
       else if ( strcmp(argv[i],"--print-bank")		==0) 	 otherIn->PrintBank		= 1;
       else if ( strcmp(argv[i],"--check")		==0)     otherIn->check 		= 1;
       else if ( strcmp(argv[i],"--InputPSD")		==0)  	 otherIn->inputPSD 		= argv[++i];
@@ -1326,12 +1367,28 @@ PrintResults(	    	InspiralTemplate       	bank,
 	    		REAL8 			fendBCV,
 	    		UINT4 			layer)
 {
-  
+ if (bank.approximant==BCV){  
+  	fprintf(stdout, "%e %e ", bank.psi0, bank.psi3);  /*triggered */
+	fprintf(stdout, "%e %e    ", injected.psi0, injected.psi3);
+      	fprintf(stdout, "%e %e %e %e   ", fendBCV,   injected.fFinal, bank.totalMass, injected.totalMass);
+      	fprintf(stdout, "%e %e %e %e   ", injected.mass1, injected.mass2, overlapout.max, overlapout.phase);
+      	fprintf(stdout, "%e %e %d %d\n ", overlapout.alpha, overlapout.alpha*pow(fendBCV,2./3.), layer, overlapout.bin);
+	}
+  else{
+  	fprintf(stdout, "%e %e ", bank.t0, bank.t3);  /*triggered */
+	fprintf(stdout, "%e %e    ", injected.t0, injected.t3);
+	fprintf(stdout, "%e %e %e %e   ", fendBCV,   injected.fFinal, bank.totalMass, injected.totalMass);
+	fprintf(stdout, "%e %e %e %e   ", injected.mass1, injected.mass2, overlapout.max, overlapout.phase);
+	fprintf(stdout, "%e %e %d %d\n ", overlapout.alpha, overlapout.alpha*pow(fendBCV,2./3.), layer, overlapout.bin);
+}
+
+#if 0
   fprintf(stdout, "%e %e ", bank.psi0, bank.psi3);  /*triggered */
   fprintf(stdout, "%e %e    ", injected.psi0, injected.psi3);
   fprintf(stdout, "%e %e %e %e   ", fendBCV,   injected.fFinal, bank.totalMass, injected.totalMass);
   fprintf(stdout, "%e %e %e %e   ", injected.mass1, injected.mass2, overlapout.max, overlapout.phase);
   fprintf(stdout, "%e %e %d %d\n ", overlapout.alpha, overlapout.alpha*pow(fendBCV,2./3.), layer, overlapout.bin);
+#endif
 }
 
 
@@ -1758,29 +1815,32 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 }
 
 
+
 /* *****************************************************************************
  *  A draft function to finalized later ; purpose: print the bank 
  *  ****************************************************************************/
 void
-PrintBank(	InspiralCoarseBankIn coarseIn,
+BEPrintBank(	InspiralCoarseBankIn coarseIn,
 		InspiralTemplateList **list,
       		UINT4 nlist
 		) 
 {
   UINT4 i;
-  
-  fprintf(stdout, "#Number of Coarse Bank Templates=%d\n",nlist);
+  FILE *output;
+  output = fopen("bank.dat","w");
+
+  fprintf(output, "#Number of Coarse Bank Templates=%d\n",nlist);
   if (coarseIn.approximant == BCV)
-	fprintf(stdout, "#psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n", 
+	fprintf(output, "#psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n", 
 	 	coarseIn.psi0Min, coarseIn.psi0Max, coarseIn.psi3Min, coarseIn.psi3Max);
   else
-  	fprintf(stdout, "#mMin=%e, mMax=%e\n", coarseIn.mMin,coarseIn.mMax);
+  	fprintf(output, "#mMin=%e, mMax=%e\n", coarseIn.mMin,coarseIn.mMax);
 
   for ( i = 0; i < nlist; i++)
     {
       if (coarseIn.approximant == BCV)
 	{      		   
-      		fprintf(stdout, "%e %e %d %e %e\n", 	(*list)[i].params.psi0, 
+      		fprintf(output, "%e %e %d %e %e\n", 	(*list)[i].params.psi0, 
 				  			(*list)[i].params.psi3,
 				  			(*list)[i].nLayer, 
 							(*list)[i].params.totalMass,
@@ -1788,16 +1848,19 @@ PrintBank(	InspiralCoarseBankIn coarseIn,
 	} 
       else
 	{
-      		fprintf(stdout, "%e %e %e %e\n", 	(*list)[i].params.t0, 
+
+      		fprintf(output, "%e %e %e %e\n", 	(*list)[i].params.t0, 
 				  			(*list)[i].params.t3, 
 							(*list)[i].params.mass1, 
 							(*list)[i].params.mass2);
 	}
     }	   
-  fprintf(stdout,"&\n");
+  fprintf(output,"&\n");
+  fclose(output);
 }
 
-/* TO fill*/
+
+
 void
 PrintBankOverlap(
 		 InspiralTemplateList 	**list,
@@ -1806,9 +1869,315 @@ PrintBankOverlap(
 		 InspiralCoarseBankIn 	coarseIn
 		)
 {
-	float psi0 = (list)[0]->params.psi0;
-	INT4 n 	= nlist;
-	float over 	= *overlap;
-	float mm	= coarseIn.mmCoarse;
-	printf("%d %f %f %f\n", n, over, mm, psi0);
+  FILE *output1, *output2;
+  output1 = fopen("FF.sr4", "w");
+  output2 = fopen("FF.dim", "w");
+
+  long Npsi0, Npsi3;
+  double dx0, dx3;
+
+  double psi0Min = coarseIn.psi0Min;
+  double psi0Max = coarseIn.psi0Max;
+  double psi3Min = coarseIn.psi3Min;
+  double psi3Max = coarseIn.psi3Max;
+  double psi0, psi3;
+  int    numfcut = coarseIn.numFcutTemplates;
+  int    i,j,l,n;
+  float  *a;
+
+  double minimalMatch = coarseIn.mmCoarse;
+  double theta, myphi, fac;
+
+
+   dx0 = sqrt(2.L * (1.L - minimalMatch)/(*list)[0].metric.g00 );
+   dx3 = sqrt(2.L * (1.L - minimalMatch)/(*list)[0].metric.g11 );
+
+
+   fprintf(stderr, "%lf %lf\n", dx0, dx3);
+   
+     if ((*list)[0].metric.theta!=0.L)
+   {
+     myphi = atan2(dx3, dx0);
+     theta = fabs((*list)[0].metric.theta);
+     if (theta <= myphi) {
+       fac = cos(theta);
+       dx0  /= fac;
+       dx3 *=  fac;
+     } 
+     else {
+       fac = sin(theta);
+       dx0 = dx3 / fac;
+       dx3 = dx0 * fac;
+     }
+   }
+   
+     fprintf(stderr, "%lf %lf\n", dx0, dx3);
+     fprintf(stderr,"Approxi= %d\n", coarseIn.approximant); 
+     a =( float*)malloc(sizeof(float) ); 
+
+     switch( coarseIn.approximant )
+       {
+       case BCV: 
+       /*some data*/
+       
+       
+       Npsi0 = floor(( psi0Max - psi0Min ) / dx0) + 1 ;
+       Npsi3 = floor(-( psi3Min - psi3Max ) / dx3) + 1;
+
+       printf("%lf %lf %ld %ld\n", dx0, dx3, Npsi0, Npsi3);     
+       
+/*	Npsi0 = 56; */
+	Npsi3 = nlist/Npsi0/5;  
+	dx0  =  ( psi0Max - psi0Min)/(Npsi0);
+	dx3  =  ( psi3Max - psi3Min)/(Npsi3);
+	
+       printf("%lf %lf %ld %ld\n", dx0, dx3, Npsi0, Npsi3);     
+       fflush(stdout); 
+       /* The dimension file */
+       fprintf(output2,"%7d %14.8lf %14.8lf  %s\n%7ld %14.8lf %14.8lf  %s\n%7d %14.8lf %14.8lf  %s\n"
+	       ,Npsi3, -psi3Max+dx3, dx3,"psi3"
+	       ,Npsi0, psi0Min+dx0, dx0,"psi0"
+	       ,numfcut,1.,1.,"layers");
+       fclose(output2);
+       float tab[Npsi0][Npsi3][numfcut];
+       for (l = 0; l < numfcut; l++){
+	 for (i = 0; i < Npsi0; i++){
+	   for (j = 0; j < Npsi3; j++){
+	     tab[i][j][l]=0;
+	   }
+	 }
+       }
+       n = 0;
+       /*fill to zero */
+       while (n< nlist)
+	 {
+	   psi0 = (*list)[n].params.psi0;
+	   psi3 = (*list)[n].params.psi3;
+	   
+	   i = (int)(( psi0 - psi0Min ) / dx0);
+           j = (int)(-( psi3 - psi3Max) / dx3);;
+	 if (i > Npsi0 || j > Npsi3 || (*list)[n].nLayer > numfcut)
+		fprintf(stderr," %d %d %d %lf %lf \n", n, i, j, psi0, psi3); 
+	  
+  	  tab[i][j][(*list)[n].nLayer-1] = overlap[n];
+	  n++;
+	}
+/*fprintf(stderr, "ok %d %d %d\n",numfcut, Npsi0, Npsi3);*/
+      for (l = 1; l <= numfcut; l++){
+       for (i = 0; i < Npsi0; i++){
+	for (j = 0; j < Npsi3; j++){
+/*        fprintf(stderr,"%ld %ld %ld %lf\n", i , j , l , tab[i][j][l]); */
+       if (tab[i][j][l-1]!=0)
+	a[0] = tab[i][j][l-1];	
+	else a[0] = 0;
+/*fprintf(stderr,"#%d %d %d %lf\n",i, j, l-1, a[0]);	*/
+	fwrite(a,4,1,output1);
+	 }
+	}	 	
+      }
+      
+    fclose(output1);
+      break;
+    case BCVSpin: 
+    case TaylorT1: 
+    case TaylorT2: 
+    case TaylorT3: 
+    case TaylorF1: 
+    case TaylorF2: 
+    case PadeT1: 
+    case PadeF1: 
+    case EOB: 
+      break;
+      
+  }
+
+}
+
+
+
+void PrintWaves(LALStatus *status	,
+		InspiralTemplate params_input)
+{
+  REAL4Vector *signal1, *signal2;
+  UINT4 n,i;
+  REAL8 dt;
+
+  
+  INITSTATUS (status, "LALInspiralWaveOverlapBCV", BANKEFFICIENCYC);
+  ATTATCHSTATUSPTR(status);
+  
+  InspiralTemplate *params = &params_input;
+  dt = 1./params->tSampling;
+
+  LAL_CALL(LALInspiralWaveLength(status->statusPtr, &n, params_input),status);
+  LAL_CALL(LALInspiralParameterCalc(status->statusPtr, params),status);
+  LAL_CALL(LALCreateVector(status->statusPtr, &signal1, n),status);
+  LAL_CALL(LALCreateVector(status->statusPtr, &signal2, n),status);
+
+ if (params->approximant==TaylorF1 || params->approximant==TaylorF2 || params->approximant==BCV) 
+   {
+	RealFFTPlan *revp = NULL;
+	COMPLEX8Vector *Signal1 = NULL;
+	LAL_CALL(LALInspiralWave(status->statusPtr, signal1, params),status);
+	/*
+	   REPORTSTATUS->STATUSPTR(status->statusPtr);
+	 */
+	LAL_CALL(LALCreateReverseRealFFTPlan(status->statusPtr, &revp, n, 0),status);
+
+	LAL_CALL(LALCCreateVector(status->statusPtr, &Signal1, n/2+1),status);
+	for (i=1; i<n/2; i++) 
+	{
+		Signal1->data[i].re = signal1->data[i];
+		Signal1->data[i].im = signal1->data[n-i];
+	}
+	Signal1->data[0].re = 0.;
+	Signal1->data[0].re = 0.;
+	Signal1->data[n/2].re = 0.;
+	Signal1->data[n/2].re = 0.;
+
+	LAL_CALL(LALReverseRealFFT(status->statusPtr, signal2, Signal1, revp),status);
+	LAL_CALL(LALCDestroyVector (status->statusPtr, &Signal1),status);
+	printf_timeseries(signal2->length, signal2->data, dt, params->startTime);
+
+	LAL_CALL(LALREAL4VectorFFT(status->statusPtr, signal2, signal1, revp),status);
+	LAL_CALL(LALDestroyRealFFTPlan (status->statusPtr, &revp),status);
+	printf_timeseries(signal2->length, signal2->data, dt, params->startTime);
+   }
+   else
+   {
+	LAL_CALL(LALInspiralWave(status->statusPtr, signal2, params),status);
+	printf_timeseries(signal2->length, signal2->data, dt, params->startTime);
+   }
+
+   LAL_CALL(LALDestroyVector(status->statusPtr, &signal2),status);
+   LAL_CALL(LALDestroyVector(status->statusPtr, &signal1),status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+}
+
+
+
+/* routine to print the bank in a xml file*/
+void 
+BEPrintBankXml(
+	       InspiralTemplateList *coarseList, 
+	       UINT4 numCoarse)
+{
+  LALStatus             status = blank_status;
+  MetadataTable         templateBank;
+  SnglInspiralTable     *tmplt  = NULL;
+  CHAR  ifo[3];                           /* two character ifo code       */
+  CHAR *channelName = NULL;               /* channel string               */
+  UINT4 i;  
+  LIGOLwXMLStream       results;
+  CHAR  fname[256];
+  LIGOTimeGPS gpsStartTime = { 0, 0 };    /* input data GPS start time    */
+  LIGOTimeGPS gpsEndTime = { 0, 0 };      /* input data GPS end time      */
+
+
+  LALSnprintf( fname, sizeof(fname), "TMPLTBANK.xml",
+	       ifo, gpsStartTime.gpsSeconds,
+	       gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  
+
+  templateBank.snglInspiralTable = NULL;
+
+  
+  /*  tmplt = templateBank.snglInspiralTable = (SnglInspiralTable *)
+    LALCalloc( 1, sizeof(SnglInspiralTable) );
+  */
+  /* convert the templates to sngl_inspiral structures for writing to XML */
+  if ( numCoarse )
+    {
+      tmplt = templateBank.snglInspiralTable = (SnglInspiralTable *)
+	LALCalloc( 1, sizeof(SnglInspiralTable) );
+      LALSnprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), ifo );
+      LALSnprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
+		   "BankEfficiency" );
+      LALSnprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+		   channelName );
+      tmplt->mass1   = (REAL4) coarseList[0].params.mass1;
+      tmplt->mass2   = (REAL4) coarseList[0].params.mass2;
+      tmplt->mchirp  = (REAL4) coarseList[0].params.chirpMass;
+      tmplt->eta     = (REAL4) coarseList[0].params.eta;
+      tmplt->tau0    = (REAL4) coarseList[0].params.t0;
+      tmplt->tau2    = (REAL4) coarseList[0].params.t2;
+      tmplt->tau3    = (REAL4) coarseList[0].params.t3;
+      tmplt->tau4    = (REAL4) coarseList[0].params.t4;
+      tmplt->tau5    = (REAL4) coarseList[0].params.t5;
+      tmplt->ttotal  = (REAL4) coarseList[0].params.tC;
+      tmplt->psi0    = (REAL4) coarseList[0].params.psi0;
+      tmplt->psi3    = (REAL4) coarseList[0].params.psi3;
+      tmplt->f_final = (REAL4) coarseList[0].params.fFinal;
+      
+      for ( i = 1; i < numCoarse; ++i )
+	{
+	  tmplt = tmplt->next = (SnglInspiralTable *)
+	    LALCalloc( 1, sizeof(SnglInspiralTable) );
+	  LALSnprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), ifo );
+	  LALSnprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
+		       "BankEfficiency" );
+	  LALSnprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+		       channelName );
+	  tmplt->mass1   = (REAL4) coarseList[i].params.mass1;
+	  tmplt->mass2   = (REAL4) coarseList[i].params.mass2;
+	  tmplt->mchirp  = (REAL4) coarseList[i].params.chirpMass;
+	  tmplt->eta     = (REAL4) coarseList[i].params.eta;
+	  tmplt->tau0    = (REAL4) coarseList[i].params.t0;
+	  tmplt->tau2    = (REAL4) coarseList[i].params.t2;
+	  tmplt->tau3    = (REAL4) coarseList[i].params.t3;
+	  tmplt->tau4    = (REAL4) coarseList[i].params.t4;
+	  tmplt->tau5    = (REAL4) coarseList[i].params.t5;
+	  tmplt->ttotal  = (REAL4) coarseList[i].params.tC;
+	  tmplt->psi0    = (REAL4) coarseList[i].params.psi0;
+	  tmplt->psi3    = (REAL4) coarseList[i].params.psi3;
+	  tmplt->f_final = (REAL4) coarseList[i].params.fFinal;
+	}
+    }
+  
+
+  memset( &results, 0, sizeof(LIGOLwXMLStream) );
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
+  
+
+  if ( templateBank.snglInspiralTable )
+    {
+      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sngl_inspiral_table ), 
+		&status );
+      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, templateBank, 
+					sngl_inspiral_table ), &status );
+      LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+    }
+
+  while ( templateBank.snglInspiralTable )
+    {
+      tmplt = templateBank.snglInspiralTable;
+      templateBank.snglInspiralTable = templateBank.snglInspiralTable->next;
+      LALFree( tmplt );
+    }
+  
+  
+  /* close the output xml file */
+  LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
+
+
+}
+
+
+
+/* function to get matrix components given 
+ * the vectors of the different moments   */
+void BEGetMatrixFromVectors( 
+			    REAL4Vector A11,
+			    REAL4Vector A21,
+			    REAL4Vector A22,
+			    UINT4 k,
+			    BCVMaximizationMatrix *matrix2fill
+			    )
+{
+  matrix2fill->a11 = A11.data[k];
+  matrix2fill->a21 = A21.data[k];
+  matrix2fill->a22 = A22.data[k];   
 }
