@@ -11,6 +11,8 @@
 #include "skygrid.h"
 #include "util.h"
 
+extern int lalDebugLevel;
+
 static
 UINT4
 modulo_sum(UINT4 a, UINT4 b, UINT4 mod)
@@ -27,25 +29,28 @@ earth_location(LALStatus *s, LIGOTimeGPS *p_gps, EphemerisData *p_eph)
 
   LALBarycenterEarth(s, &earth, p_gps, p_eph);
   
+  if (lalDebugLevel & 7)
+  {
+    printf("earth.posNow = %e, %e, %e\n", earth.posNow[0],
+           earth.posNow[1], earth.posNow[2]);
+  }
+  
   return atan2(earth.posNow[1], earth.posNow[0]);
 }
 
 
-/* fills in an irregular grid */
+/* fills in an irregular grid 
+ * FIXME: we can deal only with an even number of grid points */
 static
 UINT4 
 irr_grid_ra(LALStatus *s, REAL8Vector *ra_grid, REAL8 earth_phi)
 {
-  REAL8Vector *g = NULL;
   UINT4 num_grid = ra_grid->length;
   UINT4 num_grid_4 = num_grid / 4;
   UINT4 num_grid_2 = num_grid_4 * 2;
   UINT4 num_grid_3_4 = num_grid_4 * 3;
   UINT4 i, offset;
   REAL8 a, b;
-  REAL8 twopi_num_grid = (REAL8)LAL_TWOPI/(REAL8)num_grid;
-
-  LALDCreateVector(s, &g, num_grid);
   
   if (num_grid != 0)
   {
@@ -59,35 +64,25 @@ irr_grid_ra(LALStatus *s, REAL8Vector *ra_grid, REAL8 earth_phi)
     
     a = 2. / (REAL8)num_grid;
     b = 2. * a;
-  
-    g->data[num_grid_4] = asin(-1. + a + b*(REAL8)num_grid_4);
-    g->data[num_grid_2] = asin(-1. + a + b*(REAL8)num_grid_2);
-    for (i = 0; i < num_grid_4; ++i)
-    {
-      g->data[i] = asin(-1. + a + b*(REAL8)i);
-      g->data[num_grid_2 - i - 1] = -g->data[i];
-      g->data[num_grid_2 + i] = g->data[i] + (REAL8)LAL_PI;
-      g->data[num_grid - i - 1] = -g->data[i] + (REAL8)LAL_PI;
-    }
-  }
-  
-  if (lalDebugLevel > 2)
-  {
-    printf("irr_grid_ra (sin(ra)):\n");
-    for (i = 0; i < num_grid; ++i)
-      printf("\t% e\n", sin(g->data[i]));
-  }
-  
-  /* shift the computed grid above, and fill in the RA grid */
-  offset = (UINT4)rint(earth_phi / twopi_num_grid);
-  for (i = 0; i < num_grid; ++i)
-    ra_grid->data[modulo_sum(i, offset, num_grid)] = g->data[i];
-  
-  LALDDestroyVector(s, &g);
-  
-  return num_grid;
-}
 
+    for (i = 0; i < num_grid_2; ++i)
+      ra_grid->data[i] = asin(-1. + a + b*(REAL8)i) + earth_phi
+                         + (REAL8)LAL_PI_2 * 3.;
+      
+    for (i = 0; i < num_grid_2; ++i)
+      ra_grid->data[num_grid_2 + i] = ra_grid->data[i] + (REAL8)LAL_PI;
+  }
+  
+  if (lalDebugLevel & 7)
+  {
+    printf("earth_phi = %e\n", earth_phi);
+    printf("irr_grid_ra (rad):\n");
+    for (i = 0; i < num_grid; ++i)
+      printf("\t% e\n", ra_grid->data[i]);
+  }
+    
+  return num_grid;
+} /* END: irr_grid_ra() */
 
 void 
 init_gridding(gridding_t *g)
@@ -269,7 +264,7 @@ print_gridding(gridding_t *g, char *fn)
     fprintf(outfile, "\t% 20.14e\n", g->dec->data[i]/(double)LAL_PI*180.);
   fprintf(outfile, "\n");
     
-  fprintf(outfile, "Right Ascencion (h):\n");
+  fprintf(outfile, "Right Ascenscion (h):\n");
   if (g->ra_geom == DETRESP_REGGRID || g->ra_geom == DETRESP_IRRGRID)
   {
     for (i = 0; i < g->ra->length; ++i)
@@ -280,6 +275,7 @@ print_gridding(gridding_t *g, char *fn)
     fprintf(outfile, "RSN\n");
   }
 
-  fclose(outfile);  
+  if (outfile != stdout)
+    fclose(outfile);  
 } /* END: print_gridding() */
 

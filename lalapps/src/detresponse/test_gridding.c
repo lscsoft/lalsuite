@@ -41,7 +41,7 @@ main(int argc, char **argv)
   
   printf("\n*   *   *   *   *   *   *   *   *   *\n");
   
-  printf("RUN 2\n");
+  printf("RUN 2 - Autumnal Equi. 2003\n");
   
   gps.gpsSeconds = 748349233; /* Autumnal Equi. 2003 */
   
@@ -55,7 +55,7 @@ main(int argc, char **argv)
   
   printf("\n*   *   *   *   *   *   *   *   *   *\n");
   
-  printf("RUN 3\n");
+  printf("RUN 3 - Winter Sols. 2003\n");
   
   gps.gpsSeconds = 756111853; /* Winter Sols. 2003 */
   
@@ -64,6 +64,20 @@ main(int argc, char **argv)
   make_gridding(&s, &g, num_ra, DETRESP_IRRGRID, num_dec, DETRESP_REGGRID, &gps);
   
   print_gridding(&g, "winter2003.dat");
+
+  cleanup_gridding(&s, &g);
+  
+  printf("\n*   *   *   *   *   *   *   *   *   *\n");
+  
+  printf("RUN 4 - Vernal Equi. 2004\n");
+  
+  gps.gpsSeconds = 763800553; /* Vernal Equi. 2004 */
+  
+  num_ra = 100;
+  num_dec = 51;
+  make_gridding(&s, &g, num_ra, DETRESP_IRRGRID, num_dec, DETRESP_REGGRID, &gps);
+  
+  print_gridding(&g, "spring2004.dat");
 
   cleanup_gridding(&s, &g);
 
