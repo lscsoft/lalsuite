@@ -58,7 +58,7 @@ a GMST which gives us the orientation of the Earth.
 #include <lal/SkyCoordinates.h>
 #include <lal/TimeDelay.h>
 
-NRCSID( TIMEDELAYC, "$ID$" );
+NRCSID( TIMEDELAYC, "$Id$" );
 
 /* scalar product of two 3-vectors */
 static REAL8 dotprod(REAL8 vec1[3], REAL8 vec2[3])
