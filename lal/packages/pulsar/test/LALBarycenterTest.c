@@ -96,8 +96,11 @@ main( void )
   
   REAL8 alpha,delta;  /* RA and DEC (radians) in 
 			 ICRS realization of J2000 coords.*/
-  
+
+#if 0 /* Parallax is not treated yet. */
   REAL8 dInv; /* 1/(Dist. to Source), in units 1/sec */
+#endif
+
   edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));    
 
 #define DEBUG 1 /*rem non-zero is TRUE */

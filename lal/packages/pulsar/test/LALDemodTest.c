@@ -278,7 +278,7 @@ int main(int argc, char **argv)
 	REAL8 ts=0.0, ts0=0.0;
 	REAL8 tn=0.0;
 	
-	const CHAR *modulation=NULL;
+	/* const CHAR *modulation=NULL;   *** UNUSED ***/
 	const CHAR *noi=NULL;
 	INT4 deletions=1;
 	const CHAR *output=NULL;
