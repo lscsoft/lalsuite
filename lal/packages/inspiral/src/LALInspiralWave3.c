@@ -393,15 +393,16 @@ NRCSID (LALINSPIRALWAVE3FORINJECTIONC, "$Id$");
 
 void 
 LALInspiralWave3ForInjection (
-   LALStatus        *status,
-   CoherentGW       *waveform,   
-   InspiralTemplate *params
-   )
-
-{ /* </lalVerbatim>  */
-
+			      LALStatus        *status,
+			      CoherentGW       *waveform,   
+			      InspiralTemplate *params,
+			      PPNParamStruc  *ppnParams)
+     
+     /* </lalVerbatim>  */
+{
+  
   INT4 i, startShift, count, length;
-  REAL8 dt, fu, ieta, eta, tc, totalMass, t, td, c1, phi0, phi1, phi,omega;
+  REAL8 dt, fu, ieta, eta, tc, totalMass, t, td, c1,  phi,omega;
   REAL8 v, f, fHigh, amp, tmax, fOld, phase;
   expnFunc func;
   expnCoeffs ak;
@@ -409,8 +410,52 @@ LALInspiralWave3ForInjection (
   REAL4Vector *ff=NULL ;
   REAL8Vector *phiv=NULL;
   CreateVectorSequenceIn in;
-  REAL8 unitHz,f2a, mu, mTot, cosI, etab, fFac,  f2aFac, apFac, acFac, phiC;
-    
+  
+  REAL8 unitHz;
+  REAL8 f2a;
+  REAL8 mu; 
+  REAL8 mTot;
+  REAL8 cosI;/* cosine of system inclination */
+  REAL8 etab;
+  REAL8 fFac; /* SI normalization for f and t */
+  REAL8 f2aFac;/* factor multiplying f in amplitude function */
+  REAL8 apFac, acFac;/* extra factor in plus and cross amplitudes */
+  REAL8 phiC;/* phase at coalescence */
+  
+  
+  
+  
+
+
+  INITSTATUS (status, "LALInspiralWave3ForInjection", LALINSPIRALWAVE3FORINJECTIONC);
+  ATTATCHSTATUSPTR(status);
+  
+
+/* Make sure parameter and waveform structures exist. */
+  ASSERT( params, status, LALINSPIRALH_ENULL,
+	  LALINSPIRALH_MSGENULL );
+  ASSERT(waveform, status, LALINSPIRALH_ENULL,
+	 LALINSPIRALH_MSGENULL);  
+  ASSERT( !( waveform->a ), status, LALINSPIRALH_ENULL,
+	  LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL,
+	  LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL,
+	  LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->shift ), status, LALINSPIRALH_ENULL,
+	  LALINSPIRALH_MSGENULL );
+  
+  
+  
+  ASSERT(params, status, LALINSPIRALH_ENULL, 
+	 LALINSPIRALH_MSGENULL); 
+  ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE,
+	 LALINSPIRALH_MSGESIZE);
+  ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, 
+	 LALINSPIRALH_MSGESIZE);
+  ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, 
+	 LALINSPIRALH_MSGESIZE);
+  
   mTot   =  params->mass1 + params->mass2;
   etab   =  params->mass1 * params->mass2;
   etab  /= mTot;
@@ -425,55 +470,26 @@ LALInspiralWave3ForInjection (
   apFac *= 1.0 + cosI*cosI;
   acFac *= 2.0 * cosI;
 
-  
-
-
-  INITSTATUS (status, "LALInspiralWave3ForInjection", LALINSPIRALWAVE3FORINJECTIONC);
-  ATTATCHSTATUSPTR(status);
-  
-
-/* Make sure parameter and waveform structures exist. */
-  ASSERT( params, status, LALINSPIRALH_ENULL,
-	  LALINSPIRALH_MSGENULL );
-  ASSERT(waveform, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);  
-  /* Make sure waveform fields don't exist. */
-  ASSERT( !( waveform->a ), status, LALINSPIRALH_ENULL,
-	  LALINSPIRALH_MSGENULL );
-  ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL,
-	  LALINSPIRALH_MSGENULL );
-  ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL,
-	  LALINSPIRALH_MSGENULL );
-  ASSERT( !( waveform->shift ), status, LALINSPIRALH_ENULL,
-	  LALINSPIRALH_MSGENULL );
-   
-  
-
-  ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL); 
-  ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
-
   params->nStartPad = 0;
-
-  /*Compute some parameters*/
-   LALInspiralSetup (status->statusPtr, &ak, params);
-   CHECKSTATUSPTR(status);
-   LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
-   CHECKSTATUSPTR(status);
-   LALInspiralWaveLength(status->statusPtr, &length, *params);
-   CHECKSTATUSPTR(status);
+  
+  /* Compute some parameters*/
+  LALInspiralSetup (status->statusPtr, &ak, params);
+  CHECKSTATUSPTR(status);
+  LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
+  CHECKSTATUSPTR(status);
+  LALInspiralWaveLength(status->statusPtr, &length, *params);
+  CHECKSTATUSPTR(status);
 
   
-   /*Now we can allocate memory and vector for coherentGW structure*/     
-   LALSCreateVector(status->statusPtr, &ff, length);
-   CHECKSTATUSPTR(status);   
-   LALSCreateVector(status->statusPtr, &a, 2*length);
-   CHECKSTATUSPTR(status);   
-   LALDCreateVector(status->statusPtr, &phiv, length);
-   CHECKSTATUSPTR(status);
+  /* Now we can allocate memory and vector for coherentGW structure*/     
+  LALSCreateVector(status->statusPtr, &ff, length);
+  CHECKSTATUSPTR(status);   
+  LALSCreateVector(status->statusPtr, &a, 2*length);
+  CHECKSTATUSPTR(status);   
+  LALDCreateVector(status->statusPtr, &phiv, length);
+  CHECKSTATUSPTR(status);
   
-
+  
   dt = 1.0/(params->tSampling);    /* sampling rate  */
   fu = params->fCutoff;            /* upper frequency cutoff  */
   phi = params->startPhase;        /* initial phase  */
@@ -525,38 +541,41 @@ LALInspiralWave3ForInjection (
   CHECKSTATUSPTR(status);
   func.frequency3(status->statusPtr, &f, td, &ak);
   CHECKSTATUSPTR(status);
-  phi0=-phase+phi;
-  phi1=phi0+LAL_PI_2;
+  /*  phi0 = -phase+phi;
+      phi1 = phi0+LAL_PI_2;*/
 
   count = 0;
   tmax = tc - dt;
   fOld = 0.0;
 
-/* We stop if any of the following conditions fail */
-  while (f<fHigh && t<tmax && f>fOld) 
-  {
-    fOld = f; 
-    v = pow(f*LAL_PI*totalMass, oneby3);
-    amp = params->signalAmplitude * v*v;
+  /* We stop if any of the following conditions fail */
+  do
+    {
+      fOld = f; 
+      v = pow(f*LAL_PI*totalMass, oneby3);
+      amp = params->signalAmplitude * v*v;
+      
+      omega = v*v*v;
+      
+      ff->data[count]= (REAL4)(omega/unitHz);
+      f2a = pow (f2aFac * omega, 2./3.);
+      a->data[2*count]          = (REAL4)(4.*apFac * f2a);
+      a->data[2*count+1]        = (REAL4)(4.*acFac * f2a);
+      phiv->data[count]          = (REAL8)(phase);
+      
+      
+      ++i;
+      ++count;
+      t=count*dt;
+      td = c1*(tc-t);
+      func.phasing3(status->statusPtr, &phase, td, &ak);
+      CHECKSTATUSPTR(status);
+      func.frequency3(status->statusPtr, &f, td, &ak);
+      CHECKSTATUSPTR(status); 
+    }
+  while (f<fHigh && t<tmax && f>fOld) ;
 
-    omega = v*v*v;
 
-    ff->data[count]= (REAL4)(omega/unitHz);
-    f2a = pow (f2aFac * omega, 2./3.);
-    a->data[2*count]          = (REAL4)(4.*apFac * f2a);
-    a->data[2*count+1]        = (REAL4)(4.*acFac * f2a);
-    phiv->data[count]          = (REAL8)(phase);
-
-
-    ++i;
-    ++count;
-    t=count*dt;
-    td = c1*(tc-t);
-    func.phasing3(status->statusPtr, &phase, td, &ak);
-    CHECKSTATUSPTR(status);
-    func.frequency3(status->statusPtr, &f, td, &ak);
-    CHECKSTATUSPTR(status); 
-  }
   params->fFinal = fOld;
   
 /*
@@ -566,7 +585,7 @@ LALInspiralWave3ForInjection (
    phiC =  phiv->data[count-1] ;
    for (i=0; i<count;i++)
      {
-       phiv->data[i] =  phiv->data[i] -phiC;
+       phiv->data[i] =  phiv->data[i] -phiC + ppnParams->phi;
      }
 /* Allocate the waveform structures. */
   if ( ( waveform->a = (REAL4TimeVectorSeries *)
@@ -614,7 +633,6 @@ LALInspiralWave3ForInjection (
 
 
  
-  dt = -1. * etab / ( params->tSampling * 5.0*LAL_MTSUN_SI*mTot );      
 
   waveform->a->deltaT = waveform->f->deltaT = waveform->phi->deltaT
     = 1./params->tSampling;
@@ -622,14 +640,24 @@ LALInspiralWave3ForInjection (
   waveform->a->sampleUnits = lalStrainUnit;
   waveform->f->sampleUnits = lalHertzUnit;
   waveform->phi->sampleUnits = lalDimensionlessUnit;
- LALSnprintf( waveform->a->name, LALNameLength, "T3 inspiral amplitudes" );
+  LALSnprintf( waveform->a->name, LALNameLength, "T3 inspiral amplitudes" );
   LALSnprintf( waveform->f->name, LALNameLength, "T3 inspiral frequency" );
   LALSnprintf( waveform->phi->name, LALNameLength, "T3  inspiral phase" );
 
+  /* --- fill some output ---*/
+  
+  ppnParams->tc     = (double)(count-1) / params->tSampling ;
+  ppnParams->length = count;
+  ppnParams->dfdt   = ((REAL4)(waveform->f->data->data[count-1] 
+			       - waveform->f->data->data[count-2]))
+    * ppnParams->deltaT;
+  ppnParams->fStop  = params->fFinal;
+  ppnParams->termCode        = GENERATEPPNINSPIRALH_EFSTOP;
+  ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
+  
+  ppnParams->fStart   = ppnParams->fStartIn;
 
-  params->tC = count / params->tSampling ;
-  params->nStartPad = count;
-
+  /* --- free memory --- */
   LALSDestroyVector(status->statusPtr, &ff);
   CHECKSTATUSPTR(status);
   LALSDestroyVector(status->statusPtr, &a);

@@ -235,7 +235,8 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
 void 
 LALSTPNWaveformForInjection (LALStatus        *status,
 			     CoherentGW       *waveform,
-			     InspiralTemplate *params  )  
+			     InspiralTemplate *params,
+			     PPNParamStruc   *ppnParams)
   /* </lalVerbatim> */
 {
   /* declare model parameters*/
@@ -262,10 +263,10 @@ LALSTPNWaveformForInjection (LALStatus        *status,
   REAL8Vector 	dummy, values, dvalues, newvalues, yt, dym, dyt;
 
   REAL8 	lengths;
-  REAL8		chirpm;
+
   REAL8 	m;
   REAL8 	t;                   /* time (units of total mass)*/
-  REAL8 	phiC;                /* temp var for final phase*/
+
   REAL8 	unitHz;
   REAL8  	dt;
   REAL8 LNhztol = 1.0e-8;
@@ -275,6 +276,7 @@ LALSTPNWaveformForInjection (LALStatus        *status,
   REAL8 initLNhx, initLNhy, initLNhz;
   REAL8 initS1x, initS1y, initS1z;
   REAL8 initS2x, initS2y, initS2z;
+  REAL8 phiC;
 
   /* declare dynamical variables*/
   REAL8 vphi, omega, LNhx, LNhy, LNhz, S1x, S1y, S1z, S2x, S2y, S2z;
@@ -352,14 +354,20 @@ LALSTPNWaveformForInjection (LALStatus        *status,
 
 
  /* Make sure parameter and waveform structures exist. */
-  ASSERT(params, status, LALINSPIRALH_ENULL,  LALINSPIRALH_MSGENULL);
-  ASSERT(waveform, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);  
+  ASSERT(params, status, LALINSPIRALH_ENULL, 
+	 LALINSPIRALH_MSGENULL);
+  ASSERT(waveform, status, LALINSPIRALH_ENULL,
+	 LALINSPIRALH_MSGENULL);  
 
   /* Make sure waveform fields don't exist. */
-  ASSERT( !( waveform->a ), status, LALINSPIRALH_ENULL,	  LALINSPIRALH_MSGENULL );
-  ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL,	  LALINSPIRALH_MSGENULL );
-  ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
-  ASSERT( !( waveform->shift ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->a ), status, LALINSPIRALH_ENULL,	  
+	  LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL,
+	  LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL,
+	  LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->shift ), status, LALINSPIRALH_ENULL, 
+	  LALINSPIRALH_MSGENULL );
 
   /*===================*/
 
@@ -580,7 +588,7 @@ LALSTPNWaveformForInjection (LALStatus        *status,
   /* -? the original BCV target model had one additional stopping test*/
   /*    that I should probably reinstate*/
 
-  while(omegadot > 0 && LNhz*LNhz < 1.0 - LNhztol && omega/unitHz < 1000.0) {
+  do {
 
     /*    fprintf(stderr,"%ld %ld %15.12lf %15.12lf %15.12lf %15.12lf %15.12lf\n", count, length, omegadot, LNhz*LNhz, LNhztol, omega, unitHz);*/
       ASSERT(count < length, status, LALINSPIRALH_EMEM, "Out of memory during integration");
@@ -655,6 +663,7 @@ LALSTPNWaveformForInjection (LALStatus        *status,
 
       t = (++count - params->nStartPad) * dt;
   }  
+  while(omegadot > 0 && LNhz*LNhz < 1.0 - LNhztol && omega/unitHz < 1000.0) ;
 
   /* -? the EOB version saves some final values in params; I'm doing only fFinal*/
 
@@ -664,10 +673,10 @@ LALSTPNWaveformForInjection (LALStatus        *status,
   /*    this operations negates the use of initphi, which is set to 0.0 anyway*/
   /* -? I will comment this out to compare with my Mathematica code*/
 
-  /* phiC = phi->data[count-1] ;*/
+   phiC = phi->data[count-1] ;
 
-  /* for (j=0; j<count;j++)*/
-  /*    phi->data[j] = phi->data[j] - phiC;*/
+   for (j=0; j<count;j++)
+      phi->data[j] = phi->data[j] - phiC + ppnParams->phi;
 
   /* Allocate the waveform buffers, to be filled with what we have computed*/
 
@@ -729,9 +738,19 @@ LALSTPNWaveformForInjection (LALStatus        *status,
   LALSnprintf( waveform->phi->name, 	LALNameLength, "STPN inspiral phase" );  
   LALSnprintf( waveform->shift->name, 	LALNameLength, "STPN inspiral polshift" );
 
-  params->tC = count / params->tSampling ;
-  params->nStartPad = count;
+  /* fille some outputs*/
+  ppnParams->tc     = (double)(count-1) / params->tSampling ;
+  ppnParams->length = count;
+  ppnParams->dfdt   = ((REAL4)(waveform->f->data->data[count-1] 
+			       - waveform->f->data->data[count-2]))
+    * ppnParams->deltaT;
+  
+  ppnParams->fStop  = params->fFinal;
+  ppnParams->termCode        = GENERATEPPNINSPIRALH_EFSTOP;
+  ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
+  ppnParams->fStart   = ppnParams->fStartIn;
 
+  /* and free memory */
   LALSDestroyVector(status->statusPtr, &ff);
   CHECKSTATUSPTR(status);
   LALSDestroyVector(status->statusPtr, &a);

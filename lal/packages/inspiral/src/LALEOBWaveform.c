@@ -1138,16 +1138,19 @@ void
 LALEOBWaveformForInjection (
 			    LALStatus        *status,
 			    CoherentGW       *waveform,
-			    InspiralTemplate *params
+			    InspiralTemplate *params,
+			    PPNParamStruc    *ppnParams
 			    ) 
 { 
   /* </lalVerbatim> */
   INT4 count, nn=4, ndx,length,i;
   REAL8  eta, m, rn, r, rOld, s, p, q, dt, t,  v, omega, f, x;
   REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
-  REAL4Vector *a=NULL;
-  REAL4Vector *ff=NULL ;
-  REAL8Vector *phi=NULL;
+
+  REAL4Vector *a=NULL;/* pointers to generated amplitude  data */
+  REAL4Vector *ff=NULL ;/* pointers to generated  frequency data */
+  REAL8Vector *phi=NULL;/* pointer to generated phase data */
+
   CreateVectorSequenceIn in;
   TofVIn in1;
   InspiralPhaseIn in2;
@@ -1161,24 +1164,19 @@ LALEOBWaveformForInjection (
   DFindRootIn rootIn;
   /* 2 Additional lines of code to convert the EOB frequency 
      into physical frequency for the inject package */
-  REAL8 unitHz,f2a, mu, mTot, cosI, etab, fFac,  f2aFac, apFac, acFac, phiC;
-
-
-
-  mTot   =  params->mass1 + params->mass2;
-  etab   =  params->mass1 * params->mass2;
-  etab  /= mTot;
-  etab  /= mTot;
-  unitHz = (mTot) *LAL_MTSUN_SI*(REAL8)LAL_PI;
-  cosI   = cos( params->inclination );
-  mu     = etab * mTot;  
-  fFac   = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
-  dt     = -1. * etab / ( params->tSampling * 5.0*LAL_MTSUN_SI*mTot );      
-  f2aFac = LAL_PI*LAL_MTSUN_SI*mTot*fFac;   
-  apFac  = acFac = -2.0 * mu * LAL_MRSUN_SI/params->distance;
-  apFac *= 1.0 + cosI*cosI;
-  acFac *= 2.0*cosI;
+  REAL8 unitHz;
+  REAL8 f2a;
+  REAL8 mu; 
+  REAL8 mTot;
+  REAL8 cosI;/* cosine of system inclination */
+  REAL8 etab;
+  REAL8 fFac; /* SI normalization for f and t */
+  REAL8 f2aFac;/* factor multiplying f in amplitude function */
+  REAL8 apFac, acFac;/* extra factor in plus and cross amplitudes */
+  REAL8 phiC;/* phase at coalescence */
   
+  
+    
   INITSTATUS(status, "LALEOBWaveformForInjection", LALEOBWAVEFORMTEMPLATESC);
   ATTATCHSTATUSPTR(status);
 
@@ -1197,16 +1195,33 @@ LALEOBWaveformForInjection (
   ASSERT( !( waveform->shift ), status, LALINSPIRALH_ENULL,
 	  LALINSPIRALH_MSGENULL );
 
-  ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(params->fLower > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(params->tSampling > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(params->totalMass > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params, status, LALINSPIRALH_ENULL, 
+	 LALINSPIRALH_MSGENULL);
+  ASSERT(params->fLower > 0., status, LALINSPIRALH_ESIZE, 
+	 LALINSPIRALH_MSGESIZE);
+  ASSERT(params->tSampling > 0., status, LALINSPIRALH_ESIZE,
+	 LALINSPIRALH_MSGESIZE);
+  ASSERT(params->totalMass > 0., status, LALINSPIRALH_ESIZE,
+	 LALINSPIRALH_MSGESIZE);
 
   LALInspiralSetup (status->statusPtr, &ak, params);
   CHECKSTATUSPTR(status);
   LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
   CHECKSTATUSPTR(status);
 
+  mTot   =  params->mass1 + params->mass2;
+  etab   =  params->mass1 * params->mass2;
+  etab  /= mTot;
+  etab  /= mTot;
+  unitHz = (mTot) *LAL_MTSUN_SI*(REAL8)LAL_PI;
+  cosI   = cos( params->inclination );
+  mu     = etab * mTot;  
+  fFac   = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
+  dt     = -1. * etab / ( params->tSampling * 5.0*LAL_MTSUN_SI*mTot );      
+  f2aFac = LAL_PI*LAL_MTSUN_SI*mTot*fFac;   
+  apFac  = acFac = -2.0 * mu * LAL_MRSUN_SI/params->distance;
+  apFac *= 1.0 + cosI*cosI;
+  acFac *= 2.0*cosI;
   /* compute an approximate length*/
   x = (ak.tn) * params->tSampling ;
   ndx = ceil(log10(x)/log10(2.));
@@ -1396,41 +1411,43 @@ LALEOBWaveformForInjection (
 
 
 
-  while (r>=rn && r<rOld) {
-    /*    ASSERT(count< (INT4)inject_hc->length, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);*/
-    rOld = r;
-         
- 
-    if (params->order<threePN) LALHCapDerivatives(&values, &dvalues, funcParams);
-    else  LALHCapDerivatives3PN(&values, &dvalues, funcParams);
-
+  do
+    {
+      /*    ASSERT(count< (INT4)inject_hc->length, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);*/
+      rOld = r;
+      
+      
+      if (params->order<threePN) LALHCapDerivatives(&values, &dvalues, funcParams);
+      else  LALHCapDerivatives3PN(&values, &dvalues, funcParams);
+      
+      
+      v = pow(omega, oneby3);
+      
+      /*    ff->data[count]           = (REAL4)  (omega * fFac ); */
+      ff->data[count]= (REAL4)(omega/unitHz);
+      f2a = pow (f2aFac * omega, 2./3.);
+      a->data[2*count]          = (REAL4)(4.*apFac * f2a);
+      a->data[2*count+1]        = (REAL4)(4.*acFac * f2a);
+      phi->data[count]          = (REAL8)(2* s);
+      
+      
+      
+      omega = dvalues.data[1];
+      in4.dydx = &dvalues;
+      in4.x = t/m;
+      LALRungeKutta4(status->statusPtr, &newvalues, &in4, funcParams);
+      CHECKSTATUSPTR(status);
+      
+      
+      r = values.data[0] = newvalues.data[0];
+      s = values.data[1] = newvalues.data[1];
+      p = values.data[2] = newvalues.data[2];
+      q = values.data[3] = newvalues.data[3];
+      
+      count++;
+    }
+  while (r>=rn && r<rOld) ;
     
-    v = pow(omega, oneby3);
-         
-    /*    ff->data[count]           = (REAL4)  (omega * fFac ); */
-    ff->data[count]= (REAL4)(omega/unitHz);
-    f2a = pow (f2aFac * omega, 2./3.);
-    a->data[2*count]          = (REAL4)(4.*apFac * f2a);
-    a->data[2*count+1]        = (REAL4)(4.*acFac * f2a);
-    phi->data[count]          = (REAL8)(2* s);
-
-   
-
-    omega = dvalues.data[1];
-    in4.dydx = &dvalues;
-    in4.x = t/m;
-    LALRungeKutta4(status->statusPtr, &newvalues, &in4, funcParams);
-    CHECKSTATUSPTR(status);
-         
-    
-    r = values.data[0] = newvalues.data[0];
-    s = values.data[1] = newvalues.data[1];
-    p = values.data[2] = newvalues.data[2];
-    q = values.data[3] = newvalues.data[3];
-    
-    count++;
-
-   }  
   
   /*----------------------------------------------------------------- 
     Record the final cutoff frequency of BD Waveforms for record keeping 
@@ -1442,7 +1459,7 @@ LALEOBWaveformForInjection (
 
   for (i=0; i<count;i++)
     {
-      phi->data[i] =  phi->data[i] - phiC;
+      phi->data[i] =  phi->data[i] - phiC +ppnParams->phi;
     }
 
   /* Allocate the waveform structures. */
@@ -1491,7 +1508,7 @@ LALEOBWaveformForInjection (
 
 
  
-  dt = -1. * eta / ( params->tSampling * 5.0*LAL_MTSUN_SI*mTot );      
+
 
   waveform->a->deltaT = waveform->f->deltaT = waveform->phi->deltaT
     = 1./params->tSampling;
@@ -1509,9 +1526,19 @@ LALEOBWaveformForInjection (
   LALSnprintf( waveform->f->name, LALNameLength, "EOB inspiral frequency" );
   LALSnprintf( waveform->phi->name, LALNameLength, "EOB inspiral phase" );
 
+  /* --- fill some output ---*/
+  ppnParams->tc     = (double)(count-1) / params->tSampling ;
+  ppnParams->length = count;
+  ppnParams->dfdt   = ((REAL4)(waveform->f->data->data[count-1] 
+			       - waveform->f->data->data[count-2]))
+		       * ppnParams->deltaT;
+  ppnParams->fStop  = params->fFinal;
+  ppnParams->termCode        = GENERATEPPNINSPIRALH_EFSTOP;
+  ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
 
-  params->tC = count / params->tSampling ;
-  params->nStartPad = count;
+  ppnParams->fStart   = ppnParams->fStartIn;
+
+  /* --- free memory --- */
 
 
   LALSDestroyVector(status->statusPtr, &ff);
