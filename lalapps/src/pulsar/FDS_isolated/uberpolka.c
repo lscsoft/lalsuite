@@ -67,20 +67,19 @@ struct PolkaCommandLineArgsTag
 coarse frequency and sky bins */
 typedef struct CandINDICESTag
 {
+  REAL8 f;        /* Frequency */
+  REAL8 Alpha;    /* longitude */
+  REAL8 Delta;    /* latitude */
+  REAL8 F;        /* Maximum value of F for the cluster */
   INT4 iFreq;
   INT4 iDelta;
   INT4 iAlpha;
   INT4 iCand;
   INT4 iCandSorted;
-  REAL8 f;        /* Frequency */
-  REAL8 Alpha;    /* longitude */
-  REAL8 Delta;    /* latitude */
-  REAL8 F;        /* Maximum value of F for the cluster */
 } CandINDICES;
 
 typedef struct CandidateTag 
 {
-  UINT4 length;	   /* number of candidates in list */
   REAL8 *f;        /* Frequency */
   REAL8 *Alpha;    /* longitude */
   REAL8 *Delta;    /* latitude */
@@ -88,6 +87,7 @@ typedef struct CandidateTag
   REAL8 *fa;       /* false alarm probability for that candidate */
   UINT4 *Ctag;     /* tag for candidate if it's been found in coincidence */
   INT4  *CtagCounter;     /* contains the cumulative sum of coincident candidates so far */
+  UINT4 length;	   /* number of candidates in list */
 } CandidateList;
 
 
@@ -100,7 +100,7 @@ typedef struct CoincidentPairsTag
 
 int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA);
 int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA);
-void ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname);
+int ReadOneCandidateFile(CandidateList *CList, const char *fname);
 int compareCIStructs(const void *ip, const void *jp);
 int compareCPfa(const void *ip, const void *jp);
 int FineCoincidenceTest(CandINDICES c1, CandINDICES c2, struct PolkaCommandLineArgsTag CLA);
@@ -131,7 +131,7 @@ int main(int argc,char *argv[])
 {
   UINT4 i;
   INT4 iAlphaLowerEdge, iAlphaUpperEdge;
-  lalDebugLevel = 3;
+  lalDebugLevel = 0;
 #if USE_BOINC
   static char resolved_filename[256];
 #endif
@@ -219,16 +219,14 @@ int main(int argc,char *argv[])
 			      /* Now we've found at least one candidate */
 			      /* we need to move to the right edge (without segfaulting!) */
 
-			      while ((p->iCandSorted > 0) && (p->iFreq == (p-1)->iFreq) 
-				     && ( p->iDelta == (p-1)->iDelta) && ( p->iAlpha == (p-1)->iAlpha))
+			      while ( p->iCandSorted > 0 && !compareCIStructs(p, p-1) )
 				p--;
 			    
 			  /* Now p points to first coincident event in the second list */
 			      
 			  /* Now loop over candidates found in the second list and do the fine coincidence test */
 			  if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) return 3;
-			  while ( (p->iCandSorted <  (int)CList2.length) &&  (p->iFreq == (p+1)->iFreq) 
-				  && ( p->iDelta == (p+1)->iDelta) && ( p->iAlpha == (p+1)->iAlpha))
+			  while ( p->iCandSorted <  (int)CList2.length &&  !compareCIStructs(p, p+1) )
 			    { 
 			      p++;
 			      if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) return 3;
@@ -500,18 +498,11 @@ int compareCPfa(const void *ip, const void *jp)
 
 int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA)
 {
-  LALStatus status = blank_status;	/* initialize status */
 
-  ReadOneCandidateFile (&status, &CList1, CLA.FstatsFile1);
-  if (status.statusCode != 0) {
-    REPORTSTATUS (&status);
-    return 1;
-  }
-  ReadOneCandidateFile (&status, &CList2, CLA.FstatsFile2);
-  if (status.statusCode != 0) {
-    REPORTSTATUS (&status);
-    return 1;
-  }
+  if (ReadOneCandidateFile ( &CList1, CLA.FstatsFile1)) return 1;
+
+  if (ReadOneCandidateFile ( &CList2, CLA.FstatsFile2)) return 1;
+
   return 0;
 
 } /* ReadCandidateFiles() */
@@ -520,51 +511,51 @@ int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA)
 /*******************************************************************************/
 
 #define DONE_MARKER "%DONE"
+
 /* read and parse the given candidate 'Fstats'-file fname into the candidate-list CList */
-void 
-ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname)
+int  ReadOneCandidateFile (CandidateList *CList, const char *fname)
 {
   UINT4 i;
   UINT4 numlines;
   REAL8 dmp;
-  LALParsedDataFile *Fstats =NULL;	/* pre-parsed contents of Fstats-file */
-  const CHAR *thisline;
+  char line1[256],line2[5];
   CandidateList cands;
-  
-  INITSTATUS( stat, "ReadOneCandidateFile", rcsid );
-  ATTATCHSTATUSPTR (stat);
- 
-  ASSERT ( fname, stat, POLKAC_ENULL, POLKAC_MSGENULL);
-  ASSERT ( CList, stat, POLKAC_ENULL, POLKAC_MSGENULL);
-  ASSERT ( CList->f == NULL && CList->Alpha == NULL && CList->Delta == NULL 
-	   && CList->F == NULL && CList->fa == NULL && CList->Ctag == NULL && CList->CtagCounter == NULL, 
- 	   stat, POLKAC_ENONULL, POLKAC_MSGENONULL);
+  FILE *fp;
+  INT4 read;
 
-  /* ------ Open and read candidate file ------ */
-  TRY ( LALParseDataFile (stat->statusPtr, &Fstats, fname), stat);
-
-  numlines = Fstats->lines->nTokens; /* how many lines of data */
+  /* ------ Open and count candidates file ------ */
+  i=0;
+  fp=fopen(fname,"r");
+  if (fp==NULL) 
+    {
+      fprintf(stderr,"File %s doesn't exist!\n",fname);
+      return 1;
+    }
+  while(fgets(line1,sizeof(line1),fp))
+    {
+      strncpy(line2,line1,5);
+      i++;
+    }
+  numlines=i;
+  fclose(fp);     
+  /* -- close candidate file -- */
 
   if ( numlines == 0) 
     {
       LALPrintError ("ERROR: File '%s' is empty and is not properly terminated by '%s' marker!\n\n", fname, DONE_MARKER);
-      TRY (LALDestroyParsedDataFile ( stat->statusPtr, &Fstats ), stat);
-      ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+      return 1;
     }
 
   /* check validity of this Fstats-file */
-  thisline = Fstats->lines->tokens[numlines-1];	/* get last line */
-  if ( strcmp(thisline, DONE_MARKER ) ) 
+  if ( strcmp(line2, DONE_MARKER ) ) 
     {
       LALPrintError ("ERROR: File '%s' is not properly terminated by '%s' marker!\n\n", fname, DONE_MARKER);
-      TRY (LALDestroyParsedDataFile ( stat->statusPtr, &Fstats ), stat);
-      ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+      return 1;
     }
   else
     numlines --; 	/* avoid stepping on DONE-marker */
   
   /* reserve memory for fstats-file contents */
-
   if (numlines > 0)
     {
       cands.f     = LALCalloc (numlines, sizeof(REAL8));
@@ -577,21 +568,26 @@ ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname)
 
       if ( !cands.f || !cands.Alpha || !cands.Delta || !cands.F || !cands.fa || !cands.Ctag || !cands.CtagCounter )
 	{
-	  TRY( LALDestroyParsedDataFile ( stat->statusPtr, &Fstats ), stat);
-	  ABORT (stat, POLKAC_EMEM, POLKAC_MSGEMEM);
+	  LALPrintError ("Could not allocate memory for candidate file %s\n\n", fname);
+	  return 1;
 	}
     }
 
-
-  for (i=0; i < numlines; i++)
+  /* ------ Open and count candidates file ------ */
+  i=0;
+  fp=fopen(fname,"r");
+  if (fp==NULL) 
     {
-      int read;
-      
+      fprintf(stderr,"File %s doesn't exist!\n",fname);
+      return 1;
+    }
+  while(fgets(line1,sizeof(line1),fp) && i < numlines )
+    {
+
       cands.Ctag[i]=0;
       cands.CtagCounter[i]=-1;
 
-      thisline = Fstats->lines->tokens[i];
-      read = sscanf (thisline, 
+      read = sscanf (line1, 
 		     "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
 		     " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT, 
 		     &(cands.f[i]), &(cands.Alpha[i]), &(cands.Delta[i]), &dmp, &dmp, &dmp, &(cands.F[i]) );
@@ -599,7 +595,6 @@ ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname)
       if ( read != 7 )
 	{
 	  LALPrintError ("Failed to parse line %d in file '%s' \n", i+1, fname);
-	  TRY (LALDestroyParsedDataFile ( stat->statusPtr, &Fstats ), stat);
 	  LALFree (cands.f);
 	  LALFree (cands.Alpha);
 	  LALFree (cands.Delta);
@@ -607,12 +602,13 @@ ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname)
 	  LALFree (cands.fa);
 	  LALFree (cands.Ctag);
 	  LALFree (cands.CtagCounter);
-	  ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+	  return 1;
 	}
-    } /* for i < numlines */
- 
-  /* we're done: get rid of raw data-file */
-  TRY ( LALDestroyParsedDataFile ( stat->statusPtr, &Fstats ), stat);
+
+      i++;
+    }
+  fclose(fp);     
+  /* -- close 1st candidate file -- */
   
   /* return final candidate-list */
   CList->length = numlines;
@@ -624,13 +620,11 @@ ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname)
   CList->Ctag   = cands.Ctag;
   CList->CtagCounter   = cands.CtagCounter;
 
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  return 0;
 
 } /* ReadOneCandidateFile() */
 
 /*******************************************************************************/
-
 
 int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA) 
 {
