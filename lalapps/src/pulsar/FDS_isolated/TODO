@@ -1,5 +1,7 @@
 TODO (ComputeFStatistic-related)
 -----
+* get rid of "coordinate-cut" limitations... (->LALNormalizeSkyPosition)
+
 * get rid of year-specification on command-line if possible (use ranges 00-04..)
 
 * quick-fix for mesh-covering problem at the equator?
