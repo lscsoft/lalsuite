@@ -2413,10 +2413,8 @@ INT4 main(INT4 argc, CHAR *argv[])
           /* sum over calibrated PSDs for average */
           for (i = 0; i < filterLength; i++)
           {
-            calPsdOne->data[i] = calPsdOne->data[i] + \
-                                 1. / calInvPsdOne->data->data[i];
-            calPsdTwo->data[i] = calPsdTwo->data[i] + \
-                                 1. / calInvPsdTwo->data->data[i];
+            calPsdOne->data[i] += 1. / calInvPsdOne->data->data[i];
+            calPsdTwo->data[i] += 1. / calInvPsdTwo->data->data[i];
           }
         }
       }
@@ -2427,13 +2425,13 @@ INT4 main(INT4 argc, CHAR *argv[])
         /* average */
         if (middle_segment_flag == 0)
         {
-          calPsdOne->data[i] = calPsdOne->data[i] / (REAL4)(segsInInt - 1);
-          calPsdTwo->data[i] = calPsdTwo->data[i] / (REAL4)(segsInInt - 1);
+          calPsdOne->data[i] /= (REAL4)(segsInInt - 1);
+          calPsdTwo->data[i] /= (REAL4)(segsInInt - 1);
         }
         else
         {
-          calPsdOne->data[i] = calPsdOne->data[i] / (REAL4)segsInInt;
-          calPsdTwo->data[i] = calPsdTwo->data[i] / (REAL4)segsInInt;
+          calPsdOne->data[i] /= (REAL4)segsInInt;
+          calPsdTwo->data[i] /= (REAL4)segsInInt;
         }
         /* take inverse */
         calInvPsdOne->data->data[i] = 1. / calPsdOne->data[i];
