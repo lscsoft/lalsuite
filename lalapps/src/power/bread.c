@@ -16,13 +16,13 @@ RCSID("$Id$");
 
 /* Usage format string. */
 #define USAGE "Usage: %s --input filename --output filename " \
+	"--trig-start-time time --trig-stop-time time " \
 	"[--max-confidence maximum conf] [--noplayground] [--sort] [--cluster] " \
 	"[--min-duration min dur] [--max-duration max dur] " \
 	"[--min-centralfreq min central_freq] [--max-centralfreq max central_freq] " \
 	"[--max-bandwidth max bw] [--min-bandwidth min bw] " \
 	"[--min-amplitude min amp] [--max-amplitude max amp] " \
 	"[--min-snr min snr] [--max-snr max snr] " \
-	"[--min-start-time time] [--max-start-time time] " \
 	"[--help]\n"
 
 #define SNGLBURSTREADER_EARG   1
@@ -177,9 +177,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 		{"min-snr",         required_argument,  NULL,  'l'},
 		{"max-snr",         required_argument,  NULL,  'm'},
 		{"trig-start-time", required_argument,  NULL,  'q'},
-		{"min-start-time",  required_argument,  NULL,  'q'},
 		{"trig-stop-time",  required_argument,  NULL,  'r'},
-		{"max-start-time",  required_argument,  NULL,  'r'},
 		{"playground",      no_argument,        &options->playground, TRUE},
 		{"noplayground",    no_argument,        &options->noplayground, TRUE},
 		{"help",            no_argument,        NULL,  'o'}, 
@@ -524,6 +522,7 @@ int main(int argc, char **argv)
 	SnglBurstTable    *burstEventList;
 	SnglBurstTable    **addpoint;
 	MetadataTable     myTable;
+	MetadataTable     searchsumm;
 	LIGOLwXMLStream   xmlStream;
 	struct options_t  options;
 
@@ -539,6 +538,18 @@ int main(int argc, char **argv)
 	set_debug_level("1");
 	memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
 	xmlStream.fp = NULL;
+
+
+	/*
+	 * Store the times between which the triggers are selected in 
+	 * a search summary table
+	 */
+	/* create the search summary table */
+	searchsumm.searchSummaryTable = LALCalloc(1, sizeof(SearchSummaryTable));
+	if(!searchsumm.searchSummaryTable->out_start_time.gpsSeconds)
+	  searchsumm.searchSummaryTable->out_start_time.gpsSeconds = options.trigStartTime;
+	if(!searchsumm.searchSummaryTable->out_end_time.gpsSeconds)
+	  searchsumm.searchSummaryTable->out_end_time.gpsSeconds = options.trigStopTime;
 
 
 	/*
@@ -624,6 +635,14 @@ int main(int argc, char **argv)
 	 */
 
 	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfile), &stat);
+
+	/* search summary table */
+	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, search_summary_table), &stat);
+	LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, searchsumm, search_summary_table), &stat);
+	LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
+ 	LALFree(searchsumm.searchSummaryTable);
+
+	/* sngl_burst_table */
 	LAL_CALL(LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_burst_table), &stat);
 	myTable.snglBurstTable = burstEventList;
 	LAL_CALL(LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable, sngl_burst_table), &stat);
