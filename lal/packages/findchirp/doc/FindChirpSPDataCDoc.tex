@@ -43,9 +43,9 @@ for the LIGO channel \texttt{AS\_Q}.
 
 The discrete low frequency cutoff is computed from \texttt{fLow} by
 \begin{equation}
-k_{\textrm{low}} = \frac{\texttt{fLow}}{\Delta f}.
+k_{\mathrm{low}} = \frac{\mathtt{fLow}}{\Delta f}.
 \end{equation}
-$k_{\textrm{low}}$ is set to unity if this quantity is less than one.
+$k_{\mathrm{low}}$ is set to unity if this quantity is less than one.
 
 \paragraph*{Computation of strain and inverse power spectrum}
 
@@ -53,11 +53,11 @@ The uncallibrated input data channel $v_j$ is Fourier transformed into the
 frequency domain to obtain $\tilde{v}_k$. This is then converted into strain
 $\tilde{h}_k$ by computing 
 \begin{equation}
-\tilde{h}_k = \texttt{dynRange} \times R(f_k) \tilde{v}_k.
+\tilde{h}_k = \mathtt{dynRange} \times R(f_k) \tilde{v}_k.
 \end{equation}
 The inverse power spectrum $S^{-1}_v(|f_k|)$ is computed between the low
-frequency cutoff $f_{\textrm{low}}$ and the Nyquist frequency. Below
-$f_{\textrm{low}}$, the inverse power spectrum is set to zero. If the low
+frequency cutoff $f_{\mathrm{low}}$ and the Nyquist frequency. Below
+$f_{\mathrm{low}}$, the inverse power spectrum is set to zero. If the low
 frequency cutoff is set to $0$, then the DC component of the spectrum is
 set to zero.
 
@@ -90,35 +90,35 @@ $\sqrt{S^{-1}_v(|f_k|)}$.
 \item Set the Nyquist, $k = N/2$ and DC $k = 0$ components of this to zero.
 \item Inverse FFT to to obtain the time domain inverse PSD of length $N$
 points.
-\item Zero the spectrum between the points $j = \texttt{invSpecTrunc}/2$ and 
-$j = N - \texttt{invSpecTrunc}/2$. This sets the length of the inverse
+\item Zero the spectrum between the points $j = \mathtt{invSpecTrunc}/2$ and 
+$j = N - \mathtt{invSpecTrunc}/2$. This sets the length of the inverse
 spectrum in the time domain to be \texttt{invSpecTrunc} points.
 \item FFT the time domain quantity back to the frequency domain.
 \item Divide by $N$ so that to recover the quantity before the inverse FFT.
 \item Square this quantity to recover $S^{-1}_v(|f_k|)$.
 \item Set the Nyqist and DC frequencies to zero and zero the inverse power
-spectrum below $f_{\textrm{low}}$.
+spectrum below $f_{\mathrm{low}}$.
 \end{enumerate}
 
 The strain inverse power spectral density is then computed by
 \begin{equation}
-S^{-1}_h(|f_k|) = \frac{1}{\left|\texttt{dynRange} \times R(f_k)\right|^2}
+S^{-1}_h(|f_k|) = \frac{1}{\left|\mathtt{dynRange} \times R(f_k)\right|^2}
  S^{-1}_v(|f_k|).
 \end{equation}
 
 \paragraph*{Output Data}
 The quantity \texttt{segNorm} is computed by
 \begin{equation}
-\texttt{segNorm} = 
-   \sum_{k = k_{\textrm{low}}}^{N/2} \frac{k^{-\frac{7}{3}}}
-   {\left|\texttt{dynRange}\times R(f_k)\right|^2 S_v(|f_k|)}.
+\mathtt{segNorm} = 
+   \sum_{k = k_{\mathrm{low}}}^{N/2} \frac{k^{-\frac{7}{3}}}
+   {\left|\mathtt{dynRange}\times R(f_k)\right|^2 S_v(|f_k|)}.
 \end{equation}
 
 The output data is given by
 \begin{equation}
-\texttt{outputData[k]} = 
-\frac{k^{-7/6} \times \texttt{dynRange} \times R(f_k)\tilde{v}_k}
-{\left|\texttt{dynRange} \times R(f_k)\right|^2 S_v(|f_k|)}
+\mathtt{outputData[k]} = 
+\frac{k^{-7/6} \times \mathtt{dynRange} \times R(f_k)\tilde{v}_k}
+{\left|\mathtt{dynRange} \times R(f_k)\right|^2 S_v(|f_k|)}
 \end{equation}
 and is stored in the \texttt{FindChirpSegmentVector} structure. Note the
 quantity $k^{-\frac{7}{6}}$ which is specific to the stationary phase chirps
@@ -131,7 +131,7 @@ at this point. The indices $k$ in the frequency domain that divide the power
 in the quantity
 \begin{equation}
 \frac{k^{-\frac{7}{3}}}
-{\left|\texttt{dynRange}\times R(f_k)\right|^2 S_v(|f_k|)}.
+{\left|\mathtt{dynRange}\times R(f_k)\right|^2 S_v(|f_k|)}.
 \end{equation}
 into equal intervals are stored in the array \texttt{chisqBin}.
 
