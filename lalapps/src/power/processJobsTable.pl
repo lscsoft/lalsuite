@@ -171,7 +171,7 @@ sub f_processJobsTable {
 			or die "In f_processJobsTable: Couldn't open $jobsTableFile." ;	
 				
 	my $tmpTableFile = "jobsTable.tmp";
-	open TMP_TABLE, $jobsTableFile
+	open TMP_TABLE, ">$jobsTableFile"
 			or die "In f_processJobsTable: Couldn't open $tmpTableFile." ;	
 	
 	while(<JOBS_TABLE>){
