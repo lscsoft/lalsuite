@@ -433,7 +433,7 @@ int main(int argc, char *argv[]){
   { 
     CHAR     command[256];
     glob_t   globbuf;
-    UINT4    j;
+    INT4    j;
      
     strcpy(command, directory);
     strcat(command, "/*SFT*.*");
@@ -507,7 +507,7 @@ int main(int argc, char *argv[]){
   SUB(LALCreateSFTVector(&status, &inputSFTs, mObsCoh, sftlength),&status );
   
   { 
-    UINT4    j; 
+    INT4    j; 
     CHAR     *fname = NULL; 
     SFTtype  *sft= NULL; 
     
@@ -530,7 +530,7 @@ int main(int argc, char *argv[]){
 
   {   
     REAL8   t0, ts, tn;
-    UINT4   j; 
+    INT4   j; 
 
     ts = timeV.data[0].gpsSeconds;
     tn = timeV.data[0].gpsNanoSeconds * 1.00E-9;
@@ -789,7 +789,7 @@ int main(int argc, char *argv[]){
     {
       REAL8   f0new, vcProdn, timeDiffN;
       REAL8   sourceDelta, sourceAlpha, cosDelta;
-      UINT4   j,i, nspin, factorialN; 
+      INT4   j,i, nspin, factorialN; 
       REAL8Cart3Coor       sourceLocation;
       
       sourceDelta = pulsarTemplate.latitude;
@@ -822,7 +822,7 @@ int main(int argc, char *argv[]){
     
     for(h0loop=0; h0loop <nh0; ++h0loop){
       
-      UINT4  j, i, index; 
+      INT4  j, i, index; 
       COMPLEX8 *noise1SFT;
       COMPLEX8 *signal1SFT;
       COMPLEX8 *sumSFT;
@@ -838,7 +838,7 @@ int main(int argc, char *argv[]){
 	signal1SFT = outputSFTs->data[j].data->data;
 	noise1SFT  =  inputSFTs->data[j].data->data;
 	
-	for (i=0; i<sftlength; i++)  {
+	for (i=0; (UINT4)i < sftlength; i++)  {
 	  /* sumSFT->re = noise1SFT->re + h0scale *signal1SFT->re; */
 	  /* sumSFT->im = noise1SFT->im + h0scale *signal1SFT->im; */
 	  sumSFT->re = sftRenorm *noise1SFT->re + h0scale *signal1SFT->re;
@@ -1040,7 +1040,10 @@ void GenerateInjectTemplateParams(LALStatus   *status,
     /* calculate the mismatch in around the south pole*/ 
     mismatch.delta = - LAL_PI_2 - norm;
     mismatch.alpha = acos(dX1/norm);
-    
+    /* acos gives angle in (0,pi) so need to correct if dX2 < 0 to get range in (0,2*pi) */
+    if (dX2 < 0) 
+      mismatch.alpha += LAL_PI; 
+
     /* inverse rotate the mismatch from the south pole to desired location */
     TRY( LALInvRotatePolarU( status->statusPtr, &template, &mismatch, &par), status);
 
