@@ -488,7 +488,7 @@ int read_sft( struct sftheader *header, float **dataF, const char *fname, float 
            this needs to be reviewed by an expert */
         norm = ((float)(fmaxindex - fminindex + 1))/( (float) header->nsamples);
         
-        for(i = 0; i < (fmaxindex - fminindex + 1); i++)
+        for(i = 0; i < 2*(fmaxindex - fminindex + 1); i++)
         {
                 (*dataF)[i] *= norm * mysteryFactor;
         }
