@@ -418,20 +418,21 @@ do                                                                    \
 #define ABORT(statusptr,code,mesg)                                    \
 do                                                                    \
 {                                                                     \
+  INT4 mycode = (code);                                               \
   (statusptr)->file=__FILE__;                                         \
   (statusptr)->line=__LINE__;                                         \
-  (statusptr)->statusCode=(code);                                     \
+  (statusptr)->statusCode=mycode;                                     \
   (statusptr)->statusDescription=(mesg);                              \
   if((statusptr)->statusPtr)                                          \
     {                                                                 \
       LALFree((statusptr)->statusPtr);                                \
       (statusptr)->statusPtr=NULL;                                    \
     }                                                                 \
-  if(debuglevel==0 || ((debuglevel==1)&&((code)==0)))                 \
+  if(debuglevel==0 || ((debuglevel==1)&&(mycode==0)))                 \
     {                                                                 \
       return;                                                         \
     }                                                                 \
-  else if((code)==0)                                                  \
+  else if(mycode==0)                                                  \
     {                                                                 \
       LALPrintError("Nominal[%d]: ", (statusptr)->level);             \
       LALPrintError("function %s, file %s, line %d, %s\n",            \
@@ -441,7 +442,7 @@ do                                                                    \
     }                                                                 \
   else                                                                \
     {                                                                 \
-      LALPrintError("Error[%d] %d: ", (statusptr)->level,(code));     \
+      LALPrintError("Error[%d] %d: ", (statusptr)->level,mycode);     \
       LALPrintError("function %s, file %s, line %d, %s\n",            \
               (statusptr)->function, (statusptr)->file,               \
               (statusptr)->line, (statusptr)->Id);                    \
@@ -453,22 +454,23 @@ do                                                                    \
 #define ASSERT(assertion,statusptr,code,mesg)                         \
 do                                                                    \
 {                                                                     \
+  INT4 mycode = (code);                                               \
   if(!(assertion))                                                    \
     {                                                                 \
       (statusptr)->file=__FILE__;                                     \
       (statusptr)->line=__LINE__;                                     \
-      (statusptr)->statusCode=(code);                                 \
+      (statusptr)->statusCode=mycode;                                 \
       (statusptr)->statusDescription=(mesg);                          \
       if((statusptr)->statusPtr)                                      \
 	{                                                             \
 	  LALFree((statusptr)->statusPtr);                            \
 	  (statusptr)->statusPtr=NULL;                                \
 	}                                                             \
-      if(debuglevel==0 || ((debuglevel==1)&&((code)==0)))             \
+      if(debuglevel==0 || ((debuglevel==1)&&(mycode==0)))             \
 	{                                                             \
 	  return;                                                     \
 	}                                                             \
-      else if((code)==0)                                              \
+      else if(mycode==0)                                              \
 	{                                                             \
           LALPrintError("Nominal[%d]: ", (statusptr)->level);         \
           LALPrintError("function %s, file %s, line %d, %s\n",        \
@@ -478,7 +480,7 @@ do                                                                    \
 	}                                                             \
       else                                                            \
 	{                                                             \
-          LALPrintError("Error[%d] %d: ", (statusptr)->level,(code)); \
+          LALPrintError("Error[%d] %d: ", (statusptr)->level,mycode); \
           LALPrintError("function %s, file %s, line %d, %s\n",        \
                   (statusptr)->function, (statusptr)->file,           \
                   (statusptr)->line, (statusptr)->Id);                \
