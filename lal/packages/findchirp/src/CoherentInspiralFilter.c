@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------------- 
  * 
- * File Name: Coherent.c
+ * File Name: CoherentInspiralFilter.c
  *
  * Author: Bose, S., Seader, S. E.
  * 
@@ -24,7 +24,6 @@
 #include <lal/DetectorSite.h>
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/TwoInterfFindChirp.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/Date.h>
 #include <lal/CoherentInspiral.h>
@@ -65,7 +64,6 @@ LALCoherentInspiralFilterInputInit (
    *
    */
   
-
   /* check that the output handle exists, but points to a null pointer */
   ASSERT( input, status, COHERENTINSPIRALH_ENULL, COHERENTINSPIRALH_MSGENULL );  
   ASSERT( !*input, status, COHERENTINSPIRALH_ENNUL, COHERENTINSPIRALH_MSGENNUL );
@@ -86,13 +84,13 @@ LALCoherentInspiralFilterInputInit (
       COHERENTINSPIRALH_ENUMZ, COHERENTINSPIRALH_MSGENUMZ );
 
   /* check that the number of theta-phi "template" points 
-     in the beam-pattern functions file is positive */
-  ASSERT( params->numBeamPoints > 0, status, 
+     in the beam-pattern functions file is positive or zero */
+  ASSERT( params->numBeamPoints >= 0, status, 
       COHERENTINSPIRALH_ENUMZ, COHERENTINSPIRALH_MSGENUMZ );
 
   inputPtr= *input = (CoherentInspiralFilterInput *)
     LALCalloc(1, sizeof(CoherentInspiralFilterInput) );
-  if (! inputPtr )
+  if ( !inputPtr )
     {
       ABORT( status, COHERENTINSPIRALH_EALOC, COHERENTINSPIRALH_MSGEALOC);
     }
@@ -100,106 +98,196 @@ LALCoherentInspiralFilterInputInit (
 
   /*
    *
-   * create the CoherentInspiralBeamVector structure
+   * create the CoherentInspiralBeamVector structure if needed
    *
    */
   
-  /* allocate memory for an array  */  
-  beamVecPtr = inputPtr->beamVec = (CoherentInspiralBeamVector *)
-    LALCalloc (1, sizeof(CoherentInspiralBeamVector));
-  
-  if ( !beamVecPtr )
-    {
-      LALFree( inputPtr);
-      *input = NULL;
-      ABORT( status, COHERENTINSPIRALH_EALOC, COHERENTINSPIRALH_MSGEALOC);
-    }
-  
-  /* set the number of detectors in the vector */
-  beamVecPtr->numDetectors = params->numDetectors;
-  
-  detBeamArray = beamVecPtr->detBeamArray = (DetectorBeamArray *)
-    LALCalloc (1, inputPtr->beamVec->numDetectors*sizeof(DetectorBeamArray));
-  if ( !detBeamArray )
-    {
-      LALFree( beamVecPtr );
-      beamVecPtr = NULL;
-      LALFree( inputPtr );
-      *input = NULL;
-      ABORT( status, COHERENTINSPIRALH_EALOC, COHERENTINSPIRALH_MSGEALOC);
-    }
-  
-  
-  /* set the number of beamPoints in the vector */
-  for ( l = 0 ; l < beamVecPtr->numDetectors ; l++) {  
-    detBeamArray[l].numBeamPoints = params->numBeamPoints;
-    
-    detBeamArray[l].thetaPhiVs = (REAL4TimeSeries *)
-      LALCalloc (1, params->numBeamPoints*sizeof(REAL4TimeSeries));
-  }
-  
-  /* set the number of fields in the thetaPhiVs to 4: theta,phi,v+, and v- */
-  for ( l = 0 ; l < beamVecPtr->numDetectors ; l++) {  
-    for ( i = 0 ; i < detBeamArray[l].numBeamPoints ; i++ ) {
-      LALCreateVector (status->statusPtr, &(detBeamArray[l].thetaPhiVs[i].data), length);
-    }
-  }
 
-  /*
-    BEGINFAIL( status ) {
-    LALFree( detBeamArray[l].thetaPhiVs );
-    detBeamArray[l].thetaPhiVs = NULL;
-    LALFree( detBeamArray );
-    detBeamArray = NULL;
-    LALFree( beamVecPtr );
-    beamVecPtr = NULL;
-    LALFree( inputPtr );
-    *input = NULL;
-    }
-    ENDFAIL( status ); 
-    }
-    }
-  */
+  if( params->numBeamPoints != 0 )
+    {
+      /* allocate memory for an array  */  
+      beamVecPtr = inputPtr->beamVec = (CoherentInspiralBeamVector *)
+	LALCalloc(1, sizeof(CoherentInspiralBeamVector));
   
+      if ( !beamVecPtr )
+	{
+	  LALFree( inputPtr);
+	  *input = NULL;
+	  ABORT( status, COHERENTINSPIRALH_EALOC, COHERENTINSPIRALH_MSGEALOC);
+	}
+  
+      /* set the number of detectors in the vector */
+      beamVecPtr->numDetectors = params->numDetectors;
+  
+      detBeamArray = beamVecPtr->detBeamArray = (DetectorBeamArray *)
+	LALCalloc(1, beamVecPtr->numDetectors*sizeof(DetectorBeamArray));
+      if ( !detBeamArray )
+	{
+	  LALFree( beamVecPtr );
+	  beamVecPtr = NULL;
+	  inputPtr->beamVec = NULL;
+	  LALFree( inputPtr );
+	  *input = NULL;
+	  ABORT( status, COHERENTINSPIRALH_EALOC, COHERENTINSPIRALH_MSGEALOC);
+	}
+  
+  
+      /* set the number of beamPoints in the vector */
+      for ( l = 0 ; l < beamVecPtr->numDetectors ; l++) {  
+	detBeamArray[l].numBeamPoints = params->numBeamPoints;
+    
+	detBeamArray[l].thetaPhiVs = (REAL4TimeSeries *)
+	  LALCalloc(1, params->numBeamPoints*sizeof(REAL4TimeSeries));
+
+	BEGINFAIL(status) {
+	  LALFree( detBeamArray );
+	  beamVecPtr->detBeamArray = NULL;
+	  LALFree( beamVecPtr );
+	  inputPtr->beamVec = NULL;
+	  LALFree( inputPtr );
+	  *input = NULL;
+	}
+	ENDFAIL( status );
+      }
+  
+      /* set the number of fields in the thetaPhiVs to 4: theta,phi,v+, and v- */
+      for ( l = 0 ; l < beamVecPtr->numDetectors ; l++) {  
+	for ( i = 0 ; i < detBeamArray[l].numBeamPoints ; i++ ) {
+	  LALCreateVector(status->statusPtr, &(detBeamArray[l].thetaPhiVs[i].data), length);
+
+	  BEGINFAIL( status ) {
+	    for( l = 0; l < beamVecPtr->numDetectors; l++) {
+	      LALFree( detBeamArray[l].thetaPhiVs );
+	    }
+	    LALFree( detBeamArray );
+	    beamVecPtr->detBeamArray = NULL;
+	    LALFree( beamVecPtr );
+	    inputPtr->beamVec = NULL;
+	    LALFree( inputPtr );
+	    *input = NULL;
+	  }
+	  ENDFAIL( status );
+	}
+      }
+
+    }
   /*
    *
    * create the CoherentInspiralCVector structure
    *
    */
   
-  /* allocate memory for the cData vector  */  
-  cVecPtr = (*input)->multiCData = (CoherentInspiralCVector *)
-    LALCalloc (1, sizeof(CoherentInspiralCVector));
-  if ( !cVecPtr )
-    {
-      ABORT( status, COHERENTINSPIRALH_EALOC, COHERENTINSPIRALH_MSGEALOC);
+  /* allocate memory for the cData vector  */
+
+      cVecPtr = (*input)->multiCData = (CoherentInspiralCVector *)
+	LALCalloc(1, sizeof(CoherentInspiralCVector));
+      if ( !cVecPtr )
+	{
+	  if (params->numBeamPoints != 0)
+	    {
+	      for ( l = 0 ; l < beamVecPtr->numDetectors ; l++) {  
+		for ( i = 0 ; i < detBeamArray[l].numBeamPoints ; i++ ) {
+		  TRY( LALDestroyVector(status->statusPtr, &(detBeamArray[l].thetaPhiVs[i].data)), status);
+		}
+	      }
+	      for( l = 0; l < beamVecPtr->numDetectors; l++) {
+		LALFree( detBeamArray[l].thetaPhiVs );
+	      }
+	      LALFree( detBeamArray );
+	      beamVecPtr->detBeamArray = NULL;
+	      LALFree( beamVecPtr );
+	      inputPtr->beamVec = NULL;
+	    }
+          LALFree( inputPtr );
+          *input = NULL;
+          ABORT( status, COHERENTINSPIRALH_EALOC, COHERENTINSPIRALH_MSGEALOC);
+        }
+  
+      /* set the number of detectors in the vector */
+      cVecPtr->numDetectors = params->numDetectors;
+  
+      cVecPtr->cData = (COMPLEX8TimeSeries *)
+        LALCalloc(1, cVecPtr->numDetectors*sizeof(COMPLEX8TimeSeries));
+      if ( !(cVecPtr->cData) )
+        {
+          LALFree( cVecPtr );
+          (*input)->multiCData = NULL;
+          if( params->numBeamPoints != 0)
+	    {
+	      for ( l = 0 ; l < beamVecPtr->numDetectors ; l++) {  
+	        for ( i = 0 ; i < detBeamArray[l].numBeamPoints ; i++ ) {
+	          TRY( LALDestroyVector(status->statusPtr, &(detBeamArray[l].thetaPhiVs[i].data)), status);
+	        }
+	      }
+	      for( l = 0; l < beamVecPtr->numDetectors; l++) {
+	        LALFree( detBeamArray[l].thetaPhiVs );
+	      }
+	      LALFree( detBeamArray );
+	      beamVecPtr->detBeamArray = NULL;
+	      LALFree( beamVecPtr );
+	      inputPtr->beamVec = NULL;
+	    }
+          LALFree( inputPtr );
+          *input = NULL;
+          ABORT( status, COHERENTINSPIRALH_EALOC, COHERENTINSPIRALH_MSGEALOC);
+        }
+  
+      for ( i = 0 ; i < cVecPtr->numDetectors ; i++ ) {
+        LALCCreateVector(status->statusPtr, &(cVecPtr->cData[i].data), 
+			 params->numPoints);
+        BEGINFAIL( status ) {
+          LALFree( cVecPtr->cData );
+          LALFree( cVecPtr );
+          (*input)->multiCData = NULL;
+          if( params->numBeamPoints != 0)
+	    {
+	      for ( l = 0 ; l < beamVecPtr->numDetectors ; l++) {  
+	        for ( i = 0 ; i < detBeamArray[l].numBeamPoints ; i++ ) {
+	          TRY( LALDestroyVector(status->statusPtr, &(detBeamArray[l].thetaPhiVs[i].data)), status);
+	        }
+	      }
+	      for( l = 0; l < beamVecPtr->numDetectors; l++) {
+	        LALFree( detBeamArray[l].thetaPhiVs );
+	      }
+	      LALFree( detBeamArray );
+	      beamVecPtr->detBeamArray = NULL;
+	      LALFree( beamVecPtr );
+	      inputPtr->beamVec = NULL;
+	    }
+          LALFree( inputPtr );
+          *input = NULL;
+        }
+        ENDFAIL( status );
+      }
+
+
+  BEGINFAIL( status ) {
+    for ( i = 0 ; i < cVecPtr->numDetectors ; i++ ) {
+    TRY( LALCDestroyVector(status->statusPtr, &(cVecPtr->cData[i].data)),
+	 status);
     }
-  
-  /* set the number of detectors in the vector */
-  cVecPtr->numDetectors = params->numDetectors;
-  
-  cVecPtr->cData = (COMPLEX8TimeSeries *)
-    LALCalloc (1, cVecPtr->numDetectors*sizeof(COMPLEX8TimeSeries));
-  if ( !cData )
-    {
-      LALFree( cVecPtr );
-      cVecPtr = NULL;
-      LALFree( inputPtr );
-      *input = NULL;
-      ABORT( status, COHERENTINSPIRALH_EALOC, COHERENTINSPIRALH_MSGEALOC);
-    }
-  
-  for ( i = 0 ; i < cVecPtr->numDetectors ; i++ ) {
-    LALCCreateVector (status->statusPtr, &(cVecPtr->cData[i].data), 
-		      params->numPoints);
-    BEGINFAIL( status ) {
-      LALFree( cVecPtr );
-      cVecPtr = NULL;
-      LALFree( inputPtr );
-      *input = NULL;
+    LALFree( cVecPtr->cData );
+    LALFree( cVecPtr );
+    (*input)->multiCData = NULL;
+    if( params->numBeamPoints != 0)
+      {
+	for ( l = 0 ; l < beamVecPtr->numDetectors ; l++) {  
+	  for ( i = 0 ; i < detBeamArray[l].numBeamPoints ; i++ ) {
+	    TRY( LALDestroyVector(status->statusPtr, &(detBeamArray[l].thetaPhiVs[i].data)), status);
+	  }
+	}
+	for( l = 0; l < beamVecPtr->numDetectors; l++) {
+	  LALFree( detBeamArray[l].thetaPhiVs );
+	}
+	LALFree( detBeamArray );
+	beamVecPtr->detBeamArray = NULL;
+	LALFree( beamVecPtr );
+	inputPtr->beamVec = NULL;
+      }
+    LALFree( inputPtr );
+    *input = NULL;
     }
     ENDFAIL( status );
-  }
   
   /* normal exit */
   DETATCHSTATUSPTR( status );
@@ -236,51 +324,59 @@ LALCoherentInspiralFilterInputFinalize (
   
   /*
    *
-   * destroy the contents of the CoherentInspiralCVector structure
+   * destroy the contents of the CoherentInspiralCVector structure if necessary
    *
    */
   
-  cVecPtr = (*input)->multiCData;
+  if( inputPtr->multiCData )
+    {
+      cVecPtr = (*input)->multiCData;
   
-  for ( l = 0 ; l < cVecPtr->numDetectors ; l++ ) {
-    if (cVecPtr->cData[l].data != NULL ) {
-      LALCDestroyVector( status->statusPtr, &(cVecPtr->cData[l].data) );
-      CHECKSTATUSPTR( status );
-    }
-  }
-  LALFree( cVecPtr );
-  cVecPtr = NULL;  
-
-  /*
-   *
-   * destroy the contents of the CoherentInspiralBeamVector structure
-   *
-   */
-  
-  beamVecPtr = inputPtr->beamVec;
-  detBeamArray = beamVecPtr->detBeamArray;
-
-  /* destroy vector  */
-  if ( beamVecPtr != NULL ) {
-    for ( l = 0 ; l < beamVecPtr->numDetectors ; l++ ) {
-      for  ( i = 0 ; i < detBeamArray[l].numBeamPoints ; i++) {
-	if (inputPtr->beamVec->detBeamArray[l].thetaPhiVs != NULL ) {
-	  LALDestroyVector (status->statusPtr, &(detBeamArray[l].thetaPhiVs[i].data));
+      for ( l = 0 ; l < cVecPtr->numDetectors ; l++ ) {
+	if (cVecPtr->cData[l].data != NULL ) {
+	  LALCDestroyVector( status->statusPtr, &(cVecPtr->cData[l].data) );
 	  CHECKSTATUSPTR( status );
 	}
       }
-      LALFree(detBeamArray[l].thetaPhiVs);
-      detBeamArray[l].thetaPhiVs = NULL;
+
+      LALFree( cVecPtr->cData );
+      LALFree( cVecPtr );
+      (*input)->multiCData = NULL;  
+
     }
+  /*
+   *
+   * destroy the contents of the CoherentInspiralBeamVector structure if needed
+   *
+   */
+  
+  if( inputPtr->beamVec )
+    {
+      beamVecPtr = inputPtr->beamVec;
+      detBeamArray = beamVecPtr->detBeamArray;
+
+      /* destroy vector  */
+      if ( beamVecPtr != NULL ) {
+	for ( l = 0 ; l < beamVecPtr->numDetectors ; l++ ) {
+	  for  ( i = 0 ; i < detBeamArray[l].numBeamPoints ; i++) {
+	    if (inputPtr->beamVec->detBeamArray[l].thetaPhiVs != NULL ) {
+	      LALDestroyVector (status->statusPtr, &(detBeamArray[l].thetaPhiVs[i].data));
+	      CHECKSTATUSPTR( status );
+	    }
+	  }
+	  LALFree(detBeamArray[l].thetaPhiVs);
+	  detBeamArray[l].thetaPhiVs = NULL;
+	}
   }
   
-  LALFree(detBeamArray);  
-  detBeamArray = NULL;
-  LALFree(beamVecPtr);
-  beamVecPtr = NULL;
-  
+      LALFree(detBeamArray);  
+      beamVecPtr->detBeamArray = NULL;
+      LALFree(beamVecPtr);
+      inputPtr->beamVec = NULL;
+    }
+
   LALFree( inputPtr );
-  inputPtr = NULL;
+  *input = NULL;
 
   /* normal exit */
   DETATCHSTATUSPTR( status );
@@ -334,7 +430,7 @@ LALCoherentInspiralFilterParamsInit (
 
   /* check that the number of theta-phi "template" points 
      in the beam-pattern functions file is positive */
-  ASSERT( params->numBeamPoints > 0, status, 
+  ASSERT( params->numBeamPoints >= 0, status, 
       COHERENTINSPIRALH_ENUMZ, COHERENTINSPIRALH_MSGENUMZ );
 
  
@@ -349,12 +445,17 @@ LALCoherentInspiralFilterParamsInit (
   /* create the output structure */
   outputPtr= *output = (CoherentInspiralFilterParams *)
     LALCalloc(1, sizeof(CoherentInspiralFilterParams) );
-  if (! outputPtr )
+  if (!outputPtr )
     {
       ABORT( status, COHERENTINSPIRALH_EALOC, COHERENTINSPIRALH_MSGEALOC);
     }
 
-  LALU2CreateVector (status->statusPtr, &(outputPtr->detIDVec), 
+  outputPtr->numDetectors = params->numDetectors;
+  outputPtr->numSegments = params->numSegments;
+  outputPtr->numPoints = params->numPoints;
+  outputPtr->numBeamPoints = params->numBeamPoints;
+
+  LALU2CreateVector(status->statusPtr, &(outputPtr->detIDVec), 
 		     networkLength);
   BEGINFAIL( status ) {
     LALFree( outputPtr );
@@ -366,23 +467,28 @@ LALCoherentInspiralFilterParamsInit (
   
   /*
    *
-   * create vector to store coherent SNR, if required
+   * create vector to store coherent SNR if outputting it
    *
    */
 
-  if ( params->cohSNROut ) {
-    outputPtr->cohSNRVec = (REAL4TimeSeries *) 
-      LALCalloc( 1, sizeof(REAL4TimeSeries) );
-    LALCreateVector (status->statusPtr, &(outputPtr->cohSNRVec->data), 
-		     params->numPoints);
-    BEGINFAIL( status ) {
-      LALFree( outputPtr->detectorVec );
-      LALFree( outputPtr );
-      *output = NULL;
+  if( params->cohSNROut )
+    {
+        outputPtr->cohSNRVec = (REAL4TimeSeries *) 
+          LALCalloc( 1, sizeof(REAL4TimeSeries) );
+        LALCreateVector (status->statusPtr, &(outputPtr->cohSNRVec->data), 
+		         params->numPoints);
+        BEGINFAIL( status ) {
+          TRY( LALU2DestroyVector (status->statusPtr, &(outputPtr->detIDVec)),
+	       status);
+          LALFree( outputPtr->cohSNRVec );
+          outputPtr->cohSNRVec = NULL;
+          LALFree( outputPtr->detectorVec );
+          outputPtr->detectorVec = NULL;
+          LALFree( outputPtr );
+          *output = NULL;
+        }
+        ENDFAIL( status );    
     }
-    ENDFAIL( status );
-  }    
-
 
   /*
    *
@@ -394,21 +500,55 @@ LALCoherentInspiralFilterParamsInit (
   outputPtr->detectorVec = (DetectorVector *) 
     LALCalloc( 1, sizeof(DetectorVector) );
 
-  if ( !(outputPtr->detectorVec ) ) {
-    LALFree( outputPtr );
-    *output = NULL;
+  if ( !(outputPtr->detectorVec) ) {
+    ABORT( status, COHERENTINSPIRALH_EALOC, COHERENTINSPIRALH_MSGEALOC);
+    BEGINFAIL( status ) {
+      if( params->cohSNROut )
+	{
+          TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohSNRVec->data)),
+	       status); 
+          LALFree( outputPtr->cohSNRVec );
+          outputPtr->cohSNRVec = NULL;
+	} 
+      TRY( LALU2DestroyVector( status->statusPtr, &(outputPtr->detIDVec)),
+	   status);
+      LALFree( outputPtr->detectorVec );
+      outputPtr->detectorVec = NULL;
+      LALFree( outputPtr );
+      *output = NULL;
+    }
+    ENDFAIL( status );
   }
 
   outputPtr->detectorVec->detector = (LALDetector *) 
     LALCalloc( 1, outputPtr->detectorVec->numDetectors*sizeof(LALDetector));
   
   if ( !(outputPtr->detectorVec->detector ) ) {
-    LALFree( outputPtr->detectorVec );
-    outputPtr->detectorVec = NULL;
-    LALFree( outputPtr );
-    *output = NULL;
+    ABORT( status, COHERENTINSPIRALH_EALOC, COHERENTINSPIRALH_MSGEALOC);
+    BEGINFAIL( status ) {
+      LALFree( outputPtr->detectorVec );
+      if( params->cohSNROut )
+	{
+          TRY( LALDestroyVector( status->statusPtr, &(outputPtr->cohSNRVec->data)),
+	       status);   
+          LALFree( outputPtr->cohSNRVec );
+          outputPtr->cohSNRVec = NULL;
+	}
+      TRY( LALU2DestroyVector( status->statusPtr, &(outputPtr->detIDVec)),
+	   status);
+      LALFree( outputPtr->detectorVec );
+      outputPtr->detectorVec = NULL;
+      LALFree( outputPtr );
+      *output = NULL;
+    }
+    ENDFAIL( status );
   }
-  
+
+ 
+  /* normal exit */
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+
 }
 
 
@@ -442,11 +582,11 @@ LALCoherentInspiralFilterParamsFinalize (
 
   /* destroy detector vector */
   LALFree( outputPtr->detectorVec->detector );
-  
+  outputPtr->detectorVec->detector = NULL;
   LALFree( outputPtr->detectorVec );
   outputPtr->detectorVec = NULL;
   
-  LALU2DestroyVector (status->statusPtr, &(outputPtr->detIDVec) ); 
+  LALU2DestroyVector(status->statusPtr, &(outputPtr->detIDVec) ); 
   CHECKSTATUSPTR( status );
 
   /*
@@ -457,13 +597,19 @@ LALCoherentInspiralFilterParamsFinalize (
   if ( outputPtr->cohSNRVec ) {
     LALDestroyVector( status->statusPtr, &(outputPtr->cohSNRVec->data) );
     CHECKSTATUSPTR( status );
+    LALFree( outputPtr->cohSNRVec );
+    outputPtr->cohSNRVec = NULL;
   }
   
   LALFree( outputPtr );
   *output = NULL;
 
-}
 
+  /* normal exit */
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+
+}
 
 void
 LALCoherentInspiralFilterSegment (
@@ -477,6 +623,8 @@ LALCoherentInspiralFilterSegment (
   INT4                                caseID[6] = {0,0,0,0,0,0};
   INT4                                i,j,k,l,p,q,w,m;
   INT4                                dsites[4] = {0,0,0,0};
+  CHAR                                idtag[6][3] = {"H1","L","G","V","T","H2"};
+  CHAR                                caseStr[FILENAME_MAX];
   INT8                                chirpTimeNS;
   UINT4                               eventId = 0; 
   UINT4                               numDetectors;
@@ -486,7 +634,7 @@ LALCoherentInspiralFilterSegment (
   UINT4                               deltaEventIndex;
   UINT4                               eventStartIdx = 0;
   INT4                                slidePoints[3] = {0,0,0};
-  REAL4                               buffer = 0; /* account for timeing errors */
+  REAL4                               buffer = 0; /* account for timing errors */
   REAL4                               timingError = 0.00025; /* allowed timing error of 2 ms */
   REAL4                               n;
   REAL4                               s[4][3];/* up to 4 distances; in 3D space */
@@ -496,15 +644,15 @@ LALCoherentInspiralFilterSegment (
   REAL4                               timeDelay[4] = {0,0,0,0};
   REAL4                               chirpTime = 0;
   REAL4                               cohSNRThresh = 0;
-  REAL4                               cohSNRLocal = 0;
-  REAL4                               cohSNR = 0;
   BOOLEAN                             cohSNROut;
+  REAL4                               cohSNRLocal = 0;
+  /*REAL4                               cohSNR = 0;*/
   BOOLEAN                             unresolvedEvent = 0;
   LALMSTUnitsAndAcc                   gmstUnits;
   LALDetector                        *detector = NULL;
   COMPLEX8TimeSeries                 *cData = NULL;
   CoherentInspiralEvent              *thisEvent = NULL;
-  MultiInspiralTable                 *cohEvent  = NULL; 
+  /*MultiInspiralTable                 *cohEvent  = NULL; */
   CoherentInspiralBeamVector         *beamVec = NULL;
   
   
@@ -549,8 +697,8 @@ LALCoherentInspiralFilterSegment (
   numPoints = params->numPoints;
   numSegments = params->numSegments;
   numBeamPoints = params->numBeamPoints;
-  cohSNROut = params->cohSNROut;
   cohSNRThresh = params->cohSNRThresh;
+  cohSNROut = params->cohSNROut;
   deltaT = params->deltaT;
   
 
@@ -565,9 +713,6 @@ LALCoherentInspiralFilterSegment (
       caseID[l] = params->detIDVec->data[l];
     }
   
-  fprintf(stdout, "You have specified %2d  detector(s).\n",numDetectors);
-  fprintf(stdout, "The caseID is: %d %d %d %d %d %d (H1,L1,VIRGO,GEO,TAMA,H2) \n",caseID[0],caseID[1],caseID[2],caseID[3],caseID[4],caseID[5]);
-  
   if (numDetectors > 4)
     {
       ABORT( status, COHERENTINSPIRALH_ENDET, COHERENTINSPIRALH_MSGENDET );
@@ -577,13 +722,57 @@ LALCoherentInspiralFilterSegment (
     {
       ABORT( status, COHERENTINSPIRALH_ENDET, COHERENTINSPIRALH_MSGENDET );
     }
-  
-  
-  /* read in the coefficients for each specified detector.  This should be moved to the case statements below where the coherent snr is computed.  It should be put in each of the last three cases: 3b,4a,4b.  This saves some unnecessary reading in of data since the coefficients are only used in the last 3 cases. Note that for networks with H1 and H2, there is some redundancy because they have the same coefficients.  currently it reads in a separate file for each of them. */
-  
-  /*** get detector beam-pattern information ***/
-  
-  beamVec = input->beamVec;
+  /* Now generate the network string for CoherentInspiralEvents */
+
+  INT4 index[numDetectors];
+  for (j=0; j<numDetectors; j++)
+    {
+      index[j] = 0;
+    }
+  i = 0;  
+  for (l=0 ;l<6 ;l++)
+    {
+      if( caseID[l] )
+	{
+	  index[i] = l;
+	  i++;
+	}
+    }
+  i = 0;
+  j = 0;
+  k = 0;
+  l = 0;
+  switch ( numDetectors )
+    {
+    case 2:
+      i = index[0];
+      j = index[1];
+      LALSnprintf( caseStr, FILENAME_MAX * sizeof(CHAR), "%s-%s",idtag[i],idtag[j]);
+      break;
+
+    case 3:
+      i=index[0];
+      j=index[1];
+      k=index[2];
+      LALSnprintf( caseStr, FILENAME_MAX * sizeof(CHAR), "%s-%s-%s",idtag[i],idtag[j],idtag[k]);
+      break;
+
+    case 4:
+      i=index[0];
+      j=index[1];
+      k=index[2];
+      l=index[3];
+      LALSnprintf( caseStr, FILENAME_MAX * sizeof(CHAR), "%s-%s-%s-%s",idtag[i],idtag[j],idtag[k],idtag[l]);
+      break;
+    }
+    
+  /*** get detector beam-pattern information if we have 3 sites ***/
+
+  if( (numDetectors == 3 && !(caseID[0] && caseID[5])) || numDetectors == 4 )
+	{ 
+	  beamVec = input->beamVec;
+	}
+  /*beamVec = input->beamVec;*/
   
   
   /*** get detector c outputs ***/
@@ -610,7 +799,7 @@ LALCoherentInspiralFilterSegment (
   }
   
   /* calculate the length of the chirp for clustering over chirp-length*/
-  {
+  {  
     REAL4 eta = input->tmplt->eta;
     REAL4 m1 = input->tmplt->mass1;
     REAL4 m2 = input->tmplt->mass2;
@@ -633,19 +822,15 @@ LALCoherentInspiralFilterSegment (
 
   
   buffer = ceilf( timingError/deltaT );
-  fprintf(stdout,"slidePointsBuffer = %f\n",buffer);
 
-  /* Now construct the appropriate coherent SNR */
-  fprintf(stdout,"deltaEventIndex value = %d\n", deltaEventIndex );  
+  /* Now construct the appropriate coherent SNR */ 
   switch (numDetectors)  {
   case 1:
     ABORT( status, COHERENTINSPIRALH_ENDET, COHERENTINSPIRALH_MSGENDET );
     break;
   case 2:
-    if(caseID[0] && caseID[5])
+    if(caseID[0] && caseID[5])  /* Network: H1 and H2*/
       {
-	fprintf(stdout,"Network of 2 detectors - includes H1 and H2 \n");
-
 	m = 0;
 	for (k=0;k<numPoints;k++)
 	  {
@@ -655,17 +840,17 @@ LALCoherentInspiralFilterSegment (
 	      {
 		if(m >=0 && m<numPoints)
 		  {
-		    cohSNRLocal = (1 / sqrt(2)) * sqrt( (cData[0].data->data[k].re + cData[1].data->data[m].re)*(cData[0].data->data[k].re + cData[1].data->data[m].re) + (cData[0].data->data[k].im + cData[1].data->data[m].im)*(cData[0].data->data[k].im + cData[1].data->data[m].im));
+		    cohSNRLocal = sqrt( (cData[0].data->data[k].re + cData[1].data->data[m].re)*(cData[0].data->data[k].re + cData[1].data->data[m].re) + (cData[0].data->data[k].im + cData[1].data->data[m].im)*(cData[0].data->data[k].im + cData[1].data->data[m].im));
 
 		    if(cohSNRLocal > cohSNR)
 		      {
 			cohSNR = cohSNRLocal;
 		      }
 		  }
-		params->cohSNRVec->data->data[k]= cohSNR;
+		if( cohSNROut ) params->cohSNRVec->data->data[k]= cohSNR;
 	    
 		if ( cohSNR > cohSNRThresh ) {
-		  if ( ! *eventList ) {
+		  if ( !*eventList ) {
 		    /* store the start of the crossing */
 		    eventStartIdx = k;
 		
@@ -673,7 +858,7 @@ LALCoherentInspiralFilterSegment (
 		    thisEvent = *eventList = (CoherentInspiralEvent *) 
 		      LALCalloc( 1, sizeof(CoherentInspiralEvent) );
 		
-		    if ( ! thisEvent )
+		    if ( !thisEvent )
 		      {
 			ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
 		      }
@@ -681,21 +866,24 @@ LALCoherentInspiralFilterSegment (
 		    /* record the data that we need for the clustering algorithm */          
 		    thisEvent->end_time.gpsSeconds = k;
 		    thisEvent->cohSNR = cohSNR;
-
-		    /*fprintf(stdout,"k value FIRST = %d\t %f \n", k,cohSNR );*/
 		    fflush( stdout ); 
 
 		  } /* done creating a new event */
-		  else if (params->maximiseOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->cohSNR ) {
+		  else if (params->maximizeOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->cohSNR ) {
 		    /* if this is the same event, update the maximum */
 		    thisEvent->end_time.gpsSeconds = k;
 		    thisEvent->cohSNR = cohSNR;
+		    strcpy(thisEvent->ifos, caseStr);
+		    thisEvent->eventId = eventId;
+		    thisEvent->timeIndex = k;
+		    thisEvent->mass1 = input->tmplt->mass1;
+		    thisEvent->mass2 = input->tmplt->mass2;
 
 		    /*fprintf(stdout,"k value SECOND = %d\t %f \n", k,cohSNR  );*/
 		    fflush( stdout ); 
 
 		  }
-		  else if ( k > thisEvent->end_time.gpsSeconds + deltaEventIndex || ! params->maximiseOverChirp ) {
+		  else if ( k > thisEvent->end_time.gpsSeconds + deltaEventIndex || !(params->maximizeOverChirp) ) {
 		    /* clean up this event */
 		    CoherentInspiralEvent  *lastEvent;
 		    INT8                    timeNS1;
@@ -714,7 +902,7 @@ LALCoherentInspiralFilterSegment (
 		
 		    lastEvent->next = thisEvent = (CoherentInspiralEvent *) 
 		      LALCalloc( 1, sizeof(CoherentInspiralEvent) );
-		    if ( ! lastEvent->next )
+		    if ( !(lastEvent->next) )
 		      {
 			ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
 		      }
@@ -722,19 +910,20 @@ LALCoherentInspiralFilterSegment (
 		    /* stick minimal data into the event */
 		    thisEvent->end_time.gpsSeconds = k;
 		    thisEvent->cohSNR = cohSNR;
+		    strcpy(thisEvent->ifos,caseStr);
+		    thisEvent->mass1 = input->tmplt->mass1;
+		    thisEvent->mass2 = input->tmplt->mass2;
+		   
+		  }
+		} /* matches if (cohSNR > cohSNRThresh) */
 
-		    /*fprintf(stdout,"k value THIRD = %d\t %f \n", k,thisEvent->cohSNR  );*/
-		    fflush( stdout ); 
-		
-		  }		   
-		}
 	      }
 	  }
 	
 	/* 
 	 *
 	 * clean up the last event if there is one
-	 *
+	 * 
 	 */
 	
 	
@@ -742,21 +931,21 @@ LALCoherentInspiralFilterSegment (
 	  {
 	    INT8                    timeNS1;
 	    INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
-	    
 	    timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
 	    thisEvent->eventId = eventId++;
 	    thisEvent->timeIndex = timeIndex;
 	    thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
 	    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+	    thisEvent->mass1 = input->tmplt->mass1;
+	    thisEvent->mass2 = input->tmplt->mass2;
 	    
 	    /*fprintf(stdout,"k value FOURTH = %d\t %f \n", k,thisEvent->cohSNR  );*/
 	    fflush( stdout ); 
 	  }
       }
     else 
-      {
+      { /* Network: 2 detectors excluding either H1, H2, or both H1 and H2 */
 	/*Here, the time delay looping must start */
-	fprintf(stdout,"Network of 2 detectors \n");
 	
 	p=0;
 	for (l=0;l<6;l++)
@@ -767,15 +956,10 @@ LALCoherentInspiralFilterSegment (
 	      }
 	  }
 	
-	fprintf(stdout,"Detector Sites: %d %d \n",dsites[0],dsites[1]);
-
 	/* Now calculate the distance (in meters) */
-	distance[1] = sqrt( cartesianInnerProduct(s[1],s[1]) );
-	    
+	distance[1] = sqrt( cartesianInnerProduct(s[1],s[1]) ); 
 	timeDelay[1] = distance[1]/LAL_C_SI;
-	fprintf(stdout,"Time delay: %f\n",timeDelay[1]);
 	slidePoints[1] = ceilf( fabsf(timeDelay[1])/deltaT );
-	fprintf(stdout,"Corresponding # of Slidepoints: %d\n",slidePoints[1]);
 	
 	k = 0;
 	q = 0;
@@ -795,16 +979,100 @@ LALCoherentInspiralFilterSegment (
 			/*CHECK: updated timedelays should be stored here too */
 		      }
 		  }
-		params->cohSNRVec->data->data[k] = cohSNR;
+		if( cohSNROut ) params->cohSNRVec->data->data[k] = cohSNR;
+
+		if ( cohSNR > cohSNRThresh ) {
+		  if ( !*eventList ) {
+		    /* store the start of the crossing */
+		    eventStartIdx = k;
+		
+		    /* if this is the first event, start the list */
+		    thisEvent = *eventList = (CoherentInspiralEvent *) 
+		      LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		
+		    if ( !thisEvent )
+		      {
+			ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+		      }
+		
+		    /* record the data that we need for the clustering algorithm */          
+		    thisEvent->end_time.gpsSeconds = k;
+		    thisEvent->cohSNR = cohSNR;
+		    fflush( stdout ); 
+
+		  } /* done creating a new event */
+		  else if (params->maximizeOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->cohSNR ) {
+		    /* if this is the same event, update the maximum */
+		    thisEvent->end_time.gpsSeconds = k;
+		    thisEvent->cohSNR = cohSNR;
+		    strcpy(thisEvent->ifos, caseStr);
+		    thisEvent->eventId = eventId;
+		    thisEvent->timeIndex = k;
+		    thisEvent->mass1 = input->tmplt->mass1;
+		    thisEvent->mass2 = input->tmplt->mass2;
+
+		    /*fprintf(stdout,"k value SECOND = %d\t %f \n", k,cohSNR  );*/
+		    fflush( stdout ); 
+
+		  }
+		  else if ( k > thisEvent->end_time.gpsSeconds + deltaEventIndex || !(params->maximizeOverChirp) ) {
+		    /* clean up this event */
+		    CoherentInspiralEvent  *lastEvent;
+		    INT8                    timeNS1;
+		    INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
+		    timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
+		    thisEvent->eventId = eventId++;
+		    thisEvent->timeIndex = timeIndex;
+		    thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
+		    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+		
+		    /* store the start of the crossing */
+		    eventStartIdx = k;
+		
+		    /* allocate memory for the newEvent */
+		    lastEvent = thisEvent;
+		
+		    lastEvent->next = thisEvent = (CoherentInspiralEvent *) 
+		      LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		    if ( !(lastEvent->next) )
+		      {
+			ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+		      }
+		
+		    /* stick minimal data into the event */
+		    thisEvent->end_time.gpsSeconds = k;
+		    thisEvent->cohSNR = cohSNR;
+		    strcpy(thisEvent->ifos,caseStr);
+		    thisEvent->mass1 = input->tmplt->mass1;
+		    thisEvent->mass2 = input->tmplt->mass2;
+		   
+		  }
+		} /* matches if (cohSNR > cohSNRThresh) */
+
+
 	      }
+	  }
+
+	if ( thisEvent )
+	  {
+	    INT8                    timeNS1;
+	    INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
+	    timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
+	    thisEvent->eventId = eventId++;
+	    thisEvent->timeIndex = timeIndex;
+	    thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
+	    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+	    thisEvent->mass1 = input->tmplt->mass1;
+	    thisEvent->mass2 = input->tmplt->mass2;
+	    
+	    /*fprintf(stdout,"k value FOURTH = %d\t %f \n", k,thisEvent->cohSNR  );*/
+	    fflush( stdout ); 
 	  }
       }
     break;
-  case 3:
+  case 3: /* Network: 3 detectors including both H1 and H2 */
     if(caseID[0] && caseID[5])
       {
-	fprintf(stdout,"Network of 3 detectors - includes H1 and H2 \n");
-	
 	p=0;
 	for (l=0;l<6;l++)
 	  {
@@ -813,16 +1081,11 @@ LALCoherentInspiralFilterSegment (
 		dsites[p++] = siteID[l];
 	      }
 	  }
-	
-	fprintf(stdout,"Detector Sites: %d %d %d \n",dsites[0],dsites[1],dsites[2]);
-	
+       
 	/* Now calculate the distance (in meters) */
 	distance[1] = sqrt( cartesianInnerProduct( s[1],s[1]) );
-	    
 	timeDelay[1] = distance[1]/LAL_C_SI;
-	fprintf(stdout,"Time delay: %f\n",timeDelay[1]);
 	slidePoints[1] = ceilf( fabsf(timeDelay[1])/deltaT );
-	fprintf(stdout,"Corresponding # of Slidepoints: %d\n",slidePoints[1]);
 
 	k = 0;
 	q = 0;
@@ -839,7 +1102,7 @@ LALCoherentInspiralFilterSegment (
 		      {
 			if(q >= 0 && q < numPoints)
 			  {
-			    cohSNRLocal = sqrt( 0.5 * ((cData[0].data->data[k].re + cData[2].data->data[m].re)*(cData[0].data->data[k].re + cData[2].data->data[m].re) + (cData[0].data->data[k].im + cData[2].data->data[m].im)*(cData[0].data->data[k].im + cData[2].data->data[m].im)) + cData[1].data->data[q].re*cData[1].data->data[q].re + cData[1].data->data[q].im*cData[1].data->data[q].im);
+			    cohSNRLocal = sqrt( ((cData[0].data->data[k].re + cData[2].data->data[m].re)*(cData[0].data->data[k].re + cData[2].data->data[m].re) + (cData[0].data->data[k].im + cData[2].data->data[m].im)*(cData[0].data->data[k].im + cData[2].data->data[m].im)) + cData[1].data->data[q].re*cData[1].data->data[q].re + cData[1].data->data[q].im*cData[1].data->data[q].im);
 		    		    		  
 			    if(cohSNRLocal > cohSNR)
 			      {
@@ -848,12 +1111,96 @@ LALCoherentInspiralFilterSegment (
 			  }
 		      }
 		  }
-		params->cohSNRVec->data->data[k] = cohSNR;
+		if( cohSNROut ) params->cohSNRVec->data->data[k] = cohSNR;
+
+		if ( cohSNR > cohSNRThresh ) {
+		  if ( !*eventList ) {
+		    /* store the start of the crossing */
+		    eventStartIdx = k;
+		
+		    /* if this is the first event, start the list */
+		    thisEvent = *eventList = (CoherentInspiralEvent *) 
+		      LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		
+		    if ( !thisEvent )
+		      {
+			ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+		      }
+		
+		    /* record the data that we need for the clustering algorithm */          
+		    thisEvent->end_time.gpsSeconds = k;
+		    thisEvent->cohSNR = cohSNR;
+		    fflush( stdout ); 
+
+		  } /* done creating a new event */
+		  else if (params->maximizeOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->cohSNR ) {
+		    /* if this is the same event, update the maximum */
+		    thisEvent->end_time.gpsSeconds = k;
+		    thisEvent->cohSNR = cohSNR;
+		    strcpy(thisEvent->ifos, caseStr);
+		    thisEvent->eventId = eventId;
+		    thisEvent->timeIndex = k;
+		    thisEvent->mass1 = input->tmplt->mass1;
+		    thisEvent->mass2 = input->tmplt->mass2;
+
+		    /*fprintf(stdout,"k value SECOND = %d\t %f \n", k,cohSNR  );*/
+		    fflush( stdout ); 
+
+		  }
+		  else if ( k > thisEvent->end_time.gpsSeconds + deltaEventIndex || !(params->maximizeOverChirp) ) {
+		    /* clean up this event */
+		    CoherentInspiralEvent  *lastEvent;
+		    INT8                    timeNS1;
+		    INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
+		    timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
+		    thisEvent->eventId = eventId++;
+		    thisEvent->timeIndex = timeIndex;
+		    thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
+		    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+		
+		    /* store the start of the crossing */
+		    eventStartIdx = k;
+		
+		    /* allocate memory for the newEvent */
+		    lastEvent = thisEvent;
+		
+		    lastEvent->next = thisEvent = (CoherentInspiralEvent *) 
+		      LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		    if ( !(lastEvent->next) )
+		      {
+			ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+		      }
+		
+		    /* stick minimal data into the event */
+		    thisEvent->end_time.gpsSeconds = k;
+		    thisEvent->cohSNR = cohSNR;
+		    strcpy(thisEvent->ifos,caseStr);
+		    thisEvent->mass1 = input->tmplt->mass1;
+		    thisEvent->mass2 = input->tmplt->mass2;
+		   
+		  }
+		} /* matches if (cohSNR > cohSNRThresh) */
 	      }
+	  }
+
+	if ( thisEvent )
+	  {
+	    INT8                    timeNS1;
+	    INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
+	    timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
+	    thisEvent->eventId = eventId++;
+	    thisEvent->timeIndex = timeIndex;
+	    thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
+	    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+	    thisEvent->mass1 = input->tmplt->mass1;
+	    thisEvent->mass2 = input->tmplt->mass2;
+	    
+	    /*fprintf(stdout,"k value FOURTH = %d\t %f \n", k,thisEvent->cohSNR  );*/
+	    fflush( stdout ); 
 	  }
       }
     else
-      {
+      { /* Network: 3 detectors excluding either H1, H2, or both (H1 && H2)*/
 	/* Now the last 3 cases will involve the looping over the coefficients */
 	p=0;
 	for (l=0;l<6;l++)
@@ -863,7 +1210,6 @@ LALCoherentInspiralFilterSegment (
 		dsites[p++] = siteID[l];
 	      }
 	  }
-	fprintf(stdout,"Detector Sites: %d %d %d \n",dsites[0],dsites[1],dsites[2]);
 
 	l = 0;
 	k = 0;
@@ -882,10 +1228,8 @@ LALCoherentInspiralFilterSegment (
 	    distance[2] = cartesianInnerProduct(s[2],nHatVect);
 	    timeDelay[1] = distance[1]/LAL_C_SI;
 	    timeDelay[2] = distance[2]/LAL_C_SI;
-	    fprintf(stdout,"Time Delays: %f %f\n",timeDelay[1],timeDelay[2]);
 	    slidePoints[1] = ceilf( fabsf(timeDelay[1])/deltaT );
 	    slidePoints[2] = ceilf( fabsf(timeDelay[2])/deltaT );	    
-	    fprintf(stdout,"Corresponding # of Slide Points: %d %d\n",slidePoints[1],slidePoints[2]);
 	    
 	    for(k=0;k<numPoints;k++)
 	      {
@@ -909,19 +1253,108 @@ LALCoherentInspiralFilterSegment (
 			  }
 			
 		      }
-		    params->cohSNRVec->data->data[k] = cohSNR;		    
+		   if( cohSNROut ) params->cohSNRVec->data->data[k] = cohSNR;
+
+		    if ( cohSNR > cohSNRThresh ) {
+		      if ( !*eventList ) {
+			/* store the start of the crossing */
+			eventStartIdx = k;
+		
+		        /* if this is the first event, start the list */
+		        thisEvent = *eventList = (CoherentInspiralEvent *) 
+		          LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		
+			if ( !thisEvent )
+			  {
+			    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+			  }
+		
+			/* record the data that we need for the clustering algorithm */         
+			thisEvent->end_time.gpsSeconds = k;
+		        thisEvent->cohSNR = cohSNR;
+		        fflush( stdout ); 
+
+		      } /* done creating a new event */
+		      else if (params->maximizeOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->cohSNR ) {
+			/* if this is the same event, update the maximum */
+			thisEvent->end_time.gpsSeconds = k;
+		        thisEvent->cohSNR = cohSNR;
+		        strcpy(thisEvent->ifos, caseStr);
+		        thisEvent->eventId = eventId;
+		        thisEvent->timeIndex = k;
+		        thisEvent->mass1 = input->tmplt->mass1;
+		        thisEvent->mass2 = input->tmplt->mass2;
+			thisEvent->theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
+			thisEvent->phi = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+
+		        /*fprintf(stdout,"k value SECOND = %d\t %f \n", k,cohSNR  );*/
+		        fflush( stdout ); 
+
+		      }
+		      else if ( k > thisEvent->end_time.gpsSeconds + deltaEventIndex || !(params->maximizeOverChirp) ) {
+		        /* clean up this event */
+		        CoherentInspiralEvent  *lastEvent;
+		        INT8                    timeNS1;
+		        INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
+		        timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
+		        thisEvent->eventId = eventId++;
+		        thisEvent->timeIndex = timeIndex;
+		        thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
+		        thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+		
+		        /* store the start of the crossing */
+		        eventStartIdx = k;
+		
+	    	        /* allocate memory for the newEvent */
+		        lastEvent = thisEvent;
+		
+		        lastEvent->next = thisEvent = (CoherentInspiralEvent *) 
+		          LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		        if ( !(lastEvent->next) )
+		          {
+			    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+		          }
+		
+		        /* stick minimal data into the event */
+		        thisEvent->end_time.gpsSeconds = k;
+		        thisEvent->cohSNR = cohSNR;
+		        strcpy(thisEvent->ifos,caseStr);
+		        thisEvent->mass1 = input->tmplt->mass1;
+		        thisEvent->mass2 = input->tmplt->mass2;
+			thisEvent->theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
+			thisEvent->phi = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+		   
+		      }
+		    } /* matches if (cohSNR > cohSNRThresh) */		    
 		  }
+	      }
+
+	    if ( thisEvent )
+	      {
+		INT8                    timeNS1;
+	        INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
+	        timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
+	        thisEvent->eventId = eventId++;
+	        thisEvent->timeIndex = timeIndex;
+	        thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
+	        thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+	        thisEvent->mass1 = input->tmplt->mass1;
+	        thisEvent->mass2 = input->tmplt->mass2;
+	        thisEvent->theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
+	        thisEvent->phi = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+	    
+	        /*fprintf(stdout,"k value FOURTH = %d\t %f \n", k,thisEvent->cohSNR  );*/
+	        fflush( stdout ); 
 	      }
 	    
 	  }/* outer loop end */
-	
+
+
       } /* else statement end */
     break;
-  case 4:
+  case 4: /* Network: 4 detectors including both H1 and H2 */
     if(caseID[0] && caseID[5])
       {
-	fprintf(stdout,"Network of 4 detectors - includes H1 and H2 \n");
-	
 	p=0;
 	for (l=0;l<6;l++)
 	  {
@@ -930,7 +1363,6 @@ LALCoherentInspiralFilterSegment (
 		dsites[p++] = siteID[l];
 	      }
 	  }
-	fprintf(stdout,"Detector Sites: %d %d %d %d\n",dsites[0],dsites[1],dsites[2],dsites[3]);
 	
 	/*start search looping */
 	
@@ -946,10 +1378,8 @@ LALCoherentInspiralFilterSegment (
 	    distance[2] = cartesianInnerProduct(s[2],nHatVect);
 	    timeDelay[1] = distance[1]/LAL_C_SI;
 	    timeDelay[2] = distance[2]/LAL_C_SI;
-	    fprintf(stdout,"Time Delays: %f %f %f\n",timeDelay[1],timeDelay[2],timeDelay[3]);
 	    slidePoints[1] = ceilf( fabsf(timeDelay[1])/deltaT );
 	    slidePoints[2] = ceilf( fabsf(timeDelay[2])/deltaT );
-	    fprintf(stdout,"Corresponding # of Slidepoints: %d %d\n",slidePoints[1],slidePoints[2]);
 	    	    
 	    k = 0;
 	    q = 0;
@@ -970,7 +1400,7 @@ LALCoherentInspiralFilterSegment (
 				  {
 				    if (w >= 0 && w < numPoints)
 				      {
-					cohSNRLocal = sqrt( 0.5*( beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] )*( cData[0].data->data[k].re*cData[0].data->data[k].re + cData[0].data->data[k].im*cData[0].data->data[k].im + cData[3].data->data[m].re*cData[3].data->data[m].re + cData[3].data->data[m].im*cData[3].data->data[m].im + 2*(cData[0].data->data[k].re*cData[3].data->data[m].re + cData[0].data->data[k].im*cData[3].data->data[m].im)) + ( beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] )*( cData[1].data->data[q].re*cData[1].data->data[q].re + cData[1].data->data[q].im*cData[1].data->data[q].im ) + ( beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]  + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] )*( cData[2].data->data[w].re*cData[2].data->data[w].re + cData[2].data->data[w].im*cData[2].data->data[w].im ) + sqrt(2)*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re*cData[1].data->data[q].re + cData[0].data->data[k].im*cData[1].data->data[q].im + cData[3].data->data[m].re*cData[1].data->data[q].re + cData[3].data->data[m].im*cData[1].data->data[q].im) + sqrt(2)*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re*cData[2].data->data[w].re + cData[0].data->data[k].im*cData[2].data->data[w].im + cData[3].data->data[m].re*cData[2].data->data[w].re + cData[3].data->data[m].im*cData[2].data->data[w].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[1].data->data[q].re*cData[2].data->data[w].re + cData[1].data->data[q].im*cData[2].data->data[w].im));
+					cohSNRLocal = sqrt( ( beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] )*( (cData[0].data->data[k].re + cData[3].data->data[m].re)*(cData[0].data->data[k].re + cData[3].data->data[m].re) + (cData[0].data->data[k].im + cData[3].data->data[m].im)*(cData[0].data->data[k].im + cData[3].data->data[m].im) ) + ( beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] )*( cData[1].data->data[q].re*cData[1].data->data[q].re + cData[1].data->data[q].im*cData[1].data->data[q].im ) + ( beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]  + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] )*( cData[2].data->data[w].re*cData[2].data->data[w].re + cData[2].data->data[w].im*cData[2].data->data[w].im ) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re*cData[1].data->data[q].re + cData[0].data->data[k].im*cData[1].data->data[q].im + cData[3].data->data[m].re*cData[1].data->data[q].re + cData[3].data->data[m].im*cData[1].data->data[q].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re*cData[2].data->data[w].re + cData[0].data->data[k].im*cData[2].data->data[w].im + cData[3].data->data[m].re*cData[2].data->data[w].re + cData[3].data->data[m].im*cData[2].data->data[w].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[1].data->data[q].re*cData[2].data->data[w].re + cData[1].data->data[q].im*cData[2].data->data[w].im));
 			      
 					if(cohSNRLocal > cohSNR)
 					  {
@@ -983,19 +1413,105 @@ LALCoherentInspiralFilterSegment (
 			      }
 			  }
 		      }
-		    params->cohSNRVec->data->data[k] = cohSNR;		    
+		    if( cohSNROut ) params->cohSNRVec->data->data[k] = cohSNR;
+
+		    if ( cohSNR > cohSNRThresh ) {
+		      if ( !*eventList ) {
+			/* store the start of the crossing */
+			eventStartIdx = k;
+		
+		        /* if this is the first event, start the list */
+		        thisEvent = *eventList = (CoherentInspiralEvent *) 
+		          LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		
+			if ( !thisEvent )
+			  {
+			    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+			  }
+		
+			/* record the data that we need for the clustering algorithm */         
+			thisEvent->end_time.gpsSeconds = k;
+		        thisEvent->cohSNR = cohSNR;
+		        fflush( stdout ); 
+
+		      } /* done creating a new event */
+		      else if (params->maximizeOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->cohSNR ) {
+			/* if this is the same event, update the maximum */
+			thisEvent->end_time.gpsSeconds = k;
+		        thisEvent->cohSNR = cohSNR;
+		        strcpy(thisEvent->ifos, caseStr);
+		        thisEvent->eventId = eventId;
+		        thisEvent->timeIndex = k;
+		        thisEvent->mass1 = input->tmplt->mass1;
+		        thisEvent->mass2 = input->tmplt->mass2;
+			thisEvent->theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
+			thisEvent->phi = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+
+		        /*fprintf(stdout,"k value SECOND = %d\t %f \n", k,cohSNR  );*/
+		        fflush( stdout ); 
+
+		      }
+		      else if ( k > thisEvent->end_time.gpsSeconds + deltaEventIndex || !(params->maximizeOverChirp) ) {
+		        /* clean up this event */
+		        CoherentInspiralEvent  *lastEvent;
+		        INT8                    timeNS1;
+		        INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
+		        timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
+		        thisEvent->eventId = eventId++;
+		        thisEvent->timeIndex = timeIndex;
+		        thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
+		        thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+		
+		        /* store the start of the crossing */
+		        eventStartIdx = k;
+		
+	    	        /* allocate memory for the newEvent */
+		        lastEvent = thisEvent;
+		
+		        lastEvent->next = thisEvent = (CoherentInspiralEvent *) 
+		          LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		        if ( !(lastEvent->next) )
+		          {
+			    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+		          }
+		
+		        /* stick minimal data into the event */
+		        thisEvent->end_time.gpsSeconds = k;
+		        thisEvent->cohSNR = cohSNR;
+		        strcpy(thisEvent->ifos,caseStr);
+		        thisEvent->mass1 = input->tmplt->mass1;
+		        thisEvent->mass2 = input->tmplt->mass2;
+			thisEvent->theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
+			thisEvent->phi = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+		   
+		      }
+		    } /* matches if (cohSNR > cohSNRThresh) */		    
 		  }
 	      }
+	    if ( thisEvent )
+	      {
+	        INT8                    timeNS1;
+	        INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
+	        timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
+	        thisEvent->eventId = eventId++;
+	        thisEvent->timeIndex = timeIndex;
+	        thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
+	        thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+	        thisEvent->mass1 = input->tmplt->mass1;
+	        thisEvent->mass2 = input->tmplt->mass2;
+	        thisEvent->theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
+	        thisEvent->phi = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
 	    
+	        /*fprintf(stdout,"k value FOURTH = %d\t %f \n", k,thisEvent->cohSNR  );*/
+	        fflush( stdout ); 
+	      }		    
 	    
 	  } /* end for statement prior to computing distances*/
 	
-	
-	
+
       } /* end outer if statement in case4*/
     else
-      {
-	fprintf(stdout,"Network of four detctors \n");
+      { /* Network: 4 detectors excluding either H1, H2, or both H1 and H2 */
 	/* there will be one extra loop over the last case since there are 3 nonzero time delays*/
 	
 	p=0;
@@ -1006,8 +1522,7 @@ LALCoherentInspiralFilterSegment (
 		dsites[p++] = siteID[l];
 	      }
 	  }
-	fprintf(stdout,"Detector Sites: %d %d %d %d\n",dsites[0],dsites[1],dsites[2],dsites[3]);
-	
+
 	/*start search looping */
 	
 	for (l=0;l < numBeamPoints; l++)
@@ -1024,11 +1539,9 @@ LALCoherentInspiralFilterSegment (
 	    timeDelay[1] = distance[1]/LAL_C_SI;
 	    timeDelay[2] = distance[2]/LAL_C_SI;
 	    timeDelay[3] = distance[3]/LAL_C_SI;
-	    fprintf(stdout,"Time Delays: %f %f %f\n",timeDelay[1],timeDelay[2],timeDelay[3]);
 	    slidePoints[1] = ceilf( fabsf(timeDelay[1])/deltaT );
 	    slidePoints[2] = ceilf( fabsf(timeDelay[2])/deltaT );
 	    slidePoints[3] = ceilf( fabsf(timeDelay[3])/deltaT );	    
-	    fprintf(stdout,"Corresponding # of Slidepoints: %d %d %d\n",slidePoints[1],slidePoints[2],slidePoints[3]);
 	    
 	    k = 0;
 	    q = 0;
@@ -1061,16 +1574,104 @@ LALCoherentInspiralFilterSegment (
 			      }
 			  }
 		      }
-		    params->cohSNRVec->data->data[k] = cohSNR;
+		    if( cohSNROut ) params->cohSNRVec->data->data[k] = cohSNR;
+
+		    if ( cohSNR > cohSNRThresh ) {
+		      if ( !*eventList ) {
+			/* store the start of the crossing */
+			eventStartIdx = k;
+		
+		        /* if this is the first event, start the list */
+		        thisEvent = *eventList = (CoherentInspiralEvent *) 
+		          LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		
+			if ( !thisEvent )
+			  {
+			    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+			  }
+		
+			/* record the data that we need for the clustering algorithm */         
+			thisEvent->end_time.gpsSeconds = k;
+		        thisEvent->cohSNR = cohSNR;
+		        fflush( stdout ); 
+
+		      } /* done creating a new event */
+		      else if (params->maximizeOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->cohSNR ) {
+			/* if this is the same event, update the maximum */
+			thisEvent->end_time.gpsSeconds = k;
+		        thisEvent->cohSNR = cohSNR;
+		        strcpy(thisEvent->ifos, caseStr);
+		        thisEvent->eventId = eventId;
+		        thisEvent->timeIndex = k;
+		        thisEvent->mass1 = input->tmplt->mass1;
+		        thisEvent->mass2 = input->tmplt->mass2;
+			thisEvent->theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
+			thisEvent->phi = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+
+		        /*fprintf(stdout,"k value SECOND = %d\t %f \n", k,cohSNR  );*/
+		        fflush( stdout ); 
+
+		      }
+		      else if ( k > thisEvent->end_time.gpsSeconds + deltaEventIndex || !(params->maximizeOverChirp) ) {
+		        /* clean up this event */
+		        CoherentInspiralEvent  *lastEvent;
+		        INT8                    timeNS1;
+		        INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
+		        timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
+		        thisEvent->eventId = eventId++;
+		        thisEvent->timeIndex = timeIndex;
+		        thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
+		        thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+		
+		        /* store the start of the crossing */
+		        eventStartIdx = k;
+		
+	    	        /* allocate memory for the newEvent */
+		        lastEvent = thisEvent;
+		
+		        lastEvent->next = thisEvent = (CoherentInspiralEvent *) 
+		          LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		        if ( !(lastEvent->next) )
+		          {
+			    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+		          }
+		
+		        /* stick minimal data into the event */
+		        thisEvent->end_time.gpsSeconds = k;
+		        thisEvent->cohSNR = cohSNR;
+		        strcpy(thisEvent->ifos,caseStr);
+		        thisEvent->mass1 = input->tmplt->mass1;
+		        thisEvent->mass2 = input->tmplt->mass2;
+			thisEvent->theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
+			thisEvent->phi = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+		   
+		      }
+		    } /* matches if (cohSNR > cohSNRThresh) */
 		  }
 	      }
 	    
+	    if ( thisEvent )
+	      {
+	        INT8                    timeNS1;
+	        INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
+	        timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
+	        thisEvent->eventId = eventId++;
+	        thisEvent->timeIndex = timeIndex;
+	        thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
+	        thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+	        thisEvent->mass1 = input->tmplt->mass1;
+	        thisEvent->mass2 = input->tmplt->mass2;
+	        thisEvent->theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
+	        thisEvent->phi = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+	    
+	        /*fprintf(stdout,"k value FOURTH = %d\t %f \n", k,thisEvent->cohSNR  );*/
+	        fflush( stdout ); 
+	      }
+
 	  } /*end the outermost for statement prior to computing distances*/
 	
       } /*end else statement */
   } /* end case statement */
-  
-
   
   /* normal exit */
   DETATCHSTATUSPTR( status );

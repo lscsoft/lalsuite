@@ -50,7 +50,6 @@ The coherent statistic will be defined here.
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
-#include <lal/TwoInterfFindChirp.h>
 #include <lal/LALInspiralBank.h>
 
 #ifdef  __cplusplus
@@ -97,6 +96,63 @@ NRCSID (COHERENTINSPIRALH, "$Id$");
 #define COHERENTINSPIRALH_MSGEZDET "Number of detectors is 0; it should be greater than 1 and less than 4"
 /* </lalErrTable> */
 
+#if 0
+<lalLaTeX>
+\subsection*{Types}
+</lalLaTeX>
+#endif
+
+/* --- structure for describing a binary insipral event ------------------ */
+/* <lalVerbatim file="FindChirpHInspiralEvent"> */
+
+
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+\subsubsection*{Structure \texttt{InspiralEvent}}
+\idx[Type]{InspiralEvent}
+
+\input{FindChirpHInspiralEvent}
+
+\noindent This structure describes inspiral events found by \texttt{findchirp}.
+The fields are:
+
+\begin{description}
+\item[\texttt{UINT4 id}] A unique number assigned by the filter routine to 
+each event it finds.
+
+\item[\texttt{UINT4 segmentNumber}] The id number of the 
+\texttt{FindChirpDataSegment} in which the event was found.
+
+\item[\texttt{LIGOTimeGPS time}] The GPS time at which the event occoured.
+
+\item[\texttt{UINT4 timeIndex}] The index at which the event occoured in 
+the array containing the filter output.
+
+\item[\texttt{InspiralTemplate tmplt}] The parameters of the inspiral template
+for the event.
+
+\item[\texttt{REAL4 snrsq}] The value of $\rho^2$ for the event.
+
+\item[\texttt{REAL4 chisq}] The value of the $\chi^2$ veto for the event, if 
+it has been computed.
+
+\item[\texttt{REAL4 sigma}] The value of the normalisation constant $\sigma$ 
+for the event.
+
+\item[\texttt{REAL4 effDist}] The effective distance in megaparsecs to the
+event.
+
+\item[\texttt{REAL4 coaPhase}] The coalescence phase of the chirp.
+
+\item[\texttt{CHAR ifoName[2]}] Array for storing the two character
+interferometer name (e.g. L1, H2, etc.)
+
+\item[\texttt{struct tagInspiralEvent *next}] A pointer to a structure of type 
+\texttt{InspiralEvent} to allow the construction of a linked list of events.
+\end{description}
+</lalLaTeX>
+#endif
 
 #if 0
 <lalLaTeX>
@@ -105,18 +161,19 @@ NRCSID (COHERENTINSPIRALH, "$Id$");
 #endif
 /* structure for describing a binary insipral event */
 /* <lalVerbatim file="CoherentInspiralHCoherentInspiralEvent"> */
-typedef struct
+/*typedef struct
 tagInspiralEventVector
 {
   UINT4                                  numDetectors;
-  InspiralEvent                         *event; /* ordered list of events*/
-}
-InspiralEventVector;
+  InspiralEvent                         *event; 
+}*/
+/*InspiralEventVector;*/
+
 
 typedef struct
 tagCoherentInspiralEvent
 {
-  CHAR                                   ifos[LIGOMETA_IFOS_MAX];
+  CHAR                                   ifos[FILENAME_MAX];
   UINT4                                  eventId;
   UINT4                                  timeIndex;
   REAL4                                  mass1;
@@ -126,7 +183,6 @@ tagCoherentInspiralEvent
   REAL4                                  phi;
   LIGOTimeGPS                            time;
   LIGOTimeGPS                            end_time;
-  InspiralEventVector                   *inspEventVec;
   struct tagCoherentInspiralEvent       *next;
 }
 CoherentInspiralEvent;
@@ -208,7 +264,7 @@ typedef struct
 tagCoherentInspiralFilterParams
 {
   INT4                          numTmplts;
-  UINT4                         maximiseOverChirp;
+  UINT4                         maximizeOverChirp;
   UINT4                         numDetectors;
   UINT4                         numSegments;
   UINT4                         numPoints;
