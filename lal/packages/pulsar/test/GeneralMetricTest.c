@@ -157,7 +157,6 @@ extern char *optarg;
 NRCSID( GENERALMETRICTESTC, "$Id" );
 
 #define DEFAULT_DURATION 39600 /* seconds */
-#define NUM_SPINDOWN 0         /* No. of spindown parameters: Not yet in use */
 #define SPOKES 30
 #define MAGNIFY 1.0            /* Magnification factor of ellipses */
 
@@ -198,6 +197,8 @@ int main( int argc, char *argv[] ) {
   float           r_ellipse;        /* Radii of ellipses */
   REAL8           determinant;      /* Determinant of projected metric */
   REAL4           f0;               /* carrier frequency */
+  REAL4Vector    *spindown;         /* Spindown parameters */
+  UINT2           numSpindown;      /* Number of spindowns */
 
   /* Defaults that can be overwritten: */
   metric_code = 1;
@@ -217,10 +218,11 @@ int main( int argc, char *argv[] ) {
   tau=1.;
   f1 = 1./tau;
   f0 = 1000;
+  numSpindown = 0;
 
 
   /* Parse options. */
-  while ((opt = getopt( argc, argv, "a:b:c:d:ef:l:m:pt:s:x" )) != -1) {
+  while ((opt = getopt( argc, argv, "a:b:c:d:ef:l:m:n:pt:s:x" )) != -1) {
     switch (opt) {
     case 'a':
       metric_code = atoi( optarg );
@@ -255,6 +257,10 @@ int main( int argc, char *argv[] ) {
     case 'm':
       mismatch = atof( optarg );
       break;
+    case 'n':
+      if( metric_code == 1 )
+        numSpindown = atoi( optarg );
+      break;
     case 'p':
       nongrace = 1;
       break;
@@ -273,7 +279,7 @@ int main( int argc, char *argv[] ) {
 
   /* Allocate storage for output metric. */
   metric = NULL;
-  LALDCreateVector( &status, &metric, 6 );
+  LALDCreateVector( &status, &metric, (3+numSpindown)*(4+numSpindown)/2 );
   if( status.statusCode )
     {
       printf( "%s line %d: %s\n", __FILE__, __LINE__,
@@ -317,6 +323,14 @@ int main( int argc, char *argv[] ) {
   /* Ptolemetric constants */
   in.position.system = COORDINATESYSTEM_EQUATORIAL;
   in.spindown = NULL;
+  if( numSpindown > 0 )
+    LALCreateVector( &status, &(in.spindown), numSpindown );
+  if( status.statusCode )
+    {
+      printf( "%s line %d: %s\n", __FILE__, __LINE__,
+              GENERALMETRICTESTC_MSGEMEM );
+      return GENERALMETRICTESTC_EMEM;
+    }
 
   /* CoherentMetric constants */
   tevparam.constants = &tevpulse;
@@ -357,10 +371,7 @@ int main( int argc, char *argv[] ) {
    if(metric_code==3)
      tevparam.dtCanon = LALDTEphemeris;
 
-
-   /* Print results for a single  ponit */
-    
-   printf("\n3-dim metric (f, alpha, delta) at the requested point\n");
+   /* Evaluate metric components. */
    if(metric_code==1)
      {
        LALPtoleMetric( &status, metric, &in );
@@ -381,11 +392,16 @@ int main( int argc, char *argv[] ) {
 	   return GENERALMETRICTESTC_ESUB;
 	 }
      }
-   for (j=0; j<=2+NUM_SPINDOWN; j++) {
+
+   /* Print metric. */
+   printf("\nmetric (f0, alpha, delta, ...) at the requested point\n");
+   for (j=0; j<=2+numSpindown; j++) {
      for (k=0; k<=j; k++)
        printf( "  %+.3e", metric->data[k+j*(j+1)/2] );
      printf("\n");
    }
+
+   /* Project carrier frequency out of metric. */
    LALProjectMetric( &status, metric, 0 );
    if( status.statusCode )
      {
@@ -393,7 +409,6 @@ int main( int argc, char *argv[] ) {
 	       GENERALMETRICTESTC_MSGESUB );
        return GENERALMETRICTESTC_ESUB;
      }
-   
    determinant = metric->data[5]*metric->data[2]-pow(metric->data[4],2.0);
    if(determinant < 0.0)
      {
@@ -402,18 +417,13 @@ int main( int argc, char *argv[] ) {
        return GENERALMETRICTESTC_EMET;
      }
 
-   printf("\n2-dim metric (alpha, delta) at the requested point\n");
-   for (j=1; j<=2+NUM_SPINDOWN; j++) {
+   /* Print projected metric. */
+   printf("\nf-projected metric (alpha, delta, ...) at the requested point\n");
+   for (j=1; j<=2+numSpindown; j++) {
      for (k=1; k<=j; k++)
        printf( "  %+.3e", metric->data[k+j*(j+1)/2] );
      printf( "\n" );
       }
-    
-
-
-
-    
-
 
   /* Here is the code that uses xmgrace with the -x option, */
   /* and outputs data to a file with the -t option. */
@@ -582,6 +592,8 @@ int main( int argc, char *argv[] ) {
             GENERALMETRICTESTC_MSGEMEM );
     return GENERALMETRICTESTC_EMEM;
   }
+  if( in.spindown )
+    LALDestroyVector( &status, &(in.spindown) );
 
   if( status.statusCode )
   {
