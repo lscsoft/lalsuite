@@ -56,7 +56,7 @@ RCSID("$Id$");
   LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype); \
   LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue);
 
-#define PSD_WINDOW_LENGTH 4096
+#define PSD_WINDOW_DURATION 4
 
 /* system error checking */
 extern int errno;
@@ -217,6 +217,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* data structures for PSDs */
   REAL8 deltaF;
+  INT4 psdWindowLength;
   INT4 overlapPSDLength;
   INT4 psdTempLength;
   INT4 filterLength;
@@ -349,7 +350,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* get deltaF for optimal filter */
-  deltaF = (REAL8)resampleRate / (REAL8)PSD_WINDOW_LENGTH;
+  deltaF = 1./(REAL8)PSD_WINDOW_DURATION;
 
   /* initialize calibration gps time structure */
   gpsCalibTime.gpsSeconds = startTime + calibOffset;
@@ -428,8 +429,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   numFMax = (INT4)(fMax / deltaF);
 
   /* get lengths */
-  overlapPSDLength = PSD_WINDOW_LENGTH / 2;
-  psdTempLength = (PSD_WINDOW_LENGTH / 2) + 1;
+  psdWindowLength = PSD_WINDOW_DURATION * resampleRate;
+  overlapPSDLength = psdWindowLength / 2;
+  psdTempLength = (psdWindowLength / 2) + 1;
   filterLength = numFMax - numFMin + 1;
 
   /* set parameters for PSD estimation */
@@ -507,13 +509,13 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* create fft plan */
   LAL_CALL(LALCreateForwardRealFFTPlan(&status, &specparPSD.plan, \
-        PSD_WINDOW_LENGTH, 0), &status);
+        psdWindowLength, 0), &status);
 
   if (vrbflg)
     fprintf(stdout, "Creating window for PSD estimation...\n");
 
   /* set window parameters for PSD estimation */
-  winparPSD.length = PSD_WINDOW_LENGTH;
+  winparPSD.length = psdWindowLength;
   winparPSD.type = Hann;
 
   /* create window for PSD estimation */
