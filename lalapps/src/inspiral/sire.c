@@ -167,6 +167,7 @@ int main( int argc, char *argv[] )
   int                   numEventsCoinc = 0;
   int                   numEventsDiscard = 0;
   int                   numEventsProcessed = 0;
+  int                   numClusteredEvents = 0;
 
   SnglInspiralTable   **eventHandle = NULL;      
   SnglInspiralTable    *eventHead = NULL;
@@ -1282,6 +1283,15 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALClusterSnglInspiralTable( &stat, eventHead,
           cluster_dt, clusterchoice ), &stat );
     if ( vrbflg ) fprintf( stdout, "done\n" );
+    
+    /* count the number of triggers surviving the clustering */
+    thisEvent = eventHead;
+    numClusteredEvents = 0;
+    while ( thisEvent )
+    {
+      ++numClusteredEvents;
+      thisEvent = thisEvent->next;
+    }
   }
 
 
@@ -1474,6 +1484,12 @@ int main( int argc, char *argv[] )
           (REAL4) numSimFound / (REAL4) numSimInData );
     }
 
+    if ( clusterchoice )
+    {
+      fprintf( fp, "number of event clusters with %lld msec window: %d\n",
+	  cluster_dt/ 1000000LL, numClusteredEvents ); 
+    }
+    
     fclose( fp ); 
   }
 
