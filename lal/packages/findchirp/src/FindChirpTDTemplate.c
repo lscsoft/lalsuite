@@ -238,6 +238,7 @@ LALFindChirpTDTemplate (
     /* set up additional template parameters */
     deltaF = 1.0 / ((REAL8) numPoints * deltaT);
     sampleRate = 1.0 / deltaT;
+    tmplt->ieta            = 1;
     tmplt->approximant     = params->approximant;
     tmplt->order           = twoPN;
     tmplt->massChoice      = m1Andm2;
