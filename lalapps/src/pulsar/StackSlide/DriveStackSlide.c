@@ -86,7 +86,8 @@
 /* 05/26/04 gam; Move writing to stackslide search summary table to StackSlideConditionData */
 /* 05/26/04 gam; Change finishedSUMs to finishedSUMs; add startSUMs; defaults are TRUE; use to control I/O during Monte Carlo */
 /* 05/26/04 gam; Add whichMCSUM = which Monte Carlo SUM; default is -1. */
-
+/* 07/09/04 gam; If using running median, use LALRngMedBias to set params->normalizationParameter to correct bias in the median. */
+ 
 /*********************************************/
 /*                                           */
 /* START SECTION: define preprocessor flags  */
@@ -477,7 +478,7 @@ void StackSlideInitSearch(
     	fprintf(stdout,"#The thresholdFlag rules are: \n");
     	fprintf(stdout,"# if (params->normalizationFlag & 2) > 0 normalize BLKs else normalize STKs, \n");
     	fprintf(stdout,"# if (params->normalizationFlag & 4) > 0 normalize STKs using running median, \n"); /* 04/14/04 gam; now implemented */
-    	fprintf(stdout,"# if normalizing with the running median the normalizationParameter must be set to the expected ratio of median to mean power. This is used to correct bias in the median to get the mean.\n"); /* 05/05/04 gam; */
+    	/* fprintf(stdout,"# if normalizing with the running median the normalizationParameter must be set to the expected ratio of median to mean power. This is used to correct bias in the median to get the mean.\n"); */ /* 07/09/04 gam */ /* 05/05/04 gam; */
     	fprintf(stdout,"# if (params->normalizationFlag & 8) > 0 normalize with veto on power above normalizationParameter = max_power_allowed/mean_power.\n");
     	fprintf(stdout,"# if (params->normalizationFlag & 16) > 0 then output into .Sh file GPS startTime and PSD estimate for each SFT.\n"); /* 04/15/04 gam */
     	fprintf(stdout,"\n");
@@ -894,7 +895,31 @@ void StackSlideConditionData(
   if (!params->finishedBLKs) {
      ABORT( status, DRIVESTACKSLIDEH_EMISSINGBLKDATA, DRIVESTACKSLIDEH_MSGEMISSINGBLKDATA);
   }
- 
+
+/*****************************************************/
+/*                                                   */
+/* START SECTION: find correction for bias in median */
+/*                                                   */
+/*****************************************************/  
+  /* 07/09/04 gam; Use LALRngMedBias to correct bias in the median. */
+  if ( (params->normalizationFlag & 4) > 0 )  {
+     REAL8 tmpBiasFactor;
+           
+     LALRngMedBias(status->statusPtr, &tmpBiasFactor, params->nBinsPerNRM);
+     CHECKSTATUSPTR (status);
+     params->normalizationParameter = (REAL4)tmpBiasFactor;   
+           
+    /* 05/05/04 gam; If normalizing with running median use normalizationParameter to correct bias in median to get mean. */
+    if (params->normalizationParameter < ((REAL4)LAL_LN2) || params->normalizationParameter > 1.0) {
+        ABORT( status, DRIVESTACKSLIDEH_ENORMPARAM, DRIVESTACKSLIDEH_MSGENORMPARAM );
+    }
+  }
+/*****************************************************/
+/*                                                   */
+/* END SECTION: find correction for bias in median   */
+/*                                                   */
+/*****************************************************/  
+   
 /**********************************************/
 /*                                            */
 /* START SECTION: set units                   */
@@ -1359,20 +1384,21 @@ void StackSlideApplySearch(
            mediansLengthm1 = ((INT4)mediansLength) - 1;
            LALSCreateVector(status->statusPtr, &medians, mediansLength);
            CHECKSTATUSPTR (status);
-
+   
            #ifdef DEBUG_NORMALIZEBLKS
                fprintf(stdout, "Normalizing STKs with running median; blocksize = %i,\n",runningMedianParams.blocksize);
                fprintf(stdout, "Normalizing STKs with running median; mediansOffset1 = %i,\n",mediansOffset1);
                fprintf(stdout, "Normalizing STKs with running median; mediansOffset2 = %i,\n",mediansOffset2);
                fprintf(stdout, "Normalizing STKs with running median; mediansLength = %i,\n",mediansLength);
                fprintf(stdout, "Normalizing STKs with running median; mediansLengthm1 = %i,\n",mediansLengthm1);
+               fprintf(stdout, "Correction to bias in median set to params->normalizationParameter = %23.16e \n",params->normalizationParameter);
                fflush(stdout);
            #endif
            
            /* 05/05/04 gam; If normalizing with running median use normalizationParameter to correct bias in median to get mean. */
-           if (params->normalizationParameter < ((REAL4)LAL_LN2) || params->normalizationParameter > 1.0) {
+           /* if (params->normalizationParameter < ((REAL4)LAL_LN2) || params->normalizationParameter > 1.0) {
               ABORT( status, DRIVESTACKSLIDEH_ENORMPARAM, DRIVESTACKSLIDEH_MSGENORMPARAM );
-           }
+           } */ /* 07/09/04 gam; moved into StackSlideConditionData */
               
            /* For each STK, call LALSRunningMedian; use medians to normalize the STK. */
            for(k=0;k<params->numSTKs;k++) {

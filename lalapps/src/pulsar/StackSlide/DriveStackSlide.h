@@ -54,6 +54,7 @@
 /* 05/05/04 gam; Change params->normalizationThreshold to params->normalizationParameter.  If normalizing with running median use this to correct bias in median to get mean. */
 /* 05/26/04 gam; Change finishedSUMs to finishedSUMs; add startSUMs; defaults are TRUE; use to control I/O during Monte Carlo */
 /* 05/26/04 gam; Add whichMCSUM = which Monte Carlo SUM; default is -1. */
+/* 07/09/04 gam; If using running median, use LALRngMedBias to set params->normalizationParameter to correct bias in the median. */
 
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
@@ -74,8 +75,9 @@
 /* 02/04/04 gam; next two are for xml I/O */
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLHeaders.h>
-/* 04/14/04 gam; next includes LAL running median code */
+/* 04/14/04 gam; next includes LAL running median code */ /* 07/09/04 gam; include RngMedBias.h */
 #include <lal/LALRunningMedian.h>
+#include <lal/RngMedBias.h>
 /* 02/09/04 gam; next is needed for tables defined in LAL */
 #include <lal/LIGOMetadataTables.h>
 #include "StackSlide.h"

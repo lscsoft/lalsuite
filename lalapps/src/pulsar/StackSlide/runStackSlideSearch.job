@@ -26,6 +26,7 @@
 # 03/10/04 gam; Change fOffset to bring in only 10 extra bin for spindown for better normalization of the noise.
 # 04/14/04 gam; if (params->normalizationFlag & 4) > 0 normalize STKs using running median
 # 05/05/04 gam; Change normalizationThreshold to normalizationParameter.  If normalizing with running median use this to correct bias in median to get mean.
+# 07/09/04 gam; set normalizationParameter 0.0 below; this is now set using LALRngMedBias in the C code to correct bias in the median.
 
 if {[string range $IFONICKNAME 0 0] == "H"} {
     set IFOName "LHO";
@@ -144,7 +145,8 @@ set useCutOff [expr $searchNormalizationFlag & 8]; # 05/05/04 gam;
 #puts "doRunningMedian = $doRunningMedian";
 if {$doRunningMedian > 0} {
   set nBinsPerNRM 50; # 04/14/04 gam; This is the blocksize to use with the running median code.
-  set normalizationParameter 0.723247152044847; # 05/05/04 gam; value is from Badri's table.
+  #set normalizationParameter 0.723247152044847; # 05/05/04 gam; value is from Badri's table.
+  set normalizationParameter 0.0;  # 07/09/04 gam; value above is incorrect; this is now set using LALRngMedBias in the C code.
 } else {
   set nBinsPerNRM $nBinsPerBLK; # Number of input frequency bins in one NRM
   if {$useCutOff > 0 } {
