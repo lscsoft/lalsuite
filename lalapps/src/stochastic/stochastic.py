@@ -278,8 +278,7 @@ class LSCDataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.add_opt('lal-cache','')
     self.add_opt('url-type','file')
 
-    self.add_condor_cmd('environment',
-      """LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH);PYTHONPATH=$ENV(PYTHONPATH);LSC_DATAFIND_SERVER=$ENV(LSC_DATAFIND_SERVER);X509_USER_CERT=$ENV(X509_USER_CERT);X509_USER_KEY=$ENV(X509_USER_KEY)""" )
+    self.add_condor_cmd('getenv','True')
 
     self.set_stderr_file(log_dir + '/datafind-$(macroobservatory)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_stdout_file(self.__cache_dir + '/$(macroobservatory)-$(macrogpsstarttime)-$(macrogpsendtime).cache')
