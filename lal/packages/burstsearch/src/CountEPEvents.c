@@ -115,7 +115,19 @@ LALTFTileToBurstEvent (
     (event->deltaT);
   burstEvent->amplitude        = event->excessPower;
   burstEvent->excessPower      = event->excessPower;
-  burstEvent->confidence       = event->alpha;
+
+  /* report log(confidence) to avoid problems with REAL4's */
+  /* changement by Stefan Ballmer and Erik Katsavounidis, 9/16/2002 */
+  if(event->alpha<0) {
+      burstEvent->confidence     =   LAL_REAL4_MAX;
+  } else {
+      if(event->alpha==0) {
+          burstEvent->confidence   = - LAL_REAL4_MAX;
+      } else {
+          burstEvent->confidence   =   log(event->alpha);
+      }
+  }
+  /* end of Stefan's changement */
 
   /* normal exit */
   DETATCHSTATUSPTR (status);

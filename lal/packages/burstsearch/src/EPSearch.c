@@ -92,9 +92,11 @@ EPSearch (
       ASSERT(ptr, status, EPSEARCHH_EMALLOC, EPSEARCHH_MSGEMALLOC);
 
       /* zero out memory array */
-      for (j = 0; j < flength; j++)
-      for (i = 0; i < numSegs; i++)
-        {ptr[i * flength + j] = 0.0;}
+      for (j = 0; j < flength; j++){
+          for (i = 0; i < numSegs; i++){
+              ptr[i * flength + j] = 0.0;
+          }
+      }
 
       /* obtain power spectrum in each time slice */
       for (i = 0; i < numSegs; i++)
