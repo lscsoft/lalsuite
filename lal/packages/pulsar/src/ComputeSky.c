@@ -96,13 +96,13 @@ ASSERT((*(params->funcName))!=NULL, status, COMPUTESKYH_ENNUL, COMPUTESKYH_MSGEN
 /* calculation of Barycenter.c parameters */
 		t0=(REAL8)params->tGPS[0].gpsSeconds*1.0+(REAL8)params->tGPS[0].gpsNanoSeconds*1.0E-9;
 	
-	(*(params->funcName))(params->skyPos[iSkyCoh], params->skyPos[iSkyCoh+1], t0, &tB0, &tDot, params->sw);
+	(*(params->funcName))(params->skyPos[iSkyCoh], params->skyPos[iSkyCoh+1], t0, &tB0, &tDot);
 	
 	for (n=0; n<params->mObsSFT; n++) 
 	{
 		t=(REAL8)(params->tGPS[n].gpsSeconds)+(REAL8)(params->tGPS[n].gpsNanoSeconds)*1.0E-9+0.5*params->tSFT; 
 	
-		(*(params->funcName))(params->skyPos[iSkyCoh], params->skyPos[iSkyCoh+1], t, &tBary, &tDot, params->sw);
+		(*(params->funcName))(params->skyPos[iSkyCoh], params->skyPos[iSkyCoh+1], t, &tBary, &tDot);
 		
 		dTbary = tBary-tB0;		
 
