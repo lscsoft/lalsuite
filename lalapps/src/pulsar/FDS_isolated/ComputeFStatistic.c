@@ -81,7 +81,7 @@ BOOLEAN FILE_FSTATS = 1;
 #endif
 
 #ifndef BOINC_APP_GRAPHICS_LIB
-#define BOINC_APP_GRAPHICS_LIB "cfsBOINC.so"
+#define BOINC_APP_GRAPHICS_LIB "./libcfsBOINC.so"
 #endif
 
 /* Boinc diag constants */
@@ -2950,12 +2950,17 @@ int main(int argc, char *argv[]){
      boinc_api functions are used */
 #if BOINC_GRAPHICS == 2
   {
-	  void *handle = dlopen(BOINC_APP_GRAPHICS_LIB,  RTLD_LAZY);
-	  if(handle != NULL) {
-        set_search_pos_hook      = dlsym(handle,"set_search_pos");
-        fraction_done_hook       = dlsym(handle,"fraction_done");
-        boinc_init_graphics_hook = dlsym(handle,"boinc_init_graphics");
+    void *handle = dlopen(BOINC_APP_GRAPHICS_LIB,  RTLD_NOW);
+    if(handle != NULL) {
+      set_search_pos_hook      = dlsym(handle,"set_search_pos");
+      fraction_done_hook       = dlsym(handle,"fraction_done");
+      boinc_init_graphics_hook = dlsym(handle,"boinc_init_graphics");
+    }
+    else
+      {
+	LALPrintError ("dlopen() failed: dlerror = %s\n", dlerror());
       }
+    
   }
 #endif
 #if BOINC_GRAPHICS
