@@ -365,6 +365,54 @@ LALStochasticCrossCorrelationSpectrum(
 
 /********************************************************** <lalLaTeX>
 
+\subsubsection*{\texttt{struct SZeroPadAndFFTParameters}}
+\idx[Type]{SZeroPadAndFFTParameters}
+
+\noindent 
+Contains the parameters of \texttt{LALSZeroPadAndFFT()}.
+The fields are:
+ 
+\begin{description}
+\item[\texttt{RealFFTPlan *fftPlan}]
+The FFT plan to be used by FFTW
+\item[\texttt{REAL4Vector *window}]
+The window which is to be applied to the data
+\item[\texttt{UINT4 length}]
+The length of the data after zero-padding
+\end{description}
+
+\subsubsection*{\texttt{struct CZeroPadAndFFTParameters}}
+\idx[Type]{CZeroPadAndFFTParameters}
+
+\noindent 
+Contains the parameters of \texttt{LALCZeroPadAndFFT()}.
+The fields are:
+ 
+\begin{description}
+\item[\texttt{ComplexFFTPlan *fftPlan}]
+The FFT plan to be used by FFTW
+\item[\texttt{REAL4Vector *window}]
+The window which is to be applied to the data
+\item[\texttt{UINT4 length}]
+The length of the data after zero-padding
+\end{description}
+
+*********************************************************** </lalLaTeX> */
+
+typedef struct tagSZeroPadAndFFTParameters {
+  RealFFTPlan           *fftPlan;
+  REAL4Vector           *window;
+  UINT4                  length;
+} SZeroPadAndFFTParameters;
+
+typedef struct tagCZeroPadAndFFTParameters {
+  ComplexFFTPlan        *fftPlan;
+  REAL4Vector           *window;
+  UINT4                  length;
+} CZeroPadAndFFTParameters;
+
+/********************************************************** <lalLaTeX>
+
 \subsubsection*{Prototypes associated with 
   \texttt{ZeroPadAndFFT.c}
   (Sec.~\ref{stochastic:ss:ZeroPadAndFFT.c})}
@@ -381,13 +429,13 @@ void
 LALSZeroPadAndFFT(LALStatus                *status, 
                   COMPLEX8FrequencySeries  *output, 
                   const REAL4TimeSeries    *input, 
-                  RealFFTPlan              *fftPlan);
+                  SZeroPadAndFFTParameters *parameters);
 
 void 
 LALCZeroPadAndFFT(LALStatus                *status, 
                   COMPLEX8FrequencySeries  *output, 
                   const COMPLEX8TimeSeries *input, 
-                  ComplexFFTPlan           *fftPlan);
+                  CZeroPadAndFFTParameters *parameters);
 
 /********** </lalVerbatim> *********/
 
@@ -545,6 +593,10 @@ The fields are:
 The reference frequency used in defining the normalization.
 \item[\texttt{BOOLEAN heterodyned}]
 Indicates whether the filter is to be used on heterodyned data or not.
+\item[\texttt{REAL4Vector window1}]
+The windowing function with which the first data stream was windowed
+\item[\texttt{REAL4Vector window2}]
+The windowing function with which the second data stream was windowed
 \end{description}
 
 *********************************************************** </lalLaTeX> */
@@ -552,6 +604,8 @@ Indicates whether the filter is to be used on heterodyned data or not.
 typedef struct tagStochasticOptimalFilterNormalizationParameters {
   REAL8               fRef;
   BOOLEAN             heterodyned;
+  REAL4Vector         window1;
+  REAL4Vector         window2;
 } StochasticOptimalFilterNormalizationParameters;
 
 /********** <lalVerbatim file="StochasticCrossCorrelationHPON"> *********/

@@ -23,12 +23,13 @@ length as the optimal filter via
 \begin{equation}
 \bar{h}[k]=\ 
 \left\{ \begin{array}{cl} 
-h[k]  &    k = 0, 1, \cdots, N-1 \\ 
+w[k] h[k]  &    k = 0, 1, \cdots, N-1 \\ 
 0     &    k = -1, -2, \cdots, -(N-1) 
 \end{array} 
 \right. 
 \end{equation} 
 %
+(where $w[k]$ is a windowing function)
 before being Fourier transformed via
 \begin{equation}
 \widetilde{h}[\ell] := \sum_{\ell=-(N-1)}^{N-1} 
@@ -64,7 +65,6 @@ transform from the \texttt{fft} package.
 LALSCreateVector()
 LALSDestroyVector()
 LALTimeFreqRealFFT()
-memcpy()
 memset()
 strncpy()
 \end{verbatim}
@@ -75,7 +75,6 @@ strncpy()
 LALCCreateVector()
 LALCDestroyVector()
 LALTimeFreqComplexFFT()
-memcpy()
 memset()
 strncpy()
 \end{verbatim}
@@ -138,15 +137,17 @@ void
 LALSZeroPadAndFFT(LALStatus                *status, 
                   COMPLEX8FrequencySeries  *output, 
                   const REAL4TimeSeries    *input, 
-                  RealFFTPlan              *fftPlan)
+                  SZeroPadAndFFTParameters *parameters)
 /* </lalVerbatim> */
 {
 
-  UINT4          length, fullLength; /* fullLength = 2 * length - 1 */
+  UINT4            length, fullLength;
 
-  REAL8         deltaT;
+  REAL8            deltaT;
 
   REAL4TimeSeries  hBar;
+
+  REAL4           *sPtr, *sStopPtr, *hBarPtr, *windowPtr;
 
   /* initialize status structure */
   INITSTATUS(status, "LALSZeroPadAndFFT", ZEROPADANDFFTC);
@@ -178,20 +179,41 @@ LALSZeroPadAndFFT(LALStatus                *status,
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* check that pointer to FFT plan variable is non-null */
-  ASSERT(fftPlan != NULL, status, 
+  /* check that pointer to parameter structure is non-null */
+  ASSERT(parameters != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* check that length of FFT plan is correct */
-  fullLength = 2 * length - 1;
-  /* OMITTED -- JC
-  if (fullLength != fftPlan->size) {
+  /* check that pointer to FFT plan parameter is non-null */
+  ASSERT(parameters->fftPlan != NULL, status, 
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  /* check that pointer to window function is non-null */
+  ASSERT(parameters->window != NULL, status, 
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  /* check that pointer to data member of window function is non-null */
+  ASSERT(parameters->window->data != NULL, status, 
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  /* check that window function is same length as input time series */
+  if ( parameters->window->length != length ) {
     ABORT(  status,
          STOCHASTICCROSSCORRELATIONH_EMMLEN,
          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
-  */
+
+  /* check that zero-padded output is not shorter than input */
+  fullLength = parameters->length;
+
+  if (fullLength < length) {
+    ABORT(  status,
+         STOCHASTICCROSSCORRELATIONH_EMMLEN,
+         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+  }
 
   /* check that pointer to complex frequency series for output is non-null */
   ASSERT(output != NULL, status, 
@@ -204,9 +226,9 @@ LALSZeroPadAndFFT(LALStatus                *status,
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* check that lengths of data member of real time series for input 
-     and data member of complex frequency series for output are equal */
-  if(length != output->data->length)
+  /* check that length of complex frequency series for output
+     is consistent with length of zero-padded input */
+  if ( fullLength/2 + 1 != output->data->length )
   {
     ABORT(  status,
          STOCHASTICCROSSCORRELATIONH_EMMLEN,
@@ -243,14 +265,21 @@ LALSZeroPadAndFFT(LALStatus                *status,
   /* allocate memory for zero-padded vector */
   TRY(LALSCreateVector(status->statusPtr, &(hBar.data), fullLength), status);
 
-  /* copy data */
-  memcpy(hBar.data->data, input->data->data, length*sizeof(REAL4));
+  /* window data */
+  sStopPtr = input->data->data + input->data->length;
+  for ( sPtr = input->data->data, hBarPtr = hBar.data->data,
+	  windowPtr = parameters->window->data ;
+	sPtr < sStopPtr ;
+	++sPtr, ++hBarPtr, ++windowPtr )
+  {
+    *(hBarPtr) = *(sPtr) * *(windowPtr);
+  }
 
   /* zero pad */
   memset(hBar.data->data + length, 0, (fullLength - length)*sizeof(REAL4));
     
   /* take DFT */
-  LALTimeFreqRealFFT(status->statusPtr, output, &hBar, fftPlan);
+  LALTimeFreqRealFFT(status->statusPtr, output, &hBar, parameters->fftPlan);
   /* Can't use TRY because we have memory allocated */
   BEGINFAIL( status ) 
     TRY(LALSDestroyVector(status->statusPtr, &(hBar.data)), status);
@@ -274,15 +303,18 @@ void
 LALCZeroPadAndFFT(LALStatus                *status, 
                   COMPLEX8FrequencySeries  *output, 
                   const COMPLEX8TimeSeries *input, 
-                  ComplexFFTPlan           *fftPlan)
+                  CZeroPadAndFFTParameters *parameters)
 /* </lalVerbatim> */
 {
 
-  UINT4          length, fullLength; /* fullLength = 2 * length - 1 */
+  UINT4               length, fullLength;
 
-  REAL8         deltaT;
+  REAL8               deltaT;
 
   COMPLEX8TimeSeries  hBar;
+
+  COMPLEX8           *cPtr, *cStopPtr, *hBarPtr;
+  REAL4              *windowPtr;
 
   /* initialize status structure */
   INITSTATUS(status, "LALCZeroPadAndFFT", ZEROPADANDFFTC);
@@ -290,7 +322,7 @@ LALCZeroPadAndFFT(LALStatus                *status,
 
   /* ERROR CHECKING --------------------------------------------------- */
 
-  /* check that pointer to real timer series for input is non-null */
+  /* check that pointer to real time series for input is non-null */
   ASSERT(input != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
@@ -314,20 +346,42 @@ LALCZeroPadAndFFT(LALStatus                *status,
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* check that pointer to FFT plan variable is non-null */
-  ASSERT(fftPlan != NULL, status, 
+
+  /* check that pointer to parameter structure is non-null */
+  ASSERT(parameters != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* check that length of FFT plan is correct */
-  fullLength = 2 * length - 1;
-  /* OMITTED -- JC
-  if (fullLength != fftPlan->size) {
+  /* check that pointer to FFT plan parameter is non-null */
+  ASSERT(parameters->fftPlan != NULL, status, 
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  /* check that pointer to window function is non-null */
+  ASSERT(parameters->window != NULL, status, 
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  /* check that pointer to data member of window function is non-null */
+  ASSERT(parameters->window->data != NULL, status, 
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  /* check that window function is same length as input time series */
+  if ( parameters->window->length != length ) {
     ABORT(  status,
          STOCHASTICCROSSCORRELATIONH_EMMLEN,
          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
-  */
+
+  /* check that zero-padded output is not shorter than input */
+  fullLength = parameters->length;
+
+  if (fullLength < length) {
+    ABORT(  status,
+         STOCHASTICCROSSCORRELATIONH_EMMLEN,
+         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+  }
 
   /* check that pointer to complex frequency series for output is non-null */
   ASSERT(output != NULL, status, 
@@ -340,9 +394,9 @@ LALCZeroPadAndFFT(LALStatus                *status,
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* check that lengths of data member of zero-padded time series
-     and data member of complex frequency series for output are equal */
-  if(fullLength != output->data->length)
+  /* check that length of complex frequency series for output
+     is consistent with length of zero-padded input */
+  if ( fullLength != output->data->length )
   {
     ABORT(  status,
          STOCHASTICCROSSCORRELATIONH_EMMLEN,
@@ -371,14 +425,22 @@ LALCZeroPadAndFFT(LALStatus                *status,
   /* allocate memory for zero-padded vector */
   TRY(LALCCreateVector(status->statusPtr, &(hBar.data), fullLength), status);
 
-  /* copy data */
-  memcpy(hBar.data->data, input->data->data, length*sizeof(COMPLEX8));
+  /* window data */
+  cStopPtr = input->data->data + input->data->length;
+  for ( cPtr = input->data->data, hBarPtr = hBar.data->data,
+	  windowPtr = parameters->window->data ;
+	cPtr < cStopPtr ;
+	++cPtr, ++hBarPtr, ++windowPtr )
+  {
+    hBarPtr->re = cPtr->re * *(windowPtr);
+    hBarPtr->im = cPtr->im * *(windowPtr);
+  }
 
   /* zero pad */
   memset(hBar.data->data + length, 0, (fullLength - length)*sizeof(COMPLEX8));
-    
+
   /* take DFT */
-  LALTimeFreqComplexFFT(status->statusPtr, output, &hBar, fftPlan);
+  LALTimeFreqComplexFFT(status->statusPtr, output, &hBar, parameters->fftPlan);
   /* Can't use TRY because we have memory allocated */
   BEGINFAIL( status ) 
     TRY(LALCDestroyVector(status->statusPtr, &(hBar.data)), status);

@@ -37,7 +37,10 @@ the corresponding checks in the code are made using the ASSERT macro):
 \begin{itemize}
 \item \textit{null pointer to output series}
 \item \textit{null pointer to input series}
-\item \textit{null pointer to plan parameter}
+\item \textit{null pointer to parameter structure}
+\item \textit{null pointer to FFT plan}
+\item \textit{null pointer to window function}
+\item \textit{null pointer to data member of window function}
 \item \textit{null pointer to data member of output series}
 \item \textit{null pointer to data member of input series}
 \item \textit{null pointer to data member of optimal filter}
@@ -46,8 +49,9 @@ the corresponding checks in the code are made using the ASSERT macro):
 \item \textit{zero length}
 \item \textit{negative time spacing}
 \item \textit{zero time spacing}
-\item length mismatch between input series and output series
-% \item length mismatch between input series and plan parameter
+\item length mismatch between input series and window function
+\item length mismatch between output series and zero-padded data
+\item output series shorter than input series
 \end{itemize}
 
 It then verifies that the correct frequency series\footnote{The values
@@ -105,6 +109,7 @@ fabs()
 ******************************************************* </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
+#include <lal/Window.h>
 
 #include <math.h>
 #include <string.h>
@@ -208,14 +213,44 @@ main( int argc, char *argv[] )
 	 {+3.090169943749475e-01, +4.306254604896173e+00},
 	 {+2.208174802380956e-01, -4.325962305777781e+00} };
 
-   ComplexFFTPlan                *plan = NULL;
    COMPLEX8TimeSeries             goodInput, badInput;
-   COMPLEX8FrequencySeries     goodOutput, badOutput;
+   COMPLEX8FrequencySeries        goodOutput, badOutput;
 
    BOOLEAN                result;
    LALUnitPair            unitPair;
    LALUnit                expectedUnit;
    CHARVector             *unitString;
+
+   CZeroPadAndFFTParameters   goodParams, badParams;
+   LALWindowParams    windowParams;
+
+   goodParams.window = NULL;
+   goodParams.fftPlan = NULL;
+   goodParams.length = CZEROPADANDFFTTESTC_FULLLENGTH;
+
+   windowParams.length = CZEROPADANDFFTTESTC_LENGTH;
+   windowParams.type = Rectangular;
+
+   /* build window */ 
+   LALSCreateVector(&status, &(goodParams.window), CZEROPADANDFFTTESTC_LENGTH);
+   if ( ( code = CheckStatus( &status, 0 , "", 
+			      CZEROPADANDFFTTESTC_EFLS,
+			      CZEROPADANDFFTTESTC_MSGEFLS ) ) )
+   {
+     return code;
+   }
+
+   LALWindow(&status, goodParams.window, &windowParams);
+   if ( ( code = CheckStatus( &status, 0 , "", 
+			      CZEROPADANDFFTTESTC_EFLS,
+			      CZEROPADANDFFTTESTC_MSGEFLS ) ) )
+   {
+     return code;
+   }
+
+   badParams = goodParams;
+
+   /* Fill in expected output */
 
    for (i=0; i<CZEROPADANDFFTTESTC_FULLLENGTH; ++i)
    {
@@ -239,7 +274,7 @@ main( int argc, char *argv[] )
    badOutput = goodOutput;
 
    /* construct plan */ 
-   LALCreateForwardComplexFFTPlan(&status, &plan, 
+   LALCreateForwardComplexFFTPlan(&status, &(goodParams.fftPlan), 
 				  CZEROPADANDFFTTESTC_FULLLENGTH,
 				  CZEROPADANDFFTTESTC_FALSE);
    if ( ( code = CheckStatus( &status, 0 , "", 
@@ -269,7 +304,7 @@ main( int argc, char *argv[] )
    if ( ! lalNoDebug )
    {
      /* test behavior for null pointer to output series */
-     LALCZeroPadAndFFT(&status, NULL, &goodInput, plan);
+     LALCZeroPadAndFFT(&status, NULL, &goodInput, &goodParams);
      if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
 			       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			       CZEROPADANDFFTTESTC_ECHK,
@@ -280,7 +315,7 @@ main( int argc, char *argv[] )
      printf("  PASS: null pointer to output series results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
      /* test behavior for null pointer to input series */
-     LALCZeroPadAndFFT(&status, &goodOutput, NULL, plan);
+     LALCZeroPadAndFFT(&status, &goodOutput, NULL, &goodParams);
      if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
 			       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			       CZEROPADANDFFTTESTC_ECHK,
@@ -290,19 +325,45 @@ main( int argc, char *argv[] )
      }
      printf("  PASS: null pointer to input series results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
    
-     /* test behavior for null pointer to plan parameter */
+     /* test behavior for null pointer to parameter structure */
      LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, NULL);
-     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-			       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-			       CZEROPADANDFFTTESTC_ECHK,
-			       CZEROPADANDFFTTESTC_MSGECHK ) ) )
+     if ( ( code = CheckStatus( &status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+				STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+				CZEROPADANDFFTTESTC_ECHK,
+				CZEROPADANDFFTTESTC_MSGECHK ) ) )
      {
        return code;
      }
-     printf("  PASS: null pointer to plan parameter results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+     printf("  PASS: null pointer to parameter structure results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+     /* test behavior for null pointer to FFT plan */
+     badParams.fftPlan = NULL;
+     LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, &badParams);
+     if ( ( code = CheckStatus( &status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+				STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+				CZEROPADANDFFTTESTC_ECHK,
+				CZEROPADANDFFTTESTC_MSGECHK ) ) )
+     {
+       return code;
+     }
+     printf("  PASS: null pointer to FFT plan results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+     badParams.fftPlan = goodParams.fftPlan;
+
+     /* test behavior for null pointer to window function */
+     badParams.window = NULL;
+     LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, &badParams);
+     if ( ( code = CheckStatus( &status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+				STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+				CZEROPADANDFFTTESTC_ECHK,
+				CZEROPADANDFFTTESTC_MSGECHK ) ) )
+     {
+       return code;
+     }
+     printf("  PASS: null pointer to window function results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+     badParams.window = goodParams.window;
    
      /* test behavior for null pointer to data member of output series */
-     LALCZeroPadAndFFT(&status, &badOutput, &goodInput, plan);
+     LALCZeroPadAndFFT(&status, &badOutput, &goodInput, &goodParams);
      if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
 			       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			       CZEROPADANDFFTTESTC_ECHK,
@@ -313,7 +374,7 @@ main( int argc, char *argv[] )
      printf("  PASS: null pointer to data member of output series results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
      /* test behavior for null pointer to data member of input series */
-     LALCZeroPadAndFFT(&status, &goodOutput, &badInput, plan);
+     LALCZeroPadAndFFT(&status, &goodOutput, &badInput, &goodParams);
      if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
 			       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			       CZEROPADANDFFTTESTC_ECHK,
@@ -334,7 +395,7 @@ main( int argc, char *argv[] )
      }
      cPtr = badOutput.data->data;
      badOutput.data->data = NULL;
-     LALCZeroPadAndFFT(&status, &badOutput, &goodInput, plan);
+     LALCZeroPadAndFFT(&status, &badOutput, &goodInput, &goodParams);
      if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
 			       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			       CZEROPADANDFFTTESTC_ECHK,
@@ -362,7 +423,7 @@ main( int argc, char *argv[] )
      }
      cPtr = badInput.data->data;
      badInput.data->data = NULL;
-     LALCZeroPadAndFFT(&status, &goodOutput, &badInput, plan);
+     LALCZeroPadAndFFT(&status, &goodOutput, &badInput, &goodParams);
      if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
 			       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			       CZEROPADANDFFTTESTC_ECHK,
@@ -383,7 +444,7 @@ main( int argc, char *argv[] )
      /* test behavior for zero length */
      goodInput.data->length = goodOutput.data->length = 0;
      /* plan->size = -1; */
-     LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, plan);
+     LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, &goodParams);
      if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EZEROLEN,
 			       STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN,
 			       CZEROPADANDFFTTESTC_ECHK,
@@ -401,7 +462,7 @@ main( int argc, char *argv[] )
 
      /* test behavior for negative time spacing */
      goodInput.deltaT = -CZEROPADANDFFTTESTC_DELTAT;
-     LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, plan);
+     LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, &goodParams);
      if ( ( code = CheckStatus(&status,
 			       STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAT,
 			       STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAT,
@@ -415,7 +476,7 @@ main( int argc, char *argv[] )
     
      /* test behavior for zero time spacing */
      goodInput.deltaT = 0;
-     LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, plan);
+     LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, &goodParams);
      if ( ( code = CheckStatus(&status,
 			       STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAT,
 			       STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAT,
@@ -434,7 +495,7 @@ main( int argc, char *argv[] )
 
    /* test behavior for length mismatch between input series and output series */
    goodOutput.data->length = CZEROPADANDFFTTESTC_LENGTH;
-   LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, plan);
+   LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, &goodParams);
    if ( ( code = CheckStatus(&status,
 			     STOCHASTICCROSSCORRELATIONH_EMMLEN,
 			     STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
@@ -461,7 +522,7 @@ main( int argc, char *argv[] )
    }
 
    /* zero-pad and FFT */
-   LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, plan);
+   LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, &goodParams);
    if ( ( code = CheckStatus( &status, 0 , "", 
 			    CZEROPADANDFFTTESTC_EFLS,
 			      CZEROPADANDFFTTESTC_MSGEFLS) ) )
@@ -627,10 +688,17 @@ main( int argc, char *argv[] )
    {
      return code;
    }
-   LALDestroyComplexFFTPlan(&status, &plan);
+   LALDestroyComplexFFTPlan(&status, &(goodParams.fftPlan));
    if ( ( code = CheckStatus(&status, 0 , "",
 			     CZEROPADANDFFTTESTC_EFLS,
 			     CZEROPADANDFFTTESTC_MSGEFLS) ) )
+   {
+     return code;
+   }
+   LALSDestroyVector(&status, &(goodParams.window));
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       CZEROPADANDFFTTESTC_EFLS,
+			       CZEROPADANDFFTTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -643,7 +711,7 @@ main( int argc, char *argv[] )
 
    if (optInputFile[0] && optOutputFile[0]){ 
      /* construct plan*/ 
-     LALCreateForwardComplexFFTPlan(&status, &plan, 2*optLength - 1,
+     LALCreateForwardComplexFFTPlan(&status, &(goodParams.fftPlan), 2*optLength - 1,
 				   optMeasurePlan);
      if ( ( code = CheckStatus(&status, 0 , "",
 			       CZEROPADANDFFTTESTC_EFLS,
@@ -680,7 +748,7 @@ main( int argc, char *argv[] )
      }
      
      /* calculate zero-pad and FFT */
-     LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, plan);
+     LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, &goodParams);
      if ( ( code = CheckStatus(&status, 0 , "",
 			       CZEROPADANDFFTTESTC_EFLS,
 			       CZEROPADANDFFTTESTC_MSGEFLS) ) )
@@ -707,7 +775,7 @@ main( int argc, char *argv[] )
      {
        return code;
      }
-     LALDestroyComplexFFTPlan(&status, &plan);
+     LALDestroyComplexFFTPlan(&status, &(goodParams.fftPlan));
      if ( ( code = CheckStatus(&status, 0 , "", 
 			       CZEROPADANDFFTTESTC_EFLS,
 			       CZEROPADANDFFTTESTC_MSGEFLS) ) )

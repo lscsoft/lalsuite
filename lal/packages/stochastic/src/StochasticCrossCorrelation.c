@@ -212,7 +212,7 @@ LALUnitMultiply()
 call
 \begin{verbatim}
 LALCCreateVector()
-LALStochasticCrossCorrelationStatistic()
+LALStochasticCrossCorrelationSpectrum()
 LALCDestroyVector()
 LALUnitMultiply()
 \end{verbatim}
