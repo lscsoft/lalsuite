@@ -666,6 +666,7 @@ LALFindChirpBCVChisqVeto (
 
     LALCOMPLEX8VectorFFT( status->statusPtr, params->qBinVecPtr[l],
         params->qtildeBinVec, params->plan );
+    CHECKSTATUSPTR( status );
     LALCOMPLEX8VectorFFT( status->statusPtr, params->qBinVecPtrBCV[l],
 	params->qtildeBinVecBCV, params->plan );
     CHECKSTATUSPTR( status );
