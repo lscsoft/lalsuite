@@ -445,6 +445,10 @@ cd packages/vectorops/include
 m4 VectorIndexRangeH.m4 > VectorIndexRange.h
 cd ../../..
 
+cd packages/utilities/src
+m4 MatrixOps.m4 > MatrixOps.c
+cd ../../..
+
 cd packages/stats/src
 m4 LALMoment.m4 > LALMoment.c
 cd ../../..
