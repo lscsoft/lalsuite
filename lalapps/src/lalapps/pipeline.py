@@ -781,7 +781,7 @@ class ScienceSegment:
     time, duration) of the segment.
     """
     self.__id = segment[0]
-    self.__start = segment[2]
+    self.__start = segment[1]
     self.__end = segment[2]
     self.__dur = segment[3]
     self.__chunks = []
