@@ -93,6 +93,40 @@ NRCSID (FINDCHIRPH, "$Id$");
 </lalLaTeX>
 #endif
 
+/* --- enumeraion type for simulations ----------------------------------- */
+#pragma <lalVerbatim file="FindChirpHWaveformGenerator">
+typedef enum
+{
+  findchirpSP,
+  injectGenPPN
+}
+WaveformGenerator;
+#pragma </lalVerbatim>
+#if 0
+<lalLaTeX>
+\subsubsection*{Enumeration Type \texttt{WaveformGenerator}}
+\idx[Type]{WaveformGenerator}
+
+\input{FindChirpHWaveformGenerator}
+
+\noindent This enumaration type lists the possible methods of generating
+inspiral waveforms. The types in the enum should be of the form 
+\texttt{packagenameGenType}, where \texttt{packagename} is the name of the
+LAL package that the particular waveform generator resides and \texttt{GenType}
+is a unique identifier for that waveform generator.  The choices are:
+
+\begin{description} 
+\item[\texttt{findchirpSP}] The \texttt{findchirp} built in stationary phase
+waveform generator.
+
+\item[\texttt{injectGenPPN}] The \texttt{LALGeneratePPNInspiral()} function
+from the \texttt{inject} package.
+
+\item[\texttt{fctFCT}] The \texttt{fct} algorithm was used to find the chirp.
+\end{description}
+</lalLaTeX>
+#endif
+  
 
 /*
  *
@@ -106,7 +140,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 \subsubsection*{Input and output data structures}
 </lalLaTeX>
 #endif
-  
+
 /* --- structure for describing a binary insipral event ------------------ */
 #pragma <lalVerbatim file="FindChirpHInspiralEvent">
 typedef struct
@@ -121,7 +155,9 @@ tagInspiralEvent
   REAL4                         chisq;
   REAL4                         sigma;
   REAL4                         effDist;
+  REAL4                         coaPhase;
   CHAR                          ifoName[2];
+  WaveformGenerator             wavGen;
   struct tagInspiralEvent      *next;
 }
 InspiralEvent;
@@ -161,6 +197,10 @@ for the event.
 
 \item[\texttt{REAL4 effDist}] The effective distance in megaparsecs to the
 event.
+
+\item[\texttt{REAL4 coaPhase}] The coalescence phase of the chirp.
+
+\item[\texttt{WaveformGenerator wavGen}] The particular waveform generator that was used in the matched filter for this chirp.
 
 \item[\texttt{CHAR ifoName[2]}] Array for storing the two character
 interferometer name (e.g. L1, H2, etc.)
