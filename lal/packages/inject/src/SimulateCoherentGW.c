@@ -47,19 +47,19 @@ specified in \verb@*signal@.  Values of the propagation delay are
 precomuted at fixed intervals and stored in a table, with the
 intervals $\Delta T_\mathrm{delay}$ chosen such that the value
 interpolated from adjacent table entries will never differ from the
-true value by more than $0.1/f_\mathrm{max}$, where
-$f_\mathrm{max}=$\verb@output->f0@+1/\verb@output->deltaT@ is the
-highest signal frequency that can be reasonably represented in the
-output time series.  This implies that:
+true value by more than some timing error $\sigma_T$.  This implies
+that:
 $$
 \Delta T_\mathrm{delay} \leq \sqrt{
-	\frac{0.8}{\max\{a/c\}\times f_\mathrm{max}} } \; ,
+	\frac{8\sigma_T}{\max\{a/c\}} } \; ,
 $$
 where $\max\{a/c\}=1.32\times10^{-10}\mathrm{s}^{-1}$ is the maximum
 acceleration of an Earth-based detector in the barycentric frame.  The
 total propagation delay also includes Einstein and Shapiro delay, but
 these are more slowly varying and thus do not constrain the table
-spacing.
+spacing.  At present, a 400s table spacing is hardwired into the code,
+implying $\sigma_T\approx3\mu$s, comparable to the stated accuracy of
+\verb@LALBarycenter()@.
 
 Next, the polarization response functions of the detector
 $F_{+,\times}(\alpha,\delta)$ are computed for every 10~minutes of the
@@ -181,7 +181,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
   INT4 nMax;          /* used to store limits on index ranges */
   INT4 fInit, fFinal; /* index range for which signal->f is defined */
   INT4 shiftInit, shiftFinal; /* ditto for signal->shift */
-  UINT4 dtDelayBy2;           /* delay table half-interval (s) */
+  UINT4 dtDelayBy2 = 200;     /* delay table half-interval (s) */
   UINT4 dtPolBy2 = 300;       /* polarization table half-interval (s) */
   REAL4 *outData;             /* pointer to output data */
   REAL8 delayMin, delayMax;   /* min and max values of time delay */
@@ -383,10 +383,9 @@ LALSimulateCoherentGW( LALStatus        *stat,
     }
   } 
 
-  /* Generate the table of propagation delays. */
+  /* Generate the table of propagation delays.
   dtDelayBy2 = (UINT4)( 38924.9/sqrt( output->f0 +
-				      1.0/output->deltaT ) );
-
+				      1.0/output->deltaT ) ); */
   delayDt = output->deltaT/( 2.0*dtDelayBy2 );
   nMax = (UINT4)( output->data->length*delayDt ) + 3;
   TRY( LALDCreateVector( stat->statusPtr, &delay, nMax ), stat );
