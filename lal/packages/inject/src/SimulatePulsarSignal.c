@@ -8,6 +8,7 @@ $Id$
 \label{ss:SimulatePulsarSignal.c}
 
 Routines to simulate pulsar-signals "exactly".
+UNDER CONSTRUCTION. NOT USEABLE YET!
 
 \subsubsection*{Prototypes}
 
@@ -110,6 +111,8 @@ extern INT4 lalDebugLevel;
 #define TRUE  (1==1)
 #define FALSE (1==0)
 
+#define oneBillion 1000000000L
+
 
 
 /*--------------------------------------------------------------------------------
@@ -117,9 +120,11 @@ extern INT4 lalDebugLevel;
  *--------------------------------------------------------------------------------*/
 /* <lalVerbatim file="SimulatePulsarSignalCP"> */
 void
-LALSimulatePulsarSignal (LALStatus *stat, REAL8TimeSeries **timeSeries, const PulsarSignalParams *params)
+LALSimulatePulsarSignal (LALStatus *stat, 
+			 REAL8TimeSeries **timeSeries, 
+			 const PulsarSignalParams *params)
 { /* </lalVerbatim> */
-  REAL8 LMST;	/* local mean sidereal time */
+  REAL8 LMST;		/* local mean sidereal time */
   LALPlaceAndGPS place_and_gps;
   LALMSTUnitsAndAcc units_and_acc;
   LALDate date;
@@ -129,9 +134,11 @@ LALSimulatePulsarSignal (LALStatus *stat, REAL8TimeSeries **timeSeries, const Pu
   REAL8 Zeta;
   REAL8 SinZetaCos2Psi, SinZetaSin2Psi;
   REAL8 gamma, alphaBi, alphaEast, xAzi, yAzi;
-  REAL8 AlphaMinusT;
   LALFrDetector *det = &(params->site->frDetector);
   REAL8 lambda, delta, alpha;
+  UINT4 i, Nsteps;	/* time-counter, number of steps */
+  INT4 step_ns;	/* stepsize delta t in nanoseconds */
+  LIGOTimeGPS t_i; /* time-step t_i */
 
   INITSTATUS( stat, "LALSimulatePulsarSignal", SIMULATEPULSARSIGNALC );
   ATTATCHSTATUSPTR(stat);
@@ -164,13 +171,43 @@ LALSimulatePulsarSignal (LALStatus *stat, REAL8TimeSeries **timeSeries, const Pu
   a5 = (3.0/4.0)  * sin(2.0 * gamma) * cos(lambda)*cos(lambda) * cos(delta)*cos(delta);
 
 
-  place_and_gps.p_detector = params->site;
-  place_and_gps.p_gps = &(params->startTimeGPS);
+  b1 =            cos(2.0*gamma) * sin(lambda) * sin(delta);
+  b2 = (1.0/4.0)* sin(2.0*gamma) * (3.0- cos(2.0*lambda)) * sin(delta);
+  b3 =            cos(2.0*gamma) * cos(lambda) * cos(delta);
+  b4 = (1.0/2.0)* sin(2.0*gamma) * sin(2.0*lambda) * cos(delta);
 
+
+  /* get stepsize delta t */
+  step_ns = (INT4)( (1.0/params->samplingRate) * oneBillion + 0.5 );	/* round to ns */
+
+  Nsteps = (UINT4)( 1.0 * params->duration * params->samplingRate);
+  t_i = params->startTimeGPS;
+
+  place_and_gps.p_detector = params->site;
   units_and_acc.accuracy = LALLEAPSEC_STRICT;
   units_and_acc.units =   MST_RAD;	/* return LMST in radians */
 
-  TRY (LALGPStoLMST1(stat->statusPtr, &LMST, &place_and_gps, &units_and_acc), stat);
+
+  /* main loop: generate time-series */
+  for (i=0; i < Nsteps; i++)
+    {
+      REAL8 AlphaMinusT;
+      REAL8 cos2amT, sin2amT, cosamT, sinamT;
+
+      place_and_gps.p_gps = &t_i;
+
+      TRY (LALGPStoLMST1(stat->statusPtr, &LMST, &place_and_gps, &units_and_acc), stat);
+
+      AlphaMinusT = params->pulsar.position.longitude - LMST;
+      cos2amT = cos (2.0*AlphaMinusT);
+      sin2amT = sin (2.0*AlphaMinusT);
+      cosamT =  cos (AlphaMinusT);
+      sinamT =  sin (AlphaMinusT);
+
+
+    } /* for i < Nsteps */
+
+
 
   
 
