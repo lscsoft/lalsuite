@@ -15,6 +15,7 @@ $Id$
 #include <lal/FrequencySeries.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
+#include <lal/LALErrno.h>
 #include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/LIGOMetadataTables.h>
@@ -118,6 +119,41 @@ static void ComputeAverageSpectrum(
  * Convert a linked list of tiles to a linked list of burst events.
  */
 
+static SnglBurstTable *TFTileToBurstEvent(
+	TFTile *tile,
+	LIGOTimeGPS *epoch,
+	EPSearchParams *params  
+)
+{
+	SnglBurstTable *event = LALMalloc(sizeof(*event));
+
+	event->next = NULL;
+	strncpy(event->ifo, params->channelName, 2);
+	event->ifo[2] = '\0';
+	strncpy(event->search, "power", LIGOMETA_SEARCH_MAX);
+	strncpy(event->channel, params->channelName, LIGOMETA_CHANNEL_MAX);
+
+	event->start_time = XLALAddFloatToGPS(*epoch, tile->tstart * tile->deltaT);
+	event->duration = (tile->tend - tile->tstart + 1) * tile->deltaT;
+	event->peak_time = XLALAddFloatToGPS(event->start_time, 0.5 * event->duration);
+	event->bandwidth = (tile->fend - tile->fstart + 1) / tile->deltaT;
+	event->central_freq = params->tfTilingInput->flow + tile->fstart/tile->deltaT + (0.5 * event->bandwidth);
+	event->amplitude = tile->excessPower;
+	event->snr = tile->excessPower;
+
+	if(tile->alpha < 0)
+		event->confidence =  LAL_REAL4_MAX;
+	else if(tile->alpha == 0)
+		event->confidence = -LAL_REAL4_MAX;
+	else
+		event->confidence =  log(tile->alpha);
+
+	event->event_id = NULL;
+
+	return(event);
+}
+
+
 static SnglBurstTable **TFTilesToSnglBurstTable(LALStatus *status, TFTile *tile, SnglBurstTable **event, LIGOTimeGPS *epoch, EPSearchParams *params)
 {
 	INT4 numevents;
@@ -126,10 +162,7 @@ static SnglBurstTable **TFTilesToSnglBurstTable(LALStatus *status, TFTile *tile,
 	CHECKSTATUSPTR (status);
 
 	for(numevents = 0; tile && (tile->alpha <= params->alphaThreshold/tile->weight) && (numevents < params->eventLimit); tile = tile->nextTile, numevents++) {
-		*event = LALMalloc(sizeof(**event));
-
-		LALTFTileToBurstEvent(status->statusPtr, *event, tile, epoch, params); 
-		CHECKSTATUSPTR(status);
+		*event = TFTileToBurstEvent(tile, epoch, params); 
 
 		event = &(*event)->next;
 	}

@@ -118,15 +118,6 @@ LALCountEPEvents (
                REAL8                                alphaThreshold
                );
 
-void
-LALTFTileToBurstEvent (
-               LALStatus         *status,
-               SnglBurstTable    *burstEvent,
-               TFTile            *event,
-               LIGOTimeGPS       *epoch,
-               EPSearchParams    *params
-               );
-
 #ifdef  __cplusplus
 }
 #endif  /* C++ protection. */
