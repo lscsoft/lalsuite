@@ -5,3 +5,7 @@ MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 all-local: include-link
 dvi-local: .dvi-dep
+EXTRA_DIST = VectorIndexRangeBaseH.m4 VectorIndexRangeH.m4
+
+VectorIndexRange.h: VectorIndexRangeBaseH.m4 VectorIndexRangeH.m4
+	cd $(srcdir) && m4 VectorIndexRangeH.m4 > VectorIndexRange.h
