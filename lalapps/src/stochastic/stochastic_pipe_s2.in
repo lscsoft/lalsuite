@@ -192,8 +192,8 @@ for seg in data:
     stoch.set_ifo_two(ifo2)
     stoch.set_cache_one(df1.get_output())
     stoch.set_cache_two(df2.get_output())
-    stoch.set_calibrationS2_one(ifo1,chunk.start())
-    stoch.set_calibrationS2_two(ifo2,chunk.start())
+    stoch.set_calibration_one(ifo1,chunk.start())
+    stoch.set_calibration_two(ifo2,chunk.start())
 
     if do_datafind: 
       stoch.add_parent(df1)

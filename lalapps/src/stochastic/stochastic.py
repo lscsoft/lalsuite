@@ -108,24 +108,6 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
   def set_calibration_one(self,ifo,start):
     """
-    Set the path to the calibration cache file for the given IFO.
-    """
-    cal_path = self.job().get_config('calibration','path')
-    cal_file = self.job().get_config('calibration',ifo)
-    cal = os.path.join(cal_path,cal_file)
-    self.add_var_opt('calibration-cache-one',cal)
-
-  def set_calibration_two(self,ifo,start):
-    """
-    Set the path to the calibration cache file for the given IFO.
-    """
-    cal_path = self.job().get_config('calibration','path')
-    cal_file = self.job().get_config('calibration',ifo)
-    cal = os.path.join(cal_path,cal_file)
-    self.add_var_opt('calibration-cache-two',cal)
-
-  def set_calibrationS2_one(self,ifo,start):
-    """
     Set the path to the calibration cache file for the given IFO. During
     S2, the Hanford 2km IFO had two calibration epochs, so if the start
     time is during S2, we use the correct cache file.
@@ -143,7 +125,7 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     cal = os.path.join(cal_path,cal_file)
     self.add_var_opt('calibration-cache-one',cal)
 
-  def set_calibrationS2_two(self,ifo,start):
+  def set_calibration_two(self,ifo,start):
     """
     Set the path to the calibration cache file for the given IFO. During
     S2, the Hanford 2km IFO had two calibration epochs, so if the start
