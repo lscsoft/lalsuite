@@ -29,6 +29,7 @@ LSCSOFT_PREFIX=${LSCSOFT_PREFIX:-"$HOME/opt/lscsoft"}
 LSCSOFT_INCDIR=$LSCSOFT_PREFIX/include
 LSCSOFT_LIBDIR=$LSCSOFT_PREFIX/lib
 LSCSOFT_SRCDIR=$LSCSOFT_PREFIX/src
+LSCSOFT_ETCDIR=$LSCSOFT_PREFIX/etc
 LSCSOFT_TMPDIR=$LSCSOFT_PREFIX/tmp
 #/verbatim
 
@@ -65,6 +66,7 @@ mkdir -p $LSCSOFT_PREFIX || fail
 mkdir -p $LSCSOFT_INCDIR || fail
 mkdir -p $LSCSOFT_LIBDIR || fail
 mkdir -p $LSCSOFT_SRCDIR || fail
+mkdir -p $LSCSOFT_ETCDIR || fail
 mkdir -p $LSCSOFT_TMPDIR || fail
 #/verbatim
 
@@ -124,8 +126,8 @@ make install || fail
 
 ### write environment configuration file
 #ignore
-rm -f $LSCSOFT_PREFIX/etc/lscsoft-user-env.sh || fail
-cat > $LSCSOFT_PREFIX/etc/lscsoft-user-env.sh <<\EOF
+rm -f $LSCSOFT_ETCDIR/lscsoft-user-env.sh || fail
+cat > $LSCSOFT_ETCDIR/lscsoft-user-env.sh <<\EOF
 # Source this file to set up your environment to use lscsoft software.
 # This requires that LSCSOFT_LOCATION be set.
 # LSCSOFT_PREFIX will be set by this script to save the current location
