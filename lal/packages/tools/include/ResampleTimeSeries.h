@@ -45,15 +45,19 @@ NRCSID( RESAMPLETIMESERIESH, "$Id$" );
 #define RESAMPLETIMESERIESH_EHIGH 6
 #define RESAMPLETIMESERIESH_ELOG2 7
 #define RESAMPLETIMESERIESH_EFILT 8
+#define RESAMPLETIMESERIESH_EINVD 9
+#define RESAMPLETIMESERIESH_ELDAS 10
 
-#define RESAMPLETIMESERIESH_MSGENULL "No calibration generated: Null pointer"
-#define RESAMPLETIMESERIESH_MSGENNUL "No calibration generated: Non-null pointer"
+#define RESAMPLETIMESERIESH_MSGENULL "Null pointer"
+#define RESAMPLETIMESERIESH_MSGENNUL "Non-null pointer"
 #define RESAMPLETIMESERIESH_MSGEZERO "Length of input time series is zero"
 #define RESAMPLETIMESERIESH_MSGERATE "Sample rate is zero"
 #define RESAMPLETIMESERIESH_MSGEUPSM "Cannot upsample"
 #define RESAMPLETIMESERIESH_MSGEHIGH "Input sample rate is greater than 32kHz"
 #define RESAMPLETIMESERIESH_MSGELOG2 "Only power-of-two resampling is avaliable"
 #define RESAMPLETIMESERIESH_MSGEFILT "Unknown filter type"
+#define RESAMPLETIMESERIESH_MSGEINVD "Invalid or non-integer resample factor"
+#define RESAMPLETIMESERIESH_MSGELDAS "Input resample factor with LDAS FIR"
 /**** </lalErrTable> */
 
 /**** <lalLaTeX>
@@ -65,6 +69,11 @@ NRCSID( RESAMPLETIMESERIESH, "$Id$" );
 typedef enum
 {
   defaultButterworth,
+  GDSfirLSOne,
+  GDSfirLSTwo,
+  GDSfirLSThree,
+  GDSfirPMOne,
+  LDASorderTen,
   firLSOne,
   firLSTwo,
   firLSThree,
@@ -76,6 +85,7 @@ typedef union
 tagResampleTimeSeriesFilterPars
 {
   PassBandParamStruc    butterworth;
+  REAL8IIRFilter        iirfilter;
 }
 ResampleTSFilterParams;
 
@@ -108,7 +118,6 @@ LALDecimateREAL4TimeSeries(
     REAL4TimeSeries    *ts, 
     ResampleTSParams   *params
     );
-
 
 #ifdef __cplusplus
 #pragma {
