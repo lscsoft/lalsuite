@@ -120,7 +120,7 @@ int main(int argc,char *argv[])
       return (-1);
     }
   
-  
+
   while (1)
     {
       NextDopplerPos( &status, &dopplerpos, &thisScan );
@@ -131,12 +131,13 @@ int main(int argc,char *argv[])
 	  return (-1);
 	}
 
-      Alpha = dopplerpos.skypos.longitude;
-      Delta = dopplerpos.skypos.latitude; 
-      
       /* Have we scanned all DopplerPositions yet? */
       if (dopplerpos.finished)  
 	break;
+
+
+      Alpha = dopplerpos.skypos.longitude;
+      Delta = dopplerpos.skypos.latitude; 
       
       if (CreateDemodParams()) return 6;
       /* loop over spin params */
@@ -805,9 +806,10 @@ int NormaliseSFTData(void)
 
 int ReadSFTData(void)
 {
-  INT4 fileno=0,ndeltaf,offset;
+  INT4 fileno=0,offset;
   FILE *fp;
   size_t errorcode;
+  UINT4 ndeltaf;
 
   SFTData=(FFT **)LALMalloc(GV.SFTno*sizeof(FFT *));
   timestamps=(LIGOTimeGPS *)LALMalloc(GV.SFTno*sizeof(LIGOTimeGPS));
@@ -1127,7 +1129,7 @@ INT4 ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->Fthreshold=10.0;
   CLA->BaseName="SFT";
 
-  GV.useMetric = DOPPLER_MANUAL;
+  GV.useMetric = LAL_METRIC_NONE;
   GV.metricMismatch = 0.02;
   GV.flipTiling = 0;
   /* ---------------------------------------------------------------------- */
