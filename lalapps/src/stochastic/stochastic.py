@@ -9,9 +9,11 @@ the standalone stochastic code on LIGO data.
 Based on inspiral.py by Duncan Brown
 """
 
+
 __author__ = 'Adam Mercer <ram@star.sr.bham.ac.uk>'
 __date__ = '$Date$'
 __version__ = '$Revision$'[11:-2]
+
 
 import string
 import exceptions
@@ -48,7 +50,7 @@ class DataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.add_condor_cmd('environment',
       """LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH);PYTHONPATH=$ENV(PYTHONPATH)""" )
 
-    self.set_stderr_file('logs/datafind-$(macroinstrument)-$(macrostart)-$(macroend)-$(process).err')
+    self.set_stderr_file('logs/datafind-$(macroinstrument)-$(macrostart)-$(macroend).err')
     self.set_stdout_file('cache/$(macroinstrument)-$(macrostart)-$(macroend).cache')
     self.set_sub_file('datafind.sub')
 
@@ -73,8 +75,8 @@ class StochasticJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['stochastic']:
       self.add_ini_opts(cp,sec)
 
-    self.set_stdout_file('logs/stoch-$(macrogpsstarttime)-$(macrogpsendtime)-$(process).out')
-    self.set_stderr_file('logs/stoch-$(macrogpsstarttime)-$(macrogpsendtime)-$(process).err')
+    self.set_stdout_file('logs/stoch-$(macrogpsstarttime)-$(macrogpsendtime).out')
+    self.set_stderr_file('logs/stoch-$(macrogpsstarttime)-$(macrogpsendtime).err')
     self.set_sub_file('stochastic.sub')
 
 
