@@ -64,11 +64,10 @@ class ScienceSegment:
       dur -= seg_incr
     self.used = self.duration - dur
 
-
 class BurstPipeline:
   """
   Contains a dictionary of science segments and chunks that
-  define the data to analyze and how it should be analyzed
+  define the data to analyze and hos it should be analyzed
   """
   def __init__(self,config_file):
     """
@@ -134,7 +133,7 @@ executable = %s
 arguments = --lal-cache \\
   --instrument $(site) --type %s \\
   --start $(frstart) --end $(frend)
-environment = LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH)
+environment = LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH);PYTHONPATH=$ENV(PYTHONPATH)
 log = %s
 error = datafind/frcache-$(site)-$(frstart)-$(frend).$(cluster).$(process).err
 output = cache/frcache-$(site)-$(frstart)-$(frend).out
@@ -154,14 +153,12 @@ queue
     print >> sub_fh, """\
 universe = %s
 executable = %s
-arguments =  --nseg $(nseg) \\
+arguments = --nseg $(nseg) \\
   --npts $(npts) \\
   --numpts $(numpts) \\
   --channel $(channel) \\
   --start_time $(start) \\ 
   --framecache cache/frcache-$(site)-$(frstart)-$(frend).out \\
-  --calcache /ldas_outgoing/calibration/cache_files/$(ifo)-CAL-V03-729273600-734367600.cache \\
-  --injfile HL-INJECTIONS_1_hpeak-1_19-freq250-729273613-5094000.xml \\
   --comment realdata-$(start) \\
   --cluster \\
  """ % (self.config['condor']['universe'],self.config['condor']['burst']),
@@ -180,119 +177,63 @@ notification = never
 queue
 """ % (self.logfile)
 
-
-  def coincsub(self):
-
-    sub_fh = open( self.basename + '.coinc.sub', 'w' )
-    print >> sub_fh, """\
-universe = %s
-executable = %s
-arguments = --ifo-a L1-realdata-$(start)-POWER-$(start)-$(duration).xml \\
-  --ifo-b H1-realdata-$(start)-POWER-$(start)-$(duration).xml \\
-  --outfile coincidence-$(start)-$(end).xml --dt 10
-log = %s
-error = coin/coinc-$(start)-$(end).$(cluster).$(process).err
-output = coin/coinc-$(start)-$(end).$(cluster).$(process).out
-notification = never
-queue
-""" % (self.config['condor']['universe'],self.config['condor']['coinc'],self.logfile),
-
-
-
   def builddag(self,cache):
-    chanH1 = self.config['input']['channel-name']
-    chanL1 = self.config['input']['channell-name']
-    siteH1 = chanH1[0]
-    siteL1 = chanL1[0]
-    ifoH1  = chanH1[0:2]
-    ifoL1  = chanL1[0:2]
+    chan = self.config['input']['channel-name']
+    site = chan[0]
+    ifo  = chan[0:2]
     t      = int(self.config['datacond']['t'])
     srate  = int(self.config['arg']['srate'])
     olap   = int(self.config['arg']['olap'])
-    
+  
     dag_fh = open( self.basename + ".dag", "w" )
     
     # jobs to generate the frame cache files
     for seg in self.segments:
-      jobname = 'frcache_%s_%d_%d' % (siteH1,seg.startpad,seg.endpad)
+      jobname = 'frcache_%s_%d_%d' % (site,seg.startpad,seg.endpad)
       print >> dag_fh, 'JOB %s %s.frcache.sub' % (jobname,self.basename),
       if cache: print >> dag_fh, 'DONE',
       print >> dag_fh, '\nVARS %s site="%s" frstart="%s" frend="%s"' % (
-      jobname, siteH1, seg.startpad, seg.endpad )
+      jobname, site, seg.startpad, seg.endpad )
     for i in range(1,len(self.segments)):
       print >> dag_fh, 'PARENT frcache_%s_%s_%s CHILD frcache_%s_%s_%s' % (
-        siteH1,self.segments[i-1].startpad,self.segments[i-1].endpad,
-        siteH1,self.segments[i].startpad,self.segments[i].endpad)
-    for seg in self.segments:
-      jobname = 'frcache_%s_%d_%d' % (siteL1,seg.startpad,seg.endpad)
-      print >> dag_fh, 'JOB %s %s.frcache.sub' % (jobname,self.basename),
-      if cache: print >> dag_fh, 'DONE',
-      print >> dag_fh, '\nVARS %s site="%s" frstart="%s" frend="%s"' % (
-      jobname, siteL1, seg.startpad, seg.endpad )
-    for i in range(1,len(self.segments)):
-      print >> dag_fh, 'PARENT frcache_%s_%s_%s CHILD frcache_%s_%s_%s' % (
-        siteL1,self.segments[i-1].startpad,self.segments[i-1].endpad,
-        siteL1,self.segments[i].startpad,self.segments[i].endpad)
-
+        site,self.segments[i-1].startpad,self.segments[i-1].endpad,
+        site,self.segments[i].startpad,self.segments[i].endpad)
+    
 
     # jobs to run the burst code
     for seg in self.segments:
       for chunk in seg.chunks:
-        parent = 'frcache_%s_%s_%s' % (siteH1,seg.startpad,seg.endpad)
-        jobname = 'burst_%s_%s_%s' % (ifoH1,chunk.start,chunk.end)
+        parent = 'frcache_%s_%s_%s' % (site,seg.startpad,seg.endpad)
+        jobname = 'burst_%s_%s_%s' % (ifo,chunk.start,chunk.end)
         print >> dag_fh, 'JOB %s %s.burst.sub' % (jobname,self.basename),
         print >> dag_fh, """
 VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" chunklen="%d" channel="%s" nseg = "%d" npts = "%d" numpts = "%d"\
-""" % ( jobname,siteH1,ifoH1,seg.startpad,seg.endpad,chunk.start,chunk.end,
-chunk.length,chanH1,(2*chunk.length-1),(t*srate),(((t*srate)-olap)*(2*chunk.length-1)+(3*olap)))
+""" % ( jobname,site,ifo,seg.startpad,seg.endpad,chunk.start,chunk.end,
+chunk.length,chan,(2*chunk.length-1),(t*srate),(((t*srate)-olap)*(2*chunk.length-1)+(3*olap)))
         print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
-    for seg in self.segments:
-      for chunk in seg.chunks:
-        parent = 'frcache_%s_%s_%s' % (siteL1,seg.startpad,seg.endpad)
-        jobname = 'burst_%s_%s_%s' % (ifoL1,chunk.start,chunk.end)
-        print >> dag_fh, 'JOB %s %s.burst.sub' % (jobname,self.basename),
-        print >> dag_fh, """
-VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" chunklen="%d" channel="%s" nseg = "%d" npts = "%d" numpts = "%d"\
-""" % ( jobname,siteL1,ifoL1,seg.startpad,seg.endpad,chunk.start,chunk.end,
-chunk.length,chanL1,(2*chunk.length-1),(t*srate),(((t*srate)-olap)*(2*chunk.length-1)+(3*olap)))
-        print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
-
-
-
-     # jobs to run the coinc code
-    for seg in self.segments:
-      for chunk in seg.chunks:
-        parentA = 'burst_%s_%s_%s' % (ifoH1,chunk.start,chunk.end)
-        parentB = 'burst_%s_%s_%s' % (ifoL1,chunk.start,chunk.end)
-        jobname = 'coinc_%s_%s' % (chunk.start,chunk.end)
-        print >> dag_fh, 'JOB %s %s.coinc.sub' % (jobname,self.basename),
-        print >> dag_fh, """
-VARS %s ifo="%s" ifo="%s" start="%d" end="%d" chunklen="%d" duration="%d"\
-""" % ( jobname,ifoH1,ifoL1,chunk.start,chunk.end,chunk.length,(chunk.end-chunk.start+1))
-        print >> dag_fh, 'PARENT %s %s CHILD %s' % (parentA, parentB, jobname)    
-
-
     dag_fh.close()
-     
+
 def usage():
   msg = """\
-Usage: burst_pipeline.py [OPTIONS] 
+Usage: burst_pipeline.py [OPTIONS]
 
    -f, --config-file FILE   use configuration file FILE
    -p, --play               only create chunks that overlap with playground
    -v, --version            print version information and exit
    -h, --help               print help information
    -c, --cache              flag the frame cache query as done
+   -b, --bank               flag the bank generation and cache query as done
    -l, --log-path           directory to write condor log file
 
-This program generates a DAG to run the burst code. The configuration file 
+This program generates a DAG to run the inspiral code. The configuration file 
 should specify the parameters needed to run the jobs and must be specified 
-with the --config-file (or -f) option. 
+with the --config-file (or -f) option. See the LALapps documentation for more
+information on the syntax of the configuation file.
 
 A directory which condor uses to write a log file must be specified with the
 --log-file (or -l) option. This must be a non-NFS mounted directory. The name
 of the log file is automatically created and will be unique for each
-invocation of burst_pipeline.py.
+invocation of inspiral_pipeline.py.
 
 A file containing science segments to be analyzed should be specified in the 
 [input] section of the configuration file with a line such as
@@ -305,9 +246,9 @@ This should contain four whitespace separated coulumns:
 
 that define the science segments to be used. Lines starting with # are ignored.
 
-The length of the number of burst segments, their overlap and length is 
-determined from the config file and the length of a burst chunk is
-computed.
+The length of the number of inspiral segments, their overlap and length is 
+determined from the config file and the length of an inspiral chunk is
+computed (typically this is 1024 seconds for S2).
 
 The chunks start and stop times are computed from the science segment times
 and used to build the DAG.
@@ -320,9 +261,12 @@ playground defined by:
 are included in the DAG.
 
 If the --cache (or -c) option is specifed, the generation of the frame cache 
-files is marked as done in the DAG.
+files is marked as done in the DAG. The cache files are expected to exist by
+the bank generation and inspiral codes.
 
-
+If the --bank (or -b) option is specified, both the frame cache query and
+generation of the template bank are marked as done. The cache files and
+template banks are expected to exist by the inspiral code.
 \
 """
   print msg
@@ -382,8 +326,6 @@ try: os.mkdir('datafind')
 except: pass
 try: os.mkdir('burst')
 except: pass
-try: os.mkdir('coin')
-except: pass
 
 pipeline = BurstPipeline(config_file)
 pipeline.parsesegs()
@@ -391,5 +333,4 @@ pipeline.createchunks(play_only)
 pipeline.status(play_only)
 pipeline.frcachesub()
 pipeline.burstsub()
-pipeline.coincsub()
 pipeline.builddag(no_cache)
