@@ -1301,7 +1301,6 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   /* now check that only one of those two has been given! ;) */
   if ( UVARwasSet(&uvar_skyRegion) 
        && (UVARwasSet(&uvar_Alpha)||UVARwasSet(&uvar_Delta)
-	   ||UVARwasSet(&uvar_dAlpha)||UVARwasSet(&uvar_dDelta)
 	   ||UVARwasSet(&uvar_AlphaBand)||UVARwasSet(&uvar_DeltaBand)) ) 
     {
       LALPrintError ("ATTENTION: you can only specify *either* (Alpha,Delta,AlphaBand,DeltaBand) *or* skyRegion !\n");
