@@ -623,7 +623,7 @@ int main( int argc, char *argv[] )
   {
     currentTrigger = inspiralEventList;
     inspiralEventList = inspiralEventList->next;
-    LALFree( currentTrigger );
+    LAL_CALL( LALFreeSnglInspiral( &status, &currentTrigger ), &status );
   }
  
   /* time sort the triggers */
@@ -786,14 +786,14 @@ cleanexit:
   {
     currentTrigger = inspiralEventList;
     inspiralEventList = inspiralEventList->next;
-    LALFree( currentTrigger );
+    LAL_CALL( LALFreeSnglInspiral( &status, &currentTrigger ), &status );
   }
   
   while ( inputTriggerList )
   {
     currentTrigger = inspiralEventList;
     inspiralEventList = inspiralEventList->next;
-    LALFree( currentTrigger );
+    LAL_CALL( LALFreeSnglInspiral( &status, &currentTrigger ), &status );
   }
 
 

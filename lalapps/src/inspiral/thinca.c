@@ -1025,30 +1025,16 @@ cleanexit:
   {
     thisInspiralTrigger = inspiralEventList;
     inspiralEventList = inspiralEventList->next;
-    while ( thisInspiralTrigger->event_id )
-    {
-      /* free any associated event_id's */
-      eventId = thisInspiralTrigger->event_id;
-      thisInspiralTrigger->event_id = thisInspiralTrigger->event_id->next;
-      LALFree( eventId );
-    }
-    LALFree( thisInspiralTrigger );
+    LAL_CALL( LALFreeSnglInspiral( &status, &thisInspiralTrigger ), &status );
   }
 
   while ( snglOutput )
   {
     thisInspiralTrigger = snglOutput;
     snglOutput = snglOutput->next;
-    while ( thisInspiralTrigger->event_id )
-    {
-      /* free any associated event_id's */
-      eventId = thisInspiralTrigger->event_id;
-      thisInspiralTrigger->event_id = thisInspiralTrigger->event_id->next;
-      LALFree( eventId );
-    }
-    LALFree( thisInspiralTrigger );
+    LAL_CALL( LALFreeSnglInspiral( &status, &thisInspiralTrigger ), &status );
   }
-
+ 
   while ( coincInspiralList )
   {
     thisCoinc = coincInspiralList;

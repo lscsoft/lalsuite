@@ -398,6 +398,9 @@ int main( int argc, char *argv[] )
   /* the number of nodes for a standalone job is always 1 */
   searchsumm.searchSummaryTable->nnodes = 1;
 
+  /* fill the ifos field of the search summary table */
+  LALSnprintf( searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, ifo );
+
   /* make sure the pointer to the first event is null */
   savedEvents.snglInspiralTable = NULL;
 
