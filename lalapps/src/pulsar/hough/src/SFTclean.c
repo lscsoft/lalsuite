@@ -47,6 +47,7 @@ NRCSID (SFTCLEANC, "$Id$");
 
 INT4 lalDebugLevel=0;
 
+
 #define MAXFILENAMELENGTH 256
 #define LINEFILE "./linenoiseS2LHO4KC.txt"
 #define HARMONICFILE "./harmonicsS2LHO4KC.txt" 
@@ -56,9 +57,10 @@ INT4 lalDebugLevel=0;
 #define BANDFREQ 300.0
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 
-/* Usage format string. */
+#define USAGE "Usage: %s [-d debuglevel] \n [-l linefile] \n [-H harmonics file name] \n [-i input sft dir]\n [-o output sft dir] \n [-f start frequency] \n [-b bandwidth] \n [-h print usage] \n"
 
-#define USAGE "Usage: %s [-d debuglevel] [-l linefile] [-h harmonics file name] [-o output file] [-f start frequency] [-b bandwidth] \n"
+
+/* Usage format string. */
 
 
 /*********************************************************************/
@@ -157,7 +159,7 @@ int main(int argc, char *argv[]){
       }
     }  
     /* parse harmonicsfile */
-    else if ( !strcmp( argv[arg], "-h" ) ) {
+    else if ( !strcmp( argv[arg], "-H" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
         harmonicfname = argv[arg++];
@@ -311,8 +313,10 @@ int main(int argc, char *argv[]){
     { 
       fname = filelist[j];
       SUB( ReadCOMPLEX8SFTbinData1( &status, &sft, fname ), &status );
-      SUB( CleanCOMPLEX8SFT( &status, &sft, 2, &lines1), &status);
-      SUB( CleanCOMPLEX8SFT( &status, &sft, 2, &lines2), &status);
+      if (nLines1 > 0)
+	SUB( CleanCOMPLEX8SFT( &status, &sft, 2, &lines1), &status);
+      if (nLines2 > 0)
+	SUB( CleanCOMPLEX8SFT( &status, &sft, 2, &lines2), &status);
       
       /* make the output sft filename */
       sprintf(tempstr1, "%d",j);
@@ -327,20 +331,29 @@ int main(int argc, char *argv[]){
 
 
   /* Free memory */
-  LALFree(lines1.lineFreq);
-  LALFree(lines1.leftWing);
-  LALFree(lines1.rightWing);
+
+  if (nLines1 > 0)
+    {
+      LALFree(lines1.lineFreq);
+      LALFree(lines1.leftWing);
+      LALFree(lines1.rightWing);
+    }
+
+  if (nLines2 > 0)
+    {
+      LALFree(lines2.lineFreq);
+      LALFree(lines2.leftWing);
+      LALFree(lines2.rightWing);
+    }
  
-  LALFree(lines2.lineFreq);
-  LALFree(lines2.leftWing);
-  LALFree(lines2.rightWing);
-
-  LALFree(harmonics.startFreq);
-  LALFree(harmonics.gapFreq);
-  LALFree(harmonics.numHarmonics);
-  LALFree(harmonics.leftWing);
-  LALFree(harmonics.rightWing);
-
+  if (nHarmonicSets > 0)
+    {
+      LALFree(harmonics.startFreq);
+      LALFree(harmonics.gapFreq);
+      LALFree(harmonics.numHarmonics);
+      LALFree(harmonics.leftWing);
+      LALFree(harmonics.rightWing);
+    }
 
   LALFree(sft.data);
   LALCheckMemoryLeaks(); 
