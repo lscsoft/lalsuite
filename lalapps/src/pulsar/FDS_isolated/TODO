@@ -1,22 +1,16 @@
 TODO (ComputeFStatistic-related)
 -----
+* test/compare various metrics
+
 * get rid of year-specification on command-line if possible (use ranges 00-04..)
 
 * quick-fix for mesh-covering problem at the equator?
-
-* clarify priorities between specifying Alpha+AlphaBand.. and a skyRegion!!
-
-* metric-stuff
-	- debug, compare
 
 * work on more general tiling
 
 * modify ComputeFStat so that the search parameters can be refered to
   any arbitrary epoch and not just to the epoch of the first sample of the
   analyzed data set (as is now).
-
-* allow Coherent-metric to use either Ptolemaic-timing or precise timing-routines
-  (introduce new metric-type?)
 
 done
 ----
@@ -31,3 +25,5 @@ done
 * specify sky-regions by polygon 
 * implement new user-variable handling
 * get rid of "coordinate-cut" limitations... (seems to work so far)
+* clarify priorities between specifying Alpha+AlphaBand.. and a skyRegion!! (done: mutually exclusive)
+* complete use of Ephemeris-metric
