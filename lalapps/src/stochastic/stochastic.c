@@ -62,7 +62,6 @@ RCSID("$Id$");
 
 /* flags for getopt_long */
 static int middle_segment_flag;
-static int inject_flag;
 static int apply_mask_flag;
 static int high_pass_flag;
 static int overlap_hann_flag;
@@ -110,11 +109,6 @@ REAL8 fMax = -1;
 REAL4 alpha = 0;
 REAL4 fRef = 100;
 REAL4 omegaRef = 1;
-
-/* monte carlo parameters */
-REAL4 scaleFactor = -1;
-INT4 seed = -1;
-INT4 NLoop = 1;
 
 /* window parameters */
 INT4 hannDuration = -1;
@@ -1055,10 +1049,6 @@ static void display_usage()
   fprintf(stdout, " --hpf-order N                 high pass filter order\n");
   fprintf(stdout, " --recentre                    recentre jobs\n");
   fprintf(stdout, " --middle-segment              use middle segment in PSD estimation\n");
-  fprintf(stdout, " --inject                      inject a signal into the data\n");
-  fprintf(stdout, " --scale-factor N              scale factor for injection\n");
-  fprintf(stdout, " --seed N                      random seed\n");
-  fprintf(stdout, " --trials N                    number of trials for Monte Carlo\n");
   fprintf(stdout, " --geo-hpf-frequency N         GEO high pass filter knee frequency\n");
   fprintf(stdout, " --geo-hpf-attenuation N       GEO high pass filter attenuation\n");
   fprintf(stdout, " --geo-hpf-order N             GEO high pass filter order\n");
@@ -1082,7 +1072,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
     static struct option long_options[] =
     {
       /* options that set a flag */
-      {"inject", no_argument, &inject_flag, 1},
       {"middle-segment", no_argument, &middle_segment_flag, 1},
       {"apply-mask", no_argument, &apply_mask_flag, 1},
       {"high-pass-filter", no_argument, &high_pass_flag, 1},
@@ -1119,9 +1108,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {"hpf-frequency", required_argument, 0, 'y'},
       {"hpf-attenuation", required_argument, 0, 'z'},
       {"hpf-order", required_argument, 0, 'A'},
-      {"scale-factor", required_argument, 0, 'B'},
-      {"seed", required_argument, 0, 'C'},
-      {"trials", required_argument, 0, 'D'},
       {"geo-hpf-frequency", required_argument, 0, 'E'},
       {"geo-hpf-attenuation", required_argument, 0, 'F'},
       {"geo-hpf-order", required_argument, 0, 'G'},
@@ -1137,7 +1123,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
     c = getopt_long_only(argc, argv, \
         "abc:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:" \
-        "A:B:C:D:E:F:G:H:I:J:", long_options, &option_index);
+        "A:E:F:G:H:I:J:", long_options, &option_index);
 
     if (c == -1)
     {
@@ -1548,31 +1534,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("int", "%d", highPassOrder);
         break;
 
-      case 'B':
-        /* scale factor */
-        scaleFactor = atof(optarg);
-        ADD_PROCESS_PARAM("float", "%e", scaleFactor);
-        break;
-
-      case 'C':
-        /* seed */
-        seed = atoi(optarg);
-        ADD_PROCESS_PARAM("float", "%e", seed);
-        break;
-
-      case 'D':
-        /* number of trials */
-        NLoop = atoi(optarg);
-        if (NLoop <= 0)
-        {
-          fprintf(stderr, "Invalid argument to --%s:\n" \
-              "Number of trials to must be greater than 0: " \
-              "(%d specified)\n", long_options[option_index].name, NLoop);
-          exit(1);
-        }
-        ADD_PROCESS_PARAM("int", "%d", NLoop);
-        break;
-
       case 'E':
         /* GEO high pass knee filter frequency */
         geoHighPassFreq = atof(optarg);
@@ -1826,21 +1787,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
     }
   }
 
-  /* injections */
-  if (inject_flag)
-  {
-    if (scaleFactor == -1)
-    {
-      fprintf(stderr, "--scale-factor must be specified\n");
-      exit(1);
-    }
-    if (seed == -1)
-    {
-      fprintf(stderr, "--seed must be specified\n");
-      exit(1);
-    }
-  }
-
   /* GEO high pass filter */
   if ((strncmp(ifoOne, "G1", 2) == 0) || (strncmp(ifoTwo, "G1", 2) == 0))
   {  
@@ -1982,21 +1928,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL4TimeSeries *segmentOne = NULL;
   REAL4TimeSeries *segmentTwo = NULL;
   REAL4Vector *segOne[100], *segTwo[100];
-
-  /* simulated signal structures */
-  SSSimStochBGParams SBParams;
-  SSSimStochBGInput SBInput;
-  SSSimStochBGOutput SBOutput;
-  REAL4TimeSeries *SimStochBGOne;
-  REAL4TimeSeries *SimStochBGTwo;
-  REAL4FrequencySeries *MComegaGW = NULL;
-  COMPLEX8FrequencySeries *MCresponseOne;
-  COMPLEX8FrequencySeries *MCresponseTwo;
-  COMPLEX8Vector *MCrespOne[100], *MCrespTwo[100];
-  INT4 MCLoop;
-  INT4 MCfreqLength = 0;
-  REAL8 MCdeltaF, MCdeltaT;
-  LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
   /* window for segment data streams */
   REAL4Window *dataWindow;
@@ -2146,45 +2077,6 @@ INT4 main(INT4 argc, CHAR *argv[])
     segTwo[i] = XLALCreateREAL4Vector(segmentLength);
   }
 
-  /* allocate memory for injections - to be re-worked */
-  if (inject_flag)
-  {
-    if (vrbflg)
-      fprintf(stdout, "Allocating memory for MC...\n");
-
-    /* set  monte carlo parameters */
-    MCdeltaT = 1.0 / resampleRate;
-    MCdeltaF = (REAL8)resampleRate / (REAL8)segmentLength;
-    MCfreqLength = (segmentLength / 2) + 1;
-
-    /* create vectors to store the simulated signal */
-    LAL_CALL(LALCreateREAL4TimeSeries(&status, &SimStochBGOne, \
-          "Whitened-SimulatedSB1", gpsStartTime, 0, 1./resampleRate, \
-          lalDimensionlessUnit, segmentLength), &status);
-    LAL_CALL(LALCreateREAL4TimeSeries(&status, &SimStochBGTwo, \
-          "Whitened-SimulatedSB2", gpsStartTime, 0, 1./resampleRate, \
-          lalDimensionlessUnit, segmentLength), &status);
-
-    /* generate omegaGW */
-    MComegaGW = omega_gw(&status, alpha, fRef, omegaRef, MCfreqLength, 0, \
-        MCdeltaF);
-
-    /* response functions */
-    LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &MCresponseOne, \
-          "MCresponseOne", gpsCalibTime, 0, MCdeltaF, countPerStrain, \
-          MCfreqLength), &status);
-    LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &MCresponseTwo, \
-          "MCresponseTwo", gpsCalibTime, 0, MCdeltaF, countPerStrain, \
-          MCfreqLength), &status);
-
-    /* allocate memory for temporary monte carlo segments */
-    for (i = 0; i < segsInInt; i++)
-    {
-      MCrespOne[i] = XLALCreateCOMPLEX8Vector(MCfreqLength);
-      MCrespTwo[i] = XLALCreateCOMPLEX8Vector(MCfreqLength);
-    }
-  }
-
   /* get bins for min and max frequencies */
   numFMin = (INT4)(fMin / deltaF);
   numFMax = (INT4)(fMax / deltaF);
@@ -2251,309 +2143,226 @@ INT4 main(INT4 argc, CHAR *argv[])
   if (vrbflg)
     fprintf(stdout, "Starting analysis loop...\n");
 
-  /* main analysis loop */
-  for (MCLoop = 0; MCLoop < NLoop; MCLoop++)
-  {
-    /* loop over intervals */
-    for (interLoop = 0; interLoop < numIntervals; interLoop++)
-    {	
-      /* loop over segments */
-      for (segLoop = 0; segLoop < segsInInt; segLoop++)
+  /* loop over intervals */
+  for (interLoop = 0; interLoop < numIntervals; interLoop++)
+  {	
+    /* loop over segments */
+    for (segLoop = 0; segLoop < segsInInt; segLoop++)
+    {
+      /* get segment start/end time */
+      LAL_CALL(LALAddFloatToGPS(&status, &gpsSegStartTime, &gpsStartTime, \
+            (REAL8)((interLoop * segmentShift) + \
+                    (segLoop * segmentDuration))), &status);
+      LAL_CALL(LALAddFloatToGPS(&status, &gpsSegEndTime, &gpsSegStartTime, \
+            (REAL8)segmentDuration), &status);
+
+      /* is this the analysis segment */
+      if (segLoop == segMiddle)
       {
-        /* get segment start/end time */
-        LAL_CALL(LALAddFloatToGPS(&status, &gpsSegStartTime, &gpsStartTime, \
-              (REAL8)((interLoop * segmentShift) + \
-                      (segLoop * segmentDuration))), &status);
-        LAL_CALL(LALAddFloatToGPS(&status, &gpsSegEndTime, &gpsSegStartTime, \
-              (REAL8)segmentDuration), &status);
-
-        /* is this the analysis segment */
-        if (segLoop == segMiddle)
-        {
-          gpsAnalysisTime = gpsSegStartTime;
-        }
-
-        if (vrbflg)
-        {
-          fprintf(stdout, "request data at GPS time %d\n", \
-              gpsSegStartTime.gpsSeconds);
-        }
-
-        /* cut segments from series */
-        segmentOne = cut_time_series(&status, seriesOne, gpsSegStartTime, \
-            gpsSegEndTime);
-        segmentTwo = cut_time_series(&status, seriesTwo, gpsSegStartTime, \
-            gpsSegEndTime);
-
-        /* store in memory */
-        for (i = 0; i < segmentLength; i++)
-        {
-          segOne[segLoop]->data[i] = segmentOne->data->data[i];
-          segTwo[segLoop]->data[i] = segmentTwo->data->data[i];
-        }
-
-        /* compute response functions */
-        gpsCalibTime.gpsSeconds = gpsSegStartTime.gpsSeconds + calibOffset;
-        responseOne = generate_response(&status, ifoOne, calCacheOne, \
-            gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
-        responseTwo = generate_response(&status, ifoTwo, calCacheTwo, \
-            gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
-
-        /* store in memory */
-        for (i = 0; i < filterLength; i++)
-        {
-          respOne[segLoop]->data[i] = responseOne->data->data[i];
-          respTwo[segLoop]->data[i] = responseTwo->data->data[i];
-        }
-
-        if (inject_flag)
-        {
-          /* convert response function for use in the MC routine */
-          MCresponseOne->epoch = gpsCalibTime;
-          MCresponseTwo->epoch = gpsCalibTime;
-          LAL_CALL(LALResponseConvert(&status, MCresponseOne, \
-                responseOne), &status);
-          LAL_CALL(LALResponseConvert(&status, MCresponseTwo, \
-                responseTwo), &status);
-
-          /* force DC to be 0 and nyquist to be real */
-          MCresponseOne->data->data[0].re = 0;
-          MCresponseTwo->data->data[0].re = 0;
-          MCresponseOne->data->data[0].im = 0;
-          MCresponseTwo->data->data[0].im = 0;
-          MCresponseOne->data->data[MCfreqLength-1].im = 0;
-          MCresponseTwo->data->data[MCfreqLength-1].im = 0;
-
-          /* store in memory */
-          for (i = 0; i < MCfreqLength; i++)
-          {
-            MCrespOne[segLoop]->data[i] = MCresponseOne->data->data[i];
-            MCrespTwo[segLoop]->data[i] = MCresponseTwo->data->data[i];
-          }
-        }
-      }
-
-      /* initialize average PSDs */
-      for (i = 0; i < filterLength; i++)
-      {
-        calPsdOne->data[i] = 0;
-        calPsdTwo->data[i] = 0;
-      }
-
-      for (segLoop = 0; segLoop < segsInInt; segLoop++)
-      {
-        /* set segment start and end time */
-        gpsSegStartTime.gpsSeconds = gpsStartTime.gpsSeconds + \
-                                     (interLoop * intervalDuration) + \
-                                     (segLoop * segmentDuration);
-        gpsSegStartTime.gpsNanoSeconds = 0;
-        gpsSegEndTime.gpsSeconds = gpsSegStartTime.gpsSeconds + \
-                                   segmentDuration;
-        segmentOne->epoch = gpsSegStartTime;
-        segmentTwo->epoch = gpsSegStartTime;
-        gpsCalibTime.gpsSeconds = gpsSegStartTime.gpsSeconds + calibOffset;
-        responseOne->epoch = gpsCalibTime;
-        responseTwo->epoch = gpsCalibTime;
-
-        /* copy to temporary storage */
-        for (i = 0; i < filterLength; i++)
-        {
-          responseOne->data->data[i] = respOne[segLoop]->data[i];
-          responseTwo->data->data[i] = respTwo[segLoop]->data[i];
-        }
-
-        /* simulate signal */
-        if (inject_flag)
-        {
-          /* copy to temporay storage */
-          for (i = 0; i < MCfreqLength; i++)
-          {
-            MCresponseOne->data->data[i] = MCrespOne[segLoop]->data[i];
-            MCresponseTwo->data->data[i] = MCrespTwo[segLoop]->data[i];
-          }
-
-          /* set parameters for monte carlo */
-          SBParams.length = segmentLength;
-          SBParams.deltaT = 1. / resampleRate;
-          SBParams.detectorOne = lalCachedDetectors[siteOne];
-          SBParams.detectorTwo = lalCachedDetectors[siteTwo];
-          SBParams.SSimStochBGTimeSeries1Unit = lalADCCountUnit;
-          SBParams.SSimStochBGTimeSeries2Unit = lalADCCountUnit;
-          SBParams.seed = seed;
-
-          /* define input structure for SimulateSB */
-          SBInput.omegaGW = MComegaGW;
-          SBInput.whiteningFilter1 = MCresponseOne;
-          SBInput.whiteningFilter2 = MCresponseTwo;
-
-          /* define output structure for SimulateSB */
-          SBOutput.SSimStochBG1 = SimStochBGOne;
-          SBOutput.SSimStochBG2 = SimStochBGTwo;
-
-          /* set epochs for monte carlo outputs */
-          SimStochBGOne->epoch = gpsSegStartTime;
-          SimStochBGTwo->epoch = gpsSegStartTime;
-
-          /* perform monte carlo */
-          LAL_CALL(LALSSSimStochBGTimeSeries(&status, &SBOutput, \
-                &SBInput, &SBParams), &status);
-
-          /* multiply by scale factor and inject into real data */
-          for (i = 0; i < segmentLength ; i++)
-          {
-            segmentOne->data->data[i] = segOne[segLoop]->data[i] + \
-                                        (scaleFactor * \
-                                         SimStochBGOne->data->data[i]);
-            segmentTwo->data->data[i] = segTwo[segLoop]->data[i] + \
-                                        (scaleFactor * \
-                                         SimStochBGTwo->data->data[i]);
-          }
-
-          /* increase seed */
-          seed = seed + 2;
-        }
-        else
-        {
-          for (i = 0; i < segmentLength; i++)
-          {
-            segmentOne->data->data[i] = segOne[segLoop]->data[i];
-            segmentTwo->data->data[i] = segTwo[segLoop]->data[i];
-          }
-        }
-
-        /* store in memory */
-        for (i = 0; i < segmentLength; i++)
-        {
-          segOne[segLoop]->data[i] = segmentOne->data->data[i];
-          segTwo[segLoop]->data[i] = segmentTwo->data->data[i];
-        }
-
-        /* check if on middle segment and if we want to include this in
-         * the analysis */
-        if ((segLoop == segMiddle) && (middle_segment_flag == 0))
-        {
-          if (vrbflg)
-            fprintf(stdout, "Ignoring middle segment..\n");
-        }
-        else
-        {
-          if (vrbflg)
-            fprintf(stdout, "Estimating PSDs...\n");
-
-          /* compute uncalibrated PSDs */
-          psdOne = estimate_psd(&status, segmentOne, fMin, filterLength);
-          psdTwo = estimate_psd(&status, segmentTwo, fMin, filterLength);
-
-          if (vrbflg)
-            fprintf(stdout, "Generating inverse noise...\n");
-
-          /* compute inverse calibrate PSDs */
-          calInvPsdOne = inverse_noise(&status, psdOne, responseOne);
-          calInvPsdTwo = inverse_noise(&status, psdTwo, responseTwo);
-
-          /* sum over calibrated PSDs for average */
-          for (i = 0; i < filterLength; i++)
-          {
-            calPsdOne->data[i] += 1. / calInvPsdOne->data->data[i];
-            calPsdTwo->data[i] += 1. / calInvPsdTwo->data->data[i];
-          }
-        }
-      }
-
-      /* average calibrated PSDs and take inverse */
-      for (i = 0; i < filterLength; i++)
-      {
-        /* average */
-        if (middle_segment_flag == 0)
-        {
-          calPsdOne->data[i] /= (REAL4)(segsInInt - 1);
-          calPsdTwo->data[i] /= (REAL4)(segsInInt - 1);
-        }
-        else
-        {
-          calPsdOne->data[i] /= (REAL4)segsInInt;
-          calPsdTwo->data[i] /= (REAL4)segsInInt;
-        }
-        /* take inverse */
-        calInvPsdOne->data->data[i] = 1. / calPsdOne->data[i];
-        calInvPsdTwo->data->data[i] = 1. / calPsdTwo->data[i];
+        gpsAnalysisTime = gpsSegStartTime;
       }
 
       if (vrbflg)
-        fprintf(stdout, "Generating optimal filter...\n");
-
-      /* build optimal filter */
-      optFilter = optimal_filter(&status, overlap, omegaGW, calInvPsdOne, \
-          calInvPsdTwo, dataWindow, &sigmaTheo);
-
-      if (vrbflg)
       {
-        fprintf(stdout, "Analysing segment at GPS %d\n", \
-            gpsAnalysisTime.gpsSeconds);
+        fprintf(stdout, "request data at GPS time %d\n", \
+            gpsSegStartTime.gpsSeconds);
       }
 
-      /* copy to temporary storage */
+      /* cut segments from series */
+      segmentOne = cut_time_series(&status, seriesOne, gpsSegStartTime, \
+          gpsSegEndTime);
+      segmentTwo = cut_time_series(&status, seriesTwo, gpsSegStartTime, \
+          gpsSegEndTime);
+
+      /* store in memory */
       for (i = 0; i < segmentLength; i++)
       {
-        segmentOne->data->data[i] = segOne[segMiddle]->data[i];
-        segmentTwo->data->data[i] = segTwo[segMiddle]->data[i];
+        segOne[segLoop]->data[i] = segmentOne->data->data[i];
+        segTwo[segLoop]->data[i] = segmentTwo->data->data[i];
       }
 
-      if (vrbflg)
-        fprintf(stdout, "Constructing cross correlation spectrum...\n");
+      /* compute response functions */
+      gpsCalibTime.gpsSeconds = gpsSegStartTime.gpsSeconds + calibOffset;
+      responseOne = generate_response(&status, ifoOne, calCacheOne, \
+          gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
+      responseTwo = generate_response(&status, ifoTwo, calCacheTwo, \
+          gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
 
-      /* construct cc spectrum */
-      ccSpectrum = construct_cc_spectrum(&status, segmentOne, segmentTwo, \
-          responseOne, responseTwo, optFilter, segmentLength + 1, \
-          dataWindow);
-
-      if (cc_spectra_flag)
+      /* store in memory */
+      for (i = 0; i < filterLength; i++)
       {
-        /* save out cc spectra as frame */
+        respOne[segLoop]->data[i] = responseOne->data->data[i];
+        respTwo[segLoop]->data[i] = responseTwo->data->data[i];
+      }
+    }
+
+    /* initialize average PSDs */
+    for (i = 0; i < filterLength; i++)
+    {
+      calPsdOne->data[i] = 0;
+      calPsdTwo->data[i] = 0;
+    }
+
+    for (segLoop = 0; segLoop < segsInInt; segLoop++)
+    {
+      /* set segment start and end time */
+      gpsSegStartTime.gpsSeconds = gpsStartTime.gpsSeconds + \
+                                   (interLoop * intervalDuration) + \
+                                   (segLoop * segmentDuration);
+      gpsSegStartTime.gpsNanoSeconds = 0;
+      gpsSegEndTime.gpsSeconds = gpsSegStartTime.gpsSeconds + \
+                                 segmentDuration;
+      segmentOne->epoch = gpsSegStartTime;
+      segmentTwo->epoch = gpsSegStartTime;
+      gpsCalibTime.gpsSeconds = gpsSegStartTime.gpsSeconds + calibOffset;
+      responseOne->epoch = gpsCalibTime;
+      responseTwo->epoch = gpsCalibTime;
+
+      /* copy to temporary storage */
+      for (i = 0; i < filterLength; i++)
+      {
+        responseOne->data->data[i] = respOne[segLoop]->data[i];
+        responseTwo->data->data[i] = respTwo[segLoop]->data[i];
+      }
+
+      for (i = 0; i < segmentLength; i++)
+      {
+        segmentOne->data->data[i] = segOne[segLoop]->data[i];
+        segmentTwo->data->data[i] = segTwo[segLoop]->data[i];
+      }
+
+      /* store in memory */
+      for (i = 0; i < segmentLength; i++)
+      {
+        segOne[segLoop]->data[i] = segmentOne->data->data[i];
+        segTwo[segLoop]->data[i] = segmentTwo->data->data[i];
+      }
+
+      /* check if on middle segment and if we want to include this in
+       * the analysis */
+      if ((segLoop == segMiddle) && (middle_segment_flag == 0))
+      {
         if (vrbflg)
-          fprintf(stdout, "Saving ccSpectra to frame...\n");
-        write_ccspectra_frame(ccSpectrum, ifoOne, ifoTwo, \
-            gpsAnalysisTime, segmentDuration);
-      }
-      
-      /* cc statistic */
-      y = cc_statistic(ccSpectrum);
-
-      /* save */
-      if (vrbflg)
-      {
-        fprintf(stdout, "Interval %d\n", interLoop + 1);
-        fprintf(stdout, "  GPS time  = %d\n", gpsAnalysisTime.gpsSeconds);
-        fprintf(stdout, "  y         = %e\n", y);
-        fprintf(stdout, "  sigmaTheo = %e\n", sigmaTheo);
-      }
-
-      /* allocate memory for table */
-      if (!stochHead)
-      {
-        stochHead = thisStoch = (StochasticTable *) \
-                    LALCalloc(1, sizeof(StochasticTable));
+          fprintf(stdout, "Ignoring middle segment..\n");
       }
       else
       {
-        thisStoch = thisStoch->next = (StochasticTable *) \
-                    LALCalloc(1, sizeof(StochasticTable));
-      }
+        if (vrbflg)
+          fprintf(stdout, "Estimating PSDs...\n");
 
-      /* populate columns */
-      LALSnprintf(thisStoch->ifo_one, LIGOMETA_IFO_MAX, ifoOne);
-      LALSnprintf(thisStoch->ifo_two, LIGOMETA_IFO_MAX, ifoTwo);
-      LALSnprintf(thisStoch->channel_one, LIGOMETA_CHANNEL_MAX, channelOne);
-      LALSnprintf(thisStoch->channel_two, LIGOMETA_CHANNEL_MAX, channelTwo);
-      thisStoch->start_time.gpsSeconds = gpsAnalysisTime.gpsSeconds;
-      thisStoch->start_time.gpsNanoSeconds = gpsAnalysisTime.gpsNanoSeconds;
-      thisStoch->duration.gpsSeconds = segmentDuration;
-      thisStoch->duration.gpsNanoSeconds = 0;
-      thisStoch->f_min = fMin;
-      thisStoch->f_max = fMax;
-      thisStoch->cc_stat = y;
-      thisStoch->cc_sigma = sigmaTheo;
+        /* compute uncalibrated PSDs */
+        psdOne = estimate_psd(&status, segmentOne, fMin, filterLength);
+        psdTwo = estimate_psd(&status, segmentTwo, fMin, filterLength);
+
+        if (vrbflg)
+          fprintf(stdout, "Generating inverse noise...\n");
+
+        /* compute inverse calibrate PSDs */
+        calInvPsdOne = inverse_noise(&status, psdOne, responseOne);
+        calInvPsdTwo = inverse_noise(&status, psdTwo, responseTwo);
+
+        /* sum over calibrated PSDs for average */
+        for (i = 0; i < filterLength; i++)
+        {
+          calPsdOne->data[i] += 1. / calInvPsdOne->data->data[i];
+          calPsdTwo->data[i] += 1. / calInvPsdTwo->data->data[i];
+        }
+      }
     }
+
+    /* average calibrated PSDs and take inverse */
+    for (i = 0; i < filterLength; i++)
+    {
+      /* average */
+      if (middle_segment_flag == 0)
+      {
+        calPsdOne->data[i] /= (REAL4)(segsInInt - 1);
+        calPsdTwo->data[i] /= (REAL4)(segsInInt - 1);
+      }
+      else
+      {
+        calPsdOne->data[i] /= (REAL4)segsInInt;
+        calPsdTwo->data[i] /= (REAL4)segsInInt;
+      }
+      /* take inverse */
+      calInvPsdOne->data->data[i] = 1. / calPsdOne->data[i];
+      calInvPsdTwo->data->data[i] = 1. / calPsdTwo->data[i];
+    }
+
+    if (vrbflg)
+      fprintf(stdout, "Generating optimal filter...\n");
+
+    /* build optimal filter */
+    optFilter = optimal_filter(&status, overlap, omegaGW, calInvPsdOne, \
+        calInvPsdTwo, dataWindow, &sigmaTheo);
+
+    if (vrbflg)
+    {
+      fprintf(stdout, "Analysing segment at GPS %d\n", \
+          gpsAnalysisTime.gpsSeconds);
+    }
+
+    /* copy to temporary storage */
+    for (i = 0; i < segmentLength; i++)
+    {
+      segmentOne->data->data[i] = segOne[segMiddle]->data[i];
+      segmentTwo->data->data[i] = segTwo[segMiddle]->data[i];
+    }
+
+    if (vrbflg)
+      fprintf(stdout, "Constructing cross correlation spectrum...\n");
+
+    /* construct cc spectrum */
+    ccSpectrum = construct_cc_spectrum(&status, segmentOne, segmentTwo, \
+        responseOne, responseTwo, optFilter, segmentLength + 1, \
+        dataWindow);
+
+    if (cc_spectra_flag)
+    {
+      /* save out cc spectra as frame */
+      if (vrbflg)
+        fprintf(stdout, "Saving ccSpectra to frame...\n");
+      write_ccspectra_frame(ccSpectrum, ifoOne, ifoTwo, \
+          gpsAnalysisTime, segmentDuration);
+    }
+      
+    /* cc statistic */
+    y = cc_statistic(ccSpectrum);
+
+    /* save */
+    if (vrbflg)
+    {
+      fprintf(stdout, "Interval %d\n", interLoop + 1);
+      fprintf(stdout, "  GPS time  = %d\n", gpsAnalysisTime.gpsSeconds);
+      fprintf(stdout, "  y         = %e\n", y);
+      fprintf(stdout, "  sigmaTheo = %e\n", sigmaTheo);
+    }
+
+    /* allocate memory for table */
+    if (!stochHead)
+    {
+      stochHead = thisStoch = (StochasticTable *) \
+                  LALCalloc(1, sizeof(StochasticTable));
+    }
+    else
+    {
+      thisStoch = thisStoch->next = (StochasticTable *) \
+                  LALCalloc(1, sizeof(StochasticTable));
+    }
+
+    /* populate columns */
+    LALSnprintf(thisStoch->ifo_one, LIGOMETA_IFO_MAX, ifoOne);
+    LALSnprintf(thisStoch->ifo_two, LIGOMETA_IFO_MAX, ifoTwo);
+    LALSnprintf(thisStoch->channel_one, LIGOMETA_CHANNEL_MAX, channelOne);
+    LALSnprintf(thisStoch->channel_two, LIGOMETA_CHANNEL_MAX, channelTwo);
+    thisStoch->start_time.gpsSeconds = gpsAnalysisTime.gpsSeconds;
+    thisStoch->start_time.gpsNanoSeconds = gpsAnalysisTime.gpsNanoSeconds;
+    thisStoch->duration.gpsSeconds = segmentDuration;
+    thisStoch->duration.gpsNanoSeconds = 0;
+    thisStoch->f_min = fMin;
+    thisStoch->f_max = fMax;
+    thisStoch->cc_stat = y;
+    thisStoch->cc_sigma = sigmaTheo;
   }
 
   /* save out any flags to the process params table */
@@ -2565,17 +2374,6 @@ INT4 main(INT4 argc, CHAR *argv[])
         PROGRAM_NAME);
     LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
         "--middle-segment");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
-  }
-  if (inject_flag)
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-                      calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-        PROGRAM_NAME);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
-        "--inject");
     LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
     LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
   }
@@ -2728,25 +2526,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   XLALDestroyREAL4FrequencySeries(overlap);
   XLALDestroyREAL4FrequencySeries(omegaGW);
   XLALDestroyREAL4Window(dataWindow);
-  if (inject_flag)
-  {
-    XLALDestroyREAL4TimeSeries(SimStochBGOne);
-    XLALDestroyREAL4TimeSeries(SimStochBGTwo);
-    XLALDestroyCOMPLEX8FrequencySeries(MCresponseOne);
-    XLALDestroyCOMPLEX8FrequencySeries(MCresponseTwo);
-    XLALDestroyREAL4FrequencySeries(MComegaGW);
-  }
   for (i = 0; i <segsInInt; i++)
   {
     XLALDestroyCOMPLEX8Vector(respOne[i]);
     XLALDestroyCOMPLEX8Vector(respTwo[i]);
     XLALDestroyREAL4Vector(segOne[i]);
     XLALDestroyREAL4Vector(segTwo[i]);
-    if (inject_flag)
-    {
-      XLALDestroyCOMPLEX8Vector(MCrespOne[i]);
-      XLALDestroyCOMPLEX8Vector(MCrespTwo[i]);
-    }
   }
 
   /* free memory used in the stochastic xml table */
