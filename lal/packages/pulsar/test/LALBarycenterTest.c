@@ -35,6 +35,7 @@ LALFree()
 LALBarycenterInit()
 LALBarycenterEarth()
 LALBarycenter()
+LALCheckMemoryLeaks()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -45,17 +46,28 @@ LALBarycenter()
 
 #include <lal/LALBarycenter.h>
 #include "LALInitBarycenter.h"
+#include <lal/DetectorSite.h>
 
 NRCSID(LALBARYCENTERTESTC,"$Id$");
 
 /***************************** <lalErrTable file="LALBarycenterTestCE"> */
 #define LALBARYCENTERTESTC_ENOM 0
-#define LALBARYCENTERTESTC_EARG 1
-#define LALBARYCENTERTESTC_ESUB 2
+#define LALBARYCENTERTESTC_EOPEN 1
+#define LALBARYCENTERH_ENULL  2
+#define LALBARYCENTERTESTC_EOUTOFRANGEE  4
+#define LALBARYCENTERTESTC_EOUTOFRANGES  8
+#define LALBARYCENTERTESTC_EBADSOURCEPOS 16
+#define LALBARYCENTERTESTC_EEPHFILE 32
 
 #define LALBARYCENTERTESTC_MSGENOM "Nominal exit"
-#define LALBARYCENTERTESTC_MSGEARG "Error parsing command-line arguments"
-#define LALBARYCENTERTESTC_MSGESUB "Subroutine returned error"
+#define LALBARYCENTERTESTC_MSGEEOPEN "Error checking failed to catch missing ephemeris file."
+#define LALBARYCENTERTESTC_MSGENULL "Failed to catch null input to Barycenter routine."
+#define LALBARYCENTERTESTC_MSGEOUTOFRANGEE "Failed to catch that tgps not in range of earth.dat file"
+#define LALBARYCENTERTESTC_MSGEOUTOFRANGES "Failed to catch that tgps not in range of sun.dat file"  
+#define LALBARYCENTERTESTC_MSGEBADSOURCEPOS "Failed to catch bad source position"
+#define LALBARYCENTERTESTC_MSGEEPHFILE "Failed to catch error reading ephemeris file."
+
+
 /***************************** </lalErrTable> */
 
 /*
@@ -83,11 +95,68 @@ main()
   REAL8 alpha,delta;  /* RA and DEC (radians) in 
 			 ICRS realization of J2000 coords.*/
   
+  REAL8 dInv; /* 1/(Dist. to Source), in units 1/sec */
   edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));    
-  
+
+#define DEBUG 1 /*rem non-zero is TRUE */
+#if (DEBUG)
+
+/* Checking response if data files not present */
+
+  (*edat).ephiles.earthEphemeris = "earth47.dat";
+  (*edat).ephiles.sunEphemeris = "sun98.dat";
+  (*edat).leap = 12;
+  LALInitBarycenter(&stat, edat);  
+
+      if ( stat.statusCode != LALINITBARYCENTERH_EOPEN
+        || strcmp(stat.statusDescription, LALINITBARYCENTERH_MSGEOPEN) )
+    {
+      printf( "Got error code %d and message %s\n",
+          stat.statusCode, stat.statusDescription );
+      printf( "Expected error code %d and message %s\n",
+           LALINITBARYCENTERH_EOPEN, LALINITBARYCENTERH_MSGEOPEN);
+      return LALBARYCENTERTESTC_EOPEN;
+    }
+
+/* Checking response if data files somehow corrupted --to be fixed!
+
+  (*edat).ephiles.earthEphemeris = "earth98.dat";
+  (*edat).ephiles.sunEphemeris = "sun98_corrupt.dat";
+  (*edat).leap = 12;
+  LALInitBarycenter(&stat, edat);  
+
+      if ( stat.statusCode != LALINITBARYCENTERH_EEPHFILE
+        || strcmp(stat.statusDescription, LALINITBARYCENTERH_MSGEEPHFILE) )
+    {
+      printf( "Got error code %d and message %s\n",
+          stat.statusCode, stat.statusDescription );
+      printf( "Expected error code %d and message %s\n",
+           LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
+      return LALBARYCENTERTESTC_EEPHFILE;
+    }
+*/
+#endif
+
+/*Now inputting kosher ephemeris. files and leap sec, to illustrate
+  proper usage. The real, serious TEST of the code is a script written
+  by Rejean Dupuis comparing LALBarycenter to TEMPO for thousands
+  of source positions and times. */
+
   (*edat).ephiles.earthEphemeris = "earth98.dat";
   (*edat).ephiles.sunEphemeris = "sun98.dat";
-  
+
+/* Next give the number of leap secs added from start of GPS epoch to
+   tgps. It's perfectly OK to instead give the number of leap
+   sec from start of GPS epoch to, say, Jan. 2 in year that contains
+   tgps. Currently have to specify leap by hand. This will be
+   replaced by a leap sec function being written by D. Chin.
+   Use: leap = 11 for 1997, leap = 12 for 1998, leap = 13 for 1999,
+   leap = 13 for 2000, leap = 13 for 2001, leap = 13 for 2002. 
+   Yes, really: the last time it changed was end of 1998, and it's
+   not changing at end of 2001.
+*/ 
+
+  (*edat).leap = 12; 
   
   LALInitBarycenter(&stat, edat);
   printf("stat.statusCode = %d\n",stat.statusCode); 
@@ -96,65 +165,88 @@ main()
  /* The routines using LALBarycenter package, the code above, leading 
     up LALInitBarycenter call, should be near top of main. The idea is
     that ephemeris data is read into RAM once, at the beginning.
+ 
+    NOTE that the only part of the piece of the LALDetector structure
+    baryinput.site that has to be filled in by the driver code is 
+    the 3-vector: baryinput.site.location[] .
+
+    NOTE that the driver code that calls LALInitBarycenter must
+    LALFree(edat->earth) and LALFree(edat->sun).
+    The driver code that calls LALBarycenter must LALFree(edat).
  */   
 
   
-  { /*Now getting coords. for GEO detector. Could eventually be done
-      with a call to LALCreateDetector */
-
-  REAL8 flatFac = 0.00335281e0; /*flattening factor for ellipsoidal Earth,
-                                 from Explan. Supp. to Astronom. Almanac */ 
-  
-  REAL8 longitude,latitude,elev,theta,rd;
-  
-  /*Note I'm assuming values below are GEO's long and lat in geocentric
-    coords--BUT THAT may not be right!! E.g., in obsys.dat, tempo takes
-    uses long and lat in geodetic coords (see p. 703 of Supp to Astron Almanac)
-    Also I set elevation to zero; MUST find and right elevation!! 
-  */
-  
-  latitude = (52.e0 + 15.e0/60)*LAL_PI/180; /*detector latitude for GEO 
-					      (radians north of equator) */  
-  
-  longitude = (9.e0 + 48.e0/60 + 36.e0/3600)*LAL_PI/180; 
-                 /*detector longitude for GEO (radians east of Greenwich) */
-  
-  elev =  0.e0;  /*detector elev above mean sea level (sec) */
-  
-  /*-------------------------------------------------------------------------
-   *converting latitude from geodetic to geocentric (from p. 700 of Ex. Supp.)
-   * if necessary:  
-   
-   latitude = latitude - (692.74e0*LAL_PI/(3600*180))*sin(2.e0*latitutde)
-   + (1.16e0*LAL_PI/(3600*180))*sin(4.e0*latitude);
-   *---------------------------------------------------------------------------
-   */
-  
-  theta=LAL_PI/2.e0 - latitude;
-  
-  rd=elev + (LAL_REARTH_SI/LAL_C_SI)*(1.e0-flatFac)
-    /sqrt(1.e0 - (sin(theta))*(sin(theta))*flatFac*(2.e0-flatFac) );
-  
-  baryinput.site.location[0]=rd*sin(theta)*cos(longitude);
-  baryinput.site.location[1]=rd*sin(theta)*sin(longitude);
-  baryinput.site.location[2]=rd*cos(theta);
+  { /*Now getting coords. for detector. Cached options are:
+      LALDetectorIndexLHODIFF, LALDetectorIndexLLODIFF,
+      LALDetectorIndexVIRGODIFF, LALDetectorIndexGEO600DIFF,
+      LALDetectorIndexTAMA300DIFF,LALDetectorIndexCIT40DIFF */
+     
+  LALDetector cachedDetector;
+  cachedDetector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  baryinput.site.location[0]=cachedDetector.location[0]/LAL_C_SI;
+  baryinput.site.location[1]=cachedDetector.location[1]/LAL_C_SI;
+  baryinput.site.location[2]=cachedDetector.location[2]/LAL_C_SI;
   }  
-  
-  /* next: outer loop over pulse arrival times; LALBarycenterEarth
+
+#if (DEBUG)
+/* Checking error messages when the timestamp is not within the 
+   1-yr ephemeris files 
+*/
+    tGPS.gpsSeconds = t1998+5.e7;
+    tGPS.gpsNanoSeconds = 0;
+    LALBarycenterEarth(&stat, &earth, &tGPS, edat);
+      if ( stat.statusCode != LALBARYCENTERH_EOUTOFRANGEE
+        || strcmp(stat.statusDescription, LALBARYCENTERH_MSGEOUTOFRANGEE) )
+    {
+      printf( "Got error code %d and message %s\n",
+          stat.statusCode, stat.statusDescription );
+      printf( "Expected error code %d and message %s\n",
+           LALBARYCENTERH_EOUTOFRANGEE, LALBARYCENTERH_MSGEOUTOFRANGEE);
+      return LALBARYCENTERTESTC_EOUTOFRANGEE;
+    }
+
+/* next try calling for bad choice of RA,DEC (e.g., something 
+sensible in degrees, but radians)*/
+
+      tGPS.gpsSeconds = t1998+3600;
+      tGPS.gpsNanoSeconds = 0;
+    
+    LALBarycenterEarth(&stat, &earth, &tGPS, edat);
+
+      
+    baryinput.alpha= 120.e0;
+    baryinput.delta=60.e0;
+    baryinput.dInv=0.e0;
+
+    LALBarycenter(&stat, &emit, &baryinput, &earth);
+      if ( stat.statusCode != LALBARYCENTERH_EBADSOURCEPOS
+        || strcmp(stat.statusDescription,LALBARYCENTERH_MSGEBADSOURCEPOS) )
+    {
+      printf( "Got error code %d and message %s\n",
+          stat.statusCode, stat.statusDescription );
+      printf( "Expected error code %d and message %s\n",
+           LALBARYCENTERH_EBADSOURCEPOS, LALBARYCENTERH_MSGEBADSOURCEPOS);
+      return LALBARYCENTERTESTC_EBADSOURCEPOS;
+    }
+
+#endif
+/* Now running program w/o errors, to illustrate proper use. */
+
+/*First: outer loop over pulse arrival times; LALBarycenterEarth
     called ONCE per arrival time */
   
   for (i=0;i < 10; i++){
     
     /*GPS time(sec) =  tGPS.gpsSeconds + 1.e-9*tGPS.gpsNanoSeconds  */ 
-    
+          
     tGPS.gpsSeconds = t1998;
-    tGPS.gpsSeconds +=i*3600*50; 
+    tGPS.gpsSeconds +=i*3600*50;  
     tGPS.gpsNanoSeconds = 0;
-    
+
     LALBarycenterEarth(&stat, &earth, &tGPS, edat);
     REPORTSTATUS(&stat);
-    
-    /*next: inner loop over different sky positions, for each arrival time;
+
+/*Next: inner loop over different sky positions, for each arrival time;
      LALBarycenter called ONCE per sky position (or ONCE per detector) */
     
     for (k=0;k<3;k++){
@@ -166,7 +258,8 @@ main()
       
       baryinput.alpha = alpha;
       baryinput.delta = delta;
-      
+      baryinput.dInv = 0.e0;      
+
       baryinput.tgps.gpsSeconds = tGPS.gpsSeconds;
       baryinput.tgps.gpsNanoSeconds = tGPS.gpsNanoSeconds;
       
@@ -188,6 +281,13 @@ main()
 	     emit.vDetector[0],emit.vDetector[1],emit.vDetector[2]);
     }    
   }
+  LALFree(edat->earth);
+  LALFree(edat->sun);
   LALFree(edat);
+  LALCheckMemoryLeaks();
   return 0;
 }
+
+
+
+
