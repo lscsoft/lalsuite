@@ -716,7 +716,7 @@ int main(int argc, char *argv[])
   REAL8             d;
 
   LALDetAMResponseSeries    am_response_series = {NULL,NULL,NULL};
-  REAL4TimeSeries           plus_series, cross_series, scalar_series, circ_series;
+  REAL4TimeSeries           plus_series, cross_series, scalar_series, circ_series, sum_series;
   /* REAL4Vector               diffVector; */
   LALTimeIntervalAndNSample time_info;
 
@@ -1555,7 +1555,6 @@ int main(int argc, char *argv[])
   gps.gpsSeconds += 829;
   for (i = 0; i < 10000000; i += 1000)
     {
-      LALTimeInterval interval;
       interval.nanoSeconds += i;
       printf("i = %03d\n", i);
       LALIncrementGPS(&status, &gps, &gps, &interval);
@@ -1665,6 +1664,7 @@ int main(int argc, char *argv[])
   cross_series.data = NULL;
   scalar_series.data = NULL;
   circ_series.data = NULL;
+  sum_series.data = NULL;
   
   am_response_series.pPlus   = &(plus_series);
   am_response_series.pCross  = &(cross_series);
@@ -1674,6 +1674,7 @@ int main(int argc, char *argv[])
   LALSCreateVector(&status, &(am_response_series.pCross->data), 1);
   LALSCreateVector(&status, &(am_response_series.pScalar->data), 1);
   LALSCreateVector(&status, &(circ_series.data), 1);
+  LALSCreateVector(&status, &(sum_series.data), 1);
 
   if (lalDebugLevel > 0)
     {
@@ -1684,12 +1685,13 @@ int main(int argc, char *argv[])
       printf("am_response_series.pScalar->data->length = %d\n",
              am_response_series.pScalar->data->length);
       printf("circ_series.data->length = %d\n", circ_series.data->length);
+      printf("sum_series.data->length = %d\n", sum_series.data->length);
     }
     
   time_info.epoch.gpsSeconds     = 61094;
   time_info.epoch.gpsNanoSeconds = 640000000;
   time_info.deltaT               = 1800;
-  time_info.nSample              = 50*17;
+  time_info.nSample              = 50;
 
   LALComputeDetAMResponseSeries(&status,
                                 &am_response_series,
@@ -1747,21 +1749,40 @@ int main(int argc, char *argv[])
                        am_response_series.pPlus->data->length);
       printf("circ_series.data->length = %d\n", circ_series.data->length);
 
+      LALSDestroyVector(&status, &(sum_series.data));
+      LALSCreateVector(&status, &(sum_series.data),
+                       am_response_series.pPlus->data->length);
+      printf("sum_series.data->length = %d\n", sum_series.data->length);
+
       circ_series.epoch = am_response_series.pPlus->epoch;
       circ_series.deltaT = am_response_series.pPlus->deltaT;
       circ_series.f0 = am_response_series.pPlus->f0;
       circ_series.sampleUnits = lalDimensionlessUnit;
 
+      sum_series.epoch = am_response_series.pPlus->epoch;
+      sum_series.deltaT = am_response_series.pPlus->deltaT;
+      sum_series.f0 = am_response_series.pPlus->f0;
+      sum_series.sampleUnits = lalDimensionlessUnit;
+
       for (k = 0; k < circ_series.data->length; ++k)
         {
+          /* sqrt(Fplus^2 + Fcross^2) */
           circ_series.data->data[k] =
             sqrt(am_response_series.pPlus->data->data[k] *
                  am_response_series.pPlus->data->data[k] +
                  am_response_series.pCross->data->data[k] *
                  am_response_series.pCross->data->data[k]);
+
+          /* (Fplus + Fcross)^2 */
+          sum_series.data->data[k] =
+            (am_response_series.pPlus->data->data[k]
+             + am_response_series.pCross->data->data[k])
+            * (am_response_series.pPlus->data->data[k]
+               + am_response_series.pCross->data->data[k]);
         }
 
       LALSPrintTimeSeries(&circ_series, "circ_series.txt");
+      LALSPrintTimeSeries(&sum_series, "sum_series.txt");
     }
 
   if (lalDebugLevel >= 8)
@@ -1805,6 +1826,7 @@ int main(int argc, char *argv[])
   LALSDestroyVector(&status, &(am_response_series.pCross->data));
   LALSDestroyVector(&status, &(am_response_series.pScalar->data));
   LALSDestroyVector(&status, &(circ_series.data));
+  LALSDestroyVector(&status, &(sum_series.data));
 
   LALCheckMemoryLeaks();
 
