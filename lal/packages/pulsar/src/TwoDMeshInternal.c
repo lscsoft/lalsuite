@@ -299,8 +299,8 @@ do {                                                                 \
   if ( widthMaxFac*(dx) > sqrt( (metric)[1]*(mismatch)/det ) )       \
     TOOWIDERETURN;                                                   \
   disc = sqrt( (metric)[1]*(mismatch) - det*(dx)*(dx) );             \
-  (dy)[0] = ( -metric[2]*dx + disc ) / metric[1];                    \
-  (dy)[1] = ( -metric[2]*dx - disc ) / metric[1];                    \
+  (dy)[0] = ( -metric[2]*dx - disc ) / metric[1];                    \
+  (dy)[1] = ( -metric[2]*dx + disc ) / metric[1];                    \
 } while (0)
 
 
@@ -438,6 +438,7 @@ LALTwoDColumn( LALStatus            *stat,
 	       TwoDColumnParamStruc *column,
 	       TwoDMeshParamStruc   *params )
 { /* </lalVerbatim> */
+  BOOLEAN tiled = 0;    /* whether tiles were placed on the centreline */
   REAL4 position[2];    /* current top of column */
   REAL4 dx, dxMax;      /* current and maximum half-width of column */
   REAL4 y0, y1;         /* temporary variables storing y-coordinates */
@@ -477,8 +478,8 @@ LALTwoDColumn( LALStatus            *stat,
     nIn = params->nIn;
 
   /* Set the boundaries of the regions that no longer need tiling. */
-  centreClip[0] = 0.5*column->leftRange[0] + 0.5*column->rightRange[0];
-  centreClip[1] = 0.5*column->leftRange[1] + 0.5*column->rightRange[1];
+  centreClip[0] = 0.5*column->leftClip[0] + 0.5*column->rightClip[0];
+  centreClip[1] = 0.5*column->leftClip[1] + 0.5*column->rightClip[1];
   leftTiled[0] = column->leftClip[1];
   leftTiled[1] = column->leftClip[0];
   rightTiled[0] = column->rightClip[1];
@@ -492,29 +493,26 @@ LALTwoDColumn( LALStatus            *stat,
 
   /* Add the column of tiles along the centreline, if the parameter
      space intersects the clipping area along the centreline. */
-  position[1] = centreRange[0];
-  if ( position[1] > centreClip[0] )
-    position[1] = centreClip[0];
+  position[1] = centreClip[0];
+  if ( position[1] < centreRange[0] )
+    position[1] = centreRange[0];
   if ( position[1] < centreRange[1] ) {
 
     /* Add base tile of column. */
+    tiled = 1;
     TRY( (params->getMetric)( stat->statusPtr, metric, position,
 			      params->metricParams ), stat );
     here->next = (TwoDMeshNode *)LALMalloc( sizeof(TwoDMeshNode) );
     if ( here == NULL ) {
       ABORT( stat, TWODMESHH_EMEM, TWODMESHH_MSGEMEM );
     }
+    memset( here->next, 0, sizeof(TwoDMeshNode) );
     params->nOut++;
-
-    /*DEBUG:*/
-    fprintf( stderr, "%i %f %f\n", params->nOut, position[0],
-	     position[1] );
-    fflush( stderr );
-
     GETSIZE( here->next->dy, dx, metric, params->mThresh );
     here->next->y = position[1];
     here = here->next;
     here->x = position[0];
+    here->dx = dx;
     here->next = here->subMesh = NULL;
 
     if ( params->nOut >= nIn ) {
@@ -522,15 +520,21 @@ LALTwoDColumn( LALStatus            *stat,
       DETATCHSTATUSPTR( stat );
       RETURN( stat );
     }
+
     /* Determine the region that we've covered. */
-    leftTiled[0] = here->y - here->dy[1];
+    y0 = here->y + here->dy[0];
+    y1 = here->y - here->dy[1];
+    if ( leftTiled[0] > y1 )
+      leftTiled[0] = y1;
+    if ( rightTiled[0] > y0 )
+      rightTiled[0] = y0;
     leftTiled[1] = here->y - here->dy[0];
-    rightTiled[0] = here->y + here->dy[0];
     rightTiled[1] = here->y + here->dy[1];
     position[1] = 0.5*leftTiled[1] + 0.5*rightTiled[1];
 
     /* Continue stacking tiles until we reach the top. */
-    while ( position[1] < centreRange[1] ) {
+    while ( ( position[1] < centreRange[1] ) &&
+	    ( position[1] < centreClip[1] ) ) {
       (params->getMetric)( stat->statusPtr, metric, position,
 			   params->metricParams );
       BEGINFAIL( stat )
@@ -543,21 +547,21 @@ LALTwoDColumn( LALStatus            *stat,
 				 NULL ), stat );
 	ABORT( stat, TWODMESHH_EMEM, TWODMESHH_MSGEMEM );
       }
+      memset( here->next, 0, sizeof(TwoDMeshNode) );
       params->nOut++;
-
-      /*DEBUG:*/
-      fprintf( stderr, "%i %f %f\n", params->nOut, position[0],
-	       position[1] );
-      fflush( stderr );
-
       GETSIZE( here->next->dy, dx, metric, params->mThresh );
       y0 = here->dy[1] - here->next->dy[0];
       y1 = here->next->dy[1] - here->dy[0];
-      if ( y0 < y1 )
+      if ( y0 > y1 )
 	y0 = y1;
+      if ( y0 <= 0.0 )
+	TOOWIDERETURN;
       here->next->y = here->y + y0;
       here = here->next;
+      if ( here->y > centreRange[1] )
+	here->y = centreRange[1];
       here->x = position[0];
+      here->dx = dx;
       here->next = here->subMesh = NULL;
       if ( params->nOut >= nIn ) {
 	*tail = here;
@@ -565,45 +569,37 @@ LALTwoDColumn( LALStatus            *stat,
 	RETURN( stat );
       }
 
-      /* Check that we've extended the covered region uniformly
-         upwards. */
-      y0 = here->y + here->dy[0];
-      y1 = here->y - here->dy[1];
-      if ( ( leftTiled[0] > y0 ) || ( rightTiled[0] > y1 ) )
-	TOOWIDERETURN;
-      y0 = here->y - here->dy[0];
-      y1 = here->y + here->dy[1];
-      if ( ( leftTiled[1] > y1 ) || ( rightTiled[1] > y0 ) )
-	TOOWIDERETURN;
-      leftTiled[1] = y1;
-      rightTiled[1] = y0;
-      position[1] = 0.5*y0 + 0.5*y1;
+      /* Extend the covered region upwards. */
+      leftTiled[1] = here->y - here->dy[0];
+      rightTiled[1] = here->y + here->dy[1];
+      position[1] = 0.5*leftTiled[1] + 0.5*rightTiled[1];
     }
   }
 
   /* Centreline stacking is complete.  Now check for exposed corners
      of the parameter space, and call LALTwoDColumn() recursively. */
 
-  /* Check bottom-left corner. */
-  if ( ( column->leftRange[0] < leftTiled[0] ) &&
+  /* Check bottom corners. */
+  y0 = 0.5*leftTiled[0] + 0.5*rightTiled[0];
+
+  /* Bottom-left: */
+  if ( ( ( column->leftClip[0] < leftTiled[0] ) ||
+	 ( centreClip[0] < y0 ) ) &&
+       ( column->leftRange[0] < leftTiled[0] ) &&
        ( ( column->leftRange[1] > column->leftClip[0] ) ||
 	 ( centreRange[1] > centreClip[0] ) ) ) {
     TwoDColumnParamStruc column2;
     column2.domain[0] = column->domain[0];
     column2.domain[1] = position[0];
-    column2.leftRange[0] = column->leftRange[0];
-    column2.leftRange[1] = column->leftRange[1];
-    column2.rightRange[0] = centreRange[0];
-    column2.rightRange[1] = centreRange[1];
-    column2.leftClip[0] = column->leftClip[0];
-    column2.leftClip[1] = column->leftClip[1];
-    column2.rightClip[0] = centreClip[0];
-    column2.rightClip[1] = centreClip[1];
-    if ( leftTiled[0] < column2.leftClip[1] )
+    memcpy( column2.leftRange, column->leftRange, 2*sizeof(REAL4) );
+    memcpy( column2.leftClip, column->leftClip, 2*sizeof(REAL4) );
+    memcpy( column2.rightRange, centreRange, 2*sizeof(REAL4) );
+    memcpy( column2.rightClip, centreClip, 2*sizeof(REAL4) );
+    if ( ( leftTiled[0] < column2.leftClip[1] ) &&
+	 ( y0 < column2.rightClip[1] ) ) {
       column2.leftClip[1] = leftTiled[0];
-    y0 = 0.5*leftTiled[0] + 0.5*rightTiled[0];
-    if ( y0 < column2.rightClip[1] )
       column2.rightClip[1] = y0;
+    }
     LALTwoDColumn( stat->statusPtr, &here, &column2, params );
     BEGINFAIL( stat )
       TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),
@@ -618,61 +614,24 @@ LALTwoDColumn( LALStatus            *stat,
       TOOWIDERETURN;
   }
 
-  /* Check top-left corner. */
-  if ( ( column->leftRange[1] > leftTiled[1] ) &&
-       ( leftTiled[1] > leftTiled[0] ) &&
-       ( ( column->leftRange[0] < column->leftClip[1] ) ||
-	 ( centreRange[0] < centreClip[1] ) ) ) {
-    TwoDColumnParamStruc column2;
-    column2.domain[0] = column->domain[0];
-    column2.domain[1] = position[0];
-    column2.leftRange[0] = column->leftRange[0];
-    column2.leftRange[1] = column->leftRange[1];
-    column2.rightRange[0] = centreRange[0];
-    column2.rightRange[1] = centreRange[1];
-    column2.leftClip[0] = column->leftClip[0];
-    column2.leftClip[1] = column->leftClip[1];
-    column2.rightClip[0] = centreClip[0];
-    column2.rightClip[1] = centreClip[1];
-    if ( leftTiled[1] > column2.leftClip[0] )
-      column2.leftClip[0] = leftTiled[1];
-    y0 = 0.5*leftTiled[1] + 0.5*rightTiled[1];
-    if ( y0 > column2.rightClip[0] )
-      column2.rightClip[0] = y0;
-    LALTwoDColumn( stat->statusPtr, &here, &column2, params );
-    BEGINFAIL( stat )
-      TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),
-			       NULL ), stat );
-    ENDFAIL( stat );
-    if ( params->nOut >= nIn ) {
-      *tail = here;
-      DETATCHSTATUSPTR( stat );
-      RETURN( stat );
-    }
-    if ( column2.tooWide )
-      TOOWIDERETURN;
-  }
-
-  /* Check bottom-right corner. */
-  if ( ( column->rightRange[0] < rightTiled[0] ) &&
+  /* Bottom-right: */
+  if ( ( ( column->rightClip[0] < rightTiled[0] ) ||
+	 ( centreClip[0] < y0 ) ) &&
+       ( column->rightRange[0] < rightTiled[0] ) &&
        ( ( column->rightRange[1] > column->rightClip[0] ) ||
 	 ( centreRange[1] > centreClip[0] ) ) ) {
     TwoDColumnParamStruc column2;
     column2.domain[1] = column->domain[1];
     column2.domain[0] = position[0];
-    column2.rightRange[0] = column->rightRange[0];
-    column2.rightRange[1] = column->rightRange[1];
-    column2.leftRange[0] = centreRange[0];
-    column2.leftRange[1] = centreRange[1];
-    column2.rightClip[0] = column->rightClip[0];
-    column2.rightClip[1] = column->rightClip[1];
-    column2.leftClip[0] = centreClip[0];
-    column2.leftClip[1] = centreClip[1];
-    if ( rightTiled[0] < column2.rightClip[1] )
+    memcpy( column2.rightRange, column->rightRange, 2*sizeof(REAL4) );
+    memcpy( column2.rightClip, column->rightClip, 2*sizeof(REAL4) );
+    memcpy( column2.leftRange, centreRange, 2*sizeof(REAL4) );
+    memcpy( column2.leftClip, centreClip, 2*sizeof(REAL4) );
+    if ( ( rightTiled[0] < column2.rightClip[1] ) &&
+	 ( y0 < column2.leftClip[1] ) ) {
       column2.rightClip[1] = rightTiled[0];
-    y0 = 0.5*leftTiled[0] + 0.5*rightTiled[0];
-    if ( y0 < column2.leftClip[1] )
       column2.leftClip[1] = y0;
+    }
     LALTwoDColumn( stat->statusPtr, &here, &column2, params );
     BEGINFAIL( stat )
       TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),
@@ -687,39 +646,73 @@ LALTwoDColumn( LALStatus            *stat,
       TOOWIDERETURN;
   }
 
-  /* Check top-right corner. */
-  if ( ( column->rightRange[1] > rightTiled[1] ) &&
-       ( rightTiled[1] > rightTiled[0] ) &&
-       ( ( column->rightRange[0] < column->rightClip[1] ) ||
-	 ( centreRange[0] < centreClip[1] ) ) ) {
-    TwoDColumnParamStruc column2;
-    column2.domain[1] = column->domain[1];
-    column2.domain[0] = position[0];
-    column2.rightRange[0] = column->rightRange[0];
-    column2.rightRange[1] = column->rightRange[1];
-    column2.leftRange[0] = centreRange[0];
-    column2.leftRange[1] = centreRange[1];
-    column2.rightClip[0] = column->rightClip[0];
-    column2.rightClip[1] = column->rightClip[1];
-    column2.leftClip[0] = centreClip[0];
-    column2.leftClip[1] = centreClip[1];
-    if ( rightTiled[1] > column2.rightClip[0] )
-      column2.rightClip[0] = rightTiled[1];
+  /* Check top corners. */
+  if ( tiled ) {
     y0 = 0.5*leftTiled[1] + 0.5*rightTiled[1];
-    if ( y0 > column2.leftClip[0] )
-      column2.leftClip[0] = y0;
-    LALTwoDColumn( stat->statusPtr, &here, &column2, params );
-    BEGINFAIL( stat )
-      TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),
-			       NULL ), stat );
-    ENDFAIL( stat );
-    if ( params->nOut >= nIn ) {
-      *tail = here;
-      DETATCHSTATUSPTR( stat );
-      RETURN( stat );
+
+    /* Top-left: */
+    if ( ( ( column->leftClip[1] > leftTiled[1] ) ||
+	   ( centreClip[1] > y0 ) ) &&
+	 ( column->leftRange[1] > leftTiled[1] ) &&
+	 ( ( column->leftRange[0] < column->leftClip[1] ) ||
+	   ( centreRange[0] < centreClip[1] ) ) ) {
+      TwoDColumnParamStruc column2;
+      column2.domain[0] = column->domain[0];
+      column2.domain[1] = position[0];
+      memcpy( column2.leftRange, column->leftRange, 2*sizeof(REAL4) );
+      memcpy( column2.leftClip, column->leftClip, 2*sizeof(REAL4) );
+      memcpy( column2.rightRange, centreRange, 2*sizeof(REAL4) );
+      memcpy( column2.rightClip, centreClip, 2*sizeof(REAL4) );
+      if ( ( leftTiled[1] > column2.leftClip[0] ) &&
+	   ( y0 > column2.rightClip[0] ) ) {
+	column2.leftClip[0] = leftTiled[1];
+	column2.rightClip[0] = y0;
+      }
+      LALTwoDColumn( stat->statusPtr, &here, &column2, params );
+      BEGINFAIL( stat )
+	TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),
+				 NULL ), stat );
+      ENDFAIL( stat );
+      if ( params->nOut >= nIn ) {
+	*tail = here;
+	DETATCHSTATUSPTR( stat );
+	RETURN( stat );
+      }
+      if ( column2.tooWide )
+	TOOWIDERETURN;
     }
-    if ( column2.tooWide )
-      TOOWIDERETURN;
+
+    /* Top-right: */
+    if ( ( ( column->rightClip[1] > rightTiled[1] ) ||
+	   ( centreClip[1] > y0 ) ) &&
+	 ( column->rightRange[1] > rightTiled[1] ) &&
+	 ( ( column->rightRange[0] < column->rightClip[1] ) ||
+	   ( centreRange[0] < centreClip[1] ) ) ) {
+      TwoDColumnParamStruc column2;
+      column2.domain[1] = column->domain[1];
+      column2.domain[0] = position[0];
+      memcpy( column2.rightRange, column->rightRange, 2*sizeof(REAL4) );
+      memcpy( column2.rightClip, column->rightClip, 2*sizeof(REAL4) );
+      memcpy( column2.leftRange, centreRange, 2*sizeof(REAL4) );
+      memcpy( column2.leftClip, centreClip, 2*sizeof(REAL4) );
+      if ( ( rightTiled[1] > column2.rightClip[0] ) &&
+	   ( y0 > column2.leftClip[0] ) ) {
+	column2.rightClip[0] = rightTiled[1];
+	column2.leftClip[0] = y0;
+      }
+      LALTwoDColumn( stat->statusPtr, &here, &column2, params );
+      BEGINFAIL( stat )
+	TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),
+				 NULL ), stat );
+      ENDFAIL( stat );
+      if ( params->nOut >= nIn ) {
+	*tail = here;
+	DETATCHSTATUSPTR( stat );
+	RETURN( stat );
+      }
+      if ( column2.tooWide )
+	TOOWIDERETURN;
+    }
   }
 
   /* Everything worked fine, so update *tail and exit. */

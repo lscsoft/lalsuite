@@ -13,8 +13,9 @@ ellipses.
 
 \subsubsection*{Usage}
 \begin{verbatim}
-TwoDMeshTest [-o outfile] [-p psfile flags] [-d debug] [-b dx1 dy1 dx2 dy2 ]
-             [-e a b c] [-x dadx dbdx dcdx] [-y dady dbdy dcdy]
+TwoDMeshTest [-o outfile] [-p psfile flags] [-d debug] [-n nmax cmax]
+             [-b dx1 dy1 dx2 dy2 ] [-e a b c]
+             [-x dadx dbdx dcdx] [-y dady dbdy dcdy]
 \end{verbatim}
 
 \subsubsection*{Description}
@@ -29,6 +30,9 @@ constant mismatch metric.  The following option flags are accepted:
 no plot is made.
 \item[\texttt{-d}] Sets the debug level to \verb@debug@.  If
 absent, a debug level of zero is used.
+\item[\texttt{-n}] Sets the maximum number of mesh points to
+\verb@nmax@ and the maximum estimated number of columns to
+\verb@cmax@.  If absent, they are set to zero (meaining no maximum).
 \item[\texttt{-b}] Sets the parameter space boundary to be a
 parallelogram defined by the vectors (\verb@dx1@,\verb@dy1@) and
 (\verb@dx2@,\verb@dy2@) from the origin.  If absent, the region is
@@ -64,7 +68,7 @@ zero.
 #define TWODMESHTESTC_MSGEBAD    "Bad argument value"
 #define TWODMESHTESTC_MSGEMEM    "Memory allocation error"
 #define TWODMESHTESTC_MSGEFILE   "Could not open file"
-#define TWODMESHTESTC_MSGEMETRIC "Ellipse axis length is zero or negative within the specified region"
+#define TWODMESHTESTC_MSGEMETRIC "Axis length is zero or negative within specified region"
 /******************************************** </lalErrTable><lalLaTeX>
 
 \subsubsection*{Algorithm}
@@ -180,7 +184,7 @@ scaled to fit on one $8.5''\times11''$ page.  That is, if
 $||(x_1+x_2,y_1+y_2)||\geq||(x_1-x_2,y_1-y_2)||$, the rotation angle
 of the coordinate axes will be
 $\theta=\pi/2-\arctan\!2(y_1+y_2,x_1+x_2)$, or
-$\theta=\pi/2-\arctan\!2(y_1-y_2,x_1-x_2)$ otherwise.  We note that
+$\theta=\pi/2-\arctan\!2(y_2-y_1,x_2-x_1)$ otherwise.  We note that
 the function $\arctan\!2(y,x)$ returns the argument of the complex
 number $x+iy$ in the range $[-\pi,\pi]$.
 
@@ -229,7 +233,7 @@ int lalDebugLevel = 0;
 #define MISMATCH (1.0)  /* arbitrary mismatch threshold used */
 
 /* Usage format string. */
-#define USAGE "Usage: %s TwoDMeshTest [-o outfile] [-p psfile flags] [-d debug]\n\t[-b dx1 dy1 dx2 dy2 ] [-e a b c]\n\t[-x dadx dbdx dcdx] [-y dady dbdy dcdy]\n"
+#define USAGE "Usage: %s [-o outfile] [-p psfile flags] [-d debug] [-n nmax cmax]\n\t[-b dx1 dy1 dx2 dy2 ] [-e a b c]\n\t[-x dadx dbdx dcdx] [-y dady dbdy dcdy]\n"
 
 /* Macros for printing errors and testing subroutines. */
 #define ERROR( code, msg, statement )                                \
@@ -283,6 +287,7 @@ main(int argc, char **argv)
   CHAR *outfile = NULL;      /* name of output file */
   CHAR *psfile = NULL;       /* name of PostScript output file */
   UINT2 flags;               /* plotting flags */
+  UINT4 nmax = 0, cmax = 0;  /* maximum numbers of points/columns */
   REAL4 rangeParams[4];      /* LALRangeTest() parameters */
   REAL4 metricParams[9];     /* LALMetricTest() parameters */
   TwoDMeshParamStruc params; /* LALCreateTwoDMesh() parameters */
@@ -297,8 +302,8 @@ main(int argc, char **argv)
   REAL4 dady = DADY, dbdy = DBDY, dcdy = DCDY;
 
 
-  /* DEBUG: Do nothing at present. */
-  return 0;
+  /* DEBUG: Do nothing at present.
+  return 0; */
 
 
   /* Parse argument list.  arg stores the current position. */
@@ -332,6 +337,18 @@ main(int argc, char **argv)
       if ( argc > arg + 1 ) {
 	arg++;
 	lalDebugLevel = atoi( argv[arg++] );
+      }else{
+	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
+        LALPrintError( USAGE, *argv );
+        return TWODMESHTESTC_EARG;
+      }
+    }
+    /* Parse maximum numbers option. */
+    else if ( !strcmp( argv[arg], "-n" ) ) {
+      if ( argc > arg + 2 ) {
+	arg++;
+	nmax = atoi( argv[arg++] );
+	cmax = atoi( argv[arg++] );
       }else{
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
@@ -469,8 +486,8 @@ main(int argc, char **argv)
   params.mThresh = MISMATCH;
   params.widthMaxFac = 0.0;
   params.widthRetryFac = 0.0;
-  params.maxColumns = 0;
-  params.nIn = 0;
+  params.maxColumns = cmax;
+  params.nIn = nmax;
 
   /* Create mesh. */
   SUB( LALCreateTwoDMesh( &stat, &mesh, &params ), &stat );
@@ -492,8 +509,8 @@ main(int argc, char **argv)
 
   /* Make a PostScript plot of the mesh, if requested. */
   if ( psfile && flags ) {
-    REAL4 xSum = dx1 + dx2, xDiff = dx1 - dx2;
-    REAL4 ySum = dy1 + dy2, yDiff = dy1 - dy2;
+    REAL4 xSum = dx1 + dx2, xDiff = dx2 - dx1;
+    REAL4 ySum = dy1 + dy2, yDiff = dy2 - dy1;
     INT2 plotPoints = flags & 1;
     BOOLEAN plotTiles = flags & 2;
     BOOLEAN plotEllipses = flags & 4;
@@ -505,10 +522,10 @@ main(int argc, char **argv)
       return TWODMESHTESTC_EFILE;
     }
     if ( xSum*xSum + ySum*ySum > xDiff*xDiff + yDiff*yDiff )
-      plotParams.theta = LAL_PI_2 - atan2( ySum, xSum );
+      plotParams.theta = 90.0 - LAL_180_PI*atan2( ySum, xSum );
     else
-      plotParams.theta = LAL_PI_2 - atan2( yDiff, xDiff );
-    plotParams.xScale = plotParams.yScale = 10.0;
+      plotParams.theta = 90.0 - LAL_180_PI*atan2( yDiff, xDiff );
+    plotParams.xScale = plotParams.yScale = 100.0;
     plotParams.bBox[0] = 36.0;
     plotParams.bBox[1] = 36.0;
     plotParams.bBox[2] = 576.0;
@@ -517,7 +534,7 @@ main(int argc, char **argv)
     memset( plotParams.clipBox, 0, 4*sizeof(REAL4) );
     plotParams.nLevels = 1;
     if ( flags & 8 )
-      plotParams.nBoundary = (UINT4)( fabs( 0.1*( dx1 + dx2 )/a ) );
+      plotParams.nBoundary = (UINT4)( fabs( 2.0*( dx1 + dx2 )/a ) ) + 2;
     else
       plotParams.nBoundary = 0;
     plotParams.plotPoints = &plotPoints;
@@ -542,6 +559,8 @@ LALRangeTest( LALStatus *stat, REAL4 range[2], REAL4 x, void *params )
   REAL4 *xy = (REAL4 *)( params ); /* params recast to its proper type */
   REAL4 ya, yb;                    /* unsorted range values */
 
+  /* NOTE: It is assumed and required that xy[0] <= xy[2]. */
+
   INITSTATUS( stat, "LALRangeTest", TWODMESHTESTC );
   ASSERT( range, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
   ASSERT( params, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
@@ -550,40 +569,36 @@ LALRangeTest( LALStatus *stat, REAL4 range[2], REAL4 x, void *params )
   if ( xy[0] == 0.0 ) {
     ya = xy[3]*( x/xy[2] );
     yb = ya + xy[1];
-  } else if ( xy[2] == 0.0 ) {
+  }
+  else if ( xy[2] == 0.0 ) {
     ya = xy[1]*( x/xy[0] );
     yb = ya + xy[3];
   }
 
   /* Case 2: Both side vectors point in the same direction (either
      left or right). */
-  else if ( xy[0]*xy[2] > 0.0 ) {
-    REAL4 dx1 = x - xy[0];
-    REAL4 dx2 = x - xy[2];
-    if ( x*dx1 < 0.0 )
+  else if ( ( xy[0] > 0.0 ) || ( xy[2] < 0.0 ) ) {
+    if ( fabs( x ) < fabs( xy[0] ) )
       ya = xy[1]*( x/xy[0] );
     else
-      ya = xy[1] + xy[3]*( dx1/xy[2] );
-    if ( x*dx2 < 0.0 )
+      ya = xy[1] + xy[3]*( ( x - xy[0] )/xy[2] );
+    if ( fabs( x ) < fabs( xy[2] ) )
       yb = xy[3]*( x/xy[2] );
     else
-      yb = xy[3] + xy[1]*( dx2/xy[0] );
+      yb = xy[3] + xy[1]*( ( x - xy[2] )/xy[0] );
   }
 
-  /* Case 3: One side vector points left and the other points
-     right. */
+  /* Case 3: The first side vector points left and the second points
+     right.  (The reverse is impossible, given our assumed ordering.)  */
   else {
-    REAL4 dx1 = x - xy[0];
-    REAL4 dx2 = x - xy[2];
-    REAL4 dx12 = x - xy[0] - xy[2];
-    if ( x*dx1 < 0.0 )
+    if ( x < 0.0 )
       ya = xy[1]*( x/xy[0] );
     else
       ya = xy[3]*( x/xy[2] );
-    if ( dx1*dx12 < 0.0 )
-      yb = xy[1] + xy[3]*( dx1/xy[2] );
+    if ( x - xy[0] - xy[2] < 0.0 )
+      yb = xy[1] + xy[3]*( ( x - xy[0] )/xy[2] );
     else
-      yb = xy[3] + xy[1]*( dx2/xy[0] );
+      yb = xy[3] + xy[1]*( ( x - xy[2] )/xy[0] );
   }
 
   /* Sort and return the range values. */

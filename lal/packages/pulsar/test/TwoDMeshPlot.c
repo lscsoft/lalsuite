@@ -103,9 +103,9 @@ LALPlotTwoDMesh( LALStatus         *stat,
 		 TwoDMeshPlotStruc *params )
 { /* </lalVerbatim> */
   UINT4 i;          /* an index */
-  UINT4 nObj;       /* counter of number of objects boundary macro */
-  UINT4 nMacro;     /* counter of number of boundary macros */
-  UINT4 nPage;      /* number of pages plotted */
+  UINT4 nObj = 0;   /* counter of number of objects boundary macro */
+  UINT4 nMacro = 0; /* counter of number of boundary macros */
+  UINT4 nPage = 0;  /* number of pages plotted */
   REAL4 bBox[4];    /* bounding box in plot coordinates */
   REAL4 xOff, yOff; /* horizontal and vertical offsets */
   MeshMacroParamStruc macroParams; /* parameters for
@@ -134,8 +134,8 @@ LALPlotTwoDMesh( LALStatus         *stat,
     memcpy( bBox, params->bBox, 4*sizeof(REAL4) );
   params->bBox[0] = params->bBox[1] = LAL_REAL4_MAX;
   params->bBox[2] = params->bBox[3] = -LAL_REAL4_MAX;
-  params->cosTheta = cos( params->theta );
-  params->sinTheta = sin( params->theta );
+  params->cosTheta = cos( LAL_PI_180*params->theta );
+  params->sinTheta = sin( LAL_PI_180*params->theta );
   params->clip = ( ( params->clipBox[2] > params->clipBox[0] ) &&
 		   ( params->clipBox[3] > params->clipBox[1] ) );
 
@@ -156,20 +156,20 @@ LALPlotTwoDMesh( LALStatus         *stat,
   for ( i = 0; i < params->nLevels; i++ )
     if ( params->plotPoints[i] > 0 )
       fprintf( stream,
-	       "/point%u { gsave currentpoint translate %f %f scale"
-	       " %f rotate\n"
+	       "/point%u { gsave currentpoint translate %f %f scale\n"
+	       "  auto auto scale %f rotate\n"
 	       "  newpath 0 0 %u 0 360 arc closepath fill grestore }"
 	       " def\n",
 	       i, 1.0/params->xScale, 1.0/params->yScale,
 	       -params->theta, params->plotPoints[i] );
     else if ( params->plotPoints[i] < 0 )
       fprintf( stream,
-	       "/point%u { gsave currentpoint translate %f %f scale"
-	       " %f rotate\n"
-	       "  newpath 0 0 %u 0 360 arc closepath stroke grestore }"
+	       "/point%u { gsave currentpoint translate %f %f scale\n"
+	       "  auto auto scale %f rotate\n"
+	       "  newpath 0 0 r%u 0 360 arc closepath stroke grestore }"
 	       " def\n",
 	       i, 1.0/params->xScale, 1.0/params->yScale,
-	       -params->theta, -params->plotPoints[i] );
+	       -params->theta, i );
 
   /* Write PostScript macro for plotting ellipses.  The macro is
      called as "[axis1] [axis2] [angle] ellipse", where [axis1] and
@@ -228,7 +228,6 @@ LALPlotTwoDMesh( LALStatus         *stat,
     ENDFAIL( stat );
 
     /* Write macro. */
-    nMacro = 0;
     fprintf( stream,
 	     "/boundary%u {\n"
 	     "%f %f moveto\n", nMacro, x0, yBound[1] );
@@ -252,7 +251,7 @@ LALPlotTwoDMesh( LALStatus         *stat,
     AdjustBBox( x, yBound[2*i+1], params );
     AdjustBBox( x, yBound[2*i], params );
     nObj += 6;
-    for ( i = params->nBoundary - 2; i >= 0; i++ ) {
+    for ( i = params->nBoundary - 2; i < (UINT4)( -1 ); i-- ) {
       x = x0 + i*dx;
       fprintf( stream, "%f %f lineto\n", x, yBound[2*i] );
       AdjustBBox( x, yBound[2*i], params );
@@ -261,13 +260,14 @@ LALPlotTwoDMesh( LALStatus         *stat,
 	fprintf( stream,
 		 "stroke } def\n"
 		 "/boundary%u {\n"
-		 "%f %f moveto\n", ++nMacro, x, yBound[2*i+1] );
+		 "%f %f moveto\n", ++nMacro, x, yBound[2*i] );
 	nObj = 3;
       }
     }
     fprintf( stream,
 	     "%f %f lineto\n"
 	     "stroke } def\n", x0, yBound[1] );
+    nMacro++;
     LALFree( yBound );
   }
 
@@ -281,14 +281,15 @@ LALPlotTwoDMesh( LALStatus         *stat,
      MakeMeshMacro() traverses the linked list, adding a line to the
      macro for each node, and calling itself recursively on any
      submeshes. */
-  fprintf( stream, "\nmesh%u {\n", macroParams.nMacro );
+  fprintf( stream, "\n/mesh%u {\n", macroParams.nMacro );
   TRY( LALMakeMeshMacro( stat->statusPtr, stream, mesh,
 			 &macroParams ), stat );
   fprintf( stream, "} def\n" );
 
-  /* If the last macro list is empty, don't bother calling it. */
-  if ( macroParams.nObj = 0 )
-    macroParams.nMacro--;
+  /* Increment macro counter only if the last macro list is not
+     empty. */
+  if ( macroParams.nObj > 0 )
+    macroParams.nMacro++;
 
   /* Autoscale the axes, if necessary. */
   if ( params->autoscale ) {
@@ -301,10 +302,13 @@ LALPlotTwoDMesh( LALStatus         *stat,
     yScaleFac = ( bBox[3] - bBox[1] )/yScaleFac;
     if ( yScaleFac < xScaleFac )
       xScaleFac = yScaleFac;
-    memcpy( params->bBox, bBox, 4*sizeof(REAL4) );
     params->xScale *= xScaleFac;
     params->yScale *= xScaleFac;
-  }
+    for ( i = 0; i < 4; i++ )
+      params->bBox[i] *= xScaleFac;
+    fprintf( stream, "/auto %f def\n", 1.0/xScaleFac );
+  } else
+    fprintf( stream, "/auto 1 def\n" );
 
   /* Set up coordinate system. */
   if ( params->bBox[2] > params->bBox[0] ) {
@@ -323,37 +327,48 @@ LALPlotTwoDMesh( LALStatus         *stat,
   }
   nPage = 0;
 
+  /* Set the global graphics state. */
+  fprintf( stream, "\n0 setlinewidth 0 setgray\n" );
+
   /* Define an overall clipping region for all pages. */
-  fprintf( stream, "%f %f moveto %f %f lineto %f %f lineto\n"
-	   "%f %f lineto closepath clip\n", TWODMESHPLOTC_XMARG,
-	   TWODMESHPLOTC_YMARG, TWODMESHPLOTC_XMARG,
+  fprintf( stream, "%i %i moveto %i %i lineto %i %i lineto\n"
+	   "%i %i lineto closepath clip newpath\n",
+	   TWODMESHPLOTC_XMARG, TWODMESHPLOTC_YMARG,
+	   TWODMESHPLOTC_XMARG,
 	   TWODMESHPLOTC_YMARG + TWODMESHPLOTC_YSIZE,
 	   TWODMESHPLOTC_XMARG + TWODMESHPLOTC_XSIZE,
 	   TWODMESHPLOTC_YMARG + TWODMESHPLOTC_YSIZE,
-	   TWODMESHPLOTC_YMARG + TWODMESHPLOTC_YSIZE,
+	   TWODMESHPLOTC_XMARG + TWODMESHPLOTC_XSIZE,
 	   TWODMESHPLOTC_YMARG );
 
   /* Plot macros on each page. */
-  for ( yOff = bBox[1]; yOff < bBox[3]; yOff += TWODMESHPLOTC_YSIZE )
-    for ( xOff = bBox[0]; xOff < bBox[2]; xOff += TWODMESHPLOTC_XSIZE ) {
+  for ( yOff = params->bBox[1] - TWODMESHPLOTC_YMARG;
+	yOff < params->bBox[3] - TWODMESHPLOTC_YMARG;
+	yOff += TWODMESHPLOTC_YSIZE )
+    for ( xOff = params->bBox[0] - TWODMESHPLOTC_XMARG;
+	  xOff < params->bBox[2] - TWODMESHPLOTC_XMARG;
+	  xOff += TWODMESHPLOTC_XSIZE ) {
       fprintf( stream, "\n"
 	       "%%%%Page: %u\n"
-	       "gsave %i %i translate %f rotate %f %f scale",
-	       ++nPage, xOff, yOff, params->theta, params->xScale,
+	       "gsave %f %f translate %f rotate %f %f scale",
+	       ++nPage, -xOff, -yOff, params->theta, params->xScale,
 	       params->yScale );
       if ( params->clip )
 	fprintf( stream, " xyclip\n" );
       else
 	fprintf( stream, "\n" );
-      for ( i = 1; i <= nMacro; i++ )
+      for ( i = 0; i < nMacro; i++ )
 	fprintf( stream, "boundary%u\n", i );
-      for ( i = 1; i <= macroParams.nMacro; i++ )
+      for ( i = 0; i < macroParams.nMacro; i++ )
 	fprintf( stream, "mesh%u\n", i );
       fprintf( stream, "showpage grestore\n" );
     }
 
-  /* Finished plotting. */
+  /* Finished plotting.  Restore params->bBox to its original setting,
+     if necessary. */
   fprintf( stream, "\n%%%%EOF\n" );
+  if ( params->autoscale )
+    memcpy( params->bBox, bBox, 4*sizeof(REAL4) );
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }
@@ -444,7 +459,7 @@ LALMakeMeshMacro( LALStatus           *stat,
 	position[1] = mesh->y;
 	TRY( (getMetric)( stat->statusPtr, metric, position,
 			  metricParams ), stat );
-	theta = 0.5*atan2( 2.0*metric[2], metric[0] - metric[1] );
+	theta = 0.5*atan2( -2.0*metric[2], metric[1] - metric[0] );
 	cost = cos( theta );
 	sint = sin( theta );
 
@@ -482,7 +497,7 @@ LALMakeMeshMacro( LALStatus           *stat,
 
 	/* Plot ellipse. */
 	fprintf( stream, " %f %f %f ellipse", axes[0], axes[1],
-		 LAL_180_PI*theta );
+		 theta*(REAL4)( LAL_180_PI ) );
 	AdjustBBox( mesh->x + axes[0]*cost - axes[1]*sint,
 		    mesh->y + axes[0]*sint + axes[1]*cost,
 		    params->plotParams );
@@ -503,7 +518,7 @@ LALMakeMeshMacro( LALStatus           *stat,
       if ( params->nObj > TWODMESHPLOTC_MAXOBJ ) {
 	fprintf( stream,
 		 "} def\n"
-		 "\nmesh%u {\n", ++( params->nMacro ) );
+		 "\n/mesh%u {\n", ++( params->nMacro ) );
 	params->nObj = 0;
       }
     }
@@ -531,9 +546,9 @@ AdjustBBox( REAL4 x, REAL4 y, TwoDMeshPlotStruc *params )
      /* This routine expands the params->bBox field to include the
         point with x-y coordinates given by position. */
 {
-  if ( params->clip &&
-       ( x > params->clipBox[0] ) && ( x < params->clipBox[2] ) &&
-       ( y > params->clipBox[1] ) && ( y < params->clipBox[3] ) ) {
+  if ( !params->clip ||
+       ( ( x > params->clipBox[0] ) && ( x < params->clipBox[2] ) &&
+	 ( y > params->clipBox[1] ) && ( y < params->clipBox[3] ) ) ) {
     REAL4 xp = x*params->xScale*params->cosTheta - 
       y*params->yScale*params->sinTheta;
     REAL4 yp = x*params->xScale*params->sinTheta +

@@ -117,6 +117,13 @@ LALCreateTwoDMesh( LALStatus          *stat,
   head.next = NULL;
   headPtr = &head;
   TRY( LALTwoDMesh( stat->statusPtr, &headPtr, params ), stat );
+#ifndef NDEBUG
+  if ( lalDebugLevel&LALINFO )
+    if ( ( params->nIn == 0 ) || ( params->nOut < params->nIn ) ) {
+      LALInfo( stat, "Mesh complete" );
+      LALPrintError( "\tnumber of mesh points: %u\n", params->nOut );
+    }
+#endif
 
   /* Update the output, and exit. */
   *mesh = head.next;
@@ -274,7 +281,7 @@ LALRefineTwoDMesh( LALStatus    *stat,
   }
   /* If any fine mesh tiles were lost, warn the user. */
 #ifndef NDEBUG
-  if ( lalDebugLevel&LALINFO )
+  if ( lalDebugLevel&LALWARNING )
     if ( lost > 0 ) {
       LALWarning( stat, "Some fine mesh tiles were lost" );
       LALPrintError( "\tnumber lost = %u\n", lost );
