@@ -61,7 +61,7 @@ main(int argc, char **argv)
   UINT4   numPSDpts=262144;
   INT4 nlist;
   REAL8FrequencySeries shf;
-  REAL8 samplingRate;
+  REAL8 samplingRate, dx0, dx1;
   void *noisemodel = LALLIGOIPsd;
   static InspiralCoarseBankIn coarseIn;
   REAL4VectorSequence *list=NULL;
@@ -93,6 +93,7 @@ main(int argc, char **argv)
   params.distance = 1.e8 * LAL_PC_SI/LAL_C_SI;
   LALInspiralParameterCalc(&status, &params);
     
+  /* InspiralCoarseBankIn is not necessary except to get the ambiguity rectangles */
   coarseIn.fLower = params.fLower;
   coarseIn.fUpper = params.fCutoff;
   coarseIn.tSampling = params.tSampling;
@@ -112,12 +113,8 @@ main(int argc, char **argv)
 
   params.psi0 = 132250.;
   params.psi3 = -1314.2;
-  /*
-  params.alpha = 0.528;
-  */
   params.alpha = 0.L;
   params.fendBCV = 868.7;
-  metric.space = Tau0Tau3;
 
   samplingRate = params.tSampling;
   memset( &(shf), 0, sizeof(REAL8FrequencySeries) );
@@ -128,32 +125,20 @@ main(int argc, char **argv)
 
   /* compute the metric at this point, update bankPars and add the params to the list */
 	  
-  /*
-  GetInspiralMoments (&status, &moments, &shf, &params);
-  LALInspiralComputeMetric(&status, &metric, &params, &moments);
-  */
   LALInspiralComputeMetricBCV(&status, &metric, &shf, &params);
+  dx0 = sqrt(2.L * (1.L-coarseIn.mmCoarse)/metric.g00);
+  dx1 = sqrt(2.L * (1.L-coarseIn.mmCoarse)/metric.g11);
 
   fprintf(stderr, "%e %e %e\n", metric.G00, metric.G01, metric.G11);
   fprintf(stderr, "%e %e %e\n", metric.g00, metric.g11, metric.theta);
-  fprintf(stderr, "dp0=%e dp1=%e\n", sqrt ((1.L-coarseIn.mmCoarse)/metric.G00), sqrt ((1.L-coarseIn.mmCoarse)/metric.G11));
-  fprintf(stderr, "dP0=%e dP1=%e\n", sqrt ((1.L-coarseIn.mmCoarse)/metric.g00), sqrt ((1.L-coarseIn.mmCoarse)/metric.g11));
+  fprintf(stderr, "dp0=%e dp1=%e\n", dx0, dx1);
 
   bankParams.metric = &metric;
   bankParams.minimalMatch = coarseIn.mmCoarse;
   bankParams.x0Min = 1.0;
   bankParams.x0Max = 2.5e5;
-  bankParams.x1Min = -2.2e3;
+  bankParams.x1Min = -2.2e4;
   bankParams.x1Max = 8.e2;
-  /*
-  bankParams.x0Min = 0.30;
-  bankParams.x0Max = 43.00; 
-  bankParams.x1Min = 0.15;
-  bankParams.x1Max = 1.25;
-  */
-
-
-	  
 
   in.length = 1;
   in.vectorLength = 2;
@@ -163,7 +148,7 @@ main(int argc, char **argv)
   LALInspiralCreateFlatBank(&status, list, &bankParams);
 
   nlist = list->length;
-  fprintf(stderr, "Number of templates=%d\n", nlist);
+  fprintf(stderr, "Number of templates=%d dx0=%e dx1=%e\n", nlist, bankParams.dx0, bankParams.dx1);
 
   /* Prepare to print result. */
   {
@@ -172,7 +157,7 @@ main(int argc, char **argv)
     for (j=0; j<nlist; j++)
     {
 	/*
-	Retain only those templates that have meaningful masses:
+	Retain only those templates that have meaningful chirptimes:
 	*/
 	    static InspiralTemplate tempParams;
 	    UINT4 valid=0;
