@@ -17,6 +17,7 @@
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/StreamInput.h>
+#include <lal/TimeFreqFFT.h>
 
 NRCSID( INSPAWGFILEC, "$Id$" );
 
@@ -57,7 +58,8 @@ int lalDebugLevel = LALINFO | LALNMEMDBG;
 #define DELTAT (0.00006103515625) /* sampling interval of amplitude and phase */
 
 /* Usage format string. */
-#define USAGE "Usage: %s [-s sourcefile] [-r respfile] [-o outfile] [-e seed]\n                [-i infile | -n sec nsec npt dt sigma] [-d debuglevel]\n"
+#define USAGE "Usage: %s [-s sourcefile] [-r respfile] [-o outfile] [-e seed]\n                [-i infile | -n sec nsec npt dt sigma] [-fi lowf] [-fe highf] \n
+     [-d debuglevel] [-p]\n"
 
 /* Macros for printing errors and testing subroutines. */
 #define ERROR( code, msg, statement )                                \
@@ -133,12 +135,15 @@ main(int argc, char **argv)
   CHAR *respfile = NULL;     /* name of respfile */
   CHAR *infile = NULL;       /* name of infile */
   CHAR *outfile = NULL;      /* name of outfile */
+  CHAR *specfile = NULL;     /* name of spectrum file */
   INT4 seed = 0;             /* random number seed */
   INT4 sec = SEC;            /* ouput epoch.gpsSeconds */
   INT4 nsec = NSEC;          /* ouput epoch.gpsNanoSeconds */
   INT4 npt = NPT;            /* number of output points */
   REAL8 dt = DT;             /* output sampling interval */
   REAL4 sigma = SIGMA;       /* noise amplitude */
+  REAL4 fstart = FSTART;     /* start frequency */
+  REAL4 fstop  = FSTOP;      /* stop frequency */
 
   /* File reading variables. */
   FILE *fp = NULL; /* generic file pointer */
@@ -234,11 +239,44 @@ main(int argc, char **argv)
         return INSPAWGFILEC_EARG;
       }
     }
+    /* Parse start frequency */
+    else if ( !strcmp( argv[arg], "-fi" ) ) {
+      if ( argc > arg + 1 ) {
+	arg++;
+	fstart = atof( argv[arg++] );
+      }else{
+	ERROR( INSPAWGFILEC_EARG, INSPAWGFILEC_MSGEARG, 0 );
+        LALPrintError( USAGE, *argv );
+        return INSPAWGFILEC_EARG;
+      }
+    }
+    /* Parse stop frequency */
+    else if ( !strcmp( argv[arg], "-fe" ) ) {
+      if ( argc > arg + 1 ) {
+	arg++;
+	fstop = atof( argv[arg++] );
+      }else{
+	ERROR( INSPAWGFILEC_EARG, INSPAWGFILEC_MSGEARG, 0 );
+        LALPrintError( USAGE, *argv );
+        return INSPAWGFILEC_EARG;
+      }
+    }
     /* Parse random seed option. */
     else if ( !strcmp( argv[arg], "-e" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
 	seed = atoi( argv[arg++] );
+      }else{
+	ERROR( INSPAWGFILEC_EARG, INSPAWGFILEC_MSGEARG, 0 );
+        LALPrintError( USAGE, *argv );
+        return INSPAWGFILEC_EARG;
+      }
+    }
+    /* Parse print spectrum */
+    else if ( !strcmp( argv[arg], "-p" ) ) {
+      if ( argc > arg + 1 ) {
+	arg++;
+	specfile = argv[arg++];
       }else{
 	ERROR( INSPAWGFILEC_EARG, INSPAWGFILEC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
@@ -344,7 +382,7 @@ main(int argc, char **argv)
   else {
     I8ToLIGOTimeGPS( &( detector.transfer->epoch ), EPOCH );
     detector.transfer->f0 = 0.0;
-    detector.transfer->deltaF = 1.5*FSTOP;
+    detector.transfer->deltaF = 1.5*fstop;
     SUB( LALCCreateVector( &stat, &( detector.transfer->data ), 2 ),
 	 &stat );
     detector.transfer->data->data[0].re = 1.0;
@@ -453,8 +491,8 @@ main(int argc, char **argv)
       ppnParams.position.latitude = ppnParams.position.longitude = 0.0;
       ppnParams.position.system = COORDINATESYSTEM_EQUATORIAL;
       ppnParams.psi = 0.0;
-      ppnParams.fStartIn = FSTART;
-      ppnParams.fStopIn = FSTOP;
+      ppnParams.fStartIn = fstart;
+      ppnParams.fStopIn = fstop;
       ppnParams.lengthIn = 0;
       ppnParams.ppn = NULL;
       ppnParams.deltaT = DELTAT;
@@ -520,6 +558,43 @@ main(int argc, char **argv)
   /* Input file is exhausted (or has a badly-formatted line ). */
   if ( sourcefile )
     fclose( fp );
+
+  /*******************************************************************
+   * COMPUTE POWER SPECTRUM                                          *
+   *******************************************************************/
+
+  /* write diagnostic info to disk */
+  if ( specfile ){
+      REAL4FrequencySeries     *fseries;
+      RealDFTParams            *dftparams        = NULL;
+      LALWindowParams           winParams;
+      INT4 length=2048;
+
+      /* Set up the window parameters */
+      winParams.type=0;
+      winParams.length=length;
+
+      /* assign temporary memory for the frequency data */
+      fseries = (REAL4FrequencySeries *) 
+          LALMalloc (sizeof(REAL4FrequencySeries));
+      strncpy( fseries->name, "anonymous", LALNameLength * sizeof(CHAR) );
+      fseries->data = NULL;
+      SUB( LALCreateVector (&stat, &fseries->data, 
+                  length/2 + 1), &stat ); 
+
+      /* create the dft params */
+      SUB( LALCreateRealDFTParams(&stat , &dftparams, &winParams, 1),
+              &stat);
+
+      /* compute the average spectrum */
+      SUB( LALRealAverageSpectrum (&stat, fseries, &output, dftparams,
+                  0), &stat );
+      LALSPrintFrequencySeries ( fseries, specfile );
+
+      SUB( LALDestroyRealDFTParams(&stat, &dftparams), &stat);
+      SUB( LALDestroyVector(&stat, &fseries->data), &stat);
+      LALFree( fseries );
+  }
 
 
   /*******************************************************************
