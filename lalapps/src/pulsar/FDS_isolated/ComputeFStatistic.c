@@ -1268,8 +1268,10 @@ int ReadSFTData(void)
       /* reverse byte order if needed */
       if (reverse_endian) {
 	unsigned int cnt;
-	for (cnt=0; cnt<2*ndeltaf; cnt++)
-	  swap4((char *)&(SFTData[fileno]->fft->data->data[cnt]));
+	for (cnt=0; cnt<ndeltaf; cnt++) {
+	  swap4((char *)&(SFTData[fileno]->fft->data->data[cnt].re));
+	  swap4((char *)&(SFTData[fileno]->fft->data->data[cnt].im));
+	}
       }
       
       SFTData[fileno]->fft->epoch=timestamps[fileno];
