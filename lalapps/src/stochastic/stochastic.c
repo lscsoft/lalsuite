@@ -1323,7 +1323,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"scale-factor", required_argument, 0, 'o'},
       {"seed", required_argument, 0, 'g'},
       {"number-of-injection", required_argument, 0, 'N'},
-      {"directory for output files", required_argument, 0, 'S'},
+      {"output-dir", required_argument, 0, 'S'},
       {"debug-level", required_argument, 0, 'z'},
       {"version", no_argument, 0, 'V'},
       {0, 0, 0, 0}
