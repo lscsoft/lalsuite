@@ -174,18 +174,17 @@ if condor_prio:
 
 # get the pad and chunk lengths from the values in the ini file
 pad = 0
-s = int(cp.get('string', 'settling-time'))
+no_of_segments = int(cp.get('string', 'no-of-segments'))
 length = int(cp.get('pipeline', 'segment-length'))
-overlap = 2*s
+overlap = length/no_of_segments/4
 
 # read science segs that are greater or equal to a chunk from the input file
 data = pipeline.ScienceData()
 data.read(cp.get('input','segments'),length)
 
 # create the chunks from the science segments
-data.make_chunks(length,overlap,playground_only,0,overlap/2)
-data.make_chunks_from_unused(
-  length,overlap/2,playground_only,overlap/2,0,overlap/2)
+data.make_chunks(length,overlap,playground_only,0,0)
+data.make_chunks_from_unused(length,overlap,playground_only,overlap,0,0)
 
 # get the order of the ifos to filter
 ifo1 = cp.get('pipeline','ifo')
