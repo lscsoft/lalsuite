@@ -25,6 +25,26 @@ the CVS archive.  Contact the software coordinator,
 Alan Wiseman <agw@gravity.phys.uwm.edu>,
 to obtain a username/password, along with instructions.
 
+The following rules will assist in maintaining a stable LAL:
+
+1. Do not add a directory to the CVS archive.  Only the LAL librarian should
+   do this.  CVS treats directories differently than files; there is no
+   revision control on directories.  The cvs add command on a directory will
+   create the directory (no commit is needed), so do not do a cvs add on a
+   directory.
+
+2. You should only commit changes to the files for which you are directly
+   responsible, unless you make an agreement with the ``owners'' of the other
+   files that you want to change.  Please don't make any change to files above
+   the package subdirectory without consulting the LAL librarian.
+
+3. Before commiting any changes to the CVS archive, you should run the
+   testscript.sh and make sure it completes successfully.  This test script
+   checks for esoteric errors that you may not notice doing a vanilla install,
+   so it is important to run it before committing.
+
+
+*******************************************************************************
 
 To add an additional package, you must submit the package as a tar-ball to
 the software coordinator,
