@@ -49,28 +49,34 @@ static void FUNC ( void )
    *
    */
 
+#ifndef LAL_NDEBUG
 
-  CFUNC ( &status, &vector, 0 );
-  TestStatus( &status, CODES( AVFACTORIESH_ELENGTH ), 1 );
+  if ( ! lalNoDebug )
+  {
+    CFUNC ( &status, &vector, 0 );
+    TestStatus( &status, CODES( AVFACTORIESH_ELENGTH ), 1 );
 
-  DFUNC ( &status, NULL );
-  TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
+    DFUNC ( &status, NULL );
+    TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
 
-  CFUNC ( &status, NULL, length );
-  TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
+    CFUNC ( &status, NULL, length );
+    TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
 
-  DFUNC ( &status, &vector );
-  TestStatus( &status, CODES( AVFACTORIESH_EUPTR ), 1 );
+    DFUNC ( &status, &vector );
+    TestStatus( &status, CODES( AVFACTORIESH_EUPTR ), 1 );
 
-  vector = &vstore;
-  CFUNC ( &status, &vector, length );
-  TestStatus( &status, CODES( AVFACTORIESH_EUPTR ), 1 );
+    vector = &vstore;
+    CFUNC ( &status, &vector, length );
+    TestStatus( &status, CODES( AVFACTORIESH_EUPTR ), 1 );
 
-  DFUNC ( &status, &vector );
-  TestStatus( &status, CODES( AVFACTORIESH_EDPTR ), 1 );
+    DFUNC ( &status, &vector );
+    TestStatus( &status, CODES( AVFACTORIESH_EDPTR ), 1 );
+  }
+
+#endif
 
   LALCheckMemoryLeaks();
-  printf( "PASS... tests of CFUNC and DFUNC \n" );
+  printf( "PASS: tests of CFUNC and DFUNC \n" );
           
   return;
 }

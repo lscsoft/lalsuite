@@ -72,7 +72,7 @@ NRCSID( MAIN, "$Id$" );
 extern char *optarg;
 extern int   optind;
 
-int lalDebugLevel = 1;
+int lalDebugLevel = 0;
 int verbose    = 0;
 
 static void

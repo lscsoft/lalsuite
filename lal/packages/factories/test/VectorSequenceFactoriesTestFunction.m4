@@ -51,34 +51,40 @@ static void FUNC ( void )
    *
    */
 
+#ifndef LAL_NDEBUG
 
-  CFUNC ( &status, &sequence, &badslen );
-  TestStatus( &status, CODES( SEQFACTORIESH_ESLENGTH ), 1 );
+  if ( ! lalNoDebug )
+  {
+    CFUNC ( &status, &sequence, &badslen );
+    TestStatus( &status, CODES( SEQFACTORIESH_ESLENGTH ), 1 );
 
-  CFUNC ( &status, &sequence, &badvlen );
-  TestStatus( &status, CODES( SEQFACTORIESH_EVLENGTH ), 1 );
+    CFUNC ( &status, &sequence, &badvlen );
+    TestStatus( &status, CODES( SEQFACTORIESH_EVLENGTH ), 1 );
 
-  CFUNC ( &status, &sequence, NULL );
-  TestStatus( &status, CODES( SEQFACTORIESH_EINPTR ), 1 );
+    CFUNC ( &status, &sequence, NULL );
+    TestStatus( &status, CODES( SEQFACTORIESH_EINPTR ), 1 );
 
-  DFUNC ( &status, NULL );
-  TestStatus( &status, CODES( SEQFACTORIESH_EVPTR ), 1 );
+    DFUNC ( &status, NULL );
+    TestStatus( &status, CODES( SEQFACTORIESH_EVPTR ), 1 );
 
-  CFUNC ( &status, NULL, &input );
-  TestStatus( &status, CODES( SEQFACTORIESH_EVPTR ), 1 );
+    CFUNC ( &status, NULL, &input );
+    TestStatus( &status, CODES( SEQFACTORIESH_EVPTR ), 1 );
 
-  DFUNC ( &status, &sequence );
-  TestStatus( &status, CODES( SEQFACTORIESH_EUPTR ), 1 );
+    DFUNC ( &status, &sequence );
+    TestStatus( &status, CODES( SEQFACTORIESH_EUPTR ), 1 );
 
-  sequence = &sstore;
-  CFUNC ( &status, &sequence, &input );
-  TestStatus( &status, CODES( SEQFACTORIESH_EUPTR ), 1 );
+    sequence = &sstore;
+    CFUNC ( &status, &sequence, &input );
+    TestStatus( &status, CODES( SEQFACTORIESH_EUPTR ), 1 );
 
-  DFUNC ( &status, &sequence );
-  TestStatus( &status, CODES( SEQFACTORIESH_EDPTR ), 1 );
+    DFUNC ( &status, &sequence );
+    TestStatus( &status, CODES( SEQFACTORIESH_EDPTR ), 1 );
+  }
+
+#endif
 
   LALCheckMemoryLeaks();
-  printf( "PASS... tests of CFUNC and DFUNC \n" );
+  printf( "PASS: tests of CFUNC and DFUNC \n" );
           
   return;
 }

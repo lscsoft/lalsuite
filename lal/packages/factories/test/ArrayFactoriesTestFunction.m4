@@ -55,39 +55,46 @@ static void FUNC ( void )
    */
 
 
-  CFUNC ( &status, &array, &badLength1 );
-  TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
+#ifndef LAL_NDEBUG
 
-  CFUNC ( &status, &array, &badLength2 );
-  TestStatus( &status, CODES( AVFACTORIESH_ELENGTH ), 1 );
+  if ( ! lalNoDebug )
+  {
+    CFUNC ( &status, &array, &badLength1 );
+    TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
 
-  CFUNC ( &status, &array, &badLength3 );
-  TestStatus( &status, CODES( AVFACTORIESH_ELENGTH ), 1 );
+    CFUNC ( &status, &array, &badLength2 );
+    TestStatus( &status, CODES( AVFACTORIESH_ELENGTH ), 1 );
+
+    CFUNC ( &status, &array, &badLength3 );
+    TestStatus( &status, CODES( AVFACTORIESH_ELENGTH ), 1 );
+    LALCheckMemoryLeaks();
+
+    DFUNC ( &status, NULL );
+    TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
+
+    CFUNC ( &status, NULL, &dimLength );
+    TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
+
+    DFUNC ( &status, &array );
+    TestStatus( &status, CODES( AVFACTORIESH_EUPTR ), 1 );
+
+    array = &astore;
+    CFUNC ( &status, &array, &dimLength );
+    TestStatus( &status, CODES( AVFACTORIESH_EUPTR ), 1 );
+
+    DFUNC ( &status, &array );
+    TestStatus( &status, CODES( AVFACTORIESH_EDPTR ), 1 );
+
+    array->data = &datum;
+    DFUNC ( &status, &array );
+    TestStatus( &status, CODES( -1 ), 1 );
+    ClearStatus( &status );
+  }
+
+#endif
+
   LALCheckMemoryLeaks();
-
-  DFUNC ( &status, NULL );
-  TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
-
-  CFUNC ( &status, NULL, &dimLength );
-  TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
-
-  DFUNC ( &status, &array );
-  TestStatus( &status, CODES( AVFACTORIESH_EUPTR ), 1 );
-
-  array = &astore;
-  CFUNC ( &status, &array, &dimLength );
-  TestStatus( &status, CODES( AVFACTORIESH_EUPTR ), 1 );
-
-  DFUNC ( &status, &array );
-  TestStatus( &status, CODES( AVFACTORIESH_EDPTR ), 1 );
-
-  array->data = &datum;
-  DFUNC ( &status, &array );
-  TestStatus( &status, CODES( -1 ), 1 );
-  ClearStatus( &status );
-
-  LALCheckMemoryLeaks();
-  printf( "PASS... tests of CFUNC and DFUNC \n" );
+  printf( "PASS: tests of CFUNC and DFUNC \n" );
           
   return;
 }
