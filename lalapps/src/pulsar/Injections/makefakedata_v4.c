@@ -581,7 +581,7 @@ InitUserVars (LALStatus *stat)
   INITSTATUS( stat, "InitUserVars", rcsid );
   ATTATCHSTATUSPTR (stat);
 
-  /* set a few defaults first */
+  /* ---------- set a few defaults ----------  */
   uvar_ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
   strcpy (uvar_ephemYear, EPHEM_YEARS);
 
@@ -608,7 +608,7 @@ InitUserVars (LALStatus *stat)
   uvar_TDDfile = LALCalloc(1, strlen(DEFAULT_TDDFILE)+1);
   strcpy (uvar_TDDfile, DEFAULT_TDDFILE);
 
-  /* now register all our user-variable */
+  /* ---------- register all our user-variable ---------- */
 
   /* output options */
   LALregSTRINGUserVar(stat, outSFTbname,'n', UVAR_OPTIONAL, "Path and basefilename of output SFT files");
@@ -627,12 +627,12 @@ InitUserVars (LALStatus *stat)
   LALregINTUserVar(stat,   duration,	 0,  UVAR_OPTIONAL, "Duration of requested signal in seconds");
   LALregSTRINGUserVar(stat,timestampsFile,0, UVAR_OPTIONAL, "Timestamps file");
 
-  /* SFT properties */
-  LALregREALUserVar(stat,   Tsft, 	 0 , UVAR_OPTIONAL, "SFT time baseline Tsft");
-
   /* sampling and heterodyning frequencies */
   LALregREALUserVar(stat,   fmin,	 0 , UVAR_OPTIONAL, "Lowest frequency in output SFT (= heterodyning frequency)");
   LALregREALUserVar(stat,   Band,	 0 , UVAR_OPTIONAL, "bandwidth of output SFT in Hz (= 1/2 sampling frequency)");
+
+  /* SFT properties */
+  LALregREALUserVar(stat,   Tsft, 	 0 , UVAR_OPTIONAL, "SFT time baseline Tsft");
 
   /* pulsar params */
   LALregREALUserVar(stat,   refTime, 	'S', UVAR_OPTIONAL, "Pulsar reference time tRef in SSB ('0' means: use startTimeSSB)");
@@ -647,10 +647,6 @@ InitUserVars (LALStatus *stat)
   LALregREALUserVar(stat,   f2dot,  	 0 , UVAR_OPTIONAL, "Second spindown parameter f''");
   LALregREALUserVar(stat,   f3dot,  	 0 , UVAR_OPTIONAL, "Third spindown parameter f'''");
 
-  /* noise */
-  LALregREALUserVar(stat,   noiseSigma,	 0 , UVAR_OPTIONAL, "Gaussian noise variance sigma");
-  LALregSTRINGUserVar(stat, noiseSFTs,	'D', UVAR_OPTIONAL, "Glob-like pattern specifying noise-SFTs to be added to signal");  
-
   /* binary-system orbital parameters */
   LALregREALUserVar(stat,   orbitSemiMajorAxis, 0, UVAR_OPTIONAL, "Projected orbital semi-major axis in seconds (a/c)");
   LALregREALUserVar(stat,   orbitEccentricity,  0, UVAR_OPTIONAL, "Orbital eccentricity");
@@ -658,6 +654,10 @@ InitUserVars (LALStatus *stat)
   LALregINTUserVar(stat,    orbitTperiSSBns,    0, UVAR_OPTIONAL, "'observed' (SSB) time of periapsis passage. Nanoseconds.");
   LALregREALUserVar(stat,   orbitPeriod,        0, UVAR_OPTIONAL, "Orbital period (seconds)");
   LALregREALUserVar(stat,   orbitArgPeriapse,   0, UVAR_OPTIONAL, "Argument of periapsis (radians)");                            
+
+  /* noise */
+  LALregREALUserVar(stat,   noiseSigma,	 0 , UVAR_OPTIONAL, "Gaussian noise variance sigma");
+  LALregSTRINGUserVar(stat, noiseSFTs,	'D', UVAR_OPTIONAL, "Glob-like pattern specifying noise-SFTs to be added to signal");  
 
   LALregBOOLUserVar(stat,   help,	'h', UVAR_HELP    , "Print this help/usage message");
   

@@ -1,10 +1,21 @@
 #!/bin/bash
 
-testDIR=mfd_TEST
+testDIR="./mfd_TEST"
   
 oldcode=./makefakedata_test
 newcodeDEFAULT=./lalapps_Makefakedata
 compCode=./compareSFTs
+
+# test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
+if [ -z "$LAL_DATA_PATH" ]; then
+    echo
+    echo "Need environment-variable LAL_DATA_PATH to point to your ephemeris-directory (e.g. /usr/local/share/lal)"
+    if [ -n "$LAL_PREFIX" ]; then
+	echo "You have LAL_PREFIX set, I suggest setting 'LAL_DATA_PATH=\$LAL_PREFIX/share/lal'"
+    fi
+    echo
+    exit 1
+fi
 
 if [ -z "$1" ]; then
     newcode=${newcodeDEFAULT}
@@ -18,10 +29,8 @@ if [ ! -d "$testDIR" ]; then
     mkdir $testDIR
 else
 ## cleanup: remove previous output-SFTs
-    cd $testDIR;
-    rm SFTtest_v2.00* || true
-    rm SFTtest_v4.00* || true
-    cd ..
+    rm $testDIR/SFTtest_v2.00* || true
+    rm $testDIR/SFTtest_v4.00* || true
 fi
 
 if [ ! -x "$oldcode" ]; then
@@ -34,7 +43,7 @@ fi
 
 # signal parameters
 IFO=LLO
-ephemdir=./ephems
+ephemdir=${LAL_DATA_PATH}
 startTime=731210229
 timestamps=./testT8_1800
 refTime=$startTime
@@ -54,7 +63,7 @@ noiseSFTs="$noiseDir/SFT.0000[0-9]"
 
 dataTMP=In.data-test
 oldCL="-i $dataTMP  -I $IFO -E $ephemdir -S $refTime -n ${testDIR}/SFTtest_v2" ## -D $noiseDir"
-newCL="--Tsft=$Tsft --nTsft=$nTsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --latitude=$delta  --longitude=$alpha --detector=$IFO --ephemDir=$ephemdir --outSFTbname=${testDIR}/SFTtest_v4 --timestampsFile=$timestamps --refTime=$refTime" ## -D$noiseSFTs -v1"
+newCL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --latitude=$delta  --longitude=$alpha --detector=$IFO --outSFTbname=${testDIR}/SFTtest_v4 --timestampsFile=$timestamps --refTime=$refTime" ## -D$noiseSFTs -v1"
 
 ## produce In.data file for makefakedata_v2
 echo "$Tsft	%Tsft_in_sec
@@ -90,7 +99,7 @@ time $newcode $newCL
 echo
 echo "comparison of resulting SFTs:"
 
-$compCode -1 "${testDIR}/SFTtest_v2*" -2 "${testDIR}/SFTtest_v4*"
+cmdline="$compCode -1 '${testDIR}/SFTtest_v2*' -2 '${testDIR}/SFTtest_v4*'"
+echo ${cmdline}
+eval ${cmdline}
 
-
-cd ..
