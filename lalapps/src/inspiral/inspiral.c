@@ -174,38 +174,41 @@ int main( int argc, char *argv[] )
   set_debug_level( "1" );
 
   /* create the process and process params tables */
-  proctable.processTable = (ProcessTable *) 
-    LALCalloc( 1, sizeof(ProcessTable) );
+  proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
         &accuracy ), &status );
   LAL_CALL( populate_process_table( &status, proctable.processTable, 
         PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
-    LALCalloc( 1, sizeof(ProcessParamsTable) );
+    calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
-  /* create the search summary and summvars table */
+  /* create the search summary and zero out the summvars table */
   searchsumm.searchSummaryTable = (SearchSummaryTable *)
-    LALCalloc( 1, sizeof(SearchSummaryTable) );
+    calloc( 1, sizeof(SearchSummaryTable) );
   memset( searchsummvars.searchSummvarsTable, 0, sizeof(SearchSummvarsTable) );
 
   /* call the argument parse and check function */
   arg_parse_check( argc, argv, procparams );
+  
+  /* wind to the end of the process params table */
   for ( this_proc_param = procparams.processParamsTable; this_proc_param->next;
      this_proc_param = this_proc_param->next );
+
+  /* can use LALMalloc() and LALCalloc() from here onwards */
 
   /* fill the comment, if a user has specified on, or leave it blank */
   if ( ! *comment )
   {
-    snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
-    snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, 
+    LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+    LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, 
         " " );
   } 
   else 
   {
-    snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
+    LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
-    snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
+    LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
   }
 
@@ -269,9 +272,10 @@ int main( int argc, char *argv[] )
     }
   }
 
-  /* save the minimal match of the bank in the process params */
+  /* save the minimal match of the bank in the process params                */
+  /* create the table entry with calloc() since it will be freed with free() */
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) 
-    LALCalloc( 1, sizeof(ProcessParamsTable) ); 
+    calloc( 1, sizeof(ProcessParamsTable) ); 
   snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
       PROGRAM_NAME ); \
     snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--minimal-match" );
@@ -1014,7 +1018,7 @@ cleanexit:
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable, 
         process_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-  LALFree( proctable.processTable );
+  free( proctable.processTable );
 
   /* write the process params table */
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ), 
@@ -1026,7 +1030,7 @@ cleanexit:
   {
     this_proc_param = procparams.processParamsTable;
     procparams.processParamsTable = this_proc_param->next;
-    LALFree( this_proc_param );
+    free( this_proc_param );
   }
   
   /* write the search summary table */
@@ -1038,7 +1042,7 @@ cleanexit:
           search_summary_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
   }
-  LALFree( searchsumm.searchSummaryTable );
+  free( searchsumm.searchSummaryTable );
 
   /* write the search summvars table */
   if ( numTmplts )
@@ -1103,12 +1107,12 @@ cleanexit:
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
 
   /* free the rest of the memory, check for memory leaks and exit */
-  if ( injectionFile ) LALFree( injectionFile ); 
-  if ( calCacheName ) LALFree( calCacheName );
-  if ( frInCacheName ) LALFree( frInCacheName );
-  if ( bankFileName ) LALFree( bankFileName );
-  if ( channelName ) LALFree( channelName );
-  if ( fqChanName ) LALFree( fqChanName );
+  if ( injectionFile ) free ( injectionFile ); 
+  if ( calCacheName ) free( calCacheName );
+  if ( frInCacheName ) free( frInCacheName );
+  if ( bankFileName ) free( bankFileName );
+  if ( channelName ) free( channelName );
+  if ( fqChanName ) free( fqChanName );
 
   if ( vrbflg ) fprintf( stdout, "checking memory leaks and exiting\n" );
   LALCheckMemoryLeaks();
@@ -1119,7 +1123,7 @@ cleanexit:
 
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
 this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-  LALCalloc( 1, sizeof(ProcessParamsTable) ); \
+  calloc( 1, sizeof(ProcessParamsTable) ); \
   snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
       PROGRAM_NAME ); \
       snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
@@ -1329,7 +1333,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           /* create storage for the channel name and copy it */
           char *channamptr = NULL;
           size_t chanlen = strlen( optarg ) + 1;
-          fqChanName = (CHAR *) LALCalloc( chanlen, sizeof(CHAR) );
+          fqChanName = (CHAR *) calloc( chanlen, sizeof(CHAR) );
           memcpy( fqChanName, optarg, chanlen );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
 
@@ -1343,7 +1347,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
             exit( 1 );
           }
           chanlen = strlen( ++channamptr ) + 1;
-          channelName = (CHAR *) LALCalloc( chanlen, sizeof(CHAR) );
+          channelName = (CHAR *) calloc( chanlen, sizeof(CHAR) );
           memcpy( channelName, channamptr, chanlen );
 
           /* copy the first two characters to the ifo name */
@@ -1522,7 +1526,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           /* create storage for the calibration frame cache name */
           size_t ccnamelen = strlen(optarg) + 1;
-          calCacheName = (CHAR *) LALCalloc( ccnamelen, sizeof(CHAR));
+          calCacheName = (CHAR *) calloc( ccnamelen, sizeof(CHAR));
           memcpy( calCacheName, optarg, ccnamelen );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
@@ -1607,7 +1611,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           /* create storage for the input frame cache name */
           size_t frcnamelen = strlen(optarg) + 1;
-          frInCacheName = (CHAR *) LALCalloc( frcnamelen, sizeof(CHAR) );
+          frInCacheName = (CHAR *) calloc( frcnamelen, sizeof(CHAR) );
           memcpy( frInCacheName, optarg, frcnamelen );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
@@ -1617,7 +1621,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           /* create storage for the calibration frame cache name */
           size_t bfnamelen = strlen(optarg) + 1;
-          bankFileName = (CHAR *) LALCalloc( bfnamelen, sizeof(CHAR));
+          bankFileName = (CHAR *) calloc( bfnamelen, sizeof(CHAR));
           memcpy( bankFileName, optarg, bfnamelen );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
@@ -1627,7 +1631,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           /* create storage for the injection file name */
           size_t ifnamelen = strlen(optarg) + 1;
-          injectionFile = (CHAR *) LALCalloc( ifnamelen, sizeof(CHAR));
+          injectionFile = (CHAR *) calloc( ifnamelen, sizeof(CHAR));
           memcpy( injectionFile, optarg, ifnamelen );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
@@ -1653,7 +1657,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'Z':
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
-          LALCalloc( 1, sizeof(ProcessParamsTable) );
+          calloc( 1, sizeof(ProcessParamsTable) );
         snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
             PROGRAM_NAME );
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
@@ -1715,7 +1719,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
   /* check event cluster option */
   this_proc_param = this_proc_param->next = (ProcessParamsTable *)
-    LALCalloc( 1, sizeof(ProcessParamsTable) );
+    calloc( 1, sizeof(ProcessParamsTable) );
   if ( eventCluster == 1 )
   {
     snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 

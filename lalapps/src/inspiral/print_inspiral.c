@@ -23,6 +23,8 @@
 #include <glob.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
+#include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lalapps.h>
 #include <processtable.h>
 #include "ligolwbank.h"
@@ -98,20 +100,20 @@ int compareTmpltsByTime ( const void *a, const void *b )
   SnglInspiralTable *bPtr = *((SnglInspiralTable **)b);
   INT8 ta, tb;
   LALStatus status = blank_status;
-
+  
   LAL_CALL( LALGPStoINT8( &status, &ta, &(aPtr->end_time) ), &status );
   LAL_CALL( LALGPStoINT8( &status, &tb, &(bPtr->end_time) ), &status );
-
+  
   if ( ta > tb )
-  {
+  { 
     return 1;
   }
   else if ( ta < tb )
-  {
+  { 
     return -1;
   }
   else
-  {
+  { 
     return 0;
   }
 }
@@ -119,7 +121,7 @@ int compareTmpltsByTime ( const void *a, const void *b )
 
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
 this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-  LALCalloc( 1, sizeof(ProcessParamsTable) ); \
+  calloc( 1, sizeof(ProcessParamsTable) ); \
   LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
    PROGRAM_NAME ); \
    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
@@ -179,13 +181,13 @@ int main ( int argc, char *argv[] )
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) 
-    LALCalloc( 1, sizeof(ProcessTable) );
+    calloc( 1, sizeof(ProcessTable) );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
         &accuracy ), &status );
   LAL_CALL( populate_process_table( &status, proctable.processTable, 
         PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
-    LALCalloc( 1, sizeof(ProcessParamsTable) );
+    calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
   /* parse the command line arguments */
@@ -264,7 +266,7 @@ int main ( int argc, char *argv[] )
         {
           /* create storage for the input file name name */
           namelen = strlen( optarg ) + 1;
-          inputGlob = (CHAR *) LALCalloc( namelen, sizeof(CHAR));
+          inputGlob = (CHAR *) calloc( namelen, sizeof(CHAR));
           memcpy( inputGlob, optarg, namelen );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
@@ -274,7 +276,7 @@ int main ( int argc, char *argv[] )
         {
           /* create storage for the output file name name */
           namelen = strlen( optarg ) + 1;
-          outputFileName = (CHAR *) LALCalloc( namelen, sizeof(CHAR));
+          outputFileName = (CHAR *) calloc( namelen, sizeof(CHAR));
           memcpy( outputFileName, optarg, namelen );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
@@ -309,6 +311,8 @@ int main ( int argc, char *argv[] )
     }
     exit( 1 );
   }
+
+  /* can use LALCalloc() / LALMalloc() from here */
 
   /* don't buffer stdout if we are in verbose mode */
   if ( vrbflg ) setvbuf( stdout, NULL, _IONBF, 0 );

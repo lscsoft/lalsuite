@@ -105,7 +105,7 @@ int compareTmpltsByMass ( const void *a, const void *b )
 
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
 this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-  LALCalloc( 1, sizeof(ProcessParamsTable) ); \
+  calloc( 1, sizeof(ProcessParamsTable) ); \
   LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
    PROGRAM_NAME ); \
    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
@@ -161,13 +161,13 @@ int main ( int argc, char *argv[] )
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) 
-    LALCalloc( 1, sizeof(ProcessTable) );
+    calloc( 1, sizeof(ProcessTable) );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
         &accuracy ), &status );
   LAL_CALL( populate_process_table( &status, proctable.processTable, 
         PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
-    LALCalloc( 1, sizeof(ProcessParamsTable) );
+    calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
   /* parse the command line arguments */
@@ -233,7 +233,7 @@ int main ( int argc, char *argv[] )
         {
           /* create storage for the input file name name */
           namelen = strlen( optarg ) + 1;
-          inputFileName = (CHAR *) LALCalloc( namelen, sizeof(CHAR));
+          inputFileName = (CHAR *) calloc( namelen, sizeof(CHAR));
           memcpy( inputFileName, optarg, namelen );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
@@ -243,7 +243,7 @@ int main ( int argc, char *argv[] )
         {
           /* create storage for the output file name name */
           namelen = strlen( optarg ) + 1;
-          outputFileName = (CHAR *) LALCalloc( namelen, sizeof(CHAR));
+          outputFileName = (CHAR *) calloc( namelen, sizeof(CHAR));
           memcpy( outputFileName, optarg, namelen );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
@@ -291,6 +291,8 @@ int main ( int argc, char *argv[] )
     }
     exit( 1 );
   }
+
+  /* can use LALCalloc() / LALMalloc() from here */
 
   /* fill the comment, if a user has specified it, or leave it blank */
   if ( ! *comment )
@@ -456,13 +458,13 @@ cleanexit:
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable, 
         process_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-  LALFree( proctable.processTable );
+  free( proctable.processTable );
 
   /* erase the first empty process params entry */
   {
     ProcessParamsTable *emptyPPtable = procparams.processParamsTable;
     procparams.processParamsTable = procparams.processParamsTable->next;
-    LALFree( emptyPPtable );
+    free( emptyPPtable );
   }
 
   /* write the process params table */
@@ -475,7 +477,7 @@ cleanexit:
   {
     this_proc_param = procparams.processParamsTable;
     procparams.processParamsTable = this_proc_param->next;
-    LALFree( this_proc_param );
+    free( this_proc_param );
   }
   
   if ( eventHead )
@@ -508,8 +510,8 @@ cleanexit:
    */
 
 
-  LALFree( inputFileName );
-  LALFree( outputFileName );
+  free( inputFileName );
+  free( outputFileName );
   LALCheckMemoryLeaks();
   
   return 0;
