@@ -72,6 +72,7 @@ NRCSID (FINDCHIRPBCVH, "$Id$");
 #define FINDCHIRPBCVH_EMAPX 12
 #define FINDCHIRPBCVH_EUAPX 13
 #define FINDCHIRPBCVH_EZNRM 14
+#define FINDCHIRPBCVH_EQLEN 15
 #define FINDCHIRPBCVH_MSGENULL "Null pointer"
 #define FINDCHIRPBCVH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPBCVH_MSGEALOC "Memory allocation error"
@@ -86,6 +87,7 @@ NRCSID (FINDCHIRPBCVH, "$Id$");
 #define FINDCHIRPBCVH_MSGEMAPX "Mismatch in waveform approximant (BCV/TaylorF2)"
 #define FINDCHIRPBCVH_MSGEUAPX "Unknown approximant: must be BCV or TaylorF2"
 #define FINDCHIRPBCVH_MSGEZNRM "No non-zero value assigned to one of a1, b1, b2"
+#define FINDCHIRPBCVH_MSGEQLEN "params->qVec->length not equal to params->qVecBCV->length"
 /* </lalErrTable> */
 
 #if 0
