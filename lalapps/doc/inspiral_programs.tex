@@ -87,10 +87,16 @@ All results are written in xml files.
 \subsection{Injection Parameter Generation}
 
 \texttt{lalapps\_inspinj}: Given a mass-file, it generates the mass,
-  distance and time parameters of signals to be injected in the data.
+  distance and time parameters of BNS signals to be injected in the data.
   It currently generates the signals coming from locations within the
   galaxies of the Local Group, but the ability to do different distributions
   will be added soon.
+
+  The result is an xml file.
+
+\texttt{lalapps\_bbhinj}: It generates the mass,
+  distance and time parameters of inspiral signals to be injected in the data.
+  Despite its name, it can be used for BNS and for BBH parameter generation.
 
   The result is an xml file.
 
@@ -131,6 +137,9 @@ that bank into smaller banks.
 
 \clearpage
 \input{inspinj}
+
+\clearpage
+\input{bbhinj}
 
 \clearpage
 \input{inspfrinj}
