@@ -513,7 +513,7 @@ main(int argc, char **argv)
     }
     *id = 0;
     *tStart = tInitial = EPOCH;
-    *tStop = tFinal = EPOCH + (1000000000L)*(INT8)( NPTS_T*DELTAT );
+    *tStop = tFinal = EPOCH + (1000000000LL)*(INT8)( NPTS_T*DELTAT );
   }
 
   /* Read transferfile and store the data in structures. */
@@ -643,7 +643,7 @@ main(int argc, char **argv)
 
       /* DEBUG:
       printf( "t=%4i m1=%f m2=%f mTot=%f eta=%f\n",
-	      (INT4)( ( t - EPOCH )/1000000000 ), position.m1,
+	      (INT4)( ( t - EPOCH )/1000000000LL ), position.m1,
 	      position.m2, ppnParams.mTot, ppnParams.eta );
       */
 
@@ -733,7 +733,7 @@ main(int argc, char **argv)
     SUB( LALSDestroyVectorSequence( &stat, &(waveform.a->data) ),
 	 &stat );
     SUB( LALSDestroyVector( &stat, &(waveform.f->data) ), &stat );
-    SUB( LALSDestroyVector( &stat, &(waveform.phi->data) ), &stat );
+    SUB( LALDDestroyVector( &stat, &(waveform.phi->data) ), &stat );
 
 
 
@@ -854,8 +854,8 @@ main(int argc, char **argv)
 void
 I8ToLIGOTimeGPS( LIGOTimeGPS *output, INT8 input )
 {
-  INT4 s = input / 1000000000;
-  output->gpsSeconds = s;
-  output->gpsNanoSeconds = input - 1000000000*s;
+  INT8 s = input / 1000000000LL;
+  output->gpsSeconds = (INT4)( s );
+  output->gpsNanoSeconds = (INT4)( input - 1000000000LL*s );
   return;
 }

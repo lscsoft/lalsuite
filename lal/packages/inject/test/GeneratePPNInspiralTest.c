@@ -472,8 +472,8 @@ main(int argc, char **argv)
 void
 I8ToLIGOTimeGPS( LIGOTimeGPS *output, INT8 input )
 {
-  INT4 s = input / 1000000000;
-  output->gpsSeconds = s;
-  output->gpsNanoSeconds = input - 1000000000*s;
+  INT8 s = input / 1000000000LL;
+  output->gpsSeconds = (INT4)( s );
+  output->gpsNanoSeconds = (INT4)( input - 1000000000LL*s );
   return;
 }

@@ -117,7 +117,7 @@ series.
 \item[\texttt{REAL8 deltaT}] The requested sampling interval of the
 waveform, in s.
 
-\item[\texttt{UINT4 lengthIn}] The number of samples in the generated
+\item[\texttt{UINT4 length}] The number of samples in the generated
 waveform.
 
 \item[\texttt{REAL4 aPlus, aCross}] The polarization amplitudes $A_+$,
@@ -176,7 +176,7 @@ LALGenerateTaylorCW( LALStatus          *stat,
 		     TaylorCWParamStruc *params );
 
 /* <lalLaTeX>
-%\newpage\input{GenerateTaylorCWTestC}
+\newpage\input{SimulateTaylorCWTestC}
 </lalLaTeX> */
 
 #ifdef  __cplusplus

@@ -155,18 +155,18 @@ LALGenerateTaylorCW( LALStatus          *stat,
 
   /* Allocate output structures. */
   if ( ( output->a = (REAL4TimeVectorSeries *)
-	 LALMalloc( sizeof(REAL4TimeVectorSeries *) ) ) == NULL ) {
+	 LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
     ABORT( stat, GENERATETAYLORCWH_EMEM, GENERATETAYLORCWH_MSGEMEM );
   }
   memset( output->a, 0, sizeof(REAL4TimeVectorSeries) );
   if ( ( output->f = (REAL4TimeSeries *)
-	 LALMalloc( sizeof(REAL4TimeSeries *) ) ) == NULL ) {
+	 LALMalloc( sizeof(REAL4TimeSeries) ) ) == NULL ) {
     LALFree( output->a ); output->a = NULL;
     ABORT( stat, GENERATETAYLORCWH_EMEM, GENERATETAYLORCWH_MSGEMEM );
   }
   memset( output->f, 0, sizeof(REAL4TimeSeries) );
   if ( ( output->phi = (REAL8TimeSeries *)
-	 LALMalloc( sizeof(REAL8TimeSeries *) ) ) == NULL ) {
+	 LALMalloc( sizeof(REAL8TimeSeries) ) ) == NULL ) {
     LALFree( output->a ); output->a = NULL;
     LALFree( output->f ); output->f = NULL;
     ABORT( stat, GENERATETAYLORCWH_EMEM, GENERATETAYLORCWH_MSGEMEM );

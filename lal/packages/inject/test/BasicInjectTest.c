@@ -659,8 +659,8 @@ main(int argc, char **argv)
 	     outfile );
       return BASICINJECTTESTC_EFILE;
     }
-    epoch = 1000000000*output.epoch.gpsSeconds;
-    epoch += output.epoch.gpsNanoSeconds;
+    epoch = 1000000000LL*(INT8)( output.epoch.gpsSeconds );
+    epoch += (INT8)( output.epoch.gpsNanoSeconds );
     fprintf( fp, "# epoch = %Li\n", epoch );
     fprintf( fp, "# deltaT = %23.16e\n", output.deltaT );
     for ( i = 0; i < output.data->length; i++ )
@@ -686,8 +686,8 @@ main(int argc, char **argv)
 void
 I8ToLIGOTimeGPS( LIGOTimeGPS *output, INT8 input )
 {
-  INT4 s = input / 1000000000;
-  output->gpsSeconds = s;
-  output->gpsNanoSeconds = input - 1000000000*s;
+  INT8 s = input / 1000000000LL;
+  output->gpsSeconds = (INT4)( s );
+  output->gpsNanoSeconds = (INT4)( input - 1000000000LL*s );
   return;
 }

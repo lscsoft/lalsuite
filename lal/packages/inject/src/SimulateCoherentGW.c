@@ -470,14 +470,6 @@ LALSimulateCoherentGW( LALStatus        *stat,
     TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
 	 stat );
   } ENDFAIL( stat );
-  LALSCreateVector( stat->statusPtr, &( polResponse.pScalar ), nMax );
-  BEGINFAIL( stat ) {
-    TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
-	 stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
-	 stat );
-  } ENDFAIL( stat );
   plusData = polResponse.pPlus->data;
   crossData = polResponse.pCross->data;
   if ( detector->site ) {
@@ -496,6 +488,14 @@ LALSimulateCoherentGW( LALStatus        *stat,
     params.nSample = nMax;
 
     /* Compute table of responses. */
+    LALSCreateVector( stat->statusPtr, &( polResponse.pScalar ), nMax );
+    BEGINFAIL( stat ) {
+      TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
+	   stat );
+      TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
+	   stat );
+    } ENDFAIL( stat );
     LALComputeDetAMResponseSeries( stat->statusPtr, &polResponse,
 				   &input, &params );
     BEGINFAIL( stat ) {
