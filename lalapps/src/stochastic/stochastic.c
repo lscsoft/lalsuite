@@ -1692,7 +1692,6 @@ INT4 main(INT4 argc, CHAR *argv[])
         &status);
     LAL_CALL(LALDestroyREAL4FrequencySeries(&status, MComegaGW), &status);
   }
-  /*
   for (i = 0; i <numSegments; i++)
   {
     LAL_CALL(LALCDestroyVector(&status, &(respOne[i])), &status);
@@ -1707,7 +1706,6 @@ INT4 main(INT4 argc, CHAR *argv[])
       LAL_CALL(LALCDestroyVector(&status, &(MCrespTwo[i])), &status);
     }
   }
-  */
 
   /* free calloc'd memory */
   free(frameCacheOne);
@@ -1719,7 +1717,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   free(ifoOne);
   free(ifoTwo);
 
-  return 0;
+  LALCheckMemoryLeaks();
+  exit(0);
 }
 
 #define USAGE \
