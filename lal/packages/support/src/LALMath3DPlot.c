@@ -87,7 +87,6 @@ LALMath3DPlot( LALStatus *stat,
   FILE *nb; 				/* pointer to the notebook file */
   INT4 jflag = 0;			/* flag to justify the output data */
   Math3DPointList *list;		/* loop counter */
-  REAL4 ptsize = 1.0/(*ntiles);
   INT4 loop = 0;
   
   INITSTATUS( stat, "LALMath3DPlot", LALMATH3DPLOTC ); 
@@ -197,7 +196,8 @@ LALMath3DPlot( LALStatus *stat,
           fprintf(nb, "Image generation");
         END_SECTIONCELL;
         BEG_INPUTCELL;
-          fprintf(nb, "still = Show[TILES, Background-> RGBColor[.93, .91, .89], ViewPoint -> {1, 1.3, 2.4}, ImageSize->StillSize, Axes->True, AxesLabel->{XAxisLabel, YAxisLabel, ZAxisLabel}];\n");
+          fprintf(nb, "still = Show[TILES, Background-> RGBColor[.93, .91, .89], ViewPoint -> {1, 1.3, 2.4}, ");
+          fprintf(nb, "ImageSize->StillSize, Axes->True, AxesLabel->{XAxisLabel, YAxisLabel, ZAxisLabel}];\n");
         END_INPUTCELL;
         BEG_INPUTCELL;
           fprintf(nb, "Do[tile[T]=Show[TILES, Background -> RGBColor[.93, .91, .89], ");
@@ -214,10 +214,12 @@ LALMath3DPlot( LALStatus *stat,
           fprintf(nb, "images = Evaluate[Table[tile[j], {j, 0, 2 frames, 1}]];\n");
         END_INPUTCELL;
         BEG_INPUTCELL; 
-          fprintf(nb, "Export[StillName<>\".\"<>ToLowerCase[StillType], still, StillType, ImageSize->StillSize, ConversionOptions->{\"ColorReductionDither\" -> False}]");
+          fprintf(nb, "Export[StillName<>\".\"<>ToLowerCase[StillType], still, StillType, ImageSize->StillSize, ");
+          fprintf(nb, "ConversionOptions->{\"ColorReductionDither\" -> False}]");
         END_INPUTCELL;
         BEG_INPUTCELL;
-          fprintf(nb, "Export[AnimationName, images, \"GIF\", ImageSize -> AnimationSize, ConversionOptions -> {\"Loop\" -> True,\"AnimationDisplayTime\" -> FrameTime,");
+          fprintf(nb, "Export[AnimationName, images, \"GIF\", ImageSize -> AnimationSize, ");
+          fprintf(nb, "ConversionOptions -> {\"Loop\" -> True,\"AnimationDisplayTime\" -> FrameTime, ");
           fprintf(nb, "\"ColorReductionDither\" -> False}]");
         END_INPUTCELL_;   
       END_GROUPCELLC_;
