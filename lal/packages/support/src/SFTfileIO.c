@@ -74,6 +74,11 @@ static void DestroyStringVector (StringVector *strings);
 static void LALCopySFT (LALStatus *stat, SFTtype *dest, const SFTtype *src);
 static void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
 
+void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
+void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
+void dump_SFT (const SFTtype *sft, FILE *fp);
+void LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname);
+
 /* number of bytes in SFT-header v1.0 */
 static const size_t header_len_v1 = 32;	
 
@@ -762,3 +767,167 @@ DestroyStringVector (StringVector *strings)
   LALFree (strings);
 
 } /* DestroyStringVector () */
+
+
+/***********************************************************************
+ *
+ * the following are
+ * DEBUG + testing functions: not meant for general use!! 
+ *
+ ***********************************************************************/
+
+/* write a time-series into a text-file */
+void
+write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series)
+{
+  REAL8 timestamp; 
+  UINT4 i;
+
+  if (series == NULL)
+    {
+      printf ("\nempty input!\n");
+      return; 
+    }
+
+  timestamp = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
+
+  for( i = 0; i < series->data->length; i++)
+    {
+      fprintf( fp, "%16.9f %e\n", timestamp, series->data->data[i] );
+      timestamp += series->deltaT;
+    }
+
+  return;
+
+} /* write_timeSeriesR4() */
+
+void
+write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series)
+{
+  REAL8 timestamp; 
+  UINT4 i;
+
+  timestamp = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
+
+  for( i = 0; i < series->data->length; i++)
+    {
+      fprintf( fp, "%f %e\n", timestamp, series->data->data[i] );
+      timestamp += series->deltaT;
+    }
+
+  return;
+
+} /* write_timeSeriesR4() */
+
+
+/* write an SFT in xmgrace-readable format */
+void 
+LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
+{
+  FILE *fp;
+
+  REAL4 val;
+  UINT4 i;
+  REAL8 Tsft, freqBand;
+  REAL8 f0, df, ff;
+  UINT4 set, nsamples;
+
+  const CHAR *xmgrHeader = 
+    "@version 50103\n"
+    "@xaxis label \"f (Hz)\"\n";
+
+  INITSTATUS( stat, "LALwriteSFTtoXMGR", SFTFILEIOC);
+  ATTATCHSTATUSPTR( stat );
+
+  fp = fopen (fname, "w");
+
+  if( !fp ) {
+    ABORT (stat, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
+  }
+
+
+  f0 = sft->f0;
+  df = sft->deltaF;
+  nsamples = sft->data->length;
+  Tsft = 1.0 / sft->deltaF;
+  freqBand = nsamples * df;
+
+  fprintf (fp, xmgrHeader);
+  fprintf (fp, "@subtitle \"epoch = (%d s, %d ns), Tsft = %f\"\n", 
+	   sft->epoch.gpsSeconds, sft->epoch.gpsNanoSeconds, Tsft);
+
+  set = 0;
+  /* Print set header. */
+  fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);
+  fprintf( fp, "@s%d color (0,0,1)\n", set );
+  for (i=0; i < nsamples; i++)
+    {
+      ff = f0 + i*df;
+      val = sft->data->data[i].re;
+
+      fprintf(fp, "%f %e\n", ff, val);
+        
+    } /* for i < nsamples */
+
+  set ++;
+  /* Print set header. */
+  fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);
+  fprintf( fp, "@s%d color (0,1,0)\n", set );
+  for (i=0; i < nsamples; i++)
+    {
+      ff = f0 + i*df;
+      val = sft->data->data[i].im;
+
+      fprintf(fp, "%f %e\n", ff, val);
+        
+    } /* for i < nsamples */
+
+  set ++;
+  /* Print set header. */
+  fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);
+  fprintf( fp, "@s%d color (1,0,0)\n", set );
+  for (i=0; i < nsamples; i++)
+    {
+      ff = f0 + i*df;
+      val = (sft->data->data[i].re * sft->data->data[i].re + sft->data->data[i].im*sft->data->data[i].im) / freqBand;
+      
+      fprintf(fp, "%f %e\n", ff, val);
+        
+    } /* for i < nsamples */
+
+  
+  fclose(fp);
+
+  DETATCHSTATUSPTR( stat );
+  RETURN (stat);
+  
+} /* write_SFT() */
+
+
+/* dump an SFT into a text-file */
+void dump_SFT (const SFTtype *sft, FILE *fp)
+{
+  REAL4 valre, valim;
+  UINT4 i;
+  REAL8 Tsft, freqBand;
+  REAL8 f0, df, ff;
+  UINT4 nsamples;
+
+  f0 = sft->f0;
+  df = sft->deltaF;
+  nsamples = sft->data->length;
+  Tsft = 1.0 / sft->deltaF;
+  freqBand = nsamples * df;
+
+  for (i=0; i < nsamples; i++)
+    {
+      ff = f0 + i*df;
+      valre = sft->data->data[i].re;
+      valim = sft->data->data[i].im;
+      fprintf(fp, "%f %e %e\n", ff, valre, valim);
+        
+    } /* for i < nsamples */
+  
+  return;
+  
+} /* dump_SFT() */
