@@ -882,7 +882,7 @@ int main(int argc, char *argv[]){
       /* ********************* print results *********************** */
 
 #ifdef PRINTMAPS
-      /*if( PrintHmap2m_file( &ht, fnameOut, iHmap ) ) return 5;*/
+      if( PrintHmap2m_file( &ht, fnameOut, iHmap ) ) return 5;
 #endif 
 
       fprintf(fp1, "%d %f %f %d %d %f %f %f 0.0 \n",
