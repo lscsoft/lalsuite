@@ -233,6 +233,7 @@ LALFreeCList()
 \begin{itemize}
 \item \texttt{*clist} must be initialized by a proper call to \texttt{LALInitCList()} before calling this function.
 \item Calling this function destroys \texttt{*tpower}.
+\item \texttt{dir->rho[0]} corresponds to \texttt{minf}, not DC. 
 \end{itemize}
 
 \vfill{\footnotesize\input{TFClustersCV}}
