@@ -35,7 +35,7 @@ typedef struct OutliersInputtag {
 
 typedef struct OutliersParamstag {
   REAL8Vector *Floor;
-  REAL4       Thr; 
+  REAL8       Thr; 
   INT4        wings;
   INT4        ifmin;
 } OutliersParams;

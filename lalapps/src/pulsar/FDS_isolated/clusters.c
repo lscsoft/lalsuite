@@ -378,7 +378,7 @@ int ComputeOutliers(OutliersInput *input, OutliersParams *outliersParams, Outlie
   INT4 ileft,iright; 
   /*ITOH*/
 
-  REAL4 thresh;
+  REAL8 thresh;
 
   UINT4 i,lpc,nbins, NI;
 
