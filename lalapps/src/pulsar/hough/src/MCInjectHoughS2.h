@@ -106,37 +106,7 @@ NRCSID (MCINJECTHOUGHS2H, "$Id$");
  * Constant Declarations.  Default parameters.
  */
 
-INT4 lalDebugLevel=1;
-#define EARTHEPHEMERIS "/afs/aeiw/grawave/Linux/lal/lal/packages/pulsar/test/earth03.dat"
-#define SUNEPHEMERIS "/afs/aeiw/grawave/Linux/lal/lal/packages/pulsar/test/sun03.dat"
 
-#define ACCURACY 0.00000001 /* of the velocity calculation */
-#define MAXFILES 3000 /* maximum number of files to read in a directory */
-#define MAXFILENAMELENGTH 256 /* maximum # of characters  of a SFT filename */
-
-#define IFO 2         /*  detector, 1:GEO, 2:LLO, 3:LHO */
-#define THRESHOLD 1.6 /* thresold for peak selection, with respect to the
-                              the averaged power in the search band */
-#define F0 250.0          /*  frequency to build the LUT and start search */
-#define FBAND 2.0          /* search frequency band  (in Hz) */
-#define ALPHA 0.0		/* center of the sky patch (in radians) */
-#define DELTA  (-LAL_PI_2)
-#define PATCHSIZEX (LAL_PI*0.99) /* patch size */
-#define PATCHSIZEY (LAL_PI*0.99)
-#define NFSIZE  21 /* n-freq. span of the cylinder, to account for spin-down
-                          search */
-#define BLOCKSRNGMED 101 /* Running median window size */
-#define NH0 1 /* number of h0 values to be anlyzed */
-#define H0MIN 1.0e-23
-#define NMCLOOP 10 /* number of Monte-Carlos */
-#define NTEMPLATES 16 /* number templates for each Monte-Carlo */
-
-#define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs/"
-#define FILEOUT "./HoughMC"      /* prefix file output */
-
-/* to be removed ? */
-#define FILEVELOCITY "./velocity.data"  /* name: file with time-velocity info */
-#define FILETIME "./Ts" /* name: file with timestamps */
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
 /* ******************************************************************

@@ -42,6 +42,38 @@ Input shoud be from
 #include "./MCInjectHoughS2.h" /* proper path*/
 
 
+INT4 lalDebugLevel=1;
+#define EARTHEPHEMERIS "./earth00-04.dat"
+#define SUNEPHEMERIS "./sun00-04.dat"
+
+#define ACCURACY 0.00000001 /* of the velocity calculation */
+#define MAXFILES 3000 /* maximum number of files to read in a directory */
+#define MAXFILENAMELENGTH 256 /* maximum # of characters  of a SFT filename */
+
+#define IFO 2         /*  detector, 1:GEO, 2:LLO, 3:LHO */
+#define THRESHOLD 1.6 /* thresold for peak selection, with respect to the
+                              the averaged power in the search band */
+#define F0 250.0          /*  frequency to build the LUT and start search */
+#define FBAND 2.0          /* search frequency band  (in Hz) */
+#define ALPHA 0.0		/* center of the sky patch (in radians) */
+#define DELTA  (-LAL_PI_2)
+#define PATCHSIZEX (LAL_PI*0.99) /* patch size */
+#define PATCHSIZEY (LAL_PI*0.99)
+#define NFSIZE  21 /* n-freq. span of the cylinder, to account for spin-down
+                          search */
+#define BLOCKSRNGMED 101 /* Running median window size */
+#define NH0 1 /* number of h0 values to be anlyzed */
+#define H0MIN 1.0e-23
+#define NMCLOOP 10 /* number of Monte-Carlos */
+#define NTEMPLATES 16 /* number templates for each Monte-Carlo */
+
+#define SFTDIRECTORY "/home/badkri/L1sfts"
+#define FILEOUT "./HoughMC"      /* prefix file output */
+#define HARMONICSFILE "./harmonicsS2LLO4K_200_400.txt"
+
+#define TRUE (1==1)
+#define FALSE (1==0)
+
 /******************************************************
  *  Assignment of Id string using NRCSID()
  */
@@ -50,6 +82,9 @@ NRCSID (MCINJECTHOUGHS2C, "$Id$");
 
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
 int main(int argc, char *argv[]){
+
+  static LineNoiseInfo   lines, lines2;
+  static LineHarmonicsInfo harmonics; 
 
   static LALStatus            status;  
   static LALDetector          detector;
@@ -65,6 +100,8 @@ int main(int argc, char *argv[]){
   static HoughTemplate        pulsarTemplate;
   static HoughNearTemplates   closeTemplates;
 
+  INT4 nLines=0, nHarmonicSets, count1;
+
   SFTVector    *inputSFTs  = NULL;  
   SFTVector    *outputSFTs = NULL;
   REAL4TimeSeries   *signalTseries = NULL;
@@ -73,18 +110,13 @@ int main(int argc, char *argv[]){
   static SFTParams           sftParams;
 
   EphemerisData   *edat = NULL;
-  CHAR  *earthEphemeris = NULL; 
-  CHAR  *sunEphemeris = NULL;
 
   static COMPLEX8SFTData1  sft1;
   static REAL8PeriodoPSD   periPSD;
   static UCHARPeakGram     pg1;
     
   UINT4  msp; /*number of spin-down parameters */
-  INT4   ifo;
   CHAR   filelist[MAXFILES][MAXFILENAMELENGTH];  
-  CHAR   *directory = NULL; /* the directory where the SFT  could be */
-  CHAR   *fnameOut = NULL;               /* The output prefix filename */
   
   UINT4  numberCount,maxNumberCount;
   INT4   nTemplates, controlN, controlNN, controlNH;
@@ -92,10 +124,9 @@ int main(int argc, char *argv[]){
    
   INT4   mObsCoh, nfSizeCylinder;
   INT8   f0Bin, fLastBin;           /* freq. bin to perform search */
-  REAL8  peakThreshold, normalizeThr;
-  REAL8  f0, fSearchBand, timeBase, deltaF, alpha, delta;
-  REAL8  patchSizeAlpha, patchSizeDelta;
-  INT4   blocksRngMed;
+  REAL8  normalizeThr;
+  REAL8  timeBase, deltaF;
+
   REAL8  threshold, h0scale;
 
   UINT4  sftlength; 
@@ -105,21 +136,28 @@ int main(int argc, char *argv[]){
   REAL8  fHeterodyne;
   REAL8  tSamplingRate;
       
-  UINT2  nh0;
-  REAL8  h0Min, h0Max;
-  UINT4  nMCloop;
-
-  UINT4 MCloopId;
+  CHAR *fnamelog=NULL;
+ 
+  INT4 MCloopId;
   INT4 h0loop;
   
   FILE  *fpPar = NULL;
   FILE  *fpH0 = NULL;
   FILE  *fpNc = NULL;
-  /* FILE  **fp = NULL; */
-  
- /* to be removed ?
- *  CHAR   *fnameVelocity = NULL;
- */
+  FILE  *fpLog = NULL;
+  CHAR   *logstr=NULL; 
+
+  /* user input variables */
+  BOOLEAN uvar_help;
+  INT4 uvar_ifo, uvar_blocksRngMed, uvar_nh0, uvar_nMCloop, uvar_AllSkyFlag;
+  REAL8 uvar_f0, uvar_fSearchBand, uvar_peakThreshold, uvar_h0Min, uvar_h0Max;
+  REAL8 uvar_alpha, uvar_delta, uvar_patchSizeAlpha, uvar_patchSizeDelta;
+  CHAR *uvar_earthEphemeris=NULL;
+  CHAR *uvar_sunEphemeris=NULL;
+  CHAR *uvar_sftDir=NULL;
+  CHAR *uvar_fnameout=NULL;
+  CHAR *uvar_harmonicsfile=NULL;  
+
 
 #ifdef TIMING
   unsigned long long start, stop;
@@ -130,267 +168,199 @@ int main(int argc, char *argv[]){
    start = realcc();
 #endif
 
-  /******************************************************************/
-  /*    Set up the default parameters.      */
-  /* ****************************************************************/
-  msp = 1; /*only one spin-down */
+  /*  set up the default parameters  */
+  lalDebugLevel = 0;
+  /* LALDebugLevel must be called before anything else */
+  SUB( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
+
+  uvar_help = FALSE;
+  uvar_AllSkyFlag = 1;
   
-  nh0 = NH0;
-  h0Min = H0MIN;
-  h0Max = H0MIN;
-  
-  nMCloop = NMCLOOP;
-  nTemplates = NTEMPLATES;
-  
-  alpha = ALPHA;
-  delta = DELTA;
-  f0 =  F0;
-  fSearchBand = FBAND;
-  peakThreshold = THRESHOLD;
+  uvar_nh0 = NH0;
+  uvar_h0Min = H0MIN;
+  uvar_h0Max = H0MIN;
+
+  uvar_nMCloop = NMCLOOP;
+  nTemplates = NTEMPLATES;  
+  uvar_alpha = ALPHA;
+  uvar_delta = DELTA;
+  uvar_f0 =  F0;
+  uvar_fSearchBand = FBAND;
+  uvar_peakThreshold = THRESHOLD;
   nfSizeCylinder = NFSIZE;
-  patchSizeAlpha = PATCHSIZEX;
-  patchSizeDelta = PATCHSIZEY;
+  uvar_patchSizeAlpha = PATCHSIZEX;
+  uvar_patchSizeDelta = PATCHSIZEY; 
+  uvar_ifo = IFO;
 
-  injectPar.fullSky= 1;  /* full sky */
-  injectPar.spnFmax.length = 1; /* only one spd parameter used */
- 
-  detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF]; /* default */
-  ifo = IFO;
+  uvar_earthEphemeris = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
+
+  uvar_sunEphemeris = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
+
+  uvar_sftDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  strcpy(uvar_sftDir,SFTDIRECTORY);
+
+  uvar_harmonicsfile = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  strcpy(uvar_harmonicsfile,HARMONICSFILE);  
+
+  uvar_fnameout = FILEOUT;
+  uvar_blocksRngMed = BLOCKSRNGMED;
+
+
+  /* register user input variables */
+  SUB( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",            &uvar_help),            &status);  
+  SUB( LALRegisterINTUserVar(    &status, "ifo",             'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)", &uvar_ifo ),            &status);
+  SUB( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",             &uvar_blocksRngMed),    &status);
+  SUB( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Start search frequency",        &uvar_f0),              &status);
+  SUB( LALRegisterREALUserVar(   &status, "fSearchBand",     'b', UVAR_OPTIONAL, "Search frequency band",         &uvar_fSearchBand),     &status);
+  SUB( LALRegisterREALUserVar(   &status, "peakThreshold",   't', UVAR_OPTIONAL, "Peak selection threshold",      &uvar_peakThreshold),   &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",          &uvar_earthEphemeris),  &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",            &uvar_sunEphemeris),    &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT Directory",                 &uvar_sftDir),          &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "fnameout",        'o', UVAR_OPTIONAL, "Output file prefix",            &uvar_fnameout),        &status);
+  SUB( LALRegisterREALUserVar(   &status, "alpha",           'r', UVAR_OPTIONAL, "Right ascension",               &uvar_alpha),           &status);
+  SUB( LALRegisterREALUserVar(   &status, "delta",           'l', UVAR_OPTIONAL, "Declination",                   &uvar_delta),           &status);
+  SUB( LALRegisterREALUserVar(   &status, "patchSizeAlpha",  'R', UVAR_OPTIONAL, "Patch size in right ascension", &uvar_patchSizeAlpha),  &status);
+  SUB( LALRegisterREALUserVar(   &status, "patchSizeDelta",  'L', UVAR_OPTIONAL, "Patch size in declination",     &uvar_patchSizeDelta),  &status);
+  SUB( LALRegisterINTUserVar(    &status, "patch",           'P', UVAR_OPTIONAL, "Inject in patch if 0",          &uvar_AllSkyFlag),      &status);  
+  SUB( LALRegisterINTUserVar(    &status, "nMCloop",         'N', UVAR_OPTIONAL, "Number of MC injections",       &uvar_nMCloop),         &status);
+  SUB( LALRegisterREALUserVar(   &status, "h0Min",           'm', UVAR_OPTIONAL, "Smallest h0 to inject",         &uvar_h0Min),           &status);
+  SUB( LALRegisterREALUserVar(   &status, "h0Max",           'M', UVAR_OPTIONAL, "Largest h0 to inject",          &uvar_h0Max),           &status);
+  SUB( LALRegisterINTUserVar(    &status, "nh0",             'n', UVAR_OPTIONAL, "Number of h0 values to inject", &uvar_nh0),             &status);  
+  SUB( LALRegisterSTRINGUserVar( &status, "harmonicsfile",   'H', UVAR_OPTIONAL, "List of known lines",           &uvar_harmonicsfile),   &status);
+
+
+
+  /* read all command line variables */
+  SUB( LALUserVarReadAllInput(&status, argc, argv), &status);
+
+  /* exit if help was required */
+  if (uvar_help)
+    exit(0); 
   
-  if (ifo ==1) detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  if (ifo ==2) detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
-  if (ifo ==3) detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
- 
-  earthEphemeris = EARTHEPHEMERIS;
-  sunEphemeris = SUNEPHEMERIS;
+
+  /* write the log file */
+  fnamelog = (CHAR *)LALMalloc( 512*sizeof(CHAR));
+  strcpy(fnamelog, uvar_fnameout);
+  strcat(fnamelog, "_log");
+  /* open the log file for writing */
+  if ((fpLog = fopen(fnamelog, "w")) == NULL) {
+    fprintf(stderr, "Unable to open file %s for writing\n", fnamelog);
+    LALFree(fnamelog);
+    exit(1);
+  }
+
+  /* get the log string */
+  SUB( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
+
+
+  fprintf( fpLog, "## Log file for MCInjectHoughS2\n\n");
+  fprintf( fpLog, "# User Input:\n");
+  fprintf( fpLog, "#-------------------------------------------\n");
+  fprintf( fpLog, logstr);
+  LALFree(logstr);
+
+  /* copy contents of harmonics file into logfile */
+  fprintf(fpLog, "\n\n# Contents of harmonics file:\n");
+  fclose(fpLog);
+  {
+    CHAR command[1024] = "";
+    sprintf(command, "cat %s >> %s", uvar_harmonicsfile, fnamelog);
+    system(command);
+  }
+
+  /* append an ident-string defining the exact CVS-version of the code used */
+  fpLog = fopen(fnamelog, "a");
+  {
+    CHAR command[1024] = "";
+    fprintf (fpLog, "\n\n# CVS-versions of executable:\n");
+    fprintf (fpLog, "# -----------------------------------------\n");
+    fclose (fpLog);
+    
+    sprintf (command, "ident %s | sort -u >> %s", argv[0], fnamelog);
+    system (command);	/* we don't check this. If it fails, we assume that */
+    			/* one of the system-commands was not available, and */
+    			/* therefore the CVS-versions will not be logged */
+
+    LALFree(fnamelog); 
+  }
+
+
+  if ( (uvar_AllSkyFlag == 0) ) 
+    injectPar.fullSky= 0;  /* patch case */
+
+  SUB( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
+  if (uvar_ifo ==1) detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  if (uvar_ifo ==2) detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
+  if (uvar_ifo ==3) detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
   
-  directory = SFTDIRECTORY;
-  fnameOut = FILEOUT;
-  blocksRngMed = BLOCKSRNGMED;
-  SUB( LALRngMedBias( &status, &normalizeThr, blocksRngMed ), &status ); 
+  msp = 1; /*only one spin-down */
 
-  /* to be removed */
-/*
- *   fnameInData = FILEINDATA;
- *   fnameVelocity=FILEVELOCITY;
- *   fnameTime = FILETIME; 
- */
 
-  /*****************************************************************/
-  /*    Parse argument list.  i stores the current position.       */
-  /*****************************************************************/
-  {  
-    INT4  arg;        /* Argument counter */
+  /* find number of harmonics */
+  SUB( FindNumberHarmonics (&status, &harmonics, uvar_harmonicsfile), &status); 
+  nHarmonicSets = harmonics.nHarmonicSets; 
+  
+  /* convert harmonics to explicit lines */
+  if (nHarmonicSets > 0)
+    {
+      harmonics.startFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+      harmonics.gapFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+      harmonics.numHarmonics = (INT4 *)LALMalloc(harmonics.nHarmonicSets * sizeof(INT4));
+      harmonics.leftWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+      harmonics.rightWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+    
 
-    arg = 1;
-    while ( arg < argc ) {
-      /* Parse debuglevel option. */
-      if ( !strcmp( argv[arg], "-d" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  lalDebugLevel = atoi( argv[arg++] );
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
+      SUB( ReadHarmonicsInfo( &status, &harmonics, uvar_harmonicsfile ), &status);
+      
+      nLines = 0;
+      for (count1=0; count1 < nHarmonicSets; count1++)
+	{
+	  nLines += *(harmonics.numHarmonics + count1);
 	}
-      }
-      /* Parse interferometer option. */
-      else if ( !strcmp( argv[arg], "-i" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  ifo = atoi( argv[arg++] );
-	  if (ifo ==1) detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-	  if (ifo ==2) detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
-	  if (ifo ==3) detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse filename of earth  ephemeris data option. */
-      else if ( !strcmp( argv[arg], "-E" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  earthEphemeris = argv[arg++];
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse filename of sun ephemeris data option. */
-      else if ( !strcmp( argv[arg], "-S" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  sunEphemeris = argv[arg++];
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-       /* Parse directory SFT path  option. */
-      else if ( !strcmp( argv[arg], "-D" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  directory = argv[arg++];
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse output file prefix option. */
-      else if ( !strcmp( argv[arg], "-o" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  fnameOut = argv[arg++];
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-       /* Parse filename of Velocity.Data file corresponding to the SFTs. */
- /*
- *      else if ( !strcmp( argv[arg], "-V" ) ) {
- *         if ( argc > arg + 1 ) {
- *           arg++;
- *           fnameVelocity = argv[arg++];
- *         } else {
- *           ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
- *           LALPrintError( USAGE, *argv );
- *           return DRIVEHOUGHCOLOR_EARG;
- *         }
- *       }
- * 
- */
-     /* Parse frequency option. */
-      else if ( !strcmp( argv[arg], "-f" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  f0 = atof(argv[arg++]);
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse search frequency band option. */
-      else if ( !strcmp( argv[arg], "-b" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  fSearchBand = atof(argv[arg++]);	 
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse peak threshold option. */
-      else if ( !strcmp( argv[arg], "-t" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  peakThreshold = atof(argv[arg++]);
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse Running median window size. */
-      else if ( !strcmp( argv[arg], "-w" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  blocksRngMed = atoi( argv[arg++] );
-          SUB( LALRngMedBias( &status, &normalizeThr, blocksRngMed ), &status );	  
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse sky position options. */
-      else if ( !strcmp( argv[arg], "-p" ) ) {
-	if ( argc > arg + 2 ) {
-	  arg++;
-	  alpha = atof(argv[arg++]);
-	  delta = atof(argv[arg++]);
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse patch size option. */
-      else if ( !strcmp( argv[arg], "-s" ) ) {
-	if ( argc > arg + 2 ) {
-	  arg++;
-	  patchSizeAlpha = atof(argv[arg++]);
-	  patchSizeDelta = atof(argv[arg++]);
-	  injectPar.fullSky= 0;  /* patch case */
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse injected h0 amplitude  range and how many*/
-      else if ( !strcmp( argv[arg], "-H" ) ) {
-	if ( argc > arg + 3 ) {
-	  arg++;
-	  nh0 = atoi(argv[arg++]);
-	  h0Min = atof(argv[arg++]);
-	  h0Max = atof(argv[arg++]);
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse monte carlo iterations. */
-      else if ( !strcmp( argv[arg], "-L" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  nMCloop = atoi( argv[arg++] );	  
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Unrecognized option. */
-      else {
-	ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	LALPrintError( USAGE, *argv );
-	return DRIVEHOUGHCOLOR_EARG;
-      }
-    } /* End of argument parsing loop. */
-  }
-  /******************************************************************/
 
-  if ( f0 < 0 ) {
-    ERROR( DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD, "freq<0:" );
-    LALPrintError( USAGE, *argv  );
-    return DRIVEHOUGHCOLOR_EBAD;
-  }
-  /******************************************************************/  
- 
-  /******************************************************************/
+      if (nLines > 0)
+	{
+	  lines2.nLines = nLines;
+	  lines2.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+	  lines2.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+	  lines2.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+
+	  lines.nLines = nLines;
+	  lines.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+	  lines.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+	  lines.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+	  	  
+	  SUB( Harmonics2Lines( &status, &lines2, &harmonics), &status);
+	  
+	  SUB( ChooseLines (&status, &lines, &lines2, uvar_f0, uvar_f0 + uvar_fSearchBand), &status); 
+
+	  LALFree(lines2.lineFreq);
+	  LALFree(lines2.leftWing);
+	  LALFree(lines2.rightWing);
+	}
+
+      LALFree(harmonics.startFreq);
+      LALFree(harmonics.gapFreq);
+      LALFree(harmonics.numHarmonics);
+      LALFree(harmonics.leftWing);
+      LALFree(harmonics.rightWing);
+      
+    }
+
+
   /* computing h0 values and preparing  output files */
-  /******************************************************************/
-  h0V.length=nh0;
+  h0V.length=uvar_nh0;
   h0V.data = NULL;
-  h0V.data = (REAL8 *)LALMalloc(nh0*sizeof(REAL8));
-  h0V.data[0] = h0Min;
+  h0V.data = (REAL8 *)LALMalloc(uvar_nh0*sizeof(REAL8));
+  h0V.data[0] = uvar_h0Min;
   
-  if(nh0 >1){
+  if(uvar_nh0 >1){
     INT4 k;
     REAL8 steph0;   
-    steph0 = (h0Max-h0Min)/(nh0-1.);
-    for(k=1; k<nh0; ++k) h0V.data[k]= h0V.data[k-1]+steph0;
+    steph0 = (uvar_h0Max-uvar_h0Min)/(uvar_nh0-1.);
+    for(k=1; k<uvar_nh0; ++k) h0V.data[k]= h0V.data[k-1]+steph0;
   }
   
    /*fp = LALMalloc(nh0*sizeof(FILE *)); */
@@ -398,33 +368,33 @@ int main(int argc, char *argv[]){
     INT4 k;
     CHAR filename[MAXFILENAMELENGTH];
     
- 	/* the paramerter file */
-    strcpy( filename, fnameOut);
+    /* the paramerter file */
+    strcpy( filename, uvar_fnameout);
     strcat( filename, "_par");
     fpPar= fopen(filename, "w"); /* where to write the parameters */
     /*setlinebuf(fpPar);*/  /* line buffered on */
     setvbuf(fpPar, (char *)NULL, _IOLBF, 0);
-
-   	/* the  file  with the h0 values */
-    strcpy( filename, fnameOut);
+    
+    /* the  file  with the h0 values */
+    strcpy( filename, uvar_fnameout);
     strcat( filename, "_h0");
     fpH0= fopen(filename, "w"); /* where to write the parameters */
     /*setlinebuf(fpH0); */ /* line buffered on */
     setvbuf(fpH0, (char *)NULL, _IOLBF, 0); 
    
-   	/* the  file  with the the number-counts for different h0 values */
-    strcpy( filename, fnameOut);
+    /* the  file  with the the number-counts for different h0 values */
+    strcpy( filename, uvar_fnameout);
     strcat( filename, "_nc");
     fpNc= fopen(filename, "w"); /* where to write the parameters */
     /*setlinebuf(fpNc);*/  /* line buffered on */
     setvbuf(fpNc, (char *)NULL, _IOLBF, 0);
 
-    for (k=0; k<nh0; ++k){ fprintf(fpH0, "%g \n",  h0V.data[k] ); }  
+    for (k=0; k<uvar_nh0; ++k){ fprintf(fpH0, "%g \n",  h0V.data[k] ); }  
     fclose(fpH0);
     
     /*
-     *     for (k=0; k<nh0; ++k){
-     *       sprintf(filename, "%s_%03d.m",fnameOut, k); 
+     *     for (k=0; k<uvar_nh0; ++k){
+     *       sprintf(filename, "%s_%03d.m",uvar_fnameout, k); 
      *       fp[k] = fopen(filename, "w");
      *       setlinebuf(fp[k]);  
      *       fprintf(fp[k], " h0 = %g; \n",  h0V.data[k] );
@@ -442,7 +412,7 @@ int main(int argc, char *argv[]){
     glob_t   globbuf;
     INT4    j;
      
-    strcpy(command, directory);
+    strcpy(command, uvar_sftDir);
     strcat(command, "/*SFT*.*");
     
     globbuf.gl_offs = 1;
@@ -450,7 +420,7 @@ int main(int argc, char *argv[]){
     
     if(globbuf.gl_pathc==0)
       {
-	fprintf(stderr,"No SFTs in directory %s ... Exiting.\n", directory);
+	fprintf(stderr,"No SFTs in directory %s ... Exiting.\n", uvar_sftDir);
 	return 1;  /* stop the program */
       }
     
@@ -493,10 +463,10 @@ int main(int argc, char *argv[]){
   {    
     INT4   length, fWings;
  
-    f0Bin = f0*timeBase;     /* initial frequency to be analyzed */
-    length =  fSearchBand*timeBase; 
+    f0Bin = floor(uvar_f0*timeBase + 0.5);     /* initial frequency to be analyzed */
+    length =  uvar_fSearchBand*timeBase; 
     fLastBin = f0Bin+length;   /* final frequency to be analyzed */
-    fWings =  floor( fLastBin * VTOT +0.5) + nfSizeCylinder + blocksRngMed;
+    fWings =  floor( fLastBin * VTOT +0.5) + nfSizeCylinder + uvar_blocksRngMed;
 
     sftlength = 1 + length + 2*fWings;
     sftFminBin= f0Bin-fWings;
@@ -556,8 +526,8 @@ int main(int argc, char *argv[]){
   /*   setting of ephemeris info */ 
   /******************************************************************/ 
   edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = earthEphemeris;
-  (*edat).ephiles.sunEphemeris = sunEphemeris;
+  (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
+  (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
   
   /******************************************************************/
   /* compute detector velocity for those time stamps  
@@ -605,14 +575,14 @@ int main(int argc, char *argv[]){
   /******************************************************************/ 
   /*   setting of parameters */ 
   /******************************************************************/ 
-  injectPar.h0   = h0Min;
-  injectPar.fmin = f0;
-  injectPar.fSearchBand = fSearchBand;
+  injectPar.h0   = uvar_h0Min;
+  injectPar.fmin = uvar_f0;
+  injectPar.fSearchBand = uvar_fSearchBand;
   injectPar.deltaF = deltaF;
-  injectPar.alpha = alpha;  /* patch center if not full sky */
-  injectPar.delta = delta;
-  injectPar.patchSizeAlpha = patchSizeAlpha; /* patch size if not full sky */
-  injectPar.patchSizeDelta = patchSizeDelta; 
+  injectPar.alpha = uvar_alpha;  /* patch center if not full sky */
+  injectPar.delta = uvar_delta;
+  injectPar.patchSizeAlpha = uvar_patchSizeAlpha; /* patch size if not full sky */
+  injectPar.patchSizeDelta = uvar_patchSizeDelta; 
   injectPar.pixelFactor = PIXELFACTOR;
   injectPar.vTotC = VTOT;
   injectPar.timeObs =timeDiffV.data[mObsCoh-1] + 0.5 * timeBase;
@@ -658,7 +628,7 @@ int main(int argc, char *argv[]){
 	 -for each different h0 value create a file containing the h0
 	 value
      LOOP over xxx Monte-Carlo signal Injections:
-		- Generate signal injections parameters (using h0Min values) and
+		- Generate signal injections parameters (using uvar_h0Min values) and
 		random numbers....and also generate the corresponding template
 		parameters (position , frequency spin-down) allowing some
 		mismatch
@@ -700,7 +670,7 @@ int main(int argc, char *argv[]){
   periPSD.psd.data = NULL;
   periPSD.psd.data = (REAL8 *)LALMalloc(sftlength* sizeof(REAL8));
   
-  threshold = peakThreshold/normalizeThr; 
+  threshold = uvar_peakThreshold/normalizeThr; 
   
   pg1.length = sftlength;
   pg1.data = NULL;
@@ -722,9 +692,9 @@ int main(int argc, char *argv[]){
   /* ****************************************************************/
   /*  HERE SHOULD START THE MONTE-CARLO */
     
-  for(MCloopId=0; MCloopId < nMCloop; ++MCloopId){
+  for(MCloopId=0; MCloopId < uvar_nMCloop; ++MCloopId){
 
-    controlN=nh0; /* checks if near template corresponds to max number count*/
+    controlN=uvar_nh0; /* checks if near template corresponds to max number count*/
     controlNN=0;/* checks if near template corresponds to max number count*/
     controlNH=1;  /* checks if near template corresponds to max 
     		number count for the highest h0 value */
@@ -791,7 +761,7 @@ int main(int argc, char *argv[]){
     
     fprintf(fpNc, " %d ",  MCloopId);
     
-    for(h0loop=0; h0loop <nh0; ++h0loop){
+    for(h0loop=0; h0loop <uvar_nh0; ++h0loop){
       
       INT4  j, i, index, itemplate; 
       COMPLEX8 *noise1SFT;
@@ -827,9 +797,9 @@ int main(int argc, char *argv[]){
 	SUB( COMPLEX8SFT2Periodogram1(&status, &periPSD.periodogram, &sft1), &status );	
 	/* for color noise */    
 	SUB( LALPeriodo2PSDrng( &status, 
-			     &periPSD.psd, &periPSD.periodogram, &blocksRngMed), &status );	
+			     &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed), &status );	
 	/* SUB( Periodo2PSDrng( &status, 
-                     &periPSD.psd, &periPSD.periodogram, &blocksRngMed),  &status ); */	
+                     &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed),  &status ); */	
 	SUB( LALSelectPeakColorNoise(&status,&pg1,&threshold,&periPSD), &status); 	
 
 	index = floor( foft.data[j]*timeBase -sftFminBin+0.5); 
@@ -847,7 +817,7 @@ int main(int argc, char *argv[]){
          if( numberCountV[itemplate] > maxNumberCount ) {
 	   maxNumberCount = numberCountV[itemplate];
 	   controlNN=1;
-	   if (h0loop == (nh0-1)) controlNH=0;
+	   if (h0loop == (uvar_nh0-1)) controlNH=0;
 	 }
       }
       controlN-=controlNN; /* substracts 1 every the near template was not the
@@ -917,7 +887,15 @@ int main(int argc, char *argv[]){
   LALFree(edat);
   
   SUB(LALDestroySFTVector(&status, &inputSFTs),&status );
-  
+
+  if (nLines > 0)
+    {
+      LALFree(lines2.lineFreq);
+      LALFree(lines2.leftWing);
+      LALFree(lines2.rightWing);
+    }
+
+  SUB (LALDestroyUserVars(&status), &status);  
   LALCheckMemoryLeaks();
   
   
