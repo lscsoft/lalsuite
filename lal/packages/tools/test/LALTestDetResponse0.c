@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
       REPORTSTATUS(&status);
       return status.statusCode;
     }
-  REPORTSTATUS(&status);
+  /* REPORTSTATUS(&status); */
 
   /*
    * Expect the location vector to be (R, 0, 0): R = radius of Earth
