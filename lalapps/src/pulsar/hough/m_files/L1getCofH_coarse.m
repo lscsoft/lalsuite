@@ -9,7 +9,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-Detector = 'H1';
+Detector = 'L1';
 
 fileoutput = strcat(Detector,'kkoutput_veto');
 fid = fopen(fileoutput, 'w');
