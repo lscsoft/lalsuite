@@ -205,118 +205,123 @@ int main(int argc,char *argv[])
   MaxAngularDistance=sqrt(pow(PolkaCommandLineArgs.DeltaAlpha,2)+pow(PolkaCommandLineArgs.DeltaDelta,2))+1e-8;
 
   /* go through list */
-  for (i=0; i < CList1.length; i++)
+
+  if (CList1.length !=0 && CList2.length !=0 )
     {
-      REAL8 f1min,f1max,difff;
-      REAL8 f1,Alpha1,Delta1,F1;
-      int if2min,if2max,f;
-
-      /* Minimum and maximum frequencies acceptable for coincidence */
-      f1 = CList1.f[indices1F[i]];
-      /* if candidate frequency does not lie within bounds specified by user go to next in list */
-      if(f1 < PolkaCommandLineArgs.fmin || f1 > PolkaCommandLineArgs.fmax) continue;
-
-      f1min=f1-PolkaCommandLineArgs.Deltaf;
-      f1max=f1+PolkaCommandLineArgs.Deltaf;
-
-      /* Find nearest index to f1min and f1max; function explained below */
-      locate(CList2.f,CList2.length,f1min,&if2min,indices2f);
-      locate(CList2.f,CList2.length,f1max,&if2max,indices2f);
-
-      /* alpha */
-      Alpha1=CList1.Alpha[indices1F[i]];
-      /* delta */
-      Delta1=CList1.Delta[indices1F[i]];
-      /* F */
-      F1=CList1.F[indices1F[i]];
-      
-      for (f=if2max; f <= if2min; f++)
+      for (i=0; i < CList1.length; i++)
 	{
-	  REAL8 Alpha2=CList2.Alpha[indices2f[f]],Delta2=CList2.Delta[indices2f[f]];
-	  REAL8 n1[3],n2[3],AngularDistance;
-	  REAL8 cosAngularDistance;
+	  REAL8 f1min,f1max,difff;
+	  REAL8 f1,Alpha1,Delta1,F1;
+	  int if2min,if2max,f;
+
+	  /* Minimum and maximum frequencies acceptable for coincidence */
+	  f1 = CList1.f[indices1F[i]];
+	  /* if candidate frequency does not lie within bounds specified by user go to next in list */
+	  if(f1 < PolkaCommandLineArgs.fmin || f1 > PolkaCommandLineArgs.fmax) continue;
+
+	  f1min=f1-PolkaCommandLineArgs.Deltaf;
+	  f1max=f1+PolkaCommandLineArgs.Deltaf;
 	  
-	  n1[0]=cos(Alpha1)*cos(Delta1);
-	  n1[1]=sin(Alpha1)*cos(Delta1);
-	  n1[2]=sin(Delta1);
+	  /* Find nearest index to f1min and f1max; function explained below */
+	  locate(CList2.f,CList2.length,f1min,&if2min,indices2f);
+	  locate(CList2.f,CList2.length,f1max,&if2max,indices2f);
 
-	  n2[0]=cos(Alpha2)*cos(Delta2);
-	  n2[1]=sin(Alpha2)*cos(Delta2);
-	  n2[2]=sin(Delta2);
-
-	  cosAngularDistance=n1[0]*n2[0]+n1[1]*n2[1]+n1[2]*n2[2];
-	  if (cosAngularDistance  >  1.0) cosAngularDistance =  1.0;
-	  if (cosAngularDistance  < -1.0) cosAngularDistance = -1.0;
-
-	  AngularDistance=acos(cosAngularDistance);
-
-	  difff=fabs(f1 - CList2.f[indices2f[f]]);
-
-	  /* check difference in frequencies because we're not guaranteed 
-	     sufficient closeness at the edges of array */
-	  if ( difff <= PolkaCommandLineArgs.Deltaf) 
+	  /* alpha */
+	  Alpha1=CList1.Alpha[indices1F[i]];
+	  /* delta */
+	  Delta1=CList1.Delta[indices1F[i]];
+	  /* F */
+	  F1=CList1.F[indices1F[i]];
+      
+	  for (f=if2max; f <= if2min; f++)
 	    {
-	      if ( AngularDistance <= MaxAngularDistance )
-		{	
-		  int j;
-		  CoincidentCandidate *thisCC;
-		  CoincidentPairs *thisCP;
+	      REAL8 Alpha2=CList2.Alpha[indices2f[f]],Delta2=CList2.Delta[indices2f[f]];
+	      REAL8 n1[3],n2[3],AngularDistance;
+	      REAL8 cosAngularDistance;
+	  
+	      n1[0]=cos(Alpha1)*cos(Delta1);
+	      n1[1]=sin(Alpha1)*cos(Delta1);
+	      n1[2]=sin(Delta1);
+	      
+	      n2[0]=cos(Alpha2)*cos(Delta2);
+	      n2[1]=sin(Alpha2)*cos(Delta2);
+	      n2[2]=sin(Delta2);
+	      
+	      cosAngularDistance=n1[0]*n2[0]+n1[1]*n2[1]+n1[2]*n2[2];
+	      if (cosAngularDistance  >  1.0) cosAngularDistance =  1.0;
+	      if (cosAngularDistance  < -1.0) cosAngularDistance = -1.0;
+	      
+	      AngularDistance=acos(cosAngularDistance);
 
-		  /* tag the candidates that have been found in coincidence */
-		  CList1.Ctag[indices1F[i]]=1;
-		  CList2.Ctag[indices2f[f]]=1;
+	      difff=fabs(f1 - CList2.f[indices2f[f]]);
+	      
+	      /* check difference in frequencies because we're not guaranteed 
+		 sufficient closeness at the edges of array */
+	      if ( difff <= PolkaCommandLineArgs.Deltaf) 
+		{
+		  if ( AngularDistance <= MaxAngularDistance )
+		    {	
+		      int j;
+		      CoincidentCandidate *thisCC;
+		      CoincidentPairs *thisCP;
+
+		      /* tag the candidates that have been found in coincidence */
+		      CList1.Ctag[indices1F[i]]=1;
+		      CList2.Ctag[indices2f[f]]=1;
 		  
-		  /* seems we found a coincident candidate: let's make space for it to be stored */
-		  numCoincidences ++;
-		  if ( (CC = LALRealloc ( CC, numCoincidences * sizeof(CoincidentCandidate) )) == NULL) {
-		    fprintf (stderr, "Error: ran out of memory ... goodbye.\n");
-		    return 1;	/* got lazy here.. */
-		  }
-		  if ( (CP = LALRealloc ( CP, numCoincidences * sizeof(CoincidentPairs) )) == NULL) {
-		    fprintf (stderr, "Error: ran out of memory ... goodbye.\n");
-		    return 1;	/* got lazy here.. */
-		  }
+		      /* seems we found a coincident candidate: let's make space for it to be stored */
+		      numCoincidences ++;
+		      if ( (CC = LALRealloc ( CC, numCoincidences * sizeof(CoincidentCandidate) )) == NULL) {
+			fprintf (stderr, "Error: ran out of memory ... goodbye.\n");
+			return 1;	/* got lazy here.. */
+		      }
+		      if ( (CP = LALRealloc ( CP, numCoincidences * sizeof(CoincidentPairs) )) == NULL) {
+			fprintf (stderr, "Error: ran out of memory ... goodbye.\n");
+			return 1;	/* got lazy here.. */
+		      }
+		      
+		      thisCC = &(CC[ numCoincidences - 1]);	/* point to current new coincidences */
+		      thisCP = &(CP[ numCoincidences - 1]);	/* point to current new coincidences */
+		      
+		      thisCC->f1 = f1;
+		      thisCC->Alpha1 = Alpha1;
+		      thisCC->Delta1 =Delta1;
+		      thisCC->F1 = F1;
 
-		  thisCC = &(CC[ numCoincidences - 1]);	/* point to current new coincidences */
-		  thisCP = &(CP[ numCoincidences - 1]);	/* point to current new coincidences */
+		      if ( haveFile3 )
+			{
+			  locate(CList3.F,CList3.length,thisCC->F1,&j,indices3F);
+			  thisCC->fa1=(REAL8)(j+1)/(REAL8)CList3.length;
+			}
+		      else thisCC->fa1=(REAL8)(i+1)/(REAL8)CList1.length;
 
-		  thisCC->f1 = f1;
-		  thisCC->Alpha1 = Alpha1;
-		  thisCC->Delta1 =Delta1;
-		  thisCC->F1 = F1;
+		      thisCC->f2=CList2.f[indices2f[f]];
+		      thisCC->Alpha2=CList2.Alpha[indices2f[f]];
+		      thisCC->Delta2=CList2.Delta[indices2f[f]];
+		      thisCC->F2=CList2.F[indices2f[f]];
 
-		  if ( haveFile3 )
-		    {
-		      locate(CList3.F,CList3.length,thisCC->F1,&j,indices3F);
-		      thisCC->fa1=(REAL8)(j+1)/(REAL8)CList3.length;
+		      if ( haveFile4 )
+			{
+			  locate(CList4.F,CList4.length,thisCC->F2,&j,indices4F);
+			  thisCC->fa2=(REAL8)(j+1)/(REAL8)CList4.length;
+			}else{
+			  locate(CList2.F,CList2.length,thisCC->F2,&j,indices2F);
+			  thisCC->fa2=(REAL8)(j+1)/(REAL8)CList2.length;
+			}
+		      
+		      thisCC->fa = thisCC->fa1 * thisCC->fa2;
+		      
+		      thisCP->c1=indices1F[i];
+		      thisCP->c2=indices2f[f];
+		      thisCP->fa=thisCC->fa;
+
 		    }
-		  else thisCC->fa1=(REAL8)(i+1)/(REAL8)CList1.length;
-
-		  thisCC->f2=CList2.f[indices2f[f]];
-		  thisCC->Alpha2=CList2.Alpha[indices2f[f]];
-		  thisCC->Delta2=CList2.Delta[indices2f[f]];
-		  thisCC->F2=CList2.F[indices2f[f]];
-
-		  if ( haveFile4 )
-		    {
-		      locate(CList4.F,CList4.length,thisCC->F2,&j,indices4F);
-		      thisCC->fa2=(REAL8)(j+1)/(REAL8)CList4.length;
-		    }else{
-		      locate(CList2.F,CList2.length,thisCC->F2,&j,indices2F);
-		      thisCC->fa2=(REAL8)(j+1)/(REAL8)CList2.length;
-		    }
-
-		  thisCC->fa = thisCC->fa1 * thisCC->fa2;
-
-		  thisCP->c1=indices1F[i];
-		  thisCP->c2=indices2f[f];
-		  thisCP->fa=thisCC->fa;
-
 		}
 	    }
-	}
       /* next candidate for 1st ifo */
-    }     
+	}     
+    }
+
 
   /* allocate space */
   if (numCoincidences != 0){ 
@@ -865,6 +870,13 @@ ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname)
   TRY ( LALParseDataFile (stat->statusPtr, &Fstats, fname), stat);
 
   numlines = Fstats->lines->nTokens; /* how many lines of data */
+
+  if ( numlines == 0) 
+    {
+      LALPrintError ("ERROR: File '%s' is empty and is not properly terminated by '%s' marker!\n\n", fname, DONE_MARKER);
+      TRY (LALDestroyParsedDataFile ( stat->statusPtr, &Fstats ), stat);
+      ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+    }
 
   /* check validity of this Fstats-file */
   thisline = Fstats->lines->tokens[numlines-1];	/* get last line */
