@@ -1451,14 +1451,14 @@ int write_timeseries(int iSFT){
     if (!doxaxis) {
       for (i=0;i<header.nsamples;i++) {    
 	pw=timeSeries->data->data[i];
-	fprintf(fp,"%16.9f\n",pw);
+	fprintf(fp,"%f\n",pw);
       }
     }
     else {
       for (i=0;i<header.nsamples;i++) {
 	REAL8 ts=header.gps_sec-xaxis+header.tbase*i/header.nsamples;
 	pw=timeSeries->data->data[i];
-	fprintf(fp,"%f %f\n",ts, pw);
+	fprintf(fp,"%16.9f %f\n",ts, pw);
       }
     }
     
