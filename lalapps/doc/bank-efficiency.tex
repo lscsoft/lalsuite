@@ -1,0 +1,75 @@
+\subsection{Program \texttt{lalapps\_BankEfficiency}}
+\label{program:lalapps-BankEfficiency}
+\idx[Program]{lalapps\_BankEfficiency}
+{\LARGE{{\bf Documentation In progress}}}
+
+\begin{entry}
+
+\item[Name]
+\verb$lalapps_BankEfficiency$ --- produces Monte Carlo simulation to test bank efficiency
+in the framework of inspiral binaries. It is dedicated to BCV bank validation.
+
+\item[Synopsis]
+\verb$lalapps_BankEfficiency$ [\verb$-h$] [\verb$-V$] [\verb$-v$]
+[\verb$-d$ \textit{dbglvl}]
+[\verb$-m$ \textit{mmin}\texttt{-}\textit{mmax}]
+[\verb$-r$ \textit{range}]
+[\verb$-s$ \textit{seed}]
+[\verb$-t$ \textit{tstart}\texttt{-}\textit{tend}]
+[\verb$-u$ \textit{tstep}]
+
+\item[Description]
+\verb$lalapps_BankEfficiency$ This application create a bank of templates based on the
+SPA bank or BCV bank. Then perform a Monte Carlo Simulation by injecting known signals
+such as TaylorT1, PadeT1 or EOB and applying the bank for a detection scheme.
+ 
+Providing a range of parameters and a minimal match $MM$, the code output the Match as well
+as others output such as mass, triggers in the bank ans so on. 
+
+
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{-h}]
+Print a help message.
+\item[\texttt{-V}]
+\end{entry}
+
+\item[Debug levels]
+The LAL debug level can be specified as an integer or as a string of flags:
+\begin{entry}
+\item[\texttt{NDEBUG}]
+kdsj kfjkds
+\end{entry}
+
+
+The following composite levels are available:
+\begin{entry}
+\item[\texttt{MSGLVL1}]
+Equivalent to \verb$ERROR$
+\item[\texttt{MSGLVL2}]
+Equivalent to \verb$ERROR | WARNING$
+\item[\texttt{MSGLVL3}]
+Equivalent to \verb$ERROR | WARNING | INFO$
+\item[\texttt{ALLDBG}]
+All debugging messages are printed.
+\end{entry}
+
+
+For example, the command
+\begin{indented}
+\verb$lalapps_BankEfficiency -d "ERROR | INFO"$
+\end{indented}
+will set the debug level so that error and information messages are printed.
+
+\item[Environment]\leavevmode
+
+\begin{entry}
+\item[\texttt{LAL\_DEBUG\_LEVEL}]
+Default LAL debug level to use.
+\end{entry}
+
+\item[Author]
+Thomas Cokelaer
+
+\end{entry}

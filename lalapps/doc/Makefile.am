@@ -3,7 +3,7 @@
 ## Add additional tex sources (texfiles, eps&pdf figures, etc.) here
 TEXSOURCEFILES = lalapps.tex lalapps.bib lalapps.bst part_howto.tex \
                  animate.tex animate.ps animate.pdf \
-                 calibration.tex hello.tex \
+                 bank-efficiency.tex calibration.tex findchirp.tex hello.tex \
                  inspinj.tex inspiral-module.tex inspiral.tex \
                  stochastic.tex olapredfcn.tex \
                  pipeline-module.tex power.tex ring.tex
