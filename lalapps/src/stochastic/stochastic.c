@@ -145,7 +145,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	SSSimStochBGOutput MCoutput;
 	MonteCarloParams MCparams;
 	MonteCarloInput MCinput;
-        UINT4 MCLength;
+	UINT4 MCLength;
 
 	/* simulated output structures */
 	REAL4TimeSeries SimStochBGOne;
@@ -245,13 +245,13 @@ INT4 main(INT4 argc, CHAR *argv[])
 	REAL4WithUnits ccStat;
 	COMPLEX8FrequencySeries ccSpectrum;
 
-	/* parse command line options */
-	parseOptions(argc, argv);
-
 	/* error handler */
 	status.statusPtr = NULL;
 	lal_errhandler = LAL_ERR_EXIT;
-	set_debug_level( "7" );
+	set_debug_level( "2" );
+
+	/* parse command line options */
+	parseOptions(argc, argv);
 
 	/* open output file */
 	LALSnprintf(outputFilename, LALNameLength, "output-%s%s-%d.dat", 
