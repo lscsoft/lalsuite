@@ -143,7 +143,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* data structures for intevals */
   INT4 numIntervals;
   INT4 intervalLength;
-  INT4 intervalShift;
   REAL4TimeSeries intervalOne;
   REAL4TimeSeries intervalTwo;
 
@@ -277,12 +276,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   if (overlap_hann_flag)
   {
     numIntervals = (2 * (streamDuration / intervalDuration)) - 1;
-    intervalShift = segmentDuration / 2;
+    segmentShift = segmentDuration / 2;
   }
   else
   {
     numIntervals = streamDuration / intervalDuration;
-    intervalShift = segmentDuration;
+    segmentShift = segmentDuration;
   }
 
   /* get stream length */
@@ -980,7 +979,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   for (j = 0; j < numIntervals; j++)
   {
     /* define interval epoch */
-    gpsIntervalStart.gpsSeconds = startTime + (j * intervalShift);
+    gpsIntervalStart.gpsSeconds = startTime + (j * segmentShift);
     gpsIntervalStart.gpsNanoSeconds = 0;
     intervalOne.epoch = gpsIntervalStart;
     intervalTwo.epoch = gpsIntervalStart;
@@ -1000,15 +999,15 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     /* build interval */
     intervalOne.data->data = streamOne.data->data + (j * \
-        intervalShift * resampleRate);
+        segmentShift * resampleRate);
     intervalTwo.data->data = streamTwo.data->data + (j * \
-        intervalShift * resampleRate);
+        segmentShift * resampleRate);
 
     /* build segment */
     segmentOne.data->data = streamOne.data->data + \
-      (resampleRate * ((j * intervalShift) + segmentDuration));
+      (resampleRate * ((j * segmentShift) + segmentDuration));
     segmentTwo.data->data = streamTwo.data->data + \
-      (resampleRate * ((j * intervalShift) + segmentDuration));
+      (resampleRate * ((j * segmentShift) + segmentDuration));
 
     /* output the results */
     if (debug_flag)
@@ -1072,15 +1071,12 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* compute response function */
     responseTempOne.epoch = gpsSegmentStart;
     responseTempTwo.epoch = gpsSegmentStart;
-
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoOne;
-
     LAL_CALL( LALExtractFrameResponse(&status, &responseTempOne, calCacheOne, \
           &calfacts), &status );
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoTwo;
-
     LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwo, calCacheTwo, \
           &calfacts), &status );
 
