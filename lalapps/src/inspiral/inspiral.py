@@ -18,35 +18,6 @@ class InspiralError(exceptions.Exception):
     self.args = args
 
 
-class DataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
-  """
-  A LALdataFind job used by the inspiral pipeline. The static options are
-  read from the section [datafind] in the ini file. The stdout from
-  LALdataFind contains the paths to the frame files and is directed to a file
-  in the cache directory named by site and GPS start and end times. The stderr
-  is directed to the logs directory. The job always runs in the scheduler
-  universe. The path to the executable is determined from the ini file.
-  """
-  def __init__(self,cp):
-    """
-    cp = ConfigParser object from which options are read.
-    """
-    self.__executable = cp.get('condor','datafind')
-    self.__universe = 'scheduler'
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp)
-
-    for sec in ['datafind']:
-      self.add_ini_opts(cp,sec)
-
-    self.add_condor_cmd('environment',
-      """LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH);PYTHONPATH=$ENV(PYTHONPATH)""" )
-
-    self.set_stderr_file('logs/datafind-$(macroinstrument)-$(macrostart)-$(macroend)-$(cluster)-$(process).err')
-    self.set_stdout_file('cache/$(macroinstrument)-$(macrostart)-$(macroend).cache')
-    self.set_sub_file('datafind.sub')
-
-
 class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_tmpltbank job used by the inspiral pipeline. The static options
@@ -72,6 +43,31 @@ class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stdout_file('logs/tmpltbank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/tmpltbank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('tmpltbank.sub')
+
+
+class SplitBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A lalapps_splitbank job used by the inspiral pipeline. The static options
+  are read from the section [splitbank] in the ini file. The stdout and stderr
+  from the job are directed to the logs directory. The job runs in the
+  universe specfied in the ini file. The path to the executable is determined
+  from the ini file.
+  """
+  def __init__(self,cp):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','splitbank')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp)
+
+    for sec in ['splitbank']:
+      self.add_ini_opts(cp,sec)
+  
+    self.set_stdout_file('logs/splitbank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/splitbank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('splitbank.sub')
     
 
 class InspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
@@ -195,66 +191,6 @@ class Tama2LigoLwJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stderr_file('logs/tama2ligolw-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('tama2ligolw.sub')
 
-class DataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
-  """
-  A DataFindNode runs an instance of datafind in a Condor DAG.
-  """
-  def __init__(self,job):
-    """
-    job = A CondorDAGJob that can run an instance of LALdataFind.
-    """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
-    self.__start = 0
-    self.__end = 0
-    self.__instrument = None
-    self.__output = None
-   
-  def __set_output(self):
-    """
-    Private method to set the file to write the cache to. Automaticaly set
-    once the ifo, start and end times have been set.
-    """
-    if self.__start and self.__end and self.__instrument:
-      self.__output = 'cache/' + self.__instrument + '-' + str(self.__start) 
-      self.__output = self.__output + '-' + str(self.__end) + '.cache'
-
-  def set_start(self,time):
-    """
-    Set the start time of the datafind query.
-    time = GPS start time of query.
-    """
-    self.add_var_opt('start', time)
-    self.__start = time
-    self.__set_output()
-
-  def set_end(self,time):
-    """
-    Set the end time of the datafind query.
-    time = GPS end time of query.
-    """
-    self.add_var_opt('end', time)
-    self.__end = time
-    self.__set_output()
-
-  def set_ifo(self,ifo):
-    """
-    Set the IFO to retrieve data for. Since the data from both Hanford 
-    interferometers is stored in the same frame file, this takes the first 
-    letter of the IFO (e.g. L or H) and passes it to the --instrument option
-    of LALdataFind.
-    ifo = IFO to obtain data for.
-    """
-    self.add_var_opt('instrument',ifo[0])
-    self.__instrument = ifo[0]
-    self.__set_output()
-
-  def get_output(self):
-    """
-    Return the output file, i.e. the file containing the frame cache data.
-    """
-    return self.__output
-
 
 class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
@@ -286,6 +222,51 @@ class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_output_file(bank)
 
     return bank
+
+
+class SplitBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A SplitBankNode runs an instance of the split template bank job in a
+  Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_tmpltbank.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
+    self.__bankfile = None
+    self.__numbanks = None
+
+  def set_bank(self,bank):
+    self.add_var_opt('bank-file', bank)
+    self.add_input_file(bank)
+    self.__bankfile = bank
+
+  def get_bank(self):
+    return self.__bankfile
+
+  def set_num_banks(self,numbanks):
+    self.__numbanks = int(numbanks)
+
+  def get_num_banks(self):
+    return self.__numbanks
+
+  def get_output(self):
+    """
+    Returns a list of the file names of split banks. This must be kept
+    synchronized with the name of the output files in splitbank.c.
+    """
+    if not self.get_bank() or not self.get_num_banks():
+      raise InspiralError, "Bank file or number of banks has not been set"
+
+    banks = []
+    x = self.__bankfile.split('-')
+    for i in range( 0, self.__get_num_banks() ):
+      banks.append("%s-%s_%2.2d-%s-%s" % (x[0], x[1], i, x[2], x[3]))
+
+    return banks
 
 
 class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
