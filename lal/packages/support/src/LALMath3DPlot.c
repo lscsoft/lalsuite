@@ -30,12 +30,13 @@ $Id$
      \idx{LALMath3DPlot()}
      \noindent\texttt{*stat} LALStatus structure pointer\\
      \\\texttt{*first} Math3DPointList stucture pointer\\ 
-     \\\texttt{*ntiles} INT4 pointer to the number of templates in the plot.  This may 
-     * be called as NULL. \\
+     \\\texttt{*ntiles} INT4 pointer to the number of templates you \emph{plan} to plot.  
+     * This may be called as NULL.  If it is called with a value this function will check
+     * to see if the Math3DPointList has the correct number of templates.  If it does not
+     * a warning will be printed. \\
      \\\texttt{PointSize} REAL4 $\epsilon[0,1]$ which specifies the relative size of each 
      * point to the final display area.  (e.g. 1 would fill the enire plot.)  This may be
-     * called as NULL.  However, if ntiles!=NULL but a PointSize is not explicitly given
-     * this routine will generate a good PointSize based on the value of ntiles.
+     * called as NULL and a calculated value will be assigned.  (Its only a rough guess)
      </lalLaTeX>
      END SUBSUBSECTION - PROTOTYPES "LALMath3DPlot()" -------------------------------- */
 
@@ -112,6 +113,7 @@ LALMath3DPlot( LALStatus *stat,
   Math3DPointList *list;		/* loop counter */
   INT4 loop = 0;
   REAL4 PtSize = 0.02;
+  INT4 counter = 0;
   
   INITSTATUS( stat, "LALMath3DPlot", LALMATH3DPLOTC ); 
 
@@ -122,13 +124,31 @@ LALMath3DPlot( LALStatus *stat,
     ABORT(stat, LALMATHEMATICAH_EFILE, LALMATHEMATICAH_MSGEFILE);
  
   if (!PointSize){
-    if (!ntiles) PtSize = 0.02;
-    else {
-      if (*ntiles <=0) 
-        ABORT(stat, LALMATHEMATICAH_EVAL, LALMATHEMATICAH_MSGEVAL);
-      else PtSize = 0.5*(1.0/(pow((*ntiles),0.333333)));
+    if (!ntiles){
+      list=first;
+      while(list->next){
+        counter++;
+        list=list->next;
+        }
+      ntiles = &counter;
       }
+    else{
+      list=first;
+      while(list->next){
+        counter++;
+        list=list->next;
+        }
+      if (*ntiles != counter)
+        printf("\nWARNING!!! The value of argument ntiles (%i) != the Math3DPointList length (%i)\n",
+               *ntiles, counter);
+      }  
+    if (*ntiles <=0) 
+      ABORT(stat, LALMATHEMATICAH_EVAL, LALMATHEMATICAH_MSGEVAL);
+    PtSize = 0.50*(1.0/(pow((*ntiles),0.333333)));
+    if (*ntiles > 10000) 
+      printf("\nWARNING!!! More than 10,000 tiles may crash Mathematica:)\n");
   }
+
   else{
     if ((*PointSize <= 0.0) || (*PointSize >= 1.0)) {
       printf("\nIllegal value of PointSize; it must be between 0 and 1.\n");
