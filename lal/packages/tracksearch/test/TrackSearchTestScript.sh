@@ -1,11 +1,11 @@
 #!/bin/sh
 if test -r a.pgm
 then
-  TrackSearchTest
+  ./TrackSearchTest
   exitcode=$?
 else
   cp $srcdir/a.pgm .
-  TrackSearchTest
+  ./TrackSearchTest
   exitcode=$?
   rm a.pgm
 fi
