@@ -7,6 +7,10 @@ $Id$
 \subsection{Program \texttt{StochasticCrossCorrelationSpectrumTest.c}}
 \label{stochastic:ss:StochasticCrossCorrelationSpectrumTest.c}
 
+{\bf {\Large WARNING} The functionality of this module has been expanded
+and modified, so the tests and  documentation are not yet complete
+and/or correct.}
+
 A program to test \texttt{LALStochasticCrossCorrelationSpectrum()}.
 
 \subsubsection*{Usage}
@@ -22,7 +26,8 @@ Options:
   -i filename    read first data stream from file filename
   -j filename    read second data stream from file filename
   -k filename    read optimal filter from file filename
-  -n length      frequency series contain length points
+  -m length      optimal filter contains length points
+  -n length      data streams contain length points
 \end{verbatim}
 
 This program tests the function
@@ -52,12 +57,9 @@ the corresponding checks in the code are made using the ASSERT macro):
 \item \textit{negative frequency spacing}
 \item \textit{zero frequency spacing}
 \item negative start frequency
-\item length mismatch between optimal filter and first data stream
-\item length mismatch between optimal filter and second data stream
-\item frequency spacing mismatch between optimal filter and first data stream
-\item frequency spacing mismatch between optimal filter and second data stream
-\item start frequency mismatch between optimal filter and first data stream
-\item start frequency mismatch between optimal filter and second data stream
+\item length mismatch between data streams
+\item frequency spacing mismatch between data streams
+\item start frequency mismatch between data streams
 \item mismatch between epochs of data streams
 \end{itemize}
 
@@ -172,7 +174,8 @@ extern int   optind;
 /* int lalDebugLevel = LALMSGLVL3; */
 int lalDebugLevel = LALNDEBUG;
 BOOLEAN optVerbose    = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_FALSE;
-UINT4 optLength     = 0;
+UINT4 optStreamLength     = 0;
+UINT4 optFilterLength     = 0;
 CHAR optData1File[LALNameLength] = "";
 CHAR optData2File[LALNameLength] = "";
 CHAR optFilterFile[LALNameLength] = "";
@@ -550,25 +553,7 @@ int main( int argc, char *argv[] )
   goodData1.f0 = goodData2.f0 
     = goodFilter.f0 = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_F0;
   
-  /* test behavior for length mismatch
-     between optimal filter and first data stream */
-  goodData1.data->length = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH - 1;
-  LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input);
-  if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
-                          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
-                          STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ECHK,
-                          STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGECHK) ) 
-  {
-    return code;
-  }
-  printf("  PASS: length mismatch between optimal filter and first data stream results in error:\n       \"%s\"\n",
-         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
-  
-  /* reassign correct length */
-  goodData1.data->length = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH;
-  
-  /* test behavior for length mismatch
-     between optimal filter and first data stream */
+  /* test behavior for length mismatch between data streams */
   goodData2.data->length = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH - 1;
   LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
@@ -578,31 +563,13 @@ int main( int argc, char *argv[] )
   {
     return code;
   }
-  printf("  PASS: length mismatch between optimal filter and second data stream results in error:\n       \"%s\"\n",
+  printf("  PASS: length mismatch between data streams results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   
   /* reassign correct length */
   goodData2.data->length = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH;
   
-  /* test behavior for frequency spacing mismatch
-     between optimal filter and first data stream */
-  goodData1.deltaF = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_DELTAF * 2.0;
-  LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input);
-  if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
-                          STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF,
-                          STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ECHK,
-                          STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGECHK) ) 
-  {
-    return code;
-  }
-  printf("  PASS: frequency spacing mismatch between optimal filter and first data stream results in error:\n       \"%s\"\n",
-         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
-  
-  /* reassign correct frequency spacing */
-  goodData1.deltaF = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_DELTAF;
-  
-  /* test behavior for frequency spacing mismatch
-     between optimal filter and second data stream */
+  /* test behavior for frequency spacing mismatch between data streams */
   goodData2.deltaF = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_DELTAF * 2.0;
   LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
@@ -612,31 +579,13 @@ int main( int argc, char *argv[] )
   {
     return code;
   }
-  printf("  PASS: frequency spacing mismatch between optimal filter and second data stream results in error:\n       \"%s\"\n",
+  printf("  PASS: frequency spacing mismatch between data streams results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   
   /* reassign correct frequency spacing */
   goodData2.deltaF = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_DELTAF;
   
-  /* test behavior for start frequency mismatch
-     between optimal filter and first data stream */
-  goodData1.f0 = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_F0 + 2.0;
-  LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input);
-  if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMFMIN,
-                          STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN,
-                          STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ECHK,
-                          STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGECHK) ) 
-  {
-    return code;
-  }
-  printf("  PASS: start frequency mismatch between optimal filter and first data stream results in error:\n       \"%s\"\n",
-         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
-  
-  /* reassign correct start frequency */
-  goodData1.f0 = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_F0;
-  
-  /* test behavior for start frequency mismatch
-     between optimal filter and second data stream */
+  /* test behavior for start frequency mismatch between data streams */
   goodData2.f0 = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_F0 + 2.0;
   LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMFMIN,
@@ -646,7 +595,7 @@ int main( int argc, char *argv[] )
   {
     return code;
   }
-  printf("  PASS: start frequency mismatch between optimal filter and second data stream results in error:\n       \"%s\"\n",
+  printf("  PASS: start frequency mismatch between data streams results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   
   /* reassign correct start frequency */
@@ -716,8 +665,8 @@ int main( int argc, char *argv[] )
     return code;
   }
 
-  printf("got here\n");
   
+
   /* clean up */
   LALCDestroyVector(&status, &(goodOutput.data));
   if ( code = CheckStatus(&status, 0 , "",
@@ -759,28 +708,28 @@ int main( int argc, char *argv[] )
   {
 
     /* Allocate Memory */
-    LALCCreateVector(&status, &(goodOutput.data), optLength);
+    LALCCreateVector(&status, &(goodOutput.data), optFilterLength);
     if ( code = CheckStatus(&status, 0 , "",
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_EUSE,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGEUSE) ) 
     {
       return code;
     }
-    LALCCreateVector(&status, &(goodFilter.data), optLength);
+    LALCCreateVector(&status, &(goodFilter.data), optFilterLength);
     if ( code = CheckStatus(&status, 0 , "",
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_EUSE,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGEUSE) ) 
     {
       return code;
     }
-    LALCCreateVector(&status, &(goodData1.data), optLength);
+    LALCCreateVector(&status, &(goodData1.data), optStreamLength);
     if ( code = CheckStatus(&status, 0 , "",
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_EUSE,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGEUSE) ) 
     {
       return code;
     }
-    LALCCreateVector(&status, &(goodData2.data), optLength);
+    LALCCreateVector(&status, &(goodData2.data), optStreamLength);
     if ( code = CheckStatus(&status, 0 , "",
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_EUSE,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGEUSE) ) 
@@ -880,7 +829,8 @@ Usage (const char *program, int exitcode)
   fprintf (stderr, "  -i filename    read first data stream from file filename\n");
   fprintf (stderr, "  -j filename    read second data stream from file filename\n");
   fprintf (stderr, "  -k filename    read optimal filter from file filename\n");
-  fprintf (stderr, "  -n length      frequency series contain length points\n");
+  fprintf (stderr, "  -m length      optimal filter contains length points\n");
+  fprintf (stderr, "  -n length      data streams contain length points\n");
   exit (exitcode);
 }
 
@@ -897,7 +847,7 @@ ParseOptions (int argc, char *argv[])
   {
     int c = -1;
 
-    c = getopt (argc, argv, "hqvd:i:j:k:n:o:");
+    c = getopt (argc, argv, "hqvd:i:j:k:m:n:o:");
     if (c == -1)
     {
       break;
@@ -921,8 +871,12 @@ ParseOptions (int argc, char *argv[])
         strncpy (optFilterFile, optarg, LALNameLength);
         break;
         
-      case 'n': /* specify number of points in frequency series */
-        optLength = atoi (optarg);
+      case 'm': /* specify number of points in optimal filter */
+        optFilterLength = atoi (optarg);
+        break;
+        
+      case 'n': /* specify number of points in data streams */
+        optStreamLength = atoi (optarg);
         break;
 
       case 'd': /* set debug level */

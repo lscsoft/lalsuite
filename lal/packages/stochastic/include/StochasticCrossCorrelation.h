@@ -215,6 +215,7 @@ NRCSID( STOCHASTICCROSSCORRELATIONH,
 \subsubsection*{Structures associated with 
   \texttt{StochasticCrossCorrelation.c}
   (Sec.~\ref{stochastic:ss:StochasticCrossCorrelation.c})}
+
 \subsubsection*{\texttt{struct REAL4WithUnits}}
 \index{\texttt{REAL4WithUnits}}
 
@@ -237,6 +238,36 @@ typedef struct tagREAL4WithUnits {
   REAL4     value;
   LALUnit   units;
 } REAL4WithUnits;
+
+/********************************************************** <lalLaTeX>
+
+\subsubsection*{Structures associated with 
+  \texttt{StochasticCrossCorrelation.c}
+  (Sec.~\ref{stochastic:ss:StochasticCrossCorrelation.c})}
+
+\subsubsection*{\texttt{struct COMPLEX8WithUnits}}
+\index{\texttt{COMPLEX8WithUnits}}
+
+\noindent
+Represents a dimensionful number as a single-precision (8-byte) complex
+number with an associated
+units structure, which is the output of
+\texttt{LALStochasticHeterodynedCrossCorrelationStatistic()}.  The fields are:
+
+\begin{description}
+\item[\texttt{COMPLEX8 value}]
+The numerical value.
+
+\item[\texttt{LALUnit units}]
+The units.
+\end{description}
+
+*********************************************************** </lalLaTeX> */
+
+typedef struct tagCOMPLEX8WithUnits {
+  COMPLEX8  value;
+  LALUnit   units;
+} COMPLEX8WithUnits;
 
 /********************************************************** <lalLaTeX>
 
@@ -270,6 +301,12 @@ typedef struct tagStochasticCrossCorrelationInput {
 void 
 LALStochasticCrossCorrelationStatistic(LALStatus             *status, 
              REAL4WithUnits        *output,
+             const StochasticCrossCorrelationInput  *input);
+
+void 
+LALStochasticHeterodynedCrossCorrelationStatistic(
+	     LALStatus        *status, 
+             COMPLEX8WithUnits        *output,
              const StochasticCrossCorrelationInput  *input);
 
 void 
@@ -568,9 +605,11 @@ LALOverlapReductionFunction(LALStatus                     *status,
 
 \newpage\input{StochasticCrossCorrelationC}
 \newpage\input{StochasticCrossCorrelationStatisticTestC}
+\newpage\input{StochasticHeterodynedCrossCorrelationStatisticTestC}
 \newpage\input{StochasticCrossCorrelationSpectrumTestC}
 \newpage\input{ZeroPadAndFFTC}
 \newpage\input{SZeroPadAndFFTTestC}
+\newpage\input{CZeroPadAndFFTTestC}
 \newpage\input{StochasticOptimalFilterC}
 \newpage\input{StochasticOptimalFilterTestC}
 \newpage\input{StochasticInverseNoiseC}
