@@ -13,9 +13,12 @@
 #include <sys/time.h>
 #include <math.h>
 
+#include <unistd.h>
 #include <getopt.h>
 
 #include <FrameL.h>
+
+#include <lalapps.h>
 
 #include <lal/AVFactories.h>
 #include <lal/Calibration.h>
@@ -43,9 +46,8 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 #include <lal/Window.h>
-
-#include <lalapps.h>
-
+#include <lal/IIRFilter.h>
+#include <lal/BandPassTimeSeries.h>
 #include "stochastic.h"
 
 NRCSID (STOCHASTICC, "$Id$");
@@ -62,11 +64,12 @@ char *optarg;
 int optind;
 
 /* flags for getopt_long */
-static int inject_flag;
-static int apply_mask_flag;
-static int high_pass_flag;
-static int overlap_hann_flag;
-extern int vrbflg;
+static int inject_flag = 0;
+static int apply_mask_flag = 0;
+static int high_pass_flag = 0;
+static int overlap_hann_flag = 0;
+static int verbose_flag = 0;
+static int condor_flag = 0;
 
 /* parameters for the stochastic search */
 
@@ -77,30 +80,24 @@ REAL8 deltaF = 0.25;
 
 /* data parameters */
 LIGOTimeGPS gpsStartTime;
-UINT8 startTime;
-UINT8 endTime;
-INT4 streamDuration = 60;
+UINT8 startTime = 729332041;
+UINT8 stopTime = 729332101;
 INT4 segmentDuration = 60;
 INT4 calibDuration = 60;
-CHAR *frameCacheOne;
-CHAR *frameCacheTwo;
-CHAR *calCacheOne;
-CHAR *calCacheTwo;
-CHAR channelOne[LALNameLength];
-CHAR channelTwo[LALNameLength];
-CHAR ifoOne[LALNameLength];
-CHAR ifoTwo[LALNameLength];
-INT4 siteOne;
-INT4 siteTwo;
+CHAR frameCacheOne[100] = "cachefiles/H-729332041.cache";
+CHAR frameCacheTwo[100] = "cachefiles/L-729332041.cache";
+CHAR calCacheOne[100] = "calibration/H1-CAL-V03-729273600-734367600.cache";
+CHAR calCacheTwo[100] = "calibration/L1-CAL-V03-729273600-734367600.cache";
+CHAR channelOne[LALNameLength]= "H1:LSC-AS_Q";
+CHAR channelTwo[LALNameLength]= "L1:LSC-AS_Q";
+CHAR ifoOne[LALNameLength] = "H1";
+CHAR ifoTwo[LALNameLength] = "L1";
+INT4 siteOne = 1;
+INT4 siteTwo = 0;
 
 /* frequency band */
 INT4 fMin = 50;
 INT4 fMax = 300;
-
-/* high pass filtering parameters */
-REAL4 highPassFreq = 40;
-REAL4 highPassAt = 0.707;
-INT4 highPassOrder = 6;
 
 /* omegaGW parameters */
 REAL4 alpha = 0.0;
@@ -108,12 +105,21 @@ REAL4 fRef = 100.0;
 REAL4 omegaRef = 1.;
 
 /* monte carlo parameters */
-BOOLEAN splice = 0;
-REAL4 scaleFactor = 1;
-INT4 seed;
+/* at the moment the code cannot do monte carlo with overlapped Hann window */
+REAL4 scaleFactor = 1.;
+INT4 seed = 173;
+INT4 NLoop = 1;
 
-/* misc parameters */
-INT4 hannDuration = 60;
+/* window parameters */
+/* 60 s for pure Hann, 1 s for Tukey, 0s for rectangular window */
+INT4 hannDuration = 1;
+
+/* high pass filtering parameters */
+REAL4 highPassFreq = 40.;
+REAL4 highPassAt = 0.707;
+INT4  highPassOrder = 6;
+
+/* set as 1 if data are downsampled, 0 otherwise */ 
 INT4 padData = 1;
 
 
@@ -125,47 +131,49 @@ INT4 main(INT4 argc, CHAR *argv[])
 	LALStatus status;
 
 	/* output file */
-	FILE *out;
+	FILE *out, *in;
 	CHAR outputFilename[LALNameLength];
 
 	/* counters */
-	INT4 i, j;
+	INT4 i, segLoop;
 
 	/* results parameters */
 	REAL8 y;
 	REAL8 varTheo;
 
-	/* input data streams */
+	/* input data segment */
 	INT4 numSegments;
-	INT4 streamLength;
+	INT4 segmentLength;
+        INT4 segmentShift;
 	ReadDataPairParams streamParams;
 	StreamPair streamPair;
-	REAL4TimeSeries streamOne;
-	REAL4TimeSeries streamTwo;
+	REAL4TimeSeries segmentOne, segmentTempOne;
+	REAL4TimeSeries segmentTwo, segmentTempTwo;
 
 	/* simulated signal structures */
-	SSSimStochBGOutput MCoutput;
-	MonteCarloParams MCparams;
-	MonteCarloInput MCinput;
-	UINT4 MCLength;
-
-	/* simulated output structures */
-	REAL4TimeSeries SimStochBGOne;
-	REAL4TimeSeries SimStochBGTwo;
-
-	/* data structures for segments */
-	INT4 segmentLength;
-	INT4 segmentShift;
-	REAL4TimeSeries segmentOne;
-	REAL4TimeSeries segmentTwo;
-
+        StochasticOmegaGWParameters  parametersOmega;
+	SSSimStochBGParams                 SBParams;
+        SSSimStochBGInput                  SBInput; 
+        SSSimStochBGOutput                 SBOutput;
+        REAL4TimeSeries                    SimStochBGOne;
+        REAL4TimeSeries                    SimStochBGTwo;
+  
+        REAL4FrequencySeries               MComegaGW;
+        COMPLEX8FrequencySeries            MCresponseOne;
+        COMPLEX8FrequencySeries            MCresponseTwo;
+       
+        INT4 MCLoop;
+        INT4 MCfreqLength;
+        REAL8 MCdeltaF, MCdeltaT;
+        LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
+    
 	/* data structures for PSDs */
 	INT4 overlapPSDLength;
 	INT4 psdTempLength;
 	INT4 windowPSDLength;
 	INT4 filterLength;
-	INT4 numFMin;
-	INT4 numFMax;
+	INT4 numPointInf;
+	INT4 numPointSup;
 	LALWindowParams winparPSD;
 	AverageSpectrumParams specparPSD;
 	REAL4FrequencySeries psdTempOne;
@@ -180,7 +188,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 	COMPLEX8FrequencySeries responseOne;
 	COMPLEX8FrequencySeries responseTwo;
 	INT4 respLength;
-	LIGOTimeGPS gpsCalTime;
 	LIGOTimeGPS duration;
 	LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
@@ -202,8 +209,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 	LALWindowParams hannParams;
 	REAL4Vector *hannWindow;
 
-	/* high pass filtering */
-	PassBandParamStruc highPassParam;
+        /* high pass filtering */
+        PassBandParamStruc highpassParam;
 
 	/* zeropad and fft structures */
 	SZeroPadAndFFTParameters zeroPadParams;
@@ -259,64 +266,83 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* parse command line options */
 	parseOptions(argc, argv);
 
-	/* open output file */
-	LALSnprintf(outputFilename, LALNameLength, "stoch-%s%s-%d-%d.dat", 
-			ifoOne, ifoTwo, (INT4)startTime, (INT4)endTime);
-	if ((out = fopen(outputFilename, "w")) == NULL)
-	{
-		fprintf(stderr, "Can't open file for output...\n");
-		exit(1);
-	}
-
-	if (vrbflg)
+        /* for Condor use, read parameters into input file */
+        if (condor_flag == 1)
+        { 
+                fscanf(stdin,"%d\n%d\n%s\n%s\n",&startTime, &stopTime,&frameCacheOne,&frameCacheTwo);
+        }
+        
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Calculating number of segments...\n");
 	}
 
 	/* get number of segments */
-	streamDuration = endTime - startTime;
-	numSegments = streamDuration / segmentDuration;
-	segmentShift = segmentDuration;
-	if (overlap_hann_flag)
+	numSegments = (INT4)((stopTime - startTime) / segmentDuration );
+        segmentShift = segmentDuration;
+
+        if (overlap_hann_flag)
 	{
-		numSegments = (2 * numSegments) - 1;
-		segmentShift = segmentDuration / 2;
+	        numSegments = 2 * numSegments - 1;
+                segmentShift = segmentDuration / 2;
+        }
+
+        /* set length for data segments */
+	segmentLength = segmentDuration * resampleRate;
+
+	/* set metadata fields for data segments */
+	strncpy(segmentTempOne.name, "segmentTempOne", LALNameLength);
+	strncpy(segmentTempTwo.name, "segmentTempTwo", LALNameLength);
+	segmentTempOne.sampleUnits = lalADCCountUnit;
+	segmentTempTwo.sampleUnits = lalADCCountUnit;
+	segmentTempOne.epoch = gpsStartTime;
+	segmentTempTwo.epoch = gpsStartTime;
+	segmentTempOne.deltaT = 1./(REAL8)resampleRate;
+	segmentTempTwo.deltaT = 1./(REAL8)resampleRate;
+	segmentTempOne.f0 = 0;
+	segmentTempTwo.f0 = 0;
+     
+        strncpy(segmentOne.name, "segmentOne", LALNameLength);
+	strncpy(segmentTwo.name, "segmentTwo", LALNameLength);
+	segmentOne.sampleUnits = lalADCCountUnit;
+	segmentTwo.sampleUnits = lalADCCountUnit;
+	segmentOne.epoch = gpsStartTime;
+	segmentTwo.epoch = gpsStartTime;
+	segmentOne.deltaT = 1./(REAL8)resampleRate;
+	segmentTwo.deltaT = 1./(REAL8)resampleRate;
+	segmentOne.f0 = 0;
+	segmentTwo.f0 = 0;
+
+	if (verbose_flag)
+	{
+		fprintf(stdout, "Allocating memory for data segments...\n");
 	}
 
-	/* get stream duration and length */
-	streamLength = streamDuration * resampleRate;
-
-	/* set metadata fields for data streams */
-	strncpy(streamOne.name, "streamOne", LALNameLength);
-	strncpy(streamTwo.name, "streamTwo", LALNameLength);
-	streamOne.sampleUnits = lalADCCountUnit;
-	streamTwo.sampleUnits = lalADCCountUnit;
-	streamOne.epoch = gpsStartTime;
-	streamTwo.epoch = gpsStartTime;
-	streamOne.deltaT = 1./(REAL8)resampleRate;
-	streamTwo.deltaT = 1./(REAL8)resampleRate;
-	streamOne.f0 = 0;
-	streamTwo.f0 = 0;
-
-	if (vrbflg)
-	{
-		fprintf(stdout, "Allocating memory for data streams...\n");
-	}
-
-	/* allocate memory for data streams */
-	streamOne.data = NULL;
-	streamTwo.data = NULL;
-	LAL_CALL( LALSCreateVector(&status, &(streamOne.data), streamLength), \
+	/* allocate memory for data segments */
+	segmentTempOne.data = NULL;
+	segmentTempTwo.data = NULL;
+	LAL_CALL( LALSCreateVector(&status, &(segmentTempOne.data), segmentLength), \
 			&status );
-	LAL_CALL( LALSCreateVector(&status, &(streamTwo.data), streamLength), \
+	LAL_CALL( LALSCreateVector(&status, &(segmentTempTwo.data), segmentLength), \
 			&status );
-	memset(streamOne.data->data, 0, \
-			streamOne.data->length * sizeof(*streamOne.data->data));
-	memset(streamTwo.data->data, 0, \
-			streamTwo.data->length * sizeof(*streamTwo.data->data));
+	memset(segmentTempOne.data->data, 0, \
+			segmentTempOne.data->length * sizeof(*segmentTempOne.data->data));
+	memset(segmentTempTwo.data->data, 0, \
+			segmentTempTwo.data->length * sizeof(*segmentTempTwo.data->data));
 
-	/* set stream input parameters */
-	streamParams.duration = streamDuration;
+        segmentOne.data = NULL;
+	segmentTwo.data = NULL;
+	LAL_CALL( LALSCreateVector(&status, &(segmentOne.data), segmentLength), \
+			&status );
+	LAL_CALL( LALSCreateVector(&status, &(segmentTwo.data), segmentLength), \
+			&status );
+	memset(segmentOne.data->data, 0, \
+			segmentOne.data->length * sizeof(*segmentOne.data->data));
+	memset(segmentTwo.data->data, 0, \
+			segmentTwo.data->length * sizeof(*segmentTwo.data->data));
+
+	/* set segment input parameters */
+	streamParams.duration = segmentDuration;
 	streamParams.frameCacheOne = frameCacheOne;
 	streamParams.frameCacheTwo = frameCacheTwo;
 	streamParams.ifoOne = ifoOne;
@@ -329,85 +355,97 @@ INT4 main(INT4 argc, CHAR *argv[])
 	streamParams.resampleRate = resampleRate;
 
 	/* set stream data structures */
-	streamPair.streamOne = &streamOne;
-	streamPair.streamTwo = &streamTwo;
+	streamPair.streamOne = &segmentTempOne;
+	streamPair.streamTwo = &segmentTempTwo;
 
 	if (inject_flag)
 	{
-		/* set parameter structure for monte carlo simulations */
-		MCparams.lengthSegment = calibDuration * resampleRate;
-		if ((segmentDuration % calibDuration) == 0)
-		{
-			MCparams.numSegment = segmentDuration / calibDuration;
-		}
-		else
-		{
-			MCparams.numSegment = (segmentDuration / calibDuration) + 1;
-		}
-		MCparams.sampleRate = resampleRate;
-		MCparams.startTime = startTime;
-		MCparams.seed = seed;
-		MCparams.fRef = fRef;
-		MCparams.f0 = 0.;
-		MCparams.omegaRef = omegaRef;
-		MCparams.alpha = alpha;
-		MCparams.siteOne = siteOne;
-		MCparams.siteTwo = siteTwo;
-
-		/* set input structure for monte carlo simulations */
-		MCinput.ifoOne = ifoOne;
-		MCinput.ifoTwo = ifoTwo;
-		MCinput.calCacheOne = calCacheOne;
-		MCinput.calCacheTwo = calCacheTwo;
-		MCLength = MCparams.numSegment * MCparams.lengthSegment;
-
-		if (vrbflg)
+		
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Allocating memory for MC...\n");
 		}
+                MCdeltaT = 1.0 / resampleRate;
+                /*MCdeltaF = 1.0 / (MCdeltaT * segmentLength);*/
+                MCdeltaF = (REAL8)resampleRate / (REAL8)segmentLength;
+                MCfreqLength = segmentLength / 2 + 1;
 
-		/* allocate memory for monte carlo */
+		/* create vectors to store the simulated signal */
+                strncpy(SimStochBGOne.name, "Whitened-SimulatedSBOne",LALNameLength);
+		strncpy(SimStochBGTwo.name, "Whitened-SimulatedSBTwo",LALNameLength );
+                SimStochBGOne.f0 = 0.;
+		SimStochBGTwo.f0 = 0.;
+                SimStochBGOne.epoch = gpsStartTime;
+	        SimStochBGTwo.epoch = gpsStartTime;
+		SimStochBGOne.deltaT = 1./(REAL8)resampleRate;
+		SimStochBGTwo.deltaT = 1./(REAL8)resampleRate;
+		SimStochBGOne.sampleUnits = lalADCCountUnit;
+		SimStochBGTwo.sampleUnits = lalADCCountUnit;
+
 		SimStochBGOne.data = NULL;
-		LAL_CALL( LALSCreateVector(&status, &(SimStochBGOne.data), MCLength), \
-				&status );
 		SimStochBGTwo.data = NULL;
-		LAL_CALL( LALSCreateVector(&status, &(SimStochBGTwo.data), MCLength), \
-				&status );
-		memset(SimStochBGOne.data->data, 0, \
-				SimStochBGOne.data->length * sizeof(*SimStochBGOne.data->data));
-		memset(SimStochBGTwo.data->data, 0, \
-				SimStochBGTwo.data->length * sizeof(*SimStochBGTwo.data->data));
+		LAL_CALL(LALSCreateVector(&status, &(SimStochBGOne.data),segmentLength), &status);
+		LAL_CALL(LALSCreateVector(&status, &(SimStochBGTwo.data),segmentLength), &status);
+	
+		memset(SimStochBGOne.data->data, 0,SimStochBGOne.data->length *sizeof(*SimStochBGOne.data->data));
+		memset(SimStochBGTwo.data->data, 0,SimStochBGTwo.data->length *sizeof(*SimStochBGTwo.data->data));
 
-		/* output structure for LALStochasticMC */
-		MCoutput.SSimStochBG1 = &SimStochBGOne;
-		MCoutput.SSimStochBG2 = &SimStochBGTwo;
+		/* define parameters for SimulateSB */
+
+		SBParams.length = segmentLength;
+		SBParams.deltaT = 1. / resampleRate;
+		SBParams.detectorOne = lalCachedDetectors[siteOne];
+		SBParams.detectorTwo = lalCachedDetectors[siteTwo];
+		SBParams.SSimStochBGTimeSeries1Unit = lalADCCountUnit;
+		SBParams.SSimStochBGTimeSeries2Unit = lalADCCountUnit;
+
+		/* omegaGW */
+
+		parametersOmega.length = MCfreqLength;
+		parametersOmega.f0 = 0.;
+		parametersOmega.deltaF = MCdeltaF;
+		parametersOmega.alpha = alpha;
+		parametersOmega.fRef = fRef;
+		parametersOmega.omegaRef = omegaRef;
+
+		/* allocate memory */
+		MComegaGW.data = NULL;
+		LAL_CALL(LALSCreateVector(&status, &(MComegaGW.data), MCfreqLength), &status);
+       
+		memset(MComegaGW.data->data, 0, \
+			MComegaGW.data->length * sizeof(*MComegaGW.data->data));
+
+		/* generate omegaGW */
+		LAL_CALL(LALStochasticOmegaGW(&status, &MComegaGW, &parametersOmega), &status);
+       
+		/* response functions */
+		
+		strncpy(MCresponseOne.name,"MCresponseOne", LALNameLength);
+		strncpy(MCresponseTwo.name,"MCresponseTwo", LALNameLength);
+		MCresponseOne.sampleUnits = countPerStrain;
+		MCresponseTwo.sampleUnits = countPerStrain;
+		MCresponseOne.epoch = gpsStartTime;
+		MCresponseTwo.epoch = gpsStartTime;
+		MCresponseOne.deltaF = MCdeltaF;
+		MCresponseTwo.deltaF = MCdeltaF;
+		MCresponseOne.f0 = 0;
+		MCresponseTwo.f0 = 0;
+
+		/* allocate memory */
+		MCresponseOne.data = NULL;
+		MCresponseTwo.data = NULL;
+		LAL_CALL(LALCCreateVector(&status, &(MCresponseOne.data), MCfreqLength), &status);
+	
+		LAL_CALL(LALCCreateVector(&status, &(MCresponseTwo.data), MCfreqLength), &status);
+   
+		memset(MCresponseOne.data->data, 0, \
+		       MCresponseOne.data->length * sizeof(*MCresponseOne.data->data));
+		memset(MCresponseTwo.data->data, 0, \
+		       MCresponseTwo.data->length * sizeof(*MCresponseTwo.data->data));
+
 	}
 
-	/* set length for data segments */
-	segmentLength = segmentDuration * resampleRate;
-
-	/* set metadata fields for data segments */
-	strncpy(segmentOne.name, "segmentOne", LALNameLength);
-	strncpy(segmentTwo.name, "segmentTwo", LALNameLength);
-	segmentOne.sampleUnits = streamOne.sampleUnits;
-	segmentTwo.sampleUnits = streamTwo.sampleUnits;
-	segmentOne.epoch = gpsStartTime;
-	segmentTwo.epoch = gpsStartTime;
-	segmentOne.deltaT = 1./(REAL8)resampleRate;
-	segmentTwo.deltaT = 1./(REAL8)resampleRate;
-	segmentOne.f0 = 0;
-	segmentTwo.f0 = 0;
-
-	if (vrbflg)
-	{
-		fprintf(stdout, "Allocating memory for data segments...\n");
-	}
-
-	/* allocate memory for data segments */
-	segmentOne.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-	segmentTwo.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-	segmentOne.data->length = segmentDuration * resampleRate;
-	segmentTwo.data->length = segmentDuration * resampleRate;
+	
 
 	/* set PSD window length */
 	windowPSDLength = (UINT4)(resampleRate / deltaF);
@@ -415,9 +453,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* set parameters for PSD estimation */
 	overlapPSDLength = windowPSDLength / 2;
 	psdTempLength = (windowPSDLength / 2) + 1;
-	numFMin = (UINT4)(fMin / deltaF);
-	numFMax = (UINT4)(fMax / deltaF);
-	filterLength = numFMax - numFMin + 1;
+	numPointInf = (UINT4)(fMin / deltaF);
+	numPointSup = (UINT4)(fMax / deltaF);
+	filterLength = numPointSup - numPointInf + 1;
 
 	/* set metadata fields for PSDs */
 	strncpy(psdTempOne.name, "psdTempOne", LALNameLength);
@@ -429,7 +467,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	psdTempOne.f0 = 0;
 	psdTempTwo.f0 = 0;
 
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Allocating memory for PSDs...\n");
 	}
@@ -457,16 +495,20 @@ INT4 main(INT4 argc, CHAR *argv[])
 	psdOne.sampleUnits = psdUnits;
 	psdTwo.sampleUnits = psdUnits;
 
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Allocating memory for reduced frequency band PSDs...\n");
 	}
 
 	/* allocate memory for reduced frequency band PSDs */
-	psdOne.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-	psdTwo.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-	psdOne.data->length = filterLength;
-	psdTwo.data->length = filterLength;
+	psdOne.data = NULL;
+	psdTwo.data = NULL;
+	LAL_CALL( LALCreateVector(&status, &psdOne.data, filterLength), &status );
+	LAL_CALL( LALCreateVector(&status, &psdTwo.data, filterLength), &status );
+	memset (psdOne.data->data, 0, \
+			psdOne.data->length * sizeof(*psdOne.data->data));
+	memset( psdTwo.data->data, 0, \
+			psdTwo.data->length * sizeof(*psdTwo.data->data));
 
 	/* set window parameters for PSD estimation */
 	winparPSD.length = windowPSDLength;
@@ -478,7 +520,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	specparPSD.plan = NULL;
 	specparPSD.window = NULL;
 
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Creating FFT plan for PSD estimation...\n");
 	}
@@ -487,7 +529,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	LAL_CALL (LALCreateForwardRealFFTPlan(&status, &specparPSD.plan, \
 				windowPSDLength, 0), &status );
 
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Creating window for PSD estimation...\n");
 	}
@@ -500,22 +542,20 @@ INT4 main(INT4 argc, CHAR *argv[])
 	respLength = (UINT4)(fMax / deltaF) + 1;
 	duration.gpsSeconds = 0;
 	duration.gpsNanoSeconds = 0;
-	gpsCalTime.gpsSeconds = startTime;
-	gpsCalTime.gpsNanoSeconds = 0;
 
 	/* set metadata fields for response functions */
 	strncpy(responseTempOne.name, "responseTempOne", LALNameLength);
 	strncpy(responseTempTwo.name, "responseTempTwo", LALNameLength);
 	responseTempOne.sampleUnits = countPerAttoStrain;
 	responseTempTwo.sampleUnits = countPerAttoStrain;
-	responseTempOne.epoch = gpsCalTime;
-	responseTempTwo.epoch = gpsCalTime;
+	responseTempOne.epoch = gpsStartTime;
+	responseTempTwo.epoch = gpsStartTime;
 	responseTempOne.deltaF = deltaF;
 	responseTempTwo.deltaF = deltaF;
 	responseTempOne.f0 = 0;
 	responseTempTwo.f0 = 0;
 
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Allocating memory for response functions...\n");
 	}
@@ -538,24 +578,30 @@ INT4 main(INT4 argc, CHAR *argv[])
 	strncpy(responseTwo.name, "responseTwo", LALNameLength);
 	responseOne.sampleUnits = countPerAttoStrain;
 	responseTwo.sampleUnits = countPerAttoStrain;
-	responseOne.epoch = gpsCalTime;
-	responseTwo.epoch = gpsCalTime;
+	responseOne.epoch = gpsStartTime;
+	responseTwo.epoch = gpsStartTime;
 	responseOne.deltaF = deltaF;
 	responseTwo.deltaF = deltaF;
 	responseOne.f0 = fMin;
 	responseTwo.f0 = fMin;
 
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Allocating memory for reduced frequency band response " \
 				"functions...\n");
 	}
 
 	/* allocate memory for reduced frequency band response functions */
-	responseOne.data = (COMPLEX8Sequence*)LALCalloc(1, sizeof(COMPLEX8Sequence));
-	responseTwo.data = (COMPLEX8Sequence*)LALCalloc(1, sizeof(COMPLEX8Sequence));
-	responseOne.data->length = filterLength;
-	responseTwo.data->length = filterLength;
+	responseOne.data = NULL;
+	responseTwo.data = NULL;
+	LAL_CALL( LALCCreateVector(&status, &(responseOne.data), filterLength), \
+			&status );
+	LAL_CALL( LALCCreateVector(&status, &(responseTwo.data), filterLength), \
+			&status );
+	memset(responseOne.data->data, 0, \
+			responseOne.data->length * sizeof(*responseOne.data->data));
+	memset(responseTwo.data->data, 0, \
+			responseTwo.data->length * sizeof(*responseTwo.data->data));
 
 	/* set metadata fields for inverse noise structures */
 	strncpy(calInvPSDOne.name, "calInvPSDOne", LALNameLength);
@@ -575,7 +621,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	halfCalPSDOne.sampleUnits = halfCalPSDUnit;
 	halfCalPSDTwo.sampleUnits = halfCalPSDUnit;
 
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Allocating memory for inverse noise...\n");
 	}
@@ -620,7 +666,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	dataWindow.deltaT = 1./resampleRate;
 	dataWindow.f0 = 0;
 
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Allocating memory for data segment window...\n");
 	}
@@ -632,7 +678,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	memset(dataWindow.data->data, 0, \
 			dataWindow.data->length * sizeof(*dataWindow.data->data));
 
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Generating data segment window...\n");
 	}
@@ -672,20 +718,22 @@ INT4 main(INT4 argc, CHAR *argv[])
 	}
 
 	/* save window */
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		LALSPrintTimeSeries(&dataWindow, "dataWindow.dat");
 	}
-
-	/* structure for high pass filtering */
-	if (high_pass_flag)
+        
+        /* structure for high pass filtering */
+        if (high_pass_flag)
 	{
-		highPassParam.nMax = highPassOrder;
-		highPassParam.f2 = highPassFreq;
-		highPassParam.a2 = highPassAt;
+	  highpassParam.nMax = highPassOrder;
+	  highpassParam.f1 = -1.0;
+	  highpassParam.f2 = highPassFreq;
+	  highpassParam.a1 = -1.0;
+	  highpassParam.a2 = highPassAt;
 	}
 
-	/* zeropad lengths */
+        /* zeropad lengths */
 	zeroPadLength = 2 * segmentLength;
 	fftDataLength = (zeroPadLength / 2) + 1;
 
@@ -697,7 +745,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	strncpy(hBarTildeOne.name, "hBarTildeOne", LALNameLength);
 	strncpy(hBarTildeTwo.name, "hBarTildeTwo", LALNameLength);
 
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Allocating memory for zeropad...\n");
 	}
@@ -727,7 +775,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	overlap.deltaF = deltaF;
 	overlap.f0 = fMin;
 
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Allocating memory for the overlap reduction " \
 				"function...\n");
@@ -748,7 +796,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	detectors.detectorOne = lalCachedDetectors[siteOne];
 	detectors.detectorTwo = lalCachedDetectors[siteTwo];
 
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Generating the overlap reduction function...\n");
 	}
@@ -758,7 +806,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 				&ORFparams), &status );
 
 	/* save */
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		LALSPrintFrequencySeries(&overlap, "overlap.dat");
 	}
@@ -769,7 +817,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	omegaGW.deltaF = deltaF;
 	omegaGW.f0 = fMin;
 
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Allocating memory for spectrum...\n");
 	}
@@ -788,7 +836,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	omegaGWParams.f0 = fMin;
 	omegaGWParams.deltaF = deltaF;
 
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Generating spectrum for optimal filter...\n");
 	}
@@ -805,7 +853,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 		mask.f0 = fMin;
 		mask.sampleUnits = lalDimensionlessUnit;
 
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Allocating memory for frequency mask...\n");
 		}
@@ -820,7 +868,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 		memset(maskTemp->data, 0, \
 				maskTemp->length * sizeof(*maskTemp->data));
 
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Generating frequency mask...\n");
 		}
@@ -831,7 +879,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 			maskTemp->data[i] = 1.;
 		}
 
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Masking multiples of 16 Hz...\n");
 		}
@@ -842,7 +890,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 			maskTemp->data[i] = 0.;
 		}
 
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Masking multiples of 60 Hz...\n");
 		}
@@ -853,7 +901,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 			maskTemp->data[i] = 0.;
 		}
 
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Getting appropriate frequency band for mask...\n");
 		}
@@ -861,10 +909,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 		/* get appropriate band */
 		for (i = 0; i < filterLength; i++)
 		{
-			mask.data->data[i] = maskTemp->data[i + numFMin];
+			mask.data->data[i] = maskTemp->data[i + numPointInf];
 		}
 
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			LALSPrintFrequencySeries(&mask, "mask.dat");
 			fprintf(stdout, "Applying frequency mask to spectrum..\n");
@@ -878,7 +926,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	}
 
 	/* save */
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		LALSPrintFrequencySeries(&omegaGW, "omegaGW.dat");
 	}
@@ -901,11 +949,11 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* set metadata fields for optimal filter */
 	strncpy(optFilter.name, "optFilter", LALNameLength);
-	optFilter.epoch = gpsCalTime;
+	optFilter.epoch = gpsStartTime;
 	optFilter.deltaF = deltaF;
 	optFilter.f0 = fMin;
 
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Allocating memory for optimal filter...\n");
 	}
@@ -925,7 +973,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* set metadata fields for CC spectrum */
 	strncpy(ccSpectrum.name, "ccSpectrum", LALNameLength);
-	ccSpectrum.epoch = gpsCalTime;
+	ccSpectrum.epoch = gpsStartTime;
 	ccSpectrum.deltaF = deltaF;
 	ccSpectrum.f0 = fMin;
 
@@ -941,79 +989,182 @@ INT4 main(INT4 argc, CHAR *argv[])
 	ccIn.hBarTildeTwo = &hBarTildeTwo;
 	ccIn.optimalFilter = &optFilter;
 
-	/*
-	 ** read data, downsample and eventually inject simulated signal **
-	 */
-
-	if (vrbflg)
-	{
-		fprintf(stdout, "Reading data...\n");
-	}
-
-	/* read data */
-	readDataPair(&status, &streamPair, &streamParams);
-
-	/* save */
-	if (vrbflg)
-	{
-		LALSPrintTimeSeries(&streamOne, "stream1.dat");
-		LALSPrintTimeSeries(&streamTwo, "stream2.dat");
-	}
-
-	if (vrbflg)
-	{
-		fprintf(stdout, "High pass filtering...\n");
-	}
-
-	/* high pass filter */
-	if (high_pass_flag)
-	{
-		LAL_CALL( LALButterworthREAL4TimeSeries( &status, &streamOne, \
-					&highPassParam ), &status );
-		LAL_CALL( LALButterworthREAL4TimeSeries( &status, &streamTwo, \
-					&highPassParam ), &status );
-	}
-
+	
 	/*
 	 ** loop over segments **
 	 */
 
-	if (vrbflg)
+        if (verbose_flag)
 	{
 		fprintf(stdout, "Looping over %d segments...\n", numSegments);
 	}
+        
+        lal_errhandler = LAL_ERR_RTRN;
 
-	for (j = 0; j < numSegments; j++)
+	for (segLoop = 0; segLoop < numSegments; segLoop++)
 	{
+                                
 		/* define segment epoch */
-		gpsStartTime.gpsSeconds = startTime + (j * segmentShift);
-		gpsCalTime.gpsSeconds = gpsStartTime.gpsSeconds;
+		gpsStartTime.gpsSeconds = startTime + (segLoop * segmentShift);
 		segmentOne.epoch = gpsStartTime;
 		segmentTwo.epoch = gpsStartTime;
 
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Performing search on segment %d of %d...\n", \
-					j + 1, numSegments);
+					segLoop + 1, numSegments);
+		}
+                
+                /* compute response function */
+
+                if (verbose_flag)
+		{
+			fprintf(stdout, "Getting appropriate frequencresponse " \
+					"functions...\n");
 		}
 
-		/* build small segment */
-		segmentOne.data->data = streamOne.data->data + (j * \
-				segmentShift * resampleRate);
-		segmentTwo.data->data = streamTwo.data->data + (j * \
-				segmentShift * resampleRate);
+		responseTempOne.epoch = gpsStartTime;
+		responseTempTwo.epoch = gpsStartTime;
+                
+		LAL_CALL( LALExtractFrameResponse(&status, &responseTempOne, calCacheOne, \
+					ifoOne, &duration), &status );
+
+		if ((status.statusCode !=0)||(responseTempOne.data==NULL))
+		  {
+		    clear_status(&status);
+                    if (segLoop < (numSegments - 1))
+		     continue; 
+                    else
+		     break;   
+		  }     
+                         
+               
+		LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwo, calCacheTwo, \
+					ifoTwo, &duration), &status );
+                
+                if ((status.statusCode !=0)||(responseTempTwo.data==NULL))
+		  {
+		    clear_status(&status);
+                    if (segLoop < (numSegments - 1))
+		     continue; 
+                    else
+		     break;   
+		  }
+
+                if (verbose_flag)
+		{
+			fprintf(stdout, "Generating response functions...\n");
+		}
+
+		
+
+		/* reduce to the optimal filter frequency range */
+		responseOne.epoch = gpsStartTime;
+		responseTwo.epoch = gpsStartTime;
+		for (i = 0; i < filterLength; i++)
+		{
+			responseOne.data->data[i] = responseTempOne.data->data[i + numPointInf];
+			responseTwo.data->data[i] = responseTempTwo.data->data[i + numPointInf];
+		}
+
+		/* output the results */
+		if (verbose_flag)
+		{
+			LALCPrintFrequencySeries(&responseOne, "response1.dat");
+			LALCPrintFrequencySeries(&responseTwo, "response2.dat");
+		}
+
+		/* compute response function for MC*/
+                if (inject_flag)
+		{
+         	     if (verbose_flag)
+        	 	{
+	        		fprintf(stdout, "Getting appropriate frequencyresponse " \
+					"functions for MC...\n");
+        		}
+
+        		MCresponseOne.epoch = gpsStartTime;
+        		MCresponseTwo.epoch = gpsStartTime;
+                
+			LAL_CALL( LALExtractFrameResponse(&status, &MCresponseOne, calCacheOne, \
+					ifoOne, &duration), &status );
+			
+		    
+               
+			LAL_CALL( LALExtractFrameResponse(&status, &MCresponseTwo, calCacheTwo, \
+					ifoTwo, &duration), &status );
+
+                        /* force DC to be 0 and nyquist to be real */
+        	       	MCresponseOne.data->data[0].re = 0.;
+        		MCresponseTwo.data->data[0].re = 0.;
+        		MCresponseOne.data->data[0].im = 0.;
+        		MCresponseTwo.data->data[0].im = 0.;
+        		MCresponseOne.data->data[MCfreqLength-1].im = 0.;
+        		MCresponseTwo.data->data[MCfreqLength-1].im = 0.;
+   
+                       	/* output the results */
+		if (verbose_flag)
+		{
+			LALCPrintFrequencySeries(&MCresponseOne, "MCresponse1.dat");
+			LALCPrintFrequencySeries(&MCresponseTwo, "MCresponse2.dat");
+		}
+                
+		}
+
+        	/* read data and downsample */
+        	if (verbose_flag)
+        	{
+        		fprintf(stdout, "Reading data...\n");
+        	}
+
+        	/* read data */
+                streamParams.startTime = gpsStartTime.gpsSeconds;
+        	LAL_CALL(readDataPair(&status, &streamPair, &streamParams), &status);
+                  
+                if ((status.statusCode !=0)||(segmentTempOne.data==NULL)||(segmentTempTwo.data==NULL))
+		  {
+		    clear_status(&status);
+                    if (segLoop < (numSegments - 1))
+		     continue; 
+                    else
+		     break;   
+		  }
+               
+        	/* save */
+        	if (verbose_flag)
+        	{
+        		LALSPrintTimeSeries(&segmentTempOne, "segment1.dat");
+         		LALSPrintTimeSeries(&segmentTempTwo, "segment2.dat");
+        	}
+
+	        for (MCLoop = 0; MCLoop < NLoop; MCLoop ++)
+		{	
+       		/* open output file */
+		LALSnprintf(outputFilename, LALNameLength, "output/stoch-%s%s-%d-%d-%d.dat\
+", ifoOne, ifoTwo, (INT4)startTime, (INT4)stopTime, MCLoop);
 
 		/* simulate signal */
 		if (inject_flag)
 		{
-			MCparams.startTime = gpsStartTime.gpsSeconds;
-			seed = (INT4)(time(NULL));
-			MCparams.seed = seed;
-			/* perform monte carlo */
-			monteCarlo(&status, &MCoutput, &MCinput, &MCparams);	
+		        /* set parameters for monte carlo */
+		        SimStochBGOne.epoch = gpsStartTime;
+        		SimStochBGTwo.epoch = gpsStartTime;
+      			/* seed = (INT4)(time(NULL)); */
+                        SBParams.seed = seed ;
+                        
+                        /* define input structure for SimulateSB */
+			SBInput.omegaGW = &MComegaGW;
+			SBInput.whiteningFilter1 = &MCresponseOne;
+			SBInput.whiteningFilter2 = &MCresponseTwo;
 
+                        /* define output structure for SimulateSB */
+			SBOutput.SSimStochBG1 = &SimStochBGOne;
+			SBOutput.SSimStochBG2 = &SimStochBGTwo;
+                        
+                       /* perform monte carlo */
+                        LALSSSimStochBGTimeSeries(&status, &SBOutput, &SBInput, &SBParams);
 			/* output the results */
-			if (vrbflg)
+			if (verbose_flag)
 			{
 				LALSPrintTimeSeries(&SimStochBGOne, "simStochBG1.dat");
 				LALSPrintTimeSeries(&SimStochBGTwo, "simStochBG2.dat");
@@ -1022,26 +1173,36 @@ INT4 main(INT4 argc, CHAR *argv[])
 			/* multiply by scale factor and inject into real data */
 			for (i = 0; i < segmentLength ; i++)
 			{
-				segmentOne.data->data[i] = segmentOne.data->data[i] + \
+				segmentOne.data->data[i] = segmentTempOne.data->data[i] + \
 					(scaleFactor * SimStochBGOne.data->data[i]);
-				segmentTwo.data->data[i] = segmentTwo.data->data[i] + \
+				segmentTwo.data->data[i] = segmentTempTwo.data->data[i] + \
 					(scaleFactor * SimStochBGTwo.data->data[i]);
 			}
+                
+			/* increase seed */
+			seed = seed + 2 ;
 		}
-
-
+                else
+		{
+		  for (i = 0; i < segmentLength; i ++)
+                  {
+		   segmentOne.data->data[i] = segmentTempOne.data->data[i];
+		   segmentTwo.data->data[i] = segmentTempTwo.data->data[i] ;
+		   }
+		 }
 		/* output the results */
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			LALSPrintTimeSeries(&segmentOne, "segment1.dat");
 			LALSPrintTimeSeries(&segmentTwo, "segment2.dat");
 		}
-
-		if (vrbflg)
+                
+                if (high_pass_flag)
 		{
-			fprintf(stdout, "Zero padding data...\n");
-		}
-
+                         
+                         LAL_CALL( LALButterworthREAL4TimeSeries( &status, &segmentOne, &highpassParam ), &status );
+                         LAL_CALL( LALButterworthREAL4TimeSeries( &status, &segmentTwo, &highpassParam ), &status );
+                }
 		/* zero pad and fft */
 		LAL_CALL( LALSZeroPadAndFFT(&status, &hBarTildeOne, &segmentOne, \
 					&zeroPadParams), &status );
@@ -1049,13 +1210,13 @@ INT4 main(INT4 argc, CHAR *argv[])
 					&zeroPadParams), &status );
 
 		/* save */
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			LALCPrintFrequencySeries(&hBarTildeOne, "hBarTilde1.dat");
 			LALCPrintFrequencySeries(&hBarTildeTwo, "hBarTilde2.dat");
 		}
 
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Estimating PSDs...\n");
 		}
@@ -1066,53 +1227,27 @@ INT4 main(INT4 argc, CHAR *argv[])
 		LAL_CALL( LALREAL4AverageSpectrum(&status, &psdTempTwo, &segmentTwo, \
 					&specparPSD), &status );
 
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Getting appropriate frequency band for PSDs...\n");
 		}
 
 		/* reduce to the optimal filter frequency range */
-		psdOne.data->data = psdTempOne.data->data + numFMin;
-		psdTwo.data->data = psdTempTwo.data->data + numFMin;
+		for (i = 0; i < filterLength; i++)
+		{
+			psdOne.data->data[i] = psdTempOne.data->data[i + numPointInf];
+			psdTwo.data->data[i] = psdTempTwo.data->data[i + numPointInf];
+		}
 
 		/* output the results */
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			LALSPrintFrequencySeries(&psdOne, "psd1.dat");
 			LALSPrintFrequencySeries(&psdTwo, "psd2.dat");
 		}
 
-		if (vrbflg)
-		{
-			fprintf(stdout, "Generating response functions...\n");
-		}
 
-		/* compute response function */
-		responseTempOne.epoch = gpsCalTime;
-		responseTempTwo.epoch = gpsCalTime;
-		LAL_CALL( LALExtractFrameResponse(&status, &responseTempOne, calCacheOne, \
-					ifoOne, &duration), &status );
-		LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwo, calCacheTwo, \
-					ifoTwo, &duration), &status );
-
-		if (vrbflg)
-		{
-			fprintf(stdout, "Getting appropriate frequency band for response " \
-					"functions...\n");
-		}
-
-		/* reduce to the optimal filter frequency range */
-		responseOne.data->data = responseTempOne.data->data + numFMin;
-		responseTwo.data->data = responseTempTwo.data->data + numFMin;
-
-		/* output the results */
-		if (vrbflg)
-		{
-			LALCPrintFrequencySeries(&responseOne, "response1.dat");
-			LALCPrintFrequencySeries(&responseTwo, "response2.dat");
-		}
-
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Generating inverse noise...\n");
 		}
@@ -1124,7 +1259,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 					&inverseNoiseInTwo), &status );
 
 		/* save */
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			LALSPrintFrequencySeries(&calInvPSDOne, "inPSD1.dat");
 			LALSPrintFrequencySeries(&calInvPSDTwo, "inPSD2.dat");
@@ -1132,7 +1267,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 			LALCPrintFrequencySeries(&halfCalPSDTwo, "hInPSD2.dat");
 		}
 
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Normalising optimal filter...\n");
 		}
@@ -1144,31 +1279,32 @@ INT4 main(INT4 argc, CHAR *argv[])
 				pow(10.,normLambda.units.powerOfTen));
 		varTheo = (REAL8)(segmentDuration * normSigma.value * \
 				pow(10.,normSigma.units.powerOfTen));
+		
 
 		/* save */
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "lambda = %e s^-1\n", lambda);
 			fprintf(stdout, "varTheo = %e s\n", varTheo);
 		}
 
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Generating optimal filter...\n");
 		}
 
 		/* build optimal filter */
-		optFilter.epoch = gpsCalTime;
+		optFilter.epoch = gpsStartTime;
 		LAL_CALL( LALStochasticOptimalFilter(&status, &optFilter, &optFilterIn, \
 					&normLambda), &status );
 
 		/* save */
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			LALCPrintFrequencySeries(&optFilter, "optFilter.dat");
 		}
 
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Generating cross correlation spectrum...\n");
 		}
@@ -1178,12 +1314,12 @@ INT4 main(INT4 argc, CHAR *argv[])
 					&ccIn, epochsMatch), &status );
 
 		/* save */
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			LALCPrintFrequencySeries(&ccSpectrum, "ccSpectrum.dat");
 		}
 
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Generating cross correlation statistic...\n");
 		}
@@ -1194,33 +1330,44 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 		y = (REAL8)(ccStat.value * pow(10.,ccStat.units.powerOfTen));
 
-		if (vrbflg)
+		if (verbose_flag)
 		{
-			fprintf(stdout, "y = %f\n\n", y);
+			fprintf(stdout, "y = %f\n", y);
 		}
 
-		/* output to file */
-		fprintf(out, "%d %e %e\n", gpsStartTime.gpsSeconds, sqrt(varTheo), y);
-	}
+                if (status.statusCode !=0)
+		  {
+		    clear_status(&status);
+                    if (MCLoop < (NLoop - 1))
+		     continue; 
+                    else
+		     break;   
+		  }
 
-	/* close output file */
-	fclose(out);
+		/* output to file */
+                
+                out = fopen(outputFilename, "a");
+	       	fprintf(out,"%d %e %e\n", gpsStartTime.gpsSeconds, y, varTheo);
+                fclose(out);
+		}
+	}
+       
+        lal_errhandler = LAL_ERR_EXIT;
 
 	/* cleanup */
+
 	LAL_CALL( LALDestroyRealFFTPlan(&status, &(specparPSD.plan)), &status );
 	LAL_CALL( LALDestroyRealFFTPlan(&status, &fftDataPlan), &status );
-	LAL_CALL( LALDestroyVector(&status, &(streamOne.data)), &status );
-	LAL_CALL( LALDestroyVector(&status, &(streamTwo.data)), &status );
-	LALFree(segmentOne.data);
-	LALFree(segmentTwo.data);
+	LAL_CALL( LALDestroyVector(&status, &(segmentOne.data)), &status );
+	LAL_CALL( LALDestroyVector(&status, &(segmentTwo.data)), &status );
 	LAL_CALL( LALDestroyVector(&status, &(psdTempOne.data)), &status );
 	LAL_CALL( LALDestroyVector(&status, &(psdTempTwo.data)), &status );
-	LALFree(psdOne.data);
-	LALFree(psdTwo.data);
+	LAL_CALL( LALDestroyVector(&status, &(psdOne.data)), &status );
+	LAL_CALL( LALDestroyVector(&status, &(psdTwo.data)), &status );
+	LAL_CALL( LALCDestroyVector(&status, &(responseOne.data)), &status );
+	LAL_CALL( LALCDestroyVector(&status, &(responseTwo.data)), &status );
 	LAL_CALL( LALCDestroyVector(&status, &(responseTempOne.data)), &status );
 	LAL_CALL( LALCDestroyVector(&status, &(responseTempTwo.data)), &status );
-	LALFree(responseOne.data);
-	LALFree(responseTwo.data);
 	LAL_CALL( LALDestroyVector(&status, &(calInvPSDOne.data)), &status );
 	LAL_CALL( LALDestroyVector(&status, &(calInvPSDTwo.data)), &status );
 	LAL_CALL( LALCDestroyVector(&status, &(halfCalPSDOne.data)), &status );
@@ -1243,10 +1390,15 @@ INT4 main(INT4 argc, CHAR *argv[])
 	{       
 		LAL_CALL( LALDestroyVector(&status, &SimStochBGOne.data), &status );
 		LAL_CALL( LALDestroyVector(&status, &SimStochBGTwo.data), &status );
+		LAL_CALL( LALCDestroyVector(&status, &(MCresponseOne.data)), &status );
+		LAL_CALL( LALCDestroyVector(&status, &(MCresponseTwo.data)), &status );
+                LAL_CALL( LALDestroyVector(&status, &(MComegaGW.data)), &status ); 
 	}
+	
 
 	return 0;
 }
+
 
 /* parse command line options */
 void parseOptions(INT4 argc, CHAR *argv[])
@@ -1260,16 +1412,13 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			/* options that set a flag */
 			{"inject", no_argument, &inject_flag, 1},
 			{"apply-mask", no_argument, &apply_mask_flag, 1},
-			{"high-pass-filter", no_argument, &high_pass_flag, 1},
-			{"overlap-hann", no_argument, &overlap_hann_flag, 1},
-			{"verbose", no_argument, &vrbflg, 1},
+			{"verbose", no_argument, &verbose_flag, 1},
 			/* options that don't set a flag */
 			{"help", no_argument, 0, 'h'},
 			{"gps-start-time", required_argument, 0, 't'},
 			{"gps-end-time", required_argument, 0, 'T'},
 			{"segment-duration", required_argument, 0, 'l'},
-			{"sample-rate", required_argument, 0, 'a'},
-			{"resample-rate", required_argument, 0, 'A'},
+			{"resample-rate", required_argument, 0, 'a'},
 			{"f-min", required_argument, 0, 'f'},
 			{"f-max", required_argument, 0, 'F'},
 			{"hann-duration", required_argument, 0, 'w'},
@@ -1319,49 +1468,11 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			case 't':
 				/* start time */
 				startTime = atoi(optarg);
-
-				/* check */
-				if (startTime < 441217609)
-				{
-					fprintf(stderr, "Invalid argument to --%s:\n" \
-							"GPS start time is prior to 1 January 1994 00:00:00 UTC " \
-							"(%d specified)\n", long_options[option_index].name, \
-							(INT4)startTime);
-					exit(1);
-				}
-				if (startTime > 999999999)
-				{
-					fprintf(stderr, "Invalid argument to --%s:\n" \
-							"GPS start time is after 14 September 2011 01:46:26 UTC " \
-							"(%d specified)\n", long_options[option_index].name, \
-							(INT4)startTime);
-					exit(1);
-				}
-
 				break;
 
 			case 'T':
 				/* stop time */
-				endTime = atoi(optarg);
-
-				/* check */
-				if (endTime < 441217609)
-				{
-					fprintf(stderr, "Invalid argument to --%s:\n" \
-							"GPS end time is prior to 1 January 1994 00:00:00 UTC " \
-							"(%d specified)\n", long_options[option_index].name, \
-							(INT4)endTime);
-					exit(1);
-				}
-				if (endTime > 999999999)
-				{
-					fprintf(stderr, "Invalid argument to --%s:\n" \
-							"GPS end time is after 14 September 2011 01:46:26 UTC " \
-							"(%d specified)\n", long_options[option_index].name, \
-							(INT4)endTime);
-					exit(1);
-				}
-
+				stopTime = atoi(optarg);
 				break;
 
 			case 'l':
@@ -1370,12 +1481,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 				break;
 
 			case 'a':
-				/* sample rate */
-				sampleRate = atoi(optarg);
-				break;
-
-			case 'A':
-				/* resampe rate */
+				/* resampling */
 				resampleRate = atoi(optarg);
 				break;
 
@@ -1450,35 +1556,27 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
 				break;
 
-			case 'd':
-				/* data cache one */
-				optarg_len = strlen(optarg) + 1;
-				frameCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-				memcpy(frameCacheOne, optarg, optarg_len);
-				break;
+	        	case 'd':
+         		  /* data cache one */
+        		  strncpy(frameCacheOne, optarg, LALNameLength);
+        		  break;
 
-			case 'D':
-				/* data cache two */
-				optarg_len = strlen(optarg) + 1;
-				frameCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-				memcpy(frameCacheTwo, optarg, optarg_len);
-				break;
+        		case 'D':
+        		  /* data cache two */
+        		  strncpy(frameCacheTwo, optarg, LALNameLength);
+        		  break;
+   
+        		case 'r':
+         		  /* calibration cache one */
+        		  strncpy(calCacheOne, optarg, LALNameLength);
+        		  break;
 
-			case 'r':
-				/* calibration cache one */
-				optarg_len = strlen(optarg) + 1;
-				calCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-				memcpy(calCacheOne, optarg, optarg_len);
-				break;
-
-			case 'R':
-				/* calibration cache two */
-				optarg_len = strlen(optarg) + 1;
-				calCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-				memcpy(calCacheTwo, optarg, optarg_len);
-				break;
-
-			case 'o':
+        		case 'R':
+        		  /* calibration cache two */
+        		  strncpy(calCacheTwo, optarg, LALNameLength);
+        		  break;
+  
+ 			case 'o':
 				/* scale factor */
 				scaleFactor = atof(optarg);
 				break;
@@ -1522,9 +1620,8 @@ void displayUsage(INT4 exitcode)
 	fprintf(stderr, " --verbose                     verbose mode\n");
 	fprintf(stderr, " --debug-level LEVEL           set lalDebugLevel\n");
 	fprintf(stderr, " --gps-start-time SEC          GPS start time\n");
-	fprintf(stderr, " --gps-end-time SEC            GPS end time\n");
+	fprintf(stderr, " --gps-end-time SEC            GPS stop time\n");
 	fprintf(stderr, " --segment-duration SEC        segment duration\n");
-	fprintf(stderr, " --sample-rate F               sample rate\n");
 	fprintf(stderr, " --resample-rate F             resample rate\n");
 	fprintf(stderr, " --f-min F                     minimal frequency\n");
 	fprintf(stderr, " --f-max F                     maximal frequency\n");
@@ -1542,13 +1639,9 @@ void displayUsage(INT4 exitcode)
 	fprintf(stderr, " --apply-mask                  apply frequency masking\n");
 	fprintf(stderr, " --inject                      inject a signal into " \
 			"the data\n");
-	fprintf(stderr, " --scale-factor N              scale factor for " \
+	fprintf(stderr, " --scale-factor N              scale factor for "\
 			"injection\n");
 	fprintf(stderr, " --seed N                      seed\n");
-	fprintf(stderr, " --overlap-hann                overlaping hann windows " \
-			"for data windowing\n");
-	fprintf(stderr, " --high-pass-filter            perform high pass " \
-			"filtering\n");
 
 	exit(exitcode);
 }
@@ -1601,7 +1694,7 @@ void readDataPair(LALStatus *status,
 	dataStreamOne.epoch = bufferStartTime;
 	dataStreamTwo.epoch = bufferStartTime;
 
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Allocating memory for raw data streams...\n");
 	}
@@ -1611,41 +1704,41 @@ void readDataPair(LALStatus *status,
 	dataStreamTwo.data = NULL;
 	LALSCreateVector(status->statusPtr, &(dataStreamOne.data), \
 			sampleRate * (params->duration + (2 * buffer)));
-	CHECKSTATUSPTR( status );
+	
 	LALSCreateVector(status->statusPtr, &(dataStreamTwo.data), \
 			sampleRate * (params->duration + (2 * buffer)));
-	CHECKSTATUSPTR( status );
+	
 	memset(dataStreamOne.data->data, 0, \
 			dataStreamOne.data->length * sizeof(*dataStreamOne.data->data));
 	memset(dataStreamTwo.data->data, 0, \
 			dataStreamTwo.data->length * sizeof(*dataStreamTwo.data->data));
 
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Opening first frame cache...\n");
 	}
 
 	/* open first frame cache */
 	LALFrCacheImport(status->statusPtr, &frCacheOne, params->frameCacheOne);
-	CHECKSTATUSPTR( status );
+	
 	LALFrCacheOpen(status->statusPtr, &frStreamOne, frCacheOne);
-	CHECKSTATUSPTR( status );
+	
 
-	if (vrbflg)
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Reading in channel \"%s\"...\n", frChanInOne.name);
 	}
 
 	/* read first channel */
 	LALFrSeek(status->statusPtr, &(bufferStartTime), frStreamOne);
-	CHECKSTATUSPTR( status );
+	
 	LALFrGetREAL4TimeSeries(status->statusPtr, &dataStreamOne, \
 			&frChanInOne, frStreamOne);
-	CHECKSTATUSPTR( status );
+       
 
 	if (strcmp(params->frameCacheOne, params->frameCacheTwo) == 0)
 	{
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Reading in channel \"%s\" from same cache...\n", \
 					frChanInTwo.name);
@@ -1653,68 +1746,67 @@ void readDataPair(LALStatus *status,
 
 		/* read in second channel */
 		LALFrSeek(status->statusPtr, &(bufferStartTime), frStreamOne);
-		CHECKSTATUSPTR( status );
+	    
 		LALFrGetREAL4TimeSeries(status->statusPtr, &dataStreamTwo, \
 				&frChanInTwo, frStreamOne);
-		CHECKSTATUSPTR( status );
-
-		if (vrbflg)
+		
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Closing frame cache...\n");
 		}
 
 		/* close frame cache */
 		LALFrClose(status->statusPtr, &frStreamOne);
-		CHECKSTATUSPTR( status );
+		
 	}
 	else
 	{
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Closing first frame cache...\n");
 		}
 
 		/* close first frame cache */
 		LALFrClose(status->statusPtr, &frStreamOne);
-		CHECKSTATUSPTR( status );
+		
 
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Opening second frame cache...\n");
 		}
 
 		/* open second frame cache and read in second channel */
 		LALFrCacheImport(status->statusPtr, &frCacheTwo, params->frameCacheTwo);
-		CHECKSTATUSPTR( status );
+	    
 		LALFrCacheOpen(status->statusPtr, &frStreamTwo, frCacheTwo);
-		CHECKSTATUSPTR( status );
+		
 
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Reading in channel \"%s\"...\n", frChanInTwo.name);
 		}
 
 		/* read in second channel */
 		LALFrSeek(status->statusPtr, &(bufferStartTime), frStreamTwo);
-		CHECKSTATUSPTR( status );
+		
 		LALFrGetREAL4TimeSeries(status->statusPtr, &dataStreamTwo, \
 				&frChanInTwo, frStreamTwo);
-		CHECKSTATUSPTR( status );
+		
 
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Closing second frame cache...\n");
 		}
 
 		/* close second frame stream */
 		LALFrClose(status->statusPtr, &frStreamTwo);
-		CHECKSTATUSPTR( status );
+		
 	}
 
 	/* resample */
 	if (resampleRate != sampleRate)
 	{
-		if (vrbflg)
+		if (verbose_flag)
 		{
 			fprintf(stdout, "Resampling to %d Hz...\n", resampleRate);
 		}
@@ -1726,10 +1818,10 @@ void readDataPair(LALStatus *status,
 		/* resample */
 		LALResampleREAL4TimeSeries(status->statusPtr, &dataStreamOne, \
 				&resampleParams);
-		CHECKSTATUSPTR( status );
+		
 		LALResampleREAL4TimeSeries(status->statusPtr, &dataStreamTwo, \
 				&resampleParams);
-		CHECKSTATUSPTR( status );
+		
 	}
 
 	/* build output */
@@ -1757,638 +1849,11 @@ void readDataPair(LALStatus *status,
 
 	/* clean up */
 	LALSDestroyVector(status->statusPtr, &(dataStreamOne.data));
-	CHECKSTATUSPTR( status );
+       
 	LALSDestroyVector(status->statusPtr, &(dataStreamTwo.data));
-	CHECKSTATUSPTR( status );
-
+	
 	/* return status */
 	DETATCHSTATUSPTR( status );
 	RETURN( status );
 }
 
-void monteCarlo(LALStatus *status,
-		SSSimStochBGOutput *MCoutput,
-		MonteCarloInput *MCinput,
-		MonteCarloParams *MCparams)
-{
-	/* counters */
-	INT4 i, loop;
-
-	/* seed for random number generation */
-	INT4 seed;
-
-	/* various times, frequencies, sample rates */
-	UINT8 startTime;
-	UINT8 calTime;
-	UINT4 length;
-	INT4 lengthSegment;
-	INT4 numSegment;
-	UINT4 calibOffset;
-	UINT4 freqLength;
-	REAL8 deltaF;
-	REAL8 deltaT;
-	REAL8 sampleRate;
-
-	/* IFO parameters */  
-	INT4 siteOne;
-	INT4 siteTwo;
-	CHAR *ifoOne;
-	CHAR *ifoTwo;
-
-	/* parameters for calibration */
-	CHAR *calCacheOne;
-	CHAR *calCacheTwo;
-	LIGOTimeGPS duration;
-	const LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
-
-	/* omegaGW parameters */
-	REAL8 omegaRef;
-	REAL8 f0;
-	REAL8 fRef;
-	REAL8 alpha;
-	StochasticOmegaGWParameters parametersOmega;
-
-	/* other structures for SimulateSB */
-	SSSimStochBGParams SBParams;
-	SSSimStochBGInput SBInput;
-	SSSimStochBGOutput SBOutput;
-	REAL4TimeSeries whitenedSSimStochBGOne;
-	REAL4TimeSeries whitenedSSimStochBGTwo;
-	REAL4FrequencySeries omegaGW;
-	COMPLEX8FrequencySeries responseOne;
-	COMPLEX8FrequencySeries responseTwo;
-
-	/* initialize status pointer */
-	INITSTATUS(status, "monteCarlo", STOCHASTICC);
-	ATTATCHSTATUSPTR(status);
-
-	/* read parameters */
-	fRef = MCparams->fRef;
-	f0 = MCparams->f0;
-	omegaRef = MCparams->omegaRef;
-	alpha = MCparams->alpha;
-	siteOne = MCparams->siteOne;
-	siteTwo = MCparams->siteTwo;
-	startTime = MCparams->startTime;
-	lengthSegment = MCparams->lengthSegment;
-	numSegment = MCparams->numSegment;
-	sampleRate = MCparams->sampleRate;
-	seed = MCparams->seed;
-
-	/* derive other parameters */
-	length = lengthSegment * numSegment;
-	freqLength = lengthSegment / 2 + 1;
-	calibOffset =  lengthSegment / (2 * sampleRate);
-	deltaT = 1.0 / sampleRate;
-	deltaF = 1.0 / (deltaT * lengthSegment);
-	calTime = startTime;
-
-	/* read input structure for calibration info */
-	ifoOne = MCinput->ifoOne;
-	ifoTwo = MCinput->ifoTwo;
-	calCacheOne = MCinput->calCacheOne;
-	calCacheTwo = MCinput->calCacheTwo;
-
-	/* create vectors to store the simulated signal */
-
-	whitenedSSimStochBGOne.data = NULL;
-	whitenedSSimStochBGTwo.data = NULL;
-	LALSCreateVector(status->statusPtr, &(whitenedSSimStochBGOne.data), \
-			lengthSegment);
-	CHECKSTATUSPTR( status );
-	LALSCreateVector(status->statusPtr, &(whitenedSSimStochBGTwo.data), \
-			lengthSegment);
-	CHECKSTATUSPTR( status );
-	memset(whitenedSSimStochBGOne.data->data, 0, \
-			whitenedSSimStochBGOne.data->length * \
-			sizeof(*whitenedSSimStochBGOne.data->data));
-	memset(whitenedSSimStochBGTwo.data->data, 0, \
-			whitenedSSimStochBGTwo.data->length * \
-			sizeof(*whitenedSSimStochBGTwo.data->data));
-
-	/* define parameters for SimulateSB */
-	SBParams.length = lengthSegment;
-	SBParams.deltaT = 1. / sampleRate;
-	SBParams.detectorOne = lalCachedDetectors[siteOne];
-	SBParams.detectorTwo = lalCachedDetectors[siteTwo];
-	SBParams.SSimStochBGTimeSeries1Unit = lalADCCountUnit;
-	SBParams.SSimStochBGTimeSeries2Unit = lalADCCountUnit;
-
-	/* omegaGW */
-	parametersOmega.length = freqLength;
-	parametersOmega.f0 = f0;
-	parametersOmega.deltaF = deltaF;
-	parametersOmega.alpha = alpha;
-	parametersOmega.fRef = fRef;
-	parametersOmega.omegaRef = omegaRef;
-
-	/* allocate memory */
-	omegaGW.data = NULL;
-	LALSCreateVector(status->statusPtr, &(omegaGW.data), freqLength);
-	CHECKSTATUSPTR( status );
-	memset(omegaGW.data->data, 0, \
-			omegaGW.data->length * sizeof(*omegaGW.data->data));
-
-	/* generate omegaGW */
-	LALStochasticOmegaGW(status->statusPtr, &omegaGW, &parametersOmega);
-	CHECKSTATUSPTR( status );
-
-	/* response functions */
-	/* set metadata fields */
-	strncpy(responseOne.name,"responseOne", LALNameLength);
-	strncpy(responseTwo.name,"responseTwo", LALNameLength);
-	responseOne.sampleUnits = countPerStrain;
-	responseTwo.sampleUnits = countPerStrain;
-	responseOne.epoch.gpsNanoSeconds = 0;
-	responseTwo.epoch.gpsNanoSeconds = 0;
-	responseOne.deltaF = deltaF;
-	responseTwo.deltaF = deltaF;
-	responseOne.f0 = 0;
-	responseTwo.f0 = 0;
-
-	/* allocate memory */
-	responseOne.data = NULL;
-	responseTwo.data = NULL;
-	LALCCreateVector(status->statusPtr, &(responseOne.data), freqLength);
-	CHECKSTATUSPTR( status );
-	LALCCreateVector(status->statusPtr, &(responseTwo.data), freqLength);
-	CHECKSTATUSPTR( status );
-	memset(responseOne.data->data, 0, \
-			responseOne.data->length * sizeof(*responseOne.data->data));
-	memset(responseTwo.data->data, 0, \
-			responseTwo.data->length * sizeof(*responseTwo.data->data));
-
-	/* set response function averaging */
-	duration.gpsSeconds = 0;
-	duration.gpsNanoSeconds = 0;
-
-	/* construct a time series of the desired length */
-	for (loop = 0; loop < numSegment; loop++)
-	{
-		/* increment seed */
-		seed = seed + (2 * loop);
-		SBParams.seed = seed;
-
-		/* set calibration epoch */
-		responseOne.epoch.gpsSeconds = calTime;
-		responseTwo.epoch.gpsSeconds = calTime;
-
-		/* compute response function */
-		LALExtractFrameResponse(status->statusPtr, &responseOne, calCacheOne, \
-				ifoOne, &duration);
-		CHECKSTATUSPTR( status );
-		LALExtractFrameResponse(status->statusPtr, &responseTwo, calCacheTwo, \
-				ifoTwo, &duration);
-		CHECKSTATUSPTR( status );
-
-		/* force DC to be 0 and nyquist to be real */
-		responseOne.data->data[0].re = 0.;
-		responseTwo.data->data[0].re = 0.;
-		responseOne.data->data[0].im = 0.;
-		responseTwo.data->data[0].im = 0.;
-		responseOne.data->data[freqLength-1].im = 0.;
-		responseTwo.data->data[freqLength-1].im = 0.;
-
-		/* define input structure for SimulateSB */
-		SBInput.omegaGW = &omegaGW;
-		SBInput.whiteningFilter1 = &responseOne;
-		SBInput.whiteningFilter2 = &responseTwo;
-
-		/* define output structure for SimulateSB */
-		SBOutput.SSimStochBG1 = &whitenedSSimStochBGOne;
-		SBOutput.SSimStochBG2 = &whitenedSSimStochBGTwo;
-
-		/* generate whitened simulated SB data */
-		LALSSSimStochBGTimeSeries(status->statusPtr, &SBOutput, &SBInput, \
-				&SBParams);
-		CHECKSTATUSPTR( status );
-
-		/* get output */
-		for (i = 0; i < lengthSegment; i++)
-		{
-			MCoutput->SSimStochBG1->data->data[i + (loop * lengthSegment)] = \
-				whitenedSSimStochBGOne.data->data[i];
-			MCoutput->SSimStochBG2->data->data[i + (loop * lengthSegment)] = \
-				whitenedSSimStochBGTwo.data->data[i];
-		}
-
-		/* increase calibration time */
-		calTime = calTime + calibOffset;
-	}
-
-	/* assign parameters and data to output */
-	strncpy(MCoutput->SSimStochBG1->name, "Whitened-SimulatedSBOne", \
-			LALNameLength);
-	strncpy(MCoutput->SSimStochBG2->name, "Whitened-SimulatedSBTwo", \
-			LALNameLength );
-	MCoutput->SSimStochBG1->f0 = f0;
-	MCoutput->SSimStochBG2->f0 = f0;
-	MCoutput->SSimStochBG1->deltaT = deltaT;
-	MCoutput->SSimStochBG2->deltaT = deltaT;
-	MCoutput->SSimStochBG1->epoch.gpsSeconds = startTime;
-	MCoutput->SSimStochBG2->epoch.gpsSeconds = startTime;
-	MCoutput->SSimStochBG1->epoch.gpsNanoSeconds = 0;
-	MCoutput->SSimStochBG2->epoch.gpsNanoSeconds = 0;
-	MCoutput->SSimStochBG1->sampleUnits = lalADCCountUnit;
-	MCoutput->SSimStochBG2->sampleUnits = lalADCCountUnit;
-
-	/* clean up, and exit */
-	LALSDestroyVector(status->statusPtr, &(omegaGW.data));
-	CHECKSTATUSPTR( status );
-	LALCDestroyVector(status->statusPtr, &(responseOne.data));
-	CHECKSTATUSPTR( status );
-	LALCDestroyVector(status->statusPtr, &(responseTwo.data));
-	CHECKSTATUSPTR( status );
-	LALSDestroyVector(status->statusPtr, &(whitenedSSimStochBGOne.data));
-	CHECKSTATUSPTR( status );
-	LALSDestroyVector(status->statusPtr, &(whitenedSSimStochBGTwo.data));
-	CHECKSTATUSPTR( status );
-
-	/* return status */
-	DETATCHSTATUSPTR(status);
-	RETURN(status);
-}
-
-void monteCarloSplice(LALStatus *status,
-		SSSimStochBGOutput *MCoutput,
-		MonteCarloInput *MCinput,
-		MonteCarloParams *MCparams)
-{
-	/* counters */
-	INT4 i, m, k, loop;
-
-	/* seed for random number generation */
-	INT4 seed;
-
-	/* various times, frequencies, sample rates */
-	UINT8 startTime;
-	UINT8 calTime;
-	UINT4 length;
-	INT4 lengthSegment;
-	INT4 numSegment;
-	INT4 numSegmentSplice;
-	INT4 numSegmentTot;
-	UINT4 calibOffset;
-	UINT4 spliceOffset;
-	UINT4 freqLength;
-	REAL8 deltaF;
-	REAL8 deltaT;
-	REAL8 sampleRate;
-
-	/* IFO parameters */  
-	INT4 siteOne;
-	INT4 siteTwo;
-	CHAR *ifoOne;
-	CHAR *ifoTwo;
-
-	/* parameters for calibration */
-	CHAR *calCacheOne;
-	CHAR *calCacheTwo;
-	LIGOTimeGPS duration;
-	const LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
-
-	/* omegaGW parameters */
-	REAL8 omegaRef;
-	REAL8 f0;
-	REAL8 fRef;
-	REAL8 alpha;
-	StochasticOmegaGWParameters parametersOmega;
-
-	/* other structures for SimulateSB */
-	SSSimStochBGParams SBParams;
-	SSSimStochBGInput SBInput;
-	SSSimStochBGOutput SBOutput;
-	REAL4TimeSeries whitenedSSimStochBGOne;
-	REAL4TimeSeries whitenedSSimStochBGTwo;
-	REAL4FrequencySeries omegaGW;
-	COMPLEX8FrequencySeries responseOne;
-	COMPLEX8FrequencySeries responseTwo;
-
-	/* structures for splice function */
-	REAL4Vector **longTrain1 = NULL;
-	REAL4Vector **shortTrain1 = NULL;
-	REAL4Vector **longTrain2 = NULL;
-	REAL4Vector **shortTrain2 = NULL;
-
-	/* initialize status pointer */
-	INITSTATUS( status, "monteCarloSplice", STOCHASTICC );
-	ATTATCHSTATUSPTR( status );
-
-	/* read parameters */
-	fRef = MCparams->fRef;
-	f0 = MCparams->f0;
-	omegaRef = MCparams->omegaRef;
-	alpha = MCparams->alpha;
-	siteOne = MCparams->siteOne;
-	siteTwo = MCparams->siteTwo;
-	startTime = MCparams->startTime;
-	lengthSegment = MCparams->lengthSegment;
-	numSegment = MCparams->numSegment;
-	sampleRate = MCparams->sampleRate;
-	seed = MCparams->seed;
-
-	/* derive other parameters */
-	length = lengthSegment * numSegment;
-	numSegmentSplice = numSegment - 1;
-	numSegmentTot = numSegment + numSegmentSplice;
-	freqLength = (lengthSegment / 2) + 1;
-	calibOffset =  lengthSegment / (2 * sampleRate);
-	spliceOffset =  calibOffset;
-	deltaT = 1.0 / sampleRate;
-	deltaF = 1.0 / (deltaT * lengthSegment);
-	calTime = startTime;
-
-	/* read input structure for calibration info */
-	ifoOne = MCinput->ifoOne;
-	ifoTwo = MCinput->ifoTwo;
-	calCacheOne = MCinput->calCacheOne;
-	calCacheTwo = MCinput->calCacheTwo;
-
-	/* create vectors to store the simulated signal */
-	whitenedSSimStochBGOne.data = NULL;
-	whitenedSSimStochBGTwo.data = NULL;
-	LALSCreateVector(status->statusPtr, &(whitenedSSimStochBGOne.data), \
-			lengthSegment);
-	CHECKSTATUSPTR( status );
-	LALSCreateVector(status->statusPtr, &(whitenedSSimStochBGTwo.data), \
-			lengthSegment);
-	CHECKSTATUSPTR( status );
-	memset(whitenedSSimStochBGOne.data->data, 0, \
-			whitenedSSimStochBGOne.data->length * \
-			sizeof(*whitenedSSimStochBGOne.data->data));
-	memset(whitenedSSimStochBGTwo.data->data, 0, \
-			whitenedSSimStochBGTwo.data->length * \
-			sizeof(*whitenedSSimStochBGTwo.data->data));
-
-	/* allocate memory for longer data train */
-	longTrain1 = (REAL4Vector**)LALMalloc(sizeof(REAL4Vector*) * numSegment);
-	for (i = 0; i < numSegment; i++)
-	{
-		longTrain1[i] = NULL;
-		LALSCreateVector(status->statusPtr, &longTrain1[i], lengthSegment);
-		CHECKSTATUSPTR( status );
-		for (k = 0; k < lengthSegment; k++)
-		{
-			longTrain1[i]->data[k] = 0;
-		}
-	}
-
-	longTrain2 = (REAL4Vector**)LALMalloc(sizeof(REAL4Vector*) * numSegment);
-	for (i = 0; i < numSegment; i++)
-	{
-		longTrain2[i] = NULL;
-		LALSCreateVector(status->statusPtr, &longTrain2[i], lengthSegment);
-		CHECKSTATUSPTR( status );
-		for (k = 0; k < lengthSegment; k++)
-		{
-			longTrain2[i]->data[k] = 0;
-		}
-		longTrain2[i] = NULL;
-	}
-
-	/* allocate memory for shorter data train */
-	shortTrain1 = (REAL4Vector**)LALMalloc(sizeof(REAL4Vector*) * \
-			(numSegmentSplice));
-	for(i = 0; i < numSegmentSplice; i++)
-	{
-		shortTrain1[i] = NULL;
-		LALSCreateVector(status->statusPtr, &shortTrain1[i], lengthSegment);
-		CHECKSTATUSPTR( status );
-		for (k = 0; k < lengthSegment; k++)
-		{
-			shortTrain1[i]->data[k] = 0;
-		}
-	}
-	shortTrain2 = (REAL4Vector**)LALMalloc(sizeof(REAL4Vector*) * \
-			(numSegmentSplice));
-	for(i = 0; i < numSegmentSplice; i++)
-	{
-		shortTrain2[i] = NULL;
-		LALSCreateVector(status->statusPtr, &shortTrain2[i], lengthSegment);
-		CHECKSTATUSPTR( status );
-		for (k = 0; k < lengthSegment; k++)
-		{
-			shortTrain2[i]->data[k] = 0;
-		}
-	}
-
-	/* define parameters for SimulateSB */
-	SBParams.length = lengthSegment;
-	SBParams.deltaT = 1. / sampleRate;
-	SBParams.detectorOne = lalCachedDetectors[siteOne];
-	SBParams.detectorTwo = lalCachedDetectors[siteTwo];
-	SBParams.SSimStochBGTimeSeries1Unit = lalADCCountUnit;
-	SBParams.SSimStochBGTimeSeries2Unit = lalADCCountUnit;
-
-	/* omegaGW */
-	parametersOmega.length = freqLength;
-	parametersOmega.f0 = f0;
-	parametersOmega.deltaF = deltaF;
-	parametersOmega.alpha = alpha;
-	parametersOmega.fRef = fRef;
-	parametersOmega.omegaRef = omegaRef;
-
-	/* allocate memory */
-	omegaGW.data = NULL;
-	LALSCreateVector(status->statusPtr, &(omegaGW.data), freqLength);
-	CHECKSTATUSPTR( status );
-	memset(omegaGW.data->data, 0, \
-			omegaGW.data->length * sizeof(*omegaGW.data->data));
-
-	/* generate omegaGW */
-	LALStochasticOmegaGW(status->statusPtr, &omegaGW, &parametersOmega);
-	CHECKSTATUSPTR( status );
-
-	/* response functions */
-	/* set metadata fields */
-	strncpy(responseOne.name, "responseOne", LALNameLength);
-	strncpy(responseTwo.name, "responseTwo", LALNameLength);
-	responseOne.sampleUnits = countPerStrain;
-	responseTwo.sampleUnits = countPerStrain;
-	responseOne.epoch.gpsNanoSeconds = 0;
-	responseTwo.epoch.gpsNanoSeconds = 0;
-	responseOne.deltaF = deltaF;
-	responseTwo.deltaF = deltaF;
-	responseOne.f0 = 0;
-	responseTwo.f0 = 0;
-
-	/* allocate memory */
-	responseOne.data = NULL;
-	responseTwo.data = NULL;
-	LALCCreateVector(status->statusPtr, &(responseOne.data), freqLength);
-	CHECKSTATUSPTR( status );
-	LALCCreateVector(status->statusPtr, &(responseTwo.data), freqLength);
-	CHECKSTATUSPTR( status );
-	memset(responseOne.data->data, 0, \
-			responseOne.data->length * sizeof(*responseOne.data->data));
-	memset(responseTwo.data->data, 0, \
-			responseTwo.data->length * sizeof(*responseTwo.data->data));
-
-	/* set response function averaging */
-	duration.gpsSeconds = 0;
-	duration.gpsNanoSeconds = 0;
-
-	/* construct a time series of the desired length */
-	for (loop = 0; loop < numSegmentTot; loop++)
-	{
-		/* increment seed */
-		seed = seed + (2 * loop);
-		SBParams.seed = seed;
-
-		/* set calibration epoch */
-		responseOne.epoch.gpsSeconds = calTime;
-		responseTwo.epoch.gpsSeconds = calTime;
-
-		/* compute response function */
-		LALExtractFrameResponse(status->statusPtr, &responseOne, calCacheOne, \
-				ifoOne, &duration);
-		CHECKSTATUSPTR( status );
-		LALExtractFrameResponse(status->statusPtr, &responseTwo, calCacheTwo, \
-				ifoTwo, &duration);
-		CHECKSTATUSPTR( status );
-
-		/* force DC to be 0 and nyquist to be real */
-		responseOne.data->data[0].re = 0.;
-		responseTwo.data->data[0].re = 0.;
-		responseOne.data->data[0].im = 0.;
-		responseTwo.data->data[0].im = 0.;
-		responseOne.data->data[freqLength-1].im = 0.;
-		responseTwo.data->data[freqLength-1].im = 0.;
-
-		/* define input structure for SimulateSB */
-		SBInput.omegaGW = &omegaGW;
-		SBInput.whiteningFilter1 = &responseOne;
-		SBInput.whiteningFilter2 = &responseTwo;
-
-		/* define output structure for SimulateSB */
-		SBOutput.SSimStochBG1 = &whitenedSSimStochBGOne;
-		SBOutput.SSimStochBG2 = &whitenedSSimStochBGTwo;
-
-		/* generate whitened simulated SB data */
-		LALSSSimStochBGTimeSeries(status->statusPtr, &SBOutput, &SBInput, \
-				&SBParams);
-		CHECKSTATUSPTR( status );
-
-		/* store in the appropriate vector */
-		if (loop % 2 == 0)
-		{
-			m = (UINT4)(loop / 2);
-			longTrain1[m] = whitenedSSimStochBGOne.data;
-			longTrain2[m] = whitenedSSimStochBGTwo.data;
-		}
-		else
-		{
-			m = (UINT4)((loop-1) / 2);
-			shortTrain1[m] = whitenedSSimStochBGOne.data;
-			shortTrain2[m] = whitenedSSimStochBGTwo.data;
-		}
-
-		/* increase calibration time */
-		calTime = calTime + calibOffset;
-	}
-
-	/* splice long and short data trains into the output vector */
-	SinusoidalSplice(longTrain1, shortTrain1, MCoutput->SSimStochBG1->data, \
-			numSegmentSplice, spliceOffset);
-	SinusoidalSplice(longTrain2, shortTrain2, MCoutput->SSimStochBG2->data, \
-			numSegmentSplice, spliceOffset);
-
-	/* assign parameters and data to output */
-	strncpy(MCoutput->SSimStochBG1->name, "Whitened-SimulatedSBOne", \
-			LALNameLength);
-	strncpy(MCoutput->SSimStochBG2->name, "Whitened-SimulatedSBTwo", \
-			LALNameLength);
-	MCoutput->SSimStochBG1->f0 = f0;
-	MCoutput->SSimStochBG2->f0 = f0;
-	MCoutput->SSimStochBG1->deltaT = deltaT;
-	MCoutput->SSimStochBG2->deltaT = deltaT;
-	MCoutput->SSimStochBG1->epoch.gpsSeconds = startTime;
-	MCoutput->SSimStochBG2->epoch.gpsSeconds = startTime;
-	MCoutput->SSimStochBG1->epoch.gpsNanoSeconds = 0;
-	MCoutput->SSimStochBG2->epoch.gpsNanoSeconds = 0;
-	MCoutput->SSimStochBG1->sampleUnits = lalADCCountUnit;
-	MCoutput->SSimStochBG2->sampleUnits = lalADCCountUnit;
-
-	/* clean up, and exit */
-	LALSDestroyVector(status->statusPtr, &(omegaGW.data));
-	CHECKSTATUSPTR( status );
-	LALCDestroyVector(status->statusPtr, &(responseOne.data));
-	CHECKSTATUSPTR( status );
-	LALCDestroyVector(status->statusPtr, &(responseTwo.data));
-	CHECKSTATUSPTR( status );
-	LALSDestroyVector(status->statusPtr, &(whitenedSSimStochBGOne.data));
-	CHECKSTATUSPTR( status );
-	LALSDestroyVector(status->statusPtr, &(whitenedSSimStochBGTwo.data));
-	CHECKSTATUSPTR( status );
-
-	/* return status */
-	DETATCHSTATUSPTR(status);
-	RETURN(status);
-}
-
-void SinusoidalSplice(REAL4Vector **longData,
-		REAL4Vector **shortData,
-		REAL4Vector *output,
-		UINT4 nSpliceSegs,
-		INT4 offset)
-{
-	/* counters */
-	INT4 i, j;
-
-	UINT4 segLen;
-	INT4 nOutputPts;
-	UINT4 nSplicePts;
-	INT4 lastSpliceIndexPlusOne;
-	UINT4 leftOverlap;
-	UINT4 rightOverlap;
-	UINT4 iMod;
-	UINT4 jMod;
-	REAL4 leftScale;
-	REAL4 rightScale;
-	REAL4 phase;
-
-	segLen = longData[0]->length;
-	nOutputPts = output->length;
-	nSplicePts = nSpliceSegs * segLen;
-	lastSpliceIndexPlusOne = nSplicePts + offset;
-
-	leftOverlap = offset % segLen;
-	rightOverlap = segLen - leftOverlap;
-
-	/* leftOverlap and rightOverlap guaranteed to be non-zero by
-	 * CheckArguments */
-	leftScale = LAL_PI / (2.0 * leftOverlap);
-	rightScale = LAL_PI / (2.0 * rightOverlap);
-
-	for (i = 0; i < offset; i++)
-	{
-		output->data[i] = longData[i / segLen]->data[i % segLen];
-	}
-
-	/* check to make sure this is correct later */
-	for(i = offset, j = 0; i < lastSpliceIndexPlusOne; i++, j++)
-	{
-		iMod = i % segLen;
-		jMod = j % segLen;
-
-		/* splice from start to middle of shortData segment */
-		if (iMod < leftOverlap)
-		{
-			phase = iMod * leftScale;
-
-			output->data[i] = (longData[i/segLen]->data[iMod] * sin(phase)) + \
-				(shortData[j / segLen]->data[jMod] * cos(phase));
-		}
-		/* splice from middle to end of shortData segment */
-		else
-		{
-			phase = (iMod - leftOverlap) * rightScale;
-
-			output->data[i] = (longData[i/segLen]->data[iMod] * cos(phase)) + \
-				(shortData[j / segLen]->data[jMod] * sin(phase));
-		}
-	}
-
-	for (i = lastSpliceIndexPlusOne; i < nOutputPts; i++)
-		output->data[i] = longData[i / segLen]->data[i % segLen];
-}
