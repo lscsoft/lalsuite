@@ -4,8 +4,6 @@ $Id$
 
 stochastic_pipe.in - standalone stochastic pipeline driver script
 
-$Id$$
-
 This script produced the necessary condor submit and dag files to run
 the standalone stochastic code on LIGO data
 
