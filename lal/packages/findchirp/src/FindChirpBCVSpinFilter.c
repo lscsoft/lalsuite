@@ -122,6 +122,52 @@ LALFindChirpBCVSpinFilterSegment (
       cos(2 * Beta * amp[k] / ampBCV[k]);
   }
 
+ denominator = I*M  +  0.5*pow(I,2) - pow(J,2);
+ denominator1 = sqrt ( 0.25 * pow(I,3) + M*(pow(J,2) - 
+        pow(K,2)) - 0.5*(pow(J,2) + pow(K,2)) - I*(pow(L,2) + 
+        pow(M,2)) + 2*J*K*L );
+
+  /* 
+   * the calculation of the orthonormalised 
+   * amplitude vectors a1, a2, a3 
+   *
+   */   
+
+
+  a1 = 1.0 * amp[k]/ sqrt(I) ;
+
+  a2 = 1.0 * amp[k]/sqrt(denominator) * (I * cos(Beta * amp[k]) -  J);
+
+  a3 = 1.0 * amp[k]/denominator1 * ( sin(Beta * amp[k]) - 
+      (I*L - J*K)*cos(Beta * amp[k])/denominator + 
+      (J*L - K*M + 0.5*I*K)/denominator );
+
+  
+ 
+
+  /*
+   * initialising outputData vectors to
+   * calibrated detector output as calc in LAL..Data()
+   * note lack of exponential terms, these are
+   * calc in LALFindChirpBCVSpinTemplate()
+   */
+
+
+
+  outputData1 = fcSeg->data->data->data;
+  outputData2 = fcSeg->data->data->data;
+  outputData3 = fcSeg->data->data->data;
+  
+  outputData1[k].re *= a1 * wtilde[k].re;
+  outputData2[k].re *= a2 * wtilde[k].re;
+  outputData3[k].re *= a3 * wtilde[k].re;
+  
+
+  /*
+   * imaginary parts? square and add to find SNR
+   *
+   */
+
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
