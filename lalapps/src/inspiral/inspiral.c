@@ -174,6 +174,7 @@ REAL4 chisqThresh       = -1;           /* chisq veto thresholds        */
 Clustering clusterMethod;               /* chosen clustering algorithm  */  /*XXX*/
 REAL4 clusterWindow     = -1;           /* cluster over time window     */  /*XXX*/
 Approximant approximant;                /* waveform approximant         */
+INT4 bcvConstraint      = 0;           /* constraint BCV filter        */
 
 /* generic simulation parameters */
 enum { unset, urandom, user } randSeedType = unset;    /* sim seed type */
@@ -1862,8 +1863,15 @@ int main( int argc, char *argv[] )
               break;
               
             case BCV:
-              LAL_CALL( LALFindChirpBCVFilterSegment( &status,
+              if (!bcvConstraint){
+		      LAL_CALL( LALFindChirpBCVFilterSegment( &status,
                     &eventList, fcFilterInput, fcFilterParams ), &status );
+	      }
+	      else
+	      { 
+		      LAL_CALL( LALFindChirpBCVCFilterSegment( &status,
+                    &eventList, fcFilterInput, fcFilterParams ), &status );
+	      }
               break;
               
             case BCVSpin:
@@ -3116,6 +3124,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           approximant = BCV;
         }
+	else if ( ! strcmp( "BCVC", optarg ) )
+        {
+          approximant = BCV;
+	  bcvConstraint = 1;
+        }
         else if ( ! strcmp( "BCVSpin", optarg ) )
         {
           approximant = BCVSpin;
@@ -3124,7 +3137,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown order specified: "
-              "%s (must be either TaylorF2 or BCV or BCVSpin)\n", 
+              "%s (must be either TaylorF2 or BCV or BCVC or BCVSpin)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
