@@ -277,9 +277,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* overlap reduction function */
   LALDetectorPair detectors;
-  REAL4FrequencySeries overlap;
+  REAL4FrequencySeries *overlap;
   OverlapReductionFunctionParameters ORFparams;
-  LALUnit overlapUnit = {0,{0,0,0,0,0,2,0},{0,0,0,0,0,0,0}};
 
   /* frequency mask structures */
   REAL4FrequencySeries mask;
@@ -697,12 +696,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* quantities needed to build the optimal filter */
 
-  /* set metadata fields for overlap reduction function */
-  strncpy(overlap.name, "overlap", LALNameLength);
-  overlap.sampleUnits = overlapUnit;
-  overlap.deltaF = deltaF;
-  overlap.f0 = fMin;
-
   if (vrbflg)
   {
     fprintf(stdout, "Allocating memory for the overlap reduction " \
@@ -710,10 +703,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* allocate memory for overlap reduction function */
-  overlap.data = NULL;
-  LAL_CALL(LALCreateVector(&status, &(overlap.data), filterLength), &status);
-  memset(overlap.data->data, 0, \
-      overlap.data->length * sizeof(*overlap.data->data));
+  LAL_CALL(LALCreateREAL4FrequencySeries(&status, &overlap, \
+        "overlap", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
+        filterLength), &status);
 
   /* set parameters for overlap reduction function */
   ORFparams.length = filterLength;
@@ -728,7 +720,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     fprintf(stdout, "Generating the overlap reduction function...\n");
 
   /* generate overlap reduction function */
-  LAL_CALL(LALOverlapReductionFunction(&status, &overlap, &detectors, \
+  LAL_CALL(LALOverlapReductionFunction(&status, overlap, &detectors, \
         &ORFparams), &status);
 
   /* set metadata fields for spectrum */
@@ -843,7 +835,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   normParams.window1 = normParams.window2 = dataWindow.data;
 
   /* set normalisation input */
-  normInput.overlapReductionFunction = &overlap;
+  normInput.overlapReductionFunction = overlap;
   normInput.omegaGW = &omegaGW;
   normInput.inverseNoisePSD1 = calInvPsdOne;
   normInput.inverseNoisePSD2 = calInvPsdTwo;
@@ -869,7 +861,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       optFilter.data->length * sizeof(*optFilter.data->data));
 
   /* set optimal filter inputs */
-  optFilterIn.overlapReductionFunction = &overlap;
+  optFilterIn.overlapReductionFunction = overlap;
   optFilterIn.omegaGW = &omegaGW;
   optFilterIn.calibratedInverseNoisePSD1 = calInvPsdOne;
   optFilterIn.calibratedInverseNoisePSD2 = calInvPsdTwo;
@@ -1694,7 +1686,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALDestroyVector(&status, &(optFilter.data)), &status);
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, calInvPsdOne), &status);
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, calInvPsdTwo), &status);
-  LAL_CALL(LALDestroyVector(&status, &(overlap.data)), &status);
+  LAL_CALL(LALDestroyREAL4FrequencySeries(&status, overlap), &status);
   LAL_CALL(LALDestroyVector(&status, &(omegaGW.data)), &status);
   LAL_CALL(LALDestroyVector(&status, &(dataWindow.data)), &status);
   if (apply_mask_flag)
