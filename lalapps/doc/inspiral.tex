@@ -642,7 +642,12 @@ identifies the first trigger in a cluster,  then displaces it if its
 \end{entry}
 
 \item[Example]
-
+\begin{verbatim}
+lalapps_inca --ifo-a L-INSPIRAL-734357353-1024.xml \
+--ifo-b L-INSPIRAL-734357353-1024.xml --drhoplus 1.0 --drhominus 1.0 \
+--dm 1.0 --dt 0.01 --outfile my.xml --start-time 734357353 \
+--stop-time 734358353 --noplayground
+\end{verbatim}
 \item[Author] 
 Patrick Brady
 \end{entry}
