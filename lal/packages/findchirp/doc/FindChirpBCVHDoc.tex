@@ -334,20 +334,21 @@ take:
 
 \begin{enumerate}
 \item The template normalization squared (in \texttt{LALFindChirpBCVTemplate}):
-\texttt{tmpltNorm} = $d^2 \Big ( \frac{5\mu}{96 M_{\odot}} \Big ) \Big ( \frac{M}        {\pi^2 M_{\odot}} \Big )^{2/3} T_{\odot}^{-1/3}  
+	\\
+\texttt{tmpltNorm} = $d^2 \Big ( \frac{5\mu}{96 M_{\odot}}\Big ) \Big ( \frac{M}        {\pi^2 M_{\odot}} \Big )^{2/3} T_{\odot}^{-1/3}  
         \Big (\frac{2 T_{\odot} c}{1 Mpc} \Big )^2.$
 \item The exponential $e^{i \psi'}$ (in \texttt{LALFindChirpBCVTemplate}).
-\item The BCV Moments (in \texttt{LALFindChirpBCVData}):
+\item The BCV Moments (in \texttt{LALFindChirpBCVData}): \\
 \texttt{I73} = $\sum_{k=0}^{N/2} \frac{4 k^{-7/3}}{|dR|^2 S_v(|f_k|)}$ \\
 \texttt{I53} = $\sum_{k=0}^{N/2} \frac{4 k^{-5/3}}{|dR|^2 S_v(|f_k|)}$ \\
 \texttt{I1} = $\sum_{k=0}^{N/2} \frac{4 k^{-1}}{|dR|^2 S_v(|f_k|)}.$ \\
 These quantities should be multiplied by $(\Delta t /N)$ (b/c of the FT) and
-by \texttt{tmpltNorm} (b/c of the template), but that is taken
+by (\texttt{tmpltNorm}) (b/c of the template), but that is taken
 care of in the calculation of the SNR.
-\item The BCV normalization factors (in \texttt{LALFindChirpBCVData}):
-\texttt{a1} = (\texttt{I73}) \\
-\texttt{b2} = (\texttt{I1} - (\texttt{I53}/\texttt{I73})
-	) \\
+\item The BCV normalization factors (in \texttt{LALFindChirpBCVData}):\\
+\texttt{a1} = (\texttt{I73}$)^{-1/2}$ \\
+\texttt{b2} = (\texttt{I1} - (\texttt{I53}${}^2$/\texttt{I73})
+	$)^{-1/2}$ \\
 \texttt{b1} = -(\texttt{I53}/\texttt{I73})  \texttt{b2}. \\
 Again, these should be multiplied by $[(\Delta t/N)^{-1/2}$ (\texttt{tmpltNorm}
 $)^{-1/2}]$ 
