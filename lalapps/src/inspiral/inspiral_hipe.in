@@ -54,32 +54,34 @@ class AnalyzedIFOData:
     
 ##############################################################################
 # function to set up datafind, template bank and inspiral jobs for an ifo  
-def analyze_ifo(ifo_data,ifo_name,ifo_to_do,tmplt_job,insp_job,df_job,snr,
-  chisq,pad,prev_df,dag,usertag=None):
+def analyze_ifo(ifo_data,ifo_name,ifo_to_do,tmplt_job,insp_job,df_job,insp_opts,pad,prev_df,dag,usertag=None):
   """
   Analyze the data from a single IFO.  Since the way we treat all this data is
   the same, this function is the same for all interferometers. Returns the last
   LSCdataFind job that was executed and the chunks analyzed.
   
   ifo_data = the master science segs for the IFO
-  ifo_to_do = the science segments we need to analyze
   ifo_name = the name of the IFO
+  ifo_to_do = the science segments we need to analyze
   tmplt_job = the template bank job we should use 
   insp_job = the condor job that we should use to analyze data
   df_job = the condor job to find the data
-  snr = the signal-to-noise threshold for this IFO
-  chisq = the chi squared threshold for this IFO
+  insp_opts = the instrument specific arguments to be added to inspiral
   pad = data start/end padding
   prev_df = the previous LSCdataFind job that was executed
   dag = the DAG to attach the nodes to
   usertag = the usertag to add to the job names
   """
+
+  # add the non veto options
+  insp_job.add_ini_opts(cp,'no-veto-inspiral')
+  
+  # add the ifo specific options
+  insp_job.add_ini_opts(cp,insp_opts)
+  
   chunks_analyzed = []
   # loop over the master science segments
   for seg in ifo_data:
-
-    # make sure that we do not do a datafind more than once per science segment
-    done_df_for_seg = None
 
     # loop over the master analysis chunks in the science segment
     for chunk in seg:
@@ -95,15 +97,15 @@ def analyze_ifo(ifo_data,ifo_name,ifo_to_do,tmplt_job,insp_job,df_job,snr,
           done_this_chunk = 1
 
           # make sure we have done one and only one datafind for the segment
-          if not done_df_for_seg:
+          if not seg.get_df_node():
             df = pipeline.LSCDataFindNode(df_job)
             df.set_observatory(ifo_name[0])
             df.set_start(seg.start() - pad)
             df.set_end(seg.end() + pad)
+            seg.set_df_node(df)
             if prev_df: df.add_parent(prev_df)
             if do_datafind: dag.add_node(df)
             prev_df = df
-            done_df_for_seg = 1
 
           # make a template bank job for the master chunk
           bank = inspiral.TmpltBankNode(tmplt_job)
@@ -119,10 +121,8 @@ def analyze_ifo(ifo_data,ifo_name,ifo_to_do,tmplt_job,insp_job,df_job,snr,
           insp = inspiral.InspiralNode(insp_job)
           insp.set_start(chunk.start())
           insp.set_end(chunk.end())
-          insp.add_var_opt('snr-threshold',snr)
-          insp.add_var_opt('chisq-threshold',chisq)
-          insp.add_var_opt('trig-start-time',chunk.trig_start())
-          insp.add_var_opt('trig-end-time',chunk.trig_end())
+          insp.set_trig_start(chunk.trig_start())
+          insp.set_trig_end(chunk.trig_end())
           insp.set_ifo(ifo_name)
           insp.set_cache(df.get_output())
           insp.calibration()
@@ -135,6 +135,84 @@ def analyze_ifo(ifo_data,ifo_name,ifo_to_do,tmplt_job,insp_job,df_job,snr,
           chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
 
   return tuple([prev_df,chunks_analyzed])
+
+##############################################################################
+# function to set up trigbank and inspiral jobs for an ifo  
+def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,insp_veto_job,insp_opts,dag,usertag=None):
+  """
+  Perform the trigbank and second inspiral steps for the single ifo data.  
+  Since the way we treat all this data is the same, this function is the same 
+  for all interferometers. Returns the chunks analyzed.
+
+  ifo_data = the master science segs for the IFO
+  ifo_name = the name of the ifo
+  coinc_data = the coincident science segments and thinca jobs
+  coinc_ifos  = the list of ifos in the coincident times
+  trig_job = the triggered bank job we should use 
+  insp_veto_job = the condor job that we should use to analyze data
+  insp_opts = the instrument specific arguments to be added to inspiral
+  dag = the DAG to attach the nodes to
+  usertag = the usertag to add to the job names
+  """
+
+  # add the veto option
+  insp_veto_job.add_ini_opts(cp,'veto-inspiral')
+  # add ifo specific options
+  insp_veto_job.add_ini_opts(cp,insp_opts)
+  trig_chunks_analyzed = []
+  
+  # loop over the master science segments
+  for seg in ifo_data:
+
+    # loop over the master analysis chunks in the science segment
+    for chunk in seg:
+      done_this_chunk = 0
+
+      # now loop over all the data that we need to filter
+      for coinc_done in coinc_data:
+
+        # if the current chunk is in one of the segments we need to filter
+        if (inspiral.overlap_test(chunk,coinc_done.get_chunk()) 
+          and not done_this_chunk):
+
+          # make sure we only filter the master chunk once
+          done_this_chunk = 1
+
+          # make a trigbank job for the master chunk
+          trigbank = inspiral.TrigToTmpltNode(trig_job)
+          trigbank.set_ifo_tag(coinc_ifos)
+          trigbank.set_output_ifo(ifo_name)
+          trigbank.set_input_ifo(ifo_name)
+          trigbank.set_start(chunk.start())
+          trigbank.set_end(chunk.end())
+
+          for coinc_done in coinc_data:
+            if inspiral.overlap_test(chunk,coinc_done.get_chunk()):
+              trigbank.add_var_arg(coinc_done.get_dag_node().get_output())
+              if do_coincidence: trigbank.add_parent(coinc_done.get_dag_node())
+
+          if do_trigbank: dag.add_node(trigbank)
+
+          # make an inspiral job for the master chunk
+          insp = inspiral.InspiralNode(insp_veto_job)
+          insp.set_start(chunk.start())
+          insp.set_end(chunk.end())
+          insp.set_trig_start(chunk.trig_start())
+          insp.set_trig_end(chunk.trig_end())
+          insp.set_ifo(ifo_name)
+          insp.set_ifo_tag(coinc_ifos)
+          insp.set_cache(seg.get_df_node().get_output())
+          insp.calibration()
+          insp.set_bank(trigbank.get_trig_out())
+          if do_datafind: insp.add_parent(seg.get_df_node())
+          if do_trigbank: insp.add_parent(trigbank)
+          if do_insp_veto: dag.add_node(insp)
+
+          # store this chunk in the list of filtered data
+          trig_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
+
+  return trig_chunks_analyzed
+
 
 ##############################################################################
 # function to do inca on single IFO data  
@@ -173,7 +251,7 @@ def single_coinc(ifo_analyzed,ifo_name,ifo_single,single_coinc_job,dag,
 ##############################################################################
 # function to do thinca on double IFO data  
 def double_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name, 
-  ifo_double,double_coinc_job,dag,usertag=None):
+  ifo_double,double_coinc_job,dag,do_coinc,do_insp,usertag=None,ifotag=None):
   """
   Run thinca on the double coincident times from each of the sets of IFOs. 
   Since the way we treat all this data is the same, this function is the same 
@@ -186,6 +264,10 @@ def double_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
   ifo_double = the double coincident IFO science segments 
   double_coinc_job = the condor job to do two IFO thinca
   dag = the DAG to attach the nodes to
+  do_coinc = whether we should add these jobs to the dag
+  do_insp  = whether previous inspiral jobs are in the dag
+  ifotag = the ifotag to add to the output file name
+  usertag = the usertag to add to the output file name
   """
 
   double_coinc_analyzed = []
@@ -193,6 +275,8 @@ def double_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
     thinca = inspiral.ThincaNode(double_coinc_job)
     thinca.set_start(seg.start())
     thinca.set_end(seg.end())
+    if ifotag:
+      thinca.set_ifo_tag(ifotag)
     for ifo in [ifo_a_name, ifo_b_name]:
       thinca.set_ifo(ifo)
 
@@ -200,13 +284,13 @@ def double_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
     for done in ifo_a_analyzed:
       if inspiral.overlap_test(done.get_chunk(),seg):
         thinca.add_var_arg(done.get_dag_node().get_output())
-        if do_inspiral: thinca.add_parent(done.get_dag_node())
+        if do_insp: thinca.add_parent(done.get_dag_node())
     # add all IFO B master chunks that overlap with segment to input
     for done in ifo_b_analyzed:
       if inspiral.overlap_test(done.get_chunk(),seg):
         thinca.add_var_arg(done.get_dag_node().get_output())
-        if do_inspiral: thinca.add_parent(done.get_dag_node())
-    if do_coincidence: dag.add_node(thinca)
+        if do_insp: thinca.add_parent(done.get_dag_node())
+    if do_coinc: dag.add_node(thinca)
     double_coinc_analyzed.append(AnalyzedIFOData(seg,thinca))
 
   return double_coinc_analyzed
@@ -214,8 +298,8 @@ def double_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
 ##############################################################################
 # function to do inca on triple IFO data 
 def triple_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
-  ifo_c_analyzed,ifo_c_name,ifo_triple,triple_coinc_job,dag,
-  usertag=None):
+  ifo_c_analyzed,ifo_c_name,ifo_triple,triple_coinc_job,dag,do_coinc,
+  do_insp,usertag=None,ifotag=None):
   """
   Run thinca on the double coincident times from each of the sets of IFOs. 
   Since the way we treat all this data is the same, this function is the same 
@@ -230,6 +314,10 @@ def triple_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
   ifo_triple = the triple coincident IFO science segments 
   triple_coinc_job = the condor job to do three IFO thinca
   dag = the DAG to attach the nodes to
+  do_coinc = whether we should add these jobs to dag
+  do_insp  = whether the previous inspiral jobs are in the dag
+  usertag = the usertag to add to the output file name
+  ifotag = the ifotag to add to the output file name
   """
 
   triple_coinc_analyzed = []
@@ -237,6 +325,8 @@ def triple_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
     thinca = inspiral.ThincaNode(triple_coinc_job)
     thinca.set_start(seg.start())
     thinca.set_end(seg.end())
+    if ifotag:
+      thinca.set_ifo_tag(ifotag)
     for ifo in [ifo_a_name, ifo_b_name, ifo_c_name]:
       thinca.set_ifo(ifo)
 
@@ -244,27 +334,26 @@ def triple_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
     for done in ifo_a_analyzed:
       if inspiral.overlap_test(done.get_chunk(),seg):
         thinca.add_var_arg(done.get_dag_node().get_output())
-        if do_inspiral: thinca.add_parent(done.get_dag_node())
+        if do_insp: thinca.add_parent(done.get_dag_node())
     # add all IFO B master chunks that overlap with segment to input
     for done in ifo_b_analyzed:
       if inspiral.overlap_test(done.get_chunk(),seg):
         thinca.add_var_arg(done.get_dag_node().get_output())
-        if do_inspiral: thinca.add_parent(done.get_dag_node())
+        if do_insp: thinca.add_parent(done.get_dag_node())
     # add all IFO C master chunks that overlap with segment to input
     for done in ifo_c_analyzed:
       if inspiral.overlap_test(done.get_chunk(),seg):
         thinca.add_var_arg(done.get_dag_node().get_output())
-        if do_inspiral: thinca.add_parent(done.get_dag_node())
+        if do_insp: thinca.add_parent(done.get_dag_node())
     
-    if do_coincidence: dag.add_node(thinca)
+    if do_coinc: dag.add_node(thinca)
     triple_coinc_analyzed.append(AnalyzedIFOData(seg,thinca))
 
   return triple_coinc_analyzed
 
 ##############################################################################
 # function to do sweep up data using sire  
-def sire_segs(segments,output,file_name,sire_job,sire_clust_job,dag,
-  usertag=None):
+def sire_segs(segments,output,file_name,sire_job,dag,usertag=None,cluster=None,ifo_cut=None):
   """
   Do a sire to sweep up all the triggers of a specific kind
   
@@ -272,13 +361,17 @@ def sire_segs(segments,output,file_name,sire_job,sire_clust_job,dag,
   output    = which output of inca/inspiral to use
   file_name = output file name
   sire_job  = sire job to use for the analysis
-  sire_clust_job = sire job with the clustering arguments already added
   dag       = name of the dag
+  usertag   = the usertag to add to the output file name
+  cluster   = whether we should add the cluster arguments
+  ifo_cut   = keep triggers from only this ifo (if None, keep all)
   """
   
   sire = inspiral.SireNode(sire_job)
-  sire_clust = inspiral.SireNode(sire_clust_job) 
-  
+
+  if ifo_cut:
+    sire.add_var_opt('ifo-cut',ifo_cut)
+
   # set the sire file name
   fname = file_name
   if usertag:
@@ -289,7 +382,6 @@ def sire_segs(segments,output,file_name,sire_job,sire_clust_job,dag,
   f = open(fname, 'w')
   for seg in segments:
     sire.add_parent(seg.get_dag_node())
-    sire_clust.add_parent(seg.get_dag_node())
     if output == 'output':
       f.write('%s\n' % seg.get_dag_node().get_output())
     if output == 'output_a':
@@ -300,19 +392,15 @@ def sire_segs(segments,output,file_name,sire_job,sire_clust_job,dag,
  
   # add the input file name to sire
   sire.add_var_opt('input',fname)
-  sire_clust.add_var_opt('input',fname)
   
   # set the output files names for sire
   if inj_coinc:
     sire.set_inj_outputs(file_name,inj_coinc,usertag)
-    sire_clust.set_inj_outputs(file_name,inj_coinc,usertag,cluster)
     
   else:
     sire.set_outputs(file_name,usertag)
-    sire_clust.set_outputs(file_name,usertag,cluster_time)
 
   dag.add_node(sire) 
-  dag.add_node(sire_clust) 
 
 ##############################################################################
 # help message
@@ -339,7 +427,10 @@ Usage: lalapps_inspiral_hipe [options]
   -d, --datafind          run LSCdataFind to create frame cache files
   -t, --template-bank     run lalapps_tmpltbank to generate template banks
   -i, --inspiral          run lalapps_inspiral to generate triggers
-  -c, --coincidence       run lalapps_inca to test for coincidence
+  -c, --coincidence       run lalapps_thinca to test for coincidence
+  -B, --trigbank          run lalapps_trigbank for banks of coinc triggers
+  -V, --inspiral-veto     run lalapps_inspiral with vetos
+  -C, --second-coinc      run lalapps_thinca on the inspiral veto triggers
   -s, --sire              do sires to sweep up triggers
   
   -P, --priority PRIO     run jobs with condor priority PRIO
@@ -352,7 +443,7 @@ Usage: lalapps_inspiral_hipe [options]
 
 ##############################################################################
 # parse the command line options to figure out what we should do
-shortop = "hvu:ablSDTAdticsP:f:l:o"
+shortop = "hvu:ablSDTAdticBVCsP:f:l:o"
 longop = [
   "help",
   "version",
@@ -368,6 +459,9 @@ longop = [
   "template-bank",
   "inspiral",
   "coincidence",
+  "trigbank",
+  "inspiral-veto",
+  "second-coinc",
   "sire",
   "priority=",
   "config-file=",
@@ -393,6 +487,9 @@ do_datafind = None
 do_tmpltbank = None
 do_inspiral = None
 do_coincidence = None
+do_trigbank = None
+do_insp_veto = None
+do_second_coinc = None
 do_sire = None
 
 usertag = None
@@ -437,6 +534,12 @@ for o, a in opts:
     do_inspiral = 1
   elif o in ("-c", "--coincidence"):
     do_coincidence = 1
+  elif o in ("-B", "--trigbank"):
+    do_trigbank = 1
+  elif o in ("-V", "--inspiral-veto"):
+    do_insp_veto = 1
+  elif o in ("-C", "--second-coinc"):
+    do_second_coinc = 1
   elif o in ("-s", "--sire"):
     do_sire = 1
   elif o in ("-u", "--user-tag"):
@@ -510,12 +613,22 @@ else:
 # create the Condor jobs that will be used in the DAG
 df_job = pipeline.LSCDataFindJob('cache','logs',cp)
 tmplt_job = inspiral.TmpltBankJob(cp)
-insp_job = inspiral.InspiralJob(cp)
+trig_job = inspiral.TrigToTmpltJob(cp)
+insp_h1_job = inspiral.InspiralJob(cp)
+insp_h2_job = inspiral.InspiralJob(cp)
+insp_l1_job = inspiral.InspiralJob(cp)
+insp_h1v_job = inspiral.InspiralJob(cp)
+insp_h2v_job = inspiral.InspiralJob(cp)
+insp_l1v_job = inspiral.InspiralJob(cp)
 single_inca_job = inspiral.IncaJob(cp)
 thinca_h1h2_job = inspiral.ThincaJob(cp)
 thinca_h1l1_job = inspiral.ThincaJob(cp)
 thinca_h2l1_job = inspiral.ThincaJob(cp)
 thinca_h1h2l1_job = inspiral.ThincaJob(cp)
+thinca2_h1h2_job = inspiral.ThincaJob(cp)
+thinca2_h1l1_job = inspiral.ThincaJob(cp)
+thinca2_h2l1_job = inspiral.ThincaJob(cp)
+thinca2_h1h2l1_job = inspiral.ThincaJob(cp)
 sire_job = inspiral.SireJob(cp)
 sire_clust_job = inspiral.SireJob(cp)
 
@@ -527,12 +640,23 @@ else:
   subsuffix = '.sub'
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 tmplt_job.set_sub_file( basename + '.tmpltbank' + subsuffix )
-insp_job.set_sub_file( basename + '.inspiral' + subsuffix )
+trig_job.set_sub_file( basename + '.trigbank' + subsuffix )
+insp_h1_job.set_sub_file( basename + '.inspiral_h1' + subsuffix )
+insp_h2_job.set_sub_file( basename + '.inspiral_h2' + subsuffix )
+insp_l1_job.set_sub_file( basename + '.inspiral_l1' + subsuffix )
+insp_h1v_job.set_sub_file( basename + '.inspiral_h1_veto' + subsuffix )
+insp_h2v_job.set_sub_file( basename + '.inspiral_h2_veto' + subsuffix )
+insp_l1v_job.set_sub_file( basename + '.inspiral_l1_veto' + subsuffix )
 single_inca_job.set_sub_file( basename + '.s_inca' + subsuffix )
 thinca_h1h2_job.set_sub_file( basename + '.thinca_h1h2' + subsuffix )
 thinca_h1l1_job.set_sub_file( basename + '.thinca_h1l1' + subsuffix )
 thinca_h2l1_job.set_sub_file( basename + '.thinca_h2l1' + subsuffix )
 thinca_h1h2l1_job.set_sub_file( basename + '.thinca_h1h2l1' + subsuffix )
+thinca2_h1h2_job.set_sub_file( basename + '.thinca2_h1h2' + subsuffix )
+thinca2_h1l1_job.set_sub_file( basename + '.thinca2_h1l1' + subsuffix )
+thinca2_h2l1_job.set_sub_file( basename + '.thinca2_h2l1' + subsuffix )
+thinca2_h1h2l1_job.set_sub_file( basename + '.thinca2_h1h2l1' + subsuffix )
+
 sire_job.set_sub_file( basename + '.sire' + subsuffix )
 sire_clust_job.set_sub_file( basename + '.sire_clust' + subsuffix )
 
@@ -540,13 +664,22 @@ sire_clust_job.set_sub_file( basename + '.sire_clust' + subsuffix )
 # set the usertag in the jobs
 if usertag:
   tmplt_job.add_opt('user-tag',usertag)
-  insp_job.add_opt('user-tag',usertag)
+  trig_job.add_opt('user-tag',usertag)
+  insp_h1_job.add_opt('user-tag',usertag)
+  insp_h2_job.add_opt('user-tag',usertag)
+  insp_l1_job.add_opt('user-tag',usertag)
+  insp_h1v_job.add_opt('user-tag',usertag)
+  insp_h2v_job.add_opt('user-tag',usertag)
+  insp_l1v_job.add_opt('user-tag',usertag)
   single_inca_job.add_opt('user-tag',usertag)
   thinca_h1h2_job.add_opt('user-tag',usertag)
   thinca_h1l1_job.add_opt('user-tag',usertag)
   thinca_h2l1_job.add_opt('user-tag',usertag)
   thinca_h1h2l1_job.add_opt('user-tag',usertag)
-
+  thinca2_h1h2_job.add_opt('user-tag',usertag)
+  thinca2_h1l1_job.add_opt('user-tag',usertag)
+  thinca2_h2l1_job.add_opt('user-tag',usertag)
+  thinca2_h1h2l1_job.add_opt('user-tag',usertag)
   sire_job.add_opt('user-tag',usertag)
   sire_clust_job.add_opt('user-tag',usertag)
 
@@ -555,12 +688,22 @@ if usertag:
 if condor_prio:
   df_job.add_condor_cmd('priority',condor_prio)
   tmplt_job.add_condor_cmd('priority',condor_prio)
-  insp_job.add_condor_cmd('priority',condor_prio)
+  trig_job.add_condor_cmd('priority',condor_prio)
+  insp_h1_job.add_condor_cmd('priority',condor_prio)
+  insp_h2_job.add_condor_cmd('priority',condor_prio)
+  insp_l1_job.add_condor_cmd('priority',condor_prio)
+  insp_h1v_job.add_condor_cmd('priority',condor_prio)
+  insp_h2v_job.add_condor_cmd('priority',condor_prio)
+  insp_l1v_job.add_condor_cmd('priority',condor_prio)
   single_inca_job.add_condor_cmd('priority',condor_prio)
   thinca_h1h2_job.add_condor_cmd('priority',condor_prio)
   thinca_h1l1_job.add_condor_cmd('priority',condor_prio)
   thinca_h2l1job.add_condor_cmd('priority',condor_prio)
   thinca_h1h2l1_job.add_condor_cmd('priority',condor_prio)
+  thinca2_h1h2_job.add_condor_cmd('priority',condor_prio)
+  thinca2_h1l1_job.add_condor_cmd('priority',condor_prio)
+  thinca2_h2l1job.add_condor_cmd('priority',condor_prio)
+  thinca2_h1h2l1_job.add_condor_cmd('priority',condor_prio)
   sire_job.add_condor_cmd('priority',condor_prio)
   sire_clust_job.add_condor_cmd('priority',condor_prio)
 
@@ -573,7 +716,12 @@ except:
   inj_file = None
   
 if inj_file:
-  insp_job.add_opt('injection-file',inj_file)
+  insp_h1_job.add_opt('injection-file',inj_file)
+  insp_h2_job.add_opt('injection-file',inj_file)
+  insp_l1_job.add_opt('injection-file',inj_file)
+  insp_h1v_job.add_opt('injection-file',inj_file)
+  insp_h2v_job.add_opt('injection-file',inj_file)
+  insp_l1v_job.add_opt('injection-file',inj_file)
   sire_job.add_opt('injection-file',inj_file)
   sire_clust_job.add_opt('injection-file',inj_file)
 
@@ -592,6 +740,11 @@ if play_data_mask == 'playground_only':
   thinca_h1l1_job.add_opt('data-type','playground_only')
   thinca_h2l1_job.add_opt('data-type','playground_only')
   thinca_h1h2l1_job.add_opt('data-type','playground_only')
+  thinca2_h1h2_job.add_opt('data-type','playground_only')
+  thinca2_h1l1_job.add_opt('data-type','playground_only')
+  thinca2_h2l1_job.add_opt('data-type','playground_only')
+  thinca2_h1h2l1_job.add_opt('data-type','playground_only')
+  trig_job.add_opt('data-type','playground_only')
   sire_job.add_opt('playground-only',' ')
   sire_clust_job.add_opt('playground-only',' ')
 
@@ -602,6 +755,11 @@ elif play_data_mask == 'exclude_playground':
   thinca_h1l1_job.add_opt('data-type','exclude_play')
   thinca_h2l1_job.add_opt('data-type','exclude_play')
   thinca_h1h2l1_job.add_opt('data-type','exclude_play')
+  thinca2_h1h2_job.add_opt('data-type','exclude_play')
+  thinca2_h1l1_job.add_opt('data-type','exclude_play')
+  thinca2_h2l1_job.add_opt('data-type','exclude_play')
+  thinca2_h1h2l1_job.add_opt('data-type','exclude_play')
+  trig_job.add_opt('data-type','exclude_play')
   sire_job.add_opt('exclude-playground',' ')
   sire_clust_job.add_opt('exclude-playground',' ')
 
@@ -612,6 +770,11 @@ elif play_data_mask == 'all_data':
   thinca_h1l1_job.add_opt('data-type','all_data')
   thinca_h2l1_job.add_opt('data-type','all_data')
   thinca_h1h2l1_job.add_opt('data-type','all_data')
+  thinca2_h1h2_job.add_opt('data-type','all_data')
+  thinca2_h1l1_job.add_opt('data-type','all_data')
+  thinca2_h2l1_job.add_opt('data-type','all_data')
+  thinca2_h1h2l1_job.add_opt('data-type','all_data')
+  trig_job.add_opt('data-type','all_data')
   sire_job.add_opt('all-data',' ')
   sire_clust_job.add_opt('all-data',' ')
 
@@ -620,28 +783,15 @@ else:
   sys.exit(1)
 
 ##############################################################################
-# get the inspiral thresholds from the values in the ini file
-l1_snr = cp.get('inspiral-thresholds','l1-snr-threshold')
-h1_snr = cp.get('inspiral-thresholds','h1-snr-threshold')
-h2_snr = cp.get('inspiral-thresholds','h2-snr-threshold')
-
-l1_chisq = cp.get('inspiral-thresholds','l1-chisq-threshold')
-h1_chisq = cp.get('inspiral-thresholds','h1-chisq-threshold')
-h2_chisq = cp.get('inspiral-thresholds','h2-chisq-threshold')
-
-##############################################################################
-# add the sire parameters to the sire jobs
-cluster_time = cp.get('sire-parameters','cluster-time')
-sire_clust_job.add_opt('cluster-time',cluster_time)
-sire_clust_job.add_opt('cluster-algorithm',
-  cp.get('sire-parameters','cluster-algorithm'))
-
 if inj_file:
   # add the injection coincidence to the sire jobs
-  inj_coinc = cp.get('sire-parameters','injection-coincidence')
-  sire_job.add_opt('injection-coincidence',inj_coinc)
-  sire_clust_job.add_opt('injection-coincidence',inj_coinc)
+  sire_job.add_ini_opts(cp,'sire-inj')
+  sire_clust_job.add_ini_opts(cp,'sire-inj')
  
+ 
+############################################################################## 
+# add the clustering info to sire clust 
+sire_clust_job.add_ini_opts(cp,'sire-cluster')
 
 ##############################################################################
 # get the pad and chunk lengths from the values in the ini file
@@ -842,7 +992,7 @@ prev_df = None
 print "setting up jobs to filter H1 data...",
 sys.stdout.flush()
 (prev_df,h1_chunks_analyzed) = analyze_ifo(h1_data,'H1',h1_data_to_do,  
-  tmplt_job,insp_job,df_job,h1_snr,h1_chisq,pad,prev_df,dag,usertag=None)
+  tmplt_job,insp_h1_job,df_job,'h1-inspiral',pad,prev_df,dag,usertag=None)
 print "done"
 
 # H2
@@ -851,7 +1001,7 @@ h2_chunks_analyzed = []
 print "setting up jobs to filter H2 data...",
 sys.stdout.flush()
 (prev_df,h2_chunks_analyzed) = analyze_ifo(h2_data,'H2',h2_data_to_do,
-  tmplt_job,insp_job,df_job,h2_snr,h2_chisq,pad,prev_df,dag,usertag=None)
+  tmplt_job,insp_h2_job,df_job,'h2-inspiral',pad,prev_df,dag,usertag=None)
 print "done"
 
 # L1
@@ -860,9 +1010,32 @@ l1_chunks_analyzed = []
 print "setting up jobs to filter L1 data...",
 sys.stdout.flush()
 (prev_df,l1_chunks_analyzed) = analyze_ifo(l1_data,'L1',l1_data_to_do,
-  tmplt_job,insp_job,df_job,l1_snr,l1_chisq,pad,prev_df,dag,usertag=None)
+  tmplt_job,insp_l1_job,df_job,'l1-inspiral',pad,prev_df,dag,usertag=None)
 print "done"
   
+############################################################################## 
+# Step 4S: Run sire on the single ifo triggers
+print "setting up sire jobs ...",
+sys.stdout.flush()
+
+do_clust = 1
+
+if do_sire:
+  # First a clustered sire on the inspiral triggers from each instrument
+  
+  if len(h1_chunks_analyzed):
+    sire_segs(h1_chunks_analyzed,'output','H1-INSPIRAL',sire_clust_job,dag,
+      usertag,do_clust,'H1')
+
+  if len(h2_chunks_analyzed):
+    sire_segs(h2_chunks_analyzed,'output','H2-INSPIRAL',sire_clust_job,dag,
+      usertag,do_clust,'H2')
+
+  if len(l1_chunks_analyzed):
+    sire_segs(l1_chunks_analyzed,'output','L1-INSPIRAL',sire_clust_job,dag,
+      usertag,do_clust,'L1')
+
+print "done"
 
 ##############################################################################
 # Step 5: Run inca in single ifo mode on the single ifo triggers.
@@ -886,32 +1059,104 @@ l1_single_coinc_nodes = single_coinc(l1_chunks_analyzed,'L1',l1_single_data,
   single_inca_job,dag, usertag)
 
 print "done"
-  
+ 
+############################################################################## 
+# Step 5S: Run sire on the single ifo triggers
+print "setting up sire jobs ...",
+sys.stdout.flush()
+
+do_clust = 1
+
+if do_sire:
+  # A clustered sire on each of the single IFO configs:
+  if do_one_ifo:
+    if do_h1 and len(h1_single_data):
+      sire_segs(h1_single_coinc_nodes,'output_a','H1-SIRE_SINGLE_IFO',
+        sire_clust_job,dag,usertag,do_clust,'H1')
+        
+    if do_h2 and len(h2_single_data):
+      sire_segs(h2_single_coinc_nodes,'output_a','H2-SIRE_SINGLE_IFO',
+        sire_clust_job,dag,usertag,do_clust,'H2')
+        
+    if do_l1 and len(l1_single_data):
+      sire_segs(l1_single_coinc_nodes,'output_a','L1-SIRE_SINGLE_IFO',
+        sire_clust_job,dag,usertag,do_clust,'L1')
+ 
+print "done"
+ 
+ 
 ##############################################################################
-# Step 6: Run inca on each of the disjoint sets of double coincidence data
+# Step 6: Run thinca on each of the disjoint sets of double coincidence data
 
 print "setting up thinca jobs on double IFO data...",
 
 # H1-H2
 h1_h2_double_coinc_nodes = []
 h1_h2_double_coinc_nodes = double_coinc(h1_chunks_analyzed,'H1',
-  h2_chunks_analyzed,'H2',h1_h2_double_data,thinca_h1h2_job,dag,usertag)
+  h2_chunks_analyzed,'H2',h1_h2_double_data,thinca_h1h2_job,dag,do_coincidence,
+  do_inspiral,usertag)
   
 # H1-L1
 h1_l1_double_coinc_nodes = []
 h1_l1_double_coinc_nodes = double_coinc(h1_chunks_analyzed,'H1',
-  l1_chunks_analyzed,'L1',h1_l1_double_data,thinca_h1l1_job,dag,usertag)
+  l1_chunks_analyzed,'L1',h1_l1_double_data,thinca_h1l1_job,dag,do_coincidence,
+  do_inspiral,usertag)
 
 # H2-L1
 h2_l1_double_coinc_nodes = []
 h2_l1_double_coinc_nodes = double_coinc(h2_chunks_analyzed,'H2',
-  l1_chunks_analyzed,'L1',h2_l1_double_data,thinca_h2l1_job,dag,usertag)
+  l1_chunks_analyzed,'L1',h2_l1_double_data,thinca_h2l1_job,dag,do_coincidence,
+  do_inspiral,usertag)
 
 print "done"
 
+
 ############################################################################## 
-# Step 7: Run inca on each of the disjoint sets of triple coincidence data
-# since we do not have a triple coincidence tester, we leave this blank
+# Step 6S: Run sire on the double coincident data
+print "setting up sire jobs ...",
+sys.stdout.flush()
+
+do_clust = 1
+
+if do_sire:
+  # a sire of the two ifo coincidences, and clustered sires for each ifo
+  if do_two_ifo: 
+  
+    if do_h1 and do_h2 and len(h1_h2_double_data):
+      sire_segs(h1_h2_double_coinc_nodes,'output','H1H2-SIRE',sire_job,
+        dag,usertag)
+  
+      sire_segs(h1_h2_double_coinc_nodes,'output','H1-SIRE_H1H2',
+        sire_clust_job,dag,usertag,do_clust,'H1')
+      sire_segs(h1_h2_double_coinc_nodes,'output','H2-SIRE_H1H2',
+        sire_clust_job,dag,usertag,do_clust,'H2')
+        
+  
+
+    if do_h1 and do_l1 and len(h1_l1_double_data):
+      sire_segs(h1_l1_double_coinc_nodes,'output','H1L1-SIRE',sire_job,
+        dag,usertag)
+  
+      sire_segs(h1_l1_double_coinc_nodes,'output','H1-SIRE_H1L1',
+        sire_clust_job,dag,usertag,do_clust,'H1')
+      sire_segs(h1_l1_double_coinc_nodes,'output','L1-SIRE_H1L1',
+        sire_clust_job,dag,usertag,do_clust,'L1')
+
+     
+    if do_h2 and do_l1 and len(h2_l1_double_data):
+      sire_segs(h2_l1_double_coinc_nodes,'output','H2L1-SIRE',sire_job,
+        dag,usertag)
+  
+      sire_segs(h1_l1_double_coinc_nodes,'output','H2-SIRE_H2L1',
+        sire_clust_job,dag,usertag,do_clust,'H2')
+      sire_segs(h1_l1_double_coinc_nodes,'output','L1-SIRE_H2L1',
+        sire_clust_job,dag,usertag,do_clust,'L1')
+
+print "done"
+
+
+############################################################################## 
+# Step 7: Run thinca on each of the disjoint sets of triple coincidence data
 
 print "setting up thinca jobs on three IFO data...",
 
@@ -919,50 +1164,234 @@ print "setting up thinca jobs on three IFO data...",
 h1_h2_l1_triple_coinc_nodes = []
 h1_h2_l1_triple_coinc_nodes = triple_coinc(h1_chunks_analyzed,'H1',
   h2_chunks_analyzed,'H2',l1_chunks_analyzed,'L1',h1_h2_l1_triple_data,
-  thinca_h1h2l1_job,dag,usertag)
+  thinca_h1h2l1_job,dag,do_coincidence,do_inspiral,usertag)
 
 print "done"
 
 ############################################################################## 
-# Step 9: Run sire on each of the types of single/double/triple data
+# Step 7S: Run sire on the three ifo data
 print "setting up sire jobs ...",
 sys.stdout.flush()
 
+do_clust = 1
+
 if do_sire:
-  if do_one_ifo:
-    # a clustered and unclustered sire for each of the single IFO configs
-    if do_h1 and len(h1_single_data):
-      sire_segs(h1_single_coinc_nodes,'output_a','H1-SIRE_SINGLE_IFO',sire_job,
-        sire_clust_job,dag,usertag)
-    if do_h2 and len(h2_single_data):
-      sire_segs(h2_single_coinc_nodes,'output_a','H2-SIRE_SINGLE_IFO',sire_job,
-        sire_clust_job,dag,usertag)
-    if do_l1 and len(l1_single_data):
-      sire_segs(l1_single_coinc_nodes,'output_a','L1-SIRE_SINGLE_IFO',sire_job,
-        sire_clust_job,dag,usertag)
-   
-
  
-  if do_two_ifo:  
-    # a clustered and unclustered sire for each of the double IFO configs
-    if do_h1 and do_h2 and len(h1_h2_double_data):
-      sire_segs(h1_h2_double_coinc_nodes,'output','H1H2-SIRE',sire_job,
-        sire_clust_job,dag,usertag)
-      
-    if do_h1 and do_l1 and len(h1_l1_double_data):
-      sire_segs(h1_l1_double_coinc_nodes,'output','H1L1-SIRE',sire_job,
-        sire_clust_job,dag,usertag)
-     
-    if do_h2 and do_l1 and len(h2_l1_double_data):
-      sire_segs(h2_l1_double_coinc_nodes,'output','H2L1-SIRE',sire_job,
-        sire_clust_job,dag,usertag)
-
-  if do_three_ifo:
-  # a clustered and unclustered sire for each of the double IFO configs
+  # a sire of the three ifo coincidences, and clustered sires for each ifo
+ if do_three_ifo:
+ 
     if do_h1 and do_h2 and do_l1 and len(h1_h2_l1_triple_data):
       sire_segs(h1_h2_l1_triple_coinc_nodes,'output','H1H2L1-SIRE',sire_job,
-        sire_clust_job,dag,usertag)
-      
+        dag,usertag)
+        
+      sire_segs(h1_h2_l1_triple_coinc_nodes,'output','H1-SIRE_H1H2L1',
+        sire_clust_job,dag,usertag,do_clust,'H1')
+      sire_segs(h1_h2_l1_triple_coinc_nodes,'output','H2-SIRE_H1H2L1',
+        sire_clust_job,dag,usertag,do_clust,'H2')
+      sire_segs(h1_h2_l1_triple_coinc_nodes,'output','L1-SIRE_H1H2L1',
+        sire_clust_job,dag,usertag,do_clust,'L1')
+
+print "done"
+
+
+##############################################################################
+# Step 8: Run trigbank and inspiral on each instrument in double times
+
+# H1 in H1H2 times
+print "setting up jobs to filter H1 data with coinc trigs from H1 H2...",
+sys.stdout.flush()
+
+h1_analyzed_h1h2 = []
+h1_analyzed_h1h2 = trig_inspiral(h1_data,'H1',h1_h2_double_coinc_nodes,'H1H2',
+  trig_job,insp_h1v_job,'h1-inspiral',dag,usertag=None)
+print "done"
+
+# H2 in H1H2 times
+print "setting up jobs to filter H2 data with coinc trigs from H1 H2...",
+sys.stdout.flush()
+
+h2_analyzed_h1h2 = []
+
+h2_analyzed_h1h2 = trig_inspiral(h2_data,'H2',h1_h2_double_coinc_nodes,'H1H2',
+  trig_job,insp_h2v_job,'h2-inspiral',dag,usertag=None)
+print "done"
+
+
+# H1 in H1L1 times
+print "setting up jobs to filter H1 data with coinc trigs from H1 L1...",
+sys.stdout.flush()
+
+h1_analyzed_h1l1 = []
+h1_analyzed_h1l1 = trig_inspiral(h1_data,'H1',h1_l1_double_coinc_nodes,'H1L1',
+  trig_job,insp_h1v_job,'h1-inspiral',dag,usertag=None)
+print "done"
+
+# L1 in H1L1 times
+print "setting up jobs to filter L1 data with coinc trigs from H1 L1...",
+sys.stdout.flush()
+
+l1_analyzed_h1l1 = []
+
+l1_analyzed_h1l1 = trig_inspiral(l1_data,'L1',h1_l1_double_coinc_nodes,'H1L1',
+  trig_job,insp_l1v_job,'l1-inspiral',dag,usertag=None)
+print "done"
+
+
+# H2 in H2L1 times
+print "setting up jobs to filter H2 data with coinc trigs from H2 L1...",
+sys.stdout.flush()
+
+h2_analyzed_h2l1 = []
+h2_analyzed_h2l1 = trig_inspiral(h2_data,'H2',h2_l1_double_coinc_nodes,'H2L1',
+  trig_job,insp_h2v_job,'h2-inspiral',dag,usertag=None)
+print "done"
+
+# L1 in H2L1 times
+print "setting up jobs to filter L1 data with coinc trigs from H2 L1...",
+sys.stdout.flush()
+
+l1_analyzed_h2l1 = []
+l1_analyzed_h2l1 = trig_inspiral(l1_data,'L1',h2_l1_double_coinc_nodes,'H2L1',
+  trig_job,insp_l1v_job,'l1-inspiral',dag,usertag=None)
+print "done"
+
+# H1 in H1H2L1 times
+print "setting up jobs to filter H1 data with coinc trigs from H1 H2 L1...",
+sys.stdout.flush()
+
+h1_analyzed_h1h2l1 = []
+h1_analyzed_h1h2l1 = trig_inspiral(h1_data,'H1',h1_h2_l1_triple_coinc_nodes,
+  'H1H2L1',trig_job,insp_h1v_job,'h1-inspiral',dag,usertag=None)
+print "done"
+
+# H2 in H1H2 times
+print "setting up jobs to filter H2 data with coinc trigs from H1 H2 L1...",
+sys.stdout.flush()
+
+h2_analyzed_h1h2l1 = []
+
+h2_analyzed_h1h2l1 = trig_inspiral(h2_data,'H2',h1_h2_l1_triple_coinc_nodes,
+  'H1H2L1',trig_job,insp_h2v_job,'h2-inspiral',dag,usertag=None)
+print "done"
+
+# H1 in H1H2L1 times
+print "setting up jobs to filter H1 data with coinc trigs from H1 H2 L1...",
+sys.stdout.flush()
+
+l1_analyzed_h1h2l1 = []
+l1_analyzed_h1h2l1 = trig_inspiral(l1_data,'L1',h1_h2_l1_triple_coinc_nodes,
+  'H1H2L1',trig_job,insp_l1v_job,'l1-inspiral',dag,usertag=None)
+print "done"
+
+
+
+##############################################################################
+# Step 9: Run thinca on each of the disjoint sets of double coincidence data
+
+print "setting up thinca jobs on double IFO data...",
+
+# H1-H2
+h1_h2_double_coinc = []
+h1_h2_double_coinc = double_coinc(h1_analyzed_h1h2,'H1',h2_analyzed_h1h2,'H2',
+  h1_h2_double_data,thinca2_h1h2_job,dag,do_second_coinc,do_insp_veto,usertag,
+  'H1H2')
+  
+# H1-L1
+h1_l1_double_coinc = []
+h1_l1_double_coinc = double_coinc(h1_analyzed_h1l1,'H1',l1_analyzed_h1l1,'L1',
+  h1_l1_double_data,thinca2_h1l1_job,dag,do_second_coinc,do_insp_veto,usertag,
+  'H1L1')
+
+# H2-L1
+h2_l1_double_coinc = []
+h2_l1_double_coinc = double_coinc(h2_analyzed_h2l1,'H2',l1_analyzed_h2l1,'L1',
+  h2_l1_double_data,thinca2_h2l1_job,dag,do_second_coinc,do_insp_veto,usertag,
+  'H2L1')
+
+print "done"
+
+
+############################################################################## 
+# Step 9S: Run sire on the double coincident data surviving the vetoes
+print "setting up sire jobs ...",
+sys.stdout.flush()
+
+do_clust = 1
+
+if do_sire:
+  # a sire of the two ifo coincidences, and clustered sires for each ifo
+  if do_two_ifo: 
+  
+    if do_h1 and do_h2 and len(h1_h2_double_data):
+      sire_segs(h1_h2_double_coinc,'output','H1H2-SIRE_VETO',sire_job,
+        dag,usertag)
+  
+      sire_segs(h1_h2_double_coinc,'output','H1-SIRE_VETO_H1H2',
+        sire_clust_job,dag,usertag,do_clust,'H1')
+      sire_segs(h1_h2_double_coinc,'output','H2-SIRE_VETO_H1H2',
+        sire_clust_job,dag,usertag,do_clust,'H2')
+        
+  
+
+    if do_h1 and do_l1 and len(h1_l1_double_data):
+      sire_segs(h1_l1_double_coinc,'output','H1L1-SIRE_VETO',sire_job,
+        dag,usertag)
+  
+      sire_segs(h1_l1_double_coinc,'output','H1-SIRE_VETO_H1L1',
+        sire_clust_job,dag,usertag,do_clust,'H1')
+      sire_segs(h1_l1_double_coinc_nodes,'output','L1-SIRE_VETO_H1L1',
+        sire_clust_job,dag,usertag,do_clust,'L1')
+
+     
+    if do_h2 and do_l1 and len(h2_l1_double_data):
+      sire_segs(h2_l1_double_coinc,'output','H2L1-SIRE_VETO',sire_job,
+        dag,usertag)
+  
+      sire_segs(h1_l1_double_coinc_nodes,'output','H2-SIRE_VETO_H2L1',
+        sire_clust_job,dag,usertag,do_clust,'H2')
+      sire_segs(h1_l1_double_coinc_nodes,'output','L1-SIRE_VETO_H2L1',
+        sire_clust_job,dag,usertag,do_clust,'L1')
+
+print "done"
+
+
+
+############################################################################## 
+# Step 10: Run thinca on each of the disjoint sets of triple coincidence data
+
+print "setting up thinca jobs on three IFO data...",
+
+# H1-H2-L1
+h1_h2_l1_triple_coinc = []
+h1_h2_l1_triple_coinc = triple_coinc(h1_analyzed_h1h2l1,'H1',
+  h2_analyzed_h1h2l1,'H2',l1_analyzed_h1h2l1,'L1',h1_h2_l1_triple_data,
+  thinca2_h1h2l1_job,dag,do_second_coinc,do_insp_veto,usertag,'H1H2L1')
+
+print "done"
+
+
+############################################################################## 
+# Step 10S: Run sire on the triple coincident triggers surviving vetoes
+print "setting up sire jobs ...",
+sys.stdout.flush()
+
+do_clust = 1
+
+if do_sire:
+ 
+  # a sire of the three ifo coincidences, and clustered sires for each ifo
+ if do_three_ifo:
+ 
+    if do_h1 and do_h2 and do_l1 and len(h1_h2_l1_triple_data):
+      sire_segs(h1_h2_l1_triple_coinc,'output','H1H2L1-SIRE_VETO',sire_job,
+        dag,usertag)
+        
+      sire_segs(h1_h2_l1_triple_coinc,'output','H1-SIRE_VETO_H1H2L1',
+        sire_clust_job,dag,usertag,do_clust,'H1')
+      sire_segs(h1_h2_l1_triple_coinc,'output','H2-SIRE_VETO_H1H2L1',
+        sire_clust_job,dag,usertag,do_clust,'H2')
+      sire_segs(h1_h2_l1_triple_coinc,'output','L1-SIRE_VETO_H1H2L1',
+        sire_clust_job,dag,usertag,do_clust,'L1')
 
 print "done"
   
