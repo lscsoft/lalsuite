@@ -48,30 +48,6 @@ class StochasticJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_sub_file('stochastic.sub')
 
 
-class StoppJob(pipeline.CondorDAGJob, pipeline.AnalysisNode):
-  """
-  A lalapps_stopp job used by the stochastic pipeline. The static
-  options are read from the section [stopp] in the ini file. The stdout
-  and stderr from the job are directed to the logs directory. The path
-  to the executable and the universe is determined from the ini file.
-  """
-  def __init__(self,cp):
-    """
-    cp = ConfigParser object from which options are read.
-    """
-    self.__executable = cp.get('condor','stopp')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp)
-
-    for sec in ['stopp']:
-      self.add_ini_opts(cp,sec)
-
-    self.set_stdout_file('logs/stopp-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/stopp-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
-    self.set_sub_file('stopp.sub')
-
-
 class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
   """
   An StochaticNode runs an instance of the stochastic code in a Condor DAG.
@@ -190,6 +166,27 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     out = out + '-' + str(self.get_start()) + '-' + str(self.get_stop())
     out = out + '.xml'
     return out
+
+
+class StoppJob(pipeline.CondorDAGJob, pipeline.AnalysisNode):
+  """
+  A lalapps_stopp job used by the stochastic pipeline. The static
+  options are read from the section [stopp] in the ini file. The stdout
+  and stderr from the job are directed to the logs directory. The path
+  to the executable and the universe is determined from the ini file.
+  """
+  def __init__(self,cp):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','stopp')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp)
+
+    self.set_stdout_file('logs/stopp-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/stopp-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('stopp.sub')
 
 
 class StoppNode(pipeline.CondorDAGJob, pipeline.AnalysisJob):
