@@ -510,6 +510,7 @@ LALCoincidenceWavelet(LALStatus *status,
   REAL4 aone, atwo, energy;
   BOOLEAN CROSS = input->coincidenceLevel==CROSS_CO || input->coincidenceLevel==STRICT_CROSS_CO;
   BOOLEAN STRICT= input->coincidenceLevel==STRICT_CROSS_CO || input->coincidenceLevel==STRICT_BOX_CO;
+  int pixels;
 
   INITSTATUS( status, "LALCoincidenceWavelet", LALWAVELETC );
   ATTATCHSTATUSPTR (status);
@@ -624,7 +625,8 @@ LALCoincidenceWavelet(LALStatus *status,
 	      ewt = i+tw>n ? n : i+tw;
 	      ewf = k+fw>m ? m : k+fw;
 	      
-	      energy = 0.;	
+	      energy = 0.;
+	      pixels=0;
 	      if(one->data->data[i] != 0.) 
 		{
 		  for(j=swt; j<=ewt; j++) 
@@ -632,11 +634,18 @@ LALCoincidenceWavelet(LALStatus *status,
 		      {
 			if(CROSS && !(j==i || l==k)) continue;
 			energy += fabs(two2D[l][j]);
+			pixels++;
 		      }
+		  /*
+		    energy=energy*sqrt(3)+1.69*pixels;
+		    if(energy < input->minAmp4ClusterExtension*
+		    input->minAmp4ClusterExtension) one->data->data[i] = 0.;
+		  */
 		  if(energy < input->minAmp4ClusterExtension) one->data->data[i] = 0.;
 		}
 	
 	      energy = 0.;	
+	      pixels = 0;
 	      if(two->data->data[i] != 0.) 
 		{
 		  for(j=swt; j<=ewt; j++) 
@@ -644,8 +653,14 @@ LALCoincidenceWavelet(LALStatus *status,
 		      { 
 			if(CROSS && !(j==i || l==k)) continue;
 			energy += fabs(one2D[l][j]);
+			pixels++;
 		      }
-		  if(energy < input->minAmp4ClusterExtension) two->data->data[i] = 0.;
+		  /*
+		    energy=energy*sqrt(3)+1.69*pixels;
+		    if(energy < input->minAmp4ClusterExtension*
+		    input->minAmp4ClusterExtension) two->data->data[i] = 0.;
+		  */
+                  if(energy < input->minAmp4ClusterExtension) two->data->data[i] = 0.;
 		}
 
 	    }
