@@ -535,6 +535,7 @@ int parse_options( int argc, char **argv )
     { "filter-segsz",            required_argument, 0, 'Z' },
     { "filter-speclen",          required_argument, 0, 'Z' },
     { "filter-flow",             required_argument, 0, 'Z' },
+    { "filter-fhighpass",        required_argument, 0, 'Z' },
     { "filter-fmin",             required_argument, 0, 'Z' },
     { "filter-fmax",             required_argument, 0, 'Z' },
     { "filter-qmin",             required_argument, 0, 'Z' },
@@ -778,8 +779,10 @@ REAL4TimeSeries *get_data( UINT4 segsz, const char *ifo )
   }
   else /* get frame files from specified path and pattern */
   {
+    int mode = LAL_FR_VERBOSE_MODE; /* fails if bad time request / data gaps */
     vrbmsg( "get data from frame files %s/%s", frpath, frptrn );
     LAL_CALL( LALFrOpen( &status, &stream, frpath, frptrn ), &status );
+    LAL_CALL( LALFrSetMode( &status, mode, stream ), &status );
   }
   if ( tstart.gpsSeconds || tstart.gpsNanoSeconds )
   {
@@ -1136,6 +1139,7 @@ const char *usgfmt =
 "  --filter-segsz npts\n\t\tset size of segments to analyze to npts\n\n"
 "  --filter-speclen len\n\t\tset size of inverse spectrum truncation to len [0]\n\n"
 "  --filter-flow flow\n\t\tset low frequency cutoff to flow (Hz)\n\n"
+"  --filter-fhighpass fhighpass\n\t\tset highpass frequency to fhighpass (Hz)\n\n"
 "  --filter-fmin fmin\n\t\tset minimum frequency for bank to fmin (Hz)\n\n"
 "  --filter-fmax fmax\n\t\tset maximum frequency for bank to fmax (Hz)\n\n"
 "  --filter-qmin qmin\n\t\tset minimum quality for bank to qmin\n\n"

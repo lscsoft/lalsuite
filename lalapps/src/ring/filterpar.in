@@ -2,6 +2,7 @@
 -segsz          8192    # segment size (points)
 -speclen        1024    # truncation length of inverse spectrum (points)
 -flow           40      # low frequency cutoff (Hz)
+-fhighpass      40      # highpass frequency (Hz)
 -fmin           100     # minimum frequency for bank (Hz)
 -fmax           200     # maximum frequency for bank (Hz)
 -qmin           2       # minimum quality factor for bank
