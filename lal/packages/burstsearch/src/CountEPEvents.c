@@ -81,7 +81,7 @@ LALTFTileToBurstEvent(
 	event->duration = (tile->tend - tile->tstart + 1) * tile->deltaT;
 	event->peak_time = XLALAddFloatToGPS(event->start_time, 0.5 * event->duration);
 	event->bandwidth = (tile->fend - tile->fstart + 1) / tile->deltaT;
-	event->central_freq = params->tfTilingInput->flow + (0.5 * event->bandwidth);
+	event->central_freq = params->tfTilingInput->flow + tile->fstart + (0.5 * event->bandwidth);
 	event->amplitude = tile->excessPower;
 	event->snr = tile->excessPower;
 
