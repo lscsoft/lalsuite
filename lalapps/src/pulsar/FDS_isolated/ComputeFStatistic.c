@@ -96,7 +96,7 @@ CHAR *uvar_mergedSFTFile;
 CHAR *uvar_BaseName;
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
-BOOLEAN uvar_outputFstat;
+CHAR *uvar_outputFstat;
 
 /*----------------------------------------------------------------------*/
 
@@ -265,10 +265,10 @@ int main(int argc,char *argv[])
   LALFree (scanInit.skyRegion);
   
   if (uvar_outputFstat)
-    if ( (fpOut = fopen ("F_stat", "w")) == NULL)
+    if ( (fpOut = fopen (uvar_outputFstat, "w")) == NULL)
       {
-	printf ("Error opening file 'F_stat' for writing..\n");
-	exit (-1);
+	LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
+	exit(-1);
       }
 
   while (1)
@@ -300,13 +300,15 @@ int main(int argc,char *argv[])
 	  /* now, if user requested it, we output ALL F-statistic results */
 	  if (uvar_outputFstat && fpOut)
 	    {
-	      int i;
+	      INT4 i;
+	      REAL4 freqmax = 0;
 	      for(i=0;i < GV.FreqImax ;i++)
 		{
-		  if ( Fstat.F[i] >= uvar_Fthreshold )
-		    fprintf(fpOut, "%20.10f %20.17f %20.17f %20.17f\n",
-			    uvar_Freq+ i*GV.dFreq, Alpha, Delta, 2.0*medianbias*Fstat.F[i]);
+		  if ( Fstat.F[i] > freqmax )
+		    freqmax = Fstat.F[i];
 		}
+	      fprintf(fpOut, "%20.17f %20.17f %20.17f\n", Alpha, Delta, 2.0*medianbias*freqmax );
+
 	    } /* if outputFstat */
 	  
 	  /*  This fills-in highFLines  */
@@ -408,7 +410,7 @@ initUserVars (LALStatus *stat)
   uvar_help = FALSE;
   uvar_outputLabel = NULL;
 
-  uvar_outputFstat = FALSE;
+  uvar_outputFstat = NULL;
 
   /* register all our user-variables */
  
@@ -440,7 +442,7 @@ initUserVars (LALStatus *stat)
   LALregBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message");
   LALregSTRINGUserVar(stat,	skyRegion, 	'R', UVAR_OPTIONAL, "Specify sky-region by polygon");
   LALregSTRINGUserVar(stat,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
-  LALregBOOLUserVar(stat,	outputFstat,	 0,  UVAR_OPTIONAL, "Output the F-statistic field over the parameter-space");
+  LALregSTRINGUserVar(stat,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for the F-statistic field over the parameter-space");
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -2206,7 +2208,7 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
   REAL8Vector *Sp=NULL, *RngMdnSp=NULL;   /* |SFT|^2 and its rngmdn  */
   REAL8 B;                          /* SFT Bandwidth */
   REAL8 deltaT,norm,*N, *Sp1;
-  INT2 windowSize=50;                  /* Running Median Window Size*/
+  INT2 windowSize=20;                  /* Running Median Window Size*/
   REAL4 xre,xim,xreNorm,ximNorm;
 
 
