@@ -96,15 +96,15 @@ int main (void) {
    params.OmegaS = 0.;
    params.Theta = 0.;
    params.ieta=1; 
-   params.mass1=3.; 
-   params.mass2=3.; 
+   params.mass1=100.; 
+   params.mass2=1.; 
    params.startTime=0.0; 
    params.startPhase=0.0;
-   params.fLower=40.0; 
+   params.fLower=30.0; 
    params.fCutoff=4000.00;
    params.tSampling=8192.0;
    params.order=6;
-   params.approximant=EOB;
+   params.approximant=TaylorT1;
 /* SpinTaylorT3 */
    params.signalAmplitude=1.0;
    params.nStartPad=0;
