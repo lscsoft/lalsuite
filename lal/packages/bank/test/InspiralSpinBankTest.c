@@ -92,6 +92,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
 #include <lal/LALConfig.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALInspiralBank.h>
@@ -99,6 +100,7 @@
 #include <lal/LALStatusMacros.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALMathematica.h>
+#include <lal/LALNoiseModels.h>
 
 extern char *optarg;
 
@@ -106,7 +108,7 @@ extern char *optarg;
 #define INSPIRALSPINBANKTESTC_ENORM     0
 #define INSPIRALSPINBANKTESTC_EMEM      1
 #define INSPIRALSPINBANKTESTC_ESUB      2
-                                                                                                                                                              
+                                                                                                                                              
 #define INSPIRALSPINBANKTESTC_MSGENORM  "Normal exit"
 #define INSPIRALSPINBANKTESTC_MSGEMEM   "Memory allocation error"
 #define INSPIRALSPINBANKTESTC_MSGESUB   "Subroutine error"
@@ -126,7 +128,15 @@ int main(int argc, char *argv[]){
   INT4 opt = 0;				/* returning value of getopt() */
   INT4 optflag = -1;			/* Command Line option */
   REAL4 PtSize = 0.02;
-
+  REAL8Vector *psd = NULL;
+  REAL8 df = 1.0;
+  InspiralTemplate inspiralTemplate;
+  INT2 printMoments = 0;
+  InspiralMomentsEtc moments;
+  REAL4 F0 = 164.0; /* Roughly the minimum of the noise curve */
+                    /* This should be calculated */ 
+  REAL8 minfreq = 1;
+   
   if ((list = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
     LALError(&stat, INSPIRALSPINBANKTESTC_MSGEMEM);
     printf(INSPIRALSPINBANKTESTC_MSGEMEM);
@@ -135,6 +145,13 @@ int main(int argc, char *argv[]){
 
   first = list;
  
+  /* Stuff for calculating the PSD and Noise Moments */
+  CoarseIn.fLower = 30;
+  CoarseIn.fUpper = 3300;
+  CoarseIn.iflso = 0;
+  inspiralTemplate.fLower = 30;
+  inspiralTemplate.fCutoff = 2000;
+                                                                                                                                                
  /* Parse options. */
   do{
     optflag++;  
@@ -151,14 +168,36 @@ int main(int argc, char *argv[]){
       case 'p':
          Math3DPlot = 1;
          break;
+      case 's':
+         printMoments = 1;
+         break;
       default:
-        CoarseIn.mmCoarse = 1.0;
-        CoarseIn.mMin = 1.0;
-        CoarseIn.MMax = 3.0;
-        Math3DPlot = 0;
-        break;
+         CoarseIn.mmCoarse = 1.0;
+         CoarseIn.mMin = 1.0;
+         CoarseIn.MMax = 3.0;
+         Math3DPlot = 0;
+         printMoments = 0;
+         break;
       }
-    } while ((opt = getopt( argc, argv, "n:m:x:p" )) != -1);
+    } while ((opt = getopt( argc, argv, "n:m:x:ps" )) != -1);
+  
+  CoarseIn.shf.data = NULL;
+  memset( &(CoarseIn.shf), 0, sizeof(REAL8FrequencySeries) );
+  CoarseIn.shf.f0 = 0;
+  LALDCreateVector(&stat, &psd, 3300); 
+  df = 1.0;
+  LALNoiseSpectralDensity(&stat, psd, &LALLIGOIPsd, df);
+  CoarseIn.shf.data = psd;
+  CoarseIn.shf.deltaF = df;
+  
+  for(loop = 0; loop < psd->length; loop++){
+    if ((psd->data[loop]) && (psd->data[loop] <= minfreq)){ 
+      F0 = (REAL4) CoarseIn.shf.deltaF * loop;
+      minfreq = psd->data[loop];
+      }
+    }
+  printf("\nF0=%f\n",F0);
+    
 
   printf("\n\n\n____________________________________________________________________");
   if (optflag) printf("\nThe parameters you specified (along with defaults) are:\n");
@@ -169,14 +208,24 @@ int main(int argc, char *argv[]){
     printf("\t-n argument = minimum mass of the same\n");
     printf("\t-m argument = Mismatch threshold (e.g. 0.03 is typical");
     printf("\n\t\t      but takes a while to run)\n");
-    printf("\t-p (no arg) - calling this option makes a mathematica plot");
-    printf("\n\t\t      of the tiles");
+    printf("\t-p (no arg) - calling this option makes a mathematica plot\n");
+    printf("\n\t\t      of the tiles\n");
+    printf("\t-s (no arg) - this prints the noise moments");
     printf("\nThe default parameters are:\n");
     } 
-  printf("\nMismatch = %f\nMathematica Plot = %i\nMass two min = %f\nMass two max = %f\n", 
-    CoarseIn.mmCoarse, Math3DPlot, CoarseIn.mMin, CoarseIn.MMax);
+  printf("\nMismatch = %f\nMathematica Plot = %i\nMass two min = %f\nMass two max = %f\nPrint Moments = %i\n", 
+    CoarseIn.mmCoarse, Math3DPlot, CoarseIn.mMin, CoarseIn.MMax, printMoments);
   printf("______________________________________________________________________\n");
     
+  if (printMoments){
+    LALGetInspiralMoments(&stat, &moments, &CoarseIn.shf, &inspiralTemplate);
+    printf("\nThe noise moments are:\n");
+    for(loop = 1; loop <=17; loop++){
+      moments.j[loop] *= pow((inspiralTemplate.fLower/F0), ((7.0-(REAL4) loop)/3.0));
+      printf("J[%i] = %f\n", loop, moments.j[loop]);
+      }
+    }
+   
   printf("\n\nCalling LALInspiralSpinBank()......\n"); 
   LALInspiralSpinBank(&stat, &Tiles, &ntiles, CoarseIn);  
   REPORTSTATUS(&stat);

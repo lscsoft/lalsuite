@@ -86,6 +86,7 @@
 
 NRCSID(INSPIRALSPINBANKC, "$Id$");
 
+/* Internal structures and functions --------------------------------------- */
 typedef struct ISBNode
 {
   REAL4 psi0;
@@ -98,17 +99,132 @@ typedef struct ISBNode
   struct ISBNode *next;
 } ISBNode;
 
-  
-static void tmpmetric( REAL4Array *metric );
+
 static void cleanup(LALStatus *s,
-    REAL4Array **m, 
-    UINT4Vector **md, 
-    REAL4Vector **e, 
-    ISBNode *f, 
-    ISBNode *t,
-    INT4 *nt);
+    REAL4Array 	**, 
+    UINT4Vector **, 
+    REAL4Vector **, 
+    ISBNode 	*, 
+    ISBNode 	*,
+    INT4 	*
+    ); /* cleanup() prototype */
+
+static REAL4 calculateX(
+    REAL4,
+    REAL4,
+    REAL4,
+    REAL4,
+    REAL4,
+    REAL4,
+    INT4,
+    REAL4
+    ); /* calculateX() prototype */
+
+static REAL4 calculateY(
+    REAL4,
+    REAL4,
+    REAL4,
+    REAL4,
+    REAL4,
+    REAL4,
+    INT4,
+    REAL4
+    ); /* calculateY() prototype */
+
+static REAL4 calculateZ(
+    REAL4,
+    REAL4,
+    REAL4
+    ); /* calculateZ() prototype */
+
+static INT4 test(
+    REAL4,
+    REAL4,
+    REAL4,
+    REAL4,
+    REAL4,
+    REAL4,
+    REAL4,
+    REAL4 
+    ); /* test() prototype */
+
+/* END - Internal structures and functions --------------------------------- */
+static void
+LALInspiralSpinBankMetric(
+   LALStatus 		*,
+   REAL4Array	 	*,
+   InspiralMomentsEtc 	*,
+   InspiralTemplate	*,
+   REAL4		*
+   ); /* LALInspiralSpinBankMetric() Prototype */
 
 
+
+
+
+/* LALINSPIRALSPINBANKMETRIC() --------------------------------------------- */
+static void
+LALInspiralSpinBankMetric(
+   LALStatus		*status,
+   REAL4Array		*metric,
+   InspiralMomentsEtc	*moments,
+   InspiralTemplate	*inspiralTemplate,
+   REAL4		*f0
+   )
+{
+  INITSTATUS( status, "LALInspiralSpinBank", INSPIRALSPINBANKC );
+  ATTATCHSTATUSPTR( status );
+
+  if (!metric){
+    ABORT(status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+    }
+  if (!moments){
+    ABORT(status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+    }
+  
+  INT2 loop = 0;
+  
+  /* Rescale the moments to F0 = Noise Curve Minimum */
+  for(loop = 1; loop <=17; loop++){
+    moments->j[loop] *= pow((inspiralTemplate->fLower/(*f0)), ((7.0-(REAL4) loop)/3.0));
+    }
+
+/* This just copies the noise moment data from *moments */
+  REAL4 J1  = moments->j[1];
+/*  REAL4 J2  = moments->j[2];*/
+/*  REAL4 J3  = moments->j[3];*/
+  REAL4 J4  = moments->j[4];
+/*  REAL4 J5  = moments->j[5];*/
+  REAL4 J6  = moments->j[6];
+/*  REAL4 J7  = moments->j[7];*/
+/*  REAL4 J8  = moments->j[8];*/
+  REAL4 J9  = moments->j[9];
+/*  REAL4 J10 = moments->j[10];*/
+  REAL4 J11 = moments->j[11];
+  REAL4 J12 = moments->j[12];
+/*  REAL4 J13 = moments->j[13];*/
+  REAL4 J14 = moments->j[14];
+/*  REAL4 J15 = moments->j[15];*/
+/*  REAL4 J16 = moments->j[16];*/
+  REAL4 J17 = moments->j[17];
+                                                                                                                                                
+  /* Set metric components as functions of moments. */
+  metric->data[0] = (REAL4) (1.5)*(J17-J12*J12-(J9-J4*J12)*(J9-J4*J12)/(J1-J4*J4));
+  metric->data[1] = (REAL4) (1.5)*(J14-J9*J12-(J6-J4*J9)*(J9-J4*J12)/(J1-J4*J4));
+  metric->data[2] = (REAL4) 0;
+  metric->data[3] = (REAL4) (1.5)*(J14-J9*J12-(J6-J4*J9)*(J9-J4*J12)/(J1-J4*J4));
+  metric->data[4] = (REAL4) (1.5)*(J11-J9*J9-(J6-J4*J9)*(J6-J4*J9)/(J1-J4*J4));
+  metric->data[5] = (REAL4) 0.0;
+  metric->data[6] = (REAL4) 0.0;
+  metric->data[7] = (REAL4) 0.0;
+  metric->data[8] = (REAL4) J11-J9*J9-(J6-J4*J9)*(J6-J4*J9)/(J1-J4*J4);
+  
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+} /* LALInspiralSpinBankMetric */
+
+
+/* LALINSPIRALSPINBANK() --------------------------------------------------- */
 /* <lalVerbatim file="InspiralSpinBankCP"> */
 void
 LALInspiralSpinBank(
@@ -119,11 +235,13 @@ LALInspiralSpinBank(
     )
 /* </lalVerbatim> */
 {
-  ISBNode *tmplt = NULL;  	/* loop counter */
-  ISBNode *output = NULL; 	/* head of output linked list */
-  REAL4Array *metric = NULL;        	/* parameter-space metric */
-  UINT4Vector *metricDimensions = NULL;
-  REAL4Vector *eigenval =  NULL;     	/* eigenvalues of metric */
+  ISBNode *tmplt = 		  NULL; /* loop counter */
+  ISBNode *output = 		  NULL; /* head of output linked list */
+  REAL4Array *metric = 		  NULL; /* parameter-space metric */
+  UINT4Vector *metricDimensions = NULL;	/* contains the dimension of metric */
+  REAL4Vector *eigenval =  	  NULL; /* eigenvalues of metric */
+  InspiralMomentsEtc moments; 		/* Added for LALGetInspiralMoments() */
+  InspiralTemplate inspiralTemplate; 	/* Added for LALGetInspiralMoments() */
   REAL4 x, y, z;             		/* psi0, psi3, beta coordinates */
   REAL4 x0, y0, z0;          		/* minimum values of x, y, z */
   REAL4 x1, y1, z1;          		/* maximum values of x, y, z */
@@ -132,74 +250,102 @@ LALInspiralSpinBank(
   REAL4 xp1, yp1, zp1;       		/* maximum values of xp, yp, zp */
   REAL4 dxp, dyp, dzp;       		/* step sizes in xp, yp, zp */
   REAL4 theta;               		/* angle of rotation for xp and yp */
-  REAL4 m1;                  		/* greater binary component mass */
+  REAL4 m1 = 0.;               		/* greater binary component mass */
   REAL4 m1Min, m1Max;       		/* range of m1 to search */
-  REAL4 m2;                  		/* lesser binary component mass */
+  REAL4 m2 = 0.;              		/* lesser binary component mass */
   REAL4 m2Min, m2Max;        		/* range of m2 to search */
-  REAL4 mass;                		/* total mass of binary */
-  REAL4 eta;                 		/* symmetric mass ratio of binary */
+  REAL4 mass;            		/* total mass of binary */
+  REAL4 eta = 0.;             		/* symmetric mass ratio of binary */
   REAL4 betaMax;             		/* maximum spin parameter of binary */
-  REAL4 f0;                  		/* frequency of minimum of noise curve */
-  INT2 bccFlag = 0;          		/* determines offset for bcc tiling */
-  INT4 cnt = 0;		     		/* loop counter set to value of ntiles */
-
+  REAL4 f0 = 164.0;  			/* frequency of minimum of noise curve */
+  INT2 bccFlag = 0;      		/* determines offset for bcc tiling */
+  INT4 cnt = 0;				/* loop counter set to value of ntiles */
+  REAL8 minfreq = 1.0;			/* temp variable used to find noise min */
+  
   /* Set up status pointer. */
   INITSTATUS( status, "LALInspiralSpinBank", INSPIRALSPINBANKC );
   ATTATCHSTATUSPTR( status );
   
   
   /* Check to make sure that all the parameters are okay */
-  if (coarseIn.mmCoarse <= 0) 
+  if (coarseIn.mmCoarse <= 0){
     ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
-  
-  if ((coarseIn.mMin <= 0) || (coarseIn.MMax <= 0) || (coarseIn.mMin >= coarseIn.MMax) || (3.0*coarseIn.MMax >= 15.0))
-      ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
-   
+    }
+
+  if ((coarseIn.mMin <= 0) || (coarseIn.MMax <= 0) || 
+      (coarseIn.mMin >= coarseIn.MMax) || (3.0*coarseIn.MMax >= 15.0)){
+    ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
+    }
+
   /*These parameters have not been added to InspiralCoarseBankIn yet, but when they are the will need to be checked */
   /*
     if (coarseIn.betaMax < 0) 
       ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
   */
-    
-  /* Get noise power moments and trig moments. */
-  /* Hardcode this for the moment. */
-  f0 = 164;
 
   /* Get 3x3 parameter-space metric. */
   /* BEN: mess creating all these structures & adding TRYs etc */
   /* BEN: do it by hand, since it's so simple? */
-  metricDimensions = NULL;
 
-  LALU4CreateVector( status->statusPtr, &metricDimensions, 2 );
+  LALU4CreateVector( status->statusPtr, &metricDimensions, (UINT4) 2 );
   BEGINFAIL(status)
     cleanup(status->statusPtr, &metric, &metricDimensions, &eigenval, output, tmplt, ntiles);
   ENDFAIL(status);
   
   metricDimensions->data[0] = 3;
   metricDimensions->data[1] = 3;
-  metric = NULL;
 
   LALSCreateArray( status->statusPtr, &metric, metricDimensions );
   BEGINFAIL(status)
     cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt, ntiles);
   ENDFAIL(status);
 
-  tmpmetric( metric );
+  /* REMEMBER we must give inspiralTemplate some frequency parameters ASK BEN */  
+  inspiralTemplate.fLower  = 30;    	/* These are arbitrarily chosen for now */
+  inspiralTemplate.fCutoff = 2000;	/* They are necessary for LALInspiralGetMoments() */
+ 
+  /* Test to see if a PSD is present. If so, calculate the noise curve minimum and set to 
+     f0 then run LALGetInspiralMoments(); else cleanup & ABORT*/
+  if(coarseIn.shf.data && coarseIn.shf.data->data){ 
+    /* Calculate Noise curve minimum f0 */
+    for(cnt = 0; cnt < (INT4) coarseIn.shf.data->length; cnt++){
+      if ((coarseIn.shf.data->data[cnt]) && (coarseIn.shf.data->data[cnt] <= minfreq)){
+        f0 = (REAL4) coarseIn.shf.deltaF * cnt;
+        minfreq = coarseIn.shf.data->data[cnt];
+        }
+      }
+    LALGetInspiralMoments( status->statusPtr, &moments, &coarseIn.shf, &inspiralTemplate );
+    BEGINFAIL(status)                                                           
+      cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
+    ENDFAIL(status);
+    }
 
+  else{
+    cleanup(status->statusPtr, &metric, &metricDimensions, &eigenval, output, tmplt, ntiles);
+    ABORT(status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+    }
+
+  /* Call the metric */
+  LALInspiralSpinBankMetric(status->statusPtr, metric, &moments, &inspiralTemplate, &f0);	
+  BEGINFAIL(status)
+    cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt, ntiles);
+  ENDFAIL(status);
+                                                                                                                                              
   /* Find eigenvalues and eigenvectors of metric. */
   eigenval = NULL;
-
   LALSCreateVector( status->statusPtr, &eigenval, 3 );
   BEGINFAIL(status)
     cleanup(status->statusPtr,&metric, &metricDimensions,&eigenval,output,tmplt, ntiles);
   ENDFAIL(status);
-  
   LALSSymmetricEigenVectors( status->statusPtr, eigenval, metric );
   BEGINFAIL(status)
     cleanup(status->statusPtr,&metric, &metricDimensions,&eigenval,output,tmplt, ntiles);
   ENDFAIL(status);
     
   /* Set stepsizes and xp-yp rotation angle from metric. */
+  if((eigenval->data[0]==0.) || (eigenval->data[1]==0.) || (eigenval->data[2]==0.)){
+    ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
+    }
   dxp = 1.333333*sqrt(2*coarseIn.mmCoarse/eigenval->data[0]);
   dyp = 1.333333*sqrt(2*coarseIn.mmCoarse/eigenval->data[1]);
   dzp = 0.6666667*sqrt(2*coarseIn.mmCoarse/eigenval->data[2]);
@@ -230,55 +376,183 @@ LALInspiralSpinBank(
     
   /* Allocate first template, which will remain blank. */
   output = tmplt = (ISBNode *) LALCalloc( 1, sizeof(ISBNode) );
-  if (!output) 
-  {
+  if (!output) {
     cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
     ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
   }
-
-
+  
+  *ntiles = 0;
 
   /* This loop generates the template bank. */
-  *ntiles = 0;
-  for (zp = 0; zp <= zp1; zp += dzp)
-  {
+  for (zp = 0; zp <= zp1; zp += dzp){
     bccFlag++;
-    for (yp = 0; yp<= yp1; yp += dyp)
-    { 
-      for (xp = 0; xp <= xp1; xp += dxp)
-      {
-        x = xp0 + (xp+dxp/2.0*(bccFlag%2))*cos(theta) - (yp+dyp/2.0*(bccFlag%2))*sin(theta);
-	y = yp0 + (xp+dxp/2.0*(bccFlag%2))*sin(theta) + (yp+dyp/2.0*(bccFlag%2))*cos(theta);
-	z = zp;
-        mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
-        eta = 16.0457 * pow( -x*x/y/y/y/y/y, 0.3333333 );
-        if (eta > 0.25 || eta < 0)
-          continue;
-        m1 = 0.5*mass* (1 + sqrt(1 - 4*eta));
-        m2 = 0.5*mass* (1 - sqrt(1 - 4*eta));
-        if (m1 > m1Max || m1 < m1Min || m2 > m2Max || m2 < m2Min)
-          continue;
-        betaMax = 3.8*LAL_PI/29.961432 * (1+0.75*m2/m1)*(m1/m2) * pow((LAL_MTSUN_SI*100.0/mass),0.6666667);
-        if (z > betaMax)
-          continue;
-        tmplt = tmplt->next = (ISBNode *) LALCalloc( 1, sizeof(ISBNode) );
-        /* check to see if calloc worked */
-        if (!tmplt) 
-        {
-          cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
-          ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+    for (yp = 0; yp<= yp1; yp += dyp){
+      for (xp = 0; xp <= xp1; xp += dxp){
+        /* Calculate Coordinate values at this point */
+        x = calculateX(0, xp0, xp, dxp, yp, dyp, bccFlag, theta);
+        y = calculateY(0, yp0, xp, dxp, yp, dyp, bccFlag, theta);
+        z = calculateZ(0, zp, dzp);
+        /* Test to see if the point is in the search region */
+        if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+          tmplt = tmplt->next = (ISBNode *) LALCalloc( 1, sizeof(ISBNode));
+          /* check to see if calloc worked */
+          if (!tmplt){
+            cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
+            ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+          }
+          /* Mark that one a keeper and increase the number of tiles */
+          tmplt->mass1 = m1;
+          tmplt->mass2 = m2;
+          tmplt->eta = eta;
+          tmplt->chirpMass = pow(m1*m2,0.6)/pow(m1+m2,0.2);
+          tmplt->psi0 = x;
+          tmplt->psi3 = y;
+          tmplt->beta = z;
+          ++(*ntiles);
+          }
+
+        /* CHECK BEHIND ------------------------------------------------------------- */
+        /* Test a spot dx behind */
+        x = calculateX(-1, xp0, xp, dxp, yp, dyp, bccFlag, theta);
+        if(!test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+          x = calculateX(-0.5, xp0, xp, dxp, yp, dyp, bccFlag, theta);
+          /* If its not in the range check 1/2 dx behind. */
+          if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+            tmplt = tmplt->next = (ISBNode *) LALCalloc( 1, sizeof(ISBNode) );
+            if (!tmplt){
+              cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
+              ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+              }
+            tmplt->mass1 = m1;
+            tmplt->mass2 = m2;
+            tmplt->eta = eta;
+            tmplt->chirpMass = pow(m1*m2,0.6)/pow(m1+m2,0.2);
+            tmplt->psi0 = x;
+            tmplt->psi3 = y;
+            tmplt->beta = z;
+            ++(*ntiles);
+          }
         }
-        tmplt->mass1 = m1;
-        tmplt->mass2 = m2;
-        tmplt->eta = eta;
-        tmplt->chirpMass = pow(m1*m2,0.6)/pow(m1+m2,0.2);
-        tmplt->psi0 = x;            
-        tmplt->psi3 = y; 
-        tmplt->beta = z;
-        ++(*ntiles);
+        /* Test a spot dy behind */
+        x = calculateX(0, xp0, xp, dxp, yp, dyp, bccFlag, theta);
+        y = calculateY(-1, yp0, xp, dxp, yp, dyp, bccFlag, theta);
+        if(!test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+          y = calculateY(-0.5, yp0, xp, dxp, yp, dyp, bccFlag, theta);
+          /* If its not in the range check 1/2 dy behind. */
+          if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+            tmplt = tmplt->next = (ISBNode *) LALCalloc( 1, sizeof(ISBNode) );
+            if (!tmplt){
+              cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
+              ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+              }
+            tmplt->mass1 = m1;
+            tmplt->mass2 = m2;
+            tmplt->eta = eta;
+            tmplt->chirpMass = pow(m1*m2,0.6)/pow(m1+m2,0.2);
+            tmplt->psi0 = x;
+            tmplt->psi3 = y;
+            tmplt->beta = z;
+            ++(*ntiles);
+          }
+        }
+        /* Test a spot dz behind */
+        y = calculateY(0, yp0, xp, dxp, yp, dyp, (bccFlag+1), theta);
+        z = calculateZ(-1, zp, dzp);
+        if(!test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+          z = calculateZ(-0.5, zp, dzp);
+          /*  if its not in the range check 1/2 dz behind. */
+          if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+            tmplt = tmplt->next = (ISBNode *) LALCalloc( 1, sizeof(ISBNode) );
+            if (!tmplt){
+              cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
+              ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+              }
+            tmplt->mass1 = m1;
+            tmplt->mass2 = m2;
+            tmplt->eta = eta;
+            tmplt->chirpMass = pow(m1*m2,0.6)/pow(m1+m2,0.2);
+            tmplt->psi0 = x;
+            tmplt->psi3 = y;
+            tmplt->beta = z;
+            ++(*ntiles);
+          }
+        }
+        /* CHECK AHEAD -------------------------------------------------------------- */ 
+        /* Test a spot dx ahead */
+        x = calculateX(1, xp0, xp, dxp, yp, dyp, bccFlag, theta);
+        y = calculateY(0, yp0, xp, dxp, yp, dyp, (bccFlag+1), theta);
+        z = calculateZ(0, zp, dzp);
+
+        if(!test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+          x = calculateX(0.5, xp0, xp, dxp, yp, dyp, bccFlag, theta);
+          /* If its not in the range check 1/2 dx. */
+          if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+            tmplt = tmplt->next = (ISBNode *) LALCalloc( 1, sizeof(ISBNode) );
+            if (!tmplt){
+              cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
+              ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+              }
+            tmplt->mass1 = m1;
+            tmplt->mass2 = m2;
+            tmplt->eta = eta;
+            tmplt->chirpMass = pow(m1*m2,0.6)/pow(m1+m2,0.2);
+            tmplt->psi0 = x;
+            tmplt->psi3 = y;
+            tmplt->beta = z;
+            ++(*ntiles);
+          }
+        }
+        /* Test a spot dy ahead */
+        x = calculateX(0, xp0, xp, dxp, yp, dyp, bccFlag, theta);
+        y = calculateY(1, yp0, xp, dxp, yp, dyp, bccFlag, theta);
+        if(!test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+          y = calculateY(0.5, yp0, xp, dxp, yp, dyp, bccFlag, theta);
+          /* If its not in the range check 1/2 dy. */
+          if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+            tmplt = tmplt->next = (ISBNode *) LALCalloc( 1, sizeof(ISBNode) );
+            if (!tmplt){
+              cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
+              ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+              }
+            tmplt->mass1 = m1;
+            tmplt->mass2 = m2;
+            tmplt->eta = eta;
+            tmplt->chirpMass = pow(m1*m2,0.6)/pow(m1+m2,0.2);
+            tmplt->psi0 = x;
+            tmplt->psi3 = y;
+            tmplt->beta = z;
+            ++(*ntiles);
+          }
+        }
+        /* Test a spot dz ahead */
+        y = calculateY(0, yp0, xp, dxp, yp, dyp, (bccFlag+1), theta);
+        z = calculateZ(1, zp, dzp);
+        if(!test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+          z = calculateZ(0.5, zp, dzp);
+          /*  if its not in the range check 1/2 dz. */
+          if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+            tmplt = tmplt->next = (ISBNode *) LALCalloc( 1, sizeof(ISBNode) );
+            if (!tmplt){
+              cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
+              ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+              }
+            tmplt->mass1 = m1;
+            tmplt->mass2 = m2;
+            tmplt->eta = eta;
+            tmplt->chirpMass = pow(m1*m2,0.6)/pow(m1+m2,0.2);
+            tmplt->psi0 = x;
+            tmplt->psi3 = y;
+            tmplt->beta = z;
+            ++(*ntiles);
+          }
+        }
       } /* for (zp...) */
     } /* for (yp...) */
   } /* for (zp...) */
+
+  
+
+
 
   /* Trim the first template, which was left blank. */
   tmplt = output->next;
@@ -310,7 +584,7 @@ LALInspiralSpinBank(
 
   
   
-  /* prepare the link list to be freed by copying the number of tiles to cnt */
+  /* prepare the linked list to be freed by copying the number of tiles to cnt */
   tmplt = output;
   cnt = *ntiles;
   
@@ -320,41 +594,6 @@ LALInspiralSpinBank(
   RETURN( status );
 } /* LALInspiralSpinBank() */
 
-
-/* Temporary metric function. OK for high beta, LIGO-I SRD noise. */
-
-static void tmpmetric( REAL4Array *metric )
-{
-  /* These noise moment values are from Ben's Mathematica notebook. */
-  REAL4 J1  = 1.20978;
-/*  REAL4 J2  = 1.05754;*/
-/*  REAL4 J3  = 0.971883;*/
-  REAL4 J4  = 0.931058;
-/*  REAL4 J5  = 0.924365;*/
-  REAL4 J6  = 0.947410;	
-/*  REAL4 J7  = 1;*/
-/*  REAL4 J8  = 1.08541;*/
-  REAL4 J9  = 1.21048;	
-/*  REAL4 J10 = 1.38642;*/
-  REAL4 J11 = 1.63039;	
-  REAL4 J12 = 1.96795;
-/*  REAL4 J13 = 2.43713;*/
-  REAL4 J14 = 3.09454;
-/*  REAL4 J15 = 4.02482;*/
-/*  REAL4 J16 = 5.35540;*/
-  REAL4 J17 = 7.27921;
-
-  /* Set metric components as functions of moments. */
-  metric->data[0] = (REAL4) (1.5)*(J17-J12*J12-(J9-J4*J12)*(J9-J4*J12)/(J1-J4*J4));
-  metric->data[1] = (REAL4) (1.5)*(J14-J9*J12-(J6-J4*J9)*(J9-J4*J12)/(J1-J4*J4));	
-  metric->data[2] = (REAL4) 0;
-  metric->data[3] = (REAL4) (1.5)*(J14-J9*J12-(J6-J4*J9)*(J9-J4*J12)/(J1-J4*J4));		
-  metric->data[4] = (REAL4) (1.5)*(J11-J9*J9-(J6-J4*J9)*(J6-J4*J9)/(J1-J4*J4));
-  metric->data[5] = (REAL4) 0.0;
-  metric->data[6] = (REAL4) 0.0;
-  metric->data[7] = (REAL4) 0.0;
-  metric->data[8] = (REAL4) J11-J9*J9-(J6-J4*J9)*(J6-J4*J9)/(J1-J4*J4);
-} /* tmpmetric() */
 
 static void cleanup(
     LALStatus *s, 
@@ -368,12 +607,15 @@ static void cleanup(
   INITSTATUS( s, "LALInspiralSpinBank-cleanup", INSPIRALSPINBANKC );
   ATTATCHSTATUSPTR( s );
 
-  if (m)
+  if (m){
     TRY(LALU4DestroyVector(s->statusPtr,md),s);
-  if (md)
+    }
+  if (md){
     TRY(LALSDestroyVector(s->statusPtr, e),s);
-  if (e)
+    }
+  if (e){
     TRY(LALSDestroyArray(s->statusPtr, m),s); 
+    }
   if (t && f)
   {
     t = f;
@@ -390,3 +632,68 @@ static void cleanup(
   DETATCHSTATUSPTR( s );
   RETURN( s );
 }
+
+static REAL4 calculateX(REAL4 n,
+               REAL4 xp0,
+               REAL4 xp,
+               REAL4 dxp,
+               REAL4 yp,
+               REAL4 dyp,
+               INT4 bccFlag, 
+               REAL4 theta)
+  {
+  return (xp0 + (n*dxp + xp+dxp/2.0*((bccFlag)%2))*cos(theta) - 
+                (yp+dyp/2.0*((bccFlag)%2))*sin(theta));
+  } /* REAL4 x(); */
+
+static REAL4 calculateY(REAL4 n,
+               REAL4 yp0,
+               REAL4 xp,
+               REAL4 dxp,
+               REAL4 yp,
+               REAL4 dyp,
+               INT4 bccFlag,
+               REAL4 theta)
+  {
+  return (yp0 + (xp+dxp/2.0*((bccFlag)%2))*sin(theta) + 
+                (n*dyp + yp+dyp/2.0*((bccFlag)%2))*cos(theta));
+  } /* REAL4 y(); */
+
+static REAL4 calculateZ(REAL4 n,
+               REAL4 zp,
+               REAL4 dzp)
+  {
+  return (zp + n*dzp);
+  } /* REAL4 z(); */
+
+static INT4 test(REAL4 x, 
+                 REAL4 y, 
+                 REAL4 z,
+                 REAL4 m1Min,
+                 REAL4 m1Max,
+                 REAL4 m2Min,
+                 REAL4 m2Max,
+                 REAL4 f0){
+
+  REAL4 mass, eta, m1, m2, betaMax;
+  mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
+  eta = 16.0457 * pow( -x*x/y/y/y/y/y, 0.3333333 );
+  if (eta > 0.25 || eta < 0)
+    return 0;
+  m1 = 0.5*mass* (1 + sqrt(1 - 4*eta));
+  m2 = 0.5*mass* (1 - sqrt(1 - 4*eta));
+  if (m1 > m1Max || m1 < m1Min || m2 > m2Max || m2 < m2Min)
+    return 0;
+  betaMax = 3.8*LAL_PI/29.961432 * (1+0.75*m2/m1)*(m1/m2) * pow((LAL_MTSUN_SI*100.0/mass),0.6666667);
+  if (z > betaMax)
+    return 0;
+  if (isnan(x) || isnan(y) || isnan(z))
+    return 0;
+  return 1;
+  }
+  
+
+
+
+
+
