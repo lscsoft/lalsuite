@@ -1395,15 +1395,30 @@ int write_timeseries(int iSFT){
     REAL4 magic=1234.5;
     UINT4  length=timeSeries->data->length;
     REAL4 *datap=timeSeries->data->data;
-    
+
+#ifdef DEBUGTIMING
+    syserror("  READY to provide %d seconds of output...\n", length/16384);
+#endif
     if (
 	(!nomagic && 1 != fwrite(&magic, sizeof(magic), 1, stdout))
-	||
-	length!=fwrite(datap, sizeof(datap[0]), length, stdout)
+	|| (!nomagic && 1 != fwrite(&length, sizeof(INT4), 1, stdout))
+	|| length!=fwrite(datap, sizeof(datap[0]), length, stdout)
 	) {
       syserror( "Fatal error in writing binary data to stdout\n");
       exit(1);
     }
+
+    /* This is IMPORTANT for on-line injections.  You MUST flush
+       stdout before continuing, else you will delay the server */
+    if (fflush(stdout)){
+      syserror("Unable to flush stdout!\n");
+      exit(1);
+    }
+#ifdef DEBUGTIMING
+    syserror("  DONE providing %d seconds of output.\n", length/16384);
+    sleep(10);
+#endif
+
 
     /* only print the magic number at the start of the stream */
     nomagic=1;
