@@ -39,12 +39,12 @@ static int getline(char *line, int max, FILE * fpin)
 	int i;
 	CHAR tmpline[MAXSTR];
 
-	for (i = 0; i < MAXSTR; i++) {
+	for (i = 0; i < MAXSTR; i++)
 		*(line + i) = '\0';
-	}
-	if (fgets(tmpline, max, fpin) == NULL) {
+
+	if (fgets(tmpline, max, fpin) == NULL)
 		return 0;
-	} else {
+	else {
 		strncpy(line, tmpline, strlen(tmpline) - 1);
 		return strlen(line);
 	}
@@ -68,9 +68,8 @@ static int isPlayground(INT4 gpsStart, INT4 gpsEnd)
 	segMiddle = gpsStart + (INT4) (0.5 * (gpsEnd - gpsStart));
 	segMiddle = (segMiddle - runStart) % playInterval;
 
-	if (segStart < playLength || segEnd < playLength || segMiddle < playLength) {
+	if (segStart < playLength || segEnd < playLength || segMiddle < playLength)
 		return TRUE;
-	}
 
 	return FALSE;
 }
@@ -206,9 +205,9 @@ int main(int argc, char **argv)
 		switch (c) {
 		case 0:
 			/* if this option set a flag, do nothing else now */
-			if (long_options[option_index].flag != 0) {
+			if (long_options[option_index].flag != 0)
 				break;
-			} else {
+			else {
 				fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, optarg);
 				exit(1);
 			}
@@ -237,40 +236,30 @@ int main(int argc, char **argv)
 
 		case 'd':
 			/* the confidence must be smaller than this number */
-			{
-				maxConfidenceFlag = 1;
-				maxConfidence = atof(optarg);
-			}
+			maxConfidenceFlag = 1;
+			maxConfidence = atof(optarg);
 			break;
 
 		case 'e':
 			/* only events with duration greater than this are selected */
-			{
-				gpsStartTime = atoi(optarg);
-			}
+			gpsStartTime = atoi(optarg);
 			break;
 
 		case 'f':
 			/* only events with duration less than this are selected */
-			{
-				gpsEndTime = atoi(optarg);
-			}
+			gpsEndTime = atoi(optarg);
 			break;
 
 		case 'g':
 			/* only events with centralfreq greater than this are selected */
-			{
-				minCentralfreqFlag = 1;
-				minCentralfreq = atof(optarg);
-			}
+			minCentralfreqFlag = 1;
+			minCentralfreq = atof(optarg);
 			break;
 
 		case 'h':
 			/* only events with centralfreq less than this are selected */
-			{
-				maxCentralfreqFlag = 1;
-				maxCentralfreq = atof(optarg);
-			}
+			maxCentralfreqFlag = 1;
+			maxCentralfreq = atof(optarg);
 			break;
 
 		case 'j':
@@ -282,31 +271,22 @@ int main(int argc, char **argv)
 
 		case 'k':
 			/* restrict to the playground data */
-			{
-				playground = TRUE;
-			}
+			playground = TRUE;
 			break;
 
 		case 'n':
 			/* don't restrict to the playground data */
-			{
-				noplayground = TRUE;
-			}
+			noplayground = TRUE;
 			break;
 
 		case 'o':
 			/* print help */
-			{
-				LALPrintError(USAGE, *argv);
-				return BINJ_FIND_EARG;
-			}
-			break;
+			LALPrintError(USAGE, *argv);
+			exit(BINJ_FIND_EARG);
 
 		case 'p':
 			/* sort the events in time */
-			{
-				sort = TRUE;
-			}
+			sort = TRUE;
 			break;
 
 
@@ -318,23 +298,20 @@ int main(int argc, char **argv)
 			break;
 
 		default:
-			{
-				return BINJ_FIND_EARG;
-			}
+			exit(BINJ_FIND_EARG);
 		}
 	}
 
 	if (optind < argc) {
 		fprintf(stderr, "extraneous command line arguments:\n");
-		while (optind < argc) {
+		while (optind < argc)
 			fprintf(stderr, "%s\n", argv[optind++]);
-		}
 		exit(1);
 	}
 
 	if (!injmadeFile || !inputFile || !injectionFile || !outSnglFile) {
 		LALPrintError("Input file, injection file, output trig. file and output inj. file " "            names must be specified\n");
-		return BINJ_FIND_EARG;
+		exit(BINJ_FIND_EARG);
 	}
 
 
@@ -362,9 +339,8 @@ int main(int argc, char **argv)
   /*****************************************************************
    * OPEN FILE WITH LIST OF Injection XML FILES (one file per line)
    ****************************************************************/
-	if (!(fpin = fopen(injectionFile, "r"))) {
+	if (!(fpin = fopen(injectionFile, "r")))
 		LALPrintError("Could not open input file\n");
-	}
 
   /*****************************************************************
    * loop over the INJECTION xml files
@@ -373,9 +349,8 @@ int main(int argc, char **argv)
 	while (getline(line, MAXSTR, fpin)) {
 
 		fileCounter++;
-		if (verbose_flag) {
+		if (verbose_flag)
 			fprintf(stderr, "Working on file %s\n", line);
-		}
 
 		/* The injections from sim_burst table */
 		LAL_CALL(LALSimBurstTableFromLIGOLw(&stat, &tmpSimBurst, line, gpsStartTime, gpsEndTime), &stat);
@@ -387,17 +362,15 @@ int main(int argc, char **argv)
 
 		if (noplayground) {
 			/* connect results to linked list */
-			if (currentSimBurst == NULL) {
+			if (currentSimBurst == NULL)
 				simBurstList = currentSimBurst = tmpSimBurst;
-			} else {
+			else
 				currentSimBurst->next = tmpSimBurst;
-			}
 		}
 
 		/* move to the end of the linked list for next input file */
-		while (currentSimBurst->next != NULL) {
+		while (currentSimBurst->next != NULL)
 			currentSimBurst = currentSimBurst->next;
-		}
 		tmpSimBurst = currentSimBurst->next;
 	}
 
@@ -418,12 +391,10 @@ int main(int argc, char **argv)
 
 		if (pass) {
 			if (outSimdummyList == NULL) {
-				outSimdummyList = currentSimBurst = (SimBurstTable *)
-				    LALCalloc(1, sizeof(SimBurstTable));
+				outSimdummyList = currentSimBurst = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
 				prevSimBurst = currentSimBurst;
 			} else {
-				currentSimBurst = (SimBurstTable *)
-				    LALCalloc(1, sizeof(SimBurstTable));
+				currentSimBurst = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
 				prevSimBurst->next = currentSimBurst;
 			}
 			memcpy(currentSimBurst, tmpSimBurst, sizeof(SimBurstTable));
@@ -437,9 +408,8 @@ int main(int argc, char **argv)
   /*****************************************************************
    * OPEN FILE WITH LIST OF Trigger XML FILES (one file per line)
    ****************************************************************/
-	if (!(fpin = fopen(inputFile, "r"))) {
+	if (!(fpin = fopen(inputFile, "r")))
 		LALPrintError("Could not open input file\n");
-	}
 
   /*****************************************************************
    * loop over the xml files
@@ -455,9 +425,8 @@ int main(int argc, char **argv)
 		INT4 tmpStartTime = 0, tmpEndTime = 0;
 
 		fileCounter++;
-		if (verbose_flag) {
+		if (verbose_flag)
 			fprintf(stderr, "Working on file %s\n", line);
-		}
 
     /**************************************************************
      * Get the searchsummary info to create the LIST of INJECTIONS 
@@ -486,12 +455,10 @@ int main(int argc, char **argv)
 		       && (injPeakTime < tmpEndTime * 1000000000LL)
 		       && (tmpSimBurst->next != NULL)) {
 			if (outSimList == NULL) {
-				outSimList = currentSimBurst = (SimBurstTable *)
-				    LALCalloc(1, sizeof(SimBurstTable));
+				outSimList = currentSimBurst = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
 				prevSimBurst = currentSimBurst;
 			} else {
-				currentSimBurst = (SimBurstTable *)
-				    LALCalloc(1, sizeof(SimBurstTable));
+				currentSimBurst = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
 				prevSimBurst->next = currentSimBurst;
 			}
 			memcpy(currentSimBurst, tmpSimBurst, sizeof(SimBurstTable));
@@ -515,16 +482,14 @@ int main(int argc, char **argv)
 		LAL_CALL(LALSnglBurstTableFromLIGOLw(&stat, &tmpEvent, line), &stat);
 
 		/* connect results to linked list */
-		if (currentEvent == NULL) {
+		if (currentEvent == NULL)
 			burstEventList = currentEvent = tmpEvent;
-		} else {
+		else
 			currentEvent->next = tmpEvent;
-		}
 
 		/* move to the end of the linked list for next input file */
-		while (currentEvent->next != NULL) {
+		while (currentEvent->next != NULL)
 			currentEvent = currentEvent->next;
-		}
 		tmpEvent = currentEvent->next;
 	}
 
@@ -581,12 +546,10 @@ int main(int argc, char **argv)
 		/* set it for output if it passes */
 		if (pass) {
 			if (outEventList == NULL) {
-				outEventList = currentEvent = (SnglBurstTable *)
-				    LALCalloc(1, sizeof(SnglBurstTable));
+				outEventList = currentEvent = (SnglBurstTable *) LALCalloc(1, sizeof(SnglBurstTable));
 				prevEvent = currentEvent;
 			} else {
-				currentEvent = (SnglBurstTable *)
-				    LALCalloc(1, sizeof(SnglBurstTable));
+				currentEvent = (SnglBurstTable *) LALCalloc(1, sizeof(SnglBurstTable));
 				prevEvent->next = currentEvent;
 			}
 			memcpy(currentEvent, tmpEvent, sizeof(SnglBurstTable));
@@ -617,12 +580,10 @@ int main(int argc, char **argv)
 
 			/* write the injected signals to an output file */
 			if (injSimList == NULL) {
-				injSimList = tmpSimBurst = (SimBurstTable *)
-				    LALCalloc(1, sizeof(SimBurstTable));
+				injSimList = tmpSimBurst = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
 				prevSimBurst = tmpSimBurst;
 			} else {
-				tmpSimBurst = (SimBurstTable *)
-				    LALCalloc(1, sizeof(SimBurstTable));
+				tmpSimBurst = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
 				prevSimBurst->next = tmpSimBurst;
 			}
 			memcpy(tmpSimBurst, currentSimBurst, sizeof(SimBurstTable));
@@ -649,12 +610,10 @@ int main(int argc, char **argv)
 
 					/*write the detected triggers */
 					if (detTrigList == NULL) {
-						detTrigList = tmpEvent = (SnglBurstTable *)
-						    LALCalloc(1, sizeof(SnglBurstTable));
+						detTrigList = tmpEvent = (SnglBurstTable *) LALCalloc(1, sizeof(SnglBurstTable));
 						prevTrig = tmpEvent;
 					} else {
-						tmpEvent = (SnglBurstTable *)
-						    LALCalloc(1, sizeof(SnglBurstTable));
+						tmpEvent = (SnglBurstTable *) LALCalloc(1, sizeof(SnglBurstTable));
 						prevTrig->next = tmpEvent;
 					}
 					memcpy(tmpEvent, currentEvent, sizeof(SnglBurstTable));
@@ -663,12 +622,10 @@ int main(int argc, char **argv)
 
 					/* write the injected signals to an output file */
 					if (injFoundList == NULL) {
-						injFoundList = tmpInjFound = (SimBurstTable *)
-						    LALCalloc(1, sizeof(SimBurstTable));
+						injFoundList = tmpInjFound = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
 						prevInjFound = tmpInjFound;
 					} else {
-						tmpInjFound = (SimBurstTable *)
-						    LALCalloc(1, sizeof(SimBurstTable));
+						tmpInjFound = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
 						prevInjFound->next = tmpInjFound;
 					}
 					memcpy(tmpInjFound, currentSimBurst, sizeof(SimBurstTable));
@@ -721,5 +678,5 @@ int main(int argc, char **argv)
 	LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
 	LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
 
-	return 0;
+	exit(0);
 }
