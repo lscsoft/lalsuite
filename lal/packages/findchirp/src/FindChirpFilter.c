@@ -9,6 +9,47 @@
  *-----------------------------------------------------------------------
  */
 
+#if 0
+<lalVerbatim file="FindChirpFilterCV">
+Author: Brown D. A.
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+\subsection{Module \texttt{FindChirpFilter.c}}
+\label{ss:FindChirpFilter.c}
+
+Functions.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{FindChirpFilterCP}
+\idx{LALCreateFindChirpInput()}
+\idx{LALDestroyFindChirpInput()}
+\idx{LALFindChirpFilterInit()}
+\idx{LALFindChirpFilterFinalize()}
+\idx{LALFindChirpFilterSegment()}
+
+\subsubsection*{Description}
+
+The function \texttt{LALCreateFindChirpFilterInput()} ...
+
+\subsubsection*{Algorithm}
+
+Filter.
+
+\subsubsection*{Uses}
+\begin{verbatim}
+LALCalloc()
+LALFree()
+\end{verbatim}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{FindChirpFilterCV}}
+</lalLaTeX>
+#endif
+
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -20,12 +61,14 @@ double rint(double x);
 NRCSID (FINDCHIRPFILTERC, "$Id$");
 
 
+#pragma <lalVerbatim file="FindChirpFilterCP">
 void
 LALCreateFindChirpInput (
     LALStatus                  *status,
     FindChirpFilterInput      **output,
     FindChirpInitParams        *params
     )
+#pragma </lalVerbatim>
 {
   FindChirpFilterInput         *outputPtr;
 
@@ -97,11 +140,13 @@ LALCreateFindChirpInput (
 
 
 
+#pragma <lalVerbatim file="FindChirpFilterCP">
 void
 LALDestroyFindChirpInput (
     LALStatus                  *status,
     FindChirpFilterInput      **output
     )
+#pragma </lalVerbatim>
 {
   FindChirpFilterInput         *outputPtr;
 
@@ -149,12 +194,14 @@ LALDestroyFindChirpInput (
 }
     
 
+#pragma <lalVerbatim file="FindChirpFilterCP">
 void
 LALFindChirpFilterInit (
     LALStatus                  *status,
     FindChirpFilterParams     **output,
     FindChirpInitParams        *params
     )
+#pragma </lalVerbatim>
 {
   FindChirpFilterParams        *outputPtr;
 
@@ -331,11 +378,13 @@ LALFindChirpFilterInit (
 
 
 
+#pragma <lalVerbatim file="FindChirpFilterCP">
 void
 LALFindChirpFilterFinalize (
     LALStatus                  *status,
     FindChirpFilterParams     **output
                            )
+#pragma </lalVerbatim>
 {
   FindChirpFilterParams        *outputPtr;
 
@@ -436,6 +485,7 @@ LALFindChirpFilterFinalize (
 
 
 
+#pragma <lalVerbatim file="FindChirpFilterCP">
 void
 LALFindChirpFilterSegment (
     LALStatus                  *status,
@@ -443,6 +493,7 @@ LALFindChirpFilterSegment (
     FindChirpFilterInput       *input,
     FindChirpFilterParams      *params
     )
+#pragma </lalVerbatim>
 {
   UINT4                 j, k;
   UINT4                 numPoints;
