@@ -53,17 +53,17 @@ main (int argc, char *argv[])
 
   /* bank generation parameters */
   bankIn->mMin          = 1.0;
-  bankIn->MMax          = 10.0;
-  bankIn->mmCoarse      = 0.50;
-  bankIn->mmFine        = 0.70;
+  bankIn->MMax          = 6.0;
+  bankIn->mmCoarse      = 0.97;
+  bankIn->mmFine        = 0.99;
   bankIn->fLower        = 40.;
-  bankIn->fUpper        = 2000;
+  bankIn->fUpper        = 1000.0;
   bankIn->iflso         = 0;
-  bankIn->tSampling     = 4000.;
+  bankIn->tSampling     = 2048.;
   bankIn->NoisePsd      = LALLIGOIPsd;
   bankIn->order         = twoPN;
   bankIn->approximant   = TaylorT2;
-  bankIn->space         = Tau0Tau3;
+  bankIn->space         = Tau0Tau2;
   bankIn->etamin        = bankIn->mMin * ( bankIn->MMax - bankIn->mMin) /
     ( bankIn->MMax * bankIn->MMax );
 
@@ -76,7 +76,7 @@ main (int argc, char *argv[])
   }
 
   /* request a heirarchical template bank */
-  createBankParams->numLevel = 1;
+  createBankParams->numLevel = 0;
   createBankParams->numSegments = numSegments;
 
 
@@ -142,10 +142,9 @@ PrintInspiralBank (
   for ( current = head; current; current = current->next)
   {
     fprintf( fp, 
-        "%p\t%d\t%f\t%f\t%f\t%f\t%f\t%p\t%p\n",
+        "%p\t%d\t%.16e\t%.16e\t%p\t%p\n",
         current, current->number, 
-        current->mass1, current->mass2, current->totalMass,
-        current->eta, current->mu,
+        current->mass1, current->mass2,
         current->next, current->fine );
     /*
      * fprintf( fp, "   > " );
