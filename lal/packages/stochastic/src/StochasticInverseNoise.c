@@ -101,12 +101,10 @@ strncpy()
 
 NRCSID(STOCHASTICINVERSENOISEC, "$Id$");
 
-/* <lalVerbatim file="StochasticInverseNoiseCP"> */
 void
 LALStochasticInverseNoiseCal( LALStatus                          *status,
                               StochasticInverseNoiseCalOutput    *output,
                               const StochasticInverseNoiseInput  *input )
-/* </lalVerbatim> */
 {
   REAL8          deltaF;
   REAL8          f0;
@@ -281,9 +279,7 @@ LALStochasticInverseNoiseCal( LALStatus                          *status,
   RETURN(status);
 }
 
-
-
-
+/* <lalVerbatim file="StochasticInverseNoiseCP"> */
 void
 LALStochasticInverseNoise( LALStatus                          *status,
                            StochasticInverseNoiseOutput       *output,

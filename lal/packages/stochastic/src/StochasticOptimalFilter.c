@@ -188,14 +188,12 @@ LALUnitCompare()
 NRCSID (STOCHASTICOPTIMALFILTERC,
 "$Id$");
 
-/* <lalVerbatim file="StochasticOptimalFilterCP"> */
 void
 LALStochasticOptimalFilterCal(
             LALStatus                                  *status,
             REAL4FrequencySeries                       *optimalFilter,
             const StochasticOptimalFilterCalInput      *input,
             const REAL4WithUnits                       *lambda)
-/* </lalVerbatim> */
 {
 
   REAL4     gamma;
@@ -494,7 +492,7 @@ LALStochasticOptimalFilterCal(
 
 }
 
-
+/* <lalVerbatim file="StochasticOptimalFilterCP"> */
 void
 LALStochasticOptimalFilter(
             LALStatus                                  *status,

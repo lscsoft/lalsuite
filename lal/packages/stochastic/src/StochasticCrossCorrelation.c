@@ -271,14 +271,12 @@ LALUnitMultiply()
 NRCSID(STOCHASTICCROSSCORRELATIONC, 
 "$Id$");
 
-/* <lalVerbatim file="StochasticCrossCorrelationCP"> */
 void
 LALStochasticCrossCorrelationStatisticCal(
             LALStatus                                 *status,
             REAL4WithUnits                            *output,
             const StochasticCrossCorrelationCalInput  *input,
             BOOLEAN                                   epochsMatch)
-/* </lalVerbatim> */
 {
 
   COMPLEX8FrequencySeries   ccSpec;
@@ -553,14 +551,12 @@ LALStochasticCrossCorrelationStatisticCal(
 } /* LALStochasticCrossCorrelationStatistic() */
 
 
-/* <lalVerbatim file="StochasticCrossCorrelationCP"> */
 void
 LALStochasticHeterodynedCrossCorrelationStatisticCal(
             LALStatus                                 *status,
             COMPLEX8WithUnits                         *output,
             const StochasticCrossCorrelationCalInput  *input,
             BOOLEAN                                   epochsMatch)
-/* </lalVerbatim> */
 {
 
   COMPLEX8FrequencySeries   ccSpec;
@@ -825,14 +821,12 @@ LALStochasticHeterodynedCrossCorrelationStatisticCal(
 } /* LALStochasticHeterodynedCrossCorrelationStatistic() */
 
 
-/* <lalVerbatim file="StochasticCrossCorrelationCP"> */
 void
 LALStochasticCrossCorrelationSpectrumCal(
             LALStatus                                 *status,
             COMPLEX8FrequencySeries                   *output,
             const StochasticCrossCorrelationCalInput  *input,
             BOOLEAN                                   epochsMatch)
-/* </lalVerbatim> */
 {
 
   LALUnitPair   unitPair;
@@ -1263,15 +1257,7 @@ LALStochasticCrossCorrelationSpectrumCal(
 
 } /* LALStochasticCrossCorrelationSpectrum() */
 
-
-
-
-
-
-
-
-
-
+/* <lalVerbatim file="StochasticCrossCorrelationCP"> */
 void
 LALStochasticCrossCorrelationStatistic(
             LALStatus                              *status,
