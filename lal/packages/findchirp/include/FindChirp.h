@@ -596,7 +596,7 @@ in a form that can be used by \texttt{FindChirpFilterSegment()}
 #endif
 
 void
-LALInitalizeDataSegmentVector (
+LALInitializeDataSegmentVector (
     LALStatus                  *status,
     DataSegmentVector         **dataSegVec,
     REAL4TimeSeries            *chan,
