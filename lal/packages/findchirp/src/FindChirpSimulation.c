@@ -280,13 +280,15 @@ LALFindChirpInjectSignals (
 
     LALGeneratePPNInspiral( status->statusPtr, &waveform, &ppnParams );
     CHECKSTATUSPTR( status );
+    LALInfo( status, ppnParams.termDescription );
 
     if ( ppnParams.dfdt > 2.0 ) 
     {
       snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
           "Waveform sampling interval is too large:\n"
           "\tmaximum df*dt = %f", ppnParams.dfdt );
-      ABORT( status, 999, warnMsg );
+      LALInfo( status, warnMsg );
+      ABORT( status, FINDCHIRPH_EDFDT, FINDCHIRPH_MSGEDFDT );
     }
 
     /* get the gps start time of the signal to inject */
