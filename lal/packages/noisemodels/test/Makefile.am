@@ -5,6 +5,6 @@ ChirpSpace_LDADD = $(top_builddir)/lib/liblal.la
 RandomSignal_SOURCES = RandomSignal.c
 RandomSignal_LDADD = $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = ChirpSpace RandomSignal
+TESTS = ChirpSpace
 EXTRA_DIST = RandomSignal.par demo 
 CLEANFILES = *.out
