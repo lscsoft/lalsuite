@@ -1016,7 +1016,7 @@ WriteMFDlog (LALStatus *stat, char *argv[], const char *logfile)
     fprintf (fplog, "# ----------------------------------------------------------------------\n");
     fclose (fplog);
     
-    sprintf (command, "ident %s | sort -u >> %s", argv[0], uvar_logfile);
+    sprintf (command, "ident %s 2> /dev/null | sort -u >> %s", argv[0], uvar_logfile);
     system (command);   /* we currently don't check this. If it fails, we assume that */
                         /* one of the system-commands was not available, and */
                         /* therefore the CVS-versions will simply not be logged */
