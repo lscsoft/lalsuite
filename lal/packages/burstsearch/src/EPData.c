@@ -9,7 +9,6 @@
  *-----------------------------------------------------------------------
  */
 
-#include <lal/LALStdlib.h>
 #include "EPData.h"
 
 NRCSID (EPDATAC, "$Id$");
@@ -22,13 +21,11 @@ LALCreateEPDataSegmentVector (
     )
 {
   INITSTATUS (status, "LALCreateEPDataSegmentVector", EPDATAC);
-  ATTATCHSTATUSPTR (status);
 
   ASSERT (vector, status, EPDATA_ENUL, EPDATA_MSGENUL);
 
   *vector = NULL;
 
-  DETATCHSTATUSPTR (status);
   RETURN (status);
 }
 
@@ -40,10 +37,10 @@ LALDestroyEPDataSegmentVector (
     )
 {
   INITSTATUS (status, "LALDestroyEPDataSegmentVector", EPDATAC);
-  ATTATCHSTATUSPTR (status);
 
   ASSERT (vector, status, EPDATA_ENULL, EPDATA_MSGENULL);
 
-  DETATCHSTATUSPTR (status);
+  *vector = NULL;
+
   RETURN (status);
 }
