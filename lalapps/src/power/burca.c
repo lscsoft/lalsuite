@@ -37,27 +37,6 @@ RCSID("$Id$");
 --outfile outfilename --noplayground [--help]\n"
 
          
-/****************************************************************************
- * FUNCTION TESTS IF TRIGGER IS IN PLAYGROUND DATA
- ***************************************************************************/
-static int isPlayground(INT4 gpsStart, INT4 gpsEnd){
-    INT4 runStart=729273613;
-    INT4 playInterval=6370;
-    INT4 playLength=600;
-    INT4 segStart,segEnd,segMiddle;
-
-    segStart = (gpsStart - runStart)%playInterval;
-    segEnd   = (gpsEnd - runStart)%playInterval;
-    segMiddle = gpsStart + (INT4) (0.5 * (gpsEnd - gpsStart));
-    segMiddle = (segMiddle - runStart)%playInterval;
-
-    if (segStart < playLength || segEnd < playLength || segMiddle < playLength){
-        return TRUE;
-    }
-
-    return FALSE;
-}
-
  
 /************************************************************************************
  * The main program
@@ -65,13 +44,18 @@ static int isPlayground(INT4 gpsStart, INT4 gpsEnd){
 int main(int argc, char **argv)
 {
     static LALStatus       stat;
-    INT4                   playground=TRUE;
+    INT4                   usePlayground= 1;
     INT4                   verbose = FALSE;
 
-    INT4                   startCoincidence=0;
-    INT4                   endCoincidence=977788813;
+    INT4                   isPlay = 0;
     INT4                   deltaT=0;
-    INT4                   triggerTime = 0;
+    INT8                   triggerTime = 0;
+    INT8                   startCoincidenceNS=0;
+    INT8                   endCoincidenceNS=0;
+    LIGOTimeGPS            startCoincidence={0,0};
+    LIGOTimeGPS            endCoincidence={977788813,0};
+    LIGOTimeGPS            slideData={0,0};
+    INT8                   slideDataNS=0;
 
     CHAR                 **trigFile;
     INT4                   nTrigFile[MAXIFO];
@@ -91,8 +75,8 @@ int main(int argc, char **argv)
     struct option long_options[] =
     {
         /* these options set a flag */
-        {"verbose",                 no_argument,       &verbose,           TRUE },
-        {"noplayground",            no_argument,       &playground,        FALSE },
+        {"verbose",                 no_argument,       &verbose,           1 },
+        {"noplayground",            no_argument,       &usePlayground,     0 },
         /* parameters used to generate calibrated power spectrum */
         {"ifo-a",                   required_argument, 0,                'a'},
         {"ifo-b",                   required_argument, 0,                'b'},
@@ -101,6 +85,8 @@ int main(int argc, char **argv)
         {"dt",                      required_argument, 0,                't'},
         {"start-time",              required_argument, 0,                'r'},
         {"stop-time",               required_argument, 0,                's'},
+        {"slide-time",              required_argument, 0,                'X'},
+        {"slide-time-ns",           required_argument, 0,                'Y'},
         {"outfile",                 required_argument, 0,                'o'},
         {"help",                    no_argument,       0,                'h'}, 
         {0, 0, 0, 0}
@@ -198,23 +184,31 @@ int main(int argc, char **argv)
            
             case 'r':
                 /* time coincidence window */
-                startCoincidence = atoi(optarg);
+                startCoincidence.gpsSeconds = atoi(optarg);
                 break;
 
             case 's':
                 /* time coincidence window */
-                endCoincidence = atoi(optarg);
+                endCoincidence.gpsSeconds = atoi(optarg);
+                break;
+
+            case 'X':
+                slideData.gpsSeconds = (INT4) atoi( optarg );
+                break;
+
+            case 'Y':
+                slideData.gpsNanoSeconds = (INT4) atoi( optarg );
                 break;
 
             case 'o':
                 /* the name of the output file */
                 {
-                    size_t len = strlen(optarg) + 1;
-                    outfileName = (CHAR *) LALCalloc( len, sizeof(CHAR) );
-                    memcpy( outfileName, optarg, len);
+                  size_t len = strlen(optarg) + 1;
+                  outfileName = (CHAR *) LALCalloc( len, sizeof(CHAR) );
+                  memcpy( outfileName, optarg, len);
                 }
                 break;
-                
+
             case 'h':
                 /* help message */
                 fprintf( stderr, USAGE , argv[0]);
@@ -242,7 +236,7 @@ int main(int argc, char **argv)
     /*******************************************************************
      * END PARSE ARGUMENTS                                              *
      *******************************************************************/
-    if (endCoincidence == 977788813)
+    if (endCoincidence.gpsSeconds == 977788813)
         fprintf(stderr,"Warning: %s\n", INCA_TIMEWARNING);
 
 
@@ -285,6 +279,52 @@ int main(int argc, char **argv)
         }
     }
 
+    /*****************************************************************
+     * slide the data if requested:  always slide burstEventList[0]
+     * and put it on a ring with start and end time given by 
+     * startCoincidence and endCoincidence ........
+     *****************************************************************/
+    LAL_CALL( LALGPStoINT8( &stat, &slideDataNS, &slideData ), &stat );
+    if ( slideDataNS )
+    {
+      INT8 tStart=0;
+      INT8 tPeak=0;
+
+      currentEvent = burstEventList[0];
+
+      while( currentEvent != NULL ){
+
+        LAL_CALL( LALGPStoINT8( &stat, &tStart,
+              &(currentEvent->start_time)), &stat );
+        LAL_CALL( LALGPStoINT8( &stat, &tPeak,
+              &(currentEvent->peak_time)), &stat );
+
+       tStart += slideDataNS;
+       tPeak += slideDataNS;
+
+        if ( (tStart-startCoincidenceNS)*(tStart-endCoincidenceNS) > 0 )
+        {
+          if ( tStart < startCoincidenceNS )
+          {
+            tStart += endCoincidenceNS - startCoincidenceNS;
+            tPeak += endCoincidenceNS - startCoincidenceNS;
+          }
+          if ( tStart > endCoincidenceNS )
+          {
+            tStart += startCoincidenceNS - endCoincidenceNS;
+            tPeak += startCoincidenceNS - endCoincidenceNS;
+          }
+        }
+
+        LAL_CALL( LALINT8toGPS( &stat, &(currentEvent->start_time),
+            &tStart), &stat );
+        LAL_CALL( LALINT8toGPS( &stat, &(currentEvent->peak_time),
+            &tPeak), &stat );
+
+        currentEvent = currentEvent->next;
+      }
+    }
+
 
     /*****************************************************************
      * find the first trigger after coincidence start time
@@ -294,8 +334,8 @@ int main(int argc, char **argv)
     {
         currentTrigger[j] = burstEventList[j];
 
-        while (currentTrigger[j] != NULL && 
-                (currentTrigger[j]->start_time.gpsSeconds < startCoincidence) )
+        while ( (currentTrigger[j] != NULL) && 
+                (currentTrigger[j]->start_time.gpsSeconds < startCoincidence.gpsSeconds) )
         {
             currentTrigger[j] = currentTrigger[j]->next;
         }
@@ -307,7 +347,7 @@ int main(int argc, char **argv)
      ****************************************************************/
     if (verbose) fprintf(stdout,"Start loop over ifo A\n");
     while ( (currentTrigger[0] != NULL) && 
-            (currentTrigger[0]->start_time.gpsSeconds < endCoincidence) )
+            (currentTrigger[0]->start_time.gpsSeconds < endCoincidence.gpsSeconds) )
     {
         INT8 ta, tb;
 
@@ -325,9 +365,31 @@ int main(int argc, char **argv)
         }
 
         if (verbose) fprintf(stdout,"Start loop over ifo B\n");
+
         /* look for coincident events in B within the time window */
-        triggerTime = currentTrigger[0]->start_time.gpsSeconds;
-        if ( (!(isPlayground(triggerTime, triggerTime)) && playground) == 0 )
+        LAL_CALL( LALGPStoINT8( &stat, &triggerTime, 
+              &(currentTrigger[0]->start_time) ), &stat );
+
+        LAL_CALL( LALINT8NanoSecIsPlayground( &stat, &isPlay, 
+              &triggerTime ), &stat );
+
+        if ( verbose )
+        {
+          if ( isPlay )
+          {
+            fprintf( stdout, "trigger is playground\n" );
+          } 
+          else
+          {
+            fprintf( stdout, "trigger is not playground\n" );
+          }
+        }
+
+        /* if we are playground only and the trigger is in playground or
+         * we are not using playground and the trigger is not in the 
+         * playground  ... */
+
+        if ( ( usePlayground && isPlay ) || ( ! usePlayground && ! isPlay) )
         {
             tmpEvent = currentTrigger[1];
             while (tmpEvent != NULL)
