@@ -93,6 +93,13 @@ LALFindChirpBCVSpinData (
 
   FindChirpSegment     *fcSeg   = NULL;
   DataSegment          *dataSeg = NULL;
+
+  /* REMOVE THIS */
+  /*FILE                 *fpDataIn     = NULL;
+  char                  filename[10];
+  char                  suffix[10];*/
+  /* REMOVE THIS */
+
   
   /*declaration*/
   INITSTATUS( status, "LALFindChirpBCVSpinData", FINDCHIRPBCVSPINDATAC );
@@ -201,7 +208,18 @@ LALFindChirpBCVSpinData (
   
   for ( i = 0; i < dataSegVec->length; ++i )
   {
-    	/*
+         
+	 /* REMOVE THIS */ 
+	 /*sprintf (suffix, "%d", i);
+         strcpy (filename, "dataSegment.");
+         strncat (filename, suffix, 5);
+                                                                                                                                             
+         {
+            fpDataIn     = fopen (filename,"w");
+         }*/
+         /* REMOVE THIS */
+	 
+    /*
      	 *
      	 * set up segment dependent pointers
      	 *
@@ -234,6 +252,18 @@ LALFindChirpBCVSpinData (
 	/* store the waveform approximant in the data segment */
     	fcSeg->approximant = BCVSpin;
 
+	
+       /* REMOVE THIS */	
+       /*{
+                fprintf (stdout, "Writing input data (time domain) to file %s\n", filename );
+                                                                                                                                           
+                for ( k = 0; k < dataVec->length; ++k )
+                {
+                     fprintf (fpDataIn, "%d\t%e\n",  k, dataVec->data[k]);
+                }
+       }*/
+       /* REMOVE THIS */
+	
     	/*
      	 *
      	 * compute htilde and store in fcSeg
@@ -375,6 +405,11 @@ LALFindChirpBCVSpinData (
 
       		wtilde[k].re *= invmodsqResp;
     	}
+   
+	/* REMOVE THIS */
+	/*fclose (fpDataIn);*/
+        /* REMOVE THIS */
+
 	
   DETATCHSTATUSPTR( status );
   RETURN( status );
