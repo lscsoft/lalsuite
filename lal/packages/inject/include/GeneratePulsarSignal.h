@@ -52,7 +52,7 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 #define GENERATEPULSARSIGNALH_ENOISEDELTAF	10
 #define GENERATEPULSARSIGNALH_ENOISEBAND	11
 #define GENERATEPULSARSIGNALH_ENOISEBINS	12
-#define GENERATEPULSARSIGNALH_ECOPYSIZE		13
+
 
 #define GENERATEPULSARSIGNALH_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define GENERATEPULSARSIGNALH_MSGENONULL	"Output pointer is not NULL"
@@ -66,7 +66,6 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 #define GENERATEPULSARSIGNALH_MSGENOISEDELTAF	"Frequency resolution of noise-SFTs inconsistent with signal"
 #define GENERATEPULSARSIGNALH_MSGENOISEBAND	"Frequency band of noise-SFTs inconsistent with signal"
 #define GENERATEPULSARSIGNALH_MSGENOISEBINS	"Frequency bins of noise-SFTs inconsistent with signal"
-#define GENERATEPULSARSIGNALH_MSGECOPYSIZE	"Target SFT-struct has not enough frequency-bins for copying"
 
 /*************************************************** </lalErrTable> */
 
