@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 check_PROGRAMS = RandomTest MersenneRandomTest FindRootTest IntegrateTest InterpolateTest SortTest ODETest \
-          DirichletTest        \
+          DirichletTest        LALRunningMedianTest\
 	  SCoarseGrainFrequencySeriesTest    DCoarseGrainFrequencySeriesTest \
 	  CCoarseGrainFrequencySeriesTest    ZCoarseGrainFrequencySeriesTest
 RandomTest_SOURCES = RandomTest.c
@@ -27,10 +27,12 @@ CCoarseGrainFrequencySeriesTest_SOURCES = CCoarseGrainFrequencySeriesTest.c Chec
 CCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 ZCoarseGrainFrequencySeriesTest_SOURCES = ZCoarseGrainFrequencySeriesTest.c CheckStatus.c
 ZCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+LALRunningMedianTest_SOURCES = LALRunningMedianTest.c
+LALRunningMedianTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 EXTRA_DIST = CheckStatus.c CheckStatus.h
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = RandomTest MersenneRandomTest FindRootTest IntegrateTest InterpolateTest SortTest ODETest \
-          DirichletTest        \
+          DirichletTest        LALRunningMedianTest \
 	  SCoarseGrainFrequencySeriesTest  DCoarseGrainFrequencySeriesTest \
 	  CCoarseGrainFrequencySeriesTest  ZCoarseGrainFrequencySeriesTest
 MOSTLYCLEANFILES = .dvi-dep PrintVector.* *.out
