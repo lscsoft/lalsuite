@@ -2967,7 +2967,7 @@ void worker() {
 	boinczipret=boinc_rename(zipname, Outputfilename);
 	if (boinczipret) {
 	  fprintf(stderr, "Error in renaming file %s to %s. rename() returned %d. not zipping output.\n",
-		  zipname Outputfilename, boinczipret);
+		  zipname, Outputfilename, boinczipret);
 	  /* boinc_finish(COMPUTEFSTAT_EXIT_CANTRENAME); */
         }
       }
