@@ -2146,7 +2146,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* loop over intervals */
   for (interLoop = 0; interLoop < numIntervals; interLoop++)
   {	
-    /* loop over segments  */
+    /* loop over segments */
     for (segLoop = 0; segLoop < segsInInt; segLoop++)
     {
       /* get segment start/end time */
@@ -2206,15 +2206,19 @@ INT4 main(INT4 argc, CHAR *argv[])
     for (segLoop = 0; segLoop < segsInInt; segLoop++)
     {
       /* set segment start and end time */
-      gpsSegStartTime.gpsSeconds = gpsStartTime.gpsSeconds + \
-                                   (interLoop * intervalDuration) + \
-                                   (segLoop * segmentDuration);
-      gpsSegStartTime.gpsNanoSeconds = 0;
-      gpsSegEndTime.gpsSeconds = gpsSegStartTime.gpsSeconds + \
-                                 segmentDuration;
+      LAL_CALL(LALAddFloatToGPS(&status, &gpsSegStartTime, &gpsStartTime, \
+            (REAL8)((interLoop * segmentShift) + \
+                    (segLoop * segmentDuration))), &status);
+      LAL_CALL(LALAddFloatToGPS(&status, &gpsSegEndTime, &gpsSegStartTime, \
+            (REAL8)segmentDuration), &status);
+
+      /* get epoch for response function */
+      LAL_CALL(LALAddFloatToGPS(&status, &gpsCalibTime, &gpsSegStartTime, \
+            (REAL8)calibOffset), &status);
+
+      /* set epoch for segments and response functions */
       segmentOne->epoch = gpsSegStartTime;
       segmentTwo->epoch = gpsSegStartTime;
-      gpsCalibTime.gpsSeconds = gpsSegStartTime.gpsSeconds + calibOffset;
       responseOne->epoch = gpsCalibTime;
       responseTwo->epoch = gpsCalibTime;
 
