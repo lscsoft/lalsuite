@@ -189,7 +189,7 @@ for seg in data:
     # split the template bank
     split = inspiral.SplitBankJob(split_job)
     split.set_bank(bank.get_output())
-    split.set_num_banks(20)
+    split.set_num_banks(cp.get('pipeline','numbanks'))
     split.add_parent(bank)
     dag.add_node(split)
 
