@@ -50,6 +50,33 @@ typedef struct CLargstag {
   CHAR meshfile[256];
 } CLargs;
   
+typedef struct BinaryMeshFileHeadertag {
+  REAL8 fmax;
+  REAL8 tspan;
+  LIGOTimeGPS tstart;
+  UINT4 Nfilters;
+  REAL8 mismatch;
+  REAL8 sma_0;
+  REAL8 sma_MIN;
+  REAL8 sma_MAX;
+  LIGOTimeGPS tperi_0;
+  LIGOTimeGPS tperi_MIN;
+  LIGOTimeGPS tperi_MAX;
+  REAL8 ecc_MIN;
+  REAL8 ecc_MAX;
+  REAL8 argp_MIN;
+  REAL8 argp_MAX;
+  REAL8 period_MIN;
+  REAL8 period_MAX;
+  REAL8 metric_XX;
+  REAL8 metric_XY;
+  REAL8 metric_YY;
+  CHAR version[256];
+  CHAR det[256];
+  REAL8 RA;
+  REAL8 dec;
+} BinaryMeshFileHeader;
+
 typedef struct XYparameterspacetag {
   REAL8 X_MIN;
   REAL8 X_MAX;
@@ -83,18 +110,28 @@ typedef struct RTMeshtag {
   LIGOTimeGPS *tperi;
 } RTMesh;
 
-int FreeMem();
-int GenerateMesh(REAL4VectorSequence **,XYparameterspace *,Metric *);
-int SetupPspaceParams(RTparameterspace *,XYparameterspace *);
-int GenMetricComp(REAL8 *,REAL8 *,Metric *);
-int CheckRTBoundary(REAL8 *,LIGOTimeGPS *,RTparameterspace *);
-int ConvertMesh(REAL4VectorSequence **,RTMesh *,RTparameterspace *);
-int OutputRTMesh(RTMesh *,Metric *, RTparameterspace *);
-int ReadCommandLine(int argc,char *argv[]);
-int ConvertXYtoRTperi(REAL8 *, REAL8 *, REAL8 *, LIGOTimeGPS *);
-int ConvertTperitoPhase();
-int SetupBaryInput();
-int CheckInput();
-int GetSSBTime(LIGOTimeGPS *, LIGOTimeGPS *);
-int ConvertRTperitoXY(REAL8 *,LIGOTimeGPS *,REAL8 *,REAL8 *,REAL8 *);
-static void OrbPhaseFunc(LALStatus *, REAL8 *, REAL8, void *);
+typedef struct RTPLocationtag {
+  REAL8 sma;
+  REAL8 period;
+  LIGOTimeGPS tperi;
+  LIGOTimeGPS tstartSSB;
+  REAL8 ecc;
+  REAL8 argp;
+} RTPLocation;
+
+typedef struct XYLocationtag {
+  REAL8 X;
+  REAL8 Y;
+  REAL8 period;
+  LIGOTimeGPS tstartSSB;
+  REAL8 ecc;
+  REAL8 argp;
+} XYLocation;
+
+int ConvertXYtoRTperi(XYLocation *, RTPLocation *);
+int WriteMeshFileHeader(FILE *fp,BinaryMeshFileHeader *BMFheader);
+int ReadMeshFileHeader(FILE *fp,BinaryMeshFileHeader *BMFheader);
+int ConvertRTperitoXY(RTPLocation *, XYLocation *, REAL8 *);
+
+
+
