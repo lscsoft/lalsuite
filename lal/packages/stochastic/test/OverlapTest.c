@@ -82,7 +82,7 @@ NRCSID (MAIN, "$Id$");
 
 int main()
 {
-  Status               status;
+  Status               status = {};
   
   REAL4Vector         *vector = NULL;
   REAL4Vector          dummy;
