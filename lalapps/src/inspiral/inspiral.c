@@ -1234,13 +1234,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     exit( 1 );
   }
 
-  /* check calibration has been given */
-  if ( ! calCacheName )
-  {
-    fprintf( stderr, "--calibration must be specified\n" );
-    exit( 1 );
-  }
-
   /* check high pass option has been given */
   if ( highPass < 0 )
   {
