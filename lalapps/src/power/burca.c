@@ -25,7 +25,7 @@ RCSID("$Id$");
 2010 will be used"
 
 #define TRUE     1
-#define FALSE    0
+#define FALSE    0 
 #define MAXIFO   16
 #define MAXFILES 128
 #define MSEC   (1000000LL)
@@ -311,12 +311,12 @@ int main(int argc, char **argv)
     {
         INT8 ta, tb;
 
-        LAL_CALL( LALGPStoINT8(&stat, &ta, &(currentTrigger[0]->start_time)), &stat);
+        LAL_CALL( LALGPStoINT8(&stat, &ta, &(currentTrigger[0]->peak_time)), &stat);
 
         /*catch up triggers from ifo B */
         while (currentTrigger[1] != NULL)
         {
-            LAL_CALL( LALGPStoINT8(&stat, &tb, &(currentTrigger[1]->start_time)), &stat);
+            LAL_CALL( LALGPStoINT8(&stat, &tb, &(currentTrigger[1]->peak_time)), &stat);
             if (tb > ta-deltaT)
             {
                 break;
@@ -332,7 +332,7 @@ int main(int argc, char **argv)
             tmpEvent = currentTrigger[1];
             while (tmpEvent != NULL)
             {
-                LAL_CALL( LALGPStoINT8(&stat, &tb, &(tmpEvent->start_time)), &stat);
+                LAL_CALL( LALGPStoINT8(&stat, &tb, &(tmpEvent->peak_time)), &stat);
                 if (tb > ta+deltaT)
                 {
                     break;
