@@ -50,8 +50,6 @@
 #include <lal/LALInspiral.h>
 #include <lal/LALInspiralBank.h>
 
-#include "tmpltbank.h"
-
 RCSID( "$Id$" );
 #define CVS_ID_STRING "$Id$"
 #define CVS_NAME_STRING "$Name$"
@@ -59,6 +57,8 @@ RCSID( "$Id$" );
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "tmpltbank"
+
+int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
 
 /*

@@ -55,8 +55,6 @@
 #include <lal/FindChirpBCVSpin.h>
 #include <lal/FindChirpChisq.h>
 
-#include "inspiral.h"
-
 RCSID( "$Id$" );
 
 #define CVS_ID_STRING "$Id$"
@@ -70,6 +68,9 @@ RCSID( "$Id$" );
 #define CANDLE_MASS1 1.4
 #define CANDLE_MASS2 1.4
 #define CANDLE_RHOSQ 64.0
+
+double rint(double x);
+int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
 #ifdef LALAPPS_CONDOR
 extern int condor_compress_ckpt;

@@ -54,9 +54,6 @@
 #include <lal/FindChirpChisq.h>
 #include <lal/TwoInterfFindChirp.h>
 
-#include "inspiral.h"
-
-
 RCSID( "$Id$" );
 
 #define CVS_REVISION "$Revision$"
@@ -73,6 +70,9 @@ RCSID( "$Id$" );
 "lalapps_coherent_inspiral [options]\n\n"\
 "See lalapps documentation for more information\n"\
 "\n"
+
+double rint(double x);
+int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
 
 /*
