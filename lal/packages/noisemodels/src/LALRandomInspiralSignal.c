@@ -151,7 +151,7 @@ LALRandomInspiralSignal
 
   REAL8 maxTemp; /* temporary variable*/
   INT4 iMax;     /* temporary indice */
-  INT4 indice;
+  UINT4 indice;
    REAL8 epsilon1, epsilon2, norm;
    REAL4Vector noisy, buff;
    AddVectorsIn addIn;

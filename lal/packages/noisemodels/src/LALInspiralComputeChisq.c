@@ -96,7 +96,7 @@ LALInspiralComputeChisq
      binSNR = 0.0;
      for(k=k_start; k<=k_N; k++)
      {
-	double dSNR, ePlus, eMinus;
+	double dSNR=0., ePlus=0., eMinus=0.;
         if (input->psd->data[k]) binSNR += (dSNR=pow( (float)k*df, mSevenBy3) / input->psd->data[k]);
 
            if (binSNR > SNRPerBin)

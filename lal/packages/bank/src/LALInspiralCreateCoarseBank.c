@@ -467,7 +467,7 @@ LALInspiralCreatePNCoarseBank(
   InspiralTemplate *tempPars;
   InspiralMetric metric;
   InspiralMomentsEtc moments;
-  INT4 validPars, i;
+  INT4 validPars;
   REAL8 x01, x02, x11, x12, dist1, dist2, ndx1, ndx2, a25;
 
   INITSTATUS( status, "LALInspiralCreateCoarseBank", 
@@ -697,7 +697,7 @@ LALInspiralCreateBCVBank (
     ) 
 /*  </lalVerbatim>  */
 {  
-  UINT4 j;
+  INT4 j;
   INT4 nlistOld;
   static InspiralBankParams bankParams;
   static InspiralMetric metric;
@@ -870,7 +870,7 @@ void
 LALInspiralBCVFcutBank (
     LALStatus            *status, 
     InspiralTemplateList **list, 
-    UINT4                *NList, 
+    INT4                *NList, 
     InspiralCoarseBankIn coarseIn
     ) 
 /*  </lalVerbatim>  */
@@ -1016,7 +1016,7 @@ void
 LALInspiralBCVRegularFcutBank (
     LALStatus            *status, 
     InspiralTemplateList **list, 
-    UINT4                *NList, 
+    INT4                *NList, 
     InspiralCoarseBankIn coarseIn
     ) 
 /*  </lalVerbatim>  */

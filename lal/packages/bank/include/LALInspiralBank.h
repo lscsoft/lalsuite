@@ -501,14 +501,14 @@ void
 LALInspiralBCVFcutBank (
     LALStatus            *status, 
     InspiralTemplateList **list, 
-    UINT4                *NList, 
+    INT4                *NList, 
     InspiralCoarseBankIn coarseIn);
 
 void 
 LALInspiralBCVRegularFcutBank (
     LALStatus            *status, 
     InspiralTemplateList **list, 
-    UINT4                *NList, 
+    INT4                *NList, 
     InspiralCoarseBankIn coarseIn);
 
 
