@@ -105,6 +105,11 @@ typedef struct tagMTRandomParams MTRandomParams;
  *
  **** </lalLaTeX> */
 
+INT4 XLALBasicRandom( INT4 i );
+RandomParams * XLALCreateRandomParams( INT4 seed );
+void XLALDestroyRandomParams( RandomParams *params );
+REAL4 XLALUniformDeviate( RandomParams *params );
+int XLALNormalDeviates( REAL4Vector *deviates, RandomParams *params );
 
 void
 LALCreateRandomParams (

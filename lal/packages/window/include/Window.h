@@ -287,6 +287,33 @@ tagREAL8Window
   REAL8         sumofsquares;
 }
 REAL8Window;
+
+
+REAL4Window *XLALCreateREAL4Window( UINT4 length, WindowType type, REAL4 beta );
+REAL8Window *XLALCreateREAL8Window( UINT4 length, WindowType type, REAL4 beta );
+REAL4Window *XLALCreateRectangularREAL4Window( UINT4 length );
+REAL4Window *XLALCreateHannREAL4Window( UINT4 length );
+REAL4Window *XLALCreateWelchREAL4Window( UINT4 length );
+REAL4Window *XLALCreateBartlettREAL4Window( UINT4 length );
+REAL4Window *XLALCreateParzenREAL4Window( UINT4 length );
+REAL4Window *XLALCreatePapoulisREAL4Window( UINT4 length );
+REAL4Window *XLALCreateHammingREAL4Window( UINT4 length );
+REAL4Window *XLALCreateKaiserREAL4Window( UINT4 length, REAL4 beta );
+REAL4Window *XLALCreateCreightonREAL4Window( UINT4 length, REAL4 beta );
+REAL8Window *XLALCreateRectangularREAL8Window( UINT4 length );
+REAL8Window *XLALCreateHannREAL8Window( UINT4 length );
+REAL8Window *XLALCreateWelchREAL8Window( UINT4 length );
+REAL8Window *XLALCreateBartlettREAL8Window( UINT4 length );
+REAL8Window *XLALCreateParzenREAL8Window( UINT4 length );
+REAL8Window *XLALCreatePapoulisREAL8Window( UINT4 length );
+REAL8Window *XLALCreateHammingREAL8Window( UINT4 length );
+REAL8Window *XLALCreateKaiserREAL8Window( UINT4 length, REAL4 beta );
+REAL8Window *XLALCreateCreightonREAL8Window( UINT4 length, REAL4 beta );
+void XLALDestroyREAL4Window( REAL4Window *window );
+void XLALDestroyREAL8Window( REAL8Window *window );
+
+
+
   
 void LALWindow (
     LALStatus *,

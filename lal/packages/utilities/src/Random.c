@@ -85,9 +85,13 @@ static const INT4 r = 2836;
 
 static const REAL4 eps = 1.2e-7;
 
-static
-INT4
-BasicRandom (INT4 i)
+/*
+ *
+ * XLAL Routines.
+ *
+ */
+
+INT4 XLALBasicRandom( INT4 i )
 {
   INT4 k;
   k = i/q;
@@ -97,120 +101,80 @@ BasicRandom (INT4 i)
   return i;
 }
 
-/* <lalVerbatim file="RandomCP"> */
-void
-LALCreateRandomParams (
-    LALStatus     *status,
-    RandomParams **params,
-    INT4           seed
-    )
-{ /* </lalVerbatim> */
-  INT4 n;
+RandomParams * XLALCreateRandomParams( INT4 seed )
+{
+  static const char *func = "XLALCreateRandomParams";
+  RandomParams *params;
+  UINT4 n;
 
-  INITSTATUS (status, "LALCreateRandomParams", RANDOMC);
+  params = LALMalloc( sizeof( *params) );
+  if ( ! params )
+    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
 
-  ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
-  ASSERT (!*params, status, RANDOMH_ENNUL, RANDOMH_MSGENNUL);
+  while ( seed == 0 ) /* use system clock to get seed */
+    seed = time( NULL );
 
-  *params = (RandomParams *) LALMalloc (sizeof(RandomParams));
-  ASSERT (*params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
-
-  while (seed == 0)
-  {
-    seed = time (NULL);
-  }
-
-  if (seed < 0)
-  {
+  if ( seed < 0 )
     seed = -seed;
-  }
 
-  (*params)->i = seed;
+  params->i = seed;
+  for ( n = 0; n < 8; ++n ) /* shuffle 8 times */
+    params->i = XLALBasicRandom( params->i );
 
-  for (n = 0; n < 8; ++n)
-  {
-    (*params)->i = BasicRandom ((*params)->i);
-  }
+  /* populate vector of random numbers */
+  for ( n = 0; n < sizeof( params->v )/sizeof( *params->v ); ++n )
+    params->v[n] = params->i = XLALBasicRandom( params->i );
 
-  for (n = 0; n < (int)(sizeof((*params)->v)/sizeof(INT4)); ++n)
-  {
-    (*params)->v[n] = (*params)->i = BasicRandom ((*params)->i);
-  }
+  /* first random number is the 0th element of v */
+  params->y = params->v[0];
 
-  (*params)->y = (*params)->v[0];
-
-  RETURN (status);
-}
-
-/* <lalVerbatim file="RandomCP"> */
-void
-LALDestroyRandomParams (
-    LALStatus     *status,
-    RandomParams **params
-    )
-{ /* </lalVerbatim> */
-  INITSTATUS (status, "LALDestroyRandomParams", RANDOMC);
-
-  ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
-  ASSERT (*params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
-
-  LALFree (*params);
-  *params = NULL;
-
-  RETURN (status);
+  return params;
 }
 
 
-/* <lalVerbatim file="RandomCP"> */
-void
-LALUniformDeviate (
-    LALStatus    *status,
-    REAL4        *deviate,
-    RandomParams *params
-    )
-{ /* </lalVerbatim> */
+void XLALDestroyRandomParams( RandomParams *params )
+{
+  LALFree( params );
+  return;
+}
+
+
+REAL4 XLALUniformDeviate( RandomParams *params )
+{
+  static const char *func = "XLALUniformDeviate";
+  REAL4 ans;
   INT4 ndiv;
   INT4 n;
 
-  INITSTATUS (status, "LALUniformDeviate", RANDOMC);
+  if ( ! params )
+    XLAL_ERROR_REAL4( func, XLAL_EFAULT );
 
-  ASSERT (deviate, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
-  ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
-
-  ndiv = 1 + (m - 1)/(sizeof(params->v)/sizeof(INT4));
-  n    = params->y/ndiv;
-
+  /* randomly choose which element of the vector of random numbers to use */
+  ndiv = 1 + (m - 1)/(sizeof(params->v)/sizeof(*params->v));
+  n = params->y/ndiv;
   params->y = params->v[n];
-  params->v[n] = params->i = BasicRandom (params->i);
 
-  *deviate = params->y/(REAL4)m;
-  if (*deviate > 1 - eps)
-  {
-    *deviate = 1 - eps;
-  }
+  /* repopulate this element */
+  params->v[n] = params->i = XLALBasicRandom( params->i );
 
-  RETURN (status);
+  ans = params->y/(REAL4)m;
+  if ( ans > 1 - eps ) /* make sure it is not exactly 1 */
+    ans = 1 - eps;
+
+  return ans;
 }
 
 
-/* <lalVerbatim file="RandomCP"> */
-void
-LALNormalDeviates (
-    LALStatus    *status,
-    REAL4Vector  *deviates,
-    RandomParams *params
-    )
-{ /* </lalVerbatim> */
+int XLALNormalDeviates( REAL4Vector *deviates, RandomParams *params )
+{
+  static const char *func = "XLALNormalDeviates";
   REAL4 *data;
   INT4   half;
 
-  INITSTATUS (status, "LALNormalDeviates", RANDOMC);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
-  ASSERT (deviates, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
-  ASSERT (deviates->data, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
-  ASSERT (deviates->length > 0, status, RANDOMH_ESIZE, RANDOMH_MSGESIZE);
+  if ( ! deviates || ! deviates->data || ! params )
+    XLAL_ERROR( func, XLAL_EFAULT );
+  if ( ! deviates->length )
+    XLAL_ERROR( func, XLAL_EBADLEN );
 
   data = deviates->data;
   half = deviates->length/2;
@@ -225,10 +189,8 @@ LALNormalDeviates (
     REAL4 fac;
 
     do {
-      LALUniformDeviate (status->statusPtr, &u, params);
-      CHECKSTATUSPTR (status);
-      LALUniformDeviate (status->statusPtr, &v, params);
-      CHECKSTATUSPTR (status);
+      u = XLALUniformDeviate( params );
+      v = XLALUniformDeviate( params );
       x   = 2*u - 1;
       y   = 2*v - 1;
       rsq = x*x + y*y;
@@ -251,10 +213,8 @@ LALNormalDeviates (
     REAL4 fac;
 
     do {
-      LALUniformDeviate (status->statusPtr, &u, params);
-      CHECKSTATUSPTR (status);
-      LALUniformDeviate (status->statusPtr, &v, params);
-      CHECKSTATUSPTR (status);
+      u = XLALUniformDeviate( params );
+      v = XLALUniformDeviate( params );
       x   = 2*u - 1;
       y   = 2*v - 1;
       rsq = x*x + y*y;
@@ -266,6 +226,113 @@ LALNormalDeviates (
     /* throw away y */
   }
 
-  DETATCHSTATUSPTR (status);
+  return 0;
+}
+
+
+/*
+ *
+ * LAL Routines.
+ *
+ */
+
+
+/* <lalVerbatim file="RandomCP"> */
+void
+LALCreateRandomParams (
+    LALStatus     *status,
+    RandomParams **params,
+    INT4           seed
+    )
+{ /* </lalVerbatim> */
+  INITSTATUS (status, "LALCreateRandomParams", RANDOMC);
+
+  ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
+  ASSERT (!*params, status, RANDOMH_ENNUL, RANDOMH_MSGENNUL);
+
+  *params = XLALCreateRandomParams( seed );
+  if ( ! params )
+  {
+    XLALClearErrno();
+    ABORT( status, RANDOMH_ENULL, RANDOMH_MSGENULL );
+  }
+
+  RETURN (status);
+}
+
+
+/* <lalVerbatim file="RandomCP"> */
+void
+LALDestroyRandomParams (
+    LALStatus     *status,
+    RandomParams **params
+    )
+{ /* </lalVerbatim> */
+  INITSTATUS (status, "LALDestroyRandomParams", RANDOMC);
+
+  ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
+  ASSERT (*params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
+
+  XLALDestroyRandomParams( *params );
+  *params = NULL;
+
+  RETURN (status);
+}
+
+
+/* <lalVerbatim file="RandomCP"> */
+void
+LALUniformDeviate (
+    LALStatus    *status,
+    REAL4        *deviate,
+    RandomParams *params
+    )
+{ /* </lalVerbatim> */
+  INITSTATUS (status, "LALUniformDeviate", RANDOMC);
+
+  ASSERT (deviate, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
+  ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
+
+  *deviate = XLALUniformDeviate( params );
+  if ( XLAL_IS_REAL4_FAIL_NAN( *deviate ) )
+  {
+    XLALClearErrno();
+    ABORT( status, RANDOMH_ENULL, RANDOMH_MSGENULL );
+  }
+
+  RETURN (status);
+}
+
+
+/* <lalVerbatim file="RandomCP"> */
+void
+LALNormalDeviates (
+    LALStatus    *status,
+    REAL4Vector  *deviates,
+    RandomParams *params
+    )
+{ /* </lalVerbatim> */
+  INITSTATUS (status, "LALNormalDeviates", RANDOMC);
+
+  ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
+  ASSERT (deviates, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
+  ASSERT (deviates->data, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
+  ASSERT (deviates->length > 0, status, RANDOMH_ESIZE, RANDOMH_MSGESIZE);
+
+  if ( XLALNormalDeviates( deviates, params ) < 0 )
+  {
+    int errnum = xlalErrno;
+    XLALClearErrno();
+    switch ( errnum )
+    {
+      case XLAL_EFAULT:
+        ABORT( status, RANDOMH_ENULL, RANDOMH_MSGENULL );
+      case XLAL_EBADLEN:
+        ABORT( status, RANDOMH_ESIZE, RANDOMH_MSGESIZE );
+      default:
+        ABORTXLAL( status );
+    }
+  }
+
   RETURN (status);
 }

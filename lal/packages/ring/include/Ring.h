@@ -231,6 +231,11 @@ RingTemplateBankInput;
  *
  **** </lalLaTeX> */
 
+int XLALComputeRingTemplate( REAL4TimeSeries *output, RingTemplateInput *input );
+int XLALComputeBlackHoleRing( REAL4TimeSeries *output, BlackHoleRingInput *input );
+RingTemplateBank *XLALCreateRingTemplateBank( RingTemplateBankInput *input );
+void XLALDestroyRingTemplateBank( RingTemplateBank *bank );
+
 void
 LALComputeRingTemplate(
     LALStatus          *status,
