@@ -181,6 +181,12 @@ SummValueTableFromLIGOLw (
     CHAR           *fileName
     );
 
+int
+StochasticTableFromLIGOLw (
+    StochasticTable **stochHead,
+		CHAR             *fileName
+		);
+
 #ifdef  __cplusplus
 }
 #endif
