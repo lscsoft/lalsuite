@@ -476,7 +476,7 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__ifo = None
     self.__usertag = job.get_config('pipeline','user-tag')
 
-  def set_outputs(self,out_name,usertag=None,tama_output=None):
+  def set_outputs(self,out_name,usertag=None,slide_time=None,tama_output=None):
     """
     Sets the name of the sire output file.
     out_name = name of sire output file
@@ -485,6 +485,9 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     outfile = out_name
     if usertag:
       outfile += '_' + usertag
+    if slide_time:
+      if slide_time < 0: outfile += '_SLIDEneg' + str(abs(slide_time))
+      else: outfile += '_SLIDE' + str(slide_time)
     summ_file = outfile + '.txt' 
     if tama_output:
       tama_out = outfile + '.dat'
@@ -496,7 +499,7 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.add_var_opt('summary',summ_file)
 
   def set_inj_outputs(self,out_name,usertag=None,tama_output=None,
-    cluster=None):
+			slide_time=None,cluster=None):
     """
     Sets the name of the sire output file.
     out_name = name of sire output file
@@ -505,6 +508,9 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     outfile = out_name
     if usertag:
       outfile += '_' + usertag
+    if slide_time:
+      if slide_time < 0: outfile += '_SLIDEneg' + str(abs(slide_time))
+      else: outfile += '_SLIDE' + slide_time
     if cluster:
       outfile += '_CLUSTER'  
     summ_file = outfile + '_FOUND.txt' 
