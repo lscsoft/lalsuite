@@ -43,7 +43,12 @@ int main(int argc, char** argv) {
 
       /* check that various bits of header information are consistent */
       if (count && (err=CheckSFTHeaderConsistency(&lastinfo, &info)))
-	return err;
+	{
+	  fprintf(stderr, "%s is not a valid SFT. %s\n", argv[i], SFTErrorMessage(err));
+	  if (errno)
+	    perror(NULL);
+	  return err;
+	}
  
       /* keep copy of header for comparison the next time */
       lastinfo=info;
