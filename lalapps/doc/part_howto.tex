@@ -19,52 +19,59 @@ A useful installation of \lal\ and \lalapps\ requires \textsc{fftw},
 the \textsc{frame} and \textsc{metaio} libraries.   Pre-compiled
 versions of these libraries are available as RPM's from
 \begin{verbatim}
-    http://www.lsc-group.phys.uwm.edu/lal/rpms/
+http://www.lsc-group.phys.uwm.edu/lal/rpms/
 \end{verbatim}
 The binary versions
 \begin{verbatim}
-   fftw-2.1.3-2lal.i386.rpm   28-Aug-2003 17:35   810k  
-   frame-6.08-1lal.i386.rpm   28-Aug-2003 17:35   464k  
-   metaio-4.13-1lal.i386.rpm  28-Aug-2003 17:35    24k  
+fftw-2.1.3-2lal.i386.rpm   28-Aug-2003 17:35   810k  
+frame-6.08-1lal.i386.rpm   28-Aug-2003 17:35   464k  
+metaio-4.13-1lal.i386.rpm  28-Aug-2003 17:35    24k  
+stow-1.3.3-1lal.i386.rpm   29-Aug-2003 12:27    29k 
 \end{verbatim}
-are compiled on RedHat7.3 architecture,  but may work on later
+are compiled on RedHat7.3 and RedHat 9.0 architecture,  but should work on other
 versions of RedHat.   Download the RPM's,  log in as root on your
 computer,  then type
 \begin{verbatim}
 rpm -Uvh fftw-2.1.3-2lal.i386.rpm
 rpm -Uvh frame-6.08-1lal.i386.rpm
 rpm -Uvh metaio-4.13-1lal.i386.rpm
+rpm -Uvh stow-1.3.3-1lal.i386.rpm
 \end{verbatim}
 Watch for error messages.   If everything installs correctly,  skip to
-Sec.~\ref{s:lal},  otherwise continue through the following steps.  
+Sec.~\ref{ss:lal},  otherwise continue through the following steps.  
 
-The source RPM's are also available on the LAL web site,   download
+If the binary RPM's do not work for some reason or your particular O/S
+is not supported,   the source RPM's are also available at the LAL web
+site.   Download
 \begin{verbatim}
-   fftw-2.1.3-2lal.src.rpm   28-Aug-2003 17:35   810k  
-   frame-6.08-1lal.src.rpm   28-Aug-2003 17:35   464k  
-   metaio-4.13-1lal.src.rpm  28-Aug-2003 17:35    24k  
+fftw-2.1.3-2lal.src.rpm   28-Aug-2003 17:35   810k  
+frame-6.08-1lal.src.rpm   28-Aug-2003 17:35   464k  
+metaio-4.13-1lal.src.rpm  28-Aug-2003 17:35    24k  
+stow-1.3.3-1lal.src.rpm   29-Aug-2003 12:27   139k 
 \end{verbatim}
 to your computer.  As root,   type
 \begin{verbatim}
 rpm -Uvh fftw-2.1.3-2lal.src.rpm
 rpm -Uvh frame-6.08-1lal.src.rpm
 rpm -Uvh metaio-4.13-1lal.src.rpm
+rpm -Uvh stow-1.3.3-1lal.src.rpm
 \end{verbatim}
 Watch for errors.  If this fails,  there is a major problem:  e-mail
-\verb+lal-discuss@gravity.phys.uwm.edu+.    If it succeeds,  then
+\verb+lal-discuss@gravity.phys.uwm.edu+.    If it succeeds,  as root
 \begin{verbatim}
 cd /usr/src/redhat/SPECS
 rpm -ba fftw.spec
 rpm -ba frame.spec
 rpm -ba metaio.spec
-cd ../RPMS/i386
+cd /usr/src/redhat/RPMS/i386
 rpm -Uvh fftw-2.1.3-2lal.i386.rpm
 rpm -Uvh frame-6.08-1lal.i386.rpm
 rpm -Uvh metaio-4.13-1lal.i386.rpm
 \end{verbatim}
 Watch for errors at every step.  If you encounter a problem:   e-mail
 \verb+lal-discuss@gravity.phys.uwm.edu+.   If it succeeds,  then you
-can go ahead to the next stage.
+can go ahead to the next stage.   Later versions of the RPM software
+require \verb+rpm+ to be replaced by \verb+rpmbuild+. 
 
 \color{black}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -72,7 +79,7 @@ can go ahead to the next stage.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \color{black}
 
-While developing,  we recommend that you install the \lal\ and \lalapps
+While developing,  we recommend that you install the \lal\ and \lalapps\
 somewhere under your home directory.  If you follow the
 instructions below,  the \lal\ and \lalapps\ libraries will be in
 \verb+$LALPREFIX/lib+;  the documentation in \verb+$LALPREFIX/doc+; the header
@@ -82,8 +89,6 @@ want to install these things.  For example,  user \texttt{patrick} might put
 the source code in \verb+/home/patrick/src+ and set \verb+LALPREFIX+ to
 \verb+/home/patrick+.
 
-We assume you have installed \ligotools\ and configured your
-environment as described in Peter Shawhan's documentation.   
 To make the appropriate binaries accesible to you,  check that your path is
 set correctly. It is also useful to add environment variables for the CVS
 servers. If you have a lal CVS login, change
@@ -113,7 +118,7 @@ compiler option. This is the correct way to do this,  using
 
 \color{black}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{LAL}
+\subsection{LAL}\label{ss:lal}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \color{black}
 
@@ -131,7 +136,7 @@ mkdir $LALPREFIX/src
 
 The LAL software is maintained in a CVS repository -- CVS stands for
 Concurrent Version-control System which is tool to allow multiple developers
-to manipulate the same software,  meerging differences and identifying
+to manipulate the same software,  merging differences and identifying
 conflicts between changes if they arise.  Obtain the LAL package from the CVS
 repository as follows:  
 \begin{verbatim}
@@ -139,7 +144,7 @@ cd $LALPREFIX/src
 cvs -d $LALCVS login
 \end{verbatim}
 At this point,  you will be asked for a password.  The password for the
-\verb+anonymous+ user is \verb+lal+. If you have a your own username, use the
+\verb+anonymous+ user is \verb+lal+. If you have your own username, use the
 password that you have been given.
 The version of LAL that is checked-out is identified by the argument
 to the \texttt{-r} option in the commands below.   The HEAD tag checks out the
@@ -152,6 +157,7 @@ cvs -d $LALCVS checkout -rHEAD lal
 \end{verbatim}
 You have now obtained the latest development version of LAL.
 
+\subsubsection{Build and Install}
 To build and install the LAL software suite, 
 \begin{verbatim}
 cd $LALPREFIX/src/lal
@@ -197,6 +203,7 @@ cvs -d $LALCVS checkout -rHEAD lalapps
 \end{verbatim}
 You have now obtained the latest development version of LALApps.
 
+\subsubsection{Build and Install}
 To build and install the LALApps suite, 
 \begin{verbatim}
 cd $LALPREFIX/src/lalapps
@@ -204,7 +211,7 @@ cd $LALPREFIX/src/lalapps
 ./configure --prefix=$LALPREFIX \
     --with-extra-cppflags="-I$LALPREFIX/include" \
     --with-extra-ldflags="-L$LALPREFIX/lib" \
-    --enable-frame
+    --enable-frame --enable-metaio
 make
 make check
 make dvi
@@ -214,19 +221,42 @@ stow lalapps-howto
 \end{verbatim}
 This completes the installation and testing of LALApps.  
 
-\begin{enumerate}
+\color{black}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Updating LAL/LALApps}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\color{black}
 
-\item It's now time to start looking at the example search codes in the
-\verb+contrib+ directory.  Either \verb+power+ or \verb+inspiral+ should serve
-as good examples to get started.   Good luck and happy coding.
+Since \lal\ and \lalapps\ are constantly being improved,  you will
+eventually want to update the versions you have installed.   These
+instructions give you come guidance on the process.   As you become a
+more expereienced developer,  you will develop your own tricks for
+making this more efficient.    To do a complete update:
+\begin{enumerate}
+\item Update the source code on your computer
+\begin{verbatim}
+cd $LALPREFIX/src/lal
+make cvs-clean
+cvs update -Ad
+cd $LALPREFIX/src/lalapps
+make cvs-clean
+cvs update -Ad
+\end{verbatim}
+
+\item Remove the old versions
+\begin{verbatim}
+cd $LALPREFIX/stow_pkgs
+stow --delete lal-howto
+stow --delete lalapps-howto
+\end{verbatim}
+
+\item Repeat the \textbf{Build and Install} instructions for \lal\ and then
+\lalapps,  but \textbf{change the prefix argument} to \verb+make install+.   
+For example,   if you compiled on 28 August 2003,  you might want to use
+\begin{verbatim}
+make install prefix=$LALPREFIX/stow_pkgs/lalapps-030828
+cd $LALPREFIX/stow_pkgs
+stow lalapps-030828
+\end{verbatim}
 
 \end{enumerate}
-
-\pagebreak
-\begin{thebibliography}{99}
-\bibitem{lalspec} Bruce Allen \textit{et al}, \emph{Numerical Algorithms
-Library Specification and Style Guide}, distributed as part of \verb+lal+ 
-package and LIGO-T990030.
-\end{thebibliography}
-
-
