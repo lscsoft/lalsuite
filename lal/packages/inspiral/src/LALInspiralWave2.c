@@ -91,6 +91,8 @@ LALInspiralWave2(
   ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT((INT4)params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
+  params->nStartPad = 0;
+  
   LALInspiralSetup(status->statusPtr, &ak, params);
   CHECKSTATUSPTR(status);
   LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
@@ -196,6 +198,7 @@ LALInspiralWave2(
     CHECKSTATUSPTR(status);
   } while (freq < fHigh && freq > fOld && toffIn.t < -tC);
   params->fFinal = fOld;
+  params->tC = toffIn.t;
 
   while (i<(INT4)output->length) 
   {
@@ -436,9 +439,11 @@ LALInspiralWave2ForInjection(
   ASSERT(params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   
+  params->nStartPad=0;
+  
  /*Compute some parameters*/
    LALInspiralSetup (status->statusPtr, &ak, params);
-   CHECKSTATUSPTR(status);
+ CHECKSTATUSPTR(status);
    LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
    CHECKSTATUSPTR(status);
    LALInspiralWaveLength(status->statusPtr, &length, *params);
@@ -628,7 +633,7 @@ LALInspiralWave2ForInjection(
   LALSnprintf( waveform->phi->name, LALNameLength, "EOB inspiral phase" );
 
 
-  params->tC = count / params->tSampling ;
+ /* params->tC = count / params->tSampling ;*/
   params->tSampling = (REAL4)(waveform->f->data->data[count-1]
 			      -
 			      waveform->f->data->data[count-2]);

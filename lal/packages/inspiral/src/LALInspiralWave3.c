@@ -104,6 +104,8 @@ LALInspiralWave3 (
   ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
+  params->nStartPad = 0; 
+
   LALInspiralSetup (status->statusPtr, &ak, params);
   CHECKSTATUSPTR(status);
   LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
@@ -214,6 +216,7 @@ LALInspiralWave3 (
     CHECKSTATUSPTR(status); 
   }
   params->fFinal = fOld;
+  params->tC = t;
   
 /*
   fprintf(stderr, "%e %e\n", f, fHigh);
@@ -449,6 +452,9 @@ LALInspiralWave3ForInjection (
   ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
+
+  params->nStartPad = 0;
 
   /*Compute some parameters*/
    LALInspiralSetup (status->statusPtr, &ak, params);

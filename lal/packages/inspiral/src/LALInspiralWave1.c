@@ -455,6 +455,7 @@ LALInspiralWave1ForInjection(
    ASSERT (params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT (params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
+   params->nStartPad = 0;
 
    /*Compute some parameters*/
    LALInspiralSetup (status->statusPtr, &ak, params);
