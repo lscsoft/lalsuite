@@ -318,7 +318,7 @@ COMPLEX8Vector *fvecn = NULL;
 /*FFT plan*/
 RealFFTPlan *pfwd = NULL;
 
-INT4 lalDebugLevel = 3;
+INT4 lalDebugLevel = 0;
 
 /* Prototypes for the functions defined in this file */
 int read_commandline_and_file(LALStatus *, int argc, char *argv[]);
@@ -569,16 +569,6 @@ int main(int argc,char *argv[]) {
 
     /* produce a time series simulation of a CW signal */
     SUB( LALSimulateCoherentGW(&status, timeSeries, &cgwOutput, &cwDetector), &status);
-
-    if (lalDebugLevel >= 3)
-      {  
-	FILE *fp;
-	CHAR fname[512];
-	sprintf (fname, "Tseries_v2_%05d.dat", iSFT);
-	fp = fopen (fname, "w");
-	write_timeSeriesR4 (fp, timeSeries);
-	fclose (fp);
-      }
 
     /*if you want noise, make it and add to timeseries */
     if (sigma > 0.0 && make_and_add_time_domain_noise(&status))
