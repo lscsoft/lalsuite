@@ -6,10 +6,16 @@
 /* to do
  * put the check loop inside the main loop by forcing ntrials to be=1 
  * and force to use only one template equalk to the signal
- * 2 - print in a file output correlation in time 
+ * 2 - print in a file output correlation in time (done for check option)
  * 3 - print in a file 3d correlation*/
 
 /* --- some includes --- */
+
+
+#include <processtable.h>
+
+
+
 #include <stdio.h>
 #include <lal/LALNoiseModels.h>
 #include <lal/LALInspiralBank.h>
@@ -19,11 +25,33 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lalapps.h>
+#include <lal/Date.h>
+#include <getopt.h>
 
 /* --- version information --- */
 NRCSID( BANKEFFICIENCYC, "$Id$");
 RCSID(  "$Id$");
+
+
+#define CVS_ID_STRING "$Id$"
+#define CVS_NAME_STRING "$Name$"
+#define CVS_REVISION "$Revision$"
+#define CVS_SOURCE "$Source$"
+#define CVS_DATE "$Date$"
+#define PROGRAM_NAME "BankEfficiency"
+
+#define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
+this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+  calloc( 1, sizeof(ProcessParamsTable) ); \
+  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+      PROGRAM_NAME ); \
+      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+          long_options[option_index].name ); \
+          LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+          LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+
 
 /* --- Some Error messages --- */
 #define BANKEFFICIENCY_ENORM  0
@@ -87,16 +115,22 @@ RCSID(  "$Id$");
 #define BANKEFFICIENCY_PRINTOVERLAP             0				/* Print Best Overlap 			*/
 #define BANKEFFICIENCY_PRINTOVERLAP_FILE        "BE_BestOverlap.dat"		/* Print Best Overlap in a file		*/
 #define BANKEFFICIENCY_PRINTFILTER              0				/* Print corresponding Filter		*/
+
 #define BANKEFFICIENCY_PRINTBANK		0				/* print the template bank		*/
 #define BANKEFFICIENCY_PRINTBANK_FILEASCII	"BE_Bank.dat"			/* print template bank in a file	*/
 #define BANKEFFICIENCY_PRINTBANK_FILEXML	"BE_Bank.xml"			/* print template bank in a file	*/
+
 #define BANKEFFICIENCY_PRINTBANKOVERLAP		0				/* print the overlap of the templates	*/
+
+#define BANKEFFICIENCY_PRINTPSD                 0				/* print psd used in <x|x>      	*/
+#define BANKEFFICIENCY_PRINTPSD_FILE			"BE_PSD.dat"			/* Print Psd in a file			*/
+
 #define BANKEFFICIENCY_PRINTTEMPLATE    	0				/* print the  BCV final template	*/
 #define BANKEFFICIENCY_CHECK                    0				/* Just check that SNR=1 for identical parameters */
 #define BANKEFFICIENCY_RANDOMINJECTION		1				/* Type of injection: random  ?		*/		
 #define BANKEFFICIENCY_REGULARINJECTION		0				/* Type of injection: regular ?		*/		
 
-#define BANKEFFICIENCY_PSD_FILE			"BE_PSD.dat"			/* Print Psd in a file			*/
+
 /* --- temporary flag for the sampling of real psd --- */
 #define DeltaT      				256 
 
@@ -152,6 +186,8 @@ typedef struct{
 		
   INT4 PrintBankOverlap;		/* print match of each templates 	*/
   INT4 PrintBank;			/* print bank of templates 		*/
+  INT4 PrintPsd;                        /* print the psd used in <x|x>          */
+
   INT4 PrintTemplate;  
 
   OverlapMethodIn overlapMethod;
@@ -416,7 +452,7 @@ main (INT4 argc, CHAR **argv )
   float 			*bankEfficiencyOverlapIn;			
   /* --- main code start here --- */ 
   /* --- Debugging level --- */
-  lalDebugLevel = 0;
+  lalDebugLevel = 1;
  
   /* --- Some initialization --- */
   ParametersInitialization(	&coarseIn, 
@@ -450,9 +486,9 @@ main (INT4 argc, CHAR **argv )
   randIn.psd.length 	= signal.length/2 + 1;					/* as well as random data length	*/
   signal.data 		= (REAL4*) LALCalloc(1, sizeof(REAL4)*signal.length);	/* memory for the injected signal	*/
   correlation.data 	= (REAL4*) LALCalloc(1, sizeof(REAL4)*correlation.length); /* and correlation 			*/
-#if 0
+
   memset( &(coarseIn.shf), 0, sizeof(REAL8FrequencySeries) );			/* ?? coarseIn. should be after ??	*/
-#endif
+
   coarseIn.shf.f0 	= 0;
   LAL_CALL(LALDCreateVector( &status, &(coarseIn.shf.data), randIn.psd.length ),&status);
   
@@ -498,11 +534,14 @@ main (INT4 argc, CHAR **argv )
     }
 
 
-  /* --- save the psd in the file psd.dat --- */
-  Foutput= fopen(BANKEFFICIENCY_PSD_FILE,"w");
-  for (i=1; i<coarseIn.shf.data->length; i++)
-    fprintf(Foutput, "%lf %e\n",(float)i, coarseIn.shf.data->data[i]);  
-  fclose(Foutput);
+  /* --- save the psd in the file psd.dat if requested --- */
+  if (otherIn.PrintPsd)
+   {
+     Foutput= fopen(BANKEFFICIENCY_PRINTPSD_FILE,"w");
+     for (i=1; i<coarseIn.shf.data->length; i++)
+       fprintf(Foutput, "%lf %e\n",(float)i*df, coarseIn.shf.data->data[i]);  
+     fclose(Foutput);
+   }
 
   /* --- and affect copy coarseIn.psd in randIn.psd --- */  
   for (i=0; i< randIn.psd.length; i++){
@@ -669,12 +708,12 @@ main (INT4 argc, CHAR **argv )
     
     printf("#");
     PrintResults(list[1].params, randIn.param,overlapoutmax,  list[1].params.fFinal, 1);
-    j = nlist +1;
+
     /* --- if requested we print the correlation in a file--- */
     if (otherIn.PrintOverlap){
      Foutput  = fopen(BANKEFFICIENCY_PRINTOVERLAP_FILE,"w");
      for ( i = 0; i < correlation.length; i++)
-	fprintf(Foutput,"%f %f\n", i*df, correlation.data[i]);
+	fprintf(Foutput,"%f %f\n", i*df, sqrt(correlation.data[i]));
      fclose(Foutput);
     }
   }
@@ -1024,6 +1063,7 @@ void InitOtherParamIn(OtherParamIn *otherIn)
   otherIn->psi3         	= -1;
   otherIn->PrintOverlap 	= BANKEFFICIENCY_PRINTOVERLAP;
   otherIn->PrintFilter  	= BANKEFFICIENCY_PRINTFILTER;
+  otherIn->PrintPsd             = BANKEFFICIENCY_PRINTPSD;
   otherIn->overlapMethod	= AlphaMaximization;
   otherIn->PrintBank    	= BANKEFFICIENCY_PRINTBANK;
   otherIn->PrintBankOverlap	= BANKEFFICIENCY_PRINTBANKOVERLAP;
@@ -1059,7 +1099,7 @@ ParseParameters(	INT4 			*argc,
       else if ( strcmp(argv[i],	"--fl") 	== 0 ) 
   		coarseIn->fLower = randIn->param.fLower	= atof(argv[++i]);  
       else if ( strcmp(argv[i],	"--sampling") 	== 0 ) {
-  		coarseIn->tSampling = randIn->param.tSampling = atof(argv[i]);  
+  		coarseIn->tSampling = randIn->param.tSampling = atof(argv[++i]);  
 		randIn->param.fCutoff 	= coarseIn->tSampling/2. - 1.;
 	}      
       else if ( strcmp(argv[i],	"--mass-range")	== 0 ) 	{	
@@ -1129,6 +1169,7 @@ ParseParameters(	INT4 			*argc,
       else if ( strcmp(argv[i],"--print-ambiguity-function")==0) otherIn->ambiguityFunction 	= 1;
       else if ( strcmp(argv[i],"--FMaximization")	==0) 	 otherIn->FMaximization 	= 1;
       else if ( strcmp(argv[i],"--print-overlap")	==0)  	 otherIn->PrintOverlap 		= 1;
+      else if ( strcmp(argv[i],"--print-psd")	        ==0)  	 otherIn->PrintPsd 		= 1;
       else if ( strcmp(argv[i],"--PrintFilter")		==0) 	 otherIn->PrintFilter 		= 1; 
       else if ( strcmp(argv[i],"--print-bank-overlap")	==0)  	 otherIn->PrintBankOverlap 	= 1;
       else if ( strcmp(argv[i],"--print-template")	==0)  	 otherIn->PrintTemplate 	= 1;
@@ -1306,12 +1347,17 @@ void Help(	InspiralCoarseBankIn   coarseIn,
   fprintf(stderr,"     --PrintOverlap	: Print Overlap given by the best template 		(%d)\n", BANKEFFICIENCY_PRINTOVERLAP);
   fprintf(stderr,"     --PrintFilter	: Print filters giving the best overlap template 	(%d)\n", BANKEFFICIENCY_PRINTFILTER);
   fprintf(stderr,"     --print-ambiguity-function : print ambiguity function (bank overlap)	(%d)\n", BANKEFFICIENCY_AMBIGUITYFUNCTION);*/
+
   fprintf(stderr,"     --print-bank	: Print the bank in ascii and xml format (%s)		(%d)\n", 
 		  BANKEFFICIENCY_PRINTBANK_FILEASCII,
 		  BANKEFFICIENCY_PRINTBANK);
   fprintf(stderr,"     --print-overlap	: Print the overlap given by the best template	(%s)	(%d)\n", 
 		  BANKEFFICIENCY_PRINTOVERLAP_FILE, 
 		  BANKEFFICIENCY_PRINTOVERLAP);
+  fprintf(stderr,"     --print-psd	: Print the psd in                              	(%s)	(%d)\n", 
+		  BANKEFFICIENCY_PRINTPSD_FILE, 
+		  BANKEFFICIENCY_PRINTPSD);
+
   fprintf(stderr,"     --InQuadrature	: Overlap is compute without alpha maximization\n");
   fprintf(stderr,"     --quiet		: if this flag is present, the output is restricted to the minimum\n");
 /*  fprintf(stderr,"     --InputPSD	: to give the name of real PSD\n");*/
@@ -1809,10 +1855,17 @@ BEPrintBank(	InspiralCoarseBankIn coarseIn,
 
   fprintf(output,"#Number of Coarse Bank Templates=%d\n",nlist);
   if (coarseIn.approximant == BCV)
-	fprintf(output, "#psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n", 
-	 	coarseIn.psi0Min, coarseIn.psi0Max, coarseIn.psi3Min, coarseIn.psi3Max);
+    {
+      fprintf(output, "#psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n", 
+	      coarseIn.psi0Min, coarseIn.psi0Max, coarseIn.psi3Min, coarseIn.psi3Max);
+      fprintf(output, "#psi0 psi3 nLayer totalMass fFinal\n");
+      
+    }
   else
-  	fprintf(output, "#mMin=%e, mMax=%e\n", coarseIn.mMin,coarseIn.mMax);
+    {
+      fprintf(output, "#mMin=%e, mMax=%e\n", coarseIn.mMin,coarseIn.mMax);
+      fprintf(output, "#tau0, tau3, mass1, mass2\n");
+    }
 
   for ( i = 0; i < nlist; i++)
     {
@@ -2044,21 +2097,31 @@ void PrintWaves(LALStatus *status	,
 /* should add the status variable since we call sone lal functions here 
  * this routine is not well commented and won't be in close future.
  * */
+/* !! tau2 is used to store the Layer number */
 void 
 BEPrintBankXml(
 	       InspiralTemplateList *coarseList, 
 	       UINT4 numCoarse)
 {
+#define MAXIFO 2
   LALStatus             status = blank_status;
+  MetadataTable         proctable;
+  MetadataTable         processParamsTable;
   MetadataTable         templateBank;
   SnglInspiralTable     *tmplt  = NULL;
   CHAR  ifo[3];                           /* two character ifo code       */
   CHAR *channelName = NULL;               /* channel string               */
   UINT4 	i;  
-  LIGOLwXMLStream       results;
+  LIGOLwXMLStream       xmlStream;
   CHAR  fname[256];
   LIGOTimeGPS gpsStartTime 	= { 0, 0 };    /* input data GPS start time    */
   LIGOTimeGPS gpsEndTime 	= { 0, 0 };      /* input data GPS end time      */
+  LALLeapSecAccuracy    accuracy = 1;
+  ProcessParamsTable   *this_proc_param = NULL;
+  CHAR  comment[LIGOMETA_COMMENT_MAX];
+  CHAR  ifoName[MAXIFO][LIGOMETA_IFO_MAX];
+
+
 
 
   LALSnprintf( fname, sizeof(fname), BANKEFFICIENCY_PRINTBANK_FILEXML ,
@@ -2087,7 +2150,7 @@ BEPrintBankXml(
       tmplt->mchirp  = (REAL4) coarseList[0].params.chirpMass;
       tmplt->eta     = (REAL4) coarseList[0].params.eta;
       tmplt->tau0    = (REAL4) coarseList[0].params.t0;
-      tmplt->tau2    = (REAL4) coarseList[0].params.t2;
+      tmplt->tau2    = (REAL4) coarseList[0].nLayer;
       tmplt->tau3    = (REAL4) coarseList[0].params.t3;
       tmplt->tau4    = (REAL4) coarseList[0].params.t4;
       tmplt->tau5    = (REAL4) coarseList[0].params.t5;
@@ -2110,7 +2173,7 @@ BEPrintBankXml(
 	  tmplt->mchirp  = (REAL4) coarseList[i].params.chirpMass;
 	  tmplt->eta     = (REAL4) coarseList[i].params.eta;
 	  tmplt->tau0    = (REAL4) coarseList[i].params.t0;
-	  tmplt->tau2    = (REAL4) coarseList[i].params.t2;
+	  tmplt->tau2    = (REAL4) coarseList[i].nLayer;
 	  tmplt->tau3    = (REAL4) coarseList[i].params.t3;
 	  tmplt->tau4    = (REAL4) coarseList[i].params.t4;
 	  tmplt->tau5    = (REAL4) coarseList[i].params.t5;
@@ -2122,16 +2185,47 @@ BEPrintBankXml(
     }
   
 
-  memset( &results, 0, sizeof(LIGOLwXMLStream) );
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
+  memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlStream, fname), &status );
+   
+
+  /* create the process and process params tables */
+    proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
+  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
+			    &accuracy ), &status );
+  LAL_CALL( populate_process_table( &status, proctable.processTable, 
+				    PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+  this_proc_param = processParamsTable.processParamsTable = 
+    (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
+  memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
   
+  /* write process table */
+  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
+	       ifoName[0], ifoName[1] );
+  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
+			    &accuracy ), &status );
+
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
+	    &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 
+				    process_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+  
+  /* write process params table */
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
+				    process_params_table ), &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, processParamsTable, 
+				    process_params_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+  
+  /* finally write sngl inspiral table */
   if ( templateBank.snglInspiralTable )
     {
-      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sngl_inspiral_table ), 
+      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, sngl_inspiral_table ), 
 		&status );
-      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, templateBank, 
+      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, templateBank, 
 					sngl_inspiral_table ), &status );
-      LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+      LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
     }
 
   while ( templateBank.snglInspiralTable )
@@ -2142,7 +2236,7 @@ BEPrintBankXml(
     }
   
   /* close the output xml file */
-  LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
+  LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlStream ), &status );
 }
 
 
