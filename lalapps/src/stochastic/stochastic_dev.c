@@ -227,8 +227,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALUnit overlapUnit = {0,{0,0,0,0,0,2,0},{0,0,0,0,0,0,0}};
 
   /* frequency mask structures */
-  REAL4FrequencySeries mask;
-  REAL4FrequencySeries maskTemp;
+  REAL4FrequencySeries *mask;
+  REAL4FrequencySeries *maskTemp;
   INT4 nBin;
 
   /* spectrum structures */
@@ -642,27 +642,18 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* extra bins */
     nBin = (maskBin - 1) / 2;
 
-    /* set metadata fields for frequency mask */
-    strncpy(mask.name, "mask", LALNameLength);
-    mask.deltaF = deltaF;
-    mask.f0 = fMin;
-    mask.sampleUnits = lalDimensionlessUnit;
-
     if (vrbflg)
     {
       fprintf(stdout, "Allocating memory for frequency mask...\n");
     }
 
     /* allocate memory for frequency mask */
-    maskTemp.data = NULL;
-    LAL_CALL(LALCreateVector(&status, &(maskTemp.data), respLength), \
-        &status);
-    memset(maskTemp.data->data, 0, \
-        maskTemp.data->length * sizeof(*maskTemp.data->data));
-
-    /* reduced band frequency mask */
-    mask.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-    mask.data->length = filterLength;
+    LAL_CALL(LALCreateREAL4FrequencySeries(&status, &maskTemp, \
+          "maksTemp", gpsStartTime, 0, deltaF, lalDimensionlessUnit, \
+          respLength), &status);
+    LAL_CALL(LALCreateREAL4FrequencySeries(&status, &mask, \
+          "mask", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
+          filterLength), &status);
 
     if (vrbflg)
     {
@@ -672,7 +663,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* set all values to 1 */
     for (i = 0; i < respLength; i++)
     {
-      maskTemp.data->data[i] = 1.;
+      maskTemp->data->data[i] = 1.;
     }
 
     if (vrbflg)
@@ -683,17 +674,17 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* remove multiples of 16 Hz */
     for (i = 0; i < respLength; i += (UINT4)(16 / deltaF))
     {
-      maskTemp.data->data[i] = 0.;
+      maskTemp->data->data[i] = 0.;
 
       for (k = 0; k < nBin; k++)
       {
         if ((i + 1 + k) < respLength)
         {
-          maskTemp.data->data[i + 1 + k] = 0.;
+          maskTemp->data->data[i + 1 + k] = 0.;
         }
         if ((i - 1 - k) > 0)
         {
-          maskTemp.data->data[i - 1 - k] = 0.;
+          maskTemp->data->data[i - 1 - k] = 0.;
         }
       }
     }
@@ -706,17 +697,17 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* remove multiples of 60 Hz */
     for (i = 0; i < respLength; i += (UINT4)(60 / deltaF))
     {
-      maskTemp.data->data[i] = 0.;
+      maskTemp->data->data[i] = 0.;
 
       for (k = 0; k < nBin; k++)
       {
         if ((i + 1 + k) < respLength)
         {
-          maskTemp.data->data[i + 1 + k] = 0.;
+          maskTemp->data->data[i + 1 + k] = 0.;
         }
         if ((i - 1 - k) > 0)
         {
-          maskTemp.data->data[i - 1 - k] = 0.;
+          maskTemp->data->data[i - 1 - k] = 0.;
         }
       }
     }
@@ -727,11 +718,15 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* get appropriate band */
-    mask.data->data = maskTemp.data->data + numFMin;
+    LAL_CALL(LALCutREAL4FrequencySeries(&status, &mask, \
+          maskTemp, numFMin, filterLength), &status);
+
+    /* destroy temp structure */
+    LAL_CALL(LALDestroyREAL4FrequencySeries(&status, maskTemp), &status);
 
     if (debug_flag)
     {
-      LALSPrintFrequencySeries(&mask, "mask.dat");
+      LALSPrintFrequencySeries(mask, "mask.dat");
     }
 
     if (vrbflg)
@@ -742,7 +737,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* apply mask to omegaGW */
     for (i = 0; i < filterLength; i++)
     {
-      omegaGW.data->data[i] *= mask.data->data[i];
+      omegaGW.data->data[i] *= mask->data->data[i];
     }
   }
 
@@ -1159,8 +1154,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALDestroyVector(&status, &(dataWindow.data)), &status);
   if (apply_mask_flag)
   {
-    LALFree(mask.data);
-    LAL_CALL(LALDestroyVector(&status, &(maskTemp.data)), &status);
+    LAL_CALL(LALDestroyREAL4FrequencySeries(&status, mask), &status);
   }
   if (hannDuration != 0)
   {
