@@ -112,7 +112,6 @@ LALDTEphemeris( LALStatus             *status,
   /* Now "earth" contains position of center of Earth. */
 
 
-
   /* Now do the barycentering.  Set the input parameters: */
 
   /* Get time delay for detector vertex. */
@@ -123,9 +122,10 @@ LALDTEphemeris( LALStatus             *status,
   baryin.site = tev->site;
 
   /* ...remembering to divide the coordinates by the speed of light: */
-  baryin.site.location[0] = lalCachedDetectors[LALDetectorIndexGEO600DIFF].location[0]/LAL_C_SI;
-  baryin.site.location[1] = lalCachedDetectors[LALDetectorIndexGEO600DIFF].location[1]/LAL_C_SI;
-  baryin.site.location[2] = lalCachedDetectors[LALDetectorIndexGEO600DIFF].location[2]/LAL_C_SI;
+  baryin.site.location[0] /= LAL_C_SI;
+  baryin.site.location[1] /= LAL_C_SI;
+  baryin.site.location[2] /= LAL_C_SI;
+
   baryin.alpha = var->data[1];
   baryin.delta = var->data[2];
 
