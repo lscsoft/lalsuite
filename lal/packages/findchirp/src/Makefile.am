@@ -12,6 +12,11 @@ else
 libfindchirp_la_SOURCES = 
 endif
 
-EXTRA_DIST       = FindChirpExch.c
+EXTRA_DIST = FindChirpExch.c \
+             FindChirpMemory.c \
+             FindChirpFilter.c \
+             FindChirpChisq.c \
+             FindChirpSPData.c \
+             FindChirpSPTemplate.c
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
