@@ -64,7 +64,9 @@ int compareCCfa(const void *ip, const void *jp);
 void locate(double xx[], int n, double x, int *j, int *indices);
 
 int NCands1,NCands2,NCCands,NCands3,NCands4;       /* Global variables that keep track of no of candidates */
+#ifndef USE_BOINC
 INT4 lalDebugLevel=0;
+#endif
 Candidate C1,C2,C3,C4; /* Candidate structures */
 CoincidentCandidate CC;
 
