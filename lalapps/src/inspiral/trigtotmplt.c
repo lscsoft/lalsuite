@@ -132,11 +132,14 @@ int main ( int argc, char *argv[] )
     {"minimal-match",           required_argument, 0,                'm'},
     {"debug-level",             required_argument, 0,                'z'},
     {"snr-threshold",           required_argument, 0,                's'},
+    {"user-tag",                required_argument, 0,                'Z'},
+    {"userTag",                 required_argument, 0,                'Z'},
     {"help",                    no_argument,       0,                'h'},
     {0, 0, 0, 0}
   };
   int i, numEvents, numUniq = 0;
   REAL4 minMatch = -1;
+  CHAR                 *userTag = NULL
   SnglInspiralTable    *eventHead = NULL;
   SnglInspiralTable    *thisEvent = NULL;
   SnglInspiralTable    *prevEvent = NULL;
@@ -175,10 +178,10 @@ int main ( int argc, char *argv[] )
   {
     /* getopt_long stores long option here */
     int option_index = 0;
-    size_t namelen;
+    size_t optarg_len;
 
     i = getopt_long_only( argc, argv, 
-        "c:i:o:m:z:", long_options, &option_index );
+        "c:i:o:m:z:Z:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( i == - 1 )
@@ -230,21 +233,19 @@ int main ( int argc, char *argv[] )
         break;
 
       case 'i':
-        {
           /* create storage for the input file name name */
-          namelen = strlen( optarg ) + 1;
-          inputFileName = (CHAR *) calloc( namelen, sizeof(CHAR));
-          memcpy( inputFileName, optarg, namelen );
+          optarg_len = strlen( optarg ) + 1;
+          inputFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+          memcpy( inputFileName, optarg, optarg_len );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
-        }
         break;
 
       case 'o':
         {
           /* create storage for the output file name name */
-          namelen = strlen( optarg ) + 1;
-          outputFileName = (CHAR *) calloc( namelen, sizeof(CHAR));
-          memcpy( outputFileName, optarg, namelen );
+          optarg_len = strlen( optarg ) + 1;
+          outputFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+          memcpy( outputFileName, optarg, optarg_len );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
         break;
@@ -270,6 +271,22 @@ int main ( int argc, char *argv[] )
       case 'z':
         set_debug_level( optarg );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case 'Z':
+        /* create storage for the usertag */
+        optarg_len = strlen( optarg ) + 1;
+        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( userTag, optarg, optarg_len );
+
+        this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+          calloc( 1, sizeof(ProcessParamsTable) );
+        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+            PROGRAM_NAME );
+        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
+        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+            optarg );
         break;
 
       case '?':
@@ -510,6 +527,7 @@ cleanexit:
    */
 
 
+  if userTag free ( userTag );
   free( inputFileName );
   free( outputFileName );
   LALCheckMemoryLeaks();
