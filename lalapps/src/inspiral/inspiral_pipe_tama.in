@@ -115,7 +115,7 @@ def analyze_ifo(ifo_data,ifo_to_do,ifo_name,tmplt_job,insp_job,df_job,snr,
             df.set_start(seg.start() - pad)
             df.set_end(seg.end() + pad)
             if prev_df: df.add_parent(prev_df)
-            if ligo_analysis : dag.add_node(df)
+            if ligo_analysis or datafind_only : dag.add_node(df)
             prev_df = df
             done_df_for_seg = 1
 	  # make a template bank job for the master chunk
@@ -180,7 +180,7 @@ def single_inca(ifo_analyzed,ifo_single,ifo_name,single_inca_job,dag,
 
 
 def lt_coinc(segments,ligo_chunks,tama_segs,ifo_name,lt_inca_job,dt,
-  dag,usertag=None):
+  dag,slide_time = None, usertag=None):
   """
   Perform coincidence test between single IFO LIGO data and TAMA data.
   Since the way we treat all this data is the same, this function is the same 
@@ -191,6 +191,7 @@ def lt_coinc(segments,ligo_chunks,tama_segs,ifo_name,lt_inca_job,dt,
   ifo_name = the name of the LIGO IFO
   inca_job = the condor job that we should use to test coincidence
   dt = max time difference between triggers
+  slide_time = the amount of time by which to slide TAMA triggers
   dag = the DAG to attach the nodes to
   """
 
@@ -215,9 +216,9 @@ def lt_coinc(segments,ligo_chunks,tama_segs,ifo_name,lt_inca_job,dt,
         if ligo_analysis: lt_inca.add_parent(ligo_done.get_dag_node())
     # add all TAMA segments that overlap with segment to input
     for t_done in tama_segs:
-      if inspiral.overlap_test(t_done.get_seg(),seg):
+      if inspiral.overlap_test(t_done.get_seg(),seg,abs(slide_time)):
         lt_inca.add_var_arg(t_done.get_dag_node().get_output())
-        lt_inca.add_parent(t_done.get_dag_node())
+        if not slide_time: lt_inca.add_parent(t_done.get_dag_node())
     dag.add_node(lt_inca)
     lt_inca_analyzed.append(AnalyzedIFOData(seg,lt_inca))
 
@@ -283,10 +284,13 @@ Usage: lalapps_inspiral_pipe [options]
 
   -s, --output-segments    output the analyzed segments and exit
   -o, --tama-overlap       analyze only times in coincidence with TAMA
+  -d, --datafind-only      perform only the datafinds
   -L, --ligo-analysis      perform the ligo analysis
   -t, --tama-coincidence   test for coincidence between LIGO and TAMA triggers
   -O, --tama-output        output data in text format for TAMA exchange
   -j, --injections FILE    add simulated inspirals from sim_inspiral in FILE
+
+  -S, --time-slide SEC     slide TAMA data forward by SEC seconds
 
   -P, --priority PRIO      run jobs with condor priority PRIO
 
@@ -299,7 +303,7 @@ Usage: lalapps_inspiral_pipe [options]
 
 ##############################################################################
 # pasrse the command line options to figure out what we should do
-shortop = "hvu:cj:pP:l:f:soLtO"
+shortop = "hvu:cj:pP:l:f:sodLS:tO"
 longop = [
   "help",
   "version",
@@ -311,7 +315,9 @@ longop = [
   "config-file=",
   "output-segments",
   "tama-overlap",
+  "datafind-only",
   "ligo-analysis",
+  "time-slide=",
   "tama-coincidence",
   "tama-output"
   ]
@@ -330,10 +336,13 @@ config_file = None
 output_segs = None
 tama_overlap = None
 playground_only = 0
+datafind_only = 0
 ligo_analysis = 0
 tama_coincidence = 0
 tama_trig_file = None
 tama_output = 0
+slide_time = 0
+slide_time_ns = 0
 
 for o, a in opts:
   if o in ("-h", "--help"):
@@ -354,6 +363,8 @@ for o, a in opts:
     tama_overlap = 1
   elif o in ("-o", "--ligo-analysis"):
     ligo_analysis = 1
+  elif o in ("-d", "--datafind-only"):
+    datafind_only = 1
   elif o in ("-o", "--tama-coincidence"):
     tama_trig_file = a
     tama_coincidence = 1
@@ -363,6 +374,8 @@ for o, a in opts:
     inj_file = a
   elif o in ("-p", "--playground-only"):
     playground_only = 2
+  elif o in ("-S", "--time-slide"):
+    slide_time =  int(a) 
   elif o in ("-P", "--priority"):
     condor_prio = a
   elif o in ("-l", "--log-path"):
@@ -492,13 +505,19 @@ if playground_only:
   sire_job.add_opt('playground-only',' ')
   sire_inj_job.add_opt('playground-only',' ')
   sire_cl_inj_job.add_opt('playground-only',' ')
+elif slide_time:
+  inca_job.add_opt('all-data',' ')
+  s_inca_job.add_opt('all-data',' ')
+  sire_job.add_opt('all-data',' ')
+  sire_inj_job.add_opt('all-data',' ')
+  sire_cl_inj_job.add_opt('all-data',' ')
 else:
   inca_job.add_opt('no-playground',' ')
   s_inca_job.add_opt('no-playground',' ')
   lt_inca_job.add_opt('no-playground',' ')
-  sire_job.add_opt('no-playground',' ')
-  sire_inj_job.add_opt('no-playground',' ')
-  sire_cl_inj_job.add_opt('no-playground',' ')
+  sire_job.add_opt('exclude-playground',' ')
+  sire_inj_job.add_opt('exclude-playground',' ')
+  sire_cl_inj_job.add_opt('exclude-playground',' ')
 
   
 # set the condor job priority
@@ -516,6 +535,11 @@ if condor_prio:
   sire_inj_job.add_condor_cmd('priority',condor_prio)
   sire_cl_inj_job.add_condor_cmd('priority',condor_prio)
 
+# add the slide argument to inca if we are doing a background estimation
+if slide_time:
+  lt_inca_job.add_opt('slide-time',str(slide_time))
+  if slide_time_ns:
+    lt_inca_job.add_opt('slide-time-ns',str(slide_time))
 
 ##############################################################################
 # get the thresholds, pad and chunk lengths from the values in the ini file
@@ -548,7 +572,7 @@ h2_data = pipeline.ScienceData()
 l1_data.read(cp.get('input','l1-segments'),length)
 h1_data.read(cp.get('input','h1-segments'),length)
 h2_data.read(cp.get('input','h2-segments'),length)
-if tama_overlap or tama_coincidence:
+if tama_overlap or tama_coincidence or slide_time:
   # read in the tama file in the format provided and store as science data
   t_data = []
   file = open(cp.get('input','tama-segments'),"r")
@@ -750,7 +774,7 @@ for seg in h2_data:
           df.set_start(seg.start() - pad)
           df.set_end(seg.end() + pad)
           if prev_df: df.add_parent(prev_df)
-          if ligo_analysis: dag.add_node(df)
+          if ligo_analysis or datafind_only: dag.add_node(df)
           prev_df = df
           done_df_for_seg = 1
         # make a trigbank for the master H2 chunk: to do this, we need
@@ -822,29 +846,12 @@ print "done"
 ##############################################################################
 # Step 14: Run tama2ligolw on the tama triggers
 
-
-if tama_coincidence:
+if tama_coincidence or slide_time:
   print "Converting triggers to LIGO Lw xml format...",
   sys.stdout.flush()
-    
-  # write out all tama triggers as TAMA-INSPIRAL- ...
-  tama_data_analyzed = []
-  for seg in t_data:
-    tama2lw = inspiral.Tama2LigoLwNode(tama2lw_job)
-    tama2lw.set_start(seg.start())
-    tama2lw.set_end(seg.end())
-    infile = cp.get('input','tama-triggers')
-    tama2lw.set_input(infile)
-    outfile = 'TAMA-INSPIRAL'
-    if usertag:
-      outfile += '_' + usertag 
-    outfile += '-' + str(seg.start()) + '-' + str(seg.end() - seg.start()) + \
-      '.xml'
-    tama2lw.set_output(outfile)
-    dag.add_node(tama2lw)
-    tama_data_analyzed.append(AnalyzedTAMAData(seg,tama2lw))
-
-  # write out tama triggers in LIGO-TAMA times as T1-INSPIRAL- ...
+  
+# write out tama triggers in LIGO-TAMA times as T1-INSPIRAL- ...
+if tama_coincidence:
   ligo_tama_data = copy.deepcopy(ligo_data)
   ligo_tama_data.intersection(t_data)
   tama_segs_analyzed = []
@@ -863,12 +870,58 @@ if tama_coincidence:
     dag.add_node(tama2lw)
     tama_segs_analyzed.append(AnalyzedTAMAData(seg,tama2lw))
 
+
+# write out all tama triggers as TAMA-INSPIRAL- ...
+if tama_coincidence or slide_time:
+  tama_data_analyzed = []
+  for seg in t_data:
+    tama2lw = inspiral.Tama2LigoLwNode(tama2lw_job)
+    tama2lw.set_start(seg.start())
+    tama2lw.set_end(seg.end())
+    infile = cp.get('input','tama-triggers')
+    tama2lw.set_input(infile)
+    outfile = 'TAMA-INSPIRAL'
+    if usertag:
+      outfile += '_' + usertag 
+    outfile += '-' + str(seg.start()) + '-' + str(seg.end() - seg.start()) + \
+      '.xml'
+    tama2lw.set_output(outfile)
+    if tama_coincidence: dag.add_node(tama2lw)
+    tama_data_analyzed.append(AnalyzedTAMAData(seg,tama2lw))
+
+    if slide_time: tama_analyzed = tama_data_analyzed
+    else: tama_analyzed = tama_segs_analyzed
+
   print "done"
+
+
+##############################################################################
+## Any thing below here needs to be redone for each time slide ###############
+##############################################################################
 
 ##############################################################################
 # Step 15: Test for coincidence between the single IFO ligo and tama triggers
+if slide_time:
+  print "re-computing TAMA data with slide...",
+  sys.stdout.flush()
 
-if tama_coincidence:
+  if not slide_time_ns:
+    # the simple integer timeslide case
+    seg_start_increment = seg_end_increment = slide_time
+  else:
+    # be more careful with non-integer time slides
+    seg_start_increment = slide_time + 1
+    seg_end_increment = slide_time
+
+  for seg in t_data:
+    seg.set_start(seg.start() + seg_start_increment)
+    seg.set_end(seg.end() + seg_end_increment)
+
+  print "done"
+  sys.stdout.flush()
+
+
+if tama_coincidence or slide_time:
   print "setting up jobs to get (single ifo LIGO)-TAMA coincident triggers...",
   sys.stdout.flush()
 
@@ -878,27 +931,27 @@ if tama_coincidence:
   h1t1_data.intersection(t_data)
   h2t1_data = copy.deepcopy(h2_single_data)
   h2t1_data.intersection(t_data)
- 
+  
   lt_dt = cp.get('pipeline','lt-dt')
   l1t1_inca_nodes = []
-  l1t1_inca_nodes = lt_coinc(l1t1_data,l1_chunks_analyzed,tama_segs_analyzed,
-    'L1',lt_inca_job,lt_dt,dag,usertag)
+  l1t1_inca_nodes = lt_coinc(l1t1_data,l1_chunks_analyzed,tama_analyzed,
+    'L1',lt_inca_job,lt_dt,dag,slide_time,usertag)
 
   ht_dt = cp.get('pipeline','ht-dt')
   h1t1_inca_nodes = []
-  h1t1_inca_nodes = lt_coinc(h1t1_data,h1_chunks_analyzed,tama_segs_analyzed,
-    'H1',lt_inca_job,ht_dt,dag,usertag)
+  h1t1_inca_nodes = lt_coinc(h1t1_data,h1_chunks_analyzed,tama_analyzed,
+    'H1',lt_inca_job,ht_dt,dag,slide_time,usertag)
 
   h2t1_inca_nodes = []
   h2t1_inca_nodes = lt_coinc(h2t1_data,h2_single_chunks_analyzed,
-    tama_segs_analyzed,'H2',lt_inca_job,ht_dt,dag,usertag)
+    tama_analyzed,'H2',lt_inca_job,ht_dt,dag,slide_time,usertag)
 
   print "done"
 
 ##############################################################################
 # Step 16: Test for coincidence between the H1-H2 and tama triggers
 
-if tama_coincidence:
+if tama_coincidence or slide_time:
   print "setting up jobs to get (H1-H2 LIGO)-TAMA coincident triggers...",
   sys.stdout.flush()
 
@@ -944,10 +997,10 @@ if tama_coincidence:
         if ligo_analysis: inca3.add_parent(h1_h2_done.get_dag_node())
         inca3.add_var_arg(h1_h2_done.get_dag_node().get_output_b())
     # add all T1 master segments that overlap with segment to input
-    for t_done in tama_segs_analyzed:
-      if inspiral.overlap_test(t_done.get_seg(),seg):
+    for t_done in tama_analyzed:
+      if inspiral.overlap_test(t_done.get_seg(),seg,abs(slide_time)):
         lt_inca2.add_var_arg(t_done.get_dag_node().get_output())
-        lt_inca2.add_parent(t_done.get_dag_node())
+        if tama_coincidence: lt_inca2.add_parent(t_done.get_dag_node())
     inca3.add_parent(lt_inca2)
     inca3.add_var_arg(lt_inca2.get_output_a())
     # add the nodes to the dag
@@ -976,7 +1029,7 @@ ligo_inca_nodes.sort(compare_start)
 
 # create a sorted list of all the ligo-tama inca nodes 
 # for H1-H2 double time, we just use H1 triggers.
-if tama_coincidence:
+if tama_coincidence or slide_time:
   ligo_tama_inca_nodes = []
   for inca_nodes in [l1t1_inca_nodes,h1t1_inca_nodes,h2t1_inca_nodes,
     h1h2t1_inca2_nodes]:
@@ -1008,6 +1061,7 @@ if tama_coincidence:
   # a sire that contains all the TAMA triggers in LIGO-TAMA times
   sire_segs(tama_segs_analyzed,'output','T1-INSPIRAL',sire_job,dag,
     playground_only,usertag,tama_output)
+if tama_coincidence or slide_time:
   # a sire for all the coincidence configurations
   sire_segs(l1t1_inca_nodes,'output_a','L1-INCA_L1T1',sire_job,dag,
     playground_only,usertag,tama_output)
