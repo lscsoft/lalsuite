@@ -397,6 +397,34 @@ SimInspiralTable;
 
 Document table.
 
+\subsubsection*{Type \texttt{SimBurstTable}}
+
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
+typedef struct
+tagSimBurstTable
+{
+  struct tagSimBurstTable *next;
+  LIGOTimeGPS    geocent_start_time;
+  REAL4          start_time_gmst;
+  REAL4          duration;
+  REAL4          bandwidth;
+  REAL4          longitude;
+  REAL4          latitude;
+  CHAR           burstType[LIGOMETA_SOURCE_MAX];
+  REAL4          hrss;
+  REAL4          freq;
+  REAL4          tau;
+  INT4           zmNumber;
+}
+SimBurstTable;
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+
+Document table.
+
 \subsubsection*{Type \texttt{SnglTransdataTable}}
 
 </lalLaTeX>
@@ -475,6 +503,7 @@ tagMetadataTable
   SnglInspiralTable     *snglInspiralTable;
   MultiInspiralTable    *multiInspiralTable;
   SimInspiralTable      *simInspiralTable;
+  SimBurstTable         *simBurstTable;
   SnglTransdataTable    *snglTransdataTable;
   SummValueTable        *summValueTable;
 }
