@@ -291,7 +291,8 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     source_ifo = the name of the ifo that the triggers come from
     dest_ifo = the name of the ifo that the templates will be used for
     usertag = usertag to tag the output filename with
-    ifo_tag = string to tag source interferometers
+    ifo_tag = string to tag source interferometers, overrides the source_ifo
+    for naming files
     """
     if chunk.trig_start():
       self.set_start(chunk.trig_start())
@@ -304,9 +305,11 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
     self.add_var_opt('ifo-a',source_ifo)
 
-    outfile = dest_ifo + '-TRIGBANK_' + source_ifo
+    outfile = dest_ifo + '-TRIGBANK_'
     if ifo_tag:
       outfile += ifo_tag
+    else:
+      outfile += source_ifo
     if usertag:
       outfile += '_' + usertag 
     outfile += '-' + str(chunk.start()) + '-' + str(chunk.dur()) + '.xml'

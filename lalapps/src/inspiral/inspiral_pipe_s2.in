@@ -654,7 +654,7 @@ for seg in h2_data:
         # make a trigbank for the master H2 chunk: to do this, we need
         # the inca job from L1/H1 that overlaps with this H2 chunk as input
         trigbank = inspiral.TrigToTmpltNode(trig_job)
-        trigbank.make_trigbank(chunk,'H1','H2',usertag,'H1')
+        trigbank.make_trigbank(chunk,'H1','H2',usertag,'L1H1')
         for l1_h1_done in l1_h1_inca_nodes:
           if chunk_in_segment(chunk,l1_h1_done.get_chunk()):
             trigbank.add_var_arg(l1_h1_done.get_dag_node().get_output_b())
