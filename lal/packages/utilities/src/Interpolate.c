@@ -30,7 +30,7 @@ SPolynomialInterpolation (
   UINT4  n;
   UINT4  i;
 
-  INITSTATUS (status, INTERPOLATEC);
+  INITSTATUS (status, "SPolynomialInterpolation", INTERPOLATEC);
 
   ASSERT (output, status, INTERPOLATE_ENULL, INTERPOLATE_MSGENULL);
   ASSERT (params, status, INTERPOLATE_ENULL, INTERPOLATE_MSGENULL);
@@ -115,7 +115,7 @@ DPolynomialInterpolation (
   UINT4  n;
   UINT4  i;
 
-  INITSTATUS (status, INTERPOLATEC);
+  INITSTATUS (status, "DPolynomialInterpolation", INTERPOLATEC);
 
   ASSERT (output, status, INTERPOLATE_ENULL, INTERPOLATE_MSGENULL);
   ASSERT (params, status, INTERPOLATE_ENULL, INTERPOLATE_MSGENULL);

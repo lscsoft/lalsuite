@@ -28,19 +28,14 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef TIMEFREQ_H
 #include "TimeFreq.h"
-#ifndef TIMEFREQ_H
-#define TIMEFREQ_H
-#endif
-#endif
 
 NRCSID (DESTROYTIMEFREQPARAMC, "$Id$");
 
 void DestroyTimeFreqParam (Status *status, TimeFreqParam **param)
 {
   /*  Initialize status */
-  INITSTATUS (status, DESTROYTIMEFREQPARAMC);
+  INITSTATUS (status, "DestroyTimeFreqParam", DESTROYTIMEFREQPARAMC);
       
   /* Check param: report if NULL */
   ASSERT (param != NULL, status, DESTROYTFP_ENULL, DESTROYTFP_MSGENULL); 

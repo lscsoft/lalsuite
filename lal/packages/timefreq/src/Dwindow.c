@@ -32,12 +32,7 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef TIMEFREQ_H
 #include "TimeFreq.h"
-#ifndef TIMEFREQ_H
-#define TIMEFREQ_H
-#endif
-#endif
 
 NRCSID (DWINDOWC, "$Id$");
 
@@ -46,7 +41,7 @@ void Dwindow (Status *stat, REAL4Vector* window, REAL4Vector* dwindow)
   INT4      column, hwl;
   REAL4     step, ramp, dwin1, dwin2;
 
-  INITSTATUS (stat, DWINDOWC);
+  INITSTATUS (stat, "Dwindow", DWINDOWC);
   ATTATCHSTATUSPTR (stat);
 
   /* Make sure the arguments are not NULL: */

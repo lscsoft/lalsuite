@@ -35,12 +35,7 @@
  * 2. Source file version string (from CVS). Note the string name.
  */
 
-#ifndef _LALRCSID_H
 #include "LALRCSID.h"
-#ifndef _LALRCSID_H
-#define _LALRCSID_H
-#endif
-#endif
 
 NRCSID (EXAMPLEC, "$Id$");
 
@@ -50,37 +45,12 @@ NRCSID (EXAMPLEC, "$Id$");
  *    a. Standard library includes;
  *    b. LDAS includes;
  *    c. LAL includes.
- *    Each source file must include at least its own header. Includes should 
- *    be guarded, as in 
  */
 
-#ifndef _STDLIB_H
 #include <stdlib.h>
-#ifndef _STDLIB_H
-#define _STDLIB_H
-#endif
-#endif
-
-#ifndef _MATH_H
 #include <math.h>
-#ifndef _MATH_H
-#define _MATH_H
-#endif
-#endif
-
-#ifndef _LDASDCAPI_H
 #include "LDASDCAPI.h"
-#ifndef _LDASDCAPI_H
-#define _LDASDCAPI_H
-#endif
-#endif
-
-#ifndef _EXAMPLE_H
 #include "Example.h"
-#ifndef _EXAMPLE_H
-#define _EXAMPLE_H
-#endif
-#endif
 
 /* 
  * 4. Constants, enumerated types, structures, etc., used only internally;

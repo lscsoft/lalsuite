@@ -25,47 +25,13 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _STDIO_H
 #include <stdio.h>
-#ifndef _STDIO_H
-#define _STDIO_H
-#endif
-#endif
-
-#ifndef _MATH_H
 #include <math.h>
-#ifndef _MATH_H
-#define _MATH_H
-#endif
-#endif
-
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _SEQFACTORIES_H
 #include "SeqFactories.h"
-#ifndef _SEQFACTORIES_H
-#define _SEQFACTORIES_H
-#endif
-#endif
-
-#ifndef _REALFFT_H
 #include "RealFFT.h"
-#ifndef _REALFFT_H
-#define _REALFFT_H
-#endif
-#endif
-
-#ifndef _VECTOROPS_H
 #include "VectorOps.h"
-#ifndef _VECTOROPS_H
-#define _VECTOROPS_H
-#endif
-#endif
+
 
 NRCSID (MAIN, "$Id$");
 

@@ -77,26 +77,9 @@ I4DestroyVector()
 
 </lalLaTeX> */
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _AVFACTORIES_H
 #include "AVFactories.h"
-#ifndef _AVFACTORIES_H
-#define _AVFACTORIES_H
-#endif
-#endif
-
-#ifndef _SORT_H
 #include "Sort.h"
-#ifndef _SORT_H
-#define _SORT_H
-#endif
-#endif
 
 NRCSID(HEAPSORTC,"$Id$");
 
@@ -111,7 +94,7 @@ void SHeapSort(Status      *stat,
   REAL4 temp;
   REAL4 *data;
 
-  INITSTATUS(stat,HEAPSORTC);
+  INITSTATUS(stat,"SHeapSort",HEAPSORTC);
 
   /* Make sure all pointers are valid. */
   ASSERT(vector,stat,SORT_ENUL,SORT_MSGENUL);
@@ -171,7 +154,7 @@ void SHeapIndex(Status      *stat,
   REAL4 temp;
   REAL4 *data;
 
-  INITSTATUS(stat,HEAPSORTC);
+  INITSTATUS(stat,"SHeapIndex",HEAPSORTC);
 
   /* Make sure all pointers are valid, and the index vector is of the
      same length as the data vector. */
@@ -239,7 +222,7 @@ void SHeapRank(Status      *stat,
   INT4       *rnk;
   INT4Vector *index=NULL;
 
-  INITSTATUS(stat,HEAPSORTC);
+  INITSTATUS(stat,"SHeapRank",HEAPSORTC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure all pointers are valid, and the rank vector is of the
@@ -278,7 +261,7 @@ void DHeapSort(Status      *stat,
   REAL8 temp;
   REAL8 *data;
 
-  INITSTATUS(stat,HEAPSORTC);
+  INITSTATUS(stat,"DHeapSort",HEAPSORTC);
 
   /* Make sure all pointers are valid. */
   ASSERT(vector,stat,SORT_ENUL,SORT_MSGENUL);
@@ -338,7 +321,7 @@ void DHeapIndex(Status      *stat,
   REAL8 temp;
   REAL8 *data;
 
-  INITSTATUS(stat,HEAPSORTC);
+  INITSTATUS(stat,"DHeapIndex",HEAPSORTC);
 
   /* Make sure all pointers are valid, and the index vector is of the
      same length as the data vector. */
@@ -406,7 +389,7 @@ void DHeapRank(Status      *stat,
   INT4       *rnk;
   INT4Vector *index=NULL;
 
-  INITSTATUS(stat,HEAPSORTC);
+  INITSTATUS(stat,"DHeapRank",HEAPSORTC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure all pointers are valid, and the rank vector is of the

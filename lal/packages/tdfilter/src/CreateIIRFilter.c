@@ -85,40 +85,11 @@ DCreateVector()
 
 </lalLaTeX> */
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _LALCONSTANTS_H
 #include "LALConstants.h"
-#ifndef _LALCONSTANTS_H
-#define _LALCONSTANTS_H
-#endif
-#endif
-
-#ifndef _AVFACTORIES_H
 #include "AVFactories.h"
-#ifndef _AVFACTORIES_H
-#define _AVFACTORIES_H
-#endif
-#endif
-
-#ifndef _MATH_H
 #include <math.h>
-#ifndef _MATH_H
-#define _MATH_H
-#endif
-#endif
-
-#ifndef _IIRFILTER_H
 #include "IIRFilter.h"
-#ifndef _IIRFILTER_H
-#define _IIRFILTER_H
-#endif
-#endif
 
 NRCSID(CREATEIIRFILTERC,"$Id$");
 
@@ -141,7 +112,7 @@ void CreateREAL4IIRFilter(Status            *stat,
   REAL4 *recurs;   /* The recursive filter coefficients. */
   REAL4 *history;  /* The filter history. */
 
-  INITSTATUS(stat,CREATEIIRFILTERC);
+  INITSTATUS(stat,"CreateREAL4IIRFilter",CREATEIIRFILTERC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure all the input structures have been initialized. */
@@ -382,7 +353,7 @@ void CreateREAL8IIRFilter(Status             *stat,
   REAL8 *recurs;    /* The recursive filter coefficients. */
   REAL8 *history;   /* The filter history. */
 
-  INITSTATUS(stat,CREATEIIRFILTERC);
+  INITSTATUS(stat,"CreateREAL8IIRFilter",CREATEIIRFILTERC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure all the input structures have been initialized. */

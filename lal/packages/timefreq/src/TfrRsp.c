@@ -31,12 +31,7 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef TIMEFREQ_H
 #include "TimeFreq.h"
-#ifndef TIMEFREQ_H
-#define TIMEFREQ_H
-#endif
-#endif
 
 /* well, better macros than these one are welcome! */
 #define MIN(A, B)       ((A) < (B) ? (A) : (B))
@@ -73,7 +68,7 @@ void TfrRsp (Status *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqParam *pa
   REAL4         hatt, hatf;        /* reassignment operator */
   INT4          indext,indexf;     /* reassignment index */
 
-  INITSTATUS (stat, TFRRSPC);
+  INITSTATUS (stat, "TfrRsp", TFRRSPC);
   ATTATCHSTATUSPTR (stat);
   
   /* Make sure the arguments are not NULL: */

@@ -7,26 +7,9 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _STDIO_H
 #include <stdio.h>
-#ifndef _STDIO_H
-#define _STDIO_H
-#endif
-#endif
-
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _LALHELLO_H
 #include "LALHello.h"
-#ifndef _LALHELLO_H
-#define _LALHELLO_H
-#endif
-#endif
 
 NRCSID (LALHELLOC, "$Id$");
 
@@ -39,7 +22,7 @@ LALPrintMessage (Status *status, const CHAR *message, const CHAR *fileName)
   INT4  numChar;
   FILE *filePtr;
 
-  INITSTATUS (status, LALHELLOC);
+  INITSTATUS (status, "LALPrintMessage", LALHELLOC);
 
   if (fileName)
   {
@@ -74,7 +57,7 @@ LALPrintMessage (Status *status, const CHAR *message, const CHAR *fileName)
 void
 LALHello (Status *status, const CHAR *fileName)
 {
-  INITSTATUS (status, LALHELLOC);
+  INITSTATUS (status, "LALHello", LALHELLOC);
   ATTATCHSTATUSPTR (status);
 
   LALPrintMessage (status->statusPtr, "hello, LSC!\n", fileName);

@@ -44,19 +44,8 @@ returned through the function's return statement.
 
 </lalLaTeX> */
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _IIRFILTER_H
 #include "IIRFilter.h"
-#ifndef _IIRFILTER_H
-#define _IIRFILTER_H
-#endif
-#endif
 
 NRCSID(IIRFILTERC,"$Id$");
 
@@ -72,7 +61,7 @@ void IIRFilterREAL4(Status         *stat,
   REAL4 *coef; /* Values of filter coefficients. */
   REAL4 *hist; /* Values of filter history. */
 
-  INITSTATUS(stat,IIRFILTERC);
+  INITSTATUS(stat,"IIRFilterREAL4",IIRFILTERC);
 
   /* Check all the passed parameters for null pointers. */
   ASSERT(output,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
@@ -125,7 +114,7 @@ void IIRFilterREAL8(Status         *stat,
   REAL8 *coef; /* Values of filter coefficients. */
   REAL8 *hist; /* Values of filter history. */
 
-  INITSTATUS(stat,IIRFILTERC);
+  INITSTATUS(stat,"IIRFilterREAL8",IIRFILTERC);
 
   /* Check all the passed parameters for null pointers. */
   ASSERT(output,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);

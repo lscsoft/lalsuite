@@ -7,75 +7,25 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _STDIO_H
 #include <stdio.h>
-#ifndef _STDIO_H
-#define _STDIO_H
-#endif
-#endif
-
-#ifndef _STRING_H
 #include <string.h>
-#ifndef _STRING_H
-#define _STRING_H
-#endif
-#endif
-
-#ifndef _STDLIB_H
 #include <stdlib.h>
-#ifndef _STDLIB_H
-#define _STDLIB_H
-#endif
-#endif
-
-#ifndef _LALCONFIG_H
 #include "LALConfig.h"
-#ifndef _LALCONFIG_H
-#define _LALCONFIG_H
-#endif
-#endif
 
 #ifdef HAVE_UNISTD_H
-#ifndef _UNISTD_H
 #include <unistd.h>
-#ifndef _UNISTD_H
-#define _UNISTD_H
-#endif
-#endif
 #endif
 
 #ifdef HAVE_GETOPT_H
-#ifndef _GETOPT_H
 #include <getopt.h>
-#ifndef _GETOPT_H
-#define _GETOPT_H
-#endif
-#endif
 #endif
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _AVFACTORIES_H
 #include "AVFactories.h"
-#ifndef _AVFACTORIES_H
-#define _AVFACTORIES_H
-#endif
-#endif
-
-#ifndef _RANDOM_H
 #include "Random.h"
-#ifndef _RANDOM_H
-#define _RANDOM_H
-#endif
-#endif
 
-#define _CODES(x) #x
-#define CODES(x) _CODES(x)
+#define CODES_(x) #x
+#define CODES(x) CODES_(x)
 
 NRCSID (MAIN, "$Id$");
 

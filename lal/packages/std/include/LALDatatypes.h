@@ -1033,6 +1033,7 @@ tagStatus
   INT4                 statusCode;
   const CHAR          *statusDescription;
   volatile const CHAR *Id;
+  const CHAR          *function;
   const CHAR          *file;
   INT4                 line;
   struct tagStatus    *statusPtr;

@@ -7,33 +7,10 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _TIME_H
 #include <time.h>
-#ifndef _TIME_H
-#define _TIME_H
-#endif
-#endif
-
-#ifndef _MATH_H
 #include <math.h>
-#ifndef _MATH_H
-#define _MATH_H
-#endif
-#endif
-
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _RANDOM_H
 #include "Random.h"
-#ifndef _RANDOM_H
-#define _RANDOM_H
-#endif
-#endif
 
 NRCSID (RANDOMC, "$Id$");
 
@@ -65,7 +42,7 @@ CreateRandomParams (
 {
   INT4 n;
 
-  INITSTATUS (status, RANDOMC);
+  INITSTATUS (status, "CreateRandomParams", RANDOMC);
 
   ASSERT (params, status, RANDOM_ENULL, RANDOM_MSGENULL);
   ASSERT (!*params, status, RANDOM_ENNUL, RANDOM_MSGENNUL);
@@ -106,7 +83,7 @@ DestroyRandomParams (
     RandomParams **params
     )
 {
-  INITSTATUS (status, RANDOMC);
+  INITSTATUS (status, "DestroyRandomParams", RANDOMC);
 
   ASSERT (params, status, RANDOM_ENULL, RANDOM_MSGENULL);
   ASSERT (*params, status, RANDOM_ENULL, RANDOM_MSGENULL);
@@ -128,7 +105,7 @@ UniformDeviate (
   INT4 ndiv;
   INT4 n;
 
-  INITSTATUS (status, RANDOMC);
+  INITSTATUS (status, "UniformDeviate", RANDOMC);
 
   ASSERT (deviate, status, RANDOM_ENULL, RANDOM_MSGENULL);
   ASSERT (params, status, RANDOM_ENULL, RANDOM_MSGENULL);
@@ -159,7 +136,7 @@ NormalDeviates (
   REAL4 *data;
   INT4   half;
 
-  INITSTATUS (status, RANDOMC);
+  INITSTATUS (status, "NormalDeviates", RANDOMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (params, status, RANDOM_ENULL, RANDOM_MSGENULL);

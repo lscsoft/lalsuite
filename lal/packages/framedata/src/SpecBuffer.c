@@ -9,47 +9,12 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _AVFACTORIES_H
 #include "AVFactories.h"
-#ifndef _AVFACTORIES_H
-#define _AVFACTORIES_H
-#endif
-#endif
-
-#ifndef _REALFFT_H
 #include "RealFFT.h"
-#ifndef _REALFFT_H
-#define _REALFFT_H
-#endif
-#endif
-
-#ifndef _WINDOW_H
 #include "Window.h"
-#ifndef _WINDOW_H
-#define _WINDOW_H
-#endif
-#endif
-
-#ifndef _VECTOROPS_H
 #include "VectorOps.h"
-#ifndef _VECTOROPS_H
-#define _VECTOROPS_H
-#endif
-#endif
-
-#ifndef _SPECBUFFER_H
 #include "SpecBuffer.h"
-#ifndef _SPECBUFFER_H
-#define _SPECBUFFER_H
-#endif
-#endif
 
 NRCSID (SPECBUFFERC, "$Id$");
 
@@ -66,7 +31,7 @@ ComputeSpectrum (
   INT4         i;
   INT4         n;
 
-  INITSTATUS (status, SPECBUFFERC);
+  INITSTATUS (status, "ComputeSpectrum", SPECBUFFERC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
@@ -125,7 +90,7 @@ CreateSpectrumBuffer (
   INT4 specSize;
   INT4 spec;
 
-  INITSTATUS (status, SPECBUFFERC);
+  INITSTATUS (status, "CreateSpectrumBuffer", SPECBUFFERC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
@@ -204,7 +169,7 @@ DestroySpectrumBuffer (
 {
   INT4 spec;
 
-  INITSTATUS (status, SPECBUFFERC);
+  INITSTATUS (status, "DestroySpectrumBuffer", SPECBUFFERC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
@@ -245,7 +210,7 @@ AddSpectrum (
 {
   INT4 whichSpec;
 
-  INITSTATUS (status, SPECBUFFERC);
+  INITSTATUS (status, "AddSpectrum", SPECBUFFERC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
@@ -284,7 +249,7 @@ AverageSpectrum (
   INT4  nspec;
   REAL4 fac;
 
-  INITSTATUS (status, SPECBUFFERC);
+  INITSTATUS (status, "AverageSpectrum", SPECBUFFERC);
 
   /* make sure that arguments are not NULL */
   ASSERT (spectrum, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);

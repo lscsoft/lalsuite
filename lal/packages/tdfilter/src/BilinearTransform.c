@@ -103,47 +103,12 @@ DHeapIndex()
 
 </lalLaTeX> */
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _AVFACTORIES_H
 #include "AVFactories.h"
-#ifndef _AVFACTORIES_H
-#define _AVFACTORIES_H
-#endif
-#endif
-
-#ifndef _VECTOROPS_H
 #include "VectorOps.h"
-#ifndef _VECTOROPS_H
-#define _VECTOROPS_H
-#endif
-#endif
-
-#ifndef _SORT_H
 #include "Sort.h"
-#ifndef _SORT_H
-#define _SORT_H
-#endif
-#endif
-
-#ifndef _MATH_H
 #include <math.h>
-#ifndef _MATH_H
-#define _MATH_H
-#endif
-#endif
-
-#ifndef _ZPGFILTER_H
 #include "ZPGFilter.h"
-#ifndef _ZPGFILTER_H
-#define _ZPGFILTER_H
-#endif
-#endif
 
 NRCSID(BILINEARTRANSFORMC,"$Id$");
 
@@ -166,7 +131,7 @@ void WToZCOMPLEX8ZPGFilter(Status            *stat,
   REAL4Vector *absGain=NULL; /* Magnitudes of gain corrections. */
   INT4Vector *index=NULL;    /* Index array for sorting absGain. */
 
-  INITSTATUS(stat,BILINEARTRANSFORMC);
+  INITSTATUS(stat,"WToZCOMPLEX8ZPGFilter",BILINEARTRANSFORMC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure the filter pointer is non-null. */
@@ -401,7 +366,7 @@ void WToZCOMPLEX16ZPGFilter(Status             *stat,
   REAL8Vector *absGain=NULL;  /* Magnitudes of gain corrections. */
   INT4Vector *index=NULL;     /* Index array for sorting absGain. */
 
-  INITSTATUS(stat,BILINEARTRANSFORMC);
+  INITSTATUS(stat,"WToZCOMPLEX16ZPGFilter",BILINEARTRANSFORMC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure the filter pointer is non-null. */

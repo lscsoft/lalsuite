@@ -9,33 +9,10 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _STDIO_H
 #include <stdio.h>
-#ifndef _STDIO_H
-#define _STDIO_H
-#endif
-#endif
-
-#ifndef _STDLIB_H
 #include <stdlib.h>
-#ifndef _STDLIB_H
-#define _STDLIB_H
-#endif
-#endif
-
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _FINDCHIRPEXCH_H
 #include "FindChirpExch.h"
-#ifndef _FINDCHIRPEXCH_H
-#define _FINDCHIRPEXCH_H
-#endif
-#endif
 
 NRCSID (FINDCHIRPMASTERC, "$Id$");
 
@@ -57,7 +34,7 @@ Master (Status *status, MPIId id)
   INT4                     numProcs;
   INT4                     i;
 
-  INITSTATUS (status, FINDCHIRPMASTERC);
+  INITSTATUS (status, "Master", FINDCHIRPMASTERC);
   ATTATCHSTATUSPTR (status);
   
   printf ("Master: starting up\n");

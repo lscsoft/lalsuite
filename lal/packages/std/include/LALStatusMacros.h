@@ -80,10 +80,10 @@
  *
  * 1. Every source file should have a unique character string
  *    identifying that version of that file.  The standard convention,
- *    for a file Myfunk.c, is to declare a string at the top of the
+ *    for a file MyFile.c, is to declare a string at the top of the
  *    module using the macro NRCSID (defined in the include file LALRCSID.h):
  *
- *      NRCSID (MYFUNKC, "\044Id\044");
+ *      NRCSID( MYFILEC, "\044Id\044" );
  *
  *    where \044Id\044 is expanded by RCS to give the full name and
  *    version number of the source file.
@@ -92,7 +92,7 @@
  *    of any function should be a pointer to a structure of type
  *    Status.  Thus:
  *
- *      void Myfunk(Status *stat, ... )
+ *      void MyFunction( Status *stat, ... )
  *
  *    Since the function has no return code, it must report all errors
  *    or failure through the status structure.  A function that is
@@ -104,11 +104,11 @@
  *    routine.
  *
  * 3. The first instruction in any function, after variable
- *    declarations, should be the macro INITSTATUS(), which takes two
- *    arguments: the function's status pointer, and the module's RCS
- *    Id string.
+ *    declarations, should be the macro INITSTATUS(), which takes three
+ *    arguments: the function's status pointer, the function name (a
+ *    string literal) and the module's RCS Id string.
  *
- *        INITSTATUS(stat, MYFUNKC);
+ *        INITSTATUS( stat, "MyFunction", MYFILEC );
  *
  *    This macro checks that a valid status pointer has been passed to
  *    the function, and if so, initializes the other fields to
@@ -241,8 +241,8 @@
  *      main ()
  *      {
  *        static Status status;
- *        MYFUNK (&status);
- *        REPORTSTATUS (&status);
+ *        MyFunction( &status );
+ *        REPORTSTATUS( &status );
  *        return 0;
  *      }
  *
@@ -279,7 +279,7 @@
  *                          REAL4  *output,
  *                          REAL4  input)
  *   {
- *     INITSTATUS(stat,DIVISIONC);
+ *     INITSTATUS(stat,"InvertREAL4",DIVISIONC);
  *     ASSERT(output!=NULL,stat,DIVISION_ENULL,DIVISION_MSGENULL);
  *     if(input==0.0)
  *       ABORT(stat,DIVISION_EDIV0,DIVISION_MSGEDIV0);
@@ -294,7 +294,7 @@
  *   {
  *     REAL4 invDenom;
  *
- *     INITSTATUS(stat,DIVISIONC);
+ *     INITSTATUS(stat,"DivideREAL4",DIVISIONC);
  *     ATTATCHSTATUSPTR(stat);
  *     TRY(InvertREAL4(stat->statusPtr,&invDenom,denominator),stat);
  *     *output = numerator*invDenom;
@@ -359,24 +359,25 @@ NRCSID (LALSTATUSMACROSH, "$Id$");
 
 extern int debuglevel;
 
-#define INITSTATUS(statusptr, id)                                     \
+#define INITSTATUS( statusptr, funcname, id )                         \
 do                                                                    \
 {                                                                     \
   INT4 level;                                                         \
   if(!(statusptr))                                                    \
     {                                                                 \
       CHAR msg[1024];                                                 \
-      sprintf(msg,"Abort: line %d, file %s, %s\n"                     \
+      sprintf(msg,"Abort: function %s, file %s, line %d, %s\n"        \
 	      "       Null status pointer passed to function\n",      \
-	      __LINE__,__FILE__,(id));                                \
+	      (funcname),__FILE__,__LINE__,(id));                     \
       LALAbort(msg);                                                  \
     }                                                                 \
   ASSERT(!(statusptr)->statusPtr,statusptr,-2,                        \
 	 "INITSTATUS: non-null status pointer");                      \
   level = (statusptr)->level;                                         \
   memset((statusptr),0,sizeof(Status));                               \
-  (statusptr)->level = level > 0 ? level : 1 ;                        \
-  (statusptr)->Id    = (id);                                          \
+  (statusptr)->level    = level > 0 ? level : 1 ;                     \
+  (statusptr)->Id       = (id);                                       \
+  (statusptr)->function = (funcname);                                 \
 } while (0)
 
 #define RETURN(statusptr)                                             \
@@ -390,18 +391,20 @@ do                                                                    \
     }                                                                 \
   else if((statusptr)->statusCode==0)                                 \
     {                                                                 \
-      LALPrintError("Nominal[%d]: line %d, file %s, %s\n",            \
-	      (statusptr)->level,(statusptr)->line,(statusptr)->file, \
-              (statusptr)->Id);                                       \
+      LALPrintError("Nominal[%d]: ", (statusptr)->level);             \
+      LALPrintError("function %s, file %s, line %d, %s\n",            \
+	      (statusptr)->function,(statusptr)->file,                \
+              (statusptr)->line,(statusptr)->Id);                     \
       return;                                                         \
     }                                                                 \
   else                                                                \
     {                                                                 \
-      LALPrintError("Error[%d] %d: line %d, file %s, %s\n"            \
-              "          %s\n",(statusptr)->level,                    \
-	      (statusptr)->statusCode,(statusptr)->line,              \
-              (statusptr)->file,(statusptr)->Id,                      \
-              (statusptr)->statusDescription);                        \
+      LALPrintError("Error[%d] %d: ", (statusptr)->level,             \
+              (statusptr)->statusCode);                               \
+      LALPrintError("function %s, file %s, line %d, %s\n",            \
+              (statusptr)->function, (statusptr)->file,               \
+              (statusptr)->line, (statusptr)->Id);                    \
+      LALPrintError("          %s\n",(statusptr)->statusDescription); \
       return;                                                         \
     }                                                                 \
 } while (0)
@@ -424,17 +427,19 @@ do                                                                    \
     }                                                                 \
   else if((code)==0)                                                  \
     {                                                                 \
-      LALPrintError("Nominal[%d]: line %d, file %s, %s\n",            \
-	      (statusptr)->level,(statusptr)->line,(statusptr)->file, \
-              (statusptr)->Id);                                       \
+      LALPrintError("Nominal[%d]: ", (statusptr)->level);             \
+      LALPrintError("function %s, file %s, line %d, %s\n",            \
+	      (statusptr)->function,(statusptr)->file,                \
+              (statusptr)->line,(statusptr)->Id);                     \
       return;                                                         \
     }                                                                 \
   else                                                                \
     {                                                                 \
-      LALPrintError("Error[%d] %d: line %d, file %s, %s\n"            \
-              "         %s\n",(statusptr)->level,(code),              \
-              (statusptr)->line,(statusptr)->file,(statusptr)->Id,    \
-              (mesg));                                                \
+      LALPrintError("Error[%d] %d: ", (statusptr)->level,(code));     \
+      LALPrintError("function %s, file %s, line %d, %s\n",            \
+              (statusptr)->function, (statusptr)->file,               \
+              (statusptr)->line, (statusptr)->Id);                    \
+      LALPrintError("         %s\n", (mesg));                         \
       return;                                                         \
     }                                                                 \
 } while (0)
@@ -459,18 +464,20 @@ do                                                                    \
 	}                                                             \
       else if((code)==0)                                              \
 	{                                                             \
-	  LALPrintError("Nominal[%d]: line %d, file %s, %s\n",        \
-		  (statusptr)->level,(statusptr)->line,               \
-                  (statusptr)->file,(statusptr)->Id);                 \
+          LALPrintError("Nominal[%d]: ", (statusptr)->level);         \
+          LALPrintError("function %s, file %s, line %d, %s\n",        \
+	          (statusptr)->function,(statusptr)->file,            \
+                  (statusptr)->line,(statusptr)->Id);                 \
 	  return;                                                     \
 	}                                                             \
       else                                                            \
 	{                                                             \
-	  LALPrintError("Error[%d] %d: line %d, file %s, %s\n"        \
-		  "         Assertion %s failed: %s\n",               \
-                  (statusptr)->level,(code),(statusptr)->line,        \
-                  (statusptr)->file,(statusptr)->Id,#assertion,       \
-                  (mesg));                                            \
+          LALPrintError("Error[%d] %d: ", (statusptr)->level,(code)); \
+          LALPrintError("function %s, file %s, line %d, %s\n",        \
+                  (statusptr)->function, (statusptr)->file,           \
+                  (statusptr)->line, (statusptr)->Id);                \
+          LALPrintError("         Assertion %s failed: %s\n",         \
+                  #assertion, (mesg));                                \
 	  return;                                                     \
 	}                                                             \
     }                                                                 \
@@ -500,10 +507,10 @@ do                                                                    \
   (statusptr)->statusDescription=NULL;                                \
 } while (0)
 
-#define TRY(function,statusptr)                                       \
+#define TRY(func,statusptr)                                           \
 do                                                                    \
 {                                                                     \
-  (function);                                                         \
+  (func);                                                             \
   if((statusptr)->statusPtr->statusCode)                              \
     {                                                                 \
       (statusptr)->file=__FILE__;                                     \
@@ -512,10 +519,12 @@ do                                                                    \
       (statusptr)->statusDescription="Recursive error";               \
       if(debuglevel>0)                                                \
 	{                                                             \
-	  LALPrintError("Error[%d] %d: line %d, file %s, %s\n"        \
-		  "          Function call %s failed\n",              \
-                  (statusptr)->level,-1,(statusptr)->line,            \
-                  (statusptr)->file,(statusptr)->Id,#function);       \
+          LALPrintError("Error[%d] %d: ", (statusptr)->level, -1);    \
+          LALPrintError("function %s, file %s, line %d, %s\n",        \
+                  (statusptr)->function, (statusptr)->file,           \
+                  (statusptr)->line, (statusptr)->Id);                \
+          LALPrintError("          Function call %s failed\n",        \
+                  #func);                                             \
 	}                                                             \
       return;                                                         \
     }                                                                 \
@@ -532,10 +541,11 @@ do                                                                    \
       (statusptr)->statusDescription="Recursive error";               \
       if(debuglevel>0)                                                \
 	{                                                             \
-	  LALPrintError("Error[%d] %d: line %d, file %s, %s\n"        \
-		  "          Function call failed\n",                 \
-                  (statusptr)->level,-1,(statusptr)->line,            \
-                  (statusptr)->file,(statusptr)->Id);                 \
+          LALPrintError("Error[%d] %d: ", (statusptr)->level, -1);    \
+          LALPrintError("function %s, file %s, line %d, %s\n",        \
+                  (statusptr)->function, (statusptr)->file,           \
+                  (statusptr)->line, (statusptr)->Id);                \
+	  LALPrintError("          Function call failed\n");          \
 	}                                                             \
       return;                                                         \
     }                                                                 \
@@ -557,7 +567,8 @@ do                                                                    \
       {                                                               \
         LALPrintError("\tStatus code 0: Nominal\n");                  \
       }                                                               \
-      LALPrintError("\tfile %s, line %i\n",ptr->file,ptr->line);      \
+      LALPrintError("\tfunction %s, file %s, line %i\n",              \
+                    ptr->function,ptr->file,ptr->line);               \
     }                                                                 \
 } while (0)
 

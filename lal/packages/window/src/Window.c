@@ -27,26 +27,9 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _MATH_H
 #include <math.h>
-#ifndef _MATH_H
-#define _MATH_H
-#endif
-#endif
-
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _WINDOW_H
 #include "Window.h"
-#ifndef _WINDOW_H
-#define _WINDOW_H
-#endif
-#endif
 
 NRCSID (WINDOW, "$Id$");
 
@@ -63,7 +46,7 @@ Window (Status *status, REAL4Vector *vector, WindowParams *parameters)
   REAL8 x,y,z;
 
   /* Initialize status structure   */
-  INITSTATUS(status,WINDOW);
+  INITSTATUS(status,"Window",WINDOW);
 
   /* Check that parameter block is there. */ 
   ASSERT(parameters!=NULL,status,WINDOW_NULLPARAM,WINDOW_MSGNULLPARAM);

@@ -140,47 +140,12 @@ IIRFilterREAL8VectorR()
 
 </lalLaTeX> */
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _LALCONSTANTS_H
 #include "LALConstants.h"
-#ifndef _LALCONSTANTS_H
-#define _LALCONSTANTS_H
-#endif
-#endif
-
-#ifndef _AVFACTORIES_H
 #include "AVFactories.h"
-#ifndef _AVFACTORIES_H
-#define _AVFACTORIES_H
-#endif
-#endif
-
-#ifndef _MATH_H
 #include <math.h>
-#ifndef _MATH_H
-#define _MATH_H
-#endif
-#endif
-
-#ifndef _IIRFILTER_H
 #include "IIRFilter.h"
-#ifndef _IIRFILTER_H
-#define _IIRFILTER_H
-#endif
-#endif
-
-#ifndef _BANDPASSTIMESERIES_H
 #include "BandPassTimeSeries.h"
-#ifndef _BANDPASSTIMESERIES_H
-#define _BANDPASSTIMESERIES_H
-#endif
-#endif
 
 NRCSID(BUTTERWORTHTIMESERIESC,"$Id$");
 
@@ -204,7 +169,7 @@ void ButterworthREAL4TimeSeries(Status             *stat,
   INT4 j;    /* Another index. */
   REAL8 wc;  /* The filter's transformed frequency. */
 
-  INITSTATUS(stat,BUTTERWORTHTIMESERIESC);
+  INITSTATUS(stat,"ButterworthREAL4TimeSeries",BUTTERWORTHTIMESERIESC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure the input pointers are non-null. */
@@ -330,7 +295,7 @@ void ButterworthREAL8TimeSeries(Status             *stat,
   INT4 j;    /* Another index. */
   REAL8 wc;  /* The filter's transformed frequency. */
 
-  INITSTATUS(stat,BUTTERWORTHTIMESERIESC);
+  INITSTATUS(stat,"ButterworthREAL8TimeSeries",BUTTERWORTHTIMESERIESC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure the input pointers are non-null. */

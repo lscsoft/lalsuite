@@ -9,33 +9,10 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _STDIO_H
 #include <stdio.h>
-#ifndef _STDIO_H
-#define _STDIO_H
-#endif
-#endif
-
-#ifndef _MPI_INCLUDE
 #include "mpi.h"
-#ifndef _MPI_INCLUDE
-#define _MPI_INCLUDE
-#endif
-#endif
-
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _COMM_H
 #include "Comm.h"
-#ifndef _COMM_H
-#define _COMM_H
-#endif
-#endif
 
 NRCSID (MAIN, "$Id$");
 

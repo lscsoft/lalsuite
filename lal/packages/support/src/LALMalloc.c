@@ -7,54 +7,13 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _STDIO_H
 #include <stdio.h>
-#ifndef _STDIO_H
-#define _STDIO_H
-#endif
-#endif
-
-#ifndef _STDLIB_H
 #include <stdlib.h>
-#ifndef _STDLIB_H
-#define _STDLIB_H
-#endif
-#endif
-
-#ifndef _STRING_H
 #include <string.h>
-#ifndef _STRING_H
-#define _STRING_H
-#endif
-#endif
-
-#ifndef _SIGNAL_H
 #include <signal.h>
-#ifndef _SIGNAL_H
-#define _SIGNAL_H
-#endif
-#endif
-
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _LALERROR_H
 #include "LALError.h"
-#ifndef _LALERROR_H
-#define _LALERROR_H
-#endif
-#endif
-
-#ifndef _LALMALLOC_H
 #include "LALMalloc.h"
-#ifndef _LALMALLOC_H
-#define _LALMALLOC_H
-#endif
-#endif
 
 NRCSID (LALMALLOCC, "$Id$");
 

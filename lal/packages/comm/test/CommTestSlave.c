@@ -9,26 +9,9 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _STDIO_H
 #include <stdio.h>
-#ifndef _STDIO_H
-#define _STDIO_H
-#endif
-#endif
-
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _COMM_H
 #include "Comm.h"
-#ifndef _COMM_H
-#define _COMM_H
-#endif
-#endif
 
 NRCSID (COMMTESTSLAVEC, "$Id$");
 
@@ -42,7 +25,7 @@ Slave (Status *status, MPIId id)
   REAL4Vector *vector = NULL;
   INT4         i;
 
-  INITSTATUS (status, COMMTESTSLAVEC);
+  INITSTATUS (status, "Slave", COMMTESTSLAVEC);
   ATTATCHSTATUSPTR (status);
 
   printf ("Slave %d starting up\n", id.myId);

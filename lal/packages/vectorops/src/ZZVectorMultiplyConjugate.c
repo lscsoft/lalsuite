@@ -27,26 +27,9 @@
  * 
  *----------------------------------------------------------------------- */
 
-#ifndef _MATH_H
 #include <math.h>
-#ifndef _MATH_H
-#define _MATH_H
-#endif
-#endif
-
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _VECTOROPS_H
 #include "VectorOps.h"
-#ifndef _VECTOROPS_H
-#define _VECTOROPS_H
-#endif
-#endif
 
 NRCSID(ZZVECTORMULTIPLYCONJUGATEC,"$Id$");
 
@@ -63,7 +46,7 @@ ZZVectorMultiplyConjugate (
   COMPLEX16 *c;
   INT4       n;
 
-  INITSTATUS (status, ZZVECTORMULTIPLYCONJUGATEC);
+  INITSTATUS (status, "ZZVectorMultiplyConjugate", ZZVECTORMULTIPLYCONJUGATEC);
 
   ASSERT (out, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);
   ASSERT (in1, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);

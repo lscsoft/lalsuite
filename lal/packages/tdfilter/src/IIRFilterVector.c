@@ -41,19 +41,8 @@ LALFree()
 
 </lalLaTeX> */
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _IIRFILTER_H
 #include "IIRFilter.h"
-#ifndef _IIRFILTER_H
-#define _IIRFILTER_H
-#endif
-#endif
 
 NRCSID(IIRFILTERVECTORC,"$Id$");
 
@@ -76,7 +65,7 @@ void IIRFilterREAL4Vector(Status         *stat,
   REAL4 *history;    /* Filter history. */
   REAL4 *temp=NULL;  /* Temporary storage for the filter history. */
 
-  INITSTATUS(stat,IIRFILTERVECTORC);
+  INITSTATUS(stat,"IIRFilterREAL4Vector",IIRFILTERVECTORC);
 
   /* Make sure all the structures have been initialized. */
   ASSERT(vector,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
@@ -162,7 +151,7 @@ void IIRFilterREAL8Vector(Status         *stat,
   REAL8 *history;    /* Filter history. */
   REAL8 *temp=NULL;  /* Temporary storage for the filter history. */
 
-  INITSTATUS(stat,IIRFILTERVECTORC);
+  INITSTATUS(stat,"IIRFilterREAL8Vector",IIRFILTERVECTORC);
 
   /* Make sure all the structures have been initialized. */
   ASSERT(vector,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);

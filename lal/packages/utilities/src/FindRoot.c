@@ -28,7 +28,7 @@ SBracketRoot (
   REAL4 y1;
   REAL4 y2;
 
-  INITSTATUS (status, FINDROOTC);
+  INITSTATUS (status, "SBracketRoot", FINDROOTC);
   ATTATCHSTATUSPTR (status);
 
   /* check that arguments are reasonable */
@@ -95,7 +95,7 @@ DBracketRoot (
   REAL8 y1;
   REAL8 y2;
 
-  INITSTATUS (status, FINDROOTC);
+  INITSTATUS (status, "DBracketRoot", FINDROOTC);
   ATTATCHSTATUSPTR (status);
 
   /* check that arguments are reasonable */
@@ -164,7 +164,7 @@ SBisectionFindRoot (
   REAL4 x;
   REAL4 dx;
 
-  INITSTATUS (status, FINDROOTC);
+  INITSTATUS (status, "SBisectionFindRoot", FINDROOTC);
   ATTATCHSTATUSPTR (status);
 
   /* check that arguments are reasonable */
@@ -256,7 +256,7 @@ DBisectionFindRoot (
   REAL8 x;
   REAL8 dx;
 
-  INITSTATUS (status, FINDROOTC);
+  INITSTATUS (status, "DBisectionFindRoot", FINDROOTC);
   ATTATCHSTATUSPTR (status);
 
   /* check that arguments are reasonable */

@@ -9,40 +9,11 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _MATH_H
 #include <math.h>
-#ifndef _MATH_H
-#define _MATH_H
-#endif
-#endif
-
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _SEQFACTORIES_H
 #include "SeqFactories.h"
-#ifndef _SEQFACTORIES_H
-#define _SEQFACTORIES_H
-#endif
-#endif
-
-#ifndef _SPECBUFFER_H
 #include "SpecBuffer.h"
-#ifndef _SPECBUFFER_H
-#define _SPECBUFFER_H
-#endif
-#endif
-
-#ifndef _DATABUFFER_H
 #include "DataBuffer.h"
-#ifndef _DATABUFFER_H
-#define _DATABUFFER_H
-#endif
-#endif
 
 NRCSID (DATABUFFERC, "$Id$");
 
@@ -55,7 +26,7 @@ FillDataBlock (
 {
   DataBlock    *theBlock;
 
-  INITSTATUS (status, DATABUFFERC);
+  INITSTATUS (status, "FillDataBlock", DATABUFFERC);
   ATTATCHSTATUSPTR (status);
 
   theBlock = buffer->blockArray + whichBlock;
@@ -124,7 +95,7 @@ FillAllDataBlocks (
 {
   INT4 block;
 
-  INITSTATUS (status, DATABUFFERC);
+  INITSTATUS (status, "FillAllDataBlocks", DATABUFFERC);
   ATTATCHSTATUSPTR (status);
 
   buffer->newLock      = 0; /* new lock no longer pending */
@@ -169,7 +140,7 @@ CreateDataBuffer (
   CreateVectorSequenceIn vseqin;
   INT4 block;
 
-  INITSTATUS (status, DATABUFFERC);
+  INITSTATUS (status, "CreateDataBuffer", DATABUFFERC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
@@ -259,7 +230,7 @@ DestroyDataBuffer (
 {
   INT4 block;
 
-  INITSTATUS (status, DATABUFFERC);
+  INITSTATUS (status, "DestroyDataBuffer", DATABUFFERC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
@@ -306,7 +277,7 @@ GetData (
   INT4 numPoints;
   INT4 numBlocks;
 
-  INITSTATUS (status, DATABUFFERC);
+  INITSTATUS (status, "GetData", DATABUFFERC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */

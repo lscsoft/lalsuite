@@ -41,33 +41,10 @@
  *------------------------------------------------------------------------
  */
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _LALCONSTANTS_H
 #include "LALConstants.h"
-#ifndef _LALCONSTANTS_H
-#define _LALCONSTANTS_H
-#endif
-#endif
-
-#ifndef _MATH_H
 #include <math.h>
-#ifndef _MATH_H
-#define _MATH_H
-#endif
-#endif
-
-#ifndef _DIRICHLET_H
 #include "Dirichlet.h"
-#ifndef _DIRICHLET_H
-#define _DIRICHLET_H
-#endif
-#endif
 
 NRCSID (DIRICHLETC, "$Id$");
 
@@ -86,7 +63,7 @@ Dirichlet(Status*              pstatus,
   REAL8 bot;
 
   /* initialize status structure */
-  INITSTATUS( pstatus, DIRICHLETC );
+  INITSTATUS( pstatus, "Dirichlet", DIRICHLETC );
 
   /* check that pointer to input parameters is not null */
   ASSERT(pparameters != NULL,pstatus,DIRICHLET_ENULLIP,DIRICHLET_MSGENULLIP);

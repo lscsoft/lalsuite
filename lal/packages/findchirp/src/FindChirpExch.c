@@ -9,26 +9,9 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _DATABUFFER_H
 #include "DataBuffer.h"
-#ifndef _DATABUFFER_H
-#define _DATABUFFER_H
-#endif
-#endif
-
-#ifndef _FINDCHIRPEXCH_H
 #include "FindChirpExch.h"
-#ifndef _FINDCHIRPEXCH_H
-#define _FINDCHIRPEXCH_H
-#endif
-#endif
 
 NRCSID (FINDCHIRPEXCHC, "$Id$");
 
@@ -42,7 +25,7 @@ InitializeExchange (
 {
   MPIMessage hello; /* initialization message */
 
-  INITSTATUS (status, FINDCHIRPEXCHC);
+  INITSTATUS (status, "InitializeExchange", FINDCHIRPEXCHC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (exchParamsOut, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
@@ -117,7 +100,7 @@ FinalizeExchange (
   INT2       magic = 0xA505; /* A SOS */
   INT2Vector goodbye;
 
-  INITSTATUS (status, FINDCHIRPEXCHC);
+  INITSTATUS (status, "FinalizeExchange", FINDCHIRPEXCHC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (exchParams, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
@@ -167,7 +150,7 @@ ExchangeDataSegment (
 {
   CHARVector box; /* a box to hold some bytes of data */
 
-  INITSTATUS (status, FINDCHIRPEXCHC);
+  INITSTATUS (status, "ExchangeDataSegment", FINDCHIRPEXCHC);
   ATTATCHSTATUSPTR (status);
 
   /* only do a minimal check to see if arguments are somewhat reasonable */
@@ -250,7 +233,7 @@ ExchangeInspiralBankIn (
 {
   CHARVector box; /* a box to hold some bytes of data */
 
-  INITSTATUS (status, FINDCHIRPEXCHC);
+  INITSTATUS (status, "ExchangeInspiralBankIn", FINDCHIRPEXCHC);
   ATTATCHSTATUSPTR (status);
 
   /* only do a minimal check to see if arguments are somewhat reasonable */
@@ -292,7 +275,7 @@ ExchangeInspiralTemplate (
 {
   CHARVector box; /* a box to hold some bytes of data */
 
-  INITSTATUS (status, FINDCHIRPEXCHC);
+  INITSTATUS (status, "ExchangeInspiralTemplate", FINDCHIRPEXCHC);
   ATTATCHSTATUSPTR (status);
 
   /* only do a minimal check to see if arguments are somewhat reasonable */
@@ -334,7 +317,7 @@ ExchangeInspiralEvent (
 {
   CHARVector box; /* a box to hold some bytes of data */
 
-  INITSTATUS (status, FINDCHIRPEXCHC);
+  INITSTATUS (status, "ExchangeInspiralEvent", FINDCHIRPEXCHC);
   ATTATCHSTATUSPTR (status);
 
   /* only do a minimal check to see if arguments are somewhat reasonable */

@@ -27,33 +27,10 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _STDIO_H
-#include "stdio.h"
-#ifndef _STDIO_H
-#define _STDIO_H
-#endif
-#endif
-
-#ifndef _LALDATATYPES_H
+#include <stdio.h>
 #include "LALDatatypes.h"
-#ifndef _LALDATATYPES_H
-#define _LALDATATYPES_H
-#endif
-#endif
-
-#ifndef _PRINTVECTOR_H
 #include "PrintVector.h"
-#ifndef _PRINTVECTOR_H
-#define _PRINTVECTOR_H
-#endif
-#endif
 
 NRCSID (PRINTVECTORC, "$Id$");
 

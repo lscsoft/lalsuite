@@ -27,12 +27,7 @@
  */
 
 
-#ifndef TIMEFREQ_H
 #include "TimeFreq.h"
-#ifndef TIMEFREQ_H
-#define TIMEFREQ_H
-#endif
-#endif
 
 
 int debuglevel=2;

@@ -9,54 +9,13 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _STRING_H
 #include <string.h>
-#ifndef _STRING_H
-#define _STRING_H
-#endif
-#endif
-
-#ifndef _MATH_H
 #include <math.h>
-#ifndef _MATH_H
-#define _MATH_H
-#endif
-#endif
-
-#ifndef FRAMELIB_DEFINED
 #include "FrameL.h"
-#ifndef FRAMELIB_DEFINED
-#define FRAMELIB_DEFINED
-#endif
-#endif
-
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _LALCONSTANTS_H
 #include "LALConstants.h"
-#ifndef _LALCONSTANTS_H
-#define _LALCONSTANTS_H
-#endif
-#endif
-
-#ifndef _SEQFACTORIES_H
 #include "SeqFactories.h"
-#ifndef _SEQFACTORIES_H
-#define _SEQFACTORIES_H
-#endif
-#endif
-
-#ifndef _FRAMEDATA_H
 #include "FrameData.h"
-#ifndef _FRAMEDATA_H
-#define _FRAMEDATA_H
-#endif
-#endif
 
 NRCSID (FRAMEDATAC, "$Id$");
 
@@ -70,14 +29,14 @@ InitializeFrameData (
   const CHAR *headNames[]       = {"C1-*.F", "H-*.F", "H-*.T", "L-*.F",
                                    "L-*.T", "C1-*[0-9]"};
   const INT4  numHeadNames      = 6;
-  const INT4  maxNumFiles       = 1024;
-  const INT4  maxFileNameLength = 1024;
+  const INT4  maxNumFiles       = 2048;
+  const INT4  maxFileNameLength = 256;
 
   CreateVectorSequenceIn frameFileNameIn;
   CHAR                   command[1024];
   INT4                   nameType;
 
-  INITSTATUS (status, FRAMEDATAC);
+  INITSTATUS (status, "InitializeFrameData", FRAMEDATAC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are reasonable */
@@ -159,7 +118,7 @@ FinalizeFrameData (
     FrameData **frameData
     )
 {
-  INITSTATUS (status, FRAMEDATAC);
+  INITSTATUS (status, "FinalizeFrameData", FRAMEDATAC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure argument is reasonable */
@@ -199,7 +158,7 @@ GetNewFrame (
 {
   const REAL4 resolution = 3.2e-3;
 
-  INITSTATUS (status, FRAMEDATAC);
+  INITSTATUS (status, "GetNewFrame", FRAMEDATAC);
 
   /* make sure argument is not NULL */
   ASSERT (frameData, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
@@ -320,7 +279,7 @@ GetFrameData (
   INT4 numPoints;
   INT4 needed;
 
-  INITSTATUS (status, FRAMEDATAC);
+  INITSTATUS (status, "GetFrameData", FRAMEDATAC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are reasonable */
@@ -490,7 +449,7 @@ SplineFit (
   REAL4       *ypp;
   INT4         n;
 
-  INITSTATUS (status, FRAMEDATAC);
+  INITSTATUS (status, "SplineFit", FRAMEDATAC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are reasonable */
@@ -624,7 +583,7 @@ GetFrameDataResponse (
   INT4   n;
   INT4   i;
 
-  INITSTATUS (status, FRAMEDATAC);
+  INITSTATUS (status, "GetFrameDataResponse", FRAMEDATAC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (frameData, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);

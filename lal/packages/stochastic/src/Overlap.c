@@ -49,26 +49,9 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _MATH_H
 #include <math.h>
-#ifndef _MATH_H
-#define _MATH_H
-#endif
-#endif
-
-#ifndef _OVERLAP_H
 #include "Overlap.h"
-#ifndef _OVERLAP_H
-#define _OVERLAP_H
-#endif
-#endif
 
 NRCSID (OVERLAPC, "$Id$");
 
@@ -110,7 +93,7 @@ Overlap ( Status            *status,
   REAL8  besselJ0, besselJ1, besselJ2;
 
   /* initialize status structure */
-  INITSTATUS( status, OVERLAPC );
+  INITSTATUS( status, "Overlap", OVERLAPC );
 
   /* check that pointer to input parameters is not null */
   ASSERT(parameters!=NULL, status, OVERLAP_ENULLIP, OVERLAP_MSGENULLIP);

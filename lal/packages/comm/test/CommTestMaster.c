@@ -9,26 +9,9 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _STDIO_H
 #include <stdio.h>
-#ifndef _STDIO_H
-#define _STDIO_H
-#endif
-#endif
-
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _COMM_H
 #include "Comm.h"
-#ifndef _COMM_H
-#define _COMM_H
-#endif
-#endif
 
 NRCSID (COMMTESTMASTERC, "$Id$");
 
@@ -43,7 +26,7 @@ Master (Status *status, MPIId id)
   INT4         numProcs;
   INT4         i;
 
-  INITSTATUS (status, COMMTESTMASTERC);
+  INITSTATUS (status, "Master", COMMTESTMASTERC);
   ATTATCHSTATUSPTR (status);
 
   printf ("Master starting up\n");

@@ -31,47 +31,12 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _MATH_H
 #include <math.h>
-#ifndef _MATH_H
-#define _MATH_H
-#endif
-#endif
-
-#ifndef _STRING_H
 #include <string.h>
-#ifndef _STRING_H
-#define _STRING_H
-#endif
-#endif
-
-#ifndef _AVFACTORIES_H
 #include "AVFactories.h"
-#ifndef _AVFACTORIES_H
-#define _AVFACTORIES_H
-#endif
-#endif
-
-#ifndef _PRINTVECTOR_H
 #include "PrintVector.h"
-#ifndef _PRINTVECTOR_H
-#define _PRINTVECTOR_H
-#endif
-#endif
-
-#ifndef _OVERLAP_H
 #include "Overlap.h"
-#ifndef _OVERLAP_H
-#define _OVERLAP_H
-#endif
-#endif
 
 #define PRINT 1 /* set to 1 to write overlap reduction functions to files */ 
 INT4 debuglevel = 2; /* set to 2 to get full status information for tests */

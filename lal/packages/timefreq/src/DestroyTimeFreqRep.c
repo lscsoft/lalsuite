@@ -28,12 +28,7 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef TIMEFREQ_H
 #include "TimeFreq.h"
-#ifndef TIMEFREQ_H
-#define TIMEFREQ_H
-#endif
-#endif
 
 NRCSID (DESTROYTIMEFREQREPC, "$Id$");
 
@@ -43,7 +38,7 @@ void DestroyTimeFreqRep (Status *status, TimeFreqRep **tfr)
    * Initialize status
    */
 
-  INITSTATUS (status, DESTROYTIMEFREQREPC);
+  INITSTATUS (status, "DestroyTimeFreqRep", DESTROYTIMEFREQREPC);
       
   /* Check tfr: report if NULL */
   ASSERT (tfr != NULL, status, DESTROYTFR_ENULL, DESTROYTFR_MSGENULL); 

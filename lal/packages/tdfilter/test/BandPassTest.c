@@ -50,40 +50,11 @@ LALPrintError()
 
 </lalLaTeX> */
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _STRING_H
 #include <string.h>
-#ifndef _STRING_H
-#define _STRING_H
-#endif
-#endif
-
-#ifndef _STDLIB_H
 #include <stdlib.h>
-#ifndef _STDLIB_H
-#define _STDLIB_H
-#endif
-#endif
-
-#ifndef _AVFACTORIES_H
 #include "AVFactories.h"
-#ifndef _AVFACTORIES_H
-#define _AVFACTORIES_H
-#endif
-#endif
-
-#ifndef _BANDPASSTIMESERIES_H
 #include "BandPassTimeSeries.h"
-#ifndef _BANDPASSTIMESERIES_H
-#define _BANDPASSTIMESERIES_H
-#endif
-#endif
 
 NRCSID(BANDPASSTESTC,"$Id$");
 

@@ -9,54 +9,13 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _STDLIB_H
 #include <stdlib.h>
-#ifndef _STDLIB_H
-#define _STDLIB_H
-#endif
-#endif
-
-#ifndef _STRING_H
 #include <string.h>
-#ifndef _STRING_H
-#define _STRING_H
-#endif
-#endif
-
-#ifndef _UNISTD_H
 #include <unistd.h>
-#ifndef _UNISTD_H
-#define _UNISTD_H
-#endif
-#endif
-
-#ifndef _SYS_TYPES_H
 #include <sys/types.h>
-#ifndef _SYS_TYPES_H
-#define _SYS_TYPES_H
-#endif
-#endif
-
-#ifndef _SYS_STAT_H
 #include <sys/stat.h>
-#ifndef _SYS_STAT_H
-#define _SYS_STAT_H
-#endif
-#endif
-
-#ifndef _COMM_H
 #include "Comm.h"
-#ifndef _COMM_H
-#define _COMM_H
-#endif
-#endif
-
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
 
 NRCSID (COMMC, "$Id$");
 
@@ -70,7 +29,7 @@ MPIExportEnvironment (
   CHAR command[256];
   INT4 code;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPIExportEnvironment", COMMC);
 
   /* if master, get environment variable */
   if (myId == 0)
@@ -116,7 +75,7 @@ MPIDebug (
 {
   INT4  code;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPIDebug", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (params, status, COMM_ENULL, COMM_MSGENULL);
@@ -166,7 +125,7 @@ MPIKillScript (
   INT4       procId;
   INT4       code;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPIKillScript", COMMC);
 
   procId = (INT4) getpid();
 
@@ -230,7 +189,7 @@ MPISendMsg (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPISendMsg", COMMC);
 
   size = sizeof(MPIMessage);
   code = MPI_Send (msg, size, MPI_BYTE, dest, MPIMsg, MPI_COMM_WORLD);
@@ -250,7 +209,7 @@ MPIRecvMsg (
   INT4       code;
   INT4       size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPIRecvMsg", COMMC);
 
   size = sizeof(MPIMessage);
   code = MPI_Recv (msg, size, MPI_BYTE, MPI_ANY_SOURCE, MPIMsg,
@@ -282,7 +241,7 @@ MPISendCHARVector (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPISendCHARVector", COMMC);
 
   ASSERT (vector, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (vector->data, status, COMM_ENULL, COMM_MSGENULL);
@@ -316,7 +275,7 @@ MPIRecvCHARVector (
   INT4       code;
   INT4       size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPIRecvCHARVector", COMMC);
 
   ASSERT (vector, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (vector->data, status, COMM_ENULL, COMM_MSGENULL);
@@ -359,7 +318,7 @@ MPISendINT2Vector (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPISendINT2Vector", COMMC);
 
   ASSERT (vector, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (vector->data, status, COMM_ENULL, COMM_MSGENULL);
@@ -392,7 +351,7 @@ MPIRecvINT2Vector (
   INT4       code;
   INT4       size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPIRecvINT2Vector", COMMC);
 
   ASSERT (vector, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (vector->data, status, COMM_ENULL, COMM_MSGENULL);
@@ -435,7 +394,7 @@ MPISendREAL4Vector (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPISendREAL4Vector", COMMC);
 
   ASSERT (vector, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (vector->data, status, COMM_ENULL, COMM_MSGENULL);
@@ -468,7 +427,7 @@ MPIRecvREAL4Vector (
   INT4        code;
   INT4        size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPIRecvREAL4Vector", COMMC);
 
   ASSERT (vector, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (vector->data, status, COMM_ENULL, COMM_MSGENULL);
@@ -511,7 +470,7 @@ MPISendCOMPLEX8Vector (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPISendCOMPLEX8Vector", COMMC);
 
   ASSERT (vector, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (vector->data, status, COMM_ENULL, COMM_MSGENULL);
@@ -544,7 +503,7 @@ MPIRecvCOMPLEX8Vector (
   INT4           code;
   INT4           size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPIRecvCOMPLEX8Vector", COMMC);
 
   ASSERT (vector, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (vector->data, status, COMM_ENULL, COMM_MSGENULL);
@@ -594,7 +553,7 @@ MPISendINT2TimeSeries (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPISendINT2TimeSeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
@@ -639,7 +598,7 @@ MPIRecvINT2TimeSeries (
   INT4            code;
   INT4            size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPIRecvINT2TimeSeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
@@ -694,7 +653,7 @@ MPISendREAL4TimeSeries (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPISendREAL4TimeSeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
@@ -739,7 +698,7 @@ MPIRecvREAL4TimeSeries (
   INT4            code;
   INT4            size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPIRecvREAL4TimeSeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
@@ -793,7 +752,7 @@ MPISendCOMPLEX8TimeSeries (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPISendCOMPLEX8TimeSeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
@@ -838,7 +797,7 @@ MPIRecvCOMPLEX8TimeSeries (
   INT4               code;
   INT4               size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPIRecvCOMPLEX8TimeSeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
@@ -900,7 +859,7 @@ MPISendREAL4FrequencySeries (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPISendREAL4FrequencySeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
@@ -945,7 +904,7 @@ MPIRecvREAL4FrequencySeries (
   INT4                 code;
   INT4                 size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPIRecvREAL4FrequencySeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
@@ -999,7 +958,7 @@ MPISendCOMPLEX8FrequencySeries (
   INT4 code;
   INT4 size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPISendCOMPLEX8FrequencySeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);
@@ -1044,7 +1003,7 @@ MPIRecvCOMPLEX8FrequencySeries (
   INT4                    code;
   INT4                    size;
 
-  INITSTATUS (status, COMMC);
+  INITSTATUS (status, "MPIRecvCOMPLEX8FrequencySeries", COMMC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, COMM_ENULL, COMM_MSGENULL);

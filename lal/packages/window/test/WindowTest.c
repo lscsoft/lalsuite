@@ -28,61 +28,14 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _STDLIB_H
 #include <stdlib.h>
-#ifndef _STDLIB_H
-#define _STDLIB_H
-#endif
-#endif
-
-#ifndef _STDIO_H
 #include <stdio.h>
-#ifndef _STDIO_H
-#define _STDIO_H
-#endif
-#endif
-
-#ifndef _MATH_H
 #include <math.h>
-#ifndef _MATH_H
-#define _MATH_H
-#endif
-#endif
-
-#ifndef _STRING_H
 #include <string.h>
-#ifndef _STRING_H
-#define _STRING_H
-#endif
-#endif
-
-#ifndef _LALDATATYPES_H
 #include "LALDatatypes.h"
-#ifndef _LALDATATYPES_H
-#define _LALDATATYPES_H
-#endif
-#endif
-
-#ifndef _AVFACTORIES_H
 #include "AVFactories.h"
-#ifndef _AVFACTORIES_H
-#define _AVFACTORIES_H
-#endif
-#endif
-
-#ifndef _WINDOW_H
 #include "Window.h"
-#ifndef _WINDOW_H
-#define _WINDOW_H
-#endif
-#endif
-
-#ifndef _PRINTVECTOR_H
 #include "PrintVector.h"
-#ifndef _PRINTVECTOR_H
-#define _PRINTVECTOR_H
-#endif
-#endif
 
 NRCSID (MAIN, "$Id$");
 

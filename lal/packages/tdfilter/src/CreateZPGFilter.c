@@ -41,26 +41,9 @@ ZCreateVector()
 
 </lalLaTeX> */
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _AVFACTORIES_H
 #include "AVFactories.h"
-#ifndef _AVFACTORIES_H
-#define _AVFACTORIES_H
-#endif
-#endif
-
-#ifndef _ZPGFILTER_H
 #include "ZPGFilter.h"
-#ifndef _ZPGFILTER_H
-#define _ZPGFILTER_H
-#endif
-#endif
 
 NRCSID(CREATEZPGFILTERC,"$Id$");
 
@@ -71,7 +54,7 @@ void CreateCOMPLEX8ZPGFilter(Status            *stat,
 			     INT4              numZeros,
 			     INT4              numPoles)
 { /* </lalVerbatim> */
-  INITSTATUS(stat,CREATEZPGFILTERC);
+  INITSTATUS(stat,"CreateCOMPLEX8ZPGFilter",CREATEZPGFILTERC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure that the output handle exists, but points to a null
@@ -109,7 +92,7 @@ void CreateCOMPLEX16ZPGFilter(Status             *stat,
 			      INT4               numZeros,
 			      INT4               numPoles)
 { /* </lalVerbatim> */
-  INITSTATUS(stat,CREATEZPGFILTERC);
+  INITSTATUS(stat,"CreateCOMPLEX16ZPGFilter",CREATEZPGFILTERC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure that the output handle exists, but points to a null

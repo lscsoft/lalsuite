@@ -9,26 +9,9 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _STDIO_H
 #include <stdio.h>
-#ifndef _STDIO_H
-#define _STDIO_H
-#endif
-#endif
-
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _FINDCHIRPEXCH_H
 #include "FindChirpExch.h"
-#ifndef _FINDCHIRPEXCH_H
-#define _FINDCHIRPEXCH_H
-#endif
-#endif
 
 NRCSID (FINDCHIRPSLAVEC, "$Id$");
 
@@ -50,7 +33,7 @@ Slave (Status *status, MPIId id)
   InspiralEvent    *event;
   INT4              i;
 
-  INITSTATUS (status, FINDCHIRPSLAVEC);
+  INITSTATUS (status, "Slave", FINDCHIRPSLAVEC);
   ATTATCHSTATUSPTR (status);
 
   printf ("Slave %d: starting up\n", id.myId);

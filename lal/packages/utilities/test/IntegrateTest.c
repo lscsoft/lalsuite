@@ -43,7 +43,7 @@ void f1 (Status *s, REAL4 *y, REAL4 x, void *p)
   REAL4  x2 = x*x;
   REAL4  x4 = x2*x2;
   INT4  *n;
-  INITSTATUS (s, MAIN);
+  INITSTATUS (s, "f1", MAIN);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));  
   *y = x4*log(x + sqrt(x2 + 1));
@@ -55,7 +55,7 @@ void ff1 (Status *s, REAL8 *y, REAL8 x, void *p)
   REAL8  x2 = x*x;
   REAL8  x4 = x2*x2;
   INT4  *n;
-  INITSTATUS (s, MAIN);
+  INITSTATUS (s, "ff1", MAIN);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));  
   *y = x4*log(x + sqrt(x2 + 1));
@@ -65,7 +65,7 @@ void ff1 (Status *s, REAL8 *y, REAL8 x, void *p)
 void f2 (Status *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n;
-  INITSTATUS (s, MAIN);
+  INITSTATUS (s, "f2", MAIN);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));
   *y = 1/(x*x*x);
@@ -75,7 +75,7 @@ void f2 (Status *s, REAL4 *y, REAL4 x, void *p)
 void ff2 (Status *s, REAL8 *y, REAL8 x, void *p)
 {
   INT4 *n;
-  INITSTATUS (s, MAIN);
+  INITSTATUS (s, "ff2", MAIN);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));
   *y = 1/(x*x*x);
@@ -85,7 +85,7 @@ void ff2 (Status *s, REAL8 *y, REAL8 x, void *p)
 void f3 (Status *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n;
-  INITSTATUS (s, MAIN);
+  INITSTATUS (s, "f3", MAIN);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));
   *y = exp(-x*x/2);
@@ -95,7 +95,7 @@ void f3 (Status *s, REAL4 *y, REAL4 x, void *p)
 void ff3 (Status *s, REAL8 *y, REAL8 x, void *p)
 {
   INT4 *n;
-  INITSTATUS (s, MAIN);
+  INITSTATUS (s, "ff3", MAIN);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));
   *y = exp(-x*x/2);
@@ -105,7 +105,7 @@ void ff3 (Status *s, REAL8 *y, REAL8 x, void *p)
 void f4 (Status *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n;
-  INITSTATUS (s, MAIN);
+  INITSTATUS (s, "f4", MAIN);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));
   *y = 1/sqrt(x);
@@ -115,7 +115,7 @@ void f4 (Status *s, REAL4 *y, REAL4 x, void *p)
 void ff4 (Status *s, REAL8 *y, REAL8 x, void *p)
 {
   INT4 *n;
-  INITSTATUS (s, MAIN);
+  INITSTATUS (s, "ff4", MAIN);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));
   *y = 1/sqrt(x);
@@ -125,7 +125,7 @@ void ff4 (Status *s, REAL8 *y, REAL8 x, void *p)
 void f5 (Status *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n;
-  INITSTATUS (s, MAIN);
+  INITSTATUS (s, "f5", MAIN);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));
   *y = x + 1/sqrt(5 - x);
@@ -135,7 +135,7 @@ void f5 (Status *s, REAL4 *y, REAL4 x, void *p)
 void ff5 (Status *s, REAL8 *y, REAL8 x, void *p)
 {
   INT4 *n;
-  INITSTATUS (s, MAIN);
+  INITSTATUS (s, "ff5", MAIN);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));
   *y = x + 1/sqrt(5 - x);
@@ -145,7 +145,7 @@ void ff5 (Status *s, REAL8 *y, REAL8 x, void *p)
 void g (Status *s, REAL4 *z, REAL4 x, void *p)
 {
   REAL4 y;
-  INITSTATUS (s, MAIN);
+  INITSTATUS (s, "g", MAIN);
   ASSERT (p, s, 1, "Null pointer");
   y  = *((REAL4 *)p);
   *z = exp(-(x*x + y*y)/2);
@@ -155,7 +155,7 @@ void g (Status *s, REAL4 *z, REAL4 x, void *p)
 void gg (Status *s, REAL8 *z, REAL8 x, void *p)
 {
   REAL8 y;
-  INITSTATUS (s, MAIN);
+  INITSTATUS (s, "gg", MAIN);
   ASSERT (p, s, 1, "Null pointer");
   y  = *((REAL8 *)p);
   *z = exp(-(x*x + y*y)/2);
@@ -165,7 +165,7 @@ void gg (Status *s, REAL8 *z, REAL8 x, void *p)
 void h (Status *s, REAL4 *z, REAL4 y, void *p)
 {
   SIntegrateIn intinp;
-  INITSTATUS (s, MAIN);
+  INITSTATUS (s, "h", MAIN);
   ATTATCHSTATUSPTR (s);
   ASSERT (!p, s, 2, "Non-null pointer");
   intinp.function = g;
@@ -181,7 +181,7 @@ void h (Status *s, REAL4 *z, REAL4 y, void *p)
 void hh (Status *s, REAL8 *z, REAL8 y, void *p)
 {
   DIntegrateIn intinp;
-  INITSTATUS (s, MAIN);
+  INITSTATUS (s, "hh", MAIN);
   ATTATCHSTATUSPTR (s);
   ASSERT (!p, s, 2, "Non-null pointer");
   intinp.function = gg;

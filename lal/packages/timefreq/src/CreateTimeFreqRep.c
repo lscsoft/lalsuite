@@ -28,12 +28,7 @@
  */
 
 
-#ifndef TIMEFREQ_H
 #include "TimeFreq.h"
-#ifndef TIMEFREQ_H
-#define TIMEFREQ_H
-#endif
-#endif
 
 NRCSID (CREATETIMEFREQREPC, "$Id$");
 
@@ -44,7 +39,7 @@ void CreateTimeFreqRep (Status *status,
   /* 
    * Initialize status
    */
-  INITSTATUS (status, CREATETIMEFREQREPC);	
+  INITSTATUS (status, "CreateTimeFreqRep", CREATETIMEFREQREPC);	
   
   /* Check input structure: report if NULL */
   ASSERT (in != NULL, status, CREATETFR_ENULL, CREATETFR_MSGENULL);

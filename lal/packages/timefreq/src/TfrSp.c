@@ -31,12 +31,7 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef TIMEFREQ_H
 #include "TimeFreq.h"
-#ifndef TIMEFREQ_H
-#define TIMEFREQ_H
-#endif
-#endif
 
 #define MIN(A, B)       ((A) < (B) ? (A) : (B))
 
@@ -56,7 +51,7 @@ void TfrSp (Status *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqParam *par
   REAL4Vector  *ptmp = NULL;
   RealFFTPlan  *plan = NULL;
 
-  INITSTATUS (stat, TFRSPC);
+  INITSTATUS (stat, "TfrSp", TFRSPC);
   ATTATCHSTATUSPTR (stat);
   
   /* Make sure the arguments are not NULL: */

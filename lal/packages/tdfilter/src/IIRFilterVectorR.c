@@ -41,19 +41,8 @@ routines neither use nor modify this data array.
 
 </lalLaTeX> */
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _IIRFILTER_H
 #include "IIRFilter.h"
-#ifndef _IIRFILTER_H
-#define _IIRFILTER_H
-#endif
-#endif
 
 NRCSID(IIRFILTERVECTORRC,"$Id$");
 
@@ -72,7 +61,7 @@ void IIRFilterREAL4VectorR(Status         *stat,
   REAL4 *directCoef; /* Direct filter coefficients. */
   REAL4 *recursCoef; /* Recursive filter coefficients. */
 
-  INITSTATUS(stat,IIRFILTERVECTORRC);
+  INITSTATUS(stat,"IIRFilterREAL4VectorR",IIRFILTERVECTORRC);
 
   /* Make sure all the structures have been initialized. */
   ASSERT(vector,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
@@ -131,7 +120,7 @@ void IIRFilterREAL8VectorR(Status         *stat,
   REAL8 *directCoef; /* Direct filter coefficients. */
   REAL8 *recursCoef; /* Recursive filter coefficients. */
 
-  INITSTATUS(stat,IIRFILTERVECTORRC);
+  INITSTATUS(stat,"IIRFilterREAL8VectorR",IIRFILTERVECTORRC);
 
   /* Make sure all the structures have been initialized. */
   ASSERT(vector,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);

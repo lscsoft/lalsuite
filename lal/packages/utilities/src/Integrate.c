@@ -38,7 +38,7 @@ STrapezoid (
     void           *params
     )
 {
-  INITSTATUS (status, INTEGRATEC);
+  INITSTATUS (status, "STrapezoid", INTEGRATEC);
   ATTATCHSTATUSPTR (status);
 
   if (output->refinement)
@@ -83,7 +83,7 @@ DTrapezoid (
     void           *params
     )
 {
-  INITSTATUS (status, INTEGRATEC);
+  INITSTATUS (status, "DTrapezoid", INTEGRATEC);
   ATTATCHSTATUSPTR (status);
 
   if (output->refinement)
@@ -182,7 +182,7 @@ SMidpoint (
   REAL4 xmax;
   REAL4 xmin;
 
-  INITSTATUS (status, INTEGRATEC);
+  INITSTATUS (status, "SMidpoint", INTEGRATEC);
   ATTATCHSTATUSPTR (status);
 
   switch (input->type)
@@ -317,7 +317,7 @@ DMidpoint (
   REAL8 xmax;
   REAL8 xmin;
 
-  INITSTATUS (status, INTEGRATEC);
+  INITSTATUS (status, "DMidpoint", INTEGRATEC);
   ATTATCHSTATUSPTR (status);
 
   switch (input->type)
@@ -423,7 +423,7 @@ SRombergIntegrate (
   REAL4          stepSize[MaxSteps + 1];
   REAL4          refineFactor;
 
-  INITSTATUS (status, INTEGRATEC);
+  INITSTATUS (status, "SRombergIntegrate", INTEGRATEC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (result, status, INTEGRATE_ENULL, INTEGRATE_MSGENULL);
@@ -508,7 +508,7 @@ DRombergIntegrate (
   REAL8          stepSize[MaxSteps + 1];
   REAL8          refineFactor;
 
-  INITSTATUS (status, INTEGRATEC);
+  INITSTATUS (status, "DRombergIntegrate", INTEGRATEC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (result, status, INTEGRATE_ENULL, INTEGRATE_MSGENULL);

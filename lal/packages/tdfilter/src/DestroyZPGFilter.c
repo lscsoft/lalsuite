@@ -37,26 +37,9 @@ ZDestroyVector()
 
 </lalLaTeX> */
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _AVFACTORIES_H
 #include "AVFactories.h"
-#ifndef _AVFACTORIES_H
-#define _AVFACTORIES_H
-#endif
-#endif
-
-#ifndef _ZPGFILTER_H
 #include "ZPGFilter.h"
-#ifndef _ZPGFILTER_H
-#define _ZPGFILTER_H
-#endif
-#endif
 
 NRCSID(DESTROYZPGFILTERC,"$Id$");
 
@@ -64,7 +47,7 @@ NRCSID(DESTROYZPGFILTERC,"$Id$");
 void DestroyCOMPLEX8ZPGFilter(Status            *stat,
 			      COMPLEX8ZPGFilter **input)
 { /* </lalVerbatim> */
-  INITSTATUS(stat,DESTROYZPGFILTERC);
+  INITSTATUS(stat,"DestroyCOMPLEX8ZPGFilter",DESTROYZPGFILTERC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure handle is non-null, and points to a non-null pointer.
@@ -91,7 +74,7 @@ void DestroyCOMPLEX8ZPGFilter(Status            *stat,
 void DestroyCOMPLEX16ZPGFilter(Status             *stat,
 			       COMPLEX16ZPGFilter **input)
 { /* </lalVerbatim> */
-  INITSTATUS(stat,DESTROYZPGFILTERC);
+  INITSTATUS(stat,"DestroyCOMPLEX16ZPGFilter",DESTROYZPGFILTERC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure handle is non-null, and points to a non-null pointer.

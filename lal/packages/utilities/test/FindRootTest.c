@@ -57,7 +57,7 @@ static void
 F (Status *s, REAL4 *y, REAL4 x, void *p)
 {
   REAL4 y0;
-  INITSTATUS (s, "Test function");
+  INITSTATUS (s, "F", MAIN);
   ASSERT (y, s, 1, "Null pointer");
   ASSERT (p, s, 1, "Null pointer");
   y0 = *(REAL4 *)p;
@@ -69,7 +69,7 @@ static void
 FF (Status *s, REAL8 *y, REAL8 x, void *p)
 {
   REAL8 y0;
-  INITSTATUS (s, "Test function");
+  INITSTATUS (s, "FF", MAIN);
   ASSERT (y, s, 1, "Null pointer");
   ASSERT (p, s, 1, "Null pointer");
   y0 = *(REAL8 *)p;

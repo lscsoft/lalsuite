@@ -37,26 +37,9 @@ void DDestroyVector()
 
 </lalLaTeX> */
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _AVFACTORIES_H
 #include "AVFactories.h"
-#ifndef _AVFACTORIES_H
-#define _AVFACTORIES_H
-#endif
-#endif
-
-#ifndef _IIRFILTER_H
 #include "IIRFilter.h"
-#ifndef _IIRFILTER_H
-#define _IIRFILTER_H
-#endif
-#endif
 
 NRCSID(DESTROYIIRFILTERC,"$Id$");
 
@@ -65,7 +48,7 @@ NRCSID(DESTROYIIRFILTERC,"$Id$");
 void DestroyREAL4IIRFilter(Status         *stat,
 			   REAL4IIRFilter **input)
 { /* </lalVerbatim> */
-  INITSTATUS(stat,DESTROYIIRFILTERC);
+  INITSTATUS(stat,"DestroyREAL4IIRFilter",DESTROYIIRFILTERC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure handle is non-null, and points to a non-null pointer.
@@ -93,7 +76,7 @@ void DestroyREAL4IIRFilter(Status         *stat,
 void DestroyREAL8IIRFilter(Status         *stat,
 			   REAL8IIRFilter **input)
 { /* </lalVerbatim> */
-  INITSTATUS(stat,DESTROYIIRFILTERC);
+  INITSTATUS(stat,"DestroyREAL8IIRFilter",DESTROYIIRFILTERC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure handle is non-null, and points to a non-null pointer.
