@@ -314,6 +314,8 @@ int main( int argc, char *argv[] )
   /* deallocate response and channel data vectors */
   LAL_CALL( LALCDestroyVector( &status, &data.response->data ), &status );
   LAL_CALL( LALSDestroyVector( &status, &data.channel->data ), &status );
+  LALFree( data.response );
+  LALFree( data.channel );
 
   /* finalize ring search */
   LAL_CALL( LALRingSearchFini( &status, &params ), &status );
