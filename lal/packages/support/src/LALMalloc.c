@@ -153,6 +153,127 @@ It is assumed that pointers of type \verb+size_t *+ have the most restrictive
 alignment.  If this is not true, then this code may not work except in
 non-debugging mode.  (It will probably produce bus errors.)
 
+
+\subsubsection*{Debugging memory leak tips}
+
+Programs should end by calling \verb+LALCheckMemoryLeaks()+.  This will
+ensure that all memory that has been allocated has been freed.  Making
+sure that all memory allocated is freed is a good idea in order to
+make sure (i) that memory isn't being ``lost'' (which may mean that
+the computer will run out of memory when the program is run under more
+extensive use), (ii) that array bounds are not being exceeded (since this
+will usually overwrite the pad area at the end of the array, and this
+overwrite is detected when the array is freed).  \verb+LALCheckMemoryLeaks()+
+should pass silently---if it doesn't, then there is probably some memory
+that has not been freed; \verb+LALCheckMemoryLeaks()+ will give information
+about where this memory was allocated.
+
+The most common problem (after forgetting to free some memory) is overwriting
+of array bounds.  When this is detected, \verb+LALFree()+ reports the memory
+address that was overwritten, as well as the address of the array that
+\verb+LALFree()+ attempted to free.  In order to find out where the overwrite
+occurs, run the program in the debugger and stop the execution as soon as the
+array that is being overwritten has been allocated.  The \verb+LALMalloc+
+module has some secret memory debugging tools (for use in debugging only!).
+One is the global variable \verb+lalMemDbgUsrPtr+, which is of type
+\verb+char *+.  Set this variable to be equal to the memory address
+where the overwrite occurs.  Then watch the contents of the variable
+to find out where the overwrite occurs.  This is done in \verb+gdb+ using
+the commands:
+\begin{verbatim}
+set var lalMemDbgUsrPtr=0x20f530
+watch *lalMemDgbUsrPtr
+cont
+\end{verbatim}
+where \verb+0x20f530+ is the corrupted memory address.  The program
+will run until the value of this address is changed, thereby allowing
+you to find out where in the program the overwrite occurs.
+
+If you don't know where the memory was allocated, you can locate this
+too.  To do so, set \verb+lalMemDbgUsrPtr+ to be the address of the array.
+Then, every time \verb+LALMalloc()+ is called, it sets the value of the
+global variable \verb+lalIsMemDbgRetPtr+ to be one zero if the array
+address produced by \verb+LALMalloc()+ is not the address in
+\verb+lalMemDbgUsrPtr+, and one if it is.  Then you can watch the value
+of \verb+lalIsMemDbgRetPtr+ in a debugger until it changes to one, which stops
+execution at that point.  (Note: it is possible that a given address is
+allocated, then freed, the allocated again---you may need to watch
+\verb+lalIsMemDbgRetPtr+ for a while.)
+
+Here's an example debugging session: first we run the program, identify
+the address of the array whose bounds are being overwritten, and find
+out where that array is allocated.
+\begin{verbatim}
+(gdb) run
+LALFree error: array bounds overwritten
+Byte 4 past end of array has changed
+Corrupted address: 0x1cf530
+Array address: 0x1cf528
+
+Program received signal SIGSEGV, Segmentation fault.
+0x9001b46c in kill ()
+(gdb) list 1,11
+1       #include <lal/LALStdlib.h>
+2       int main( void )
+3       {
+4         char *s;
+5         lalDebugLevel = 1;
+6         s = LALMalloc( 5 );
+7         s[8] = 'x';
+8         LALFree( s );
+9         LALCheckMemoryLeaks();
+10        return 0;
+11      }
+(gdb) break 5
+Breakpoint 1 at 0x1b60: file bad.c, line 5.
+(gdb) run
+
+Breakpoint 1, main () at bad.c:5
+5         lalDebugLevel = 1;
+(gdb) set var lalMemDbgUsrPtr = 0x1cf528
+(gdb) watch lalIsMemDbgRetPtr
+Hardware watchpoint 2: lalIsMemDbgRetPtr
+(gdb) cont
+Continuing.
+Hardware watchpoint 2: lalIsMemDbgRetPtr
+
+Old value = 0
+New value = 1
+0x0088d63c in LALMallocLong (n=5, file=0x1ff8 "bad.c", line=6) at LALMalloc.c:575
+575       lalIsMemDbgPtr = lalIsMemDbgRetPtr = ( lalMemDbgRetPtr == lalMemDbgUsrPtr );
+(gdb) up
+#1  0x00001b84 in main () at bad.c:6
+6         s = LALMalloc( 5 );
+\end{verbatim}
+So here is where the memory is allocated.  We want to find out where the
+memory is being corrupted.
+\begin{verbatim}
+(gdb) set var lalMemDbgUsrPtr = 0x1cf530
+(gdb) watch *lalMemDbgUsrPtr
+Hardware watchpoint 3: *lalMemDbgUsrPtr
+(gdb) cont
+Continuing.
+Hardware watchpoint 3: *lalMemDbgUsrPtr
+
+Old value = -25
+New value = 120 'x'
+main () at bad.c:8
+8         LALFree( s );
+(gdb) list
+3       {
+4         char *s;
+5         lalDebugLevel = 1;
+6         s = LALMalloc( 5 );
+7         s[8] = 'x';
+8         LALFree( s );
+9         LALCheckMemoryLeaks();
+10        return 0;
+11      }
+\end{verbatim}
+Notice that the program has stopped just \emph{after} the line in which
+the array bounds were overwritten.
+
+
 \vfill{\footnotesize\input{LALMallocCV}}
 
 ******************************************************* </lalLaTeX> */
@@ -181,6 +302,18 @@ static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 
 NRCSID( LALMALLOCC, "$Id$" );
 
+/* global variables to assist in memory debugging */
+/* watch the value of these variables to find a particular alloc/free */
+char  *lalMemDbgArgPtr  = NULL; /* set to ptr arg in free or realloc */
+char  *lalMemDbgRetPtr  = NULL; /* set to ptr returned in alloc functions */
+char  *lalMemDbgPtr     = NULL; /* set in both cases */
+char  *lalMemDbgUsrPtr  = NULL; /* avaliable global memory pointer for user */
+void **lalMemDbgUsrHndl = NULL; /* avaliable global memory handle for user */
+int lalIsMemDbgArgPtr; /* ( lalMemDbgUsrPtr == lalMemDbgArgPtr ) */
+int lalIsMemDbgRetPtr; /* ( lalMemDbgUsrPtr == lalMemDbgRetPtr ) */
+int lalIsMemDbgPtr;    /* ( lalMemDbgUsrPtr == lalMemDbgPtr ) */
+
+
 enum              { nprefix   = 2 };
 static const size_t prefix    = nprefix * sizeof( size_t );
 static const size_t padFactor = 2;
@@ -202,7 +335,9 @@ static size_t lalMallocTotal = 0;
 static int    lalMallocCount = 0;
 extern int    lalDebugLevel;
 
-#if 0
+/* Useful function for debugging */
+/* Checks to make sure alloc list is OK */
+/* Returns 0 if list is corrupted; 1 if list is OK */
 static int CheckAllocList( void )
 {
   int    count = 0;
@@ -216,7 +351,39 @@ static int CheckAllocList( void )
   }
   return count == lalMallocCount && total == lalMallocTotal;
 }
-#endif
+
+/* Useful function for debugging */
+/* Finds the node of the alloc list previous to the desired alloc */
+/* Returns NULL if not found or if the alloc node is the head */
+static struct allocNode *FindPrevAlloc( void *p )
+{
+  struct allocNode *node = allocList;
+  if ( p == node->addr ) /* top of list */
+    return NULL;
+  /* scroll through list to find node before the alloc */
+  while ( node->next )
+    if ( node->next->addr == p )
+      return node;
+    else
+      node = node->next;
+  return NULL;
+}
+
+/* Useful function for debugging */
+/* Finds the node of the alloc list for the desired alloc */
+/* Returns NULL if not found  */
+static struct allocNode *FindAlloc( void *p )
+{
+  struct allocNode *node = allocList;
+  while ( node )
+    if ( p == node->addr )
+      return node;
+    else
+      node = node->next;
+  return NULL;
+}
+
+
 
 static void *PadAlloc( size_t *p, size_t n, int keep, const char *func )
 {
@@ -234,12 +401,14 @@ static void *PadAlloc( size_t *p, size_t n, int keep, const char *func )
 
   if ( lalDebugLevel & LALMEMINFO )
   {
-    LALPrintError( "%s meminfo: allocating %ld bytes\n", func, n );
+    LALPrintError( "%s meminfo: allocating %ld bytes at address %p\n",
+        func, n, p + nprefix );
   }
 
   if ( lalDebugLevel & LALWARNING && n == 0 )
   {
-    LALPrintError( "%s warning: zero size allocation\n", func );
+    LALPrintError( "%s warning: zero size allocation at address %p\n",
+        func, p + nprefix );
   }
   
   /* store the size in a known position */
@@ -284,23 +453,27 @@ static void *UnPadAlloc( void *p, int keep, const char *func )
 
   if ( lalDebugLevel & LALMEMINFO )
   {
-    LALPrintError( "%s meminfo: freeing %ld bytes\n", func, n );
+    LALPrintError( "%s meminfo: freeing %ld bytes at address %p\n",
+        func, n, p );
   }
 
   if ( lalDebugLevel & LALWARNING && n == 0 )
   {
-    LALPrintError( "%s warning: tried to free a freed pointer\n", func );
+    LALPrintError( "%s warning: tried to free a freed pointer at address %p\n",
+        func, p );
   }
           
   if ( q[1] != magic )
   {
-    lalRaiseHook( SIGSEGV, "%s error: wrong magic\n", func );
+    lalRaiseHook( SIGSEGV, "%s error: wrong magic for pointer at address %p\n",
+        func, p );
     return NULL;
   }
 
   if ( ( (int) n ) < 0 )
   {
-    lalRaiseHook( SIGSEGV, "%s error: corrupt size descriptor\n", func );
+    lalRaiseHook( SIGSEGV, "%s error: corrupt size descriptor for pointer at address %p\n",
+        func, p );
     return NULL;
   }
           
@@ -310,7 +483,9 @@ static void *UnPadAlloc( void *p, int keep, const char *func )
     if ( s[i + prefix] != (char) (i ^ padding) )
     {
       lalRaiseHook( SIGSEGV, "%s error: array bounds overwritten\n"
-          "Byte %ld past end of array has changed\n", func, i - n + 1 );
+          "Byte %ld past end of array has changed\n"
+          "Corrupted address: %p\nArray address: %p\n",
+          func, i - n + 1, s + i + prefix, s + prefix );
       return NULL;
     }
   }
@@ -381,7 +556,7 @@ static void *PopAlloc( void *p, const char *func )
   pthread_mutex_lock( &mut );
   if ( ! ( node = allocList ) ) /* empty allocation list */
   {
-    lalRaiseHook( SIGSEGV, "%s error: alloc not found\n", func );
+    lalRaiseHook( SIGSEGV, "%s error: alloc %p not found\n", func, p );
     return NULL;
   }
   if ( p == node->addr ) /* free the top of the list */
@@ -397,7 +572,7 @@ static void *PopAlloc( void *p, const char *func )
     }
     if ( ! node->next ) /* bottom of list reached */
     {
-      lalRaiseHook( SIGSEGV, "%s error: alloc not found\n", func );
+      lalRaiseHook( SIGSEGV, "%s error: alloc %p not found\n", func, p );
       return NULL;
     }
     else /* found the alloc */
@@ -427,14 +602,14 @@ static void *ModAlloc( void *p, void *q, size_t n, const char *func,
   pthread_mutex_lock( &mut );
   if ( ! ( node = allocList ) ) /* empty allocation list */
   {
-    lalRaiseHook( SIGSEGV, "%s error: alloc not found\n", func );
+    lalRaiseHook( SIGSEGV, "%s error: alloc %p not found\n", func, p );
     return NULL;
   }
   while ( p != node->addr )
   {
     if ( ! ( node = node->next ) )
     {
-      lalRaiseHook( SIGSEGV, "%s error: alloc not found\n", func );
+      lalRaiseHook( SIGSEGV, "%s error: alloc %p not found\n", func, p );
       return NULL;
     }
   }
@@ -470,6 +645,8 @@ LALMallocLong( size_t n, const char *file, int line )
 
   p = malloc( allocsz( n ) );
   q = PushAlloc( PadAlloc( p, n, 0, "LALMalloc" ), n, file, line );
+  lalMemDbgPtr = lalMemDbgRetPtr = q;
+  lalIsMemDbgPtr = lalIsMemDbgRetPtr = ( lalMemDbgRetPtr == lalMemDbgUsrPtr );
   if ( ! q )
   {
     if ( lalDebugLevel & LALMEMINFO )
@@ -510,6 +687,8 @@ LALCallocLong( size_t m, size_t n, const char *file, int line )
   sz = m * n;
   p  = malloc( allocsz( sz ) );
   q  = PushAlloc( PadAlloc( p, sz, 1, "LALCalloc" ), sz, file, line );
+  lalMemDbgPtr = lalMemDbgRetPtr = q;
+  lalIsMemDbgPtr = lalIsMemDbgRetPtr = ( lalMemDbgRetPtr == lalMemDbgUsrPtr );
   if ( ! q )
   {
     if ( lalDebugLevel & LALMEMINFO )
@@ -544,6 +723,8 @@ LALReallocLong( void *q, size_t n, const char *file, const int line )
     return realloc( q, n );
   }
 
+  lalMemDbgPtr = lalMemDbgArgPtr = q;
+  lalIsMemDbgPtr = lalIsMemDbgArgPtr = ( lalMemDbgArgPtr == lalMemDbgUsrPtr );
   if ( ! q )
   {
     p = malloc( allocsz( n ) );
@@ -580,6 +761,8 @@ LALReallocLong( void *q, size_t n, const char *file, const int line )
 
   q = ModAlloc( q, PadAlloc( realloc( p, allocsz( n ) ), n, 1, "LALRealloc" ),
       n, "LALRealloc", file, line );
+  lalMemDbgPtr = lalMemDbgRetPtr = q;
+  lalIsMemDbgPtr = lalIsMemDbgRetPtr = ( lalMemDbgRetPtr == lalMemDbgUsrPtr );
 
   return q;
 }
@@ -595,6 +778,8 @@ LALFree( void *q )
     free( q );
     return;
   }
+  lalMemDbgPtr = lalMemDbgArgPtr = q;
+  lalIsMemDbgPtr = lalIsMemDbgArgPtr = ( lalMemDbgArgPtr == lalMemDbgUsrPtr );
   p = UnPadAlloc( PopAlloc( q, "LALFree" ), 0, "LALFree" );
   if ( p )
   {

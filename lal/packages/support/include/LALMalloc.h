@@ -62,6 +62,18 @@ NRCSID( LALMALLOCH, "$Id$" );
 #define LALCalloc( m, n )     LALCallocLong( m, n, __FILE__, __LINE__ )
 #define LALRealloc( p, n )    LALReallocLong( p, n, __FILE__, __LINE__ )
 
+/* global variables to assist in memory debugging */
+/* watch the value of these variables to find a particular alloc/free */
+extern char  *lalMemDbgArgPtr;   /* set to ptr arg in free or realloc */
+extern char  *lalMemDbgRetPtr;   /* set to ptr returned in alloc functions */
+extern char  *lalMemDbgPtr;      /* set in both cases */
+extern char  *lalMemDbgUsrPtr;   /* avaliable global memory pointer for user */
+extern void **lalMemDbgUsrHndl;  /* avaliable global memory handle for user */
+extern int    lalIsMemDbgArgPtr; /* ( lalMemDbgUsrPtr == lalMemDbgArgPtr ) */
+extern int    lalIsMemDbgRetPtr; /* ( lalMemDbgUsrPtr == lalMemDbgRetPtr ) */
+extern int    lalIsMemDbgPtr;    /* ( lalMemDbgUsrPtr == lalMemDbgPtr ) */
+
+
 void *
 LALMallocShort( size_t n );
 
