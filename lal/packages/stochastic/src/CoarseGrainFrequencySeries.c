@@ -162,7 +162,6 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
   REAL8         fMinCoarse, fMinFine;
   REAL8         deltaFCoarse, deltaFFine;
   REAL4         offset, resRatio;
-  LALUnitPair   unitPair1, unitPair2;
 
   UINT4         k, l;
   UINT4         lMin, lMax;
@@ -397,7 +396,6 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
   REAL8         fMinCoarse, fMinFine;
   REAL8         deltaFCoarse, deltaFFine;
   REAL4         offset, resRatio;
-  LALUnitPair   unitPair1, unitPair2;
 
   UINT4         k, l;
   UINT4         lMin, lMax;
