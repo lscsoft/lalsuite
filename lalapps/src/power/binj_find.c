@@ -34,6 +34,11 @@ RCSID("$Id$");
 #define TRUE  1
 #define FALSE 0
 
+/*
+ * Read a line of text from a file, striping the newline character if read.
+ * Return an empty string on any error.
+ */
+
 static int getline(char *line, int max, FILE *fpin)
 {
 	char *end;
@@ -47,11 +52,11 @@ static int getline(char *line, int max, FILE *fpin)
 }
 
 
-/****************************************************************************
- * 
- * FUNCTION TESTS IF THE FILE CONTAINS ANY PLAY GROUND DATA
- * 
- ***************************************************************************/
+/*
+ * Function tests if the file contains any playground data.
+ * FIXME: check if doing S2 or S3
+ */
+
 static int isPlayground(INT4 gpsStart, INT4 gpsEnd)
 {
 	INT4 runStart = 729273613;
@@ -67,17 +72,51 @@ static int isPlayground(INT4 gpsStart, INT4 gpsEnd)
 	return(segStart < playLength || segEnd < playLength || segMiddle < playLength);
 }
 
-/****************************************************************************
+
+/*
+ * Read injection data.
  *
- * The main program
- *
- *****************************************************************************/
+ * The input file should contain a list of injection XML files, one file name
+ * per line.
+ */
+
+static SimBurstTable *read_injection_table(LALStatus *stat, char *filename, INT4 start_time, INT4 end_time, int verbose)
+{
+	FILE *infile;
+	char line[MAXSTR];
+	SimBurstTable *simBurstList = NULL;
+	SimBurstTable **addPoint = &simBurstList;
+
+	if (verbose)
+		fprintf(stdout, "Reading in SimBurst Table\n");
+
+	if (!(infile = fopen(filename, "r")))
+		LALPrintError("Could not open input file\n");
+
+	while (getline(line, MAXSTR, infile)) {
+		if (verbose)
+			fprintf(stderr, "Working on file %s\n", line);
+
+		LAL_CALL(LALSimBurstTableFromLIGOLw(stat, addPoint, line, start_time, end_time), stat);
+
+		while (*addPoint)
+			addPoint = &(*addPoint)->next;
+	}
+
+	fclose(infile);
+
+	return(simBurstList);
+}
+
+
+/*
+ * Entry point.
+ */
 
 int main(int argc, char **argv)
 {
 	static LALStatus stat;
 	FILE *fpin = NULL;
-	INT4 fileCounter = 0;
 	BOOLEAN playground = FALSE;
 	BOOLEAN noplayground = FALSE;
 
@@ -309,7 +348,7 @@ int main(int argc, char **argv)
 
 
   /*******************************************************************
-   * END PARSE ARGUMENTS                                              *
+   * END PARSE ARGUMENTS                                             *
    *******************************************************************/
 
 
@@ -322,52 +361,11 @@ int main(int argc, char **argv)
 	memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
 	xmlStream.fp = NULL;
 
+  /*******************************************************************
+   * Read the injection table                                        *
+   *******************************************************************/
 
-  /*****************************************************************
-   * READ IN THE INJECTIONS
-   ****************************************************************/
-	if (verbose_flag)
-		fprintf(stdout, "Reading in SimBurst Table\n");
-
-  /*****************************************************************
-   * OPEN FILE WITH LIST OF Injection XML FILES (one file per line)
-   ****************************************************************/
-	if (!(fpin = fopen(injectionFile, "r")))
-		LALPrintError("Could not open input file\n");
-
-  /*****************************************************************
-   * loop over the INJECTION xml files
-   *****************************************************************/
-	currentSimBurst = tmpSimBurst = simBurstList = NULL;
-	while (getline(line, MAXSTR, fpin)) {
-
-		fileCounter++;
-		if (verbose_flag)
-			fprintf(stderr, "Working on file %s\n", line);
-
-		/* The injections from sim_burst table */
-		LAL_CALL(LALSimBurstTableFromLIGOLw(&stat, &tmpSimBurst, line, gpsStartTime, gpsEndTime), &stat);
-
-		/*if --noplayground option is chosen then only the injections that were
-		 * made outside the playground will be linked [Currently works for
-		 * only --noplayground option:05/23/2004 Saikat]
-		 */
-
-		if (noplayground) {
-			/* connect results to linked list */
-			if (currentSimBurst == NULL)
-				simBurstList = currentSimBurst = tmpSimBurst;
-			else
-				currentSimBurst->next = tmpSimBurst;
-		}
-
-		/* move to the end of the linked list for next input file */
-		while (currentSimBurst->next != NULL)
-			currentSimBurst = currentSimBurst->next;
-		tmpSimBurst = currentSimBurst->next;
-	}
-
-	fclose(fpin);
+	simBurstList = read_injection_table(&stat, injectionFile, gpsStartTime, gpsEndTime, verbose_flag);
 
   /***************************************************** 
    *  make any requested cuts                          *
@@ -417,7 +415,6 @@ int main(int argc, char **argv)
 	while (getline(line, MAXSTR, fpin)) {
 		INT4 tmpStartTime = 0, tmpEndTime = 0;
 
-		fileCounter++;
 		if (verbose_flag)
 			fprintf(stderr, "Working on file %s\n", line);
 
