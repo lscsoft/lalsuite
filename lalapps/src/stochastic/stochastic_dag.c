@@ -1845,9 +1845,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   " -F, --f-max N                       maximum frequency\n"\
   " -i, --ifo-one IFO                   ifo for first stream\n"\
   " -I, --ifo-two IFO                   ifo for second stream\n"\
-  " -e, --omega-alpha N                 omega_gw exponent\n"\
-  " -E, --omega-fref N                  omega_gw reference frequency\n"\
-  " -O, --omega0 N                      omega_0\n"\
+  " -e, --filter-omega-alpha N          omega_gw exponent\n"\
+  " -E, --filter-omega-fref N           omega_gw reference frequency\n"\
+  " -O, --filter-omega0 N               omega_0\n"\
   " -d, --frame-cache-one FILE          cache file for first stream\n"\
   " -D, --frame-cache-two FILE          cache file for second stream\n"\
   " -r, --calibration-cache-one FILE    first stream calibration cache\n"\
@@ -1900,9 +1900,9 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"resample-rate", required_argument, 0, 'a'},
       {"f-min", required_argument, 0, 'f'},
       {"f-max", required_argument, 0, 'F'},
-      {"omega-alpha", required_argument, 0, 'e'},
-      {"omega-fref", required_argument, 0, 'E'},
-      {"omega0", required_argument, 0, 'O'},
+      {"filter-omega-alpha", required_argument, 0, 'e'},
+      {"filter-omega-fref", required_argument, 0, 'E'},
+      {"filter-omega0", required_argument, 0, 'O'},
       {"hann-duration", required_argument, 0, 'w'},
       {"hpf-frequency", required_argument, 0, 'k'},
       {"hpf-attenuation", required_argument, 0, 'p'},
