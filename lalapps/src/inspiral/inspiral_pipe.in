@@ -117,7 +117,7 @@ for o, a in opts:
   elif o in ("-u", "--user-tag"):
     usertag = a
   elif o in ("-p", "--playground-only"):
-    playground_only = 1
+    playground_only = 2
   elif o in ("-P", "--priority"):
     condor_prio = a
   elif o in ("-f", "--config-file"):
@@ -408,6 +408,7 @@ for seg in data:
     insp1.set_start(chunk.start())
     insp1.set_end(chunk.end())
     insp1.add_var_opt('trig-start-time',chunk.trig_start())
+    insp1.add_var_opt('trig-end-time',chunk.trig_end())
     insp1.add_var_opt('snr-threshold',ifo1_snr)
     insp1.add_var_opt('chisq-threshold',ifo1_chisq)
     insp1.set_ifo(ifo1)
@@ -484,6 +485,7 @@ for seg in data:
     insp2.add_var_opt('snr-threshold',ifo2_snr)
     insp2.add_var_opt('chisq-threshold',ifo2_chisq)
     insp2.add_var_opt('trig-start-time',chunk.trig_start())
+    insp2.add_var_opt('trig-end-time',chunk.trig_end())
 
     if not do_dax:
         insp2.set_cache(df2.get_output())
