@@ -1,4 +1,4 @@
-\section{Inspiral}
+\section{Inspiral Search Programs}
 \label{secion:inspiral}
 
 This section of \textsc{LALApps} contains programs that can be used to search
@@ -6,45 +6,13 @@ interferometer data for inspiral signals using templated matched filtering and
 associated veto stratergies.
 
 \clearpage
-
 \subsection{Program \texttt{lalapps\_tmpltbank}}
 \label{program:lalapps-tmpltbank}
 \idx[Program]{lalapps\_tmpltbank}
 
-\begin{entry}
-
-\item[Name]
-\verb$lalapps_tmpltbank$ --- template bank generation from raw data.
-
-\item[Synopsis]
-\verb$lalapps_tmpltbank$ 
-[\verb$--help$]
-[\verb$--debug-level$ \textsc{level}]
-[\verb$--verbose$]
-\verb$--gps-start-time$ \textsc{gps} 
-\verb$--gps-stop-time$ \textsc{gps}
-\verb$--channel-name$ \textsc{name}
-\verb$--segment-length$ \textsc{points}
-\verb$--number-of-segments$ \textsc{segments} \\
-\verb$--sample-rate$ \textsc{rate}
-(\verb$--enable-high-pass$ \textsc{frequency}$|$\verb$--disable-high-pass$) \\
-\verb$--spectrum-type$ \textsc{(mean$|$median)}
-\verb$--frame-cache$ \textsc{file}
-\verb$--calibration-cache$ \textsc{file}
-\verb$--minimum-mass$ \textsc{mass}
-\verb$--maximum-mass$ \textsc{mass}
-\verb$--low-frequency-cutoff$ \textsc{freq}
-\verb$--high-frequency-cutoff$ \textsc{freq}
-\verb$--order$ 
-\textsc{(newtonian$|$oneHalfPN$|$onePN$|$onePointFivePN$|$twoPN$|$twoPointFive$|$threePN$|$threePointFivePN)}
-%\verb$$ \textsc{}
-%\verb$$ \textsc{}
-%\verb$$ \textsc{}
-%\verb$$ \textsc{}
-
-\item[Description]
-\verb$lalapps_tmpltbank$ generates inspiral template bank parameters from raw
-data for a specified time interval.
+\begin{verbatim}
+lalapps_tmpltbank is a stand alone code for generating inspiral template
+banks for LIGO data with the LAL bank package.
 
 The code generates a calibrated power spectrum at the specified time for
 the requested channel and uses this to compute the template bank.
@@ -52,10 +20,301 @@ the requested channel and uses this to compute the template bank.
 See the LAL bank package documentation for detailed information on the
 algorithms used to generate the banks.
 
-\item[Example]
-none
+Usage: lalapps_tmpltbank [OPTIONS]
 
-\item[Author]
-Duncan Brown
-\end{entry}
+If the option takes an argument, the agument type is shown after the option.
+Some of the options are required for operation. If a required option is
+not specified, the program will exit with an error message reporting the
+missing option. Sanity checking is performed on option arguments.
 
+
+PROGRAM OPTIONS.
+
+The following options control non-sceintific program behaviour, such as
+enabling debugging information:
+
+   --help                      display this message
+   --debug-level lstring       set the LAL debug level to the specified
+                                 value. Useful values are: NDEBUG, ERROR,
+                                 WARNING, INFO, TRACE, MEMINFO and MEMDBG
+   --verbose                   verbose operation
+
+
+POWER SPECTRUM GENERATION OPTIONS.
+
+The following options contol reading of the raw data and generation of 
+the power spectum. The raw data is read from IGWD frame files.
+
+   --gps-start-time                GPS start (seconds) of data in PSD
+   --gps-stop-time                 GPS stop time (seconds) of data in PSD
+   --channel-name lstring          name of the channel (e.g. H1:LSC-AS_Q)
+   --segment-length int_4u         length of each individual segment
+   --number-of-segments int_4u     numer of segments to break the data into
+   --sample-rate int_4u            resample the raw data to the specified rate
+   --enable-high-pass real_4       high pass the data above the specified
+                                     frequency before computing PSD
+   --disable-high-pass             do not high pass the data
+   --spectrum-type lstring         method of psd computation (mean or median)
+   --frame-cache lstring           name of the cache file containing input data
+   --calibration-cache lstring     location of a frame cache file containing
+                                     calibration information.
+
+
+TEMPLATE BANK OPTIONS.
+
+The following options are using to generate the bank. A brief overview of the
+paramerers is given here. The LAL bank package contains should be consulted
+for the full documentation on the parameters
+
+   --minimum-mass real_4           minimum (component) mass in the bank
+   --maximum-mass real_4           maximum (component) mass in the bank
+   --minimum-match real_4          minimal match of the template bank
+   --low-frequency-cutoff real_4   high frequency cutoff
+   --high-frequency-cutoff real_4  upper frequency cutoff
+   --order lstring                 post-Newtonian order of the waveform
+                                    (newtonian|oneHalfPN|onePN|onePointFivePN|
+                                    twoPN|twoPointFive|threePN|threePointFivePN)
+   --approximant lstring           approximant of the waveform
+                                    (TaylorT1|TaylorT2|TaylorT3|
+                                    TaylorF1|TaylorF2|PadeT1|PadeT2|
+                                    EOB|BCV|SpinTaylorT3)
+   --space lstring                 space in which to lay down the bank
+                                     (Tau0Tau2|Tau0Tau3)
+
+
+OUTPUT OPTIONS.
+
+The following options control writing any result data to disk. The bank is
+written as LIGO lightweigh XML file (LIGOLw), data as IGWD frame files.
+
+   --comment lstring           add a comment to the process params table
+   --write-raw-data            write the raw data read in as a frame
+   --write-response            write the response function used as a frame
+   --write-spectrum            write the power spectrum used as a frame
+
+
+EXAMPLE USEAGE.
+
+Generates a typical template bank as used in the S1 analysis:
+
+lalapps_tmpltbank --gps-start-time 715482185 
+                  --gps-end-time 715482441 
+                  --segment-length 262144 --number-of-segments 7 
+                  --sample-rate 4096 
+                  --enable-high-pass 30.0 --low-frequency-cutoff 40.0 
+                  --spectrum-type mean 
+                  --channel-name "L1:LSC-AS_Q" 
+                  --frame-cache s1_bank_data.catalog 
+                  --calibration-cache s1_bank_cal.catalog 
+                  --minimum-mass 1.0 --maximum-mass 3.0 --minimum-match 0.97 
+                  --high-frequency-cutoff 1024.0 
+                  --order twoPN --approximant TaylorT1 --space Tau0Tau3 
+                  --write-raw-data --write-spectrum 
+                  --write-response --write-strain-spectrum
+\end{verbatim}
+
+%\begin{entry}
+%
+%\item[Name]
+%\verb$lalapps_tmpltbank$ --- template bank generation from raw data.
+%
+%\item[Synopsis]
+%\verb$lalapps_tmpltbank$ 
+%[\verb$--help$]
+%[\verb$--debug-level$ \textsc{level}]
+%[\verb$--verbose$]
+%\verb$--gps-start-time$ \textsc{gps} 
+%\verb$--gps-stop-time$ \textsc{gps}
+%\verb$--channel-name$ \textsc{name}
+%\verb$--segment-length$ \textsc{points}
+%\verb$--number-of-segments$ \textsc{segments} \\
+%\verb$--sample-rate$ \textsc{rate}
+%(\verb$--enable-high-pass$ \textsc{frequency}$|$\verb$--disable-high-pass$) \\
+%\verb$--spectrum-type$ \textsc{(mean$|$median)}
+%\verb$--frame-cache$ \textsc{file}
+%\verb$--calibration-cache$ \textsc{file}
+%\verb$--minimum-mass$ \textsc{mass}
+%\verb$--maximum-mass$ \textsc{mass}
+%\verb$--low-frequency-cutoff$ \textsc{freq}
+%\verb$--high-frequency-cutoff$ \textsc{freq}
+%\verb$--order$ 
+%\textsc{(newtonian$|$oneHalfPN$|$onePN$|$onePointFivePN$|$twoPN$|$twoPointFive$|$threePN$|$threePointFivePN)}
+%\verb$$ \textsc{}
+%\verb$$ \textsc{}
+%\verb$$ \textsc{}
+%\verb$$ \textsc{}
+%
+%\item[Description]
+%\verb$lalapps_tmpltbank$ generates inspiral template bank parameters from raw
+%data for a specified time interval.
+%
+%The code generates a calibrated power spectrum at the specified time for
+%the requested channel and uses this to compute the template bank.
+%
+%See the LAL bank package documentation for detailed information on the
+%algorithms used to generate the banks.
+%
+%\item[Example]
+%none
+%
+%\item[Author]
+%Duncan Brown
+%\end{entry}
+
+\clearpage
+\subsection{Program \texttt{lalapps\_inspiral}}
+\label{program:lalapps-inspiral}
+\idx[Program]{lalapps\_inspiral}
+
+\begin{verbatim}
+lalapps_inspiral is a stand alone code for performing matched filtering
+of LIGO data for graviational wave signals and Monte Carlo analysis.
+
+Usage: lalapps_inspiral [OPTIONS]
+
+If the option takes an argument, the agument type is shown after the option.
+Some of the options are required for operation. If a required option is
+not specified, the program will exit with an error message reporting the
+missing option. Sanity checking is performed on option arguments.
+
+
+PROGRAM OPTIONS.
+
+The following options control non-sceintific program behaviour, such as
+enabling debugging information:
+
+   --help                      display this message
+   --debug-level lstring       set the LAL debug level to the specified
+                                 value. Useful values are: NDEBUG, ERROR,
+                                 WARNING, INFO, TRACE, MEMINFO and MEMDBG
+   --verbose                   verbose operation
+
+
+INPUT DATA OPTIONS.
+
+The following options contol reading of the raw data that the code will filter.
+The inspiral code reads in a block of data from the desired channel, startingat 
+the specified GPS start time and ending at the last sample before the GPS
+end time (i.e. start <= data < end). It breaks this into a specified number of 
+segments of a given length and overlap for filtering. Sanity checking is 
+performed to make sure that the specified block of data can be appropriately
+segmented.
+
+The raw data is read from IGWD frame files and the template bank is read from a
+LIGO lightweight XML file containing the template parameters.
+
+   --frame-cache lstring        name of the cache file containing input data
+   --gps-start-time             GPS start (seconds) of input data
+   --gps-start-time-ns          GPS start (nanoseconds) of input data
+   --gps-stop-time              GPS stop time (seconds) of input data
+   --gps-stop-time              GPS stop time (nanoseconds) of input data
+   --channel-name lstring       name of the channel to filter (e.g. H1:LSC-AS_Q)
+   --segment-length int_4u      length of each individual segment
+   --number-of-segments int_4u  numer of segments to break the data into
+   --segment-overlap int_4u     overlap between consecutive segments
+   --start-template int_4u      start parsing templates at this row number
+   --stop-template int_4u       stop parsing templates at this row number
+
+
+DATA CONDITIONING OPTIONS.
+
+The following options control any pre-conditioning applied to the raw data
+before it is passed to the filtering code as well as parameters to generate
+the one-sided power specral density of the data. It is possible to resample
+and/or apply a time-domain high-pass filter to the data before the power
+spectrum is computed
+
+   --sample-rate int_4u            resample the raw data to the specified rate
+   --enable-high-pass real_4       high pass the data above the specified
+                                      frequency
+   --disable-high-pass             do not high pass the data
+   --low-frequency-cutoff real_4   specifiy a low frequency cutoff for the
+                                      filter. All frequencies below this value
+                                      are ignored. This takes effect after
+                                      the high-pass filter.
+   --spectrum-type lstring         method of psd computation (mean or median)
+   --inverse-spec-length int_4u    truncate the inverse power spectal density in
+                                   time domain. Specify desired length of the
+                                   inverse specrum in seconds.
+   --dynamic-range-exponent real_4 to keep the data in range a dynamic range
+                                      scale factor is applied to the data as
+                                      described in the findchirp documentation.
+   --calibration-cache lstring     location of a frame cache file containing
+                                      calibration information.
+
+
+FILTERING OPTIONS.
+
+The following options are using by the filtering routines to control the
+parameters of the matched filter and chi squared veto. The thresholds for
+signal to noise and chi squared are specified as a comma separated list
+(e.g. 9.0,7.0,6.0) with the first value being used for the coarse search,
+the second value for the first hierarchical search and so on. If the
+numer of chi squared bins is set to 0 then the chi squared veto is disabled.
+
+   --chisq-bins int_4u         number chi squared veto frequency bins
+   --snr-thresholds real_4     list of signal to noise thresholds
+   --chisq-thresholds real_4   list of chi squared thresholds
+   --enable-event-cluster      enable the event clustering algorithm
+   --disable-event-cluster     disable the event clustering algorithm
+
+
+OUTPUT OPTIONS.
+
+The following options control writing any result data to disk. Results are
+written as LIGO lightweigh XML file (LIGOLw) or as IGWD frame files (frames)
+
+   --enable-output             write inspiral triggers found as LIGOLw
+   --disable-output            do not write triggers as LIGOLw 
+   --comment lstring           add a comment to the process params table
+   --write-raw-data            write the raw data read in as a frame
+   --write-filter-data         write the pre-conditioned data as a frame
+   --write-response            write the response function used as a frame
+   --write-spectrum            write the power spectrum used as a frame
+   --write-snrsq               write the last vector of snr^2 data as a frame
+   --write-chisq               write the last vector of chi^2 data as a frame
+
+
+EXAMPLE USEAGE.
+
+Requires 256 seconds of LHO frame data in the current directory.
+
+lalapps_inspiral --enable-output --enable-high-pass 50.0
+                 --enable-event-cluster --gps-start-time 600000000
+                 --gps-end-time 600000256 --segment-length 262144
+                 --number-of-segments 7 --segment-overlap 131072
+                 --sample-rate 4096 --chisq-bins 8
+                 --low-frequency-cutoff 100.0 --spectrum-type mean
+                 --inverse-spec-length 0 --dynamic-range-exponent 69.0
+                 --channel-name H1:LSC-AS_Q --snr-threshold 1.0
+                 --chisq-threshold 0.001 --verbose --debug-level NDEBUG
+\end{verbatim}
+
+\clearpage
+\subsection{Program \texttt{inspiral\_pipeline.py}}
+\label{program:inspiral-pipeline}
+\idx[Program]{inspiral\_pipeline.py}
+
+\begin{verbatim}
+Usage: inspiral_pipeline.py [OPTIONS]
+
+   -f, --config-file FILE       use configuration file FILE
+   -v, --version                print version information and exit
+   -h, --help                   print help information
+   -c, --cache                  query LDR to generate cache files
+   -b, --bank                   run the bank generation code in the DAG
+   -i, --inspiral               run the inspiral code in the DAG
+
+This program generates a DAG to run the inspiral code. The configuration
+file should specify the parameters needed to run the jobs and must be
+specified with the --config-file (or -f) option.
+
+If the --cache (or -c) option is specified the DAG will generate frame
+cache files by querying LDR, otherwise these will be expected to exist.
+
+The DAG will have each template bank generation job marked as done unless the
+--bank (or -b) option is given. Similarly the DAG will have the inspiral jobs
+marked as done unless the --inspiral (or -i) option is given. If the bank
+generation is not specified and the inspiral is specifed, the DAG will 
+expect the banks to have been previously generated with the correct names.
+\end{verbatim}
