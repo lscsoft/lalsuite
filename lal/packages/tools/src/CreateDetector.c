@@ -504,7 +504,7 @@ const LALDetector lalCachedDetectors[LALNumCachedDetectors]
     { { 3.85630994953e+06L,   666598.956352L,   5.01964141692e+06L},
       { {  0.0968250,  0.3657823,  -0.1221373},
         {  0.3657823, -0.222968,  -0.2497174},
-        { -0.1221373, -0.249717,   0.1261431},
+        { -0.1221373, -0.2497174,   0.1261431},
       },
       LALDETECTORTYPE_IFODIFF,
       { "GEO-600 Interferometer",
