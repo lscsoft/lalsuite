@@ -44,7 +44,7 @@ fi
 
 
 if [ x$1 = x ]; then
-    prog=$CFSDEFAULT;
+    prog=$CFS_DEFAULT;
 else
     prog=$1;
 fi
