@@ -19,20 +19,22 @@
  *
  * The ringdown waveform is an exponentially-damped sinusoid
  * \begin{equation}
- *   q(t) = \left\{
+ *   r(t) = \left\{
  *   \begin{array}{ll}
- *     (2\pi)^{1/2}e^{-\pi ft/Q}\cos(2\pi ft) & \mbox{for $t\ge0$} \\
+ *     e^{-\pi ft/Q}\cos(2\pi ft + \phi_0) & \mbox{for $t\ge0$} \\
  *     0 & \mbox{for $t<0$}
  *   \end{array}
  *   \right.
  * \end{equation}
- * where $f$ is the central frequency of the ringdown waveform and $Q$ is
- * the quality factor.
+ * where $f$ is the central frequency of the ringdown waveform, $Q$ is
+ * the quality factor, and $\phi_0$ is the initial phase of the waveform.
+ * Note that Ref.~\cite{JDECreighton} adopted the
+ * normalization convention $q(t)=(2\pi)^{1/2}r(t)$.
  *
  * For a black hole ringdown, the gravitational waveform produced, averaged
  * over the various angles, is
  * \begin{equation}
- *   h(t) = Aq(t)
+ *   h(t) = A_qq(t)
  * \end{equation}
  * where the central frequency and quality of the ringdown are determined from
  * the mass and spin of the black holes.  An analytic approximation
@@ -52,11 +54,13 @@
  * distance $r$ to the source and the fractional mass loss $\epsilon$ radiated
  * in gravitational waves~\cite{JDECreighton}:
  * \begin{equation}
- *   A = 2.415\times10^{-21}Q^{-1/2}[1-0.63(1-{\hat{a}})^{3/10}]^{-1/2}
+ *   A_q = 2.415\times10^{-21}Q^{-1/2}[1-0.63(1-{\hat{a}})^{3/10}]^{-1/2}
  *   \left(\frac{\textrm{Mpc}}{r}\right)
  *   \left(\frac{M}{M_\odot}\right)
  *   \left(\frac{\epsilon}{0.01}\right)^{1/2}.
  * \end{equation}
+ * Note that this is the amplitude factor for the waveform $q(t)$, whereas
+ * the amplitude factor for $r(t)$ would be $(2\pi)^{1/2}A_q$.
  *
  * The mismatch between two nearby templates is given by $ds^2$, which can be
  * thought of as the line interval for a mismatch-based metric on the $(f,Q)$
@@ -118,6 +122,7 @@ tagRingTemplateInput
 {
   REAL4 quality;
   REAL4 frequency;
+  REAL4 phase;
 }
 RingTemplateInput;
 /**** </lalVerbatim> */
@@ -129,6 +134,8 @@ RingTemplateInput;
  * \item[\texttt{quality}] The quality factor $Q$ of the ringdown waveform.
  * \item[\texttt{frequency}] The central frequency of the ringdown waveform
  *     (in Hz).
+ * \item[\texttt{phase}] The initial phase of the ringdown in radians.
+ *     Zero is a cosine-phase ringdown; $-\pi/2$ is a sine-phase ringdown.
  * \end{description}
  *
  *
@@ -144,6 +151,7 @@ tagBlackHoleRingInput
   REAL4 dimensionlessSpin;
   REAL4 percentMassLoss;
   REAL4 distanceMpc;
+  REAL4 initialPhase;
 }
 BlackHoleRingInput;
 /**** </lalVerbatim> */
@@ -160,6 +168,8 @@ BlackHoleRingInput;
  * \item[\texttt{percentMassLoss}] The fractional mass loss, as a percent of
  *     the initial black hole mass, in ringdown radiation.
  * \item[\texttt{distanceMpc}] The distance of the source in megaparsecs (Mpc).
+ * \item[\texttt{initialPhase}] The initial phase of the ringdown in radians.
+ *     Zero is a cosine-phase ringdown; $-\pi/2$ is a sine-phase ringdown.
  * \end{description}
  *
  *
@@ -197,6 +207,7 @@ tagRingTemplateBankInput
   REAL4 minFrequency;
   REAL4 maxFrequency;
   REAL4 maxMismatch;
+  REAL4 templatePhase;
 }
 RingTemplateBankInput;
 /**** </lalVerbatim> */
@@ -213,6 +224,9 @@ RingTemplateBankInput;
  *     (in Hz).
  * \item[\texttt{maxMismatch}] The maximum mismatch allowed between templates 
  *     in the bank.
+ * \item[\texttt{templatePhase}] The phase of the ringdown templates, in
+ *     radians.  Zero is a cosine-phase template; $-\pi/2$ is a sine-phase
+ *     template.
  * \end{description}
  *
  **** </lalLaTeX> */

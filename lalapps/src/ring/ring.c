@@ -608,6 +608,7 @@ int parse_options( int argc, char **argv )
     { "filter-fmax",             required_argument, 0, 'Z' },
     { "filter-qmin",             required_argument, 0, 'Z' },
     { "filter-qmax",             required_argument, 0, 'Z' },
+    { "filter-phase",            required_argument, 0, 'Z' },
     { "filter-maxmm",            required_argument, 0, 'Z' },
     { "filter-thresh",           required_argument, 0, 'Z' },
     { "filter-scale",            required_argument, 0, 'Z' },
@@ -1258,6 +1259,7 @@ const char *usgfmt =
 "  --filter-fmax fmax\n\t\tset maximum frequency for bank to fmax (Hz)\n\n"
 "  --filter-qmin qmin\n\t\tset minimum quality for bank to qmin\n\n"
 "  --filter-qmax qmax\n\t\tset maximum quality for bank to qmax\n\n"
+"  --filter-phase phase\n\t\tset template filter phase to phase (rad, 0 = cosine; -pi/2 = sine)\n\n"
 "  --filter-maxmm maxmm\n\t\tset maximum mismatch of bank to maxmm\n\n"
 "  --filter-thresh thrsh\n\t\tset ringdown event snr threshold to thrsh\n\n"
 "  --filter-scale scale\n\t\tscale response function by a factor of scale [1]\n\n";

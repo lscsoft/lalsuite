@@ -165,6 +165,11 @@ void LALRingSearchInit(
       params->maxQuality = atof( *++argv );
       --argc;
     }
+    else if ( strstr( *argv, "-phase" ) )
+    {
+      params->templatePhase = atof( *++argv );
+      --argc;
+    }
     else if ( strstr( *argv, "-maxmm" ) )
     {
       params->maxMismatch = atof( *++argv );
@@ -224,11 +229,12 @@ void LALRingSearchInit(
       params->segmentSize, 0 );
   CHECKSTATUSPTR( status );
 
-  bankin.minQuality   = params->minQuality;
-  bankin.maxQuality   = params->maxQuality;
-  bankin.minFrequency = params->minFrequency;
-  bankin.maxFrequency = params->maxFrequency;
-  bankin.maxMismatch  = params->maxMismatch;
+  bankin.minQuality    = params->minQuality;
+  bankin.maxQuality    = params->maxQuality;
+  bankin.minFrequency  = params->minFrequency;
+  bankin.maxFrequency  = params->maxFrequency;
+  bankin.maxMismatch   = params->maxMismatch;
+  bankin.templatePhase = params->templatePhase;
   LALCreateRingTemplateBank( status->statusPtr, &params->templateBank,
       &bankin );
   CHECKSTATUSPTR( status );

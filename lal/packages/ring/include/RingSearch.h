@@ -93,6 +93,7 @@ tagRingSearchParams
   REAL4                    maxFrequency;
   REAL4                    minQuality;
   REAL4                    maxQuality;
+  REAL4                    templatePhase;
   REAL4                    maxMismatch;
   REAL4                    sampleRate;
   RingTemplateBank        *templateBank;
@@ -142,6 +143,7 @@ RingSearchParams;
  * \item[\texttt{maxFrequency}]  Maximum ring frequency (Hz) for the bank.
  * \item[\texttt{minQuality}]    Minimum ring quality for the bank.
  * \item[\texttt{maxQuality}]    Maximum ring quality for the bank.
+ * \item[\texttt{maxQuality}]    Phase of templates (rad) in the bank.
  * \item[\texttt{maxMismatch}]   Maximum allowed mismatch for the bank.
  * \item[\texttt{sampleRate}]    Sample rate of the data.
  * \item[\texttt{templateBank}]  The template bank.

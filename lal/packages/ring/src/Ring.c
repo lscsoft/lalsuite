@@ -122,8 +122,8 @@ LALComputeRingTemplate(
 
   /* oscillator variables */
   a = 2 * cos( 2 * LAL_PI * input->frequency * output->deltaT );
-  y = sin( -2 * LAL_PI * input->frequency * output->deltaT + 0.5 * LAL_PI );
-  yy = sin( -4 * LAL_PI * input->frequency * output->deltaT + 0.5 * LAL_PI );
+  y = sin( -2 * LAL_PI * input->frequency * output->deltaT + 0.5 * LAL_PI + input->phase );
+  yy = sin( -4 * LAL_PI * input->frequency * output->deltaT + 0.5 * LAL_PI + input->phase );
 
   if ( n < output->data->length )
   {
@@ -170,6 +170,7 @@ LALComputeBlackHoleRing(
   ffac = 1 - 0.63 * pow( 1 - input->dimensionlessSpin, 0.3 );
   tmplt.frequency = 32000 * ffac / input->solarMasses;
   tmplt.quality = 2 * pow( 1 - input->dimensionlessSpin, -0.45 );
+  tmplt.phase = input->initialPhase;
 
   amp  = 2.415e-21; /* factor given in PRD 022001 (1999) */
   amp *= sqrt( 2 * LAL_PI ); /* convert NEW conventions to OLD conventions */
@@ -206,6 +207,7 @@ static int MakeBank( RingTemplateInput *tmplt, RingTemplateBankInput *input )
       {
         tmplt[count].quality   = q;
         tmplt[count].frequency = exp( logf );
+        tmplt[count].phase     = input->templatePhase;
       }
       ++count;
       logf += dseff / sqrt( 3 + 8 * q2 );
