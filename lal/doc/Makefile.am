@@ -46,9 +46,6 @@ lal-install.tex: lal-install-x.sh texstrip.sed
 lal-install.txt: lal-install-x.sh txtstrip.sed
 	cd $(srcdir) && sed -f txtstrip.sed lal-install-x.sh > lal-install.txt
 
-
-pkgdocdir=${prefix}/doc/@PACKAGE@-@VERSION@
-
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(pkgdocdir)
 	@for file in $(INSTALLFILES) ; do \
