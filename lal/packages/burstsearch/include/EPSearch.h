@@ -27,8 +27,8 @@ tagEPSearchParams {
 	CHAR                 *channelName;
 	BOOLEAN               printSpectrum;
 	INT4                  eventLimit;
-	UINT4                 windowLength;
-	UINT4                 windowShift;
+        UINT4                 windowLength;
+        UINT4                 windowShift;
 	REAL8                 alphaThreshold;
 	AvgSpecMethod         method;
 	CreateTFTilingIn      tfTilingInput;

@@ -301,7 +301,7 @@ EPSearch(
 )
 /******** </lalVerbatim> ********/
 { 
-	int                       start_sample;
+	int                       start_sample, i, j;
 	COMPLEX8FrequencySeries  *fseries;
 	RealDFTParams            *dftparams = NULL;
 	LALWindowParams           winParams;
@@ -309,6 +309,8 @@ EPSearch(
 	REAL4TimeSeries          *cutTimeSeries;
 	SnglBurstTable          **EventAddPoint = burstEvent;
 	TFTiling                 *tfTiling = NULL;
+	REAL4                    *normalisation;
+	FILE                     *fp;
 
 	INITSTATUS(status, "EPSearch", EPSEARCHC);
 	ATTATCHSTATUSPTR(status);
@@ -406,15 +408,16 @@ EPSearch(
 		/*
 		 * Compute the TFplanes for the data segment.
 		 */
-
 		LALInfo(status->statusPtr, "Computing the TFPlanes");
 		CHECKSTATUSPTR(status);
 		if (params->tfPlaneMethod == useMultipleTFPlane)
 		  LALComputeTFPlanes(status->statusPtr, tfTiling, fseries, params->windowShift);
-		else
-		  LALModComputeTFPlanes(status->statusPtr, tfTiling, fseries, params->windowShift);
+		else{
+		  normalisation = LALMalloc(params->tfPlaneParams.freqBins * sizeof(REAL4));
+		  LALModComputeTFPlanes(status->statusPtr, tfTiling, fseries, params->windowShift, normalisation, AverageSpec);
+		}
 		CHECKSTATUSPTR(status);
-
+	
                  /*
 		 * Search these planes.
 		 */
@@ -424,9 +427,9 @@ EPSearch(
 		if (params->tfPlaneMethod == useMultipleTFPlane)
 		  LALComputeExcessPower (status->statusPtr, tfTiling, &params->compEPInput);
 		else
-		  LALModComputeExcessPower (status->statusPtr, tfTiling, &params->compEPInput);
+		  LALModComputeExcessPower (status->statusPtr, tfTiling, &params->compEPInput, normalisation);
 		CHECKSTATUSPTR(status);
-	  
+
 		/*
 		 * Compute the likelihood for slightly better detection
 		 * method.
@@ -468,6 +471,7 @@ EPSearch(
 		tfTiling->planesComputed=FALSE;
 		tfTiling->excessPowerComputed=FALSE;
 		tfTiling->tilesSorted=FALSE;
+		LALFree(normalisation);
 	}
 
 	/*

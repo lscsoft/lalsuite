@@ -101,7 +101,9 @@ LALModComputeTFPlanes (
 		 LALStatus                             *status,
 		 TFTiling                           *tfTiling,
 		 COMPLEX8FrequencySeries            *freqSeries,
-		 UINT4                              windowShift
+		 UINT4                              windowShift,
+		 REAL4                              *norm,
+		 REAL4FrequencySeries               *psd
 		 )
 /******** </lalVerbatim> ********/
 {
@@ -126,6 +128,8 @@ LALModComputeTFPlanes (
       COMPLEX8TimeFrequencyPlane    **thisPlane;
       ComplexDFTParams              **thisDftParams;
       HorizontalTFTransformIn       transformparams;
+      int                           j;
+      FILE *fp;
 
       thisPlane = tfTiling->tfp;
       ASSERT(thisPlane, status, LAL_NULL_ERR, LAL_NULL_MSG);
@@ -140,11 +144,12 @@ LALModComputeTFPlanes (
       transformparams.startT=0;  /* not used for horizontal transforms */
       transformparams.dftParams=*thisDftParams;
       transformparams.windowShift = windowShift;
+
       /* Compute TF transform */
       LALInfo(status->statusPtr, "Converting Frequency series to TFPlane");
       CHECKSTATUSPTR (status);
       LALModModFreqSeriesToTFPlane( status->statusPtr, *thisPlane, freqSeries, 
-                           &transformparams); 
+                           &transformparams, norm, psd); 
       CHECKSTATUSPTR (status);
     }
 

@@ -176,7 +176,9 @@ LALModModFreqSeriesToTFPlane (
                      LALStatus                         *status,
                      COMPLEX8TimeFrequencyPlane     *tfp,
                      COMPLEX8FrequencySeries        *freqSeries,
-                     HorizontalTFTransformIn        *input
+                     HorizontalTFTransformIn        *input,
+                     REAL4                          *norm,
+		     REAL4FrequencySeries           *psd
                      );
 
 

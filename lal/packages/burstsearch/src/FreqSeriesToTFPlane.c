@@ -440,7 +440,9 @@ LALModModFreqSeriesToTFPlane (
     LALStatus                            *status,
     COMPLEX8TimeFrequencyPlane           *tfp,
     COMPLEX8FrequencySeries              *freqSeries,
-    HorizontalTFTransformIn              *input
+    HorizontalTFTransformIn              *input,
+    REAL4                                *normalisation,
+    REAL4FrequencySeries                 *psd
     )
 /******** </lalVerbatim> ********/
 {
@@ -615,19 +617,13 @@ LALModModFreqSeriesToTFPlane (
       filter->data[numpts-j] = tmpValue;
     }
 
-    /*  fp = fopen("timefilter.dat","a");
-    for(j=0;j<numpts;j++){
-      fprintf(fp,"%d %f\n",j, filter->data[j]);
-    }
-    fclose(fp);*/
-
-
+  
     /* PRB - Fourier transform the filter into the frequency domain */
     LALForwardRealFFT( status->statusPtr, tmp, filter, pfwd);
     CHECKSTATUSPTR (status);
 
     /* PRB - The normalization constant */
-    norm = 0.0;
+    /*norm = 0.0;
     for(j = 0; (unsigned) j < freqSeries->data->length; j++)
     {
       REAL4 re = tmp->data[j].re;
@@ -636,22 +632,27 @@ LALModModFreqSeriesToTFPlane (
       norm += (re*re + im*im);
     }
     norm = sqrt(4.0 * norm);
+    */
 
   /* loop over different basis vectors in the frequency domain */
   for(i=0; i< nf; i++)
   {
-    /* offset = flow1 + i * fseglength;*/
-    
     /* PRB - set all values below i * df to zero */
     for( j=0 ; j < i*fseglength ; j++)
     {
       REAL4 reFilter = 0.0;
       REAL4 imFilter = 0.0;
+      /*REAL4 reData = freqSeries->data->data[j].re*sqrt(1/psd->data->data[j]);
+	REAL4 imData = freqSeries->data->data[j].im*sqrt(1/psd->data->data[j]);*/
+
       REAL4 reData = freqSeries->data->data[j].re;
       REAL4 imData = freqSeries->data->data[j].im;
-      
+
       fcorr->data[j].re = reFilter * reData + imFilter * imData;
       fcorr->data[j].im = reFilter * imData - imFilter * reData;
+
+      /*normalisation[i] += (1/psd->data->data[j])*(reFilter*reFilter + imFilter*imFilter);*/
+      normalisation[i] += (reFilter*reFilter + imFilter*imFilter);
     }
 
     /* PRB - Multiply the filter by the data.  Don't forget complex
@@ -660,12 +661,20 @@ LALModModFreqSeriesToTFPlane (
     {
       REAL4 reFilter = tmp->data[j-i*fseglength].re;
       REAL4 imFilter = tmp->data[j-i*fseglength].im;
+      /*REAL4 reData = freqSeries->data->data[j].re*sqrt(1/psd->data->data[j]);
+	REAL4 imData = freqSeries->data->data[j].im*sqrt(1/psd->data->data[j]);*/
+
       REAL4 reData = freqSeries->data->data[j].re;
       REAL4 imData = freqSeries->data->data[j].im;
-      
+
       fcorr->data[j].re = reFilter * reData + imFilter * imData;
       fcorr->data[j].im = reFilter * imData - imFilter * reData;
+
+      /*normalisation[i] += (1/psd->data->data[j])*(reFilter*reFilter + imFilter*imFilter);*/
+      normalisation[i] += (reFilter*reFilter + imFilter*imFilter);
     }
+
+    normalisation[i] = sqrt(4.0 * normalisation[i]);
 
     /* clean up Nyquist */
       fcorr->data[freqSeries->data->length-1].re=0.0;
@@ -706,7 +715,7 @@ LALModModFreqSeriesToTFPlane (
     /* Copy the result into appropriate spot in output structure */    
     for(j=0; j< nt; j++)
       {
-	tfp->data[j*nf+i].re = snr->data[(j*(INT4)(delT/dt))+windowShift] / norm;
+	tfp->data[j*nf+i].re = snr->data[(j*(INT4)(delT/dt))+windowShift];
 	tfp->data[j*nf+i].im = 0.0;
       }
   }

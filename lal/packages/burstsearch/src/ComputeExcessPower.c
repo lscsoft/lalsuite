@@ -192,7 +192,8 @@ void
 LALModComputeExcessPower (
 		   LALStatus               *status,
 		   TFTiling                *tfTiling,
-		   ComputeExcessPowerIn    *input
+		   ComputeExcessPowerIn    *input,
+		   REAL4                   *norm
 		   )
 /******** </lalVerbatim> ********/
 {
@@ -232,11 +233,11 @@ LALModComputeExcessPower (
   while (thisTile != NULL)
     {
       COMPLEX8TimeFrequencyPlane *tfPlane;
-      REAL8 sum;
+      REAL8 sum, sumalt;
       REAL8 dof;
       REAL8 rho2;
       REAL8 numsigma;
-      
+      REAL4 sumnorm;
 
       INT4 j;
       INT4 ii;
@@ -275,9 +276,11 @@ LALModComputeExcessPower (
       /* printf("searching tile = %d whose dof = %f\n",count, dof);*/
 
       sum=0.0;
+      sumalt = 0.0;
       for(j=t1; j<t2; j+=(INT4)((t2-t1)/dof))
 	{
 	  COMPLEX8 sumz;
+	  sumnorm = 0.0; 
 	  sumz.re = 0.0;
 	  sumz.im = 0.0;
 	  for(ii=k1; ii<k2; ii++)
@@ -287,10 +290,11 @@ LALModComputeExcessPower (
 	      z = tfPlane->data[offset+ii];
 	      sumz.re += z.re;
 	      sumz.im += z.im;
+	      sumnorm += (norm[ii]*norm[ii]);
 	    }
-	  sum += (sumz.re*sumz.re + sumz.im*sumz.im)/(k2-k1);
+	  sum += (sumz.re*sumz.re + sumz.im*sumz.im)/sumnorm;
 	}
-	
+      
       rho2 = sum - dof;
       thisTile->excessPower = rho2;
       numsigma = rho2 / sqrt(2*dof);
