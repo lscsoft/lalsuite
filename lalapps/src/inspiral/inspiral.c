@@ -314,7 +314,7 @@ int main( int argc, char *argv[] )
   inputLengthNS = 
     (REAL8) ( gpsEndTimeNS - gpsStartTimeNS + 2000000000LL * padData );
   chan.deltaT *= 1.0e9;
-  numInputPoints = (UINT4) floor( inputLengthNS / chan.deltaT );
+  numInputPoints = (UINT4) floor( inputLengthNS / chan.deltaT + 0.5 );
   LAL_CALL( LALSCreateVector( &status, &(chan.data), numInputPoints ), 
       &status );
 
