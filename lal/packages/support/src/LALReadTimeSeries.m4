@@ -12,9 +12,6 @@ ifelse(TYPECODE,`C',`define(`FMT',`"%lf\t%f\t%f\n"')')
 ifelse(TYPECODE,`D',`define(`FMT',`"%lf\t%lf\n"')')
 ifelse(TYPECODE,`S',`define(`FMT',`"%lf\t%f\n"')')
 ifelse(TYPECODE,`',`define(`FMT',`"%lf\t%f\n"')')
-define(`HEADER',`"Freq (Hz)\tValue\n"');
-ifelse(TYPECODE,`Z',`define(`HEADER',`"Freq (Hz)\tRe(Value)\tIm(Value)\n"')')
-ifelse(TYPECODE,`C',`define(`HEADER',`"Freq (Hz)\tRe(Value)\tIm(Value)\n"')')
 define(`ARG',`&data')
 define(`NARGS',`1')
 ifelse(TYPECODE,`Z',`define(`ARG',`&(data.re),&(data.im)')')
@@ -66,7 +63,12 @@ FUNC ( LALStatus* status,
     ABORT(status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE);
   }
 
-  if (LALSnprintf( series->name, sizeof( series->name ), "%s", line ) < 0)
+  if (line[0] != '#' || line[1] != ' ')
+  {
+    ABORT(status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE);
+  }
+
+  if (LALSnprintf( series->name, sizeof( series->name ), "%s", line + 2) < 0)
   {
     ABORT(status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE);
   }
@@ -80,11 +82,15 @@ FUNC ( LALStatus* status,
   {
     ABORT(status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE);
   }
-  if (line[0] == '\n') 
+  if (line[0] != '#' || line[1] != ' ')
+  {
+    ABORT(status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE);
+  }
+  if (line[2] == '\n') 
   {
     series->f0 = 0.0;
   }
-  else if ( sscanf( line, "Heterodyned at %lf Hz\n", &(series->f0) ) != 1 )
+  else if ( sscanf( line, "# Heterodyned at %lf Hz\n", &(series->f0) ) != 1 )
   {
     ABORT(status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE);
   }
@@ -94,12 +100,16 @@ FUNC ( LALStatus* status,
     ABORT(status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE);
   }
 
-  if (line[0] == '\n') 
+  if (line[0] != '#' || line[1] != ' ')
+  {
+    ABORT(status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE);
+  }
+  if (line[2] == '\n') 
   {
     series->epoch.gpsSeconds = 0;
     series->epoch.gpsNanoSeconds = 0;
   }
-  else if ( sscanf( line, "Epoch is %d seconds, %d nanoseconds\n",
+  else if ( sscanf( line, "# Epoch is %d seconds, %d nanoseconds\n",
 	            &(series->epoch.gpsSeconds), 
                     &(series->epoch.gpsNanoSeconds) )
 	    != 2 )
@@ -115,22 +125,20 @@ FUNC ( LALStatus* status,
     ABORT( status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE );
   }
 
-  if (!strcmp(line,"Units are ()\n"))
+  if (!strcmp(line,"# Units are ()\n"))
   {
     series->sampleUnits = lalDimensionlessUnit; 
   }
   else {
-    if ( sscanf( line, "Units are (%[^)]", string->data ) != 1 )
+    if ( sscanf( line, "# Units are (%[^)]", string->data ) != 1 )
     {
       TRY( LALCHARDestroyVector( status->statusPtr, &string ), status );
       ABORT( status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE );
     }
     LALParseUnitString(status->statusPtr, &tempUnit, string);
-    if (status->statusPtr->statusCode) 
-    {
+    BEGINFAIL( status ) 
       TRY( LALCHARDestroyVector( status->statusPtr, &string ), status );
-      ABORT( status, -1, "Recursive error" );
-    }
+    ENDFAIL( status ); 
     series->sampleUnits = tempUnit;
   }
 

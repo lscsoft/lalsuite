@@ -21,9 +21,9 @@ ifelse(TYPECODE,`S',`define(`FMT',`"%g\t%g\n"')')
 ifelse(TYPECODE,`I8',`define(`FMT',`"%g\t%0.0f\n"')')
 ifelse(TYPECODE,`U8',`define(`FMT',`"%g\t%0.0f\n"')')
 ifelse(TYPECODE,`',`define(`FMT',`"%g\t%f\n"')')
-define(`HEADER',`"Freq (Hz)\tValue\n"');
-ifelse(TYPECODE,`Z',`define(`HEADER',`"Freq (Hz)\tRe(Value)\tIm(Value)\n"')')
-ifelse(TYPECODE,`C',`define(`HEADER',`"Freq (Hz)\tRe(Value)\tIm(Value)\n"')')
+define(`HEADER',`"# Freq (Hz)\tValue\n"');
+ifelse(TYPECODE,`Z',`define(`HEADER',`"# Freq (Hz)\tRe(Value)\tIm(Value)\n"')')
+ifelse(TYPECODE,`C',`define(`HEADER',`"# Freq (Hz)\tRe(Value)\tIm(Value)\n"')')
 define(`ARG',`*data')
 ifelse(TYPECODE,`Z',`define(`ARG',`data->re,data->im')')
 ifelse(TYPECODE,`C',`define(`ARG',`data->re,data->im')')
@@ -48,18 +48,18 @@ void FUNC ( STYPE *series, const CHAR *filename )
 
   /* open output file */
   fp=LALFopen(filename,"w");
-  fprintf(fp,"%s\n",series->name);
+  fprintf(fp,"# %s\n",series->name);
   if (series->epoch.gpsSeconds && series->epoch.gpsNanoSeconds) {
-    fprintf(fp,"Epoch is %d seconds, %d nanoseconds\n",
+    fprintf(fp,"# Epoch is %d seconds, %d nanoseconds\n",
             series->epoch.gpsSeconds,series->epoch.gpsNanoSeconds);
   }
   else {
-    fprintf(fp,"\n");
+    fprintf(fp,"# \n");
   }
   unitString = NULL;
   LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
   LALUnitAsString(&status, unitString, &(series->sampleUnits));
-  fprintf(fp,"Units are (%s)\n",unitString->data);
+  fprintf(fp,"# Units are (%s)\n",unitString->data);
   fprintf(fp,HEADER);
   LALCHARDestroyVector(&status, &unitString);
   for ( i = 0; i < series->data->length; ++i )
