@@ -2697,6 +2697,23 @@ static void parseOptions(INT4 argc, CHAR *argv[])
     exit(1);
   }
 
+  /* interval duration must be a least 3 times the segment duration */
+  if ((intervalDuration / segmentDuration) < 3)
+  {
+    fprintf(stderr, "Invalid interval duration (%d): must be a least 3 times " \
+        "the segment\nduration (%d)\n", intervalDuration, segmentDuration);
+    exit(1);
+  }
+
+  /* interval duration must be an odd mutliple of segment duration */
+  if (((intervalDuration / segmentDuration) % 2) != 1)
+  {
+    fprintf(stderr, "Invalid interval duration (%d): must be an odd " \
+        "multiple of the segment\nduration (%d)\n", intervalDuration, \
+        segmentDuration);
+    exit(1);
+  }
+
   /* min frequency same as max */
   if (fMin == fMax)
   {
