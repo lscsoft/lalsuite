@@ -1,0 +1,129 @@
+.TH LALAPPS_FINDCHIRP_POST 1 "11 Jun 2002" LALApps LALApps
+.SH NAME
+lalapps_findchirp_post - post process event files from findchirp
+
+.SH SYNOPSIS
+.B lalapps_findchirp
+.RB [ \-h ]
+.RB [ \-V ]
+.RB [ \-v ]
+.RB [ \-d 
+.IR dbglvl ] 
+]
+.RB [ \-V ]
+.RB [ \-v ]
+.RB [ \-d 
+.IR dbglvl ] 
+.RB [ \-m ]
+.RB [ \-s 
+.IR minsnr\-maxsnr ] 
+.RB [ \-c 
+.IR minchisq\-maxchisq ] 
+.RB [ \-b 
+.IR bins ]
+.RB [ \-e 
+.IR eventfile ]
+
+.SH DESCRIPTION
+.PP
+\fIlalapps_findchirp_post\fP post process event files from findchirp.
+
+.SH OPTIONS
+.TP
+.BI \-h
+Print a help message.
+.TP
+.BI \-V
+Print the version information.
+.TP
+.BI \-v
+Verbose output.
+.TP
+.BI \-d " dbglvl"
+Set LAL debug level to \fIdbglvl\fP.
+.TP
+.BI \-m
+Maximize events over injections. This options caused only the loudest event
+(in SNR) in each window of length 100/pi = 31.8309886183791 to be processed.
+The window starts at the time of the first event.
+.TP
+.BI \-s " minsnr\-maxsnr"
+Set minimum and maximum of the range of signal to noise ratio for creation
+of the histogram bins.  (Default is 7.0\-14.0.)
+.TP
+.BI \-c " minchisq\-maxchisq"
+Set minimum and maximum of the range of chi squared veto statistic for
+creation of the histogram bins.  (Default is 0.0\-50.0.)
+.TP
+.BI \-b " bins"
+Set the number of bins in the two dimensional histogram. (Default is 10.)
+.TP
+.BI \-e " eventfile"
+Set the path to the file containing the list of inspiral events. 
+(Default is eventfile.dat.) The event file must be of the format
+.B END_TIME END_TIME_NS EFF_DISTANCE MASS1 MASS2 MCHIRP ETA SNR CHISQ SIGMASQ.
+Each event should be separated by a new line. Lines beginning with an
+octothorpe are ignored.
+
+.SH DEBUG LEVELS
+The LAL debug level can be specified as an integer or as a string of flags:
+.RS
+.TP
+.B NDEBUG
+No debugging information is printed and memory debugging code is disabled.
+.TP
+.B ERROR
+Error messages are printed.
+.TP
+.B WARNING
+Warning messages are printed.
+.TP
+.B INFO
+Information messages are printed.
+.TP
+.B TRACE
+Function call tracing messages are printed.
+.TP
+.B MEMINFO
+Memory allocation information messages are printed.
+.TP
+.B MEMDBG
+Debugging of memory allocation routines is enabled but no messages are printed.
+.RE
+.PP
+
+The following composite levels are available:
+.RS
+.TP
+.B MSGLVL1
+Equivalent to
+.B ERROR
+.TP
+.B MSGLVL2
+Equivalent to
+.B ERROR | WARNING
+.TP
+.B MSGLVL3
+Equivalent to
+.B ERROR | WARNING | INFO
+.TP
+.B ALLDBG
+All debugging messages are printed.
+.RE
+.PP
+
+For example, the command
+.PP
+.RS
+lalapps_findchirp_post -d "ERROR | INFO"
+.RE
+.PP
+will set the debug level so that error and information messages are printed.
+
+.SH ENVIRONMENT
+.TP
+.BR LAL_DEBUG_LEVEL
+Default LAL debug level to use.
+
+.SH AUTHOR
+Duncan Brown
