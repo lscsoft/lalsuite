@@ -276,6 +276,8 @@ main (  int argc, char **argv )
    randIn.mMin = coarseIn.mMin;
    randIn.mMax = coarseIn.mMax;
    randIn.MMax = 2.*randIn.mMax;
+   coarseIn.MMax = 2*coarseIn.MMax; 
+
    randIn.param.fLower = coarseIn.fLower;
    randIn.param.alpha = coarseIn.alpha;
    randIn.psi0Min = coarseIn.psi0Min;
