@@ -168,7 +168,7 @@ int main( int argc, char *argv[] )
 
   /* parse options */
   parse_options( argc, argv );
-  if (geo_data) {strain_data = 1;}
+  
 
   /* echo command if verbose */
   if ( vrbflg )
@@ -187,6 +187,12 @@ int main( int argc, char *argv[] )
   /* initialize ring search */
   vrbmsg( "call LALRingSearchInit" );
   LAL_CALL( LALRingSearchInit( &status, &params, fargv, fargc ), &status );
+
+  if (geo_data) 
+   {
+    strain_data = 1;
+    params->dynRangeFac = geoScale;
+    }  
 
   /* set IFO name and other filter (test) parameters */
   strncpy( params->ifoName, frchan, 2 );
@@ -1110,7 +1116,11 @@ COMPLEX8FrequencySeries *get_response( UINT4 segsz, double dt, const char *ifo )
     UINT4 i;
     for ( i = 0; i < response->data->length; ++i ) /* set response to unity */
     {
-      response->data->data[i].re = 1;
+      if (geo_data)
+       {response->data->data[i].re = 1 / geoScale;}
+      else  
+       {response->data->data[i].re = 1;}
+
       response->data->data[i].im = 0;
     }
     /* response is dimensionless */
