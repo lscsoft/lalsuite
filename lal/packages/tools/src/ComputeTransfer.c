@@ -295,9 +295,10 @@ LALUpdateCalibration(
   REAL8 first_cal;
   REAL8 duration;
   REAL4 dt;
+  REAL4 i_r4;
   UINT4 n;
   UINT4 i;
-  UINT4 length;
+  UINT4 length = 0;
   
   INITSTATUS( status, "LALUpdateCalibration", COMPUTETRANSFERC );
   ATTATCHSTATUSPTR( status );
@@ -390,10 +391,15 @@ LALUpdateCalibration(
   }
   
   /* find the first point at or before the requested time */
-  i = (UINT4) floor( dt / params->sensingFactor->deltaT );
+  if ( (i_r4 = floor( dt / params->sensingFactor->deltaT ) ) < 0 )
+  {
+    ABORT( status, CALIBRATIONH_ETIME, CALIBRATIONH_MSGETIME );
+  }
+  else
+  {
+    i = (UINT4) i_r4;
+  }
  
-  length = 0;  
-
   /* compute the sum of the calibration factors */
   a.re = a.im = ab.re = ab.im = 0;
   do
