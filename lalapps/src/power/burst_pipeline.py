@@ -10,7 +10,7 @@ This script produced the necessary condor submit and dag files to run
 the standalone burst code on LIGO data
 """
 
-__author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>'
+__author__ = 'Saikat Ray Majumder <saikat@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'[11:-2]
 
@@ -71,9 +71,9 @@ class ScienceSegment:
       dur -= seg_incr
       if (dur < mindur and dur > 0 ):
         subdur = dur
-    if (not play_only) or ( play_only 
+      if (not play_only) or ( play_only 
         and ( isplay(start) or isplay(middle) or isplay(end) ) ):
-      self.used = used
+        self.used = used
 
 
 class BurstPipeline:
@@ -170,12 +170,11 @@ queue
     print >> sub_fh, """\
 universe = %s
 executable = %s
-arguments =  --nseg $(nseg) \\
-  --npts $(npts) \\
-  --numpts $(numpts) \\
+arguments =  --npts $(npts) \\
   --channel $(channel) \\
   --threshold $(alphath) \\
-  --start_time $(start) \\ 
+  --start_time $(jobstart) \\
+  --stop_time $(jobend) \\
   --framecache cache/frcache-$(site)-$(frstart)-$(frend).out \\
   --comment $(usertag) \\
   --cluster \\
@@ -189,8 +188,8 @@ arguments =  --nseg $(nseg) \\
           print >> sub_fh, "--" + arg, self.config[sec][arg], 
     print >> sub_fh, """
 log = %s
-error = burst/burst-$(ifo)-$(start)-$(end).$(cluster).$(process).err
-output = burst/burst-$(ifo)-$(start)-$(end).$(cluster).$(process).out
+error = burst/burst-$(ifo)-$(jobstart)-$(jobend).$(cluster).$(process).err
+output = burst/burst-$(ifo)-$(jobstart)-$(jobend).$(cluster).$(process).out
 notification = never
 queue
 """ % (self.logfile)
@@ -204,12 +203,13 @@ queue
     print >> sub_fh, """\
 universe = standard
 executable = %s
-arguments = --ifo-a H1-$(usertag)-POWER-$(start)-$(duration).xml \\
-  --ifo-b H2-$(usertag)-POWER-$(start)-$(duration).xml \\
-  --outfile coincidence-$(usertag)-POWER-$(start)-$(duration).xml --dt 500
+arguments = --ifo-a H1-$(usertag)-POWER-$(jobstart)-$(duration).xml \\
+  --ifo-b H2-$(usertag)-POWER-$(jobstart)-$(duration).xml \\
+  --outfile H1H2-$(usertag)-POWER-$(jobstart)-$(duration).xml --dt 350 \\
+  --noplayground
 log = %s
-error = coin/coinc-$(start)-$(end).$(cluster).$(process).err
-output = coin/coinc-$(start)-$(end).$(cluster).$(process).out
+error = coin/H1H2-$(jobstart)-$(jobend).$(cluster).$(process).err
+output = coin/H1H2-$(jobstart)-$(jobend).$(cluster).$(process).out
 notification = never
 queue
 """ % (self.config['condor']['coinc'],self.logfile)
@@ -218,12 +218,13 @@ queue
     print >> sub_fh, """\
 universe = standard
 executable = %s
-arguments = --ifo-a coincidence-$(usertag)-POWER-$(start)-$(duration).xml \\
-  --ifo-b L1-$(usertag)-POWER-$(start)-$(duration).xml \\
-  --outfile H1H2L1-$(usertag)-POWER-$(start)-$(duration).xml --dt 500
+arguments = --ifo-a L1-$(usertag)-POWER-$(jobstart)-$(duration).xml \\
+  --ifo-b H1H2-$(usertag)-POWER-$(jobstart)-$(duration).xml \\
+  --outfile H1H2L1-$(usertag)-POWER-$(jobstart)-$(duration).xml --dt 350 \\
+  --noplayground
 log = %s
-error = coin/H1H2L1-$(start)-$(end).$(cluster).$(process).err
-output = coin/H1H2L1-$(start)-$(end).$(cluster).$(process).out
+error = coin/H1H2L1-$(jobstart)-$(jobend).$(cluster).$(process).err
+output = coin/H1H2L1-$(jobstart)-$(jobend).$(cluster).$(process).out
 notification = never
 queue
 """ % (self.config['condor']['coinc'],self.logfile)
@@ -245,6 +246,7 @@ queue
     t      = int(self.config['datacond']['t'])
     srate  = int(self.config['arg']['srate'])
     olap   = int(self.config['arg']['olap'])
+    pad    = int(self.config['burst']['pad-data'])
     usertag = self.config['input']['user-tag']
     cala   = self.config['calib']['cala']
     calb   = self.config['calib']['calb']
@@ -278,62 +280,54 @@ queue
 
     # jobs to run the burst code
     for seg in self.segments:
-      for chunk in seg.chunks:
-        parent = 'frcache_%s_%s_%s' % (siteH1,seg.startpad,seg.endpad)
-        jobname = 'burst_%s_%s_%s' % (ifoH1,chunk.start,chunk.end)
-        print >> dag_fh, 'JOB %s %s.burst.sub' % (jobname,self.basename),
-        print >> dag_fh, """
-VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" chunklen="%d" channel="%s" nseg = "%d" npts = "%d" numpts = "%d" frduration="%s" usertag="%s" alphath="%g"\
-""" % ( jobname,siteH1,ifoH1,seg.startpad,seg.endpad,chunk.start,chunk.end,
-chunk.length,chanH1,(2*chunk.length-1),(t*srate),(((t*srate)-olap)*(2*chunk.length-1)+(3*olap)),seg.endpad-seg.startpad, usertag, alphathH)
-        print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
-        print >> seg_fh, '%d  %d  %d' % (chunk.start, chunk.end, chunk.length)
+      parent = 'frcache_%s_%s_%s' % (siteH1,seg.startpad,seg.endpad)
+      jobname = 'burst_%s_%s_%s' % (ifoH1,seg.start,seg.end)
+      print >> dag_fh, 'JOB %s %s.burst.sub' % (jobname,self.basename),
+      print >> dag_fh, """
+VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" jobstart="%d" jobend="%d" channel="%s" npts = "%d" frduration="%s" usertag="%s" alphath="%g"\
+""" % ( jobname,siteH1,ifoH1,seg.startpad,seg.endpad,seg.start,seg.end,chanH1,(t*srate),seg.endpad-seg.startpad, usertag, alphathH)
+      print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
+      print >> seg_fh, '%d  %d  %d' % (seg.start, seg.end, seg.end-seg.start)
     for seg in self.segments:
-      for chunk in seg.chunks:
-        parent = 'frcache_%s_%s_%s' % (siteL1,seg.startpad,seg.endpad)
-        jobname = 'burst_%s_%s_%s' % (ifoL1,chunk.start,chunk.end)
-        print >> dag_fh, 'JOB %s %s.burst.sub' % (jobname,self.basename),
-        print >> dag_fh, """
-VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" chunklen="%d" channel="%s" nseg = "%d" npts = "%d" numpts = "%d" frduration="%s" usertag="%s" alphath="%g"\
-""" % ( jobname,siteL1,ifoL1,seg.startpad,seg.endpad,chunk.start,chunk.end,
-chunk.length,chanL1,(2*chunk.length-1),(t*srate),(((t*srate)-olap)*(2*chunk.length-1)+(3*olap)),seg.endpad-seg.startpad, usertag, alphathL)
-        print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
+      parent = 'frcache_%s_%s_%s' % (siteL1,seg.startpad,seg.endpad)
+      jobname = 'burst_%s_%s_%s' % (ifoL1,seg.start,seg.end)
+      print >> dag_fh, 'JOB %s %s.burst.sub' % (jobname,self.basename),
+      print >> dag_fh, """
+VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" jobstart="%d" jobend="%d" channel="%s" npts = "%d" frduration="%s" usertag="%s" alphath="%g"\
+""" % ( jobname,siteL1,ifoL1,seg.startpad,seg.endpad,seg.start,seg.end,chanL1,(t*srate),seg.endpad-seg.startpad, usertag, alphathL)
+      print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
     for seg in self.segments:
-      for chunk in seg.chunks:
-        parent = 'frcache_%s_%s_%s' % (siteH2,seg.startpad,seg.endpad)
-        jobname = 'burst_%s_%s_%s' % (ifoH2,chunk.start,chunk.end)
-        print >> dag_fh, 'JOB %s %s.burst.sub' % (jobname,self.basename),
-        print >> dag_fh, """
-VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" chunklen="%d" channel="%s" nseg = "%d" npts = "%d" numpts = "%d" frduration="%s" usertag="%s" alphath="%g"\
-""" % ( jobname,siteH2,ifoH2,seg.startpad,seg.endpad,chunk.start,chunk.end,
-chunk.length,chanH2,(2*chunk.length-1),(t*srate),(((t*srate)-olap)*(2*chunk.length-1)+(3*olap)),seg.endpad-seg.startpad, usertag, alphathH)
-        print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
+      parent = 'frcache_%s_%s_%s' % (siteH2,seg.startpad,seg.endpad)
+      jobname = 'burst_%s_%s_%s' % (ifoH2,seg.start,seg.end)
+      print >> dag_fh, 'JOB %s %s.burst.sub' % (jobname,self.basename),
+      print >> dag_fh, """
+VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" jobstart="%d" jobend="%d" channel="%s" npts = "%d" frduration="%s" usertag="%s" alphath="%g"\
+""" % ( jobname,siteH2,ifoH2,seg.startpad,seg.endpad,seg.start,seg.end,chanH2,(t*srate),seg.endpad-seg.startpad, usertag, alphathH)
+      print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
 
 
 
      # jobs to run the coinc code
     for seg in self.segments:
-      for chunk in seg.chunks:
-        parentA = 'burst_%s_%s_%s' % (ifoH1,chunk.start,chunk.end)
-        parentB = 'burst_%s_%s_%s' % (ifoH2,chunk.start,chunk.end)
-        jobname = 'coinc_1_%s_%s' % (chunk.start,chunk.end)
-        if coin:
-          print >> dag_fh, 'JOB %s %s.coinc1.sub' % (jobname,self.basename),
-          print >> dag_fh, """
-VARS %s ifo="%s" ifo="%s" start="%d" end="%d" chunklen="%d" duration="%d" usertag="%s"\
-""" % ( jobname,ifoH1,ifoH2,chunk.start,chunk.end,chunk.length,(chunk.end-chunk.start+1),usertag)
-          print >> dag_fh, 'PARENT %s %s CHILD %s' % (parentA, parentB, jobname)
+      parentA = 'burst_%s_%s_%s' % (ifoH1,seg.start,seg.end)
+      parentB = 'burst_%s_%s_%s' % (ifoH2,seg.start,seg.end)
+      jobname = 'coinc_1_%s_%s' % (seg.start,seg.end)
+      if coin:
+        print >> dag_fh, 'JOB %s %s.coinc1.sub' % (jobname,self.basename),
+        print >> dag_fh, """
+VARS %s ifo="%s" ifo="%s" jobstart="%d" jobend="%d" duration="%d" usertag="%s"\
+""" % ( jobname,ifoH1,ifoH2,seg.start,seg.end,seg.end-seg.start,usertag)
+        print >> dag_fh, 'PARENT %s %s CHILD %s' % (parentA, parentB, jobname)
     for seg in self.segments:
-      for chunk in seg.chunks:
-        parentA = 'burst_%s_%s_%s' % (ifoL1,chunk.start,chunk.end)
-        parentB = 'coinc_1_%s_%s' % (chunk.start,chunk.end)
-        jobname = 'coinc_2_%s_%s' % (chunk.start,chunk.end)
-        if coin:
-          print >> dag_fh, 'JOB %s %s.coinc2.sub' % (jobname,self.basename),
-          print >> dag_fh, """
-VARS %s ifo="%s" start="%d" end="%d" chunklen="%d" duration="%d" usertag="%s"\
-""" % ( jobname,ifoL1,chunk.start,chunk.end,chunk.length,(chunk.end-chunk.start+1),usertag)
-          print >> dag_fh, 'PARENT %s %s CHILD %s' % (parentA, parentB, jobname)
+      parentA = 'burst_%s_%s_%s' % (ifoL1,seg.start,seg.end)
+      parentB = 'coinc_1_%s_%s' % (seg.start,seg.end)
+      jobname = 'coinc_2_%s_%s' % (seg.start,seg.end)
+      if coin:
+        print >> dag_fh, 'JOB %s %s.coinc2.sub' % (jobname,self.basename),
+        print >> dag_fh, """
+VARS %s ifo="%s" jobstart="%d" jobend="%d" duration="%d" usertag="%s"\
+""" % ( jobname,ifoL1,seg.start,seg.end,seg.end-seg.start,usertag)
+        print >> dag_fh, 'PARENT %s %s CHILD %s' % (parentA, parentB, jobname)
 
 
     dag_fh.close()
