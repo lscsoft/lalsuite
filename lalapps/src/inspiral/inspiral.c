@@ -83,7 +83,7 @@ void ckpt_and_exit( void );
     { \
       fprintf( stderr, "error: frame stream contains gaps\n" ); \
       exit( 1 ); \
-    } \
+    }
 
 /*
  *
@@ -500,6 +500,9 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALFrSeek( &status, &(chan.epoch), frStream ), &status );
   frChan.name = fqChanName;
 
+  /* XXX check that there are no gaps in the data XXX */
+  FR_CHECK_GAPS;
+
   if ( geoData )
   {
     /* determine the sample rate of the raw data */
@@ -507,7 +510,7 @@ int main( int argc, char *argv[] )
         &status );
 
     /* XXX check that there are no gaps in the data XXX */
-    FR_CHECK_GAPS
+    FR_CHECK_GAPS;
 
     /* copy the data paramaters from the GEO channel to input data channel */
     LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", geoChan.name );
@@ -523,7 +526,7 @@ int main( int argc, char *argv[] )
         &status );
 
     /* XXX check that there are no gaps in the data XXX */
-    FR_CHECK_GAPS
+    FR_CHECK_GAPS;
   }
 
   /* store the input sample rate */
@@ -585,7 +588,7 @@ int main( int argc, char *argv[] )
         &status);
 
     /* XXX check that there are no gaps in the data XXX */
-    FR_CHECK_GAPS
+    FR_CHECK_GAPS;
 
     if ( vrbflg ) fprintf( stdout, "done\n" );
 
@@ -627,7 +630,7 @@ int main( int argc, char *argv[] )
         &status );
 
     /* XXX check that there are no gaps in the data XXX */
-    FR_CHECK_GAPS
+    FR_CHECK_GAPS;
   }
   memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
 
