@@ -1,9 +1,32 @@
 \chapter{Package \texttt{burstsearch}}
 
-A set of functions to implement the excess power search technique which was
-suggested in Ref.~\cite{fh:1998} and later independently invented in
-Ref.~\cite{acdhp:1999}.  The implementation here is described in detail in
-Ref.~\cite{abcf:2000}. 
+Functions for the implementation of the standard burst searches:
+
+\begin{itemize}
+
+\item A standard interface for burst event trigger generators.
+
+\item A function for the estimation of burst parameters.
+
+\item A wrapper for the TFCLUSTERS algorithm.
+
+\item A wrapper for the SLOPE algorithm.
+
+\item A set of functions to implement the excess power search technique which was suggested in Ref.~\cite{fh:1998} and later independently invented in Ref.~\cite{acdhp:1999}.  The implementation here is described in detail in Ref.~\cite{abcf:2000}. 
+
+\end{itemize}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{StdBurstSearchH}
+\newpage
+\input{StdBurstSearchC}
+\newpage
+\input{TFClustersETGC}
+\newpage
+\input{SlopeETGC}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

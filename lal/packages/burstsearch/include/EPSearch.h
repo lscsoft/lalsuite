@@ -12,6 +12,7 @@ $Id$
 #include <lal/ExcessPower.h>
 #include <lal/BurstSearch.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/IIRFilter.h>
 #include <lal/LALRCSID.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
@@ -111,6 +112,7 @@ tagEPDataSegment
   INT4                          newLock;
   INT4                          newCal;
   INT4                          number;
+  REAL4IIRFilter               *preprocessing_filter;
 }
 EPDataSegment;
 
