@@ -1,25 +1,27 @@
-/*-----------------------------------------------------------------------
- *
- * File Name: ComplexFFT.h
- *
- * Author: Creighton, J. D. E.
- *
- * Revision: $Id$
- *
- *-----------------------------------------------------------------------
- *
- * NAME
- * ComplexFFT.h
- *
- * SYNOPSIS
- * #include <lal/ComplexFFT.h>
- *
- * DESCRIPTION
- *
- * DIAGNOSTICS
- *
- *-----------------------------------------------------------------------
- */
+#if 0 /* autodoc block */
+
+<lalVerbatim file="ComplexFFTHV">
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+
+\section{Header \texttt{ComplexFFT.h}}
+\label{s:ComplexFFT.h}
+
+Generates random numbers.
+
+\subsection*{Synopsis}
+\begin{verbatim}
+#include <lal/ComplexFFT.h>
+\end{verbatim}
+
+Perform complex-to-complex fast Fourier transforms of vectors using the
+package FFTW~\cite{fj:1998}.
+
+</lalLaTeX>
+
+#endif /* autodoc block */
 
 #ifndef _COMPLEXFFT_H
 #define _COMPLEXFFT_H
@@ -32,19 +34,49 @@ extern "C" {
 
 NRCSID( COMPLEXFFTH, "$Id$" );
 
-#define COMPLEXFFT_ENULL 1
-#define COMPLEXFFT_ENNUL 2
-#define COMPLEXFFT_ESIZE 4
-#define COMPLEXFFT_ESZMM 8
-#define COMPLEXFFT_ESLEN 16
-#define COMPLEXFFT_ESAME 32
+#if 0 /* autodoc block */
 
-#define COMPLEXFFT_MSGENULL "Null pointer"
-#define COMPLEXFFT_MSGENNUL "Non-null pointer"
-#define COMPLEXFFT_MSGESIZE "Invalid input size"
-#define COMPLEXFFT_MSGESZMM "Size mismatch"
-#define COMPLEXFFT_MSGESLEN "Invalid/mismatched sequence lengths"
-#define COMPLEXFFT_MSGESAME "Input/Output data vectors are the same"
+<lalLaTeX>
+\subsection*{Error conditions}
+\input{ComplexFFTHErrTab}
+</lalLaTeX>
+
+<lalErrTable file="ComplexFFTHErrTab">
+
+#endif /* autodoc block */
+
+#define COMPLEXFFTH_ENULL 1
+#define COMPLEXFFTH_ENNUL 2
+#define COMPLEXFFTH_ESIZE 4
+#define COMPLEXFFTH_ESZMM 8
+#define COMPLEXFFTH_ESLEN 16
+#define COMPLEXFFTH_ESAME 32
+
+#define COMPLEXFFTH_MSGENULL "Null pointer"
+#define COMPLEXFFTH_MSGENNUL "Non-null pointer"
+#define COMPLEXFFTH_MSGESIZE "Invalid input size"
+#define COMPLEXFFTH_MSGESZMM "Size mismatch"
+#define COMPLEXFFTH_MSGESLEN "Invalid/mismatched sequence lengths"
+#define COMPLEXFFTH_MSGESAME "Input/Output data vectors are the same"
+
+#if 0 /* autodoc block */
+
+</lalErrTable>
+
+<lalLaTeX>
+
+\subsection*{Structures}
+
+\begin{verbatim}
+typedef struct tagComplexFFTPlan ComplexFFTPlan;
+\end{verbatim}
+
+This structure contains the parameters necessary for performing an FFT of a
+given size and direction.  The contents should not be manually adjusted.
+
+</lalLaTeX>
+
+#endif /* autodoc block */
 
 typedef struct
 tagComplexFFTPlan
@@ -55,6 +87,13 @@ tagComplexFFTPlan
 }
 ComplexFFTPlan;
 
+#if 0 /* autodoc block */
+
+<lalLaTeX>
+\newpage\input{ComplexFFTC}
+</lalLaTeX>
+
+#endif /* autodoc block */
 
 void
 LALEstimateFwdComplexFFTPlan (
@@ -99,6 +138,13 @@ LALCOMPLEX8VectorFFT (
     ComplexFFTPlan *plan
     );
 
+#if 0 /* autodoc block */
+
+<lalLaTeX>
+\newpage\input{ComplexFFTTestC}
+</lalLaTeX>
+
+#endif /* autodoc block */
 
 #ifdef  __cplusplus
 }

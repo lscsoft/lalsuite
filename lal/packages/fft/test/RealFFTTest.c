@@ -1,29 +1,40 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: RealFFTTest.c
- * 
- * Author: Creighton, J. D. E.
- * 
- * Revision: $Id$
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
- *   main()
- *
- * SYNOPSIS 
- * 
- * DESCRIPTION 
- *   Tests real FFT functions.
- * 
- * DIAGNOSTICS
- * 
- * CALLS
- * 
- * NOTES
- * 
- *-----------------------------------------------------------------------
- */
+#if 0 /* autodoc block */
+
+<lalVerbatim file="RealFFTTestCV">
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+
+\subsection{Program \texttt{RealFFTTest.c}}
+\label{ss:RealFFTTest.c}
+
+Tests the routines in \verb+RealFFT.h+.
+
+\subsection*{Usage}
+\begin{verbatim}
+RealFFTTest
+\end{verbatim}
+
+\subsubsection*{Description}
+\subsubsection*{Exit codes}
+\begin{tabular}{|c|l|}
+\hline
+ Code & Explanation                   \\
+\hline
+\tt 0 & Success, normal exit.         \\
+\tt 1 & Subroutine failed.            \\
+\hline
+\end{tabular}
+
+\subsubsection*{Uses}
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{RealFFTTestCV}}
+
+</lalLaTeX>
+
+#endif /* autodoc block */
 
 #include <stdio.h>
 #include <math.h>

@@ -1,29 +1,40 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: RealPowerSpectrumTest.c
- * 
- * Author: Creighton, J. D. E.
- * 
- * Revision: $Id$
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
- *   main()
- *
- * SYNOPSIS 
- * 
- * DESCRIPTION 
- *   Constructs real power spectra of data with a variety of widows.
- * 
- * DIAGNOSTICS
- * 
- * CALLS
- * 
- * NOTES
- * 
- *-----------------------------------------------------------------------
- */
+#if 0 /* autodoc block */
+
+<lalVerbatim file="RealPowerSpectrumTestCV">
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+
+\subsection{Program \texttt{RealPowerSpectrumTest.c}}
+\label{ss:RealPowerSpectrumTest.c}
+
+Tests the routines in \verb+RealFFT.h+.
+
+\subsection*{Usage}
+\begin{verbatim}
+RealPowerSpectrumTest
+\end{verbatim}
+
+\subsubsection*{Description}
+\subsubsection*{Exit codes}
+\begin{tabular}{|c|l|}
+\hline
+ Code & Explanation                   \\
+\hline
+\tt 0 & Success, normal exit.         \\
+\tt 1 & Subroutine failed.            \\
+\hline
+\end{tabular}
+
+\subsubsection*{Uses}
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{RealPowerSpectrumTestCV}}
+
+</lalLaTeX>
+
+#endif /* autodoc block */
 
 #include <stdio.h>
 #include <math.h>
@@ -40,7 +51,7 @@ int lalDebugLevel = 2;
 int main( void )
 {
   const INT4 m = NumberWindowTypes;
-  const INT4 n = 65536;
+  const INT4 n = 64;
 
   static LALStatus status;
 
@@ -70,7 +81,7 @@ int main( void )
 
   /* initialize raw data vector */
   for (k = 0; k < (INT4) hvec->length; ++k)
-    hvec->data[k] = sin(0.001*k);
+    hvec->data[k] = sin(0.5*k);
 
   /* create window sum-of-squares vector */
   LALSCreateVector (&status, &wss, m);

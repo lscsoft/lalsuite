@@ -1,31 +1,174 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: RealFFT.c
- * 
- * Author: Creighton, J. D. E.
- * 
- * Revision: $Id$
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
- * RealFFT
- * 
- * SYNOPSIS 
- *
- *
- * DESCRIPTION 
- * Creates plans for forward and inverse real FFTs.
- * Performs foward and inverse real FFTs on vectors and sequences of vectors.
- * 
- * DIAGNOSTICS 
- *
- * CALLS
- * 
- * NOTES
- * 
- *-----------------------------------------------------------------------
- */
+#if 0  /* autodoc block */
+
+<lalVerbatim file="RealFFTCV">
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+\subsection{Module \texttt{RealFFT.c}}
+\label{ss:RealFFT.c}
+
+Functions for performing real FFTs.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{RealFFTCP}
+\index{\texttt{LALEstimateFwdRealFFTPlan()}}
+\index{\texttt{LALEstimateInvRealFFTPlan()}}
+\index{\texttt{LALMeasureFwdRealFFTPlan()}}
+\index{\texttt{LALMeasureInvRealFFTPlan()}}
+\index{\texttt{LALDestroyRealFFTPlan()}}
+\index{\texttt{LALREAL4VectorFFT()}}
+\index{\texttt{LALREAL4VectorSequenceFFT()}}
+\index{\texttt{LALFwdRealFFT()}}
+\index{\texttt{LALInvRealFFT()}}
+\index{\texttt{LALRealPowerSpectrum()}}
+\index{\texttt{LALFwdRealSequenceFFT()}}
+\index{\texttt{LALInvRealSequenceFFT()}}
+\index{\texttt{LALRealSequencePowerSpectrum()}}
+
+\subsubsection*{Description}
+
+This package provides a LAL-style interface with the FFTW fast Fourier
+transform package~\cite{fj:1998}.
+
+The routines \texttt{LALEstimateFwdRealFFTPlan()},
+\texttt{LALEstimateInvRealFFTPlan()}, \texttt{LALMeasureFwdRealFFTPlan()}, and
+\texttt{LALMeasureInvRealFFTPlan()} create plans for computing the forward
+(real-to-complex) and inverse (complex-to-real) FFTs.  The optimum plan is
+either estimated (reasonably fast) or measured (can be time-consuming, but
+gives better performance).  The routine \texttt{LALDestroyRealFFTPlan()}
+destroys any of these flavours of plans.
+
+The routines \texttt{LALREAL4VectorFFT()} and
+\texttt{LALREAL4VectorSequenceFFT()} are essentially direct calls to FFTW
+routines without any re-packing of the data.  These routines should not be used
+unless the user understands the packing used in FFTW.
+
+The routines \texttt{LALFwdRealFFT()} and \texttt{LALInvRealFFT()} perform the
+forward (real-to-complex) and inverse (complex-to-real) FFTs using the plans.
+The discrete Fourier transform $H_k$, $k=0\ldots \lfloor n/2\rfloor$ ($n/2$ rounded down),
+of a vector $h_j$, $j=0\ldots n-1$, of length $n$ is defined by
+\[
+  H_k = \sum_{j=0}^{n-1} h_j e^{2\pi ijk/n}
+\]
+and, similarly, the inverse Fourier transform is defined by
+\[
+  h_j = \frac{1}{n}\sum_{k=0}^{\lfloor n/2\rfloor} H_k e^{-2\pi ijk/n}.
+\]
+However, the present implementation of the inverse FFT omits the factor of
+$1/n$.
+
+The routines in this package require that the vector $h_j$, $j=0\ldots n-1$ be
+real; consequently, $H_k=H_{n-k}^\ast$ ($0\le k\le\lfloor n/2\rfloor$), i.e., the negative
+frequency Fourier components are the complex conjugate of the positive
+frequency Fourier components when the data is real.  Therefore, one need
+compute and store only the first $\lfloor n/2\rfloor+1$ components of $H_k$; only
+the values of $H_k$ for $k=0\ldots \lfloor n/2\rfloor$ are returned (integer division is
+rounded down, e.g., $\lfloor 7/2\rfloor=3$).
+
+The routine \texttt{LALRealPowerSpectrum()} computes the power spectrum
+$P_k=|H_k|^2$, $k=0\ldots \lfloor n/2\rfloor$, of the data $h_j$, $j=0\ldots n-1$.
+
+The routines \texttt{LALFwdRealSequenceFFT()} and
+\texttt{LALInvRealSequenceFFT()} operate on sequences of vectors
+$\{h^{(0)}_{j_0},\ldots,h^{(m-1)}_{j_{m-1}}\}$, $j_0,\ldots,j_{m-1}=0\ldots
+n-1$, to produce the Fourier components
+$\{H^{(0)}_{k_0},\ldots,H^{(m-1)}_{k_{m-1}}\}$, $k_0,\ldots,k_{m-1}=0\ldots
+\lfloor n/2\rfloor$, and vice versa respectively.  Here, $m$ is the length of the sequence
+of vectors and $n$ and $\lfloor n/2\rfloor+1$ are the lengths of the vectors themselves.
+Similarly, the routine \texttt{LALRealSequencePowerSpectrum()} computes the power
+spectra $\{P^{(0)}_{k_0}=|H^(0)_{k_0}|^2,\ldots,P^{(m-1)}_{k_{m-1}}=
+|H^{(m-1)}_{k_{m-1}}|^2\}$, $k_0,\ldots,k_{m-1}=0\ldots n/2$, of the sequence
+of vectors $\{h^{(0)}_{j_0},\ldots,h^{(m-1)}_{j_{m-1}}\}$,
+$j_0,\ldots,j_{m-1}=0\ldots n-1$.
+
+\subsubsection*{Operating Instructions}
+
+\begin{verbatim}
+const INT4 m = 4;   /* example length of sequence of vectors */
+const INT4 n = 32;  /* example vector length */
+
+static LALStatus status; 
+
+RealFFTPlan            *pfwd = NULL;
+RealFFTPlan            *pinv = NULL;
+REAL4Vector            *hvec = NULL;
+COMPLEX8Vector         *Hvec = NULL;
+REAL4Vector            *Pvec = NULL;
+REAL4VectorSequence    *hseq = NULL;
+COMPLEX8VectorSequence *Hseq = NULL;
+REAL4VectorSequence    *Pseq = NULL;
+CreateVectorSequenceIn  seqinp;
+CreateVectorSequenceIn  seqout;
+
+/* create data vector and sequence */
+seqinp.length       = m;
+seqinp.vectorLength = n;
+seqout.length       = m;
+seqout.vectorLength = n/2 + 1;
+
+LALEstimateFwdRealFFTPlan( &status, &pfwd, n );
+LALEstimateInvRealFFTPlan( &status, &pinv, n );
+LALSCreateVector( &status, &hvec, n );
+LALCCreateVector( &status, &Hvec, n/2 + 1 );
+LALSCreateVector( &status, &Pvec, n/2 + 1 );
+LALSCreateVectorSequence( &status, &hseq, &seqinp );
+LALCCreateVectorSequence( &status, &Hseq, &seqout );
+LALSCreateVectorSequence( &status, &Pseq, &seqout );
+
+/* assign data ... */
+
+/* perform FFTs */
+LALFwdRealFFT( &status, Hvec, hvec, pfwd );
+LALInvRealFFT( &status, hvec, Hvec, pinv );
+LALRealPowerSpectrum( &status, Pvec, hvec, pfwd );
+LALFwdRealSequenceFFT( &status, Hseq, hseq, pfwd );
+LALInvRealSequenceFFT( &status, hseq, Hseq, pinv );
+LALRealSequencePowerSpectrum( &status, Pseq, hseq, pfwd );
+
+/* destroy plans, vectors, and sequences */
+LALDestroyRealFFTPlan( &status, &pfwd );
+LALDestroyRealFFTPlan( &status, &pinv );
+LALSDestroyVector( &status, &hvec );
+LALCDestroyVector( &status, &Hvec );
+LALSDestroyVector( &status, &Pvec );
+LALSDestroyVectorSequence( &status, &hseq );
+LALCDestroyVectorSequence( &status, &Hseq );
+LALSDestroyVectorSequence( &status, &Pseq );
+\end{verbatim}
+
+\subsubsection*{Algorithm}
+
+The FFTW~\cite{fj:1998} is used.
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\begin{enumerate}
+\item The sign convention used here agrees with the definition in
+\textit{Numerical Recipes}~\cite{ptvf:1992}, but is opposite from the one used
+by FFTW~\cite{fj:1998}.
+\item The result of the inverse FFT must be multiplied by $1/n$ to recover the
+original vector.  This is unlike the \textit{Numerical
+Recipes}~\cite{ptvf:1992} convension where the factor is $2/n$ for real FFTs.
+\item The size $n$ of the transform can be any positive integer; the
+performance is $O(n\log n)$.  However, better performance is obtained if $n$
+is the product of powers of 2, 3, 5, 7, and zero or one power of either 11 or
+13.  Transforms when $n$ is a power of 2 are especially fast.  See
+Ref.~\cite{fj:1998}.
+\item All of these routines leave the input array undamaged.  (Except for
+\verb+LALREAL4VectorFFT+ and \verb+LALREAL4VectorSequenceFFT+.)
+\item LALMalloc() is used by all the fftw routines.
+\end{enumerate}
+
+\vfill{\footnotesize\input{RealFFTCV}}
+
+</lalLaTeX>
+
+#endif /* autodoc block */
+
 
 #include <config.h>
 
@@ -92,29 +235,30 @@ static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 #define FFTWHOOKS \
   do { fftw_malloc_hook = LALMalloc; fftw_free_hook = LALFree; } while(0)
 
+/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALEstimateFwdRealFFTPlan (
-    LALStatus       *stat,
+    LALStatus    *stat,
     RealFFTPlan **plan,
     UINT4         size
     )
-{
+{ /* </lalVerbatim> */
   INITSTATUS (stat, "LALEstimateFwdRealFFTPlan", REALFFTC);
 
   FFTWHOOKS;
 
   /* make sure that the argument is not NULL */
-  ASSERT (plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* make sure that the plan has not been previously defined */
-  ASSERT (*plan == NULL, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
+  ASSERT (*plan == NULL, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
 
   /* make sure that the requested size is valid */
-  ASSERT (size > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
+  ASSERT (size > 0, stat, REALFFTH_ESIZE, REALFFTH_MSGESIZE);
 
   /* allocate memory */
   *plan = (RealFFTPlan *) LALMalloc (sizeof(RealFFTPlan));
-  ASSERT (*plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (*plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* assign plan fields */
   (*plan)->size = size;
@@ -133,36 +277,37 @@ LALEstimateFwdRealFFTPlan (
   {
     LALFree( *plan );
     *plan = NULL;
-    ABORT( stat, REALFFT_ENULL, REALFFT_MSGENULL );
+    ABORT( stat, REALFFTH_ENULL, REALFFTH_MSGENULL );
   }
 
   /* normal exit */
   RETURN (stat);
 }
 
+/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALEstimateInvRealFFTPlan (
-    LALStatus       *stat,
+    LALStatus    *stat,
     RealFFTPlan **plan,
     UINT4         size
     )
-{
+{ /* </lalVerbatim> */
   INITSTATUS (stat, "LALEstimateInvRealFFTPlan", REALFFTC);
  
   FFTWHOOKS;
 
   /* make sure that the argument is not NULL */
-  ASSERT (plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* make sure that the plan has not been previously defined */
-  ASSERT (*plan == NULL, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
+  ASSERT (*plan == NULL, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
 
   /* make sure that the requested size is valid */
-  ASSERT (size > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
+  ASSERT (size > 0, stat, REALFFTH_ESIZE, REALFFTH_MSGESIZE);
 
   /* allocate memory */
   *plan = (RealFFTPlan *) LALMalloc (sizeof(RealFFTPlan));
-  ASSERT (*plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (*plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* assign plan fields */
   (*plan)->size = size;
@@ -181,36 +326,37 @@ LALEstimateInvRealFFTPlan (
   {
     LALFree( *plan );
     *plan = NULL;
-    ABORT( stat, REALFFT_ENULL, REALFFT_MSGENULL );
+    ABORT( stat, REALFFTH_ENULL, REALFFTH_MSGENULL );
   }
 
   /* normal exit */
   RETURN (stat);
 }
 
+/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALMeasureFwdRealFFTPlan (
-    LALStatus       *stat,
+    LALStatus    *stat,
     RealFFTPlan **plan,
     UINT4         size
     )
-{
+{ /* </lalVerbatim> */
   INITSTATUS (stat, "LALMeasureFwdRealFFTPlan", REALFFTC);
 
   FFTWHOOKS;
 
   /* make sure that the argument is not NULL */
-  ASSERT (plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* make sure that the plan has not been previously defined */
-  ASSERT (*plan == NULL, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
+  ASSERT (*plan == NULL, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
 
   /* make sure that the requested size is valid */
-  ASSERT (size > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
+  ASSERT (size > 0, stat, REALFFTH_ESIZE, REALFFTH_MSGESIZE);
 
   /* allocate memory */
   *plan = (RealFFTPlan *) LALMalloc (sizeof(RealFFTPlan));
-  ASSERT (*plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (*plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* assign plan fields */
   (*plan)->size = size;
@@ -229,36 +375,37 @@ LALMeasureFwdRealFFTPlan (
   {
     LALFree( *plan );
     *plan = NULL;
-    ABORT( stat, REALFFT_ENULL, REALFFT_MSGENULL );
+    ABORT( stat, REALFFTH_ENULL, REALFFTH_MSGENULL );
   }
 
   /* normal exit */
   RETURN (stat);
 }
 
+/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALMeasureInvRealFFTPlan (
-    LALStatus       *stat,
+    LALStatus    *stat,
     RealFFTPlan **plan,
     UINT4         size
     )
-{
+{ /* </lalVerbatim> */
   INITSTATUS (stat, "LALMeasureInvRealFFTPlan", REALFFTC);
 
   FFTWHOOKS;
 
   /* make sure that the argument is not NULL */
-  ASSERT (plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* make sure that the plan has not been previously defined */
-  ASSERT (*plan == NULL, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
+  ASSERT (*plan == NULL, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
 
   /* make sure that the requested size is valid */
-  ASSERT (size > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
+  ASSERT (size > 0, stat, REALFFTH_ESIZE, REALFFTH_MSGESIZE);
 
   /* allocate memory */
   *plan = (RealFFTPlan *) LALMalloc (sizeof(RealFFTPlan));
-  ASSERT (*plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (*plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* assign plan fields */
   (*plan)->size = size;
@@ -277,28 +424,29 @@ LALMeasureInvRealFFTPlan (
   {
     LALFree( *plan );
     *plan = NULL;
-    ABORT( stat, REALFFT_ENULL, REALFFT_MSGENULL );
+    ABORT( stat, REALFFTH_ENULL, REALFFTH_MSGENULL );
   }
 
   /* normal exit */
   RETURN (stat);
 }
 
+/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALDestroyRealFFTPlan (
-    LALStatus       *stat,
+    LALStatus    *stat,
     RealFFTPlan **plan
     )
-{
+{ /* </lalVerbatim> */
   INITSTATUS (stat, "LALDestroyRealFFTPlan", REALFFTC);
 
   FFTWHOOKS;
 
   /* make sure that the argument is not NULL */
-  ASSERT (plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* check that the plan is not NULL */
-  ASSERT (*plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (*plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* destroy plan and set to NULL pointer */
   pthread_mutex_lock( &mut );  
@@ -312,34 +460,35 @@ LALDestroyRealFFTPlan (
 }
 
 
+/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALREAL4VectorFFT (
-    LALStatus      *stat,
+    LALStatus   *stat,
     REAL4Vector *vout,
     REAL4Vector *vinp,
     RealFFTPlan *plan
     )
-{
+{ /* </lalVerbatim> */
   INITSTATUS (stat, "LALREAL4VectorFFT", REALFFTC);
 
   FFTWHOOKS;
 
   /* make sure that the arguments are not NULL */
-  ASSERT (vout, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-  ASSERT (vinp, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-  ASSERT (plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (vout, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
+  ASSERT (vinp, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
+  ASSERT (plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* make sure that the data exists */
-  ASSERT (vout->data, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-  ASSERT (vinp->data, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (vout->data, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
+  ASSERT (vinp->data, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* make sure that it is not the same data! */
-  ASSERT (vout->data != vinp->data, stat, REALFFT_ESAME, REALFFT_MSGESAME);
+  ASSERT (vout->data != vinp->data, stat, REALFFTH_ESAME, REALFFTH_MSGESAME);
 
   /* make sure that the lengths agree */
-  ASSERT (plan->size > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
-  ASSERT (vout->length == plan->size, stat, REALFFT_ESZMM, REALFFT_MSGESZMM);
-  ASSERT (vinp->length == plan->size, stat, REALFFT_ESZMM, REALFFT_MSGESZMM);
+  ASSERT (plan->size > 0, stat, REALFFTH_ESIZE, REALFFTH_MSGESIZE);
+  ASSERT (vout->length == plan->size, stat, REALFFTH_ESZMM, REALFFTH_MSGESZMM);
+  ASSERT (vinp->length == plan->size, stat, REALFFTH_ESZMM, REALFFTH_MSGESZMM);
 
   rfftw_one (
       (rfftw_plan) plan->plan,
@@ -352,39 +501,40 @@ LALREAL4VectorFFT (
 }
 
 
+/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALREAL4VectorSequenceFFT (
-    LALStatus              *stat,
+    LALStatus           *stat,
     REAL4VectorSequence *vout,
     REAL4VectorSequence *vinp,
     RealFFTPlan         *plan
     )
-{
+{ /* </lalVerbatim> */
   INITSTATUS (stat, "LALREAL4VectorSequenceFFT", REALFFTC);
 
   FFTWHOOKS;
 
   /* make sure that the arguments are not NULL */
-  ASSERT (vout, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-  ASSERT (vinp, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-  ASSERT (plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (vout, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
+  ASSERT (vinp, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
+  ASSERT (plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* make sure that the data exists */
-  ASSERT (vout->data, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-  ASSERT (vinp->data, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (vout->data, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
+  ASSERT (vinp->data, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* make sure that it is not the same data! */
-  ASSERT (vout->data != vinp->data, stat, REALFFT_ESAME, REALFFT_MSGESAME);
+  ASSERT (vout->data != vinp->data, stat, REALFFTH_ESAME, REALFFTH_MSGESAME);
 
   /* make sure that the lengths agree */
-  ASSERT (plan->size > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
+  ASSERT (plan->size > 0, stat, REALFFTH_ESIZE, REALFFTH_MSGESIZE);
   ASSERT (vout->vectorLength == plan->size, stat,
-          REALFFT_ESZMM, REALFFT_MSGESZMM);
+          REALFFTH_ESZMM, REALFFTH_MSGESZMM);
   ASSERT (vinp->vectorLength == plan->size, stat,
-          REALFFT_ESZMM, REALFFT_MSGESZMM);
+          REALFFTH_ESZMM, REALFFTH_MSGESZMM);
 
-  ASSERT (vout->length > 0, stat, REALFFT_ESLEN, REALFFT_MSGESLEN);
-  ASSERT (vinp->length == vout->length, stat, REALFFT_ESLEN, REALFFT_MSGESLEN);
+  ASSERT (vout->length > 0, stat, REALFFTH_ESLEN, REALFFTH_MSGESLEN);
+  ASSERT (vinp->length == vout->length, stat, REALFFTH_ESLEN, REALFFTH_MSGESLEN);
   rfftw (
       (rfftw_plan) plan->plan, vout->length,
       (fftw_real *)vinp->data, 1, plan->size,
@@ -396,14 +546,15 @@ LALREAL4VectorSequenceFFT (
 }
 
 
+/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALFwdRealFFT (
-    LALStatus         *stat,
+    LALStatus      *stat,
     COMPLEX8Vector *vout,
     REAL4Vector    *vinp,
     RealFFTPlan    *plan
     )
-{
+{ /* </lalVerbatim> */
   REAL4Vector *vtmp = NULL;
   UINT4        n;
   UINT4        k;
@@ -414,23 +565,23 @@ LALFwdRealFFT (
   FFTWHOOKS;
 
   /* make sure that the arguments are not NULL */
-  ASSERT (vout, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-  ASSERT (vinp, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-  ASSERT (plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (vout, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
+  ASSERT (vinp, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
+  ASSERT (plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* make sure that the data pointers are not NULL */
-  ASSERT (vout->data, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
-  ASSERT (vinp->data, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
-  ASSERT (plan->plan, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
+  ASSERT (vout->data, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
+  ASSERT (vinp->data, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
+  ASSERT (plan->plan, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
 
   /* make sure that sizes agree */
   n = plan->size;
-  ASSERT (n > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
-  ASSERT (vinp->length == n, stat, REALFFT_ESZMM, REALFFT_MSGESZMM);
-  ASSERT (vout->length == n/2 + 1, stat, REALFFT_ESZMM, REALFFT_MSGESZMM);
+  ASSERT (n > 0, stat, REALFFTH_ESIZE, REALFFTH_MSGESIZE);
+  ASSERT (vinp->length == n, stat, REALFFTH_ESZMM, REALFFTH_MSGESZMM);
+  ASSERT (vout->length == n/2 + 1, stat, REALFFTH_ESZMM, REALFFTH_MSGESZMM);
 
   /* make sure that the correct plan is being used */
-  ASSERT (plan->sign == 1, stat, REALFFT_ESIGN, REALFFT_MSGESIGN);
+  ASSERT (plan->sign == 1, stat, REALFFTH_ESIGN, REALFFTH_MSGESIGN);
 
   /* create temporary vector and check that it was created */
   TRY (LALCreateVector (stat->statusPtr, &vtmp, n), stat);
@@ -465,14 +616,15 @@ LALFwdRealFFT (
 }
 
 
+/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALInvRealFFT (
-    LALStatus         *stat,
+    LALStatus      *stat,
     REAL4Vector    *vout,
     COMPLEX8Vector *vinp,
     RealFFTPlan    *plan
     )
-{
+{ /* </lalVerbatim> */
   REAL4Vector *vtmp = NULL;
   UINT4        n;
   UINT4        k;
@@ -483,23 +635,23 @@ LALInvRealFFT (
   FFTWHOOKS;
 
   /* make sure that the arguments are not NULL */
-  ASSERT (vout, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-  ASSERT (vinp, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-  ASSERT (plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (vout, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
+  ASSERT (vinp, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
+  ASSERT (plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* make sure that the data pointers are not NULL */
-  ASSERT (vout->data, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
-  ASSERT (vinp->data, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
-  ASSERT (plan->plan, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
+  ASSERT (vout->data, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
+  ASSERT (vinp->data, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
+  ASSERT (plan->plan, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
 
   /* make sure that sizes agree */
   n = plan->size;
-  ASSERT (n > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
-  ASSERT (vinp->length == n/2 + 1, stat, REALFFT_ESZMM, REALFFT_MSGESZMM);
-  ASSERT (vout->length == n, stat, REALFFT_ESZMM, REALFFT_MSGESZMM);
+  ASSERT (n > 0, stat, REALFFTH_ESIZE, REALFFTH_MSGESIZE);
+  ASSERT (vinp->length == n/2 + 1, stat, REALFFTH_ESZMM, REALFFTH_MSGESZMM);
+  ASSERT (vout->length == n, stat, REALFFTH_ESZMM, REALFFTH_MSGESZMM);
 
   /* make sure that the correct plan is being used */
-  ASSERT (plan->sign == -1, stat, REALFFT_ESIGN, REALFFT_MSGESIGN);
+  ASSERT (plan->sign == -1, stat, REALFFTH_ESIGN, REALFFTH_MSGESIGN);
 
   /* create temporary vector and check that it was created */
   TRY (LALCreateVector (stat->statusPtr, &vtmp, n), stat);
@@ -520,7 +672,7 @@ LALInvRealFFT (
     vtmp->data[n/2] = vinp->data[n/2].re;
 
     /* make sure the Nyquist component is purely real */
-    ASSERT (vinp->data[n/2].im == 0, stat, REALFFT_EDATA, REALFFT_MSGEDATA);
+    ASSERT (vinp->data[n/2].im == 0, stat, REALFFTH_EDATA, REALFFTH_MSGEDATA);
   }
 
   /* perform the FFT */
@@ -535,14 +687,15 @@ LALInvRealFFT (
 }
 
 
+/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALRealPowerSpectrum (
-    LALStatus      *stat,
+    LALStatus   *stat,
     REAL4Vector *vout,
     REAL4Vector *vinp,
     RealFFTPlan *plan
     )
-{
+{ /* </lalVerbatim> */
   REAL4Vector *vtmp = NULL;
   UINT4        n;
   UINT4        k;
@@ -553,23 +706,23 @@ LALRealPowerSpectrum (
   FFTWHOOKS;
 
   /* make sure that the arguments are not NULL */
-  ASSERT (vout, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-  ASSERT (vinp, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-  ASSERT (plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (vout, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
+  ASSERT (vinp, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
+  ASSERT (plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* make sure that the data pointers are not NULL */
-  ASSERT (vout->data, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
-  ASSERT (vinp->data, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
-  ASSERT (plan->plan, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
+  ASSERT (vout->data, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
+  ASSERT (vinp->data, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
+  ASSERT (plan->plan, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
 
   /* make sure that sizes agree */
   n = plan->size;
-  ASSERT (n > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
-  ASSERT (vinp->length == n, stat, REALFFT_ESZMM, REALFFT_MSGESZMM);
-  ASSERT (vout->length == n/2 + 1, stat, REALFFT_ESZMM, REALFFT_MSGESZMM);
+  ASSERT (n > 0, stat, REALFFTH_ESIZE, REALFFTH_MSGESIZE);
+  ASSERT (vinp->length == n, stat, REALFFTH_ESZMM, REALFFTH_MSGESZMM);
+  ASSERT (vout->length == n/2 + 1, stat, REALFFTH_ESZMM, REALFFTH_MSGESZMM);
 
   /* make sure that the correct plan is being used */
-  ASSERT (plan->sign == 1, stat, REALFFT_ESIGN, REALFFT_MSGESIGN);
+  ASSERT (plan->sign == 1, stat, REALFFTH_ESIGN, REALFFTH_MSGESIGN);
 
   /* create temporary vector and check that it was created */
   TRY (LALCreateVector (stat->statusPtr, &vtmp, n), stat);
@@ -601,14 +754,15 @@ LALRealPowerSpectrum (
 }
 
 
+/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALFwdRealSequenceFFT (
-    LALStatus                 *stat,
+    LALStatus              *stat,
     COMPLEX8VectorSequence *vout,
     REAL4VectorSequence    *vinp,
     RealFFTPlan            *plan
     )
-{
+{ /* </lalVerbatim> */
   REAL4VectorSequence    *vtmp = NULL;
   CreateVectorSequenceIn  sqin; 
 
@@ -623,26 +777,26 @@ LALFwdRealSequenceFFT (
   FFTWHOOKS;
 
   /* make sure that the arguments are not NULL */
-  ASSERT (vout, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-  ASSERT (vinp, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-  ASSERT (plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (vout, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
+  ASSERT (vinp, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
+  ASSERT (plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* make sure that the data pointers are not NULL */
-  ASSERT (vout->data, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
-  ASSERT (vinp->data, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
-  ASSERT (plan->plan, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
+  ASSERT (vout->data, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
+  ASSERT (vinp->data, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
+  ASSERT (plan->plan, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
 
   /* make sure that sizes agree */
   m = sqin.length = vinp->length;
   n = sqin.vectorLength = plan->size;
-  ASSERT (m > 0, stat, REALFFT_ESLEN, REALFFT_MSGESLEN);
-  ASSERT (n > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
-  ASSERT (vinp->vectorLength == n, stat, REALFFT_ESZMM, REALFFT_MSGESZMM);
-  ASSERT (vout->vectorLength == n/2 + 1, stat, REALFFT_ESZMM, REALFFT_MSGESZMM);
-  ASSERT (vout->length == m, stat, REALFFT_ESLEN, REALFFT_MSGESLEN);
+  ASSERT (m > 0, stat, REALFFTH_ESLEN, REALFFTH_MSGESLEN);
+  ASSERT (n > 0, stat, REALFFTH_ESIZE, REALFFTH_MSGESIZE);
+  ASSERT (vinp->vectorLength == n, stat, REALFFTH_ESZMM, REALFFTH_MSGESZMM);
+  ASSERT (vout->vectorLength == n/2 + 1, stat, REALFFTH_ESZMM, REALFFTH_MSGESZMM);
+  ASSERT (vout->length == m, stat, REALFFTH_ESLEN, REALFFTH_MSGESLEN);
 
   /* make sure that the correct plan is being used */
-  ASSERT (plan->sign == 1, stat, REALFFT_ESIGN, REALFFT_MSGESIGN);
+  ASSERT (plan->sign == 1, stat, REALFFTH_ESIGN, REALFFTH_MSGESIGN);
 
   /* create temporary vector sequence and check that it was created */
   TRY (LALCreateVectorSequence (stat->statusPtr, &vtmp, &sqin), stat);
@@ -684,14 +838,15 @@ LALFwdRealSequenceFFT (
 }
 
 
+/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALInvRealSequenceFFT (
-    LALStatus                 *stat,
+    LALStatus              *stat,
     REAL4VectorSequence    *vout,
     COMPLEX8VectorSequence *vinp,
     RealFFTPlan            *plan
     )
-{
+{ /* </lalVerbatim> */
   REAL4VectorSequence *vtmp = NULL;
   CreateVectorSequenceIn  sqin; 
 
@@ -706,26 +861,26 @@ LALInvRealSequenceFFT (
   FFTWHOOKS;
 
   /* make sure that the arguments are not NULL */
-  ASSERT (vout, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-  ASSERT (vinp, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-  ASSERT (plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (vout, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
+  ASSERT (vinp, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
+  ASSERT (plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* make sure that the data pointers are not NULL */
-  ASSERT (vout->data, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
-  ASSERT (vinp->data, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
-  ASSERT (plan->plan, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
+  ASSERT (vout->data, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
+  ASSERT (vinp->data, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
+  ASSERT (plan->plan, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
 
   /* make sure that sizes agree */
   m = sqin.length = vinp->length;
   n = sqin.vectorLength = plan->size;
-  ASSERT (m > 0, stat, REALFFT_ESLEN, REALFFT_MSGESLEN);
-  ASSERT (n > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
-  ASSERT (vinp->vectorLength == n/2 + 1, stat, REALFFT_ESZMM, REALFFT_MSGESZMM);
-  ASSERT (vout->vectorLength == n, stat, REALFFT_ESZMM, REALFFT_MSGESZMM);
-  ASSERT (vout->length == m, stat, REALFFT_ESLEN, REALFFT_MSGESLEN);
+  ASSERT (m > 0, stat, REALFFTH_ESLEN, REALFFTH_MSGESLEN);
+  ASSERT (n > 0, stat, REALFFTH_ESIZE, REALFFTH_MSGESIZE);
+  ASSERT (vinp->vectorLength == n/2 + 1, stat, REALFFTH_ESZMM, REALFFTH_MSGESZMM);
+  ASSERT (vout->vectorLength == n, stat, REALFFTH_ESZMM, REALFFTH_MSGESZMM);
+  ASSERT (vout->length == m, stat, REALFFTH_ESLEN, REALFFTH_MSGESLEN);
 
   /* make sure that the correct plan is being used */
-  ASSERT (plan->sign == -1, stat, REALFFT_ESIGN, REALFFT_MSGESIGN);
+  ASSERT (plan->sign == -1, stat, REALFFTH_ESIGN, REALFFTH_MSGESIGN);
 
   /* create temporary vector sequence and check that it was created */
   TRY (LALCreateVectorSequence (stat->statusPtr, &vtmp, &sqin), stat);
@@ -740,7 +895,7 @@ LALInvRealSequenceFFT (
     x[0] = z[0].re;
 
     /* make sure the DC component is purely real */
-    ASSERT (z[0].im == 0, stat, REALFFT_EDATA, REALFFT_MSGEDATA);
+    ASSERT (z[0].im == 0, stat, REALFFTH_EDATA, REALFFTH_MSGEDATA);
 
     /* other components */
     for (k = 1; k < (n + 1)/2; ++k) /* k < n/2 rounded up */
@@ -754,7 +909,7 @@ LALInvRealSequenceFFT (
     {
       x[n/2] = z[n/2].re;
       /* make sure Nyquist component is purely real */
-      ASSERT (z[n/2].im == 0, stat, REALFFT_EDATA, REALFFT_MSGEDATA);
+      ASSERT (z[n/2].im == 0, stat, REALFFTH_EDATA, REALFFTH_MSGEDATA);
     }
   }
 
@@ -770,14 +925,15 @@ LALInvRealSequenceFFT (
 }
 
 
+/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALRealSequencePowerSpectrum (
-    LALStatus              *stat,
+    LALStatus           *stat,
     REAL4VectorSequence *vout,
     REAL4VectorSequence *vinp,
     RealFFTPlan         *plan
     )
-{
+{ /* </lalVerbatim> */
   REAL4VectorSequence    *vtmp = NULL;
   CreateVectorSequenceIn  sqin; 
 
@@ -792,26 +948,26 @@ LALRealSequencePowerSpectrum (
   FFTWHOOKS;
 
   /* make sure that the arguments are not NULL */
-  ASSERT (vout, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-  ASSERT (vinp, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-  ASSERT (plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  ASSERT (vout, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
+  ASSERT (vinp, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
+  ASSERT (plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
 
   /* make sure that the data pointers are not NULL */
-  ASSERT (vout->data, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
-  ASSERT (vinp->data, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
-  ASSERT (plan->plan, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
+  ASSERT (vout->data, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
+  ASSERT (vinp->data, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
+  ASSERT (plan->plan, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
 
   /* make sure that sizes agree */
   m = sqin.length = vinp->length;
   n = sqin.vectorLength = plan->size;
-  ASSERT (m > 0, stat, REALFFT_ESLEN, REALFFT_MSGESLEN);
-  ASSERT (n > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
-  ASSERT (vinp->vectorLength == n, stat, REALFFT_ESZMM, REALFFT_MSGESZMM);
-  ASSERT (vout->vectorLength == n/2 + 1, stat, REALFFT_ESZMM, REALFFT_MSGESZMM);
-  ASSERT (vout->length == m, stat, REALFFT_ESLEN, REALFFT_MSGESLEN);
+  ASSERT (m > 0, stat, REALFFTH_ESLEN, REALFFTH_MSGESLEN);
+  ASSERT (n > 0, stat, REALFFTH_ESIZE, REALFFTH_MSGESIZE);
+  ASSERT (vinp->vectorLength == n, stat, REALFFTH_ESZMM, REALFFTH_MSGESZMM);
+  ASSERT (vout->vectorLength == n/2 + 1, stat, REALFFTH_ESZMM, REALFFTH_MSGESZMM);
+  ASSERT (vout->length == m, stat, REALFFTH_ESLEN, REALFFTH_MSGESLEN);
 
   /* make sure that the correct plan is being used */
-  ASSERT (plan->sign == 1, stat, REALFFT_ESIGN, REALFFT_MSGESIGN);
+  ASSERT (plan->sign == 1, stat, REALFFTH_ESIGN, REALFFTH_MSGESIGN);
 
   /* create temporary vector sequence and check that it was created */
   TRY (LALCreateVectorSequence (stat->statusPtr, &vtmp, &sqin), stat);
