@@ -19,7 +19,7 @@ lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c ComputeFStatistic.h	\
 
 lalapps_FrComputeFStatistic_SOURCES = FrComputeFStatistic.c FrComputeFStatistic.h	\
 	rngmed.c rngmed.h clusters.c clusters.h  			\
-	DopplerScan.c DopplerScan.h NearestGridPoints.c
+	DopplerScan.c DopplerScan.h NeighboringGridPoints.c
 
 lalapps_FstatShapeTest_SOURCES = FstatShapeTest.c 
 lalapps_FstatShapeTestLAL_SOURCES = FstatShapeTestLAL.c
