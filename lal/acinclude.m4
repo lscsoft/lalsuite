@@ -247,7 +247,9 @@ AC_DEFUN(LAL_CHECK_MPI,
   MPICPPFLAGS=""
   MPICFLAGS=""
   MPILDFLAGS=""
+  MPITYPE=NONE
   if (($MPICC -compile_info 1>/dev/null 2>/dev/null) && ($MPICC -link_info 1>/dev/null 2>/dev/null)) ; then
+    MPITYPE=mpich
     for mpiarg in `$MPICC -compile_info` ; do
       case $mpiarg in
         -D*) MPICPPFLAGS="$MPICPPFLAGS $mpiarg" ;;
@@ -262,8 +264,10 @@ AC_DEFUN(LAL_CHECK_MPI,
     done
   else
     if ($MPICC -show 1>/dev/null 2>/dev/null) ; then
+      MPITYPE=MPICH
       SHOWARG="-show"
     elif ($MPICC -showme 1>/dev/null 2>/dev/null) ; then
+      MPITYPE=LAM
       SHOWARG="-showme"
     else
       AC_MSG_WARN(couldn't determine mpi compile flags)
@@ -292,7 +296,6 @@ AC_DEFUN(LAL_CHECK_MPI,
     AC_MSG_RESULT(no)
     AC_MSG_ERROR(mpi does not work))
   AC_MSG_CHECKING(mpi type)
-  MPITYPE=NONE
   AC_TRY_COMPILE([
     #include <mpi.h>
     #ifndef LAM_MPI
@@ -305,8 +308,16 @@ AC_DEFUN(LAL_CHECK_MPI,
       #erro "not MPICH"
       #endif], , [ MPITYPE=MPICH
                    AC_MSG_RESULT(mpich)],
-      AC_MSG_RESULT(couldn't determine)
+      [
+      if test $MPITYPE = MPICH ; then
+      AC_MSG_RESULT([couldn't determine... guessing mpich])
+      elif test $MPITYPE = LAM ; then
+      AC_MSG_RESULT([couldn't determine... assuming lam])
+      else
+      AC_MSG_RESULT([couldn't determine.])
       AC_MSG_ERROR(mpi must be either lam or mpich)
+      fi
+      ]
     )
   )
   AC_SUBST(MPITYPE)dnl
