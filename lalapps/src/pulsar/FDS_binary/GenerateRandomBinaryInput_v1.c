@@ -214,10 +214,13 @@ int GenRandomParams()
     /* find difference between min and max */
     LALDeltaGPS(&status,&deltaT,&tperiMAX,&tperiMIN);
     LALIntervalToFloat(&status,&deltaTFLT,&deltaT);
+   
     /* calculate random increment */
     RandDeltaT=vector->data[k]*deltaTFLT;
+   
     /* add random increment */
     LALAddFloatToGPS(&status,&tperiGPS,&tperiMIN,RandDeltaT);
+   
     k++;
   }
   if (eccflag) {
@@ -297,16 +300,17 @@ int GenRandomParams()
 
   /* make the binary parameters realistic for the chosen sft length */
   if (MakeSafeBinaryParams()) return 4;
-      
-      /* make sure that the periapse passage is before the start time */
-  if (tperiGPS.gpsSeconds>tstart) 
+
+  /* make sure that the periapse passage is before the start time */
+  if ((tperiGPS.gpsSeconds>tstart)&&(tstartflag)) 
     {
-      REAL8 norb;
+      REAL8 norb=0.0;
       norb=(REAL8)(tperiGPS.gpsSeconds-tstart+600)/period;
       tperiGPS.gpsSeconds=tperiGPS.gpsSeconds-(INT4)((floor(norb)+1.0)*period);
     }
 
-  
+ 
+
   return 0;
  
 }
