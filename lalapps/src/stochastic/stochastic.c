@@ -2504,6 +2504,13 @@ void parseOptions(INT4 argc, CHAR *argv[])
   free(channelOneTemp);
   free(channelTwoTemp);
 
+  /* output dir */
+  if (outputFilePath == NULL)
+  {
+    fprintf(stderr, "Output file path not set, using current directory\n");
+    outputFilePath = "./";
+  }
+
   return;
 }
 
