@@ -961,8 +961,19 @@ void dump_SFT (FILE *fp, const SFTtype *sft, INT4 format)
       fprintf (fp, "structure = 2-vector\n");
       fprintf (fp, "type = float\n");
       fprintf (fp, "dependency = positions\n");
+      fprintf (fp, "header = marker \"SFT-data\\n\"\n");
       fprintf (fp, "positions = regular, %f, %f \n", f0, df);
       fprintf(fp, "end\n\n");
+      
+      /* write some SFT header-info */
+      fprintf (fp, "SFT-header\n");
+      fprintf (fp, "Name = %s\n", sft->name);
+      fprintf (fp, "Timestamps = %d s, %d ns\n", sft->epoch.gpsSeconds, sft->epoch.gpsNanoSeconds);
+      fprintf (fp, "Start-frequency = %f Hz\n", sft->f0);
+      fprintf (fp, "Frequency-step = %f Hz\n", sft->deltaF);
+      
+      /* write SFT-data */
+      fprintf (fp, "\nSFT-data\n");
     }
 
   for (i=0; i < nsamples; i++)
