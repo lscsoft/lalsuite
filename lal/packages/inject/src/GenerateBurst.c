@@ -48,6 +48,7 @@ LALSnprintf()
 #include <lal/SeqFactories.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GenerateBurst.h>
+#include <lal/LIGOMetadataTables.h>
 
 NRCSID( GENERATEBURSTC, "$Id$" );
 
@@ -195,6 +196,161 @@ LALGenerateBurst(
   }
 
   /* Set output field and return. */
+  DETATCHSTATUSPTR( stat );
+  RETURN( stat );
+}
+
+
+void
+LALBurstInjectSignals( 
+    LALStatus               *stat, 
+    REAL4TimeSeries         *series, 
+    SimBurstTable           *injections,
+    COMPLEX8FrequencySeries *resp
+    )
+{
+  UINT4              k;
+  INT8               chanStartTime;
+  DetectorResponse   detector;
+  COMPLEX8Vector     *unity = NULL;
+  CoherentGW         waveform;
+  BurstParamStruc    burstParam;
+  REAL4TimeSeries    signal;
+
+  INITSTATUS( stat, "LALBurstInjectSignals", GENERATEBURSTC );
+  ATTATCHSTATUSPTR( stat );
+
+
+  /*  set up parameters */
+  LALGPStoINT8( stat->statusPtr, &chanStartTime, &(series->epoch) );
+  CHECKSTATUSPTR( stat );
+
+  /* 
+   *compute the transfer function 
+   */
+
+  /* allocate memory and copy the parameters describing the freq series */
+  memset( &detector, 0, sizeof( DetectorResponse ) );
+  detector.transfer = (COMPLEX8FrequencySeries *)
+    LALCalloc( 1, sizeof(COMPLEX8FrequencySeries) );
+  if ( ! detector.transfer ) 
+  {
+    ABORT( stat, GENERATEBURSTH_EMEM, GENERATEBURSTH_MSGEMEM );
+  }
+  memcpy( &(detector.transfer->epoch), &(resp->epoch),
+      sizeof(LIGOTimeGPS) );
+  detector.transfer->f0 = resp->f0;
+  detector.transfer->deltaF = resp->deltaF;
+
+  detector.site = (LALDetector *) LALMalloc( sizeof(LALDetector) );
+  /* set the detector site */
+  switch ( series->name[0] )
+  {
+    case 'H':
+      *(detector.site) = lalCachedDetectors[LALDetectorIndexLHODIFF];
+      LALWarning( stat, "computing waveform for Hanford." );
+      break;
+    case 'L':
+      *(detector.site) = lalCachedDetectors[LALDetectorIndexLLODIFF];
+      LALWarning( stat, "computing waveform for Livingston." );
+      break;
+    default:
+      LALFree( detector.site );
+      detector.site = NULL;
+      LALWarning( stat, "Unknown detector site, computing plus mode "
+          "waveform with no time delay" );
+      break;
+  }
+
+  /* set up units for the transfer function */
+  {
+    RAT4 negOne = { -1, 0 };
+    LALUnit unit;
+    LALUnitPair pair;
+    pair.unitOne = &lalADCCountUnit;
+    pair.unitTwo = &lalStrainUnit;
+    LALUnitRaise( stat->statusPtr, &unit, pair.unitTwo, &negOne );
+    CHECKSTATUSPTR( stat );
+    pair.unitTwo = &unit;
+    LALUnitMultiply( stat->statusPtr, &(detector.transfer->sampleUnits),
+        &pair );
+    CHECKSTATUSPTR( stat );
+  }
+
+  /* invert the response function to get the transfer function */
+  LALCCreateVector( stat->statusPtr, &( detector.transfer->data ),
+      resp->data->length );
+  CHECKSTATUSPTR( stat );
+
+  LALCCreateVector( stat->statusPtr, &unity, resp->data->length );
+  CHECKSTATUSPTR( stat );
+  for ( k = 0; k < resp->data->length; ++k ) 
+  {
+    unity->data[k].re = 1.0;
+    unity->data[k].im = 0.0;
+  }
+
+  LALCCVectorDivide( stat->statusPtr, detector.transfer->data, unity,
+      resp->data );
+  CHECKSTATUSPTR( stat );
+
+  LALCDestroyVector( stat->statusPtr, &unity );
+  CHECKSTATUSPTR( stat );
+
+  /*
+   * inject into time series 
+   */
+
+  burstParam.position.longitude  = injections->longitude;;
+  burstParam.position.latitude   = injections->latitude;;
+  burstParam.position.system     = COORDINATESYSTEM_EQUATORIAL;
+  burstParam.psi = LAL_PI/2.0;
+  burstParam.epoch.gpsSeconds =  injections->geocent_start_time.gpsSeconds;
+  burstParam.epoch.gpsNanoSeconds =  injections->geocent_start_time.gpsNanoSeconds;
+  burstParam.deltaT = series->deltaT;
+  burstParam.length = series->data->length;
+  burstParam.hrss = injections->hrss;
+  burstParam.burstType = sineGaussian;
+  burstParam.f0 = (REAL8)injections->freq;
+  burstParam.tau  = (REAL8)injections->tau;
+  
+ /*generate waveform*/
+
+  memset( &waveform, 0, sizeof(CoherentGW) );
+
+  LALGenerateBurst( &stat, &waveform, &burstParam );
+
+  /*set the parameters for the to be injected signal */
+  signal.deltaT = series->deltaT;
+   if ( ( signal.f0 = series->f0 ) != 0 )
+    {
+      ABORT( stat, GENERATEBURSTH_EMEM, GENERATEBURSTH_MSGEMEM );
+    }
+    signal.sampleUnits = lalADCCountUnit;
+
+   /* simulate the detectors response  */
+    LALSCreateVector( stat->statusPtr, &(signal.data), 
+        (UINT4)burstParam.length );
+    CHECKSTATUSPTR( stat );
+
+    LALSimulateCoherentGW( stat->statusPtr, 
+        &signal, &waveform, &detector );
+    CHECKSTATUSPTR( stat );
+
+    /* inject the signal into the data channel */
+    LALSSInjectTimeSeries( stat->statusPtr, series, &signal );
+    CHECKSTATUSPTR( stat );
+
+   /* destroy the signal */
+    LALSDestroyVector( stat->statusPtr, &(signal.data) );
+    CHECKSTATUSPTR( stat );
+
+  LALCDestroyVector( stat->statusPtr, &( detector.transfer->data ) );
+  CHECKSTATUSPTR( stat );
+
+  if ( detector.site ) LALFree( detector.site );
+  LALFree( detector.transfer );
+
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }
