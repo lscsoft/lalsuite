@@ -1075,7 +1075,7 @@ SimInspiralTableFromLIGOLw (
     INT4 geo_time = env->ligo_lw.table.elt[tableDir[0].pos].data.int_4s;
 
       /* get the injetcion time and check that it is within the time window */
-      if ( geo_time > startTime && geo_time < endTime )
+      if ( ! endTime || geo_time > startTime && geo_time < endTime )
       {
         /* allocate memory for the template we are about to read in */
         if ( ! *simHead )
