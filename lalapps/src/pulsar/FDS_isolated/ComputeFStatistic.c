@@ -993,7 +993,7 @@ void CreateDemodParams (LALStatus *status)
   DemodParams->returnFaFb = uvar_EstimSigParam;
 
   /* compute the "sky-constants" A and B */
-  TRY ( ComputeSky (status->statusPtr, DemodParams->skyConst, 0, csParams), status);  
+  TRY ( ComputeSky(status->statusPtr, DemodParams->skyConst, 0, csParams), status);  
   LALFree(midTS);
 
   LALFree(csParams->skyPos);
@@ -1624,7 +1624,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     cfg->edat->ephiles.earthEphemeris = cfg->EphemEarth;
     cfg->edat->ephiles.sunEphemeris = cfg->EphemSun;
 
-    TRY (LALLeapSecs (status->statusPtr, &leap, &starttime, &formatAndAcc), status);
+    TRY (LALLeapSecs(status->statusPtr, &leap, &starttime, &formatAndAcc), status);
     cfg->edat->leap = leap;
 
     TRY (LALInitBarycenter(status->statusPtr, cfg->edat), status);               
@@ -1710,7 +1710,7 @@ WriteFStatLog (LALStatus *stat, char *argv[])
     }
 
     /* write out a log describing the complete user-input (in cfg-file format) */
-    TRY (LALUserVarGetLog (stat->statusPtr, &logstr,  UVAR_LOGFMT_CFGFILE), stat);
+    TRY (LALUserVarGetLog(stat->statusPtr, &logstr,  UVAR_LOGFMT_CFGFILE), stat);
 
     fprintf (fplog, "## LOG-FILE of ComputeFStatistic run\n\n");
     fprintf (fplog, "# User-input:\n");
@@ -1725,9 +1725,9 @@ WriteFStatLog (LALStatus *stat, char *argv[])
     fclose (fplog);
     
     sprintf (command, "ident %s | sort -u >> %s", argv[0], fname);
-    system (command);	/* we don't check this. If it fails, we assume that */
+    system (command);	/* we currently don't check this. If it fails, we assume that */
     			/* one of the system-commands was not available, and */
-    			/* therefore the CVS-versions will not be logged */
+    			/* therefore the CVS-versions will simply not be logged */
 
     LALFree (fname);
 
@@ -1814,7 +1814,7 @@ void Freemem(LALStatus *status)
      
 
   /* Free config-Variables and userInput stuff */
-  TRY (LALDestroyUserVars (status->statusPtr), status);
+  TRY (LALDestroyUserVars(status->statusPtr), status);
 
   if (GV.skyRegion)
     LALFree ( GV.skyRegion );
