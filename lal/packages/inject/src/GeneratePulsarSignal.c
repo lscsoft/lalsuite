@@ -50,8 +50,7 @@ detector-site (\verb+params->site+) and the ephemeris-data
 \verb+PulsarSignalParams+-structure.  
 
 \item Furthermore, \verb+LALCreateSFTVector()+ and\verb+LALDestroySFTVector()+ 
-respectively allocate and free an SFT-vector. The API is identical to
-the LAL-factories (cf.~\ref{s:AVFactories.h}).
+respectively allocate and free an SFT-vector. 
 Similarly, \verb+LALDestroyTimestampVector()+ frees a bunch of
 GPS-timestamps.
 
@@ -73,8 +72,6 @@ turn it into a time-series at the detector.
 (cf.~\ref{ss:RealFFT.c}) appropriately on the input-timeseries to 
 produce the required output-SFTs. 
 
-NOTE: handling of FFTW-plan
-
 \subsubsection*{Uses}
 \begin{verbatim}
 LALGenerateSpinOrbitCW()        LALSimulateCoherentGW()
@@ -91,6 +88,23 @@ LALSDestroyVectorSequence()     LALPrintError()
 \end{verbatim}
 
 \subsubsection*{Notes}
+
+\verb+LALSignalToSFTs()+ currently enforces the constraint of 
+\verb+Tsft * Band+ being an integer, so that the number of
+time-samples per SFT is even. This follows \verb+makefakedata_v2+.
+
+Furthermore, if the timestamps for SFT-creation passed to
+\verb+LALSignalToSFTs()+ do not fit exactly on a time-step of the
+input time-series, it will be "nudged" to the closest one.
+If \verb+lalDebugLevel>0+, a warning will be printed about this. 
+The user could also see this effect in the actual timestamps of the
+SFTs returned.
+
+The FFTW-"plan" is currently created using the \verb+ESTIMATE+ flag,
+which is fast but only yields an approximate plan. Better results
+might be achieve by using \verb+MEASURE+ and an appropriate buffering
+of the resulting plan (which doesn't change provided the SFT-length is
+the same).
 
 \vfill{\footnotesize\input{GeneratePulsarSignalCV}}
 
@@ -236,7 +250,7 @@ LALGeneratePulsarSignal (LALStatus *stat,
    *
    *----------------------------------------------------------------------*/
   /* first set up the detector-response */
-  detector.transfer = params->transferFunction;
+  detector.transfer = params->transfer;
   detector.site = params->site;
   detector.ephemerides = params->ephemerides;
   /* we need to set the heterodyne epoch in GPS time, but we want to use

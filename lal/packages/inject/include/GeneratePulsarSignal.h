@@ -123,10 +123,10 @@ detector-location and the time-series to be produced.
 typedef struct {
   /* source-parameters */
   PulsarSourceParams pulsar;	/* defining the actual pulsar-source */
-  BinaryOrbitParams *orbit;	/* and its binary orbit if applicable (NULL if not) */
+  BinaryOrbitParams *orbit;	/* and its binary orbit (NULL if isolated pulsar) */
   
   /* characterize the detector */
-  COMPLEX8FrequencySeries *transferFunction;    /* frequency transfer function (NULL if not used) */	
+  COMPLEX8FrequencySeries *transfer; /* detector transfer function (NULL if not used) */	
   LALDetector *site;		/* detector location and orientation */  
   EphemerisData *ephemerides;	/* Earth and Sun ephemerides */
   
@@ -176,8 +176,8 @@ void LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSe
 void LALCreateSFTVector (LALStatus *stat, SFTVector **output, UINT4 numSFTs, UINT4 SFTlen);
 void LALDestroySFTVector (LALStatus *stat, SFTVector **vect);
 
-void ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
-void ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
+void LALConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
+void LALConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
 void LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect);
 void LALNormalizeSkyPosition (LALStatus *stat, SkyPosition *posOut, const SkyPosition *posIn);
 
