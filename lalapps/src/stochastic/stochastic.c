@@ -260,7 +260,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* structures for optimal filter */
   REAL4FrequencySeries *optFilter;
-  StochasticOptimalFilterCalInput optFilterIn;
 
   /* spectrum structures */
   REAL4FrequencySeries *omegaGW;
@@ -655,27 +654,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   if (vrbflg)
-    fprintf(stdout, "Allocating memory for optimal filter...\n");
-
-  /* allocate memory for optimal filter */
-  LAL_CALL(LALCreateREAL4FrequencySeries(&status, &optFilter, "optFilter", \
-        gpsStartTime, fMin, deltaF, lalDimensionlessUnit, filterLength), \
-      &status);
-
-  if (vrbflg)
     fprintf(stdout, "Allocating memory for CC Spectrum...\n");
 
   /* allocate memory for CC spectrum*/
   LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &ccSpectrum, \
         "ccSpectrum", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
         filterLength), &status);
-
-  /* set CC inputs */
-  ccIn.hBarTildeOne = hBarTildeOne;
-  ccIn.hBarTildeTwo = hBarTildeTwo;
-  ccIn.responseFunctionOne = responseOne;
-  ccIn.responseFunctionTwo = responseTwo;
-  ccIn.optimalFilter = optFilter;
 
   if (vrbflg)
     fprintf(stdout, "Done with memory allocation...\n");
@@ -1013,16 +997,9 @@ INT4 main(INT4 argc, CHAR *argv[])
       if (vrbflg)
         fprintf(stdout, "Generating optimal filter...\n");
 
-      /* set optimal filter inputs */
-      optFilterIn.overlapReductionFunction = overlap;
-      optFilterIn.omegaGW = omegaGW;
-      optFilterIn.calibratedInverseNoisePSD1 = calInvPsdOne;
-      optFilterIn.calibratedInverseNoisePSD2 = calInvPsdTwo;
-      
       /* build optimal filter */
-      optFilter->epoch = gpsSegStartTime;
-      LAL_CALL(LALStochasticOptimalFilterCal(&status, optFilter, \
-            &optFilterIn, &normLambda), &status);
+      optFilter = optimal_filter(&status, overlap, omegaGW, calInvPsdOne, \
+          calInvPsdTwo, normLambda);
 
       if (vrbflg)
       {
@@ -1041,6 +1018,13 @@ INT4 main(INT4 argc, CHAR *argv[])
             &zeroPadParams), &status);
       LAL_CALL(LALSZeroPadAndFFT(&status, hBarTildeTwo, segmentTwo, \
             &zeroPadParams), &status);
+
+      /* set CC inputs */
+      ccIn.hBarTildeOne = hBarTildeOne;
+      ccIn.hBarTildeTwo = hBarTildeTwo;
+      ccIn.responseFunctionOne = responseOne;
+      ccIn.responseFunctionTwo = responseTwo;
+      ccIn.optimalFilter = optFilter;
 
       if (vrbflg)
         fprintf(stdout, "Generating cross correlation spectrum...\n");
