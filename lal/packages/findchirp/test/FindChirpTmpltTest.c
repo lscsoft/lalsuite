@@ -59,12 +59,12 @@ main ( void )
   bankIn->mMin          = 1.0;
   bankIn->mMax          = 3.0;
   bankIn->MMax          = bankIn->mMax * 2.;
-  bankIn->mmCoarse      = 0.95;
+  bankIn->mmCoarse      = 0.97;
   bankIn->mmFine        = 0.99;
   bankIn->fLower        = 40.;
-  bankIn->fUpper        = 1500.0;
+  bankIn->fUpper        = 1024L;
   bankIn->iflso         = 0;
-  bankIn->tSampling     = 4096.;
+  bankIn->tSampling     = 4096L;
   bankIn->order         = twoPN;
   bankIn->approximant   = TaylorT1;
   bankIn->space         = Tau0Tau3;
@@ -120,7 +120,10 @@ main ( void )
   {
     for( k = 0; k < bankIn->shf.data->length ; ++k )
     {
-      fscanf( fp, "%le\n", bankIn->shf.data->data + k );
+      REAL8 specpt;
+      fscanf( fp, "%le\n", &specpt );
+      specpt /= 9.0e-46;
+      bankIn->shf.data->data[k] = specpt;
     }
     fclose( fp );
   }
