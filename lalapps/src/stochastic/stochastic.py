@@ -12,7 +12,8 @@ __author__ = 'Adam Mercer <ram@star.sr.bham.ac.uk>'
 __date__ = '$Date$'
 __version__ = '$Revision$'[11:-2]
 
-
+import string
+import exceptions
 from glue import pipeline
 
 
