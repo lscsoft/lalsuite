@@ -86,7 +86,7 @@ LALCreateMetaTableDir(
   switch( table )
   {
     case no_table:
-      ABORT( status, LIGOLWXMLREADH_ENTAB, LIGOLWXMLREADH_MSGENTAB );
+      ABORT( status, LIGOLWXMLREADH_EMTAB, LIGOLWXMLREADH_MSGEMTAB );
       break;
     case process_table:
       break;

@@ -64,11 +64,10 @@ NRCSID( LIGOLWXMLREADH, "$Id$" );
 #define LIGOLWXMLREADH_ENCOL 5
 #define LIGOLWXMLREADH_ENTAB 6
 #define LIGOLWXMLREADH_EPARS 7
-
-#define LIGOLWXMLREADH_ENTAB 8
-#define LIGOLWXMLREADH_EENDT 8
-#define LIGOLWXMLREADH_ETMSM 9
-#define LIGOLWXMLREADH_ETNOP 10
+#define LIGOLWXMLREADH_EMTAB 8
+#define LIGOLWXMLREADH_EENDT 9
+#define LIGOLWXMLREADH_ETMSM 10
+#define LIGOLWXMLREADH_ETNOP 11
 
 #define LIGOLWXMLREADH_MSGENULL "Null pointer"
 #define LIGOLWXMLREADH_MSGENNUL "Non-null pointer"
@@ -77,8 +76,7 @@ NRCSID( LIGOLWXMLREADH, "$Id$" );
 #define LIGOLWXMLREADH_MSGENCOL "Unable to find table column"
 #define LIGOLWXMLREADH_MSGENTAB "Requested table not found in file"
 #define LIGOLWXMLREADH_MSGEPARS "Error parsing table"
-
-#define LIGOLWXMLREADH_MSGENTAB "No table type specified"
+#define LIGOLWXMLREADH_MSGEMTAB "No table type specified"
 #define LIGOLWXMLREADH_MSGEENDT "Ending a table without an beginning a table"
 #define LIGOLWXMLREADH_MSGETMSM "Table type mismatch"
 #define LIGOLWXMLREADH_MSGETNOP "Table not begun for writing"
