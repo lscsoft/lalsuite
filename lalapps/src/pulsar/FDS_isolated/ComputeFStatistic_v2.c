@@ -176,8 +176,8 @@ REAL8 uvar_f1dot;
 REAL8 uvar_df1dot;
 REAL8 uvar_f1dotBand;
 REAL8 uvar_Fthreshold;
-CHAR *uvar_EphemDir;
-CHAR *uvar_EphemYear;
+CHAR *uvar_ephemDir;
+CHAR *uvar_ephemYear;
 INT4  uvar_gridType;
 INT4  uvar_metricType;
 REAL8 uvar_metricMismatch;
@@ -670,12 +670,12 @@ initUserVars (LALStatus *stat)
   uvar_dopplermax=1e-4;       /* BINARY-MOD - Need to have this as an option (important for binary) */
   uvar_windowsize=50;      /* BINARY-MOD - Need to have this as an option (important for shorter SFT's ?) */
 
-  uvar_EphemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
-  strcpy (uvar_EphemYear, EPHEM_YEARS);
+  uvar_ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
+  strcpy (uvar_ephemYear, EPHEM_YEARS);
 
 #define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
-  uvar_EphemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
-  strcpy (uvar_EphemDir, DEFAULT_EPHEMDIR);
+  uvar_ephemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
+  strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
 
   uvar_SignalOnly = FALSE;
   uvar_EstimSigParam = FALSE;
@@ -719,8 +719,8 @@ initUserVars (LALStatus *stat)
   LALregSTRINGUserVar(stat,	DataDir, 	'D', UVAR_OPTIONAL, "Directory where SFT's are located");
   LALregSTRINGUserVar(stat,	mergedSFTFile, 	'B', UVAR_OPTIONAL, "Merged SFT's file to be used"); 
   LALregSTRINGUserVar(stat,	BaseName, 	'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
-  LALregSTRINGUserVar(stat,	EphemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
-  LALregSTRINGUserVar(stat,	EphemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  LALregSTRINGUserVar(stat,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
+  LALregSTRINGUserVar(stat,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregSTRINGUserVar(stat, 	IFO, 		'I', UVAR_REQUIRED, "Detector: GEO(0), LLO(1), LHO(2), NAUTILUS(3), VIRGO(4), TAMA(5), CIT(6)");
   LALregBOOLUserVar(stat, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
   LALregBOOLUserVar(stat, 	binary, 	'u', UVAR_OPTIONAL, "Binary search flag");
@@ -1303,9 +1303,9 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
 
-  if (uvar_EphemYear == NULL)
+  if (uvar_ephemYear == NULL)
     {
-      LALPrintError ("\nNo ephemeris year specified (option 'EphemYear')\n\n");
+      LALPrintError ("\nNo ephemeris year specified (option 'ephemYear')\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
   /* don't allow negative frequency-band for safety */
@@ -1411,15 +1411,15 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
    * set up and check ephemeris-file locations
    */
 
-  if (LALUserVarWasSet (&uvar_EphemDir) )
+  if (LALUserVarWasSet (&uvar_ephemDir) )
     {
-      sprintf(cfg->EphemEarth, "%s/earth%s.dat", uvar_EphemDir, uvar_EphemYear);
-      sprintf(cfg->EphemSun, "%s/sun%s.dat", uvar_EphemDir, uvar_EphemYear);
+      sprintf(cfg->EphemEarth, "%s/earth%s.dat", uvar_ephemDir, uvar_ephemYear);
+      sprintf(cfg->EphemSun, "%s/sun%s.dat", uvar_ephemDir, uvar_ephemYear);
     }
   else
     {
-      sprintf(cfg->EphemEarth, "earth%s.dat", uvar_EphemYear);
-      sprintf(cfg->EphemSun, "sun%s.dat",  uvar_EphemYear);
+      sprintf(cfg->EphemEarth, "earth%s.dat", uvar_ephemYear);
+      sprintf(cfg->EphemSun, "sun%s.dat",  uvar_ephemYear);
     }
 
   /*----------------------------------------------------------------------

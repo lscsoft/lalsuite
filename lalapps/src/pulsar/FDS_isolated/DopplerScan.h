@@ -14,10 +14,6 @@ Header file for DopplerScan
 #include "DopplerScan.h"
 \end{verbatim}
 
-\noindent This header provides two trivial functions to divide real
-numbers.  It exists primarily to demonstrate documentation and coding
-standards for LAL headers.
-
 ******************************************************* </lalLaTeX> */
 
 #ifndef _DOPPLERSCAN_H  /* Double-include protection. */
