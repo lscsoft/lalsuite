@@ -216,9 +216,8 @@ LALClusterSnglBurstTable (
 <lalLaTeX>
 \vfill{\footnotesize\input{LIGOMetadataUtilsHV}}
 
-\newpage
-\input{LIGOMetadataUtilsC}
-\input{SnglInspiralUtilsC}
+\newpage\input{LIGOMetadataUtilsC}
+\newpage\input{SnglInspiralUtilsC}
 </lalLaTeX>
 #endif
 
