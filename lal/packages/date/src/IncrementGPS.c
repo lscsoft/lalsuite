@@ -29,6 +29,7 @@ Routines to perform arithmetic and comparisons on \texttt{LIGOTimeGPS} and
 \idx{XLALAddFloatToGPS()}
 \idx{LALDeltaGPS()}
 \idx{LALDeltaFloatGPS()}
+\idx{XLALDeltaFloatGPS()}
 \idx{LALCompareGPS()}
 
 \subsubsection*{Description}
@@ -44,6 +45,7 @@ the GPS times they operate on into a floating point representation.
   \item \texttt{XLALAddFloatToGPS()} adds a REAL8 interval (in seconds) to a GPS time
   \item \texttt{LALDeltaGPS()} returns the difference between two GPS times as a \texttt{LALTimeInterval}.
   \item \texttt{LALDeltaFloatGPS()} returns the difference between two GPS times in seconds as a \texttt{REAL8}.
+  \item \texttt{XLALDeltaFloatGPS()} returns the difference between two GPS times in seconds as a \texttt{REAL8}.
   \item \texttt{LALCompareGPS()} compares two GPS times, and returns a \texttt{LALGPSCompareResult} indicating if the first GPS time is earlier than, equal to,  or later than the second GPS time
 \end{itemize}
 
@@ -379,21 +381,34 @@ LALAddFloatToGPS(
 
 /* Return GPS1 - GPS2 as a REAL8 !*/
 /* <lalVerbatim file="IncrementGPSCP"> */
+REAL8
+XLALDeltaFloatGPS(
+	const LIGOTimeGPS *GPS1,
+	const LIGOTimeGPS *GPS2
+)
+/* </lalVerbatim> */
+{
+  return(GPS1->gpsSeconds - GPS2->gpsSeconds + (REAL8) 1e-9 * (GPS1->gpsNanoSeconds - GPS2->gpsNanoSeconds));
+} /* XLALDeltaFloatGPS() */
+
+
+/* Return GPS1 - GPS2 as a REAL8 !*/
+/* <lalVerbatim file="IncrementGPSCP"> */
 void
 LALDeltaFloatGPS (LALStatus    *status,
-		  REAL8 	*deltaT,	/* tGPS1 - tGPS2 */
-		  const LIGOTimeGPS *tGPS1, 	/* input: tGPS1 */
-		  const LIGOTimeGPS *tGPS2) 	/* input: tGPS2 */
+		  REAL8 	*deltaT,	/* GPS1 - GPS2 */
+		  const LIGOTimeGPS *GPS1, 	/* input: GPS1 */
+		  const LIGOTimeGPS *GPS2) 	/* input: GPS2 */
 /* </lalVerbatim> */
 {
 
   INITSTATUS( status, "LALDeltaFloatGPS", INCREMENTGPSC );
 
   ASSERT(deltaT, status, DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
-  ASSERT(tGPS1, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
-  ASSERT(tGPS2, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
+  ASSERT(GPS1, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
+  ASSERT(GPS2, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
   
-  *deltaT = (REAL8)(tGPS1->gpsSeconds - tGPS2->gpsSeconds) + 1.0*(tGPS1->gpsNanoSeconds - tGPS2->gpsNanoSeconds)/oneBillion;
+  *deltaT = XLALDeltaFloatGPS(GPS1, GPS2);
 
   RETURN( status );
 
