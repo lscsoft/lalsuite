@@ -264,8 +264,8 @@ int AddInjections(struct CommandLineArgsTag CLA)
   LALSimBurstTableFromLIGOLw(&status, &injections, CLA.InjectionFile, startTime, stopTime);
 
   /* make the response function */
-  LALCreateCOMPLEX8FrequencySeries(&status, &response, CLA.ChannelName, GV.ht_proc.epoch, 
-				   0.0, 1.0 / (GV.ht_proc.data->length * GV.ht_proc.deltaT), 
+  LALCreateCOMPLEX8FrequencySeries(&status, &response, CLA.ChannelName, GV.ht_proc.epoch, 0.0, 
+				   1.0 / (GV.ht_proc.data->length * GV.ht_proc.deltaT), 
 				   strainPerCount, GV.ht_proc.data->length / 2 + 1);
   
   for(i = 0; i < (int)response->data->length; i++)
@@ -707,7 +707,6 @@ int ProcessData(struct CommandLineArgsTag CLA)
 {
   PassBandParamStruc highpassParams;
   int p;
-  REAL4TimeSeries *series;
 
   highpassParams.nMax =  8;
   highpassParams.f1   = -1;
@@ -718,16 +717,17 @@ int ProcessData(struct CommandLineArgsTag CLA)
   LALButterworthREAL8TimeSeries( &status, &GV.ht, &highpassParams ); 
   TESTSTATUS( &status ); 
   
-  LALCreateREAL4TimeSeries(&status, &series, GV.ht.name, GV.ht.epoch, GV.ht.f0, 
-			   GV.ht.deltaT, GV.ht.sampleUnits, GV.ht.data->length);
   TESTSTATUS( &status ); 
 
   for (p=0; p<(int)GV.ht.data->length; p++)  
     {
-      series->data->data[p]=GV.ht.data->data[p]; 
+      GV.ht_proc.data->data[p]=GV.ht.data->data[p]; 
     } 
 
-  GV.ht_proc=*series;
+  strncpy(GV.ht_proc.name, GV.ht.name, LALNameLength);
+  GV.ht_proc.deltaT=GV.ht.deltaT;
+  GV.ht_proc.epoch=GV.ht.epoch;
+  GV.ht_proc.sampleUnits=GV.ht.sampleUnits;
 
   /* destroy double precision vector */
   LALDDestroyVector(&status,&GV.ht.data); 
