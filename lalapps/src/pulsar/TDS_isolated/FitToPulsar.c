@@ -350,7 +350,7 @@ LALFitToPulsarStudentT	( 	LALStatus            *status,
 	  h0 = params->meshH0[0] + (float)iH0*params->meshH0[1]; 
 	  chiSquare = sumBB - 2.0*h0*sumAB + h0*h0*sumAA;
 	  arg = iH0 + params->meshH0[2]*(iCosIota +  params->meshCosIota[2]*(iPhase + params->meshPhase[2]*iPsi));
-	  output->mChiSquare->data[arg] += 2.0*0.5*(k)*log(chiSquare); 
+	  output->mChiSquare->data[arg] += 2.0*(k)*log(chiSquare); 
         } /* iH0 */
 
        } /* n*/
