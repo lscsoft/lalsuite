@@ -298,7 +298,7 @@ void LALDemod(LALStatus *stat,
 
 
 		 /* If x is small then we are in the x=0 case and we need correct x->0 limit of Dirichlet kernel */
- 		 if(abs(x) < SMALL) 
+ 		 if(fabs(x) < SMALL) 
  		   {
  		     realP=1.0;
  		     imagP=0.0;
