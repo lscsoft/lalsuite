@@ -31,6 +31,7 @@ RCSID("$Id$");
   "Usage: " PROGRAM_NAME " [options] [xml files]\n"\
   " --help                       display this message\n"\
   " --version                    display version\n"\
+  " --verbose                    verbose mode\n"\
   " --text                       output file as text\n"\
   " --output FILE                write output data to FILE\n"
 
@@ -44,6 +45,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* getopt flags */
   static int text_flag;
+  extern int vrbflg;
 
   /* counters */
   INT4 i;
@@ -75,6 +77,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     static struct option long_options[] = 
     {
       /* options that set a flag */
+      {"verbose", no_argument, &vrbflg, 1},
       {"text", no_argument, &text_flag, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'h'},
@@ -175,8 +178,11 @@ INT4 main(INT4 argc, CHAR *argv[])
       }
       else if (numSegments > 0)
       {
-        fprintf(stdout, "Read in %d segments from file \"%s\"\n", numSegments, \
-            argv[i]);
+        if (vrbflg)
+        {
+          fprintf(stdout, "Read in %d segments from file \"%s\"\n", \
+              numSegments, argv[i]);
+        }
 
         /* scroll to end of list */
         thisStoch = *stochHandle;
