@@ -69,6 +69,8 @@ int LALvsnprintf( char *, size_t, const char *, va_list );
 #ifdef LAL_HAVE_SNPRINTF
 #  define LALsnprintf snprintf
 #  define LALvsnprintf vsnprintf
+   int snprintf( char *, size_t, const char *, ... );
+   int vsnprintf( char *, size_t, const char *, va_list );
 #else /* dangerous */
 #  define LALvsnprintf( str, size, fmt, ap ) vsprintf( str, fmt, ap )
 #endif

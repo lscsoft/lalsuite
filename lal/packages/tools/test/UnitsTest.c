@@ -97,8 +97,8 @@ NRCSID( UNITSTESTC, "$Id$" );
 int main( int argc, char *argv[] )
 {
   static LALStatus   status;
-  LALUnit            unit = {0};
-  LALUnit            unity = {0};
+  static LALUnit     unit;
+  static LALUnit     unity;
   LALUnitPair        unitPair;
   RAT4               power;
   CHARVector         dummy;

@@ -1,5 +1,5 @@
 /********************************* <lalVerbatim file="UnitsHV">
-Author: Whelan, J.~T.
+Author: Whelan, J. T.
 $Id$
 ********************************** </lalVerbatim> */
 
@@ -184,6 +184,8 @@ void LALUnitAsString (LALStatus *status, CHARVector *output,
  * for example using LALUnitRaise, LALUnitMultiply and LALUnitCompare
  * to show that 1 Farad = 1 Coulomb Volt^-1
  */
+
+extern const LALUnit lalDimensionlessUnit;
 
 /* Basic Units */
 extern const LALUnit lalMeterUnit    ;

@@ -1,6 +1,6 @@
 dnl $Id$
 /************************************ <lalVerbatim file="PrintTimeSeriesCV">
-Author: J.T. Whelan
+Author: Whelan, J. T.
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -39,6 +39,12 @@ so it should not be used in any real analysis codes.
 
 \subsubsection*{Uses}
 
+\begin{verbatim}
+LALCHARCreateVector()
+LALCHARDestroyVector()
+LALUnitAsString()
+\end{verbatim}
+
 \subsubsection*{Notes}
 
 This function's arguments do not conform to the LAL spec.  For this
@@ -50,24 +56,42 @@ functions \verb&LALI8PrintTimeSeries()& and
 \verb&LALU8PrintTimeSeries()& use a typecast to REAL8 and are thus
 only valid for numbers between around $-10^{15}$ and $10^{15}$.
 
-The output format is three or four space-separated columns: the first
-column is the time of the beginning of the time series, in seconds
-after the GPS reference epoch (1980 January 6), and is the same for
-each entry; the second column is the time into the series (so that the
-sum of the first two columns is the time of the entry in question);
-for real and integer time series, the third column is the value of the
-series; for complex time series, the third column is the real part and
-the fourth the imaginary part of the value.
+The first five lines of the file are a header containing:
+\begin{enumerate}
+\item the name of the series
+\item the starting epoch 
+\item the units expressed in terms of the basic SI units
+\item column labels
+\end{enumerate}
+after which come the data, one per line.
+
+
+The output format is two or three tab-separated columns: the first
+column is the time corresponding to the row in question, in seconds
+after the series' starting epoch; for real and integer time
+series, the second column is the value of the series; for complex time
+series, the second column is the real part and the third the imaginary
+part of the value.
 
 \vfill{\footnotesize\input{PrintTimeSeriesCV}}
 
 </lalLaTeX> */
 
 
-#include "LALStdlib.h"
+#include <lal/LALStdlib.h>
 #include <stdio.h>
-#include "LALDatatypes.h"
-#include "PrintFTSeries.h"
+#include <lal/LALDatatypes.h>
+#include <lal/PrintFTSeries.h>
+
+void LALCHARCreateVector( LALStatus *, CHARVector **, UINT4 );
+void LALCHARDestroyVector( LALStatus *, CHARVector ** );
+void LALUnitAsString( LALStatus *status, CHARVector *output,
+                      const LALUnit *input );
+
+enum { LALUnitTextSize = sizeof("10^-32768 m^-32768/32767 kg^-32768/32767 "
+				"s^-32768/32767 A^-32768/32767 " 
+				"K^-32768/32767 strain^-32768/32767 "
+				"count^-32768/32767") };
 
 /* <lalVerbatim file="PrintTimeSeriesNRCSID"> */
 NRCSID( PRINTTIMESERIESC, "$Id$" );

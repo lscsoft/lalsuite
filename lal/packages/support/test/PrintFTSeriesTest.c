@@ -1,4 +1,5 @@
 /*************** <lalVerbatim file="PrintFTSeriesTestCV"> *******
+Author: Whelan, J. T.
 $Id$
 **************** </lalVerbatim> ***********************************/
 
@@ -43,40 +44,12 @@ the \verb+PrintVector+ module).
 
 </lalLaTeX> */
 
-#ifndef _PRINTVECTOR_H
+#include <lal/Units.h>
 #include <lal/PrintFTSeries.h>
-#ifndef _PRINTVECTOR_H
-#define _PRINTVECTOR_H
-#endif
-#endif
-
-#ifndef _MATH_H
 #include <math.h>
-#ifndef _MATH_H
-#define _MATH_H
-#endif
-#endif
-
-#ifndef _STDIO_H
 #include <stdio.h>
-#ifndef _STDIO_H
-#define _STDIO_H
-#endif
-#endif
-
-#ifndef _LALSTDLIB_H
 #include <lal/LALStdlib.h>
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _AVFACTORIES_H
 #include <lal/AVFactories.h>
-#ifndef _AVFACTORIES_H
-#define _AVFACTORIES_H
-#endif
-#endif
 
 NRCSID( PRINTVECTORTESTC, "$Id$" );
 
@@ -110,6 +83,7 @@ int main( void )
   LIGOTimeGPS      t80;
   LIGOTimeGPS      t00;
   LIGOTimeGPS      t10;
+  int i;
 
   t80.gpsSeconds = 0;
   t80.gpsNanoSeconds = 0;
@@ -127,12 +101,17 @@ int main( void )
     z->re = sinh(90.0*(4-n));
     z->im = - 1 / (1e-300 + z->re);
   }
+  strncpy(zTimeSeries.name,"Complex time series",LALNameLength);
+  zTimeSeries.sampleUnits = lalDimensionlessUnit;
   zTimeSeries.deltaT = 1e-3;
+  zTimeSeries.f0 = 0;
   zTimeSeries.epoch = t80;
   zTimeSeries.data = zSequence;
 
   LALZPrintTimeSeries(&zTimeSeries, "zTS.dat");
 
+  strncpy(zFrequencySeries.name,"Complex frequency series",LALNameLength);
+  zFrequencySeries.sampleUnits = lalDimensionlessUnit; 
   zFrequencySeries.deltaF = 1;
   zFrequencySeries.epoch = t80;
   zFrequencySeries.f0 = 0;
@@ -147,12 +126,17 @@ int main( void )
     c->re = sinh(9.0*(4-n));
     c->im = - 1 / (1e-30 + c->re);
   } 
+  strncpy(cTimeSeries.name,"Complex time series",LALNameLength);
+  cTimeSeries.sampleUnits = lalDimensionlessUnit;
   cTimeSeries.deltaT = 1.0/1024.0;
+  cTimeSeries.f0 = 0;
   cTimeSeries.epoch = t00;
   cTimeSeries.data = cSequence;
  
   LALCPrintTimeSeries(&cTimeSeries, "cTS.dat");
 
+  strncpy(cFrequencySeries.name,"Complex frequency series",LALNameLength);
+  cFrequencySeries.sampleUnits = lalDimensionlessUnit;
   cFrequencySeries.deltaF = 1;
   cFrequencySeries.epoch = t80;
   cFrequencySeries.f0 = 0;
@@ -166,15 +150,23 @@ int main( void )
   for ( n=dSequence->length, d=dSequence->data; n > 0 ; --n, ++d ) {
     *d = sinh(90.0*(4-n));
   }
+  strncpy(dTimeSeries.name,"Real time series",LALNameLength);
+  dTimeSeries.sampleUnits = lalDimensionlessUnit;
+  dTimeSeries.f0 = 0;
   dTimeSeries.deltaT = 1.0/1024.0;
   dTimeSeries.epoch = t00;
   dTimeSeries.data = dSequence;
 
   LALDPrintTimeSeries(&dTimeSeries, "dTS.dat");
+/*    for ( n=dSequence->length, d=dSequence->data; n > 0 ; --n, ++d ) { */
+/*      *d = 1 / (1e-300 + *d); */
+/*    } */
   for ( n=dSequence->length, d=dSequence->data; n > 0 ; --n, ++d ) {
     *d = 1 / (1e-300 + *d);
   }
-  dFrequencySeries.f0 = -3*128;
+  strncpy(dFrequencySeries.name,"Real frequency series",LALNameLength);
+  dFrequencySeries.sampleUnits = lalDimensionlessUnit;
+  dFrequencySeries.f0 = 0     ;
   dFrequencySeries.deltaF = 128;
   dFrequencySeries.epoch = t00;
   dFrequencySeries.data = dSequence;
@@ -186,7 +178,10 @@ int main( void )
   for ( n=sSequence->length, s=sSequence->data; n > 0 ; --n, ++s ) {
     *s = sinh(9.0*(4-n));
   }
+  strncpy(sFrequencySeries.name,"Real frequency series",LALNameLength);
+  sTimeSeries.sampleUnits = lalDimensionlessUnit;
   sTimeSeries.deltaT = 1.0/1024.0;
+  sTimeSeries.f0 = 0;
   sTimeSeries.epoch = t10;
   sTimeSeries.data = sSequence;
   LALSPrintTimeSeries(&sTimeSeries, "sTS.dat");
@@ -194,11 +189,42 @@ int main( void )
   for ( n=sSequence->length, s=sSequence->data; n > 0 ; --n, ++s ) {
     *s = 1 / (1e-30 + *s);
   }
+  sFrequencySeries.sampleUnits = lalDimensionlessUnit;
   sFrequencySeries.f0 = 0;
   sFrequencySeries.deltaF = 128;
   sFrequencySeries.epoch = t10;
   sFrequencySeries.data = sSequence;
   LALSPrintFrequencySeries(&sFrequencySeries, "sFS.dat");
+
+  strncpy(cFrequencySeries.name,"Heterodyned frequency series",LALNameLength);
+  cFrequencySeries.sampleUnits = lalDimensionlessUnit;
+  cFrequencySeries.f0 = 500.0;
+  cFrequencySeries.deltaF = 50.0;
+  cFrequencySeries.epoch = t00;
+  cFrequencySeries.data = cSequence;
+
+  for (i=0; i<(int)cSequence->length; ++i) {
+    cSequence->data[i].re = 1.0*i;
+    cSequence->data[i].im = cFrequencySeries.f0 + cFrequencySeries.deltaF * i;
+  }
+
+  LALCPrintFrequencySeries(&cFrequencySeries, "hFSe.dat");
+
+  LALCDestroyVector( &status, &cSequence );
+  LALCCreateVector( &status, &cSequence, 9 );
+
+  cFrequencySeries.sampleUnits = lalDimensionlessUnit;
+  cFrequencySeries.f0 = 500.0;
+  cFrequencySeries.deltaF = 50.0;
+  cFrequencySeries.epoch = t00;
+  cFrequencySeries.data = cSequence;
+
+  for (i=0; i<(int)cSequence->length; ++i) {
+    cSequence->data[i].re = 1.0*i;
+    cSequence->data[i].im = cFrequencySeries.f0 + cFrequencySeries.deltaF*i;
+  }
+
+  LALCPrintFrequencySeries(&cFrequencySeries, "hFSo.dat");
 
   return 0;
 }

@@ -37,7 +37,9 @@ None.
 \subsubsection*{Predefined Units}
 
 This file also defines a number of \texttt{constant} unit structures
-(declared \texttt{extern} in \texttt{Units.h}).
+(declared \texttt{extern} in \texttt{Units.h}).  Zeroth is
+\texttt{lalDimensionlessUnit}, which is simply a \texttt{LALUnit} 
+structure to be associated with a unitless quantity.
 First, the relevant fundamental SI units and two custom units of use in 
 gravitational wave detection:
 \begin{center}
@@ -178,57 +180,59 @@ const CHAR lalUnitName[LALNumUnits][LALUnitNameSize] =
  * to show that 1 Farad = 1 Coulomb Volt^-1
  */
 
+const LALUnit lalDimensionlessUnit = {  0, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+
 /* Basic Units */
-const LALUnit lalMeterUnit       = {  0, { 1} };
-const LALUnit lalKiloGramUnit    = {  0, { 0, 1} };
-const LALUnit lalSecondUnit      = {  0, { 0, 0, 1} };
-const LALUnit lalAmpereUnit      = {  0, { 0, 0, 0, 1} };
-const LALUnit lalKelvinUnit      = {  0, { 0, 0, 0, 0, 1} };
-const LALUnit lalStrainUnit      = {  0, { 0, 0, 0, 0, 0, 1} };
-const LALUnit lalADCCountUnit    = {  0, { 0, 0, 0, 0, 0, 0, 1} };
+const LALUnit lalMeterUnit         = {  0, { 1, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalKiloGramUnit      = {  0, { 0, 1, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalSecondUnit        = {  0, { 0, 0, 1, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalAmpereUnit        = {  0, { 0, 0, 0, 1, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalKelvinUnit        = {  0, { 0, 0, 0, 0, 1, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalStrainUnit        = {  0, { 0, 0, 0, 0, 0, 1, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalADCCountUnit      = {  0, { 0, 0, 0, 0, 0, 0, 1}, { 0, 0, 0, 0, 0, 0, 0} };
 
 /* Derived Mechanical Units */
-const LALUnit lalHertzUnit       = {  0, { 0, 0,-1} };
-const LALUnit lalNewtonUnit      = {  0, { 1, 1,-2} };
-const LALUnit lalPascalUnit      = {  0, {-1, 1,-2} };
-const LALUnit lalJouleUnit       = {  0, { 2, 1,-2} };
-const LALUnit lalWattUnit        = {  0, { 2, 1,-3} };
+const LALUnit lalHertzUnit         = {  0, { 0, 0,-1, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalNewtonUnit        = {  0, { 1, 1,-2, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalPascalUnit        = {  0, {-1, 1,-2, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalJouleUnit         = {  0, { 2, 1,-2, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalWattUnit          = {  0, { 2, 1,-3, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
 
 /* Derived Electromagnetic Units */
-const LALUnit lalCoulombUnit     = {  0, { 0, 0, 1, 1} };
-const LALUnit lalVoltUnit        = {  0, { 2, 1,-3,-1} };
-const LALUnit lalOhmUnit         = {  0, { 2, 1,-3,-2} };
-const LALUnit lalFaradUnit       = {  0, {-2,-1, 4, 2} };
-const LALUnit lalWeberUnit       = {  0, { 2, 1,-2,-1} };
-const LALUnit lalHenryUnit       = {  0, { 2, 1,-2,-2} };
-const LALUnit lalTeslaUnit       = {  0, { 0, 1,-2,-1} };
+const LALUnit lalCoulombUnit       = {  0, { 0, 0, 1, 1, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalVoltUnit          = {  0, { 2, 1,-3,-1, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalOhmUnit           = {  0, { 2, 1,-3,-2, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalFaradUnit         = {  0, {-2,-1, 4, 2, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalWeberUnit         = {  0, { 2, 1,-2,-1, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalHenryUnit         = {  0, { 2, 1,-2,-2, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalTeslaUnit         = {  0, { 0, 1,-2,-1, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
 
 /* Powers of Ten */
-const LALUnit lalYottaUnit       = { 24};
-const LALUnit lalZettaUnit       = { 21};
-const LALUnit lalExaUnit         = { 18};
-const LALUnit lalPetaUnit        = { 15};
-const LALUnit lalTeraUnit        = { 12};
-const LALUnit lalGigaUnit        = {  9};
-const LALUnit lalMegaUnit        = {  6};
-const LALUnit lalKiloUnit        = {  3};
-const LALUnit lalHectoUnit       = {  2};
-const LALUnit lalDekaUnit        = {  1};
-const LALUnit lalDeciUnit        = { -1};
-const LALUnit lalCentiUnit       = { -2};
-const LALUnit lalMilliUnit       = { -3};
-const LALUnit lalMicroUnit       = { -6};
-const LALUnit lalNanoUnit        = { -9};
-const LALUnit lalPicoUnit        = {-12};
-const LALUnit lalFemtoUnit       = {-15};
-const LALUnit lalAttoUnit        = {-18};
-const LALUnit lalZeptoUnit       = {-21};
-const LALUnit lalYoctoUnit       = {-24};
+const LALUnit lalYottaUnit         = { 24, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalZettaUnit         = { 21, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalExaUnit           = { 18, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalPetaUnit          = { 15, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalTeraUnit          = { 12, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalGigaUnit          = {  9, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalMegaUnit          = {  6, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalKiloUnit          = {  3, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalHectoUnit         = {  2, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalDekaUnit          = {  1, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalDeciUnit          = { -1, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalCentiUnit         = { -2, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalMilliUnit         = { -3, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalMicroUnit         = { -6, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalNanoUnit          = { -9, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalPicoUnit          = {-12, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalFemtoUnit         = {-15, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalAttoUnit          = {-18, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalZeptoUnit         = {-21, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalYoctoUnit         = {-24, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
 
 /* Convenient Scaled Units */
-const LALUnit lalGramUnit        = { -3, { 0, 1} };
-const LALUnit lalAttoStrainUnit  = {-18, { 0, 0, 0, 0, 0, 1} };
-const LALUnit lalPicoFaradUnit   = {-12, {-2,-1, 2, 2} };
+const LALUnit lalGramUnit          = { -3, { 0, 1, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalAttoStrainUnit    = {-18, { 0, 0, 0, 0, 0, 1, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+const LALUnit lalPicoFaradUnit     = {-12, {-2,-1, 2, 2, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
 
 /* <lalVerbatim file="UnitDefsCP"> */
 void 

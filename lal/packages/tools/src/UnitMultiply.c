@@ -83,8 +83,8 @@ LALUnitMultiply (LALStatus *status, LALUnit *output, const LALUnitPair *input)
        denom1 and denom2, but we have to reduce the fractions after
        addition anyway; consider e.g., 1/6 + 1/10 = (5+3)/30 = 4/15 */
     unReduced.unitDenominatorMinusOne[i] = denom - 1;
-    numer = denom2 * input->unitOne.unitNumerator[i]
-      + denom1 * input->unitTwo.unitNumerator[i];
+    numer = ((INT4) denom2) * input->unitOne.unitNumerator[i]
+      + ((INT4) denom1) * input->unitTwo.unitNumerator[i];
 
     ASSERT(numer < 32767L && numer > -32768L, status, UNITSH_EOVERFLOW,
 	   UNITSH_MSGEOVERFLOW);

@@ -30,13 +30,7 @@ file.
 #define _PRINTFTSERIES_H
 
 #include <lal/LALRCSID.h>
-
-#ifndef _LALSTDLIB_H
 #include <lal/LALStdlib.h>
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
 
 #ifdef  __cplusplus
 extern "C" {

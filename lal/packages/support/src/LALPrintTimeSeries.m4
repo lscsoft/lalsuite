@@ -13,14 +13,17 @@ ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`STYPE',`format(`%sTimeSeries',TYPE)')
 define(`VTYPE',`format(`%sSequence',TYPE)')
 define(`FUNC',`format(`LAL%sPrintTimeSeries',TYPECODE)')
-define(`FMT',`"%g %g %i\n"')
-ifelse(TYPECODE,`Z',`define(`FMT',`"%g %g %g %g\n"')')
-ifelse(TYPECODE,`C',`define(`FMT',`"%g %g %g %g\n"')')
-ifelse(TYPECODE,`D',`define(`FMT',`"%g %g %g\n"')')
-ifelse(TYPECODE,`S',`define(`FMT',`"%g %g %g\n"')')
-ifelse(TYPECODE,`I8',`define(`FMT',`"%g %g %0.0f\n"')')
-ifelse(TYPECODE,`U8',`define(`FMT',`"%g %g %0.0f\n"')')
-ifelse(TYPECODE,`',`define(`FMT',`"%g %g %f\n"')')
+define(`FMT',`"%g\t%i\n"')
+ifelse(TYPECODE,`Z',`define(`FMT',`"%g\t%g\t%g\n"')')
+ifelse(TYPECODE,`C',`define(`FMT',`"%g\t%g\t%g\n"')')
+ifelse(TYPECODE,`D',`define(`FMT',`"%g\t%g\n"')')
+ifelse(TYPECODE,`S',`define(`FMT',`"%g\t%g\n"')')
+ifelse(TYPECODE,`I8',`define(`FMT',`"%g\t%0.0f\n"')')
+ifelse(TYPECODE,`U8',`define(`FMT',`"%g\t%0.0f\n"')')
+ifelse(TYPECODE,`',`define(`FMT',`"%g\t%f\n"')')
+define(`HEADER',`"Seconds since epoch\tValue\n"');
+ifelse(TYPECODE,`Z',`define(`HEADER',`"Seconds since epoch\tRe(Value)\tIm(Value)\n"')')
+ifelse(TYPECODE,`C',`define(`HEADER',`"Seconds since epoch\tRe(Value)\tIm(Value)\n"')')
 define(`ARG',`*data')
 ifelse(TYPECODE,`Z',`define(`ARG',`data->re,data->im')')
 ifelse(TYPECODE,`C',`define(`ARG',`data->re,data->im')')
@@ -31,10 +34,11 @@ ifelse(TYPECODE,`U8',`define(`ARG',`(REAL8) *data')')
 void FUNC ( STYPE *series, const CHAR *filename ) 
 { /* </lalVerbatim> */
   REAL8 t;
-  REAL8 t0;
   TYPE *data;
   FILE *fp;
   TYPE *endOfSeq;
+  static LALStatus status;
+  CHARVector *unitString;
 
   if (series==NULL) return;
 
@@ -49,14 +53,27 @@ void FUNC ( STYPE *series, const CHAR *filename )
 
   /* open output file */
   fp=fopen(filename,"w");
-	t0 = series->epoch.gpsSeconds + 1e-9 * series->epoch.gpsNanoSeconds;
+  fprintf(fp,"%s\n",series->name);
+  if (series->f0) {
+     fprintf(fp,"Heterodyned at %g Hz\n",series->f0);
+  }
+  else {
+    fprintf(fp,"\n");
+  }
+  fprintf(fp,"Epoch is %d seconds, %d nanoseconds\n",
+          series->epoch.gpsSeconds,series->epoch.gpsNanoSeconds);
+  unitString = NULL;
+  LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
+  LALUnitAsString(&status, unitString, &(series->sampleUnits));
+  fprintf(fp,"Units are (%s)\n",unitString->data);
+  fprintf(fp,HEADER);
+  LALCHARDestroyVector(&status, &unitString);
   for ( t = 0,
         data = series->data->data;
         data < endOfSeq;
         t += series->deltaT, ++data )
   {
-    fprintf(fp,FMT,t0,t,ARG
-           );
+    fprintf(fp,FMT,t,ARG);
   }	
 
   fclose(fp);

@@ -76,7 +76,7 @@ LALUnitRaise (LALStatus *status, LALUnit *output, const LALUnit *input, const RA
   ASSERT( input->powerOfTen % denom2 == 0, status, 
 	  UNITSH_ENONINT, UNITSH_MSGENONINT);
 
-  numer = (input->powerOfTen / denom2) * power->numerator;
+  numer = (input->powerOfTen / (INT4) denom2) * power->numerator;
 
   ASSERT(numer < 32767L && numer > -32768L, status, UNITSH_EOVERFLOW,
 	 UNITSH_MSGEOVERFLOW);

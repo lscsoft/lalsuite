@@ -1,5 +1,5 @@
 /************************************ <lalVerbatim file="UnitCompareCV">
-Author: Whelan, J.~T.
+Author: Whelan, J. T.
 $Id$  
 ************************************* </lalVerbatim> */
 
