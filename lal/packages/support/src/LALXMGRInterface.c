@@ -27,7 +27,7 @@ Functions for creating XMGR graphs from LAL structures and functions.
 
 #include <math.h>
 #include <lal/LALStdlib.h>
-#include <lal/LALStd.h>
+#include <lal/LALStdio.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/LALXMGRInterface.h>
