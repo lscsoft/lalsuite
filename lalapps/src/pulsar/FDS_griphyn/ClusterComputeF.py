@@ -106,6 +106,9 @@ DESCRIPTION
        -c, --calibration=TYPE
               select calibration type for input data [Funky]
 
+       -q, --data-quality=NUM
+              use SFTs generated from data quality version NUM
+
        -v, --calibration-version=VERSION
               select version number for calibration [3]
 
@@ -137,12 +140,12 @@ DESCRIPTION
   print msg
 
 # Options and their defaults
-shortopts = "hs:e:i:f:b:d:p:m:x:t:l:n:r:c:v:V"
+shortopts = "hs:e:i:f:b:d:p:m:x:t:l:n:r:c:q:v:V"
 longopts = [ "help", "start=", "end=", "instrument=", "frequency=",
              "bandwidth=", "spindown=", "spinband=", "metric=",
              "mismatch=", "threshold=", "liststart=", "num=",
              "rls-server=", "calibration=", "calibration-version=",
-             "version" ]
+             "version", "data-quality=" ]
 start = 0
 end = 86400
 instrument = "H1"
@@ -158,12 +161,13 @@ num = -1
 rls_server = "rls://hydra.phys.uwm.edu"
 calibration = "Funky"
 calibration_version = 3
+data_quality=5
 
 # Parse command line
 try:
   options, args = getopt.getopt( sys.argv[1:], shortopts, longopts )
-except getopt.GetoptError:
-  print >>sys.stderr, sys.argv[0] + ": Error parsing command line"
+except getopt.GetoptError, e:
+  print >>sys.stderr, sys.argv[0] + ": Error parsing command line: %s" % e
   print >>sys.stderr, "Use " + sys.argv[0] + " --help for usage"
   sys.exit( 2 )
 
@@ -197,6 +201,8 @@ for opt, value in options:
     num = int( value )
   elif opt in ( "-c", "--calibration" ):
     calibration = value
+  elif opt in ( "-q", "--data-quality" ):
+    data_quality = int(value)
   elif opt in  ("-r", "--rls-server" ):
      rls_server = value
   elif opt in ( "-v", "--calibration-version" ):
@@ -268,11 +274,13 @@ searchJob.set_sub_file(                "QueryMetadataLFN.sub" )
 searchJob.set_stdout_file( outputDir + "QueryMetadataLFN.out" )
 searchJob.set_stderr_file( outputDir + "QueryMetadataLFN.err" )
 searchJob.add_opt( "calibration", calibration )
+searchJob.add_opt( "data-quality", "%i" % data_quality )
 searchJob.add_opt( "calibration-version", "%i" % calibration_version )
 searchJob.add_opt( "instrument", instrument )
 searchJob.add_opt( "gps-start-time", "%i" % start )
 searchJob.add_opt( "gps-end-time",   "%i" % end )
 searchJob.add_opt( "output", outputDir + sftList )
+searchJob.add_condor_cmd( "getenv", "True" )
 
 # Create SFT collection job.
 collectJob = CondorDAGJob( "scheduler", "lalapps_GatherLFN" )
@@ -283,6 +291,7 @@ collectJob.add_opt( "input",  outputDir + sftList )
 collectJob.add_opt( "output", outputDir + sftPath )
 collectJob.add_opt( "server", rls_server )
 collectJob.add_opt( "bucket", sharedDir )
+collectJob.add_condor_cmd( "getenv", "True" )
 
 # Create SFT extraction job
 extractJob = CondorDAGJob( "scheduler",  "narrowBandExtract" )
@@ -293,6 +302,7 @@ extractJob.add_opt( "frequency", "%f" % frequency )
 extractJob.add_opt( "bandwidth", "%f" % bandwidth )
 extractJob.add_opt( "input",  outputDir + sftPath )
 extractJob.add_opt( "output", nbsftname )
+extractJob.add_condor_cmd( "getenv", "True" )
 
 # Create FrComputeFStatistic job
 computeJob = CondorDAGJob( "standard",   "FrComputeFStatistic" )
