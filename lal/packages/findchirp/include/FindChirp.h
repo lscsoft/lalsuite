@@ -32,7 +32,7 @@ Provides routines to filter IFO data for binary inspiral chirps.
 #include <lal/ComplexFFT.h>
 #include <lal/DataBuffer.h>
 #include <lal/Comm.h>
-#include <lal/Inspiral.h>
+#include <lal/LALInspiral.h>
 #include <lal/FindChirpChisq.h>
 
 #ifdef  __cplusplus

@@ -14,6 +14,8 @@
 #include <lal/LALConstants.h>
 #include <lal/FindChirp.h>
 
+double rint(double x);
+
 NRCSID (FINDCHIRPFILTERC, "$Id$");
 
 
@@ -464,7 +466,6 @@ LALFindChirpFilterSegment (
   UINT4                 numPoints;
   UINT4                 deltaEventIndex;
   UINT4                 eventId = 0;
-  REAL4                 rhosq;
   REAL4                 deltaT;
   REAL4                 norm;
   REAL4                 modqsqThresh;

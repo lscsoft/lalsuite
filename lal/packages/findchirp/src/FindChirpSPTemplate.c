@@ -9,11 +9,11 @@
  *-----------------------------------------------------------------------
  */
 
-#include "LALStdlib.h"
-#include "DataBuffer.h"
-#include "Inspiral.h"
-#include "FindChirp.h"
-#include "FindChirpSP.h"
+#include <lal/LALStdlib.h>
+#include <lal/DataBuffer.h>
+#include <lal/LALInspiral.h>
+#include <lal/FindChirp.h>
+#include <lal/FindChirpSP.h>
 
 
 NRCSID (FINDCHIRPSPTEMPLATEC, "$Id$");

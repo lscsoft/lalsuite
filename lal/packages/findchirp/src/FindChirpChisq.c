@@ -10,12 +10,12 @@
  */
 
 #include <stdio.h>
-#include "LALStdlib.h"
-#include "LALConstants.h"
-#include "AVFactories.h"
-#include "ComplexFFT.h"
-#include "FindChirp.h"
-#include "FindChirpChisq.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/AVFactories.h>
+#include <lal/ComplexFFT.h>
+#include <lal/FindChirp.h>
+#include <lal/FindChirpChisq.h>
 
 NRCSID (FINDCHIRPCHISQC, "$Id$");
 
