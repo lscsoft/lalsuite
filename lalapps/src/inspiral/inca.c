@@ -110,6 +110,7 @@ int main( int argc, char *argv[] )
   extern int vrbflg;
   static INT4  writeUniqTrigs = 0;
   static INT4  usePlayground = 1;
+  INT4  havePlgOpt = 0;
   INT4  startCoincidence = -1;
   INT4  endCoincidence = -1;
   CHAR  ifoName[MAXIFO][LIGOMETA_IFO_MAX];
@@ -167,10 +168,10 @@ int main( int argc, char *argv[] )
   struct option long_options[] =
   {
     {"verbose",                 no_argument,       &vrbflg,           1 },
-    {"no-playground",           no_argument,       &usePlayground,    0 },
-    {"playground-only",         no_argument,       &usePlayground,    1 },
     {"write-uniq-triggers",     no_argument,       &writeUniqTrigs,   1 },
     {"ifo-b-range-cut",		no_argument,       &useRangeCut,      1 },
+    {"no-playground",           no_argument,       0,                'Q'},
+    {"playground-only",         no_argument,       0,                'R'},
     {"ifo-a",                   required_argument, 0,                'a'},
     {"ifo-b",                   required_argument, 0,                'b'},
     {"epsilon",                 required_argument, 0,                'e'},
@@ -247,7 +248,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:e:k:A:m:p:P:t:q:r:s:hz:I:Z:M:T:S:c:n:", long_options, 
+        "a:b:e:k:A:m:p:P:t:q:r:s:hz:I:Z:M:T:S:c:n:QR", long_options, 
 	&option_index );
 
     /* detect the end of the options */
@@ -383,7 +384,6 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
-
       case 't':
         /* time coincidence window, argument is in milliseconds */
         errorParams.dt = atof(optarg) * 1000000LL;
@@ -452,6 +452,16 @@ int main( int argc, char *argv[] )
         {
           LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
+        break;
+
+      case 'Q':
+        usePlayground = 0;
+        havePlgOpt = 1;
+        break;
+
+      case 'R':
+        usePlayground = 1;
+        havePlgOpt = 1;
         break;
 
       case 'h':
@@ -565,6 +575,14 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "--minimal-match must be specified\n" );
     exit( 1 );
   }
+
+  /* check that a playground option is not specified if doing a slide */
+  if ( slideDataNS && havePlgOpt )
+  {
+    fprintf( stderr, "--playground-only or --no-playground should not "
+        "be specified for a time slide\n" );
+    exit( 1 );
+  }
   
   /* fill the comment, if a user has specified on, or leave it blank */
   if ( ! *comment )
@@ -607,7 +625,15 @@ int main( int argc, char *argv[] )
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
-  if ( ! trigBankFile )
+  if ( trigBankFile || slideDataNS )
+  {
+    /* erase the first empty process params */
+    ProcessParamsTable *tmpProc = processParamsTable.processParamsTable;
+    processParamsTable.processParamsTable = 
+      processParamsTable.processParamsTable->next;
+    free( tmpProc );
+  }
+  else
   {
     /* store the playground argument in the process_params */
     LALSnprintf( processParamsTable.processParamsTable->program, 
@@ -626,13 +652,6 @@ int main( int argc, char *argv[] )
       LALSnprintf( processParamsTable.processParamsTable->param, 
           LIGOMETA_PARAM_MAX, "--no-playground" );
     }
-  }
-  else
-  {
-    ProcessParamsTable *tmpProc = processParamsTable.processParamsTable;
-    processParamsTable.processParamsTable = 
-      processParamsTable.processParamsTable->next;
-    free( tmpProc );
   }
 
 
@@ -1213,10 +1232,9 @@ int main( int argc, char *argv[] )
       currentTrigger[1] = currentTrigger[1]->next;
     }
 
-    /* if we are playground only and the trigger is in playground or 
-     * we are not using playground and the trigger is not in theplayground or
-     * we have a non-zer time-slide ... */
-
+    /* if we are playground only and the trigger is in playground or    */
+    /* we are not using playground and the trigger is not in the        */
+    /* playground or we have a non-zero time-slide...                   */
     if ( ( usePlayground && isPlay ) || ( ! usePlayground && ! isPlay) ||
 	(slideDataNS) )
     {
