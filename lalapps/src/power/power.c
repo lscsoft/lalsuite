@@ -109,7 +109,8 @@ INT4               whiteNoise    = FALSE;   /* insertion of Gaussian white noise
 INT4               sineBurst     = FALSE;   /* insertion of shaped sine burst  */
 INT4               injFlag       = FALSE;
 INT4               calFlag       = FALSE;
-
+INT4               mdcFlag       = FALSE;
+ 
 /* global variables */
 FrChanIn   channelIn;               /* channnel information               */
 CHAR       site[2];                 /* one character site                 */
@@ -126,7 +127,8 @@ INT4       sampleRate    = 2048;    /* sample rate in Hz                  */
 
 /* data conditioning parameters */
 CHAR      *calCacheFile  = NULL;    /* name of the calibration cache file */
-CHAR      *injectionFile  = NULL;   /* file with list of injections       */
+CHAR      *injectionFile = NULL;    /* file with list of injections       */
+CHAR      *mdcCacheFile  = NULL;    /* name of mdc signal cache file */
 
 /* GEO data high pass corner freq. */
 REAL8	  fcorner	= 100.0;	/* corner frequency in Hz */
@@ -159,6 +161,7 @@ int main( int argc, char *argv[])
     REAL4TimeSeries            series;
     REAL8TimeSeries            geoSeries;
     COMPLEX8FrequencySeries    resp;
+    REAL4TimeSeries            mdcSeries;
 
     /* Burst events */
     SnglBurstTable      *burstEvent    = NULL;
@@ -370,7 +373,7 @@ int main( int argc, char *argv[])
     } 
 
     /*****************************************************************
-     * Add injections into the time series:  UNTESTED
+     * Add injections into the time series:  
      *****************************************************************/
     if( injFlag )
     {
@@ -413,6 +416,52 @@ int main( int argc, char *argv[])
         LALPrintTimeSeries( &series, "./injections.dat" );
       }
     }
+
+    /* if one wants to use mdc signals for injections */
+
+    if (mdcFlag)
+      {
+          INT4 i;
+	  /*open mdc cache */
+          LAL_CALL( LALFrCacheImport( &stat, &frameCache, mdcCacheFile ), &stat);
+	  LAL_CALL( LALFrCacheOpen( &stat, &stream, frameCache ), &stat);
+	  LAL_CALL( LALDestroyFrCache( &stat, &frameCache ), &stat );
+
+          /* create and initialize the mdc time series vector */
+          mdcSeries.data = NULL;
+          LAL_CALL( LALCreateVector( &stat, &mdcSeries.data, numPoints), &stat);
+          memset( mdcSeries.data->data, 0, mdcSeries.data->length*sizeof(REAL4) );
+          mdcSeries.epoch.gpsSeconds     = epoch.gpsSeconds;
+          mdcSeries.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
+          strcpy(mdcSeries.name, params->channelName);
+          mdcSeries.deltaT = 1.0/((REAL8) sampleRate);
+          mdcSeries.f0 = 0.0;
+          mdcSeries.sampleUnits = lalADCCountUnit;
+          LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &mdcSeries, &channelIn, stream), &stat);
+          mdcSeries.epoch.gpsSeconds     = epoch.gpsSeconds;
+          mdcSeries.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
+          LAL_CALL( LALFrSeek(&stat, &(mdcSeries.epoch), stream), &stat);
+
+          /* get the mdc signal data */
+          LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &mdcSeries, &channelIn, stream), &stat);
+
+	  /* add the signal to the As_Q data */
+	  
+	  for(i=0;i<numPoints;i++)
+	    {
+	      series.data->data[i] += mdcSeries.data->data[i];
+	    }
+
+	  /* write diagnostic info to disk */
+	  if ( printData ){
+	    LALPrintTimeSeries( &series, "./timeseriesasqmdc.dat" );
+	  }
+
+	  /* destroy the mdc data vector */
+	  LAL_CALL( LALDestroyVector( &stat, &mdcSeries.data), &stat);
+	  /* close the frame stream */
+	  LAL_CALL( LALFrClose( &stat, &stream ), &stat);
+      }
 
     /* Finally call condition data */
     LAL_CALL( EPConditionData( &stat, &series, searchParams), &stat);
@@ -632,9 +681,10 @@ int initializeEPSearch(
         {"injfile",                 required_argument, 0,                 'J'},
 	/* geo data flag, argument is corner freq. of high pass filter */
 	{"geodata",		    required_argument, 0,		  'K'},
+        {"mdccache",                required_argument, 0,                 'L'},
         /* output options */
         {"printData",               no_argument,       &printData,         TRUE },
-        {"printSpectrum",           no_argument,       &printSpectrum,         TRUE },
+        {"printSpectrum",           no_argument,       &printSpectrum,     TRUE },
         {0, 0, 0, 0}
     };
     int c;
@@ -1236,6 +1286,15 @@ int initializeEPSearch(
                   fcorner = tmpfcorner;
 		  geodata = TRUE;
                 }
+                break;
+
+             case 'L':
+                /* create storage for the mdc signal frame cache name */
+                len = strlen( optarg ) + 1;
+                mdcCacheFile = (CHAR *) calloc( len, sizeof(CHAR));
+                memcpy( mdcCacheFile, optarg, len );
+                mdcFlag = TRUE;
+                ADD_PROCESS_PARAM( "string", "%s", optarg );
                 break;
 
            case '?':
