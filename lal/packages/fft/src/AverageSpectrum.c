@@ -689,7 +689,9 @@ int XLALREAL4SpectrumInvertTruncate(
 
     /* rescale spectrum: 0.5 to undo factor of two from REAL4PowerSpectrum */
     /* seglen^2 for the reverse fft (squared because power spectrum) */
-    normfac = 0.5 / ( seglen * seglen );
+    /* Note: cast seglen to real so that seglen*seglen is a real rather */
+    /* than a four-byte integer which might overflow... */
+    normfac = 0.5 / ( ((REAL4)seglen) * ((REAL4)seglen) );
     for ( k = cut; k < spectrum->data->length - 1; ++k )
       spectrum->data->data[k] *= normfac;
 
