@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-PACKAGE = burstsearch 
+PACKAGE = burstsearch
 MOSTLYCLEANFILES = main.log main.ilg main.blg main.out
 CLEANFILES = main.aux main.bbl main.glo main.ind main.idx \
              main.lof main.lot main.toc
