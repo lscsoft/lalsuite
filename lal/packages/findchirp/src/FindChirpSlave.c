@@ -198,6 +198,84 @@ ExchNumTmpltsFilteredMPI (
 }
 
 /*-----------------------------------------------------------------------*/
+static REAL4 
+MedianSpec(
+    LALStatus  *status,
+    REAL4      *p, 
+    UINT4       j, 
+    UINT4       flength, 
+    UINT4       numSegs
+    )
+{
+  /* p points to array of power spectra data over time slices */
+  /* j is desired frequency offset into power spectra array   */
+  /* flength is size of frequency series obtained from DFT    */
+  /* numSegs is the number of time slices to be evaluated     */
+  /* status points to LAL status struct passed into main      */
+  /* returns the median value, over time slice at given freq. */
+
+  INT4  outer  = 0;       /* local loop counter */
+  INT4  middle = 0;       /* local loop counter */
+  INT4  inner  = 0;       /* local loop counter */
+  REAL4 returnVal = 0.0;  /* holder for return value */
+
+  ASSERT( p, status, 
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  ASSERT( flength, status, 
+      FINDCHIRPENGINEH_EZERO, FINDCHIRPENGINEH_MSGEZERO );
+  ASSERT( j < flength, status, 
+      FINDCHIRPENGINEH_EAOVR, FINDCHIRPENGINEH_MSGEAOVR );
+  ASSERT( flength, status, 
+      FINDCHIRPENGINEH_EZERO, FINDCHIRPENGINEH_MSGEZERO );
+
+  /* allocate memory array for insert sort, test for success */
+  REAL4 *s = (REAL4 *) LALMalloc( numSegs * sizeof(REAL4) );
+  if ( ! s )
+  {
+    ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
+  }
+
+  /* zero out the sort array */
+  memset( s, 0, numSegs * sizeof(REAL4) );
+
+  /* scan time slices for a given frequency */
+  for ( outer = 0; outer < numSegs; ++outer )
+  {
+    /* insert power value into sort array */
+    REAL4 tmp = p[outer * flength + j]; /* obtain value to insert */
+    for ( middle = 0; middle < numSegs; ++middle )
+    {
+      if ( tmp > s[middle] )
+      {
+        /* insert taking place of s[middle] */
+        for ( inner = numSegs - 1; inner > middle; --inner )
+        {
+          s[inner] = s [inner - 1];  /* move old values */
+        }
+        s[middle] = tmp;   /* insert new value */
+        break;  /* terminate loop */
+      }
+    }
+  }  /* done inserting into sort array */
+
+  /* check for odd or even number of segments */
+  if ( numSegs % 2 )
+  {
+    /* if odd number of segments, return median */
+    returnVal = s[numSegs / 2];
+  }
+  else
+  {
+    /* if even number of segments, return average of two medians */
+    returnVal = 0.5 * (s[numSegs/2] + s[(numSegs/2) - 1]);
+  }
+
+  /* free memory used for sort array */
+  LALFree( s );
+
+  return returnVal;
+}
+/*-----------------------------------------------------------------------*/
 void
 LALFindChirpSlave (
     LALStatus                  *status, 
@@ -727,6 +805,7 @@ LALFindChirpSlave (
       else if ( params->specType == fcSpecMedian ||
           params->specType == fcSpecMedianBandPassed )
       {
+#if 0
         /* compute a median power spectrum estimate from the data */
         AvgSpecParams           avgParams;
         REAL4TimeSeries         dataChanF;
@@ -747,6 +826,62 @@ LALFindChirpSlave (
 
         LALDestroyRealFFTPlan (status->statusPtr, &fftPlan );
         CHECKSTATUSPTR (status);
+#endif
+        /* compute a median power spectrum estimate using power code */
+        COMPLEX8FrequencySeries   segmentFFT;
+        REAL4                    *psdSeg;
+        LALWindowParams           winParams;
+        RealDFTParams            *dftParams = NULL;
+
+        memset( &segmentFFT, 0, sizeof(COMPLEX8FrequencySeries) );
+        memset( &winParams, 0, sizeof(LALWindowParams) );
+
+        LALCCreateVector( status->statusPtr, &(segmentFFT.data), fdLength );
+        CHECKSTATUSPTR( status );
+        
+        memset( specPtr->data->data, 0, fdLength * sizeof(REAL4) );
+
+        winParams.type   = Hann;
+        winParams.length = tdLength;
+
+        psdSeg = (REAL4 *) 
+          LALCalloc( dataSegVec->length, fdLength * sizeof(REAL4) );
+
+        LALCreateRealDFTParams( status->statusPtr , &dftParams, &winParams, 1 );
+        CHECKSTATUSPTR( status );
+
+        for ( i = 0; i < dataSegVec->length; ++i )
+        {
+          /* compute the fft of each data segment */
+          LALComputeFrequencySeries( status->statusPtr, &segmentFFT, 
+              dataSegVec->data[i].chan, dftParams );
+          CHECKSTATUSPTR (status);
+
+          for ( k = 0; k < fdLength; ++k )
+          {
+            REAL4 fftRe = segmentFFT.data->data[k].re;
+            REAL4 fftIm = segmentFFT.data->data[k].im;
+            psdSeg[i * fdLength + k] = 2.0 * (REAL4) deltaT * 
+              (fftRe * fftRe + fftIm * fftIm);
+          }
+        }
+
+        for ( k = 0; k < fdLength; ++k )
+        {
+          specPtr->data->data[k] = MedianSpec( status->statusPtr, 
+                psdSeg, k, fdLength, dataSegVec->length );
+          CHECKSTATUSPTR( status );
+
+          specPtr->data->data[k] /= LAL_LN2;
+        }
+        
+        LALFree( psdSeg );
+
+        LALDestroyRealDFTParams( status->statusPtr , &dftParams );
+        CHECKSTATUSPTR( status );
+
+        LALCDestroyVector( status->statusPtr, &(segmentFFT.data) );
+        CHECKSTATUSPTR( status );
       }
       else
       {
@@ -1018,3 +1153,5 @@ exit:
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
+
+
