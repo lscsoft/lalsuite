@@ -197,7 +197,6 @@ static SnglBurstTable *select_event(LALStatus *stat, SimBurstTable *injection, S
 		return(llabs(atime - injtime) < llabs(btime - injtime) ? a : b);
 	}
 
-	/* control cannot reach here */
 	return(NULL);
 }
 
@@ -293,10 +292,8 @@ static SimBurstTable *read_injection_list(LALStatus *stat, char *filename, INT4 
  * Extract the injections that lie between the given start and end times.
  */
 
-static SimBurstTable *extract_injections(LALStatus *stat, SimBurstTable *injection, INT8 start, INT8 end)
+static SimBurstTable **extract_injections(LALStatus *stat, SimBurstTable **addpoint, SimBurstTable *injection, INT8 start, INT8 end)
 {
-	SimBurstTable *head = NULL;
-	SimBurstTable **addpoint = &head;
 	INT8 peaktime;
 
 	for(; injection; injection = injection->next) {
@@ -309,7 +306,7 @@ static SimBurstTable *extract_injections(LALStatus *stat, SimBurstTable *injecti
 		}
 	}
 
-	return(head);
+	return(addpoint);
 }
 
 
@@ -324,10 +321,10 @@ static SimBurstTable *extract_injections(LALStatus *stat, SimBurstTable *injecti
  * table.
  */
 
-static INT4 read_search_summary_start_end(char *filename, INT4 *start, INT4 *end, FILE *fpout)
+static INT8 read_search_summary_start_end(LALStatus *stat, char *filename, INT8 *start, INT8 *end, FILE *fpout)
 {
 	SearchSummaryTable *searchSummary = NULL;
-	INT4 local_start, local_end;
+	INT8 local_start, local_end;
 
 	/* allow for NULL pointers if the calling code doesn't care about these
 	 * results */
@@ -338,11 +335,11 @@ static INT4 read_search_summary_start_end(char *filename, INT4 *start, INT4 *end
 
 	SearchSummaryTableFromLIGOLw(&searchSummary, filename);
 
-	*start = searchSummary->in_start_time.gpsSeconds;
-	*end = searchSummary->in_end_time.gpsSeconds;
+	LAL_CALL(LALGPStoINT8(stat, start, &searchSummary->in_start_time), stat);
+	LAL_CALL(LALGPStoINT8(stat, end, &searchSummary->in_end_time), stat);
 
 	if(fpout)
-		fprintf(fpout, "%d  %d  %d\n", *start, *end, *end - *start);
+		fprintf(fpout, "%lld  %lld  %lld\n", *start, *end, *end - *start);
 
 	while(searchSummary) {
 		SearchSummaryTable *tmp = searchSummary;
@@ -436,8 +433,8 @@ static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT4 *
 	SnglBurstTable *list = NULL;
 	SnglBurstTable **eventaddpoint = &list;
 	SimBurstTable *newinjection = NULL;
-	SimBurstTable **injectionaddpoint = &newinjection;
-	INT4 start, end;
+	SimBurstTable **injaddpoint = &newinjection;
+	INT8 start, end;
 
 	if(!(infile = fopen(filename, "r")))
 		LALPrintError("Could not open input file\n");
@@ -447,11 +444,9 @@ static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT4 *
 		if(options.verbose)
 			fprintf(stderr, "Working on file %s\n", line);
 
-		*timeAnalyzed += read_search_summary_start_end(line, &start, &end, NULL);
+		*timeAnalyzed += read_search_summary_start_end(stat, line, &start, &end, NULL);
 
-		*injectionaddpoint = extract_injections(stat, *injection, start * 1000000000LL, end * 1000000000LL);
-		while(*injectionaddpoint)
-			injectionaddpoint = &(*injectionaddpoint)->next;
+		injaddpoint = extract_injections(stat, injaddpoint, *injection, start, end);
 
 		LAL_CALL(LALSnglBurstTableFromLIGOLw(stat, eventaddpoint, line), stat);
 
@@ -469,8 +464,8 @@ static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT4 *
 		*injection = (*injection)->next;
 		LALFree(tmp);
 	}
-	*injection = newinjection;
 	*/
+	*injection = newinjection;
 
 	fclose(infile);
 
