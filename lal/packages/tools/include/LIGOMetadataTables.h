@@ -387,6 +387,8 @@ tagSimInspiralTable
   LIGOTimeGPS    l_end_time;
   REAL8          end_time_gmst;
   CHAR           source[LIGOMETA_SOURCE_MAX];
+  REAL4          mass1;
+  REAL4          mass2;
   REAL4          mtotal;
   REAL4          eta;
   REAL4          distance;

@@ -411,6 +411,8 @@ LALWriteLIGOLwXMLTable (
             tablePtr.simInspiralTable->end_time_gmst,
             tablePtr.simInspiralTable->source,
             tablePtr.simInspiralTable->mtotal,
+            tablePtr.simInspiralTable->mass1,
+            tablePtr.simInspiralTable->mass2,
             tablePtr.simInspiralTable->eta,
             tablePtr.simInspiralTable->distance,
             tablePtr.simInspiralTable->longitude,
