@@ -1,0 +1,236 @@
+#!/usr/bin/env @PYTHONPROG@
+"""
+strain_pipe - standalone strain pipeline driver script
+
+$Id$
+
+This script produces the condor submit and dag files to run
+the standalone strain
+"""
+
+__author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
+__date__ = '$Date$'
+__version__ = '$Revision$'[11:-2]
+
+
+# import standard modules and append the lalapps prefix to the python path
+import sys, os
+import getopt, re, string
+import tempfile
+import ConfigParser
+sys.path.append('@PYTHONLIBDIR@')
+
+# import the modules we need to build the pipeline
+from glue import pipeline
+import strain
+
+def usage():
+  msg = """\
+Usage: lalapps_ring_pipe [options]
+
+  -h, --help               display this message
+  -v, --version            print version information and exit
+  -c, --config-file FILE   use configuration file FILE
+  -l, --log-path PATH      directory to write condor log file
+  -s, --gps-start-time     GPS start time
+  -e, --gps-end-time       GPS end time
+  -f, --dag-file           basename for .dag file (excluding the .dag)
+  -t, --aux-path           path to auxiliary files
+"""
+  print >> sys.stderr, msg
+
+# pasrse the command line options to figure out what we should do
+shortop = "hv:c:l:s:e:f:t:"
+longop = [
+  "help",
+  "version",
+  "config-file=",
+  "log-path=",
+  "gps-start-time=",
+  "gps-end-time=",
+  "dag-file=",
+  "aux-path="
+  ]
+
+try:
+  opts, args = getopt.getopt(sys.argv[1:], shortop, longop)
+except getopt.GetoptError:
+  usage()
+  sys.exit(1)
+
+config_file = None
+log_path = None
+GPSStart = None
+GPSEnd = None
+basename = None
+aux_path = None
+
+for o, a in opts:
+  if o in ("-v", "--version"):
+    print "$Id$"
+    sys.exit(0)
+  elif o in ("-h", "--help"):
+    usage()
+    sys.exit(0)
+  elif o in ("-c", "--config-file"):
+    config_file = a
+  elif o in ("-l", "--log-path"):
+    log_path = a
+  elif o in ("-s", "--gps-start-time"):
+    GPSStart = a
+  elif o in ("-e", "--gps-end-time"):
+    GPSEnd = a
+  elif o in ("-f", "--dag-file"):
+    basename = a
+  elif o in ("-t", "--aux-path"):
+    aux_path = a
+  else:
+    print >> sys.stderr, "Unknown option:", o
+    usage()
+    sys.exit(1)
+
+if not config_file:
+  print >> sys.stderr, "No configuration file specified."
+  print >> sys.stderr, "Use --help for usage details."
+  sys.exit(1)
+
+if not log_path:
+  print >> sys.stderr, "No log file path specified."
+  print >> sys.stderr, "Use --help for usage details."
+  sys.exit(1)
+
+if not GPSStart:
+  print >> sys.stderr, "No GPS start time  specified."
+  print >> sys.stderr, "Use --help for usage details."
+  sys.exit(1)
+
+if not GPSEnd:
+  print >> sys.stderr, "No GPS end time  specified."
+  print >> sys.stderr, "Use --help for usage details."
+  sys.exit(1)
+
+if not GPSEnd:
+  print >> sys.stderr, "No GPS end time  specified."
+  print >> sys.stderr, "Use --help for usage details."
+  sys.exit(1)
+
+if not basename:
+  print >> sys.stderr, "No dag file base name specified."
+  print >> sys.stderr, "Use --help for usage details."
+  sys.exit(1)
+
+if not aux_path:
+  print >> sys.stderr, "No auxiliary file path specified."
+  print >> sys.stderr, "Use --help for usage details."
+  sys.exit(1)
+
+# try and make a directory to store the cache files and job logs
+try: os.mkdir('logs')
+except: pass
+
+try: os.mkdir('cache')
+except: pass
+
+# create the config parser object and read in the ini file
+cp = ConfigParser.ConfigParser()
+cp.read(config_file)
+
+# create a log file that the Condor jobs will write to
+tempfile.tempdir = log_path
+tempfile.template = basename + '.dag.log.'
+logfile = tempfile.mktemp()
+fh = open( logfile, "w" )
+fh.close()
+
+# create the DAG writing the log to the specified directory
+dag = pipeline.CondorDAG(logfile)
+dag.set_dag_file(basename + '.dag')
+
+# create the Condor jobs that will be used in the DAG
+df_job = pipeline.LSCDataFindJob('cache','logs',cp)
+strain_job = strain.StrainJob(cp)
+
+# submit files
+subsuffix = '.sub'
+df_job.set_sub_file( basename + '.datafind'+ subsuffix )
+strain_job.set_sub_file( basename + '.strain' + subsuffix )
+  
+# get the pad and chunk lengths from the values in the ini file
+length = int(cp.get('pipeline', 'segment-length'))
+overlap = int(cp.get('strain', 'wings'))
+
+# make segments filename
+segment_file=open('strain_segment.txt',mode='w')
+print >> segment_file, '1',GPSStart,' ',GPSEnd,' ',int(GPSEnd)-int(GPSStart)
+segment_file.close()
+
+# read science segs that are greater or equal to a chunk from the input file
+data = pipeline.ScienceData()
+data.read('strain_segment.txt',length)
+
+# create the chunks from the science segments
+data.make_chunks(length+2*overlap,2*overlap,0,0,0)
+data.make_chunks_from_unused(0,0,0,overlap,0,0)
+
+# get the ifo to filter
+ifo = cp.get('pipeline','ifo')
+datatype = cp.get('input','type') 
+
+# create all the LSCdataFind jobs to run in sequence
+prev_df = None
+for seg in data:
+  # find all the data for first ifo
+  df = pipeline.LSCDataFindNode(df_job)
+  df.set_start(seg.start())
+  df.set_end(seg.end())
+  df.set_observatory(ifo[0])
+  df.add_var_opt('type',datatype)
+
+  if prev_df: 
+    df.add_parent(prev_df)
+  dag.add_node(df)
+  prev_df = df
+
+  # create strain jobs also to run in sequence
+  prev_strain = None
+  for chunk in seg:
+    #String job for first ifo
+    strain1 = strain.StrainNode(strain_job)
+    strain1.set_start(chunk.start())
+    strain1.set_end(chunk.end())
+    strain1.set_cache(df.get_output())
+    
+    strain1.add_parent(df)
+    if prev_strain:
+      strain1.add_parent(prev_strain)
+    dag.add_node(strain1)
+    prev_strain=strain1
+
+# write out the DAG
+dag.write_sub_files()
+dag.write_dag()
+
+# write out a log file for this script
+log_fh = open(basename + '.pipeline.log', 'w')
+  
+log_fh.write( "$Id$" + "\n\n" )
+log_fh.write( "Invoked with arguments:\n" )
+for o, a in opts:
+  log_fh.write( o + ' ' + a + '\n' )
+log_fh.write( "\n" )
+log_fh.write( "Parsed " + str(len(data)) + " science segments\n" )
+total_data = 0
+for seg in data:
+  for chunk in seg:
+    total_data += len(chunk)
+print >> log_fh, "total data =", total_data
+
+print >> log_fh, "\n===========================================\n"
+print >> log_fh, data
+for seg in data:
+  print >> log_fh, seg
+  for chunk in seg:
+    print >> log_fh, chunk
+
+sys.exit(0)
+
