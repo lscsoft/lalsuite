@@ -406,7 +406,7 @@ LALCheckMemoryLeaks( void )
   if ( lalMallocTotal || lalMallocCount )
   {
     lalRaiseHook( SIGSEGV, "LALCheckMemoryLeaks: memory leak\n"
-        "lalMallocCount = %d allocs\n", "lalMallocTotal = %ld bytes\n",
+        "lalMallocCount = %d allocs\nlalMallocTotal = %ld bytes\n",
         lalMallocCount, (long)lalMallocTotal );
     return;
   }
