@@ -836,7 +836,7 @@ LALStochasticCrossCorrelationSpectrumCal(
 {
 
   LALUnitPair   unitPair;
-  LALUnit       h1H2Units, hc1Hc2Units, r1R2Units;
+  LALUnit       h1H2Units, hc1Hc2Units, r1R2Units, invR1R2Units;
 
   COMPLEX8FrequencySeries   h1StarH2, h1StarH2Coarse, hc1StarHc2Coarse;
   COMPLEX8FrequencySeries   r1StarR2;
@@ -845,6 +845,8 @@ LALStochasticCrossCorrelationSpectrumCal(
   REAL8         streamF0;
   REAL8         streamDF;
   UINT4         streamLength;
+  
+  INT4 i;
 
   /* initialize status structure */
   INITSTATUS( status, "LALStochasticCrossCorrelationSpectrumCal",
@@ -1205,8 +1207,8 @@ LALStochasticCrossCorrelationSpectrumCal(
     TRY(LALCDestroyVector(status->statusPtr, &(hc1StarHc2Coarse.data)), status);
   ENDFAIL( status ); 
 
-  LALCCVectorMultiply(status->statusPtr, hc1StarHc2Coarse.data,
-                      r1StarR2.data, h1StarH2Coarse.data);
+  LALCCVectorDivide(status->statusPtr, hc1StarHc2Coarse.data,
+                     h1StarH2Coarse.data, r1StarR2.data);
 
   BEGINFAIL( status ) 
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2Coarse.data)), status);
@@ -1240,8 +1242,15 @@ LALStochasticCrossCorrelationSpectrumCal(
   unitPair.unitTwo = &(input->responseFunctionTwo->sampleUnits);
   TRY( LALUnitMultiply(status->statusPtr, &r1R2Units, &unitPair),
        status );
+
+  invR1R2Units.powerOfTen = - r1R2Units.powerOfTen;
+  for (i=0; i<LALNumUnits; ++i) 
+   {
+    invR1R2Units.unitNumerator[i] = -1 * r1R2Units.unitNumerator[i];
+    invR1R2Units.unitDenominatorMinusOne[i] = r1R2Units.unitDenominatorMinusOne[i];
+   }
   unitPair.unitOne = &h1H2Units;
-  unitPair.unitTwo = &r1R2Units;
+  unitPair.unitTwo = &invR1R2Units;
   TRY( LALUnitMultiply(status->statusPtr, &hc1Hc2Units, &unitPair),
        status );
   unitPair.unitOne = &hc1Hc2Units;
