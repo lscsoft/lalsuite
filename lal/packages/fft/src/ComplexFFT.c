@@ -120,7 +120,7 @@ NRCSID( COMPLEXFFTC, "$Id$" );
 
 /* tell FFTW to use LALMalloc and LALFree */
 #define FFTWHOOKS \
-  do { fftw_malloc_hook = LALMalloc; fftw_free_hook = LALFree; } while(0)
+  do { fftw_malloc_hook = LALMallocShort; fftw_free_hook = LALFree; } while(0)
 
 struct
 tagComplexFFTPlan

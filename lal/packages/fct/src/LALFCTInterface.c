@@ -52,14 +52,14 @@ void LALCreateFCTPlan(LALStatus* const status,
     }
 
     /* Set up the fct malloc hooks */
-    fct_malloc_hook = LALMalloc;
-    fct_calloc_hook = LALCalloc;
+    fct_malloc_hook = LALMallocShort;
+    fct_calloc_hook = LALCallocShort;
     fct_free_hook = LALFree;
     
     /* Also set the FFTW hooks *unless* they've already been set */
     if (fftw_malloc_hook == 0)
     {
-	fftw_malloc_hook = LALMalloc;
+	fftw_malloc_hook = LALMallocShort;
     }
     
     if (fftw_free_hook == 0)

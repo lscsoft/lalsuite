@@ -158,23 +158,25 @@ combining these flags using the bitwise-\textit{or} operator,
 \begin{center}
 \begin{tabular}{|lccl|}
 \hline
-Flag & Binary & Decimal & Meaning \\
+Flag & Octal & Decimal & Meaning \\
 \hline
 \multicolumn{4}{|l|}{\it Primitive flags} \\
-\tt LALNDEBUG   & 0\ldots00000 &  0 & No debugging or status messages \\
-\tt LALERROR    & 0\ldots00001 &  1 & Turn on error messages \\
-\tt LALWARNING  & 0\ldots00010 &  2 & Turn on warning messages \\
-\tt LALINFO     & 0\ldots00100 &  4 & Turn on info messages \\
-\tt LALTRACE    & 0\ldots01000 &  8 & Turn on tracing messages \\
-\tt LALMEMINFO  & 0\ldots10000 & 16 & Turn on memory messages \\
-\tt LALMEMDBG   & 1\ldots00000 & $2^{14}$ & Turn on debugging without
-messages \\
+\tt LALNDEBUG   & 000000 &     0 & No debugging or status messages \\
+\tt LALERROR    & 000001 &     1 & Turn on error messages \\
+\tt LALWARNING  & 000002 &     2 & Turn on warning messages \\
+\tt LALINFO     & 000004 &     4 & Turn on info messages \\
+\tt LALTRACE    & 000010 &     8 & Turn on tracing messages \\
+\tt LALMEMINFO  & 000020 &    16 & Turn on memory messages \\
+\tt LALNMEMDBG  & 000040 &    32 & Turn off all memory debugging \\
+\tt LALNMEMPAD  & 000100 &    64 & Turn off memory padding \\
+\tt LALNMEMTRK  & 000200 &   128 & Turn off memory tracking \\
+\tt LALMEMDBG   & 040000 & 16384 & Turn on memory debugging without messages \\
 \multicolumn{4}{|l|}{\it Combination flags} \\
-\tt LALMSGLVL1  & 0\ldots00001 &  1 & Error messages only \\
-\tt LALMSGLVL2  & 0\ldots00011 &  3 & Error and warning messages \\
-\tt LALMSGLVL3  & 0\ldots00111 &  7 & Error, warning, and info messages \\
-\tt LALMEMTRACE & 0\ldots11000 & 24 & Memory and tracing messages \\
-\tt LALALLDBG   & 1\ldots11111 & $2^{15}-1$ & All messages and debugging \\
+\tt LALMSGLVL1  & 000001 &     1 & Error messages only \\
+\tt LALMSGLVL2  & 000003 &     3 & Error and warning messages \\
+\tt LALMSGLVL3  & 000007 &     7 & Error, warning, and info messages \\
+\tt LALMEMTRACE & 000030 &    24 & Memory and tracing messages \\
+\tt LALALLDBG   & 077437 & 32543 & All messages and debugging \\
 \hline
 \end{tabular}
 \end{center}
@@ -184,6 +186,9 @@ messages \\
 \idx[Constant]{LALINFO}
 \idx[Constant]{LALTRACE}
 \idx[Constant]{LALMEMINFO}
+\idx[Constant]{LALMEMNDBG}
+\idx[Constant]{LALMEMNPAD}
+\idx[Constant]{LALMEMNTRK}
 \idx[Constant]{LALMEMDBG}
 \idx[Constant]{LALMSGLVL1}
 \idx[Constant]{LALMSGLVL2}
@@ -198,7 +203,8 @@ of debugging or error-tracking code --- such as the memory leak
 detection code in \verb@LALMalloc.c@ --- do not write status messages
 and are not associated with a \verb@lalDebugLevel@ bit; instead, these
 pieces of code are turned on for \emph{any} nonzero value of
-\verb@lalDebugLevel@.  Switching on only the most significant bit with
+\verb@lalDebugLevel@, unless the \verb@LALNMEMDBG@ bit is set.
+Switching on only the most significant bit with
 \verb@LALMEMDBG@ activates this code without turning on any other
 error reporting.
 

@@ -33,6 +33,7 @@ standard C routines.
 #define _LALMALLOC_H
 
 #include <lal/LALRCSID.h>
+#include <lal/LALConfig.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -41,29 +42,51 @@ extern "C" {
 
 NRCSID( LALMALLOCH, "$Id$" );
 
+#if defined NDEBUG || defined LAL_NDEBUG
+
+#define LALMalloc                          malloc     
+#define LALMallocShort                     malloc     
+#define LALMallocLong( n, file, line )     malloc( n )
+#define LALCalloc                          calloc        
+#define LALCallocShort                     calloc        
+#define LALCallocLong( m, n, file, line )  calloc( m, n )
+#define LALRealloc                         realloc
+#define LALReallocShort                    realloc
+#define LALReallocLong( p, n, file, line ) realloc( p, n )
+#define LALFree                            free      
+#define LALCheckMemoryLeaks()
+
+#else
+
+#define LALMalloc( n )        LALMallocLong( n, __FILE__, __LINE__ )
+#define LALCalloc( m, n )     LALCallocLong( m, n, __FILE__, __LINE__ )
+#define LALRealloc( p, n )    LALReallocLong( p, n, __FILE__, __LINE__ )
+
 void *
-LALMalloc( size_t n );
+LALMallocShort( size_t n );
+
+void *
+LALMallocLong( size_t n, const char *file, int line );
 
 void
 LALFree( void *p );
 
 void *
-LALCalloc( size_t m, size_t n );
+LALCallocShort( size_t m, size_t n );
 
 void *
-LALRealloc( void *p, size_t n );
+LALCallocLong( size_t m, size_t n, const char *file, int line );
+
+void *
+LALReallocShort( void *p, size_t n );
+
+void *
+LALReallocLong( void *p, size_t n, const char *file, int line );
 
 void
 LALCheckMemoryLeaks( void );
 
-
-#ifdef NDEBUG
-#define LALMalloc( n )        malloc( n )
-#define LALFree( p )          free( p )
-#define LALCalloc( m, n )     calloc( m, n )
-#define LALRealloc( p, n )    realloc( p, n )
-#define LALCheckMemoryLeaks()
-#endif /* NDEBUG */
+#endif /* NDEBUG || LAL_NDEBUG */
 
 #ifdef  __cplusplus
 }

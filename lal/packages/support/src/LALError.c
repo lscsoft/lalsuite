@@ -168,6 +168,7 @@ lalDebugLevel
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <signal.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALError.h>
 
