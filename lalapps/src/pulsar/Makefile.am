@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 
-SUBDIRS = FDS_isolated
+SUBDIRS = FDS_isolated Injections
 
 if FRAME
 FRAMEPROGS = lalapps_make_job_input_data lalapps_make_sfts
