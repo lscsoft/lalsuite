@@ -314,9 +314,10 @@ int main(int argc, char *argv[]){
   timeDiffV.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
   
   {   
-    REAL8   t0, ts, tn;
+    REAL8   t0, ts, tn, midTimeBase;
     UINT4   j; 
 
+    midTimeBase=0.5*timeBase;
     ts = timeV.data[0].gpsSeconds;
     tn = timeV.data[0].gpsNanoSeconds * 1.00E-9;
     t0=ts+tn;
@@ -325,7 +326,7 @@ int main(int argc, char *argv[]){
     for (j=1; j< mObsCoh; ++j){
       ts = timeV.data[j].gpsSeconds;
       tn = timeV.data[j].gpsNanoSeconds * 1.00E-9;  
-      timeDiffV.data[j] = ts+tn -t0; 
+      timeDiffV.data[j] = ts + tn -t0 + midTimeBase; 
     }  
   }
 
