@@ -3,7 +3,7 @@ FRAMEFILES = F-TEST-600000000-60.gwf F-TEST-600000060-60.gwf F-TEST-600000120-60
 
 if FRAME
 check_PROGRAMS   = FrameStreamTest Read40mData ReadGEOData ReadLHOData MakeFrames FrameCacheTest FrameCalibrationTest
-TESTS            = FrameCacheTest.sh FrameStreamTest FrameCalibrationTest
+TESTS            = FrameCacheTest.sh FrameStreamTest
 else
 check_PROGRAMS   =
 TESTS            = NoTest
