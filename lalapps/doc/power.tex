@@ -1,3 +1,4 @@
+\DeclareGraphicsRule{.fig.pdf}{pdf}{.fig.pdf}{}
 \input{power-module.tex}
 \clearpage
 
@@ -651,6 +652,37 @@ quarter of the window length (i.e.\ half the length of data that is
 actually analyzed).
 
 \end{entry}
+
+\item[Time Domain Segmentation]\leavevmode
+
+The excess power analysis code does not process the input data as a
+continuous time series;  rather the time series is split into a sequence of
+discrete ``analysis windows'', which are each analyzed individually.  To
+account for the possibility of a burst event stradling the boundary between
+two analysis windows, successive windows are staggered in such a way that
+they overlap one another in time.  In this way, a burst event occuring on
+the boundary of one window will (typically) be centred in the next.
+
+Because edge effects at various stages of the analysis can corrupt the
+beginning and end of the analysis window, the actual quantity of data
+extracted from the input time series to form a window is twice the amount
+that is analyzed.  Only the central half of the window is retained, with
+the first and last quarters of each window being discarded.  The
+arrangement is shown in the following diagram.
+\begin{center}
+\input{figures/power/windows.fig}
+\end{center}
+Here we see an example sequence of analysis windows, each containing 32768
+samples.  The first and last 8192 samples (first and last quarter) from
+each window are discarded as indicated by the crossed-out sections in each
+window.  In this example, each window is shifted 8192 samples (equal to one
+quarter of the window length) from the start of the previous window.  This
+choice of window length and window shift cause the sections of the time
+series that are actually searched for events (the sections that are not
+crossed out) to overlap each other by half of their own width, which is the
+typical mode of operation for the code.  Notice that the first and last
+quarter window length of the complete time series are \emph{not} analyzed,
+as they are discarded from the only windows in which they appear.
 
 
 \item[Example]
