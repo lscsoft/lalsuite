@@ -42,7 +42,8 @@ option argument. (Default is $10^6$.)
 
 The \texttt{-r} option sets the radius (in arcminutes) of the circular sky
 patch. (The default value is set for the globular cluster 47 Tuc.) At the
-moment there is no option for another patch shape.
+moment there is no option for another patch shape, but if you specify radius
+zero you will get an all-sky search.
 
 The \texttt{-t} option sets the duration of integration, in seconds. (The
 default is $10^5$ seconds, which is of order one day but is not an integer
@@ -143,7 +144,7 @@ int main( int argc, char **argv )
   center.latitude = -(72+5./60)*LAL_PI_180;
   radius = 30.9/60*LAL_PI_180;
 
-  /* Parse command-line options. */
+  /* Parse and sanity-check the command-line options. */
   while( (opt = getopt( argc, argv, "b:c:e:f:i:m:n:r:t:x" )) != -1 )
   {
     switch( opt )
@@ -179,9 +180,19 @@ int main( int argc, char **argv )
       break;
     case 'r':
       radius = LAL_PI_180/60*atof( optarg );
+      if( radius < 0 ) {
+        fprintf( stderr, "%s line %d: %s\n", __FILE__, __LINE__,
+                 PTOLEMESHTESTC_MSGERNG );
+        return PTOLEMESHTESTC_ERNG;
+      }
       break;
     case 't':
       duration = atof( optarg );
+      if( duration < MIN_DURATION || duration > MAX_DURATION ) {
+	fprintf( stderr, "%s line %d: %s\n", __FILE__, __LINE__,
+                 PTOLEMESHTESTC_MSGERNG );
+        return PTOLEMESHTESTC_ERNG;
+      }
       break;
     case 'x':
       grace = 1;
@@ -193,11 +204,18 @@ int main( int argc, char **argv )
   mesh.mThresh = mismatch;
   mesh.nIn = maxNodes;
   mesh.getRange = getRange;
-  mesh.rangeParams = NULL;
   mesh.getMetric = getMetric;
   mesh.metricParams = (void *) &search;
-  mesh.domain[0] = center.longitude - radius;
-  mesh.domain[1] = center.longitude + radius;
+  if( radius == 0 ) {
+    mesh.domain[0] = 0;
+    mesh.domain[1] = LAL_TWOPI;
+    mesh.rangeParams = (void *) &search;
+  }
+  else {
+    mesh.domain[0] = center.longitude - radius;
+    mesh.domain[1] = center.longitude + radius;
+    mesh.rangeParams = NULL;
+  }
   search.position.system = COORDINATESYSTEM_EQUATORIAL;
   search.spindown = NULL;
   search.epoch.gpsSeconds = begin;
@@ -211,7 +229,7 @@ int main( int argc, char **argv )
     return stat.statusCode;
   printf( "created %d nodes\n", mesh.nOut );
 
-  /* Plot what we've got. */
+  /* Plot what we've got, if asked. */
   if( grace )
   {
     fp = fopen( "mesh.agr", "w" );
@@ -240,13 +258,17 @@ void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *unused )
   /* Set up shop. */
   INITSTATUS( stat, "getRange", PTOLEMESHTESTC );
   ATTATCHSTATUSPTR( stat );
-  unused = NULL;
 
   /* Search a circle. BEN: The 1.001 is a kludge. */
   y[0] = center.latitude - sqrt( pow( radius*1.001, 2 )
          - pow( x-center.longitude, 2 ) );
   y[1] = center.latitude + sqrt( pow( radius*1.001, 2 )
          - pow( x-center.longitude, 2 ) );
+
+  if( unused ) {
+    y[0] = -LAL_PI_2;
+    y[1] = LAL_PI_2;
+  }
 
   /* Clean up and leave. */
   DETATCHSTATUSPTR( stat );
