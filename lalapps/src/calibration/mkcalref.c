@@ -1,3 +1,4 @@
+int isnan(double value);
 #include <math.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -6,8 +7,6 @@
 #include "series.h"
 
 int lalDebugLevel = 0;
-
-int isnan(double value);
 
 char *get_next_line( char *line, size_t size, FILE *fp )
 {
