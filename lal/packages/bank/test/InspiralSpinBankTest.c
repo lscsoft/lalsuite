@@ -201,7 +201,7 @@ int main(int argc, char *argv[]){
     }
     list->next = NULL;
     printf("\nCalling LALMath3DPlot()......\n");
-    LALMath3DPlot(&stat, first, &ntiles,NULL);
+    LALMath3DPlot(&stat, first, &ntiles, NULL);
     REPORTSTATUS(&stat);
     if (stat.statusCode){
       LALError(&stat, INSPIRALSPINBANKTESTC_MSGESUB);
