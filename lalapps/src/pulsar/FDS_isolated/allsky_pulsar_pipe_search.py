@@ -149,7 +149,7 @@ data=data1
 # define command line for run on first ifo
 cfstat_args=' '.join(['./lalapps_ComputeFStatistic','-f',str(freq),'-b',str(float(freq_band)+2*float(wings)),\
                       '-I',ifo,'-r',df,a_search,d_search,\
-                      '-D',data,'-E . -y 00-04 -F',Fth,'-o',''.join(['-',ifo,'-',str(freq)])])
+                      '-D',data,'-E . -y 00-04 -F',Fth,'-o',''.join(['-',ifo,'-',str(freq+float(wings))])])
 
 #execute ComputeFStatistic code on first ifo
 print 'running: ',cfstat_args
@@ -163,7 +163,7 @@ data=data2
 # define command line for run on second ifo
 cfstat_args=' '.join(['./lalapps_ComputeFStatistic','-f',str(freq),'-b',str(float(freq_band)+2*float(wings)),\
                       '-I',ifo,'-r',df,a_search,d_search,\
-                      '-D',data,'-E . -y 00-04 -F',Fth,'-o',''.join(['-',ifo,'-',str(freq)])])
+                      '-D',data,'-E . -y 00-04 -F',Fth,'-o',''.join(['-',ifo,'-',str(freq+float(wings))])])
 #execute ComputeFStatistic code on second ifo
 print 'running: ',cfstat_args
 os.system(cfstat_args)
