@@ -24,9 +24,9 @@ int main( void )
   const float srate  = 1024;
   const int   nseg   = 3;
 
-  const char *argv[] = { "filterparams", "segsz:65536", "speclen:4096",
-      "flow:40", "fmin:150", "fmax:200", "qmin:2", "qmax:10", "maxmm:0.1",
-      "thresh:6", "scale:2000", NULL };
+  const char *argv[] = { "filterparams", "-segsz", "65536", "-speclen", "4096",
+      "-flow", "40", "-fmin", "150", "-fmax", "200", "-qmin", "2",
+      "-qmax", "10", "-maxmm", "0.1", "-thresh", "6", "-scale", "2000", NULL };
   int argc = sizeof( argv ) / sizeof( *argv ) - 1;
 
   static LALStatus                status;

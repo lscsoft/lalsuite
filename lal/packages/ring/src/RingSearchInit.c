@@ -38,47 +38,56 @@ void LALRingSearchInit(
 
   while ( --argc > 0 )
   {
-    CHAR *arg;
     ++argv;
-    if ( ( arg = strstr( *argv, "segsz:" ) ) )
+    if ( strstr( *argv, "-segsz" ) )
     {
-      params->segmentSize = atoi( strchr( arg, ':' ) + 1 );
+      params->segmentSize = atoi( *++argv );
+      --argc;
     }
-    else if ( ( arg = strstr( *argv, "scale:" ) ) )
+    else if ( strstr( *argv, "-scale" ) )
     {
-      params->dynRangeFac = atof( strchr( arg, ':' ) + 1 );
+      params->dynRangeFac = atof( *++argv );
+      --argc;
     }
-    else if ( ( arg = strstr( *argv, "speclen:" ) ) )
+    else if ( strstr( *argv, "-speclen" ) )
     {
-      params->invSpecTrunc = atoi( strchr( arg, ':' ) + 1 );
+      params->invSpecTrunc = atoi( *++argv );
+      --argc;
     }
-    else if ( ( arg = strstr( *argv, "flow:" ) ) )
+    else if ( strstr( *argv, "-flow" ) )
     {
-      params->lowFrequency = atof( strchr( arg, ':' ) + 1 );
+      params->lowFrequency = atof( *++argv );
+      --argc;
     }
-    else if ( ( arg = strstr( *argv, "fmin:" ) ) )
+    else if ( strstr( *argv, "-fmin" ) )
     {
-      params->minFrequency = atof( strchr( arg, ':' ) + 1 );
+      params->minFrequency = atof( *++argv );
+      --argc;
     }
-    else if ( ( arg = strstr( *argv, "fmax:" ) ) )
+    else if ( strstr( *argv, "-fmax" ) )
     {
-      params->maxFrequency = atof( strchr( arg, ':' ) + 1 );
+      params->maxFrequency = atof( *++argv );
+      --argc;
     }
-    else if ( ( arg = strstr( *argv, "qmin:" ) ) )
+    else if ( strstr( *argv, "-qmin" ) )
     {
-      params->minQuality = atof( strchr( arg, ':' ) + 1 );
+      params->minQuality = atof( *++argv );
+      --argc;
     }
-    else if ( ( arg = strstr( *argv, "qmax:" ) ) )
+    else if ( strstr( *argv, "-qmax" ) )
     {
-      params->maxQuality = atof( strchr( arg, ':' ) + 1 );
+      params->maxQuality = atof( *++argv );
+      --argc;
     }
-    else if ( ( arg = strstr( *argv, "maxmm:" ) ) )
+    else if ( strstr( *argv, "-maxmm" ) )
     {
-      params->maxMismatch = atof( strchr( arg, ':' ) + 1 );
+      params->maxMismatch = atof( *++argv );
+      --argc;
     }
-    else if ( ( arg = strstr( *argv, "thresh:" ) ) )
+    else if ( strstr( *argv, "-thresh" ) )
     {
-      params->threshold = atof( strchr( arg, ':' ) + 1 );
+      params->threshold = atof( *++argv );
+      --argc;
     }
     else
     {
