@@ -772,21 +772,11 @@ INT4 main(INT4 argc, CHAR *argv[])
       /* loop over segments */
       for (segLoop = 0; segLoop < segsInInt; segLoop++)
       {
-        /* get segment start time */
-        gpsSegStartTime = increment_gps(&status, &gpsStartTime, \
+        /* get segment start/end time */
+        gpsSegStartTime = increment_gps(&status, gpsStartTime, \
             (interLoop + segLoop) * segmentDuration);
-        /*
-        gpsSegStartTime.gpsSeconds = gpsStartTime.gpsSeconds + \
-                                     ((interLoop + segLoop) * segmentDuration);
-        gpsSegStartTime.gpsNanoSeconds = 0;
-        */
-        gpsSegEndTime = increment_gps(&status, &gpsSegStartTime, \
+        gpsSegEndTime = increment_gps(&status, gpsSegStartTime, \
             segmentDuration);
-        /*
-        gpsSegEndTime.gpsSeconds = gpsSegStartTime.gpsSeconds + \
-                                   segmentDuration;
-        gpsSegEndTime.gpsNanoSeconds = 0;
-        */
         segmentOne->epoch = gpsSegStartTime;
         segmentTwo->epoch = gpsSegStartTime;
 
@@ -1142,7 +1132,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       /* save */
       if (vrbflg)
       {
-        fprintf(stdout, "interval %d\n", interLoop + 1);
+        fprintf(stdout, "Interval %d\n", interLoop + 1);
         fprintf(stdout, "  GPS time  = %d\n", gpsAnalysisTime.gpsSeconds);
         fprintf(stdout, "  y         = %e\n", y);
         fprintf(stdout, "  sigmaTheo = %e\n", sqrt(varTheo));
@@ -1165,8 +1155,8 @@ INT4 main(INT4 argc, CHAR *argv[])
       LALSnprintf(thisStoch->ifo_two, LIGOMETA_IFO_MAX, ifoTwo);
       LALSnprintf(thisStoch->channel_one, LIGOMETA_CHANNEL_MAX, channelOne);
       LALSnprintf(thisStoch->channel_two, LIGOMETA_CHANNEL_MAX, channelTwo);
-      thisStoch->start_time.gpsSeconds = gpsStartTime.gpsSeconds;
-      thisStoch->start_time.gpsNanoSeconds = gpsStartTime.gpsNanoSeconds;
+      thisStoch->start_time.gpsSeconds = gpsAnalysisTime.gpsSeconds;
+      thisStoch->start_time.gpsNanoSeconds = gpsAnalysisTime.gpsNanoSeconds;
       thisStoch->duration.gpsSeconds = segmentDuration;
       thisStoch->duration.gpsNanoSeconds = 0;
       thisStoch->cc_stat = y;
@@ -2354,10 +2344,10 @@ static void readDataPair(LALStatus *status,
 
   /* get first bin required, and length */
   first = (start.gpsSeconds - streamStart) * resampleRate;
-  length = (segmentDuration) * resampleRate;
+  length = segmentDuration * resampleRate;
 
   if (vrbflg)
-    fprintf(stdout, "Allocating memory for raw data streams...\n");
+    fprintf(stdout, "Allocating memory for data streams...\n");
 
   /* allocate memory */
   LAL_CALL(LALCreateREAL4TimeSeries(status, &dataStreamOne, "DataStreamOne", \
@@ -2367,7 +2357,7 @@ static void readDataPair(LALStatus *status,
 
   if (vrbflg)
     fprintf(stdout, "Cutting data from stream...\n");
-
+  
   LAL_CALL(LALCutREAL4TimeSeries(status, &dataStreamOne, seriesOne, first, \
         length), status);
   LAL_CALL(LALCutREAL4TimeSeries(status, &dataStreamTwo, seriesTwo, first, \
@@ -2416,7 +2406,7 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
   /* apply resample buffer */
   if (buffer)
   {
-    length = delta_gps_to_float(status, &end, &start) * resampleRate;
+    length = delta_gps_to_float(status, end, start) * resampleRate;
     start.gpsSeconds -= buffer;
     end.gpsSeconds += buffer;
   }
@@ -2495,7 +2485,7 @@ static REAL4TimeSeries *get_ligo_data(LALStatus *status,
         stream), status);
 
   /* resize series to the correct number of samples */
-  length = delta_gps_to_float(status, &end, &start) / series->deltaT;
+  length = delta_gps_to_float(status, end, start) / series->deltaT;
   LAL_CALL(LALResizeREAL4TimeSeries(status, series, 0, length), status);
 
   if (vrbflg)
@@ -2536,7 +2526,7 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status,
         stream), status);
 
   /* resize series to the correct number of samples */
-  length = delta_gps_to_float(status, &end, &start) / series->deltaT;
+  length = delta_gps_to_float(status, end, start) / series->deltaT;
   LAL_CALL(LALResizeREAL8TimeSeries(status, geo, 0, length), status);
 
   if (vrbflg)
@@ -2571,15 +2561,15 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status,
 
 /* return the difference between two GPS times as REAL8 */
 static REAL8 delta_gps_to_float(LALStatus *status,
-    LIGOTimeGPS *end,
-    LIGOTimeGPS *start)
+    LIGOTimeGPS end,
+    LIGOTimeGPS start)
 {
   /* varaibles */
   LALTimeInterval i;
   REAL8 d;
 
   /* get the time difference as a REAL8 */
-  LAL_CALL(LALDeltaGPS(status, &i, end, start), status);
+  LAL_CALL(LALDeltaGPS(status, &i, &end, &start), status);
   LAL_CALL(LALIntervalToFloat(status, &d, &i), status);
 
   return(d);
@@ -2654,7 +2644,7 @@ static REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
 /* helper function to increment the seconds component of a gps time with
  * an integer */
 static LIGOTimeGPS increment_gps(LALStatus *status,
-    LIGOTimeGPS *time,
+    LIGOTimeGPS time,
     INT4 increment)
 {
   /* variables */
@@ -2666,9 +2656,37 @@ static LIGOTimeGPS increment_gps(LALStatus *status,
   interval.nanoSeconds = 0;
 
   /* increment GPS time */
-  LAL_CALL(LALIncrementGPS(status, &result, time, &interval), status);
+  LAL_CALL(LALIncrementGPS(status, &result, &time, &interval), status);
 
   return(result);
+}
+
+/* function to cut a time series between given start and end times */
+static REAL4TimeSeries *cut_time_series(LALStatus *status,
+    REAL4TimeSeries *input,
+    LIGOTimeGPS start,
+    LIGOTimeGPS end)
+{
+  /* variables */
+  REAL4TimeSeries *series;
+  INT4 length;
+  INT4 first;
+
+  /* calculate length of segment to cut */
+  length = (INT4)delta_gps_to_float(status, end, start);
+
+  /* get first bin */
+  first = (INT4)((start.gpsSeconds - input->epoch.gpsSeconds) / input->deltaT);
+  
+  /* allocate memory */
+  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, input->name, start, \
+        input->f0, input->deltaT, input->sampleUnits, length), status);
+
+  /* cut time series */
+  LAL_CALL(LALCutREAL4TimeSeries(status, &series, input, first, length), \
+      status);
+
+  return(series);
 }
 
 /*
