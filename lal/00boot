@@ -587,7 +587,7 @@ $prefixstring
 [frameenabled="`test x${frame} = xtrue && echo "ENABLED " || echo "DISABLED"`"]
 [metaioenabled="`test x${metaio} = xtrue && echo "ENABLED " || echo "DISABLED"`"]
 [mpienabled="`test x${mpi} = xtrue && echo "ENABLED " || echo "DISABLED"`"]
-[prefixstring="`printf '* %61s *' "$prefix"`"]
+[prefixstring="`printf '*               %-47s *' "$prefix"`"]
 )
 AC_OUTPUT([ \
   lal.pc \
@@ -619,7 +619,6 @@ fi
 
 rm -f acinclude.m4 acconfig.h || fail "removing acinclude.m4 acconfig.h"
 cat misc/lal.m4 > acinclude.m4 || fail "creating acinclude.m4"
-cat misc/pkg.m4 >> acinclude.m4 || fail "creating acinclude.m4"
 case "$automake_version" in
   1.5*)
   cat misc/lalam15patch.m4 >> acinclude.m4 || fail "creating acinclude.m4"
@@ -629,8 +628,12 @@ esac
 cat misc/lallibtool.m4 >> acinclude.m4 || fail "creating acinclude.m4"
 case "$autoconf_version" in
   2.1*)
-  cp misc/acconfig.h acconfig.h || fail "creating acinclude.m4"
+  cp misc/acconfig.h acconfig.h || fail "creating acconfig.h"
+  cat misc/old-pkg.m4 >> acinclude.m4 || fail "creating acinclude.m4"
+  break
   ;;
+  *)
+  cat misc/pkg.m4 >> acinclude.m4 || fail "creating acinclude.m4"
 esac
 
 
