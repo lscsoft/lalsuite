@@ -55,14 +55,12 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
  ATTATCHSTATUSPTR( status );
 
   /* high pass filter parameters */ 
-  highpassfilterpar.name  = "Butterworth High Pass";
   highpassfilterpar.nMax  = 10;
   highpassfilterpar.f2    = 40.0;
   highpassfilterpar.a2    = 0.5;
   highpassfilterpar.f1    = -1.0;
   highpassfilterpar.a1    = -1.0;
   /* low pass filter parameters */
-  lowpassfilterpar.name  = "Butterworth Low Pass";
   lowpassfilterpar.nMax  = 12;
   lowpassfilterpar.f2    = -1.0;
   lowpassfilterpar.a2    = -1.0;
@@ -95,11 +93,11 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   uphR.deltaT=input->AS_Q.deltaT/UpSamplingFactor;
 
   /* copy AS_Q input into residual strain as double */  
-  for (p=0; p<hR.data->length; p++) {
+  for (p=0; p<(int)hR.data->length; p++) {
     hR.data->data[p]=input->AS_Q.data->data[p];
   }
   /* copy AS_Q input into control strain as double */  
-  for (p=0; p<hC.data->length; p++) {
+  for (p=0; p<(int)hC.data->length; p++) {
     hC.data->data[p]=input->AS_Q.data->data[p];
   }
 
@@ -111,10 +109,15 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   
   /* ---------- Compute Residual Strain -------------*/
   /* to get the residual strain we must first divide AS_Q by alpha */
-  if(XLALhROverAlpha(&hR, output)) ABORT(status,116,"Broke at hR/alpha") ;
-
+  if(XLALhROverAlpha(&hR, output)) 
+    {
+      ABORT(status,116,"Broke at hR/alpha") ;
+    }
   /* then we upsample (and smooth it with a low pass filter) */
-  if(XLALUpsamplehR(&uphR, &hR, UpSamplingFactor)) ABORT(status,117,"Broke upsampling hR");
+  if(XLALUpsamplehR(&uphR, &hR, UpSamplingFactor)) 
+    { 
+      ABORT(status,117,"Broke upsampling hR");
+    }
   LALButterworthREAL8TimeSeries(status->statusPtr,&uphR,&lowpassfilterpar);
   CHECKSTATUSPTR( status );
 
@@ -127,29 +130,32 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   CHECKSTATUSPTR( status );
  
   /* then we downsample and voila' */
-  for (p=0; p<hR.data->length; p++) {
+  for (p=0; p<(int)hR.data->length; p++) {
     hR.data->data[p]=uphR.data->data[p*UpSamplingFactor];
   }
-
+  
   /* ---------- Compute Control Strain -------------*/
   /* to get the control strain we first multiply AS_Q by beta */
-  if( XLALhCTimesBeta(&hC, output)) ABORT(status,120,"Broke in hC x beta");
-  
+  if( XLALhCTimesBeta(&hC, output))
+    { 
+      ABORT(status,120,"Broke in hC x beta");
+    }
+
   /* Now we filter through the servo */
   for(p=NGfilt-1;p>=0;p--){
     LALIIRFilterREAL8Vector(status->statusPtr,hC.data,&G[p]);
     CHECKSTATUSPTR( status );
   }
   /* and adjust to account for servo gain to get darm_ctrl */ 
-  for (p=0; p<hC.data->length;p++) {
+  for (p=0; p<(int)hC.data->length;p++) {
     hC.data->data[p] *= ServoGain;
   }
 
   /* Copy data into x and y time series for parallel filtering */
-  for (p=0; p < hCX.data->length; p++) {
+  for (p=0; p < (int)hCX.data->length; p++) {
     hCX.data->data[p]=hC.data->data[p];
   }
-  for (p=0; p < hCY.data->length; p++) {
+  for (p=0; p < (int)hCY.data->length; p++) {
     hCY.data->data[p]=hC.data->data[p];
   }
   
@@ -159,7 +165,7 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
     CHECKSTATUSPTR( status );
   }
   /* Adjust to account for digital gain on x-arm*/ 
-  for (p=0; p< hC.data->length;p++) {
+  for (p=0; p< (int)hC.data->length;p++) {
     hCX.data->data[p] *= AXGain;
   }
   
@@ -169,12 +175,12 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
     CHECKSTATUSPTR( status );
   }
   /* Adjust to account for digital gain on y-arm*/ 
-  for (p = 0; p < hC.data->length; p++) {
+  for (p = 0; p < (int)hC.data->length; p++) {
     hCY.data->data[p] *= AYGain;
   }
 
   /* add x-arm and y-arm together */
-  for (p=0; p< hC.data->length; p++) {
+  for (p=0; p< (int)hC.data->length; p++) {
     hC.data->data[p]=(hCX.data->data[p]+hCY.data->data[p])/2;
   }
 
@@ -192,7 +198,7 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   CHECKSTATUSPTR( status );
 
   /* now add control and residual signals together and we're done */
-  for (p=0; p < h.data->length; p++) {
+  for (p=0; p < (int)h.data->length; p++) {
     h.data->data[p]= hR.data->data[p]+ hC.data->data[p];
     output->h.data->data[p]=h.data->data[p];
   }
@@ -267,7 +273,7 @@ int XLALhCTimesBeta(REAL8TimeSeries *hC, StrainOut *output)
   static REAL8 beta[MAXALPHAS],tainterp[MAXALPHAS];
 
   /* copy ouput betas into local array */
-  for(m=0; m < output->beta.data->length; m++)
+  for(m=0; m < (int)output->beta.data->length; m++)
     {
       beta[m]=output->beta.data->data[m].re;
       tainterp[m]= m*output->beta.deltaT;
@@ -280,7 +286,7 @@ int XLALhCTimesBeta(REAL8TimeSeries *hC, StrainOut *output)
     gsl_spline *spline_alpha = gsl_spline_alloc(gsl_interp_cspline,output->beta.data->length);
     gsl_spline_init(spline_alpha,tainterp,beta,output->beta.data->length);
 
-    for (n = 0; n < hC->data->length; n++) 
+    for (n = 0; n < (int)hC->data->length; n++) 
       {
 	InterpolatedBeta=gsl_spline_eval(spline_alpha,time,acc_alpha); 
 	hC->data->data[n] *= InterpolatedBeta;
@@ -304,12 +310,12 @@ int XLALUpsamplehR(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor)
   int n;
 
   /* Set all values to 0 */
-  for (n=0; n < uphR->data->length; n++) {
+  for (n=0; n < (int)uphR->data->length; n++) {
     uphR->data->data[n] = 0.0;
   }
 
   /* Set one in every up_factor to the value of hR x USR */
-  for (n=0; n < hR->data->length; n++) {
+  for (n=0; n < (int)hR->data->length; n++) {
     uphR->data->data[n * up_factor] = up_factor * hR->data->data[n];
   }
 
@@ -326,12 +332,11 @@ int XLALhROverAlpha(REAL8TimeSeries *hR, StrainOut *output)
   double alpha[MAXALPHAS],tainterp[MAXALPHAS];
 
   /* copy ouput alphas into local array */
-  for(m=0; m < output->alpha.data->length; m++)
+  for(m=0; m < (int)output->alpha.data->length; m++)
     {
       alpha[m]=output->alpha.data->data[m].re;
       tainterp[m]= m*output->alpha.deltaT;
     }
-
 
   time=0.0;    /* time variable */
   
@@ -340,7 +345,7 @@ int XLALhROverAlpha(REAL8TimeSeries *hR, StrainOut *output)
     gsl_spline *spline_alpha = gsl_spline_alloc(gsl_interp_cspline,output->alpha.data->length);
     gsl_spline_init(spline_alpha,tainterp,alpha,output->alpha.data->length);
 
-    for (n = 0; n < hR->data->length; n++) 
+    for (n = 0; n < (int)hR->data->length; n++) 
       {
 	InterpolatedAlpha=gsl_spline_eval(spline_alpha,time,acc_alpha);
 	
@@ -364,7 +369,6 @@ void XLALMakeFilters(LALStatus *status, REAL8IIRFilter *Cinv, REAL8IIRFilter *G,
 {
   int l,n;
   
-
   LALDCreateVector(status->statusPtr,&Cinv->directCoef,CinvDirectOrder);
   LALDCreateVector(status->statusPtr,&Cinv->recursCoef,CinvRecursOrder);
   LALDCreateVector(status->statusPtr,&Cinv->history,CinvDirectOrder-1);
@@ -386,7 +390,6 @@ void XLALMakeFilters(LALStatus *status, REAL8IIRFilter *Cinv, REAL8IIRFilter *G,
 
   }
 
-
   LALDCreateVector(status->statusPtr,&AA->directCoef, A_0_Rord);
   LALDCreateVector(status->statusPtr,&AA->recursCoef, A_0_Rord);
   LALDCreateVector(status->statusPtr,&AA->history, A_0_Rord-1);
@@ -395,7 +398,6 @@ void XLALMakeFilters(LALStatus *status, REAL8IIRFilter *Cinv, REAL8IIRFilter *G,
   for(l=0;l< A_0_Rord;l++) AA->directCoef->data[l]=A_0_D[l];
   for(l=0;l< A_0_Rord;l++) AA->recursCoef->data[l]=-A_0_R[l];
   for(l=0;l< A_0_Rord-1;l++) AA->history->data[l]=0.0;
-
 
   for(n=0;n<NAXfilt;n++){
    
@@ -519,6 +521,7 @@ INT4 length = input->AS_Q.data->length;
   LALDestroyVector(status->statusPtr,&asqwin);
   LALDestroyVector(status->statusPtr,&darmwin);
   LALDestroyVector(status->statusPtr,&excwin);
+
 
   RETURN (status);
 }
