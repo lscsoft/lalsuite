@@ -249,13 +249,13 @@ static int testAllocList( void )
 
   /* empty allocation list */
   trial( LALCheckMemoryLeaks(), 0, "" );
-  trial( LALFree( s ), SIGSEGV, "error: alloc not found" );
+  trial( LALFree( s ), SIGSEGV, "not found" );
 
   /* can't find allocation in PopAlloc */
   trial( p = LALMalloc( 2 * sizeof( *p ) ), 0, "" );
   trial( q = LALMalloc( 4 * sizeof( *q ) ), 0, "" );
   trial( r = LALMalloc( 8 * sizeof( *r ) ), 0, "" );
-  trial( LALFree( s ), SIGSEGV, "error: alloc not found" );
+  trial( LALFree( s ), SIGSEGV, "not found" );
   trial( LALFree( p ), 0, "" );
   trial( LALFree( r ), 0, "" );
   trial( LALCheckMemoryLeaks(), SIGSEGV, "memory leak" );
@@ -263,9 +263,9 @@ static int testAllocList( void )
   trial( LALCheckMemoryLeaks(), 0, "" );
 
   /* can't fine allocation in ModAlloc */
-  trial( s = LALRealloc( s, 1024 ), SIGSEGV, "error: alloc not found" );
+  trial( s = LALRealloc( s, 1024 ), SIGSEGV, "not found" );
   trial( p = LALRealloc( NULL, 2 * sizeof( *p ) ), 0, "" );
-  /* trial( s = LALRealloc( s, 1024 ), SIGSEGV, "error: alloc not found" ); */
+  /* trial( s = LALRealloc( s, 1024 ), SIGSEGV, "not found" ); */
   trial( LALFree( p ), 0, "" );
   trial( LALCheckMemoryLeaks(), 0, "" );
   
