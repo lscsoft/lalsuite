@@ -1,8 +1,8 @@
 /*
  * stochastic.c - SGWB Standalone Analysis Pipeline
  *
- * Tania Regimbau <Tania.Regimbau@astro.cf.ac.uk>
  * Adam Mercer <ram@star.sr.bham.ac.uk>
+ * Tania Regimbau <Tania.Regimbau@astro.cf.ac.uk>
  *
  * $Id$
  */
@@ -49,6 +49,8 @@
 #include <lal/Window.h>
 #include <lal/IIRFilter.h>
 #include <lal/BandPassTimeSeries.h>
+#include <lal/FrequencySeries.h>
+#include <lal/TimeSeries.h>
 
 #include <lalapps.h>
 
@@ -1824,7 +1826,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   " -Q, --geo-hpf-order N             GEO high pass filter order\n"
 
 /* parse command line options */
-void parseOptions(INT4 argc, CHAR *argv[])
+static void parseOptions(INT4 argc, CHAR *argv[])
 {
   int c = -1;
   struct stat fileStatus;
@@ -2729,7 +2731,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 }
 
 /* function to read data in frames */
-void readDataPair(LALStatus *status,
+static void readDataPair(LALStatus *status,
     StreamPair *streamPair,
     ReadDataPairParams *params)
 {

@@ -28,9 +28,8 @@ typedef struct tagReadDataPairParams {
 	INT4 buffer;
 } ReadDataPairParams;
 
-void parseOptions(INT4 argc, CHAR *argv[]);
-void displayUsage(INT4 exitcode);
-void readDataPair(LALStatus *status, StreamPair *streamPair,
+static void parseOptions(INT4 argc, CHAR *argv[]);
+static void readDataPair(LALStatus *status, StreamPair *streamPair,
 		ReadDataPairParams *params);
 
 #ifdef  __cplusplus
