@@ -81,7 +81,7 @@
 
 NRCSID(INSPIRALSPINBANKC, "$Id$");
 
-typedef struct Node
+typedef struct ISBNode
 {
   REAL4 psi0;
   REAL4 psi3;
@@ -90,8 +90,8 @@ typedef struct Node
   REAL4 chirpMass;
   REAL4 mass1;
   REAL4 mass2;
-  struct Node *next;
-} Node;
+  struct ISBNode *next;
+} ISBNode;
 
   
 static void tmpmetric( REAL4Array *metric );
@@ -99,8 +99,8 @@ static void cleanup(LALStatus *s,
     REAL4Array **m, 
     UINT4Vector **md, 
     REAL4Vector **e, 
-    Node *f, 
-    Node *t,
+    ISBNode *f, 
+    ISBNode *t,
     INT4 *nt);
 
 
@@ -114,8 +114,8 @@ LALInspiralSpinBank(
     )
 /* </lalVerbatim> */
 {
-  Node *tmplt = NULL;  	/* loop counter */
-  Node *output = NULL; 	/* head of output linked list */
+  ISBNode *tmplt = NULL;  	/* loop counter */
+  ISBNode *output = NULL; 	/* head of output linked list */
   REAL4Array *metric = NULL;        	/* parameter-space metric */
   UINT4Vector *metricDimensions = NULL;
   REAL4Vector *eigenval =  NULL;     	/* eigenvalues of metric */
@@ -223,7 +223,7 @@ LALInspiralSpinBank(
   zp1 = z1;
     
   /* Allocate first template, which will remain blank. */
-  output = tmplt = (Node *) LALCalloc( 1, sizeof(Node) );
+  output = tmplt = (ISBNode *) LALCalloc( 1, sizeof(ISBNode) );
   if (!output) 
   {
     cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
@@ -255,7 +255,7 @@ LALInspiralSpinBank(
         betaMax = 3.8*LAL_PI/29.961432 * (1+0.75*m2/m1)*(m1/m2) * pow((LAL_MTSUN_SI*100.0/mass),0.6666667);
         if (z > betaMax)
           continue;
-        tmplt = tmplt->next = (Node *) LALCalloc( 1, sizeof(Node) );
+        tmplt = tmplt->next = (ISBNode *) LALCalloc( 1, sizeof(ISBNode) );
         /* check to see if calloc worked */
         if (!tmplt) 
         {
@@ -355,8 +355,8 @@ static void cleanup(
     REAL4Array **m, 
     UINT4Vector **md, 
     REAL4Vector **e, 
-    Node *f,
-    Node *t,
+    ISBNode *f,
+    ISBNode *t,
     INT4 *nt)
 {
   INITSTATUS( s, "LALInspiralSpinBank-cleanup", INSPIRALSPINBANKC );
