@@ -21,19 +21,39 @@ import tempfile
 import ConfigParser
 
 def isplay(t):
+  """Return 1 if t is in the S2 playground, 0 otherwise"""
   if ((t - 729273613) % 6370) < 600:
     return 1
   else:
     return 0
 
 class InspiralChunk:
+  """
+  An InspiralChunk is the unit of analysis for the inspiral code.
+  """
   def __init__(self,start,end):
+    """
+    start = start time of the chunk
+    end   = end time of the chunk
+    """
     self.start = start
     self.end = end
     self.length = end - start
 
 class ScienceSegment:
+  """
+  A ScienceSegment is a period of time when the experimenters 
+  determine that the data from the instrument is suitable for
+  analysis by the search codes.
+  """
   def __init__(self,id,start,end,duration,segpad):
+    """
+    id = science segment id number as defined by the experimenters
+    start = gps start time of science segment
+    end = gps end time of science segment
+    duration = duration of science segment
+    segpad = amount by which to pad science segments when constructing LALdataFind queries
+    """
     self.id = id
     self.start = start
     self.end = end
@@ -45,6 +65,12 @@ class ScienceSegment:
     self.endpad = self.end + self.segpad
 
   def createchunks(self,length,overlap,play_only):
+    """
+    Divide a science segment up into chunks for analysis
+    length = desired length of the each chunk
+    overlap = overlap between adjacent chunks
+    play_only = create only chunks that overlap with playground data
+    """
     dur = self.duration
     start = self.start
     seg_incr = length - overlap
@@ -66,7 +92,7 @@ class InspiralPipeline:
   """
   def __init__(self,config_file):
     """
-    configfile = the name of the file containing configuration parameters
+    config_file = the name of the file containing configuration parameters
     """
     # parse the configuration file into a dictionary
     self.config = {}
