@@ -46,6 +46,7 @@ use of the stereographic projection.
 #define MAX(A, B)  (((A) < (B)) ? (B) : (A))
 #define MIN(A, B)  (((A) < (B)) ? (A) : (B))
 #define cot(A)  (1./tan(A))
+#define rint(x) floor((x)+0.5)
 \end{verbatim}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -95,8 +96,8 @@ static void Fill1ColumnAnor(INT4);
 static void FillCaseA1(INT4, INT4, INT4);
 static void FillCaseA2(INT4, INT4, INT4);
 static void FillCaseA3(INT4, INT4, INT4);
-static void InitialCircleCase(INT4 *,REAL8, REAL8, REAL8, REAL8, REAL8 *,INT4 *,INT4 *);
-static void SecondCircleCase(INT4, INT4*, REAL8, REAL8, REAL8, REAL8, INT4,
+static void InitialCircleCase(INT4 *,REAL8, REAL8, REAL8, REAL8 *,INT4 *,INT4 *);
+static void SecondCircleCase(INT4, INT4*, REAL8, REAL8, REAL8, INT4,
                              REAL8*, INT4*, INT4 *, INT4*);
 static void FollowCircleCase(INT4, INT4 *, REAL8, REAL8, REAL8, REAL8, REAL8,
                              INT4 *,INT4 *,INT4 *);
@@ -165,7 +166,7 @@ More detailed documentation can be found in the source code itself.
  *    c. LAL includes
  */
 
-#include <lal/LALConstants.h>
+
 #include <lal/LUT.h>
 
 
@@ -253,8 +254,8 @@ static void FillCaseA1(INT4, INT4, INT4);
 static void FillCaseA2(INT4, INT4, INT4);
 static void FillCaseA3(INT4, INT4, INT4);
 
-static void InitialCircleCase(INT4 *,REAL8, REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *);
-static void SecondCircleCase(INT4, INT4*,REAL8,REAL8, REAL8,REAL8,INT4,REAL8*,INT4*,INT4 *,INT4*);
+static void InitialCircleCase(INT4 *,REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *);
+static void SecondCircleCase(INT4, INT4*,REAL8,REAL8, REAL8,INT4,REAL8*,INT4*,INT4 *,INT4*);
 static void FollowCircleCase(INT4,INT4 *,REAL8,REAL8,REAL8,REAL8,REAL8,INT4 *,INT4 *,INT4 *);
 static void InitialLineCase(INT4 *, REAL8, REAL8, REAL8, INT4 *);
 static void SecondLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, INT4 *);
@@ -275,7 +276,7 @@ void LALHOUGHConstructPLUT(LALStatus       *status,
 { /*  ************************************************ </lalVerbatim> */
  
   INT8    f0Bin;
-  INT2    i;
+  
   /* --------------------------------------------- */
   INITSTATUS (status, " LALHOUGHConstructPLUT", CONSTRUCTPLUTC);
   /*  ATTATCHSTATUSPTR (status); */
@@ -506,7 +507,7 @@ static void  FillPLUT(HOUGHParamPLUT  *par, UINT2 maxNBins, UINT2 maxNBorders){
       directionPlus = -1;
     } else{
       /* circle case */
-      InitialCircleCase(&lastBorder,alpha, ang1, ang2, rCritic, 
+      InitialCircleCase(&lastBorder,alpha, ang1, ang2,  
 			&rcOldPlus, &directionPlus, &ifailPlus);
     }    
   }
@@ -600,7 +601,7 @@ static void  FillPLUT(HOUGHParamPLUT  *par, UINT2 maxNBins, UINT2 maxNBorders){
       /* circle case */
       pathology = 1; /* provisionally */
       SecondCircleCase(currentBin, &lastBorder,alpha, ang1, ang2, 
-		       rCritic, directionPlus, &rcOldMinus, 
+		       directionPlus, &rcOldMinus, 
 		       &pathology, &directionMinus, &ifailMinus);
     }    
   }
@@ -707,7 +708,7 @@ static void InitialLineCase(INT4  *lastBorderP, REAL8 alpha, REAL8  delta,
 
 
   INT4 lastBorder;
-  INT4 ifail;        /* =1 (ok), =0 (stop) */
+  
 
   REAL8  xA,yA;
   INT4 yymin,yymax;
@@ -721,7 +722,7 @@ static void InitialLineCase(INT4  *lastBorderP, REAL8 alpha, REAL8  delta,
   CheckLineIntersection(alpha, xA, yA, &yymin, &yymax, &noIn);
 
   if( noIn ==0 ){
-    *ifailP = 0;
+    *ifailP = 0;    /* =1 (ok), =0 (stop) */
     return;
   }
   ++lastBorder;
@@ -813,7 +814,7 @@ static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
      changed accordingly */
 
   INT4 lastBorder;
-  INT4 ifail;        /* =1 (ok), =0 (stop) */
+  
 
   REAL8  xA,yA;
   INT4 yymin,yymax;
@@ -827,7 +828,7 @@ static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
   CheckLineIntersection(alpha, xA, yA, &yymin, &yymax, &noIn);
 
   if( noIn ==0 ){
-    *ifailP = 0;
+    *ifailP = 0;  /* =1 (ok), =0 (stop) */
     return;
   }
   ++lastBorder;
@@ -921,7 +922,7 @@ static void FollowLineCase(INT4 currentBin, INT4  *lastBorderP,
 		    INT4 direction, INT4 *ifailP){
 
   INT4 lastBorder;
-  INT4 ifail;        /* =1 (ok), =0 (stop) */
+  
 
   REAL8  xA,yA;
   INT4 yymin,yymax;
@@ -934,7 +935,7 @@ static void FollowLineCase(INT4 currentBin, INT4  *lastBorderP,
   CheckLineIntersection(alpha, xA, yA, &yymin, &yymax, &noIn);
 
   if( noIn ==0 ){
-    *ifailP = 0;
+    *ifailP = 0; /* =1 (ok), =0 (stop) */
     return;
   }
   ++lastBorder;
@@ -1185,7 +1186,8 @@ static void CheckLineIntersection(REAL8 alpha, REAL8 xA, REAL8 yA,
 		      INT4 *yyminP, INT4 *yymaxP, INT4 *noInP){
  
   INT4 yymin,yymax,noIn;
-
+  yymin = 0;
+  yymax = 0;
   noIn = 0;
 
   if ((alpha == 0) || (alpha == LAL_PI) || (alpha == -LAL_PI) ){ 
@@ -1231,7 +1233,6 @@ static void CheckLineIntersection(REAL8 alpha, REAL8 xA, REAL8 yA,
       }
     }
   }
-
   
   *yyminP = yymin;
   *yymaxP = yymax;
@@ -1304,12 +1305,12 @@ static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA,
 /****************************************************************/
 
 static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
-		      REAL8 ang1, REAL8  ang2, REAL8 rCritic, 
+		      REAL8 ang1, REAL8  ang2,  
 		      REAL8 *rcOldP, INT4 *directionP, INT4 *ifailP){
 
   INT4 lastBorder;
   INT4 direction;    /* +1, or -1 */
-  INT4 ifail;        /* =1 (ok), =0 (stop) */
+  
 
   REAL8 rho1,rho2,radius;
   REAL8 xc,yc,rc; /* coordinates of the center of the circle */
@@ -1331,7 +1332,7 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
       ( xc+radius < LUTxMin ) || ( xc-radius > LUTxMax )  ||
       ( sqrt(LUTxMax*LUTxMax + LUTyMax*LUTyMax) + radius < fabs(rc) ) ){
     /* no intersection */
-    *ifailP = 0;
+    *ifailP = 0;  /* =1 (ok), =0 (stop) */
     return;
   }
 
@@ -1492,19 +1493,19 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 
 static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP, 
 		      REAL8 alpha, REAL8 ang1, REAL8  ang2, 
-		      REAL8 rCritic, INT4 directionPlus, REAL8 *rcOldP, 
+		      INT4 directionPlus, REAL8 *rcOldP, 
 		      INT4 *pathologyP,INT4 *directionP, INT4 *ifailP){
 
   INT4 lastBorder;
   INT4 pathology;    /* =1 (normal), =0 (anormal) */
   INT4 direction;    /* +1, or -1 */
-  INT4 ifail;        /* =1 (ok), =0 (stop) */
+  
 
   REAL8 rho1,rho2,radius;
   REAL8 xc,yc,rc; /* coordinates of the center of the circle */
   INT4 pieces;
 
-    
+  pathology = *pathologyP;
   lastBorder = *lastBorderP;
 
   rho1 = cos(ang1)/(1. -sin(ang1));
@@ -1520,7 +1521,7 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
       ( xc+radius < LUTxMin ) || ( xc-radius > LUTxMax )  ||
       ( sqrt(LUTxMax*LUTxMax + LUTyMax*LUTyMax) + radius < fabs(rc) ) ){
     /* no intersection */
-    *ifailP = 0;
+    *ifailP = 0;  /* =1 (ok), =0 (stop) */
     return;
   }
 
@@ -1701,7 +1702,7 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
   INT4 lastBorder;
   INT4 pathology;    /* =1 (normal), =0 (anormal) */
   INT4 direction;    /* +1, or -1 */
-  INT4 ifail;        /* =1 (ok), =0 (stop) */
+  
 
   REAL8 rho1,rho2,radius;
   REAL8 xc,yc,rc; /* coordinates of the center of the circle */
@@ -1725,7 +1726,7 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
       ( xc+radius < LUTxMin ) || ( xc-radius > LUTxMax )  ||
       ( sqrt(LUTxMax*LUTxMax + LUTyMax*LUTyMax) + radius < fabs(rc) ) ){
     /* no intersection */
-    *ifailP = 0;
+    *ifailP = 0;  /* =1 (ok), =0 (stop) */
     return;
   }
 
@@ -1927,11 +1928,11 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 
  /* convert  to the values of the 'near' y-pixel */  
   yymax  = floor(yupper/DIFFY+LUTySide/2.-0.5);
-  /*  yupper = Ycoor[yymax];  /*  yupper = DIFFY*(0.5 + yymax - LUTySide/2.) */
-  /* this gives problems when circles are almost horizontal lines */
+  
+  
 
   yymin  = ceil(ylower/DIFFY+LUTySide/2.-0.5);
-  /*  ylower = Ycoor[yymin];   /*ylower = DIFFY*(0.5 + yymin - LUTySide/2.) */
+  
 
   /*********************************************************/
   /* looking at the upper-left quadrant */
@@ -2061,10 +2062,10 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 
   /* convert to the value of the 'near' y-pixel */ 
   yymax  = floor(yupper/DIFFY+LUTySide/2.-0.5);
-  /* yupper = Ycoor[yymax];  /* yupper = DIFFY*(0.5 + yymax - LUTySide/2.) */
+ 
   
   yymin  = ceil(ylower/DIFFY+LUTySide/2.-0.5);
-  /* ylower = Ycoor[yymin];  /* ylower = DIFFY*(0.5 + yymin - LUTySide/2.) */
+  
   
   /*********************************************************/
   /* looking at the upper-right quadrant */
