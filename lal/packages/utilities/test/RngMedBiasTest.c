@@ -132,7 +132,7 @@ int main(int argc, char *argv[]){
 
 
   
-  SUB( RngMedBias( &status, &bias, blkSize), &status);
+  SUB( LALRngMedBias( &status, &bias, blkSize), &status);
 
   printf("The correction factor for block size %d is:  %1.15lf\n", blkSize, bias);
 

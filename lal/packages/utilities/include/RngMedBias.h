@@ -126,7 +126,7 @@ NRCSID (RNGMEDBIASH, "$Id$");
  */
 
 
-void RngMedBias (LALStatus   *status,
+void LALRngMedBias (LALStatus   *status,
 		 REAL8       *biasFactor,
 		 INT4        blkSize
 		 );

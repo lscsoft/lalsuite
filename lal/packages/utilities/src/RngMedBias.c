@@ -38,7 +38,7 @@ returns and error for smaller values.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{RngMedBiasD}
-\index{\verb&RngMedBias()&}
+\index{\verb&LALRngMedBias()&}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Description}
 
@@ -73,7 +73,7 @@ NRCSID (RNGMEDBIASC, "$Id$");
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* *******************************  <lalVerbatim file="RngMedBiasD"> */
-void RngMedBias (LALStatus   *status,
+void LALRngMedBias (LALStatus   *status,
 		 REAL8       *biasFactor,
 		 INT4        blkSize
                  )
@@ -1085,7 +1085,7 @@ void RngMedBias (LALStatus   *status,
 
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "RngMedBiasC", RNGMEDBIASC);
+  INITSTATUS (status, "LALRngMedBias", RNGMEDBIASC);
   ATTATCHSTATUSPTR (status);   
 
   /* check arguments are not null and block size is positive*/
