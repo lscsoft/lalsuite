@@ -133,7 +133,7 @@ arguments = --lal-cache \\
   --instrument $(site) --type %s \\
   --start $(frstart) --end $(frend)
 environment = LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH)
-log = %s.log
+log = %s
 error = datafind/frcache-$(site)-$(frstart)-$(frend).$(cluster).$(process).err
 output = cache/frcache-$(site)-$(frstart)-$(frend).out
 notification = never
@@ -161,7 +161,7 @@ arguments = --gps-start-time $(start) --gps-end-time $(end) \\
         else:
           print >> sub_fh, "--" + arg, self.config[sec][arg], 
     print >> sub_fh, """
-log = %s.log
+log = %s
 error = bank/tmpltbank-$(ifo)-$(start)-$(end).$(cluster).$(process).err
 output = bank/tmpltbank-$(ifo)-$(start)-$(end).$(cluster).$(process).out
 notification = never
@@ -187,7 +187,7 @@ arguments = --gps-start-time $(start) --gps-end-time $(end) \\
         else:
           print >> sub_fh, "--" + arg, self.config[sec][arg], 
     print >> sub_fh, """
-log = %s.log
+log = %s
 error = inspiral/inspiral-$(ifo)-$(start)-$(end).$(cluster).$(process).err
 output = inspiral/inspiral-$(ifo)-$(start)-$(end).$(cluster).$(process).out
 notification = never
