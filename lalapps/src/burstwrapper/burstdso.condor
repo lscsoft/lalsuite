@@ -5,10 +5,10 @@ executable = /dso-test/jsylvest/lalapps/src/burstwrapper/burstdso
 error = job.TIMES.err
 log = jobs.log
 
-arguments = ldas-gridmon.ligo.caltech.edu framequery.txt algorithms.txt filterparams.txt responsefiles.txt
+arguments = FrCacheFile.TIMES framequery.TIMES.txt algorithms.TIMES.txt filterparams.TIMES.txt responsefiles.TIMES.txt
 
 initialdir = IDIR 
-transfer_input_files = FrCacheFile,framequery.txt,algorithms.txt,filterparams.txt,responsefiles.txt
+transfer_input_files = FrCacheFile.TIMES,framequery.TIMES.txt,algorithms.TIMES.txt,filterparams.TIMES.txt,responsefiles.TIMES.txt
 when_to_transfer_output = ON_EXIT
 
 getenv = True

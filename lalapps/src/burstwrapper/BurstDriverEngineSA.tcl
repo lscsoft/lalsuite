@@ -69,6 +69,11 @@ set injAmpTmp $injAmp
 set LOCALFILE 0
 set FastCacheDone 0
 
+set cjid 0
+if { [ file exists tmp.condor ] } {
+    file delete tmp.condor
+}
+
 if { [ regexp {LOCAL:(.*)} $PrebinFile junk ZeFile ] } {
 
     set NNODES 210
@@ -896,77 +901,7 @@ if { [ catch { exec burstdso $dataserver framequery.txt algorithms.txt filterpar
     set jobOK 1
     set jobRetry 0
 }
-} else {
- # Condor
- puts "Submitting condor job..."
 
- file copy -force algorithms.txt framequery.txt filterparams.txt responsefiles.txt $PrebinFile
-
- file rename $PrebinFile/algorithms.txt $PrebinFile/algorithms.$start_time.txt
- file rename $PrebinFile/framequery.txt $PrebinFile/framequery.$start_time.txt
- file rename $PrebinFile/filterparams.txt $PrebinFile/filterparams.$start_time.txt
- file rename $PrebinFile/responsefiles.txt $PrebinFile/responsefiles.$start_time.txt
-
- if { [ catch { exec ./subst burstdso.condor tmp1 TIMES $start_time } cout ] } {
-    puts $cout
-    exit 1
- }
-
-regsub -all "/" $ZeFile "\\/" rZeFile
- if { [ catch { exec ./subst tmp1 tmp IDIR $rZeFile } cout ] } {
-        puts $cout
-        exit 1
- }
-
-if { [ info exists FastCache ] == 0 } {
-    if { [ catch { exec /bin/bash --login -c "echo $PrebinFile ; cd $PrebinFile ; buildcache $dataserver $PrebinFile/framequery.$start_time.txt" } cout ] } {
-	puts $cout
-	exit 1
-    }
-
-    file rename $PrebinFile/FrCacheFile $PrebinFile/FrCacheFile.$start_time
-
-} else {
-    if { $FastCacheDone == 0 } {
-
-	puts "Creating cache..."
-
-	if { [ file exists $PrebinFile/FrCacheFile.txt ] } {
-	    file delete $PrebinFile/FrCacheFile.txt
-	}
-
-	if { [ catch { exec BuildCache.tcl $dataType $env(LSC_DATAGRID_CLIENT_LOCATION) $dataserver $IFO $FType $PrebinFile/FrCacheFile.txt } cout ] } {
-	    puts $cout
-	    exit 1
-	}
-	if { [ catch { exec BuildCache.tcl $dataType $env(LSC_DATAGRID_CLIENT_LOCATION) $dataserver $IFO CAL_FAC_V03_$IFO2 $PrebinFile/FrCacheFile.txt } cout ] } {
-	    puts $cout
-	    exit 1
-	}
-	if { [ catch { exec BuildCache.tcl $dataType $env(LSC_DATAGRID_CLIENT_LOCATION) $dataserver $IFO CAL_REF_V03_$IFO2 $PrebinFile/FrCacheFile.txt } cout ] } {
-	    puts $cout
-	    exit 1
-	}
-	if { [ catch { exec BuildCache.tcl $dataType $env(LSC_DATAGRID_CLIENT_LOCATION) $dataserver $IFO $MDCFrames $PrebinFile/FrCacheFile.txt } cout ] } {
-	    puts $cout
-	    exit 1
-	}
-	
-	set FastCacheDone 1
-
-	puts "done"
-    }
-
-    file copy $PrebinFile/FrCacheFile.txt $PrebinFile/FrCacheFile.$start_time.txt
-}
-    
-
- if { [ catch { exec /bin/bash --login -c "condor_submit tmp" } cout ] } {
-     puts $cout
-     exit 1
- }
- puts "done."
-}
 
 #######################################################
 
@@ -1002,6 +937,74 @@ if { $doSplit } {
 
 }
 
+
+
+} else {
+# Condor
+puts "Creating condor job..."
+
+file copy -force algorithms.txt framequery.txt filterparams.txt responsefiles.txt $PrebinFile
+
+file rename $PrebinFile/algorithms.txt $PrebinFile/algorithms.$start_time.txt
+file rename $PrebinFile/framequery.txt $PrebinFile/framequery.$start_time.txt
+file rename $PrebinFile/filterparams.txt $PrebinFile/filterparams.$start_time.txt
+file rename $PrebinFile/responsefiles.txt $PrebinFile/responsefiles.$start_time.txt
+
+if { [ catch { exec ./subst burstdso.condor tmp1 TIMES $start_time } cout ] } {
+    puts $cout
+    exit 1
+}
+
+regsub -all "/" $ZeFile "\\/" rZeFile
+if { [ catch { exec ./subst tmp1 tmp IDIR $rZeFile } cout ] } {
+    puts $cout
+    exit 1
+}
+
+
+if { $cjid == 0 } {
+    # create framequery for full segment
+    set fid [ open $PrebinFile/framequery.$start_time.txt "r" ]
+    while { [ eof $fid ] == 0 } {
+	gets $fid line
+
+	if { [ regexp "$FType $IFO (\[0-9\]{9})-(\[0-9\]{9}) .*" $line junk T0 T1 ] } {
+	    break
+	}
+    }
+    close $fid
+
+    if { [ catch { exec ./subst $PrebinFile/framequery.$start_time.txt sfquery.txt $T0 $start_time } cout ] } {
+	    puts $cout
+	    exit 1
+    }
+    
+    if { [ catch { exec ./subst sfquery.txt $PrebinFile/sframequery.txt $T1 $end_time } cout ] } {
+	    puts $cout
+	    exit 1
+    }
+    
+
+    if { [ catch { exec /bin/bash --login -c "echo $PrebinFile ; cd $PrebinFile ; buildcache $dataserver $PrebinFile/sframequery.txt" } cout ] } {
+	puts $cout
+	exit 1
+    }
+}
+
+file copy $PrebinFile/FrCacheFile $PrebinFile/FrCacheFile.$start_time
+
+
+if { $cjid == 0 } {
+    file copy tmp tmp.condor
+} else {
+    exec cat tmp >> tmp.condor
+}
+
+incr cjid
+
+}
+
+
 #end loop over channels:
 } 
     
@@ -1011,6 +1014,21 @@ incr start_time $duration
 }
 
 #end loop over times within one segment:
+}
+
+if { [ info exists NoCondor ] == 0 && $cjid > 0} {
+    puts "Sending jobs to cluster"
+
+    if { [ catch { exec /bin/bash --login -c "condor_submit tmp.condor" } cout ] } {
+	puts $cout
+	exit 1
+    }
+
+#    file delete tmp.condor
+    file rename tmp.condor tmp.condor.$start_time
+    
+    set cjid 0
+    
 }
 
 # end if gotIFO, etc.
