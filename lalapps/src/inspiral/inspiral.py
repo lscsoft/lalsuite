@@ -43,6 +43,7 @@ class DataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
       self.add_ini_args(cp,sec)
 
     self.set_stderr_file('logs/datafind-$(instrument)-$(start)-$(end).err')
+    self.set_stdout_file('cache/$(instrument)-$(start)-$(end).cache')
     self.set_sub_file('datafind.sub')
 
 
@@ -59,7 +60,7 @@ class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     cp = ConfigParser object from which options are read.
     """
     self.__executable = cp.get('condor','tmpltbank')
-    self.__universe = cp.get('condor','univese')
+    self.__universe = cp.get('condor','universe')
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__init__(self,cp)
 
@@ -86,7 +87,7 @@ class InspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     cp = ConfigParser object from which options are read.
     """
     self.__executable = cp.get('condor','inspiral')
-    self.__universe = cp.get('condor','univese')
+    self.__universe = cp.get('condor','universe')
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__init__(self,cp)
 
@@ -140,8 +141,8 @@ class IncaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     cp = ConfigParser object from which options are read.
     """
     self.__universe = 'scheduler'
+    self.__executable = 'lalapps_inca'
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.CondorDAGJob.__init__(self,'lalapps_inca','scheduler')
     pipeline.AnalysisJob.__init__(self,cp)
     
     for sec in ['inca']:
@@ -175,7 +176,6 @@ class DataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     if self.__start and self.__end and self.__instrument:
       self.__output = 'cache/' + self.__instrument + '-' + str(self.__start) 
       self.__output = self.__output + '-' + str(self.__end) + '.cache'
-      self.job().set_stdout_file(self.__output)
 
   def set_start(self,time):
     """
