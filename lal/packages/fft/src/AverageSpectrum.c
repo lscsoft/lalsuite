@@ -696,10 +696,10 @@ int XLALREAL4SpectrumInvertTruncate(
   else /* otherwise just invert the spectrum */
   {
     /* clear the low frequency components */
-    memset( vtilde->data, 0, cut * sizeof( *vtilde->data ) );
+    memset( spectrum->data->data, 0, cut * sizeof( *spectrum->data->data ) );
 
     /* invert the high frequency (non-Nyquist) components */
-    for ( k = 1; k < spectrum->data->length - 1; ++k )
+    for ( k = cut; k < spectrum->data->length - 1; ++k )
       spectrum->data->data[k] = 1.0 / spectrum->data->data[k];
 
     /* zero Nyquist */
@@ -707,7 +707,7 @@ int XLALREAL4SpectrumInvertTruncate(
   }
 
   /* now correct the units */
-  XLALUnitRaiseINT2( spectrum->sampleUnits, spectrum->sampleUnits, -1 );
+  XLALUnitRaiseINT2( &spectrum->sampleUnits, &spectrum->sampleUnits, -1 );
 
   return 0;
 }
