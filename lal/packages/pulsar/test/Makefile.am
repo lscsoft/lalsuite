@@ -40,4 +40,5 @@ DISTCLEANFILES = *.tex
 MAINTAINERCLEANFILES = earth*.ilwd sun*.ilwd
 dvi-local: .dvi-dep
 
+SUFFIXES=.ilwd .dat
 .dat.ilwd:; /bin/sh ephemtoilwd.sh $< > $@
