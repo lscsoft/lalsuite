@@ -14,15 +14,20 @@ Module to initialize some parameters for waveform generation.
 \idx{LALInspiralRestrictedInit()}
 
 \subsubsection*{Description}
-The input parameters is an InspiralTemplate structure which provides the waveform parameters.
-That function call the \texttt{LALInspiralParameterCalc} function to compute all the mass 
-parameters. Then, the restricted newtonian amplitude is computed and finally 
-an estimated length of the waveform  is compute and stored in an output structure called 
-\texttt{InspiralInit}.
+The input parameters is an InspiralTemplate structure which provides the waveform parameters
+such as masses, lower frequency\dots The function \texttt{LALInspiralInit} calls the 
+\texttt{LALInspiralParameterCalc} function in order to  compute all the mass parameters. Then, 
+\texttt{LALInspiralRestrictedAmplitude} function is called to get the restricted newtonian 
+amplitude. LALInspiralWavelength, LALInspiralSetup and LALInspiralChooseModel are also called 
+in order to estimate the waveform length which is stored in an output structure called 
+\texttt{InspiralInit}. We also stored Energy, flux and evolution function of flux and energy in 
+that structure.
 
-Whatever is the results of LALInspiralChooseModel function the status code is force to be zero. 
-However, in that case, the length of the waveform is fixed to zero. Therefore, the codes which 
-use LALInspiralInit (mainly injection code right now) won't stopped.
+The  \texttt{LALInspiralChooseModel} function might failed or send a non zero status code. 
+That function force it to be zero therefore the codes which  use LALInspiralInit (mainly 
+injection code right now) won't stopped. Of course, if status code is non zero, we have to keep 
+trace of it. Thus, the length of the waveform is fixed to zero in case of problems such as
+negative length, cutoff frequency lower than the lower cutoff frequency \dots. 
 
 \subsubsection*{Uses}
 \texttt{LALInspiralParameterCalc}\\
@@ -32,9 +37,9 @@ use LALInspiralInit (mainly injection code right now) won't stopped.
 \noindent\texttt{LALInspiralSetup}
 
 \subsubsection*{Notes}
-There is only one assert on the InspiralTemplate variable. All asserts
-are already included in the different functions which are called throughout
-LALInspiralInit function.
+There is only one assert on the InspiralTemplate variable since  all relevant asserts
+are already included in the different functions which are called throughout the LALInspiralInit
+function.
 \vfill{\footnotesize\input{LALInspiralInitCV}}
 </lalLaTeX>  */
 
