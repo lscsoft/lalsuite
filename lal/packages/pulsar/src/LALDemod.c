@@ -8,7 +8,7 @@ Computes a demodulated Fourier transform (DeFT) given a set of input short Fouri
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
-\input{LALDemodD}
+\input{LALDemodCP}
 \index{\texttt{LALDemod()}}
 
 \subsubsection*{Description}
@@ -20,7 +20,7 @@ The {\bf parameter structure} defines the search frequency band
 
 The {\bf input} is: \verb@**input@, an array of structures of type \verb@FFT@. This data type will soon disappear as it is just a complex8frequencyseries.
 
-The {\bf output} is a pointer a double containing the values of $\cF$. Will be modified to also output $F_a$ and $F_b$.
+The {\bf output} is a pointer a double containing the values of $\mathcal{F}$. Will be modified to also output $F_a$ and $F_b$.
 
 \subsubsection*{Algorithm}
 
@@ -60,10 +60,12 @@ None
 #include <lal/LALDemod.h>
 NRCSID( LALDEMODC, "$Id$" );
 
+/* <lalVerbatim file="LALDemodCP"> */
 void LALDemod(LALStatus *status, 
 	double *F, 
 	FFT **input, 
 	DemodPar *params) 
+/* </lalVerbatim> */
 { 
 
   INT4 alpha,i;                 /* loop indices */

@@ -165,7 +165,10 @@ typedef struct FFTTag
   COMPLEX8FrequencySeries *fft;   
 } FFT;
 
-
+/********************************************************** <lalLaTeX>
+\vfill{\footnotesize\input{LALDemodHV}}
+\newpage\input{LALDemodC}
+******************************************************* </lalLaTeX> */
 void LALDemod (LALStatus *stat, double  *F, FFT **input, DemodPar *params);
 
 	
