@@ -10,7 +10,13 @@ pkgdata_DATA = eigen_Tf0-1e8_n-2.dat eigenInv_Tf0-1e8_n-2.dat \
   earth02.dat sun02.dat \
   earth03.dat sun03.dat \
   earth04.dat sun04.dat \
+  earth05.dat sun05.dat  \
+  earth06.dat sun06.dat  \
+  earth07.dat sun07.dat  \
+  earth08.dat sun08.dat  \
+  earth09.dat sun09.dat  \
   earth00-04.dat sun00-04.dat \
+  earth03-06.dat sun03-06.dat \
   earth05-09.dat sun05-09.dat \
   earth98.ilwd sun98.ilwd \
   earth99.ilwd sun99.ilwd \
