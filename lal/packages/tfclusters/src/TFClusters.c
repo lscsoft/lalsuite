@@ -841,7 +841,9 @@ LALClustersPowerThreshold (
       P0 += dir->rho[in->f[i][j]];
     }
      
+    /*
     po -= P0;
+    */
 
     incgam(status->statusPtr, (float)in->sizes[i], po, &prob);
     CHECKSTATUSPTR (status);
