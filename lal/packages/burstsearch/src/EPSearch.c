@@ -27,7 +27,6 @@ NRCSID (EPSEARCHC, "$Id$");
 #define TRUE 1
 #define FALSE 0
 
-
 extern INT4 lalDebugLevel;
 
 /******** <lalVerbatim file="EPSearchCP"> ********/
@@ -40,15 +39,15 @@ EPSearch (
 		   )
 /******** </lalVerbatim> ********/
 { 
-    INT4                    i,j;
-    REAL4                   redummy, imdummy;
-    EPDataSegment          *dummySegment = NULL;
-    BurstEvent             *currentEvent = NULL;
-    BurstEvent             *prevEvent = NULL;
-    COMPLEX8FrequencySeries *fseries;
-    RealDFTParams           *dftparams=NULL;
-    LALWindowParams          winParams;
-    REAL4                  *dummySpec = NULL;
+    INT4                      i,j;
+    REAL4                     redummy, imdummy;
+    EPDataSegment            *dummySegment     = NULL;
+    BurstEvent               *currentEvent     = NULL;
+    BurstEvent               *prevEvent        = NULL;
+    COMPLEX8FrequencySeries  *fseries;
+    RealDFTParams            *dftparams        = NULL;
+    LALWindowParams           winParams;
+    REAL4                    *dummySpec        = NULL;
 
     INITSTATUS (status, "EPSearch", EPSEARCHC);
     ATTATCHSTATUSPTR (status);
@@ -83,31 +82,102 @@ EPSearch (
       dummySpec[j] = 0.0;
     }
 
-    /* loop over data computing spectrum */
-    for ( i=0 ; i<(INT4)tmpDutyCycle ; i++)
-    {
-      /* point dummySegment to the segment to analyze */
-      dummySegment = params->epSegVec->data + params->currentSegment + i;
+    if (params->initParams->method == useMedian)
+    /* run new code using median to obtain power spectrum */
+    { /* loop over data computing spectrum */
+      /* allocate two dimensional array to hold power at each freq in each time slice */
+      INT4 flength = fseries->data->length;
+      INT4 numSegs = (INT4)tmpDutyCycle;
+      REAL4 *ptr = (REAL4 *)LALMalloc(flength * numSegs * sizeof(REAL4));
+      ASSERT(ptr, status, EPSEARCHH_EMALLOC, EPSEARCHH_MSGEMALLOC);
 
-      /* compute the DFT of input time series */
-      LALComputeFrequencySeries (status->statusPtr, fseries, 
-          dummySegment->data, dftparams);
-      CHECKSTATUSPTR (status);
+      /* zero out memory array */
+      for (j = 0; j < flength; j++)
+      for (i = 0; i < numSegs; i++)
+        {ptr[i * flength + j] = 0.0;}
 
-      /* normalize the data stream so that rms of Re or Im is 1 */
-      redummy=imdummy=0.0;
+      /* obtain power spectrum in each time slice */
+      for (i = 0; i < numSegs; i++)
+      {
+        /* point dummySegment to the segment to analyze */
+        dummySegment = params->epSegVec->data + params->currentSegment + i;
+
+        /* compute the DFT of input time series */
+        LALComputeFrequencySeries (status->statusPtr, fseries, 
+            dummySegment->data, dftparams);
+        CHECKSTATUSPTR (status);
+
+        /* copy modulus of DFT output into two dimensional array */
+        for (j=0 ; j < flength ; j++)
+        {
+          redummy = fseries->data->data[j].re ;
+          imdummy = fseries->data->data[j].im ;
+          ptr[i * flength + j] = redummy*redummy + imdummy*imdummy;
+        }
+      }  /* done computing spectrum */
+
+      /* find median value over time slices for each frequency */
+      for (j = 0; j < flength; j++)
+      {
+        dummySpec[j] = EPMedian(ptr, j, flength, numSegs, status);
+        dummySpec[j] *= sqrt(2.0); /* scale to match mean method */
+      }
+
+      LALFree(ptr);     
+    }  /* end of new code using median */
+    
+    else if (params->initParams->method == useMean)
+    /* run original code using mean to obtain power spectrum */
+    {  /* loop over data computing spectrum */
+      for ( i=0 ; i<(INT4)tmpDutyCycle ; i++)
+      {
+        /* point dummySegment to the segment to analyze */
+        dummySegment = params->epSegVec->data + params->currentSegment + i;
+
+        /* compute the DFT of input time series */
+        LALComputeFrequencySeries (status->statusPtr, fseries, 
+            dummySegment->data, dftparams);
+        CHECKSTATUSPTR (status);
+
+        /* normalize the data stream so that rms of Re or Im is 1 */
+        redummy=imdummy=0.0;
+        for (j=0 ; j<(INT4)fseries->data->length ; j++)
+        {
+          redummy = fseries->data->data[j].re ;
+          imdummy = fseries->data->data[j].im ;
+          dummySpec[j] += redummy*redummy + imdummy*imdummy;
+        }
+      }
       for (j=0 ; j<(INT4)fseries->data->length ; j++)
       {
-        redummy = fseries->data->data[j].re ;
-        imdummy = fseries->data->data[j].im ;
-        dummySpec[j] += redummy*redummy + imdummy*imdummy;
+        dummySpec[j] /= ((REAL4) tmpDutyCycle);
       }
-    }
-    for (j=0 ; j<(INT4)fseries->data->length ; j++)
+    }  /* end of original code using mean */
+    
+    else if (params->initParams->method == useUnity)
+    /* force power spectrum to unity */
     {
-      dummySpec[j] /= ((REAL4) tmpDutyCycle);
+      for (j=0 ; j<(INT4)fseries->data->length ; j++)
+        {dummySpec[j] = 1.0;}
     }
 
+    /* default case for unknown method */
+    else
+    {
+        ABORT (status, EPSEARCHH_EINCOMP, EPSEARCHH_MSGEINCOMP );
+    }
+    
+    /* write diagnostic info to disk */
+    { /* output normalized power spectrum MSW 7/19/02 */
+      FILE *fp;
+      fp = fopen("./freqseries.dat","w");
+      for (j=0 ; j<(INT4)fseries->data->length ; j++)
+      {
+        fprintf(fp, "%i\t%g\n", j, dummySpec[j]);
+      }    
+      fclose(fp);
+    }
+    
     /* loop over data applying excess power method */
     for ( i=0 ; i<(INT4)tmpDutyCycle ; i++)
     {
@@ -161,10 +231,11 @@ EPSearch (
         redummy += fseries->data->data[j].re * fseries->data->data[j].re;
         imdummy += fseries->data->data[j].im * fseries->data->data[j].im;
       }
+      
 #ifdef PRINTAVERAGE
       {
         FILE *fp;
-        fp = fopen("/tmp/power.dat","a");
+        fp = fopen("./power.dat","a");
         fprintf (fp , "Real average = %f, Imag average = %f\n",redummy/((REAL4)
               fseries->data->length), imdummy/((REAL4) fseries->data->length));
         fclose(fp);
@@ -278,4 +349,72 @@ EPSearch (
     RETURN (status);
 }
 
+/*************************************************************/
+/* calculation of median for power spectrum data 7/17/02 MSW */
+/* implements an insert sort using temporary array           */
+/* assumes inputs are positive, sorts in descending order    */
+/*************************************************************/
+
+REAL4 EPMedian(REAL4 *p, INT4 j, INT4 flength, INT4 numSegs, LALStatus *status)
+{
+    /* p points to array of power spectra data over time slices */
+    /* j is desired frequency offset into power spectra array   */
+    /* flength is size of frequency series obtained from DFT    */
+    /* numSegs is the number of time slices to be evaluated     */
+    /* status points to LAL status struct passed into main      */
+    /* returns the median value, over time slice at given freq. */
+
+    /* TODO should check for valid or reasonable inputs */
+    INT4  outer  = 0;       /* local loop counter */
+    INT4  middle = 0;       /* local loop counter */
+    INT4  inner  = 0;       /* local loop counter */
+    REAL4 returnVal = 0.0;  /* holder for return value */
+
+    /* allocate memory array for insert sort, test for success */
+    REAL4 *s = (REAL4 *)LALMalloc(numSegs * sizeof(REAL4));
+    ASSERT(s, status, EPSEARCHH_EMALLOC, EPSEARCHH_MSGEMALLOC);
+
+    /* zero out the sort array */
+    for (outer = 0; outer < numSegs; outer++)
+    {
+      s[outer] = 0.0;
+    }
+
+    /* scan time slices for a given frequency */
+    for (outer = 0; outer < numSegs; outer++)
+    {
+      /* insert power value into sort array */
+      REAL4 tmp = p[outer * flength + j]; /* obtain value to insert */
+      for (middle = 0; middle < numSegs; middle++)
+      {
+        if (tmp > s[middle])
+        {
+          /* insert taking place of s[middle] */
+          for (inner = numSegs - 1; inner > middle; inner--)
+          {
+            s[inner] = s [inner - 1];  /* move old values */
+          }
+          s[middle] = tmp;   /* insert new value */
+          break;  /* terminate loop */
+        }
+      }
+    }  /* done inserting into sort array */
+
+    /* check for odd or even number of segments */
+    if (numSegs % 2)
+    {
+      /* if odd number of segments, return median */
+      returnVal = s[numSegs / 2];
+    }
+    else
+    {
+      /* if even number of segments, return average of two medians */
+      returnVal = 0.5 * (s[numSegs/2] + s[(numSegs/2) - 1]);
+    }
+
+    /* free memory used for sort array */
+    LALFree(s);
+
+    return returnVal;
+}
 
