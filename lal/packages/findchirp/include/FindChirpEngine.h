@@ -108,29 +108,6 @@ the linked list.
 </lalLaTeX>
 #endif
 
-typedef struct
-tagFindChirpCreateBankParams
-{
-  INT4                          numCoarse;
-  UINT4                         numSegments;
-  UINT4                         numLevel;
-}
-FindChirpCreateBankParams;
-
-void
-LALFindChirpCreateInspiralBank (
-    LALStatus                  *status,
-    InspiralCoarseBankIn       *bankIn,
-    InspiralTemplate          **bankHead,
-    FindChirpCreateBankParams  *params
-    );
-
-void
-LALFindChirpDestroyInspiralBank (
-    LALStatus                  *status,
-    InspiralTemplate          **bankHead
-    );
-
 void
 LALFindChirpCreateTmpltNode (
     LALStatus                  *status,
