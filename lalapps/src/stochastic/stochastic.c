@@ -766,15 +766,21 @@ static COMPLEX8FrequencySeries *ligo_response(LALStatus *status,
     REAL8 deltaF,
     LALUnit units,
     INT4 length,
-    INT4 offset)
+    INT4 offset,
+    INT4 duration)
 {
   /* variables */
   COMPLEX8FrequencySeries *response;
   FrCache *cache = NULL;
   CalibrationUpdateParams calib_params;
+  LIGOTimeGPS gps_duration;
 
   /* apply offset to epoch */
   epoch.gpsSeconds += offset;
+
+  /* get calibration duration */
+  gps_duration.gpsSeconds = duration;
+  gps_duration.gpsNanoSeconds = 0;
 
   /* allocate memory */
   memset(&calib_params, 0, sizeof(CalibrationUpdateParams));
@@ -783,6 +789,7 @@ static COMPLEX8FrequencySeries *ligo_response(LALStatus *status,
 
   /* set ifo */
   calib_params.ifo = ifo;
+  calib_params.duration = gps_duration;
 
   /* open calibration frame cache */
   cache = XLALFrImportCache(cache_file);
@@ -811,7 +818,8 @@ static COMPLEX8FrequencySeries *generate_response(LALStatus *status,
     REAL8 deltaF,
     LALUnit units,
     INT4 length,
-    INT4 offset)
+    INT4 offset,
+    INT4 duration)
 {
   /* variables */
   COMPLEX8FrequencySeries *response = NULL;
@@ -825,7 +833,7 @@ static COMPLEX8FrequencySeries *generate_response(LALStatus *status,
   {
     /* generate response function for LIGO */
     response = ligo_response(status, ifo, cache_file, epoch, f0, deltaF, \
-        units, length, offset);
+        units, length, offset, duration);
   }
 
   return(response);
@@ -1250,10 +1258,10 @@ static StochasticTable *stochastic_search(LALStatus *status,
       /* compute response */
       response_one = generate_response(status, ifoOne, calCacheOne, \
           seg_epoch, fMin, delta_f, countPerAttoStrain, filter_length, \
-          calibOffset);
+          calibOffset, segmentDuration);
       response_two = generate_response(status, ifoTwo, calCacheTwo, \
           seg_epoch, fMin, delta_f, countPerAttoStrain, filter_length, \
-          calibOffset);
+          calibOffset, segmentDuration);
 
       /* check if on middle segment and if we want to include this in
        * the analysis */
@@ -1340,10 +1348,10 @@ static StochasticTable *stochastic_search(LALStatus *status,
     /* get response functions for analysis segments */
     response_one = generate_response(status, ifoOne, calCacheOne, \
         analysis_epoch, fMin, delta_f, countPerAttoStrain, filter_length, \
-        calibOffset);
+        calibOffset, segmentDuration);
     response_two = generate_response(status, ifoTwo, calCacheTwo, \
         analysis_epoch, fMin, delta_f, countPerAttoStrain, filter_length, \
-        calibOffset);
+        calibOffset, segmentDuration);
 
     /* calculate cc spectrum */
     cc_spectra = cc_spectrum(status, zero_pad_one, zero_pad_two, \
