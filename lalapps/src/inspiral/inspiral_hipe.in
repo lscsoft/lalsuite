@@ -173,7 +173,7 @@ def single_coinc(ifo_analyzed,ifo_name,ifo_single,single_coinc_job,dag,
 ##############################################################################
 # function to do thinca on double IFO data  
 def double_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name, 
-  ifo_double,double_coinc_job,dt,dag,usertag=None):
+  ifo_double,double_coinc_job,dag,usertag=None):
   """
   Run thinca on the double coincident times from each of the sets of IFOs. 
   Since the way we treat all this data is the same, this function is the same 
@@ -185,7 +185,6 @@ def double_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
   ifo_b_name = the name of the second IFO
   ifo_double = the double coincident IFO science segments 
   double_coinc_job = the condor job to do two IFO thinca
-  dt = the time coincidence window
   dag = the DAG to attach the nodes to
   """
 
@@ -215,7 +214,7 @@ def double_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
 ##############################################################################
 # function to do inca on triple IFO data 
 def triple_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
-  ifo_c_analyzed,ifo_c_name,ifo_triple,triple_coinc_job,dt,dag,
+  ifo_c_analyzed,ifo_c_name,ifo_triple,triple_coinc_job,dag,
   usertag=None):
   """
   Run thinca on the double coincident times from each of the sets of IFOs. 
@@ -230,7 +229,6 @@ def triple_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
   ifo_c_name = the name of the third IFO
   ifo_triple = the triple coincident IFO science segments 
   triple_coinc_job = the condor job to do three IFO thinca
-  dt = the time coincidence window
   dag = the DAG to attach the nodes to
   """
 
@@ -897,17 +895,17 @@ print "setting up thinca jobs on double IFO data...",
 # H1-H2
 h1_h2_double_coinc_nodes = []
 h1_h2_double_coinc_nodes = double_coinc(h1_chunks_analyzed,'H1',
-  h2_chunks_analyzed,'H2',h1_h2_double_data,thinca_h1h2_job,hh_dt,dag,usertag)
+  h2_chunks_analyzed,'H2',h1_h2_double_data,thinca_h1h2_job,dag,usertag)
   
 # H1-L1
 h1_l1_double_coinc_nodes = []
 h1_l1_double_coinc_nodes = double_coinc(h1_chunks_analyzed,'H1',
-  l1_chunks_analyzed,'L1',h1_l1_double_data,thinca_h1l1_job,hh_dt,dag,usertag)
+  l1_chunks_analyzed,'L1',h1_l1_double_data,thinca_h1l1_job,dag,usertag)
 
 # H2-L1
 h2_l1_double_coinc_nodes = []
 h2_l1_double_coinc_nodes = double_coinc(h2_chunks_analyzed,'H2',
-  l1_chunks_analyzed,'L1',h2_l1_double_data,thinca_h2l1_job,hl_dt,dag,usertag)
+  l1_chunks_analyzed,'L1',h2_l1_double_data,thinca_h2l1_job,dag,usertag)
 
 print "done"
 
@@ -921,7 +919,7 @@ print "setting up thinca jobs on three IFO data...",
 h1_h2_l1_triple_coinc_nodes = []
 h1_h2_l1_triple_coinc_nodes = triple_coinc(h1_chunks_analyzed,'H1',
   h2_chunks_analyzed,'H2',l1_chunks_analyzed,'L1',h1_h2_l1_triple_data,
-  thinca_h1h2l1_job,hl_dt,dag,usertag)
+  thinca_h1h2l1_job,dag,usertag)
 
 print "done"
 
