@@ -203,11 +203,19 @@ int main( int argc, char *argv[])
     /* fill the comment, if a user has specified one, or leave it blank */
     if ( ! *comment )
     {
-        snprintf( procTable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
-    } else {
-        snprintf( procTable.processTable->comment, LIGOMETA_COMMENT_MAX,
-                "%s", comment );
+      snprintf( procTable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+      snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, " " );    
+    } 
+    else 
+    {
+      snprintf( procTable.processTable->comment, LIGOMETA_COMMENT_MAX,
+          "%s", comment );
+      snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
+          "%s", comment );
     }
+
+    /* the number of nodes for a standalone job is always 1 */
+    searchsumm.searchSummaryTable->nnodes = 1;
 
     /* create and initialize the time series vector */
     series.data = NULL;
@@ -228,6 +236,8 @@ int main( int argc, char *argv[])
     /* only try to load frame if name is specified */
     if (dirname || cachefile)
     {
+        REAL8 tmpTime=0;
+
         if(dirname){
             /* Open frame stream */
             LAL_CALL( LALFrOpen( &stat, &stream, dirname, "*.gwf" ), &stat);
@@ -249,6 +259,14 @@ int main( int argc, char *argv[])
 
         /* get the data */
         LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream), &stat);
+
+        /* store the start and end time of the raw channel in the search summary */
+        searchsumm.searchSummaryTable->in_start_time = series.epoch;
+        LAL_CALL( LALGPStoFloat( &stat, &tmpTime, &(series.epoch) ), 
+            &stat );
+        tmpTime += series.deltaT * (REAL8) series.data->length;
+        LAL_CALL( LALFloatToGPS( &stat, 
+              &(searchsumm.searchSummaryTable->in_end_time), &tmpTime ), &stat );
 
         /* close the frame stream */
         LAL_CALL( LALFrClose( &stat, &stream ), &stat);
@@ -333,6 +351,21 @@ int main( int argc, char *argv[])
 
     /* Finally call condition data */
     LAL_CALL( EPConditionData( &stat, &series, searchParams), &stat);
+
+    /* add information about times to summary table */
+    {
+      REAL8 tmpTime=0;
+
+      /* store the start and end time of the raw channel in the search summary */
+      LAL_CALL( LALGPStoFloat( &stat, &tmpTime, &(series.epoch) ), 
+          &stat );
+      tmpTime += series.deltaT * (REAL8) params->ovrlap;
+      LAL_CALL( LALFloatToGPS( &stat, 
+            &(searchsumm.searchSummaryTable->out_start_time), &tmpTime ), &stat );
+      tmpTime += series.deltaT * ((REAL8) series.data->length - (REAL8) params->ovrlap);
+      LAL_CALL( LALFloatToGPS( &stat, 
+            &(searchsumm.searchSummaryTable->out_end_time), &tmpTime ), &stat );
+    }
 
     /*******************************************************************
     * DO THE SEARCH                                                    *
