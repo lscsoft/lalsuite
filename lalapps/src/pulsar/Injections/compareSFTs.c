@@ -26,12 +26,14 @@ RCSID ("$Id");
 #define MAKEFAKEDATAC_EFILE 	4
 #define MAKEFAKEDATAC_ENOARG 	5
 
+
 #define MAKEFAKEDATAC_MSGENORM "Normal exit"
 #define MAKEFAKEDATAC_MSGESUB  "Subroutine failed"
 #define MAKEFAKEDATAC_MSGEARG  "Error parsing arguments"
 #define MAKEFAKEDATAC_MSGEBAD  "Bad argument values"
 #define MAKEFAKEDATAC_MSGEFILE "File IO error"
 #define MAKEFAKEDATAC_MSGENOARG "Missing argument"
+
 
 /* </lalErrTable> */
 
@@ -62,13 +64,15 @@ int
 main(int argc, char *argv[]) 
 {
   LALStatus status = empty_status;	/* initialize status */
-  REAL8 fmin, fmax, deltaF;
+  REAL8 fmin1, fmax1;
+  REAL8 fmin2, fmax2;
+  REAL8 deltaF;
   SFTHeader header;
   CHAR *fname;
   SFTVector *SFTs1 = NULL, *SFTs2 = NULL;
   UINT4 i;
 
-  lalDebugLevel = 3;
+  lalDebugLevel = 0;
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
@@ -82,11 +86,6 @@ main(int argc, char *argv[])
   if (uvar_help) 	/* help requested: we're done */
     exit (0);
 
-  lalDebugLevel = uvar_debug;
-
-  /* check that all required input-variables have been specified */
-  LAL_CALL (LALUserVarCheckRequired (&status), &status);
-
   /* figure out what frequency-band these SFTs contain */
   fname = LALCalloc(1, strlen(uvar_sftBname1) + 10);
   sprintf (fname, "%s.00000", uvar_sftBname1);
@@ -94,19 +93,38 @@ main(int argc, char *argv[])
   LALFree (fname);
 
   deltaF = 1.0 / header.timeBase;
-  fmin = header.fminBinIndex * deltaF;
-  fmax = fmin + (header.length - 1) * deltaF;
+  fmin1 = header.fminBinIndex * deltaF;
+  fmax1 = fmin1 + (header.length - 1) * deltaF;
+  /* header 2*/
+  fname = LALCalloc(1, strlen(uvar_sftBname2) + 10);
+  sprintf (fname, "%s.00000", uvar_sftBname2);
+  LAL_CALL (LALReadSFTheader (&status, &header, fname), &status);
+  LALFree (fname);
+
+  deltaF = 1.0 / header.timeBase;
+  fmin2 = header.fminBinIndex * deltaF;
+  fmax2 = fmin2 + (header.length - 1) * deltaF;
+
+  if ( (fmin1 != fmin2) || (fmax1 != fmax2) ) {
+    LALPrintError ("SFTs don't cover the same frequency-bands [%f,%f] vs [%f,%f]\n", 
+		   fmin1, fmax1, fmin2, fmax2);
+    exit (-1);
+  }
+
 
   /* now read in the two sft-vectors */
-  LAL_CALL (LALReadSFTfiles (&status, &SFTs1, fmin, fmax, uvar_sftBname1), &status);
-  LAL_CALL (LALReadSFTfiles (&status, &SFTs2, fmin, fmax, uvar_sftBname2), &status);
+  LAL_CALL (LALReadSFTfiles (&status, &SFTs1, fmin1, fmax1, uvar_sftBname1), &status);
+  LAL_CALL (LALReadSFTfiles (&status, &SFTs2, fmin2, fmax2, uvar_sftBname2), &status);
 
   if (SFTs1->length != SFTs2->length) {
     LALPrintError ("Warning: number of SFTs differ for SFTbname1 and SFTbname2!\n");
   }
 
   for (i=0; i < mymax(SFTs1->length, SFTs2->length); i++)
-    compare_SFTs ( &(SFTs1->data[i]), &(SFTs2->data[i]) );
+    {
+      printf ("i=%02d: ", i);
+      compare_SFTs ( &(SFTs1->data[i]), &(SFTs2->data[i]) );
+    }
 
 
   /* free memory */
@@ -156,8 +174,10 @@ compare_SFTs (const SFTtype *sft1, const SFTtype *sft2)
   static LALStatus status;
   UINT4 i;
   REAL4 errpow= 0, errph = 0;
+  REAL4 meanerr = 0, meanph = 0;
   REAL4 re1, re2, im1, im2, pow1, pow2, phase1, phase2;
-  REAL8 Tdiff;
+  REAL8 Tdiff, tmp;
+  
 
   if (sft1->data->length != sft2->data->length) 
     {
@@ -187,14 +207,25 @@ compare_SFTs (const SFTtype *sft1, const SFTtype *sft2)
 
       phase1 = atan2 (im1, re1);
       phase2 = atan2 (im2, re2);
+      /* error in power */
+      tmp = fabs(pow1-pow2)/mymax(pow1,pow2);
+      meanerr += tmp;
+      errpow = mymax (tmp, errpow);
+      /* error in phase */
+      tmp = fabs(phase1 - phase2);
+      if (tmp > LAL_PI)
+	tmp = LAL_TWOPI - tmp;
 
-      errpow = mymax (errpow, fabs(pow1-pow2)/mymax(pow1,pow2) );
-      errph = mymax (errph, fabs(phase1 - phase2) );
+      meanph += tmp;
+      errph = mymax (errph, tmp);
 
     } /* for i */
 
+  meanerr /= sft1->data->length;
+  meanph /= sft1->data->length;
 
-  printf ("maximal relative error in power: %e, max phaseerror: %e radians\n", errpow, errph);
+  printf ("errors (max/mean):  dPOWER = (%e, %e), dPHASE = (%e, %e) radians\n", 
+	  errpow, meanerr, errph, meanph);
 
   return;
 
