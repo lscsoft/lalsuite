@@ -28,7 +28,7 @@ typedef struct tagReadDataPairParams {
 	INT4 buffer;
 } ReadDataPairParams;
 
-static void parseOptions(INT4 argc, CHAR *argv[]);
+static void parse_options(INT4 argc, CHAR *argv[]);
 static void readDataPair(LALStatus *status, StreamPair *streamPair,
 		ReadDataPairParams *params);
 static REAL4TimeSeries *get_time_series(LALStatus *status, CHAR *ifo,
