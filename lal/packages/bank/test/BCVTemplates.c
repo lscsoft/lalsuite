@@ -135,8 +135,8 @@ main(int argc, char **argv)
   bankParams.metric = &metric;
   bankParams.minimalMatch = coarseIn.mmCoarse;
   bankParams.x0Min = 1.0;
-  bankParams.x0Max = 2.5e5;
-  bankParams.x1Min = -2.2e4;
+  bankParams.x0Max = 2.5e4;
+  bankParams.x1Min = -2.2e3;
   bankParams.x1Max = 8.e2;
 
   in.length = 1;

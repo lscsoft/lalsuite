@@ -69,7 +69,7 @@ main ( void )
    coarseIn.space = Tau0Tau3;
    coarseIn.approximant = TaylorT1;
 
-   coarseIn.mMin = 1.0;
+   coarseIn.mMin = 3.0;
    coarseIn.mMax = 20.0;
    coarseIn.MMax = coarseIn.mMax * 2.;
 
