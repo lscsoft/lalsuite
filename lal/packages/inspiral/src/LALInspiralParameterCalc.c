@@ -338,6 +338,8 @@ LALInspiralParameterCalc (
    params->t4 = (5.0/(128.0*eta*pow(totalMass,oneby3)*pow(piFl,fourby3)))
               * (3058673./1016064. + 5429.*ieta*eta/1008. +617.*ieta*eta*eta/144.);
    params->t5 = 5.*(7729./252. + ieta*eta)/(256.*eta*params->fLower); 
+   params->psi0 = 3.L/(128.L * eta * pow(LAL_PI * totalMass, fiveby3));
+   params->psi3 = -3.L * LAL_PI/(8.L * eta * pow(LAL_PI * totalMass, twoby3));
    switch (params->order) {
                         
       case newtonian:

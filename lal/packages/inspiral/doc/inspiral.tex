@@ -328,6 +328,83 @@ full PN expansion in $\dot{F}(t),$ gives a better agreement between the
 time-domain and Fourier domains signals and this code therefore uses the full
 PN expansion \cite{dis2}.
 
+\section{Detection template family}
+\label{sec:BCV}
+
+ The Fourier transform of a chirp waveform in the restricted post-Newtonian
+ approximation in the stationary phase approximation is given, for 
+ positive frequencies $f,$ by [cf. Eq.(\ref{eq:InspiralFourierPhase:f2})]
+ \begin{equation}
+ \tilde h(f) = h_0 f^{-7/6} \exp \left [ \sum_k \psi_k f^{(k-5)/3} \right ],
+ \end{equation}
+ where $h_0$ is a constant for a given system and $psi_k$ are parameters that
+ depend on the two masses of the binary. Since the time-domain waveform 
+ is terminated at when the instantaneous GW frequency reaches a certain value
+ $F_{\rm cut}$ (which is either the last stable
+ orbit or the light-ring defined by the model) and since the contribution to
+ a Fourier component comes mainly from times when the GW instantaneous frequency
+ reaches that value, it is customery to terminate the Fourier transform at the
+ same frequency, namely $f_{\rm cut} = F_{\rm cut}.$ In otherwords, the Fourier
+ transform is taken to be
+ \begin{equation}
+ \tilde h(f) = h_0 f^{-7/6} \theta(f-f_{\rm cut}) \exp \left [ \sum_k \psi_k f^{(k-5)/3} \right ],
+ \end{equation}
+ where $\theta(x<0)=0$ and $\theta(x\ge 0) =1.$ 
+ We have seen that there are different post-Newtonian models such as the 
+ standard post-Newtonian,
+ P-approximants, effective one-body (see Sec.\ref{sec:EOB}), 
+ and their overlaps with one another is not
+ as good as we would like them to be. The main reason for this is that matched 
+ filtering is sensitive to the phasing of the waves. It is not clear which model
+ best describes the true GW signal from a compact binary inspiral although some,
+ like the EOB, are more robust in their predictions than others. Thus, Buonanno,
+ Chen and Vallisneri proposed \cite{BCV03,BCV03b} 
+a {\it phenomenological} model as a detection template
+ family (DTF) based on the above expression for the Fourier transform. Indeed, they
+ proposed to use a DTF that depends on four parameters 
+$(\psi_0,\, \psi_3,\, f_{\rm cut},\, \alpha)$ for non-spinning sources \cite{BCV03}
+and on six parameters 
+$(\psi_0,\, \psi_3,\, f_{\rm cut},\, \alpha_1,\, \alpha_2,\, \beta)$
+for spinning sources \cite{BCV03b}.
+We have implemented both the non-spinning and spinning waveforms
+in \texttt{LALBCVWaveform} and \texttt{LALBCVSpinWaveform,} respectively. 
+
+\subsection{DTF for non-spinning sources}
+
+ The proposed waveform has structure similar to the one above: 
+ \begin{equation}
+ \tilde h(f) = h_0 f^{-7/6} \left (1 - \alpha f^{2/3} \right) \theta(f-f_{\rm cut}) 
+ \exp \left [ \psi_0 f^{-5/3} + \psi_3 f^{-2/3} \right ],
+\label{eq:BCV:NonSpinning}
+ \end{equation}
+ where the motivation to include an amplitude correction term $\alpha$ is based on the
+ fact that the first post-Newtonian correction to the amplitude would induce a term like this.
+ Note carefully that the phasing does not include the full post-Newtonian expansion 
+ but only the Newtonian and 1.5 post-Newtonian terms. It turns out this four-parameter
+ family of waveforms has good overlap with the two-parameter family of templates
+ corresponding to different post-Newtonian models and their improvments.
+
+\subsection{DTF for spinning sources}
+In the generic case of spinning black hole binaries there are a total of 17
+parameters characterizing the waveform amplitude and shape 
+(see Sec.\ref{sec:smirches}.  However, the phasing
+of the waves is determined, in general, by about 10 parameters. Apostolatos
+et al. \cite {ACST94} studied the time-evolution based on which Apostolatos
+found \cite{TAA96} that far fewer parameters can be used to capture 
+the full structure of the spinning black hole binary
+waveforms. BCV suggested \cite{BCV03b} that one could use a DTF of waveforms that resembles
+the non-spinning case. Their proposal has the following structure:
+\begin{equation}
+\tilde h(f) = h_0 f^{-7/6} 
+\left [1 + \alpha_1 \cos ( \beta f^{-2/3} ) 
+         + \alpha_2 \sin ( \beta f^{-2/3} ) \right] 
+\theta(f-f_{\rm cut}) 
+ \exp \left [ \psi_0 f^{-5/3} + \psi_3 f^{-2/3} \right ],
+\label{eq:BCV:Spinning}
+\end{equation}
+where $\alpha_1,$ $\alpha_2$ and $\beta$ are the parameters designed
+to capture the spin-induced modulation of the waveform. 
+
 \section{Effective one-body approach}
 \label{sec:EOB}
 \newcommand{\ww}{\widehat{\omega}}
@@ -409,6 +486,7 @@ at the light ring $r_{\rm lr}$ given by the solution to the equation,
 r_{\rm lr}^3 - 3 r_{\rm lr}^2 + 5 \eta = 0.
 \label{eq:LightRing}
 \end{equation}
+
 \section{Spinning Modulated Chirps}
 \label{sec:smirches}
 Waveforms from spinning black hole binaries at 2PN order can be
@@ -583,6 +661,8 @@ gr-qc/0211087.
 \bibitem{ACST94} 
 T.A. Apostolatos, C. Cutler, G.J. Sussman
 and K.S. Thorne Phys. Rev. D {\bf 49,} 6274 (1994);
+
+\bibitem{TAA96}
 T.A. Apostolatos Phys. Rev. D {\bf 50,} 605 (1996).
 
 \end{thebibliography}
