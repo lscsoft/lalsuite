@@ -49,10 +49,11 @@ INT4 lalDebugLevel=0;
 
 
 #define MAXFILENAMELENGTH 256
-#define LINEFILE "./linenoiseS2LHO4KC.txt"
-#define HARMONICFILE "./harmonicsS2LHO4KC.txt" 
-#define INPUTSFTDIR "/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_H1_Funky-v3Cal30MinSFTs"
-#define OUTPUTSFTDIR "/nfs/morbo/geo600/hannover/sft/S2-LIGO-clean/S2_H1_FunkyClean-v3Cal30MinSFTs"
+/* defaults chosen for L1 */
+#define LINEFILE "./linenoiseS2LLO4KC.txt"
+#define HARMONICFILE "./harmonicsS2LLO4KC.txt" 
+#define INPUTSFTDIR "/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs"
+#define OUTPUTSFTDIR "/nfs/morbo/geo600/hannover/sft/S2-LIGO-clean/S2_L1_Funky-v3Calv5DQ30MinSFTs-clean"
 #define STARTFREQ 150.0
 #define BANDFREQ 300.0
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
@@ -105,8 +106,9 @@ char *lalWatch;
 int main(int argc, char *argv[]){ 
   static LALStatus       status;  /* LALStatus pointer */ 
   static SFTHeader1      header;
-  static COMPLEX8SFTData1 sft;
-  static LineNoiseInfo  lines1, lines2;
+  static SFTtype         sft;
+  static SFTVector       *sftvect=NULL;
+  static LineNoiseInfo  lines;
   static LineHarmonicsInfo harmonics; 
   
   CHAR *fname;
@@ -115,13 +117,12 @@ int main(int argc, char *argv[]){
   CHAR *inputSFTDir;    /* directory for unclean sfts */
   CHAR *outputSFTDir;   /* directory for cleaned sfts */
   INT4 j, arg;                         /* Argument counter */
-  INT4 nLines1, nLines2, count1, nHarmonicSets;
+  INT4 nLines, count1, nHarmonicSets;
   INT4 mObsCoh;  
   REAL8 fStart, fBand, timeBase, deltaF;
   INT8 fStartBin, fBandBin;  
   CHAR filelist[MAXFILES][MAXFILENAMELENGTH];
-  CHAR tempstr1[256], tempstr2[256];
-  INT4 temp; 
+  CHAR tempstr1[256], tempstr2[256]; 
 
   /* set defaults */
   linefname = LINEFILE;
@@ -141,17 +142,6 @@ int main(int argc, char *argv[]){
       if ( argc > arg + 1 ) {
         arg++;
         lalDebugLevel = atoi( argv[arg++] );
-      } else {
-        ERROR( SFTCLEANC_EARG, SFTCLEANC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
-        return SFTCLEANC_EARG;
-      }
-    }
-    /* parse linefile */
-    else if ( !strcmp( argv[arg], "-l" ) ) {
-      if ( argc > arg + 1 ) {
-        arg++;
-        linefname = argv[arg++];
       } else {
         ERROR( SFTCLEANC_EARG, SFTCLEANC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
@@ -224,39 +214,35 @@ int main(int argc, char *argv[]){
   /* End of argument parsing loop. */
   /******************************************************************/
   
-  {  
-    CHAR     command[256];
-    glob_t   globbuf;
-    UINT4    k; 
-
-    strcpy(command, inputSFTDir);
-    strcat(command, "/*SFT*.*");
-  
-    globbuf.gl_offs = 1;
-    glob(command, GLOB_ERR, NULL, &globbuf);
+  /*  {  
+      CHAR     command[256];
+      glob_t   globbuf;
+      UINT4    k; 
+      
+      strcpy(command, inputSFTDir);
+      strcat(command, "/*SFT*.*");
+			 
+			 globbuf.gl_offs = 1;
+			 glob(command, GLOB_ERR, NULL, &globbuf);
+			 
+			 if(globbuf.gl_pathc==0)
+			 {
+			 fprintf(stderr,"No SFTs in directory %s ... Exiting.\n", inputSFTDir);
+			 return 1;  
+			 }
     
-    if(globbuf.gl_pathc==0)
-      {
-	fprintf(stderr,"No SFTs in directory %s ... Exiting.\n", inputSFTDir);
-	return 1;  /* stop the program */
-      }
-    
-    /* we will read up to a certain number of SFT files, but not all 
-       if there are too many ! */ 
-    mObsCoh = (MAXFILES < globbuf.gl_pathc)? MAXFILES : globbuf.gl_pathc;
-    
-    /* Remember to do the following: 
-       globfree(&globbuf); after reading the file names. The file names are 
-       globbuf.gl_pathv[fileno]   that one can copy into whatever as:
-       strcpy(filelist[fileno],globbuf.gl_pathv[fileno]);  */
-  
-    for (k=0; k < mObsCoh; k++)
-      {
-	strcpy(filelist[k],globbuf.gl_pathv[k]);
-      }
-    globfree(&globbuf);	
-  }
+			 mObsCoh = (MAXFILES < globbuf.gl_pathc)? MAXFILES : globbuf.gl_pathc;
+			 
+			 
+			 for (k=0; k < mObsCoh; k++)
+			 {
+			 strcpy(filelist[k],globbuf.gl_pathv[k]);
+			 }
+      globfree(&globbuf);	
+      }*/
    
+
+
   SUB( FindNumberHarmonics (&status, &harmonics, harmonicfname), &status); 
   nHarmonicSets = harmonics.nHarmonicSets; 
 
@@ -271,36 +257,31 @@ int main(int argc, char *argv[]){
 
       SUB( ReadHarmonicsInfo( &status, &harmonics, harmonicfname ), &status);
       
-      nLines1 = 0;
+      nLines = 0;
       for (count1=0; count1 < nHarmonicSets; count1++)
 	{
-	  nLines1 += *(harmonics.numHarmonics + count1);
+	  nLines += *(harmonics.numHarmonics + count1);
 	}
       
-      lines1.nLines = nLines1;
-      lines1.lineFreq = (REAL8 *)LALMalloc(nLines1 * sizeof(REAL8));
-      lines1.leftWing = (REAL8 *)LALMalloc(nLines1 * sizeof(REAL8));
-      lines1.rightWing = (REAL8 *)LALMalloc(nLines1 * sizeof(REAL8));
+      lines.nLines = nLines;
+      lines.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+      lines.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+      lines.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
 
-      SUB( Harmonics2Lines( &status, &lines1, &harmonics), &status);
+      SUB( Harmonics2Lines( &status, &lines, &harmonics), &status);
     }
 
-  SUB( FindNumberLines( &status, &lines2, linefname ), &status);
-  nLines2 = lines2.nLines;
- 
-  if (nLines2 > 0)
-    {
-      lines2.lineFreq = (REAL8 *)LALMalloc(nLines2 * sizeof(REAL8));
-      lines2.leftWing = (REAL8 *)LALMalloc(nLines2 * sizeof(REAL8));
-      lines2.rightWing = (REAL8 *)LALMalloc(nLines2 * sizeof(REAL8));
-      
-      SUB( ReadLineInfo( &status, &lines2, linefname ), &status);
-    }
+
+  strcpy(command, inputSFTDir);
+  strcat(command, "/SFT");
+  SUB( LALReadSFTfiles( &status, &sftvect, fstart, fstart + fBand, command), &status);
+  mObsCoh = sftvect->length;
+
 
 
   SUB( ReadSFTbinHeader1( &status, &header, filelist[0] ), &status );
-  timeBase = header.timeBase; /* Coherent integration time */
-  deltaF = 1./timeBase;  /* The frequency resolution */
+  timeBase = header.timeBase; 
+  deltaF = 1./timeBase;  
   fStartBin = (INT8)(fStart * timeBase);
   fBandBin = (INT8)(fBand * timeBase);
 
@@ -311,39 +292,31 @@ int main(int argc, char *argv[]){
 
   for (j=0; j < mObsCoh; j++)
     { 
+      /* read the sft */
       fname = filelist[j];
       SUB( ReadCOMPLEX8SFTbinData1( &status, &sft, fname ), &status );
-      if (nLines1 > 0)
-	SUB( CleanCOMPLEX8SFT( &status, &sft, 2, &lines1), &status);
-      if (nLines2 > 0)
-	SUB( CleanCOMPLEX8SFT( &status, &sft, 2, &lines2), &status);
+
+      /* clean the sft */
+      if (nLines > 0)
+	SUB( CleanCOMPLEX8SFT( &status, &sft, 2, &lines), &status);
       
       /* make the output sft filename */
-      sprintf(tempstr1, "%d",j);
+      sprintf(tempstr1, "%d", sft.epoch.gpsSeconds);
       strcpy(tempstr2,outputSFTDir);
-      strcat(tempstr2, "/CLEAN_SFT.");  
-      for (temp = 0; temp < 5-strlen(tempstr1); temp++)
-	strcat(tempstr2, "0");
+      strcat(tempstr2, "/CLEAN_SFT.");
       strcat(tempstr2, tempstr1);
-      /* write the sft to the file */
+
+      /* write the sft */
       SUB( WriteCOMPLEX8SFT( &status, &sft, tempstr2),  &status );
     }
 
 
   /* Free memory */
-
-  if (nLines1 > 0)
+  if (nLines > 0)
     {
-      LALFree(lines1.lineFreq);
-      LALFree(lines1.leftWing);
-      LALFree(lines1.rightWing);
-    }
-
-  if (nLines2 > 0)
-    {
-      LALFree(lines2.lineFreq);
-      LALFree(lines2.leftWing);
-      LALFree(lines2.rightWing);
+      LALFree(lines.lineFreq);
+      LALFree(lines.leftWing);
+      LALFree(lines.rightWing);
     }
  
   if (nHarmonicSets > 0)
