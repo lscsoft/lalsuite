@@ -21,6 +21,14 @@
 #define MAXCANDIDATES   3750000     /* Maximum # of allowed candidates */
 #define MAXCOINC   3750000         /* Maximum # of allowed coincident candidates */
 
+#ifndef USE_BOINC
+#define USE_BOINC 0
+#endif
+
+#if USE_BOINC
+#define fopen boinc_fopen
+#endif
+
 struct PolkaCommandLineArgsTag 
 {
   char *FstatsFile1; /* Names of Fstat files to be read in */
@@ -64,7 +72,7 @@ int compareCCfa(const void *ip, const void *jp);
 void locate(double xx[], int n, double x, int *j, int *indices);
 
 int NCands1,NCands2,NCCands,NCands3,NCands4;       /* Global variables that keep track of no of candidates */
-#ifndef USE_BOINC
+#if !USE_BOINC
 INT4 lalDebugLevel=0;
 #endif
 Candidate C1,C2,C3,C4; /* Candidate structures */
