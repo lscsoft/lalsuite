@@ -136,6 +136,9 @@ MetadataTable  procTable;
 MetadataTable  procparams;
 MetadataTable  searchsumm;
 
+CHAR outfilename[256];
+CHAR ifo[3]; 
+
 int Nevents=0;
 
 /***************************************************************************/
@@ -175,8 +178,6 @@ int OutputEvents();
 /* Frees the memory */
 int FreeMem(void);                                        
 
-
-
 /************************************* MAIN PROGRAM *************************************/
 
 int main(int argc,char *argv[])
@@ -187,8 +188,19 @@ int main(int argc,char *argv[])
  LALGPSTimeNow(&status, &(procTable.processTable->start_time), &accuracy);
  populate_process_table(&status, procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE);
  procparams.processParamsTable = NULL;
+ /* create the search summary table */
+ searchsumm.searchSummaryTable = LALCalloc(1, sizeof(SearchSummaryTable));
+ /* the number of nodes for a standalone job is always 1 */
+ searchsumm.searchSummaryTable->nnodes = 1;
+ /* store the input start and end times */
 
  if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
+
+ /* set the start and end time for the search summary */
+ searchsumm.searchSummaryTable->in_start_time.gpsSeconds = CommandLineArgs.GPSStart;
+ searchsumm.searchSummaryTable->in_start_time.gpsNanoSeconds =0;
+ searchsumm.searchSummaryTable->in_end_time.gpsSeconds = CommandLineArgs.GPSEnd;
+ searchsumm.searchSummaryTable->in_end_time.gpsNanoSeconds =0;
  
  if (ReadData(CommandLineArgs)) return 2;
 
@@ -232,32 +244,51 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param,
 
 /*******************************************************************************/
 
+
 int OutputEvents()
 {
     
-  SnglBurstTable *thisEvent = events;
-  FILE *fp;
-  fp = fopen( "events.txt", "w" );
-  if ( ! fp )
-    {
-      perror( "output file" );
-      exit( 1 );
-    }
-  fprintf( fp,"# gps start time\tsignal/noise\tamplitude\tfrequency\tbandwidth\n" );
-  while ( thisEvent )
-    {
-      fprintf( fp, "%9d.%09d\t%e\t%e\t%e\t%e\t%e\n",
-	       (int) thisEvent->start_time.gpsSeconds,
-	       (int) thisEvent->start_time.gpsNanoSeconds,
-	       thisEvent->snr,
-	       thisEvent->amplitude,
-	       thisEvent->central_freq,
-	       thisEvent->bandwidth,thisEvent->duration );
-      thisEvent = thisEvent->next;
-    }
-  fclose( fp );
+  LIGOLwXMLStream xml;
+  LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
+  MetadataTable myTable;
+
+  snprintf(outfilename, sizeof(outfilename)-1, "%s-STRINGSEARCH-%d-%d.xml", ifo,
+	   searchsumm.searchSummaryTable->in_start_time.gpsSeconds,
+	   searchsumm.searchSummaryTable->in_end_time.gpsSeconds - searchsumm.searchSummaryTable->in_start_time.gpsSeconds);
+
+  outfilename[sizeof(outfilename)-1] = '\0';
+
+
+  memset(&xml, 0, sizeof(LIGOLwXMLStream));
+  LALOpenLIGOLwXMLFile(&status, &xml, outfilename);
+
+  /* process table */
+  snprintf(procTable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
+  LALGPSTimeNow(&status, &(procTable.processTable->start_time), &accuracy);
+  LALBeginLIGOLwXMLTable(&status, &xml, process_table);
+  LALWriteLIGOLwXMLTable(&status, &xml, procTable, process_table);
+  LALEndLIGOLwXMLTable(&status, &xml);
+
+  /* process params table */
+  LALBeginLIGOLwXMLTable(&status, &xml, process_params_table);
+  LALWriteLIGOLwXMLTable(&status, &xml, procparams, process_params_table);
+  LALEndLIGOLwXMLTable(&status, &xml);
+
+  /* search summary table */
+  LALBeginLIGOLwXMLTable(&status, &xml, search_summary_table);
+  LALWriteLIGOLwXMLTable(&status, &xml, searchsumm, search_summary_table);
+  LALEndLIGOLwXMLTable(&status, &xml);
+
+  /* burst table */
+  LALBeginLIGOLwXMLTable(&status, &xml, sngl_burst_table);
+  myTable.snglBurstTable = events;
+  LALWriteLIGOLwXMLTable(&status, &xml, myTable, sngl_burst_table);
+  LALEndLIGOLwXMLTable(&status, &xml);
+
+  LALCloseLIGOLwXMLFile(&status, &xml);
+
   
-  /* free event list */
+  /* free event list, process table, search summary and process params */
   while ( events )
   {
     SnglBurstTable *next = events->next;
@@ -265,6 +296,15 @@ int OutputEvents()
     events = next;
   }
 
+
+  LALFree(procTable.processTable);
+  LALFree(searchsumm.searchSummaryTable);
+
+  while(procparams.processParamsTable) {
+    ProcessParamsTable *table = procparams.processParamsTable;
+    procparams.processParamsTable = table->next;
+    LALFree(table);
+  }
 
   return 0;
 }
@@ -302,39 +342,39 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
               *thisEvent = events = LALCalloc( 1, sizeof( *events ) );
             }
 
-           if ( ! *thisEvent ) /* allocation error */
-            {
+	  if ( ! *thisEvent ) /* allocation error */
+	    {
 	      fprintf(stderr,"Could not allocate memory for event. Memory allocation error. Exiting. \n");
 	      return 1;
-            }
-	   while(fabs(vector->data[p]) > CLA.threshold)
-	     {
-	       if(fabs(vector->data[p]) > maximum) 
-		 {
-		   maximum=fabs(vector->data[p]);
-		   pmax=p;
-		 }
-	       p++;
-	     }
+	    }
+	  while(fabs(vector->data[p]) > CLA.threshold)
+	    {
+	      if(fabs(vector->data[p]) > maximum) 
+		{
+		  maximum=fabs(vector->data[p]);
+		  pmax=p;
+		}
+	      p++;
+	    }
 
-	   peaktime = timeNS + (INT8)( 1e9 * GV.ht_proc.deltaT * pmax );
-	   duration = GV.ht_proc.deltaT * ( (p-1) - pstart );
+	  peaktime = timeNS + (INT8)( 1e9 * GV.ht_proc.deltaT * pmax );
+	  duration = GV.ht_proc.deltaT * ( (p-1) - pstart );
 
-	   /* Now copy stuff into event */
-	   strncpy( (*thisEvent)->ifo, CLA.ChannelName, sizeof( (*thisEvent)->ifo ) );
-	   strncpy( (*thisEvent)->search, "string", sizeof( (*thisEvent)->search ) );
-	   strncpy( (*thisEvent)->channel, CLA.ChannelName, sizeof( (*thisEvent)->channel ) );
+	  /* Now copy stuff into event */
+	  strncpy( (*thisEvent)->ifo, CLA.ChannelName, sizeof( ifo-1 ) );
+	  strncpy( (*thisEvent)->search, "STRINGSEARCH", sizeof( (*thisEvent)->search ) );
+	  strncpy( (*thisEvent)->channel, CLA.ChannelName, sizeof( (*thisEvent)->channel ) );
 
-	   (*thisEvent)->start_time.gpsSeconds     = timeNS / 1000000000;
-	   (*thisEvent)->start_time.gpsNanoSeconds = timeNS % 1000000000;
-	   (*thisEvent)->peak_time.gpsSeconds      = peaktime / 1000000000;
-	   (*thisEvent)->peak_time.gpsNanoSeconds  = peaktime % 1000000000;
-	   (*thisEvent)->duration     = duration;
-	   (*thisEvent)->central_freq = (strtemplate[m].f-CLA.flow)/2.0;	   
-	   (*thisEvent)->bandwidth    = strtemplate[m].f-CLA.flow;				     
-	   (*thisEvent)->snr          = maximum;
-           (*thisEvent)->amplitude   = vector->data[pmax];
-	   (*thisEvent)->confidence   = 0; /* FIXME */
+	  (*thisEvent)->start_time.gpsSeconds     = timeNS / 1000000000;
+	  (*thisEvent)->start_time.gpsNanoSeconds = timeNS % 1000000000;
+	  (*thisEvent)->peak_time.gpsSeconds      = peaktime / 1000000000;
+	  (*thisEvent)->peak_time.gpsNanoSeconds  = peaktime % 1000000000;
+	  (*thisEvent)->duration     = duration;
+	  (*thisEvent)->central_freq = (strtemplate[m].f-CLA.flow)/2.0;	   
+	  (*thisEvent)->bandwidth    = strtemplate[m].f-CLA.flow;				     
+	  (*thisEvent)->snr          = maximum;
+	  (*thisEvent)->amplitude   = vector->data[pmax];
+	  (*thisEvent)->confidence   = 0; /* FIXME */
 
 	}
     }
@@ -737,8 +777,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   INT4 errflg = 0;
   optarg = NULL;
   ProcessParamsTable **paramaddpoint = &procparams.processParamsTable;
-
-  /* Need to add long options */
   struct option long_options[] = {
     {"low-freq-cutoff",     required_argument, NULL,           'f'},
     {"bank-low-freq-cutoff",        required_argument, NULL,   'b'},
@@ -772,6 +810,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->threshold=0.0;
   CLA->fakenoiseflag=0;
   
+  /* initialise ifo string */
+  memset(ifo, 0, sizeof(ifo));
+
   /* Scan through list of command line arguments */
   while ( 1 )
   {
@@ -808,6 +849,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'C':
       /* name channel */
       CLA->ChannelName=optarg;
+      memcpy(ifo, optarg, sizeof(ifo) - 1);
       ADD_PROCESS_PARAM("string");
       break;
     case 'i':
