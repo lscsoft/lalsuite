@@ -964,11 +964,10 @@ int main( int argc, char *argv[] )
     }
     else
     {
-      fprintf( stderr, "error: unknown waveform approximant for sorting
-		     events \n" );
+      fprintf( stderr, 
+          "error: unknown waveform approximant for sorting events \n" );
       exit( 1 );
     }
-
 
     /* create a linked list of sorted templates */
     coincidentEvents[0] = prevEvent = eventHandle[0];
@@ -1018,7 +1017,53 @@ int main( int argc, char *argv[] )
 
     LALFree( eventHandle );
 
-    /* skip the inca code and write out the bank */
+    /* now sort the templates by time and remove all the   */
+    /* tmplts before and after the gps start and end times */
+    if ( vrbflg ) fprintf( stdout, "sorting templates by time... " );
+    LAL_CALL( LALSortSnglInspiral( &status, &(coincidentEvents[0]),
+          LALCompareSnglInspiralByTime ), &status );
+    if ( vrbflg ) fprintf( stdout, "done\n" );
+
+    numTriggers[0] = 0;
+    thisEvent = coincidentEvents[0];
+    coincidentEvents[0] = NULL;
+
+    if ( vrbflg ) fprintf( stdout, 
+        "discarding triggers outside start/end times: " );
+    while ( thisEvent )
+    {
+      SnglInspiralTable *tmpEvent = thisEvent;
+      thisEvent = thisEvent->next;
+
+      if ( tmpEvent->end_time.gpsSeconds >= startCoincidence &&
+          tmpEvent->end_time.gpsSeconds < endCoincidence )
+      {
+        /* keep this template */
+        if ( ! coincidentEvents[0] )
+        {
+          coincidentEvents[0] = tmpEvent;
+        }
+        else
+        {
+          prevEvent->next = tmpEvent;
+        }
+        tmpEvent->next = NULL;
+        prevEvent = tmpEvent;
+        ++numTriggers[0];
+        if ( vrbflg ) fprintf( stdout, "+" );
+      }
+      else
+      {
+        /* discard this template */
+        LALFree( tmpEvent );
+        if ( vrbflg ) fprintf( stdout, "-" );
+      }
+    }
+
+    if ( vrbflg ) fprintf( stdout, " done\nkept %d templates\n", 
+        numTriggers[0] );
+
+    /* skip the rest of the inca code and write out the bank */
     goto cleanexit;
   }
 
