@@ -333,7 +333,9 @@ int main(int argc,char *argv[]){
       /* apply butterworth filter */
       LALButterworthREAL4TimeSeries(&status, &chan, &filterpar);
       TESTSTATUS(&status);
-      
+
+      // Turn on windowing
+#if (1)
       /* window data.  Off portion */
       for (i=0; i<WINSTART; i++) {
 	chan.data->data[i] = 0.0;
@@ -345,6 +347,7 @@ int main(int argc,char *argv[]){
 	chan.data->data[i] *= win;
 	chan.data->data[chan.data->length - 1 - i]  *= win;
       }
+#endif
 
       /* open SFT file for writing */
       fpsft=tryopen(sftname,"w");
