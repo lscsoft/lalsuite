@@ -4,6 +4,7 @@ $Id$
 </lalVerbatim>
  */
 
+#include <string.h>
 #include <lal/Date.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>

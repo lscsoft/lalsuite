@@ -5,7 +5,6 @@ $Id$
  */
 
 #include <string.h>
-
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStatusMacros.h>
