@@ -35,7 +35,8 @@ int gethostname(char *name, int len);
 #define USAGE "Usage: %s --input filename --output filename " \
 	"--trig-start-time time --trig-stop-time time " \
 	"[--outtxt txt filename] " \
-	"[--max-confidence maximum conf] [--noplayground] [--sort] [--cluster] " \
+	"[--max-confidence maximum conf] [--noplayground] [--sort] " \
+        "[--cluster clusterchoice(clusterbypeaktimeandfreq/clusterbytimeandfreq)] " \
 	"[--min-duration min dur] [--max-duration max dur] " \
 	"[--min-centralfreq min central_freq] [--max-centralfreq max central_freq] " \
 	"[--max-bandwidth max bw] [--min-bandwidth min bw] " \
@@ -54,6 +55,8 @@ int gethostname(char *name, int len);
 #define TRUE  1
 #define FALSE 0
 
+/* cluster options */
+enum { undefined, clusterbypeaktimeandfreq, clusterbytimeandfreq } clusterchoice = undefined;
 
 /*
  * Command-line options
@@ -165,7 +168,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 	struct option long_options[] = {
 		/* these options set a flag */
 		{"verbose",         no_argument,        &options->verbose, TRUE},
-		{"cluster",         no_argument,        &options->cluster, TRUE},
+		/*{"cluster",         no_argument,        &options->cluster, TRUE},*/
 		{"globtrig",        no_argument,        &options->globtrig, TRUE},
 		/* parameters which determine the output xml file */
 		{"input",           required_argument,  NULL,  'a'},
@@ -181,6 +184,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 		{"max-amplitude",   required_argument,  NULL,  'k'},
 		{"min-snr",         required_argument,  NULL,  'l'},
 		{"max-snr",         required_argument,  NULL,  'm'},
+		{"cluster",         required_argument,  NULL,  'n'},
 		{"trig-start-time", required_argument,  NULL,  'q'},
 		{"trig-stop-time",  required_argument,  NULL,  'r'},
 		{"playground",      no_argument,        &options->playground, TRUE},
@@ -299,6 +303,30 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 			 */
 			options->minSnrFlag = TRUE;
 			options->minSnr = atof(optarg);
+			break;
+			
+		        case 'n':
+			/*
+			 * set the cluster option
+			 */			
+			{
+			  if ( ! strcmp( "clusterbypeaktimeandfreq", optarg ) )
+			    {
+			      options->cluster = TRUE;
+			      clusterchoice = clusterbypeaktimeandfreq;
+			    }
+			  else if ( ! strcmp( "clusterbytimeandfreq", optarg ) )
+			    {
+			      options->cluster = TRUE;
+			      clusterchoice = clusterbytimeandfreq;
+			    }
+			  else
+			    {
+			      fprintf( stderr, "invalid argument to --cluster\n"
+				       "unknown clusterchoice specified;\n"
+				       "(must be one of:clusterbypeaktimeandfreq ,clusterbytimeandfreq )\n");
+			    }
+			}
 			break;
 
 			case 'm':
@@ -727,9 +755,10 @@ int main(int argc, char **argv)
 	 * Cluster the events
 	 */
 
-	if(options.cluster)
-		LAL_CALL(LALClusterSnglBurstTable(&stat, &burstEventList, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq), &stat);
-
+	if(options.cluster && clusterchoice == clusterbypeaktimeandfreq)
+	  LAL_CALL(LALClusterSnglBurstTable(&stat, &burstEventList, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq), &stat);
+	else if (options.cluster && clusterchoice == clusterbytimeandfreq)
+	  LAL_CALL(LALClusterSnglBurstTable(&stat, &burstEventList,  NULL, XLALCompareSnglBurst), &stat);
 
 	/*
 	 * Do any requested cuts
