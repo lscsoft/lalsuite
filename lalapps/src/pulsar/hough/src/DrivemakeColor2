@@ -36,8 +36,8 @@ THELIBS = -l$(LALSUP) -l$(LLAL) -lm -L$(LAL_LIB)
 # ----------------------------------------------------------
 # compiler options
 
-CFLAGS =  -O2 -static -I$(LAL_INCLUDE) 
-#CFLAGS =  -Wall -g -static -I$(LAL_INCLUDE) -I$p
+#CFLAGS =  -O2 -static -I$(LAL_INCLUDE) 
+CFLAGS =  -Wall -g -static -I$(LAL_INCLUDE) 
 # -----------------------------------------------------------
 # default target
 all: DriveHoughColor_v2

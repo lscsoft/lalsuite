@@ -1213,10 +1213,17 @@ void PrintHoughEvents (LALStatus       *status,
       if(temp > houghThreshold){
         TRY( Stereo2SkyLocation(status->statusPtr, 
 				&sourceLocation,xPos,yPos,patch, parDem), status);
-	fprintf(fpEvents, "%d %f %f %f %g \n", 
-	        temp, sourceLocation.alpha, sourceLocation.delta, 
-	        f0, ht->spinRes.data[0]);
-      }      
+	if (ht->spinRes.length) {
+	  fprintf(fpEvents, "%d %f %f %f %g \n", 
+		  temp, sourceLocation.alpha, sourceLocation.delta, 
+		  f0, ht->spinRes.data[0]);
+	}
+	else {
+	  fprintf(fpEvents, "%d %f %f %f %g \n", 
+		  temp, sourceLocation.alpha, sourceLocation.delta, 
+		  f0,0.00);
+	}
+	}      
     }
   }
   	 
