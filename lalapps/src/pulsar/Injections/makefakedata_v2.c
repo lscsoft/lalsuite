@@ -1346,12 +1346,12 @@ int write_SFTS(int iSFT){
     return 1;
   }
 
-  norm=((REAL4)header.nsamples)*1.0/((REAL4)(fvec->length-1));
+  norm=((REAL4)header.nsamples)*1.0/((REAL4)(fvec->length));
 
   for (i=0;i<fvec->length-1;i++){
 
-    rpw=fvec->data[i].re;
-    ipw=fvec->data[i].im;
+    rpw=norm*fvec->data[i].re;
+    ipw=norm*fvec->data[i].im;
 
     errorcode=fwrite((void*)&rpw, sizeof(REAL4),1,fp);  
     if (errorcode!=1){
