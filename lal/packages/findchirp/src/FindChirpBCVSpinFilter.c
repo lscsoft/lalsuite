@@ -70,7 +70,7 @@ LALFindChirpBCVSpinFilterSegment (
   )
 /* </lalVerbatim> */
 {
-  UINT4                 i, j, k;
+  UINT4                 j, k;
   UINT4                 numPoints;
   UINT4                 deltaEventIndex;
   UINT4                 ignoreIndex;
@@ -94,11 +94,7 @@ LALFindChirpBCVSpinFilterSegment (
   REAL4			rhoSq;
   REAL4 		rho = 0.0;
   REAL4                 invRho;
-  REAL4                 alphaFac;
-  REAL4                 alphaFac1;
   REAL4 		m;
-  REAL4			maxRho;
-  UINT4			maxRhoCount;
   REAL4                 normFac;
   REAL4                 normFacSq;
   REAL4   		alpha1hat;
@@ -107,20 +103,9 @@ LALFindChirpBCVSpinFilterSegment (
   REAL4                 alpha4hat;
   REAL4                 alpha5hat;
   REAL4                 alpha6hat;
-  REAL4                 alphaSumSq;
-  REAL4                 alpha1;
-  REAL4                 alpha2;
-  REAL4                 alpha3;
-  REAL4                 alpha4;
-  REAL4                 alpha5;
-  REAL4                 alpha6;
-  RealFFTPlan          *prev             = NULL;
-  REAL4Vector          *hVec 	         = NULL;
-  REAL4Vector          *HVec             = NULL;
   REAL8                *A1Vec            = NULL;
   REAL8                *A2Vec            = NULL;
   REAL8                *A3Vec            = NULL;
-  REAL4                 factor;
   REAL4                 normData;
   REAL4                 invRootNormData;
  
@@ -133,21 +118,6 @@ LALFindChirpBCVSpinFilterSegment (
   REAL8                 rootDenominator;
   REAL8                 numerator1;
   REAL8                 denominator1;
-  
-  int                   doTest;
-  
-  FILE     	       *fpRho            = NULL;
-  FILE                 *fpRho1           = NULL; 
-  FILE                 *fpRecon          = NULL;
-  FILE                 *fpalphaSumSq     = NULL;
-  FILE                 *fpqtilde         = NULL;
-  FILE                 *fpqtildeBCVSpin1 = NULL;
-  FILE                 *fpqtildeBCVSpin2 = NULL;
-  FILE                  *fpq = NULL;
-  FILE                  *fpqBCVSpin1 = NULL;
-  FILE                  *fpqBCVSpin2 = NULL;
-  FILE                  *fpStrain1Re = NULL;
-  FILE                  *fpStrain1Im = NULL;
   
   INITSTATUS( status, "LALFindChirpBCVSpinFilter", FINDCHIRPBCVSPINFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -221,28 +191,6 @@ LALFindChirpBCVSpinFilterSegment (
       FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
   ASSERT( input->segment->approximant == BCVSpin, status,
       FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
-
-  /*
-   * Choose level of output
-   */
-
-  doTest = 0; /* 1 writes out many files, useful for testing */
-     
-  if (doTest ==1)
-  {	  
-  	fpStrain1Re      = fopen ("Strain1Re.dat","w");
-  	fpStrain1Im      = fopen ("Strain1Im.dat","w");
-  	fpqtilde         = fopen ("qtildeBCVSpin.dat","w");
-  	fpqtildeBCVSpin1 = fopen ("qtildeBCVSpin1.dat","w");
-  	fpqtildeBCVSpin2 = fopen ("qtildeBCVSpin2.dat","w");
- 	fpq              = fopen ("qBCVSpin.dat","w");
-  	fpqBCVSpin1      = fopen ("qBCVSpin1.dat","w");
-  	fpqBCVSpin2      = fopen ("qBCVSpin2.dat","w");
-	fpRho            = fopen ("rhoBCVSpin.dat", "w");
-        fpalphaSumSq     = fopen ("alphaSumSq.dat","w");
-        fpRecon          = fopen ("Recon.dat", "w");
-  	fpRho1           = fopen ("rho1BCVSpin.dat", "w");
-  }	
   
   /* template and data */
   inputData1    = input->segment->data->data->data; /* data */
@@ -269,13 +217,6 @@ LALFindChirpBCVSpinFilterSegment (
   rootDenominator = input->fcTmplt->numFactor1;
   numerator1      = input->fcTmplt->numFactor2;
   denominator1    = input->fcTmplt->numFactor3;
-
-  
- /* fprintf (stdout, "rootI = %e\n", rootI); 
-  fprintf (stdout, "denominator = %e\n", denominator); 
-  fprintf (stdout, "rootDenominator = %e\n", rootDenominator); 
-  fprintf (stdout, "numerator = %e\n", numerator1); 
-  fprintf (stdout, "denominator1 = %e\n", denominator1); */
   
   /* workspace vectors */
   q              = params->qVec->data;
@@ -290,26 +231,9 @@ LALFindChirpBCVSpinFilterSegment (
   gmstUnits.units = MST_HRS;
   gmstUnits.accuracy = LALLEAPSEC_STRICT;
  
-  if (doTest ==1)
-  {
-	fprintf (stdout, "Writing input (freq domain) data out to file: ");
-	fprintf (stdout, "Strain1Re.dat, Strain1Im.dat \n\n");
-		  
-  	for (k = 0; k < (numPoints/2)+1; ++k )
-  	{
-  		fprintf (fpStrain1Re, "%d\t%e\n", k, inputData1[k].re);
-  		fprintf (fpStrain1Im, "%d\t%e\n", k, inputData1[k].im);
-  	} 
-  }
-
   /* finding cross product of data with itself,  
      to be used for normalisation later  */
-  
-  if (doTest == 1)
-  {	  
-  	fprintf(stdout,
-		"Checking normalisation of input data (dotest=1)\n"); 
-	  
+ 
   	normData = 0.; 
  
   	for (k = 0; k < (numPoints/2)+1; ++k )
@@ -324,46 +248,19 @@ LALFindChirpBCVSpinFilterSegment (
   	fprintf (stdout, "Cross product of input data with itself = %e\n", 
 			normData);
 
-  	invRootNormData = pow(normData,-0.5);
+  	invRootNormData = pow(normData,-0.5); 
  
 	
         /*UNCOMMENT LOOP BELOW TO NORMALISE INPUT  */
-    	fprintf (stdout, 
+    	/*fprintf (stdout, 
 		"Normalising input data (should not generally be used) \n"); 
    
   	for (k = 0; k < (numPoints/2)+1; ++k )
   	{
   		inputData1[k].re *= invRootNormData;
 		inputData1[k].im *= invRootNormData;  
-  	}
-  	/*  UNCOMMENT LOOP ABOVE TO NORMALISE INPUT  */
-	
-  	normData = 0.;
-	/*q[j].re *= normFac; */  
-                                                                                                                             
-  	for (k = 0; k < (numPoints/2)+1; ++k )
-  	{
-		normData += ((inputData1[k].re * inputData1[k].re) 
-                	 + (inputData1[k].im * inputData1[k].im))
-             	 	 * wtilde[k].re;
-  	}
-                                                                                                                             
-  	normData *= deltaT * normFac;
-  	fprintf (stdout, "Cross product of input data with itself after ");
-	fprintf (stdout, "normalisation = %e\n", normData);
-                                                                                                                            
-  	normData = 0.;
-  	for (k = 0; k < (numPoints/2)+1; ++k )
-  	{
-		normData +=  wtilde[k].re 
-                  	* ( pow(tmpltSignal[k].re,2) 
-                  	+ pow(tmpltSignal[k].im,2) ) ;
-  	}
-                                                                                                                             
-  	normData *= deltaT *normFac; 
-  	fprintf (stdout, " 4 int df over snf   = %e\n", normData);
-
-   }
+  	}*/
+        /*UNCOMMENT LOOP ABOVE TO NORMALISE INPUT  */
   
   memset( qtilde,         0, numPoints * sizeof(COMPLEX8) );
   memset( qtildeBCVSpin1, 0, numPoints * sizeof(COMPLEX8) );
@@ -405,20 +302,6 @@ LALFindChirpBCVSpinFilterSegment (
      	qtilde[k].im         *= A1Vec[k];
      	qtildeBCVSpin1[k].im *= A2Vec[k];
      	qtildeBCVSpin2[k].im *= A3Vec[k];
-
-	if (doTest == 1)
-	{
-		fprintf (fpqtilde, "%d\t%e\t%e\n", 
-			k, qtilde[k].re, qtilde[k].im);
-		fprintf (fpqtildeBCVSpin1, "%d\t%e\t%e\n", 
-			k, qtildeBCVSpin1[k].re, qtildeBCVSpin1[k].im);
-		fprintf (fpqtildeBCVSpin2, "%d\t%e\t%e\n", 
-			k, qtildeBCVSpin2[k].re, qtildeBCVSpin2[k].im);
-
-		fflush (fpqtilde);
-		fflush (fpqtildeBCVSpin1);
-		fflush (fpqtildeBCVSpin2);
-        }
   }
 
   /* qtilde negative frequency only: not DC or nyquist */
@@ -474,29 +357,6 @@ LALFindChirpBCVSpinFilterSegment (
 	params->qtildeVecBCVSpin2, params->invPlan );
   CHECKSTATUSPTR( status ); 
 
-  if (doTest ==1)
-  {
-	fprintf (stdout, "Writing overlap (time domain) vectors to files: \n");
-        fprintf (stdout, "q.dat, qBCVSpin1.dat, qBCVSpin2.dat \n");	
-	    	
-  	for ( j = 0; j < numPoints; ++j)
-  	{
-  		fprintf (fpq,         "%d\t%e\t%e\n", j, 
-                	normFac * q[j].re,         
-                	normFac * q[j].im);
-		fprintf (fpqBCVSpin1, "%d\t%e\t%e\n", j, 
-			normFac * qBCVSpin1[j].re, 
-			normFac * qBCVSpin1[j].im);
-		fprintf (fpqBCVSpin2, "%d\t%e\t%e\n", j, 
-			normFac * qBCVSpin2[j].re, 
-                	normFac * qBCVSpin2[j].im);
- 
-		fflush (fpq);
-		fflush (fpqBCVSpin1);
-		fflush (fpqBCVSpin2);       
-  	}
-  }
-	
   /* 
    *
    * calculate signal to noise squared 
@@ -517,9 +377,6 @@ LALFindChirpBCVSpinFilterSegment (
     	memcpy( &(params->rhosqVec->epoch), &(input->segment->data->epoch),
         	sizeof(LIGOTimeGPS) );
     	params->rhosqVec->deltaT = input->segment->deltaT;
-
-	maxRho = 0;
-	maxRhoCount = 0;
                                                                                                                            
 	for ( j = 0; j < numPoints; ++j)
 	{
@@ -532,221 +389,13 @@ LALFindChirpBCVSpinFilterSegment (
                         * normFacSq;
 
 		params->rhosqVec->data->data[j] = rhoSq;  
-      
-		if (doTest ==1)
-		{	
-           		rho    = pow(rhoSq, 0.5);
-        		fprintf (fpRho, "%d\t%e\n", j, rho);
-        		fflush(fpRho);
-		}	
 	}
-
-	if (doTest == 1)
-	{
-        	fprintf (stdout, "Reconstructing wave (doTest=1) \n");
-
-        	for ( j = 0; j < numPoints; ++j)
-        	{
-        		rhoSq =  params->rhosqVec->data->data[j];
-        		rho = pow(rhoSq, 0.5); 
-
-        		/* finding max value of rho in time */
-			if (rho > maxRho)
-			{
-				maxRho = rho;
-        			maxRhoCount = j;
-			}
-
-   			invRho   = 1/rho; 
-        		alphaFac = normFac / rho; 
-           
-   			alpha1hat = q[j].re * alphaFac; 
-   			alpha4hat = q[j].im * alphaFac; 
-  			alpha2hat = qBCVSpin1[j].re * alphaFac; 
-   			alpha5hat = qBCVSpin1[j].im * alphaFac; 
-   			alpha3hat = qBCVSpin2[j].re * alphaFac;
-   			alpha6hat = qBCVSpin2[j].im * alphaFac;
-
-        		/* alphaSumSq calc for checking purposes, should = 1 */
-        		alphaSumSq = 
-				pow(alpha1hat,2) + pow(alpha2hat,2) + pow(alpha3hat,2)
-                    		+ pow(alpha4hat,2) + pow(alpha5hat,2) + pow(alpha6hat,2);
-
-			fprintf (fpalphaSumSq,
-				"%d\t%e\t%e\t%e\t%e\t%e\t%e\t%e\n", 
-				j, alphaSumSq,
-                                alpha1hat, alpha2hat, alpha3hat, alpha4hat, alpha5hat, alpha6hat);
-
-       		} 
-
-       		/*
-	 	 *
-		 * Reconstructing waveform corresponding to maximum rho event
-	         *
-	         */
-
-                alphaFac1 = normFac / maxRho;
-
-		fprintf (stdout, "normFac      = %e\n", normFac);
-		fprintf (stdout, "normFacSq    = %e\n", normFacSq);
-		fprintf (stdout, "maxRho       = %e \n", maxRho);
-		fprintf (stdout, "alphaFac1    = %e\n", alphaFac1);
-		fprintf (stdout, "maxRhoCount  = %d \n", maxRhoCount);
-                                                                     
-		/* calc alpha values in time domain */
-                                      
-		alpha1hat = q[maxRhoCount].re * alphaFac1;
-		alpha4hat = q[maxRhoCount].im * alphaFac1;
-		alpha2hat = qBCVSpin1[maxRhoCount].re * alphaFac1;
-		alpha5hat = qBCVSpin1[maxRhoCount].im * alphaFac1;
-		alpha3hat = qBCVSpin2[maxRhoCount].re * alphaFac1;
-		alpha6hat = qBCVSpin2[maxRhoCount].im * alphaFac1;
-
-		fprintf (stdout, "alpha1hat       = %e \n", alpha1hat);
-		fprintf (stdout, "alpha2hat       = %e \n", alpha2hat);
-		fprintf (stdout, "alpha3hat       = %e \n", alpha3hat);
-		fprintf (stdout, "alpha4hat       = %e \n", alpha4hat);
-		fprintf (stdout, "alpha5hat       = %e \n", alpha5hat);
-		fprintf (stdout, "alpha6hat       = %e \n", alpha6hat);
-
-		alphaSumSq = pow(alpha1hat,2) + pow(alpha2hat,2) + pow(alpha3hat,2) 
-            		   + pow(alpha4hat,2) + pow(alpha5hat,2) + pow(alpha6hat,2);
-
-		fprintf (stdout, "alphaSumSq   = %e \n", alphaSumSq);
-
-                alpha1 = (1/rootI) * (
-			       	   	alpha1hat 
-					- ( (alpha2hat * J) / rootDenominator ) 
-					+ ( (alpha3hat / denominator1) 
-					*   ( (- K / I) + (  numerator1 * J / denominator ) ) )  
-				     );
-
-		alpha2 = alpha2hat * (rootI / rootDenominator )
-                        - alpha3hat * rootI * (numerator1 / denominator) / denominator1;
-
-	        alpha3 = alpha3hat * rootI / denominator1;
-
 		
-		alpha4 = (1/rootI) * (
-    					alpha4hat
-                        		- ( (alpha5hat * J) / rootDenominator ) 
-                        		+ ( ( alpha6hat /denominator1)
-					* ( (- K / I) + ( numerator1 * J / denominator ) ) )
-				      );
-			                                                                                                                     alpha5 = alpha5hat * (rootI / rootDenominator )
-	                 - alpha6hat * rootI * (numerator1 / denominator) / denominator1;
-												
-		alpha6 = alpha6hat * rootI / denominator1;
-
-                fprintf (stdout, "alpha1       = %e \n", alpha1);
-                fprintf (stdout, "alpha2       = %e \n", alpha2);
-                fprintf (stdout, "alpha3       = %e \n", alpha3);
-                fprintf (stdout, "alpha4       = %e \n", alpha4);
-                fprintf (stdout, "alpha5       = %e \n", alpha5);
-                fprintf (stdout, "alpha6       = %e \n", alpha6);
-														
-	        alphaSumSq = pow(alpha1,2) + pow(alpha2,2) + pow(alpha3,2)
-                           + pow(alpha4,2) + pow(alpha5,2) + pow(alpha6,2);
-                                                                                                                             
-                fprintf (stdout, "alphaSumSq   = %e \n", alphaSumSq);
-		
-
-		
-		/*calc freq domain waveform, store in qtilde[k]  */
-
-		/* setting DC frequencies to 0 */
-		qtilde[0].re = 0;
-		qtilde[0].im = 0;
-
-		/* setting NYQUIST frequencies to 0 */
-		qtilde[numPoints/2].re = 0;
-		qtilde[numPoints/2].im = 0;
-
-		/* creates time domain offset for reconstructed waveform */ 
-		factor = LAL_TWOPI * 0.5;
-		fprintf(stdout, "factor=%e\n", factor);
-
-		for ( k = 1; k < (numPoints/2); ++k )
-		{                                                                                       
-			REAL4 x = tmpltSignal[k].re; 
-        		REAL4 y = - tmpltSignal[k].im;
- 	
-		        qtilde[k].re = (alpha1hat * x - alpha4hat * y) 
-				 	* A1Vec[k];
-    			qtilde[k].re += (alpha2hat * x - alpha5hat * y) 
-					* A2Vec[k];
-        		qtilde[k].re += (alpha3hat * x - alpha6hat * y) 
-					* A3Vec[k];
-                                                                                                                             
-        		qtilde[k].im = (alpha1hat * y + alpha4hat * x) 
-					* A1Vec[k];
-			qtilde[k].im += (alpha2hat * y + alpha5hat * x) 
-					* A2Vec[k];
-			qtilde[k].im += (alpha3hat * y + alpha6hat * x) 
-					* A3Vec[k];
-		
-		}
-
-		/* calculate overlap of recon waveform with itself,should= 1 */  
-		normData =  0.;
-
-		for (k = 0; k < (numPoints/2)+1; ++k )
-		{
-			normData += ((qtilde[k].re * qtilde[k].re) 
-				 + (qtilde[k].im * qtilde[k].im))
-                                 * wtilde[k].re;
-		}
-                                                                                                                             
-		normData *= 4 * deltaF;
-                                                                                                                             
-		fprintf (stdout, 
-		"cross product of reconstructed wave with itself= %e\n", 
-		normData);
-
-		/* inverse FFT to find time domain reconstructed 
-		waveform, store in hVec */
-
-		LALCreateReverseRealFFTPlan(status->statusPtr, &prev
-			, numPoints,0);
-		LALSCreateVector(status->statusPtr, &hVec, numPoints);
-		LALSCreateVector(status->statusPtr, &HVec, numPoints);
-
-		/* setting DC and NYQUIST parts to 0 */
-		HVec->data[0] = 0.;
-		HVec->data[numPoints/2] = 0.;
-
-		for (i=1; i<(numPoints/2); i++)
-		{
-			HVec->data[i] = qtilde[i].re *  cos((REAL4)i*factor) 
-                                      - qtilde[i].im *  sin((REAL4)i*factor);
-			HVec->data[numPoints-i] = qtilde[i].im 
-				*  cos((REAL4)i*factor) 
-                               	+ qtilde[i].re *  sin((REAL4)i*factor);  
-			/* no - sign needed to correct time reversal */
-		}       
-                
-		fprintf (stdout, "before FFT \n");
-
-		LALREAL4VectorFFT( status->statusPtr, hVec, HVec, prev );
-		CHECKSTATUSPTR( status );
-
-		fprintf (stdout, "after FFT \n");
-
-		for ( j = 0; j < numPoints; ++j)
-		{
-        		hVec->data[j] *= deltaF;           
-     			fprintf (fpRecon, "%d\t%e\n", j, hVec->data[j]);
-       		}
-
-		LALDestroyRealFFTPlan ( status->statusPtr, &prev);
-		LALSDestroyVector ( status->statusPtr, &hVec);
-		LALSDestroyVector ( status->statusPtr, &HVec);
-	}
   }
+  
   /*
    * Looking for event in output
    * Writing out to SnglInspiralTable
-   * Copying and modifying Eirini's code
    *
    */   
 
@@ -791,11 +440,6 @@ LALFindChirpBCVSpinFilterSegment (
 	 
 	rho    = pow(rhoSq, 0.5);
 	invRho = 1/rho;
-	
-	if (doTest ==1)
-	{       	
-		fprintf (fpRho1, "%d\t%e\n", j, rho);
-	}
 	
 	/* if snrsq exceeds threshold at any point */
    	if ( rhoSq > modqsqThresh )
@@ -899,25 +543,6 @@ LALFindChirpBCVSpinFilterSegment (
           	        thisEvent->eta = 3.0 / (128.0*thisEvent->psi0 *
               		pow( (m*LAL_MTSUN_SI*LAL_PI), (5.0/3.0)) );
           		thisEvent->f_final  = (REAL4) input->tmplt->fFinal ;
-                        
-		if (doTest ==1)
-		{
-                	fprintf (stdout, "rhoSq  %e\n", rhoSq); 
-			fprintf (stdout, "rho    %e\n", rho);
-			fprintf (stdout, "alpha1hat %e\n", alpha1hat);
-			fprintf (stdout, "alpha2hat %e\n", alpha2hat);
-			fprintf (stdout, "alpha3hat %e\n", alpha3hat);
-			fprintf (stdout, "alpha4hat %e\n", alpha4hat);
-			fprintf (stdout, "alpha5hat %e\n", alpha5hat);
-			fprintf (stdout, "alpha6hat %e\n", alpha6hat);
-			fprintf (stdout, "fFinal %e\n", input->tmplt->fFinal);
-			/*UNCOMMENT NEXT LINE WHEN CODE IS READY TO READ beta */
-			/*fprintf (stdout, "beta   %e\n", input->tmplt->beta);*/
-			fprintf (stdout, "psi0   %e\n", input->tmplt->psi0);
-			fprintf (stdout, "psi3   %e\n", input->tmplt->psi3);
-		}	
-
-			
 			
           		/* set the type of the template used in the analysis */
           		LALSnprintf( thisEvent->search, 
@@ -973,22 +598,6 @@ LALFindChirpBCVSpinFilterSegment (
                 } 
   	}
   } 
-  
-  if (doTest ==1)
-  {	  
-  	fclose (fpStrain1Re);
-  	fclose (fpStrain1Im);
-  	fclose (fpqtilde);
-  	fclose (fpqtildeBCVSpin1);
-  	fclose (fpqtildeBCVSpin2);
-   	fclose (fpq);
-     	fclose (fpqBCVSpin1);
-       	fclose (fpqBCVSpin2);
-        fclose (fpRho);
-        fclose (fpalphaSumSq);
-	fclose (fpRecon);
-    	fclose (fpRho1);
-  }			  
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
