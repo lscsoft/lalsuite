@@ -14,6 +14,8 @@ Computes the transfer function from zero-pole-gain representation.
 \vspace{0.1in}
 \input{ComputeTransferCP}
 \idx{LALComputeTransfer()}
+\idx{LALUpdateCalibration()}
+\idx{LALResponseConvert()}
 
 \subsubsection*{Description}
 
@@ -23,6 +25,25 @@ frequency representation of the transfer function \verb+calrec->transfer+
 described by the zeroes,  poles and gain in \verb@*calrec@.   The memory for 
 the frequency series should be allocated before calling this routine which uses
 \verb+calrec->transfer->deltaF+ and \verb+calrec->transfer->data->npoints+.
+
+The routine \texttt{LALUpdateCalibration()} updates the response function
+and the sensing function from some reference functions to the current
+functions using information about the calibration lines.  The two calibration
+lines yield two constants (as a slowly-varying function of time) that are
+used as coefficients to the reference response and sensing functions to
+compute the current response and sensing functions.  These coefficients are
+stored in time series in the parameter structure, along with the current
+epoch for which the calibration functions are to be computed.
+
+The routine \texttt{LALResponseConvert()} takes a given frequency series
+and converts it to a new frequency series by performing the following steps:
+(i) the original frequency series is interpolated (using linear interpolation
+of the real and imaginary parts independently) to the frequencies required
+in the output frequency series;  (ii) if the output frequency series has units
+that are the inverse of those of the input frequency series, the data is
+inverted;  (iii) the data is scaled by an appropriate power of ten computed
+from the input units and the output units.  For example you can convert from 
+strain per count to counts per atto-strain.
 
 \subsubsection*{Algorithm}
 
@@ -50,6 +71,33 @@ and
 For both the transfer function and the pole-zero notation the units for
 frequency is Hz rather than rad/s (angular frequency).  In particular, poles
 and zeros are specified by their location in frequency space
+
+To update the response function from one epoch to another, two functions are
+needed.  These are the sensing function $C(f)$ and the response function
+$R(f)$, which are related by
+\begin{equation}
+  R(f) = \frac{1+H(f)}{C(f)}
+\end{equation}
+where $H(f)$ is the open-loop gain function.  If the sensing function and
+the open-loop gain function are known at some reference time ($C_0(f)$ and
+$H_0(f)$) then the sensing function and open-loop gain function can be
+calculated at a later time.  They are $C(f)=\alpha C_0(f)$ and
+$H(f)=\alpha\beta H_0(f)$ where $\alpha$ and $\beta$ are slowly varying
+coefficients that account for overall changes in the gains of the sensing
+function and the open-loop gain.  The coefficients $\alpha$ and $\alpha\beta$
+can be determined, as slowly-varying functions of time, by monitoring the
+two injected calibration lines.  Thus, an updated sensing function and response
+function can be computed from reference sensing function and response function,
+$C_0(f)$ and $R_0(f)$ via:
+\begin{equation}
+  C(f) = \alpha C_0(f)
+\end{equation}
+and
+\begin{equation}
+  R(f) = \frac{1+\alpha\beta[C_0(f)R_0(f)-1]}{\alpha C_0(f)}
+\end{equation}
+where $\alpha$ and $\beta$ are those values of the coefficients that are
+appropriate for the particular epoch.
 
 \subsubsection*{Uses}
 \begin{verbatim}
@@ -221,6 +269,7 @@ LALComputeTransfer( LALStatus                 *stat,
       tmpc ) )
 
 
+/* <lalVerbatim file="ComputeTransferCP"> */
 void
 LALUpdateCalibration(
     LALStatus               *status,
@@ -228,7 +277,7 @@ LALUpdateCalibration(
     CalibrationFunctions    *input,
     CalibrationUpdateParams *params
     )
-{
+{ /* </lalVerbatim> */
   const REAL4 tiny = 1e-6;
   cini;
   COMPLEX8Vector *save;
@@ -351,13 +400,14 @@ LALUpdateCalibration(
   RETURN( status );
 }
 
+/* <lalVerbatim file="ComputeTransferCP"> */
 void
 LALResponseConvert(
     LALStatus               *status,
     COMPLEX8FrequencySeries *output,
     COMPLEX8FrequencySeries *input
     )
-{
+{ /* </lalVerbatim> */
   cini;
   LALUnit unitOne;
   LALUnit unitTwo;

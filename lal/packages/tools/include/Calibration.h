@@ -50,6 +50,10 @@ extern "C" {
  * \subsection*{Structures}
  * \idx[Type]{CalibrationType}
  * \idx[Type]{CalibrationRecord}
+ * \idx[Type]{CalibrationFunctions}
+ * \idx[Type]{CalibrationUpdateParams}
+ *
+ * \subsubsection*{Type \texttt{CalibrationType}}
  *
  **** </lalLaTeX> */
 /**** <lalVerbatim> */
@@ -66,6 +70,8 @@ CalibrationType;
 /**** <lalLaTeX>
  *
  * Document \verb+CalibrationType+
+ *
+ * \subsubsection*{Type \texttt{CalibrationRecord}}
  *
  **** </lalLaTeX> */
 /**** <lalVerbatim> */
@@ -88,16 +94,16 @@ tagCalibrationRecord
 }
 CalibrationRecord;
 /**** </lalVerbatim> */
+
+
 /**** <lalLaTeX>
  *
  * Document \verb+CalibrationRecord+
  *
- * \vfill{\footnotesize\input{CalibrationHV}}
- * \newpage\input{ComputeTransferC}
+ * \subsubsection*{Type \texttt{CalibrationFunctions}}
  *
  **** </lalLaTeX> */
-
-
+/**** <lalVerbatim> */
 typedef struct
 tagCalibrationFunctions
 {
@@ -105,7 +111,17 @@ tagCalibrationFunctions
   COMPLEX8FrequencySeries *sensingFunction;
 }
 CalibrationFunctions;
-
+/**** </lalVerbatim> */
+/**** <lalLaTeX>
+ * The type \texttt{CalibrationFunctions} contains two calibration functions,
+ * the sensing function $C(f)$ and the response function $R(f)$.  While the
+ * response function is the function that is most often wanted, the sensing
+ * function is needed in updating calibration from one epoch to another.
+ *
+ * \subsubsection*{Type \texttt{CalibrationUpdateParams}}
+ *
+ **** </lalLaTeX> */
+/**** <lalVerbatim> */
 typedef struct
 tagCalibrationUpdateParams
 {
@@ -114,8 +130,24 @@ tagCalibrationUpdateParams
   COMPLEX8TimeSeries *sensingFactor;
 }
 CalibrationUpdateParams;
-
-
+/**** </lalVerbatim> */
+/**** <lalLaTeX>
+ * The type \texttt{CalibrationUpdateParams} contains two time series
+ * representing an overall gain factor for the open-loop gain function $H(f)$
+ * and the sensing function $C(f)$.  These transfer functions are known to
+ * change (by an overall factor) with time, and these two factors can be
+ * tracked using the injected calibration lines.  The factors are stored
+ * in this structure as (very-slowly varying) time series, and are to be
+ * used in updating the calibration functions described previously.
+ * (The response function can be computed from the open-loop gain and the
+ * sensing function.  It is simply $R(f)=[1+H(f)]/C(f)$.)  In addition, this
+ * structure contains the present epoch to identify the particular pair of
+ * factors (from those recorded in the time series) to use.
+ *
+ * \vfill{\footnotesize\input{CalibrationHV}}
+ * \newpage\input{ComputeTransferC}
+ *
+ **** </lalLaTeX> */
 
 
 void LALComputeTransfer( LALStatus *status, CalibrationRecord *calrec );
