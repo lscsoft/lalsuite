@@ -504,6 +504,14 @@ LALInspiralBCVFcutBank (
     InspiralCoarseBankIn coarseIn);
 
 void 
+LALInspiralBCVRegularFcutBank (
+    LALStatus            *status, 
+    InspiralTemplateList **list, 
+    UINT4                *NList, 
+    InspiralCoarseBankIn coarseIn);
+
+
+void 
 LALInspiralCreateFlatBank (
     LALStatus            *status, 
     REAL4VectorSequence  *list, 
