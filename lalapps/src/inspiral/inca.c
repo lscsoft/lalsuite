@@ -904,8 +904,9 @@ int main( int argc, char *argv[] )
             }
             else
             {
-              /* append to the end of the linked list */
-              currentTrigger[j]->next = inputData;
+              /* append to the end of the linked list and set current    */
+              /* trigger to the first trigger of the list being appended */
+              currentTrigger[j] = currentTrigger[j]->next = inputData;
             }
 	    
 	    if ( slideDataNS && j == 1 && vrbflg)  fprintf( stdout, 
