@@ -95,8 +95,9 @@ static int overlap_hann_flag;
 static int recentre_flag;
 extern int vrbflg;
 
-/* xml comment */
+/* xml comment/tags */
 CHAR comment[LIGOMETA_COMMENT_MAX];
+CHAR *userTag = NULL;
 
 /* xml tables */
 MetadataTable proctable;
@@ -1850,7 +1851,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   " --alpha N                     exponent on filter spectrum\n"\
   " --f-ref N                     reference frequency for filter spectrum\n"\
   " --omega0 N                    reference omega_0 for filter spectrum\n"\
-  " --comment STRING              set the process table to STRING\n"
+  " --comment STRING              set the process table to STRING\n"\
+  " --user-tag STRING             set the process_params usertag to STRING\n"
 
 /* parse command line options */
 static void parseOptions(INT4 argc, CHAR *argv[])
@@ -1911,6 +1913,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
       {"f-ref", required_argument, 0, 'H'},
       {"omega0", required_argument, 0, 'I'},
       {"comment", required_argument, 0, 'J'},
+      {"user-tag", required_argument, 0, 'K'},
       {0, 0, 0, 0}
     };
 
@@ -2523,6 +2526,22 @@ static void parseOptions(INT4 argc, CHAR *argv[])
         {
           LALSnprintf(comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
+        break;
+
+      case 'K':
+        /* process_params usertag */
+        optarg_len = strlen(optarg) + 1;
+        userTag = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        strncpy(userTag, optarg, optarg_len);
+
+        /* add to process_params table */
+        this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+                          calloc(1, sizeof(ProcessParamsTable));
+        LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+            PROGRAM_NAME);
+        LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, "--user-tag");
+        LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+        LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, "%s", optarg);
         break;
 
       case '?':
