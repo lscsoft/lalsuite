@@ -171,7 +171,7 @@ EPSearch (
 
 void EPInitSearch(
         LALStatus             *status,
-        void                 **searchParams,
+        EPSearchParams       **params,
         CHAR                  *argv[],
         INT4                   argc
         );
@@ -183,22 +183,22 @@ EPConditionData(
     REAL4                  flow,
     REAL8                  resampledeltaT,
     ResampleTSFilter       resampleFiltType,
-    void                  *searchParams
+    EPSearchParams        *params
     );
 
 void
 EPFinalizeSearch(
     LALStatus             *status,
-    void                 **searchParams
+    EPSearchParams       **params
     );
 
 void
 LALTFTileToBurstEvent (
-               LALStatus                            *status,
-               SnglBurstTable                          *burstEvent,
-               TFTile                               *event,
-               INT8                                  tstart,
-               EPSearchParams                       *params
+               LALStatus         *status,
+               SnglBurstTable    *burstEvent,
+               TFTile            *event,
+               INT8               tstart,
+               EPSearchParams    *params
                );
 
 void LALWeighTFTileList (
