@@ -791,10 +791,11 @@ LALFindChirpFilterSegment (
           thisEvent->time.gpsSeconds = (INT4) (timeNS/1000000000L);
           thisEvent->time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
 
-          /* record the ifo name for the event */
-          /* XXX this should eventually cope with channel name as well XXX */
+          /* record the ifo and channel name for the event */
           strncpy( thisEvent->ifoName, input->segment->data->name, 
               2 * sizeof(CHAR) );
+          strncpy( thisEvent->channel, input->segment->data->name + 3,
+              (LALNameLength - 3) * sizeof(CHAR) );
 
           /* copy the template into the event */
           memcpy( &(thisEvent->tmplt), input->tmplt, sizeof(InspiralTemplate) );
@@ -805,10 +806,12 @@ LALFindChirpFilterSegment (
           if ( input->segment->chisqBinVec->length )
           {
             thisEvent->chisq   = params->chisqVec->data[thisEvent->timeIndex];
+            thisEvent->numChisqBins = input->segment->chisqBinVec->length - 1;
           }
           else
           {
-            thisEvent->chisq   = 0;
+            thisEvent->chisq        = 0;
+            thisEvent->numChisqBins = 0;
           }
           thisEvent->sigma   = sqrt( norm * input->segment->segNorm * 
               input->segment->segNorm * input->fcTmplt->tmpltNorm );
@@ -818,7 +821,7 @@ LALFindChirpFilterSegment (
           thisEvent->effDist = sqrt( thisEvent->effDist );
 
           thisEvent->snrsq  *= norm;
-
+          
           /* allocate memory for the newEvent */
           lastEvent = thisEvent;
 
@@ -859,9 +862,10 @@ LALFindChirpFilterSegment (
     thisEvent->time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
 
     /* record the ifo name for the event */
-    /* XXX this should eventually cope with channel name as well XXX */
     strncpy( thisEvent->ifoName, input->segment->data->name, 
         2 * sizeof(CHAR) );
+    strncpy( thisEvent->channel, input->segment->data->name + 3,
+        (LALNameLength - 3) * sizeof(CHAR) );
 
     /* copy the template into the event */
     memcpy( &(thisEvent->tmplt), input->tmplt, sizeof(InspiralTemplate) );
@@ -870,10 +874,12 @@ LALFindChirpFilterSegment (
     if ( input->segment->chisqBinVec->length )
     {
       thisEvent->chisq = params->chisqVec->data[thisEvent->timeIndex];
+      thisEvent->numChisqBins = input->segment->chisqBinVec->length - 1;
     }
     else
     {
-      thisEvent->chisq = 0;
+      thisEvent->chisq        = 0;
+      thisEvent->numChisqBins = 0;
     }
     thisEvent->sigma   = sqrt( norm * input->segment->segNorm * 
         input->segment->segNorm * input->fcTmplt->tmpltNorm );
@@ -882,6 +888,7 @@ LALFindChirpFilterSegment (
        input->segment->segNorm) / thisEvent->snrsq;
       thisEvent->effDist = sqrt( thisEvent->effDist );
     thisEvent->snrsq  *= norm;
+    thisEvent->numChisqBins = input->segment->chisqBinVec->length - 1;
   }    
 
 
