@@ -255,6 +255,9 @@ tagFindChirpTemplate
   COMPLEX8Vector               *data;
   REAL4                         tmpltNorm;
   Approximant                   approximant;
+  REAL8Vector                  *A1BCVSpin;
+  REAL8Vector                  *A2BCVSpin;
+  REAL8Vector                  *A3BCVSpin;
 }
 FindChirpTemplate;
 /* </lalVerbatim> */
