@@ -2192,11 +2192,8 @@ INT4 main(INT4 argc, CHAR *argv[])
           XLALFrDestroyCache(calibCache);
 
           /* reduce to the optimal filter frequency range */
-          for (i = 0; i < filterLength; i++)
-          {
-            responseOne->data->data[i] = responseTempOne->data->data[i + \
-                                         numFMin];
-          }
+          LAL_CALL(LALCutCOMPLEX8FrequencySeries(&status, &responseOne, \
+                responseTempOne, numFMin, filterLength), &status);
         }
 
         /* set response function to unity for GEO */
@@ -2225,11 +2222,8 @@ INT4 main(INT4 argc, CHAR *argv[])
           XLALFrDestroyCache(calibCache);
 
           /* reduce to the optimal filter frequency range */
-          for (i = 0; i < filterLength; i++)
-          {
-            responseTwo->data->data[i] = responseTempTwo->data->data[i + \
-                                         numFMin];
-          }
+          LAL_CALL(LALCutCOMPLEX8FrequencySeries(&status, &responseTwo, \
+                responseTempTwo, numFMin, filterLength), &status);
         }
 
         /* store in memory */
@@ -2384,11 +2378,10 @@ INT4 main(INT4 argc, CHAR *argv[])
           }
 
           /* reduce to the optimal filter frequency range */
-          for (i = 0; i < filterLength; i++)
-          {
-            psdOne->data->data[i] =  psdTempOne->data->data[i + numFMin];
-            psdTwo->data->data[i] =  psdTempTwo->data->data[i + numFMin];
-          }
+          LAL_CALL(LALCutREAL4FrequencySeries(&status, &psdOne, \
+                psdTempOne, numFMin, filterLength), &status);
+          LAL_CALL(LALCutREAL4FrequencySeries(&status, &psdTwo, \
+                psdTempTwo, numFMin, filterLength), &status);
 
           if (vrbflg)
             fprintf(stdout, "Generating inverse noise...\n");
