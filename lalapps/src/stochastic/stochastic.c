@@ -103,7 +103,6 @@ CHAR *userTag = NULL;
 MetadataTable proctable;
 MetadataTable procparams;
 ProcessParamsTable *this_proc_param;
-LIGOLwXMLStream xmlStream;
 
 /* parameters for the stochastic search */
 
@@ -176,8 +175,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   CHAR baseName[FILENAME_MAX];
   CHAR outputFilename[FILENAME_MAX];
 
-  /* xml output file name */
+  /* xml */
   CHAR xmlFileName[FILENAME_MAX];
+  LIGOLwXMLStream xmlStream;
+  StochasticTable *stochHead = NULL;
+  StochasticTable *thisStoch = NULL;
+  MetadataTable outputTable;
 
   /* counters */
   INT4 i, j, n, segLoop, interLoop, N;
@@ -1531,6 +1534,30 @@ INT4 main(INT4 argc, CHAR *argv[])
           fprintf(stdout, "varTheo = %e\n", varTheo);
         }
 
+        /* allocate memory for table */
+        if (!stochHead)
+        {
+          stochHead = thisStoch = (StochasticTable *) \
+                      LALCalloc(1, sizeof(StochasticTable));
+        }
+        else
+        {
+          thisStoch = thisStoch->next = (StochasticTable *) \
+                      LALCalloc(1, sizeof(StochasticTable));
+        }
+
+        /* populate columns */
+        LALSnprintf(thisStoch->ifo_one, LIGOMETA_IFO_MAX, ifoOne);
+        LALSnprintf(thisStoch->ifo_two, LIGOMETA_IFO_MAX, ifoTwo);
+        LALSnprintf(thisStoch->channel_one, LIGOMETA_CHANNEL_MAX, channelOne);
+        LALSnprintf(thisStoch->channel_two, LIGOMETA_CHANNEL_MAX, channelTwo);
+        thisStoch->start_time.gpsSeconds = gpsStartTime.gpsSeconds;
+        thisStoch->start_time.gpsNanoSeconds = gpsStartTime.gpsNanoSeconds;
+        thisStoch->duration.gpsSeconds = segmentDuration;
+        thisStoch->duration.gpsNanoSeconds = 0;
+        thisStoch->cc_stat = y;
+        thisStoch->cc_sigma = sqrt(varTheo);
+
         /* output to file */
         out = fopen(outputFilename, "a");
         fprintf(out,"%d %e %e\n", gpsStartTime.gpsSeconds, y, \
@@ -1662,6 +1689,15 @@ INT4 main(INT4 argc, CHAR *argv[])
         process_params_table), &status);
   LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlStream), &status);
 
+  /* write stochastic table */
+  if (stochHead)
+  {
+    outputTable.stochasticTable = stochHead;
+    LALBeginLIGOLwXMLTable(&status, &xmlStream, stochastic_table);
+    LALWriteLIGOLwXMLTable(&status, &xmlStream, outputTable, stochastic_table);
+    LALEndLIGOLwXMLTable(&status, &xmlStream);
+  }
+
   /* close xml file */
   LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlStream), &status);
 
@@ -1719,6 +1755,14 @@ INT4 main(INT4 argc, CHAR *argv[])
       LAL_CALL(LALCDestroyVector(&status, &(MCrespOne[i])), &status);
       LAL_CALL(LALCDestroyVector(&status, &(MCrespTwo[i])), &status);
     }
+  }
+
+  /* free memory used in the stochastic xml table */
+  while (stochHead)
+  {
+    thisStoch = stochHead;
+    stochHead = stochHead->next;
+    LALFree(thisStoch);
   }
 
   /* free calloc'd memory */
