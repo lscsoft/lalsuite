@@ -132,6 +132,7 @@ int main( int argc, char *argv[] )
   InspiralTemplateNode         *tmpltInsert  = NULL;
 
   /* inspiral events */
+  INT4                          numEvents   = 0;
   SnglInspiralTable            *event       = NULL;
   SnglInspiralTable            *eventList   = NULL;
   MetadataTable                 savedEvents;
@@ -139,6 +140,9 @@ int main( int argc, char *argv[] )
   /* output data */
   MetadataTable         proctable;
   MetadataTable         procparams;
+  MetadataTable         searchsumm;
+  MetadataTable         searchsummvars;
+  SearchSummvarsTable  *this_search_summvar;
   MetadataTable         summvalue;
   SummValueTable        candleTable;
   ProcessParamsTable   *this_proc_param;
@@ -154,6 +158,7 @@ int main( int argc, char *argv[] )
   UINT4 numInputPoints;
   const REAL8 epsilon = 1.0e-8;
   UINT4 resampleChan = 0;
+  REAL8 tsLength;
 
 
   /*
@@ -178,6 +183,10 @@ int main( int argc, char *argv[] )
     LALCalloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
+  /* create the search summary table */
+  searchsumm.searchSummaryTable = (SearchSummaryTable *)
+    LALCalloc( 1, sizeof(SearchSummaryTable) );
+
   /* call the argument parse and check function */
   arg_parse_check( argc, argv, procparams );
   for ( this_proc_param = procparams.processParamsTable; this_proc_param->next;
@@ -187,12 +196,19 @@ int main( int argc, char *argv[] )
   if ( ! *comment )
   {
     snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+    snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, 
+        " " );
   } 
   else 
   {
     snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
+    snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
+        "%s", comment );
   }
+
+  /* the number of nodes for a standalone job is always 1 */
+  searchsumm.searchSummaryTable->nnodes = 1;
 
   /* make sure the pointer to the first event is null */
   savedEvents.snglInspiralTable = NULL;
@@ -262,6 +278,7 @@ int main( int argc, char *argv[] )
    *
    */
 
+
   /* set the time series parameters of the input data and resample params */
   memset( &resampleParams, 0, sizeof(ResampleTSParams) );
   resampleParams.deltaT = 1.0 / (REAL8) sampleRate;
@@ -287,6 +304,13 @@ int main( int argc, char *argv[] )
   /* determine the sample rate of the raw data and allocate enough memory */
   LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
       &status );
+
+  /* store the input sample rate */
+  this_search_summvar = searchsummvars.searchSummvarsTable = 
+    (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
+  LALSnprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+      "raw data sample rate" );
+  this_search_summvar->value = chan.deltaT;
 
   /* determine if we need to resample the channel */
   if ( vrbflg )
@@ -326,6 +350,14 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
       &status );
   memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
+
+  /* store the start and end time of the raw channel in the search summary */
+  searchsumm.searchSummaryTable->in_start_time = chan.epoch;
+  LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ), 
+      &status );
+  tsLength += chan.deltaT * (REAL8) chan.data->length;
+  LAL_CALL( LALFloatToGPS( &status, 
+        &(searchsumm.searchSummaryTable->in_end_time), &tsLength ), &status );
 
   /* close the frame file stream and destroy the cache */
   LAL_CALL( LALFrClose( &status, &frStream ), &status );
@@ -483,6 +515,13 @@ int main( int argc, char *argv[] )
         &chan, "ct", "RAW_RESAMP" );
   }
 
+  /* store the filter data sample rate */
+  this_search_summvar = this_search_summvar->next = 
+    (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
+  LALSnprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+      "filter data sample rate" );
+  this_search_summvar->value = chan.deltaT;
+
 
   /* 
    *
@@ -535,6 +574,22 @@ int main( int argc, char *argv[] )
         chan.data->length, inputDataLength );
     exit( 1 );
   }
+
+  /* store the start and end time of the filter channel in the search summ */
+  /* noting that we don't look for events in the first and last quarter    */
+  /* of each findchirp segment of the input data                           */
+  LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ), 
+      &status );
+  tsLength += (REAL8) (numPoints / 4) * chan.deltaT;
+  LAL_CALL( LALFloatToGPS( &status, 
+        &(searchsumm.searchSummaryTable->out_start_time), &tsLength ), 
+      &status );
+  LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ), 
+      &status );
+  tsLength += chan.deltaT * ((REAL8) chan.data->length - (REAL8) (numPoints/4));
+  LAL_CALL( LALFloatToGPS( &status, 
+        &(searchsumm.searchSummaryTable->out_end_time), &tsLength ), 
+      &status );
 
 
   /* 
@@ -797,10 +852,12 @@ int main( int argc, char *argv[] )
           fcSegVec->data[i].level += 1;
         } 
 
-        /* save a pointer to the last event in the list */
+        /* save a pointer to the last event in the list and count the events */
+        ++numEvents;
         while ( eventList->next )
         {
           eventList = eventList->next;
+          ++numEvents;
         }
         event = eventList;
         eventList = NULL;
@@ -835,7 +892,8 @@ int main( int argc, char *argv[] )
 
   } /* end loop over linked list */
 
-
+  /* save the number of events in the search summary table */
+  searchsumm.searchSummaryTable->nevents = numEvents;
 
 
   /*
@@ -936,6 +994,27 @@ cleanexit:
     this_proc_param = procparams.processParamsTable;
     procparams.processParamsTable = this_proc_param->next;
     LALFree( this_proc_param );
+  }
+  
+  /* write the search summary table */
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, search_summary_table ), 
+      &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm, 
+        search_summary_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  LALFree( searchsumm.searchSummaryTable );
+
+  /* write the search summvars table */
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, search_summvars_table ), 
+      &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsummvars, 
+        search_summvars_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  while( searchsummvars.searchSummvarsTable )
+  {
+    this_search_summvar = searchsummvars.searchSummvarsTable;
+    searchsummvars.searchSummvarsTable = this_search_summvar->next;
+    LALFree( this_search_summvar );
   }
 
   /* write the summvalue table */
@@ -1043,6 +1122,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"injection-file",          required_argument, 0,                'w'},
     {"pad-data",                required_argument, 0,                'x'},
     {"debug-level",             required_argument, 0,                'z'},
+    {"user-tag",                required_argument, 0,                'Z'},
+    {"userTag",                 required_argument, 0,                'Z'},
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-filter-data",       no_argument,       &writeFilterData,  1 },
@@ -1070,8 +1151,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     /* getopt_long stores long option here */
     int option_index = 0;
 
-    c = getopt_long( argc, argv, 
-        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:M:n:o:p:q:r:R:s:t:u:v:w:x:z:", 
+    c = getopt_long_only( argc, argv, 
+        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:M:n:o:p:q:r:R:s:t:u:v:w:x:z:Z:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1504,14 +1585,25 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           fprintf( stderr, "invalid argument to --%s:\n"
               "number of seconds to pad from input data"
               "must be greater than 0: (%d specified)\n", 
-              long_options[option_index].name, numSegments );
+              long_options[option_index].name, padData );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%d", numSegments );
+        ADD_PROCESS_PARAM( "int", "%d", padData );
         break;
 
       case 'z':
         set_debug_level( optarg );
+        break;
+
+      case 'Z':
+        this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+          LALCalloc( 1, sizeof(ProcessParamsTable) );
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+            PROGRAM_NAME );
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+            optarg );
         break;
 
       case '?':
