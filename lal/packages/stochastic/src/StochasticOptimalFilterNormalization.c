@@ -1,5 +1,5 @@
 /*************************** <lalVerbatim file="StochasticOptimalFilterNormalizationCV">
-Author: UTB Relativity Group; contact whelan@oates.utb.edu
+Author: UTB Relativity Group; contact whelan@phys.utb.edu
 $Id$
 ************************************* </lalVerbatim> */
 

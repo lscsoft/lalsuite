@@ -1,5 +1,5 @@
 /*********************** <lalVerbatim file="StochasticCrossCorrelationHV">
-Author: UTB Relativity Group; contact whelan@oates.utb.edu (original by S. Drasco)
+Author: UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
 $Id$ 
 *********************************************************** </lalVerbatim> */
 
@@ -816,8 +816,9 @@ LALOverlapReductionFunction(
 \newpage\input{SZeroPadAndFFTTestC}
 \newpage\input{CZeroPadAndFFTTestC}
 \newpage\input{StochasticOptimalFilterC}
-\newpage\input{StochasticOptimalFilterNormalizationC}
 \newpage\input{StochasticOptimalFilterTestC}
+\newpage\input{StochasticOptimalFilterNormalizationC}
+\newpage\input{StochasticOptimalFilterNormalizationTestC}
 \newpage\input{StochasticInverseNoiseC}
 \newpage\input{StochasticInverseNoiseTestC}
 \newpage\input{StochasticOmegaGWC}

@@ -4,7 +4,8 @@ check_PROGRAMS = 	  StochasticCrossCorrelationStatisticTest \
           StochasticCrossCorrelationSpectrumTest \
 	  SZeroPadAndFFTTest                    CZeroPadAndFFTTest \
           StochasticOptimalFilterTest           StochasticOmegaGWTest \
-          OverlapReductionFunctionTest           StochasticInverseNoiseTest \
+          StochasticOptimalFilterNormalizationTest \
+          OverlapReductionFunctionTest          StochasticInverseNoiseTest \
           DirichletTest        \
 	  SCoarseGrainFrequencySeriesTest    DCoarseGrainFrequencySeriesTest \
 	  CCoarseGrainFrequencySeriesTest    ZCoarseGrainFrequencySeriesTest
@@ -32,6 +33,9 @@ CZeroPadAndFFTTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la
 StochasticOptimalFilterTest_SOURCES = StochasticOptimalFilterTest.c \
                                          CheckStatus.c
 StochasticOptimalFilterTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+StochasticOptimalFilterNormalizationTest_SOURCES = StochasticOptimalFilterNormalizationTest.c \
+                                         CheckStatus.c
+StochasticOptimalFilterNormalizationTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 StochasticOmegaGWTest_SOURCES = StochasticOmegaGWTest.c CheckStatus.c
 StochasticOmegaGWTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 OverlapReductionFunctionTest_SOURCES = OverlapReductionFunctionTest.c \
@@ -68,7 +72,8 @@ TESTS =	  StochasticCrossCorrelationStatisticTest \
 	  StochasticHeterodynedCrossCorrelationStatisticTest \
           StochasticCrossCorrelationSpectrumTest \
 	  SZeroPadAndFFTTest                    CZeroPadAndFFTTest \
-          StochasticOptimalFilterTest           StochasticOmegaGWTest \
+          StochasticOptimalFilterTest           \
+          StochasticOptimalFilterNormalizationTest   StochasticOmegaGWTest \
           OverlapReductionFunctionTest           StochasticInverseNoiseTest \
           DirichletTest        \
 	  SCoarseGrainFrequencySeriesTest  DCoarseGrainFrequencySeriesTest \

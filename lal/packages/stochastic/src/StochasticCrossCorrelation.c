@@ -1,5 +1,5 @@
 /************************** <lalVerbatim file="StochasticCrossCorrelationCV">
-Author: UTB Relativity Group; contact whelan@oates.utb.edu (original by S. Drasco)
+Author: UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
 $Id$  
 ************************************* </lalVerbatim> */
 
