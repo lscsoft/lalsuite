@@ -578,6 +578,7 @@ ununcalibrated noise power spectral density for the second detector.
 
 typedef struct tagStochasticOptimalFilterNormalizationInput {
   REAL4FrequencySeries     *overlapReductionFunction;
+  REAL4FrequencySeries     *frequencyMask;
   REAL4FrequencySeries     *omegaGW;
   REAL4FrequencySeries     *inverseNoisePSD1;
   REAL4FrequencySeries     *inverseNoisePSD2;
@@ -618,7 +619,7 @@ void
 LALStochasticOptimalFilterNormalization(
             LALStatus                                            *status,
             StochasticOptimalFilterNormalizationOutput           *output,
-            const StochasticOptimalFilterNormalizationInput      *input,
+            StochasticOptimalFilterNormalizationInput      *input,
             const StochasticOptimalFilterNormalizationParameters *parameters);
 
 /********** </lalVerbatim> *********/

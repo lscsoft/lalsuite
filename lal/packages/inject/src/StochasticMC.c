@@ -1,4 +1,3 @@
-
 /*
 <lalVerbatim file="StochasticMCCV">
 Author: Tania Regimbau, Sukanta Bose, Jeff Noel
@@ -761,3 +760,4 @@ void SinusoidalSplice(REAL4Vector **longData, REAL4Vector **shortData, REAL4Vect
      output->data[i] = longData[i/segLen]->data[i%segLen];
 
 }
+

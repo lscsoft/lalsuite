@@ -884,6 +884,7 @@ int main(int argc, char *argv[])
 
   /* fill normalization input */
   normIn.overlapReductionFunction     = &(overlap);
+  normIn.frequencyMask                = NULL;
   normIn.omegaGW                      = &(omegaGW);
   normIn.inverseNoisePSD1             = &(invNoise1);
   normIn.inverseNoisePSD2             = &(invNoise2);
@@ -1104,6 +1105,7 @@ int main(int argc, char *argv[])
 
   /* fill normalization input */
   normIn.overlapReductionFunction     = &(overlap);
+  normIn.frequencyMask                = NULL;
   normIn.omegaGW                      = &(omegaGW);
   normIn.inverseNoisePSD1             = &(invNoise1);
   normIn.inverseNoisePSD2             = &(invNoise2);
@@ -1433,6 +1435,7 @@ int main(int argc, char *argv[])
     
     /* fill normalization input */
     normIn.overlapReductionFunction     = &(overlap);
+    normIn.frequencyMask                = NULL;
     normIn.omegaGW                      = &(omegaGW);
     normIn.inverseNoisePSD1             = &(invNoise1);
     normIn.inverseNoisePSD2             = &(invNoise2);
