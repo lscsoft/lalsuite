@@ -541,11 +541,6 @@ int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA)
 
 #define DONE_MARKER "%DONE\n"
 
-/* This is very long, since some Fstats output might contain numbers
-   written in the form
-   1234567890123456789012345678901234567890.00000000000000 */
-#define LINEBUF_LEN 4096
-
 /* read and parse the given candidate 'Fstats'-file fname into the candidate-list CList */
 int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
 {
@@ -553,7 +548,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
   INT4 j, uplim;
   UINT4 numlines;
   REAL8 epsilon=1e-5;
-  char line1[LINEBUF_LEN];
+  char line1[256];
   FILE *fp;
   INT4 read;
   UINT4 checksum=0;
@@ -575,8 +570,8 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
        line1 or null chars read) */
     if (!len || line1[len-1] != '\n') {
       LALPrintError(
-	      "Line %d of file %s is too long or has no NEWLINE.  First %d chars are:\n%s\n",
-	      i+1, fname, LINEBUF_LEN, line1);
+	      "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
+	      i+1, fname, line1);
       fclose(fp);
       return 1;
     }
@@ -641,8 +636,8 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
 
       if (strlen(line1)==0 || line1[strlen(line1)-1] != '\n') {
 	LALPrintError(
-		"Line %d of file %s is too long or has no NEWLINE.  First %d chars are:\n%s\n",
-		i+1, fname, LINEBUF_LEN, line1);
+		"Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
+		i+1, fname, line1);
 	LALFree ((*CList));
 	fclose(fp);
 	return 1;
@@ -674,13 +669,13 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
 	  ) {
 	  LALPrintError(
 		  "Line %d of file %s has invalid values.\n"
-		  "First %d chars are:\n"
+		  "First 255 chars are:\n"
 		  "%s\n"
 		  "1st and 7th field should be positive.\n" 
 		  "2nd field should lie between 0 and %1.15f.\n" 
 		  "3rd field should lie between %1.15f and %1.15f.\n"
 		  "All fields should be finite\n",
-		  i+1, fname, LINEBUF_LEN, line1, (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
+		  i+1, fname, line1, (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
 	  LALFree ((*CList));
 	  fclose(fp);
 	  return 1;
@@ -694,9 +689,9 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
       if (newline != '\n') {
 	LALPrintError(
 		"Line %d of file %s had extra chars after F value and before newline.\n"
-		"First %d chars are:\n"
+		"First 255 chars are:\n"
 		"%s\n",
-		i+1, fname, LINEBUF_LEN, line1);
+		i+1, fname, line1);
 	LALFree ((*CList));
 	fclose(fp);
 	return 1;
