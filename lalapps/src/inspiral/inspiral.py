@@ -306,7 +306,7 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
     outfile = dest_ifo + '-TRIGBANK_' + source_ifo
     if ifo_tag:
-      outfile += ifo_tag + '_'
+      outfile += ifo_tag
     if usertag:
       outfile += '_' + usertag 
     outfile += '-' + str(chunk.start()) + '-' + str(chunk.dur()) + '.xml'
