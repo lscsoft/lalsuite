@@ -827,33 +827,33 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
   if(CLA->FstatsFile1 == NULL)
     {
       fprintf(stderr,"No 1st candidates file specified; input with -1 option.\n");
-      fprintf(stderr,"For help type ./polka -h \n");
+      fprintf(stderr,"For help type %s -h\n", argv[0]);
       return 1;
     }      
   if(CLA->FstatsFile2 == NULL)
     {
       fprintf(stderr,"No 2nd candidates file specified; input with -2 option.\n");
-      fprintf(stderr,"For help type ./polka -h \n");
+      fprintf(stderr,"For help type %s -h\n", argv[0]);
       return 1;
     }      
   if(CLA->OutputFile == NULL)
     {
       fprintf(stderr,"No ouput filename specified; input with -o option.\n");
-      fprintf(stderr,"For help type ./polka -h \n");
+      fprintf(stderr,"For help type %s -h\n", argv[0]);
       return 1;
     }      
 
   if(CLA->fmin == 0.0)
     {
       fprintf(stderr,"No minimum frequency specified.\n");
-      fprintf(stderr,"For help type ./polka -h \n");
+      fprintf(stderr,"For help type %s -h\n", argv[0]);
       return 1;
     }      
 
   if(CLA->fmax == 0.0)
     {
       fprintf(stderr,"No maximum frequency specified.\n");
-      fprintf(stderr,"For help type ./polka -h \n");
+      fprintf(stderr,"For help type %s -h\n", argv[0]);
       return 1;
     }      
 
