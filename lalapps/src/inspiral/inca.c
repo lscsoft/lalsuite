@@ -53,6 +53,9 @@ RCSID("$Id$");
 "  --gps-start-time SEC         GPS second of data start time\n"\
 "  --gps-start-time-ns NS       GPS nanosecond of data start time\n"\
 "\n"\
+"  --silde-time SEC             slide triggers by SEC when determining playground\n"\
+"  --slide-time-ns NS           slide triggers by NS when determining playground\n"\
+"\n"\
 "  --ifo-a ifo_name             name of first ifo (e.g. L1, H1 or H2)\n"\
 "  --ifo-b ifo_name             name of second ifo (e.g. L1, H1 or H2)\n"\
 "\n"\
@@ -134,11 +137,13 @@ int main( int argc, char *argv[] )
   CHAR *trigBankFile = NULL;
   CHAR *xmlFileName;
 
+  LIGOTimeGPS slideData = {0,0};
+  INT8  slideDataNS;
   INT4  numEvents = 0;
   INT4  numIFO;
   INT4  have_ifo_a_trigger = 0;
   INT4  isPlay = 0;
-  INT8  ta, tb;
+  INT8  ta, tb, tp;
   INT4  numTriggers[MAXIFO];
   INT4  inStartTime = -1;
   INT4  inEndTime = -1;
@@ -179,6 +184,8 @@ int main( int argc, char *argv[] )
     {"gps-start-time",          required_argument, 0,                'q'},
     {"gps-end-time",            required_argument, 0,                'r'},
     {"comment",                 required_argument, 0,                's'},
+    {"slide-time",              required_argument, 0,                'X'},
+    {"slide-time-ns",           required_argument, 0,                'Y'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
     {"help",                    no_argument,       0,                'h'}, 
@@ -420,6 +427,16 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "float", "%e", minMatch );
         break;
 
+      case 'X':
+        slideData.gpsSeconds = (INT4) atoi( optarg );
+        ADD_PROCESS_PARAM( "int", "%d", slideData.gpsSeconds );
+        break;
+
+      case 'Y':
+        slideData.gpsNanoSeconds = (INT4) atoi( optarg );
+        ADD_PROCESS_PARAM( "int", "%d", slideData.gpsNanoSeconds );
+        break;
+
       case '?':
         fprintf( stderr, USAGE , argv[0]);
         exit( 1 );
@@ -509,6 +526,9 @@ int main( int argc, char *argv[] )
     numIFO = 2;
   }
     
+  /* calculate the slide time in nanoseconds */
+  LAL_CALL( LALGPStoINT8( &status, &slideDataNS, &slideData ), &status );
+
 
   /*
    *
@@ -756,7 +776,10 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALGPStoINT8( &status, &ta, &(currentTrigger[0]->end_time) ), 
         &status );
 
-    LAL_CALL( LALINT8NanoSecIsPlayground( &status, &isPlay, &ta ), &status );
+    /* use the proper trigger times to determine playground */
+    tp = ta - slideDataNS;
+
+    LAL_CALL( LALINT8NanoSecIsPlayground( &status, &isPlay, &tp ), &status );
 
     if ( vrbflg )
     {

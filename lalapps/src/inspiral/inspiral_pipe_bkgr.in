@@ -218,6 +218,12 @@ if condor_prio:
   trig_job.add_condor_cmd('priority',condor_prio)
   inca_job.add_condor_cmd('priority',condor_prio)
 
+# add the slide time argument
+insp_job.add_opt('slide-time',str(slide_sec))
+insp_job.add_opt('slide-time-ns',str(slide_ns))
+inca_job.add_opt('slide-time',str(slide_sec))
+inca_job.add_opt('slide-time-ns',str(slide_ns))
+
 # get the pad and chunk lengths from the values in the ini file
 pad = int(cp.get('data', 'pad-data'))
 n = int(cp.get('data', 'segment-length'))
@@ -305,8 +311,6 @@ for s_seg in s_data:
     insp2.add_var_opt('trig-start-time',s_chunk.trig_start())
     insp2.set_cache(df2.get_output())
     insp2.set_bank(trigbank.get_output())
-    insp2.add_var_opt('slide-time',slide_sec)
-    insp2.add_var_opt('slide-time-ns',slide_ns)
 
     if do_trigbank:
       insp2.add_parent(trigbank)
