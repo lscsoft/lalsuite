@@ -129,6 +129,7 @@ struct CSParams
 \item[\texttt{LIGOTimeGPS *tGPS}] An array containing the GPS times of the first datum from each SFT.
 \item[\texttt{REAL8 *skyPos}] The array containing the sky patch coordinates.
 \item[\texttt{CHAR *sw}] A switch which turns modulation on/off. 
+\item[\texttt{void (*funcName)(REAL8 , REAL8 , REAL8 , REAL8 *, REAL8 *, const CHAR *sw)}] A function pointer, to make the use of different timing routines easy.
 \end{description}
 
 </lalLaTeX> */
@@ -142,6 +143,7 @@ tagCSParams
 	LIGOTimeGPS	*tGPS;		/* GPS time of 1st data sample of each SFT */
 	REAL8 		*skyPos; 	/* array of sky positions */
 	const CHAR 	*sw;		/* switch to turn on/off modulation */
+	void (*funcName)(REAL8 , REAL8 , REAL8 , REAL8 *, REAL8 *, const CHAR *sw);
 }
 CSParams;
 

@@ -20,19 +20,11 @@ LALDemodTest -i <input data file> [-g <gap>] [-m] [-n] [-o]
 \noindent This routine performs tests on the routine \verb@LALDemod()@ as per
 LAL standards.  It is a lengthy code, in comparison with the demodulation
 routine itself.  In brief, this is an overview of the options: an input data
-file, specified on the command line with '\verb@-i@', contains parameters
-relevant to the search (search band, timescales, spindown parameters, sky
-    positions, etc.), and is the only required command line argument.  A fake
-signal is then produced, which can be superimposed on noise using the
-'\verb@-n@' switch.  This signal can be modulated (by adding the '-m' switch
-    on the command line), and one can simulate 'gaps' in the data by adding
-the '\verb@-g <gap>@' option, where \verb@<gap>@ refers to the integral number
-SFT timescales between adjacent timestamps.  Finally, to print output files
-containing the DeFT data, one uses the '\verb@-o@' option.  Please note that
-an example input file, \verb@in.data@, is included with this distribution.
+file may be specified on the command line with '\verb@-i@', and contains parameters relevant to the search (search band, timescales, spindown parameters, sky positions, etc.).  A fake signal is then produced, which can be superimposed on zero-mean, Gaussian noise using the '\verb@-n@' switch.  This signal can be modulated (by adding the '-m' switch on the command line), and one can simulate 'gaps' in the data by adding the '\verb@-g <gap>@' option, where \verb@<gap>@ refers to the integral number SFT timescales between adjacent timestamps.  Finally, to print output files containing the DeFT data, one uses the '\verb@-o@' option.  Please note that an example input file, \verb@in.data@, is included with this distribution.  This file contains the default search values, if none are specified in a different data file.
 
 In more detail, let us begin with a discussion of the structure of the test
-code, which is composed of several modules.  \begin{itemize}
+code, which is composed of several modules.  
+\begin{itemize}
 \item The first module reads in data from an input parameter data file.  The parameters must be listed in the input file in the following order, with the corresponding format:
 \begin{verbatim}
 total observation time -- float
@@ -62,18 +54,11 @@ template source declination (delta) -- float (value in DEGREES)
 
 \item The next module in this test code creates noise using LALs
 \verb@LALNormalDeviates()@ routine.  By design, the noise is created in single
-precision.  This noise is added, datum-by-datum, to the time series created in
+precision, and is zero-mean and Gaussian.  This noise is added, datum-by-datum, to the time series created in
 the next module, after the amplitude of the time series has been changed by a
 factor of \verb@SNR@, which is specified in the input data file.
 
-\item The next module to be invoked creates a time series that gets eventually
-FFT-ed and constitutes the SFT data to be input to the demodulation code.
-This is the fake signal data set that we need to generate in order to test the
-demodulation code.  The fake signal data is characterized by an intrinsic
-frequency at the beginning of the observation plus some other source
-parameters.  The DeFT is produced in a band \verb@f0Band@ centered at this
-frequency.  The band, as explained above, is an input parameter. The width of
-this band (plus some extra width of $2\cdot 10^{-4}f0 $ Hz) determines the
+\item The next module to be invoked creates a time series, which undergoes a FFT; this transformed data constitutes the SFT data to be input to the demodulation code. This is the fake signal data set that we need to generate in order to test the demodulation code.  The fake signal data is characterized by an intrinsic frequency at the beginning of the observation plus some other source parameters.  The DeFT is produced in a band \verb@f0Band@ centered at this frequency.  The band, as explained above, is an input parameter. The width of this band (plus some extra width of $2\cdot 10^{-4}f0 $ Hz) determines the
 sampling frequency of the time series (Nyquist theorem).  In practice this
 would be the inverse FFT of a data set that has been band-passed around
 \verb@f0@ and then appropriately down-sampled (e.g. with a lock-in).  The
@@ -135,13 +120,13 @@ observation time might differ from the ones defined in the input file, the
 reason being that they are rounded to the nearest multiple of the SFT time
 baseline.
 
-Finally note that use is made of an internal function named \verb@tdb()@
+Note that use is made of an internal function named \verb@tdb()@
 written by C. Cutler.  This function is a basic routine which simulates the
 modulation effects due to the Earths motion.  Currently it uses an epicyclic
 motion model for the Earth spin and the Earths orbital motion.  In time it
 will be replaced by a routine submitted to LAL by C. Cutler. This routine will
 compute at any given time the actual instantaneous position and velocity of a
-detector at any specified location of the Earth with respect to the SSB.
+detector at any specified location of the Earth with respect to the SSB.  For now, the user of the test routine may supply his or her own routine to accomplish the same task, provided that the function prototype matches that of \verb@tdb()@.
 
 \item Following the creation of a short chunk of time series data, an FFT is
 performed with the internal FFTW routines.  This outputs a frequency domain
@@ -167,7 +152,7 @@ the data.
 \item There is an option within the code which allows one to print out SFT
 data, information about the peaks of the SFTs, and information about the
 DeFTs' peak position (whether they various DeFTs' maximal power peaks are in
-    the same bins as all the others or not).  This option is available to
+the same bins as all the others or not).  This option is available to
 those interested by uncommenting some code in this test suite.  The comments
 look like \begin{verbatim}
 /*****
@@ -181,8 +166,7 @@ look like \begin{verbatim}
 Simply remove the necessary characters.  Note that in some places, the
 commentary should be commented out (so the code can compile!)  These snippets
 of code provide someone with the ability to see what the intermediate results
-of the test code look like.  Note also that some variables, when commented
-out, may appear as unused in the compiler output.  Dont delete them!
+of the test code look like.
 \end{itemize}
 
 
@@ -223,7 +207,7 @@ The implementation of the code here is intended to give a general outline of wha
 #endif
 
 /* Usage */
-#define USAGE "Usage: %s [-i basicInputsFile] <<<options>>> [-m] [-n] [-d] [-o]\n"
+#define USAGE "Usage: %s [-i basicInputsFile] [-m] [-n] [-d] [-o]\n"
 
 
 /* Error macro, taken from ResampleTest.c in LAL's pulsar/test package */
@@ -231,7 +215,7 @@ The implementation of the code here is intended to give a general outline of wha
 if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
   LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
-		 "        %s %s\n", (code), *argv, __FILE__,         \
+		 "        %s %s\n", (code), *argv, __FILE__,		\
 		 __LINE__, LALDEMODTESTC, statement ? statement : "",\
 		 (msg) );                                            \
 }                                                                    \
@@ -243,7 +227,7 @@ else (void)(0)
 
 NRCSID(LALDEMODTESTC, "$Id$");
 
-void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot, const CHAR *sw) ;
+void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot, const CHAR *sw);
 
 int lalDebugLevel =3;
 
@@ -251,7 +235,7 @@ int main(int argc, char **argv)
 {
 	static LALStatus status;
 	
-/*** VARIABLE DECLARATION ***/
+/***** VARIABLE DECLARATION *****/
 
 	ParameterSet *signalParams;
 	ParameterSet *templateParams;
@@ -262,10 +246,10 @@ int main(int argc, char **argv)
 	REAL8 f0;
 	
 	INT4 mCohSFT, mObsCoh, mObsSFT;
-	REAL8 dfSFT, /* dtSFT, */ dtEFF /*, dfCoh */;
+	REAL8 dfSFT, dtEFF;
 	INT4 if0Min, if0Max, ifMin, ifMax;
-	REAL8 f0Min, f0Max, fMin, /* fMax, */ f0Band;
-	INT4 nDeltaF, n /*, nSFT */;
+	REAL8 f0Min, f0Max, fMin, f0Band;
+	INT4 nDeltaF, n;
 
 	LIGOTimeGPS *timeStamps;
 	
@@ -276,7 +260,7 @@ int main(int argc, char **argv)
 	
 	REAL8 baseTbary0, tDot, t, tBary;
 	REAL8 dTbary, dTbary2, dTbary3, dTbary4, dTbary5, dTbary6;
-	INT4 i, /* j, */ k;
+	INT4 i, k;
 	COMPLEX8Vector *tvec = NULL;
 	
 	FFT **SFTData;
@@ -289,7 +273,7 @@ int main(int argc, char **argv)
 	
 	FFT **xHat;
 	
-	FILE *fp /*, *fp1 */;
+	FILE *fp;
 	REAL8 ts=0.0, ts0=0.0;
 	REAL8 tn=0.0;
 	
@@ -300,23 +284,39 @@ int main(int argc, char **argv)
 	
 	CHAR filename[13];
 	REAL8 factor;
-	/* INT4 *maxArray; */
-	/* REAL8 pw, pwMax; */
-	/* INT4 ipwMax; */
-	/* INT2 tmp=0; */
 	INT2 arg;
+	void (*funcName)(REAL8, REAL8, REAL8, REAL8 *, REAL8 *, const CHAR *);
+	
+/* Comment out the following when printing the 'extra' output */
+/*****
+*****/
+	
+	/* INT4 *maxArray; 	*/
+	/* REAL8 pw, pwMax; 	*/
+	/* INT4 ipwMax; 		*/
+	/* INT2 tmp=0; 		*/
+	/* FILE *fp1; 		*/
+	/* INT4 j; 			*/
+	/* REAL8 dtSFT, dfCoh 	*/
+	/* REAL8 fMax; 		*/
+	/* INT4 nSFT; 		*/
+/******
+*******/
+	
+/***** END VARIABLE DECLARATION *****/
 
-	/* Parse command line options */	
+	
+/***** PARSE COMMAND LINE OPTIONS *****/	
+	basicInputsFile=(CHAR *)LALMalloc(50*sizeof(CHAR));
+	sprintf(basicInputsFile, "in.data");
 	arg=1;
 	while(arg<argc) {
+		
 		/* the input file */
 		if(!strcmp(argv[arg],"-i"))
 		{
-			/*if(argc>arg+1)
-			{*/
 				basicInputsFile=argv[++arg];
 				arg++;
-			/* } */
 			if(LALOpenDataFile(basicInputsFile)==NULL)
 			{
 				ERROR(LALDEMODH_ENOFILE, LALDEMODH_MSGENOFILE, 0);
@@ -324,7 +324,6 @@ int main(int argc, char **argv)
 				return LALDEMODH_ENOFILE;
 			}
 		}
-		
 		
 		/* turn modulation on?  if string is not NULL, it will be */
 		else if(!strcmp(argv[arg],"-m"))
@@ -340,7 +339,7 @@ int main(int argc, char **argv)
 			arg++;
 		}
 		
-		/* turn timestamp deletions on? if string is not NULL, it will be */ 
+		/* turn timestamp deletions on? if string is not NULL, it will be */
 		else if(!strcmp(argv[arg],"-g"))
 		{
 			deletions=atoi(argv[++arg]);
@@ -354,17 +353,36 @@ int main(int argc, char **argv)
 			arg++;
 		}
 		
-		/* erroneous command line argument */
-		else
+		/* default: no input file specified */
+		else if(basicInputsFile==NULL)
 		{
-			ERROR(LALDEMODH_EBADARG, LALDEMODH_MSGEBADARG, 0);			
+			bif=LALFopen("in.data","r");
+		}
+		
+		/* erroneous command line argument */
+		else if(basicInputsFile!=NULL && arg<argc)
+		{
+			ERROR(LALDEMODH_EBADARG, LALDEMODH_MSGEBADARG, 0);		
 			LALPrintError(USAGE, *argv);
 			arg=argc;
 			return LALDEMODH_EBADARG;
 		}
 		
 	}
-/*** INITIALIZATION OF SIGNAL AND TEMPLATE ***/
+	
+/***** END COMMAND LINE PARSING *****/
+
+	
+/***** SET NAME OF TIMING ROUTINE *****/
+
+/* Here you should set the name of your timing routine to 		*/
+/* whatever it is.  Of course you'll also need to compile it in! 	*/
+funcName=tdb;
+
+/*** END TIMING ROUTINE NAME ***/
+	
+	
+/***** INITIALIZATION OF SIGNAL AND TEMPLATE *****/
 
 	/* Allocate space for signal parameters */
 	signalParams=LALMalloc(sizeof(ParameterSet));
@@ -377,11 +395,13 @@ int main(int argc, char **argv)
 	templateParams->spind=LALMalloc(sizeof(Spindown));
 	templateParams->skyP=LALMalloc(2*sizeof(SkyPos));
 	templateParams->spind->spParams=LALMalloc(5*sizeof(REAL8));
-	
-	
-/*** GET INPUTS FROM FILES ***/
 
-	bif=LALOpenDataFile(basicInputsFile);
+/***** END INITIALIZATION *****/
+	
+	
+/***** GET INPUTS FROM FILES *****/
+
+	bif=LALFopen(basicInputsFile,"r");
 	
 	fscanf(bif, "%lf\n%lf\n%lf\n%lf\n%lf\n%lf\n%d\n%le\n%le\n%le\n%le\n%le\n%lf\n%lf\n%d\n%le\n%le\n%le\n%le\n%le\n%lf\n%lf\n",
 	&tObs, &tCoh, &factor, &SNR, &f0Band, &f0,
@@ -397,22 +417,20 @@ int main(int argc, char **argv)
 	&templateParams->skyP->alpha, &templateParams->skyP->delta);
 	
 	LALFclose(bif);
+
+/***** END FILE INPUT *****/
 	
 
-/*** CALCULATE USEFUL QUANTITIES ***/
+/***** CALCULATE USEFUL QUANTITIES *****/
 
-/*2^n gives the number of samples of the SFT. This will be a signal in a band 
-	 fSample/2 with fSample=2*(2.e-4 f0+f0Band). This makes sures that the sampling 
-	 frequency enables us to produce the DeFT frequency band that we want (f0Band) and 
-	 that there's enought wings of SFT data (2.e-4*f0) to produce such DeFT band. */
+/*	2^n gives the number of samples of the SFT. This will be a signal in a 	*/	/*	band fSample/2 with fSample=2*(2.e-4 f0+f0Band). This makes sure that	*/ /*	that the sampling frequency enables us to produce the DeFT frequency 	*/ /*	band that we want (f0Band) and that there's enought wings of SFT data	*/ /*	(2.e-4*f0) to produce such DeFT band. 						*/
+
 	fSample=2.0*(2.e-4*f0+f0Band);
-/* 	The main formula used here is that the gives the maximum allowed time-baseline (Tmax)  */
-/* 	  such that a signal of frequency f0 Doppler modulated due to Earth spin is seen  */
-/* 	  as monochromatic during such observation time: */
-/* 	  Tmax < 9.6e4/sqrt(f0). We have thus taken Tmax=9.4e4/sqrt(f0). A different criterion */
-/* 	  can be chosen by setting the variable "factor" to a suitable  */
-/* 	  value. We have rounded the resulting number of samples  */
-/* 	  to the nearest smallest power of two. */
+
+/* 	The main formula used here is that the gives the maximum allowed		*/ /*	time-baseline (Tmax) such that a signal of frequency f0 Doppler 		*/ /*	modulated due to Earth spin is seen as monochromatic during such		*/ /*	observation time: 									*/
+/* 	  	Tmax < 9.6e4/sqrt(f0). 								*/
+/*	We have thus taken Tmax=9.4e4/sqrt(f0). A different criterion can be	*/ /*	chosen by setting the variable "factor" to a suitable value. We have	*/ /*	rounded the resulting number of samples to the nearest smallest power 	*/ /*	of two. 											*/
+
  	n=floor((log(factor*94000.0*fSample/sqrt(f0))/log(2.0))); 
 	/* Number of SFT time series data points */
 	nDeltaF=ldexp(1., n);
@@ -423,7 +441,6 @@ int main(int argc, char **argv)
 	ifMin=floor(f0/dfSFT)-nDeltaF/4.0;
 	ifMax=ifMin+nDeltaF/2.0;
 	fMin=dfSFT*ifMin;
-
 	/* Maximum search band frequency, in Hz */
 	if0Max=ifMax-ceil((f0Band/2.0)/dfSFT);
 	f0Max=dfSFT*if0Max;
@@ -432,8 +449,6 @@ int main(int argc, char **argv)
 	f0Min=dfSFT*if0Min;
 	/* DeFT band, in Hz */
 	f0Band=f0Max-f0Min;
-
-
 
 	/* Number of SFTs which make one DeFT */ 
 	mCohSFT=ceil(tCoh/tSFT);
@@ -453,14 +468,20 @@ int main(int argc, char **argv)
 	signalParams->skyP->delta=signalParams->skyP->delta*LAL_TWOPI/360.0;
 	templateParams->skyP->alpha=templateParams->skyP->alpha*LAL_TWOPI/360.0;
 	templateParams->skyP->delta=templateParams->skyP->delta*LAL_TWOPI/360.0;
-	
 
-/*** CALL ROUTINE TO GENERATE TIMESTAMPS ***/
+/***** END USEFUL QUANTITIES *****/	
+
+
+/***** CALL ROUTINE TO GENERATE TIMESTAMPS *****/
 	
 	timeStamps=(LIGOTimeGPS *)LALMalloc(mObsSFT*sizeof(LIGOTimeGPS));
 	times(tSFT, mObsSFT, timeStamps, deletions);
+	
+/***** END TIMESTAMPS *****/
 
-/*** CREATE NOISE ***/
+
+/***** CREATE NOISE *****/
+
 if(noi!=NULL)
 {
 	LALCreateVector(&status, &noise, (UINT4)nDeltaF*mObsSFT);
@@ -483,7 +504,10 @@ if(noi!=NULL)
 	LALSDestroyVector(&status, &temp);
 }
 
-/*** CREATE SIGNAL ***/
+/***** END CREATE NOISE *****/
+
+
+/***** CREATE SIGNAL *****/
 
 	/* Create vector to hold frequency series */
 	LALCCreateVector(&status, &fvec, (UINT4)nDeltaF);
@@ -510,16 +534,13 @@ if(noi!=NULL)
 	/* conversion: detector->barycenter time,  t=GPS_0 */ 
 	ts0=(REAL8)(timeStamps[0].gpsSeconds)+	 
 		(REAL8)(timeStamps[0].gpsNanoSeconds)*1.0E-9;
-	tdb((REAL8)signalParams->skyP->alpha,(REAL8)signalParams->skyP->delta,	 
+	(*funcName)((REAL8)signalParams->skyP->alpha,(REAL8)signalParams->skyP->delta,	 
 		ts0, &baseTbary0, &tDot, modulation);
 
 	/*****
 	*****
 		
-		Below I've commented out file pointers.  These open the file descriptors 		for files which can contain output data; one is 'sft.data', which 	
-		contains all of the data from all of the SFTs, 'peaks.data', which 	
-		contains the peaks of the SFTs.  These are used in conjunction with 	
-		areas commented out below.
+		Below I've commented out file pointers.  These open the file descriptors for files which can contain output data; one is 'sft.data', which 	contains all of the data from all of the SFTs, 'peaks.data', which contains the peaks of the SFTs.  These are used in conjunction with areas commented out below.
 	
 	fp=LALFopen("sft.data","w");
 	fp1=LALFopen("peaks.data","w");	
@@ -537,7 +558,7 @@ if(noi!=NULL)
 		{
 			t=ts+tn+(REAL8)i*dtEFF;
 			/* conversion again */
-			tdb((REAL8)signalParams->skyP->alpha,
+			(*funcName)((REAL8)signalParams->skyP->alpha,
 				(REAL8)signalParams->skyP->delta, (REAL8)t, &tBary,  							&tDot, modulation);
 			
 			/* pipeline for better performance */
@@ -636,8 +657,10 @@ if(noi!=NULL)
 	LALCDestroyVector(&status, &tvec);
 	LALDestroyComplexFFTPlan(&status, &pfwd);
 	
+/***** END CREATE SIGNAL *****/
 	
-/*** DEMODULATE SIGNAL ***/
+	
+/***** DEMODULATE SIGNAL *****/
 
 	/* Allocate space and set quantity values for demodulation parameters */
 	demParams=(DemodPar *)LALMalloc(sizeof(DemodPar));
@@ -665,6 +688,7 @@ if(noi!=NULL)
 	csParams->mObsSFT=mObsSFT;
 	csParams->tSFT=tSFT;
 	csParams->sw=modulation;
+	csParams->funcName=funcName;
 	iSkyCoh=0;
 
 	/* Call COMPUTESKY() */
@@ -673,10 +697,6 @@ if(noi!=NULL)
 	/* Deallocate space for ComputeSky parameters */
 	LALFree(csParams->skyPos);
 	LALFree(csParams);
-
-	/**************************/
-	/*       DEMODULATE       */
-	/**************************/
 
 	/* Allocate memory for demodulated data */
 	xHat=(FFT **)LALMalloc(mObsCoh*sizeof(FFT *));
@@ -700,6 +720,11 @@ if(noi!=NULL)
 	for(k=0; k<mObsCoh; k++)
 	{
 		demParams->iCoh=k;
+		
+		/**************************/
+		/*       DEMODULATE       */
+		/**************************/
+
 		LALDemod(&status, xHat, SFTData, demParams);
 		if(output!=NULL)
 		{
@@ -747,9 +772,11 @@ if(noi!=NULL)
 
 		*****
 		*****/
+		
+/***** END DEMODULATION *****/
 			
 		
-/*** DEALLOCATION ***/
+/***** DEALLOCATION *****/
 	
 	/* Deallocate SFTData structure, since we don't need it anymore */
 	for(i=0;i<mObsSFT;i++)
@@ -787,7 +814,8 @@ if(noi!=NULL)
 	LALFree(demParams->spinDwn);
 	LALFree(demParams);
 	
-	
+	LALFree(timeStamps);
+	LALFree(basicInputsFile);
 	/* Anything else */
 	
 	/***** 
@@ -798,7 +826,6 @@ if(noi!=NULL)
 	*****
 	*****/
 	
-	LALFree(timeStamps);
 	LALCheckMemoryLeaks(); 
         return 0;
 }
