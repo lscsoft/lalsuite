@@ -533,7 +533,7 @@ initUserVars (LALStatus *stat)
   uvar_workingDir = LALMalloc(512);
   strcpy(uvar_workingDir, ".");
 
-  uvar_dopplermax = 1.e-4;
+  uvar_dopplermax =  1.05e-4;
   uvar_windowsize = 50;	/* for running-median */
 
   /* register all our user-variables */
