@@ -187,8 +187,8 @@ int main( int argc, char *argv[])
  
 
     /* Burst events */
-    SnglBurstTable      *burstEvent    = NULL;
-    SnglBurstTable      *nextEvent     = NULL;
+    SnglBurstTable      *burstEvent = NULL;
+    SnglBurstTable     **EventAddPoint;
     MetadataTable        myTable;
     MetadataTable        procTable;
     MetadataTable        procparams;
@@ -588,60 +588,22 @@ int main( int argc, char *argv[])
       /*******************************************************************
        * DO THE SEARCH                                                    *
        *******************************************************************/
-      start_sample = 0;
-      while( start_sample < (int) series.data->length )
+      EventAddPoint = &burstEvent;
+      for(start_sample = 0; start_sample < (int) series.data->length; start_sample += params->initParams->segDutyCycle * params->ovrlap)
       {
-        UINT4                tmpDutyCycle=0;
-        UINT4                dumCurrentSeg=params->currentSegment;
-        SnglBurstTable      *tmpEvent     = NULL;
-        REAL4TimeSeries  *interval;
+        REAL4TimeSeries *interval;
 
         LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, start_sample, min(33.5 / series.deltaT, (series.data->length - start_sample))), &stat);
 
-        /* count the segments to analyze */
-	for ( tmpDutyCycle=0 ; tmpDutyCycle < params->initParams->segDutyCycle && 
-		dumCurrentSeg < params->initParams->numSegments ; tmpDutyCycle++ )
-	  {
-	    dumCurrentSeg++;
-	  }
-
-        /* tell operator how we are doing */
         if (verbose)
-        {
-          fprintf(stdout,"Analyzing from %i -- %i\n", start_sample,
-		  start_sample + min(33.5 /series.deltaT, (series.data->length - start_sample)));
-        }
+          fprintf(stdout,"Analyzing samples %i -- %i\n", start_sample, start_sample + min(33.5 / series.deltaT, (series.data->length - start_sample)));
 
-        /* This is the main engine of the excess power method */ 
-        LAL_CALL(EPSearch(&stat, interval, params, &tmpEvent), &stat);
+        LAL_CALL(EPSearch(&stat, interval, params, EventAddPoint), &stat);
 
-        if ( tmpEvent != NULL ){
-
-          /* add events to event list */
-          if (burstEvent == NULL){
-            nextEvent = burstEvent = 
-              (SnglBurstTable *)LALMalloc( sizeof(SnglBurstTable) );
-          } else {
-            nextEvent->next = (SnglBurstTable *)LALMalloc( sizeof(SnglBurstTable) );
-            nextEvent = nextEvent->next;
-          }
-          memcpy(nextEvent, tmpEvent, sizeof(SnglBurstTable));
-
-          /* locate end of event list */
-          while (nextEvent->next){
-            nextEvent = nextEvent->next;
-          }
-
-          /* free the head of the temporary list */
-          LALFree( tmpEvent );
-          tmpEvent = NULL;
-
-        }
+        while(*EventAddPoint)
+          EventAddPoint = &(*EventAddPoint)->next;
 
         LAL_CALL(LALDestroyREAL4TimeSeries(&stat, interval), &stat);
-
-        /* move to the next start point*/
-	start_sample += tmpDutyCycle * params->ovrlap ; 
       } 
 
 
@@ -719,7 +681,7 @@ int main( int argc, char *argv[])
 
     /* Write the results to the burst table */
     LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_burst_table), &stat);
-    myTable.snglBurstTable=burstEvent;
+    myTable.snglBurstTable = burstEvent;
     LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable, 
                 sngl_burst_table), &stat);
 
