@@ -25,9 +25,13 @@ $\alpha$ and declination $\delta$ on the sky and arrives at the
 detector at a time $t$, then it will pass the centre of the solar
 system at a time $t_b(t,\alpha,\delta)$.
 
-The input/output features of this function are identical to those of
-\texttt{DTBaryPtolemaic()}, whose documentation should be consulted
-for the details.  The only differnce lies in the computation itself:
+The input/output features of this function are nearly identical to
+those of \texttt{DTBaryPtolemaic()}, whose documentation should be
+consulted  for the details. One important difference in calling this
+function is that the user has to supply the initialised ephemeris-data
+in the \verb+PulsarTimesParamStruc->ephemeris+ and the detector-data
+in \verb+PulsarTimesParamStruc->site+.
+
 \texttt{DTBaryPtolemaic()} uses the Ptolemaic approximation to model
 the Earth/Sun system, while \texttt{DTEphemeris()} uses accurate
 ephemeris data read in from files in the calling function, and passed
@@ -81,22 +85,19 @@ LALDTEphemeris( LALStatus             *status,
 
   /* This function may be called a lot.  Do error checking only in
      debug mode. */ 
-#ifndef NDEBUG
-  if(lalDebugLevel){
-    /* Make sure parameter structures and their fields exist. */
-    ASSERT(drv,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
-    ASSERT(drv->data,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
-    ASSERT(var,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
-    ASSERT(var->data,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
-    ASSERT(tev,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
-    /* Make sure array sizes are consistent. */
-    ASSERT(drv->length==var->length+1,status,
-	   PULSARTIMESH_EBAD,PULSARTIMESH_MSGEBAD);
-    ASSERT(var->length>2,status,
-	   PULSARTIMESH_EBAD,PULSARTIMESH_MSGEBAD);
-  }
-#endif
 
+  /* Make sure parameter structures and their fields exist. */
+  ASSERT(drv,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
+  ASSERT(drv->data,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
+  ASSERT(var,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
+  ASSERT(var->data,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
+  ASSERT(tev,status, PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
+  /* Make sure array sizes are consistent. */
+  ASSERT(drv->length==var->length+1,status, PULSARTIMESH_EBAD,PULSARTIMESH_MSGEBAD);
+  ASSERT(var->length>2,status, PULSARTIMESH_EBAD,PULSARTIMESH_MSGEBAD);
+  /* Make sure ephermis and detector data have been passed */
+  ASSERT (tev->ephemeris != NULL, status, PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
+  ASSERT (tev->site != NULL, status, PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
 
   /* First compute the location, velocity, etc... of the Earth:  */
 
@@ -106,7 +107,7 @@ LALDTEphemeris( LALStatus             *status,
     + tev->epoch.gpsNanoSeconds;
  
   /* Set the ephemeris data: */
-  eph = &(tev->ephemeris);
+  eph = tev->ephemeris;
 
   TRY( LALBarycenterEarth( status->statusPtr, &earth, &tGPS, eph ), status );
   /* Now "earth" contains position of center of Earth. */
@@ -119,7 +120,7 @@ LALDTEphemeris( LALStatus             *status,
   baryin.tgps.gpsNanoSeconds = tGPS.gpsNanoSeconds;
 
   /* Set the detector site...*/
-  baryin.site = tev->site;
+  baryin.site = *(tev->site);
 
   /* ...remembering to divide the coordinates by the speed of light: */
   baryin.site.location[0] /= LAL_C_SI;
