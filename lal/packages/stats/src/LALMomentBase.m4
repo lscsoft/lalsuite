@@ -20,7 +20,6 @@ void FUNC (
 	INT4	length;
 	TYPE	ave 	= 0.0;
 	TYPE	momentn	= 0.0;
-	TYPE	sigma	= 0.0;
 	TYPE	sum	= 0.0;
 	TYPE	base	= 0.0;
 
@@ -57,7 +56,7 @@ void FUNC (
 	}
 
 
-	for (iterator=0; iterator < length; iterator++)
+	for (iterator = 0; iterator < length; iterator++)
 	{
 		base = (data->data[iterator] - ave);
 		sum = pow( base, whichMoment );
@@ -70,20 +69,13 @@ void FUNC (
 	if ( whichMoment > 2 )
 	{
 		for (iterator = 0; iterator < length; iterator++)
-		{
+		{	
 			base = (data->data[iterator] - ave);
-			sum = pow( base, 2 );
-			sigma += sum;
+			sum = pow( base, whichMoment );
+			momentn += sum;
 		}
 
-		sum = sigma/(length - 1);
-		sum = sqrt(sum);
-		sum = pow( sum, whichMoment );
-
-		if( sigma != 0.0)
-		{
-			momentn /= sigma;
-		}
+		momentn /= ((TYPE)(length));
 	}
 
 
