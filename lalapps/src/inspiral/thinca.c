@@ -1087,7 +1087,7 @@ cleanexit:
   }
   else if ( ifoTag )
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA-%s_%d-%d.xml", ifos,
+    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml", ifos,
         ifoTag, startCoincidence, endCoincidence - startCoincidence );
   }
   else if ( userTag )
