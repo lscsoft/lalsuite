@@ -33,7 +33,7 @@ fail () {
   message="!!! `date`: Failed.  Consult file $LOGFILE."
   echo $message >&3
   echo $message
-  cleanup
+  # cleanup
   exit 1
 }
 trap 'echo "!!! `date`: Interrupt" >&4 ; cleanup ; exit 1' 1 2 15
@@ -50,7 +50,7 @@ message=">>> `date`: Testing LAL $LALVERSION $RCSTAG"
 echo $message >&3
 echo $message
 
-make distcheck DISTCHECK_CONFIGURE_FLAGS='--with-cc="$(CC)" --with-extra-cflags="$(CFLAGS)" --with-extra-cppflags="$(CPPFLAGS)" --with-extra-ldflags="$(LDFLAGS)" --with-extra-libs="$(LIBS)"'
+make distcheck DISTCHECK_CONFIGURE_FLAGS='--with-cc="$(CC)" --with-extra-cflags="$(CFLAGS)" --with-extra-cppflags="$(CPPFLAGS)" --with-extra-ldflags="$(LDFLAGS)" --with-extra-libs="$(LIBS)"' || fail
 
 message=">>> `date`: Finished"
 echo $message >&3

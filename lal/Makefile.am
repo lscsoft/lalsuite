@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-SUBDIRS = misc include packages doc lib
+SUBDIRS = include packages doc lib misc
 MAINTAINERCLEANFILES = README.install
 EXTRA_DIST = README.bugs README.contrib README.install \
   lal.pc.in lalsupport.pc.in lalframe.pc.in lalmetaio.pc.in lalmpi.pc.in \
