@@ -166,6 +166,7 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     out = out + "stochastic" + '-' + str(self.get_start()) + '-' + str(self.get_stop())
     return out + '.xml'
 
+
 class LSCDataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   An LSCdataFind job used to locate data. The static options are
@@ -189,9 +190,6 @@ class LSCDataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,config_file)
     self.__cache_dir = cache_dir
 
-    for sec in ['datafind']:
-      self.add_ini_opts(config_file,sec)
-    
     # we need a lal cache for files on the localhost
     self.add_opt('match','localhost')
     self.add_opt('lal-cache','')
@@ -224,6 +222,7 @@ class LSCDataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__start = 0
     self.__end = 0
     self.__observatory = None
+    self.__type = None
     self.__output = None
     self.__job = job
    
@@ -265,6 +264,15 @@ class LSCDataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     self.add_var_opt('observatory',obs)
     self.__observatory = obs
+    self.__set_output()
+
+  def set_type(self,type):
+    """
+    Set the frame type to retrieve data for
+    @param type: Frame type to obtain data for.
+    """
+    self.add_var_opt('type',type)
+    self.__type = type
     self.__set_output()
 
   def get_output(self):

@@ -160,6 +160,10 @@ data.make_short_chunks_from_unused(min_length)
 ifo1 = cp.get('detectors','detector-one')
 ifo2 = cp.get('detectors','detector-two')
 
+# get the frame types
+type1 = cp.get('datafind','type-one')
+type2 = cp.get('datafind','type-two')
+
 # get the min/max frequency
 f_min = int(cp.get('frequency','f-min'))
 f_max = int(cp.get('frequency','f-max'))
@@ -184,6 +188,7 @@ for seg in data:
   df1.set_start(seg.start())
   df1.set_end(seg.end())
   df1.set_observatory(ifo1[0])
+  df1.set_type(type1)
   if prev_df:
     df1.add_parent(prev_df)
   prev_df = df1
@@ -194,6 +199,7 @@ for seg in data:
     df2.set_start(seg.start())
     df2.set_end(seg.end())
     df2.set_observatory(ifo2[0])
+    df2.set_type(type2)
     df2.add_parent(prev_df)
     prev_df = df2
 
@@ -211,8 +217,10 @@ for seg in data:
   for chunk in seg:
     # loop over band
     for i in min_range:
+      # get band for analysis
       min = float(i)
       max = float(i + f_band)
+      # set up job
       stoch = stochastic.StochasticNode(stoch_job)
       stoch.set_start(chunk.start())
       stoch.set_end(chunk.end())

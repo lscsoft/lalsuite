@@ -159,6 +159,10 @@ data.make_short_chunks_from_unused(min_length)
 ifo1 = cp.get('detectors','detector-one')
 ifo2 = cp.get('detectors','detector-two')
 
+# get the frame types
+type1 = cp.get('datafind','type-one')
+type2 = cp.get('datafind','type-two')
+
 # create all the LSCdataFind jobs to run in sequence
 prev_df = None
 
@@ -169,6 +173,7 @@ for seg in data:
   df1.set_start(seg.start())
   df1.set_end(seg.end())
   df1.set_observatory(ifo1[0])
+  df1.set_type(type1)
   if prev_df:
     df1.add_parent(prev_df)
   prev_df = df1
@@ -179,6 +184,7 @@ for seg in data:
     df2.set_start(seg.start())
     df2.set_end(seg.end())
     df2.set_observatory(ifo2[0])
+    df2.set_type(type2)
     df2.add_parent(prev_df)
     prev_df = df2
 
