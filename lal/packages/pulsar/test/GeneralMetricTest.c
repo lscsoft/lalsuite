@@ -177,9 +177,6 @@ int main( int argc, char *argv[] ) {
   MetricParamStruc tevparam;        /* Input structure for CoherentMetric */
   PulsarTimesParamStruc tevpulse;   /* Input structure for CoherentMetric */
                                     /* (this is a member of tevparam) */
-  PulsarTimesParamStruc baryparams; /* barycentering parameters */
-  PulsarTimesParamStruc spinparams; /* spindown parameters */
-  PulsarTimesParamStruc compparams; /* composite parameters */
   EphemerisData   *eph;             /* To store ephemeris data */
   int             detector;         /* Which detector to use: */
                                     /* 1 = Hanford,  2 = Livingston,  */
@@ -195,7 +192,6 @@ int main( int argc, char *argv[] ) {
   float           r_ellipse;        /* Radii of ellipses */
   REAL8           determinant;      /* Determinant of projected metric */
   REAL4           f0;               /* carrier frequency */
-  REAL4Vector    *spindown;         /* Spindown parameters */
   UINT2           numSpindown;      /* Number of spindowns */
 
   /* Defaults that can be overwritten: */
@@ -407,7 +403,7 @@ int main( int argc, char *argv[] ) {
    printf("\nmetric (f0, alpha, delta, ...) at the requested point\n");
    for (j=0; j<=2+numSpindown; j++) {
      for (k=0; k<=j; k++)
-       printf( "  %+.3e", metric->data[k+j*(j+1)/2] );
+       printf( "  %+.4e", metric->data[k+j*(j+1)/2] );
      printf("\n");
    }
 
@@ -431,7 +427,7 @@ int main( int argc, char *argv[] ) {
    printf("\nf-projected metric (alpha, delta, ...) at the requested point\n");
    for (j=1; j<=2+numSpindown; j++) {
      for (k=1; k<=j; k++)
-       printf( "  %+.3e", metric->data[k+j*(j+1)/2] );
+       printf( "  %+.4e", metric->data[k+j*(j+1)/2] );
      printf( "\n" );
       }
 
