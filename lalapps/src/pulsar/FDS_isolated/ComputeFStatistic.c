@@ -3134,7 +3134,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 	COMPLEX8 *Xalpha=input[alpha]->fft->data->data;
 	REAL4 a = params->amcoe->a->data[alpha];
 	REAL4 b = params->amcoe->b->data[alpha];
-	REAL8 x;
+	REAL8 x,y;
 	REAL4 realP, imagP;	        /* real and imaginary parts of P, see CVS */
 
 	/* NOTE: sky-constants are always positive!!
@@ -3165,7 +3165,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 	  tcos = tc-d*ts-d2*tc-1.0;
 	}
 
-	REAL8 y = - LAL_TWOPI * ( f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ] );
+	y = - LAL_TWOPI * ( f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ] );
 	realQ = cos(y);
 	imagQ = sin(y);
 
