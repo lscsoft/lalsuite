@@ -60,7 +60,7 @@ RCSID( "$Id$" );
 "  --time-interval TIME     distribute injections in interval TIME (0)\n"\
 "  --seed SEED              seed random number generator with SEED (1)\n"\
 "  --user-tag STRING        set the usertag to STRING\n"\
-"  --minimum-mass MIN       set the minimum componenet mass to MIN (0.2)\n"\
+"  --minimum-mass MIN       set the minimum componenet mass to MIN (0.1)\n"\
 "  --maximum-mass MAX       set the maximum componenet mass to MAX (1.0)\n"\
 "  --core-radius A          set the galactic core radius to A kpc (8.5)\n"\
 "  --flatten-halo Q         set the halo flattening parameter to Q (1)\n"\
