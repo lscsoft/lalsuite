@@ -238,6 +238,9 @@ LALCreateTFTiling (
       INT4                          timeBins = pow1(2,i);
       INT4                          freqBins = nf/timeBins; 
 
+      COMPLEX8TimeFrequencyPlane    **thisPlane;
+      
+      thisPlane = (*tfTiling)->tfp + i;
       
 
       deltat=input->minTimeBins;
@@ -275,6 +278,7 @@ LALCreateTFTiling (
 		      (*currentTile)->tend=tstart+deltat-1;
 		      (*currentTile)->whichPlane=i;
 		      (*currentTile)->nextTile=NULL;
+                      (*currentTile)->deltaT=(*thisPlane)->params->deltaT;
 		      (*currentTile)->excessPower=0.0;
 		      (*currentTile)->alpha=0.0;
 		      (*currentTile)->weight=1.0;
