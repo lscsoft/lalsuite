@@ -561,8 +561,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   dataWindow = data_window(&status, seriesOne->deltaT, 0, \
       segmentLength, hannDuration);
 
-  LALSPrintTimeSeries(dataWindow, "1.dat");
-
   /* structure for high pass filtering */
   if (high_pass_flag)
   {
