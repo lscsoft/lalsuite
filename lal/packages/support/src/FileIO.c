@@ -73,6 +73,10 @@ It is strongly recommended that
     LALPrintError( "Info: function LALOpenDataFile, file " __FILE__ ", line " \
       XSTR( __LINE__ ) ", $Id$\n\tCould not open data file %s\n", file ) : 0 )
 
+#ifndef LAL_PREFIX
+#define LAL_PREFIX "/usr/local"
+#endif
+
 
 /* <lalVerbatim file="FileIOCP"> */
 FILE *
