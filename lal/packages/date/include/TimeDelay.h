@@ -62,14 +62,14 @@ TwoDetsTimeAndASource
 \end{verbatim}
 \index{\texttt{TwoDetsTimeAndASource}}
 
-\noindent This structure stores two pointers to \verb@LALPlaceAndGPS@
-structures, and a pointer to a \verb@SkyPosition@ structure.  The
+\noindent This structure stores two pointers to \verb+LALPlaceAndGPS+
+structures, and a pointer to a \verb+SkyPosition+ structure.  The
 fields are:
 
 \begin{description}
-\item[\verb@LALPlaceAndGPS *p_det_and_time1@] The first detector and GPS
-\item[\verb@LALPlaceAndGPS *p_det_and_time2@] The second detector and GPS
-\item[\verb@SkyPosition *p_source@] The source location (equatorial
+\item{\verb+LALPlaceAndGPS *p_det_and_time1+} The first detector and GPS
+\item{\verb+LALPlaceAndGPS *p_det_and_time2+} The second detector and GPS
+\item{\verb+SkyPosition *p_source+} The source location (equatorial
     co\"{o}dinates in decimal radians)
 \end{description}
 
@@ -94,13 +94,13 @@ DetTimeAndASource}
 \end{verbatim}
 \index{\texttt{DetTimeAndASource}}
 
-\noindent This structure stores one pointer to a \verb@LALPlaceAndGPS@
-structure, and a pointer to a \verb@SkyPosition@ structure.  The
+\noindent This structure stores one pointer to a \verb+LALPlaceAndGPS+
+structure, and a pointer to a \verb+SkyPosition+ structure.  The
 fields are:
 
 \begin{description}
-\item[\verb@LALPlaceAndGPS *p_det_and_time@] The detector and GPS
-\item[\verb@SkyPosition *p_source@]  The source location (equatorial
+\item{\verb+LALPlaceAndGPS *p_det_and_time+} The detector and GPS
+\item{[\verb+SkyPosition *p_source+}  The source location (equatorial
     co\"{o}dinates in decimal radians)
 \end{description}
 

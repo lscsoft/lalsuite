@@ -68,7 +68,7 @@ NRCSID (DATEH, "$Id$");
 #define DATEH_MSGEDATETOOEARLY "Date too early: Julian Day can only be computed for dates >= 1900-03-01"
 #define DATEH_MSGERANGE "Input time out of range: 0 <= utc seconds <= 946684823"
 #define DATEH_MSGEBUFFTOOSMALL "Output timestamp string too small: min. size = 26"
-#define DATEH_MSGEASCTIMEFAIL "asctime_r() failed"
+#define DATEH_MSGEASCTIMEFAIL "asctimeUNDERSCOREr() failed"
     
 
 /* </lalErrTable>
@@ -100,10 +100,10 @@ Time. The allowed values are:
 
 \medskip\noindent
 \begin{tabular}{ll}
-  \verb@MST_SEC@ & arc-seconds \\
-  \verb@MST_HRS@ & arc-hours (\textit{i.e.} units of Right Ascension)\\
-  \verb@MST_DEG@ & degrees \\
-  \verb@MST_RAD@ & radians
+  \verb+MST_SEC+ & arc-seconds \\
+  \verb+MST_HRS+ & arc-hours (\textit{i.e.} units of Right Ascension)\\
+  \verb+MST_DEG+ & degrees \\
+  \verb+MST_RAD+ & radians
 \end{tabular}
 \bigskip
 
@@ -127,8 +127,8 @@ allowed values are:
 
 \medskip\noindent
 \begin{tabular}{ll}
-  \verb@LALLEAPSEC_LOOSE@ & may miss leap seconds \\
-  \verb@LALLEAPSEC_STRICT@ & require all leap seconds
+  \verb+LALLEAPSEC_LOOSE+ & may miss leap seconds \\
+  \verb+LALLEAPSEC_STRICT+ & require all leap seconds
 \end{tabular}
 \bigskip
 
@@ -147,7 +147,7 @@ typedef enum
 \index{\texttt{LALUnixDate}}
 
 This structure is just the standard Unix \texttt{tm} structure.  We shall
-{\em always} ignore the daylight savings time field, \verb@tm_isdst@.
+{\em always} ignore the daylight savings time field, \verb+tm_isdst+.
 
 </lalLaTeX> */
 
@@ -257,8 +257,8 @@ This structure stores pointers to a \texttt{LALDetector} and a
 structures for passing to functions.  The fields are:
 
 \begin{description}
-\item[\verb@LALDetector *p_detector@] Pointer to a detector
-\item[\verb@LIGOTimeGPS *p_gps@] Pointer to a GPS time structure
+\item{\verb+LALDetector *p_detector+} Pointer to a detector
+\item{\verb+LIGOTimeGPS *p_gps+} Pointer to a GPS time structure
 \end{description}
 
 </lalLaTeX> */
@@ -286,8 +286,8 @@ detector and a pointer to a date.  This is another convenience
 structure, used in calling \texttt{LALLMST1()}.  The fields are:
 
 \begin{description}
-\item[\verb@LALDetector *p_detector@] Pointer to a detector
-\item[\verb@LALDate *p_date@] Pointer to a date
+\item{\verb+LALDetector *p_detector+} Pointer to a detector
+\item{\verb+LALDate *p_date+} Pointer to a date
 \end{description}
 
 </lalLaTeX> */
