@@ -97,7 +97,7 @@ LALComputeWaveletSpectrogram (
   REAL4Vector first;
   TFPlaneParams *params;
   UINT4 smin, smax, is, N, i, NPrev, ip, imax;
-  REAL4 max;
+  REAL4 max, tmp;
   TFCWavelet twav;
 
 
@@ -144,8 +144,21 @@ LALComputeWaveletSpectrogram (
   /* main construction */
 
   /* determine scales of interest */
-  smin = (UINT4)floor(log(tspec->minScale) / log(2.0));
-  smax = (UINT4)ceil(log(tspec->maxScale) / log(2.0));
+  tmp = log(tspec->minScale) / log(2.0);
+  if(tmp - floor(tmp) >= 0.5) {
+    smin = (UINT4)floor(tmp) + 1;
+  }
+  else {
+    smin = (UINT4)floor(tmp);
+  }
+
+  tmp = log(tspec->maxScale) / log(2.0);
+  if(tmp - floor(tmp) >= 0.5) {
+    smax = (UINT4)floor(tmp) + 1;
+  }
+  else {
+    smax = (UINT4)floor(tmp);
+  }
 
   ASSERT (smax - smin + 1 == tspec->freqBins, status, TFCWAVELETH_EINCOMP, TFCWAVELETH_MSGEINCOMP );
 
