@@ -370,7 +370,7 @@ LALDeltaFloatGPS (LALStatus    *status,
   ASSERT(tGPS1, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
   ASSERT(tGPS2, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
   
-  *deltaT = (REAL8)(tGPS1->gpsSeconds - tGPS2->gpsSeconds) + 1.0*(tGPS1->gpsNanoSeconds - tGPS2->gpsNanoSeconds)*oneBillion;
+  *deltaT = (REAL8)(tGPS1->gpsSeconds - tGPS2->gpsSeconds) + 1.0*(tGPS1->gpsNanoSeconds - tGPS2->gpsNanoSeconds)/oneBillion;
 
   RETURN( status );
 
