@@ -24,20 +24,20 @@ Module to calculate the moment of the noise power spectral density.
 The moments of the noise curve are defined as
 \begin{equation}
 I(q)  \equiv S_{h}(f_{0}) \int^{f_{c}/f_{0}}_{f_{s}/f_{0}}
-\frac{x^{-q/3}}{S_{h}(x f_{0})} \, dx \,.  
+\frac{x^{-q}}{S_{h}(x)} \, dx \,.  
 \end{equation}
 Because in practice we will always divide one of these moments by another, we
 do not need to include the $S_{h}(f_{0})$ term, which always cancels.
 This function calculates the integral
 \begin{equation}
-I = \int^{f_{c}/f_{0}}_{f_{s}/f_{0}} \frac{x^{-q/3}}{S_{h}(x f_{0})} \, dx \,.
+I = \int^{f_{c}/f_{0}}_{f_{s}/f_{0}} \frac{x^{-q}}{S_{h}(x)} \, dx \,.
 \end{equation} 
 It then divides this quantity by a normalisation constant which has been
 passed to the function. In the case of calculating the components of the
 metric for the signal manifold for the purpose of generating a template bank,
 this constant is given by $I(7)$, because of the definition of the quantity
 \begin{equation}
-J(q) \equiv \frac{I(q)}{I(7)} \,.
+J(q) \equiv \frac{I(q)}{I(7/3)} \,.
 \end{equation}
 
 \subsubsection*{Algorithm}
@@ -52,7 +52,6 @@ the power spectral density specified by the frequency series
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALInspiralMomentsIntegrand
 LALDRombergIntegrate
 \end{verbatim}
 

@@ -194,7 +194,9 @@ void LALInspiralValidParams(LALStatus            *status,
 				  Pars->mass1 >= coarseIn.mMin &&
 				  Pars->mass2 >= coarseIn.mMin &&
 				  Pars->mass1 <= coarseIn.mMax &&
-				  Pars->mass2 <= coarseIn.mMax
+				  Pars->mass2 <= coarseIn.mMax &&
+				  Pars->eta <= 0.25 && 
+				  Pars->eta >= coarseIn.etamin
 		     ) 
 		  {
 			  *valid = 1;

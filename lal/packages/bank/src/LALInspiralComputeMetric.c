@@ -23,102 +23,90 @@ to describe distances on the signal manifold.
 \end{itemize}
 
 \subsubsection*{Description}
-
 We calculate the components of the metric using the procedure outlined 
 in Owen \cite{Owen:96}. 
 This uses the moments of the noise curve,
 \begin{equation}
-I(q) \equiv s_{h}(f_{0}) \int^{f_{c}/f_{0}}_{f_{s}/f_{0}} \frac{x^{-q/3}}{S_{h}(xf_{0})}
+I(q) \equiv S_{h}(f_{0}) \int^{f_{c}/f_{0}}_{f_{s}/f_{0}} \frac{x^{-q/3}}{S_{h}(x)}
 \, dx
 \end{equation}
 and
 \begin{equation}
 J(q) \equiv \frac{I(q)}{I(7)} \,.
 \end{equation}
+(Please note that the function {\tt LALInspiralMoments} doesn't compute $I(q)$ defined 
+here; the index $q$ is definted differently there and the normalisation is supplied by the user.
+For ease of writing, here we shall follow the standard notation.)
 Then the moment functional $\mathcal{J}$ is defined such that, for a function $a$,
 \begin{equation}
-\mathcal{J} [a] = \frac{1}{I(7)} \int^{f_{c}/f_{0}}_{f_{s}/f_{0}} \frac{x^{-7/3}}{S_{h}(xf_{0}}
+\mathcal{J} [a] \equiv \frac{1}{I(7)} \int^{f_{c}/f_{0}}_{f_{s}/f_{0}} \frac{x^{-7/3}}{S_{h}(x)}
 a(x) \, dx
 \end{equation}
 which gives us
 \begin{equation}
-\mathcal{J} \left[ \sum_{n} a_{n} x^{n} \right] = \sum_{n} a_{n} J(7-3n)
+\mathcal{J} = \left[ \sum_{n} a_{n} x^{n} \right] = \sum_{n} a_{n} J(7-3n).
 \end{equation}
-This is used to calculate the components of the metric using the following formula:
+The above equation is used to calculate the components of the metric using the following formula:
 \begin{equation}
 \gamma_{\alpha \beta} = \frac{1}{2} \left( \mathcal{J} [ \psi_{\alpha} \psi_{\beta} ] -
 \mathcal{J} [ \psi_{\alpha} ] \mathcal{J} [ \psi_{\beta} ] \right)
 \end{equation}
-where we have
+where $\psi_\alpha$ is the derivative of the Fourier phase of the inspiral waveform
+with respect to the parameter $\lambda^\alpha,$ that is
+$\psi_\alpha \equiv \Psi_{,\alpha}.$  Writing the derivative index as
+$\alpha=0,j,$ with $j=1,\ldots,n$ we have 
 \begin{equation}
-\psi_{0} \equiv 2 \pi f
+\psi_{0} \equiv 2 \pi f, \ \ \ 
+\psi_{j} \equiv \frac{\partial \Delta \Psi}{\partial \Delta \lambda^{j}}.
 \end{equation}
-and
+The phase $\Psi$ is that which appears in the usual stationary-phase formula for
+the Fourier transform:
 \begin{equation}
-\psi_{j} \equiv \frac{\partial \Delta \Psi}{\partial \Delta \lambda^{j}}
-\end{equation}
-where
-$\Psi$ is the phase of the waveform which appears in the usual stationary phase formula:
-\begin{equation}
-\tilde{u}  = f^{-7/6} e^{i[-pi/4 - \Phi_{0} + 2 \pi f t_{0} + \Psi(f;\vec{\lambda}]}
+\tilde{h}(f)  \propto f^{-7/6} e^{i[-\pi/4 - \Phi_{0} + 2 \pi f t_{0} + \Psi(f;\vec{\lambda}]}.
 \end{equation}
 If we take the usual chirp times and multiply each by $(\pi f_{0})$ then we get
 \emph{dimensionless
 chirp times} $\tau_{k}$, and then the phase $\Psi$ may be written in the form
- 
 \begin{equation}
 \Psi = 2 \pi f t_{c} + \sum_{k} \Psi_{k}(f) \tau_{k}
 \end{equation}
-where the $\tau_{k}$ are given by
+where, defining $v_0 = (\pi m f_0)^{1/3}$ ($m$ being total mass and $f_0$ a
+fiducial starting frequency), the chirptimes $\tau_{k},$ up to 2nd PN order,
+are given by
+$$
+\tau_{0} = \frac{5}{256 \eta v_{0}^{5}},\ \ 
+\tau_{2} = \frac{5}{192 \eta v_{0}^{3}} \left( \frac{743}{336} + \frac{11}{4} \eta \right),
+$$
 \begin{equation}
-\tau_{0} = \frac{5}{256 \eta v_{0}^{5}}
-\end{equation}
-\begin{equation}
-\tau_{2} = \frac{5}{192 \eta v_{0}^{3}} \left( \frac{743}{336} + \frac{11}{4} \eta \right)
-\end{equation}
-\begin{equation}
-\tau_{3} = \frac{\pi}{8 \eta v_{0}^{2}}
-\end{equation}
-\begin{equation}
+\tau_{3} = \frac{\pi}{8 \eta v_{0}^{2}},\ \ 
 \tau_{4} = \frac{5}{128 \eta v_{0}} \left( \frac{3\,058\,673}{1\,016\,064} + \frac{5429}{1008}
 \eta +
-\frac{617}{144} \eta^{2} \right)
+\frac{617}{144} \eta^{2} \right).
 \end{equation}
-and the $\Psi_{k}$ are given by
+Up to second post-Newtonian approximation the $\psi_{k}$ are given by
 \begin{equation}
-\Psi_{0} = \frac{6}{5 \nu^{5/3}}
-\end{equation}
-\begin{equation}
-\Psi_{2} = \frac{2}{\nu}
-\end{equation}
-\begin{equation}
-\Psi_{3} = - \frac{3}{\nu^{2/3}}
-\end{equation}
-\begin{equation}
-\Psi_{4} = \frac{6}{\nu^{1/3}}
+\psi_{0} = \frac{6}{5 \nu^{5/3}},\ \ 
+\psi_{2} = \frac{2}{\nu},\ \ 
+\psi_{3} = - \frac{3}{\nu^{2/3}},\ \ 
+\psi_{4} = \frac{6}{\nu^{1/3}}.
 \end{equation}
 where $\nu = f/f_{0}$.
 
 If we now make the substitution $f = v^{3}/\pi m$ we then the find that the phase may be
-expressed in the
-simpler form
+expressed in a simpler form
 \begin{equation}
 \Psi(v) = 2 \pi f t_{c} + \sum_{k} \theta_{k} v^{k-5}
 \end{equation}
 where the \emph{chirp parameters} $\theta_{k}$ are given by
+$$
+\theta_{0} = \frac{3}{128 \eta}, \ \ 
+\theta_{2} = \frac{5}{96 \eta} \left( \frac{743}{336} + \frac{11}{4} \eta \right),
+$$
 \begin{equation}
-\theta_{0} = \frac{3}{128 \eta}
-\end{equation}
-\begin{equation}
-\theta_{2} = \frac{5}{96 \eta} \left( \frac{743}{336} + \frac{11}{4} \eta \right)
-\end{equation}
-\begin{equation}
-\theta_{3} = - \frac{3 \pi}{8 \eta}
-\end{equation}
-\begin{equation}
+\theta_{3} = - \frac{3 \pi}{8 \eta},\ \ 
 \theta_{4} = \frac{15}{64 \eta} \left( \frac{3\,058\,673}{1\,016\,064} + \frac{5429}{1008} \eta
 + \frac{617}{144}
-\eta^{2} \right)
+\eta^{2} \right).
 \end{equation}
  
 If we want to express $\Psi$ in terms of $f$ rather than $v$ we simply substitute $v = (\pi m
@@ -248,9 +236,9 @@ write as:
 + \left [a_{21} \frac {\theta_1}{\theta_2} + a_{22} \left ( \theta_1 \theta_2^2 \right )^{1/3} \right ] v^{-3}
 + a_{31} \theta_2 v^{-2} \nonumber \\
 & + & \left [a_{41} \frac {\theta_1}{\theta_2^2} + a_{42} \left ( \frac {\theta_1}{\theta_2} \right )^{1/3} 
-+ a_{43} \left ( \frac{\theta_2^4}{\theta_1} \right )^{1/3} \right ] v^{-1}.
++ a_{43} \left ( \frac{\theta_2^4}{\theta_1} \right )^{1/3} \right ] v^{-1},
 \end{eqnarray}
-to two-PN order.  Here $v=(f/f_0)^{1/3},$ $\theta_1$ and $\theta_2$ are 
+to 2nd post-Newtonain order.  Here $v=(f/f_0)^{1/3},$ $\theta_1$ and $\theta_2$ are 
 identical to the  $\theta^1$ and $\theta^2$ parameters
 of Owen and Sathyaprakash defined in Eq.~(3.3) there and the $a$ coefficients are given by:
 \begin{eqnarray}

@@ -269,8 +269,8 @@ LALInspiralCreateCoarseBank(
   CHECKSTATUSPTR(status);
   
   /* Let's add the first template to the template list
-   On failure realloc() returns a NULL to outlist, hence there is
-   no need to explicitly free the outlist 
+   On failure realloc() returns a NULL to list, hence there is
+   no need to explicitly free list 
   */
   if (!(*list = (InspiralTemplateList*) 
 			  LALRealloc(*list, sizeof(InspiralTemplateList)*(*nlist+1)))) {
@@ -445,6 +445,7 @@ GetInspiralMoments (
    ATTATCHSTATUSPTR(status);
   
    ASSERT (params, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+   ASSERT (params->fLower>0, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    ASSERT (moments, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    ASSERT (psd, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
 
@@ -459,11 +460,11 @@ GetInspiralMoments (
    /* setup the input structure needed in the computation of the moments */
 
    in.shf = psd;
-   in.shf->f0 = params->fLower/params->fLower;
+   in.shf->f0 /= params->fLower;
    in.shf->deltaF /= params->fLower;
    in.xmin = params->fLower/params->fLower;
    in.xmax = params->fCutoff/params->fLower;
-
+	   
    /* First compute the norm */
 
    in.norm = 1.L;
@@ -491,6 +492,7 @@ GetInspiralMoments (
 	   if (lalDebugLevel==1) fprintf(stderr, "j%1i=%e\n", k,moments->j[k]);
    }
    in.shf->deltaF *= params->fLower;
+   in.shf->f0 *= params->fLower;
   
    DETATCHSTATUSPTR(status);
    RETURN (status);

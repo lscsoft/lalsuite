@@ -23,12 +23,12 @@ $Id$
 The moments of the noise curve are defined as 
 \begin{equation}
 I(q)  \equiv S_{h}(f_{0}) \int^{f_{c}/f_{0}}_{f_{s}/f_{0}}
-\frac{x^{-q/3}}{S_{h}(x f_{0})} \, dx \,.  
+\frac{x^{-q/3}}{S_{h}(x)} \, dx \,.  
 \end{equation}
 This function calculates the integrand of this integral, i.e.\ for a given $x$
 it calculates 
 \begin{equation}
-\frac{x^{-q/3}}{S_{h}(xf_{0})} \,\,.
+\frac{x^{-q/3}}{S_{h}(x)} \,\,.
 \end{equation}
 by interpolating the frequency series containing $S_h(f)$.
 
