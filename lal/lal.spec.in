@@ -34,7 +34,7 @@ as well as the documentation for the library.
 
 %build
 nightly_version=@NIGHTLY_VERSION@
-%configure --enable-nightly=${nightly_version:-no}
+%configure --enable-nightly=${nightly_version:-no} --disable-debug
 %{__make}
 
 %install
