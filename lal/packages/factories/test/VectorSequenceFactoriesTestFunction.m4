@@ -1,0 +1,84 @@
+dnl $Id$
+ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')')
+ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')')
+ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')
+ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')
+ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')
+ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')
+ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')
+ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')')
+ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')')
+ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
+ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
+ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
+define(`VTYPE',`format(`%sVectorSequence',TYPE)')
+define(`CFUNC',`format(`%sCreateVectorSequence',TYPECODE)')
+define(`DFUNC',`format(`%sDestroyVectorSequence',TYPECODE)')
+define(`FUNC',`format(`%sVectorSequenceFactoriesTest',TYPECODE)')
+
+
+void FUNC ( void )
+{
+  CreateVectorSequenceIn input   = { 2, 8 };
+  CreateVectorSequenceIn badslen = { 0, 8 };
+  CreateVectorSequenceIn badvlen = { 2, 0 };
+  static Status  status;
+  static VTYPE  *sequence;
+  static VTYPE   sstore;
+
+
+  /*
+   *
+   * Test ordinary behavior.
+   *
+   */
+
+
+  CFUNC ( &status, &sequence, &input );
+  TestStatus( &status, CODES( 0 ), 1 );
+
+  memset( sequence->data, 0, input.length*input.vectorLength*sizeof( TYPE ) );
+
+  DFUNC ( &status, &sequence );
+  TestStatus( &status, CODES( 0 ), 1 );
+
+  LALCheckMemoryLeaks();
+
+
+  /*
+   *
+   * Test error codes.
+   *
+   */
+
+
+  CFUNC ( &status, &sequence, &badslen );
+  TestStatus( &status, CODES( CREATEVECSEQ_ESLENGTH ), 1 );
+
+  CFUNC ( &status, &sequence, &badvlen );
+  TestStatus( &status, CODES( CREATEVECSEQ_EVLENGTH ), 1 );
+
+  CFUNC ( &status, &sequence, NULL );
+  TestStatus( &status, CODES( CREATEVECSEQ_EINPTR ), 1 );
+
+  DFUNC ( &status, NULL );
+  TestStatus( &status, CODES( DESTROYVECSEQ_EVPTR ), 1 );
+
+  CFUNC ( &status, NULL, &input );
+  TestStatus( &status, CODES( CREATEVECSEQ_EVPTR ), 1 );
+
+  DFUNC ( &status, &sequence );
+  TestStatus( &status, CODES( DESTROYVECSEQ_EUPTR ), 1 );
+
+  sequence = &sstore;
+  CFUNC ( &status, &sequence, &input );
+  TestStatus( &status, CODES( CREATEVECSEQ_EUPTR ), 1 );
+
+  DFUNC ( &status, &sequence );
+  TestStatus( &status, CODES( DESTROYVECSEQ_EDPTR ), 1 );
+
+  LALCheckMemoryLeaks();
+  printf( "PASS... tests of CFUNC and DFUNC \n" );
+          
+  return;
+}
