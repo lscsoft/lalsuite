@@ -490,7 +490,7 @@ void parse_command_line(
 
 		case 'D':
 		set_debug_level(optarg);
-		ADD_PROCESS_PARAM("int", "%d", atoi(optarg));
+		ADD_PROCESS_PARAM("string", "%s", optarg);
 		break;
 
 		case 'E':
