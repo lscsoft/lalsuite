@@ -8,7 +8,7 @@ This script produces the condor submit and dag files to run
 the standalone power code on LIGO data
 """
 
-__author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>'
+__author__ = 'Saikat Ray-Majumder <saikat@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'[11:-2]
 
@@ -42,6 +42,7 @@ Usage: lalapps_power_pipe [options]
   -m, --mdcinjections      add mdc injections 
 
   -b, --coincidence        do coincidence analysis
+  -t, --triplecoincidence  do triple coincidence
 
   -p, --playground-only    only create chunks that overlap with playground
   -P, --priority PRIO      run jobs with condor priority PRIO
@@ -52,7 +53,7 @@ Usage: lalapps_power_pipe [options]
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvdrHKLcjmbp:u:P:f:l:"
+shortop = "hvdrHKLcjmbtp:u:P:f:l:"
 longop = [
   "help",
   "version",
@@ -65,6 +66,7 @@ longop = [
   "injections",
   "mdcinjections",
   "coincidence",
+  "triplecoincidence",
   "playground-only",
   "user-tag=",
   "priority=",
@@ -86,6 +88,7 @@ do_H2 = None
 do_L1 = None
 do_makeinjfiles = None
 do_coincidence = None
+do_triplecoincidence = None
 do_inj = None
 do_mdcinj = None
 usertag = None
@@ -119,6 +122,8 @@ for o, a in opts:
     do_mdcinj = 1
   elif o in ("-b", "--coincidence"):
     do_coincidence = 1
+  elif o in ("-t", "--triplecoincidence"):
+    do_triplecoincidence = 1
   elif o in ("-u", "--user-tag"):
     usertag = a
   elif o in ("-p", "--playground-only"):
@@ -156,7 +161,7 @@ if do_mdcinj:
   except: pass
 
 #try and make a directory to store the coincidence outputs
-if do_coincidence: 
+if do_coincidence or do_triplecoincidence: 
   try: os.mkdir('coincident')
   except: pass
 
@@ -213,7 +218,6 @@ burca_job.set_sub_file( basename + '.burca' + subsuffix )
 if usertag:
   pow_job.add_opt('user-tag',usertag)
   
-
 # set the condor job priority
 if condor_prio:
   df_job.add_condor_cmd('priority',condor_prio)
@@ -244,6 +248,12 @@ if do_L1:
   ifo3 = cp.get('pipeline','ifo3')
   ifo3_snr = cp.get('pipeline','thresholdifo3')
   ifo3_calibration = cp.get('calibration','L1')
+
+#set the proper prefixes for burca jobs
+if do_coincidence or do_triplecoincidence:
+  double_prefix = cp.get('pipeline','double_outfileprefix')
+if do_triplecoincidence:
+  triple_prefix = cp.get('pipeline','triple_outfileprefix')
 
 # create all the LSCdataFind jobs to run in sequence
 prev_df1 = None
@@ -397,43 +407,55 @@ for seg in data:
       dag.add_node(pow3)
 
   ########set the burca jobs ###########
-  if do_coincidence:
-    burca = power.BurcaNode(burca_job)
+  if do_coincidence or do_triplecoincidence:
+    burca1 = power.BurcaNode(burca_job)
+    if do_triplecoincidence:
+      do_L1=None
     if do_H1 and do_L1:	
-      burca.set_ifoa(pow1.get_output())
-      burca.set_ifob(pow3.get_output()) 
+      burca1.set_ifoa(pow1.get_output())
+      burca1.set_ifob(pow3.get_output())
+      burca1.set_prefix(double_prefix) 
     if do_H2 and do_L1:	
-      burca.set_ifoa(pow2.get_output())
-      burca.set_ifob(pow3.get_output())
+      burca1.set_ifoa(pow2.get_output())
+      burca1.set_ifob(pow3.get_output())
+      burca1.set_prefix(double_prefix)
     if do_H1 and do_H2:	
-      burca.set_ifoa(pow1.get_output())
-      burca.set_ifob(pow2.get_output())
-    burca.set_start(seg.start())
-    burca.set_end(seg.end())
-    burca.add_var_opt('outfile',burca.get_output())
+      burca1.set_ifoa(pow1.get_output())
+      burca1.set_ifob(pow2.get_output())
+      burca1.set_prefix(double_prefix)
+    burca1.set_start(seg.start())
+    burca1.set_end(seg.end())
+    burca1.add_var_opt('outfile',burca1.get_output())
 
-    if do_datafind: 
-      burca.add_parent(df1)
-      if do_L1:
-        burca.add_parent(df2)
-    if do_mdcinj: 
-      burca.add_parent(mdcdf1)
-      if do_L1:
-        burca.add_parent(mdcdf2)
-    if do_makeinjfiles:
-      burca.add_parent(inj1)	
+	
     if do_power:
       if do_H1 and do_L1: 
-        burca.add_parent(pow1)
-        burca.add_parent(pow3)
+        burca1.add_parent(pow1)
+        burca1.add_parent(pow3)
       if do_H2 and do_L1: 
-        burca.add_parent(pow2)
-        burca.add_parent(pow3)
+        burca1.add_parent(pow2)
+        burca1.add_parent(pow3)
       if do_H1 and do_H2: 
-        burca.add_parent(pow1)
-        burca.add_parent(pow2)
-    dag.add_node(burca)
+        burca1.add_parent(pow1)
+        burca1.add_parent(pow2)
+    dag.add_node(burca1)
           
+  if do_triplecoincidence:
+    do_L1 = 1
+    burca2 = power.BurcaNode(burca_job)	
+    burca2.set_ifoa(burca1.get_output())
+    burca2.set_ifob(pow3.get_output()) 
+    burca2.set_prefix(triple_prefix)
+    burca2.set_start(seg.start())
+    burca2.set_end(seg.end())
+    burca2.add_var_opt('outfile',burca2.get_output())
+
+    if do_power:
+      burca2.add_parent(pow3)
+    burca2.add_parent(burca1)
+    dag.add_node(burca2)
+
+  #########################################################
 
 # write out the DAG
 dag.write_sub_files()
