@@ -1999,8 +1999,9 @@ int main( int argc, char *argv[] )
         LAL_CALL( LALGPStoINT8( &status, &trigTimeNS, &(event->end_time) ), 
             &status );
 
-        if ( ! ( ! trigTimeNS || (trigTimeNS >= trigStartTimeNS) ) && 
-            ( ! trigEndTimeNS || (trigTimeNS < trigEndTimeNS) ) )
+        if ( trigTimeNS &&
+            (trigStartTimeNS && (trigTimeNS < trigStartTimeNS)) ||
+            (trigEndTimeNS && (trigTimeNS >= trigEndTimeNS)) )
         {
           /* throw this trigger away */
           SnglInspiralTable *tmpEvent = event;
