@@ -500,7 +500,6 @@ LALFrCacheGenerate(
   ATTATCHSTATUSPTR( status );
   ASSERT( output, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
   ASSERT( ! *output, status, FRAMECACHEH_ENNUL, FRAMECACHEH_MSGENNUL );
-  ASSERT( dirstr, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
   ASSERT( fnptrn, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
 
   fnptrn = fnptrn ? fnptrn : "*.gwf";
