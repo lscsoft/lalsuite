@@ -66,18 +66,36 @@ NRCSID (AVFACTORIESH, "$Id$");
 #define CREATEVECTOR_EUPTR    4
 #define CREATEVECTOR_EMALLOC  8
 
+#define CREATEARRAY_ELENGTH  1
+#define CREATEARRAY_EVPTR    2
+#define CREATEARRAY_EUPTR    4
+#define CREATEARRAY_EMALLOC  8
+
 #define CREATEVECTOR_MSGELENGTH   "Illegal length" /* ELENGTH */
 #define CREATEVECTOR_MSGEVPTR    "vector == NULL" /* EVPTR */
 #define CREATEVECTOR_MSGEUPTR    "*vector != NULL" /* EUPTR */
 #define CREATEVECTOR_MSGEMALLOC   "Malloc failure" /* EMALLOC */
 
+#define CREATEARRAY_MSGELENGTH   "Illegal length" /* ELENGTH */
+#define CREATEARRAY_MSGEVPTR    "array == NULL" /* EVPTR */
+#define CREATEARRAY_MSGEUPTR    "*array != NULL" /* EUPTR */
+#define CREATEARRAY_MSGEMALLOC   "Malloc failure" /* EMALLOC */
+
 #define DESTROYVECTOR_EVPTR  1
 #define DESTROYVECTOR_EUPTR  2
 #define DESTROYVECTOR_EDPTR  8
 
+#define DESTROYARRAY_EVPTR  1
+#define DESTROYARRAY_EUPTR  2
+#define DESTROYARRAY_EDPTR  8
+
 #define DESTROYVECTOR_MSGEVPTR "vector == NULL" /* EVPTR */
 #define DESTROYVECTOR_MSGEUPTR "*vector == NULL" /* EUPTR */
 #define DESTROYVECTOR_MSGEDPTR "(*vector)->data == NULL" /* EDPTR */
+
+#define DESTROYARRAY_MSGEVPTR "array == NULL" /* EVPTR */
+#define DESTROYARRAY_MSGEUPTR "*array == NULL" /* EUPTR */
+#define DESTROYARRAY_MSGEDPTR "(*array)->data == NULL" /* EDPTR */
 
 /* 
  * 6. Extern Constant Declarations. These should not be present unless a
