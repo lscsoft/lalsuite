@@ -139,6 +139,7 @@ tagEPSearchParams
 {
   BOOLEAN                       searchMaster;
   BOOLEAN                       haveData;
+  INT4                          cluster;
   UINT4                        *numSlaves;          
   UINT4                         simType;
   UINT4                         currentSegment;
