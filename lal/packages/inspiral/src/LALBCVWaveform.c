@@ -116,7 +116,7 @@ LALBCVWaveform(
 
   REAL8 f, df;
   REAL8 shift, phi, psi, amp0, amp;
-  REAL8 Sevenby6, Fiveby3, Twoby3, alpha, totalMass;
+  REAL8 Sevenby6, Fiveby3, Twoby3, alpha;
   INT4 n, i;
 
   INITSTATUS(status, "LALBCVWaveform", LALBCVWAVEFORMC);
@@ -202,7 +202,7 @@ LALBCVSpinWaveform(
 
   REAL8 f, df;
   REAL8 shift, phi, psi, amp0, amp, beta, modphase;
-  REAL8 Sevenby6, Fiveby3, Twoby3, alpha1, alpha2, totalMass;
+  REAL8 Sevenby6, Fiveby3, Twoby3, alpha1, alpha2;
   INT4 n, i;
 
   INITSTATUS(status, "LALBCVSpinWaveform", LALBCVWAVEFORMC);

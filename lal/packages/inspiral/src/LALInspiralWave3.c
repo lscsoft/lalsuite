@@ -376,3 +376,164 @@ LALInspiralWave3Templates (
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
+
+
+
+
+
+NRCSID (LALINSPIRALWAVE3FORINJECTIONC, "$Id$");
+
+/*  <lalVerbatim file="LALInspiralWave3ForInjectionCP"> */
+
+void 
+LALInspiralWave3ForInjection (
+   LALStatus        *status,
+   REAL4Vector      *inject_hc,
+   REAL4Vector      *inject_hp,
+   REAL4Vector      *inject_phase,
+   REAL4Vector      *inject_freq,
+   InspiralTemplate *params
+   )
+
+{ /* </lalVerbatim>  */
+
+  INT4 i, startShift, count;
+  REAL8 dt, fu, ieta, eta, tc, totalMass, t, td, c1, phi0, phi1, phi;
+  REAL8 v, f, fHigh, amp, tmax, fOld, phase;
+  expnFunc func;
+  expnCoeffs ak;
+
+  REAL8 unitHz; 
+  unitHz = (params->mass1 +params->mass2) *LAL_MTSUN_SI*(REAL8)LAL_PI;
+
+
+  INITSTATUS (status, "LALInspiralWave3ForInjection", LALINSPIRALWAVE3FORINJECTIONC);
+  ATTATCHSTATUSPTR(status);
+  
+  ASSERT(inject_hc,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(inject_hp,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(inject_hc->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(inject_hp->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  
+  ASSERT(inject_phase,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(inject_freq,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(inject_freq->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(inject_phase->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+
+  ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL); 
+  ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
+  LALInspiralSetup (status->statusPtr, &ak, params);
+  CHECKSTATUSPTR(status);
+  LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
+  CHECKSTATUSPTR(status);
+
+  dt = 1.0/(params->tSampling);    /* sampling rate  */
+  fu = params->fCutoff;            /* upper frequency cutoff  */
+  phi = params->startPhase;        /* initial phase  */
+  startShift = params->nStartPad;  /* number of zeros at the start of the wave  */
+
+/* Calculate the three unknown paramaters in (m1,m2,M,eta,mu) from the two
+   which are given.  */
+
+  LALInspiralParameterCalc (status->statusPtr, params);
+  CHECKSTATUSPTR(status);
+
+  ASSERT(params->totalMass >0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->eta >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
+
+  tc=params->tC;       /* Instant of coalescence of the compact objects */
+  eta = params->eta;   /* Symmetric mass ratio  */
+  ieta = params->ieta;
+  totalMass = (params->totalMass)*LAL_MTSUN_SI; /* mass of the system in seconds */
+
+
+/* 
+   If flso is less than the user inputted upper frequency cutoff fu, 
+   then the waveforn is truncated at f=flso.  
+*/
+
+  if (fu) 
+     fHigh = (fu < ak.flso) ? fu : ak.flso; 
+  else 
+     fHigh = ak.flso;
+
+/* 
+   Check that the highest frequency is less than half the sampling frequency - 
+   the Nyquist theorum 
+*/
+
+  ASSERT(fHigh < 0.5/dt, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(fHigh > params->fLower, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
+/* Here's the part which calculates the waveform */
+
+  c1 = eta/(5.*totalMass);
+  i=0; while (i<startShift) 
+  {
+       *(inject_hc->data + i) = 
+       *(inject_hp->data + i) = 
+       *(inject_phase ->data +i) =
+       *(inject_freq->data +i) = 0.;
+      i++;
+  }
+
+  t=0.0;
+  td = c1*(tc-t);
+  func.phasing3(status->statusPtr, &phase, td, &ak);
+  CHECKSTATUSPTR(status);
+  func.frequency3(status->statusPtr, &f, td, &ak);
+  CHECKSTATUSPTR(status);
+  phi0=-phase+phi;
+  phi1=phi0+LAL_PI_2;
+
+  count = 0;
+  tmax = tc - dt;
+  fOld = 0.0;
+
+/* We stop if any of the following conditions fail */
+
+  while (f<fHigh && t<tmax && f>fOld) 
+  {
+    fOld = f; 
+    v = pow(f*LAL_PI*totalMass, oneby3);
+    amp = params->signalAmplitude * v*v;
+
+    *(inject_hc->data + i) = (REAL4) amp;
+    *(inject_hp->data + i) = (REAL4) amp;
+    *(inject_phase->data + i) = (REAL8) (phase);
+    *(inject_freq->data + i) = (REAL4) v*v*v / unitHz;
+
+
+    ++i;
+    ++count;
+    t=count*dt;
+    td = c1*(tc-t);
+    func.phasing3(status->statusPtr, &phase, td, &ak);
+    CHECKSTATUSPTR(status);
+    func.frequency3(status->statusPtr, &f, td, &ak);
+    CHECKSTATUSPTR(status); 
+  }
+  params->fFinal = fOld;
+  
+/*
+  fprintf(stderr, "%e %e\n", f, fHigh);
+*/
+
+   while (i<(INT4)inject_hp->length) 
+
+  {
+     *(inject_hc->data + i) = 
+       *(inject_hp->data + i) = 
+       *(inject_phase ->data +i) =
+       *(inject_freq->data +i) =0.;
+      i++;
+  }
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}

@@ -1387,8 +1387,9 @@ LALEOBWaveformForInjection (
       count++;
     }
   
+   LALFree(dummy.data);
    DETATCHSTATUSPTR(status);
    RETURN(status);
-   LALFree(dummy.data);
 }
+
 
