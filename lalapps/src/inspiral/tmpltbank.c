@@ -328,10 +328,10 @@ int main ( int argc, char *argv[] )
   {
     PassBandParamStruc highpassParam;
     highpassParam.nMax = 4;
-    highpassParam.f1 = highPassFreq;
-    highpassParam.f2 = -1.0;
-    highpassParam.a1 = 0.1;
-    highpassParam.a2 = -1.0;
+    highpassParam.f1 = -1.0;
+    highpassParam.f2 = highPassFreq;
+    highpassParam.a1 = -1.0;
+    highpassParam.a2 = 0.1;
 
     LAL_CALL( LALButterworthREAL4TimeSeries( &status, &chan, &highpassParam ),
         &status );
