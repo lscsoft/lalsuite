@@ -1112,6 +1112,7 @@ static SnglBurstTable **analyze_series(
 	LALStatus *stat,
 	SnglBurstTable **addpoint,
 	REAL4TimeSeries *series,
+	size_t psdlength,
 	EPSearchParams *params
 )
 {
@@ -1119,21 +1120,21 @@ static SnglBurstTable **analyze_series(
 	size_t i, start;
 	size_t overlap = params->windowLength - params->windowShift;
 
-	if(options.PSDAverageLength > series->data->length) {
-		options.PSDAverageLength = window_commensurate(series->data->length, params->windowLength, params->windowShift);
+	if(psdlength > series->data->length) {
+		psdlength = window_commensurate(series->data->length, params->windowLength, params->windowShift);
 		if(options.verbose)
-			fprintf(stderr, "Warning: PSD average length exceeds available data --- reducing PSD average length to %d samples\n", options.PSDAverageLength);
-		if(!options.PSDAverageLength) {
+			fprintf(stderr, "Warning: PSD average length exceeds available data --- reducing PSD average length to %d samples\n", psdlength);
+		if(!psdlength) {
 			if(options.verbose)
 				fprintf(stderr, "Warning: cowardly refusing to analyze 0 samples... skipping series\n");
 			return(addpoint);
 		}
 	}
 
-	for(i = 0; i < series->data->length - overlap; i += options.PSDAverageLength - overlap) {
-		start = min(i, series->data->length - options.PSDAverageLength);
+	for(i = 0; i < series->data->length - overlap; i += psdlength - overlap) {
+		start = min(i, series->data->length - psdlength);
 		
-		LAL_CALL(LALCutREAL4TimeSeries(stat, &interval, series, start, options.PSDAverageLength), stat);
+		LAL_CALL(LALCutREAL4TimeSeries(stat, &interval, series, start, psdlength), stat);
 
 		if(options.verbose)
 			fprintf(stderr, "Analyzing samples %i -- %i\n", start, start + interval->data->length);
@@ -1271,19 +1272,20 @@ int main( int argc, char *argv[])
 	searchsumm.searchSummaryTable->in_start_time = options.startEpoch;
 	searchsumm.searchSummaryTable->in_end_time = options.stopEpoch;
 
-	/* determine the input time series overlap correction */
-	/* LAL spec makes us pass a pointer... sigh */
+	/* determine the input time series overlap correction (LAL spec
+	 * makes us pass a pointer... sigh), and set the outer loop's upper
+	 * bound */
 	{
 	REAL8 overlap = (REAL8) params.windowLength / 2.0 / targetSampleRate;
+
 	LAL_CALL(LALFloatToInterval(&stat, &overlapCorrection, &overlap), &stat);
 	if(options.verbose)
 		fprintf(stderr, "time series overlap correction is %u.%09u s\n", overlapCorrection.seconds, overlapCorrection.nanoSeconds);
-	}
 
-	/* determine the outer loop's upper bound */
-	LAL_CALL(LALAddFloatToGPS(&stat, &boundepoch, &options.stopEpoch, (REAL8) -2.0 * options.FilterCorruption / targetSampleRate), &stat);
+	LAL_CALL(LALAddFloatToGPS(&stat, &boundepoch, &options.stopEpoch, (REAL8) -2.0 * options.FilterCorruption / targetSampleRate - overlap), &stat);
 	if(options.verbose)
 		fprintf(stderr, "series epochs must be less than %u.%09u s\n", boundepoch.gpsSeconds, boundepoch.gpsNanoSeconds);
+	}
 
 
 	/*
@@ -1383,7 +1385,7 @@ int main( int argc, char *argv[])
 		 * Analyze the data
 		 */
 
-		EventAddPoint = analyze_series(&stat, EventAddPoint, series, &params);
+		EventAddPoint = analyze_series(&stat, EventAddPoint, series, options.PSDAverageLength, &params);
 
 		/*
 		 * Reset for next run
