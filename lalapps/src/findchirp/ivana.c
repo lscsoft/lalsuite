@@ -21,7 +21,7 @@ ivana ../data/H2_ASQ_triple_c5.xml \
 /* CLUSWINDOW determines how candidate events are grouped into clusters.  It
    is the maximum time between consecutive candidate events. */
 #define CLUSWINDOW 1.0
-/* MINLIVETIMEINTERVAL is the time associated with Patrick's "veto clustering"
+/* MINLIVEINTERVAL is the time associated with Patrick's "veto clustering"
    criterion.  It is the minimum length of a time interval between veto
    events which can be considered live. */
 #define MINLIVEINTERVAL 4.0
@@ -1213,6 +1213,7 @@ int main( int argc, char **argv )
 
   /*------ Report results ------*/
 
+  printf( "$Id$\n" );
   printf( "Candidate clustering window = %.2f seconds\n", CLUSWINDOW );
   printf( "Minimum live interval between vetoes = %.2f seconds\n",
 	  MINLIVEINTERVAL );
