@@ -8,7 +8,6 @@
  *                 Albert Einstein Institute/UWM - started September 2002   
  *********************************************************************************/
 
-
 #include <lal/UserInput.h>
 #include <lal/LALDemod.h>
 #include <lal/RngMedBias.h>
@@ -79,7 +78,9 @@ BOOLEAN FILE_FSTATS = 1;
 #endif
 
 #define fopen boinc_fopen
+
 int boincmain(int argc, char *argv[]);
+void worker();
 
 extern double fraction_done;
 void use_boinc_filename1(char** orig_name);
@@ -225,6 +226,22 @@ DopplerScanState emptyScan;
 /* CODE starts here */
 /*----------------------------------------------------------------------*/
 
+
+#if USE_BOINC
+int BOINC_ERR_EXIT(LALStatus  *stat, const char *func, const char *file, const int line, volatile const char *id) {
+  if (stat->statusCode) {
+    fprintf(stderr,
+	    "Level 0: %s\n"
+	    "\tFunction call `%s' failed.\n"
+	    "\tfile %s, line %d\n",
+	    id, func, file, line );
+    REPORTSTATUS(stat);
+    boinc_finish( 12345+stat->statusCode );
+  }
+  return stat->statusCode;
+}
+#endif
+
 /** 
  * MAIN function of ComputeFStatistic code.
  * Calculate the F-statistic over a given portion of the parameter-space
@@ -257,7 +274,11 @@ int main(int argc,char *argv[])
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
+#if USE_BOINC
+  lal_errhandler = BOINC_ERR_EXIT;
+#else
   lal_errhandler = LAL_ERR_EXIT;
+#endif
 
   /* register all user-variable */
   LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
@@ -267,7 +288,7 @@ int main(int argc,char *argv[])
   LAL_CALL (LALUserVarReadAllInput(&status, argc,argv), &status);	
 
   if (uvar_help)	/* if help was requested, we're done here */
-    exit (0);
+    return 0;
 
   /* This is dangerous for BOINC since it calls system() and makes
      assumptions that might not be true */
@@ -489,7 +510,7 @@ int main(int argc,char *argv[])
       if (thisScan.state == STATE_FINISHED)
 	break;
 
-      LALNormalizeSkyPosition(&status, &thisPoint, &(dopplerpos.skypos) );
+      LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint, &(dopplerpos.skypos) ), &status);
 
       Alpha = thisPoint.longitude;
       Delta = thisPoint.latitude;
@@ -2800,11 +2821,9 @@ void use_boinc_filename1(char **orig_name ) {
 
 int globargc=0;
 char **globargv=NULL;
-int globreturnvalue=0;
 
 void worker() {
   int retval=boincmain(globargc,globargv);
-  globreturnvalue=retval;
   boinc_finish(retval);
   return;
 }
@@ -2815,18 +2834,25 @@ int main(int argc, char *argv[]){
   globargv=argv;
 
   /* boinc_init() needs to be run before any boinc_api functions are used */
+#if 0
   boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED | BOINC_DIAG_REDIRECTSTDERR | BOINC_DIAG_TRACETOSTDERR);
+#endif
   boinc_init();
 
-#if !NO_BOINC_GRAPHICS
-  boinc_init_graphics(worker);
+#if NO_BOINC_GRAPHICS
+  worker();
+#else
+  { 
+    /* only returns if trouble creating worker thread */
+    int retval=boinc_init_graphics(worker);
+    if (retval)
+      fprintf(stderr,"boinc_init_graphics() returned %d: unable to create worker thread\n", retval);
+    boinc_finish(1234+retval);
+  }
 #endif
-  
-#if !NO_BOINC_GRAPHICS
-  boinc_finish_graphics();
-#endif
-  boinc_finish(globreturnvalue);
-  return 0;
+
+  /* we never get here!! */
+  return 222;
 }
 #endif /*USE_BOINC*/
 
