@@ -119,10 +119,14 @@ LALFindChirpBCVSpinTemplate (
   FILE                 *fpA2       	 = NULL;
   FILE                 *fpA3             = NULL;
   
-  /*RealFFTPlan        *prev             = NULL;
+  FILE                 *fpTemplate       = NULL;
+
+  REAL4                 factor;
+  INT4                  i;
+  RealFFTPlan          *prev             = NULL;
   REAL4Vector          *hVec             = NULL;
   REAL4Vector          *HVec             = NULL;
-  REAL4                 invNumPoints;*/
+  REAL4                 invNumPoints;
   
   INITSTATUS( status, "LALFindChirpBCVSpinTemplate", FINDCHIRPSBCVTEMPLATEC );
   ATTATCHSTATUSPTR( status );
@@ -158,8 +162,9 @@ LALFindChirpBCVSpinTemplate (
   
   if (doTest ==1)
   {	  
-  fpTmpltIm        =  fopen("tmpltIm.dat","w");
-  fpTmpltRe        =  fopen("tmpltRe.dat","w");
+  fpTemplate       = fopen ("TemplateBCVSpin.dat","w");	  
+  fpTmpltIm        = fopen ("tmpltIm.dat","w");
+  fpTmpltRe        = fopen ("tmpltRe.dat","w");
   fpwtilde         = fopen ("wtilde.dat", "w");
   fpA1             = fopen ("A1.dat","w");
   fpA2             = fopen ("A2.dat","w");
@@ -274,7 +279,7 @@ LALFindChirpBCVSpinTemplate (
       /* XXX The sign of this is different than the SP filtering
        * because the data is conjugated instead of the template in the
        * BCV code */
-      expPsi[k].im =   sin(psi1);
+      expPsi[k].im =   -sin(psi1);
       expPsi[k].re =   cos(psi1);
         
       if (doTest ==1)
@@ -286,7 +291,9 @@ LALFindChirpBCVSpinTemplate (
     }
 
         /* Uncomment following code to output template in time domain  */
-        /*
+       
+   if (doTest == 1)
+   {	   
         LALCreateReverseRealFFTPlan(status->statusPtr, &prev, numPoints,0);
         LALSCreateVector(status->statusPtr, &hVec, numPoints);
         LALSCreateVector(status->statusPtr, &HVec, numPoints);
@@ -302,11 +309,10 @@ LALFindChirpBCVSpinTemplate (
        for (i=kmin; i<kmax; i++)
         {
                 HVec->data[i]           =  expPsi[i].re *  cos((REAL4)i*factor) - expPsi[i].im *  sin((REAL4)i*factor);
-                HVec->data[numPoints-i] = expPsi[i].im *  cos((REAL4)i*factor) - expPsi[i].re *  sin((REAL4)i*factor);*/
-        /* - to correct time reversal */
-        /*}
+                HVec->data[numPoints-i] =  expPsi[i].im *  cos((REAL4)i*factor) + expPsi[i].re *  sin((REAL4)i*factor);
+        }
                 HVec->data[0] = 0.;
-                HVec->data[numPoints/2] = 0.;*/
+                HVec->data[numPoints/2] = 0.;
 
         /*for ( i = 0; i < numPoints; ++i)
         {
@@ -314,29 +320,29 @@ LALFindChirpBCVSpinTemplate (
         }*/
 
 
-/*fprintf (stdout, "before FFT \n");*/
-/*                                                                                                                           
-LALREAL4VectorFFT( status->statusPtr, hVec, HVec, prev );
-CHECKSTATUSPTR( status );
+	fprintf (stdout, "before FFT \n");
+                                                                                                                           
+	LALREAL4VectorFFT( status->statusPtr, hVec, HVec, prev );
+	CHECKSTATUSPTR( status );
                                                                                                                              
-fprintf (stdout, "after FFT \n");
+	fprintf (stdout, "after FFT \n");
 
-invNumPoints = 1.0 / ((REAL4) numPoints); 
-fprintf (stdout, "invNumPoints  %e\n", invNumPoints );
+	invNumPoints = 1.0 / ((REAL4) numPoints); 
+	fprintf (stdout, "invNumPoints  %e\n", invNumPoints );
 
-for ( i = 0; i < numPoints; ++i)
+	for ( i = 0; i < numPoints; ++i)
                                                                                                                              
         {
            hVec->data[i] *= invNumPoints;
            fprintf (fpTemplate, "%d\t%e\n", i, hVec->data[i]);
         }
 
-fclose (fpTemplate);
+	fclose (fpTemplate);
 
-LALDestroyRealFFTPlan ( status->statusPtr, &prev);
-LALSDestroyVector ( status->statusPtr, &hVec);
-LALSDestroyVector ( status->statusPtr, &HVec);
-*/ 
+	LALDestroyRealFFTPlan ( status->statusPtr, &prev);
+	LALSDestroyVector ( status->statusPtr, &hVec);
+	LALSDestroyVector ( status->statusPtr, &HVec);
+   }
 
   /*
    *
