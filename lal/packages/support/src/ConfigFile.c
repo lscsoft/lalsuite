@@ -486,7 +486,7 @@ LALReadConfigSTRINGVariable (LALStatus *stat,
 
   LALReadConfigVariable (stat, (void*) &str, cfgdata, &param, wasRead);
 
-  if (wasRead)
+  if ( *wasRead && (str!=NULL) )
     {
       INT2 numQuotes = 0;
       CHAR *ptr = str;
