@@ -27,4 +27,4 @@ INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 pkgdata_DATA = BNSMasses.dat inspsrcs.dat
 EXTRA_DIST = BNSMasses.dat inspsrcs.dat exc_resp.c trump.c trump.h event_utils.c ivana.c
-MOSTLYCLEANFILES = injepochs.ilwd injparams.ilwd injlog.txt
+MOSTLYCLEANFILES = injepochs.ilwd injparams.ilwd injlog.txt *.xml
