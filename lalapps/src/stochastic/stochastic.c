@@ -1764,6 +1764,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   free(frameCacheTwo);
   free(calCacheOne);
   free(calCacheTwo);
+  free(channelOne);
+  free(channelTwo);
 
   return 0;
 }
