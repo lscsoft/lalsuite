@@ -51,8 +51,11 @@
 #include <lal/BandPassTimeSeries.h>
 #include <lal/FrequencySeries.h>
 #include <lal/TimeSeries.h>
+#include <lal/LIGOLwXML.h>
+#include <lal/LIGOMetadataTables.h>
 
 #include <lalapps.h>
+#include <processtable.h>
 
 #include "stochastic.h"
 
@@ -60,10 +63,21 @@ NRCSID(STOCHASTICC, "$Id$");
 RCSID("$Id$");
 
 /* cvs info */
+#define PROGRAM_NAME "lalapps_stochastic"
 #define CVS_ID "$Id$"
 #define CVS_REVISION "$Revision$"
 #define CVS_DATE "$Date$"
-#define PROGRAM_NAME "lalapps_stochastic"
+#define CVS_SOURCE "$Source$"
+
+#define ADD_PROCESS_PARAM(pptype, format, ppvalue) \
+this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+  calloc(1, sizeof(ProcessParamsTable)); \
+  LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+      PROGRAM_NAME); \
+  LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+      long_options[option_index].name); \
+  LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype); \
+  LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue);
 
 /* system error checking */
 extern int errno;
@@ -82,6 +96,9 @@ static int verbose_flag;
 static int test_flag;
 static int post_analysis_flag;
 static int recentre_flag;
+
+/* xml comment */
+CHAR comment[LIGOMETA_COMMENT_MAX];
 
 /* parameters for the stochastic search */
 
@@ -151,8 +168,9 @@ CHAR *outputFilePath = NULL;
 
 INT4 main(INT4 argc, CHAR *argv[])
 {
-  /* status pointer */
-  LALStatus status;
+  /* lal initialisation variables */
+  LALStatus status = blank_status;
+  LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
 
   /* output file */
   FILE *outOne, *outTwo;
@@ -161,6 +179,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* counters */
   INT4 i, j, n, segLoop, interLoop, N;
   INT4 firstpass, pathology;
+
+  /* xml tables */
+  MetadataTable proctable;
+  MetadataTable procparams;
+  ProcessParamsTable *this_proc_param;
 
   /* results parameters */
   REAL8 y, yOpt;
@@ -278,6 +301,22 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* error handler */
   status.statusPtr = NULL;
   lal_errhandler = LAL_ERR_EXIT;
+
+  /* create the process and process params tables */
+  printf("arse0!\n");
+  proctable.processTable = (ProcessTable *) calloc(1, sizeof(ProcessTable));
+  printf("arse1!\n");
+  LAL_CALL(LALGPSTimeNow(&status, &(proctable.processTable->start_time), \
+        &accuracy), &status);
+  printf("arse2!\n");
+  LAL_CALL(populate_process_table(&status, proctable.processTable, \
+        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE), &status);
+  printf("arse3!\n");
+  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) \
+                    calloc(1, sizeof(ProcessParamsTable));
+  printf("arse4!\n");
+  memset(comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR));
+  printf("arse5!\n");
 
   /* parse command line options */
   parseOptions(argc, argv);
@@ -1888,6 +1927,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
       {"alpha", required_argument, 0, 'J'},
       {"f-ref", required_argument, 0, 'K'},
       {"omega0", required_argument, 0, 'L'},
+      {"comment", required_argument, 0, 'M'},
       {0, 0, 0, 0}
     };
 
@@ -1897,7 +1937,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
     c = getopt_long(argc, argv, \
         "ab:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:" \
-        "A:B:C:D:E:F:G:H:IJ:K:L:", long_options, &option_index);
+        "A:B:C:D:E:F:G:H:IJ:K:L:M:", long_options, &option_index);
 
     if (c == -1)
     {
@@ -2471,6 +2511,21 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        break;
+
+      case 'M':
+        /* xml comment */
+        if (strlen(optarg) > LIGOMETA_COMMENT_MAX - 1)
+        {
+          fprintf(stderr, "invalid argument to --%s:\n" \
+              "comment must be less than %d characters\n", \
+              long_options[option_index].name, LIGOMETA_COMMENT_MAX);
+          exit(1);
+        }
+        else
+        {
+          LALSnprintf(comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+        }
         break;
 
       case '?':
