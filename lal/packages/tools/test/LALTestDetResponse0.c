@@ -57,6 +57,8 @@ int        lalDebugLevel = 0;
 BOOLEAN    verbose_p     = FALSE;
 const INT4 oneBillion    = 1000000000;
 
+REAL8 default_tolerance = (REAL8)0.;
+
 static void REAL4VectorSubtraction(const REAL4Vector * pA,
                                    const REAL4Vector * pB,
                                    REAL4Vector *pAminusB);
@@ -66,10 +68,12 @@ static void PrintDetResponse(const LALDetAMResponse * const response,
                              const char * const title);
 
 static BOOLEAN matrix_ok_p(LALDR_33Matrix * const computed,
-                           LALDR_33Matrix * const expected);
+                           LALDR_33Matrix * const expected,
+                           REAL8 tolerance);
 static BOOLEAN vector_ok_p(LALDR_3Vector * const computed,
-                           LALDR_3Vector * const expected);
-static BOOLEAN scalar_ok_p(REAL8 computed, REAL8 expected);
+                           LALDR_3Vector * const expected,
+                           REAL8 tolerance);
+static BOOLEAN scalar_ok_p(REAL8 computed, REAL8 expected, REAL8 tolerance);
 
 static void print_m_results_maybe(const char * title,
                                   LALDR_33Matrix * const computed,
@@ -84,11 +88,19 @@ static void print_s_results_maybe(const char * title,
 
 static int print_separator_maybe(void);
 
+static int print_passed_maybe(void);
+
 
 static BOOLEAN detresponse_ok_p(LALStatus * status,
                                 const LALDetAndSource * const det_and_src,
                                 const LIGOTimeGPS * const gps,
                                 const LALDetAMResponse * const expected_resp);
+
+static BOOLEAN frdetector_ok_p(const LALFrDetector * const computed,
+                               const LALFrDetector * const expected);
+
+static BOOLEAN detector_ok_p(const LALDetector * const computed,
+                             const LALDetector * const expected);
 
 /*
  * Private functions
@@ -699,10 +711,8 @@ int main(int argc, char *argv[])
     {
       printf("TEST OF MATRIX AND VECTOR FUNCTIONS\n");
       printf("-----------------------------------\n");
-    }
+      printf("Manual inspection required.\n");
 
-  if (verbose_p)
-    {
       /* Print33Matrix */
       A[0][0] = 0.;    A[0][1] = 0.;   A[0][2] = 0.;
       A[1][0] = 0.;    A[1][1] = 0.;   A[1][2] = 0.;
@@ -746,11 +756,15 @@ int main(int argc, char *argv[])
 
   print_m_results_maybe("Zero33Matrix test", &A, &B);
 
-  if (!matrix_ok_p(&A, &B))
+  if (!matrix_ok_p(&A, &B, default_tolerance))
     {
       fprintf(stderr, "ERROR: A != B\n");
       
       return 1;
+    }
+  else
+    {
+      print_passed_maybe();
     }
 
   print_separator_maybe();
@@ -766,11 +780,15 @@ int main(int argc, char *argv[])
 
   print_m_results_maybe("Set33Matrix test", &A, &B);
   
-  if (!matrix_ok_p(&A, &B))
+  if (!matrix_ok_p(&A, &B, default_tolerance))
     {
       fprintf(stderr, "ERROR: A != B\n");
       
       return 1;
+    }
+  else
+    {
+      print_passed_maybe();
     }
 
   if (verbose_p)
@@ -786,11 +804,15 @@ int main(int argc, char *argv[])
 
   print_m_results_maybe("Add33Matrix test", &C, &D);
   
-  if (!matrix_ok_p(&C, &D))
+  if (!matrix_ok_p(&C, &D, default_tolerance))
     {
       fprintf(stderr, "ERROR: C != D\n");
 
       return 1;
+    }
+  else
+    {
+      print_passed_maybe();
     }
 
   print_separator_maybe();
@@ -816,11 +838,15 @@ int main(int argc, char *argv[])
 
   print_m_results_maybe("Multiply33Matrix test", &C, &D);
 
-  if (!matrix_ok_p(&C, &D))
+  if (!matrix_ok_p(&C, &D, default_tolerance))
     {
       fprintf(stderr, "ERROR: C != D\n");
 
       return 1;
+    }
+  else
+    {
+      print_passed_maybe();
     }
 
   print_separator_maybe();
@@ -837,11 +863,15 @@ int main(int argc, char *argv[])
 
   print_m_results_maybe("ScalarMult33Matrix test", &C, &D);
 
-  if (!matrix_ok_p(&C, &D))
+  if (!matrix_ok_p(&C, &D, default_tolerance))
     {
       fprintf(stderr, "ERROR: C != D\n");
 
       return 1;
+    }
+  else
+    {
+      print_passed_maybe();
     }
 
   print_separator_maybe();
@@ -854,11 +884,15 @@ int main(int argc, char *argv[])
 
   print_s_results_maybe("DotProd33Matrix test", c, d);
 
-  if (!scalar_ok_p(c, d))
+  if (!scalar_ok_p(c, d, default_tolerance))
     {
       fprintf(stderr, "ERROR: c != d\n");
 
       return 1;
+    }
+  else
+    {
+      print_passed_maybe();
     }
 
   print_separator_maybe();
@@ -877,11 +911,15 @@ int main(int argc, char *argv[])
 
   print_m_results_maybe("Transpose33Matrix test", &B, &C);
 
-  if (!matrix_ok_p(&B, &C))
+  if (!matrix_ok_p(&B, &C, default_tolerance))
     {
       fprintf(stderr, "ERROR: B != C\n");
 
       return 1;
+    }
+  else
+    {
+      print_passed_maybe();
     }
                     
   print_separator_maybe();
@@ -892,11 +930,15 @@ int main(int argc, char *argv[])
 
   print_v_results_maybe("Set3Vector test", &u, &v);
 
-  if (!vector_ok_p(&u, &v))
+  if (!vector_ok_p(&u, &v, default_tolerance))
     {
       fprintf(stderr, "ERROR: u != v\n");
 
       return 1;
+    }
+  else
+    {
+      print_passed_maybe();
     }
 
   print_separator_maybe();
@@ -910,11 +952,15 @@ int main(int argc, char *argv[])
 
   print_s_results_maybe("DotProd3Vector test", c, d);
 
-  if (!scalar_ok_p(c, d))
+  if (!scalar_ok_p(c, d, default_tolerance))
     {
       fprintf(stderr, "ERROR: c != d\n");
 
       return 1;
+    }
+  else
+    {
+      print_passed_maybe();
     }
 
   print_separator_maybe();
@@ -928,11 +974,15 @@ int main(int argc, char *argv[])
 
   print_v_results_maybe("CrossProd3Vector test", &w, &x);
 
-  if (!vector_ok_p(&w, &x))
+  if (!vector_ok_p(&w, &x, default_tolerance))
     {
       fprintf(stderr, "ERROR: w != x\n");
 
       return 1;
+    }
+  else
+    {
+      print_passed_maybe();
     }
 
   print_separator_maybe();
@@ -948,11 +998,15 @@ int main(int argc, char *argv[])
 
   print_m_results_maybe("OuterProd3Vector test", &A, &B);
 
-  if (!matrix_ok_p(&A, &B))
+  if (!matrix_ok_p(&A, &B, default_tolerance))
     {
       fprintf(stderr, "ERROR: A != B\n");
 
       return 1;
+    }
+  else
+    {
+      print_passed_maybe();
     }
 
   print_separator_maybe();
@@ -967,6 +1021,7 @@ int main(int argc, char *argv[])
     {
       printf("TEST OF LALCreateDetector()\n");
       printf("---------------------------\n\n");
+      printf("Manual inspection required.\n");
     }
 
   /* Now, here's where the docs for LALFrDetector differ
@@ -1032,6 +1087,16 @@ int main(int argc, char *argv[])
 
   LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
 
+  /*
+  if (!detector_ok_p(&detector, &(lalCachedDetectors[LALDetectorIndexLHODIFF])))
+    {
+      if (verbose_p)
+        fprintf(stderr, "LHO computed w/ Frame spec != LHO cached\n");
+      
+      return 1;
+    }
+  */
+
   if (verbose_p)
     {
       printf("LHO tensor converted from LALFrDetector (Frame spec):\n");
@@ -1060,7 +1125,30 @@ int main(int argc, char *argv[])
       printf("\n- - -\n");
     }
 
-  /* Third, look at the cached detector for comparison */
+  /* Third, use data from the CreateDetector (DetectorSite.h) doco */
+  strncpy(frdet.name, "LHO, from FrDetector struct (numbers from doco)",
+          LALNameLength);
+  frdet.vertexLongitudeRadians  = (REAL8)deg_to_rad(-119. - 25./60. - 27.5657/3600.);
+  frdet.vertexLatitudeRadians  = (REAL8)deg_to_rad(46. + 27./60. + 18.528/3600.);
+  frdet.vertexElevation        = 142.554;
+  frdet.xArmAltitudeRadians    = -6.195e-04;
+  frdet.yArmAltitudeRadians    =  1.250e-05;
+  frdet.xArmAzimuthRadians     = deg_to_rad(324.0006);
+  frdet.yArmAzimuthRadians     = deg_to_rad(234.0006);
+  /* check: y-arm azi - x-arm azi = -90deg ; ok, i think. */
+
+  LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
+
+  if (verbose_p)
+    {
+      printf("LHO tensor converted from LALFrDetector (numbers from doco):\n");
+      PrintLALDetector(&detector);
+      printf("\n- - -\n");
+    }
+  
+  
+
+  /* Fourth, look at the cached detector for comparison */
   detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
   
   if (verbose_p)
@@ -1154,12 +1242,17 @@ int main(int argc, char *argv[])
 
       return 1;
     }
+  else
+    {
+      print_passed_maybe();
+    }
 
   print_separator_maybe();
 
   /* another point */
 
   goto skip; /* skip this for now -- i know it fails */
+
   /* use LALFrDetector structure for convenience */
   strncpy(frdet.name, "Reference", LALNameLength);
   frdet.vertexLongitudeRadians = deg_to_rad(-71.);
@@ -1198,6 +1291,10 @@ int main(int argc, char *argv[])
 
       return 1;
     }
+  else
+    {
+      print_passed_maybe();
+    }
 
   print_separator_maybe();
 
@@ -1205,8 +1302,20 @@ int main(int argc, char *argv[])
   /*
    * Compute a time series AM response
    */
-  if (lalDebugLevel)
+  if (verbose_p)
     printf("Starting vector test\n");
+
+  /* fake detector */
+  detector.location[0] = LAL_AWGS84_SI;
+  detector.location[1] = 0.;
+  detector.location[2] = 0.;
+  detector.response[0][0] = 0.;
+  detector.response[1][1] = 0.5;
+  detector.response[2][2] = -0.5;
+  detector.response[0][1] = detector.response[1][0] = 0.;
+  detector.response[0][2] = detector.response[2][0] = 0.;
+  detector.response[1][2] = detector.response[2][1] = 0.;
+  detector.type = LALDETECTORTYPE_ABSENT;
 
   plus_series.data = NULL;
   cross_series.data = NULL;
@@ -1240,7 +1349,7 @@ int main(int argc, char *argv[])
                                 &det_and_pulsar,
                                 &time_info);
 
-  if (status.statusCode && lalDebugLevel > 0)
+  if (status.statusCode && verbose_p)
     {
       fprintf(stderr,
               "LALTestDetResponse0: error in LALComputeDetAMResponseSeries, line %i, %s\n",
@@ -1399,45 +1508,117 @@ PrintLALDetector(LALDetector * const detector)
 
 
 static BOOLEAN matrix_ok_p(LALDR_33Matrix * const computed,
-                           LALDR_33Matrix * const expected)
+                           LALDR_33Matrix * const expected,
+                           REAL8 tolerance)
 {
   INT4 i, j;
 
-  for (i = 0; i < 2; ++i)
-    for (j = 0; j < 2; ++j)
-      {
-        if ((*computed)[i][j] != (*expected)[i][j])
+  if (tolerance == 0.)
+    {
+      for (i = 0; i < 2; ++i)
+        for (j = 0; j < 2; ++j)
           {
-            if (verbose_p)
+            if ((*computed)[i][j] != (*expected)[i][j])
               {
-                LALDR_Print33Matrix(expected, "expected", 0, stdout, "");
-                LALDR_Print33Matrix(computed, "computed", 0, stdout, "");
-              }
+                if (verbose_p)
+                  {
+                    LALDR_Print33Matrix(expected, "expected", 0, stdout, "");
+                    LALDR_Print33Matrix(computed, "computed", 0, stdout, "");
+                  }
 
-            return FALSE;
+                return FALSE;
+              }
+            else
+              {
+                return TRUE;
+              }
           }
-        else
+    }
+  else
+    {
+      for (i = 0; i < 2; ++i)
+        for (j = 0; j < 2; ++j)
           {
-            return TRUE;
+            if (fabs((*computed)[i][j] - (*expected)[i][j]) > tolerance)
+              {
+                if (verbose_p)
+                  {
+                    LALDR_Print33Matrix(expected, "expected", 0, stdout, "");
+                    LALDR_Print33Matrix(computed, "computed", 0, stdout, "");
+                  }
+
+                return FALSE;
+              }
+            else
+              {
+                return TRUE;
+              }
           }
-      }
+    }
 }
 
 
 
 static BOOLEAN vector_ok_p(LALDR_3Vector * const computed,
-                           LALDR_3Vector * const expected)
+                           LALDR_3Vector * const expected,
+                           REAL8 tolerance)
 {
   INT4 i;
 
-  for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+  if (tolerance == 0.)
     {
-      if ((*computed)[i] != (*expected)[i])
+      for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+        {
+          if ((*computed)[i] != (*expected)[i])
+            {
+              if (verbose_p)
+                {
+                  LALDR_Print3Vector(computed, "computed", stdout);
+                  LALDR_Print3Vector(expected, "expected", stdout);
+                }
+
+              return FALSE;
+            }
+          else
+            {
+              return TRUE;
+            }
+        }
+    }
+  else
+    {
+      for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+        {
+          if (fabs((*computed)[i] - (*expected)[i]) > tolerance)
+            {
+              if (verbose_p)
+                {
+                  LALDR_Print3Vector(computed, "computed", stdout);
+                  LALDR_Print3Vector(expected, "expected", stdout);
+                }
+
+              return FALSE;
+            }
+          else
+            {
+              return TRUE;
+            }
+        }
+    }
+}
+
+
+
+static BOOLEAN scalar_ok_p(REAL8 computed, REAL8 expected, REAL8 tolerance)
+{
+  if (tolerance == 0.)
+    {
+      if (computed != expected)
         {
           if (verbose_p)
             {
-              LALDR_Print3Vector(computed, "computed", stdout);
-              LALDR_Print3Vector(expected, "expected", stdout);
+              printf("computed = %22.14e\n", computed);
+              printf("expected = %22.14e\n", expected);
             }
 
           return FALSE;
@@ -1447,25 +1628,22 @@ static BOOLEAN vector_ok_p(LALDR_3Vector * const computed,
           return TRUE;
         }
     }
-}
-
-
-
-static BOOLEAN scalar_ok_p(REAL8 computed, REAL8 expected)
-{
-  if (computed != expected)
-    {
-      if (verbose_p)
-        {
-          printf("computed = %22.14e\n", computed);
-          printf("expected = %22.14e\n", expected);
-        }
-
-      return FALSE;
-    }
   else
     {
-      return TRUE;
+      if (fabs(computed - expected) > tolerance)
+        {
+          if (verbose_p)
+            {
+              printf("computed = %22.14e\n", computed);
+              printf("expected = %22.14e\n", expected);
+            }
+
+          return FALSE;
+        }
+      else
+        {
+          return TRUE;
+        }
     }
 }
 
@@ -1540,6 +1718,15 @@ static int print_separator_maybe(void)
 
 
 
+static int print_passed_maybe(void)
+{
+  if (verbose_p)
+    return printf("\nOK\n");
+  else
+    return 0;
+}
+
+
 
 static BOOLEAN detresponse_ok_p(LALStatus * status,
                                 const LALDetAndSource * const det_and_src,
@@ -1579,4 +1766,32 @@ static void PrintDetResponse(const LALDetAMResponse * const response,
   printf("      plus = % 15.8e\n", response->plus);
   printf("     cross = % 15.8e\n", response->cross);
   printf("    scalar = % 15.8e\n", response->scalar);
+}
+
+
+
+static BOOLEAN frdetector_ok_p(const LALFrDetector * const computed,
+                               const LALFrDetector * const expected)
+{
+  /* let's not bother with comparing the name */
+
+  return (computed->vertexLongitudeRadians == expected->vertexLongitudeRadians
+          && computed->vertexLatitudeRadians == expected->vertexLatitudeRadians
+          && computed->vertexElevation == expected->vertexElevation
+          && computed->xArmAltitudeRadians == expected->xArmAltitudeRadians
+          && computed->xArmAzimuthRadians == expected->xArmAzimuthRadians
+          && computed->yArmAltitudeRadians == expected->yArmAltitudeRadians
+          && computed->yArmAzimuthRadians == expected->yArmAzimuthRadians);
+}
+
+
+
+
+static BOOLEAN detector_ok_p(const LALDetector * const computed,
+                             const LALDetector * const expected)
+{
+  return (vector_ok_p(&(computed->location), &(expected->location), default_tolerance) &&
+          matrix_ok_p(&(computed->response), &(expected->response), default_tolerance) &&
+          computed->type == expected->type &&
+          frdetector_ok_p(&(computed->frDetector), &(expected->frDetector)));
 }
