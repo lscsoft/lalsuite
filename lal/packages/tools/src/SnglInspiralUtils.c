@@ -46,10 +46,13 @@ Provides a set of utilities for manipulating \texttt{snglInspiralTable}s.
 \idx{LALCompareSnglInspiralByPsi()}
 \idx{LALCompareSnglInspiralByTime()}
 \idx{LALCompareSnglInspiral()}
+\idx{LALCompareInspirals()}
 \idx{LALClusterSnglInspiralTable()}
 \idx{LALTimeCutSingleInspiral()}
 \idx{LALalphaFCutSingleInspiral()}
 \idx{LALIfoCutSingleInspiral()}
+\idx{LALIfoCountSingleInspiral()}
+\idx{LALTimeSlideSingleInspiral()} 
 \idx{LALPlayTestSingleInspiral()}
 \idx{LALCreateTrigBank()}
 \idx{LALIncaCoincidenceTest()}
@@ -59,9 +62,9 @@ Provides a set of utilities for manipulating \texttt{snglInspiralTable}s.
 \subsubsection*{Description}
 
 The function \texttt{LALFreeSnglInspiral()} frees the memory associated to a
-single inspiral table.  The single inspiral table may point to a linked list of
-EventIDColumns.  Thus, it is necessary to free all event ids associated with
-the single inspiral.
+single inspiral table.  The single inspiral table may point to a linked list
+of EventIDColumns.  Thus, it is necessary to free all event ids associated
+with the single inspiral.
 
 The function \texttt{LALSortSnglInspiral()} sorts a list of single inspiral
 tables.  The function simply calls qsort with the appropriate comparison
@@ -78,15 +81,16 @@ tables.  The function is analogous to the mass comparison described above.
 inspiral tables, returnng 1 if the first time is larger, 0 if equal and -1 if
 the second time is larger.
 
-\texttt{LALCompareSnglInspiral()} tests whether two single inspiral tables pass
-a coincidence test.  The coincidence parameters are given by \texttt{params}
-which is a \texttt{SnglInspiralAccuracy} structure.  It tests first that the
-\texttt{ifo} fields are different.  If they are, it then tests for time and
-mass coincidence, where mass coincidence may be any one of
+\texttt{LALCompareSnglInspiral()} tests whether two single inspiral tables
+pass a coincidence test.  The coincidence parameters are given by
+\texttt{params} which is a \texttt{SnglInspiralAccuracy} structure.  It tests
+first that the \texttt{ifo} fields are different.  If they are, it then tests
+for time and mass coincidence, where mass coincidence may be any one of
 \texttt{psi0\_and\_psi3}, \texttt{m1\_and\_m2}, \texttt{mchirp\_and\_eta}.
 Finally, if the test is on \texttt{m1\_and\_m2}, consistency of effective
-distances is also checked.  If the two single inspiral tables pass coincidences
-the \texttt{params.match} is set to 1, otherwise it is set to zero.
+distances is also checked.  If the two single inspiral tables pass
+coincidences the \texttt{params.match} is set to 1, otherwise it is set to
+zero.
 
 \texttt{LALClusterSnglInspiralTable ()} clusters single inspiral triggers
 within a time window \texttt{dtimeNS}.  The triggers are compared either by
@@ -98,22 +102,27 @@ window is returned.
 tables and returns only those which occur after the given \texttt{startTime}
 and before the \texttt{endTime}.
 
-\texttt{LALalphaFCutSingleInspiral()} takes in a linked list of single inspiral
-tables and returns only those triggers which have alphaF values below a
-specific alphaFcut. It is relevant for the BCV search only.
+\texttt{LALalphaFCutSingleInspiral()} takes in a linked list of single
+inspiral tables and returns only those triggers which have alphaF values below
+a specific alphaFcut. It is relevant for the BCV search only.
 
 \texttt{LALIfoCutSingleInspiral()} scans through a linked list of single
 inspiral tables and returns those which are from the requested \texttt{ifo}.
-On input, \texttt{eventHead} is a pointer to the head of a linked list of single inspiral tables.  On output, this list contains only single inspirals from the requested \texttt{ifo}.
+On input, \texttt{eventHead} is a pointer to the head of a linked list of
+single inspiral tables.  On output, this list contains only single inspirals
+from the requested \texttt{ifo}.
 
 \texttt{LALIfoCountSingleInspiral()} scans through a linked list of single
 inspiral tables and counts the number which are from the requested IFO.  
 This count is returned as \texttt{numTrigs}.
 
-\texttt{LALTimeSlideSingleInspiral()} performs a time slide of
-\texttt{slideTime} on the triggers containted in the \texttt{triggerList}.
-The triggers from \texttt{skipIfo} are not slid.  If you want to slide all
-triggers, simply set \texttt{skipIfo = LAL_UNKNOWN_IFO}.
+\texttt{LALTimeSlideSingleInspiral()} performs a time slide on the triggers
+contained in the \texttt{triggerList}.  The time slide for each instrument is
+specified by \texttt{slideTimes[LAL\_NUM\_IFO]}.  If \texttt{startTime} and
+\texttt{endTime} are specified, then the time slide is performed on a ring.  If
+the slide takes any trigger outside of the window
+\texttt{[startTime,endTime]}, then the trigger is wrapped to be in
+this time window.
 
 \texttt{LALPlayTestSingleInspiral()} tests whether single inspiral events
 occured in playground or non-playground times.  It then returns the requested
@@ -129,12 +138,17 @@ Triggers are tested for coincidence in \texttt{m1\_and\_m2} or
 
 \texttt{LALIncaCoincidenceTest()} performs a coincidence test between triggers
 from two interferometers.  It tests pairs of events for both time and mass
-coincidence and returns two equal length lists of coincident events.  Note that
-if an event in one detector is coincident with several events in the other 
-detector, the output lists will contain several copies of this event.
+coincidence and returns two equal length lists of coincident events.  Note
+that if an event in one detector is coincident with several events in the
+other detector, the output lists will contain several copies of this event.
 
 \texttt{LALTamaCoincidenceTest()} also performs a coincidence test between
-triggers from two interferometers, but with a slightly different coincidence test.  First, it locates all triggers in the second instrument which are coincident with triggers in the first instrument.  Then, it clusters these triggers using the appropriate \texttt{clusterchioce}.  Finally, it tests for mass coincidence between the first trigger and the clustered trigger from the second instrument.
+triggers from two interferometers, but with a slightly different coincidence
+test.  First, it locates all triggers in the second instrument which are
+coincident with triggers in the first instrument.  Then, it clusters these
+triggers using the appropriate \texttt{clusterchioce}.  Finally, it tests for
+mass coincidence between the first trigger and the clustered trigger from the
+second instrument.
 
 
 \subsubsection*{Algorithm}
@@ -590,8 +604,6 @@ exit:
   RETURN (status);
 }
 
-/* </lalVerbatim> */
-
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 void
@@ -887,14 +899,17 @@ void
 LALTimeSlideSingleInspiral(
     LALStatus                  *status,
     SnglInspiralTable          *triggerList,
-    LIGOTimeGPS                *slideTime,
-    InterferometerNumber        skipIfo 
+    LIGOTimeGPS                *startTime,
+    LIGOTimeGPS                *endTime,
+    LIGOTimeGPS                 slideTimes[LAL_NUM_IFO]
     )
 /* </lalVerbatim> */
 {
-  SnglInspiralTable    *thisEvent = NULL;
-  INT8                  slideNS = 0;
-  INT8                  trigTimeNS = 0;
+  SnglInspiralTable    *thisEvent   = NULL;
+  INT8                  startTimeNS = 0;
+  INT8                  endTimeNS   = 0;
+  INT8                  slideNS     = 0;
+  INT8                  trigTimeNS  = 0;
   INITSTATUS( status, "LALTimeSlideSingleInspiral", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
@@ -906,18 +921,39 @@ LALTimeSlideSingleInspiral(
   /* check that input non-null */
   ASSERT( triggerList, status, 
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  
+  if ( startTime )
+  {
+    LALGPStoINT8( status->statusPtr, &startTimeNS, startTime );
+  }
 
-  /* calculate the slide time in nanoseconds */
-  LALGPStoINT8( status->statusPtr, &slideNS, slideTime );
-
+  if ( endTime )
+  {
+    LALGPStoINT8( status->statusPtr, &endTimeNS, endTime );
+  }
+  
   for( thisEvent = triggerList; thisEvent; thisEvent = thisEvent->next )
   {
-    if ( skipIfo != XLALIFONumber(thisEvent->ifo) )
+    /* calculate the slide time in nanoseconds */
+    LALGPStoINT8( status->statusPtr, &slideNS, 
+        &(slideTimes[XLALIFONumber(thisEvent->ifo)]) );
+    /* and trig time in nanoseconds */
+    LALGPStoINT8( status->statusPtr, &trigTimeNS, &(thisEvent->end_time));
+    trigTimeNS += slideNS;
+    
+    if ( startTimeNS && trigTimeNS < startTimeNS )
     {
-      LALGPStoINT8( status->statusPtr, &trigTimeNS, &(thisEvent->end_time));
-      trigTimeNS += slideNS;
-      LALINT8toGPS( status->statusPtr, &(thisEvent->end_time), &trigTimeNS );
-    }     
+      /* if before startTime, then wrap trigger time */
+      trigTimeNS += endTimeNS - startTimeNS;
+    }
+    else if ( endTimeNS && trigTimeNS > endTimeNS )
+    {
+      /* if after endTime, then wrap trigger time */
+      trigTimeNS -= endTimeNS - startTimeNS;
+    }
+   
+    /* convert back to LIGOTimeGPS */
+    LALINT8toGPS( status->statusPtr, &(thisEvent->end_time), &trigTimeNS );
   }         
 
   DETATCHSTATUSPTR (status);
