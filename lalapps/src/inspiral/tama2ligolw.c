@@ -421,8 +421,9 @@ int main( int argc, char *argv[] )
     REAL4 chisq = 0;
     REAL4 mtot = 0;
     REAL4 eta = 0;
-    if( fscanf( fp, "%lf %f %f %f %f\n", &trig_time,
-	  &snr, &chisq, &mtot, &eta ) == 5)
+    REAL4 deff = 0;
+    if( fscanf( fp, "%lf %f %f %f %f %f\n", &trig_time,
+	  &snr, &chisq, &mtot, &eta, &deff ) == 6)
     {
       if ( vrbflg )
       {
@@ -457,6 +458,7 @@ int main( int argc, char *argv[] )
 	  thisEvent->mass2 = 0;
 	} 
 	thisEvent->mchirp = pow( eta, 0.6 ) * mtot;
+        thisEvent->eff_distance = 1.0e-03 * deff; /* TAMA eff dist in kpc */
 
 	LALSnprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), "T1" );
 	LAL_CALL( LALFloatToGPS( &stat, &(thisEvent->end_time), &trig_time ),
