@@ -2435,7 +2435,7 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
     fprintf(stderr, "Gap in data detected between GPS times %d s and %d s\n", \
         start.gpsSeconds, end.gpsSeconds);
     LAL_CALL(LALDestroyREAL4TimeSeries(status, series), status);
-    series = NULL;
+    exit(1);
   }
 
   /* clean up */
