@@ -276,7 +276,8 @@ int main( int argc, char *argv[] )
 			     &(paramsIn.gpsEndTime) ), &status );
 
 
-    this_inj->f_lower  = paramsIn.fLower; 
+    this_inj->f_lower  = paramsIn.fLower;
+    memcpy (this_inj->waveform, paramsIn.waveform, sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX);  
   } /* end loop over injection times */
 
   LAL_CALL( LALDestroyRandomParams( &status, &randParams ), &status );
@@ -628,7 +629,6 @@ void LALParserInspiralInjection(LALStatus *status,
   MetadataTable         proctable;
   MetadataTable         procparams;
   ProcessParamsTable   *this_proc_param;
-  CHAR waveform[LIGOMETA_WAVEFORM_MAX];
   LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
   int i;
   
@@ -646,7 +646,7 @@ void LALParserInspiralInjection(LALStatus *status,
     calloc( 1, sizeof(ProcessParamsTable) );
   
   /* clear the waveform field */
-  memset( waveform, 0, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR) );
+  memset( params->waveform, 0, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR) );
   
   /* Default values */
   params->theta0.min                      = 0.1; /* can not be set to zero */
@@ -676,7 +676,7 @@ void LALParserInspiralInjection(LALStatus *status,
   params->mdistr                      = 0;
   params->ddistr                      = 0;
   params->userTag                     = NULL;
-  LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
+  LALSnprintf( params->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
 	       "EOBtwoPN");  
   LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
 	       params->randSeed, params->gpsStartTime.gpsSeconds, 
