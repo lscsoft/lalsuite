@@ -286,7 +286,7 @@ if usertag:
 # add the injections
 if inj_file:
   insp_job.add_opt('injection-file',inj_file)
-  trig_insp_job.add_opt('injection-file',inj_file)
+#  trig_insp_job.add_opt('injection-file',inj_file)
 
 # set the condor job priority
 if condor_prio:
