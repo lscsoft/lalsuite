@@ -9,7 +9,8 @@ pkginclude_HEADERS = FindChirpDatatypes.h \
                      FindChirpSP.h \
                      FindChirpTD.h \
                      FindChirpBCV.h \
-                     FindChirpBCVSpin.h
+                     FindChirpBCVSpin.h \
+                     CoherentInspiral.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 all-local: include-link
