@@ -105,16 +105,6 @@ LALSlopeETG(
 /* </lalVerbatim> */
 
 /* <lalVerbatim file="StdBurstSearchH"> */
-void
-LALPowerETG(
-	    LALStatus *status, 
-	    EventIDColumn *output, 
-	    REAL4TimeVectorSeries *input, 
-	    BurstParameter *params
-	    );
-/* </lalVerbatim> */
-
-/* <lalVerbatim file="StdBurstSearchH"> */
 typedef struct
 tagBurstOutputDataSegment
 {
