@@ -1,5 +1,5 @@
 /************************************ <lalVerbatim file="PtoleMetricTestCV">
-Author: Owen, B. J.
+Author: Owen, B. J.,   Jones, D. I.
 $Id$
 ********************************************************** </lalVerbatim> */
 
@@ -25,6 +25,14 @@ $f_0$ projected out.
 With no options, this program displays metric components for a single point
 in parameter space for two different integration times.
 
+The \texttt{-p} option is provided for users who wish to view the
+power mismatch contours provided by the \texttt{-x} option (see below)
+but don't have xmgrace installed.  All necessary data is simply
+written to a file ``nongrace.data''; it's probably best to look at the
+code to see the exact format.  The user should then write a small
+script to convert the data into the format appropriate to their
+favorite graphics package.
+
 The \texttt{-t} option causes the program to showcase error messages when
 given bad parameter values, etc.
 
@@ -34,6 +42,7 @@ legibility. The purpose of the graph is to get a feel for how ellipses are
 varying across parameter space. Note that this option makes a system call to
 the \texttt{xmgrace} program, and will not work if that program is not
 installed on your system.
+
 
 \subsubsection*{Exit Codes}
 ************************************************ </lalLaTeX><lalErrTable> */
@@ -100,11 +109,14 @@ int main( int argc, char *argv[] ) {
   int              opt;             /* Command-line option. */
   BOOLEAN          test = 0;        /* Whether we showcase error messages */
   BOOLEAN          grace = 0;       /* Whether or not we use xmgrace */
+  BOOLEAN          nongrace = 0;    /* Whether or not to output data to file*/
   int              ra, dec, i;      /* Loop variables for xmgrace option */
   FILE            *pvc;             /* Temporary file for xmgrace option */
+  FILE            *fnongrace;       /* File contaning ellipse coordinates */
+
 
   /* Parse options. */
-  while ((opt = getopt( argc, argv, "tx" )) != -1) {
+  while ((opt = getopt( argc, argv, "txp" )) != -1) {
     switch (opt) {
     case 't':
       test = 1;
@@ -112,6 +124,9 @@ int main( int argc, char *argv[] ) {
       break;
     case 'x':
       grace = 1;
+      break;
+    case 'p':
+      nongrace = 1;
       break;
     }
   }
@@ -249,20 +264,34 @@ int main( int argc, char *argv[] ) {
     }
   } /* if (argc...) */
 
-  /* Here is the code that uses xmgrace with the -x option. */
-  if (grace) {
+  /* Here is the code that uses xmgrace with the -x option, */
+  /* and outputs data to a file with the -t option. */
+  if (grace || nongrace) {
 
     /* Take care of preliminaries. */
     in.duration = 1e5;
-    pvc = popen( "xmgrace -pipe", "w" );
-    if( !pvc )
-    {
-      printf( "%s line %d: %s\n", __FILE__, __LINE__,
-              PTOLEMETRICTESTC_MSGESYS );
-      return PTOLEMETRICTESTC_ESYS;
-    }
-    fprintf( pvc, "@xaxis label \"Right ascension (degrees)\"\n" );
-    fprintf( pvc, "@yaxis label \"Declination (degrees)\"\n" );
+    if(grace)
+      {
+	pvc = popen( "xmgrace -pipe", "w" );
+	if( !pvc )
+	  {
+	    printf( "%s line %d: %s\n", __FILE__, __LINE__,
+		    PTOLEMETRICTESTC_MSGESYS );
+	    return PTOLEMETRICTESTC_ESYS;
+	  }
+	fprintf( pvc, "@xaxis label \"Right ascension (degrees)\"\n" );
+	fprintf( pvc, "@yaxis label \"Declination (degrees)\"\n" );
+      }
+    if(nongrace)
+      {
+	fnongrace = fopen( "nongrace.data", "w" );
+	if( !fnongrace )
+	  {
+	    printf( "%s line %d: %s\n", __FILE__, __LINE__,
+		    PTOLEMETRICTESTC_MSGESYS );
+	    return PTOLEMETRICTESTC_ESYS;
+	  }
+      }
 
     /* Step around the sky: a grid in ra and dec. */
     j = 0;
@@ -297,24 +326,38 @@ int main( int argc, char *argv[] ) {
         if (angle <= -LAL_PI_2) angle += LAL_PI;
         if (angle > LAL_PI_2) angle -= LAL_PI;
  
-        /* Print set header. */
-        fprintf( pvc, "@s%d color (0,0,0)\n", j );
-        fprintf( pvc, "@target G0.S%d\n@type xy\n", j++ );
-        /* Print center of patch. */
-        fprintf( pvc, "%16.8g %16.8g\n", (float)ra, (float)dec );
-        /* Loop around patch ellipse. */
+        if(grace)
+	  {
+	    /* Print set header. */
+	    fprintf( pvc, "@s%d color (0,0,0)\n", j );
+	    fprintf( pvc, "@target G0.S%d\n@type xy\n", j++ );
+	    /* Print center of patch. */
+	    fprintf( pvc, "%16.8g %16.8g\n", (float)ra, (float)dec );
+	  }
+	if(nongrace)
+	  /* Print center of patch. */
+	  fprintf( fnongrace, "%16.8g %16.8g\n", (float)ra, (float)dec );
+	/* Loop around patch ellipse. */
         for (i=0; i<=SPOKES; i++) {
           float c, r;
           c = LAL_TWOPI*i/SPOKES;
           r = 10*LAL_180_PI*smaj*smin/sqrt( pow(smaj*sin(c),2)
               + pow(smin*cos(c),2) );
-          fprintf( pvc, "%e %e\n", ra+r*cos(angle-c), dec+r*sin(angle-c) );
+	  if(grace)
+	    fprintf( pvc, "%e %e\n", ra+r*cos(angle-c), dec+r*sin(angle-c) );
+	  if(nongrace)
+	    fprintf( fnongrace, "%e %e\n", ra+r*cos(angle-c), 
+		     dec+r*sin(angle-c) );
+
         } /* for (a...) */
  
       } /* for (ra...) */
     } /* for (dec...) */
-    fclose( pvc );
-  } /* if (grace) */
+    if(grace)
+      fclose( pvc );
+    if(nongrace)
+      fclose( fnongrace );
+  } /* if (grace || nongrace) */
 
   printf("\nCleaning up and leaving...\n");
   if( spindown )
