@@ -131,12 +131,6 @@ LALFindChirpBCVSpinData (
   ASSERT( fcSegVec->data->data->data, status,
       FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL
       ": fcSegVec->data->data->data" );
-  ASSERT( fcSegVec->data->dataBCV, status,
-      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL
-      ": fcSegVec->data->dataBCV" );
-  ASSERT( fcSegVec->data->dataBCV->data, status,
-      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL
-      ": fcSegVec->data->dataBCV->data" );
 
   /* check that the parameter structure exists */
   ASSERT( params, status, 
@@ -180,11 +174,6 @@ LALFindChirpBCVSpinData (
       FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
   ASSERT( params->tmpltPowerVec->data, status,
       FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
-  /*ASSERT( params->tmpltPowerVecBCV, status,
-      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
-  ASSERT( params->tmpltPowerVecBCV->data, status,
-      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );*/
-
 
   /* check that the fft plans exist */
   ASSERT( params->fwdPlan, status,
@@ -452,7 +441,7 @@ LALFindChirpBCVSpinData (
  		fprintf (stdout, "resp[cut].im %e\n", resp[cut].im);
  		fprintf (stdout, "wtilde[cut].re %e\n", wtilde[cut].re);
 		
-		for (k = 1; k < fcSeg->dataBCV->data->length; ++k)
+		for (k = 1; k < params->wtildeVec->length; ++k)
     		{
   		fprintf (fpwtildeData, "%d\t%e\t%e\n", 
 				k,wtilde[k].re, wtilde[k].im);
@@ -461,19 +450,12 @@ LALFindChirpBCVSpinData (
 		
    	/* set output frequency series parameters */
     	strncpy( fcSeg->data->name, dataSeg->chan->name, LALNameLength ); 
-    	strncpy( fcSeg->dataBCV->name, dataSeg->chan->name, LALNameLength );
 
     	fcSeg->data->epoch.gpsSeconds     = dataSeg->chan->epoch.gpsSeconds;
     	fcSeg->data->epoch.gpsNanoSeconds = dataSeg->chan->epoch.gpsNanoSeconds;
-    	fcSeg->dataBCV->epoch.gpsSeconds     = dataSeg->chan->epoch.gpsSeconds;
-    	fcSeg->dataBCV->epoch.gpsNanoSeconds = 
-		dataSeg->chan->epoch.gpsNanoSeconds;
 
     	fcSeg->data->f0     = dataSeg->chan->f0;
     	fcSeg->data->deltaF = 1.0 /
-    	( (REAL8) dataSeg->chan->data->length * dataSeg->chan->deltaT ) ;
-    	fcSeg->dataBCV->f0     = dataSeg->chan->f0;
-    	fcSeg->dataBCV->deltaF = 1.0 /
     	( (REAL8) dataSeg->chan->data->length * dataSeg->chan->deltaT ) ;
 
     	fcSeg->deltaT       = dataSeg->chan->deltaT;
@@ -483,10 +465,6 @@ LALFindChirpBCVSpinData (
     	fcSeg->fLow         = params->fLow;
     	fcSeg->invSpecTrunc = params->invSpecTrunc;
 
-	/* write wtilde to fcSeg so that it may be reader by BCVSpinFilterSegment() */
-	fcSeg->dataBCV->data->data = wtilde;
-
-	
   } /* end of loop over data segments */
 
   if (doTest ==1)
