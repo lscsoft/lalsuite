@@ -400,6 +400,7 @@ int ReadFiles(struct CommandLineArgsTag CLA)
 
 /*******************************************************************************/
 
+extern char *optarg;
    int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA) 
 {
   INT4 c, errflg = 0;
