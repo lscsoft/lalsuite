@@ -672,7 +672,7 @@ int main(int argc,char *argv[])
         if (cfsRunNo == 1)
           local_fraction_done=(((double)loopcounter)/((double)thisScan.numGridPoints))*0.99/2;
         else if (cfsRunNo == 2)
-          local_fraction_done=(((double)loopcounter)/((double)thisScan.numGridPoints))*0.99/2+0.45;
+          local_fraction_done=(((double)loopcounter)/((double)thisScan.numGridPoints))*0.99/2+0.495;
         else
           local_fraction_done=((double)loopcounter)/((double)thisScan.numGridPoints);
         if (local_fraction_done<0.0)
