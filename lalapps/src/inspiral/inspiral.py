@@ -532,5 +532,34 @@ class Tama2LigoLwNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__usertag = job.get_config('pipeline','user-tag')
 
 
+##############################################################################
+# some functions to make life easier later
+
+def overlap_test(interval1, interval2, slide_sec=0):
+  """
+  Test whether the two intervals could possibly overlap with one of them being
+  slid by a maximum time of slide_sec.  Perform three tests:
+  1)  Does the start of interval 1 lie within interval 2's range (with the 
+    start decremented by slide_sec and the end incremented by slide_sec)
+  2)  Does the end of interval 1 lie within interval 2's range (with the start 
+    decremented by slide_sec and the end incremented by slide_sec)
+  3)  Does interval 1 completely cover (the extended) interval 2, 
+    ie is interval_1 start before (interval 2 start - slide_sec) AND 
+    interval 1 end after (interval 2 end + slide_sec)
+  If any of the above conditions are satisfied then return 1, else 0.
+  """
+  if ( 
+    interval1.start() >= interval2.start() - slide_sec
+    and interval1.start() <= interval2.end() + slide_sec
+    ) or (
+    interval1.end() >= interval2.start() - slide_sec 
+    and interval1.end() <= interval2.end() + slide_sec
+    ) or (
+    interval1.start() <= interval2.start() - slide_sec    
+    and interval1.end() >= interval2.end() + slide_sec ):
+    return 1
+  else:
+    return 0
+
 
 

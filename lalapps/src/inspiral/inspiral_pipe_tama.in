@@ -72,48 +72,6 @@ class AnalyzedTAMAData:
     return self.__dag_node
 
 
-def chunk_in_segment(chunk,seg):
-  if ( 
-    chunk.start() >= seg.start()
-    and chunk.start() <= seg.end()
-    ) or (
-    chunk.end() >= seg.start()
-    and chunk.end() <= seg.end()
-    ) or (
-    seg.start() >= chunk.start() 
-    and seg.end() <= chunk.end() ):
-    return 1
-  else:
-    return 0
-
-def chunks_overlap(chunk1,chunk2):
-  if ( 
-    chunk1.start()  >= chunk2.start() 
-    and chunk1.start()  <= chunk2.end()
-    ) or (
-    chunk1.end()  >= chunk2.start() 
-    and chunk1.end() <= chunk2.end()
-    ) or (
-    chunk1.start()  >= chunk2.start() 
-    and chunk1.end() <= chunk2.end() ):
-    return 1
-  else:
-    return 0
-
-def segs_overlap(seg1,seg2):
-  if ( 
-    seg1.start()  >= seg2.start() 
-    and seg1.start()  <= seg2.end()
-    ) or (
-    seg1.end()  >= seg2.start() 
-    and seg1.end() <= seg2.end()
-    ) or (
-    seg1.start()  <= seg2.start() 
-    and seg1.end() >= seg2.end() ):
-    return 1
-  else:
-    return 0
-
 def analyze_ifo(ifo_data,ifo_to_do,ifo_name,tmplt_job,insp_job,df_job,snr,
   chisq,pad,prev_df,dag,usertag=None):
   """
@@ -145,7 +103,7 @@ def analyze_ifo(ifo_data,ifo_to_do,ifo_name,tmplt_job,insp_job,df_job,snr,
       # now loop over all the data that we need to filter
       for seg_to_do in ifo_to_do:
         # if the current chunk is in one of the segments we need to filter
-        if chunk_in_segment(chunk,seg_to_do) and not done_this_chunk:
+        if inspiral.overlap_test(chunk,seg_to_do) and not done_this_chunk:
           # make sure we only filter the master chunk once
           done_this_chunk = 1
           # make sure we have done one and only one datafind for the segment
@@ -208,7 +166,7 @@ def single_inca(ifo_analyzed,ifo_single,ifo_name,single_inca_job,dag,
 
     # add all master chunks that overlap with segment to input
     for ifo_done in ifo_analyzed:
-      if chunk_in_segment(ifo_done.get_chunk(),seg):
+      if inspiral.overlap_test(ifo_done.get_chunk(),seg):
         sinca.add_var_arg(ifo_done.get_dag_node().get_output())
         if ligo_analysis: sinca.add_parent(ifo_done.get_dag_node())
     if ligo_analysis: dag.add_node(sinca)
@@ -248,12 +206,12 @@ def lt_coinc(segments,ligo_chunks,tama_segs,ifo_name,lt_inca_job,dt,
     
     # add all LIGO master chunks that overlap with segment to input
     for ligo_done in ligo_chunks:
-      if chunk_in_segment(ligo_done.get_chunk(),seg):
+      if inspiral.overlap_test(ligo_done.get_chunk(),seg):
         lt_inca.add_var_arg(ligo_done.get_dag_node().get_output())
         if ligo_analysis: lt_inca.add_parent(ligo_done.get_dag_node())
     # add all TAMA segments that overlap with segment to input
     for t_done in tama_segs:
-      if segs_overlap(t_done.get_seg(),seg):
+      if inspiral.overlap_test(t_done.get_seg(),seg):
         lt_inca.add_var_arg(t_done.get_dag_node().get_output())
         lt_inca.add_parent(t_done.get_dag_node())
     dag.add_node(lt_inca)
@@ -727,7 +685,7 @@ for seg in h2_data:
     # now loop over all the H1_H2 data that we need to filter
     for seg_to_do in h1_h2_data:
       # if the current chunk is in one of the segments we need to filter
-      if chunk_in_segment(chunk,seg_to_do) and not done_this_chunk:
+      if inspiral.overlap_test(chunk,seg_to_do) and not done_this_chunk:
         # make sure we only filter the master chunk once
         done_this_chunk = 1
         # make sure we have done one and only one datafind for the segment
@@ -745,7 +703,7 @@ for seg in h2_data:
         trigbank = inspiral.TrigToTmpltNode(trig_job)
         trigbank.make_trigbank(chunk,0,'H1','H2',usertag)
         for h1_done in h1_chunks_analyzed:
-          if chunks_overlap(chunk,h1_done.get_chunk()):
+          if inspiral.overlap_test(chunk,h1_done.get_chunk()):
             trigbank.add_var_arg(h1_done.get_dag_node().get_output())
             trigbank.add_parent(h1_done.get_dag_node())
         if ligo_analysis: dag.add_node(trigbank)
@@ -793,12 +751,12 @@ for seg in h1_h2_data:
 
   # add all H1 master chunks that overlap with segment to input
   for h1_done in h1_chunks_analyzed:
-    if chunk_in_segment(h1_done.get_chunk(),seg):
+    if inspiral.overlap_test(h1_done.get_chunk(),seg):
       inca.add_var_arg(h1_done.get_dag_node().get_output())
       inca.add_parent(h1_done.get_dag_node())
   # add all H2 master chunks that overlap with segment to input
   for h2_done in h1_h2_chunks_analyzed:
-    if chunk_in_segment(h2_done.get_chunk(),seg):
+    if inspiral.overlap_test(h2_done.get_chunk(),seg):
       inca.add_var_arg(h2_done.get_dag_node().get_output())
       inca.add_parent(h2_done.get_dag_node())
   if ligo_analysis: dag.add_node(inca)
@@ -907,7 +865,7 @@ if tama_coincidence:
         inca3.add_var_arg(h1_h2_done.get_dag_node().get_output_b())
     # add all H2 master segments that overlap with segment to input
     for t_done in tama_segs_analyzed:
-      if chunk_in_segment(t_done.get_seg(),seg):
+      if inspiral.overlap_test(t_done.get_seg(),seg):
         lt_inca2.add_var_arg(t_done.get_dag_node().get_output())
         lt_inca2.add_parent(t_done.get_dag_node())
     inca3.add_parent(lt_inca2)
