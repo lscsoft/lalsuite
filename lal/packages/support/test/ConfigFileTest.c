@@ -94,6 +94,9 @@ do {                                                                 \
 } while (0)
 /******************************************************************/
 
+#define TRUE (1==1)
+#define FALSE (1==0)
+
 int main(int argc, char *argv[]){ 
   static LALStatus       status;  
   static LALConfigData *cfgdata;
@@ -103,18 +106,19 @@ int main(int argc, char *argv[]){
   CHARVector *string2 = NULL;
   INT4 someint;
   REAL8 somefloat;
+  BOOLEAN wasRead = FALSE;
 
   SUB (LALLoadConfigFile (&status, &cfgdata, "ConfigFileSample.cfg"), &status);
 
-  SUB (LALReadConfigREAL8Variable  (&status, &somefloat, cfgdata, "float1"), &status);
+  SUB (LALReadConfigREAL8Variable  (&status, &somefloat, cfgdata, "float1", &wasRead), &status);
   SUB (LALReadConfigSTRINGVariable (&status, &string1,   cfgdata, "string1"), &status);
 
-  SUB (LALReadConfigINT4Variable   (&status, &someint,   cfgdata, "int1"), &status);
+  SUB (LALReadConfigINT4Variable   (&status, &someint,   cfgdata, "int1", &wasRead), &status);
 
   SUB (LALCHARCreateVector (&status, &string2, 35), &status);  
-  SUB (LALReadConfigSTRINGNVariable(&status, string2,   cfgdata, "string2"), &status);
+  SUB (LALReadConfigSTRINGNVariable(&status, string2,   cfgdata, "string2", &wasRead), &status);
 
-  SUB (LALReadConfigBOOLVariable   (&status, &testBool,  cfgdata, "testBool"), &status);
+  SUB (LALReadConfigBOOLVariable   (&status, &testBool,  cfgdata, "testBool", &wasRead), &status);
 
   SUB (LALCheckConfigReadComplete (&status, cfgdata, CONFIGFILE_ERROR), &status);
   SUB (LALDestroyConfigData (&status, &cfgdata), &status);
