@@ -60,7 +60,7 @@ AC_DEFUN(LALAPPS_CHECK_LAL,
 AC_CACHE_VAL(ac_cv_lib_lal,
 [ac_save_LIBS="$LIBS"
 LIBS="-llal $LIBS"
-AC_TRY_LINK([int lalDebugLevel = 0; char LALMalloc();], LALMalloc();,
+AC_TRY_LINK([int lalDebugLevel = 0; char LALVersion();], LALVersion();,
 eval "ac_cv_lib_lal=yes", eval "ac_cv_lib_lal=no")
 LIBS="$ac_save_LIBS"
 ])dnl
