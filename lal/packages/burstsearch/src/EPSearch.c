@@ -160,7 +160,7 @@ static SnglBurstTable *TFTileToBurstEvent(
 	return(event);
 }
 
-
+ 
 static SnglBurstTable *ModTFTileToBurstEvent(
 	TFTile *tile,
 	LIGOTimeGPS *epoch,
@@ -177,7 +177,9 @@ static SnglBurstTable *ModTFTileToBurstEvent(
 	strncpy(event->search, "power", LIGOMETA_SEARCH_MAX);
 	strncpy(event->channel, params->channelName, LIGOMETA_CHANNEL_MAX);
 
-	event->start_time = *epoch;
+	event->start_time = *epoch; 
+
+	/* Moving the epoch has to be fixed */ 
 	XLALAddFloatToGPS(&event->start_time, (0.5 + (tile->tstart * tile->deltaT)));
 	event->duration = (tile->tend - tile->tstart ) * tile->deltaT;
 	event->peak_time = event->start_time;
@@ -311,6 +313,7 @@ EPSearch(
 	SnglBurstTable          **EventAddPoint = burstEvent;
 	TFTiling                 *tfTiling = NULL;
 	REAL4                    *normalisation;
+	INT4                     tileStartShift;
 	FILE                     *fp;
 
 	INITSTATUS(status, "EPSearch", EPSEARCHC);
@@ -395,8 +398,8 @@ EPSearch(
 		 * in the Single TFPlane
 		 */ 
 		if (params->tfPlaneMethod == useSingleTFPlane)
-		  params->tfPlaneParams.timeDuration = (params->windowLength - 2*params->windowShift)*cutTimeSeries->deltaT;
-
+		  params->tfPlaneParams.timeDuration = 2*params->windowShift*cutTimeSeries->deltaT;
+		
 		LALDestroyREAL4TimeSeries(status->statusPtr, cutTimeSeries);
 		CHECKSTATUSPTR(status);
 		
@@ -427,13 +430,14 @@ EPSearch(
 		/*
 		 * Compute the TFplanes for the data segment.
 		 */
+		tileStartShift = (INT4)(params->windowLength/2)-params->windowShift;
 		LALInfo(status->statusPtr, "Computing the TFPlanes");
 		CHECKSTATUSPTR(status);
 		if (params->tfPlaneMethod == useMultipleTFPlane)
-		  LALComputeTFPlanes(status->statusPtr, tfTiling, fseries, params->windowShift);
+		  LALComputeTFPlanes(status->statusPtr, tfTiling, fseries, tileStartShift);
 		else{
 		  normalisation = LALMalloc(params->tfPlaneParams.freqBins * sizeof(REAL4));
-		  LALModComputeTFPlanes(status->statusPtr, tfTiling, fseries, params->windowShift, normalisation, Psd);
+		  LALModComputeTFPlanes(status->statusPtr, tfTiling, fseries, tileStartShift, normalisation, Psd);
 		}
 		CHECKSTATUSPTR(status);
 	
