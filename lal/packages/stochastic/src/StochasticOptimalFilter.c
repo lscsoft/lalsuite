@@ -80,6 +80,7 @@ Y
 \end{equation}
 where the ``whitened optimal filter'' is
 \begin{eqnarray}
+\label{stochastic:e:QW}
 \widetilde{Q}^{\scriptstyle{\rm W}}(f)
 &=&\frac{\widetilde{Q}(f)}{\widetilde{R}_1(f)^*\widetilde{R}_2(f)}
 =\lambda\,\left(\frac{1}{\widetilde{R}_1(f)^*P_1(f)}\right)
@@ -112,6 +113,7 @@ stochastic background (see
 Sec.~\ref{stochastic:ss:OverlapReductionFunction.c}).  This sets the
 value at
 \begin{equation}
+\label{stochastic:e:lambda}
 \lambda = \frac{20\pi^2\, \Omega_{\scriptstyle{\rm R}}}{3\,{H_0}^2}
 \left(
       \int_{-\infty}^\infty \frac{df}{f^6} 
@@ -131,10 +133,18 @@ $\gamma(f)$, the stochastic gravitational wave background spectrum
 ${h_{100}}^2\Omega_{\scriptstyle{\rm GW}}(f)$, and the unwhitened
 (inverse) PSDs $\{1/P_i(f)|i=1,2\}$ of the two detectors, as well as
 complex frequency series representing the half-whitened (inverse) PSDs
-$\{1/P^{\scriptstyle{\rm HW}}_i(f)|i=1,2\}$
-
+$\{1/P^{\scriptstyle{\rm HW}}_i(f)|i=1,2\}$.
 
 \subsubsection*{Algorithm}
+
+The routine \texttt{LALStochasticOptimalFilter()} first uses
+(\ref{stochastic:e:lambda}) to find the normalization constant
+$\lambda$ (the amplitude ${h_{100}}^2\Omega_{\scriptstyle{\rm R}}$ is
+found from the specified reference frequency $f_{\scriptstyle{\rm R}}$
+and the input series representing ${h_{100}}^2\Omega_{\scriptstyle{\rm
+    GW}}(f)$ by logarithmic interpolation), then the output series is
+filled with the values corresponding to the definition
+(\ref{stochastic:e:QW}).
 
 \subsubsection*{Uses}
 
