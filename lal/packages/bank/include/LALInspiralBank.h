@@ -117,7 +117,10 @@ the metric is computed.
 
 \item \texttt{InspiralCoarseBankIn:}
 Input for choosing a template bank. This is the structure that must
-	be filled by a routine calling the code \texttt{InspiralCreateCoarseBank}
+	be filled by a routine calling the code \texttt{InspiralCreateCoarseBank} or \texttt{InspiralCreateBCVBank}.  
+Unless BCV template bank is needed (that is, \texttt{InspiralCreateBCVBank})  then one can ignore the
+parameters \texttt{psi0Min, psi0Max, psi3Min, psi3Max, alpha, numFcutTemplates.}
+
 \input{LALInspiralCoarseBankH}
 
 \begin{itemize}
@@ -126,6 +129,11 @@ Input for choosing a template bank. This is the structure that must
 	to use minimum component mass and maximum totalmass.
 \item \texttt{space}: enum that decides whether to use $(\tau_0,\tau_2)$ 
         or $(\tau_0,\tau_3)$ in constructing the template bank
+\item \texttt{alpha}: the BCV amplitude correction parameter
+\item \texttt{psi0Min}: minimum value of the parameter $\psi_0$
+\item \texttt{psi0Max}: maximum value of the parameter $\psi_0$
+\item \texttt{psi3Min}: minimum value of the parameter $\psi_3$
+\item \texttt{psi3Max}: maximum value of the parameter $\psi_3$
 \item \texttt{mMin}: minimum mass of components to search for 
 \item \texttt{mMax}: maximum mass of components to search for
 \item \texttt{MMax}:   alternatively, maximum total mass of binary to search for
@@ -137,7 +145,7 @@ Input for choosing a template bank. This is the structure that must
 \item \texttt{etamin}: minimum value of eta in our search 
 \item \texttt{shf}: Frequency series containing the PSD 
 \item \texttt{iflso}: (currently not implemented) flso will be used as an 
-upper limit in moments integrals if iflso!=0; else   fUpper will be used 
+\item \texttt{numFcutTemplates}: number of templates in the {\tt fcut} direction
 
 The next two members are used in setting up the InspiralTemplate
 parameter structure but not in creating the template bank. 
@@ -392,6 +400,11 @@ tagInspiralCoarseBankIn
 	REAL8                         mMin;           
 	REAL8                         mMax;           
 	REAL8                         MMax;         
+	REAL8                         alpha;      
+	REAL8                         psi0Min;      
+	REAL8                         psi0Max;      
+	REAL8                         psi3Min;      
+	REAL8                         psi3Max;      
 	REAL8                         mmCoarse;      
 	REAL8                         mmFine;        
 	REAL8                         fLower;        
@@ -402,6 +415,7 @@ tagInspiralCoarseBankIn
 	REAL8FrequencySeries          shf;
   
 	INT4                          iflso;          
+	UINT4                         numFcutTemplates;
 
 	Order                         order;        
 	Approximant                   approximant;  
@@ -586,6 +600,16 @@ LALInspiralCreateCoarseBank
    InspiralTemplateList   **list,
    INT4                   *nlist,
    InspiralCoarseBankIn   bankIn
+);
+
+
+void 
+LALInspiralCreateBCVBank
+(
+   LALStatus            *status, 
+   InspiralTemplateList **list, 
+   INT4                 *nlist,
+   InspiralCoarseBankIn coarseIn
 );
 
 void 

@@ -702,8 +702,8 @@ LALGetInspiralMomentsBCV (
 
 
 
-   in.shf->deltaF *= params->fLower;
   /* 
+   in.shf->deltaF *= params->fLower;
    printf("#M1=\n");
    printf("#%15.12lf %15.12lf \n# %15.12lf %15.12lf\n",
 	    moments->M1[0][0],

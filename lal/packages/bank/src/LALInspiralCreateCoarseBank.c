@@ -177,6 +177,41 @@ LALInspiralValidTemplate()
 \clearpage
 
 
+\subsection{Module \texttt{LALInspiralCreateBCVBank.c}}
+Lay a flat grid of BCV templates in the user specified range
+of the parameters $(\psi_0, \psi_3)$ in {\tt coarseIn} structure
+(see below).
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{LALInspiralCreateBCVBankCP}
+\idx{LALInspiralCreateBCVBank()}
+\begin{itemize}
+   \item \texttt{list,} Output, an array containing the template bank parameters.
+   \item \texttt{nlist,} Output, the number of templates in bank.
+\end{itemize}
+
+\subsubsection*{Description}
+Given the range of the parameters $(\psi_0, \psi_3),$  
+number of templates in the {\tt fCut} direction,
+{\it minimalMatch}, noise spectral density, upper and
+lower frequency cutoffs (all in the input structure {\tt coarseIn})
+this routine outputs the list of templates in the BCV bank
+for the parameters $(\psi_0, \psi_3, f_{\rm cut}).$  
+\subsubsection*{Algorithm}
+A flat signal manifold is assumed and templates are laid
+uniform in the three dimensions.  See below for an explanation
+of how templates are chosen in the {\tt fcut} direction.
+
+\subsubsection*{Uses}
+\begin{verbatim}
+LALInspiralUpdateParams()
+LALRalloc()
+\end{verbatim}
+
+\subsubsection*{Notes}
+\clearpage
+
+
 \subsection{Module \texttt{LALInspiralCreateFlatBank.c}}
 Lay a flat grid of templates in the user defined $(x_0, x_1)$ 
 coordinates and range.
@@ -209,7 +244,6 @@ not necessarily the eigen-directions) and lays a uniform grid of templates in
 the range specified in ({\tt bankParams->x0Min}, {\tt bankParams->x0Max}) and
 ({\tt bankParams->x1Min}, {\tt bankParams->x1Max}).
 \subsubsection*{Algorithm}
-\subsubsection*{Uses}
 The algorithm to lay templates is as follows: Given the increments $Dx_0$ and
 $Dx_1$ found from calling {\tt bank/LALInspiralUpdateParams} lay a rectangular
 grid in the space of $(x_0, x_1).$
@@ -608,7 +642,7 @@ GetInspiralMoments (
    UINT4 k;
    InspiralMomentsIn in;
 
-   INITSTATUS (status, "LALInspiralCreateCoarseBank", LALINSPIRALCREATECOARSEBANKC);
+   INITSTATUS (status, "GetInspiralMoments", LALINSPIRALCREATECOARSEBANKC);
    ATTATCHSTATUSPTR(status);
   
    ASSERT (params, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
@@ -675,10 +709,83 @@ GetInspiralMoments (
 
 
 
+/*  <lalVerbatim file="LALInspiralCreateBCVBankCP"> */
+void 
+LALInspiralCreateBCVBank(
+		LALStatus            *status, 
+		InspiralTemplateList **list, 
+		INT4                 *nlist,
+		InspiralCoarseBankIn coarseIn) 
+{  /*  </lalVerbatim>  */
 
+	UINT4 j;
+	static InspiralBankParams bankParams;
+	static InspiralMetric metric;
+	static InspiralTemplate params;
+	static CreateVectorSequenceIn in; 
+	static REAL4VectorSequence *tempList=NULL;
+	REAL8 dx0, dx1;
+  
+	INITSTATUS (status, "LALInspiralCreateBCVBank", LALINSPIRALCREATECOARSEBANKC);
+	ATTATCHSTATUSPTR(status);
+  
+	params.fLower = coarseIn.fLower;
+	params.fCutoff = coarseIn.fUpper;
+	params.alpha = coarseIn.alpha;
+	LALInspiralComputeMetricBCV(status->statusPtr, &metric, &coarseIn.shf, &params);
 
+	dx0 = sqrt(2.L * (1.L-coarseIn.mmCoarse)/metric.g00);
+	dx1 = sqrt(2.L * (1.L-coarseIn.mmCoarse)/metric.g11);
+  
+	fprintf(stderr, "%e %e %e\n", metric.G00, metric.G01, metric.G11);
+	fprintf(stderr, "%e %e %e\n", metric.g00, metric.g11, metric.theta);
+	fprintf(stderr, "dp0=%e dp1=%e\n", dx0, dx1);
 
+	/*
+	*/
+	bankParams.metric = &metric;
+	bankParams.minimalMatch = coarseIn.mmCoarse;
+	bankParams.x0Min = coarseIn.psi0Min;
+	bankParams.x0Max = coarseIn.psi0Max;
+	bankParams.x1Min = coarseIn.psi3Min;
+	bankParams.x1Max = coarseIn.psi3Max;
+  
+	in.length = 1;
+	in.vectorLength = 2;
+	LALSCreateVectorSequence(status->statusPtr, &tempList, &in);
+	tempList->vectorLength = 2;
+	LALInspiralCreateFlatBank(status->statusPtr, tempList, &bankParams);
+	*nlist = tempList->length;
+  
+	if (! (*list = (InspiralTemplateList *) LALMalloc (sizeof (InspiralTemplateList) * *nlist) ) )
+	{
+      		ABORT (status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+	}
+	
+	for (j=0; j<*nlist; j++)
+	{
+		/*
+		   Retain only those templates that have meaningful chirptimes:
+		 */
+		(*list)[j].params.psi0 = (REAL8) tempList->data[2*j];
+		(*list)[j].params.psi3 = (REAL8) tempList->data[2*j+1];
+		(*list)[j].params.fLower = params.fLower;
+		(*list)[j].params.nStartPad = 0;
+		(*list)[j].params.nEndPad = 0;
+		(*list)[j].params.tSampling= coarseIn.tSampling;
+		(*list)[j].params.distance =  1.;
+		(*list)[j].params.signalAmplitude= 1.;
+		(*list)[j].metric = metric;
+	}
+	fprintf(stderr, "Num templates before=%d \n", *nlist);
+	LALInspiralBCVFcutBank( status->statusPtr, list, nlist, coarseIn.numFcutTemplates) ;
+	fprintf(stderr, "Num templates after=%d \n", *nlist);
+    
+	LALSDestroyVectorSequence(status->statusPtr, &tempList);
 
+	DETATCHSTATUSPTR(status);
+	RETURN (status);
+}
 
 
 
@@ -792,6 +899,7 @@ LALInspiralBCVFcutBank(
 					}
 					(*list)[ndx-1] = (*list)[j];
 					(*list)[ndx-1].params.fendBCV = fendBCV;
+					(*list)[ndx-1].metric = (*list)[0].metric;
 				}
 			}
 		}
@@ -847,5 +955,4 @@ static void PSItoMasses (InspiralTemplate *params, UINT4 *valid)
 	}
    
 }
-
 
