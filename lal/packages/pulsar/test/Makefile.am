@@ -1,6 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest LALDemodTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest
-#check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest
+check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest LALDemodTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest HeterodynePulsarTest FitToPulsarTest
 pkgdata_DATA = eigen_Tf0-1e8_n-2.dat eigenInv_Tf0-1e8_n-2.dat \
   range_tauOverT-1e5_n-2.dat in.data \
   earth98.dat sun98.dat \
@@ -35,8 +34,12 @@ PtoleMetricTest_SOURCES = PtoleMetricTest.c
 PtoleMetricTest_LDADD = $(top_builddir)/lib/liblal.la
 PtoleMeshTest_SOURCES = PtoleMeshTest.c
 PtoleMeshTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+HeterodynePulsarTest_SOURCES = HeterodynePulsarTest.c
+HeterodynePulsarTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+FitToPulsarTest_SOURCES = FitToPulsarTest.c
+FitToPulsarTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest LALDemodTest PtoleMeshTest
+TESTS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest LALDemodTest PtoleMeshTest HeterodynePulsarTest FitToPulsarTest
 TESTS_ENVIRONMENT = LAL_DATA_PATH=$(srcdir)
 DISTCLEANFILES = *.tex
 MAINTAINERCLEANFILES = earth*.ilwd sun*.ilwd
