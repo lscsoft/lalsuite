@@ -274,6 +274,12 @@ LALFindChirpBCVData (
     FindChirpSPDataParams      *params
     );
 
+#if 0
+<lalLaTeX>
+\newpage\input{FindChirpBCVSpinDataC}
+</lalLaTeX>
+#endif
+
 void
 LALFindChirpBCVSpinData (
     LALStatus                  *status,
