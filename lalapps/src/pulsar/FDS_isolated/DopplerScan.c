@@ -1251,7 +1251,7 @@ printFrequencyShifts ( LALStatus *stat, const DopplerScanState *scan, const Dopp
   const CHAR *fname = "dFreq.pred";
   const DopplerScanGrid *node = NULL;
 
-  REAL8 v[3];
+  REAL8 v[3], a[3];
   REAL8 np[3], n[3];
   REAL8 fact, kappa0;
   REAL8 alpha, delta, f0;
@@ -1268,6 +1268,7 @@ printFrequencyShifts ( LALStatus *stat, const DopplerScanState *scan, const Dopp
   UINT4 j;
   REAL8 corr0, corr1, accN, accDot[3];
   REAL8 Tobs, dT;
+  REAL8 V0[3], V1[3], V2[3];
 
   INITSTATUS( stat, "printFrequencyShifts", DOPPLERSCANC );
   ATTATCHSTATUSPTR (stat);
@@ -1288,17 +1289,42 @@ printFrequencyShifts ( LALStatus *stat, const DopplerScanState *scan, const Dopp
   t0e = tgps[0] - tinitE;
   ientryE = floor((t0e/dT) +0.5e0);  /*finding Earth table entry closest to arrival time*/
 
-  tdiffE = t0e - edat->dtEtable*ientryE + tgps[1]*1.e-9; /*tdiff is arrival 
-	      time minus closest Earth table entry; tdiff can be pos. or neg. */
+  /* tdiff is arrival time minus closest Earth table entry; tdiff can be pos. or neg. */
+  tdiffE = t0e - edat->dtEtable*ientryE + tgps[1]*1.e-9; 
+
 
   vel = edat->ephemE[ientryE].vel;
   acc = edat->ephemE[ientryE].acc; 
 
-  for (j=0;j<3;j++){
-    accDot[j] = (edat->ephemE[ientryE+1].acc[j] - edat->ephemE[ientryE].acc[j]) / dT;
-    v[j] = vel[j] + acc[j]*tdiffE + 0.5 * acc[j] * Tobs;
-  }
+  /* interpolate v, a to the actual start-time */
+  for (j = 0; j < 3; j++)
+    {
+      accDot[j] = (edat->ephemE[ientryE+1].acc[j] - edat->ephemE[ientryE].acc[j]) / dT;
+      v[j] = vel[j] + acc[j]*tdiffE + 0.5 * accDot[j] * tdiffE * tdiffE;
+      a[j] = acc[j] + accDot[j] * tdiffE;
+    }
 
+
+  /* calculate successively higher order-expressions for V */
+  for ( j=0; j < 3; j++)
+    {
+      V0[j] = v[j];			/* 0th order */
+      V1[j] = v[j] + 0.5 * a[j]*Tobs;	/* 1st order */
+      V2[j] = v[j] + 0.5 * a[j]*Tobs + (2.0/5.0)*accDot[j] * Tobs * Tobs; /* 2nd order */
+    }
+
+  printf ("dT = %f, tdiffE = %f, Tobs = %f\n", dT, tdiffE, Tobs);
+  printf (" vel =  [ %g, %g, %g ]\n", vel[0], vel[1], vel[2]);
+  printf (" acc =  [ %g, %g, %g ]\n", acc[0], acc[1], acc[2]);
+  printf (" accDot =  [ %g, %g, %g ]\n\n", accDot[0], accDot[1], accDot[2]);
+
+  printf (" v =  [ %g, %g, %g ]\n", v[0], v[1], v[2]);
+  printf (" a =  [ %g, %g, %g ]\n", a[0], a[1], a[2]);
+
+  printf ("\nVelocity-expression in circle-equation: \n");
+  printf (" V0 = [ %g, %g, %g ]\n", V0[0], V0[1], V0[2] );
+  printf (" V1 = [ %g, %g, %g ]\n", V1[0], V1[1], V1[2] );
+  printf (" V2 = [ %g, %g, %g ]\n", V2[0], V2[1], V2[2] );
 
   node = scan->grid;
 
