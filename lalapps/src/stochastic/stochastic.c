@@ -1857,7 +1857,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"help", no_argument, 0, 'h'},
       {"gps-start-time", required_argument, 0, 't'},
       {"gps-end-time", required_argument, 0, 'T'},
-      {"segment-big-duration", required_argument, 0, 'L'},
+      {"interval-duration", required_argument, 0, 'L'},
       {"segment-duration", required_argument, 0, 'l'},
       {"sample-rate", required_argument, 0, 'A'},
       {"resample-rate", required_argument, 0, 'a'},
