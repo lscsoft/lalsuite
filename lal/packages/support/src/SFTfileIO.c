@@ -1118,7 +1118,8 @@ void dump_SFT (FILE *fp, const SFTtype *sft, INT4 format)
       /* write some SFT header-info */
       fprintf (fp, "SFT-header\n");
       fprintf (fp, "Name = %s\n", sft->name);
-      fprintf (fp, "Timestamps = %d s, %d ns\n", sft->epoch.gpsSeconds, sft->epoch.gpsNanoSeconds);
+      fprintf (fp, "Timestamp = %d s, %d ns\n", sft->epoch.gpsSeconds, sft->epoch.gpsNanoSeconds);
+      fprintf (fp, "Tsft = %f\n", Tsft);
       fprintf (fp, "Start-frequency = %f Hz\n", sft->f0);
       fprintf (fp, "Frequency-step = %f Hz\n", sft->deltaF);
       
