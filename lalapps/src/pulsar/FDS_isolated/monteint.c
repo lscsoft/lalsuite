@@ -23,7 +23,7 @@
 #include <lal/LALGSL.h>
 
 
-/* LAL-includes */
+/* LALApps-includes */
 #include <lalapps/lalapps.h>
 
 RCSID( "$Id$");
@@ -486,7 +486,7 @@ void MonteCarloIntegrate(MonteCarloIntOut *mciout, MonteCarloIntIn *mciin, Monte
   gsl_monte_vegas_integrate (&G, xl, xu, mciin->dimension, warmupcalls, r, s,
 			     &res, &err);
   if(verboseflag >= 2) {
-    printf (" vegas warm-up: result = %g; sigma = %g\n ", res, err);
+    printf ("%% vegas warm-up: result = %g; sigma = %g\n ", res, err);
     printf ("%% converging...\n");
   }
 
@@ -510,7 +510,7 @@ void MonteCarloIntegrate(MonteCarloIntOut *mciout, MonteCarloIntIn *mciin, Monte
   }
 
   if(verboseflag >= 2) {
-    printf (" vegas final: result = %g; sigma = %g\n ", res, err);
+    printf ("%% vegas final: result = %g; sigma = %g\n ", res, err);
   }
 
   gsl_monte_vegas_free (s);
