@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
-POWERSRCS = power.c power.h 
+POWERSRCS = power.c
 BURCASRC = burca.c
 BREADSRC = bread.c
 BINJSRC = binj.c
