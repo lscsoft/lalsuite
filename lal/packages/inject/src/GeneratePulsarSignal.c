@@ -871,7 +871,8 @@ void LALFastGeneratePulsarSFTs (LALStatus *stat,
       }
 
       /* find kappa associated with fOneHalf */
-      /* fOneHalf = (f0Signal*input->skyConst[tmpInt] + xSum)/tSFT; /* /* Do not need to actually compute this, just kappa */
+      /* fOneHalf = (f0Signal*input->skyConst[tmpInt] + xSum)/tSFT; */
+      /* Do not need to actually compute this, just kappa */
       /* kappa = REAL8 index associated with fOneHalf; usually not an integer  */
       kappa = f0Signal*input->skyConst[tmpInt] + xSum;
       
