@@ -255,7 +255,7 @@ s_data.make_chunks_from_unused(
 # only process jobs that were missed with the bad playground algorithm
 if missing_play:
   bad_s_data = pipeline.ScienceData()
-  bad_s_data.read(cp.get('input','segments'),length)
+  bad_s_data.read(cp.get('input','segments'),length,slide_sec)
   bad_s_data.make_chunks_bad_play(length,overlap,playground_only,slide_sec)
   bad_s_data.make_chunks_from_unused_bad_play(
     length,overlap/2,playground_only,overlap/2,slide_sec)
