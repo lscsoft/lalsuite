@@ -372,7 +372,7 @@ LALInspiralComputeMetric
    static REAL8 Psi[Dim][Order];
    static REAL8 g[Dim][Dim];
 
-   REAL8 a, b, c, q, det, tmpa;
+   REAL8 a, b, c, q, det/*, tmpa*/;
    UINT4 PNorder, m, n;
 
    INITSTATUS (status, "LALInspiralComputeMetric", LALINSPIRALCOMPUTEMETRICC);

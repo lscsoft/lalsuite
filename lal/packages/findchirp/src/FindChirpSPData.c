@@ -287,17 +287,15 @@ LALFindChirpSPData (
     )
 /* </lalVerbatim> */
 {
-  UINT4                 i, j, k; 
+  UINT4                 i, k; 
   UINT4                 cut;
 
-  REAL4                *v;
   REAL4                *w;
   REAL4                *amp;
   COMPLEX8             *wtilde;
   REAL4                *tmpltPower;
   
   REAL4Vector          *dataVec;
-  REAL4                *data;
   REAL4                *spec;
   COMPLEX8             *resp;
   

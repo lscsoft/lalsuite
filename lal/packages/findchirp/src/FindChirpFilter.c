@@ -475,7 +475,6 @@ LALFindChirpFilterSegment (
   UINT4                 numPoints;
   UINT4                 deltaEventIndex;
   UINT4                 ignoreIndex;
-  UINT4                 eventId = 0;
   REAL4                 deltaT;
   REAL4                 norm;
   REAL4                 modqsqThresh;

@@ -23,6 +23,7 @@ LALREAL4VectorFFT
 \vfill{\footnotesize\input{LALInspiralComputeChisqCV}}
 </lalLaTeX>  */
 
+#include <lal/AVFactories.h>
 #include <lal/LALNoiseModels.h>
 
 NRCSID (LALINSPIRALCOMPUTECHISQ, "$Id$");
@@ -39,7 +40,7 @@ LALInspiralComputeChisq
 {  /*  </lalVerbatim>  */
 
   REAL8 c2, flso, df, duration, totalModelSNR, SNRPerBin, binSNR, totalSNR, diffSNR, mSevenBy3;
-  INT4 n, k_0, k_N, ki, count, k, k_start, k_end, i;
+  INT4 n, k_0, k_N, /*ki,*/ count, k, k_start, k_end, i;
   UINT4 binIndexLength;
   INT4Vector *binIndexes = NULL;
   REAL8Vector *binSNRs = NULL;

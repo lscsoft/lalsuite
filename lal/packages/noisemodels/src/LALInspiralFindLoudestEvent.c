@@ -228,7 +228,7 @@ LALInspiralFindLoudestEvent
    totalMass = findeventsin->param.totalMass*LAL_MTSUN_SI;
    eta = findeventsin->param.eta;
    flso = 1.L/(pow(6.L,1.5L)*totalMass*LAL_PI);
-   for (i=1; i<findeventsin->psd.length; i++)
+   for (i=1; i<(INT4)findeventsin->psd.length; i++)
    {
 	   f = i*df;
 	   if (f > flso) break;

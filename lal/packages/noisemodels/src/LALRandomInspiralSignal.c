@@ -246,6 +246,8 @@ LALRandomInspiralSignal
 				   }
 				   break;
 		   
+                           default:
+                                   break; /* FIXME: TODO: Do Something Here!!!! */
 		   }
 	   }
    }
