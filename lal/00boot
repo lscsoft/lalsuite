@@ -292,6 +292,10 @@ m4 ArrayFactoriesTest.m4 > ArrayFactoriesTest.c
 m4 ArraySequenceFactoriesTest.m4 > ArraySequenceFactoriesTest.c
 cd ../../..
 
+cd packages/stats/src
+m4 LALMoment.m4 > LALMoment.c
+cd ../../..
+
 cd packages/comm/src
 m4 SendRecv.m4 > SendRecv.c
 m4 Exchange.m4 > Exchange.c
