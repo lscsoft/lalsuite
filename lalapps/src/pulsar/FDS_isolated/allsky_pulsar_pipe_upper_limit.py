@@ -147,7 +147,7 @@ subdir=''.join([local_work_dir,'/','ul-run.',str(job_id)])
 
 ipolka=0
 while ipolka < Npolka:
- freq_dmp = float(start_freq) + float(job_id)*ipolka * float(coincidence_band)
+ freq_dmp = float(start_freq)+float(job_id)*Npolka*float(coincidence_band)+ipolka*float(coincidence_band)
  gzpd_res_in=''.join(['polka_out-',str(freq_dmp),'.gz'])
  res_in=''.join(['polka_out-',str(freq_dmp)])
  gzpd_res_file=''.join([starting_dir,'/polka_results/',gzpd_res_in])
@@ -210,7 +210,7 @@ shutil.copy(times2,subdir)
 #############################################
 ipolka=0
 while ipolka < Npolka:
- freq_dmp = float(start_freq) + (float(job_id)*ipolka * float(coincidence_band))
+ freq_dmp=float(start_freq)+float(job_id)*Npolka*float(coincidence_band)+ipolka*float(coincidence_band)
  gzpd_res_in=''.join(['polka_out-',str(freq_dmp),'.gz'])
  res_in=''.join(['polka_out-',str(freq_dmp)])
  gzpd_res_file=''.join([starting_dir,'/polka_results/',gzpd_res_in])
@@ -235,12 +235,15 @@ freq=float(start_freq) + float(job_id) * float(coincidence_band) * Npolka
 fmin=freq-2.0*float(coincidence_band)
 band=float(coincidence_band) * (Npolka + 4.0)
 
+fminX=fmin-(float(coincidence_band))/2.0
+bandX=band+float(coincidence_band)
+
 print 'freq,fmin,band=',freq,fmin,band
 
 # define command line first ifo
 #print e
-extract_args=' '.join(['./lalapps_extractSFTband','-n xdata1/SFT','-d',data,'-N 20',
-                       '-b',str(band),'-f',str(fmin)])
+extract_args=' '.join(['./lalapps_extractSFTband','-n xdata1/SFT','-d',data,'-N 20',\
+                       '-b',str(bandX),'-f',str(fminX)])
 
 print extract_args
 
@@ -253,8 +256,8 @@ os.mkdir('xdata2/')
 data=data2
 
 # define command line second ifo
-extract_args=' '.join(['./lalapps_extractSFTband','-n xdata2/SFT','-d',data,'-N 20',
-                       '-b',str(band),'-f',str(fmin)])
+extract_args=' '.join(['./lalapps_extractSFTband','-n xdata2/SFT','-d',data,'-N 20',\
+                       '-b',str(bandX),'-f',str(fminX)])
 
 # extract data for second ifo
 print extract_args
@@ -268,7 +271,7 @@ os.system(extract_args)
 ipolka=0
 fa=100.0
 while ipolka < Npolka:
- freq_dmp = float(start_freq) + float(job_id)*ipolka * float(coincidence_band)
+ freq_dmp=float(start_freq)+float(job_id)*Npolka*float(coincidence_band)+ipolka*float(coincidence_band)
  res_in=''.join(['polka_out-',str(freq_dmp)])
  results_file=open(res_in,mode='r')
  line=results_file.readline()
@@ -280,10 +283,13 @@ while ipolka < Npolka:
    fa=fa1
    freqFA=freq
  ipolka=ipolka+1
-fa1=fa
-fa=math.log(fa1)
-print ' *  *  * ' 
+print  ' *  *  * '
 print 'Loudest event was from band ',freqFA
+print 'Loudest false alarm: ',fa 
+fa1=fa
+if fa > 0 :  fa=math.log(fa1)
+if fa == 0 : fa=-308
+
 print 'Target log false alarm is ',fa
 print ' *  *  * '
 #sys.exit(0)
@@ -307,7 +313,7 @@ while cont:
     Ac=cosi*h0
     psi=random.uniform(0.0,2*pi)
     phi01=random.uniform(0.0,2*pi)
-    f0=random.uniform(freq,freq+float(coincidence_band)*(Npolka-1))
+    f0=random.uniform(freq,freq+float(coincidence_band)*Npolka)
     alpha=random.uniform(0.0,2*pi)
     cosdelta=random.uniform(-1.0,1.0)
     delta=math.acos(cosdelta)
@@ -389,7 +395,7 @@ while cont:
     # search for the signal 
     ifo=ifo1
     cfstat_args=' '.join(['./lalapps_ComputeFStatistic','-f',str(fstart),'-b',str(2*float(freq_window)),\
-                          '--expLALDemod -I ',str(ifo),'-r',str(df),'-a',str(alphaT),'-d',str(deltaT),
+                          '--expLALDemod -I ',str(ifo),'-r',str(df),'-a',str(alphaT),'-d',str(deltaT),\
                           '-D signal1','-E . -y 00-04 -F 0.0','-o -1' ])
     #print cfstat_args
     #print 'IFO',sifo,'. Searching fake signal in real data'
@@ -812,7 +818,7 @@ while cont:
       # first ifo
   res_out=''.join(['Confidence.data-',str(freq)])
   outCdata_file=open(res_out,mode='a')
-  print >>outCdata_file,Ninj,h0,confidence
+  print >>outCdata_file,Ninj,tol,h0,confidence
   outCdata_file.close()
   shutil.copy(res_out,starting_dir)
    
