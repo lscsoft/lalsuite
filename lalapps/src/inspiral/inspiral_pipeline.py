@@ -94,7 +94,7 @@ executable = %s
 arguments = --lal-cache \\
   --instrument $(site) --type %s \\
   --start $(frstart) --end $(frend)
-getenv = true
+environment = LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH)
 log = %s.log
 error = frcache-$(site)-$(frstart)-$(frend).err
 output = frcache-$(site)-$(frstart)-$(frend).out
