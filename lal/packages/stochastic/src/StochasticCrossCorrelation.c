@@ -126,9 +126,6 @@ time-shifted data as a control case.
 
 \subsubsection*{\texttt{LALStochasticHeterodynedCrossCorrelationStatistic()}}
 
-{\bf Note: This function does not currently have a working test
-  routine, and is not guaranteed to work.}
-
 In the case of heterodyned data, one wishes to calculate 
 % 
 \begin{eqnarray} 
@@ -230,7 +227,7 @@ LALUnitMultiply()
     {} [Y(f)] &:=& [\widetilde{\bar{h}}_1] 
     [\widetilde{Q}^{\scriptstyle{\rm W}}]  [\widetilde{\bar{h}}_2]
     = \textrm{s}^2 \\
-    {} [Y] &:=& [Y(f)] \textrm{Hz} = \textrm{s}
+    {} [Y] &:=& [Y(f)]\, \textrm{Hz}^{-1} = \textrm{s}
   \end{eqnarray}
 \end{itemize}
 
@@ -533,7 +530,6 @@ LALStochasticHeterodynedCrossCorrelationStatistic(
   REAL8         streamF0;
   REAL8         streamDF;
   UINT4         streamLength;
-
   /* initialize status structure */
   INITSTATUS( status, "LALStochasticHeterodynedCrossCorrelationStatistic",
               STOCHASTICCROSSCORRELATIONC );
