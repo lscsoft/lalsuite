@@ -159,8 +159,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 filterLength;
   INT4 numFMin;
   INT4 numFMax;
-  LALWindowParams winparPSD;
-  AverageSpectrumParams specparPSD;
+  LALWindowParams psdWindowParams;
+  AverageSpectrumParams psdParams;
   REAL4FrequencySeries psdTempOne;
   REAL4FrequencySeries psdTempTwo;
   REAL4FrequencySeries psdOne;
@@ -441,14 +441,14 @@ INT4 main(INT4 argc, CHAR *argv[])
   psdTwo.data->length = filterLength;
 
   /* set window parameters for PSD estimation */
-  winparPSD.length = windowPSDLength;
-  winparPSD.type = Hann;
+  psdWindowParams.length = windowPSDLength;
+  psdWindowParams.type = Hann;
 
   /* set parameters for PSD estimation */
-  specparPSD.method = useMean;
-  specparPSD.overlap = overlapPSDLength;
-  specparPSD.plan = NULL;
-  specparPSD.window = NULL;
+  psdParams.method = useMean;
+  psdParams.overlap = overlapPSDLength;
+  psdParams.plan = NULL;
+  psdParams.window = NULL;
 
   if (vrbflg)
   {
@@ -456,7 +456,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* create fft plan */
-  LAL_CALL (LALCreateForwardRealFFTPlan(&status, &specparPSD.plan, \
+  LAL_CALL (LALCreateForwardRealFFTPlan(&status, &psdParams.plan, \
         windowPSDLength, 0), &status );
 
   if (vrbflg)
@@ -465,8 +465,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* create window for PSD estimation */
-  LAL_CALL( LALCreateREAL4Window(&status, &specparPSD.window, &winparPSD), \
-      &status );
+  LAL_CALL( LALCreateREAL4Window(&status, &psdParams.window, \
+        &psdWindowParams), &status );
 
   /* set parameters for response functions */
   respLength = (UINT4)(fMax / deltaF) + 1;
@@ -1039,9 +1039,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     /* compute uncalibrated PSDs */
     LAL_CALL( LALREAL4AverageSpectrum(&status, &psdTempOne, &intervalOne, \
-          &specparPSD), &status );
+          &psdParams), &status );
     LAL_CALL( LALREAL4AverageSpectrum(&status, &psdTempTwo, &intervalTwo, \
-          &specparPSD), &status );
+          &psdParams), &status );
 
     if (vrbflg)
     {
@@ -1191,7 +1191,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   fclose(out);
 
   /* cleanup */
-  LAL_CALL( LALDestroyRealFFTPlan(&status, &(specparPSD.plan)), &status );
+  LAL_CALL( LALDestroyRealFFTPlan(&status, &(psdParams.plan)), &status );
   LAL_CALL( LALDestroyRealFFTPlan(&status, &fftDataPlan), &status );
   LAL_CALL( LALDestroyVector(&status, &(streamOne.data)), &status );
   LAL_CALL( LALDestroyVector(&status, &(streamTwo.data)), &status );
