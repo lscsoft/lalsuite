@@ -459,6 +459,9 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
       metricpar->position.latitude =  skypos[0];
     }
 
+  /* before we call the metric: make sure the sky-position  is "normalized" */
+  TRY ( LALNormalizeSkyPosition (stat->statusPtr, &(metricpar->position), &(metricpar->position)), stat);
+
   TRY ( LALMetricWrapper( stat->statusPtr, metric, metricpar, useMetric), stat);
 
   BEGINFAIL( stat )
@@ -591,6 +594,9 @@ printGrid (LALStatus *stat,
 	   * parameter have been set already ! */
 	  metricPar->position.longitude = alpha;
 	  metricPar->position.latitude  = delta;
+
+	  /* make sure we "normalize" point before calling metric */
+	  TRY( LALNormalizeSkyPosition (stat->statusPtr, &(metricPar->position), &metricPar->position), stat);
 
 	  TRY( LALMetricWrapper( stat->statusPtr, metric, metricPar, useMetric ), stat);
 
