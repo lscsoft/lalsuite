@@ -489,7 +489,6 @@ int main(int argc, char **argv)
 {
 	static LALStatus stat;
 
-	INT4 sort = FALSE;
 	INT4 ndetected;
 	INT4 ninjected;
 	INT4 timeAnalyzed;
@@ -557,7 +556,6 @@ int main(int argc, char **argv)
 			{"playground", no_argument, &options.playground, 1},
 			{"noplayground", no_argument, &options.noplayground, 1},
 			{"help", no_argument, NULL, 'o'},
-			{"sort", no_argument, NULL, 'p'},
 			{"output-trig", required_argument, NULL, 'q'},
 			{"best-confidence", no_argument, &options.best_confidence, 1},
 			{"best-peaktime", no_argument, &options.best_peaktime, 1},
@@ -574,13 +572,7 @@ int main(int argc, char **argv)
 
 		switch (c) {
 		case 0:
-			/* if this option set a flag, do nothing else now */
-			if (long_options[option_index].flag != 0)
-				break;
-			else {
-				fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, optarg);
-				exit(1);
-			}
+			/* if this option set a flag */
 			break;
 
 		case 'a':
@@ -631,12 +623,6 @@ int main(int argc, char **argv)
 			/* print help */
 			LALPrintError(USAGE, *argv);
 			exit(BINJ_FIND_EARG);
-
-		case 'p':
-			/* sort the events in time */
-			sort = TRUE;
-			break;
-
 
 		case 'q':
 			outSnglFile = optarg;
@@ -735,9 +721,9 @@ int main(int argc, char **argv)
 		*detInjectionsAddPoint = NULL;
 	}
 
-	fprintf(stderr,"%d sec = %d hours analyzed\n", timeAnalyzed, timeAnalyzed/3600);
-	fprintf(stderr, "Detected %i injections out of %i made\n", ndetected, ninjected);
-	fprintf(stderr, "Efficiency is %f \n", ((REAL4) ndetected / (REAL4) ninjected));
+	fprintf(stdout,"%d sec = %d hours analyzed\n", timeAnalyzed, timeAnalyzed/3600);
+	fprintf(stdout, "Detected %i injections out of %i made\n", ndetected, ninjected);
+	fprintf(stdout, "Efficiency is %f \n", ((REAL4) ndetected / (REAL4) ninjected));
 
 	/*
 	 * Write output XML files.
