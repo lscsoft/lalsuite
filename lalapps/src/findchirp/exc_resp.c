@@ -10,7 +10,7 @@ RCSID( "$Id$" );
 
 /* Calibration Constants for L1:LSC-ETMX        */
 /* Based on mail from Gaby Mon, 24 Jun 2002     */
-#define L1_DC_RESP 1.72         /* nm/count */
+#define L1_DC_RESP 2.63         /* nm/count */
 #define L1_PEND_F0 0.76         /* Hz */
 #define L1_LENGTH  4000         /* m */
 
