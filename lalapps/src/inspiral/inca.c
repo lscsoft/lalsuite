@@ -44,32 +44,33 @@ RCSID("$Id$");
 /* Usage format string. */
 #define USAGE \
 "Usage: %s [options] [LIGOLW XML input files]\n\n"\
-"  --help                       display this message\n"\
-"  --verbose                    print progress information\n"\
-"  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
-"  --user-tag STRING            set the process_params usertag to STRING\n"\
-"  --comment STRING             set the process table comment to STRING\n"\
+"  --help                    display this message\n"\
+"  --verbose                 print progress information\n"\
+"  --debug-level LEVEL       set the LAL debug level to LEVEL\n"\
+"  --user-tag STRING         set the process_params usertag to STRING\n"\
+"  --comment STRING          set the process table comment to STRING\n"\
 "\n"\
-"  --gps-start-time SEC         GPS second of data start time\n"\
-"  --gps-start-time-ns NS       GPS nanosecond of data start time\n"\
+"  --gps-start-time SEC      GPS second of data start time\n"\
+"  --gps-start-time-ns NS    GPS nanosecond of data start time\n"\
 "\n"\
-"  --silde-time SEC             slide triggers by SEC when determining playground\n"\
-"  --slide-time-ns NS           slide triggers by NS when determining playground\n"\
+"  --silde-time SEC          slide triggers by SEC when determining playground\n"\
+"  --slide-time-ns NS        slide triggers by NS when determining playground\n"\
 "\n"\
-"  --ifo-a ifo_name             name of first ifo (e.g. L1, H1 or H2)\n"\
-"  --ifo-b ifo_name             name of second ifo (e.g. L1, H1 or H2)\n"\
+"  --ifo-a ifo_name          name of first ifo (e.g. L1, H1 or H2)\n"\
+"  --ifo-b ifo_name          name of second ifo (e.g. L1, H1 or H2)\n"\
 "\n"\
-"  --triggered-bank FILE        write a triggered bank insted of doing inca\n"\
-"  --minimal-match M            set minimal match of triggered bank to M\n"\
+"  --triggered-bank FILE     write a triggered bank insted of doing inca\n"\
+"  --minimal-match M         set minimal match of triggered bank to M\n"\
 "\n"\
-"  --epsilon error              set effective distance test epsilon (default 2)\n"\
-"  --kappa error                set effective distance test kappa (default 0.01)\n"\
-"  --dm mass                    mass coincidence window (default 0)\n"\
-"  --dt time                    time coincidence window (milliseconds)\n"\
+"  --epsilon ERROR           set effective distance test epsilon (default 2)\n"\
+"  --kappa ERROR             set effective distance test kappa (default 0.01)\n"\
+"  --ifo-b-range D           limit dist cut to second ifo range +/- D (default 0)\n"\
+"  --dm mass                 mass coincidence window (default 0)\n"\
+"  --dt time                 time coincidence window (milliseconds)\n"\
 "\n"\
-"  --no-playground              do not select triggers from playground\n"\
-"  --playground-only            only use triggers that are in playground\n"\
-"  --write-uniq-triggers        make sure triggers from IFO A are unique\n" \
+"  --no-playground           do not select triggers from playground\n"\
+"  --playground-only         only use triggers that are in playground\n"\
+"  --write-uniq-triggers     make sure triggers from IFO A are unique\n" \
 "\n"\
 "[LIGOLW XML input files] list of the input trigger files.\n"\
 "\n"
@@ -148,6 +149,9 @@ int main( int argc, char *argv[] )
   INT4  inStartTime = -1;
   INT4  inEndTime = -1;
   REAL4 minMatch = -1;
+  UINT4 useRangeCut = 0;
+  REAL4 rangeError = 0;
+  /* REAL4 ifoBRange = 0; */
 
   SnglInspiralTable    *inspiralEventList[MAXIFO];
   SnglInspiralTable    *currentTrigger[MAXIFO];
@@ -179,6 +183,7 @@ int main( int argc, char *argv[] )
     {"triggered-bank",          required_argument, 0,                'T'},
     {"minimal-match",           required_argument, 0,                'M'},
     {"kappa",                   required_argument, 0,                'k'},
+    {"ifo-b-range",             required_argument, 0,                'R'},
     {"dm",                      required_argument, 0,                'm'},
     {"dt",                      required_argument, 0,                't'},
     {"gps-start-time",          required_argument, 0,                'q'},
@@ -302,6 +307,25 @@ int main( int argc, char *argv[] )
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case 'R':
+        /* limit the effective distance cut to the range of second ifo */
+        useRangeCut = 1;
+        rangeError = atof(optarg);
+        if ( rangeError > 1.0 || rangeError < 0.0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "error in in second ifo range test must be in interval [0,1]:"
+              "(%s given)\n", 
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        /* XXX abort if range cut is given since it's not implemented yet XXX */
+        fprintf( stderr, "--%s not get implemented, aborting!\n", 
+            long_options[option_index].name );
+        abort();
         break;
 
       case 'm':
