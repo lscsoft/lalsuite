@@ -107,7 +107,8 @@ void LALReadSFTheader (LALStatus  *status,
   DETATCHSTATUSPTR (status);
   /* normal exit */
   RETURN (status);
-}
+
+} /* LALReadSFTheader() */
 
 /* ------------------------------------------------------------*/
 /* *******************************  <lalVerbatim file="SFTfileIOD"> */
@@ -165,7 +166,7 @@ void LALReadSFTtype(LALStatus  *status,
     COMPLEX8  *dataIn;
     COMPLEX8  *dataOut;
     INT4      n;
-    REAL8     factor;
+    REAL4     factor;
     
     ASSERT (sft->data->data, status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
     ASSERT (header1.length >= offset+length, status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
@@ -180,7 +181,7 @@ void LALReadSFTtype(LALStatus  *status,
     
     /* is this correct  ? */
     /* or if the data is normalized properly, there will be no need to consider. */
-    factor = ((double) length)/ ((double) header1.length);
+    factor = ((REAL4)length)/ ((REAL4) header1.length);
     
     /* let's normalize */
     while (n-- >0){
@@ -203,16 +204,16 @@ void LALReadSFTtype(LALStatus  *status,
 /* *******************************  <lalVerbatim file="SFTfileIOD"> */
 void
 LALWriteSFTtoFile (LALStatus  *status,
-		const SFTtype    *sft,
-		const CHAR       *outfname)
+		   const SFTtype    *sft,
+		   const CHAR       *outfname)
 {/*   *********************************************  </lalVerbatim> */
   /* function to write an entire SFT to a file which has been read previously*/
   
   FILE  *fp = NULL;
   COMPLEX8  *inData;
   SFTHeader  header;
-  INT4  i, w;
-  REAL4  rePt, imPt;
+  INT4  i;
+  REAL4  *rawdata;
 
   /* --------------------------------------------- */
   INITSTATUS (status, "WriteSFTtoFile", SFTFILEIOC);
@@ -241,28 +242,28 @@ LALWriteSFTtoFile (LALStatus  *status,
   }
 
   /* write the header*/
-  w = fwrite((void* )&header, sizeof(header), 1, fp);
-  if (w != 1) {
+  if( fwrite((void* )&header, sizeof(header), 1, fp) != 1) {
     ABORT (status, SFTFILEIOH_EWRITE, SFTFILEIOH_MSGEWRITE);
+  }
+
+  /* write data into a contiguous REAL4-array */
+  rawdata = LALCalloc (1, 2* header.length * sizeof(REAL4));
+  if (rawdata == NULL) {
+    fclose (fp);
+    ABORT (status, SFTFILEIOH_EMEM, SFTFILEIOH_MSGEMEM);    
   }
 
   inData = sft->data->data;
   for ( i = 0; i < header.length; i++)
     {
-      rePt = inData[i].re;
-      imPt = inData[i].im;
-
-      /* write the real and imaginary parts */
-      w = fwrite((void* )&rePt, sizeof(REAL4), 1, fp);
-      if (w != 1) {
-	ABORT (status, SFTFILEIOH_EWRITE, SFTFILEIOH_MSGEWRITE);
-      }
-      w = fwrite((void* )&imPt, sizeof(REAL4), 1, fp);
-      if (w != 1) {
-	ABORT(status, SFTFILEIOH_EWRITE, SFTFILEIOH_MSGEWRITE);
-      }
-    } /* for i < length */
-
+      rawdata[2 * i] = inData[i].re;
+      rawdata[2 * i + 1] = inData[i].im;
+    }
+  
+  if (fwrite( rawdata, 2 * header.length * sizeof(REAL4), 1, fp) != 1) {
+    ABORT (status, SFTFILEIOH_EWRITE, SFTFILEIOH_MSGEWRITE);
+  }
+  LALFree (rawdata);
   fclose(fp);
 
   DETATCHSTATUSPTR (status);
@@ -290,10 +291,10 @@ LALReadSFTfile (LALStatus *status,
   UINT4 offset0, offset1, SFTlen;
   SFTtype *outputSFT;
   UINT4 i;
-  REAL4 factor;
+  REAL4 renorm;
   BOOLEAN swapEndian = 0;
   REAL8 version;
-  
+  REAL4 *rawdata = NULL;
 
   INITSTATUS (status, "ReadSFTfile", SFTFILEIOC);
   ATTATCHSTATUSPTR (status); 
@@ -314,7 +315,7 @@ LALReadSFTfile (LALStatus *status,
   version = header.version;
   /* check endian-ness and SFT-version */
   if (version > 1000000) {
-    endian_swap ((CHAR*)&version, sizeof(REAL8), 1);
+    endian_swap ((CHAR*)&version, sizeof(version), 1);
     swapEndian = 1;
   }
 
@@ -363,29 +364,43 @@ LALReadSFTfile (LALStatus *status,
     LALFree (outputSFT);
   } ENDFAIL (status);
 
-  if (fread( outputSFT->data->data, SFTlen * sizeof(COMPLEX8), 1, fp) != 1) {
+  rawdata = LALCalloc (1, 2*SFTlen*sizeof(REAL4));
+  if (rawdata == NULL)
+    {
+      LALCDestroyVector (status->statusPtr, &(outputSFT->data));
+      LALFree (outputSFT);
+      ABORT (status, SFTFILEIOH_EMEM, SFTFILEIOH_MSGEMEM);
+    }
+
+  /* careful here: the data-vector contains a COMPLEX8-struct, so
+     we better don't rely on memory-alignment and read into a
+     REAL4 array first */
+  if (fread( rawdata, 2*SFTlen * sizeof(REAL4), 1, fp) != 1) {
     fclose(fp);
     LALCDestroyVector (status->statusPtr, &(outputSFT->data));
     LALFree (outputSFT);
+    LALFree (rawdata);
     ABORT (status, SFTFILEIOH_EREAD, SFTFILEIOH_MSGEREAD);
   }
   fclose(fp);
 
   /* do endian byte-swapping on the data if required */
-
-  /* FIXME: continue here */
+  if ( swapEndian )
+    endian_swap ( (CHAR*)rawdata, sizeof(REAL4), 2 * SFTlen);
 
   /* is this correct  ? */
-  /* or if the data is normalized properly, there will be no need to consider. */
-  factor = 1.0 * SFTlen / header.length;
+  /* FIXME: double-check this !! */
+  renorm = 1.0 * SFTlen / header.length;
     
-  /* let's re-normalize */
+  /* let's re-normalize and fill data into output-vector */
   for (i=0; i < SFTlen; i++)
     {
-      outputSFT->data->data[i].re *= factor;
-      outputSFT->data->data[i].im *= factor;
+      outputSFT->data->data[i].re = renorm * rawdata[2 * i];
+      outputSFT->data->data[i].im = renorm * rawdata[2 * i + 1];
     }    
   
+  LALFree (rawdata);
+
   /* now fill in the header-info */
   outputSFT->deltaF  = deltaF;
   outputSFT->f0      = f0 + offset0 * deltaF;
@@ -443,17 +458,17 @@ ByteSwapSFTHeader (LALStatus *stat, SFTHeader *header)
   /* we have to do this one by one, because memory-alignment
    * is not guaranteed !! 
    */
-  endian_swap ((CHAR*)&(header->version), sizeof(REAL8), 1);
+  endian_swap ((CHAR*)&(header->version), sizeof(header->version), 1);
 
   if (header->version > 1) {
     ABORT (stat, SFTFILEIOH_EVERSION, SFTFILEIOH_MSGEVERSION);
   }
 
-  endian_swap ((CHAR*)&(header->gpsSeconds), sizeof(INT4), 1);
-  endian_swap ((CHAR*)&(header->gpsNanoSeconds), sizeof(INT4), 1);
-  endian_swap ((CHAR*)&(header->timeBase), sizeof(REAL8), 1);
-  endian_swap ((CHAR*)&(header->fminBinIndex), sizeof(INT4), 1);
-  endian_swap ((CHAR*)&(header->length), sizeof(INT4), 1);
+  endian_swap ((CHAR*)&(header->gpsSeconds), sizeof(header->gpsSeconds), 1);
+  endian_swap ((CHAR*)&(header->gpsNanoSeconds), sizeof(header->gpsNanoSeconds), 1);
+  endian_swap ((CHAR*)&(header->timeBase), sizeof(header->timeBase), 1);
+  endian_swap ((CHAR*)&(header->fminBinIndex), sizeof(header->fminBinIndex), 1);
+  endian_swap ((CHAR*)&(header->length), sizeof(header->length), 1);
 
   RETURN (stat);
 

@@ -77,7 +77,7 @@ INT4 lalDebugLevel=3;
 #define THRESHOLD 2.0
 #define SFTBASEFILENAME "./data1/SFT."
 #define OUTFILE "./outsft.0"
-#define FILEIN "./inputsft.0"
+#define INFILE "./inputsft.0"
 
 /* Usage format string. */
 
@@ -121,22 +121,22 @@ char *lalWatch;
 #endif
 
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
+/* ----------------------------------------------------------------------*/
 int main(int argc, char *argv[]){ 
   static LALStatus       status;  /* LALStatus pointer */ 
   static SFTHeader      header;
-  static SFTtype          sft1;
+  SFTtype *sft1 = NULL;
   SFTtype *sft2 = NULL;
-  REAL8 fmin, fmax;
-  
+  static SFTtype sft0;
+  REAL8 fmin, fmax, f0;
+    
   const CHAR *fname;               /* The input filename */
   const CHAR *outfname;           /* output sft file name */
   INT4 arg;                         /* Argument counter */
   UINT4  length;
-  UINT4 fminindex;
+  UINT4 offset0, offset1, fminindex;
  
-  fname = FILEIN;
+  fname = INFILE;
   outfname = OUTFILE;
   /********************************************************/  
   /* Parse argument list.  i stores the current position. */
@@ -174,52 +174,86 @@ int main(int argc, char *argv[]){
   } /* End of argument parsing loop. */
   /******************************************************************/
   
-  SUB( LALReadSFTheader( &status, &header, fname),  &status );
- 
-  length = 10;
-/*
- *   sft.fminBinIndex = floor(151.298 * header.timeBase + 0.5);
- */
-  fminindex = header.fminBinIndex + 5;
-  length = 10;
-  sft1.data = NULL;
+  /* Reinhard: ReadSFTheader() and ReadSFTtype() cannot easily be extended
+   * to do endian byte-swapping, so we de-activate their tests
+   * if the machine is not litte-endian */
+  fmin = 1008.5;
+  fmax = 1009.1;
 
-  printf ("Testing LALReadSFTtype(), LALWriteSFTtoFile() and LALReadSFTfile()\n");
-  SUB( LALCCreateVector (&status, &(sft1.data), length),  &status ); 
-  SUB( LALReadSFTtype( &status, &sft1, fname, fminindex),  &status );
-
-  /* write SFT to disk */
-  SUB (LALWriteSFTtoFile (&status, &sft1, OUTFILE), &status);
-
+  printf ("Testing LALWriteSFTtoFile() and LALReadSFTfile()\n");
+  /* read SFT from disk */
   /* try to do the same thing with ReadSFTfile() */
-  fmin = fminindex / header.timeBase;
-  fmax = (fminindex + length) / header.timeBase;
+  SUB ( LALReadSFTfile (&status, &sft1, fmin, fmax, fname), &status);
+  /* write SFT to disk */
+  SUB (LALWriteSFTtoFile (&status, sft1, OUTFILE), &status);
 
   SUB ( LALReadSFTfile (&status, &sft2, fmin, fmax, OUTFILE), &status);
 
   /* compare sft1 and sft2 */
-  if ( (sft1.epoch.gpsSeconds != sft2->epoch.gpsSeconds)
-       || (sft1.epoch.gpsNanoSeconds != sft2->epoch.gpsNanoSeconds)  )
+  if ( (sft1->epoch.gpsSeconds != sft2->epoch.gpsSeconds)
+       || (sft1->epoch.gpsNanoSeconds != sft2->epoch.gpsNanoSeconds)  )
     {
       ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
       return SFTFILEIOTESTC_ESFTDIFF;
     }
-  if ( (sft1.f0 != sft2->f0) || (sft1.deltaF != sft2->deltaF) ) {
+  if ( (sft1->f0 != sft2->f0) || (sft1->deltaF != sft2->deltaF) ) {
     ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
     return SFTFILEIOTESTC_ESFTDIFF;
   }
-  if ( sft1.data->length != sft2->data->length) {
+  if ( sft1->data->length != sft2->data->length) {
     ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
     return SFTFILEIOTESTC_ESFTDIFF;
   }
-  if ( memcmp (sft1.data->data, sft2->data->data, sft1.data->length) ) {
+  if ( memcmp (sft1->data->data, sft2->data->data, sft1->data->length) ) {
     ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
     return SFTFILEIOTESTC_ESFTDIFF;
   }
- 
+
+#ifndef WORDS_BIGENDIAN 
+  printf ("Testing LALReadSFtheader() and LALReadSFTtype()\n");
+  SUB( LALReadSFTheader( &status, &header, fname),  &status );
+  f0 = header.fminBinIndex / header.timeBase;
+  offset0 = (UINT4) ((fmin-f0) * header.timeBase);
+  offset1 = (UINT4) ceil ( (fmax-f0) * header.timeBase );
+  length = offset1 - offset0;
+  fminindex = header.fminBinIndex + offset0;
+  sft0.data = NULL;
+  SUB( LALCCreateVector (&status, &(sft0.data), length),  &status ); 
+  SUB( LALReadSFTtype( &status, &sft0, fname, fminindex),  &status );
+  sft0.deltaF  = 1.0 / header.timeBase;
+  sft0.f0      = f0 + offset0 / header.timeBase;
+  sft0.epoch.gpsSeconds     = header.gpsSeconds;
+  sft0.epoch.gpsNanoSeconds = header.gpsNanoSeconds;
+
+
+  /* compare sft0 and sft1 */
+  if ( (sft1->epoch.gpsSeconds != sft0.epoch.gpsSeconds)
+       || (sft1->epoch.gpsNanoSeconds != sft0.epoch.gpsNanoSeconds)  )
+    {
+      ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
+      return SFTFILEIOTESTC_ESFTDIFF;
+    }
+  if ( (sft1->f0 != sft0.f0) || (sft1->deltaF != sft0.deltaF) ) {
+    ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
+    return SFTFILEIOTESTC_ESFTDIFF;
+  }
+  if ( sft1->data->length != sft0.data->length) {
+    ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
+    return SFTFILEIOTESTC_ESFTDIFF;
+  }
+  if ( memcmp (sft1->data->data, sft0.data->data, sft1->data->length) ) {
+    ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
+    return SFTFILEIOTESTC_ESFTDIFF;
+  }
+
+#endif
+  
+  SUB( LALCDestroyVector (&status, &(sft0.data) ), &status);
+  SUB( LALCDestroyVector (&status, &(sft1->data) ), &status);
   SUB( LALCDestroyVector (&status, &(sft2->data) ),  &status );
-  LALCDestroyVector (&status, &(sft1.data) );
+  LALFree ( sft1 );
   LALFree ( sft2 );
+  
 
   LALCheckMemoryLeaks(); 
 
@@ -227,4 +261,4 @@ int main(int argc, char *argv[]){
   return SFTFILEIOTESTC_ENORM;
 }
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
