@@ -1,14 +1,14 @@
 ## Process this file with automake to produce Makefile.in
-noinst_LTLIBRARIES = liblal.la
+noinst_LTLIBRARIES = libfindchirp.la
 
 if FRAMEANDMPI
-liblal_la_SOURCES = FindChirpExch.c
+libfindchirp_la_SOURCES = FindChirpExch.c
 else
-liblal_la_SOURCES = 
+libfindchirp_la_SOURCES = 
 endif
 
 EXTRA_DIST       = FindChirpExch.c
 
 CC=@MPICC@
 
-INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include
+INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include

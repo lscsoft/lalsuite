@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
-noinst_LTLIBRARIES = liblal.la
-liblal_la_SOURCES = \
+noinst_LTLIBRARIES = libtimefreq.la
+libtimefreq_la_SOURCES = \
   CreateTimeFreqParam.c \
   CreateTimeFreqRep.c \
   DestroyTimeFreqParam.c \
@@ -11,5 +11,5 @@ liblal_la_SOURCES = \
   TfrSp.c \
   TfrWv.c
 
-INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include
+INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 

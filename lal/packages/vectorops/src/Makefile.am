@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
-noinst_LTLIBRARIES = liblal.la
-liblal_la_SOURCES = \
+noinst_LTLIBRARIES = libvectorops.la
+libvectorops_la_SOURCES = \
         CCVectorDivide.c \
         CCVectorMultiply.c \
         CCVectorMultiplyConjugate.c \
@@ -18,4 +18,4 @@ liblal_la_SOURCES = \
         DZVectorMultiply.c \
         DDVectorMultiply.c
 
-INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include
+INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include

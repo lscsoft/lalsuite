@@ -7,13 +7,13 @@ check_PROGRAMS = \
 VectorFactoriesTest_SOURCES = VectorFactoriesTest.c
 VectorSequenceFactoriesTest_SOURCES = VectorSequenceFactoriesTest.c
 
-VectorFactoriesTest_LDADD = $(top_srcdir)/lib/liblal.la
-VectorSequenceFactoriesTest_LDADD = $(top_srcdir)/lib/liblal.la
+VectorFactoriesTest_LDADD = $(top_builddir)/lib/liblal.la
+VectorSequenceFactoriesTest_LDADD = $(top_builddir)/lib/liblal.la
 
 ArrayFactoriesTest_SOURCES = ArrayFactoriesTest.c
-ArrayFactoriesTest_LDADD = $(top_srcdir)/lib/liblal.la
+ArrayFactoriesTest_LDADD = $(top_builddir)/lib/liblal.la
 
-INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include
+INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = VectorFactoriesTest \
         VectorSequenceFactoriesTest \
         ArrayFactoriesTest

@@ -4,14 +4,14 @@ CLEANFILES = *.aux *.bbl *.dvi *.glo *.idx *.ind *.lof *.lot *.tex *.toc \
              *.eps *.pdf *.ps
 
 dvi-local:
-	cp $(srcdir)/../lsd.* $(srcdir)
+	cp $(srcdir)/../lsd.* .
 	rm -f lsdFig*
-	@LN_S@ ../lsdFig* .
+	@LN_S@ `pwd`/$(srcdir)/../lsdFig* .
 	rm -f schedule.*
-	@LN_S@ ../schedule.* .
+	@LN_S@ `pwd`/$(srcdir)/../schedule.* .
 	@LATEX@ lsd.tex
 	@MKIND@ lsd.idx
 	@LATEX@ lsd.tex
 	@LATEX@ lsd.tex
-	rm -f $(srcdir)/lsd.tex
-	mv $(srcdir)/lsd.* $(srcdir)/..
+	rm -f lsd.tex
+	mv lsd.* ..

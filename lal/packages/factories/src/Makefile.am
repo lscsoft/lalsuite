@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
-noinst_LTLIBRARIES = liblal.la
+noinst_LTLIBRARIES = libfactories.la
 
-liblal_la_SOURCES = \
+libfactories_la_SOURCES = \
   VectorFactories.c VectorSequenceFactories.c \
   ArrayFactories.c
 MAINTAINERCLEANFILES = $(liblal_la_SOURCES)
@@ -10,7 +10,7 @@ EXTRA_DIST = \
   ArrayFactories.m4 CreateArray.m4 DestroyArray.m4 \
   VectorSequenceFactories.m4 CreateVectorSequence.m4 DestroyVectorSequence.m4
 
-INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include
+INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
 
 VectorFactories.c: VectorFactories.m4 CreateVector.m4 DestroyVector.m4

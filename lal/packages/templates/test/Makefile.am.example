@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
-noinst_PROGRAMS = ExampleTest
-example_test_SOURCES = ExampleTest.c
-example_test_LDADD = $(top_srcdir)/lib/liblal.a
-INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include
-TESTS = $(PROGRAMS)
+check_PROGRAMS = ExampleTest
+ExampleTest_SOURCES = ExampleTest.c
+ExampleTest_LDADD = $(top_builddir)/lib/liblal.la
+INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+TESTS = ExampleTest

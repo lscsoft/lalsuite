@@ -104,6 +104,7 @@ AC_CHECK_FUNCS(putenv)
 AC_OUTPUT( Makefile                               \
            doc/Makefile                           \
            doc/laldoc/Makefile                    \
+           doc/laldoc/ldoc-pkg.sh                 \
            doc/autodoc/Makefile                   \
            include/Makefile                       \
            lib/Makefile                           \

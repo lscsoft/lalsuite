@@ -12,7 +12,7 @@ EXTRA_DIST      = NoTest FindChirp FindChirpMain.c FindChirpMaster.c FindChirpSl
 CC=@MPICC@
 
 FindChirpMain_SOURCES = FindChirpMain.c FindChirpMaster.c FindChirpSlave.c
-FindChirpMain_LDADD = $(top_srcdir)/lib/liblal.la @MPILIBS@
-INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include
+FindChirpMain_LDADD = $(top_builddir)/lib/liblal.la @MPILIBS@
+INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = PI* Slave*.out Slave*.err machines killscript
 CLEANFILES = FindChirpMain

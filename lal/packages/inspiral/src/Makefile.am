@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
-noinst_LTLIBRARIES = liblal.la
-liblal_la_SOURCES = \
+noinst_LTLIBRARIES = libinspiral.la
+libinspiral_la_SOURCES = \
 ChooseModel.c \
 InspiralDerivatives.c \
 InspiralParameterCalc.c \
@@ -20,5 +20,5 @@ TimeDomain2.c \
 TofV.c \
 TofVIntegrand.c
 
-INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include
+INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 

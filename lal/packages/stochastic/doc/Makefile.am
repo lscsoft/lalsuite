@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 TEXFILES = Overlap.tex Dirichlet.tex CrossCorr.tex
 DVIFILES = Overlap.dvi Dirichlet.dvi CrossCorr.dvi
-SUFFIXES = .tex .dvi
+#SUFFIXES = .tex .dvi
 MOSTLYCLEANFILES = *.log *.aux
 CLEANFILES = Overlap.dvi Overlap.pdf Dirichlet.dvi Dirichlet.pdf \
              CrossCorr.dvi CrossCorr.pdf
@@ -24,5 +24,13 @@ EXTRA_DIST = $(TEXFILES) \
         kernel2.eps kernel2.pdf \
         kernel3.eps kernel3.pdf
 
-dvi-local: $(DVIFILES)
-.tex.dvi:; @LATEX@ $< ; @LATEX@ $<
+dvi-local: $(EXTRA_DIST)
+	for file in $(EXTRA_DIST) ; do \
+          if [ ! -f $$file ] ; then cp -f $(srcdir)/$$file $$file ; fi ; \
+        done
+	for texfile in $(TEXFILES) ; do \
+          @LATEX@ $$texfile ; @LATEX@ $$texfile ; \
+        done
+
+#dvi-local: $(DVIFILES)
+#.tex.dvi:; @LATEX@ $< ; @LATEX@ $<

@@ -10,3 +10,5 @@ laldoc_SOURCES = LALDoc.c LALDoc.h             \
                  LALErrTableWriter.c           \
                  LALLaTeXEnv.c                 \
                  LALVerbatimEnv.c
+all-local:
+	chmod +x ldoc-pkg.sh
