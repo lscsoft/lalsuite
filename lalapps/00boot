@@ -1,5 +1,54 @@
 #!/bin/sh
-aclocal
-autoheader
-automake
-autoconf
+
+# Help message
+helpmsg="Usage $0 [options]
+Options: [defaults in brackets after description]"
+helpmsg="$helpmsg
+  --help                        print this message"
+helpmsg="$helpmsg
+  --with-aclocal=ACLOCAL        use aclocal program ACLOCAL [aclocal]"
+helpmsg="$helpmsg
+  --with-automake=AUTOMAKE      use automake program AUTOMAKE [automake]"
+helpmsg="$helpmsg
+  --with-autoheader=AUTOHEADER  use autoheader program AUTOHEADER [autoheader]"
+helpmsg="$helpmsg
+  --with-autoconf=AUTOCONF      use autoconf program AUTOCONF [autoconf]"
+helpmsg="$helpmsg
+  --include-deps                pass option --include-deps to automake [no]"
+
+INCLUDEDEPS=""
+
+## Process args
+while test $# -gt 0 ; do
+  option=$1
+  case "$option" in
+    -*=*) optarg=`echo "$option" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+    *) optarg= ;;
+  esac
+  case $option in
+    -h | -help | --help ) echo "$helpmsg"; exit 0;;
+    -include-deps | --include-deps ) INCLUDEDEPS=" --include-deps";;
+    -with-automake=* | --with-automake=* ) AUTOMAKE="$optarg";;
+    -with-aclocal=* | --with-aclocal=* ) ACLOCAL="$optarg";;
+    -with-autoconf=* | --with-autoconf=* ) AUTOCONF="$optarg";;
+    -with-autoheader=* | --with-autoheader=* ) AUTOHEADER="$optarg";;
+    *) echo "unrecognized option $option"; exit 1;;
+  esac
+  shift
+done
+
+AUTOMAKE="${AUTOMAKE:-automake}"
+ACLOCAL="${ACLOCAL:-aclocal}"
+AUTOCONF="${AUTOCONF:-autoconf}"
+AUTOHEADER="${AUTOHEADER:-autoheader}"
+
+echo "Using:
+aclocal:        `which $ACLOCAL`
+automake:       `which $AUTOMAKE`
+autoheader:     `which $AUTOHEADER`
+autoconf:       `which $AUTOCONF`"
+
+$ACLOCAL
+$AUTOHEADER
+$AUTOMAKE $INCLUDEDEPS
+$AUTOCONF
