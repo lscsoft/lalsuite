@@ -800,6 +800,7 @@ int main( int argc, char *argv[] )
 	    }
 	    else
 	    {
+#if 0
 	      /* check that effective distance was calculated using 
 	       * 1.4_1.4 solar mass inspiral and snr = 8 */
 	      if ( strncmp( thisSummValue->comment, "1.4_1.4_8",
@@ -814,6 +815,7 @@ int main( int argc, char *argv[] )
 	      }
 	      else
 	      {
+#endif
 		if ( vrbflg )
 		{  
 		  fprintf( stdout, "got inspiral effective distance of %f ",
@@ -860,7 +862,7 @@ int main( int argc, char *argv[] )
 			    thisSummValue->end_time.gpsSeconds, 
 			    thisSummValue->end_time.gpsNanoSeconds);
 		      }		
-		    }
+		    } /* close if ( slideDataNS && j == 1) */
 
 		    if ( ! inspEffRange[j] )
 		    {
@@ -876,8 +878,9 @@ int main( int argc, char *argv[] )
 		    thisSummValue = thisSummValue->next;
 		    currentEffRange[j]->next = NULL;
 		    break;
-		  }
-		}
+		  } /* close if ( ! strncmp( ifoName[j], thisSummValue->ifo,
+                                               LIGOMETA_IFO_MAX ) ) */
+		} /*close for ( j = 0; j < numIFO ; ++j ) */
 		if ( ! knownIFO )
 		{
 		  /* catch an unknown ifo name among the input files */
@@ -888,8 +891,10 @@ int main( int argc, char *argv[] )
 		  thisSummValue = thisSummValue->next;
 		  LALFree( tempSummValue );
 		}
-	      } /* close for ( j = 0; j < numIFO ; ++j ) */
-	    }
+#if 0
+	      } /* close for second else */
+#endif
+	    } /* close for first else */
 	  } /* close while ( thisSummValue ) */
 	}
       } /* close if( ! trigBankFile ) */
