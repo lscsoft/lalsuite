@@ -15,6 +15,7 @@ Applies an IIR filter to a data stream.
 \input{IIRFilterVectorCP}
 \idx{LALIIRFilterREAL4Vector()}
 \idx{LALIIRFilterREAL8Vector()}
+\idx{LALDIIRFilterREAL4Vector()}
 
 \subsubsection*{Description}
 
@@ -27,7 +28,21 @@ To filter a piece of a larger dataset, the calling routine may pass a
 vector structure whose data pointer and length fields specify a subset
 of a larger vector.
 
+The routine \verb@LALDIIRFilterREAL4Vector()@ applies a
+double-precision filter to single-precision data.  It makes a single
+pass through the data, continuously updating the filter history at
+each step rather than storing the auxiliary array in-place.  This
+reduces roundoff error by keeping \emph{all} intermediate results to
+double-precision.
+
 \subsubsection*{Algorithm}
+
+The implementation of \verb@LALDIIRFilterREAL4Vector()@ not only has
+lower truncation errors than \verb@LALIIRFilterREAL4Vector()@, but
+also appears to be more computationally efficient, for reasons I have
+not yet determined; see the documentation for \verb@IIRFilterTest.c@.
+These combine to suggest that \verb@LALDIIRFilterREAL4Vector()@ is the
+better overall algorithm for filtering \verb@REAL4Vector@s.
 
 \subsubsection*{Uses}
 \begin{verbatim}
@@ -58,6 +73,7 @@ LALIIRFilterREAL4Vector( LALStatus      *stat,
   INT4 k;            /* Index for filter history. */
   INT4 length;       /* Length of vector. */
   REAL4 *data;       /* Vector data. */
+  REAL8 datum;       /* Temporary working variable. */
   INT4 directOrder;  /* Number of direct filter coefficients. */
   INT4 recursOrder;  /* Number of recursive filter coefficients. */
   INT4 numHist;      /* The number of history data. */
@@ -95,14 +111,18 @@ LALIIRFilterREAL4Vector( LALStatus      *stat,
 
   /* Compute the auxiliary data series. */
   for(i=0;(i<recursOrder)&&(i<length);i++,data++){
+    datum=*data;
     for(j=1;j<=i;j++)
-      *data+=data[-j]*recursCoef[j];
+      datum+=data[-j]*recursCoef[j];
     for(k=0;j<recursOrder;j++,k++)
-      *data+=history[k]*recursCoef[j];
+      datum+=history[k]*recursCoef[j];
+    *data=datum;
   }
   for(;i<length;i++,data++){
+    datum=*data;    
     for(j=1;j<recursOrder;j++)
-      *data+=data[-j]*recursCoef[j];
+      datum+=data[-j]*recursCoef[j];
+    *data=datum;
   }
   data--;
 
@@ -114,16 +134,18 @@ LALIIRFilterREAL4Vector( LALStatus      *stat,
 
   /* Compute the output data series. */
   for(;i>directOrder;i--,data--){
-    *data*=directCoef[0];
+    datum=*data*directCoef[0];
     for(j=1;j<directOrder;j++)
-      *data+=data[-j]*directCoef[j];
+      datum+=data[-j]*directCoef[j];
+    *data=datum;
   }
   for(;i>0;i--,data--){
-    *data*=directCoef[0];
+    datum=*data*directCoef[0];
     for(j=1;j<i;j++)
-      *data+=data[-j]*directCoef[j];
+      datum+=data[-j]*directCoef[j];
     for(k=0;j<directOrder;j++,k++)
-      *data+=history[k]*directCoef[j];
+      datum+=history[k]*directCoef[j];
+    *data=datum;
   }
 
   /* Update the filter history from the temporary history. */
@@ -147,6 +169,7 @@ LALIIRFilterREAL8Vector( LALStatus      *stat,
   INT4 k;            /* Index for filter history. */
   INT4 length;       /* Length of vector. */
   REAL8 *data;       /* Vector data. */
+  REAL8 datum;       /* Temporary working variable. */
   INT4 directOrder;  /* Number of direct filter coefficients. */
   INT4 recursOrder;  /* Number of recursive filter coefficients. */
   INT4 numHist;      /* The number of history data. */
@@ -184,14 +207,18 @@ LALIIRFilterREAL8Vector( LALStatus      *stat,
 
   /* Compute the auxiliary data series. */
   for(i=0;(i<recursOrder)&&(i<length);i++,data++){
+    datum=*data;
     for(j=1;j<=i;j++)
-      *data+=data[-j]*recursCoef[j];
+      datum+=data[-j]*recursCoef[j];
     for(k=0;j<recursOrder;j++,k++)
-      *data+=history[k]*recursCoef[j];
+      datum+=history[k]*recursCoef[j];
+    *data=datum;
   }
   for(;i<length;i++,data++){
+    datum=*data;
     for(j=1;j<recursOrder;j++)
-      *data+=data[-j]*recursCoef[j];
+      datum+=data[-j]*recursCoef[j];
+    *data=datum;
   }
   data--;
 
@@ -203,21 +230,92 @@ LALIIRFilterREAL8Vector( LALStatus      *stat,
 
   /* Compute the output data series. */
   for(;i>directOrder;i--,data--){
-    *data*=directCoef[0];
+    datum=*data*directCoef[0];
     for(j=1;j<directOrder;j++)
-      *data+=data[-j]*directCoef[j];
+      datum+=data[-j]*directCoef[j];
+    *data=datum;
   }
   for(;i>0;i--,data--){
-    *data*=directCoef[0];
+    datum=*data*directCoef[0];
     for(j=1;j<i;j++)
-      *data+=data[-j]*directCoef[j];
+      datum+=data[-j]*directCoef[j];
     for(k=0;j<directOrder;j++,k++)
-      *data+=history[k]*directCoef[j];
+      datum+=history[k]*directCoef[j];
+    *data=datum;
   }
 
   /* Update the filter history from the temporary history. */
   for(k=0;k<numHist;k++)
     history[k]=temp[k];
+  LALFree(temp);
+
+  /* Normal exit */
+  RETURN(stat);
+}
+
+
+/* <lalVerbatim file="IIRFilterVectorCP"> */
+void
+LALDIIRFilterREAL4Vector( LALStatus      *stat,
+			  REAL4Vector    *vector,
+			  REAL8IIRFilter *filter )
+{ /* </lalVerbatim> */
+  INT4 j;            /* Index for filter coeficients. */
+  INT4 length;       /* Length of vector. */
+  REAL4 *data;       /* Vector data. */
+  REAL8 w, datum;    /* Current auxiliary and output values. */
+  INT4 directOrder;  /* Number of direct filter coefficients. */
+  INT4 recursOrder;  /* Number of recursive filter coefficients. */
+  INT4 numHist;      /* The number of history data. */
+  REAL8 *directCoef; /* Direct filter coefficients. */
+  REAL8 *recursCoef; /* Recursive filter coefficients. */
+  REAL8 *temp=NULL;  /* Temporary storage for the filter history. */
+
+  INITSTATUS(stat,"LALDIIRFilterREAL4Vector",IIRFILTERVECTORC);
+
+  /* Make sure all the structures have been initialized. */
+  ASSERT(vector,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(vector->data,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->directCoef,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->recursCoef,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->history,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->directCoef->data,stat,IIRFILTERH_ENUL,
+	 IIRFILTERH_MSGENUL);
+  ASSERT(filter->recursCoef->data,stat,IIRFILTERH_ENUL,
+	 IIRFILTERH_MSGENUL);
+  ASSERT(filter->history->data,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  length=vector->length;
+  data=vector->data;
+  directOrder=filter->directCoef->length;
+  recursOrder=filter->recursCoef->length;
+  directCoef=filter->directCoef->data;
+  recursCoef=filter->recursCoef->data;
+  numHist=filter->history->length+1;
+  if(!(temp=(REAL8 *)LALMalloc(numHist*sizeof(REAL8)))){
+    ABORT(stat,IIRFILTERH_EMEM,IIRFILTERH_MSGEMEM);
+  }
+  memcpy(temp,filter->history->data,(numHist-1)*sizeof(REAL8));
+
+  /* Run through the vector. */
+  while(length--){
+
+    /* Compute the auxiliary variable. */
+    for(j=numHist-1;j>=recursOrder;j--)
+      temp[j]=temp[j-1];
+    w=*data;
+    for(;j;j--)
+      w+=recursCoef[j]*(temp[j]=temp[j-1]);
+
+    /* Compute filter output. */
+    datum=*directCoef*(*temp=w);
+    for(j=1;j<directOrder;j++)
+      datum+=directCoef[j]*temp[j];
+    *(data++)=datum;
+  }
+
+  /* Update the history. */
+  memcpy(filter->history->data,temp,(numHist-1)*sizeof(REAL8));
   LALFree(temp);
 
   /* Normal exit */

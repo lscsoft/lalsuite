@@ -1,5 +1,6 @@
 ## Process this file with automake to produce Makefile.in
-DOCSOURCEFILES = tdfilters.tex
+DOCSOURCEFILES = tdfilter.tex \
+  tdfilter_iirfiltertest.eps tdfilter_iirfiltertest.pdf
 MOSTLYCLEANFILES = .dvi-dep
 CLEANFILES = main.dvi main.pdf main.ps
 EXTRA_DIST = $(DOCSOURCEFILES)

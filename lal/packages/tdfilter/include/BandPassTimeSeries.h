@@ -99,6 +99,11 @@ LALButterworthREAL8TimeSeries( LALStatus          *stat,
 			       REAL8TimeSeries    *series,
 			       PassBandParamStruc *params );
 
+void
+LALDButterworthREAL4TimeSeries( LALStatus          *stat,
+				REAL4TimeSeries    *series,
+				PassBandParamStruc *params );
+
 /* Chebyshev filters should also be added, but I'm too busy to write
    the routines now. */
 

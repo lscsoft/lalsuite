@@ -222,6 +222,11 @@ LALIIRFilterREAL8Vector( LALStatus      *stat,
 			 REAL8Vector    *vector,
 			 REAL8IIRFilter *filter );
 
+void
+LALDIIRFilterREAL4Vector( LALStatus      *stat,
+			  REAL4Vector    *vector,
+			  REAL8IIRFilter *filter );
+
 /* <lalLaTeX>
 \newpage\input{IIRFilterVectorRC}
 </lalLaTeX> */
@@ -234,6 +239,11 @@ void
 LALIIRFilterREAL8VectorR( LALStatus      *stat,
 			  REAL8Vector    *vector,
 			  REAL8IIRFilter *filter );
+
+void
+LALDIIRFilterREAL4VectorR( LALStatus      *stat,
+			   REAL4Vector    *vector,
+			   REAL8IIRFilter *filter );
 
 /* <lalLaTeX>
 \newpage\input{IIRFilterTestC}

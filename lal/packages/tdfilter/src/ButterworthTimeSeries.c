@@ -15,6 +15,7 @@ Applies a low- or high-pass Butterworth filter to a time series.
 \input{ButterworthTimeSeriesD}
 \idx{LALButterworthREAL4TimeSeries()}
 \idx{LALButterworthREAL8TimeSeries()}
+\idx{LALDButterworthREAL4TimeSeries()}
 
 \subsubsection*{Description}
 
@@ -25,6 +26,11 @@ the square root of the desired amplitude response, which it then
 applied to the data once forward and once in reverse.  This gives the
 full amplitude response with little or no frequency-dependent phase
 shift.
+
+The routine \verb@LALDButterworthREAL4TimeSeries()@ applies a
+double-precision filter to single-precision data, using
+\verb@LALDIIRFilterREAL4Vector()@ and
+\verb@LALDIIRFilterREAL4VectorR()@.
 
 \subsubsection*{Algorithm}
 
@@ -508,6 +514,164 @@ LALButterworthREAL8TimeSeries( LALStatus          *stat,
       TRY(LALDestroyREAL8IIRFilter(stat->statusPtr,&iirFilter),stat);
     } ENDFAIL(stat);
     LALIIRFilterREAL8VectorR(stat->statusPtr,series->data,iirFilter);
+    BEGINFAIL(stat) {
+      TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+      TRY(LALDestroyREAL8IIRFilter(stat->statusPtr,&iirFilter),stat);
+    } ENDFAIL(stat);
+
+    /* Free the filters. */
+    TRY(LALDestroyREAL8IIRFilter(stat->statusPtr,&iirFilter),stat);
+    TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),stat);
+  }
+
+  /* Normal exit. */
+  DETATCHSTATUSPTR(stat);
+  RETURN(stat);
+}
+
+
+/* <lalVerbatim file="ButterworthTimeSeriesD"> */
+void
+LALDButterworthREAL4TimeSeries( LALStatus          *stat,
+				REAL4TimeSeries    *series,
+				PassBandParamStruc *params )
+{ /* </lalVerbatim> */
+  INT4 n;    /* The filter order. */
+  INT4 type; /* The pass-band type: high, low, or undeterminable. */
+  INT4 i;    /* An index. */
+  INT4 j;    /* Another index. */
+  REAL8 wc;  /* The filter's transformed frequency. */
+
+  INITSTATUS(stat,"LALButterworthREAL8TimeSeries",BUTTERWORTHTIMESERIESC);
+  ATTATCHSTATUSPTR(stat);
+
+  /* Make sure the input pointers are non-null. */
+  ASSERT(params,stat,BANDPASSTIMESERIESH_ENUL,
+	 BANDPASSTIMESERIESH_MSGENUL);
+  ASSERT(series,stat,BANDPASSTIMESERIESH_ENUL,
+	 BANDPASSTIMESERIESH_MSGENUL);
+  ASSERT(series->data,stat,BANDPASSTIMESERIESH_ENUL,
+	 BANDPASSTIMESERIESH_MSGENUL);
+  ASSERT(series->data->data,stat,BANDPASSTIMESERIESH_ENUL,
+	 BANDPASSTIMESERIESH_MSGENUL);
+
+  /* Parse the pass-band parameter structure.  I separate this into a
+     local static subroutine because it's an icky mess of conditionals
+     that would clutter the logic of the main routine. */
+  type=ParsePassBandParamStruc(stat,params,&n,&wc,series->deltaT);
+  if(type==0) {
+    ABORT(stat,BANDPASSTIMESERIESH_EBAD,BANDPASSTIMESERIESH_MSGEBAD);
+  }
+
+  /* An order n Butterworth filter has n poles spaced evenly along a
+     semicircle in the upper complex w-plane.  By pairing up poles
+     symmetric across the imaginary axis, the filter gan be decomposed
+     into [n/2] filters of order 2, plus perhaps an additional order 1
+     filter.  The following loop pairs up poles and applies the
+     filters with order 2. */
+  for(i=0,j=n-1;i<j;i++,j--){
+    REAL8 theta=LAL_PI*(i+0.5)/n;
+    REAL8 ar=wc*cos(theta);
+    REAL8 ai=wc*sin(theta);
+    REAL8IIRFilter *iirFilter=NULL;
+    COMPLEX16ZPGFilter *zpgFilter=NULL;
+
+    /* Generate the filter in the w-plane. */
+    if(type==2){
+      TRY(LALCreateCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter,2,2),
+	  stat);
+      zpgFilter->zeros->data[0].re=0.0;
+      zpgFilter->zeros->data[0].im=0.0;
+      zpgFilter->zeros->data[1].re=0.0;
+      zpgFilter->zeros->data[1].im=0.0;
+      zpgFilter->gain.re=1.0;
+      zpgFilter->gain.im=0.0;
+    }else{
+      TRY(LALCreateCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter,0,2),
+	  stat);
+      zpgFilter->gain.re=-wc*wc;
+      zpgFilter->gain.im=0.0;
+    }
+    zpgFilter->poles->data[0].re=ar;
+    zpgFilter->poles->data[0].im=ai;
+    zpgFilter->poles->data[1].re=-ar;
+    zpgFilter->poles->data[1].im=ai;
+
+    /* Transform to the z-plane and create the IIR filter. */
+    LALWToZCOMPLEX16ZPGFilter(stat->statusPtr,zpgFilter);
+    BEGINFAIL(stat)
+      TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+    ENDFAIL(stat);
+    LALCreateREAL8IIRFilter(stat->statusPtr,&iirFilter,zpgFilter);
+    BEGINFAIL(stat)
+      TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+    ENDFAIL(stat);
+
+    /* Filter the data, once each way. */
+    LALDIIRFilterREAL4Vector(stat->statusPtr,series->data,iirFilter);
+    BEGINFAIL(stat) {
+      TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+      TRY(LALDestroyREAL8IIRFilter(stat->statusPtr,&iirFilter),stat);
+    } ENDFAIL(stat);
+    LALDIIRFilterREAL4VectorR(stat->statusPtr,series->data,iirFilter);
+    BEGINFAIL(stat) {
+      TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+      TRY(LALDestroyREAL8IIRFilter(stat->statusPtr,&iirFilter),stat);
+    } ENDFAIL(stat);
+
+    /* Free the filters. */
+    TRY(LALDestroyREAL8IIRFilter(stat->statusPtr,&iirFilter),stat);
+    TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),stat);
+  }
+
+  /* Next, this conditional applies the possible order 1 filter
+     corresponding to an unpaired pole on the imaginary w axis. */
+  if(i==j){
+    REAL8IIRFilter *iirFilter=NULL;
+    COMPLEX16ZPGFilter *zpgFilter=NULL;
+
+    /* Generate the filter in the w-plane. */
+    if(type==2){
+      TRY(LALCreateCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter,1,1),
+	  stat);
+      zpgFilter->zeros->data->re=0.0;
+      zpgFilter->zeros->data->im=0.0;
+      zpgFilter->gain.re=1.0;
+      zpgFilter->gain.im=0.0;
+    }else{
+      TRY(LALCreateCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter,0,1),
+	  stat);
+      zpgFilter->gain.re=0.0;
+      zpgFilter->gain.im=-wc;
+    }
+    zpgFilter->poles->data->re=0.0;
+    zpgFilter->poles->data->im=wc;
+
+    /* Transform to the z-plane and create the IIR filter. */
+    LALWToZCOMPLEX16ZPGFilter(stat->statusPtr,zpgFilter);
+    BEGINFAIL(stat)
+      TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+    ENDFAIL(stat);
+    LALCreateREAL8IIRFilter(stat->statusPtr,&iirFilter,zpgFilter);
+    BEGINFAIL(stat)
+      TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+    ENDFAIL(stat);
+
+    /* Filter the data, once each way. */
+    LALDIIRFilterREAL4Vector(stat->statusPtr,series->data,iirFilter);
+    BEGINFAIL(stat) {
+      TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+      TRY(LALDestroyREAL8IIRFilter(stat->statusPtr,&iirFilter),stat);
+    } ENDFAIL(stat);
+    LALDIIRFilterREAL4VectorR(stat->statusPtr,series->data,iirFilter);
     BEGINFAIL(stat) {
       TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),
 	  stat);
