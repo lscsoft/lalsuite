@@ -66,6 +66,8 @@ if test "${dataflow}" = "true"; then
 fi
 
 AM_CONDITIONAL(FRAME, test x$frame = xtrue)
+AM_CONDITIONAL(DATAFLOW, test x$dataflow = xtrue)
+AC_DEFINE_UNQUOTED(PREFIX, "$prefix", [Install prefix])
 
 AC_OUTPUT( 				\
 	Makefile 			\

@@ -26,9 +26,9 @@ NRCSID( RESPONSEC, "$Id$" );
 #define RESPONSEC_MSGEMEM   "Out of memory"
 
 /* Usage format string. */
-#define USAGE "Usage: %s [-z nz z_1 ... z_nz] [-p np p_1 .... p_np] 
-                         [-g gain] [-f npoints fmin fmax] [-o outfile]
-                         [-i ilwdfile] [-t] \n"
+#define USAGE "Usage: %s [-z nz z_1 ... z_nz] [-p np p_1 .... p_np] \n" \
+                        "[-g gain] [-f npoints fmin fmax] [-o outfile]\n" \
+                        "[-i ilwdfile] [-t] \n"
 
 /* Macros for printing errors and testing subroutines. */
 #define ERROR( code, msg, statement )                                \
