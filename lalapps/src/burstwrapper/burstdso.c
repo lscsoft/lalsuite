@@ -191,7 +191,9 @@ int main(int argc, char *argv[]) {
   }
 
 
-  printf("%s\n%s\n%s\n%s\n%g\n%g\n",fQuery,algorithms,filterParams,rFiles,f0,f1);
+#ifdef DEBUGBURST
+  fprintf(stderr,"%s\n%s\n%s\n%s\n%g\n%g\n",fQuery,algorithms,filterParams,rFiles,f0,f1);
+#endif
 
   /*****************************************/
   /* prepare output symbols */

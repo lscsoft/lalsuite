@@ -15,7 +15,9 @@ extern "C" {
 
   /*****************************************************************/
 
+  /*
 #define DEBUGBURST 
+  */
 
 #ifdef linux
 #undef WORDS_BIGENDIAN

@@ -15,6 +15,10 @@ int getFrameCache(char *fQuery,
   char *p0, *p1;
   char *buf;
 
+  /* try to delete file */
+  unlink(CACHEFILENAME);
+
+
   buf = (char *)calloc(1+strlen(fQuery),sizeof(char));
 
   /* process line by line */
@@ -35,7 +39,9 @@ int getFrameCache(char *fQuery,
 
     if(buf[0]!='\n') {
 
-      printf("Processing: %s\n", buf);
+#ifdef DEBUGBURST
+      fprintf(stderr,"Processing: %s\n", buf);
+#endif
 
       /* Examine line
 	 Format: type IFO times channel alias */
@@ -63,8 +69,6 @@ int getFrameCache(char *fQuery,
 	  return 1;
 	}
       
-	unlink(tname);
-
 	sprintf(cmd,"source %s/setup.sh; %s/ldg-client/bin/LSCdataFind --server %s --observatory %s --type %s --gps-start-time %s --gps-end-time %s --url-type file --lal-cache >> %s", path, path, dataserver, IFO, type, T0, T1, tname);
 
 	if(system(cmd) == -1) {

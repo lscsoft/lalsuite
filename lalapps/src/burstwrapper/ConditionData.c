@@ -25,7 +25,9 @@ int OutputSymbols(char *algorithms,
 
   while(strlen(buf) || buf[0]=='\n') {
 
-    printf("Algo: %s\n",buf);
+#ifdef DEBUGBURST
+    fprintf(stderr,"Algo: %s\n",buf);
+#endif
 
     if(strstr(buf,"output(")) {
 

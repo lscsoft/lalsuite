@@ -912,7 +912,13 @@ regsub -all "/" $ZeFile "\\/" rZeFile
         exit 1
  }
 
-if { [ catch { exec /bin/bash -c "condor_submit tmp" } cout ] } {
+if { [ catch { exec /bin/bash --login -c "echo $PrebinFile ; cd $PrebinFile ; buildcache $dataserver $PrebinFile/framequery.txt" } cout ] } {
+         puts $cout
+         exit 1
+ }
+
+
+ if { [ catch { exec /bin/bash --login -c "condor_submit tmp" } cout ] } {
      puts $cout
      exit 1
  }

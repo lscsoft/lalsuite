@@ -59,7 +59,9 @@ int getFrameData(char *fQuery,
 
     if(buf[0]!='\n') {
 
-      printf("Processing: %s\n", buf);
+#ifdef DEBUGBURST
+      fprintf(stderr,"Processing: %s\n", buf);
+#endif
 
       /* Examine line
 	 Format: type IFO times channel alias */
@@ -137,7 +139,7 @@ int getFrameData(char *fQuery,
 	}
 	
 	/* find the data */
-	if(!strstr(dataserver,"CACHEFILENAME")) {
+	if(!strstr(dataserver,CACHEFILENAME)) {
 	  /* use LSCdataFind */
 	  {
 	    int fid = mkstemp(tname);
@@ -171,10 +173,28 @@ int getFrameData(char *fQuery,
 	  unlink(tname);
 	} else {
 	  /* we have a cache file */
+	  char tname[] = "/tmp/getFrameDataXXXXXX";
+	  char cmd[2048];
+	  int fid = mkstemp(tname);
+	  if(fid==-1) {
+	    fprintf(stderr,"Can't create temp file\n");
+	    return 1;
+	  }
+	  close(fid);
+
+	  sprintf(cmd,"grep %s %s > %s",type,dataserver,tname);
+
+	  if(system(cmd)) {
+	    fprintf(stderr,"ERROR: %s failed\n",cmd);
+	    return 1;
+	  }
+
 	  /* get the data */
-	  LAL_CALL( LALFrCacheImport( &stat, &frameCache, dataserver ), &stat );
+	  LAL_CALL( LALFrCacheImport( &stat, &frameCache, tname ), &stat );
 	  LAL_CALL( LALFrCacheOpen( &stat, &stream, frameCache ), &stat );
 	  LAL_CALL( LALDestroyFrCache( &stat, &frameCache ), &stat );
+
+	  unlink(tname);
 	}
 
 

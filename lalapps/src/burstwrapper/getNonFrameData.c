@@ -28,7 +28,9 @@ int getNonFrameData(char *rFiles,
 
     if(buf[0] != '\n') {
 
-      printf("nonframe: %s\n",buf);
+#ifdef DEBUGBURST
+      fprintf(stderr,"nonframe: %s\n",buf);
+#endif
 
       /* FORMAT: file push/pass name */
       sscanf(buf,"%s\t%s\t%s",file,pp,name);
