@@ -229,11 +229,13 @@ LALFindChirpBCVSpinFilterSegment (
 
   /* 
    * the calculation of the orthonormalised 
-   * amplitude vectors a1, a2, a3 
+   * amplitude vectors a1, a2, a3, put in a loop
    *
    */   
 
 
+ for ( k = 1; k < fcSeg->data->data->length; ++k )
+  {
   a1 = 1.0 * amp[k]/ sqrt(I) ;
 
   a2 = 1.0 * amp[k]/sqrt(denominator) * (I * cos(Beta * amp[k]) -  J);
@@ -241,7 +243,7 @@ LALFindChirpBCVSpinFilterSegment (
   a3 = 1.0 * amp[k]/denominator1 * ( sin(Beta * amp[k]) - 
       (I*L - J*K)*cos(Beta * amp[k])/denominator + 
       (J*L - K*M + 0.5*I*K)/denominator );
-
+  }
   
  
 
@@ -255,24 +257,97 @@ LALFindChirpBCVSpinFilterSegment (
 
 
   inputData1 = fcSeg->data->data->data;
-  inputData2 = fcSeg->data->data->data;
-  inputData3 = fcSeg->data->data->data;
+  /*  inputData2 = fcSeg->data->data->data;
+      inputData3 = fcSeg->data->data->data; i dont think ill need these   */
   
-  inputData1[k].re *= a1 * wtilde[k].re;
-  inputData2[k].re *= a2 * wtilde[k].re;
-  inputData3[k].re *= a3 * wtilde[k].re;
-  
-  inputData1[k].im *= a1 * wtilde[k].im;
-  inputData2[k].im *= a2 * wtilde[k].im;
-  inputData3[k].im *= a3 * wtilde[k].im;
-
-
-
   /*
-   * imaginary parts? square and add to find SNR
+   *
+   * compute qtilde, qtildeBCV, and q, qBCV 
+   * need to create qtildeBCVSpin, qBCVSpin
+   *
+   * needs close checking
    *
    */
 
+
+  memset( qtilde,    0, numPoints * sizeof(COMPLEX8) );
+  memset( qtildeBCV, 0, numPoints * sizeof(COMPLEX8) );
+
+  /* qtilde positive frequency, not DC or nyquist */
+  for ( k = 1; k < numPoints/2; ++k )
+  {
+    REAL4 r        = inputData1[k].re;
+    REAL4 s        = 0.0 - inputData1[k].im;    /* note complex conjugate */
+    /* REAL4 rBCV     = inputData2[k].re;
+       REAL4 sBCV     = 0.0 - inputData2[k].im; */   /* note complex conjugate */
+    /* REAL4 rBCVSpin = inputData3[k].re;
+       REAL4 sBCVSpin = 0.0 - inputData3[k].im;  */  /* note complex conjugate */
+
+    REAL4 x = tmpltSignal[k].re;
+    REAL4 y = tmpltSignal[k].im;     
+ 
+ 
+    qtilde[k].re        = r * x - s * y ;
+    qtilde[k].im        = r * y + s * x ;
+    /* qtildeBCV[k].re     = rBCV * x - sBCV * y ;
+       qtildeBCV[k].im     = rBCV * y + sBCV * x ; */
+    /*    qtildeBCVSpin[k].re = rBCVSpin * x - sBCVSpin * y ;
+	  qtildeBCVSpin[k].im = rBCVSpin * y + sBCVSpin * x ; */
+    
+    
+    qtildeBCV[k]     = qtilde[k];
+    /*qtildeBCVSpin[k] = qtilde[k]; */
+
+    qtilde[k].re        *= a1;
+    qtildeBCV[k].re     *= a2;
+    /*qtildeBCVSpin[k].re *= a3; */
+
+    qtilde[k].im        *= a1;
+    qtildeBCV[k].im     *= a2;
+    /*qtildeBCVSpin[k].im *= a3; */
+
+  }
+
+  /* qtilde negative frequency only: not DC or nyquist */
+  if ( params->computeNegFreq )
+  {
+    for ( k = numPoints/2 + 2; k < numPoints - 1; ++k )
+    {
+      REAL4 r        = inputData1[k].re;
+      REAL4 s        = 0.0 - inputData1[k].im;    /* note complex conjugate */
+      /* REAL4 rBCV     = inputData2[k].re;
+	 REAL4 sBCV     = 0.0 - inputData2[k].im; */   /* note complex conjugate */
+      /* REAL4 rBCVSpin = inputData3[k].re;
+	 REAL4 sBCVSpin = 0.0 - inputData3[k].im;  */  /* note complex conjugate */
+
+      REAL4 x = tmpltSignal[k].re;
+      REAL4 y = tmpltSignal[k].im;
+
+      qtilde[k].re = r * x - s * y ;
+      qtilde[k].im = r * y + s * x ;
+      /*qtildeBCV[k].re = rBCV * x - sBCV * y ;
+	qtildeBCV[k].im = rBCV * y + sBCV * x ;*/
+      /*qtildeBCVSpin[k].re = rBCVSpin * x - sBCVSpin * y ;
+	qtildeBCVSpin[k].im = rBCVSpin * y + sBCVSpin * x ; */
+
+      qtildeBCV[k]     = qtilde[k];
+      /*qtildeBCVSpin[k] = qtilde[k]; */
+
+     
+      qtilde[k].re        *= a1;
+      qtildeBCV[k].re     *= a2;
+      /*qtildeBCVSpin[k].re *= a3; */
+
+      qtilde[k].im        *= a1;
+      qtildeBCV[k].im     *= a2;
+      /*qtildeBCVSpin[k].im *= a3; */
+
+    }
+   }
+ 
+  
+
+ 
  
 
 
