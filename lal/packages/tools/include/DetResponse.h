@@ -172,7 +172,7 @@ tagLALDetAMResponse
 LALDetAMResponse;
 
 /* <lalLaTeX>
-\subsubsection{Structure \texttt{LALDetAMResponseVector}}
+\subsubsection{Structure \texttt{LALDetAMResponseSeries}}
 \idx[Type]{LALDetAMResponseSeries}
 
 This structure aggregates together three \texttt{REAL4Vector}s containing
