@@ -28,7 +28,7 @@ a pair of interferometers for binary inspiral chirps.
 #include <lal/TwoInterfFindChirp.h>
 \end{verbatim}
 
-\input{TwoInterfFindChirpHDoc}
+%\input{TwoInterfFindChirpHDoc}
 </lalLaTeX>
 #endif
 
@@ -128,7 +128,7 @@ TwoInterfInspiralEvent;
 \subsubsection*{Structure \texttt{TwoInterfInspiralEvent}}
 \idx[Type]{TwoInterfInspiralEvent}
 
-\input{TwoInterfFindChirpHTwoInterfInspiralEvent}
+%\input{TwoInterfFindChirpHTwoInterfInspiralEvent}
 
 \noindent This structure describes inspiral events in the data of a pair 
 of detectors found by \texttt{TwoInterffindchirp}.
@@ -185,7 +185,7 @@ TwoInterfDataSegmentVector;
 \subsubsection*{Structure \texttt{TwoInterfDataSegmentVector}}
 \idx[Type]{TwoInterfDataSegmentVector}
 
-\input{TwoInterfFindChirpHTwoInterfDataSegmentVector}
+%\input{TwoInterfFindChirpHTwoInterfDataSegmentVector}
 
 \noindent This structure provides a LAL like vector structure for the
 \texttt{DataSegmentVector} structure defined elsewhere
@@ -216,7 +216,7 @@ TwoInterfFindChirpSegmentVector;
 \subsubsection*{Structure \texttt{TwoInterfFindChirpSegmentVector}}
 \idx[Type]{TwoInterfFindChirpSegmentVector}
 
-\input{TwoInterfFindChirpHTwoInterfFindChirpSegmentVector}
+%\input{TwoInterfFindChirpHTwoInterfFindChirpSegmentVector}
 
 \noindent This structure provides a LAL like vector structure for the
 \texttt{FindChirpSegmentVector} structure defined elsewhere in the
@@ -257,7 +257,7 @@ TwoInterfFindChirpInitParams;
 \subsubsection*{Structure \texttt{TwoInterfFindChirpInitParams}}
 \idx[Type]{TwoInterfFindChirpInitParams}
 
-\input{TwoInterfFindChirpHTwoInterfFindChirpInitParams}
+%\input{TwoInterfFindChirpHTwoInterfFindChirpInitParams}
 
 \noindent This structure provides the essential information for the
 filter initialization and memory allocation functions used in the
@@ -305,7 +305,7 @@ TwoInterfFindChirpFilterParamsVector;
 \subsubsection*{Structure \texttt{TwoInterfFindChirpFilterParams}}
 \idx[Type]{TwoInterfFindChirpFilterParams}
 
-\input{TwoInterfFindChirpHFindChirpFilterParams}
+%\input{TwoInterfFindChirpHFindChirpFilterParams}
 
 \noindent This structure provides the parameters 
 used by the \texttt{TwoInterfFindChirpFilterParams()} structure defined below.
@@ -337,7 +337,7 @@ TwoInterfFindChirpFilterParams;
 \subsubsection*{Structure \texttt{TwoInterfFindChirpFilterParams}}
 \idx[Type]{TwoInterfFindChirpFilterParams}
 
-\input{TwoInterfFindChirpHTwoInterfFindChirpFilterParams}
+%\input{TwoInterfFindChirpHTwoInterfFindChirpFilterParams}
 
 \noindent This structure provides the parameters used by the
 \texttt{TwoInterfFindChirpFilterSegment()} function.
@@ -376,13 +376,12 @@ tagTwoInterfFindChirpFilterInputVector
   FindChirpFilterInput         *filterInput;
 }
 TwoInterfFindChirpFilterInputVector;
-#pragma </lalVerbatim>
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{TwoInterfFindChirpFilterInputVector}}
 \idx[Type]{TwoInterfFindChirpFilterInputVector}
 
-\input{TwoInterfFindChirpHTwoInterFindChirpFilterInputVector}
+%\input{TwoInterfFindChirpHTwoInterFindChirpFilterInputVector}
 
 \noindent This structure groups the input data required for the
  \texttt{TwoInterfFindChirpFilterSegment()} function into a single structure.
@@ -404,13 +403,12 @@ tagTwoInterfFindChirpSPDataParamsVector
   FindChirpSPDataParams        *data;
 }
 TwoInterfFindChirpSPDataParamsVector;
-#pragma </lalVerbatim>
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{TwoInterfFindChirpSPDataParamsVector}}
 \idx[Type]{TwoInterfFindChirpSPDataParamsVector}
 
-\input{TwoInterfFindChirpHTwoInterfFindChirpSPDataParamsVector}
+%\input{TwoInterfFindChirpHTwoInterfFindChirpSPDataParamsVector}
 
 \noindent This structure contains the parameters needed to call the
 \texttt{TwoInterfFindChirpSPData()} function. It should be initialized by
