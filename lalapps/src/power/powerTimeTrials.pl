@@ -1,14 +1,11 @@
 #!/usr/bin/perl -w
-
 use strict;
 #-----------------------------------------------------------------------------------
 #
-# powerTimeTrials.pl - Program tests the speed of LALdataFind for different lengths of
-# data
-#
+# powerTimeTrials.pl - Program tests the speed of lalapps_power
+# for multiple lengths of data and then plots the result.
 #
 # Revision History
-# June, 2003 - Dennis Mackin <dsmackin@stupidlinux.com>  - Created the original version of the script
 # $Id$
 #-----------------------------------------------------------------------------------
 
@@ -21,7 +18,7 @@ open LOG, ">$LOG_FILE" or die "Couldn't open $LOG_FILE.";
 open DATA, ">$DATA_FILE" or die "Couldn't open $DATA_FILE.";
 
 #my @lengths = qw(10 100 1000 10000 100000 1000000);
-my @lengths = qw(256 512 1024 2048 4096);
+my @lengths = qw(512 1024 2048 4096);
 
 my $cacheFileLength = 10000;
 
@@ -74,7 +71,7 @@ foreach (@lengths){ $xtics .= $divider . $_; $divider = ",";}
 print PLOT_FILE << "PLOT_COMMANDS";
 	set term png small color
 	set xlabel "Number of Seconds of Data"
-	set ylabel "Time to Run LALdataFind"
+	set ylabel "Time to Run lalapps_power"
 	set data style line
 	set size 1.5,1.5
 	set logscale x
@@ -82,9 +79,7 @@ print PLOT_FILE << "PLOT_COMMANDS";
 	set timestamp
 	set output "$PLOT_FILE"
 	set title "lalapps_power Length Optimization (first second in test $startEpoch; tested on Hydra)"
-	set xlabel "Length of Run in Seconds"
 	set xtics ($xtics)
-	set ylabel "Time to Run"
 	set data style lp
 	plot "$DATA_FILE" using 1:2 t "lalapps_power (2*length -1  segments)"
 

@@ -21,13 +21,15 @@ use strict;
 #  GLOBAL VARIABLES
 #-----------------------------------------------------------------------------------
 # Check to make sure date of table is included as arg
-my $USAGE = "\nusage: countJobsTable.pl  YYMMDD \n\n";
-if(! $ARGV[0])
+my $USAGE = "\nusage: countJobsTable.pl  YYMMDD RUN_NUM \n\n";
+if(! $ARGV[1])
 {
 	die $USAGE;
 }
 #my $DATE = f_getDateYYMMDD();
 my $DATE =$ARGV[0];	
+
+my $runNum = $ARGV[1];
 
 my %STATUS = (
 					P => "Pending",
@@ -49,11 +51,11 @@ my $CACHE_PATH = "/home/dsmackin/tmp/cache";
 my $EXECUTABLE = "/home/dsmackin/bin/lalapps_power";
 
 #OUTPUT FILES
-my $OUTPUT_PATH = "/scratch/power/tests/$DATE";
+my $OUTPUT_PATH = "/scratch/power/tests/$DATE-$runNum";
 my $OUTPUT_FILE_ROOT  =  "search$DATE-EPOCH";
-my $CONDOR_SUBMIT_FILE = "/scratch/power/Search-$DATA_SET_NAME-$DATE.sub";
-my $JOBS_TABLE = "/scratch/power/power_jobs_$DATE.tbl";
-my $LOG = "/scratch/power/processTable-$DATE.log";
+my $CONDOR_SUBMIT_FILE = "$OUTPUT_PATH/Search-$DATA_SET_NAME-$DATE.sub";
+my $JOBS_TABLE = "$OUTPUT_PATH/power_jobs_$DATE.tbl";
+my $LOG = "$OUTPUT_PATH/processTable-$DATE.log";
 
 my $JOBS_TABLE_FIELDS = 6;
 
@@ -141,9 +143,10 @@ my $PRINT_SPECTRUM = "";
 #-----------------------------------------------------------------------------------
 
 open LOG, ">>$LOG";
-print LOG  "Began run at ", localtime(), "\n";
 
-f_setupOutputDirs($OUTPUT_PATH);
+my $t = localtime();
+print LOG  "Began run at $t\n";
+
 #set up the condor submit file by writing executable line 
 # and other statements relevant to all the jobs to be submitted
 f_writeCondorSubmitFileHeaders( );
@@ -155,21 +158,30 @@ f_writeCondorSubmitFileHeaders( );
 
 
 # now create the submit script using quality data file and the 
-# the playground seconds hash array
-f_processJobsTable ($JOBS_TABLE);
-									
-f_submitJobs($CONDOR_SUBMIT_FILE);					
+# the playground seconds hash array. The return code is one
+# if jobs need to be submitted to condor. 0 otherwise
+my $returnCode = f_processJobsTable ($JOBS_TABLE);
 
-print "Completed run at ", localtime(), "\n";
+if ($returnCode){					
+	f_submitJobs($CONDOR_SUBMIT_FILE);
+}
+
+$t = localtime();
+print "Completed run at $t\n";
+print LOG "Completed run at $t\n";
 close LOG;		
 									
 
 #-----------------------------------------------------------------------------------
 # f_processJobsTable
 #-----------------------------------------------------------------------------------
-#  
+#  - Reads through the records in the jobs table. if a record
+#    is P then the job is added to the condor submit script
+#   and the value of $submitCondor is set to 1 (true) to tell the
+#   calling part of the code that there are jobs to submit to condor
+#    
 #-----------------------------------------------------------------------------------
-# Returns
+# Returns $submitCondor 
 #-----------------------------------------------------------------------------------
 sub f_processJobsTable {
 
@@ -177,9 +189,11 @@ sub f_processJobsTable {
 	open JOBS_TABLE, $jobsTableFile
 			or die "In f_processJobsTable: Couldn't open $jobsTableFile." ;	
 				
-	my $tmpTableFile = "/scratch/power/jobsTable.tmp";
+	my $tmpTableFile = "$jobsTableFile.tmp";
 	open TMP_TABLE, ">$tmpTableFile"
 			or die "In f_processJobsTable: Couldn't open $tmpTableFile." ;	
+	
+	my $submitCondor = 0;
 	
 	while(<JOBS_TABLE>){
 		chomp;
@@ -197,6 +211,7 @@ sub f_processJobsTable {
 		if ($statusCode eq "P"){
 			print LOG "Adding $startSec - $stopSec to submit file.";
 			f_writeJobToCondorSubmitFile($startSec,  $stopSec, $framecache, $outfile);
+			$submitCondor = 1;
 			$statusCode = "R";
 		} elsif ($statusCode eq "R") { #Check output file for completion
 			$statusCode = f_checkForProgramCompletion($outfile);
@@ -209,10 +224,9 @@ sub f_processJobsTable {
 	}
 	close TMP_TABLE;
 	close JOBS_TABLE;
-	#unlink "$jobsTableFile";
-	print "rename($tmpTableFile, $jobsTableFile)";
+	
 	rename($tmpTableFile, $jobsTableFile);
-	return ;
+	return $submitCondor;
 }
 
 #-----------------------------------------------------------------------------------
@@ -373,29 +387,6 @@ sub f_submitJobs {
 	
 	#call rescedule to minimize delay before jobs are started
 	system("/opt/condor/sbin/condor_reschedule");
-}
-
-#-----------------------------------------------------------------------------------
-#   f_setupOutputDirs()
-#-----------------------------------------------------------------------------------
-#  - checks to see if output dirs exist. if not, creates them
-#-----------------------------------------------------------------------------------
-#  Returns 
-#-----------------------------------------------------------------------------------
-sub f_setupOutputDirs {
-	my $path = shift;
-	
-	my $xmldir = "$path/xml/";
-	my $logdir = "$path/log/";
-	my $errdir = "$path/err/";
-	my $outdir = "$path/out/";
-	
-	if(! -d $path) { mkdir $path or die "Couldn't create $path.\n";}
-	if(! -d $xmldir) { mkdir $xmldir or die "Couldn't create $xmldir.\n";}
-	if(! -d $logdir) { mkdir $logdir or die "Couldn't create $logdir\n";}
-	if(! -d $errdir) { mkdir $errdir or die "Couldn't create $errdir\n";}
-	if(! -d $outdir) { mkdir $outdir or die "Couldn't create $outdir\n";}			
-	
 }
 
 #-----------------------------------------------------------------------------------

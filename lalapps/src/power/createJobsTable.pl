@@ -10,6 +10,10 @@ use strict;
 # - This script works in conjunction with runJobsInJobTable.pl which
 #   submits the jobs from the table to condor and checks on their progress
 #   
+# *****WARNING *************
+#  This script does not properly overlap chunks of time. When a chunk of time starts next to another 
+# chunk of time, they should overlap by one second.
+# *****END OF WARNING *****
 #
 # Revision History
 # July, 2003 - Dennis Mackin <dsmackin@stupidlinux.com>  - Created the original version of the script
@@ -36,7 +40,7 @@ my $CACHE_PATH = "/scratch/power/cache";
 #OUTPUT FILES
 my $OUTPUT_PATH = "/scratch/power/tests";
 my $OUTPUT_FILE_ROOT  =  "search$DATE-EPOCH";
-my $JOBS_TABLE = "/scratch/power/power_jobs_$DATE.tbl";
+my $JOBS_TABLE = "power_jobs_$DATE.tbl";
 
 my $INSTRUMENT = "H";	
 my $TYPE = "RDS_R_L1";
@@ -46,8 +50,18 @@ my $TYPE = "RDS_R_L1";
 #  MAIN
 #-----------------------------------------------------------------------------------
 
+#get the next runNumber as string NNN
+my $runNum = f_getRunNumber($OUTPUT_PATH,$DATE);
+
+#call function to setup output dirs
+ f_setupOutputDirs($OUTPUT_PATH,$DATE, $runNum);
+ 
+ #set the path for all program output files
+ my $runPath = "$OUTPUT_PATH/$DATE-$runNum";
+ 
 #if the jobs table exists, move it to a backup file
-if (-f $JOBS_TABLE){ rename $JOBS_TABLE, "$JOBS_TABLE.bak";}
+if (-f "$runPath/$JOBS_TABLE"){ rename "$runPath/$JOBS_TABLE", "$runPath/$JOBS_TABLE.bak";}
+
 #playgroundSeconds is a reference to a hash array that contains all the playground
 # seconds.
 my $playgroundSeconds = lf_getPlaygroundSeconds($PLAYGROUND_FILE);
@@ -57,16 +71,19 @@ my $countPlaygroundSecs =0;
 foreach (keys %{$playgroundSeconds}){
 	$countPlaygroundSecs++;
 }
-print "playgroundSecs=$countPlaygroundSecs\n";
+print "The Playground is $countPlaygroundSecs seconds.\n\n";
 
 # now create the submit script using quality data file and the 
 # the playground seconds hash array
 f_createJobsForGoodData (
+									$runPath,
 									$DATA_QUALITY_FILE, 
 									$TIME_CHUNK_MIN_SIZE, 
 									$TIME_CHUNK_SIZE,
 									$playgroundSeconds);
-									
+
+print "The jobs table for run $DATE-$runNum has been created. \n\n".
+			"To submit the jobs to condor, run:\n\n processJobsTable.pl $DATE $runNum\n\n";									
 
 #-----------------------------------------------------------------------------------
 #  f_createJobsForGoodData
@@ -79,7 +96,7 @@ f_createJobsForGoodData (
 #-----------------------------------------------------------------------------------
 sub f_createJobsForGoodData {
 
-	my ($dataQualityFile, $minChunkSize, $maxChunkSize, $playgroundSecondsHash) = @_;
+	my ($runPath, $dataQualityFile, $minChunkSize, $maxChunkSize, $playgroundSecondsHash) = @_;
 	my ($chunkStart, $chunkStop);
 	
 	open DATA_QUALITY_FILE, $dataQualityFile
@@ -111,7 +128,7 @@ sub f_createJobsForGoodData {
 			#print "chunksize = ", $chunkStop - $chunkStart , "\n";
 			if(not exists ${$playgroundSecondsHash}{$chunkStop}  or  ($chunkStop - $chunkStart)  >= $maxChunkSize ){
 				
-				f_processChunk($chunkStart, $chunkStop);
+				f_processChunk($runPath,$chunkStart, $chunkStop);
 				
 				#fast forward to the next good second 
 				while(not exists(${$playgroundSecondsHash}{$chunkStop}) and $chunkStop < $stopSecond){ 
@@ -124,10 +141,9 @@ sub f_createJobsForGoodData {
 		
 		#process last chunk in data segment
 		#print "Processing last chunk.\n";
-		f_processChunk($chunkStart, $chunkStop);
+		f_processChunk($runPath,$chunkStart, $chunkStop);
 	}
 	
-	print "Completed loop.\n";
 	close DATA_QUALITY_FILE;
 	return ;
 }
@@ -141,18 +157,18 @@ sub f_createJobsForGoodData {
 #  Returns 
 #-----------------------------------------------------------------------------------
 sub  f_processChunk {
-	my ($startSec, $stopSec) = @_;
+	my ($runPath,$startSec, $stopSec) = @_;
 	
 	#print "Processing chunk $startSec, $stopSec.\n";
 	#make sure chunk is larger than minimum size
 	if($stopSec - $startSec > $TIME_CHUNK_MIN_SIZE){
 	
 		#build output file string
-		my $outfile = "$OUTPUT_PATH/xml/$OUTPUT_FILE_ROOT$startSec-$stopSec.xml";
+		my $outfile = "$runPath/xml/$OUTPUT_FILE_ROOT$startSec-$stopSec.xml";
 		my $framecache = "$CACHE_PATH/$startSec-$stopSec";
 		
 		f_findData($startSec,  $stopSec,$framecache);
-		f_writeJobsTable($startSec,  $stopSec, $framecache, $outfile, $JOBS_TABLE);
+		f_writeJobsTable($runPath,$startSec,  $stopSec, $framecache, $outfile, $JOBS_TABLE);
 	}
 }
 
@@ -171,7 +187,7 @@ sub f_findData {
 	if (! -f $framecache){
 		my $cmd =  "LALdataFind --lal-cache --instrument $INSTRUMENT --type RDS_R_L1 " .
 		 		" --start $startSec --end $stopSec > $framecache";
-		#print "$cmd\n";
+		print "$cmd\n";
 		system $cmd;
 	}
 }
@@ -191,9 +207,9 @@ sub f_findData {
 #  Returns 
 #-----------------------------------------------------------------------------------
 sub  f_writeJobsTable {
-	my ($startSec, $stopSec, $cachefile, $xmlFile, $tableFilePath) = @_;
+	my ($runPath,$startSec, $stopSec, $cachefile, $xmlFile, $tableFile) = @_;
 	
-	open TABLE, ">>$tableFilePath" or die "Couldn't open $tableFilePath.";
+	open TABLE, ">>$runPath/$tableFile" or die "Couldn't open $tableFile.";
 	#print  "P\tpending\tstart=$startSec\tstop=$stopSec\tcache=$cachefile\t$xmlFile\n";
 	print TABLE  "P\tpending\t$startSec\t$stopSec\t$cachefile\t$xmlFile\n";
 	close TABLE;
@@ -238,6 +254,64 @@ sub lf_getPlaygroundSeconds{
 	
 	close PLAYGROUND_FILE;
 	return \%playgroundSeconds;
+}
+
+#-----------------------------------------------------------------------------------
+#   f_setupOutputDirs()
+#-----------------------------------------------------------------------------------
+#  - checks to see if output dirs exist. if not, creates them
+#-----------------------------------------------------------------------------------
+#  Returns 
+#-----------------------------------------------------------------------------------
+sub f_setupOutputDirs {
+	my ($path, $date, $runNum) = @_;
+	
+	$path .= "/$date-$runNum";
+	
+	my $xmldir = "$path/xml/";
+	my $logdir = "$path/log/";
+	my $errdir = "$path/err/";
+	my $outdir = "$path/out/";
+	
+	if(! -d $path) { mkdir $path or die "Couldn't create $path.\n";}
+	if(! -d $xmldir) { mkdir $xmldir or die "Couldn't create $xmldir.\n";}
+	if(! -d $logdir) { mkdir $logdir or die "Couldn't create $logdir\n";}
+	if(! -d $errdir) { mkdir $errdir or die "Couldn't create $errdir\n";}
+	if(! -d $outdir) { mkdir $outdir or die "Couldn't create $outdir\n";}			
+	
+}
+#-----------------------------------------------------------------------------------
+#  f_getRunNumber
+#-----------------------------------------------------------------------------------
+#  - Looks in the run output directory to determine the next run
+#    number for the current day
+#-----------------------------------------------------------------------------------
+#  Returns the next run number as NNN
+#-----------------------------------------------------------------------------------
+sub f_getRunNumber {
+	my ($path, $date) = @_;
+	opendir PATH, $path	;
+	
+	#get a bottom to top list of the files that end with -XXX
+	my @dirs = reverse sort grep /$-\d{3}/, readdir PATH;
+	#my @tmp = reverse sort readdir PATH;
+	#foreach(@tmp){print "dir: $_\n";}
+	
+	closedir PATH;
+	
+	if(scalar @dirs > 0){
+		my @parts  = reverse split "-", $dirs[0];
+		my $maxNum = $parts[0];
+		my $nextNum = $maxNum + 1;
+		
+		#make sure nextNum is like NNN not NN or N
+		while(length($nextNum) < 3){ $nextNum = "0" . $nextNum;}
+		
+		return $nextNum;
+	}
+
+	#by default return 001
+	return "001";
 }
 
 

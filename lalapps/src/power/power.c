@@ -523,7 +523,7 @@ int main( int argc, char *argv[])
     *******************************************************************/
 
     /* Which error handler to use */
-    lal_errhandler = LAL_ERR_DFLT;
+    lal_errhandler = LAL_ERR_EXIT;
     set_debug_level( "3" );
 
     /* Make sure all pointers are NULL */
