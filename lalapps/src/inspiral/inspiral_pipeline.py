@@ -1,6 +1,6 @@
 #!/usr/bin/python2.2
 """
-pipeline.py - standalone inspiral pipeline driver script
+inspiral_pipeline.py - standalone inspiral pipeline driver script
 
 $Id$
 
@@ -213,7 +213,7 @@ queue
 
 def usage():
   msg = """\
-Usage: pipeline.py [OPTIONS]
+Usage: inspiral_pipeline.py [OPTIONS]
 
    -f, --config-file FILE       use configuration file FILE
    -v, --version                print version information and exit
