@@ -39,7 +39,7 @@ int debuglevel = 2;
 
 int main()
 {
-  const INT4 m = NUMBERWINDOWTYPES;
+  const INT4 m = NumberWindowTypes;
   const INT4 n = 65536;
 
   static Status status;
@@ -79,7 +79,7 @@ int main()
   {
     REAL4Vector   dum;
     REAL4Vector  *win  = NULL;
-    WindowParams  winp;
+    LALWindowParams  winp;
 
     dum.length  = hseq->vectorLength;
     dum.data    = hseq->data + j*hseq->vectorLength;
@@ -89,7 +89,7 @@ int main()
 
     /* create window */
     SCreateVector (&status, &win, winp.length);
-    Window (&status, win, &winp);
+    LALWindow (&status, win, &winp);
     wss->data[j] = winp.sumofsquares;
 
     /* apply window to data */
