@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------------- 
  * 
- * File Name: trigg2tmplt.c
+ * File Name: trig2tmplt.c
  *
  * Author: Brown, D. A.
  * 
@@ -15,12 +15,20 @@
 #include <string.h>
 #include <getopt.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <regex.h>
+#include <time.h>
+#include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
 #include <lalapps.h>
+#include <processtable.h>
 #include "ligolwbank.h"
 
 RCSID( "$Id$" );
 
+#define PROGRAM_NAME "trig2tmplt"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
@@ -68,45 +76,79 @@ int compareTmplts ( const void *a, const void *b )
  */
 
 
+#define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
+this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+  LALCalloc( 1, sizeof(ProcessParamsTable) ); \
+  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+   PROGRAM_NAME ); \
+   LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+     long_options[option_index].name ); \
+     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+     LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 int main ( int argc, char *argv[] )
 {
-  extern int vrbflg;            /* verbocity of lal function    */
-  char *inputFileName = NULL;   /* input file name              */
-  char *outputFileName = NULL;  /* output file name             */
+  extern int vrbflg;
+  LALStatus status = blank_status;
+  LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
+  char *inputFileName = NULL;
+  char *outputFileName = NULL;
+  CHAR comment[LIGOMETA_COMMENT_MAX];
   struct option long_options[] =
   {
     /* these options set a flag */
     {"verbose",                 no_argument,       &vrbflg,           1 },
-    {"input-file",              required_argument, 0,                'i'},
-    {"output-file",             required_argument, 0,                'o'},
+    {"comment",                 required_argument, 0,                'c'},
+    {"input",                   required_argument, 0,                'i'},
+    {"output",                  required_argument, 0,                'o'},
+    {"minimum-match",           required_argument, 0,                'm'},
     {"debug-level",             required_argument, 0,                'z'},
     {0, 0, 0, 0}
   };
   int i, numEvents, numUniq;
+  REAL4 minMatch = -1;
   SnglInspiralTable    *eventHead = NULL;
   SnglInspiralTable    *thisEvent = NULL;
   SnglInspiralTable    *prevEvent = NULL;
   SnglInspiralTable   **eventHandle = NULL;
+  ProcessParamsTable   *this_proc_param;
+  MetadataTable         proctable;
+  MetadataTable         procparams;
   MetadataTable         outputTable;
   LIGOLwXMLStream       results;
-  LALStatus             status = blank_status;
   
 
   /*
    *
-   * parse the command line arguments
+   * initialization
    *
    */
 
 
+  /* set up inital debugging values */
+  lal_errhandler = LAL_ERR_EXIT;
+  set_debug_level( "1" );
+
+  /* create the process and process params tables */
+  proctable.processTable = (ProcessTable *) 
+    LALCalloc( 1, sizeof(ProcessTable) );
+  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
+        &accuracy ), &status );
+  LAL_CALL( populate_process_table( &status, proctable.processTable, 
+        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
+    LALCalloc( 1, sizeof(ProcessParamsTable) );
+  memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
+
+  /* parse the command line arguments */
   while ( 1 )
   {
     /* getopt_long stores long option here */
     int option_index = 0;
     size_t namelen;
 
-    i = getopt_long_only( argc, argv, "i:o:z:", long_options, &option_index );
+    i = getopt_long_only( argc, argv, 
+        "c:i:o:m:z:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( i == - 1 )
@@ -130,12 +172,27 @@ int main ( int argc, char *argv[] )
         }
         break;
 
+      case 'c':
+        if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "comment must be less than %d characters\n",
+              long_options[option_index].name, LIGOMETA_COMMENT_MAX );
+          exit( 1 );
+        }
+        else
+        {
+          LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+        }
+        break;
+
       case 'i':
         {
           /* create storage for the input file name name */
           namelen = strlen( optarg ) + 1;
           inputFileName = (CHAR *) LALCalloc( namelen, sizeof(CHAR));
           memcpy( inputFileName, optarg, namelen );
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
         break;
 
@@ -145,12 +202,27 @@ int main ( int argc, char *argv[] )
           namelen = strlen( optarg ) + 1;
           outputFileName = (CHAR *) LALCalloc( namelen, sizeof(CHAR));
           memcpy( outputFileName, optarg, namelen );
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
+        break;
+
+      case 'm':
+        minMatch = (REAL4) atof( optarg );
+        if ( minMatch <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "minimum match of bank must be > 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, minMatch );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", minMatch );
         break;
         
       case 'z':
         set_debug_level( optarg );
         break;
+
       case '?':
         exit( 1 );
         break;
@@ -171,14 +243,16 @@ int main ( int argc, char *argv[] )
     exit( 1 );
   }
 
+  /* fill the comment, if a user has specified it, or leave it blank */
+  if ( ! *comment )
+  {
+    LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+  } else {
+    LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
+        "%s", comment );
+  }
   
-  /* 
-   *
-   * check that the input and output file names have been specified 
-   *
-   */
-
-
+  /* check that the input and output file names and match have been specified */
   if ( ! inputFileName )
   {
     fprintf( stderr, "--input-file must be specified\n" );
@@ -187,6 +261,11 @@ int main ( int argc, char *argv[] )
   if ( ! outputFileName )
   {
     fprintf( stderr, "--output-file must be specified\n" );
+    exit( 1 );
+  }
+  if ( minMatch < 0 )
+  {
+    fprintf( stderr, "--minimum-match must be specified\n" );
     exit( 1 );
   }
 
@@ -276,6 +355,35 @@ int main ( int argc, char *argv[] )
   
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, outputFileName),
       &status );
+  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
+        &accuracy ), &status );
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), 
+      &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable, 
+        process_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  LALFree( proctable.processTable );
+
+  /* erase the first empty process params entry */
+  {
+    ProcessParamsTable *emptyPPtable = procparams.processParamsTable;
+    procparams.processParamsTable = procparams.processParamsTable->next;
+    LALFree( emptyPPtable );
+  }
+
+  /* write the process params table */
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ), 
+      &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, procparams, 
+        process_params_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  while( procparams.processParamsTable )
+  {
+    this_proc_param = procparams.processParamsTable;
+    procparams.processParamsTable = this_proc_param->next;
+    LALFree( this_proc_param );
+  }
+  
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sngl_inspiral_table ), 
       &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, outputTable, 
