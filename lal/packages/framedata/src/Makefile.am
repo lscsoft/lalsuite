@@ -12,7 +12,7 @@ EXTRA_TEXSOURCES = $(FRAMEDATASOURCES) FrameSeries.c
 endif
 
 EXTRA_DIST = $(FRAMEDATASOURCES) $(OLDFRAMEDATASOURCES) \
-        FrameSeries.m4 FrameSeriesRead.m4 FrameSeriesWrite.m4
+        FrameSeries.c FrameSeries.m4 FrameSeriesRead.m4 FrameSeriesWrite.m4
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MAINTAINERCLEANFILES = FrameSeries.c
