@@ -1255,6 +1255,43 @@ LALFindChirpBCVSpinData (
     )
 
 {
+  UINT4                 i, k;
+  UINT4                 cut;
+
+  REAL4                *w;
+  REAL4                *amp;
+  REAL4                *ampBCV; 
+  COMPLEX8             *wtilde;
+  REAL4		       *tmpltPower;
+  REAL4		       *tmpltPowerBCV;
+
+  REAL4Vector          *dataVec;
+  REAL4                *spec;
+  COMPLEX8             *resp;
+
+  COMPLEX8             *outputData;
+  COMPLEX8             *outputDataBCV;
+
+  UINT4                *chisqBin    = NULL;
+  UINT4                *chisqBinBCV = NULL;
+  UINT4                 numChisqBins;
+  UINT4                 chisqPt;
+  REAL4                 increment;
+  REAL4                 nextBin;
+  REAL4                 partSum;
+  REAL4                 Power  = 0.0 ;
+  REAL4                 PowerBCV = 0.0 ;
+  REAL4                 I = 0.0;
+  REAL4                 J = 0.0;
+  REAL4                 K = 0.0;
+  REAL4                 L = 0.0;
+  REAL4                 M = 0.0;
+
+  FindChirpSegment     *fcSeg;
+  DataSegment          *dataSeg;
+
+
+
 /*declaration*/
  INITSTATUS( status, "LALFindChirpBCVSpinData", FINDCHIRPSPDATAC );
  ATTATCHSTATUSPTR( status );
