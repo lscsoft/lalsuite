@@ -159,14 +159,9 @@ int main( int argc, char *argv[])
     ProcessParamsTable   *this_proc_param;
     LIGOLwXMLStream      xmlStream;
 
-   
-    /* new application instance variables added 7/17/02 MSW */
-    /* INT4                  sineBurst     = FALSE;    insertion of shaped sine burst  
-    REAL4                 sineFreq      = 100.0;    nominal frequency of sine burst 
-    REAL4                 sineOffset    = 1.0;     sin-burst center in time series 
-    REAL4                 sineAmpl      = 1.0;     peak amplitude of sine burst    
-    REAL4                 sineWidth     = 1.0;.     width (in sigmas) of sine burst */
-
+    /*  used in injections */
+    COMPLEX8FrequencySeries     *injRespPtr;    
+ 
     /* units and other things */
     const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
@@ -265,7 +260,7 @@ int main( int argc, char *argv[])
         makeWhiteNoise(&stat, &series, noiseAmpl, seed);
     }
 
-    /* insert shaped sine burst into time series if specified */
+    /* insert shaped sine burst into time series if specified 
     if (sineBurst)
     {
       double deltaT  = series.deltaT;
@@ -283,7 +278,8 @@ int main( int argc, char *argv[])
         series.data->data[index] = sample;
       }
     }
-    
+    */
+
     /* write diagnostic info to disk */
     if ( printData ){
       LALPrintTimeSeries( &series, "./timeseries.dat" );
@@ -308,6 +304,41 @@ int main( int argc, char *argv[])
       LAL_CALL( LALExtractFrameResponse( &stat, &resp, calCacheFile, ifo ),
           &stat );
     } 
+
+    /*****************************************************************/
+
+    /* Injections (10/13/03) */
+    if( sineBurst )
+    {
+      SimBurstTable *injections = NULL;
+
+       injections =  (SimBurstTable *)LALMalloc( sizeof(SimBurstTable) );
+    
+      /* Fill in the injection structure */
+      injections->geocent_start_time.gpsSeconds = 723345762;
+      injections->geocent_start_time.gpsNanoSeconds = 0;
+      injections->duration                       = 1.0;
+      injections->bandwidth                      = 100.0;
+      injections->longitude                      = 50.0;
+      injections->latitude                       = 50.0;
+      injections->hrss                           = sineAmpl;
+      injections->freq                           = sineFreq;
+      injections->tau                            = sineWidth;
+      injections->next                           = NULL;
+      /* Inject */
+
+      injRespPtr = &resp;
+      LAL_CALL( LALBurstInjectSignals( &stat, &series, injections, injRespPtr ), 
+          &stat ); 
+    }
+
+
+
+
+
+    /**********************************************************************/
+
+
 
     /* Finally call condition data */
     LAL_CALL( EPConditionData( &stat, &series, searchParams), &stat);
