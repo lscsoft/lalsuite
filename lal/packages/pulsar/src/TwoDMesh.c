@@ -129,10 +129,15 @@ LALCreateTwoDMesh( LALStatus          *stat,
   params->nOut = 0;
   head.next = NULL;
   headPtr = &head;
+#ifndef NDEBUG
+  if ( lalDebugLevel&LALINFO )
+    LALInfo( stat, "Generating mesh\n" );
+#endif
   TRY( LALTwoDMesh( stat->statusPtr, &headPtr, params ), stat );
 #ifndef NDEBUG
   if ( lalDebugLevel&LALINFO )
     if ( ( params->nIn == 0 ) || ( params->nOut < params->nIn ) ) {
+      LALPrintError( "\n" );
       LALInfo( stat, "Mesh complete" );
       LALPrintError( "\tnumber of mesh points: %u\n", params->nOut );
     }

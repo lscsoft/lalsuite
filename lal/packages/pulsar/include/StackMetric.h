@@ -204,6 +204,8 @@ LALProjectMetric( LALStatus *, REAL8Vector *metric, BOOLEAN errors );
 
 /* <lalLaTeX>
 \newpage\input{StackMetricTestC}
+
+\newpage\input{SkyMetricTestC}
 </lalLaTeX> */
 
 #ifdef  __cplusplus

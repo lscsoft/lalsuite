@@ -154,6 +154,11 @@ while (0)
 char *lalWatch;
 #endif
 
+#include <lal/LALStdio.h>
+#define MAXLEN 1024
+int
+fprintderr( FILE *fp, REAL8 x, REAL8 dx );
+
 int
 main(int argc, char **argv)
 {
@@ -346,9 +351,95 @@ main(int argc, char **argv)
     fprintf( stdout, "\n" );
   }
 
+  if ( nSpin == 0 ) {
+    if ( params.errors ) {
+      REAL8 det = metric->data[4]*metric->data[10]
+	- metric->data[8]*metric->data[8];
+      REAL8 ddet = fabs( metric->data[4]*metric->data[11] )
+	+ fabs( metric->data[5]*metric->data[10] )
+	+ fabs( metric->data[8]*metric->data[9] )*2.0;
+      fprintderr( stdout, det, ddet );
+      fprintf( stdout, "\n" );
+    } else {
+      REAL8 det = metric->data[2]*metric->data[5]
+	- metric->data[4]*metric->data[4];
+      fprintf( stdout, "%10.3e\n", det );
+    }
+  }
+
   /* Free the metric, and exit. */
   SUB( LALDDestroyVector( &stat, &metric ), &stat );
   LALCheckMemoryLeaks();
   INFO( STACKMETRICTESTC_MSGENORM );
   return STACKMETRICTESTC_ENORM;
+}
+
+
+int
+fprintderr( FILE *fp, REAL8 x, REAL8 dx ) {
+  CHAR format[MAXLEN]; /* format string for fprintf() */
+  INT4 gsd = 0;        /* place index of greatest significant digit */
+  INT4 lsd = 0;        /* place index of least significant digit */
+  REAL8 norm;          /* normalization factor */
+
+  /* Compute gsd, lsd, y, and dy. */
+  if ( dx < LAL_REAL8_EPS*fabs( x ) )
+    dx = 0.0;
+  if ( dx > 0.0 ) {
+    REAL8 lsdd = log( 0.5*dx )/log( 10.0 );
+    if ( lsdd >= 0.0 )
+      lsd = (INT4)( lsdd );
+    else
+      lsd = (INT4)( lsdd ) - 1;
+  }
+  if ( x != 0.0 ) {
+    REAL8 gsdd = log( fabs( x ) )/log( 10.0 );
+    if ( gsdd >= 0.0 )
+      gsd = (INT4)( gsdd );
+    else
+      gsd = (INT4)( gsdd ) - 1;
+  }
+
+  /* If x is zero, format is determined entirely by dx. */
+  if ( x == 0.0 ) {
+    if ( dx <= 0.0 )
+      return fprintf( fp, "0" );
+    if ( abs( lsd ) > 3 ) {
+      norm = pow( 10.0, -lsd );
+      return fprintf( fp, "( 0 +/- %.0f )e%+i", dx*norm, lsd );
+    }
+    if ( lsd <= 0 ) {
+      LALSnprintf( format, MAXLEN, "%%.%if +/- %%.%if", -lsd, -lsd );
+      return fprintf( fp, format, 0.0, dx );
+    }
+    norm = pow( 10.0, -lsd );
+    LALSnprintf( format, MAXLEN, "0 +/- %%.0f%%0%ii", lsd );
+    return fprintf( fp, format, dx*norm, 0 );
+  }
+
+  /* If number is exact to 8-byte precision, print it as such. */
+  if ( dx <= 0.0 ) {
+    if ( abs( gsd ) > 3 )
+      return fprintf( fp, "%.16e", x );
+    LALSnprintf( format, MAXLEN, "%%.%if", 16 - gsd );
+    return fprintf( fp, format, x );
+  }
+
+  /* Otherwise, format depends on x and dx. */
+  if ( gsd < lsd )
+    gsd = lsd;
+  if ( lsd > 3 || gsd < -3 ) {
+    norm = pow( 10.0, -gsd );
+    LALSnprintf( format, MAXLEN, "( %%.%if +/- %%.%if )e%+i",
+		 gsd - lsd, gsd - lsd, gsd );
+    return fprintf( fp, format, x*norm, dx*norm );
+  }
+  if ( lsd <= 0 ) {
+    LALSnprintf( format, MAXLEN, "%%.%if +/- %%.%if", -lsd, -lsd );
+    return fprintf( fp, format, x, dx );
+  }
+  norm = pow( 10.0, -lsd );
+  LALSnprintf( format, MAXLEN, "%%.0f%%0%ii +/- %%.0f%%0%ii", lsd,
+	       lsd );
+  return fprintf( fp, format, x*norm, 0, dx*norm, 0 );
 }

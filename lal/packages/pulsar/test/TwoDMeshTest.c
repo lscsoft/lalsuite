@@ -13,15 +13,16 @@ ellipses.
 
 \subsubsection*{Usage}
 \begin{verbatim}
-TwoDMeshTest [-o outfile] [-p psfile flags] [-d debug] [-n nmax cmax]
-             [-b dx1 dy1 dx2 dy2 ] [-e a b c]
+TwoDMeshTest [-o outfile] [-p psfile flags] [-d debug] [-m mismatch nmax cmax]
+             [-i metricfile rangefile] [-b x1 y1 x2 y2 ] [-e a b c]
              [-x dadx dbdx dcdx] [-y dady dbdy dcdy]
 \end{verbatim}
 
 \subsubsection*{Description}
 
-This test program creates a template mesh for a parameter space with a
-constant mismatch metric.  The following option flags are accepted:
+This test program creates a template mesh for a parameter space with
+an arbitrary mismatch metric.  The following option flags are
+accepted:
 \begin{itemize}
 \item[\texttt{-o}] Writes the output mesh list to the file
 \verb@outfile@.  If absent, no output is written.
@@ -30,18 +31,27 @@ constant mismatch metric.  The following option flags are accepted:
 no plot is made.
 \item[\texttt{-d}] Sets the debug level to \verb@debug@.  If
 absent, a debug level of zero is used.
-\item[\texttt{-n}] Sets the maximum number of mesh points to
-\verb@nmax@ and the maximum estimated number of columns to
-\verb@cmax@.  If absent, they are set to zero (meaining no maximum).
+\item[\texttt{-m}] Sets the maximum mismatch to \verb@mismatch@,
+maximum number of mesh points to \verb@nmax@ and the maximum estimated
+number of columns to \verb@cmax@.  If \verb@mismatch@ is not in the
+range (0,1], it is taken to be 1.  If \verb@nmax@ or \verb@cmax@ is
+non-positive, it is ignored (no maximum).  If this option is not
+given, \verb@-m 1 0 0@ is assumed.
+\item[\texttt{-i}] Determines the metric and the parameter space
+boundary from \verb@REAL4Grid@ structures stored in the files
+\verb@metricfile@ and \verb@rangefile@, read using the generic parser
+\verb@LALSReadGrid()@.  The formats for these grids are discussed
+below.  If present, this option \emph{overrides} the \verb@-b@,
+\verb@-e@, \verb@-x@, and \verb@-y@ options, below.  If absent, these
+options, or their defaults, will be used.
 \item[\texttt{-b}] Sets the parameter space boundary to be a
-parallelogram defined by the vectors (\verb@dx1@,\verb@dy1@) and
-(\verb@dx2@,\verb@dy2@) from the origin.  If absent, the region is
+parallelogram defined by the vectors (\verb@x1@,\verb@y1@) and
+(\verb@x2@,\verb@y2@) from the origin.  If absent, the region is
 taken to be a unit square.
 \item[\texttt{-e}] Sets the parameters of the mismatch ellipse at the
 origin: its principal axis lengths are \verb@a@ and \verb@b@ units,
 and the angle from the $x$-axis to the first principal axis is
-\verb@c@ radians.  If absent, the values \verb@a@=0.1, \verb@b@=0.05,
-and \verb@c@=1 are assumed.
+\verb@c@ radians.  If absent, \verb@-e 0.1 0.05 1@ is assumed.
 \item[\texttt{-x}] Sets the rates of change in the $x$-direction of
 \verb@a@, \verb@b@, and \verb@c@ (above) to \verb@dadx@, \verb@dbdx@,
 and \verb@dcdx@, respectively.  If absent, the rates are taken to be
@@ -51,6 +61,7 @@ zero.
 and \verb@dcdy@, respectively.  If absent, the rates are taken to be
 zero.
 \end{itemize}
+
 
 \subsubsection*{Exit codes}
 ****************************************** </lalLaTeX><lalErrTable> */
@@ -82,13 +93,41 @@ requested, it is generated using \verb@LALPlotTwoDMesh()@, using the
 value of the command-line number \verb@flags@ to set the plotting
 parameters.  Each of these functions is discussed below.
 
-\paragraph{Parameter ranges:} The parameter space is defined to be a
-parallelogram with one corner on the origin, and two sides defined by
-vectors $(x_1,y_1)$ and $(x_2,y_2)$.  Without loss of generality we
-assume that $x_1<x_2$.  The functions defining the boundaries are
-denoted $y_{a,b}(x)$, and we make no assumption about their signs or
-relative order.  The algorithm used then depends on the signs of $x_1$
-and $x_2$.
+\paragraph{Metric and range grid files:}  If the \verb@-i@ option was
+given, the metric and parameter ranges are read from the files named
+by the \verb@metricfile@ and \verb@rangefile@ arguments.  These two
+files must be in a format parseable by \verb@LALSReadGrid()@; see the
+documentation of that routine for more details.
+
+The \verb@REAL4Grid@ extracted from \verb@metricfile@ must
+have grid dimension 2 and data dimension 3: the grid dimensions refer
+to the $(x,y)$ coordinates of the points where the metric is
+evaluated, while the third dimension must have length 3, storing the
+metric components $g_{xx}$, $g_{yy}$, and $g_{xy}$ (in that order) at
+each point.  Within the \verb@TwoDMesh.h@ routines, this metric grid
+is interpolated using \verb@LALInterpolateMetricGrid()@.
+
+The \verb@REAL4Grid@ extracted from \verb@rangefile@ must have grid
+dimension 1 and data dimension 2: the grid dimension refers to an $x$
+coordinate, and the second dimension must have length 3, storing the
+lower and upper boundaries $y_1(x)$ and $y_2(x)$ at each sampled value
+of $x$.  Within the \verb@TwoDMesh.h@ routines, this range grid is
+interpolated using \verb@LALInterpolateRangeGrid()@.
+
+If the \verb@-i@ option is \emph{not} given, then the parameter
+boundary and metric are determined by internal routines, with default
+settings that can be overridden using command-line options \verb@-p@,
+\verb@-e@, \verb@-x@, and \verb@-y@.
+
+\paragraph{Parameter ranges:} The parameter space boundary can be
+specified by input parameters \verb@x1@$=x_1$, \verb@x2@$=x_2$,
+\verb@y1@$=y_1$, and \verb@y2@$=y_2$.  The parameter space is then
+defined to be a parallelogram with one corner on the origin, and two
+sides defined by vectors $(x_1,y_1)$ and $(x_2,y_2)$.  Without loss of
+generality we assume that $x_1<x_2$.  The functions defining the
+boundaries are denoted $y_{a,b}(x)$, and we make no assumption about
+their signs or relative order.  The algorithm used then depends on the
+signs of $x_1$ and $x_2$.
 
 \medskip\noindent
 If $x_1=x_2=0$, then the parameter space is singular, and no mesh need
@@ -193,6 +232,7 @@ number $x+iy$ in the range $[-\pi,\pi]$.
 lalDebugLevel
 LALPrintError()                 LALCheckMemoryLeaks()
 LALCreateTwoDMesh()             LALDestroyTwoDMesh()
+LALSReadGrid()                  LALSDestroyGrid()
 LALPlotTwoDMesh()
 \end{verbatim}
 
@@ -208,6 +248,8 @@ LALPlotTwoDMesh()
 #include <lal/FileIO.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
+#include <lal/Grid.h>
+#include <lal/StreamInput.h>
 #include <lal/TwoDMesh.h>
 #include "TwoDMeshPlot.h"
 
@@ -215,10 +257,10 @@ NRCSID( TWODMESHTESTC, "$Id$" );
 
 /* Default parameter settings. */
 int lalDebugLevel = 0;
-#define DX1 (1.0)
-#define DY1 (0.0)
-#define DX2 (0.0)
-#define DY2 (1.0)
+#define X1 (1.0)
+#define Y1 (0.0)
+#define X2 (0.0)
+#define Y2 (1.0)
 #define A_DEFAULT (0.1)
 #define B_DEFAULT (0.05)
 #define C_DEFAULT (1.0)
@@ -228,12 +270,12 @@ int lalDebugLevel = 0;
 #define DADY (0.0)
 #define DBDY (0.0)
 #define DCDY (0.0)
-
-/* Other numerical constants. */
-#define MISMATCH (1.0)  /* arbitrary mismatch threshold used */
+#define MISMATCH (1.0)
 
 /* Usage format string. */
-#define USAGE "Usage: %s [-o outfile] [-p psfile flags] [-d debug] [-n nmax cmax]\n\t[-b dx1 dy1 dx2 dy2 ] [-e a b c]\n\t[-x dadx dbdx dcdx] [-y dady dbdy dcdy]\n"
+#define USAGE "Usage: %s [-o outfile] [-p psfile flags] [-d debug]\n" \
+"\t[-m mismatch nmax cmax] [-b x1 y1 x2 y2 ] [-e a b c]\n"        \
+"\t[-x dadx dbdx dcdx] [-y dady dbdy dcdy] [-i metricfile rangefile]\n"
 
 /* Macros for printing errors and testing subroutines. */
 #define ERROR( code, msg, statement )                                \
@@ -282,26 +324,30 @@ LALMetricTest( LALStatus *stat,
 int
 main(int argc, char **argv)
 {
-  INT4 arg;                  /* argument counter */
-  static LALStatus stat;     /* top-level status structure */
-  CHAR *outfile = NULL;      /* name of output file */
-  CHAR *psfile = NULL;       /* name of PostScript output file */
-  UINT2 flags = 0;           /* plotting flags */
-  UINT4 nmax = 0, cmax = 0;  /* maximum numbers of points/columns */
-  REAL4 rangeParams[4];      /* LALRangeTest() parameters */
-  REAL4 metricParams[9];     /* LALMetricTest() parameters */
-  TwoDMeshParamStruc params; /* LALCreateTwoDMesh() parameters */
-  TwoDMeshNode *mesh = NULL; /* head of mesh list */
-  FILE *fp;                  /* output file pointer */
+  INT4 arg;                     /* argument counter */
+  static LALStatus stat;        /* top-level status structure */
+  REAL4 rangeParams[4];         /* LALRangeTest() params. */
+  REAL4 metricParams[9];        /* LALMetricTest() params. */
+  REAL4Grid *metricGrid = NULL; /* LALInterpolateMetric() params. */
+  REAL4Grid *rangeGrid = NULL;  /* LALInterpolateRangeGrid() params. */
+  TwoDMeshParamStruc params;    /* LALCreateTwoDMesh() params. */
+  TwoDMeshNode *mesh = NULL;    /* head of mesh list */
 
-  /* Boundary parameters: */
-  REAL4 dx1 = DX1, dy1 = DY1, dx2 = DX2, dy2 = DY2;
-  /* Ellipse parameters: */
-  REAL4 a = A_DEFAULT, b = B_DEFAULT, c = C_DEFAULT;
-  REAL4 dadx = DADX, dbdx = DBDX, dcdx = DCDX;
-  REAL4 dady = DADY, dbdy = DBDY, dcdy = DCDY;
-  /* Minimum size of ellipse axis, and a temporary value. */
-  REAL4 axisMin, axisTemp;
+  /* Command-line arguments. */
+  CHAR *outfile = NULL;                       /* output filename */
+  CHAR *psfile = NULL;                        /* PostScript filename */
+  UINT2 flags = 0;                            /* PostScript flags */
+  CHAR *metricfile = NULL, *rangefile = NULL; /* input filenames */
+  REAL4 mismatch = MISMATCH;                  /* maximum mismatch */
+  UINT4 nmax = 0, cmax = 0;                   /* maximum nodes/columns */
+  REAL4 x1 = X1, y1 = Y1, x2 = X2, y2 = Y2;   /* boundary params. */
+  REAL4 a = A_DEFAULT, b = B_DEFAULT, c = C_DEFAULT; /* ellipse params. */
+  REAL4 dadx = DADX, dbdx = DBDX, dcdx = DCDX;       /* ellipse x gradient */
+  REAL4 dady = DADY, dbdy = DBDY, dcdy = DCDY;       /* ellipse y gradient */
+
+  /******************************************************************
+   * ARGUMENT PARSING                                               *
+   ******************************************************************/
 
   /* Parse argument list.  arg stores the current position. */
   arg = 1;
@@ -311,7 +357,7 @@ main(int argc, char **argv)
       if ( argc > arg + 1 ) {
 	arg++;
 	outfile = argv[arg++];
-      }else{
+      } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
@@ -323,7 +369,7 @@ main(int argc, char **argv)
 	arg++;
 	psfile = argv[arg++];
 	flags = atoi( argv[arg++] );
-      }else{
+      } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
@@ -334,19 +380,20 @@ main(int argc, char **argv)
       if ( argc > arg + 1 ) {
 	arg++;
 	lalDebugLevel = atoi( argv[arg++] );
-      }else{
+      } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
       }
     }
     /* Parse maximum numbers option. */
-    else if ( !strcmp( argv[arg], "-n" ) ) {
+    else if ( !strcmp( argv[arg], "-m" ) ) {
       if ( argc > arg + 2 ) {
 	arg++;
 	nmax = atoi( argv[arg++] );
 	cmax = atoi( argv[arg++] );
-      }else{
+	mismatch = atof( argv[arg++] );
+      } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
@@ -356,11 +403,11 @@ main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-b" ) ) {
       if ( argc > arg + 4 ) {
 	arg++;
-	dx1 = atof( argv[arg++] );
-	dy1 = atof( argv[arg++] );
-	dx2 = atof( argv[arg++] );
-	dy2 = atof( argv[arg++] );
-      }else{
+	x1 = atof( argv[arg++] );
+	y1 = atof( argv[arg++] );
+	x2 = atof( argv[arg++] );
+	y2 = atof( argv[arg++] );
+      } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
@@ -373,7 +420,7 @@ main(int argc, char **argv)
 	a = atof( argv[arg++] );
 	b = atof( argv[arg++] );
 	c = atof( argv[arg++] );
-      }else{
+      } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
@@ -386,7 +433,7 @@ main(int argc, char **argv)
 	dadx = atof( argv[arg++] );
 	dbdx = atof( argv[arg++] );
 	dcdx = atof( argv[arg++] );
-      }else{
+      } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
@@ -399,7 +446,19 @@ main(int argc, char **argv)
 	dady = atof( argv[arg++] );
 	dbdy = atof( argv[arg++] );
 	dcdy = atof( argv[arg++] );
-      }else{
+      } else {
+	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
+        LALPrintError( USAGE, *argv );
+        return TWODMESHTESTC_EARG;
+      }
+    }
+    /* Parse metric and range grid input option. */
+    else if ( !strcmp( argv[arg], "-i" ) ) {
+      if ( argc > arg + 2 ) {
+	arg++;
+	metricfile = argv[arg++];
+	rangefile = argv[arg++];
+      } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
@@ -413,85 +472,128 @@ main(int argc, char **argv)
     }
   } /* End of argument parsing loop. */
 
-  /* Set up range function and parameters. */
-  if ( ( dx1 == 0.0 ) && ( dx2 == 0.0 ) ) {
-    ERROR( TWODMESHTESTC_EBAD, TWODMESHTESTC_MSGEBAD,
-	   "dx1 = dx2 = 0:" );
-    return TWODMESHTESTC_EBAD;
-  }
-  if ( dx1 < dx2 ) {
-    rangeParams[0] = dx1;
-    rangeParams[1] = dy1;
-    rangeParams[2] = dx2;
-    rangeParams[3] = dy2;
-  } else {
-    rangeParams[0] = dx2;
-    rangeParams[1] = dy2;
-    rangeParams[2] = dx1;
-    rangeParams[3] = dy1;
-  }
-  params.getRange = LALRangeTest;
-  params.rangeParams = (void *)( rangeParams );
-  if ( dx1*dx2 <= 0.0 ) {
-    if ( dx1 < dx2 ) {
-      params.domain[0] = dx1;
-      params.domain[1] = dx2;
-    } else {
-      params.domain[0] = dx2;
-      params.domain[1] = dx1;
+  /******************************************************************
+   * SETUP (INTERNAL METRIC/RANGE FUNCTIONS)                        *
+   ******************************************************************/
+
+  if ( !metricfile ) {
+    REAL4 axisMin, axisTemp; /* Min. ellipse size, and a temp value */
+
+    /* Set up range function and parameters. */
+    if ( ( x1 == 0.0 ) && ( x2 == 0.0 ) ) {
+      ERROR( TWODMESHTESTC_EBAD, TWODMESHTESTC_MSGEBAD,
+	     "x1 = x2 = 0:" );
+      return TWODMESHTESTC_EBAD;
     }
-  } else {
-    if ( dx1 < 0.0 ) {
-      params.domain[0] = dx1 + dx2;
-      params.domain[1] = 0.0;
+    if ( x1 < x2 ) {
+      rangeParams[0] = x1;
+      rangeParams[1] = y1;
+      rangeParams[2] = x2;
+      rangeParams[3] = y2;
     } else {
-      params.domain[0] = 0.0;
-      params.domain[1] = dx1 + dx2;
+      rangeParams[0] = x2;
+      rangeParams[1] = y2;
+      rangeParams[2] = x1;
+      rangeParams[3] = y1;
     }
+    params.getRange = LALRangeTest;
+    params.rangeParams = (void *)( rangeParams );
+    if ( x1*x2 <= 0.0 ) {
+      if ( x1 < x2 ) {
+	params.domain[0] = x1;
+	params.domain[1] = x2;
+      } else {
+	params.domain[0] = x2;
+	params.domain[1] = x1;
+      }
+    } else {
+      if ( x1 < 0.0 ) {
+	params.domain[0] = x1 + x2;
+	params.domain[1] = 0.0;
+      } else {
+	params.domain[0] = 0.0;
+	params.domain[1] = x1 + x2;
+      }
+    }
+
+    /* Check that metric will be positive everywhere in the region. */
+    axisMin = a;
+    axisTemp = a + dadx*x1 + dady*y1;
+    if ( axisTemp < axisMin ) axisMin = axisTemp;
+    axisTemp = a + dadx*x2 + dady*y2;
+    if ( axisTemp < axisMin ) axisMin = axisTemp;
+    axisTemp = a + dadx*( x1 + x2 ) + dady*( y1 + y2 );
+    if ( axisTemp < axisMin ) axisMin = axisTemp;
+    if ( axisMin <= 0.0 ) {
+      ERROR( TWODMESHTESTC_EMETRIC, TWODMESHTESTC_MSGEMETRIC,
+	     "axis a:" );
+      return TWODMESHTESTC_EBAD;
+    }
+    axisTemp = b;
+    if ( axisTemp < axisMin ) axisMin = axisTemp;
+    axisTemp = b + dbdx*x1 + dbdy*y1;
+    if ( axisTemp < axisMin ) axisMin = axisTemp;
+    axisTemp = b + dbdx*x2 + dbdy*y2;
+    if ( axisTemp < axisMin ) axisMin = axisTemp;
+    axisTemp = b + dbdx*( x1 + x2 ) + dbdy*( y1 + y2 );
+    if ( axisTemp < axisMin ) axisMin = axisTemp;
+    if ( axisMin <= 0.0 ) {
+      ERROR( TWODMESHTESTC_EMETRIC, TWODMESHTESTC_MSGEMETRIC,
+	     "axis b:" );
+      return TWODMESHTESTC_EBAD;
+    }
+
+    /* Set up metric function and parameters. */
+    metricParams[0] = a;
+    metricParams[1] = b;
+    metricParams[2] = c;
+    metricParams[3] = dadx;
+    metricParams[4] = dbdx;
+    metricParams[5] = dcdx;
+    metricParams[6] = dady;
+    metricParams[7] = dbdy;
+    metricParams[8] = dcdy;
+    params.getMetric = LALMetricTest;
+    params.metricParams = (void *)( metricParams );
   }
 
-  /* Check that metric will be positive everywhere in the region. */
-  axisMin = a;
-  axisTemp = a + dadx*dx1 + dady*dy1;
-  if ( axisTemp < axisMin ) axisMin = axisTemp;
-  axisTemp = a + dadx*dx2 + dady*dy2;
-  if ( axisTemp < axisMin ) axisMin = axisTemp;
-  axisTemp = a + dadx*( dx1 + dx2 ) + dady*( dy1 + dy2 );
-  if ( axisTemp < axisMin ) axisMin = axisTemp;
-  if ( axisMin <= 0.0 ) {
-    ERROR( TWODMESHTESTC_EMETRIC, TWODMESHTESTC_MSGEMETRIC,
-	   "axis a:" );
-    return TWODMESHTESTC_EBAD;
-  }
-  axisTemp = b;
-  if ( axisTemp < axisMin ) axisMin = axisTemp;
-  axisTemp = b + dbdx*dx1 + dbdy*dy1;
-  if ( axisTemp < axisMin ) axisMin = axisTemp;
-  axisTemp = b + dbdx*dx2 + dbdy*dy2;
-  if ( axisTemp < axisMin ) axisMin = axisTemp;
-  axisTemp = b + dbdx*( dx1 + dx2 ) + dbdy*( dy1 + dy2 );
-  if ( axisTemp < axisMin ) axisMin = axisTemp;
-  if ( axisMin <= 0.0 ) {
-    ERROR( TWODMESHTESTC_EMETRIC, TWODMESHTESTC_MSGEMETRIC,
-	   "axis b:" );
-    return TWODMESHTESTC_EBAD;
+  /******************************************************************
+   * SETUP (METRIC/RANGE GRID)                                      *
+   ******************************************************************/
+
+  else {
+    FILE *fp = fopen( metricfile, "r" ); /* input file pointer */
+    if ( !fp ) {
+      ERROR( TWODMESHTESTC_EFILE, "- " TWODMESHTESTC_MSGEFILE,
+	     metricfile );
+      return TWODMESHTESTC_EFILE;
+    }
+    SUB( LALSReadGrid( &stat, &metricGrid, fp ), &stat );
+    fclose( fp );
+    fp = fopen( rangefile, "r" );
+    if ( !fp ) {
+      ERROR( TWODMESHTESTC_EFILE, "- " TWODMESHTESTC_MSGEFILE,
+	     rangefile );
+      return TWODMESHTESTC_EFILE;
+    }
+    SUB( LALSReadGrid( &stat, &rangeGrid, fp ), &stat );
+    fclose( fp );
+    params.getMetric = LALInterpolateMetricGrid;
+    params.metricParams = (void *)( metricGrid );
+    params.getRange = LALInterpolateRangeGrid;
+    params.rangeParams = (void *)( rangeGrid );
+    params.domain[0] = rangeGrid->offset->data[0];
+    params.domain[1] = rangeGrid->offset->data[0]
+      + rangeGrid->interval->data[0]
+      *( rangeGrid->data->dimLength->data[0] - 1 );
   }
 
-  /* Set up metric function and parameters. */
-  metricParams[0] = a;
-  metricParams[1] = b;
-  metricParams[2] = c;
-  metricParams[3] = dadx;
-  metricParams[4] = dbdx;
-  metricParams[5] = dcdx;
-  metricParams[6] = dady;
-  metricParams[7] = dbdy;
-  metricParams[8] = dcdy;
-  params.getMetric = LALMetricTest;
-  params.metricParams = (void *)( metricParams );
+  /******************************************************************
+   * MESH CREATION AND OUTPUT                                       *
+   ******************************************************************/
 
   /* Set up remaining mesh creation parameters. */
-  params.mThresh = MISMATCH;
+  params.mThresh = mismatch;
   params.widthMaxFac = 0.0;
   params.widthRetryFac = 0.0;
   params.maxColumns = cmax;
@@ -502,9 +604,10 @@ main(int argc, char **argv)
 
   /* Print mesh list to a file, if requested. */
   if ( outfile ) {
-    TwoDMeshNode *here; /* current node in mesh list */
+    FILE *fp = fopen( outfile, "w" ); /* output file pointer */
+    TwoDMeshNode *here;               /* current node in mesh list */
 
-    if ( !( fp = fopen( outfile, "w" ) ) ) {
+    if ( !fp ) {
       ERROR( TWODMESHTESTC_EFILE, "- " TWODMESHTESTC_MSGEFILE,
 	     outfile );
       return TWODMESHTESTC_EFILE;
@@ -517,42 +620,48 @@ main(int argc, char **argv)
 
   /* Make a PostScript plot of the mesh, if requested. */
   if ( psfile && flags ) {
-    REAL4 theta1, theta2;
-    REAL4 xSum = dx1 + dx2, xDiff = dx2 - dx1;
-    REAL4 ySum = dy1 + dy2, yDiff = dy2 - dy1;
-    INT2 plotPoints = flags & 1;
-    BOOLEAN plotTiles = flags & 2;
-    BOOLEAN plotEllipses = flags & 4;
-    TwoDMeshPlotStruc plotParams;
+    FILE *fp = fopen( psfile, "w" );  /* PostScript file pointer */
+    INT2 plotPoints = flags & 1;      /* whether to plot mesh points */
+    BOOLEAN plotTiles = flags & 2;    /* whether to plot mesh tiles */
+    BOOLEAN plotEllipses = flags & 4; /* whether to plot mesh ellipses */
+    TwoDMeshPlotStruc plotParams;     /* plotting parameter structure */
 
-    if ( !( fp = fopen( psfile, "w" ) ) ) {
+    if ( !fp ) {
       ERROR( TWODMESHTESTC_EFILE, "- " TWODMESHTESTC_MSGEFILE,
 	     psfile );
       return TWODMESHTESTC_EFILE;
     }
 
-    /* Find the rotation angle for best fit. */
-    theta1 = LAL_180_PI*atan2( (REAL4)( TWODMESHPLOTH_YSIZE ),
-			       (REAL4)( TWODMESHPLOTH_XSIZE ) );
-    if ( xSum*xSum + ySum*ySum >= xDiff*xDiff + yDiff*yDiff )
-      theta1 -= LAL_180_PI*atan2( ySum, xSum );
-    else
-      theta1 -= LAL_180_PI*atan2( yDiff, xDiff );
-    theta2 = theta1 + LAL_180_PI*atan2( dy1, dx1 );
-    while ( theta2 < -180.0 ) theta2 += 360.0;
-    while ( theta2 > 180.0 ) theta2 -= 360.0;
-    if ( theta2 > 90.0 )
-      theta1 -= theta2 - 90.0;
-    else if ( ( -90.0 < theta2 ) && ( theta2 < 0.0 ) )
-      theta1 -= theta2 + 90.0;
-    theta2 = theta1 + LAL_180_PI*atan2( dy2, dx2 );
-    while ( theta2 < -180.0 ) theta2 += 360.0;
-    while ( theta2 > 180.0 ) theta2 -= 360.0;
-    if ( theta2 > 90.0 )
-      theta1 -= theta2 - 90.0;
-    else if ( ( -90.0 < theta2 ) && ( theta2 < 0.0 ) )
-      theta1 -= theta2 + 90.0;
-    plotParams.theta = theta1;
+    /* For a parallelogram region specified on the command line, find
+       the rotation angle for best fit.  Otherwise, just plot it
+       straight. */
+    if ( !metricfile ) {
+      REAL4 theta1, theta2;
+      REAL4 xSum = x1 + x2, xDiff = x2 - x1;
+      REAL4 ySum = y1 + y2, yDiff = y2 - y1;
+      theta1 = LAL_180_PI*atan2( (REAL4)( TWODMESHPLOTH_YSIZE ),
+				 (REAL4)( TWODMESHPLOTH_XSIZE ) );
+      if ( xSum*xSum + ySum*ySum >= xDiff*xDiff + yDiff*yDiff )
+	theta1 -= LAL_180_PI*atan2( ySum, xSum );
+      else
+	theta1 -= LAL_180_PI*atan2( yDiff, xDiff );
+      theta2 = theta1 + LAL_180_PI*atan2( y1, x1 );
+      while ( theta2 < -180.0 ) theta2 += 360.0;
+      while ( theta2 > 180.0 ) theta2 -= 360.0;
+      if ( theta2 > 90.0 )
+	theta1 -= theta2 - 90.0;
+      else if ( ( -90.0 < theta2 ) && ( theta2 < 0.0 ) )
+	theta1 -= theta2 + 90.0;
+      theta2 = theta1 + LAL_180_PI*atan2( y2, x2 );
+      while ( theta2 < -180.0 ) theta2 += 360.0;
+      while ( theta2 > 180.0 ) theta2 -= 360.0;
+      if ( theta2 > 90.0 )
+	theta1 -= theta2 - 90.0;
+      else if ( ( -90.0 < theta2 ) && ( theta2 < 0.0 ) )
+	theta1 -= theta2 + 90.0;
+      plotParams.theta = theta1;
+    } else
+      plotParams.theta = 0.0;
 
     /* Set remaining parameters, and make the plot. */
     plotParams.xScale = plotParams.yScale = 100.0;
@@ -576,7 +685,11 @@ main(int argc, char **argv)
     fclose( fp );
   }
 
-  /* Free the mesh, and exit. */
+  /* Free memory, and exit. */
+  if ( metricfile ) {
+    SUB( LALSDestroyGrid( &stat, &metricGrid ), &stat );
+    SUB( LALSDestroyGrid( &stat, &rangeGrid ), &stat );
+  }
   SUB( LALDestroyTwoDMesh( &stat, &mesh, NULL ), &stat );
   LALCheckMemoryLeaks();
   INFO( TWODMESHTESTC_MSGENORM );

@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest HeterodynePulsarTest FitToPulsarTest PulsarCatTest
+check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest SkyMetricTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest HeterodynePulsarTest FitToPulsarTest PulsarCatTest
 #check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest LALDemodTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest HeterodynePulsarTest FitToPulsarTest PulsarCatTest
 pkgdata_DATA = eigen_Tf0-1e8_n-2.dat eigenInv_Tf0-1e8_n-2.dat \
   range_tauOverT-1e5_n-2.dat in.data \
@@ -27,6 +27,8 @@ FlatMeshTest_SOURCES = FlatMeshTest.c
 FlatMeshTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 TwoDMeshTest_SOURCES = TwoDMeshTest.c TwoDMeshPlot.h TwoDMeshPlot.c
 TwoDMeshTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+SkyMetricTest_SOURCES = SkyMetricTest.c TwoDMeshPlot.h TwoDMeshPlot.c
+SkyMetricTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 ResampleTest_SOURCES = ResampleTest.c
 ResampleTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 #LALDemodTest_SOURCES = LALDemodTest.c
@@ -47,7 +49,9 @@ PulsarCatTest_SOURCES = PulsarCatTest.c
 PulsarCatTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 #TESTS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest FitToPulsarTest LALDemodTest
-TESTS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest FitToPulsarTest PulsarCatTest
+TESTS = StackMetricTest FlatMeshTest TwoDMeshTest SkyMetricTest      \
+  ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest  \
+  PtoleMeshTest FitToPulsarTest PulsarCatTest
 TESTS_ENVIRONMENT = LAL_DATA_PATH=$(srcdir)
 DISTCLEANFILES = *.tex
 MAINTAINERCLEANFILES = earth*.ilwd sun*.ilwd

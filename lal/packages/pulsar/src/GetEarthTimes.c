@@ -31,9 +31,19 @@ and hence the Dopple modulation on an incoming signal.  See the
 
 \subsubsection*{Algorithm}
 
-At present this function is just a stub.  It assumes that the zero of
-GPS time was sidereal midnight on the autumnal equinox, which is
-clearly not the case.
+The routine first computes the Greenwich mean sidereal time at
+\verb@times->epoch@ using \verb@LALGPStoMST1()@.  The next sidereal
+midnight (at the Prime Meridian) is simply 86400 seconds minus that
+sidereal time.
+
+Next the routine computes the time of the next autumnal equinox.  The
+module contains an internal list of GPS times of autumnal equinoxes
+from 1992 to 2020, given to the nearest minute; this is certainly
+enough accuracy for use with the routines in \verb@TBaryPtolemaic()@.
+If the specified time \verb@times->epoch@ is after the 2020 autumnal
+equinox, or more than a year before the 1992 equinox, then the next
+equinox is extrapolated assuming exact periods of length
+\verb@LAL_YRSID_SI@.
 
 When assigning the fields of \verb@*times@, it is up to the user to
 choose a \verb@times->epoch@ that is close to the actual times that
@@ -43,6 +53,9 @@ a \verb@REAL8@ time variable whose origin is the time
 the \verb@REAL8@ time variables may suffer loss of precision.
 
 \subsubsection*{Uses}
+\begin{verbatim}
+LALGPStoGMST1()
+\end{verbatim}
 
 \subsubsection*{Notes}
 
@@ -53,27 +66,67 @@ the \verb@REAL8@ time variables may suffer loss of precision.
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
+#include <lal/Date.h>
 #include <lal/PulsarTimes.h>
 
-NRCSID(GETEARTHTIMESC,"$Id$");
+NRCSID( GETEARTHTIMESC, "$Id$" );
+
+
+/* Define a list of GPS times of autumnal equinoxes (1992 to 2020). */
+#define NEQUINOXES 29
+static const INT4 equinoxes[NEQUINOXES] = {
+  401222588, 432778929, 464336350, 495893590, 527450411, 559007772,
+  590564232, 622121473, 653678833, 685235053, 716792113, 748349233,
+  779905813, 811462993, 843019393, 874576273, 906133453, 937689493,
+  969246553, 1000803853, 1032360553, 1063917853, 1095474553,
+  1127031613, 1158589273, 1190145733, 1221702853, 1253260213,
+  1284816613 };
+
 
 /* <lalVerbatim file="GetEarthTimesCP"> */
 void
 LALGetEarthTimes( LALStatus *stat, PulsarTimesParamStruc *times )
 { /* </lalVerbatim> */
-  REAL8 t; /* The GPS time as a floating-point number, in s. */
+  LIGOTimeGPS epoch;   /* local copy of times->epoch */
+  REAL8 t;             /* time as a floating-point number (s) */
+  LALMSTUnitsAndAcc p; /* parameter to LALGPStoGMST() */
 
-  INITSTATUS(stat,"GetEarthTimes",GETEARTHTIMESC);
+  INITSTATUS( stat, "GetEarthTimes", GETEARTHTIMESC );
+  ATTATCHSTATUSPTR( stat );
 
   /* Make sure the parameters exist. */
-  ASSERT(times,stat,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
-  t=(REAL8)times->epoch.gpsSeconds+
-    (1.0e-9)*times->epoch.gpsNanoSeconds;
+  ASSERT( times, stat, PULSARTIMESH_ENUL, PULSARTIMESH_MSGENUL );
+  epoch = times->epoch;
 
-  /* I don't have the actual ephemeris, so for now, assume that GPS
-     zero time is midnight on the autumnal equinox. */
-  times->tAutumn=fmod(t,LAL_TWOPI*LAL_YRSID_SI);
-  times->tMidnight=fmod(t,LAL_TWOPI*LAL_DAYSID_SI);
+  /* Find the next sidereal midnight. */
+  p.units = MST_SEC;
+  p.accuracy = LALLEAPSEC_LOOSE;
+  TRY( LALGPStoGMST1( stat->statusPtr, &t, &epoch, &p ), stat );
+  times->tMidnight = 86400.0 - t;
 
+  /* Find the next autumnal equinox. */
+  while ( epoch.gpsNanoSeconds > 0 ) {
+    epoch.gpsSeconds += 1;
+    epoch.gpsNanoSeconds -= 1000000000;
+  }
+  if ( equinoxes[0] - epoch.gpsSeconds > LAL_YRSID_SI ) {
+    t = (REAL8)( equinoxes[0] - epoch.gpsSeconds )
+      - (1.0e-9)*epoch.gpsNanoSeconds;
+    times->tAutumn = fmod( t, LAL_YRSID_SI );
+  } else {
+    UINT4 i = 0; /* index over equinox list */
+    while ( i < NEQUINOXES && equinoxes[i] <= epoch.gpsSeconds )
+      i++;
+    if ( i == NEQUINOXES ) {
+      t = (REAL8)( equinoxes[i-1] - epoch.gpsSeconds )
+	- (1.0e-9)*epoch.gpsNanoSeconds;
+      times->tAutumn = fmod( t, LAL_YRSID_SI ) + LAL_YRSID_SI;
+    } else
+      times->tAutumn = (REAL8)( equinoxes[i] - epoch.gpsSeconds )
+	- (1.0e-9)*epoch.gpsNanoSeconds;
+  }
+
+  /* Done. */
+  DETATCHSTATUSPTR( stat );
   RETURN(stat);
 }

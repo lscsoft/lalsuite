@@ -105,12 +105,16 @@ NRCSID(TWODMESHH,"$Id$");
 #define TWODMESHH_EMEM    3
 #define TWODMESHH_EMETRIC 4
 #define TWODMESHH_EWIDTH  5
+#define TWODMESHH_EDIM    6
+#define TWODMESHH_EINT    7
 
 #define TWODMESHH_MSGENUL    "Unexpected null pointer in arguments"
 #define TWODMESHH_MSGEOUT    "Output handle points to a non-null pointer"
 #define TWODMESHH_MSGEMEM    "Memory allocation error"
 #define TWODMESHH_MSGEMETRIC "Non-positive metric"
 #define TWODMESHH_MSGEWIDTH  "Column width too small"
+#define TWODMESHH_MSGEDIM    "Incorrect dimensions"
+#define TWODMESHH_MSGEINT    "Non-positive interval"
 /******************************************** </lalErrTable><lalLaTeX>
 
 \subsection*{Types}
@@ -327,6 +331,24 @@ void
 LALTwoDNodeCopy( LALStatus    *stat,
 		 TwoDMeshNode **new,
 		 TwoDMeshNode *old );
+
+/* <lalLaTeX>
+\newpage\input{TwoDMeshMetricsC}
+</lalLaTeX> */
+void
+LALGetNearestMetric( LALStatus *stat, REAL4 metric[3], REAL4 position[2], void *params );
+
+void
+LALInterpolateMetricGrid( LALStatus *stat, REAL4 metric[3], REAL4 position[2], void *params );
+
+/* <lalLaTeX>
+\newpage\input{TwoDMeshRangesC}
+</lalLaTeX> */
+void
+LALInterpolateRangePolygon( LALStatus *stat, REAL4 range[2], REAL4 x, void *params );
+
+void
+LALInterpolateRangeGrid( LALStatus *stat, REAL4 range[2], REAL4 x, void *params );
 
 #ifdef __cplusplus
 #pragma {

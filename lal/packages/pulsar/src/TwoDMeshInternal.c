@@ -205,6 +205,10 @@ LALMalloc()                 LALDestroyTwoDMesh()
 
 NRCSID( TWODMESHINTERNALC, "$Id$" );
 
+/* Whether or not to track progress internally. */
+#define TWODMESHINTERNALC_TRACK
+static UINT4 columnNo;
+
 /* Local constants. */
 #define TWODMESHINTERNALC_WMAXFAC   (1.189207115)
 #define TWODMESHINTERNALC_WRETRYFAC LAL_SQRT2
@@ -349,6 +353,11 @@ LALTwoDMesh( LALStatus          *stat,
 			   column.domain[0], params->rangeParams ),
        stat );
 
+#ifdef TWODMESHINTERNALC_TRACK
+  columnNo = 0;
+  LALPrintError( "      Node count    Column count\n" );
+#endif
+
   /* Main loop: add columns until we're past the end of the space. */
   here = *tail;
   while ( column.domain[0] < params->domain[1] ) {
@@ -422,9 +431,15 @@ LALTwoDMesh( LALStatus          *stat,
     column.domain[0] = column.domain[1];
     column.leftRange[0] = column.rightRange[0];
     column.leftRange[1] = column.rightRange[1];
+#ifdef TWODMESHINTERNALC_TRACK
+    LALPrintError( "\r%16u%16u", params->nOut, columnNo++ );
+#endif
   }
 
   /* We're done.  Update the *tail pointer and exit. */
+#ifdef TWODMESHINTERNALC_TRACK
+  LALPrintError( "\n" );
+#endif
   *tail = here;
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
@@ -505,6 +520,9 @@ LALTwoDColumn( LALStatus            *stat,
     }
     memset( here->next, 0, sizeof(TwoDMeshNode) );
     params->nOut++;
+#ifdef TWODMESHINTERNALC_TRACK
+    LALPrintError( "\r%16u", params->nOut );
+#endif
     GETSIZE( here->next->dy, dx, metric, params->mThresh );
     here->next->y = position[1];
     here = here->next;
@@ -546,6 +564,9 @@ LALTwoDColumn( LALStatus            *stat,
       }
       memset( here->next, 0, sizeof(TwoDMeshNode) );
       params->nOut++;
+#ifdef TWODMESHINTERNALC_TRACK
+      LALPrintError( "\r%16u", params->nOut );
+#endif
       GETSIZE( here->next->dy, dx, metric, params->mThresh );
       y0 = here->dy[1] - here->next->dy[0];
       y1 = here->next->dy[1] - here->dy[0];

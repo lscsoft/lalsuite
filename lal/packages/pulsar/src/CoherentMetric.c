@@ -33,9 +33,9 @@ $\verb@metric->data[@$\beta + \alpha(\alpha+1)/2$\verb@]@.  If
 this length, and \verb@LALCoherentMetric()@ will store metric
 components and their estimated uncertainty in alternate slots; i.e.\
 the metric component
-$g_{\alpha\beta}=$\verb@metric->data[@$2\beta+\alpha(\alpha+1)$@, and
-the uncertainty
-$s_{\alpha\beta}=$\verb@metric->data[@$1+2\beta+\alpha(\alpha+1)$@.
+$g_{\alpha\beta}=$\verb@metric->data[@$2\beta+\alpha(\alpha+1)$\verb@]@,
+and the uncertainty
+$s_{\alpha\beta}=$\verb@metric->data[@$1+2\beta+\alpha(\alpha+1)$\verb@]@.
 
 The argument \verb@*lambda@ is another vector, of length $n+1$,
 storing the components of $\bm{\lambda}=(\lambda^0,\ldots,\lambda^n)$
@@ -51,8 +51,8 @@ of header \verb@StackMetric.h@.  Most of the work is done by the
 function \verb@params->dtCanon()@, which computes the value and
 parameter derivatives of the canonical time coordinate
 $\tau[t;\vec\lambda]$.  Since the phase function is simply
-$\phi[t;\bm{\lambda}]=\lambda^0 \tau[t;\vec\lambda]$, the metric
-components are simply:
+$\phi[t;\bm{\lambda}]=2\pi\lambda^0 \tau[t;\vec\lambda]$, where
+$\lambda^0=f_0$, the metric components are simply:
 \begin{eqnarray}
 g_{00}(\bm\lambda) & = &
 	4\pi^2\bigg\langle\!(\tau[t;\vec\lambda])^2\bigg\rangle -
@@ -151,6 +151,9 @@ NRCSID(COHERENTMETRICC,"$Id$");
 
 #define COHERENTMETRICC_NPTS 100000
 /* Number of points to average per time interval. */
+
+/* #define APPROXIMATE Whether to use the approximation in the last
+		       form of the averaging integral */
 
 static REAL8
 Average(REAL8Vector *integrand, REAL8 *uncertainty);
@@ -260,8 +263,12 @@ LALCoherentMetric( LALStatus        *stat,
 
   /* Compute the overall correction factor to convert the canonical
      time interval into the detector time interval. */
+#ifndef APPROXIMATE
   dt=params->deltaT/(dSeq->data[(s+1)*(COHERENTMETRICC_NPTS-1)]
 		     - dSeq->data[0]);
+#else
+  dt=1.0;
+#endif
 
   /* Compute metric components.  First generate the g00 component. */
   /* Fill integrand arrays. */
@@ -269,8 +276,13 @@ LALCoherentMetric( LALStatus        *stat,
   l=COHERENTMETRICC_NPTS;
   k=0;
   while(l--){
+#ifndef APPROXIMATE
     a->data[l]=*data*data[-1]*data[-1];
     b->data[l]=c->data[l]=*data*data[-1];
+#else
+    a->data[l]=data[-1]*data[-1];
+    b->data[l]=c->data[l]=data[-1];
+#endif
     data+=s+1;
   }
   /* Integrate to get the metric component. */
@@ -279,12 +291,12 @@ LALCoherentMetric( LALStatus        *stat,
     REAL8 aAvg=Average(a,&aErr);
     REAL8 bAvg=Average(b,&bErr);
     REAL8 cAvg=Average(c,&cErr);
-    metric->data[k++]=LAL_TWOPI*LAL_TWOPI*dt*(aAvg-bAvg*cAvg);
+    metric->data[k++]=LAL_TWOPI*LAL_TWOPI*dt*(aAvg-dt*bAvg*cAvg);
     metric->data[k++]=LAL_TWOPI*LAL_TWOPI*dt*
-      (aErr + bErr*fabs(cAvg) + cErr*fabs(bAvg));
+      (aErr + dt*bErr*fabs(cAvg) + dt*cErr*fabs(bAvg));
   }else
     metric->data[k++]=LAL_TWOPI*LAL_TWOPI*dt*
-      (Average(a,0)-Average(b,0)*Average(c,0));
+      (Average(a,0)-dt*Average(b,0)*Average(c,0));
 
   for(i=1;i<s;i++){
     /* Now generate the gi0 components. */
@@ -292,9 +304,15 @@ LALCoherentMetric( LALStatus        *stat,
     data=dSeq->data+1;
     l=COHERENTMETRICC_NPTS;
     while(l--){
+#ifndef APPROXIMATE
       a->data[l]=*data*data[-1]*f0*data[i];
       b->data[l]=*data*data[-1];
       c->data[l]=*data*f0*data[i];
+#else
+      a->data[l]=data[-1]*f0*data[i];
+      b->data[l]=data[-1];
+      c->data[l]=f0*data[i];
+#endif
       data+=s+1;
     }
     /* Integrate to get the metric component. */
@@ -303,12 +321,12 @@ LALCoherentMetric( LALStatus        *stat,
       REAL8 aAvg=Average(a,&aErr);
       REAL8 bAvg=Average(b,&bErr);
       REAL8 cAvg=Average(c,&cErr);
-      metric->data[k++]=LAL_TWOPI*LAL_TWOPI*dt*(aAvg-bAvg*cAvg);
+      metric->data[k++]=LAL_TWOPI*LAL_TWOPI*dt*(aAvg-dt*bAvg*cAvg);
       metric->data[k++]=LAL_TWOPI*LAL_TWOPI*dt*
-	(aErr + bErr*fabs(cAvg) + cErr*fabs(bAvg));
+	(aErr + dt*bErr*fabs(cAvg) + dt*cErr*fabs(bAvg));
     }else
       metric->data[k++]=LAL_TWOPI*LAL_TWOPI*dt*
-	(Average(a,0)-Average(b,0)*Average(c,0));
+	(Average(a,0)-dt*Average(b,0)*Average(c,0));
 
     for(j=1;j<=i;j++){
       /* Now generate the gij components. */
@@ -316,9 +334,15 @@ LALCoherentMetric( LALStatus        *stat,
       data=dSeq->data+1;
       l=COHERENTMETRICC_NPTS;
       while(l--){
+#ifndef APPROXIMATE
 	a->data[l]=*data*f0*f0*data[i]*data[j];
 	b->data[l]=*data*f0*data[i];
 	c->data[l]=*data*f0*data[j];
+#else
+	a->data[l]=f0*f0*data[i]*data[j];
+	b->data[l]=f0*data[i];
+	c->data[l]=f0*data[j];
+#endif
 	data+=s+1;
       }
       /* Integrate to get the metric component. */
@@ -327,12 +351,12 @@ LALCoherentMetric( LALStatus        *stat,
 	REAL8 aAvg=Average(a,&aErr);
 	REAL8 bAvg=Average(b,&bErr);
 	REAL8 cAvg=Average(c,&cErr);
-	metric->data[k++]=LAL_TWOPI*LAL_TWOPI*dt*(aAvg-bAvg*cAvg);
+	metric->data[k++]=LAL_TWOPI*LAL_TWOPI*dt*(aAvg-dt*bAvg*cAvg);
 	metric->data[k++]=LAL_TWOPI*LAL_TWOPI*dt*
-	  (aErr + bErr*fabs(cAvg) + cErr*fabs(bAvg));
+	  (aErr + dt*bErr*fabs(cAvg) + dt*cErr*fabs(bAvg));
       }else
 	metric->data[k++]=LAL_TWOPI*LAL_TWOPI*dt*
-	  (Average(a,0)-Average(b,0)*Average(c,0));
+	  (Average(a,0)-dt*Average(b,0)*Average(c,0));
     }
   }
 
