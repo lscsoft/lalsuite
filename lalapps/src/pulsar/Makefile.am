@@ -11,7 +11,6 @@ endif
 EXTRA_DIST =  lalapps_make_job_input_data \
 lalapps_make_sfts \
 make_cluster_data_list \
-Makefile.am \
 make_job_input_data.c \
 make_locked_data_list \
 make_sfts.c \
