@@ -2561,6 +2561,7 @@ static void _waveFilter(Wavelet **in, ClusterWavelet *w, UINT4 offset, UINT4 ext
 
   in1.w=*in;
   in1.ldeep=extradeep;
+
   LALt2wWavelet(&status,&in1,&out1);
 
   M=_getMaxLayer(out1->w)+1;
@@ -2570,9 +2571,9 @@ static void _waveFilter(Wavelet **in, ClusterWavelet *w, UINT4 offset, UINT4 ext
 
   for(i=0;i<M;i++)
     {
-      /*      printf("%6d ",i);*/
       _getLayer(&a, i, out1->w);
       rms[i]=_computeRMS(a,offset);
+
       for(j=0;j<a->data->length;j++)
 	{
 	  a->data->data[j]/=rms[i];
@@ -2634,10 +2635,6 @@ static REAL4 _computeRMS(REAL4TimeSeries *a, UINT4 offset)
   mR=m-mL;
   result=(*(aptr[mR]) - *(aptr[mL]))/2.;
   median=*aptr[m/2];
-
-  /*
-  printf("rms=%f median=%f\n", result, median);
-  */
 
   LALFree(aptr);
   return result;
@@ -2997,10 +2994,10 @@ static void _clusterProperties(ClusterWavelet *w)
 		  w->relativeStopTime[i]=x;
 		  w->blobs[i].stop_time_indx=t;
 		}
-	      w->centralTime[i]+=x*a*a;
-	      weight+=a*a;
+	      w->centralTime[i]+=x*b*b;
+	      weight+=b*b;
 	      x=delta_f*f*ff;
-	      w->centralFrequency[i]+=x*a*a;
+	      w->centralFrequency[i]+=x*b*b;
 	      if(x<w->startFrequency[i]) 
 		{
 		  w->startFrequency[i]=x;

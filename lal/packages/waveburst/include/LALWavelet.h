@@ -43,6 +43,8 @@ events that satisfy certain criteria.
 #include <lal/Random.h>
 #include <lal/Date.h>
 
+
+
 /******* INCLUDE ANY OTHER LAL HEADERS needed for header (NOT module) ****/
 
 #ifdef  __cplusplus
@@ -50,6 +52,7 @@ extern "C" {
 #endif
 
 NRCSID (LALWAVELETH, "$Id$");
+
 
 
 /******************************** <lalErrTable file="LALWaveletHE"> */

@@ -133,6 +133,7 @@ LALPercentileWavelet( LALStatus *status,
         ABORT( status, LALWAVELETH_ENULLP, LALWAVELETH_MSGENULLP );
   }
 
+
   _createClusterWavelet(&(*output)->out);
   (*output)->out->nsubintervals=input->nsubintervals;
 
