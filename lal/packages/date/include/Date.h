@@ -82,6 +82,7 @@ NRCSID (DATEH, "$Id$");
 #define DATEH_EGPSDATETOOEARLY 7
 #define DATEH_EFORMATPARAMOUTOFRANGE 8
 #define DATEH_EACCPARAMOUTOFRANGE    9
+#define DATEH_EDECRTIMETOOLARGE 10
 
 #define DATEH_MSGENULLINPUT "Input is NULL"
 #define DATEH_MSGENULLOUTPUT "Output is NULL"
@@ -92,6 +93,7 @@ NRCSID (DATEH, "$Id$");
 #define DATEH_MSGEGPSDATETOOEARLY "Date too early: GPS time only defined for times on or after 1980-Jan-06 00:00:00 UTC"
 #define DATEH_MSGEFORMATPARAMOUTOFRANGE "Format parameter out of range: must be one of LALLEAPSECunderscoreTAIUTC or LALLEAPSECunderscoreGPSUTC"
 #define DATEH_MSGEACCPARAMOUTOFRANGE "Accuracy parameter out of range: must be one of LALLEAPSECunderscoreSTRICT or LALLEAPSECunderscoreLOOSE"
+#define DATEH_MSGEDECRTIMETOOLARGE "Decrement amount too large: GPS time cannot be decremented to before the start of the GPS epoch."
   
 
 /* </lalErrTable>
@@ -167,6 +169,29 @@ typedef enum
 } LALLeapSecAccuracy;
 
 /* <lalLaTeX>
+\subsubsection*{Enumeration \texttt{LALGPSCompareResult}}
+\idx[Type]{LALGPSCompareResult}
+
+This enumerated type is used as the output type for
+\texttt{LALCompareGPS()}.  The allowed values are:
+
+\medskip\noindent
+\begin{tabular}{ll}
+  \verb+LALGPS_EARLIER+ & GPS1 < GPS2 \\
+  \verb+LALGPS_EQUAL+ & GPS1 = GPS2 \\
+  \verb+LALGPS_LATER+ & GPS1 > GPS2
+\end{tabular}
+\bigskip
+</lalLaTeX> */
+typedef enum
+{
+  LALGPS_EARLIER = -1,
+  LALGPS_EQUAL   =  0,
+  LALGPS_LATER   =  1,
+} LALGPSCompareResult;
+
+
+/* <lalLaTeX>
 
 \subsubsection*{Enumeration \texttt{LALLeapSecFormat}}
 \idx[Type]{LALLeapSecFormat}
@@ -223,7 +248,7 @@ and \texttt{LIGOTimeUnix} times.  The fields are:
 
 \begin{description}
 \item{\texttt{INT4 seconds}} Integral part of the time interval
-\item{\texttt{INT8 nanoSeconds}} Residual nanoseconds (\textit{i.e.}
+\item{\texttt{INT4 nanoSeconds}} Residual nanoseconds (\textit{i.e.}
   fractional part, in nanoseconds)
 \end{description}
 
@@ -236,7 +261,7 @@ typedef struct
 tagLALTimeInterval
 {
     INT4 seconds;
-    INT8 nanoSeconds;
+    INT4 nanoSeconds;
 }
 LALTimeInterval;
 
@@ -446,6 +471,15 @@ void LALFloatToGPS(LALStatus *status,
                    LIGOTimeGPS *output, 
                    const REAL8 *input);
 
+void LALFloatToInterval(LALStatus *status,
+                        LALTimeInterval *pInterval,
+                        const REAL8 *pDeltaT);
+
+void LALIntervalToFloat(LALStatus *status,
+                        REAL8 *pDeltaT,
+                        const LALTimeInterval *pInterval);
+                        
+
 /* <lalLaTeX>
 \newpage\input{GPStoINT8C}
 </lalLaTeX> */
@@ -463,7 +497,40 @@ LALGPStoINT8 (
     const LIGOTimeGPS  *input 
     );
 
+/* This next function is to facilitate writing loops that increment time
+ * by a time interval */
+/* <lalLaTeX>
+\newpage\input{IncrementGPSC}
+</lalLaTeX> */
+void
+LALIncrementGPS (LALStatus             *status,
+                 LIGOTimeGPS           *pIncrementedGPS,
+                 const LIGOTimeGPS     *pInitialGPS,
+                 const LALTimeInterval *pDeltaT);
 
+void
+LALDecrementGPS (LALStatus             *status,
+                 LIGOTimeGPS           *pDecrementedGPS,
+                 const LIGOTimeGPS     *pInitialGPS,
+                 const LALTimeInterval *pDeltaT);
+
+
+/* This function takes the difference between two GPS times, GPS1 - GPS2 */
+void
+LALDeltaGPS (LALStatus         *status,
+             LALTimeInterval   *pDeltaGPS, /* output: GPS1 - GPS2*/
+             const LIGOTimeGPS *pGPS1, /* input: GPS1 */
+             const LIGOTimeGPS *pGPS2); /* input: GPS2 */
+
+/* This function compares GPS1 to GPS2; returns 0 if GPS1 == GPS2,
+ returns -1 if GPS1 < GPS2, +1 if GPS1 > GPS2 */
+void
+LALCompareGPS (LALStatus *status,
+               LALGPSCompareResult *pResult, /* output: -1 => GPS1 < GPS2
+                                                         0 => GPS1 = GPS2
+                                                         1 => GPS1 > GPS2 */
+               const LIGOTimeGPS *pGPS1, /* input: GPS1 */
+               const LIGOTimeGPS *pGPS2); /* input: GPS2 */
 
 
 

@@ -15,15 +15,18 @@ int main(int argc, char *argv[])
   static LALStatus   status;
   LIGOTimeGPS        gpsTime = {0, 0};
   REAL8              realTime = 0.;
+  LALTimeInterval    interval = {0, 0};
+  REAL8              deltaT = 0.;
 
   if (argc > 1)
     lalDebugLevel = atoi(argv[1]);
 
+  /* 1 */
   gpsTime.gpsSeconds     = 987654321;
   gpsTime.gpsNanoSeconds = 123456789;
   LALGPStoFloat(&status, &realTime, &gpsTime);
 
-  if (status.statusCode && lalDebugLevel > 0)
+  if (status.statusCode && lalDebugLevel)
     {
       fprintf(stderr, "TestGPStoFloat: LALGPStoFloat() failed; line %i, %s\n",
               __LINE__, LALTESTGPSTOFLOATC);
@@ -31,7 +34,7 @@ int main(int argc, char *argv[])
       return status.statusCode;
     }
 
-    if (lalDebugLevel > 0)
+    if (lalDebugLevel)
     {
       printf("TestGPStoFloat: expected %22.9f\n                got      %22.9f\n",
              987654321.123456789, realTime);
@@ -45,10 +48,11 @@ int main(int argc, char *argv[])
     }
       
 
+  /* 2 */
   realTime = 987654321.123456;
   LALFloatToGPS(&status, &gpsTime, &realTime);
 
-  if (status.statusCode && lalDebugLevel > 0)
+  if (status.statusCode && lalDebugLevel)
     {
       fprintf(stderr, "TestGPStoFloat: LALFloatToGPS() failed; line %i, %s\n",
               __LINE__, LALTESTGPSTOFLOATC);
@@ -56,7 +60,7 @@ int main(int argc, char *argv[])
       return status.statusCode;
     }
 
-  if (lalDebugLevel > 0)
+  if (lalDebugLevel)
     {
       printf("TestGPStoFloat: expected (%d, %d)\n                got      (%d, %d)\n",
              987654321, 123456000, gpsTime.gpsSeconds,
@@ -69,6 +73,58 @@ int main(int argc, char *argv[])
               987654321, 123456000, gpsTime.gpsSeconds,
               gpsTime.gpsNanoSeconds);
       return 2;
+    }
+
+  /* 3 */
+  interval.seconds     = 123;
+  interval.nanoSeconds = 654;
+
+  LALIntervalToFloat(&status, &deltaT, &interval);
+  
+  if (status.statusCode && lalDebugLevel)
+    {
+      fprintf(stderr, "TestGPStoFloat: LALIntervalToFloat() failed; line %i, %s\n",
+              __LINE__, LALTESTGPSTOFLOATC);
+      REPORTSTATUS(&status);
+      return status.statusCode;
+    }
+
+  if (lalDebugLevel)
+    {
+      printf("TestGPStoFloat: expected (%18.9f)\n", 123.000000654);
+      printf("                     got (%18.9f)\n", deltaT);
+    }
+
+  if (deltaT != 123.000000654)
+    {
+      fprintf(stderr, "TestGPStoFloat: LALIntervalToFloat() returned wrong value; ");
+      fprintf(stderr, "expected %18.9f, got %18.9f\n", 123.000000654, deltaT);
+      return 3;
+    }
+
+  /* 4 */
+  LALFloatToInterval(&status, &interval, &deltaT);
+
+  if (status.statusCode && lalDebugLevel)
+    {
+      fprintf(stderr, "TestGPStoFloat: LALIntervalToFloat() failed; line %i, %s\n",
+              __LINE__, LALTESTGPSTOFLOATC);
+      REPORTSTATUS(&status);
+      return status.statusCode;
+    }
+
+  if (lalDebugLevel)
+    {
+      printf("TestGPStoFloat: expected (%9d:%09d)\n", 123, 654);
+      printf("                     got (%9d:%09d)\n", interval.seconds, interval.nanoSeconds);
+    }
+
+  if (interval.seconds != 123 || interval.nanoSeconds != 654)
+    {
+      fprintf(stderr, "TestGPStoFloat: LALFloatToInterval() returned wrong value; ");
+      fprintf(stderr, "expected (%9d:%09d), got (%9d:%09d)\n", 123, 654, interval.seconds,
+              interval.nanoSeconds);
+      return 4;
     }
 
   return 0;
