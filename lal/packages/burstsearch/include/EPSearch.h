@@ -102,12 +102,6 @@ NRCSID (EPSEARCHH, "$Id$");
 #define INPUTNAME_RESPONSE  "response"
 
 typedef struct
-tagEPDataSegmentVector
-{
-}
-EPDataSegmentVector;
-
-typedef struct
 tagEPInitParams
 {
   UINT4                         numPoints;
