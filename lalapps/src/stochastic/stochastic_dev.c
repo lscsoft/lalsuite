@@ -58,7 +58,7 @@ RCSID ("$Id$");
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "lalapps_stochastic_dev"
 
-/* variables for getopt options parsing */
+/* variables for getopt option parsing */
 char *optarg;
 int optind;
 
@@ -68,27 +68,24 @@ static int high_pass_flag;
 static int overlap_hann_flag;
 extern int vrbflg;
 
-/* parameters for the stochastic search */
-
 /* sampling parameters */
-INT4 sampleRate = 16384;
-INT4 resampleRate = 1024;
-REAL8 deltaF = 0.25;
+INT4 sampleRate = -1;
+INT4 resampleRate = -1;
+REAL8 deltaF;
 
 /* data parameters */
-UINT8 startTime;
-UINT8 endTime;
-INT4 streamDuration = 60;
-INT4 segmentDuration = 60;
-INT4 calibDuration = 60;
-CHAR *frameCacheOne;
-CHAR *frameCacheTwo;
-CHAR *calCacheOne;
-CHAR *calCacheTwo;
+UINT8 startTime = 0;
+UINT8 endTime = 0;
+INT4 streamDuration;
+INT4 segmentDuration = -1;
+CHAR *frameCacheOne = NULL;
+CHAR *frameCacheTwo = NULL;
+CHAR *calCacheOne = NULL;
+CHAR *calCacheTwo = NULL;
 CHAR channelOne[LALNameLength];
 CHAR channelTwo[LALNameLength];
-CHAR ifoOne[LALNameLength];
-CHAR ifoTwo[LALNameLength];
+CHAR *ifoOne = NULL;
+CHAR *ifoTwo = NULL;
 INT4 siteOne;
 INT4 siteTwo;
 
@@ -1189,6 +1186,14 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL( LALCDestroyVector(&status, &(hBarTildeOne.data)), &status );
   LAL_CALL( LALCDestroyVector(&status, &(hBarTildeTwo.data)), &status );
 
+  /* free calloc'd memory */
+  free(frameCacheOne);
+  free(frameCacheTwo);
+  free(calCacheOne);
+  free(calCacheTwo);
+  free(ifoOne);
+  free(ifoTwo);
+
   return 0;
 }
 
@@ -1287,6 +1292,16 @@ void parseOptions(INT4 argc, CHAR *argv[])
       case 'b':
         /* number of bins to mask */
         maskBin = atoi(optarg);
+
+        /* check */
+        if (maskBin <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Number of bins to mask must be greater than 0: " \
+              "(%d specified)\n", long_options[option_index].name, maskBin);
+          exit(1);
+        }
+
         break;
 
       case 't':
@@ -1338,38 +1353,103 @@ void parseOptions(INT4 argc, CHAR *argv[])
         break;
 
       case 'l':
-        /* duration */
+        /* segment duration */
         segmentDuration = atoi(optarg);
+
+        /* check */
+        if (segmentDuration <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Segment duration must be greater than 0: " \
+              "(%d specified)\n", long_options[option_index].name, \
+              segmentDuration);
+          exit(1);
+        }
+
         break;
 
       case 'a':
         /* sample rate */
         sampleRate = atoi(optarg);
+
+        /* check */
+        if (sampleRate < 2 || sampleRate > 16384 || sampleRate % 2)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Sample rate must be a power of 2 between 2 and 16384: " \
+              "inclusive: (%d specified)\n", long_options[option_index].name, \
+              sampleRate);
+          exit(1);
+        }
+
         break;
 
       case 'A':
-        /* resampe rate */
+        /* resample rate */
         resampleRate = atoi(optarg);
+
+        /* check */
+        if (resampleRate < 2 || resampleRate > 16384 || resampleRate % 2)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Resample rate must be a power of 2 between 2 and 16384: " \
+              "inclusive: (%d specified)\n", long_options[option_index].name, \
+              resampleRate);
+          exit(1);
+        }
+
         break;
 
       case 'f':
         /* minimal frequency */
         fMin = atoi(optarg);
+
+        /* check */
+        if (fMin < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Minimum frequency is less than 0 Hz (%d specified)\n", \
+              long_options[option_index].name, fMin);
+          exit(1);
+        }
+
         break;
 
       case 'F':
         /* maximal frequency */
         fMax = atoi(optarg);
+
+        /* check */
+        if (fMax < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Maximum frequency is less than 0 Hz (%d specified)\n", \
+              long_options[option_index].name, fMax);
+          exit(1);
+        }
+
         break;
 
       case 'w':
         /* hann window duration */
         hannDuration = atoi(optarg);
+
+        /* check */
+        if (hannDuration < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Hann duartion is less than 0: (%d specified)\n", \
+              long_options[option_index].name, hannDuration);
+          exit(1);
+        }
+
         break;
 
       case 'i':
         /* ifo for first stream */
-        strncpy(ifoOne, optarg, LALNameLength);
+        optarg_len = strlen(optarg) + 1;
+        ifoOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(ifoOne, optarg, optarg_len);
 
         /* set site and channel */
         if (strncmp(ifoOne, "H1", 2) == 0)
@@ -1397,7 +1477,9 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
       case 'I':
         /* ifo for second stream */
-        strncpy(ifoTwo, optarg, LALNameLength);
+        optarg_len = strlen(optarg) + 1;
+        ifoTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(ifoTwo, optarg, optarg_len);
 
         /* set site and channel */
         if (strncmp(ifoTwo, "H1", 2) == 0)
@@ -1453,7 +1535,17 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
       case 'z':
         /* set debug level */
-        set_debug_level( optarg );
+        set_debug_level(optarg);
+
+        /* check */
+        if (atoi(optarg) < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Debug level must be greater than 0: (%d specified)\n", \
+              long_options[option_index].name, atoi(optarg));
+          exit(1);
+        }
+
         break;
 
       case 'V':
@@ -1479,6 +1571,161 @@ void parseOptions(INT4 argc, CHAR *argv[])
     {
       fprintf(stderr, "%s\n", argv[optind++]);
     }
+    exit(1);
+  }
+
+  /* check for required arguments */
+  /* start time */
+  if (startTime == 0)
+  {
+    fprintf(stderr, "--gps-start-time must be specified\n");
+    exit(1);
+  }
+
+  if (endTime == 0)
+  {
+    fprintf(stderr, "--gps-end-time must be specified\n");
+    exit(1);
+  }
+
+  /* segment duration */
+  if (segmentDuration == -1)
+  {
+    fprintf(stderr, "--segment-duration must be specified\n");
+    exit(1);
+  }
+
+  /* sample rate */
+  if (sampleRate == -1)
+  {
+    fprintf(stderr, "--sample-rate must be specified\n");
+    exit(1);
+  }
+
+  /* resample rate */
+  if (resampleRate == -1)
+  {
+    fprintf(stderr, "--resample-rate must be specified\n");
+    exit(1);
+  }
+
+  /* minimum frequency */
+  if (fMin == -1)
+  {
+    fprintf(stderr, "--f-min must be specified\n");
+    exit(1);
+  }
+
+  /* maximum frequency */
+  if (fMax == -1)
+  {
+    fprintf(stderr, "--f-max must be specified\n");
+    exit(1);
+  }
+
+  /* hann duration */
+  if (hannDuration == -1)
+  {
+    fprintf(stderr, "--hann-duration must be specified\n");
+    exit(1);
+  }
+
+  /* ifo */
+  if (ifoOne == NULL)
+  {
+    fprintf(stderr, "--ifo-one must be specified\n");
+    exit(1);
+  }
+  if (ifoTwo == NULL)
+  {
+    fprintf(stderr, "--ifo-two must be specified\n");
+    exit(1);
+  }
+
+  /* frame cache */
+  if (frameCacheOne == NULL)
+  {
+    fprintf(stderr, "--frame-cache-one must be specified\n");
+    exit(1);
+  }
+  if (siteOne != siteTwo)
+  {
+    /* only need second frame cache if ifos differ */
+    if (frameCacheOne == NULL)
+    {
+      fprintf(stderr, "--frame-cache-two must be specified\n");
+      exit(1);
+    }
+  }
+
+  /* calibration cache */
+  if (calCacheOne == NULL)
+  {
+    fprintf(stderr, "--calibration-cache-one must be specified\n");
+    exit(1);
+  }
+  if (calCacheTwo == NULL)
+  {
+    fprintf(stderr, "--calibration-cache-two must be specified\n");
+    exit(1);
+  }
+
+  /* mask */
+  if (apply_mask_flag)
+  {
+    if (maskBin == -1)
+    {
+      fprintf(stderr, "--mask-bin must be specified\n");
+      exit(1);
+    }
+  }
+
+  /* check for sensible arguments */
+
+  /* start time same as stop time */
+  if (startTime == endTime)
+  {
+    fprintf(stderr, "Start time same as stop time; no analysis to perform\n");
+    exit(1);
+  }
+
+  /* stop time before start time */
+  if (startTime > endTime)
+  {
+    fprintf(stderr, "Invalid start/stop time; stop time (%lld) is before " \
+        "start time (%lld)\n", endTime, startTime);
+    exit(1);
+  }
+
+  /* resample rate greater than sample rate */
+  if (resampleRate > sampleRate)
+  {
+    fprintf(stderr, "Invalid resample rate (%d); must be less than sample " \
+        "rate (%d)\n", resampleRate, sampleRate);
+    exit(1);
+  }
+
+  /* min frequency same as max */
+  if (fMin == fMax)
+  {
+    fprintf(stderr, "Minimum frequency same as maximum; no analysis to " \
+        "perform\n");
+    exit(1);
+  }
+
+  /* max frequency less than min */
+  if (fMin > fMax)
+  {
+    fprintf(stderr, "Invalid frequency band; maximum frequency (%d Hz) is " \
+        "before minimum\nfrequency (%d Hz)\n", fMax, fMin);
+    exit(1);
+  }
+
+  /* hann duration greater than segment duration */
+  if (hannDuration > segmentDuration)
+  {
+    fprintf(stderr, "Invalid hann duration (%d); must be less than, or " \
+        "equal to segment\nduration (%d)\n", hannDuration, segmentDuration);
     exit(1);
   }
 
