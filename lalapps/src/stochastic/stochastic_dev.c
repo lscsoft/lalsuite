@@ -993,10 +993,10 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* output the results */
     if (debug_flag)
     {
-      LALSnprintf(debugFilename, LALNameLength, "%d-inPDS1.dat", \
+      LALSnprintf(debugFilename, LALNameLength, "%d-inPSD1.dat", \
           gpsSegmentBStart.gpsSeconds);
       LALSPrintFrequencySeries(calInvPSDOne, debugFilename);
-      LALSnprintf(debugFilename, LALNameLength, "%d-inPDS2.dat", \
+      LALSnprintf(debugFilename, LALNameLength, "%d-inPSD2.dat", \
           gpsSegmentBStart.gpsSeconds);
       LALSPrintFrequencySeries(calInvPSDTwo, debugFilename);
     }
