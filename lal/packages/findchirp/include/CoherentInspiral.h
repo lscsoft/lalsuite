@@ -77,9 +77,7 @@ NRCSID (COHERENTINSPIRALH, "$Id$");
 #define COHERENTINSPIRALH_ERHOT 9
 #define COHERENTINSPIRALH_ECHIT 10
 #define COHERENTINSPIRALH_ESMSM 11
-#define COHERENTINSPIRALH_ENDET 12
-#define COHERENTINSPIRALH_EGDET 13
-#define COHERENTINSPIRALH_EZDET 14
+#define COHERENTINSPIRALH_EZDET 12
 #define COHERENTINSPIRALH_MSGENULL "Null pointer"
 #define COHERENTINSPIRALH_MSGENNUL "Non-null pointer"
 #define COHERENTINSPIRALH_MSGEALOC "Memory allocation error"
@@ -91,9 +89,7 @@ NRCSID (COHERENTINSPIRALH, "$Id$");
 #define COHERENTINSPIRALH_MSGERHOT "coherentSNR threshold is negative"
 #define COHERENTINSPIRALH_MSGECHIT "Chisq threshold is negative"
 #define COHERENTINSPIRALH_MSGESMSM "Size mismatch between vectors"
-#define COHERENTINSPIRALH_MSGENDET "Number of detectors is 1; it should be greater than 1 and less than 4"
-#define COHERENTINSPIRALH_MSGEGDET "Number of detectors is > 4; it should be greater than 1 and less than 4"
-#define COHERENTINSPIRALH_MSGEZDET "Number of detectors is 0; it should be greater than 1 and less than 4"
+#define COHERENTINSPIRALH_MSGEZDET "Number of detectors should be greater than 1 and less than 5"
 /* </lalErrTable> */
 
 #if 0
