@@ -209,9 +209,9 @@ void LALDemod(LALStatus *stat,
    alpha2 = params->sftPerCoh[params->iCoh+1];
    
   /* this loop computes the values of the phase model */
-  xSum=(REAL8 *)LALMalloc(tempMCohSFT*sizeof(REAL8));
-  ySum=(REAL8 *)LALMalloc(tempMCohSFT*sizeof(REAL8));
-  tempInt1=(INT4 *)LALMalloc(tempMCohSFT*sizeof(INT4));
+  xSum=(REAL8 *)LALMalloc(alpha2*sizeof(REAL8));
+  ySum=(REAL8 *)LALMalloc(alpha2*sizeof(REAL8));
+  tempInt1=(INT4 *)LALMalloc(alpha2*sizeof(INT4));
   for(alpha=alpha1;alpha<alpha2;alpha++){
     tempInt1[alpha-alpha1]=2*alpha*(spOrder+1)+1;
     xSum[alpha-alpha1]=0.0;
@@ -346,9 +346,9 @@ if(tempMCohSFT == 1)
 	  /* Now, compute normalised periodograms for each statistic */
 	  /* |F_a|^2, |F_b|^2, Re[(F_a)(F_b}^*] */
 	  
-	  fA  = oneOverMCohSFT*(tXa->re*tXa->re+tXa->im*tXa->im);
-	  fB  = oneOverMCohSFT*(tXb->re*tXb->re+tXb->im*tXb->im);
-	  fAB = oneOverMCohSFT*(tXa->re*tXb->re+tXa->im*tXb->im);
+	  fA  = 1.0/alpha2*(tXa->re*tXa->re+tXa->im*tXa->im);
+	  fB  = 1.0/alpha2*(tXb->re*tXb->re+tXb->im*tXb->im);
+	  fAB = 1.0/alpha2*(tXa->re*tXb->re+tXa->im*tXb->im);
 	  	  
 	  /* Compute statistic for this DeFT bin */
 	  /* F = 1/D * (B*|F_a|^2+A*|F_b|^2-2C*Re(F_a * F_b^*)) */
