@@ -351,6 +351,7 @@ for seg in data:
     if not do_dax:
         bank.calibration()
     else:
+        bank.add_var_opt('glob-calibration-data', '')
         bank.calibration_cache_path()
         cache_filename = bank.get_calibration()
         pat = re.compile(r'(file://.*)')
@@ -381,6 +382,14 @@ for seg in data:
       dag.add_node(bank)
 
     if do_dax:
+        # add the --glob-frame-data option 
+        bank.add_var_opt('glob-frame-data', '')
+
+        # determine the frame type
+        dict = df_job.get_opts()
+        ftype = dict['type']
+        bank.add_var_opt('frame-type', ftype)
+
         for lfn in lfnList:
                 bank.add_input_file(lfn)
 
@@ -395,6 +404,7 @@ for seg in data:
     if not do_dax:
         insp1.calibration()
     else:
+        insp1.add_var_opt('glob-calibration-data', '')
         insp1.calibration_cache_path()
         cache_filename = insp1.get_calibration()
         pat = re.compile(r'(file://.*)')
@@ -420,6 +430,13 @@ for seg in data:
     insp1.set_bank(bank.get_output())
 
     if do_dax:
+        insp1.add_var_opt('glob-frame-data', '')
+
+        # determine the frame type
+        dict = df_job.get_opts()
+        ftype = dict['type']
+        insp1.add_var_opt('frame-type', ftype)
+
         for lfn in lfnList:
                 insp1.add_input_file(lfn)
 
