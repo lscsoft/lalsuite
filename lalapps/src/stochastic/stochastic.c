@@ -36,6 +36,10 @@
 
 #include "stochastic.h"
 
+/* C99 prototypes */
+double fabs(double x);
+double round(double x);
+
 NRCSID(STOCHASTICC, "$Id$");
 RCSID("$Id$");
 
@@ -106,8 +110,8 @@ INT4 siteOne;
 INT4 siteTwo;
 
 /* frequency band */
-INT4 fMin = -1;
-INT4 fMax = -1;
+REAL8 fMin = -1;
+REAL8 fMax = -1;
 
 /* omegaGW parameters */
 REAL4 alpha = 0;
@@ -1535,28 +1539,28 @@ void parse_options(INT4 argc, CHAR *argv[])
 
       case 'h':
         /* minimal frequency */
-        fMin = atoi(optarg);
+        fMin = atof(optarg);
         if (fMin < 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
-              "Minimum frequency is less than 0 Hz (%d specified)\n", \
+              "Minimum frequency is less than 0 Hz (%f specified)\n", \
               long_options[option_index].name, fMin);
           exit(1);
         }
-        ADD_PROCESS_PARAM("int", "%d", fMin);
+        ADD_PROCESS_PARAM("float", "%e", fMin);
         break;
 
       case 'i':
         /* maximal frequency */
-        fMax = atoi(optarg);
+        fMax = atof(optarg);
         if (fMax < 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
-              "Maximum frequency is less than 0 Hz (%d specified)\n", \
+              "Maximum frequency is less than 0 Hz (%f specified)\n", \
               long_options[option_index].name, fMax);
           exit(1);
         }
-        ADD_PROCESS_PARAM("int", "%d", fMax);
+        ADD_PROCESS_PARAM("float", "%e", fMax);
         break;
 
       case 'j':
@@ -2169,8 +2173,8 @@ void parse_options(INT4 argc, CHAR *argv[])
   /* max frequency less than min */
   if (fMin > fMax)
   {
-    fprintf(stderr, "Invalid frequency band; maximum frequency (%d Hz) is " \
-        "before minimum\nfrequency (%d Hz)\n", fMax, fMin);
+    fprintf(stderr, "Invalid frequency band; maximum frequency (%f Hz) is " \
+        "before minimum\nfrequency (%f Hz)\n", fMax, fMin);
     exit(1);
   }
 
@@ -2178,7 +2182,7 @@ void parse_options(INT4 argc, CHAR *argv[])
   if (fRef < fMin)
   {
     fprintf(stderr, "Reference frequency (%f Hz) is less than minimum " \
-        "frequency (%d Hz)\n", fRef, fMin);
+        "frequency (%f Hz)\n", fRef, fMin);
     exit(1);
   }
 
@@ -2186,8 +2190,25 @@ void parse_options(INT4 argc, CHAR *argv[])
   if (fRef > fMax)
   {
     fprintf(stderr, "Reference frequency (%f Hz) is greater than maximum " \
-        "frequency (%d Hz)\n", fRef, fMax);
+        "frequency (%f Hz)\n", fRef, fMax);
     exit(1);
+  }
+
+  /* FIXME: the values of fMin and fMax that are passed to the code are
+   * put into the process params table - need to stored the rounded
+   * frequencies below */
+
+  /* check that min and max frequencies can be represented by the
+   * sampling rate of the data and round accordingly */
+  if (fMin != fabs(round(fMin * PSD_WINDOW_DURATION)) / PSD_WINDOW_DURATION)
+  {
+    fMin = fabs(round(fMin * PSD_WINDOW_DURATION)) / PSD_WINDOW_DURATION;
+    fprintf(stderr, "warning: fMin has been rounded to %f\n", fMin);
+  }
+  if (fMax != fabs(round(fMax * PSD_WINDOW_DURATION)) / PSD_WINDOW_DURATION)
+  {
+    fMax = fabs(round(fMax * PSD_WINDOW_DURATION)) / PSD_WINDOW_DURATION;
+    fprintf(stderr, "warning: fMax has been rounded to %f\n", fMax);
   }
 
   /* set channels */
