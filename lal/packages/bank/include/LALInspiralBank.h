@@ -1,6 +1,6 @@
 /* <lalVerbatim file="LALInspiralBankHV">
 
-Author: Churches, D. K and B.S. Sathyaprakash.
+Author: Churches, D.K. and Sathyaprakash, B.S.
 $Id$
 
 </lalVerbatim> */
@@ -31,6 +31,7 @@ Header file for the template placement codes.
 #include <lal/LALConstants.h>
 #include <lal/LALInspiral.h>
 #include <lal/RealFFT.h>
+#include <lal/LALNoiseModels.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -59,32 +60,27 @@ NRCSID( LALINSPIRALBANKH, "$Id$" );
 \input{LALInspiralBankHS}
 </lalLaTeX>  */
 
+/*  <lalLaTeX> 
+\index{\texttt{Detector}} 
+</lalLaTeX>  */
+
 /*  <lalVerbatim file="LALInspiralBankHS"> */
-
-typedef enum
-{
-  geo, ligo, tama, virgo
-}
-Detector;
-
 typedef enum
 {
   Tau0Tau2, Tau0Tau3
 }
 CoordinateSpace;
-
-
 /*  </lalVerbatim>  */
 
-/*  <lalLaTeX>
-\index{\texttt{Detector}}
+/*  <lalLaTeX> 
+\index{\texttt{CoordinateSpace}} 
 </lalLaTeX>  */
 
 /*  <lalLaTeX>
 \index{\texttt{LALInspiralMetric}}
 </lalLaTeX>  */
 
-/* metric and its dimension */
+/* Metric and its dimension */
 
 /*  <lalVerbatim file="LALInspiralBankHS"> */
 typedef struct 
@@ -100,16 +96,19 @@ tagInspiralMetric
 InspiralMetric;
 /* </lalVerbatim>  */
 
-
-/* a grid of inspiral templates (i.e., a template list) */
+/*  <lalLaTeX> 
+\index{\texttt{InspiralMetric}} 
+</lalLaTeX>  */
 
 /*  <lalVerbatim file="LALInspiralBankHS"> */
+/* a grid of inspiral templates (i.e., a template list) */
+
 typedef struct
 tagInspiralTemplateList
 {
   INT4 ID;
-  InspiralTemplate  params;       /* Pointer to parameter vectors */
-  InspiralMetric    metric;       /* Pointer to metric at every point */
+  InspiralTemplate  params;              /* Pointer to parameter vectors */
+  InspiralMetric    metric;              /* Pointer to metric at every point */
   struct tagInspiralTemplateList *next;  /* to create linked list */
 }
 InspiralTemplateList;
@@ -119,9 +118,9 @@ InspiralTemplateList;
 \index{\texttt{InspiralTemplateList}}
 </lalLaTeX>  */
 
-/* Parameters needed in InspiralCreateCoarseBank */
 
 /*  <lalVerbatim file="LALInspiralBankHS"> */
+/* Parameters needed in InspiralCreateCoarseBank */
 typedef struct
 tagInspiralBankParams
 {
@@ -143,9 +142,9 @@ InspiralBankParams;
 \index{\texttt{InspiralBankParams}}
 </lalLaTeX>  */
 
+/*  <lalVerbatim file="LALInspiralBankHS"> */
 /* input for specifying a template bank */
 
-/*  <lalVerbatim file="LALInspiralBankHS"> */
 typedef struct
 tagInspiralCoarseBankIn
 {
@@ -174,20 +173,6 @@ InspiralCoarseBankIn;
 \index{\texttt{InspiralCoarseBankIn}}
 </lalLaTeX>  */
 
-typedef 
-enum {ta, phi, t0, t1, t2, t3, t4, t5} 
-DParamSelect;
-
-typedef struct
-tagInspiralWaveDerivativeIn 
-{
-   DParamSelect     dp;
-   REAL8Vector      *psd;
-   InspiralTemplate p;
-   REAL8            eps;
-}
-InspiralWaveDerivativeIn;
-
 /*  <lalVerbatim file="LALInspiralBankHS"> */
 typedef struct {
    REAL8 xmin, xmax, ndx, norm;
@@ -213,29 +198,18 @@ typedef struct {
 
 /*  <lalVerbatim file="LALInspiralBankHS"> */
 typedef struct
-tagCorrelateIn {
-   REAL4Vector signal1, signal2;
-   REAL8Vector psd;
-   RealFFTPlan *revp;
-}CorrelateIn;
-/* </lalVerbatim>  */
-
-/*  <lalLaTeX>
-\index{\texttt{CorrelateIn}}
-</lalLaTeX>  */
-
-typedef struct
 tagInspiralFineBankIn
 {
    InspiralTemplateList templateList;
    InspiralCoarseBankIn coarseIn;
 } InspiralFineBankIn;
-
+/*  </lalVerbatim>  */
+/*  <lalLaTeX> 
+\index{\texttt{InspiralFineBankIn}} 
+</lalLaTeX>  */
 
 /*  <lalLaTeX>
-
 \vfill{\footnotesize\input{LALInspiralBankHV}}
-
 </lalLaTeX>  */
 
 /* Function prototypes */
@@ -251,31 +225,6 @@ LALInspiralComputeParams(
    InspiralBankParams   bankParams,
    InspiralCoarseBankIn coarseIn
 );
-
-
-void 
-LALInspiralCopyBankParams(
-   LALStatus             *status,
-   InspiralBankParams *bankParams1,
-   InspiralBankParams bankParams2
-);
-
-
-void 
-LALInspiralFirstTemplateOnBoundary(
-   LALStatus               *status,
-   InspiralBankParams   *bankParams,
-   InspiralCoarseBankIn bankIn
-);
-
- 
-void 
-LALInspiralLastTemplateOnBoundary(
-   LALStatus               *status,
-   InspiralBankParams   *bankParams,
-   InspiralCoarseBankIn bankIn
-);
- 
 
 /* <lalLaTeX>
 \newpage\input{LALInspiralValidParamsC}
@@ -349,16 +298,8 @@ LALInspiralUpdateParams(
 );
 
 /* <lalLaTeX>
-%\newpage\input{LALInspiralFineGridSpacingC}
+\newpage\input{LALInspiralWaveLengthC}
 </lalLaTeX>  */
-
-void 
-LALInspiralFineGridSpacing(
-   LALStatus            *status,
-   InspiralBankParams   *bankParams,
-   InspiralMetric       metric,
-   InspiralCoarseBankIn coarseIn
-);
 
 void 
 LALInspiralWaveLength(
@@ -366,61 +307,6 @@ LALInspiralWaveLength(
    INT4             *length,
    InspiralTemplate p
 );
-
-void 
-LALNoiseSpectralDensity (
-   LALStatus   *status, 
-   REAL8Vector *psd, 
-   Detector    choice, 
-   REAL8       f
-);
-
-void 
-LALCorrelate (
-   LALStatus   *status, 
-   REAL4Vector *output, 
-   CorrelateIn in
-);
-
-void 
-LALNormalise (
-   LALStatus   *status, 
-   REAL4Vector *dh, 
-   REAL8       *norm, 
-   REAL8Vector psd
-);
-
-/* <lalLaTeX>
-\newpage\input{LALGEOPsdC}
-</lalLaTeX>  */
-
-REAL8 LALGEOPsd (REAL8 x);
-
-/* <lalLaTeX>
-\newpage\input{LALLIGOIPsdC}
-</lalLaTeX>  */
-
-REAL8 LALLIGOIPsd (REAL8 x);
-
-/* <lalLaTeX>
-\newpage\input{LALTAMAPsdC}
-</lalLaTeX>  */
-
-REAL8 LALTAMAPsd (REAL8 x);
-
-/* <lalLaTeX>
-\newpage\input{LALVIRGOPsdC}
-</lalLaTeX>  */
-
-REAL8 LALVIRGOPsd (REAL8 x);
-
-
-void InverseMatrix (
-LALStatus *status,
-   INT4   Dim, 
-   REAL8  **mm3, 
-   INT4   *buff2, 
-   REAL8  **buff1);
 
 /* <lalLaTeX>
 \newpage\input{LALMatrixTransformC}
@@ -455,17 +341,24 @@ LALInspiralMomentsIntegrand(
    REAL8  f,
    void   *pars);
 
-void LALDeterminant3(LALStatus *status, 
-                     REAL8  *determinant, 
-                     REAL8  **matrix) ;
+/* <lalLaTeX>
+\newpage\input{LALDeterminant3C}
+</lalLaTeX>  */
+
+void
+LALDeterminant3(LALStatus *status, 
+                REAL8  *determinant, 
+                REAL8  **matrix) ;
 
 /* <lalLaTeX>
 \newpage\input{LALInverse3C}
 </lalLaTeX>  */
 
-void LALInverse3(LALStatus *status, 
-                 REAL8     **inverse, 
-                 REAL8     **matrix) ;
+void 
+LALInverse3(
+            LALStatus *status, 
+            REAL8     **inverse, 
+            REAL8     **matrix) ;
 
 /* <lalLaTeX>
 \newpage\input{LALInspiralSetParamsC}
@@ -491,74 +384,6 @@ LALInspiralNextTemplate(
 /* <lalLaTeX>
 \newpage\input{CoarseTestC}
 </lalLaTeX> */
-
-typedef struct 
-tagAddVectorsIn
-{
-   REAL4Vector *v1, *v2;
-   REAL8 a1, a2;
-} AddVectorsIn;
-
-typedef struct 
-tagRandomInspiralSignalIn
-{
-   InspiralTemplate param;
-   UINT8 useed;
-   REAL8 mMin, MMax, SignalAmp, NoiseAmp;
-   INT4 type;
-   REAL8Vector psd;
-   RealFFTPlan *fwdp;
-} RandomInspiralSignalIn;
-
-typedef struct
-tagOverlapIn {
-   REAL4Vector signal;
-   REAL8Vector psd;
-   InspiralTemplate param;
-   RealFFTPlan *fwdp, *revp;
-} OverlapIn; 
-
-typedef struct
-tagOverlapOut {
-   REAL8 max, phase;
-   INT4 bin;
-} OverlapOut; 
-
-void
-LALRandomInspiralSignal(
-   LALStatus *status, 
-   REAL4Vector *signal,
-   RandomInspiralSignalIn *randIn);
-
-void
-LALGaussianNoise (
-   LALStatus   *status,
-   REAL4Vector *noisy, 
-   UINT8       *seed);
-
-void
-LALColoredNoise (
-   LALStatus   *status,
-   REAL4Vector *noisy, 
-   REAL8Vector psd);
-
-void
-LALGaussianRandomNumber(
-   LALStatus *status, 
-   REAL4 *randnum);
-
-void 
-LALAddVectors(
-   LALStatus *status, 
-   REAL4Vector *vector, 
-   AddVectorsIn in);
-
-void
-LALInspiralWaveOverlap (
-   LALStatus   *status,
-   REAL4Vector *output,
-   OverlapOut  *overlapout,
-   OverlapIn   *overlapin);
 
 #ifdef  __cplusplus
 }
