@@ -98,6 +98,10 @@ inspiral tables and returns those which are from the requested \texttt{ifo}.
 The \texttt{output} is a pointer to the head of a linked list of single
 inspiral tables for the specified instrument.
 
+\texttt{LALIfoCountSingleInspiral()} scans through a linked list of single
+inspiral tables and counts the number which are from the requested IFO.  
+This count is returned as.
+
 \texttt{LALPlayTestSingleInspiral()} tests whether single inspiral events
 occured in playground or non-playground times.  It then returns the requested
 subset of events which occurred in the times specified by \texttt{dataType},
@@ -568,7 +572,7 @@ LALIfoScanSingleInspiral(
 {
   SnglInspiralTable    *thisEvent = NULL;
 
-  INITSTATUS( status, "LALIfoCutSingleInspiral", SNGLINSPIRALUTILSC );
+  INITSTATUS( status, "LALIfoScanSingleInspiral", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
   /* check that output is null and input non-null */
@@ -607,6 +611,46 @@ LALIfoScanSingleInspiral(
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }  
+
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void
+LALIfoCountSingleInspiral(
+    LALStatus                  *status,
+    UINT4                      *numTrigs,
+    SnglInspiralTable          *input,
+    InterferometerLabel         ifoLabel 
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable    *thisEvent = NULL;
+  CHAR                  ifoList[7][LIGOMETA_IFO_MAX] = 
+                            {"??","G1", "H1", "H2", "L1", "T1", "V1"};
+
+  INITSTATUS( status, "LALIfoCountSingleInspiral", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  /* check that output is null and input non-null */
+  ASSERT( !(*numTrigs), status, 
+      LIGOMETADATAUTILSH_ENNUL, LIGOMETADATAUTILSH_MSGENNUL );
+  ASSERT( input, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+
+  /* Scan through a linked list of sngl_inspiral tables and return a
+     pointer to the head of a linked list of tables for a specific IFO */
+  for( thisEvent = input; thisEvent; thisEvent = thisEvent->next )
+  {
+    if ( !strcmp(thisEvent->ifo, ifoList[ifoLabel]) ) 
+    {
+      /* IFOs match so count this trigger */
+      ++(*numTrigs);
+    }
+  }
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}  
+
 
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
