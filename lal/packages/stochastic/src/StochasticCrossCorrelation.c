@@ -1195,6 +1195,16 @@ LALStochasticCrossCorrelationSpectrumCal(
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2Coarse.data)), status);
   } ENDFAIL( status ); 
 
+
+  hc1StarHc2Coarse.data = NULL;
+
+  LALCCreateVector(status->statusPtr, &(hc1StarHc2Coarse.data),
+                   freqParams.length);
+
+  BEGINFAIL( status ) 
+    TRY(LALCDestroyVector(status->statusPtr, &(hc1StarHc2Coarse.data)), status);
+  ENDFAIL( status ); 
+
   LALCCVectorMultiply(status->statusPtr, hc1StarHc2Coarse.data,
                       r1StarR2.data, h1StarH2Coarse.data);
 
@@ -1226,7 +1236,15 @@ LALStochasticCrossCorrelationSpectrumCal(
   unitPair.unitTwo = &(input->hBarTildeTwo->sampleUnits);
   TRY( LALUnitMultiply(status->statusPtr, &h1H2Units, &unitPair),
        status );
+  unitPair.unitOne = &(input->responseFunctionOne->sampleUnits);
+  unitPair.unitTwo = &(input->responseFunctionTwo->sampleUnits);
+  TRY( LALUnitMultiply(status->statusPtr, &r1R2Units, &unitPair),
+       status );
   unitPair.unitOne = &h1H2Units;
+  unitPair.unitTwo = &r1R2Units;
+  TRY( LALUnitMultiply(status->statusPtr, &hc1Hc2Units, &unitPair),
+       status );
+  unitPair.unitOne = &hc1Hc2Units;
   unitPair.unitTwo = &(input->optimalFilter->sampleUnits);
   TRY( LALUnitMultiply(status->statusPtr, &(output->sampleUnits), &unitPair),
        status );
