@@ -376,15 +376,21 @@ int main( int argc, char *argv[] ) {
      spinparams.epoch = tevpulse.epoch;
      spinparams.t0 = tevpulse.t0;
      compparams.epoch = tevpulse.epoch;
-     compparams.t1 = LALDTBaryPtolemaic;
-     compparams.t2 = LALDTSpin;
+     compparams.t1 = LALTBaryPtolemaic;
+     compparams.t2 = LALTSpin;
      compparams.dt1 = LALDTBaryPtolemaic;
      compparams.dt2 = LALDTSpin;
      compparams.constants1 = &baryparams;
      compparams.constants2 = &spinparams;
      compparams.nArgs = 2;
-     tevparam.dtCanon = LALDTComp;
-     tevparam.constants = &compparams;
+     if(numSpindown) {
+       tevparam.dtCanon = LALDTComp;
+       /*tevparam.constants = &compparams;*/
+     }
+     else {
+       tevparam.dtCanon=LALDTBaryPtolemaic;
+       /*tevparam.constants = &baryparams;*/
+     }
    }
    if(metric_code==3)
      tevparam.dtCanon = LALDTEphemeris;
