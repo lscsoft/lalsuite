@@ -622,3 +622,50 @@ LALExtractFrameResponse(
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
+
+/* <lalVerbatim file="FrameCalibrationCP"> */
+void
+LALCreateCalibFrCache(
+    LALStatus          *status,
+    FrCache           **output,
+    const CHAR         *calCacheName,
+    const CHAR         *dirstr,
+    const CHAR         *calGlobPattern
+    )
+
+{ /* </lalVerbatim> */
+    
+  INITSTATUS( status, "LALCreateCalibFrCache", FRAMECALIBRATIONC );
+  ATTATCHSTATUSPTR( status );
+
+  ASSERT( output, status, 
+      FRAMECALIBRATIONH_ENULL, FRAMECALIBRATIONH_MSGENULL );
+  ASSERT( ! *output, status, 
+      FRAMECALIBRATIONH_ENNUL, FRAMECALIBRATIONH_MSGENNUL );
+
+  /* check that we have only one method specified */
+  if ( (calCacheName && calGlobPattern) || (calCacheName && dirstr) )
+  {
+    ABORT( status, FRAMECALIBRATIONH_EMETH, FRAMECALIBRATIONH_MSGEMETH );
+  }
+
+  if ( calCacheName )
+  {
+    /* read in a calibration cache file */
+    LALFrCacheImport( status->statusPtr, output, calCacheName );
+    CHECKSTATUSPTR( status );
+  }
+  else
+  {
+    /* set the default glob */
+    calGlobPattern = calGlobPattern ? calGlobPattern : "*CAL*.gwf";
+    dirstr = dirstr ? dirstr : ".";
+
+    /* build the cache by globbing */
+    LALFrCacheGenerate( status->statusPtr, output, dirstr, calGlobPattern );
+    CHECKSTATUSPTR( status );
+  }
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}

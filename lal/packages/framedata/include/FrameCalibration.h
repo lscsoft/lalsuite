@@ -59,6 +59,7 @@ NRCSID( FRAMECALIBRATIONH, "$Id$" );
 #define FRAMECALIBRATIONH_EREFR 7
 #define FRAMECALIBRATIONH_ECFAC 8
 #define FRAMECALIBRATIONH_EDTMM 9
+#define FRAMECALIBRATIONH_EMETH 10
 
 #define FRAMECALIBRATIONH_MSGENULL "No calibration generated: Null pointer"
 #define FRAMECALIBRATIONH_MSGENNUL "No calibration generated: Non-null pointer"
@@ -69,6 +70,7 @@ NRCSID( FRAMECALIBRATIONH, "$Id$" );
 #define FRAMECALIBRATIONH_MSGEREFR "No calibration generated: error reading refernce calibration"
 #define FRAMECALIBRATIONH_MSGECFAC "Calibration not updated: no update factor frames in cache"
 #define FRAMECALIBRATIONH_MSGEDTMM "Calibration not updated: mismatch between sample rate of alpha and alpha*beta"
+#define FRAMECALIBRATIONH_MSGEMETH "Calibration cache must either be read from a file or globbed"
 /**** </lalErrTable> */
 
 /**** <lalLaTeX>
@@ -91,6 +93,15 @@ LALExtractFrameResponse(
     COMPLEX8FrequencySeries *output,
     FrCache                 *calCache,
     CalibrationUpdateParams *calfacts
+    );
+
+void
+LALCreateCalibFrCache(
+    LALStatus          *status,
+    FrCache           **output,
+    const CHAR         *calCacheName,
+    const CHAR         *dirstr,
+    const CHAR         *calGlobPattern
     );
 
 #ifdef __cplusplus

@@ -52,7 +52,7 @@ NRCSID( FRAMECACHEH, "$Id$" );
 #define FRAMECACHEH_MSGEALOC "Memory allocation error"
 #define FRAMECACHEH_MSGEIEIO "Import/export I/O error"
 #define FRAMECACHEH_MSGELINE "Input line too long"
-#define FRAMECACHEH_MSGEPATH "Invalid path"
+#define FRAMECACHEH_MSGEPATH "Unable to glob frame files to build cache"
 #define FRAMECACHEH_MSGENFRM "No frame files"
 /**** </lalErrTable> */
 
