@@ -62,7 +62,7 @@ main (int argc, char **argv )
   if  ( (input2  = fopen(BEASCII2XML_INPUT2,"r"))==NULL){
     fprintf(stderr,"error while opening input file %s\n",BEASCII2XML_INPUT2);
     fprintf(stderr,"the xml file will not contains parameters information\n");
-    fprintf(output,"%s", LIGOLW_XML_HEADER);
+    fprintf(output,"%s", LIGOLW_XML_HEADER_BANKEFFICIENCY);
   }
   else 
     {
@@ -145,8 +145,8 @@ main (int argc, char **argv )
 	      trigger.binC, trigger.coaTime);
     }
    while(!feof(input1));
-  fprintf(output,"%s", LIGOLW_XML_TABLE_FOOTER);
-  fprintf(output,"%s", LIGOLW_XML_FOOTER);
+  fprintf(output,"%s", LIGOLW_XML_TABLE_FOOTER_BANKEFFICIENCY);
+  fprintf(output,"%s", LIGOLW_XML_FOOTER_BANKEFFICIENCY);
 
 
   return 0;

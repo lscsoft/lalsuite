@@ -2558,8 +2558,8 @@ BEPrintResultsXml( InspiralCoarseBankIn   coarseBankIn,
 	    trigger.coaTime);
 	    
      if (trigger.ntrial == otherIn.ntrials){
-       fprintf( xmlStream.fp, LIGOLW_XML_TABLE_FOOTER );
-       fprintf( xmlStream.fp, LIGOLW_XML_FOOTER );
+       fprintf( xmlStream.fp, LIGOLW_XML_TABLE_FOOTER_BANKEFFICIENCY );
+       fprintf( xmlStream.fp, LIGOLW_XML_FOOTER_BANKEFFICIENCY );
      }
      fclose( xmlStream.fp );
      xmlStream.fp = NULL;
@@ -2598,8 +2598,8 @@ BEPrintResultsXml( InspiralCoarseBankIn   coarseBankIn,
 		trigger.alpha_fC, 
 		trigger.layerC,
 		trigger.binC, trigger.coaTime);
-	fprintf( xmlStream.fp, LIGOLW_XML_TABLE_FOOTER );
-	fprintf( xmlStream.fp, LIGOLW_XML_FOOTER );
+	fprintf( xmlStream.fp, LIGOLW_XML_TABLE_FOOTER_BANKEFFICIENCY );
+	fprintf( xmlStream.fp, LIGOLW_XML_FOOTER_BANKEFFICIENCY );
       }
       else
 	{
