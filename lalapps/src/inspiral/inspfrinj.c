@@ -230,11 +230,11 @@ int main( int argc, char *argv[] )
    *
    */
 
+  memset( &chan, 0, sizeof(REAL4TimeSeries) );
 
   if ( frInCacheName )
   {
     /* set the params of the input data time series */
-    memset( &chan, 0, sizeof(REAL4TimeSeries) );
     chan.epoch = gpsStartTime;
 
     /* open a frame cache */
@@ -387,6 +387,8 @@ int main( int argc, char *argv[] )
 	injResp.data->data[k].re = 1.0;
 	injResp.data->data[k].im = 0;
       }
+      if ( vrbflg ) fprintf( stdout, "done.\n" );
+
     }
 
 
@@ -520,7 +522,7 @@ int main( int argc, char *argv[] )
   else
   {
     LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), 
-      "%s-INSPFRINJ_%d-%d.xml", ifo, gpsStartTime.gpsSeconds, 
+      "%s-INSPFRINJ-%d-%d.xml", ifo, gpsStartTime.gpsSeconds, 
 	gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
 
   }
