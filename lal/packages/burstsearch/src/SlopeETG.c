@@ -174,7 +174,7 @@ parameter index & type & description \\ \hline
     if(buffer.data[i] >= thr) {
 
       UINT4 i0 = i;
-      UINT4 i1;
+      UINT4 i1 = 0;
 
       i++;
 

@@ -188,9 +188,9 @@ parameter index & type & description \\ \hline
     LALDCreateVector(status->statusPtr, &tmpv, spower.params->timeBins);
     CHECKSTATUSPTR (status);
     ip = (UINT4)floor((1.0-p) * (spower.params->timeBins - 1));
-    for(i=0; i<spower.params->freqBins; i++) {
+    for(i=0; (int)i<(int)spower.params->freqBins; i++) {
 
-      for(j=0; j<spower.params->timeBins; j++) {
+      for(j=0; (int)j<(int)spower.params->timeBins; j++) {
 	tmpv->data[j] = spower.power[j*spower.params->freqBins + i];
       }
 
@@ -223,11 +223,11 @@ parameter index & type & description \\ \hline
       rtp.Q = (REAL8 *)LALCalloc(rtp.nFreq, sizeof(REAL8));
       if(!(rtp.Q)) {ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM);} 
 
-      for(i=0; i<spower.params->freqBins; i++) {
+      for(i=0; (int)i<(int)spower.params->freqBins; i++) {
 
 	P = P2 = 0.0;
 
-	for(j=0; j<spower.params->timeBins; j++) {
+	for(j=0; (int)j<(int)spower.params->timeBins; j++) {
 	  P += spower.power[j*spower.params->freqBins + i];
 	  P2 += spower.power[j*spower.params->freqBins + i] * spower.power[j*spower.params->freqBins + i];
 	}
@@ -250,7 +250,7 @@ parameter index & type & description \\ \hline
 	P = P2 = 0.0;
 	NP = 0;
 
-	for(j=0; j<spower.params->timeBins; j++) {
+	for(j=0; (int)j<(int)spower.params->timeBins; j++) {
 	  if(spower.power[j*spower.params->freqBins + i] < rtp.Q[j] + Nsigma * rtp.P0[j]) {
 	    NP++;
 	    P += spower.power[j*spower.params->freqBins + i];
@@ -284,7 +284,7 @@ parameter index & type & description \\ \hline
 	LALTFCRiceThreshold(status->statusPtr, rho, &rtp);
 	CHECKSTATUSPTR (status);
       
-	for(k=0;k<spower.params->freqBins;k++) {
+	for(k=0;(int)k<(int)spower.params->freqBins;k++) {
 	  dir.rho[k] = rho[k];
 	}
       

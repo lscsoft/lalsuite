@@ -52,8 +52,8 @@ LALComputeFrequencySeries (
   ASSERT(timeSeries->data->length > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
   n = timeSeries->data->length;
 
-  ASSERT(freqSeries->data->length == n/2 + 1, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-  ASSERT(dftParams->window->length == n, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  ASSERT((int)freqSeries->data->length == n/2 + 1, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  ASSERT((int)dftParams->window->length == n, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
 
   /* copy over data into frequency series structure */

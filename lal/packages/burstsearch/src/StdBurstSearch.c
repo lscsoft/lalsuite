@@ -31,7 +31,7 @@ NRCSID (STDBURSTSEARCHC, "$Id$");
 #define HALF_LOG_2PI 0.918938533204673
 
 static REAL8 LALi0(REAL8 x);
-static REAL8 LALi1(REAL8 x);
+/*static REAL8 LALi1(REAL8 x); */
 static REAL8 LALi0e(REAL8 x);
 static REAL8 LALi1e(REAL8 x);
 
@@ -168,7 +168,7 @@ Description of the function...
   while(Input) {
 
     LIGOTimeGPS   start_time;
-    REAL4         duration;
+    REAL4         duration = 0;
     REAL4         central_freq;
     REAL4         bandwidth;
     REAL4         amplitude;
@@ -401,7 +401,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	/* now compute fft of burst */
 	start_index = (UINT4)floor((REAL8)(input->start_time.gpsSeconds - data->data->epoch.gpsSeconds)/data->data->deltaT + 1E-9*((REAL8)input->start_time.gpsNanoSeconds - (REAL8)data->data->epoch.gpsNanoSeconds)/data->data->deltaT);
 
-	if(start_index >= didel) {
+	if((int)start_index >= (int)didel) {
 	  start_index -= didel; /* correct for duration_increase */
 	} else {
 	  start_index = 0;
@@ -436,7 +436,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	}
 
 	lhi = (INT4)ceil((input->central_freq + 0.5 * input->bandwidth) * data->data->deltaT * (REAL8)bptr->nTime);
-	if(lhi > bptr->nFreq) {
+	if((int)lhi > (int)bptr->nFreq) {
 	  lhi = bptr->nFreq;
 	}
 
@@ -450,7 +450,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	  CHECKSTATUSPTR (status);
 	}
 
-	for(l=llo;l<lhi;l++) {
+	for(l=llo;(int)l<(int)lhi;l++) {
 	  RiceLikelihoodParams rp;
 	  REAL8 Pmax, q0;
 	  DFindRootIn dfri;
@@ -559,7 +559,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	    msdur = mpeak;
 	  }
 
-	  for(sdur=0;sdur<FPower->length;sdur++) {
+	  for(sdur=0;(int)sdur<(int)FPower->length;sdur++) {
 	    tPower += FPower->data[sdur];
 	  }
 	  thr = tPower * (1.0 - bandwidthPF);
@@ -780,14 +780,14 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	  filter_delay = e2_filter_delay;
 	  r4ptr = e2;
 
-	  if(lhi > data->data->data->vectorLength) {
+	  if((int)lhi > (int)data->data->data->vectorLength) {
 	    lhi = data->data->data->vectorLength;
 	  }
 	} else {
 	  r4ptr = e1;
 	  filter_delay = e1_filter_delay;
 
-	  if(lhi > e1_end) {
+	  if((int)lhi > (int)e1_end) {
 	    lhi = e1_end;
 	  }
 	}
@@ -801,7 +801,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 
 	  banddata.deltaT = data->data->deltaT;
 	  fi = llo - (INT4)ceil(bandSafe / banddata.deltaT);
-	  if(llo >= e2_start && fi < e2_start) {
+	  if((int)llo >= (int)e2_start && (int)fi < (int)e2_start) {
 	    fi = e2_start;
 	  }
 	  if(fi < 0) {
@@ -809,10 +809,10 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	  }
 
 	  li = lhi + (INT4)ceil(bandSafe / banddata.deltaT);
-	  if(llo < e2_start && li > e1_end) {
+	  if((int)llo < (int)e2_start && (int)li > (int)e1_end) {
 	    li = e1_end;
 	  }
-	  if(li > data->data->data->vectorLength) {
+	  if((int)li > (int)data->data->data->vectorLength) {
 	    li = data->data->data->vectorLength;
 	  }
 
@@ -846,7 +846,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 
 	  r4ptr = bdat->data - fi;
 
-	  for(l=llo+1; l<lhi; l++) {
+	  for(l=llo+1; (int)l<(int)lhi; l++) {
 	    r4ptr[l] /= norm;
 	  }
 
@@ -859,7 +859,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	    llikt = -HALF_LOG_2PI -0.5e30;
 	  }
 
-	  for(l=llo+1; l<lhi; l++) {
+	  for(l=llo+1; (int)l<(int)lhi; l++) {
 
 	    if(fabs(r4ptr[l]) > mlik) {
 	      mlik = fabs(r4ptr[l]);
@@ -903,7 +903,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	    CHECKSTATUSPTR (status);
 	  }
 
-	  for(l=llo+1; l<lhi; l++) {
+	  for(l=llo+1; (int)l<(int)lhi; l++) {
 	    FPower->data[l-llo-1] = r4ptr[l] * r4ptr[l];
 	  }
 
@@ -918,7 +918,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	      msdur = mpeak;
 	    }
 
-	    for(sdur=0;sdur<FPower->length;sdur++) {
+	    for(sdur=0;(int)sdur<(int)FPower->length;sdur++) {
 	      tPower += FPower->data[sdur];
 	    }
 	    thr = tPower * (1.0 - durationPF);
@@ -1278,6 +1278,7 @@ static REAL8 BB[] =
  7.78576235018280120474E-1
 };
 
+/*
 static REAL8 LALi1(REAL8 x)
 { 
 REAL8 y, z;
@@ -1296,6 +1297,7 @@ if( x < 0.0 )
 	z = -z;
 return( z );
 }
+*/
 
 static REAL8 LALi1e( REAL8 x )
 { 

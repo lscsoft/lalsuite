@@ -60,7 +60,7 @@ void LALBlockRho2 (
  LALStatus		*status,
  REAL8			*result,
  REAL8			*rpeak,
- INT4			*index,
+ INT4			*myindex,
  REAL8Sequence		*data,
  UINT4			*marginOfExclusion			
 );
@@ -69,7 +69,7 @@ void LALBlockRho3 (
  LALStatus               *status,
  REAL8                   *result,
  REAL8                   *rpeak,
- INT4                    *index,
+ INT4                    *myindex,
  REAL8Sequence           *data
 );
 

@@ -28,6 +28,7 @@ extern int lalDebugLevel;
  */
 
 
+#if 0
 static REAL8 logGamma(REAL8 z)
 {
   /* 
@@ -55,7 +56,7 @@ static REAL8 logGamma(REAL8 z)
   lngamma = log(lngamma) + lnsqrt2pi - (z+6.5) + (z-0.5)*log(z+6.5);
   return lngamma;
 }
-
+#endif
 
 
 static REAL8 Factorial(INT4 n)
@@ -70,6 +71,7 @@ static REAL8 Factorial(INT4 n)
 }
 
 
+#if 0
 static void
 ChisqCdf1 (
     LALStatus                *status,
@@ -125,7 +127,7 @@ ChisqCdf1 (
   DETATCHSTATUSPTR (status);
   RETURN(status);
 }
-
+#endif
 
 
 static void
