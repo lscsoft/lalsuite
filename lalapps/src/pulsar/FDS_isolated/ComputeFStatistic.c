@@ -103,6 +103,7 @@ CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
 CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
+CHAR *uvar_workingDir;
 
 /* try this */
 BOOLEAN uvar_openDX;
@@ -468,6 +469,9 @@ initUserVars (LALStatus *stat)
 
   uvar_skyGridFile = NULL;
 
+  uvar_workingDir = LALMalloc(512);
+  strcpy(uvar_workingDir, ".");
+
   /* register all our user-variables */
  
   LALregINTUserVar(stat,	Dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
@@ -503,6 +507,7 @@ initUserVars (LALStatus *stat)
   LALregSTRINGUserVar(stat,	outputSkyGrid,	 0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
 
   LALregBOOLUserVar(stat,	openDX,	 	 0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
+  LALregSTRINGUserVar(stat,     workingDir,     'w', UVAR_OPTIONAL, "Directory to be made the working directory, . is default");
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -1251,6 +1256,12 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
       LALPrintError ("\nNegative value of sky-bands not allowed (alpha or delta)!\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
+
+  /* set the current working directory */
+  if(chdir(uvar_workingDir) != 0){
+    fprintf(stderr, "in Main: unable to change directory to %s\n", uvar_workingDir);
+    return 2;
+  }
 
 #if USE_BOINC
   strcat(cfg->EphemEarth,"earth");
