@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
     LALDetector      detector;
     LALPlaceAndDate  place_and_date;
     LALPlaceAndGPS   place_and_gps;
-    char             refstr[128];
+    char             refstr[256];
     char             tmpstr[128];
     LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
 
