@@ -273,6 +273,10 @@ Name & Value & Description \\
 \hline
 \tt LAL\_REARTH\_SI & $6.378140\times10^6\,\mathrm{m}$ &
 	Earth equatorial radius \\
+\tt LAL_AWGS84_SI   & $6.378137\times10^6\,\mathrm{m}$ &
+        Semimajor axis of WGS-84 Reference Ellipsoid \\
+\tt LAL_BWGS84_SI   & $6.356752314\times10^6\,\mathrm{m}$ &
+        Semiminor axis of WGS-84 Reference Ellipsoid \\
 \tt LAL\_MEARTH\_SI & $5.97370\times10^{24}\,\mathrm{kg}$ & Earth mass \\
 \tt LAL\_IEARTH     & $0.409092804\,\mathrm{rad}$ &
 	Obliquity of the ecliptic (2000) \\
@@ -299,6 +303,8 @@ Name & Value & Description \\
 </lalLaTeX> */
 
 #define LAL_REARTH_SI 6.378140e6      /* Earth equatorial radius, m */
+#define LAL_AWGS84_SI 6.378137e6      /* Semimajor axis of WGS-84 Reference Ellipsoid, m */
+#define LAL_BWGS84_SI 6.356752314e6   /* Semiminor axis of WGS-84 Reference Ellipsoid, m */
 #define LAL_MEARTH_SI 5.97370e24      /* Earth mass, kg */
 #define LAL_IEARTH    0.409092804     /* Earth inclination (2000), radians */
 #define LAL_EEARTH    0.0167          /* Earth orbital eccentricity */
