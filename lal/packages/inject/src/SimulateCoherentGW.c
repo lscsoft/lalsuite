@@ -848,7 +848,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
     REAL8 iCentre = TCENTRE( i );  /* value of i + propagation delays */
     REAL8 x;                /* interpolation point in arrays */
     INT4 j;                 /* array index preceding x */
-    REAL4 frac;             /* value of x - j */
+    REAL8 frac;             /* value of x - j */
     REAL4 a1, a2;           /* current signal amplitudes */
     REAL8 phi = 0.0;        /* current signal phase */
     REAL4 f = 0.0;          /* current signal frequency */
@@ -862,7 +862,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
     /* Interpolate the signal amplitude. */
     x = aOff + iCentre*aDt;
     j = (INT4)floor( x );
-    frac = (REAL4)( x - j );
+    frac = (REAL8)( x - j );
     j *= 2;
     a1 = frac*aData[j+2] + ( 1.0 - frac )*aData[j];
     a2 = frac*aData[j+3] + ( 1.0 - frac )*aData[j+1];
@@ -873,14 +873,14 @@ LALSimulateCoherentGW( LALStatus        *stat,
     else {
       x = shiftOff + iCentre*shiftDt;
       j = (INT4)floor( x );
-      frac = (REAL4)( x - j );
+      frac = (REAL8)( x - j );
       shift = frac*shiftData[j+1] + ( 1.0 - frac )*shiftData[j];
     }
 
     /* Interpolate the signal phase, and apply any heterodyning. */
     x = phiOff + iCentre*phiDt;
     j = (INT4)floor( x );
-    frac = (REAL4)( x - j );
+    frac = (REAL8)( x - j );
     phi = frac*phiData[j+1] + ( 1.0 - frac )*phiData[j];
     phi -= heteroFac*i + phi0;
 
@@ -892,7 +892,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
       } else {
 	x = fOff + iCentre*fDt;
 	j = (INT4)floor( x );
-	frac = (REAL4)( x - j );
+	frac = (REAL8)( x - j );
 	f = frac*fData[j+1] + ( 1.0 - frac )*fData[j];
 	f *= fFac;
       }
@@ -903,7 +903,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
 	fFlag = 1;
       } else {
 	j = (INT4)floor( x );
-	frac = (REAL4)( x - j );
+	frac = (REAL8)( x - j );
 	aTrans = frac*aTransData[j+1] + ( 1.0 - frac )*aTransData[j];
 	phiTrans = frac*phiTransData[j+1] + ( 1.0 - frac )*phiTransData[j];
       }
@@ -926,7 +926,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
     /* Interpolate the polarization response, and compute output. */
     x = polOff + i*polDt;
     j = (INT4)floor( x );
-    frac = (REAL4)( x - j );
+    frac = (REAL8)( x - j );
     oPlus *= frac*plusData[j+1] + ( 1.0 - frac )*plusData[j];
     oCross *= frac*crossData[j+1] + ( 1.0 - frac )*crossData[j];
     outData[i] = oPlus + oCross;

@@ -718,7 +718,7 @@ main(int argc, char **argv)
     fprintf( fp, "# epoch = %lli\n", epoch );
     fprintf( fp, "# deltaT = %23.16e\n", output.deltaT );
     for ( i = 0; i < output.data->length; i++ )
-      fprintf( fp, "%10.3e\n", (REAL4)( output.data->data[i] ) );
+      fprintf( fp, "%16.9e\n", (REAL4)( output.data->data[i] ) );
     fclose( fp );
   }
 
