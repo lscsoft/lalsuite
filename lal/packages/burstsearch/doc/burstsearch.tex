@@ -23,19 +23,18 @@ power search technique.
 \noindent This package provides a suite for functions for computing time-frequency
 representations of data using stacked Fourier transforms.
 
-The first few functions simply combine together some of the functionality of
-the packages \verb+fft+ and \verb+Window+ in a convenient way.  They are
-designed to streamline the task of setting up structures to prepare for taking
-many discrete Fourier transforms (DFTs), including windows and ``plans'' for
-FFTW.
+The first few functions simply combine functionality from the packages
+\verb+fft+ and \verb+Window+ in a convenient way.  They are designed to
+streamline the task of setting up structures to prepare for taking many
+discrete Fourier transforms (DFTs), including windows and plans for FFTW.
 
 A general description of the time-frequency (TF) transform provided by
-TFTransform is as follows.  Suppose that one starts with some data $h_j$, $0
-\le j < n$ in the time domain, with sampling time $\Delta t$, so that the data
-point $h_j$ corresponds to a time $t_j = t_{\rm start} + j \Delta t$.  Taking
-the standard DFT yields complex data
+TFTransform is as follows.  Suppose one starts with some data $h_j$, $0 \le j
+< n$ in the time domain, with sampling time $\Delta t$, so that the data point
+$h_j$ corresponds to a time $t_j = t_{\rm start} + j \Delta t$.  Taking the
+standard DFT yields complex data
 \begin{equation}
-{\tilde h}_\gamma = \sum_{j=0}^{n-1} \, e^{2 \pi i j \gamma / n} \, h_j
+{\tilde h}_\gamma = \sum_{j=0}^{n-1} \, e^{-2 \pi i j \gamma / n} \, h_j
 \label{standarddft}
 \end{equation}
 in the Fourier domain, for $0 \le \gamma \le [n/2]+1$.  Here the data point
@@ -57,7 +56,7 @@ plane, and $N_T$ is the number of time bins.  The time resolution ${\overline
 {\Delta t}}$ and frequency resolution ${\overline {\Delta f}}$ are related by
 ${\overline {\Delta t}} \ {\overline {\Delta f}} =1$, and are given by
 ${\overline {\Delta t}} = 2 N_F \Delta t$ and ${\overline {\Delta f}} = N_T
-\Delta f$.  Note that there are many other ``time-frequency'' representations
+\Delta f$.  Note that there are many other time-frequency representations
 of data that are not of this type; see \cite{ab:1999}.
 
 
@@ -101,7 +100,7 @@ Eq.\ (\ref{standarddft}).
 \idx[Type]{TFPlaneParams}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\noindent Parameters needed to described a particular TF plane.
+\noindent Parameters needed to describe a particular TF plane.
 
 \begin{description}
 \item[\texttt{INT4 timeBins}] Number of time bins $N_T$ in TF plane. 
@@ -223,6 +222,12 @@ $+1$ indicating forward transform and $-1$ indicating inverse transform.  On
 exit, \verb+*dftParams+ will point to the newly created structure.
 
 \subsubsection*{Uses}
+\begin{verbatim}
+LALCreateForwardRealFFTPlan
+LALCreateReverseRealFFTPlan
+LALSCreateVector
+LALWindow 
+\end{verbatim}
 
 \subsubsection*{Notes}
 
@@ -246,6 +251,11 @@ Destroys a structure of type \verb+RealDFTParams+,
 On exit, \verb+*dftParams+ will be NULL.
 
 \subsubsection*{Uses}
+\begin{verbatim}
+LALSDestroyVector
+LALDestroyRealFFTPlan
+LALFree
+\end{verbatim}
 
 \subsubsection*{Notes}
 
@@ -275,6 +285,12 @@ $+1$ indicating forward transform and $-1$ indicating inverse transform.  On
 exit, \verb+*dftParams+ will point to the newly created structure.
 
 \subsubsection*{Uses}
+\begin{verbatim}
+LALCreateForwardComplexFFTPlan
+LALCreateReverseComplexFFTPlan
+LALSCreateVector
+LALWindow 
+\end{verbatim}
 
 \subsubsection*{Notes}
 
@@ -298,6 +314,11 @@ Destroys a structure of type \verb+ComplexDFTParams+,
 On exit, \verb+*dftParams+ will be NULL.
 
 \subsubsection*{Uses}
+\begin{verbatim}
+LALSDestroyVector
+LALDestroyComplexFFTPlan
+LALFree
+\end{verbatim}
 
 \subsubsection*{Notes}
 
@@ -331,6 +352,11 @@ to the nearest integer.  Appropriate values for the various fields in the
 from the corresponding fields in the input \verb+REAL4TimeSeries+. 
 
 \subsubsection*{Uses}
+\begin{verbatim}
+LALCreateVector
+LALForwardRealFFT
+LALDestroyVector
+\end{verbatim}
 
 \subsubsection*{Notes}
 
@@ -361,6 +387,10 @@ It assigns nominal values to all the other fields in the
 \verb+COMPLEX8TimeFrequencyPlane+ structure. 
 
 \subsubsection*{Uses}
+\begin{verbatim}
+LALMalloc
+LALFree
+\end{verbatim}
 
 \subsubsection*{Notes}
 
@@ -385,6 +415,9 @@ The routine \verb+DestroyTFPlane()+ frees all the memory associated with a
 \verb+COMPLEX8FrequencyPlane+ and destroys the TF plane.
 
 \subsubsection*{Uses}
+\begin{verbatim}
+LALFree
+\end{verbatim}
 
 \subsubsection*{Notes}
 
@@ -446,7 +479,12 @@ each time bin, then the real and imaginary parts of the data points in the TF
 plane are also independent Gaussian random variables with RMS value 1.]  
  
 \subsubsection*{Uses}
-
+\begin{verbatim}
+LALSCreateVector
+LALForwardRealFFT
+LALDestroyVector
+LALCDestroyVector
+\end{verbatim}
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{TimeSeriesToTFPlaneCV}}
@@ -503,6 +541,11 @@ the data points in the TF plane are also independent Gaussian random variables
 with rms value 1.]  
 
 \subsubsection*{Uses}
+\begin{verbatim}
+LALCCreateVector
+LALCOMPLEX8VectorFFT
+LALCDestroyVector
+\end{verbatim}
 
 \subsubsection*{Notes}
 
@@ -664,6 +707,102 @@ where the step size for both $J_1$ and $\Delta J$ is
 \begin{equation}
 \delta J = 1 + \left[\Delta J / N_{\rm ov} \right].
 \end{equation}
+Here the brackets mean ``round down to the nearest integer'', and
+$N_{\rm ov}$ is a fixed integer of order a few.  The idea is that
+successive tiles that differ only in their value of $J_1$ and have
+identical values of $\Delta J$ (for example) can have a fractional
+overlap as small as $N_{\rm ov} / (N_{\rm ov} + 1)$.  For large $N_T$,
+the spacing of the tiles is exhaustive (all possible tiles covered)
+for $\Delta J \le $ a few, while the spacing becomes uniform in $\log
+(\Delta J)$ for large $\Delta J$.  Similarly, the set of frequencies
+$\Sigma_1$ and $\Delta \Sigma$ is determined by 
+looping through values of $\Sigma_1$
+and $\Delta \Sigma$ with
+\begin{equation}
+0 \le \Sigma_1 \le \Sigma_1 + \Delta \Sigma < N_F,
+\end{equation}
+where the step size for both $\Sigma_1$ and $\Delta \Sigma$ is
+\begin{equation}
+\delta \Sigma = 1 + \left[\Delta \Sigma / N_{\rm ov} \right].
+\end{equation}
+More detailed explanation of and justification for this method of
+sampling the space of TF tiles can be found in \cite{abcf:2000}.
+The number $N_{\rm tiles}$ of tiles generated with $N_{\rm ov}=3$ (for
+example) is
+approximately 
+\begin{equation}
+N_{\rm tiles} \sim 100 N
+\end{equation}
+for large $N$, where $N$ is the original number of data points in the
+frequency domain.  [By
+contrast, an exhaustive search over all possible tiles would give
+$N_{\rm tiles} \sim N^2$ for large $N$, neglecting logarithmic factors.]
+
+
+\subsubsection{The two search methods provided}
+\label{twomethods}
+
+This package provides two types of search routines:
+\begin{itemize}
+\item Routines for which the user specifies the threshold $\alpha_*$.
+Then, the routine searches through all tiles ${\cal T}_j$ in the
+discrete set discussed above, and returns a list of tiles (candidate
+events) for which $\alpha_{\cal T} \le \alpha_*$, sorted in order of
+probability.  A drawback of this
+approach is that the appropriate value of the threshold $\alpha_*$
+depends on how 
+statistically independent the individual statistics $\alpha_{\cal T}$
+are, and also on how many tiles are being computed.  The correct way
+to determine the value of the threshold $\alpha_*$ would be to perform
+Monte Carlo simulations.  However, one would need to repeat the Monte
+Carlo simulations whenever one changed the search parameters (for
+example, the total number of points in the frequency domain, the
+number of tiles generated etc.)
+
+\item A more powerful search method is to compute an average ${\bar
+\Lambda}$ of the quantity 
+\begin{equation}
+\Lambda_{\cal T} \equiv {1 \over \alpha_{\cal T}}
+\end{equation}
+over the space of all TF tiles, and to threshold on the average value
+${\bar \Lambda}$.  We will refer to ${\bar \Lambda}$ as the mean likelihood.
+Motivation for this can be found in Ref.\ \cite{abcf:2000}.
+Data segments for which ${\bar \Lambda} \le {\bar
+\Lambda}_*$ are then rejected, while data segments for which
+${\bar \Lambda} \ge {\bar \Lambda}_*$ are tagged for further
+analysis.  Here ${\bar \Lambda}_*$ is a threshold.  An approximate but
+sufficiently accurate formula for the average is \cite{abcf:2000}
+\begin{equation}
+{\bar \Lambda} = {1 \over N_{\rm tiles}} \, \sum_j \left[{2 N_{{\cal
+T}_j} \over (\Delta P_{{\cal T}_j})^2 } \right] \, {1 \over
+\alpha_{{\cal T}_j}},
+\label{meanlikelihood}
+\end{equation}
+where $N_{\rm tiles}$ is the total number of tiles in the sum.  Under
+suitable assumed prior probability for signals (roughly speaking,
+``uniform'' in each tile and ``uniformly distributed'' over all tiles)  
+, it can be shown that the probability $p$ that a signal is present in
+the data is related to the prior probability $p_0$ that a signal is
+present by \cite{abcf:2000}
+\begin{equation}
+{p \over 1 - p} = {\bar \Lambda} \ {p_0 \over 1 - p_0}.
+\label{ff1}
+\end{equation}
+Thus the user can specify a desired value of $p$ for a given $p_0$, or
+equivalently can specify ${\bar \Lambda}$.  
+
+\end{itemize}
+
+In the second method, {\it if} the noise were purely Gaussian and
+stationary, the threshold ${\bar \Lambda}_*$ could be prescribed 
+without any Monte Carlo simulations, with the (Bayesian)
+interpretation being given by Eq.\ (\ref{ff1}).  However, due to the
+ubiquitous presence of nonGaussian noise, it will be necessary to
+resort to Monte Carlo simulations to determine a (frequentist)
+threshold ${\bar \Lambda}_*$.  Even so, the second method will have
+significant advantages over the first method \cite{abcf:2000}. 
+ 
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection*{Error Conditions}
@@ -821,6 +960,13 @@ vector of which the real and imaginary parts of each element are independent,
 zero-mean Gaussian deviates with rms value \verb+noiseLevel+.
 
 \subsubsection*{Uses}
+\begin{verbatim}
+LALCreateRandomParams
+LALSCreateVector
+LALNormalDeviates
+LALSDestroyVector
+LALDestroyRandomParams
+\end{verbatim}
 
 \subsubsection*{Notes}
 
@@ -853,6 +999,12 @@ assigns memory for and creates the $p+1$ time frequency planes and the $p+1$
 \verb+ComplexDFTParams+ structures, and the linked list of TF tiles.
 
 \subsubsection*{Uses}
+\begin{verbatim}
+LALMalloc
+LALFree
+LALCreateTFPlane
+LALCreateComplexDFTParams
+\end{verbatim}
 
 \subsubsection*{Notes}
 A failure to allocate memory for some element of the linked list of tiles
@@ -881,7 +1033,12 @@ When \verb+DestroyTFTiling()+ is called, \verb+*tfTiling+ should point to the
 structure to be destroyed, and on exit \verb+*tfTiling+ will be \verb+NULL+.
 
 \subsubsection*{Uses}
-
+\begin{verbatim}
+LALMalloc
+LALFree
+LALDestroyTFPlane
+LALDestroyComplexDFTParams
+\end{verbatim}
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{DestroyTFTilingCV}}
@@ -910,7 +1067,9 @@ transforms according to the parameters (\ref{tfplanes}) and
 stores the resulting TF planes in the structure \verb+*tfTiling+.
 
 \subsubsection*{Uses}
-
+\begin{verbatim}
+LALFreqSeriesToTFPlane
+\end{verbatim}
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{ComputeTFPlanesCV}}
@@ -946,6 +1105,9 @@ routine \verb+ComputeExcessPower()+ must be called after calling
 to an error.
 
 \subsubsection*{Uses}
+\begin{verbatim}
+LALOneMinusChisqCdf
+\end{verbatim}
 
 \subsubsection*{Notes}
 
@@ -978,6 +1140,11 @@ The routine \verb+SortTFTiling()+ must be called after calling
 rise to an error.
 
 \subsubsection*{Uses}
+\begin{verbatim}
+LALMalloc
+qsort
+LALFree
+\end{verbatim}
 
 \subsubsection*{Notes}
 
@@ -1068,6 +1235,9 @@ passing to it the parameter $n_{\rm events}$ obtained from the routine
 passing a specified threshold $\alpha_*$.
 
 \subsubsection*{Uses}
+\begin{verbatim}
+LALChi2Threshold 
+\end{verbatim}
 
 \subsubsection*{Notes}
 
@@ -1330,7 +1500,11 @@ positive real $n$, and the routines work for non-integral $n$.
 \end{enumerate}
 
 \subsubsection*{Uses}
+\begin{verbatim}
+LALDBracketRoot
+LALDBisectionFindRoot
 
+\end{verbatim}
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{ThresholdsCV}}
