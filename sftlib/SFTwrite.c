@@ -11,7 +11,7 @@ void printerror(int err);
 void dosystem(const char *command);
 void modify_bytes(const char *filename, int byte_offset, const char *new_value, int nbytes);
 int isbigendian(void);
-void modify_checksum(const char *filename, unsigned long long newchecksum);
+void modify_checksum(const char *filename, unsigned long long newchecksumle, unsigned long long newchecksumbe);
 void swap2(char *location);
 void swap4(char *location);
 void swap8(char *location);
@@ -22,33 +22,6 @@ int isbigendian(void){
   short i=0x0100;
   char *tmp=(char *)&i;
   return *tmp;
-}
-
-/* swap 2, 4 or 8 bytes.  Point to low address */
-void swap2(char *location){
-  char tmp=*location;
-  *location=*(location+1);
-  *(location+1)=tmp;
-  return;
-}
-  
-void swap4(char *location){
-  char tmp=*location;
-  *location=*(location+3);
-  *(location+3)=tmp;
-  swap2(location+1);
-  return;
-}
-                                                                                                                  
-void swap8(char *location){
-  char tmp=*location;
-  *location=*(location+7);
-  *(location+7)=tmp;
-  tmp=*(location+1);
-  *(location+1)=*(location+6);
-  *(location+6)=tmp;
-  swap4(location+2);
-  return;
 }
 
 FILE *openfile(const char* name) {
@@ -107,10 +80,11 @@ void modify_bytes(const char *filename, int byte_offset, const char *new_value, 
   return;
 }
 
-void modify_checksum(const char *filename, unsigned long long newchecksum) {
+void modify_checksum(const char *filename, unsigned long long newchecksumle, unsigned long long newchecksumbe) {
   if (isbigendian())
-    swap8((char *)&newchecksum);
-  modify_bytes(filename, 32, (char *)&newchecksum, 8);
+    modify_bytes(filename, 32, (char *)&newchecksumbe, 8);
+  else
+    modify_bytes(filename, 32, (char *)&newchecksumle, 8);
   return;
 }
 
@@ -148,15 +122,15 @@ int main(void) {
   /* Nonexistent detector (change H1 to I1) checksum */
   dosystem("cat SFT-test1 > SFT-bad7");
   modify_bytes("SFT-bad7", 40, "I", 1);
-  modify_checksum("SFT-bad7", 2594301065140926588ULL);
+  modify_checksum("SFT-bad7", 2594301065140926588ULL, 1040429337927860515ULL);
   /* SFT with comment containing hidden data */
   dosystem("cat SFT-test1 > SFT-bad8");
   modify_bytes("SFT-bad8", 49, "", 1);
-  modify_checksum("SFT-bad8", 9546122005026447583ULL);
+  modify_checksum("SFT-bad8", 9546122005026447583ULL, 12540893872916896128ULL);
   /* SFT with comment no terminating null character containing hidden data */
   printerror(WriteSFT(fp=openfile("SFT-bad9"), 12345,          6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, "test567", data)); fclose(fp);
   modify_bytes("SFT-bad9", 55, "8", 1);
-  modify_checksum("SFT-bad9", 8104828364422822013ULL);
+  modify_checksum("SFT-bad9", 8104828364422822013ULL, 6488197905334075682ULL);
 
   printf("To test SFTs, do for example:\n"
 	 "./SFTvalidate SFT-good SFT-test[1234567]\n"
