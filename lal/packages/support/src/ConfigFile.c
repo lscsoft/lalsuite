@@ -371,6 +371,7 @@ LALReadConfigBOOLVariable (LALStatus *stat,
 	ret = 0;
       else
 	{
+	  LALPrintError ( "illegal bool-value `%s`\n", tmp);
 	  LALFree (tmp);
 	  ABORT (stat, CONFIGFILEH_EBOOL, CONFIGFILEH_MSGEBOOL);
 	}

@@ -223,7 +223,7 @@ LALUserVarReadCmdline (LALStatus *stat,
 
       switch (ptr->type)
 	{
-	  BOOLEAN ret;
+	  INT2 ret;
 	case UVAR_BOOL:
 	  ret = -1;
 
@@ -236,11 +236,15 @@ LALUserVarReadCmdline (LALStatus *stat,
 	      else if ( !strcmp (optarg, "no") || !strcmp(optarg,"false") || !strcmp(optarg,"0") )
 		ret = 0;
 	      else {	/* failed to parse BOOL properly */
+		LALPrintError ("illegal bool-value `%s`\n", optarg);
 		ABORT (stat, USERINPUTH_EBOOL, USERINPUTH_MSGEBOOL);
 	      }
 	    } /* parse bool-argument */
+	  
+	  /* only set if we properly parsed something */
+	  if (ret != -1)
+	    *(BOOLEAN*)(ptr->varp)  = (BOOLEAN)ret;
 
-	  *(BOOLEAN*)(ptr->varp)  = ret;
 	  break;
 
 	case UVAR_INT4:
@@ -413,7 +417,10 @@ LALUserVarHelpString (LALStatus *stat,
 
       /* now increase allocated memory by the right amount */
       newlen += strlen (strbuf) + 1;
-      helpstr = LALRealloc (helpstr, newlen);
+      if (helpstr == NULL)  /* !!make sure the first time the string is cleared!!*/
+	helpstr = LALCalloc (1, newlen);
+      else
+	helpstr = LALRealloc (helpstr, newlen);
       if ( helpstr == NULL) {
 	ABORT (stat, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
       }
