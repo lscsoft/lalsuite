@@ -106,12 +106,14 @@ void sighandler(int sig);
 #define COMPUTEFSTATC_EINPUT   		3
 #define COMPUTEFSTATC_EMEM   		4
 #define COMPUTEFSTATC_ECHECKPOINT	5
+#define COMPUTEFSTATC_ECLUSTER		6
 
 #define COMPUTEFSTATC_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define COMPUTEFSTATC_MSGESYS		"System call failed (probably file IO)"
 #define COMPUTEFSTATC_MSGEINPUT   	"Invalid input"
 #define COMPUTEFSTATC_MSGEMEM   	"Out of memory. Bad."
 #define COMPUTEFSTATC_MSGECHECKPOINT	"Illegal checkpoint"
+#define COMPUTEFSTATC_MSGECLUSTER	"Unspecified error in cluster-related routine"
 /*----------------------------------------------------------------------
  * User-variables: can be set from config-file or command-line */
 
@@ -182,12 +184,11 @@ extern "C" {
   void initUserVars (LALStatus *stat);
   INT4 ReadSFTData (void);
   void InitFStat (LALStatus *status, ConfigVariables *cfg);
-  INT4 NormaliseSFTData(void);
   void CreateDemodParams (LALStatus *status);
   void CreateNautilusDetector (LALStatus *status, LALDetector *Detector);
   void Freemem (LALStatus *status);
   void EstimateFLines(LALStatus *status);
-  INT4 NormaliseSFTDataRngMdn (LALStatus *status);
+  void NormaliseSFTDataRngMdn (LALStatus *status);
   INT4 EstimateSignalParameters(INT4 * maxIndex);
   int writeFLines(INT4 *maxIndex, int *bytes_written);
   INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN);
@@ -1252,55 +1253,6 @@ int writeFLines(INT4 *maxIndex, int *bytes_written)
 
 } /* writeFLines() */
 
-/** [OBSOLETE] Normalize SFTs using the mean.
- * This function is obsolete, as we use the running-median now. 
- * This function has been  replaced by NormaliseSFTDataRngMdn().
- */
-int NormaliseSFTData(void)
-{
-  INT4 k,j;                         	/* loop indices */
-  INT4 nbins=GV.ifmax-GV.ifmin+1;   	/* Number of points in SFT's */
-  REAL8 SFTsqav;           		/* Average of Square of SFT */
-  REAL8 B;                        	/* SFT Bandwidth */
-  REAL8 deltaT,N;
-  REAL8 MeanOneOverSh=0.0;
-
-  /* loop over each SFTs */
-  for (k=0;k<GV.SFTno;k++)         
-    {
-      
-      SFTsqav=0.0;
-      /* loop over SFT data to estimate noise */
-      for (j=0;j<nbins;j++)               
-	  {
-	    SFTsqav=SFTsqav+
-	      SFTData[k]->fft->data->data[j].re * SFTData[k]->fft->data->data[j].re+
-	      SFTData[k]->fft->data->data[j].im * SFTData[k]->fft->data->data[j].im;
-	  }
-      SFTsqav=SFTsqav/(1.0*nbins);              /* Actual average of Square of SFT */
-      MeanOneOverSh=2.0*GV.nsamples*GV.nsamples/(SFTsqav*GV.tsft)+MeanOneOverSh;      
-
-      N=1.0/sqrt(2.0*(REAL8)SFTsqav);
-
-      /* signal only case */  
-      if(uvar_SignalOnly == 1)
-	{
-	  B=(1.0*GV.nsamples)/(1.0*GV.tsft);
-	  deltaT=1.0/(2.0*B);
-	  N=deltaT/sqrt(GV.tsft);
-	}
-
-      /* loop over SFT data to Normalise it*/
-      for (j=0;j<nbins;j++)               
-	{
-	  SFTData[k]->fft->data->data[j].re = N*SFTData[k]->fft->data->data[j].re; 
-	  SFTData[k]->fft->data->data[j].im = N*SFTData[k]->fft->data->data[j].im;
-	}
-    } 
-	
-   MeanOneOverSh=MeanOneOverSh/(1.0*GV.SFTno); 
-  return 0;
-}
 
 /** Reads in data from SFT-files.
  *
@@ -2251,19 +2203,16 @@ EstimateFLines(LALStatus *stat)
 
 #ifdef FILE_FTXT
   /*  file contains freq, PSD, noise floor */
-  if(!(outfile=fopen("F.txt","wb"))){
-    fprintf(stderr, "Cannot open F.txt file\n");
-    return 1;
+  if( (outfile = fopen("F.txt","wb")) == NULL) {
+    ABORT (stat, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
   }
 #endif
   /*  file contanis freq, PSD, noise floor,lines */
 #ifdef FILE_FLINES  
-  if(!(outfile1=fopen("FLines.txt","wb"))){
-    fprintf(stderr, "Cannot open FLines.txt file\n");
-    return 1;
+  if( (outfile1 = fopen("FLines.txt","wb")) == NULL) {
+    ABORT (stat, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
   }
 #endif
-
 
   TRY ( LALDCreateVector(stat->statusPtr, &F1, nbins), stat);
   TRY ( LALDCreateVector(stat->statusPtr, &FloorF1, nbins), stat);
@@ -2416,7 +2365,8 @@ EstimateFLines(LALStatus *stat)
 /***********************************************************************/
 /** Normalise the SFT-array \em SFTData by the running median.
  */
-INT4 NormaliseSFTDataRngMdn(LALStatus *status)
+void 
+NormaliseSFTDataRngMdn(LALStatus *stat)
 {
 #ifdef FILE_SPRNG  
   FILE *outfile;
@@ -2429,36 +2379,30 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
   INT2 windowSize=50;                  /* Running Median Window Size*/
   REAL4 xre,xim,xreNorm,ximNorm;
 
+  INITSTATUS( stat, "NormaliseSFTDataRngMdn", rcsid );
+  ATTATCHSTATUSPTR (stat);
+
 
   /* The running median windowSize in this routine determines 
      the sample bias which, instead of log(2.0), must be 
      multiplied by F statistics.
   */
 
-  if (uvar_SignalOnly != 1)
-    LALRngMedBias (status, &medianbias, windowSize);
-
-
-  LALDCreateVector(status, &Sp, (UINT4)nbins);
-  LALDCreateVector(status, &RngMdnSp, (UINT4)nbins);
-
-  nbins=(INT2)nbins;
-
-  if(!(N= (REAL8 *) LALCalloc(nbins,sizeof(REAL8)))){ 
-    fprintf(stderr, "Memory allocation failure");
-    return 1;
-  }
-   if(!(Sp1= (REAL8 *) LALCalloc(nbins,sizeof(REAL8)))){ 
-    fprintf(stderr, "Memory allocation failure");
-    return 1;
+  if ( !uvar_SignalOnly ) {
+    TRY ( LALRngMedBias (stat->statusPtr, &medianbias, windowSize), stat);
   }
 
-   /*
-   if( nbins < windowSize ) {
-     fprintf( stderr, "The frequency band has too small bins compared to the now hard-coded window size (= %d) used in EstimateFloor().\n", windowSize );
-     return 1;
-   }
-   */
+  TRY ( LALDCreateVector(stat->statusPtr, &Sp, (UINT4)nbins), stat);
+  TRY ( LALDCreateVector(stat->statusPtr, &RngMdnSp, (UINT4)nbins), stat);
+
+  nbins=(INT2)nbins;	/* RP: What the heck is this????? (FIXME) */
+
+  if( (N = (REAL8 *) LALCalloc(nbins,sizeof(REAL8))) == NULL) {
+    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+  }
+  if( (Sp1 = (REAL8 *) LALCalloc(nbins,sizeof(REAL8))) == NULL) {
+    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+  }
 
   /* loop over each SFTs */
   for (i=0;i<GV.SFTno;i++)         
@@ -2478,8 +2422,7 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
       
       /* Compute running median */
       if (EstimateFloor(Sp, windowSize, RngMdnSp)) {
-	fprintf(stderr,"Problem in EstimateFloor()\n");
-	return 1;
+	ABORT (stat, COMPUTEFSTATC_ECLUSTER, COMPUTEFSTATC_MSGECLUSTER);
       }
 
       /* compute how many cluster points in all */
@@ -2526,9 +2469,8 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
     } /* end loop over SFTs*/
 
 #ifdef FILE_SPRNG  
-  if(!(outfile=fopen("SpRng.txt","wb"))){ 
-    printf("Cannot open output file"); 
-    return 1;
+  if( (outfile = fopen("SpRng.txt","wb")) == NULL) {
+    ABORT (stat, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
   } 
 
 
@@ -2543,11 +2485,12 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
   
   LALFree(N);
   LALFree(Sp1);
-  LALDDestroyVector(status, &RngMdnSp);
-  LALDDestroyVector(status, &Sp);
-  
-  return 0;
+  TRY ( LALDDestroyVector(stat->statusPtr, &RngMdnSp), stat);
+  TRY ( LALDDestroyVector(stat->statusPtr, &Sp), stat);
 
+  DETATCHSTATUSPTR(stat);
+  RETURN(stat);
+  
 } /* NormaliseSFTDataRngMed() */
 
 
