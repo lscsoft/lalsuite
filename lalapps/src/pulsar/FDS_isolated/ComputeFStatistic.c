@@ -12,19 +12,19 @@
 #include "clusters.h"
 #include "DopplerScan.h"
 
-//#define DEBG_FAFB                
-//#define DEBG_ESTSIGPAR
-//#define DEBG_MAIN 
-//#define DEBG_SGV
+/* #define DEBG_FAFB                 */
+/* #define DEBG_ESTSIGPAR */
+/* #define DEBG_MAIN  */
+/* #define DEBG_SGV */
 
 /* If FILE_FILENAME is defined, then print the corresponding file  */
 #define FILE_FSTATS
 #define FILE_FMAX
-//#define FILE_FLINES
-//#define FILE_FTXT
-//#define FILE_PSD
-//#define FILE_PSDLINES
-//#define FILE_SPRNG
+/* #define FILE_FLINES */
+/* #define FILE_FTXT */
+/* #define FILE_PSD */
+/* #define FILE_PSDLINES */
+/* #define FILE_SPRNG */
 
 
 
@@ -40,12 +40,12 @@ REAL8 MeanOneOverSh=0.0;
 REAL8 Alpha,Delta;
 Clusters HFLines={0}, HPLines={0};
 Clusters *highSpLines=&HPLines, *highFLines=&HFLines;
-//#ifdef FILE_FMAX    
+/* #ifdef FILE_FMAX     */
 FILE *fpmax;
-//#endif
-//#ifdef FILE_STATS
+/* #endif */
+/* #ifdef FILE_STATS */
 FILE *fpstat;
-//#endif    
+/* #endif     */
 REAL8 medianbias=1.0;
 
 DopplerScanState_t thisScan;
@@ -54,7 +54,7 @@ DopplerScanState_t thisScan;
 int main(int argc,char *argv[]) 
 {
 
-  INT4 *maxIndex=NULL; // array that contains indexes of maximum of each cluster
+  INT4 *maxIndex=NULL; /*  array that contains indexes of maximum of each cluster */
   DopplerPosition_t dopplerpos;
   DopplerScanInit_t scanInit;
 
@@ -66,7 +66,7 @@ int main(int argc,char *argv[])
 
   if (ReadSFTData()) return 4;
 
-  // This fills-in highSpLines that are then used by NormaliseSFTRngMdn
+  /*  This fills-in highSpLines that are then used by NormaliseSFTRngMdn */
 #if 0
   if (GV.noise!=1){
     if (EstimatePSDLines()) return 6;
@@ -104,7 +104,7 @@ int main(int argc,char *argv[])
 
   scanInit.obsBegin = SFTData[0]->fft->epoch;
   scanInit.obsDuration = SFTData[GV.SFTno-1]->fft->epoch.gpsSeconds - scanInit.obsBegin.gpsSeconds + GV.tsft;
-  //  scanInit.obsDuration = 36000;
+  /*   scanInit.obsDuration = 36000; */
 
   scanInit.fmax  = GV.Freq;
   if (GV.FreqBand > 0) scanInit.fmax += GV.FreqBand;
@@ -144,7 +144,7 @@ int main(int argc,char *argv[])
 	  DemodParams->spinDwn[0]=GV.Spin+s*GV.dSpin;
 	  LALDemod (&status, &Fstat, SFTData, DemodParams);
 	  
-	  // This fills-in highFLines that are then used by discardFLines
+	  /*  This fills-in highFLines that are then used by discardFLines */
 	  if (GV.FreqImax > 5)
 	    if (EstimateFLines()) return 6;
 	  
@@ -159,12 +159,12 @@ int main(int argc,char *argv[])
 	    }
 #endif
 	  
-	  // This fills-in highFLines 
+	  /*  This fills-in highFLines  */
 	  if (highFLines != NULL && highFLines->Nclusters > 0){
 	    
 	    maxIndex=(INT4 *)LALMalloc(highFLines->Nclusters*sizeof(INT4));
 	    
-	    // for every cluster writes the information about it in file Fstats
+	    /*  for every cluster writes the information about it in file Fstats */
 
 	    if (writeFLines(maxIndex)){
 	      fprintf(stderr, "%s: trouble making file Fstats\n", argv[0]);
@@ -195,7 +195,7 @@ int main(int argc,char *argv[])
 
 	} /* For GV.spinImax */
       
-    } // while SkyPos
+    } /*  while SkyPos */
 
 
 #ifdef FILE_FMAX  
@@ -211,11 +211,10 @@ int main(int argc,char *argv[])
 
 
 /*******************************************************************************/
-//         
-// Note that there is a degeneracy where the shifts taken at the same time, 
-// psi -> psi+Pi/2 and Phi0 -> Phi0 + Pi/2, 
-// give the same A1,A2,A3,A4. 
-//
+/*  Note that there is a degeneracy where the shifts taken at the same time,  */
+/*  psi -> psi+Pi/2 and Phi0 -> Phi0 + Pi/2,  */
+/*  give the same A1,A2,A3,A4.  */
+/*  */
 /*******************************************************************************/
 
 
@@ -274,7 +273,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
 	  fprintf(stderr,"in the EstimateSignalParameters routine");
 	  fprintf(stderr,"in ComputeFStatistic code");
 	  fprintf(stderr,"Now exitting...");
-	  //	  break;
+	  /* 	  break; */
 	  exit(1);
 	}
 
@@ -691,9 +690,9 @@ int AllocateMem(void)
 
 /*******************************************************************************/
 
-// for every cluster writes the information about it in file Fstats
-// precisely it writes:
-// fr_max alpha delta N_points_of_cluster mean std max (of 2F)
+/*  for every cluster writes the information about it in file Fstats */
+/*  precisely it writes: */
+/*  fr_max alpha delta N_points_of_cluster mean std max (of 2F) */
 int writeFLines(INT4 *maxIndex){
 
   INT4 i,j,j1,j2,k,N;
@@ -709,8 +708,8 @@ int writeFLines(INT4 *maxIndex){
   for (i=0;i<highFLines->Nclusters;i++){
     N=highFLines->NclustPoints[i];
     
-    // determine maximum of j-th cluster
-    // and compute mean
+    /*  determine maximum of j-th cluster */
+    /*  and compute mean */
     max=0.0;
     imax=0;
     mean=0.0;
@@ -724,8 +723,8 @@ int writeFLines(INT4 *maxIndex){
 	max=R;
 	imax=k;
       }
-    }// end j loop over points of i-th cluster 
-    // and start again to compute variance
+    }/*  end j loop over points of i-th cluster  */
+    /*  and start again to compute variance */
     maxIndex[i]=imax;
     mean=mean/N;
     var=0.0;
@@ -733,7 +732,7 @@ int writeFLines(INT4 *maxIndex){
       R=2.0*log2*highFLines->clusters[j2];
       j2=j2+1;
       var=var+(R-mean)*(R-mean);
-    }// end j loop over points of i-th cluster 
+    }/*  end j loop over points of i-th cluster  */
     var=var/N;
     std=sqrt(var);
     fr=GV.Freq+imax*GV.dFreq;
@@ -748,7 +747,7 @@ int writeFLines(INT4 *maxIndex){
   }
 #endif
 
-  }// end i loop over different clusters
+  }/*  end i loop over different clusters */
 
   return 0;
 }
@@ -1498,8 +1497,8 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
     for (j=0;j<N;j++){
       iF=highFLines->Iclust[j];
       Fstat.F[iF]=0.0;
-    }// end j loop over points of i-th cluster 
-  }// end i loop over different clusters
+    }/*  end j loop over points of i-th cluster  */
+  }/*  end i loop over different clusters */
 
 
 
@@ -1548,7 +1547,7 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
 #endif
 #endif
 
-  // find out how many points have been set to zero (N)
+  /*  find out how many points have been set to zero (N) */
   N=0;
   if (highFLines) {
     for (i=0;i<highFLines->Nclusters; i++){
@@ -1628,14 +1627,14 @@ INT4 EstimatePSDLines(void)
   wings=windowSize/2;
 
 #ifdef FILE_PSD
-  // file contains freq, PSD, noise floor
+  /*  file contains freq, PSD, noise floor */
   if(!(outfile=fopen("PSD.txt","w"))){
     printf("Cannot open PSD.txt file");
     return 1;
   } 
 #endif 
 #ifdef FILE_PSDLINES
-  // file contains freq, PSD, noise floor,lines
+  /*  file contains freq, PSD, noise floor,lines */
   if(!(outfile1=fopen("PSDLines.txt","w"))){
     printf("Cannot open PSD.txt file");
     return 1;
@@ -1643,10 +1642,10 @@ INT4 EstimatePSDLines(void)
 #endif
 
   /* Allocate memory for input & output */
-  //if (!(Sp = (double *) calloc(nbins,sizeof(double)))){
-  //  printf("Memory allocation failure");
-  //  return 0;
-  //}
+  /* if (!(Sp = (double *) calloc(nbins,sizeof(double)))){ */
+  /*   printf("Memory allocation failure"); */
+  /*   return 0; */
+  /* } */
   
   LALDCreateVector(&status, &Sp, nbins);
   LALDCreateVector(&status, &FloorSp, nbins);
@@ -1698,7 +1697,7 @@ INT4 EstimatePSDLines(void)
    if (outliers->Noutliers == 0){
 
 #ifdef FILE_PSD
-     // PSD.txt file contains freq, PSD, noise floor  
+     /*  PSD.txt file contains freq, PSD, noise floor   */
      for (i=0;i<nbins;i++){ 
        freq=(GV.ifmin+i)/GV.tsft;
        r0=Sp->data[i];
@@ -1750,14 +1749,14 @@ INT4 EstimatePSDLines(void)
      return 1;
    }
       
-   // sum of points in all lines
+   /*  sum of points in all lines */
    Ntot=0;
    for (i=0;i<SpLines->Nclusters;i++){ 
      Ntot=Ntot+SpLines->NclustPoints[i];
    }
    
 #ifdef FILE_PSDLINES
-   // PSDLines file contains: PSD, noise floor and lines.
+   /*  PSDLines file contains: PSD, noise floor and lines. */
    for (i=0;i<Ntot;i++){ 
      j=SpLines->Iclust[i];
      freq=(GV.ifmin+SpLines->Iclust[i])/GV.tsft;
@@ -1769,7 +1768,7 @@ INT4 EstimatePSDLines(void)
 #endif
 
 #ifdef FILE_PSD   
-   // PSD.txt file contains freq, PSD, noise floor  
+   /*  PSD.txt file contains freq, PSD, noise floor   */
    for (i=0;i<nbins;i++){ 
      freq=(GV.ifmin+i)/GV.tsft;
      r0=Sp->data[i];
@@ -1812,7 +1811,7 @@ INT4 EstimateFLines(void)
   INT4 nbins=GV.FreqImax;                /* Number of points in F */
   REAL8Vector *F1=NULL; 
   REAL8Vector *FloorF1=NULL;                        /* Square of SFT */
-  //INT2 windowSize=(0.01/GV.dFreq);               /* 0.1 is 1E-4*1000 */
+  /* INT2 windowSize=(0.01/GV.dFreq);               0.1 is 1E-4*1000 */
   INT2 windowSize=100;
   REAL4 THR=10.0;
   
@@ -1837,29 +1836,29 @@ INT4 EstimateFLines(void)
   THR=GV.Fthreshold;
 
 
-  //wings=windowSize/2;
-  // 0.0002 is the max expected width of the F stat curve for signal
-  // with ~ 10 h observation time
-  // 0.0001 = 0.0002/2
-  // let me put 0.005
+  /* wings=windowSize/2; */
+  /*  0.0002 is the max expected width of the F stat curve for signal */
+  /*  with ~ 10 h observation time */
+  /*  0.0001 = 0.0002/2 */
+  /*  let me put 0.005 */
   dmp=0.5+0.0002/GV.dFreq;
   wings=dmp;
 
 
   if (windowSize > nbins){
     windowSize = nbins/2.0;
-    //printf("Had to change windowSize for running median in F floor estimate\n");
+    /* printf("Had to change windowSize for running median in F floor estimate\n"); */
   }
 
 #ifdef FILE_FTXT
-  // file contains freq, PSD, noise floor
+  /*  file contains freq, PSD, noise floor */
   if(!(outfile=fopen("F.txt","w"))){
     printf("Cannot open F.txt file\n");
     return 1;
   }
 #endif
 #ifdef FILE_FLINES  
-  // file contains freq, PSD, noise floor,lines
+  /*  file contains freq, PSD, noise floor,lines */
   if(!(outfile1=fopen("FLines.txt","w"))){
     printf("Cannot open FLines.txt file\n");
     return 1;
@@ -1879,7 +1878,7 @@ INT4 EstimateFLines(void)
   F1->length=nbins;
   FloorF1->length=nbins;
 
-  //  j=EstimateFloor(F1, windowSize, FloorF1);
+  /*   j=EstimateFloor(F1, windowSize, FloorF1); */
  
   if (!(outliers=(Outliers *)LALMalloc(sizeof(Outliers)))){
     fprintf(stderr,"Memory allocation failure for SpOutliers\n");
@@ -1907,7 +1906,7 @@ INT4 EstimateFLines(void)
    if (outliers->Noutliers == 0){
 
 #ifdef FILE_FTXT
-     // F.txt file contains freq, F, noise floor of F  
+     /*  F.txt file contains freq, F, noise floor of F   */
      for (i=0;i<nbins;i++){ 
        freq=GV.Freq+i*GV.dFreq;
        r0=F1->data[i];
@@ -1929,15 +1928,15 @@ INT4 EstimateFLines(void)
      LALDDestroyVector(&status,&F1);
      LALDDestroyVector(&status,&FloorF1);
 
-     //     fprintf(stderr,"Nclusters zero \n");
-     //     fflush(stderr);
+     /*      fprintf(stderr,"Nclusters zero \n"); */
+     /*      fflush(stderr); */
 
      return 0;
 
    }
   
-   //     fprintf(stderr,"Nclusters non zero \n");
-   //     fflush(stderr);
+   /*      fprintf(stderr,"Nclusters non zero \n"); */
+   /*      fflush(stderr); */
 
    if (!(SpClParams=(ClustersParams *)LALMalloc(sizeof(ClustersParams)))){ 
      printf("Memory allocation failure for SpClusterParams");
@@ -1964,7 +1963,7 @@ INT4 EstimateFLines(void)
    }
    
    
-   // sum of points in all lines
+   /*  sum of points in all lines */
    Ntot=0;
    for (i=0;i<SpLines->Nclusters;i++){ 
      Ntot=Ntot+SpLines->NclustPoints[i];
@@ -1973,7 +1972,7 @@ INT4 EstimateFLines(void)
 
 
 #ifdef FILE_FLINES  
-   // FLines file contains: F, noise floor and lines.
+   /*  FLines file contains: F, noise floor and lines. */
    for (i=0;i<Ntot;i++){ 
      j=SpLines->Iclust[i];
      freq=(GV.Freq+SpLines->Iclust[i]*GV.dFreq);
@@ -1984,7 +1983,7 @@ INT4 EstimateFLines(void)
    }
 #endif
 #ifdef FILE_FTXT   
-   // PSD.txt file contains freq, PSD, noise floor  
+   /*  PSD.txt file contains freq, PSD, noise floor   */
    for (i=0;i<nbins;i++){ 
      freq=GV.Freq+i*GV.dFreq;
      r0=F1->data[i];
@@ -2074,8 +2073,8 @@ INT4 NormaliseSFTDataRngMdn(void)
       /* Compute running median */
       EstimateFloor(Sp, windowSize, RngMdnSp);
       
-      //compute how many cluster points in all
-      //substitute the line profiles value in RngMdnSp
+      /* compute how many cluster points in all */
+      /* substitute the line profiles value in RngMdnSp */
       Ntot=0;
       if (highSpLines != NULL){
 	for (il=0;il<highSpLines->Nclusters;il++){
@@ -2103,9 +2102,9 @@ INT4 NormaliseSFTDataRngMdn(void)
 	}
       }
       
-      // loop over SFT data to normalise it (with N)
-      // also compute Sp1, average normalized PSD
-      // and the sum of the PSD in the band, SpSum
+      /*  loop over SFT data to normalise it (with N) */
+      /*  also compute Sp1, average normalized PSD */
+      /*  and the sum of the PSD in the band, SpSum */
       for (j=0;j<nbins;j++){
 	xre=SFTData[i]->fft->data->data[j].re;
 	xim=SFTData[i]->fft->data->data[j].im;

@@ -67,12 +67,10 @@ typedef struct GlobalVariablesTag {
   REAL8 Freq;
   REAL8 dFreq;
   REAL8 FreqBand;
-  INT4 FreqImax;  // number of computed F values: F[0]....F[FreqImax-1]
+  INT4 FreqImax;  /* number of computed F values: F[0]....F[FreqImax-1] */
   REAL8 Alpha;
   REAL8 dAlpha;
   REAL8 AlphaBand;
-  //  INT4 AlphaImax;  // FIXME: these two are now in ScanSky.c
-  //  INT4 DeltaImax;
   REAL8 Delta;
   REAL8 dDelta;
   REAL8 DeltaBand;

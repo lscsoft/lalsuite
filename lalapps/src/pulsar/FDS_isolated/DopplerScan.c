@@ -105,7 +105,7 @@ InitDopplerScan( LALStatus *stat, DopplerScanState_t *scan, DopplerScanInit_t in
     }
 
   /* check consistency of bounds for the sky-region */
-  // FIXME: actually that's nonsense, as the region might stretch across this coordinate "cut"
+  /*  FIXME: actually that's nonsense, as the region might stretch across this coordinate "cut" */
   if ( (scan->Alpha < 0) || (scan->Alpha >= LAL_TWOPI) || (fabs(scan->Delta) > LAL_PI_2) 
        ||(scan->Alpha + scan->AlphaBand >= LAL_TWOPI) || (scan->Delta + scan->DeltaBand > LAL_PI_2) )
     {
@@ -158,7 +158,7 @@ InitDopplerScan( LALStatus *stat, DopplerScanState_t *scan, DopplerScanInit_t in
 
       /* Prepare call of TwoDMesh(): the mesh-parameters */
       scan->meshpar.mThresh = init.metricMismatch;
-      scan->meshpar.nIn = 1e6;  	/* maximum nodes in mesh */ // FIXME: hardcoded
+      scan->meshpar.nIn = 1e6;  	/* maximum nodes in mesh */ /*  FIXME: hardcoded */
       
       /* helper-function: range and metric */
       scan->meshpar.getRange = getRange;
@@ -185,7 +185,7 @@ InitDopplerScan( LALStatus *stat, DopplerScanState_t *scan, DopplerScanInit_t in
       if (scan->useMetric == DOPPLER_PTOLE_METRIC)
 	{
 	  scan->ptoleMetricPar.position.system = COORDINATESYSTEM_EQUATORIAL;
-	  scan->ptoleMetricPar.spindown = NULL;  // FIXME: no spindowns for now
+	  scan->ptoleMetricPar.spindown = NULL;  /*  FIXME: no spindowns for now */
 	  scan->ptoleMetricPar.epoch = init.obsBegin;
 	  scan->ptoleMetricPar.duration = init.obsDuration;
 	  scan->ptoleMetricPar.maxFreq = init.fmax;
@@ -193,7 +193,7 @@ InitDopplerScan( LALStatus *stat, DopplerScanState_t *scan, DopplerScanInit_t in
 	}
       else if (scan->useMetric == DOPPLER_COHERENT_METRIC)
 	{ /* modelled after StackMetricTest.c */
-	  // FIXME: currently no spindowns are used
+	  /*  FIXME: currently no spindowns are used */
 	  INT2 nSpin = 0;
 
 	  /* Set up start time. */
@@ -315,7 +315,7 @@ NextDopplerPos( LALStatus *stat, DopplerPosition_t *pos, DopplerScanState_t *sca
       pos->skypos.longitude = scan->Alpha + scan->AlphaCounter * scan->dAlpha;
       pos->skypos.latitude = scan->Delta + scan->DeltaCounter * scan->dDelta;
 
-      pos->spindowns.length = 0; // FIXME: not done in here YET
+      pos->spindowns.length = 0; /*  FIXME: not done in here YET */
 
       /* prepare next step: 'loop' over alpha and delta */ 
       scan->DeltaCounter ++;
@@ -345,7 +345,7 @@ NextDopplerPos( LALStatus *stat, DopplerPosition_t *pos, DopplerScanState_t *sca
       pos->skypos.longitude = scan->gridNode->x;
       pos->skypos.latitude =  scan->gridNode->y;
 
-      pos->spindowns.length = 0; // FIXME
+      pos->spindowns.length = 0; /*  FIXME */
 
       /* prepare next step */
       scan->gridNode = scan->gridNode->next;
@@ -356,7 +356,7 @@ NextDopplerPos( LALStatus *stat, DopplerPosition_t *pos, DopplerScanState_t *sca
       break;
 
     case STATE_FINISHED:
-      pos->finished = 1;  // signal to caller that we've finished
+      pos->finished = 1;  /*  signal to caller that we've finished */
       break;
     }
 
@@ -385,7 +385,7 @@ void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params )
   DopplerScanState_t *scan = params;
   /* Set up shop. */
   INITSTATUS( stat, "getRange", DOPPLERSCANC );
-  //  ATTATCHSTATUSPTR( stat );
+  /*   ATTATCHSTATUSPTR( stat ); */
   
   /* for now: we return the fixed y-range, indendent of x */
   if (scan->internalOrder == ORDER_ALPHA_DELTA)
@@ -400,7 +400,7 @@ void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params )
     }
 
   /* Clean up and leave. */
-  //  DETATCHSTATUSPTR( stat );
+  /*   DETATCHSTATUSPTR( stat ); */
 
   RETURN( stat );
 } /* getRange() */

@@ -1,20 +1,20 @@
-//Author: M. A. Papa - AEI August 2003
-//Revision: Y. Itoh - AEI December 2003 
-//          Commented out "if Nclust==0. NclustPoints[Nclust]=k" 
+/* Author: M. A. Papa - AEI August 2003 */
+/* Revision: Y. Itoh - AEI December 2003  */
+/*           Commented out "if Nclust==0. NclustPoints[Nclust]=k"  */
 
 
-//#include <stdlib.h>
+/* #include <stdlib.h> */
 #include <lal/LALStdlib.h>
 #include <math.h>
 #include "clusters.h"
 #include "rngmed.h"
 
 int EstimateFloor(REAL8Vector *input, INT2 windowSize, REAL8Vector *output){
-  //input : vector (N points) over which the running median code is ran with a 
-  //blocksize = windowsize
-  //the output of the running median code has N - blocksize+1 points. 
-  //the output of this routine has N points. The missing blocksize points
-  //are set equal to the nearest last value of the output of th erunnning median.
+  /* input : vector (N points) over which the running median code is ran with a  */
+  /* blocksize = windowsize */
+  /* the output of the running median code has N - blocksize+1 points.  */
+  /* the output of this routine has N points. The missing blocksize points */
+  /* are set equal to the nearest last value of the output of th erunnning median. */
 
 
   UINT4 start,start2;
@@ -80,8 +80,8 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
 
   Dmax = 2*wings;
 
-  // find how many clusters there are (Nclust+1)
-  // find how many points the most populated cluster will have
+  /*  find how many clusters there are (Nclust+1) */
+  /*  find how many points the most populated cluster will have */
 
 
   Dist=0;
@@ -98,23 +98,23 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
   
   output->Nclusters=Nclust+1;
 
-  // Now that we know how many clusters, allocate space for Iclust
+  /*  Now that we know how many clusters, allocate space for Iclust */
   if (!(Iclust = (UINT4 *) LALCalloc(Nclust+1,sizeof(UINT4)))){
     printf("Memory allocation failure in Iclust");
     return 0;
   }
-    // Now that we know how many clusters, allocate space for NclustPoints
+  /*  Now that we know how many clusters, allocate space for NclustPoints */
   if (!(NclustPoints = (UINT4 *) LALCalloc(Nclust+1,sizeof(UINT4)))){
     printf("Memory allocation failure in NClustPoints");
     return 0;
   }  
-    // Now that we know how many clusters, allocate space for NclustPoints
+  /*  Now that we know how many clusters, allocate space for NclustPoints */
   if (!(output->NclustPoints = (UINT4 *) LALRealloc(output->NclustPoints,(Nclust+1)*sizeof(UINT4)))){
     printf("Memory allocation failure in output->NclustPoints");
     return 0;
   }  
 
-  // Populate Iclust and NclustPoints
+  /*  Populate Iclust and NclustPoints */
   Dist=0;
   Nclust=0; /* number of clusters - 1 */
   k=0;      /* number of outlier values in a single cluster */
@@ -141,21 +141,21 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
     Iclust[Nclust]=input->outliers->outlierIndexes[Nclust];
   }
 
-   if (Nclust != 0 && k!=0){ // if the last considered outlier was part of a cluster
-                             // and the really last outlier belongs to
-                             // the same cluster
+  if (Nclust != 0 && k!=0){ 	/*  if the last considered outlier was part of a cluster */
+    				/*  and the really last outlier belongs to */
+	    			/*  the same cluster */
      k++;
      Iclust[Nclust]=input->outliers->outlierIndexes[i+1-k]; 
      NclustPoints[Nclust]=input->outliers->outlierIndexes[i]-input->outliers->outlierIndexes[i0]+1; 
    } 
   
-   if (Nclust != 0 && k==0){ //if the last outlier is isolated
+  if (Nclust != 0 && k==0){ /* if the last outlier is isolated */
     Iclust[Nclust]=input->outliers->outlierIndexes[i];
     NclustPoints[Nclust]=1;
   }
 
 
-  // count how many points in the lines in total and per line; 
+  /*  count how many points in the lines in total and per line;  */
   NtotCheck=0;
   for (lpc=0;lpc<output->Nclusters;lpc++){
     rwing=wings;
@@ -172,7 +172,7 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
   }
   
 
-  // Allocate space for output vectors
+  /*  Allocate space for output vectors */
   if (!(output->clusters = (REAL8 *) LALRealloc(output->clusters,NtotCheck*sizeof(REAL8)))){
     printf("Memory allocation failure in output->clusters");
     LALFree(Iclust);
@@ -186,7 +186,7 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
 
 
 
-  // compute line profiles 
+   /*  compute line profiles  */
 
   Ntot=0;
   for (lpc=0;lpc<output->Nclusters;lpc++){
@@ -199,16 +199,16 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
     if (lpc == Nclust)
       rwing=input->outliers->rightwing;
 
-    // k : number of samples to feed into rngmed code. 
-    // They are smallBlock-1 more than the output. 
-    // The output is output->NclustPoints[lpc].    
+    /*  k : number of samples to feed into rngmed code.  */
+    /*  They are smallBlock-1 more than the output.  */
+    /*  The output is output->NclustPoints[lpc].     */
 
     k= output->NclustPoints[lpc]+smallBlock-1; 
 
 
-    // RDMP2 has the relevant part (i.e. the outliers + wings for 
-    // this profile) of the input data.
-    // RDMP1 will have the profile
+    /*  RDMP2 has the relevant part (i.e. the outliers + wings for  */
+    /*  this profile) of the input data. */
+    /*  RDMP1 will have the profile */
 
     if (!(RDMP2 = (REAL8 *) LALCalloc(k,sizeof(REAL8)))){
       printf("RDMP2 memory allocation failure");
@@ -220,11 +220,11 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
     }
 
     if (smallBlock > 1){
-      // compute max of input data
+      /*  compute max of input data */
       max2=0;
       imax2=0;
       for (i=0;i<k;i++){
-	//      j=Iclust[lpc]-rwing-lwing+i;
+	/*       j=Iclust[lpc]-rwing-lwing+i; */
 	j=Iclust[lpc]-lwing+i;
 	RDMP2[i]=input->outliersInput->data->data[j];
 	if (input->outliersInput->data->data[j] > max2){
@@ -235,7 +235,7 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
       
       rngmed(RDMP2, k, smallBlock, RDMP1);
       
-      // compute max of output data
+      /*  compute max of output data */
       max1=0;
       for (i=0;i<k-smallBlock+1;i++){
 	if (RDMP1[i] > max1){
@@ -246,8 +246,8 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
 	}
       }
       
-      // put maximum of input vector in place of max of running median
-      //RDMP1[imax1+1]=RDMP2[imax2];
+      /*  put maximum of input vector in place of max of running median */
+      /* RDMP1[imax1+1]=RDMP2[imax2]; */
       shift=(UINT4)((smallBlock+0.5)/2.0);
       if (shift > imax2)
 	shift=imax2;
@@ -256,7 +256,7 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
       RDMP1[imax2-shift]=RDMP2[imax2];
       
       
-      //write output
+      /* write output */
       for (i=0;i<k-smallBlock+1;i++){
 	j=Iclust[lpc]+smallBlock/2+i-lwing;
 	output->Iclust[Ntot]=j;
@@ -269,7 +269,7 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
 
     if (smallBlock == 1){
       for (i=0;i< output->NclustPoints[lpc];i++){
-	//for (i=0;i< output->Nclusters;i++){
+	/* for (i=0;i< output->Nclusters;i++){ */
 	j=i+Iclust[lpc]-lwing;
 	output->Iclust[Ntot]=j;
 	output->clusters[Ntot]=input->outliersInput->data->data[j];
@@ -343,7 +343,7 @@ int ComputeOutliers(OutliersInput *input, OutliersParams *outliersParams, Outlie
   i=0;     
   for (lpc=0;lpc<nbins;lpc++){
     outliers->ratio[lpc]=input->data->data[lpc]/outliersParams->Floor->data[lpc];
-    //    fprintf(outfile1,"%f %E %E %E\n",(GV.ifmin+lpc)/GV.tsft,Sp[lpc],RngMdnSp[lpc],R[lpc]);
+    /*     fprintf(outfile1,"%f %E %E %E\n",(GV.ifmin+lpc)/GV.tsft,Sp[lpc],RngMdnSp[lpc],R[lpc]); */
     if (outliers->ratio[lpc] > thresh){
       IDMP[i]=lpc;
       RDMP[i]=outliers->ratio[lpc];
@@ -366,8 +366,8 @@ int ComputeOutliers(OutliersInput *input, OutliersParams *outliersParams, Outlie
   }
 
 
-  //check left border
-  // leftwing : how many points on the left wing
+  /* check left border */
+  /*  leftwing : how many points on the left wing */
   leftwing = wings;
   ileft = IDMP[0]-wings;
   if (ileft < 0){
@@ -375,15 +375,15 @@ int ComputeOutliers(OutliersInput *input, OutliersParams *outliersParams, Outlie
     leftwing = IDMP[0];
   }
   
-  // check right border
-  // rightwing : how many points on the right wing
+  /*  check right border */
+  /*  rightwing : how many points on the right wing */
   rightwing = wings;
   iright = IDMP[NI-1]+ wings;
   if (iright > (nbins-1)){
     iright = nbins-1;
     rightwing = nbins - IDMP[NI-1]-1;
     /* ITOH */
-    //rightwing = nbins - IDMP[NI-1] - 1;
+    /* rightwing = nbins - IDMP[NI-1] - 1; */
   }
 
   for (j=0;j<NI;j++){

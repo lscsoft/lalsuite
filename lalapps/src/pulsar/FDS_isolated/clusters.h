@@ -10,10 +10,10 @@
 
 
 typedef struct Clusterstag {
-  INT2  Nclusters;     //how many clusters
-  UINT4  *NclustPoints; //for each cluster: how many points it has
-  UINT4  *Iclust;       //index of each cluster point, for all clusters
-  REAL8 *clusters;     //value of ratio for each cluster point, for all clusters
+  INT2  Nclusters;     /* how many clusters */
+  UINT4  *NclustPoints; /* for each cluster: how many points it has */
+  UINT4  *Iclust;       /* index of each cluster point, for all clusters */
+  REAL8 *clusters;     /* value of ratio for each cluster point, for all clusters */
 } Clusters;
 
 typedef struct ClustersParamstag {
@@ -25,7 +25,7 @@ typedef struct Outlierstag {
   UINT4  Noutliers;
   INT4  rightwing;
   INT4  leftwing;
-  UINT4  *outlierIndexes; // indexes in OutliersInput->data vector
+  UINT4  *outlierIndexes; /*  indexes in OutliersInput->data vector */
   REAL8 *ratio;
 } Outliers;
 
