@@ -681,7 +681,6 @@ main (int argc, char **argv )
 	 for (j=0; j<nlist; j++) 
 	   {	   	     	     	     
 	     overlapin.param 	= list[j].params;	   
-	     overlapin.param 	= randIn.param;	   
 	     
 	     
 	     switch(otherIn.overlapMethod)
@@ -767,7 +766,6 @@ main (int argc, char **argv )
 			{			   
 		     */
 		     fendBCV  =  list[j].params.fFinal;   
-		     fendBCV  = randIn.param.fFinal;
 		     overlapin.param.fFinal = fendBCV;
 		     for (i=0; i<(INT4)signal.length; i++) correlation.data[i] = 0.;	   	   	  
 		     
