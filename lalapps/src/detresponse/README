@@ -14,3 +14,5 @@ To generate data for Vladimir:
 For testing, try:
     lalapps_detresponse -r .1 -d .1 -o 0.18 -D lho -W -s 729273613 -u 32 -i 3600 -Fmam -t
 
+Autumnal Equinox 2003: 748349233
+

@@ -34,8 +34,8 @@
 #include "cmdline.h"
 
 /* number of grid points in declination and right ascension */
-#define NUM_DEC 11
-#define NUM_RA  25
+#define NUM_DEC 801
+#define NUM_RA  3101
 
 extern struct gengetopt_args_info args_info;
 

@@ -25,11 +25,6 @@ REAL4 skygrid_avg(const skygrid_t response)
     }
   }
   
-  /*
-   for (i = 0; i < lim; ++i)
-   retval += response[i];
-   */
-  
   retval /= grid_lim;
   
   return retval;

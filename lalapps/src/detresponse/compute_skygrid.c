@@ -83,6 +83,22 @@ static double doppler(LALStatus * status,
 }
 
 
+static double approx_doppler(LIGOTimeGPS * gps,    
+                             double alpha, double dalpha,
+                             double delta, double ddelta)
+{
+  /* there are 31,556,925.9747 ephemeris seconds per year */
+  const unsigned int secs_per_year = 31556926;
+  /* autumnal equinox 2003 was at GPS time 748349233 */ 
+  const unsigned int aut_equinox_2003 = 748349233;
+  
+  /* phi = angle along Earth's orbit */
+  double theta; /* theta := pi/2 - delta, delta = Dec. of source */
+  /* alpha = RA of source */
+  
+}
+
+
 static double relval(double ra, double dec, int i, int nrelvals)
 {
   int j;
@@ -500,7 +516,9 @@ void compute_skygrid(LALStatus * status)
     skygrid_print(&start_time, grid_sum_sq, sum_file_name);
     skygrid_print(&start_time, grid_relfreq, relfreq_file_name);
   }
-  
+
+  LALFree(detectorvel_inputs.edat);
+    
   LALCheckMemoryLeaks();
   
   return;

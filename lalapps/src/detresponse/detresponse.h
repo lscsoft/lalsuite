@@ -35,18 +35,6 @@
 #include "cmdline.h"
 
 
-/* wrap fopen(3) and fclose(3) */
-FILE *xfopen(const char *path, const char *mode);
-int   xfclose(FILE *stream);
-
-/* wrap strncpy(3) */
-char *mystrlcpy(char *dst, const char *src, size_t len);
-
-/* print detector parameters */
-void PrintLALDetector(LALDetector * const detector);
-
-/* print source params */
-void print_source_maybe(const LALSource * source);
 
 REAL8 deg_to_rad(REAL8 degrees);
 
