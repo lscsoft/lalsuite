@@ -399,62 +399,62 @@ typedef enum {
 typedef struct
 tagInspiralTemplate
 {
-   INT4 ieta;
-   INT4 level;
-   INT4Vector *segmentIdVec;
-   INT4 number;
-   INT4 nStartPad;
-   INT4 nEndPad;
-   REAL4 minMatch;
-   REAL8 mass1; 
-   REAL8 mass2;
-   REAL8 spin1[3];
-   REAL8 spin2[3];
-   REAL8 sourceTheta;
-   REAL8 sourcePhi;
-   REAL8 orbitTheta0;
-   REAL8 orbitPhi0;
-   REAL8 distance; 
-   REAL8 inclination;
-   REAL8 eccentricity;
-   REAL8 totalMass; 
-   REAL8 chirpMass; 
-   REAL8 psi0;
-   REAL8 psi3;
-   REAL8 fendBCV;
-   REAL8 alpha;
-   REAL8 alpha1;
-   REAL8 alpha2;
-   REAL8 beta;
-   REAL8 t0; 
-   REAL8 t2; 
-   REAL8 t3; 
-   REAL8 t4; 
-   REAL8 t5; 
-   REAL8 tC; 
-   REAL8 mu; 
-   REAL8 eta;
-   REAL8 fLower;
-   REAL8 fCutoff;
-   REAL8 tSampling;
-   REAL8 startPhase;
-   REAL8 startTime;
-   REAL8 signalAmplitude;
-   REAL8 rInitial;
-   REAL8 vInitial;
-   REAL8 rFinal;
-   REAL8 vFinal;
-   REAL8 fFinal;
-   REAL8 rLightRing;
-   REAL8 OmegaS;
-   REAL8 Theta;
-   REAL8 Zeta2;
-   InputMasses massChoice;
-   Order order;
-   Approximant approximant;
-   struct tagInspiralTemplate *next;
-   struct tagInspiralTemplate *fine;
- } InspiralTemplate;
+  REAL8 alpha;
+  REAL8 alpha1;
+  REAL8 alpha2;
+  Approximant approximant;
+  REAL8 beta;
+  REAL8 chirpMass; 
+  REAL8 distance; 
+  REAL8 eccentricity;
+  REAL8 eta;
+  REAL8 fCutoff;
+  REAL8 fendBCV;
+  REAL8 fFinal;
+  REAL8 fLower;
+  INT4  ieta;
+  REAL8 inclination;
+  INT4  level;
+  REAL4 minMatch;
+  REAL8 mass1; 
+  REAL8 mass2;
+  InputMasses massChoice;
+  REAL8 mu; 
+  INT4  number;
+  INT4  nStartPad;
+  INT4  nEndPad;
+  REAL8 OmegaS;
+  REAL8 orbitTheta0;
+  REAL8 orbitPhi0;
+  Order order;
+  REAL8 psi0;
+  REAL8 psi3;
+  REAL8 rFinal;
+  REAL8 rInitial;
+  REAL8 rLightRing;
+  REAL8 signalAmplitude;
+  INT4Vector *segmentIdVec;
+  REAL8 spin1[3];
+  REAL8 spin2[3];
+  REAL8 sourceTheta;
+  REAL8 sourcePhi;
+  REAL8 startPhase;
+  REAL8 startTime;
+  REAL8 t0; 
+  REAL8 t2; 
+  REAL8 t3; 
+  REAL8 t4; 
+  REAL8 t5; 
+  REAL8 tC; 
+  REAL8 Theta;
+  REAL8 totalMass; 
+  REAL8 tSampling;
+  REAL8 vFinal;
+  REAL8 vInitial;
+  REAL8 Zeta2;
+  struct tagInspiralTemplate *next;
+  struct tagInspiralTemplate *fine;
+} InspiralTemplate;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
@@ -879,6 +879,12 @@ void LALInspiralSpinModulatedWave(
      LALStatus        *status, 
      REAL4Vector      *signal, 
      InspiralTemplate *in);
+
+
+void LALInspiralSpinModulateWaveForInjection(
+     LALStatus *status,
+     CoherentGW *waveform,
+     InspiralTemplate *params);
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralChooseModelC}

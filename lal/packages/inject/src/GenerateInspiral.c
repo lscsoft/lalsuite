@@ -62,6 +62,19 @@ NRCSID( INJECTINSPIRALC, "$Id$" );
 #define INJECTINSPIRAL_LENGTH   1024  
 #define INJECTINSPIRAL_LENGTHIN  1e9
 
+#define INJECTINSPIRAL_SOURCETHETA 1
+#define INJECTINSPIRAL_SOURCEPHI   2
+#define INJECTINSPIRAL_SPIN1       0.3
+#define INJECTINSPIRAL_SPIN2       0.7
+#define INJECTINSPIRAL_THETA1      0.86
+#define INJECTINSPIRAL_THETA2      0.86
+
+#define INJECTINSPIRAL_PHI1      1.53
+#define INJECTINSPIRAL_PHI2      1.53
+
+
+
+
 
 
 void
@@ -133,12 +146,12 @@ REAL8
 
   PPNParamStruc         ppnParams;
   InspiralTemplate      inspiralParams;
-
+  
   /* System-derived constants. */
-
-
   
 
+  
+  
   UINT4 n;
 
   /*  LALAssert(approximant);*/
@@ -151,8 +164,8 @@ REAL8
 			    &order ,
 			    &approximant);
   
-    CHECKSTATUSPTR(status);
-
+  CHECKSTATUSPTR(status);
+  
   if (order == -1)
     {
       ABORT(status, INJECTINSPIRALC_EORDER, INJECTINSPIRALC_MSGEORDER);
@@ -161,7 +174,7 @@ REAL8
     {
       ABORT(status, INJECTINSPIRALC_EAPPROXIMANT, INJECTINSPIRALC_MSGEAPPROXIMANT);
     }
-
+  
 
   /*  dt = 1./params->inspiral.tSampling;*/
   
@@ -217,6 +230,42 @@ REAL8
       inspiralParams.Zeta2  = zeta2;
       inspiralParams.approximant  = approximant;
       break;
+    case SpinTaylorT3:
+      inspiralParams.ieta        = 1;
+      inspiralParams.mass1       = thisEvent->mass1;
+      inspiralParams.mass2       = thisEvent->mass2;
+      inspiralParams.startTime   = 0.0;
+      inspiralParams.startPhase  = 0.0;
+      inspiralParams.nStartPad   = 0;
+      inspiralParams.nEndPad     = 0;
+      inspiralParams.signalAmplitude = 1.; 
+      inspiralParams.distance    = thisEvent->distance * LAL_PC_SI * 1e6; 
+      inspiralParams.fLower      = INJECTINSPIRAL_FLOWER;
+      inspiralParams.fCutoff     = INJECTINSPIRAL_FUPPER;
+      inspiralParams.order       = order;
+      inspiralParams.inclination = thisEvent->inclination ;
+      inspiralParams.massChoice  = m1Andm2;
+      inspiralParams.tSampling   = 1./ (*buffer1);
+      inspiralParams.OmegaS      = omegas;
+      inspiralParams.Theta       = theta;
+      inspiralParams.Zeta2       = zeta2;
+      inspiralParams.approximant = approximant;
+      inspiralParams.sourceTheta = INJECTINSPIRAL_SOURCETHETA;
+      inspiralParams.sourcePhi   = INJECTINSPIRAL_SOURCEPHI;
+      inspiralParams.spin1[0]    = INJECTINSPIRAL_SPIN1; 
+      inspiralParams.spin2[0]    = INJECTINSPIRAL_SPIN2;
+      inspiralParams.spin1[1]    = INJECTINSPIRAL_THETA1;
+      inspiralParams.spin2[1]    = INJECTINSPIRAL_THETA2;
+      inspiralParams.spin1[2]    = INJECTINSPIRAL_PHI1;
+      inspiralParams.spin2[2]    = INJECTINSPIRAL_PHI2;
+
+
+
+
+      /* Extra computation for spin parameters: */
+      ComputeSpin(&inspiralParams);      
+
+      break;
     }
 
 
@@ -235,74 +284,80 @@ REAL8
 
   /*veritable computation c ici*/
   switch(approximant)
-      {
-      case TaylorT1: 
-	LALInspiralWave1ForInjection(status->statusPtr, 
-				     waveform,
-				     &inspiralParams);
-	*buffer1 = inspiralParams.tSampling;
-	*buffer2 = inspiralParams.tC;
-	*buffer3 = inspiralParams.nStartPad;
-	CHECKSTATUSPTR(status);      
-	break;
-      case TaylorT2: 
-	LALInspiralWave2ForInjection(status->statusPtr, 
-				     waveform,
-				     &inspiralParams);
-	*buffer1 = inspiralParams.tSampling;
-	*buffer2 = inspiralParams.tC;
-	*buffer3 = inspiralParams.nStartPad;
-	CHECKSTATUSPTR(status);      
-	break;
-      case TaylorT3: 
-	LALInspiralWave3ForInjection(status->statusPtr, 
-				     waveform,
-				     &inspiralParams);
-	*buffer1 = inspiralParams.tSampling;
-	*buffer2 = inspiralParams.tC;
-	*buffer3 = inspiralParams.nStartPad;
-	CHECKSTATUSPTR(status);      
-	break;
-      case TaylorF1:
-      case TaylorF2:      
-      case PadeT1:
-      case PadeF1:
-      case BCV:
-      case BCVSpin:
-      case SpinTaylorT3:
-      case EOB:       
-	LALEOBWaveformForInjection(status->statusPtr, 
+    {
+    case TaylorT1: 
+      LALInspiralWave1ForInjection(status->statusPtr, 
 				   waveform,
 				   &inspiralParams);
-	*buffer1 = inspiralParams.tSampling;
-
-
-	*buffer2 = inspiralParams.tC;
-	*buffer3 = inspiralParams.nStartPad;
-	CHECKSTATUSPTR(status);      
+      *buffer1 = inspiralParams.tSampling;
+      *buffer2 = inspiralParams.tC;
+      *buffer3 = inspiralParams.nStartPad;
+      CHECKSTATUSPTR(status);      
+      break;
+    case TaylorT2: 
+      LALInspiralWave2ForInjection(status->statusPtr, 
+				   waveform,
+				     &inspiralParams);
+      *buffer1 = inspiralParams.tSampling;
+      *buffer2 = inspiralParams.tC;
+      *buffer3 = inspiralParams.nStartPad;
+      CHECKSTATUSPTR(status);      
+      break;
+    case TaylorT3: 
+      LALInspiralWave3ForInjection(status->statusPtr, 
+				   waveform,
+				     &inspiralParams);
+      *buffer1 = inspiralParams.tSampling;
+      *buffer2 = inspiralParams.tC;
+      *buffer3 = inspiralParams.nStartPad;
+      CHECKSTATUSPTR(status);      
 	break;
-      case PPN:
-	LALGeneratePPNInspiral(status->statusPtr, waveform, &ppnParams);	    	
-	CHECKSTATUSPTR(status);   
-	*buffer1 = ppnParams.dfdt;
-	*buffer2 = ppnParams.tc;
-	*buffer3 = ppnParams.length;
-
+    case TaylorF1:
+    case TaylorF2:      
+    case PadeT1:
+    case PadeF1:
+    case BCV:
+    case BCVSpin:
+    case SpinTaylorT3:
+      LALInspiralSpinModulatedWaveForInjection(status->statusPtr, 
+					       waveform,
+					       &inspiralParams);
+      *buffer1 = inspiralParams.tSampling;
+      *buffer2 = inspiralParams.tC;
+      *buffer3 = inspiralParams.nStartPad;
+      CHECKSTATUSPTR(status);      
+      break;
+    case EOB:       
+      LALEOBWaveformForInjection(status->statusPtr, 
+					       waveform,
+					       &inspiralParams);
+      *buffer1 = inspiralParams.tSampling;
+      *buffer2 = inspiralParams.tC;
+      *buffer3 = inspiralParams.nStartPad;
+      CHECKSTATUSPTR(status);      
+      break;
+    case PPN:
+      LALGeneratePPNInspiral(status->statusPtr, waveform, &ppnParams);	    	
+      CHECKSTATUSPTR(status);   
+      *buffer1 = ppnParams.dfdt;
+      *buffer2 = ppnParams.tc;
+      *buffer3 = ppnParams.length;
+	
 	break;
 	/*      case SpinOrbitCW:	   
-	LALGenerateSpinOrbitCW(status->statusPtr, waveform, &params->socw);
-	CHECKSTATUSPTR(status);      
-	break;
-      case TaylorCW:
-	LALGenerateTaylorCW(status->statusPtr, waveform, &params->taylorcw);
-	CHECKSTATUSPTR(status);      
+		LALGenerateSpinOrbitCW(status->statusPtr, waveform, &params->socw);
+		CHECKSTATUSPTR(status);      
+		break;
+		case TaylorCW:
+		LALGenerateTaylorCW(status->statusPtr, waveform, &params->taylorcw);
+		CHECKSTATUSPTR(status);      
 	break;*/
-      default: 
-	fprintf(stderr,"nothing to do (bad approximant?)");
-	break;
-      }
+    default: 
+      fprintf(stderr,"nothing to do (bad approximant?)");
+      break;
+    }
   
-
+  
   
   DETATCHSTATUSPTR( status );
   RETURN(status);
@@ -349,6 +404,8 @@ LALGetApproximantAndOrder(
     *approximant = TaylorT1;
   else if (  (approxptr = strstr(waveform, "TaylorT2" ) ) )
     *approximant = TaylorT2;
+  else if (  (approxptr = strstr(waveform, "SpinTaylorT3" ) ) )
+    *approximant = SpinTaylorT3;
   else if (  (approxptr = strstr(waveform, "TaylorT3" ) ) )
     *approximant = TaylorT3;
   else if (  (approxptr = strstr(waveform, "TaylorF1" ) ) )
@@ -363,8 +420,6 @@ LALGetApproximantAndOrder(
     *approximant = EOB;
   else if (  (approxptr = strstr(waveform, "BCV" ) ) )
     *approximant = BCV;
-  else if (  (approxptr = strstr(waveform, "SpinTaylorT3" ) ) )
-    *approximant = SpinTaylorT3;
   else if (  (approxptr = strstr(waveform, "GeneratePPN" ) ) )
     *approximant = PPN;
   else if (  (approxptr = strstr(waveform, "TaylorCW" ) ) )
@@ -381,3 +436,32 @@ LALGetApproximantAndOrder(
 
 
 
+void ComputeSpin(InspiralTemplate *params)
+{
+
+
+  double mass1Sq, mass2Sq, spin1Frac, spin2Frac, spin1Phi, spin2Phi, spin1Theta, spin2Theta;
+
+  mass1Sq = pow(params->mass1*LAL_MTSUN_SI,2.L); 
+  mass2Sq = pow(params->mass2*LAL_MTSUN_SI,2.L); 
+  spin1Frac = params->spin1[0];  
+  spin2Frac = params->spin2[0];
+
+  params->sourceTheta = LAL_PI/6.L;
+  params->sourcePhi   = LAL_PI/6.L;
+
+
+  spin1Theta = params->spin1[1];
+  spin2Theta = params->spin2[1];
+  spin1Phi   = params->spin1[2];
+  spin2Phi   = params->spin2[2];
+  
+  
+  params->spin1[0] =  mass1Sq * spin1Frac * sin(spin1Theta) * cos(spin1Phi);
+  params->spin1[1] =  mass1Sq * spin1Frac * sin(spin1Theta) * sin(spin1Phi);
+  params->spin1[2] =  mass1Sq * spin1Frac * cos(spin1Theta);	 	 
+  params->spin2[0] =  mass2Sq * spin2Frac * sin(spin2Theta) * cos(spin2Phi);
+  params->spin2[1] =  mass2Sq * spin2Frac * sin(spin2Theta) * sin(spin2Phi);
+  params->spin2[2] =  mass2Sq * spin2Frac * cos(spin2Theta);  
+
+}

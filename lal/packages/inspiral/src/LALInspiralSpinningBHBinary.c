@@ -53,6 +53,10 @@ by a spinning black hole binary.
 */
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
+#include <lal/Units.h>
+#include <lal/SeqFactories.h>
+
+
 /* computes the polarisation angle psi */ 
 static void LALInspiralPolarisationAngle( REAL8 *psi, REAL8 psiOld, REAL8 *NCap, REAL8 *L);
 /* compute beam factors Fplus and Fcross */
@@ -450,3 +454,351 @@ LALACSTDerivatives
 	}                                        
 
 }
+
+
+
+/* Routine to inject inspiral waveforms from binaries consisting of spinning objects */
+/*  <lalVerbatim file="LALInspiralSpinningBHBinaryCP"> */
+
+/* NOT DONE FOR THE MOMENT should remove the polarisation effects which are already 
+   taken into account in inject package */
+void 
+LALInspiralSpinModulatedWaveForInjection(
+					 LALStatus        *status,
+					 CoherentGW *waveform,
+					 InspiralTemplate *params
+					 )
+{ /* </lalVerbatim> */
+  
+  
+  UINT4 nDEDim=9/*, Dim=3*/;
+  UINT4 i,j, count, length = 0;
+  /* polarisation and antenna pattern */
+  REAL8 omega,psi, psiOld, Fplus, Fcross, Fp0, Fp1, Fc0, Fc1, magL, amp, amp0, phi, phiOld, /*Amplitude,*/ Phi/*, dPhi*/;
+  REAL8 v, t, tMax, dt, f, fOld, fn, phase, phi0, MCube, Theta, etaBy5M, NCapDotL, NCapDotLByL;
+  /* source direction angles */
+  InspiralACSTParams acstPars;
+  REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
+  void *funcParams;
+    rk4In rk4in;
+    expnFunc func;
+    expnCoeffs ak;
+    REAL4Vector *a=NULL;
+    REAL4Vector *ff=NULL ;
+    REAL8Vector *phiv=NULL;
+    REAL8 unitHz,f2a, mu, mTot, cosI, etab, fFac,  f2aFac, apFac, acFac, phiC;
+    CreateVectorSequenceIn in;
+
+    mTot   =  params->mass1 + params->mass2;
+    etab   =  params->mass1 * params->mass2;
+    etab  /= mTot;
+    etab  /= mTot;
+    unitHz = (mTot) *LAL_MTSUN_SI*(REAL8)LAL_PI;
+    cosI   = cos( params->inclination );
+    mu     = etab * mTot;  
+    fFac   = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
+    dt     = -1. * etab / ( params->tSampling * 5.0*LAL_MTSUN_SI*mTot );      
+    f2aFac = LAL_PI*LAL_MTSUN_SI*mTot*fFac;   
+    apFac  = acFac = -2.0 * mu * LAL_MRSUN_SI/params->distance;
+    apFac *= 1.0 + cosI*cosI;
+    acFac *= 2.0*cosI;
+    
+
+    INITSTATUS(status, "LALInspiralSpinngBHBinaryForInjection", LALINSPIRALSPINNINGBHBINARYC);
+    ATTATCHSTATUSPTR(status);
+    ASSERT(params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+    /* Make sure waveform fields don't exist. */
+    ASSERT( !( waveform->a ), status, LALINSPIRALH_ENULL,
+	    LALINSPIRALH_MSGENULL );
+    ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL,
+	    LALINSPIRALH_MSGENULL );
+    ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL,
+	    LALINSPIRALH_MSGENULL );
+    ASSERT( !( waveform->shift ), status, LALINSPIRALH_ENULL,
+	    LALINSPIRALH_MSGENULL );
+    
+
+    LALInspiralSetup (status->statusPtr, &ak, params);
+    CHECKSTATUSPTR(status);
+    LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
+    CHECKSTATUSPTR(status);
+    LALInspiralWaveLength(status->statusPtr, &length, *params);
+    CHECKSTATUSPTR(status);
+    LALInspiralParameterCalc(status->statusPtr, params);
+    CHECKSTATUSPTR(status);
+
+    /* memset(&ff,0,sizeof(REAL4TimeSeries));*/
+    LALSCreateVector(status->statusPtr, &ff, length);
+    CHECKSTATUSPTR(status);
+    
+    LALSCreateVector(status->statusPtr, &a, 2*length);
+    CHECKSTATUSPTR(status);
+    
+    LALDCreateVector(status->statusPtr, &phiv, length);
+    CHECKSTATUSPTR(status);
+  
+
+    /* Allocate space for all the vectors in one go ... */
+    
+    dummy.length = nDEDim * 6;
+    values.length = dvalues.length = newvalues.length = yt.length = dym.length = dyt.length = nDEDim;
+    
+    if (!(dummy.data = (REAL8 *) LALMalloc(sizeof(REAL8) * dummy.length))) 
+      {
+	ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
+      }
+    
+    /* and distribute as necessary */
+    values.data = &dummy.data[0];             /* values of L, S1, S2 at current time */
+    dvalues.data = &dummy.data[nDEDim];       /* values of dL/dt, dS1/dt, dS2/dt at current time */
+    newvalues.data = &dummy.data[2*nDEDim];   /* new values of L, S1, S2 after time increment by dt*/
+    yt.data = &dummy.data[3*nDEDim];          /* Vector space needed by LALRungeKutta4 */
+    dym.data = &dummy.data[4*nDEDim];         /* Vector space needed by LALRungeKutta4 */
+    dyt.data = &dummy.data[5*nDEDim];         /* Vector space needed by LALRungeKutta4 */
+    
+    v = pow(LAL_PI * params->totalMass * LAL_MTSUN_SI * params->fLower, 1.L/3.L);
+    MCube = pow(LAL_MTSUN_SI * params->totalMass, 3.L);
+    /* Fill in the structure needed by the routine that computes the derivatives */
+    /* constant spins of the two bodies */
+    acstPars.magS1 = params->spin1[0]*params->spin1[0] + params->spin1[1]*params->spin1[1] + params->spin1[2]*params->spin1[2];
+    acstPars.magS2 = params->spin2[0]*params->spin2[0] + params->spin2[1]*params->spin2[1] + params->spin2[2]*params->spin2[2];
+    /* Direction to the source in the solar system barycenter */
+    acstPars.NCap[0] = sin(params->sourceTheta)*cos(params->sourcePhi);
+    acstPars.NCap[1] = sin(params->sourceTheta)*sin(params->sourcePhi);
+    acstPars.NCap[2] = cos(params->sourceTheta);
+    /* total mass in seconds */
+    acstPars.M = LAL_MTSUN_SI * params->totalMass;
+    /* Combination of masses that appears in the evolution of L, S1 and S2 */
+    acstPars.fourM1Plus = (4.L*params->mass1 + 3.L*params->mass2)/(2.*params->mass1*MCube);
+    acstPars.fourM2Plus = (4.L*params->mass2 + 3.L*params->mass1)/(2.*params->mass2*MCube);
+    acstPars.oneBy2Mcube = 0.5L/MCube;
+    acstPars.threeBy2Mcube = 1.5L/MCube;
+    acstPars.thirtytwoBy5etc = (32.L/5.L) * pow(params->eta,2.) * acstPars.M;
+    
+    /* Constant amplitude of GW */
+    amp0 = 2.L*params->eta * acstPars.M/params->distance;
+    /* Initial magnitude of the angular momentum, determined by the initial frequency/velocity */
+    magL = params->eta * (acstPars.M * acstPars.M)/v;
+    /* Initial angular momentum and spin vectors */
+    /* Angular momentum */
+    values.data[0] = magL * sin(params->orbitTheta0) * cos(params->orbitPhi0);
+    values.data[1] = magL * sin(params->orbitTheta0) * sin(params->orbitPhi0);
+    values.data[2] = magL * cos(params->orbitTheta0);
+    /* Spin of primary */
+    values.data[3] = params->spin1[0];
+    values.data[4] = params->spin1[1];
+    values.data[5] = params->spin1[2];
+    /* Spin of secondarfy */
+    values.data[6] = params->spin2[0];
+    values.data[7] = params->spin2[1];
+    values.data[8] = params->spin2[2];
+    /* Structure needed by RungeKutta4 for the evolution of the differential equations */
+    rk4in.function = LALACSTDerivatives;
+    rk4in.y = &values;
+    rk4in.h = 1.L/params->tSampling;
+    rk4in.n = nDEDim;
+    rk4in.yt = &yt;
+    rk4in.dym = &dym;
+    rk4in.dyt = &dyt;
+    
+    /* Pad the first nStartPad elements of the signal array with zero */
+    count = 0;
+    
+
+    /* Get the initial conditions before the evolution */
+    t = 0.L;                                                 /* initial time */
+    dt = 1.L/params->tSampling;                                  /* Sampling interval */
+    etaBy5M = params->eta/(5.L*acstPars.M);                      /* Constant that appears in ... */
+    Theta = etaBy5M * (params->tC - t);                          /* ... Theta */
+    tMax = params->tC - dt;                                      /* Maximum duration of the signal */
+    fn = (ak.flso > params->fCutoff) ? ak.flso : params->fCutoff;    /* Frequency cutoff, smaller of user given f or flso */
+    
+    func.phasing3(status->statusPtr, &Phi, Theta, &ak);      /* Carrier phase at the initial time */
+    CHECKSTATUSPTR(status);
+    func.frequency3(status->statusPtr, &f, Theta, &ak);      /* Carrier Freqeuncy at the initial time */
+    CHECKSTATUSPTR(status);
+    
+    /* Constants that appear in the antenna pattern */
+    Fp0 = (1.L + cos(params->sourceTheta)*cos(params->sourceTheta)) * cos(2.L*params->sourcePhi); 
+    Fp1 = cos(params->sourceTheta) * sin(2.L*params->sourcePhi);
+    Fc0 = Fp0;
+    Fc1 = -Fp1;
+    
+    psiOld = 0.L;
+    phiOld = 0.L;
+    magL = sqrt(values.data[0]*values.data[0] + values.data[1]*values.data[1] + values.data[2]*values.data[2]);
+    NCapDotL = acstPars.NCap[0]*values.data[0] + acstPars.NCap[1]*values.data[1] + acstPars.NCap[2]*values.data[2];
+    NCapDotLByL = NCapDotL/magL;
+
+    /* Initial values of */
+    /* the polarization angle */
+    LALInspiralPolarisationAngle(&psi, psiOld, &acstPars.NCap[0], &values.data[0]);
+    /* beam pattern factors */
+    LALInspiralBeamFactors(&Fplus, &Fcross, Fp0, Fp1, Fc0, Fc1, psi);
+    /* the polarization phase */
+    LALInspiralPolarisationPhase(&phi, phiOld, NCapDotLByL, Fplus, Fcross);
+    /* modulated amplitude */
+    LALInspiralModulatedAmplitude(&amp, v, amp0, NCapDotLByL, Fplus, Fcross);
+    
+
+    phase = Phi + phi;
+    phi0 = -phase + params->startPhase;
+    
+    fOld = f - 0.1;
+    while (f < fn && t < tMax && f>fOld)
+      {
+	/*ASSERT((INT4)count < (INT4)signal->length, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);*/
+	/* Subtract the constant initial phase (chosen to have a phase of in->startPhase) */
+
+
+
+	omega = v*v*v;
+	ff->data[count]= (REAL4)(omega/unitHz);
+	f2a = pow (f2aFac * omega, 2./3.);
+	a->data[2*count]          = (REAL4)(4.*apFac * f2a);
+	a->data[2*count+1]        = (REAL4)(4.*acFac * f2a);
+	phiv->data[count]          = (REAL8)(phase);
+
+
+	
+	/*
+	  double s1;
+	  s1 = pow(pow(values.data[3],2.0) + pow(values.data[4], 2.0) +pow(values.data[5], 2.0), 0.5);
+	  printf("%e %e %e %e %e\n", t, values.data[3], values.data[4], values.data[5], s1);
+	  printf("%e %e %e %e %e %e %e %e\n", t, signal->data[count], Phi, phi, psi, NCapDotL/magL, Fcross, Fplus);
+	*/
+	
+	/* Record the old values of frequency, polarisation angle and phase */
+	fOld = f;
+	psiOld = psi;
+	phiOld = phi;
+	
+	count++;
+	t = (count-params->nStartPad) * dt;
+	
+	/* The velocity parameter */
+	acstPars.v = v;
+	/* Cast the input structure into a void struct as required by the RungeKutta4 routine */
+	funcParams = (void *) &acstPars;
+	/* Compute the derivatives at the current time. */
+	LALACSTDerivatives(&values, &dvalues, funcParams);
+	/* Supply the integration routine with derivatives and current time*/
+	rk4in.dydx = &dvalues;
+	rk4in.x = t;
+	/* Compute the carrier phase of the signal at the current time */
+	Theta = etaBy5M * (params->tC - t);
+	func.phasing3(status->statusPtr, &Phi, Theta, &ak);
+	CHECKSTATUSPTR(status);
+	/* Compute the post-Newtonian frequency of the signal and 'velocity' at the current time */
+	func.frequency3(status->statusPtr, &f, Theta, &ak);
+	CHECKSTATUSPTR(status);
+	v = pow(LAL_PI * params->totalMass * LAL_MTSUN_SI * f, 1.L/3.L);
+	/* Integrate the equations one step forward */
+	LALRungeKutta4(status->statusPtr, &newvalues, &rk4in, funcParams);
+	CHECKSTATUSPTR(status);
+	
+	/* re-record the new values of the variables */
+	for (j=0; j<nDEDim; j++) values.data[j] = newvalues.data[j];
+	
+	/* Compute the magnitude of the angular-momentum and its component along line-of-sight. */
+	magL = sqrt(values.data[0]*values.data[0] + values.data[1]*values.data[1] + values.data[2]*values.data[2]);
+	NCapDotL = acstPars.NCap[0]*values.data[0]+acstPars.NCap[1]*values.data[1]+acstPars.NCap[2]*values.data[2];
+	NCapDotLByL = NCapDotL/magL;
+	
+	/* Compute the polarisation angle, beam factors, polarisation phase and modulated amplitude */
+	LALInspiralPolarisationAngle(&psi, psiOld, &acstPars.NCap[0], &values.data[0]);
+	LALInspiralBeamFactors(&Fplus, &Fcross, Fp0, Fp1, Fc0, Fc1, psi);
+	LALInspiralPolarisationPhase(&phi, phiOld, NCapDotLByL, Fplus, Fcross);
+	LALInspiralModulatedAmplitude(&amp, v, amp0, NCapDotLByL, Fplus, Fcross);
+	
+	/* The new phase of the signal is ... */
+	phase = Phi + phi;
+      }
+
+
+    params->fFinal = f;
+    
+    /*wrap the phase vector*/
+    phiC =  phiv->data[count-1] ;
+    for (i=0; i<count;i++)
+      {
+	phiv->data[i] =  phiv->data[i] -phiC;
+      }
+    /* Allocate the waveform structures. */
+    if ( ( waveform->a = (REAL4TimeVectorSeries *)
+	   LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
+      ABORT( status, LALINSPIRALH_EMEM,
+	     LALINSPIRALH_MSGEMEM );
+    }
+    memset( waveform->a, 0, sizeof(REAL4TimeVectorSeries) );
+    if ( ( waveform->f = (REAL4TimeSeries *)
+	   LALMalloc( sizeof(REAL4TimeSeries) ) ) == NULL ) {
+      LALFree( waveform->a ); waveform->a = NULL;
+      ABORT( status, LALINSPIRALH_EMEM,
+	     LALINSPIRALH_MSGEMEM );
+    }
+    memset( waveform->f, 0, sizeof(REAL4TimeSeries) );
+    if ( ( waveform->phi = (REAL8TimeSeries *)
+	   LALMalloc( sizeof(REAL8TimeSeries) ) ) == NULL ) {
+      LALFree( waveform->a ); waveform->a = NULL;
+      LALFree( waveform->f ); waveform->f = NULL;
+      ABORT( status, LALINSPIRALH_EMEM,
+	     LALINSPIRALH_MSGEMEM );
+    }
+    memset( waveform->phi, 0, sizeof(REAL8TimeSeries) );
+    
+    
+    
+    in.length = (UINT4)count;
+    in.vectorLength = 2;
+    LALSCreateVectorSequence( status->statusPtr,
+			      &( waveform->a->data ), &in );
+    CHECKSTATUSPTR(status);      
+    LALSCreateVector( status->statusPtr,
+		      &( waveform->f->data ), count);
+    CHECKSTATUSPTR(status);      
+    LALDCreateVector( status->statusPtr,
+		      &( waveform->phi->data ), count );
+    CHECKSTATUSPTR(status);        
+    
+    
+    
+    
+    memcpy(waveform->f->data->data , ff->data, count*(sizeof(REAL4)));
+    memcpy(waveform->a->data->data , a->data, 2*count*(sizeof(REAL4)));
+    memcpy(waveform->phi->data->data ,phiv->data, count*(sizeof(REAL8)));
+    
+    
+    
+    dt = -1. * etab / ( params->tSampling * 5.0*LAL_MTSUN_SI*mTot );      
+    
+    waveform->a->deltaT = waveform->f->deltaT = waveform->phi->deltaT
+      = 1./params->tSampling;
+    
+    waveform->a->sampleUnits = lalStrainUnit;
+    waveform->f->sampleUnits = lalHertzUnit;
+    waveform->phi->sampleUnits = lalDimensionlessUnit;
+    LALSnprintf( waveform->a->name, LALNameLength, "EOB inspiral amplitudes" );
+    LALSnprintf( waveform->f->name, LALNameLength, "EOB inspiral frequency" );
+    LALSnprintf( waveform->phi->name, LALNameLength, "EOB inspiral phase" );
+    
+    
+    params->tC = count / params->tSampling ;
+    params->tSampling = (REAL4)(waveform->f->data->data[count-1]
+				-
+				waveform->f->data->data[count-2]);
+    /* - (waveform->f->data[count-2]);*/
+    params->tSampling /= (REAL4)dt;
+    params->nStartPad = count;
+    
+    LALFree(a->data);
+    LALFree(ff->data);
+    LALFree(phiv->data);
+    
+  
+    LALFree(dummy.data);
+    DETATCHSTATUSPTR(status);
+    RETURN(status);
+    
+  }
+
