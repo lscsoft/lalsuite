@@ -586,6 +586,17 @@ LALModModFreqSeriesToTFPlane (
   LALCreateReverseRealFFTPlan( status->statusPtr, &prev, numpts, 0); 
   CHECKSTATUSPTR (status);
 
+  /* 
+   * PRB - test code to add a delta function to the segment and
+   * confirm the output of the code
+   */
+	/*
+	 memset(filter->data, 0, numpts * sizeof(REAL4));
+	 filter->data[numpts/2] = 1.0;
+	 LALForwardRealFFT( status->statusPtr, freqSeries->data, filter, pfwd);
+	 CHECKSTATUSPTR (status);
+	 */
+
     /* PRB - generate the time domain filter function.  This filter should
      * depends on the frequency flow1 and the fseglength.  It should
      * be non-zero for some amount that depends on fseglength and
@@ -665,10 +676,22 @@ LALModModFreqSeriesToTFPlane (
     CHECKSTATUSPTR (status);
 
 
-    /*    zsum += snr->data[(3*(INT4)(delT/dt))+8192]/norm;*/
-    /*    fp = fopen("z.dat","a");
-    fprintf(fp,"%f\n",snr->data[(32*(INT4)(delT/dt))+8192]/norm);
-    fclose(fp);*/
+	/* 
+	 * PRB & SRM - to output the time series when the delta function
+	 * is inserted instead of other data 
+	 */
+	/*
+	{
+		char fname[248];
+		sprintf(fname, "z%02d.dat", i);
+		fp = fopen(fname,"a");
+		for(j=0; j<numpts ; j++)
+		{
+			fprintf(fp,"%i %f\n",j,snr->data[j]/norm);
+		}
+		fclose(fp);
+	}
+	*/
 
     /* PRB - copy the data back into the time series.  In this
      * process,  one only takes the samples corresponding to the
