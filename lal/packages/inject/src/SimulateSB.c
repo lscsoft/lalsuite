@@ -544,17 +544,31 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
 		     gaussdevsX1, randParams ); 
   CHECKSTATUSPTR( status);
 
+  LALDestroyRandomParams(status->statusPtr,&randParams);
+
+  LALCreateRandomParams(status->statusPtr,&randParams, params->seed +1);
+  
   LALNormalDeviates( status->statusPtr, 
 		     gaussdevsY1, randParams ); 
   CHECKSTATUSPTR( status);
-
+  
+  LALDestroyRandomParams(status->statusPtr,&randParams);
+  
+  LALCreateRandomParams(status->statusPtr,&randParams, params->seed +2);
+  
   LALNormalDeviates( status->statusPtr, 
 		     gaussdevsX2, randParams ); 
   CHECKSTATUSPTR( status);
-
+ 
+  LALDestroyRandomParams(status->statusPtr,&randParams);
+  
+  LALCreateRandomParams(status->statusPtr,&randParams, params->seed +3);
+  
   LALNormalDeviates( status->statusPtr, 
 		     gaussdevsY2, randParams ); 
   CHECKSTATUSPTR( status);
+  
+  LALDestroyRandomParams(status->statusPtr,&randParams);
 
   ORFparameters.length   = length/2 + 1;
   ORFparameters.f0       = f0;
@@ -659,6 +673,13 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
 	 wFilter2.im * ccountsTmp[1]->data[length/2].im);
       ccounts[1]->data[length/2].im = 0;
       
+      LALSDestroyVector(status->statusPtr, &(overlap.data));
+      
+      LALSDestroyVector(status->statusPtr, &gaussdevsX1);
+      LALSDestroyVector(status->statusPtr, &gaussdevsY1);
+      LALSDestroyVector(status->statusPtr, &gaussdevsX2);
+      LALSDestroyVector(status->statusPtr, &gaussdevsY2);
+      
       /*
        * 
        * assign parameters and data to output 
@@ -671,6 +692,13 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
 			ccounts[0],invPlan); 
       LALReverseRealFFT(status->statusPtr,output->SSimStochBG2->data,
 			ccounts[1],invPlan); 
+      
+      LALDestroyRealFFTPlan(status->statusPtr,&invPlan);
+  
+      for (i=0;i<2;i++){
+	LALCDestroyVector(status->statusPtr, &ccountsTmp[i]);
+	LALCDestroyVector(status->statusPtr, &ccounts[i]);
+      }
       
       /*
        * 
@@ -704,18 +732,7 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
     }
   
   /* clean up and exit */
-  
-  LALDestroyRealFFTPlan(status->statusPtr,&invPlan);
-  LALDestroyRandomParams(status->statusPtr,&randParams);
-  LALSDestroyVector(status->statusPtr, &gaussdevsX1);
-  LALSDestroyVector(status->statusPtr, &gaussdevsY1);
-  LALSDestroyVector(status->statusPtr, &gaussdevsX2);
-  LALSDestroyVector(status->statusPtr, &gaussdevsY2);
-  LALSDestroyVector(status->statusPtr, &(overlap.data));
-  for (i=0;i<2;i++){
-    LALCDestroyVector(status->statusPtr, &ccountsTmp[i]);
-    LALCDestroyVector(status->statusPtr, &ccounts[i]);
-  }
+
   LALCheckMemoryLeaks();
   
   DETATCHSTATUSPTR(status);
