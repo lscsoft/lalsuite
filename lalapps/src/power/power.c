@@ -845,8 +845,8 @@ void parse_command_line(
 
 		case 'k':
 		params->tfPlaneParams.fhigh = atof(optarg);
-		if(params->tfPlaneParams.fhigh < params->tfPlaneParams.flow) {
-			sprintf(msg,"must be > %f (%f specified)", params->tfPlaneParams.flow, params->tfPlaneParams.fhigh);
+		if(params->tfPlaneParams.fhigh < 0) {
+			sprintf(msg,"must be > 0 (%f specified)",params->tfPlaneParams.fhigh);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -856,8 +856,8 @@ void parse_command_line(
 		case 'l':
 		params->tfTilingInput.maxTileBand = atof(optarg);
 		params->tfPlaneParams.deltaT = 1 / (2 * params->tfTilingInput.maxTileBand);
-		if(params->tfTilingInput.maxTileBand > params->tfTilingInput.length) {
-			sprintf(msg,"must be < %i (%f specified)", params->tfTilingInput.length, params->tfTilingInput.maxTileBand);
+		if(params->tfTilingInput.maxTileBand < 0) {
+			sprintf(msg,"must be > 0(%f specified)",params->tfTilingInput.maxTileBand);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
