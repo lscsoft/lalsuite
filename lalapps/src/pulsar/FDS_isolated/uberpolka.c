@@ -538,7 +538,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
 {
   UINT4 i;
   UINT4 numlines;
-  REAL8 dmp;
+  REAL8 dmp, epsilon=1e-5;
   char line1[256];
   FILE *fp;
   INT4 read;
@@ -624,6 +624,26 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
                      "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
                      " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT "%c", 
                      &((*CList)[i].f), &((*CList)[i].Alpha), &((*CList)[i].Delta), &dmp, &dmp, &dmp, &((*CList)[i].F), &newline );
+
+      /* check that values that are read in are sensible */
+      if ( (*CList)[i].f < 0.0 || (*CList)[i].F < 0.0 || 
+	   (*CList)[i].Alpha < -epsilon || (*CList)[i].Alpha > LAL_TWOPI + epsilon ||
+	   (*CList)[i].Delta < -LAL_PI/2.0-epsilon || (*CList)[i].Delta > LAL_PI/2.0+epsilon)
+	{
+	  fprintf(stderr,
+		  "Line %d of file %s has invalid values.\n"
+		  "First 255 chars are:\n"
+		  "%s\n"
+		  "1st and 7th field should be positive.\n" 
+		  "2nd field should lie between 0 and %1.15f.\n" 
+		  "3rd field should lie between %1.15f and %1.15f.\n",
+		  i+1, fname, line1, (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
+	  LALFree ((*CList));
+	  fclose(fp);
+	  return 1;
+	}
+	   
+	   
 
       /* check that the FIRST character following the Fstat value is a
 	 newline.  Note deliberate LACK OF WHITE SPACE char before %c
