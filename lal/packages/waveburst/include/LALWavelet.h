@@ -92,7 +92,7 @@ enum TREETYPE {DIADIC, BINARY};
 
   /*enum COINCIDENCETYPE {GG,GV};*/
 
-typedef enum { ORIGINAL_CL, SWAPPED_CL, MIXED_CL } CLUSTER_TYPE;
+typedef enum { ORIGINAL_CL, SWAPPED_CL, MIXED_CL, MIXED_CL1, MIXED_CL2 } CLUSTER_TYPE;
 typedef enum { NONE_CO=-1, CROSS_CO=0, RECTANGLE_CO=1 } COINCIDENCE_LEVEL;
 
 /*************************************<lalLaTeX file="WaveburstStructs">
