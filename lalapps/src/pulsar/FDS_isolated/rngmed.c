@@ -60,7 +60,7 @@ Computes running median in an efficient manner.
                        allocated outside this function.
 
 */
-void rngmed(const double *data, unsigned int lendata, unsigned int nblocks, double *medians){
+int rngmed(const double *data, unsigned int lendata, unsigned int nblocks, double *medians){
 
 
 /*--------------------------
@@ -101,7 +101,7 @@ as checkpoints
      index_block =(struct rngmed_val_index *)LALCalloc(nblocks, sizeof(struct rngmed_val_index));
      if(!index_block){
           printf("Could not allocate memory for index_block\n");
-          return;
+          return 1;
      }
      for(k=0;k<nblocks;k++){
           index_block[k].data=data[k];
@@ -113,7 +113,7 @@ as checkpoints
      sorted_indices=(double *)LALCalloc(nblocks,sizeof(double));
      if (!sorted_indices){
            printf("Could not allocate memory for sorted_indices\n");
-           return;
+           return 1;
      }
      for(k=0;k<nblocks;k++){
          sorted_indices[k]=index_block[k].index; 
@@ -130,11 +130,11 @@ Number of nodes per checkpoint=floor(sqrt(nblocks))
      checks=(struct node **)LALCalloc(ncheckpts,sizeof(struct node*));
      if(!checks){
            printf("Could not allocate storage for checks\n");
-           return;
+           return 1;
      }
      if(!(checks4shift=(int*)LALCalloc(ncheckpts,sizeof(int)))){
            printf("Could not allocate storage for checks4shift\n");
-           return;
+           return 1;
      }
 
 /*---------------------------------
@@ -166,12 +166,12 @@ in sequential order
      node_addresses=(struct node **)LALCalloc(nblocks,sizeof(struct node *));
      if(!node_addresses){
            printf("Could not allocate storage for node_addresses\n");
-           return;
+           return 1;
      }
      first_sequence=(struct node *)LALCalloc(1,sizeof(struct node));
      if(!first_sequence){
            printf("Could not create first node\n");
-           return;
+           return 1;
      }
      node_addresses[0]=first_sequence;
      first_sequence->next_sequence=NULL;
@@ -183,7 +183,7 @@ in sequential order
            currentnode=(struct node *)LALCalloc(1,sizeof(struct node));
            if(!currentnode){
                 printf("Could not create node \n");
-                return;
+                return 1;
            }
            node_addresses[samplecount]=currentnode;
            previousnode->next_sequence=currentnode;
@@ -226,7 +226,7 @@ the pointers to checkpoint nodes
 -------------------------------*/
      if(!medians){
            printf("Null output array");
-           return;
+           return 1;
      }
      currentnode=checks[nearestchk];
      for(k=1;k<=offset;k++){
@@ -440,6 +440,8 @@ the new value.
      }
      LALFree(checks4shift);
      LALFree(checks);
+
+     return 0;
 }
 
 /*--------------------------

@@ -2124,7 +2124,11 @@ INT4 EstimatePSDLines(LALStatus *status)
   Sp->length=nbins;
   FloorSp->length=nbins;
 
-  j=EstimateFloor(Sp, windowSize, FloorSp);
+  /* Bruce note: is j used anywhere?  I think not... */
+  if ((j=EstimateFloor(Sp, windowSize, FloorSp))){
+    fprintf(stderr,"Problem in EstimateFloor()\n");
+    return 1;
+  }
  
   if (!(outliers=(Outliers *)LALMalloc(sizeof(Outliers)))){
     fprintf(stderr,"Memory allocation failure for SpOutliers\n");
@@ -2179,7 +2183,7 @@ INT4 EstimatePSDLines(LALStatus *status)
 
      return 0;
 
-   }
+   } /* if outliers->Noutliers==0 */
   
    if (!(SpClParams=(ClustersParams *)LALMalloc(sizeof(ClustersParams)))){ 
      printf("Memory allocation failure for SpClusterParams");
@@ -2538,7 +2542,10 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
       }
       
       /* Compute running median */
-      EstimateFloor(Sp, windowSize, RngMdnSp);
+      if (EstimateFloor(Sp, windowSize, RngMdnSp)) {
+	fprintf(stderr,"Problem in EstimateFloor()\n");
+	return 1;
+      }
 
       /* compute how many cluster points in all */
       /* substitute the line profiles value in RngMdnSp */

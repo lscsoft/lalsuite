@@ -1,7 +1,7 @@
 #ifndef RNGMED_H
 #define RNGMED_H
 
-void rngmed(const double *, unsigned int, unsigned int, double *);
+int rngmed(const double *, unsigned int, unsigned int, double *);
 int rngmed_sortindex(const void *, const void *); 
 
 /*----------------------------

@@ -34,12 +34,15 @@ int EstimateFloor(REAL8Vector *input, INT2 windowSize, REAL8Vector *output){
   M = nbins-windowSize+1;
   if(!(dmp= (double *) LALCalloc(M,sizeof(double)))){ 
     printf("dmp Memory allocation failure");
-    return 0;
+    return 1;
   }
   
   /* Call rngmed */
-  rngmed(input->data, nbins, windowSize, dmp);
-  
+  if (rngmed(input->data, nbins, windowSize, dmp)) {
+    fprintf(stderr,"Problem in rngmed()\n");
+    return 1;
+  }
+
   /* start is the index of outdata at which the actual rmgmed begins*/
   halfWindow=windowSize/2.0;
   start=((int)(halfWindow))-1;
