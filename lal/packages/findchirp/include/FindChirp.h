@@ -164,6 +164,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_EDFDT 20
 #define FINDCHIRPH_EAPRX 21
 #define FINDCHIRPH_EUAPX 22
+#define FINDCHIRPH_ECHTZ 23
 #define FINDCHIRPH_MSGENULL "Null pointer"
 #define FINDCHIRPH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPH_MSGEALOC "Memory allocation error"
@@ -182,6 +183,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_MSGEDFDT "Waveform sampling interval is too large"
 #define FINDCHIRPH_MSGEAPRX "Incorrect waveform approximant"
 #define FINDCHIRPH_MSGEUAPX "Unknown waveform approximant"
+#define FINDCHIRPH_MSGECHTZ "Length of chirp is zero or negative"
 /* </lalErrTable> */
 
 

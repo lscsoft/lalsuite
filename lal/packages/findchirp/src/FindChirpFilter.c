@@ -939,6 +939,10 @@ LALFindChirpFilterSegment (
     REAL4 x4 = x2*x2;
     REAL4 x8 = x4*x4;
     chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8;
+    if ( chirpTime <= 0 )
+    {
+      ABORT( status, FINDCHIRPH_ECHTZ, FINDCHIRPH_MSGECHTZ );
+    }
 
     deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
 
