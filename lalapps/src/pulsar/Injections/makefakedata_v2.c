@@ -320,23 +320,23 @@ INT4 lalDebugLevel=0;
 
 /* Prototypes for the functions defined in this file */
 int read_commandline_and_file(LALStatus *, int argc, char *argv[]);
-int set_default(LALStatus *);
-int read_timestamps(LALStatus *, REAL8);
+int set_default(void);
+int read_timestamps(REAL8);
 int write_modulated_amplitudes_file(LALStatus *);
 int prepare_baryinput(LALStatus *);
 int prepare_cwDetector(LALStatus *);
-int prepare_timeSeries(LALStatus *);
+int prepare_timeSeries(void);
 int compute_SSBtimes(LALStatus *);
 int prepare_fvec(LALStatus *);
 int make_and_add_time_domain_noise(LALStatus *);
-int make_filelist(LALStatus *);
+int make_filelist(void);
 int read_and_add_freq_domain_noise(LALStatus *, int iSFT);
 int add(LALStatus *);
-int write_SFTS(LALStatus *, int iSFT);
-int write_timeseries(LALStatus *, int iSFT);
+int write_SFTS(int iSFT);
+int write_timeseries(int iSFT);
 int cleanup(LALStatus *);
 int freemem(LALStatus *);
-int window_data(LALStatus *);
+int window_data(void);
 int correct_phase(LALStatus *);
 
 /* Like perror() but takes variable numbers of arguments and includes
@@ -367,18 +367,20 @@ void error(char *fmt, ...){
   return;
 }
 
-
-void printclock(char *message){
 #if 0
+void printclock(char *message){
+
   /* Define this to get crude profiling information */
   char datestring[64];
   time_t t=time(NULL);
   sprintf(datestring, "%s", ctime(&t));
   datestring[strlen(datestring)-1]='\0';
   error("%s : %s\n", datestring, message);
-#endif
   return;
 }
+#else
+#define printclock(a)
+#endif
 
 int main(int argc,char *argv[]) {
   
@@ -408,7 +410,7 @@ int main(int argc,char *argv[]) {
   printclock("Start");
   
   /* set genTayParams.f = NULL and 60s genTayParams interpolation interval */
-  if (set_default(&status))
+  if (set_default())
     return 1;
   
   /* read command line arguments and input variables from input data file */
@@ -417,12 +419,12 @@ int main(int argc,char *argv[]) {
   
   if (sigma < 0.0){
     /* make file list for noise data files */
-    if (make_filelist(&status))
+    if (make_filelist())
       return 1;
   }
   
   /* Read in timestamps and place them in timestamps vec*/
-  if (read_timestamps(&status, GPStime))
+  if (read_timestamps(GPStime))
     return 1;
 
   printclock("Making baryinput");  
@@ -444,7 +446,7 @@ int main(int argc,char *argv[]) {
 
   /* Allocate space for time series that will hold SFT time chunks and
      fill-in all fields that are independent of the particular SFT */
-  if (prepare_timeSeries(&status))
+  if (prepare_timeSeries())
     return 1;
 
   /* Allocate space for SFT vector and fill-in appropriate fields, if
@@ -562,14 +564,14 @@ int main(int argc,char *argv[]) {
     
     /* Write Time-domain strain file in the file specified by the path
        name. If no path is set, this means don't output in Time domain */
-    if (write_timeseries(&status, iSFT))
+    if (write_timeseries(iSFT))
       return 1;
 
     /* if we've asked for freq-domain output... */
     if (freqbasefilename) {
       
       /* window data in the time domain before FFTing it */
-      if (do_windowing && window_data(&status))
+      if (do_windowing && window_data())
 	return 1;
 
       /* Perform FFTW-LAL Fast Fourier Transform */
@@ -586,7 +588,7 @@ int main(int argc,char *argv[]) {
       
       /* Write the SFT file in the file that is specified by the path
 	 name.  If no path name is set, this means don't output SFTs*/
-      if (write_SFTS(&status, iSFT))
+      if (write_SFTS(iSFT))
 	return 1;  
     }
 
@@ -671,7 +673,7 @@ int freemem(LALStatus* status){
 
 
 /*sets default values */
-int set_default(LALStatus* status) {
+int set_default(void) {
 
   genTayParams.f=NULL;
   genTayParams.position.system= COORDINATESYSTEM_EQUATORIAL;
@@ -681,29 +683,14 @@ int set_default(LALStatus* status) {
 }
 
 
-void compute_one_SSB(LALStatus* status, LIGOTimeGPS *ssbout, LIGOTimeGPS *gpsin) {
-  REAL8 doubleTime;
-  LIGOTimeGPS ssb;
-
-  /* This was a mistake in the original makefakedata.  Fixed by Bruce
-     Allen on October 9, 2003.  Without the extra precision of a
-     double, too much significance is lost in computing SSB
-     timestamps. */  
-#if 0
-  REAL4 Ts=gpsin->gpsSeconds;
-  REAL4 Tns=gpsin->gpsNanoSeconds;
-#else
-  REAL8 Ts=gpsin->gpsSeconds;
-  REAL8 Tns=gpsin->gpsNanoSeconds;
-#endif
+void compute_one_SSB(LALStatus* status, LIGOTimeGPS *ssbout, LIGOTimeGPS *gpsin) 
+{
 
   LALBarycenterEarth(status, &earth, gpsin, edat);
+  baryinput.tgps = *gpsin;
   LALBarycenter(status, &emit, &baryinput, &earth);
   
-  doubleTime= emit.deltaT + Ts + Tns*1.E-9;
-  LALFloatToGPS(status, &ssb, &doubleTime);
-  
-  *ssbout=ssb;
+  *ssbout = emit.te;
   return;
 }
 
@@ -777,7 +764,7 @@ int correct_phase(LALStatus* status, int iSFT) {
  */
 int correct_phase(LALStatus* status) {
 
-  int i;
+  UINT4 i;
   REAL8 cosx,sinx;
   COMPLEX8 fvec1;
   LALTimeInterval deltaGPS;
@@ -806,7 +793,7 @@ int correct_phase(LALStatus* status) {
 
 
 /* windows the data*/
-int window_data(LALStatus* status){
+int window_data(void){
 
   REAL4 *window,timedata1,timedata2;
   REAL4 frac;
@@ -962,7 +949,8 @@ int prepare_cwDetector(LALStatus* status){
       delta -= SSBofguess.gpsNanoSeconds;
       
       /* break if we've converged */
-      if (delta>-2 && delta<2)
+      /*      if (delta>-2 && delta<2)*/
+      if (delta == 0)	/* try to be ns-precise */
 	break;
 
       /* use delta to make next guess.  Be careful of the order of
@@ -996,7 +984,7 @@ int prepare_cwDetector(LALStatus* status){
 }
 
 /*Allocates space for timeseries */
-int prepare_timeSeries(LALStatus* status) {
+int prepare_timeSeries(void) {
 
   timeSeries = (REAL4TimeSeries *)LALMalloc(sizeof(REAL4TimeSeries));
   timeSeries->data = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
@@ -1081,7 +1069,7 @@ int make_and_add_time_domain_noise(LALStatus* status) {
 }
 
 /*reads timestamps file and fills-in timestamps vector*/
-int read_timestamps(LALStatus* status,REAL8 startattime) {
+int read_timestamps(REAL8 startattime) {
   
   FILE *fp;
   int i,r;
@@ -1159,9 +1147,9 @@ int write_modulated_amplitudes_file(LALStatus* status){
 
 
 
-int make_filelist(LALStatus* status) {
+int make_filelist(void) {
 
-  INT4 fileno=0;
+  UINT4 fileno=0;
   char command[256];
   glob_t globbuf;
 
@@ -1200,7 +1188,7 @@ int read_and_add_freq_domain_noise(LALStatus* status, int iSFT) {
   FILE *fp;
   REAL4 norm;
   size_t errorcode;
-  INT4 i;
+  UINT4 i;
 
   struct headertag {
     REAL8 endian;
@@ -1315,14 +1303,15 @@ INT4 myRound(REAL8 x)
 
 
 
-int write_SFTS(LALStatus* status, int iSFT){
+int write_SFTS(int iSFT){
 
 
   FILE *fp;
   REAL4 rpw,ipw;
   /* REAL8 fr; */
   char filename[256], filenumber[16];
-  int i,errorcode;
+  int errorcode;
+  UINT4 i;
 
   struct headertag {
     REAL8 endian;
@@ -1381,13 +1370,13 @@ int write_SFTS(LALStatus* status, int iSFT){
 }
 
 /* This writes out the simulated dat in the time-domain. */
-int write_timeseries(LALStatus* status, int iSFT){
+int write_timeseries(int iSFT){
   
   /* write binary form of the output to stdout.  This is useful for
      hardware pulsar injections at the sites */
   if (binaryoutput){
     REAL4 magic=1234.5;
-    INT4  length=timeSeries->data->length;
+    UINT4  length=timeSeries->data->length;
     REAL4 *datap=timeSeries->data->data;
     
     if (
