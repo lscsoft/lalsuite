@@ -38,8 +38,8 @@
 #define DETRESPONSE_MIN(a, b) (((a) < (b)) ? (a) : (b))
 
 /* number of grid points in declination and right ascension */
-#define NUM_DEC 11
-#define NUM_RA  25
+#define NUM_DEC 81
+#define NUM_RA  193
 
 typedef REAL4 skygrid_t[NUM_RA * NUM_DEC];
 

@@ -355,7 +355,9 @@ void compute_skygrid(LALStatus * status)
       for (j = 0; j < NUM_RA; ++j)
       {
         source.equatorialCoords.longitude =
-        (REAL8)j/24. * ((REAL8)LAL_TWOPI);
+        (REAL8)j/(NUM_RA - 1.) * ((REAL8)LAL_TWOPI);
+        
+        /* printf("%10.6f\n", source.equatorialCoords.longitude); */
         
         for (i = -dec_lim; i <= dec_lim; ++i)
         {
