@@ -4,25 +4,46 @@ $Id$
 ************************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
-\subsection{Module \texttt{ConfigFile}
+\subsection{Module \texttt{ConfigFile.c}}
 \label{ss:ConfigFile.c}
 
 Some general-purpose routines for config-file reading
 
 \subsubsection*{Prototypes}
 \input{ConfigFileCP}
-\idx{NextSkyPosition()}
+\idx{LALLoadConfigFile()}
+\idx{LALDestroyConfigData()}
+\idx{LALReadConfigVariable()}
+\idx{LALReadConfigBOOLVariable()}
+\idx{LALReadConfigINT2Variable()}
+\idx{LALReadConfigINT4Variable()}
+\idx{LALReadConfigREAL4Variable()}
+\idx{LALReadConfigREAL8Variable()}
+\idx{LALReadConfigSTRINGVariable()}
+\idx{LALReadConfigSTRINGNVariable()}
+\idx{LALCheckConfigReadComplete()}
 
 \subsubsection*{Description}
 
-allow reading of "variable = value" type config-files, that may also contain 
-comments
+allow reading of "variable = value" type config-files, which may contain 
+comments and line-continuation.
 
 \subsubsection*{Algorithm}
 
 \subsubsection*{Uses}
 
 \subsubsection*{Notes}
+
+\verb+LALReadConfigSTRINGVariable()+ is a special case, as it reads
+the rest of the logical line (excluding comments) as a string (different
+from \verb+"%s"+). The required memory is allocated and has to be
+freed by the caller. 
+
+\verb+LALReadConfigSTRINGVariable()+ is a somewhat different version
+of the same, but reads only up to a maximum of $N$ bytes, and the
+corresponding memory has to be provided by the user.
+This is achieved by using a \verb+CHARVector+, where the
+\verb+length+-entry specifies the maximal length of the string.
 
 \vfill{\footnotesize\input{ConfigFileCV}}
 
@@ -62,19 +83,26 @@ static void cleanConfig (CHARSequence *text);
  *
  *----------------------------------------------------------------------*/
 void
-LALLoadConfigFile (LALStatus *stat, LALConfigData_t *cfgdata, FILE *instream)
+LALLoadConfigFile (LALStatus *stat, LALConfigData **cfgdata, const CHAR *fname)
 {
   CHARSequence *rawdata = NULL;
   UINT4 i;
+  FILE *fp;
 
   INITSTATUS( stat, "LALLoadConfigFile", CONFIGFILEC );
   ATTATCHSTATUSPTR (stat);
 
-  ASSERT (cfgdata->lines == NULL, stat, CONFIGFILEH_ENONULL, CONFIGFILEH_MSGENONULL);
-  ASSERT (cfgdata->wasRead == NULL, stat, CONFIGFILEH_ENONULL, CONFIGFILEH_MSGENONULL);
-  ASSERT (instream != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT (*cfgdata == NULL, stat, CONFIGFILEH_ENONULL, CONFIGFILEH_MSGENONULL);
+  ASSERT (fname != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
 
-  TRY (LALCHARReadSequence (stat->statusPtr, &rawdata, instream), stat);
+
+  if ( (fp = fopen(fname, "r")) == NULL) {
+    ABORT (stat, CONFIGFILEH_EFILE, CONFIGFILEH_MSGEFILE);
+  }
+
+  LALCHARReadSequence (stat->statusPtr, &rawdata, fp);
+  fclose (fp);
+  CHECKSTATUSPTR (stat);
 
   if (rawdata == NULL) {
     ABORT (stat, CONFIGFILEH_EFILE, CONFIGFILEH_MSGEFILE);
@@ -83,22 +111,32 @@ LALLoadConfigFile (LALStatus *stat, LALConfigData_t *cfgdata, FILE *instream)
   /* get rid of comments and do line-continuation */
   cleanConfig (rawdata);
 
+  if ( (*cfgdata = LALCalloc (1, sizeof(LALConfigData))) == NULL) {
+    ABORT (stat, CONFIGFILEH_EMEM, CONFIGFILEH_MSGEMEM);
+  }
+  
   /* parse this into individual lines */
-  TRY (LALCreateTokenList (stat->statusPtr, &(cfgdata->lines), rawdata->data, "\n"), stat);
-
+  LALCreateTokenList (stat->statusPtr, &((*cfgdata)->lines), rawdata->data, "\n");
   LALFree (rawdata->data);
   LALFree (rawdata);
+  
+  BEGINFAIL (stat)
+    LALFree (*cfgdata);
+  ENDFAIL (stat);
 
   if (lalDebugLevel >= 3)
     {
       LALPrintError ("ConfigFile DEBUG: parsed config-file contents:\n");
-      for (i=0; i < cfgdata->lines->nTokens; i++)
-	printf ( "%d: '%s'\n", i, cfgdata->lines->tokens[i] );
+      for (i=0; i < (*cfgdata)->lines->nTokens; i++)
+	printf ( "%d: '%s'\n", i, (*cfgdata)->lines->tokens[i] );
     }
 
 
   /* initialize the 'wasRead' flags for the lines */
-  cfgdata->wasRead = LALCalloc (1, cfgdata->lines->nTokens * sizeof(cfgdata->wasRead[0]));
+  if ( ((*cfgdata)->wasRead = LALCalloc (1, (*cfgdata)->lines->nTokens * sizeof( (*cfgdata)->wasRead[0]))) == NULL) {
+    LALFree ((*cfgdata)->lines);
+    ABORT (stat, CONFIGFILEH_EMEM, CONFIGFILEH_MSGEMEM);
+  }
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -106,22 +144,24 @@ LALLoadConfigFile (LALStatus *stat, LALConfigData_t *cfgdata, FILE *instream)
 } /* LALLoadConfigFile() */
 
 /*----------------------------------------------------------------------
- * free memory associated with a LALConfigData_t structure
+ * free memory associated with a LALConfigData structure
  *----------------------------------------------------------------------*/
 void
-LALDestroyConfigData (LALStatus *stat, LALConfigData_t *cfgdata)
+LALDestroyConfigData (LALStatus *stat, LALConfigData **cfgdata)
 {
   INITSTATUS( stat, "LALDestroyConfigData", CONFIGFILEC );
   ATTATCHSTATUSPTR (stat);
 
-  ASSERT (cfgdata, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
-  ASSERT (cfgdata->lines, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
-  ASSERT (cfgdata->wasRead, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT (cfgdata != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT (*cfgdata != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT ((*cfgdata)->lines != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT ( (*cfgdata)->wasRead != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
 
-  TRY ( LALDestroyTokenList (stat->statusPtr, &(cfgdata->lines)), stat);
-  cfgdata->lines = NULL;
-  LALFree (cfgdata->wasRead);
-  cfgdata->wasRead = NULL;
+  TRY ( LALDestroyTokenList (stat->statusPtr, &((*cfgdata)->lines)), stat);
+  LALFree ( (*cfgdata)->wasRead);
+  LALFree ( *cfgdata );
+  
+  *cfgdata = NULL;
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -131,9 +171,9 @@ LALDestroyConfigData (LALStatus *stat, LALConfigData_t *cfgdata)
  * specialization to BOOLEAN variables
  *----------------------------------------------------------------------*/
 void
-LALReadConfigBOOLVariable (LALStatus *stat, BOOLEAN *varp, LALConfigData_t *cfgdata, CHAR *varName)
+LALReadConfigBOOLVariable (LALStatus *stat, BOOLEAN *varp, LALConfigData *cfgdata, const CHAR *varName)
 {
-  static LALConfigVar_t param;
+  static LALConfigVar param;
   INT2 tmp;
 
   param.varName = varName;
@@ -152,9 +192,9 @@ LALReadConfigBOOLVariable (LALStatus *stat, BOOLEAN *varp, LALConfigData_t *cfgd
  * specialization to INT2 variables
  *----------------------------------------------------------------------*/
 void
-LALReadConfigINT2Variable (LALStatus *stat, INT2 *varp, LALConfigData_t *cfgdata, CHAR *varName)
+LALReadConfigINT2Variable (LALStatus *stat, INT2 *varp, LALConfigData *cfgdata, const CHAR *varName)
 {
-  static LALConfigVar_t param;
+  static LALConfigVar param;
 
   param.varName = varName;
   param.fmt = "%" LAL_INT2_FORMAT;
@@ -169,9 +209,9 @@ LALReadConfigINT2Variable (LALStatus *stat, INT2 *varp, LALConfigData_t *cfgdata
  * specialization to INT4 variables
  *----------------------------------------------------------------------*/
 void
-LALReadConfigINT4Variable (LALStatus *stat, INT4 *varp, LALConfigData_t *cfgdata, CHAR *varName)
+LALReadConfigINT4Variable (LALStatus *stat, INT4 *varp, LALConfigData *cfgdata, const CHAR *varName)
 {
-  static LALConfigVar_t param;
+  static LALConfigVar param;
 
   param.varName = varName;
   param.fmt = "%" LAL_INT4_FORMAT;
@@ -186,9 +226,9 @@ LALReadConfigINT4Variable (LALStatus *stat, INT4 *varp, LALConfigData_t *cfgdata
  * specialization to REAL4 variables
  *----------------------------------------------------------------------*/
 void
-LALReadConfigREAL4Variable (LALStatus *stat, REAL4 *varp, LALConfigData_t *cfgdata, CHAR *varName)
+LALReadConfigREAL4Variable (LALStatus *stat, REAL4 *varp, LALConfigData *cfgdata, const CHAR *varName)
 {
-  static LALConfigVar_t param;
+  static LALConfigVar param;
 
   param.varName = varName;
   param.fmt = "%" LAL_REAL4_FORMAT;
@@ -203,9 +243,9 @@ LALReadConfigREAL4Variable (LALStatus *stat, REAL4 *varp, LALConfigData_t *cfgda
  * specialization to REAL8 variables
  *----------------------------------------------------------------------*/
 void
-LALReadConfigREAL8Variable (LALStatus *stat, REAL8 *varp, LALConfigData_t *cfgdata, CHAR *varName)
+LALReadConfigREAL8Variable (LALStatus *stat, REAL8 *varp, LALConfigData *cfgdata, const CHAR *varName)
 {
-  static LALConfigVar_t param;
+  static LALConfigVar param;
 
   param.varName = varName;
   param.fmt = "%" LAL_REAL8_FORMAT;
@@ -222,9 +262,9 @@ LALReadConfigREAL8Variable (LALStatus *stat, REAL8 *varp, LALConfigData_t *cfgda
  * here we need the pointer to the char-pointer
  *----------------------------------------------------------------------*/
 void
-LALReadConfigSTRINGVariable (LALStatus *stat, CHAR **varp, LALConfigData_t *cfgdata, CHAR *varName)
+LALReadConfigSTRINGVariable (LALStatus *stat, CHAR **varp, LALConfigData *cfgdata, const CHAR *varName)
 {
-  static LALConfigVar_t param;
+  static LALConfigVar param;
 
   param.varName = varName;
   param.fmt = FMT_STRING;
@@ -253,7 +293,7 @@ LALReadConfigSTRINGVariable (LALStatus *stat, CHAR **varp, LALConfigData_t *cfgd
  *
  *----------------------------------------------------------------------*/
 void
-LALReadConfigSTRINGNVariable (LALStatus *stat, CHARVector *varp, LALConfigData_t *cfgdata, CHAR *varName)
+LALReadConfigSTRINGNVariable (LALStatus *stat, CHARVector *varp, LALConfigData *cfgdata, const CHAR *varName)
 {
   CHAR *tmp = NULL;
 
@@ -296,7 +336,7 @@ LALReadConfigSTRINGNVariable (LALStatus *stat, CHARVector *varp, LALConfigData_t
  * ----------------------------------------------------------------------*/
 /* <lalVerbatim file="ConfigFileCP"> */
 void
-LALReadConfigVariable (LALStatus *stat, void *varp, LALConfigData_t *cfgdata, LALConfigVar_t *param)
+LALReadConfigVariable (LALStatus *stat, void *varp, LALConfigData *cfgdata, LALConfigVar *param)
 { /* </lalVerbatim> */
   CHAR *found = NULL;
   INT2 ret = 0;
@@ -399,11 +439,11 @@ LALReadConfigVariable (LALStatus *stat, void *varp, LALConfigData_t *cfgdata, LA
  * and issue a warning or error (depending on strictness) if not
  *----------------------------------------------------------------------*/
 void
-LALCheckCfgReadComplete (LALStatus *stat, LALConfigData_t *cfgdata, INT2 strictness)
+LALCheckConfigReadComplete (LALStatus *stat, LALConfigData *cfgdata, INT4 strictness)
 {
   UINT4 i;
 
-  INITSTATUS( stat, "LALCheckCfgReadComplete", CONFIGFILEC );  
+  INITSTATUS( stat, "LALCheckConfigReadComplete", CONFIGFILEC );  
 
   ASSERT (cfgdata != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
   ASSERT (cfgdata->lines != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
@@ -443,9 +483,7 @@ LALCheckCfgReadComplete (LALStatus *stat, LALConfigData_t *cfgdata, INT2 strictn
   
   RETURN (stat);
 
-} /* LALCheckCfgReadComplete() */
-
-
+} /* LALCheckConfigReadComplete() */
 
 
 /* ---------------------------------------------------------------------- 
@@ -505,8 +543,7 @@ void
 testConfigFile(void)
 {
   /*--testbed --------------------------------------------------------------------*/
-  FILE *fp;
-  static LALConfigData_t cfgdata;
+  static LALConfigData *cfgdata;
   BOOLEAN relat;
   INT2 freq;
   INT4 mermax;
@@ -515,18 +552,16 @@ testConfigFile(void)
   CHAR *string = NULL;
   static LALStatus status;
 
-  fp = fopen ("settings.par", "r");
-  
-  LALLoadConfigFile (&status, &cfgdata, fp);
+  LALLoadConfigFile (&status, &cfgdata, "settings.par");
 
-  LALReadConfigBOOLVariable (&status, &relat, &cfgdata, "relat");
-  LALReadConfigINT2Variable (&status, &freq, &cfgdata, "freq_si");
-  LALReadConfigINT4Variable (&status, &mermax, &cfgdata, "mer_max");
-  LALReadConfigREAL4Variable (&status, &precis, &cfgdata, "precis");
-  LALReadConfigREAL8Variable (&status, &relax, &cfgdata, "relax");
-  LALReadConfigSTRINGVariable (&status, &string, &cfgdata, "stringy");
+  LALReadConfigBOOLVariable (&status, &relat, cfgdata, "relat");
+  LALReadConfigINT2Variable (&status, &freq, cfgdata, "freq_si");
+  LALReadConfigINT4Variable (&status, &mermax, cfgdata, "mer_max");
+  LALReadConfigREAL4Variable (&status, &precis, cfgdata, "precis");
+  LALReadConfigREAL8Variable (&status, &relax, cfgdata, "relax");
+  LALReadConfigSTRINGVariable (&status, &string, cfgdata, "stringy");
   
-  fclose (fp);
+  LALDestroyConfigData (&status, &cfgdata);
 
   printf ("\nrelat = %d\n", relat);
   printf ("freq_si = %d\n", freq);
