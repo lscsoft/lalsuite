@@ -12,7 +12,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef HAVE_GETOPT_H
 #include <getopt.h>
+#endif
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -55,7 +57,9 @@
 
 NRCSID( COHERENTINSPIRALINPUTC, "$Id$");
 
-double rint(double x);
+/* JC: Please don't use rint ... it is not standard C89 */
+/* double rint(double x); */
+#define rint(x) floor((x)+0.5)
 
 static void
 LALFindChirpCreateCoherentInput( 

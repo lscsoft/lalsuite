@@ -177,7 +177,6 @@ tagDetectorVector
   LALDetector            *detector;
 }
 DetectorVector;
-/* </lalVerbatim> */
 
 
 typedef struct
@@ -216,7 +215,6 @@ tagCoherentInspiralFilterParams
   REAL4TimeSeries              *cohSNRVec;
 }
 CoherentInspiralFilterParams;
-/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{CoherentInspiralFilterParams}}
