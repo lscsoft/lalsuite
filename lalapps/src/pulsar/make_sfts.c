@@ -279,6 +279,8 @@ int main(int argc,char *argv[]){
     /* read in correct data */
     errno=0;
     frvect = FrFileIGetVAdc(frfile, chname, epoch.gpsSeconds, tbase, 0);
+    
+    /* This block will detect permission denied and other access errors */
     if (errno){
       char command[256];
       pout("System error when reading Frame data: %s\n", strerror(errno));
@@ -288,6 +290,7 @@ int main(int argc,char *argv[]){
       return 3;
     }
     
+    /* This block detects the case where the frame file list did not contain all data */
     if (frvect==NULL) {
       pout( "Data missing between times %d and %d\n",epoch.gpsSeconds,epoch.gpsSeconds+tbase);
       continue;
