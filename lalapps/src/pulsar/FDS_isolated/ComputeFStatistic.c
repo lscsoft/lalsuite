@@ -36,7 +36,6 @@
 
 RCSID( "$Id$");
 
-#define BOINC_DEBUGGING_ENABLED 1
 /*----------------------------------------------------------------------*/
 /* conditional compilation-switches */
 
@@ -2933,9 +2932,11 @@ void worker() {
 
 int main(int argc, char *argv[]){
 
+  int skipsighandler=0;
+  
   globargc=argc;
   globargv=argv;
-
+  
 #if defined(__GNUC__)
   /* see if user has created a DEBUG_CFS file at the top level... */
   if (fopen("../../DEBUG_CFS", "r") || fopen("./DEBUG_CFS", "r")) {
@@ -2959,28 +2960,30 @@ int main(int argc, char *argv[]){
     if (boinc_resolve_filename(ptr, resolved_name, 256))
       fprintf(stderr, "Unable to boinc_resolve_filename(%s), so no debugging\n", ptr);
     else {
-      /* char *cmd_name = argv[0]; */
+      skipsighandler=1;
       sprintf(commandstring,"ddd %s %d &", resolved_name ,process_id);
       system(commandstring);
       sleep(20);
     }
   }
 #endif
-
+  
   /* install signal handler (for ALL threads) for catching
      Segmentation violations, floating point exceptions, Bus
      violations and Illegal instructions */
-  if (signal(SIGSEGV, sighandler)==SIG_IGN)
-    signal(SIGSEGV, SIG_IGN);
-  if (signal(SIGFPE, sighandler)==SIG_IGN)
-    signal(SIGFPE, SIG_IGN);
+  if (!skipsighandler) {
+    if (signal(SIGSEGV, sighandler)==SIG_IGN)
+      signal(SIGSEGV, SIG_IGN);
+    if (signal(SIGFPE, sighandler)==SIG_IGN)
+      signal(SIGFPE, SIG_IGN);
 #ifndef _MSC_VER
-  if (signal(SIGBUS, sighandler)==SIG_IGN)
-    signal(SIGBUS, SIG_IGN);
+    if (signal(SIGBUS, sighandler)==SIG_IGN)
+      signal(SIGBUS, SIG_IGN);
 #endif
-  if (signal(SIGILL, sighandler)==SIG_IGN)
-    signal(SIGILL, SIG_IGN);
-
+    if (signal(SIGILL, sighandler)==SIG_IGN)
+      signal(SIGILL, SIG_IGN);
+  }
+  
 #if (BOINC_GRAPHICS == 1)
   set_search_pos_hook = set_search_pos;
   fraction_done_hook = &fraction_done;
