@@ -109,6 +109,9 @@ LALNoiseSpectralDensity
    } else if(NoisePsd == LALVIRGOPsd) {
            s0 = 3.24e-46;
            fs = 10.;
+   } else if(NoisePsd == LALAdvLIGOPsd) {
+           s0 = 1e-49;
+           fs = 10.;
    } else {
            s0 = 1.;
            fs = 0.;

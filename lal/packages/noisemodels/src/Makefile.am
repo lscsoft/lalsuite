@@ -18,7 +18,8 @@ LALInspiralWaveOverlap.c\
 LALRandomInspiralSignal.c\
 LALStatsREAL4Vector.c\
 LALTAMAPsd.c\
-LALVIRGOPsd.c
+LALVIRGOPsd.c\
+LALAdvLIGOPsd.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex

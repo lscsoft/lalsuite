@@ -389,6 +389,18 @@ LALGEOPsd
    );
 
 /* <lalLaTeX>
+\newpage\input{LALAdvLIGOPsdC}
+</lalLaTeX>  */
+
+void 
+LALAdvLIGOPsd 
+   (
+   LALStatus *status, 
+   REAL8     *shf, 
+   REAL8     x
+   );
+
+/* <lalLaTeX>
 \newpage\input{LALLIGOIPsdC}
 </lalLaTeX>  */
 

@@ -26,6 +26,7 @@ LALGEOPsd
 LALLIGOIPsd
 LALTAMAPsd
 LALVIRGOPsd
+LALAdvLIGOPsd
 LALDDestroyVector
 LALCheckMemoryLeaks
 \end{verbatim}
@@ -49,7 +50,7 @@ int main ( void )
    FILE *NoisePsdFile;
 
    fprintf(stderr, "This test code computes the amplitude spectrum \n");
-   fprintf(stderr, "of GEO, LIGO, TAMA and VIRGO and writes them in \n");
+   fprintf(stderr, "of GEO, LIGO, VIRGO, TAMA and AdvLIGO and writes them in \n");
    fprintf(stderr, "NoisePSDTest.out in a format suitable for \n");
    fprintf(stderr, "display with xmgr/xgrace\n");
 
@@ -81,6 +82,11 @@ int main ( void )
    }
    fprintf(NoisePsdFile, "&\n");
    LALNoiseSpectralDensity(&status, psd, &LALTAMAPsd, df); 
+   for (i=2; i<length; i++) {
+        if (psd->data[i]) fprintf (NoisePsdFile, "%d %e\n", i, sqrt(psd->data[i]));
+   }
+   fprintf(NoisePsdFile, "&\n");
+   LALNoiseSpectralDensity(&status, psd, &LALAdvLIGOPsd, df); 
    for (i=2; i<length; i++) {
         if (psd->data[i]) fprintf (NoisePsdFile, "%d %e\n", i, sqrt(psd->data[i]));
    }
