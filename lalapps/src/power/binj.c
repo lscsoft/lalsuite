@@ -31,7 +31,7 @@
 #include <processtable.h>
 
 #define USAGE \
-"lalapps_inspinj [options]\n"\
+"lalapps_binj [options]\n"\
 "\nDefaults are shown in brackets\n\n" \
 "  --help                   display this message\n"\
 "  --gps-start-time TIME    start injections at GPS time TIME (729273613)\n"\
@@ -203,7 +203,7 @@ int main( int argc, char *argv[] ){
   const long S2StopTime    = 734367613;  /* Apr 14 2003 15:00:00 UTC */
   long gpsStartTime = S2StartTime;
   long gpsEndTime = S2StopTime;
-  double meanTimeStep = 2630 / LAL_PI; /* seconds between injections     */
+  double meanTimeStep = 210 / LAL_PI; /* seconds between injections     */
   long long tinj = 1000000000LL * gpsStartTime;
 
   size_t ninj;
@@ -211,6 +211,9 @@ int main( int argc, char *argv[] ){
 
   /* waveform */
   CHAR waveform[LIGOMETA_WAVEFORM_MAX];
+  REAL4  tau=0.1;
+  REAL4  freq=150.0;
+  REAL4  hpeak=1.0e-20;
 
   /* site end time */
   LALPlaceAndGPS       *place_and_gps;
@@ -244,8 +247,10 @@ int main( int argc, char *argv[] ){
     {"time-step",               required_argument, 0,                't'},
     {"seed",                    required_argument, 0,                's'},
     {"waveform",                required_argument, 0,                'w'},
+    {"tau",                     required_argument, 0,                'x'},
+    {"freq",                    required_argument, 0,                'y'},
+    {"hpeak",                   required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
-    {"userTag",                 required_argument, 0,                'Z'},
     {0, 0, 0, 0}
   };
   int c;
@@ -277,7 +282,7 @@ int main( int argc, char *argv[] ){
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "ha:b:t:s:w:Z:", long_options, &option_index );
+        "ha:b:t:s:w:x:y:z:Z:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -368,6 +373,27 @@ int main( int argc, char *argv[] ){
             optarg );
         this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "string", "%le", optarg );
 
+      case 'x':
+        {
+          tau = atof( optarg );
+          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", tau );
+        }
+        break;
+
+      case 'y':
+        {
+          freq = atof( optarg );
+          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", freq );
+        }
+        break;
+
+      case 'z':
+        {
+          hpeak = atof( optarg );
+          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", hpeak );
+        }
+        break;
+
       case 'Z':
         /* create storage for the usertag */
         optarg_len = strlen( optarg ) + 1;
@@ -438,6 +464,19 @@ int main( int argc, char *argv[] ){
     {
       break;
     }
+
+    if ( ninj == 1 )
+    {
+      /* create the first injection */
+      this_sim_burst = injections.simBurstTable = (SimBurstTable *)
+        calloc( 1, sizeof(SimBurstTable) );
+    }
+    else
+    {
+      this_sim_burst = this_sim_burst->next = (SimBurstTable *)
+        calloc( 1, sizeof(SimBurstTable) );
+    }
+
     ++ninj;
 
     /* GPS time of burst */
@@ -445,7 +484,7 @@ int main( int argc, char *argv[] ){
       (long)( tinj / 1000000000LL );
     tnan = this_sim_burst->geocent_peak_time.gpsNanoSeconds = 
       (long)( tinj % 1000000000LL );
-
+    
     /* get gmst (radians) */
     gmst =  greenwich_mean_sidereal_time( tsec, tnan, 32 );
 
@@ -455,14 +494,16 @@ int main( int argc, char *argv[] ){
     /* populate the sim burst table */
     memcpy( this_sim_burst->waveform, waveform, 
         sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
-    this_sim_burst->tau = 1.0;
     this_sim_burst->longitude = 0.0;
-    this_sim_burst->latitude = 0.0;
+    this_sim_burst->latitude = 90.0;
     this_sim_burst->polarization = 0.0;
-    this_sim_burst->hrss = 0.0;
-    this_sim_burst->freq = 0.0;
-    this_sim_burst->tau = 0.0;
-    this_sim_burst->zmNumber = 0.0;
+    this_sim_burst->hrss = sqrt( sqrt(2.0 * LAL_PI) * tau / 4.0 ) * hpeak;
+    this_sim_burst->hpeak = hpeak;
+    this_sim_burst->freq = freq;
+    this_sim_burst->tau = tau;
+    this_sim_burst->dtplus = 4.0 * tau;
+    this_sim_burst->dtminus = 4.0 * tau;
+    this_sim_burst->zm_number = 0;
     
     place_and_gps->p_gps = &(this_sim_burst->geocent_peak_time);
     det_time_and_source->p_det_and_time = place_and_gps;
@@ -490,10 +531,6 @@ int main( int argc, char *argv[] ){
     LAL_CALL( LALFloatToGPS( &status, &(this_sim_burst->l_peak_time),
           &site_time ), &status );
   
-    /* FIXME:  HELP */
-
-      this_sim_burst = this_sim_burst->next = (SimBurstTable *)
-        calloc( 1, sizeof(SimBurstTable) );
   }
 
   memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );

@@ -388,3 +388,87 @@ Patrick Brady
 \end{entry}
 \clearpage
 
+\begin{entry}
+\item[Name]
+\verb$lalapps_binj$ --- produces burst injection data files.
+
+\item[Synopsis]
+\verb$lalapps_binj$ 
+[\verb$--help$]
+\verb$--gps-start-time$ \textsc{tstart} 
+\verb$--gps-end-time$ \textsc{tend} 
+[\verb$--time-step$ \textsc{tstep}]
+[\verb$--seed$ \textsc{seed}]
+[\verb$--waveform$ \textsc{wave}]
+[\verb$--freq$ \textsc{freq}]
+[\verb$--tau$ \textsc{tau}]
+[\verb$--hpeak$ \textsc{hpeak}]
+[\verb$--usertag$ \textsc{tag}]
+
+\item[Description] 
+\verb$lalapps_binj$
+generates a number of burst  parameters suitable  for using in a Monte
+Carlo injection to test the efficiency of a burst search.  The  various
+parameters (detailed  below)  are specified on the command line or can be
+randomly chosen in a manner appropriate for an burst upper limit
+search.
+
+The output of this program  is  a  list  of  the  injected events,  starting
+at  the specified start time, ending at the specified end time, and containing
+one set  of burst parameters every specified time step.  The output
+is written to a file name in the standard burst pipeline format:
+\begin{center}
+\begin{verbatim}
+HL-INJECTIONS_USERTAG_SEED-GPSSTART-DURATION.xml
+\end{verbatim}
+\end{center}
+where \verb$USERTAG$ is \textsc{tag} as specfied on the command line, 
+\verb$SEED$ is the  value  of  the random number seed chosen and 
+\verb$GPSSTART$ and \verb$DURATION$ describes the GPS time interval that
+the file covers. The file is in the standard LIGO lightweight XML format
+containing a \texttt{sim\_burst} table that describes the injections.
+If a \texttt{--user-tag} is not specified on the command line, the
+\texttt{\_USERTAG} part of the filename will be omitted.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--help}] Print a help message.
+
+\item[\texttt{--gps-start-time} \textsc{tstart}]
+Optional.  Start time of the injection data to be created. Defaults to the
+start of S2, Feb 14 2003 16:00:00 UTC (GPS time 729273613)
+
+\item[\texttt{--gps-end-time} \textsc{tend}]
+Optional. End time of the injection data to be created. Defaults to the end of
+S2, Apr 14 2003 15:00:00 UTC (GPS time 734367613).
+
+\item[\texttt{--time-step} \textsc{tstep}]
+Optional. Sets the time step interval between injections. The injections will
+occour at \textsc{tstep}$/\pi$ second intervals. Defaults to $2630/\pi$.
+
+\item[\texttt{--seed} \textsc{seed}]
+Optional. Seed the random number generator with the integer \textsc{seed}.
+Defaults to $1$.
+
+\item[\texttt{--waveform} \textsc{wave}]
+Optional. The string \textsc{wave} will be written into the \texttt{waveform}
+column of the \texttt{sim\_burst} table output. This is used by the
+burst code to determine which type of waveforms it should inject into the
+data. Default is \texttt{SineGaussian}.
+
+\item[\texttt{--user-tag} \textsc{string}] Optional. Set the user tag for this
+job to be \textsc{string}. May also be specified on the command line as 
+\texttt{-userTag} for LIGO database compatibility.
+
+\end{entry}
+
+\item[Example]
+\begin{verbatim}
+lalapps_binj --seed 45\
+--freq 150 --tau 0.1 --hpeak 1e-20 --user-tag SGBURST
+\end{verbatim}
+
+\item[Author] 
+Jolien Creighton, Patrick Brady, Duncan Brown
+\end{entry}
+
