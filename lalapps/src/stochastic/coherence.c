@@ -93,7 +93,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALStatus status;
 
   /* counters */
-  INT4 i,j, segLoop;
+  INT4 i,count,segLoop;
+
+  INT4 pathology;
 
   /* input data segment */
   INT4 numSegments;
@@ -158,7 +160,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* allocate memory for data segments */
   
-
   segment1.data = segment2.data = NULL;
   LAL_CALL( LALSCreateVector( &status, &(segment1.data), segmentLength), 
             &status );
@@ -283,7 +284,7 @@ INT4 main(INT4 argc, CHAR *argv[])
    
    /** loop over segments **/
    
-
+   count = 0;
    if (verbose_flag)
     { fprintf(stdout, "Looping over %d segments...\n", numSegments);}
         
@@ -314,65 +315,73 @@ INT4 main(INT4 argc, CHAR *argv[])
          (segment1.data==NULL)||(segment2.data==NULL))
       {
        clear_status(&status);
-       if (segLoop < (numSegments - 1)) continue; 
-       else break;   
+       if (verbose_flag)
+	 {
+	   fprintf(stdout, "Skipping segment...\n");}
+  
+       if (segLoop < (numSegments - 1)) 
+        continue; 
+       else 
+        break;   
       }
-               
+                
      /* save */
      if (verbose_flag)
       {
        LALSPrintTimeSeries(&segment1, "segment1.dat");
        LALSPrintTimeSeries(&segment2, "segment2.dat");
       }
-       
+      
      if (verbose_flag)
-      { fprintf(stdout, "Estimating PSDs...\n");}
+      { 
+       fprintf(stdout, "Estimating PSDs...\n");}
 
-     /* compute CSD and  PSDs */
+       /* compute CSD and  PSDs */
 
-     LAL_CALL( LALCOMPLEX8AverageSpectrum(&status, &csd, &segment1,&segment2, 
-               &specparPSD), &status );
-     LAL_CALL( LALREAL4AverageSpectrum(&status, &psd1, &segment1, 
-               &specparPSD), &status );
-     LAL_CALL( LALREAL4AverageSpectrum(&status, &psd2, &segment2, 
-               &specparPSD), &status );
+       LAL_CALL( LALCOMPLEX8AverageSpectrum(&status, &csd, &segment1,&segment2,
+                 &specparPSD), &status );
+       LAL_CALL( LALREAL4AverageSpectrum(&status, &psd1, &segment1, 
+                 &specparPSD), &status );
+       LAL_CALL( LALREAL4AverageSpectrum(&status, &psd2, &segment2, 
+                 &specparPSD), &status );
 
 
-    /* output the results */
-    if (verbose_flag)
-     {
-      LALCPrintFrequencySeries(&csd, "csd.dat");
-      LALSPrintFrequencySeries(&psd1, "psd1.dat");
-      LALSPrintFrequencySeries(&psd2, "psd2.dat");
-     }
+      /* output the results */
+      if (verbose_flag)
+       { 
+        LALCPrintFrequencySeries(&csd, "csd.dat");
+        LALSPrintFrequencySeries(&psd1, "psd1.dat");
+        LALSPrintFrequencySeries(&psd2, "psd2.dat");
+       }
  
-    /* compute coherence */
-    for (i = 0; i < psdLength; i ++)
-     {
-      coh.data->data[i].re = csd.data->data[i].re / sqrt(psd1.data->data[i] 
-                             * psd2.data->data[i]);  
-      coh.data->data[i].im = csd.data->data[i].im / sqrt(psd1.data->data[i] 
-                             * psd2.data->data[i]);
-  
-     }
+      /* compute coherence */
+      for (i = 0; i < psdLength; i ++)
+       {
+        coh.data->data[i].re = csd.data->data[i].re / sqrt(psd1.data->data[i] 
+                               * psd2.data->data[i]);  
+        coh.data->data[i].im = csd.data->data[i].im / sqrt(psd1.data->data[i] 
+			       * psd2.data->data[i]);
+       }
  
-   /* sum over segments */
-   for (i = 0; i < psdLength; i ++)
-    {
-     cohTot.data->data[i].re = cohTot.data->data[i].re + coh.data->data[i].re;
-     cohTot.data->data[i].im = cohTot.data->data[i].im + coh.data->data[i].im; 
+     /* sum over segments */
+     for (i = 0; i < psdLength; i ++)
+      {
+       cohTot.data->data[i].re = cohTot.data->data[i].re 
+                                 + coh.data->data[i].re;
+       cohTot.data->data[i].im = cohTot.data->data[i].im 
+                                 + coh.data->data[i].im; 
+      }
+     count ++; 
     }
-	 
-   }
 
    /* output the results */
-   fprintf(stdout,"%d\n", segLoop);
+   fprintf(stdout,"%d\n", count);
    for ( i = 0; i < psdLength; i++ )
-    {
-     fprintf(stdout,"%e\t%e\t%e\n", 
-      i * cohTot.deltaF,cohTot.data->data[i].re,cohTot.data->data[i].im );
-     }         
-
+     {
+       fprintf(stdout,"%e\t%e\t%e\n", 
+       i * cohTot.deltaF,cohTot.data->data[i].re,cohTot.data->data[i].im );
+     }     
+ 
        
    lal_errhandler = LAL_ERR_EXIT;
 
@@ -386,8 +395,6 @@ INT4 main(INT4 argc, CHAR *argv[])
    LAL_CALL( LALCDestroyVector(&status, &(csd.data)), &status );
    LAL_CALL( LALCDestroyVector(&status, &(coh.data)), &status );
    LAL_CALL( LALCDestroyVector(&status, &(cohTot.data)), &status );
-
-
 
   return 0;
  }
@@ -643,10 +650,10 @@ void readDataPair(LALStatus *status,
   dataStream1.data = dataStream2.data = NULL;
   LALSCreateVector( status->statusPtr, &(dataStream1.data),
                     sampleRate * (params->duration + (2 * buffer)));
-	
+  CHECKSTATUSPTR (status);	
   LALSCreateVector( status->statusPtr, &(dataStream2.data), 
                     sampleRate * (params->duration + (2 * buffer)));
-	
+  CHECKSTATUSPTR (status);	
   memset( dataStream1.data->data, 0, 
           dataStream1.data->length * sizeof(*dataStream1.data->data));
   memset( dataStream2.data->data, 0, 
@@ -657,16 +664,19 @@ void readDataPair(LALStatus *status,
 
   /* open first frame cache */
   LALFrCacheImport(status->statusPtr, &frCache1, params->frameCache1);
+  CHECKSTATUSPTR (status);
   LALFrCacheOpen(status->statusPtr, &frStream1, frCache1);
+  CHECKSTATUSPTR (status);
 	
   if (verbose_flag)
    { fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn1.name);}
 
   /* read first channel */
   LALFrSeek(status->statusPtr, &(bufferStartTime), frStream1);
+  CHECKSTATUSPTR (status);
   LALFrGetREAL4TimeSeries(status->statusPtr,
                           &dataStream1,&frChanIn1, frStream1);
-
+  CHECKSTATUSPTR (status);
   if (strcmp(params->frameCache1, params->frameCache2) == 0)
    {
     if (verbose_flag)
@@ -676,15 +686,18 @@ void readDataPair(LALStatus *status,
 
   /* read in second channel */
   LALFrSeek(status->statusPtr, &(bufferStartTime), frStream1);
+  CHECKSTATUSPTR (status);
 	    
   LALFrGetREAL4TimeSeries(status->statusPtr, &dataStream2, 
                           &frChanIn2, frStream1);
+  CHECKSTATUSPTR (status);
 		
   if (verbose_flag)
    { fprintf(stdout, "Closing frame cache...\n");}
 
   /* close frame cache */
   LALFrClose(status->statusPtr, &frStream1);
+  CHECKSTATUSPTR (status);
 		
    }
   else
@@ -694,26 +707,30 @@ void readDataPair(LALStatus *status,
 
     /* close first frame cache */
     LALFrClose(status->statusPtr, &frStream1);
+    CHECKSTATUSPTR (status);
     if (verbose_flag)
      { fprintf(stdout, "Opening second frame cache...\n");}
 
     /* open second frame cache and read in second channel */
     LALFrCacheImport(status->statusPtr, &frCache2, params->frameCache2);
+    CHECKSTATUSPTR (status);
     LALFrCacheOpen(status->statusPtr, &frStream2, frCache2);
+    CHECKSTATUSPTR (status);
     if (verbose_flag)
      { fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn2.name);}
 
     /* read in second channel */
     LALFrSeek(status->statusPtr, &(bufferStartTime), frStream2);
-		
+    CHECKSTATUSPTR (status);		
     LALFrGetREAL4TimeSeries(status->statusPtr, &dataStream2,
                             &frChanIn2, frStream2);
-		
+    CHECKSTATUSPTR (status);	
     if (verbose_flag)
      { fprintf(stdout, "Closing second frame cache...\n");}
 
     /* close second frame stream */
     LALFrClose(status->statusPtr, &frStream2);
+    CHECKSTATUSPTR (status);
 		
    }
 
@@ -729,7 +746,9 @@ void readDataPair(LALStatus *status,
 
    /* resample */
    LALResampleREAL4TimeSeries(status->statusPtr, &dataStream1,&resampleParams);
+   CHECKSTATUSPTR (status);
    LALResampleREAL4TimeSeries(status->statusPtr, &dataStream2,&resampleParams);
+   CHECKSTATUSPTR (status);
 		
   }
 
@@ -757,7 +776,9 @@ void readDataPair(LALStatus *status,
 
  /* clean up */
  LALSDestroyVector(status->statusPtr, &(dataStream1.data));
+ CHECKSTATUSPTR (status);
  LALSDestroyVector(status->statusPtr, &(dataStream2.data));
+ CHECKSTATUSPTR (status);
 	
  /* return status */
  DETATCHSTATUSPTR( status );
