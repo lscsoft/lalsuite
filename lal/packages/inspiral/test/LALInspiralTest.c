@@ -105,7 +105,7 @@ int main (void) {
    params.tSampling=8192.0;
    params.order=6;
    params.approximant=EOB;
-//SpinTaylorT3
+/* SpinTaylorT3 */
    params.signalAmplitude=1.0;
    params.nStartPad=0;
    params.nEndPad=1000;
