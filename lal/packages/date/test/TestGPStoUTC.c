@@ -26,7 +26,8 @@ int main(int argc, char *argv[])
       lalDebugLevel = atoi(argv[1]);
 
   LALCHARCreateVector(&status, &timestamp, (UINT4)128);
-  REPORTSTATUS(&status);
+  if (status.statusCode && lalDebugLevel > 0)
+    REPORTSTATUS(&status);
 
   /*
    * GPS 0 == 1980-01-06 00:00:00 UTC Sun
@@ -240,9 +241,12 @@ int main(int argc, char *argv[])
     {
       if (status.statusCode == DATEH_ERANGEGPSABS) /* expected error */
         {
-          fprintf(stderr, "failed with status code %d as expected",
-                  DATEH_ERANGEGPSABS);
-          REPORTSTATUS(&status);
+          if (lalDebugLevel > 0)
+            {
+              fprintf(stderr, "failed with status code %d as expected",
+                      DATEH_ERANGEGPSABS);
+              REPORTSTATUS(&status);
+            }
         }
       else /* some other error */
         {
@@ -266,9 +270,12 @@ int main(int argc, char *argv[])
     {
       if (status.statusCode == DATEH_ERANGEGPSABS) /* expected error */
         {
-          fprintf(stderr, "failed with status code %d as expected",
-                  DATEH_ERANGEGPSABS);
-          REPORTSTATUS(&status);
+          if (lalDebugLevel > 0)
+            {
+              fprintf(stderr, "failed with status code %d as expected",
+                      DATEH_ERANGEGPSABS);
+              REPORTSTATUS(&status);
+            }
         }
       else /* some other error */
         {
@@ -336,7 +343,8 @@ int main(int argc, char *argv[])
       REPORTSTATUS(&status);
       return status.statusCode;
     }
-  REPORTSTATUS(&status);
+  if (lalDebugLevel > 0)
+    REPORTSTATUS(&status);
   LALCheckMemoryLeaks();
   return 0;
 }

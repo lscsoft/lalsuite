@@ -17,7 +17,7 @@ INT4 lalDebugLevel = 0;
 
 NRCSID (LALTESTDATESTRINGC, "$Id$");
 
-int main(void)
+int main(int argc, char **argv)
 {
     static LALStatus stat;
     time_t           tmpsecs;
@@ -25,7 +25,11 @@ int main(void)
     CHAR             refstamp[128];
     CHARVector      *timestamp = NULL;
 
+    if (argc > 1)
+      lalDebugLevel = atoi(argv[1]);
+
     LALCHARCreateVector(&stat, &timestamp, (UINT4)64);
+
     if (stat.statusCode && lalDebugLevel > 0)
       {
         fprintf(stderr,
@@ -34,7 +38,8 @@ int main(void)
         REPORTSTATUS(&stat);
         return stat.statusCode;
       }
-    REPORTSTATUS(&stat);
+    if (lalDebugLevel > 2)
+      REPORTSTATUS(&stat);
         
     tmpsecs = (24*365 + 8*366 + 2*31 + 28)*86400 - 1;
     gmtime_r(&tmpsecs, &(date.unixDate));
@@ -53,14 +58,17 @@ int main(void)
     if (!stat.statusCode)
       {
         sprintf(refstamp, "2002-03-31 23:59:59 UTC Sun");
-        fprintf(stderr, "refstamp  = %s\n", refstamp);
-        fprintf(stderr, "timestamp = %s\n", timestamp->data);
+        if (lalDebugLevel > 2)
+          {
+            fprintf(stderr, "refstamp  = %s\n", refstamp);
+            fprintf(stderr, "timestamp = %s\n", timestamp->data);
+          }
       }
 
     if (strcmp(refstamp, timestamp->data) == 0)
       {
         LALCHARDestroyVector(&stat, &timestamp);
-		if (lalDebugLevel > 2)
+        if (lalDebugLevel > 2)
           REPORTSTATUS(&stat);
         LALCheckMemoryLeaks();
         return 0;
@@ -68,8 +76,7 @@ int main(void)
     else
       {
         LALCHARDestroyVector(&stat, &timestamp);
-		if (lalDebugLevel > 2)
-          REPORTSTATUS(&stat);
+        REPORTSTATUS(&stat);
         LALCheckMemoryLeaks();
         return 1;
       }

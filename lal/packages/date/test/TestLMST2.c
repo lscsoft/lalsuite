@@ -25,6 +25,7 @@ main(int argc, char *argv[])
     INT4             dayofmonth, monthofyear;
     LIGOTimeGPS      gpstime;
     LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
+    LALMSTUnitsAndAcc units_and_acc;
 
     
     if (argc != 3)
@@ -112,8 +113,11 @@ main(int argc, char *argv[])
 
         printf("\n");
         printf("Using the GPStoGMST1() and GPStoLMST1() routines instead:\n");
-        LALGPStoGMST1(&status, &gmstsecs, &gpstime, MST_SEC);
-        LALGPStoGMST1(&status, &gmsthours, &gpstime, MST_HRS);
+        units_and_acc.units = MST_SEC;
+        units_and_acc.accuracy = LALLEAPSEC_STRICT;
+        LALGPStoGMST1(&status, &gmstsecs, &gpstime, &units_and_acc);
+        units_and_acc.units = MST_HRS;
+        LALGPStoGMST1(&status, &gmsthours, &gpstime, &units_and_acc);
         LALSecsToLALDate(&status, &mstdate, gmstsecs);
         strftime(timestr, 64, "%Hh %Mm %S", &(mstdate.unixDate));
         sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
@@ -122,7 +126,8 @@ main(int argc, char *argv[])
 
         place_and_gps.p_detector = &detector;
         place_and_gps.p_gps      = &gpstime;
-        LALGPStoLMST1(&status, &lmsthours, &place_and_gps, MST_HRS);
+        units_and_acc.units      = MST_HRS;
+        LALGPStoLMST1(&status, &lmsthours, &place_and_gps, &units_and_acc);
         printf("     Time = %s\n", datestamp->data);
         printf("gmsthours = %f = %s\n", gmsthours, timestr);
         printf("    expect: 3.655728 = 03h 39m 20.6222s \n");
@@ -183,7 +188,8 @@ main(int argc, char *argv[])
         printf("    expect:        0h = 00h 00m 00s \n");
 
         printf("\nUsing the GPStoGMST1() and GPStoLMST1() routines instead:\n");
-        LALGPStoGMST1(&status, &gmstsecs, &gpstime, MST_SEC);
+        units_and_acc.units = MST_SEC;
+        LALGPStoGMST1(&status, &gmstsecs, &gpstime, &units_and_acc);
         LALSecsToLALDate(&status, &mstdate, gmstsecs);
         strftime(timestr, 64, "%Hh %Mm %S", &(mstdate.unixDate));
         sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
@@ -192,7 +198,8 @@ main(int argc, char *argv[])
 
         place_and_gps.p_detector = &detector;
         place_and_gps.p_gps      = &gpstime;
-        LALGPStoLMST1(&status, &lmsthours, &place_and_gps, MST_HRS);
+        units_and_acc.units      = MST_HRS;
+        LALGPStoLMST1(&status, &lmsthours, &place_and_gps, &units_and_acc);
         printf("     Time = %s\n", datestamp->data);
         printf("gmsthours = %f = %s\n", gmsthours, timestr);
         printf("    expect:        0h = 00h 00m 00s \n");
@@ -254,7 +261,8 @@ main(int argc, char *argv[])
 
         printf("\n");
         printf("Using the GPStoGMST1() and GPStoLMST1() routines instead:\n");
-        LALGPStoGMST1(&status, &gmstsecs, &gpstime, MST_SEC);
+        units_and_acc.units = MST_SEC;
+        LALGPStoGMST1(&status, &gmstsecs, &gpstime, &units_and_acc);
         LALSecsToLALDate(&status, &mstdate, gmstsecs);
         strftime(timestr, 64, "%Hh %Mm %S", &(mstdate.unixDate));
         sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
@@ -263,7 +271,8 @@ main(int argc, char *argv[])
 
         place_and_gps.p_detector = &detector;
         place_and_gps.p_gps      = &gpstime;
-        LALGPStoLMST1(&status, &lmsthours, &place_and_gps, MST_HRS);
+        units_and_acc.units      = MST_HRS;
+        LALGPStoLMST1(&status, &lmsthours, &place_and_gps, &units_and_acc);
         printf("     Time = %s\n", datestamp->data);
         printf("gmsthours = %f = %s\n", gmsthours, timestr);
         printf("    expect: 15.63105328 = 15h 37m 51.7918s\n");
@@ -302,7 +311,8 @@ main(int argc, char *argv[])
         printf("    expect: 16.63105328 = 16h 37m 51.7918s\n");
 
         printf("\nUsing the GPStoGMST1() and GPStoLMST1() routines instead:\n");
-        LALGPStoGMST1(&status, &gmstsecs, &gpstime, MST_SEC);
+        units_and_acc.units = MST_SEC;
+        LALGPStoGMST1(&status, &gmstsecs, &gpstime, &units_and_acc);
         LALSecsToLALDate(&status, &mstdate, gmstsecs);
         strftime(timestr, 64, "%Hh %Mm %S", &(mstdate.unixDate));
         sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
@@ -311,7 +321,8 @@ main(int argc, char *argv[])
 
         place_and_gps.p_detector = &detector;
         place_and_gps.p_gps      = &gpstime;
-        LALGPStoLMST1(&status, &lmsthours, &place_and_gps, MST_HRS);
+        units_and_acc.units      = MST_HRS;
+        LALGPStoLMST1(&status, &lmsthours, &place_and_gps, &units_and_acc);
         printf("     Time = %s\n", datestamp->data);
         printf("gmsthours = %f = %s\n", gmsthours, timestr);
         printf("    expect: 16.63105328 = 16h 37m 51.7918s\n");

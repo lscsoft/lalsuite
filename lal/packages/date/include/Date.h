@@ -417,6 +417,24 @@ tagLALLeapSecFormatAndAcc
 LALLeapSecFormatAndAcc;
 
 
+/* <lalLaTeX>
+\subsubsection{Structure \texttt{LALMSTUnitsAndAcc}}
+\index[Type]{LALMSTUnitsAndAcc}
+
+This structure aggregates the \texttt{LALMSTUnits} and
+\texttt{LALLeapSecAccuracy} parameters for passing to
+\texttt{LALGPStoGMST1()} and \texttt{LALGPStoLMST1()}.
+</lalLaTeX> */
+typedef struct
+tagLALMSTUnitsAndAcc
+{
+  LALMSTUnits        units;
+  LALLeapSecAccuracy accuracy;
+}
+LALMSTUnitsAndAcc;
+
+
+
 /* 
  * Function prototypes
  */
@@ -459,7 +477,8 @@ void LALGMST1 (LALStatus     *status,
 void LALGPStoGMST1( LALStatus         *status,
                     REAL8             *gmst,      /* output - GMST1 */
                     const LIGOTimeGPS *gps,       /* input - GPS time */
-                    LALMSTUnits        outunits); /* GMST1 units */
+                    const LALMSTUnitsAndAcc *pUnitsAndAcc); /* GMST1 units and
+                                                        leapsec accuracy */
 
 void LALLMST1 (LALStatus             *status,
                REAL8                 *lmst,          /* output - LMST1 */
@@ -471,7 +490,9 @@ void LALGPStoLMST1( LALStatus             *status,
                     REAL8                 *lmst,        /* output - LMST1 */
                     const LALPlaceAndGPS  *placeAndGps, /* input - location and
                                                            GPS */  
-                    LALMSTUnits            outunits);   /* LMST1 units */
+                    const LALMSTUnitsAndAcc      *pUnitsAndAcc);   /* LMST1 units
+                                                               and leapsec
+                                                               accuracy */
 
 /* <lalLaTeX>
 \newpage\input{SecsToLALDateC}

@@ -13,6 +13,9 @@ NRCSID (LALTESTLMSTC, "$Id$");
 #define SUCCESS               0
 #define TESTLMSTC_DATESTRING  1
 
+static BOOLEAN mstdate_ok_p(const LALDate *p_date,
+                            const LALDate *p_expected_date);
+
 int main(int argc, char *argv[])
 {
     static LALStatus stat;
@@ -21,6 +24,7 @@ int main(int argc, char *argv[])
     REAL8            gmstsecs;
     LALDate          date;
     LALDate          mstdate;
+    LALDate          expected_mstdate;
     LALDetector      detector;
     LALPlaceAndDate  place_and_date;
     /* LALPlaceAndGPS   place_and_gps; */
@@ -29,7 +33,7 @@ int main(int argc, char *argv[])
     LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
 
 
-    if (argc == 2)
+    if (argc > 1)
       lalDebugLevel = atoi(argv[1]);
 
     /** TEST NO. 1 **/
@@ -86,17 +90,44 @@ int main(int argc, char *argv[])
     /*strcat(refstr, tmpstr+1); / * remove leading 0 */
     /*printf("   get: %s\n", refstr);*/
 
-    sprintf(refstr, "%2dh %2dm %2d", mstdate.unixDate.tm_hour,
-            mstdate.unixDate.tm_min, mstdate.unixDate.tm_sec);
-    sprintf(tmpstr, "%.4fs", mstdate.residualNanoSeconds * 1.e-9);
-    strcat(refstr, tmpstr+1);
-    printf("GMST at 0h UTC on 1994-11-16:\n");
-    printf("     get: %s\n", refstr);
+    expected_mstdate.residualNanoSeconds = 0.2738 * 1.e9;
+    expected_mstdate.unixDate.tm_sec  = 21;
+    expected_mstdate.unixDate.tm_min  = 39;
+    expected_mstdate.unixDate.tm_hour =  3;
 
-    sprintf(tmpstr, "03h 39m 21.2738s");
-    printf("  expect: %s\n", tmpstr);
-    printf("but since we don't have the equation of equinoxes in, can\n");
-    printf("expect up to one sidereal second disagreement\n");
+    if  (!mstdate_ok_p(&mstdate, &expected_mstdate))
+      {
+        fprintf(stderr, "TestLMST: ERROR: wrong sidereal time:\n");
+
+        sprintf(refstr, "  %02dh %02dm %02d", mstdate.unixDate.tm_hour,
+                mstdate.unixDate.tm_min, mstdate.unixDate.tm_sec);
+        sprintf(tmpstr, "%.4fs", mstdate.residualNanoSeconds * 1.e-9);
+        strcat(refstr, tmpstr+1);
+        fprintf(stderr, "  GMST at 0h UTC on 1994-11-16:\n");
+        fprintf(stderr, "       get: %s\n", refstr);
+        
+        sprintf(tmpstr, "  03h 39m 21.2738s");
+        fprintf(stderr, "    expect: %s\n", tmpstr);
+        fprintf(stderr, "  but since we don't have the equation of equinoxes in, can\n");
+        fprintf(stderr, "  expect up to one sidereal second disagreement\n");
+
+        return (1);
+      }
+
+    if (lalDebugLevel > 2)
+      {
+        sprintf(refstr, "%02dh %02dm %02d", mstdate.unixDate.tm_hour,
+                mstdate.unixDate.tm_min, mstdate.unixDate.tm_sec);
+        sprintf(tmpstr, "%.4fs", mstdate.residualNanoSeconds * 1.e-9);
+        strcat(refstr, tmpstr+1);
+        printf("GMST at 0h UTC on 1994-11-16:\n");
+        printf("     get: %s\n", refstr);
+        
+        sprintf(tmpstr, "03h 39m 21.2738s");
+        printf("  expect: %s\n", tmpstr);
+        printf("but since we don't have the equation of equinoxes in, can\n");
+        printf("expect up to one sidereal second disagreement\n");
+      }
 
     /** TEST NO. 2 **/
 
@@ -152,19 +183,45 @@ int main(int argc, char *argv[])
     /* strcat(refstr, tmpstr+1); / * remove leading 0 */
     /* printf("   get: %s\n", refstr); */
 
-    sprintf(refstr, "%2dh %2dm %2d", mstdate.unixDate.tm_hour,
-            mstdate.unixDate.tm_min, mstdate.unixDate.tm_sec);
-    sprintf(tmpstr, "%.4fs", mstdate.residualNanoSeconds * 1.e-9);
-    printf("\n");
-    printf("GMST at 0h UTC on 1994-08-08:\n");
-    strcat(refstr, tmpstr+1);
-    printf("     get: %s\n", refstr);
+    expected_mstdate.residualNanoSeconds = 0.9812*1.e9;
+    expected_mstdate.unixDate.tm_sec  =  5;
+    expected_mstdate.unixDate.tm_min  =  5;
+    expected_mstdate.unixDate.tm_hour = 21;
 
-    sprintf(tmpstr, "21h 05m 05.9812s");
-    printf("  expect: %s\n", tmpstr);
-    printf("but since we don't have the equation of equinoxes in, can\n");
-    printf("expect up to one sidereal second disagreement\n");
+    if  (!mstdate_ok_p(&mstdate, &expected_mstdate))
+      {
+        fprintf(stderr, "TestLMST: ERROR: wrong sidereal time:\n");
 
+        sprintf(refstr, "  %02dh %02dm %02d", mstdate.unixDate.tm_hour,
+                mstdate.unixDate.tm_min, mstdate.unixDate.tm_sec);
+        sprintf(tmpstr, "%.4fs", mstdate.residualNanoSeconds * 1.e-9);
+        strcat(refstr, tmpstr+1);
+        fprintf(stderr, "  GMST at 0h UTC on 1994-08-08:\n");
+        fprintf(stderr, "       get: %s\n", refstr);
+        
+        sprintf(tmpstr, "  21h 05m 05.9812s");
+        fprintf(stderr, "    expect: %s\n", tmpstr);
+        fprintf(stderr, "  but since we don't have the equation of equinoxes in, can\n");
+        fprintf(stderr, "  expect up to one sidereal second disagreement\n");
+
+        return (1);
+      }
+
+    if (lalDebugLevel > 2)
+      {
+        sprintf(refstr, "%02dh %02dm %02d", mstdate.unixDate.tm_hour,
+                mstdate.unixDate.tm_min, mstdate.unixDate.tm_sec);
+        sprintf(tmpstr, "%.4fs", mstdate.residualNanoSeconds * 1.e-9);
+        printf("\n");
+        printf("GMST at 0h UTC on 1994-08-08:\n");
+        strcat(refstr, tmpstr+1);
+        printf("     get: %s\n", refstr);
+        
+        sprintf(tmpstr, "21h 05m 05.9812s");
+        printf("  expect: %s\n", tmpstr);
+        printf("but since we don't have the equation of equinoxes in, can\n");
+        printf("expect up to one sidereal second disagreement\n");
+      }
 
 
     /** TEST NO. 3 **/
@@ -223,19 +280,47 @@ int main(int argc, char *argv[])
     /* strcat(refstr, tmpstr+1); / * remove leading 0 */
     /* printf("   get: %s\n", refstr); */
 
-    sprintf(refstr, "%2dh %2dm %2d", mstdate.unixDate.tm_hour,
-            mstdate.unixDate.tm_min, mstdate.unixDate.tm_sec);
-    sprintf(tmpstr, "%.4fs", mstdate.residualNanoSeconds * 1.e-9);
-    strcat(refstr, tmpstr+1);
-    printf("\n");
-    printf("GMST at 0h UTC on 2003-01-11:\n");
-    printf("     get: %s\n", refstr);
+    expected_mstdate.residualNanoSeconds = 0.5980*1.e9;
+    expected_mstdate.unixDate.tm_sec  = 21;
+    expected_mstdate.unixDate.tm_min  = 20;
+    expected_mstdate.unixDate.tm_hour =  7;
 
-    sprintf(tmpstr, "07h 20m 21.5980s");
-    printf("  expect: %s\n", tmpstr);
-    printf("but since we don't have the equation of equinoxes in, can\n");
-    printf("expect up to one sidereal second disagreement\n");
+    if  (!mstdate_ok_p(&mstdate, &expected_mstdate))
+      {
+        fprintf(stderr, "TestLMST: ERROR: wrong sidereal time:\n");
 
+        sprintf(refstr, "  %02dh %02dm %02d", mstdate.unixDate.tm_hour,
+                mstdate.unixDate.tm_min, mstdate.unixDate.tm_sec);
+        sprintf(tmpstr, "%.4fs", mstdate.residualNanoSeconds * 1.e-9);
+        strcat(refstr, tmpstr+1);
+        fprintf(stderr, "  GMST at 0h UTC on 2003-01-11:\n");
+        fprintf(stderr, "       get: %s\n", refstr);
+        
+        sprintf(tmpstr, "  07h 20m 21.5980s");
+        fprintf(stderr, "    expect: %s\n", tmpstr);
+        fprintf(stderr, "  but since we don't have the equation of equinoxes in, can\n");
+        fprintf(stderr, "  expect up to one sidereal second disagreement\n");
+
+        return (1);
+      }
+
+
+
+    if (lalDebugLevel > 2)
+      {
+        sprintf(refstr, "%02dh %02dm %02d", mstdate.unixDate.tm_hour,
+                mstdate.unixDate.tm_min, mstdate.unixDate.tm_sec);
+        sprintf(tmpstr, "%.4fs", mstdate.residualNanoSeconds * 1.e-9);
+        strcat(refstr, tmpstr+1);
+        printf("\n");
+        printf("GMST at 0h UTC on 2003-01-11:\n");
+        printf("     get: %s\n", refstr);
+        
+        sprintf(tmpstr, "07h 20m 21.5980s");
+        printf("  expect: %s\n", tmpstr);
+        printf("but since we don't have the equation of equinoxes in, can\n");
+        printf("expect up to one sidereal second disagreement\n");
+      }
 
 
 
@@ -295,22 +380,74 @@ int main(int argc, char *argv[])
     /* strcat(refstr, tmpstr+1); / * remove leading 0 */
     /* printf("   get: %s\n", refstr); */
 
-    sprintf(refstr, "%2dh %2dm %2d", mstdate.unixDate.tm_hour,
-            mstdate.unixDate.tm_min, mstdate.unixDate.tm_sec);
-    sprintf(tmpstr, "%.4fs", mstdate.residualNanoSeconds * 1.e-9);
-    strcat(refstr, tmpstr+1);
-    printf("\n");
-    printf("GMST at 0h UTC on 2003-04-01:\n");
-    printf("     get: %s\n", refstr);
+    
+    expected_mstdate.residualNanoSeconds = 0.6093*1.e9;
+    expected_mstdate.unixDate.tm_sec  =  2;
+    expected_mstdate.unixDate.tm_min  = 34;
+    expected_mstdate.unixDate.tm_hour = 14;
 
-    sprintf(tmpstr, "14h 34m 02.6093s");
-    printf("  expect: %s\n", tmpstr);
-    printf("but since we don't have the equation of equinoxes in, can\n");
-    printf("expect up to one sidereal second disagreement\n");
-    printf("additionally, this should generate an error/warning since\n");
-    printf("the requested is after when we have leap-second data for.\n");
+    if  (!mstdate_ok_p(&mstdate, &expected_mstdate))
+      {
+        fprintf(stderr, "TestLMST: ERROR: wrong sidereal time:\n");
+
+        sprintf(refstr, "  %02dh %02dm %02d", mstdate.unixDate.tm_hour,
+                mstdate.unixDate.tm_min, mstdate.unixDate.tm_sec);
+        sprintf(tmpstr, "%.4fs", mstdate.residualNanoSeconds * 1.e-9);
+        strcat(refstr, tmpstr+1);
+        fprintf(stderr, "  GMST at 0h UTC on 2003-04-01:\n");
+        fprintf(stderr, "       get: %s\n", refstr);
+        
+        sprintf(tmpstr, "  14h 34m 02.6093s ");
+        fprintf(stderr, "    expect: %s\n", tmpstr);
+        fprintf(stderr, "  but since we don't have the equation of equinoxes in, can\n");
+        fprintf(stderr, "  expect up to one sidereal second disagreement\n");
+
+        return (1);
+      }
+
+
+    if (lalDebugLevel > 2)
+      {
+        sprintf(refstr, "%02dh %02dm %02d", mstdate.unixDate.tm_hour,
+                mstdate.unixDate.tm_min, mstdate.unixDate.tm_sec);
+        sprintf(tmpstr, "%.4fs", mstdate.residualNanoSeconds * 1.e-9);
+        strcat(refstr, tmpstr+1);
+        printf("\n");
+        printf("GMST at 0h UTC on 2003-04-01:\n");
+        printf("     get: %s\n", refstr);
+        
+        sprintf(tmpstr, "14h 34m 02.6093s");
+        printf("  expect: %s\n", tmpstr);
+        printf("but since we don't have the equation of equinoxes in, can\n");
+        printf("expect up to one sidereal second disagreement\n");
+      }
 
     
     return stat.statusCode;
     
+}
+
+
+/* allow up to 1 sidereal second difference */
+static BOOLEAN mstdate_ok_p(const LALDate *p_date,
+                            const LALDate *p_expected_date)
+{
+  BOOLEAN secs_ok_p;
+  double  secs, expected_secs;
+
+  secs = (double)((*p_date).unixDate.tm_sec) +
+    (*p_date).residualNanoSeconds / 1.e9;
+  expected_secs = (double)((*p_expected_date).unixDate.tm_sec) +
+    (*p_expected_date).residualNanoSeconds / 1.e9;
+
+#if 0  
+  printf("         secs = % 20.14e\n", secs);
+  printf("expected_secs = % 20.14e\n", expected_secs);
+#endif  
+
+  secs_ok_p = (fabs(secs - expected_secs) < 1.);
+  
+  return (secs_ok_p &&
+          (*p_date).unixDate.tm_min == (*p_expected_date).unixDate.tm_min &&
+          (*p_date).unixDate.tm_hour == (*p_expected_date).unixDate.tm_hour);
 }

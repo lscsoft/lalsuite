@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
   CHARVector          *timestamp = NULL;
   time_t               sec;
 
-  if (argc == 2)
+  if (argc > 1)
     lalDebugLevel = atoi(argv[1]);
 
   LALCHARCreateVector(&status, &timestamp, (UINT4)64);
@@ -33,7 +33,9 @@ int main(int argc, char *argv[])
       REPORTSTATUS(&status);
       return status.statusCode;
     }
-  REPORTSTATUS(&status);
+
+  if (lalDebugLevel > 0)
+    REPORTSTATUS(&status);
   
   /* Set the date */
   utcDate.unixDate.tm_year = 80;
@@ -53,7 +55,8 @@ int main(int argc, char *argv[])
       REPORTSTATUS(&status);
       return status.statusCode;
     }
-  REPORTSTATUS(&status);
+  if (lalDebugLevel > 0)
+    REPORTSTATUS(&status);
   
   refGPS.gpsSeconds = 0;
   refGPS.gpsNanoSeconds = 0;
@@ -66,13 +69,17 @@ int main(int argc, char *argv[])
       REPORTSTATUS(&status);
       return status.statusCode;
     }
-  REPORTSTATUS(&status);
-  
-  fprintf(stderr, "For: %s\n", timestamp->data);
-  fprintf(stderr, "  expect GPS = {%10d, %9d}\n", refGPS.gpsSeconds,
-          refGPS.gpsNanoSeconds);
-  fprintf(stderr, "  got    GPS = {%10d, %9d}\n", gpsTime.gpsSeconds,
-          gpsTime.gpsNanoSeconds);
+  if (lalDebugLevel > 0)
+    REPORTSTATUS(&status);
+
+  if (lalDebugLevel > 0)
+    {
+      fprintf(stderr, "For: %s\n", timestamp->data);
+      fprintf(stderr, "  expect GPS = {%10d, %9d}\n", refGPS.gpsSeconds,
+              refGPS.gpsNanoSeconds);
+      fprintf(stderr, "  got    GPS = {%10d, %9d}\n", gpsTime.gpsSeconds,
+              gpsTime.gpsNanoSeconds);
+    }
 
   if (gpsTime.gpsSeconds != refGPS.gpsSeconds ||
       gpsTime.gpsNanoSeconds != refGPS.gpsNanoSeconds)
@@ -109,7 +116,8 @@ int main(int argc, char *argv[])
       REPORTSTATUS(&status);
       return status.statusCode;
     }
-  REPORTSTATUS(&status);
+  if (lalDebugLevel > 0)
+    REPORTSTATUS(&status);
 
   refGPS.gpsSeconds = 457574400;
   refGPS.gpsNanoSeconds = 123456789;
@@ -122,13 +130,17 @@ int main(int argc, char *argv[])
       REPORTSTATUS(&status);
       return status.statusCode;
     }
-  REPORTSTATUS(&status);
-  
-  fprintf(stderr, "For: %s\n", timestamp->data);
-  fprintf(stderr, "  expect GPS = {%10d, %9d}\n", refGPS.gpsSeconds,
-          refGPS.gpsNanoSeconds);
-  fprintf(stderr, "  got    GPS = {%10d, %9d}\n", gpsTime.gpsSeconds,
-          gpsTime.gpsNanoSeconds);
+  if (lalDebugLevel > 0) 
+    REPORTSTATUS(&status);
+
+  if (lalDebugLevel > 0)
+    {
+      fprintf(stderr, "For: %s\n", timestamp->data);
+      fprintf(stderr, "  expect GPS = {%10d, %9d}\n", refGPS.gpsSeconds,
+              refGPS.gpsNanoSeconds);
+      fprintf(stderr, "  got    GPS = {%10d, %9d}\n", gpsTime.gpsSeconds,
+              gpsTime.gpsNanoSeconds);
+    }
 
   if (gpsTime.gpsSeconds != refGPS.gpsSeconds ||
       gpsTime.gpsNanoSeconds != refGPS.gpsNanoSeconds)
@@ -165,7 +177,8 @@ int main(int argc, char *argv[])
       REPORTSTATUS(&status);
       return status.statusCode;
     }
-  REPORTSTATUS(&status);
+  if (lalDebugLevel > 0)
+    REPORTSTATUS(&status);
 
   refGPS.gpsSeconds = 457056010;
   refGPS.gpsNanoSeconds = 123456789;
@@ -178,13 +191,17 @@ int main(int argc, char *argv[])
       REPORTSTATUS(&status);
       return status.statusCode;
     }
-  REPORTSTATUS(&status);
+  if (lalDebugLevel > 0)
+    REPORTSTATUS(&status);
 
-  fprintf(stderr, "For: %s\n", timestamp->data);
-  fprintf(stderr, "  expect GPS = {%10d, %9d}\n", refGPS.gpsSeconds,
-          refGPS.gpsNanoSeconds);
-  fprintf(stderr, "  got    GPS = {%10d, %9d}\n", gpsTime.gpsSeconds,
-          gpsTime.gpsNanoSeconds);
+  if (lalDebugLevel > 0)
+    {
+      fprintf(stderr, "For: %s\n", timestamp->data);
+      fprintf(stderr, "  expect GPS = {%10d, %9d}\n", refGPS.gpsSeconds,
+              refGPS.gpsNanoSeconds);
+      fprintf(stderr, "  got    GPS = {%10d, %9d}\n", gpsTime.gpsSeconds,
+              gpsTime.gpsNanoSeconds);
+    }
 
   if (gpsTime.gpsSeconds != refGPS.gpsSeconds ||
       gpsTime.gpsNanoSeconds != refGPS.gpsNanoSeconds)
@@ -226,7 +243,8 @@ int main(int argc, char *argv[])
           REPORTSTATUS(&status);
           return status.statusCode;
         }
-      REPORTSTATUS(&status);
+      if (lalDebugLevel > 0)
+        REPORTSTATUS(&status);
       
       LALDateString(&status, timestamp, &utcDate);
       if (status.statusCode && lalDebugLevel > 0)
@@ -237,13 +255,17 @@ int main(int argc, char *argv[])
           REPORTSTATUS(&status);
           return status.statusCode;
         }
-      REPORTSTATUS(&status);
-      
-      fprintf(stderr, "For: %s\n", timestamp->data);
-      fprintf(stderr, "  expect GPS = {%10d, %9d}\n", refGPS.gpsSeconds,
-              refGPS.gpsNanoSeconds);
-      fprintf(stderr, "  got    GPS = {%10d, %9d}\n", gpsTime.gpsSeconds,
-              gpsTime.gpsNanoSeconds);
+      if (lalDebugLevel > 0)
+        REPORTSTATUS(&status);
+
+      if (lalDebugLevel > 0)
+        {
+          fprintf(stderr, "For: %s\n", timestamp->data);
+          fprintf(stderr, "  expect GPS = {%10d, %9d}\n", refGPS.gpsSeconds,
+                  refGPS.gpsNanoSeconds);
+          fprintf(stderr, "  got    GPS = {%10d, %9d}\n", gpsTime.gpsSeconds,
+                  gpsTime.gpsNanoSeconds);
+        }
 
       if (gpsTime.gpsSeconds != refGPS.gpsSeconds ||
           gpsTime.gpsNanoSeconds != refGPS.gpsNanoSeconds)
@@ -292,7 +314,8 @@ int main(int argc, char *argv[])
       REPORTSTATUS(&status);
       return status.statusCode;
     }
-  REPORTSTATUS(&status);
+  if (lalDebugLevel > 0)
+    REPORTSTATUS(&status);
 
   refGPS.gpsSeconds = 468979210;
   refGPS.gpsNanoSeconds = 123456789;
@@ -305,13 +328,17 @@ int main(int argc, char *argv[])
       REPORTSTATUS(&status);
       return status.statusCode;
     }
-  REPORTSTATUS(&status);
+  if (lalDebugLevel > 0)
+    REPORTSTATUS(&status);
 
-  fprintf(stderr, "For: %s\n", timestamp->data);
-  fprintf(stderr, "  expect GPS = {%10d, %9d}\n", refGPS.gpsSeconds,
-          refGPS.gpsNanoSeconds);
-  fprintf(stderr, "  got    GPS = {%10d, %9d}\n", gpsTime.gpsSeconds,
-          gpsTime.gpsNanoSeconds);
+  if (lalDebugLevel > 0)
+    {
+      fprintf(stderr, "For: %s\n", timestamp->data);
+      fprintf(stderr, "  expect GPS = {%10d, %9d}\n", refGPS.gpsSeconds,
+              refGPS.gpsNanoSeconds);
+      fprintf(stderr, "  got    GPS = {%10d, %9d}\n", gpsTime.gpsSeconds,
+              gpsTime.gpsNanoSeconds);
+    }
 
   if (gpsTime.gpsSeconds != refGPS.gpsSeconds ||
       gpsTime.gpsNanoSeconds != refGPS.gpsNanoSeconds)
@@ -375,7 +402,8 @@ int main(int argc, char *argv[])
       REPORTSTATUS(&status);
       return status.statusCode;
     }
-  REPORTSTATUS(&status);
+  if (lalDebugLevel > 0)
+    REPORTSTATUS(&status);
   LALCheckMemoryLeaks();
   return 0;
 }

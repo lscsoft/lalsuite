@@ -72,7 +72,7 @@ int main(int argc, char **argv)
   LALTimeInterval  expected_deltaT;
 
 
-  if (argc == 2)
+  if (argc > 1)
     lalDebugLevel = atoi(argv[1]);
 
   if (lalDebugLevel >= 4)

@@ -64,7 +64,7 @@ NRCSID( LALTESTDELAYC, "$Id$" );
 
 int lalDebugLevel = 0;
 
-int main( void )
+int main(int argc, char **argv)
 {
   static LALStatus stat;
   LALFrDetector    frdet1;     /* Framelib detector info */
@@ -74,10 +74,14 @@ int main( void )
   LIGOTimeGPS      gps;
   SkyPosition      source;
   REAL8            delay;
+  REAL8            difference;
   DetTimeAndASource     det1_and_source;
   /* TwoDetsTimeAndASource dets_and_source; */
   LALPlaceAndGPS        det1_and_gps;
   /* LALPlaceAndGPS        det2_and_gps; */
+
+  if (argc > 1)
+    lalDebugLevel = atoi(argv[1]);
 
   /*
    * Set up a source that will be used in both LALTimeDelay() and
@@ -109,15 +113,33 @@ int main( void )
       REPORTSTATUS(&stat);
       return stat.statusCode;
     }
-  REPORTSTATUS(&stat);
+  if (lalDebugLevel > 2)
+    REPORTSTATUS(&stat);
 
   /*
    * Expect the location vector to be (R, 0, 0): R = radius of Earth
    *                                                 at Equator
+   * tolerance, 1.e-04
    */
-  printf("Det #1 location: (%7.4e, %7.4e, %7.4e)\n",
-         detector1.location[0], detector1.location[1],
-         detector1.location[2]);
+  if (fabs(detector1.location[0] - LAL_REARTH_SI)/LAL_REARTH_SI > 1.e-4 ||
+      detector1.location[1] != 0.                         ||
+      detector1.location[2] != 0.)
+    {
+      fprintf(stderr, "TestDelay: LALCreateDetector output is wrong, line %i, %s\n",
+              __LINE__, LALTESTDELAYC);
+      fprintf(stderr, "Got Det #1 location: (% 16.8e, % 16.8e, % 16.8e)\n",
+              (float)detector1.location[0], (float)detector1.location[1],
+              (float)detector1.location[2]);
+      fprintf(stderr, "Expected:            (% 16.8e, % 16.8e, % 16.8e)\n",
+              (float)LAL_REARTH_SI, 0., 0.);
+
+      return(1);
+    }
+
+  if (lalDebugLevel > 2)
+    printf("Det #1 location: (%7.4e, %7.4e, %7.4e)\n",
+           detector1.location[0], detector1.location[1],
+           detector1.location[2]);
     
 
   strcpy(frdet2.name, "TEST IFO 2");
@@ -137,7 +159,8 @@ int main( void )
       REPORTSTATUS(&stat);
       return stat.statusCode;
     }  
-  REPORTSTATUS(&stat);
+  if (lalDebugLevel > 2)
+    REPORTSTATUS(&stat);
 
   /*
    * Set a GPS time that's close to 0h GMST1. (Found this by trial and
@@ -161,7 +184,8 @@ int main( void )
       REPORTSTATUS(&stat);
       return stat.statusCode;
     }
-  REPORTSTATUS(&stat);
+  if (lalDebugLevel > 2)
+    REPORTSTATUS(&stat);
 
   /*
    * Expect delay to be roughly c/R, where c=speed of light,
@@ -177,12 +201,23 @@ int main( void )
     printf("H_PREC = %18.13e\n", (float)H_PREC);
   */
 
-  printf("delay      = %20.14e\n", delay);
-  printf("Rearth / c = %20.14e\n", (REAL8)LAL_REARTH_SI /
-         (REAL8)LAL_C_SI);
+  if (lalDebugLevel > 2)
+    {
+      printf("delay      = %20.14e\n", delay);
+      printf("Rearth / c = %20.14e\n", (REAL8)LAL_REARTH_SI /
+             (REAL8)LAL_C_SI);
+    }
 
-  if ((fabs(delay) - (REAL8)LAL_REARTH_SI / (REAL8)LAL_C_SI) < DOUBLE_EPSILON)
-    return 0;
+  difference = fabs(delay) - (REAL8)LAL_REARTH_SI / (REAL8)LAL_C_SI;
+
+  if (difference < DOUBLE_EPSILON)
+    {
+      return 0;
+    }
   else
-    return 1;
+    {
+      fprintf(stderr, "ERROR: computed delay differs from expected delay by amount greater than DOUBLE_EPSILON (% 14.8e); difference = % 14.8e\n", 
+              DOUBLE_EPSILON, difference);
+      return 1;
+    }
 }

@@ -96,11 +96,7 @@ main(int argc, char *argv[])
     /*
      * Distinctly not robust
      */
-    if (argc == 1)
-      fprintf(stderr,
-              "Usage: TestJulianDay [debug_level] -- debug_level = [0,1,2]\n");
-
-    if (argc == 2)
+    if (argc > 1)
         lalDebugLevel = atoi(argv[1]);
 
     /*
