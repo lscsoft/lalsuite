@@ -7,9 +7,6 @@ $Id$
 \subsection{Module \texttt{StochasticCrossCorrelation.c}}
 \label{stochastic:ss:StochasticCrossCorrelation.c}
 
-{\bf {\Large WARNING} The functionality of this module has been expanded
-and modified, so the documentation is not yet complete and/or correct.}
-
 Calculates the value of the standard optimally-filtered 
 cross-correlation statistic for stochastic background searches.
 
@@ -20,8 +17,12 @@ cross-correlation statistic for stochastic background searches.
 \input{StochasticCrossCorrelationCP}
 
 \subsubsection*{Description}
-\texttt{LALStochasticCrossCorrelationStatistic()} calculates the value
-of the standard optimally-filtered cross-correlation statistic
+
+\subsubsection*{\texttt{LALStochasticCrossCorrelationStatistic()}}
+
+The default version of the function, for handling non-heterodyned
+data, calculates the value of the standard optimally-filtered
+cross-correlation statistic
 % 
 \begin{eqnarray} 
 Y
@@ -82,14 +83,18 @@ Y=\
 \label{stochastic:e:shortcut}
 \end{equation} 
 
-If the input data streams represent a range of positive frequencies
-$f_0\le f < f_0+(2N-1)\delta f$, $f_0>0$ (and thus were produced by
-Fourier transforming heterodyned data) we calculate the
-cross-correlation statistic
+The routine \texttt{LALStochasticCrossCorrelationStatistic()} is
+designed for analyzing non-heterodyned data, so if the input FFTed
+datasets have a positive start frequency, and thus represent a range
+of frequencies $f_0\le f< f_0 + (N-1)\delta f$, it is assumed that
+they were produced by discarding frequencies below $f_0$ from a longer
+frequency series, which was still the Fourier transform of a real time
+series.  In this case the cross-correlation statistic is calculated
+as 
 \begin{eqnarray}
 Y&=&\ 
 \delta f\ 
-2\sum_{\ell=0}^{2N-2}\ 
+2\sum_{\ell=0}^{N-1}\ 
 {\mathrm{Re}} \left\{
 \widetilde{\bar{h}}_{1}[\ell]^* \ 
 \widetilde{Q}[\ell]\ 
@@ -97,16 +102,100 @@ Y&=&\
 \right\} \nonumber
 \\
 &\approx&
-\int_{-f_0-(2N-1)\delta f}^{-f_0} df\ 
+\int_{-f_0-(N-1)\delta f}^{-f_0} df\ 
 \widetilde{h}_1(f)^*\ \widetilde{Q}(f)\ \widetilde{h}_2(f)
-+ \int_{f_0}^{f_0+(2N-1)\delta f} df\ 
++ \int_{f_0}^{f_0+(N-1)\delta f} df\ 
 \widetilde{h}_1(f)^*\ \widetilde{Q}(f)\ \widetilde{h}_2(f)
-\label{stochastic:e:heterodyned}
+\label{stochastic:e:bandlimited}
 \end{eqnarray}
+
+The frequency sampling parameters (start frequency, frequency spacing,
+and number of points) must be the same for both data streams, but if
+the optimal filter is more coarsely sampled (for instance, if it
+varies in frequency too slowly to warrant the finer resolution), the
+data streams will be multiplied in the frequency domain and their
+product coarse-grained
+(cf.~Sec\ref{stochastic:ss:CoarseGrainFrequencySeries.c}) to the
+optimal filter resolution before calculating
+(\ref{stochastic:e:bandlimited}).
+
+If the \texttt{epochsMatch} boolean variable is set to a true value,
+the function will confirm that the start times for both time series
+agree.  It can be set to false to allow for cross-correlation of
+time-shifted data as a control case.
+
+\subsubsection*{\texttt{LALStochasticHeterodynedCrossCorrelationStatistic()}}
+
+{\bf Note: This function does not currently have a working test
+  routine, and is not guaranteed to work.}
+
+In the case of heterodyned data, one wishes to calculate 
+% 
+\begin{eqnarray} 
+Y
+&:=&\int_{t_0}^{t_0+T} dt_1\int_{t_0}^{t_0+T} dt_2\,
+h_1(t_1)^*\, Q(t_1-t_2)\, h_2(t_2) \nonumber \\
+&\approx& \sum_{j=0}^{N-1}\delta t\sum_{k=0}^{N-1}\delta t\,
+h_1[j]^*\, Q[j-k]\, h_2[k] \nonumber \\
+&=& \sum_{\ell=-(N-1)}^{N-1} \delta f\,
+\widetilde{\bar{h}}_{1}[\ell]^* \,\widetilde{Q}[\ell]\,
+\widetilde{\bar{h}}_{2}[\ell],
+\label{stochastic:e:ymaxhet}
+\end{eqnarray}
+%
+In this case, the Fourier transforms of the zero-padded data streams
+have $2N-1$ independent elements, which must all be included in the sum,
+which is calculated as
+\begin{equation}
+Y=\ 
+\sum_{\ell=0}^{2N-2}\ 
+\widetilde{\bar{h}}_{1}[\ell]^* \ 
+\widetilde{Q}[\ell]\ 
+\widetilde{\bar{h}}_{2}[\ell] 
+\ .
+\label{stochastic:e:heterodyned}
+\end{equation} 
+While the mean value of the cross-correlation statistic for
+heterodyned data should be real (assuming both series were heterodyned
+with the same phase), the value for an individual stretch of data will
+be complex, so the output is returned as \texttt{COMPLEX8WithUnits}.
+
+\subsubsection*{\texttt{LALStochasticCrossCorrelationSpectrum()}}
+
+For diagnostic purposes, this function calculates the integrand of
+(\ref{stochastic:e:ymax}) or (\ref{stochastic:e:ymaxhet}), i.e.
+\begin{equation}
+  \label{stochastic:e:ccspec}
+Y(f)=
+\widetilde{\bar{h}}_{1}(f)^* \ 
+\widetilde{Q}(f)\ 
+\widetilde{\bar{h}}_{2}(f)=
+Y[\ell]=
+\widetilde{\bar{h}}_{1}[\ell]^* \ 
+\widetilde{Q}[\ell]\ 
+\widetilde{\bar{h}}_{2}[\ell]  
+\end{equation}
+and returns it as a frequency series.
  
 \subsubsection*{Algorithm}
-The value  of $Y$ is calculated via  a straightforward implementation
-of (\ref{stochastic:e:shortcut}) or (\ref{stochastic:e:heterodyned}).
+
+All three routines calculate $\widetilde{\bar{h}}_{1}[\ell]^* \ 
+\widetilde{\bar{h}}_{2}[\ell]$ with
+\texttt{LALCCVectorMultiplyConjugate()} and match the resolution of
+the result to that of \verb+input->optimalFilter+ with
+\texttt{LALCCoarseGrainFrequencySeries()}.  
+
+The functions \texttt{LALStochasticCrossCorrelationStatistic()} and
+\texttt{LALStochasticHeterodynedCrossCorrelationStatistic()} simply
+then combine this with the input $\widetilde{Q}[\ell]$ to calculate
+(\ref{stochastic:e:shortcut}) or (\ref{stochastic:e:heterodyned})
+directly.
+
+The function \texttt{LALStochasticCrossCorrelationSpectrum()} uses
+\texttt{LALCCVectorMultiply()} to calculate
+(\ref{stochastic:e:ccspec}) from the input $\widetilde{Q}[\ell]$ and
+the coarse-grained $\widetilde{\bar{h}}_{1}[\ell]^* \ 
+\widetilde{\bar{h}}_{2}[\ell]$
 
 \subsubsection*{Uses}
 
@@ -129,15 +218,19 @@ LALUnitMultiply()
   whitened data include the different complex whitening filters for
   the two streams.  
   (cf.\ Sec.~\ref{stochastic:ss:StochasticOptimalFilter.c}.)
+\item The coarse-graining technique produces the same
+  cross-correlation statistic as fine-graining the optimal filter by
+  assuming it is zero outside the coarse-grained frequency range and
+  constant across each coarse-grained frequency bin.
 \item The output units are constructed by combining the input units,
   but under normal circumstances the units will be as follows:
   \begin{eqnarray}
-    {} [\widetilde{Q}^{\scriptstyle{\rm W}}] &=&
-    \textrm{count}^{-2} \\
+    {} [\widetilde{Q}^{\scriptstyle{\rm W}}] &=& \textrm{count}^{-2} \\
     {} [\widetilde{\bar{h}}_{1,2}] &=& \textrm{count}\,\textrm{Hz}^{-1} \\
-    {} [Y] &:=&     [\widetilde{\bar{h}}_1] 
+    {} [Y(f)] &:=& [\widetilde{\bar{h}}_1] 
     [\widetilde{Q}^{\scriptstyle{\rm W}}]  [\widetilde{\bar{h}}_2]
-    = \textrm{s}
+    = \textrm{s}^2 \\
+    {} [Y] &:=& [Y(f)] \textrm{Hz} = \textrm{s}
   \end{eqnarray}
 \end{itemize}
 
@@ -161,9 +254,9 @@ NRCSID(STOCHASTICCROSSCORRELATIONC,
 void
 LALStochasticCrossCorrelationStatistic(
             LALStatus                              *status,
-	    REAL4WithUnits                         *output,
-	    const StochasticCrossCorrelationInput  *input,
-	    BOOLEAN                                 epochsMatch)
+            REAL4WithUnits                         *output,
+            const StochasticCrossCorrelationInput  *input,
+            BOOLEAN                                 epochsMatch)
 /* </lalVerbatim> */
 {
 
@@ -314,11 +407,11 @@ LALStochasticCrossCorrelationStatistic(
   /* epoch (start time) */
   if ( epochsMatch
        && ( (input->hBarTildeOne->epoch.gpsSeconds != 
-	     input->hBarTildeTwo->epoch.gpsSeconds) 
-	    ||
-	    (input->hBarTildeOne->epoch.gpsNanoSeconds != 
-	     input->hBarTildeTwo->epoch.gpsNanoSeconds) 
-	  )
+             input->hBarTildeTwo->epoch.gpsSeconds) 
+            ||
+            (input->hBarTildeOne->epoch.gpsNanoSeconds != 
+             input->hBarTildeTwo->epoch.gpsNanoSeconds) 
+          )
      )
   {
      ABORT( status,
@@ -334,8 +427,8 @@ LALStochasticCrossCorrelationStatistic(
       status);
 
   LALCCVectorMultiplyConjugate( status->statusPtr, h1StarH2.data,
-				input->hBarTildeTwo->data,
-				input->hBarTildeOne->data );
+                                input->hBarTildeTwo->data,
+                                input->hBarTildeOne->data );
 
   BEGINFAIL( status ) 
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
@@ -344,14 +437,14 @@ LALStochasticCrossCorrelationStatistic(
   h1StarH2Coarse.data = NULL;
 
   LALCCreateVector(status->statusPtr, &(h1StarH2Coarse.data),
-		   freqParams.length);
+                   freqParams.length);
 
   BEGINFAIL( status ) 
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
   ENDFAIL( status ); 
 
   LALCCoarseGrainFrequencySeries(status->statusPtr, &h1StarH2Coarse,
-				 &h1StarH2, &freqParams);
+                                 &h1StarH2, &freqParams);
 
   BEGINFAIL( status ) {
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
@@ -392,7 +485,7 @@ LALStochasticCrossCorrelationStatistic(
   for ( ; cPtrFilter < cStopPtr; ++cPtrFilter, ++cPtrStream ) 
   {
     output->value += (cPtrFilter->re * cPtrStream->re 
-		      - cPtrFilter->im * cPtrStream->im);
+                      - cPtrFilter->im * cPtrStream->im);
   }
   
   /* normalize */
@@ -422,9 +515,9 @@ LALStochasticCrossCorrelationStatistic(
 void
 LALStochasticHeterodynedCrossCorrelationStatistic(
             LALStatus                              *status,
-	    COMPLEX8WithUnits                      *output,
-	    const StochasticCrossCorrelationInput  *input,
-	    BOOLEAN                                 epochsMatch)
+            COMPLEX8WithUnits                      *output,
+            const StochasticCrossCorrelationInput  *input,
+            BOOLEAN                                 epochsMatch)
 /* </lalVerbatim> */
 {
 
@@ -575,11 +668,11 @@ LALStochasticHeterodynedCrossCorrelationStatistic(
   /* epoch (start time) */
   if ( epochsMatch
        && ( (input->hBarTildeOne->epoch.gpsSeconds != 
-	     input->hBarTildeTwo->epoch.gpsSeconds) 
-	    ||
-	    (input->hBarTildeOne->epoch.gpsNanoSeconds != 
-	     input->hBarTildeTwo->epoch.gpsNanoSeconds) 
-	  )
+             input->hBarTildeTwo->epoch.gpsSeconds) 
+            ||
+            (input->hBarTildeOne->epoch.gpsNanoSeconds != 
+             input->hBarTildeTwo->epoch.gpsNanoSeconds) 
+          )
      )
   {
      ABORT( status,
@@ -595,8 +688,8 @@ LALStochasticHeterodynedCrossCorrelationStatistic(
       status);
 
   LALCCVectorMultiplyConjugate(status->statusPtr, h1StarH2.data,
-			       input->hBarTildeTwo->data,
-			       input->hBarTildeOne->data);
+                               input->hBarTildeTwo->data,
+                               input->hBarTildeOne->data);
 
   BEGINFAIL( status ) 
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
@@ -605,14 +698,14 @@ LALStochasticHeterodynedCrossCorrelationStatistic(
   h1StarH2Coarse.data = NULL;
 
   LALCCreateVector(status->statusPtr, &(h1StarH2Coarse.data),
-		   freqParams.length);
+                   freqParams.length);
 
   BEGINFAIL( status ) 
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
   ENDFAIL( status ); 
 
   LALCCoarseGrainFrequencySeries(status->statusPtr, &h1StarH2Coarse,
-				 &h1StarH2, &freqParams);
+                                 &h1StarH2, &freqParams);
 
   BEGINFAIL( status ) {
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
@@ -637,9 +730,9 @@ LALStochasticHeterodynedCrossCorrelationStatistic(
   for ( ; cPtrFilter < cStopPtr; ++cPtrFilter, ++cPtrStream ) 
   {
     output->value.re += (cPtrFilter->re * cPtrStream->re 
-			 - cPtrFilter->im * cPtrStream->im);
+                         - cPtrFilter->im * cPtrStream->im);
     output->value.im += (cPtrFilter->re * cPtrStream->im 
-			 + cPtrFilter->im * cPtrStream->re);
+                         + cPtrFilter->im * cPtrStream->re);
   }
   
   /* normalize */
@@ -671,8 +764,8 @@ void
 LALStochasticCrossCorrelationSpectrum(
             LALStatus                              *status,
             COMPLEX8FrequencySeries                *output,
-	    const StochasticCrossCorrelationInput  *input,
-	    BOOLEAN                                 epochsMatch)
+            const StochasticCrossCorrelationInput  *input,
+            BOOLEAN                                 epochsMatch)
 /* </lalVerbatim> */
 {
 
@@ -884,11 +977,11 @@ LALStochasticCrossCorrelationSpectrum(
   /* epoch (start time) */
   if ( epochsMatch
        && ( (input->hBarTildeOne->epoch.gpsSeconds != 
-	     input->hBarTildeTwo->epoch.gpsSeconds) 
-	    ||
-	    (input->hBarTildeOne->epoch.gpsNanoSeconds != 
-	     input->hBarTildeTwo->epoch.gpsNanoSeconds) 
-	  )
+             input->hBarTildeTwo->epoch.gpsSeconds) 
+            ||
+            (input->hBarTildeOne->epoch.gpsNanoSeconds != 
+             input->hBarTildeTwo->epoch.gpsNanoSeconds) 
+          )
      )
   {
      ABORT( status,
@@ -904,8 +997,8 @@ LALStochasticCrossCorrelationSpectrum(
       status);
 
   LALCCVectorMultiplyConjugate(status->statusPtr, h1StarH2.data,
-			       input->hBarTildeTwo->data,
-			       input->hBarTildeOne->data);
+                               input->hBarTildeTwo->data,
+                               input->hBarTildeOne->data);
 
   BEGINFAIL( status ) 
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
@@ -914,14 +1007,14 @@ LALStochasticCrossCorrelationSpectrum(
   h1StarH2Coarse.data = NULL;
 
   LALCCreateVector(status->statusPtr, &(h1StarH2Coarse.data),
-		   freqParams.length);
+                   freqParams.length);
 
   BEGINFAIL( status ) 
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
   ENDFAIL( status ); 
 
   LALCCoarseGrainFrequencySeries(status->statusPtr, &h1StarH2Coarse,
-				 &h1StarH2, &freqParams);
+                                 &h1StarH2, &freqParams);
 
   BEGINFAIL( status ) {
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
@@ -936,7 +1029,7 @@ LALStochasticCrossCorrelationSpectrum(
   } ENDFAIL( status ); 
 
   LALCCVectorMultiply(status->statusPtr, output->data,
-		      h1StarH2Coarse.data, input->optimalFilter->data);
+                      h1StarH2Coarse.data, input->optimalFilter->data);
 
   BEGINFAIL( status ) 
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2Coarse.data)), status);

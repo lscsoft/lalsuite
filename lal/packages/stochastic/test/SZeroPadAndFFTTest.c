@@ -7,10 +7,6 @@ $Id$
 \subsection{Program \texttt{SZeroPadAndFFTTest.c}}
 \label{stochastic:ss:SZeroPadAndFFTTest.c}
 
-{\bf {\Large WARNING} The functionality of this module has been expanded
-and modified, so the tests and  documentation are not yet complete
-and/or correct.}
-
 Test suite for \texttt{LALSZeroPadAndFFT()}.
 
 \subsubsection*{Usage}

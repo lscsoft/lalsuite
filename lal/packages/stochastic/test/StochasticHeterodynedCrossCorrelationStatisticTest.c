@@ -1,4 +1,4 @@
-/************* <lalVerbatim file="StochasticHeterodynedCrossCorrelationStatisticTestCV">
+/*** <lalVerbatim file="StochasticHeterodynedCrossCorrelationStatisticTestCV">
 Author: UTB Relativity Group; contact J. T. Whelan (original by S. Drasco)
 $Id$
 ********************************* </lalVerbatim> */
@@ -65,29 +65,30 @@ the corresponding checks in the code are made using the ASSERT macro):
 \item mismatch between epochs of data streams
 \end{itemize}
 
-% It then verifies that the correct cross-correlation statistic (value
-% and units) is generated for each of the following simple test cases:
-% \begin{enumerate}
-% \item $\widetilde{Q}(f) = \frac{f(N\,\delta f - f)}{(N\,\delta
-%     f/2)^2}$; $\widetilde{\bar{h}}_1(f)=f^2+if$,
-%   $\widetilde{\bar{h}}_2(f)=f^{-2}-if^{-1}$.  The expected result in
-%   this case is zero.
-% \item $\widetilde{Q}(f) = 1$ for
-%   $300\,\textrm{Hz}<f<500\,\textrm{Hz}$, 0 otherwise;
-%   $\widetilde{\bar{h}}_1(f)=1-\widetilde{\bar{h}}_2(f)=f/800\,\textrm{Hz}$.
-%   With $f_0=\delta f=80\,\textrm{Hz}$ and $N=9$, the expected value is
-%   $116.8$.
-% \end{enumerate}
-% For each successful test
-% (both of these valid data and the invalid ones described above), it
-% prints ``\texttt{PASS}'' to standard output; if a test fails, it
-% prints ``\texttt{FAIL}''.
+It then verifies that the correct cross-correlation statistic (value
+and units) is generated for each of the following simple test cases:
+\begin{enumerate}
+\item $\widetilde{Q}(f) = \frac{f(N\,\delta f - f)}{(N\,\delta
+    f/2)^2}$; $\widetilde{\bar{h}}_1(f)=f^2+if$,
+  $\widetilde{\bar{h}}_2(f)=f^{-2}-if^{-1}$.  With $f_0=\delta
+  f=80\,\textrm{Hz}$ and $N=9$, the expected value is
+  $-1706.68\overline{703}i$
+\item $\widetilde{Q}(f) = 1$ for
+  $300\,\textrm{Hz}<f<500\,\textrm{Hz}$, 0 otherwise;
+  $\widetilde{\bar{h}}_1(f)=1-\widetilde{\bar{h}}_2(f)=f/800\,\textrm{Hz}$.
+  With $f_0=\delta f=80\,\textrm{Hz}$ and $N=9$, the expected value is
+  $58.4$.
+\end{enumerate}
+For each successful test
+(both of these valid data and the invalid ones described above), it
+prints ``\texttt{PASS}'' to standard output; if a test fails, it
+prints ``\texttt{FAIL}''.
 
-% If the \texttt{filename} arguments are present, it also reads in the
-% optimal filter and the two data streams from the specified files and
-% use the specified parameters to calculate the cross-correlation
-% statistic.  The result is printed to standard output along with the
-% resulting units in terms of the basic SI units.
+If the \texttt{filename} arguments are present, it also reads in the
+optimal filter and the two data streams from the specified files and
+use the specified parameters to calculate the cross-correlation
+statistic.  The result is printed to standard output along with the
+resulting units in terms of the basic SI units.
 
 \subsubsection*{Exit codes}
 \input{StochasticHeterodynedCrossCorrelationStatisticTestCE}
@@ -161,7 +162,8 @@ NRCSID (STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC, "$Id$");
 #define STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_WINMIN   300.0
 #define STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_WINMAX   500.0
 #define STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_FLIM     800.0
-#define STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP2     116.8
+#define STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP1     -15.6
+#define STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP2      58.4
 
 #define STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE     1
 #define STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_FALSE    0
@@ -226,7 +228,7 @@ int main( int argc, char *argv[] )
   CHARVector               *unitString = NULL;
 
   UINT4 i;
-  REAL4 omega, f;
+  REAL4 omega, f, x;
   INT4 code;
   
   ParseOptions( argc, argv );
@@ -674,27 +676,28 @@ int main( int argc, char *argv[] )
   goodFilter.sampleUnits = dimensionless;
   goodFilter.sampleUnits.unitNumerator[LALUnitIndexStrain] = -1;
 
-  goodData1.f0 = goodData2.f0 = goodFilter.f0 = 41.0;
-
-  goodData1.data->data[0].re = goodData1.data->data[0].im 
-    = goodData2.data->data[0].re = goodData2.data->data[0].im 
-    = goodFilter.data->data[0].re = goodFilter.data->data[0].im 
-    = 0.0;
+  goodData1.f0 = goodData2.f0 = goodFilter.f0 
+    = STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_F0;
   
-  for (i=1; i<STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_LENGTH; ++i)
+  for (i=0; i<STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_LENGTH; ++i)
   {
-    f =  i * STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_DELTAF;
-    goodData1.data->data[i].re = f*f
-      /(STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_FLIM
-        * STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_FLIM / 4.0);
-    goodData1.data->data[i].im = f/(STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_FLIM/2.0);
+    f = goodData1.f0
+      + i * STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_DELTAF;
+    x = f
+      / (STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_FLIM / 2.0);
+    printf ("%f\n",x);
+    goodData1.data->data[i].re = x*x;
+    goodData1.data->data[i].im = x;
     goodData2.data->data[i].re = 1.0/goodData1.data->data[i].re;
     goodData2.data->data[i].im = -1.0/goodData1.data->data[i].im;
     goodFilter.data->data[i].re 
-      = f * ( STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_FLIM - f)
-      / (STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_FLIM
-         * STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_FLIM/4);
+      = x * (2-x);
     goodFilter.data->data[i].im = 0.0;
+    printf ("%f + %f i    %f + %f i    %f + %f i\n",
+	    goodData1.data->data[i].re, goodData1.data->data[i].im,
+	    goodData2.data->data[i].re, goodData2.data->data[i].im,
+	    goodFilter.data->data[i].re, goodFilter.data->data[i].im
+	    );
   }
 
   LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
@@ -704,10 +707,19 @@ int main( int argc, char *argv[] )
   {
     return code;
   }
-  /*  
-  if (optVerbose) printf("Y=%g, should be 0\n",output.value);
-  if (fabs(output.value)/STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_DELTAF
-      > STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TOL)
+
+  if (optVerbose) 
+  { 
+    printf("Y=%g + %g i, should be %g i\n", output.value.re,
+	   output.value.im,
+	   STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP1);
+  }
+  if ( ( fabs(output.value.re)/STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_DELTAF
+	 > STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TOL ) 
+       || ( fabs(output.value.im - STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP1)
+	    / STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_DELTAF
+	    > STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TOL )
+       )
   {
     printf("  FAIL: Valid data test #1\n");
     if (optVerbose)
@@ -717,7 +729,7 @@ int main( int argc, char *argv[] )
     }
     return STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS;
   }
-  */
+
   unitPair.unitOne = goodData1.sampleUnits;
   unitPair.unitTwo = output.units;
   LALUnitCompare(&status, &result, &unitPair);
@@ -819,15 +831,19 @@ int main( int argc, char *argv[] )
   {
     return code;
   }
-  /*  
+
   if (optVerbose) 
   {
-    printf("Y=%g, should be %g\n",output.value,
+    printf("Y = %g + %g i, should be %g\n", output.value.re, output.value.im,
            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP2);
   }
-  if ( fabs(output.value-STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP2)
-       / STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP2
-       > STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TOL)
+  if ( ( fabs(output.value.re-STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP2)
+         / STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP2
+         > STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TOL )
+       || ( fabs(output.value.im)
+            / STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP2
+            > STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TOL )
+       )
   {
     printf("  FAIL: Valid data test #2\n");
     if (optVerbose)
@@ -837,7 +853,7 @@ int main( int argc, char *argv[] )
     }
     return STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS;
   }
-  */
+
 
   unitPair.unitOne = dimensionless;
   unitPair.unitOne.unitNumerator[LALUnitIndexSecond] = 1;
@@ -1010,7 +1026,7 @@ int main( int argc, char *argv[] )
 
     printf("=========== Cross-Correlation Statistic for User-Specified Data Is =======\n");
     printf("     %g + %g i %s\n", output.value.re, output.value.im,
-	   unitString->data);
+           unitString->data);
 
     /* Deallocate Memory */
     LALCHARDestroyVector(&status, &unitString);

@@ -141,8 +141,6 @@ fabs()
   \texttt{LALCReadFrequencySeries()} function is called.
 \item If some, but not all, of the \texttt{filename} arguments are
   present, the user-specified data will be silently ignored.
-\item The routine \texttt{LALStochasticOptimalFilter()} does not yet
-  support non-zero heterodyning frequencies.
 \end{itemize}
 
 \vfill{\footnotesize\input{StochasticOptimalFilterTestCV}}

@@ -7,9 +7,6 @@ $Id$
 \subsection{Module \texttt{ZeroPadAndFFT.c}}
 \label{stochastic:ss:ZeroPadAndFFT.c}
 
-{\bf {\Large WARNING} The functionality of this module has been expanded
-and modified, so the documentation is not yet complete and/or correct.}
-
 Routines for zero-padding and Fourier transforming a time series.
 
 \subsubsection*{Prototypes}

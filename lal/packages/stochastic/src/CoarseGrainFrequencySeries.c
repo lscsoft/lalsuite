@@ -579,6 +579,7 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
 
     output->data->data[0].re = ( input->data->data[0].re + 2.0 * value.re )
       / resRatio;
+    output->data->data[0].im = 0.0;
 
     /* :TODO: ?  check that imaginary parts of DC vanish? */
 

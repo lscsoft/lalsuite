@@ -140,11 +140,49 @@ $\{1/P^{\scriptstyle{\rm HW}}_i(f)|i=1,2\}$.
 The routine \texttt{LALStochasticOptimalFilter()} first uses
 (\ref{stochastic:e:lambda}) to find the normalization constant
 $\lambda$ (the amplitude ${h_{100}}^2\Omega_{\scriptstyle{\rm R}}$ is
-found from the specified reference frequency $f_{\scriptstyle{\rm R}}$
-and the input series representing ${h_{100}}^2\Omega_{\scriptstyle{\rm
-    GW}}(f)$ by logarithmic interpolation), then the output series is
-filled with the values corresponding to the definition
-(\ref{stochastic:e:QW}).
+found by logarithmic interpolation using the reference frequency
+$f_{\scriptstyle{\rm R}}$ specified in the parameter structure and the
+input series representing ${h_{100}}^2\Omega_{\scriptstyle{\rm
+    GW}}(f)$), then the output series is filled with the values
+corresponding to the definition (\ref{stochastic:e:QW}).
+
+The precise behavior of the normalization depends on the boolean
+parameter \verb+parameters->heterodyned+, which indicates whether the
+filter is to be used on heterodyned data or not.  In the case of
+heterodyned data, the integral is approximated by the sum
+$$
+\lambda \approx \frac{20\pi^2\, \Omega_{\scriptstyle{\rm R}}}{3\,{H_0}^2}
+\left(
+  \delta f\sum_{k=0}^{N-1}
+  (f_0 + k\,\delta f)^{-6}
+  \frac{(\gamma[k]\,\Omega_{\scriptstyle{\rm GW}}[k])^2}{P_1[k]P_2[k]}
+\right)^{-1}
+\approx
+\frac{20\pi^2\, \Omega_{\scriptstyle{\rm R}}}{3\,{H_0}^2}
+\left(
+      \int_{f_0}^{f_0+N\delta f} \frac{df}{f^6} 
+      \frac{[\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)]^2}{P_1(f)P_2(f)}
+\right)^{-1}
+$$
+(Leaving out frequencies outside the band is equivalent to assuming
+one or both of the noise PSDs $P_{1,2}(f)$ blows up outside that
+range.)
+
+In the case of non-heterodyned data with $f_0=0$, we calculate
+$$
+\lambda \approx \frac{20\pi^2\, \Omega_{\scriptstyle{\rm R}}}{3\,{H_0}^2}
+\left(
+  \delta f\, 2\ {\mathrm{Re}}  \sum_{k=0 \scriptstyle{\rm or } 1}^{N-1}
+  (k\,\delta f)^{-6}
+  \frac{(\gamma[k]\,\Omega_{\scriptstyle{\rm GW}}[k])^2}{P_1[k]P_2[k]}
+\right)^{-1}
+$$
+which includes negative frequencies as well.  The difference
+between the two is because the cross-correlation statistic appearing
+in the definition (\ref{stochastic:e:mu}) is the one calculated by
+\texttt{StochasticHeterodynedCrossCorrelationStatistic()} in the case
+of heterodyned and \texttt{StochasticCrossCorrelationStatistic()} in
+the case of non-heterodyned data.
 
 \subsubsection*{Uses}
 
@@ -157,7 +195,10 @@ LALUnitCompare()
 \subsubsection*{Notes}
 
 \begin{itemize}
-\item This routine does not yet support non-zero heterodyning frequencies.
+\item The reference frequency $f_{\scriptstyle{\rm R}}$ must lie
+  safely enough in the frequency range of the inputs to allow the
+  value of ${h_{100}}^2\Omega_{\scriptstyle{\rm R}}$ to be determined
+  by interpolation.
 \item The implementation of the optimal filter function given here
   assumes a large observation time continuum-limit approximation.  In
   this limit, the Dirichlet kernels (which appear in an exact
@@ -659,8 +700,8 @@ LALStochasticOptimalFilter(
     if (omega1 <= 0)
     {
       ABORT( status,
-	     STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA,
-	     STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA );
+             STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA,
+             STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA );
     }
     else
     {

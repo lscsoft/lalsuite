@@ -64,10 +64,9 @@ the corresponding checks in the code are made using the ASSERT macro):
 It then verifies that the correct cross-correlation statistic (value
 and units) is generated for each of the following simple test cases:
 \begin{enumerate}
-\item $\widetilde{Q}(f) = \frac{f(N\,\delta f - f)}{(N\,\delta
-    f/2)^2}$; $\widetilde{\bar{h}}_1(f)=f^2+if$,
-  $\widetilde{\bar{h}}_2(f)=f^{-2}-if^{-1}$.  The expected result in
-  this case is zero.
+\item $\widetilde{Q}(f) = x(1-x)$; $\widetilde{\bar{h}}_1(f)=x^2+ix$,
+  $\widetilde{\bar{h}}_2(f)=x^{-2}-ix^{-1}$, with $x=400\,\textrm{Hz}$
+  The expected result in this case is zero.
 \item $\widetilde{Q}(f) = 1$ for
   $300\,\textrm{Hz}<f<500\,\textrm{Hz}$, 0 otherwise;
   $\widetilde{\bar{h}}_1(f)=1-\widetilde{\bar{h}}_2(f)=f/800\,\textrm{Hz}$.
@@ -222,7 +221,7 @@ int main( int argc, char *argv[] )
   CHARVector               *unitString = NULL;
 
   UINT4 i;
-  REAL4 omega, f;
+  REAL4 omega, f, x;
   INT4 code;
   
   ParseOptions( argc, argv );
@@ -679,18 +678,14 @@ int main( int argc, char *argv[] )
   
   for (i=1; i<STOCHASTICCROSSCORRELATIONSTATISTICTESTC_LENGTH; ++i)
   {
-    f =  i * STOCHASTICCROSSCORRELATIONSTATISTICTESTC_DELTAF;
-    goodData1.data->data[i].re = f*f
-      /(STOCHASTICCROSSCORRELATIONSTATISTICTESTC_FLIM
-        * STOCHASTICCROSSCORRELATIONSTATISTICTESTC_FLIM / 4.0);
-    goodData1.data->data[i].im = f/(STOCHASTICCROSSCORRELATIONSTATISTICTESTC_FLIM/2.0);
+    f = i * STOCHASTICCROSSCORRELATIONSTATISTICTESTC_DELTAF;
+    x = f / (STOCHASTICCROSSCORRELATIONSTATISTICTESTC_FLIM / 2.0);
+    goodData1.data->data[i].re = x*x;
+    goodData1.data->data[i].im = x;
     goodData2.data->data[i].re = 1.0/goodData1.data->data[i].re;
     goodData2.data->data[i].im = -1.0/goodData1.data->data[i].im;
     goodFilter.data->data[i].re 
-      = f * ( STOCHASTICCROSSCORRELATIONSTATISTICTESTC_FLIM - f)
-      / (STOCHASTICCROSSCORRELATIONSTATISTICTESTC_FLIM
-         * STOCHASTICCROSSCORRELATIONSTATISTICTESTC_FLIM/4);
-    goodFilter.data->data[i].im = 0.0;
+      = x * (2-x);
   }
 
   LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
