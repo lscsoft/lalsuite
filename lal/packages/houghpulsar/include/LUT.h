@@ -544,35 +544,17 @@ NRCSID (LUTH, "$Id$");
 /* Maximum ``error'' (as a fraction of the width of the thinnest annulus) */
 /* which allows to consider two border equivalents!  */
 /*It is relevant for determining the LUT frequency range validity */
-#define PIXERR     0.1
+ /* #define PIXERR     0.1 */
+#define PIXERR     0.5
   
 
 /* Width of the thinnest annulus in terms of pixels */
-#define PIXELFACTORX  2
-#define PIXELFACTORY  2
+#define PIXELFACTOR  2
 
 /* Earth v_epicycle/c, & v_total/c TO BE CHANGED DEPENDING ON DETECTOR */
 #define VEPI 1.0e-06
-#define VTOT 1.0e-04
-
-/*  Maximun number of pixels in a given patch  SIDEX x SIDEY */
-/* These numbers should be integers !!! */
-/* It comes from assuming that: */
-/* - the 'longitudinal' patch size is dF*10^6/f0, where 10^6 = c/v_epicycle */
-/* - the thinnest possible annulus is dF*10^4/f0, where 10^4 = c/v_tot */
-/* the ratio (longitudinal patch size)/(width thinnest annuli) = 100.  */
-/* 100 => TO BE CHANGED DEPENDING ON DETECTOR */
-
-#define SIZEFACTOR 10
-
-#define SIDEX   (100* PIXELFACTORX* SIZEFACTOR)
-#define SIDEY   (100* PIXELFACTORY* SIZEFACTOR)
-
-/* Maximun number of bins that can affect a patch */
-#define MAX_N_BINS     (150* SIZEFACTOR)
-
-/* Maximun number of borders in a patch */
-#define MAX_N_BORDERS  (208* SIZEFACTOR)
+/* #define VTOT 1.08e-04 , or let's make it bigger for security */
+#define VTOT 1.06e-04
 
 
 
@@ -580,8 +562,8 @@ NRCSID (LUTH, "$Id$");
  * 10. Structure, enum, union, etc., typdefs.
  */
  
-
-typedef INT4 COORType; 
+typedef INT2 COORType; 
+ /* typedef INT4 COORType; */
   /* typedef  UCHAR COORType; */  
 
 typedef struct tagHOUGHBorder{
@@ -611,7 +593,7 @@ typedef struct tagHOUGHptfLUT{
   INT2    timeIndex;  /* time index of the LUT */
   INT8    f0Bin;      /* freq. bin for which it has been constructed */
   REAL8   deltaF;     /* df=1/TCOH */
-  INT4    nFreqValid; /* number of frequencies where the LUT is valid */
+  INT8    nFreqValid; /* number of frequencies where the LUT is valid */
   INT4    iniBin;     /* first bin affecting the patch with respect to f0 */
   INT4    nBin;       /* number of bins affecting the patch */
   INT4    offset;      /* freq. bin (wrt f0Bin) containing center of patch  */ 
@@ -628,34 +610,44 @@ typedef struct tagHOUGHptfLUT{
 typedef struct tagHOUGHPatchGrid{
   REAL8   f0;         /* frequency to construct grid */
   REAL8   deltaF;     /* df=1/TCOH */
-  REAL8   patchSizeX;     /* Size of sky patch in radians */
-  REAL8   patchSizeY;
-  REAL8   minWidthRatio; /* (min annuli width in this search)/(min annuli 
-			    width in 1 year)  [1.0, 25.0] */
   REAL8   deltaX;
   REAL8   xMin;     /* patch limits, as centers of the last pixels */
   REAL8   xMax;
   UINT2   xSide;    /* number of pixels in the x direction (projected plane)*/
-  UINT2   xSideMax; /* maximun number of pixels in the x direction 
-  			(for memory allocation). i.e., length of xCoor */
   REAL8   *xCoor;   /* coordinates of the pixel centers */
   REAL8   deltaY;
   REAL8   yMin;     /* patch limits,as centers of the last pixels */
   REAL8   yMax;
   UINT2   ySide;    /* number of pixels in the y direction */
-  UINT2   ySideMax; /* maximun number of pixels in the y direction 
-  			(for memory allocation). i.e., length of yCoor */
   REAL8   *yCoor;   /* coordinates of the pixel centers  */
 } HOUGHPatchGrid;
 
 typedef struct tagHOUGHResolutionPar{
-  REAL8   f0;            /* frequency to construct grid */
+  INT8    f0Bin; /* frequency bin */
   REAL8   deltaF;        /* df=1/TCOH */
-  REAL8   patchSizeX;     /* Size of sky patch in radians */
-  REAL8   patchSizeY;
-  REAL8   minWidthRatio; /* (min annuli width in this search)/(min annuli 
-			    width in 1 year)  [1.0, 25.0] */
+  REAL8   patchSkySizeX;     /* Size of sky patch in radians */
+  REAL8   patchSkySizeY;
+  UINT2   pixelFactor; /* number of pixel that fit in the thinnest annulus*/
+  REAL8   pixErr;   /* for validity of LUT as PIXERR */
+  REAL8   linErr;   /* as LINERR circle ->line */
+  REAL8   vTotC;    /* estimate value of v-total/C as VTOT */
 } HOUGHResolutionPar;
+
+typedef struct tagHOUGHSizePar{
+  INT8    f0Bin; /* corresponding freq. bin  */
+  REAL8   deltaF;        /* df=1/TCOH */
+  REAL8   deltaX; /* pixel size in the projected plane */
+  REAL8   deltaY;
+  UINT2   xSide;    /* number of pixels in the x direction (projected plane)*/
+  UINT2   ySide;    /* number of pixels in the y direction */ 
+  UINT2   maxNBins;    /* maximum number of bins affecting the patch. For
+                               memory allocation */
+  UINT2   maxNBorders; /* maximum number of borders affecting the patch. For
+                               memory allocation */  
+  INT8    nFreqValid; /* number of frequencies where the LUT is valid */
+  REAL8   epsilon; /* max. angle (rad.) from the pole to consider
+			       a circle as a line in the projected plane */
+} HOUGHSizePar;
 
 typedef struct tagREAL8Cart3Coor{
   REAL8  x;
@@ -684,7 +676,7 @@ typedef struct tagHOUGHParamPLUT{
   REAL8UnitPolarCoor   xi;  /* xi{alpha,delta} in rotated coordinates */
   REAL8            cosDelta;    /* Delta cos(phi) for one annulus */
   INT4             offset;
-  INT4             nFreqValid; 
+  INT8             nFreqValid; 
   REAL8            cosPhiMax0;
   REAL8            cosPhiMin0;
   REAL8            epsilon; /* max. angle (rad.) from the pole to consider
@@ -696,8 +688,6 @@ typedef struct tagHOUGHDemodPar{
   /* all coordinates with respect the same reference system */
   REAL8               deltaF;   /*   df=1/TCOH */
   REAL8UnitPolarCoor  skyPatch; /*   N_center {alpha, delta} */
-  REAL8               patchSizeX; /* Patch Size information */
-  REAL8               patchSizeY;
   REAL8Cart3Coor      veloC;    /*   v(t)/c {x,y,z} */
   REAL8Cart3Coor      positC;   /*   (x(t)-x(t0))/c {x,y,z} */
   REAL8               timeDiff; /*   T(t)-T(t0) */
@@ -716,21 +706,31 @@ typedef struct tagHOUGHDemodPar{
 /*
  * 12. Functions Declarations (i.e., prototypes).
  */
-  
-void LALHOUGHPatchGrid (LALStatus      *status,
-                   HOUGHPatchGrid      *out,  /* Patch Grid info */
-                   HOUGHResolutionPar  *in1   /*  */
+void LALHOUGHComputeSizePar (LALStatus  *status, /* demod case */
+                   HOUGHSizePar        *out, 
+                   HOUGHResolutionPar  *in   
 		   );
+		   
+void LALHOUGHComputeNDSizePar (LALStatus  *status, /* non -demod case*/
+                   HOUGHSizePar          *out, 
+                   HOUGHResolutionPar    *in   
+		   );
+		   
+		   
+void LALHOUGHFillPatchGrid (LALStatus   *status,
+		   HOUGHPatchGrid      *out,
+                   HOUGHSizePar        *par 
+		       );
 
-void LALHOUGHParamPLUT (LALStatus   *status,
+void LALHOUGHParamPLUT (LALStatus   *status, /* Demod. case */
                    HOUGHParamPLUT   *out,  /* parameters needed build LUT*/
-		   INT8             f0Bin, /* freq. bin to construct LUT */
+		   HOUGHSizePar     *sizePar, 
                    HOUGHDemodPar    *par  /* demodulation parameters */
 			);
 
-void LALNDHOUGHParamPLUT (LALStatus   *status,
+void LALNDHOUGHParamPLUT (LALStatus   *status, /* non-demod. case */
                    HOUGHParamPLUT   *out,  /* parameters needed build LUT*/
-		   INT8             f0Bin, /* freq. bin to construct LUT */
+		   HOUGHSizePar     *sizePar,  
                    HOUGHDemodPar    *par  /* demodulation parameters */
 			);
 
@@ -778,6 +778,8 @@ void LALHOUGHConstructPLUT(LALStatus       *status,
 #endif
 
 #endif     /* Close double-include protection _LUT_H */
+
+
 
 
 
