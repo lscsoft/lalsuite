@@ -272,11 +272,6 @@ int main( int argc, char *argv[])
       if (params->initParams->numSegments > totalNumSegs)
         params->initParams->numSegments = totalNumSegs;
 
-      /* allocate memory for the conditioned segments */
-      params->epSegVec     = NULL;
-      LAL_CALL( LALCreateEPDataSegmentVector (&stat, &(params->epSegVec), 
-            params->initParams), &stat); 
-
       /* decrement the total number of segments */
       if (totalNumSegs >= params->initParams->numSegments+1 )
       {
@@ -620,10 +615,6 @@ int main( int argc, char *argv[])
       {
         LAL_CALL( LALCDestroyVector( &stat, &(resp.data) ), &stat);
       }
-
-      /* destroy the epSegvec created at the begining of this loop */
-      LAL_CALL( LALDestroyEPDataSegmentVector( &stat, &(params->epSegVec) ), &stat);
-
     } 
     /*******************************************************************
      * while (totalNumSegs>0){..  ends here
@@ -1532,7 +1523,6 @@ int initializeEPSearch(
 
     /* initialize parameter structures */
     (*params)->tfTiling     = NULL;
-    (*params)->epSegVec     = NULL;
     (*params)->numSlaves    = NULL;
 
     /* initialize parameters */

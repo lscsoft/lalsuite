@@ -36,7 +36,6 @@ LALCreateEPDataSegmentVector (
   ASSERT (params->numPoints > 0, status, EPDATA_ENUMZ, EPDATA_MSGENUMZ);
 
   vectorPtr = *vector = (EPDataSegmentVector *) LALMalloc (sizeof(EPDataSegmentVector));
-  vectorPtr->length = params->numSegments;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);

@@ -104,7 +104,6 @@ NRCSID (EPSEARCHH, "$Id$");
 typedef struct
 tagEPDataSegmentVector
 {
-  UINT4                         length;
 }
 EPDataSegmentVector;
 
@@ -134,7 +133,6 @@ tagEPSearchParams
   INT4                          events2Master;     /* Added Erik Kats */
   CHAR                         *channelName;       /* Added Erik Kats */
   EPInitParams                 *initParams;
-  EPDataSegmentVector          *epSegVec;
   CreateTFTilingIn             *tfTilingInput;
   TFTiling                     *tfTiling;
   ComputeExcessPowerIn         *compEPInput;

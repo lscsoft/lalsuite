@@ -551,13 +551,7 @@ void EPInitSearch(
 
     /* initialize parameter structures */
     (*params)->tfTiling     = NULL;
-    (*params)->epSegVec     = NULL;
     (*params)->numSlaves    = NULL;
-
-    /* allocate memory for the conditioned segments */
-    LALCreateEPDataSegmentVector (status->statusPtr, &((*params)->epSegVec), 
-            (*params)->initParams);  
-    CHECKSTATUSPTR (status);
 
     /* initialize parameters */
     (*params)->haveData        = 0;
@@ -593,7 +587,6 @@ void EPConditionData(
     INT8                          dataTimeNS  = 0;
     REAL4                        *dummyData    = NULL;  
     REAL4                         fsafety=0;
-    EPDataSegmentVector          *dataSegVec = NULL;
     PassBandParamStruc            highpassParam;
 
     /* resample parameters */
@@ -671,7 +664,6 @@ void EPConditionData(
      * function data
      *
      ****************************************************************/
-    dataSegVec = params->epSegVec;
 
     /* Set up for a highpass filter */
     highpassParam.nMax = 4;
@@ -726,9 +718,6 @@ EPFinalizeSearch(
     ABORT( status, EPSEARCHH_ENULLP, EPSEARCHH_MSGENULLP );
   }
 
-  /* destroy memory for conditioned segments [ Now moved inside the power code]*/
-  /* LALDestroyEPDataSegmentVector(status->statusPtr, &(*params->epSegVec));*/
-  
   if ( (*params)->searchMaster )
   {
     /* free numSlaves */
