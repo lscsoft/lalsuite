@@ -45,6 +45,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* counters */
   INT4 i;
 
+  /* combined statistics variables */
+  REAL8 numerator = 0;
+  REAL8 yOpt = 0;
+  REAL8 sigmaOpt = 0;
+
   /* program option variables */
   CHAR *outputFileName = NULL;
 
@@ -178,6 +183,19 @@ INT4 main(INT4 argc, CHAR *argv[])
       }
     }
   }
+
+  /* combine statistics */
+  for (thisStoch = stochHead; thisStoch; thisStoch = thisStoch->next)
+  {
+    numerator += thisStoch->cc_stat / (thisStoch->cc_sigma * \
+        thisStoch->cc_sigma);
+    sigmaOpt += thisStoch->cc_sigma * thisStoch->cc_sigma;
+  }
+  yOpt = numerator / sigmaOpt;
+
+  /* print results */
+  fprintf(stdout, "    yOpt = %e\n", yOpt);
+  fprintf(stdout, "sigmaOpt = %e\n", sigmaOpt);
 
   if (text_flag)
   {
