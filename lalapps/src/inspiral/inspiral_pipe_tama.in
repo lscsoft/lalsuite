@@ -159,10 +159,14 @@ Usage: lalapps_inspiral_pipe [options]
   -h, --help               display this message
   -v, --version            print version information and exit
   -u, --user-tag TAG       tag the job with TAG (overrides value in ini file)
- 
+
+  -s, --output-segments    output the analyzed segments and exit
+  -t, --tama-overlap       analyze only times in coincidence with TAMA 
   -j, --injections FILE    add simulated inspirals from sim_inspiral in FILE
 
   -P, --priority PRIO      run jobs with condor priority PRIO
+
+  -p, --playground-only    only analyze jobs in the playground
 
   -l, --log-path PATH      directory to write condor log file
   -f, --config-file FILE   use configuration file FILE
@@ -171,15 +175,18 @@ Usage: lalapps_inspiral_pipe [options]
 
 ##############################################################################
 # pasrse the command line options to figure out what we should do
-shortop = "hvu:cj:P:l:f:"
+shortop = "hvu:cj:pP:l:f:st"
 longop = [
   "help",
   "version",
   "user-tag=",
   "injections=",
+  "playground-only",
   "priority=",
   "log-path=",
   "config-file=",
+  "output-segments",
+  "tama-overlap"
   ]
 
 try:
@@ -193,7 +200,10 @@ inj_file = None
 condor_prio = None
 log_path = None
 config_file = None
-check_bkgr_dag = None
+output_segs = None
+tama_overlap = None
+playground_only = 0
+
 
 for o, a in opts:
   if o in ("-h", "--help"):
@@ -208,8 +218,14 @@ for o, a in opts:
     sys.exit(0)
   elif o in ("-u", "--user-tag"):
     usertag = a
+  elif o in ("-s", "--output-segments"):
+    output_segs = 1
+  elif o in ("-t", "--tama-overlap"):
+    tama_overlap = 1
   elif o in ("-j", "--injections"):
     inj_file = a
+  elif o in ("-p", "--playground-only"):
+    playground_only = 1
   elif o in ("-P", "--priority"):
     condor_prio = a
   elif o in ("-l", "--log-path"):
@@ -344,10 +360,12 @@ sys.stdout.flush()
 l1_data = pipeline.ScienceData()
 h1_data = pipeline.ScienceData()
 h2_data = pipeline.ScienceData()
+t_data = pipeline.ScienceData()
 
 l1_data.read(cp.get('input','l1-segments'),length)
 h1_data.read(cp.get('input','h1-segments'),length)
 h2_data.read(cp.get('input','h2-segments'),length)
+t_data.read('tama_segs.txt',0)
 print "done"
 
 ##############################################################################
@@ -356,19 +374,18 @@ print "done"
 # analyze (since all the science segments are over length seconds.) 
 print "making master chunks...",
 sys.stdout.flush()
-l1_data.make_chunks(length,overlap,0)
-h1_data.make_chunks(length,overlap,0)
-h2_data.make_chunks(length,overlap,0)
+l1_data.make_chunks(length,overlap,playground_only)
+h1_data.make_chunks(length,overlap,playground_only)
+h2_data.make_chunks(length,overlap,playground_only)
 
-l1_data.make_chunks_from_unused(length,overlap/2,0,0)
-h1_data.make_chunks_from_unused(length,overlap/2,0,0)
-h2_data.make_chunks_from_unused(length,overlap/2,0,0)
+l1_data.make_chunks_from_unused(length,overlap/2,playground_only,0)
+h1_data.make_chunks_from_unused(length,overlap/2,playground_only,0)
+h2_data.make_chunks_from_unused(length,overlap/2,playground_only,0)
 print "done"
 
 ##############################################################################
-# Step 3: find all data that is double coincident between LLO and LHO
-# and will have been analyzed in the S2 pipeline.
-print "determining double coincident LL0 LH0 data"
+# Step 3: find all data that is analyzable.
+print "determining analyzable data"
 sys.stdout.flush()
 
 l1_data_out = copy.deepcopy(l1_data)
@@ -388,24 +405,18 @@ not_h1_data_out.invert()
 not_h2_data_out = copy.deepcopy(h2_data_out)
 not_h2_data_out.invert()
 
-lho_data_out = copy.deepcopy(h1_data_out)
-lho_data_out.union(h2_data_out)
-
-llo_lho_data = copy.deepcopy(l1_data_out)
-llo_lho_data.intersection(lho_data_out)
-llo_lho_data.coalesce()
 print "done"
 
 ##############################################################################
 # Step 4: find all single ifo L1 data that we can analyze
 print "computing L1 single ifo data..."
 sys.stdout.flush()
-
 l1_single_data = copy.deepcopy(l1_data_out)
 l1_single_data.intersection(not_h1_data_out)
 l1_single_data.intersection(not_h2_data_out)
+if tama_overlap:
+  l1_single_data.intersection(t_data)
 l1_single_data.coalesce()
-
 print "done"
 
 
@@ -413,11 +424,12 @@ print "done"
 # Step 5: Compute the ScienceSegments for the H1/H2 double coincident data
 print "computing H1/H2 double coincident data..."
 sys.stdout.flush()
-
 h1_h2_data = copy.deepcopy(h1_data_out)
 h1_h2_data.intersection(h2_data_out)
 h1_h2_data.intersection(not_l1_data_out)
-
+if tama_overlap:
+  h1_h2_data.intersection(t_data)
+h1_h2_data.coalesce()
 print "done"
 
 ##############################################################################
@@ -427,17 +439,23 @@ sys.stdout.flush()
 
 h1_data_to_do = copy.deepcopy(h1_data_out)
 h1_data_to_do.intersection(not_l1_data_out)
+if tama_overlap:
+  h1_data_to_do.intersection(t_data)
+h1_data_to_do.coalesce()
 
 h1_single_data = copy.deepcopy(h1_data_out)
 h1_single_data.intersection(not_l1_data_out)
 h1_single_data.intersection(not_h2_data_out)
+if tama_overlap:
+  h1_single_data.intersection(t_data)
 h1_single_data.coalesce()
 
 h2_single_data = copy.deepcopy(h2_data_out)
 h2_single_data.intersection(not_l1_data_out)
 h2_single_data.intersection(not_h1_data_out)
+if tama_overlap:
+  h2_single_data.intersection(t_data)
 h2_single_data.coalesce()
-
 print "done"
 
 ##############################################################################
@@ -659,6 +677,13 @@ for seg in l1_single_data:
   total_time += seg.dur()
 print >> log_fh, "\n total time", total_time, "seconds"
 
+if output_segs:
+  f = open('l1_segs_analyzed.txt', 'w')
+  for seg in l1_single_data:
+    f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+      seg.dur()))
+  f.close()
+
 print >> log_fh, "\n===========================================\n"
 log_fh.write( "Writing " + str(len(h1_single_data)) + 
   " H1 science segments\n" )
@@ -667,6 +692,14 @@ for seg in h1_single_data:
   print >> log_fh, seg
   total_time += seg.dur()
 print >> log_fh, "\n total time", total_time, "seconds"
+
+if output_segs:
+  f = open('h1_segs_analyzed.txt', 'w')
+  for seg in h1_single_data:
+    f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+      seg.dur()))
+  f.close()
+
 
 print >> log_fh, "\n===========================================\n"
 log_fh.write( "Writing " + str(len(h2_single_data)) + 
@@ -677,6 +710,13 @@ for seg in h2_single_data:
   total_time += seg.dur()
 print >> log_fh, "\n total time", total_time, "seconds"
 
+if output_segs:
+  f = open('h2_segs_analyzed.txt', 'w')
+  for seg in h2_single_data:
+    f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+      seg.dur()))
+  f.close()
+
 print >> log_fh, "\n===========================================\n"
 log_fh.write( "Writing " + str(len(h1_h2_data)) + 
   " H1/H2 double coincident segments\n" )
@@ -685,4 +725,34 @@ for seg in h1_h2_data:
   print >> log_fh, seg
   total_time += seg.dur()
 print >> log_fh, "\n total time", total_time, "seconds"
+
+if output_segs:
+  f = open('h1_h2_segs_analyzed.txt', 'w')
+  for seg in h1_h2_data:
+    f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+      seg.dur()))
+  f.close()
+
+  ligo_data = copy.deepcopy(l1_single_data)
+  ligo_data.union(h1_single_data)
+  ligo_data.union(h2_single_data)
+  ligo_data.union(h1_h2_data)
+  if playground_only:
+    ligo_data.play()
+  ligo_data.coalesce()
+
+  f = open('ligo_segs_analyzed.txt', 'w')
+  for seg in ligo_data:
+    f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+      seg.dur()))
+  f.close()
+
+  lt_data = copy.deepcopy(ligo_data)
+  lt_data.intersection(t_data)
+
+  f = open('ligo_tama_segs_analyzed.txt', 'w')
+  for seg in lt_data:
+    f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+      seg.dur()))
+  f.close()
 sys.exit(0)
