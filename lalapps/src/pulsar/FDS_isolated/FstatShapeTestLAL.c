@@ -22,20 +22,23 @@
   ./FstatShapeTestLAL -o FaFb00.001 -t FaFb01.001 > FST.txt
  
   (4)Validation:
-  Generate 10^4 signals of SNR = \sqrt{2F} ranging from sqrt(20) to ~ 30 with 
-  a Gaussian white noise, run ComputeFStatistic with the threshold on 2F being 20. 
-  The code reported 81748 outliers that includes statistical disturbances. The 
-  resulting veto statistics by the original FstatShapeTest are consistent with those 
-  by this LALAppsified code with a relative difference of 6x10^-8. 
+  Generate 10^5 signals of SNR = \sqrt{2F} ranging from sqrt(20) to ~ 30 with 
+  a Gaussian stationary noise, run ComputeFStatistic with the threshold on 
+  2F being 20.  The code reported 789135 outliers that includes statistical 
+  disturbances. The resulting veto statistics by the original FstatShapeTest 
+  are consistent with those by this LALAppsified code with a relative 
+  difference of 6x10^-8. 
 
   
+  @todo 
+  <ul>
+  <li>Adopt LALUserInput command line argument parser.   
+  </ul>  
 
  */
 /*************************************** <lalVerbatim file="FstatShapeTestLALCV">
 $Id$
 ***************************************************************</lalVerbatim> */
-
-
 
 
 #include <stdio.h>
@@ -389,7 +392,7 @@ showHelp( LALStatus *status,
 {
   INITSTATUS( status, "showHelp", rcsid );
 
-  fprintf(stderr,"Usage: FstatShapeTest [-hC] [-otls <>]\n");
+  fprintf(stderr,"Usage: lalapps_FstatShapeTestLAL [-hC] [-otls <>]\n");
   fprintf(stderr,
 	  "\t -o: <CHAR STRING: filename> File <filename> contains the observed data to be vetoed: [%s]\n",cla->obsvdatafile);
   fprintf(stderr,
@@ -398,7 +401,7 @@ showHelp( LALStatus *status,
   fprintf(stderr,"\t -s <REAL8:>: significance level. [0.01]\n");
   fprintf(stderr,"\t -C : Compute Probability assuming chi square distribution. [False]\n");
   fprintf(stderr,"\t -h : Show this help\n");
-  fprintf(stderr,"Example: ./FstatShapeTest -o <ObservedDataFile> -t <VetoDataFile>\n");
+  fprintf(stderr,"Example: ./lalapps_FstatShapeTestLAL -o <ObservedDataFile> -t <VetoDataFile>\n");
   fprintf(stderr,"Output from left to right:\n");
   fprintf(stderr,"\t (1) Frequency at which the maximum of F occurs\n");
   fprintf(stderr,"\t (2) Maximum of F in the cluster\n");
@@ -408,12 +411,15 @@ showHelp( LALStatus *status,
   fprintf(stderr,"\t [(5) Chi-square Q probability (\"Significance\" of the data)]\n");
   fprintf(stderr,"\t [(6) If 0, the observed signal is consistent with the veto signal, \n");
   fprintf(stderr,"\t with the significance level = %g.]\n", cla->sigLevel);
-  fprintf(stderr,"Expected File Format:\n");
-  fprintf(stderr,"\t (Number of points in cluster)\n");
+  fprintf(stderr,"Expected Input Files Format:\n");
+  fprintf(stderr,"\t (N: Number of points in cluster)\n");
   fprintf(stderr,"\t (Freqnecy where maximum of F occurs) (Maximum of F)\n");
-  fprintf(stderr,"\t (Leftmost frequency in cluster) (Frequency resolution)\n");
+  fprintf(stderr,"\t (f0: Leftmost frequency in cluster) (df: Frequency resolution)\n");
   fprintf(stderr,"\t (JKS A) (JKS B) (JKS C)\n");
-  fprintf(stderr,"\t (Frequency) (Re[Fa]) (Im[Fa]) (Re[Fb]) (Im[Fb])\n");
+  fprintf(stderr,"\t f0          Re[Fa(f0)]         Im[Fa] Re[Fb] Im[Fb]\n");
+  fprintf(stderr,"\t f0+df       Re[Fa(f0+df)]      Im[Fa] Re[Fb] Im[Fb]\n");
+  fprintf(stderr,"\t ...         ...                ...    ...    ...\n");
+  fprintf(stderr,"\t f0+(N-1)df  Re[Fa(f0+(N-1)df)] Im[Fa] Re[Fb] Im[Fb]\n");
   exit(0);
   /* should not be here */
   RETURN( status );
@@ -679,8 +685,9 @@ ComputeVetoStatistic( LALStatus *status,
        ) 
       {
 	RearrangeData( status->statusPtr, &CP, clustInfoPair );
-	BEGINFAIL( status )
+	BEGINFAIL( status ) {
 	  TRY( LALDDestroyVector( status->statusPtr, &searchFreq ), status );
+	}
 	ENDFAIL( status );
       }
 
