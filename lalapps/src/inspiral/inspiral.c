@@ -139,6 +139,8 @@ int main( int argc, char *argv[] )
   /* output data */
   MetadataTable         proctable;
   MetadataTable         procparams;
+  MetadataTable         summvalue;
+  SummValueTable        candleTable;
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       results;
 
@@ -195,7 +197,9 @@ int main( int argc, char *argv[] )
   /* make sure the pointer to the first event is null */
   savedEvents.snglInspiralTable = NULL;
 
-  /* create the standard candle */
+  /* create the standard candle and database table */
+  summvalue.summValueTable = &candleTable;
+  memset( &candleTable, 0, sizeof(SummValueTable) );
   memset( &candle, 0, sizeof(FindChirpStandardCandle) );
   strncpy( candle.ifo, ifo, 2 * sizeof(CHAR) );
   candle.tmplt.mass1 = CANDLE_MASS1;
@@ -206,7 +210,6 @@ int main( int argc, char *argv[] )
     candle.tmplt.totalMass;
   candle.tmplt.eta = candle.tmplt.mu / candle.tmplt.totalMass;
 
-  
 
   /*
    *
@@ -917,7 +920,7 @@ cleanexit:
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
 
   /* write the process table */
-  snprintf( proctable.processTable->ifos, LIGOMETA_IFO_MAX, "%s", ifo );
+  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
         &accuracy ), &status );
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), 
@@ -939,6 +942,24 @@ cleanexit:
     procparams.processParamsTable = this_proc_param->next;
     LALFree( this_proc_param );
   }
+
+  /* write the summvalue table */
+  snprintf( summvalue.summValueTable->program, LIGOMETA_PROGRAM_MAX, 
+      "%s", PROGRAM_NAME );
+  summvalue.summValueTable->version = 0;
+  summvalue.summValueTable->start_time = gpsStartTime;
+  summvalue.summValueTable->end_time = gpsEndTime;
+  snprintf( summvalue.summValueTable->ifo, LIGOMETA_IFO_MAX, "%s", ifo );
+  snprintf( summvalue.summValueTable->name, LIGOMETA_SUMMVALUE_NAME_MAX, 
+      "%s", "inspiral_effective_distance" );
+  snprintf( summvalue.summValueTable->comment, LIGOMETA_SUMMVALUE_COMM_MAX, 
+      "%s", "1.4_1.4_8" );
+  summvalue.summValueTable->value = candle.effDistance;
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, summ_value_table ), 
+      &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, summvalue, 
+        summ_value_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
 
   /* write the inspiral events to the file */
   if ( savedEvents.snglInspiralTable )
