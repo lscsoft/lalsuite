@@ -154,6 +154,39 @@ echo "**************************************************************"
 AC_MSG_ERROR([FFTW must be properly installed.])
 ))])
 
+AC_DEFUN(AC_WITH_EXTRA_CPPFLAGS,
+[AC_ARG_WITH(
+	extra_cppflags, 
+	[  --with-extra-cppflags   Additional C preprocessor flags],
+	[ if test -n "${with_extra_cppflags}"
+	  then
+	    CPPFLAGS="$CPPFLAGS ${with_extra_cppflags}";
+	  fi
+	],)
+])
+
+AC_DEFUN(AC_WITH_EXTRA_CFLAGS,
+[AC_ARG_WITH(
+	extra_cflags, 
+	[  --with-extra-cflags     Additional C compiler flags],
+	[ if test -n "${with_extra_cflags}"
+	  then
+	    CFLAGS="$CFLAGS ${with_extra_cflags}";
+	  fi
+	],)
+])
+
+AC_DEFUN(AC_WITH_EXTRA_LDFLAGS,
+[AC_ARG_WITH(
+	extra_ldflags, 
+	[  --with-extra-ldflags    Additional linker flags],
+	[ if test -n "${with_extra_ldflags}"
+	  then
+	    LDFLAGS="$LDFLAGS ${with_extra_ldflags}";
+	  fi
+	],)
+])
+
 ## libtool.m4 - Configure libtool for the target system. -*-Shell-script-*-
 ## Copyright (C) 1996-1999, 2000 Free Software Foundation, Inc.
 ## Originally by Gordon Matzigkeit <gord@gnu.ai.mit.edu>, 1996

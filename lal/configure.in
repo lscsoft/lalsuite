@@ -24,6 +24,10 @@ AM_CONDITIONAL(MPI, test x$mpi = xtrue)
 
 AM_CONDITIONAL(FRAMEANDMPI, test x$frame = xtrue -a x$mpi = xtrue)
 
+AC_WITH_EXTRA_CPPFLAGS
+AC_WITH_EXTRA_CFLAGS
+AC_WITH_EXTRA_LDFLAGS
+
 dnl Checks for programs.
 AC_PROG_AWK
 AC_PROG_CC
@@ -55,29 +59,63 @@ if test "${frame}" = "true"; then
             AC_MSG_ERROR(FrameL.h not found or FRAMELIB_VERSION < 3.85)])
 fi
 
-MPILIBS=""
 if test "${mpi}" = "true"; then
-        save_CC="$CC"
-        CC="$MPICC"
-        if test -z "$MPILIBS"; then
-                AC_CHECK_FUNC(MPI_Init, [MPILIBS=" "])
-        fi
-        if test -z "$MPILIBS"; then
-                AC_CHECK_LIB(mpi, MPI_Init, [MPILIBS="-lmpi"])
-        fi
-        if test -z "$MPILIBS"; then
-                AC_MSG_ERROR(couldn't find mpi library for --enable-mpi)
-        else
-                AC_MSG_CHECKING(whether mpi works)
-                AC_TRY_LINK([#include <mpi.h>
-                        ], MPI_Finalize();,
-                        AC_MSG_RESULT(yes),
-                        AC_MSG_RESULT(no)
-                        AC_MSG_ERROR(mpi does not work))
-        fi
-        CC="$save_CC"
+
+  AC_MSG_CHECKING(for mpicc flags)
+
+  SHOWARG=""
+  MPICPPFLAGS=""
+  MPICFLAGS=""
+  MPILDFLAGS=""
+
+  if (($MPICC -compile_info 1>/dev/null 2>/dev/null) && ($MPICC -link_info 1>/dev/null 2>/dev/null)) ; then
+    for mpiarg in `$MPICC -compile_info` ; do
+      case $mpiarg in
+        -D*) MPICPPFLAGS="$MPICPPFLAGS $mpiarg" ;;
+        -I*) MPICPPFLAGS="$MPICPPFLAGS $mpiarg" ;;
+      esac
+    done
+    for mpiarg in `$MPICC -link_info` ; do
+      case $mpiarg in
+        -L*) MPILDFLAGS="$MPILDFLAGS $mpiarg" ;;
+        -l*) MPILDFLAGS="$MPILDFLAGS $mpiarg" ;;
+      esac
+    done
+  else
+    if ($MPICC -show 1>/dev/null 2>/dev/null) ; then
+      SHOWARG="-show"
+    elif ($MPICC -showme 1>/dev/null 2>/dev/null) ; then
+      SHOWARG="-showme"
+    else
+      AC_MSG_WARN(couldn't determine mpi compile flags)
+    fi
+    if test -n "$SHOWARG" ; then
+      for mpiarg in `$MPICC $SHOWARG` ; do
+        case $mpiarg in
+          -D*) MPICPPFLAGS="$MPICPPFLAGS $mpiarg" ;;
+          -I*) MPICPPFLAGS="$MPICPPFLAGS $mpiarg" ;;
+          -L*) MPILDFLAGS="$MPILDFLAGS $mpiarg" ;;
+          -l*) MPILDFLAGS="$MPILDFLAGS $mpiarg" ;;
+          -Wl*) MPICFLAGS="$MPICFLAGS $mpiarg" ;;
+        esac
+      done
+    fi
+  fi
+  AC_MSG_RESULT($MPICPPFLAGS $MPICFLAGS $MPILDFLAGS)
+
+  LIBS="$LIBS $MPILDFLAGS"
+  CPPFLAGS="$CPPFLAGS $MPICPPFLAGS"
+  CFLAGS="$CFLAGS $MPICFLAGS"
+
+  AC_CHECK_HEADER(mpi.h, ,AC_MSG_ERROR(can't find mpi.h))
+
+  AC_MSG_CHECKING(whether mpi works)
+  AC_TRY_LINK([#include <mpi.h>
+    ], MPI_Finalize();,
+    AC_MSG_RESULT(yes),
+    AC_MSG_RESULT(no)
+    AC_MSG_ERROR(mpi does not work))
 fi
-AC_SUBST(MPILIBS)
 
 dnl Checks for header files.
 AC_HEADER_STDC

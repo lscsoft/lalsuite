@@ -9,6 +9,4 @@ endif
 
 EXTRA_DIST       = FindChirpExch.c
 
-CC=@MPICC@
-
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include

@@ -9,7 +9,5 @@ endif
 
 EXTRA_DIST       = Comm.c
 
-CC=@MPICC@
-
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
