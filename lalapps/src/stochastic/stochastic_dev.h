@@ -1,6 +1,7 @@
 /*
- * stochasticPipeline.h - SGWB Standalone Analysis Pipeline
- *                      - header file
+ * stochastic_dev.h - SGWB Standalone Analysis Pipeline
+ *                  - header file
+ *                  - development branch
  *
  * Adam Mercer <ram@star.sr.bham.ac.uk>
  * Tania Regimbau <Tania.Regimbau@astro.cf.ac.uk>
@@ -15,7 +16,7 @@
 extern "C" {
 #endif
 
-NRCSID (STOCHASTICH, "$Id$" );
+NRCSID (STOCHASTICDEVH, "$Id$" );
 
 typedef struct tagStreamPair {
 	REAL4TimeSeries *streamOne;
@@ -61,12 +62,6 @@ void parseOptions(INT4 argc, CHAR *argv[]);
 void displayUsage(INT4 exitcode);
 void readDataPair(LALStatus *status, StreamPair *streamPair,
 		ReadDataPairParams *params);
-void monteCarlo (LALStatus *status, SSSimStochBGOutput *MCoutput,
-		MonteCarloInput  *MCinput, MonteCarloParams *MCparams);
-void monteCarloSplice (LALStatus *status, SSSimStochBGOutput *MCoutput,
-		MonteCarloInput  *MCinput, MonteCarloParams *MCparams);
-void SinusoidalSplice(REAL4Vector **longData, REAL4Vector **shortData,
-		REAL4Vector *output, UINT4 nSpliceSegs, INT4 offset);
 
 #ifdef  __cplusplus
 }
