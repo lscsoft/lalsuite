@@ -139,6 +139,7 @@ INT4 maskBin = -1;
 /* output file */
 CHAR *outputFilePath = NULL;
 
+/* program entry point */
 INT4 main(INT4 argc, CHAR *argv[])
 {
   /* lal initialisation variables */
@@ -832,6 +833,9 @@ INT4 main(INT4 argc, CHAR *argv[])
           streamParams.start = gpsSegStartTime.gpsSeconds;
           adam_readDataPair(&status, &streamPair, &streamParams, \
                 seriesOne, seriesTwo, gpsSegStartTime);
+          /*
+          readDataPair(&status, &streamPair, &streamParams);
+          */
 
           /* skip segment if data not found or corrupted with 0 values */
           if (status.statusCode != 0)
@@ -1029,6 +1033,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 
         adam_readDataPair(&status, &streamPair, &streamParams, \
               seriesOne, seriesTwo, gpsSegStartTime);
+        /*
+        readDataPair(&status, &streamPair, &streamParams);
+        */
 
         /* skip segment if data not found or corrupted with 0 values */
         if (status.statusCode != 0)
@@ -2804,10 +2811,10 @@ static void readDataPair(LALStatus *status,
   /* remove buffer, and hence corruption due to resampling */
   for (i = 0; i < params->duration * resampleRate; i++)
   {
-    streamPair->streamOne->data->data[i] = \
-                                           dataStreamOne->data->data[i + (resampleRate * params->buffer)];
-    streamPair->streamTwo->data->data[i] = \
-                                           dataStreamTwo->data->data[i + (resampleRate * params->buffer)];
+    streamPair->streamOne->data->data[i] = dataStreamOne->data->data[i + \
+                                           (resampleRate * params->buffer)];
+    streamPair->streamTwo->data->data[i] = dataStreamTwo->data->data[i + \
+                                           (resampleRate * params->buffer)];
   }
 
   /* clean up */
@@ -2843,9 +2850,10 @@ static void adam_readDataPair(LALStatus *status,
   /* get start of stream */
   streamStart = start.gpsSeconds;
 
-  /* get first bin required */
-  first = (params->start - streamStart) * resampleRate;
-  length = segmentDuration * resampleRate;
+  /* get first bin required, and length */
+  /* add buffer as code expects a 1s buffer either side of the segment */
+  first = (params->start - streamStart - 1) * resampleRate;
+  length = (segmentDuration + 2) * resampleRate;
 
   if (vrbflg)
     fprintf(stdout, "Allocating memory for raw data streams...\n");
