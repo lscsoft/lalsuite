@@ -248,7 +248,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* error handler */
 	status.statusPtr = NULL;
 	lal_errhandler = LAL_ERR_EXIT;
-	set_debug_level( "2" );
+	set_debug_level( "1" );
 
 	/* parse command line options */
 	parseOptions(argc, argv);
@@ -1206,11 +1206,11 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 
 		/* output to file */
-		fprintf(out, "%e %e\n", varTheo, y);
+		fprintf(out, "%e %e\n", sqrt(varTheo), y);
 	}
 
 	/* compute point estimate, error bar and report results */
-	errorBar = sqrt(1./inVarTheoSum);
+	errorBar = sqrt(1./inVarTheoSum) / (REAL8)segmentDuration;
 	pointEstimate = yWhitenedSum / (inVarTheoSum * (REAL8)segmentDuration);
 	fprintf(stdout, "error bar = %f s\n", errorBar);
 	fprintf(stdout, "h_0^2 omega = %f\n\n", pointEstimate);
