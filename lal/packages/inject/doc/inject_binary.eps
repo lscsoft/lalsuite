@@ -1,0 +1,260 @@
+%!PS-Adobe-2.0 EPSF-2.0
+%%Title: Binary orbital coordinates
+%%Creator: Teviet Creighton
+%%CreationDate: Tue Jun 25 17:01:21 2002
+%%Orientation: Portrait
+%%Pages: 0
+%%BoundingBox: 40 190 510 665
+%%EndComments
+
+
+% Draw bounding box.
+%40 190 moveto 40 665 lineto 510 665 lineto 510 190 lineto closepath stroke
+
+
+% Define some constants.
+/a 0.35 def  % squeeze factor of sky plane
+/v 30 def   % position angle of ascending node
+/i 40 def   % inclination of orbit
+/aa 35 def  % semimajor axis of orbit
+/ss 0.8 def % squeeze factor of orbit
+/oo -30 def % argument of periapsis
+/vv 100 def  % true anomaly
+
+% Derive some constants.
+/xv v sin 100 mul def
+/yv v cos a mul -100 mul def
+/b i cos yv mul i sin xv mul sub dup mul
+   xv dup mul i cos xv mul i sin yv mul add dup mul sub yv a div dup mul add
+   div sqrt def
+
+/az 1 a dup mul sub sqrt def
+/bz 1 b dup mul sub sqrt def
+
+/ee 1 ss ss mul sub sqrt def
+
+
+% Start drawing.
+306 396 translate
+2 2 scale
+
+% Draw line of sight.
+%gsave
+%  0 setgray 10 -130 10 120 180 arc -10 -130 10 0 60 arc
+%  gsave
+%    closepath clip newpath 0 -130 8 0 180 arc stroke
+%  grestore
+%  stroke
+%  0 -120 moveto 0 -100 lineto stroke
+%  0.7 setgray 0.5 -100 moveto 0.5 -100 az mul 3 sub lineto 1 0 rlineto
+%  -1.5 3 rlineto -1.5 -3 rlineto 1 0 rlineto -0.5 -100 lineto
+%  closepath fill
+%grestore
+
+% Draw North pole.
+gsave
+  0 setgray
+  -100 0.5 moveto -20 0 rlineto 0 1 rlineto -3 -1.5 rlineto
+  3 -1.5 rlineto 0 1 rlineto 20 0 rlineto closepath fill
+grestore
+
+% Draw backward arcs of ellipses.
+0.7 setgray
+gsave
+  1 a scale 0 0 100 0 180 arc stroke
+grestore
+gsave
+  i rotate 1 b scale 0 0 100 0 180 arc stroke
+grestore
+
+% Draw twice-shaded backwards arcs of ellipses.
+0.9 setgray
+gsave
+  1 a scale 0 0 100 0 360 arc closepath clip 1 1 a div scale
+  newpath i rotate 1 b scale 0 0 100 0 180 arc stroke
+grestore
+gsave
+  i rotate 1 b scale 0 0 100 0 360 arc closepath clip 1 1 b div scale
+  i neg rotate newpath 1 a scale 0 0 100 0 180 arc stroke
+grestore
+
+% Draw orbit.
+gsave
+
+  % Draw shaded back of orbit and line of apsides,
+  gsave
+    0.9 setgray i rotate 1 b scale oo rotate
+    0 0 moveto 1 ee add aa mul neg 0 lineto stroke
+    1 ss scale ee neg aa mul 0 aa 0 360 arc stroke
+
+  % and apoapsis.
+    1 ee add aa mul neg 0 moveto
+    1 1 ss div scale oo neg rotate 1 1 b div scale
+    currentpoint 1 0 360 arc closepath fill
+  grestore
+
+  % clip to front side of orbit
+  xv neg yv neg moveto xv yv lineto xv yv 100 add lineto
+  xv neg yv neg 100 add lineto closepath clip newpath
+
+  % draw front side of line of apsides
+  0.7 setgray i rotate 1 b scale oo rotate
+  0 0 moveto 1 ee sub aa mul 0 lineto currentpoint stroke moveto
+  0 1 17 { pop 2 0 rmoveto currentpoint gsave newpath
+  0.5 0 360 arc closepath fill grestore } for newpath
+
+  % draw arrow for argument of perihelion
+  gsave
+    -15 rotate
+    aa 1.2 mul 2 add 0 moveto 2 0 rlineto -4 6 rlineto -4 -6 rlineto
+    2 0 rlineto
+    0 0 aa 1.2 mul 2 sub -5 -60 oo sub arcn
+    0 0 aa 1.2 mul 2 add -60 oo sub -5 arc
+    closepath stroke
+  grestore
+
+  % draw true anomaly and its arrow
+  gsave
+    vv rotate
+    0 0 moveto 1 ee ee mul sub aa mul 1 vv cos ee mul add div 0 lineto
+    currentpoint stroke moveto
+    0 1 11 { pop 3 0 rmoveto currentpoint gsave newpath
+    0.5 0 360 arc closepath fill grestore } for newpath
+    -15 rotate
+    aa 1.2 mul 2 add 0 moveto 2 0 rlineto -4 6 rlineto -4 -6 rlineto
+    2 0 rlineto
+    0 0 aa 1.2 mul 2 sub -5 20 vv sub arcn
+    0 0 aa 1.2 mul 2 add 20 vv sub -5 arc
+    closepath stroke
+  grestore
+
+  % draw front side of orbit,
+  gsave
+    1 ss scale ee neg aa mul 0 aa 0 360 arc stroke
+  grestore
+
+  % periapsis,
+  1 ee sub aa mul 0 moveto
+  gsave
+    oo neg rotate 1 1 b div scale currentpoint 1 0 360 arc closepath fill
+  grestore
+
+  % and star.
+  vv rotate 1 ee ee mul sub aa mul 1 vv cos ee mul add div 0 moveto
+  vv neg oo sub rotate 1 1 b div scale currentpoint translate newpath
+  0 0 1.5 0 360 arc closepath
+  gsave
+    1 setgray fill
+  grestore
+  stroke
+%  0.2 setlinewidth 15 rotate 0.5 setgray
+%  1 1 6 { pop 3 0 moveto 6 0 lineto stroke 60 rotate } for
+%  30 rotate 1 1 6 { pop 3 0 moveto 4.5 0 lineto stroke 60 rotate } for
+  0.2 setlinewidth 0.5 setgray 15 rotate
+  1 1 4 { pop 0 0 3.5 -25 25 arc stroke 90 rotate } for
+  1 1 4 { pop 0 0 5   -12 12 arc stroke 90 rotate } for
+  1 1 4 { pop 0 0 6.5  -4  4 arc stroke 90 rotate } for
+
+grestore
+
+
+% Draw line of nodes
+gsave
+  0.7 setgray 1 a scale v rotate
+  0.5 -100 moveto 0 200 rlineto -1 0 rlineto 0 -200 rlineto closepath fill
+grestore
+
+% Draw forward arcs of ellipses and sphere.
+0 setgray
+gsave
+  1 a scale 0 0 100 -180 0 arc stroke
+grestore
+gsave
+  i rotate 1 b scale 0 0 100 -180 0 arc stroke
+grestore
+0 0 100 0 360 arc stroke
+
+% Draw ascending node.
+gsave
+  0 setgray 1 a scale v rotate
+  0.5 -100 moveto 0 -40 rlineto 1 0 rlineto -1.5 -8 rlineto
+  -1.5 8 rlineto 1 0 rlineto 0 40 rlineto closepath fill
+grestore
+%gsave
+%  0 setgray 1 a scale v rotate
+%  0 -100 moveto 1 2 scale
+%  0 1 10 { pop 0 -2 rmoveto currentpoint gsave newpath
+%  0.5 0 360 arc closepath fill grestore } for newpath
+%grestore
+
+% Draw node angle.
+0 setgray gsave 1 a scale
+xv 6 sub yv 12 sub a div moveto 6 5 a div rlineto -6 3 a div rlineto
+0 -4 a div 102 -94.5 v add -180 arcn
+0 -8 a div 102 -180 -94.5 v add arc closepath
+gsave 1 setgray fill grestore stroke grestore
+
+
+
+% Draw radial axis.
+gsave
+  0 setgray 1 az scale
+  0.5 100 moveto 0 30 rlineto 1 0 rlineto -1.5 3 rlineto
+  -1.5 -3 rlineto 1 0 rlineto 0 -30 rlineto closepath fill
+grestore
+
+% Draw z axis.
+gsave
+  0 setgray i rotate 1 bz scale
+  0.5 100 moveto 0 30 rlineto 1 0 rlineto -1.5 3 rlineto
+  -1.5 -3 rlineto 1 0 rlineto 0 -30 rlineto closepath fill
+grestore
+
+% Draw inclination angle.
+/e0 57 def
+/e1 84 def
+gsave
+  0 setgray i rotate 1 bz scale
+  0 0 121 e0 e1 arc 0 2 rlineto -8 -4 rlineto 8 -4 rlineto 0 2 rlineto
+  0 0 117 e1 e0 arcn closepath gsave 1 setgray fill grestore stroke
+grestore
+%gsave
+%  xv yv translate v cos 1 scale
+%  v i add dup sin a mul exch cos exch atan rotate
+%  43 -5 moveto -3 4 rlineto -4 -4 rlineto
+%  0 0 38 -8 12 i sub arcn 0 0 42 13 i sub -7 arc
+%  closepath stroke
+%grestore
+
+% Draw labels.
+
+/Symbol findfont 10 scalefont setfont
+0 setgray
+-50 -50 moveto (W) show
+0.5 setgray
+35 -5 moveto (w) show
+18 37 moveto (u) show
+/Times-Roman findfont 10 scalefont setfont
+((t)) show
+%0.7 setgray
+%-15 -15 moveto gsave 22 rotate (2a) show grestore
+0 setgray
+-40 100 moveto (i) show
+-132 -3 moveto (N) show
+-3 127 moveto (R) show
+-77 87 moveto (z) show
+0.5 setgray
+4 4 moveto
+gsave
+  22 rotate (r) show
+  /Times-Roman findfont 5 scalefont setfont
+  0 -0.5 rmoveto (p) show
+grestore
+
+% Ascending node symbol
+75 -50 translate 45 rotate 0.8 setlinewidth newpath
+0 -4.5 1.5 90 -270 arcn 0 0 3 -90 180 arc -4.5 0 1.5 0 -360 arcn stroke
+
+
+%showpage
+%%EOF
