@@ -60,13 +60,17 @@ NRCSID( LALINSPIRALH, "$Id$" );
 
 /* <lalErrTable> */
 
-#define LALINSPIRALH_ENULL          1
-#define LALINSPIRALH_EMEM           2
-#define LALINSPIRALH_EDIV0          4
-#define LALINSPIRALH_ESIZE          8
-#define LALINSPIRALH_ECHOICE       16
-#define LALINSPIRALH_EORDER        32 
-#define LALINSPIRALH_EAPPROXIMANT  64 
+#define LALINSPIRALH_ENULL           1
+#define LALINSPIRALH_EMEM            2
+#define LALINSPIRALH_EDIV0           4
+#define LALINSPIRALH_ESIZE           8
+#define LALINSPIRALH_ECHOICE        16
+#define LALINSPIRALH_EORDER         32 
+#define LALINSPIRALH_EAPPROXIMANT   64 
+#define LALINSPIRALH_EPSI0         128 
+#define LALINSPIRALH_EPSI3         256 
+#define LALINSPIRALH_EALPHA        512
+#define LALINSPIRALH_EFCUTOFF     1024
 
 
 #define LALINSPIRALH_MSGENULL         "Arguments contained an unexpected null pointer"
@@ -75,8 +79,11 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_MSGESIZE         "Invalid input range"
 #define LALINSPIRALH_MSGECHOICE       "Invalid choice for an input parameter"
 #define LALINSPIRALH_MSGEORDER        "unknown order specified"
-#define LALINSPIRALH_MSGEAPPROXIMANT  "Invalid choice for order of PN models"
-
+#define LALINSPIRALH_MSGEAPPROXIMANT  "Invalid model"
+#define LALINSPIRALH_MSGEPSI0         "psi0 must be > 0"
+#define LALINSPIRALH_MSGEPSI3         "psi3 must be < 0"
+#define LALINSPIRALH_MSGEALPHA        "alpha must be defined positive"
+#define LALINSPIRALH_MSGEFCUTOFF      "fcutoff must be defined and > 0"
 
 /* </lalErrTable> */
 
