@@ -39,6 +39,9 @@ class DataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['datafind']:
       self.add_ini_args(cp,sec)
 
+    self.add_condor_cmd('environment',
+      """LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH)""" )
+
     self.set_stderr_file('logs/datafind-$(instrument)-$(start)-$(end).err')
     self.set_stdout_file('cache/$(instrument)-$(start)-$(end).cache')
     self.set_sub_file('datafind.sub')
