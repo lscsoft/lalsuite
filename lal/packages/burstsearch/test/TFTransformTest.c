@@ -330,16 +330,16 @@ main (int argc, char *argv[])
     winParams.length=tseglength;
 
     LALCreateRealDFTParams( &status, NULL, &winParams, 1); 
-    TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
 
     winParams.length=0;
     LALCreateRealDFTParams( &status, &(transformparams.dftParams), &winParams, 1);  
-    TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
     winParams.length=tseglength;
     
     transformparams.dftParams=NULL;
     LALDestroyRealDFTParams( &status, &(transformparams.dftParams)); 
-    TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
 
     /* next few tests require a valid DFTParams */
     
@@ -347,17 +347,17 @@ main (int argc, char *argv[])
     TestStatus (&status, CODES(0), 1);
 
     LALCreateRealDFTParams( &status, &(transformparams.dftParams), &winParams, 1);
-    TestStatus (&status, CODES(TFTRANSFORM_EALLOCP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_EALLOCP), 1);
 
     LALDestroyRealDFTParams( &status, NULL);
-    TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
 
     {
       RealFFTPlan *p;
       p = transformparams.dftParams->plan;
       transformparams.dftParams->plan = NULL;
       LALDestroyRealDFTParams( &status, &(transformparams.dftParams));
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       transformparams.dftParams->plan = p;
     }
 
@@ -366,7 +366,7 @@ main (int argc, char *argv[])
       p = transformparams.dftParams->window;
       transformparams.dftParams->window = NULL;
       LALDestroyRealDFTParams( &status, &(transformparams.dftParams));
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       transformparams.dftParams->window = p;
     }
 
@@ -392,16 +392,16 @@ main (int argc, char *argv[])
     winParams.length=tseglength;
 
     LALCreateComplexDFTParams( &status, NULL, &winParams, 1); 
-    TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
 
     winParams.length=0;
     LALCreateComplexDFTParams( &status, &(transformparams1.dftParams), &winParams, 1);  
-    TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
     winParams.length=tseglength;
     
     transformparams.dftParams=NULL;
     LALDestroyComplexDFTParams( &status, &(transformparams1.dftParams)); 
-    TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
 
     /* next few tests require a valid DFTParams */
     
@@ -409,11 +409,11 @@ main (int argc, char *argv[])
     TestStatus (&status, CODES(0), 1);
 
     LALCreateComplexDFTParams( &status, &(transformparams1.dftParams), &winParams, 1);
-    TestStatus (&status, CODES(TFTRANSFORM_EALLOCP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_EALLOCP), 1);
 
 
     LALDestroyComplexDFTParams( &status, NULL);
-    TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
 
 
     {
@@ -421,7 +421,7 @@ main (int argc, char *argv[])
       p = transformparams1.dftParams->plan;
       transformparams1.dftParams->plan = NULL;
       LALDestroyComplexDFTParams( &status, &(transformparams1.dftParams));
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       transformparams1.dftParams->plan = p;
     }
 
@@ -430,7 +430,7 @@ main (int argc, char *argv[])
       p = transformparams1.dftParams->window;
       transformparams1.dftParams->window = NULL;
       LALDestroyComplexDFTParams( &status, &(transformparams1.dftParams));
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       transformparams1.dftParams->window = p;
     }
 
@@ -467,20 +467,20 @@ main (int argc, char *argv[])
     TestStatus (&status, CODES(0), 1);
     
     LALComputeFrequencySeries ( &status, &fseries, &tseries, NULL);
-    TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
 
     LALComputeFrequencySeries ( &status, &fseries, NULL, dftparams1);
-    TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
 
     LALComputeFrequencySeries ( &status, NULL, &tseries, dftparams1);
-    TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
 
     {
       COMPLEX8Vector *p;
       p = fseries.data;
       fseries.data=NULL;
       LALComputeFrequencySeries ( &status, &fseries, &tseries, dftparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       fseries.data=p;
     }
 
@@ -489,13 +489,13 @@ main (int argc, char *argv[])
       p = tseries.data;
       tseries.data=NULL;
       LALComputeFrequencySeries ( &status, &fseries, &tseries, dftparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       tseries.data=p;
 
       p = dftparams1->window;
       dftparams1->window=NULL;
       LALComputeFrequencySeries ( &status, &fseries, &tseries, dftparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       dftparams1->window=p;
     }
 
@@ -504,7 +504,7 @@ main (int argc, char *argv[])
       p = dftparams1->plan;
       dftparams1->plan=NULL;
       LALComputeFrequencySeries ( &status, &fseries, &tseries, dftparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       dftparams1->plan=p;
     }
 
@@ -514,24 +514,24 @@ main (int argc, char *argv[])
       n = dftparams1->plan->size;
       dftparams1->plan->size=0;
       LALComputeFrequencySeries ( &status, &fseries, &tseries, dftparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
       dftparams1->plan->size=n;
     }
     */
 
     tseries.data->length--;
     LALComputeFrequencySeries ( &status, &fseries, &tseries, dftparams1);
-    TestStatus (&status, CODES(TFTRANSFORM_EINCOMP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_EINCOMP), 1);
     tseries.data->length++;
     
     fseries.data->length--;
     LALComputeFrequencySeries ( &status, &fseries, &tseries, dftparams1);
-    TestStatus (&status, CODES(TFTRANSFORM_EINCOMP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_EINCOMP), 1);
     fseries.data->length++;
 
     dftparams1->window->length--;
     LALComputeFrequencySeries ( &status, &fseries, &tseries, dftparams1);
-    TestStatus (&status, CODES(TFTRANSFORM_EINCOMP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_EINCOMP), 1);
     dftparams1->window->length++;
 
     {
@@ -539,13 +539,13 @@ main (int argc, char *argv[])
       p = tseries.deltaT;
       tseries.deltaT=0.0;
       LALComputeFrequencySeries ( &status, &fseries, &tseries, dftparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
       tseries.deltaT=p;
 
       p = dftparams1->sumofsquares;
       dftparams1->sumofsquares=0;
       LALComputeFrequencySeries ( &status, &fseries, &tseries, dftparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
       dftparams1->sumofsquares=p;
     }
 
@@ -573,29 +573,29 @@ main (int argc, char *argv[])
       }
 
     LALCreateTFPlane( &status, &tfp, NULL);
-    TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
 
     LALCreateTFPlane( &status, NULL, &params);
-    TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
 
     LALDestroyTFPlane( &status, NULL);
-    TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
 
     LALDestroyTFPlane( &status, &tfp);
-    TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
 
     {
       INT4 n;
       n = params.timeBins;
       params.timeBins=0;
       LALCreateTFPlane( &status, &tfp, &params);
-      TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
       params.timeBins=n;
 
       n = params.freqBins;
       params.freqBins=0;
       LALCreateTFPlane( &status, &tfp, &params);
-      TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
       params.freqBins=n;
     }
 
@@ -604,7 +604,7 @@ main (int argc, char *argv[])
       p = params.deltaT;
       params.deltaT = 0.0;
       LALCreateTFPlane( &status, &tfp, &params);
-      TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
       params.deltaT=p;
     }
 
@@ -616,14 +616,14 @@ main (int argc, char *argv[])
     TestStatus (&status, CODES(0), 1);
 
     LALCreateTFPlane( &status, &tfp, &params);
-    TestStatus (&status, CODES(TFTRANSFORM_EALLOCP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_EALLOCP), 1);
     
     {
       COMPLEX8 *p;
       p = tfp->data;
       tfp->data = NULL;
       LALDestroyTFPlane( &status, &tfp);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       tfp->data = p;
     }
 
@@ -632,7 +632,7 @@ main (int argc, char *argv[])
       p = tfp->params;
       tfp->params=NULL;
       LALDestroyTFPlane( &status, &tfp);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       tfp->params = p;
     }
     
@@ -677,24 +677,24 @@ main (int argc, char *argv[])
     /* Now start checking errors */
 
     LALTimeSeriesToTFPlane( &status, tfp, &tseries, NULL);
-    TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
     LALTimeSeriesToTFPlane( &status, tfp, NULL, &transformparams);
-    TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
     LALTimeSeriesToTFPlane( &status, NULL, &tseries, &transformparams);
-    TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
 
     {
       REAL4Vector *p;
       p = tseries.data;
       tseries.data=NULL;
       LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       tseries.data=p;
 
       p = transformparams.dftParams->window;
       transformparams.dftParams->window=NULL;
       LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       transformparams.dftParams->window=p;
 
     }
@@ -704,13 +704,13 @@ main (int argc, char *argv[])
       p = tseries.data->data;
       tseries.data->data=NULL;
       LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       tseries.data->data=p;
 
       p = transformparams.dftParams->window->data;
       transformparams.dftParams->window->data=NULL;
       LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       transformparams.dftParams->window->data=p;
     }
 
@@ -719,7 +719,7 @@ main (int argc, char *argv[])
       p = tfp->data;
       tfp->data=NULL;
       LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       tfp->data=p;
     }
 
@@ -728,7 +728,7 @@ main (int argc, char *argv[])
       p = transformparams.dftParams;
       transformparams.dftParams=NULL;
       LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       transformparams.dftParams=p;
     }
 
@@ -737,7 +737,7 @@ main (int argc, char *argv[])
       p = transformparams.dftParams->plan;
       transformparams.dftParams->plan=NULL;
       LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       transformparams.dftParams->plan=p;
     }
 
@@ -747,7 +747,7 @@ main (int argc, char *argv[])
       p = transformparams.dftParams->plan->plan;
       transformparams.dftParams->plan->plan=NULL;
       LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       transformparams.dftParams->plan->plan=p;
     }
     */
@@ -757,7 +757,7 @@ main (int argc, char *argv[])
       p = tfp->params;
       tfp->params=NULL;
       LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       tfp->params=p;
     }
 
@@ -766,23 +766,23 @@ main (int argc, char *argv[])
       p = tfp->params->timeBins;
       tfp->params->timeBins=0;
       LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-      TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
       tfp->params->timeBins=p;
 
       p = tfp->params->freqBins;
       tfp->params->freqBins=0;
       LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-      TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
 
       tfp->params->freqBins=10000000;
       LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-      TestStatus (&status, CODES(TFTRANSFORM_EINCOMP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EINCOMP), 1);
       tfp->params->freqBins=p;
 
       p = transformparams.startT;
       transformparams.startT = 1000000;
       LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-      TestStatus (&status, CODES(TFTRANSFORM_EINCOMP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EINCOMP), 1);
       transformparams.startT = p;
     }
 
@@ -791,7 +791,7 @@ main (int argc, char *argv[])
       p = transformparams.dftParams->sumofsquares;
       transformparams.dftParams->sumofsquares=0;
       LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-      TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
       transformparams.dftParams->sumofsquares=p;
     }
 
@@ -800,41 +800,41 @@ main (int argc, char *argv[])
       p = tseries.deltaT;
       tseries.deltaT=0.0;
       LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-      TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
       tseries.deltaT=p;
 
       p = tfp->params->deltaT;
       tfp->params->deltaT=0.0;
       LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-      TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
       tfp->params->deltaT = 0.1 * tseries.deltaT;
       LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-      TestStatus (&status, CODES(TFTRANSFORM_EINCOMP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EINCOMP), 1);
       tfp->params->deltaT=p;
 
       p = tseries.f0;
       tseries.f0 = -1.0;
       LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-      TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
       tseries.f0=p;
     }
 
     /* OMITTED -- JC
     transformparams.dftParams->plan->size--;
     LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-    TestStatus (&status, CODES(TFTRANSFORM_EINCOMP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_EINCOMP), 1);
     transformparams.dftParams->plan->size++;
     */
 
     transformparams.dftParams->window->length--;
     LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-    TestStatus (&status, CODES(TFTRANSFORM_EINCOMP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_EINCOMP), 1);
     transformparams.dftParams->window->length++;
 
     /* OMITTED -- JC
     transformparams.dftParams->plan->sign=-1;
     LALTimeSeriesToTFPlane( &status, tfp, &tseries, &transformparams);
-    TestStatus (&status, CODES(TFTRANSFORM_EINCOMP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_EINCOMP), 1);
     transformparams.dftParams->plan->sign=1;
     */
 
@@ -909,18 +909,18 @@ main (int argc, char *argv[])
     /* Now start checking errors */
 
     LALFreqSeriesToTFPlane( &status, tfp, &fseries, NULL);
-    TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
     LALFreqSeriesToTFPlane( &status, tfp, NULL, &transformparams1);
-    TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
     LALFreqSeriesToTFPlane( &status, NULL, &fseries, &transformparams1);
-    TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
 
     {
       COMPLEX8Vector *p;
       p = fseries.data;
       fseries.data=NULL;
       LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       fseries.data=p;
     }
     
@@ -929,7 +929,7 @@ main (int argc, char *argv[])
       p = transformparams1.dftParams->window;
       transformparams1.dftParams->window=NULL;
       LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       transformparams1.dftParams->window=p;
     }
 
@@ -938,13 +938,13 @@ main (int argc, char *argv[])
       p = fseries.data->data;
       fseries.data->data=NULL;
       LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       fseries.data->data=p;
 
       p = tfp->data;
       tfp->data=NULL;
       LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       tfp->data=p;
     }
 
@@ -953,7 +953,7 @@ main (int argc, char *argv[])
       p = transformparams1.dftParams->window->data;
       transformparams1.dftParams->window->data=NULL;
       LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       transformparams1.dftParams->window->data=p;
     }
 
@@ -962,7 +962,7 @@ main (int argc, char *argv[])
       p = transformparams1.dftParams;
       transformparams1.dftParams=NULL;
       LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       transformparams1.dftParams=p;
     }
 
@@ -973,7 +973,7 @@ main (int argc, char *argv[])
       p = transformparams1.dftParams->plan;
       transformparams1.dftParams->plan=NULL;
       LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       transformparams1.dftParams->plan=p;
     }
 
@@ -982,7 +982,7 @@ main (int argc, char *argv[])
       p = transformparams1.dftParams->plan->plan;
       transformparams1.dftParams->plan->plan=NULL;
       LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       transformparams1.dftParams->plan->plan=p;
     }
     */
@@ -992,7 +992,7 @@ main (int argc, char *argv[])
       p = tfp->params;
       tfp->params=NULL;
       LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_ENULLP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_ENULLP), 1);
       tfp->params=p;
     }
 
@@ -1001,17 +1001,17 @@ main (int argc, char *argv[])
       p = tfp->params->timeBins;
       tfp->params->timeBins=0;
       LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
       tfp->params->timeBins=p;
 
       p = tfp->params->freqBins;
       tfp->params->freqBins=0;
       LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
 
       tfp->params->freqBins=10000000;
       LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_EINCOMP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EINCOMP), 1);
       tfp->params->freqBins=p;
     }
 
@@ -1020,7 +1020,7 @@ main (int argc, char *argv[])
       p = transformparams1.dftParams->sumofsquares;
       transformparams1.dftParams->sumofsquares=0;
       LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
       transformparams1.dftParams->sumofsquares=p;
     }
 
@@ -1029,44 +1029,44 @@ main (int argc, char *argv[])
       p = fseries.deltaF;
       fseries.deltaF=0.0;
       LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
       fseries.deltaF=p;
 
       p = tfp->params->deltaT;
       tfp->params->deltaT=0.0;
       LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
       tfp->params->deltaT = 20.0 / fseries.deltaF;
       LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_EINCOMP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EINCOMP), 1);
       tfp->params->deltaT=p;
 
       p = fseries.f0;
       fseries.f0 = -1.0;
       LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_EPOSARG), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EPOSARG), 1);
       fseries.f0 = 10000000.0;
       LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-      TestStatus (&status, CODES(TFTRANSFORM_EINCOMP), 1);
+      TestStatus (&status, CODES(TFTRANSFORMH_EINCOMP), 1);
       fseries.f0=p;
     }
 
     /* OMITTED -- JC
     transformparams1.dftParams->plan->size--;
     LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-    TestStatus (&status, CODES(TFTRANSFORM_EINCOMP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_EINCOMP), 1);
     transformparams1.dftParams->plan->size++;
     */
 
     transformparams1.dftParams->window->length--;
     LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-    TestStatus (&status, CODES(TFTRANSFORM_EINCOMP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_EINCOMP), 1);
     transformparams1.dftParams->window->length++;
 
     /* OMITTED -- JC
     transformparams1.dftParams->plan->sign=1;
     LALFreqSeriesToTFPlane( &status, tfp, &fseries, &transformparams1);
-    TestStatus (&status, CODES(TFTRANSFORM_EINCOMP), 1);
+    TestStatus (&status, CODES(TFTRANSFORMH_EINCOMP), 1);
     transformparams1.dftParams->plan->sign=-1;
     */
 
