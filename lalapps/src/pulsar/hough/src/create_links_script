@@ -1,0 +1,19 @@
+#!/bin/tcsh
+
+# RUN THIS SCRIPT IN YOUR SHELL. IT CREATES THE APPROPIATE LINKS
+
+# ---------------------------------------------------------------
+#
+# create_links_script
+#
+# Authors: Alicia M. Sintes
+#
+# Revision: $Id$
+#
+#-----------------------------------------------------------------
+
+
+# Set links to rngmed files
+
+ln -s ../../FDS_isolated/rngmed.c  ./rngmed.c
+ln -s ../../FDS_isolated/rngmed.h  ./rngmed.h
