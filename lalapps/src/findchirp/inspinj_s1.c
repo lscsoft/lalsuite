@@ -1,4 +1,7 @@
 /*
+ * Updated to include M31 based on numbers sent to inspiral group by
+ * Phil Nutzman.   Needs to be checked.   Sun 17 Aug 2003 02:48:28 AM
+ * CDT
  *
  * Program to produce ILWD files containing injection times and parameters
  * for binary inspirals in the Galaxy, LMC, and SMC for use in S1 analysis.
@@ -388,7 +391,7 @@ int main( int argc, char *argv[] )
   const long S1StopTime    = 715618813;  /* Sep 09, 2002  08:00:00 PDT */
   long gpsStartTime = S1StartTime;
   long gpsStopTime = S1StopTime;
-  const double meanTimeStep = 2630 / M_PI; /* seconds between injections     */
+  double meanTimeStep = 2630 / M_PI; /* seconds between injections     */
 
   long long tinj              = 1000000000LL * gpsStartTime;
   struct time_list  tlisthead;
@@ -399,6 +402,7 @@ int main( int argc, char *argv[] )
   size_t inj;
   FILE *fp;
   int rand_seed;
+  INT4 gotSeed=0;
 
   /* xml output data */
   CHAR                  fname[256];
@@ -416,6 +420,7 @@ int main( int argc, char *argv[] )
     /* parameters used to generate calibrated power spectrum */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
+    {"time-step",               required_argument, 0,                't'},
     {"seed",                    required_argument, 0,                's'},
     {0, 0, 0, 0}
   };
@@ -444,7 +449,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:", long_options, &option_index );
+        "a:b:s:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -536,6 +541,21 @@ int main( int argc, char *argv[] )
         }
         break;
 
+      case 't':
+        {
+            double tstep = atof( optarg );
+            meanTimeStep = tstep / M_PI;
+            fprintf(stdout,"Time step is %e/PI = %e\n",tstep, meanTimeStep);
+            snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+                    "%s", PROGRAM_NAME );
+            snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+                    "--time-step" );
+            snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "float" );
+            snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, "%e", tstep );
+            /* ADD_PROCESS_PARAM( "int", "%ld", gendt ); */
+        }
+        break;
+
       case '?':
         fprintf( stderr, USAGE );
         exit( 1 );
@@ -546,6 +566,12 @@ int main( int argc, char *argv[] )
         fprintf( stderr, USAGE );
         exit( 1 );
     }
+  }
+
+  if(!gotSeed){
+      fprintf(stderr,"Must supply a seed with option --seed\n");
+        fprintf( stderr, USAGE );
+      exit( 1 );
   }
 
   tlisthead.tinj = tinj;
