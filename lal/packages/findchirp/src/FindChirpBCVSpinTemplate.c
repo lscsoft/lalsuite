@@ -227,6 +227,12 @@ LALFindChirpBCVSpinTemplate (
 
 	fFinal = (-psi00 * 16 * LAL_PI) / (psi15 * rLSOto3by2);
   }
+ 
+  /* since we have redefined fFinal we must redefine kmax */
+  
+  kmax = fFinal / deltaF < numPoints/2 ? fFinal / deltaF : numPoints/2;
+   
+
   
   if (doTest ==1)
   {	  
