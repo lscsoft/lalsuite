@@ -158,7 +158,7 @@ void LALDRunningMedian( LALStatus *status,
   UINT4 samplecount,counter_chkpt,chkcount,shiftcounter = 0;
   INT8 k;
   REAL8 nextsample,deletesample,dummy;
-  UINT4 shift,dummy_int;
+  INT4 shift,dummy_int;
 
   INITSTATUS( status, "LALDRunningMedian", LALRUNNINGMEDIANC );
   
@@ -586,7 +586,7 @@ void LALSRunningMedian( LALStatus *status,
   UINT4 samplecount,counter_chkpt,chkcount,shiftcounter = 0;
   INT8 k;
   REAL4 nextsample,deletesample,dummy;
-  UINT4 shift,dummy_int;
+  INT4 shift,dummy_int;
 
   INITSTATUS( status, "LALSRunningMedian", LALRUNNINGMEDIANC );
   
