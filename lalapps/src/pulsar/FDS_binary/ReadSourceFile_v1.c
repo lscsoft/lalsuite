@@ -9,7 +9,7 @@
 
 #include "ReadSourceFile_v1.h"
 
-LALStatus status;
+LALStatus rsf_status;
 
 int ReadSource(char *sourcefile, char *sourcename, LIGOTimeGPS *obsstart, binarysource *source) 
 {
@@ -154,17 +154,17 @@ int ReadSource(char *sourcefile, char *sourcename, LIGOTimeGPS *obsstart, binary
   
   /* lets calculate the extra errors due to accumulating time (its a bit simple at present) */
   if (obsstart!=NULL) {
-    LALDeltaGPS(&status,&interval,obsstart,&period_epochGPS);
-    LALIntervalToFloat(&status,&period_epochdiff,&interval);
+    LALDeltaGPS(&rsf_status,&interval,obsstart,&period_epochGPS);
+    LALIntervalToFloat(&rsf_status,&period_epochdiff,&interval);
     n_period=period_epochdiff/period;
     extra_err=n_period*period_err;
     tperi_err=sqrt((tperi_err*tperi_err)+(extra_err*extra_err));
   }
 
   /* now add the errors to find range */
-  LALFloatToInterval(&status,&interval,&tperi_err);
-  LALDecrementGPS(&status,&tperi_min,&tperi_dummy,&interval);
-  LALIncrementGPS(&status,&tperi_max,&tperi_dummy,&interval);
+  LALFloatToInterval(&rsf_status,&interval,&tperi_err);
+  LALDecrementGPS(&rsf_status,&tperi_min,&tperi_dummy,&interval);
+  LALIncrementGPS(&rsf_status,&tperi_max,&tperi_dummy,&interval);
 
   /* sort out the argp ranges */
   argp_min=argp-argp_err;
