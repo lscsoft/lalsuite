@@ -146,7 +146,8 @@ Usage: lalapps_inspiral_pipe [options]
 
   -P, --priority PRIO      run jobs with condor priority PRIO
 
-
+  -p, --playground-only    only analyze jobs in the playground
+  
   -l, --log-path PATH      directory to write condor log file
   -f, --config-file FILE   use configuration file FILE
 """
@@ -154,13 +155,14 @@ Usage: lalapps_inspiral_pipe [options]
 
 ##############################################################################
 # pasrse the command line options to figure out what we should do
-shortop = "hvu:cj:P:s:x:y:l:f:"
+shortop = "hvu:cj:pP:s:x:y:l:f:"
 longop = [
   "help",
   "version",
   "user-tag=",
   "check-bkgr-dag",
   "injections=",
+  "playground-only",
   "max-slide-time=",
   "slide-time=",
   "slide-time-ns=",
@@ -180,6 +182,7 @@ inj_file = None
 max_slide = 0
 slide_time = 0
 slide_time_ns = 0
+playground_only = 0
 condor_prio = None
 log_path = None
 config_file = None
@@ -202,6 +205,8 @@ for o, a in opts:
     check_bkgr_dag = 1
   elif o in ("-j", "--injections"):
     inj_file = a
+  elif o in ("-p", "--playground-only"):
+    playground_only = 2
   elif o in ("-s", "--max-slide-time"):
     max_slide = int(a)
   elif o in ("-x", "--slide-time"):
@@ -381,13 +386,13 @@ print "done"
 # analyze (since all the science segments are over length seconds.) 
 print "making master chunks...",
 sys.stdout.flush()
-l1_data.make_chunks(length,overlap,0)
-h1_data.make_chunks(length,overlap,0)
-h2_data.make_chunks(length,overlap,0)
+l1_data.make_chunks(length,overlap,playground_only,0,overlap/2)
+h1_data.make_chunks(length,overlap,playground_only,0,overlap/2)
+h2_data.make_chunks(length,overlap,playground_only,0,overlap/2)
 
-l1_data.make_chunks_from_unused(length,overlap/2,0,0)
-h1_data.make_chunks_from_unused(length,overlap/2,0,0)
-h2_data.make_chunks_from_unused(length,overlap/2,0,0)
+l1_data.make_chunks_from_unused(length,overlap/2,playground_only,0,0,overlap/2)
+h1_data.make_chunks_from_unused(length,overlap/2,playground_only,0,0,overlap/2)
+h2_data.make_chunks_from_unused(length,overlap/2,playground_only,0,0,overlap/2)
 print "done"
 
 ##############################################################################
@@ -398,6 +403,8 @@ l1_lho_data = copy.deepcopy(l1_data)
 all_lho_data = copy.deepcopy(h1_data)
 all_lho_data.union(h2_data)
 l1_lho_data.intersection(all_lho_data)
+if playground_only:
+  l1_lho_data.play()
 l1_lho_data.coalesce()
 print "done"
 
@@ -422,6 +429,8 @@ not_h2_data.invert()
 l1_h2_data = copy.deepcopy(l1_data_out)
 l1_h2_data.intersection(h2_data_out)
 l1_h2_data.intersection(not_h1_data)
+if playground_only:
+  l1_h2_data.play()
 l1_h2_data.coalesce()
 print "done"
 
@@ -548,6 +557,8 @@ sys.stdout.flush()
 l1_h1_data = copy.deepcopy(l1_data_out)
 l1_h1_data.intersection(h1_data_out)
 l1_h1_data.intersection(not_h2_data)
+if playground_only:
+  l1_h1_data.play()
 l1_h1_data.coalesce()
 
 for seg in l1_h1_data:
@@ -610,6 +621,8 @@ sys.stdout.flush()
 l1_h1_h2_data = copy.deepcopy(l1_data_out)
 l1_h1_h2_data.intersection(h1_data_out)
 l1_h1_h2_data.intersection(h2_data_out)
+if playground_only:
+  l1_h1_h2_data.play()
 l1_h1_h2_data.coalesce()
 
 l1_h1_inca_nodes = []
