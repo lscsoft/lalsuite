@@ -10,6 +10,7 @@ $Id$
 #include <lal/BandPassTimeSeries.h>
 #include <lal/BurstSearch.h>
 #include <lal/EPData.h>
+#include <lal/EPSearch.h>
 #include <lal/ExcessPower.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALConstants.h>
@@ -18,12 +19,14 @@ $Id$
 #include <lal/LALStdlib.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
+#include <lal/PrintFTSeries.h>
 #include <lal/Random.h>
 #include <lal/RealFFT.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/SeqFactories.h>
-#include <lal/TimeFreqFFT.h>
 #include <lal/Thresholds.h>
+#include <lal/TimeFreqFFT.h>
+#include <lal/TimeSeries.h>
 #include <lal/Window.h>
 
 NRCSID (EPSEARCHC, "$Id$");
@@ -167,6 +170,7 @@ EPSearch (
     RealDFTParams            *dftparams        = NULL;
     LALWindowParams           winParams;
     REAL4FrequencySeries     *AverageSpec;
+    REAL4TimeSeries          *cutTimeSeries;
     INT4                      nevents, dumevents;
 
     INITSTATUS (status, "EPSearch", EPSEARCHC);
@@ -219,20 +223,27 @@ EPSearch (
     {
 
       /* point segment to the segment to analyze */
-      segment = params->epSegVec->data + params->currentSegment + i;
+      /*      segment = params->epSegVec->data + params->currentSegment + i;*/
 
-      /* compute the DFT of input time series */
+      /* Cut out two sec long time series */
+      LALCutREAL4TimeSeries(status->statusPtr, &cutTimeSeries, tseries,  i * params->ovrlap, (2.0 / tseries->deltaT));
+      CHECKSTATUSPTR (status);
+
+      /* compute the DFT of input time series: NOTE:We are using
+       * the timeseries directly to compute the spectrum: Saikat
+       * (20040823)
+       */
       LALInfo(status->statusPtr, "Computing the frequency series");
       CHECKSTATUSPTR (status);
       LALComputeFrequencySeries (status->statusPtr, fseries, 
-          segment->data, dftparams);
+          cutTimeSeries, dftparams);
       CHECKSTATUSPTR (status);
 
       /* check that deltaF agrees with that of response */
-      if ( fabs( segment->spec->deltaF - fseries->deltaF ) > 0.000001 )
+      /*  if ( fabs( segment->spec->deltaF - fseries->deltaF ) > 0.000001 )
       {
         ABORT (status, EXCESSPOWERH_EDELF, EXCESSPOWERH_MSGEDELF );
-      }
+	}*/
 
       /* normalize the data stream so that rms of Re or Im is 1 */
       for (j=0 ; j<(INT4)fseries->data->length ; j++)
@@ -314,8 +325,8 @@ EPSearch (
 
           /* convert epoch to GPS nanoseconds */
           tstartNS  = 1000000000L * 
-            (INT8) segment->data->epoch.gpsSeconds;
-          tstartNS += (INT8) segment->data->epoch.gpsNanoSeconds;
+            (INT8) cutTimeSeries->epoch.gpsSeconds;
+          tstartNS += (INT8) cutTimeSeries->epoch.gpsNanoSeconds;
 
           /* allocate memory for the burst event */
           if ( (*burstEvent) == NULL )
@@ -347,6 +358,10 @@ EPSearch (
       params->tfTiling->planesComputed=FALSE;
       params->tfTiling->excessPowerComputed=FALSE;
       params->tfTiling->tilesSorted=FALSE;
+  
+      /*reset the timeseries */
+      LALDestroyREAL4TimeSeries(status->statusPtr,cutTimeSeries);
+      CHECKSTATUSPTR (status);
     }
   
     nevents = 0;
