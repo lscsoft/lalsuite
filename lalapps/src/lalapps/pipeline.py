@@ -589,6 +589,12 @@ class AnalysisChunk:
 
   def __repr__(self):
     return '<AnalysisChunk: start %d, end %d>' % (self.start(), self.end())
+
+  def __len__(self):
+    """
+    Returns the length of this AnalysisChunk in seconds.
+    """
+    return self.__length
     
   def start(self):
     """
