@@ -39,6 +39,7 @@ This is a sample function only.
 
 #include <stdio.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALStdio.h>
 #include <lal/LALHello.h>
 
 /* <lalVerbatim file="LALHelloNRCSID"> */

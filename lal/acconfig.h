@@ -19,8 +19,5 @@
 /* The number of bytes in a short.  */
 #undef LAL_SIZEOF_SHORT
 
-/* Have function snprintf (with correct prototype).  */
-#undef LAL_HAVE_SNPRINTF
-
 @BOTTOM@
 #endif /* CONFIG_H__LAL */

@@ -51,7 +51,7 @@ TYPECODEDestroyVectorSequence()
 #include <stdio.h>
 #include <string.h>
 
-#include "LALConfig.h"
+#include <lal/LALConfig.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -61,8 +61,8 @@ TYPECODEDestroyVectorSequence()
 #include <getopt.h>
 #endif
 
-#include "LALStdlib.h"
-#include "SeqFactories.h"
+#include <lal/LALStdlib.h>
+#include <lal/SeqFactories.h>
 
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)

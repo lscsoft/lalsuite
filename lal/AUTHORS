@@ -1,6 +1,8 @@
 Allen, Bruce
 Ausmus, Donald
 Balasubramanian, R
+Berukoff, S J
+Brady, Patrick R
 Brown, Duncan A
 Casquette, Martha
 Chassande-Mottin, Eric
@@ -13,8 +15,24 @@ Edlund, Jeffrey
 Finn, Lee Samuel
 Flanagan, Eanna E
 Luna, Rosa
+Papa, M A
 Romano, Joseph D
 Sathyaprakash, B S
 Sintes, Alicia M
 Torres, Charlie
 Wiseman, Alan G
+
+
+
+This package also contains code written and copywrited by
+Mark Martinec.  This code is contained in the file
+
+  packages/support/src/LALStdio.c
+
+and the license and readme files for the code are contained
+in the files
+
+  packages/support/src/snprintf_LICENSE.txt
+  packages/support/src/snprintf_README
+
+The snprintf package is available from http://www.ijs.si/software/snprintf.

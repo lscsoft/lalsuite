@@ -1,12 +1,13 @@
 ## Process this file with automake to produce Makefile.in
 noinst_LTLIBRARIES = libsupport.la
-libsupport_la_SOURCES = LALVersion.c LALMalloc.c LALError.c PrintVector.c \
-                        PrintFrequencySeries.c PrintTimeSeries.c
+libsupport_la_SOURCES = LALStdio.c LALVersion.c LALMalloc.c LALError.c \
+                        PrintVector.c PrintFrequencySeries.c PrintTimeSeries.c
 MAINTAINERCLEANFILES = PrintVector.c \
                         PrintFrequencySeries.c PrintTimeSeries.c
 EXTRA_DIST = PrintVector.m4 LALPrintVector.m4 \
              PrintTimeSeries.m4 LALPrintTimeSeries.m4 \
-             PrintFrequencySeries.m4 LALPrintFrequencySeries.m4
+             PrintFrequencySeries.m4 LALPrintFrequencySeries.m4 \
+             snprintf_LICENSE.txt snprintf_README
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 PrintVector.c: PrintVector.m4 LALPrintVector.m4
 	m4 PrintVector.m4 > PrintVector.c
