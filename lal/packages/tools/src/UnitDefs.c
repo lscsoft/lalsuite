@@ -403,11 +403,6 @@ LALUnitAsString( LALStatus *status,
 		 const LALUnit *input )
 /* </lalVerbatim> */
 {
-  UINT2        i;
-  CHAR         temp[UNITDEFSC_TEMPSIZE];
-  INT2         numer;
-  CHAR         *charPtr, *charStopPtr;
-
   INITSTATUS( status, "LALUnitAsString", UNITDEFSC );
   /* ATTATCHSTATUSPTR (status); */
 
