@@ -95,7 +95,7 @@ class CondorJob:
       arg = string.strip(cp.get(section,opt))
       self.__arguments[opt] = arg
 
-  def set_notifcation(self, value):
+  def set_notification(self, value):
     """
     Set the email address to send notification to.
     value = email address or never for no notification.
@@ -207,7 +207,7 @@ class CondorDAGJob(CondorJob):
     executable = the executable to run in the DAG.
     """
     CondorJob.__init__(self, universe, executable, 1)
-    self.set_notification('never')
+    CondorJob.set_notification(self, 'never')
     self.__var_args = []
     self.__bad_macro_chars = re.compile(r'[-_]')
 
