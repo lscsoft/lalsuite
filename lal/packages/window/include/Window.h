@@ -54,27 +54,29 @@ NRCSID (WINDOWH, "$Id$");
 #define WINDOW_MSGNULLDATA "data area of input vector is null"
 
 /* Define the types of available windows */
+/* WARNING: additional window types must be added just before */
+/* NumberWindowTypes, and after the existing window types */
 typedef enum
 {
-  Rectangular,Hann,Welch,Bartlett,Parzen,Papoulis,Hamming
+    Rectangular,Hann,Welch,Bartlett,Parzen,Papoulis,Hamming,
+    /* add any new window types just before this comment */
+    NumberWindowTypes
 }
 WindowType;
 
-#define NUMBERWINDOWTYPES ((int)(Hamming+1))
 #define WINDOWNAMELIST {"Rectangular","Hann","Welch","Bartlett","Parzen","Papoulis","Hamming"}
 
 typedef struct
-tagWindowParams
+tagLALWindowParams
 {
   INT4		length;		/* length of window */
   WindowType 	type;		/* type of window */
   REAL8   	sumofsquares;	/* sum of window squared  (returned) */
   CHAR*		windowname;	/* pointer to a char string with window name */
 }
-WindowParams;
+LALWindowParams;
 
-void
-Window (Status * ,REAL4Vector *, WindowParams *);
+void LALWindow(Status * ,REAL4Vector *, LALWindowParams *);
 
 #ifdef  __cplusplus
 }

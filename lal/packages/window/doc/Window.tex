@@ -2,7 +2,7 @@
 \documentclass{article}
 \usepackage{epsfig}
 \begin{document}
-\section{{\tt Window()}}
+\section{{\tt LALWindow()}}
 
 \subsection{Purpose}
 
@@ -29,14 +29,14 @@ they are desired.
 #include "Window.h"
 #include "AVFactories.h"
 
-void Window (Status *,REAL4Vector *, WindowParams *);
+void LALWindow (Status *,REAL4Vector *, LALWindowParams *);
 
-typedef struct tagWindowParams {
+typedef struct tagLALWindowParams {
   INT4        length;       /* length of window (input) */
   WindowType  type;         /* type of window (input) */
   REAL8       sumofsquares; /* sum of window squared  (ouput) */
   CHAR*       windowname;   /* pointer to a char string with window name (output) */
-} WindowParams;
+} LALWindowParams;
 
 typedef enum {Rectangular,
               Hann,
@@ -44,7 +44,8 @@ typedef enum {Rectangular,
               Bartlett,
               Parzen,
               Papoulis,
-              Hamming} WindowType;
+              Hamming,
+              NumberWindowTypes} WindowType;
 
 \end{verbatim}
 \subsection{Description}
@@ -59,17 +60,17 @@ output vector.
 \begin{verbatim}
 Status status; 
 REAL4Vector *vector=NULL;
-WindowParams params;
+LALWindowParams params;
 
   params.type=Hann;
   params.length=1024;
   CreateVector(&status,&vector,1024);
-  Window(&status,vector,&params);
+  LALWindow(&status,vector,&params);
   DestroyVector(&status,&vector);
 
 \end{verbatim}
 
-Note that the {\tt Window()} function sets the fields {\tt params.windowname} and
+Note that the {\tt LALWindow()} function sets the fields {\tt params.windowname} and
 {\tt params.sumofsquares}.
 
 \subsubsection{Arguments}
@@ -80,13 +81,13 @@ Note that the {\tt Window()} function sets the fields {\tt params.windowname} an
 \item {\tt status\/} is a universal status strucure. Its contents are 
 assigned by {\tt CreateVector}.
 \item {\tt vector\/} After
-return from {\tt Window()}, {\tt vector} points to a vector containing the window function.
+return from {\tt LALWindow()}, {\tt vector} points to a vector containing the window function.
 The vector's length must
 agree with {\tt params.length} or an error will occur.
 \item {\tt params\/} is a structure specifying the type of the window
 and containing useful information on return.  The window type {\tt
-params.type} and length {\tt params.length} must be set before calling
-{\tt Window()}.  On return {\tt params.sumofsquares} is set to the sum of
+params.type} and length $N$={\tt params.length} must be set before calling
+{\tt LALWindow()}.  On return {\tt params.sumofsquares} is set to the sum of
 the squares of the window function, and {\tt params.windowname} points
 to a static string containing one-word the window name (for example,
 ``Parzen").
@@ -100,7 +101,7 @@ The window type and the window length are both required.
 
 % What constitutes an error condition? What do the error codes mean?
 
-{\tt Window\/}
+{\tt LALWindow\/}
 sets the universal status structure on return. Non-zero status codes
 indicate an error condition. Error conditions are described in
 table \ref{tbl:WI}.
@@ -110,24 +111,27 @@ table \ref{tbl:WI}.
 \begin{tabular}{|r|l|l|}\hline
 status&status&Description\\
 code&description&\\\hline
-WINDOW\_NULLPARAM&$*${\tt params} NULL&must point to a parameter structure\\
-WINDOW\_NULLVECTOR&CreateVector() failed&CreateVector() produced null vector\\
-WINDOW\_EALLOCATE&CreateVector() failed &CreateVector() failed\\
-WINDOW\_ELENGTH&{\tt params.length}$\le 0$&window length must be positive\\
-WINDOW\_TYPEUNKNOWN&Unknown window type&Rectangular$\le${\tt params.type}$\le$Hamming\\
-WINDOW\_NULLHANDLE&{\tt *vector NULL}&Vector handle is null\\
-WINDOW\_WRONGLENGTH&{\tt (*vector)$\rightarrow$length!=params.length}&Vector length incorrect\\
+WINDOW\_NULLPARAM&$*${\tt params} NULL&must point to a parameter structure\\\hline
+WINDOW\_NULLVECTOR&CreateVector() failed&CreateVector() produced null vector\\\hline
+WINDOW\_EALLOCATE&CreateVector() failed &CreateVector() failed\\\hline
+WINDOW\_ELENGTH&{\tt params.length}$\le 0$&window length must be positive\\\hline
+WINDOW\_TYPEUNKNOWN&Unknown window type&Rectangular$\le${\tt
+params.type}$<$\\
+ & & NumberWindowTypes\\\hline
+WINDOW\_NULLHANDLE&{\tt *vector NULL}&Vector handle is null\\\hline
+WINDOW\_WRONGLENGTH&{\tt (*vector)$\rightarrow$length!=params.length}&Vector length incorrect\\\hline
 WINDOW\_MSGNULLDATA&{\tt (*vector)$\rightarrow$data==NULL}&input vector data pointer null\\
 \hline
 \end{tabular}
-\caption{Error conditions for {\tt Window()}}\label{tbl:WI}
+\caption{Error conditions for {\tt LALWindow()}}\label{tbl:WI}
 \end{table}
 
                                 
 \subsection{Algorithms}
 
-The window functions are defined for $j=0,\cdots,N-1$ by the following formulae.
-In these formulae, let $x=2 \pi j/N$, and $y=|2j/N-1|$,
+The window functions are defined for $j=0,\cdots,N-1$ by the following
+formulae.  Note that $N$={\tt params.length}.  In these formulae, let
+$x=2 \pi j/N$, and $y=|2j/N-1|$,
 \begin{eqnarray*}
 {\rm Rectangular:\ } w_j &=& 1 \\
 {\rm Hann:\ } w_j &=& {1 \over 2} ( 1 - \cos  x  ) \\
@@ -140,6 +144,27 @@ In these formulae, let $x=2 \pi j/N$, and $y=|2j/N-1|$,
 \end{eqnarray*}
 
 These window functions are shown in Fig.~\ref{f:window} for $N=1024$.
+
+A couple of comments and warnings may be useful.  First, the
+definitions given here are taken from {\it Numerical Recipes in C} and
+{\it Spectral Analysis for Physical Applications} (see references
+below).  These definitions are {\it not standard}.  In particular,
+some authors (e.g. J.G. Proakis and D.G. Manolakis, {\it Digital
+Signal Processing}) and some standard computer applications (e.g. {\tt
+MatLab}) use definitions in which $N$ is replaced by $N-1$ in the
+definitions of $x$ and $y$, with $j$ covering the range
+$j=0,\cdots,N-1$.  This has the advantage of making the window
+function ``more symmetric'', typically be appending an extra ``0'' to
+the end of the array.  It has the disadvantage that it throws out more
+of your precious data.
+
+If you want to get a window function that agrees with either Proakis
+\& Manolakis, or with MatLab, just call {\tt LALWindow()} with {\tt
+params.length}=M-1.  Then create an array of length $M$, copy the
+$M-1$ elements of the array returned by {\tt LALWindow()}, into it,
+and finally copy the {\it first} element of the array returned by {\tt
+LALWindow()} into the last element of your new array.
+
 
 % Describe algorithm by which work is done
 
@@ -156,7 +181,7 @@ window is calculated with the same accuracy.
 % Describe the tests that are part of the test suite
 
 The test programs {\tt WindowTest\/} exercise the procedure {\tt
-Window()\/}.  It tests all error conditions.  It also performs an
+LALWindow()\/}.  It tests all error conditions.  It also performs an
 elementary check that the sum of the window squared has the correct
 value for a length 1024 window, for all window types.
 
@@ -172,21 +197,20 @@ in the literature.  The Hann and the Hamming window are special cases of
 the Blackman-Tukey window.
 
 \noindent
-The header file {\tt Window.h} also defines a macro
-\begin{verbatim}
-#define NUMBERWINDOWTYPES 7
-\end{verbatim}
-which can be used for example to loop over the different types of windows.
-Note that since the number of types may change in the future if additional
-types are added, so the macro should always be used in place of an
-explicit integer.
+The header file {\tt Window.h} also defines the enum {\tt
+NumberWindowTypes} (see above) which can be used for example to loop
+over the different types of windows.  Note that the number of window
+types may change in the future if additional window types are added,
+so this enum should always be used in place of an explicit integer. It
+is guaranteed to be the smallest integer greater than the largest
+allowed window type.
 
 Fig. \ref{f:window} shows the seven different window functions, for
 $N=1024$ points.
 \begin{figure}
 \hskip -0.5in
 \noindent\includegraphics[width=0.9\linewidth,angle=-90]{WindowFig}
-%\epsfig{file=WindowFig,angle=-90,width=6in}
+%\epsfig{file=WindowFig.eps,angle=-90,width=6in}
 \caption{\label{f:window}
 The different window functions are shown in different colors, for the
 $N=1024$ case. Note that the Hamming window does not vanish at the endpoints.}

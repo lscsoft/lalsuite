@@ -66,7 +66,7 @@ int main()
   static Status status;     
   REAL4Vector *vector = NULL;
   REAL4Vector dummy;
-  WindowParams params;
+  LALWindowParams params;
   WindowType wintype;
   REAL8 testsquares[]=
     {1024.0,     /* rectangular */
@@ -80,25 +80,25 @@ int main()
   CreateVector (&status, &vector, 1024);
 
   /* Test behavior for null parameter block */
-  Window (&status,vector,NULL );
+  LALWindow(&status,vector,NULL );
   if (check(&status,WINDOW_NULLPARAM,WINDOW_MSGNULLPARAM)) return 1;
 
   /* Test behavior for null vector block */
-  Window (&status,NULL,&params );
+  LALWindow(&status,NULL,&params );
   if (check(&status,WINDOW_NULLHANDLE,WINDOW_MSGNULLHANDLE)) return 1;
 
   /* Test behavior for non-positive length  */
   params.length=0;
-  Window (&status,vector,&params);
+  LALWindow(&status,vector,&params);
   if (check(&status,WINDOW_ELENGTH,WINDOW_MSGELENGTH)) return 1;
 
   /* Test failures for undefined window type on lower and upper bounds */
   params.length=1024;
   params.type=-1;
-  Window ( &status, vector, &params );
+  LALWindow( &status, vector, &params );
   if (check(&status,WINDOW_TYPEUNKNOWN,WINDOW_MSGTYPEUNKNOWN)) return 1;
-  params.type=NUMBERWINDOWTYPES;
-  Window ( &status, vector, &params );
+  params.type=NumberWindowTypes;
+  LALWindow( &status, vector, &params );
   if (check(&status,WINDOW_TYPEUNKNOWN,WINDOW_MSGTYPEUNKNOWN)) return 1;
 
   params.type=Rectangular;
@@ -106,12 +106,12 @@ int main()
   /* test that we get an error if the wrong vector length is present */
   dummy.length=1234;
   dummy.data=NULL;
-  Window ( &status, &dummy, &params );
+  LALWindow( &status, &dummy, &params );
   if (check(&status,WINDOW_WRONGLENGTH,WINDOW_MSGWRONGLENGTH)) return 1;
 
   /* test that we get an error if the vector data area null */
   dummy.length=params.length;
-  Window ( &status, &dummy, &params );
+  LALWindow( &status, &dummy, &params );
   if (check(&status,WINDOW_NULLDATA,WINDOW_MSGNULLDATA)) return 1;
 
 
@@ -119,7 +119,7 @@ int main()
   for (wintype=Rectangular;wintype<=Hamming;wintype++)
   {
     params.type=wintype;
-    Window (&status,vector,&params);
+    LALWindow(&status,vector,&params);
     if (fabs(params.sumofsquares-testsquares[(int)wintype])>1.e-5)
     {
       printf("FAIL: Window %s appears incorrect.\n",params.windowname);

@@ -36,8 +36,7 @@ NRCSID (WINDOW, "$Id$");
 
 static char *WindowTypeNames[] = WINDOWNAMELIST;
 
-void
-Window (Status *status, REAL4Vector *vector, WindowParams *parameters) 
+void LALWindow(Status *status, REAL4Vector *vector, LALWindowParams *parameters) 
 {
   INT4 i;
   INT4 length;
@@ -47,7 +46,7 @@ Window (Status *status, REAL4Vector *vector, WindowParams *parameters)
   REAL8 x,y,z;
 
   /* Initialize status structure   */
-  INITSTATUS(status,"Window",WINDOW);
+  INITSTATUS(status,"LALWindow Function",WINDOW);
 
   /* Check that parameter block is there. */ 
   ASSERT(parameters!=NULL,status,WINDOW_NULLPARAM,WINDOW_MSGNULLPARAM);
@@ -61,7 +60,7 @@ Window (Status *status, REAL4Vector *vector, WindowParams *parameters)
 
   /* Make sure that window is of a known type */
   windowtype=parameters->type;
-  ASSERT(windowtype>=Rectangular && windowtype<NUMBERWINDOWTYPES,status,
+  ASSERT(windowtype>=Rectangular && windowtype<NumberWindowTypes,status,
          WINDOW_TYPEUNKNOWN,WINDOW_MSGTYPEUNKNOWN);
 
   /* vector is apparently already allocated.  Check length, data area */
@@ -117,7 +116,7 @@ Window (Status *status, REAL4Vector *vector, WindowParams *parameters)
 
     /* Default case -- this will NEVER happen -- it is trapped above! */
     default:
-      ASSERT(0,status,WINDOW_TYPEUNKNOWN,WINDOW_MSGTYPEUNKNOWN);
+      ABORT(status,WINDOW_TYPEUNKNOWN,WINDOW_MSGTYPEUNKNOWN);
       break;
     }
     wss+=win*win;
