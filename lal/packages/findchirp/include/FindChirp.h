@@ -149,6 +149,7 @@ tagInspiralEvent
   UINT4                         id;
   UINT4                         segmentNumber;
   LIGOTimeGPS                   time;
+  LIGOTimeGPS                   impulseTime;
   UINT4                         timeIndex;
   InspiralTemplate              tmplt;
   REAL4                         snrsq;
