@@ -416,10 +416,10 @@ LALFindChirpSlave (
         REAL4   dynRange   = params->dataParams->dynRange;
         REAL4   dynRangeSq = dynRange * dynRange;
 
-        REAL8   deltaT = currentDataSeg->real4Data->deltaT;
+        REAL8   deltaT = currentDataSeg->chan->deltaT;
         REAL8   deltaF = currentDataSeg->spec->deltaF;
 
-        UINT4   tdLength = currentDataSeg->real4Data->data->length;
+        UINT4   tdLength = currentDataSeg->chan->data->length;
         UINT4   fdLength = currentDataSeg->spec->data->length;
 
         /* create storeage for loudest event and (s|s) for each segment */
@@ -443,7 +443,7 @@ LALFindChirpSlave (
           CoherentGW    waveform;
           PPNParamStruc ppnParams;
           REAL4         mass1, mass2;
-          REAL4        *data = currentDataSeg->real4Data->data->data;
+          REAL4        *data = currentDataSeg->chan->data->data;
           REAL4        *spec = currentDataSeg->spec->data->data;
           COMPLEX8     *resp = currentDataSeg->resp->data->data;
 
@@ -570,7 +570,7 @@ LALFindChirpSlave (
           for ( j = 0; j < tdLength; ++j )
           {
             fprintf( tdfp, "%u\t%e\n", j, 
-                dataSegVec->data->real4Data->data->data[j] );
+                dataSegVec->data->chan->data->data[j] );
           }
           fclose( tdfp );
 

@@ -236,20 +236,20 @@ main (int argc, char *argv[])
     REAL4 time;
     dataSeg = dataSegVec->data;
 
-    dataSeg[i].real4Data->deltaT = (REAL8) deltaT;
+    dataSeg[i].chan->deltaT = (REAL8) deltaT;
     dataSeg[i].spec->deltaF = (REAL8) deltaF;
 
     time = numPoints * deltaT * (REAL4) i;
-    dataSeg[i].real4Data->epoch.gpsSeconds     = (INT4) floor( time );
+    dataSeg[i].chan->epoch.gpsSeconds     = (INT4) floor( time );
     time = (time - floor( time )) * 1.0E9;
-    dataSeg[i].real4Data->epoch.gpsNanoSeconds = (INT4) floor( time );
+    dataSeg[i].chan->epoch.gpsNanoSeconds = (INT4) floor( time );
 
     /* impulse */
     if ( inputDataType == impulse )
     {
-      memset( dataSeg[i].real4Data->data->data, 0, numPoints * sizeof(REAL4) );
+      memset( dataSeg[i].chan->data->data, 0, numPoints * sizeof(REAL4) );
 
-      dataSeg[i].real4Data->data->data[0] = 1.0;
+      dataSeg[i].chan->data->data[0] = 1.0;
 
       /* spectrum and response */
       for ( k = 0; k < numPoints/2 + 1; ++k )
@@ -282,7 +282,7 @@ main (int argc, char *argv[])
         else 
           ifodmro=2047.0;
 
-        dataSeg[i].real4Data->data->data[j] = ifodmro;
+        dataSeg[i].chan->data->data[j] = ifodmro;
       }
 
       /* spectrum and response */
@@ -322,7 +322,7 @@ main (int argc, char *argv[])
       for ( j = 0; j < numPoints; ++j )
       {
         if (( (flag = fscanf( fpData, "%f\n", 
-                  &(dataSeg[i].real4Data->data->data[j]) )) != 1 || flag == EOF ) 
+                  &(dataSeg[i].chan->data->data[j]) )) != 1 || flag == EOF ) 
             && j < numPoints ) 
         {
           fprintf( stdout, "error reading input data\n" );

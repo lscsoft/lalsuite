@@ -418,12 +418,12 @@ LALFindChirpSPData (
   ASSERT( dataSegVec->data, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
       ": dataSegVec->data" );
-  ASSERT( dataSegVec->data->real4Data, status,
+  ASSERT( dataSegVec->data->chan, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
-      ": dataSegVec->data->real4Data" );
-  ASSERT( dataSegVec->data->real4Data->data, status,
+      ": dataSegVec->data->chan" );
+  ASSERT( dataSegVec->data->chan->data, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
-      ": dataSegVec->data->real4Data->data" );
+      ": dataSegVec->data->chan->data" );
 
 
   /*
@@ -461,7 +461,7 @@ LALFindChirpSPData (
     dataSeg      = &(dataSegVec->data[i]);
     fcSeg        = &(fcSegVec->data[i]);
 
-    data         = dataSeg->real4Data->data->data;
+    data         = dataSeg->chan->data->data;
     spec         = dataSeg->spec->data->data;
     resp         = dataSeg->resp->data->data;
 
@@ -652,11 +652,11 @@ LALFindChirpSPData (
     }
 
     /* set output frequency series parameters */
-    fcSeg->data->epoch  = dataSeg->real4Data->epoch;
-    fcSeg->data->f0     = dataSeg->real4Data->f0;
+    fcSeg->data->epoch  = dataSeg->chan->epoch;
+    fcSeg->data->f0     = dataSeg->chan->f0;
     fcSeg->data->deltaF = 1.0 / 
-      ( (REAL8) dataSeg->real4Data->data->length * dataSeg->real4Data->deltaT ) ;
-    fcSeg->deltaT       = dataSeg->real4Data->deltaT;
+      ( (REAL8) dataSeg->chan->data->length * dataSeg->chan->deltaT ) ;
+    fcSeg->deltaT       = dataSeg->chan->deltaT;
     fcSeg->number       = dataSeg->number;;
 
     /* store low frequency cutoff and invSpecTrunc in segment */

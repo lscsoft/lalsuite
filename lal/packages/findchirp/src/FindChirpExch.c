@@ -30,7 +30,7 @@ LALExchangeDataSegment (
   /* only do a minimal check to see if arguments are somewhat reasonable */
   ASSERT (exchParams, status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
   ASSERT (segment, status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
-  ASSERT (segment->data, status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
+  ASSERT (segment->chan, status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
   ASSERT (segment->spec, status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
   ASSERT (segment->resp, status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
 
@@ -49,7 +49,7 @@ LALExchangeDataSegment (
     /* send pointer fields of data segment */
 
     /* data */
-    LALMPISendINT2TimeSeries (status->statusPtr, segment->data, dest,
+    LALMPISendREAL4TimeSeries (status->statusPtr, segment->chan, dest,
         exchParams->mpiComm);
     CHECKSTATUSPTR (status);
 
@@ -76,16 +76,10 @@ LALExchangeDataSegment (
         exchParams->mpiComm);
     CHECKSTATUSPTR (status);
 
-    /* set relevant fields */
-    segment->endOfData = tmpSegment.endOfData;
-    segment->newLock   = tmpSegment.newLock;
-    segment->newCal    = tmpSegment.newCal;
-    segment->number    = tmpSegment.number;
-
     /* receive remaining fields */
 
     /* data */
-    LALMPIRecvINT2TimeSeries (status->statusPtr, segment->data, source,
+    LALMPIRecvREAL4TimeSeries (status->statusPtr, segment->chan, source,
         exchParams->mpiComm);
     CHECKSTATUSPTR (status);
 

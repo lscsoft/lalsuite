@@ -86,28 +86,16 @@ LALCreateDataSegmentVector (
   /* XXX this should be cleaned up to prevent leaks   */
   for (i = 0; i < vectorPtr->length; ++i)
   {
-    /* ifodmro */
-    segPtr[i].data = (INT2TimeSeries *) 
-      LALCalloc( 1, sizeof(INT2TimeSeries) );
-    if ( ! segPtr[i].data )
-    {
-      ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-    }
-
-    LALI2CreateVector (status->statusPtr, 
-        &segPtr[i].data->data, params->numPoints);
-    CHECKSTATUSPTR (status);
-
-    /* as_q */
-    segPtr[i].real4Data = (REAL4TimeSeries *) 
+    /* channel */
+    segPtr[i].chan = (REAL4TimeSeries *) 
       LALCalloc( 1, sizeof(REAL4TimeSeries) );
-    if ( ! segPtr[i].real4Data )
+    if ( ! segPtr[i].chan )
     {
       ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
     }
 
     LALCreateVector (status->statusPtr, 
-        &segPtr[i].real4Data->data, params->numPoints);
+        &segPtr[i].chan->data, params->numPoints);
     CHECKSTATUSPTR (status);
 
     /* power spectrum */
@@ -181,17 +169,11 @@ LALDestroyDataSegmentVector (
   /* destroy the contents of the array */
   for (i = 0; i < (*vector)->length; ++i)
   {
-    /* ifodmro */
-    LALI2DestroyVector (status->statusPtr, &segPtr[i].data->data);
+    /* data channel */
+    LALDestroyVector (status->statusPtr, &segPtr[i].chan->data);
     CHECKSTATUSPTR (status);
 
-    LALFree (segPtr[i].data);
-
-    /* as_q */
-    LALDestroyVector (status->statusPtr, &segPtr[i].real4Data->data);
-    CHECKSTATUSPTR (status);
-
-    LALFree (segPtr[i].real4Data);
+    LALFree (segPtr[i].chan);
 
     /* power spectrum */
     LALDestroyVector (status->statusPtr, &segPtr[i].spec->data);
