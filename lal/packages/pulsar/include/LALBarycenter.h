@@ -328,10 +328,12 @@ void LALBarycenter(LALStatus *, EmissionTime *, BarycenterInput *, EarthState *)
 \newpage\input{LALBarycenterC}
 ******************************************************* </lalLaTeX> */
 
-/* Test program. */
-
 /* <lalLaTeX>
-\newpage\input{LALInitBarycenterH}
+\section{Header \texttt{LALInitBarycenter.h}}
+
+This header and its associated module have been moved into the
+\verb@support@ package.
+
 \newpage\input{LALBarycenterTestC}
 </lalLaTeX> */
 

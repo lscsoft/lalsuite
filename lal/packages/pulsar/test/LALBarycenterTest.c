@@ -45,7 +45,7 @@ LALCheckMemoryLeaks()
 </lalLaTeX> */
 
 #include <lal/LALBarycenter.h>
-#include "LALInitBarycenter.h"
+#include <lal/LALInitBarycenter.h>
 #include <lal/DetectorSite.h>
 
 NRCSID(LALBARYCENTERTESTC,"$Id$");

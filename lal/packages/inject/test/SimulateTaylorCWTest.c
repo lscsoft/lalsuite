@@ -166,7 +166,7 @@ LALGenerateTaylorCW()        LALSDestroyVectorSequence()
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GenerateTaylorCW.h>
 #include <lal/LALBarycenter.h>
-#include "LALInitBarycenter.h"
+#include <lal/LALInitBarycenter.h>
 
 NRCSID( SIMULATETAYLORCWTESTC, "$Id$" );
 

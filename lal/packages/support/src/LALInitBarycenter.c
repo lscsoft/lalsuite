@@ -16,22 +16,32 @@ Reads Earth and Sun position information from data files.
 
 \subsubsection*{Description}
 
-\verb@LALInitBarycenter()@ reads in two data files (specified in the
-\verb@EphemerisFilenames@ structure) that contain the position, velocity,
-and acceleration of the Earth and Sun, resp., at regular intervals
-througout the specified year. E.g., for 1998, the two files
-are \verb@earth98.dat@ and \verb@sun98.dat@. These files are derived from the
-JPL DE405 ephemeris and are provided by Cutler. 
-The information gets stored in the \verb@EphemerisData@ structure.
-This function should be called once
-near the beginning of the larger analysis package, as
-illustrated in \verb@LALBarycenterTest.c@.
+\verb@LALInitBarycenter()@ fills the contents of \verb@edat@ from data
+read from data files.  See \verb@LALBarycenter.h@ in the \verb@pulsar@
+package for the definition of the \verb@EphemerisData@ structure.
+
+The function reads in two data files (specified in the
+\verb@edat->ephiles@ structure) that contain the position, velocity,
+and acceleration of the Earth and Sun, respectively, at regular
+intervals througout the specified year. E.g., for 1998, the two files
+are \verb@earth98.dat@ and \verb@sun98.dat@.  These files are derived
+from the JPL DE405 ephemeris and are provided by Cutler.  The first
+line of these files specifies the start time, sampling interval, and
+number of datapoints stored in each file, which are used to allocate
+data arrays \verb@edat->ephemE@ and \verb@edat->ephemS@ of appropriate
+length.  \verb@LALInitBarycenter()@ should be called once near the
+beginning of the larger analysis package, and the fields
+\verb@edat->ephemE@ and \verb@edat->ephemS@ should be freed with
+\verb@LALFree()@ near the end.  See the \verb@LALBarycenterTest@
+program in the \verb@pulsar@ package for an illustration of how this
+routine is used.
 
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALFopen()
-LALFclose()
+LALOpenDataFile()
+LALMalloc()
+LALFree()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -39,9 +49,9 @@ LALFclose()
 
 </lalLaTeX> */
 
-#include "LALInitBarycenter.h"
-#include <lal/LALBarycenter.h>
 #include <lal/FileIO.h>
+#include <lal/LALBarycenter.h>
+#include <lal/LALInitBarycenter.h>
 		 
 NRCSID(LALINITBARYCENTERC,"$Id$");
 		 

@@ -19,6 +19,8 @@ data files.
 \end{verbatim}
 
 \noindent This header covers the routine \verb@LALInitBarycenter.c@.
+Since it involves file I/O, it is placed in the \verb@support@
+package, and included in the \verb@lalsupport@ library.
 
 </lalLaTeX> */
 
