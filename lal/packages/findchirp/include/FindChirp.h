@@ -38,6 +38,7 @@ for binary inspiral chirps.
 #include <lal/LALDatatypes.h>
 #include <lal/ComplexFFT.h>
 #include <lal/DataBuffer.h>
+#include <lal/LIGOMetadataTables.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirpChisq.h>
 
@@ -135,81 +136,6 @@ from the \texttt{inject} package.
 #if 0
 <lalLaTeX>
 \subsubsection*{Input and output data structures}
-</lalLaTeX>
-#endif
-
-/* --- structure for describing a binary insipral event ------------------ */
-/* <lalVerbatim file="FindChirpHInspiralEvent"> */
-typedef struct
-tagInspiralEvent
-{
-  UINT4                         id;
-  UINT4                         segmentNumber;
-  LIGOTimeGPS                   time;
-  LIGOTimeGPS                   impulseTime;
-  REAL8                         templateDuration;
-  REAL8                         eventDuration;
-  UINT4                         timeIndex;
-  InspiralTemplate              tmplt;
-  REAL4                         snrsq;
-  REAL4                         chisq;
-  REAL4                         sigma;
-  REAL4                         effDist;
-  REAL4                         coaPhase;
-  UINT4                         numChisqBins;
-  CHAR                          ifoName[2];
-  CHAR                          channel[LALNameLength];
-  WaveformGenerator             wavGen;
-  struct tagInspiralEvent      *next;
-}
-InspiralEvent;
-/* </lalVerbatim> */
-#if 0
-<lalLaTeX>
-\subsubsection*{Structure \texttt{InspiralEvent}}
-\idx[Type]{InspiralEvent}
-
-\input{FindChirpHInspiralEvent}
-
-\noindent This structure describes inspiral events found by \texttt{findchirp}.
-The fields are:
-
-\begin{description}
-\item[\texttt{UINT4 id}] A unique number assigned by the filter routine to 
-each event it finds.
-
-\item[\texttt{UINT4 segmentNumber}] The id number of the 
-\texttt{FindChirpDataSegment} in which the event was found.
-
-\item[\texttt{LIGOTimeGPS time}] The GPS time at which the event occoured.
-
-\item[\texttt{UINT4 timeIndex}] The index at which the event occoured in 
-the array containing the filter output.
-
-\item[\texttt{InspiralTemplate tmplt}] The parameters of the inspiral template
-for the event.
-
-\item[\texttt{REAL4 snrsq}] The value of $\rho^2$ for the event.
-
-\item[\texttt{REAL4 chisq}] The value of the $\chi^2$ veto for the event, if 
-it has been computed.
-
-\item[\texttt{REAL4 sigma}] The value of the normalisation constant $\sigma$ 
-for the event.
-
-\item[\texttt{REAL4 effDist}] The effective distance in megaparsecs to the
-event.
-
-\item[\texttt{REAL4 coaPhase}] The coalescence phase of the chirp.
-
-\item[\texttt{WaveformGenerator wavGen}] The particular waveform generator that was used in the matched filter for this chirp.
-
-\item[\texttt{CHAR ifoName[2]}] Array for storing the two character
-interferometer name (e.g. L1, H2, etc.)
-
-\item[\texttt{struct tagInspiralEvent *next}] A pointer to a structure of type 
-\texttt{InspiralEvent} to allow the construction of a linked list of events.
-\end{description}
 </lalLaTeX>
 #endif
 
@@ -681,7 +607,7 @@ LALDestroyFindChirpInput (
 void
 LALFindChirpFilterSegment (
     LALStatus                  *status,
-    InspiralEvent             **eventList,
+    SnglInspiralTable         **eventList,
     FindChirpFilterInput       *input,
     FindChirpFilterParams      *params
     );

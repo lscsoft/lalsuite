@@ -465,7 +465,7 @@ LALFindChirpFilterFinalize (
 void
 LALFindChirpFilterSegment (
     LALStatus                  *status,
-    InspiralEvent             **eventList,
+    SnglInspiralTable         **eventList,
     FindChirpFilterInput       *input,
     FindChirpFilterParams      *params
     )
@@ -486,7 +486,7 @@ LALFindChirpFilterSegment (
   COMPLEX8             *q             = NULL;
   COMPLEX8             *inputData     = NULL;
   COMPLEX8             *tmpltSignal   = NULL;
-  InspiralEvent        *thisEvent     = NULL;
+  SnglInspiralTable    *thisEvent     = NULL;
 
   INITSTATUS( status, "LALFindChirpFilter", FINDCHIRPFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -745,82 +745,86 @@ LALFindChirpFilterSegment (
           eventStartIdx = j;
 
           /* if this is the first event, start the list */
-          thisEvent = *eventList = (InspiralEvent *) 
-            LALCalloc( 1, sizeof(InspiralEvent) );
+          thisEvent = *eventList = (SnglInspiralTable *) 
+            LALCalloc( 1, sizeof(SnglInspiralTable) );
           if ( ! thisEvent )
           {
             ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
           }
-          thisEvent->id = eventId++;
 
-          /* record the segment id that the event was found in */
-          thisEvent->segmentNumber = input->segment->number;
-
-          /* stick minimal data into the event */
-          thisEvent->timeIndex = j;
-          thisEvent->snrsq = modqsq;
+          /* record the data that we need for the clustering algorithm */
+          thisEvent->end_time.gpsSeconds = j;
+          thisEvent->snr = modqsq;
         }
         else if ( params->maximiseOverChirp &&
-            j < thisEvent->timeIndex + deltaEventIndex &&
-            modqsq > thisEvent->snrsq )
+            j < thisEvent->end_time.gpsSeconds + deltaEventIndex &&
+            modqsq > thisEvent->snr )
         {
           /* if this is the same event, update the maximum */
-          thisEvent->timeIndex = j;
-          thisEvent->snrsq = modqsq;
+          thisEvent->end_time.gpsSeconds = j;
+          thisEvent->snr = modqsq;
         }
-        else if ( j > thisEvent->timeIndex + deltaEventIndex ||
+        else if ( j > thisEvent->end_time.gpsSeconds + deltaEventIndex ||
             ! params->maximiseOverChirp )
         {
           /* clean up this event */
-          InspiralEvent *lastEvent;
-          INT8           timeNS;
+          SnglInspiralTable *lastEvent;
+          INT8               timeNS;
+          INT4               timeIndex = thisEvent->end_time.gpsSeconds;
 
           /* set the event LIGO GPS time of the event */
           timeNS = 1000000000L * 
             (INT8) (input->segment->data->epoch.gpsSeconds);
           timeNS += (INT8) (input->segment->data->epoch.gpsNanoSeconds);
-          timeNS += (INT8) (1e9 * (thisEvent->timeIndex) * deltaT);
-          thisEvent->time.gpsSeconds = (INT4) (timeNS/1000000000L);
-          thisEvent->time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
+          timeNS += (INT8) (1e9 * timeIndex * deltaT);
+          thisEvent->end_time.gpsSeconds = (INT4) (timeNS/1000000000L);
+          thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
 
           /* set the impuse time for the event */
-          thisEvent->templateDuration = (REAL8) chirpTime;
+          thisEvent->template_duration = (REAL8) chirpTime;
           
           /* record the ifo and channel name for the event */
-          strncpy( thisEvent->ifoName, input->segment->data->name, 
+          strncpy( thisEvent->ifo, input->segment->data->name, 
               2 * sizeof(CHAR) );
           strncpy( thisEvent->channel, input->segment->data->name + 3,
               (LALNameLength - 3) * sizeof(CHAR) );
 
           /* copy the template into the event */
-          memcpy( &(thisEvent->tmplt), input->tmplt, sizeof(InspiralTemplate) );
-          thisEvent->tmplt.next = NULL;
-          thisEvent->tmplt.fine = NULL;
+          thisEvent->mass1  = (REAL4) input->tmplt->mass1;
+          thisEvent->mass2  = (REAL4) input->tmplt->mass2;
+          thisEvent->mchirp = (REAL4) input->tmplt->chirpMass;
+          thisEvent->eta    = (REAL4) input->tmplt->eta;
+          thisEvent->tau0   = (REAL4) input->tmplt->t0;
+          thisEvent->tau2   = (REAL4) input->tmplt->t2;
+          thisEvent->tau3   = (REAL4) input->tmplt->t3;
+          thisEvent->tau4   = (REAL4) input->tmplt->t4;
+          thisEvent->tau5   = (REAL4) input->tmplt->t5;
+          thisEvent->ttotal = (REAL4) input->tmplt->tC;
 
           /* set snrsq, chisq, sigma and effDist for this event */
           if ( input->segment->chisqBinVec->length )
           {
-            thisEvent->chisq   = params->chisqVec->data[thisEvent->timeIndex];
-            thisEvent->numChisqBins = input->segment->chisqBinVec->length - 1;
+            thisEvent->chisq     = params->chisqVec->data[timeIndex];
+            thisEvent->chisq_dof = input->segment->chisqBinVec->length - 1;
           }
           else
           {
-            thisEvent->chisq        = 0;
-            thisEvent->numChisqBins = 0;
+            thisEvent->chisq     = 0;
+            thisEvent->chisq_dof = 0;
           }
-          thisEvent->sigma   = sqrt( norm * input->segment->segNorm * 
-              input->segment->segNorm * input->fcTmplt->tmpltNorm );
-          thisEvent->effDist = 
+          thisEvent->sigmasq = norm * input->segment->segNorm * 
+              input->segment->segNorm * input->fcTmplt->tmpltNorm;
+          thisEvent->eff_distance = 
             (input->fcTmplt->tmpltNorm * input->segment->segNorm * 
-             input->segment->segNorm) / thisEvent->snrsq;
-          thisEvent->effDist = sqrt( thisEvent->effDist );
+             input->segment->segNorm) / thisEvent->snr;
+          thisEvent->eff_distance = sqrt( thisEvent->eff_distance );
 
-          thisEvent->snrsq  *= norm;
+          thisEvent->snr *= norm;
+          thisEvent->snr = sqrt( thisEvent->snr );
 
           /* compute the time since the snr crossing */
-          thisEvent->eventDuration = (REAL8) thisEvent->timeIndex
-            - (REAL8) eventStartIdx;
-          thisEvent->eventDuration /= (REAL8) deltaT;
+          thisEvent->event_duration = (REAL8) timeIndex - (REAL8) eventStartIdx;
+          thisEvent->event_duration /= (REAL8) deltaT;
           
           /* store the start of the crossing */
           eventStartIdx = j;
@@ -828,17 +832,16 @@ LALFindChirpFilterSegment (
           /* allocate memory for the newEvent */
           lastEvent = thisEvent;
 
-          lastEvent->next = thisEvent = (InspiralEvent *) 
-            LALCalloc( 1, sizeof(InspiralEvent) );
+          lastEvent->next = thisEvent = (SnglInspiralTable *) 
+            LALCalloc( 1, sizeof(SnglInspiralTable) );
           if ( ! lastEvent->next )
           {
             ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
           }
-          thisEvent->id = eventId++;
 
           /* stick minimal data into the event */
-          thisEvent->timeIndex = j;
-          thisEvent->snrsq = modqsq;
+          thisEvent->end_time.gpsSeconds = j;
+          thisEvent->snr = modqsq;
         }
       }
     }
@@ -855,50 +858,60 @@ LALFindChirpFilterSegment (
   if ( thisEvent )
   {
     INT8           timeNS;
+    INT4           timeIndex = thisEvent->end_time.gpsSeconds;
 
     /* set the event LIGO GPS time of the event */
     timeNS = 1000000000L * 
       (INT8) (input->segment->data->epoch.gpsSeconds);
     timeNS += (INT8) (input->segment->data->epoch.gpsNanoSeconds);
-    timeNS += (INT8) (1e9 * (thisEvent->timeIndex) * deltaT);
-    thisEvent->time.gpsSeconds = (INT4) (timeNS/1000000000L);
-    thisEvent->time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
+    timeNS += (INT8) (1e9 * timeIndex * deltaT);
+    thisEvent->end_time.gpsSeconds = (INT4) (timeNS/1000000000L);
+    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
 
     /* set the impuse time for the event */
-    thisEvent->templateDuration = (REAL8) chirpTime;
+    thisEvent->template_duration = (REAL8) chirpTime;
 
     /* record the ifo name for the event */
-    strncpy( thisEvent->ifoName, input->segment->data->name, 
+    strncpy( thisEvent->ifo, input->segment->data->name, 
         2 * sizeof(CHAR) );
     strncpy( thisEvent->channel, input->segment->data->name + 3,
         (LALNameLength - 3) * sizeof(CHAR) );
 
     /* copy the template into the event */
-    memcpy( &(thisEvent->tmplt), input->tmplt, sizeof(InspiralTemplate) );
+    thisEvent->mass1  = (REAL4) input->tmplt->mass1;
+    thisEvent->mass2  = (REAL4) input->tmplt->mass2;
+    thisEvent->mchirp = (REAL4) input->tmplt->chirpMass;
+    thisEvent->eta    = (REAL4) input->tmplt->eta;
+    thisEvent->tau0   = (REAL4) input->tmplt->t0;
+    thisEvent->tau2   = (REAL4) input->tmplt->t2;
+    thisEvent->tau3   = (REAL4) input->tmplt->t3;
+    thisEvent->tau4   = (REAL4) input->tmplt->t4;
+    thisEvent->tau5   = (REAL4) input->tmplt->t5;
+    thisEvent->ttotal = (REAL4) input->tmplt->tC;
 
     /* set snrsq, chisq, sigma and effDist for this event */
     if ( input->segment->chisqBinVec->length )
     {
-      thisEvent->chisq = params->chisqVec->data[thisEvent->timeIndex];
-      thisEvent->numChisqBins = input->segment->chisqBinVec->length - 1;
+      thisEvent->chisq = params->chisqVec->data[timeIndex];
+      thisEvent->chisq_dof = input->segment->chisqBinVec->length - 1;
     }
     else
     {
-      thisEvent->chisq        = 0;
-      thisEvent->numChisqBins = 0;
+      thisEvent->chisq     = 0;
+      thisEvent->chisq_dof = 0;
     }
-    thisEvent->sigma   = sqrt( norm * input->segment->segNorm * 
-        input->segment->segNorm * input->fcTmplt->tmpltNorm );
-    thisEvent->effDist = 
+    thisEvent->sigmasq = norm * input->segment->segNorm * 
+        input->segment->segNorm * input->fcTmplt->tmpltNorm;
+    thisEvent->eff_distance = 
       (input->fcTmplt->tmpltNorm * input->segment->segNorm * 
-       input->segment->segNorm) / thisEvent->snrsq;
-    thisEvent->effDist = sqrt( thisEvent->effDist );
-    thisEvent->snrsq  *= norm;
+       input->segment->segNorm) / thisEvent->snr;
+    thisEvent->eff_distance = sqrt( thisEvent->eff_distance );
+    thisEvent->snr *= norm;
+    thisEvent->snr = sqrt( thisEvent->snr );
 
     /* compute the time since the snr crossing */
-    thisEvent->eventDuration = (REAL8) thisEvent->timeIndex
-      - (REAL8) eventStartIdx;
-    thisEvent->eventDuration /= (REAL8) deltaT;
+    thisEvent->event_duration = (REAL8) timeIndex - (REAL8) eventStartIdx;
+    thisEvent->event_duration /= (REAL8) deltaT;
   }    
 
 
