@@ -16,12 +16,19 @@ $Id$
 </lalVerbatim> 
 
 <lalLaTeX>
-
 \section{Header \texttt{FindChirp.h}}
 \label{s:FindChirp.h}
 
-Provides routines to filter IFO data for binary inspiral chirps.
+Provides core protypes, structures and functions to filter interferometer data
+for binary inspiral chirps.
 
+\subsection*{Synopsis}
+
+\begin{verbatim}
+#include <lal/FindChirp.h>
+\end{verbatim}
+
+\input{FindChirpHDoc}
 </lalLaTeX>
 #endif
 
@@ -39,6 +46,7 @@ Provides routines to filter IFO data for binary inspiral chirps.
 
 #ifdef  __cplusplus
 extern "C" {
+#pragma }
 #endif
 
 
@@ -72,10 +80,10 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_MSGEDTZO "deltaT is zero or negative"
 #define FINDCHIRPH_MSGETRNC "Duration of inverse spectrum in time domain is negative"
 #define FINDCHIRPH_MSGEFLOW "Inverse spectrum low frequency cutoff is negative"
-#define FINDCHIRPH_MSGEFREE "Memory free error"
+#define FINDCHIRPH_MSGEFREE "Error freeing memory"
 #define FINDCHIRPH_MSGERHOT "Rhosq threshold is zero or negative"
 #define FINDCHIRPH_MSGECHIT "Chisq threshold is zero or negative"
-#define FINDCHIRPH_MSGECRUP "Attempting to filter corrupted data"
+#define FINDCHIRPH_MSGECRUP "Chirp length or invSpecTrunc too long for length of data segment"
 /* </lalErrTable> */
 
 
@@ -85,8 +93,13 @@ NRCSID (FINDCHIRPH, "$Id$");
  *
  */
 
+#if 0
+<lalLaTeX>
+\subsection*{Types}
+</lalLaTeX>
+#endif
 
-/* structure for describing a binary insipral event */
+/* --- structure for describing a binary insipral event ------------------ */
 typedef struct
 tagInspiralEvent
 {
@@ -102,8 +115,47 @@ tagInspiralEvent
   struct tagInspiralEvent      *next;
 }
 InspiralEvent;
+#if 0
+<lalLaTeX>
+\subsubsection*{Structure \texttt{InspiralEvent}}
+\idx[Type]{InspiralEvent}
 
-/* vector of DataSegment, as defined the framedata package */
+\noindent This structure describes inspiral events found by \texttt{findchirp}.
+The fields are:
+
+\begin{description}
+\item[\texttt{UINT4 id}] A unique number assigned by the filter routine to 
+each event it finds.
+
+\item[\texttt{UINT4 segmentNumber}] The id number of the 
+\texttt{FindChirpDataSegment} in which the event was found.
+
+\item[\texttt{LIGOTimeGPS time}] The GPS time at which the event occoured.
+
+\item[\texttt{UINT4 timeIndex}] The index at which the event occoured in 
+the array containing the filter output.
+
+\item[\texttt{InspiralTemplate tmplt}] The parameters of the inspiral template
+for the event.
+
+\item[\texttt{REAL4 snrsq}] The value of $\rho^2$ for the event.
+
+\item[\texttt{REAL4 chisq}] The value of the $\chi^2$ veto for the event, if 
+it has been computed.
+
+\item[\texttt{REAL4 sigma}] The value of the normalisation constant $\sigma$ 
+for the event.
+
+\item[\texttt{REAL4 effDist}] The effective distance in megaparsecs to the
+event.
+
+\item[\texttt{struct tagInspiralEvent *next}] A pointer to a structure of type 
+\texttt{InspiralEvent} to allow the construction of a linked list of events.
+\end{description}
+</lalLaTeX>
+#endif
+
+/* --- vector of DataSegment, as defined the framedata package ----------- */
 typedef struct
 tagDataSegmentVector
 {
@@ -111,8 +163,24 @@ tagDataSegmentVector
   DataSegment                  *data;
 }
 DataSegmentVector;
+#if 0
+<lalLaTeX>
+\subsubsection*{Structure \texttt{DataSegmentVector}}
+\idx[Type]{DataSegmentVector}
 
-/* processed data segment used by FindChirp filter routine */
+\noindent This structure provides a LAL like vector structure for the
+\texttt{DataSegment} structure defined in the package \texttt{framedata}
+
+\begin{description}
+\item[\texttt{UINT4 length}] Number of \texttt{DataSegment} structres in the
+vector
+
+\item[\texttt{DataSegment *data}] Pointer to the data.
+\end{description}
+</lalLaTeX>
+#endif
+
+/* --- processed data segment used by FindChirp filter routine ----------- */
 typedef struct
 tagFindChirpSegment
 {
@@ -125,8 +193,41 @@ tagFindChirpSegment
   UINT4                         number;
 }
 FindChirpSegment;
+#if 0
+<lalLaTeX>
+\subsubsection*{Structure \texttt{FindChirpSegment}}
+\idx[Type]{FindChirpSegment}
 
-/* vector of FindChirpSegment defined above */
+\noindent This structure contains the conditioned input data and its
+parameters for the \texttt{FindChirpFilter()} function.
+
+\begin{description}
+\item[\texttt{COMPLEX8FrequencySeries *data}] The conditioned input data.
+The conditioneing performed is as described in the documentation for the
+module \texttt{FindChirpSPData.c}
+
+\item[\texttt{UINT4Vector *chisqBinVec}] A vector containing the indices of
+the boundaries of the bins of equal power for the $\chi^2$ veto created by 
+\texttt{FindChirpSPData()}
+
+\item[\texttt{REAL8 deltaT}] The time step $\Delta$ of the time series 
+input data.
+
+\item[\texttt{REAL4 segNorm}] The template independent part of the 
+normalisation constant $\sigma$.
+
+\item[\texttt{UINT4 invSpecTrunc}] The number of points to which the inverse 
+power spectrum \ospsd is truncated to in the time domain in order to smooth
+out high $Q$ features in the power spectrum.
+
+\item[\texttt{UINT4 number}] A unique identification number for the 
+\texttt{FindChirpDataSegment}. This will generally correspond to the number in
+the \texttt{DataSegment} from which the conditioned data was computed.
+\end{description}
+</lalLaTeX>
+#endif
+
+/* --- vector of FindChirpSegment defined above -------------------------- */
 typedef struct
 tagFindChirpSegmentVector
 {
@@ -134,8 +235,24 @@ tagFindChirpSegmentVector
   FindChirpSegment             *data;
 }
 FindChirpSegmentVector;
+#if 0
+<lalLaTeX>
+\subsubsection*{Structure \texttt{FindChirpSegmentVector}}
+\idx[Type]{FindChirpSegmentVector}
 
-/* structure to contain an inspiral template */
+\noindent This structure provides a LAL like vector structure for the
+\texttt{FindChirpSegment} structure defined above.
+
+\begin{description}
+\item[\texttt{UINT4 length}] Number of \texttt{FindChirpSegment} structres in
+the vector
+
+\item[\texttt{DataSegment *data}] Pointer to the data.
+\end{description}
+</lalLaTeX>
+#endif
+
+/* --- structure to contain an inspiral template ------------------------- */
 typedef struct
 tagFindChirpTemplate
 {
@@ -143,6 +260,23 @@ tagFindChirpTemplate
   REAL4                         tmpltNorm;
 }
 FindChirpTemplate;
+#if 0
+<lalLaTeX>
+\subsubsection*{Structure \texttt{FindChirpTemplate}}
+\idx[Type]{FindChirpTemplate}
+
+\noindent This structure provides contains the frequency domain representation
+of the cosine phase inspiral template $\tilde{h_c}(f)$.
+
+\begin{description}
+\item[\texttt{COMPLEX8Vector *data}] A vector containing $\tilde{h_c}(f)$. Note
+that in the future, this will be changed to a \texttt{COMPLEX8FrequencySeries}.
+
+\item[\texttt{REAL4 tmpltNorm}] The template dependent part of the 
+normalisation constant $\sigma$.
+\end{description}
+</lalLaTeX>
+#endif
 
 
 /*
@@ -292,6 +426,7 @@ LALFindChirpFilterSegment (
 #endif
 
 #ifdef  __cplusplus
+#pragma {
 }
 #endif
 
