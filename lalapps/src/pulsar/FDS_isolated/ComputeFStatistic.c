@@ -191,6 +191,8 @@ BOOLEAN uvar_searchNeighbors;
 BOOLEAN uvar_openDX;
 BOOLEAN uvar_doCheckpointing;
 BOOLEAN uvar_expLALDemod;
+REAL8 uvar_startTime;
+REAL8 uvar_endTime;
 /*----------------------------------------------------------------------*/
 /* some other global variables */
 
@@ -758,8 +760,6 @@ initUserVars (LALStatus *stat)
   uvar_expLALDemod = FALSE;
 #endif
 
-
-
   /* register all our user-variables */
   LALregBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message"); 
   LALregSTRINGUserVar(stat, 	IFO, 		'I', UVAR_REQUIRED, "Detector: GEO(0),LLO(1),LHO(2),NAUTILUS(3),VIRGO(4),TAMA(5),CIT(6)");
@@ -797,6 +797,9 @@ initUserVars (LALStatus *stat)
   LALregBOOLUserVar(stat,	searchNeighbors, 0,  UVAR_OPTIONAL, "Refine skyregion to neighboring points of original center.");
   LALregBOOLUserVar(stat,	doCheckpointing, 0,  UVAR_OPTIONAL, "Do checkpointing and resume for previously checkpointed state.");
   LALregBOOLUserVar(stat,	expLALDemod, 	 0,  UVAR_OPTIONAL, "Use new experimental LALDemod-version.");
+
+  LALregREALUserVar(stat, 	startTime, 	 0,  UVAR_OPTIONAL, "Start-time of data to be analysed");
+  LALregREALUserVar(stat, 	endTime, 	 0,  UVAR_OPTIONAL, "End-time of data to be analysed");
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -2756,7 +2759,7 @@ void sighandler(int sig){
   sleep(5);
   boinc_finish(4321);
   return;
-}
+} /* sighandler */
 #endif /*USE_BOINC*/
 
 
