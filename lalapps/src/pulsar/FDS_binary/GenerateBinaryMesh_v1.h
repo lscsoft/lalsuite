@@ -31,7 +31,7 @@
 #define ARGP 0.0
 
 typedef struct CLargstag {
-  REAL8 fmax;
+  REAL8 f_max;
   REAL8 tspan;
   LIGOTimeGPS tstart;
   REAL8 RA;
@@ -51,7 +51,7 @@ typedef struct CLargstag {
 } CLargs;
   
 typedef struct BinaryMeshFileHeadertag {
-  REAL8 fmax;
+  REAL8 f_max;
   REAL8 tspan;
   LIGOTimeGPS tstart;
   UINT4 Nfilters;

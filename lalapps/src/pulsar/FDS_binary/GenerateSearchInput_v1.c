@@ -14,7 +14,7 @@ static LALStatus status;
 REAL8 alpha,delta;
 REAL8 sma,period,ecc,argp;
 INT4 tperisec,tperins;
-REAL8 fmin,band,fres;
+REAL8 f_min,band,fres;
 CHAR datadir[256],efiles[56],basename[256],yr[256],ifo[256],bintempfile[256],outfile[256],fout[256];
 BOOLEAN signalflag;
 BOOLEAN estimflag;
@@ -61,7 +61,7 @@ int OutputBinTemplateFile()
   }
 
   /* setup the header input */
-  BMFheader.fmax=fmin+band;
+  BMFheader.f_max=f_min+band;
   BMFheader.tspan=tspan;
   BMFheader.tstart.gpsSeconds=tstart;
   BMFheader.tstart.gpsNanoSeconds=0;
@@ -113,7 +113,7 @@ int ReadCommandLine(int argc,char *argv[])
   alpha=0.0; /* a */
   delta=0.0; /* d */
   sprintf(ifo,"LLO"); /* I */            
-  fmin=600.0; /* F */
+  f_min=600.0; /* F */
   band=0.0; /* b */
   fres=0.0; /* r*/
 
@@ -147,7 +147,7 @@ int ReadCommandLine(int argc,char *argv[])
       {"alpha", required_argument, 0, 'a'},
       {"delta", required_argument, 0, 'd'},
       {"ifo", required_argument, 0, 'I'},
-      {"fmin", required_argument, 0, 'f'},
+      {"f_min", required_argument, 0, 'f'},
       {"band", required_argument, 0, 'b'},
       {"fres", required_argument, 0, 'r'},
       {"doppler", required_argument, 0, 'p'},
@@ -190,7 +190,7 @@ int ReadCommandLine(int argc,char *argv[])
       sprintf(ifo,temp);
       break;
     case 'f':
-      fmin=atof(optarg);
+      f_min=atof(optarg);
       break;
     case 'b':
       band=atof(optarg);
@@ -280,7 +280,7 @@ int ReadCommandLine(int argc,char *argv[])
       fprintf(stdout,"\t--alpha       FLOAT\t Sky position alpha (equatorial coordinates) in radians [DEFAULT=0.0 ]\n");
       fprintf(stdout,"\t--delta       FLOAT\t Sky position delta (equatorial coordinates) in radians [DEFAULT=0.0 ]\n");
       fprintf(stdout,"\t--ifo         STRING\t Detector (LLO,LHO,GEO,VIRGO,TAMA) [DEFAULT=LLO]\n");
-      fprintf(stdout,"\t--fmin        FLOAT\t Minimum search frequency in Hz [DEFAULT=0.0] \n");
+      fprintf(stdout,"\t--f_min        FLOAT\t Minimum search frequency in Hz [DEFAULT=0.0] \n");
       fprintf(stdout,"\t--band        FLOAT\t Bandwidth to be searched in Hz [DEFAULT=0.0]\n");
       fprintf(stdout,"\t--fres        FLOAT\t Frequency resolution to be used in Hz [DEFAULT=0.0]\n");
       fprintf(stdout,"\t--ephem       STRING\t Location of ephemeris data [DEFAULT=./]\n");
@@ -348,7 +348,7 @@ int OutputConfigFile()
   fprintf(fp,"\n");
   fprintf(fp,"DataDir         = %s\t# Directory where SFT's are located\n",datadir);
   fprintf(fp,"EphemDir        = %s\t# Directory where Ephemeris files are located\n",efiles);
-  fprintf(fp,"Freq            = %6.12f\t\t# Starting search frequency in Hz\n",fmin);
+  fprintf(fp,"Freq            = %6.12f\t\t# Starting search frequency in Hz\n",f_min);
   fprintf(fp,"\n");
   fprintf(fp,"IFO             = %s\t\t# 0=GEO, 1=LLO, 2=LHO or 3=Roman Bar\n",ifo);
   fprintf(fp,"\n");

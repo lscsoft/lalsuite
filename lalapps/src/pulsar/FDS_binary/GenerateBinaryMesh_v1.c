@@ -425,7 +425,7 @@ int GenMetricComp(REAL8 *X,REAL8 *Y,Metric *XYMetric)
 
   /* set up some more concise variables */
   T=CLA.tspan;
-  f=CLA.fmax;
+  f=CLA.f_max;
   w=LAL_TWOPI/(CLA.period);
   pi=LAL_PI;
   
@@ -646,7 +646,7 @@ int ConvertMesh(REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparameterspace *RT
   }
 
   /* setup the header input */
-  BMFheader.fmax=CLA.fmax;
+  BMFheader.f_max=CLA.f_max;
   BMFheader.tspan=CLA.tspan;
   BMFheader.tstart.gpsSeconds=CLA.tstart.gpsSeconds;
   BMFheader.tstart.gpsNanoSeconds=CLA.tstart.gpsNanoSeconds;
@@ -699,7 +699,7 @@ int ConvertMesh(REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparameterspace *RT
   optarg = NULL;
   
   /* Initialize default values */
-  CLA.fmax=0.0;
+  CLA.f_max=0.0;
   CLA.tspan=0.0;
   CLA.tstart.gpsSeconds=0;
   CLA.tstart.gpsNanoSeconds=0;
@@ -724,7 +724,7 @@ int ConvertMesh(REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparameterspace *RT
   {
     int option_index = 0;
     static struct option long_options[] = {
-      {"fmax", required_argument, 0, 'f'},
+      {"f_max", required_argument, 0, 'f'},
       {"tspan", required_argument, 0, 's'},
       {"tstart", required_argument, 0, 'T'},
       {"ra", required_argument, 0, 'a'},
@@ -747,7 +747,7 @@ int ConvertMesh(REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparameterspace *RT
     while (!errflg && ((c = getopt_long (argc, argv,"hf:s:T:a:d:A:p:P:q:Q:w:W:m:E:y:I:o:",long_options, &option_index)))!=-1)
       switch (c) {
       case 'f':
-	CLA.fmax=atof(optarg);
+	CLA.f_max=atof(optarg);
 	break;
       case 's':
 	CLA.tspan=atof(optarg);
@@ -808,7 +808,7 @@ int ConvertMesh(REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparameterspace *RT
       case 'h':
 	/* print usage/help message */
 	fprintf(stdout,"Arguments are:\n");
-	fprintf(stdout,"\t--fmax      REAL8\t Maximum search frequency in Hz [DEFAULT=0.0]\n");
+	fprintf(stdout,"\t--f_max      REAL8\t Maximum search frequency in Hz [DEFAULT=0.0]\n");
 	fprintf(stdout,"\t--tspan     REAL8\t Observation time span in seconds [DEFAULT=0.0]\n");
 	fprintf(stdout,"\t--tstart    INT4\t Start time of observation at detector site in GPS seconds [DEFAULT=0]\n");
 	fprintf(stdout,"\t--ra        REAL8\t Source right ascension in radians (equatorial) [DEFAULT=0.0]\n");
@@ -854,7 +854,7 @@ int CheckInput()
   LIGOTimeGPS endGPS;
  
   
-  if (CLA.fmax<0.0) {
+  if (CLA.f_max<0.0) {
     fprintf(stderr,"MAX search frequency must be > 0 \n");
     exit(1);
   }
