@@ -446,6 +446,7 @@ LALFindChirpFilterSegment (
   UINT4                 j, k;
   UINT4                 numPoints;
   UINT4                 deltaEventIndex;
+  UINT4                 ignoreIndex;
   UINT4                 eventId = 0;
   REAL4                 deltaT;
   REAL4                 norm;
@@ -539,7 +540,6 @@ LALFindChirpFilterSegment (
   numPoints = params->qVec->length;
 
 
-
   /*
    *
    * calculate the minimum distance between distinct events
@@ -547,12 +547,28 @@ LALFindChirpFilterSegment (
    */
 
 
-  /***************** temporary code for mpi mdc ************************/
-  /* this should be the length of a chirp, but I have left my notes in */
-  /* Milwaukee, so it is hard wired to sixty seconds at the moment     */
-  deltaEventIndex = (UINT4) rint( (60.0 / deltaT) + 1.0 );
-  /*********************************************************************/
-
+  /* calculate the length of the chirp */
+  {
+    REAL4 eta = input->tmplt->eta;
+    REAL4 m1 = input->tmplt->mass1;
+    REAL4 m2 = input->tmplt->mass2;
+    REAL4 fmin = input->segment->fLow;
+    REAL4 m = 2 * ( m1 > m2 ? m2 : m1 );
+    REAL4 c0 = 5*m*LAL_MTSUN_SI/(256*eta);
+    REAL4 c2 = 743.0/252.0 + eta*11.0/3.0;
+    REAL4 c3 = -32*LAL_PI/3;
+    REAL4 c4 = 3058673.0/508032.0 + eta*(5429.0/504.0 + eta*617.0/72.0);
+    REAL4 x  = pow(LAL_PI*m*LAL_MTSUN_SI*fmin, 1.0/3.0);
+    REAL4 x2 = x*x;
+    REAL4 x3 = x*x2;
+    REAL4 x4 = x2*x2;
+    REAL4 x8 = x4*x4;
+    REAL4 chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8;
+    deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
+    fprintf( stdout, "chirp time = %f\ndeltaEventIndex = %d\n", 
+        chirpTime, deltaEventIndex );
+  }
+    
 
   /*
    *
@@ -614,15 +630,23 @@ LALFindChirpFilterSegment (
   /* normalised threhold */
   modqsqThresh = params->rhosqThresh / norm;
 
-  for ( j = 0; j < numPoints; ++j )
+  /* if full snrsq vector is required, store the snrsq */
+  if ( params->rhosqVec ) 
+  {
+    for ( j = 0; j < numPoints; ++j )
+    {
+      REAL4 modqsq = q[j].re * q[j].re + q[j].im * q[j].im;
+      params->rhosqVec->data[j] = norm * modqsq;
+    }
+  }
+
+  /* ignore corrupted data at start and end */
+  ignoreIndex = (input->segment->invSpecTrunc + deltaEventIndex ) / 2;
+  
+  /* look for an events in the filter output */
+  for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )
   {
     REAL4 modqsq = q[j].re * q[j].re + q[j].im * q[j].im;
-
-    /* signal to noise squared */
-    /* rhosq = norm * modqsq;  */
-
-    /* if full snrsq vector is required, store the snrsq */
-    if ( params->rhosqVec ) params->rhosqVec->data[j] = norm * modqsq;
 
     /* if snrsq exceeds threshold at any point */
     if ( modqsq > modqsqThresh )

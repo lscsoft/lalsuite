@@ -581,10 +581,6 @@ LALFindChirpSPData (
     }
 
 
-
-
-
-
     /*
      *
      * compute segment normalisation, outputData, point fcSeg at data segment
@@ -622,6 +618,10 @@ LALFindChirpSPData (
       ( (REAL8) dataSeg->real4Data->data->length * dataSeg->real4Data->deltaT ) ;
     fcSeg->deltaT       = dataSeg->real4Data->deltaT;
     fcSeg->number       = dataSeg->number;;
+
+    /* store low frequency cutoff and invSpecTrunc in segment */
+    fcSeg->fLow         = params->fLow;
+    fcSeg->invSpecTrunc = params->invSpecTrunc;
 
 
     /*
