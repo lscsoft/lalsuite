@@ -1,0 +1,61 @@
+\section{Inspiral}
+\label{secion:inspiral}
+
+This section of \textsc{LALApps} contains programs that can be used to search
+interferometer data for inspiral signals using templated matched filtering and
+associated veto stratergies.
+
+\clearpage
+
+\subsection{Program \texttt{lalapps\_tmpltbank}}
+\label{program:lalapps-tmpltbank}
+\idx[Program]{lalapps\_tmpltbank}
+
+\begin{entry}
+
+\item[Name]
+\verb$lalapps_tmpltbank$ --- template bank generation from raw data.
+
+\item[Synopsis]
+\verb$lalapps_tmpltbank$ 
+[\verb$--help$]
+[\verb$--debug-level$ \textsc{level}]
+[\verb$--verbose$]
+\verb$--gps-start-time$ \textsc{gps} 
+\verb$--gps-stop-time$ \textsc{gps}
+\verb$--channel-name$ \textsc{name}
+\verb$--segment-length$ \textsc{points}
+\verb$--number-of-segments$ \textsc{segments} \\
+\verb$--sample-rate$ \textsc{rate}
+(\verb$--enable-high-pass$ \textsc{frequency}$|$\verb$--disable-high-pass$) \\
+\verb$--spectrum-type$ \textsc{(mean$|$median)}
+\verb$--frame-cache$ \textsc{file}
+\verb$--calibration-cache$ \textsc{file}
+\verb$--minimum-mass$ \textsc{mass}
+\verb$--maximum-mass$ \textsc{mass}
+\verb$--low-frequency-cutoff$ \textsc{freq}
+\verb$--high-frequency-cutoff$ \textsc{freq}
+\verb$--order$ 
+\textsc{(newtonian$|$oneHalfPN$|$onePN$|$onePointFivePN$|$twoPN$|$twoPointFive$|$threePN$|$threePointFivePN)}
+%\verb$$ \textsc{}
+%\verb$$ \textsc{}
+%\verb$$ \textsc{}
+%\verb$$ \textsc{}
+
+\item[Description]
+\verb$lalapps_tmpltbank$ generates inspiral template bank parameters from raw
+data for a specified time interval.
+
+The code generates a calibrated power spectrum at the specified time for
+the requested channel and uses this to compute the template bank.
+
+See the LAL bank package documentation for detailed information on the
+algorithms used to generate the banks.
+
+\item[Example]
+none
+
+\item[Author]
+Duncan Brown
+\end{entry}
+
