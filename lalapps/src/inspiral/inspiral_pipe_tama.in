@@ -84,7 +84,7 @@ def analyze_ifo(ifo_data,ifo_to_do,ifo_name,tmplt_job,insp_job,df_job,snr,
   """
   Analyze the data from L1, H1 (single and double with H2) and H2 single. 
   Since the way we treat all this data is the same, this function is the same 
-  for all three cases. Returns the last LALdataFind job that was executed and 
+  for all three cases. Returns the last LSCdataFind job that was executed and 
   the chunks analyzed.
   ifo_data = the master science segs for the IFO
   ifo_to_do = the science segments we need to analyze
@@ -96,7 +96,7 @@ def analyze_ifo(ifo_data,ifo_to_do,ifo_name,tmplt_job,insp_job,df_job,snr,
   chisq = the chi squared threshold for this IFO
   pad = data start/end padding
   max_slide = the maximum length of a time slide
-  prev_df = the previous LALdataFind job that was executed
+  prev_df = the previous LSCdataFind job that was executed
   dag = the DAG to attach the nodes to
   """
   chunks_analyzed = []
@@ -115,8 +115,8 @@ def analyze_ifo(ifo_data,ifo_to_do,ifo_name,tmplt_job,insp_job,df_job,snr,
           done_this_chunk = 1
           # make sure we have done one and only one datafind for the segment
           if not done_df_for_seg:
-            df = inspiral.DataFindNode(df_job)
-            df.set_ifo(ifo_name)
+            df = pipeline.LSCDataFindNode(df_job)
+            df.set_observatory(ifo_name[0])
             df.set_start(seg.start() - pad)
             df.set_end(seg.end() + pad)
             if prev_df: df.add_parent(prev_df)
@@ -276,7 +276,7 @@ else:
 
 ##############################################################################
 # create the Condor jobs that will be used in the DAG
-df_job = inspiral.DataFindJob(cp)
+df_job = pipeline.LSCDataFindJob('cache','logs',cp)
 tmplt_job = inspiral.TmpltBankJob(cp)
 insp_job = inspiral.InspiralJob(cp)
 trig_job = inspiral.TrigToTmpltJob(cp)
@@ -492,8 +492,8 @@ for seg in h2_data:
         done_this_chunk = 1
         # make sure we have done one and only one datafind for the segment
         if not done_df_for_seg:
-          df = inspiral.DataFindNode(df_job)
-          df.set_ifo('H2')
+          df = pipeline.LSCDataFindNode(df_job)
+          df.set_observatory('H')
           df.set_start(seg.start() - pad)
           df.set_end(seg.end() + pad)
           if prev_df: df.add_parent(prev_df)
@@ -571,14 +571,14 @@ dag.write_dag()
 print "\nCreated a DAG file which can be submitted by executing"
 print "\n   condor_submit_dag", dag.get_dag_file()
 print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
-If you are running LALdataFind jobs, do not forget to initialize your grid 
+If you are running LSCdataFind jobs, do not forget to initialize your grid 
 proxy certificate on the condor submit machine by running the commands
 
   unset X509_USER_PROXY
   grid-proxy-init -hours 72
 
 Enter your pass phrase when promted. The proxy will be valid for 72 hours. 
-If you expect the LALdataFind jobs to take longer to complete, increase the
+If you expect the LSCdataFind jobs to take longer to complete, increase the
 time specified in the -hours option to grid-proxy-init. You can check that 
 the grid proxy has been sucessfully created by executing the command:
 
