@@ -332,8 +332,14 @@ m4 Exchange.m4 > Exchange.c
 cd ../../..
 
 cd packages/pulsar/test
-/bin/sh ephemtoilwd.sh earth98.dat > earth98.ilwd
-/bin/sh ephemtoilwd.sh sun98.dat > sun98.ilwd
+/bin/sh ephemtoilwd.sh earth99.dat > earth99.ilwd
+/bin/sh ephemtoilwd.sh sun99.dat > sun99.ilwd
+/bin/sh ephemtoilwd.sh earth00.dat > earth00.ilwd
+/bin/sh ephemtoilwd.sh sun00.dat > sun00.ilwd
+/bin/sh ephemtoilwd.sh earth01.dat > earth01.ilwd
+/bin/sh ephemtoilwd.sh sun01.dat > sun01.ilwd
+/bin/sh ephemtoilwd.sh earth02.dat > earth02.ilwd
+/bin/sh ephemtoilwd.sh sun02.dat > sun02.ilwd
 cd ../../..
 
 ## Generate the Makefile.in's and the configure script

@@ -18,8 +18,8 @@
 
 # FORMAT:
 #
-# - the first line contains three integers, the GPS start time, the number
-#   of leap seconds (ignored), and the number of enteries
+# - the first line contains three integers, the GPS start time, the time step,
+#   and the number of enteries
 # - each entry is in the format " %f %f %f\n %f %e %e\n %e %e %e\n %e\n"
 #   where the first number in the entry is the GPS time and the remaining
 #   nine numbers are positions, velocities, and accelerations (three
@@ -32,8 +32,9 @@ tmpfile=$infile.tmp
 rm -f $tmpfile
 
 # First line contains useful info
-nlines=`sed -n '1s/[^0-9]*\([0-9][0-9]*\)[^0-9][^0-9]*\([0-9][0-9]*\)[^0-9][^0-9]*\([0-9][0-9]*\)/\3/p' $infile`
-tstart=`sed -n '1s/[^0-9]*\([0-9][0-9]*\)[^0-9][^0-9]*\([0-9][0-9]*\)[^0-9][^0-9]*\([0-9][0-9]*\)/\1/p' $infile`
+nlines=`sed -n '1s/[^0-9]*\([0-9][0-9]*\)[^0-9][^0-9]*\([0-9][0-9]*\)\.[0-9]*[^0-9][^0-9]*\([0-9][0-9]*\)/\3/p' $infile`
+tstart=`sed -n '1s/[^0-9]*\([0-9][0-9]*\)[^0-9][^0-9]*\([0-9][0-9]*\)\.[0-9]*[^0-9][^0-9]*\([0-9][0-9]*\)/\1/p' $infile`
+tstep=`sed -n '1s/[^0-9]*\([0-9][0-9]*\)[^0-9][^0-9]*\([0-9][0-9]*\)\.[0-9]*[^0-9][^0-9]*\([0-9][0-9]*\)/\2/p' $infile`
 
 # Rest of the file has spurious newlines... correct this!
 # Also get rid of multiple spaces and initial spaces.
@@ -50,11 +51,22 @@ s/^  *//
 p
 }' $infile > $tmpfile
 
-# Need to get time step and stop time: assume integers!
-t1=`sed -n '1s/[^0-9].*$//p' $tmpfile`
-t2=`sed -n '2s/[^0-9].*$//p' $tmpfile`
-tstep=`expr $t2 - $t1`
+# Re-read start and stop times
+tstart=`sed -n '1s/[^0-9].*$//p' $tmpfile`
 tstop=`sed -n '$s/[^0-9].*$//p' $tmpfile`
+
+# Sanity check
+dt1=`expr $nlines \* $tstep - $tstep`
+dt2=`expr $tstop - $tstart`
+if test $dt1 -ne $dt2
+then
+  echo "sanity check failed: time step seems wrong"
+  echo "nlines =" $nlines
+  echo "tstart =" $tstart
+  echo "tstop =" $tstop
+  echo "tstep =" $tstep
+  exit 1
+fi
 
 # Print ILWD file
 printf "<?ilwd?>\n"
