@@ -674,7 +674,7 @@ static REAL4FrequencySeries *optimal_filter(LALStatus *status,
 }
 
 /* wrapper function for estimating the psd */
-REAL4FrequencySeries *estimate_psd(LALStatus *status,
+static REAL4FrequencySeries *estimate_psd(LALStatus *status,
     REAL4TimeSeries *series)
 {
   /* variables */
@@ -712,6 +712,9 @@ REAL4FrequencySeries *estimate_psd(LALStatus *status,
 
   /* esimate psd */
   LAL_CALL(LALREAL4AverageSpectrum(status, psd, series, &psd_params), status);
+
+  /* destroy fft plan */
+  XLALDestroyREAL4FFTPlan(plan);  
 
   /* free memory for window */
   XLALDestroyREAL4Window(window);
@@ -1720,7 +1723,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 filterLength;
   INT4 numFMin;
   INT4 numFMax;
-  AverageSpectrumParams specparPSD;
   REAL4FrequencySeries *psdTempOne = NULL;
   REAL4FrequencySeries *psdTempTwo = NULL;
   REAL4FrequencySeries *psdOne;
@@ -2711,7 +2713,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* cleanup */
   XLALDestroyREAL4TimeSeries(segmentOne);
   XLALDestroyREAL4TimeSeries(segmentTwo);
-  XLALDestroyREAL4FFTPlan(specparPSD.plan);
   XLALDestroyREAL4FFTPlan(fftDataPlan);
   XLALDestroyREAL4FrequencySeries(psdTempOne);
   XLALDestroyREAL4FrequencySeries(psdTempTwo);
