@@ -1174,28 +1174,30 @@ loadSkyGridFile (LALStatus *stat, DopplerScanGrid **grid, const CHAR *fname)
   TRY (LALParseDataFile (stat->statusPtr, &data, fname), stat);
 
   /* parse this list of lines into a sky-grid */
-  node = &head;
+  node = &head;	/* head will remain empty! */
   for (i=0; i < data->lines->nTokens; i++)
     {
+      /* prepare next list-entry */
       if ( (node->next = LALCalloc (1, sizeof (DopplerScanGrid))) == NULL)
 	{
 	  freeGrid (head.next);
 	  ABORT (stat, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
 	}
+
+      node = node->next;
+
       if ( 2 != sscanf( data->lines->tokens[i], "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT, &(node->alpha), &(node->delta)) )
 	{
 	  LALPrintError ("\nERROR: could not parse line %d in skyGrid-file '%s'\n\n", i, fname);
 	  freeGrid (head.next);
 	  ABORT (stat, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
 	}
-      
-      node = node->next;
 
     } /* for i < nLines */
 
   TRY ( LALDestroyParsedDataFile (stat->statusPtr, &data), stat);
 
-  *grid = head.next;	/* pass result */
+  *grid = head.next;	/* pass result (without head!) */
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
