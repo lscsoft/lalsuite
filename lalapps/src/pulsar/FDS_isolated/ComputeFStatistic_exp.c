@@ -6,8 +6,9 @@
 /*                 Albert Einstein Institute/UWM - started September 2002        */
 /*********************************************************************************/
 #include <lal/LALDemod.h>
+#include <lal/RngMedBias.h>
 
-#include "ComputeFStatistic.h"
+#include "ComputeFStatistic_exp.h"
 #include "rngmed.h"
 #include "clusters.h"
 #include "DopplerScan.h"
@@ -49,16 +50,16 @@ FILE *fpstat;
 /* #endif     */
 REAL8 medianbias=1.0;
 
-DopplerScanState_t thisScan;
-ConfigVariables_t GV;
+DopplerScanState thisScan;
+ConfigVariables GV;
 
 /* local prototypes */
-void SetInputDefaults ( UserInput_t *input );
-INT2 ReadUserInput (int argc, char *argv[], UserInput_t *input);
-INT2 ReadCmdlineInput (int argc, char *argv[], UserInput_t *input);
-INT2 ReadCfgfileInput (UserInput_t *input, CHAR *cfgfile);
+void SetInputDefaults ( UserInput *input );
+INT2 ReadUserInput (int argc, char *argv[], UserInput *input);
+INT2 ReadCmdlineInput (int argc, char *argv[], UserInput *input);
+INT2 ReadCfgfileInput (UserInput *input, CHAR *cfgfile);
 
-INT2 SetGlobalVariables(ConfigVariables_t *cfg);
+INT2 SetGlobalVariables(ConfigVariables *cfg);
 INT4 ReadSFTData(void);
 INT4 CreateDemodParams(void);
 INT4 NormaliseSFTData(void);
@@ -74,7 +75,6 @@ INT4 NormaliseSFTDataRngMdn(void);
 INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN);
 INT4 EstimateFloor(REAL8Vector *Sp, INT2 windowSize, REAL8Vector *SpFloor);
 int compare(const void *ip, const void *jp);
-INT4 MedianBias(INT2 * BlockSize, REAL8 * medianbias);
 INT4 writeFaFb(INT4 *maxIndex);
 
 /*----------------------------------------------------------------------
@@ -83,8 +83,8 @@ INT4 writeFaFb(INT4 *maxIndex);
 int main(int argc,char *argv[]) 
 {
   INT4 *maxIndex=NULL; /*  array that contains indexes of maximum of each cluster */
-  DopplerPosition_t dopplerpos;
-  DopplerScanInit_t scanInit;
+  DopplerPosition dopplerpos;
+  DopplerScanInit scanInit;
 
   /*  testConfigFile(); */
 
@@ -930,7 +930,7 @@ int ReadSFTData(void)
 /*******************************************************************************/
 
 INT2 
-SetGlobalVariables(ConfigVariables_t *cfg)
+SetGlobalVariables(ConfigVariables *cfg)
 {
 
   CHAR command[512];
@@ -1774,7 +1774,8 @@ INT4 NormaliseSFTDataRngMdn(void)
   */
 
   if (GV.userInput.SignalOnly != 1)
-    MedianBias(&windowSize,&medianbias);
+    RngMedBias (&status, &medianbias, windowSize);
+
 
   LALDCreateVector(&status, &Sp, (UINT4)nbins);
   LALDCreateVector(&status, &RngMdnSp, (UINT4)nbins);
@@ -1883,7 +1884,7 @@ INT4 NormaliseSFTDataRngMdn(void)
  * set all the default settings for the user-input variables 
  *----------------------------------------------------------------------*/
 void
-SetInputDefaults ( UserInput_t *input )
+SetInputDefaults ( UserInput *input )
 {
 
   input->Dterms=16;
@@ -1931,7 +1932,7 @@ SetInputDefaults ( UserInput_t *input )
  * Read User's input: first from config-file (if applicable), then cmd-line
  *----------------------------------------------------------------------*/
 INT2 
-ReadUserInput (int argc, char *argv[], UserInput_t *input)
+ReadUserInput (int argc, char *argv[], UserInput *input)
 {
   INT2 i;
   CHAR fname[MAXFILENAMELENGTH] = "";
@@ -2038,7 +2039,7 @@ ReadUserInput (int argc, char *argv[], UserInput_t *input)
  * parse command-line into userInput structure
  *----------------------------------------------------------------------*/
 INT2 
-ReadCmdlineInput (int argc, char *argv[], UserInput_t *input)
+ReadCmdlineInput (int argc, char *argv[], UserInput *input)
 {
   INT2 errflg = 0;
   INT4 c; 
@@ -2261,17 +2262,12 @@ ReadCmdlineInput (int argc, char *argv[], UserInput_t *input)
  * individual variable-reads are treated as optional
  *----------------------------------------------------------------------*/
 INT2 
-ReadCfgfileInput (UserInput_t *input, CHAR *cfgfile)
+ReadCfgfileInput (UserInput *input, CHAR *cfgfile)
 {
-  static LALConfigData_t cfg;
-  FILE *fp;
+  LALConfigData *cfg = NULL;
   CHARVector string;
 
-  if ( (fp = fopen(cfgfile, "r")) == NULL)
-    return 1;
-
-  LALLoadConfigFile (&status, &cfg, fp);
-  fclose (fp);
+  LALLoadConfigFile (&status, &cfg, cfgfile);
 
   if (status.statusCode != 0)
     {
@@ -2279,46 +2275,46 @@ ReadCfgfileInput (UserInput_t *input, CHAR *cfgfile)
       return 1;
     }
 
-  LALReadConfigINT4Variable   (&status, &(input->Dterms), 	&cfg, "Dterms");
-  LALReadConfigINT4Variable   (&status, &(input->IFO), 		&cfg, "IFO");
-  LALReadConfigBOOLVariable   (&status, &(input->SignalOnly), 	&cfg, "SignalOnly");
-  LALReadConfigBOOLVariable   (&status, &(input->EstimSigParam),&cfg, "EstimSigParam");
-  LALReadConfigREAL8Variable  (&status, &(input->Freq), 	&cfg, "Freq");
-  LALReadConfigREAL8Variable  (&status, &(input->dFreq), 	&cfg, "dFreq");
-  LALReadConfigREAL8Variable  (&status, &(input->FreqBand), 	&cfg, "FreqBand");
-  LALReadConfigREAL8Variable  (&status, &(input->Alpha), 	&cfg, "Alpha");
-  LALReadConfigREAL8Variable  (&status, &(input->dAlpha), 	&cfg, "dAlpha");
-  LALReadConfigREAL8Variable  (&status, &(input->AlphaBand), 	&cfg, "AlphaBand");
-  LALReadConfigREAL8Variable  (&status, &(input->Delta), 	&cfg, "Delta");
-  LALReadConfigREAL8Variable  (&status, &(input->dDelta), 	&cfg, "dDelta");
-  LALReadConfigREAL8Variable  (&status, &(input->DeltaBand), 	&cfg, "DeltaBand");
-  LALReadConfigREAL8Variable  (&status, &(input->Spin), 	&cfg, "Spin");
-  LALReadConfigREAL8Variable  (&status, &(input->dSpin), 	&cfg, "dSpin");
-  LALReadConfigREAL8Variable  (&status, &(input->SpinBand), 	&cfg, "SpinBand");
-  LALReadConfigREAL8Variable  (&status, &(input->Fthreshold), 	&cfg, "Fthreshold");
+  LALReadConfigINT4Variable   (&status, &(input->Dterms), 	cfg, "Dterms");
+  LALReadConfigINT4Variable   (&status, &(input->IFO), 		cfg, "IFO");
+  LALReadConfigBOOLVariable   (&status, &(input->SignalOnly), 	cfg, "SignalOnly");
+  LALReadConfigBOOLVariable   (&status, &(input->EstimSigParam),cfg, "EstimSigParam");
+  LALReadConfigREAL8Variable  (&status, &(input->Freq), 	cfg, "Freq");
+  LALReadConfigREAL8Variable  (&status, &(input->dFreq), 	cfg, "dFreq");
+  LALReadConfigREAL8Variable  (&status, &(input->FreqBand), 	cfg, "FreqBand");
+  LALReadConfigREAL8Variable  (&status, &(input->Alpha), 	cfg, "Alpha");
+  LALReadConfigREAL8Variable  (&status, &(input->dAlpha), 	cfg, "dAlpha");
+  LALReadConfigREAL8Variable  (&status, &(input->AlphaBand), 	cfg, "AlphaBand");
+  LALReadConfigREAL8Variable  (&status, &(input->Delta), 	cfg, "Delta");
+  LALReadConfigREAL8Variable  (&status, &(input->dDelta), 	cfg, "dDelta");
+  LALReadConfigREAL8Variable  (&status, &(input->DeltaBand), 	cfg, "DeltaBand");
+  LALReadConfigREAL8Variable  (&status, &(input->Spin), 	cfg, "Spin");
+  LALReadConfigREAL8Variable  (&status, &(input->dSpin), 	cfg, "dSpin");
+  LALReadConfigREAL8Variable  (&status, &(input->SpinBand), 	cfg, "SpinBand");
+  LALReadConfigREAL8Variable  (&status, &(input->Fthreshold), 	cfg, "Fthreshold");
 
-  LALReadConfigINT2Variable   (&status, &(input->EphemYear), 	&cfg, "EphemYear");
+  LALReadConfigINT2Variable   (&status, &(input->EphemYear), 	cfg, "EphemYear");
 
-  LALReadConfigINT2Variable   (&status, &(input->useMetric), 	&cfg, "useMetric");	
-  LALReadConfigREAL8Variable  (&status,&(input->metricMismatch),&cfg, "metricMismatch");	
-  LALReadConfigBOOLVariable   (&status, &(input->flipTiling), 	&cfg, "flipTiling");	
+  LALReadConfigINT2Variable   (&status, &(input->useMetric), 	cfg, "useMetric");	
+  LALReadConfigREAL8Variable  (&status,&(input->metricMismatch),cfg, "metricMismatch");	
+  LALReadConfigBOOLVariable   (&status, &(input->flipTiling), 	cfg, "flipTiling");	
 
   /* reading of fixed-size array string is slightly more tricky */
   string.length = sizeof (input->DataDir) - 1;
   string.data = input->DataDir;
-  LALReadConfigSTRINGNVariable (&status, &string, 		&cfg, "DataDir");
+  LALReadConfigSTRINGNVariable (&status, &string, 		cfg, "DataDir");
 
   string.length = sizeof (input->EphemDir) - 1;
   string.data = input->EphemDir;
-  LALReadConfigSTRINGNVariable (&status, &string, 		&cfg, "EphemDir");
+  LALReadConfigSTRINGNVariable (&status, &string, 		cfg, "EphemDir");
 
   string.length = sizeof (input->BaseName) - 1;
   string.data = input->BaseName;
-  LALReadConfigSTRINGNVariable (&status, &string,	 	&cfg, "BaseName");
+  LALReadConfigSTRINGNVariable (&status, &string,	 	cfg, "BaseName");
 
 
   /* ok, that should be it: check if there were more definitions we did not read */
-  LALCheckCfgReadComplete (&status, &cfg, CONFIGFILE_ERROR);	/* let's be strict about this */
+  LALCheckConfigReadComplete (&status, cfg, CONFIGFILE_ERROR);	/* let's be strict about this */
 
   if (status.statusCode != 0) {
     REPORTSTATUS (&status);

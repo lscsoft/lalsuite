@@ -71,14 +71,14 @@ typedef struct {
   REAL8 metricMismatch;	/* maximum allowed mismatch for metric grid */
   BOOLEAN flipTiling;	/* use non-standard internal grid order? ORDER_DELTA_ALPHA */
 
-} UserInput_t;
+} UserInput;
 
 /* 
  *this structure holds all configuration-settings for the code, including the 
  * user-input variables, but also derived ones 
  */
 typedef struct {
-  UserInput_t userInput;
+  UserInput userInput;
 
   CHAR EphemEarth[MAXFILENAMELENGTH];
   CHAR EphemSun[MAXFILENAMELENGTH];
@@ -99,7 +99,7 @@ typedef struct {
 
   LALDetector Detector;              /* Our detector*/
 
-} ConfigVariables_t;
+} ConfigVariables;
   
 struct headertag {
     REAL8 endian;
