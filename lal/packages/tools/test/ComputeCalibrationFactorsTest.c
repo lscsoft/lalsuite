@@ -17,7 +17,10 @@
  * \subsubsection*{Description}
  *
  **** </lalLaTeX> */
-
+#include <lal/LALConfig.h>
+#ifndef LAL_FRAME_ENABLED
+int main( void ) { return 77; }
+#else
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -565,3 +568,5 @@ int FreeMem(void)
  
   return 0;
 }
+#endif
+
