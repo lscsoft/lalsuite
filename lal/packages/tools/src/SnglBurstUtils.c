@@ -60,6 +60,53 @@ NRCSID( SNGLBURSTUTILSC, "$Id$" );
 </lalLaTeX>
 #endif
 
+/* cluster events a and b, storing result in a */
+
+void XLALClusterSnglBurst(SnglBurstTable *a, SnglBurstTable *b)
+{
+	REAL4 f_lo, f_hi;
+	INT8 ta_start, ta_end, tb_start, tb_end;
+
+	/* the cluster's frequency band is the smallest band containing the
+	 * bands of the two original events */
+
+	f_lo = a->central_freq - a->bandwidth / 2;
+	f_hi = a->central_freq + a->bandwidth / 2;
+	if(b->central_freq - b->bandwidth / 2 < f_lo)
+		f_lo = b->central_freq - b->bandwidth / 2;
+	if(b->central_freq + b->bandwidth / 2 > f_hi)
+		f_hi = b->central_freq + b->bandwidth / 2;
+
+	a->central_freq = (f_hi + f_lo) / 2;
+	a->bandwidth = f_hi - f_lo;
+
+	/* the cluster's time interval is the smallest interval containing the
+	 * intervals of the two original events */
+
+	ta_start = XLALGPStoINT8(&a->start_time);
+	tb_start = XLALGPStoINT8(&b->start_time);
+	ta_end = ta_start + 1e9 * a->duration;
+	tb_end = tb_start + 1e9 * b->duration;
+	if(tb_start < ta_start) {
+		a->start_time = b->start_time;
+		ta_start = tb_start;
+	}
+	if(tb_end > ta_end)
+		a->duration = (tb_end - ta_start) / 1e9;
+	else
+		a->duration = (ta_end - ta_start) / 1e9;
+
+	/* the amplitude, SNR, confidence, and peak time of the cluster are
+	 * those of the loudest of the two events */
+
+	if(a->amplitude < b->amplitude) {
+		a->amplitude = b->amplitude;
+		a->snr = b->snr;
+		a->confidence = b->confidence;
+		a->peak_time = b->peak_time;
+	}
+}
+
 static int ModifiedforClustering(
 				 SnglBurstTable *prevEvent, 
 				 SnglBurstTable *thisEvent
@@ -379,5 +426,3 @@ LALClusterSnglBurstTable (
 	DETATCHSTATUSPTR (status);
 	RETURN (status);
 }
-
-#undef NANOSEC
