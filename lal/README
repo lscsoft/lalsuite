@@ -1,6 +1,6 @@
 1. Introduction
 
-Welcome to the LSC Algorithm Library (LAL). The LAL website:
+Welcome to the LSC Algorithm Library (LAL). The LAL web site:
 
    http://www.lsc-group.phys.uwm.edu/daswg/projects/lal.html
 
@@ -29,7 +29,7 @@ BEFORE building LAL.
 Official releases of LAL are produced from time to time. These releases are
 intended for production scientific analysis, for example on line analysis
 during science runs. If you intend to develop LAL code you should obtain LAL
-via CVS as decribed in section 3 of this README.
+via CVS as described in section 3 of this README.
 
 The latest released version of LAL is available as gzipped tar files from the
 LAL web site:
@@ -46,17 +46,17 @@ The file README.bugs gives instructions for filing bug reports for LAL.
 3. Getting the LAL source code from CVS
 
 The source code for LAL is stored in the lscsoft CVS archive. If you are a LAL
-developer you should obtain a username and password for the lscsoft archive.
+developer you should obtain a user name and password for the lscsoft archive.
 Instruction on how to do this are at
 
 http://www.lsc-group.phys.uwm.edu/daswg/docs/howto/lscsoft-cvs.html
 
 If you just wish to browse the source without contributing any code you may
-use the username anonymous and the password lscsoft to access the archive.
+use the user name anonymous and the password lscsoft to access the archive.
 
 To obtain the current working version of LAL first log into the lscsoft CVS
 server. Type the following command, replacing USERNAME with your lscsoft
-username (or anonymous): 
+user name (or anonymous): 
 
   cvs -d :pserver:USERNAME@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft login
 
@@ -65,7 +65,7 @@ user).
 
 * Note that some old versions of CVS (e.g. the version that comes with Mac OS
 X 10.3) cannot access the CVS server due to the server operating on port 2402
-rather than 2401. If you recieve an error similar to
+rather than 2401. If you receive an error similar to
 
   2402/usr/local/cvs/lscsoft: no such repository
 
@@ -73,7 +73,7 @@ you will need to obtain a newer version of CVS (OS X users may use the CVS
 available via Fink).
 
 Next use CVS to checkout the lal source code. Type the following, again
-replacing USERNAME with your lscsoft username (or anonymous):
+replacing USERNAME with your lscsoft user name (or anonymous):
 
   cvs -d :pserver:USERNAME@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft checkout lal
 
@@ -146,7 +146,7 @@ If you wish to log out of the CVS server, type the command
 
   cvs -d :pserver:USERNAME@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft logout
 
-replacing USERNAME with your lscsoft username (or anonymous). It is not
+replacing USERNAME with your lscsoft user name (or anonymous). It is not
 necessary to log out of the CVS server. Developers should generally stay
 logged in to allow them to commit new code and get updates.
 
