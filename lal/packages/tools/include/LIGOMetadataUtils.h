@@ -91,6 +91,15 @@ tagSnglInspiralAccuracy
 }
 SnglInspiralAccuracy;
 
+typedef enum 
+{ 
+  none,
+  snr_and_chisq, 
+  snrsq_over_chisq, 
+  snr 
+} 
+SnglInspiralClusterChoice;
+
 
 /*
  *
@@ -162,6 +171,13 @@ LALCompareSnglInspiral (
     SnglInspiralAccuracy     *params
     );
 
+void
+LALClusterSnglInspiralTable (
+    LALStatus                  *status,
+    SnglInspiralTable          *inspiralEvent,
+    INT8                        dtimeNS,
+    SnglInspiralClusterChoice   clusterchoice
+    );
 
 /*
  *

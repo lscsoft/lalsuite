@@ -2,7 +2,7 @@
  * 
  * File Name: SnglInspiralUtils.c
  *
- * Author: Brown, D. A.
+ * Author: Brady, P. R., Brown, D. A., and Fairhurst, S
  * 
  * Revision: $Id$
  * 
@@ -232,6 +232,76 @@ LALCompareSnglInspiral (
     LALInfo( status, "Triggers fails time coincidence test" );
   }
 
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void
+LALClusterSnglInspiralTable (
+    LALStatus                  *status,
+    SnglInspiralTable          *inspiralEvent,
+    INT8                        dtimeNS,
+    SnglInspiralClusterChoice   clusterchoice
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable     *thisEvent=NULL;
+  SnglInspiralTable     *prevEvent=NULL;
+
+  INITSTATUS( status, "LALClusterSnglInspiralTable", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  thisEvent = inspiralEvent->next;
+  prevEvent = inspiralEvent;
+
+  while ( thisEvent )
+  {
+    INT8 currTime;
+    INT8 prevTime;
+
+    /* compute the time in nanosec for each event trigger */
+    LALGPStoINT8(status->statusPtr, &currTime, &(thisEvent->end_time));
+    CHECKSTATUSPTR(status);
+
+    LALGPStoINT8(status->statusPtr, &prevTime, &(prevEvent->end_time));
+    CHECKSTATUSPTR(status);
+
+    /* find events within the cluster window */
+    if ( (currTime - prevTime) < dtimeNS )
+    {
+      /* displace previous event in cluster */
+      if ( 
+          (
+           (clusterchoice == snr_and_chisq) && 
+           (thisEvent->snr > prevEvent->snr) && 
+           (thisEvent->chisq < prevEvent->chisq)
+          ) || (
+            (clusterchoice == snrsq_over_chisq) &&
+            (thisEvent->snr)*(thisEvent->snr)/(thisEvent->chisq) > 
+            (prevEvent->snr)*(prevEvent->snr)/(prevEvent->chisq)
+          ) || (
+            (clusterchoice == snr) && (thisEvent->snr > prevEvent->snr)
+          )
+         )
+      {
+        memcpy( prevEvent, thisEvent, sizeof(SnglInspiralTable) );
+      }
+
+      /* otherwise just dump this event from cluster */
+      prevEvent->next = thisEvent->next;
+      LALFree( thisEvent );
+      thisEvent = prevEvent->next;
+    }
+    else 
+    {
+      /* otherwise we keep this unique event trigger */
+      prevEvent = thisEvent;
+      thisEvent = thisEvent->next;
+    }
+  }
+
+  /* normal exit */
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }

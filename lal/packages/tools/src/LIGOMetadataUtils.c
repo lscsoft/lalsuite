@@ -65,36 +65,67 @@ with playground data. The time between \texttt{in\_start\_time} and
 
 static INT8 PlaygroundOverlap( INT8 seg_end, INT8 seg_length )
 {
-  INT8 play_length = 600000000000LL;
-  INT8 S2_start = 729273613000000000LL;
+  const INT8 play_length = 600000000000LL;
+  const INT8 S2_start = 729273613000000000LL;
+  const INT8 mod_play = 6370000000000LL;
   INT8 end_mod_play;
+
+  /* handle the unhandled case */
+  if ( seg_length >= mod_play )
+  {
+    LALPrintError( "Segment length is longer than mod_play: FIXME" );
+    return -1LL;
+  }
   
-  end_mod_play = ((seg_end - S2_start) % 6370000000000LL);
- 
+  end_mod_play = ((seg_end - S2_start) % mod_play );
 
   /* if no overlap with playground, return zero */
   if ( end_mod_play >= play_length + seg_length )
   {
+    fprintf( stdout, "return 0LL\n" );
     return 0LL;
-  }
-  else if ( (seg_length < end_mod_play) && 
-		  (end_mod_play < play_length + seg_length ) )
-  {
-    return play_length + seg_length - end_mod_play;
-  }
-  else if ( (play_length <= end_mod_play) && 
-		(end_mod_play <= seg_length ) )
-  {
-    return play_length;
-  }
-  else if ( end_mod_play < play_length )
-  {
-    return end_mod_play;
   }
   else
   {
-    LALPrintError( "Error determining playground overlap" );
-    return -1LL;
+    if ( seg_length > play_length )
+    {
+      if ( (seg_length < end_mod_play) && 
+          (end_mod_play < play_length + seg_length ) )
+      {
+        return play_length + seg_length - end_mod_play;
+      }
+      else if ( (play_length <= end_mod_play) && 
+          (end_mod_play <= seg_length ) )
+      {
+        return play_length;
+      }
+      else if ( end_mod_play < play_length )
+      {
+        return end_mod_play;
+      }
+    }
+    else if ( seg_length < play_length )
+    {
+      if ( (play_length < end_mod_play) && 
+          (end_mod_play < seg_length + play_length ) )
+      {
+        return play_length + seg_length - end_mod_play;
+      }
+      else if ( (seg_length <= end_mod_play) && 
+          (end_mod_play <= play_length ) )
+      {
+        return seg_length;
+      }
+      else if ( end_mod_play < seg_length )
+      {
+        return end_mod_play;
+      }
+    }
+    else
+    {
+      LALPrintError( "Error determining playground overlap" );
+      return -1LL;
+    }
   }
 }
 
@@ -133,13 +164,19 @@ LALPlaygroundInSearchSummary (
   LALINT8toGPS( status->statusPtr, inPlayTime, &playNS );
   CHECKSTATUSPTR( status );
   
+  fprintf( stdout, "ssTable->out_start_time = %d, ssTable->out_end_time = %d\n",
+      ssTable->out_start_time.gpsSeconds, ssTable->out_end_time.gpsSeconds );
+  fflush( stdout );
 
   LALGPStoINT8( status->statusPtr, &startNS, &(ssTable->out_start_time) );
   CHECKSTATUSPTR( status );
   LALGPStoINT8( status->statusPtr, &endNS, &(ssTable->out_end_time) );
   CHECKSTATUSPTR( status );
   lengthNS = endNS - startNS;
+
+  fprintf( stdout, "lengthNS = %lld\nendNS = %lld\n", lengthNS, endNS );
   playNS = PlaygroundOverlap( endNS, lengthNS );
+  fprintf( stdout, "playNS = %lld\n", playNS );
   if ( playNS < 0 )
   {
     ABORT( status, LIGOMETADATAUTILSH_ETIME, LIGOMETADATAUTILSH_MSGETIME );
