@@ -1741,7 +1741,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"scale-factor", required_argument, 0, 'o'},
       {"seed", required_argument, 0, 'g'},
       {"number-of-injection", required_argument, 0, 'N'},
-      {"directory for output files", required_argument, 0, 'S'},
+      {"output-dir", required_argument, 0, 'S'},
       {"test-big-segment-number", required_argument, 0, 'U'},
       {"test-small-segment-number", required_argument, 0, 'V'},
       {"test-trial-number", required_argument, 0, 'W'},
