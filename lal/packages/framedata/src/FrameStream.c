@@ -79,6 +79,7 @@
 #include <FrameL.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
+#include <lal/Units.h>
 #include <lal/AVFactories.h>
 #include <lal/FrameStream.h>
 
@@ -339,6 +340,7 @@ LALSFrameReadADCTimeSeries(
   strncpy( (*series)->name, channel, sizeof( (*series)->name ) );
   (*series)->epoch.gpsSeconds = stream->frame->GTimeS;
   (*series)->epoch.gpsNanoSeconds = stream->frame->GTimeN;
+  (*series)->sampleUnits = lalADCCountUnit;
   (*series)->deltaT = ( adc->sampleRate == 0.0 ? 0.0 : 1.0 / adc->sampleRate );
   (*series)->f0 = adc->fShift; /* IS THIS CORRECT??? */
   
