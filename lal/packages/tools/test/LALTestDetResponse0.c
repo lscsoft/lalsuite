@@ -459,7 +459,7 @@ LALDR_L2Norm33Matrix(LALDR_33Matrix * matrix)
 
 
 
-#if 0 /* NOT USED */
+#if 1
 /*
  * The RMS norm of a matrix: RMS sum of all elements.
  */
@@ -1310,8 +1310,11 @@ int main(int argc, char *argv[])
   det_and_pulsar.pDetector = &detector;
   det_and_pulsar.pSource   = &pulsar;
 
-  PrintLALDetector(&detector);
-  fflush(stdout);
+  if (verbose_p)
+  {
+    PrintLALDetector(&detector);
+    fflush(stdout);
+  }
 
   handle_detresponse_test(detresponse_ok_p(&status, &det_and_pulsar,
                                            &gps_and_acc, &expected_resp, tolerance),
@@ -1772,13 +1775,16 @@ int main(int argc, char *argv[])
       xfclose(file_phi);
     }
 
-  printf("GRASP plus = % 14.9e\n", resp_local(0., 0., 0., gwpol_plus));
-  printf("     cross = % 14.9e\n", resp_local(0., 0., 0., gwpol_cross));
+  if (verbose_p)
+  {
+    printf("GRASP plus = % 14.9e\n", resp_local(0., 0., 0., gwpol_plus));
+    printf("     cross = % 14.9e\n", resp_local(0., 0., 0., gwpol_cross));
 
-  printf("GRASP plus = % 14.9e\n", resp_local(LAL_PI_4, 0., 0., gwpol_plus));
-  printf("     cross = % 14.9e\n", resp_local(LAL_PI_4, 0., 0., gwpol_cross));
+    printf("GRASP plus = % 14.9e\n", resp_local(LAL_PI_4, 0., 0., gwpol_plus));
+    printf("     cross = % 14.9e\n", resp_local(LAL_PI_4, 0., 0., gwpol_cross));
 
-  fflush(stdout);
+    fflush(stdout);
+  }
   
   fudge_factor_test(&status);
 
@@ -2702,7 +2708,8 @@ void fudge_factor_test(LALStatus *status)
   FILE *rms_diff_plus_file = (FILE *)NULL;
   FILE *rms_diff_cros_file = (FILE *)NULL;
 
-  printf("\n\nSTARTING FUDGE FACTOR TEST NOW...\n");
+  if (verbose_level & 4)
+    printf("\n\nSTARTING FUDGE FACTOR TEST NOW...\n");
 
   rms_diff_plus_file = xfopen("ff_rms_diff_plus_vs_fudge.txt", "w");
   rms_diff_cros_file = xfopen("ff_rms_diff_cros_vs_fudge.txt", "w");
@@ -2716,7 +2723,7 @@ void fudge_factor_test(LALStatus *status)
   LALGPStoGMST1(status, &gmst1, &(gps_and_acc.gps), &uandacc);
 
   if (verbose_level & 4)
-    printf("gmst1 = % 14.20e\n", gmst1);
+    printf("gmst1 = % 20.14e\n", gmst1);
 
   set_source_params(&pulsar, "FOOBAR", 0., -LAL_PI_2, (REAL8)LAL_PI_2);
 
@@ -2748,7 +2755,8 @@ void fudge_factor_test(LALStatus *status)
     }
 
   /* loop over fudge factors */
-  printf("   Starting to loop over fudge_factor...\n");
+  if (verbose_p)
+    printf("   Starting to loop over fudge_factor...\n");
   
   for (k = -128; k < 129; ++k)
     {
@@ -2824,7 +2832,8 @@ void fudge_factor_test(LALStatus *status)
       fprintf(rms_diff_cros_file, "% 20.14e    % 20.14e\n", 
               fudge_factor, skygrid_rms(tmp3));
     } /* for (k = -128; ..) */
-  printf("... Done with looping over fudge_factor.\n");
+  if (verbose_level & 4)
+    printf("... Done with looping over fudge_factor.\n");
 
   xfclose(rms_diff_plus_file);
   xfclose(rms_diff_cros_file);
@@ -3017,42 +3026,70 @@ BOOLEAN passed_matrix_test_p(void)
   LALDR_3Vector     x;
   REAL8             c;    /* test scalar */
   REAL8             d;
+  unsigned int      iter, jter;
   
 
-  printf("TEST OF MATRIX AND VECTOR FUNCTIONS\n");
-  printf("-----------------------------------\n");
-  printf("Manual inspection required.\n");
+  if (verbose_p)
+  {
+    printf("TEST OF MATRIX AND VECTOR FUNCTIONS\n");
+    printf("-----------------------------------\n");
+  }
 
   /* Print33Matrix */
   A[0][0] = 0.;    A[0][1] = 0.;   A[0][2] = 0.;
   A[1][0] = 0.;    A[1][1] = 0.;   A[1][2] = 0.;
   A[2][0] = 0.;    A[2][1] = 0.;   A[2][2] = 0.;
   
-  printf("Print33Matrix output:\n");
-  LALDR_Print33Matrix(&A, "A", 0, stdout, "");
-  printf("\n");
+  if (verbose_p)
+  {
+    printf("Print33Matrix output:\n");
+    LALDR_Print33Matrix(&A, "A", 0, stdout, "");
+    printf("\n");
+  }
 
-  printf("Expected output:\n");
-  printf("A:\n");
-  printf("% 20.14e\t% 20.14e\t% 20.14e\n", 0., 0., 0.);
-  printf("% 20.14e\t% 20.14e\t% 20.14e\n", 0., 0., 0.);
-  printf("% 20.14e\t% 20.14e\t% 20.14e\n", 0., 0., 0.);
-  
-  printf("\n- - - - -\n\n");
+  if (verbose_p)
+  {
+    printf("Expected output:\n");
+    printf("A:\n");
+
+    for (iter = 0; iter < 3; ++iter)
+    {
+      for (jter = 0; jter < 3; ++jter)
+      {
+          printf("% 20.14e\t", A[iter][jter]);
+      }
+      printf("\n");
+    }
+  }
+
+  if (verbose_p)
+    printf("\n- - - - -\n\n");
 
   A[0][0] = -4.;    A[0][1] = -3.;   A[0][2] = -2.;
   A[1][0] = -1.;    A[1][1] =  0.;   A[1][2] =  1.;
   A[2][0] =  2.;    A[2][1] =  3.;   A[2][2] =  4.;
 
-  printf("Print33Matrix output:\n");
-  LALDR_Print33Matrix(&A, "A", 0, stdout, "");
-  printf("\n");
+  if (verbose_p)
+  {
+    printf("Print33Matrix output:\n");
+    LALDR_Print33Matrix(&A, "A", 0, stdout, "");
+    printf("\n");
+  }
+  
+  if (verbose_p)
+  {
+    printf("Expected output:\n");
+    printf("A:\n");
 
-  printf("Expected output:\n");
-  printf("A:\n");
-  printf("% 20.14e\t% 20.14e\t% 20.14e\n", -4., -3., -2.);
-  printf("% 20.14e\t% 20.14e\t% 20.14e\n", -1., 0., 1.);
-  printf("% 20.14e\t% 20.14e\t% 20.14e\n", 2., 3., 4.);
+    for (iter = 0; iter < 3; ++iter)
+    {
+      for (jter = 0; jter < 3; ++jter)
+      {
+          printf("% 20.14e\t", A[iter][jter]);
+      }
+      printf("\n");
+    }
+  }
 
   print_separator_maybe();
   
