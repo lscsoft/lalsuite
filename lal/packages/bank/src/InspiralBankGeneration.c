@@ -1,22 +1,23 @@
-                                                                                                                                                
+
+
 #include<lal/LALStdlib.h>
 #include<lal/LALStatusMacros.h>
 #include<lal/InspiralBankGeneration.h>   
 #include<lal/LALInspiral.h>
 #include<lal/LALInspiralBank.h>
 #include<lal/LIGOMetadataTables.h>
-                                                                                                                                         
+
+
 NRCSID(INSPIRALBANKGENERATIONC, "$Id$");
 
 void
-LALInspiralBankGeneration(LALStatus *status,
-                          TemplateBankType *type,
-                          InspiralTmpltBankCInput *input,
-                          SnglInspiralTable *first)
+LALInspiralBankGeneration(
+     LALStatus *status,
+     InspiralCoarseBankIn *input,
+     SnglInspiralTable **first,
+     INT4 *ntiles )
 {
-  InspiralCoarseBankIn CoarseIn;
-  InspiralTemplateList *CoarseList;
-  INT4 ntiles = 0;
+  InspiralTemplateList *coarseList = NULL;
   SnglInspiralTable *bank;
   INT4 cnt = 0;
   
@@ -24,9 +25,6 @@ LALInspiralBankGeneration(LALStatus *status,
   ATTATCHSTATUSPTR(status);
     
   /* Check the inputs 
-  if (type == NULL){
-    ABORT(status, INSPIRALBANKGENERATIONH_ENULL, INSPIRALBANKGENERATIONH_MSGENULL);
-    }
   if (input == NULL){
     ABORT(status, INSPIRALBANKGENERATIONH_ENULL, INSPIRALBANKGENERATIONH_MSGENULL);
     }
@@ -34,64 +32,79 @@ LALInspiralBankGeneration(LALStatus *status,
     ABORT(status, INSPIRALBANKGENERATIONH_ENONNULL, INSPIRALBANKGENERATIONH_MSGENONNULL);
     }
   */
-  /* For InspiralSpinBank() */                               
-  if (*type == 102){
-    CoarseIn.mMin = (REAL8) input->mMin;
-    CoarseIn.mMax = (REAL8) input->mMax;
-    CoarseIn.MMax = (REAL8) input->MMax;
-    CoarseIn.psi0Min = (REAL8) input->psi0Min;
-    CoarseIn.psi0Max = (REAL8) input->psi0Max;
-    CoarseIn.psi3Min = (REAL8) input->psi3Min;
-    CoarseIn.psi3Max = (REAL8) input->psi3Max;
-    CoarseIn.alpha = (REAL8) input->alpha;
-    CoarseIn.numFcutTemplates = input->numFcutTemplates;
-    CoarseIn.mmCoarse = (REAL8) input->mmCoarse;
-    CoarseIn.fLower = (REAL8) input->fLower;
-    CoarseIn.fUpper = (REAL8) input->fUpper;
-    CoarseIn.order = input->order;
-    CoarseIn.shf = input->shf;
-    CoarseIn.tSampling = input->tSampling;
-    CoarseIn.etamin = (REAL8) input->etamin;
-    CoarseIn.LowGM = input->LowGM;
-    CoarseIn.HighGM = input->HighGM;
-    CoarseIn.approximant = input->approximant;
-    CoarseIn.space = input->space;
-    CoarseIn.massRange = MinMaxComponentMass;
-    
-    /* call LALInspiralSpinBank() */
-    TRY(LALInspiralSpinBank(status->statusPtr, &CoarseList, &ntiles, CoarseIn), status);   
-    
-    if (!ntiles){       
-      ABORT(status, INSPIRALBANKGENERATIONH_ENULL, INSPIRALBANKGENERATIONH_MSGENULL);
-      }
- 
-    input->ntiles = ntiles;   
-    first = (SnglInspiralTable *) LALCalloc(1, sizeof(SnglInspiralTable));
-    bank = first;
 
-    if (bank == NULL){
-      ABORT(status, INSPIRALBANKGENERATIONH_EMEM, INSPIRALBANKGENERATIONH_MSGEMEM);
-      }
+  /* For nonspinning approximants, call LALInspiralCreateCoarseBank(). */
+  switch( input->approximant )
+  {
+  /* These use LALInspiralCreateCoarseBank(). */
+  case BCV:
+  case EOB:
+  case PadeT1:
+  case PadeF1:
+  case TaylorF1:
+  case TaylorF2:
+  case TaylorT1:
+  case TaylorT2:
+  case TaylorT3:
+    TRY( LALInspiralCreateCoarseBank( status->statusPtr, &coarseList, ntiles,
+         *input ), status );
+    break;
 
-    for(cnt = 0; cnt < input->ntiles; cnt++){
-      bank->mass1 = CoarseList[cnt].params.mass1;
-      bank->mass2 = CoarseList[cnt].params.mass2;
-      bank->psi0 = CoarseList[cnt].params.psi0;
-      bank->psi3 = CoarseList[cnt].params.psi3;
-      bank->eta = CoarseList[cnt].params.eta;
-      bank->mchirp = CoarseList[cnt].params.chirpMass; 
-      /* CoarseList[cnt].params.beta = bank->beta  THIS NEEDS TO BE ADDED TO SnglInspiralTable */
-      bank->next = (SnglInspiralTable *) LALCalloc(1, sizeof(SnglInspiralTable));
-      bank = bank->next;
-      if (bank == NULL){
-        ABORT(status, INSPIRALBANKGENERATIONH_EMEM, INSPIRALBANKGENERATIONH_MSGEMEM);
-        }
-      }
-    bank->next == NULL; 
+  /* This uses LALInspiralSpinBank(). */
+  case BCVSpin:
+    TRY( LALInspiralSpinBank( status->statusPtr, &coarseList, ntiles,
+         *input ), status );   
+    if (*ntiles < 1){       
+      ABORT( status, INSPIRALBANKGENERATIONH_ENULL,
+            INSPIRALBANKGENERATIONH_MSGENULL );
+    }
+    break;
+
+  default:
+    /* This error message needs to be changed. */
+    ABORT( status, INSPIRALBANKGENERATIONH_EMEM,
+           INSPIRALBANKGENERATIONH_MSGEMEM );
   }
-     
+ 
+  /* Convert output data structure. */
+  bank = (SnglInspiralTable *) LALCalloc(1, sizeof(SnglInspiralTable));
+  if (bank == NULL){
+    ABORT( status, INSPIRALBANKGENERATIONH_EMEM,
+           INSPIRALBANKGENERATIONH_MSGEMEM );
+  }
+  *first = bank;
+  for( cnt = 0; cnt < *ntiles; cnt++ )
+  {
+    bank = bank->next = (SnglInspiralTable *) LALCalloc( 1, sizeof(
+           SnglInspiralTable ) );
+    if (bank == NULL)
+    {
+      ABORT( status, INSPIRALBANKGENERATIONH_EMEM,
+             INSPIRALBANKGENERATIONH_MSGEMEM);
+    }
+    bank->mass1 = coarseList[cnt].params.mass1;
+    bank->mass2 = coarseList[cnt].params.mass2;
+    bank->mchirp = coarseList[cnt].params.chirpMass;
+    bank->eta = coarseList[cnt].params.eta;
+    bank->tau0 = coarseList[cnt].params.t0;
+    bank->tau2 = coarseList[cnt].params.t2;
+    bank->tau3 = coarseList[cnt].params.t3;
+    bank->tau4 = coarseList[cnt].params.t4;
+    bank->tau5 = coarseList[cnt].params.t5;
+    bank->ttotal = coarseList[cnt].params.tC;
+    bank->psi0 = coarseList[cnt].params.psi0;
+    bank->psi3 = coarseList[cnt].params.psi3;
+    bank->f_final = coarseList[cnt].params.fFinal;
+    bank->eta = coarseList[cnt].params.eta;
+#if 0
+    bank->beta = coarseList[cnt].params.beta;
+#endif
+  }
+  /* Free first template, which is blank. */
+  bank = (*first)->next;
+  LALFree( *first );
+  *first = bank;
+
   DETATCHSTATUSPTR(status);
   RETURN(status); 
 }
-                                                                                                                                                
-
