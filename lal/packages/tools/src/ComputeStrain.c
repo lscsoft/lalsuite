@@ -36,14 +36,6 @@ None
 #define UpSamplingFactor 16
 #define MAXALPHAS 10000
 
-/* Butterworth high pass at 40Hz */
-const REAL8 b_high[3]={9.892117314337300e-01,    -1.978423462867460e+00,     9.892117314337300e-01};
-const REAL8 a_high[3]={1.000000000000000e+00,    -1.978307072742137e+00,     9.785398529927832e-01};
-
-/* Butterworth low pass at 6000Hz */
-const REAL8 b_low[3]={4.686543159618028e-03,     9.373086319236057e-03,     4.686543159618028e-03};
-const REAL8 a_low[3]={1.000000000000000e+00,    -1.797224507982706e+00,     8.159706806211777e-01};
-
 NRCSID( COMPUTESTRAINC, "$Id$" );
 
 void LALComputeStrain(
@@ -54,15 +46,13 @@ void LALComputeStrain(
 {
 /* Inverse sensing, servo, analog actuation, digital x 
 actuation  digital y actuation */
-static MyIIRFilter Cinv,G[NGfilt],AA,AX[NAXfilt],AY[NAYfilt];    
-static REAL8IIRFilter CinvLAL,GLAL[NGfilt],AALAL,AXLAL[NAXfilt],AYLAL[NAYfilt];    
+static REAL8IIRFilter Cinv,G[NGfilt],AA,AX[NAXfilt],AY[NAYfilt];    
 static REAL8TimeSeries h,hR,uphR,hC,hCX,hCY;
 int p;
 PassBandParamStruc highpassfilterpar,lowpassfilterpar;
 
  INITSTATUS( status, "LALComputeStrain", COMPUTESTRAINC );
  ATTATCHSTATUSPTR( status );
-
 
   /* high pass filter parameters */ 
   highpassfilterpar.name  = "Butterworth High Pass";
@@ -79,9 +69,11 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   lowpassfilterpar.f1    = 6000.0;
   lowpassfilterpar.a1    = 0.5;
 
-  if(XLALMakeFilters(&Cinv,&G,&AA,&AX,&AY)) ABORT(status,111,"Broke making iir filters");
-  if(XLALMakeFilters2(status,&CinvLAL,&GLAL,&AALAL,&AXLAL,&AYLAL)) ABORT(status,112,"Broke making LAL iir filters");
-  if(XLALGetFactors(status, output, input)) ABORT(status,113,"Broke making factors");
+  XLALMakeFilters(status,&Cinv,G,&AA,AX,AY); 
+  CHECKSTATUSPTR( status );
+
+  XLALGetFactors(status, output, input);
+  CHECKSTATUSPTR( status );
   
   /* Create vectors that will hold the residual, control and net strain signals */
   LALDCreateVector(status->statusPtr,&h.data,input->AS_Q.data->length);
@@ -117,9 +109,6 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   LALButterworthREAL8TimeSeries(status->statusPtr,&hC,&highpassfilterpar);
   CHECKSTATUSPTR( status );
   
-/*   if(XLALHighPass(&hR)) ABORT(status,113,"Broke highpassing hR"); */
-/*   if(XLALHighPass(&hC)) ABORT(status,115,"Broke highpassing hC"); */
-
   /* ---------- Compute Residual Strain -------------*/
   /* to get the residual strain we must first divide AS_Q by alpha */
   if(XLALhROverAlpha(&hR, output)) ABORT(status,116,"Broke at hR/alpha") ;
@@ -129,18 +118,13 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   LALButterworthREAL8TimeSeries(status->statusPtr,&uphR,&lowpassfilterpar);
   CHECKSTATUSPTR( status );
 
-/*   if(XLALLowPass(&uphR)) ABORT(status,118,"Broke lowpassing uphR"); */
-
   /* then we filter through the inverse of the sensing function */
-/*   if(XLALFilterSeries(&Cinv, &uphR)) ABORT(status,119,"Broke filtering hR through Cinv"); */
-
-  LALIIRFilterREAL8Vector(status->statusPtr,uphR.data,&CinvLAL);
+  LALIIRFilterREAL8Vector(status->statusPtr,uphR.data,&Cinv);
   CHECKSTATUSPTR( status );
 
   /* Low pass again before downsampling */
   LALButterworthREAL8TimeSeries(status->statusPtr,&uphR,&lowpassfilterpar);
   CHECKSTATUSPTR( status );
-/*   if(XLALLowPass(&uphR)) ABORT(status,120,"Broke lowpassing uphR"); */
  
   /* then we downsample and voila' */
   for (p=0; p<hR.data->length; p++) {
@@ -153,8 +137,7 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   
   /* Now we filter through the servo */
   for(p=NGfilt-1;p>=0;p--){
-/*     if (XLALFilterSeries(&G[p],&hC)) ABORT(status,121,"Broke filtering hC through servo"); */
-    LALIIRFilterREAL8Vector(status->statusPtr,hC.data,&GLAL[p]);
+    LALIIRFilterREAL8Vector(status->statusPtr,hC.data,&G[p]);
     CHECKSTATUSPTR( status );
   }
   /* and adjust to account for servo gain to get darm_ctrl */ 
@@ -172,8 +155,7 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   
   /* Filter x-arm */
   for(p = NAXfilt-1; p >= 0; p--){
-/*     if (XLALFilterSeries(&AX[p],&hCX)) ABORT(status,122,"Broke filtering hC through AX"); */
-    LALIIRFilterREAL8Vector(status->statusPtr,hCX.data,&AXLAL[p]);
+    LALIIRFilterREAL8Vector(status->statusPtr,hCX.data,&AX[p]);
     CHECKSTATUSPTR( status );
   }
   /* Adjust to account for digital gain on x-arm*/ 
@@ -183,8 +165,7 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   
   /* Filter y-arm */
   for(p = NAYfilt-1; p >= 0; p--){
-/*     if (XLALFilterSeries(&AY[p],&hCY)) ABORT(status,123,"Broke filtering hC through AY"); */
-    LALIIRFilterREAL8Vector(status->statusPtr,hCY.data,&AYLAL[p]);
+    LALIIRFilterREAL8Vector(status->statusPtr,hCY.data,&AY[p]);
     CHECKSTATUSPTR( status );
   }
   /* Adjust to account for digital gain on y-arm*/ 
@@ -198,10 +179,8 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   }
 
   /* filter through analog part of actuation and voila' */ 
-/*   if (XLALFilterSeries(&AA,&hC)) ABORT(status,124,"Broke filtering hC through AA"); */
-    LALIIRFilterREAL8Vector(status->statusPtr,hC.data,&AALAL);
-    CHECKSTATUSPTR( status );
-
+  LALIIRFilterREAL8Vector(status->statusPtr,hC.data,&AA);
+  CHECKSTATUSPTR( status );
 
   /* ---------- Compute Net Strain -------------*/
 
@@ -211,9 +190,6 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   CHECKSTATUSPTR( status );
   LALButterworthREAL8TimeSeries(status->statusPtr,&hC,&highpassfilterpar);
   CHECKSTATUSPTR( status );
-
-/*   if (XLALHighPass(&hR))ABORT(status,125,"Broke in final highpassing of hR"); */
-/*   if (XLALHighPass(&hC))ABORT(status,126,"Broke in final highpassing of hC"); */
 
   /* now add control and residual signals together and we're done */
   for (p=0; p < h.data->length; p++) {
@@ -236,127 +212,49 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   CHECKSTATUSPTR( status );
 
   /* Destroy vectors that hold filter coefficients */
-
-  LALDDestroyVector(status->statusPtr,&CinvLAL.directCoef);
+  LALDDestroyVector(status->statusPtr,&Cinv.directCoef);
   CHECKSTATUSPTR( status );
-  LALDDestroyVector(status->statusPtr,&CinvLAL.recursCoef);
+  LALDDestroyVector(status->statusPtr,&Cinv.recursCoef);
   CHECKSTATUSPTR( status );
-  LALDDestroyVector(status->statusPtr,&CinvLAL.history);
+  LALDDestroyVector(status->statusPtr,&Cinv.history);
   CHECKSTATUSPTR( status );
 
   for(p=0;p<NGfilt;p++){
-    LALDDestroyVector(status->statusPtr,&GLAL[p].directCoef);
+    LALDDestroyVector(status->statusPtr,&G[p].directCoef);
     CHECKSTATUSPTR( status );
-    LALDDestroyVector(status->statusPtr,&GLAL[p].recursCoef);
+    LALDDestroyVector(status->statusPtr,&G[p].recursCoef);
     CHECKSTATUSPTR( status );
-    LALDDestroyVector(status->statusPtr,&GLAL[p].history);   
+    LALDDestroyVector(status->statusPtr,&G[p].history);   
     CHECKSTATUSPTR( status );
   }
 
-  LALDDestroyVector(status->statusPtr,&AALAL.directCoef);
+  LALDDestroyVector(status->statusPtr,&AA.directCoef);
   CHECKSTATUSPTR( status );
-  LALDDestroyVector(status->statusPtr,&AALAL.recursCoef);
+  LALDDestroyVector(status->statusPtr,&AA.recursCoef);
   CHECKSTATUSPTR( status );
-  LALDDestroyVector(status->statusPtr,&AALAL.history);
+  LALDDestroyVector(status->statusPtr,&AA.history);
   CHECKSTATUSPTR( status );
 
   for(p=0;p<NAXfilt;p++){
-    LALDDestroyVector(status->statusPtr,&AXLAL[p].directCoef);
+    LALDDestroyVector(status->statusPtr,&AX[p].directCoef);
     CHECKSTATUSPTR( status );
-    LALDDestroyVector(status->statusPtr,&AXLAL[p].recursCoef);
+    LALDDestroyVector(status->statusPtr,&AX[p].recursCoef);
     CHECKSTATUSPTR( status );
-    LALDDestroyVector(status->statusPtr,&AXLAL[p].history);
+    LALDDestroyVector(status->statusPtr,&AX[p].history);
     CHECKSTATUSPTR( status );
   }
 
   for(p=0;p<NAYfilt;p++){
-    LALDDestroyVector(status->statusPtr,&AYLAL[p].directCoef);
+    LALDDestroyVector(status->statusPtr,&AY[p].directCoef);
     CHECKSTATUSPTR( status );
-    LALDDestroyVector(status->statusPtr,&AYLAL[p].recursCoef);
+    LALDDestroyVector(status->statusPtr,&AY[p].recursCoef);
     CHECKSTATUSPTR( status );
-    LALDDestroyVector(status->statusPtr,&AYLAL[p].history);
+    LALDDestroyVector(status->statusPtr,&AY[p].history);
     CHECKSTATUSPTR( status );
   }
 
-
-
   DETATCHSTATUSPTR( status );
   RETURN( status );
-}
-
-
-/*******************************************************************************/
-
-
-int XLALLowPass(REAL8TimeSeries *TSeries)
-{
-  MyIIRFilter ButterLow;
-  int p,l;
-
-  ButterLow.yOrder=3;
-  ButterLow.xOrder=3;
-
-  /* Fill coefficient vectors with coefficients */
-  for(l=0;l<ButterLow.xOrder;l++) ButterLow.b[l]=b_low[l];
-  for(l=0;l<ButterLow.yOrder;l++) ButterLow.a[l]=a_low[l];
-
-  for (p=0;p<3;p++)
-    {
-      /* Set history to zero */
-      for(l=0;l<ButterLow.yOrder-1;l++) ButterLow.yhist[l]=0.0;
-      for(l=0;l<ButterLow.xOrder-1;l++) ButterLow.xhist[l]=0.0;
-
-      /* Filter forward */
-      XLALFilterSeries(&ButterLow,TSeries);   
-
-      /* Set history to zero */
-      for(l=0;l<ButterLow.yOrder-1;l++) ButterLow.yhist[l]=0.0;
-      for(l=0;l<ButterLow.xOrder-1;l++) ButterLow.xhist[l]=0.0;
-
-      /* filter backwards */
-      XLALFilterSeriesReverse(&ButterLow,TSeries);   
-
-    }
-  
-
-  return 0;
-}
-
-/*******************************************************************************/
-
-
-int XLALHighPass(REAL8TimeSeries *TSeries)
-{
-  MyIIRFilter ButterHigh;
-  int p,l;
-
-  ButterHigh.yOrder=3;
-  ButterHigh.xOrder=3;
-
-  /* Fill coefficient vectors with coefficients */
-  for(l=0;l<ButterHigh.xOrder;l++) ButterHigh.b[l]=b_high[l];
-  for(l=0;l<ButterHigh.yOrder;l++) ButterHigh.a[l]=a_high[l];
-
-  for (p=0;p<2;p++)
-    {
-      /* Set history to zero */
-      for(l=0;l<ButterHigh.yOrder-1;l++) ButterHigh.yhist[l]=0.0;
-      for(l=0;l<ButterHigh.xOrder-1;l++) ButterHigh.xhist[l]=0.0;
-
-      /* Filter forward */
-      XLALFilterSeries(&ButterHigh,TSeries);   
-
-      /* Set history to zero */
-      for(l=0;l<ButterHigh.yOrder-1;l++) ButterHigh.yhist[l]=0.0;
-      for(l=0;l<ButterHigh.xOrder-1;l++) ButterHigh.xhist[l]=0.0;
-
-      /* filter backwards */
-      XLALFilterSeriesReverse(&ButterHigh,TSeries);   
-
-    }
-  
-
-  return 0;
 }
 
 /*******************************************************************************/
@@ -374,119 +272,29 @@ int XLALhCTimesBeta(REAL8TimeSeries *hC, StrainOut *output)
       beta[m]=output->beta.data->data[m].re;
       tainterp[m]= m*output->beta.deltaT;
     }
-  
-  gsl_interp_accel *acc_alpha = gsl_interp_accel_alloc();      /* GSL spline interpolation stuff */
-  gsl_spline *spline_alpha = gsl_spline_alloc(gsl_interp_cspline,output->beta.data->length);
-  gsl_spline_init(spline_alpha,tainterp,beta,output->beta.data->length);
 
   time=0.0;    /* time variable */
 
-  for (n = 0; n < hC->data->length; n++) {
+  {
+    gsl_interp_accel *acc_alpha = gsl_interp_accel_alloc();      /* GSL spline interpolation stuff */
+    gsl_spline *spline_alpha = gsl_spline_alloc(gsl_interp_cspline,output->beta.data->length);
+    gsl_spline_init(spline_alpha,tainterp,beta,output->beta.data->length);
 
-    InterpolatedBeta=gsl_spline_eval(spline_alpha,time,acc_alpha);
-    
-    hC->data->data[n] *= InterpolatedBeta;
-    time=time+hC->deltaT;
+    for (n = 0; n < hC->data->length; n++) 
+      {
+	InterpolatedBeta=gsl_spline_eval(spline_alpha,time,acc_alpha); 
+	hC->data->data[n] *= InterpolatedBeta;
+	time=time+hC->deltaT;
+      }
+
+    /* clean up GSL spline interpolation stuff */
+    gsl_spline_free(spline_alpha);
+    gsl_interp_accel_free(acc_alpha);
   }
 
-  /* clean up GSL spline interpolation stuff */
-  gsl_spline_free(spline_alpha);
-  gsl_interp_accel_free(acc_alpha);
-
   return 0;
 }
 
-
-/*******************************************************************************/
-
-int XLALFilterSeriesReverse(MyIIRFilter *F, REAL8TimeSeries *TSeries)
-{
-  int n,r;
-  long double yn,xn,xsum,ysum;
-
-  for (n=TSeries->data->length-1; n >= 0; n--) 
-    {
-      xsum=0.0;
-      ysum=0.0;
-
-      xn=TSeries->data->data[n];
-    
-      for(r=0;r<F->xOrder-1;r++)
-	{
-	  xsum += (long double) F->xhist[r]*  (long double) F->b[r+1];
-	}
-      xsum=xsum+xn*F->b[0];
-    
-      for(r=0;r<F->yOrder-1;r++)
-	{
-	  ysum -=  (long double) F->yhist[r] *  (long double) F->a[r+1];
-	}
-    
-      yn=xsum+ysum;
-
-      TSeries->data->data[n]=yn;
-
-      for(r=F->xOrder-2;r>0;r--)
-	{
-	  F->xhist[r]=F->xhist[r-1];
-	}
-      for(r=F->yOrder-2;r>0;r--)
-	{
-	  F->yhist[r]=F->yhist[r-1];
-	}
-
-      F->yhist[0]=yn;
-      F->xhist[0]=xn;
-    }
-
-  return 0;
-}
-
-
-/*******************************************************************************/
-
-int XLALFilterSeries(MyIIRFilter *F, REAL8TimeSeries *TSeries)
-{
-  int n,r;
-  long double yn,xn,xsum,ysum;
-
-  for (n=0; n<TSeries->data->length;n++) 
-    {
-      xsum=0.0;
-      ysum=0.0;
-
-      xn=TSeries->data->data[n];
-    
-      for(r=0;r<F->xOrder-1;r++)
-	{
-	  xsum += (long double) F->xhist[r]*  (long double) F->b[r+1];
-	}
-      xsum=xsum+xn*F->b[0];
-    
-      for(r=0;r<F->yOrder-1;r++)
-	{
-	  ysum -=  (long double) F->yhist[r] *  (long double) F->a[r+1];
-	}
-    
-      yn=xsum+ysum;
-
-      TSeries->data->data[n]=yn;
-
-      for(r=F->xOrder-2;r>0;r--)
-	{
-	  F->xhist[r]=F->xhist[r-1];
-	}
-      for(r=F->yOrder-2;r>0;r--)
-	{
-	  F->yhist[r]=F->yhist[r-1];
-	}
-
-      F->yhist[0]=yn;
-      F->xhist[0]=xn;
-    }
-
-  return 0;
-}
 
 /*******************************************************************************/
 
@@ -523,28 +331,26 @@ int XLALhROverAlpha(REAL8TimeSeries *hR, StrainOut *output)
       alpha[m]=output->alpha.data->data[m].re;
       tainterp[m]= m*output->alpha.deltaT;
     }
-  
-  gsl_interp_accel *acc_alpha = gsl_interp_accel_alloc();      /* GSL spline interpolation stuff */
-  gsl_spline *spline_alpha = gsl_spline_alloc(gsl_interp_cspline,output->alpha.data->length);
-  gsl_spline_init(spline_alpha,tainterp,alpha,output->alpha.data->length);
+
 
   time=0.0;    /* time variable */
+  
+  {
+    gsl_interp_accel *acc_alpha = gsl_interp_accel_alloc();      /* GSL spline interpolation stuff */
+    gsl_spline *spline_alpha = gsl_spline_alloc(gsl_interp_cspline,output->alpha.data->length);
+    gsl_spline_init(spline_alpha,tainterp,alpha,output->alpha.data->length);
 
-  for (n = 0; n < hR->data->length; n++) {
-
-    InterpolatedAlpha=gsl_spline_eval(spline_alpha,time,acc_alpha);
-    
-    hR->data->data[n] /= InterpolatedAlpha;
-    time=time+hR->deltaT;
-
-/*     fprintf(stdout,"%e %1.17e\n", time,InterpolatedAlpha); */
-
-
-  }
-
+    for (n = 0; n < hR->data->length; n++) 
+      {
+	InterpolatedAlpha=gsl_spline_eval(spline_alpha,time,acc_alpha);
+	
+	hR->data->data[n] /= InterpolatedAlpha;
+	time=time+hR->deltaT;
+      }
   /* clean up GSL spline interpolation stuff */
   gsl_spline_free(spline_alpha);
   gsl_interp_accel_free(acc_alpha);
+  }
 
   return 0;
 }
@@ -553,136 +359,73 @@ int XLALhROverAlpha(REAL8TimeSeries *hR, StrainOut *output)
 
 
 
-int XLALMakeFilters2(LALStatus *status, REAL8IIRFilter *CinvLAL, REAL8IIRFilter *GLAL,REAL8IIRFilter 
-  *AALAL,REAL8IIRFilter *AXLAL,REAL8IIRFilter *AYLAL)
+void XLALMakeFilters(LALStatus *status, REAL8IIRFilter *Cinv, REAL8IIRFilter *G,REAL8IIRFilter 
+  *AA,REAL8IIRFilter *AX,REAL8IIRFilter *AY)
 {
   int l,n;
   
 
-  LALDCreateVector(status->statusPtr,&CinvLAL->directCoef,CinvDirectOrder);
-  LALDCreateVector(status->statusPtr,&CinvLAL->recursCoef,CinvRecursOrder);
-  LALDCreateVector(status->statusPtr,&CinvLAL->history,CinvDirectOrder-1);
+  LALDCreateVector(status->statusPtr,&Cinv->directCoef,CinvDirectOrder);
+  LALDCreateVector(status->statusPtr,&Cinv->recursCoef,CinvRecursOrder);
+  LALDCreateVector(status->statusPtr,&Cinv->history,CinvDirectOrder-1);
 
-  for(l=0;l<CinvDirectOrder;l++) CinvLAL->directCoef->data[l]=CinvDirectCoefs[l];
-  for(l=0;l<CinvDirectOrder;l++) CinvLAL->recursCoef->data[l]=-CinvRecursCoefs[l];
-  for(l=0;l<CinvDirectOrder-1;l++) CinvLAL->history->data[l]=0.0;
+  for(l=0;l<CinvDirectOrder;l++) Cinv->directCoef->data[l]=CinvDirectCoefs[l];
+  for(l=0;l<CinvDirectOrder;l++) Cinv->recursCoef->data[l]=-CinvRecursCoefs[l];
+  for(l=0;l<CinvDirectOrder-1;l++) Cinv->history->data[l]=0.0;
 
   for(n=0;n<NGfilt;n++){
 
-    LALDCreateVector(status->statusPtr,&GLAL[n].directCoef,G_Dord);
-    LALDCreateVector(status->statusPtr,&GLAL[n].recursCoef,G_Dord);
-    LALDCreateVector(status->statusPtr,&GLAL[n].history,G_Dord-1);
+    LALDCreateVector(status->statusPtr,&G[n].directCoef,G_Dord);
+    LALDCreateVector(status->statusPtr,&G[n].recursCoef,G_Dord);
+    LALDCreateVector(status->statusPtr,&G[n].history,G_Dord-1);
    
     /* Fill coefficient vectors with coefficients from filters.h */
-    for(l=0;l<G_Dord;l++) GLAL[n].directCoef->data[l]=G_D[n][l];
-    for(l=0;l<G_Dord;l++) GLAL[n].recursCoef->data[l]=-G_R[n][l];
-    for(l=0;l<G_Dord-1;l++) GLAL[n].history->data[l]=0.0;
+    for(l=0;l<G_Dord;l++) G[n].directCoef->data[l]=G_D[n][l];
+    for(l=0;l<G_Dord;l++) G[n].recursCoef->data[l]=-G_R[n][l];
+    for(l=0;l<G_Dord-1;l++) G[n].history->data[l]=0.0;
 
   }
 
 
-  LALDCreateVector(status->statusPtr,&AALAL->directCoef, A_0_Rord);
-  LALDCreateVector(status->statusPtr,&AALAL->recursCoef, A_0_Rord);
-  LALDCreateVector(status->statusPtr,&AALAL->history, A_0_Rord-1);
+  LALDCreateVector(status->statusPtr,&AA->directCoef, A_0_Rord);
+  LALDCreateVector(status->statusPtr,&AA->recursCoef, A_0_Rord);
+  LALDCreateVector(status->statusPtr,&AA->history, A_0_Rord-1);
 
   /* Fill coefficient vectors with coefficients from filters.h */
-  for(l=0;l< A_0_Rord;l++) AALAL->directCoef->data[l]=A_0_D[l];
-  for(l=0;l< A_0_Rord;l++) AALAL->recursCoef->data[l]=-A_0_R[l];
-  for(l=0;l< A_0_Rord-1;l++) AALAL->history->data[l]=0.0;
+  for(l=0;l< A_0_Rord;l++) AA->directCoef->data[l]=A_0_D[l];
+  for(l=0;l< A_0_Rord;l++) AA->recursCoef->data[l]=-A_0_R[l];
+  for(l=0;l< A_0_Rord-1;l++) AA->history->data[l]=0.0;
 
 
   for(n=0;n<NAXfilt;n++){
    
-    LALDCreateVector(status->statusPtr,&AXLAL[n].directCoef, A_digital_Rord);
-    LALDCreateVector(status->statusPtr,&AXLAL[n].recursCoef, A_digital_Rord);
-    LALDCreateVector(status->statusPtr,&AXLAL[n].history, A_digital_Rord-1);
+    LALDCreateVector(status->statusPtr,&AX[n].directCoef, A_digital_Rord);
+    LALDCreateVector(status->statusPtr,&AX[n].recursCoef, A_digital_Rord);
+    LALDCreateVector(status->statusPtr,&AX[n].history, A_digital_Rord-1);
 
-    for(l=0;l< A_digital_Rord;l++) AXLAL[n].directCoef->data[l]=AX_D[n][l];
-    for(l=0;l< A_digital_Rord;l++) AXLAL[n].recursCoef->data[l]=-AX_R[n][l];
-    for(l=0;l< A_digital_Rord-1;l++) AXLAL[n].history->data[l]=0.0;
+    for(l=0;l< A_digital_Rord;l++) AX[n].directCoef->data[l]=AX_D[n][l];
+    for(l=0;l< A_digital_Rord;l++) AX[n].recursCoef->data[l]=-AX_R[n][l];
+    for(l=0;l< A_digital_Rord-1;l++) AX[n].history->data[l]=0.0;
     
   }
 
   for(n=0;n<NAYfilt;n++){
-    LALDCreateVector(status->statusPtr,&AYLAL[n].directCoef, A_digital_Rord);
-    LALDCreateVector(status->statusPtr,&AYLAL[n].recursCoef, A_digital_Rord);
-    LALDCreateVector(status->statusPtr,&AYLAL[n].history, A_digital_Rord-1);
+    LALDCreateVector(status->statusPtr,&AY[n].directCoef, A_digital_Rord);
+    LALDCreateVector(status->statusPtr,&AY[n].recursCoef, A_digital_Rord);
+    LALDCreateVector(status->statusPtr,&AY[n].history, A_digital_Rord-1);
 
-    for(l=0;l< A_digital_Rord;l++) AYLAL[n].directCoef->data[l]=AY_D[n][l];
-    for(l=0;l< A_digital_Rord;l++) AYLAL[n].recursCoef->data[l]=-AY_R[n][l];
-    for(l=0;l< A_digital_Rord-1;l++) AYLAL[n].history->data[l]=0.0;
+    for(l=0;l< A_digital_Rord;l++) AY[n].directCoef->data[l]=AY_D[n][l];
+    for(l=0;l< A_digital_Rord;l++) AY[n].recursCoef->data[l]=-AY_R[n][l];
+    for(l=0;l< A_digital_Rord-1;l++) AY[n].history->data[l]=0.0;
   }
 
-  return 0;
+  RETURN (status);
 }
+
 
 /*******************************************************************************/
 
-
-int XLALMakeFilters(MyIIRFilter *Cinv,MyIIRFilter *G,MyIIRFilter *AA,MyIIRFilter *AX,MyIIRFilter *AY)
-{
-  int l,n;
- 
-  Cinv->yOrder=CinvRecursOrder;
-  Cinv->xOrder=CinvDirectOrder;
-
-  /* Fill coefficient vectors with coefficients from filters.h */
-  for(l=0;l<Cinv->xOrder;l++) Cinv->b[l]=CinvDirectCoefs[l];
-  for(l=0;l<Cinv->yOrder;l++) Cinv->a[l]=CinvRecursCoefs[l];
-  for(l=0;l<Cinv->yOrder-1;l++) Cinv->yhist[l]=0.0;
-  for(l=0;l<Cinv->xOrder-1;l++) Cinv->xhist[l]=0.0;
-
-  for(n=0;n<NGfilt;n++){
-    G[n].xOrder=G_Dord;
-    G[n].yOrder=G_Rord;
-    
-    /* Fill coefficient vectors with coefficients from filters.h */
-    for(l=0;l<G[n].xOrder;l++) G[n].b[l]=G_D[n][l];
-    for(l=0;l<G[n].yOrder;l++) G[n].a[l]=G_R[n][l];
-    for(l=0;l<G[n].yOrder-1;l++) G[n].yhist[l]=0.0;
-    for(l=0;l<G[n].xOrder-1;l++) G[n].xhist[l]=0.0;
-  }
-
-    AA->yOrder= A_0_Rord;
-    AA->xOrder= A_0_Dord;
-
-    /* Fill coefficient vectors with coefficients from filters.h */
-    for(l=0;l<AA->xOrder;l++) AA->b[l]=A_0_D[l];
-    for(l=0;l<AA->yOrder;l++) AA->a[l]=A_0_R[l];
-    for(l=0;l<AA->yOrder-1;l++) AA->yhist[l]=0.0;
-    for(l=0;l<AA->xOrder-1;l++) AA->xhist[l]=0.0;
-
-
-  for(n=0;n<NAXfilt;n++){
-    AX[n].yOrder=A_digital_Rord;
-    AX[n].xOrder=A_digital_Dord;
-    
-    /* Fill coefficient vectors with coefficients from filters.h */
-    for(l=0;l<AX[n].xOrder;l++) AX[n].b[l]=AX_D[n][l];
-    for(l=0;l<AX[n].yOrder;l++) AX[n].a[l]=AX_R[n][l];
-    for(l=0;l<AX[n].yOrder-1;l++) AX[n].yhist[l]=0.0;
-    for(l=0;l<AX[n].xOrder-1;l++) AX[n].xhist[l]=0.0;
-  }
-
-  for(n=0;n<NAYfilt;n++){
-    AY[n].yOrder=A_digital_Rord;
-    AY[n].xOrder=A_digital_Dord;
-    
-    /* Fill coefficient vectors with coefficients from filters.h */
-    for(l=0;l<AY[n].xOrder;l++) AY[n].b[l]=AY_D[n][l];
-    for(l=0;l<AY[n].yOrder;l++) AY[n].a[l]=AY_R[n][l];
-    for(l=0;l<AY[n].yOrder-1;l++) AY[n].yhist[l]=0.0;
-    for(l=0;l<AY[n].xOrder-1;l++) AY[n].xhist[l]=0.0;
-  }
-
-  return 0;
-}
-
-/*******************************************************************************/
-
-
-
-int XLALGetFactors(LALStatus *status, StrainOut *output, StrainIn *input)
+void XLALGetFactors(LALStatus *status, StrainOut *output, StrainIn *input)
 {
 
 static REAL4TimeSeries darm;
@@ -760,16 +503,12 @@ INT4 length = input->AS_Q.data->length;
       output->alpha.data->data[m]= factors.alpha;
       output->beta.data->data[m]= factors.beta;
 
-/*       fprintf(stdout,"%e %e %e %e\n",output->alpha.data->data[m].re,output->alpha.data->data[m].im, */
-/* 	                             output->beta.data->data[m].re,output->beta.data->data[m].im); */
-
-
-
       if(m == MAXALPHAS)
 	{
 	  fprintf(stderr,"Too many values of the factors, maximum allowed is %d\n",MAXALPHAS);
-	  return 1;
+	  RETURN(status);
 	}
+
     }
 
   /* Clean up */
@@ -781,5 +520,5 @@ INT4 length = input->AS_Q.data->length;
   LALDestroyVector(status->statusPtr,&darmwin);
   LALDestroyVector(status->statusPtr,&excwin);
 
-  return 0;
+  RETURN (status);
 }
