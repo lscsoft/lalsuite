@@ -1,17 +1,17 @@
-/* <lalVerbatim file="LALCoarseTest2CV">
+/* <lalVerbatim file="CoarseTest2CV">
 Author: Churches, D. K. and Sathyaprakash, B. S.
 $Id$
 </lalVerbatim> */
 
 /* <lalLaTeX>
-\subsection{Program \texttt{LALCoarseTest2.c}}
-\label{ss:LALCoarseTest2.c}
+\subsection{Program \texttt{CoarseTest2.c}}
+\label{ss:CoarseTest2.c}
 
-Test code for the inspiral modules.
+Test code for the \texttt{bank} modules.
 
 \subsubsection*{Usage}
 \begin{verbatim}
-LALCoarseTest2
+CoarseTest2
 \end{verbatim}
 
 \subsubsection*{Description}
@@ -21,7 +21,7 @@ generates vertices of the ambiguity 'rectangle' around each lattice point
 suitable for plotting with xmgr or xgrace.
 
 \subsubsection*{Exit codes}
-\input{LALCoarseTest2CE}
+\input{CoarseTest2CE}
 
 \subsubsection*{Uses}
 \begin{verbatim}
@@ -32,10 +32,10 @@ LALInspiralCreateCoarseBank
 
 \subsubsection*{Notes}
 
-\vfill{\footnotesize\input{LALCoarseTest2CV}}
+\vfill{\footnotesize\input{CoarseTest2CV}}
 </lalLaTeX> */
 
-/* <lalErrTable file="LALCoarseTest2CE"> */
+/* <lalErrTable file="CoarseTest2CE"> */
 /* </lalErrTable> */
 
 #include <stdio.h>

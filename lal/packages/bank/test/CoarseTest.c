@@ -1,50 +1,42 @@
-/* <lalVerbatim file="LALCoarseTestCV">
+/* <lalVerbatim file="CoarseTestCV">
 Author: Churches, D. K. and Sathyaprakash, B. S.
 $Id$
 </lalVerbatim> */
 
 /* <lalLaTeX>
-\subsection{Program \texttt{LALCoarseTest.c}}
-\label{ss:LALCoarseTest.c}
+\subsection{Program \texttt{CoarseTest.c}}
+\label{ss:CoarseTest.c}
 
 Test code for the inspiral modules.
 
 \subsubsection*{Usage}
 \begin{verbatim}
-LALCoarseTest
+CoarseTest
 \end{verbatim}
 
 \subsubsection*{Description}
 
-This test code gives an example of how one calls the functions which generate inspiral
-waveforms.
-Note that one must calculate the length of the waveform and allocate memory for it
-\emph{before} calling
-\texttt{InspiralWave}. The length of the waveform can be calculated by calling the function
-\texttt{InspiralWaveLength} beforehand, as shown.
-
-There are only two functions which one can call to generate waveforms. These are
-\texttt{InspiralWave},
-which will return a \emph{single} waveform, and \texttt{InspiralWaveTemplates}, which
-returns a \emph{pair}
-of waveforms which have phases which differ by $\pi/2$.
+This test code gives an example of how one calls \texttt{LALInspiralCreateCoarseBank}
+and \texttt{LALInspiralCreateFineBank} modules.
 
 \subsubsection*{Exit codes}
-\input{LALCoarseTestCE}
+\input{CoarseTestCE}
 
 \subsubsection*{Uses}
 \begin{verbatim}
 lalDebugLevel
-InspiralWaveLength
-InspiralWave
+LALInspiralCreateCoarseBank
+LALInspiralCreateFineBank
+LALFree
+LALCheckMemoryLeaks
 \end{verbatim}
 
 \subsubsection*{Notes}
 
-\vfill{\footnotesize\input{LALCoarseTestCV}}
+\vfill{\footnotesize\input{CoarseTestCV}}
 </lalLaTeX> */
 
-/* <lalErrTable file="LALCoarseTestCE"> */
+/* <lalErrTable file="CoarseTestCE"> */
 /* </lalErrTable> */
 
 #include <stdio.h>

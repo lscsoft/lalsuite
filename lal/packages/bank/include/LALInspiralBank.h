@@ -430,6 +430,14 @@ LALRectangleVertices(
 \newpage\input{CoarseTestC}
 </lalLaTeX> */
 
+/* <lalLaTeX>
+\newpage\input{CoarseTest2C}
+</lalLaTeX> */
+
+/* <lalLaTeX>
+\newpage\input{ChirpSpaceC}
+</lalLaTeX> */
+
 #ifdef  __cplusplus
 }
 #endif

@@ -76,6 +76,19 @@ void LALInspiralSetParams(LALStatus            *status,
    tempPars->approximant = coarseIn.approximant;
    tempPars->nStartPad = 0;
    tempPars->nEndPad = 0;
+   tempPars->Theta = 0.;
+   tempPars->OmegaS = 0.;
+   tempPars->startTime = 0.;
+   tempPars->startPhase = 0.;
+   tempPars->spin1[0] = tempPars->spin1[1] = tempPars->spin1[2] = 0.;
+   tempPars->spin2[0] = tempPars->spin2[1] = tempPars->spin2[2] = 0.;
+   tempPars->inclination = 0.;
+   tempPars->eccentricity = 0.;
+   tempPars->rInitial = 0.;
+   tempPars->vInitial = 0.;
+   tempPars->rFinal = 0.;
+   tempPars->vFinal = 0.;
+   tempPars->rLightRing = 0.;
 
    DETATCHSTATUSPTR(status);
    RETURN(status);

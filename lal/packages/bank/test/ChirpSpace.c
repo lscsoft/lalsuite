@@ -1,3 +1,25 @@
+/* <lalVerbatim file="ChirpSpaceCV">
+Author: Sathyaprakash, B. S.
+</lalVerbatim> */
+
+/* <lalLaTeX>
+\subsection{Program \texttt{ChirpSpace.c}}
+\label{ss:bank:ChirpSpace.c}
+
+Test code for \texttt{LALInspiralParameterCalc} module.
+This code works out the boundary of the region enclosed
+by the parameter space specified by {\em maximum total
+mass} and {\em minimum companion masses.}
+
+\subsubsection*{Uses}
+\begin{verbatim}
+LALInspiralParameterCalc
+\end{verbatim}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{ChirpSpaceCV}}
+</lalLaTeX> */
 /* 
    This code generates the chirp parameter space for a given
    minimum companion mass mMin and maximum total mass MMax. One can use
