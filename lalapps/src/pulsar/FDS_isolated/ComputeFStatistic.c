@@ -70,7 +70,9 @@ BOOLEAN FILE_FSTATS = 1;
 
 #if USE_BOINC
 #include <signal.h>
-#include <pthread.h> /* Bernd, you may want/need to disable this for Win32 */
+#ifndef _WIN32
+#include <pthread.h>
+#endif
 
 #define USE_BOINC_DEBUG 0
 /* for getpid() */
@@ -2636,7 +2638,7 @@ void sighandler(int sig){
   void *array[64];
   size_t size;
   
-#if 1
+#ifndef _WIN32
   sigset_t signalset;
   sigemptyset(&signalset);
   sigaddset(&signalset, sig);
