@@ -570,17 +570,12 @@ int main(int argc,char *argv[])
 
 #ifdef RUN_POLKA
   /* look for a Fstat file ending in "%DONE" and quit (boinc)main if found */
-#ifdef _WIN32
-#define LAST_LINE_BYTES 7
-#else
-#define LAST_LINE_BYTES 6
-#endif
   fpstat=fopen( Fstatsfilename,"r");
   if(fpstat){
     char done[6];
     done[0] = '\0';
-    if(!fseek(fpstat,-LAST_LINE_BYTES,SEEK_END))
-      if(fread(done,LAST_LINE_BYTES,1,fpstat)==1)
+    if(!fseek(fpstat,-6,SEEK_END))
+      if(fread(done,6,1,fpstat)==1)
         if(strncmp(done,"%DONE",5)==0){
           fclose(fpstat);
           fprintf(stderr,"detected finished Fstat file - aborting Fstat run %d\n",cfsRunNo);
