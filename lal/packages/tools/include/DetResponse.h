@@ -128,9 +128,9 @@ detector and source parameters to the functions
 
 The fields are:
 \begin{description}
-\item[\texttt{const LALDetector *pDetector}] Pointer to \texttt{LALDetector}
+\item[\texttt{LALDetector *pDetector}] Pointer to \texttt{LALDetector}
   object containing information about the detector
-\item[\texttt{const LALSource *pSource}] Pointer to \texttt{LALSource} object
+\item[\texttt{LALSource *pSource}] Pointer to \texttt{LALSource} object
   containing information about the source
 \end{description}
 </lalLaTeX> */
@@ -138,8 +138,8 @@ The fields are:
 typedef struct
 tagLALDetAndSource
 {
-  const LALDetector  *pDetector;
-  const LALSource    *pSource;
+  LALDetector  *pDetector;
+  LALSource    *pSource;
 }
 LALDetAndSource;
 
