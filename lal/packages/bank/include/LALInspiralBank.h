@@ -657,30 +657,6 @@ LALInspiralComputeMetric(
 
 
 /* <lalLaTeX>
-\newpage\input{LALInspiralComputeMetricBCVC}
-</lalLaTeX>  */
-
-void 
-LALInspiralComputeMetricBCV
-(
-  	LALStatus             *status,
-	InspiralMetric        *metric,
-	REAL8FrequencySeries  *psd,
-	InspiralTemplate      *params
-);
-
-
-
-
-
-
-
-
-
-
-
-
-/* <lalLaTeX>
 \newpage\input{LALInspiralMomentsC}
 </lalLaTeX>  */
 

@@ -61,22 +61,31 @@ void LALInspiralUpdateParams(LALStatus          *status,
    ASSERT (metric.g11 > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
    ASSERT (minimalmatch < 1., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
    ASSERT (minimalmatch > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-   ASSERT (metric.theta != LAL_PI_2, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-   ASSERT (metric.theta != -LAL_PI_2, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (metric.theta < LAL_PI_2, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (metric.theta > -LAL_PI_2, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
 
    dx0 = sqrt(2. * (1. - minimalmatch)/metric.g00 );
    dx1 = sqrt(2. * (1. - minimalmatch)/metric.g11 );
-   myphi = atan2(dx1, dx0);
-   theta = fabs(metric.theta);
-   if (theta <= myphi) {
-      fac = cos(theta);
-      bankParams->dx0 = dx0 / fac;
-      bankParams->dx1 = dx1 * fac;
-   } 
-   else {
-      fac = sin(theta);
-      bankParams->dx0 = dx1 / fac;
-      bankParams->dx1 = dx0 * fac;
+
+   if (metric.theta==0)
+   {
+	   bankParams->dx0 = dx0;
+	   bankParams->dx1 = dx1;
+   }
+   else
+   {
+	   myphi = atan2(dx1, dx0);
+	   theta = fabs(metric.theta);
+	   if (theta <= myphi) {
+		   fac = cos(theta);
+		   bankParams->dx0 = dx0 / fac;
+		   bankParams->dx1 = dx1 * fac;
+	   } 
+	   else {
+		   fac = sin(theta);
+		   bankParams->dx0 = dx1 / fac;
+		   bankParams->dx1 = dx0 * fac;
+	   }
    }
 
    DETATCHSTATUSPTR(status);
