@@ -140,16 +140,23 @@ void LALDRunningMedian( LALStatus *status,
     checks: Array to hold pointers to Checkpoint nodes.
     first_sequence: Pointer to first node of sequential list
     ------------------------------------*/
-  struct node **checks,**node_addresses;    
-  struct node *first_sequence,*last_sequence;
-  struct node *currentnode,*previousnode; 
-  struct node *leftnode, *rightnode;
-  struct node *reuse_next_sorted,*reuse_prev_sorted;
-  struct node *dummy_node,*dummy_node1,*dummy_node2;
+  struct node **checks = NULL;
+  struct node **node_addresses = NULL;    
+  struct node *first_sequence = NULL;
+  struct node *last_sequence = NULL;
+  struct node *currentnode = NULL;
+  struct node *previousnode = NULL; 
+  struct node *leftnode = NULL;
+  struct node *rightnode = NULL;
+  struct node *reuse_next_sorted = NULL;
+  struct node *reuse_prev_sorted = NULL;
+  struct node *dummy_node = NULL;
+  struct node *dummy_node1 = NULL;
+  struct node *dummy_node2 = NULL;
   UINT4 ncheckpts,stepchkpts;
   UINT4 nextchkptindx,*checks4shift;
   UINT4 nearestchk,midpoint,offset,numberoffsets;
-  UINT4 samplecount,counter_chkpt,chkcount,shiftcounter;
+  UINT4 samplecount,counter_chkpt,chkcount,shiftcounter = 0;
   INT8 k;
   REAL8 nextsample,deletesample,dummy;
   UINT4 shift,dummy_int;
@@ -173,8 +180,9 @@ void LALDRunningMedian( LALStatus *status,
     Sort the first block of param.blocksize samples
     ------------------------------------*/
   index_block =(struct rngmed_val_index8 *)LALCalloc(param.blocksize, sizeof(struct rngmed_val_index8));
-  if(!index_block)
+  if(!index_block) {
     ABORT(status,LALRUNNINGMEDIANH_EMALOC1,LALRUNNINGMEDIANH_MSGEMALOC1);
+  }
   for(k=0;k<param.blocksize;k++){
     index_block[k].data=input->data[k];
     index_block[k].index=k;
@@ -560,16 +568,23 @@ void LALSRunningMedian( LALStatus *status,
     checks: Array to hold pointers to Checkpoint nodes.
     first_sequence: Pointer to first node of sequential list
     ------------------------------------*/
-  struct node **checks,**node_addresses;    
-  struct node *first_sequence,*last_sequence;
-  struct node *currentnode,*previousnode; 
-  struct node *leftnode, *rightnode;
-  struct node *reuse_next_sorted,*reuse_prev_sorted;
-  struct node *dummy_node,*dummy_node1,*dummy_node2;
+  struct node **checks = NULL;
+  struct node **node_addresses = NULL;    
+  struct node *first_sequence = NULL;
+  struct node *last_sequence = NULL;
+  struct node *currentnode = NULL;
+  struct node *previousnode = NULL; 
+  struct node *leftnode = NULL;
+  struct node *rightnode = NULL;
+  struct node *reuse_next_sorted = NULL;
+  struct node *reuse_prev_sorted = NULL;
+  struct node *dummy_node = NULL;
+  struct node *dummy_node1 = NULL;
+  struct node *dummy_node2 = NULL;
   UINT4 ncheckpts,stepchkpts;
   UINT4 nextchkptindx,*checks4shift;
   UINT4 nearestchk,midpoint,offset,numberoffsets;
-  UINT4 samplecount,counter_chkpt,chkcount,shiftcounter;
+  UINT4 samplecount,counter_chkpt,chkcount,shiftcounter = 0;
   INT8 k;
   REAL4 nextsample,deletesample,dummy;
   UINT4 shift,dummy_int;
@@ -593,14 +608,15 @@ void LALSRunningMedian( LALStatus *status,
     Sort the first block of param.blocksize samples
     ------------------------------------*/
   index_block =(struct rngmed_val_index8 *)LALCalloc(param.blocksize, sizeof(struct rngmed_val_index8));
-  if(!index_block)
+  if(!index_block) {
     ABORT(status,LALRUNNINGMEDIANH_EMALOC1,LALRUNNINGMEDIANH_MSGEMALOC1);
+  }
   for(k=0;k<param.blocksize;k++){
     index_block[k].data=input->data[k];
     index_block[k].index=k;
   }
 
-  qsort(index_block, param.blocksize, sizeof(struct rngmed_val_index8),rngmed_sortindex8);
+  qsort(index_block, param.blocksize, sizeof(struct rngmed_val_index4),rngmed_sortindex4);
   
   sorted_indices=(REAL4 *)LALCalloc(param.blocksize,sizeof(REAL4));
 
