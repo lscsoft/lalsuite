@@ -514,8 +514,9 @@ LALSimBurstTableFromLIGOLw (
 
         if ( tableDir[j].idx == 0 )
         {
-          LALSnprintf( thisEvent->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), 
-              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+          LALSnprintf( thisEvent->waveform, 
+              LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s", 
+              env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else if ( tableDir[j].idx == 1 )
         {
@@ -887,7 +888,7 @@ LALSnglInspiralTableFromLIGOLw (
         {
           thisEvent->beta = r4colData;
         }
-	else if ( tableDir[j].idx == 34 )
+        else if ( tableDir[j].idx == 34 )
         {
           thisEvent->f_final = r4colData;
         }
@@ -1140,7 +1141,7 @@ InspiralTmpltBankFromLIGOLw (
         {
           thisTmplt->beta = colData;
         }
-	else if ( tableDir[j].idx == 13 )
+        else if ( tableDir[j].idx == 13 )
         {
           thisTmplt->fFinal = colData;
         }
@@ -1207,21 +1208,21 @@ SimInspiralTableFromLIGOLw (
   const  MetaioParseEnv                 env = &parseEnv;
   MetaTableDirectory tableDir[] =
   {
-    {"waveform",	    -1, 0},
+    {"waveform",            -1, 0},
     {"geocent_end_time",    -1, 1},
     {"geocent_end_time_ns", -1, 2},
-    {"h_end_time",	    -1, 3},
-    {"h_end_time_ns",	    -1, 4},
-    {"l_end_time",	    -1, 5},
-    {"l_end_time_ns",	    -1, 6},
-    {"g_end_time",	    -1, 7},
-    {"g_end_time_ns",	    -1, 8},
-    {"t_end_time",	    -1, 9},
-    {"t_end_time_ns",	    -1, 10},
-    {"v_end_time",	    -1, 11},
-    {"v_end_time_ns",	    -1, 12},
-    {"end_time_gmst",	    -1,	13},
-    {"source",		    -1, 14},
+    {"h_end_time",          -1, 3},
+    {"h_end_time_ns",       -1, 4},
+    {"l_end_time",          -1, 5},
+    {"l_end_time_ns",       -1, 6},
+    {"g_end_time",          -1, 7},
+    {"g_end_time_ns",       -1, 8},
+    {"t_end_time",          -1, 9},
+    {"t_end_time_ns",       -1, 10},
+    {"v_end_time",          -1, 11},
+    {"v_end_time_ns",       -1, 12},
+    {"end_time_gmst",       -1, 13},
+    {"source",              -1, 14},
     {"mass1",               -1, 15},
     {"mass2",               -1, 16},
     {"eta",                 -1, 17},
@@ -1231,11 +1232,11 @@ SimInspiralTableFromLIGOLw (
     {"inclination",         -1, 21},
     {"coa_phase",           -1, 22},
     {"polarization",        -1, 23},
-    {"eff_dist_h",	    -1, 24},
-    {"eff_dist_l",	    -1, 25},
-    {"eff_dist_g",	    -1, 26},
-    {"eff_dist_t",	    -1, 27},
-    {"eff_dist_v",	    -1, 28},
+    {"eff_dist_h",          -1, 24},
+    {"eff_dist_l",          -1, 25},
+    {"eff_dist_g",          -1, 26},
+    {"eff_dist_t",          -1, 27},
+    {"eff_dist_v",          -1, 28},
     {NULL,                   0, 0}
   };
 
@@ -1277,163 +1278,163 @@ SimInspiralTableFromLIGOLw (
   {
     INT4 geo_time = env->ligo_lw.table.elt[tableDir[1].pos].data.int_4s;
 
-      /* get the injetcion time and check that it is within the time window */
-      if ( ! endTime || geo_time > startTime && geo_time < endTime )
+    /* get the injetcion time and check that it is within the time window */
+    if ( ! endTime || geo_time > startTime && geo_time < endTime )
+    {
+      /* allocate memory for the template we are about to read in */
+      if ( ! *simHead )
       {
-        /* allocate memory for the template we are about to read in */
-        if ( ! *simHead )
+        thisSim = *simHead = (SimInspiralTable *) 
+          LALCalloc( 1, sizeof(SimInspiralTable) );
+      }
+      else
+      {
+        thisSim = thisSim->next = (SimInspiralTable *) 
+          LALCalloc( 1, sizeof(SimInspiralTable) );
+      }
+      if ( ! thisSim )
+      {
+        fprintf( stderr, "could not allocate inspiral simulation\n" );
+        CLOBBER_SIM;
+        MetaioClose( env );
+        return -1;
+      }
+
+      /* parse the row into the SimInspiralTable structure */
+      for ( j = 0; tableDir[j].name; ++j )
+      {
+        REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
+        REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
+        INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+        if ( tableDir[j].idx == 0 )
         {
-          thisSim = *simHead = (SimInspiralTable *) 
-            LALCalloc( 1, sizeof(SimInspiralTable) );
+          LALSnprintf(thisSim->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
+        }    
+        else if ( tableDir[j].idx == 1 )    
+        {
+          thisSim->geocent_end_time.gpsSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 2 )
+        {
+          thisSim->geocent_end_time.gpsNanoSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 3 )    
+        {
+          thisSim->h_end_time.gpsSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 4 )
+        {
+          thisSim->h_end_time.gpsNanoSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 5 )    
+        {
+          thisSim->l_end_time.gpsSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 6 )
+        {
+          thisSim->l_end_time.gpsNanoSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 7 )    
+        {
+          thisSim->g_end_time.gpsSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 8 )
+        {
+          thisSim->g_end_time.gpsNanoSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 9 )    
+        {
+          thisSim->t_end_time.gpsSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 10 )
+        {
+          thisSim->t_end_time.gpsNanoSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 11 )     
+        {
+          thisSim->v_end_time.gpsSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 12 )
+        {
+          thisSim->v_end_time.gpsNanoSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 13 )
+        {
+          thisSim->end_time_gmst = r8colData;
+        }
+        else if ( tableDir[j].idx == 14 )
+        {
+          LALSnprintf(thisSim->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
+        }
+        else if ( tableDir[j].idx == 15 )
+        {
+          thisSim->mass1 = r4colData;
+        }
+        else if ( tableDir[j].idx == 16 )
+        {
+          thisSim->mass2 = r4colData;
+        }
+        else if ( tableDir[j].idx == 17 )
+        {
+          thisSim->eta = r4colData;
+        }
+        else if ( tableDir[j].idx == 18 )
+        {
+          thisSim->distance = r4colData;
+        }
+        else if ( tableDir[j].idx == 19 )
+        {
+          thisSim->longitude = r4colData;
+        }
+        else if ( tableDir[j].idx == 20 )
+        {
+          thisSim->latitude = r4colData;
+        }
+        else if ( tableDir[j].idx == 21 )
+        {
+          thisSim->inclination = r4colData;
+        }
+        else if ( tableDir[j].idx == 22 )
+        {
+          thisSim->coa_phase = r4colData;
+        }
+        else if ( tableDir[j].idx == 23 )
+        {
+          thisSim->polarization = r4colData;
+        }
+        else if ( tableDir[j].idx == 24 )
+        {
+          thisSim->eff_dist_h = r4colData;
+        }
+        else if ( tableDir[j].idx == 25 )
+        {
+          thisSim->eff_dist_l = r4colData;
+        }
+        else if ( tableDir[j].idx == 26 )
+        {
+          thisSim->eff_dist_g = r4colData;
+        }
+        else if ( tableDir[j].idx == 27 )
+        {
+          thisSim->eff_dist_t = r4colData;
+        }
+        else if ( tableDir[j].idx == 28 )
+        {
+          thisSim->eff_dist_v = r4colData;
         }
         else
         {
-          thisSim = thisSim->next = (SimInspiralTable *) 
-            LALCalloc( 1, sizeof(SimInspiralTable) );
-        }
-        if ( ! thisSim )
-        {
-          fprintf( stderr, "could not allocate inspiral simulation\n" );
           CLOBBER_SIM;
-          MetaioClose( env );
+          fprintf( stderr, "unknown column while parsing\n" );
           return -1;
         }
-
-        /* parse the row into the SimInspiralTable structure */
-	for ( j = 0; tableDir[j].name; ++j )
-	{
-	  REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
-	  REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
-	  INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
-	  if ( tableDir[j].idx == 0 )
-	  {
-	    LALSnprintf(thisSim->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
-	      "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
-	  }    
-	  else if ( tableDir[j].idx == 1 ) 	  
-	  {
-	    thisSim->geocent_end_time.gpsSeconds = i4colData;
-	  }
-	  else if ( tableDir[j].idx == 2 )
-	  {
-	    thisSim->geocent_end_time.gpsNanoSeconds = i4colData;
-	  }
-	  else if ( tableDir[j].idx == 3 ) 	  
-	  {
-	    thisSim->h_end_time.gpsSeconds = i4colData;
-	  }
-	  else if ( tableDir[j].idx == 4 )
-	  {
-	    thisSim->h_end_time.gpsNanoSeconds = i4colData;
-	  }
-	  else if ( tableDir[j].idx == 5 ) 	  
-	  {
-	    thisSim->l_end_time.gpsSeconds = i4colData;
-	  }
-	  else if ( tableDir[j].idx == 6 )
-	  {
-	    thisSim->l_end_time.gpsNanoSeconds = i4colData;
-	  }
-	  else if ( tableDir[j].idx == 7 ) 	  
-	  {
-	    thisSim->g_end_time.gpsSeconds = i4colData;
-	  }
-	  else if ( tableDir[j].idx == 8 )
-	  {
-	    thisSim->g_end_time.gpsNanoSeconds = i4colData;
-	  }
-	  else if ( tableDir[j].idx == 9 ) 	  
-	  {
-	    thisSim->t_end_time.gpsSeconds = i4colData;
-	  }
-	  else if ( tableDir[j].idx == 10 )
-	  {
-	    thisSim->t_end_time.gpsNanoSeconds = i4colData;
-	  }
-	  else if ( tableDir[j].idx == 11 ) 	  
-	  {
-	    thisSim->v_end_time.gpsSeconds = i4colData;
-	  }
-	  else if ( tableDir[j].idx == 12 )
-	  {
-	    thisSim->v_end_time.gpsNanoSeconds = i4colData;
-	  }
-	  else if ( tableDir[j].idx == 13 )
-          {
-	    thisSim->end_time_gmst = r8colData;
-	  }
-	  else if ( tableDir[j].idx == 14 )
-	  {
-	    LALSnprintf(thisSim->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR),
-	      "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
-	  }
-	  else if ( tableDir[j].idx == 15 )
-	  {
-	    thisSim->mass1 = r4colData;
-          }
-	  else if ( tableDir[j].idx == 16 )
-	  {
-	    thisSim->mass2 = r4colData;
-          }
-          else if ( tableDir[j].idx == 17 )
-          {
-            thisSim->eta = r4colData;
-          }
-          else if ( tableDir[j].idx == 18 )
-          {
-	    thisSim->distance = r4colData;
-          }
-          else if ( tableDir[j].idx == 19 )
-          {
-            thisSim->longitude = r4colData;
-          }
-          else if ( tableDir[j].idx == 20 )
-          {
-            thisSim->latitude = r4colData;
-          }
-          else if ( tableDir[j].idx == 21 )
-          {
-            thisSim->inclination = r4colData;
-          }
-          else if ( tableDir[j].idx == 22 )
-          {
-            thisSim->coa_phase = r4colData;
-          }
-          else if ( tableDir[j].idx == 23 )
-          {
-            thisSim->polarization = r4colData;
-          }
-	  else if ( tableDir[j].idx == 24 )
-          {
-            thisSim->eff_dist_h = r4colData;
-          }
-	  else if ( tableDir[j].idx == 25 )
-          {
-            thisSim->eff_dist_l = r4colData;
-          }
-	  else if ( tableDir[j].idx == 26 )
-          {
-            thisSim->eff_dist_g = r4colData;
-          }
-	  else if ( tableDir[j].idx == 27 )
-          {
-            thisSim->eff_dist_t = r4colData;
-          }
-	  else if ( tableDir[j].idx == 28 )
-          {
-            thisSim->eff_dist_v = r4colData;
-          }
-
-          else
-          {
-            CLOBBER_SIM;
-            fprintf( stderr, "unknown column while parsing\n" );
-            return -1;
-          }
-        }
-        /* increase the count of rows parsed */
-        ++nrows;       
       }
+      
+      /* increase the count of rows parsed */
+      ++nrows;       
+    }
   }
 
   if ( mioStatus == -1 )
@@ -1614,20 +1615,19 @@ SummValueTableFromLIGOLw (
 {
   int                                   i, j, nrows;
   int                                   mioStatus;
-  SummValueTable			*thisValue = NULL;
-
+  SummValueTable                       *thisValue = NULL;
   struct MetaioParseEnvironment         parseEnv;
   const  MetaioParseEnv                 env = &parseEnv;
   MetaTableDirectory tableDir[] =
   {
-    {"program",		      -1, 0},
-    {"start_time",	      -1, 1},
+    {"program",               -1, 0},
+    {"start_time",            -1, 1},
     {"start_time_ns",         -1, 2},
-    {"end_time",	      -1, 3},
-    {"end_time_ns",	      -1, 4},
-    {"ifo",		      -1, 5},
-    {"name",		      -1, 6},
-    {"value",		      -1, 7},
+    {"end_time",              -1, 3},
+    {"end_time_ns",           -1, 4},
+    {"ifo",                   -1, 5},
+    {"name",                  -1, 6},
+    {"value",                 -1, 7},
     {"comment",               -1, 8},
     {NULL,                     0, 0}
   };
@@ -1672,7 +1672,7 @@ SummValueTableFromLIGOLw (
     if ( ! *sumHead )
     {
       thisValue = *sumHead = (SummValueTable *) 
-	  LALCalloc( 1, sizeof(SummValueTable) );
+    LALCalloc( 1, sizeof(SummValueTable) );
     }
     else
     {
@@ -1716,24 +1716,24 @@ SummValueTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 5 )
       {
-	LALSnprintf( thisValue->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
-            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+        LALSnprintf( thisValue->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
+          "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 6 )
       {
-	LALSnprintf( thisValue->name, LIGOMETA_SUMMVALUE_NAME_MAX * 
-	    sizeof(CHAR), "%s",
-	    env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+        LALSnprintf( thisValue->name, LIGOMETA_SUMMVALUE_NAME_MAX * 
+          sizeof(CHAR), "%s",
+          env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 7 )
       {
-	thisValue->value = r4colData;
+        thisValue->value = r4colData;
       }
       else if ( tableDir[j].idx == 8 )
       {
         LALSnprintf( thisValue->comment, LIGOMETA_SUMMVALUE_NAME_MAX * 
-	    sizeof(CHAR), "%s",
-	    env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+          sizeof(CHAR), "%s",
+          env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else
       {
@@ -1775,27 +1775,27 @@ SummValueTableFromLIGOLw (
 int
 StochasticTableFromLIGOLw (
     StochasticTable **stochHead,
-		CHAR *fileName)
+    CHAR *fileName)
 /* </lalVerbatim> */
 {
   int i, j, nrows;
-	int mioStatus;
+  int mioStatus;
   StochasticTable *thisValue = NULL;
 
   struct MetaioParseEnvironment parseEnv;
   const MetaioParseEnv env = &parseEnv;
   MetaTableDirectory tableDir[] =
   {
-		{"ifo_one",       -1, 0},
-		{"ifo_two",       -1, 1},
-		{"channel_one",   -1, 2},
-		{"channel_two",   -1, 3},
+    {"ifo_one",       -1, 0},
+    {"ifo_two",       -1, 1},
+    {"channel_one",   -1, 2},
+    {"channel_two",   -1, 3},
     {"start_time",    -1, 4},
     {"start_time_ns", -1, 5},
-    {"duration",	    -1, 6},
-    {"duration_ns",	  -1, 7},
-		{"cc_stat",       -1, 8},
-		{"cc_sigma",      -1, 9},
+    {"duration",      -1, 6},
+    {"duration_ns",   -1, 7},
+    {"cc_stat",       -1, 8},
+    {"cc_sigma",      -1, 9},
     {NULL,             0, 0}
   };
 
@@ -1816,7 +1816,7 @@ StochasticTableFromLIGOLw (
   if (mioStatus)
   {
     fprintf(stderr, "error opening stochastic table from file %s\n", \
-				fileName);
+        fileName);
     return -1;
   }
 
@@ -1839,12 +1839,12 @@ StochasticTableFromLIGOLw (
     if (!*stochHead)
     {
       thisValue = *stochHead = (StochasticTable *) \
-									LALCalloc(1, sizeof(StochasticTable));
+                  LALCalloc(1, sizeof(StochasticTable));
     }
     else
     {
       thisValue = thisValue->next = (StochasticTable *) \
-									LALCalloc( 1, sizeof(StochasticTable) );
+                  LALCalloc( 1, sizeof(StochasticTable) );
     }
     if (!thisValue)
     {
@@ -1873,14 +1873,14 @@ StochasticTableFromLIGOLw (
       else if ( tableDir[j].idx == 2 )
       {
         LALSnprintf(thisValue->channel_one, LIGOMETA_CHANNEL_MAX * \
-						sizeof(CHAR), "%s", \
-						env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
+            sizeof(CHAR), "%s", \
+            env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
       }
       else if ( tableDir[j].idx == 3 )
       {
         LALSnprintf(thisValue->channel_two, LIGOMETA_CHANNEL_MAX * \
-						sizeof(CHAR), "%s", \
-						env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
+            sizeof(CHAR), "%s", \
+            env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
       }
       else if ( tableDir[j].idx == 4 )
       {
@@ -1900,11 +1900,11 @@ StochasticTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 8 )
       {
-				thisValue->cc_stat = r8colData;
+        thisValue->cc_stat = r8colData;
       }
       else if ( tableDir[j].idx == 9 )
       {
-				thisValue->cc_sigma = r8colData;
+        thisValue->cc_sigma = r8colData;
       }
       else
       {
