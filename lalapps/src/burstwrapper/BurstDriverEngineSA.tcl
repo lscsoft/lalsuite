@@ -1091,7 +1091,7 @@ foreach l1 $SegmentList {
 		     
 
 			## get alpha's/beta's
-			set frqueryFAC "$FTypeCALFAC $IFO $ctimes proc($IFO2:CAL-OLOOP_FAC h1oloop\n$FTypeCALFAC $IFO $ctimes proc($IFO2:CAL-CAV_FAC) h1cavfac"
+			set frqueryFAC "$FTypeCALFAC $IFO $ctimes proc($IFO2:CAL-OLOOP_FAC) h1oloop\n$FTypeCALFAC $IFO $ctimes proc($IFO2:CAL-CAV_FAC) h1cavfac"
 
 
 			## datacond algorithms for calibration
