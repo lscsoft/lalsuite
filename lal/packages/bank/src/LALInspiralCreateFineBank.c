@@ -68,6 +68,12 @@ void LALInspiralCreateFineBank(LALStatus            *status,
   ASSERT (fineIn.coarseIn.space<=1,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
   ASSERT (fineIn.templateList.params.t0 > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
 
+  /* set the number of fine templates generated to zero      */
+  /* otherwise the LALCalloc will fail horribly, since there */
+  /* is nothing that guarantees that *nlist is a reasonable  */
+  /* number when the function is called                      */
+  *nlist = 0;
+
   tempPars = fineIn.templateList.params;
   switch (fineIn.coarseIn.space) {
     case Tau0Tau2:
