@@ -243,8 +243,8 @@ INT4 main(INT4 argc, CHAR ** argv)
       rejection = 1; /* We reject the null hypothesis */
     }
     /* NOTE: The code calls chi2cdfp() that is an integral from 0 to x of 
-     *       chi2pdf(). Therefore, the probability here is confidence level. 
-     *       The significance level is 1 - confidence level. 
+     *       chi2pdf(). Therefore, the probability here is "confidence". 
+     *       The "significance" is "1 - confidence". 
      */
     fprintf(stdout, "%8.5e %d", 1.0 - probability, rejection);
   }
@@ -336,10 +336,9 @@ showHelp( LALStatus *status,
 	  "-o: <CHAR STRING: filename> File <filename> contains the observed data to be vetoed: [%s]\n",cla->obsvdatafile);
   fprintf(stderr,
 	  "-t: <CHAR STRING: filename> File <filename> contains the veto signal: [%s]\n",cla->testdatafile);
-  fprintf(stderr,"-v <INT2: 0, 1 or 2>: Output in a verbose way. Mainly for debugging. [0]\n");
   fprintf(stderr,"-l <CHAR:>: lalDebugLevel. [0]\n");
   fprintf(stderr,"-C : Compute Probability assuming chi square ditributoin. [False]\n");
-  fprintf(stderr,"FstatSphapeTest -h : Show this help\n");
+  fprintf(stderr,"-h : Show this help\n");
   fprintf(stderr,"Example: ./FstatShapeTest -o <ObservedDataFile> -t <VetoDataFile>\n");
   fprintf(stderr,"Output from left to right:\n");
   fprintf(stderr,"(1) Frequency at which the maximum of F occurs\n");
@@ -347,7 +346,7 @@ showHelp( LALStatus *status,
   fprintf(stderr,"(3) Maximum of F in the cluster\n");
   fprintf(stderr,"(4) Degrees of freedom\n");
   fprintf(stderr,"(5) Veto statistic\n");
-  fprintf(stderr,"[(6) Chi square Probability]\n");
+  fprintf(stderr,"[(6) Chi-square Q probability (\"Significance\" of the data)]\n");
   fprintf(stderr,"[(7) If 0, the observed signal is consistent with the veto signal, \n");
   fprintf(stderr,"with the significance level = %f.]\n", cla->sigLevel);
   exit(0);
@@ -410,6 +409,12 @@ ReadClusterInfo( LALStatus *status,
   fclose(fpobsv);
 
 
+  /* n
+   * fmax        Fmax
+   * startFreq   deltaFreq
+   * A           B          C
+   */
+
 
   /* read the hader of the test data*/
   fptest = fopen(cla->testdatafile,"r");
@@ -448,12 +453,12 @@ ReadClusterInfo( LALStatus *status,
   }
 
   /* Check consistency betwee the data files.*/
-  if(fabs(Aobsv-Atest)>fabs(Aobsv)*errorTol) { 
+  if( fabs(Aobsv-Atest) > Aobsv * errorTol) { 
     fprintf(stderr,
 	    "Error: A of data is different from A of test.\n");
     ABORT( status, FSTATSHAPETESTC_EODDDATA, FSTATSHAPETESTC_MSGEODDDATA );
   }
-  if(fabs(Bobsv-Btest)>fabs(Bobsv)*errorTol) {
+  if( fabs(Bobsv-Btest) > Bobsv * errorTol) {
     fprintf(stderr,
 	    "Error: A of data is different from B of test.\n");
     ABORT( status, FSTATSHAPETESTC_EODDDATA, FSTATSHAPETESTC_MSGEODDDATA );
@@ -596,8 +601,8 @@ ComputeVetoStatistic( LALStatus *status,
   /* rearrange the data if necessary */
     if(
        ( (clustInfoPair->ObsvCI.nData) != (clustInfoPair->TestCI.nData) ) ||
-       ( fabs( clustInfoPair->ObsvCI.startFreq - clustInfoPair->TestCI.startFreq ) > errorTol ) ||
-       ( fabs( clustInfoPair->ObsvCI.deltaFreq - clustInfoPair->TestCI.deltaFreq ) > errorTol )
+       ( fabs( clustInfoPair->ObsvCI.startFreq - clustInfoPair->TestCI.startFreq ) > errorTol * ( clustInfoPair->ObsvCI.startFreq ) ) ||
+       ( fabs( clustInfoPair->ObsvCI.deltaFreq - clustInfoPair->TestCI.deltaFreq ) > errorTol * ( clustInfoPair->ObsvCI.deltaFreq ) )
        ) 
       {
 	RearrangeData( status->statusPtr, &CP, clustInfoPair );
@@ -756,9 +761,12 @@ RearrangeData( LALStatus *status,
   deltaFreqLCM = deltaFreqO;
 
   if( startFreqO - startFreqT != errorTol ) {
-    if( fabs( fmod( startFreqO - startFreqT, deltaFreqLCM ) ) > errorTol ) {
+    {REAL8 diffSFreq = fabs( startFreqO - startFreqT);
+    REAL8 tmp = diffSFreq - myRound( diffSFreq / deltaFreqLCM ) * deltaFreqLCM;
+    if( tmp  > errorTol * diffSFreq ) {
       fprintf(stderr,"The starting frequency inconsistency\n");
     ABORT( status, FSTATSHAPETESTC_EODDDATA, FSTATSHAPETESTC_MSGEODDDATA );
+    }
     }
   }
   indexOffset = (INT4) myRound( ( startFreqO - startFreqT ) / deltaFreqLCM );
