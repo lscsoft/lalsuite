@@ -121,7 +121,7 @@ int main(int argc, char *argv[]){
   INT4 loop = 0; 			/* loop counter */
   Math3DPointList *list = NULL; 	/* Pointer to structure for mathematica plot */
   Math3DPointList *first = NULL; 	
-  InspiralTemplateList *Tiles = NULL;	
+  SnglInspiralTable *tiles = NULL;	
   InspiralCoarseBankIn coarseIn;	/* this input stucture is superfluous */
   INT4 ntiles = 0;			/* number of tiles */
   INT2 Math3DPlot = 0;			/* option flag for Mathematica plot */
@@ -228,7 +228,7 @@ int main(int argc, char *argv[]){
     }
    
   printf("\n\nCalling LALInspiralSpinBank()......\n"); 
-  LALInspiralSpinBank(&stat, &Tiles, &ntiles, coarseIn);  
+  LALInspiralSpinBank(&stat, &tiles, &ntiles, coarseIn);  
   REPORTSTATUS(&stat);
   if (stat.statusCode){
     LALError(&stat, INSPIRALSPINBANKTESTC_MSGESUB);
@@ -239,15 +239,15 @@ int main(int argc, char *argv[]){
   printf("\nThese parameters yeild %i tiles.\n\n\n", ntiles);
   
   for(loop=0; loop < ntiles; loop++){
-    fprintf(plot, "%f\t%f\n", Tiles[loop].params.mass1/LAL_MTSUN_SI, Tiles[loop].params.mass2/LAL_MTSUN_SI);
+    fprintf(plot, "%f\t%f\n", tiles[loop].params.mass1/LAL_MTSUN_SI, tiles[loop].params.mass2/LAL_MTSUN_SI);
     }
   
   /* Mathematica Plot Stuff */
   if (Math3DPlot){
     for(loop=0; loop < (ntiles); loop++){
-      list->x = Tiles[loop].params.psi0;
-      list->y = Tiles[loop].params.psi3;
-      list->z = Tiles[loop].params.beta;
+      list->x = tiles[loop].params.psi0;
+      list->y = tiles[loop].params.psi3;
+      list->z = tiles[loop].params.beta;
       list->GrayLevel = 1.0*loop/ntiles;
       if ((list = list->next = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
         LALError(&stat, INSPIRALSPINBANKTESTC_MSGEMEM);

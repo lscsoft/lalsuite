@@ -519,7 +519,7 @@ LALInspiralBCVRegularFcutBank (
 void
 LALInspiralSpinBank(
     LALStatus         	 *status,
-    InspiralTemplateList **tiles,
+    SnglInspiralTable   **tiles,
     INT4      		 *ntiles,
     InspiralCoarseBankIn  coarseIn
     );

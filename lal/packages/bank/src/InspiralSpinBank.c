@@ -86,25 +86,13 @@
 NRCSID(INSPIRALSPINBANKC, "$Id$");
 
 /* Internal structures and functions --------------------------------------- */
-typedef struct ISBNode
-{
-  REAL4 psi0;
-  REAL4 psi3;
-  REAL4 beta;
-  REAL4 eta;
-  REAL4 chirpMass;
-  REAL4 mass1;
-  REAL4 mass2;
-  struct ISBNode *next;
-} ISBNode;
-
 
 static void cleanup(LALStatus *,
     REAL4Array 	**, 
     UINT4Vector **, 
     REAL4Vector **, 
-    ISBNode 	*, 
-    ISBNode 	*,
+    SnglInspiralTable 	*, 
+    SnglInspiralTable 	*,
     INT4 	*
     ); /* cleanup() prototype */
 
@@ -219,14 +207,13 @@ LALInspiralSpinBankMetric(
 void
 LALInspiralSpinBank(
     LALStatus         	 *status,
-    InspiralTemplateList **tiles,
+    SnglInspiralTable   **tiles,
     INT4      		 *ntiles,
     InspiralCoarseBankIn  coarseIn
     )
 /* </lalVerbatim> */
 {
-  ISBNode *tmplt = 		  NULL; /* loop counter */
-  ISBNode *output = 		  NULL; /* head of output linked list */
+  SnglInspiralTable *tmplt = 	  NULL; /* loop counter */
   REAL4Array *metric = 		  NULL; /* parameter-space metric */
   UINT4Vector *metricDimensions = NULL;	/* contains the dimension of metric */
   REAL4Vector *eigenval =  	  NULL; /* eigenvalues of metric */
@@ -286,13 +273,13 @@ LALInspiralSpinBank(
   /* BEN: do it by hand, since it's so simple? */
   LALU4CreateVector( status->statusPtr, &metricDimensions, (UINT4) 2 );
   BEGINFAIL(status)
-    cleanup(status->statusPtr, &metric, &metricDimensions, &eigenval, output, tmplt, ntiles);
+    cleanup(status->statusPtr, &metric, &metricDimensions, &eigenval, *tiles, tmplt, ntiles);
   ENDFAIL(status);
   metricDimensions->data[0] = 3;
   metricDimensions->data[1] = 3;
   LALSCreateArray( status->statusPtr, &metric, metricDimensions );
   BEGINFAIL(status)
-    cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt, ntiles);
+    cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt, ntiles);
   ENDFAIL(status);
 
   /* Set f0 to frequency of minimum of noise curve. */
@@ -311,24 +298,24 @@ LALInspiralSpinBank(
   LALGetInspiralMoments( status->statusPtr, &moments, &coarseIn.shf,
                          &inspiralTemplate );
   BEGINFAIL(status)                                                           
-    cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
+    cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
   ENDFAIL(status);
 
   /* Call the metric */
   LALInspiralSpinBankMetric(status->statusPtr, metric, &moments, &inspiralTemplate, &f0);	
   BEGINFAIL(status)
-    cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt, ntiles);
+    cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt, ntiles);
   ENDFAIL(status);
                                                                                                                                               
   /* Find eigenvalues and eigenvectors of metric. */
   eigenval = NULL;
   LALSCreateVector( status->statusPtr, &eigenval, 3 );
   BEGINFAIL(status)
-    cleanup(status->statusPtr,&metric, &metricDimensions,&eigenval,output,tmplt, ntiles);
+    cleanup(status->statusPtr,&metric, &metricDimensions,&eigenval,*tiles,tmplt, ntiles);
   ENDFAIL(status);
   LALSSymmetricEigenVectors( status->statusPtr, eigenval, metric );
   BEGINFAIL(status)
-    cleanup(status->statusPtr,&metric, &metricDimensions,&eigenval,output,tmplt, ntiles);
+    cleanup(status->statusPtr,&metric, &metricDimensions,&eigenval,*tiles,tmplt, ntiles);
   ENDFAIL(status);
     
   /* Set stepsizes and xp-yp rotation angle from metric. */
@@ -365,9 +352,10 @@ LALInspiralSpinBank(
   zp1 = z1;
     
   /* Allocate first template, which will remain blank. */
-  output = tmplt = (ISBNode *) LALCalloc( 1, sizeof(ISBNode) );
-  if (!output) {
-    cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
+  *tiles = tmplt = (SnglInspiralTable *) LALCalloc( 1,
+                   sizeof(SnglInspiralTable) );
+  if (*tiles == NULL) {
+    cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
     ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
   }
   
@@ -385,10 +373,11 @@ LALInspiralSpinBank(
         /* Test to see if the point is in the search region */
         if( test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0) )
         {
-          tmplt = tmplt->next = (ISBNode *) LALCalloc( 1, sizeof(ISBNode));
+          tmplt = tmplt->next = (SnglInspiralTable *) LALCalloc( 1,
+                  sizeof(SnglInspiralTable) );
           /* check to see if calloc worked */
           if (!tmplt){
-            cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
+            cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
             ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
           }
           /* Mark that one a keeper and increase the number of tiles */
@@ -400,7 +389,7 @@ LALInspiralSpinBank(
           tmplt->mass1 = m1;
           tmplt->mass2 = m2;
           tmplt->eta = eta;
-          tmplt->chirpMass = pow(m1*m2,0.6)/pow(m1+m2,0.2);
+          tmplt->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2);
           tmplt->psi0 = x;
           tmplt->psi3 = y;
           tmplt->beta = z;
@@ -414,9 +403,10 @@ LALInspiralSpinBank(
           x = calculateX(-0.5, xp0, xp, dxp, yp, dyp, bccFlag, theta);
           /* If its not in the range check 1/2 dx behind. */
           if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
-            tmplt = tmplt->next = (ISBNode *) LALCalloc( 1, sizeof(ISBNode) );
+            tmplt = tmplt->next = (SnglInspiralTable *) LALCalloc( 1,
+                    sizeof(SnglInspiralTable) );
             if (!tmplt){
-              cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
+              cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
               }
             mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
@@ -427,7 +417,7 @@ LALInspiralSpinBank(
             tmplt->mass1 = m1;
             tmplt->mass2 = m2;
             tmplt->eta = eta;
-            tmplt->chirpMass = pow(m1*m2,0.6)/pow(m1+m2,0.2);
+            tmplt->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2);
             tmplt->psi0 = x;
             tmplt->psi3 = y;
             tmplt->beta = z;
@@ -441,9 +431,10 @@ LALInspiralSpinBank(
           y = calculateY(-0.5, yp0, xp, dxp, yp, dyp, bccFlag, theta);
           /* If its not in the range check 1/2 dy behind. */
           if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
-            tmplt = tmplt->next = (ISBNode *) LALCalloc( 1, sizeof(ISBNode) );
+            tmplt = tmplt->next = (SnglInspiralTable *) LALCalloc( 1,
+                    sizeof(SnglInspiralTable) );
             if (!tmplt){
-              cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
+              cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
               }
             mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
@@ -454,7 +445,7 @@ LALInspiralSpinBank(
             tmplt->mass1 = m1;
             tmplt->mass2 = m2;
             tmplt->eta = eta;
-            tmplt->chirpMass = pow(m1*m2,0.6)/pow(m1+m2,0.2);
+            tmplt->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2);
             tmplt->psi0 = x;
             tmplt->psi3 = y;
             tmplt->beta = z;
@@ -468,9 +459,10 @@ LALInspiralSpinBank(
           z = calculateZ(-0.5, zp, dzp);
           /*  if its not in the range check 1/2 dz behind. */
           if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
-            tmplt = tmplt->next = (ISBNode *) LALCalloc( 1, sizeof(ISBNode) );
+            tmplt = tmplt->next = (SnglInspiralTable *) LALCalloc( 1,
+                    sizeof(SnglInspiralTable) );
             if (!tmplt){
-              cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
+              cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
               }
             mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
@@ -481,7 +473,7 @@ LALInspiralSpinBank(
             tmplt->mass1 = m1;
             tmplt->mass2 = m2;
             tmplt->eta = eta;
-            tmplt->chirpMass = pow(m1*m2,0.6)/pow(m1+m2,0.2);
+            tmplt->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2);
             tmplt->psi0 = x;
             tmplt->psi3 = y;
             tmplt->beta = z;
@@ -498,9 +490,10 @@ LALInspiralSpinBank(
           x = calculateX(0.5, xp0, xp, dxp, yp, dyp, bccFlag, theta);
           /* If its not in the range check 1/2 dx. */
           if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
-            tmplt = tmplt->next = (ISBNode *) LALCalloc( 1, sizeof(ISBNode) );
+            tmplt = tmplt->next = (SnglInspiralTable *) LALCalloc( 1,
+                    sizeof(SnglInspiralTable) );
             if (!tmplt){
-              cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
+              cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
               }
             mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
@@ -511,7 +504,7 @@ LALInspiralSpinBank(
 	    tmplt->mass1 = m1;
             tmplt->mass2 = m2;
             tmplt->eta = eta;
-            tmplt->chirpMass = pow(m1*m2,0.6)/pow(m1+m2,0.2);
+            tmplt->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2);
             tmplt->psi0 = x;
             tmplt->psi3 = y;
             tmplt->beta = z;
@@ -525,9 +518,10 @@ LALInspiralSpinBank(
           y = calculateY(0.5, yp0, xp, dxp, yp, dyp, bccFlag, theta);
           /* If its not in the range check 1/2 dy. */
           if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
-            tmplt = tmplt->next = (ISBNode *) LALCalloc( 1, sizeof(ISBNode) );
+            tmplt = tmplt->next = (SnglInspiralTable *) LALCalloc( 1,
+                    sizeof(SnglInspiralTable) );
             if (!tmplt){
-              cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
+              cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
               }
             mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
@@ -538,7 +532,7 @@ LALInspiralSpinBank(
             tmplt->mass1 = m1;
             tmplt->mass2 = m2;
             tmplt->eta = eta;
-            tmplt->chirpMass = pow(m1*m2,0.6)/pow(m1+m2,0.2);
+            tmplt->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2);
             tmplt->psi0 = x;
             tmplt->psi3 = y;
             tmplt->beta = z;
@@ -552,9 +546,10 @@ LALInspiralSpinBank(
           z = calculateZ(0.5, zp, dzp);
           /*  if its not in the range check 1/2 dz. */
           if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
-            tmplt = tmplt->next = (ISBNode *) LALCalloc( 1, sizeof(ISBNode) );
+            tmplt = tmplt->next = (SnglInspiralTable *) LALCalloc( 1,
+                    sizeof(SnglInspiralTable) );
             if (!tmplt){
-              cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
+              cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
               }
             mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
@@ -565,7 +560,7 @@ LALInspiralSpinBank(
             tmplt->mass1 = m1;
             tmplt->mass2 = m2;
             tmplt->eta = eta;
-            tmplt->chirpMass = pow(m1*m2,0.6)/pow(m1+m2,0.2);
+            tmplt->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2);
             tmplt->psi0 = x;
             tmplt->psi3 = y;
             tmplt->beta = z;
@@ -581,41 +576,20 @@ LALInspiralSpinBank(
 
 
   /* Trim the first template, which was left blank. */
-  tmplt = output->next;
-  LALFree( output );
+  tmplt = (*tiles)->next;
+  LALFree( *tiles );
   /* BEN: error check here */
-  output = tmplt;
+  *tiles = tmplt;
 
   /* What if no templates were allocated? ABORT */
-  if (!output) 
+  if (*tiles == NULL) 
   {  
-    cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
+    cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
     ABORT(status, INSPIRALSPINBANKC_ENOTILES, INSPIRALSPINBANKC_MSGENOTILES);
   }
   
-  /* Convert output to communicate with LALInspiralCreateCoarseBank(). */
-  *tiles = (InspiralTemplateList *) LALCalloc( *ntiles, sizeof(InspiralTemplateList));
-  cnt = 0;
-  for (tmplt = output; tmplt; tmplt = tmplt->next)
-  {
-    (*tiles)[cnt].params.mass1 = tmplt->mass1;
-    (*tiles)[cnt].params.mass2 = tmplt->mass2;
-    (*tiles)[cnt].params.psi0 = tmplt->psi0;
-    (*tiles)[cnt].params.psi3 = tmplt->psi3;
-    (*tiles)[cnt].params.eta = tmplt->eta;
-    (*tiles)[cnt].params.chirpMass = tmplt->chirpMass;
-    (*tiles)[cnt].params.beta = tmplt->beta;
-    ++cnt;
-  } /* for(tmplt...) */
-
-  
-  
-  /* prepare the linked list to be freed by copying the number of tiles to cnt */
-  tmplt = output;
-  cnt = *ntiles;
-  
-  /* free memory allocated for the linked list, vectors and arrays */
-  cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,&cnt);
+  /* free memory allocated for the vectors and arrays */
+  cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,NULL,NULL,&cnt);
   DETATCHSTATUSPTR( status );
   RETURN( status );
 } /* LALInspiralSpinBank() */
@@ -626,8 +600,8 @@ static void cleanup(
     REAL4Array **m, 
     UINT4Vector **md, 
     REAL4Vector **e, 
-    ISBNode *f,
-    ISBNode *t,
+    SnglInspiralTable *f,
+    SnglInspiralTable *t,
     INT4 *nt)
 {
   INITSTATUS( s, "LALInspiralSpinBank-cleanup", INSPIRALSPINBANKC );
