@@ -275,7 +275,7 @@ char *earthdata;
 char *sundata;
 
 /* timebaseline of SFT in sec, band SFT in Hz */
-REAL4 Tsft,B,sigma;
+REAL8 Tsft,B,sigma;
 /* smallest frequency in the band B */
 REAL8 global_fmin;
 /* How many SFTS we'll produce*/
@@ -285,7 +285,7 @@ INT4 nTsft;
 INT2 inoise;
 
 /*SCALE factor*/
-REAL4 scale=1.E19;
+REAL8 scale = 1.0;
 
 /* Our detector*/
 LALDetector Detector;
@@ -350,6 +350,7 @@ int parseI4(FILE *fp, const char* vname, INT4 *data);
 void usage(FILE *fp);
 
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
+extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 
 /* Like perror() but takes variable numbers of arguments and includes
    program name*/
@@ -554,6 +555,15 @@ int main(int argc,char *argv[]) {
     return 1;
   }
 
+  if (lalDebugLevel >= 3)
+    {
+      FILE *fp;
+      fp = fopen ("debug_phi_v2.dat", "w");
+      write_timeSeriesR8 (fp, cgwOutput.phi);
+      fclose (fp);
+    }
+
+
   /* This is the main loop that produces output data */
   for (iSFT=0;iSFT<nTsft;iSFT++){
 
@@ -569,6 +579,16 @@ int main(int argc,char *argv[]) {
 
     /* produce a time series simulation of a CW signal */
     SUB( LALSimulateCoherentGW(&status, timeSeries, &cgwOutput, &cwDetector), &status);
+
+    if (lalDebugLevel >= 3)
+      {  
+	FILE *fp;
+	CHAR fname[512];
+	sprintf (fname, "Tseries_v2_%05d.dat", iSFT);
+	fp = fopen (fname, "w");
+	write_timeSeriesR4 (fp, timeSeries);
+	fclose (fp);
+      }
 
     /*if you want noise, make it and add to timeseries */
     if (sigma > 0.0 && make_and_add_time_domain_noise(&status))
@@ -926,7 +946,10 @@ int prepare_cwDetector(LALStatus* status){
 
   if (!pulsar_defined_at_fiducial_SSB)
     cwDetector.heterodyneEpoch=timestamps[0];
-  else {
+  else 
+    cwDetector.heterodyneEpoch=SSBpulsarparams;
+#if 0 
+{
 
     /* Find GPS detector time corresponding to SSBpulsarparams. To
        start root finding, use SSBpulsarparams as guess (not off by
@@ -941,15 +964,6 @@ int prepare_cwDetector(LALStatus* status){
 
       /* find SSB time of guess */
       compute_one_SSB(status, &SSBofguess, &GPSguess);
-
-#if 0 
-      /* debugging print statements to check root finding. */     
-      error("Iteration %d: SSB %d.%09d  GPS %d.%09d\n", iterations,
-	      SSBofguess.gpsSeconds,
-	      SSBofguess.gpsNanoSeconds,
-	      GPSguess.gpsSeconds,
-	      GPSguess.gpsNanoSeconds);
-#endif
       
       /* compute difference between that and what we want.  Be careful
 	 with operations in INT4s. They will overflow if you are not
@@ -991,6 +1005,7 @@ int prepare_cwDetector(LALStatus* status){
        please use that to heterodyne by. */
     cwDetector.heterodyneEpoch=GPSguess;
   }
+#endif
   
   return 0;
 }
@@ -1196,9 +1211,9 @@ int make_filelist(void) {
 int read_and_add_freq_domain_noise(LALStatus* status, int iSFT) {
 
   FILE *fp;
-  REAL4 norm;
   size_t errorcode;
   UINT4 i;
+  REAL4 norm;
 
   struct headertag {
     REAL8 endian;
@@ -1275,8 +1290,8 @@ int read_and_add_freq_domain_noise(LALStatus* status, int iSFT) {
   norm=((REAL4)(fvec->length)/((REAL4)header.nsamples));
 
   for (i = 0; i < fvec->length; ++i) {
-    fvec->data[i].re += scale*fvecn->data[i].re*norm;
-    fvec->data[i].im += scale*fvecn->data[i].im*norm;
+    fvec->data[i].re += norm * fvecn->data[i].re;
+    fvec->data[i].im += norm * fvecn->data[i].im;
   }
   
   return 0;
@@ -1363,8 +1378,8 @@ int write_SFTS(int iSFT){
 
   for (i=0;i<fvec->length;i++){
 
-    rpw= fvec->data[i].re;
-    ipw= fvec->data[i].im;
+    rpw = fvec->data[i].re;
+    ipw = fvec->data[i].im;
 
     errorcode=fwrite((void*)&rpw, sizeof(REAL4),1,fp);  
     if (errorcode!=1){
@@ -1569,7 +1584,7 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
   
   opterr=0;
 
-  while (!errflg && ((c = getopt(argc, argv,":i:n:t:I:G:S:X:E:D:wbmh"))!=-1))
+  while (!errflg && ((c = getopt(argc, argv,":i:n:t:I:G:S:X:E:D:wbmhd:"))!=-1))
     switch (c) {
     case 'i':
       /* Name of input data file */
@@ -1683,6 +1698,9 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
       usage(stdout);
       exit(0);
       break;
+    case 'd':
+      lalDebugLevel = atoi (optarg);
+      break;
     default:
       
       /* unrecognized option */
@@ -1716,7 +1734,7 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
     return 1;
   }
   
-  if (parseR4(fp, "SFT time baseline Tsft", &Tsft))
+  if (parseR8(fp, "SFT time baseline Tsft", &Tsft))
     return 1;
 
   if (parseI4(fp, "# of SFTs nTsft", &nTsft))
@@ -1725,10 +1743,10 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
   if (parseR8(fp, "minimum frequency fmin", &global_fmin))
     return 1;
 
-  if (parseR4(fp, "bandwidth B", &B))
+  if (parseR8(fp, "bandwidth B", &B))
     return 1;
 
-  if (parseR4(fp, "noise variance sigma", &sigma))
+  if (parseR8(fp, "noise variance sigma", &sigma))
     return 1;
   
   if (parseR4(fp, "Plus polarization amplitude aPlus", &genTayParams.aPlus))
