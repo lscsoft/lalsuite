@@ -196,13 +196,16 @@ int main(int argc,char *argv[])
 		{
 		  /* Now we've found at least one candidate */
 
+
+/* 		  fprintf(stdout,"%e %e\n",SortedC1[i].f-p->f,SortedC1[i].Delta-p->Delta); */
+
 		  /* we need to move to the right edge; first look up until second (I don't think this will cause seg faults) */ 
 		  if ( p->iCandSorted > 0)
 		    {
 		      INT4 keepgoing = 1;
 		      while ( keepgoing )
 			{
-			  if( (p->iFreq == (p--)->iFreq) && ( p->iDelta == (p--)->iDelta) && ( p->iAlpha == (p--)->iAlpha)) 
+			  if( (p->iFreq == (p-1)->iFreq) && ( p->iDelta == (p-1)->iDelta) && ( p->iAlpha == (p-1)->iAlpha)) 
 			    {
 			      p--;
 			    }else{
@@ -217,7 +220,9 @@ int main(int argc,char *argv[])
 		  /* Now p points to first coincident event in the second list */
 		  
 		  /* Now loop over candidates found in the second list and do the fine coincidence test */
-/* 		       fprintf(stdout,"%d %d %d %d\n",p->iFreq,p->iDelta,p->iAlpha,p->iCand); */
+
+
+		  fprintf(stdout,"%e %e %e %e %e %e\n",SortedC1[i].f,p->f,SortedC1[i].Delta,p->Delta,SortedC1[i].Alpha,p->Alpha);
 		  
 
 		} /* check that besearch was non-null */
