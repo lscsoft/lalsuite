@@ -313,10 +313,10 @@ void compute_skygrid(LALStatus * status)
     /* 
      * SNAPSHOT 
      */
-    (void)mystrlcpy(cross_file_name, "whole_sky_cross", LALNameLength);
-    (void)mystrlcpy(plus_file_name, "whole_sky_plus", LALNameLength);
-    (void)mystrlcpy(sum_file_name, "whole_sky_sum", LALNameLength);
-    (void)mystrlcpy(relfreq_file_name, "whole_sky_relfreq", LALNameLength);
+    snprintf(cross_file_name,LALNameLength,"%s/whole_sky_cross", args_info.output_dir_arg);
+    snprintf(plus_file_name,LALNameLength,"%s/whole_sky_plus", args_info.output_dir_arg);
+    snprintf(sum_file_name,LALNameLength,"%s/whole_sky_sum", args_info.output_dir_arg);
+    snprintf(relfreq_file_name,LALNameLength,"%s/whole_sky_relfreq", args_info.output_dir_arg);
     
     (void)strncat(cross_file_name, outfile_suffix, LALNameLength);
     (void)strncat(plus_file_name, outfile_suffix, LALNameLength);
