@@ -72,6 +72,7 @@ NRCSID( LIGOMETADATATABLESH, "$Id$" );
 #define LIGOMETA_TRANSDATA_UNITS_MAX 17
 #define LIGOMETA_TRANSDATA_DATA_MAX 17
 #define LIGOMETA_SOURCE_MAX 17
+#define LIGOMETA_WAVEFORM_MAX 25
 
 #if 0
 <lalLaTeX>
@@ -376,6 +377,7 @@ typedef struct
 tagSimInspiralTable
 {
   struct tagSimInspiralTable *next;
+  CHAR           waveform[LIGOMETA_WAVEFORM_MAX];
   LIGOTimeGPS    geocent_end_time;
   REAL4          end_time_gmst;
   CHAR           source[LIGOMETA_SOURCE_MAX];

@@ -399,6 +399,7 @@ LALWriteLIGOLwXMLTable (
       {
         FIRST_TABLE_ROW
         fprintf( xml->fp, SIM_INSPIRAL_ROW,
+            tablePtr.simInspiralTable->waveform,
             tablePtr.simInspiralTable->geocent_end_time.gpsSeconds,
             tablePtr.simInspiralTable->geocent_end_time.gpsNanoSeconds,
             tablePtr.simInspiralTable->end_time_gmst,
