@@ -71,6 +71,8 @@ BOOLEAN FILE_FSTATS = 1;
 #include <unistd.h>
 
 #include "BOINC/boinc_api.h"
+#include "BOINC/filesys.h"
+#include "BOINC/diagnostics.h"
 
 #if !NO_BOINC_GRAPHICS
 #include "BOINC/graphics_api.h"
