@@ -79,14 +79,14 @@ LALU4DestroyVector()
 
 NRCSID (FINDCHIRPMEMORYC, "$Id$");
 
-#pragma <lalVerbatim file="FindChirpMemoryCP">
+/* <lalVerbatim file="FindChirpMemoryCP"> */
 void
 LALCreateDataSegmentVector (
     LALStatus                  *status,
     DataSegmentVector         **vector,
     FindChirpInitParams        *params
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   UINT4                 i;
   DataSegmentVector    *vectorPtr;
@@ -195,13 +195,13 @@ LALCreateDataSegmentVector (
 }
 
 
-#pragma <lalVerbatim file="FindChirpMemoryCP">
+/* <lalVerbatim file="FindChirpMemoryCP"> */
 void
 LALDestroyDataSegmentVector (
     LALStatus                  *status,
     DataSegmentVector         **vector
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   UINT4                 i;
   DataSegment          *segPtr;
@@ -268,14 +268,14 @@ LALDestroyDataSegmentVector (
 }
 
 
-#pragma <lalVerbatim file="FindChirpMemoryCP">
+/* <lalVerbatim file="FindChirpMemoryCP"> */
 void
 LALCreateFindChirpSegmentVector (
     LALStatus                  *status,
     FindChirpSegmentVector    **vector,
     FindChirpInitParams        *params
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   UINT4                         i;
   FindChirpSegmentVector       *vectorPtr;
@@ -381,13 +381,13 @@ LALCreateFindChirpSegmentVector (
 }
 
 
-#pragma <lalVerbatim file="FindChirpMemoryCP">
+/* <lalVerbatim file="FindChirpMemoryCP"> */
 void
 LALDestroyFindChirpSegmentVector (
     LALStatus                  *status,
     FindChirpSegmentVector    **vector
     )
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 {
   UINT4                         i;
   FindChirpSegment             *segPtr;
