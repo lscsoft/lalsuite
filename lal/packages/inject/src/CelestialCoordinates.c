@@ -20,12 +20,11 @@ Converts among Galactic, ecliptic, and equatorial coordinates.
 
 \subsubsection*{Description}
 
-These functions convert celestial coordinates from one spherical
-coordinate system to another; the definitions of the coordinate
-systems are given in \verb@SkyCoordinates.h@.  For simplicity the
-transformation is done in place; \verb@*position@ stores the
-coordinates in the first coordinate system at the start of the call,
-and the second coordinate system upon return.
+These functions perform the specified coordinate transformation on the
+contents of \verb@*input@ and store the result in \verb@*output@.  The
+two pointers may point to the same object, in which case the
+conversion is done in place.  The functions will also check
+\verb@input->system@ and set \verb@output->system@ as appropriate.
 
 These routines are collected together because they involve fixed,
 absolute coordinate systems, so the transformations require no
@@ -133,16 +132,17 @@ $$
 #include <lal/LALConstants.h>
 #include <lal/SkyCoordinates.h>
 
-#define LAL_ALPHAGAL 3.366032942
-#define LAL_DELTAGAL 0.473477302
-#define LAL_LGAL 0.576
+#define LAL_ALPHAGAL (3.366032942)
+#define LAL_DELTAGAL (0.473477302)
+#define LAL_LGAL     (0.576)
 
 NRCSID( CELESTIALCOORDINATESC, "$Id$" );
 
 /* <lalVerbatim file="CelestialCoordinatesCP"> */
 void
 LALGalacticToEquatorial( LALStatus   *stat,
-			 SkyPosition *position )
+			 SkyPosition *output,
+			 SkyPosition *input )
 { /* </lalVerbatim> */
   REAL8 sinDGal = sin( LAL_DELTAGAL ); /* sin(delta_NGP) */
   REAL8 cosDGal = cos( LAL_DELTAGAL ); /* cos(delta_NGP) */
@@ -153,12 +153,18 @@ LALGalacticToEquatorial( LALStatus   *stat,
   INITSTATUS( stat, "LALGalacticToEquatorial", CELESTIALCOORDINATESC );
 
   /* Make sure parameter structures exist. */
-  ASSERT( position, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
+  ASSERT( input, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
+  ASSERT( output, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
+
+  /* Make sure we're given the right coordinate system. */
+  if ( input->system != COORDINATESYSTEM_GALACTIC ) {
+    ABORT( stat, SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
+  }
 
   /* Compute intermediates. */
-  l += position->longitude;
-  sinB = sin( position->latitude );
-  cosB = cos( position->latitude );
+  l += input->longitude;
+  sinB = sin( input->latitude );
+  cosB = cos( input->latitude );
   sinL = sin( l );
   cosL = cos( l );
 
@@ -168,13 +174,14 @@ LALGalacticToEquatorial( LALStatus   *stat,
   cosA = cosB*sinL - sinB*cosDGal;
 
   /* Compute final results. */
-  position->latitude = asin( sinD );
+  output->system = COORDINATESYSTEM_EQUATORIAL;
+  output->latitude = asin( sinD );
   l = atan2( sinA, cosA ) + LAL_ALPHAGAL;
 
   /* Optional phase correction. */
   if ( l < 0.0 )
     l += LAL_TWOPI;
-  position->longitude = l;
+  output->longitude = l;
 
   RETURN( stat );
 }
@@ -183,7 +190,8 @@ LALGalacticToEquatorial( LALStatus   *stat,
 /* <lalVerbatim file="CelestialCoordinatesCP"> */
 void
 LALEquatorialToGalactic( LALStatus   *stat,
-			 SkyPosition *position )
+			 SkyPosition *output,
+			 SkyPosition *input )
 { /* </lalVerbatim> */
   REAL8 sinDGal = sin( LAL_DELTAGAL ); /* sin(delta_NGP) */
   REAL8 cosDGal = cos( LAL_DELTAGAL ); /* cos(delta_NGP) */
@@ -194,12 +202,18 @@ LALEquatorialToGalactic( LALStatus   *stat,
   INITSTATUS( stat, "LALGalacticToEquatorial", CELESTIALCOORDINATESC );
 
   /* Make sure parameter structures exist. */
-  ASSERT( position, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
+  ASSERT( input, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
+  ASSERT( output, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
+
+  /* Make sure we're given the right coordinate system. */
+  if ( input->system != COORDINATESYSTEM_EQUATORIAL ) {
+    ABORT( stat, SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
+  }
 
   /* Compute intermediates. */
-  a += position->longitude;
-  sinD = sin( position->latitude );
-  cosD = cos( position->latitude );
+  a += input->longitude;
+  sinD = sin( input->latitude );
+  cosD = cos( input->latitude );
   sinA = sin( a );
   cosA = cos( a );
 
@@ -209,13 +223,14 @@ LALEquatorialToGalactic( LALStatus   *stat,
   cosL = cosD*sinA;
 
   /* Compute final results. */
-  position->latitude = asin( sinB );
+  output->system = COORDINATESYSTEM_GALACTIC;
+  output->latitude = asin( sinB );
   a = atan2( sinL, cosL ) + LAL_LGAL;
 
   /* Optional phase correction. */
   if ( a < 0.0 )
     a += LAL_TWOPI;
-  position->longitude = a;
+  output->longitude = a;
 
   RETURN( stat );
 }
@@ -224,7 +239,8 @@ LALEquatorialToGalactic( LALStatus   *stat,
 /* <lalVerbatim file="CelestialCoordinatesCP"> */
 void
 LALEclipticToEquatorial( LALStatus   *stat,
-			 SkyPosition *position )
+			 SkyPosition *output,
+			 SkyPosition *input )
 { /* </lalVerbatim> */
   REAL8 sinE = sin( LAL_IEARTH ); /* sin(epsilon) */
   REAL8 cosE = cos( LAL_IEARTH ); /* cos(epsilon) */
@@ -234,13 +250,19 @@ LALEclipticToEquatorial( LALStatus   *stat,
   INITSTATUS( stat, "LALGalacticToEquatorial", CELESTIALCOORDINATESC );
 
   /* Make sure parameter structures exist. */
-  ASSERT( position, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
+  ASSERT( input, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
+  ASSERT( output, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
+
+  /* Make sure we're given the right coordinate system. */
+  if ( input->system != COORDINATESYSTEM_ECLIPTIC ) {
+    ABORT( stat, SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
+  }
 
   /* Compute intermediates. */
-  sinB = sin( position->latitude );
-  cosB = cos( position->latitude );
-  sinL = sin( position->longitude );
-  cosL = cos( position->longitude );
+  sinB = sin( input->latitude );
+  cosB = cos( input->latitude );
+  sinL = sin( input->longitude );
+  cosL = cos( input->longitude );
 
   /* Compute components. */
   sinD = cosB*sinL*sinE + sinB*cosE;
@@ -248,12 +270,13 @@ LALEclipticToEquatorial( LALStatus   *stat,
   cosA = cosB*cosL;
 
   /* Compute final results. */
-  position->latitude = asin( sinD );
-  position->longitude = atan2( sinA, cosA );
+  output->system = COORDINATESYSTEM_EQUATORIAL;
+  output->latitude = asin( sinD );
+  output->longitude = atan2( sinA, cosA );
 
   /* Optional phase correction. */
-  if ( position->longitude < 0.0 )
-    position->longitude += LAL_TWOPI;
+  if ( output->longitude < 0.0 )
+    output->longitude += LAL_TWOPI;
 
   RETURN( stat );
 }
@@ -262,7 +285,8 @@ LALEclipticToEquatorial( LALStatus   *stat,
 /* <lalVerbatim file="CelestialCoordinatesCP"> */
 void
 LALEquatorialToEcliptic( LALStatus   *stat,
-			 SkyPosition *position )
+			 SkyPosition *output,
+			 SkyPosition *input )
 { /* </lalVerbatim> */
   REAL8 sinE = sin( LAL_IEARTH ); /* sin(epsilon) */
   REAL8 cosE = cos( LAL_IEARTH ); /* cos(epsilon) */
@@ -272,13 +296,19 @@ LALEquatorialToEcliptic( LALStatus   *stat,
   INITSTATUS( stat, "LALGalacticToEquatorial", CELESTIALCOORDINATESC );
 
   /* Make sure parameter structures exist. */
-  ASSERT( position, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
+  ASSERT( input, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
+  ASSERT( output, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
+
+  /* Make sure we're given the right coordinate system. */
+  if ( input->system != COORDINATESYSTEM_EQUATORIAL ) {
+    ABORT( stat, SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
+  }
 
   /* Compute intermediates. */
-  sinD = sin( position->latitude );
-  cosD = cos( position->latitude );
-  sinA = sin( position->longitude );
-  cosA = cos( position->longitude );
+  sinD = sin( input->latitude );
+  cosD = cos( input->latitude );
+  sinA = sin( input->longitude );
+  cosA = cos( input->longitude );
 
   /* Compute components. */
   sinB = sinD*cosE - cosD*sinA*sinE;
@@ -286,12 +316,13 @@ LALEquatorialToEcliptic( LALStatus   *stat,
   cosL = cosD*cosA;
 
   /* Compute final results. */
-  position->latitude = asin( sinB );
-  position->longitude = atan2( sinL, cosL );
+  output->system = COORDINATESYSTEM_ECLIPTIC;
+  output->latitude = asin( sinB );
+  output->longitude = atan2( sinL, cosL );
 
   /* Optional phase correction. */
-  if ( position->longitude < 0.0 )
-    position->longitude += LAL_TWOPI;
+  if ( output->longitude < 0.0 )
+    output->longitude += LAL_TWOPI;
 
   RETURN( stat );
 }

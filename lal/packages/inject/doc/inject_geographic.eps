@@ -1,0 +1,134 @@
+%!PS-Adobe-2.0 EPSF-2.0
+%%Title: Geographic coordinate system
+%%Creator: Teviet Creighton
+%%CreationDate: Tue Apr 24 16:46:32 2001
+%%Orientation: Portrait
+%%Pages: 0
+%%BoundingBox: 161 251 541 641
+%%EndComments
+
+
+% Draw bounding box.
+%161 251 moveto 161 641 lineto 541 641 lineto 541 251 lineto
+%closepath stroke
+
+% Define some constants.
+/a 0.3 def    % squeeze factor of equatorial plane
+/v 15 def     % position angle of vernal equinox
+/gw 40 def    % tilt of prime meridian ellipse
+/pw 51.48 def % latitude of Greenwich
+
+% Derive some constants.
+/xv v sin 100 mul def
+/yv v cos a mul -100 mul def
+
+% position N pole
+/az 1 a dup mul sub sqrt def
+
+% squeeze factor of meridional ellipse
+/bw gw sin abs 1 az div dup mul gw cos dup mul sub sqrt div def
+
+% slope of meridional edge
+/mw bw dup mul 1 sub gw sin mul gw cos mul
+    bw gw cos mul dup mul gw sin dup mul add div def
+
+% prime meridian longitude
+/lw mw a div 1 atan def
+
+% Greenwich position angles
+/woff gw sin gw cos bw mul atan def
+/w pw woff sub def
+
+
+% Start plotting.
+306 396 translate 2 2 scale
+
+% Draw shaded part of equator, pole, and vernal equinox.
+gsave 0.9 setgray 1 a scale
+0 0 70 0 180 arc stroke
+1 1 a div scale
+0.5 0 moveto 0 70 rlineto -1 0 rlineto 0 -70 rlineto closepath fill
+1 a scale v rotate
+0.5 0 moveto 0 -70 rlineto -1 0 rlineto 0 70 rlineto closepath fill
+v neg rotate lw 90 add rotate
+1 0 moveto 0 -70 rlineto -2 0 rlineto 0 70 rlineto closepath fill
+grestore
+
+% Draw Earth
+0 setgray 0 0 70 0 360 arc stroke
+
+% Draw x axis.
+% unshaded part
+%0 0.5 moveto 100 dup mw mul rlineto 0 1 rlineto 5 dup mw mul -1.5 add rlineto
+%-5 dup mw mul -1.5 add rlineto 0 1 rlineto -100 dup mw mul rlineto
+%closepath fill
+% shaded part
+%gsave 0.9 setgray gw rotate bw 1 scale 0 0 70 0 360 arc closepath clip
+%1 bw div 1 scale gw neg rotate newpath
+%0 0.5 moveto 70 dup mw mul rlineto 0 -1 rlineto -70 dup mw mul rlineto
+%closepath fill
+%grestore
+
+% Draw Earth's equator.
+gsave 1 a scale 0 0 70 -180 0 arc stroke grestore
+
+% Draw north pole.
+0 setgray
+gsave 1 az scale
+-0.5 70 moveto 0 40 rlineto -1 0 rlineto 1.5 5 rlineto
+1.5 -5 rlineto -1 0 rlineto 0 -40 rlineto closepath fill
+grestore
+
+% Draw prime meridian and Greenwich.
+gsave gw rotate bw 1 scale 0 0 70 0 woff sub 90 woff sub arc stroke
+w cos 70 mul w sin 70 mul 2 0 360 arc closepath fill
+grestore
+
+% Draw vernal equinox.
+gsave 1 a scale v rotate
+0.5 -70 moveto 0 -40 rlineto 1 0 rlineto -1.5 -8 rlineto
+-1.5 8 rlineto 1 0 rlineto 0 40 rlineto closepath fill
+grestore
+
+% Draw x axis.
+gsave 1 a scale 90 lw add rotate
+1 -70 moveto 0 -40 rlineto 2 0 rlineto -3 -5 rlineto
+-3 5 rlineto 2 0 rlineto 0 40 rlineto closepath fill
+grestore
+
+% Draw GMST.
+/l0 v lw sub 270 add 1 add def
+/l1 -9 def
+gsave 0.5 setlinewidth 1 a scale lw rotate
+0 0 88 l0 l1 arc -2 0 rlineto 4 10 rlineto 4 -10 rlineto -2 0 rlineto
+0 0 92 l1 l0 arcn closepath gsave 1 setgray fill grestore stroke
+grestore
+
+
+% Labels.
+
+0 setgray 1 setlinejoin 1.5 setlinewidth
+
+/Times-Roman findfont 10 scalefont setfont
+44 51 moveto (Greenwich)
+% Optional: shade limb of Earth behind label.
+gsave dup false charpath strokepath closepath clip newpath
+0.8 setgray 0 0 70 -90 90 arc stroke grestore
+show
+51 -32 moveto (GMST)
+% Optional: shade limb of Earth behind label.
+gsave dup false charpath strokepath closepath clip newpath
+0.8 setgray 0 0 70 -90 90 arc stroke grestore
+show
+
+-4 az 117 mul moveto (N, ) show
+/Times-Italic findfont 10 scalefont setfont
+(z) show
+110 dup mw mul moveto 0 -2 rmoveto (x) show
+
+/Symbol findfont 10 scalefont setfont
+/char 1 string def char 0 161 put
+xv 1.5 mul yv 1.5 mul moveto -7 0 rmoveto char show
+
+%showpage
+%%EOF

@@ -1,0 +1,132 @@
+%!PS-Adobe-2.0 EPSF-2.0
+%%Title: Equatorial and ecliptic coordinate systems
+%%Creator: Teviet Creighton
+%%CreationDate: Sun Apr 22 00:20:47 2001
+%%Orientation: Portrait
+%%Pages: 0
+%%BoundingBox: 101 191 511 656
+%%EndComments
+
+
+% Draw bounding box.
+%101 191 moveto 101 656 lineto 511 656 lineto 511 191 lineto closepath stroke
+
+
+% Define some constants.
+/a 0.3 def % squeeze factor of equatorial plane
+/v 15 def  % position angle of ascending node
+/i 24 def  % inclination of ecliptic ellipse
+
+% Derive some constants.
+/xv v sin 100 mul def
+/yv v cos a mul -100 mul def
+/b i cos yv mul i sin xv mul sub dup mul
+   xv dup mul i cos xv mul i sin yv mul add dup mul sub yv a div dup mul add
+   div sqrt def
+
+/az 1 a dup mul sub sqrt def
+/bz 1 b dup mul sub sqrt def
+
+
+% Start drawing.
+306 396 translate
+2 2 scale
+
+
+% Temporary: Draw tropic of Cancer
+%/e 23.44 def
+%gsave 0 e sin az mul 100 mul translate 1 a scale
+%0 0 e cos 100 mul 0 360 arc stroke grestore
+
+% Draw backward arcs of ellipses.
+0.7 setgray
+gsave 1 a scale 0 0 100 0 180 arc stroke grestore
+gsave i rotate 1 b scale 0 0 100 0 180 arc stroke grestore
+
+% Draw twice-shaded backwards arcs of ellipses.
+0.9 setgray
+gsave 1 a scale 0 0 100 0 360 arc closepath clip 1 1 a div scale
+newpath i rotate 1 b scale 0 0 100 0 180 arc stroke grestore
+gsave i rotate 1 b scale 0 0 100 0 360 arc closepath clip 1 1 b div scale
+i neg rotate newpath 1 a scale 0 0 100 0 180 arc stroke grestore
+
+% Draw line of nodes
+gsave 0.7 setgray 1 a scale v rotate
+0.5 100 moveto 0 -200 rlineto -1 0 rlineto 0 200 rlineto closepath fill
+grestore
+
+% Draw forward arcs of ellipses and sphere.
+0 setgray
+gsave 1 a scale 0 0 100 -180 0 arc stroke grestore
+gsave i rotate 1 b scale 0 0 100 -180 0 arc stroke grestore
+0 0 100 0 360 arc stroke
+
+% Draw x axis.
+gsave 0 setgray 1 a scale v rotate
+0.5 -100 moveto 0 -40 rlineto 1 0 rlineto -1.5 -8 rlineto
+-1.5 8 rlineto 1 0 rlineto 0 40 rlineto closepath fill
+grestore
+
+% Draw Earth and Sun
+0.7 setgray
+0 0 5 0 360 arc gsave closepath 0.9 setgray fill grestore stroke
+gsave i rotate 1 b scale -20 rotate newpath
+0 0 89 -115 -90 arc 0 2 rlineto 5 -3 rlineto -5 -3 rlineto 0 2 rlineto
+0 0 91 -90 -115 arcn closepath fill
+-25 rotate 0 -100 moveto
+45 rotate 1 1 b div scale i neg rotate currentpoint translate
+0 setgray newpath
+0 0 5 0 360 arc gsave closepath 1 setgray fill grestore stroke
+0.2 setlinewidth
+60 60 360 { pop 0 8 moveto 0 8 rlineto stroke 60 rotate } for
+30 rotate
+60 60 360 { pop 0 8 moveto 0 4 rlineto stroke 60 rotate } for
+grestore
+
+% Draw equatorial z axis.
+gsave 0.7 setgray 1 az scale
+0.5 5 moveto 0 95 rlineto -1 0 rlineto 0 -95 rlineto closepath fill
+0 setgray
+0.5 100 moveto 0 20 rlineto 1 0 rlineto -1.5 5 rlineto
+-1.5 -5 rlineto 1 0 rlineto 0 -20 rlineto closepath fill
+grestore
+
+% Draw ecliptic z axis.
+gsave 0.7 setgray i rotate 1 bz scale
+0.5 5 moveto 0 95 rlineto -1 0 rlineto 0 -95 rlineto closepath fill
+0 setgray
+0.5 100 moveto 0 20 rlineto 1 0 rlineto -1.5 5 rlineto
+-1.5 -5 rlineto 1 0 rlineto 0 -20 rlineto closepath fill
+grestore
+
+% Draw inclination angle.
+/e0 69 def
+/e1 85 def
+gsave 0.7 setgray 0.5 setlinewidth i rotate 1 bz scale
+0 0 61 e0 e1 arc 0 1 rlineto -4 -2 rlineto 4 -2 rlineto 0 1 rlineto
+0 0 59 e1 e0 arcn closepath stroke
+grestore
+
+% Draw labels.
+
+/Symbol findfont 10 scalefont setfont
+0.5 setgray
+-14 59 moveto (e) show
+0 setgray
+/char 1 string def char 0 161 put
+xv 1.5 mul yv 1.5 mul moveto -2 -8 rmoveto char show
+/Times-Italic findfont 10 scalefont setfont
+(, x) show
+i rotate 1 bz scale -2 129 moveto 1 1 bz div scale i neg rotate (z) show
+
+/Times-Roman findfont 10 scalefont setfont
+1 az scale -3 127 moveto 1 1 az div scale (N) show
+
+i rotate 1 b scale -45 rotate 0 -100 moveto 45 rotate 1 1 b div scale
+i neg rotate 10 -18 rmoveto (Sun) show
+
+0.5 setgray
+7 3 moveto (Earth) show
+
+%showpage
+%%EOF
