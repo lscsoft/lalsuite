@@ -91,6 +91,7 @@ LALFindChirpBCVSpinData (
    *
    */
 
+/*  fprintf ( stdout, "just before assert statements of LALFindChirpBCVSpinData \n");*/
 
   /* check that the output exists */
   ASSERT( fcSegVec, status,
@@ -105,12 +106,12 @@ LALFindChirpBCVSpinData (
   ASSERT( fcSegVec->data->data->data, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
       ": fcSegVec->data->data->data" );
-  ASSERT( fcSegVec->data->dataBCV, status,
+ /* ASSERT( fcSegVec->data->dataBCV, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
       ": fcSegVec->data->dataBCV" );
   ASSERT( fcSegVec->data->dataBCV->data, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
-      ": fcSegVec->data->dataBCV->data" );
+      ": fcSegVec->data->dataBCV->data" );*/
 
   /* check that the parameter structure exists */
   ASSERT( params, status, 
@@ -127,9 +128,17 @@ LALFindChirpBCVSpinData (
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( params->ampVec->data, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
-  ASSERT( params->ampVecBCV, status,
+ /*ASSERT( params->ampVecBCV, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL ); 
-  ASSERT( params->ampVecBCV->data, status,
+   ASSERT( params->ampVecBCV->data, status,
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );*/
+ASSERT( params->ampVecBCVSpin1, status,
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+   ASSERT( params->ampVecBCVSpin1->data, status,
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+ASSERT( params->ampVecBCVSpin2, status,
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+   ASSERT( params->ampVecBCVSpin2->data, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   ASSERT( params->wVec, status,
@@ -146,10 +155,10 @@ LALFindChirpBCVSpinData (
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( params->tmpltPowerVec->data, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
-  ASSERT( params->tmpltPowerVecBCV, status,
+/*  ASSERT( params->tmpltPowerVecBCV, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( params->tmpltPowerVecBCV->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );*/
 
 
   /* check that the fft plans exist */
@@ -179,6 +188,9 @@ LALFindChirpBCVSpinData (
   ASSERT( dataSegVec->data->chan->data, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
       ": dataSegVec->data->chan->data" );
+  
+ /*fprintf ( stdout, "just after assert statements of LALFindChirpBCVSpinData \n");*/
+
   /*
    *
    * set up local segment independent pointers
@@ -201,9 +213,13 @@ LALFindChirpBCVSpinData (
    *
    */
 
+ /*fprintf ( stdout, "just before loop over data segments in LALFindChirpBCVSpinData \n");*/
+
+
   for ( i = 0; i < dataSegVec->length; ++i )
   {
 
+/*fprintf ( stdout, "just inside loop over data segments in LALFindChirpBCVSpinData \n");*/
 
     /*
      *
@@ -220,7 +236,10 @@ LALFindChirpBCVSpinData (
     resp         = dataSeg->resp->data->data;
 
     outputData    = fcSeg->data->data->data;
-    outputDataBCV = fcSeg->dataBCV->data->data;
+/*    outputDataBCV = fcSeg->dataBCV->data->data;*/
+
+/*fprintf ( stdout, "just after sep. dep. pointers in LALFindChirpBCVSpinData \n");*/
+
 
     if ( fcSeg->chisqBinVec->length )
     {
@@ -236,9 +255,14 @@ LALFindChirpBCVSpinData (
     ASSERT( params->wtildeVec->length == fcSeg->data->data->length, status,
         FINDCHIRPSPH_EMISM, FINDCHIRPSPH_MSGEMISM );
 
+/*fprintf ( stdout, "just after chisq in LALFindChirpBCVSpinData \n");*/
+
+
     /* store the waveform approximant in the data segment */
     fcSeg->approximant = BCVSpin;
 
+/*fprintf ( stdout, "just after approx = BCVSpin in LALFindChirpBCVSpinData \n");*/
+ 
 
     /*
      *
@@ -250,9 +274,11 @@ LALFindChirpBCVSpinData (
     LALForwardRealFFT( status->statusPtr, fcSeg->data->data,
         dataVec, params->fwdPlan );
     CHECKSTATUSPTR( status );
-    LALForwardRealFFT( status->statusPtr, fcSeg->dataBCV->data, 
+/*    LALForwardRealFFT( status->statusPtr, fcSeg->dataBCV->data, 
         dataVec, params->fwdPlan );                             
-    CHECKSTATUSPTR( status );                                   
+    CHECKSTATUSPTR( status );*/                                   
+
+/*fprintf ( stdout, "just after FFT in LALFindChirpBCVSpinData \n");*/
 
 
   /* compute strain */
@@ -266,6 +292,8 @@ LALFindChirpBCVSpinData (
     outputData[k].re =  p*x - q*y;
     outputData[k].im =  p*y + q*x;
   }
+
+ /*fprintf ( stdout, "just after htilde etc. calc. of LALFindChirpBCVSpinData \n");*/
 
 
     /*
@@ -359,6 +387,8 @@ LALFindChirpBCVSpinData (
       wtilde[k].re *= invmodsqResp;
     }
 
+/*fprintf ( stdout, "just after wtilde etc. calc. of LALFindChirpBCVSpinData \n");*/
+
   /*
      *
      * compute BCV normalisation parameters a1, b1 and b2, 
@@ -366,7 +396,7 @@ LALFindChirpBCVSpinData (
      *
      */
 
-
+/*
     fcSeg->a1 = 0.0;
     fcSeg->b1 = 0.0;
     fcSeg->b2 = 0.0;
@@ -382,7 +412,7 @@ LALFindChirpBCVSpinData (
 
     memset( tmpltPower, 0, params->tmpltPowerVec->length * sizeof(REAL4) );
     memset( tmpltPowerBCV,0, params->tmpltPowerVecBCV->length * sizeof(REAL4) );
-
+*/
     /* 
      * moments necessary for the calculation of
      * the BCVSpin normalization parameters
@@ -403,19 +433,19 @@ LALFindChirpBCVSpinData (
 
     /* set output frequency series parameters */
     strncpy( fcSeg->data->name, dataSeg->chan->name, LALNameLength );
-    strncpy( fcSeg->dataBCV->name, dataSeg->chan->name, LALNameLength );
+   /* strncpy( fcSeg->dataBCV->name, dataSeg->chan->name, LALNameLength );*/
 
     fcSeg->data->epoch.gpsSeconds      = dataSeg->chan->epoch.gpsSeconds;
     fcSeg->data->epoch.gpsNanoSeconds  = dataSeg->chan->epoch.gpsNanoSeconds;
-    fcSeg->dataBCV->epoch.gpsSeconds     = dataSeg->chan->epoch.gpsSeconds;
-    fcSeg->dataBCV->epoch.gpsNanoSeconds = dataSeg->chan->epoch.gpsNanoSeconds;
+ /*   fcSeg->dataBCV->epoch.gpsSeconds     = dataSeg->chan->epoch.gpsSeconds;
+    fcSeg->dataBCV->epoch.gpsNanoSeconds = dataSeg->chan->epoch.gpsNanoSeconds;*/
 
     fcSeg->data->f0     = dataSeg->chan->f0;
     fcSeg->data->deltaF = 1.0 /
       ( (REAL8) dataSeg->chan->data->length * dataSeg->chan->deltaT ) ;
-    fcSeg->dataBCV->f0     = dataSeg->chan->f0;
+  /*  fcSeg->dataBCV->f0     = dataSeg->chan->f0;
     fcSeg->dataBCV->deltaF = 1.0 /
-      ( (REAL8) dataSeg->chan->data->length * dataSeg->chan->deltaT ) ;
+      ( (REAL8) dataSeg->chan->data->length * dataSeg->chan->deltaT ) ;*/
 
     fcSeg->deltaT       = dataSeg->chan->deltaT;
     fcSeg->number       = dataSeg->number;
