@@ -44,7 +44,6 @@ RCSID ("$Id");
 /* local prototypes */
 /* Prototypes for the functions defined in this file */
 void initUserVars (LALStatus *stat);
-void dump_SFT (const SFTtype *sft, FILE *fp);
 
 /*----------------------------------------------------------------------*/
 static const LALStatus empty_status;
@@ -52,9 +51,8 @@ static const LALStatus empty_status;
 /* User variables */
 CHAR *uvar_SFTfname;
 CHAR *uvar_SFToutname;
-INT4 uvar_debug;
 BOOLEAN uvar_help;
-
+INT4 uvar_format;
 /*----------------------------------------------------------------------
  * main function 
  *----------------------------------------------------------------------*/
@@ -67,10 +65,13 @@ main(int argc, char *argv[])
   REAL8 deltaF, f_min, f_max;
   FILE *fp;
 
-  lalDebugLevel = 3;
+  lalDebugLevel = 0;
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
+  
+  /* set debug level */
+  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
 
   /* register all user-variables */
   LAL_CALL (initUserVars (&status), &status);	  
@@ -91,14 +92,22 @@ main(int argc, char *argv[])
   /* read in the binary sft-file */
   LAL_CALL (LALReadSFTfile (&status, &sft, f_min, f_max, uvar_SFTfname), &status);
 
-  /* now dump it into a text-file */
-  if ( (fp = fopen (uvar_SFToutname, "w")) == NULL) 
+  /* now dump it into a text-file or to stdout */
+  if ( uvar_SFToutname && LALUserVarWasSet (&uvar_SFToutname) )
     {
-      LALPrintError ("Could not open file `%s` for writing.\n", uvar_SFToutname);
-      exit (-1);
+      if ( (fp = fopen (uvar_SFToutname, "w")) == NULL) 
+	{
+	  LALPrintError ("Could not open file `%s` for writing.\n", uvar_SFToutname);
+	  exit (-1);
+	}
     }
-  dump_SFT (sft, fp);
-  fclose (fp);
+  else
+    fp = stdout;
+  
+  dump_SFT (fp, sft, uvar_format);
+
+  if (fp != stdout)
+    fclose (fp);
 
 
   /* free memory */
@@ -119,16 +128,18 @@ initUserVars (LALStatus *stat)
   INITSTATUS( stat, "initUserVars", rcsid );
   ATTATCHSTATUSPTR (stat);
 
-  /* set some defaults */
-  uvar_debug = lalDebugLevel;
+#define DEFAULT_OUTFILE "stdout"
+  uvar_SFToutname = LALCalloc (strlen(DEFAULT_OUTFILE)+1, 1);
+  strcpy (uvar_SFToutname, DEFAULT_OUTFILE);
+
+  uvar_format = 0;	/* defaults to openDX */
 
   /* now register all our user-variable */
-
   LALregSTRINGUserVar(stat, SFTfname,	'i', UVAR_REQUIRED, "Path and filename for binary SFTs-file");
-  LALregSTRINGUserVar(stat, SFToutname,	'o', UVAR_REQUIRED, "Path and filename for output SFT text-file");
-  LALregINTUserVar(stat,    debug,	'v', UVAR_OPTIONAL, "set debug-level");
+  LALregSTRINGUserVar(stat, SFToutname,	'o', UVAR_OPTIONAL, "Path and filename for output SFT text-file");
+  LALregINTUserVar(stat,    format,	'F', UVAR_OPTIONAL, "Output format: 0 = openDX, 1 = xmgrace");
   LALregBOOLUserVar(stat,   help,	'h', UVAR_HELP,     "Print this help/usage message");
-
+  
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
 
