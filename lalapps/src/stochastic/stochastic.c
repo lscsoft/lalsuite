@@ -235,13 +235,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL4FrequencySeries *calInvPsdOne;
   REAL4FrequencySeries *calInvPsdTwo;
 
-  /* units for inverse noise */
-  LALUnit calPSDUnit = {36,{0,0,-1,0,0,-2,0},{0,0,0,0,0,0,0}};
-
-  /* structures for LALInverseNoise */
-  StochasticInverseNoiseInput inverseNoiseInOne, inverseNoiseInTwo;
-  StochasticInverseNoiseCalOutput inverseNoiseOutOne, inverseNoiseOutTwo;
-
   /* zeropad and fft structures */
   SZeroPadAndFFTParameters zeroPadParams;
   RealFFTPlan *fftDataPlan = NULL;
@@ -532,27 +525,6 @@ INT4 main(INT4 argc, CHAR *argv[])
       &status);
 
   if (vrbflg)
-    fprintf(stdout, "Allocating memory for inverse noise...\n");
-
-  /* allocate memory for inverse noise */
-  LAL_CALL(LALCreateREAL4FrequencySeries(&status, &calInvPsdOne, \
-        "calInvPsdOne", gpsStartTime, fMin, deltaF, calPSDUnit, \
-        filterLength), &status);
-  LAL_CALL(LALCreateREAL4FrequencySeries(&status, &calInvPsdTwo, \
-        "calInvPsdTwo", gpsStartTime, fMin, deltaF, calPSDUnit, \
-        filterLength), &status);
-
-  /* set inverse noise inputs */
-  inverseNoiseInOne.unCalibratedNoisePSD = psdOne;
-  inverseNoiseInOne.responseFunction = responseOne;
-  inverseNoiseInTwo.unCalibratedNoisePSD = psdTwo;
-  inverseNoiseInTwo.responseFunction = responseTwo;
-
-  /* set inverse noise outputs */
-  inverseNoiseOutOne.calibratedInverseNoisePSD = calInvPsdOne;
-  inverseNoiseOutTwo.calibratedInverseNoisePSD = calInvPsdTwo;
-
-  if (vrbflg)
     fprintf(stdout, "Generating data segment window...\n");
 
   if (overlap_hann_flag)
@@ -682,21 +654,6 @@ INT4 main(INT4 argc, CHAR *argv[])
     LAL_CALL(LALDestroyREAL4FrequencySeries(&status, mask), &status);
   }
 
-  /* set normalisation parameters */
-  normParams.fRef = fRef;
-  normParams.heterodyned = 0;
-  normParams.window1 = normParams.window2 = dataWindow->data;
-
-  /* set normalisation input */
-  normInput.overlapReductionFunction = overlap;
-  normInput.omegaGW = omegaGW;
-  normInput.inverseNoisePSD1 = calInvPsdOne;
-  normInput.inverseNoisePSD2 = calInvPsdTwo;
-
-  /* set normalisation output */
-  normOutput.normalization = &normLambda;
-  normOutput.variance = &normSigma;
-
   if (vrbflg)
     fprintf(stdout, "Allocating memory for optimal filter...\n");
 
@@ -704,12 +661,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALCreateREAL4FrequencySeries(&status, &optFilter, "optFilter", \
         gpsStartTime, fMin, deltaF, lalDimensionlessUnit, filterLength), \
       &status);
-
-  /* set optimal filter inputs */
-  optFilterIn.overlapReductionFunction = overlap;
-  optFilterIn.omegaGW = omegaGW;
-  optFilterIn.calibratedInverseNoisePSD1 = calInvPsdOne;
-  optFilterIn.calibratedInverseNoisePSD2 = calInvPsdTwo;
 
   if (vrbflg)
     fprintf(stdout, "Allocating memory for CC Spectrum...\n");
@@ -1002,10 +953,10 @@ INT4 main(INT4 argc, CHAR *argv[])
             fprintf(stdout, "Generating inverse noise...\n");
 
           /* compute inverse calibrate PSDs */
-          LAL_CALL(LALStochasticInverseNoiseCal(&status, \
-                &inverseNoiseOutOne, &inverseNoiseInOne), &status);
-          LAL_CALL(LALStochasticInverseNoiseCal(&status, \
-                &inverseNoiseOutTwo, &inverseNoiseInTwo), &status);
+          calInvPsdOne = inverse_noise(&status, psdOne, responseOne);
+          LALSPrintFrequencySeries(calInvPsdOne, "1.dat");
+          calInvPsdTwo = inverse_noise(&status, psdTwo, responseTwo);
+          LALSPrintFrequencySeries(calInvPsdTwo, "2.dat");
 
           /* sum over calibrated PSDs for average */
           for (i = 0; i < filterLength; i++)
@@ -1035,6 +986,21 @@ INT4 main(INT4 argc, CHAR *argv[])
         calInvPsdTwo->data->data[i] = 1. / calPsdTwo->data[i];
       }
 
+      /* set normalisation parameters */
+      normParams.fRef = fRef;
+      normParams.heterodyned = 0;
+      normParams.window1 = normParams.window2 = dataWindow->data;
+
+      /* set normalisation input */
+      normInput.overlapReductionFunction = overlap;
+      normInput.omegaGW = omegaGW;
+      normInput.inverseNoisePSD1 = calInvPsdOne;
+      normInput.inverseNoisePSD2 = calInvPsdTwo;
+
+      /* set normalisation output */
+      normOutput.normalization = &normLambda;
+      normOutput.variance = &normSigma;
+
       if (vrbflg)
         fprintf(stdout, "Normalising optimal filter...\n");
 
@@ -1049,6 +1015,12 @@ INT4 main(INT4 argc, CHAR *argv[])
       if (vrbflg)
         fprintf(stdout, "Generating optimal filter...\n");
 
+      /* set optimal filter inputs */
+      optFilterIn.overlapReductionFunction = overlap;
+      optFilterIn.omegaGW = omegaGW;
+      optFilterIn.calibratedInverseNoisePSD1 = calInvPsdOne;
+      optFilterIn.calibratedInverseNoisePSD2 = calInvPsdTwo;
+      
       /* build optimal filter */
       optFilter->epoch = gpsSegStartTime;
       LAL_CALL(LALStochasticOptimalFilterCal(&status, optFilter, \
