@@ -47,22 +47,28 @@ ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c 	rngmed.c rngmed.h cluster
 ##----------------------------------------------------------------------
 ## some optional BOINC-related stuff follows here:
 EXTRA_PROGRAMS = cfsBOINC cfsBOINCnographics
+HOME_BOINC=/usr/local/src/eah_build_2004_10_15
 
 cfsBOINC_SOURCES = cfsBOINC.cc $(CFSsources) \
 	screensaver/src/starlist.C screensaver/src/starsphere.C \
 	screensaver/src/user_text.C screensaver/src/pulsar_list.C \
 	screensaver/src/search_info.C
-cfsBOINC_CPPFLAGS = $(AM_CPPFLAGS) -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include/BOINC -DUSE_BOINC 
-cfsBOINC_LDFLAGS =  $(AM_LDFLAGS) -static \
+cfsBOINC_CPPFLAGS = -Wall $(AM_CPPFLAGS) -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include/BOINC -DUSE_BOINC 
+cfsBOINC_LDFLAGS =  $(AM_LDFLAGS) -all-static \
 	-L$(HOME_BOINC)/lib -lboinc -lboinc_api -lboinc_graphics_api \
-	-L$(HOME_OPENGL)/lib -L/usr/X11R6/lib -lboincglut -lGL -lGLU -lXmu  
+	-L$(HOME_OPENGL)/lib -L/usr/X11R6/lib -lboincglut -lpthread -lGL -lGLU -lXmu -lX11 -lXext -ldl -lm -lpthread -lXi -lXmu -lX11
 
-# non-graphic version
+#cfsBOINC_LDFLAGS = -static -L$(HOME_BOINC)/lib -L$(HOME_OPENGL)/lib -lboinc \
+#-print-file-name=libpthread.so -lboinc_api -lboinc_graphics_api -lGL -lboincglut -L/usr/X11R6/lib -lGL -lGLU -lXmu
+
+
+## Bruce: these don't seem to be needed explicitly for me? are they for you?
+## -L/usr/X11R6/lib -lGL -lGLU  -lX11 -lXext -ldl -lm -lpthread -lXi -lXmu
+
 cfsBOINCnographics_SOURCES = cfsBOINC.cc $(CFSsources)
-cfsBOINCnographics_CPPFLAGS = $(AM_CPPFLAGS) -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include/BOINC \
-	-DUSE_BOINC -DNO_BOINC_GRAPHICS
-cfsBOINCnographics_LDFLAGS = $(AM_LDFLAGS) -L$(HOME_BOINC)/lib -all-static -lboinc -lboinc_api 
+cfsBOINCnographics_CPPFLAGS = $(AM_CPPFLAGS) -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include/BOINC -DUSE_BOINC -DNO_BOINC_GRAPHICS
+cfsBOINCnographics_LDFLAGS = $(AM_LDFLAGS) -L$(HOME_BOINC)/lib -static -lboinc -lboinc_api 
 
-## trick automake into using g++ for ComputeFStatistic.c (for boinc-includes to work):
+## trick make into using c++ for ComputeFStatistic.c (for boinc-includes):
 cfsBOINC.cc: ComputeFStatistic.c
 	ln -s ComputeFStatistic.c cfsBOINC.cc
