@@ -11,6 +11,8 @@
 
 /* System includes */
 #include <stdio.h>
+#define __USE_ISOC99 1
+#include <math.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -181,7 +183,7 @@ ConfigVariables GV;		/**< global container for various derived configuration set
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *stat);
 void InitFStat (LALStatus *status, ConfigVariables *cfg);
-void CreateDemodParams (LALStatus *stat, computeFStatPar *DemodPar, const ConfigVariables *cfg);
+void CreateDemodParams (LALStatus *stat, computeFStatPar *DemodPar, ConfigVariables *cfg);
 
 void CreateNautilusDetector (LALStatus *status, LALDetector *Detector);
 void Freemem(LALStatus *status,  ConfigVariables *cfg);
@@ -198,7 +200,7 @@ void writeFVect(LALStatus *stat, const FStatisticVector *FVect, const CHAR *fnam
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 void 
-refineCOMPLEX16Vector (LALStatus *, COMPLEX16Vector **out, const COMPLEX16Vector *in, UINT4 newLen, UINT4 Dterms);
+refineCOMPLEX16Vector (LALStatus *, COMPLEX16Vector **out, const COMPLEX16Vector *in, UINT4 refineby, UINT4 Dterms);
 
 void NewLALDemod (LALStatus *, FStatisticVector **FVect, const SFTVector *sfts, const computeFStatPar *params);
 
@@ -217,6 +219,13 @@ computeFStat(LALStatus *,
 
 #define TRUE (1==1)
 #define FALSE (1==0)
+
+#ifndef max
+#define max(a,b) ( (a) > (b) ? (a) : (b) )
+#endif
+#ifndef min
+#define min(a,b) ( (a) < (b) ? (a) : (b) )
+#endif
 
 extern int vrbflg;
 
@@ -577,7 +586,7 @@ initUserVars (LALStatus *stat)
 void 
 CreateDemodParams (LALStatus *stat, 
 		   computeFStatPar *CFSparams,
-		   const ConfigVariables *cfg)
+		   ConfigVariables *cfg)
 {
   CSParams *csParams  = NULL;        /* ComputeSky parameters */
   EarthState earth;
@@ -657,11 +666,11 @@ CreateDemodParams (LALStatus *stat,
 int writeFLines(INT4 *maxIndex, REAL8 f0, REAL8 df){
 
   INT4 i,j,j1,j2,k,N;
-  REAL8 max,log2,mean,var,std,R,fr;
+  REAL8 max,logof2,mean,var,std,R,fr;
   INT4 imax;
   INT4 err;
 
-  log2=medianbias;
+  logof2=medianbias;
  
   j1=0;
   j2=0;
@@ -676,7 +685,7 @@ int writeFLines(INT4 *maxIndex, REAL8 f0, REAL8 df){
     mean=0.0;
     std=0.0;
     for (j=0;j<N;j++){
-      R=2.0*log2*highFLines->clusters[j1];
+      R=2.0*logof2*highFLines->clusters[j1];
       k=highFLines->Iclust[j1];
       j1=j1+1;
       mean=mean+R;
@@ -690,7 +699,7 @@ int writeFLines(INT4 *maxIndex, REAL8 f0, REAL8 df){
     mean=mean/N;
     var=0.0;
     for (j=0;j<N;j++){
-      R=2.0*log2*highFLines->clusters[j2];
+      R=2.0*logof2*highFLines->clusters[j2];
       j2=j2+1;
       var=var+(R-mean)*(R-mean);
     }/*  end j loop over points of i-th cluster  */
@@ -904,6 +913,12 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
    */
   if (! uvar_useInterpolation)
     cfg->dFreq /= uvar_overSampling;
+
+  if ( uvar_useInterpolation && (uvar_overSampling != (UINT4)uvar_overSampling ) )
+    {
+      LALPrintError ("\nOversampling by interpolation only supported for integer oversampling-rates!\n");
+      ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
   
   /*Number of frequency values to calculate F for */
   cfg->FreqImax = (INT4)(uvar_FreqBand/cfg->dFreq + 0.5) + 1;  
@@ -1217,12 +1232,12 @@ int compare(const void *ip, const void *jp)
 void
 EstimateFLines(LALStatus *stat, const FStatisticVector *FVect)
 {
-  INT4 i,j,Ntot;   
+  UINT4 i,j,Ntot;   
   UINT4 nbins;                	/**< Number of bins in F */
   REAL8Vector *F1=NULL; 
   REAL8Vector *FloorF1=NULL;             /* Square of SFT */
   REAL4 THR=10.0;
-  REAL8 dFreq, f0, fBand;
+  REAL8 dFreq, f0;
   
   OutliersInput  *outliersInput;
   OutliersParams *outliersParams;
@@ -1322,7 +1337,7 @@ EstimateFLines(LALStatus *stat, const FStatisticVector *FVect)
    
    /*  sum of points in all lines */
    Ntot=0;
-   for (i=0; i < SpLines->Nclusters; i++){ 
+   for (i=0; i < (UINT4)SpLines->Nclusters; i++){ 
      Ntot = Ntot + SpLines->NclustPoints[i];
    }
 
@@ -1352,8 +1367,9 @@ EstimateFLines(LALStatus *stat, const FStatisticVector *FVect)
 void 
 NormaliseSFTDataRngMdn(LALStatus *stat)
 {
-  INT4 i,j,m,lpc,il;                         /* loop indices */
-  INT4 Ntot;
+  INT4 m, il;                         /* loop indices */
+  UINT4 i, j, lpc;
+  UINT4 Ntot;
   REAL8Vector *Sp=NULL, *RngMdnSp=NULL;   /* |SFT|^2 and its rngmdn  */
   REAL8 B;                          /* SFT Bandwidth */
   REAL8 deltaT,norm,*N, *Sp1;
@@ -1476,7 +1492,7 @@ NewLALDemod (LALStatus *stat, FStatisticVector **FVect, const SFTVector *sfts, c
   REAL8	y;		        /* local variable for holding y */
   REAL8 realQ, imagQ;
   INT4 *tempInt1;
-  INT4 index;
+  INT4 ind;
   COMPLEX16 Fa, Fb;
   REAL8 f;
 
@@ -1572,15 +1588,15 @@ NewLALDemod (LALStatus *stat, FStatisticVector **FVect, const SFTVector *sfts, c
 	  realXP=0.0;
 	  imagXP=0.0;
 	      
-	  /* find correct index into LUT -- pick closest point */
+	  /* find correct ind into LUT -- pick closest point */
 	  tempFreq = xTemp - (INT4) xTemp;
-	  index = (INT4) (tempFreq * LUT_RES + 0.5);
+	  ind = (INT4) (tempFreq * LUT_RES + 0.5);
 	      
 	  {
-	    REAL8 d = LAL_TWOPI * ( tempFreq - 1.0*index / LUT_RES );
+	    REAL8 d = LAL_TWOPI * ( tempFreq - 1.0*ind / LUT_RES );
 	    REAL8 d2 = 0.5 * d * d;
-	    REAL8 ts = sinVal[ index ];
-	    REAL8 tc = cosVal[ index ];
+	    REAL8 ts = sinVal[ ind ];
+	    REAL8 tc = cosVal[ ind ];
 		
 	    tsin = ts + d * tc - d2 * ts;
 	    tcos = tc - d * ts - d2 * tc - 1.0;
@@ -1682,16 +1698,14 @@ computeFStat (LALStatus *stat,
   
   TRY ( NewLALDemod (stat->statusPtr, &FVect, sfts, params), stat);
 
-  nbins = FVect->Fa->length;
-
   /* use 2x interpolationOrder bins for interpolation */
   if ( useInterpolation && (params->overSampling != 1) )
     {
       /* increase number of bins accordingly */
-      nbins =  (UINT4)( params->overSampling * nbins + 0.5);
-
-      TRY (refineCOMPLEX16Vector(stat->statusPtr, &FaRefined, FVect->Fa, nbins, uvar_interpolationOrder), stat);
-      TRY (refineCOMPLEX16Vector(stat->statusPtr, &FbRefined, FVect->Fb, nbins, uvar_interpolationOrder), stat);
+      TRY (refineCOMPLEX16Vector(stat->statusPtr, 
+				 &FaRefined, FVect->Fa, uvar_overSampling, uvar_interpolationOrder), stat);
+      TRY (refineCOMPLEX16Vector(stat->statusPtr, 
+				 &FbRefined, FVect->Fb, uvar_overSampling, uvar_interpolationOrder), stat);
 
       if (FVect->F) {
 	TRY (LALDDestroyVector (stat->statusPtr, &(FVect->F)), stat);
@@ -1708,6 +1722,7 @@ computeFStat (LALStatus *stat,
 
     } /* if useInterpolation */
 
+  nbins = FVect->Fa->length;
       
   /* calculate F-statistic from  Fa and Fb */
   TRY (LALDCreateVector (stat->statusPtr, &(FVect->F), nbins), stat);
@@ -1784,17 +1799,19 @@ writeFVect(LALStatus *stat, const FStatisticVector *FVect, const CHAR *fname)
  *  This is using DFT-interpolation (derived from zero-padding).
  */
 void
-refineCOMPLEX16Vector (LALStatus *stat, COMPLEX16Vector **out, const COMPLEX16Vector *in, UINT4 newLen, UINT4 Dterms)
+refineCOMPLEX16Vector (LALStatus *stat, COMPLEX16Vector **out, const COMPLEX16Vector *in, UINT4 refineby, UINT4 Dterms)
 {
-  UINT4 oldLen, k;
-  REAL8 Rlk_Re, Rlk_Im, Xd_Re, Xd_Im;
   REAL8 Yk_Re, Yk_Im;
-  REAL8 phase, phaseN;
-  REAL8 x;
-  REAL8 a, b, c, d, Ooa;
+  REAL8 b, d;
   UINT4 lstar;
-  INT4 l;
+  UINT4 newLen, oldLen, k;
   COMPLEX16Vector *ret = NULL;
+
+  static REAL4 sinVal[ LUT_RES + 1 ];
+  static REAL4 cosVal[ LUT_RES + 1 ];
+  static BOOLEAN firstCall = TRUE;
+
+  REAL8 invOldLen, invNewLen, TWOPIOverOldLen;	/* tmp results for optimization */
 
   INITSTATUS( stat, "refineCOMPLEX16Vector", rcsid );  
   ATTATCHSTATUSPTR (stat);
@@ -1805,53 +1822,107 @@ refineCOMPLEX16Vector (LALStatus *stat, COMPLEX16Vector **out, const COMPLEX16Ve
   ASSERT ( newLen > 0, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
 
   oldLen = in->length;
+  newLen = oldLen * refineby;
+
+  /* calculate trig-LUT only the first time we're called */
+  if (firstCall)
+    {
+      /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
+      for (k=0; k <= LUT_RES ; k++)
+	{
+	  sinVal[k] = sin((LAL_TWOPI* k) / LUT_RES);
+	  cosVal[k] = cos((LAL_TWOPI* k) / LUT_RES);
+	}
+      firstCall = FALSE;
+    } /* if first call */
+
+  /* the following are used to speed things up in the innermost loop */
+  invOldLen = 1.0 / oldLen;
+  TWOPIOverOldLen = LAL_TWOPI / oldLen;
+  invNewLen = 1.0 / newLen;
 
   TRY (LALZCreateVector (stat->statusPtr, &ret, newLen), stat);
 
   for (k=0; k < newLen; k++)
     {
+      INT4 lm;
+      UINT4 l, l0, l1;
+      REAL4 x;
+      REAL4 phaseN;
+      /* common frequency-bins remain unchanged */
+      if ( k % refineby == 0 )
+	{
+	  ret->data[k] = in->data[k / refineby];	
+	  continue;
+	}
+
       Yk_Re = Yk_Im = 0;
 
-      lstar = (UINT4)(1.0*k * oldLen / newLen + 0.5);
+      lstar = (UINT4)(1.0*k * oldLen * invNewLen + 0.5);
 
-      for (l = (INT4)lstar - Dterms; l <= (INT4)(lstar + Dterms); l++)
+      /* boundaries for innermost loop */
+      lm = (INT4)lstar - Dterms;
+      l0 = max( lm, 0);
+
+      l1 = lstar + Dterms +1;
+      l1 = min ( l1, oldLen );
+      
+      /* Optimization: phase is defined as phase = 2*pi*( l/oldLen - k/newLen )
+       * but is implemented a bit more economically here.
+       * Start with value of phase in first iteration of inner loop:
+       */
+      x = ( l0 * invOldLen - k * invNewLen ); 
+      /* oldLen*phase doesn't actually change in the innermost loop(!), 
+       * so we calculate all its derived quantities here: 
+       */
+      phaseN = LAL_TWOPI * x * oldLen;
+      d = 0.5 * sinf(phaseN);
+      b = 0.5 * (1.0 - cosf(phaseN));
+
+      /* ---------- innermost loop: l over 2*Dterms around lstar ---------- */
+      for (l = l0; l < l1; l++)
 	{
-	  if ( l < 0 || l >= (INT4)oldLen)
-	    continue;
+	  REAL4 cInva, Rlk_Re, Rlk_Im;
+	  REAL8 Xd_Re, Xd_Im;
+	  REAL4 tsin, tcos;
 
 	  Xd_Re = in->data[l].re;
 	  Xd_Im = in->data[l].im;
 
-	  /* treat special case of all summands being 1: happens if x is integer */
-	  x = 1.0 * l * newLen - k * oldLen;
-	  x /= 1.0 * oldLen * newLen;
-	  if ( x == (INT4)x )
-	    {
-	      Rlk_Re = oldLen;
-	      Rlk_Im = 0;
-	    }
-	  else
-	    { 	  /* otherwise: calculate geometric sum: */
-	      phase = 2.0 * LAL_PI * x;
-	      phaseN = phase * oldLen;
+	  /* find correct ind into LUT -- pick closest point */
+	  {
+	    REAL4 tempFreq, d1, d2, ts, tc;
+	    UINT4 ind;
+
+	    tempFreq = x - (INT4) x;
+	    if ( tempFreq < 0) tempFreq += 1.0;
+	    
+	    ind = (UINT4) (tempFreq * LUT_RES + 0.5);
+
+	    d1 = (REAL4)LAL_TWOPI * ( tempFreq - 1.0f * ind / LUT_RES );
+	    d2 = 0.5 * d1 * d1;
+	    ts = sinVal[ ind ];
+	    tc = cosVal[ ind ];
+		
+	    tsin = ts + d1 * tc - d2 * ts;
+	    tcos = tc - d1 * ts - d2 * tc;
+	  } /* LUT lookup */
+
+	  cInva = tsin / (1.0f - tcos);
 	      
-	      a = 1.0 - cos(phase);
-	      Ooa = 1.0 / a;
-	      b = 1.0 - cos(phaseN);
-	      c = sin(phase);
-	      d = sin(phaseN);
-	      
-	      Rlk_Re = 0.5*(b + c*d*Ooa);
-	      Rlk_Im = 0.5*(c*b*Ooa - d);
-	    }
+	  Rlk_Re = b + cInva * d;
+	  Rlk_Im = cInva * b - d;
 
-	  Yk_Re += Xd_Re*Rlk_Re - Xd_Im*Rlk_Im;
-	  Yk_Im += Xd_Im*Rlk_Re + Xd_Re*Rlk_Im;
+	  Yk_Re += Xd_Re * Rlk_Re - Xd_Im * Rlk_Im;
+	  Yk_Im += Xd_Im * Rlk_Re + Xd_Re * Rlk_Im;
 
-	} /* for k <= N-1 */
+	  /* calculate phase for next iteration */
+	  x += invOldLen;
 
-      ret->data[k].re = Yk_Re / oldLen;
-      ret->data[k].im = Yk_Im / oldLen;
+	} /* ---------- innermost loop in l ---------- */
+
+      ret->data[k].re = Yk_Re * invOldLen;
+      ret->data[k].im = Yk_Im * invOldLen;
 
     }  /* for k <= M-1 */
 
