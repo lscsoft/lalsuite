@@ -232,8 +232,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALUnit psdUnits = {0,{0,0,1,0,0,0,2},{0,0,0,0,0,0,0}};
 
   /* calibrated inverse noise data structures */
-  REAL4FrequencySeries *calInvPsdOne;
-  REAL4FrequencySeries *calInvPsdTwo;
+  REAL4FrequencySeries *calInvPsdOne = NULL;
+  REAL4FrequencySeries *calInvPsdTwo = NULL;
 
   /* zeropad and fft structures */
   SZeroPadAndFFTParameters zeroPadParams;
@@ -259,7 +259,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL8 lambda;
 
   /* structures for optimal filter */
-  REAL4FrequencySeries *optFilter;
+  REAL4FrequencySeries *optFilter = NULL;
 
   /* spectrum structures */
   REAL4FrequencySeries *omegaGW;
