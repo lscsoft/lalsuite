@@ -304,7 +304,9 @@ int main( int argc, char *argv[] )
         break;
 
       case 'V':
-        fprintf( stdout, "%s:\n" CVS_REVISION " " CVS_DATE, argv[0] );
+        fprintf( stdout, "Single Inspiral Reader and Injection Analysis\n"
+            "Patrick Brady, Duncan Brown and Steve Fairhurst\n"
+            "CVS Version: $Id$\n" );
         exit( 0 );
         break;
 
