@@ -51,7 +51,8 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-CLEANFILES = lalapps_inspiral_pipe
+CLEANFILES = lalapps_inspiral_pipe lalapps_inspiral_pipe_bkgr \
+             lalapps_inspiral_pipe_s2
 
 MOSTLYCLEANFILES = *INSPIRAL*.xml *INSPIRAL*.gwf \
                    *TMPLTBANK*.gwf *TMPLTBANK*.xml
