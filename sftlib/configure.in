@@ -2,7 +2,7 @@
 #
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.50)
-AC_INIT(SFTReferenceLibrary, 2.3, ballen@gravity.phys.uwm.edu)
+AC_INIT(SFTReferenceLibrary, 2.4, ballen@gravity.phys.uwm.edu)
 AC_CONFIG_SRCDIR(SFTReferenceLibrary.c)
 
 AM_CONFIG_HEADER(config.h)
