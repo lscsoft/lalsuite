@@ -7,11 +7,12 @@ COHERESRC = coherent_inspiral.c inspiral.h
 INCASRC = inca.c
 SIRESRC = sire.c
 INSPINJSRC = inspinj.c
+SPLITBANKSRC = splitbank.c
 if LALFRAME
 if LALMETAIO
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank lalapps_trigtotmplt \
                lalapps_inca lalapps_coherent_inspiral lalapps_sire \
-               lalapps_inspinj
+               lalapps_inspinj lalapps_splitbank
 lalapps_inspiral_SOURCES = $(INSPIRALSRC)
 lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
 lalapps_trigtotmplt_SOURCES = $(TRIGTOTMPLTSRC)
@@ -19,6 +20,7 @@ lalapps_inca_SOURCES = $(INCASRC)
 lalapps_sire_SOURCES = $(SIRESRC)
 lalapps_coherent_inspiral_SOURCES = $(COHERESRC)
 lalapps_inspinj_SOURCES = $(INSPINJSRC)
+lalapps_splitbank_SOURCES = $(SPLITBANKSRC)
 else
 bin_PROGRAMS = 
 endif
@@ -45,7 +47,8 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(INCASRC) inspiral_pipe.in s2_dag.ini \
              $(COHERESRC) $(SCRIPTS) inspiral_pipe_bkgr.in \
              inspiral_pipe_s2.in inspiral_pipe.ini \
-             $(INSPINJSRC) BNSMasses.dat inspsrcs.dat
+             $(INSPINJSRC) BNSMasses.dat inspsrcs.dat \
+             $(SPLITBANKSRC)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
