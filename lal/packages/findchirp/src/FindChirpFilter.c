@@ -62,10 +62,6 @@ LALCreateFindChirpInput (
   ASSERT( outputPtr, status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
   memset( outputPtr, 0, sizeof(FindChirpFilterInput) );
 
-  /* don't need this because of the memset above */
-  /* outputPtr->tmplt   = NULL; */
-  /* outputPtr->segment = NULL; */
-
   /* create memory for the chirp template structure */
   outputPtr->fcTmplt = (FindChirpTemplate *)
     LALMalloc( sizeof(FindChirpTemplate) );
@@ -76,10 +72,6 @@ LALCreateFindChirpInput (
     ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
   }
   memset( outputPtr->fcTmplt, 0, sizeof(FindChirpTemplate) );
-
-  /* don't need this because of the memset above */
-  /* outputPtr->fcTmplt->tmpltNorm = 0.0; */
-  /* outputPtr->fcTmplt->data = NULL; */
 
   /* create memory for the chirp template data */
   LALCCreateVector (status->statusPtr, &(outputPtr->fcTmplt->data), 
@@ -198,17 +190,6 @@ LALFindChirpFilterInit (
   ASSERT( outputPtr, status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
   memset( outputPtr, 0, sizeof(FindChirpFilterParams) );
 
-  /* don't need this because of the memset above */
-  /* set contents to reasonable values */
-  /* outputPtr->deltaT         = 0; */
-  /* outputPtr->rhosqThresh    = 0; */
-  /* outputPtr->computeNegFreq = 0; */
-  /* outputPtr->qVec           = NULL; */
-  /* outputPtr->qtildeVec      = NULL; */
-  /* outputPtr->invPlan        = NULL; */
-  /* outputPtr->chisqVec       = NULL; */
-  /* outputPtr->rhosqVec       = NULL; */
-
   /* create memory for the chisq parameters */
   outputPtr->chisqParams = (FindChirpChisqParams *)
     LALMalloc( sizeof(FindChirpChisqParams) );
@@ -231,12 +212,6 @@ LALFindChirpFilterInit (
     ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
   }
   memset( outputPtr->chisqInput, 0, sizeof(FindChirpChisqInput) );
-    
-  /* don't need this because of the memset above */
-  /* outputPtr->chisqParams->chisqBinVec = NULL; */
-  /* outputPtr->chisqParams->plan        = NULL; */
-  /* outputPtr->chisqInput->qtildeVec = NULL; */
-  /* outputPtr->chisqInput->qVec      = NULL; */
 
 
   /*
@@ -487,16 +462,18 @@ LALFindChirpFilterSegment (
 {
   UINT4                 j, k;
   UINT4                 numPoints;
+  UINT4                 deltaEventIndex;
+  UINT4                 eventId = 0;
   REAL4                 rhosq;
   REAL4                 deltaT;
   REAL4                 norm;
+  REAL4                 modqsqThresh;
   BOOLEAN               haveChisq   = 0;
   COMPLEX8             *qtilde      = NULL;
   COMPLEX8             *q           = NULL;
   COMPLEX8             *inputData   = NULL;
   COMPLEX8             *tmpltSignal = NULL;
-
-  REAL4                 distsq      = 0.0;
+  InspiralEvent        *thisEvent   = NULL;
 
   INITSTATUS( status, "LALFindChirpFilter", FINDCHIRPFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -580,6 +557,21 @@ LALFindChirpFilterSegment (
   numPoints = params->qVec->length;
 
 
+
+  /*
+   *
+   * calculate the minimum distance between distinct events
+   *
+   */
+
+
+  /***************** temporary code for mpi mdc ************************/
+  /* this should be the length of a chirp, but I have left my notes in */
+  /* Milwaukee, so it is hard wired to sixty seconds at the moment     */
+  deltaEventIndex = (UINT4) rint( (60.0 / deltaT) + 1.0 );
+  /*********************************************************************/
+
+
   /*
    *
    * compute qtilde and q
@@ -636,20 +628,23 @@ LALFindChirpFilterSegment (
   /* normalisation */
   norm = 4.0 * (deltaT / (REAL4)numPoints) / input->segment->segNorm;
 
+  /* normalised threhold */
+  modqsqThresh = params->rhosqThresh / norm;
+
   for ( j = 0; j < numPoints; ++j )
   {
     REAL4 modqsq = q[j].re * q[j].re + q[j].im * q[j].im;
 
     /* signal to noise squared */
-    rhosq = norm * modqsq;
+    /* rhosq = norm * modqsq;  */
 
     /* if full snrsq vector is required, store the snrsq */
-    if ( params->rhosqVec ) params->rhosqVec->data[j] = rhosq;
+    if ( params->rhosqVec ) params->rhosqVec->data[j] = norm * modqsq;
 
-    /* test for rhosq threshold */
-    if ( rhosq > params->rhosqThresh )
+    /* if snrsq exceeds threshold at any point */
+    if ( modqsq > modqsqThresh )
     {
-      /* compute chisqVector */
+      /* compute chisq vector if it does not exist */
       if ( ! haveChisq )
       {
         memset( params->chisqVec->data, 0, 
@@ -663,42 +658,109 @@ LALFindChirpFilterSegment (
         params->chisqParams->chisqBinVec = input->segment->chisqBinVec;
         params->chisqParams->chisqNorm   = sqrt( norm );
 
+        /* compute the chisq threshold: this is slow! */
         LALFindChirpChisqVeto( status->statusPtr, params->chisqVec, 
             params->chisqInput, params->chisqParams );
         CHECKSTATUSPTR (status); 
 
         haveChisq = 1;
       }
-    }
 
-    /* this needs updating: it is just temporary code for the mdc */
-    if ( params->chisqVec->data[j] < params->chisqThresh &&
-        rhosq > params->rhosqThresh )
-    {
-      if ( ! *eventList )
+      /* if chisq drops below threshold start processing events */
+      if ( params->chisqVec->data[j] < params->chisqThresh )
       {
-        *eventList = (InspiralEvent *) LALMalloc( sizeof(InspiralEvent) );
-        memset( *eventList, 0, sizeof(InspiralEvent) );
+        if ( ! *eventList )
+        {
+          /* if this is the first event, start the list */
+          thisEvent = *eventList = (InspiralEvent *) 
+            LALMalloc( sizeof(InspiralEvent) );
+          memset( thisEvent, 0, sizeof(InspiralEvent) );
+          thisEvent->id = eventId++;
 
-        (*eventList)->time.gpsSeconds     = 25;
-        (*eventList)->time.gpsNanoSeconds = 0176;
-        
-        memcpy( &((*eventList)->tmplt), input->tmplt , sizeof(InspiralTemplate) );
-      }
+          /* stick minimal data into the event */
+          thisEvent->timeIndex = j;
+          thisEvent->snrsq = modqsq;
+        }
+        else if ( j < thisEvent->timeIndex + deltaEventIndex &&
+            modqsq > thisEvent->snrsq )
+        {
+          /* if this is the same event, update the maximum */
+          thisEvent->timeIndex = j;
+          thisEvent->snrsq = modqsq;
+        }
+        else if ( j > thisEvent->timeIndex + deltaEventIndex )
+        {
+          /* clean up this event */
+          InspiralEvent *lastEvent;
+          INT8           timeNS;
 
-      if ( rhosq > (*eventList)->snrsq )
-      {
-        (*eventList)->snrsq = rhosq;
-        (*eventList)->chisq = params->chisqVec->data[j];
+          /* set the event LIGO GPS time of the event */
+          timeNS = 1000000000L * 
+            (INT8) (input->segment->data->epoch.gpsSeconds);
+          timeNS += (INT8) (input->segment->data->epoch.gpsNanoSeconds);
+          timeNS += (INT8) (1e9 * (thisEvent->timeIndex) * deltaT);
+          thisEvent->time.gpsSeconds = (INT4) (timeNS/1000000000L);
+          thisEvent->time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
 
-        /* effective distance */
-        distsq = (input->fcTmplt->tmpltNorm * 
-            input->segment->segNorm * input->segment->segNorm) / modqsq;
+          /* copy the template into the event */
+          memcpy( &(thisEvent->tmplt), input->tmplt, sizeof(InspiralTemplate) );
 
-        (*eventList)->sigma = sqrt( distsq );
+          /* set snrsq, chisq, sigma and effDist for this event */
+          thisEvent->chisq   = params->chisqVec->data[thisEvent->timeIndex];
+          thisEvent->sigma   = norm;
+          thisEvent->effDist = (input->fcTmplt->tmpltNorm * 
+              input->segment->segNorm * input->segment->segNorm) / thisEvent->snrsq;
+          thisEvent->effDist = sqrt( thisEvent->effDist );
+          thisEvent->snrsq  *= norm;
+
+          /* allocate memory for the newEvent */
+          lastEvent = thisEvent;
+
+          lastEvent->next = thisEvent = (InspiralEvent *) 
+            LALMalloc( sizeof(InspiralEvent) );
+          memset( thisEvent, 0, sizeof(InspiralEvent) );
+          thisEvent->id = eventId++;
+
+          /* stick minimal data into the event */
+          thisEvent->timeIndex = j;
+          thisEvent->snrsq = norm * modqsq;
+        }
       }
     }
   }
+
+
+  /* 
+   *
+   * clean up the last event if there is one
+   *
+   */
+
+  
+  if ( thisEvent )
+  {
+    INT8           timeNS;
+
+    /* set the event LIGO GPS time of the event */
+    timeNS = 1000000000L * 
+      (INT8) (input->segment->data->epoch.gpsSeconds);
+    timeNS += (INT8) (input->segment->data->epoch.gpsNanoSeconds);
+    timeNS += (INT8) (1e9 * (thisEvent->timeIndex) * deltaT);
+    thisEvent->time.gpsSeconds = (INT4) (timeNS/1000000000L);
+    thisEvent->time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
+
+    /* copy the template into the event */
+    memcpy( &(thisEvent->tmplt), input->tmplt, sizeof(InspiralTemplate) );
+
+    /* set snrsq, chisq, sigma and effDist for this event */
+    thisEvent->chisq   = params->chisqVec->data[thisEvent->timeIndex];
+    thisEvent->sigma   = norm;
+    thisEvent->effDist = (input->fcTmplt->tmpltNorm * 
+          input->segment->segNorm * input->segment->segNorm) / thisEvent->snrsq;
+      thisEvent->effDist = sqrt( thisEvent->effDist );
+    thisEvent->snrsq  *= norm;
+
+  }    
 
 
   /* normal exit */

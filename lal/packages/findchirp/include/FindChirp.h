@@ -91,11 +91,14 @@ InspiralBankIn;
 typedef struct
 tagInspiralEvent
 {
+  UINT4                         id;
   LIGOTimeGPS                   time;
+  UINT4                         timeIndex;
   InspiralTemplate              tmplt;
   REAL4                         snrsq;
   REAL4                         chisq;
   REAL4                         sigma;
+  REAL4                         effDist;
   struct tagInspiralEvent      *next;
 }
 InspiralEvent;
