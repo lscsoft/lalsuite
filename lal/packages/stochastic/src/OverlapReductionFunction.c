@@ -54,7 +54,7 @@ polarization states, normalized so that $e_{ab}^A e^{Bab}=2\delta^{AB}$.
 With this definition, 
 %
 \begin{equation}
-\gamma(f):=d_{1ab}d_2^{cd}{5\over 4\pi}\int_{S^2}d\hat\Omega\
+\gamma(f)=d_{1ab}d_2^{cd}{5\over 4\pi}\int_{S^2}d\hat\Omega\
 e^{i2\pi f\hat\Omega\cdot\Delta \vec x/c}\ 
 P^{ab}_{cd}(\hat\Omega)
 \end{equation}
@@ -157,14 +157,14 @@ as follows:
     j_0(\alpha)&=& 1 - \frac{\alpha^2}{6} + \frac{\alpha^4}{120} 
     + \mathcal{O}(\alpha^6) \\
     \frac{j_1(\alpha)}{\alpha}
-    &=& \frac{1}{3} - \frac{\alpha^2}{30} + \frac{\alpha^4}{8400}
+    &=& \frac{1}{3} - \frac{\alpha^2}{30} + \frac{\alpha^4}{840}
     + \mathcal{O}(\alpha^6) \\
     \frac{j_2(\alpha)}{\alpha^2}
     &=& \frac{1}{15} - \frac{\alpha^2}{210} + \frac{\alpha^4}{7560}
     + \mathcal{O}(\alpha^6) 
   \end{eqnarray}
   for the spherical Bessel functions $j_0(\alpha_i)$,
-  $j_a(\alpha_i)$, $j_2(\alpha_i)$ when $\alpha_i:=2\pi f_i
+  $j_a(\alpha_i)$, $j_2(\alpha_i)$ when $\alpha_i=2\pi f_i
   |\Delta\vec x|/c<0.01$.
 
 \end{enumerate}
@@ -197,6 +197,12 @@ strncpy()
   Defining $\gamma(f)$ as we do allows us to use the formul{\ae} from,
   e.g., \cite{stochastic:Allen:1999}, irrespective of the detector
   type in question.
+  
+\item While $\gamma(f)$ is usually considered to be dimensionless,
+  this routine attaches to it units of strain$^2$.  This is because it
+  contains two powers of the response tensor $d^{ab}$, which converts
+  the dimensionless metric perturbation $h_{ab}$ to $h=h_{ab}d^{ab}$,
+  which has units of strain.
 
 \end{itemize}
 
@@ -425,9 +431,9 @@ LALOverlapReductionFunction(
 
 static void evaluateBessels(REAL4 rho[3], REAL4 alpha)
 {
-  REAL4  alpha2, alpha4;
-  REAL4  s, c;
-  REAL4  b0, b1, b2;
+  REAL8  alpha2, alpha4;
+  REAL8  s, c;
+  REAL8  b0, b1, b2;
 
 
   alpha2 = alpha*alpha;
@@ -436,7 +442,7 @@ static void evaluateBessels(REAL4 rho[3], REAL4 alpha)
   if ( alpha<0.01 ) {
     alpha4 = alpha2*alpha2;
     b0 =  1.0 - alpha2/6.0  + alpha4/120.0;
-    b1 = 1.0/3.0 - alpha2/30.0 + alpha4/8400.0;
+    b1 = 1.0/3.0 - alpha2/30.0 + alpha4/840.0;
     b2 = 1.0/15.0 - alpha2/210.0 + alpha4/7560.0;
   }
   else {
