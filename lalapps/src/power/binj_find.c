@@ -428,8 +428,9 @@ int main(int argc, char **argv)
     }
 
     /**************************************************************
-     * read in search summary information and determine how much
-     * data is analyzed: only works for playground right now.
+     * Uncomment if want to read in search summary information and 
+     * determine how much data is analyzed: only works for playground 
+     * right now.
      **************************************************************/
     /* SearchSummaryTableFromLIGOLw( &searchSummary, line);
     tmpStartTime=searchSummary->out_start_time.gpsSeconds;
@@ -664,9 +665,10 @@ int main(int argc, char **argv)
   }
 
 
+  /* Uncomment the line if have read in the searchsummary info. above */
+  /*fprintf(stdout,"%d sec = %d hours analyzed\n",timeAnalyzed,
+    timeAnalyzed/3600);*/
 
-  fprintf(stdout,"%d sec = %d hours analyzed\n",timeAnalyzed,
-      timeAnalyzed/3600);
   fprintf(stdout,"Detected %i injections out of %i made\t %i \n",ndetected,ninjected,ncheck);
   fprintf(stdout,"Efficiency is %f \n", ((REAL4)ndetected/(REAL4)ninjected) );
 
