@@ -86,7 +86,7 @@ main ( void )
    REAL8 dt0, dt1, g00, g11, h00, h11, h01, ang, match;
    REAL4Vector signal, correlation;
    UINT4 numPSDpts = 1048576;
-   UINT4 numFcutTemplates=5;
+   UINT4 numFcutTemplates=4;
    void *noisemodel = LALLIGOIPsd;
    static RandomInspiralSignalIn randIn;
    static InspiralWaveOverlapIn overlapin;
@@ -110,10 +110,10 @@ main ( void )
    fprintf(stderr, "Results of the run are written in FilterTest.out\n");
 
    bankParams.x0Min = 0.0;
-   bankParams.x0Max = 2.5e5;
-   bankParams.x1Min = -2.2e3;
+   bankParams.x0Max = 2.5e4;
+   bankParams.x1Min = -2.2e2;
    bankParams.x1Max = 100.0;
-   bankParams.minimalMatch = 0.95;
+   bankParams.minimalMatch = 0.90;
 
 /*---------------------------------------------------------------------------*/
 /* Prepare parameters needed to create a verctor sequence to store BCV templates */
@@ -148,8 +148,8 @@ main ( void )
    randIn.param.approximant = PadeT1;
    randIn.param.massChoice = m1Andm2;
    randIn.param.fendBCV = 1000.;
-   randIn.mMin = 3.0;
-   randIn.mMax = 20.0;
+   randIn.mMin = 5.0;
+   randIn.mMax = 10.0;
    randIn.MMax = 2.*randIn.mMax;
    randIn.param.mass1 = randIn.mMin;
    randIn.param.mass2 = randIn.mMin;
@@ -231,7 +231,7 @@ main ( void )
    fprintf(stderr, "   psi0             psi3        Overlap/SNR\n");
    fprintf(stderr,"----------------------------------------------\n");
 
-   ntrials=10;
+   ntrials=3;
    fprintf(FilterTest, "#Signal Length=%d Number of sims=%d\n", signal.length, ntrials);
    fprintf(FilterTest, "   psi0            psi3        Overlap/SNR\n");
    fprintf(FilterTest, "psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n",
