@@ -34,34 +34,34 @@ RCSID("$Id$");
 #define CVS_DATE "$Date$"
 
 #define USAGE \
-"Usage: lalapps_sire [options]\n"\
-  "\n"\
-  "  --help                       display this message\n"\
-  "  --verbose                    print progress information\n"\
-  "  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
-  "  --user-tag STRING            set the process_params usertag to STRING\n"\
-  "  --comment STRING             set the process table comment to STRING\n"\
-  "  --version                    print the CVS version string\n"\
-  "\n"\
-  "  --gps-start-time SEC         start time (default to S2 start, 729273613)\n"\
-  "  --gps-start-time-ns NS       start time nanoseconds\n"\
-  "  --gps-end-time SEC           end time (default to S2 end, 734367613)\n"\
-  "  --gps-end-time-ns NS         end time nanoseconds\n"\
-  "  --input FILE                 TAMA file to be converted to xml\n"\
-  "  --output FILE                write output data to FILE\n"\
+"Usage: lalapps_tama2ligolw [options]\n"\
+"\n"\
+"  --help                       display this message\n"\
+"  --verbose                    print progress information\n"\
+"  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
+"  --user-tag STRING            set the process_params usertag to STRING\n"\
+"  --comment STRING             set the process table comment to STRING\n"\
+"  --version                    print the CVS version string\n"\
+"\n"\
+"  --gps-start-time SEC         start time (default to S2 start, 729273613)\n"\
+"  --gps-start-time-ns NS       start time nanoseconds\n"\
+"  --gps-end-time SEC           end time (default to S2 end, 734367613)\n"\
+"  --gps-end-time-ns NS         end time nanoseconds\n"\
+"  --input FILE                 TAMA file to be converted to xml\n"\
+"  --output FILE                write output data to FILE\n"\
 
 #define S2START 729273613
 #define S2END 734367613
 
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-  calloc( 1, sizeof(ProcessParamsTable) ); \
-  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-      PROGRAM_NAME ); \
-      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
-	  long_options[option_index].name ); \
-	  LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-	  LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+calloc( 1, sizeof(ProcessParamsTable) ); \
+LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+    PROGRAM_NAME ); \
+LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+    long_options[option_index].name ); \
+LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 int main( int argc, char *argv[] )
 {
@@ -72,13 +72,13 @@ int main( int argc, char *argv[] )
 
   extern int vrbflg;
   CHAR *userTag = NULL;
-  CHAR comment[LIGOMETA_COMMENT_MAX];
+  CHAR  comment[LIGOMETA_COMMENT_MAX];
+  CHAR  line[LIGOMETA_STRING_MAX];
 
   char *inputFileName = NULL;
   char *outputFileName = NULL;
 
   FILE *fp;
-  INT4			ok = 1;
   INT4			num_trigs = 0;
   MetadataTable         proctable;
   MetadataTable         procparams;
@@ -413,8 +413,9 @@ int main( int argc, char *argv[] )
   if ( fp == NULL )
   {
     fprintf( stderr, "Could not open file %s\n", inputFileName );
+    exit ( 1 );
   }
-  while( ok )
+  while( fgets( line, sizeof( line ), fp ) )
   {
     REAL8 trig_time = 0;
     REAL4 snr = 0;
@@ -422,60 +423,65 @@ int main( int argc, char *argv[] )
     REAL4 mtot = 0;
     REAL4 eta = 0;
     REAL4 deff = 0;
-    if( fscanf( fp, "%lf %f %f %f %f %f\n", &trig_time,
-	  &snr, &chisq, &mtot, &eta, &deff ) == 6)
+    
+    /* effective distance not required */
+    if( sscanf( line, "%lf %f %f %f %f %f\n", &trig_time,
+	  &snr, &chisq, &mtot, &eta, &deff ) >= 5)
     {
       if ( vrbflg )
       {
-	fprintf( stdout, "obtained trigger at time %f\n", trig_time);
-      }
-
-      /* check that trigger is within our analyzed time */
-      if( trig_time >= gpsStartTimeFloat && trig_time <= gpsEndTimeFloat )
-      {
-	if( thisEvent )
-	{
-	  thisEvent = thisEvent->next = (SnglInspiralTable *) 
-	    LALCalloc( 1, sizeof(SnglInspiralTable) );
-	}
-	else
-	{
-	  eventHead = thisEvent = (SnglInspiralTable *) 
-	    LALCalloc( 1, sizeof(SnglInspiralTable) );
-	}
-	thisEvent->snr = snr;
-	thisEvent->chisq = chisq;
-	thisEvent->chisq_dof = 30;
-	thisEvent->eta = eta;
-	if( eta <= 0.25 )
-	{
-	  thisEvent->mass1 = mtot * ( 1 + sqrt( 1 - 4 * eta ) ) / 2;
-	  thisEvent->mass2 = mtot * ( 1 - sqrt( 1 - 4 * eta ) ) / 2;
-	}
-	else
-	{
-	  thisEvent->mass1 = 0;
-	  thisEvent->mass2 = 0;
-	} 
-	thisEvent->mchirp = pow( eta, 0.6 ) * mtot;
-        thisEvent->eff_distance = 1.0e-03 * deff; /* TAMA eff dist in kpc */
-
-	LALSnprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), "T1" );
-	LAL_CALL( LALFloatToGPS( &stat, &(thisEvent->end_time), &trig_time ),
-	    &stat );
-	LAL_CALL( LALGPStoGMST1( &stat, &(thisEvent->end_time_gmst),
-	      &(thisEvent->end_time),  &gmstUnits ), &stat );	  
-	++num_trigs;
-      }
-      else if( vrbflg )
-      {
-	fprintf( stdout, "trigger outside of analyzed time");
+	fprintf( stdout, "obtained trigger at time %f\n", 
+	    trig_time);
       }
     }
     else
     {
-      ok = 0;
-      if( vrbflg ) fprintf( stdout, "Obtained %d triggers\n", num_trigs);
+      fprintf( stderr, "Invalid line format\n" );
+      exit ( 1 );
+    }
+
+    /* check that trigger is within our analyzed time */
+    if( trig_time >= gpsStartTimeFloat && trig_time <= gpsEndTimeFloat )
+    {
+      if( thisEvent )
+      {
+	thisEvent = thisEvent->next = (SnglInspiralTable *) 
+	  LALCalloc( 1, sizeof(SnglInspiralTable) );
+      }
+      else
+      {
+	eventHead = thisEvent = (SnglInspiralTable *) 
+	  LALCalloc( 1, sizeof(SnglInspiralTable) );
+      }
+      thisEvent->snr = snr;
+      thisEvent->chisq = chisq;
+      thisEvent->chisq_dof = 30;
+      thisEvent->eta = eta;
+
+      /* if eta is less than 0.25, store the masses of the components */
+      if( eta <= 0.25 )
+      {
+	thisEvent->mass1 = mtot * ( 1 + sqrt( 1 - 4 * eta ) ) / 2;
+	thisEvent->mass2 = mtot * ( 1 - sqrt( 1 - 4 * eta ) ) / 2;
+      }
+      else
+      {
+	thisEvent->mass1 = 0;
+	thisEvent->mass2 = 0;
+      } 
+      thisEvent->mchirp = pow( eta, 0.6 ) * mtot;
+      thisEvent->eff_distance = 1.0e-03 * deff; /* TAMA eff dist in kpc */
+
+      LALSnprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), "T1" );
+      LAL_CALL( LALFloatToGPS( &stat, &(thisEvent->end_time), &trig_time ),
+	  &stat );
+      LAL_CALL( LALGPStoGMST1( &stat, &(thisEvent->end_time_gmst),
+	    &(thisEvent->end_time),  &gmstUnits ), &stat );	  
+      ++num_trigs;
+    }
+    else if( vrbflg )
+    {
+      fprintf( stdout, "trigger outside of analyzed time");
     }
   }
 
