@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <lal/LALInspiralBank.h>
 
-long int random(void);
-void srandom(unsigned int seed);
+#define random() rand()
+#define srandom( seed ) srand( seed )
 
 NRCSID (LALGAUSSIANNOISEC, "$Id$");
 void 
@@ -11,7 +11,6 @@ LALGaussianNoise (
    REAL4Vector *noisy, 
    UINT8       *seed) 
 {
-
    int i;
 
    INITSTATUS (status, "LALGaussianNoise", LALGAUSSIANNOISEC);

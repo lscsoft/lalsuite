@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <lal/LALInspiralBank.h>
 
-long int random(void);
-void srandom(unsigned int seed);
+#define random() rand()
+#define srandom( seed ) srand( seed )
 
 NRCSID (LALRANDOMINSPIRALSIGNALC, "$Id$");
 void
