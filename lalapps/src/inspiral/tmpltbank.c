@@ -66,7 +66,7 @@ enum
   undefined,
   real_4,
   real_8
-} cal_data = undefined;
+} calData = undefined;
 
 /*
  *
@@ -83,7 +83,9 @@ LIGOTimeGPS gpsStartTime = { 0, 0 };    /* input data GPS start time    */
 LIGOTimeGPS gpsEndTime = { 0, 0 };      /* input data GPS end time      */
 INT4  padData = 0;                      /* saftety margin on input data */
 CHAR  *fqChanName       = NULL;         /* name of data channel         */
+INT4  globFrameData     = 0;            /* glob *.gwf to get frame data */
 CHAR  *frInCacheName    = NULL;         /* cache file containing frames */
+CHAR  *frInType         = NULL;         /* type of data frames          */
 INT4  numPoints         = -1;           /* points in a segment          */
 INT4  numSegments       = -1;           /* number of segments           */
 CHAR  ifo[3];                           /* two character ifo code       */
@@ -143,8 +145,10 @@ int main ( int argc, char *argv[] )
 
   /* frame input data */
   FrCache      *frInCache = NULL;
+  FrCache      *frGlobCache = NULL;
   FrStream     *frStream = NULL;
   FrChanIn      frChan;
+  FrCacheSieve  sieve;
   
   /* frame output data */
   struct FrFile *frOutFile = NULL;
@@ -279,16 +283,53 @@ int main ( int argc, char *argv[] )
   /* copy the start time into the GEO time series */
   geoChan.epoch = chan.epoch;
 
-  /* open a frame cache or files */
-  if ( frInCacheName )
+  if ( globFrameData )
   {
-    LAL_CALL( LALFrCacheImport( &status, &frInCache, frInCacheName), &status );
-    LAL_CALL( LALFrCacheOpen( &status, &frStream, frInCache ), &status );
+    if ( vrbflg ) fprintf( stdout, 
+        "globbing for *.gwf frame files of type %s in current directory\n",
+        frInType );
+
+    frGlobCache = NULL;
+
+    /* create a frame cache by globbing all *.gwf files in the pwd */
+    LAL_CALL( LALFrCacheGenerate( &status, &frGlobCache, NULL, NULL ), 
+        &status );
+
+    /* check we globbed at least one frame file */
+    if ( ! frGlobCache->numFrameFiles )
+    {
+      fprintf( stderr, "error: no frame file files of type %s found\n",
+          frInType );
+      exit( 1 );
+    }
+    
+    /* sieve out the requested data type */
+    memset( &sieve, 0, sizeof(FrCacheSieve) );
+    sieve.dscRegEx = frInType;
+    LAL_CALL( LALFrCacheSieve( &status, &frInCache, frGlobCache, &sieve ), 
+        &status );
+
+    /* check we got at least one frame file back after the sieve */
+    if ( ! frInCache->numFrameFiles )
+    {
+      fprintf( stderr, "error: no frame files of type %s globbed as input\n",
+          frInType );
+      exit( 1 );
+    }
+
+    LALFree( frGlobCache );
   }
   else
   {
-    LAL_CALL( LALFrOpen( &status, &frStream, NULL, "*.gwf" ), &status );
+    if ( vrbflg ) fprintf( stdout, 
+        "reading frame file locations from cache file: %s\n", frInCacheName );
+
+    /* read a frame cache from the specified file */
+    LAL_CALL( LALFrCacheImport( &status, &frInCache, frInCacheName), &status );
   }
+
+  /* open the input data frame stream from the frame cache */
+  LAL_CALL( LALFrCacheOpen( &status, &frStream, frInCache ), &status );
 
   /* set the mode of the frame stream to fail on gaps or time errors */
   frStream->mode = LAL_FR_VERBOSE_MODE;
@@ -297,7 +338,7 @@ int main ( int argc, char *argv[] )
   LAL_CALL( LALFrSeek( &status, &(chan.epoch), frStream ), &status );
   frChan.name = fqChanName;
 
-  if ( cal_data == real_8 )
+  if ( calData == real_8 )
   {
     /* determine the sample rate of the raw data */
     LAL_CALL( LALFrGetREAL8TimeSeries( &status, &geoChan, &frChan, frStream ),
@@ -351,7 +392,7 @@ int main ( int argc, char *argv[] )
       ( gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds + 2 * padData ) );
   chan.deltaT *= 1.0e9;
   numInputPoints = (UINT4) floor( inputLengthNS / chan.deltaT + 0.5 );
-  if ( cal_data == real_8 )
+  if ( calData == real_8 )
   {
     /* create storage for the GEO input data */
     LAL_CALL( LALDCreateVector( &status, &(geoChan.data), numInputPoints ), 
@@ -364,7 +405,7 @@ int main ( int argc, char *argv[] )
       "(deltaT) = %e\nreading %d points from frame stream\n", fqChanName, 
       chan.deltaT / 1.0e9, numInputPoints );
 
-  if ( cal_data == real_8 )
+  if ( calData == real_8 )
   {
     /* read in the GEO data here */
     PassBandParamStruc geoHighpassParam;
@@ -414,7 +455,7 @@ int main ( int argc, char *argv[] )
     /* read the data channel time series from frames */
     LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
         &status );
-    if ( cal_data == real_4 )
+    if ( calData == real_4 )
     {
       /* multiply the input data by dynRange */
       for ( j = 0 ; j < numInputPoints ; ++j )
@@ -435,8 +476,7 @@ int main ( int argc, char *argv[] )
 
   /* close the frame file stream and destroy the cache */
   LAL_CALL( LALFrClose( &status, &frStream ), &status );
-  if ( frInCacheName ) LAL_CALL( LALDestroyFrCache( &status, &frInCache ), 
-      &status );
+  LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );
 
   /* write the raw channel data as read in from the frame files */
   if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
@@ -575,7 +615,7 @@ int main ( int argc, char *argv[] )
   resp.f0 = spec.f0;
   resp.sampleUnits = strainPerCount;
 
-  if ( cal_data )
+  if ( calData )
   {
     /* if we are using calibrated data set the response to unity */
     if ( vrbflg ) fprintf( stdout, "generating unity response function\n" );
@@ -757,7 +797,7 @@ int main ( int argc, char *argv[] )
             &status );
   if ( vrbflg )
   {
-    fprintf( stdout, "done all %d\n", numCoarse );
+    fprintf( stdout, "done. Got %d templates\n", numCoarse );
     fflush( stdout );
   }
 
@@ -914,9 +954,10 @@ int main ( int argc, char *argv[] )
 
   /* free the rest of the memory, check for memory leaks and exit */
   if ( calCacheName ) free( calCacheName );
-  free( frInCacheName );
-  free( channelName );
-  free( fqChanName );
+  if ( frInCacheName ) free( frInCacheName );
+  if ( frInType ) free( frInType );
+  if ( channelName ) free( channelName );
+  if ( fqChanName ) free( fqChanName );
   LALCheckMemoryLeaks();
   exit( 0 );
 }
@@ -945,8 +986,11 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --gps-end-time SEC           GPS second of data end time\n"\
 "  --pad-data T                 pad the data start and end time by T seconds\n"\
 "\n"\
+"  --glob-frame-data            glob *.gwf files in the pwd to obtain frame data\n"\
+"  --frame-type TAG             input data is contained in frames of type TAG\n"\
 "  --frame-cache                obtain frame data from LAL frame cache FILE\n"\
 "  --calibration-cache FILE     obtain calibration from LAL frame cache FILE\n"\
+"\n"\
 "  --channel-name CHAN          read data from interferometer channel CHAN\n"\
 "  --calibrated-data TYPE       calibrated data of TYPE real_4 or real_8\n"\
 "  --geo-high-pass-freq F       high pass GEO data above F Hz using an IIR filter\n"\
@@ -1010,6 +1054,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"verbose",                 no_argument,       &vrbflg,           1 },
     {"disable-high-pass",       no_argument,       &highPass,         0 },
     {"standard-candle",         no_argument,       &computeCandle,    1 },
+    {"glob-frame-data",         no_argument,       &globFrameData,    1 },
     /* parameters used to generate calibrated power spectrum */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
@@ -1030,8 +1075,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"enable-high-pass",        required_argument, 0,                't'},
     {"high-pass-order",         required_argument, 0,                'H'},
     {"high-pass-attenuation",   required_argument, 0,                'I'},
-    
     {"frame-cache",             required_argument, 0,                'u'},
+    {"frame-type",              required_argument, 0,                'n'},
     {"pad-data",                required_argument, 0,                'x'},
     {"debug-level",             required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
@@ -1089,7 +1134,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:c:d:e:f:g:hi:j:k:l:m:p:r:s:t:u:x:z:"
+        "a:b:c:d:e:f:g:hi:j:k:l:m:n:p:r:s:t:u:x:z:"
         "A:B:C:D:E:F:G:H:I:J:K:L:M:P:Q:R:S:T:U:VZ:",
         long_options, &option_index );
 
@@ -1241,11 +1286,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	{
 	  if ( ! strcmp( "real_4", optarg ) )
 	  {
-	    cal_data = real_4;
+	    calData = real_4;
 	  }
 	  else if ( ! strcmp( "real_8", optarg ) )
 	  {
-	    cal_data = real_8;
+	    calData = real_8;
 	  }
 	  else
 	  {
@@ -1426,6 +1471,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         optarg_len = strlen( optarg ) + 1;
         frInCacheName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
         memcpy( frInCacheName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case 'n':
+        optarg_len = strlen( optarg ) + 1;
+        frInType = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( frInType, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
@@ -1868,7 +1920,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     }
   }
 
-  if ( cal_data == real_8 )
+  if ( calData == real_8 )
   {
     /* check that geo high pass parameters have been specified */
     if ( geoHighPassFreq < 0 )
@@ -1968,13 +2020,56 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     exit( 1 );
   }
 
-  /* check that the frame caches have been specified */
-  if ( ! frInCacheName )
+  /* check that we can correctly obtain the input frame data */
+  if ( globFrameData )
   {
-    fprintf( stderr, "--frame-cache must be specified\n" );
-    exit( 1 );
+    if ( frInCacheName )
+    {
+      fprintf( stderr, 
+          "--frame-cache must not be specified when globbing frame data\n" );
+      exit( 1 );
+    }
+
+    if ( ! frInType )
+    {
+      fprintf( stderr, 
+          "--frame-type must be specified when globbing frame data\n" );
+      exit( 1 );
+    }
   }
-  if ( ! cal_data && ! calCacheName )
+  else
+  {
+    if ( ! frInCacheName )
+    {
+      fprintf( stderr, 
+          "--frame-cache must be specified when not globbing frame data\n" );
+      exit( 1 );
+    }
+
+    if ( frInType )
+    {
+      fprintf( stderr, "--frame-type must not be specified when obtaining "
+          "frame data from a cache file\n" );
+      exit( 1 );
+    }
+  }
+
+  /* record the glob frame data option in the process params */
+  if ( globFrameData )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--glob-frame-data" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+
+  
+  /* check that the calibration frame cache has been specified */
+  if ( ! calData && ! calCacheName )
   {
     fprintf( stderr, "--calibration-cache must be specified\n" );
     exit( 1 );
