@@ -42,7 +42,7 @@ int main( void )
     "--lngth            bandwidth \n"\
     "--nsigma           sigma \n"\
     "--alphdef          alpha \n"\
-    "--segdcle          nsegs \n"\ 
+    "--segdcle          nsegs \n"\
     "--threshold        threshold\n"\
     "--etomstr          nevents \n"\
     "--framecache       filename \n"\
