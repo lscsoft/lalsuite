@@ -1,7 +1,15 @@
 NOTE:  You must install the package FFTW (Fastest Fourier Transform in the
 West) before installing this package.
 
-0.  Install FFTW and (optionally) the FrameL library and MPI:
+Contents:
+  0. Installing FFTW, FrameL, and MPI.
+  1. Installing LAL.
+  2. Uninstalling LAL.
+  3. Multiple builds.
+
+-------------------------------------------------------------------------------
+
+0.  Install FFTW and (optionally) the FrameL library and MPI.
 
     You can obtain FFTW from http://www.fftw.org
     When configuring, you must use the --enable-float option.
@@ -29,13 +37,16 @@ West) before installing this package.
           Then you must set a few environment variables before continuing.
           If you are using sh (or bash):
 
-          LIBS=-L/home/alice/lib
-          CPPFLAGS=-I/home/alice/include
+          LIBS=-L/home/alice/lib ; export LIBS
+          CPPFLAGS=-I/home/alice/include ; export CPPFLAGS
 
           If you are using csh (or tcsh):
 
           setenv LIBS -L/home/alice/lib
           setenv CPPFLAGS -I/home/alice/include
+
+          Alternatively, you can use the --with-extra-cppflags and the
+          --with-extra-libs options of the LAL configure script (see below).
 
     0.3.  To install the FrameL library (optional) go to the mgr directory of
           the frame library directory structure and run the compilation script
@@ -43,19 +54,26 @@ West) before installing this package.
           will need to set the LIBS and CPPFLAGS variables so that the
           library and include files are accessible (as above).
 
+          If you are trying to make a shared object version of LAL with the
+          frame library interface, you'll need to make a shared object version
+          of the frame library too.  See the troubleshooting section below.
+
     0.4.  Install the MPICH implementation of MPI (optional).  Then set the
           environment variable MPICC to the name of the MPI C-compiler (which
           is probably a shell script).  For example, if you are using sh:
 
-          MPICC=mpicc
+          MPICC=mpicc ; export MPICC
 
           or if you are using csh:
 
           setenv MPICC mpicc
 
+          Alternatively, you can specify the mpicc program using the
+          --with-mpicc option in the LAL configure script (see below).
+
           Troubles may arise if you compile LAL with gcc but the MPICC script
           uses some other cc.  In this case, edit the file mpicc to use gcc
-          rather than cc.
+          rather than cc.  (This should no longer be a problem.)
 
           Also, make sure that mpirun will work.  This means that you have to
           be able to type
@@ -86,24 +104,45 @@ West) before installing this package.
 
     1.1.  If you are installing LAL on the system, use the commands:
 
-          ./configure [--enable-frame] [--enable-mpi] [--enable-shared]
+          ./configure [options]
           make
           make install
 
-          The --enable-frame argument is only used if you have the FrameL
-          library installed and you want to include code that uses this
-          library.
+          Options include:
 
-          The --enable-mpi argument is only used if you have MPI and want
-          to run the code that runs on multiple processors.
+            --enable-frame
+            --enable-mpi
+            --enable-shared
+            --disable-static
+            --disable-debug
+            --disable-macros
 
-          The --enable-shared argument is used if you want to produce a
-          shared-object library (liblal.so rather than liblal.a).  This
-          option is only available for certain compilers/systems.  If you
-          do make a shared-object library, you'll also want to have
-          shared-object versions of fftw (libsfftw.so & libsrfftw.so or
-          libfftw.so & librfftw.so), and of the frame library (libFrame.so)
-          and the MPI library (libmpi.so) if you are enabling these too.
+          * The --enable-frame argument is only used if you have the FrameL
+            library installed and you want to include code that uses this
+            library.
+
+          * The --enable-mpi argument is only used if you have MPI and want
+            to run the code that runs on multiple processors.  You may also
+            need to include --with-mpicc=/path/of/mpicc to specify the program
+            mpicc if it is not in your path.
+
+          * The --enable-shared argument is used if you want to produce a
+            shared-object library (liblal.so rather than liblal.a).  This
+            option is only available for certain compilers/systems.  If you do
+            make a shared-object library, you'll also want to have
+            shared-object versions of fftw (libsfftw.so & libsrfftw.so or
+            libfftw.so & librfftw.so), and of the frame library (libFrame.so)
+            and the MPI library (libmpi.so) if you are enabling these too.
+
+          * The --disable-static prevents the construction of a static library
+            (liblal.a) in addition to the shared-object library.
+
+          * The --disable-debug prevents LAL from including debugging code.
+            This should make the LAL code run faster.
+
+          * The --disable-macros forces LAL to use functions rather than
+            macros for certain status operations.  This may make it easier
+            to debug LAL code.
 
           Optionally you can also type
 
@@ -114,7 +153,7 @@ West) before installing this package.
           to produce dvi (or pdf) files.  If you want to test the code that
           reads frame files, type
 
-          LAL_FRAME_PATH=<framedata path>
+          LAL_FRAME_PATH=<framedata path> ; export LAL_FRAME_PATH
 
           if you are using sh (or bash) or
 
@@ -124,25 +163,27 @@ West) before installing this package.
 
     1.2.  If you are installing LAL on your personal account, use:
 
-          ./configure --prefix=/home/alice [--enable-frame] [--enable-mpi] \
-                      [--enable-shared]
+          ./configure --prefix=/home/alice [--with-extra-cppflags=CPPFLAGS] \
+                  [--with-extra-libs=LIBS] [options]
           make
           make install
 
-          The --enable-frame argument is only used if you have the FrameL
-          library installed and you want to include code that uses this
-          library.
+          The options are as described above.
 
-          The --enable-mpi argument is only used if you have MPI and want
-          to run the code that runs on multiple processors.
+          The --with-extra-cppflags option is used to specify additional
+          pre-processor flags, e.g.,
+          
+            --with-extra-cppflags=-I/home/alice/include
 
-          The --enable-shared argument is used if you want to produce a
-          shared-object library (liblal.so rather than liblal.a).  This
-          option is only available for certain compilers/systems.  If you
-          do make a shared-object library, you'll also want to have
-          shared-object versions of fftw (libsfftw.so & libsrfftw.so or
-          libfftw.so & librfftw.so), and of the frame library (libFrame.so)
-          and the MPI library (libmpi.so) if you are enabling these too.
+          The --with-extra-libs option is used to specify additional library
+          flags (-l or -L flags), e.g.,
+          
+            --with-extra-libs=-L/home/alice/lib
+
+          If you need more than one flag, you'll need to use quotation marks:
+
+            --with-extra-cppflags="-I/home/alice/include -I/opt/include"
+            --with-extra-libs="-L/home/alice/lib -L/opt/lib"
 
           Optionally you can also type
 
@@ -153,13 +194,60 @@ West) before installing this package.
           to produce dvi (or pdf) files.  If you want to test the code that
           reads frame files, type
 
-          LAL_FRAME_PATH=<framedata path>
+          LAL_FRAME_PATH=<framedata path> ; export LAL_FRAME_PATH
 
           if you are using sh (or bash) or
 
           setenv LAL_FRAME_PATH <framedata path>
 
           if you are using csh (or tcsh), and then run make check.
+
+
+2.  Uninstalling the LAL package.
+    
+    Before making a new version of LAL, it is best to un-install the previous
+    version.  This is done simply by typing
+
+    make uninstall
+
+    in the OLD LAL directory.
+
+
+3.  Multiple builds.
+
+    You can build LAL multiple times, e.g., for several different
+    architectures.  Here is an example:
+
+    /home is mounted on both a pentium linux system and a sun solaris system,
+    but /people is a private directory on each system and is not cross
+    mounted.
+
+    Bob wants to install the LAL library for both systems in /people/bob/lib,
+    /people/bob/include, etc.  He wan't all the LAL source code to be in
+    /home/bob/src/lal, which is common to both systems.
+    
+    First he unpacks LAL to get the directory /home/bob/src/lal (which
+    contains all the LAL files).  He then creates two subdirectories:
+    /home/bob/src/lal/i686-linux and /home/bob/src/lal/sun-solaris.
+
+    Second, on the pentium linux system, he types:
+
+      cd /home/bob/src/lal/i686-linux
+      ../configure --prefix=/people/bob 
+      make
+      make install
+
+    This installs LAL in /people/bob on the pentium linux system.
+
+    Third, on the solaris system, he types:
+
+      cd /home/bob/src/lal/sun-solaris
+      ../configure --prefix=/people/bob
+      make
+      make install
+
+    This installs LAL in /people/bob on the sun solaris system.
+    
 
 -------------------------------------------------------------------------------
 
@@ -173,6 +261,19 @@ SGI running IRIX 6.5.3 with gcc:
 
   * Make sure that the compiler used is gcc by setting the environment CC to
     gcc.
+
+
+Alpha running Linux with ccc --- making shared libraries:
+
+  * Problem: libtool doesn't know that ccc makes position-independent code
+    by default (at least I hope it does).
+
+  * Solution: trick the configure script into thinking that you are using
+    OSF/1 by using the --host option:
+
+      ./configure --host=alpha-dec-osf3 --enable-shared
+
+  * Note: use the same trick to make shared libraries for fftw!
 
 
 -------------------------------------------------------------------------------
@@ -189,3 +290,11 @@ Troubleshooting:
 
 * "make dvi" must be run after "make" since make dvi requires the program
   laldoc must be compiled for "make dvi" to work.
+
+* If you want to make a shared library version of LAL with frame library
+  and/or MPI interface, you need to make a shared library version of the frame
+  library and mpi too.  With mpich, use the --enable-sharedlib flag when
+  you run the mpich configuration script.  With the frame library it is
+  easiest to use a modified version of the frame library available from the
+  URL http://www.lsc-group.phys.uwm.edu/~duncan/project/mpi/frame-3.85.tar.gz
+  to make the shared version of the frame library.
