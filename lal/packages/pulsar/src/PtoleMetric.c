@@ -216,6 +216,7 @@ sin_2d = sin(2*(input->position.latitude));
 
 /* Calculation of phases of spin and orbit at start: */
 zero_phases.epoch.gpsSeconds = input->epoch.gpsSeconds;
+zero_phases.epoch.gpsNanoSeconds = input->epoch.gpsNanoSeconds;
 LALGetEarthTimes( status, &zero_phases);
 phi_o_i = -zero_phases.tAutumn/LAL_YRSID_SI*LAL_TWOPI;
 phi_s_i = -zero_phases.tMidnight/LAL_DAYSID_SI*LAL_TWOPI + lon;
