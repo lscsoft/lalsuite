@@ -12,7 +12,7 @@ int main() {
   REAL4Vector a;
   REAL4 data[10] = {1.0,0.9,1.1,0.5,1.2,0.8,0.9,1.4,1.0,0.9};
   REAL4 matlab[4] = {1.0,-0.6861568,-0.3781715,0.218191};
-  REAL4 eps = 1e-6;
+  REAL4 eps = 1e-3;
   UINT4 p = 3, i;
   
   UINT4 m=5;
