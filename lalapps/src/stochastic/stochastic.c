@@ -1010,6 +1010,167 @@ static COMPLEX8FrequencySeries *construct_cc_spectrum(LALStatus *status,
   return(cc_spectra);
 }
 
+/* helper function to save out xml tables */
+static void save_xml_file(LALStatus *status,
+    CHAR *output_path,
+    CHAR *base_name,
+    StochasticTable *stochtable)
+{
+  /* variables */
+  LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
+  MetadataTable output_table;
+  CHAR xml_file_name[FILENAME_MAX];
+  LIGOLwXMLStream xml_stream;
+
+  /* save out any flags to the process params table */
+  if (middle_segment_flag)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+                      calloc(1, sizeof(ProcessParamsTable));
+    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+        PROGRAM_NAME);
+    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+        "--middle-segment");
+    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+  }
+  if (apply_mask_flag)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+                      calloc(1, sizeof(ProcessParamsTable));
+    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+        PROGRAM_NAME);
+    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+        "--apply-mask");
+    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+  }
+  if (high_pass_flag)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+                      calloc(1, sizeof(ProcessParamsTable));
+    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+        PROGRAM_NAME);
+    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+        "--high-pass-filter");
+    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+  }
+  if (overlap_hann_flag)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+                      calloc(1, sizeof(ProcessParamsTable));
+    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+        PROGRAM_NAME);
+    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+        "--overlap-hann");
+    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+  }
+  if (recentre_flag)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+                      calloc(1, sizeof(ProcessParamsTable));
+    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+        PROGRAM_NAME);
+    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+        "--recentre");
+    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+  }
+  if (cc_spectra_flag)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+                      calloc(1, sizeof(ProcessParamsTable));
+    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+        PROGRAM_NAME);
+    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+        "--cc-spectra");
+    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+  }
+  if (vrbflg)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+                      calloc(1, sizeof(ProcessParamsTable));
+    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+        PROGRAM_NAME);
+    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+        "--verbose");
+    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+  }
+
+  /* add the xml comment, if specified */
+  if (!*comment)
+  {
+    LALSnprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " ");
+  }
+  else
+  {
+    LALSnprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", \
+        comment);
+  }
+
+  /* delete empty first entry in process params table */
+  this_proc_param = procparams.processParamsTable;
+  procparams.processParamsTable = procparams.processParamsTable->next;
+  free(this_proc_param);
+
+  /* set xml output file */
+  if (output_path)
+  {
+    LALSnprintf(xml_file_name, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml",
+        output_path, base_name);
+  }
+  else
+  {
+    LALSnprintf(xml_file_name, FILENAME_MAX * sizeof(CHAR), "%s.xml",
+        base_name);
+  }
+
+  /* write out xml */
+  if (vrbflg)
+    fprintf(stdout, "Writing output XML file...\n");
+
+  /* opening xml file stream */
+  memset(&xml_stream, 0, sizeof(LIGOLwXMLStream));
+  LAL_CALL(LALOpenLIGOLwXMLFile(status, &xml_stream, xml_file_name), status);
+
+  /* write out process and process params tables */
+  LAL_CALL(LALGPSTimeNow(status, &(proctable.processTable->end_time), \
+        &accuracy), status);
+  LAL_CALL(LALBeginLIGOLwXMLTable(status, &xml_stream, process_table), \
+      status);
+  LAL_CALL(LALWriteLIGOLwXMLTable(status, &xml_stream, proctable, \
+        process_table), status);
+  LAL_CALL(LALEndLIGOLwXMLTable(status, &xml_stream), status);
+  free(proctable.processTable);
+
+  /* write the process params table */
+  LAL_CALL(LALBeginLIGOLwXMLTable(status, &xml_stream, \
+        process_params_table), status);
+  LAL_CALL(LALWriteLIGOLwXMLTable(status, &xml_stream, procparams, \
+        process_params_table), status);
+  LAL_CALL(LALEndLIGOLwXMLTable(status, &xml_stream), status);
+
+  /* write stochastic table */
+  if (stochtable)
+  {
+    output_table.stochasticTable = stochtable;
+    LAL_CALL(LALBeginLIGOLwXMLTable(status, &xml_stream, stochastic_table), \
+        status);
+    LAL_CALL(LALWriteLIGOLwXMLTable(status, &xml_stream, output_table, \
+          stochastic_table), status);
+    LAL_CALL(LALEndLIGOLwXMLTable(status, &xml_stream), status);
+  }
+
+  /* close xml file */
+  LAL_CALL(LALCloseLIGOLwXMLFile(status, &xml_stream), status);
+
+  return;
+}
+
 /* display usage information */
 static void display_usage()
 {
@@ -1895,11 +2056,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* xml */
   CHAR baseName[FILENAME_MAX];
-  CHAR xmlFileName[FILENAME_MAX];
-  LIGOLwXMLStream xmlStream;
   StochasticTable *stochHead = NULL;
   StochasticTable *thisStoch = NULL;
-  MetadataTable outputTable;
 
   /* counters */
   INT4 i, segLoop, interLoop;
@@ -2139,16 +2297,16 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* loop over segments in the interval */
     for (segLoop = 0; segLoop < segsInInt; segLoop++)
     {
-      /* set segment start and end time */
+      /* set segment start time */
       LAL_CALL(LALAddFloatToGPS(&status, &gpsSegStartTime, &gpsStartTime, \
             (REAL8)((interLoop * segmentShift) + \
                     (segLoop * segmentDuration))), &status);
 
-      /* get epoch for response function */
+      /* get epoch for response functions */
       LAL_CALL(LALAddFloatToGPS(&status, &gpsCalibTime, &gpsSegStartTime, \
             (REAL8)calibOffset), &status);
 
-      /* is this the analysis segment */
+      /* is this the analysis segment? */
       if (segLoop == segMiddle)
       {
         gpsAnalysisTime = gpsSegStartTime;
@@ -2171,7 +2329,6 @@ INT4 main(INT4 argc, CHAR *argv[])
           gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
       responseTwo = generate_response(&status, ifoTwo, calCacheTwo, \
           gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
-
 
       /* check if on middle segment and if we want to include this in
        * the analysis */
@@ -2299,151 +2456,8 @@ INT4 main(INT4 argc, CHAR *argv[])
     thisStoch->cc_sigma = sigmaTheo;
   }
 
-  /* save out any flags to the process params table */
-  if (middle_segment_flag)
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-                      calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-        PROGRAM_NAME);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
-        "--middle-segment");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
-  }
-  if (apply_mask_flag)
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-                      calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-        PROGRAM_NAME);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
-        "--apply-mask");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
-  }
-  if (high_pass_flag)
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-                      calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-        PROGRAM_NAME);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
-        "--high-pass-filter");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
-  }
-  if (overlap_hann_flag)
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-                      calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-        PROGRAM_NAME);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
-        "--overlap-hann");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
-  }
-  if (recentre_flag)
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-                      calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-        PROGRAM_NAME);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
-        "--recentre");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
-  }
-  if (cc_spectra_flag)
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-                      calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-        PROGRAM_NAME);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
-        "--cc-spectra");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
-  }
-  if (vrbflg)
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-                      calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-        PROGRAM_NAME);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
-        "--verbose");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
-  }
-
-  /* add the xml comment, if specified */
-  if (!*comment)
-  {
-    LALSnprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " ");
-  }
-  else
-  {
-    LALSnprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", \
-        comment);
-  }
-
-  /* delete empty first entry in process params table */
-  this_proc_param = procparams.processParamsTable;
-  procparams.processParamsTable = procparams.processParamsTable->next;
-  free(this_proc_param);
-
-  /* set xml output file */
-  if (outputPath)
-  {
-    LALSnprintf(xmlFileName, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml",
-        outputPath, baseName);
-  }
-  else
-  {
-    LALSnprintf(xmlFileName, FILENAME_MAX * sizeof(CHAR), "%s.xml",
-        baseName);
-  }
-
-  /* write out xml */
-  if (vrbflg)
-    fprintf(stdout, "Writing output XML file...\n");
-
-  /* opening xml file stream */
-  memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
-  LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlStream, xmlFileName), &status);
-
-  /* write out process and process params tables */
-  LAL_CALL(LALGPSTimeNow(&status, &(proctable.processTable->end_time), \
-        &accuracy), &status);
-  LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlStream, process_table), \
-      &status);
-  LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlStream, proctable, \
-        process_table), &status);
-  LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlStream), &status);
-  free(proctable.processTable);
-
-  /* write the process params table */
-  LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlStream, \
-        process_params_table), &status);
-  LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlStream, procparams, \
-        process_params_table), &status);
-  LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlStream), &status);
-
-  /* write stochastic table */
-  if (stochHead)
-  {
-    outputTable.stochasticTable = stochHead;
-    LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlStream, stochastic_table), \
-        &status);
-    LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlStream, outputTable, \
-          stochastic_table), &status);
-    LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlStream), &status);
-  }
-
-  /* close xml file */
-  LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlStream), &status);
+  /* save out xml table */
+  save_xml_file(&status, outputPath, baseName, stochHead);
 
   /* cleanup */
   XLALDestroyREAL4TimeSeries(segmentOne);
