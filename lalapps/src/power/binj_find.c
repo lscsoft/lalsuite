@@ -20,8 +20,8 @@ RCSID("$Id$");
 #define PLAYGROUND_LENGTH 600
 
 /* Usage format string. */
-#define USAGE "Usage: %s --input infile --outfile filename \
-    --injfile injectionfile [--noplayground] [--help]\n"
+#define USAGE "Usage: %s --input infile --outinjfile filename \
+    --injfile injectionfile --outsnglfile filename [--noplayground] [--help]\n"
 
 #define BINJ_FIND_EARG   1
 #define BINJ_FIND_EROW   2
@@ -52,7 +52,7 @@ static int getline(char *line, int max, FILE *fpin)
 
 /****************************************************************************
  * 
- * FUNCTION TESTS IF THE FILE CONTAINS ANY PLAYGROUND DATA
+ * FUNCTION TESTS IF THE FILE CONTAINS ANY PLAY GROUND DATA
  * 
  ***************************************************************************/
 static int isPlayground(INT4 gpsStart, INT4 gpsEnd){
@@ -89,13 +89,16 @@ int main(int argc, char **argv)
     INT4                     pass=TRUE;
     size_t                   len=0;
     INT4                     ndetected=0;
+    INT4                     ninjected=0;
+    INT4                     ncheck=0;
     const long S2StartTime   = 729273613;  /* Feb 14 2003 16:00:00 UTC */
     const long S2StopTime    = 734367613;  /* Apr 14 2003 15:00:00 UTC */
 
-    /* filenames */
+       /* filenames */
     CHAR                    *inputFile=NULL;
     CHAR                    *injectionFile=NULL;
     CHAR                    *outputFile=NULL;
+    CHAR                    *outSnglFile=NULL;
 
     /* times of comparison */
     INT4                     gpsStartTime=S2StartTime;
@@ -143,11 +146,13 @@ int main(int argc, char **argv)
     
     /* triggers */
     SnglBurstTable          *tmpEvent=NULL,*currentEvent=NULL,*prevEvent=NULL;
-    SnglBurstTable           burstEvent,*burstEventList=NULL,*outEventList=NULL;
+    SnglBurstTable           burstEvent,*burstEventList=NULL,*outEventList=NULL; 
+    SnglBurstTable          *detEventList=NULL, *detTrigList=NULL, *prevTrig=NULL;
 
     /* injections */
     SimBurstTable           *simBurstList=NULL;
     SimBurstTable           *currentSimBurst=NULL, *tmpSimBurst=NULL;
+    SimBurstTable           *injSimList=NULL,*prevSimBurst=NULL;
 
     /* comparison parameters */
     SnglBurstAccuracy        accParams;
@@ -172,13 +177,16 @@ int main(int argc, char **argv)
  	    /* parameters which determine the output xml file */
 	    {"input",    	required_argument,  0,	'a'},
 	    {"injfile",		required_argument,  0,	'b'},
-	    {"outfile",		required_argument,  0,	'c'},
+	    {"outinjfile",      required_argument,  0,	'c'},
 	    {"max-confidence",	required_argument,  0,	'd'},
 	    {"gps-start-time",	required_argument,  0,	'e'},
 	    {"gps-end-time",	required_argument,  0,	'f'},
+            {"min-centralfreq", required_argument,  0,  'g'},
+	    {"max-centralfreq", required_argument,  0,  'h'},
 	    {"noplayground",	required_argument,  0,	'n'},
 	    {"help",		no_argument,	    0,	'o'}, 
 	    {"sort",		no_argument,	    0,	'p'},
+	    {"outsnglfile",     required_argument,  0,  'q'},
 	    {0, 0, 0, 0}
 	};
 	/* getopt_long stores the option index here. */
@@ -222,7 +230,7 @@ int main(int argc, char **argv)
 	    break;	
 	
 	case 'c':
-            /* create storage for the injection file name */
+            /* create storage for the output file name */
             len = strlen( optarg ) + 1;
             outputFile = (CHAR *) calloc( len, sizeof(CHAR));
             memcpy( outputFile, optarg, len );
@@ -250,6 +258,22 @@ int main(int argc, char **argv)
 	    }
 	    break;
 
+	case 'g':
+	     /* only events with centralfreq greater than this are selected */
+	    {
+              minCentralfreqFlag = 1;
+              minCentralfreq = atof( optarg );
+	    }
+	    break;
+    
+	case 'h':
+	    /* only events with centralfreq less than this are selected */
+	    {
+              maxCentralfreqFlag = 1;
+              maxCentralfreq = atof( optarg );
+	    }
+	    break;
+
 	case 'n':
 	    /* don't restrict to the playground data */
 	    {
@@ -272,6 +296,14 @@ int main(int argc, char **argv)
 	    }
 	    break;
 	    
+
+	case 'q':
+            /* create storage for the output file name */
+            len = strlen( optarg ) + 1;
+            outSnglFile = (CHAR *) calloc( len, sizeof(CHAR));
+            memcpy( outSnglFile, optarg, len );
+	    break;
+
 	default:
 	    {
 		return BINJ_FIND_EARG;
@@ -289,10 +321,10 @@ int main(int argc, char **argv)
 	exit( 1 );
     }	  
 
-    if ( ! outputFile || ! inputFile || ! injectionFile )
+    if ( ! outputFile || ! inputFile || ! injectionFile || ! outSnglFile)
     {
-    	LALPrintError( "Input file, injection file, and output file 
-            name must be specified\n" );
+    	LALPrintError( "Input file, injection file, output trig. file and output inj. file 
+            names must be specified\n" );
 	return BINJ_FIND_EARG;
     }
 
@@ -416,7 +448,7 @@ int main(int argc, char **argv)
         searchSummary = searchSummary->next;
         LALFree( thisEvent );
       }
-      searchSummary = NULL;
+      searchSummary = NULL; 
 
       /* Now the events themselves */
       LAL_CALL( LALSnglBurstTableFromLIGOLw (&stat, &tmpEvent, 
@@ -524,52 +556,107 @@ int main(int argc, char **argv)
     /*****************************************************************
      * first event in list
      *****************************************************************/
+
     currentSimBurst = simBurstList;
-    currentEvent = outEventList;
-    while ( currentSimBurst != NULL ){
-      /* convert injection time to INT8 */
-      LAL_CALL( LALGPStoINT8(&stat, &injPeakTime, 
-            &(currentSimBurst->geocent_peak_time)), &stat);
-
-      /* loop over the burst events */
-      while( currentEvent != NULL )
+    currentEvent = detEventList = outEventList;
+  
+    while ( currentSimBurst != NULL )
       {
+      /* check if the injection is made in the playground */
+      if ( (playground && !(isPlayground(currentSimBurst->geocent_peak_time.gpsSeconds,
+             currentSimBurst->geocent_peak_time.gpsSeconds)))==0 ) 
+	{
+	  ninjected++;
 
-        /* convert injection time to INT8 */
-        LAL_CALL( LALGPStoINT8(&stat, &burstStartTime,
-              &(currentEvent->start_time)), &stat);
+	  /* write the injected signals to an output file */
+	    if ( injSimList == NULL)
+	    {
+	      injSimList = tmpSimBurst = (SimBurstTable *)
+            LALCalloc(1, sizeof(SimBurstTable) );
+	      prevSimBurst = tmpSimBurst;
+	    }
+	  else 
+	    {
+	      tmpSimBurst = (SimBurstTable *)
+		LALCalloc(1, sizeof(SimBurstTable) );
+	      prevSimBurst->next = tmpSimBurst;
+	    }
+	    memcpy( tmpSimBurst, currentSimBurst, sizeof(SimBurstTable) );
+	    prevSimBurst = tmpSimBurst;
+	    tmpSimBurst = tmpSimBurst->next = NULL;
+	  
+          /* convert injection time to INT8 */
+          LAL_CALL (LALGPStoINT8(&stat, &injPeakTime, 
+			     &(currentSimBurst->geocent_peak_time)), &stat);
+ 
 
-        if( injPeakTime < burstStartTime )
-          break;
+          /* loop over the burst events */
+	  while( currentEvent != NULL )
+	    {
 
-        LAL_CALL( LALCompareSimBurstAndSnglBurst(&stat,
-              currentSimBurst, currentEvent, &accParams), &stat);
+              /* convert injection time to INT8 */
+              LAL_CALL( LALGPStoINT8(&stat, &burstStartTime,
+			       &(currentEvent->start_time)), &stat);
 
-        if( accParams.match )
-        {
-          ndetected++;
-          break;
-        }
+	      if( injPeakTime < burstStartTime )
+		break;
 
-        currentEvent = currentEvent->next;
-      } 
+              LAL_CALL( LALCompareSimBurstAndSnglBurst(&stat,
+						 currentSimBurst, currentEvent, &accParams), &stat);
+
+	      if( accParams.match )
+		{
+		  ndetected++;
+
+		  /*write the detected triggers*/
+		  if ( detTrigList == NULL)
+		    {
+                      detTrigList = tmpEvent = (SnglBurstTable *)
+			LALCalloc(1, sizeof(SnglBurstTable) );
+		      prevTrig = tmpEvent;
+		    }
+	          else
+		    {
+		      tmpEvent = (SnglBurstTable *)
+			LALCalloc(1, sizeof(SnglBurstTable) );
+		      prevTrig->next = tmpEvent;
+		    }
+		  memcpy( tmpEvent, currentEvent, sizeof(SnglBurstTable) );
+		  prevTrig = tmpEvent;
+		  tmpEvent = tmpEvent->next = NULL;
+
+		  break;
+		}
+
+	      currentEvent = currentEvent->next;
+	    }
+	}
 
       currentSimBurst = currentSimBurst->next;
-    }
+      }
 
-    fprintf(stdout,"%d sec = %d hours analyzed\n",timeAnalyzed,
-        timeAnalyzed/3600);
-    fprintf(stdout,"Detected %i injections out of %i made\n",ndetected,
-        (INT4)(LAL_PI*timeAnalyzed/50.0));
-    fprintf(stdout,"Efficiency is %f \n", (REAL4)(50.0*
-        (REAL4)(ndetected) / (REAL4)( timeAnalyzed ) / LAL_PI ) );
+
+
+    /*  fprintf(stdout,"%d sec = %d hours analyzed\n",timeAnalyzed,
+	timeAnalyzed/3600);*/
+    fprintf(stdout,"Detected %i injections out of %i made\t %i \n",ndetected,ninjected,ncheck);
+    fprintf(stdout,"Efficiency is %f \n", ((REAL4)ndetected/(REAL4)ninjected) );
 
     /*****************************************************************
      * open output xml file
      *****************************************************************/
     LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outputFile), &stat);
+    LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sim_burst_table), &stat);
+    myTable.simBurstTable = injSimList;
+    LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable,
+                    sim_burst_table), &stat);
+    LAL_CALL( LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
+    LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
+
+
+    LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outSnglFile), &stat);
     LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_burst_table), &stat);
-    myTable.snglBurstTable = outEventList;
+    myTable.snglBurstTable = detTrigList;
     LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable,
                     sngl_burst_table), &stat);
     LAL_CALL( LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
