@@ -247,7 +247,7 @@ templates this is
 where $1 \le k \le N/2$. For time domain templates, this quantity is 
 \begin{equation}
 \mathcal{S}_k = \sum_{k^\prime=1}^{k} 
-\frac{\tilde{h}_{k^\prime}{d^2|R|^2S_v\left(\left|f_{k^\prime}\right|\right)}
+\frac{\tilde{h}_{k^\prime}}{d^2|R|^2S_v\left(\left|f_{k^\prime}\right|\right)}
 \end{equation}
 and must be recomputed for each template.
 
