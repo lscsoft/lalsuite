@@ -1194,10 +1194,9 @@ SimInspiralTableFromLIGOLw (
             fprintf( stderr, "unknown column while parsing\n" );
             return -1;
           }
-
-          /* increase the count of rows parsed */
-          ++nrows;
         }
+        /* increase the count of rows parsed */
+        ++nrows;       
       }
   }
 
