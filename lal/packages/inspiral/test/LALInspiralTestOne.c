@@ -177,6 +177,8 @@ int main (int argc , char **argv) {
     SUB( LALCDestroyVector (&status, &Signal1), &status);
     printf_timeseries(signal2->length, signal2->data, dt, params.startTime);
     SUB( LALDestroyRealFFTPlan (&status, &revp), &status);
+    SUB( LALSDestroyVector(&status, &signal2), &status);
+    SUB( LALSDestroyVector(&status, &signal1), &status);
     break;
   case SpinTaylorT3:
   case TaylorT1:
