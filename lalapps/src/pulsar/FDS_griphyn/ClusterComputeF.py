@@ -272,7 +272,7 @@ fp.close()
 
 # copy patches file into the outputDir
 patchesPath = os.path.abspath(args[0])
-shutil.copyfile(patchesPath, os.path.join(outputDir, patchesPath))
+shutil.copyfile(patchesPath, os.path.join(outputDir, os.path.basename(patchesPath)))
 
 
 ### Get name of directory where ephemerides are stored, and year of ephemeris
