@@ -40,6 +40,8 @@ given search area and resolution
 #include <lal/LALXMGRInterface.h>
 #include <lal/StringInput.h>
 
+#include <lal/ConfigFile.h>
+
 #include "DopplerScan.h"
 
 
@@ -86,6 +88,7 @@ static PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 /* internal prototypes */
 void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params );
 void getMetric( LALStatus *status, REAL4 g[3], REAL4 skypos[2], void *params );
+void LALMetricWrapper (LALStatus *stat, REAL8Vector *metric, const PtoleMetricIn *input, PulsarMetricType metricType);
 
 	
 void ConvertTwoDMesh2Grid ( LALStatus *stat, DopplerScanGrid **grid, 
@@ -96,10 +99,11 @@ BOOLEAN pointInPolygon ( const SkyPosition *point, const SkyRegion *polygon );
 void gridFlipOrder ( TwoDMeshNode *grid );
 
 void buildFlatGrid (LALStatus *stat, DopplerScanGrid **grid, const SkyRegion *region, REAL8 dAlpha, REAL8 dDelta);
-void buildIsotropicGrid (LALStatus *stat, DopplerScanGrid **grid, const SkyRegion *skyRegion, REAL8 dBeta);
+void buildIsotropicGrid (LALStatus *stat, DopplerScanGrid **grid, const SkyRegion *skyRegion, REAL8 dAlpha, REAL8 dDelta);
 void buildMetricGrid (LALStatus *stat, DopplerScanGrid **grid, SkyRegion *skyRegion,  const DopplerScanInit *init);
+void loadSkyGridFile (LALStatus *stat, DopplerScanGrid **grid, const CHAR *fname);
 
-void printGrid (LALStatus *stat, DopplerScanGrid *grid, const SkyRegion *region, const DopplerScanInit *init);
+void plotGrid (LALStatus *stat, DopplerScanGrid *grid, const SkyRegion *region, const DopplerScanInit *init);
 
 void freeGrid (DopplerScanGrid *grid);
 
@@ -111,7 +115,6 @@ InitDopplerScan( LALStatus *stat,
 		 const DopplerScanInit *init)		/* init-params */
 { /* </lalVerbatim> */
   DopplerScanGrid *node; 
-  PulsarMetricType metricType;
 
   INITSTATUS( stat, "DopplerScanInit", DOPPLERSCANC );
   ATTATCHSTATUSPTR (stat); 
@@ -156,7 +159,7 @@ InitDopplerScan( LALStatus *stat,
 
     case GRID_ISOTROPIC: 	/* variant of manual stepping: try to produce an isotropic mesh */
 
-      TRY ( buildIsotropicGrid ( stat->statusPtr, &(scan->grid), &(scan->skyRegion), init->metricMismatch), stat);
+      TRY ( buildIsotropicGrid ( stat->statusPtr, &(scan->grid), &(scan->skyRegion), init->dAlpha, init->dDelta), stat);
 
       break;
 
@@ -166,8 +169,14 @@ InitDopplerScan( LALStatus *stat,
 
       break;
 
+    case GRID_FILE:
+
+      TRY ( loadSkyGridFile (stat->statusPtr, &(scan->grid), init->skyGridFile), stat);
+
+      break;
+
     default:
-      LALPrintError ("\nUnknown metric-type `%d`\n\n", metricType);
+      LALPrintError ("\nUnknown grid-type `%d`\n\n", init->gridType);
       ABORT ( stat, DOPPLERSCANH_EMETRIC, DOPPLERSCANH_MSGEMETRIC);
       break;
 
@@ -201,10 +210,13 @@ InitDopplerScan( LALStatus *stat,
     }
 
 
+  if (lalDebugLevel >= 1)
+    LALPrintError ("\nFinal Scan-grid has %d nodes\n", scan->numGridPoints);
   if (lalDebugLevel >= 3)
     {
-      LALPrintError ("\nFinal Scan-grid has %d nodes\n", scan->numGridPoints);
-      TRY( printGrid (stat->statusPtr, scan->grid, &(scan->skyRegion), init), stat);
+      LALPrintError ("\nDEBUG: plotting sky-grid into file 'mesh_debug.agr' ...");
+      TRY( plotGrid (stat->statusPtr, scan->grid, &(scan->skyRegion), init), stat);
+      LALPrintError (" done. \n");
     }
 
   scan->state = STATE_READY;
@@ -231,7 +243,7 @@ FreeDopplerScan (LALStatus *stat, DopplerScanState *scan)
   
   if ( scan->state == STATE_IDLE )
     {
-      LALError (stat, "freeing uninitialized DopplerScan.");
+      LALError (stat, "\nTrying to free an uninitialized DopplerScan.\n");
       ABORT (stat, DOPPLERSCANH_ENOINIT, DOPPLERSCANH_MSGENOINIT);
     }
   else if ( scan->state != STATE_FINISHED )
@@ -252,7 +264,9 @@ FreeDopplerScan (LALStatus *stat, DopplerScanState *scan)
 
 } /* FreeDopplerScan() */
 
-/* helper-function: free the linked list containing the grid */
+/*----------------------------------------------------------------------
+ *  helper-function: free the linked list containing the grid 
+ *----------------------------------------------------------------------*/
 void
 freeGrid (DopplerScanGrid *grid)
 {
@@ -273,7 +287,9 @@ freeGrid (DopplerScanGrid *grid)
   return;
 } /* freeGrid() */
 
-/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------
+ * NextDopplerPos(): step through template-grid 
+ *----------------------------------------------------------------------*/
 /* <lalVerbatim file="DopplerScanCP"> */
 void
 NextDopplerPos( LALStatus *stat, DopplerPosition *pos, DopplerScanState *scan)
@@ -436,10 +452,11 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
 
   g[2] = metric->data[INDEX_AD]; /* gxy = g21: 1 + 2*(2+1)/2 = 4; */
 
+  /*
   if (lalDebugLevel >= 3)
     printf ("DEBUG: (ra,dec)=(%f,%f): gxx = %f, gyy = %f, gxy = %f\n", 
 	    metricpar->position.longitude, metricpar->position.latitude,  g[0], g[1], g[2]);
-
+  */
  
   /* Clean up and leave. */
   TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
@@ -455,7 +472,7 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
 #define NUM_SPINDOWN 0       /* Number of spindown parameters */
 
 void 
-printGrid (LALStatus *stat, 
+plotGrid (LALStatus *stat, 
 	   DopplerScanGrid *grid, 
 	   const SkyRegion *region, 
 	   const DopplerScanInit *init)
@@ -478,7 +495,7 @@ printGrid (LALStatus *stat,
     "@yaxis label \"delta\"\n";
 
   /* Set up shop. */
-  INITSTATUS( stat, "printGrid", DOPPLERSCANC );
+  INITSTATUS( stat, "plotGrid", DOPPLERSCANC );
   ATTATCHSTATUSPTR( stat );
 
   /* currently we use only f0, alpha, delta: -> 3D metric */
@@ -494,17 +511,20 @@ printGrid (LALStatus *stat,
 
   set = 0;
 
-  /* Plot boundary. */
-  fprintf( fp, "@target s%d\n@type xy\n", set );
-
-  for( i = 0; i < region->numVertices; i++ )
+  /* Plot boundary. (if given) */
+  if (region->vertices)
     {
-      fprintf( fp, "%e %e\n", region->vertices[i].longitude, region->vertices[i].latitude );
+      fprintf( fp, "@target s%d\n@type xy\n", set );
+
+      for( i = 0; i < region->numVertices; i++ )
+	{
+	  fprintf( fp, "%e %e\n", region->vertices[i].longitude, region->vertices[i].latitude );
+	}
+      fprintf (fp, "%e %e\n", region->vertices[0].longitude, region->vertices[0].latitude ); /* close contour */
+      
+      set ++;
     }
-  fprintf (fp, "%e %e\n", region->vertices[0].longitude, region->vertices[0].latitude ); /* close contour */
-
-  set ++;
-
+      
   /* Plot mesh points. */
   fprintf( fp, "@s%d symbol 9\n@s%d symbol size 0.33\n", set, set );
   fprintf( fp, "@s%d line type 0\n", set );
@@ -610,7 +630,7 @@ printGrid (LALStatus *stat,
   DETATCHSTATUSPTR( stat );
   RETURN (stat);
 
-} /* printGrid */
+} /* plotGrid */
 
 /*----------------------------------------------------------------------
  * this is a "wrapper" to provide a uniform interface to PtoleMetric() 
@@ -1004,11 +1024,11 @@ buildFlatGrid (LALStatus *stat, DopplerScanGrid **grid, const SkyRegion *skyRegi
 
 /*----------------------------------------------------------------------
  *
- * make an (approx.) isotropic grid, i.e. with cells of fixed solid-angle dBeta^2
+ * (approx.) isotropic grid with cells of fixed solid-angle dAlpha x dDelta
  *
  *----------------------------------------------------------------------*/
 void
-buildIsotropicGrid (LALStatus *stat, DopplerScanGrid **grid, const SkyRegion *skyRegion, REAL8 dBeta)
+buildIsotropicGrid (LALStatus *stat, DopplerScanGrid **grid, const SkyRegion *skyRegion, REAL8 dAlpha, REAL8 dDelta)
 {
   SkyPosition thisPoint;
   DopplerScanGrid head = empty_grid;  /* empty head to start grid-list */
@@ -1019,12 +1039,11 @@ buildIsotropicGrid (LALStatus *stat, DopplerScanGrid **grid, const SkyRegion *sk
 
   ASSERT ( grid, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   ASSERT ( skyRegion, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
-  ASSERT ( (dBeta > 0), stat, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
   ASSERT ( *grid == NULL, stat, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL);
 
   thisPoint = skyRegion->lowerLeft;	/* start from lower-left corner */
 
-  step_delta = dBeta;	/* delta step-size is fixed */
+  step_delta = dDelta;	/* delta step-size is fixed */
   cos_delta = fabs(cos (thisPoint.latitude));
 
   node = &head;		/* start our grid with an empty head */
@@ -1045,7 +1064,7 @@ buildIsotropicGrid (LALStatus *stat, DopplerScanGrid **grid, const SkyRegion *sk
 	  node->delta = thisPoint.latitude;
 	} /* if pointInPolygon() */
       
-      step_alpha = dBeta / cos_delta;	/* alpha stepsize depends on delta */
+      step_alpha = dAlpha / cos_delta;	/* alpha stepsize depends on delta */
 
       thisPoint.longitude += step_alpha;
       if (thisPoint.longitude > skyRegion->upperRight.longitude)
@@ -1153,3 +1172,91 @@ buildMetricGrid (LALStatus *stat, DopplerScanGrid **grid, SkyRegion *skyRegion, 
   RETURN (stat);
 
 } /* buildMetricGrid() */
+
+
+/*----------------------------------------------------------------------
+ *
+ * load skygrid from a file
+ *
+ *----------------------------------------------------------------------*/
+void
+loadSkyGridFile (LALStatus *stat, DopplerScanGrid **grid, const CHAR *fname)
+{
+  LALConfigData *data = NULL;
+  DopplerScanGrid *node, head = empty_grid;
+  UINT4 i;
+
+  INITSTATUS( stat, "loadGridFile", DOPPLERSCANC );
+  ATTATCHSTATUSPTR (stat);
+
+  ASSERT ( grid, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT ( *grid == NULL, stat, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL);
+  ASSERT ( fname, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+
+  TRY (LALLoadConfigFile (stat->statusPtr, &data, fname), stat);
+
+  /* parse this list of lines into a sky-grid */
+  node = &head;
+  for (i=0; i < data->lines->nTokens; i++)
+    {
+      if ( (node->next = LALCalloc (1, sizeof (DopplerScanGrid))) == NULL)
+	{
+	  freeGrid (head.next);
+	  ABORT (stat, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+	}
+      if ( 2 != sscanf( data->lines->tokens[i], "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT, &(node->alpha), &(node->delta)) )
+	{
+	  LALPrintError ("\nERROR: could not parse line %d in skyGrid-file '%s'\n\n", i, fname);
+	  freeGrid (head.next);
+	  ABORT (stat, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
+	}
+      
+      node = node->next;
+
+    } /* for i < nLines */
+
+  TRY ( LALDestroyConfigData (stat->statusPtr, &data), stat);
+
+  *grid = head.next;	/* pass result */
+
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
+  
+} /* loadSkyGridFile() */
+
+/*----------------------------------------------------------------------
+ * write a sky-grid to a file, including some comments containing the 
+ * parameters of the grid (?)
+ *----------------------------------------------------------------------*/
+void
+writeSkyGridFile (LALStatus *stat, const DopplerScanGrid *grid, const CHAR *fname, const DopplerScanInit *init)
+{
+  FILE *fp;
+  const DopplerScanGrid *node;
+
+  INITSTATUS( stat, "writeGridFile", DOPPLERSCANC );
+  ATTATCHSTATUSPTR (stat);
+
+  ASSERT ( grid, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT ( fname, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT ( init, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+
+  if ( (fp = fopen(fname, "w")) == NULL )
+    {
+      LALPrintError ("\nERROR: could not open %s for writing!\n", fname);
+      ABORT (stat, DOPPLERSCANH_ESYS, DOPPLERSCANH_MSGESYS);
+    }
+
+  node = grid;
+  while (node)
+    {
+      fprintf (fp, "%g %g \n", node->alpha, node->delta);
+      node = node->next;
+    }
+  
+  fclose (fp);
+
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
+
+} /* writeSkyGridFile() */

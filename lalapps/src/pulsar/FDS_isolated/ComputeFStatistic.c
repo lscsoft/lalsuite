@@ -99,6 +99,7 @@ BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
 CHAR *uvar_skyGridFile;
+CHAR *uvar_outputSkyGrid;
 /*----------------------------------------------------------------------*/
 
 FFT **SFTData=NULL;                 /* SFT Data for LALDemod */
@@ -265,6 +266,11 @@ int main(int argc,char *argv[])
 
   LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status);
 
+  if ( uvar_outputSkyGrid ) {
+    LALPrintError ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
+    LAL_CALL (writeSkyGridFile ( &status, thisScan.grid, uvar_outputSkyGrid, &scanInit), &status);
+    LALPrintError (" done.\n\n");
+  }
   
   if (uvar_outputFstat)
     if ( (fpOut = fopen (uvar_outputFstat, "w")) == NULL)
@@ -447,6 +453,7 @@ initUserVars (LALStatus *stat)
   LALregSTRINGUserVar(stat,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
   LALregSTRINGUserVar(stat,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for the F-statistic field over the parameter-space");
   LALregSTRINGUserVar(stat,	skyGridFile,	 0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
+  LALregSTRINGUserVar(stat,	outputSkyGrid,	 0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -1411,21 +1418,51 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
    * initialize+check  template-grid related parameters 
    */
   {
-    UINT2 haveSkyRegion, haveAlphaDelta, haveGridFile, haveMetric, needMetric, setMetric;
+    UINT2 haveSkyRegion, haveAlphaDelta, haveGridFile, needGridFile, haveMetric, needMetric, setMetric;
 
     haveSkyRegion  = (uvar_skyRegion != NULL);
     haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta) );
     haveGridFile   = (uvar_skyGridFile != NULL);
+    needGridFile   = (uvar_gridType == GRID_FILE);
     haveMetric     = (uvar_metricType > LAL_METRIC_NONE);
     needMetric     = (uvar_gridType == GRID_METRIC);
     setMetric      = LALUserVarWasSet (&uvar_metricType);
 
-    if ( haveSkyRegion + haveAlphaDelta + haveGridFile != 1) 
+    /* some consistency checks on input to help catch errors */
+    if ( !needGridFile && !(haveSkyRegion || haveAlphaDelta) )
       {
-	LALPrintError ("\nExactly ONE of (Alpha,Delta), skyRegion or skyGridFile has to be specified!\n\n");
+	LALPrintError ("\nNeed sky-region: either use (Alpha,Delta) or skyRegion!\n\n");
 	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       }
+    if ( !needGridFile && haveSkyRegion && haveAlphaDelta )
+      {
+	LALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta) OR skyRegion!\n\n");
+	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      }
+    if ( needGridFile && !haveGridFile )
+      {
+	LALPrintError ("\nERROR: gridType=FILE, but no skyGridFile specified!\n\n");
+	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);	
+      }
+    if ( !needGridFile && haveGridFile )
+      {
+	LALWarning (status, "\nWARNING: skyGridFile was specified but not needed ... will be ignored\n");
+      }
+    if ( needGridFile && (haveSkyRegion || haveAlphaDelta) )
+      {
+	LALWarning (status, "\nWARNING: We are using skyGridFile, but sky-region was also specified ... will be ignored!\n");
+      }
+    if ( setMetric && haveMetric && !needMetric) 
+      {
+	LALWarning (status, "\nWARNING: Metric was specified for non-metric grid... will be ignored!\n");
+      }
+    if (needMetric && !haveMetric) 
+      {
+	LALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
+	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
+      }
 
+    /* pre-process template-related input */
     if (haveSkyRegion)
       {
 	cfg->skyRegion = LALCalloc(1, strlen(uvar_skyRegion)+1);
@@ -1453,15 +1490,6 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 		   a, d + Dd );
       }
     
-
-    if ( setMetric && haveMetric && !needMetric) {
-	LALWarning (status, "\nWARNING: Metric was specified for non-metric grid... will be ignored!\n");
-    }
-
-    if (needMetric && !haveMetric) {
-      LALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
-    }
 
   } /* end: template-grid stuff */
 
