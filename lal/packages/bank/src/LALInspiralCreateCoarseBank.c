@@ -174,9 +174,158 @@ LALInspiralValidTemplate()
 \end{verbatim}
 
 \subsubsection*{Notes}
+\clearpage
 
+
+\subsection{Module \texttt{LALInspiralCreateFlatBank.c}}
+Lay a flat grid of templates in the user defined $(x_0, x_1)$ 
+coordinates and range.
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{LALInspiralCreateFlatBankCP}
+\idx{LALInspiralCreateFlatBank()}
+\begin{itemize}
+   \item \texttt{list,} Output, an array containing the template bank parameters
+   \item \texttt{bankParams,} Input. It is necessary and sufficient to input 
+   the eigenvalues of the metric and the angle between the $x_0$ axis and the 
+   semi-major axis of the ambiguity ellipse, that is,
+   \texttt{bankParams.metric.g00, bankParams.metric.g11, bankParams.metric.theta,}
+   the minimal match, \texttt{bankParams.minimalMatch} and the range of the two
+   coordinates over which templates must be chosen:
+({\tt bankParams->x0Min}, {\tt bankParams->x0Max}) and
+({\tt bankParams->x1Min}, {\tt bankParams->x1Max}).
+\end{itemize}
+The code expects {\tt list->vectorLength=2} and allocates just the 
+requisite amount of memory to {\tt list} and returns the number 
+of grid points in {\tt list->length.} The data points {\tt list->data[2j],}
+{\tt j=1,2,\ldots, list->length,} contain the $x_0$-coordinates of the grid
+and data points {\tt list->data[2j+1],} contain the $x_1$-coordinates 
+of the grid.
+
+\subsubsection*{Description}
+Given the {\tt metric} and the {\tt minimalMatch} this routine calls 
+{\tt bank/LALInspiralUpdateParams} to get the spacings in user coordinates (which are 
+not necessarily the eigen-directions) and lays a uniform grid of templates in 
+the range specified in ({\tt bankParams->x0Min}, {\tt bankParams->x0Max}) and
+({\tt bankParams->x1Min}, {\tt bankParams->x1Max}).
+\subsubsection*{Algorithm}
+\subsubsection*{Uses}
+The algorithm to lay templates is as follows: Given the increments $Dx_0$ and
+$Dx_1$ found from calling {\tt bank/LALInspiralUpdateParams} lay a rectangular
+grid in the space of $(x_0, x_1).$
+\begin{obeylines}
+\texttt{
+\hskip 1 true cm $x_1 = x_1^{\min}$
+\hskip 1 true cm do while ($x_1 <= x_1^{\rm max}$)
+\hskip 1 true cm \{
+\hskip 2 true cm $x_0 = x_0^{\min}$
+\hskip 2 true cm do while ($x_0 <= x_0^{\rm max}$)
+\hskip 2 true cm \{
+\hskip 3 true cm Add ($x_0, x_1$) to list
+\hskip 3 true cm numTemplates++
+\hskip 3 true cm Increment $x_0:$ $x_0 = x_0 + Dx_0$ 
+\hskip 2 true cm \}
+\hskip 2 true cm Increment $x_1:$ $x_1 = x_1 + Dx_1$ 
+\hskip 1 true cm \}
+}
+\end{obeylines}
+
+\subsubsection*{Uses}
+\begin{verbatim}
+LALInspiralUpdateParams()
+LALRalloc()
+\end{verbatim}
+
+\subsubsection*{Notes}
+\clearpage
+
+\subsection{Module \texttt{LALInspiralBCVFcutBank.c}}
+Given a grid of templates with distinct values of $(\psi_0, \psi_3)$
+this routine returns a new grid in which every template has {\tt numFcutTemplates}
+partners differing from one another in the ending frequency {\tt fendBCV.}
+A call to this function should be preceeded by a call to \texttt {LALInspiralCreateFlatBank.c},
+or a similar function, that gives a grid in $(\psi_0, \psi_3)$ space.
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{LALInspiralBCVFcutBankCP}
+\idx{LALInspiralBCVFcutBank()}
+\begin{itemize}
+   \item \texttt{list,} Output/Input, an array initially containing the template 
+   bank with the values of {\tt list[j]->psi0, list[j]->psi3, list[j]->fLower,} specified,
+   is replaced on return with a re-sized array specifying also {\tt list->fendBCV.}
+   \item \texttt{Nlist,} Output/Input, the number of templates in the Input bank is
+   replaced by the number of templates in the output bank.
+   \item \texttt{numFcutTemplates,} Input, the largest number of templates for the
+   parameter $f_{cut}$ of BCV.
+\end{itemize}
+
+\subsubsection*{Description}
+
+A lattice of templates for BCV models should include,
+in addition to the values of $(\psi_0, \psi_3)$ 
+a range of $f_{\rm cut}$ -- the cutoff frequency. 
+The right approach would be
+to compute the metric in the three-dimensional space of 
+$(\psi_0, \psi_3, f_{\rm cut})$ and to choose templates as
+dictated by the metric. However, analytic computation of the
+metric has not been easy. Therefore, it has become necessary
+(at least for the time being) to make alternate choice of
+the cutoff frequencies. 
+
+In this routine we implement a simple
+choice based on physical grounds: The post-Newtonian models
+predict an ending frequency that is larger than, but close to,
+the Schwarzschild last-stable orbit frequency
+$f_{\rm lso} = (6^{3/2} \pi M )^{-1}$ where $M$ is the total mass,
+while the effective one-body model has an ending frequency close
+to the light-ring, whose Schwarzschild value is 
+$f_{\rm lr} = (3^{3/2} \pi M )^{-1}.$ It is necessary to know
+the total mass of the system in both cases.  However, not all
+pairs of $(\psi_0, \psi_3)$ can be inverted to get a positive
+$M$ but only when $\psi_0 > 0$ and $\psi_3 < 0.$ Even then
+it is not guaranteed that the symmetric mass ratio will be
+less than $1/4,$ a necessary condition so that the component
+masses are found to be real. However, we do not demand that the
+symmetric mass ratio is less than a quarter. If the total mass 
+is non-negative then we compute the $(f_{\rm lso}, f_{\rm lr})$
+and choose a user specified number of templates uniformly
+spaced in this range.
+
+Furthermore, this routine discards all templates for which
+either the mass is not defined or when defined $f_{\rm }$ is
+larger than the user input lower cutoff frequency of templaes.
+Thus, the number of templates returned by this routine code
+be more or less than the input number of templates.
+
+\subsubsection*{Algorithm}
+Given $(\psi_0, \psi_3)$ one can solve for $(M, \eta)$ using:
+\begin{equation}
+M = \frac{-\psi_3}{16 \pi^2 \psi_0},\ \ \eta = \frac{3}{128 \psi_0 (\pi M)^{5/3}}.
+\end{equation}
+Given the total mass compute the last stable orbit and light-ring frequencies using
+\begin{equation}
+f_{\rm lso} = (6^{3/2} \pi M)^{-1},\ \  f_{\rm lr} = (3^{3/2} \pi M)^{-1}.
+\end{equation}
+Divide the range $(f_{\rm lso}, f_{\rm lr})$ so as to have $n_{\rm cut}={\tt numFcutTemplates}$
+templates over this range: 
+\begin{equation}
+df = f_{\rm lr} \frac {\left ( 1 - 2^{-3/2} \right ) }{ (n_{\rm cut} -1) }.
+\end{equation}
+Next, choose templates at $f_k = f_{\rm lr} - k \times df,$ where $k=0, \ldots, n_{\rm cut}-1.$
+Note that by definition $f_0 = f_{\rm lr}$ and $f_{n_{\rm cut}-1} = f_{\rm lso};$
+there are exatly $n_{\rm cut}$ templates in the range $(f_{\rm lso}, f_{\rm lr}).$
+We discard a template if either $M$ is not defined or if $f_{\rm cut}$ is smaller
+than the lower frequency cutoff specified in  \texttt{list[j]->fLower.}
+
+\subsubsection*{Uses}
+\begin{verbatim}
+LALRalloc()
+\end{verbatim}
+\subsubsection*{Notes}
+
+
+\vspace{0.1in}
 \vfill{\footnotesize\input{LALInspiralCreateCoarseBankCV}}
-
 </lalLaTeX>  */
 
 #include <stdio.h>
@@ -190,6 +339,21 @@ GetInspiralMoments (
 		InspiralMomentsEtc   *moments,
 		REAL8FrequencySeries *psd,
 		InspiralTemplate     *params );
+
+static void 
+PSItoMasses (
+	InspiralTemplate *params, 
+	UINT4 *valid);
+
+
+
+
+
+
+
+
+
+
 
 NRCSID (LALINSPIRALCREATECOARSEBANKC, "Id: $");
 
@@ -431,6 +595,7 @@ LALInspiralCreateCoarseBank(
 
 
 
+NRCSID (GETINSPIRALMOMENTSC, "Id: $");
 
 static void
 GetInspiralMoments (
@@ -443,7 +608,7 @@ GetInspiralMoments (
    UINT4 k;
    InspiralMomentsIn in;
 
-   INITSTATUS (status, "LALInspiralCreateCoarseBank", LALINSPIRALCREATECOARSEBANKC);
+   INITSTATUS (status, "LALInspiralCreateCoarseBank", GETINSPIRALMOMENTSC);
    ATTATCHSTATUSPTR(status);
   
    ASSERT (params, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
@@ -513,8 +678,9 @@ GetInspiralMoments (
 
 
 
+NRCSID (LALINSPIRALCREATEFLATBANKC, "Id: $");
 
-/*  <lalVerbatim file="LALInspiralCreateCoarseBankCP"> */
+/*  <lalVerbatim file="LALInspiralCreateFlatBankCP"> */
 void 
 LALInspiralCreateFlatBank(
 		LALStatus            *status, 
@@ -527,7 +693,7 @@ LALInspiralCreateFlatBank(
   REAL8 x0, x1;
   UINT4 nlist = 0;
 
-  INITSTATUS (status, "LALInspiralCreateCoarseBank", LALINSPIRALCREATECOARSEBANKC);
+  INITSTATUS (status, "LALInspiralCreateFlatBank", LALINSPIRALCREATEFLATBANKC);
   ATTATCHSTATUSPTR(status);
   /* From the knowledge of the metric and the minimal match find the constant
    * increments bankParams->dx0 and bankParmams->dx1
@@ -558,3 +724,119 @@ LALInspiralCreateFlatBank(
   DETATCHSTATUSPTR(status);
   RETURN (status);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+NRCSID (LALINSPIRALBCVFCUTBANKC, "Id: $");
+
+/*  <lalVerbatim file="LALInspiralBCVFcutBankCP"> */
+void 
+LALInspiralBCVFcutBank(
+		LALStatus            *status, 
+		InspiralTemplate     *list, 
+		UINT4                *NList, 
+		UINT4                numFcutTemplates) 
+{  /*  </lalVerbatim>  */
+
+	UINT4 nf, nlist, j, ndx;
+	REAL8 frac, fendBCV;
+
+  
+	INITSTATUS (status, "LALInspiralBCVFcutBank", LALINSPIRALBCVFCUTBANKC);
+	ATTATCHSTATUSPTR(status);
+	nf=numFcutTemplates;
+	ndx = nlist = *NList;
+	frac = (1.L - 1.L/pow(2.L, 1.5L)) / (nf-1.L);
+	for (j=0; j<nlist; j++)
+	{
+		UINT4 valid=0;
+		PSItoMasses (&list[j], &valid);
+		if (valid)
+		{
+			UINT4 i;
+			REAL8 fMin, fMax, df; 
+
+			fMax = list[j].fendBCV;
+			df = fMax * frac;
+			fMin = fMax * ( 1.L - (nf-1.L)*df);
+
+			for (i=0; i<nf; i++)
+			{
+				fendBCV = fMax * (1.L - i * frac);
+					
+				if (fendBCV > list[j].fLower)
+				{
+					ndx++;
+					list = (InspiralTemplate *)LALRealloc( list, ndx*sizeof(InspiralTemplate) );
+					if (!list)
+					{
+						ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+					}
+					list[ndx-1] = list[j];
+					list[ndx-1].fendBCV = fendBCV;
+				}
+			}
+		}
+	}
+	for (j=nlist; j<ndx; j++)
+	{
+		list[j-nlist] = list[j];
+	}
+					
+	list = (InspiralTemplate *)LALRealloc( list, (ndx-nlist)*sizeof(InspiralTemplate) );
+	if (!list)
+	{
+		ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+	}
+	*NList = ndx - nlist;
+  
+	DETATCHSTATUSPTR(status);
+	RETURN (status);
+}
+
+
+static void PSItoMasses (InspiralTemplate *params, UINT4 *valid)
+{
+   
+	
+	if (params->psi0 <= 0.L || params->psi3 >= 0.L)
+	{
+		*valid = 0;
+	}
+	else
+	{
+		REAL4 totalMass, eta, eightBy3=8.L/3.L, twoBy3=2.L/3.L, fiveBy3 = 5.L/3.L;
+
+		params->totalMass = -params->psi3/(16.L*LAL_PI * LAL_PI * params->psi0);
+		eta = params->eta = 3.L/(128.L * params->psi0 * pow(LAL_PI*params->totalMass, fiveBy3));
+		totalMass = params->totalMass;
+		params->fendBCV = 1.L/( LAL_PI * pow(3.L,1.5L) * params->totalMass );
+		params->totalMass /= LAL_MTSUN_SI;
+		*valid = 1;
+		/*
+		if (params->eta > 0.25L) 
+		{
+			*valid = 0;
+		}
+		else
+		{
+			LALInspiralParameterCalc(status->statusPtr, params);
+			*valid = 1;
+		}
+		*/
+		params->t0 = 5.0/(256.0*eta*pow(totalMass, fiveby3)*pow(LAL_PI * params->fLower, eightBy3));
+		params->t3 = LAL_PI/(8.0*eta*pow(totalMass, twoBy3)*pow(LAL_PI * params->fLower, fiveBy3));
+	}
+   
+}
+
+

@@ -43,7 +43,6 @@ NRCSID(FLATMESHTESTC,"$Id$");
 /* Default parameter settings. */
 int lalDebugLevel = 0;
 
-static void PSItoMasses (LALStatus *status, InspiralTemplate *params, UINT4 *valid, REAL4 psi0, REAL4 psi3);
 void  LALInspiralCreateFlatBank(LALStatus *status, REAL4VectorSequence *list, InspiralBankParams *bankParams);
 static void
 GetInspiralMoments (
@@ -148,29 +147,36 @@ main(int argc, char **argv)
   LALInspiralCreateFlatBank(&status, list, &bankParams);
 
   nlist = list->length;
-  fprintf(stderr, "Number of templates=%d dx0=%e dx1=%e\n", nlist, bankParams.dx0, bankParams.dx1);
-
   /* Prepare to print result. */
   {
-    UINT4 j;
+    UINT4 j, numFcutTemplates=4;
+    static InspiralTemplate *tempParams;
     /* Print out the template parameters */
+	    
+    tempParams = (InspiralTemplate *) LALMalloc (sizeof (InspiralTemplate) * nlist);
     for (j=0; j<nlist; j++)
     {
 	/*
 	Retain only those templates that have meaningful chirptimes:
 	*/
-	    static InspiralTemplate tempParams;
-	    UINT4 valid=0;
-	    tempParams.massChoice=totalMassAndEta;
-	    tempParams.fLower=params.fLower;
-	    tempParams.order=twoPN;
-	    bankParams.x0 = (REAL8) list->data[2*j];
-	    bankParams.x1 = (REAL8) list->data[2*j+1];
-	    PSItoMasses (&status, &tempParams, &valid, bankParams.x0, bankParams.x1);
-	    fprintf(stdout, "%10.4f %10.4f %10.3f %10.3f\n", 
-			    tempParams.t0, tempParams.t3, bankParams.x0, bankParams.x1);
+	    tempParams[j].psi0 = (REAL8) list->data[2*j];
+	    tempParams[j].psi3 = (REAL8) list->data[2*j+1];
+	    tempParams[j].fLower = params.fLower;
+	    tempParams[j].nStartPad = params.nStartPad;
+	    tempParams[j].nEndPad = params.nEndPad;
+	    tempParams[j].tSampling= params.tSampling;
+	    tempParams[j].distance =  params.distance;
+	    tempParams[j].signalAmplitude= params.signalAmplitude;
+	    printf("%e %e\n", tempParams[j].psi0, tempParams[j].psi3);
     }
+
+    printf("#nlist before=%d\n&\n", nlist);
+    LALInspiralBCVFcutBank( &status, tempParams, &nlist, numFcutTemplates) ;
+    printf("#nlist after=%d\n", nlist);
+    for (j=0; j<nlist; j++)
+    printf("%e %e %e %e\n", tempParams[j].psi0, tempParams[j].psi3, tempParams[j].totalMass, tempParams[j].fendBCV);
   }
+
   exit(0);
   {
     UINT4 j;
@@ -284,43 +290,3 @@ GetInspiralMoments (
    DETATCHSTATUSPTR(status);
    RETURN (status);
 }
-
-static void PSItoMasses (LALStatus *status, InspiralTemplate *params, UINT4 *valid, REAL4 psi0, REAL4 psi3)
-{
-   
-	INITSTATUS (status, "PsitoMasses", FLATMESHTESTC);
-	ATTATCHSTATUSPTR(status);
-  
-	if (psi3 > 0.L)
-	{
-		*valid = 0;
-	}
-	else
-	{
-		REAL4 totalMass, eta, eightBy3=8.L/3.L, twoBy3=2.L/3.L, fiveBy3 = 5.L/3.L;
-
-		params->totalMass = -psi3/(16.L*LAL_PI * LAL_PI * psi0);
-		eta = params->eta = 3.L/(128.L * psi0 * pow(LAL_PI*params->totalMass, fiveBy3));
-		totalMass = params->totalMass;
-		params->totalMass /= LAL_MTSUN_SI;
-		*valid = 1;
-		/*
-		if (params->eta > 0.25L) 
-		{
-			*valid = 0;
-		}
-		else
-		{
-			LALInspiralParameterCalc(status->statusPtr, params);
-			*valid = 1;
-		}
-		*/
-		params->t0 = 5.0/(256.0*eta*pow(totalMass, fiveby3)*pow(LAL_PI * params->fLower, eightBy3));
-		params->t3 = LAL_PI/(8.0*eta*pow(totalMass, twoBy3)*pow(LAL_PI * params->fLower, fiveBy3));
-	}
-   
-	DETATCHSTATUSPTR(status);
-	RETURN (status);
-}
-
-

@@ -64,10 +64,10 @@ void LALInspiralUpdateParams(LALStatus          *status,
    ASSERT (metric.theta < LAL_PI_2, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
    ASSERT (metric.theta > -LAL_PI_2, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
 
-   dx0 = sqrt(2. * (1. - minimalmatch)/metric.g00 );
-   dx1 = sqrt(2. * (1. - minimalmatch)/metric.g11 );
+   dx0 = sqrt(2.L * (1.L - minimalmatch)/metric.g00 );
+   dx1 = sqrt(2.L * (1.L - minimalmatch)/metric.g11 );
 
-   if (metric.theta==0)
+   if (metric.theta==0.L)
    {
 	   bankParams->dx0 = dx0;
 	   bankParams->dx1 = dx1;

@@ -579,11 +579,83 @@ RectangleOut;
 </lalLaTeX>  */
 
 void 
-LALInspiralCreateCoarseBank(
+LALInspiralCreateCoarseBank
+(
    LALStatus              *status,
    InspiralTemplateList   **list,
    INT4                   *nlist,
    InspiralCoarseBankIn   bankIn
+);
+
+void 
+LALInspiralBCVFcutBank
+(
+   LALStatus            *status, 
+   InspiralTemplate     *list, 
+   UINT4                *NList, 
+   UINT4                numFcutTemplates
+);
+
+
+void 
+LALInspiralCreateFlatBank
+(
+   LALStatus            *status, 
+   REAL4VectorSequence  *list, 
+   InspiralBankParams   *bankParams
+); 
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* <lalLaTeX>
+\newpage\input{LALInspiralCreateFineBankC}
+</lalLaTeX>  */
+
+void 
+LALInspiralCreateFineBank
+(
+   LALStatus              *status,
+   InspiralTemplateList   **outlist,
+   INT4                   *nlist,
+   InspiralFineBankIn     fineIn
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* <lalLaTeX>
+\newpage\input{LALInspiralComputeMetricC}
+</lalLaTeX>  */
+
+void 
+LALInspiralComputeMetric
+(
+   LALStatus           *status,
+   InspiralMetric      *metric,
+   InspiralTemplate    *params,
+   InspiralMomentsEtc  *moments
 );
 
 
@@ -602,53 +674,13 @@ LALInspiralCreateCoarseBank(
 </lalLaTeX>  */
 void
 LALInspiralLongestTemplateInBank
-   (
+(
    LALStatus            *status, 
    UINT4                *templateLength,
    InspiralCoarseBankIn *coarseIn
-   );
-
-
-
-
-
-
-
-
-
-/* <lalLaTeX>
-\newpage\input{LALInspiralCreateFineBankC}
-</lalLaTeX>  */
-
-void 
-LALInspiralCreateFineBank(
-   LALStatus              *status,
-   InspiralTemplateList   **outlist,
-   INT4                   *nlist,
-   InspiralFineBankIn     fineIn
 );
 
 
-
-
-
-
-
-
-
-
-
-/* <lalLaTeX>
-\newpage\input{LALInspiralComputeMetricC}
-</lalLaTeX>  */
-
-void 
-LALInspiralComputeMetric(
-   LALStatus           *status,
-   InspiralMetric      *metric,
-   InspiralTemplate    *params,
-   InspiralMomentsEtc  *moments
-);
 
 
 
@@ -662,10 +694,16 @@ LALInspiralComputeMetric(
 </lalLaTeX>  */
 
 void 
-LALInspiralMoments(
+LALInspiralMoments
+(
    LALStatus         *status,
    REAL8             *moment,
-   InspiralMomentsIn pars);
+   InspiralMomentsIn pars
+);
+
+
+
+
 
 
 
@@ -682,11 +720,13 @@ LALInspiralMoments(
 </lalLaTeX>  */
 
 void 
-LALInspiralMomentsIntegrand(
+LALInspiralMomentsIntegrand
+(
    LALStatus *status,
    REAL8  *integrand,
    REAL8  f,
-   void   *pars);
+   void   *pars
+);
 
 
 
@@ -703,8 +743,9 @@ LALInspiralMomentsIntegrand(
 </lalLaTeX>  */
 
 void 
-LALInspiralSetSearchLimits(
-   LALStatus               *status,
+LALInspiralSetSearchLimits
+(
+   LALStatus            *status,
    InspiralBankParams   *bankParams,
    InspiralCoarseBankIn coarseIn
 );
@@ -724,10 +765,12 @@ LALInspiralSetSearchLimits(
 </lalLaTeX>  */
 
 void 
-LALInspiralNextTemplate(
+LALInspiralNextTemplate
+(
     LALStatus          *status, 
     InspiralBankParams *bankPars, 
-    InspiralMetric      metric);            
+    InspiralMetric      metric
+);            
 
 
 
@@ -744,7 +787,8 @@ LALInspiralNextTemplate(
 </lalLaTeX>  */
 
 void 
-LALInspiralComputeParams(
+LALInspiralComputeParams
+(
    LALStatus            *status,
    InspiralTemplate     *pars,
    InspiralBankParams   bankParams,
@@ -766,7 +810,8 @@ LALInspiralComputeParams(
 </lalLaTeX>  */
 
 void 
-LALInspiralValidParams(
+LALInspiralValidParams
+(
    LALStatus            *status,
    INT4                 *valid,
    InspiralBankParams   bankParams,
@@ -788,7 +833,8 @@ LALInspiralValidParams(
 </lalLaTeX>  */
 
 void
-LALInspiralValidTemplate(
+LALInspiralValidTemplate
+(
    LALStatus            *status,
    INT4                 *valid,
    InspiralBankParams   bankParams,
@@ -810,7 +856,8 @@ LALInspiralValidTemplate(
 </lalLaTeX>  */
 
 void 
-LALInspiralUpdateParams(
+LALInspiralUpdateParams
+(
    LALStatus          *status,
    InspiralBankParams *bankParams,
    InspiralMetric     metric,
@@ -833,7 +880,8 @@ LALInspiralUpdateParams(
 </lalLaTeX>  */
 
 void 
-LALMatrixTransform (
+LALMatrixTransform 
+(
    LALStatus *status,
    INT4      Dim,
    REAL8     **trans,
@@ -860,9 +908,12 @@ LALMatrixTransform (
 </lalLaTeX>  */
 
 void
-LALDeterminant3(LALStatus *status, 
-                REAL8  *determinant, 
-                REAL8  **matrix) ;
+LALDeterminant3
+(
+   LALStatus *status, 
+   REAL8  *determinant, 
+   REAL8  **matrix
+);
 
 
 
@@ -879,10 +930,12 @@ LALDeterminant3(LALStatus *status,
 </lalLaTeX>  */
 
 void 
-LALInverse3(
-            LALStatus *status, 
-            REAL8     **inverse, 
-            REAL8     **matrix) ;
+LALInverse3
+(
+ LALStatus *status, 
+ REAL8     **inverse, 
+ REAL8     **matrix
+);
 
 
 
@@ -899,10 +952,12 @@ LALInverse3(
 </lalLaTeX>  */
 
 void 
-LALInspiralSetParams(
+LALInspiralSetParams
+(
    LALStatus            *status, 
    InspiralTemplate     *tempPars,
-   InspiralCoarseBankIn coarseIn);
+   InspiralCoarseBankIn coarseIn
+);
 
 
 
@@ -920,7 +975,8 @@ LALInspiralSetParams(
 </lalLaTeX>  */
 
 void 
-LALRectangleVertices(
+LALRectangleVertices
+(
    LALStatus *status, 
    RectangleOut *out,
    RectangleIn *in

@@ -136,13 +136,13 @@ main ( void )
    coarseIn = (InspiralCoarseBankIn *)LALMalloc(sizeof(InspiralCoarseBankIn));
    fineIn = (InspiralFineBankIn *)LALMalloc(sizeof(InspiralFineBankIn));
 
-   coarseIn->mMin = 3.0;
+   coarseIn->mMin = 1.0;
    coarseIn->mMax = 20.0;
    coarseIn->MMax = coarseIn->mMax * 2.0;
    /* coarseIn->massRange = MinComponentMassMaxTotalMass;*/
    coarseIn->massRange = MinMaxComponentMass; 
 
-   coarseIn->mmCoarse = 0.95;
+   coarseIn->mmCoarse = 0.7;
    coarseIn->mmFine = 0.97;
    coarseIn->fLower = 40.;
    coarseIn->fUpper = 2000;
