@@ -742,8 +742,10 @@ cleanexit:
     searchsumm.searchSummaryTable->in_start_time.gpsSeconds = inStartTime;
     searchsumm.searchSummaryTable->in_end_time.gpsSeconds = inEndTime;
   }
-  searchsumm.searchSummaryTable->out_start_time.gpsSeconds = startCoincidence;
-  searchsumm.searchSummaryTable->out_end_time.gpsSeconds = endCoincidence;
+  searchsumm.searchSummaryTable->out_start_time.gpsSeconds = 
+    inStartTime > startCoincidence ? inStartTime : startCoincidence;
+  searchsumm.searchSummaryTable->out_end_time.gpsSeconds = 
+    inEndTime < endCoincidence ? inEndTime : endCoincidence;
   searchsumm.searchSummaryTable->nnodes = 1;
 
   if ( vrbflg ) fprintf( stdout, "writing output file... " );
