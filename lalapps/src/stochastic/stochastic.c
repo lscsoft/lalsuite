@@ -17,8 +17,6 @@
 
 #include <FrameL.h>
 
-#include <lalapps.h>
-
 #include <lal/AVFactories.h>
 #include <lal/Calibration.h>
 #include <lal/ComplexFFT.h>
@@ -45,6 +43,8 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 #include <lal/Window.h>
+
+#include <lalapps.h>
 
 #include "stochastic.h"
 
@@ -1295,7 +1295,8 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			{"gps-start-time", required_argument, 0, 't'},
 			{"gps-end-time", required_argument, 0, 'T'},
 			{"segment-duration", required_argument, 0, 'l'},
-			{"resample-rate", required_argument, 0, 'a'},
+			{"sample-rate", required_argument, 0, 'a'},
+			{"resample-rate", required_argument, 0, 'A'},
 			{"f-min", required_argument, 0, 'f'},
 			{"f-max", required_argument, 0, 'F'},
 			{"hann-duration", required_argument, 0, 'w'},
@@ -1396,7 +1397,12 @@ void parseOptions(INT4 argc, CHAR *argv[])
 				break;
 
 			case 'a':
-				/* resampling */
+				/* sample rate */
+				sampleRate = atoi(optarg);
+				break;
+
+			case 'A':
+				/* resampe rate */
 				resampleRate = atoi(optarg);
 				break;
 
@@ -1545,6 +1551,7 @@ void displayUsage(INT4 exitcode)
 	fprintf(stderr, " --gps-start-time SEC          GPS start time\n");
 	fprintf(stderr, " --gps-end-time SEC            GPS end time\n");
 	fprintf(stderr, " --segment-duration SEC        segment duration\n");
+	fprintf(stderr, " --sample-rate F               sample rate\n");
 	fprintf(stderr, " --resample-rate F             resample rate\n");
 	fprintf(stderr, " --f-min F                     minimal frequency\n");
 	fprintf(stderr, " --f-max F                     maximal frequency\n");
