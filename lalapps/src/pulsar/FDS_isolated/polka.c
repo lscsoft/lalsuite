@@ -391,6 +391,16 @@ int main(int argc,char *argv[])
 	  UINT4 k = indicesCCfa[i];  /* print out ordered by joint significance */
 	  fprintf(fpOut,"%d %d %le\n", CList1.CtagCounter[CP[k].c1],CList2.CtagCounter[CP[k].c2],CP[k].fa);
 	}
+
+/*       for (i=0; i < numCoincidences; i++)  */
+/* 	{ */
+/* 	  UINT4 k = indicesCCfa[i];   */
+/* 	  fprintf(stdout,"%1.15le %le %le %le %le %1.15le %le %le %le %le %le\n",  */
+/* 		  CList1.f[CP[k].c1],CList1.Alpha[CP[k].c1],CList1.Delta[CP[k].c1],CList1.F[CP[k].c1],CList1.fa[CP[k].c1], */
+/* 		  CList2.f[CP[k].c2],CList2.Alpha[CP[k].c2],CList2.Delta[CP[k].c2],CList2.F[CP[k].c2],CList2.fa[CP[k].c2],CP[k].fa); */
+/* 	} */
+      /* cat polka_out-short | awk '{print $1" "$2" "$3" "$4" "$6" "$7" "$8" "$9" "$11}' > la3 */
+
     }
 #if USE_BOINC
   /* write end marker */
