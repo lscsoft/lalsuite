@@ -107,6 +107,12 @@ Order   order;                          /* post-Newtonian order         */
 Approximant approximant;                /* approximation method         */
 CoordinateSpace space;                  /* coordinate space used        */
 
+/* standard candle parameters */
+INT4    computeCandle = 0;              /* should we compute a candle?  */
+REAL4   candleSnr = -1;                 /* candle signal to noise ratio */
+REAL4   candleMass1 = -1;               /* standard candle mass (solar) */
+REAL4   candleMass2 = -1;               /* standard candle mass (solar) */
+
 /* output parameters */
 CHAR  *userTag          = NULL;
 int    writeRawData     = 0;            /* write the raw data to a file */
@@ -153,6 +159,7 @@ int main ( int argc, char *argv[] )
   MetadataTable         templateBank;
   MetadataTable         proctable;
   MetadataTable         procparams;
+  MetadataTable         candle;
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       results;
 
@@ -216,7 +223,6 @@ int main ( int argc, char *argv[] )
    * read in the input data channel
    *
    */
-
 
 
   /* set the time series parameters of the input data and resample params */
@@ -319,7 +325,7 @@ int main ( int argc, char *argv[] )
 
 
   /*
-   *
+   * 
    * compute a calibrated strain spectrum
    *
    */
@@ -473,6 +479,68 @@ int main ( int argc, char *argv[] )
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
     LALDPrintFrequencySeries( &(bankIn.shf), fname );
   }
+
+
+  /*
+   *
+   * compute the standard candle distance
+   *
+   */
+
+
+  if ( computeCandle )
+  {
+    REAL8 sigmaSqSum = 0;
+    REAL8 distance = 0;
+    REAL8 negativeSevenOverThree = -7.0/3.0;
+    REAL8 totalMass = candleMass1 + candleMass2;
+    REAL8 mu = candleMass1 * candleMass2 / totalMass;
+    REAL8 distNorm = 2.0 * LAL_MRSUN_SI / (1.0e6 * LAL_PC_SI );
+    REAL8 a = sqrt( (5.0 * mu) / 96.0 ) *
+      pow( totalMass / ( LAL_PI * LAL_PI ), 1.0/3.0 ) *
+      pow( LAL_MTSUN_SI / chan.deltaT, -1.0/6.0 );
+    REAL8 sigmaSq = 4.0 * ( chan.deltaT / (REAL8) numPoints ) * 
+      distNorm * distNorm * a * a; 
+
+    if ( vrbflg ) fprintf( stdout, "maximum distance for (%3.2f,%3.2f) "
+        "at signal-to-noise %3.2f = ", candleMass1, candleMass2, candleSnr );
+        
+    for ( k = cut; k < bankIn.shf.data->length; ++k )
+    {
+      sigmaSqSum += 
+        pow( (REAL8) k / (REAL8) numPoints, negativeSevenOverThree ) 
+        / bankIn.shf.data->data[k];
+    }
+
+    sigmaSq *= sigmaSqSum;
+
+    distance = sqrt( sigmaSq ) / candleSnr;
+
+    if ( vrbflg ) fprintf( stdout, "%e Mpc\n", distance );
+    
+    /* add value to summ_value table */
+    candle.summValueTable = (SummValueTable *) 
+      LALCalloc( 1, sizeof(SummValueTable) );
+    LALSnprintf( candle.summValueTable->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    candle.summValueTable->version = 0;
+    candle.summValueTable->start_time = gpsStartTime;
+    candle.summValueTable->end_time = gpsEndTime;
+    LALSnprintf( candle.summValueTable->ifo, LIGOMETA_IFO_MAX, "%s", ifo );
+    LALSnprintf( candle.summValueTable->name, LIGOMETA_SUMMVALUE_NAME_MAX, 
+        "%s", "inspiral_effective_distance" );
+    LALSnprintf( candle.summValueTable->comment, LIGOMETA_SUMMVALUE_COMM_MAX,
+        "%3.2f_%3.2f_%3.2f", candleMass1, candleMass2, candleSnr );
+    candle.summValueTable->value = distance;
+  }
+
+  
+  /*
+   *
+   * compute the template bank
+   *
+   */
+
 
   /* bank generation parameters */
   bankIn.massRange     = MinMaxComponentMass;
@@ -641,6 +709,19 @@ int main ( int argc, char *argv[] )
     free( this_proc_param );
   }
 
+  /* write the standard candle to the file */
+  if ( computeCandle )
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, summ_value_table ), 
+        &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, candle, 
+          summ_value_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+    LALFree( candle.summValueTable );
+    candle.summValueTable = NULL;
+  }
+    
+
   /* write the template bank to the file */
   if ( templateBank.snglInspiralTable )
   {
@@ -711,6 +792,11 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --segment-length N           set data segment length to N points\n"\
 "  --number-of-segments N       set number of data segments to N\n"\
 "\n"\
+"  --standard-candle            compute a standard candle from the PSD\n"\
+"  --candle-snr SNR             signal-to-noise ration of standard candle\n"\
+"  --candle-mass1 M             mass of first component in candle binary\n"\
+"  --candle-mass2 M             mass of second component in candle binary\n"\
+"\n"\
 "  --low-frequency-cutoff F     do not filter below F Hz\n"\
 "  --high-frequency-cutoff F    upper frequency cutoff in Hz\n"\
 "\n"\
@@ -749,6 +835,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     /* these options set a flag */
     {"verbose",                 no_argument,       &vrbflg,           1 },
     {"disable-high-pass",       no_argument,       &highPass,         0 },
+    {"standard-candle",         no_argument,       &computeCandle,    1 },
     /* parameters used to generate calibrated power spectrum */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
@@ -785,6 +872,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"order",                   required_argument, 0,                'E'},
     {"approximant",             required_argument, 0,                'F'},
     {"space",                   required_argument, 0,                'G'},
+    /* standard candle parameters */
+    {"candle-snr",              required_argument, 0,                'k'},
+    {"candle-mass1",            required_argument, 0,                'l'},
+    {"candle-mass2",            required_argument, 0,                'm'},
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-response",          no_argument,       &writeResponse,    1 },
@@ -818,7 +909,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:c:d:e:g:h:i:j:p:s:t:H:I:u:x:z:A:B:P:Q:R:S:U:T:C:D:E:F:G:r:Z:", 
+        "a:b:c:d:e:g:h:i:j:p:s:t:H:I:u:x:z:A:B:P:Q:R:S:U:T:C:D:E:F:G:k:l:m:r:Z:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1378,6 +1469,45 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
+      case 'k':
+        candleSnr = (REAL4) atof( optarg );
+        if ( candleSnr <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "standard candle signal-to-noise ratio must be > 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, candleSnr );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", candleSnr );
+        break;
+
+      case 'l':
+        candleMass1 = (REAL4) atof( optarg );
+        if ( candleMass1 <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "standard candle first component mass must be > 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, candleMass1 );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", candleMass1 );
+        break;
+
+      case 'm':
+        candleMass2 = (REAL4) atof( optarg );
+        if ( candleMass2 <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "standard candle second component mass must be > 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, candleMass2 );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", candleMass2 );
+        break;
+
       case 'V':
         /* print version information and exit */
         fprintf( stdout, "LIGO/LSC Standalone Inspiral Template Bank Code\n" 
@@ -1504,6 +1634,38 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       fprintf( stderr, "gps channel time interval: %lld ns\n"
           "computed input data length: %lld ns\n", 
           gpsChanIntervalNS, inputDataLengthNS );
+      exit( 1 );
+    }
+  }
+
+  /* check standard candle arguments */
+  if ( computeCandle )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--standard-candle" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+
+    if ( candleSnr < 0 )
+    {
+      fprintf( stderr, 
+          "--candle-snr must be specified if --standard-candle is given\n" );
+      exit( 1 );
+    }
+    if ( candleMass1 < 0 )
+    {
+      fprintf( stderr, 
+          "--candle-mass1 must be specified if --standard-candle is given\n" );
+      exit( 1 );
+    }
+    if ( candleMass2 < 0 )
+    {
+      fprintf( stderr, 
+          "--candle-mass2 must be specified if --standard-candle is given\n" );
       exit( 1 );
     }
   }
