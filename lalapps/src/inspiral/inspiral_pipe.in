@@ -267,8 +267,7 @@ for i in range(len(data)):
     inca = inspiral.IncaNode(inca_job)
     inca.set_start(chunk.start())
     inca.set_end(chunk.end())
-    inca.set_output( ifo1 + ifo2 + '-INCA-' + str(chunk.start())
-      + '-' + str(chunk.dur()) + '.xml')
+    inca.set_output(ifo1 + ifo2)
     
     # if there is a chunk before this one, add it to the job
     try: 
