@@ -93,67 +93,125 @@ LALFindChirpMaster (
 
       case ExchInspiralTemplate:
 
-        /* if there are any templates left send them to the slave */
-        if ( params->currentTmpltNode )
+        if ( *(params->inspiralDebugFlagPtr) == fcBankMinimalMatch )
         {
-          UINT4                        tmpNumTmplts = 0;
-          InspiralTemplate            *tmpBankHead = NULL;
-          InspiralTemplateNode        *tempCurrentTmpltNode;
+          UINT4         tmpNumTmplts = 1;
 
-          /* count the number of templates to send to the slave */
-          for ( tempCurrentTmpltNode = params->currentTmpltNode; 
-              tempCurrentTmpltNode && tmpNumTmplts < numTmpltExch;
-              tempCurrentTmpltNode = tempCurrentTmpltNode->next )
-          { 
-            ++tmpNumTmplts;
-          }
+#if 0
+          fprintf( stdout, "master: slave %d requested bank simulation\n", 
+              thisExch->partnerProcNum );
+          fflush( stdout );
+#endif
 
-          /* tell the slave how many templates we have for it   */
-          LALExchangeUINT4( status->statusPtr, &tmpNumTmplts, thisExch );
-          CHECKSTATUSPTR( status );
+          /* check that the bank simulation vector exists       */
+          ASSERT( params->bankSentVec, status, 
+              FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL ); 
 
-          /* allocate some memory for a temporary inspiral bank */
-          tmpBankHead = (InspiralTemplate *) 
-            LALCalloc( tmpNumTmplts, sizeof(InspiralTemplate) );
-          if ( ! tmpBankHead )
+          /* for a bank simulation, we want to send the whole   */
+          /* bank once only to every slave                      */
+          if ( ! params->bankSentVec->data[thisExch->partnerProcNum] )
           {
-            ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
-          }
+            /* tell the slave how many templates we have for it */
+            LALExchangeUINT4( status->statusPtr, &(params->numTmpltsTotal), 
+                thisExch );
+            CHECKSTATUSPTR( status );
 
-          /* copy the templates from the bank to the temporary  */
-          /* template storage                                   */
-          for ( i = 0; i < tmpNumTmplts; ++i )
-          {
-            memcpy( tmpBankHead + i, params->currentTmpltNode->tmpltPtr,
-                sizeof(InspiralTemplate) );
+#if 0
+            fprintf( stdout, "master: sending whole bank to slave %d\n", 
+                thisExch->partnerProcNum );
+            fflush( stdout );
+#endif
+
+            /* exchange the whole template bank...              */
+            LALExchangeTemplateBank( status->statusPtr, 
+                &(params->tmpltBankHead), thisExch );
+            CHECKSTATUSPTR( status );
+
+            /* update the progress info                         */
+            params->numTmpltsToFilter += params->numTmpltsTotal;
             
-            /* point the segmentIdVec at the address of the     */
-            /* id vector in the real bank                       */
-            (tmpBankHead + i)->segmentIdVec = 
-              params->currentTmpltNode->tmpltPtr->segmentIdVec;
-
-            /* set the next pointer so the array is also a linked list */
-            (tmpBankHead + i)->next = NULL;
-            (tmpBankHead + i)->fine = NULL;
-            if ( i ) (tmpBankHead + i - 1)->next = (tmpBankHead + i);
-
-            /* increment the current template node pointer in the list */
-            params->currentTmpltNode = params->currentTmpltNode->next;
+            /* ...and remember that we have sent it             */
+            ++params->bankSentVec->data[thisExch->partnerProcNum];
           }
-
-          /* exchange the temporary template bank... */
-          LALExchangeTemplateBank( status->statusPtr, &tmpBankHead, thisExch );
-          CHECKSTATUSPTR( status );
-          
-          /* ...and destroy it */
-          LALFree( tmpBankHead );
+          else
+          {
+            /* tell the slave that there are no templates       */
+#if 0
+            fprintf( stdout, "master: no more templates for slave %d\n", 
+                thisExch->partnerProcNum );
+            fflush( stdout );
+#endif
+            numTmpltExch = 0;
+            LALExchangeUINT4( status->statusPtr, &numTmpltExch, thisExch );
+            CHECKSTATUSPTR( status );
+          }
         }
-        else /* no templates */
+        else
         {
-          /* tell the slave that there are no templates */
-          numTmpltExch = 0;
-          LALExchangeUINT4( status->statusPtr, &numTmpltExch, thisExch );
-          CHECKSTATUSPTR( status );
+          /* if there are any templates left send them to the slave */
+          if ( params->currentTmpltNode )
+          {
+            UINT4                        tmpNumTmplts = 0;
+            InspiralTemplate            *tmpBankHead = NULL;
+            InspiralTemplateNode        *tempCurrentTmpltNode;
+
+            /* count the number of templates to send to the slave */
+            for ( tempCurrentTmpltNode = params->currentTmpltNode; 
+                tempCurrentTmpltNode && tmpNumTmplts < numTmpltExch;
+                tempCurrentTmpltNode = tempCurrentTmpltNode->next )
+            { 
+              ++tmpNumTmplts;
+            }
+
+            /* tell the slave how many templates we have for it   */
+            LALExchangeUINT4( status->statusPtr, &tmpNumTmplts, thisExch );
+            CHECKSTATUSPTR( status );
+
+            /* allocate some memory for a temporary inspiral bank */
+            tmpBankHead = (InspiralTemplate *) 
+              LALCalloc( tmpNumTmplts, sizeof(InspiralTemplate) );
+            if ( ! tmpBankHead )
+            {
+              ABORT( status, 
+                  FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
+            }
+
+            /* copy the templates from the bank to the temporary  */
+            /* template storage                                   */
+            for ( i = 0; i < tmpNumTmplts; ++i )
+            {
+              memcpy( tmpBankHead + i, params->currentTmpltNode->tmpltPtr,
+                  sizeof(InspiralTemplate) );
+
+              /* point the segmentIdVec at the address of the     */
+              /* id vector in the real bank                       */
+              (tmpBankHead + i)->segmentIdVec = 
+                params->currentTmpltNode->tmpltPtr->segmentIdVec;
+
+              /* set the next pointer so the array is also a linked list */
+              (tmpBankHead + i)->next = NULL;
+              (tmpBankHead + i)->fine = NULL;
+              if ( i ) (tmpBankHead + i - 1)->next = (tmpBankHead + i);
+
+              /* increment the current template node pointer in the list */
+              params->currentTmpltNode = params->currentTmpltNode->next;
+            }
+
+            /* exchange the temporary template bank... */
+            LALExchangeTemplateBank( status->statusPtr, 
+                &tmpBankHead, thisExch );
+            CHECKSTATUSPTR( status );
+
+            /* ...and destroy it */
+            LALFree( tmpBankHead );
+          }
+          else /* no templates */
+          {
+            /* tell the slave that there are no templates */
+            numTmpltExch = 0;
+            LALExchangeUINT4( status->statusPtr, &numTmpltExch, thisExch );
+            CHECKSTATUSPTR( status );
+          }
         }
 
         break;
