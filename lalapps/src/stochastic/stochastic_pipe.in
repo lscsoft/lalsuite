@@ -208,14 +208,14 @@ dag.write_dag()
 print "\nCreated a DAG file which can be submitted by executing"
 print "\n   condor_submit_dag", dag.get_dag_file()
 print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
-If you are running LALdataFind jobs, do not forget to initialize your grid 
+If you are running LSCdataFind jobs, do not forget to initialize your grid 
 proxy certificate on the condor submit machine by running the commands
 
   unset X509_USER_PROXY
   grid-proxy-init -hours 72
 
 Enter your pass phrase when promted. The proxy will be valid for 72 hours. 
-If you expect the LALdataFind jobs to take longer to complete, increase the
+If you expect the LSCdataFind jobs to take longer to complete, increase the
 time specified in the -hours option to grid-proxy-init. You can check that 
 the grid proxy has been sucessfully created by executing the command:
 
