@@ -2,6 +2,7 @@
 noinst_LTLIBRARIES = libstats.la
 libstats_la_SOURCES = LALMoment.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+MAINTAINERCLEANFILES = LALMoment.c
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
