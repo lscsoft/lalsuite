@@ -9,7 +9,30 @@
 \clearpage
 \section{Running the LALApps Stochastic Pipeline Under Condor}
 
-This section is under construction...
+This section describes how to run the LALApps stochastic analysis
+pipeline under Condor at the various LSC Data Grid Sites, such as CIT.
+
+The pipeline is constructed as a directed acyclic graph (DAG) run under
+Condor. A DAG represents a set of programs where the input, output, or
+execution of one ore more programs is dependant upon one or more other
+programs. The programs are represented by nodes (verticies) in the
+graph, and the edges (arcs) identifies the dependancies. There are three
+different nodes that make up the Stochastic analysis DAG - datafind,
+stochastic and stopp.
+
+\subsubsection{Datafind Node}
+
+The datafind node, as its name suggests, is for determining the location
+of the data that is to be analysed.
+
+\subsubsection{Stochastic Node}
+
+The stochastic node runs an instance of \prog{lalapps\_stochastic}
+
+\subsubsection{Stopp Node}
+
+The stopp node runs an instance of \prog{lalapps\_stopp}, the STOchastic
+Post Processing code.
 
 \clearpage
 \section{Program \prog{lalapps\_stochastic\_pipe}}
