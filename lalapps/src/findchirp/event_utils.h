@@ -1,8 +1,69 @@
+#include <lal/LIGOMetadataTables.h>
+#include "metaio.h"
+
 #define INJECTIONS 1
 #define TRIGGERS   0
 
 #define EVENTUTILSH_ENULLP 1
-#define EVENTUTILSH_MSGENULLP "null pointer"
+#define EVENTUTILSH_EGETRO 2
+#define EVENTUTILSH_MSGENULLP "Null pointer"
+#define EVENTUTILSH_MSGEGETRO "Error getting row from table"
+
+typedef struct
+tagSnglInspiralIndex
+{
+    INT4 ifoIndex;
+    INT4 searchIndex;
+    INT4 channelIndex;
+    INT4 end_timeIndex;
+    INT4 end_time_nsIndex;
+    INT4 impulse_timeIndex;
+    INT4 impulse_time_nsIndex;
+    INT4 template_durationIndex;
+    INT4 event_durationIndex;
+    INT4 amplitudeIndex;
+    INT4 eff_distanceIndex;
+    INT4 coa_phaseIndex;
+    INT4 mass1Index;
+    INT4 mass2Index;
+    INT4 mchirpIndex;
+    INT4 etaIndex;
+    INT4 tau0Index;
+    INT4 tau2Index;
+    INT4 tau3Index;
+    INT4 tau4Index;
+    INT4 tau5Index;
+    INT4 ttotalIndex;
+    INT4 snrIndex;
+    INT4 chisqIndex;
+    INT4 chisq_dofIndex;
+    INT4 sigmasqIndex;
+}
+SnglInspiralIndex;
+
+
+typedef struct
+tagSearchSummaryIndex
+{
+    INT4 process_idIndex;
+    INT4 shared_objectIndex;
+    INT4 lalwrapper_cvs_tagIndex;
+    INT4 lal_cvs_tagIndex;
+    INT4 commentIndex;
+    INT4 in_start_timeIndex;
+    INT4 in_start_time_nsIndex;
+    INT4 in_end_timeIndex;
+    INT4 in_end_time_nsIndex;
+    INT4 out_start_timeIndex;
+    INT4 out_start_time_nsIndex;
+    INT4 out_end_timeIndex;
+    INT4 out_end_time_nsIndex;
+    INT4 neventsIndex;
+    INT4 nnodesIndex;
+}
+SearchSummaryIndex;
+
+
 typedef struct
 tagcandParams{
     char       name[256];
@@ -99,3 +160,22 @@ int buildDataQaulity(int **coincident_times, snglIFO *ifo, int numIFO,
 int buildMultiInspiralEvents(multiInspiral **multInspEv, int *coincident_times,
         snglIFO *ifo, int numIFO, int injectflag, double dummyStart, float delm,
         float distance, float coincidence_window);
+
+
+void
+buildSnglInspiralIndex(
+        LALStatus             *status,
+        const MetaioParseEnv   triggerEnv,
+        SnglInspiralIndex        *params
+        );
+
+void
+getSnglInspiralEvent(
+        LALStatus             *status,
+        const MetaioParseEnv   triggerEnv,
+        SnglInspiralTable        *burstEvent,
+        SnglInspiralIndex        *params
+        );
+
+
+

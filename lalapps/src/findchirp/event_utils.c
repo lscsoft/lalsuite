@@ -11,7 +11,7 @@
 #include <lal/LALRCSID.h>
 
 
-NRCSID (SORTTFTILINGC, "$Id$");
+NRCSID (EVENT_UTILSC, "$Id$");
 
 
 #include <math.h>
@@ -43,8 +43,192 @@ NRCSID (SORTTFTILINGC, "$Id$");
  *******************************************************************/
 
 
+void
+buildSnglInspiralIndex(
+        LALStatus             *status,
+        const MetaioParseEnv   triggerEnv,
+        SnglInspiralIndex        *params
+        )
+{
+
+  INITSTATUS (status, "buildSnglInspiralIndex", EVENT_UTILSC);
+  ATTATCHSTATUSPTR (status);
+
+  params->ifoIndex = MetaioFindColumn( triggerEnv, "IFO");
+  params->searchIndex = MetaioFindColumn( triggerEnv, "search");
+  params->channelIndex = MetaioFindColumn( triggerEnv, "channel");
+  params->end_timeIndex = MetaioFindColumn( triggerEnv, "end_time");
+  params->end_time_nsIndex = MetaioFindColumn( triggerEnv, "end_time_ns");
+  params->impulse_timeIndex = MetaioFindColumn( triggerEnv, "impulse_time");
+  params->impulse_time_nsIndex = MetaioFindColumn( triggerEnv, "impulse_time_ns");
+  params->template_durationIndex = MetaioFindColumn( triggerEnv, "template_duration");
+  params->event_durationIndex = MetaioFindColumn( triggerEnv, "event_duration");
+  params->amplitudeIndex = MetaioFindColumn( triggerEnv, "amplitude");
+  params->eff_distanceIndex = MetaioFindColumn( triggerEnv, "eff_distance");
+  params->coa_phaseIndex = MetaioFindColumn( triggerEnv, "coa_phase");
+  params->mass1Index = MetaioFindColumn( triggerEnv, "mass1");
+  params->mass2Index = MetaioFindColumn( triggerEnv, "mass2");
+  params->mchirpIndex = MetaioFindColumn( triggerEnv, "mchirp");
+  params->etaIndex = MetaioFindColumn( triggerEnv, "eta");
+  params->tau0Index = MetaioFindColumn( triggerEnv, "tau0");
+  params->tau2Index = MetaioFindColumn( triggerEnv, "tau2");
+  params->tau3Index = MetaioFindColumn( triggerEnv, "tau3");
+  params->tau4Index = MetaioFindColumn( triggerEnv, "tau4");
+  params->tau5Index = MetaioFindColumn( triggerEnv, "tau5");
+  params->ttotalIndex = MetaioFindColumn( triggerEnv, "ttotal");
+  params->snrIndex = MetaioFindColumn( triggerEnv, "snr");
+  params->chisqIndex = MetaioFindColumn( triggerEnv, "chisq");
+  params->chisq_dofIndex = MetaioFindColumn( triggerEnv, "chisq_dof");
+  params->sigmasqIndex = MetaioFindColumn( triggerEnv, "sigmasq");
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
 
 
+void
+getSnglInspiralEvent(
+        LALStatus                *status,
+        const MetaioParseEnv      triggerEnv,
+        SnglInspiralTable        *inspiralEvent,
+        SnglInspiralIndex        *params
+        )
+{
+
+  INITSTATUS (status, "getSnglInspiralEvent", EVENT_UTILSC);
+  ATTATCHSTATUSPTR (status);
+  
+  strcpy(inspiralEvent->ifo,
+          triggerEnv->ligo_lw.table.elt[params->ifoIndex].data.lstring.data);
+  strcpy(inspiralEvent->search,
+          triggerEnv->ligo_lw.table.elt[params->searchIndex].data.lstring.data);
+  strcpy(inspiralEvent->channel,
+          triggerEnv->ligo_lw.table.elt[params->channelIndex].data.lstring.data);
+  inspiralEvent->end_time.gpsSeconds = 
+      triggerEnv->ligo_lw.table.elt[params->end_timeIndex].data.int_4s;  
+  inspiralEvent->end_time.gpsNanoSeconds = 
+      triggerEnv->ligo_lw.table.elt[params->end_time_nsIndex].data.int_4s;  
+  inspiralEvent->impulse_time.gpsSeconds = 
+      triggerEnv->ligo_lw.table.elt[params->impulse_timeIndex].data.int_4s;  
+  inspiralEvent->impulse_time.gpsNanoSeconds = 
+      triggerEnv->ligo_lw.table.elt[params->impulse_time_nsIndex].data.int_4s;  
+  inspiralEvent->template_duration = 
+      triggerEnv->ligo_lw.table.elt[params->template_durationIndex].data.real_8;  
+  inspiralEvent->event_duration = 
+      triggerEnv->ligo_lw.table.elt[params->event_durationIndex].data.real_8;  
+  inspiralEvent->amplitude = 
+      triggerEnv->ligo_lw.table.elt[params->amplitudeIndex].data.real_4;  
+  inspiralEvent->eff_distance = 
+      triggerEnv->ligo_lw.table.elt[params->eff_distanceIndex].data.real_4;  
+  inspiralEvent->coa_phase = 
+      triggerEnv->ligo_lw.table.elt[params->coa_phaseIndex].data.real_4;  
+  inspiralEvent->mass1 = 
+      triggerEnv->ligo_lw.table.elt[params->mass1Index].data.real_4;  
+  inspiralEvent->mass2 = 
+      triggerEnv->ligo_lw.table.elt[params->mass2Index].data.real_4;  
+  inspiralEvent->mchirp = 
+      triggerEnv->ligo_lw.table.elt[params->mchirpIndex].data.real_4;  
+  inspiralEvent->eta = 
+      triggerEnv->ligo_lw.table.elt[params->etaIndex].data.real_4;  
+  inspiralEvent->tau0 = 
+      triggerEnv->ligo_lw.table.elt[params->tau0Index].data.real_4;  
+  inspiralEvent->tau2 = 
+      triggerEnv->ligo_lw.table.elt[params->tau2Index].data.real_4;  
+  inspiralEvent->tau3 = 
+      triggerEnv->ligo_lw.table.elt[params->tau3Index].data.real_4;  
+  inspiralEvent->tau4 = 
+      triggerEnv->ligo_lw.table.elt[params->tau4Index].data.real_4;  
+  inspiralEvent->tau5 = 
+      triggerEnv->ligo_lw.table.elt[params->tau5Index].data.real_4;  
+  inspiralEvent->ttotal = 
+      triggerEnv->ligo_lw.table.elt[params->ttotalIndex].data.real_4;  
+  inspiralEvent->snr = 
+      triggerEnv->ligo_lw.table.elt[params->snrIndex].data.real_4;  
+  inspiralEvent->chisq = 
+      triggerEnv->ligo_lw.table.elt[params->chisqIndex].data.real_4;  
+  inspiralEvent->chisq_dof = 
+      triggerEnv->ligo_lw.table.elt[params->chisq_dofIndex].data.real_4;  
+  inspiralEvent->sigmasq = 
+      triggerEnv->ligo_lw.table.elt[params->sigmasqIndex].data.real_8;  
+  
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+void
+buildSearchSummaryIndex(
+        LALStatus             *status,
+        const MetaioParseEnv   triggerEnv,
+        SearchSummaryIndex        *params
+        )
+{
+
+  INITSTATUS (status, "buildSearchSummaryIndex", EVENT_UTILSC);
+  ATTATCHSTATUSPTR (status);
+
+  params->process_idIndex = MetaioFindColumn( triggerEnv, "process_id");
+  params->shared_objectIndex = MetaioFindColumn( triggerEnv, "shared_object");
+  params->lalwrapper_cvs_tagIndex = MetaioFindColumn( triggerEnv, "lalwrapper_cvs_tag");
+  params->lal_cvs_tagIndex = MetaioFindColumn( triggerEnv, "lal_cvs_tag");
+  params->commentIndex = MetaioFindColumn( triggerEnv, "comment");
+  params->in_start_timeIndex = MetaioFindColumn( triggerEnv, "in_start_time");
+  params->in_start_time_nsIndex = MetaioFindColumn( triggerEnv, "in_start_time_ns");
+  params->in_end_timeIndex = MetaioFindColumn( triggerEnv, "in_end_time");
+  params->in_end_time_nsIndex = MetaioFindColumn( triggerEnv, "in_end_time_ns");
+  params->out_start_timeIndex = MetaioFindColumn( triggerEnv, "out_start_time");
+  params->out_start_time_nsIndex = MetaioFindColumn( triggerEnv, "out_start_time_ns");
+  params->out_end_timeIndex = MetaioFindColumn( triggerEnv, "out_end_time");
+  params->out_end_time_nsIndex = MetaioFindColumn( triggerEnv, "out_end_time_ns");
+  params->neventsIndex = MetaioFindColumn( triggerEnv, "nevents");
+  params->nnodesIndex = MetaioFindColumn( triggerEnv, "nnodes");
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+
+void
+getSearchSummaryTable(
+        LALStatus                *status,
+        const MetaioParseEnv      triggerEnv,
+        SearchSummaryTable        *table,
+        SearchSummaryIndex        *params
+        )
+{
+    INT4 retVal=0;
+
+    INITSTATUS (status, "getSearchSummaryTable", EVENT_UTILSC);
+    ATTATCHSTATUSPTR (status);
+
+    retVal = MetaioGetRow(triggerEnv);
+    if ( retVal <= 0 ) {
+        ABORT( status, EVENTUTILSH_EGETRO, EVENTUTILSH_MSGEGETRO);
+    } 
+
+    table->in_start_time.gpsSeconds = 
+        triggerEnv->ligo_lw.table.elt[params->in_start_timeIndex].data.int_4s;  
+    table->in_start_time.gpsNanoSeconds = 
+        triggerEnv->ligo_lw.table.elt[params->in_start_time_nsIndex].data.int_4s;  
+    table->in_end_time.gpsSeconds = 
+        triggerEnv->ligo_lw.table.elt[params->in_end_timeIndex].data.int_4s;  
+    table->in_end_time.gpsNanoSeconds = 
+        triggerEnv->ligo_lw.table.elt[params->in_end_time_nsIndex].data.int_4s;  
+    table->out_start_time.gpsSeconds = 
+        triggerEnv->ligo_lw.table.elt[params->out_start_timeIndex].data.int_4s;  
+    table->out_start_time.gpsNanoSeconds = 
+        triggerEnv->ligo_lw.table.elt[params->out_start_time_nsIndex].data.int_4s;  
+    table->out_end_time.gpsSeconds = 
+        triggerEnv->ligo_lw.table.elt[params->out_end_timeIndex].data.int_4s;  
+    table->out_end_time.gpsNanoSeconds = 
+        triggerEnv->ligo_lw.table.elt[params->out_end_time_nsIndex].data.int_4s;  
+    table->nevents = 
+        triggerEnv->ligo_lw.table.elt[params->neventsIndex].data.int_4s;  
+    table->nnodes = 
+        triggerEnv->ligo_lw.table.elt[params->nnodesIndex].data.int_4s;  
+
+    DETATCHSTATUSPTR (status);
+    RETURN (status);
+}
 
 /*******************************************************************
 * Function builds a set of times that are vetoed according to the
@@ -832,7 +1016,7 @@ LALSortTriggers (
   candEvent             *thisEvent;
   candEvent             **events;
 
-  INITSTATUS (status, "LALSortTFTiling", SORTTFTILINGC);
+  INITSTATUS (status, "LALSortTFTiling", EVENT_UTILSC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
