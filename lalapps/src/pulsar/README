@@ -42,8 +42,8 @@ sorted by GPS time.  S2 is replaced by the run name.
 
 INPUTS:  listing of "*.gwf" files under /netdat[ac]/s001 - /netdat[ac]/s296
 OUTPUTS: alldata, S2.LLO.full.sorted,  S2.LHO.full.sorted, S2.LLO.RDS.sorted,
-         S2.LHO.RDS.sorted
-
+         S2.LHO.RDS.sorted  S2.LHO.NRDS.sorted S2.LLO.NRDS.sorted
+         
 ================================================================================
 
 STEP 1:
