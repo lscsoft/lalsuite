@@ -43,7 +43,7 @@ does the following:
 
  *************************************************** </lalLaTeX> */
 
-#include "BlockRho.h"
+#include <lal/BlockRho.h>
 
 NRCSID( BLOCKRHO2, "$Id$");
 
