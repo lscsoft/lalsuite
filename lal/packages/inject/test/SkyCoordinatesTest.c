@@ -467,6 +467,9 @@ main( int argc, char **argv )
       REAL8 jDate;                  /* Julian date */
       /* don't bomb if leap second table isn't up to date */
       LALLeapSecAccuracy acc = LALLEAPSEC_LOOSE;
+      LALMSTUnitsAndAcc uAcc;
+      uAcc.units = MST_DEG;
+      uAcc.accuracy = acc;
 
       fprintf( stdout, "GPS time: %i.%09is\n", gpsTime.gpsSeconds,
 	       gpsTime.gpsNanoSeconds );
@@ -481,7 +484,7 @@ main( int argc, char **argv )
       fprintf( stdout, "Julian date: J%.4Lf\n", 1.0L*jDate );
 
       /* Convert to Greenwich mean sidereal time. */
-      SUB( LALGPStoGMST1( &stat, &gmst, &gpsTime, MST_DEG ), &stat );
+      SUB( LALGPStoGMST1( &stat, &gmst, &gpsTime, &uAcc ), &stat );
       fprintf( stdout, "Greenwich mean sidereal time: %6.2Lf deg\n",
 	       1.0L*gmst );
     } else
