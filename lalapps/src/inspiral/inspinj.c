@@ -808,6 +808,7 @@ int main( int argc, char *argv[] )
 	this_proc_param = this_proc_param->next = 
 	  next_process_param( long_options[option_index].name, "string", 
 	      "%s", optarg );
+        break;
 
       case 'Z':
 	/* create storage for the usertag */
