@@ -127,7 +127,7 @@ static void readWavelet_ALL(ClusterWavelet **w, FILE *in)
 
   fscanf(in,"%d",&(*w)->clusterCount);
 
-  (*w)->sCuts=(INT4*)LALMalloc(sizeof(INT4)*(*w)->clusterCount);
+  (*w)->sCuts=(UINT4*)LALMalloc(sizeof(UINT4)*(*w)->clusterCount);
 
   for(i=0;i<(*w)->clusterCount;i++)
     {
