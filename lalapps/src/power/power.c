@@ -142,7 +142,10 @@ INT8       gpsStartTimeNS = 0;      /* gps start time in nsec             */
 INT8       gpsStopTimeNS  = 0;      /* gps start time in nsec             */
 LIGOTimeGPS   startEpoch;           /* gps start time                     */
 LIGOTimeGPS   stopEpoch;            /* gps stop time                      */
-INT4       sampleRate     = -1;     /* sample rate in Hz                  */
+INT4       frameSampleRate  = -1;   /* sample rate of the frame data      */
+INT4       targetSampleRate = -1;   /* sample rate after resampling  */
+INT4       psdAveragePoints = 0;    /* no. of points used to estimate the spec*/ 
+INT4       ramLimitPoints = 0;      /* no. of points to be read in at a time */
 
 /* data conditioning parameters */
 CHAR      *calCacheFile  = NULL;    /* name of the calibration cache file */
@@ -184,9 +187,7 @@ int main( int argc, char *argv[])
     REAL8TimeSeries            geoSeries;
     COMPLEX8FrequencySeries    resp;
     REAL4TimeSeries            mdcSeries;
-    ResampleTSParams           resampleParams;
  
-
     /* Burst events */
     SnglBurstTable      *burstEvent = NULL;
     SnglBurstTable     **EventAddPoint = &burstEvent;
@@ -256,7 +257,7 @@ int main( int argc, char *argv[])
     /******************************************************************
      * OUTER LOOP over data small enough to fit into memory 
      ******************************************************************/
-    while ((totalNumPoints-usedNumPoints)>(2*params->ovrlap)){
+    while ((totalNumPoints-usedNumPoints)>(2*params->ovrlap*(frameSampleRate/targetSampleRate))){
 
       /* tell operator how we are doing */
       if (verbose){
@@ -264,7 +265,7 @@ int main( int argc, char *argv[])
       }
 
       /* compute the number of points in a chunk */
-      numPoints = min(999424,(totalNumPoints - usedNumPoints)) ;
+      numPoints = min(ramLimitPoints,(totalNumPoints - usedNumPoints)) ;
       
       /* count the no. of points that are being used */
       usedNumPoints += numPoints;
@@ -310,7 +311,7 @@ int main( int argc, char *argv[])
           memset( geoSeries.data->data, 0, geoSeries.data->length*sizeof(REAL8) );
           geoSeries.epoch = tmpEpoch;
           strcpy(geoSeries.name, params->channelName);
-          geoSeries.deltaT = 1.0/((REAL8) sampleRate);
+          geoSeries.deltaT = 1.0/((REAL8)frameSampleRate);
           geoSeries.f0 = 0.0;
           geoSeries.sampleUnits = lalADCCountUnit;
           LAL_CALL( LALFrGetREAL8TimeSeries( &stat, &geoSeries, &channelIn, stream), &stat);
@@ -405,7 +406,7 @@ int main( int argc, char *argv[])
 
         /* set the parameters of the response to match the data */
         resp.epoch = tmpEpoch;
-        resp.deltaF = (REAL8) sampleRate / (REAL8) numPoints;
+        resp.deltaF = (REAL8) frameSampleRate / (REAL8) numPoints;
         resp.sampleUnits = strainPerCount;
         strcpy( resp.name, channelIn.name );
 
@@ -495,7 +496,7 @@ int main( int argc, char *argv[])
         memset( mdcSeries.data->data, 0, mdcSeries.data->length*sizeof(REAL4) );
         mdcSeries.epoch = tmpEpoch;
         strcpy(mdcSeries.name, mdcparams->channelName);
-        mdcSeries.deltaT = 1.0/((REAL8) sampleRate);
+        mdcSeries.deltaT = 1.0/((REAL8)frameSampleRate);
         mdcSeries.f0 = 0.0;
         mdcSeries.sampleUnits = lalADCCountUnit;
         LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &mdcSeries, &mdcchannelIn, stream), &stat);
@@ -530,7 +531,7 @@ int main( int argc, char *argv[])
       }
 
       /* Finally call condition data */
-      LAL_CALL( EPConditionData( &stat, &series, minFreq, 1.0/sampleRate, resampFiltType, params), &stat);
+      LAL_CALL( EPConditionData( &stat, &series, minFreq, 1.0/targetSampleRate, resampFiltType, params), &stat);
 
       /* add information about times to summary table */
       {
@@ -540,14 +541,13 @@ int main( int argc, char *argv[])
          * 0.5 sec's at the begining & end) in the search summary */
 
         LAL_CALL( LALGPStoFloat( &stat, &tmpTime, &(series.epoch) ), 
-            &stat );
-        tmpTime += series.deltaT * (REAL8) params->ovrlap;
+		  &stat );
         if ( !(searchsumm.searchSummaryTable->out_start_time.gpsSeconds) )
         {
           LAL_CALL( LALFloatToGPS( &stat, 
                 &(searchsumm.searchSummaryTable->out_start_time), &tmpTime ), &stat );
         }
-        tmpTime += series.deltaT * ((REAL8) series.data->length - 2.0 * (REAL8) params->ovrlap);
+        tmpTime += series.deltaT * ((REAL8) series.data->length);
         if ( totalNumSegs <= 0 )
         {
           LAL_CALL( LALFloatToGPS( &stat, 
@@ -558,11 +558,11 @@ int main( int argc, char *argv[])
       /*******************************************************************
        * DO THE SEARCH                                                    *
        *******************************************************************/
-      for(start_sample = 0; start_sample < (int) series.data->length; start_sample += params->initParams->segDutyCycle * params->ovrlap)
+      for(start_sample = 0; start_sample < (int) series.data->length; start_sample += (psdAveragePoints - 3* params->ovrlap))
       {
         REAL4TimeSeries *interval;
 
-        LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, start_sample, min(33.5 / series.deltaT, (series.data->length - start_sample))), &stat);
+        LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, start_sample, min(psdAveragePoints, (series.data->length - start_sample))), &stat);
 
         if (verbose)
           fprintf(stdout,"Analyzing samples %i -- %i\n", start_sample, start_sample + interval->data->length);
@@ -577,7 +577,7 @@ int main( int argc, char *argv[])
 
 
       /* compute the start time for the next chunk */
-      tmpOffset = (REAL8)(numPoints - 2 * params->ovrlap)/((REAL8) sampleRate);
+      tmpOffset = (REAL8)(numPoints - 2 * (params->ovrlap*(frameSampleRate/targetSampleRate)))/((REAL8)frameSampleRate);
       LAL_CALL( LALFloatToInterval(&stat, &tmpInterval, 
             &tmpOffset), &stat );
       LAL_CALL( LALIncrementGPS(&stat, &(tmpEpoch), &(tmpEpoch), 
@@ -587,7 +587,7 @@ int main( int argc, char *argv[])
        *fact that we moved back by 2*params->ovrlap
        *when we calculated the offset in the previous step
        */
-      usedNumPoints -= 2*params->ovrlap;
+      usedNumPoints -= 2*params->ovrlap*(frameSampleRate/targetSampleRate);
       
      /* clean up memory from that run */
       LAL_CALL( LALSDestroyVector( &stat, &(series.data) ), &stat);
@@ -708,48 +708,58 @@ int initializeEPSearch(
         {"cluster",                 no_argument,       &cluster,           TRUE },
         /* these options don't set a flag */
         {"alphdef",                 required_argument, 0,                 'a'}, 
+        {"default-alpha",           required_argument, 0,                 'a'},
         {"channel-name",            required_argument, 0,                 'b'}, 
         {"user-tag",                required_argument, 0,                 'c'}, 
-        {"delf",                    required_argument, 0,                 'd'}, 
-        {"etomstr",                 required_argument, 0,                 'e'}, 
+	{"etomstr",                 required_argument, 0,                 'e'},
+        {"event-limit",             required_argument, 0,                 'e'},
         {"flow",                    required_argument, 0,                 'f'}, 
+        {"low-freq-cutoff",         required_argument, 0,                 'f'}, 
         {"frame-cache",             required_argument, 0,                 'g'}, 
         {"framedir",                required_argument, 0,                 'i'}, 
         {"help",                    no_argument,       0,                 'h'}, 
-        {"lngth",                   required_argument, 0,                 'j'}, 
+        {"lngth",                   required_argument, 0,                 'j'},
+	{"bandwidth",               required_argument, 0,                 'j'},
         {"minfbin",                 required_argument, 0,                 'k'}, 
+        {"min-freq-bin",            required_argument, 0,                 'k'}, 
         {"mintbin",                 required_argument, 0,                 'l'}, 
+        {"min-time-bin",            required_argument, 0,                 'l'},
         {"npts",                    required_argument, 0,                 'm'},
-        {"noiseamp",                required_argument, 0,                 'n'}, 
-        {"numpts",                  required_argument, 0,                 'o'}, 
+        {"noiseamp",                required_argument, 0,                 'n'},
+	{"noise-amplitude",         required_argument, 0,                 'n'}, 
         {"nseg",                    required_argument, 0,                 'p'}, 
+        {"ram-limit-points",        required_argument, 0,                 'p'},
         {"nsigma",                  required_argument, 0,                 'q'}, 
-        {"olap",                    required_argument, 0,                 'r'}, 
+        {"olap",                    required_argument, 0,                 'r'},
+	{"shift-points",            required_argument, 0,                 'r'},
         {"olapfctr",                required_argument, 0,                 's'}, 
-        {"segdcle",                 required_argument, 0,                 't'}, 
-        {"simtype",                 required_argument, 0,                 'u'}, 
-        {"spectype",                required_argument, 0,                 'v'}, 
+        {"tileoverlap-factor",      required_argument, 0,                 's'},
+        {"segdcle",                 required_argument, 0,                 't'},
+        {"psd-average-points",      required_argument, 0,                 't'},  
+        {"spectype",                required_argument, 0,                 'v'},
+	{"psd-average-method",      required_argument, 0,                 'v'},
         {"gps-start-time",          required_argument, 0,                 'x'}, 
         {"gps-start-time-ns",       required_argument, 0,                 'y'}, 
         {"gps-end-time",            required_argument, 0,                 'X'}, 
         {"gps-end-time-ns",         required_argument, 0,                 'Y'}, 
         {"sample-rate",             required_argument, 0,                 'z'},
-	{"resample-filter",         required_argument, 0,                 'N'},
-        {"sinFreq",                 required_argument, 0,                 'A'}, 
+	{"frame-sample-rate",       required_argument, 0,                 'z'},
+        {"target-sample-rate",      required_argument, 0,                 'A'},
+	{"resample-filter",         required_argument, 0,                 'N'}, 
         {"seed",                    required_argument, 0,                 'E'}, 
         {"threshold",               required_argument, 0,                 'B'}, 
         {"window",                  required_argument, 0,                 'C'}, 
         {"dbglevel",                required_argument, 0,                 'D'},
-	{"sinOffset",               required_argument, 0,                 'F'},
-	{"sinAmpl",                 required_argument, 0,                 'G'},
-	{"sinWidth",                required_argument, 0,                 'H'},
+        {"debug-level",             required_argument, 0,                 'D'},
         {"calibration-cache",       required_argument, 0,                 'I'},
-        {"injection-file",                 required_argument, 0,                 'J'},
+        {"injection-file",          required_argument, 0,                 'J'},
 	/* geo data flag, argument is corner freq. of high pass filter */
 	{"geodata",		    required_argument, 0,		  'K'},
 	/* mdc data & channel information */
         {"mdccache",                required_argument, 0,                 'L'},
+        {"mdc-cache",               required_argument, 0,                 'L'},
         {"mdcchannel",              required_argument, 0,                 'M'},
+        {"mdc-channel",             required_argument, 0,                 'M'},
         /* output options */
         {"printData",               no_argument,       &printData,         TRUE },
         {"printSpectrum",           no_argument,       &printSpectrum,     TRUE },
@@ -858,22 +868,6 @@ int initializeEPSearch(
                 /* comment string to be used in output file name */
                 snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
                 ADD_PROCESS_PARAM( "string", "%s", optarg );
-                break;
-
-            case 'd':
-                /* Frequency resolution of first TF plane */
-                {
-                    REAL4 delf = atof( optarg );
-                    if ( delf <= 0.0 ){
-                        fprintf(stderr,"invalid argument to --%s:\n"
-                                "Must be >= 0 (%f specified)\n",
-                                long_options[option_index].name, delf );
-                        exit( 1 );
-                    }
-                    /* default alpha value for tiles with sigma < numSigmaMin */
-                    (*params)->tfTilingInput->deltaF = delf;
-                    ADD_PROCESS_PARAM( "float", "%e", delf );
-                }
                 break;
 
             case 'e':
@@ -1010,33 +1004,20 @@ int initializeEPSearch(
                 }
                 break;
 
-            case 'o':
-                /* number of data points to read in */
-                {
-                    INT4 tmpn = atoi(optarg);
-                    if (tmpn <= 0){
-                        fprintf(stderr,"invalid argument to --%s:\n"
-                                "Must be > 0 (%i specified)\n",
-                                long_options[option_index].name, tmpn);
-                        exit( 1 );
-                    }
-                    numPoints = tmpn;
-                    ADD_PROCESS_PARAM( "int", "%d", tmpn );                    
-                }
-                break;
+
 
             case 'p':
-                /* number of data points to read in */
+                /* number of data points to read in at a time*/
                 {
-                    INT4 tmpseg = atoi(optarg);
-                    if (tmpseg <= 0){
+                    ramLimitPoints = atoi(optarg);
+                    if (ramLimitPoints <= 0){
                         fprintf(stderr,"invalid argument to --%s:\n"
                                 "Must be > 0 (%i specified)\n",
-                                long_options[option_index].name, tmpseg);
+                                long_options[option_index].name, ramLimitPoints);
                         exit( 1 );
                     }
-                    (*params)->initParams->numSegments = tmpseg;
-                    ADD_PROCESS_PARAM( "int", "%d", tmpseg );                    
+                    (*params)->initParams->numSegments = ramLimitPoints;
+                    ADD_PROCESS_PARAM( "int", "%d", ramLimitPoints );                    
                 }
                 break;
 
@@ -1056,7 +1037,9 @@ int initializeEPSearch(
                 break;
 
             case 'r':
-                /* Overlap betweeen segments (# of points) */
+                /* Overlap betweeen segments (# of points)/no. of pts
+		 *to be shifted 
+		 */
                 {
                     INT4 tmpolap = atoi(optarg);
                     if (tmpolap < 0){
@@ -1089,32 +1072,16 @@ int initializeEPSearch(
             case 't':
                 /* Number of segments sent to slave */
                 {
-                    INT4 tmpseg = atoi(optarg);
-                    if (tmpseg < 0){
+                    psdAveragePoints = atoi(optarg);
+                    if (psdAveragePoints < 0){
                         fprintf(stderr,"invalid argument to --%s:\n"
                                 "Must be > 0 (%i specified)\n",
-                                long_options[option_index].name, tmpseg);
+                                long_options[option_index].name, psdAveragePoints);
                         exit( 1 );
                     }
-                    (*params)->initParams->segDutyCycle      = tmpseg; 
-                    ADD_PROCESS_PARAM( "int", "%d", tmpseg ); 
-                }
-                break;
+                    (*params)->initParams->segDutyCycle = psdAveragePoints;
 
-
-            case 'u':
-                /* Simulation type:  currently ignored. */
-                {
-                    INT4 tmpsim = atoi(optarg);
-                    if (tmpsim < 0 || tmpsim > 3){
-                        fprintf(stderr,"invalid argument to --%s:\n"
-                                "Must be > 0 (%i specified)\n",
-                                long_options[option_index].name, tmpsim);
-                        exit( 1 );
-                    }
-                    tmpsim = 0;
-                    (*params)->simType =  tmpsim;
-                    ADD_PROCESS_PARAM( "int", "%d", tmpsim ); 
+                    ADD_PROCESS_PARAM( "int", "%d", psdAveragePoints ); 
                 }
                 break;
 
@@ -1239,18 +1206,30 @@ int initializeEPSearch(
                 break;
 
             case 'z':
-                sampleRate = (INT4) atoi( optarg );
-                if ( sampleRate < 2 || sampleRate > 16384 || sampleRate % 2 )
+                frameSampleRate = (INT4) atoi( optarg );
+                if ( frameSampleRate < 2 || frameSampleRate > 16384 || frameSampleRate % 2 )
                 {
                   fprintf( stderr, "invalid argument to --%s:\n"
                       "rate must be power of 2 between 2 and 16384 inclusive: "
                       "(%d specified)\n", 
-                      long_options[option_index].name, sampleRate );
+                      long_options[option_index].name, frameSampleRate );
                   exit( 1 );
                 }
-                ADD_PROCESS_PARAM( "int", "%d", sampleRate );
+                ADD_PROCESS_PARAM( "int", "%d", frameSampleRate );
                 break;
 
+            case 'A':
+                targetSampleRate = (INT4) atoi( optarg );
+                if ( targetSampleRate < 2 || targetSampleRate > 16384 || targetSampleRate % 2 )
+                {
+                  fprintf( stderr, "invalid argument to --%s:\n"
+                      "rate must be power of 2 between 2 and 16384 inclusive: "
+                      "(%d specified)\n", 
+                      long_options[option_index].name, targetSampleRate );
+                  exit( 1 );
+                }
+                ADD_PROCESS_PARAM( "int", "%d", targetSampleRate );
+                break;
 
 	    case 'N':
 	      if ( ! strcmp( "ldas", optarg ) )
@@ -1271,24 +1250,7 @@ int initializeEPSearch(
 		}
 	      ADD_PROCESS_PARAM( "string", "%s", optarg );
 	      break;
-	  
-
-
-	    case 'A':
-	        /* inject Sine-Gaussians: set the freq. */
-	        {
-                  REAL4 tmpsineFreq = atof(optarg);
-		  sineBurst = TRUE;
-		  if (tmpsineFreq <= 0){
-		      fprintf(stderr,"invalid argument to --%s:\n",
-                              long_options[option_index].name);
-		      exit( 1 );
-		  }
-		  sineFreq = tmpsineFreq;
-		  ADD_PROCESS_PARAM( "float", "%e", tmpsineFreq );
-		}      
-		break;
-
+	 
             case 'E':
                 /* seed for noise simulations */
                 {
@@ -1342,45 +1304,6 @@ int initializeEPSearch(
                 }
                 break;
 
-            case 'F':
-	        /* set the offset for the injections */
-	        {
-                  REAL4 tmpsineOffset = atof(optarg);
-		  if (tmpsineOffset <= 0){
-		      fprintf(stderr,"invalid argument to --%s:\n",
-                              long_options[option_index].name);
-		      exit( 1 );
-		  }
-		  sineOffset = tmpsineOffset;
-		} 
-		break;
-
-            case 'G':
-	        /* set the amplitude of injections. */
-	        {
-                  REAL4 tmpsineAmpl = atof(optarg);
-		  if (tmpsineAmpl <= 0){
-		      fprintf(stderr,"invalid argument to --%s:\n",
-                              long_options[option_index].name);
-		      exit( 1 );
-		  }
-		  sineAmpl = tmpsineAmpl;
-		} 
-		break;
-
-            case 'H':
-	        /* set the Width of injections. */
-	        {
-                  REAL4 tmpsineWidth = atof(optarg);
-		  if (tmpsineWidth <= 0){
-		      fprintf(stderr,"invalid argument to --%s:\n",
-                              long_options[option_index].name);
-		      exit( 1 );
-		  }
-		  sineWidth = tmpsineWidth;
-                }
-                break;
-
             case 'I':
                 /* create storage for the calibration frame cache name */
                 len = strlen( optarg ) + 1;
@@ -1391,7 +1314,7 @@ int initializeEPSearch(
                 break;
 
              case 'J':
-                /* create storage for the calibration frame cache name */
+                /* create storage for the injetion file name */
                 len = strlen( optarg ) + 1;
                 injectionFile = (CHAR *) calloc( len, sizeof(CHAR));
                 memcpy( injectionFile, optarg, len );
@@ -1437,12 +1360,6 @@ int initializeEPSearch(
                 strcpy( mdcparams->channelName, optarg );
                 mdcchannelIn.name = mdcparams->channelName;
                 mdcchannelIn.type = ADCDataChannel;
-  
-                /* copy the first character to site and the first two to ifo 
-                memset( site, 0, sizeof(site) );
-                memset( ifo, 0, sizeof(ifo) );
-                memcpy( site, mdcchannelIn.name, sizeof(site) - 1 );
-                memcpy( ifo, mdcchannelIn.name, sizeof(ifo) - 1 );*/
                 ADD_PROCESS_PARAM( "string", "%s", optarg );
                 break;
 
@@ -1483,26 +1400,28 @@ int initializeEPSearch(
     LAL_CALL( LALINT8toGPS( &stat, &stopEpoch, &gpsStopTimeNS), &stat);
 
     /* check that the sample rate has been supplied */
-    if ( sampleRate < 0 )
+    if ( frameSampleRate < 0 )
     {
-      fprintf( stderr, "--sample-rate must be specified\n" );
+      fprintf( stderr, "--frame-sample-rate must be specified. This is the expected sampling rate of data in frames\n" );
+      exit( 1 );
+    }
+
+   /* check that the target sample rate has been supplied */
+    if ( targetSampleRate < 0 )
+    {
+      fprintf( stderr, "--target-sample-rate must be specified. This will be the sampling rate of the resampled time series \n" );
       exit( 1 );
     }
 
     /* compute the total number of points to be analyzed */
     totalNumPoints = ( stopEpoch.gpsSeconds  - startEpoch.gpsSeconds ) 
-      * sampleRate;
-
-    /* compute the total number of segments to be analyzed */
-    totalNumSegs = (INT4) (( totalNumPoints - 3 * (*params)->ovrlap ) /
-      ( (*params)->initParams->numPoints - (*params)->ovrlap ));
+      * frameSampleRate;
 
     /* initialize parameter structures */
     (*params)->numSlaves    = NULL;
 
     /* initialize parameters */
     (*params)->haveData        = 0;
-    (*params)->currentSegment  = 0;
     (*params)->numEvents       = 0;
     (*params)->searchMaster    = 0;
     (*params)->tfTilingInput->maxTileBand = 64.0;
