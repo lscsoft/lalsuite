@@ -15,24 +15,33 @@ extern "C" {
 
   /*****************************************************************/
 
+  /* Define DEBUGBURST for debug info to be sent to disk */
   /*
 #define DEBUGBURST 
   */
 
+  /* big endian when not linux */
 #ifdef linux
 #undef WORDS_BIGENDIAN
 #endif
 
+  /* max number of triggers */
 #define MAXNBURSTS 50000
+
+  /* max size of a blob object */
 #define MAXBLOB 800000
 
+  /* names of the channels used by the wrapper */
 #define GW_STRAIN_DATA "GW_STRAIN_DATA"
 #define GW_STRAIN_PSD "GW_STRAIN_PSD"
 
+  /* name of the frame cache file */
 #define CACHEFILENAME "FrCacheFile"
 
+  /* abort macro for LAL functions */
 #define SABORT(I,M) fprintf(stderr,"ERROR: %i\n%s\n%s:%i\n",I,M,__FILE__,__LINE__); return 1
 
+  /* macro to check LAL status pointer */
 #define RCHECKSTATUSPTR( statusptr ) \
   if ( (statusptr)->statusPtr->statusCode ) \
   { \
@@ -50,6 +59,7 @@ extern "C" {
   } else (void)(0)
   */
 
+  /* Assert/Abort macros for LAL functions */
 #define SASSERT(p1,p3,p4) if(!(p1)) {SABORT(p3,p4);}
 
 #define RASSERT(p1,p2,p3,p4) if(!(p1)) {ABORT(p2,p3,p4);}
@@ -57,6 +67,7 @@ extern "C" {
 #define TASSERT(p1,p2,p3,p4) if(!(p1)) {SABORT(p3,p4);}
 
 
+  /* linked list for burst parameters */
   typedef struct tagBurstParameterList {
     
     struct tagBurstParameterList *next;
@@ -66,70 +77,71 @@ extern "C" {
   } BurstParameterList;
 
 
+  /* implemented ETGs */
   typedef enum {TFCLUSTERS,SLOPE,POWER} BurstETG;
 
-
+  /* burst search structure */
   typedef struct tagBurstSearchParams {
 
-    CHAR channel[LIGOMETA_CHANNEL_MAX];
+    CHAR channel[LIGOMETA_CHANNEL_MAX]; /* channel name */
     
-    UINT4 Ndata;
+    UINT4 Ndata; /* number of data points */
 
-    BurstParameter waveforms;
+    BurstParameter waveforms; /* linked list of waveform names */
 
-    UINT4 Nwaveforms;
+    UINT4 Nwaveforms; /* number of waveforms */
 
-    REAL4TimeVectorSeries *wave_pc;
+    REAL4TimeVectorSeries *wave_pc; /* input data */
 
-    BurstParameter waveform_amplitudes;
+    BurstParameter waveform_amplitudes; /* linked list of amplitudes */
 
-    UINT4 Nwaveform_amplitude;
+    UINT4 Nwaveform_amplitude; /* number of amplitudes */
 
-    BurstParameter alpha;
+    BurstParameter alpha; /* linked list of alpha */
 
-    UINT4 Nalpha;
+    UINT4 Nalpha; /* numebr of alpha */
 
-    BurstParameter delta;
+    BurstParameter delta; /* linked list of delta */
 
-    UINT4 Ndelta;
+    UINT4 Ndelta; /* number of delta */
 
-    BurstParameter psi;
+    BurstParameter psi; /* linked list of psi */
 
-    UINT4 Npsi;
+    UINT4 Npsi; /* number of psi */
 
-    UINT4 MAXinj;
+    UINT4 MAXinj; 
 
-    UINT4 Ninj;
+    UINT4 Ninj; /* number of injections */
 
-    BurstParameter injTimes;
+    BurstParameter injTimes; /* linked list of injection times */
 
-    UINT4 Ninj_per_segment;
+    UINT4 Ninj_per_segment; /* number of injection times */
 
-    BurstETG ETG;
+    BurstETG ETG; /* which ETG */
 
-    BurstParameterList ETGparams;
+    BurstParameterList ETGparams; /* linked list of ETG parameters; each parameter can be a linked list */
 
     BOOLEAN ETGparamsLOCK;
 
-    UINT4 Nparams;
+    UINT4 Nparams; /* number of ETG parameters */
 
-    UINT4 *NNparams;
+    UINT4 *NNparams; /* number of element of each ETG parameter */
 
-    BurstOutputDataSegment data;
+    BurstOutputDataSegment data; /* data for Parameter Estimation function */
 
-    BurstOutputParameters oparams;
+    BurstOutputParameters oparams; /* parameters for PEst function */
 
-    BOOLEAN searchMaster;
+    BOOLEAN searchMaster; /* Am I searchMaster? */
 
-    void (*ETGfun)(LALStatus *, EventIDColumn *, REAL4TimeVectorSeries *, BurstParameter *);
+    void (*ETGfun)(LALStatus *, EventIDColumn *, REAL4TimeVectorSeries *, BurstParameter *); /* pointer to LAL function implementing the ETG */
 
-    INT4 outputMethod;
+    INT4 outputMethod; /* flag for output method */
 
-    BOOLEAN noLALBurstOutput;
+    BOOLEAN noLALBurstOutput; /* flag for disabling the PEst function */
 
-    CHAR dsoOutput[1024];
+    CHAR dsoOutput[1024]; /* output file */
 
-    BOOLEAN allowNoResponse;
+    BOOLEAN allowNoResponse; /* flag to avoid using response files */
 
   } BurstSearchParams;
 

@@ -70,15 +70,17 @@ int InitSearch(char *filterParams,
     params: structure with all parameters needed by the ETG and wrapper
   */
 
-  static LALStatus status;
+  static LALStatus status;  /* LAL status */
 
-  UINT4 i;
-  CHAR cbuf[CBUFSIZE];
+  UINT4 i;  /* counter */
+  CHAR cbuf[CBUFSIZE];  /* scratch buffer */
   BurstParameterList *tmpBPL;
 
-  INT4 argc;
-  CHAR **argv;
+  INT4 argc;    /* number of arguments in filterParams */
+  CHAR **argv;  /* vector of strings in filterParams */
 
+
+  /* Note: define DEBUGBURST to have debug info written to disk */
 #ifdef DEBUGBURST
  {
    char *uname = getenv("USER");
@@ -107,10 +109,14 @@ int InitSearch(char *filterParams,
 #endif
  */
 
+
+ /* initialize params */
  bzero(params, sizeof(BurstSearchParams));
 
 
- /* Create argc, argv */
+ /* Create argc, argv from filterParams string */
+ /* comma separated strings between () parantheses are treated
+    as single arguments, and the parantheses are stripped. */
  {
    char *p0 = filterParams, *p1;
 
@@ -118,23 +124,39 @@ int InitSearch(char *filterParams,
    argv = NULL;
 
    if(*p0 == '(') {
+     /* list of elements between () parantheses */
      p1 = strchr(p0,')');
      if(!p1) {
+       /* no closing ) */
        fprintf(stderr,"Invalid filterParams: %s\n",filterParams);
        return 1;
      }
-     p1 = strchr(p1,',');
+     p1 = strchr(p1,','); /* p1 is 1st comma after ) */
    } else {
+     /* no parantheses, p1 is 1st comma after p0 */
      p1 = strchr(p0,',');
    }
 
+   /* loop over all arguments */
    while(p1) {
+
+     /* allocate memory for new argument */
      argc++;
      argv = (CHAR **)realloc(argv,argc*sizeof(CHAR *));
      argv[argc-1] = (CHAR *)calloc(1+p1-p0,sizeof(CHAR));
-     memcpy(argv[argc-1], p0, p1-p0);
 
-     p0=p1+1;
+     /* copy data */
+     if(*p0 != '(') {
+       /* no parantheses */
+       memcpy(argv[argc-1], p0, p1-p0);
+     } else {
+       /* parantheses, remove 1st and last character */
+       memcpy(argv[argc-1], p0+1, p1-p0-2);
+     }
+
+     p0=p1+1; /* move to next argument */
+
+     /* deal with parantheses */
      if(*p0 == '(') {
        p1 = strchr(p0,')');
        if(!p1) {
@@ -147,10 +169,25 @@ int InitSearch(char *filterParams,
      }
    }
 
+   /* add last argument */
    argc++;
    argv = (CHAR **)realloc(argv,argc*sizeof(CHAR *));
    argv[argc-1] = (CHAR *)calloc(strlen(p0),sizeof(CHAR));
-   strcpy(argv[argc-1], p0);
+
+   if(*p0 != '(') {
+     /* no parantheses */
+     strcpy(argv[argc-1], p0);
+   } else {
+     /* parantheses, remove 1st and last character */
+     char *pl;
+     strcpy(argv[argc-1], p0+1);     
+     pl  = strrchr(argv[argc-1],')');
+     if(pl) {
+       *pl = 0;
+     } else {
+       SABORT(INITSEARCHH_EARGS, INITSEARCHH_MSGEARGS ); 
+     }
+   }
 
  }
 
@@ -161,14 +198,17 @@ int InitSearch(char *filterParams,
   *
   */
 
+ /* check number of inputs */
   if ( argc < 11){
         SABORT(INITSEARCHH_EARGS, INITSEARCHH_MSGEARGS ); 
   }
  
+  /* check first argument is -filterparams */
   if (strcmp( argv[0], "-filterparams" )){
     SABORT(INITSEARCHH_EARGS, INITSEARCHH_MSGEARGS);
   }
 
+  /* is 1st or 2nd argument is binOutput, set flag */
   if(!strcmp(argv[1],"binOutput") ||
      !strcmp(argv[2],"binOutput")) {
     (argv)++;
@@ -187,13 +227,22 @@ int InitSearch(char *filterParams,
     fflush(NULL);
 #endif
 
-  if(strstr(argv[1],"fileOutput")) {
-    char *p = strchr(argv[1],':')+1;
+    /*********************************************************************/
+    /* Parse arguments from filterParams */
+    /*********************************************************************/
 
+    /* if 1st argument is fileOutput: */
+  if(strstr(argv[1],"fileOutput")) {
+
+    /* extract file name */
+    char *p = strchr(argv[1],':')+1;
     strncpy(params->dsoOutput,p,1024);
 
+    /* remove from list */
     (argv)++;
     (argc)--;
+
+    /* update flag */
     params->outputMethod = 2;
 
 #ifdef DEBUGBURST
@@ -202,6 +251,7 @@ int InitSearch(char *filterParams,
 #endif
   }
 
+  /* same for 2nd argument */
   if(strstr(argv[2],"fileOutput")) {
 
     char *p = strchr(argv[2],':')+1;
@@ -218,6 +268,8 @@ int InitSearch(char *filterParams,
 #endif
   }
 
+
+  /* if 1st or 2nd argument is noLALBurstOutput, update flag */
   if(!strcmp(argv[1],"noLALBurstOutput") ||
      !strcmp(argv[2],"noLALBurstOutput")) {
     (argv)++;
@@ -232,6 +284,7 @@ int InitSearch(char *filterParams,
   }
 
 
+  /* if one of first 4 arguments is noResponse, set flag */
   if(!strcmp(argv[1],"noResponse") ||
      !strcmp(argv[2],"noResponse") ||
      !strcmp(argv[3],"noResponse") ||
@@ -247,48 +300,65 @@ int InitSearch(char *filterParams,
 
   }
 
+  /* 1st argument: channel */
   strncpy(params->channel, argv[1], LIGOMETA_CHANNEL_MAX-1);
 
+  /* 2nd argument: number of data points */
   params->Ndata = atoi(argv[2]);
   if ( params->Ndata <= 0 ) {
     SABORT(INITSEARCHH_ESPOS, INITSEARCHH_MSGESPOS );
   }
 
+  /* 3rd argument: set of waveforms */
   LAL_CALL ( ParseParameter( &status, &(params->waveforms), argv[3], &(params->Nwaveforms) ), &status);
 
   if(params->waveforms.random) {
+    /* waveforms cannot be a random parameter */
     SABORT(INITSEARCHH_EARGS, INITSEARCHH_MSGEARGS ); 
   }
 
+  /* 4th argument: waveform amplitudes */
   LAL_CALL ( ParseParameter( &status, &(params->waveform_amplitudes), argv[4], &(params->Nwaveform_amplitude)), &status );
 
   if(params->Nwaveform_amplitude>1 && params->waveform_amplitudes.random == 1) {
+    /* if random, should have only one number */
     SABORT(INITSEARCHH_EARGS, INITSEARCHH_MSGEARGS ); 
   }
 
+  /* 5th argument: alpha */
   LAL_CALL ( ParseParameter( &status, &(params->alpha), argv[5], &(params->Nalpha)), &status );
 
   if(params->Nalpha>1 && params->alpha.random == 1) {
+    /* if random, should have only one number */
     SABORT(INITSEARCHH_EARGS, INITSEARCHH_MSGEARGS ); 
   }
 
+  /* 6th argument: delta */
   LAL_CALL ( ParseParameter( &status, &(params->delta), argv[6], &(params->Ndelta)), &status );
 
   if(params->Ndelta>1 && params->delta.random == 1) {
+    /* if random, should have only one number */
     SABORT(INITSEARCHH_EARGS, INITSEARCHH_MSGEARGS ); 
   }
 
+  /* 7th argument: psi */
   LAL_CALL ( ParseParameter( &status, &(params->psi), argv[7], &(params->Npsi)), &status );
 
   if(params->Npsi>1 && params->psi.random == 1) {
+    /* if random, should have only one number */
     SABORT(INITSEARCHH_EARGS, INITSEARCHH_MSGEARGS ); 
   }
 
+  /* 8th argument: number of injections */
   params->Ninj = atoi(argv[8]);
 
+  /* 9th argument: injection times */
   LAL_CALL ( ParseParameter( &status, &(params->injTimes), argv[9], &(params->Ninj_per_segment)), &status );
 
+  /* 10th argument: ETG */
   strncpy(cbuf,argv[10],CBUFSIZE);
+
+  /* interpret string */
   if(!strcmp(cbuf,"TFCLUSTERS")) {
     params->ETG = TFCLUSTERS;
   } else if(!strcmp(cbuf,"SLOPE")) {
@@ -299,10 +369,15 @@ int InitSearch(char *filterParams,
     SABORT(INITSEARCHH_EIN, INITSEARCHH_MSGEIN );
   }
 
+
+  /* Create linked list of ETG parameters: */
   tmpBPL = &(params->ETGparams);
   params->Nparams = 0;
   params->NNparams = NULL;
+
+  /* loop over arguments after the 10th argument */
   for(i=11; i<argc; i++) {
+    /* allocate memory */
     tmpBPL->next = (BurstParameterList *)LALCalloc(1,sizeof(BurstParameterList));
     SASSERT(tmpBPL->next, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC);
     tmpBPL = tmpBPL->next;
@@ -310,11 +385,15 @@ int InitSearch(char *filterParams,
     (params->Nparams)++;
     params->NNparams = (UINT4 *)LALRealloc(params->NNparams, params->Nparams*sizeof(UINT4));
 
+    /* parse the argument string */
     LAL_CALL ( ParseParameter( &status, &(tmpBPL->param), argv[i], &(params->NNparams[params->Nparams-1]) ), &status );
 
 
   }
 
+  /*********************************************************************/
+
+  /* assign proper ETG function */
   switch(params->ETG) {
   case TFCLUSTERS:
     params->ETGfun = LALTFClustersETG;
@@ -331,8 +410,11 @@ int InitSearch(char *filterParams,
     SABORT(INITSEARCHH_EIN, INITSEARCHH_MSGEIN );
   }
 
+  
+  /* no searchMaster */
   params->searchMaster = 0;
 
+  /* sanity check */
   if(params->Nwaveforms==0 && ( params->Nwaveform_amplitude || params->Nalpha || params->Ndelta || params->Ninj || params->Ninj_per_segment)) {
     SABORT(INITSEARCHH_EIN, INITSEARCHH_MSGEIN);
   }
@@ -361,6 +443,8 @@ int InitSearch(char *filterParams,
       */
 				    
 
+      /* Initialize data structure */
+      
   if(params->Ninj_per_segment == 0) {
     params->Ninj_per_segment = 1;
   }
@@ -371,6 +455,8 @@ int InitSearch(char *filterParams,
   params->oparams.data = &(params->data);
   params->oparams.method = 1;
 
+
+  /* restore pointer to allow clean-up */
   if(params->outputMethod) {
     (argv)--;
     (argc)++;
@@ -402,7 +488,21 @@ int InitSearch(char *filterParams,
 
 
 
+/* The following macro is used to parse the string str and to
+   allocate memory for the new parameter, and to add it to the
+   link list bp.
 
+   With the __FILE__ notation, bp->random is set to 2, and 
+   bp->char_ is set to FILE.
+
+   With the _FILE_ notation, bp->real4vector_ is allocated, 
+   and bp->char_ is set to FILE.
+
+   In the absence of underscores, the string is simply parsed:
+   only digits: int4_
+   only digits and +-.eE: real4_
+   otherwise: char_
+*/
 #define SetParams(bp,str) if(str[0]=='_' && str[strlen(str)-1]=='_') { \
  BOOLEAN mat = 0; \
  if(strlen(str)>=5) { \
@@ -439,12 +539,21 @@ if(i<strlen(str)) { \
      } \
 	 }
 
+/* This function parse the string argv, and returns the result in par and M */
 void ParseParameter( 
 		    LALStatus *status,
 		    BurstParameter *par,
 		    CHAR *argv,
 		    UINT4 *M
 		    ) {
+
+  /* 
+     Arguments:
+     status: LAL status pointer
+     par: pointer to returned BurstParameter structure
+     argv: string to be parsed
+     M: number of parameters corresponding to the string (e.g. if [1,2,4], M=4)
+  */
 
   INT4 i,N;
   CHAR *ptr;
@@ -460,23 +569,35 @@ void ParseParameter(
   *M = 0;
 
   if(!strlen(argv)) {
+    /* empty string, do nothing */
     RETURN (status);
   }
 
 
+  /* first check if we have a range: */
   if(argv[0] == '[') {
+
+    /* check we have closing bracket: */
     if(argv[strlen(argv)-1] != ']') {
       ABORT(status, INITSEARCHH_EIN, INITSEARCHH_MSGEIN);
     }
 
+    /* use strtok to process the string;
+       warning: not thread safe, etc. */
     ptr = strtok(argv,"[,]");
+
+    /* check non-null pointer */
     RASSERT(ptr, status, INITSEARCHH_EIN, INITSEARCHH_MSGEIN);
+
+    /* set xlo to first element in range, i.e. to lower bound */
     xlo = strtod(ptr, NULL);
 
+    /* second element is upper bound */
     ptr = strtok(NULL,"[,]");
     RASSERT(ptr, status, INITSEARCHH_EIN, INITSEARCHH_MSGEIN);
     xhi = strtod(ptr, NULL);
     
+    /* third argument is number of elements */
     ptr = strtok(NULL,"[,]");
     RASSERT(ptr, status, INITSEARCHH_EIN, INITSEARCHH_MSGEIN);
     *M = N = atoi(ptr);
@@ -487,8 +608,13 @@ void ParseParameter(
   fprintf(stderr,"N: %i\n",N);
 #endif
 
+  /* check for 4th element */
     ptr = strtok(NULL,"[,]");
     if(!ptr) {
+
+      /* No 4th element */
+
+      /* loop to fill in the values */
       for(i=0;i<N;i++) {
 	if(N>1) {
 	  x = xlo + (xhi-xlo)*(REAL4)i/(REAL4)(N-1);
@@ -496,17 +622,24 @@ void ParseParameter(
 	  x = xhi;
 	}
 
+	/* allocate memory for output (link list) */
 	params->next = (BurstParameter *)LALCalloc(1,sizeof(BurstParameter));
 	RASSERT(params->next, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC);
 	params = params->next;
 
+	/* type of each element in link list is real4 */
 	params->real4_ = (REAL4 *)LALMalloc(sizeof(REAL4)); 
 	RASSERT(params->real4_, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC); 
 	*(params->real4_) = x;
       }
     } else {
+
+      /* Have a 4th element, switch it */
+
       switch(*ptr) {
+
       case 'l':
+	/* log-spaced interval */
 	for(i=0;i<N;i++) {
 	  if(N>1) {
 	    x = xlo*pow(xhi/xlo,(REAL4)i/(REAL4)(N-1));
@@ -514,10 +647,62 @@ void ParseParameter(
 	    x = xhi;
 	  }
 
+	  /* allocate memory for output (link list) */
+	params->next = (BurstParameter *)LALCalloc(1,sizeof(BurstParameter));
+	RASSERT(params->next, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC);
+	params = params->next;
+
+	/* type of each element in link list is real4 */
+	params->real4_ = (REAL4 *)LALMalloc(sizeof(REAL4)); 
+	RASSERT(params->real4_, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC); 
+	*(params->real4_) = x;
+      }
+    } else {
+
+      /* Have a 4th element, switch it */
+
+      switch(*ptr) {
+
+      case 'l':
+	/* log-spaced interval */
+	for(i=0;i<N;i++) {
+	  if(N>1) {
+	    x = xlo*pow(xhi/xlo,(REAL4)i/(REAL4)(N-1));
+	  } else {
+	    x = xhi;
+	  }
+
+	  /* allocate memory for output (link list) */
+	params->next = (BurstParameter *)LALCalloc(1,sizeof(BurstParameter));
+	RASSERT(params->next, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC);
+	params = params->next;
+
+	/* type of each element in link list is real4 */
+	params->real4_ = (REAL4 *)LALMalloc(sizeof(REAL4)); 
+	RASSERT(params->real4_, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC); 
+	*(params->real4_) = x;
+      }
+    } else {
+
+      /* Have a 4th element, switch it */
+
+      switch(*ptr) {
+
+      case 'l':
+	/* log-spaced interval */
+	for(i=0;i<N;i++) {
+	  if(N>1) {
+	    x = xlo*pow(xhi/xlo,(REAL4)i/(REAL4)(N-1));
+	  } else {
+	    x = xhi;
+	  }
+
+	  /* allocate memory for output (link list) */
 	  params->next = (BurstParameter *)LALCalloc(1,sizeof(BurstParameter));
 	  RASSERT(params->next, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC);
 	  params = params->next;
 
+	  /* type of each element in link list is real4 */
 	  params->real4_ = (REAL4 *)LALMalloc(sizeof(REAL4)); 
 	  RASSERT(params->real4_, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC); 
 	  *(params->real4_) = x;
@@ -525,7 +710,14 @@ void ParseParameter(
 	break;
 
       case 'r':
-	params->random = 1;
+
+	/* random interval */
+
+	params->random = 1; /* set flag */
+
+	/* setup link list; 
+	   1st element is lower bound of random interval (xlo),
+	   2nd element is upper bound (xhi) */
 
 	params->next = (BurstParameter *)LALCalloc(1,sizeof(BurstParameter));
 	RASSERT(params->next, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC);
@@ -533,11 +725,13 @@ void ParseParameter(
 
 	if(fabs((xlo - floor(xlo))/xlo) < 1E-15 ||
 	   fabs((xlo - ceil(xlo))/xlo) < 1E-15) {
+	  /* xlo is integer type */
 	  params->int4_ = (INT4 *)LALMalloc(sizeof(INT4));
 	  RASSERT(params->int4_, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC);
 
 	  *(params->int4_) = (INT4)xlo;
 	} else {
+	  /* xlo is a REAL4 type */
 	  params->real4_ = (REAL4 *)LALMalloc(sizeof(REAL4));
 	  RASSERT(params->real4_, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC);
 
@@ -546,17 +740,20 @@ void ParseParameter(
 
 	params->random = 1;
 
+	/* xhi: */
 	params->next = (BurstParameter *)LALCalloc(1,sizeof(BurstParameter));
 	RASSERT(params->next, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC);
 	params = params->next;
 
 	if(fabs((xhi - floor(xhi))/xhi) < 1E-15 ||
 	   fabs((xhi - ceil(xhi))/xhi) < 1E-15) {
+	  /* integer */
 	  params->int4_ = (INT4 *)LALMalloc(sizeof(INT4));
 	  RASSERT(params->int4_, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC);
 
 	  *(params->int4_) = (INT4)xhi;
 	} else {
+	  /* float */
 	  params->real4_ = (REAL4 *)LALMalloc(sizeof(REAL4));
 	  RASSERT(params->real4_, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC);
 
@@ -573,13 +770,21 @@ void ParseParameter(
     }
   } else {
 
+    /* we don't have a range delimited by square brackets */
+    /* NOTE: the wrapper is responsible for stripping the () parantheses */
+
     CHAR *tptr = argv;
+
+    /* loop over elements separated by commas: */
     while((ptr = strtok(tptr,","))) {
       tptr = NULL;
+
+      /* allocate memory (link list) */
       params->next = (BurstParameter *)LALCalloc(1,sizeof(BurstParameter));
       RASSERT(params->next, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC);
       params = params->next;
 
+      /* parse parameter using macro */
       SetParams(params,ptr)
 
       (*M)++;
