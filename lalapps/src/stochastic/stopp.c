@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <errno.h>
 #include <getopt.h>
 
 #include <lal/Date.h>
@@ -19,6 +18,9 @@
 #include <lal/LIGOMetadataTables.h>
 
 #include <lalapps.h>
+
+/* verbose flag */
+extern int vrbflg;
 
 NRCSID(STOPPC, "$Id$");
 RCSID("$Id$");
@@ -41,12 +43,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* status */
   LALStatus status = blank_status;
 
-  /* system error checking */
-  extern int errno;
-
   /* getopt flags */
   static int text_flag;
-  extern int vrbflg;
   static int cat_flag;
 
   /* counters */
@@ -81,6 +79,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       /* options that set a flag */
       {"verbose", no_argument, &vrbflg, 1},
       {"text", no_argument, &text_flag, 1},
+      {"cat-flag", no_argument, &cat_flag, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'h'},
       {"version", no_argument, 0, 'v'},
@@ -154,7 +153,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       struct stat infileStatus;
 
       /* if the named file does not exist, exit with an error */
-      if ((stat(argv[i], &infileStatus) == -1) && (errno = ENOENT))
+      if (stat(argv[i], &infileStatus) == -1)
       {
         fprintf(stderr, "Error opening input file \"%s\"\n", argv[i]);
         exit(1);
@@ -213,10 +212,9 @@ INT4 main(INT4 argc, CHAR *argv[])
     fprintf(stdout, "sigmaOpt = %e\n", sigmaOpt);
   }
 
+  /* output as text file */
   if (text_flag)
   {
-    /* output as text file */
-
     /* open output file */
     if ((out = fopen(outputFileName, "w")) == NULL)
     {
@@ -235,10 +233,9 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* close output file */
     fclose(out);
   }
+  /* output as xml file */
   else
   {
-    /* output as xml file */
-
     /* open xml file stream */
     memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
     LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlStream, outputFileName), \
