@@ -41,13 +41,13 @@
 /* #define PRINT50 */
 
 /* should we use doubles for the time-domain filtering */
-#define TDDOUBLE
+#define TDDOUBLE 1
 
 /* should we shift timestamps to compensate for timing errors */
-#define TSHIFT
+#define TIMESHIFT 1
 
 /* should we use the new 2*DF/SRATE normalization convention? */
-#define NEWNORM
+#define NEWNORM 1
 
 /* debug level for LAL */
 INT4 lalDebugLevel = LALERROR | LALWARNING | LALINFO;
@@ -306,7 +306,7 @@ void shifter(float *data, int length, int shift){
   return;
 }
 
-#ifdef PRINT50
+#if PRINT50
 void print50(float *array, char *name){
   int i;
   printf("\n%s\n", name);
@@ -332,7 +332,7 @@ int main(int argc,char *argv[]){
   char framelist[256];
   int opencount=0;
 
-#ifdef TDDOUBLE
+#if TDDOUBLE
   /* for double-precision experiments */
   static REAL8TimeSeries chand;
 #endif
@@ -463,7 +463,7 @@ int main(int argc,char *argv[]){
   LALSCreateVector(&status, &chan.data, npts);
   TESTSTATUS(&status);
 
-#ifdef TDDOUBLE
+#if TDDOUBLE
   /* create structure to store channel data */
   chand.data = NULL;
   LALDCreateVector(&status, &chand.data, npts);
@@ -483,7 +483,7 @@ int main(int argc,char *argv[]){
     struct stat buff;
     char sftname[256];
     int filesize=(INT4)(DF*tbase);
-#ifdef TIMESHIFT
+#if TIMESHIFT
     int microsec, valid=0;
 #endif
 
@@ -491,13 +491,15 @@ int main(int argc,char *argv[]){
     epoch.gpsSeconds=starts[count];
     epoch.gpsNanoSeconds=0;
     
-#ifdef TIMESHIFT
+#if TIMESHIFT
     /* compute timeshift needed */
     microsec=deltatime(argv[4], epoch.gpsSeconds, &valid);
     
     /* if there is no valid timeshift info, skip SFT */
-    if (!valid)
+    if (!valid) {
+      printf("SFT at time %d not made.  No valid timing data\n", epoch.gpsSeconds);
       continue;
+    }
 #endif
     
     /* to check that an existing file has the correct size */
@@ -562,27 +564,27 @@ int main(int argc,char *argv[]){
       chan.epoch = epoch;
       chan.data->length = npts;
 
-#ifdef TDDOUBLE
+#if TDDOUBLE
       strcpy(chand.name, chname);
       chand.deltaT = 1.0/SRATE;
       chand.epoch = epoch;
       chand.data->length = npts;
 #endif
 
-#ifdef PRINT50
+#if PRINT50
       print50(frvect->dataF, "FRAMEDATA");
 #endif
 
       /* copy data */
       for (i=0;i<npts;i++){
 	chan.data->data[i]=frvect->dataF[i];
-#ifdef NEWNORM
+#if NEWNORM
 	/* Normalize data according to the GEO SFT specifications */
 	chan.data->data[i]*=(((double)DF)/(0.5*(double)SRATE));
 #endif
       }
 
-#ifdef PRINT50
+#if PRINT50
       print50(chan.data->data, "LAL_TIMESERIES");
 #endif
 
@@ -590,7 +592,7 @@ int main(int argc,char *argv[]){
       FrVectFree(frvect); 
       frvect=NULL;
 
-#ifdef TDDOUBLE
+#if TDDOUBLE
       /* put into doubles */
       for (i=0; i<npts; i++)
 	chand.data->data[i]=chan.data->data[i];
@@ -608,7 +610,7 @@ int main(int argc,char *argv[]){
       TESTSTATUS(&status);
 #endif
       
-#ifdef PRINT50
+#if PRINT50
       print50(chan.data->data, "LAL_FILTERED");
 #endif
 
@@ -627,11 +629,11 @@ int main(int argc,char *argv[]){
 	}
       }
 
-#ifdef PRINT50
+#if PRINT50
       print50(chan.data->data, "LAL_WINDOWED");
 #endif
 
-#ifdef TIMESHIFT
+#if TIMESHIFT
       /* correct data for timing errors.  This is a bit of a hack.  We
 	 can do it either just before or just after the FFT. This is
 	 equivalent if the timing error equals an integer multiple of
@@ -681,7 +683,7 @@ int main(int argc,char *argv[]){
 	return 7;
       }
       
-#ifdef PRINT50
+#if PRINT50
       print50(chan.data->data, "SHIFTED");
 #endif
 
@@ -689,7 +691,7 @@ int main(int argc,char *argv[]){
       LALForwardRealFFT(&status, fvec, chan.data, pfwd);
       TESTSTATUS(&status);
       
-#ifdef PRINT50
+#if PRINT50
       print50(chan.data->data, "FFT");
       exit(0);
 #endif
@@ -734,7 +736,7 @@ int main(int argc,char *argv[]){
   LALSDestroyVector( &status, &chan.data );
   TESTSTATUS( &status );
 
-#ifdef TDDOUBLE
+#if TDDOUBLE
   LALDDestroyVector( &status, &chand.data );
   TESTSTATUS( &status );
 #endif
