@@ -1478,29 +1478,34 @@ LALFillCListDir (
   ASSERT ( cldir->sigma > 0, status, TFCLUSTERSH_ESTRICTPOS, TFCLUSTERSH_MSGESTRICTPOS);
   ASSERT ( rho >= 0, status, TFCLUSTERSH_EPOS, TFCLUSTERSH_MSGEPOS);
 
-  
-  cldir->s1 = (UINT4 *)LALMalloc(cldir->sigma *(cldir->sigma-1) * sizeof(UINT4)/2);
-  if(!(cldir->s1)) {
-    ABORT ( status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
+  if(cldir->sigma > 1) {
+
+    cldir->s1 = (UINT4 *)LALMalloc(cldir->sigma *(cldir->sigma-1) * sizeof(UINT4)/2);
+    if(!(cldir->s1)) {
+      ABORT ( status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
+    }
+
+    cldir->s2 = (UINT4 *)LALMalloc(cldir->sigma *(cldir->sigma-1) * sizeof(UINT4)/2);
+    if(!(cldir->s2)) {
+      ABORT ( status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP ); 
+    }
+
+    cldir->d = (UINT4 *)LALMalloc(cldir->sigma *(cldir->sigma-1) * sizeof(UINT4)/2);
+    if(!(cldir->d)) {
+      ABORT ( status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP ); 
+    }
+
+
+    for(k=0, i=1; i < cldir->sigma; i++)
+      for(j=i;j<cldir->sigma;j++)
+	{cldir->s1[k] = i;
+	cldir->s2[k] = j;
+	k++;}
   }
-
-  cldir->s2 = (UINT4 *)LALMalloc(cldir->sigma *(cldir->sigma-1) * sizeof(UINT4)/2);
-  if(!(cldir->s2)) {
-    ABORT ( status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP ); 
+  else {
+    cldir->s1 = cldir->s2 = NULL;
+    cldir->d = NULL;
   }
-
-  cldir->d = (UINT4 *)LALMalloc(cldir->sigma *(cldir->sigma-1) * sizeof(UINT4)/2);
-  if(!(cldir->d)) {
-    ABORT ( status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP ); 
-  }
-
-
-  for(k=0, i=1; i < cldir->sigma; i++)
-    for(j=i;j<cldir->sigma;j++)
-      {cldir->s1[k] = i;
-      cldir->s2[k] = j;
-      k++;}
-
 
   cldir->rho = (REAL8 *)LALMalloc(cldir->freqBins * sizeof(REAL8));
   if(!(cldir->rho)) {
