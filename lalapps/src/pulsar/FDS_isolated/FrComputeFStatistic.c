@@ -214,11 +214,11 @@ int main(int argc,char *argv[])
   scanInit.obsDuration = duration + GV.tsft;
   scanInit.fmax  = uvar_Freq;
   if (uvar_FreqBand > 0) scanInit.fmax += uvar_FreqBand;
-  scanInit.Detector = GV.Detector;
+  scanInit.Detector = &GV.Detector;
   scanInit.skyRegion = LALMalloc (strlen (uvar_skyRegion) + 1);
   strcpy (scanInit.skyRegion, uvar_skyRegion);
 
-  LAL_CALL ( InitDopplerScan ( &status, &thisScan, scanInit), &status);
+  LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status);
   
   LALFree (scanInit.skyRegion);
   
