@@ -300,12 +300,12 @@ int main(int argc,char *argv[])
   fpOut=fopen(PolkaCommandLineArgs.OutputFile,"w"); 	 
   for (i=0; i < numCoincidences; i++) 
     {
-      /*      k=indicesCCfa[i]; */
+      UINT4 k = indicesCCfa[i];  /* print out ordered by joint significance */
       fprintf(fpOut,"%1.15le %le %le %le %le %1.15le %le %le %le %le %le\n",
-	      CC[i].f1, CC[i].Alpha1, CC[i].Delta1,
-	      CC[i].F1, CC[i].fa1,
-	      CC[i].f2, CC[i].Alpha2, CC[i].Delta2,
-	      CC[i].F2, CC[i].fa2, CC[i].fa);
+	      CC[k].f1, CC[k].Alpha1, CC[k].Delta1,
+	      CC[k].F1, CC[k].fa1,
+	      CC[k].f2, CC[k].Alpha2, CC[k].Delta2,
+	      CC[k].F2, CC[k].fa2, CC[k].fa);
     }
   fclose(fpOut);
 #if USE_BOINC
