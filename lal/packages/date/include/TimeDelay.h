@@ -4,8 +4,7 @@
 Author: Chin, David <dwchin@umich.edu> 1-734-730-1274
 $Id$
    
-</lalVerbatim> 
-*/
+</lalVerbatim> */
 
 /* 
 <lalLaTeX>
@@ -25,8 +24,7 @@ time for a signal to arrive at two detectors.  The routine is a direct
 translation of the Maple worksheet by Anderson, \emph{et al.}, available at
 \verb+http://dirac.utb.edu/~warren/unprot/beam_patterns.tar.gz+.
 
-</lalLaTeX> 
-*/
+</lalLaTeX> */
 
 
 #ifndef _TIMEDELAY_H
@@ -35,6 +33,7 @@ translation of the Maple worksheet by Anderson, \emph{et al.}, available at
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 #include <lal/DetectorSite.h>
+#include <lal/SkyCoordinates.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -43,26 +42,19 @@ extern "C"
 
 NRCSID( TIMEDELAYH, "$Id$" );
 
-/*
-<lalLaTeX>
+/* <lalLaTeX>
 
 \subsection*{Error conditions}
 
-</lalLaTeX>
-*/
+</lalLaTeX> */
 
-/*
-<lalErrTable>
-*/
+/* <lalErrTable> */
 #define TIMEDELAYH_ENUL 1
 
 #define TIMEDELAYH_MSGENUL "Unexpected null pointer in arguments"
-/*
-</lalErrTable>
-*/
+/* </lalErrTable> */
 
-/*
-<lalLaTeX>
+/* <lalLaTeX>
 
 \subsection*{Structures}
 \begin{verbatim}
@@ -76,42 +68,61 @@ fields are:
 \item[\texttt{LALPlaceAndGPS *detector1}] The first detector
 \item[\texttt{LALPlaceAndGPS *detector2}] The second detector
 \item[\texttt{SkyPosition *source}] The source location (equatorial
-    co\"{o}dinates in decimal radians
+    co\"{o}dinates in decimal radians)
 \end{description}
 
-</lalLaTeX>
-*/
+</lalLaTeX> */
 
 typedef struct
 tagTwoDetsTimeAndASource
 {
   LALPlaceAndGPS *det_and_time1; /* the first detector and detection time */
   LALPlaceAndGPS *det_and_time2; /* the second detector and detection time */
-  SkyPosition    *source;        /* source Equatorial location (lon=RA, lat=dec)
-                                    in decimal radians */
+  SkyPosition    *source;        /* source Equatorial location
+                                  * (lon=RA, lat=dec) in decimal
+                                  * radians */ 
 }
 TwoDetsTimeAndASource;
 
-/*
-<lalLaTeX>
+
+  
+typedef struct
+tagDetTimeAndASource
+{
+  LALPlaceAndGPS *det_and_time; /* detector and detection time */
+  SkyPosition    *source;       /* source Equatorial location
+                                 * (lon=RA, lat=dec) in decimal
+                                 * radians */ 
+}
+DetTimeAndASource;
+    
+
+/* <lalLaTeX>
 \vfill{\footnotesize\input{TimeDelayHV}}
-</lalLaTeX>
-*/
+</lalLaTeX> */
 
 /*
  * Function prototypes
  */
 
-/*
-<lalLaTeX>
+/* <lalLaTeX>
 \newpage\input{TimeDelayC}
-</lalLaTeX>
-*/
+</lalLaTeX> */
 
 void
 LALTimeDelay( LALStatus                   *stat,
               REAL8                       *delay,
               const TwoDetsTimeAndASource *two_detectors_time_and_source );
+
+
+/* <lalLaTeX>
+\newpage\input{TimeDelayFromEarthCenterC}
+</lalLaTeX> */
+
+void
+LALTimeDelayFromEarthCenter( LALStatus               *stat,
+                             REAL8                   *p_time_diff,
+                             const DetTimeAndASource *p_det_time_and_source );
 
 #ifdef __cplusplus
 }

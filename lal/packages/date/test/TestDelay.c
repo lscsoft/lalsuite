@@ -26,7 +26,7 @@ TestDelay
 
 \subsubsection*{Description}
 
-This program does nothing, yet.
+This program does zero-th order tests for \texttt{LALTimeDelay()}. 
 
 
 \subsubsection*{Exit codes}
@@ -42,5 +42,103 @@ This program does nothing, yet.
 </lalErrorTable>
 */
 
+#include <math.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <values.h>
+#include <lal/LALStdlib.h>
+#include <lal/Date.h>
+#include <lal/TimeDelay.h>
+#include <lal/SkyCoordinates.h>
+#include <lal/DetectorSite.h>
+
+
+NRCSID( TESTDELAYC, "$Id$" );
+
+
 int lalDebugLevel = 0;
-int main( void ) { return 77; }
+
+int main( void )
+{
+  static LALStatus stat;
+  LALFrDetector    frdet1;     /* Framelib detector info */
+  LALFrDetector    frdet2;
+  LALDetector      detector1;
+  LALDetector      detector2;
+  LIGOTimeGPS      gps;
+  SkyPosition      source;
+  REAL8            delay;
+  DetTimeAndASource     det1_and_source;
+  TwoDetsTimeAndASource dets_and_source;
+  LALPlaceAndGPS        det1_and_gps;
+  LALPlaceAndGPS        det2_and_gps;
+
+  /*
+   * Set up a source that will be used in both LALTimeDelay() and
+   * LALTimeDelayFromEarthCenter().
+   * Simple source at (RA=0, Dec=0)
+   */
+  source.longitude = 0.;
+  source.latitude  = 0.;
+  source.system    = COORDINATESYSTEM_EQUATORIAL;
+
+  /*
+   * Now, setup two detectors. One at (0.E, 0.N) and the other at (90.E,
+   * 0.N)
+   */
+  strcpy(frdet1.name, "TEST IFO 1");
+  frdet1.vertexLongitudeDegrees = 0.;
+  frdet1.vertexLatitudeDegrees  = 0.;
+  frdet1.vertexElevation        = 0.;
+  frdet1.xArmAltitudeRadians    = 0.;
+  frdet1.xArmAzimuthRadians     = 3. * LAL_PI_2;
+  frdet1.yArmAltitudeRadians    = 0.;
+  frdet1.yArmAzimuthRadians     = 0.;
+
+  LALCreateDetector(&stat, &detector1, &frdet1, LALIFODIFFDETECTOR);
+
+  strcpy(frdet2.name, "TEST IFO 2");
+  frdet2.vertexLongitudeDegrees = 90.;
+  frdet2.vertexLatitudeDegrees  = 0.;
+  frdet2.vertexElevation        = 0.;
+  frdet2.xArmAltitudeRadians    = 0.;
+  frdet2.xArmAzimuthRadians     = 3. * LAL_PI_2;
+  frdet2.yArmAltitudeRadians    = 0.;
+  frdet2.yArmAzimuthRadians     = 0.;
+
+  LALCreateDetector(&stat, &detector2, &frdet2, LALIFODIFFDETECTOR);
+
+  /*
+   * Set a GPS time that's close to 0h GMST1. (Found this by trial and
+   * error.) 
+   */
+  gps.gpsSeconds     = 60858;
+  gps.gpsNanoSeconds = 0;
+
+  det1_and_gps.detector = &detector1;
+  det1_and_gps.gps      = &gps;
+
+  det1_and_source.det_and_time = &det1_and_gps;
+  det1_and_source.source       = &source;
+
+  LALTimeDelayFromEarthCenter(&stat, &delay, &det1_and_source);
+
+  /*
+   * Expect delay to be roughly c/R, where c=speed of light,
+   *                                       R=radius of Earth at
+   *                                         Equator
+   */
+  /*
+    printf("Time delay from Earth center = %18.13e sec\n", delay);
+    printf("R/c = %18.13e sec\n", (REAL8)LAL_REARTH_SI / (REAL8)LAL_C_SI);
+
+    printf("Diff = %18.13e\n", delay + (REAL8)LAL_REARTH_SI / (REAL8)LAL_C_SI);
+    printf("X_EPS = %18.13e\n", (float)X_EPS);
+    printf("H_PREC = %18.13e\n", (float)H_PREC);
+  */
+
+  if ((fabs(delay) - (REAL8)LAL_REARTH_SI / (REAL8)LAL_C_SI) < X_EPS)
+    return 0;
+  else
+    return 1;
+}

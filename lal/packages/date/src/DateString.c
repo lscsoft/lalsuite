@@ -45,9 +45,9 @@ NRCSID (DATESTRINGC, "$Id$");
 
 
 void
-LALDateString (LALStatus        *status,
-            CHARVector    *timestamp,
-            const LALDate *date)
+LALDateString (LALStatus     *status,
+               CHARVector    *timestamp,
+               const LALDate *date)
 {
     INITSTATUS (status, "LALDateString", DATESTRINGC);
 

@@ -1,27 +1,31 @@
-/*-----------------------------------------------------------------------
- *
- * File Name: Date.h
- *
- * Author: David Chin <dwchin@umich.edu>
- *
- * Revision: $Id$
- *
- *-----------------------------------------------------------------------
- *
- * NAME
- * Date.h
- *
- * SYNOPSIS
- * #include <lal/Date.h>
- *
- * DESCRIPTION
- * Data type definitions for date and time manipulation.
- * Function prototypes for date and time manipulation functions.
- *
- * DIAGNOSTICS
- *
- *-----------------------------------------------------------------------
- */
+/*
+<lalVerbatim file="DateHV">
+
+Author: David Chin <dwchin@umich.edu> +1-734-730-1274
+$Id$
+
+</lalVerbatim>
+*/
+
+/*
+<lalLaTeX>
+
+\section{Header \texttt{Date.h}}
+\label{s:Date.h}
+
+Provides routines for manipulating date and time information.
+
+\subsection*{Synopsis}
+\begin{verbatim}
+#include <lal/Date.h>
+\end{verbatim}
+
+This header covers routines for manipulating date and time
+information.  The various time systems are discussed in~cite{esaa:1992}.
+
+
+</lalLaTeX>
+*/
 
 #ifndef _DATE_H
 #define _DATE_H
@@ -52,8 +56,14 @@ extern "C"
 NRCSID (DATEH, "$Id$");
 
 /*
- * Julian.c
- */
+<lalLaTeX>
+\subsection*{Error conditions}
+</lalLaTeX>
+*/
+
+/*
+<lalErrTable> 
+*/
 #define JULIAN_ENULLINPUT    1
 #define JULIAN_ENULLOUTPUT   2
 #define JULIAN_EDATETOOEARLY 3
@@ -62,29 +72,22 @@ NRCSID (DATEH, "$Id$");
 #define JULIAN_MSGENULLOUTPUT "Output is NULL"
 #define JULIAN_MSGEDATETOOEARLY "Date too early: Julian Day can only be computed for dates >= 1900-Mar"
 
-/*
- * UtoGPS.c
- */
 #define UTOGPS_ENULLINPUT   1
 #define UTOGPS_ENULLOUTPUT  2
     
 #define UTOGPS_MSGENULLINPUT "Input is NULL"
 #define UTOGPS_MSGENULLOUTPUT "Output is NULL"
     
-/*
- * Utime.c
- */
+
 #define UTIME_ENULLINPUT  1
 #define UTIME_ENULLOUTPUT 2
 #define UTIME_ERANGE      3
 
 #define UTIME_MSGENULLINPUT "Input is NULL"
 #define UTIME_MSGENULLOUTPUT "Output is NULL"
-#define UTIME_MSGERANGE "Input time out of range: 0 <= utc_seconds <= 946684823"
+#define UTIME_MSGERANGE "Input time out of range: 0 <= utcSeconds <= 946684823"
 
-/*
- * DateString.c
- */
+
 #define DATESTRING_ENULLINPUT    1
 #define DATESTRING_ENULLOUTPUT   2
 #define DATESTRING_EBUFFTOOSMALL 3
@@ -93,9 +96,11 @@ NRCSID (DATEH, "$Id$");
 #define DATESTRING_MSGENULLOUTPUT "Output is NULL"
 #define DATESTRING_MSGEBUFFTOOSMALL "Output timestamp string too small: min. size = 26"
     
-/*
- * LMST1.c
- */
+#define SECSTOLALDATE_ENULLOUTPUT 1
+    
+#define SECSTOLALDATE_MSGENULLOUTPUT "Output is NULL"
+
+
 #define LMST1_ENULLINPUT  1
 #define LMST1_ENULLOUTPUT 2
     
@@ -107,6 +112,7 @@ NRCSID (DATEH, "$Id$");
 
 #define GPSTOGMST1_ENULLINPUT 1
 #define GPSTOGMST1_ENULLOUTPUT 2    
+
 
 #define LMST1_MSGENULLINPUT "Input is NULL"
 #define LMST1_MSGENULLOUTPUT "Output is NULL"
@@ -121,9 +127,49 @@ NRCSID (DATEH, "$Id$");
 #define GPSTOGMST1_MSGENULLOUTPUT "Output is NULL"    
 
 /*
- * Enumerated type to specify units for the return value
- * of MST routines
- */
+</lalErrTable>
+
+<lalLaTeX>
+
+
+\subsection*{Structures}
+
+
+</lalLaTeX>
+*/
+
+/*
+<lalLaTeX>
+
+\vfill{\footnotesize\input{DateHV}}
+
+</lalLaTeX>
+*/
+
+/*
+<lalLaTeX>
+
+\subsection*{Types}
+
+\subsubsection*{Enumeration \texttt{LALMSTUnits}}
+\index{\texttt{LALMSTUnits}}
+
+This enumerated type is used as a parameter for Mean Sidereal Time
+routines to specify the units in which to return the Mean Sidereal
+Time. The allowed values are:
+
+\medskip\noindent
+\begin{tabular}{ll}
+  \verb@MST_SEC@ & arc-seconds \\
+  \verb@MST_HRS@ & arc-hours (\textit{i.e.} units of Right Ascension)\\
+  \verb@MST_DEG@ & degrees \\
+  \verb@MST_RAD@ & radians
+\end{tabular}
+\bigskip
+
+</lalLaTeX>
+*/
+
 typedef enum
 {
   MST_SEC,       /* arc seconds */
@@ -132,21 +178,45 @@ typedef enum
   MST_RAD,       /* radians */
 } LALMSTUnits;
 
-    
-/*
- * SecsToLALDate.c
- */
-#define SECSTOLALDATE_ENULLOUTPUT 1
-    
-#define SECSTOLALDATE_MSGENULLOUTPUT "Output is NULL"
 
-    
+/*
+<lalLaTeX>
+
+\subsubsection*{Structure \texttt{LALUnixDate}}
+\index{\texttt{LALUnixDate}}
+
+This structure is just the standard Unix \texttt{tm} structure.
+
+</lalLaTeX>
+*/
+
 /*
  * The standard Unix tm structure
  */
 typedef struct
 tm
 LALUnixDate;
+
+/*
+<lalLaTeX>
+
+\subsubsection*{Structure \texttt{LIGOTimeUnix}}
+\index{\texttt{LIGOTimeUnix}}
+
+This structure is the Unix-epoch analog of \texttt{LIGOTimeGPS}.  It
+store the number of seconds and nanoseconds elapsed since the Unix
+epoch (1970-Jan-01 00:00:00). The fileds are:
+
+\begin{description}
+\item[\texttt{INT4 unixSeconds}] The integral number of seconds
+  elapsed since the Unix epoch
+\item[\texttt{INT4 unixNanoSeconds}] The residual number of
+  nanoseconds that have to be added to \texttt{unixSeconds} to bring us
+  up to the time in question
+\end{description}
+
+</lalLaTeX>
+*/
 
 /*
  * This time object is exactly like LIGOTimeGPS, except for the name.
@@ -159,6 +229,24 @@ tagLIGOTimeUnix
     INT4 unixNanoSeconds;
 }
 LIGOTimeUnix;
+
+/*
+<lalLaTeX>
+
+
+\subsubsection{Structure \texttt{LALTimeInterval}}
+
+This structure is used for storing intervals of \texttt{LIGOTimeGPS}
+and \texttt{LIGOTimeUnix} times.  The fields are:
+
+\begin{description}
+\item[\texttt{REAL4 seconds}] Integral part of the time interval
+\item[\texttt{REAL4 nanoSeconds}] Residual nanoseconds (\textit{i.e.}
+  fractional part, in nanoseconds)
+\end{description}
+
+</lalLaTeX>
+*/
 
 /*
  * This time object is for time intervals, i.e. no reference epoch implied

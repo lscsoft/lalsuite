@@ -24,7 +24,9 @@ main(int argc, char *argv[])
     INT4        testid;
     INT4        dayofmonth, monthofyear;
     LIGOTimeGPS gpstime;
+    INT4        i;
     static LALStatus  status;
+
     
     if (argc != 3)
     {
@@ -42,6 +44,9 @@ main(int argc, char *argv[])
 
 
     LALCHARCreateVector(&status, &tmpstamp, (UINT4)64);
+
+    for (i = 0; i < (INT4)(tmpstamp->length); ++i)
+        tmpstamp->data[i] = '\0';
 
     printf("TEST of LALGMST1 routine\n");
     printf("=====================\n");
@@ -71,7 +76,7 @@ main(int argc, char *argv[])
 
         LALGMST1(&status, &gmstsecs, &date, MST_SEC);
         LALSecsToLALDate(&status, &mstdate, gmstsecs);
-        strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
+        strftime(timestamp, 64, "%Hh %Mm %Ss", &(mstdate.unixDate));
         sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
         strcat(timestamp, tmpstr+1); /* remove leading 0 */
         LALDateString(&status, tmpstamp, &date);
@@ -84,7 +89,7 @@ main(int argc, char *argv[])
         printf("\nUsing the GPStoGMST1() and GPStoLMST1() routines instead:\n");
         LALGPStoGMST1(&status, &gmstsecs, &gpstime, MST_SEC);
         LALSecsToLALDate(&status, &mstdate, gmstsecs);
-        strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
+        strftime(timestamp, 64, "%Hh %Mm %Ss", &(mstdate.unixDate));
         sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
         strcat(timestamp, tmpstr+1); /* remove leading 0 */
         LALDateString(&status, tmpstamp, &date);
@@ -123,7 +128,7 @@ main(int argc, char *argv[])
 
         LALGMST1(&status, &gmstsecs, &date, MST_SEC);
         LALSecsToLALDate(&status, &mstdate, gmstsecs);
-        strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
+        strftime(timestamp, 64, "%Hh %Mm %Ss", &(mstdate.unixDate));
         sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
         strcat(timestamp, tmpstr+1); /* remove leading 0 */
         LALDateString(&status, tmpstamp, &date);
@@ -135,7 +140,7 @@ main(int argc, char *argv[])
         printf("\nUsing the GPStoGMST1() and GPStoLMST1() routines instead:\n");
         LALGPStoGMST1(&status, &gmstsecs, &gpstime, MST_SEC);
         LALSecsToLALDate(&status, &mstdate, gmstsecs);
-        strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
+        strftime(timestamp, 64, "%Hh %Mm %Ss", &(mstdate.unixDate));
         sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
         strcat(timestamp, tmpstr+1); /* remove leading 0 */
         LALDateString(&status, tmpstamp, &date);
@@ -174,7 +179,7 @@ main(int argc, char *argv[])
 
         LALGMST1(&status, &gmstsecs, &date, MST_SEC);
         LALSecsToLALDate(&status, &mstdate, gmstsecs);
-        strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
+        strftime(timestamp, 64, "%Hh %Mm %Ss", &(mstdate.unixDate));
         sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
         strcat(timestamp, tmpstr+1); /* remove leading 0 */
         LALDateString(&status, tmpstamp, &date);
@@ -186,7 +191,7 @@ main(int argc, char *argv[])
         printf("\nUsing the GPStoGMST1() and GPStoLMST1() routines instead:\n");
         LALGPStoGMST1(&status, &gmstsecs, &gpstime, MST_SEC);
         LALSecsToLALDate(&status, &mstdate, gmstsecs);
-        strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
+        strftime(timestamp, 64, "%Hh %Mm %Ss", &(mstdate.unixDate));
         sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
         strcat(timestamp, tmpstr+1); /* remove leading 0 */
         LALDateString(&status, tmpstamp, &date);
@@ -222,7 +227,7 @@ main(int argc, char *argv[])
 
         LALGMST1(&status, &gmstsecs, &date, MST_SEC);
         LALSecsToLALDate(&status, &mstdate, gmstsecs);
-        strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
+        strftime(timestamp, 64, "%Hh %Mm %Ss", &(mstdate.unixDate));
         sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
         strcat(timestamp, tmpstr+1); /* remove leading 0 */
         LALDateString(&status, tmpstamp, &date);
@@ -234,7 +239,7 @@ main(int argc, char *argv[])
         printf("\nUsing the GPStoGMST1() and GPStoLMST1() routines instead:\n");
         LALGPStoGMST1(&status, &gmstsecs, &gpstime, MST_SEC);
         LALSecsToLALDate(&status, &mstdate, gmstsecs);
-        strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
+        strftime(timestamp, 64, "%Hh %Mm %Ss", &(mstdate.unixDate));
         sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
         strcat(timestamp, tmpstr+1); /* remove leading 0 */
         LALDateString(&status, tmpstamp, &date);
@@ -275,7 +280,7 @@ main(int argc, char *argv[])
 
         LALGMST1(&status, &gmstsecs, &date, MST_SEC);
         LALSecsToLALDate(&status, &mstdate, gmstsecs);
-        strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
+        strftime(timestamp, 64, "%Hh %Mm %Ss", &(mstdate.unixDate));
         sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
         strcat(timestamp, tmpstr+1); /* remove leading 0 */
         LALDateString(&status, tmpstamp, &date);
@@ -303,7 +308,7 @@ main(int argc, char *argv[])
 
                 LALGMST1(&status, &gmstsecs, &date, MST_SEC);
                 LALSecsToLALDate(&status, &mstdate, gmstsecs);
-                strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
+                strftime(timestamp, 64, "%Hh %Mm %Ss", &(mstdate.unixDate));
                 sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
                 strcat(timestamp, tmpstr+1); /* remove leading 0 */
                 LALDateString(&status, tmpstamp, &date);

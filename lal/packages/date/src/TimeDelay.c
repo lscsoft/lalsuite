@@ -1,23 +1,20 @@
-/*
-<lalVerbatim file="TimeDelayCV">
+/* <lalVerbatim file="TimeDelayCV">
 
 Author: Chin, David <dwchin@umich.edu> +1-734-730-1274
 $Id$
 
-</lalVerbatim>
-*/
+</lalVerbatim> */
 
-/*
-<lalLaTeX>
+/* <lalLaTeX>
 
 \subsection{Module \texttt{TimeDelay.c}}
-\label{sec:TimeDelay.c}
+\label{ss:TimeDelay.c}
 
 Computes difference in arrival time of the same signal at two different
 detectors. 
 
-
 \subsubsection*{Prototypes}
+\vspace{0.1in}
 \input{TimeDelayCP}
 \index{\texttt{LALTimeDelay()}}
 
@@ -51,8 +48,7 @@ a GMST which gives us the orientation of the Earth.
 
 \vfill{\footnotesize\input{TimeDelayCV}}
 
-</lalLaTeX>
-*/
+</lalLaTeX> */
 
 #include <math.h>
 #include <lal/LALConstants.h>
@@ -72,9 +68,7 @@ static REAL8 dotprod(REAL8 vec1[3], REAL8 vec2[3])
           vec1[2] * vec2[2]);
 }
 
-/*
-<lalVerbatim file="TimeDelayCP">
-*/
+/* <lalVerbatim file="TimeDelayCP"> */
 void
 LALTimeDelay( LALStatus                    *stat,
               REAL8                        *p_time_diff,
@@ -164,15 +158,15 @@ LALTimeDelay( LALStatus                    *stat,
    * compute the location vector of detector 1 
    */
   /* latitude of detector 1, in radians */
-  lat1 = p_dets_time_and_source->det_and_time1->detector->frDetector.vertexLatitudeDegrees * LAL_PI / (REAL8)180.;
+  lat1 = p_dets_time_and_source->det_and_time1->detector->frDetector.vertexLatitudeDegrees * LAL_PI_180;
   
   /* longitude of detector 1, in radians */
-  lon1 = p_dets_time_and_source->det_and_time1->detector->frDetector.vertexLongitudeDegrees * LAL_PI / (REAL8)180.;
+  lon1 = p_dets_time_and_source->det_and_time1->detector->frDetector.vertexLongitudeDegrees * LAL_PI_180;
 
   cosLat1 = cos(lat1);
   sinLat1 = sin(lat1);
 
-  /* local rad. of curv. at detector 2 */
+  /* local rad. of curv. at detector 1 */
   R1  = a2 / sqrt(a2 * cosLat1 * cosLat1 +
                   b2 * sinLat1 * sinLat1); 
   Rh1 = R1 + p_dets_time_and_source->det_and_time1->detector->frDetector.vertexElevation;
@@ -204,14 +198,16 @@ LALTimeDelay( LALStatus                    *stat,
   detLoc2[2] = (b2 * R2 / a2) * sinLat2;
 
   /*
-   * displacement of detector 2 from detector 1
+   * displacement of detector 1 from detector 2
    */
   for (i = 0; i < 3; ++i)
-    deltaLoc[i] = detLoc2[i] - detLoc1[i];
+    deltaLoc[i] = detLoc1[i] - detLoc2[i];
 
   /*
-   * time difference: time taken for light to travel the intervening
-   * distance along the direction to the source
+   * Time difference: time taken for light to travel the intervening
+   * distance along the direction to the source.
+   * If (detLoc1 - detLoc2) &. ehat_src is positive, then detector 1
+   * is closer to the source and hence the time delay is positive.
    */
   *p_time_diff = dotprod(ehat_src, deltaLoc) / LAL_C_SI;
 
@@ -221,4 +217,6 @@ LALTimeDelay( LALStatus                    *stat,
    */
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
-}
+} /* END: LALTimeDelay() */
+
+

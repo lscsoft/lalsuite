@@ -127,9 +127,9 @@ static const time_t leaps[]={
  * Bruce Allen, et al.
  */
 void
-LALUtime (LALStatus              *status,
-       LALDate             *utc,
-       const LIGOTimeUnix  *unixtime)
+LALUtime ( LALStatus           *status,
+           LALDate             *utc,
+           const LIGOTimeUnix  *unixtime)
 {
     /* latest time for which this routine will work */
     const INT4   maxtested = 946684823;

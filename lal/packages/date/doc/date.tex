@@ -1,19 +1,57 @@
-\chapter{Package \texttt{delay}}
+%%% Author: David Chin <dwchin@umich.edu> +1-734-730-1274
+%%%$Id$
 
-This package provides a routine to compute the difference in time arrival
-of a signal at two detector locations.
+\chapter{Package \texttt{date}}
+
+This package provides routines related to date and time manipulations
+(\texttt{Date.h}).  It also provides routines to compute the
+difference in time of arrival of a signal at two detector locations,
+and also between a detector and the center of the Earth-fixed frame
+(\texttt{TimeDelay.h}).
+
+\newpage\input{DateH}
 
 \newpage\input{TimeDelayH}
 
 \newpage\begin{thebibliography}{1}
   
-  \bibitem{ABCF:2000}
-    W.~G. Anderson, P.~R Brady, J.~D.~E. Creighton, and \'E.~\'E. Flanagan,
-    \emph{Beam Pattern Response
-        Functions and Times of Arrival for Earthbound Interferometers}
-    (2000), unpublished Maple worksheet,
-    \verb+http://dirac.utb.edu/~warren/unprot/beam_patterns.tar.gz+.
+\bibitem{ptvf:1992}
+  W.~H. Press, S.~A. Teukolsky, W.~T. Vetterling, and B.~P. Flannery,
+  \textit{Numerical Recipes in C: The Art of Scientific Computing}, 2nd ed.
+  (Cambridge University Press, Cambridge, 1992).
 
+\bibitem{vfp:1979}
+  T.~C. Van Flandern, and K.~F. Pulkkinen, 
+  \textit{Astrophysical Journal Supplement Series}, \textbf{41},
+  391-411, 1979 Nov.
+  
+\bibitem{esaa:1992}
+  \textit{Explanatory Supplement to the Astronomical Almanac} (University
+  Science Books, Mill Valley, 1992)
+
+\bibitem{novas:1999}
+  \textit{Naval Observatory Vector Astrometry Subroutines, C Version 2.0.1}
+  (U.~S.~Naval Observatory, Astronomical Applications Dept., Dec. 1999)
+  \verb+http://aa.usno.navy.mil/software/novas/novas_c/novasc_info.html+
+  
+\bibitem{green:1985}
+  R.~M. Green, \textit{Spherical Astronomy} (Cambridge University Press,
+  Cambridge, 1985)
+  
+\bibitem{grasp:194}
+  B. Allen, \textit{et al.}, GRASP Release 1.9.4 (University of Wisconsin
+  - Milwaukee, Milwaukee, 1999)
+  
+\bibitem{iso8601}
+  \textit{International Standard ISO 8601} (International Organization for
+  Standardization, Switzerland, 1988)
+  
+\bibitem{ABCF:2000}
+  W.~G. Anderson, P.~R Brady, J.~D.~E. Creighton, and \'E.~\'E. Flanagan,
+  \emph{Beam Pattern Response Functions and Times of Arrival for Earthbound Interferometers} 
+  (2000), unpublished Maple worksheet,
+  \verb+http://dirac.utb.edu/~warren/unprot/beam_patterns.tar.gz+
+  
 \end{thebibliography}
 
 %%% Local Variables: 
