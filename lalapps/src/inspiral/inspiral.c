@@ -883,6 +883,7 @@ int main( int argc, char *argv[] )
       &status );
   fcFilterParams->deltaT = 1.0 / (REAL4) sampleRate;
   fcFilterParams->computeNegFreq = 0;
+  fcFilterParams->chisqParams->approximant = approximant;
 
   LAL_CALL( LALCreateFindChirpInput( &status, &fcFilterInput, fcInitParams ), 
       &status );
