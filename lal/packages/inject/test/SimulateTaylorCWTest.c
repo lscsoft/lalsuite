@@ -43,7 +43,7 @@ is written.
 waveform: \verb@sec@ and \verb@nsec@ are integers specifying the start
 time in GPS seconds and nanoseconds, \verb@npt@ is the number of time
 samples generated, and \verb@dt@ is the sampling interval in seconds.
-If absent, \verb@-t 0 0 65536 9.765625e-4 0.0@ is assumed.
+If absent, \verb@-t 0 0 65536 9.765625e-4@ is assumed.
 \item[\texttt{-d}] Sets the debug level to \verb@debuglevel@.  If
 absent, level 0 is assumed.
 \end{itemize}
