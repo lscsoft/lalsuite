@@ -382,28 +382,15 @@ main (INT4 argc, CHAR **argv )
 		case PadeT1:
 		case PadeF1:
 		case SpinTaylor:
-
-		  
-		  /* SHOULD be replace by flso of the template in the bank*/
-		  fendBCV   = 1./LAL_PI/pow(6, 1.5)/(list[currentTemplateNumber].params.mass1+list[currentTemplateNumber].params.mass2)/LAL_MTSUN_SI;
-		  
-		  if (coarseBankIn.approximant == EOB && coarseBankIn.order==threePN)
-		    fendBCV   = 1./LAL_PI/pow(2.3, 1.5)/(list[currentTemplateNumber].params.mass1+list[currentTemplateNumber].params.mass2)/LAL_MTSUN_SI;
-		  		  
-		  if (otherIn.check)
-		    fendBCV   =  list[currentTemplateNumber].params.fFinal;  
-
-		  if (fendBCV > randIn.param.tSampling/2 ) 
-		    fendBCV = randIn.param.tSampling/2. - 1;
-		  
-		  /* should simply be 
-		     fendBCV   =  list[currentTemplateNumber].params.fFinal;  
-		     all the time isnt' it ? 
-		  */
-		  overlapin.param.fFinal  = fendBCV;
-		  overlapin.param.fCutoff = fendBCV;
-		  
-		  /*  printf("params M=%lf m1 =%lf m2 = %lf\n",overlapin.param.totalMass, overlapin.param.mass1, overlapin.param.mass2);*/
+		  if (otherIn.check){
+		    randIn.param.fCutoff = coarseBankIn.fUpper;
+		    overlapin.param = randIn.param;
+		  }
+		  else
+		    {
+		      overlapin.param.fCutoff = randIn.param.tSampling/2. - 1;;
+		      overlapin.param.fFinal = randIn.param.tSampling/2. - 1;
+		    }
 
 		  
 		  LAL_CALL(LALInspiralWaveOverlap(&status,
@@ -411,14 +398,13 @@ main (INT4 argc, CHAR **argv )
 						  &overlapout,
 						  &overlapin), &status);
 		  
-
-
+		  
 		  BEFillOverlapOutput(overlapout, 
 				      &OverlapOutputThisTemplate);
 		  
 		  break;	     
 		}     /* switch end */
-
+	      
 	      
 	      /* fill historgranm of the correlation output */
 	      if (otherIn.PrintSNRHisto){
@@ -426,7 +412,7 @@ main (INT4 argc, CHAR **argv )
 		  gsl_histogram_increment(histogramNoise, correlation.data[i]);
 		}		    
 	      }	
-
+	      
 
 	      
 	      /* --- if overlap is the largest one, then we keep some 
