@@ -1,34 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <getopt.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <regex.h>
-#include <time.h>
-#include <math.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALError.h>
-#include <lal/AVFactories.h>
-#include <lal/LALDatatypes.h>
-#include <lal/LALConstants.h>
-#include <lal/FrameStream.h>
-#include <lal/EPData.h>
-#include <lal/EPSearch.h>
-#include <lal/BurstSearch.h>
-#include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOLwXML.h>
-#include <lal/PrintFTSeries.h>
-#include <lal/ResampleTimeSeries.h>
-#include <lal/Random.h>
-#include <lal/Date.h>
-#include <lal/Units.h>
-#include <lal/IIRFilter.h>
-#include <lal/TimeFreqFFT.h>
-#include <lalapps.h>
-#include <processtable.h>
+#include "power.h"
 
 #define PROGRAM_NAME "power"
 
@@ -79,44 +49,6 @@ int main( void )
 #define POWERC_MSGEMEM          "Out of memory"
 #define POWERC_MSGENOEPOCH      "Epoch must be provided"
 
-#define POWERC_ARGVNPTS     "--npts"
-#define POWERC_ARGNPTS      1
-#define POWERC_ARGVNSEG     "--nseg"
-#define POWERC_ARGNSEG      2
-#define POWERC_ARGVOLAP     "--olap"
-#define POWERC_ARGOLAP      3
-#define POWERC_ARGVOLAPFCTR "--olapfctr"
-#define POWERC_ARGOLAPFCTR  4
-#define POWERC_ARGVMINFBIN  "--minfbin"
-#define POWERC_ARGMINFBIN   5
-#define POWERC_ARGVMINTBIN  "--mintbin"
-#define POWERC_ARGMINTBIN   6
-#define POWERC_ARGVFLOW     "--flow"
-#define POWERC_ARGFLOW      7
-#define POWERC_ARGVDELF     "--delf"
-#define POWERC_ARGDELF      8
-#define POWERC_ARGVLNGTH    "--lngth"
-#define POWERC_ARGLNGTH     9
-#define POWERC_ARGVNSIGMA   "--nsigma"
-#define POWERC_ARGNSIGMA    10
-#define POWERC_ARGVALPHDEF  "--alphdef"
-#define POWERC_ARGALPHDEF   11
-#define POWERC_ARGVSEGDCLE  "--segdcle"
-#define POWERC_ARGSEGDCLE   12
-#define POWERC_ARGVALPHTH   "--threshold"
-#define POWERC_ARGALPHTH    13
-#define POWERC_ARGVE2MSTR   "--etomstr"
-#define POWERC_ARGE2MSTR    14
-#define POWERC_ARGVCHANNEL  "--channel"
-#define POWERC_ARGCHANNEL   15
-#define POWERC_ARGVSIMTYPE  "--simtype"
-#define POWERC_ARGSIMTYPE   16
-#define POWERC_ARGVSPECTYPE "--spectype"
-#define POWERC_ARGSPECTYPE  17
-#define POWERC_ARGVWINTYPE  "--window"
-#define POWERC_ARGWINTYPE   18
-#define POWERC_ARGVHELP  "--help"
-
 #define TRUE       1
 #define FALSE      0
 
@@ -134,8 +66,6 @@ int main( void )
 #define CAV_GAIN_REGEX "CAL-CAV_GAIN"
 #define CAV_FAC_REGEX "CAL-CAV_FAC"
 #define OLOOP_FAC_REGEX "CAL-OLOOP_FAC"
-
-#define OLDWAY 0
 
 /* Fill an array with white noise */
 static void makeWhiteNoise(
@@ -238,349 +168,6 @@ int main( int argc, char *argv[])
     lal_errhandler = LAL_ERR_EXIT;
     set_debug_level( "3" );
 
-#if OLDWAY
-    /*******************************************************************
-    * BEGIN PARSE ARGUMENTS (inarg stores the current position)        *
-    *******************************************************************/
-
-    if (argc <= 1){
-        fprintf(stderr,  USAGE, *argv );
-        return 0;
-    }
-    
-    initSearchParams.argc = 1;
-    initSearchParams.argv[0] = "-filterparams";
-    memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
-
-    while ( inarg < argc ) {
-        /* Parse output file option. */
-        if ( !strcmp( argv[inarg], POWERC_ARGVNPTS ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                initSearchParams.argv[POWERC_ARGNPTS] = argv[inarg++];
-                initSearchParams.argc++;
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], POWERC_ARGVHELP ) ) {
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-        }
-        else if ( !strcmp( argv[inarg], POWERC_ARGVNSEG ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                initSearchParams.argv[POWERC_ARGNSEG] = argv[inarg++];
-                initSearchParams.argc++;
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], POWERC_ARGVOLAP ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                initSearchParams.argv[POWERC_ARGOLAP] = argv[inarg++];
-                initSearchParams.argc++;
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], POWERC_ARGVOLAPFCTR ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                initSearchParams.argv[POWERC_ARGOLAPFCTR] = argv[inarg++];
-                initSearchParams.argc++;
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], POWERC_ARGVMINFBIN ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                initSearchParams.argv[POWERC_ARGMINFBIN] = argv[inarg++];
-                initSearchParams.argc++;
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], POWERC_ARGVMINTBIN ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                initSearchParams.argv[POWERC_ARGMINTBIN] = argv[inarg++];
-                initSearchParams.argc++;
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], POWERC_ARGVFLOW ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                initSearchParams.argv[POWERC_ARGFLOW] = argv[inarg++];
-                initSearchParams.argc++;
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], POWERC_ARGVDELF ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                initSearchParams.argv[POWERC_ARGDELF] = argv[inarg++];
-                initSearchParams.argc++;
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], POWERC_ARGVLNGTH ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                initSearchParams.argv[POWERC_ARGLNGTH] = argv[inarg++];
-                initSearchParams.argc++;
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], POWERC_ARGVNSIGMA ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                initSearchParams.argv[POWERC_ARGNSIGMA] = argv[inarg++];
-                initSearchParams.argc++;
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], POWERC_ARGVALPHDEF ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                initSearchParams.argv[POWERC_ARGALPHDEF] = argv[inarg++];
-                initSearchParams.argc++;
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], POWERC_ARGVSEGDCLE ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                initSearchParams.argv[POWERC_ARGSEGDCLE] = argv[inarg++];
-                initSearchParams.argc++;
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], POWERC_ARGVALPHTH ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                initSearchParams.argv[POWERC_ARGALPHTH] = argv[inarg++];
-                initSearchParams.argc++;
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], POWERC_ARGVE2MSTR ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                initSearchParams.argv[POWERC_ARGE2MSTR] = argv[inarg++];
-                initSearchParams.argc++;
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], POWERC_ARGVCHANNEL ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                initSearchParams.argv[POWERC_ARGCHANNEL] = argv[inarg++];
-                initSearchParams.argc++;
-                channelIn.name = initSearchParams.argv[POWERC_ARGCHANNEL];
-                channelIn.type = ADCDataChannel;
-
-                /* copy the first character to site and the first two to ifo */
-                memset( site, 0, sizeof(site) );
-                memset( ifo, 0, sizeof(ifo) );
-                memcpy( site, channelIn.name, sizeof(site) - 1 );
-                memcpy( ifo, channelIn.name, sizeof(ifo) - 1 );
-
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], POWERC_ARGVSPECTYPE ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                initSearchParams.argv[POWERC_ARGSPECTYPE] = argv[inarg++];
-                initSearchParams.argc++;
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], POWERC_ARGVSIMTYPE ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                initSearchParams.argv[POWERC_ARGSIMTYPE] = argv[inarg++];
-                initSearchParams.argc++;
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], POWERC_ARGVWINTYPE ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                initSearchParams.argv[POWERC_ARGWINTYPE] = argv[inarg++];
-                initSearchParams.argc++;
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], "--epoch" ) ) {
-            if ( argc > inarg + 2 ) {
-                inarg++;
-                epoch.gpsSeconds = atoi( argv[inarg++] );
-                epoch.gpsNanoSeconds = atoi( argv[inarg++] );
-                epochSet = TRUE;
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], "--srate" ) ) {
-            inarg++;
-            sampleRate = atoi( argv[inarg++] );
-        }
-        else if ( !strcmp( argv[inarg], "--numpts" ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                numPoints = atoi( argv[inarg++] );
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return POWERC_EARG;
-            }
-        }
-        else if ( !strcmp( argv[inarg], "--framedir" ) )
-        {
-          /* enable loading frame data from disk */
-          if ( argc > inarg + 1 ) {
-              inarg++;
-              dirname = argv[inarg++];
-          }else{
-              fprintf(stderr,  USAGE, *argv );
-              return POWERC_EARG;
-          }
-        }
-        else if ( !strcmp( argv[inarg], "--framecache" ) )
-        {
-          /* enable loading frame data from disk using a cache file */
-          if ( argc > inarg + 1 ) {
-              inarg++;
-              cachefile = argv[inarg++];
-          }else{
-              fprintf(stderr,  USAGE, *argv );
-              return POWERC_EARG;
-          }
-        }
-        /* set the lalDebugLevel to something useful */
-        else if ( !strcmp( argv[inarg], "--dbglevel" ) ) {
-            inarg++;
-            set_debug_level( argv[inarg++] );
-        }
-        /* print out the spectrum */
-        else if ( !strcmp( argv[inarg], "--printSpectrum" ) ) {
-            inarg++;
-            printSpectrum = TRUE;
-        }
-        /* print out the time series */
-        else if ( !strcmp( argv[inarg], "--printData" ) ) {
-            inarg++;
-            printData = TRUE;
-        }
-        /* print out informational messages */
-        else if ( !strcmp( argv[inarg], "--verbose" ) ) {
-            inarg++;
-            verbose = TRUE;
-        }
-        else if ( !strcmp( argv[inarg], "--comment" ) )
-        {
-          /* enable loading frame data from disk using a cache file */
-          if ( argc > inarg + 1 ) {
-              inarg++;
-              snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", argv[inarg++]);
-          }else{
-              fprintf(stderr,  USAGE, *argv );
-              return POWERC_EARG;
-          }
-        }
-        else if ( !strcmp( argv[inarg], "--noise" ) )
-        {
-          /* enable insertion of Gaussian white noise */
-          /* up to 1 numeric parameter may be entered */
-          whiteNoise = TRUE;
-          inarg++;
-          if (argv[inarg] && (argv[inarg][0] != '-'))
-          {
-              noiseAmpl = atof(argv[inarg++]);
-              if (argv[inarg] && (argv[inarg][0] != '-'))
-              {
-                  seed = atoi(argv[inarg++]);
-              }
-          }
-        }
-        else if ( !strcmp( argv[inarg], "--sine" ) )
-        {
-          /* enable insertion of shaped sine burst */
-          /* up to 4 numeric parameters may be entered */
-          sineBurst = TRUE;
-          inarg++;
-          if (argv[inarg] && (argv[inarg][0] != '-'))
-          {
-            sineFreq = atof(argv[inarg++]);
-            if (argv[inarg] && (argv[inarg][0] != '-'))
-            {
-              sineOffset = atof(argv[inarg++]);
-              if (argv[inarg] && (argv[inarg][0] != '-'))
-              {
-                sineAmpl = atof(argv[inarg++]);
-                if (argv[inarg] && (argv[inarg][0] != '-'))
-                {
-                  sineWidth = atof(argv[inarg++]);
-                }
-              }
-            }
-          }
-        }
-        /* Check for unrecognized options. */
-        else if ( argv[inarg][0] == '-' ) {
-            fprintf(stderr,  "Unrecognized options\n" );
-            return POWERC_EARG;
-        }
-        /* Default case for unknown arguments */
-        else
-        {
-          fprintf(stderr,  "Unknown arguments\n" );
-          return POWERC_EARG;
-        }
-    }
-    /*******************************************************************
-    * END PARSE ARGUMENTS                                              *
-    *******************************************************************/
-#endif
-
-
-
     
     /*******************************************************************
     * INITIALIZE EVERYTHING                                            *
@@ -596,10 +183,8 @@ int main( int argc, char *argv[])
     this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
         LALCalloc( 1, sizeof(ProcessParamsTable) );
 
-#if (!OLDWAY)
     /* parse arguments and fill procparams table */
     initializeEPSearch( argc, argv, &searchParams, &procparams);
-#endif
 
     /* create the search summary table */
     searchsumm.searchSummaryTable = (SearchSummaryTable *)
@@ -618,13 +203,6 @@ int main( int argc, char *argv[])
     series.data = NULL;
     LAL_CALL( LALCreateVector( &stat, &series.data, numPoints), &stat);
     memset( series.data->data, 0, series.data->length*sizeof(REAL4) );
-#if OLDWAY
-    if ( !epochSet )
-    {
-        fprintf(stderr, POWERC_MSGENOEPOCH);
-        return POWERC_ENOEPOCH;
-    }
-#endif
     series.epoch.gpsSeconds     = epoch.gpsSeconds;
     series.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
     strcpy(series.name, "Data");
@@ -632,10 +210,6 @@ int main( int argc, char *argv[])
     series.f0 = 0.0;
     series.sampleUnits = lalADCCountUnit;
    
-#if OLDWAY
-    LAL_CALL( EPInitSearch( &stat, &searchParams, initSearchParams.argv, 
-                initSearchParams.argc), &stat);
-#endif
     params = (EPSearchParams *) searchParams;
     params->printSpectrum = printSpectrum;
     
