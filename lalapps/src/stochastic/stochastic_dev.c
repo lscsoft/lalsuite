@@ -205,7 +205,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* frequency mask structures */
   REAL4FrequencySeries mask;
-  REAL4Vector *maskTemp;
+  REAL4FrequencySeries maskTemp;
   INT4 nBin;
 
   /* spectrum structures */
@@ -746,14 +746,15 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* allocate memory for frequency mask */
-    mask.data = NULL;
-    maskTemp = NULL;
-    LAL_CALL( LALCreateVector(&status, &(mask.data), filterLength), &status );
-    LAL_CALL( LALCreateVector(&status, &maskTemp, respLength), &status );
-    memset(mask.data->data, 0, \
-        mask.data->length * sizeof(*mask.data->data));
-    memset(maskTemp->data, 0, \
-        maskTemp->length * sizeof(*maskTemp->data));
+    maskTemp.data = NULL;
+    LAL_CALL( LALCreateVector(&status, &(maskTemp.data), respLength), \
+        &status );
+    memset(maskTemp.data->data, 0, \
+        maskTemp.data->length * sizeof(*maskTemp.data->data));
+
+    /* reduced band frequency mask */
+    mask.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
+    mask.data->length = filterLength;
 
     if (vrbflg)
     {
@@ -763,7 +764,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* set all values to 1 */
     for (i = 0; i < respLength; i++)
     {
-      maskTemp->data[i] = 1.;
+      maskTemp.data->data[i] = 1.;
     }
 
     if (vrbflg)
@@ -774,17 +775,17 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* remove multiples of 16 Hz */
     for (i = 0; i < respLength; i += (UINT4)(16 / deltaF))
     {
-      maskTemp->data[i] = 0.;
+      maskTemp.data->data[i] = 0.;
 
       for (k = 0; k < nBin; k++)
       {
         if ((i + 1 + k) < respLength)
         {
-          maskTemp->data[i + 1 + k] = 0.;
+          maskTemp.data->data[i + 1 + k] = 0.;
         }
         if ((i - 1 - k) > 0)
         {
-          maskTemp->data[i - 1 - k] = 0.;
+          maskTemp.data->data[i - 1 - k] = 0.;
         }
       }
     }
@@ -797,17 +798,17 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* remove multiples of 60 Hz */
     for (i = 0; i < respLength; i += (UINT4)(60 / deltaF))
     {
-      maskTemp->data[i] = 0.;
+      maskTemp.data->data[i] = 0.;
 
       for (k = 0; k < nBin; k++)
       {
         if ((i + 1 + k) < respLength)
         {
-          maskTemp->data[i + 1 + k] = 0.;
+          maskTemp.data->data[i + 1 + k] = 0.;
         }
         if ((i - 1 - k) > 0)
         {
-          maskTemp->data[i - 1 - k] = 0.;
+          maskTemp.data->data[i - 1 - k] = 0.;
         }
       }
     }
@@ -818,10 +819,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* get appropriate band */
-    for (i = 0; i < filterLength; i++)
-    {
-      mask.data->data[i] = maskTemp->data[i + numFMin];
-    }
+    mask.data->data = maskTemp.data->data + numFMin;
 
     if (vrbflg)
     {
@@ -1173,8 +1171,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL( LALDestroyVector(&status, &(dataWindow.data)), &status );
   if (apply_mask_flag)
   {
-    LAL_CALL( LALDestroyVector(&status, &(mask.data)), &status );
-    LAL_CALL( LALDestroyVector(&status, &maskTemp), &status );
+    LALFree(mask.data);
+    LAL_CALL( LALDestroyVector(&status, &(maskTemp.data)), &status );
   }
   if (hannDuration != 0)
   {
