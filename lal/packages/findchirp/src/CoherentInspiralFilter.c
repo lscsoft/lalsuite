@@ -2,7 +2,7 @@
  * 
  * File Name: Coherent.c
  *
- * Author: Bose, S, Seader, S. E.
+ * Author: Bose, S., Seader, S. E.
  * 
  * Revision: $Id$
  * 
@@ -444,6 +444,7 @@ LALCoherentInspiralFilterParamsFinalize (
   outputPtr->detectorVec = NULL;
   
   LALU2DestroyVector (status->statusPtr, &(outputPtr->detIDVec) ); 
+  CHECKSTATUSPTR( status );
 
   /*
    *
