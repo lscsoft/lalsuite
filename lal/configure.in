@@ -28,6 +28,7 @@ AM_CONDITIONAL(FRAMEANDMPI, test x$frame = xtrue -a x$mpi = xtrue)
 
 LAL_ENABLE_DEBUG
 LAL_ENABLE_MACROS
+LAL_ENABLE_PTHREAD_LOCK
 
 dnl Checks for programs.
 AC_PROG_AWK
@@ -59,6 +60,9 @@ if test "${frame}" = "true"; then
 fi
 if test "${mpi}" = "true"; then
   LAL_CHECK_MPI
+fi
+if test "${lal_pthread_lock}" = "true"; then
+  AC_CHECK_HEADERS(pthread.h, break)
 fi
 
 dnl Checks for typedefs, structures, and compiler characteristics.

@@ -127,6 +127,18 @@ AC_DEFUN(LAL_ENABLE_MACROS,
         ],)
 ])
 
+AC_DEFUN(LAL_ENABLE_PTHREAD_LOCK,
+[AC_ARG_ENABLE(
+        pthread_lock,
+        [  --enable-pthread-lock   use pthread mutex lock for threadsafety [default=no] ],
+        [ case "${enableval}" in
+            yes) lal_pthread_lock=true; AC_DEFINE(LAL_PTHREAD_LOCK, 1, Use pthread mutex lock for threadsafety) ;;
+            no) lal_pthread_lock=false ;;
+            *) AC_MSG_ERROR(bad value for ${enableval} for --enable-pthread-lock) ;;
+          esac
+        ], [ lal_pthread_lock=false ] )
+])
+
 AC_DEFUN(LAL_FFTW_MSG_ERROR,
 [echo "**************************************************************"
  echo "* You must install FFTW (v >= 2.0) on your system.           *"

@@ -129,7 +129,13 @@ Ref.~\cite{fj:1998}.
 #endif
 #endif
 
+#ifdef LAL_PTHREAD_LOCK
 #include <pthread.h>
+static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
+#else
+#define pthread_mutex_lock( pmut )
+#define pthread_mutex_unlock( pmut )
+#endif
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -158,8 +164,6 @@ extern fftw_free_type_function fftw_free_hook;
 #endif
 
 NRCSID( COMPLEXFFTC, "$Id$" );
-
-static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 
 /* tell FFTW to use LALMalloc and LALFree */
 #define FFTWHOOKS \
