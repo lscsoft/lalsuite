@@ -12,24 +12,130 @@ __author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'[11:-2]
 
-# append the lalapps python modules to the install path
+# import standard modules and append the lalapps prefix to the python path
 import sys, os
-sys.path.append('@PYTHONLIBDIR@')
-
 import getopt, re
 import tempfile
-import pipeline, inspiral
 import ConfigParser
+sys.path.append('@PYTHONLIBDIR@')
+
+# import the modules we need to build the pipeline
+import pipeline, inspiral
+
+def usage():
+  msg = """\
+Usage: lalapps_inspiral_pipe [OPTIONS]
+
+  -v, --version            print version information and exit
+  -h, --help               display this message
+  -d, --datafind           run LALdataFind to create frame cache files
+  -t, --template-bank      run lalapps_tmpltbank to generate a template bank
+  -i, --inspiral           run lalapps_inspiral on the first IFO
+  -T, --triggered-bank     run lalapps_trigtotmplt to generate a triggered bank
+  -I, --triggered-inspiral run lalapps_inspiral on the second IFO
+  -C, --coincidence        run lalapps_inca on the triggers from both IFOs
+  -p, --playground-only    only create chunks that overlap with playground
+  -f, --config-file FILE   use configuration file FILE
+  -l, --log-path PATH      directory to write condor log file
+"""
+  print >> sys.stderr, msg
+
+# pasrse the command line options to figure out what we should do
+shortop = "hvdtiTICpc:l:"
+longop = [
+  "help",
+  "version",
+  "datafind",
+  "template-bank",
+  "inspiral",
+  "triggered-bank",
+  "triggered-inspiral",
+  "coincidence",
+  "playground-only",
+  "config-file=",
+  "log-path="
+  ]
+
+try:
+  opts, args = getopt.getopt(sys.argv[1:], shortop, longop)
+except getopt.GetoptError:
+  usage()
+  sys.exit(1)
+
+config_file = None
+do_datafind = None
+do_tmpltbank = None
+do_inspiral = None
+do_trigbank = None
+do_triginsp = None
+do_coinc = None
+playground_only = 0
+config_file = None
+log_path = None
+
+for o, a in opts:
+  if o in ("-v", "--version"):
+    print "$Id$"
+    sys.exit(0)
+  elif o in ("-h", "--help"):
+    usage()
+    sys.exit(0)
+  elif o in ("-d", "--datafind"):
+    do_datafind = 1
+  elif o in ("-t", "--template-bank"):
+    do_tmpltbank = 1
+  elif o in ("-i", "--inspiral"):
+    do_inspiral = 1
+  elif o in ("-T", "--triggered-bank"):
+    do_trigbank = 1
+  elif o in ("-I", "--triggered-inspiral"):
+    do_triginsp = 1
+  elif o in ("-C", "--coincidence"):
+    do_coinc = 1
+  elif o in ("-p", "--playground-only"):
+    playground_only = 1
+  elif o in ("-c", "--config-file"):
+    config_file = a
+  elif o in ("-l", "--log-path"):
+    log_path = a
+  else:
+    print >> sys.stderr, "Unknown option:", o
+    usage()
+    sys.exit(1)
+
+if not config_file:
+  print >> sys.stderr, "No configuration file specified."
+  print >> sys.stderr, "Use --config-file FILE to specify location."
+  sys.exit(1)
+
+if not log_path:
+  print >> sys.stderr, "No log file path specified."
+  print >> sys.stderr, "Use --log-path PATH to specify a location."
+  sys.exit(1)
+
+# try and make a directory to store the cache files and job logs
+try: os.mkdir('cache')
+except: pass
+try: os.mkdir('logs')
+except: pass
 
 # create the config parser object and read in the ini file
 cp = ConfigParser.ConfigParser()
-cp.read('pipe2.ini')
+cp.read(config_file)
 
-# create the DAG
-dag = pipeline.CondorDAG('dag.log')
-dag.set_dag_file('this.dag')
+# create a log file that the Condor jobs will write to
+basename = config_file.split('.')[0]
+tempfile.tempdir = log_path
+tempfile.template = basename + '.dag.log.'
+logfile = tempfile.mktemp()
+fh = open( logfile, "w" )
+fh.close()
 
-# create the jobs to use in the DAG
+# create the DAG writing the log to the specified directory
+dag = pipeline.CondorDAG(logfile)
+dag.set_dag_file(basename + '.dag')
+
+# create the Condor jobs that will be used in the DAG
 df_job = inspiral.DataFindJob(cp)
 tmplt_job = inspiral.TmpltBankJob(cp)
 insp_job = inspiral.InspiralJob(cp)
@@ -48,16 +154,7 @@ overlap = o / r
 # read the science segments from the input file and create the chunks
 data = pipeline.ScienceData()
 data.read(cp.get('input','segments'))
-data.make_chunks(length,overlap,0)
-
-vrbflg = 1
-if vrbflg:
-  print data
-  for seg in data:
-    print seg
-    for chunk in seg:
-      print chunk
-    print seg.unused(), 'seconds remaining'
+data.make_chunks(length,overlap,1)
 
 # get the order of the ifos to filter
 ifo1 = cp.get('pipeline','ifo1')
@@ -70,12 +167,12 @@ prev_df1 = None
 prev_df2 = None
 first_df2 = None
 
+# create a list to store the inspiral jobs
 insp_nodes = []
 
 for seg in data:
   # find all the data
   df1 = inspiral.DataFindNode(df_job)
-
   df1.set_start(seg.start() - pad)
   df1.set_end(seg.end() + pad)
   df1.set_ifo(ifo1)
@@ -83,14 +180,14 @@ for seg in data:
 
   df2 = inspiral.DataFindNode(df_job)
   if not first_df2: first_df2 = df2
-
   df2.set_start(seg.start() - pad)
   df2.set_end(seg.end() + pad)
   df2.set_ifo(ifo2)
   if prev_df2: df2.add_parent(prev_df2)
 
-  dag.add_node(df1)
-  dag.add_node(df2)
+  if do_datafind:
+    dag.add_node(df1)
+    dag.add_node(df2)
 
   prev_df1 = df1
   prev_df1 = df2
@@ -103,8 +200,11 @@ for seg in data:
     bank.set_end(chunk.end())
     bank.set_ifo(ifo1)
     bank.set_cache(df1.get_output())
-    bank.add_parent(df1)
-    dag.add_node(bank)
+
+    if do_datafind: 
+      bank.add_parent(df1)
+    if do_tmpltbank: 
+      dag.add_node(bank)
 
     insp1 = inspiral.InspiralNode(insp_job)
     insp1.set_start(chunk.start())
@@ -113,14 +213,23 @@ for seg in data:
     insp1.add_var('snr-threshold',ifo1_snr)
     insp1.set_cache(df1.get_output())
     insp1.set_bank(bank.get_output())
-    insp1.add_parent(bank)
+
+    if do_tmpltbank:
+      insp1.add_parent(bank)
+    if not do_tmpltbank and do_datafind:
+      insp1.add_parent(df1)
+    if do_inspiral:
+      dag.add_node(insp1)
 
     trigbank = inspiral.TrigToTmpltNode(trig_job)
     trigbank.set_input(insp1.get_output())
     trigbank.set_output(ifo2 + '-TRIGBANK_' + ifo1 + '-' + str(chunk.start())
       + '-' + str(chunk.dur()) + '.xml')
-    trigbank.add_parent(insp1)
-    dag.add_node(trigbank)
+
+    if do_inspiral:
+      trigbank.add_parent(insp1)
+    if do_trigbank:
+      dag.add_node(trigbank)
 
     insp2 = inspiral.InspiralNode(insp_job)
     insp2.set_start(chunk.start())
@@ -129,13 +238,24 @@ for seg in data:
     insp2.add_var('snr-threshold',ifo2_snr)
     insp2.set_cache(df2.get_output())
     insp2.set_bank(trigbank.get_output())
-    insp2.add_parent(df2)
-    insp2.add_parent(trigbank)
-    dag.add_node(insp2)
 
+    if do_datafind:
+      insp2.add_parent(df2)
+    if do_trigbank:
+      insp2.add_parent(trigbank)
+    if do_triginsp:
+      dag.add_node(insp2)
+
+    # add the two inspiral jobs for this chunk to the stored list
     seg_insp_nodes.append(tuple([insp1,insp2]))
 
+  # add the inspiral jobs for this segment to the list
   insp_nodes.append(seg_insp_nodes)
+
+# now add the last df1 as a parent to the first df2 so we 
+# don't have multiple datafinds running at the same time
+if do_datafind:
+  first_df2.add_parent(df1)
     
 # now find coincidences between the two inspiral jobs
 for i in range(len(data)):
@@ -147,6 +267,7 @@ for i in range(len(data)):
     inca.set_output( ifo1 + ifo2 + '-INCA-' + str(chunk.start())
       + '-' + str(chunk.dur()) + '.xml')
     
+    # if there is a chunk before this one, add it to the job
     try: 
       data[i][j-1]
       inca.add_parent(insp_nodes[i][j-1][0])
@@ -156,11 +277,13 @@ for i in range(len(data)):
     except IndexError:
       pass
 
+    # add this chunk to the job
     inca.add_parent(insp_nodes[i][j][0])
     inca.add_parent(insp_nodes[i][j][1])
     inca.add_input_a(insp_nodes[i][j][0].get_output())
     inca.add_input_b(insp_nodes[i][j][1].get_output())
-
+    
+    # if there is a chunk after this one, add it to the job
     try:
       data[i][j+1]
       inca.add_parent(insp_nodes[i][j+1][0])
@@ -170,10 +293,27 @@ for i in range(len(data)):
     except IndexError:
       pass
       
-    dag.add_node(inca)
+    if do_coinc:
+      dag.add_node(inca)
 
 # write out the DAG
 dag.write_sub_files()
 dag.write_dag()
 
+# write out a log file for this script
+log_fh = open(basename + '.pipeline.log', 'w')
+log_fh.write( "$Id$" + "\n\n" )
+log_fh.write( "Invoked with arguments:\n" )
+for o, a in opts:
+  log_fh.write( o + ' ' + a + '\n' )
+log_fh.write( "\n" )
+log_fh.write( "Parsed " + str(len(data)) + " science segments\n" )
+print >> log_fh, data
+for seg in data:
+  print >> log_fh, seg
+  for chunk in seg:
+    print >> log_fh, chunk
+  print >> log_fh, seg.unused(), 'seconds remaining'
+
 sys.exit(0)
+
