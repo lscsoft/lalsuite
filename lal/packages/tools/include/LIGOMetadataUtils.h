@@ -51,7 +51,6 @@ extern "C" {
 NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 
 #include <lal/LIGOMetadataTables.h>
-#include <lal/BurstSearch.h>
 
 typedef struct
 tagSnglBurstAccuracy
