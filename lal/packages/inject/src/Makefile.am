@@ -8,7 +8,7 @@ libinject_la_SOURCES =	\
 	InjectVector.c			InjectTimeSeries.c \
 	CelestialCoordinates.c		TerrestrialCoordinates.c \
 	SkyCoordinates.c		SimulateSB.c \
-	SimulateInspiral.c
+	SimulateInspiral.c              SimulatePopcorn.c
 ## Hack to get this working for now... change later
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include -I$(srcdir)/../../date/include
 #INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
