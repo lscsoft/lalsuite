@@ -262,8 +262,16 @@ int main(int argc, char *argv[]){
   mObsCoh = inputSFTs->length; 
   sftlength = inputSFTs->data->data->length;
   timeBase = 1.0/inputSFTs->data->deltaF;
-  sftFminBin = floor( timeBase * inputSFTs->data->f0 + 0.5);
+  {
+    INT4 tempFbin;
+    sftFminBin = floor( (REAL4)(timeBase * inputSFTs->data->f0) + (REAL4)(0.5));
+    tempFbin = floor( timeBase * inputSFTs->data->f0 + 0.5);
 
+    if (tempFbin - sftFminBin)
+      {
+	printf(stderr, "Rounding error in calculating fminbin....be careful! \n");
+      }
+  }
 
   /* loop over sfts and select peaks */
 
