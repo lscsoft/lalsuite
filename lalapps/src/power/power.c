@@ -931,6 +931,16 @@ void parse_command_line(
 		exit(1);
 
 	/*
+	 * Make sure windowShift and windowLength are OK.
+	 */
+
+	if(params->windowLength < 2 * params->windowShift) {
+		sprintf(msg, "must be >= 2 * --window-shift = %u (%u specified)", 2 * params->windowShift, params->windowLength);
+		print_bad_argument(argv[0], "window-length", msg);
+		exit(1);
+	}
+
+	/*
 	 * Ensure PSDAverageLength is comensurate with the analysis window
 	 * length and shift.
 	 */
@@ -1548,6 +1558,15 @@ int main( int argc, char *argv[])
 		LAL_CALL(LALDecrementGPS(&stat, &epoch, &epoch, &overlapCorrection), &stat);
 		LAL_CALL(LALDestroyREAL4TimeSeries(&stat, series), &stat);
 	}
+
+	/*
+	 * Adjust the "out" times for the amount of data not analyzed at the
+	 * beginning and end of the first and last analysis windows
+	 * respectively.
+	 */
+
+	LAL_CALL(LALAddFloatToGPS(&stat, &searchsumm.searchSummaryTable->out_start_time, &searchsumm.searchSummaryTable->out_start_time, series->deltaT * (params.windowLength / 2 - params.windowShift)), &stat);
+	LAL_CALL(LALAddFloatToGPS(&stat, &searchsumm.searchSummaryTable->out_end_time, &searchsumm.searchSummaryTable->out_end_time, -series->deltaT * (params.windowLength / 2 - params.windowShift)), &stat);
 
 	/*
 	 * Cluster and sort the events.
