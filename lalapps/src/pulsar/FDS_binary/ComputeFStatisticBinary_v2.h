@@ -83,7 +83,7 @@ typedef struct BinaryTemplatetag {             /* BINARY-MOD - structure to stor
 } BinaryTemplate;
 
 typedef struct BinaryTemplateBanktag {
-    BinaryMeshFileHeader *BMFheader;
+    BinaryMeshFileHeader BMFheader;
     BinaryTemplate *BTB;       
 } BinaryTemplateBank;
 
