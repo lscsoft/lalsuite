@@ -1263,7 +1263,7 @@ int main( int argc, char *argv[] )
       }
 
       matchNorm *= ( 4.0 * (REAL4) fcSegVec->data->deltaT ) / 
-        (REAL4) numPoints;
+        (REAL4) dataSegVec->data->chan->data->length;
       matchNorm = sqrt( matchNorm );
 
       if ( vrbflg ) fprintf( stdout, "%e\n", matchNorm );
@@ -1571,8 +1571,7 @@ int main( int argc, char *argv[] )
         LALCalloc( 1, sizeof(SimInstParamsTable) );
       LALSnprintf( thisSimInstParams->name, LIGOMETA_SIMINSTPARAMS_NAME_MAX,
           "minimal_match" );
-      thisSimInstParams->value = 
-        loudestEvent->snr * loudestEvent->snr / matchNorm;
+      thisSimInstParams->value = loudestEvent->snr / matchNorm;
 
       /* store the last created sim_inst_params table */
       prevSimInstParams = thisSimInstParams;
