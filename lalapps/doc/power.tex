@@ -777,8 +777,8 @@ Jolien Creighton, Patrick Brady, Duncan Brown
 \item[Synopsis]
 \verb$lalapps_bread$ 
 [\verb$--help$]
-\verb$--input$ \textsc{infile} 
-\verb$--outfile$ \textsc{filename} 
+\verb$--input$ \textsc{filename} 
+\verb$--output$ \textsc{filename} 
 [\verb$--max-confidence$ \textsc{maximum conf}]
 [\verb$--noplayground$]
 [\verb$--sort$]
@@ -804,13 +804,13 @@ file.
 \begin{entry}
 \item[\texttt{--help}] Print a help message.
 
-\item[\texttt{--input} \textsc{infile}]
+\item[\texttt{--input} \textsc{filename}]
 The infile should be a txt file, say file.txt which
 will contain the list of xml files. \verb$lalapps_bread$ reads 
 in triggers from those xml files which are listed in file.txt
 
-\item[\texttt{--outfile} \textsc{filename}]
-\verb$lalapps_bread$ writes all the triggers out in one single xml file, specified by filename
+\item[\texttt{--output} \textsc{filename}]
+\verb$lalapps_bread$ writes all the triggers out in one single xml file, specified by filename.  The (old) option \texttt{--outfile} can also be used.
 
 \item[\texttt{--max-confidence} \textsc{maximum conf}]
 Optional. Reads in only the triggers with confidence less than the value specified by maximum conf

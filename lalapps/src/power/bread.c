@@ -16,7 +16,7 @@ RCSID("$Id$");
 #define MAXSTR 2048
 
 /* Usage format string. */
-#define USAGE "Usage: %s --input infile --outfile filename \
+#define USAGE "Usage: %s --input filename --output filename \
     [--max-confidence maximum conf] [--noplayground] [--sort] [--min-duration min dur] \
     [--max-duration max dur] [--min-centralfreq min central_freq] \
     [--max-centralfreq max central_freq] [--max-bandwidth max bw] \
@@ -159,6 +159,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 		{"verbose",         no_argument,        &options->verbose, TRUE},
 		/* parameters which determine the output xml file */
 		{"input",           required_argument,  NULL,  'a'},
+		{"output",          required_argument,  NULL,  'c'},
 		{"outfile",         required_argument,  NULL,  'c'},
 		{"max-confidence",  required_argument,  NULL,  'd'},
 		{"min-duration",    required_argument,  NULL,  'e'},
@@ -298,14 +299,14 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 			options->trigStopTime = atoi(optarg);
 			break;
 
+			case ':':
+			case '?':
 			case 'o':
+			default:
 			/*
-			 * print help
+			 * print usage
 			 */
 			LALPrintError(USAGE, *argv);
-			exit(SNGLBURSTREADER_EARG);
-
-			default:
 			exit(SNGLBURSTREADER_EARG);
 		}
 	} while(c != -1);
