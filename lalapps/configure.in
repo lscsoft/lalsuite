@@ -86,7 +86,7 @@ PKG_CHECK_MODULES(GSL, gsl, [ true ], [ false ])
 CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
 LIBS="$LIBS $GSL_LIBS"
 AC_CHECK_LIB(gslcblas, main)
-AC_CHECK_LIB(gsl, gsl_strerror, , [AC_MSG_ERROR(could not find GSL library)])
+AC_CHECK_LIB(gsl, gsl_version)
 
 dnl FrameL (libframe)
 if test "${frame}" = "true"; then
