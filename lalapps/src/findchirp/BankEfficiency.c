@@ -111,6 +111,7 @@ NRCSID( BANKEFFICIENCYC, "$Id$");
 #define BANKEFFICIENCY_CHECK                    0
 
 
+#define DeltaT                                  256
 
 
 typedef enum{
@@ -118,7 +119,8 @@ typedef enum{
     LIGOII,
     GEO,
     TAMA,
-    VIRGO
+    VIRGO, 
+    REALPSD
 }DetectorName;
 
 
@@ -323,7 +325,7 @@ PrintBank(
 	  UINT4 signalLength);
 
 
-extern int lalDebugLevel=1;
+extern int lalDebugLevel=0;
 
 
 /* ===================================== THE MAIN PROGRAM ===================================================== */
@@ -340,11 +342,12 @@ main (int argc, char **argv )
     i,
     j=0,
     n,
-    k,
+    k, kk,
     jmax,
     nlist,
     kMin;
-  
+  REAL4 temp;
+
   REAL8
     df,
     fendBCV=0,
@@ -396,7 +399,7 @@ main (int argc, char **argv )
   BCVMaximizationMatrix
     matrix;
 
-   
+  FILE *Finput;   
   
   /* --- Initialisation of parameters and variables --- */
   Init2DummyCoarse(&coarseIn);					/* the bank*/
@@ -436,19 +439,49 @@ main (int argc, char **argv )
   df = randIn.param.tSampling/(float) signal.length;
   switch (otherIn.NoiseModel)
     {
-    case LIGOI:  noisemodel = LALLIGOIPsd ; break;
-    case VIRGO: noisemodel = LALVIRGOPsd;  break;
-    case GEO:   noisemodel = LALGEOPsd;    break;
-    case TAMA:  noisemodel = LALTAMAPsd;   break;
+    case LIGOI:  noisemodel = LALLIGOIPsd ; 
+      LALNoiseSpectralDensity (&status, coarseIn.shf.data, noisemodel, df);
+      break;
+    case VIRGO: noisemodel = LALVIRGOPsd;  
+      LALNoiseSpectralDensity (&status, coarseIn.shf.data, noisemodel, df);
+      break;
+    case GEO:   noisemodel = LALGEOPsd;    
+      LALNoiseSpectralDensity (&status, coarseIn.shf.data, noisemodel, df);
+      break;
+    case TAMA:  noisemodel = LALTAMAPsd;  
+      LALNoiseSpectralDensity (&status, coarseIn.shf.data, noisemodel, df);
+      break;
+    case REALPSD:
+      /* Read psd dans le fichier InputPSD.dat */
+      /*      Finput = fopen("InputPSD.dat","r");*/
+      Finput = fopen("H1_a.dat","r");
+
+      
+
+      for (i=0; i<(int)coarseIn.shf.data->length; i++)
+	{
+	  /* factor DeltaT since the input data have a sampling frequency of 1./DeltaT */
+	  fscanf(Finput, "%f %lf\n", &temp,&coarseIn.shf.data->data[i]);
+	  for (kk=1; kk < (int)( DeltaT * df); kk++)
+	      fscanf(Finput, "%f %f\n", &temp,&temp);
+	}
+      fclose(Finput);
+      break;
+        
     default:    noisemodel = LALLIGOIPsd; 
+      LALNoiseSpectralDensity (&status, coarseIn.shf.data, noisemodel, df);
+      break;
     }
-  LALNoiseSpectralDensity (&status, coarseIn.shf.data, noisemodel, df);
-  
-  
-  for (i=0; i< (int)randIn.psd.length; i++)
-    {
-      randIn.psd.data[i] = coarseIn.shf.data->data[i];
-    }
+
+     
+   for (i=0; i<(int)coarseIn.shf.data->length; i++)
+	printf("%f %E\n", i*df, coarseIn.shf.data->data[i]);	   
+     
+   
+   for (i=0; i< (int)randIn.psd.length; i++)
+     {
+       randIn.psd.data[i] = coarseIn.shf.data->data[i];
+     }
   
   
   
@@ -577,7 +610,6 @@ main (int argc, char **argv )
 	   randIn.param.mass2 = otherIn.m2;
 	   LALGenerateWaveform(&status,&signal, &randIn);
 	 }
-       
        overlapin.signal = signal;
        jmax           = 0;
        overlapout.max = 0.0;
@@ -596,31 +628,55 @@ main (int argc, char **argv )
        matrix.a21 = VectorA21.data[k];
        matrix.a11 = VectorA11.data[k];
        matrix.a22 = VectorA22.data[k];
-       
-       LALCreateFilters(&Filter1,
-			&Filter2,
-			VectorPowerFm5_3,
-			VectorPowerFm2_3,
-			VectorPowerFm7_6,
-			VectorPowerFm1_2,
-			matrix,
-			kMin,					       
-			list[1].params.psi0,
-			list[1].params.psi3
-			);
-       
-       
-       /* The overlap given two filters and the input signal*/
-       LALWaveOverlapBCV(&status, 
-			 &correlation,
-			 &overlapout,
-			 &overlapin,
-			 &Filter1,
-			 &Filter2,
-			 matrix,
-			 otherIn);
+       switch(otherIn.overlapMethod)
+	 {
+	 case AlphaMaximization:
+	   
+	   LALCreateFilters(&Filter1,
+			    &Filter2,
+			    VectorPowerFm5_3,
+			    VectorPowerFm2_3,
+			    VectorPowerFm7_6,
+			    VectorPowerFm1_2,
+			    matrix,
+			    kMin,					       
+			    list[1].params.psi0,
+			    list[1].params.psi3
+			    );
+	   
+	   
+	   /* The overlap given two filters and the input signal*/
+	   LALWaveOverlapBCV(&status, 
+			     &correlation,
+			     &overlapout,
+			     &overlapin,
+			     &Filter1,
+			     &Filter2,
+			     matrix,
+			     otherIn);
+	   break;
+	 case InQuadrature:
+	   {
+	     fendBCV   = randIn.param.fFinal;
+	     
+	     overlapin.param.fFinal  = fendBCV;
+	     overlapin.param.fCutoff = fendBCV;
+	     
+	     for (i=0; i<(INT4)signal.length; i++) correlation.data[i] = 0.;	   	   	  
+	     
+	     
+	     LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
+	     KeepHighestValues(overlapout, j, l, fendBCV, &overlapoutmax,  &jmax, &lmax, &fMax);
+	     
+	   }
+	 }
+     
+       printf("#");
        PrintResults(list[1].params, randIn.param,overlapout, list[1].params.fFinal, 1);
        j = nlist +1;
+       if (otherIn.PrintOverlap)
+	 for (i=0; i<correlation.length; i++)
+	   printf("%f %f\n", i*df, correlation.data[i]);
      }
    
 
@@ -652,6 +708,11 @@ main (int argc, char **argv )
 	     LALGenerateWaveform(&status,&signal, &randIn);
 	   }
 	 
+	 /*       for (kk = 0; kk<signal.length; kk++)
+	 {
+	   printf("%i %E\n", kk, signal.data[kk]);
+	 }
+	 */
 	 
 	 
 	 
@@ -1018,7 +1079,10 @@ ParseParameters(int *argc,
       }	
       else if ( strcmp(argv[i],"--sampling") ==0) {	  
 	coarseIn->tSampling  = atof(argv[++i]);  
+	randIn->param.tSampling  = atof(argv[i]);  
+
 	randIn->param.fCutoff = coarseIn->tSampling/2-1;
+
       }      
       else if ( strcmp(argv[i],"--mMin") == 0 )
 	{
@@ -1061,6 +1125,7 @@ ParseParameters(int *argc,
       else if ( strcmp(argv[i],"--numFcut")==0)      {	  coarseIn->numFcutTemplates = atoi(argv[++i]);	}
       else if ( strcmp(argv[i],"-simType")==0)	     {	  randIn->type = atoi(argv[++i]);	}
       else if ( strcmp(argv[i],"-sigAmp")==0)	     {	  randIn->SignalAmp = atof(argv[++i]);	}
+      else if ( strcmp(argv[i],"-NoiseAmp")==0)	     {	  randIn->NoiseAmp = atof(argv[++i]);	}
       else if ( strcmp(argv[i],"--alpha")==0)	     {	  coarseIn->alpha = atof(argv[++i]); 	  randIn->param.alpha = coarseIn->alpha;	}
       else if ( strcmp(argv[i],"--TemplateOrder")==0){     coarseIn->order = atoi(argv[++i]); 	}
       else if ( strcmp(argv[i],"--SignalOrder")==0)  {	  randIn->param.order = atoi(argv[++i]); 	}
@@ -1076,6 +1141,7 @@ ParseParameters(int *argc,
 	  else if (strcmp(argv[i], "VIRGO") == 0)  otherIn->NoiseModel = VIRGO;
 	  else if (strcmp(argv[i], "TAMA") == 0)   otherIn->NoiseModel = TAMA;
 	  else if (strcmp(argv[i], "GEO") == 0)    otherIn->NoiseModel = GEO;
+	  else if (strcmp(argv[i], "REALPSD")==0)  otherIn->NoiseModel = REALPSD;
       }
 
       else if ( strcmp(argv[i],"--InQuadrature")==0)    { otherIn->overlapMethod = InQuadrature;}
@@ -1697,7 +1763,7 @@ LALWaveOverlapBCV(
   overlapout->bin   = nBegin;
   overlapout->phase = 0;
 
-  if (otherIn.PrintOverlap == 1)
+  /*  if (otherIn.PrintOverlap == 1)
     {
       for (i=0; i< x1.length; i++)
 	printf("%d %e\n", i,fabs(x1.data[i]));
@@ -1715,7 +1781,7 @@ LALWaveOverlapBCV(
 	printf("%d %e\n", i,fabs(x4.data[i]));
       printf("&\n");	       
     }
-
+  */
 
 
 
@@ -1733,7 +1799,8 @@ LALWaveOverlapBCV(
       V2 = 2*x1.data[i]*x2.data[i] + 2*x3.data[i]*x4.data[i];
 
       rho = V0 + sqrt(V1*V1+V2*V2);
-
+      if(otherIn.PrintOverlap==1)
+	correlation->data[i] = sqrt(rho /2.);
       if ( rho > maxrho)
 	{
 	  maxV2 = V2;
@@ -1754,26 +1821,26 @@ LALWaveOverlapBCV(
 
   /* Check whether phase is in the appropriate range */
 
-
+  /*
   if (otherIn.PrintOverlap == 1)
     printf("&\n");
-  
+  */
   phase = overlapout->phase;
   phi   = overlapin->param.startPhase;
   
   
-  /*   for (i=0; i<(UINT4)correlation->length; i++) 
-       {
-       cphase = cos(phase);
-       cphi = cos(phi);
-       sphase = sqrt(1-cphase*cphase);
-       sphi = sqrt(1-cphi*cphi);
-       
-       correlation->data[i] = x1.data[i] * cphase * cphi
-       + x2.data[i] * sphase * cphi
-       + x3.data[i] * cphase * sphi
-       + x4.data[i] * sphase * sphi;	
-       }
+  /*for (i=0; i<(UINT4)correlation->length; i++) 
+    {
+      cphase = cos(phase);
+      cphi = cos(phi);
+      sphase = sqrt(1-cphase*cphase);
+      sphi = sqrt(1-cphi*cphi);
+      
+      correlation->data[i] = x1.data[i] * cphase * cphi
+	+ x2.data[i] * sphase * cphi
+	+ x3.data[i] * cphase * sphi
+	+ x4.data[i] * sphase * sphi;	
+    }
   */
   
   overlapout->alpha = -(matrix.a22 * tan(phase)) / (matrix.a11 + matrix.a21* tan(phase));
