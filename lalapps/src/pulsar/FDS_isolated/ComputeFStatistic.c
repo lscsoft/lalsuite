@@ -369,7 +369,7 @@ int main(int argc,char *argv[])
 
 #if USE_BOINC
   use_boinc_filename0(Fstatsfilename);
-  use_boinc_filename0(ckp_fname)
+  use_boinc_filename0(ckp_fname);
 #endif /* USE_BOINC */
 
   /*----------------------------------------------------------------------
