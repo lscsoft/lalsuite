@@ -22,10 +22,20 @@ helpmsg="$helpmsg
 helpmsg="$helpmsg
   --prefix=PREFIX       set prefix to PREFIX [/tmp/`logname`]"
 helpmsg="$helpmsg
-  --config-args=ARGS    configure with arguments ARGS
-                        [\"--enable-frame --enable-mpi --with-gcc-flags\"]"
-helpmsg="$helpmsg
   --extra-config-args=ARGS configure with extra arguments ARGS [none]"
+helpmsg="$helpmsg
+  --without-gcc-flags   do not add --with-gcc-flags to configure arguments"
+helpmsg="$helpmsg
+  --disable-frame       do not add --enable-frame to configure arguments"
+helpmsg="$helpmsg
+  --disable-mpi         do not add --enable-mpi to configure arguments"
+helpmsg="$helpmsg
+  --disable-static      do not build static library"
+helpmsg="$helpmsg
+  --disable-shared      do not build shared library"
+helpmsg="$helpmsg
+  --production          test build in LDAS production mode"
+
 
 # Setable variables
 
@@ -33,8 +43,14 @@ FRESH="no"
 TAR="tar"
 MAKE="make"
 PREFIX="/tmp/`logname`"
-CONFIGARGS="--with-gcc-flags --enable-frame --enable-mpi"
+CONFIGARGS=""
 INCLUDEDEPS=""
+GCCFLAGS="yes"
+FRAME="yes"
+MPI="yes"
+STATIC="yes"
+SHARED="yes"
+PRODUCTION="no"
 
 # Process args
 while test $# -gt 0 ; do
@@ -50,12 +66,39 @@ while test $# -gt 0 ; do
     -use-tar=* | --use-tar=* ) TAR="$optarg";;
     -use-make=* | --use-make=* ) MAKE="$optarg";;
     -prefix=* | --prefix=* ) PREFIX="$optarg";;
-    -config-args=* | --config-args=* ) CONFIGARGS="$optarg";;
     -extra-config-args=* | --extra-config-args=* ) CONFIGARGS="$CONFIGARGS $optarg";;
+    -without-gcc-flags | --without-gcc-flags ) GCCFLAGS="no";;
+    -disable-frame | --disable-frame ) FRAME="no";;
+    -disable-mpi | --disable-mpi ) MPI="no";;
+    -disable-static | --disable-static ) STATIC="no";;
+    -disable-shared | --disable-shared ) SHARED="no";;
+    -production | --production ) PRODUCTION="yes";;
     *) echo "unrecognized option $option"; exit 1;;
   esac
   shift
 done
+
+if test "x$GCCFLAGS" = "xyes" ; then
+  CONFIGARGS="$CONFIGARGS --with-gcc-flags"
+fi
+if test "x$FRAME" = "xyes" ; then
+  CONFIGARGS="$CONFIGARGS --enable-frame"
+fi
+if test "x$MPI" = "xyes" ; then
+  CONFIGARGS="$CONFIGARGS --enable-mpi"
+fi
+if test "x$STATIC" = "xno" ; then
+  CONFIGARGS="$CONFIGARGS --disable-static"
+fi
+if test "x$SHARED" = "xno" ; then
+  CONFIGARGS="$CONFIGARGS --disable-shared"
+fi
+if test "x$PRODUCTION" = "xyes" ; then
+  CONFIGARGS="--enable-mpi --disable-static --disable-debug"
+  STATIC="no"
+fi
+
+echo ">>> Using configure arguments: $CONFIGARGS"
 
 TOPDIR="`pwd`"
 LOG="$TOPDIR/testscript.log"
@@ -107,8 +150,12 @@ $MAKE check >> $LOG 2>&1 || fail
 $MAKE dvi >> $LOG 2>&1 || fail
 $MAKE install >> $LOG 2>&1 || fail
 test -f $PREFIX/include/$lal/LALStdlib.h || fail
-test -f $PREFIX/lib/lib$lal.a || fail
-test -f $PREFIX/lib/lib$lal.so || fail
+if test "x$STATIC" = "xyes" ; then
+  test -f $PREFIX/lib/lib$lal.a || fail
+fi
+if test "x$SHARED" = "xyes" ; then
+  test -f $PREFIX/lib/lib$lal.so || fail
+fi
 $MAKE uninstall >> $LOG 2>&1 || fail
 test ! -f $PREFIX/include/$lal/LALStdlib.h || fail
 test ! -f $PREFIX/lib/lib$lal.a || fail
@@ -137,206 +184,4 @@ echo "*                                                    *"
 echo "* Congratulations: LAL has been successfully tested! *"
 echo "*                                                    *"
 echo "******************************************************"
-exit 0
-
-
-###
-### OLD VERSION
-###
-
-## Be sure to set all important paths in the environment variables:
-##
-##   C_INCLUDE_PATH
-##   LIBRARY_PATH
-##   LD_LIBRARY_PATH
-##   PATH
-
-TOPDIR="`pwd`"
-LOG="$TOPDIR/testscript.log"
-
-# Configure arguments for various tests:
-
-TEST0CONFARGS="--prefix=/tmp"
-TEST1CONFARGS="$TEST0CONFARGS --enable-frame"
-TEST2CONFARGS="$TEST1CONFARGS --enable-mpi"
-TEST3CONFARGS="$TEST2CONFARGS --with-gcc-flags"
-TEST4CONFARGS="$TEST3CONFARGS --disable-debug"
-
-# The function that performs the tests:
-
-test0() {
-  $BUILDDIR/configure $TEST0CONFARGS &&         \
-  $MAKE &&                                      \
-  $MAKE check &&                                \
-  $MAKE dvi &&                                  \
-  $MAKE install &&                              \
-  test -f /tmp/include/lal/LALStdlib.h &&       \
-  test -f /tmp/lib/liblal.a &&                  \
-  test -f /tmp/lib/liblal.so &&                 \
-  $MAKE uninstall &&                            \
-  test ! -f /tmp/include/lal/LALStdlib.h &&     \
-  test ! -f /tmp/lib/liblal.a &&                \
-  test ! -f /tmp/lib/liblal.so &&               \
-  $MAKE distclean;
-}
-
-test1() {
-  $BUILDDIR/configure $TEST1CONFARGS &&         \
-  $MAKE &&                                      \
-  $MAKE check &&                                \
-  $MAKE install &&                              \
-  test -f /tmp/include/lal/LALStdlib.h &&       \
-  test -f /tmp/lib/liblal.a &&                  \
-  test -f /tmp/lib/liblal.so &&                 \
-  $MAKE uninstall &&                            \
-  test ! -f /tmp/include/lal/LALStdlib.h &&     \
-  test ! -f /tmp/lib/liblal.a &&                \
-  test ! -f /tmp/lib/liblal.so &&               \
-  $MAKE distclean;
-}
-
-test2() {
-  $BUILDDIR/configure $TEST2CONFARGS &&         \
-  $MAKE &&                                      \
-  $MAKE check &&                                \
-  $MAKE install &&                              \
-  test -f /tmp/include/lal/LALStdlib.h &&       \
-  test -f /tmp/lib/liblal.a &&                  \
-  test -f /tmp/lib/liblal.so &&                 \
-  $MAKE uninstall &&                            \
-  test ! -f /tmp/include/lal/LALStdlib.h &&     \
-  test ! -f /tmp/lib/liblal.a &&                \
-  test ! -f /tmp/lib/liblal.so &&               \
-  $MAKE distclean;
-}
-
-test3() {
-  $BUILDDIR/configure $TEST3CONFARGS &&         \
-  $MAKE &&                                      \
-  $MAKE check &&                                \
-  $MAKE install &&                              \
-  test -f /tmp/include/lal/LALStdlib.h &&       \
-  test -f /tmp/lib/liblal.a &&                  \
-  test -f /tmp/lib/liblal.so &&                 \
-  $MAKE uninstall &&                            \
-  test ! -f /tmp/include/lal/LALStdlib.h &&     \
-  test ! -f /tmp/lib/liblal.a &&                \
-  test ! -f /tmp/lib/liblal.so &&               \
-  $MAKE distclean;
-}
-
-test4() {
-  $BUILDDIR/configure $TEST4CONFARGS &&         \
-  $MAKE &&                                      \
-  $MAKE install &&                              \
-  test -f /tmp/include/lal/LALStdlib.h &&       \
-  test -f /tmp/lib/liblal.a &&                  \
-  test -f /tmp/lib/liblal.so &&                 \
-  $MAKE uninstall &&                            \
-  test ! -f /tmp/include/lal/LALStdlib.h &&     \
-  test ! -f /tmp/lib/liblal.a &&                \
-  test ! -f /tmp/lib/liblal.so &&               \
-  $MAKE distclean;
-}
-
-# Start fresh
-
-rm -f $LOG
-
-MESSAGE="*** `date`: Start fresh"
-echo "$MESSAGE" > $LOG
-echo "$MESSAGE"
-
-rm -rf tmp
-rm -f  /tmp/lib/liblal.*
-rm -rf /tmp/include/lal
-rm -rf /tmp/doc/lal-*.*
-
-if test -f Makefile
-then
-  make cvs-clean >> $LOG 2>&1 || exit 1
-fi
-./00boot >> $LOG 2>&1
-
-# Perform tests of CVS archive
-
-MESSAGE="*** `date`: Perform tests of CVS archive"
-echo "$MESSAGE" >> $LOG
-echo "$MESSAGE"
-
-BUILDDIR='.'
-echo "*** `date`:   test0" ; test0 >> $LOG 2>&1 || exit 1
-echo "*** `date`:   test1" ; test1 >> $LOG 2>&1 || exit 1
-echo "*** `date`:   test2" ; test2 >> $LOG 2>&1 || exit 1
-echo "*** `date`:   test3" ; test3 >> $LOG 2>&1 || exit 1
-echo "*** `date`:   test4" ; test4 >> $LOG 2>&1 || exit 1
-
-# Make a distribution extract it
-
-MESSAGE="*** `date`: Create and extract distribution"
-echo "$MESSAGE" >> $LOG
-echo "$MESSAGE"
-
-./configure >> $LOG 2>&1 || exit 1
-make dist >> $LOG 2>&1 || exit 1
-$TAR zxvf lal-*.*.tar.gz >> $LOG 2>&1 || exit 1
-rm -f lal-*.*.tar.gz >> $LOG 2>&1 || exit 1
-mv lal-*.* tmp >> $LOG 2>&1 || exit 1
-cd tmp >> $LOG 2>&1 || exit 1
-
-# Perform tests of distribution
-
-MESSAGE="*** `date`: Perform tests of distribution"
-echo "$MESSAGE" >> $LOG
-echo "$MESSAGE"
-
-BUILDDIR='.'
-echo "*** `date`:   test0" ; test0 >> $LOG 2>&1 || exit 1
-echo "*** `date`:   test1" ; test1 >> $LOG 2>&1 || exit 1
-echo "*** `date`:   test2" ; test2 >> $LOG 2>&1 || exit 1
-echo "*** `date`:   test3" ; test3 >> $LOG 2>&1 || exit 1
-echo "*** `date`:   test4" ; test4 >> $LOG 2>&1 || exit 1
-
-# Perform tests in sub-directory
-
-MESSAGE="*** `date`: Perform tests of distribution in subdirectory"
-echo "$MESSAGE" >> $LOG
-echo "$MESSAGE"
-
-mkdir tmp && cd tmp || exit 1
-
-BUILDDIR='..'
-echo "*** `date`:   test0" ; test0 >> $LOG 2>&1 || exit 1
-echo "*** `date`:   test1" ; test1 >> $LOG 2>&1 || exit 1
-echo "*** `date`:   test2" ; test2 >> $LOG 2>&1 || exit 1
-echo "*** `date`:   test3" ; test3 >> $LOG 2>&1 || exit 1
-echo "*** `date`:   test4" ; test4 >> $LOG 2>&1 || exit 1
-
-# Clean up
-
-MESSAGE="*** `date`: Clean-up"
-echo "$MESSAGE" >> $LOG
-echo "$MESSAGE"
-
-cd .. || exit 1
-rm -rf tmp || exit 1
-cd .. || exit 1
-rm -rf tmp || exit 1
-
-rm -f  /tmp/lib/liblal.*
-rm -rf /tmp/include/lal
-rm -rf /tmp/doc/lal-*.*
-
-# Successful test
-
-MESSAGE="*** `date`: Finished"
-echo "$MESSAGE" >> $LOG
-echo "$MESSAGE"
-
-echo "******************************************************"
-echo "*                                                    *"
-echo "* Congratulations: LAL has been successfully tested! *"
-echo "*                                                    *"
-echo "******************************************************"
-
 exit 0

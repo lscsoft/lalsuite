@@ -7,12 +7,11 @@
 
 ## LAL version:
 package=lal
-version=0.10
+version=0.11
 
 ## Add a new package here:
 
 # Base (non-conditionally-compiled) packages:
-#lal_pkg_list_base="support tools sample hello factories vectorops utilities stats inject date tdfilter window fft timefreq clremoval stochastic inspiral noisemodels bank pulsar fct burstsearch tracksearch tfclusters slopefilters"
 lal_pkg_list_base="support tools sample hello factories vectorops utilities stats inject date tdfilter window fft clremoval stochastic inspiral noisemodels bank ring findchirp pulsar houghpulsar fct burstsearch tracksearch tfclusters slopefilters"
 
 # Packages compiled only with --enable-mpi
@@ -27,35 +26,10 @@ lal_pkg_list_frame_mpi=""
 # Packages that are omitted
 lal_pkg_list_omit="timefreq"
 
-## Do not edit below here!
+## <<<< !!!!  Do not edit below here !!!! >>>> ##
 
 # All packages
 lal_pkg_list="std $lal_pkg_list_base $lal_pkg_list_mpi $lal_pkg_list_frame $lal_pkg_list_frame_mpi $lal_pkg_list_omit"
-
-#lal_pkgout_list=`for pkg in $lal_pkg_list; do pkgdir=packages/$pkg; echo -n "$pkgdir/Makefile $pkgdir/doc/Makefile:$pkgdir/doc/Makefile.in:misc/doc.mk $pkgdir/include/Makefile:$pkgdir/include/Makefile.in:misc/include.mk:misc/dvi.mk $pkgdir/src/Makefile:$pkgdir/src/Makefile.in:misc/dvi.mk $pkgdir/test/Makefile:$pkgdir/test/Makefile.in:misc/dvi.mk " ; done`
-#lal_out_list="Makefile doc/Makefile doc/laldoc/Makefile doc/autodoc/Makefile include/Makefile include/lal/Makefile lib/Makefile packages/Makefile $lal_pkgout_list "
-#dollar='$'
-#lal_lib_list_base=`for pkg in $lal_pkg_list_base; do echo -n "$dollar(top_builddir)/packages/$pkg/src/lib$pkg.la " ; done`
-#lal_lib_list_mpi=`for pkg in $lal_pkg_list_mpi; do echo -n "$dollar(top_builddir)/packages/$pkg/src/lib$pkg.la " ; done`
-#lal_lib_list_frame=`for pkg in $lal_pkg_list_frame; do echo -n "$dollar(top_builddir)/packages/$pkg/src/lib$pkg.la " ; done`
-#lal_lib_list_mpi_frame=`for pkg in $lal_pkg_list_mpi_frame; do echo -n "$dollar(top_builddir)/packages/$pkg/src/lib$pkg.la " ; done`
-
-test -f 00boot.sed && rm 00boot.sed
-
-#cat >> 00boot.sed <<EOF
-#s%@PKG@%$package%g
-#s%@VER@%$version%g
-#s%@PKGLIST@%$lal_pkg_list%g
-#s%@OUTLIST@%$lal_out_list%g
-#s%@LIBLISTBASE@%$lal_lib_list_base%g
-#s%@LIBLISTMPI@%$lal_lib_list_mpi%g
-#s%@LIBLISTFRAME@%$lal_lib_list_frame%g
-#s%@LIBLISTMPIFRAME@%$lal_lib_list_mpi_frame%g
-#EOF
-
-#sed -f 00boot.sed configure.boot > configure.in
-
-#rm 00boot.sed
 
 # Help message
 helpmsg="Usage $0 [options]
@@ -82,21 +56,6 @@ while test $# -gt 0 ; do
   shift
 done
 
-
-## Find an echo that accepts -n
-#ECHO=${ECHO:-echo}
-#if test ! "`$ECHO -n a`" = "a" ; then
-#  echo "*** Warning: echo does not support -n"
-#  echo "*** make sure /usr/ucb is ahead of /usr/bin in PATH"
-#  echo "*** or set variable ECHO to an echo that supports -n"
-#  echo "*** trying /usr/ucb/echo..."
-#  ECHO=/usr/ucb/echo
-#  if test ! "`$ECHO -n a`" = "a" ; then
-#    echo "*** Error: could not find an appropriate echo!"
-#    exit 1
-#  fi
-#  echo "*** using $ECHO"
-#fi
 
 ## Here is the stuff to make configure.in
 
@@ -235,34 +194,26 @@ fi
 EOF
 
 # Substitutions
-#$ECHO -n "LIBLISTBASE='" >> configure.in
 printf "LIBLISTBASE='" >> configure.in
 for pkg in $lal_pkg_list_base ; do
-#  $ECHO -n "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
   printf "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
 done
 echo "'" >> configure.in
 
-#$ECHO -n "LIBLISTMPI='" >> configure.in
 printf "LIBLISTMPI='" >> configure.in
 for pkg in $lal_pkg_list_mpi ; do
-#  $ECHO -n "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
   printf "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
 done
 echo "'" >> configure.in
 
-#$ECHO -n "LIBLISTFRAME='" >> configure.in
 printf "LIBLISTFRAME='" >> configure.in
 for pkg in $lal_pkg_list_frame ; do
-#  $ECHO -n "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
   printf "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
 done
 echo "'" >> configure.in
 
-#$ECHO -n "LIBLISTMPIFRAME='" >> configure.in
 printf "LIBLISTMPIFRAME='" >> configure.in
 for pkg in $lal_pkg_list_mpi_frame ; do
-#  $ECHO -n "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
   printf "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
 done
 echo "'" >> configure.in
