@@ -2,6 +2,7 @@
 sftdir=".."
 sftbase="SFT.0000"
 IFO="LHO"
+FCOMPARE="./compareFstats"
 
 CFSparams1="--IFO=$IFO --DataDir=$sftdir --BaseName=$sftbase --Freq=300.1 \
 --FreqBand=0.2 --Alpha=2.2 --AlphaBand=0.003 --Delta=0.8 --DeltaBand=0.003 --gridType=0"
@@ -18,7 +19,16 @@ if [ x$LAL_DATA_PATH = x ]; then
     echo
     echo "Need environment-variable LAL_DATA_PATH to point to your ephemeris-directory (e.g. /usr/local/share/lal)"
     echo
-    exit
+    exit 1
+fi
+
+if [ ! -x "$FCOMPARE" ] ; then
+    echo 
+    echo "F-stat Comparison code not found: $FCOMPARE"
+    echo
+    echo "I suggest you try: 'make $FCOMPARE'"
+    echo
+    exit 1
 fi
 
 
@@ -30,20 +40,26 @@ fi
 
 ## Tests start here 
 ## --------------------
+echo
 echo "Running ComputeFStatistic-code '$prog' on test-data '$sftdir/$sftbase*'"
 
 ## Test1: using a uniform sky-grid
 ##----------------------------------------
+echo
+echo "----------------------------------------------------------------------"
 echo "Test 1) uniform sky-grid:"
-echo "cmd-line args: $CFSparams1"
-if ! "$prog" $CFSparams1 -v0; then
+echo "----------------------------------------------------------------------"
+echo "$prog $CFSparams1"
+if ! "$prog" $CFSparams1; then
     echo "failed... exiting.";
-    exit
+    echo
+    exit 2
 fi
 
+echo
 echo -n "Comparing output-file 'Fstats' with reference-version 'Fstats.ref1' ... "
 
-if ./compareFstats -1 ./Fstats -2 ./Fstats.ref1 ; then
+if $FCOMPARE -1 ./Fstats -2 ./Fstats.ref1 ; then
     echo "OK."
 else
     echo "OUCH... files differ. Something might be wrong..."
@@ -51,16 +67,21 @@ fi
 
 ## Test2: using an isotropic Grid
 ##-------------------------------
+echo
+echo "----------------------------------------------------------------------"
 echo "Test 2) isotropic sky-grid:"
-echo "cmd-line args: $CFSparams2"
-if ! "$prog" $CFSparams2 -v0; then
+echo "----------------------------------------------------------------------"
+echo "$prog $CFSparams2"
+if ! "$prog" $CFSparams2; then
     echo "failed... exiting.";
-    exit
+    echo
+    exit 2
 fi
 
+echo
 echo -n "Comparing output-file 'Fstats' with reference-version 'Fstats.ref2' ... "
 
-if ./compareFstats -1 ./Fstats -2 ./Fstats.ref2 ; then
+if $FCOMPARE -1 ./Fstats -2 ./Fstats.ref2 ; then
     echo "OK."
 else
     echo "OUCH... files differ. Something might be wrong..."
@@ -69,17 +90,24 @@ fi
 
 ## Test3: using a the analytic Ptole-metric
 ##----------------------------------------
+echo
+echo "----------------------------------------------------------------------"
 echo "Test 3) analytic Ptole-metric:"
-echo "cmd-line args: $CFSparams3"
-if ! "$prog" $CFSparams3 -v0; then
+echo "----------------------------------------------------------------------"
+echo "$prog $CFSparams3"
+if ! "$prog" $CFSparams3; then
     echo "failed... exiting.";
+    echo
     exit
 fi
 
+echo
 echo -n "Comparing output-file 'Fstats' with reference-version 'Fstats.ref3' ... "
 
-if ./compareFstats -1 ./Fstats -2 ./Fstats.ref3 ; then
+if $FCOMPARE -1 ./Fstats -2 ./Fstats.ref3 ; then
     echo "OK."
+    echo
 else
     echo "OUCH... files differ. Something might be wrong..."
+    echo
 fi
