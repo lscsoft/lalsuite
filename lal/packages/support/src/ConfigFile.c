@@ -167,7 +167,7 @@ LALLoadConfigFile (LALStatus *stat,
 
 
   if ( (fp = LALOpenDataFile(fname)) == NULL) {
-    LALPrintError ("Could not open config-file: `%s`\n", fname);
+    LALPrintError ("Could not open config-file: `%s`\n\n", fname);
     ABORT (stat, CONFIGFILEH_EFILE, CONFIGFILEH_MSGEFILE);
   }
 
@@ -305,13 +305,13 @@ LALReadConfigVariable (LALStatus *stat,
 	  break;
 	case CONFIGFILE_WARN:
 	  if (lalDebugLevel & LALWARNING)
-	    LALPrintError ("Warning: Config-file variable '%s' was not found!\n", param->varName);
+	    LALPrintError ("\nWarning: Config-file variable '%s' was not found!\n", param->varName);
 	  RETURN (stat);
 	  break;
 
 	case CONFIGFILE_ERROR:
 	default: 
-	  LALPrintError ("Error: Config-file variable %s was not found!\n", param->varName);
+	  LALPrintError ("\nError: Config-file variable %s was not found!\n", param->varName);
 	  ABORT (stat, CONFIGFILEH_EVAR, CONFIGFILEH_MSGEVAR );
 	  break;
 	} /* switch (strictness) */
@@ -337,7 +337,7 @@ LALReadConfigVariable (LALStatus *stat,
 
   if ( (ret == 0) || (ret == EOF) )
     {
-      LALPrintError("ERROR: Config-file variable %s was not readable using the format %s\n", param->varName, param->fmt);
+      LALPrintError("\nERROR: Config-file variable %s was not readable using the format %s\n\n", param->varName, param->fmt);
       ABORT( stat, CONFIGFILEH_EFMT, CONFIGFILEH_MSGEFMT );
     }
 
