@@ -353,7 +353,7 @@ int main( int argc, char *argv[] )
   const double meanTimeStep = 526 / M_PI; /* seconds between injections     */
 
   long long tinj              = 1000000000LL * gpsStartTime;
-  struct time_list  tlisthead = { tinj, NULL };
+  struct time_list  tlisthead;
   struct time_list *tlistelem = &tlisthead;
 
   double injPar[numElem];
@@ -361,6 +361,8 @@ int main( int argc, char *argv[] )
   size_t inj;
   FILE *fp;
 
+  tlisthead.tinj = tinj;
+  tlisthead.next = NULL;
   /* sanity check on arguments; if one argument, use it as random seed */
   if ( argc == 1 )
     seed_random( 1001 );

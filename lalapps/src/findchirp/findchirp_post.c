@@ -47,7 +47,7 @@ int main( int argc, char *argv[] )
   INT4          max_over_inject = 0;
   CHAR          eventfile[LINEBUFSIZ] = "events.dat";
 
-  REAL4         smin = 1e99, smax = 0, cmin = 1e99, cmax = 0;
+  REAL4         smin = 1e38, smax = 0, cmin = 1e38, cmax = 0;
   CHAR          linebuf[LINEBUFSIZ];
 
   struct event *elisthead = NULL;
