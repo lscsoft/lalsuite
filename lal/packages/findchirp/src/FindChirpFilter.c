@@ -481,6 +481,7 @@ LALFindChirpFilterSegment (
   REAL4                 mismatch;
   REAL4                 chisqThreshFac;
   REAL4                 modChisqThresh;
+  UINT4                 numChisqBins;
   UINT4                 eventStartIdx = 0;
   REAL4                 chirpTime     = 0;
   BOOLEAN               haveChisq     = 0;
@@ -569,6 +570,10 @@ LALFindChirpFilterSegment (
   inputData = input->segment->data->data->data;
   tmpltSignal = input->fcTmplt->data->data;
   deltaT = params->deltaT;
+
+  /* the length of the chisq bin vec is the number of bin   */
+  /* _boundaries_ so the number of chisq bins is length - 1 */
+  numChisqBins = input->segment->chisqBinVec->length - 1;
 
   /* number of points in a segment */
   numPoints = params->qVec->length;
@@ -698,8 +703,7 @@ LALFindChirpFilterSegment (
   /* the raw chisq is stored in the database. this quantity is chisq    */
   /* distributed with 2p-2 degrees of freedom.                          */
   mismatch = 1.0 - input->tmplt->minMatch;
-  chisqThreshFac = norm * mismatch * mismatch / 
-    (REAL4) ( input->segment->chisqBinVec->length - 1 );
+  chisqThreshFac = norm * mismatch * mismatch / (REAL4) numChisqBins;
 
   /* if full snrsq vector is required, store the snrsq */
   if ( params->rhosqVec ) 
@@ -822,8 +826,12 @@ LALFindChirpFilterSegment (
           /* set snrsq, chisq, sigma and effDist for this event */
           if ( input->segment->chisqBinVec->length )
           {
-            thisEvent->chisq     = params->chisqVec->data[timeIndex];
-            thisEvent->chisq_dof = input->segment->chisqBinVec->length - 1;
+            /* we store chisq distributed with 2p - 2 degrees of freedom */
+            /* in the database. params->chisqVec->data = r^2 = chisq / p */
+            /* so we multiply r^2 by p here to get chisq                 */
+            thisEvent->chisq = 
+              params->chisqVec->data[timeIndex] * (REAL4) numChisqBins;
+            thisEvent->chisq_dof = numChisqBins;
           }
           else
           {
@@ -911,8 +919,12 @@ LALFindChirpFilterSegment (
     /* set snrsq, chisq, sigma and effDist for this event */
     if ( input->segment->chisqBinVec->length )
     {
-      thisEvent->chisq = params->chisqVec->data[timeIndex];
-      thisEvent->chisq_dof = input->segment->chisqBinVec->length - 1;
+      /* we store chisq distributed with 2p - 2 degrees of freedom */
+      /* in the database. params->chisqVec->data = r^2 = chisq / p */
+      /* so we multiply r^2 by p here to get chisq                 */
+      thisEvent->chisq = 
+        params->chisqVec->data[timeIndex] * (REAL4) numChisqBins;
+      thisEvent->chisq_dof = numChisqBins;
     }
     else
     {
