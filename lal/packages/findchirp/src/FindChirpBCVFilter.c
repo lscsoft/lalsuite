@@ -634,8 +634,8 @@ LALFindChirpBCVFilterSegment (
 
       omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
       alpha = - b2 * tan(omega) / ( a1 + b1*tan(omega) );
-      alpha *= pow(params->deltaT, 2/3); 
-      alphaF = alpha * pow(fFinal, 2/3);
+      alpha *= pow(params->deltaT, 2.0/3.0); 
+      alphaF = alpha * pow(fFinal, 2.0/3.0);
       if ( (alphaF >= 0.0 && alphaF <= 2.0) &&  
            ( ! numChisqBins || params->chisqVec->data[j] <
            (params->chisqThresh * ( 1.0 + modqsq * chisqThreshFac )) ) )
@@ -714,7 +714,7 @@ LALFindChirpBCVFilterSegment (
           InvTan1 = (REAL4) atan2(Num1, Den1);
           InvTan2 = (REAL4) atan2(Num2, Den2);
 
-          thisEvent->coa_phase = - 0.5 * InvTan1 + 0.5 * InvTan2 ;
+          thisEvent->coa_phase = 0.5 * InvTan1 - 0.5 * InvTan2 ;
           omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
           thisEvent->alpha = - b2 * tan(omega) 
             / ( a1 + b1 * tan(omega) );
@@ -755,7 +755,7 @@ LALFindChirpBCVFilterSegment (
           thisEvent->eff_distance =
             input->fcTmplt->tmpltNorm / norm / thisEvent->snr;
           thisEvent->eff_distance = sqrt( thisEvent->eff_distance ) /
-            pow(params->deltaT, 1/6);
+            pow(params->deltaT, 1.0/6.0);
 
           thisEvent->snr *= norm;      
           thisEvent->snr = sqrt( thisEvent->snr );
@@ -832,7 +832,7 @@ LALFindChirpBCVFilterSegment (
     InvTan2 = (REAL4) atan2(Num2, Den2 );
 
 
-    thisEvent->coa_phase = - 0.5 * InvTan1 + 0.5 * InvTan2 ;
+    thisEvent->coa_phase = 0.5 * InvTan1 - 0.5 * InvTan2 ;
     omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
     thisEvent->alpha = - b2 * tan(omega) 
       / ( a1 + b1 * tan(omega) );
@@ -876,7 +876,7 @@ LALFindChirpBCVFilterSegment (
     thisEvent->eff_distance = input->fcTmplt->tmpltNorm / norm /
       thisEvent->snr;
     thisEvent->eff_distance = sqrt( thisEvent->eff_distance ) /
-      pow(params->deltaT,1/6);
+      pow(params->deltaT,1.0/6.0);
 
     thisEvent->snr *=  norm ;   
     thisEvent->snr = sqrt( thisEvent->snr );
