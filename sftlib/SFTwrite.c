@@ -5,6 +5,13 @@
 #include <errno.h>
 #include "SFTReferenceLibrary.h"
 
+/* some local prototypes */
+FILE *openfile(const char* name);
+void printerror(int err);
+
+
+/* function definitions */
+
 FILE *openfile(const char* name) {
   FILE *fp=fopen(name, "w");
   if (!fp) {
@@ -29,7 +36,7 @@ void printerror(int err) {
 #define DET2 "L1"
 #define DET3 "X3"
 
-int main() {
+int main(void) {
   FILE *fp;
   float data[]={1.0, 0.0, 2.0, -1.0, 3.0, -2.0, 4.0, -3.0};
   

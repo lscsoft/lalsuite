@@ -30,7 +30,7 @@
 #define BLOCKSIZE 65536
 
 /* some local prototypes */
-unsigned long long crc64(unsigned char* data, unsigned int length, unsigned long long crc);
+unsigned long long crc64(const unsigned char* data, unsigned int length, unsigned long long crc);
 int isbigendian(void);
 void swap2(char *location);
 void swap4(char *location);
@@ -45,7 +45,7 @@ const char* ReferenceSFTLibraryVersion(void) {
    by crc64(data, M, ~(0ULL)). Call the function multiple times to
    compute the checksum of data made in contiguous chunks, setting
    final argument to the previously accumulated checksum value. */
-unsigned long long crc64(unsigned char* data,
+unsigned long long crc64(const unsigned char* data,
 			 unsigned int length,
 			 unsigned long long crc) {
 
@@ -209,7 +209,7 @@ int WriteSFT(FILE *fp,            /* stream to write to */
 	     int firstfreqindex,  /* index of first frequency bin included in data (0=DC)*/
 	     int nsamples,        /* number of frequency bins to include in SFT */
 	     const char *detector,/* channel-prefix defining detector */
-	     char *comment,       /* null-terminated comment string to include in SFT */
+	     const char *comment, /* null-terminated comment string to include in SFT */
 	     float *data          /* points to nsamples x 2 x floats (Real/Imag)  */
 	     ) {
   struct headertag2 header;
@@ -274,16 +274,16 @@ int WriteSFT(FILE *fp,            /* stream to write to */
   header.comment_length = comment_length+inc;
   
   /* compute CRC of header */
-  header.crc64 = crc64((unsigned char *)&header, sizeof(header), ~(0ULL));
+  header.crc64 = crc64((const unsigned char *)&header, sizeof(header), ~(0ULL));
   
   /* compute CRC of comment */
-  header.crc64 = crc64((unsigned char *)comment, comment_length, header.crc64);
+  header.crc64 = crc64((const unsigned char *)comment, comment_length, header.crc64);
   
   /* compute CRC of comment padding */
-  header.crc64 = crc64((unsigned char *)pad, inc, header.crc64);
+  header.crc64 = crc64((const unsigned char *)pad, inc, header.crc64);
 
   /* compute CRC of data */
-  header.crc64 = crc64((unsigned char *)data, nsamples*2*sizeof(float), header.crc64);
+  header.crc64 = crc64((const unsigned char *)data, nsamples*2*sizeof(float), header.crc64);
   
   /* write the header to file */
   if (1 != fwrite((const void *)&header, sizeof(header), 1, fp))

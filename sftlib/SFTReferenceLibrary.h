@@ -48,7 +48,7 @@ int WriteSFT(FILE   *fp,            /* stream to write to.  On return, is at the
 	     int    firstfreqindex, /* index of first frequency bin included in data (0=DC)*/
 	     int    nsamples,       /* number of frequency bins to include in SFT */
 	     const char *detector,  /* channel-prefix defining detector */
-	     char   *comment,       /* null-terminated comment string to include in SFT */
+	     const char *comment,       /* null-terminated comment string to include in SFT */
 	     float  *data           /* points to nsamples x 2 x floats (Real/Imag)  */
 	     );
 
