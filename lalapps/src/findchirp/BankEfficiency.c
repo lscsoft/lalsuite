@@ -8,27 +8,6 @@
  * 2 - print in a file output correlation in time 
  * 3 - print in a file 3d correlation*/
 
-
-/*
-output:
-
-psi0, psi0t
-psi3 psi3t
-tau0, tau0t
-tau3, tau3t
-fcut, fcutt
-M, Mt
-eta, etat
-MM
-psi0, psi0t
-time, time_t
-Nlayer
-alpha
-
-
-
-*/
-
 #include <stdio.h>
 #include <lal/LALNoiseModels.h>
 #include <lal/LALInspiralBank.h>
@@ -119,10 +98,6 @@ typedef enum{
     REALPSD
 }DetectorName;
 
-
-typedef struct{
-  double m1,m2;
-} BankTable;
 
 /* Structure to store the value of a 2 by 2 matrix. 
  * This matrix is used in the alpha maximization 
@@ -371,7 +346,6 @@ main (int argc, char **argv )
     Filter1, 
     Filter2;
   
-
   
   void	 			*noisemodel;
   RandomInspiralSignalIn 	randIn;						/* random signal waveform to inject*/
@@ -400,7 +374,6 @@ main (int argc, char **argv )
   
   /* --- Debugging level --- */
   lalDebugLevel=0;
-
  
   /* --- Some initialization --- */
   ParametersInitialization(	&coarseIn, 
@@ -867,7 +840,7 @@ main (int argc, char **argv )
 	 
 	 /*Now print some results or other stuffs*/
 	 
-	 fprintf(stdout, "kdsfjj\n");	 
+	 
          PrintBankOverlap(&list, nlist ,  bankEfficiencyOverlapIn, coarseIn);
 	 
 	 LAL_CALL(LALInspiralParameterCalc(&status, &list[jmax].params), &status);
@@ -1135,9 +1108,9 @@ ParseParameters(	int 			*argc,
       else if ( strcmp(argv[i],	"--noise-amplitude")	==0)	     
     	      randIn->NoiseAmp = atof(argv[++i]);	
       else if ( strcmp(argv[i],	"--alpha-bank")	==0)	     
-    	      coarseIn->alpha = atof(argv[++i]);
+    	      coarseIn->alpha = coarseIn->alpha;	
       else if ( strcmp(argv[i],	"--alpha-signal")==0)	     
-    	      randIn->param.alpha = atof(argv[++i]);
+    	      randIn->param.alpha = coarseIn->alpha;	
       else if ( strcmp(argv[i],	"--template-order")==0)     
 	      coarseIn->order = atoi(argv[++i]); 	
       else if ( strcmp(argv[i],	"--signal-order")==0) 
@@ -1353,21 +1326,12 @@ PrintResults(	    	InspiralTemplate       	bank,
 	    		REAL8 			fendBCV,
 	    		UINT4 			layer)
 {
-
-  if (bank.approximant==BCV){  
-  	fprintf(stdout, "%e %e ", bank.psi0, bank.psi3);  /*triggered */
-	fprintf(stdout, "%e %e    ", injected.psi0, injected.psi3);
-      	fprintf(stdout, "%e %e %e %e   ", fendBCV,   injected.fFinal, bank.totalMass, injected.totalMass);
-      	fprintf(stdout, "%e %e %e %e   ", injected.mass1, injected.mass2, overlapout.max, overlapout.phase);
-      	fprintf(stdout, "%e %e %d %d\n ", overlapout.alpha, overlapout.alpha*pow(fendBCV,2./3.), layer, overlapout.bin);
-	}
-  else{
-  	fprintf(stdout, "%e %e ", bank.t0, bank.t3);  /*triggered */
-	fprintf(stdout, "%e %e    ", injected.t0, injected.t3);
-	fprintf(stdout, "%e %e %e %e   ", fendBCV,   injected.fFinal, bank.totalMass, injected.totalMass);
-	fprintf(stdout, "%e %e %e %e   ", injected.mass1, injected.mass2, overlapout.max, overlapout.phase);
-	fprintf(stdout, "%e %e %d %d\n ", overlapout.alpha, overlapout.alpha*pow(fendBCV,2./3.), layer, overlapout.bin);
-}
+  
+  fprintf(stdout, "%e %e ", bank.psi0, bank.psi3);  /*triggered */
+  fprintf(stdout, "%e %e    ", injected.psi0, injected.psi3);
+  fprintf(stdout, "%e %e %e %e   ", fendBCV,   injected.fFinal, bank.totalMass, injected.totalMass);
+  fprintf(stdout, "%e %e %e %e   ", injected.mass1, injected.mass2, overlapout.max, overlapout.phase);
+  fprintf(stdout, "%e %e %d %d\n ", overlapout.alpha, overlapout.alpha*pow(fendBCV,2./3.), layer, overlapout.bin);
 }
 
 
@@ -1804,21 +1768,19 @@ PrintBank(	InspiralCoarseBankIn coarseIn,
 		) 
 {
   UINT4 i;
-  FILE *output;
-  output = fopen("bank.dat","w");
-
-  fprintf(output, "#Number of Coarse Bank Templates=%d\n",nlist);
+  
+  fprintf(stdout, "#Number of Coarse Bank Templates=%d\n",nlist);
   if (coarseIn.approximant == BCV)
-	fprintf(output, "#psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n", 
+	fprintf(stdout, "#psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n", 
 	 	coarseIn.psi0Min, coarseIn.psi0Max, coarseIn.psi3Min, coarseIn.psi3Max);
   else
-  	fprintf(output, "#mMin=%e, mMax=%e\n", coarseIn.mMin,coarseIn.mMax);
+  	fprintf(stdout, "#mMin=%e, mMax=%e\n", coarseIn.mMin,coarseIn.mMax);
 
   for ( i = 0; i < nlist; i++)
     {
       if (coarseIn.approximant == BCV)
 	{      		   
-      		fprintf(output, "%e %e %d %e %e\n", 	(*list)[i].params.psi0, 
+      		fprintf(stdout, "%e %e %d %e %e\n", 	(*list)[i].params.psi0, 
 				  			(*list)[i].params.psi3,
 				  			(*list)[i].nLayer, 
 							(*list)[i].params.totalMass,
@@ -1826,16 +1788,16 @@ PrintBank(	InspiralCoarseBankIn coarseIn,
 	} 
       else
 	{
-      		fprintf(output, "%e %e %e %e\n", 	(*list)[i].params.t0, 
+      		fprintf(stdout, "%e %e %e %e\n", 	(*list)[i].params.t0, 
 				  			(*list)[i].params.t3, 
 							(*list)[i].params.mass1, 
 							(*list)[i].params.mass2);
 	}
     }	   
-  fprintf(output,"&\n");
-  fclose(output);
+  fprintf(stdout,"&\n");
 }
 
+/* TO fill*/
 void
 PrintBankOverlap(
 		 InspiralTemplateList 	**list,
@@ -1844,125 +1806,9 @@ PrintBankOverlap(
 		 InspiralCoarseBankIn 	coarseIn
 		)
 {
-  FILE *output1, *output2;
-  output1 = fopen("FF.sr4", "w");
-  output2 = fopen("FF.dim", "w");
-
-  long Npsi0, Npsi3;
-  double dx0, dx3;
-
-  double psi0Min = coarseIn.psi0Min;
-  double psi0Max = coarseIn.psi0Max;
-  double psi3Min = coarseIn.psi3Min;
-  double psi3Max = coarseIn.psi3Max;
-  double psi0, psi3;
-  int    numfcut = coarseIn.numFcutTemplates;
-  int    i,j,l,n;
-  float  *a;
-
-  double minimalMatch = coarseIn.mmCoarse;
-  double theta, myphi, fac;
-
-
-   dx0 = sqrt(2.L * (1.L - minimalMatch)/(*list)[0].metric.g00 );
-   dx3 = sqrt(2.L * (1.L - minimalMatch)/(*list)[0].metric.g11 );
-
-
-   fprintf(stderr, "%lf %lf\n", dx0, dx3);
-   
-     if ((*list)[0].metric.theta!=0.L)
-   {
-     myphi = atan2(dx3, dx0);
-     theta = fabs((*list)[0].metric.theta);
-     if (theta <= myphi) {
-       fac = cos(theta);
-       dx0  /= fac;
-       dx3 *=  fac;
-     } 
-     else {
-       fac = sin(theta);
-       dx0 = dx3 / fac;
-       dx3 = dx0 * fac;
-     }
-   }
-   
-   fprintf(stderr, "%lf %lf\n", dx0, dx3);
-fprintf(stderr,"Approxi= %d\n", coarseIn.approximant); 
-   a =( float*)malloc(sizeof(float) ); 
-   switch( coarseIn.approximant )
-     {
-     case BCV: 
-       /*some data*/
-       
-       
-       Npsi0 = floor(( psi0Max - psi0Min ) / dx0) + 1 ;
-       Npsi3 = floor(-( psi3Min - psi3Max ) / dx3) + 1;
-
-       printf("%lf %lf %d %d\n", dx0, dx3, Npsi0, Npsi3);     
-       
-	Npsi0 = 200; 
-	Npsi3 = 9;  
-	dx0  =  ( psi0Max - psi0Min)/(Npsi0);
-	dx3  =  ( psi3Max - psi3Min)/(Npsi3);
-	
-       printf("%lf %lf %d %d\n", dx0, dx3, Npsi0, Npsi3);     
-       fflush(stdout); 
-       /* The dimension file */
-       fprintf(output2,"%7d %14.8lf %14.8lf  %s\n%7ld %14.8lf %14.8lf  %s\n%7ld %14.8lf %14.8lf  %s\n"
-	       ,Npsi3, -psi3Max+dx3, dx3,"psi3"
-	       ,Npsi0, psi0Min+dx0, dx0,"psi0"
-	       ,numfcut,1.,1.,"layers");
-       fclose(output2);
-       float tab[Npsi0][Npsi3][numfcut];
-       for (l = 0; l < numfcut; l++){
-	 for (i = 0; i < Npsi0; i++){
-	   for (j = 0; j < Npsi3; j++){
-	     tab[i][j][l]=0;
-	   }
-	 }
-       }
-       n = 0;
-       /*fill to zero */
-       while (n< nlist)
-	 {
-	   psi0 = (*list)[n].params.psi0;
-	   psi3 = (*list)[n].params.psi3;
-	   
-	   i = (int)(( psi0 - psi0Min ) / dx0);
-           j = (int)(-( psi3 - psi3Max) / dx3);;
-	 if (i > Npsi0 || j > Npsi3 || (*list)[n].nLayer > numfcut)
-		fprintf(stderr," %d %d %d %lf %lf \n", n, i, j, psi0, psi3); 
-	  
-  	  tab[i][j][(*list)[n].nLayer-1] = overlap[n];
-	  n++;
-	}
-/*fprintf(stderr, "ok %d %d %d\n",numfcut, Npsi0, Npsi3);*/
-      for (l = 1; l <= numfcut; l++){
-       for (i = 0; i < Npsi0; i++){
-	for (j = 0; j < Npsi3; j++){
-/*        fprintf(stderr,"%ld %ld %ld %lf\n", i , j , l , tab[i][j][l]); */
-       if (tab[i][j][l-1]!=0)
-	a[0] = tab[i][j][l-1];	
-	else a[0] = 0;
-fprintf(stderr,"#%d %d %d %lf\n",i, j, l-1, a[0]);	
-	fwrite(a,4,1,output1);
-	 }
-	}	 	
-      }
-      
-    fclose(output1);
-      break;
-    case BCVSpin: 
-    case TaylorT1: 
-    case TaylorT2: 
-    case TaylorT3: 
-    case TaylorF1: 
-    case TaylorF2: 
-    case PadeT1: 
-    case PadeF1: 
-    case EOB: 
-      break;
-      
-  }
-
+	float psi0 = (list)[0]->params.psi0;
+	INT4 n 	= nlist;
+	float over 	= *overlap;
+	float mm	= coarseIn.mmCoarse;
+	printf("%d %f %f %f\n", n, over, mm, psi0);
 }
