@@ -192,15 +192,14 @@ cd lal
 
 #this gives a mode to libtool and gets rid of the gsl checks
 #do this with "configure.in" instead of "00boot" if you are compiling
-the distibution
+#the distibution
 cp 00boot 00boot.dist
 sed '/gsl/d;s%^\(ac_link=\"./libtool\)%\1 --mode=link%' 00boot.dist > 00boot
 
 #generate fake headers
 #actually it would be better to surround the corresponding includes with
-#ifdef HAVE_ s
-#than making fake headers, but that would involve modifying the whole
-source tree.
+#ifdef HAVE_ s than making fake headers, but that would involve modifying
+#the whole source tree.
 #Not needed for MinGW
 touch /work/include/strings.h /work/include/unistd.h
 
@@ -215,8 +214,8 @@ done )
 #Not needed for MinGW
 f=packages/tfclusters/src/TFClusters.c
 cp $f $f.min
-sed 's/\([^0-9a-zA-Z]\)\(min[^0-9a-zA-Z]\)/\1uint4\2g;
-s/\([^0-9a-zA-Z]\)\(max[^0-9a-zA-Z]\)/\1uint4\2g' $f.min >$f
+sed 's/\([^0-9a-zA-Z]\)\(min[^0-9a-zA-Z]\)/\1uint4\2/g;
+s/\([^0-9a-zA-Z]\)\(max[^0-9a-zA-Z]\)/\1uint4\2/g' $f.min >$f
 
 #replacement for the asctime_r and gmtime_r functions
 #M$ made the asctime and gmtime functions "thread-safe"
@@ -245,8 +244,8 @@ make && make install
 
 #rename libs
 #Not needed for MinGW
-( cd /work/lib ; for i in lib*.lib ; do cp "$i" "`echo $i | sed
-'s/^lib//'`" ; done )
+( cd /work/lib ; for i in lib*.lib ; do
+  cp "$i" "`echo $i | sed 's/^lib//'`" ; done )
 
 
 ###########
