@@ -1435,6 +1435,7 @@ checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL
   SFTtype *thisSFT;
   REAL8 fn0, fn1, deltaFn, shift;
   UINT4 nshift;
+  REAL8 relError;
 
   INITSTATUS( stat, "checkNoiseSFTs", GENERATEPULSARSIGNALC);
 
@@ -1460,9 +1461,10 @@ checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL
       shift = (f0 - fn0) / deltaF;
       /* frequency bins have to coincide! ==> check that shift is integer!  */
       nshift = (UINT4)(shift+0.5);
-      if ( fabs( nshift - shift) > eps ) {
+      relError = fabs( nshift - shift)/shift;
+      if ( relError > eps ) {
 	if (lalDebugLevel) 
-	  LALPrintError ("\n\nNoise frequency-bins don't coincide with signal-bins. Shift=%g (has to be integer)\n", shift);
+	  LALPrintError ("\n\nNoise frequency-bins don't coincide with signal-bins. Relative deviation=%g\n", relError);
 	ABORT (stat, GENERATEPULSARSIGNALH_ENOISEBINS, GENERATEPULSARSIGNALH_MSGENOISEBINS);
       }
 
@@ -1495,7 +1497,7 @@ correct_phase (LALStatus* stat, SFTtype *sft, LIGOTimeGPS tHeterodyne)
   if ( fabs (deltaT - (INT4) deltaT ) > eps )
     {
       if (lalDebugLevel)
-	LALPrintError ("Warning: we need to apply  heterodyning phase-correction now: correct_phase()");
+	LALPrintError ("Warning: we need to apply  heterodyning phase-correction now: correct_phase()\n");
 
       deltaT *= LAL_TWOPI;
 
