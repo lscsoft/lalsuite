@@ -1,15 +1,15 @@
 #!/bin/sh
 
-StochasticOmegaGWTest -a 0 -f 0 -e 32 -F 32 -n 9 -o omegaGW.dat
-OverlapReductionFunctionTest -f 0 -e 32 -n 9 -s 0 -t 0 -o overlap.dat
-StochasticInverseNoiseTest -f response1.in -n 9 -w spectrum1.in \
-	-u unwhitened1.dat -m halfwhitened1.dat
-StochasticInverseNoiseTest -f response2.in -n 9 -w spectrum2.in \
-	-u unwhitened2.dat -m halfwhitened2.dat
-SZeroPadAndFFTTest -n 32 -i ifo1dmro.in -o ifo1gwfft.dat
-SZeroPadAndFFTTest -n 32 -i ifo2dmro.in -o ifo2gwfft.dat
-StochasticOptimalFilterTest -f 32 -n 9 -w omegaGW.dat -g overlap.dat \
+StochasticOmegaGWTest -a 0 -f 0 -e 32 -F 32 -n 9 -o omegaGW.dat \
+&& OverlapReductionFunctionTest -f 0 -e 32 -n 9 -s 0 -t 0 -o overlap.dat \
+&& StochasticInverseNoiseTest -f response1.in -n 9 -w spectrum1.in \
+	-u unwhitened1.dat -m halfwhitened1.dat \
+&& StochasticInverseNoiseTest -f response2.in -n 9 -w spectrum2.in \
+	-u unwhitened2.dat -m halfwhitened2.dat \
+&& SZeroPadAndFFTTest -n 32 -i ifodmro1.in -o ifogwfft1.dat \
+&& SZeroPadAndFFTTest -n 32 -i ifodmro2.in -o ifogwfft2.dat \
+&& StochasticOptimalFilterTest -f 32 -n 9 -w omegaGW.dat -g overlap.dat \
 	-i unwhitened1.dat -j unwhitened2.dat -s halfwhitened1.dat \
-	-t halfwhitened2.dat -o optimal.dat 
-StochasticCrossCorrelationSpectrumTest -i ifo1gwfft.dat -j ifo2gwfft.dat \
+	-t halfwhitened2.dat -o optimal.dat \
+&& StochasticCrossCorrelationSpectrumTest -i ifogwfft1.dat -j ifogwfft2.dat \
 	-k optimal.dat -m 9 -n 32 -o ccspectrum.dat
