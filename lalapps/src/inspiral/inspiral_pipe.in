@@ -26,18 +26,22 @@ def usage():
   msg = """\
 Usage: lalapps_inspiral_pipe [options]
 
-  -v, --version            print version information and exit
   -h, --help               display this message
+  -v, --version            print version information and exit
+  -u, --user-tag TAG       tag the job with TAG (overrides value in ini file)
+
   -d, --datafind           run LALdataFind to create frame cache files
   -t, --template-bank      run lalapps_tmpltbank to generate a template bank
   -i, --inspiral           run lalapps_inspiral on the first IFO
   -T, --triggered-bank     run lalapps_trigtotmplt to generate a triggered bank
   -I, --triggered-inspiral run lalapps_inspiral on the second IFO
   -C, --coincidence        run lalapps_inca on the triggers from both IFOs
+
   -j, --injections         add simulated inspirals from injection file
+
   -p, --playground-only    only create chunks that overlap with playground
-  -u, --user-tag TAG       tag the job with TAG (overrides value in ini file)
   -P, --priority PRIO      run jobs with condor priority PRIO
+
   -f, --config-file FILE   use configuration file FILE
   -l, --log-path PATH      directory to write condor log file
 """
