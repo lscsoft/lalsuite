@@ -2,8 +2,8 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+AM_LDFLAGS = $(top_builddir)/src/lalapps/liblalapps.la
 
 if FRAME
 FRAMEPROGRAMS = lalapps_FrComputeFStatistic
@@ -13,11 +13,11 @@ endif
 
 bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF lalapps_polka lalapps_FstatShapeTestLAL ComputeFStatisticBinary  compareFstats $(FRAMEPROGRAMS) ComputeFStatistic_v2 lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh
 
-CFSsources = 	ComputeFStatistic.c ComputeFStatistic.h		\
+CFSsources = 	ComputeFStatistic.h		\
 		rngmed.c rngmed.h clusters.c clusters.h  	\
 		DopplerScan.c DopplerScan.h NeighboringGridPoints.c
 
-lalapps_ComputeFStatistic_SOURCES = $(CFSsources)
+lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c $(CFSsources)
 lalapps_ComputeFStatistic_LDFLAGS = -all-static
 
 lalapps_FrComputeFStatistic_SOURCES = FrComputeFStatistic.c FrComputeFStatistic.h	\
@@ -44,19 +44,25 @@ compareFstats_SOURCES = compareFstats.c
 ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c 	rngmed.c rngmed.h clusters.c clusters.h  			\
 	DopplerScan.c DopplerScan.h NeighboringGridPoints.c
 
+##----------------------------------------------------------------------
 ## some optional BOINC-related stuff follows here:
 EXTRA_PROGRAMS = cfsBOINC cfsBOINCnographics
-cfsBOINC_SOURCES = $(CFSsources) screensaver/src/starlist.C screensaver/src/starsphere.C screensaver/src/user_text.C screensaver/src/pulsar_list.C screensaver/src/search_info.C
-cfsBOINCnographics_SOURCES = $(CFSsources)
 
-cfsBOINC_LDFLAGS =            -L$(HOME_BOINC)/lib -L$(HOME_OPENGL)/lib -static -lboinc -lboinc_api -lboinc_graphics_api -lGL -lboincglut -lglut -L/usr/X11R6/lib -lGL -lGLU  -lX11 -lXext -ldl -lglut  -lm -lpthread -lXi -lXmu
+cfsBOINC_SOURCES = cfsBOINC.cc $(CFSsources) \
+	screensaver/src/starlist.C screensaver/src/starsphere.C \
+	screensaver/src/user_text.C screensaver/src/pulsar_list.C \
+	screensaver/src/search_info.C
+cfsBOINC_CPPFLAGS = $(AM_CPPFLAGS) -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include -DUSE_BOINC 
+cfsBOINC_LDFLAGS =  $(AM_LDFLAGS)  -static
+cfsBOINC_LDADD = -L$(HOME_BOINC)/lib -L$(HOME_OPENGL)/lib -lboinc -lboinc_api -lboinc_graphics_api -lGL -lboincglut -lglut
 
-# Reinhard, I don't understand why ALL these graphics libraries are
-# needed for the 'nographics' case.  But when I try without them I get
-# unresolved symbols.  BA
-cfsBOINCnographics_LDFLAGS =  -L$(HOME_BOINC)/lib -static -lboinc -lboinc_api -lboinc_graphics_api -lGL -lboincglut -lglut -L/usr/X11R6/lib -lGL -lGLU  -lX11 -lXext -ldl -lglut  -lm -lpthread -lXi -lXmu
+## Bruce: these don't seem to be needed explicitly for me? are they for you?
+## -L/usr/X11R6/lib -lGL -lGLU  -lX11 -lXext -ldl -lglut  -lm -lpthread -lXi -lXmu
 
-cfsBOINC_CPPFLAGS = -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include -DUSE_BOINC
-cfsBOINCnographics_CPPFLAGS = -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include -DUSE_BOINC -DNO_BOINC_GRAPHICS
+cfsBOINCnographics_SOURCES = cfsBOINC.cc $(CFSsources)
+cfsBOINCnographics_CPPFLAGS = $(AM_CPPFLAGS) -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include -DUSE_BOINC -DNO_BOINC_GRAPHICS
+cfsBOINCnographics_LDFLAGS = $(AM_LDFLAGS) -L$(HOME_BOINC)/lib -static -lboinc -lboinc_api 
 
-
+## trick make into using c++ for ComputeFStatistic.c (for boinc-includes):
+cfsBOINC.cc: ComputeFStatistic.c
+	ln -s ComputeFStatistic.c cfsBOINC.cc
