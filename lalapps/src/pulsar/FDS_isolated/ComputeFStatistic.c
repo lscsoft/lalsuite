@@ -14,11 +14,19 @@
 #include <lal/RngMedBias.h>
 #include <lalapps.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "ComputeFStatistic.h"
 #include "rngmed.h"
 #include "clusters.h"
 #include "DopplerScan.h"
+
+#ifdef __cplusplus
+}
+#endif
+
 
 RCSID( "$Id$");
 
@@ -63,7 +71,14 @@ BOOLEAN FILE_FSTATS = 1;
 #include <unistd.h>
 #define fopen boinc_fopen
 int boincmain(int argc, char *argv[]);
+
+#ifndef __cplusplus
 typedef int bool;
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 FILE *boinc_fopen(const char *path, const char *mode);
 extern int boinc_init();
 extern int boinc_finish(int);
@@ -80,6 +95,10 @@ extern int boinc_init_graphics(void (*worker)());
 extern int boinc_finish_graphics();
 extern void set_search_pos(float RAdeg, float DEdeg);
 extern double fraction_done;
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* USE_BOINC */
@@ -161,30 +180,37 @@ int reverse_endian=-1;          /**< endian order of SFT data.  -1: unknown, 0: 
 
 /*----------------------------------------------------------------------*/
 /* local prototypes */
-int main(int argc,char *argv[]);
-void initUserVars (LALStatus *stat);
-INT4 ReadSFTData (void);
-void InitFStat (LALStatus *status, ConfigVariables *cfg);
-INT4 NormaliseSFTData(void);
-void CreateDemodParams (LALStatus *status);
-void CreateNautilusDetector (LALStatus *status, LALDetector *Detector);
-void Freemem (LALStatus *status);
-INT4 EstimateFLines(LALStatus *status);
-INT4 NormaliseSFTDataRngMdn (LALStatus *status);
-INT4 EstimateSignalParameters(INT4 * maxIndex);
-int writeFLines(INT4 *maxIndex, int *bytes_written);
-INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN);
-INT4 EstimateFloor(REAL8Vector *Sp, INT2 windowSize, REAL8Vector *SpFloor);
-int compare(const void *ip, const void *jp);
-INT4 writeFaFb(INT4 *maxIndex);
-void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit *scanInit);
-INT4 EstimatePSDLines(LALStatus *status);
-void WriteFStatLog (LALStatus *stat, CHAR *argv[]);
-static void swap2(char *location);
-static void swap4(char *location);
-static void swap8(char *location);
-void swapheader(struct headertag *thisheader);
-void getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, long *bytecounter, const CHAR *fstat_fname, const CHAR *ckp_fname);
+#ifdef __cplusplus
+extern "C" {
+#endif
+  int main(int argc,char *argv[]);
+  void initUserVars (LALStatus *stat);
+  INT4 ReadSFTData (void);
+  void InitFStat (LALStatus *status, ConfigVariables *cfg);
+  INT4 NormaliseSFTData(void);
+  void CreateDemodParams (LALStatus *status);
+  void CreateNautilusDetector (LALStatus *status, LALDetector *Detector);
+  void Freemem (LALStatus *status);
+  INT4 EstimateFLines(LALStatus *status);
+  INT4 NormaliseSFTDataRngMdn (LALStatus *status);
+  INT4 EstimateSignalParameters(INT4 * maxIndex);
+  int writeFLines(INT4 *maxIndex, int *bytes_written);
+  INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN);
+  int compare(const void *ip, const void *jp);
+  INT4 writeFaFb(INT4 *maxIndex);
+  void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit *scanInit);
+  INT4 EstimatePSDLines(LALStatus *status);
+  void WriteFStatLog (LALStatus *stat, CHAR *argv[]);
+  static void swap2(char *location);
+  static void swap4(char *location);
+  static void swap8(char *location);
+  void swapheader(struct headertag *thisheader);
+  void getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, long *bytecounter, const CHAR *fstat_fname, const CHAR *ckp_fname);
+#ifdef __cplusplus
+}
+#endif
+
+
 /*----------------------------------------------------------------------*/
 /* some local defines */
 
@@ -298,8 +324,8 @@ int main(int argc,char *argv[])
   if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
   scanInit.dAlpha = uvar_dAlpha;
   scanInit.dDelta = uvar_dDelta;
-  scanInit.gridType = uvar_gridType;
-  scanInit.metricType = uvar_metricType;
+  scanInit.gridType = (DopplerGridType) uvar_gridType;
+  scanInit.metricType = (LALPulsarMetricType) uvar_metricType;
   scanInit.metricMismatch = uvar_metricMismatch;
   t0 = SFTData[0]->fft->epoch;
   t1 = SFTData[GV.SFTno-1]->fft->epoch;
@@ -593,14 +619,14 @@ initUserVars (LALStatus *stat)
   uvar_dDelta 	= 0.001;
   uvar_skyRegion = NULL;
 
-  uvar_EphemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
+  uvar_EphemYear = (CHAR*)LALCalloc (1, strlen(EPHEM_YEARS)+1);
   strcpy (uvar_EphemYear, EPHEM_YEARS);
 
-  uvar_BaseName	= LALCalloc (1, strlen(SFT_BNAME)+1);
+  uvar_BaseName	= (CHAR*)LALCalloc (1, strlen(SFT_BNAME)+1);
   strcpy (uvar_BaseName, SFT_BNAME);
 
 #define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
-  uvar_EphemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
+  uvar_EphemDir = (CHAR*)LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
   strcpy (uvar_EphemDir, DEFAULT_EPHEMDIR);
 
   uvar_SignalOnly = FALSE;
@@ -624,7 +650,7 @@ initUserVars (LALStatus *stat)
 
   uvar_skyGridFile = NULL;
 
-  uvar_workingDir = LALMalloc(512);
+  uvar_workingDir = (CHAR*)LALMalloc(512);
   strcpy(uvar_workingDir, ".");
 
   uvar_searchNeighbors = FALSE;
@@ -1518,7 +1544,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       fseek(fp,k,SEEK_CUR);
     }
     /* save final time and time baseline */
-    cfg->Tf = header.gps_sec + header.tbase;  /* FINAL TIME */
+    cfg->Tf = (INT4)(header.gps_sec + header.tbase);  /* FINAL TIME */
     cfg->tsft=header.tbase;  /* Time baseline of SFTs */
     
     /* NOTE: we do NOT close fp here.  If we are using merged SFT file
@@ -1621,7 +1647,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     fclose(fp);
 
     /* FINAL TIME */
-    cfg->Tf=header.gps_sec+header.tbase;  
+    cfg->Tf = (INT4) (header.gps_sec+header.tbase);  
     /* Time baseline of SFTs */
     cfg->tsft=header.tbase;  
   }
@@ -1674,8 +1700,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
   cfg->nsamples=header.nsamples;    /* # of freq. bins */
 
-  cfg->ifmax=ceil((1.0+DOPPLERMAX)*(uvar_Freq+uvar_FreqBand)*cfg->tsft)+uvar_Dterms;
-  cfg->ifmin=floor((1.0-DOPPLERMAX)*uvar_Freq*cfg->tsft)-uvar_Dterms;
+  cfg->ifmax = (INT4) ceil((1.0+DOPPLERMAX)*(uvar_Freq+uvar_FreqBand)*cfg->tsft)+uvar_Dterms;
+  cfg->ifmin = (INT4) floor((1.0-DOPPLERMAX)*uvar_Freq*cfg->tsft)-uvar_Dterms;
 
   /* allocate F-statistic arrays */
   Fstat.F =(REAL8*)LALMalloc(cfg->FreqImax*sizeof(REAL8));
@@ -1747,7 +1773,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     /* pre-process template-related input */
     if (haveSkyRegion)
       {
-	cfg->skyRegion = LALCalloc(1, strlen(uvar_skyRegion)+1);
+	cfg->skyRegion = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
 	strcpy (cfg->skyRegion, uvar_skyRegion);
       }
     else if (haveAlphaDelta)	/* parse this into a sky-region */
@@ -1761,7 +1787,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 	/* consistency check either one point given or a 2D region! */
 	ASSERT ( (Da && Dd)  || ((Da == 0) && (Dd == 0.0)), status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       
-	cfg->skyRegion = LALMalloc (512); /* should be enough for max 4 points... */
+	cfg->skyRegion = (CHAR*)LALMalloc (512); /* should be enough for max 4 points... */
 	if ( (Da == 0) || (Dd == 0) ) 	/* only one point */
 	  sprintf (cfg->skyRegion, "(%.16f, %.16f)", a, d);
 	else				/* or a rectangle */
@@ -1783,7 +1809,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
     INT4 leap;
 
-    cfg->edat = LALCalloc(1, sizeof(EphemerisData));
+    cfg->edat = (EphemerisData*)LALCalloc(1, sizeof(EphemerisData));
     cfg->edat->ephiles.earthEphemeris = cfg->EphemEarth;
     cfg->edat->ephiles.sunEphemeris = cfg->EphemSun;
 
@@ -1858,7 +1884,7 @@ WriteFStatLog (LALStatus *stat, char *argv[])
     if (uvar_outputLabel)
       len += strlen(uvar_outputLabel);
 
-    if ( (fname=LALCalloc(len,1)) == NULL) {
+    if ( (fname = (CHAR*)LALCalloc(len,1)) == NULL) {
       ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
     }
     strcpy (fname, head);
@@ -2394,7 +2420,7 @@ INT4 EstimateFLines(LALStatus *status)
 /* with ~ 10 h observation time */
 
   dmp=0.5+0.0002/GV.dFreq;
-  wings=dmp;
+  wings = (INT4) dmp;
 
 
 #ifdef FILE_FTXT
@@ -2445,7 +2471,7 @@ INT4 EstimateFLines(LALStatus *status)
   outliersParams->Thr=THR/(2.0*medianbias);
   outliersParams->Floor = FloorF1;
   outliersParams->wings=wings; /*these must be the same as ClustersParams->wings */
-  outliersInput->ifmin=((uvar_Freq/GV.dFreq)+0.5);
+  outliersInput->ifmin = (INT4) ((uvar_Freq/GV.dFreq)+0.5);
   outliersInput->data = F1;
 
   /*find values of F above THR and populate outliers with them */
@@ -2774,7 +2800,7 @@ void use_boinc_filename1(char **orig_name ) {
     boinc_finish(2);
   }
   LALFree(*orig_name);
-  *orig_name = LALCalloc(strlen(resolved_name)+1,1);
+  *orig_name = (CHAR*) LALCalloc(strlen(resolved_name)+1,1);
   strcpy(*orig_name, resolved_name);
   return;
 }
