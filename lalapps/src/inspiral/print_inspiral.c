@@ -347,20 +347,24 @@ int main ( int argc, char *argv[] )
   if ( playground )
   {
     /* get only the playground events */
-    numEvents = 0;
+    int numPlayEvents = 0;
     eventHead = NULL;
-    if ( ((eventHandle[i]->end_time.gpsSeconds - 729273613) % 6370) < 600 )
+    for ( i = 0; i < numEvents; ++i )
     {
-      ++numEvents;
-      if ( ! eventHead )
+      if ( ((eventHandle[i]->end_time.gpsSeconds - 729273613) % 6370) < 600 )
       {
-        prevEvent = eventHead = eventHandle[i];
-      }
-      else
-      {
-        prevEvent = prevEvent->next = eventHandle[i];
+        ++numPlayEvents;
+        if ( ! eventHead )
+        {
+          prevEvent = eventHead = eventHandle[i];
+        }
+        else
+        {
+          prevEvent = prevEvent->next = eventHandle[i];
+        }
       }
     }
+    numEvents = numPlayEvents;
   }
   else
   {
