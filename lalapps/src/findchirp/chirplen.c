@@ -1,4 +1,14 @@
-/* Author: Duncan Brown */
+/*----------------------------------------------------------------------- 
+ * 
+ * File Name: chirplen.c
+ *
+ * Author: Brown, D. A.
+ * 
+ * Revision: $Id$
+ * 
+ *-----------------------------------------------------------------------
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -17,15 +27,15 @@ int main ( int argc, char *argv[] )
   m1 = atof( argv[1] );
   m2 = atof( argv[2] );
   fmin = atof( argv[3] );
-  fprintf( stdout, "m1 = %f\tm2 = %f\tfLow = %f\n", m1, m2, fmin );
+  fprintf( stdout, "m1 = %e\tm2 = %e\tfLow = %e\n", m1, m2, fmin );
 
   M = m1 + m2;
   eta = ( m1 * m2 ) / ( M * M );
   m = 2 * ( m1 > m2 ? m2 : m1 );
-  fprintf( stdout, "eta = %f\tm = %f\n", eta, M );
+  fprintf( stdout, "eta = %e\tm = %e\n", eta, M );
 
   fmax = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * m * LAL_MTSUN_SI);
-  fprintf( stdout, "isco freq = %f Hz", fmax );
+  fprintf( stdout, "isco freq = %e Hz", fmax );
 
   c0 = 5*M*LAL_MTSUN_SI/(256*eta);
   c2 = 743.0/252.0 + eta*11.0/3.0;
@@ -38,7 +48,7 @@ int main ( int argc, char *argv[] )
   x8 = x4*x4;
   chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8;
 
-  fprintf( stdout, "length = %f seconds\n", chirpTime );
+  fprintf( stdout, "length = %e seconds\n", chirpTime );
 
   return 0;
 }
