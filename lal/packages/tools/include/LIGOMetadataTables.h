@@ -316,10 +316,14 @@ tagSnglInspiralTable
   REAL4         tau4;
   REAL4         tau5;
   REAL4         ttotal;
+  REAL4         psi0;
+  REAL4         psi3;
+  REAL4         f_cut;
   REAL4         snr;
   REAL4         chisq;
   INT4          chisq_dof;
   REAL8         sigmasq;
+  REAL4         alpha;
   EventIDColumn *event_id;
 }
 SnglInspiralTable;

@@ -527,10 +527,14 @@ LALSnglInspiralTableFromLIGOLw (
     {"tau4",                    -1, 20},
     {"tau5",                    -1, 21},
     {"ttotal",                  -1, 22},
-    {"snr",                     -1, 23},
-    {"chisq",                   -1, 24},
-    {"chisq_dof",               -1, 25},
-    {"sigmasq",                 -1, 26},
+    {"psi0",                    -1, 23},
+    {"psi3",                    -1, 24},
+    {"f_cut",                   -1, 25},
+    {"snr",                     -1, 26},
+    {"chisq",                   -1, 27},
+    {"chisq_dof",               -1, 28},
+    {"sigmasq",                 -1, 29},
+    {"alpha",                   -1, 30},
     {NULL,                       0, 0}
   };
 
@@ -704,19 +708,35 @@ LALSnglInspiralTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 23 )
         {
-          thisEvent->snr = r4colData;
+          thisEvent->psi0 = r4colData;
         }
         else if ( tableDir[j].idx == 24 )
         {
-          thisEvent->chisq = r4colData;
+          thisEvent->psi3 = r4colData;
         }
         else if ( tableDir[j].idx == 25 )
         {
-          thisEvent->chisq_dof = i4colData;
+          thisEvent->f_cut = r4colData;
         }
         else if ( tableDir[j].idx == 26 )
         {
+          thisEvent->snr = r4colData;
+        }
+        else if ( tableDir[j].idx == 27 )
+        {
+          thisEvent->chisq = r4colData;
+        }
+        else if ( tableDir[j].idx == 28 )
+        {
+          thisEvent->chisq_dof = i4colData;
+        }
+        else if ( tableDir[j].idx == 29 )
+        {
           thisEvent->sigmasq = r8colData;
+        }
+        else if ( tableDir[j].idx == 30 )
+        {
+          thisEvent->alpha = r4colData;
         }
         else
         {
@@ -783,6 +803,9 @@ InspiralTmpltBankFromLIGOLw (
     {"tau4",    -1, 7},
     {"tau5",    -1, 8},
     {"ttotal",  -1, 9},
+    {"psi0",    -1, 10},
+    {"psi3",    -1, 11},
+    {"f_cut",   -1, 12},
     {NULL,      0, 0}
   };
 
@@ -933,6 +956,18 @@ InspiralTmpltBankFromLIGOLw (
         {
           thisTmplt->tC = colData;
         }
+        else if ( tableDir[j].idx == 10 )
+        {
+          thisTmplt->psi0 = colData;
+        }
+        else if ( tableDir[j].idx == 11 )
+        {
+          thisTmplt->psi3 = colData;
+        }
+        else if ( tableDir[j].idx == 12 )
+        {
+          thisTmplt->fendBCV = colData;
+        }
         else
         {
           CLOBBER_BANK;
@@ -943,8 +978,11 @@ InspiralTmpltBankFromLIGOLw (
 
       /* compute derived mass parameters */
       thisTmplt->totalMass = thisTmplt->mass1 + thisTmplt->mass2;
-      thisTmplt->mu = thisTmplt->mass1 * thisTmplt->mass2 / 
-        thisTmplt->totalMass;
+      if ( thisTmplt->totalMass > 0 )
+      {
+        thisTmplt->mu = thisTmplt->mass1 * thisTmplt->mass2 / 
+          thisTmplt->totalMass;
+      }
       
       /* set the match determined from the bank generation process params */
       thisTmplt->minMatch = minMatch;

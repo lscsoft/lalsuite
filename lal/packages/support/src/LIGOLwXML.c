@@ -356,10 +356,14 @@ LALWriteLIGOLwXMLTable (
             tablePtr.snglInspiralTable->tau4,
             tablePtr.snglInspiralTable->tau5,
             tablePtr.snglInspiralTable->ttotal,
+            tablePtr.snglInspiralTable->psi0,
+            tablePtr.snglInspiralTable->psi3,
+            tablePtr.snglInspiralTable->f_cut,
             tablePtr.snglInspiralTable->snr,
             tablePtr.snglInspiralTable->chisq,
             tablePtr.snglInspiralTable->chisq_dof,
-            tablePtr.snglInspiralTable->sigmasq
+            tablePtr.snglInspiralTable->sigmasq,
+            tablePtr.snglInspiralTable->alpha
             );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
       }
