@@ -342,7 +342,7 @@ XLALAddFloatToGPS(
 	  return(NULL);
 
   gps->gpsSeconds += secs;
-  gps->gpsNanoSeconds += floor((deltaT - secs) * oneBillion  + 0.5);
+  gps->gpsNanoSeconds += (INT4) ((deltaT - secs) * oneBillion); /* truncate, not round!*/
 
   if (gps->gpsNanoSeconds >= oneBillion)
     {
