@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
   COMPLEX8FrequencySeries  complexBadData;
   REAL4                   *sPtr;
   COMPLEX8                *cPtr;
-  LIGOTimeGPS              epoch = {1,0};
+  LIGOTimeGPS              epoch = {1234,56789};
 
   REAL4FrequencySeries     wNoise;
   COMPLEX8FrequencySeries  wFilter;
@@ -229,6 +229,7 @@ int main(int argc, char *argv[])
   /**************************************************/
 
   /* allocate memory */
+  printf("About to create\n");
   LALSCreateVector(&status, &(wNoise.data),
 		   STOCHASTICINVERSENOISETESTC_LENGTH);
   if ( code = CheckStatus(&status, 0 , "", STOCHASTICINVERSENOISETESTC_EFLS,
@@ -236,6 +237,7 @@ int main(int argc, char *argv[])
   {
     return code;
   }
+  printf("Just created\n");
 
   LALSCreateVector(&status, &(invNoise.data), 
 		   STOCHASTICINVERSENOISETESTC_LENGTH);
@@ -258,6 +260,11 @@ int main(int argc, char *argv[])
   {
     return code;
   }
+
+  input.whitenedNoisePSD = &wNoise;
+  input.whiteningFilter = &wFilter;
+  output.unWhitenedInverseNoisePSD = &invNoise;
+  output.halfWhitenedInverseNoisePSD = &hwInvNoise;
 
  /* TEST INVALID DATA HERE -------------------------------------- */
 
@@ -478,10 +485,10 @@ int main(int argc, char *argv[])
     }
     
     /* test behavior for zero length */
-    input.whitenedNoisePSD->data->length = 
-      input.whiteningFilter->data->length = 
-      output.unWhitenedInverseNoisePSD->data->length = 
-      output.halfWhitenedInverseNoisePSD->data->length = 0;
+    wNoise.data->length = 
+      wFilter.data->length = 
+      invNoise.data->length = 
+      hwInvNoise.data->length = 0;
     
     LALStochasticInverseNoise(&status, &output, &input);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EZEROLEN,
@@ -494,14 +501,14 @@ int main(int argc, char *argv[])
     printf("  PASS: zero length results in error:\n       \"%s\"\n",
 	   STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
     /* reassign valid length */
-    input.whitenedNoisePSD->data->length = 
-      input.whiteningFilter->data->length = 
-      output.unWhitenedInverseNoisePSD->data->length = 
-      output.halfWhitenedInverseNoisePSD->data->length =STOCHASTICINVERSENOISETESTC_LENGTH;
+    wNoise.data->length = 
+      wFilter.data->length = 
+      invNoise.data->length = 
+      hwInvNoise.data->length =STOCHASTICINVERSENOISETESTC_LENGTH;
     
     /* test behavior for negative frequency spacing */
-    input.whitenedNoisePSD->deltaF = 
-      input.whiteningFilter->deltaF = -3.5;
+    wNoise.deltaF = 
+      wFilter.deltaF = - STOCHASTICINVERSENOISETESTC_DELTAF;
     
     LALStochasticInverseNoise(&status, &output, &input);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
@@ -514,12 +521,12 @@ int main(int argc, char *argv[])
     printf("  PASS: negative frequency spacing results in error:\n       \"%s\"\n",
 	   STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
     /* reassign valid frequency spacing */
-    input.whitenedNoisePSD->deltaF = 
-      input.whiteningFilter->deltaF = STOCHASTICINVERSENOISETESTC_DELTAF;
+    wNoise.deltaF = 
+      wFilter.deltaF = STOCHASTICINVERSENOISETESTC_DELTAF;
     
     /* test behavior for zero frequency spacing */
-    input.whitenedNoisePSD->deltaF = 
-    input.whiteningFilter->deltaF = 0.0;
+    wNoise.deltaF = 
+    wFilter.deltaF = 0.0;
   
     LALStochasticInverseNoise(&status, &output, &input);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
@@ -532,13 +539,13 @@ int main(int argc, char *argv[])
     printf("  PASS: zero frequency spacing results in error:\n       \"%s\"\n",
 	   STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
     /* reassign valid frequency spacing */
-    input.whitenedNoisePSD->deltaF = 
-      input.whiteningFilter->deltaF = STOCHASTICINVERSENOISETESTC_DELTAF;
+    wNoise.deltaF = 
+      wFilter.deltaF = STOCHASTICINVERSENOISETESTC_DELTAF;
   } /* if ( ! lalNoDebug ) */  
 #endif /* LAL_NDEBUG */
   
   /* test behavior for negative start frequency */
-  input.whitenedNoisePSD->f0 = input.whiteningFilter->f0 = -3.0;
+  wNoise.f0 = wFilter.f0 = -3.0;
   
   LALStochasticInverseNoise(&status, &output, &input);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
@@ -551,11 +558,12 @@ int main(int argc, char *argv[])
   printf("  PASS: negative start  frequency results in error:\n     \"%s\"\n",
 	 STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN);
   /* reasign valid f0 */
-  input.whitenedNoisePSD->f0 = 
-    input.whiteningFilter->f0 = STOCHASTICINVERSENOISETESTC_F0;
+  wNoise.f0 = 
+    wFilter.f0 = STOCHASTICINVERSENOISETESTC_F0;
   
   /* test behavior for length mismatch between wNoise and wFilter */
-  input.whiteningFilter->data->length = 30;
+  wFilter.data->length 
+    = STOCHASTICINVERSENOISETESTC_LENGTH - 1;
   LALStochasticInverseNoise(&status, &output, &input);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
 			  STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
@@ -566,10 +574,11 @@ int main(int argc, char *argv[])
     }
   printf("  PASS: length mismatch between whitened noise and whitening filter results in error:\n       \"%s\"\n",
 	 STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
-  input.whiteningFilter->data->length = STOCHASTICINVERSENOISETESTC_LENGTH;
+  wFilter.data->length = STOCHASTICINVERSENOISETESTC_LENGTH;
   
   /* test behavior length mismatch between wNoise and invNoise */
-  output.unWhitenedInverseNoisePSD->data->length = 30;
+  invNoise.data->length 
+    = STOCHASTICINVERSENOISETESTC_LENGTH - 1;
   LALStochasticInverseNoise(&status, &output, &input);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
 			  STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
@@ -580,10 +589,11 @@ int main(int argc, char *argv[])
    }
    printf("  PASS: length mismatch between whitened inverse noise and unwhitened inverse noise results in error:\n       \"%s\"\n",
           STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
-   output.unWhitenedInverseNoisePSD->data->length = STOCHASTICINVERSENOISETESTC_LENGTH;
+   invNoise.data->length = STOCHASTICINVERSENOISETESTC_LENGTH;
 
    /* test behavior length mismatch between wNoise and hwInvNoise */
-   output.halfWhitenedInverseNoisePSD->data->length = 30;
+   hwInvNoise.data->length 
+    = STOCHASTICINVERSENOISETESTC_LENGTH - 1;
    LALStochasticInverseNoise(&status, &output, &input);
    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
                            STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
@@ -594,10 +604,10 @@ int main(int argc, char *argv[])
    }
    printf("  PASS: length mismatch between whtiened inverse noise and half-whitened inverse noise results in error:\n       \"%s\"\n",
           STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
-   output.halfWhitenedInverseNoisePSD->data->length = STOCHASTICINVERSENOISETESTC_LENGTH;
+   hwInvNoise.data->length = STOCHASTICINVERSENOISETESTC_LENGTH;
 
    /* test behavior for initial frequency mismatch between wNoise and wFilter*/
-   input.whiteningFilter->f0 = 30;
+   wFilter.f0 = 30;
    LALStochasticInverseNoise(&status, &output, &input);
    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMFMIN,
                            STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN,
@@ -608,10 +618,11 @@ int main(int argc, char *argv[])
    }
    printf("  PASS: initial frequency mismatch between whitened noise and whitening filter results in error:\n       \"%s\"\n",
           STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
-   input.whiteningFilter->f0 = STOCHASTICINVERSENOISETESTC_F0;
+   wFilter.f0 = STOCHASTICINVERSENOISETESTC_F0;
 
    /* test behavior for frequency spacing mismatch between wNoise and wFilter*/
-   input.whiteningFilter->deltaF = 30;
+   wFilter.deltaF = 
+     2.0 * STOCHASTICINVERSENOISETESTC_DELTAF;
    LALStochasticInverseNoise(&status, &output, &input);
    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
                            STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF,
@@ -622,7 +633,7 @@ int main(int argc, char *argv[])
    }
    printf("  PASS: frequency spacing mismatch between whitened noise and whitening filter results in error:\n       \"%s\"\n",
           STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
-   input.whiteningFilter->deltaF = STOCHASTICINVERSENOISETESTC_DELTAF;
+   wFilter.deltaF = STOCHASTICINVERSENOISETESTC_DELTAF;
 
 
  /* VALID TEST DATA HERE ----------------------------------------- */

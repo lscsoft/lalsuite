@@ -67,8 +67,8 @@ the corresponding checks in the code are made using the ASSERT macro):
 \item \textit{null pointer to data member of data member of first half-whitened inverse noise PSD}
 \item \textit{null pointer to data member of data member of second half-whitened inverse noise PSD}
 \item \textit{zero length}
-\item negative frequency spacing
-\item zero frequency spacing
+\item \textit{negative frequency spacing}
+\item \textit{zero frequency spacing}
 \item negative start frequency
 \item length mismatch between overlap reduction function and output series
 \item length mismatch between overlap reduction function and overlap reduction function
@@ -210,9 +210,8 @@ int main(int argc, char *argv[])
 
   LALStatus                status = {0};
 
-  StochasticOptimalFilterInput             optimalIn;
+  StochasticOptimalFilterInput             input;
 
-  StochasticOptimalFilterInput             dummyIn;
   COMPLEX8FrequencySeries  dummyOut;
   REAL4FrequencySeries     realBadData;
   COMPLEX8FrequencySeries  complexBadData;
@@ -327,6 +326,14 @@ int main(int argc, char *argv[])
   {
     return code;
   }
+
+  input.overlapReductionFunction = &overlap;
+  input.omegaGW = &omegaGW;
+  input.unWhitenedInverseNoisePSD1 = &invNoise1;
+  input.unWhitenedInverseNoisePSD2 = &invNoise2;
+  input.halfWhitenedInverseNoisePSD1 = &hwInvNoise1;
+  input.halfWhitenedInverseNoisePSD2 = &hwInvNoise2;
+
   /* TEST INVALID DATA HERE -------------------------------------- */
 #ifndef LAL_NDEBUG
   if ( ! lalNoDebug )
@@ -343,7 +350,7 @@ int main(int argc, char *argv[])
     printf("  PASS: null pointer to input structure results in error:\n \"%s\"\n",STOCHASTICCROSSCORRELATIONH_MSGENULLP);
 
     /* test behavior for null pointer to output series */
-    LALStochasticOptimalFilter(&status, NULL, &dummyIn, fRef);
+    LALStochasticOptimalFilter(&status, NULL, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -354,8 +361,8 @@ int main(int argc, char *argv[])
     printf("  PASS: null pointer to output series results in error:\n \"%s\"\n",STOCHASTICCROSSCORRELATIONH_MSGENULLP);
     
     /* test behavior for null pointer to overlap reduction function */ 
-    dummyIn.overlapReductionFunction = NULL;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    input.overlapReductionFunction = NULL;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -365,11 +372,11 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to overlap reduction function results in error:\n      \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENULLP);
-    dummyIn.overlapReductionFunction = &overlap;
+    input.overlapReductionFunction = &overlap;
     
     /* test behavior for null pointer to gravitational-wave spectrum */ 
-    dummyIn.omegaGW = NULL;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    input.omegaGW = NULL;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -379,12 +386,12 @@ int main(int argc, char *argv[])
     }
     printf("  PASS: null pointer to gravitational-wave spectrum results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENULLP);
-    dummyIn.omegaGW = &omegaGW;
+    input.omegaGW = &omegaGW;
     
     /* test behavior for null pointer to inverse noise 1 member */
     /* of input structure */
-    dummyIn.unWhitenedInverseNoisePSD1 = NULL;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    input.unWhitenedInverseNoisePSD1 = NULL;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -393,12 +400,12 @@ int main(int argc, char *argv[])
       return code;
     }
     printf("  PASS: null pointer to first inverse noise PSD results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
-    dummyIn.unWhitenedInverseNoisePSD1 = &invNoise1;
+    input.unWhitenedInverseNoisePSD1 = &invNoise1;
     
     /* test behavior for null pointer to inverse noise 2 member */
     /* of input structure*/ 
-    dummyIn.unWhitenedInverseNoisePSD2 = NULL;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    input.unWhitenedInverseNoisePSD2 = NULL;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -407,12 +414,12 @@ int main(int argc, char *argv[])
       return code;
     }
     printf("  PASS: null pointer to second inverse noise PSD results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
-    dummyIn.unWhitenedInverseNoisePSD2 = &invNoise2;
+    input.unWhitenedInverseNoisePSD2 = &invNoise2;
     
     /* test behavior for null pointer to half-whitened inverse noise 1 member */
     /* of input structure */
-    dummyIn.halfWhitenedInverseNoisePSD1 = NULL;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    input.halfWhitenedInverseNoisePSD1 = NULL;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -421,12 +428,12 @@ int main(int argc, char *argv[])
       return code;
     }
     printf("  PASS: null pointer to first half-whitened inverse noise PSD results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
-    dummyIn.halfWhitenedInverseNoisePSD1 = &hwInvNoise1;
+    input.halfWhitenedInverseNoisePSD1 = &hwInvNoise1;
     
     /* test behavior for null pointer to second half-whitened inverse noise PSD member */
     /* of input structure */
-    dummyIn.halfWhitenedInverseNoisePSD2 = NULL;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    input.halfWhitenedInverseNoisePSD2 = NULL;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -435,11 +442,11 @@ int main(int argc, char *argv[])
       return code;
     }
     printf("  PASS: null pointer to second half-whitened inverse noise PSD results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
-    dummyIn.halfWhitenedInverseNoisePSD2 = &hwInvNoise2;
+    input.halfWhitenedInverseNoisePSD2 = &hwInvNoise2;
     
     /* test behavior for null pointer to data member of overlap */
-    dummyIn.overlapReductionFunction = &realBadData;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    input.overlapReductionFunction = &realBadData;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -448,11 +455,11 @@ int main(int argc, char *argv[])
       return code;
     }
     printf("  PASS: null pointer to data member of overlap reduction function results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
-    dummyIn.overlapReductionFunction = &overlap;
+    input.overlapReductionFunction = &overlap;
     
     /* test behavior for null pointer to data member of omega */
-    dummyIn.omegaGW = &realBadData;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    input.omegaGW = &realBadData;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -461,11 +468,11 @@ int main(int argc, char *argv[])
       return code;
     }
     printf("  PASS: null pointer to data member of gravitational-wave spectrum results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
-    dummyIn.omegaGW = &omegaGW;
+    input.omegaGW = &omegaGW;
     
     /* test behavior for null pointer to data member of first inverse noise PSD */
-    dummyIn.unWhitenedInverseNoisePSD1 = &realBadData;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    input.unWhitenedInverseNoisePSD1 = &realBadData;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -474,11 +481,11 @@ int main(int argc, char *argv[])
       return code;
     }
     printf("  PASS: null pointer to data member of first inverse noise PSD results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
-    dummyIn.unWhitenedInverseNoisePSD1 = &invNoise1;
+    input.unWhitenedInverseNoisePSD1 = &invNoise1;
     
     /* test behavior for null pointer to data member of second inverse noise PSD */
-    dummyIn.unWhitenedInverseNoisePSD2 = &realBadData;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    input.unWhitenedInverseNoisePSD2 = &realBadData;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -487,12 +494,12 @@ int main(int argc, char *argv[])
       return code;
     }
     printf("  PASS: null pointer to data member of second inverse noise PSD results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
-    dummyIn.unWhitenedInverseNoisePSD2 = &invNoise2;
+    input.unWhitenedInverseNoisePSD2 = &invNoise2;
     
     /* test behavior for null pointer to data member of half-whitened */
     /* first inverse noise PSD */
-    dummyIn.halfWhitenedInverseNoisePSD1 = &complexBadData;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    input.halfWhitenedInverseNoisePSD1 = &complexBadData;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -501,12 +508,12 @@ int main(int argc, char *argv[])
       return code;
     }
     printf("  PASS: null pointer to data member of first half-whitened noise PSD results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
-    dummyIn.halfWhitenedInverseNoisePSD1 = &hwInvNoise1;
+    input.halfWhitenedInverseNoisePSD1 = &hwInvNoise1;
     
     /* test behavior for null pointer to data member of half-whitened */
     /* second inverse noise PSD */
-    dummyIn.halfWhitenedInverseNoisePSD2 = &complexBadData;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    input.halfWhitenedInverseNoisePSD2 = &complexBadData;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -515,12 +522,12 @@ int main(int argc, char *argv[])
       return code;
     }
     printf("  PASS: null pointer to data member of second half-whitened noise PSD results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
-    dummyIn.halfWhitenedInverseNoisePSD2 = &hwInvNoise2;
+    input.halfWhitenedInverseNoisePSD2 = &hwInvNoise2;
     
     /* test behavior for null pointer to data member of output */
     /* frequency series */ 
     dummyOut = complexBadData;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -545,7 +552,7 @@ int main(int argc, char *argv[])
     /* test behavior for null pointer to data member of data member of */
     /* output frequency series */
     dummyOut = complexBadData;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -557,8 +564,8 @@ int main(int argc, char *argv[])
     dummyOut = optimal;
     
     /* test behavior for null pointer to data member of data member of overlap */
-    dummyIn.overlapReductionFunction = &realBadData;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    input.overlapReductionFunction = &realBadData;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -567,11 +574,11 @@ int main(int argc, char *argv[])
       return code;
     }
     printf("  PASS: null pointer to data member of data member of overlap reduction function results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
-    dummyIn.overlapReductionFunction = &overlap;
+    input.overlapReductionFunction = &overlap;
     
     /* test behavior for null pointer to data member of data member of omega */
-    dummyIn.omegaGW = &realBadData;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    input.omegaGW = &realBadData;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -580,12 +587,12 @@ int main(int argc, char *argv[])
       return code;
     }
     printf("  PASS: null pointer to data member of data member of gravitational-wave spectrum results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
-    dummyIn.omegaGW = &omegaGW;
+    input.omegaGW = &omegaGW;
     
     /* test behavior for null pointer to data member of data member of */
     /* first inverse noise PSD */
-    dummyIn.unWhitenedInverseNoisePSD1 = &realBadData;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    input.unWhitenedInverseNoisePSD1 = &realBadData;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -594,12 +601,12 @@ int main(int argc, char *argv[])
       return code;
     }
     printf("  PASS: null pointer to data member of data member of first inverse noise PSD results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
-    dummyIn.unWhitenedInverseNoisePSD1 = &invNoise1;
+    input.unWhitenedInverseNoisePSD1 = &invNoise1;
     
     /* test behavior for null pointer to data member of data member of */
     /* second inverse noise PSD */
-    dummyIn.unWhitenedInverseNoisePSD2 = &realBadData;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    input.unWhitenedInverseNoisePSD2 = &realBadData;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -608,7 +615,7 @@ int main(int argc, char *argv[])
       return code;
     }
     printf("  PASS: null pointer to data member of data member of second inverse noise PSD results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
-    dummyIn.unWhitenedInverseNoisePSD2 = &invNoise2;
+    input.unWhitenedInverseNoisePSD2 = &invNoise2;
     
     /* Create a vector for testing COMPLEX8 null data-data pointers */ 
     LALCCreateVector(&status, &(complexBadData.data), STOCHASTICOPTIMALFILTERTESTC_LENGTH);
@@ -622,8 +629,8 @@ int main(int argc, char *argv[])
     
     /* test behavior for null pointer to data member of data member of */
     /* first half-whitened inverse noise PSD */
-    dummyIn.halfWhitenedInverseNoisePSD1 = &complexBadData;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    input.halfWhitenedInverseNoisePSD1 = &complexBadData;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -632,12 +639,12 @@ int main(int argc, char *argv[])
       return code;
     }
     printf("  PASS: null pointer to data member of data member of first half-whitened noise PSD results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
-    dummyIn.halfWhitenedInverseNoisePSD1 = &hwInvNoise1;
+    input.halfWhitenedInverseNoisePSD1 = &hwInvNoise1;
     
     /* test behavior for null pointer to data member of data member of */
     /* second half-whitened inverse noise PSD */
-    dummyIn.halfWhitenedInverseNoisePSD2 = &complexBadData;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    input.halfWhitenedInverseNoisePSD2 = &complexBadData;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -646,7 +653,7 @@ int main(int argc, char *argv[])
       return code;
     }
     printf("  PASS: null pointer to data member of data member of second half-whitened noise PSD results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
-    dummyIn.halfWhitenedInverseNoisePSD2 = &hwInvNoise2;
+    input.halfWhitenedInverseNoisePSD2 = &hwInvNoise2;
     
     /** clean up **/
     realBadData.data->data = realTempPtr;
@@ -666,13 +673,13 @@ int main(int argc, char *argv[])
     }
     
     /* test behavior for zero length */
-    dummyIn.overlapReductionFunction->data->length = 
-      dummyIn.omegaGW->data->length = dummyIn.unWhitenedInverseNoisePSD1->data->length = 
-      dummyIn.unWhitenedInverseNoisePSD2->data->length = 
-      dummyIn.halfWhitenedInverseNoisePSD1->data->length = 
-      dummyIn.halfWhitenedInverseNoisePSD2->data->length = 
+    overlap.data->length = 
+      omegaGW.data->length = invNoise1.data->length = 
+      invNoise2.data->length = 
+      hwInvNoise1.data->length = 
+      hwInvNoise2.data->length = 
       dummyOut.data->length = 0;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EZEROLEN,
                             STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -683,19 +690,19 @@ int main(int argc, char *argv[])
     printf("  PASS: zero length results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
     /* reassign valid length */
-    dummyIn.overlapReductionFunction->data->length = 
-      dummyIn.omegaGW->data->length = dummyIn.unWhitenedInverseNoisePSD1->data->length = 
-      dummyIn.unWhitenedInverseNoisePSD2->data->length = 
-      dummyIn.halfWhitenedInverseNoisePSD1->data->length = 
-      dummyIn.halfWhitenedInverseNoisePSD2->data->length =
+    overlap.data->length = 
+      omegaGW.data->length = invNoise1.data->length = 
+      invNoise2.data->length = 
+      hwInvNoise1.data->length = 
+      hwInvNoise2.data->length =
       dummyOut.data->length =STOCHASTICOPTIMALFILTERTESTC_LENGTH;
     
     /* test behavior for negative frequency spacing */
-    dummyIn.overlapReductionFunction->deltaF = dummyIn.omegaGW->deltaF =
-      dummyIn.unWhitenedInverseNoisePSD1->deltaF = dummyIn.unWhitenedInverseNoisePSD2->deltaF = 
-      dummyIn.halfWhitenedInverseNoisePSD1->deltaF = 
-      dummyIn.halfWhitenedInverseNoisePSD2->deltaF = -3.5;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    overlap.deltaF = omegaGW.deltaF =
+      invNoise1.deltaF = invNoise2.deltaF = 
+      hwInvNoise1.deltaF = 
+      hwInvNoise2.deltaF = -3.5;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
                             STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -706,17 +713,17 @@ int main(int argc, char *argv[])
     printf("  PASS: negative frequency spacing results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
     /* reassign valid frequency spacing */
-    dummyIn.overlapReductionFunction->deltaF = dummyIn.omegaGW->deltaF = 
-      dummyIn.unWhitenedInverseNoisePSD1->deltaF = dummyIn.unWhitenedInverseNoisePSD2->deltaF = 
-      dummyIn.halfWhitenedInverseNoisePSD1->deltaF = 
-      dummyIn.halfWhitenedInverseNoisePSD2->deltaF = STOCHASTICOPTIMALFILTERTESTC_DELTAF;
+    overlap.deltaF = omegaGW.deltaF = 
+      invNoise1.deltaF = invNoise2.deltaF = 
+      hwInvNoise1.deltaF = 
+      hwInvNoise2.deltaF = STOCHASTICOPTIMALFILTERTESTC_DELTAF;
     
     /* test behavior for zero frequency spacing */
-    dummyIn.overlapReductionFunction->deltaF = dummyIn.omegaGW->deltaF =
-      dummyIn.unWhitenedInverseNoisePSD1->deltaF = dummyIn.unWhitenedInverseNoisePSD2->deltaF = 
-      dummyIn.halfWhitenedInverseNoisePSD1->deltaF = 
-      dummyIn.halfWhitenedInverseNoisePSD2->deltaF = 0;
-    LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+    overlap.deltaF = omegaGW.deltaF =
+      invNoise1.deltaF = invNoise2.deltaF = 
+      hwInvNoise1.deltaF = 
+      hwInvNoise2.deltaF = 0;
+    LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
                             STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF,
                             STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -727,20 +734,23 @@ int main(int argc, char *argv[])
     printf("  PASS: zero frequency spacing results in error:\n       \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
     /* reassign valid frequency spacing */
-    dummyIn.overlapReductionFunction->deltaF = 
-      dummyIn.omegaGW->deltaF = dummyIn.unWhitenedInverseNoisePSD1->deltaF = 
-      dummyIn.unWhitenedInverseNoisePSD2->deltaF = 
-      dummyIn.halfWhitenedInverseNoisePSD1->deltaF = 
-      dummyIn.halfWhitenedInverseNoisePSD2->deltaF =  STOCHASTICOPTIMALFILTERTESTC_DELTAF;
+    overlap.deltaF = 
+      omegaGW.deltaF = invNoise1.deltaF = 
+      invNoise2.deltaF = 
+      hwInvNoise1.deltaF = 
+      hwInvNoise2.deltaF =  STOCHASTICOPTIMALFILTERTESTC_DELTAF;
   } /* if ( ! lalNoDebug ) */ 
 #endif /* LAL_NDEBUG */
 
   /* test behavior for negative start frequency */
-  dummyIn.overlapReductionFunction->f0 = dummyIn.omegaGW->f0 =
-    dummyIn.unWhitenedInverseNoisePSD1->f0 = dummyIn.unWhitenedInverseNoisePSD2->f0 = 
-    dummyIn.halfWhitenedInverseNoisePSD1->f0 = 
-    dummyIn.halfWhitenedInverseNoisePSD2->f0 = -3.0;
-  LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+  overlap.f0 = omegaGW.f0 
+    = invNoise1.f0 
+    = invNoise2.f0 
+    = hwInvNoise1.f0 
+    = hwInvNoise2.f0 = -3.0;
+
+  LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
+
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
                           STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN,
                           STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -750,14 +760,14 @@ int main(int argc, char *argv[])
   }
   printf("  PASS: negative start frequency results in error:\n      \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN);
-  dummyIn.overlapReductionFunction->f0 = dummyIn.omegaGW->f0 =
-    dummyIn.unWhitenedInverseNoisePSD1->f0 = dummyIn.unWhitenedInverseNoisePSD2->f0 = 
-    dummyIn.halfWhitenedInverseNoisePSD1->f0 = 
-    dummyIn.halfWhitenedInverseNoisePSD2->f0 = STOCHASTICOPTIMALFILTERTESTC_F0;
+  overlap.f0 = omegaGW.f0 =
+    invNoise1.f0 = invNoise2.f0 = 
+    hwInvNoise1.f0 = 
+    hwInvNoise2.f0 = STOCHASTICOPTIMALFILTERTESTC_F0;
 
   /* test behavior length mismatch between overlap reduction function and output */
   dummyOut.data->length = STOCHASTICOPTIMALFILTERTESTC_LENGTH - 1;
-  LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+  LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
                           STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -770,8 +780,8 @@ int main(int argc, char *argv[])
   dummyOut.data->length = STOCHASTICOPTIMALFILTERTESTC_LENGTH;
   
   /* test behavior for length mismatch between overlap reduction function and omega */
-  dummyIn.omegaGW->data->length = STOCHASTICOPTIMALFILTERTESTC_LENGTH - 1;
-  LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+  omegaGW.data->length = STOCHASTICOPTIMALFILTERTESTC_LENGTH - 1;
+  LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
                           STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -781,12 +791,12 @@ int main(int argc, char *argv[])
   }
   printf("  PASS: length mismatch between overlap reduction function and gravitational-wave spectrum results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
-  dummyIn.omegaGW->data->length = STOCHASTICOPTIMALFILTERTESTC_LENGTH;
+  omegaGW.data->length = STOCHASTICOPTIMALFILTERTESTC_LENGTH;
   
   /* test behavior length mismatch between overlap reduction function and first inverse noise PSD */
-  dummyIn.unWhitenedInverseNoisePSD1->data->length 
+  invNoise1.data->length 
     = STOCHASTICOPTIMALFILTERTESTC_LENGTH - 1;
-  LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+  LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
                           STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -796,12 +806,12 @@ int main(int argc, char *argv[])
    }
   printf("  PASS: length mismatch between overlap reduction function and first inverse noise PSD results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
-  dummyIn.unWhitenedInverseNoisePSD1->data->length 
+  invNoise1.data->length 
     = STOCHASTICOPTIMALFILTERTESTC_LENGTH;
   
   /* test behavior length mismatch between overlap reduction function and second inverse noise PSD */
-  dummyIn.unWhitenedInverseNoisePSD2->data->length = STOCHASTICOPTIMALFILTERTESTC_LENGTH - 1;
-  LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+  invNoise2.data->length = STOCHASTICOPTIMALFILTERTESTC_LENGTH - 1;
+  LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
                           STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -811,12 +821,12 @@ int main(int argc, char *argv[])
   }
   printf("  PASS: length mismatch between overlap reduction function and second inverse noise PSD results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
-  dummyIn.unWhitenedInverseNoisePSD2->data->length = STOCHASTICOPTIMALFILTERTESTC_LENGTH;
+  invNoise2.data->length = STOCHASTICOPTIMALFILTERTESTC_LENGTH;
   
   /* test behavior length mismatch between overlap reduction function and half-whitened */
   /* first inverse noise PSD */
-  dummyIn.halfWhitenedInverseNoisePSD1->data->length = STOCHASTICOPTIMALFILTERTESTC_LENGTH - 1;
-  LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+  hwInvNoise1.data->length = STOCHASTICOPTIMALFILTERTESTC_LENGTH - 1;
+  LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
                           STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -826,12 +836,12 @@ int main(int argc, char *argv[])
     }
   printf("  PASS: length mismatch between overlap reduction function and first half-whitened inverse noise PSD results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
-  dummyIn.halfWhitenedInverseNoisePSD1->data->length = STOCHASTICOPTIMALFILTERTESTC_LENGTH;
+  hwInvNoise1.data->length = STOCHASTICOPTIMALFILTERTESTC_LENGTH;
   
   /* test behavior length mismatch between overlap reduction function and half-whitened */
   /* first inverse noise PSD */
-  dummyIn.halfWhitenedInverseNoisePSD2->data->length = STOCHASTICOPTIMALFILTERTESTC_LENGTH - 1;
-  LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+  hwInvNoise2.data->length = STOCHASTICOPTIMALFILTERTESTC_LENGTH - 1;
+  LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
                           STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -841,11 +851,11 @@ int main(int argc, char *argv[])
     }
   printf("  PASS: length mismatch between overlap reduction function and second half-whitened inverse noise PSD results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
-  dummyIn.halfWhitenedInverseNoisePSD2->data->length = STOCHASTICOPTIMALFILTERTESTC_LENGTH;
+  hwInvNoise2.data->length = STOCHASTICOPTIMALFILTERTESTC_LENGTH;
   
   /* test behavior for frequency spacing mismatch between overlap reduction function and omega */
-  dummyIn.omegaGW->deltaF = 2.0 * STOCHASTICOPTIMALFILTERTESTC_DELTAF;
-  LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+  omegaGW.deltaF = 2.0 * STOCHASTICOPTIMALFILTERTESTC_DELTAF;
+  LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF,
                           STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -855,11 +865,11 @@ int main(int argc, char *argv[])
     }
   printf("  PASS: frequency spacing mismatch between overlap reduction function and gravitational-wave spectrum results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
-  dummyIn.omegaGW->deltaF = STOCHASTICOPTIMALFILTERTESTC_DELTAF;
+  omegaGW.deltaF = STOCHASTICOPTIMALFILTERTESTC_DELTAF;
   
   /* test behavior frequency spacing mismatch between overlap reduction function and first inverse noise PSD */
-  dummyIn.unWhitenedInverseNoisePSD1->deltaF = 2.0 * STOCHASTICOPTIMALFILTERTESTC_DELTAF;
-  LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+  invNoise1.deltaF = 2.0 * STOCHASTICOPTIMALFILTERTESTC_DELTAF;
+  LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF,
                           STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -869,12 +879,12 @@ int main(int argc, char *argv[])
     }
   printf("  PASS: frequency spacing mismatch between overlap reduction function and first inverse noise PSD results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
-  dummyIn.unWhitenedInverseNoisePSD1->deltaF = STOCHASTICOPTIMALFILTERTESTC_DELTAF;
+  invNoise1.deltaF = STOCHASTICOPTIMALFILTERTESTC_DELTAF;
   
   /* test behavior frequency spacing mismatch between overlap reduction function and inverse */
   /* noise 2 */
-  dummyIn.unWhitenedInverseNoisePSD2->deltaF = 2.0 * STOCHASTICOPTIMALFILTERTESTC_DELTAF;
-  LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+  invNoise2.deltaF = 2.0 * STOCHASTICOPTIMALFILTERTESTC_DELTAF;
+  LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF,
                           STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -884,12 +894,12 @@ int main(int argc, char *argv[])
     }
   printf("  PASS: frequency spacing mismatch between overlap reduction function and second inverse noise PSD results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
-  dummyIn.unWhitenedInverseNoisePSD2->deltaF = STOCHASTICOPTIMALFILTERTESTC_DELTAF;
+  invNoise2.deltaF = STOCHASTICOPTIMALFILTERTESTC_DELTAF;
   
   /* test behavior frequency spacing mismatch between overlap reduction function and */
   /* first half-whitened inverse noise PSD */
-  dummyIn.halfWhitenedInverseNoisePSD1->deltaF = 2.0 * STOCHASTICOPTIMALFILTERTESTC_DELTAF;
-  LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+  hwInvNoise1.deltaF = 2.0 * STOCHASTICOPTIMALFILTERTESTC_DELTAF;
+  LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF,
                           STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -899,12 +909,12 @@ int main(int argc, char *argv[])
     }
   printf("  PASS: frequency spacing mismatch between overlap reduction function and first half-whitened inverse noise PSD results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
-  dummyIn.halfWhitenedInverseNoisePSD1->deltaF = STOCHASTICOPTIMALFILTERTESTC_DELTAF;
+  hwInvNoise1.deltaF = STOCHASTICOPTIMALFILTERTESTC_DELTAF;
   
   /* test behavior frequency spacing mismatch between overlap reduction function and */
   /* second half-whitened inverse noise PSD */
-  dummyIn.halfWhitenedInverseNoisePSD2->deltaF = 305;
-  LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+  hwInvNoise2.deltaF = 305;
+  LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF,
                           STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -914,11 +924,11 @@ int main(int argc, char *argv[])
     }
   printf("  PASS: frequency spacing mismatch between overlap reduction function and second half-whitened inverse noise PSD results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
-  dummyIn.halfWhitenedInverseNoisePSD2->deltaF = STOCHASTICOPTIMALFILTERTESTC_DELTAF;
+  hwInvNoise2.deltaF = STOCHASTICOPTIMALFILTERTESTC_DELTAF;
   
   /* test behavior for start frequency mismatch between overlap reduction function and omega */
-  dummyIn.omegaGW->f0 = 30;
-  LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+  omegaGW.f0 = 30;
+  LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMFMIN,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN,
                           STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -928,11 +938,11 @@ int main(int argc, char *argv[])
     }
   printf("  PASS: start frequency mismatch between overlap reduction function and gravitational-wave spectrum results in error:\n         \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
-  dummyIn.omegaGW->f0 = STOCHASTICOPTIMALFILTERTESTC_F0;
+  omegaGW.f0 = STOCHASTICOPTIMALFILTERTESTC_F0;
   
   /* test behavior start frequency mismatch between overlap reduction function and first inverse noise PSD */
-  dummyIn.unWhitenedInverseNoisePSD1->f0 = 30;
-  LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+  invNoise1.f0 = 30;
+  LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMFMIN,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN,
                           STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -942,11 +952,11 @@ int main(int argc, char *argv[])
     }
   printf("  PASS: start frequency mismatch between overlap reduction function and first inverse noise PSD results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
-  dummyIn.unWhitenedInverseNoisePSD1->f0 = STOCHASTICOPTIMALFILTERTESTC_F0;
+  invNoise1.f0 = STOCHASTICOPTIMALFILTERTESTC_F0;
   
   /* test behavior start frequency mismatch between overlap reduction function and second inverse noise PSD */
-  dummyIn.unWhitenedInverseNoisePSD2->f0 = 30;
-  LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+  invNoise2.f0 = 30;
+  LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMFMIN,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN,
                           STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -956,12 +966,12 @@ int main(int argc, char *argv[])
     }
   printf("  PASS: start frequency mismatch between overlap reduction function and second inverse noise PSD results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
-  dummyIn.unWhitenedInverseNoisePSD2->f0 = STOCHASTICOPTIMALFILTERTESTC_F0;
+  invNoise2.f0 = STOCHASTICOPTIMALFILTERTESTC_F0;
   
   /* test behavior start frequency mismatch between overlap reduction function and half-whitened */
   /* first inverse noise PSD */
-  dummyIn.halfWhitenedInverseNoisePSD1->f0 = 30;
-  LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+  hwInvNoise1.f0 = 30;
+  LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMFMIN,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN,
                           STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -971,12 +981,12 @@ int main(int argc, char *argv[])
     }
   printf("  PASS: start frequency mismatch between overlap reduction function and first half-whitened inverse noise PSD results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
-  dummyIn.halfWhitenedInverseNoisePSD1->f0 = STOCHASTICOPTIMALFILTERTESTC_F0;
+  hwInvNoise1.f0 = STOCHASTICOPTIMALFILTERTESTC_F0;
   
   /* test behavior start frequency mismatch between overlap reduction function and half-whitened */
   /* second inverse noise PSD */
-  dummyIn.halfWhitenedInverseNoisePSD2->f0 = 305;
-  LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+  hwInvNoise2.f0 = 305;
+  LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMFMIN,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN,
                           STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -986,11 +996,11 @@ int main(int argc, char *argv[])
     }
   printf("  PASS: start frequency mismatch between overlap reduction function and second half-whitened inverse noise PSD results in error:\n       \"%s\"\n",
          STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
-  dummyIn.halfWhitenedInverseNoisePSD2->f0 = STOCHASTICOPTIMALFILTERTESTC_F0;
+  hwInvNoise2.f0 = STOCHASTICOPTIMALFILTERTESTC_F0;
   
   /* test behavior for reference frequency to be less than frequency spacing */
   fRef = STOCHASTICOPTIMALFILTERTESTC_DELTAF/2;
-  LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+  LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EOORFREF,
                           STOCHASTICCROSSCORRELATIONH_MSGEOORFREF,
                           STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -1003,7 +1013,7 @@ int main(int argc, char *argv[])
  
   /* test behavior for reference frequency to be greater than its maximum */
   fRef = (STOCHASTICOPTIMALFILTERTESTC_LENGTH*STOCHASTICOPTIMALFILTERTESTC_DELTAF);
-  LALStochasticOptimalFilter(&status, &dummyOut, &dummyIn, fRef);
+  LALStochasticOptimalFilter(&status, &dummyOut, &input, fRef);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EOORFREF,
                           STOCHASTICCROSSCORRELATIONH_MSGEOORFREF,
                           STOCHASTICOPTIMALFILTERTESTC_ECHK,
@@ -1044,15 +1054,15 @@ int main(int argc, char *argv[])
   }
 
   /* fill optimal input */
-  optimalIn.overlapReductionFunction    = &(overlap);
-  optimalIn.omegaGW                     = &(omegaGW);
-  optimalIn.halfWhitenedInverseNoisePSD1 = &(hwInvNoise1);
-  optimalIn.halfWhitenedInverseNoisePSD2 = &(hwInvNoise2);
-  optimalIn.unWhitenedInverseNoisePSD1             = &(invNoise1);
-  optimalIn.unWhitenedInverseNoisePSD2             = &(invNoise2);
+  input.overlapReductionFunction    = &(overlap);
+  input.omegaGW                     = &(omegaGW);
+  input.halfWhitenedInverseNoisePSD1 = &(hwInvNoise1);
+  input.halfWhitenedInverseNoisePSD2 = &(hwInvNoise2);
+  input.unWhitenedInverseNoisePSD1             = &(invNoise1);
+  input.unWhitenedInverseNoisePSD2             = &(invNoise2);
  
   /* calculate optimal filter */
-  LALStochasticOptimalFilter(&status, &optimal, &optimalIn, fRef);
+  LALStochasticOptimalFilter(&status, &optimal, &input, fRef);
   if ( code = CheckStatus(&status,0, "", STOCHASTICOPTIMALFILTERTESTC_EFLS,
                           STOCHASTICOPTIMALFILTERTESTC_MSGEFLS) ) 
   {
@@ -1239,15 +1249,15 @@ int main(int argc, char *argv[])
     }
 
   /* fill optimal input */
-  optimalIn.overlapReductionFunction    = &(overlap);
-  optimalIn.omegaGW                     = &(omegaGW);
-  optimalIn.halfWhitenedInverseNoisePSD1 = &(hwInvNoise1);
-  optimalIn.halfWhitenedInverseNoisePSD2 = &(hwInvNoise2);
-  optimalIn.unWhitenedInverseNoisePSD1             = &(invNoise1);
-  optimalIn.unWhitenedInverseNoisePSD2             = &(invNoise2);
+  input.overlapReductionFunction    = &(overlap);
+  input.omegaGW                     = &(omegaGW);
+  input.halfWhitenedInverseNoisePSD1 = &(hwInvNoise1);
+  input.halfWhitenedInverseNoisePSD2 = &(hwInvNoise2);
+  input.unWhitenedInverseNoisePSD1             = &(invNoise1);
+  input.unWhitenedInverseNoisePSD2             = &(invNoise2);
     
   /* calculate optimal filter */
-  LALStochasticOptimalFilter(&status, &optimal, &optimalIn, fRef);
+  LALStochasticOptimalFilter(&status, &optimal, &input, fRef);
   if ( code = CheckStatus(&status,0, "", STOCHASTICOPTIMALFILTERTESTC_EFLS,
                           STOCHASTICOPTIMALFILTERTESTC_MSGEFLS) ) 
   {
@@ -1537,15 +1547,15 @@ int main(int argc, char *argv[])
    LALCReadFrequencySeries(&status, &hwInvNoise2, optHwInvNoise2File);
 
   /* fill optimal input */
-  optimalIn.overlapReductionFunction    = &(overlap);
-  optimalIn.omegaGW                     = &(omegaGW);
-  optimalIn.halfWhitenedInverseNoisePSD1 = &(hwInvNoise1);
-  optimalIn.halfWhitenedInverseNoisePSD2 = &(hwInvNoise2);
-  optimalIn.unWhitenedInverseNoisePSD1             = &(invNoise1);
-  optimalIn.unWhitenedInverseNoisePSD2             = &(invNoise2);
+  input.overlapReductionFunction    = &(overlap);
+  input.omegaGW                     = &(omegaGW);
+  input.halfWhitenedInverseNoisePSD1 = &(hwInvNoise1);
+  input.halfWhitenedInverseNoisePSD2 = &(hwInvNoise2);
+  input.unWhitenedInverseNoisePSD1             = &(invNoise1);
+  input.unWhitenedInverseNoisePSD2             = &(invNoise2);
  
   /* calculate optimal filter */
-  LALStochasticOptimalFilter(&status, &optimal, &optimalIn, optfRef);
+  LALStochasticOptimalFilter(&status, &optimal, &input, optfRef);
   if ( code = CheckStatus (&status, 0 , "", STOCHASTICOPTIMALFILTERTESTC_EFLS,
                           STOCHASTICOPTIMALFILTERTESTC_MSGEFLS) ) 
   {
