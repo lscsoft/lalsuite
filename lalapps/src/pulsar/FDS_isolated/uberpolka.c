@@ -80,24 +80,24 @@ struct PolkaCommandLineArgsTag
 coarse frequency and sky bins */
 typedef struct CandidateListTag
 {
-  REAL8 f;        /* Frequency */
-  REAL8 Alpha;    /* longitude */
-  REAL8 Delta;    /* latitude */
-  REAL8 F;        /* Maximum value of F for the cluster */
-  REAL8 fa;       /* false alarm probability for that candidate */
-  UINT4 Ctag;     /* tag for candidate if it's been found in coincidence */
-  INT4  CtagCounter;     /* contains the cumulative sum of coincident candidates so far */
-  INT4 iFreq;
-  INT4 iDelta;
-  INT4 iCand;
-} CandidateList;
+  REAL8 f;           /* Frequency */
+  REAL4 Alpha;       /* longitude -> REAL4*/
+  REAL4 Delta;       /* latitude -> REAL4 */
+  REAL4 F;           /* Maximum value of F for the cluster -> R4*/
+  REAL4 fa;          /* false alarm probability for that candidate ->R4*/
+  UINT4 iCand;
+  UINT4 CtagCounter; /* contains the cumulative sum of coincident candidates so far */
+  INT4  iFreq;       /* I2 , delete? */
+  UINT2 iDelta;      /* 0-300 -> I2, delete?  */
+  CHAR  Ctag;        /* tag for candidate if it's been found in coincidence, just a Bit, maybe coded as CtagC-2 */
+} CandidateList; /* ~ Fstat lines */ 
 
 typedef struct CoincidentPairsTag 
 {
   UINT4 c1;             /* number in Fstats file that corresponds to first member of pair */
   UINT4 c2;             /* number in Fstats file that corresponds to second member of pair */
   REAL8 fa;             /* joint false alarm for that pair */
-} CoincidentPairs;
+} CoincidentPairs; /* ~ coninc */
 
 int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA);
 int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA);
@@ -280,7 +280,7 @@ int OutputCoincidences(struct PolkaCommandLineArgsTag CLA)
           UINT4 k = indicesCCfa[i];  /* print out ordered by joint significance */
           UINT4 k1 = CP[k].c1;
           UINT4 k2 = CP[k].c2;
-          fprintf(fpOut,"%1.15le %le %le %le %le %1.15le %le %le %le %le %le\n",
+          fprintf(fpOut,"%1.15e %e %e %e %e %1.15e %e %e %e %e %e\n",
                   SortedC1[k1].f, SortedC1[k1].Alpha, SortedC1[k1].Delta, 
                   SortedC1[k1].F, SortedC1[k1].fa,
                   SortedC2[k2].f, SortedC2[k2].Alpha, SortedC2[k2].Delta, 
@@ -330,7 +330,7 @@ int OutputCoincidences(struct PolkaCommandLineArgsTag CLA)
       for (i=0; i < numCoincidences; i++) 
         {
           UINT4 k = indicesCCfa[i];  /* print out ordered by joint significance */
-          fprintf(fpOut,"%d %d %le\n",
+          fprintf(fpOut,"%d %d %e\n",
                   SortedC1[CP[k].c1].CtagCounter,SortedC2[CP[k].c2].CtagCounter,CP[k].fa);
         }
     }
@@ -647,8 +647,8 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
       cl->CtagCounter=-1;
 
       read = sscanf (line1, 
-                     "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
-                     " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT "%c", 
+                     "%" LAL_REAL8_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL8_FORMAT 
+                     " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL4_FORMAT "%c", 
                      &(cl->f), &(cl->Alpha), &(cl->Delta), &dmp1, &dmp2, &dmp3, &(cl->F), &newline );
 
       /* check that values that are read in are sensible */
@@ -910,4 +910,3 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
 
   return errflg;
 }
-
