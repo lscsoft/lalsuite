@@ -29,12 +29,86 @@ main (int argc, char *argv[])
 {
   static LALStatus  stat;
 
-  InspiralCoarseBankIn          *bankIn = NULL;
-  InspiralTemplate              *tmplt = NULL;
+  InspiralTemplate             *tmplt = NULL;
 
-  LALFindChirpCreateInspiralBank( &stat, bankIn, &tmplt );
+  InspiralCoarseBankIn         *bankIn;
+  FindChirpCreateBankParams    *createBankParams;
+
+  
+  /*
+   *
+   * create the input and parameters
+   *
+   */
+
+
+  bankIn = (InspiralCoarseBankIn *)
+    LALCalloc( 1, sizeof(InspiralCoarseBankIn) );
+  if ( ! bankIn )
+  {
+    fprintf( stderr, "Unable to allocate memory for bankIn\n" );
+    return 1;
+  }
+
+  /* bank generation parameters */
+  bankIn->mMin          = 1.0;
+  bankIn->MMax          = 10.0;
+  bankIn->mmCoarse      = 0.90;
+  bankIn->mmFine        = 0.98;
+  bankIn->fLower        = 40.;
+  bankIn->fUpper        = 2000;
+  bankIn->iflso         = 0;
+  bankIn->tSampling     = 4000.;
+  bankIn->NoisePsd      = LALLIGOIPsd;
+  bankIn->method        = one;
+  bankIn->order         = twoPN;
+  bankIn->approximant   = taylor;
+  bankIn->domain        = TimeDomain;
+  bankIn->space         = Tau0Tau3;
+  bankIn->etamin        = bankIn->mMin * ( bankIn->MMax - bankIn->mMin) /
+    ( bankIn->MMax * bankIn->MMax );
+
+  createBankParams = (FindChirpCreateBankParams *)
+    LALCalloc( 1, sizeof(FindChirpCreateBankParams) );
+  if ( ! createBankParams )
+  {
+    fprintf( stderr, "Unable to allocate memory for createBankParams\n" );
+    return 1;
+  }
+
+  /* request a flat template bank */
+  createBankParams->numLevel = 0;
+
+
+  /*
+   *
+   * generate the template bank, print it out and then free it
+   *
+   */
+
+
+  LALFindChirpCreateInspiralBank( &stat, bankIn, &tmplt, createBankParams );
   REPORTSTATUS( &stat );
   if ( stat.statusCode ) return stat.statusCode;
+
+  PrintInspiralBank( &stat, tmplt, stdout ); 
+  REPORTSTATUS( &stat );
+  if ( stat.statusCode ) return stat.statusCode;
+
+  LALFindChirpDestroyInspiralBank( &stat, &tmplt );
+  REPORTSTATUS( &stat );
+  if ( stat.statusCode ) return stat.statusCode;
+
+
+  /*
+   *
+   * free memory, check for leaks and exit
+   *
+   */
+
+
+  LALFree( bankIn );
+  LALFree( createBankParams );
 
   LALCheckMemoryLeaks ();
 

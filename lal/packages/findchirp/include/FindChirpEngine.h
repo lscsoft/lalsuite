@@ -43,6 +43,7 @@ NRCSID (FINDCHIRPENGINEHH, "$Id$");
 #define FINDCHIRPENGINEH_EALOC 8
 #define FINDCHIRPENGINEH_ERANK 9
 #define FINDCHIRPENGINEH_EUEXT 10
+#define FINDCHIRPENGINEH_ELVEL 11
 
 
 #define FINDCHIRPENGINEH_MSGENULL "Null pointer"
@@ -55,6 +56,7 @@ NRCSID (FINDCHIRPENGINEHH, "$Id$");
 #define FINDCHIRPENGINEH_MSGEALOC "Memory allocation error"
 #define FINDCHIRPENGINEH_MSGERANK "Search node has incorrect rank"
 #define FINDCHIRPENGINEH_MSGEUEXT "Unrecognised exchange type"
+#define FINDCHIRPENGINEH_MSGELVEL "Invalid heriarchical template bank level"
 
 
 enum ExchObjectType
@@ -91,6 +93,14 @@ tagFindChirpSlaveParams
 FindChirpSlaveParams;
 
 typedef struct
+tagFindChirpCreateBankParams
+{
+  INT4                          numCoarse;
+  UINT4                         numLevel;
+}
+FindChirpCreateBankParams;
+
+typedef struct
 tagInspiralTemplateNode
 {
   UINT4                                 level;
@@ -120,13 +130,14 @@ void
 LALFindChirpCreateInspiralBank (
     LALStatus                  *status,
     InspiralCoarseBankIn       *bankIn,
-    InspiralTemplate          **head
+    InspiralTemplate          **bankHead,
+    FindChirpCreateBankParams  *params
     );
 
 void
 LALFindChirpDestroyInspiralBank (
-    LALStatus           *status,
-    InspiralTemplate   **head
+    LALStatus                  *status,
+    InspiralTemplate          **bankHead
     );
 
 #ifdef  __cplusplus
