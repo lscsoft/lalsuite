@@ -103,6 +103,7 @@ complication to the tiling.
 #include <lal/LALStdlib.h>
 #include <lal/PtoleMetric.h>
 #include <lal/StackMetric.h>
+extern char *optarg;
 
 NRCSID( PTOLEMETRICTESTC, "$Id" );
 
