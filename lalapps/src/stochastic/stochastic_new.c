@@ -84,7 +84,7 @@ INT4 resampleRate = 1024;
 REAL8 deltaF = 0.25;
 
 /* data parameters */
-LIGOTimeGPS gpsStartTime, gpsCalibTime;
+LIGOTimeGPS gpsStartTime;
 UINT8 startTime = 730793098;
 UINT8 stopTime = 730793218;
 INT4 intervalDuration = 60;
@@ -156,12 +156,14 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL8 ptEst, error;
   /* input data segment */
   INT4 numSegments, numIntervals;
-  INT4 segmentLength, intervalLength;
+  INT4 segmentLength,segmentPadLength,intervalLength;
   INT4 segmentShift;
   INT4 padData;
+  LIGOTimeGPS gpsStartPadTime, gpsCalibTime;
   ReadDataPairParams streamParams;
   StreamPair streamPair;
-  REAL4TimeSeries segment1,segment2,interval1,interval2;
+  REAL4TimeSeries segment1,segment2,segmentPad1, segmentPad2;
+  REAL4TimeSeries interval1,interval2;
   REAL4Vector *seg1[100], *seg2[100];
 
   /* simulated signal structures */
@@ -283,7 +285,14 @@ INT4 main(INT4 argc, CHAR *argv[])
        { seed = 2 * NLoop * seed;}
    }
 
-       
+  /* initialize gps time structure */  
+  gpsStartTime.gpsSeconds = startTime;
+  gpsStartTime.gpsNanoSeconds = 0.;
+  gpsStartPadTime.gpsSeconds = startTime - padData;
+  gpsStartPadTime.gpsNanoSeconds = 0.;
+  gpsCalibTime.gpsSeconds = startTime + calibOffset;
+  gpsCalibTime.gpsNanoSeconds = 0.;
+
   if (verbose_flag)
    {fprintf(stdout,"number of intervals:");}
 
@@ -301,22 +310,30 @@ INT4 main(INT4 argc, CHAR *argv[])
     segmentShift = segmentDuration / 2;
    }
   
-  if (sampleRate == resampleRate) 
+  if ((sampleRate == resampleRate)&&(high_pass_flag == 0)) 
     {padData = 0;}
   else {padData = 1;}
 
   /* set length for data segments */
-  intervalLength = intervalDuration * resampleRate;
+  intervalLength = (intervalDuration + 2 * padData) * resampleRate;
+  segmentPadLength = (segmentDuration + 2 * padData) * resampleRate;
   segmentLength = segmentDuration * resampleRate;
 
   /* set metadata fields for data segments */
   strncpy(interval1.name, "interval1", LALNameLength);
   strncpy(interval2.name, "interval2", LALNameLength);
   interval1.sampleUnits = interval2.sampleUnits = lalADCCountUnit;
-  interval1.epoch = interval2.epoch = gpsStartTime;
+  interval1.epoch = interval2.epoch = gpsStartPadTime;
   interval1.deltaT = interval2.deltaT = 1./(REAL8)resampleRate;
   interval1.f0 = interval2.f0 = 0;
      
+  strncpy(segmentPad1.name, "segmentPad1", LALNameLength);
+  strncpy(segmentPad2.name, "segmentPad2", LALNameLength);
+  segmentPad1.sampleUnits = segmentPad2.sampleUnits = lalADCCountUnit;
+  segmentPad1.epoch = segmentPad2.epoch = gpsStartTime;
+  segmentPad1.deltaT = segmentPad2.deltaT = 1./(REAL8)resampleRate;
+  segmentPad1.f0 = segmentPad2.f0 = 0;
+
   strncpy(segment1.name, "segment1", LALNameLength);
   strncpy(segment2.name, "segment2", LALNameLength);
   segment1.sampleUnits = segment2.sampleUnits = lalADCCountUnit;
@@ -337,6 +354,16 @@ INT4 main(INT4 argc, CHAR *argv[])
           interval1.data->length * sizeof(*interval1.data->data));
   memset( interval2.data->data, 0,
           interval2.data->length * sizeof(*interval2.data->data));
+
+  segmentPad1.data = segmentPad2.data = NULL;
+  LAL_CALL( LALSCreateVector( &status, &(segmentPad1.data), segmentPadLength), 
+            &status );
+  LAL_CALL( LALSCreateVector( &status, &(segmentPad2.data), segmentPadLength), 
+            &status );
+  memset( segmentPad1.data->data, 0,
+          segmentPad1.data->length * sizeof(*segmentPad1.data->data));
+  memset( segmentPad2.data->data, 0,
+          segmentPad2.data->length * sizeof(*segmentPad2.data->data));
 
   segment1.data = segment2.data = NULL;
   LAL_CALL( LALSCreateVector( &status, &(segment1.data), segmentLength), 
@@ -370,8 +397,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   streamParams.ifo2 = ifo2;
   streamParams.channel1 = channel1;
   streamParams.channel2 = channel2;
-  streamParams.startTime = startTime;
-  streamParams.buffer = padData;
+  streamParams.startTime = gpsStartPadTime.gpsSeconds;
+  streamParams.buffer = 0;
   streamParams.sampleRate = sampleRate;
   streamParams.resampleRate = resampleRate;
 
@@ -393,14 +420,12 @@ INT4 main(INT4 argc, CHAR *argv[])
     strncpy(SimStochBG1.name, "Whitened-SimulatedSB1",LALNameLength);
     strncpy(SimStochBG2.name, "Whitened-SimulatedSB2",LALNameLength );
     SimStochBG1.f0 = SimStochBG2.f0 = 0.;
-    SimStochBG1.epoch = SimStochBG2.epoch = gpsStartTime;
+    SimStochBG1.epoch = SimStochBG2.epoch = gpsStartPadTime;
     SimStochBG1.deltaT = SimStochBG2.deltaT = 1./(REAL8)resampleRate;
     SimStochBG1.sampleUnits = SimStochBG2.sampleUnits = lalADCCountUnit;
     SimStochBG1.data = SimStochBG2.data = NULL;
-    LAL_CALL( LALSCreateVector( &status, &(SimStochBG1.data), segmentLength), 
-              &status);
-    LAL_CALL( LALSCreateVector( &status, &(SimStochBG2.data), segmentLength), 
-              &status);
+    LAL_CALL( LALSCreateVector( &status, &(SimStochBG1.data), segmentPadLength),              &status);
+    LAL_CALL( LALSCreateVector( &status, &(SimStochBG2.data), segmentPadLength),              &status);
 	
     memset(SimStochBG1.data->data, 0,
            SimStochBG1.data->length *sizeof(*SimStochBG1.data->data));
@@ -409,7 +434,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 		
     /* define parameters for SimulateSB */
-    SBParams.length = segmentLength;
+    SBParams.length = segmentPadLength;
     SBParams.deltaT = 1. / resampleRate;
     SBParams.detectorOne = lalCachedDetectors[site1];
     SBParams.detectorTwo = lalCachedDetectors[site2];
@@ -440,7 +465,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     strncpy(MCresponse1.name,"MCresponse1", LALNameLength);
     strncpy(MCresponse2.name,"MCresponse2", LALNameLength);
     MCresponse1.sampleUnits = MCresponse2.sampleUnits = countPerStrain;
-    MCresponse1.epoch = MCresponse2.epoch = gpsStartTime;
+    MCresponse1.epoch = MCresponse2.epoch = gpsCalibTime;
     MCresponse1.deltaF = MCresponse2.deltaF = MCdeltaF;
     MCresponse1.f0 = MCresponse2.f0 = 0;
 
@@ -543,7 +568,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   strncpy(responseTemp1.name, "responseTemp1", LALNameLength);
   strncpy(responseTemp2.name, "responseTemp2", LALNameLength);
   responseTemp1.sampleUnits = responseTemp2.sampleUnits = countPerAttoStrain;
-  responseTemp1.epoch = responseTemp2.epoch = gpsStartTime;
+  responseTemp1.epoch = responseTemp2.epoch = gpsCalibTime;
   responseTemp1.deltaF = responseTemp2.deltaF = deltaF;
   responseTemp1.f0 = responseTemp2.f0 = 0;
 
@@ -566,7 +591,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   strncpy(response1.name, "response1", LALNameLength);
   strncpy(response2.name, "response2", LALNameLength);
   response1.sampleUnits = response2.sampleUnits = countPerAttoStrain;
-  response1.epoch = response2.epoch = gpsStartTime;
+  response1.epoch = response2.epoch = gpsCalibTime;
   response1.deltaF = response2.deltaF = deltaF;
   response1.f0 = response2.f0 = fMin;
 
@@ -972,7 +997,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
      /* define segment epoch */
      gpsStartTime.gpsSeconds = startTime + (interLoop * intervalDuration);
-     interval1.epoch = interval2.epoch = gpsStartTime;
+     gpsStartPadTime.gpsSeconds = gpsStartTime.gpsSeconds - padData;
+     interval1.epoch = interval2.epoch = gpsStartPadTime;
 
      if (verbose_flag)
       {
@@ -985,7 +1011,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	{ fprintf(stdout, "Reading data...\n");}
 
       /* read data */
-      streamParams.startTime = gpsStartTime.gpsSeconds;
+      streamParams.startTime = gpsStartPadTime.gpsSeconds;
       LAL_CALL(readDataPair(&status, &streamPair, &streamParams), &status);
        
       /* skip segment if data not found or corrupted with 0 values */           
@@ -1136,6 +1162,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
             gpsStartTime.gpsSeconds = gpsStartTime.gpsSeconds +  
                                       (segLoop * segmentShift);
+            gpsStartPadTime.gpsSeconds = gpsStartTime.gpsSeconds - padData;
 
             if (verbose_flag)
              {
@@ -1171,7 +1198,7 @@ INT4 main(INT4 argc, CHAR *argv[])
                 }
          
 	      /* set parameters for monte carlo */
-	      SimStochBG1.epoch = SimStochBG2.epoch = gpsStartTime;
+	      SimStochBG1.epoch = SimStochBG2.epoch = gpsStartPadTime;
               SBParams.seed = seed ;
               /* define input structure for SimulateSB */
 	      SBInput.omegaGW = &MComegaGW;
@@ -1195,12 +1222,12 @@ INT4 main(INT4 argc, CHAR *argv[])
                 }
 	     
               /* multiply by scale factor and inject into real data */
-	      for (i = 0; i < segmentLength ; i++)
+	      for (i = 0; i < segmentPadLength ; i++)
 	       {
-	        segment1.data->data[i] = 
+	        segmentPad1.data->data[i] = 
                      interval1.data->data[i + segLoop * segmentShift * resampleRate] + 
                      (scaleFactor * SimStochBG1.data->data[i]);
-	        segment2.data->data[i] = 
+	        segmentPad2.data->data[i] = 
                      interval2.data->data[i + segLoop * segmentShift * resampleRate] + 
                      (scaleFactor * SimStochBG2.data->data[i]);
 	       }
@@ -1212,9 +1239,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 	     {
 	      for (i = 0; i < segmentLength; i ++)
                {
-	        segment1.data->data[i] = 
+	        segmentPad1.data->data[i] = 
                      interval1.data->data[i + segLoop * segmentShift * resampleRate];
-	        segment2.data->data[i] = 
+	        segmentPad2.data->data[i] = 
                      interval2.data->data[i + segLoop * segmentShift * resampleRate] ;
 	       }
 	     }
@@ -1227,14 +1254,23 @@ INT4 main(INT4 argc, CHAR *argv[])
              }
             
 
-
             if (high_pass_flag)
 	     {               
-              LAL_CALL( LALButterworthREAL4TimeSeries( &status, &segment1, 
+              LAL_CALL( LALButterworthREAL4TimeSeries( &status, &segmentPad1, 
                         &highpassParam ), &status );
-              LAL_CALL( LALButterworthREAL4TimeSeries( &status, &segment2, 
+              LAL_CALL( LALButterworthREAL4TimeSeries( &status, &segmentPad2, 
                         &highpassParam ), &status );
-             }             
+             }       
+
+            /* throw away pad data on each side of the segment */      
+            
+            for (i = 0; i < segmentLength; i ++)
+               {
+	        segment1.data->data[i] = 
+                     segmentPad1.data->data[i + padData * resampleRate];
+	        segment2.data->data[i] = 
+                     segmentPad2.data->data[i + padData * resampleRate];
+	       }
             
             /* store in memory */
             
@@ -1451,6 +1487,8 @@ INT4 main(INT4 argc, CHAR *argv[])
    LAL_CALL( LALDestroyVector(&status, &(interval2.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(segment1.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(segment2.data)), &status );
+   LAL_CALL( LALDestroyVector(&status, &(segmentPad1.data)), &status );
+   LAL_CALL( LALDestroyVector(&status, &(segmentPad2.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(psdTemp1.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(psdTemp2.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(psd1.data)), &status );
