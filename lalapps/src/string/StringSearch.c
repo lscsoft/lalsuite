@@ -24,7 +24,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <glob.h>
 #include <errno.h>
 #include <getopt.h>
-#include <stdarg.h>
+
 
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
@@ -43,37 +43,23 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/ComplexFFT.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/Random.h>
-#include <lal/Date.h>
+
 
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 
-#include <lalapps.h>
-#include <processtable.h>
 
 extern char *optarg;
 extern int optind, opterr, optopt;
 
-int snprintf(char *str, size_t size, const char *format, ...);
-int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
-#define ADD_PROCESS_PARAM(type) \
-	do { paramaddpoint = add_process_param(paramaddpoint, type, long_options[option_index].name, optarg); } while(0)
-
 #define SCALE 1e20
 #define MAXTEMPLATES 10000
 
-NRCSID( STRINGSEARCHC, "StringSearch $Id$");
-RCSID( "StringSearch $Id$");
-
-#define PROGRAM_NAME "StringSearch"
-#define CVS_REVISION "$Revision$"
-#define CVS_SOURCE "$Source$"
-#define CVS_DATE "$Date$"
 
 
 /***************************************************************************/
@@ -129,12 +115,9 @@ StringTemplate strtemplate[MAXTEMPLATES];
 
 int NTemplates;
 
-LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
+
 
 SnglBurstTable *events=NULL;
-MetadataTable  procTable;
-MetadataTable  procparams;
-MetadataTable  searchsumm;
 
 int Nevents=0;
 
@@ -182,12 +165,6 @@ int FreeMem(void);
 int main(int argc,char *argv[])
 {
 
- /* create the process and process params tables */
- procTable.processTable = LALCalloc(1, sizeof(ProcessTable));
- LALGPSTimeNow(&status, &(procTable.processTable->start_time), &accuracy);
- populate_process_table(&status, procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE);
- procparams.processParamsTable = NULL;
-
  if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
  
  if (ReadData(CommandLineArgs)) return 2;
@@ -214,20 +191,6 @@ int main(int argc,char *argv[])
 /************************************* MAIN PROGRAM ENDS *************************************/
 
 
-/*******************************************************************************/
-
-static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, 
-					      const char *type, const char *param, const char *value)
-{
-	*proc_param = LALCalloc(1, sizeof(**proc_param));
-	(*proc_param)->next = NULL;
-	snprintf((*proc_param)->program, LIGOMETA_PROGRAM_MAX, PROGRAM_NAME);
-	snprintf((*proc_param)->type, LIGOMETA_TYPE_MAX, type);
-	snprintf((*proc_param)->param, LIGOMETA_PARAM_MAX, "--%s", param);
-	snprintf((*proc_param)->value, LIGOMETA_VALUE_MAX, value);
-
-	return(&(*proc_param)->next);
-}
 
 
 /*******************************************************************************/
@@ -734,25 +697,9 @@ int ReadData(struct CommandLineArgsTag CLA)
 
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA) 
 {
-  INT4 c, errflg = 0;
+  INT4 errflg = 0;
   optarg = NULL;
-  ProcessParamsTable **paramaddpoint = &procparams.processParamsTable;
-  int option_index;
-  
-  /* Initialize default values */
-  CLA->flow=0.0;
-  CLA->FrCacheFile=NULL;
-  CLA->InjectionFile=NULL;
-  CLA->ChannelName=NULL;
-  CLA->GPSStart=0;
-  CLA->GPSEnd=0;
-  CLA->NoOfSegs=0;
-  CLA->TruncSecs=0;
-  CLA->power=0.0;
-  CLA->fbanklow=0.0;
-  CLA->threshold=0.0;
-  CLA->fakenoiseflag=0;
-  
+
   /* Need to add long options */
   struct option long_options[] = {
     {"low-freq-cutoff",     required_argument, NULL,           'f'},
@@ -768,79 +715,89 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"cusp-search",                no_argument, NULL,         'c' },
     {"kink-search",                no_argument, NULL,         'k' },
     {"fake-gaussian-noise",        no_argument, NULL,         'n' },
-    {NULL, 0, NULL, 0}
+    {"help",        no_argument, NULL,         'h' },
+    {0, 0, 0, 0}
   };
+  char args[] = "hnckf:b:t:F:C:E:S:i:N:T:";
 
-
+  /* Initialize default values */
+  CLA->flow=0.0;
+  CLA->FrCacheFile=NULL;
+  CLA->InjectionFile=NULL;
+  CLA->ChannelName=NULL;
+  CLA->GPSStart=0;
+  CLA->GPSEnd=0;
+  CLA->NoOfSegs=0;
+  CLA->TruncSecs=0;
+  CLA->power=0.0;
+  CLA->fbanklow=0.0;
+  CLA->threshold=0.0;
+  CLA->fakenoiseflag=0;
+  
   /* Scan through list of command line arguments */
-  opterr = 1;	/* enable error messages */
-  optind = 0;	/* start scanning from argv[0] */
-  do switch(c = getopt_long(argc, argv, "", long_options, &option_index)) 
+  while ( 1 )
+  {
+    int option_index = 0; /* getopt_long stores long option here */
+    int c;
+
+    c = getopt_long_only( argc, argv, args, long_options, &option_index );
+    if ( c == -1 ) /* end of options */
+      break;
+
+    switch ( c )
     {
+
     case 'f':
       /* low frequency cutoff */
       CLA->flow=atof(optarg);
-      ADD_PROCESS_PARAM("float");
       break;
     case 'b':
       /* low frequency cutoff */
       CLA->fbanklow=atof(optarg);
-      ADD_PROCESS_PARAM("float");
       break;
     case 't':
       /* low frequency cutoff */
       CLA->threshold=atof(optarg);
-      ADD_PROCESS_PARAM("float");
       break;
     case 'F':
       /* name of frame cache file */
       CLA->FrCacheFile=optarg;
-      ADD_PROCESS_PARAM("string");
       break;
     case 'C':
       /* name channel */
       CLA->ChannelName=optarg;
-      ADD_PROCESS_PARAM("string");
       break;
     case 'i':
-      /* name channel */
+      /* name of xml injection file */
       CLA->InjectionFile=optarg;
-      ADD_PROCESS_PARAM("string");
       break;
     case 'S':
       /* GPS start time of search */
        CLA->GPSStart=atof(optarg);
-      ADD_PROCESS_PARAM("int");
       break;
     case 'E':
        /* GPS end time time of search */
       CLA->GPSEnd=atof(optarg);
-      ADD_PROCESS_PARAM("int");
       break;
     case 'N':
        /* Number of segment to break-up search into */
       CLA->NoOfSegs=atof(optarg);
-      ADD_PROCESS_PARAM("int");
       break;
     case 'T':
       /* Half the number of seconds that are trown out at the start and at the end of a short chunk */
       CLA->TruncSecs=atof(optarg);
-      ADD_PROCESS_PARAM("int");
       break;
     case 'c':
       /* cusp power law */
       CLA->power=-4.0/3.0;
-      ADD_PROCESS_PARAM("string");
       break;
     case 'k':
       /* kink power law */
       CLA->power=-5.0/3.0;
-      ADD_PROCESS_PARAM("string");
       break;
     case 'n':
       /* fake gaussian noise flag */
       CLA->fakenoiseflag=1;
-      ADD_PROCESS_PARAM("string");
       break;
     case 'h':
       /* print usage/help message */
@@ -866,7 +823,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Unrecognized option argument %c\n",c);
       exit(1);
       break;
-    }while(c != -1);
+    }
+    }
 
   if(CLA->flow == 0.0)
     {
