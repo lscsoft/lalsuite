@@ -13,9 +13,9 @@
 #include <FrVect.h>
 
 #include "FrComputeFStatistic.h"
-#include "../FDS_isolated/rngmed.h"
-#include "../FDS_isolated/clusters.h"
-#include "../FDS_isolated/DopplerScan.h"
+#include "rngmed.h"
+#include "clusters.h"
+#include "DopplerScan.h"
 
 RCSID( "$Id$");
 
@@ -1024,7 +1024,7 @@ INT4 ReadSFTFrame( void )
 	each SFT, which must all be the same). */
 {
   INT8 t0, t;       /* timestamps in nanoseconds */
-  INT4 i;           /* index over SFTs */
+  INT4 i, j, k;     /* index over frames, SFTs/frame, and SFTs */
   FrFile *frfile;   /* frame file pointer */
   FrTOCts *ts;      /* table of contents structure pointer */
   FrProcData *proc; /* processed data pointer */
@@ -1041,19 +1041,18 @@ INT4 ReadSFTFrame( void )
     FrFileIEnd( frfile );
     return 2;
   }
-  t0 = 1000000000LL*frfile->toc->GTimeS[0] + frfile->toc->GTimeN[0];
 
-  /* Count number of SFT proc datas in frame. */
-  for ( i = 0, ts = frfile->toc->proc; ts; i++, ts = ts->next )
+  /* Count number of SFT proc data in each frame. */
+  for ( j = 0, ts = frfile->toc->proc; ts; j++, ts = ts->next )
     while ( ts && !strstr( ts->name, SFT_NAME ) )
       ts = ts->next;
-  if ( i == 0 ) {
+  if ( j == 0 ) {
     fprintf( stderr, "Could not locate SFT channels in file %s\n",
 	     uvar_Name );
     FrFileIEnd( frfile );
     return 3;
   }
-  GV.SFTno = i;
+  GV.SFTno = j*frfile->toc->nFrame;
 
   /* Allocate space for SFTData and timestamps. */
   SFTData = (FFT **)LALMalloc( GV.SFTno*sizeof(FFT *) );
@@ -1067,75 +1066,79 @@ INT4 ReadSFTFrame( void )
   memset( timestamps, 0, GV.SFTno*sizeof(LIGOTimeGPS) );
 
   /* Start reading SFT data into the arrays. */
-  for ( i = 0, ts = frfile->toc->proc; ts; i++, ts = ts->next ) {
-    while ( ts && !strstr( ts->name, SFT_NAME ) )
-      ts = ts->next;
+  for ( i = 0; i < frfile->toc->nFrame; i++ ) {
+    t0 = 1000000000LL*frfile->toc->GTimeS[i] + frfile->toc->GTimeN[i];
+    for ( j = 0, ts = frfile->toc->proc; ts; j++, ts = ts->next ) {
+      while ( ts && !strstr( ts->name, SFT_NAME ) )
+	ts = ts->next;
 
-    /* Read and check proc data. */
-    FrTOCSetPos( frfile, ts->position[0] );
-    if ( !( proc = FrProcDataRead( frfile ) ) || !( proc->data ) ) {
-      fprintf( stderr, "Could not read SFT data %i in file %s\n", i,
-	       uvar_Name );
-      CLEANUP( i );
-      return 5;
-    }
-    if ( proc->type != 2 || proc->subType != 1 || proc->data->nDim != 1 ||
-	 ( proc->data->type != FR_VECT_8C &&
-	   proc->data->type != FR_VECT_16C ) ) {
-      fprintf( stderr, "Wrong data type for SFT %i in file %s\n", i,
-	       uvar_Name );
-      CLEANUP( i );
-      return 6;
-    }
-    if ( !( proc->data->nData ) || !( proc->data->data ) ) {
-      fprintf( stderr, "No data present for SFT %i in file %s\n", i,
-	       uvar_Name );
-      CLEANUP( i );
-      return 7;
-    }
-
-    /* Set timestamp. */
-    t = t0 + (INT8)( 1e9*proc->timeOffset );
-    timestamps[i].gpsSeconds = t / 1000000000LL;
-    timestamps[i].gpsNanoSeconds = t % 1000000000LL;
-
-    /* Set/check the timebase. */
-    if ( i == 0 )
-      GV.tsft = proc->tRange;
-    else if ( GV.tsft != proc->tRange ) {
-      fprintf( stderr, "Inconsistent SFT timebases in file %s\n",
-	       uvar_Name );
-      CLEANUP( i );
-      return 8;
-    }
-
-    /* Allocate data structure. */
-    if ( !( SFTData[i] = (FFT *)LALMalloc( sizeof(FFT) ) ) ||
-	 !( SFTData[i]->fft = (COMPLEX8FrequencySeries *)
-	    LALMalloc( sizeof(COMPLEX8FrequencySeries) ) ) ||
-	 !( SFTData[i]->fft->data = (COMPLEX8Vector *)
-	    LALMalloc( sizeof(COMPLEX8Vector) ) ) ||
-	 !( SFTData[i]->fft->data->data = (COMPLEX8 *)
-	    LALMalloc( proc->data->nData*sizeof(COMPLEX8) ) ) ) {
-      fprintf( stderr, "Memory allocation error\n" );
-      CLEANUP( i + 1 );
-      return 9;
-    }
-
-    /* Fill data structure. */
-    SFTData[i]->fft->epoch = timestamps[i];
-    SFTData[i]->fft->f0 = proc->data->startX[0];
-    SFTData[i]->fft->deltaF = proc->data->dx[0];
-    SFTData[i]->fft->data->length = proc->data->nData;
-    if ( proc->data->type == FR_VECT_16C ) {
-      UINT4 j; /* index over data elements */
-      for ( j = 0; j < proc->data->nData; j++ ) {
-	SFTData[i]->fft->data->data[j].re = proc->data->dataD[2*j];
-	SFTData[i]->fft->data->data[j].im = proc->data->dataD[2*j+1];
+      /* Read and check proc data. */
+      k = i*frfile->toc->nFrame + j;
+      FrTOCSetPos( frfile, ts->position[i] );
+      if ( !( proc = FrProcDataRead( frfile ) ) || !( proc->data ) ) {
+	fprintf( stderr, "Could not read SFT %i in frame %i of file"
+		 " %s\n", j, i, uvar_Name );
+	CLEANUP( k );
+	return 5;
       }
-    } else {
-      memcpy( SFTData[i]->fft->data->data, proc->data->dataF,
-	      2*proc->data->nData*sizeof(float) );
+      if ( proc->type != 2 || proc->subType != 1 || proc->data->nDim != 1 ||
+	   ( proc->data->type != FR_VECT_8C &&
+	     proc->data->type != FR_VECT_16C ) ) {
+	fprintf( stderr, "Wrong data type for SFT %i in frame %i of"
+		 " file %s\n", j, i, uvar_Name );
+	CLEANUP( k );
+	return 6;
+      }
+      if ( !( proc->data->nData ) || !( proc->data->data ) ) {
+	fprintf( stderr, "No data present for SFT %i in frame %i of"
+		 " file %s\n", j, i, uvar_Name );
+	CLEANUP( k );
+	return 7;
+      }
+
+      /* Set timestamp. */
+      t = t0 + (INT8)( 1e9*proc->timeOffset );
+      timestamps[k].gpsSeconds = t / 1000000000LL;
+      timestamps[k].gpsNanoSeconds = t % 1000000000LL;
+
+      /* Set/check the timebase. */
+      if ( k == 0 )
+	GV.tsft = proc->tRange;
+      else if ( GV.tsft != proc->tRange ) {
+	fprintf( stderr, "Inconsistent SFT timebases in file %s\n",
+		 uvar_Name );
+	CLEANUP( k );
+	return 8;
+      }
+
+      /* Allocate data structure. */
+      if ( !( SFTData[k] = (FFT *)LALMalloc( sizeof(FFT) ) ) ||
+	   !( SFTData[k]->fft = (COMPLEX8FrequencySeries *)
+	      LALMalloc( sizeof(COMPLEX8FrequencySeries) ) ) ||
+	   !( SFTData[k]->fft->data = (COMPLEX8Vector *)
+	      LALMalloc( sizeof(COMPLEX8Vector) ) ) ||
+	   !( SFTData[k]->fft->data->data = (COMPLEX8 *)
+	      LALMalloc( proc->data->nData*sizeof(COMPLEX8) ) ) ) {
+	fprintf( stderr, "Memory allocation error\n" );
+	CLEANUP( k + 1 );
+	return 9;
+      }
+
+      /* Fill data structure. */
+      SFTData[k]->fft->epoch = timestamps[k];
+      SFTData[k]->fft->f0 = proc->data->startX[0];
+      SFTData[k]->fft->deltaF = proc->data->dx[0];
+      SFTData[k]->fft->data->length = proc->data->nData;
+      if ( proc->data->type == FR_VECT_16C ) {
+	UINT4 l; /* index over data elements */
+	for ( l = 0; l < proc->data->nData; l++ ) {
+	  SFTData[k]->fft->data->data[l].re = proc->data->dataD[2*l];
+	  SFTData[k]->fft->data->data[l].im = proc->data->dataD[2*l+1];
+	}
+      } else {
+	memcpy( SFTData[k]->fft->data->data, proc->data->dataF,
+		2*proc->data->nData*sizeof(float) );
+      }
     }
   }
 
@@ -1144,10 +1147,10 @@ INT4 ReadSFTFrame( void )
     REAL8 f0 = SFTData[0]->fft->f0;
     REAL8 deltaF = SFTData[0]->fft->deltaF;
     UINT4 length = SFTData[0]->fft->data->length;
-    for ( i = 1; i < GV.SFTno; i++ )
-      if ( SFTData[i]->fft->f0 != f0 ||
-	   SFTData[i]->fft->deltaF != deltaF ||
-	   SFTData[i]->fft->data->length != length ) {
+    for ( k = 1; k < GV.SFTno; k++ )
+      if ( SFTData[k]->fft->f0 != f0 ||
+	   SFTData[k]->fft->deltaF != deltaF ||
+	   SFTData[k]->fft->data->length != length ) {
 	fprintf( stderr, "Inconsistent SFT metadata in file %s\n",
 		 uvar_Name );
 	CLEANUP( GV.SFTno );
