@@ -182,6 +182,8 @@ const char *SFTErrorMessage(int errorcode) {
     return "SFT first frequency index is negative";
   case SFTENSAMPLESNOTPOS:
     return "SFT number of data samples is not positive";
+  case SFTEINSTRUMENTUNKNOWN:
+    return "SFT instrument (detector) not recognized";
   }
   return "SFT Error Code not recognized";
 }

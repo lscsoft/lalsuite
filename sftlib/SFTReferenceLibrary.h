@@ -97,6 +97,8 @@ int CheckSFTHeaderConsistency(struct headertag2 *headerone, /* pointer to earlie
 #define SFTETBASENOTPOS        23
 #define SFTEFIRSTINDEXNEG      24
 #define SFTENSAMPLESNOTPOS     25
+#define SFTEINSTRUMENTUNKNOWN  26
+
 
 /* takes error code from above list and returns static human-readable
    description as null-terminated string */
