@@ -378,9 +378,10 @@ int main(int argc,char *argv[])
       Delta = thisPoint.latitude;
 #if USE_BOINC
       /* pass current search position, for use with starsphere.C
-	 revision 4.6 or greater. */
-      search_RAdeg = (float)Alpha;
-      search_DEdeg = (float)Delta;
+	 revision 4.6 or greater. Need to convert radians to
+	 degrees. */
+      search_RAdeg = (float)(180.0*Alpha/LAL_PI);
+      search_DEdeg = (float)(180.0*Delta/LAL_PI);
 #endif /* USE_BOINC */
 
       LAL_CALL (CreateDemodParams(&status), &status);
