@@ -510,7 +510,7 @@ void
 LALPlayTestSingleInspiral(
     LALStatus                  *status,
     SnglInspiralTable         **eventHead,
-    DataType                   *dataType
+    LALPlaygroundDataMask      *dataType
     )
 /* </lalVerbatim> */
 {
