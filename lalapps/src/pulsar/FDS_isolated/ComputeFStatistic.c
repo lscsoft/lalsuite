@@ -65,6 +65,7 @@ BOOLEAN FILE_FSTATS = 1;
 
 #if USE_BOINC
 #include <signal.h>
+
 #define USE_BOINC_DEBUG 0
 /* for getpid() */
 #include <sys/types.h>
@@ -245,7 +246,7 @@ int BOINC_ERR_EXIT(LALStatus  *stat, const char *func, const char *file, const i
 }
 #endif
 
-LALStatus *sig_stat;
+LALStatus *sig_stat=NULL;
 
 /** 
  * MAIN function of ComputeFStatistic code.
@@ -2888,18 +2889,37 @@ int main(int argc, char *argv[]){
 }
 
 
+#ifdef __GLIBC__
+/* needed to define backtrace() which is glibc specific*/
+#include <execinfo.h>
+#endif /* __GLIBC__ */
+
 /* signal handlers */
 void sighandler(int sig){
+  void *array[64];
+  size_t size;
+
   fprintf(stderr, "Application caught signal %d.\nStack Trace:\n", sig);
   
   while (sig_stat) {
     fprintf(stderr, "%s at line %d of file %s\n", sig_stat->function, sig_stat->line, sig_stat->file);
+    if (!(sig_stat->statusPtr)) {
+      const char *p=sig_stat->statusDescription;
+      fprintf(stderr, "At lowest level status code = %d, description: %s\n", sig_stat->statusCode, p?p:"NO LAL ERROR REGISTERED");
+    }
     sig_stat=sig_stat->statusPtr;
   }
+  
+#ifdef __GLIBC__
+  /* now get TRUE stacktrace */
+  size = backtrace (array, 64);
+  fprintf(stderr, "Obtained %zd stack frames.\n", size);
+  fprintf(stderr, "Use gdb command: 'info line *0xADDRESS' to print corresponding line numbers.\n");
+  backtrace_symbols_fd(array, size, fileno(stderr));
+#endif /* __GLIBC__ */
   boinc_finish(4321);
   return;
 }
- 
 #endif /*USE_BOINC*/
 
 
@@ -2972,3 +2992,5 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, long *bytecounter, co
   RETURN(stat);
   
 } /* getChkptCounters() */ 
+
+
