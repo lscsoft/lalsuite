@@ -21,7 +21,6 @@
 #include <fcntl.h>
 #include <regex.h>
 #include <pwd.h>
-#define _XOPEN_SOURCE /* glibc2 needs this */
 #include <time.h>
 
 #include <lalapps.h>
@@ -39,6 +38,7 @@ RCSID( "$Id$" );
 long long atoll(const char *nptr);
 int gethostname(char *name, size_t len);
 char *strptime(const char *s, const char  *format,  struct tm *tm);
+struct tm *gmtime_r(const time_t *timep, struct tm *result);
 
 
 /*
