@@ -94,7 +94,7 @@ static REAL8 rad_to_deg(REAL8 radians)
 /* axis for LALDR_EulerRotation() */
 typedef enum { xAxis = 1, yAxis = 2, zAxis = 3 } LALDR_Axis_t;
 
-
+#if 1
 static void
 LALDR_Set3Vector(LALDR_3Vector * v,
                  REAL8 v1, REAL8 v2, REAL8 v3)
@@ -110,8 +110,8 @@ LALDR_Set3Vector(LALDR_3Vector * v,
  */
 static void
 LALDR_CrossProd3Vector(LALDR_3Vector * result,
-                       LALDR_3Vector * const a,
-                       LALDR_3Vector * const b)
+                       LALDR_3Vector * a,
+                       LALDR_3Vector * b)
 {
   (*result)[0] =  (*a)[1]*(*b)[2] - (*a)[2]*(*b)[1];
   (*result)[1] = -(*a)[0]*(*b)[2] + (*a)[2]*(*b)[0];
@@ -126,8 +126,8 @@ LALDR_CrossProd3Vector(LALDR_3Vector * result,
  * Dot product of two 3-vectors
  */
 static REAL8
-LALDR_DotProd3Vector(LALDR_3Vector * const a,
-                     LALDR_3Vector * const b)
+LALDR_DotProd3Vector(LALDR_3Vector * a,
+                     LALDR_3Vector * b)
 {
   INT4 i;
   REAL8 result = 0.;
@@ -142,8 +142,8 @@ LALDR_DotProd3Vector(LALDR_3Vector * const a,
 
 static void
 LALDR_OuterProd3Vector(LALDR_33Matrix * a,
-                       LALDR_3Vector * const u,
-                       LALDR_3Vector * const v)
+                       LALDR_3Vector * u,
+                       LALDR_3Vector * v)
 {
   INT4 i;
   INT4 j;
@@ -161,7 +161,7 @@ LALDR_OuterProd3Vector(LALDR_33Matrix * a,
  * Scalar product of two 3x3 matrices
  */
 static REAL8
-LALDR_DotProd33Matrix(LALDR_33Matrix * const a, LALDR_33Matrix * const b)
+LALDR_DotProd33Matrix(LALDR_33Matrix * a, LALDR_33Matrix * b)
 {
   INT4 i, j;
   REAL8 result = 0.;
@@ -200,7 +200,7 @@ LALDR_Set33Matrix(LALDR_33Matrix * matrix,
  * Copy matrix source to matrix target
  */
 static void
-LALDR_Copy33Matrix(LALDR_33Matrix * target, LALDR_33Matrix * const source)
+LALDR_Copy33Matrix(LALDR_33Matrix * target, LALDR_33Matrix * source)
 {
   INT4 i, j;
 
@@ -233,8 +233,8 @@ LALDR_Zero33Matrix(LALDR_33Matrix * matrix)
  */
 static void
 LALDR_Multiply33Matrix(LALDR_33Matrix * product,
-                       LALDR_33Matrix * const matrixL,
-                       LALDR_33Matrix * const matrixR)
+                       LALDR_33Matrix * matrixL,
+                       LALDR_33Matrix * matrixR)
 {
   /* loop counters */
   INT4 i, j, k;
@@ -266,7 +266,7 @@ LALDR_Multiply33Matrix(LALDR_33Matrix * product,
 static void
 LALDR_ScalarMult33Matrix(LALDR_33Matrix * result,
                          REAL8 coefficient,
-                         LALDR_33Matrix * const  matrix)
+                         LALDR_33Matrix *  matrix)
 {
   INT4 i, j;
 
@@ -284,8 +284,8 @@ LALDR_ScalarMult33Matrix(LALDR_33Matrix * result,
  */
 static void
 LALDR_Add33Matrix(LALDR_33Matrix * result,
-                  LALDR_33Matrix * const matrix1,
-                  LALDR_33Matrix * const matrix2)
+                  LALDR_33Matrix * matrix1,
+                  LALDR_33Matrix * matrix2)
 {
   INT4 i, j;
 
@@ -303,8 +303,8 @@ LALDR_Add33Matrix(LALDR_33Matrix * result,
  */
 static void
 LALDR_Subtract33Matrix(LALDR_33Matrix * result,
-                       LALDR_33Matrix * const matrix1,
-                       LALDR_33Matrix * const matrix2)
+                       LALDR_33Matrix * matrix1,
+                       LALDR_33Matrix * matrix2)
 {
   INT4 i, j;
 
@@ -322,7 +322,7 @@ LALDR_Subtract33Matrix(LALDR_33Matrix * result,
  */
 static void
 LALDR_Transpose33Matrix(LALDR_33Matrix * transpose,
-                        LALDR_33Matrix * const matrix)
+                        LALDR_33Matrix * matrix)
 {
   INT4 i, j;
 
@@ -347,7 +347,7 @@ LALDR_Transpose33Matrix(LALDR_33Matrix * transpose,
  * The L2 norm of a matrix
  */
 static REAL8
-LALDR_L2Norm33Matrix(LALDR_33Matrix * const matrix)
+LALDR_L2Norm33Matrix(LALDR_33Matrix * matrix)
 {
     INT4   i, j;
     REAL8  l2norm = 0.;
@@ -368,7 +368,7 @@ LALDR_L2Norm33Matrix(LALDR_33Matrix * const matrix)
  * The RMS norm of a matrix: RMS sum of all elements.
  */
 static REAL8
-LALDR_RMSNorm33Matrix(LALDR_33Matrix * const matrix)
+LALDR_RMSNorm33Matrix(LALDR_33Matrix * matrix)
 {
     INT4   i, j;
     REAL8  rmsnorm = 0.;
@@ -388,7 +388,7 @@ LALDR_RMSNorm33Matrix(LALDR_33Matrix * const matrix)
  * The "infinity" norm of a matrix: max over all elems
  */
 static REAL8
-LALDR_InfNorm33Matrix(LALDR_33Matrix * const matrix)
+LALDR_InfNorm33Matrix(LALDR_33Matrix * matrix)
 {
     INT4 i, j;
     REAL8 infnorm = 0.;
@@ -407,7 +407,7 @@ LALDR_InfNorm33Matrix(LALDR_33Matrix * const matrix)
  * Print out matrix
  */
 static void
-LALDR_Print33Matrix(LALDR_33Matrix * const matrix,
+LALDR_Print33Matrix(LALDR_33Matrix * matrix,
                     const CHAR  *varname,
                     UINT4        format,
                     FILE        *file,
@@ -482,9 +482,9 @@ LALDR_Print33Matrix(LALDR_33Matrix * const matrix,
 
 
 static void
-LALDR_Print3Vector(LALDR_3Vector * const vector,
-                   const CHAR           *varname,
-                   FILE                 *file)
+LALDR_Print3Vector(LALDR_3Vector * vector,
+                   const CHAR    * varname,
+                   FILE          * file)
 {
   /* counter */
   INT4 i;
@@ -545,10 +545,11 @@ LALDR_EulerRotation(LALDR_33Matrix * rotationMatrix,
 
   return;
 }
-
+#endif
 
 
 
+/* YES, THIS IS MEANT TO BE #if'ed out */
 #if 0
 /*
  * This computes the effective longitude and latitude of a detector, given
