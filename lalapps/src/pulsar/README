@@ -124,3 +124,13 @@ un-buildable SFTs and the corresponding missing GPS frame times can be
 found in the files joberror.XXXXX These joberror files are not
 produced unless there is missing data.  So ls joberror* will
 immediately reveal if any data files are missing.
+
+================================================================================
+
+STEP 3:
+
+You are now ready to make the SFTs.  This is done by running condor jobs.
+Here are the steps:
+
+Make a working directory containing the files you have made
+
