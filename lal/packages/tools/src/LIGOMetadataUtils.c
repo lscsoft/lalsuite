@@ -66,18 +66,24 @@ with playground data. The time between \texttt{in\_start\_time} and
 static INT8 PlaygroundOverlap( INT8 seg_end, INT8 seg_length )
 {
   INT8 play_length = 600000000000LL;
-  INT8 end_mod_play = seg_end % 6370000000000LL;
+  INT8 S2_start = 729273613000000000LL;
+  INT8 end_mod_play;
+  
+  end_mod_play = ((seg_end - S2_start) % 6370000000000LL);
+ 
 
   /* if no overlap with playground, return zero */
-  if ( end_mod_play > play_length + play_length )
+  if ( end_mod_play >= play_length + seg_length )
   {
     return 0LL;
   }
-  else if ( seg_length < end_mod_play < play_length + seg_length )
+  else if ( (seg_length < end_mod_play) && 
+		  (end_mod_play < play_length + seg_length ) )
   {
     return play_length + seg_length - end_mod_play;
   }
-  else if ( play_length <= end_mod_play <= seg_length )
+  else if ( (play_length <= end_mod_play) && 
+		(end_mod_play <= seg_length ) )
   {
     return play_length;
   }
