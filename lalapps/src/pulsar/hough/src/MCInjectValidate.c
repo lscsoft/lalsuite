@@ -69,6 +69,11 @@ int main(int argc, char *argv[]){
   EphemerisData   *edat = NULL;
   CHAR  *earthEphemeris = NULL; 
   CHAR  *sunEphemeris = NULL;
+  
+  REAL8 *alphaVec=NULL;
+  REAL8 *deltaVec=NULL;
+  REAL8 *freqVec=NULL;
+  REAL8 *spndnVec=NULL;
 
   static REAL8PeriodoPSD   periPSD;
   static UCHARPeakGram     pg1;
@@ -80,7 +85,7 @@ int main(int argc, char *argv[]){
   CHAR   *SFTdir = NULL; /* the directory where the SFT  could be */
   CHAR   *fnameOut = NULL;               /* The output prefix filename */
   CHAR   *fnameIn = NULL;  
-  UINT4  numberCount;
+  UINT4  numberCount, index;
   UINT8  nTemplates;   
   INT4   mObsCoh, nfSizeCylinder;
   
@@ -248,7 +253,7 @@ int main(int argc, char *argv[]){
 
 
   /* open output file for writing */
-  fpOut= fopen(fnameout, "w");
+  fpOut= fopen(fnameOut, "w");
   setlinebuf(fpOut);  /* line buffered on */  
 
 
@@ -286,7 +291,7 @@ int main(int argc, char *argv[]){
     
     for (templateCounter = 0; templateCounter < nTemplates; templateCounter++)
       {
-	r=fscanf(fpsky,"%lf%lf%lf%lf\n", &temp1, alphaVec + templateCounter, deltaVec + templateCounter, 
+	r=fscanf(fpIn,"%lf%lf%lf%lf\n", &temp1, alphaVec + templateCounter, deltaVec + templateCounter, 
 		 freqVec + templateCounter,  spndnVec + templateCounter);
       }     
     fclose(fpIn);      
@@ -498,7 +503,7 @@ int main(int argc, char *argv[]){
       SUB( LALSelectPeakColorNoise(&status,&pg1,&threshold,&periPSD), &status); 	
       
       /* calculate frequency bin for template */
-      index = floor( foft.data[j]*timeBase -sftFminBin+0.5); 
+      index = floor( foft.data[tempLoopId]*timeBase -sftFminBin+0.5); 
       
       /* update the number count */
       numberCount+=pg1.data[index]; 
