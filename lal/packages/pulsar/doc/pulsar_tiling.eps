@@ -1,0 +1,73 @@
+%!PS-Adobe-1.0
+%%Creator: LALPlotTwoDMesh()
+%%Title: mesh.ps
+%%BoundingBox: 0 0 375 125
+%%EndComments
+
+/point { gsave currentpoint translate
+  newpath 0 0 1 0 360 arc closepath fill grestore } def
+/ellipse { gsave 0 setlinewidth currentpoint translate rotate scale
+  newpath 0 0 1 0 360 arc closepath stroke grestore } def
+/tile { gsave currentpoint translate 3 copy
+  dup 4 1 roll exch 4 1 roll moveto sub 0 exch rlineto
+  2 copy add neg 4 3 roll -2 mul exch rlineto
+  sub neg 0 exch rlineto closepath stroke grestore } def
+
+0.5 setlinewidth
+/Times-Roman findfont 10 scalefont setfont
+-100 -100 moveto 20 10 -10 tile
+
+%Panel (a):
+45 15 moveto ((a)) show
+50 50 moveto point 30.00 5.00 0.00 ellipse 21.00 3.57 -3.57 tile
+50 90 moveto point 30.00 5.00 28.65 ellipse 18.51 13.80 5.70 tile
+
+%Panel (b):
+155 15 moveto ((b)) show
+160 50 moveto point 30.00 5.00 0.00 ellipse 12.40 4.55 -4.55 tile
+160 58.53 moveto point 29.09 5.00 2.61 ellipse 12.40 5.07 -3.98 tile
+160 66.52 moveto point 27.39 5.00 7.48 ellipse 12.40 6.06 -2.91 tile
+160 74.49 moveto point 25.80 5.00 12.03 ellipse 12.40 6.99 -1.91 tile
+160 82.36 moveto point 24.21 5.00 16.58 ellipse 12.40 7.93 -0.88 tile
+160 90.11 moveto point 22.65 5.00 21.06 ellipse 12.40 8.84 0.18 tile
+160 97.64 moveto point 21.11 5.00 25.46 ellipse 12.40 9.70 1.30 tile
+
+%Panel (c):
+285 15 moveto ((c)) show
+235.00 101.00 moveto 355.00 77.00 lineto stroke 0 setlinewidth
+252.40 50 moveto 12.40 4.55 -4.55 tile
+252.40 58.53 moveto 12.40 5.07 -3.98 tile
+252.40 66.52 moveto 12.40 6.06 -2.91 tile
+252.40 74.49 moveto 12.40 6.99 -1.91 tile
+252.40 82.36 moveto 12.40 7.93 -0.88 tile
+252.40 90.11 moveto 12.40 8.84 0.18 tile
+252.40 97.52 moveto 12.40 9.70 1.30 tile
+0.5 setlinewidth
+246.20 98.76 moveto point 6.20 8.32 -2.22 tile
+0 setlinewidth
+278.12 50 moveto 13.32 4.48 -4.48 tile
+278.12 58.35 moveto 13.32 5.03 -3.87 tile
+278.12 66.12 moveto 13.32 6.05 -2.74 tile
+278.12 73.85 moveto 13.32 7.01 -1.68 tile
+278.12 81.45 moveto 13.32 7.96 -0.59 tile
+278.12 88.88 moveto 13.32 8.88 0.53 tile
+0.5 setlinewidth
+271.46 93.71 moveto point 6.66 7.81 -2.42 tile
+0 setlinewidth
+305.74 50 moveto 14.30 4.40 -4.40 tile
+305.74 58.14 moveto 14.30 4.97 -3.75 tile
+305.74 65.67 moveto 14.30 6.03 -2.55 tile
+305.74 73.13 moveto 14.30 7.00 -1.44 tile
+305.74 80.43 moveto 14.30 7.96 -0.30 tile
+305.74 86.85 moveto 14.30 8.88 0.88 tile
+0.5 setlinewidth
+298.58 88.28 moveto point 7.15 7.77 -2.32 tile
+0 setlinewidth
+335.39 50 moveto 15.36 4.30 -4.30 tile
+335.39 57.91 moveto 15.36 4.89 -3.61 tile
+335.39 65.15 moveto 15.36 5.98 -2.36 tile
+335.39 72.33 moveto 15.36 6.97 -1.19 tile
+335.39 79.29 moveto 15.36 7.93 0.01 tile
+0.5 setlinewidth
+327.72 82.46 moveto point 7.68 7.29 -2.57 tile
+0 setlinewidth
