@@ -172,6 +172,12 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     return self.__f_max
 
+  def set_f_ref(self,f_ref):
+    """
+    Set the reference frequency
+    """
+    self.add_var_opt('f-ref',f_ref)
+
   def set_user_tag(self,usertag):
     """
     Set the user tag

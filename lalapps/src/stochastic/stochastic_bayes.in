@@ -232,6 +232,7 @@ for seg in data:
       stoch.set_calibration_two(ifo2,chunk.start())
       stoch.set_f_min(min)
       stoch.set_f_max(max)
+      stoch.set_f_ref((float)(max - min)/2)
 
       # add dependancy on LSCdataFind jobs, if required
       if do_datafind:
