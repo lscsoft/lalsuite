@@ -96,14 +96,17 @@ represent a unique binary quantity.
 #ifndef _LALATOMICDATATYPES_H
 #define _LALATOMICDATATYPES_H
 
+#ifdef LDAS_BUILD
+#include "LDASConfig.h"
+#else
 #include "LALConfig.h"
 #include "LALRCSID.h"
+NRCSID( LALATOMICDATATYPESH, "$Id$" );
+#endif
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-NRCSID( LALATOMICDATATYPESH, "$Id$" );
 
 typedef char CHAR;
 typedef unsigned char UCHAR;
