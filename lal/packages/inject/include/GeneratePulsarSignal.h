@@ -131,7 +131,6 @@ void LALDestroySFTVector (LALStatus *stat, SFTVector **vect);
 void LALConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
 void LALConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
 void LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect);
-void LALNormalizeSkyPosition (LALStatus *stat, SkyPosition *posOut, const SkyPosition *posIn);
 
 /* debug- und testing functions */
 void dump_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname);

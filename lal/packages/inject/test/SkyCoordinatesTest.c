@@ -93,6 +93,7 @@ LALGPStoGMST1()                 LALJulianDate()
 LALCHARCreateVector()           LALCHARDestroyVector()
 LALCreateRandomParams()         LALDestroyRandomParams()
 LALUniformDeviate()             LALConvertSkyCoordinates()
+LALNormalizeSkyPosition()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -338,6 +339,8 @@ main( int argc, char **argv )
     SkyPosition sky2; /* converted celestial coordinates */
     RandomParams *rparams = NULL; /* pseudorandom sequence parameters */
 
+
+    printf ("Testing LALConvertSkyCoordinates()\n");
     /* Set up random Galactic position. */
     SUB( LALCreateRandomParams( &stat, &rparams, 0 ), &stat );
     SUB( LALUniformDeviate( &stat, &deviate, rparams ), &stat );
@@ -382,6 +385,47 @@ main( int argc, char **argv )
       ERROR( SKYCOORDINATESTESTC_ETEST, SKYCOORDINATESTESTC_MSGETEST, 0 );
       return SKYCOORDINATESTESTC_ETEST;
     }
+
+
+    /***********************************************************************
+     * Test LALNormalizeSkyPosition()
+     * we completely ignore the coordinate-system here, they are all treated
+     * the same (provided we can assume they are spherical and their coordinates
+     * lie within the range [0,2pi)x[-pi/2,pi/2]
+     ************************************************************************/
+    {
+      SkyPosition testIn, testOut;
+      SkyPosition correct = { 3.4, 0.9, 0 };
+      printf ("Testing LALNormalizeSkyPosition()\n");
+      /* now add some cycles of 2pi*/
+      testIn.longitude = correct.longitude + 4 * LAL_TWOPI;
+      testIn.latitude  = correct.latitude - 7 * LAL_TWOPI;
+      SUB (LALNormalizeSkyPosition (&stat, &testOut, &testIn), &stat);
+      if ( (fabs(testOut.longitude - correct.longitude) > 1e-14) 
+	   || (fabs(testOut.latitude-correct.latitude)>1e-14)) 
+	{
+	  printf ( "1.) LALNormalizeSkyPosition failed: got (%f,%f) instead of (%f,%f)\n",
+		   testOut.longitude, testOut.latitude, correct.longitude, correct.latitude);
+	  ERROR( SKYCOORDINATESTESTC_ETEST, SKYCOORDINATESTESTC_MSGETEST, 0 );
+	  return SKYCOORDINATESTESTC_ETEST;
+	}
+      /* try going over the pole */
+      testIn.latitude = LAL_PI - testIn.latitude;
+      testIn.longitude += LAL_PI + 2 * LAL_TWOPI;
+      SUB (LALNormalizeSkyPosition (&stat, &testOut, &testIn), &stat);
+      if ( (fabs(testOut.longitude - correct.longitude) > 1e-14) 
+	   || (fabs(testOut.latitude-correct.latitude)>1e-14)) 
+	{
+	  printf ( "2.) LALNormalizeSkyPosition failed: got (%f,%f) instead of (%f,%f)\n",
+		   testOut.longitude, testOut.latitude, correct.longitude, correct.latitude);
+	  ERROR( SKYCOORDINATESTESTC_ETEST, SKYCOORDINATESTESTC_MSGETEST, 0 );
+	  return SKYCOORDINATESTESTC_ETEST;
+	}
+      
+      
+    } /* testing LALNormalizeSkyPosition() */
+    /***********************************************************************/
+    
 
     /* Everything's fine, and nothing should have been allocated. */
     LALCheckMemoryLeaks();

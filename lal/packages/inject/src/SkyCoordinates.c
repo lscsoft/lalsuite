@@ -14,10 +14,12 @@ Automatically converts among sky coordinate systems.
 \vspace{0.1in}
 \input{SkyCoordinatesCP}
 \idx{LALConvertSkyCoordinates()}
+\idx{LALNormalizeSkyPosition()}
 
 \subsubsection*{Description}
 
-This function transforms the contents of \verb@*input@ to the system
+The function \verb+LALConvertSkyCoordinates()+ transforms the contents
+of \verb@*input@ to the system  
 specified in \verb@*params@, storing the result in \verb@*output@
 (which may point to the same object as \verb@*input@ for an in-place
 transformation).  The routine makes calls to the functions in
@@ -25,9 +27,17 @@ transformation).  The routine makes calls to the functions in
 required; the \verb@*params@ object must store any data fields
 required by these functions, or an error will occur.
 
+
+The function \verb+LALNormalizeSkyPosition()+ "normalizes" any given
+(spherical) sky-position (in radians), which means it projects the
+angles into $[0, 2\pi) \times [-\pi/2, \pi/2]$ if they lie outside.
+\end{itemize}
+
+
 \subsubsection*{Algorithm}
 
-The function is structured as a simple loop over transformations, each
+\verb+LALConvertSkyCoordinates()+ is structured as a simple loop over
+transformations, each 
 of which moves the output sky position one step closer to the desired
 final coordinates system.  The usual ``flow'' of the algorithm is:
 \begin{center}
@@ -168,4 +178,76 @@ LALConvertSkyCoordinates( LALStatus        *stat,
   *output = temp;
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
-}
+
+} /* LALConvertSkyCoordinates */
+
+
+
+/*----------------------------------------------------------------------
+ * if sky-position is not in "normal-range", normalize it correspondingly 
+ * based on Alicia's function with some additional "unwinding" added  
+ *----------------------------------------------------------------------*/
+/* <lalVerbatim file="SkyCoordinatesCP"> */
+void
+LALNormalizeSkyPosition (LALStatus *stat, 
+			 SkyPosition *posOut, 
+			 const SkyPosition *posIn)
+{ /* </lalVerbatim> */
+  SkyPosition tmp;	/* allow posOut == posIn */
+
+  INITSTATUS( stat, "NormalizeSkyPosition", SKYCOORDINATESC);
+  
+  ASSERT (posIn, stat, SKYCOORDINATESH_ENUL ,  SKYCOORDINATESH_MSGENUL );
+  ASSERT (posOut, stat, SKYCOORDINATESH_ENUL ,  SKYCOORDINATESH_MSGENUL );
+
+  tmp = *posIn;
+  
+  /* FIRST STEP: completely "unwind" positions, i.e. make sure that 
+   * [0 <= alpha < 2pi] and [-pi < delta <= pi] */
+  /* normalize longitude */
+  while (tmp.longitude < 0)
+    tmp.longitude += LAL_TWOPI;
+  while (tmp.longitude >= LAL_TWOPI)
+    tmp.longitude -= LAL_TWOPI;
+
+  /* pre-normalize (unwind) latitude */
+  while (tmp.latitude <= -LAL_PI)
+    tmp.latitude += LAL_TWOPI;
+  while (tmp.latitude > LAL_TWOPI)
+    tmp.latitude -= LAL_TWOPI;
+
+  /* SECOND STEP: get latitude into canonical interval [-pi/2 <= delta <= pi/2 ] */
+  /* this requires also a change in longitude by adding/subtracting PI */
+  if (tmp.latitude > LAL_PI_2)
+    {
+      tmp.latitude = LAL_PI - tmp.latitude;
+      if (tmp.longitude < LAL_PI)
+	{
+	  tmp.longitude += LAL_PI;
+	}
+      else
+	{
+	  tmp.longitude -= LAL_PI;
+	}
+    }
+
+  if (tmp.latitude < -LAL_PI_2)
+    {
+      tmp.latitude = -LAL_PI - tmp.latitude;
+      if (tmp.longitude <= LAL_PI)
+	{
+	  tmp.longitude += LAL_PI;
+	}
+      else
+	{
+	  tmp.longitude -= LAL_PI;
+	}
+    }
+
+  *posOut = tmp;
+
+  RETURN (stat);
+
+} /* LALNormalizeSkyPosition() */
+
+

@@ -17,7 +17,6 @@ Module to generate simulated pulsar-signals.
 \idx{LALCreateSFTVector()}
 \idx{LALDestroySFTVector()}
 \idx{LALDestroyTimestampVector()}
-\idx{LALNormalizeSkyPosition()}
 
 \input{GeneratePulsarSignalCP}
 
@@ -52,11 +51,6 @@ detector-site (\verb+params->site+) and the ephemeris-data
 respectively allocate and free an SFT-vector. 
 Similarly, \verb+LALDestroyTimestampVector()+ frees a bunch of
 GPS-timestamps.
-
-\item Finally, \verb+LALNormalizeSkyPosition()+ "normalizes" any given
-(spherical) sky-position (in radians), which means it projects the
-angles into $[0, 2\pi) \times [-\pi/2, \pi/2]$ if they lie outside.
-\end{itemize}
 
 \subsubsection*{Algorithm}
 
@@ -697,73 +691,6 @@ LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect)
   RETURN (stat);
   
 } /* LALDestroyTimestampVector() */
-
-
-
-/*----------------------------------------------------------------------
- * if sky-position is not in "normal-range", normalize it correspondingly 
- * based on Alicia's function with some additional "unwinding" added  
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="GeneratePulsarSignalCP"> */
-void
-LALNormalizeSkyPosition (LALStatus *stat, SkyPosition *posOut, const SkyPosition *posIn)
-{ /* </lalVerbatim> */
-  SkyPosition tmp;	/* allow posOut == posIn */
-
-  INITSTATUS( stat, "NormalizeSkyPosition", GENERATEPULSARSIGNALC);
-  
-  ASSERT (posIn, stat, GENERATEPULSARSIGNALH_ENULL ,  GENERATEPULSARSIGNALH_MSGENULL );
-  ASSERT (posOut, stat, GENERATEPULSARSIGNALH_ENULL ,  GENERATEPULSARSIGNALH_MSGENULL );
-
-  tmp = *posIn;
-  
-  /* FIRST STEP: completely "unwind" positions, i.e. make sure that 
-   * [0 <= alpha < 2pi] and [-pi < delta <= pi] */
-  /* normalize longitude */
-  while (tmp.longitude < 0)
-    tmp.longitude += LAL_TWOPI;
-  while (tmp.longitude >= LAL_TWOPI)
-    tmp.longitude -= LAL_TWOPI;
-
-  /* pre-normalize (unwind) latitude */
-  while (tmp.latitude <= -LAL_PI)
-    tmp.latitude += LAL_TWOPI;
-  while (tmp.latitude > LAL_TWOPI)
-    tmp.latitude -= LAL_TWOPI;
-
-  /* SECOND STEP: get latitude into canonical interval [-pi/2 <= delta <= pi/2 ] */
-  /* this requires also a change in longitude by adding/subtracting PI */
-  if (tmp.latitude > LAL_PI_2)
-    {
-      tmp.latitude = LAL_PI - tmp.latitude;
-      if (tmp.longitude < LAL_PI)
-	{
-	  tmp.longitude += LAL_PI;
-	}
-      else
-	{
-	  tmp.longitude -= LAL_PI;
-	}
-    }
-
-  if (tmp.latitude < -LAL_PI_2)
-    {
-      tmp.latitude = -LAL_PI - tmp.latitude;
-      if (tmp.longitude <= LAL_PI)
-	{
-	  tmp.longitude += LAL_PI;
-	}
-      else
-	{
-	  tmp.longitude -= LAL_PI;
-	}
-    }
-
-  *posOut = tmp;
-
-  RETURN (stat);
-
-} /* LALNormalizeSkyPosition() */
 
 
 
