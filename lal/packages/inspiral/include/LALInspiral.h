@@ -31,6 +31,7 @@ Header file for the template generation codes.
 # include <lal/LALConstants.h>
 # include <lal/SimulateCoherentGW.h>
 # include <lal/GeneratePPNInspiral.h>
+# include <lal/LIGOMetadataTables.h>
 
  
 #ifdef  __cplusplus
@@ -522,6 +523,9 @@ tagInspiralTemplate
   REAL8 rLightRing;*/
   InputMasses massChoice;
   INT4Vector *segmentIdVec; 
+  LIGOTimeGPS end_time;
+  EventIDColumn *event_id;
+  CHAR ifo[LIGOMETA_IFO_MAX];
   struct tagInspiralTemplate *next;
   struct tagInspiralTemplate *fine; 
 } InspiralTemplate;
