@@ -57,7 +57,7 @@ The following example will create a DAG containing all nodes, datafind,
 stochastic and stopp.
 
 \begin{verbatim}
-> lalapps_stochastic --datafind --stochastic --stopp \
+> lalapps_stochastic_pipe --datafind --stochastic --stopp \
     --config-file example_S3_H1L1.ini --log-path logs
 \end{verbatim}
 
@@ -93,33 +93,28 @@ list, has been split up into different jobs.
 
 \subsection{Running the DAG}
 
-When the DAG has been created successfully, a message similar to the one
-shown below will be dislayed. This describes what needs to be done
-inorder to run the analysis pipeline.
+When the DAG has been created successfully, a message will be displayed
+describing what needs to be done inorder to run the analysis pipeline at
+a LSC DataGrid Site.
+
+\prog{LSCdataFind} works by querying the LDRdataFind Server for the
+location of the requested data, this requires the user running
+LSCdataFind to have a valid grid proxy. Therefore if the DAG includes
+any datafind nodes, a valid grid proxy must be available prior to the
+job being submitted to the cluster. This is achieved by running the
+following commands:
 
 \begin{verbatim}
-Created a DAG file which can be submitted by executing
-
-   condor_submit_dag example_S3_H1L1.dag
-
-from a condor submit machine (e.g. hydra.phys.uwm.edu)
-
-If you are running LSCdataFind jobs, do not forget to initialize your grid
-proxy certificate on the condor submit machine by running the commands
-
-  unset X509_USER_PROXY
-  grid-proxy-init -hours 72
-
-Enter your pass phrase when promted. The proxy will be valid for 72 hours.
-If you expect the LSCdataFind jobs to take longer to complete, increase the
-time specified in the -hours option to grid-proxy-init. You can check that
-the grid proxy has been sucessfully created by executing the command:
-
-  grid-cert-info -all -file /tmp/x509up_u`id -u`
-
-This will also give the expiry time of the proxy.
-
-You also need to set the LSC_DATAFIND_SERVER environment variable eg.
-
-  export LSC_DATAFIND_SERVER=dataserver.phys.uwm.edu
+> unset X509_USER_PROXY
+> grid-proxy-init
 \end{verbatim}
+
+This will remove any existing proxy and recreate another, requesting the
+grid certificates pass phase. The default duration for the proxy to be
+valid is 12 hours, if a longer duration is required it can be increased
+by appending ``\option{-hours}~\parm{HOURS}'' to the call to
+\prog{grid-proxy-init}.
+
+\subsection{Example}
+
+This section is under construction...
