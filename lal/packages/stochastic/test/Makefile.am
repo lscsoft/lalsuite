@@ -1,10 +1,12 @@
 # Process this file with automake to produce Makefile.in
-check_PROGRAMS =  StochasticCrossCorrelationStatisticTest  \
-	          StochasticCrossCorrelationSpectrumTest  \
-	          SZeroPadAndFFTTest \
-                  StochasticOptimalFilterTest     StochasticOmegaGWTest \
-                  OverlapReductionFunctionTest    StochasticInverseNoiseTest \
-                  DirichletTest              SCoarseGrainFrequencySeriesTest
+check_PROGRAMS = 	  StochasticCrossCorrelationStatisticTest \
+	  StochasticHeterodynedCrossCorrelationStatisticTest \
+          StochasticCrossCorrelationSpectrumTest \
+	  SZeroPadAndFFTTest                    CZeroPadAndFFTTest \
+          StochasticOptimalFilterTest           StochasticOmegaGWTest \
+          OverlapReductionFunctionTest           StochasticInverseNoiseTest \
+          DirichletTest        \
+	  SCoarseGrainFrequencySeriesTest    CCoarseGrainFrequencySeriesTest
 
 #                   SFalseAlarmTest       SFalseDismissalTest  \
 #                   DFalseAlarmTest       SFDismissalVsFAlarmTest \
@@ -14,12 +16,18 @@ StochasticCrossCorrelationStatisticTest_SOURCES = \
                                StochasticCrossCorrelationStatisticTest.c \
                                CheckStatus.c
 StochasticCrossCorrelationStatisticTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+StochasticHeterodynedCrossCorrelationStatisticTest_SOURCES = \
+                    StochasticHeterodynedCrossCorrelationStatisticTest.c \
+                               CheckStatus.c
+StochasticHeterodynedCrossCorrelationStatisticTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 StochasticCrossCorrelationSpectrumTest_SOURCES = \
-                               StochasticCrossCorrelationSpectrumTest.c \
+                   StochasticCrossCorrelationSpectrumTest.c \
                                CheckStatus.c
 StochasticCrossCorrelationSpectrumTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 SZeroPadAndFFTTest_SOURCES = SZeroPadAndFFTTest.c CheckStatus.c
 SZeroPadAndFFTTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+CZeroPadAndFFTTest_SOURCES = CZeroPadAndFFTTest.c CheckStatus.c
+CZeroPadAndFFTTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 StochasticOptimalFilterTest_SOURCES = StochasticOptimalFilterTest.c \
                                          CheckStatus.c
 StochasticOptimalFilterTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
@@ -47,19 +55,25 @@ DirichletTest_SOURCES = DirichletTest.c
 DirichletTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 SCoarseGrainFrequencySeriesTest_SOURCES = SCoarseGrainFrequencySeriesTest.c CheckStatus.c
 SCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+CCoarseGrainFrequencySeriesTest_SOURCES = CCoarseGrainFrequencySeriesTest.c CheckStatus.c
+CCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
 TESTS =	  StochasticCrossCorrelationStatisticTest \
-          StochasticCrossCorrelationSpectrumTest  SZeroPadAndFFTTest \
+	  StochasticHeterodynedCrossCorrelationStatisticTest \
+          StochasticCrossCorrelationSpectrumTest \
+	  SZeroPadAndFFTTest                    CZeroPadAndFFTTest \
           StochasticOptimalFilterTest           StochasticOmegaGWTest \
           OverlapReductionFunctionTest           StochasticInverseNoiseTest \
-          DirichletTest                     SCoarseGrainFrequencySeriesTest
+          DirichletTest        \
+	  SCoarseGrainFrequencySeriesTest    CCoarseGrainFrequencySeriesTest
 
 #    SFalseAlarmTest       SFalseDismissalTest  \
 #           DFalseAlarmTest       SFDismissalVsFAlarmTest \
 #           DFalseDismissalTest   DFDismissalVsFAlarmTest \
 
-EXTRA_DIST = CheckStatus.c CheckStatus.h
+EXTRA_DIST = CheckStatus.c CheckStatus.h pipeline spectrum1.in spectrum2.in \
+             response1.in response2.in
 
 MOSTLYCLEANFILES = .dvi-dep *.dat* PrintVector.0*
 DISTCLEANFILES = *.tex
