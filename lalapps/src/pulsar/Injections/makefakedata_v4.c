@@ -310,6 +310,7 @@ LIGOTimeGPS SSBfirst,SSBlast;
 REAL4TimeSeries *totalTimeSeries = NULL;
 /*Time series for every SFT*/
 REAL4TimeSeries *timeSeries = NULL;
+REAL4TimeSeries shortTseries;	/* for comparison */
 
 /* Signal parameters to generate signal at source */
 TaylorCWParamStruc genTayParams;
@@ -318,6 +319,7 @@ DetectorResponse cwDetector;
 
 /*This will hold the SFT*/
 COMPLEX8Vector *fvec = NULL;
+COMPLEX8Vector *fvec0, *fvec0c;		/* for comparison with original result */
 COMPLEX8Vector *fvecn = NULL;
 
 /*FFT plan*/
@@ -343,8 +345,9 @@ int write_SFTS(LALStatus *, int iSFT);
 int write_timeseries(LALStatus *, int iSFT);
 int freemem(LALStatus *);
 int window_data(LALStatus *);
-int correct_phase(LALStatus *, int iSFT);
 void compute_one_SSB(LALStatus* status, LIGOTimeGPS *ssbout, LIGOTimeGPS *gpsin);
+void correct_phase(LALStatus* status, REAL8 f0, COMPLEX8Vector *vec);
+
 
 /* Like perror() but takes variable numbers of arguments and includes
    program name*/
@@ -380,11 +383,13 @@ int main(int argc,char *argv[]) {
   int iSFT;
   SpinOrbitCWParamStruc spinorbit;
   REAL4 dfdt;
+  UINT4 j;
 
   /* new stuff */
   UINT4 i;
   SFTVector *SFTs = NULL;
   static REAL4TimeSeries Tseries;
+
   
   programname=argv[0];
   
@@ -445,7 +450,7 @@ int main(int argc,char *argv[]) {
 
   /* Allocate space for SFT vector and fill-in appropriate fields, if
      we will be making SFTs. Also, create plan for forward FFT.  */
-  if (freqbasefilename && prepare_fvec(&status))
+  if (prepare_fvec(&status))
     return 1;
   
   /* If option active, write amplitude-modulation info file*/
@@ -559,7 +564,17 @@ int main(int argc,char *argv[]) {
     params.pulsar.aCross = genTayParams.aCross;
     params.pulsar.phi0 = genTayParams.phi0;
     params.pulsar.f0 = genTayParams.f0;
-    params.pulsar.f = genTayParams.f;
+    if (genTayParams.f)
+      {	/* this is just a temporary hack: genTayParams.f has been devided by f0, but in params.pulsar, 
+	 * is should be the real spindown (not normalized by f0), so we multiply it again */
+	UINT4 i;
+	SUB( LALDCreateVector (&status, &(params.pulsar.spindown), genTayParams.f->length), &status);
+	for (i=0; i < params.pulsar.spindown->length; i++)
+	  params.pulsar.spindown->data[i] = genTayParams.f0 * genTayParams.f->data[i];
+      }
+    else
+      params.pulsar.spindown = NULL;
+
     params.orbit = NULL;
     params.transferFunction = cwDetector.transfer;
     params.site = &(Detector);
@@ -581,6 +596,9 @@ int main(int argc,char *argv[]) {
 
     SUB (LALGeneratePulsarSignal (&status, &Tseries, &params), &status );
 
+    if (params.pulsar.spindown)
+      LALDDestroyVector (&status, &(params.pulsar.spindown) );
+
     SUB (LALPrintR4TimeSeries (&status, &Tseries, "test2.agr"), &status);
 
     sftParams.Tsft = Tsft;
@@ -593,10 +611,11 @@ int main(int argc,char *argv[]) {
 
     LALFree (sftParams.timestamps);
 
-    for (i=0; i < SFTs->numSFTs; i++) 
+    for (i=0; i < SFTs->length; i++) 
       {
-	sprintf (fname, "SFT_comp.%05d", i);
-	write_SFT (&status, &(SFTs->SFTlist[i]), fname);
+	SFTtype *thisSFT = &(SFTs->data[i]);
+	sprintf (fname, "SFTnew-%05d.agr", i);
+	LALwriteSFTtoXMGR (&status, thisSFT, fname);
       }
 
   }
@@ -623,10 +642,9 @@ int main(int argc,char *argv[]) {
 
 
     /* produce a time series simulation of a CW signal */
-
-    /*
-    SUB( LALSimulateCoherentGW(&status, timeSeries, &cgwOutput, &cwDetector), &status);
-    */
+    /* this is the "classic" way it was done in makefakedata_v2 */
+    shortTseries.epoch = timestamps[iSFT];
+    SUB( LALSimulateCoherentGW(&status, &shortTseries, &cgwOutput, &cwDetector), &status);
 
     /*if you want noise, make it and add to timeseries */
     if (sigma > 0.0 && make_and_add_time_domain_noise(&status))
@@ -636,31 +654,59 @@ int main(int argc,char *argv[]) {
        name. If no path is set, this means don't output in Time domain */
     if (write_timeseries(&status, iSFT))
       return 1;
+      
+    /* window data in the time domain before FFTing it */
+    if (do_windowing && window_data(&status))
+      return 1;
+    
+    /* Perform FFTW-LAL Fast Fourier Transform */
+    SUB(LALForwardRealFFT(&status, fvec, timeSeries->data, pfwd), &status);
+    
+    /* FFT the "classic" time-series stretch for comparison */
+    SUB(LALForwardRealFFT(&status, fvec0, shortTseries.data, pfwd), &status);
+    for (j=0; j < fvec0->length; j++)
+      fvec0c->data[j] = fvec0->data[j];
+    /* apply phase-correction */
+    correct_phase (&status, fmin, fvec0);
+      
+    /*----------------------------------------------------------------------*/
+    /* for comparison with GeneratePulsarSignal(): write SFT in xmgrace-file */
+    if (lalDebugLevel >= 3)
+      {
+	SFTtype thisSFT;
+	CHAR fname[256];
+	
+	/* first need to translate into SFTtype */
+	thisSFT.epoch = timestamps[iSFT];
+	thisSFT.f0 = fmin;
+	thisSFT.deltaF = 1.0 / Tsft;
 
+	thisSFT.data = fvec;	
+	sprintf (fname, "SFTrevised-%05d.agr", iSFT);
+	LALwriteSFTtoXMGR (&status, &thisSFT, fname);
+	
+	thisSFT.data = fvec0;
+	sprintf (fname, "SFTorig0-%05d.agr", iSFT);
+	LALwriteSFTtoXMGR (&status, &thisSFT, fname);
+
+	thisSFT.data = fvec0c;
+	sprintf (fname, "SFTorig0c-%05d.agr", iSFT);
+	LALwriteSFTtoXMGR (&status, &thisSFT, fname);
+	
+      }
+    /*----------------------------------------------------------------------*/
+
+
+    /* if you want noise added in the FREQ domain only, read from files and add in */
+    if (sigma < 0.0 && read_and_add_freq_domain_noise(&status, iSFT))
+      return 1;
+      
+    /* Write the SFT file in the file that is specified by the path
+       name.  If no path name is set, this means don't output SFTs*/
     /* if we've asked for freq-domain output... */
     if (freqbasefilename) {
-      
-      /* window data in the time domain before FFTing it */
-      if (do_windowing && window_data(&status))
-	return 1;
-
-      /* Perform FFTW-LAL Fast Fourier Transform */
-      SUB(LALForwardRealFFT(&status, fvec, timeSeries->data, pfwd), &status);
-      
-      /* if you want noise added in the FREQ domain only, read from files and add in */
-      if (sigma < 0.0 && read_and_add_freq_domain_noise(&status, iSFT))
-	return 1;
-      
-      /* Write the SFT file in the file that is specified by the path
-	 name.  If no path name is set, this means don't output SFTs*/
       if (write_SFTS(&status, iSFT))
 	return 1;  
-
-      /* FIXME */ 
-      /*
-      printf ("\nComparing SFT %d:", iSFT);
-      compare_SFTs (fvec, SFTs.data[iSFT] ); 
-      */
     }
 
   } /* end of loop over different SFTs */
@@ -699,6 +745,7 @@ int freemem(LALStatus* status)
 
   LALSDestroyVector (status, &(totalTimeSeries->data) );
   LALFree (timeSeries->data);
+  LALDestroyVector (status, &(shortTseries.data));
 
   LALFree(totalTimeSeries);
   LALFree(timeSeries);
@@ -721,9 +768,9 @@ int freemem(LALStatus* status)
   LALFree(timestamps); 
 
   /* Clean up FFTs of signal and of noise - each a complex8vector */
-  if (fvec)
-    LALCDestroyVector(status, &fvec);
-
+  LALCDestroyVector(status, &fvec);
+  LALCDestroyVector(status, &fvec0);
+  LALCDestroyVector(status, &fvec0c);
   if (pfwd)
     LALDestroyRealFFTPlan(status, &pfwd);
 
@@ -802,27 +849,6 @@ int compute_SSBtimes(LALStatus* status) {
   
   return 0;
 }
-
-#if 0
-/*applies correct heterodyning from one SFT to the next*/
-int correct_phase(LALStatus* status, int iSFT) {
-
-  int i;
-  REAL8 cosx,sinx,x;
-  COMPLEX8 fvec1;
-
-  x=2.0*LAL_PI*fmin*Tsft*iSFT;
-  cosx=cos(x);
-  sinx=sin(x);
-  for (i = 0; i < fvec->length; ++i){
-    fvec1=fvec->data[i];
-    fvec->data[i].re=fvec1.re*cosx+fvec1.im*sinx;
-    fvec->data[i].im=fvec1.im*cosx-fvec1.re*sinx;
-  }
-  
-  return 0;
-}
-#endif
 
 /* windows the data*/
 int window_data(LALStatus* status){
@@ -1019,7 +1045,7 @@ int prepare_cwDetector(LALStatus* status){
 /*Allocates space for timeseries */
 int prepare_timeSeries(LALStatus* status) 
 {
-  REAL8 t0, t1, duration;
+  REAL8 duration;
   UINT4 len0;
 
   status->statusCode = 0;
@@ -1032,12 +1058,10 @@ int prepare_timeSeries(LALStatus* status)
 
   timeSeries->data->length = Band*Tsft*2;
 
-
   len0 = nTsft * Tsft * 2 * Band;
 
-  LALGPStoFloat (status, &t0, &(timestamps[0]) );
-  LALGPStoFloat (status, &t1, &(timestamps[nTsft-1]) );
-  duration = t1 - t0 + Tsft;
+  LALDeltaFloatGPS (status, &duration, &(timestamps[nTsft-1]), &(timestamps[0]) );
+  duration += Tsft;
   totalTimeSeries->data->length = duration * Band * 2.0;
 
   printf ("\nlenth: %d vs %d\n", len0, totalTimeSeries->data->length);
@@ -1049,6 +1073,11 @@ int prepare_timeSeries(LALStatus* status)
 
   timeSeries->f0=fmin;
   totalTimeSeries->f0=fmin;
+
+
+  LALCreateVector (status, &(shortTseries.data), timeSeries->data->length);
+  shortTseries.deltaT = Tsft/timeSeries->data->length;
+  shortTseries.f0 = fmin;
 
   return 0;
 }
@@ -1062,6 +1091,8 @@ int prepare_fvec(LALStatus* status) {
   
   /* Create vector to hold signal frequency series */
   LALCCreateVector(status, &fvec, (UINT4)len2);
+  LALCCreateVector(status, &fvec0, (UINT4)len2);
+  LALCCreateVector(status, &fvec0c, (UINT4)len2);
     
   /* Compute measured plan for FFTW */
   LALCreateForwardRealFFTPlan(status, &pfwd, (UINT4)len, 0);
@@ -1599,6 +1630,7 @@ void usage(FILE *fp){
 	  "-w                            Window data in time domain before doing FFT\n"
 	  "-b                            Output time-domain data in IEEE754 binary format\n"
 	  "-m                            DON'T output 1234.5 before time-domain binary samples\n"
+	  "-d                            set debug-level                            [default=0]\n"
 	  "-h                            Print this help/usage message\n"
 	  );
   return;
@@ -1622,7 +1654,7 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
   
   opterr=0;
 
-  while (!errflg && ((c = getopt(argc, argv,":i:n:t:I:G:S:X:E:D:wbmh"))!=-1))
+  while (!errflg && ((c = getopt(argc, argv,":i:n:t:I:G:S:X:E:D:wbmhd:"))!=-1))
     switch (c) {
     case 'i':
       /* Name of input data file */
@@ -1735,6 +1767,9 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
     case 'h':
       usage(stdout);
       exit(0);
+      break;
+    case 'd':
+      lalDebugLevel = atoi (optarg);
       break;
     default:
       
@@ -1867,3 +1902,30 @@ Timestamps:
    FORMAT: INT4 SECONDS
 
 */
+
+void
+correct_phase(LALStatus* status, REAL8 f0, COMPLEX8Vector *vec) 
+{
+  UINT4 i;
+  REAL8 cosx,sinx;
+  COMPLEX8 fvec1;
+  LIGOTimeGPS gps1,gps2;
+  REAL8 deltaT;
+
+  gps1=timeSeries->epoch;
+  gps2=cwDetector.heterodyneEpoch;
+
+  LALDeltaFloatGPS(status, &deltaT, &gps1, &gps2);
+  deltaT *= LAL_TWOPI * f0; 
+
+  cosx=cos(deltaT);
+  sinx=sin(deltaT);
+
+  for (i = 0; i < fvec->length; ++i){
+    fvec1 = vec->data[i];
+    vec->data[i].re = fvec1.re*cosx-fvec1.im*sinx;
+    vec->data[i].im = fvec1.im*cosx+fvec1.re*sinx;
+  }
+  
+  return;
+}
