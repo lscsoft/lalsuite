@@ -81,6 +81,8 @@ LALMath3DPlot( LALStatus *stat,
   INT4 loop = 0;
   REAL4 PtSize = 0.02;
   INT4 counter = 0;
+  REAL4 xmax, ymax, zmax; /* maximum values plotted */
+  INT2 xlog, ylog, zlog;  /* log10 of axis scaling factors */
   
   INITSTATUS( stat, "LALMath3DPlot", LALMATH3DPLOTC ); 
 
@@ -123,6 +125,22 @@ LALMath3DPlot( LALStatus *stat,
       PtSize = 0.02;
     }
   }
+
+  /* Find scaling factors for axes from maximum absolute values. */
+  xmax = ymax = zmax = 0;
+  for( list = first; list != NULL; list = list->next )
+  {
+    if( abs( list->x ) > xmax )
+      xmax = abs( list->x );
+    if( abs( list->y ) > ymax )
+      ymax = abs( list->y );
+    if( abs( list->z ) > zmax )
+      zmax = abs( list->z );
+  }
+  xlog = (INT2)(log(xmax)/log(10));
+  ylog = (INT2)(log(ymax)/log(10));
+  zlog = (INT2)(log(zmax)/log(10));
+
   /* The code that generates the notebook */  
   BEG_NOTEBOOK;
     BEG_TITLECELL;
@@ -177,13 +195,13 @@ LALMath3DPlot( LALStatus *stat,
         fprintf(nb, "FrameTime\t= 0.2;");
       END_INPUTCELL;
       BEG_INPUTCELL;
-        fprintf(nb, "XAxisLabel := \"Psi01\"");
+        fprintf(nb, "XAxisLabel = \"Psi0 / 1e%d\"", xlog );
       END_INPUTCELL;
       BEG_INPUTCELL; 
-        fprintf(nb, "YAxisLabel := \"Psi03\"");
+        fprintf(nb, "YAxisLabel = \"Psi3 / 1e%d\"", ylog );
       END_INPUTCELL;
       BEG_INPUTCELL;
-        fprintf(nb, "ZAxisLabel := \"Beta\"");
+        fprintf(nb, "ZAxisLabel = \"Beta / 1e%d\"", zlog );
       END_INPUTCELL;
       BEG_TEXTCELL;
         fprintf(nb, "AnimationPlot:\tFlag that determines whether to generate animations");
@@ -216,8 +234,9 @@ LALMath3DPlot( LALStatus *stat,
           list = first;
           while(list->next) 
           {
-            fprintf(nb, ",{GrayLevel[%f], Point[{%f,%f,%f}]}",
-                    list->grayLevel, list->x, list->y, list->z);
+            fprintf( nb, ",{GrayLevel[%f], Point[{%f,%f,%f}]}",
+                     list->grayLevel, list->x/pow(10,xlog),
+                     list->y/pow(10,ylog), list->z/pow(10,zlog) );
             if (jflag%2) fprintf(nb,"\n");
             ++jflag;
             list = list->next;
