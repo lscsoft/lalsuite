@@ -115,6 +115,8 @@ extern INT4 lalDebugLevel;
 
 
 
+/* Unfinished work in progress: deactivate to avoid warnings */
+#if 0 
 /*--------------------------------------------------------------------------------
  * Simulate a pulsar signal to best accuracy possible
  *--------------------------------------------------------------------------------*/
@@ -216,3 +218,4 @@ LALSimulatePulsarSignal (LALStatus *stat,
 
 } /* LALSimulatePulsarSignal() */
 
+#endif
