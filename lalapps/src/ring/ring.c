@@ -1,3 +1,9 @@
+/*
+ *
+ * Program: lalapps_ring -- search code for ringdown waveforms
+ * Authors: Jolien Creighton, Rana Adhikari
+ *
+ */
 #include <math.h>
 #include <ctype.h>
 #include <errno.h>
