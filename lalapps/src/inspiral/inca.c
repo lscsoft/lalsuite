@@ -206,9 +206,13 @@ int main( int argc, char *argv[] )
   SummValueTable       *inspEffRange[MAXIFO];
   SummValueTable       *currentEffRange[MAXIFO];
   
+  SearchSummvarsTable       *inputFiles;
+  SearchSummvarsTable       *thisInputFile;
+
   MetadataTable         proctable;
   MetadataTable         processParamsTable;
   MetadataTable         searchsumm;
+  MetadataTable		searchSummvarsTable;
   MetadataTable		summValueTable;
   MetadataTable         inspiralTable;
   ProcessParamsTable   *this_proc_param = NULL;
@@ -692,10 +696,29 @@ int main( int argc, char *argv[] )
       INT4 numFileTriggers = 0;
       SnglInspiralTable *inputData = NULL;
       SearchSummaryTable *inputSummary = NULL;
+      
+      if ( vrbflg ) fprintf( stdout, 
+          "storing input file name %s in search summvars table\n", argv[i] );
+      
+      if ( !inputFiles )
+      {
+	inputFiles = thisInputFile = (SearchSummvarsTable *)
+	  LALCalloc( 1, sizeof(SearchSummvarsTable) );
+      }
+      else
+      {
+	thisInputFile = thisInputFile->next = (SearchSummvarsTable *)
+	  LALCalloc( 1, sizeof(SearchSummvarsTable) );
+      }
+      LALSnprintf( thisInputFile->name, LIGOMETA_NAME_MAX, 
+        "input_file" );
+      LALSnprintf( thisInputFile->string, LIGOMETA_NAME_MAX, 
+        "%s", argv[i] );      
+     
 
       if ( vrbflg ) fprintf( stdout, 
           "reading search_summary table from file: %s\n", argv[i] );
-
+    
       haveSearchSum = SearchSummaryTableFromLIGOLw( &inputSummary, argv[i] );
       
       if ( haveSearchSum < 1 || ! inputSummary )
@@ -1378,6 +1401,14 @@ cleanexit:
           search_summary_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
+    /* write the search_summvars tabls */
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
+            search_summvars_table), &status );
+    searchSummvarsTable.searchSummvarsTable = inputFiles;
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, searchSummvarsTable,
+            search_summvars_table), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
+
     /* write the summ_value table for ifoName[j] */
     if ( inspEffRange[j] )
     {
@@ -1423,6 +1454,13 @@ cleanexit:
     this_proc_param = processParamsTable.processParamsTable;
     processParamsTable.processParamsTable = this_proc_param->next;
     free( this_proc_param );
+  }
+
+  while( inputFiles )
+  {
+    thisInputFile = inputFiles;
+    inputFiles = thisInputFile->next;
+    LALFree( thisInputFile );
   }
 
   for( j = 0; j < numIFO; ++j )
