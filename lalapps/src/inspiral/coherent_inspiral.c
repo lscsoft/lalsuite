@@ -73,6 +73,8 @@ RCSID( "$Id$" );
 #define PROGRAM_NAME "coherent_inspiral"
 #define CVS_NAME_STRING "$Name$"
 
+
+
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
@@ -93,17 +95,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 /* input data parameters */
 
 CHAR  *chanNumber       = NULL;         /* name of data channel         */
-INT4  numPoints         = -1;           /* points in a segment          */
-INT4  numSegments       = 1;            /* number of segments           */
+UINT4  numPoints         = -1;           /* points in a segment          */
+UINT4  numSegments       = 1;            /* number of segments           */
 INT4   sampleRate       = -1;           /* sample rate of filter data   */
 REAL4  fLow             = -1;           /* low frequency cutoff         */
 
 /* matched filter parameters */
 
 CHAR *bankFileName      = NULL;         /* name of input template bank  */
-INT4  startTemplate     = 0;            /* index of first template      */
-INT4  stopTemplate      = 1;            /* index of last template       */
-INT4  eventCluster      = -1;           /* perform chirplen clustering  */
 
 /*Coherent code specific inputs*/
 
@@ -122,26 +121,27 @@ char GEOBeam[256];
 char VIRGOBeam[256];
 char TAMABeam[256];
 
-UINT4 siteID[6] = {0,1,2,3,4,0}; /*H1 L1 V G T H2*/
-UINT2 caseID[6] = {0,0,0,0,0,0};
+UINT2 caseID[6] = {0,0,0,0,0,0}; /* H1 L G V T H2 */
 
-static BOOLEAN verbose = 0;
+INT4  verbose = 0;
 
-static BOOLEAN   cohSNROut            = 0;
+BOOLEAN          cohSNROut            = 0; /* default is not to write frame */
 CHAR             *cohSNROutFrame      = NULL;
+BOOLEAN          eventsOut            = 0;/* default is not to write events */
+CHAR             *eventsOutXML        = NULL;
 CHAR             outputPath[FILENAME_MAX];
-INT4             numTmplts            = -1;
-UINT4            numBeamPoints        = 100;
-REAL4            cohSNRThresh         = -1;
-UINT4            maximiseOverChirp    = 0; 
+CHAR             framename[FILENAME_MAX];
+CHAR             xmlname[FILENAME_MAX];
 
-FILE *fp[4];
+REAL4            cohSNRThresh         = -1;
+UINT4            maximizeOverChirp    = 0; /* default is no clustering */
 
 
 int main( int argc, char *argv[] )
 {
   /* lal function variables */
-  static LALStatus             status;
+  LALStatus             status = blank_status;
+  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
   /* frame input data */
   FrStream     *frStream = NULL;
@@ -152,16 +152,21 @@ int main( int argc, char *argv[] )
   struct FrFile *frOutFile  = NULL;
   struct FrameH *outFrame   = NULL;
 
-/* inspiral events */
-  INT4                          numEvents   = 0;
-  MultiInspiralTable           *event       = NULL;
-  MultiInspiralTable           *eventList   = NULL;
-  MetadataTable                 savedEvents;
 
   /* output */
 
-  MetadataTable procparams;
-  CHAR fname[FILENAME_MAX];
+  MetadataTable         proctable;
+  MetadataTable         procparams;
+  ProcessParamsTable   *this_proc_param;
+  LIGOLwXMLStream       results;
+
+  FILE *filePtr[4];
+
+  INT4             numTmplts            = 1;
+  INT4  startTemplate     = 0;           
+  INT4  stopTemplate      = 1;      
+
+  UINT4            numBeamPoints        = 0;
 
  /* counters and other variables */
   INT4                          i,j,k,l;
@@ -185,15 +190,27 @@ int main( int argc, char *argv[] )
   char namearray3[6][256] = {"0","0","0","0","0","0"}; /* chan names */
 
   set_debug_level( "1" ); /* change with parse option */
-  memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );
+  /*memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );*/
 
-if (verbose)  fprintf(stdout, "calling parse options\n");
+  /* create the process and process params tables */
+  proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
+  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
+        &accuracy ), &status );
+  LAL_CALL( populate_process_table( &status, proctable.processTable, 
+        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
+    calloc( 1, sizeof(ProcessParamsTable) );
+
   arg_parse_check( argc, argv, procparams );
-if (verbose)  fprintf(stdout, "parse options called\n");
+  if (verbose)  fprintf(stdout, "called parse options..\n");
+
+  /* wind to the end of the process params table */
+  for ( this_proc_param = procparams.processParamsTable; this_proc_param->next;
+      this_proc_param = this_proc_param->next );
 
 
   /* read in the template bank from a ligo lw xml file */
-  numTmplts = InspiralTmpltBankFromLIGOLw( &bankHead, bankFileName,
+    numTmplts = InspiralTmpltBankFromLIGOLw( &bankHead, bankFileName,
       startTemplate, stopTemplate );
   if ( numTmplts < 0 )
   {
@@ -204,7 +221,7 @@ if (verbose)  fprintf(stdout, "parse options called\n");
   else if ( numTmplts == 0 )
   {
     /* if there are no tmplts, store the time we would have analyzed and exit */
-    fprintf( stdout, "no templates found in template bank file: %s\n"
+      fprintf( stdout, "no templates found in template bank file: %s\n"
         "exiting without searching for events.\n", bankFileName ); 
 
     goto cleanexit;
@@ -218,6 +235,14 @@ if (verbose)  fprintf(stdout, "parse options called\n");
 
   if ( verbose ) fprintf( stdout, "parsed %d templates from %s\n", 
       numTmplts, bankFileName );
+  
+  REAL4 m1 = 0;
+  REAL4 m2 = 0;
+  m1 = bankHead->mass1;
+  m2 = bankHead->mass2;
+  /*free the template read from the bank */
+  LALFree( bankHead );
+  bankHead = NULL;
 
 /* read in the network detectors */
   for (l=0;l<6;l++)
@@ -226,8 +251,8 @@ if (verbose)  fprintf(stdout, "parse options called\n");
 	numDetectors++;
     }
 
-if (verbose)  fprintf(stdout, "You have specified %2d  detector(s).\n",numDetectors);
-if (verbose)  fprintf(stdout, "The caseID is: %d %d %d %d %d %d (H1,L1,VIRGO,GEO,TAMA,H2) \n",caseID[0],caseID[1],caseID[2],caseID[3],caseID[4],caseID[5]);
+  if (verbose)  fprintf(stdout, "You have specified %2d  detector(s).\n",numDetectors);
+  if (verbose)  fprintf(stdout, "The caseID is: %d %d %d %d %d %d (H1,L1,VIRGO,GEO,TAMA,H2) \n",caseID[0],caseID[1],caseID[2],caseID[3],caseID[4],caseID[5]);
 
   if (numDetectors > 4)
     {
@@ -242,6 +267,11 @@ if (verbose)  fprintf(stdout, "The caseID is: %d %d %d %d %d %d (H1,L1,VIRGO,GEO
     }
 
 
+  if ( (numDetectors == 3 && !( caseID[0] && caseID[5])) || numDetectors == 4 ) {
+    numBeamPoints = 2;
+  }
+
+
   /*
    *
    * read in the input data channels
@@ -254,21 +284,22 @@ if (verbose)  fprintf(stdout, "The caseID is: %d %d %d %d %d %d (H1,L1,VIRGO,GEO
    * create and populate coherentInspiral initialization structure 
    *
    */
-  cohInspInitParams = (CoherentInspiralInitParams *) LALMalloc (sizeof(CoherentInspiralInitParams));
 
-  if ( ! ( cohInspInitParams = (CoherentInspiralInitParams *) 
-	   LALCalloc (1,sizeof(CoherentInspiralInitParams)) ))
+  /*          cohInspInitParams = (CoherentInspiralInitParams *) calloc(1,sizeof(CoherentInspiralInitParams));*/
+
+    if ( !(cohInspInitParams = (CoherentInspiralInitParams *) calloc(1,sizeof(CoherentInspiralInitParams)) ))
   {
-    fprintf( stderr, "could not allocate memory for coherentInspiral init params\n" );
+    fprintf( stdout, "could not allocate memory for coherentInspiral init params\n" );
     goto cleanexit;
   }
+
+
   
   cohInspInitParams->numDetectors            = numDetectors;
   cohInspInitParams->numSegments             = numSegments;
   cohInspInitParams->numPoints               = numPoints;
   cohInspInitParams->numBeamPoints           = numBeamPoints;
   cohInspInitParams->cohSNROut               = cohSNROut;
-
 
   /*
    *
@@ -291,19 +322,15 @@ if (verbose)  fprintf(stdout, "The caseID is: %d %d %d %d %d %d (H1,L1,VIRGO,GEO
 
  
   cohInspFilterInput->tmplt = (InspiralTemplate *)
-    LALMalloc (sizeof(InspiralTemplate) );
+    LALCalloc(1,sizeof(InspiralTemplate) );
   memset( cohInspFilterInput->tmplt, 0, sizeof(InspiralTemplate) );
-  cohInspFilterInput->tmplt->mass1 = bankHead->mass1;
-  cohInspFilterInput->tmplt->mass2 = bankHead->mass2;
-  REAL8 m1;
-  REAL8 m2;
-  m1 = cohInspFilterInput->tmplt->mass1;
-  m2 = cohInspFilterInput->tmplt->mass2;
+  cohInspFilterInput->tmplt->mass1 = m1;
+  cohInspFilterInput->tmplt->mass2 = m2;
   cohInspFilterInput->tmplt->totalMass = m1 + m2;
   cohInspFilterInput->tmplt->mu = m1 * m2 / (m1 + m2);
   cohInspFilterInput->tmplt->eta = (m1 * m2) / ((m1 + m2) * (m1 + m2 ));
 
-if (verbose)  fprintf( stdout, "m1:%f m2:%f totalmass:%f mu:%f eta%f\n", m1, m2,cohInspFilterInput->tmplt->totalMass,cohInspFilterInput->tmplt->mu,cohInspFilterInput->tmplt->eta);
+  if (verbose)  fprintf( stdout, "m1:%f m2:%f totalmass:%f mu:%f eta%f\n", m1, m2,cohInspFilterInput->tmplt->totalMass,cohInspFilterInput->tmplt->mu,cohInspFilterInput->tmplt->eta);
   
 
   /* fill the params structure */
@@ -312,16 +339,12 @@ if (verbose)  fprintf( stdout, "m1:%f m2:%f totalmass:%f mu:%f eta%f\n", m1, m2,
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
   
-  cohInspFilterParams->numDetectors            = numDetectors;
-  cohInspFilterParams->numSegments             = numSegments;
-  cohInspFilterParams->numPoints               = numPoints;
-  cohInspFilterParams->numBeamPoints           = numBeamPoints;
   cohInspFilterParams->deltaT                  = 1/((REAL4) sampleRate);
-  cohInspFilterParams->cohSNROut               = cohSNROut;
   cohInspFilterParams->cohSNRThresh            = cohSNRThresh;
+  cohInspFilterParams->cohSNROut               = cohSNROut;
   cohInspFilterParams->numTmplts               = numTmplts;
   cohInspFilterParams->fLow                    = fLow;
-  cohInspFilterParams->maximiseOverChirp       = maximiseOverChirp;
+  cohInspFilterParams->maximizeOverChirp       = maximizeOverChirp;
   
   detIDVec = cohInspFilterParams->detIDVec;
 
@@ -370,7 +393,7 @@ if (verbose)  fprintf( stdout, "m1:%f m2:%f totalmass:%f mu:%f eta%f\n", m1, m2,
       /* virgo data is not available */
     strcpy(namearray[2],VIRGOfilename);
     /*strcpy(namearray2[2],"VIRGOBeam.dat");*/ 
-    strcpy(namearray2[2],"HBeam.dat");
+    strcpy(namearray2[2],"VIRGOBeam.dat");
     LALSnprintf(namearray3[2], LALNameLength*sizeof(CHAR), "H2:LSC-AS_Q_CData_%s", chanNumber );
     }
 
@@ -395,39 +418,45 @@ if (verbose)  fprintf( stdout, "m1:%f m2:%f totalmass:%f mu:%f eta%f\n", m1, m2,
     LALSnprintf(namearray3[5], LALNameLength*sizeof(CHAR), "H2:LSC-AS_Q_CData_%s", chanNumber );
     }
 
-if (verbose)  fprintf(stdout,"built namearrays\n");
+  if (verbose)  fprintf(stdout,"built namearrays\n");
 
   /* Now read in the beam coefficients if necessary */
 
-  cohInspBeamVec = cohInspFilterInput->beamVec;
+  /* cohInspBeamVec = cohInspFilterInput->beamVec;*/
 
- if ( numDetectors > 2 && !( caseID[0] && caseID[5]) ) {
-  l=0;
+ if ( (numDetectors == 3 && !( caseID[0] && caseID[5])) || numDetectors == 4 ) {
+   cohInspBeamVec = cohInspFilterInput->beamVec;
+
+   l=0;
+  if( verbose ) fprintf(stdout, "This network requires beam-pattern coefficients - reading them in...\n");
   for ( j=0 ; j < 6 ; j++ ) {
     if ( caseID[j] ) { 
-      fp[l] = fopen(namearray2[j], "r");
-      if(!fp[l])
+      filePtr[l] = fopen(namearray2[j], "r");
+      if(!filePtr[l])
 	{
 	  fprintf(stdout,"The file %s containing the coefficients could not be found - exiting...\n",namearray2[j]);
 	  goto cleanexit;
 	}
-      for ( k=0 ; k< (INT4) numBeamPoints ; k++)
-	{
-	  fscanf(fp[l],"%f %f %f %f",&theta,&phi,&vPlus,&vMinus);
+      for ( k=0 ; k < (INT4) numBeamPoints ; k++)
+	{ 
+	  fprintf(stdout,"scanning a beam file...");
+	  fscanf(filePtr[l],"%f %f %f %f",&theta,&phi,&vPlus,&vMinus);
+	  fprintf(stdout,"done\n");
 	  cohInspBeamVec->detBeamArray[l].thetaPhiVs[k].data->data[0] = theta;
 	  cohInspBeamVec->detBeamArray[l].thetaPhiVs[k].data->data[1] = phi;
 	  cohInspBeamVec->detBeamArray[l].thetaPhiVs[k].data->data[2] = vPlus;
 	  cohInspBeamVec->detBeamArray[l].thetaPhiVs[k].data->data[3] = vMinus;
 	}
-      fclose(fp[l++]);
+      fclose(filePtr[l]);
+      l++;
     }
   } 
  }
 
  cohInspCVec = cohInspFilterInput->multiCData;
 
- TestStatus (&status, "0", 1);
- ClearStatus (&status);
+ /* TestStatus (&status, "0", 1);
+    ClearStatus (&status);*/
 
  if (verbose) {
    fprintf(stdout,"reading data from frames\n");
@@ -439,7 +468,7 @@ if (verbose)  fprintf(stdout,"built namearrays\n");
   for ( j=0 ; j < 6 ; j++ ) {
     if ( caseID[j] ) {
       if (verbose) fprintf(stdout,"opening C framefile %s\n",namearray[j]);
-      LAL_CALL( LALFrOpen(&status,&frStream,0,namearray[j]), &status);
+      LAL_CALL( LALFrOpen(&status,&frStream,NULL,namearray[j]), &status);
       if(!frStream)
 	{
 	  fprintf(stdout,"The file %s does not exist - exiting...\n",
@@ -459,52 +488,165 @@ if (verbose)  fprintf(stdout,"built namearrays\n");
   }
 
   /*Do the filtering and output events */
+
   cohInspEvent = NULL;
-  if (verbose) fprintf(stdout,"filtering the data\n");
+
+  if (verbose) fprintf(stdout,"filtering the data..\n");
+  if ( maximizeOverChirp && verbose )
+    {
+      fprintf(stdout,"clustering events\n");
+    }		       
   LALCoherentInspiralFilterSegment (&status, &cohInspEvent, cohInspFilterInput, cohInspFilterParams); 
+
 
   if ( cohSNROut )
     {
       strcpy( cohInspFilterParams->cohSNRVec->name, "coherent");
       outFrame = fr_add_proc_REAL4TimeSeries( outFrame,
 	  cohInspFilterParams->cohSNRVec, "none", "SNR" );
+      if ( outputPath[0] )
+	{
+	  LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s", outputPath, cohSNROutFrame);
+	}
+      else 
+	{
+	  LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s", cohSNROutFrame );
+	}
+
+      if ( verbose ) fprintf( stdout, "writing frame data to %s....", framename );
+      frOutFile = FrFileONew( framename, 0);
+      FrameWrite( outFrame, frOutFile);
+      FrFileOEnd( frOutFile );
+      if ( verbose ) fprintf(stdout, "done\n");
+      if ( !eventsOut )
+	{
+	  while( cohInspEvent )
+	    {
+	      CoherentInspiralEvent *cohtmp = cohInspEvent;
+	      cohInspEvent = cohInspEvent->next;
+	      LALFree( cohtmp );
+	    }
+	}
     }
-  if (outputPath[0] )
+
+  if ( eventsOut )
     {
-      LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s", outputPath, cohSNROutFrame);
-    }
-  else
-    {
-      LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s", cohSNROutFrame );
-    }
-  if ( verbose ) fprintf( stdout, "writing frame data to %s....", fname );
-  frOutFile = FrFileONew( fname, 0);
-  FrameWrite( outFrame, frOutFile);
-  FrFileOEnd( frOutFile );
-  if ( verbose ) fprintf(stdout, "done\n");
+      memset( &results, 0, sizeof(LIGOLwXMLStream) );
+      if ( outputPath[0] )
+	{
+	  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s", outputPath, eventsOutXML);
+	}
+      else 
+	{
+	  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s", eventsOutXML );
+	}
+      if ( verbose ) fprintf( stdout, "writing XML data to %s...\n", xmlname );
+      LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, xmlname), &status );
+
+      /* write the process table */
+      if ( verbose ) fprintf( stdout, "  process table...\n" );
+      /*      LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", caseID );*/
+      LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time), &accuracy ), &status );
+      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), &status );
+      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable, process_table ), &status );
+      LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+      free( proctable.processTable );
+
+      /* write the process params table */
+      if ( verbose ) fprintf( stdout, "  process_params table...\n" );
+      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ), &status );
+      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, procparams, process_params_table ), &status );
+      LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+      while( procparams.processParamsTable )
+	{
+	  this_proc_param = procparams.processParamsTable;
+	  procparams.processParamsTable = this_proc_param->next;
+	  free( this_proc_param );
+	  }
+
+      /* The following should be incorporated into LIGOLwXML.c and associated headers */
+#define COHERENT_INSPIRAL_SUMMARY \
+"   <Table Name=\"coherent_inspiral:table\">\n" \
+"      <Column Name=\"coherent_inspiral:ifos\" Type=\"ilwd:char\"/>\n" \
+"      <Column Name=\"coherent_inspiral:eventId\" Type=\"UINT4\"/>\n" \
+"      <Column Name=\"coherent_inspiral:timeIndex\" Type=\"UINT4\"/>\n" \
+"      <Column Name=\"coherent_inspiral:mass1\" Type=\"REAL4\"/>\n" \
+"      <Column Name=\"coherent_inspiral:mass2\" Type=\"REAL4\"/>\n" \
+"      <Column Name=\"coherent_inspiral:cohSNR\" Type=\"REAL4\"/>\n" \
+"      <Column Name=\"coherent_inspiral:theta\" Type=\"REAL4\"/>\n" \
+"      <Column Name=\"coherent_inspiral:phi\" Type=\"REAL4\"/>\n" \
+"      <Column Name=\"coherent_inspiral:time\" Type=\"LIGOTimeGPS\"/>\n" \
+"      <Column Name=\"coherent_inspiral:end_time\" Type=\"LIGOTimeGPS\"/>\n" \
+"      <Stream Name=\"coherent_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n"
 
 
+      fprintf( results.fp, COHERENT_INSPIRAL_SUMMARY );
+      if( verbose ) fprintf(stdout,"  event params table\n ");
+
+      /* If we have 3 different sites in network, need to include theta and phi in event table */
+      if( (numDetectors == 3 && !(caseID[0] && caseID[5])) || numDetectors == 4 )
+	{
+
+	  while( cohInspEvent )
+	    {   /* include theta and phi */
+	      CoherentInspiralEvent *cohtmp = cohInspEvent;
+	      fprintf(results.fp,"         %s,%d,%d,%e,%e,%e,%e,%e,%s,%s\n",cohInspEvent->ifos, cohInspEvent->eventId, cohInspEvent->timeIndex, cohInspEvent->mass1, cohInspEvent->mass2,cohInspEvent->cohSNR, cohInspEvent->theta, cohInspEvent->phi,"NULL","NULL");
+	      cohInspEvent = cohInspEvent->next;
+	      LALFree( cohtmp );
+	    }
+
+	}
+      else
+	{
+	  while( cohInspEvent )
+	    {   /* print NA for theta and phi */
+	      CoherentInspiralEvent *cohtmp = cohInspEvent;
+	      fprintf(results.fp,"         %s,%d,%d,%e,%e,%e,%s,%s,%s,%s\n",cohInspEvent->ifos, cohInspEvent->eventId, cohInspEvent->timeIndex, cohInspEvent->mass1, cohInspEvent->mass2,cohInspEvent->cohSNR,"NA","NA","NULL","NULL");
+	      cohInspEvent = cohInspEvent->next;
+	      LALFree( cohtmp );
+	    }
+	}
+#undef COHERENT_INSPIRAL_SUMMARY
+
+      /* close the output xml file */
+      LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
+      if ( verbose ) fprintf( stdout, "done. XML file closed\n" );
+
+    }
+
+  goto cleanexit;
 
  cleanexit:
 
+  LALFree( cohInspFilterInput->tmplt );
+  cohInspFilterInput->tmplt = NULL;
+  free( cohInspInitParams );
+
   /* Destroy params structure for coherent filter code */
-  LALCoherentInspiralFilterParamsFinalize (&status, &cohInspFilterParams);
+  LAL_CALL( LALCoherentInspiralFilterParamsFinalize (&status, 
+      &cohInspFilterParams), &status );
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
 
   /* Destroy input structure for coherent filter code */
-  LALCoherentInspiralFilterInputFinalize (&status, &cohInspFilterInput);
-    TestStatus (&status, "0", 1);
-    ClearStatus (&status);
+  LAL_CALL( LALCoherentInspiralFilterInputFinalize (&status, &cohInspFilterInput), 
+      &status);
+  TestStatus (&status, "0", 1);
+  ClearStatus (&status);
 
  /* free the rest of the memory, check for memory leaks and exit */
-  if ( bankFileName ) free( bankFileName );
-  if ( chanNumber ) free( chanNumber );
+ /* LALFree( bankHead );
+    bankHead = NULL;*/
 
+  if ( cohSNROutFrame ) free( cohSNROutFrame );
+  if ( eventsOutXML ) free( eventsOutXML );
+  free( bankFileName );
+  free( chanNumber );
   if ( verbose ) fprintf( stdout, "checking memory leaks and exiting\n" );
   LALCheckMemoryLeaks();
 
-  return 0;
+  /*return 0;*/
+  exit( 0 );
 
 }
 
@@ -575,6 +717,17 @@ ClearStatus (
   }
 }
 
+#define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
+this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+  calloc( 1, sizeof(ProcessParamsTable) ); \
+  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+      PROGRAM_NAME ); \
+      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+          long_options[option_index].name ); \
+          LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+          LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+
+
 #define USAGE \
 "lalapps_inspiral [options]\n\n"\
 "  --help                       display this message\n"\
@@ -590,8 +743,9 @@ ClearStatus (
 "  --cohsnr-threshold RHO          set signal-to-noise threshold to RHO\n"\
 "  --maximize-over-chirp        do clustering\n"\
 "\n"\
+"  --write-events <filename(.xml)>    write events to specified xml file\n"\
 "  --write-cohsnr <filename(.gwf)>    write cohsnr to specified frame file\n"\
-"  --output-path                 the path to where the user wants to the output file written\n"\
+"  --output-path                 the path to where the user wants to output file(s) written\n"\
 "  --H1-framefile               frame data for H1\n"\
 "  --H2-framefile               frame data for H2\n"\
 "  --L-framefile                frame data for L\n"\
@@ -604,29 +758,31 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 {
    struct option long_options[] = 
    {
-     {"verbose",                  no_argument,       0,                 'w'},
+     {"verbose",                  no_argument,       &verbose,           1 },
      {"help",                     no_argument,       0,                 'h'},
      {"version",                  no_argument,       0,                 'v'},
-     {"debug-level",              no_argument,       0,                 'd'},
+     {"debug-level",              required_argument, 0,                 'd'},
      {"low-frequency-cutoff",     required_argument, 0,                 'f'},
      {"bank-file",                required_argument, 0,                 'u'},
      {"sample-rate",              required_argument, 0,                 'r'},
      {"segment-length",           required_argument, 0,                 'n'},
      {"cohsnr-threshold",         required_argument, 0,                 'p'},
-     {"maximize-over-chirp",      required_argument, 0,                 'c'},
+     {"maximize-over-chirp",      no_argument,       &maximizeOverChirp, 1 },
+     {"write-events",             required_argument, 0,                 'e'},
      {"write-cohsnr",             required_argument, 0,                 'o'},
      {"output-path",              required_argument, 0,                 'P'},
-     {"H1-framefile",             no_argument,       0,                 'A'},
-     {"H2-framefile",             no_argument,       0,                 'Z'},
-     {"L-framefile",              no_argument,       0,                 'L'},
-     {"V-framefile",              no_argument,       0,                 'V'},
-     {"G-framefile",              no_argument,       0,                 'G'},
-     {"T-framefile",              no_argument,       0,                 'T'},
+     {"H1-framefile",             required_argument, 0,                 'A'},
+     {"H2-framefile",             required_argument, 0,                 'Z'},
+     {"L-framefile",              required_argument, 0,                 'L'},
+     {"V-framefile",              required_argument, 0,                 'V'},
+     {"G-framefile",              required_argument, 0,                 'G'},
+     {"T-framefile",              required_argument, 0,                 'T'},
      {"channel-number",           required_argument, 0,                 'k'},
-     {0, 0, 0, 0,}
+     {0, 0, 0, 0}
    };
 
    int c;
+   ProcessParamsTable *this_proc_param = procparams.processParamsTable;
 
    while (1)
      {
@@ -635,7 +791,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
        size_t optarg_len;
 
        c = getopt_long_only( argc, argv,
-	   "A:G:L:P:T:V:Z:c:d:f:h:k:n:o:p:r:u:v:w:",
+	   "A:G:L:P:T:V:Z:d:e:f:h:k:n:o:p:r:u:v:",
 	   long_options, &option_index );
 
        if ( c == -1 )
@@ -645,52 +801,71 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
        switch ( c )
 	 {
+	 case 0:
+        /* if this option set a flag, do nothing else now */
+	   if ( long_options[option_index].flag != 0 )
+	     {
+	       break;
+	     }
+	   else 
+	     {
+	       fprintf( stderr, "error parsing option %s with argument %s\n",
+			long_options[option_index].name, optarg );
+	       exit( 1 );
+	     }
+	   break;
+
 	 case 'A':
 	   strcpy(H1filename,optarg);
 	   caseID[0] = 1;
+	   ADD_PROCESS_PARAM( "string", "%s", H1filename );
 	   break;
 
 	 case 'G':
 	   strcpy(GEOfilename,optarg);
 	   caseID[3] = 1;  
+	   ADD_PROCESS_PARAM( "string", "%s", GEOfilename );
 	   break;
 
 	 case 'L':
 	   strcpy(Lfilename,optarg);
 	   caseID[1] = 1;
+	   ADD_PROCESS_PARAM( "string", "%s", Lfilename );
 	   break;
 
 	 case 'T':
 	   strcpy(TAMAfilename,optarg);
 	   caseID[4] = 1;      
+	   ADD_PROCESS_PARAM( "string", "%s", TAMAfilename );
 	   break;
 
 	 case 'V':
 	   strcpy(VIRGOfilename,optarg);
 	   caseID[2] = 1;	   
+	   ADD_PROCESS_PARAM( "string", "%s", VIRGOfilename );
 	   break;
 
 	 case 'Z':
 	   strcpy(H2filename,optarg);
 	   caseID[5] = 1;
+	   ADD_PROCESS_PARAM( "string", "%s", H2filename );
 	   break;
 
 	 case 'P':
 	   memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );
 	   LALSnprintf( outputPath, FILENAME_MAX * sizeof(CHAR),
 			"%s", optarg );
-	   break;
-
-	 case 'c': /* set maximiseOverChirp */
-	   maximiseOverChirp  = 1;
+	   ADD_PROCESS_PARAM( "string", "%s", outputPath );
 	   break;
 
 	 case 'd': /* set debuglevel */
 	   lalDebugLevel = atoi (optarg);
+	   ADD_PROCESS_PARAM( "int", "%d", lalDebugLevel );
 	   break;
 
 	 case 'f': /* set fLow */
 	   fLow = (REAL4) atof (optarg);
+	   ADD_PROCESS_PARAM( "float", "%e", fLow );
 	   break;
 
 	 case 'h':
@@ -700,6 +875,15 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
 	 case 'n': /* set number of points in a segment */
 	   numPoints = atoi (optarg);
+	   ADD_PROCESS_PARAM( "int", "%d", numPoints );
+	   break;
+
+	 case 'e':
+	   eventsOut = 1;
+	   optarg_len = strlen( optarg ) + 1;
+	   eventsOutXML = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+	   memcpy( eventsOutXML, optarg, optarg_len );
+	   ADD_PROCESS_PARAM( "string", "%s", eventsOutXML );
 	   break;
 
 	 case 'o': /* sets flag to write coherent SNR */
@@ -707,22 +891,25 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	   optarg_len = strlen( optarg ) +1;
 	   cohSNROutFrame = (CHAR *) calloc( optarg_len, sizeof(CHAR));
 	   memcpy( cohSNROutFrame, optarg, optarg_len );
+	   ADD_PROCESS_PARAM( "string", "%s", cohSNROutFrame );
 	   break;
 
 	 case 'p': /* set coherent SNR threshold */
 	   cohSNRThresh = atof (optarg);
+	   ADD_PROCESS_PARAM( "float", "%e", cohSNRThresh );
 	   break;
 
 	 case 'r': /* set sampling rate */
 	   sampleRate = atoi (optarg);
+	   ADD_PROCESS_PARAM( "int", "%d", sampleRate );
 	   break;
 
 	 case 'u':
-           /* create storage for the calibration frame cache name */
+           /* create storage for the bank filename */
 	   optarg_len = strlen( optarg ) + 1;
 	   bankFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
 	   memcpy( bankFileName, optarg, optarg_len );
-	   /* ADD_PROCESS_PARAM( "string", "%s", optarg );*/
+	   ADD_PROCESS_PARAM( "string", "%s", bankFileName );
 	   break;
 
 	 case 'v':
@@ -734,15 +921,20 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	   exit( 0 );
 	   break;
 
-	 case 'w': /* set verbosity */
-	   verbose = 1;
-	   break;
-
 	 case 'k':
 	   optarg_len = strlen( optarg ) +1;
 	   chanNumber = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
 	   memcpy( chanNumber, optarg, optarg_len );
+	   ADD_PROCESS_PARAM("string", "%s", chanNumber );
 	   break;
+
+	 case '?':
+	   exit( 1 );
+	   break;
+
+	 default:
+	   fprintf( stderr, "unknown error while parsing options\n" );
+	   exit( 1 );
 
 	 }
 
@@ -759,5 +951,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      }
   
    return 0;
-
 }
+
+#undef ADD_PROCESS_PARAM
