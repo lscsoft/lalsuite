@@ -22,7 +22,6 @@ notably \texttt{BlockSearchParams}.
 #define _BLOCK_RHO_H_
 
 #include <math.h>
-#include <mpi.h>
 #include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
