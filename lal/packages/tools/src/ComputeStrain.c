@@ -104,7 +104,10 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
 
   /* then we filter through the inverse of the sensing function */
   if(XLALFilterSeries(&Cinv, &uphR)) RETURN( status );
-  
+
+  /* Low pass again before downsampling */
+  LALButterworthREAL8TimeSeries(status,&uphR,&lowpassfilterpar);
+ 
   /* then we downsample and voila' */
   for (p=0; p<hR.data->length; p++) {
     hR.data->data[p]=uphR.data->data[p*UpSamplingFactor];
