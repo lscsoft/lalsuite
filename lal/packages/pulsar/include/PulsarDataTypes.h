@@ -70,11 +70,11 @@ Defines the astrophysical parameters of the pulsar.
 typedef struct {
   LIGOTimeGPS tRef;	/* reference time of pulsar parameters (in SSB!) */
   SkyPosition position;	/* source location (in radians) */
-  REAL4 psi;            /* polarization angle (radians) at TRef */
-  REAL4 aPlus, aCross;  /* polarization amplitudes at TRef */
-  REAL8 phi0;           /* initial phase (radians) at TRef */
-  REAL8 f0;             /* initial frequency (Hz) at TRef */
-  REAL8Vector *spindown;/* frequency spindowns at TRef (NOT f0-normalized!) */
+  REAL4 psi;            /* polarization angle (radians) at tRef */
+  REAL4 aPlus, aCross;  /* polarization amplitudes at tRef */
+  REAL8 phi0;           /* initial phase (radians) at tRef */
+  REAL8 f0;             /* WAVE-frequency(!) at tRef (in Hz) */
+  REAL8Vector *spindown;/* wave-frequency spindowns at tRef (NOT f0-normalized!) */
 } PulsarSourceParams;
 /* </lalVerbatim> */
 /*<lalLaTeX>
