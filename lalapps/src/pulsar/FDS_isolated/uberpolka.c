@@ -604,7 +604,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
       LALFree ((*CList));
       return 1;
     }
-  while(fgets(line1,sizeof(line1),fp) && i < numlines )
+  while(i < numlines && fgets(line1,sizeof(line1),fp))
     {
       char newline='\0';
 
@@ -657,7 +657,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
     fprintf(stderr,
 	    "Read of file %s terminated after %d line but numlines=%d\n",
 	    fname, i, numlines);
-    LALFree ((*CList));
+    LALFree((*CList));
     fclose(fp);
     return 1;
   }
@@ -667,7 +667,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
     fprintf(stderr,
 	    "Failed to find marker line of file %s\n",
 	    fname);
-    LALFree ((*CList));
+    LALFree((*CList));
     fclose(fp);
     return 1;
   }
