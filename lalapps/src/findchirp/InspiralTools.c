@@ -48,7 +48,6 @@ parameters.
 #define  INSPIRALTEMPLATE_ORDER twoPN
 #define  INSPIRALTEMPLATE_PSI0 100000
 #define  INSPIRALTEMPLATE_PSI3 -1000
-#define  INSPIRALTEMPLATE_SIGNALAMPLITUDE 1
 
 
 #define INSPIRALTEMPLATE_THETA 1
@@ -202,13 +201,13 @@ void Init2DummyInspiralTemplate(InspiralTemplate *params)
   params->psi3         = -1;
   params->signalAmplitude = -1;
 
-  params->spin1[3];
+/*  params->spin1[3];
   params->spin2[3];
   params->sourceTheta;
   params->sourcePhi;
   params->startPhase;
   params->startTime;
-
+*/
   params->Theta       = -1;
   params->totalMass   = -1;
   params->tSampling   = -1;
@@ -250,13 +249,13 @@ SetDefault(InspiralTemplate *params)
   params->psi3         = INSPIRALTEMPLATE_PSI3;
   params->signalAmplitude = INSPIRALTEMPLATE_SIGNALAMPLITUDE;
 
-  params->spin1[3];
+  /*params->spin1[3];
   params->spin2[3];
   params->sourceTheta;
   params->sourcePhi;
   params->startPhase;
   params->startTime;
-
+*/
   params->Theta       = INSPIRALTEMPLATE_THETA;
   /*  params->totalMass   = INSPIRALTEMPLATE_TOTALMASS; */
   params->tSampling   = INSPIRALTEMPLATE_TSAMPLING;
@@ -379,7 +378,7 @@ ParseParameters(int argc,
 	 fprintf(stderr,"All options should be followed by a number \n");
 	 fprintf(stderr,"      -alpha : BCV amplitude correction parameter (%7.2f)\n",params->alpha);
 	 fprintf(stderr,"-approximant : Post-Newtonian model such as TaylorT1(2,3), TaylorF1(2), PadeT1, PadeF1, EOB, BCV, BCVSpin and SpinTaylorT3  (PadeT1)\n");
-	 fprintf(stderr,"         -fl : lower frequency cutoff             (%7.2f) Hz\n", 10);
+	 fprintf(stderr,"         -fl : lower frequency cutoff             (%7.2f) Hz\n", 10.);
 	 /*	 fprintf(stderr,"         -m1 : mass of primary (%7.2f) SolarMass\n", params.mass1);
 	 fprintf(stderr,"         -m2 : mass of primary (%7.2f) SolarMass\n", params.mass2);
 	 fprintf(stderr,"      -order : order of PN model                  (%7.2d)\n",    10);;*/

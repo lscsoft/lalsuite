@@ -590,6 +590,7 @@ void Help()
 	       							  BANKNUMBEROFTEMPLATES_LOWGM, BANKNUMBEROFTEMPLATES_HIGHGM);
   fprintf(stderr,"   --noise-model   : design sensitivity (LIGOI)\n"); 
   fprintf(stderr,"         --bank    : SPA or BCV  (%7.2d)\n",    BANKNUMBEROFTEMPLATES_BANK);
+  fprintf(stderr,"         --space    : Tau0Tau3, Tau0Tau2  (%7.2d)\n",    BANKNUMBEROFTEMPLATES_BANK);
   fprintf(stderr,"--mass-range		: minimal mass of component stars    			(%7.2f, %7.2f) Mo\n",
 		  BANKNUMBEROFTEMPLATES_MMIN,  BANKNUMBEROFTEMPLATES_MMAX);
 
