@@ -12,7 +12,7 @@ Provides routines to plot two-dimensional parameter meshes.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include <lal/TwoDMeshPlot.h>
+#include "TwoDMeshPlot.h"
 \end{verbatim}
 
 \noindent This header covers routines that display 2-dimensional
