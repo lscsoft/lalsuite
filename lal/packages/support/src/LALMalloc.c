@@ -119,7 +119,7 @@ static const size_t padding   = 0xDeadBeef;
 static const size_t repadding = 0xBeefDead;
 static const size_t magic     = 0xABadCafe;
 
-pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 static size_t lalMallocTotal = 0;
 static int    lalMallocCount = 0;
 extern int    lalDebugLevel;

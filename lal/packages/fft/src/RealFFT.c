@@ -46,6 +46,8 @@
 #endif
 #endif
 
+#include <pthread.h>
+
 #include <lal/LALStdlib.h>
 #include <lal/SeqFactories.h>
 #include <lal/RealFFT.h>
@@ -84,6 +86,8 @@ void rfftw_one( rfftw_plan, fftw_real *, fftw_real * );
 
 NRCSID (REALFFTC, "$Id$");
 
+static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
+
 /* tell FFTW to use LALMalloc and LALFree */
 #define FFTWHOOKS \
   do { fftw_malloc_hook = LALMalloc; fftw_free_hook = LALFree; } while(0)
@@ -115,12 +119,14 @@ LALEstimateFwdRealFFTPlan (
   /* assign plan fields */
   (*plan)->size = size;
   (*plan)->sign = 1;
+  pthread_mutex_lock( &mut );  
   (*plan)->plan = (void *)
     rfftw_create_plan (
         size,
         FFTW_REAL_TO_COMPLEX,
         FFTW_THREADSAFE | FFTW_ESTIMATE /* | FFTW_USE_WISDOM */
         );
+  pthread_mutex_unlock( &mut );  
 
   /* check that the plan is not NULL */
   if ( !(*plan)->plan )
@@ -161,12 +167,14 @@ LALEstimateInvRealFFTPlan (
   /* assign plan fields */
   (*plan)->size = size;
   (*plan)->sign = -1;
+  pthread_mutex_lock( &mut );
   (*plan)->plan = (void *)
     rfftw_create_plan (
         size,
         FFTW_COMPLEX_TO_REAL,
         FFTW_THREADSAFE | FFTW_ESTIMATE /* | FFTW_USE_WISDOM */
         );
+  pthread_mutex_unlock( &mut );
 
   /* check that the plan is not NULL */
   if ( !(*plan)->plan )
@@ -207,12 +215,14 @@ LALMeasureFwdRealFFTPlan (
   /* assign plan fields */
   (*plan)->size = size;
   (*plan)->sign = 1;
+  pthread_mutex_lock( &mut );  
   (*plan)->plan = (void *)
     rfftw_create_plan (
         size,
         FFTW_REAL_TO_COMPLEX,
         FFTW_THREADSAFE | FFTW_MEASURE /* | FFTW_USE_WISDOM */
         );
+  pthread_mutex_unlock( &mut );  
 
   /* check that the plan is not NULL */
   if ( !(*plan)->plan )
@@ -253,12 +263,14 @@ LALMeasureInvRealFFTPlan (
   /* assign plan fields */
   (*plan)->size = size;
   (*plan)->sign = -1;
+  pthread_mutex_lock( &mut );  
   (*plan)->plan = (void *)
     rfftw_create_plan (
         size,
         FFTW_COMPLEX_TO_REAL,
         FFTW_THREADSAFE | FFTW_MEASURE /* | FFTW_USE_WISDOM */
         );
+  pthread_mutex_unlock( &mut );  
 
   /* check that the plan is not NULL */
   if ( !(*plan)->plan )
@@ -289,7 +301,9 @@ LALDestroyRealFFTPlan (
   ASSERT (*plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
 
   /* destroy plan and set to NULL pointer */
+  pthread_mutex_lock( &mut );  
   rfftw_destroy_plan ((rfftw_plan)(*plan)->plan);
+  pthread_mutex_unlock( &mut );  
   LALFree (*plan);
   *plan = NULL;
 

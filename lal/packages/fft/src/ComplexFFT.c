@@ -46,6 +46,8 @@
 #endif
 #endif
 
+#include <pthread.h>
+
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/ComplexFFT.h>
@@ -73,6 +75,8 @@ extern fftw_free_type_function fftw_free_hook;
 #endif
 
 NRCSID( COMPLEXFFTC, "$Id$" );
+
+static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 
 /* tell FFTW to use LALMalloc and LALFree */
 #define FFTWHOOKS \
@@ -106,8 +110,10 @@ LALEstimateFwdComplexFFTPlan (
   /* assign plan fields */
   (*plan)->size = size;
   (*plan)->sign = 1;
+  pthread_mutex_lock( &mut );  
   (*plan)->plan = (void *)
     fftw_create_plan( size, 1, FFTW_THREADSAFE | FFTW_ESTIMATE );
+  pthread_mutex_unlock( &mut );  
 
   /* check that the plan is not NULL */
   if ( !(*plan)->plan )
@@ -149,8 +155,10 @@ LALEstimateInvComplexFFTPlan (
   /* assign plan fields */
   (*plan)->size = size;
   (*plan)->sign = -1;
+  pthread_mutex_lock( &mut );  
   (*plan)->plan = (void *)
     fftw_create_plan( size, -1, FFTW_THREADSAFE | FFTW_ESTIMATE );
+  pthread_mutex_unlock( &mut );  
 
   /* check that the plan is not NULL */
   if ( !(*plan)->plan )
@@ -192,8 +200,10 @@ LALMeasureFwdComplexFFTPlan (
   /* assign plan fields */
   (*plan)->size = size;
   (*plan)->sign = 1;
+  pthread_mutex_lock( &mut );  
   (*plan)->plan = (void *)
     fftw_create_plan( size, 1, FFTW_THREADSAFE | FFTW_MEASURE );
+  pthread_mutex_unlock( &mut );  
 
   /* check that the plan is not NULL */
   if ( !(*plan)->plan )
@@ -235,8 +245,10 @@ LALMeasureInvComplexFFTPlan (
   /* assign plan fields */
   (*plan)->size = size;
   (*plan)->sign = -1;
+  pthread_mutex_lock( &mut );  
   (*plan)->plan = (void *)
     fftw_create_plan( size, -1, FFTW_THREADSAFE | FFTW_MEASURE );
+  pthread_mutex_unlock( &mut );
 
   /* check that the plan is not NULL */
   if ( !(*plan)->plan )
@@ -268,7 +280,9 @@ LALDestroyComplexFFTPlan (
   ASSERT( *plan, stat, COMPLEXFFT_ENULL, COMPLEXFFT_MSGENULL );
 
   /* destroy plan and set to NULL pointer */
+  pthread_mutex_lock( &mut );  
   fftw_destroy_plan( (fftw_plan)(*plan)->plan );
+  pthread_mutex_unlock( &mut );  
   LALFree( *plan );
   *plan = NULL;
 
