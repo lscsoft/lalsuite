@@ -55,6 +55,29 @@ NRCSID( TWODMESHPLOTH, "$Id$" );
 #define TWODMESHPLOTH_MSGENOPLOT "Nothing to plot"
 /******************************************** </lalErrTable><lalLaTeX>
 
+\subsection*{Constants}
+
+\begin{center}\begin{tabular}{|ccp{4.5in}|}\hline
+\texttt{<}\textit{name}\texttt{>} & value & description \\
+\hline
+\tt XSIZE & 540 & \vspace{-1.4ex}Horizontal size of plotting area (points = 1/72$''$) \\
+\tt YSIZE & 720 & \vspace{-1.4ex}Vertical size of plotting area (points) \\
+\tt XMARG &  36 & \vspace{-1.4ex}Distance from left of page to plotting area (points) \\
+\tt YMARG &  36 & \vspace{-1.4ex}Distance from bottom of page to plotting area (points) \\
+\hline
+\end{tabular}\end{center}
+\vspace{-.1in}The values in the table above are stored in the
+constants \verb@TWODMESHPLOTH_@\texttt{<}\textit{name}\texttt{>}.
+
+/****************************************************** </lalLaTeX> */
+
+#define TWODMESHPLOTH_XSIZE 540 /* horizontal plot size (points) */
+#define TWODMESHPLOTH_YSIZE 720 /* vertical plot size (points) */
+#define TWODMESHPLOTH_XMARG  36 /* horizontal margin (points) */
+#define TWODMESHPLOTH_YMARG  36 /* vertical margin (points) */
+
+/********************************************************** <lalLaTeX>
+
 \subsection*{Types}
 
 \subsubsection*{Structure \texttt{TwoDMeshPlotStruc}}
@@ -155,6 +178,10 @@ LALPlotTwoDMesh( LALStatus         *stat,
 		 FILE              *stream,
 		 TwoDMeshNode      *mesh,
 		 TwoDMeshPlotStruc *params );
+
+/* <lalLaTeX>
+\newpage\input{TwoDMeshTestC}
+</lalLaTeX> */
 
 #ifdef __cplusplus
 #pragma {

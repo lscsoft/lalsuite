@@ -77,7 +77,8 @@ coarsest mesh.
 \begin{verbatim}
 lalDebugLevel               LALPrintError()
 LALWarning()                LALInfo()
-LALTwoDMesh()               LALFree()
+LALTwoDMesh()               LALTwoDNodeCopy()
+LALFree()
 \end{verbatim}
 
 \subsubsection*{Notes}

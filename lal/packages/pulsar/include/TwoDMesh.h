@@ -319,10 +319,6 @@ LALTwoDNodeCopy( LALStatus    *stat,
 		 TwoDMeshNode **new,
 		 TwoDMeshNode *old );
 
-/* <lalLaTeX>
-\newpage\input{TwoDMeshTestC}
-</lalLaTeX> */
-
 #ifdef __cplusplus
 #pragma {
 }

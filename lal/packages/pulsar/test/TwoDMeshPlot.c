@@ -69,10 +69,6 @@ LALMalloc()             LALFree()
 NRCSID( TWODEMESHPLOTC, "$Id$" );
 
 /* Local constants. */
-#define TWODMESHPLOTC_XSIZE  540 /* horizontal plot size (points) */
-#define TWODMESHPLOTC_YSIZE  720 /* vertical plot size (points) */
-#define TWODMESHPLOTC_XMARG   36 /* horizontal margin (points) */
-#define TWODMESHPLOTC_YMARG   36 /* vertical margin (points) */
 #define TWODMESHPLOTC_MAXOBJ 797 /* Maximum number of objects in a
                                     PostScript macro */
 
@@ -146,9 +142,9 @@ LALPlotTwoDMesh( LALStatus         *stat,
 	   "%%%%Title: mesh.ps\n"
 	   "%%%%BoundingBox: %i %i %i %i\n"
 	   "%%%%EndComments\n\n",
-	   TWODMESHPLOTC_XMARG, TWODMESHPLOTC_YMARG,
-	   TWODMESHPLOTC_XMARG + TWODMESHPLOTC_XSIZE,
-	   TWODMESHPLOTC_YMARG + TWODMESHPLOTC_YSIZE );
+	   TWODMESHPLOTH_XMARG, TWODMESHPLOTH_YMARG,
+	   TWODMESHPLOTH_XMARG + TWODMESHPLOTH_XSIZE,
+	   TWODMESHPLOTH_YMARG + TWODMESHPLOTH_YSIZE );
 
   /* Write PostScript macros for plotting mesh points.  The macros are
      called simply as "point[N]", where [N] is the recursive submesh
@@ -333,21 +329,21 @@ LALPlotTwoDMesh( LALStatus         *stat,
   /* Define an overall clipping region for all pages. */
   fprintf( stream, "%i %i moveto %i %i lineto %i %i lineto\n"
 	   "%i %i lineto closepath clip newpath\n",
-	   TWODMESHPLOTC_XMARG, TWODMESHPLOTC_YMARG,
-	   TWODMESHPLOTC_XMARG,
-	   TWODMESHPLOTC_YMARG + TWODMESHPLOTC_YSIZE,
-	   TWODMESHPLOTC_XMARG + TWODMESHPLOTC_XSIZE,
-	   TWODMESHPLOTC_YMARG + TWODMESHPLOTC_YSIZE,
-	   TWODMESHPLOTC_XMARG + TWODMESHPLOTC_XSIZE,
-	   TWODMESHPLOTC_YMARG );
+	   TWODMESHPLOTH_XMARG, TWODMESHPLOTH_YMARG,
+	   TWODMESHPLOTH_XMARG,
+	   TWODMESHPLOTH_YMARG + TWODMESHPLOTH_YSIZE,
+	   TWODMESHPLOTH_XMARG + TWODMESHPLOTH_XSIZE,
+	   TWODMESHPLOTH_YMARG + TWODMESHPLOTH_YSIZE,
+	   TWODMESHPLOTH_XMARG + TWODMESHPLOTH_XSIZE,
+	   TWODMESHPLOTH_YMARG );
 
   /* Plot macros on each page. */
-  for ( yOff = params->bBox[1] - TWODMESHPLOTC_YMARG;
-	yOff < params->bBox[3] - TWODMESHPLOTC_YMARG;
-	yOff += TWODMESHPLOTC_YSIZE )
-    for ( xOff = params->bBox[0] - TWODMESHPLOTC_XMARG;
-	  xOff < params->bBox[2] - TWODMESHPLOTC_XMARG;
-	  xOff += TWODMESHPLOTC_XSIZE ) {
+  for ( yOff = params->bBox[1] - TWODMESHPLOTH_YMARG;
+	yOff < params->bBox[3] - TWODMESHPLOTH_YMARG - 1;
+	yOff += TWODMESHPLOTH_YSIZE )
+    for ( xOff = params->bBox[0] - TWODMESHPLOTH_XMARG;
+	  xOff < params->bBox[2] - TWODMESHPLOTH_XMARG - 1;
+	  xOff += TWODMESHPLOTH_XSIZE ) {
       fprintf( stream, "\n"
 	       "%%%%Page: %u\n"
 	       "gsave %f %f translate %f rotate %f %f scale",

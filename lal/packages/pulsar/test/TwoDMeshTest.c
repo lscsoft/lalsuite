@@ -300,11 +300,8 @@ main(int argc, char **argv)
   REAL4 a = A_DEFAULT, b = B_DEFAULT, c = C_DEFAULT;
   REAL4 dadx = DADX, dbdx = DBDX, dcdx = DCDX;
   REAL4 dady = DADY, dbdy = DBDY, dcdy = DCDY;
-
-
-  /* DEBUG: Do nothing at present.
-  return 0; */
-
+  /* Minimum size of ellipse axis, and a temporary value. */
+  REAL4 axisMin, axisTemp;
 
   /* Parse argument list.  arg stores the current position. */
   arg = 1;
@@ -435,7 +432,7 @@ main(int argc, char **argv)
   }
   params.getRange = LALRangeTest;
   params.rangeParams = (void *)( rangeParams );
-  if ( dx1*dx2 < 0.0 ) {
+  if ( dx1*dx2 <= 0.0 ) {
     if ( dx1 < dx2 ) {
       params.domain[0] = dx1;
       params.domain[1] = dx2;
@@ -453,23 +450,34 @@ main(int argc, char **argv)
     }
   }
 
-  /* Set up metric function and parameters. */
-  if ( ( a <= 0.0 ) ||
-       ( a + dadx*dx1 + dady*dy1 <= 0.0 ) ||
-       ( a + dadx*dx2 + dady*dy2 <= 0.0 ) ||
-       ( a + dadx*( dx1 + dx2 ) + dady*( dy1 + dy2 ) <= 0.0 ) ) {
+  /* Check that metric will be positive everywhere in the region. */
+  axisMin = a;
+  axisTemp = a + dadx*dx1 + dady*dy1;
+  if ( axisTemp < axisMin ) axisMin = axisTemp;
+  axisTemp = a + dadx*dx2 + dady*dy2;
+  if ( axisTemp < axisMin ) axisMin = axisTemp;
+  axisTemp = a + dadx*( dx1 + dx2 ) + dady*( dy1 + dy2 );
+  if ( axisTemp < axisMin ) axisMin = axisTemp;
+  if ( axisMin <= 0.0 ) {
     ERROR( TWODMESHTESTC_EMETRIC, TWODMESHTESTC_MSGEMETRIC,
 	   "axis a:" );
     return TWODMESHTESTC_EBAD;
   }
-  if ( ( b <= 0.0 ) ||
-       ( b + dbdx*dx1 + dbdy*dy1 <= 0.0 ) ||
-       ( b + dbdx*dx2 + dbdy*dy2 <= 0.0 ) ||
-       ( b + dbdx*( dx1 + dx2 ) + dbdy*( dy1 + dy2 ) <= 0.0 ) ) {
+  axisTemp = b;
+  if ( axisTemp < axisMin ) axisMin = axisTemp;
+  axisTemp = b + dbdx*dx1 + dbdy*dy1;
+  if ( axisTemp < axisMin ) axisMin = axisTemp;
+  axisTemp = b + dbdx*dx2 + dbdy*dy2;
+  if ( axisTemp < axisMin ) axisMin = axisTemp;
+  axisTemp = b + dbdx*( dx1 + dx2 ) + dbdy*( dy1 + dy2 );
+  if ( axisTemp < axisMin ) axisMin = axisTemp;
+  if ( axisMin <= 0.0 ) {
     ERROR( TWODMESHTESTC_EMETRIC, TWODMESHTESTC_MSGEMETRIC,
 	   "axis b:" );
     return TWODMESHTESTC_EBAD;
   }
+
+  /* Set up metric function and parameters. */
   metricParams[0] = a;
   metricParams[1] = b;
   metricParams[2] = c;
@@ -509,6 +517,7 @@ main(int argc, char **argv)
 
   /* Make a PostScript plot of the mesh, if requested. */
   if ( psfile && flags ) {
+    REAL4 theta1, theta2;
     REAL4 xSum = dx1 + dx2, xDiff = dx2 - dx1;
     REAL4 ySum = dy1 + dy2, yDiff = dy2 - dy1;
     INT2 plotPoints = flags & 1;
@@ -521,10 +530,31 @@ main(int argc, char **argv)
 	     psfile );
       return TWODMESHTESTC_EFILE;
     }
-    if ( xSum*xSum + ySum*ySum > xDiff*xDiff + yDiff*yDiff )
-      plotParams.theta = 90.0 - LAL_180_PI*atan2( ySum, xSum );
+
+    /* Find the rotation angle for best fit. */
+    theta1 = LAL_180_PI*atan2( (REAL4)( TWODMESHPLOTH_YSIZE ),
+			       (REAL4)( TWODMESHPLOTH_XSIZE ) );
+    if ( xSum*xSum + ySum*ySum >= xDiff*xDiff + yDiff*yDiff )
+      theta1 -= LAL_180_PI*atan2( ySum, xSum );
     else
-      plotParams.theta = 90.0 - LAL_180_PI*atan2( yDiff, xDiff );
+      theta1 -= LAL_180_PI*atan2( yDiff, xDiff );
+    theta2 = theta1 + LAL_180_PI*atan2( dy1, dx1 );
+    while ( theta2 < -180.0 ) theta2 += 360.0;
+    while ( theta2 > 180.0 ) theta2 -= 360.0;
+    if ( theta2 > 90.0 )
+      theta1 -= theta2 - 90.0;
+    else if ( ( -90.0 < theta2 ) && ( theta2 < 0.0 ) )
+      theta1 -= theta2 + 90.0;
+    theta2 = theta1 + LAL_180_PI*atan2( dy2, dx2 );
+    while ( theta2 < -180.0 ) theta2 += 360.0;
+    while ( theta2 > 180.0 ) theta2 -= 360.0;
+    if ( theta2 > 90.0 )
+      theta1 -= theta2 - 90.0;
+    else if ( ( -90.0 < theta2 ) && ( theta2 < 0.0 ) )
+      theta1 -= theta2 + 90.0;
+    plotParams.theta = theta1;
+
+    /* Set remaining parameters, and make the plot. */
     plotParams.xScale = plotParams.yScale = 100.0;
     plotParams.bBox[0] = 36.0;
     plotParams.bBox[1] = 36.0;
@@ -534,7 +564,8 @@ main(int argc, char **argv)
     memset( plotParams.clipBox, 0, 4*sizeof(REAL4) );
     plotParams.nLevels = 1;
     if ( flags & 8 )
-      plotParams.nBoundary = (UINT4)( fabs( 2.0*( dx1 + dx2 )/a ) ) + 2;
+      plotParams.nBoundary = 2 +
+	(UINT4)( ( params.domain[1] - params.domain[0] )/a );
     else
       plotParams.nBoundary = 0;
     plotParams.plotPoints = &plotPoints;
