@@ -256,8 +256,8 @@ int main(int argc,char *argv[])
   scanInit.obsDuration = duration + GV.tsft;
   scanInit.fmax  = uvar_Freq;
   if (uvar_FreqBand > 0) scanInit.fmax += uvar_FreqBand;
-  scanInit.Detector = GV.Detector;
-  /*  scanInit.ephemeris = GV.edat;	*//* used by Ephemeris-based metric */
+  scanInit.Detector = &GV.Detector;
+  scanInit.ephemeris = GV.edat;		/* used by Ephemeris-based metric */
   scanInit.skyRegion = LALMalloc (strlen (uvar_skyRegion) + 1);
   strcpy (scanInit.skyRegion, uvar_skyRegion);
 
