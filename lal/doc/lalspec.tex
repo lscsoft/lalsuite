@@ -128,12 +128,25 @@ C.
 \subsection{Applicability of LAL software}
 
 The LIGO Laboratory and the LSC will work to ensure that all developed
-hardware and software systems support LAL. In turn,  {\bf all participating
-groups will be required to analyze LIGO data using LAL-compliant
-software}. The LAL software shall be available in the public domain,
-subject only to rules in this document. LAL will be written assuming
-IEEE/ASCII compliant hardware and software is used to analyze
-interferometer data.
+hardware and software systems support LAL. In turn,  {\bf all
+participating groups will be required to perform scientific analysis
+of  LIGO data using LAL-compliant software}.  Although this
+requirement is quite stringent, it is not intended to stifle
+exploratory development in less formal environments, nor is  it
+intended to interfere with detector diagnostic software being written
+for other purposes.  However, as an analysis moves toward the
+publication of scientific results, the need to validate the findings
+requires that the software must also move toward the collaboration's
+adopted software standard.
+
+The requirement of using LAL compliant software for analysis will
+extend up to the LAL-LDAS interface. In particular, the dynamically
+loaded shared object library functions that form the search engines
+shall be LAL-compliant.
+
+The LAL software shall be available in the public domain, subject only
+to rules in this document.
+
 
 \subsection{How does the LAL fit into the  LDAS?}
 
@@ -213,7 +226,7 @@ Allen I.Holub, McGraw-Hill 1995\\
 \end{tabular}
 \end{center}
 
-Links accessibel via http://www.ldas.ligo.caltech.edu and \\
+Links accessible via http://www.ldas.ligo.caltech.edu and \\
 http://www.ldas.ligo.caltech.edu/LIGO\_web/dcc/docs. Notee that
 some of these documents are still evolving.
 \end{table}
@@ -335,7 +348,7 @@ Software Coordinator.
 
 \subsection{Style for type declarations}
 
-One variable definition per type declaration is prefered; however a
+One variable definition per type declaration is preferred; however a
 few closely related variables can be declared on the same line. This
 allows ease of reading and maintenance. It allows each line to have a
 single comment that pertains to the declaration:
@@ -826,7 +839,7 @@ LALUnit;
 
 The structure {\tt SequenceOfTimeSeries} is used to represent a sequence of
 time series, each of which starts at the same time, e.g. the two
-time-series representing the two polarizations of gravi- tational
+time-series representing the two polarizations of gravitational
 wave. A  {\tt SequenceOfTimeSeries} object has the following attributes:
 
 \begin{itemize}
@@ -839,7 +852,7 @@ time of {\tt epoch} - time at which the earliest sample in the series was acquir
 \vspace{-0.15in}
 \item
 {\tt deltaT} offset between samples (reciprocal of sample
-rate).(time offset units will be sec- onds).  {\bf (Time offset units will
+rate).(time offset units will be seconds).  {\bf (Time offset units will
 be seconds.)}
 \vspace{-0.15in}
 \item
@@ -957,7 +970,7 @@ tag<datatype>TimeVectorSeries
                                          same for all elements     */
   REAL8          f0;                  /* base frequency !=0 if 
                                          heterodyned series        */
-  LALUnit        sampleUnits;         /* units of sampled quanties */
+  LALUnit        sampleUnits;         /* units of sampled quantities */
   <datatype>VectorSequence  *data;    /* the data                  */
 }
 <datatype>TimeVectorSeries;
@@ -1020,7 +1033,7 @@ tag<datatype>TimeArraySeries
                                          same for all elements     */
   REAL8          f0;                  /* base frequency !=0 if 
                                          heterodyned series        */
-  LALUnit        sampleUnits;         /* units of sampled quanties */
+  LALUnit        sampleUnits;         /* units of sampled quantities */
   <datatype>ArraySequence  *data;     /* the data                  */
 }
 <datatype>TimeArraySeries;
@@ -1104,9 +1117,9 @@ power-spectrum (one-sided real frequency series)
 \paragraph{{\texttt {SequenceOfFrequencySeries}} {\bf (Not implemented
 yet.)} \\}
 
-The structure SequenceOffrequencySeries is used to represent result of
+The structure SequenceOfFrequencySeries is used to represent result of
 a Fourier transformation on a {\tt SequenceOfTimeSeries} object. It
-may have both negative and positive frequency compo- nents, depending
+may have both negative and positive frequency components, depending
 on the value of the starting frequency parameter. A 
 {\tt SequenceOfFrequencySeries} object has the following attributes:
 
@@ -1167,8 +1180,8 @@ tag<datatype>SequenceOfFrequencySeries
 
 
 The structure {\tt FrequencyVectorSeries} is used to represent result of a
-Fourier transformation on a timeVectorSeries object. It may have both
-negative and positive frequency components, depend- ing on the value
+Fourier transformation on a TimeVectorSeries object. It may have both
+negative and positive frequency components, depending on the value
 of the starting frequency parameter. A {\tt FrequencyVectorSeries} object
 has the following attributes:
 
@@ -1233,7 +1246,7 @@ The structure FrequencyArraySeries is used to represent result of a
 Fourier transformation on a {\tt TimeArraySeries} object. It may have both
 negative and positive frequency components, depend- ing on the value
 of the starting frequency parameter. A {\tt FrequencyArraySeries} object has
-the fol- lowing attributes:
+the following attributes:
 
 
 \begin{itemize}
@@ -1295,7 +1308,7 @@ tag<datatype>FrequencyArraySeries
 \subsubsection{Series of n-tuples  {\bf (Not implemented yet.)} }
 
 The structure TableSeries is used to represent ordered n-tuple data
-for which, for example, sam- pling rate is not a fixed value.
+for which, for example, sampling rate is not a fixed value.
 TableSeries would be used to represent calibration data taken at
 logarithmically spaced frequency intervals. A TableSeries object has
 the following attributes:
@@ -2331,7 +2344,7 @@ to install before they can use the LAL functions.
 In keeping with the goal of ``broad use" we will try to maintain
 portability of the LAL, e.g. it currently installs several platforms
 with several different compilers.  This portability may be hard to
-maintain in the furture, but, as minimum, we will work to insure the
+maintain in the future, but, as minimum, we will work to insure the
 LAL compiles and installs on 
 
 \begin{itemize}
