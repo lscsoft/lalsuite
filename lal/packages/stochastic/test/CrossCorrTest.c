@@ -132,7 +132,8 @@ main()
         fprintf(stderr,"PASS: CrossCorr test (1/3) for sample data\n");
 
         /* change input to simple case 2 */
-        for (i=0; i < N; i++) in.QmaxTilde->data[i] = (float) exp((double) (-i*i)/10.0);
+        for (i=0; i < N; i++)
+          in.QmaxTilde->data[i] = i < 10 ? (float) exp((double) (-i*i)/10.0) : 0;
 
 
 	/* simple test 2/3 */
