@@ -67,12 +67,13 @@ struct PolkaCommandLineArgsTag
 
 typedef struct CandidateTag 
 {
-  UINT4 length;	  /* number of candidates in list */
+  UINT4 length;	   /* number of candidates in list */
   REAL8 *f;        /* Frequency */
   REAL8 *Alpha;    /* longitude */
   REAL8 *Delta;    /* latitude */
   REAL8 *F;        /* Maximum value of F for the cluster */
   REAL8 *fa;       /* false alarm probability for that candidate */
+  BOOLEAN  *Ctag;  /* tag for candidate if it's been found in coincidence */
 } CandidateList;
 
 typedef struct CoincidentCandidateTag 
@@ -249,6 +250,10 @@ int main(int argc,char *argv[])
 		{	
 		  int j;
 		  CoincidentCandidate *thisCC;
+		  /* tag the candidates that have been found in coincidence */
+		  CList1.Ctag[indices1F[i]]=1;
+		  CList2.Ctag[indices2f[f]]=1;
+		  
 		  /* seems we found a coincident candidate: let's make space for it to be stored */
 		  numCoincidences ++;
 		  if ( (CC = LALRealloc ( CC, numCoincidences * sizeof(CoincidentCandidate) )) == NULL) {
@@ -339,7 +344,7 @@ int main(int argc,char *argv[])
   LALFree(indices2f);
 
   /* freeing a CList is a bit tedious, so we use a macro */
-#define freeCList(x) do { LALFree((x).f); LALFree((x).Alpha); LALFree((x).Delta); LALFree((x).F); LALFree((x).fa); } while(0)
+#define freeCList(x) do { LALFree((x).f); LALFree((x).Alpha); LALFree((x).Delta); LALFree((x).F); LALFree((x).fa); LALFree((x).Ctag);} while(0)
   
   freeCList(CList1);
   freeCList(CList2);
@@ -735,6 +740,8 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
   return errflg;
 }
 
+/*******************************************************************************/
+
 #define DONE_MARKER "%DONE"
 /* read and parse the given candidate 'Fstats'-file fname into the candidate-list CList */
 void 
@@ -752,7 +759,8 @@ ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname)
  
   ASSERT ( fname, stat, POLKAC_ENULL, POLKAC_MSGENULL);
   ASSERT ( CList, stat, POLKAC_ENULL, POLKAC_MSGENULL);
-  ASSERT ( CList->f == NULL && CList->Alpha == NULL && CList->Delta == NULL && CList->F == NULL && CList->fa == NULL, 
+  ASSERT ( CList->f == NULL && CList->Alpha == NULL && CList->Delta == NULL 
+	   && CList->F == NULL && CList->fa == NULL && CList->Ctag == NULL, 
 	   stat, POLKAC_ENONULL, POLKAC_MSGENONULL);
 
   /* ------ Open and read candidate file ------ */
@@ -777,8 +785,10 @@ ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname)
   cands.Delta = LALCalloc (numlines, sizeof(REAL8));
   cands.F     = LALCalloc (numlines, sizeof(REAL8));
   cands.fa    = LALCalloc (numlines, sizeof(REAL8));
+  cands.Ctag  = LALCalloc (numlines, sizeof(BOOLEAN));
 
-  if ( !cands.f || !cands.Alpha || !cands.Delta || !cands.F || !cands.fa )
+
+  if ( !cands.f || !cands.Alpha || !cands.Delta || !cands.F || !cands.fa || !cands.Ctag )
     {
       TRY( LALDestroyParsedDataFile ( stat->statusPtr, &Fstats ), stat);
       ABORT (stat, POLKAC_EMEM, POLKAC_MSGEMEM);
@@ -788,6 +798,8 @@ ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname)
     {
       int read;
       
+      cands.Ctag[i]=0;
+
       thisline = Fstats->lines->tokens[i];
       read = sscanf (thisline, 
 		     "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
@@ -802,6 +814,7 @@ ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname)
 	  LALFree (cands.Delta);
 	  LALFree (cands.F);
 	  LALFree (cands.fa);
+	  LALFree (cands.Ctag);
 	  ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
 	}
     } /* for i < numlines */
@@ -816,6 +829,8 @@ ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname)
   CList->Delta  = cands.Delta;
   CList->F      = cands.F;
   CList->fa     = cands.fa;
+  CList->Ctag   = cands.Ctag;
+
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
