@@ -1458,37 +1458,50 @@ int main( int argc, char *argv[] )
     }
     else
     {
-      /* compute the standard candle */
-      REAL4 cannonDist = 1.0; /* Mpc */
-      REAL4 m  = (REAL4) candle.tmplt.totalMass;
-      REAL4 mu = (REAL4) candle.tmplt.mu;
-      REAL4 distNorm = 2.0 * LAL_MRSUN_SI / (cannonDist * 1e6 * LAL_PC_SI);
-      REAL4 candleTmpltNorm = sqrt( (5.0*mu) / 96.0 ) *
-        pow( m / (LAL_PI*LAL_PI) , 1.0/3.0 ) *
-        pow( LAL_MTSUN_SI / (REAL4) chan.deltaT, -1.0/6.0 );
-
-      distNorm *= fcTmpltParams->dynRange;
-      candleTmpltNorm *= candleTmpltNorm;
-      candleTmpltNorm *= distNorm * distNorm;
-
-      candle.sigmasq = 4.0 * ( (REAL4) chan.deltaT / (REAL4) numPoints );
-      candle.sigmasq *= candleTmpltNorm * 
-        fcSegVec->data->segNorm->data[fcSegVec->data->segNorm->length-1];
-
-      candle.effDistance = sqrt( candle.sigmasq / candle.rhosq );
-
-      if ( vrbflg ) 
+      if ( approximant == TaylorF2 )
       {
-        fprintf( stdout, "candle m = %e\ncandle mu = %e\n"
-            "candle.rhosq = %e\nchan.deltaT = %e\nnumPoints = %d\n"
-            "fcSegVec->data->segNorm->data[fcSegVec->data->segNorm->length-1]"
-            " = %e\ncandleTmpltNorm = %e\ncandle.effDistance = %e Mpc\n"
-            "candle.sigmasq = %e\n",
-            m, mu, candle.rhosq, chan.deltaT, numPoints, 
-            fcSegVec->data->segNorm->data[fcSegVec->data->segNorm->length-1], 
-            candleTmpltNorm, candle.effDistance, candle.sigmasq );
-        fflush( stdout );
+        /* compute the standard candle */
+        REAL4 cannonDist = 1.0; /* Mpc */
+        REAL4 m  = (REAL4) candle.tmplt.totalMass;
+        REAL4 mu = (REAL4) candle.tmplt.mu;
+        REAL4 distNorm = 2.0 * LAL_MRSUN_SI / (cannonDist * 1e6 * LAL_PC_SI);
+        REAL4 candleTmpltNorm = sqrt( (5.0*mu) / 96.0 ) *
+          pow( m / (LAL_PI*LAL_PI) , 1.0/3.0 ) *
+          pow( LAL_MTSUN_SI / (REAL4) chan.deltaT, -1.0/6.0 );
+
+        distNorm *= fcTmpltParams->dynRange;
+        candleTmpltNorm *= candleTmpltNorm;
+        candleTmpltNorm *= distNorm * distNorm;
+
+        candle.sigmasq = 4.0 * ( (REAL4) chan.deltaT / (REAL4) numPoints );
+        candle.sigmasq *= candleTmpltNorm * 
+          fcSegVec->data->segNorm->data[fcSegVec->data->segNorm->length-1];
+
+        candle.effDistance = sqrt( candle.sigmasq / candle.rhosq );
+
+        if ( vrbflg ) 
+        {
+          fprintf( stdout, "candle m = %e\ncandle mu = %e\n"
+              "candle.rhosq = %e\nchan.deltaT = %e\nnumPoints = %d\n"
+              "fcSegVec->data->segNorm->data[fcSegVec->data->segNorm->length-1]"
+              " = %e\ncandleTmpltNorm = %e\ncandle.effDistance = %e Mpc\n"
+              "candle.sigmasq = %e\n",
+              m, mu, candle.rhosq, chan.deltaT, numPoints, 
+              fcSegVec->data->segNorm->data[fcSegVec->data->segNorm->length-1], 
+              candleTmpltNorm, candle.effDistance, candle.sigmasq );
+          fflush( stdout );
+        }
       }
+      else 
+      {
+        if ( vrbflg )
+        {
+           fprintf( stdout, "Standard Candle Not Calculated; \n"
+              "chan.deltaT = %e\nnumPoints = %d\n",
+              chan.deltaT, numPoints );
+           fflush( stdout );
+        }
+      }  
     }
 
 
@@ -1935,7 +1948,7 @@ int main( int argc, char *argv[] )
   }
 
   /* write the summ_value table with the standard candle distance */
-  if ( ! bankSim )
+  if ( approximant == TaylorF2 && ! bankSim )
   {
     if ( vrbflg ) fprintf( stdout, "  summ_value table...\n" );
     LALSnprintf( summvalue.summValueTable->program, LIGOMETA_PROGRAM_MAX, 
