@@ -101,6 +101,7 @@ REAL4  fLow             = -1;           /* low frequency cutoff         */
 INT4   specType         = -1;           /* use median or mean psd       */
 CHAR  *calCacheName     = NULL;         /* location of calibration data */
 INT4   globCalData      = 0;            /* glob for calibration frames  */
+INT4   pointCal         = 0;            /* don't average cal over chunk */
 REAL4  dynRangeExponent = 0;            /* exponent of dynamic range    */
 REAL4 geoHighPassFreq = -1;             /* GEO high pass frequency      */
 INT4  geoHighPassOrder = -1;            /* GEO high pass filter order   */
@@ -638,8 +639,17 @@ int main ( int argc, char *argv[] )
   {
     /* initialize the calfacts */
     memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
-    calfacts.duration.gpsSeconds = gpsEndTime.gpsSeconds 
-      - gpsStartTime.gpsSeconds;
+
+    if ( pointCal )
+    {
+      calfacts.duration.gpsSeconds = 1; 
+      calfacts.duration.gpsNanoSeconds = 0;
+    }
+    else
+    { 
+      calfacts.duration.gpsSeconds = gpsEndTime.gpsSeconds 
+        - gpsStartTime.gpsSeconds;
+    }
     calfacts.ifo = ifo;
 
     /* create the lal calibration frame cache */
@@ -1042,6 +1052,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --geo-high-pass-freq F       high pass GEO data above F Hz using an IIR filter\n"\
 "  --geo-high-pass-order O      set the order of the GEO high pass filter to O\n"\
 "  --geo-high-pass-atten A      set the attenuation of the high pass filter to A\n"\
+"  --point-calibration          use the first point in the chunk to calibrate\n"\ 
 "\n"\
 "  --sample-rate F              filter data at F Hz, downsampling if necessary\n"\
 "  --resample-filter TYPE       set resample filter to TYPE [ldas|butterworth]\n"\
@@ -1102,6 +1113,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"standard-candle",         no_argument,       &computeCandle,    1 },
     {"glob-frame-data",         no_argument,       &globFrameData,    1 },
     {"glob-calibration-data",   no_argument,       &globCalData,      1 },
+    {"point-calibration",       no_argument,       &pointCal,         1 },
     /* parameters used to generate calibrated power spectrum */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
@@ -2110,6 +2122,19 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         "%s", PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--glob-frame-data" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+
+  /* store point calibration option */
+  if ( pointCal )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+        "--point-calibration" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }

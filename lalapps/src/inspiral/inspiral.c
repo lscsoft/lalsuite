@@ -160,6 +160,7 @@ INT4   invSpecTrunc     = -1;           /* length of inverse spec (s)   */
 REAL4  dynRangeExponent = -1;           /* exponent of dynamic range    */
 CHAR  *calCacheName     = NULL;         /* location of calibration data */
 INT4   globCalData      = 0;            /* glob for calibration frames  */
+INT4   pointCal         = 0;            /* don't average cal over chunk */
 CHAR  *injectionFile    = NULL;         /* name of file containing injs */
 int   injectOverhead    = 0;            /* inject h+ into detector      */
 
@@ -840,9 +841,17 @@ int main( int argc, char *argv[] )
   calfacts.ifo = ifo;
 
   /* determine length of chunk */
-  durationNS = gpsEndTimeNS - gpsStartTimeNS;
-  LAL_CALL( LALINT8toGPS( &status, &(calfacts.duration), 
-        &durationNS ), &status );
+  if ( pointCal )
+  {
+    calfacts.duration.gpsSeconds = 1;
+    calfacts.duration.gpsNanoSeconds = 0;
+  }
+  else
+  {
+    durationNS = gpsEndTimeNS - gpsStartTimeNS;
+    LAL_CALL( LALINT8toGPS( &status, &(calfacts.duration), 
+          &durationNS ), &status );
+  }
 
   if ( calData )
   {
@@ -2416,6 +2425,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --geo-high-pass-freq F       high pass GEO data above F Hz using an IIR filter\n"\
 "  --geo-high-pass-order O      set the order of the GEO high pass filter to O\n"\
 "  --geo-high-pass-atten A      set the attenuation of the high pass filter to A\n"\
+"  --point-calibration          use the first point in the chunk to calibrate\n"\
 "\n"\
 "  --injection-file FILE        inject simulated inspiral signals from FILE\n"\
 "\n"\
@@ -2493,6 +2503,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"data-checkpoint",         no_argument,       &dataCheckpoint,   1 },
     {"glob-frame-data",         no_argument,       &globFrameData,    1 },
     {"glob-calibration-data",   no_argument,       &globCalData,      1 },
+    {"point-calibration",       no_argument,       &pointCal,         1 },
     /* these options don't set a flag */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-start-time-ns",       required_argument, 0,                'A'},
@@ -3473,10 +3484,24 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
+  /* store point calibration option */
+  if ( pointCal )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+        "--point-calibration" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+
 
   /*
    *
    * check validity of arguments
+   *
    *
    */
 
