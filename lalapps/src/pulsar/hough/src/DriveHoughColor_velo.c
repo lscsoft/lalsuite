@@ -26,51 +26,51 @@ NRCSID (DRIVEHOUGHCOLORC, "$Id$");
  * Usage format string. 
  */
 
-#define USAGE "Usage: %s 
- [-d debuglevel] 
-        Default value:  lalDebugLevel=1
- [-i IFO (1,2,3)] 
-        Interferometer option
-             1:GEO600 (Default), 2:LLO, 3:LHO  
- [-E Earth ephemeris data filename] 
-         Default value:
-	 /afs/aeiw/grawave/Linux/lal/lal/packages/pulsar/test/earth03.dat
- [-S Sun ephemeris data filename] 
-	 Default value:
-	 /afs/aeiw/grawave/Linux/lal/lal/packages/pulsar/test/sun03.dat
- [-D directory] 
-        Directory where the input SFT data are located. 
-	If not set, the program will look into ./data1
- [-o outfile-basename] 
-        This is a string that prefixes some output filenames.
-        It might contain a path. Filenames are formed by 
-        appending .<number>
- 	If not set, the program will write into ./outHM1/HM.<number>
- [-V time-velocity data file]
-        This is a string of the output time-velocity data file.
-        It might contain a path.
-        If not set, the program will write on ./velocity.data	
- [-f first search frequency (in Hz)] 
-        Lowest search frequency in Hz. 
-        Default: 250.0 Hz
- [-b search frequency band (in Hz)] 
-        Bandwith to be analyzed 
-        Default: 2.0 Hz
- [-t peak threshold selection ] 
-        Threshold relative to the PSD for the selection of peak in the
-        time-frequency plane 
-        Default: 1.6 (almost optimal)
- [-w running median window size ] 
-        To estimate the psd 
- 	Default: 135
- [-p alpha delta (in radians)] 
-        Center of the sky patch (in radians) to be analysed.
-        Default: alpha = 0.0, delta = - pi/2    
- [-s patchSizeX patchSizeY (in radians)]
-        Sky patch size (in radians).to be analysed with Hough 
-        Maximun values allowed are pi, pi (corresponding to half the sky). 
-        Recommended values 0.5, 0.5
- \n"
+#define USAGE "Usage: \n\
+ [-d debuglevel] \n\
+        Default value:  lalDebugLevel=1\n\
+ [-i IFO (1,2,3)] \n\
+        Interferometer option\n\
+             1:GEO600 (Default), 2:LLO, 3:LHO  \n\
+ [-E Earth ephemeris data filename] \n\
+         Default value:\n\
+	 /afs/aeiw/grawave/Linux/lal/lal/packages/pulsar/test/earth03.dat\n\
+ [-S Sun ephemeris data filename] \n\
+	 Default value:\n\
+	 /afs/aeiw/grawave/Linux/lal/lal/packages/pulsar/test/sun03.dat\n\
+ [-D directory] \n\
+        Directory where the input SFT data are located. \n\
+	If not set, the program will look into ./data1\n\
+ [-o outfile-basename] \n\
+        This is a string that prefixes some output filenames.\n\
+        It might contain a path. Filenames are formed by \n\
+        appending .<number>\n\
+ 	If not set, the program will write into ./outHM1/HM.<number>\n\
+ [-V time-velocity data file]\n\
+        This is a string of the output time-velocity data file.\n\
+        It might contain a path.\n\
+        If not set, the program will write on ./velocity.data	\n\
+ [-f first search frequency (in Hz)] \n\
+        Lowest search frequency in Hz. \n\
+        Default: 250.0 Hz\n\
+ [-b search frequency band (in Hz)] \n\
+        Bandwith to be analyzed \n\
+        Default: 2.0 Hz\n\
+ [-t peak threshold selection ] \n\
+        Threshold relative to the PSD for the selection of peak in the\n\
+        time-frequency plane \n\
+        Default: 1.6 (almost optimal)\n\
+ [-w running median window size ] \n\
+        To estimate the psd \n\
+ 	Default: 25\n\
+ [-p alpha delta (in radians)] \n\
+        Center of the sky patch (in radians) to be analysed.\n\
+        Default: alpha = 0.0, delta = - pi/2    \n\
+ [-s patchSizeDelta patchSizeAlpha (in radians)]\n\
+        Sky patch size (in radians).to be analysed with Hough \n\
+        Maximun values allowed are pi, pi (corresponding to half the sky). \n\
+        Recommended values 0.5, 0.5\n\
+\n"
 
 
 /* ***************************************************************
@@ -102,7 +102,7 @@ INT4 lalDebugLevel=1;
 #define PATCHSIZEY (LAL_PI*0.99)
 #define NFSIZE  21 /* n-freq. span of the cylinder, to account for spin-down
                           search */
-#define BLOCKSRNGMED 135 /* Running median window size */
+#define BLOCKSRNGMED 25 /* Running median window size */
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
