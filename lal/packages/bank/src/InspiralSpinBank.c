@@ -86,16 +86,17 @@ static void tmpmetric( REAL4Array *metric );
 
 
 static void cleanup(LALStatus *s,
-    REAL4Array *m, 
-    UINT4Vector *md, 
-    REAL4Vector *e, 
+    REAL4Array **m, 
+    UINT4Vector **md, 
+    REAL4Vector **e, 
     SnglInspiralTable *f, 
     SnglInspiralTable *t,
     INT4 *nt);
 
 
 /* <lalVerbatim file="InspiralSpinBankCP"> */
-void LALInspiralSpinBank(
+void
+LALInspiralSpinBank(
     LALStatus         	 *status,
     InspiralTemplateList **tiles,
     INT4      		 *ntiles,
@@ -130,7 +131,8 @@ void LALInspiralSpinBank(
   /* Set up status pointer. */
   INITSTATUS( status, "LALInspiralSpinBank", INSPIRALSPINBANKC );
   ATTATCHSTATUSPTR( status );
-
+  
+  
   /* Check to make sure that all the parameters are okay */
   if (coarseIn.mmCoarse <= 0) 
     ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
@@ -155,7 +157,7 @@ void LALInspiralSpinBank(
 
   LALU4CreateVector( status->statusPtr, &metricDimensions, 2 );
   BEGINFAIL(status)
-    cleanup(status->statusPtr, metric, metricDimensions, eigenval, output, tmplt, ntiles);
+    cleanup(status->statusPtr, &metric, &metricDimensions, &eigenval, output, tmplt, ntiles);
   ENDFAIL(status);
   
   metricDimensions->data[0] = 3;
@@ -164,7 +166,7 @@ void LALInspiralSpinBank(
 
   LALSCreateArray( status->statusPtr, &metric, metricDimensions );
   BEGINFAIL(status)
-    cleanup(status->statusPtr,metric,metricDimensions,eigenval,output,tmplt, ntiles);
+    cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt, ntiles);
   ENDFAIL(status);
 
   tmpmetric( metric );
@@ -174,14 +176,14 @@ void LALInspiralSpinBank(
 
   LALSCreateVector( status->statusPtr, &eigenval, 3 );
   BEGINFAIL(status)
-    cleanup(status->statusPtr,metric, metricDimensions,eigenval,output,tmplt, ntiles);
+    cleanup(status->statusPtr,&metric, &metricDimensions,&eigenval,output,tmplt, ntiles);
   ENDFAIL(status);
-
+  
   LALSSymmetricEigenVectors( status->statusPtr, eigenval, metric );
   BEGINFAIL(status)
-    cleanup(status->statusPtr,metric, metricDimensions,eigenval,output,tmplt, ntiles);
+    cleanup(status->statusPtr,&metric, &metricDimensions,&eigenval,output,tmplt, ntiles);
   ENDFAIL(status);
-
+    
   /* Set stepsizes and xp-yp rotation angle from metric. */
   dxp = 1.333333*sqrt(2*coarseIn.mmCoarse/eigenval->data[0]);
   dyp = 1.333333*sqrt(2*coarseIn.mmCoarse/eigenval->data[1]);
@@ -214,7 +216,7 @@ void LALInspiralSpinBank(
   output = tmplt = (SnglInspiralTable *) LALCalloc( 1, sizeof(SnglInspiralTable) );
   if (!output) 
   {
-    cleanup(status->statusPtr,metric,metricDimensions,eigenval,output,tmplt,ntiles);
+    cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
     ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
   }
 
@@ -247,7 +249,7 @@ void LALInspiralSpinBank(
         /* check to see if calloc worked */
         if (!tmplt) 
         {
-          cleanup(status->statusPtr,metric,metricDimensions,eigenval,output,tmplt,ntiles);
+          cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
           ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
         }
         tmplt->mass1 = m1;
@@ -271,10 +273,9 @@ void LALInspiralSpinBank(
   /* What if no templates were allocated? ABORT */
   if (!output) 
   {  
-    cleanup(status->statusPtr,metric,metricDimensions,eigenval,output,tmplt,ntiles);
+    cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
     ABORT(status, INSPIRALSPINBANKC_ENOTILES, INSPIRALSPINBANKC_MSGENOTILES);
   }
-  
   
   /* Convert output to communicate with LALInspiralCreateCoarseBank(). */
   *tiles = (InspiralTemplateList *) LALCalloc( *ntiles, sizeof(InspiralTemplateList));
@@ -286,7 +287,6 @@ void LALInspiralSpinBank(
     (*tiles)[cnt].params.psi0 = tmplt->psi0;
     (*tiles)[cnt].params.psi3 = tmplt->psi3;
     ++cnt;
-/*    (*tiles)->params.beta = tmplt->beta;*/
   } /* for(tmplt...) */
   
   /* prepare the link list to be freed by copying the number of tiles to cnt */
@@ -294,8 +294,7 @@ void LALInspiralSpinBank(
   cnt = *ntiles;
   
   /* free memory allocated for the linked list, vectors and arrays */
-  cleanup(status->statusPtr,metric,metricDimensions,eigenval,output,tmplt,&cnt);
- 
+  cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,&cnt);
   DETATCHSTATUSPTR( status );
   RETURN( status );
 } /* LALInspiralSpinBank() */
@@ -339,9 +338,9 @@ static void tmpmetric( REAL4Array *metric )
 
 static void cleanup(
     LALStatus *s, 
-    REAL4Array *m, 
-    UINT4Vector *md, 
-    REAL4Vector *e, 
+    REAL4Array **m, 
+    UINT4Vector **md, 
+    REAL4Vector **e, 
     SnglInspiralTable *f,
     SnglInspiralTable *t,
     INT4 *nt)
@@ -350,11 +349,11 @@ static void cleanup(
   ATTATCHSTATUSPTR( s );
 
   if (m)
-    TRY(LALU4DestroyVector(s->statusPtr,&md),s);
+    TRY(LALU4DestroyVector(s->statusPtr,md),s);
   if (md)
-    TRY(LALSDestroyVector(s->statusPtr, &e),s);
+    TRY(LALSDestroyVector(s->statusPtr, e),s);
   if (e)
-    TRY(LALSDestroyArray(s->statusPtr, &m),s);
+    TRY(LALSDestroyArray(s->statusPtr, m),s); 
   if (t && f)
   {
     t = f;
@@ -364,12 +363,12 @@ static void cleanup(
       t = t->next;
       LALFree(f);
       --(*nt);
-    }/* while(tmplt) */
+    }
   LALFree(t);
   --(*nt);
   }
   DETATCHSTATUSPTR( s );
   RETURN( s );
-} /*cleanup() */
+}/* cleanup() */
 
 
