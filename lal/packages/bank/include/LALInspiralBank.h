@@ -968,6 +968,16 @@ LALRectangleVertices(
 \newpage\input{ChirpSpaceC}
 </lalLaTeX> */
 
+void 
+LALInspiralComputeMetricBCV
+(
+ LALStatus             *status,
+ InspiralMetric        *metric,
+ REAL8FrequencySeries  *psd,
+ InspiralTemplate      *params
+);
+
+
 #ifdef  __cplusplus
 }
 #endif
