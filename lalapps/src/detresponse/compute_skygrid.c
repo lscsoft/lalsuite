@@ -12,6 +12,65 @@
 static const INT4 grid_lim = NUM_RA * NUM_DEC;
 static const INT4 dec_lim  = (NUM_DEC - 1)/2;
 
+static const double rad2deg = 180./M_PI;
+static const double eps = 23.5;
+static const double vorb = 2.*M_PI*1.5e11/(365.25*24.*3600.);
+static const double clight = 2.998e8;
+
+static double vorbrel;
+
+static double relval(double ra, double dec, int i, int nrelvals)
+{
+    int j;
+    double latdet,vrotrel,radearth;
+    double phipinit,dphip,dphiptot,phiprad;
+    double phirotinit,dphirot,dphirottot,phirotrad;
+    double numdays,coseps,sineps;
+    double unitvect[3];
+    double vearth[3];
+    double vdet[3];
+    double vtotal[3];
+    double retval = 0.;
+    
+    
+    latdet = 46.5;
+    radearth = 6.38e6;
+    vrotrel = 2.*M_PI*radearth/(24.*3600.)/.997/clight*cos(latdet/rad2deg);
+        
+    numdays = 59.;
+    phipinit = 180. - 34./365.25*360.;
+    dphip = numdays/365.25*360./(nrelvals-1);
+    phirotinit = -phipinit - 4./24.*360.;
+    dphirot = numdays/.997*360./(nrelvals-1);
+        
+    coseps = cos(eps/rad2deg);
+    sineps = sin(eps/rad2deg);
+    
+    unitvect[0] = cos(dec/rad2deg) * cos(ra/rad2deg);
+    unitvect[1] = cos(dec/rad2deg) * sin(ra/rad2deg);
+    unitvect[2] = sin(dec/rad2deg);
+ 
+    dphiptot = i*dphip;
+    phiprad = (phipinit + dphiptot)/rad2deg;
+    vearth[0] = -sin(phiprad)*vorbrel;
+    vearth[1] = cos(phiprad)*coseps*vorbrel;
+    vearth[2] = cos(phiprad)*sineps*vorbrel;
+        
+    dphirottot = i*dphirot;
+    phirotrad = (phirotinit + dphirottot)/rad2deg;
+    vdet[0] = -sin(phirotrad)*vrotrel;
+    vdet[1] = cos(phirotrad)*vrotrel;
+    vdet[2] = 0.;
+    
+    for (j = 0; j < 3; ++j)
+    {
+        vtotal[j] = vearth[j] + vdet[j];
+        retval += vtotal[j] * unitvect[j];
+    }
+    
+    return retval;
+}
+
 void compute_skygrid(LALStatus * status)
 {
   LALDetector             detector;
@@ -25,15 +84,18 @@ void compute_skygrid(LALStatus * status)
   skygrid_t               grid_cros_sq;  
   skygrid_t               grid_plus_sq;
   skygrid_t               grid_sum_sq;
+  skygrid_t               grid_relfreq;
   CHAR                    cross_file_name[LALNameLength];
   CHAR                    plus_file_name[LALNameLength];
   CHAR                    sum_file_name[LALNameLength];
+  CHAR                    relfreq_file_name[LALNameLength];
   INT4                    i, j, k, cnt;
 
   /* null out strings */
   cross_file_name[0] = '\0';
   plus_file_name[0] = '\0';
   sum_file_name[0] = '\0';
+  relfreq_file_name[0] = '\0';
 
   if (args_info.detector_given)
     {
@@ -153,10 +215,69 @@ void compute_skygrid(LALStatus * status)
         }
     }
 
-  skygrid_print("cross", grid_cros_sq, cross_file_name);
-  skygrid_print("plus", grid_plus_sq, plus_file_name);
-  skygrid_print("sum", grid_sum_sq, sum_file_name);
+  skygrid_print("cross", grid_cros_sq, cross_file_name, "w");
+  skygrid_print("plus", grid_plus_sq, plus_file_name, "w");
+  skygrid_print("sum", grid_sum_sq, sum_file_name, "w");
 
+
+  /* time series */
+  (void)mystrlcpy(cross_file_name, "ser_whole_sky_cross.txt", LALNameLength);
+  (void)mystrlcpy(plus_file_name, "ser_whole_sky_plus.txt", LALNameLength);
+  (void)mystrlcpy(sum_file_name, "ser_whole_sky_sum.txt", LALNameLength);
+  (void)mystrlcpy(relfreq_file_name, "ser_whole_sky_relfreq.txt", LALNameLength);
+
+  /* zero out arrays */
+  skygrid_zero(grid_cros_sq);
+  skygrid_zero(grid_plus_sq);
+  skygrid_zero(grid_sum_sq);
+  skygrid_zero(grid_relfreq);
+  
+  for (k = 0; k < (int)time_info.nSample; ++k)
+    {
+      for (j = 0; j < NUM_RA; ++j)
+        {
+          source.equatorialCoords.longitude =
+            (REAL8)j/(REAL8)NUM_RA * ((REAL8)LAL_TWOPI);
+      
+          for (i = -dec_lim; i <= dec_lim; ++i)
+            {
+              cnt = j*NUM_DEC + i + dec_lim;
+              source.equatorialCoords.latitude = asin((REAL8)i/(REAL8)dec_lim);
+
+              LALComputeDetAMResponse(status, &response, &det_and_source,
+                                      &gps_and_acc);
+
+              grid_cros_sq[cnt] += response.cross * response.cross /
+                time_info.nSample;
+              grid_plus_sq[cnt] += response.plus  * response.plus /
+                time_info.nSample;
+              grid_sum_sq[cnt]  += (grid_cros_sq[cnt] + grid_plus_sq[cnt]) /
+                time_info.nSample;
+                
+              grid_relfreq[cnt] += relval(source.equatorialCoords.latitude,
+                                          source.equatorialCoords.longitude,
+                                          k, (int)time_info.nSample);
+            }
+        }
+        
+        LALIncrementGPS(status, &(gps_and_acc.gps), &(gps_and_acc.gps),
+                      &time_interval);
+        
+        if (k != 0)
+          {
+            skygrid_print("series cross", grid_cros_sq, cross_file_name, "a");
+            skygrid_print("series plus", grid_plus_sq, plus_file_name, "a");
+            skygrid_print("series sum", grid_sum_sq, sum_file_name, "a");
+            skygrid_print("series relfreq", grid_relfreq, relfreq_file_name, "a");
+          }
+        else
+          {
+            skygrid_print("series cross", grid_cros_sq, cross_file_name, "w");
+            skygrid_print("series plus", grid_plus_sq, plus_file_name, "w");
+            skygrid_print("series sum", grid_sum_sq, sum_file_name, "w");
+            skygrid_print("series relfreq", grid_relfreq, relfreq_file_name, "w");
+          }
+    }
   
   /* time-averaged */
   (void)mystrlcpy(cross_file_name, "int_whole_sky_cross.txt", LALNameLength);
@@ -196,9 +317,9 @@ void compute_skygrid(LALStatus * status)
                       &time_interval);
     }
 
-  skygrid_print("integrated cross", grid_cros_sq, cross_file_name);
-  skygrid_print("integrated plus", grid_plus_sq, plus_file_name);
-  skygrid_print("integrated sum", grid_sum_sq, sum_file_name);
+  skygrid_print("integrated cross", grid_cros_sq, cross_file_name, "w");
+  skygrid_print("integrated plus", grid_plus_sq, plus_file_name, "w");
+  skygrid_print("integrated sum", grid_sum_sq, sum_file_name, "w");
   
   return;
 }
@@ -275,12 +396,13 @@ INT4 skygrid_copy(skygrid_t dest, const skygrid_t src)
 
 
 void skygrid_print(const char * comments,
-                   const skygrid_t input, const char * filename)
+                   const skygrid_t input, const char * filename,
+                   const char *mode)
 {
   INT4 i, j;
   FILE * outfile = NULL;
 
-  outfile = xfopen(filename, "w");
+  outfile = xfopen(filename, mode);
 
   if (comments != (char *)NULL)
     fprintf(outfile, "# %s\n", comments);

@@ -47,7 +47,7 @@ REAL4 skygrid_rms(const skygrid_t input);
 void  skygrid_sqrt(skygrid_t result, const skygrid_t input);
 INT4  skygrid_copy(skygrid_t dest, const skygrid_t src);
 void  skygrid_print(const char * comments, const skygrid_t input,
-                    const char * filename);
+                    const char * filename, const char * mode);
 void  skygrid_fabs(skygrid_t absgrid, const skygrid_t input);
 void  skygrid_add(skygrid_t sum, const skygrid_t a, const skygrid_t b);
 void  skygrid_subtract(skygrid_t sum, const skygrid_t a, const skygrid_t b);
