@@ -467,6 +467,7 @@ int main(int argc, char **argv)
 	SnglBurstTable *burstEventList = NULL;
 	SnglBurstTable *detectedTriggers = NULL;
 	SnglBurstTable **detTriggersAddPoint = &detectedTriggers;
+	SnglBurstTable *bestmatch;
 
 	/* injections */
 	SimBurstTable *injection;
@@ -496,7 +497,7 @@ int main(int argc, char **argv)
 		static struct option long_options[] = {
 			/* these options set a flag */
 			{"verbose", no_argument, &options.verbose, 1},
-			/* parameters which determine the output xml file */
+			/* parameters which determine the output XML file */
 			{"input", required_argument, NULL, 'a'},
 			{"injfile", required_argument, NULL, 'b'},
 			{"injmadefile", required_argument, NULL, 'c'},
@@ -640,38 +641,48 @@ int main(int argc, char **argv)
 	for (injection = simBurstList; injection; injection = injection->next) {
 		ninjected++;
 
-		/* convert injection time to INT8 */
 		LAL_CALL(LALGPStoINT8(&stat, &injPeakTime, &injection->l_peak_time), &stat);
 
-		/* loop over the burst events */
+		bestmatch = NULL;
 		for (event = burstEventList; event; event = event->next) {
 			SnglBurstAccuracy accParams;
 
 			LAL_CALL(LALGPStoINT8(&stat, &burstStartTime, &event->start_time), &stat);
 
-			if (injPeakTime < burstStartTime)
+			/* trigger list is sorted, so we can bailout */
+			if (burstStartTime > injPeakTime)
 				break;
 
+			/* check if the injection's centre frequency and peak
+			 * time lie within the trigger's time-frequency volume
+			 * */
 			LAL_CALL(LALCompareSimBurstAndSnglBurst(&stat, injection, event, &accParams), &stat);
 
+			/* if not, move to next event */
 			if (!accParams.match)
 				continue;
 
 			ndetected++;
-
-			/* record the detected triggers */
-			*detTriggersAddPoint = LALCalloc(1, sizeof(**detTriggersAddPoint));
-			**detTriggersAddPoint = *event;
-			detTriggersAddPoint = &(*detTriggersAddPoint)->next;
-			*detTriggersAddPoint = NULL;
-
-			/* record the detected injections */
-			*detInjectionsAddPoint = LALCalloc(1, sizeof(**detInjectionsAddPoint));
-			**detInjectionsAddPoint = *injection;
-			detInjectionsAddPoint = &(*detInjectionsAddPoint)->next;
-			*detInjectionsAddPoint = NULL;
+			bestmatch = event;
 			break;
 		}
+
+		/* if we didn't detect a matching event, continue to next
+		 * injection */
+		if(!bestmatch)
+			continue;
+
+		/* record the detected trigger */
+		*detTriggersAddPoint = LALCalloc(1, sizeof(**detTriggersAddPoint));
+		**detTriggersAddPoint = *bestmatch;
+		detTriggersAddPoint = &(*detTriggersAddPoint)->next;
+		*detTriggersAddPoint = NULL;
+
+		/* record the detected injection */
+		*detInjectionsAddPoint = LALCalloc(1, sizeof(**detInjectionsAddPoint));
+		**detInjectionsAddPoint = *injection;
+		detInjectionsAddPoint = &(*detInjectionsAddPoint)->next;
+		*detInjectionsAddPoint = NULL;
 	}
 
 	fprintf(stdout,"%d sec = %d hours analyzed\n", timeAnalyzed, timeAnalyzed/3600);
@@ -679,7 +690,7 @@ int main(int argc, char **argv)
 	fprintf(stdout, "Efficiency is %f \n", ((REAL4) ndetected / (REAL4) ninjected));
 
 	/*
-	 * Write output xml file.
+	 * Write output XML file.
 	 */
 
 	memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
