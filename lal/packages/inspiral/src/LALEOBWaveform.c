@@ -1,3 +1,30 @@
+/*  <lalVerbatim file="LALEOBWaveformCV">
+Author: Sathyaprakash, B. S.
+$Id$
+</lalVerbatim>  */
+
+/*  <lalLaTeX>
+
+\subsection{Module \texttt{LALEOBWaveform.c}}
+
+Module to generate effective-one-body waveforms.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{LALEOBWaveformCP}
+\index{\verb&LALEOBWaveform()&}
+
+\subsubsection*{Description}
+
+\subsubsection*{Algorithm}
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{LALEOBWaveformCV}}
+
+</lalLaTeX>  */
 #include <lal/LALInspiral.h>
 #include <lal/FindRoot.h>
 
@@ -13,10 +40,13 @@ void LALrOfOmega (LALStatus *status, REAL8 *x, REAL8 r, void *params);
 
 NRCSID (LALEOBWAVEFORMC, "$Id$");
 
+/*  <lalVerbatim file="LALEOBWaveformCP"> */
+
 void LALEOBWaveform (LALStatus *status,
                      REAL4Vector *signal,
                      InspiralTemplate *params) 
-{ 
+{ /* </lalVerbatim> */
+
    INT4 count, i, nn=4;
    REAL8 eta, m, rn, r, s, p, q, dt, t, h, v, omega, f, x;
    REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
@@ -40,12 +70,11 @@ void LALEOBWaveform (LALStatus *status,
    ASSERT(params->nEndPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->totalMass > 0.4, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->totalMass < 100, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(params->totalMass > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    LALInspiralSetup (status->statusPtr, &ak, params);
    CHECKSTATUSPTR(status);
-   LALChooseModel(status->statusPtr, &func, &ak, params);
+   LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
    CHECKSTATUSPTR(status);
 
    ASSERT(ak.totalmass/LAL_MTSUN_SI > 0.4, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
@@ -95,7 +124,7 @@ void LALEOBWaveform (LALStatus *status,
    in2.dEnergy = func.dEnergy;
    in2.flux = func.flux;
    in2.coeffs = &ak;
-   LALInspiralPhase(status->statusPtr, &s, v, &in2);
+   LALInspiralPhasing1(status->statusPtr, &s, v, &in2);
    CHECKSTATUSPTR(status);
    s = s/2.;
 
@@ -138,7 +167,7 @@ Userful for debugging: Make sure a solution for r exists.
    params->rLightRing = rn;
 
 /* 
-   LALInspiralPhase(v) gives the GW phase (= twice the orbital phase).
+   LALInspiralPhasing1(v) gives the GW phase (= twice the orbital phase).
    The ODEs we solve give the orbital phase. Therefore, set the
    initial phase to be half the GW pahse.
 */

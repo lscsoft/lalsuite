@@ -73,6 +73,4 @@ void LALInspiralDerivatives (REAL8Vector *values,
   dvalues->data[1] = 2.* pow(v,3.)/ak->totalmass;
 
   return;
-
-
 }

@@ -34,14 +34,13 @@ brackets):
    params.signalAmplitude=1.0; 
    params.nStartPad=0;     (number of leading zero bins)
    params.nEndPad=0;       (number of trailing zero bins)
-   params.method=one;      (the method in the convention of DIS 2001; 
-                            one=ODE solver, 
-                            two=implicit phasing formula solved in quadrature, 
-                            three=explicit time-domain phasing)
-                            eob=effective-one-body approach
-   params.order=twoPN;     (also Newtonian, onePN, oneAndHalfPN, twoAndHalfPN)
-   params.domain=TimeDomain;
-   params.approximant=pade;(also taylor)
+   params.approximant=TaylorT1; (approximant in the convention of DIS 2001; 
+                            TaylorT1, PadeT1=ODE solver, 
+                            TaylorT2=implicit phasing formula solved in quadrature, 
+                            TaylorT3=explicit time-domain phasing)
+                            EOB=effective-one-body approach
+   params.order=twoPN;     (also newtonian, onePN, oneAndHalfPN, twoPN, 
+                            twoAndHalfPN, threePN, threeAndHalfPN)
    params.massChoice=m1Andm2; (also t0t2, t0t3, t0t4, totalMassAndEta,totalMassAndMu) 
 \end{verbatim}
 
@@ -52,7 +51,7 @@ brackets):
 #include <stdio.h>
 #include <lal/LALInspiral.h>
 
-INT4 lalDebugLevel=0;
+INT4 lalDebugLevel=1;
 
 void printf_timeseries (int n, float *signal, double delta, double t0) ;
 void printf_timeseries (int n, float *signal, double delta, double t0) 
@@ -67,43 +66,62 @@ void printf_timeseries (int n, float *signal, double delta, double t0)
 
   while (n-++i); 
   fprintf(outfile1,"&\n");
+  fclose(outfile1);
 }
 
 
 int main () {
-   REAL4Vector signal;
+   REAL4Vector signal1, signal2;
    InspiralTemplate params;
    double dt;
    static LALStatus status;
+   expnCoeffs ak;
    INT4 n;
 
    params.ieta=1; 
-   params.mass1=1.40; 
-   params.mass2=1.40; 
+   params.mass1=10.; 
+   params.mass2=1.4; 
    params.startTime=0.0; 
-   params.startPhase=0.0; 
+   params.startPhase=0.83038459; 
    params.fLower=40.0; 
-   params.fCutoff=1000.0;
+   params.fCutoff=1000.00;
    params.tSampling=4000.0;
    params.signalAmplitude=1.0;
    params.nStartPad=1000;
    params.nEndPad=1000;
-   params.method=two;
-   params.order=twoPN;
-   params.domain=TimeDomain;
-   params.approximant=pade;
+   params.order=6;
+   params.approximant=EOB;
    params.massChoice=m1Andm2;
+   params.OmegaS=0.;
+   params.Theta=0.;
 
    LALInspiralWaveLength (&status, &n, params);
+/*
+   CHECKSTATUSPTR(&status);
+*/
    LALInspiralParameterCalc (&status, &params);
+/*
+   CHECKSTATUSPTR(&status);
+*/
+   n = 65536;
    fprintf(stderr, "signal length=%d\n", n);
-   signal.length = n;
-   signal.data = (REAL4*) LALMalloc(sizeof(REAL4)*n);
-   LALInspiralWave (&status, &signal, &params);
+   signal1.length = signal2.length = n;
+   signal1.data = (REAL4*) LALMalloc(sizeof(REAL4)*n);
+   signal2.data = (REAL4*) LALMalloc(sizeof(REAL4)*n);
+/*
+   LALInspiralWave(&status, &signal1, &params);
+*/
+   LALInspiralWaveTemplates (&status, &signal1, &signal2, &params);
+/*
+   CHECKSTATUSPTR(&status);
+*/
    dt = 1./params.tSampling;
-   printf_timeseries(signal.length, signal.data, dt, params.startTime);
-   LALFree(signal.data);
-   signal.data = NULL;
+   printf_timeseries(signal1.length, signal1.data, dt, params.startTime);
+/*
+   printf_timeseries(signal2.length, signal2.data, dt, params.startTime);
+*/
+   if (signal1.data != NULL) LALFree(signal1.data);
+   if (signal2.data != NULL) LALFree(signal2.data);
    LALCheckMemoryLeaks();
 
    return 0;

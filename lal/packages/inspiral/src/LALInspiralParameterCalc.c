@@ -75,8 +75,8 @@ LALInspiralParameterCalc (
    InspiralTemplate *params)
 { /* </lalVerbatim> */
 
-   REAL8 m1, m2, totalMass, eta, mu, piFl, etamin, tiny;
-   REAL8 x1, x2, A0, A2, A3, A4, B2, B4, C4, dumm_const1, dumm_const2, dumm_const3;
+   REAL8 m1, m2, totalMass, eta, mu, piFl, etamin, tiny, ieta;
+   REAL8 x1, x2, A0, A2, A3, A4, B2, B4, C4;
    static REAL8 oneby4;
    void *pars;
    DFindRootIn rootIn;
@@ -90,6 +90,8 @@ LALInspiralParameterCalc (
    ASSERT(params->massChoice >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT(params->massChoice <= 6, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
+   ieta = params->ieta;
+   ieta = 1.;
    oneby4 = 1./4.;
    etamin = 1.e-10;
    tiny = 1.e-10;
@@ -152,7 +154,7 @@ LALInspiralParameterCalc (
          ASSERT(params->t2 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
          A0 = 5./ pow(piFl, eightby3)/256.;
          A2 = 3715.0/(64512.0*pow(piFl,2.0));
-         B2 = 4620.0/3715;
+         B2 = 4620.0/3715 * ieta;
          Tau2In.t2 = params->t2;
          Tau2In.A2 = A2 * pow(params->t0/A0, 0.6);
          Tau2In.B2 = B2;
@@ -212,8 +214,8 @@ LALInspiralParameterCalc (
          ASSERT(params->t4 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
          A0 = 5./(256. * pow(piFl, eightby3));
          A4 = 5./(128.0 * pow(piFl,fourby3)) * 3058673./1016064.;
-         B4 = 5429./1008 * 1016064./3058673.;
-         C4 = 617./144. * 1016064./3058673.;
+         B4 = 5429./1008 * 1016064./3058673. * ieta;
+         C4 = 617./144. * 1016064./3058673. * ieta;
          Tau4In.t4 = params->t4;
          Tau4In.A4 = A4 * pow(params->t0/A0, 0.2);
          Tau4In.B4 = B4;
@@ -251,14 +253,11 @@ LALInspiralParameterCalc (
    if (params->eta > oneby4) params->eta-=tiny;
    totalMass = totalMass*LAL_MTSUN_SI;
    params->t0 = 5.0/(256.0*eta*pow(totalMass,fiveby3)*pow(piFl,eightby3));
-   params->t2 = (3715.0 + (4620.0*eta))/(64512.0*eta*totalMass*pow(piFl,2.0));
+   params->t2 = (3715.0 + (4620.0*ieta*eta))/(64512.0*eta*totalMass*pow(piFl,2.0));
    params->t3 = LAL_PI/(8.0*eta*pow(totalMass,twoby3)*pow(piFl,fiveby3));
-   dumm_const1 = 3058673.0/1016064.0;
-   dumm_const2 = (5429.0*eta)/1008.0;
-   dumm_const3 = (617.0*pow(eta,2.0))/144.0;
    params->t4 = (5.0/(128.0*eta*pow(totalMass,oneby3)*pow(piFl,fourby3)))
-                *(dumm_const1 + dumm_const2 + dumm_const3);
-
+              * (3058673./1016064. + 5429.*ieta*eta/1008. +617.*ieta*eta*eta/144.);
+   params->t5 = 5.*(7729./252. + ieta*eta)/(256.*eta*params->fLower); 
    switch (params->order) {
                         
       case newtonian:
@@ -277,12 +276,18 @@ LALInspiralParameterCalc (
 
       case onePointFivePN:
          params->t4=0.0;
+         params->t5=0.0;
          params->tC = params->t0 + params->t2 - params->t3;
       break;
 
       case twoPN:
-      default:
+         params->t5=0.0;
          params->tC = params->t0 + params->t2 - params->t3 + params->t4;
+      break;
+
+      case twoPointFivePN:
+      default:
+         params->tC = params->t0+params->t2-params->t3+params->t4-params->t5;
       break;
    }
 

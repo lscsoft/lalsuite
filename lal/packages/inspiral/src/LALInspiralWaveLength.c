@@ -70,7 +70,7 @@ void LALInspiralWaveLength(LALStatus       *status,
 
    LALInspiralSetup (status->statusPtr, &ak, &params);
    CHECKSTATUSPTR(status);
-   LALChooseModel(status->statusPtr, &func, &ak, &params);
+   LALInspiralChooseModel(status->statusPtr, &func, &ak, &params);
    CHECKSTATUSPTR(status);
 
    x = (ak.tn) * params.tSampling + params.nStartPad + params.nEndPad;

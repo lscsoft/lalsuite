@@ -106,9 +106,10 @@ parameter \texttt{approximant}, which is of type \texttt{enum Approximant}.
 \subsubsection*{Uses}
 Depending on the user inputs one of the following functions is called:
 
-\texttt{TimeDomain2}
-\texttt{TappRpnTdomFreq}
-\texttt{TappRpnTdomTime}
+\texttt{LALInspiralWave1}
+\texttt{LALInspiralWave2}
+\texttt{LALInspiralWave3}
+\texttt{LALEOBWaveform}
 
 \subsubsection*{Notes}
 
@@ -136,40 +137,39 @@ void LALInspiralWave(LALStatus *status,
    ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
 
-   ASSERT(params->domain >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->domain <= 1, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(params->approximant >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(params->approximant <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-   switch (params->domain) {
-      case TimeDomain:
-         ASSERT(params->method >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-         ASSERT(params->method <= 3, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-         switch (params->method) {
-
-            case one:
-                LALTimeDomain2(status->statusPtr, signal, params);
-                CHECKSTATUSPTR(status);
-            break;
-            case two:
-                LALTappRpnTdomFreq(status->statusPtr, signal, params);
-                CHECKSTATUSPTR(status);
-            break;
-            case three:
-                LALTappRpnTdomTime(status->statusPtr, signal, params);
-                CHECKSTATUSPTR(status);
-            break;
-	    case eob:
-	    case best:
-                LALEOBWaveform(status->statusPtr, signal, params);
-                CHECKSTATUSPTR(status);
-            break;
-         }
+   switch (params->approximant) 
+   {
+      case TaylorT1:
+      case PadeT1:
+           LALInspiralWave1(status->statusPtr, signal, params);
+           CHECKSTATUSPTR(status);
       break;
-      case FrequencyDomain:
-          fprintf(stderr,"LALInspiralWave: We don't have frequency domain waveforms yet \n");
-          exit(0);
-   }						
+      case TaylorT2:
+           LALInspiralWave2(status->statusPtr, signal, params);
+           CHECKSTATUSPTR(status);
+      break;
+      case TaylorT3:
+           LALInspiralWave3(status->statusPtr, signal, params);
+           CHECKSTATUSPTR(status);
+      break;
+      case EOB:
+           LALEOBWaveform(status->statusPtr, signal, params);
+           CHECKSTATUSPTR(status);
+      break;
+      case TaylorF1:
+      case TaylorF2:
+      case PadeF1:
+      case INSPA:
+      case IRSPA:
+           ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+      break;
+   }
 
    DETATCHSTATUSPTR(status);
    RETURN (status);
-
 }

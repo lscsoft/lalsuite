@@ -68,7 +68,7 @@ void LALInspiralVelocity(LALStatus *status,
   ASSERT (v, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT (ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
-  rootIn.function = LALTofV;
+  rootIn.function = LALInspiralTofV;
   rootIn.xmax = ak->vlso;
   rootIn.xmin = ak->v0/2.;
   rootIn.xacc = 1.0e-8;

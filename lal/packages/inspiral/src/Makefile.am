@@ -1,33 +1,34 @@
 ## Process this file with automake to produce Makefile.in
 noinst_LTLIBRARIES = libinspiral.la
 libinspiral_la_SOURCES = \
-LALChooseModel.c\
+LALInspiralChooseModel.c\
+LALInspiralSetup.c\
 LALEtaTau02.c\
 LALEtaTau04.c\
-LALEOBWaveform.c\
-LALInspiralDerivatives.c\
 LALInspiralParameterCalc.c\
-LALInspiralPhase.c\
-LALInspiralSetup.c\
 LALInspiralVelocity.c\
-LALInspiralWave.c\
-LALInspiralWaveLength.c\
-LALInspiralWaveTemplates.c\
-LALPhiofVIntegrand.c\
+LALInspiralTofV.c\
+LALInspiralTofVIntegrand.c\
+LALInspiralPhiofVIntegrand.c\
 LALPrintTimeseries.c\
+LALInspiralPhasing1.c\
+LALInspiralPhasing2.c\
+LALInspiralPhasing3.c\
+LALInspiralFrequency3.c\
+LALInspiralTiming2.c\
+LALInspiralWaveLength.c\
+LALInspiralWave.c\
+LALInspiralWaveTemplates.c\
+LALInspiralWave1.c\
+LALInspiralWave1Templates.c\
+LALInspiralWave2.c\
+LALInspiralWave2Templates.c\
+LALInspiralWave3.c\
+LALInspiralWave3Templates.c\
+LALInspiralDerivatives.c\
 LALRungeKutta4.c\
-LALTappRpnTdomFreq.c\
-LALTappRpnTdomFreqPhase.c\
-LALTappRpnTdomFreqTemplates.c\
-LALTappRpnTdomFreqTofF.c\
-LALTappRpnTdomTime.c\
-LALTappRpnTdomTimeFrequency.c\
-LALTappRpnTdomTimePhase.c\
-LALTappRpnTdomTimeTemplates.c\
-LALTimeDomain2.c\
-LALTimeDomain2Templates.c\
-LALTofV.c\
-LALTofVIntegrand.c
+LALEOBWaveform.c\
+LALEOBWaveformTemplates.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex

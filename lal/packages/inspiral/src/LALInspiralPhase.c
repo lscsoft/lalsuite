@@ -43,15 +43,6 @@ $\mathcal{F}(v)$.
 
 </lalLaTeX>  */
 
-
-
-
-
-
-
-
-
-
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
@@ -85,7 +76,7 @@ void LALInspiralPhase (LALStatus *status,
 
    in1 = (InspiralPhaseIn *) params;
 
-   intinp.function = LALPhiofVIntegrand;
+   intinp.function = LALInspiralPhiofVIntegrand;
    intinp.xmin = in1->v0;
    intinp.xmax = v;
    intinp.type = ClosedInterval;
