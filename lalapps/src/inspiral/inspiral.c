@@ -61,6 +61,9 @@ RCSID( "$Id$" );
 #define CVS_ID_STRING "$Id$"
 #define CVS_NAME_STRING "$Name$"
 #define CVS_REVISION "$Revision$"
+#define CVS_ID_STRING "$Id$"
+#define CVS_NAME_STRING "$Name$"
+#define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "inspiral"
@@ -1492,7 +1495,7 @@ int main( int argc, char *argv[] )
     }
     else
     {
-      if ( approximant == TaylorF2 )
+      if ( approximant == TaylorF2 ) 
       {
         /* compute the standard candle */
         REAL4 cannonDist = 1.0; /* Mpc */
@@ -1526,11 +1529,51 @@ int main( int argc, char *argv[] )
           fflush( stdout );
         }
       }
+      else if ( approximant == BCV )
+      {
+        /* compute the standard candle for a  5-5 Msun inspiral*/
+        REAL4 cannonDist = 1.0; /* Mpc */
+        REAL4 m  = 10.0;
+        REAL4 mu = 2.5;
+        REAL4 k1 = numPoints * chan.deltaT ;
+        UINT4 kmax = 432 * k1 ; /* 432 = fISCO for 5-5 */
+        REAL4 distNorm = 2.0 * LAL_MRSUN_SI / (cannonDist * 1e6 * LAL_PC_SI);
+        REAL4 candleTmpltNorm = sqrt( (5.0*mu) / 96.0 ) *
+              pow( m/(LAL_PI*LAL_PI) , 1.0/3.0 ) * 
+              pow(LAL_MTSUN_SI / (REAL4) chan.deltaT, -1.0/6.0);
+        distNorm *= fcTmpltParams->dynRange;
+        candleTmpltNorm *= candleTmpltNorm;
+        candleTmpltNorm *= distNorm * distNorm;
+        candle.sigmasq = 4.0 * ( (REAL4) chan.deltaT / (REAL4) numPoints );
+        candle.sigmasq *= candleTmpltNorm *
+          fcSegVec->data->segNorm->data[kmax];
+        candle.effDistance = sqrt( candle.sigmasq / candle.rhosq );
+
+        /* for 5-5 Msun... */
+        candle.tmplt.mass1 = 5.0;
+        candle.tmplt.mass2 = 5.0;
+        candle.tmplt.totalMass = 10.0;
+        candle.tmplt.mu = 2.5;
+        candle.tmplt.eta = 0.25;
+
+        if ( vrbflg ) 
+        {
+          fprintf( stdout, "candle m = %e\ncandle mu = %e\n"
+               "candle.rhosq = %e\nchan.deltaT = %e\nnumPoints = %d\n"
+               "fcSegVec->data->segNorm->data[kmax] = %e\n"
+               "kmax = %d\ncandleTmpltNorm = %e\ncandle.effDistance = %e Mpc \n"
+               "candle.sigmasq=%e\n",
+               m,mu,candle.rhosq,chan.deltaT,
+               numPoints,fcSegVec->data->segNorm->data[kmax],kmax,
+               candleTmpltNorm,candle.effDistance,candle.sigmasq);
+           fflush(stdout);
+         }
+      }
       else 
       {
         if ( vrbflg )
         {
-           fprintf( stdout, "Standard Candle Not Calculated; \n"
+           fprintf( stdout, "standard candle not calculated; \n"
               "chan.deltaT = %e\nnumPoints = %d\n",
               chan.deltaT, numPoints );
            fflush( stdout );
@@ -1983,6 +2026,12 @@ int main( int argc, char *argv[] )
   {
     if ( vrbflg ) fprintf( stdout, "  summ_value table...\n" );
     ADD_SUMM_VALUE( "inspiral_effective_distance", "1.4_1.4_8", 
+      candle.effDistance, 0);
+  }
+  else if ( approximant == BCV && ! bankSim )
+  {
+    if ( vrbflg ) fprintf( stdout, "  summ_value table...\n" );
+    ADD_SUMM_VALUE( "inspiral_effective_distance", "5.0_5.0_8",
       candle.effDistance, 0);
   }
   if ( !bankSim )
