@@ -537,6 +537,7 @@ class AnalysisNode(CondorDAGNode):
     self.__start = 0
     self.__end = 0
     self.__ifo = None
+    self.__ifo_tag = None
     self.__input = None
     self.__output = None
     self.__calibration = None
@@ -621,6 +622,20 @@ class AnalysisNode(CondorDAGNode):
     Returns the two letter IFO code for this node.
     """
     return self.__ifo
+
+  def set_ifo_tag(self,ifo_tag):
+    """
+    Set the ifo tag that is passed to the analysis code.
+    ifo_tag = a string to identify one or more IFOs
+    """
+    self.__ifo = ifo_tag
+    self.add_var_opt('ifo-tag', ifo_tag)
+
+  def get_ifo_tag(self):
+    """
+    Returns the IFO tag string
+    """
+    return self.__ifo_tag
 
   def set_cache(self,file):
     """
