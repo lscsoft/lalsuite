@@ -167,7 +167,9 @@ typedef enum
 {
   fcSpecDatacond,
   fcSpecMean,
-  fcSpecMedian
+  fcSpecMedian,
+  fcSpecMeanBandPassed,
+  fcSpecMedianBandPassed
 }
 FindChirpSpecType;
 

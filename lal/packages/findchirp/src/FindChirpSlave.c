@@ -596,7 +596,8 @@ LALFindChirpSlave (
     */
 
     
-    if ( ! params->bandPassed && params->specType )
+    if ( ! params->bandPassed && ( params->specType == fcSpecMeanBandPassed || 
+          params->specType == fcSpecMedianBandPassed ) )
     {
       REAL4                     fsafety = 0;
       PassBandParamStruc        highpassParam;
@@ -671,7 +672,8 @@ LALFindChirpSlave (
       TRY( LALUnitMultiply( status->statusPtr, &(specPtr->sampleUnits),
             &pair ), status );
 
-      if ( params->specType == fcSpecMean )
+      if ( params->specType == fcSpecMean || 
+          params->specType == fcSpecMeanBandPassed )
       {
         /* compute a mean power spectrum estimate from the data */
         COMPLEX8FrequencySeries   segmentFFT;
@@ -722,7 +724,8 @@ LALFindChirpSlave (
         LALCDestroyVector( status->statusPtr, &(segmentFFT.data) );
         CHECKSTATUSPTR( status );
       }
-      else if ( params->specType == fcSpecMedian )
+      else if ( params->specType == fcSpecMedian ||
+          params->specType == fcSpecMedianBandPassed )
       {
         /* compute a median power spectrum estimate from the data */
         AvgSpecParams           avgParams;
