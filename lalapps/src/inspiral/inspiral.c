@@ -46,10 +46,10 @@ CHAR  *frInCacheName    = NULL;         /* cache file containing frames */
 INT4  numPoints         = -1;           /* points in a segment          */
 INT4  numSegments       = -1;           /* number of segments           */
 INT4  ovrlap            = -1;           /* overlap between segments     */
-CHAR  site[2];                          /* single character site code   */
 CHAR  ifo[3];                           /* two character ifo code       */
 CHAR *channelName = NULL;               /* channel string               */
 UINT4 inputDataLength = 0;              /* number of points in input    */
+REAL4 minimalMatch = -1;                /* override bank minimal match  */
 
 /* data conditioning parameters */
 INT4   resampFiltType   = -1;           /* low pass filter used for res */
@@ -254,6 +254,20 @@ int main( int argc, char *argv[] )
 
   if ( vrbflg ) fprintf( stdout, "parsed %d templates from %s\n", 
       numTmplts, bankFileName );
+
+  /* override the minimal match of the bank if specified on the command line */
+  if ( minimalMatch >= 0 )
+  {
+    if ( vrbflg )
+    {
+      fprintf( stdout, "Overriding bank minimal match:\n   value in bank = %e,"
+        " new value = %e\n", bankHead->minMatch, minimalMatch );
+    }
+    for ( bankCurrent = bankHead; bankCurrent; bankCurrent = bankCurrent->next )
+    {
+      bankCurrent->minMatch = minimalMatch;
+    }
+  }
 
   /* save the minimal match of the bank in the process params */
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) 
@@ -973,7 +987,7 @@ int main( int argc, char *argv[] )
       writeRhosq || writeChisq )
   {
     snprintf( fname, sizeof(fname), "%s-INSPIRAL-%d-%d.gwf",
-        site, gpsStartTime.gpsSeconds,
+        ifo, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
     frOutFile = FrFileONew( fname, 0 );
     FrameWrite( outFrame, frOutFile );
@@ -987,7 +1001,7 @@ cleanexit:
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
   snprintf( fname, sizeof(fname), "%s-INSPIRAL-%d-%d.xml",
-      site, gpsStartTime.gpsSeconds,
+      ifo, gpsStartTime.gpsSeconds,
       gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
 
@@ -1063,9 +1077,15 @@ cleanexit:
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
   }
 
-  /* write the inspiral events to the file */
+  /* sort the inspiral events by time and write the events to the output xml */
   if ( savedEvents.snglInspiralTable )
   {
+    /*  before writing to a file */
+    if ( vrbflg ) fprintf( stdout, "sorting events by time... " );
+    LAL_CALL( LALSortSnglInspiral( &status, &(savedEvents.snglInspiralTable),
+          LALCompareSnglInspiralByTime), &status );
+    if ( vrbflg ) fprintf( stdout, "done\n" );
+    
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sngl_inspiral_table ), 
         &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, 
@@ -1326,10 +1346,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           channelName = (CHAR *) LALCalloc( chanlen, sizeof(CHAR) );
           memcpy( channelName, channamptr, chanlen );
 
-          /* copy the first character to site and the first two to ifo */
-          memset( site, 0, sizeof(site) );
+          /* copy the first two characters to the ifo name */
           memset( ifo, 0, sizeof(ifo) );
-          memcpy( site, optarg, sizeof(site) - 1 );
           memcpy( ifo, optarg, sizeof(ifo) - 1 );
         }
         break;
@@ -1462,7 +1480,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'M':
-        /* minimal match option is ignored */
+        minimalMatch = (REAL4) atof( optarg );
+        if ( minimalMatch < 0 || minimalMatch > 1 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "minimal match must be in the range [0,1]: "          
+              "(%e specified)\n", 
+              long_options[option_index].name, minimalMatch );
+        }
+        /* process param added after bank is generated so that a */
+        /* value in the bank looks like a command line option.   */
         break;
 
       case 'n':
@@ -1844,7 +1871,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     exit( 1 );
   }
 
-  /* check that a channel has been requested and fill the ifo and site */
+  /* check that a channel has been requested and fill the ifo */
   if ( ! fqChanName )
   {
     fprintf( stderr, "--channel-name must be specified\n" );
