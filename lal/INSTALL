@@ -66,9 +66,9 @@ Contents:
           frame library interface, you'll need to make a shared object version
           of the frame library too.  See the troubleshooting section below.
 
-    0.4.  Install the MPICH implementation of MPI (optional).  Then set the
-          environment variable MPICC to the name of the MPI C-compiler (which
-          is probably a shell script).  For example, if you are using sh:
+    0.4.  Install the MPICH or LAM implementation of MPI (optional).  Then set
+          the environment variable MPICC to the name of the MPI C-compiler
+          (which may be a shell script).  For example, if you are using sh:
 
           MPICC=mpicc ; export MPICC
 
