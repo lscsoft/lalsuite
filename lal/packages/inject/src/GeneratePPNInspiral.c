@@ -203,10 +203,11 @@ integration.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALSCreateVectorSequence()
-LALSDestroyVectorSequence()
-LALSBisectionFindRoot()
-LALWarning()
+LALMalloc()                   LALFree()
+LALSCreateVectorSequence()    LALSDestroyVectorSequence()
+LALSCreateVector()            LALSDestroyVector()
+LALDCreateVector()            LALDDestroyVector()
+LALSBisectionFindRoot()       LALSnprintf()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -225,6 +226,7 @@ LALWarning()
 #include <lal/LALConstants.h>
 #include <lal/Units.h>
 #include <lal/FindRoot.h>
+#include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GeneratePPNInspiral.h>

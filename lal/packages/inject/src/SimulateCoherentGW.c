@@ -388,7 +388,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
     delayMax *= -1;
 
     /* Compute table. */
-    for ( i = 0; (UINT4)( i ) < nMax; i++ ) {
+    for ( i = 0; i < nMax; i++ ) {
       REAL8 tDelay; /* propagation time */
       LALBarycenterEarth( stat->statusPtr, &state, &gpsTime,
 			  detector->ephemerides );
@@ -429,7 +429,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
     delayMin *= -1;
 
     /* Compute table. */
-    for ( i = 0; (UINT4)( i ) < nMax; i++ ) {
+    for ( i = 0; i < nMax; i++ ) {
       REAL8 tDelay; /* propagation time */
       LALTimeDelayFromEarthCenter( stat->statusPtr, &tDelay, &input );
       BEGINFAIL( stat )
@@ -482,8 +482,6 @@ LALSimulateCoherentGW( LALStatus        *stat,
   crossData = polResponse.pCross->data;
   if ( detector->site ) {
     LALSource polSource;     /* position and polarization angle */
-    LIGOTimeGPS gpsTime;     /* detector time when we compute delay */
-    LALPlaceAndGPS event;    /* spacetime point where we compute delay */
     LALDetAndSource input;            /* response input structure */
     LALTimeIntervalAndNSample params; /* response parameter structure */
 
@@ -513,7 +511,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
 	 stat );
   } else {
     /* No detector site, so just simulate response to hplus. */
-    for ( i = 0; (UINT4)( i ) < nMax; i++ ) {
+    for ( i = 0; i < nMax; i++ ) {
       plusData[i] = 1.0;
       crossData[i] = 0.0;
     }
