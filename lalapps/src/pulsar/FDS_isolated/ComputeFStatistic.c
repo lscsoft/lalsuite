@@ -73,11 +73,12 @@ void use_boinc_filename0(char* orig_name);
 #define COMPUTEFSTATC_ENULL 		1
 #define COMPUTEFSTATC_ESYS     		2
 #define COMPUTEFSTATC_EINPUT   		3
+#define COMPUTEFSTATC_EMEM   		4
 
 #define COMPUTEFSTATC_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define COMPUTEFSTATC_MSGESYS		"System call failed (probably file IO)"
 #define COMPUTEFSTATC_MSGEINPUT   	"Invalid input"
-
+#define COMPUTEFSTATC_MSGEMEM   	"Out of memory. Bad."
 /*----------------------------------------------------------------------
  * User-variables: can be set from config-file or command-line */
 
@@ -140,26 +141,25 @@ ConfigVariables GV;		/**< global container for various derived configuration set
 /*----------------------------------------------------------------------*/
 /* local prototypes */
 
-void CreateDemodParams (LALStatus *status);
+int main(int argc,char *argv[]);
+void initUserVars (LALStatus *stat);
+INT4 ReadSFTData (void);
 void InitFStat (LALStatus *status, ConfigVariables *cfg);
+INT4 NormaliseSFTData(void);
+void CreateDemodParams (LALStatus *status);
 void CreateNautilusDetector (LALStatus *status, LALDetector *Detector);
 void Freemem (LALStatus *status);
-
-INT4 EstimatePSDLines(LALStatus *status);
 INT4 EstimateFLines(LALStatus *status);
 INT4 NormaliseSFTDataRngMdn (LALStatus *status);
-
-INT4 NormaliseSFTData(void);
-INT4 ReadSFTData (void);
 INT4 EstimateSignalParameters(INT4 * maxIndex);
 INT4 writeFLines(INT4 *maxIndex);
 INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN);
 INT4 EstimateFloor(REAL8Vector *Sp, INT2 windowSize, REAL8Vector *SpFloor);
 int compare(const void *ip, const void *jp);
 INT4 writeFaFb(INT4 *maxIndex);
-void initUserVars (LALStatus *stat);
 void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit *scanInit);
-
+INT4 EstimatePSDLines(LALStatus *status);
+void WriteFStatLog (LALStatus *stat, CHAR *argv[]);
 /*----------------------------------------------------------------------*/
 /* some local defines */
 
@@ -235,6 +235,9 @@ int main(int argc,char *argv[])
 
   if (uvar_help)	/* if help was requested, we're done here */
     exit (0);
+
+  /* keep a log-file recording all relevant parameters of this search-run */
+  LAL_CALL (WriteFStatLog (&status, argv), &status);
 
   /* main initialization of the code: */
   LAL_CALL ( InitFStat(&status, &GV), &status);
@@ -1668,6 +1671,70 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     RETURN (status);
 
 } /* InitFStat() */
+
+/***********************************************************************/
+/** Log the all relevant parameters of the present search-run to a log-file.
+ * The name of the log-file is "Fstats{uvar_outputLabel}.log".
+ * <em>NOTE:</em> Currently this function only logs the user-input and code-versions.
+ */
+void
+WriteFStatLog (LALStatus *stat, char *argv[])
+{
+    CHAR *logstr = NULL;
+    const CHAR *head = "Fstats";
+    CHAR command[512] = "";
+    UINT4 len;
+    CHAR *fname = NULL;
+    FILE *fplog;
+
+    INITSTATUS (stat, "WriteFStatLog", rcsid);
+    ATTATCHSTATUSPTR (stat);
+
+    /* prepare log-file for writing */
+    len = strlen(head) + strlen(".log") +10;
+    if (uvar_outputLabel)
+      len += strlen(uvar_outputLabel);
+
+    if ( (fname=LALCalloc(len,1)) == NULL) {
+      ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    }
+    strcpy (fname, head);
+    if (uvar_outputLabel)
+      strcat (fname, uvar_outputLabel);
+    strcat (fname, ".log");
+
+    if ( (fplog = fopen(fname, "w" )) == NULL) {
+      LALPrintError ("\nFailed to open log-file '%f' for writing.\n\n", fname);
+      LALFree (fname);
+      ABORT (stat, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+    }
+
+    /* write out a log describing the complete user-input (in cfg-file format) */
+    TRY (LALUserVarGetLog (stat->statusPtr, &logstr,  UVAR_LOGFMT_CFGFILE), stat);
+
+    fprintf (fplog, "## LOG-FILE of ComputeFStatistic run\n\n");
+    fprintf (fplog, "# User-input:\n");
+    fprintf (fplog, "# ----------------------------------------------------------------------\n\n");
+
+    fprintf (fplog, logstr);
+    LALFree (logstr);
+
+    /* append an ident-string defining the exact CVS-version of the code used */
+    fprintf (fplog, "\n\n# CVS-versions of executable:\n");
+    fprintf (fplog, "# ----------------------------------------------------------------------\n");
+    fclose (fplog);
+    
+    sprintf (command, "ident %s | sort -u >> %s", argv[0], fname);
+    system (command);	/* we don't check this. If it fails, we assume that */
+    			/* one of the system-commands was not available, and */
+    			/* therefore the CVS-versions will not be logged */
+
+    LALFree (fname);
+
+    DETATCHSTATUSPTR (stat);
+    RETURN(stat);
+
+} /* WriteFStatLog() */
 
 
 /*******************************************************************************/
