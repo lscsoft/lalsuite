@@ -165,6 +165,22 @@ AC_DEFUN([LAL_ENABLE_MACROS],
         ],)
 ])
 
+AC_DEFUN([LAL_ENABLE_NIGHTLY],
+[AC_ARG_ENABLE(
+        [nightly],
+        [  --enable-nightly        nightly build [default=no] ],
+        [ case "${enableval}" in
+            yes) NIGHTLY_VERSION=`date +"%Y_%m_%d"`
+                 VERSION="${VERSION}_${NIGHTLY_VERSION}";;
+            no)  NIGHTLY_VERSION="";;
+            *)   NIGHTLY_VERSION="${enableval}"
+                 VERSION="${VERSION}_${NIGHTLY_VERSION}";;
+          esac ],
+        [ NIGHTLY_VERSION="" ] )
+ AC_SUBST(NIGHTLY_VERSION)
+])
+                
+
 AC_DEFUN([LAL_ENABLE_PTHREAD_LOCK],
 [AC_ARG_ENABLE(
         [pthread_lock],

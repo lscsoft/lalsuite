@@ -186,17 +186,6 @@ fi
 
 # Body
 cat >> $CONFIGFILE <<\EOF
-lal_version_major=`echo "$VERSION" | cut -d. -f1`
-lal_version_minor=`echo "$VERSION" | cut -d. -f2`
-lal_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-lal_cvs_tag=`echo '$Name$' | sed 's/\\$//g' | sed 's/Name: //'`
-AC_DEFINE_UNQUOTED(LAL_VERSION, "$VERSION", [LAL Version])
-AC_DEFINE_UNQUOTED(LAL_VERSION_MAJOR, $lal_version_major, [LAL Version Major Number] )
-AC_DEFINE_UNQUOTED(LAL_VERSION_MINOR, $lal_version_minor, [LAL Version Minor Number] )
-AC_DEFINE_UNQUOTED(LAL_CONFIGURE_ARGS, "$ac_configure_args", [LAL Configure Arguments])
-AC_DEFINE_UNQUOTED(LAL_CONFIGURE_DATE, "$lal_configure_date", [LAL Configure Date])
-AC_DEFINE_UNQUOTED(LAL_CVS_TAG, "$lal_cvs_tag", [LAL CVS Tag])
-AC_DEFINE_UNQUOTED(LAL_PREFIX, "$prefix", [LAL Install Prefix])
 
 LAL_WITH_CC
 LAL_WITH_MPICC
@@ -215,6 +204,19 @@ LAL_ENABLE_MPI
 LAL_ENABLE_DEBUG
 LAL_ENABLE_MACROS
 LAL_ENABLE_PTHREAD_LOCK
+LAL_ENABLE_NIGHTLY
+
+lal_version_major=`echo "$VERSION" | cut -d. -f1`
+lal_version_minor=`echo "$VERSION" | cut -d. -f2`
+lal_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
+lal_cvs_tag=`echo '$Name$' | sed 's/\\$//g' | sed 's/Name: //'`
+AC_DEFINE_UNQUOTED(LAL_VERSION, "$VERSION", [LAL Version])
+AC_DEFINE_UNQUOTED(LAL_VERSION_MAJOR, $lal_version_major, [LAL Version Major Number] )
+AC_DEFINE_UNQUOTED(LAL_VERSION_MINOR, $lal_version_minor, [LAL Version Minor Number] )
+AC_DEFINE_UNQUOTED(LAL_CONFIGURE_ARGS, "$ac_configure_args", [LAL Configure Arguments])
+AC_DEFINE_UNQUOTED(LAL_CONFIGURE_DATE, "$lal_configure_date", [LAL Configure Date])
+AC_DEFINE_UNQUOTED(LAL_CVS_TAG, "$lal_cvs_tag", [LAL CVS Tag])
+AC_DEFINE_UNQUOTED(LAL_PREFIX, "$prefix", [LAL Install Prefix])
 
 dnl Checks for programs.
 AC_PROG_AWK
@@ -432,6 +434,33 @@ AM_CONDITIONAL(INTELFFT, test x$intelfft = xtrue)
 AM_CONDITIONAL(QTHREAD, test x$qthread = xtrue)
 
 
+dnl Configure subdirectory lalapps if present
+if test -d $srcdir/lalapps ; then
+  lal_build_dir='$(top_builddir)/..'
+  LAL_BUILD="true"
+  LAL_LIBS=$lal_build_dir/lib/liblal.la
+  LAL_CFLAGS=-I$lal_build_dir/include
+  LALSUPPORT_LIBS=$lal_build_dir/packages/support/src/liblalsupport.la
+  LALSUPPORT_CFLAGS=-I$lal_build_dir/include
+  if test x$frame = xtrue ; then
+    LALFRAME_LIBS=$lal_build_dir/packages/framedata/src/liblalframe.la
+    LALFRAME_CFLAGS=-I$lal_build_dir/include
+  else
+    LALFRAME_LIBS=""
+    LALFRAME_CFLAGS=""
+  fi
+  if test x$metaio = xtrue ; then
+    LALMETAIO_LIBS=$lal_build_dir/packages/support/src/liblalmetaio.la
+    LALMETAIO_CFLAGS=-I$lal_build_dir/include
+  else
+    LALMETAIO_LIBS=""
+    LALMETAIO_CFLAGS=""
+  fi
+  export LAL_BUILD LAL_LIBS LAL_CFLAGS LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALFRAME_LIBS LALFRAME_CFLAGS LALMETAIO_LIBS LALMETAIO_CFLAGS
+  AC_CONFIG_SUBDIRS(lalapps)
+fi
+
+
 dnl Add gcc specific flags --- must be done at end or tests will break!
 if test "$GCC" = yes; then
   CFLAGS="$CFLAGS $lal_gcc_flags"
@@ -490,27 +519,7 @@ EOF
 if test "$AUTOCONF25" = "yes"; then
 cat >> $CONFIGFILE <<\EOF
 AC_OUTPUT_COMMANDS([chmod +x lal-config])
-AC_OUTPUT_COMMANDS([echo "
-*****************************************************************
-*                                                               *
-*       LAL has now been successfully configured:               *
-*                                                               *
-*               LAL Frame library support is $frameenabled           *
-*               LAL MetaIo library support is $metaioenabled          *
-*               LAL MPI support is $mpienabled                     *
-*                                                               *
-*       Now run 'make' to build LAL                             *
-*	and run 'make install' to install LAL                   *
-*       LAL will be installed under the directory:              *
-*                                                               *
-$prefixstring
-*                                                               *
-*****************************************************************"],
-[frameenabled="`test x${frame} = xtrue && echo "ENABLED " || echo "DISABLED"`"]
-[metaioenabled="`test x${metaio} = xtrue && echo "ENABLED " || echo "DISABLED"`"]
-[mpienabled="`test x${mpi} = xtrue && echo "ENABLED " || echo "DISABLED"`"]
-[prefixstring="`printf '*               %-47s *' "$prefix"`"]
-)
+AC_CONFIG_FILES([lal.spec])
 AC_CONFIG_FILES([lal.pc])
 AC_CONFIG_FILES([lalframe.pc])
 AC_CONFIG_FILES([lalmetaio.pc])
@@ -539,28 +548,8 @@ echo "AC_OUTPUT" >> $CONFIGFILE
 else
 cat >> $CONFIGFILE <<\EOF
 AC_OUTPUT_COMMANDS([chmod +x lal-config])
-AC_OUTPUT_COMMANDS([echo "
-*****************************************************************
-*                                                               *
-*       LAL has now been successfully configured:               *
-*                                                               *
-*               LAL Frame library support is $frameenabled           *
-*               LAL MetaIo library support is $metaioenabled          *
-*               LAL MPI support is $mpienabled                     *
-*                                                               *
-*       Now run 'make' to build LAL                             *
-*	and run 'make install' to install LAL                   *
-*       LAL will be installed under the directory:              *
-*                                                               *
-$prefixstring
-*                                                               *
-*****************************************************************"],
-[frameenabled="`test x${frame} = xtrue && echo "ENABLED " || echo "DISABLED"`"]
-[metaioenabled="`test x${metaio} = xtrue && echo "ENABLED " || echo "DISABLED"`"]
-[mpienabled="`test x${mpi} = xtrue && echo "ENABLED " || echo "DISABLED"`"]
-[prefixstring="`printf '*               %-47s *' "$prefix"`"]
-)
 AC_OUTPUT([ \
+  lal.spec \
   lal.pc \
   lalframe.pc \
   lalmetaio.pc \
@@ -588,6 +577,27 @@ done
 echo "])" >> $CONFIGFILE
 fi
 
+cat >> $CONFIGFILE <<\EOF
+frameenabled="`test x${frame} = xtrue && echo "ENABLED" || echo "DISABLED"`"
+metaioenabled="`test x${metaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
+mpienabled="`test x${mpi} = xtrue && echo "ENABLED" || echo "DISABLED"`"
+echo "
+================================================================
+
+        LAL has now been successfully configured:
+
+                LAL Frame library support is $frameenabled
+                LAL MetaIo library support is $metaioenabled
+                LAL MPI support is $mpienabled
+
+        Now run 'make' to build LAL
+ 	and run 'make install' to install LAL
+        LAL will be installed under the directory:
+
+                $prefix
+
+================================================================="
+EOF
 
 ## Now generate acinclude.m4 and acconfig.h (if needed)
 
@@ -712,20 +722,24 @@ $AUTOMAKE $INCLUDEDEPS || fail "automake"
 echo ">>> 00boot: running autoconf"
 $AUTOCONF || fail "autoconf"
 
+## If there is a lalapps subdirectory run 00boot within this directory too
+if test -d lalapps ; then
+  echo ">>> 00boot: running 00boot within lalapps subdir"
+  ( cd lalapps && ./00boot )  || fail "lalapps 00boot"
+fi
+
 echo ">>> 00boot: done"
 echo "
-*****************************************************************
-*                                                               *
-*       00boot has been run.                                    *
-*                                                               *
-*       Now run './configure' with appropriate options          *
-*       to configure LAL.                                       *
-*                                                               *
-*       If you are building LAL for use with LALApps, see       *
-*       the LALApps README file for futher instructions         *
-*                                                               *
-*       Otherwise consult the file                              *
-*                                                               *
-*           README.install                                      *
-*                                                               *
-*****************************************************************"
+=================================================================
+
+        00boot has been run.
+
+        Now run './configure' with appropriate options
+        to configure LAL.
+
+        If you are building LAL for use with LALApps, see
+        the LALApps README file for futher instructions
+
+        Otherwise consult the file README.install
+
+================================================================="
