@@ -186,7 +186,7 @@ LALGeneratePulsarSignal (LALStatus *stat,
     sourceParams.rPeriNorm = 0.0;		/* this defines an isolated pulsar */
 
 
-  /* pulsar reference-time in SSB frame(!): tRef is in UTC -> convert  */
+  /* we need pulsar reference-time in SSB frame(!): tRef is in UTC -> convert  */
   TRY (LALConvertGPS2SSB (stat->statusPtr, &tmpTime, params->pulsar.tRef, params), stat);
   sourceParams.spinEpoch = tmpTime;
 
@@ -248,7 +248,16 @@ LALGeneratePulsarSignal (LALStatus *stat,
   detector.transfer = params->transfer;
   detector.site = params->site;
   detector.ephemerides = params->ephemerides;
-  detector.heterodyneEpoch = params->startTimeGPS;  /* always set the heterodyne epoch to the start-time */
+
+  /* similar to the spirit of makefakedata_v2, we use the pulsar reference-time 
+   * as t_h, so that several time-series generated for the same pulsar would be 
+   * guaranteed to have consistent heterodyning.
+   *
+   * However, we round this to integer-seconds to allow simplifications concerning
+   * the necessary phase-correction in the final SFTs. (see docu)
+   */
+  detector.heterodyneEpoch = params->pulsar.tRef;
+  detector.heterodyneEpoch.gpsNanoSeconds = 0;	/* make sure this only has seconds */
   
   /* ok, we  need to prepare the output time-series */
   if ( (output = LALCalloc (1, sizeof (*output) )) == NULL) {
@@ -419,8 +428,16 @@ LALSignalToSFTs (LALStatus *stat,
       } ENDFAIL(stat);
 
 
-      /* correct heterodyning-phase */
-      correct_phase (stat->statusPtr, thisSFT, signal->epoch);	/* theterodyne = signal->epoch!*/
+      /* correct heterodyning-phase, IF NECESSARY */
+      if ( ( (INT4)signal->f0 != signal->f0  )
+	   || (signal->epoch.gpsNanoSeconds != 0)
+	   || (thisSFT->epoch.gpsNanoSeconds != 0) )
+	{
+	  correct_phase (stat->statusPtr, thisSFT, signal->epoch);	/* theterodyne = signal->epoch!*/
+	  BEGINFAIL (stat) {
+	    LALDestroySFTVector (stat->statusPtr, &sftvect);
+	  } ENDFAIL (stat);
+	} /* if phase-correction necessary */
 
       /* Now add the noise-SFTs if given */
       if (params->noiseSFTs)
@@ -926,19 +943,25 @@ correct_phase (LALStatus* stat, SFTtype *sft, LIGOTimeGPS tHeterodyne)
   ATTATCHSTATUSPTR( stat );
 
   TRY (LALDeltaFloatGPS(stat->statusPtr, &deltaT, &(sft->epoch), &tHeterodyne), stat);
+  deltaT *= sft->f0; 
 
-  deltaT *= LAL_TWOPI * sft->f0; 
-
-  cosx=cos(deltaT);
-  sinx=sin(deltaT);
-
-  for (i = 0; i < sft->data->length; i++)
+  /* check if we really need to do anything here? (i.e. is deltaT an integer?) */
+  if ( fabs (deltaT - (INT4) deltaT ) > eps )
     {
-      fvec1 = sft->data->data[i];
-      sft->data->data[i].re = fvec1.re * cosx - fvec1.im * sinx;
-      sft->data->data[i].im = fvec1.im * cosx + fvec1.re * sinx;
-    } /* for i < length */
-  
+      deltaT *= LAL_TWOPI;
+
+      cosx = cos (deltaT);
+      sinx = sin(deltaT);
+
+      for (i = 0; i < sft->data->length; i++)
+	{
+	  fvec1 = sft->data->data[i];
+	  sft->data->data[i].re = fvec1.re * cosx - fvec1.im * sinx;
+	  sft->data->data[i].im = fvec1.im * cosx + fvec1.re * sinx;
+	} /* for i < length */
+
+    } /* if deltaT/2pi not integer */
+
   DETATCHSTATUSPTR( stat );
   RETURN (stat);
   
