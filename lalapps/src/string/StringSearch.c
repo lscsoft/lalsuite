@@ -194,24 +194,7 @@ int FreeMem(void);
 int main(int argc,char *argv[])
 {
 
- /* create the process and process params tables */
- procTable.processTable = LALCalloc(1, sizeof(ProcessTable));
- LALGPSTimeNow(&status, &(procTable.processTable->start_time), &accuracy);
- populate_process_table(&status, procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE);
- procparams.processParamsTable = NULL;
- /* create the search summary table */
- searchsumm.searchSummaryTable = LALCalloc(1, sizeof(SearchSummaryTable));
- /* the number of nodes for a standalone job is always 1 */
- searchsumm.searchSummaryTable->nnodes = 1;
- /* store the input start and end times */
-
  if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
-
- /* set the start and end time for the search summary */
- searchsumm.searchSummaryTable->in_start_time.gpsSeconds = CommandLineArgs.GPSStart;
- searchsumm.searchSummaryTable->in_start_time.gpsNanoSeconds =0;
- searchsumm.searchSummaryTable->in_end_time.gpsSeconds = CommandLineArgs.GPSEnd;
- searchsumm.searchSummaryTable->in_end_time.gpsNanoSeconds =0;
  
  if (ReadData(CommandLineArgs)) return 2;
 
@@ -1066,6 +1049,24 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       }    
   }
 
+  /* set up xml output stuff */
+  /* create the process and process params tables */
+  procTable.processTable = LALCalloc(1, sizeof(ProcessTable));
+  LALGPSTimeNow(&status, &(procTable.processTable->start_time), &accuracy);
+  populate_process_table(&status, procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE);
+  procparams.processParamsTable = NULL;
+  /* create the search summary table */
+  searchsumm.searchSummaryTable = LALCalloc(1, sizeof(SearchSummaryTable));
+  /* the number of nodes for a standalone job is always 1 */
+  searchsumm.searchSummaryTable->nnodes = 1;
+  /* store the input start and end times */
+
+  /* set the start and end time for the search summary */
+  searchsumm.searchSummaryTable->in_start_time.gpsSeconds = CLA->GPSStart;
+  searchsumm.searchSummaryTable->in_start_time.gpsNanoSeconds =0;
+  searchsumm.searchSummaryTable->in_end_time.gpsSeconds = CLA->GPSEnd;
+  searchsumm.searchSummaryTable->in_end_time.gpsNanoSeconds =0;
+ 
   return errflg;
 }
 
