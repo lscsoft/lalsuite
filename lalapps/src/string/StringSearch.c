@@ -254,13 +254,16 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 
            if ( ! *thisEvent ) /* allocation error */
             {
-	      fprintf(stderr,"Memory allocation error. Exiting. \n");
+	      fprintf(stderr,"Could not allocate memory for event. Memory allocation error. Exiting. \n");
 	      return 1;
             }
 	   while(fabs(vector->data[p]) > CLA.threshold)
 	     {
-	       if(fabs(vector->data[p]) > maximum) pmax=p;
-	       if(fabs(vector->data[p]) > maximum) maximum=fabs(vector->data[p]);
+	       if(fabs(vector->data[p]) > maximum) 
+		 {
+		   maximum=fabs(vector->data[p]);
+		   pmax=p;
+		 }
 	       p++;
 	     }
 
@@ -277,7 +280,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	   (*thisEvent)->peak_time.gpsSeconds      = peaktime / 1000000000;
 	   (*thisEvent)->peak_time.gpsNanoSeconds  = peaktime % 1000000000;
 	   (*thisEvent)->duration     = duration;
-	   (*thisEvent)->central_freq = strtemplate[m].f;	   
+	   (*thisEvent)->central_freq = (strtemplate[m].f-CLA.flow)/2.0;	   
 	   (*thisEvent)->bandwidth    = strtemplate[m].f-CLA.flow;				     
 	   (*thisEvent)->snr          = maximum;
            (*thisEvent)->amplitude   = vector->data[pmax];
