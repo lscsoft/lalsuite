@@ -73,7 +73,11 @@ Routines for reading SFT binary files
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
+#include <lal/SFTfileIO.h>
 
+#include <gsl/gsl_statistics.h>
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>  
 /*
  *   Protection against C++ name mangling
  */
@@ -138,7 +142,7 @@ NRCSID (SFTBINH, "$Id$");
     INT4   gpsNanoSeconds;
     REAL8  timeBase;
     INT4   fminBinIndex;
-    INT4   length;  
+    INT4   length;
   } SFTHeader1;
   
   typedef struct tagCOMPLEX8SFTData1{  /* simple case */
@@ -246,15 +250,15 @@ void ReadLineInfo (LALStatus        *status,
 		   );
 
 void CleanCOMPLEX8SFT (LALStatus          *status,
-		       COMPLEX8SFTData1   *sft,
+		       SFTtype            *sft,
 		       INT4               width,
 		       LineNoiseInfo      *lineInfo
 		       );
 
-void CleanCOMPLEX16SFT (LALStatus            *status,
-			COMPLEX16SFTData1    *sft,
-			INT4                 width,
-			LineNoiseInfo        *lineInfo
+void CleanCOMPLEX16SFT (LALStatus               *status,
+			COMPLEX16FrequencySeries *sft,
+			INT4                    width,
+			LineNoiseInfo           *lineInfo
 			);
 
 void WriteCOMPLEX8SFT (LALStatus          *status,
