@@ -391,6 +391,7 @@ LALFrGetTimeSeriesType(
   {
     if ( FrTOCReadFull( stream->file ) == NULL )
     {
+      LALPrintError( "Error opening frame TOC %s\n", stream->file );
       stream->state |= LAL_FR_ERR | LAL_FR_TOC;
       ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
     }
