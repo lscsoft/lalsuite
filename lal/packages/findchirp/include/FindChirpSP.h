@@ -288,9 +288,6 @@ LALFindChirpBCVSpinData (
     FindChirpSPDataParams      *params
     );
 
-
-
-
 #if 0
 <lalLaTeX>
 \newpage\input{FindChirpSPTemplateC}
@@ -333,6 +330,18 @@ LALFindChirpBCVSpinTemplate (
     InspiralTemplate           *tmplt,
     FindChirpSPTmpltParams     *params
     );
+
+void
+LALFindChirpBCVSpinFilterSegment (
+    LALStatus                  *status,
+    SnglInspiralTable         **eventList,
+    FindChirpFilterInput       *input,
+    FindChirpFilterParams      *params,
+    FindChirpSPDataParams      *inputParams,
+    FindChirpSegmentVector     *fcSegVec,
+    DataSegmentVector          *dataSegVec
+    );
+
 #ifdef  __cplusplus
 #pragma {
 }

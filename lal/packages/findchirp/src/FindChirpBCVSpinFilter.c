@@ -43,8 +43,11 @@ LALFindChirpBCVSpinFilterSegment (
     LALStatus                  *status,
     SnglInspiralTable         **eventList,
     FindChirpFilterInput       *input,
-    FindChirpFilterParams      *params
-                                  )
+    FindChirpFilterParams      *params,             
+    FindChirpSPDataParams      *inputParams,
+    FindChirpSegmentVector     *fcSegVec,
+    DataSegmentVector          *dataSegVec
+  )
 
 {
   UINT4                 j, k;
@@ -71,29 +74,54 @@ LALFindChirpBCVSpinFilterSegment (
   COMPLEX8             *tmpltSignal   = NULL;
   SnglInspiralTable    *thisEvent     = NULL;
   LALMSTUnitsAndAcc     gmstUnits;
-  REAL4                 a1;
-  REAL4                 b1;                  
-  REAL4                 b2;                  
+  FindChirpSegment      *fcSeg;
+  DataSegment           *dataSeg; 
   REAL4                 templateNorm;
   REAL4                 modqsq;
-
+  COMPLEX8              *wtilde;  /* need new pointer name? */
+  REAL4                 *amp;
+  REAL4                 *ampBCV;
+  REAL4                 I = 0.0;
+  REAL4                 J = 0.0;
+  REAL4                 K = 0.0;
+  REAL4                 L = 0.0;
+  REAL4                 M = 0.0;
+  REAL4                 Beta; /* Spin parameter, value from bank or external loop */  
+  REAL4                 denominator;
+  REAL4                 denominator1;
+  REAL4                 a1;
+  REAL4                 a2;                  
+  REAL4                 a3;     
+  COMPLEX8             *outputData1;
+  COMPLEX8             *outputData2;
+  COMPLEX8             *outputData3;
   FindChirpChisqInput  *chisqInput;
   FindChirpChisqInput  *chisqInputBCV;
 
   INITSTATUS( status, "LALFindChirpBCVSpinFilter", FINDCHIRPBCVSPINFILTERC );
   ATTATCHSTATUSPTR( status );
 
-
-
-
-
-
-
 /*declaration*/
-
 
 /*code*/
 
- DETATCHSTATUSPTR( status );
- RETURN( status );
+  amp        = inputParams->ampVec->data;
+  ampBCV     = inputParams->ampVecBCV->data;
+  wtilde     = inputParams->wtildeVec->data;
+
+  for ( k = 1; k < fcSeg->data->data->length; ++k )
+  {
+    I += 4.0 * amp[k] * amp[k] * wtilde[k].re ;
+    J += 4.0 * amp[k] * amp[k] * wtilde[k].re * 
+      cos(Beta * amp[k] / ampBCV[k]);                
+    K += 4.0 * amp[k] * amp[k] * wtilde[k].re * 
+      sin(Beta * amp[k] / ampBCV[k]);
+    L += 4.0 * amp[k] * amp[k] * wtilde[k].re * 
+      sin(2 * Beta * amp[k] / ampBCV[k]);
+    M += 4.0 * amp[k] * amp[k] * wtilde[k].re * 
+      cos(2 * Beta * amp[k] / ampBCV[k]);
+  }
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
 }
