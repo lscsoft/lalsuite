@@ -53,7 +53,7 @@ main(int argc, char **argv)
   if (!args_info.count_dec_given)
   	args_info.count_dec_arg = args_info.n_dec_arg-args_info.start_dec_arg;
     
-  printf("lalDebugLevel = %d\n", lalDebugLevel);
+  if(lalDebugLevel!=0)printf("lalDebugLevel = %d\n", lalDebugLevel);
     
   /* initalize ephemeris_data */
   init_ephemeris(&status, &ephemeris_data);
