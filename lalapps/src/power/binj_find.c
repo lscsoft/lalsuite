@@ -326,7 +326,12 @@ static SnglBurstTable *select_event(LALStatus *stat, SimBurstTable *injection, S
  */
 
 /*
- * Trim a SimBurstTable.
+ * Trim a SimBurstTable.  The trim function takes as input the address of the
+ * pointer pointing to the head of the trigger list.  Upon exit, this pointer
+ * will be set to point to the new head of the trigger list.  The return value
+ * is the address of the "next" pointer in the last element of the list (which
+ * might be same as the pointer to the head of the list if all elements were
+ * deleted).
  */
 
 static int keep_this_injection(SimBurstTable *injection, struct options_t options)
@@ -537,7 +542,12 @@ static INT8 read_search_summary_start_end(LALStatus *stat, char *filename, INT8 
 
 
 /*
- * Trim a SnglBurstTable
+ * Trim a SnglBurstTable.  The trim function takes as input the address of the
+ * pointer pointing to the head of the trigger list.  Upon exit, this pointer
+ * will be set to point to the new head of the trigger list.  The return value
+ * is the address of the "next" pointer in the last element of the list (which
+ * might be same as the pointer to the head of the list if all elements were
+ * deleted).
  */
 
 static int keep_this_event(SnglBurstTable *event, struct options_t options)
@@ -617,15 +627,15 @@ static SnglBurstTable **trim_event_list(SnglBurstTable **list, struct options_t 
  * triggers as we go to try to control memory usage.
  */
 
-static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT8 *timeAnalyzed, SimBurstTable **injection, struct options_t options)
+static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT8 *timeAnalyzed, SimBurstTable **injection_list, struct options_t options)
 {
 	FILE *infile;
 	char line[MAXSTR];
-	SnglBurstTable *list = NULL;
-	SnglBurstTable **eventaddpoint = &list;
+	SnglBurstTable *trigger_list = NULL;
+	SnglBurstTable **eventaddpoint = &trigger_list;
 	SimBurstTable *newinjection = NULL;
 	SimBurstTable **injaddpoint = &newinjection;
-	INT8 start, end;
+	INT8 SearchStart, SearchEnd;
 
 	if(!(infile = fopen(filename, "r")))
 		LALPrintError("Could not open input file\n");
@@ -635,21 +645,21 @@ static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT8 *
 		if(options.verbose)
 			fprintf(stderr, "Working on file %s\n", line);
 
-		*timeAnalyzed += read_search_summary_start_end(stat, line, &start, &end, NULL);
+		*timeAnalyzed += read_search_summary_start_end(stat, line, &SearchStart, &SearchEnd, NULL);
 
-		injaddpoint = extract_injections(stat, injaddpoint, *injection, start, end);
+		injaddpoint = extract_injections(stat, injaddpoint, *injection_list, SearchStart, SearchEnd);
 
 		LAL_CALL(LALSnglBurstTableFromLIGOLw(stat, eventaddpoint, line), stat);
 
 		eventaddpoint = trim_event_list(eventaddpoint, options);
 	}
 
-	free_injections(*injection);
-	*injection = newinjection;
+	free_injections(*injection_list);
+	*injection_list = newinjection;
 
 	fclose(infile);
 
-	return(list);
+	return(trigger_list);
 }
 
 
@@ -661,23 +671,27 @@ static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT8 *
 
 int main(int argc, char **argv)
 {
-	static LALStatus stat;
+	/*
+	 * Data.
+	 */
 
-	INT4 ndetected;
-	INT4 ninjected;
-	INT8 timeAnalyzed;
+	/* LAL */
+	LALStatus stat;
 
-	static struct options_t options;
+	/* command line */
+	struct options_t options;
 
 	/* triggers */
-	SnglBurstTable *burstEventList = NULL;
+	INT8 timeAnalyzed;
+	SnglBurstTable *trigger_list = NULL;
 	SnglBurstTable *detectedTriggers = NULL;
 
 	/* injections */
-	SimBurstTable *simBurstList = NULL;
+	INT4 ninjected, ndetected;
+	SimBurstTable *injection_list = NULL;
 	SimBurstTable *detectedInjections = NULL;
 
-	/* Table outputs */
+	/* outputs */
 	MetadataTable myTable;
 	LIGOLwXMLStream xmlStream;
 
@@ -685,6 +699,7 @@ int main(int argc, char **argv)
 	 * Initialize things.
 	 */
 
+	memset(&stat, 0, sizeof(stat));
 	lal_errhandler = LAL_ERR_EXIT;
 	set_debug_level("35");
 	set_option_defaults(&options);
@@ -694,7 +709,7 @@ int main(int argc, char **argv)
 	 * Read and trim the injection list.
 	 */
 
-	simBurstList = read_injection_list(&stat, options.injectionFile, options.gpsStartTime, options.gpsEndTime, options);
+	injection_list = read_injection_list(&stat, options.injectionFile, options.gpsStartTime, options.gpsEndTime, options);
 
 	/*
 	 * Read and trim the trigger list;  remove injections from the
@@ -702,14 +717,14 @@ int main(int argc, char **argv)
 	 * actually analyzed according to the search summary tables.
 	 */
 
-	burstEventList = read_trigger_list(&stat, options.inputFile, &timeAnalyzed, &simBurstList, options);
+	trigger_list = read_trigger_list(&stat, options.inputFile, &timeAnalyzed, &injection_list, options);
 
 	/*
 	 * Construct a list of detected injections, and a list of the matching
 	 * triggers.
 	 */
 
-	find_injections(&stat, simBurstList, burstEventList, &detectedInjections, &detectedTriggers, &ninjected, &ndetected, options);
+	find_injections(&stat, injection_list, trigger_list, &detectedInjections, &detectedTriggers, &ninjected, &ndetected, options);
 
 	fprintf(stdout,"%19.9f seconds = %.1f hours analyzed\n", timeAnalyzed / 1e9, timeAnalyzed / 3.6e12);
 	fprintf(stdout, "Total injections: %d\n", ninjected);
@@ -726,7 +741,7 @@ int main(int argc, char **argv)
 	/* List of injections that were actually made */
 	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, options.injmadeFile), &stat);
 	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sim_burst_table), &stat);
-	myTable.simBurstTable = simBurstList;
+	myTable.simBurstTable = injection_list;
 	LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, myTable, sim_burst_table), &stat);
 	LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
 	LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
