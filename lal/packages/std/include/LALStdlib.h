@@ -58,6 +58,9 @@ NRCSID (LALSTDLIBH, "$Id$");
 #define LALFopen  fopen    /* will be replaced by custom unit */
 #define LALFclose fclose   /* will be replaced by custom unit */
 
+/* These are non-ANSI standard routines that will be allowed in LAL */
+int getopt( int, char * const *, const char * );
+
 #ifdef  __cplusplus
 }
 #endif
