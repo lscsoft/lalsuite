@@ -297,6 +297,8 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     else:
       self.set_end(chunk.end())
 
+    self.add_var_opt('ifo-a',source_ifo)
+
     outfile = dest_ifo + '-TRIGBANK_' + source_ifo
     if usertag:
       outfile += '_' + usertag 
