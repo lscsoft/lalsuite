@@ -594,7 +594,7 @@ typedef struct tagStochasticOmegaGWParameters {
   UINT4     length;   /* length of vector containing omegaGW(f) values */
   REAL8     f0;       /* start frequency */
   REAL8     deltaF;   /* frequency spacing */
-  REAL4     fRef;    /* reference normalization frequency */
+  REAL8     fRef;    /* reference normalization frequency */
   REAL4     omegaRef; /* refenence omega coefficent for normalization */
 }
 StochasticOmegaGWParameters;
