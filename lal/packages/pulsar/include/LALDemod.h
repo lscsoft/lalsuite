@@ -88,23 +88,8 @@ Now, computing $\hat{F_{\hat{a}}}$ and $\hat{F_{\hat{b}}}$ can be done in parall
 #ifndef _LALDEMOD_H
 #define _LALDEMOD_H
 
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <lal/LALStdlib.h>
-#include <lal/AVFactories.h>
-#include <lal/Random.h>
-#include <lal/RealFFT.h>
-#include <lal/LALConstants.h>
-#include <lal/DetResponse.h>
-#include <lal/DetectorSite.h>
-#include <lal/SimulateCoherentGW.h>
-#include <lal/GenerateTaylorCW.h>
+#include <lal/LALDatatypes.h>
 #include <lal/LALComputeAM.h>
-#include <lal/ComputeSky.h>
-#include <lal/LALBarycenter.h>
 
 #ifdef __cplusplus
 extern "C" {
