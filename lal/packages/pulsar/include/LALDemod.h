@@ -49,8 +49,8 @@ with
 \begin{eqnarray}
 \label{DeFT_defs}
 P_{\alpha k}(b,\vec{\lambda})={\sin{x'}\over x'}-i{1-\cos{x'}\over x'}\\
-x'=\sum_{s} f_s B_{s\alpha} - k\\
-y_\alpha=\sum_{s} f_s A_{s\alpha}.
+x'=2\pi(\sum_{s} f_s B_{s\alpha} - k)\\
+y_\alpha=2\pi\sum_{s} f_s A_{s\alpha}.
 \end{eqnarray}
 In the previous expressions $f_s$ indicate the spin-down parameters of the  different orders 
 (labeled 
@@ -230,7 +230,7 @@ void LALDemod (LALStatus 	*stat,
 			DemodPar 	*params);
 
 /* MODIFIED BY JOLIEN: repaced tdb with lalTDBHook */
-extern void ( *lalTDBHook )( REAL8 , REAL8 , REAL8, REAL8 *, REAL8 *, CHAR * );
+extern void ( *lalTDBHook )( REAL8 , REAL8 , REAL8, REAL8 *, REAL8 *);
 
 void times(REAL8 ,
 		 int, 
