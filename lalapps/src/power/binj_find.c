@@ -275,22 +275,19 @@ static int getline(char *line, int max, FILE *file)
 
 
 /*
- * Function tests if the file contains any playground data.
+ * Function tests if the given interval contains any playground data.
  * FIXME: check if doing S2 or S3
  */
 
-static int isPlayground(INT4 gpsStart, INT4 gpsEnd)
+static int contains_playground(INT4 gpsStart, INT4 gpsEnd)
 {
 	const INT4 S2Start = 729273613;
 	const INT4 playInterval = 6370;
 	const INT4 playLength = 600;
-	INT4 segStart, segEnd, segMiddle;
+	INT4 start_offset = gpsStart - S2Start;
+	INT4 end_offset = gpsEnd - S2Start;
 
-	segStart = (gpsStart - S2Start) % playInterval;
-	segEnd = (gpsEnd - S2Start) % playInterval;
-	segMiddle = ((gpsStart + gpsEnd)/2 - S2Start) % playInterval;
-
-	return((segStart < playLength) || (segEnd < playLength) || (segMiddle < playLength));
+	return((start_offset % playInterval < playLength) || (end_offset / playInterval != start_offset / playInterval));
 }
 
 
@@ -338,7 +335,7 @@ static int keep_this_injection(SimBurstTable *injection, struct options_t option
 		return(FALSE);
 	if (options.maxCentralfreqFlag && !(injection->freq < options.maxCentralfreq))
 		return(FALSE);
-	if (options.playground && !isPlayground(injection->l_peak_time.gpsSeconds, injection->l_peak_time.gpsSeconds))
+	if (options.playground && !contains_playground(injection->l_peak_time.gpsSeconds, injection->l_peak_time.gpsSeconds))
 		return(FALSE);
 
 	return(TRUE);
@@ -508,7 +505,7 @@ static int keep_this_event(SnglBurstTable *event, struct options_t options)
 	if (options.maxSnrFlag && !(event->snr < options.maxSnr))
 		return(FALSE);
 
-	if (options.playground && !(isPlayground(event->start_time.gpsSeconds, event->start_time.gpsSeconds)))
+	if (options.playground && !(contains_playground(event->start_time.gpsSeconds, event->start_time.gpsSeconds)))
 		return(FALSE);
 
 	return(TRUE);
@@ -702,9 +699,10 @@ int main(int argc, char **argv)
 		*detInjectionsAddPoint = NULL;
 	}
 
-	fprintf(stdout,"%19.9f seconds = %.1f hours analyzed\n", timeAnalyzed / 1e9, timeAnalyzed / 1e9 / 3600.0);
-	fprintf(stdout, "Detected %i injections out of %i made\n", ndetected, ninjected);
-	fprintf(stdout, "Efficiency is %f\n", (double) ndetected / ninjected);
+	fprintf(stdout,"%19.9f seconds = %.1f hours analyzed\n", timeAnalyzed / 1e9, timeAnalyzed / 3.6e12);
+	fprintf(stdout, "Total injections: %d\n", ninjected);
+	fprintf(stdout, "Total detected: %d\n", ndetected);
+	fprintf(stdout, "Efficiency: %f\n", (double) ndetected / ninjected);
 
 	/*
 	 * Write output XML files.

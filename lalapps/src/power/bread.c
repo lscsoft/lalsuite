@@ -368,23 +368,19 @@ static INT8 read_search_summary_start_end(LALStatus *stat, char *filename, INT8 
 
 
 /*
- * Function tests if the file contains any playground data
+ * Function tests if the given interval contains any playground data
  * FIXME: check if doing S2 or S3
  */
 
-static int isPlayground(INT4 gpsStart, INT4 gpsEnd)
+static int contains_playground(INT4 gpsStart, INT4 gpsEnd)
 {
-	INT4 runStart = 729273613;
+	INT4 S2Start = 729273613;
 	INT4 playInterval = 6370;
 	INT4 playLength = 600;
-	INT4 segStart, segEnd, segMiddle;
+	INT4 start_offset = gpsStart - S2Start;
+	INT4 end_offset = gpsEnd - S2Start;
 
-	segStart = (gpsStart - runStart)%playInterval;
-	segEnd = (gpsEnd - runStart)%playInterval;
-	segMiddle = gpsStart + (INT4) (0.5 * (gpsEnd - gpsStart));
-	segMiddle = (segMiddle - runStart)%playInterval;
-
-	return(segStart < playLength || segEnd < playLength || segMiddle < playLength);
+	return((start_offset % playInterval < playLength) || (end_offset / playInterval != start_offset / playInterval));
 }
 
 
@@ -443,10 +439,10 @@ static BOOLEAN keep_this_event(SnglBurstTable *event, struct options_t options)
 		return(FALSE);
 
 	/* check if trigger starts in playground */
-	if ( options.playground && !(isPlayground(event->peak_time.gpsSeconds, event->peak_time.gpsSeconds)) )
+	if ( options.playground && !(contains_playground(event->peak_time.gpsSeconds, event->peak_time.gpsSeconds)) )
 		return(FALSE);
 
-	if ( options.noplayground && (isPlayground(event->peak_time.gpsSeconds, event->peak_time.gpsSeconds))  )
+	if ( options.noplayground && (contains_playground(event->peak_time.gpsSeconds, event->peak_time.gpsSeconds))  )
 		return(FALSE);
 	
 	return(TRUE);
