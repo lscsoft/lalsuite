@@ -63,11 +63,14 @@ dnl LAL and LALSupport (required).
 if test -n "$LAL_PREFIX" ; then
   PKG_CONFIG_PATH="$LAL_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
   LAL_CFLAGS="-I$LAL_PREFIX/include"
-  LAL_LIBS="-L$LAL_PREFIX/lib -llalsupport -llal"
+  LAL_LIBS="-L$LAL_PREFIX/lib -llal"
+  LALSUPPORT_CFLAGS="-I$LAL_PREFIX/include"
+  LALSUPPORT_LIBS="-L$LAL_PREFIX/lib -llalsupport"
 fi
-PKG_CHECK_MODULES(LAL, lal lalsupport, [ true ], [ false ])
-CPPFLAGS="$CPPFLAGS $LAL_CFLAGS"
-LIBS="$LIBS $LAL_LIBS"
+PKG_CHECK_MODULES(LAL, lal, [ true ], [ false ])
+PKG_CHECK_MODULES(LALSUPPORT, lalsupport , [ true ], [ false ])
+CPPFLAGS="$CPPFLAGS $LAL_CFLAGS $LALSUPPORT_CFLAGS"
+LIBS="$LALSUPPORT_LIBS $LAL_LIBS $LIBS"
 AC_CHECK_LIB(lal, LALVersion, , AC_MSG_ERROR(could not find the LAL library))
 AC_CHECK_LIB(lalsupport, LALOpenDataFile, , AC_MSG_ERROR(could not find the LAL support library))
 
@@ -75,11 +78,10 @@ dnl LALFrame and LALMetaIo (optional).
 lalframe="true"
 lalmetaio="true"
 PKG_CHECK_MODULES(LALFRAME, lalframe, [ true ], [ false ])
-PKG_CHECK_MODULES(LALMETAIO, lalframe, [ true ], [ false ])
+PKG_CHECK_MODULES(LALMETAIO, lalmetaio, [ true ], [ false ])
 CPPFLAGS="$CPPFLAGS $LALFRAME_CFLAGS $LALMETAIO_CFLAGS"
 LIBS="$LIBS $LALFRAME_LIBS $LALMETAIO_LIBS"
-AC_CHECK_LIB(lalframe, LALFrOpen, , lalframe="false")
-AC_CHECK_LIB(lalmetaio, LALSnglInspiralTableFromLIGOLw, , lalmetaio="false")
+dnl do actual checks for libraries after checking for gsl and FrameL
 
 dnl GSL
 PKG_CHECK_MODULES(GSL, gsl, [ true ], [ false ])
@@ -109,6 +111,10 @@ if test "${metaio}" = "true"; then
                  [metaio="false"]
                  [LIBS="$lal_pre_metaio_LIBS"])
 fi
+
+dnl Now check for LALFrame and LALMetaIo
+AC_CHECK_LIB(lalframe, LALFrOpen, , lalframe="false")
+AC_CHECK_LIB(lalmetaio, LALSnglInspiralTableFromLIGOLw, , lalmetaio="false")
 
 AC_CHECK_LIB(mysqlclient, mysql_init)
 AC_CHECK_LIB(datacondCaller, DatacondCaller)
