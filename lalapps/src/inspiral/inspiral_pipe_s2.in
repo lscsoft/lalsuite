@@ -53,37 +53,36 @@ class AnalyzedIFOData:
   def get_dag_node(self):
     return self.__dag_node
 
-def chunk_in_segment(chunk,seg,max_slide=0):
+def chunk_in_segment(chunk,seg,slide_sec=0):
   if ( 
-    chunk.start() >= seg.start() - max_slide
-    and chunk.start() <= seg.end() + max_slide
+    chunk.start() >= seg.start() - slide_sec
+    and chunk.start() <= seg.end() + slide_sec
     ) or (
-    chunk.end() >= seg.start() - max_slide 
-    and chunk.end() <= seg.end() + max_slide
+    chunk.end() >= seg.start() - slide_sec 
+    and chunk.end() <= seg.end() + slide_sec
     ) or (
-    seg.start() - max_slide >= chunk.start() 
-    and seg.end() + max_slide <= chunk.end() ):
+    seg.start() - slide_sec >= chunk.start() 
+    and seg.end() + slide_sec <= chunk.end() ):
     return 1
   else:
     return 0
 
-def chunks_overlap(chunk1,max_slide,chunk2):
+def chunks_overlap(chunk1,slide_sec,chunk2):
   if ( 
-    chunk1.start() - max_slide >= chunk2.start() 
-    and chunk1.start() - max_slide <= chunk2.end()
+    chunk1.start() - slide_sec >= chunk2.start() 
+    and chunk1.start() - slide_sec <= chunk2.end()
     ) or (
-    chunk1.end() + max_slide >= chunk2.start() 
-    and chunk1.end() - max_slide <= chunk2.end()
+    chunk1.end() + slide_sec >= chunk2.start() 
+    and chunk1.end() - slide_sec <= chunk2.end()
     ) or (
-    chunk1.start() + max_slide >= chunk2.start() 
-    and chunk1.end() - max_slide <= chunk2.end() ):
+    chunk1.start() + slide_sec >= chunk2.start() 
+    and chunk1.end() - slide_sec <= chunk2.end() ):
     return 1
   else:
     return 0
 
 def analyze_lho_ifo(l1_lho_data,l1_chunks_analyzed,ifo_data,ifo_name,
-  insp_job,trig_job,df_job,snr,chisq,pad,max_slide,prev_df,
-  do_datafind,do_trigbank,do_inspiral,dag,usertag=None):
+  insp_job,trig_job,df_job,snr,chisq,pad,max_slide,prev_df,dag,usertag=None):
   """
   Analyze the data from a Hanford instrument. Since the way we treat H1 and
   H2 is symmetric, this function is the same for both instruments. Returns the
@@ -100,9 +99,6 @@ def analyze_lho_ifo(l1_lho_data,l1_chunks_analyzed,ifo_data,ifo_name,
   pad = data start/end padding
   max_slide = the maximum length of a time slide
   prev_df = the previous LALdataFind job that was executed
-  do_datafind = should we do the datafind?
-  do_trigbank = should we do the triggered bank?
-  do_inspiral = should we do the inspiral?
   dag = the DAG to attach the nodes to
   """
   chunks_analyzed = []
@@ -126,7 +122,7 @@ def analyze_lho_ifo(l1_lho_data,l1_chunks_analyzed,ifo_data,ifo_name,
             df.set_start(seg.start() - pad)
             df.set_end(seg.end() + pad)
             if prev_df: df.add_parent(prev_df)
-            if do_datafind: dag.add_node(df)
+            if not slide_time: dag.add_node(df)
             prev_df = df
             done_df_for_seg = 1
           # make a trigbank for the master LHO chunk: to do this, we need
@@ -136,8 +132,8 @@ def analyze_lho_ifo(l1_lho_data,l1_chunks_analyzed,ifo_data,ifo_name,
           for l1_done in l1_chunks_analyzed:
             if chunks_overlap(chunk,max_slide,l1_done.get_chunk()):
               trigbank.add_var_arg(l1_done.get_dag_node().get_output())
-              if do_inspiral: trigbank.add_parent(l1_done.get_dag_node())
-          if do_trigbank: dag.add_node(trigbank)
+              trigbank.add_parent(l1_done.get_dag_node())
+          if not slide_time: dag.add_node(trigbank)
           # analyze the LHO master chunk with this triggered template bank
           insp = inspiral.InspiralNode(insp_job)
           insp.set_start(chunk.start())
@@ -150,9 +146,9 @@ def analyze_lho_ifo(l1_lho_data,l1_chunks_analyzed,ifo_data,ifo_name,
           insp.add_var_opt('trig-end-time',chunk.trig_end())
           insp.set_cache(df.get_output())
           insp.set_bank(trigbank.get_output())
-          if do_datafind: insp.add_parent(df)
-          if do_trigbank: insp.add_parent(trigbank)
-          if do_inspiral: dag.add_node(insp)
+          insp.add_parent(df)
+          insp.add_parent(trigbank)
+          if not slide_time: dag.add_node(insp)
           # store this chunk in the list of filtered L1 data
           chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
   
@@ -168,26 +164,12 @@ Usage: lalapps_inspiral_pipe [options]
   -v, --version            print version information and exit
   -u, --user-tag TAG       tag the job with TAG (overrides value in ini file)
 
-  -d, --datafind           create frame cache files
-  
-  -t, --template-bank      generate a template bank for L1
-  -i, --inspiral           generate inspiral triggers for L1
-
-  -T, --h1-triggered-bank  generate a triggered bank for L1H1
-  -U, --h2-triggered-bank  generate a triggered bank for L1H2
-  
-  -I, --h1-inspiral        generate inspiral triggers for L1H1
-  -J, --h2-inspiral        generate inspiral triggers for L1H2
-
-  -C, --l1h1-coincidence   generate run inca to generate triggers for L1H1
-  -D, --l1h2-coincidence   generate run inca to generate triggers for L1H2
-  -E, --l1h1h2-coincidence generate run inca to generate triggers for L1H1H2
-
   -j, --injections FILE    add simulated inspirals from sim_inspiral in FILE
 
   -s, --max-slide-time SEC set the largest time side for background to SEC
+  -x, --slide-time SEC     run a time slide with slide time SEC seconds
+  -y, --slide-time-ns NS   run a time slide with slide time NS nanoseconds
 
-  -p, --playground-only    only create chunks that overlap with playground
   -P, --priority PRIO      run jobs with condor priority PRIO
 
   -l, --log-path PATH      directory to write condor log file
@@ -197,24 +179,15 @@ Usage: lalapps_inspiral_pipe [options]
 
 ##############################################################################
 # pasrse the command line options to figure out what we should do
-shortop = "hvu:driTUIJCDEj:pP:s:l:f:"
+shortop = "hvu:j:P:s:x:y:l:f:"
 longop = [
   "help",
   "version",
   "user-tag=",
-  "datafind",
-  "template-bank",
-  "inspiral",
-  "h1-triggered-bank",
-  "h2-triggered-bank",
-  "h1-inspiral",
-  "h2-inspiral",
-  "l1h1-coincidence",
-  "l1h2-coincidence",
-  "l1h1h2-coincidence",
   "injections=",
   "max-slide-time=",
-  "playground-only",
+  "slide-time=",
+  "slide-time-ns=",
   "priority=",
   "log-path=",
   "config-file=",
@@ -227,19 +200,10 @@ except getopt.GetoptError:
   sys.exit(1)
 
 usertag = None
-do_datafind = None
-do_tmpltbank = None
-do_inspiral = None
-do_h1_trigbank = None
-do_h2_trigbank = None
-do_h1_inspiral = None
-do_h2_inspiral = None
-do_l1h1_coinc = None
-do_l1h2_coinc = None
-do_l1h1h2_coinc = None
 inj_file = None
 max_slide = 0
-playground_only = 0
+slide_time = 0
+slide_time_ns = 0
 condor_prio = None
 log_path = None
 config_file = None
@@ -249,36 +213,22 @@ for o, a in opts:
     usage()
     sys.exit(0)
   elif o in ("-v", "--version"):
-    print "$Id$"
+    print "S2 Inspiral Pipeline DAG generation script"
+    print "Duncan Brown <duncan@gravity.phys.uwm.edu>"
+    print "CVS Version:",\
+      "$Id$"
+    print "CVS Tag: $Name$"
     sys.exit(0)
   elif o in ("-u", "--user-tag"):
     usertag = a
-  elif o in ("-d", "--datafind"):
-    do_datafind = 1
-  elif o in ("-t", "--template-bank"):
-    do_tmpltbank = 1
-  elif o in ("-i", "--inspiral"):
-    do_inspiral = 1
-  elif o in ("-T", "--h1-triggered-bank"):
-    do_h1_trigbank = 1
-  elif o in ("-U", "--h2-triggered-bank"):
-    do_h2_trigbank = 1
-  elif o in ("-I", "--h1-inspiral"):
-    do_h1_inspiral = 1
-  elif o in ("-J", "--h2-inspiral"):
-    do_h2_inspiral = 1
-  elif o in ("-C", "--l1h1-coincidence"):
-    do_l1h1_coinc = 1
-  elif o in ("-C", "--l1h2-coincidence"):
-    do_l1h2_coinc = 1
-  elif o in ("-C", "--l1h1h2-coincidence"):
-    do_l1h1h2_coinc = 1
   elif o in ("-j", "--injections"):
     inj_file = a
   elif o in ("-s", "--max-slide-time"):
     max_slide = int(a)
-  elif o in ("-p", "--playground-only"):
-    playground_only = 1
+  elif o in ("-x", "--slide-time"):
+    slide_time = int(a)
+  elif o in ("-y", "--slide-time-ns"):
+    slide_time_ns = int(a)
   elif o in ("-P", "--priority"):
     condor_prio = a
   elif o in ("-l", "--log-path"):
@@ -299,6 +249,15 @@ if not config_file:
   print >> sys.stderr, "No configuration file specified."
   print >> sys.stderr, "Use --config-file FILE to specify location."
   sys.exit(1)
+
+if slide_time_ns and not slide_time:
+  print >> sys.stderr, \
+    "--slide-time-ns reqires a non-zero value for --slide-time"
+
+# if slide time is specified, turn off 
+if slide_time:
+  print "Slide time of", slide_time, "sec", slide_time_ns, "ns given"
+  print "Turning off parts of pipeline not needed for background estimation"
 
 ##############################################################################
 # try and make a directory to store the cache files and job logs
@@ -351,6 +310,7 @@ l_insp_job = inspiral.InspiralJob(cp)
 trig_job = inspiral.TrigToTmpltJob(cp)
 inca_job = inspiral.IncaJob(cp)
 lho_inca_job = inspiral.IncaJob(cp)
+l1h1h2_inca_job = inspiral.IncaJob(cp)
 
 # set better submit file names than the default
 if usertag:
@@ -364,6 +324,7 @@ l_insp_job.set_sub_file( basename + '.l1_inspiral' + subsuffix )
 trig_job.set_sub_file( basename + '.trigtotmplt' + subsuffix )
 inca_job.set_sub_file( basename + '.inca' + subsuffix )
 lho_inca_job.set_sub_file( basename + '.lho_inca' + subsuffix )
+l1h1h2_inca_job.set_sub_file( basename + '.l1h1h2_inca' + subsuffix )
 
 # set the usertag in the jobs
 if usertag:
@@ -373,6 +334,7 @@ if usertag:
   trig_job.add_opt('user-tag',usertag)
   inca_job.add_opt('user-tag',usertag)
   lho_inca_job.add_opt('user-tag',usertag)
+  l1h1h2_inca_job.add_opt('user-tag',usertag)
 
 # add the injections
 if inj_file:
@@ -388,6 +350,15 @@ if condor_prio:
   trig_job.add_condor_cmd('priority',condor_prio)
   inca_job.add_condor_cmd('priority',condor_prio)
   lho_inca_job.add_condor_cmd('priority',condor_prio)
+  l1h1h2_inca_job.add_condor_cmd('priority',condor_prio)
+
+# add the slide argument to inca if we are doing a background estimation
+if slide_time:
+  inca_job.add_opt('slide-time',slide_time)
+  lho_inca_job.add_opt('slide-time',slide_time)
+  if slide_time_ns:
+    inca_job.add_opt('slide-time-ns',slide_time_ns)
+    lho_inca_job.add_opt('slide-time-ns',slide_time_ns)
 
 ##############################################################################
 # get the thresholds, pad and chunk lengths from the values in the ini file
@@ -427,16 +398,13 @@ print "done"
 # analyze (since all the science segments are over length seconds.) 
 print "making master chunks...",
 sys.stdout.flush()
-l1_data.make_chunks(length,overlap,playground_only)
-h1_data.make_chunks(length,overlap,playground_only)
-h2_data.make_chunks(length,overlap,playground_only)
+l1_data.make_chunks(length,overlap,0)
+h1_data.make_chunks(length,overlap,0)
+h2_data.make_chunks(length,overlap,0)
 
-l1_data.make_chunks_from_unused(
-  length,overlap/2,playground_only,overlap/2)
-h1_data.make_chunks_from_unused(
-  length,overlap/2,playground_only,overlap/2)
-h2_data.make_chunks_from_unused(
-  length,overlap/2,playground_only,overlap/2)
+l1_data.make_chunks_from_unused(length,overlap/2,0,overlap/2)
+h1_data.make_chunks_from_unused(length,overlap/2,0,overlap/2)
+h2_data.make_chunks_from_unused(length,overlap/2,0,overlap/2)
 print "done"
 
 ##############################################################################
@@ -451,29 +419,18 @@ l1_lho_data.coalesce()
 print "done"
 
 ##############################################################################
-# Step 4: Compute the ScienceSegments for the non-overlaping coincidence
-# regions: i.e. H1/L1, H2/L1, H1/H2/L1
-print "determining disjoint coincidence regions...",
+# Step 4: Compute the ScienceSegments for the L1/H2 double coincident data
+print "computing L1/H2 double coincident data..."
 sys.stdout.flush()
 not_h1_data = copy.deepcopy(h1_data)
 not_h1_data.invert()
 not_h2_data = copy.deepcopy(h2_data)
 not_h2_data.invert()
 
-l1_h1_data = copy.deepcopy(l1_data)
-l1_h1_data.intersection(h1_data)
-l1_h1_data.intersection(not_h2_data)
-l1_h1_data.coalesce()
-
 l1_h2_data = copy.deepcopy(l1_data)
 l1_h2_data.intersection(h2_data)
 l1_h2_data.intersection(not_h1_data)
 l1_h2_data.coalesce()
-
-l1_h1_h2_data = copy.deepcopy(l1_data)
-l1_h1_h2_data.intersection(h1_data)
-l1_h1_h2_data.intersection(h2_data)
-l1_h1_h2_data.coalesce()
 print "done"
 
 ##############################################################################
@@ -503,7 +460,7 @@ for seg in l1_data:
           df.set_start(seg.start() - pad)
           df.set_end(seg.end() + pad)
           if prev_df: df.add_parent(prev_df)
-          if do_datafind: dag.add_node(df)
+          if not slide_time: dag.add_node(df)
           prev_df = df
           done_df_for_seg = 1
         # make a template bank job for the master L1 chunk
@@ -512,8 +469,8 @@ for seg in l1_data:
         bank.set_end(chunk.end())
         bank.set_ifo('L1')
         bank.set_cache(df.get_output())
-        if do_datafind: bank.add_parent(df)
-        if do_tmpltbank: dag.add_node(bank)
+        bank.add_parent(df)
+        if not slide_time: dag.add_node(bank)
         # make an inspiral job for the master L1 chunk
         insp = inspiral.InspiralNode(l_insp_job)
         insp.set_start(chunk.start())
@@ -525,9 +482,8 @@ for seg in l1_data:
         insp.set_ifo('L1')
         insp.set_cache(df.get_output())
         insp.set_bank(bank.get_output())
-        if do_tmpltbank: insp.add_parent(bank)
-        if not do_tmpltbank and do_datafind:insp.add_parent(df)
-        if do_inspiral: dag.add_node(insp)
+        insp.add_parent(bank)
+        if not slide_time: dag.add_node(insp)
         # store this chunk in the list of filtered L1 data
         l1_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
 print "done"
@@ -541,7 +497,7 @@ sys.stdout.flush()
 (prev_df,h1_chunks_analyzed) = analyze_lho_ifo(
   l1_lho_data,l1_chunks_analyzed,h1_data,
   'H1',insp_job,trig_job,df_job,h1_snr,h1_chisq,pad,max_slide,prev_df,
-  do_datafind,do_h1_trigbank,do_h1_inspiral,dag,usertag)
+  dag,usertag)
 print "done"
 
 ##############################################################################
@@ -553,13 +509,39 @@ sys.stdout.flush()
 (prev_df,l1_h2_chunks_analyzed) = analyze_lho_ifo(
   l1_h2_data,l1_chunks_analyzed,h2_data,
   'H2',insp_job,trig_job,df_job,h2_snr,h2_chisq,pad,max_slide,prev_df,
-  do_datafind,do_h2_trigbank,do_h2_inspiral,dag,usertag)
+  dag,usertag)
 print "done"
 
 ##############################################################################
+## Any thing below here needs to be redone for each time slide ###############
+##############################################################################
+
+##############################################################################
 # Step 8: Run inca on each of the disjoint sets of double coincidence data
+if slide_time:
+  print "re-computing L1/H2 double coincident data with slide...",
+  sys.stdout.flush()
+  for seg in h1_data:
+    h1_data.set_start(h1_data.start() + slide_time)
+    h1_data.set_end(h1_data.end() + slide_time)
+  for seg in h2_data:
+    h1_data.set_start(h2_data.start() + slide_time)
+    h1_data.set_end(h2_data.end() + slide_time)
+  l1_h2_data = copy.deepcopy(l1_data)
+  l1_h2_data.intersection(h2_data)
+  l1_h2_data.intersection(not_h1_data)
+  l1_h2_data.coalesce()
+  print "done"
+  sys.stdout.flush()
+
 print "setting up jobs to get L1/H1 double coincident triggers...",
 sys.stdout.flush()
+
+l1_h1_data = copy.deepcopy(l1_data)
+l1_h1_data.intersection(h1_data)
+l1_h1_data.intersection(not_h2_data)
+l1_h1_data.coalesce()
+
 for seg in l1_h1_data:
   inca = inspiral.IncaNode(inca_job)
   inca.set_start(seg.start())
@@ -574,13 +556,13 @@ for seg in l1_h1_data:
   for l1_done in l1_chunks_analyzed:
     if chunk_in_segment(l1_done.get_chunk(),seg):
       inca.add_var_arg(l1_done.get_dag_node().get_output())
-      if do_inspiral: inca.add_parent(l1_done.get_dag_node())
+      if not slide_time: inca.add_parent(l1_done.get_dag_node())
   # add all H1 master segments that overlap with segment to input
   for h1_done in h1_chunks_analyzed:
-    if chunk_in_segment(h1_done.get_chunk(),seg):
+    if chunk_in_segment(h1_done.get_chunk(),seg,slide_time):
       inca.add_var_arg(h1_done.get_dag_node().get_output())
-      if do_h1_inspiral: inca.add_parent(h1_done.get_dag_node())
-  if do_l1h1_coinc: dag.add_node(inca)
+      if not slide_time: inca.add_parent(h1_done.get_dag_node())
+  dag.add_node(inca)
 print "done"
 
 print "setting up jobs to get L1/H2 double coincident triggers...",
@@ -599,19 +581,24 @@ for seg in l1_h2_data:
   for l1_done in l1_chunks_analyzed:
     if chunk_in_segment(l1_done.get_chunk(),seg):
       inca.add_var_arg(l1_done.get_dag_node().get_output())
-      if do_inspiral: inca.add_parent(l1_done.get_dag_node())
+      if not slide_time: inca.add_parent(l1_done.get_dag_node())
   # add all H2 master segments that overlap with segment to input
   for h2_done in l1_h2_chunks_analyzed:
-    if chunk_in_segment(h2_done.get_chunk(),seg):
+    if chunk_in_segment(h2_done.get_chunk(),seg,slide_time):
       inca.add_var_arg(h2_done.get_dag_node().get_output())
-      if do_h1_inspiral: inca.add_parent(h2_done.get_dag_node())
-  if do_l1h2_coinc: dag.add_node(inca)
+      if not slide_time: inca.add_parent(h2_done.get_dag_node())
+  dag.add_node(inca)
 print "done"
 
 ##############################################################################
 # Step 9: Run incas on the triple coincident data
 print "setting up jobs to get L1/H1 triple coincident triggers...",
 sys.stdout.flush()
+
+l1_h1_h2_data = copy.deepcopy(l1_data)
+l1_h1_h2_data.intersection(h1_data)
+l1_h1_h2_data.intersection(h2_data)
+l1_h1_h2_data.coalesce()
 
 l1_h1_inca_nodes = []
 
@@ -630,15 +617,14 @@ for seg in l1_h1_h2_data:
   for l1_done in l1_chunks_analyzed:
     if chunk_in_segment(l1_done.get_chunk(),seg):
       inca1.add_var_arg(l1_done.get_dag_node().get_output())
-      if do_inspiral: inca1.add_parent(l1_done.get_dag_node())
+      if not slide_time: inca1.add_parent(l1_done.get_dag_node())
   # add all H1 master segments that overlap with segment to input
   for h1_done in h1_chunks_analyzed:
-    if chunk_in_segment(h1_done.get_chunk(),seg):
+    if chunk_in_segment(h1_done.get_chunk(),seg,slide_time):
       inca1.add_var_arg(h1_done.get_dag_node().get_output())
-      if do_h1_inspiral: inca1.add_parent(h1_done.get_dag_node())
+      if not slide_time: inca1.add_parent(h1_done.get_dag_node())
   # add the nodes to the dag
-  if do_l1h1h2_coinc:
-    dag.add_node(inca1)
+  dag.add_node(inca1)
   l1_h1_inca_nodes.append(AnalyzedIFOData(seg,inca1))
 print "done"
 
@@ -668,17 +654,17 @@ for seg in h2_data:
           df.set_start(seg.start() - pad)
           df.set_end(seg.end() + pad)
           if prev_df: df.add_parent(prev_df)
-          if do_datafind: dag.add_node(df)
+          if not slide_time: dag.add_node(df)
           prev_df = df
           done_df_for_seg = 1
         # make a trigbank for the master H2 chunk: to do this, we need
         # the inca job from L1/H1 that overlaps with this H2 chunk as input
         trigbank = inspiral.TrigToTmpltNode(trig_job)
-        trigbank.make_trigbank(chunk,0,'H1','H2',usertag,'L1H1')
+        trigbank.make_trigbank(chunk,slide_time,'H1','H2',usertag,'L1H1')
         for l1_h1_done in l1_h1_inca_nodes:
-          if chunk_in_segment(chunk,l1_h1_done.get_chunk()):
+          if chunk_in_segment(chunk,l1_h1_done.get_chunk(),slide_time):
             trigbank.add_var_arg(l1_h1_done.get_dag_node().get_output_b())
-            trigbank.add_parent(l1_h1_done.get_dag_node())
+            if not slide_time: trigbank.add_parent(l1_h1_done.get_dag_node())
         # analyze the H2 master chunk with this triggered template bank
         insp = inspiral.InspiralNode(insp_job)
         insp.set_start(chunk.start())
@@ -691,11 +677,10 @@ for seg in h2_data:
         insp.add_var_opt('trig-end-time',chunk.trig_end())
         insp.set_cache(df.get_output())
         insp.set_bank(trigbank.get_output())
-        if do_datafind: insp.add_parent(df)
-        if do_l1h1h2_coinc: 
-          dag.add_node(trigbank)
-          insp.add_parent(trigbank)
-          dag.add_node(insp)
+        if not slide_time: insp.add_parent(df)
+        dag.add_node(trigbank)
+        insp.add_parent(trigbank)
+        dag.add_node(insp)
         # store this chunk in the list of filtered L1 data
         l1_h1_h2_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
 print "done"
@@ -721,7 +706,7 @@ for seg in l1_h1_h2_data:
   inca2.add_var_opt('epsilon',cp.get('pipeline','hh-epsilon'))
   inca2.add_var_opt('ifo-b-snr-threshold',h2_snr)
   # do the third inca to clobber and L1 triggers that we can
-  inca3 = inspiral.IncaNode(inca_job)
+  inca3 = inspiral.IncaNode(l1h1h2_inca_job)
   inca3.set_start(seg.start())
   inca3.set_end(seg.end())
   inca3.set_ifo_a('L1')
@@ -746,9 +731,8 @@ for seg in l1_h1_h2_data:
   inca3.add_parent(inca2)
   inca3.add_var_arg(inca2.get_output_a())
   # add the nodes to the dag
-  if do_l1h1h2_coinc:
-    dag.add_node(inca2)
-    dag.add_node(inca3)
+  dag.add_node(inca2)
+  dag.add_node(inca3)
 print "done"
 sys.stdout.flush()
 
