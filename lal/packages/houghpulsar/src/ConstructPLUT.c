@@ -209,7 +209,7 @@ static void DrawRightCircle(REAL8,REAL8,REAL8,INT4,INT4, COORType *,
 static void DrawLeftCircle(REAL8,REAL8,REAL8,INT4,INT4,COORType *, 
                          HOUGHPatchGrid *);
 static void CheckLineCase(REAL8, REAL8, REAL8,REAL8 *, INT4 *);
-static void FindExactLine(REAL8,REAL8,REAL8 *,REAL8 *);
+/* static void FindExactLine(REAL8,REAL8,REAL8 *,REAL8 *); */
 static void FindLine(REAL8,REAL8,REAL8,REAL8 *,REAL8 *);
 static void CheckLineIntersection(REAL8,REAL8,REAL8,INT4 *,INT4 *,INT4 *, 
                                 HOUGHPatchGrid *);
