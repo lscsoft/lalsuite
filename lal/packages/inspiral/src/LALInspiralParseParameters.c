@@ -128,7 +128,7 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	{
 	  params->massChoice  = m1Andm2;
 	  if (strcmp(argv[++i],"TaylorT1")==0){
-	    params->massChoice  = psi0Andpsi3;}
+	    params->approximant = TaylorT1; }
 	  else if (strcmp(argv[i],"TaylorT2")==0){
 	    params->approximant = TaylorT2;}
 	  else if (strcmp(argv[i],"TaylorT3")==0){
@@ -423,7 +423,7 @@ void LALInspiralITStructureSetDefault(LALStatus *status,
     
   params->eccentricity = INSPIRALTEMPLATE_ECCENTRICITY;   
   
-  params->ieta         = 1;  
+  params->ieta         = 1.;  
   params->OmegaS       = INSPIRALTEMPLATE_OMEGAS;
   params->nStartPad    = 0;
   params->nEndPad      = 0;
