@@ -1,16 +1,20 @@
 ## Process this file with automake to produce Makefile.in
 if MPI
-check_PROGRAMS  = CommTestMain
+check_PROGRAMS  = SendRecvTest ExchangeTest
 TESTS           = CommTest@MPITYPE@
 else
 check_PROGRAMS  =
-TESTS           = NoTest
+TESTS           =
 endif
 
-EXTRA_DIST      = NoTest CommTestMPICH CommTestLAM CommTestMain.c CommTestMaster.c CommTestSlave.c CommTestGlobal.h
+EXTRA_DIST      = CommTestMPICH CommTestLAM SendRecvTest.c ExchangeTest.c
 
-CommTestMain_SOURCES = CommTestMain.c CommTestMaster.c CommTestSlave.c
-CommTestMain_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+SendRecvTest_SOURCES = SendRecvTest.c
+SendRecvTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+ExchangeTest_SOURCES = ExchangeTest.c
+ExchangeTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-MOSTLYCLEANFILES = PI* Slave*.out Slave*.err machines killscript lamhosts CommTestSchema
-CLEANFILES = CommTestMain
+MOSTLYCLEANFILES = .dvi-dep PI* Slave*.out Slave*.err machines killscript lamhosts CommTestSchema
+CLEANFILES = SendRecvTest ExchangeTest
+DISTCLEANFILES = *.tex
+dvi-local: .dvi-dep

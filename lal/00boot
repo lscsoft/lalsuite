@@ -294,6 +294,10 @@ m4 VectorSequenceFactoriesTest.m4 > VectorSequenceFactoriesTest.c
 m4 ArrayFactoriesTest.m4 > ArrayFactoriesTest.c
 cd ../../..
 
+cd packages/comm/src
+m4 SendRecv.m4 > SendRecv.c
+m4 Exchange.m4 > Exchange.c
+cd ../../..
 
 ## Generate the Makefile.in's and the configure script
 

@@ -1,6 +1,28 @@
 #!/bin/sh
+fail=
 rm -f machines
-echo `hostname` >  machines
-echo `hostname` >> machines
-echo `hostname` >> machines
-mpirun -np 3 -machinefile machines CommTestMain
+cat > machines <<EOF
+`hostname`
+`hostname`
+`hostname`
+`hostname`
+`hostname`
+EOF
+
+if mpirun -np 5 -machinefile machines SendRecvTest
+then
+  echo "PASS: SendRecvTest"
+else
+  echo "FAIL: SendRecvTest"
+  fail=yes
+fi
+
+if mpirun -np 5 -machinefile machines ExchangeTest
+then
+  echo "PASS: ExchangeTest"
+else
+  echo "FAIL: ExchangeTest"
+  fail=yes
+fi
+
+test -z "$fail"

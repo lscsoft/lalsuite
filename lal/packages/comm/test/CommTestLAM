@@ -1,14 +1,43 @@
 #!/bin/sh
+
+fail=
+
 rm -f lamhosts
 rm -f CommTestSchema
 
-echo `hostname` >  lamhosts
-echo 'CommTestMain h' > CommTestSchema
-echo 'CommTestMain h' >> CommTestSchema
-echo 'CommTestMain h' >> CommTestSchema
+echo `hostname` > lamhosts
+cat > CommTestSchema <<EOF
+SendRecvTest
+SendRecvTest
+SendRecvTest
+SendRecvTest
+SendRecvTest
+EOF
 
 lamboot -v lamhosts
 
-mpirun -v CommTestSchema
+if mpirun -v CommTestSchema
+then
+  echo "PASS: SendRecvTest"
+else
+  echo "FAIL: SendRecvTest"
+  fail=yes
+fi
+
+echo 'ExchangeTest' >  CommTestSchema
+echo 'ExchangeTest' >> CommTestSchema
+echo 'ExchangeTest' >> CommTestSchema
+echo 'ExchangeTest' >> CommTestSchema
+echo 'ExchangeTest' >> CommTestSchema
+
+if mpirun -v CommTestSchema
+then
+  echo "PASS: ExchangeTest"
+else
+  echo "FAIL: ExchangeTest"
+  fail=yes
+fi
 
 wipe -v lamhosts
+
+test -z "$fail"
