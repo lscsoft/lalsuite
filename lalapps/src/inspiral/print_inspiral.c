@@ -80,6 +80,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 int main ( int argc, char *argv[] )
 {
   extern int vrbflg;
+  int playground = 0;
   LALStatus status = blank_status;
   LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
   char *inputGlob = NULL;
@@ -90,6 +91,7 @@ int main ( int argc, char *argv[] )
   {
     /* these options set a flag */
     {"verbose",                 no_argument,       &vrbflg,           1 },
+    {"playground",              no_argument,       &playground,       1 },
     {"comment",                 required_argument, 0,                'c'},
     {"input",                   required_argument, 0,                'i'},
     {"output",                  required_argument, 0,                'o'},
@@ -329,15 +331,57 @@ int main ( int argc, char *argv[] )
   if ( vrbflg ) fprintf( stdout, "done\n" );
 
   /* create a linked list of sorted templates */
-  if ( vrbflg ) fprintf( stdout, "reordering linked list... " );
-  prevEvent = eventHead = eventHandle[0];
-  for ( i = 1; i < numEvents; ++i )
+  if ( vrbflg ) 
   {
-    /* add the event to the linked list */
-    prevEvent = prevEvent->next = eventHandle[i];
+    fprintf( stdout, "reordering linked list " );
   }
-  prevEvent->next = NULL;
+  if ( vrbflg && playground )
+  {
+    fprintf( stdout, "for playground events only... " );
+  }
+  else if ( vrbflg )
+  {
+    fprintf( stdout, "... " );
+  }
+  
+  if ( playground )
+  {
+    /* get only the playground events */
+    numEvents = 0;
+    eventHead = NULL;
+    if ( ((eventHandle[i].end_time.gpsSeconds - 729273613) % 6370) < 600 )
+    {
+      ++numEvents;
+      if ( ! eventHead )
+      {
+        prevEvent = eventHead = eventHandle[i];
+      }
+      else
+      {
+        prevEvent = prevEvent->next = eventHandle[i];
+      }
+    }
+  }
+  else
+  {
+    /* add all events to the linked list */
+    prevEvent = eventHead = eventHandle[0];
+    for ( i = 1; i < numEvents; ++i )
+    {
+      prevEvent = prevEvent->next = eventHandle[i];
+    }
+  }
+
   if ( vrbflg ) fprintf( stdout, "done\n" );
+
+  if ( eventHead )
+  {
+    prevEvent->next = NULL;
+  }
+  else
+  {
+    if ( vrbflg ) fprintf( stdout, "no events left\n" );
+  }
   
 
   /*
@@ -347,7 +391,7 @@ int main ( int argc, char *argv[] )
    */
 
 
-  if ( vrbflg ) fprintf( stdout, "writing events to file... " );
+  if ( vrbflg ) fprintf( stdout, "writing output file... " );
 
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
   outputTable.snglInspiralTable = eventHead;
