@@ -5,7 +5,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <getopt.h>
-#include <lalapps.h>
+
+/* lal headers */
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/ResampleTimeSeries.h>
@@ -16,11 +17,19 @@
 #include <lal/FrameCalibration.h>
 #include <lal/RingSearch.h>
 
+/* lal-support headers */
 #include <lal/PrintFTSeries.h>
 
+/* lal-metaio headers */
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
 
+/* frame library headers */
+#include <FrameL.h>
+
+/* lalapps headers */
+#include <lalapps.h>
+#include <series.h>
 #include <processtable.h>
 
 RCSID( "$Id$" );
@@ -57,8 +66,17 @@ ProcessTable *create_process_table( const char *ifo );
 REAL4TimeSeries *get_data( UINT4 segsz );
 COMPLEX8FrequencySeries *get_response( UINT4 segsz, double dt, const char *ifo );
 int read_response( COMPLEX8FrequencySeries *series, const char *fname );
+FrameH *fr_add_proc_REAL4TimeSeries( FrameH *frame,
+    REAL4TimeSeries *series );
+FrameH *fr_add_proc_REAL4FrequencySeries( FrameH *frame,
+    REAL4FrequencySeries *series );
+FrameH *fr_add_proc_COMPLEX8FrequencySeries( FrameH *frame,
+    COMPLEX8FrequencySeries *series );
 int vrbmsg( const char *fmt, ... );
 int usage( const char *program );
+
+/* possible output formats */
+enum { ascii_format, xml_format, frame_format };
 
 /* global variables: these are the program parameters */
 ProcessParamsTable *procpartab;
@@ -75,11 +93,21 @@ const char *frptrn  = "*.gwf";
 const char *frchan  = "H1:LSC-AS_Q";
 const char *rspfile = "response.asc";
 const char *outfile;
+int outfmt = xml_format;
 double srate = -1;
 int bmin = -1;
 int bmax = -1;
-int keep;
 int verbose;
+
+/* flags for writing output */
+int write_raw_data;
+int write_data;
+int write_response;
+int write_inverse_spectrum;
+int write_data_segments;
+int write_filter_output;
+int write_format = frame_format;
+FrameH *write_frame;
 
 const char *fpars;
 int         fargc = 1;
@@ -95,12 +123,6 @@ int main( int argc, char *argv[] )
   static RingSearchParams *params;
   static SnglBurstTable   *events;
 
-  static MetadataTable     proctable;
-  static MetadataTable     procparams;
-  static MetadataTable     searchsumm;
-  static MetadataTable     ringevents;
-  static LIGOLwXMLStream   results;
-
   char  ofile[64];
 
   program = argv[0];
@@ -108,12 +130,11 @@ int main( int argc, char *argv[] )
   /* add the non-filter arguments to the process param list */
   add_process_params( argc, argv );
 
-  /* parse options */
-  parse_options( argc, argv );
-
   /* reverse process param list so output is in correct order */
   reverse_process_params();
-  procparams.processParamsTable = procpartab;
+
+  /* parse options */
+  parse_options( argc, argv );
 
   /* set debug level */
   lal_errhandler = LAL_ERR_EXIT;
@@ -126,7 +147,7 @@ int main( int argc, char *argv[] )
   /* set IFO name */
   strncpy( params->ifoName, frchan, 2 );
 
-  /* get data and response function */
+  /* get data and response function; write to files if requested */
   data.channel  = get_data( params->segmentSize );
   data.response = get_response( params->segmentSize, data.channel->deltaT,
       params->ifoName );
@@ -135,6 +156,47 @@ int main( int argc, char *argv[] )
   /* condition data */
   vrbmsg( "call LALRingSearchConditionData" );
   LAL_CALL( LALRingSearchConditionData( &status, params, &data ), &status );
+
+  /* write inverse spectrum and/or data segments if required */
+  if ( write_inverse_spectrum )
+  {
+    LALSnprintf( params->invSpectrum->name, sizeof( params->invSpectrum->name ),
+        "%s_INVSPEC", frchan );
+    if ( write_format == frame_format )
+    {
+      vrbmsg( "writing inverse spectrum to frame" );
+      write_frame = fr_add_proc_REAL4FrequencySeries( write_frame,
+          params->invSpectrum );
+    }
+    else
+    {
+      const char *fname = "ring-invspec.dat";
+      vrbmsg( "writing inverse spectrum to file %s", fname );
+      LALSPrintFrequencySeries( params->invSpectrum, fname );
+    }
+  }
+  if ( write_data_segments )
+  {
+    size_t seg;
+    for ( seg = 0; seg < params->numSegments; ++seg )
+    {
+      LALSnprintf( params->dataSegment[seg].name,
+          sizeof( params->dataSegment[seg].name ), "%s_SEG_%03d", frchan, seg );
+      if ( write_format == frame_format )
+      {
+        vrbmsg( "writing data segment %d to frame", seg );
+        write_frame = fr_add_proc_COMPLEX8FrequencySeries( write_frame,
+            params->dataSegment + seg );
+      }
+      else
+      {
+        char fname[64];
+        LALSnprintf( fname, sizeof( fname ), "ring-segment-%03d.dat", seg );
+        vrbmsg( "writing data segment %d to file %s", seg, fname );
+        LALCPrintFrequencySeries( params->dataSegment + seg, fname );
+      }
+    }
+  }
 
   /* filter entire template bank */
   bmin = bmin < params->templateBank->numTmplt ? bmin :
@@ -145,61 +207,146 @@ int main( int argc, char *argv[] )
   bmax = bmax >= bmin ? bmax : params->templateBank->numTmplt;
   input.startTemplate = bmin;
   input.templatesToDo = bmax - bmin + 1;
-  params->keepResults = keep;
+  params->keepResults = write_filter_output; /* keep output if to write it */
   vrbmsg( "call LALRingSearch" );
   LAL_CALL( LALRingSearch( &status, &events, &input, params ), &status );
 
+  /* write filter outputs if required */
+  if ( write_filter_output )
+  {
+    size_t rslt;
+    for ( rslt = 0; rslt < params->numResults; ++rslt )
+    {
+      int tmplt;
+      int sgmnt;
+      sscanf( params->result[rslt].name, "snr-%d.%d", &tmplt, &sgmnt );
+      LALSnprintf( params->result[rslt].name,
+          sizeof( params->result[rslt].name ), "%s_SNR_%03d_%03d",
+          frchan, tmplt, sgmnt );
+      if ( write_format == frame_format )
+      {
+        vrbmsg( "writing filter %d output to frame", rslt );
+        write_frame = fr_add_proc_REAL4TimeSeries( write_frame,
+            params->result + rslt );
+      }
+      else
+      {
+        char fname[64];
+        LALSnprintf( fname, sizeof(fname), "snr-%03d-%03d.dat", tmplt, sgmnt );
+        vrbmsg( "writing filter %d output to file %s", rslt, fname );
+        LALSPrintTimeSeries( params->result + rslt, fname );
+      }
+    }
+  }
+
+  /* actually write frame results if required */
+  if ( write_frame )
+  {
+    FrFile *frfile;
+    char fname[64];
+    LALSnprintf( fname, sizeof( fname ), "%s-RING-%d-%d.gwf", params->ifoName,
+        tstart.gpsSeconds, (int)ceil( duration ) );
+    vrbmsg( "writing frame file %s", fname );
+    frfile = FrFileONew( fname, 0 );
+    FrameWrite( write_frame, frfile );
+    FrFileOEnd( frfile );
+  }
+
   /* output events */
-
-  proctable.processTable = create_process_table( params->ifoName );
-  searchsumm.searchSummaryTable = create_search_summary( &tstart,
-      duration, params->segmentSize / params->sampleRate,
-      params->numSegments, params->numEvents );
-  ringevents.snglBurstTable = events;
-
-  /* open results xml file */
   if ( ! outfile )
   {
-    LALSnprintf( ofile, sizeof( ofile ), "%s-RING-%d-%d.xml", params->ifoName,
-        tstart.gpsSeconds, (int)ceil( duration ) );
+    LALSnprintf( ofile, sizeof( ofile ), "%s-RING-%d-%d.%s", params->ifoName,
+        tstart.gpsSeconds, (int)ceil( duration ),
+        outfmt == xml_format ? "xml" : "asc" );
     outfile = ofile;
   }
   vrbmsg( "output events to file %s", outfile );
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, outfile ), &status );
 
-  /* output the process table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ),
-      &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable,
-        process_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
-
-  /* output process params table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ),
-      &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, procparams,
-        process_params_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
-
-  /* output search summary table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, search_summary_table ),
-      &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm,
-        search_summary_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
-
-  /* output the events */
-  if ( ringevents.snglBurstTable )
+  if ( outfmt == xml_format )  /* XML output */
   {
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sngl_burst_table ),
+    MetadataTable proctable;
+    MetadataTable procparams;
+    MetadataTable searchsumm;
+    MetadataTable ringevents;
+    LIGOLwXMLStream  results;
+
+    memset( &proctable, 0, sizeof( proctable ) );
+    memset( &procparams, 0, sizeof( procparams ) );
+    memset( &searchsumm, 0, sizeof( searchsumm ) );
+    memset( &ringevents, 0, sizeof( ringevents ) );
+    memset( &results, 0, sizeof( results ) );
+
+    proctable.processTable = create_process_table( params->ifoName );
+    procparams.processParamsTable = procpartab;
+    searchsumm.searchSummaryTable = create_search_summary( &tstart,
+        duration, params->segmentSize / params->sampleRate,
+        params->numSegments, params->numEvents );
+    ringevents.snglBurstTable = events;
+
+    /* open results xml file */
+    LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, outfile ), &status );
+
+    /* output the process table */
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ),
         &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, ringevents,
-          sngl_burst_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable,
+          process_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
+
+    /* output process params table */
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ),
+        &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, procparams,
+          process_params_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
+
+    /* output search summary table */
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, search_summary_table ),
+        &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm,
+          search_summary_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
+
+    /* output the events */
+    if ( ringevents.snglBurstTable )
+    {
+      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sngl_burst_table ),
+          &status );
+      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, ringevents,
+            sngl_burst_table ), &status );
+      LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
+    }
+
+    /* close the xml file */
+    LAL_CALL( LALCloseLIGOLwXMLFile( &status, &results ), &status );
+  }
+  else /* ASCII output */
+  {
+    SnglBurstTable *this_event = events;
+    FILE *fp;
+    fp = fopen( outfile, "w" );
+    if ( ! fp )
+    {
+      perror( "output file" );
+      exit( 1 );
+    }
+    fprintf( fp,
+        "# gps start time\tsignal/noise\tamplitude\tfrequency\tbandwidth\n" );
+    while ( this_event )
+    {
+      fprintf( fp, "%9d.%09d\t%e\t%e\t%e\t%e\n",
+          (int) this_event->start_time.gpsSeconds,
+          (int) this_event->start_time.gpsNanoSeconds,
+          this_event->snr,
+          this_event->amplitude,
+          this_event->central_freq,
+          this_event->bandwidth );
+      this_event = this_event->next;
+    }
+    fclose( fp );
   }
 
-  /* close the xml file */
-  LAL_CALL( LALCloseLIGOLwXMLFile( &status, &results ), &status );
+  vrbmsg( "cleaning up" );
 
   /* free event list */
   while ( events )
@@ -208,8 +355,6 @@ int main( int argc, char *argv[] )
     LALFree( events );
     events = next;
   }
-
-  vrbmsg( "cleaning up" );
 
   /* deallocate response and channel data vectors */
   LAL_CALL( LALCDestroyVector( &status, &data.response->data ), &status );
@@ -368,6 +513,7 @@ int parse_options( int argc, char **argv )
     { "bank-start-template",     required_argument, 0, 'i' },
     { "bank-end-template",       required_argument, 0, 'j' },
     { "output-file",             required_argument, 0, 'o' },
+    { "output-format",           required_argument, 0, 'O' },
     { "response-file",           required_argument, 0, 'r' },
     { "sample-rate",             required_argument, 0, 's' },
     { "user-tag",                required_argument, 0, 'U' },
@@ -383,9 +529,19 @@ int parse_options( int argc, char **argv )
     { "filter-qmax",             required_argument, 0, 'Z' },
     { "filter-maxmm",            required_argument, 0, 'Z' },
     { "filter-thresh",           required_argument, 0, 'Z' },
-    { "filter-scale",            required_argument, 0, 'Z' }
+    { "filter-scale",            required_argument, 0, 'Z' },
+    /* these options are for writing output */
+    { "write-format", required_argument, 0, 'w' },
+    { "write-raw-data",         no_argument, &write_raw_data,         1 },
+    { "write-data",             no_argument, &write_data,             1 },
+    { "write-response",         no_argument, &write_response,         1 },
+    { "write-inverse-spectrum", no_argument, &write_inverse_spectrum, 1 },
+    { "write-data-segments",    no_argument, &write_data_segments,    1 },
+    { "write-filter-output",    no_argument, &write_filter_output,    1 },
+    /* nul terminate */
+    { 0, 0, 0, 0 }
   };
-  char args[] = "hVa:A:b:B:c:C:d:D:f:F:i:j:o:r:s:U:z:Z:";
+  char args[] = "hVa:A:b:B:c:C:d:D:f:F:i:j:o:O:r:s:U:w:z:Z:";
 
   program  = argv[0];
   fargv[0] = my_strdup( program );
@@ -455,6 +611,9 @@ int parse_options( int argc, char **argv )
       case 'o': /* output-file */
         outfile = optarg;
         break;
+      case 'O' : /* output-format */
+        outfmt = strstr( optarg, "asc" ) ? ascii_format : xml_format;
+        break;
       case 'r': /* response-file */
         rspfile = optarg;
         break;
@@ -462,6 +621,9 @@ int parse_options( int argc, char **argv )
         srate = atof( optarg );
         break;
       case 'U': /* user-tag: do nothing with this! */
+        break;
+      case 'w' : /* write-format */
+        write_format = strstr( optarg, "asc" ) ? ascii_format : frame_format;
         break;
       case 'z': /* filter-params: inport a filter params file */
         import_filter_params( optarg );
@@ -634,6 +796,24 @@ REAL4TimeSeries *get_data( UINT4 segsz )
       &status );
   /* close the frame file */
   LAL_CALL( LALFrClose( &status, &stream ), &status );
+
+  /* write this data to file if required */
+  if ( write_raw_data )
+  {
+    if ( write_format == frame_format )
+    {
+      LALSnprintf( channel->name, sizeof( channel->name ), "%s_RAW", frchan );
+      vrbmsg( "writing raw data to frame" );
+      write_frame = fr_add_proc_REAL4TimeSeries( write_frame, channel );
+    }
+    else
+    {
+      const char *fname = "ring-raw-data.dat";
+      vrbmsg( "writing raw data to file %s", fname );
+      LALSPrintTimeSeries( channel, fname );
+    }
+  }
+
   /* set epoch and duration to actual start time and duration */
   tstart   = channel->epoch;
   duration = channel->deltaT * channel->data->length;
@@ -660,6 +840,24 @@ REAL4TimeSeries *get_data( UINT4 segsz )
     duration = channel->deltaT * channel->data->length;
     vrbmsg( "resizing data duration to %f seconds", duration );
   }
+
+  /* write this data to file if required */
+  if ( write_data )
+  {
+    if ( write_format == frame_format )
+    {
+      LALSnprintf( channel->name, sizeof( channel->name ), "%s_PROC", frchan );
+      vrbmsg( "writing data to frame" );
+      write_frame = fr_add_proc_REAL4TimeSeries( write_frame, channel );
+    }
+    else
+    {
+      const char *fname = "ring-proc-data.dat";
+      vrbmsg( "writing data to file %s", fname );
+      LALSPrintTimeSeries( channel, fname );
+    }
+  }
+
   return channel;
 }
 
@@ -696,6 +894,26 @@ COMPLEX8FrequencySeries *get_response( UINT4 segsz, double dt, const char *ifo )
     vrbmsg( "get calibration data from ascii file %s", rspfile );
     read_response( response, rspfile );
   }
+
+  /* write this data to file if required */
+  if ( write_response )
+  {
+    LALSnprintf( response->name, sizeof( response->name ), "%s_RESPONSE",
+        frchan );
+    if ( write_format == frame_format )
+    {
+      vrbmsg( "writing response to frame" );
+      write_frame = fr_add_proc_COMPLEX8FrequencySeries( write_frame,
+          response );
+    }
+    else
+    {
+      const char *fname = "ring-response.dat";
+      vrbmsg( "writing response to file %s", fname );
+      LALCPrintFrequencySeries( response, fname );
+    }
+  }
+
   return response;
 }
 
@@ -752,6 +970,75 @@ int read_response( COMPLEX8FrequencySeries *series, const char *fname )
   return 0;
 }
 
+struct series blank_series;
+
+FrameH *fr_add_proc_REAL4TimeSeries( FrameH *frame, REAL4TimeSeries *series )
+{
+  LALStatus status = blank_status;
+  struct series data = blank_series;
+  CHARVector uvec;
+  char unit[256];
+  uvec.length = sizeof( unit );
+  uvec.data   = unit;
+  LAL_CALL( LALUnitAsString( &status, &uvec, &series->sampleUnits ), &status );
+  data.name = series->name;
+  data.tbeg = series->epoch;
+  epoch_add( &data.tend, &series->epoch, series->deltaT*series->data->length );
+  data.dom  = Time;
+  data.type = FR_VECT_4R;
+  data.step = series->deltaT;
+  data.unit = unit;
+  data.size = series->data->length;
+  data.data = (float *)series->data->data;
+  return fr_add_proc_data( frame, &data );
+}
+
+FrameH *fr_add_proc_REAL4FrequencySeries( FrameH *frame,
+    REAL4FrequencySeries *series )
+{
+  LALStatus status = blank_status;
+  struct series data = blank_series;
+  CHARVector uvec;
+  char unit[256];
+  uvec.length = sizeof( unit );
+  uvec.data   = unit;
+  LAL_CALL( LALUnitAsString( &status, &uvec, &series->sampleUnits ), &status );
+  data.name = series->name;
+  data.tbeg = series->epoch;
+  epoch_add( &data.tend, &series->epoch,
+      ( series->data->length - 1 )/( series->deltaF * series->data->length ) );
+  data.dom  = Freq;
+  data.type = FR_VECT_4R;
+  data.step = series->deltaF;
+  data.unit = unit;
+  data.size = series->data->length;
+  data.data = (float *)series->data->data;
+  return fr_add_proc_data( frame, &data );
+}
+
+FrameH *fr_add_proc_COMPLEX8FrequencySeries( FrameH *frame,
+    COMPLEX8FrequencySeries *series )
+{
+  LALStatus status = blank_status;
+  struct series data = blank_series;
+  CHARVector uvec;
+  char unit[256];
+  uvec.length = sizeof( unit );
+  uvec.data   = unit;
+  LAL_CALL( LALUnitAsString( &status, &uvec, &series->sampleUnits ), &status );
+  data.name = series->name;
+  data.tbeg = series->epoch;
+  epoch_add( &data.tend, &series->epoch,
+      ( series->data->length - 1 )/( series->deltaF * series->data->length ) );
+  data.dom  = Freq;
+  data.type = FR_VECT_8C;
+  data.step = series->deltaF;
+  data.unit = unit;
+  data.size = series->data->length;
+  data.data = (float *)series->data->data;
+  return fr_add_proc_data( frame, &data );
+}
+
 int vrbmsg( const char *fmt, ... )
 {
   int c = 0;
@@ -787,9 +1074,18 @@ const char *usgfmt =
 "  --bank-start-template bmin\n\t\tfirst template of bank to use [0]\n\n"
 "  --bank-end-tempate bmax\n\t\tlast template of bank to use [last]\n\n"
 "  --output-file outfile\n\t\tevent output file [IFO-RING-tstart-duration.xml]\n\n"
+"  --output-format format\n\t\tevent output file format (xml or ascii) [xml]\n\n"
 "  --sample-rate srate\n\t\tdesired sampling rate in Hz [raw rate]\n\n"
 "  --user-tag tag\n"
 "  --userTag  tag\n\t\tuser tag [none]\n\n"
+"Write Options (used to write intermediate results to files)\n\n"
+"  --write-format format\n\t\tformat to write results (frame or ascii) [frame]\n\n"
+"  --write-raw-data\n\t\twrite data input before pre-processing\n\n"
+"  --write-data\n\t\twrite data after pre-processing (and injections)\n\n"
+"  --write-response\n\t\twrite response function used\n\n"
+"  --write-inverse-spectrum\n\t\twrite inverse spectrum computed\n\n"
+"  --write-data-segments\n\t\twrite conditioned data segments\n\n"
+"  --write-filter-output\n\t\twrite matched filter output\n\n"
 "Filter Parameters [defaults in brackets; otherwise required]\n\n"
 "  --filter-params parfile\n\t\tread filter parameters from file [none]\n\n"
 "  --filter-segsz npts\n\t\tset size of segments to analyze to npts\n\n"
