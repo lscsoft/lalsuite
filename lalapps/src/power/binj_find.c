@@ -16,22 +16,6 @@ long long int llabs(long long int j);	/* LAL's not written in ANSI C.  Get over 
 RCSID("$Id$");
 
 #define MAXSTR 2048
-
-/* Usage format string. */
-#define USAGE \
-"Usage: %s --input-trig filename --input-inj filename\n" \
-"	--output-trig filename --output-inj-made filename\n" \
-"	--output-inj-found filename --best-confidence|--best-peaktime\n" \
-"	[--noplayground] [--help]\n"
-
-#define BINJ_FIND_EARG   1
-#define BINJ_FIND_EROW   2
-#define BINJ_FIND_EFILE  3
-
-#define BINJ_FIND_MSGEARG   "Error parsing arguments"
-#define BINJ_FIND_MSGROW    "Error reading row from XML table"
-#define BINJ_FIND_MSGEFILE  "Could not open file"
-
 #define TRUE  1
 #define FALSE 0
 
@@ -93,9 +77,6 @@ struct options_t {
 	REAL4 minSnr;
 };
 
-/*
- * Set the options to their defaults.
- */
 
 static void set_option_defaults(struct options_t *options)
 {
@@ -147,6 +128,16 @@ static void set_option_defaults(struct options_t *options)
 }
 
 
+static void print_usage(FILE *handle, char *prog)
+{
+	fprintf(handle,
+"Usage: %s --input-trig <filename> --input-inj <filename>\n" \
+"	--output-trig <filename> --output-inj-made <filename>\n" \
+"	--output-inj-found <filename> --best-confidence|--best-peaktime\n" \
+"	[--noplayground] [--help]\n", prog);
+}
+
+
 static void parse_command_line(int argc, char *argv[], struct options_t *options)
 {
 	struct option long_options[] = {
@@ -168,9 +159,9 @@ static void parse_command_line(int argc, char *argv[], struct options_t *options
 		{"best-peaktime", no_argument, &options->best_peaktime, TRUE},
 		{NULL, 0, NULL, 0}
 	};
-	int c, option_index = 0;
+	int c, index;
 
-	do switch(c = getopt_long(argc, argv, "a:c:d:e:f:g:h:i:oq:", long_options, &option_index)) {
+	do switch(c = getopt_long(argc, argv, "a:c:d:e:f:g:h:i:oq:", long_options, &index)) {
 	case 'a':
 		options->inputFile = optarg;
 		break;
@@ -184,29 +175,24 @@ static void parse_command_line(int argc, char *argv[], struct options_t *options
 		break;
 
 	case 'd':
-		/* the confidence must be smaller than this number */
 		options->maxConfidenceFlag = TRUE;
 		options->maxConfidence = atof(optarg);
 		break;
 
 	case 'e':
-		/* only events with duration greater than this are selected */
 		options->gpsStartTime = atoi(optarg);
 		break;
 
 	case 'f':
-		/* only events with duration less than this are selected */
 		options->gpsEndTime = atoi(optarg);
 		break;
 
 	case 'g':
-		/* only events with centralfreq greater than this are selected */
 		options->minCentralfreqFlag = TRUE;
 		options->minCentralfreq = atof(optarg);
 		break;
 
 	case 'h':
-		/* only events with centralfreq less than this are selected */
 		options->maxCentralfreqFlag = TRUE;
 		options->maxCentralfreq = atof(optarg);
 		break;
@@ -216,43 +202,50 @@ static void parse_command_line(int argc, char *argv[], struct options_t *options
 		break;
 
 	case 'o':
-		/* print help */
-		LALPrintError(USAGE, *argv);
-		exit(BINJ_FIND_EARG);
+		print_usage(stderr, argv[0]);
+		exit(1);
 
 	case 'q':
 		options->outSnglFile = optarg;
 		break;
 
+	/* option sets a flag */
 	case 0:
-		/* option sets a flag */
 		break;
+
+	/* end of arguments */
 	case -1:
-		/* end of arguments */
 		break;
+
+	/* unrecognized argument */
 	case '?':
-		/* unrecognized argument */
-		exit(BINJ_FIND_EARG);
+		print_usage(stderr, argv[0]);
+		exit(1);
+
+	/* missing argument for an option */
 	case ':':
-		/* missing argument for an option */
-		exit(BINJ_FIND_EARG);
+		print_usage(stderr, argv[0]);
+		exit(1);
 	} while(c != -1);
 
-	if (optind < argc) {
-		fprintf(stderr, "extraneous command line arguments:\n");
-		while (optind < argc)
-			fprintf(stderr, "%s\n", argv[optind++]);
+	if(optind < argc) {
+		fprintf(stderr, "%s: error: extraneous command line arguments:\n", argv[0]);
+		while(optind < argc)
+			fprintf(stderr, "\t%s\n", argv[optind++]);
+		print_usage(stderr, argv[0]);
 		exit(1);
 	}
 
 	if(!(options->best_confidence ^ options->best_peaktime)) {
-		LALPrintError("Must specify exactly one of --best-confidence or --best-peaktime\n");
-		exit(BINJ_FIND_EARG);
+		fprintf(stderr, "%s: error: must specify exactly one of --best-confidence or --best-peaktime\n", argv[0]);
+		print_usage(stderr, argv[0]);
+		exit(1);
 	}
 
-	if (!options->inputFile || !options->injectionFile || !options->injmadeFile  || !options->injFoundFile || !options->outSnglFile) {
-		LALPrintError("Must specify --input-trig, --input-inj, --output-trig, --output-inj-made, and --output-inj-found\n");
-		exit(BINJ_FIND_EARG);
+	if(!options->inputFile || !options->injectionFile || !options->injmadeFile  || !options->injFoundFile || !options->outSnglFile) {
+		fprintf(stderr, "%s: error: must specify all of --input-trig, --input-inj, --output-trig, --output-inj-made, and --output-inj-found\n", argv[0]);
+		print_usage(stderr, argv[0]);
+		exit(1);
 	}
 }
 
@@ -288,15 +281,14 @@ static int getline(char *line, int max, FILE *file)
 
 static int isPlayground(INT4 gpsStart, INT4 gpsEnd)
 {
-	INT4 runStart = 729273613;
-	INT4 playInterval = 6370;
-	INT4 playLength = 600;
+	const INT4 S2Start = 729273613;
+	const INT4 playInterval = 6370;
+	const INT4 playLength = 600;
 	INT4 segStart, segEnd, segMiddle;
 
-	segStart = (gpsStart - runStart) % playInterval;
-	segEnd = (gpsEnd - runStart) % playInterval;
-	segMiddle = gpsStart + (INT4) (0.5 * (gpsEnd - gpsStart));
-	segMiddle = (segMiddle - runStart) % playInterval;
+	segStart = (gpsStart - S2Start) % playInterval;
+	segEnd = (gpsEnd - S2Start) % playInterval;
+	segMiddle = ((gpsStart + gpsEnd)/2 - S2Start) % playInterval;
 
 	return((segStart < playLength) || (segEnd < playLength) || (segMiddle < playLength));
 }
@@ -555,7 +547,7 @@ static SnglBurstTable *trim_event_list(SnglBurstTable *event, struct options_t o
  * triggers as we go to try to control memory usage.
  */
 
-static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT4 *timeAnalyzed, SimBurstTable **injection, struct options_t options)
+static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT8 *timeAnalyzed, SimBurstTable **injection, struct options_t options)
 {
 	FILE *infile;
 	char line[MAXSTR];
@@ -614,7 +606,7 @@ int main(int argc, char **argv)
 
 	INT4 ndetected;
 	INT4 ninjected;
-	INT4 timeAnalyzed;
+	INT8 timeAnalyzed;
 
 	static struct options_t options;
 
@@ -710,9 +702,9 @@ int main(int argc, char **argv)
 		*detInjectionsAddPoint = NULL;
 	}
 
-	fprintf(stdout,"%d sec = %d hours analyzed\n", timeAnalyzed, timeAnalyzed/3600);
+	fprintf(stdout,"%19.9f seconds = %.1f hours analyzed\n", timeAnalyzed / 1e9, timeAnalyzed / 1e9 / 3600.0);
 	fprintf(stdout, "Detected %i injections out of %i made\n", ndetected, ninjected);
-	fprintf(stdout, "Efficiency is %f \n", ((REAL4) ndetected / (REAL4) ninjected));
+	fprintf(stdout, "Efficiency is %f\n", (double) ndetected / ninjected);
 
 	/*
 	 * Write output XML files.
