@@ -1,0 +1,71 @@
+# ------------------------------------------------------------
+#
+# Makefile for  PeakSelect. and the like
+#
+# Alicia M. Sintes  05-2003
+#
+# $Id$
+#
+# -----------------------------------------------------------
+
+
+# -----------------------------------------------------------
+# determine architecture
+OSType=`uname`
+hello=`date`
+
+# -----------------------------------------------------------
+# your compiler
+CC = gcc
+
+#CC = gcc -DCHECKHOUGHINDEX
+
+# -----------------------------------------------------------
+# header file directory
+LAL_INCLUDE=/afs/aeiw/grawave/Linux/lal/correct/include/
+
+# -----------------------------------------------------------
+# libraries
+
+LAL_LIB = /afs/aeiw/grawave/Linux/lal/lib
+
+LLAL = lal
+LALSUP = lalsupport
+
+THELIBS = -L$(LAL_LIB) -l$(LLAL) -l$(LALSUP) -lm
+
+p=./timer/cycle_counter/Intel/GCC/
+
+# ----------------------------------------------------------
+# compiler options
+
+CFLAGS =  -Wall -g  -I$(LAL_INCLUDE) -I$p
+
+# -----------------------------------------------------------
+# default target
+all: Peaktest
+
+
+# -----------------------------------------------------------
+#  produce object files
+
+PeakSelect.o: PeakSelect.c PeakSelect.h 
+	$(CC) -c $(CFLAGS)  PeakSelect.c
+
+
+PeakSelectTest.o: PeakSelectTest.c PeakSelect.h 
+	$(CC) -c $(CFLAGS) PeakSelectTest.c
+
+# -----------------------------------------------------------
+# link tests code
+# -----------------------------------------------------------
+
+Peaktest: SFTbin.o PeakSelect.o PeakSelectTest.o
+	$(CC) $(CFLAGS) -o $@ SFTbin.o PeakSelect.o PeakSelectTest.o $(THELIBS)
+
+# -----------------------------------------------------------
+# cleaning...
+clean:
+	rm -f  PeakSelect.o PeakSelectTest.o Peaktest
+
+# -----------------------------------------------------------
