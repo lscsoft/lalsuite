@@ -137,21 +137,22 @@ static REAL8 DeltaGPStoFloat(LALStatus *stat, LIGOTimeGPS *stop, LIGOTimeGPS *st
 
 
 /*
- * Round a PSD length down to a value that is commensurate with the window
- * length and window shift.
+ * Round length down so that an integer number of intervals of length
+ * block_length, each shifted by block_shift with respect to its neighbours,
+ * fits into the result.  This is used to ensure that an integer number of
+ * analysis windows fits into the PSD length, and also that an integer number
+ * of PSD lenghts fits into the RAM limit length.
  */
 
-static size_t window_commensurate(
-	size_t psdlength,
-	size_t windowlength,
-	size_t windowshift
+static size_t block_commensurate(
+	size_t length,
+	size_t block_length,
+	size_t block_shift
 )
 {
-	volatile size_t windows = (psdlength - windowlength) / windowshift;
+	volatile size_t blocks = (length - block_length) / block_shift;
 
-	if(psdlength < windowlength)
-		return(0);
-	return(windows * windowshift + windowlength);
+	return(length < block_length ? 0 : blocks * block_shift + block_length);
 }
 
 
@@ -551,7 +552,7 @@ void parse_command_line(
 
 		case 'E':
 		params->compEPInput.alphaDefault = atof(optarg);
-		if(params->compEPInput.alphaDefault <= 0.0 || params->compEPInput.alphaDefault >= 1.0) {
+		if(params->compEPInput.alphaDefault < 0.0 || params->compEPInput.alphaDefault > 1.0) {
 			sprintf(msg, "must be in range [0,1] (%f specified)", params->compEPInput.alphaDefault);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
@@ -818,7 +819,7 @@ void parse_command_line(
 		case 'i':
 		params->windowType = atoi(optarg);
 		if(params->windowType >= NumberWindowTypes) {
-			sprintf(msg, "must be <= %d (%i specified)", NumberWindowTypes, params->windowType);
+			sprintf(msg, "must be < %d (%i specified)", NumberWindowTypes, params->windowType);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -828,7 +829,7 @@ void parse_command_line(
 		case 'j':
 		options.FilterCorruption = atoi(optarg);
 		if(options.FilterCorruption < 0) {
-			sprintf(msg, "must be > 0 (%d specified)", options.FilterCorruption);
+			sprintf(msg, "must be >= 0 (%d specified)", options.FilterCorruption);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -838,7 +839,7 @@ void parse_command_line(
 		case 'k':
 		params->tfPlaneParams.fhigh = atof(optarg);
 		if(params->tfPlaneParams.fhigh < 0) {
-			sprintf(msg,"must be > 0 (%f specified)",params->tfPlaneParams.fhigh);
+			sprintf(msg,"must be >= 0 (%f specified)",params->tfPlaneParams.fhigh);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -849,7 +850,7 @@ void parse_command_line(
 		params->tfTilingInput.maxTileBand = atof(optarg);
 		params->tfPlaneParams.deltaT = 1 / (2 * params->tfTilingInput.maxTileBand);
 		if(params->tfTilingInput.maxTileBand < 0) {
-			sprintf(msg,"must be > 0 (%f specified)",params->tfTilingInput.maxTileBand);
+			sprintf(msg,"must be >= 0 (%f specified)",params->tfTilingInput.maxTileBand);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -860,7 +861,7 @@ void parse_command_line(
 		params->tfTilingInput.maxTileDuration = atof(optarg);
 		params->tfPlaneParams.deltaF = 1 / (2 * params->tfTilingInput.maxTileDuration);
 		if(params->tfTilingInput.maxTileDuration > 1.0) {
-			sprintf(msg,"must be < 1.0 (%f specified)", params->tfTilingInput.maxTileDuration);
+			sprintf(msg,"must be <= 1.0 (%f specified)", params->tfTilingInput.maxTileDuration);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -934,7 +935,7 @@ void parse_command_line(
 	 * length and shift.
 	 */
 
-	options.PSDAverageLength = window_commensurate(options.PSDAverageLength, params->windowLength, params->windowShift);
+	options.PSDAverageLength = block_commensurate(options.PSDAverageLength, params->windowLength, params->windowShift);
 
 	/*
 	 * Miscellaneous chores.
@@ -1275,7 +1276,7 @@ static SnglBurstTable **analyze_series(
 	size_t overlap = params->windowLength - params->windowShift;
 
 	if(psdlength > series->data->length) {
-		psdlength = window_commensurate(series->data->length, params->windowLength, params->windowShift);
+		psdlength = block_commensurate(series->data->length, params->windowLength, params->windowShift);
 		if(options.verbose)
 			fprintf(stderr, "analyze_series(): warning: PSD average length exceeds available data --- reducing PSD average length to %zu samples\n", psdlength);
 		if(!psdlength) {
@@ -1506,6 +1507,17 @@ int main( int argc, char *argv[])
 
 		if(options.verbose)
 			fprintf(stderr, "%s: %u samples (%.9f s) remain after conditioning\n", argv[0], series->data->length, series->data->length * series->deltaT);
+
+		/*
+		 * Adjust the series length to ensure that an integer number of
+		 * PSD estimates will fit in it.
+		 */
+
+#if 0
+		series->data->length = block_commensurate(series->data->length, options.PSDAverageLength, options.PSDAverageLength - (params.windowLength - params.windowShift));
+		if(options.verbose)
+			fprintf(stderr, "%s: series trimmed to %u samples (%.9f s) in accordance with PSD estimate length\n", argv[0], series->data->length, series->data->length * series->deltaT);
+#endif
 
 		/*
 		 * Store the start and end times of the data that actually
