@@ -34,12 +34,10 @@ file.
 
 
 \end{verbatim}
-
 \subsubsection*{Notes}
-
 \vfill{\footnotesize\input{InterfaceTestCV}}
 
-******************************************************* </lalLaTeX><lalErrTable> */
+</lalLaTeX><lalErrTable> */
 #define INTERFACETESTC_ENORM 	0
 #define INTERFACETESTC_ESUB  	1
 #define INTERFACETESTC_EARG  	2
@@ -134,7 +132,7 @@ int main(int argc, char **argv)
   FILE		*output;             /* output result*/
   
    /* --- for debugging --- */
-  lalDebugLevel = 7;
+  lalDebugLevel = 0;
   program       = *argv;
 
   /* --- Start Main part here --- */
@@ -169,8 +167,9 @@ int main(int argc, char **argv)
   						       	/* ..with the xml file			*/ 
   ts.sampleUnits 	= lalADCCountUnit;	       	/*  UNITY ?? 				*/
   ts.deltaT 		= 1./sampling;		       	/* sampling				*/
-  ts.name[0]='Lu'; 					/* L, H, G, V or T for the detector 
+  ts.name[0]='X'; 					/* L, H, G, V or T for the detector 
 							   otherwise it is optimally oriented	*/ 
+
 
   fs.deltaF 		= sampling / numPoints;	       /* idem for fs				*/
   fs.sampleUnits 	= lalADCCountUnit;
@@ -192,7 +191,7 @@ int main(int argc, char **argv)
 						  endTime), &status);
 
   /* any injection to do ? */
-  if ( numInjections < 0 )
+  if ( numInjections <= 0 )
     {
       ERROR(INTERFACETESTC_EINJECT, INTERFACETESTC_MSGEINJECT, 0);
       exit( 1 );
@@ -207,7 +206,7 @@ int main(int argc, char **argv)
 
   /* --- now we save the results --- */
   for (k = 0; k < numPoints; k++){
-    fprintf(output,"%15.12lf %e\n",  (float)k/sampling, ts.data->data[k]);
+    fprintf(output,"%15.12f %e\n",  (float)k/sampling, ts.data->data[k]);
   }
   fclose(output);
   
@@ -225,73 +224,3 @@ int main(int argc, char **argv)
   LALCheckMemoryLeaks();
   return 0;
 }
-
-
-
-/* might be used later keep it for the time being */
-#if 0
-    case SpinOrbitCW: 
-      params->socw.epoch.gpsSeconds = params->socw.epoch.gpsNanoSeconds = 0;
-      params->socw.spinEpoch.gpsSeconds = params->socw.spinEpoch.gpsNanoSeconds = 0;
-      params->socw.orbitEpoch.gpsSeconds = params->socw.orbitEpoch.gpsNanoSeconds = 0;
-      params->socw.position.latitude = dec* LAL_PI/180.0;
-      params->socw.position.longitude = ra* LAL_PI/180.0;
-      params->socw.position.system = COORDINATESYSTEM_EQUATORIAL;
-      params->socw.psi = psi* LAL_PI/180.0;
-      if (deltaT!=0) 
-	params->socw.deltaT = deltaT;
-      else
-	params->socw.deltaT = 1./ sampling;
-      params->socw.length = length;
-      params->socw.aPlus=a1;
-      params->socw.aCross=a2;
-      params->socw.phi0=phi0 * LAL_PI/180.0;
-      params->socw.f0=f0 ;
-      params->socw.omega = arg * LAL_PI/180.0;
-      params->socw.rPeriNorm = rp;   /* if =0 -> equivaut a Taylor*/
-      params->socw.oneMinusEcc = 1 - e;
-      params->socw.angularSpeed = udot ;  
-      params->socw.f = NULL;
-      
-      if ( nspin ) {
-	LALDCreateVector( status, &(params->socw.f), nspin );
-	ClearStatus(status);
-      }
-      for (i=0; i<nspin; i++)	
-	params->socw.f->data[i] = fdata[i];	  
-	
-      
-      /* vp = rp * udot entre ]0, 1[
-	 argument  = omega*/
-      
-      break;
-    case TaylorCW:
-      params->taylorcw.epoch.gpsSeconds = params->taylorcw.epoch.gpsNanoSeconds = 0;
-      params->taylorcw.epoch.gpsSeconds = params->taylorcw.epoch.gpsNanoSeconds = 0;
-      params->taylorcw.position.latitude = dec* LAL_PI/180.0;
-      params->taylorcw.position.longitude = ra* LAL_PI/180.0;
-      params->taylorcw.position.system = COORDINATESYSTEM_EQUATORIAL;
-      params->taylorcw.psi = psi* LAL_PI/180.0;
-      if (deltaT!=0) 
-	params->taylorcw.deltaT = deltaT;
-      else
-	params->taylorcw.deltaT = 1./ sampling;
-      params->taylorcw.length = length;
-      params->taylorcw.aPlus=a1;
-      params->taylorcw.aCross=a2;
-      params->taylorcw.phi0=phi0 * LAL_PI/180.0;
-      params->taylorcw.f0=f0 ;   /* ?? pouirquoi ce terme pi */
-          
-      params->taylorcw.f = NULL;
-      if ( nspin  ) {
-	LALDCreateVector( status,&(params->taylorcw.f), nspin );
-	ClearStatus(status);
-      }
-      for (i=0; i<params->taylorcw.f->length; i++)
-	params->taylorcw.f->data[i] = fdata[i];	  
-      break;
-    }
-  }
-
-
-#endif
