@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-noinst_LTLIBRARIES = libtimefreq.la
+#noinst_LTLIBRARIES = libtimefreq.la
 #libtimefreq_la_SOURCES = \
 #  CreateTimeFreqParam.c \
 #  CreateTimeFreqRep.c \
@@ -10,7 +10,6 @@ noinst_LTLIBRARIES = libtimefreq.la
 #  TfrRsp.c \
 #  TfrSp.c \
 #  TfrWv.c
-libtimefreq_la_SOURCES =
 EXTRA_DIST = \
   CreateTimeFreqParam.c \
   CreateTimeFreqRep.c \
