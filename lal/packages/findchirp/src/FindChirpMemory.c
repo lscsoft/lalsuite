@@ -592,7 +592,9 @@ LALCreateFindChirpSegmentVector (
     }
 
     /* segment dependent part of normalisation */
-    segPtr[i].segNorm = 0.0;
+    LALCreateVector( status->statusPtr, &(segPtr[i].segNorm), 
+        params->numPoints/2 + 1 );
+    CHECKSTATUSPTR( status );
 
     if( params->approximant ==BCV )
     {
@@ -687,6 +689,12 @@ LALDestroyFindChirpSegmentVector (
     if ( segPtr[i].dataBCV )
     {
       LALFree( segPtr[i].dataBCV );
+    }
+
+    if ( segPtr[i].segNorm )
+    {
+      LALDestroyVector( status->statusPtr, &(segPtr[i].segNorm) );
+      CHECKSTATUSPTR( status );
     }
   }
 

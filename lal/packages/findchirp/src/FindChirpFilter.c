@@ -45,11 +45,12 @@ LALFindChirpFilterSegment (
     )
 /* </lalVerbatim> */
 {
-  UINT4                 j, k;
+  UINT4                 j, k, kmax;
   UINT4                 numPoints;
   UINT4                 deltaEventIndex;
   UINT4                 ignoreIndex;
   REAL4                 deltaT;
+  REAL8                 deltaF;
   REAL4                 norm;
   REAL4                 modqsqThresh;
   REAL4                 mismatch;
@@ -153,17 +154,20 @@ LALFindChirpFilterSegment (
   q = params->qVec->data;
   qtilde = params->qtildeVec->data;
 
+  /* number of points in a segment */
+  numPoints = params->qVec->length;
+
   /* template and data */
   inputData = input->segment->data->data->data;
   tmpltSignal = input->fcTmplt->data->data;
   deltaT = params->deltaT;
+  deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints );
+  kmax = input->tmplt->fCutoff / deltaF < numPoints/2 ? 
+    input->tmplt->fCutoff / deltaF : numPoints/2;
 
   /* the length of the chisq bin vec is the number of bin   */
   /* _boundaries_ so the number of chisq bins is length - 1 */
   numChisqBins = input->segment->chisqBinVec->length - 1;
-
-  /* number of points in a segment */
-  numPoints = params->qVec->length;
 
   /* set the gmst units and strictness */
   gmstUnits.units = MST_HRS;
@@ -291,7 +295,7 @@ LALFindChirpFilterSegment (
 
   /* normalisation */
   params->norm = norm = 
-    4.0 * (deltaT / (REAL4)numPoints) / input->segment->segNorm;
+    4.0 * (deltaT / (REAL4)numPoints) / input->segment->segNorm->data[kmax];
 
   /* normalised snr threhold */
   modqsqThresh = params->rhosqThresh / norm;
@@ -460,11 +464,11 @@ LALFindChirpFilterSegment (
             thisEvent->chisq     = 0;
             thisEvent->chisq_dof = 0;
           }
-          thisEvent->sigmasq = norm * input->segment->segNorm * 
-            input->segment->segNorm * input->fcTmplt->tmpltNorm;
+          thisEvent->sigmasq = norm * input->segment->segNorm->data[kmax] * 
+            input->segment->segNorm->data[kmax] * input->fcTmplt->tmpltNorm;
           thisEvent->eff_distance = 
-            (input->fcTmplt->tmpltNorm * input->segment->segNorm * 
-             input->segment->segNorm) / thisEvent->snr;
+            (input->fcTmplt->tmpltNorm * input->segment->segNorm->data[kmax] * 
+             input->segment->segNorm->data[kmax]) / thisEvent->snr;
           thisEvent->eff_distance = sqrt( thisEvent->eff_distance );
 
           thisEvent->snr *= norm;
@@ -564,11 +568,11 @@ LALFindChirpFilterSegment (
       thisEvent->chisq     = 0;
       thisEvent->chisq_dof = 0;
     }
-    thisEvent->sigmasq = norm * input->segment->segNorm * 
-      input->segment->segNorm * input->fcTmplt->tmpltNorm;
+    thisEvent->sigmasq = norm * input->segment->segNorm->data[kmax] * 
+      input->segment->segNorm->data[kmax] * input->fcTmplt->tmpltNorm;
     thisEvent->eff_distance = 
-      (input->fcTmplt->tmpltNorm * input->segment->segNorm * 
-       input->segment->segNorm) / thisEvent->snr;
+      (input->fcTmplt->tmpltNorm * input->segment->segNorm->data[kmax] * 
+       input->segment->segNorm->data[kmax]) / thisEvent->snr;
     thisEvent->eff_distance = sqrt( thisEvent->eff_distance );
     thisEvent->snr *= norm;
     thisEvent->snr = sqrt( thisEvent->snr );

@@ -77,7 +77,6 @@ LALFindChirpSPTemplate (
   REAL4        *xfac       = NULL;
   REAL4         x1         = 0.0;
   REAL4         psi0       = 0.0;
-  REAL4         fHi        = 0.0;
   INT4          k          = 0;
   INT4          kmin       = 0;
   INT4          kmax       = 0;
@@ -179,9 +178,10 @@ LALFindChirpSPTemplate (
   x1 = pow( LAL_PI * m * LAL_MTSUN_SI * deltaF, -1.0/3.0 );
 
   /* frequency cutoffs */
-  fHi = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * m * LAL_MTSUN_SI);
+  tmplt->fCutoff = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * m * LAL_MTSUN_SI);
   kmin = params->fLow / deltaF > 1 ? params->fLow / deltaF : 1;
-  kmax = fHi / deltaF < numPoints/2 ? fHi / deltaF : numPoints/2;
+  kmax = tmplt->fCutoff / deltaF < numPoints/2 ? 
+    tmplt->fCutoff / deltaF : numPoints/2;
 
   /* compute psi0: used in range reduction */
   {

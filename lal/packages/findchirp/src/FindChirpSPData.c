@@ -68,6 +68,7 @@ LALFindChirpSPData (
   REAL4                 increment;
   REAL4                 nextBin;
   REAL4                 partSum;
+  REAL4                 segNormSum;
 
   FindChirpSegment     *fcSeg;
   DataSegment          *dataSeg;
@@ -341,7 +342,6 @@ LALFindChirpSPData (
      */
 
 
-    fcSeg->segNorm = 0.0;
 
     for ( k = 0; k < cut; ++k )
     {
@@ -350,11 +350,14 @@ LALFindChirpSPData (
     }
 
     memset( tmpltPower, 0, params->tmpltPowerVec->length * sizeof(REAL4) );
+    memset( fcSeg->segNorm->data, 0, fcSeg->segNorm->length * sizeof(REAL4) );
 
+    segNormSum = 0.0;
     for ( k = 1; k < fcSeg->data->data->length; ++k )
     {
-      tmpltPower[k]   = amp[k] * amp[k] * wtilde[k].re;
-      fcSeg->segNorm += tmpltPower[k];
+      tmpltPower[k] = amp[k] * amp[k] * wtilde[k].re;
+      segNormSum += tmpltPower[k];
+      fcSeg->segNorm->data[k] = segNormSum;
     }
 
     for ( k = cut; k < fcSeg->data->data->length; ++k )
@@ -390,7 +393,8 @@ LALFindChirpSPData (
 
     if ( numChisqBins )
     {
-      increment = fcSeg->segNorm / (REAL4) numChisqBins;
+      increment = fcSeg->segNorm->data[fcSeg->segNorm->length-1] / 
+        (REAL4) numChisqBins;
       nextBin   = increment;
       chisqPt   = 0;
       partSum   = 0.0;

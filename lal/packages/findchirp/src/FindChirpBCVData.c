@@ -378,7 +378,9 @@ LALFindChirpBCVData (
      */
 
 
+#if 0
     fcSeg->segNorm = 0.0;
+#endif
     Power    = 0.0;
     PowerBCV = 0.0;
     I73 = 0.0;
@@ -408,7 +410,9 @@ LALFindChirpBCVData (
 
     for ( k = 1; k < fcSeg->data->data->length; ++k )
     {
+#if 0
       fcSeg->segNorm += amp[k] * amp[k] * wtilde[k].re ; /* for std-candle */
+#endif
       I73 += 4.0 * amp[k] * amp[k] * wtilde[k].re ;
       I53 += 4.0 * amp[k] *  ampBCV[k] * wtilde[k].re ;
       I1 += 4.0 * ampBCV[k] * ampBCV[k] * wtilde[k].re;  

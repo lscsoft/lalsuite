@@ -471,10 +471,12 @@ fprintf ( stdout, "fcSeg->data->data->length  %d\n", fcSeg->data->data->length);
      * the BCVSpin normalization parameters
      */
     
+#if 0
     for ( k = 1; k < fcSeg->data->data->length; ++k )
     {
       fcSeg->segNorm += amp[k] * amp[k] * wtilde[k].re ; /* for std-candle */
     }
+#endif
 
     /*
      *
