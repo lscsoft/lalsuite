@@ -1494,6 +1494,7 @@ INT4 main(INT4 argc, CHAR *argv[])
             
            /* analyse middle segment */             
            gpsStartTime.gpsSeconds = startTime + (interLoop + segMiddle) * segmentDuration;                     
+           segment1.epoch = segment2.epoch = gpsStartTime;
             
            if (verbose_flag)
 	     {
