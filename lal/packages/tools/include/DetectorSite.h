@@ -1,5 +1,5 @@
 /********************************* <lalVerbatim file="DetectorSiteHV">
-Author: Whelan, J. T.
+Author: J. T. Whelan <whelan@oates.utb.edu>
 $Id$
 ********************************** </lalVerbatim> */
 

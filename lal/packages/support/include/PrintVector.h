@@ -1,5 +1,5 @@
 /************************************ <lalVerbatim file="PrintVectorHV">
-Author: Allen, B.; generalized by J.T. Whelan
+Author: Allen, B.; generalized by J. T. Whelan <whelan@oates.utb.edu>
 $Id$
 ************************************* </lalVerbatim> */
 

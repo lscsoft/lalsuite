@@ -1,5 +1,5 @@
 /************************************ <lalVerbatim file="PrintFTSeriesHV">
-Author: John T. Whelan
+Author: J. T. Whelan <whelan@oates.utb.edu>
 $Id$
 ************************************* </lalVerbatim> */
 

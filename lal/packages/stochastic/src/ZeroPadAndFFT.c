@@ -1,5 +1,5 @@
 /************************************ <lalVerbatim file="ZeroPadAndFFTCV">
-Author: UTB Relativity Group; contact J. T. Whelan
+Author: UTB Relativity Group; contact whelan@oates.utb.edu
 $Id$
 ************************************* </lalVerbatim> */
 
