@@ -871,6 +871,8 @@ main (int argc, char *argv[])
 
     LALCCreateVector( &status, &(locfseries.data), 1000);
     TestStatus (&status, CODES(0), 1);
+    memset( locfseries.data->data, 0,
+        locfseries.data->length * sizeof( *locfseries.data->data ) );
     
     LALComputeTFPlanes( &status, tfTiling, &locfseries);
     TestStatus (&status, CODES(0), 1);
@@ -954,6 +956,8 @@ main (int argc, char *argv[])
 
     LALCCreateVector( &status, &(locfseries.data), 1000);
     TestStatus (&status, CODES(0), 1);
+    memset( locfseries.data->data, 0,
+        locfseries.data->length * sizeof( *locfseries.data->data ) );
     
     LALComputeTFPlanes( &status, tfTiling, &locfseries);
     TestStatus (&status, CODES(0), 1);
