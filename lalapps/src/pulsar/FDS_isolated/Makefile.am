@@ -45,3 +45,7 @@ compareFstats_LDFLAGS = -all-static
 
 ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c clusters.c clusters.h  \
 	DopplerScan.c DopplerScan.h NeighboringGridPoints.c
+
+
+TESTS = testFStat.sh
+
