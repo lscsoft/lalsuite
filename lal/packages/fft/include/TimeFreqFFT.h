@@ -25,6 +25,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/ComplexFFT.h>
 #include <lal/RealFFT.h>
+#include <lal/Window.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -42,17 +43,57 @@ NRCSID( TIMEFREQFFTH, "$Id$" );
 #define TIMEFREQFFTH_ESIZE 2
 #define TIMEFREQFFTH_ERATE 4
 #define TIMEFREQFFTH_ESIGN 4
+#define TIMEFREQFFTH_EALLOC 16
+#define TIMEFREQFFTH_EPOSARG 32
+#define TIMEFREQFFTH_EMALLOC 64
+#define TIMEFREQFFTH_EINCOMP 128
 
 #define TIMEFREQFFTH_MSGENULL "Null pointer"
 #define TIMEFREQFFTH_MSGESIZE "Invalid size"
 #define TIMEFREQFFTH_MSGERATE "Invalid rate"
 #define TIMEFREQFFTH_MSGESIGN "Incorrect plan sign"
+#define TIMEFREQFFTH_MSGEALLOC "Pointer has already been allocated, should be null"
+#define TIMEFREQFFTH_MSGEPOSARG "Argument must be positive"
+#define TIMEFREQFFTH_MSGEMALLOC "Malloc failure"
+#define TIMEFREQFFTH_MSGEINCOMP "Incompatible arguments"
 
 /**** </lalErrTable> */
+
+typedef struct tagRealDFTParams
+{
+  WindowType               windowType;
+  REAL4Vector              *window;
+  REAL4                    sumofsquares;
+  RealFFTPlan              *plan;
+}
+RealDFTParams;
+
+typedef enum
+{
+  useMean,
+  useMedian,
+  useUnity
+} AvgSpecMethod;
+
+
 /**** <lalLaTeX>
  * \newpage\input{TimeFreqFFTC}
  * \newpage\input{TimeFreqFFTTestC}
  **** </lalLaTeX> */
+
+void
+LALCreateRealDFTParams ( 
+        LALStatus                         *status, 
+        RealDFTParams                  **dftParams, 
+        LALWindowParams                   *params,
+        INT2                           sign
+        );
+
+void
+LALDestroyRealDFTParams (
+        LALStatus                        *status, 
+        RealDFTParams                 **dftParams
+        );
 
 void
 LALTimeFreqRealFFT(
@@ -68,6 +109,15 @@ LALFreqTimeRealFFT(
     REAL4TimeSeries         *time,
     COMPLEX8FrequencySeries *freq,
     RealFFTPlan             *plan
+    );
+
+void
+LALRealAverageSpectrum(
+    LALStatus            *status,
+    REAL4FrequencySeries *fSeries,
+    REAL4TimeSeries      *tSeries,
+    RealDFTParams        *params,
+    AvgSpecMethod              method
     );
 
 void
