@@ -19,12 +19,13 @@
  * command line parameter input.  It also has the option to make a
  * \MATHEMATICA notebook using LALMath3DPlot() which will plot the 3D
  * template bank. If the \texttt{-b} option is specified, the program will
- * read the template bank from an XML file instead of generating it.
+ * read the template bank from an XML file instead of generating it. (This
+ * only works if LAL is compiled with metaio.)
  *
  * \subsubsection{Command line options}
  * \begin{description}
  * \item[-b]
- * Specifies the XML file to read template bank from.
+ * Specifies the XML file to read template bank from. (Only with metaio.)
  * \item[-n] 
  * Specifies the minimum smaller mass between 0 and 5.0 $M\odot$.
  * \item[-x]
@@ -76,7 +77,9 @@
 #include <lal/LALNoiseModels.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/LALStdlib.h>
-#include <lal/LIGOLwXMLRead.h>
+#if LAL_METAIO_ENABLED
+  #include <lal/LIGOLwXMLRead.h>
+#endif
 
 
 extern char *optarg;
@@ -141,6 +144,7 @@ int main( int argc, char *argv[] )
     switch (opt)
     {
       case 'b':
+#if LAL_METAIO_ENABLED
 	if( (ntiles = LALSnglInspiralTableFromLIGOLw( &bankHead, optarg, 1,
             10000)) < 1 )
         {
@@ -148,6 +152,7 @@ int main( int argc, char *argv[] )
           return INSPIRALSPINBANKTESTC_EFILE;
         }
         haveXML = 1;
+#endif
         break;
       case 'm':
         coarseIn.mmCoarse = atof( optarg );       
