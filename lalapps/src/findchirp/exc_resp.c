@@ -27,8 +27,8 @@ RCSID( "$Id$" );
 "  -V            print version info\n"\
 "  -v            verbose\n"\
 "  -d dbglvl     set debug level to dbglvl [0]\n"\
-"  -l flow       low frequency cutoff for response function [25.0]\n"\
-"  -h fhigh      high frequency cutoff for response function [3000.0]\n"\
+"  -L flow       low frequency cutoff for response function [25.0]\n"\
+"  -H fhigh      high frequency cutoff for response function [3000.0]\n"\
 "  -n numpoints  number of points in response function [8192]\n"
 
 #define usage( program ) fprintf( stderr, usgfmt, program )
@@ -50,7 +50,7 @@ int main ( int argc, char *argv[] )
   FILE  *l1_fp = NULL, *h2_fp = NULL;
   
   /* parse options */
-  while ( 0 < ( opt = getopt( argc, argv, "hVvd:l:h:n:" ) ) )
+  while ( 0 < ( opt = getopt( argc, argv, "hVvd:L:H:n:" ) ) )
   {
     switch ( opt )
     {
@@ -66,10 +66,10 @@ int main ( int argc, char *argv[] )
       case 'd':
         dbglvl = optarg;
         break;
-      case 'l':
+      case 'L':
         f_min = (REAL4) atof(optarg);
         break;
-      case 'h':
+      case 'H':
         f_max = (REAL4) atof(optarg);
         break;
       case 'n':
@@ -97,11 +97,11 @@ int main ( int argc, char *argv[] )
   }
 
   fprintf( l1_fp, "# epoch = %lli\n", 0LL ); 
-  fprintf( l1_fp, "# f0 = %Le\n", (REAL8) f_min );
-  fprintf( l1_fp, "# deltaF = %Le\n", (REAL8) df );
+  fprintf( l1_fp, "# f0 = %e\n", (REAL8) f_min );
+  fprintf( l1_fp, "# deltaF = %e\n", (REAL8) df );
   fprintf( h2_fp, "# epoch = %lli\n", 0LL ); 
-  fprintf( h2_fp, "# f0 = %Le\n", (REAL8) f_min );
-  fprintf( h2_fp, "# deltaF = %Le\n", (REAL8) df );
+  fprintf( h2_fp, "# f0 = %e\n", (REAL8) f_min );
+  fprintf( h2_fp, "# deltaF = %e\n", (REAL8) df );
 
   for ( k = 0; k < numpts; ++k )
   {
