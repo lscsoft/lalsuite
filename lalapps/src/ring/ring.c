@@ -145,6 +145,16 @@ int main( int argc, char *argv[] )
   /* parse options */
   parse_options( argc, argv );
 
+  /* echo command if verbose */
+  if ( vrbflg )
+  {
+    int arg;
+    fprintf( stderr, "command: %s", program );
+    for ( arg = 1; arg < argc; ++arg )
+      fprintf( stderr, " %s", argv[arg] );
+    fprintf( stderr, "\n" );
+  }
+
   /* set debug level */
   lal_errhandler = LAL_ERR_EXIT;
   set_debug_level( dbglvl );
