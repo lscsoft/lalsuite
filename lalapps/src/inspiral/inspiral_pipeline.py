@@ -180,7 +180,7 @@ queue
       for chunk in seg.chunks:
         jobname = 'tmpltbank_%s_%s_%s' % (ifo,chunk.start,chunk.end)
         print >> dag_fh, 'JOB %s %s.tmpltbank.condor' % (jobname,self.basename),
-        if not cache: print >> dag_fh, 'done',
+        if not bank: print >> dag_fh, 'done',
         print >> dag_fh, """
 VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" channel="%s" calcache="%s"\
 """ % ( jobname,site,ifo,seg.startpad,seg.endpad,chunk.start,chunk.end,chan,
@@ -194,7 +194,7 @@ self.config['input'][string.lower(ifo) + '-cal'])
         parent = 'tmpltbank_%s_%s_%s' % (ifo,chunk.start,chunk.end)
         jobname = 'inspiral_%s_%s_%s' % (ifo,chunk.start,chunk.end)
         print >> dag_fh, 'JOB %s %s.inspiral.condor' % (jobname,self.basename),
-        if not cache: print >> dag_fh, 'done',
+        if not inspiral: print >> dag_fh, 'done',
         print >> dag_fh, """
 VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" channel="%s" calcache="%s"\
 """ % ( jobname,site,ifo,seg.startpad,seg.endpad,chunk.start,chunk.end,chan,
