@@ -540,14 +540,6 @@ LALModModFreqSeriesToTFPlane (
   ASSERT(ntotal + flow1<= (INT4)freqSeries->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
 
-  /* set the epoch of the TF plane */
-  tfp->epoch = freqSeries->epoch;
-
-
-  /* This TF plane is a horizontal type */
-  tfp->planeType = horizontalPlane;
-
-
   /* create temporary vectors for filter and correlations */
   numpts = 2*(freqSeries->data->length-1);
   twopiOverNumpts = 2.0 * LAL_PI / (float)numpts;
@@ -563,6 +555,17 @@ LALModModFreqSeriesToTFPlane (
   
   /* sampling rate of time series which gave freqSeries */
   dt = 1.0 / (((REAL4) numpts) * freqSeries->deltaF) ;
+
+
+  /* set the epoch of the TF plane */
+  /*adjust the freq series epoch determined by the windowshift */
+  XLALAddFloatToGPS(&freqSeries->epoch, (windowShift*dt));
+  tfp->epoch = freqSeries->epoch;
+
+
+  /* This TF plane is a horizontal type */
+  tfp->planeType = horizontalPlane;
+
 
   /* number of points from peak of filter to first zero */
   filterlen = (INT4)(numpts/fseglength);
