@@ -26,8 +26,13 @@ With no options, this program displays metric components for a single point
 in parameter space for the default integration time (see the \texttt{-t}
 option).
 
+The \texttt{-b} option sets the beginning time of integration to the option
+argument. (Default is $0$ seconds)
+
 The \texttt{-e} option causes the program to showcase error messages when
 given bad parameter values, etc.
+
+The \texttt{-m} option sets the mismatch (default is $0.02$).
 
 The \texttt{-p} option is provided for users who wish to view the
 power mismatch contours provided by the \texttt{-x} option (see below)
@@ -41,12 +46,13 @@ The \texttt{-t} option sets the duration of integration in seconds. The default
 is $10^5$ seconds, which is chosen because it is about one day but not an
 integer multiple of any astronomically important timescale.
 
-The \texttt{-x} option produces a graph of the 2\% power mismatch contours
-on the sky. Dimensions of the ellipses have been exaggerated by 10 for
-legibility. The purpose of the graph is to get a feel for how ellipses are
-varying across parameter space. Note that this option makes a system call to
-the \texttt{xmgrace} program, and will not work if that program is not
-installed on your system.
+The \texttt{-x} option produces a graph of the 2\% power mismatch
+contours on the sky. Dimensions of the ellipses have been exaggerated
+by a factor of \texttt{MAGNIFY} (specified within the code) for
+legibility. The purpose of the graph is to get a feel for how ellipses
+are varying across parameter space. Note that this option makes a
+system call to the \texttt{xmgrace} program, and will not work if that
+program is not installed on your system.
 
 
 \subsubsection*{Exit Codes}
@@ -103,12 +109,14 @@ NRCSID( PTOLEMETRICTESTC, "$Id" );
 #define DEFAULT_DURATION 1e5 /* seconds */
 #define NUM_SPINDOWN 0       /* Number of spindown parameters */
 #define SPOKES 30
+#define MAGNIFY 5.0           /* Magnification factor of ellipses */
 
 int lalDebugLevel = 0;
 
 int main( int argc, char *argv[] ) {
   static LALStatus status;          /* Status structure */
   PtoleMetricIn    in;              /* PtoleMetric() input structure */
+  REAL4            mismatch;        /* mismatch threshold of mesh */
   REAL4Vector     *spindown = NULL; /* Spindown parameters */
   REAL8Vector     *metric = NULL;   /* Parameter-space metric */
   int              j, k;            /* Parameter-space indices */
@@ -123,22 +131,32 @@ int main( int argc, char *argv[] ) {
 
   /* Default values. */
   in.duration = DEFAULT_DURATION;
+  in.epoch.gpsSeconds = 0.0;
+  in.epoch.gpsNanoSeconds = 0.0;
+  mismatch = 0.02;
+
 
   /* Parse options. */
-  while ((opt = getopt( argc, argv, "et:xp" )) != -1) {
+  while ((opt = getopt( argc, argv, "b:em:pt:x" )) != -1) {
     switch (opt) {
+    case 'b':
+      in.epoch.gpsSeconds = atof( optarg );
+      break;
     case 'e':
       test = 1;
       lalDebugLevel = 1;
+      break;
+    case 'm':
+      mismatch = atof( optarg );
+      break;
+    case 'p':
+      nongrace = 1;
       break;
     case 't':
       in.duration = atof( optarg );
       break;
     case 'x':
       grace = 1;
-      break;
-    case 'p':
-      nongrace = 1;
       break;
     }
   }
@@ -176,9 +194,7 @@ int main( int argc, char *argv[] ) {
   else
     in.spindown = NULL;
 
-  /* Good epoch: simple as possible, need to find those constants */
-  in.epoch.gpsSeconds = 0;
-  in.epoch.gpsNanoSeconds = 0;
+  
 
   if (test) {
     REAL4 old_duration = in.duration;
@@ -329,12 +345,12 @@ int main( int argc, char *argv[] ) {
         gdd = metric->data[5];
         /* Semiminor axis from larger eigenvalue of metric. */
         smin = gaa+gdd + sqrt( pow(gaa-gdd,2) + pow(2*gad,2) );
-        smin = sqrt(2*.02/smin);
+        smin = sqrt(2*mismatch/smin);
         /* Semiminor axis from smaller eigenvalue of metric. */
         smaj = gaa+gdd - sqrt( pow(gaa-gdd,2) + pow(2*gad,2) );
-        smaj = sqrt(2*.02/smaj);
+        smaj = sqrt(2*mismatch/smaj);
         /* Angle of semimajor axis with "horizontal" (equator). */
-        angle = atan2( gad, .02/smaj/smaj-gdd );
+        angle = atan2( gad, mismatch/smaj/smaj-gdd );
         if (angle <= -LAL_PI_2) angle += LAL_PI;
         if (angle > LAL_PI_2) angle -= LAL_PI;
  
@@ -353,7 +369,7 @@ int main( int argc, char *argv[] ) {
         for (i=0; i<=SPOKES; i++) {
           float c, r;
           c = LAL_TWOPI*i/SPOKES;
-          r = 10*LAL_180_PI*smaj*smin/sqrt( pow(smaj*sin(c),2)
+          r = MAGNIFY*LAL_180_PI*smaj*smin/sqrt( pow(smaj*sin(c),2)
               + pow(smin*cos(c),2) );
 	  if(grace)
 	    fprintf( pvc, "%e %e\n", ra+r*cos(angle-c), dec+r*sin(angle-c) );
