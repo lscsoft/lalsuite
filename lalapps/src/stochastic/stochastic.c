@@ -1,4 +1,3 @@
-
 /*
  * stochastic.c - SGWB Standalone Analysis Pipeline
  *
@@ -19,8 +18,6 @@
 #include <getopt.h>
 
 #include <FrameL.h>
-
-#include <lalapps.h>
 
 #include <lal/AVFactories.h>
 #include <lal/Calibration.h>
@@ -50,6 +47,9 @@
 #include <lal/Window.h>
 #include <lal/IIRFilter.h>
 #include <lal/BandPassTimeSeries.h>
+
+#include <lalapps.h>
+
 #include "stochastic.h"
 
 NRCSID (STOCHASTICC, "$Id$");
@@ -279,8 +279,8 @@ INT4 main(INT4 argc, CHAR *argv[])
    { 
      fscanf(stdin,"%lld\n", &startTime);
      fscanf(stdin,"%lld\n", &stopTime);
-     fscanf(stdin,"%s\n%s\n",&frameCache1,&frameCache2);
-     fscanf(stdin,"%s\n%s\n",&calCache1,&calCache2); 
+     fscanf(stdin,"%s\n%s\n", frameCache1, frameCache2);
+     fscanf(stdin,"%s\n%s\n", calCache1, calCache2); 
      if (inject_flag)
        { seed = 2 * NLoop * seed;}
    }
