@@ -35,7 +35,7 @@ BurstEvent;
 typedef struct
 tagBurstEventList
 {
-  BurstEvent                            *burstEvent;
+  SnglBurstTable                           *burstEvent;
   CHAR                                  *ifo;
   CHAR                                  *search;
   INT4                                   numEvents;
