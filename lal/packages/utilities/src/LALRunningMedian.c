@@ -26,9 +26,10 @@ REAL8Sequence. The routine \verb+LALSRunningMedian()+ does the same for a REAL4S
 is the length of the block the medians are calculated of.
 With n being the lenght of the input array and b being the blocksize,
 the medians array must be a REAL4/REAL8 sequence of length (n-b+1).
-\verb+LALDRunningMedian2()+ is a different implentation of the same algorithm. It 
-should behave exactly like \verb+LALDRunningMedian()+, but has proven to be a
-little faster. Check if it works for you.
+\verb+LALDRunningMedian2()+ and \verb+LALSRunningMedian2()+ are a
+different implentation of the same algorithm. It should behave exactly like
+\verb+LALDRunningMedian()+, but has proven to be a
+little faster and more stable. Check if it works for you.
 \subsubsection*{Algorithm}
 
 For a detailed description of the algorithm see the
@@ -113,6 +114,26 @@ static int rngmed_sortindex4(const void *elem1, const void *elem2){
 static int rngmed_qsortindex8(const void *elem1, const void *elem2){
   struct qsnode{
     REAL8 value;
+    UINT4 index;
+  };
+  
+  const struct qsnode *A = elem1;
+  const struct qsnode *B = elem2;
+
+  if (B->value > A->value)
+    return -1;
+  else if (A->value > B->value)
+    return 1;
+  else if (A->index > B->index)
+    return -1;
+  else
+    return 1;
+}
+
+/* Used in running qsort, RunningMedian2 version */
+static int rngmed_qsortindex4(const void *elem1, const void *elem2){
+  struct qsnode{
+    REAL4 value;
     UINT4 index;
   };
   
@@ -946,6 +967,7 @@ void LALSRunningMedian( LALStatus *status,
   RETURN( status );  
 }
 
+
 /* <lalVerbatim file="LALRunningMedianCP"> */
 void LALDRunningMedian2( LALStatus *status,
 			 REAL8Sequence *medians,
@@ -1045,6 +1067,290 @@ void LALDRunningMedian2( LALStatus *status,
 
   /* sort qsnodes by value and index(!) */
   qsort(qsnodes, bsize, sizeof(struct qsnode),rngmed_qsortindex8);
+
+  /* init nodes array */
+  for(i=0;i<bsize;i++)
+    nodes[i].value = input->data[i];
+  for(i=1;i<bsize-1;i++) {
+    nodes[qsnodes[i-1].index].greater = qsnodes[i].index;
+    nodes[qsnodes[i+1].index].lesser  = qsnodes[i].index;
+  }
+  nodes[qsnodes[0].index].lesser      = nil; /* end marker */
+  nodes[qsnodes[1].index].lesser      = qsnodes[0].index;
+  nodes[qsnodes[bsize-2].index].greater = qsnodes[bsize-1].index;
+  nodes[qsnodes[bsize-1].index].greater = nil; /* end marker */
+
+  /* setup checkpoints */
+  /* j is the current checkpoint
+     i is the stepping
+     they are out of sync after a median checkpoint has been added */
+  for(i=0,j=0; (UINT4)j<ncheckpts; i++,j++) {
+    if ((UINT4)j == mdnnearest) {
+      checkpts[j] = qsnodes[midpoint].index;
+      if (i*stepchkpts != midpoint)
+	j++;
+    }
+    checkpts[j] = qsnodes[i*stepchkpts].index;
+  }
+
+  /* don't need the qsnodes anymore */
+  LALFree(qsnodes);
+
+  /* find first median */
+  nextnode = checkpts[mdnnearest];
+  if(isodd)
+    medians->data[0] = nodes[nextnode].value;
+  else
+    medians->data[0] = (nodes[nextnode].value
+			+ nodes[nodes[nextnode].greater].value) / 2.0;
+
+  /* the "oldest" node (first in sequence) is the one with index 0 */
+  oldestnode = 0;
+
+  /* outer loop: find a median with each iteration */
+  for(nmedian=1; nmedian < medians->length; nmedian++) {
+
+    /* remember value of sample to be deleted */
+    oldvalue = nodes[oldestnode].value;
+
+    /* get next value to be inserted from input */
+    newvalue = input->data[nmedian+bsize-1];
+
+    /** find point of insertion: **/
+
+    /* find checkpoint greater or equal newvalue */
+    /* possible optimisation: use bisectional search instaed of linear */
+    for(rightcheckpt=0; rightcheckpt<ncheckpts; rightcheckpt++)
+      if(newvalue <= nodes[checkpts[rightcheckpt]].value)
+	break;
+      
+    /* assume we are inserting at the beginning: */
+    prevnode = nil;
+    if (rightcheckpt == 0)
+      /* yes, we are */
+      nextnode = checkpts[0];
+    else {
+      /* we're beyond the first checkpoint, find the node we're inserting at: */
+      nextnode = checkpts[rightcheckpt-1]; /* this also works if we found no
+					      checkpoint > newvalue, as
+					      then rightcheckpt == ncheckpts */ 
+      /* the following loop is always ran at least once, as
+	 nodes[checkpts[rightcheckpt-1]].value < newvalue
+         after 'find checkpoint' loop */ 
+      while((nextnode != nil) && (newvalue > nodes[nextnode].value)) {
+	prevnode = nextnode;
+	nextnode = nodes[nextnode].greater;
+      }
+    }
+    /* ok, we have:
+       - case 1: insert at beginning: prevnode == nil, nextnode == smallest node
+       - case 2: insert at end: nextnode == nil (terminated loop),
+                 prevnode == last node
+       - case 3: ordinary insert: insert between prevnode and nextnode
+    */
+
+    /* insertion deletion and shifting are unnecessary if we are replacing
+       at the same pos */
+    if ((oldestnode != prevnode) && (oldestnode != nextnode)) {
+
+      /* delete oldest node from list */
+      if (nodes[oldestnode].lesser == nil) {
+	/* case 1: at beginning */
+	nodes[nodes[oldestnode].greater].lesser = nil;
+	/* this shouldn't be necessary, but doesn't harm */
+	checkpts[0] = nodes[oldestnode].greater;
+      } else if (nodes[oldestnode].greater == nil)
+	/* case 2: at end */
+	nodes[nodes[oldestnode].lesser].greater = nil;
+      else {
+	/* case 3: anywhere else */
+	nodes[nodes[oldestnode].lesser].greater = nodes[oldestnode].greater;
+	nodes[nodes[oldestnode].greater].lesser = nodes[oldestnode].lesser;
+      }
+      /* remember the old links for special case in shifting below */
+      oldgreater = nodes[oldestnode].greater;
+      oldlesser = nodes[oldestnode].lesser;
+
+
+      /* insert new node - actually we reuse the oldest one */
+      /* the value is set outside the outer "if" */
+      nodes[oldestnode].lesser = prevnode;
+      nodes[oldestnode].greater = nextnode;
+      if (prevnode != nil)
+	nodes[prevnode].greater = oldestnode;
+      if (nextnode != nil)
+	nodes[nextnode].lesser = oldestnode;
+
+
+      /* shift checkpoints */
+
+      /* if there is a sequence of identical values, new values are inserted
+	 always at the left end. Thus, the oldest value has to be the rightmost
+	 of such a sequence. This requires proper init.
+	 
+	 This makes shifting of the checkpoints rather easy:
+	 if (oldvalue < newvalue), all checkpoints with
+	     oldvalue <(=) chkptvalue < newvalue are shifted,
+	 if (newvalue <= oldvalue), all checkpoints with
+	     newvalue <= chkptvalue <= oldvalue are shifted.
+	 <(=) means that only a checkpoint at the deleted node must be
+	     shifted, no other accidently pointing to the same value.
+
+	 Care is needed if a checkpoint to shift is the node we just deleted
+
+	 We start at the checkpoint we know to be closest to the new node
+	 satifying the above condition:
+	 rightcheckpt-1 if (oldvalue < newvalue)
+	 rightcheckpt othewise
+	 and proceed in the direction towards the deleted node
+      */
+
+      if (oldvalue < newvalue) {
+	/* we shift towards larger values */
+	for(j=rightcheckpt-1; (j>0)&&(nodes[checkpts[j]].value >= oldvalue);j--)
+	  if (nodes[checkpts[j]].value > oldvalue)
+	    checkpts[j] = nodes[checkpts[j]].greater;
+	  else if (checkpts[j] == oldestnode)
+	    checkpts[j] = oldgreater;
+      } else /* newvalue <= oldvalue */
+	/* we shift towards smaller values */
+	for(i=rightcheckpt;
+	    (i<ncheckpts) && (nodes[checkpts[i]].value <= oldvalue); i++)
+	  if (checkpts[i] == oldestnode)
+	    checkpts[i] = oldlesser;
+	  else
+	    checkpts[i] = nodes[checkpts[i]].lesser;
+
+    } /* if ((oldestnode != prevnode) && (oldestnode != nextnode)) */
+
+    /* in any case set new value */
+    nodes[oldestnode].value = newvalue;
+
+
+    /* find median */
+    if (newvalue == oldvalue)
+      medians->data[nmedian] = medians->data[nmedian-1];
+    else {
+      nextnode = checkpts[mdnnearest];
+      if(isodd)
+	medians->data[nmedian] = nodes[nextnode].value;
+      else
+	medians->data[nmedian] = (nodes[nextnode].value
+				  + nodes[nodes[nextnode].greater].value) / 2.0;
+    }
+    
+    /* next oldest node */
+    oldestnode = (oldestnode + 1) % bsize; /* wrap around */
+    
+  } /* for (nmedian...) */
+  
+  /* cleanup */
+  LALFree(checkpts);
+  LALFree(nodes);
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );  
+}
+
+/* <lalVerbatim file="LALRunningMedianCP"> */
+void LALSRunningMedian2( LALStatus *status,
+			 REAL4Sequence *medians,
+			 const REAL4Sequence *input,
+			 LALRunningMedianPar param)
+/* </lalVerbatim> */
+{
+  /* a single "node"
+   lesser  points to the next node with less or equal value
+   greater points to the next node with greater or equal value
+   an index == blocksize is an end marker 
+  */
+  struct node{
+    REAL4 value;
+    UINT4 lesser;
+    UINT4 greater;
+  };
+
+  /* a node of the quicksort array */
+  struct qsnode{
+    REAL4 value;
+    UINT4 index;
+  };
+
+  const UINT4 bsize = param.blocksize; /* just an abbrevation */
+  const UINT4 nil = bsize;       /* invalid index used as end marker */
+  const BOOLEAN isodd = bsize&1; /* bsize is odd = median is a single element */
+
+  struct node* nodes;           /* array of nodes, will be of size blocksize */
+  struct qsnode* qsnodes;       /* array of indices for initial qsort */
+  UINT4* checkpts;              /* array of checkpoints */
+  UINT4  ncheckpts,stepchkpts;  /* checkpoints: number and distance between */
+  UINT4  oldestnode;            /* index of "oldest" node */
+  UINT4  i;                     /* loop counter (up to input length) */
+  INT4   j;                     /* loop counter (might get negative) */
+  UINT4  nmedian;               /* current median, outer loop counter */
+  UINT4  midpoint;              /* index of middle node in sorting order */
+  UINT4  mdnnearest;            /* checkpoint "nearest" to the median */
+  UINT4  nextnode;              /* node after an insertion point,
+			           also used to find a median */
+  UINT4  prevnode;              /* node before an insertion point */
+  UINT4  rightcheckpt;          /* checkpoint 'right' of an insertion point */
+  REAL4 oldvalue,newvalue;      /* old + new value of the node being replaced */
+  UINT4 oldlesser,oldgreater;   /* remember the pointers of the replaced node */
+
+  INITSTATUS( status, "LALDRunningMedian", LALRUNNINGMEDIANC );
+
+  /* check input parameters */
+  /* input must not be NULL */
+  ASSERT(input,status,LALRUNNINGMEDIANH_ENULL,LALRUNNINGMEDIANH_MSGENULL);
+  /* param.blocksize must be >2 */
+  ASSERT(param.blocksize>2,
+	 status,LALRUNNINGMEDIANH_EZERO,LALRUNNINGMEDIANH_MSGEZERO);
+  /* blocksize must not be larger than input size */
+  ASSERT(param.blocksize <= input->length,
+	 status,LALRUNNINGMEDIANH_ELARGE,LALRUNNINGMEDIANH_MSGELARGE);
+  /* medians must point to a valid sequence of correct size */
+  ASSERT(medians,status,LALRUNNINGMEDIANH_EIMED,LALRUNNINGMEDIANH_MSGEIMED);
+  ASSERT(medians->length == (input->length - param.blocksize + 1),
+	 status,LALRUNNINGMEDIANH_EIMED,LALRUNNINGMEDIANH_MSGEIMED);
+
+  ATTATCHSTATUSPTR( status );
+
+  /* create nodes array */
+  nodes = (struct node*)LALCalloc(bsize, sizeof(struct node));  
+
+  /* determine checkpoint positions */
+  stepchkpts = sqrt(bsize);
+  /* the old form
+     ncheckpts = bsize/stepchkpts;
+     caused too less checkpoints at the end, leading to break the
+     cost calculation */
+  ncheckpts = ceil((REAL4)bsize/(REAL4)stepchkpts);
+
+  /* set checkpoint nearest to the median and offset of the median to it */
+  midpoint = (bsize+(bsize&1)) / 2 - 1;
+  /* this becomes the median checkpoint */
+  mdnnearest = ceil((REAL4)midpoint / (REAL4)stepchkpts);
+
+  /* add a checkpoint for the median if necessary */
+  if (ceil((REAL4)midpoint / (REAL4)stepchkpts) != (REAL4)midpoint / (REAL4)stepchkpts)
+    ncheckpts++;
+
+  /* create checkpoints array */
+  checkpts = (UINT4*)LALCalloc(ncheckpts,sizeof(UINT4));
+
+  /* create array for qsort */
+  qsnodes = (struct qsnode*)LALCalloc(bsize, sizeof(struct qsnode));  
+
+  /* init qsort array
+   the nodes get their values from the input,
+   the indices are only identities qi[0]=0,qi[1]=1,... */
+  for(i=0;i<bsize;i++) {
+    qsnodes[i].value = input->data[i];
+    qsnodes[i].index = i;
+  }
+
+  /* sort qsnodes by value and index(!) */
+  qsort(qsnodes, bsize, sizeof(struct qsnode),rngmed_qsortindex4);
 
   /* init nodes array */
   for(i=0;i<bsize;i++)

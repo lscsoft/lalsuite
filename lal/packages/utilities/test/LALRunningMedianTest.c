@@ -112,8 +112,10 @@ char*argv0;
 int compare_double( double x, double y );
 int compare_single( float x, float y );
 static int rngmed_sortindex(const void *elem1, const void *elem2);
-int testDRunningMedian(LALStatus *stat, REAL8Sequence *input, UINT4 length, LALRunningMedianPar param, BOOLEAN verbose);
-int testSRunningMedian(LALStatus *stat, REAL4Sequence *input, UINT4 length, LALRunningMedianPar param, BOOLEAN verbose);
+int testDRunningMedian(LALStatus *stat, REAL8Sequence *input, UINT4 length,
+		       LALRunningMedianPar param, BOOLEAN verbose, BOOLEAN bmimpl);
+int testSRunningMedian(LALStatus *stat, REAL4Sequence *input, UINT4 length,
+		       LALRunningMedianPar param, BOOLEAN verbose, BOOLEAN bmimpl);
 
 
 struct rngmed_val_index {
@@ -187,9 +189,10 @@ static int rngmed_sortindex(const void *elem1, const void *elem2){
 }
 
 
-int testDRunningMedian(LALStatus *stat, REAL8Sequence *input, UINT4 length, LALRunningMedianPar param, BOOLEAN verbose) {
+int testDRunningMedian(LALStatus *stat, REAL8Sequence *input, UINT4 length,
+		       LALRunningMedianPar param, BOOLEAN verbose, BOOLEAN bmimpl) {
 /* Test the LALDRunningMedian (REAL8Sequence) function by
-   comparing the reults to individaully calculated medians */
+   comparing the reults to individually calculated medians */
 
   REAL8 median;
   REAL8Sequence *medians=NULL;
@@ -204,7 +207,10 @@ int testDRunningMedian(LALStatus *stat, REAL8Sequence *input, UINT4 length, LALR
   }
 
   /* call running median */
-  LALDRunningMedian( stat, medians, input, param );
+  if (bmimpl)
+    LALDRunningMedian2( stat, medians, input, param );
+  else
+    LALDRunningMedian( stat, medians, input, param );
   if ( stat->statusCode ) {
     printf("ERROR: LALDRunningMedian returned status %d\n",stat->statusCode);
     EXIT( LALRUNNINGMEDIANTESTC_ESUB, argv0, LALRUNNINGMEDIANTESTC_MSGESUB );
@@ -263,9 +269,10 @@ int testDRunningMedian(LALStatus *stat, REAL8Sequence *input, UINT4 length, LALR
 
 
 
-int testSRunningMedian(LALStatus *stat, REAL4Sequence *input, UINT4 length, LALRunningMedianPar param, BOOLEAN verbose) {
+int testSRunningMedian(LALStatus *stat, REAL4Sequence *input, UINT4 length,
+		       LALRunningMedianPar param, BOOLEAN verbose, BOOLEAN bmimpl) {
 /* Test the LALSRunningMedian (REAL4Sequence) function by
-   comparing the reults to individaully calculated medians */
+   comparing the reults to individually calculated medians */
 
   REAL4 median;
   REAL4Sequence *medians=NULL;
@@ -280,7 +287,10 @@ int testSRunningMedian(LALStatus *stat, REAL4Sequence *input, UINT4 length, LALR
   }
 
   /* call running median */
-  LALSRunningMedian( stat, medians, input, param );
+  if (bmimpl)
+    LALSRunningMedian2( stat, medians, input, param );
+  else
+    LALSRunningMedian( stat, medians, input, param );
   if ( stat->statusCode ) {
     printf("ERROR: LALRunningMedian returned status %d\n",stat->statusCode);
     EXIT( LALRUNNINGMEDIANTESTC_ESUB, argv0, LALRUNNINGMEDIANTESTC_MSGESUB );
@@ -616,13 +626,13 @@ int main( int argc, char **argv )
 
   /* test normal operation */
 
-  if(testDRunningMedian(&stat,input8,length,param,verbose)) {
+  if(testDRunningMedian(&stat,input8,length,param,verbose,0)) {
     EXIT( LALRUNNINGMEDIANTESTC_EFALSE, argv0, LALRUNNINGMEDIANTESTC_MSGEFALSE );
   } else {
     printf("  PASS: LALDRunningMedian(%d,%d)\n",length,param.blocksize);
   }
 
-  if(testSRunningMedian(&stat,input4,length,param,verbose)) {
+  if(testSRunningMedian(&stat,input4,length,param,verbose,0)) {
     EXIT( LALRUNNINGMEDIANTESTC_EFALSE, argv0, LALRUNNINGMEDIANTESTC_MSGEFALSE );
   } else {
     printf("  PASS: LALSRunningMedian(%d,%d)\n",length,param.blocksize);
@@ -631,16 +641,43 @@ int main( int argc, char **argv )
   /* decrement the blocksize for the next two test to check for even/odd errors */
   param.blocksize--;
 
-  if(testDRunningMedian(&stat,input8,length,param,verbose)) {
+  if(testDRunningMedian(&stat,input8,length,param,verbose,0)) {
     EXIT( LALRUNNINGMEDIANTESTC_EFALSE, argv0, LALRUNNINGMEDIANTESTC_MSGEFALSE );
   } else {
     printf("  PASS: LALDRunningMedian(%d,%d)\n",length,param.blocksize);
   }
 
-  if(testSRunningMedian(&stat,input4,length,param,verbose)) {
+  if(testSRunningMedian(&stat,input4,length,param,verbose,0)) {
     EXIT( LALRUNNINGMEDIANTESTC_EFALSE, argv0, LALRUNNINGMEDIANTESTC_MSGEFALSE );
   } else {
     printf("  PASS: LALSRunningMedian(%d,%d)\n",length,param.blocksize);
+  }
+
+  if(testDRunningMedian(&stat,input8,length,param,verbose,1)) {
+    EXIT( LALRUNNINGMEDIANTESTC_EFALSE, argv0, LALRUNNINGMEDIANTESTC_MSGEFALSE );
+  } else {
+    printf("  PASS: LALDRunningMedian2(%d,%d)\n",length,param.blocksize);
+  }
+
+  if(testSRunningMedian(&stat,input4,length,param,verbose,1)) {
+    EXIT( LALRUNNINGMEDIANTESTC_EFALSE, argv0, LALRUNNINGMEDIANTESTC_MSGEFALSE );
+  } else {
+    printf("  PASS: LALSRunningMedian2(%d,%d)\n",length,param.blocksize);
+  }
+
+  /* decrement the blocksize for the next two test to check for even/odd errors */
+  param.blocksize--;
+
+  if(testDRunningMedian(&stat,input8,length,param,verbose,1)) {
+    EXIT( LALRUNNINGMEDIANTESTC_EFALSE, argv0, LALRUNNINGMEDIANTESTC_MSGEFALSE );
+  } else {
+    printf("  PASS: LALDRunningMedian2(%d,%d)\n",length,param.blocksize);
+  }
+
+  if(testSRunningMedian(&stat,input4,length,param,verbose,1)) {
+    EXIT( LALRUNNINGMEDIANTESTC_EFALSE, argv0, LALRUNNINGMEDIANTESTC_MSGEFALSE );
+  } else {
+    printf("  PASS: LALSRunningMedian2(%d,%d)\n",length,param.blocksize);
   }
 
 
