@@ -15,6 +15,8 @@
 #include <errno.h>
 #include <getopt.h>
 
+#include <FrameL.h>
+
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
 #include <lal/FrameCalibration.h>
@@ -280,7 +282,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   BOOLEAN epochsMatch = 1;
   REAL4WithUnits ccStat;
   COMPLEX8FrequencySeries *ccSpectrum;
-  CHAR ccFilename[FILENAME_MAX];
 
   /* error handler */
   status.statusPtr = NULL;
@@ -1116,14 +1117,12 @@ INT4 main(INT4 argc, CHAR *argv[])
       LAL_CALL(LALStochasticCrossCorrelationSpectrumCal(&status, \
             ccSpectrum, &ccIn, epochsMatch), &status);
 
-      /* save */
+      /* save out cc spectra as frame */
       if (vrbflg)
-      {
-        LALSnprintf(ccFilename, FILENAME_MAX, "%s%s-ccSpectra-%d-%d.dat", \
-            ifoOne, ifoTwo, startTime, segmentDuration);
-        LALCPrintFrequencySeries(ccSpectrum, ccFilename);
-      }
-
+        fprintf(stdout, "Saving ccSpectra to frame...\n");
+      write_ccspectra_frame(ccSpectrum, ifoOne, ifoTwo, gpsAnalysisTime, \
+          segmentDuration);
+      
       /* cc statistic */
       LAL_CALL(LALStochasticCrossCorrelationStatisticCal(&status, &ccStat, \
             &ccIn,epochsMatch), &status);
@@ -1359,8 +1358,15 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* free calloc'd memory */
-  free(frameCacheOne);
-  free(frameCacheTwo);
+  if (strcmp(frameCacheOne, frameCacheTwo))
+  {
+    free(frameCacheOne);
+    free(frameCacheTwo);
+  }
+  else
+  {
+    free(frameCacheOne);
+  }
   free(calCacheOne);
   free(calCacheTwo);
   free(channelOne);
@@ -2687,6 +2693,81 @@ static REAL4TimeSeries *cut_time_series(LALStatus *status,
       status);
 
   return(series);
+}
+
+/* function to save out ccSpectra as a frame file */
+static void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
+    CHAR *ifoOne,
+    CHAR *ifoTwo,
+    LIGOTimeGPS time,
+    INT4 duration)
+{
+  /* variables */
+  COMPLEX8 *data;
+  CHAR hertz[] = "Hz";
+  CHAR comment[] = "Created by $Id$";
+  CHAR source[FILENAME_MAX];
+  CHAR fname[FILENAME_MAX];
+  CHAR units[LALUnitNameSize];
+  struct FrFile *frfile;
+  UINT4 nframes;
+
+  LALSnprintf(source, sizeof(source), "%s%s", ifoOne, ifoTwo);
+  LALSnprintf(fname, sizeof(fname), "%s%s-ccSpectra-%d-%d.gwf", ifoOne, \
+      ifoTwo, time.gpsSeconds, duration);
+  frfile = FrFileONew(fname, 0);
+
+  data = series->data->data;
+  nframes = 1;
+  {
+    UINT4 ncpy;
+    struct FrameH *frame;
+    struct FrVect *vect;
+    struct FrProcData *proc;
+    ncpy = series->data->length;
+    frame = FrameHNew( source );
+    frame->run = 0;
+    frame->frame = 0;
+    frame->GTimeS = time.gpsSeconds;
+    frame->GTimeN = time.gpsNanoSeconds;
+    frame->dt = duration;
+
+    proc = LALCalloc(1, sizeof(*proc));
+    vect = FrVectNew1D(series->name, FR_VECT_8C, series->data->length, \
+        series->deltaF, hertz, units);
+    if (!vect)
+    {
+      LALFree(proc);
+      FrVectFree(vect);
+      fprintf(stderr, "unable to allocate memory for frame.\n");
+      exit(1);
+    }
+    vect->startX[0] = series->f0;
+
+    FrStrCpy(&proc->name, "CCSPECTRA");
+    FrStrCpy(&proc->comment, comment);
+    proc->next = frame->procData;
+    frame->procData = proc;
+    proc->classe = FrProcDataDef();
+    proc->type = 2;
+    proc->data = vect;
+    proc->subType = 0;
+    proc->tRange = duration;
+    proc->fRange = series->data->length * series->deltaF;
+    /* frequency is in vector */
+
+    memcpy(vect->dataD, data, ncpy * sizeof(*series->data->data));
+
+    /* write frame */
+    FrameWrite(frame, frfile);
+
+    /* free frame */
+    FrVectFree(vect); 
+    vect=NULL;
+  }
+
+  /* end frame file */
+  FrFileOEnd( frfile );
 }
 
 /*
