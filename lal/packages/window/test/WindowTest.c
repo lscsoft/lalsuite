@@ -77,61 +77,68 @@ int main( void )
     300.357781729967622,   /* Papoulis */
     406.9376};     /* Hamming */
 
-  LALCreateVector (&status, &vector, 1024);
+    LALCreateVector (&status, &vector, 1024);
 
-  /* Test behavior for null parameter block */
-  LALWindow(&status,vector,NULL );
-  if (check(&status,WINDOW_NULLPARAM,WINDOW_MSGNULLPARAM)) return 1;
-
-  /* Test behavior for null vector block */
-  LALWindow(&status,NULL,&params );
-  if (check(&status,WINDOW_NULLHANDLE,WINDOW_MSGNULLHANDLE)) return 1;
-
-  /* Test behavior for non-positive length  */
-  params.length=0;
-  LALWindow(&status,vector,&params);
-  if (check(&status,WINDOW_ELENGTH,WINDOW_MSGELENGTH)) return 1;
-
-  /* Test failures for undefined window type on lower and upper bounds */
-  params.length=1024;
-  params.type=-1;
-  LALWindow( &status, vector, &params );
-  if (check(&status,WINDOW_TYPEUNKNOWN,WINDOW_MSGTYPEUNKNOWN)) return 1;
-  params.type=NumberWindowTypes;
-  LALWindow( &status, vector, &params );
-  if (check(&status,WINDOW_TYPEUNKNOWN,WINDOW_MSGTYPEUNKNOWN)) return 1;
-
-  params.type=Rectangular;
-
-  /* test that we get an error if the wrong vector length is present */
-  dummy.length=1234;
-  dummy.data=NULL;
-  LALWindow( &status, &dummy, &params );
-  if (check(&status,WINDOW_WRONGLENGTH,WINDOW_MSGWRONGLENGTH)) return 1;
-
-  /* test that we get an error if the vector data area null */
-  dummy.length=params.length;
-  LALWindow( &status, &dummy, &params );
-  if (check(&status,WINDOW_NULLDATA,WINDOW_MSGNULLDATA)) return 1;
-
-
-  /* Test normalizations */
-  for (wintype=Rectangular;wintype<=Hamming;wintype++)
-  {
-    params.type=wintype;
-    LALWindow(&status,vector,&params);
-    if (fabs(params.sumofsquares-testsquares[(int)wintype])>1.e-5)
+#ifndef LAL_NDEBUG
+    if ( ! lalNoDebug )
     {
-      printf("FAIL: Window %s appears incorrect.\n",params.windowname);
-      return 1;
+      /* Test behavior for null parameter block */
+      LALWindow(&status,vector,NULL );
+      if (check(&status,WINDOW_NULLPARAM,WINDOW_MSGNULLPARAM)) return 1;
+
+      /* Test behavior for null vector block */
+      LALWindow(&status,NULL,&params );
+      if (check(&status,WINDOW_NULLHANDLE,WINDOW_MSGNULLHANDLE)) return 1;
+
+      /* Test behavior for non-positive length  */
+      params.length=0;
+      LALWindow(&status,vector,&params);
+      if (check(&status,WINDOW_ELENGTH,WINDOW_MSGELENGTH)) return 1;
+
+      /* Test failures for undefined window type on lower and upper bounds */
+      params.length=1024;
+      params.type=-1;
+      LALWindow( &status, vector, &params );
+      if (check(&status,WINDOW_TYPEUNKNOWN,WINDOW_MSGTYPEUNKNOWN)) return 1;
+      params.type=NumberWindowTypes;
+      LALWindow( &status, vector, &params );
+      if (check(&status,WINDOW_TYPEUNKNOWN,WINDOW_MSGTYPEUNKNOWN)) return 1;
+
+      params.type=Rectangular;
+
+      /* test that we get an error if the wrong vector length is present */
+      dummy.length=1234;
+      dummy.data=NULL;
+      LALWindow( &status, &dummy, &params );
+      if (check(&status,WINDOW_WRONGLENGTH,WINDOW_MSGWRONGLENGTH)) return 1;
+
+      /* test that we get an error if the vector data area null */
+      dummy.length=params.length;
+      LALWindow( &status, &dummy, &params );
+      if (check(&status,WINDOW_NULLDATA,WINDOW_MSGNULLDATA)) return 1;
     }
-    if (PRINT) LALPrintVector(vector);
-  }
+#endif
 
 
-  printf("PASS Window()\n");
 
-  LALDestroyVector (&status, &vector);
+    /* Test normalizations */
+    for (wintype=Rectangular;wintype<=Hamming;wintype++)
+    {
+      params.length=vector->length;
+      params.type=wintype;
+      LALWindow(&status,vector,&params);
+      if (fabs(params.sumofsquares-testsquares[(int)wintype])>1.e-5)
+      {
+        printf("FAIL: Window %s appears incorrect.\n",params.windowname);
+        return 1;
+      }
+      if (PRINT) LALPrintVector(vector);
+    }
 
-  return 0;
+
+    printf("PASS Window()\n");
+
+    LALDestroyVector (&status, &vector);
+
+    return 0;
 }

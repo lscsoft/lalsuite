@@ -1,48 +1,84 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: VectorOpsTest.c
- * 
- * Author: Creighton, J. D. E., Sintes, A. M.
- * 
- * Revision: $Id$
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
- *   main()
- *
- * SYNOPSIS 
- * 
- * DESCRIPTION 
- *   Test suite for vector operations
- * 
- * DIAGNOSTICS
- * 
- * CALLS
- *   CCVectorDivide
- *   CCVectorMultiply
- *   CCVectorMultiplyConjugate
- *   SCVectorMultiply
- *   SSVectorMultiply
- * 
- * NOTES
- * 
- *-----------------------------------------------------------------------
- */
+/*************** <lalVerbatim file="VectorOpsTestCV"> **************
+$Id$
+**************** </lalVerbatim> ***********************************/
+
+/* <lalLaTeX>
+
+\subsection{Program \texttt{VectorOpsTest.c}}
+\label{ss:VectorOpsTest.c}
+
+Tests the routines in \verb@VectorOps.h@.  Exercises some of the error
+conditions and makes sure that they work.
+
+\subsubsection*{Usage}
+\begin{verbatim}
+VectorOpsTest [options]
+Options:
+  -h         print help
+  -q         quiet: run silently
+  -v         verbose: print extra information
+  -d level   set lalDebugLevel to level
+\end{verbatim}
+
+\subsubsection*{Description}
+\subsubsection*{Exit codes}
+\begin{tabular}{|c|l|}
+\hline
+ Code & Explanation                   \\
+\hline
+\tt 0 & Success, normal exit.         \\
+\tt 1 & Subroutine failed.            \\
+\hline
+\end{tabular}
+
+\vfill{\footnotesize\input{VectorOpsTestCV}}
+
+</lalLaTeX> */
+
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <math.h>
+#include <config.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/VectorOps.h>
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+
 NRCSID (MAIN, "$Id$");
 
-int lalDebugLevel = 2;
+#define CODES_(x) #x
+#define CODES(x) CODES_(x)
+
+extern char *optarg;
+extern int   optind;
+
+int lalDebugLevel = 0;
+int verbose    = 0;
+
+static void
+Usage( const char *program, int exitflag );
+
+static void
+ParseOptions( int argc, char *argv[] );
+
+static void
+TestStatus( LALStatus *status, const char *expectedCodes, int exitCode );
+
+static void
+ClearStatus( LALStatus *status );
 
 int
-main ( void )
+main ( int argc, char *argv[] )
 {
   const int size = 8;
   COMPLEX8Vector *z1 = NULL;
@@ -57,13 +93,22 @@ main ( void )
   static LALStatus   status;
   INT4            i;
 
+  ParseOptions( argc, argv );
+
   LALCCreateVector(&status, &z1, size);
+  TestStatus( &status, CODES(0), 1 );
   LALCCreateVector(&status, &z2, size);
+  TestStatus( &status, CODES(0), 1 );
   LALCCreateVector(&status, &z3, size);
+  TestStatus( &status, CODES(0), 1 );
   LALSCreateVector(&status, &x1, size);
+  TestStatus( &status, CODES(0), 1 );
   LALSCreateVector(&status, &x2, size);
+  TestStatus( &status, CODES(0), 1 );
   LALSCreateVector(&status, &x3, size);
+  TestStatus( &status, CODES(0), 1 );
   LALSCreateVector(&status, &y_1, size/2);
+  TestStatus( &status, CODES(0), 1 );
   y2         = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
   y2->data   = NULL;
   y2->length = size;
@@ -81,141 +126,334 @@ main ( void )
     x2->data[i]    = 6 + i + i*i + i*i*i;
   }
 
-  printf("\n");
+  if (verbose) printf("\n");
   LALCCVectorMultiply(&status, z3, z1, z2);
+  TestStatus( &status, CODES(0), 1 );
   for (i = 0; i < size; ++i)
-    printf("(% 6.0f,% 6.0f) x (% 6.0f,% 6.0f) = (% 6.0f,% 6.0f)\n",
-           z1->data[i].re, z1->data[i].im,
-           z2->data[i].re, z2->data[i].im,
-           z3->data[i].re, z3->data[i].im);
+    if (verbose) printf("(% 6.0f,% 6.0f) x (% 6.0f,% 6.0f) = (% 6.0f,% 6.0f)\n",
+        z1->data[i].re, z1->data[i].im,
+        z2->data[i].re, z2->data[i].im,
+        z3->data[i].re, z3->data[i].im);
 
-  printf("\n");
+  if (verbose) printf("\n");
   LALCCVectorMultiplyConjugate(&status, z3, z1, z2);
+  TestStatus( &status, CODES(0), 1 );
   for (i = 0; i < size; ++i)
-    printf("(% 6.0f,% 6.0f) x (% 6.0f,% 6.0f)* = (% 6.0f,% 6.0f)\n",
-           z1->data[i].re, z1->data[i].im,
-           z2->data[i].re, z2->data[i].im,
-           z3->data[i].re, z3->data[i].im);
+    if (verbose) printf("(% 6.0f,% 6.0f) x (% 6.0f,% 6.0f)* = (% 6.0f,% 6.0f)\n",
+        z1->data[i].re, z1->data[i].im,
+        z2->data[i].re, z2->data[i].im,
+        z3->data[i].re, z3->data[i].im);
 
-  printf("\n");
+  if (verbose) printf("\n");
   LALCCVectorDivide(&status, z3, z1, z2);
+  TestStatus( &status, CODES(0), 1 );
   for (i = 0; i < size; ++i)
-    printf("(% 6.0f,% 6.0f) / (% 6.0f,% 6.0f) = (% 9.6f,% 9.6f)\n",
-           z1->data[i].re, z1->data[i].im,
-           z2->data[i].re, z2->data[i].im,
-           z3->data[i].re, z3->data[i].im);
+    if (verbose) printf("(% 6.0f,% 6.0f) / (% 6.0f,% 6.0f) = (% 9.6f,% 9.6f)\n",
+        z1->data[i].re, z1->data[i].im,
+        z2->data[i].re, z2->data[i].im,
+        z3->data[i].re, z3->data[i].im);
 
-  printf("\n");
+  if (verbose) printf("\n");
   LALSCVectorMultiply(&status, z3, x1, z1);
+  TestStatus( &status, CODES(0), 1 );
   for (i = 0; i < size; ++i)
-    printf("% 6.0f x (% 6.0f,% 6.0f) = (% 6.0f,% 6.0f)\n",
-           x1->data[i],
-           z1->data[i].re, z1->data[i].im,
-           z3->data[i].re, z3->data[i].im);
+    if (verbose) printf("% 6.0f x (% 6.0f,% 6.0f) = (% 6.0f,% 6.0f)\n",
+        x1->data[i],
+        z1->data[i].re, z1->data[i].im,
+        z3->data[i].re, z3->data[i].im);
 
-  printf("\n");
+  if (verbose) printf("\n");
   LALSSVectorMultiply(&status, x3, x1, x2);
+  TestStatus( &status, CODES(0), 1 );
   for (i = 0; i < size; ++i)
-    printf("% 6.0f x % 6.0f = % 6.0f\n",
-           x1->data[i], x2->data[i], x3->data[i]);
+    if (verbose) printf("% 6.0f x % 6.0f = % 6.0f\n",
+        x1->data[i], x2->data[i], x3->data[i]);
 
-  printf("\n");
-  LALSSVectorMultiply(&status, x3, x1, NULL);
-  LALSSVectorMultiply(&status, x3, y2, x2);
-  LALSSVectorMultiply(&status, y3, x1, x2);
-  LALSSVectorMultiply(&status, x3, x1, y_1);
+  if (verbose) printf("\n");
+#ifndef LAL_NDEBUG
+  if ( ! lalNoDebug )
+  {
+    LALSSVectorMultiply(&status, x3, x1, NULL);
+    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
+    LALSSVectorMultiply(&status, x3, y2, x2);
+    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
+    LALSSVectorMultiply(&status, y3, x1, x2);
+    TestStatus( &status, CODES(VECTOROPS_ESIZE), 1 );
+    LALSSVectorMultiply(&status, x3, x1, y_1);
+    TestStatus( &status, CODES(VECTOROPS_ESZMM), 1 );
+  }
+#endif
 
   LALCDestroyVector(&status, &z1);
+  TestStatus( &status, CODES(0), 1 );
   LALCDestroyVector(&status, &z2);
+  TestStatus( &status, CODES(0), 1 );
   LALCDestroyVector(&status, &z3);
+  TestStatus( &status, CODES(0), 1 );
   LALSDestroyVector(&status, &x1);
+  TestStatus( &status, CODES(0), 1 );
   LALSDestroyVector(&status, &x2);
+  TestStatus( &status, CODES(0), 1 );
   LALSDestroyVector(&status, &x3);
+  TestStatus( &status, CODES(0), 1 );
   LALSDestroyVector(&status, &y_1);
+  TestStatus( &status, CODES(0), 1 );
   LALFree(y2);
   LALFree(y3->data);
   LALFree(y3);
 
   x1 = x2 = x3 = y_1 = y2 = y3 = NULL;
   z1 = z2 = z3 = NULL;
-  
-  
+
+
   LALCCreateVector(&status, &z1, size);
-  
+  TestStatus( &status, CODES(0), 1 );
+
   LALSCreateVector(&status, &x1, size);
+  TestStatus( &status, CODES(0), 1 );
   LALSCreateVector(&status, &x2, size);
+  TestStatus( &status, CODES(0), 1 );
   LALSCreateVector(&status, &x3, size);
-  
-  
-   for (i = 0; i < size; ++i)
+  TestStatus( &status, CODES(0), 1 );
+
+
+  for (i = 0; i < size; ++i)
   {
     z1->data[i].re = (12.0 + i) *cos(LAL_PI/3.0*i);
     z1->data[i].im = (12.0 + i )*sin(LAL_PI/3.0*i);
   }
-  
-   printf("\n"); 
-   LALCVectorAbs(&status, x1, z1);  
-   for (i = 0; i < size; ++i)
-    printf(" Abs(% f,%f)  = %f \n",
-           z1->data[i].re, z1->data[i].im,
-           x1->data[i]);
-           
-    LALCVectorAngle(&status, x2, z1);
-    for (i = 0; i < size; ++i)    
-     printf(" Angle(%f,%f)  = %f \n",
-           z1->data[i].re, z1->data[i].im,
-           x2->data[i]);
- 
-    LALUnwrapREAL4Angle(&status, x3, x2); 
-     for (i = 0; i < size; ++i)    
-     printf(" Unwrap Phase Angle ( %f )  = %f \n",
-           x2->data[i],
-           x3->data[i]);
-  
-  
+
+  if (verbose) printf("\n"); 
+  LALCVectorAbs(&status, x1, z1);  
+  TestStatus( &status, CODES(0), 1 );
+  for (i = 0; i < size; ++i)
+    if (verbose) printf(" Abs(% f,%f)  = %f \n",
+        z1->data[i].re, z1->data[i].im,
+        x1->data[i]);
+
+  LALCVectorAngle(&status, x2, z1);
+  TestStatus( &status, CODES(0), 1 );
+  for (i = 0; i < size; ++i)    
+    if (verbose) printf(" Angle(%f,%f)  = %f \n",
+        z1->data[i].re, z1->data[i].im,
+        x2->data[i]);
+
+  LALUnwrapREAL4Angle(&status, x3, x2); 
+  TestStatus( &status, CODES(0), 1 );
+  for (i = 0; i < size; ++i)    
+    if (verbose) printf(" Unwrap Phase Angle ( %f )  = %f \n",
+        x2->data[i],
+        x3->data[i]);
+
+
   LALSCreateVector(&status, &y_1, size/2);
-  
+  TestStatus( &status, CODES(0), 1 );
+
   y2         = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
   y2->data   = NULL;
   y2->length = size;
-  
+
   y3         = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
   y3->data   = (REAL4 *)LALMalloc(size*sizeof(REAL4));
   y3->length = 0;
 
-  printf("\n");
-  
+  if (verbose) printf("\n");
+
+#ifndef LAL_NDEBUG
+  if ( ! lalNoDebug )
+  {
     LALCVectorAbs(&status, x1, NULL);
+    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
     LALCVectorAbs(&status, NULL, z1);
+    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
     LALCVectorAbs(&status, y_1, z1);
+    TestStatus( &status, CODES(VECTOROPS_ESZMM), 1 );
     LALCVectorAbs(&status, y2, z1);
+    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
     LALCVectorAbs(&status, y3, z1);
-    
-    
+    TestStatus( &status, CODES(VECTOROPS_ESIZE), 1 );
+
+
     LALCVectorAngle(&status, x2, NULL);
+    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
     LALCVectorAngle(&status, NULL, z1);
+    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
     LALCVectorAngle(&status, y_1, z1);
+    TestStatus( &status, CODES(VECTOROPS_ESZMM), 1 );
     LALCVectorAngle(&status, y2, z1);
+    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
     LALCVectorAngle(&status, y3, z1);
-    
+    TestStatus( &status, CODES(VECTOROPS_ESIZE), 1 );
+
     LALUnwrapREAL4Angle(&status, x3, NULL);   
+    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
     LALUnwrapREAL4Angle(&status, NULL, x2);   
+    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
     LALUnwrapREAL4Angle(&status, y_1, x2);   
+    TestStatus( &status, CODES(VECTOROPS_ESZMM), 1 );
     LALUnwrapREAL4Angle(&status, y2, x2);   
+    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
     LALUnwrapREAL4Angle(&status, y3, x2);   
+    TestStatus( &status, CODES(VECTOROPS_ESIZE), 1 );
     LALUnwrapREAL4Angle(&status, x2, x2);   
- 
+    TestStatus( &status, CODES(VECTOROPS_ESAME), 1 );
+  }
+#endif
+
 
   LALCDestroyVector(&status, &z1);
- 
+  TestStatus( &status, CODES(0), 1 );
+
   LALSDestroyVector(&status, &x1);
+  TestStatus( &status, CODES(0), 1 );
   LALSDestroyVector(&status, &x2);
+  TestStatus( &status, CODES(0), 1 );
   LALSDestroyVector(&status, &x3);
-  
+  TestStatus( &status, CODES(0), 1 );
+
   LALSDestroyVector(&status, &y_1);
+  TestStatus( &status, CODES(0), 1 );
   LALFree(y2);
   LALFree(y3->data);
   LALFree(y3);
 
+  LALCheckMemoryLeaks();
   return 0;
+}
+
+
+/*
+ * TestStatus()
+ *
+ * Routine to check that the status code status->statusCode agrees with one of
+ * the codes specified in the space-delimited string ignored; if not,
+ * exit to the system with code exitcode.
+ *
+ */
+static void
+TestStatus( LALStatus *status, const char *ignored, int exitcode )
+{
+  char  str[64];
+  char *tok;
+
+  if ( verbose )
+  {
+    REPORTSTATUS( status );
+  }
+
+  if ( strncpy( str, ignored, sizeof( str ) ) )
+  {
+    if ( ( tok = strtok( str, " " ) ) )
+    {
+      do
+      {
+        if ( status->statusCode == atoi( tok ) )
+        {
+          return;
+        }
+      }
+      while ( ( tok = strtok( NULL, " " ) ) );
+    }
+    else
+    {
+      if ( status->statusCode == atoi( tok ) )
+      {
+        return;
+      }
+    }
+  }
+
+  fprintf( stderr, "\nExiting to system with code %d\n", exitcode );
+  exit( exitcode );
+}
+
+
+/*
+ *
+ * ClearStatus()
+ *
+ * Recursively applies DETATCHSTATUSPTR() to status structure to destroy
+ * linked list of statuses.
+ *
+ */
+void
+ClearStatus( LALStatus *status )
+{
+  if ( status->statusPtr )
+  {
+    ClearStatus( status->statusPtr );
+    DETATCHSTATUSPTR( status );
+  }
+}
+
+
+/*
+ * Usage()
+ *
+ * Prints a usage message for program program and exits with code exitcode.
+ *
+ */
+static void
+Usage( const char *program, int exitcode )
+{
+  fprintf( stderr, "Usage: %s [options]\n", program );
+  fprintf( stderr, "Options:\n" );
+  fprintf( stderr, "  -h         print this message\n" );
+  fprintf( stderr, "  -q         quiet: run silently\n" );
+  fprintf( stderr, "  -v         verbose: print extra information\n" );
+  fprintf( stderr, "  -d level   set lalDebugLevel to level\n" );
+  exit( exitcode );
+}
+
+
+/*
+ * ParseOptions()
+ *
+ * Parses the argc - 1 option strings in argv[].
+ *
+ */
+static void
+ParseOptions( int argc, char *argv[] )
+{
+  while ( 1 )
+  {
+    int c = -1;
+
+    c = getopt( argc, argv, "hqvd:" );
+    if ( c == -1 )
+    {
+      break;
+    }
+
+    switch ( c )
+    {
+      case 'd': /* set debug level */
+        lalDebugLevel = atoi( optarg );
+        break;
+
+      case 'v': /* verbose */
+        ++verbose;
+        break;
+
+      case 'q': /* quiet: run silently (ignore error messages) */
+        freopen( "/dev/null", "w", stderr );
+        freopen( "/dev/null", "w", stdout );
+        break;
+
+      case 'h':
+        Usage( argv[0], 0 );
+        break;
+
+      default:
+        Usage( argv[0], 1 );
+    }
+
+  }
+
+  if ( optind < argc )
+  {
+    Usage( argv[0], 1 );
+  }
+
+  return;
 }
