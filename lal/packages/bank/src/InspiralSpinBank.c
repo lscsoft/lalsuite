@@ -172,6 +172,16 @@ LALInspiralSpinBankMetric(
    REAL4		*f0
    )
 {
+  INT4 loop = 0;
+  REAL8 J1  = 0.0;
+  REAL8 J4  = 0.0;
+  REAL8 J6  = 0.0;
+  REAL8 J9  = 0.0;
+  REAL8 J11 = 0.0;
+  REAL8 J12 = 0.0;
+  REAL8 J14 = 0.0;
+  REAL8 J17 = 0.0;
+
   INITSTATUS( status, "LALInspiralSpinBank", INSPIRALSPINBANKC );
   ATTATCHSTATUSPTR( status );
 
@@ -182,7 +192,6 @@ LALInspiralSpinBankMetric(
     ABORT(status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
     }
   
-  INT2 loop = 0;
   
   /* Rescale the moments to F0 = Noise Curve Minimum */
   for(loop = 1; loop <=17; loop++){
@@ -190,23 +199,14 @@ LALInspiralSpinBankMetric(
     }
 
 /* This just copies the noise moment data from *moments */
-  REAL4 J1  = moments->j[1];
-/*  REAL4 J2  = moments->j[2];*/
-/*  REAL4 J3  = moments->j[3];*/
-  REAL4 J4  = moments->j[4];
-/*  REAL4 J5  = moments->j[5];*/
-  REAL4 J6  = moments->j[6];
-/*  REAL4 J7  = moments->j[7];*/
-/*  REAL4 J8  = moments->j[8];*/
-  REAL4 J9  = moments->j[9];
-/*  REAL4 J10 = moments->j[10];*/
-  REAL4 J11 = moments->j[11];
-  REAL4 J12 = moments->j[12];
-/*  REAL4 J13 = moments->j[13];*/
-  REAL4 J14 = moments->j[14];
-/*  REAL4 J15 = moments->j[15];*/
-/*  REAL4 J16 = moments->j[16];*/
-  REAL4 J17 = moments->j[17];
+  J1  = moments->j[1];
+  J4  = moments->j[4];
+  J6  = moments->j[6];
+  J9  = moments->j[9];
+  J11 = moments->j[11];
+  J12 = moments->j[12];
+  J14 = moments->j[14];
+  J17 = moments->j[17];
                                                                                                                                                 
   /* Set metric components as functions of moments. */
   metric->data[0] = (REAL4) (1.5)*(J17-J12*J12-(J9-J4*J12)*(J9-J4*J12)/(J1-J4*J4));
@@ -686,8 +686,6 @@ static INT4 test(REAL4 x,
     return 0;
   betaMax = 3.8*LAL_PI/29.961432 * (1+0.75*m2/m1)*(m1/m2) * pow((LAL_MTSUN_SI*100.0/mass),0.6666667);
   if (z > betaMax)
-    return 0;
-  if (isnan(x) || isnan(y) || isnan(z))
     return 0;
   return 1;
   }
