@@ -510,6 +510,10 @@ LALInspiralBCVRegularFcutBank (
     UINT4                *NList, 
     InspiralCoarseBankIn coarseIn);
 
+/* <lalLaTeX>
+   \newpage\input{InspiralSpinBankC}
+   </lalLaTeX>  */
+
 void
 LALInspiralSpinBank(
     LALStatus         	 *status,
