@@ -117,8 +117,8 @@ def analyze_lho_ifo(l1_lho_data,l1_chunks_analyzed,ifo_data,ifo_name,
           done_this_chunk = 1
           # make sure we have done one and only one datafind for the segment
           if not done_df_for_seg:
-            df = inspiral.DataFindNode(df_job)
-            df.set_ifo(ifo_name)
+            df = pipeline.LSCDataFindNode(df_job)
+            df.set_observatory(ifo_name[0])
             df.set_start(seg.start() - pad)
             df.set_end(seg.end() + pad)
             if prev_df: df.add_parent(prev_df)
@@ -309,7 +309,7 @@ else:
 
 ##############################################################################
 # create the Condor jobs that will be used in the DAG
-df_job = inspiral.DataFindJob(cp)
+df_job = pipeline.LSCDataFindJob('cache','logs',cp)
 tmplt_job = inspiral.TmpltBankJob(cp)
 insp_job = inspiral.InspiralJob(cp)
 l_insp_job = inspiral.InspiralJob(cp)
@@ -470,8 +470,8 @@ for seg in l1_data:
         done_this_chunk = 1
         # make sure we have done one and only one datafind for the segment
         if not done_df_for_seg:
-          df = inspiral.DataFindNode(df_job)
-          df.set_ifo('L1')
+          df = pipeline.LSCDataFindNode(df_job)
+          df.set_observatory('L')
           df.set_start(seg.start() - pad)
           df.set_end(seg.end() + pad)
           if prev_df: df.add_parent(prev_df)
@@ -685,8 +685,8 @@ for seg in h2_data:
         done_this_chunk = 1
         # make sure we have done one and only one datafind for the segment
         if not done_df_for_seg:
-          df = inspiral.DataFindNode(df_job)
-          df.set_ifo('H2')
+          df = pipeline.LSCDataFindNode(df_job)
+          df.set_observatory('H')
           df.set_start(seg.start() - pad)
           df.set_end(seg.end() + pad)
           if prev_df: df.add_parent(prev_df)
