@@ -50,6 +50,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/LIGOLwXMLRead.h>
 
 #include <lal/FrequencySeries.h>
+#include <lal/TimeSeries.h>
 #include <lal/GenerateBurst.h>
 
 
@@ -706,6 +707,7 @@ int ProcessData(struct CommandLineArgsTag CLA)
 {
   PassBandParamStruc highpassParams;
   int p;
+  REAL4TimeSeries *series;
 
   highpassParams.nMax =  8;
   highpassParams.f1   = -1;
@@ -715,15 +717,17 @@ int ProcessData(struct CommandLineArgsTag CLA)
 
   LALButterworthREAL8TimeSeries( &status, &GV.ht, &highpassParams ); 
   TESTSTATUS( &status ); 
+  
+  LALCreateREAL4TimeSeries(&status, &series, GV.ht.name, GV.ht.epoch, GV.ht.f0, 
+			   GV.ht.deltaT, GV.ht.sampleUnits, GV.ht.data->length);
+  TESTSTATUS( &status ); 
 
   for (p=0; p<(int)GV.ht.data->length; p++)  
     {
-      GV.ht_proc.data->data[p]=GV.ht.data->data[p]; 
+      series->data->data[p]=GV.ht.data->data[p]; 
     } 
 
-  GV.ht_proc.deltaT=GV.ht.deltaT; 
-  GV.ht_proc.name=CLA.ChannelName;
-  GV.ht_proc.epoch=GV.ht.epoch;
+  GV.ht_proc=*series;
 
   /* destroy double precision vector */
   LALDDestroyVector(&status,&GV.ht.data); 
@@ -821,14 +825,15 @@ int ReadData(struct CommandLineArgsTag CLA)
       GV.ht.data->data[p] *= SCALE;
     }
 
-  GV.ht.name=CLA.ChannelName;
-
   LALFrClose(&status,&framestream);
   TESTSTATUS( &status );
 
 
   return 0;
 }
+
+
+
 
 /*******************************************************************************/
 
