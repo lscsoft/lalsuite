@@ -2,7 +2,6 @@
 
 #include<lal/LALStdlib.h>
 #include<lal/LALStatusMacros.h>
-#include<lal/InspiralBankGeneration.h>   
 #include<lal/LALInspiral.h>
 #include<lal/LALInspiralBank.h>
 #include<lal/LIGOMetadataTables.h>
@@ -24,14 +23,10 @@ LALInspiralBankGeneration(
   INITSTATUS(status, "LALInspiralBankGeneration", INSPIRALBANKGENERATIONC);
   ATTATCHSTATUSPTR(status);
     
-  /* Check the inputs 
-  if (input == NULL){
-    ABORT(status, INSPIRALBANKGENERATIONH_ENULL, INSPIRALBANKGENERATIONH_MSGENULL);
-    }
-  if (first != NULL){
-    ABORT(status, INSPIRALBANKGENERATIONH_ENONNULL, INSPIRALBANKGENERATIONH_MSGENONNULL);
-    }
-  */
+  ASSERT( input != NULL, status, LALINSPIRALBANKH_ENULL,
+          LALINSPIRALBANKH_MSGENULL );
+  ASSERT( first == NULL, status, LALINSPIRALBANKH_ENULL,
+          LALINSPIRALBANKH_MSGENULL );
 
   /* For nonspinning approximants, call LALInspiralCreateCoarseBank(). */
   switch( input->approximant )
@@ -55,22 +50,19 @@ LALInspiralBankGeneration(
     TRY( LALInspiralSpinBank( status->statusPtr, &coarseList, ntiles,
          *input ), status );   
     if (*ntiles < 1){       
-      ABORT( status, INSPIRALBANKGENERATIONH_ENULL,
-            INSPIRALBANKGENERATIONH_MSGENULL );
+      ABORT( status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
     }
     break;
 
   default:
     /* This error message needs to be changed. */
-    ABORT( status, INSPIRALBANKGENERATIONH_EMEM,
-           INSPIRALBANKGENERATIONH_MSGEMEM );
+    ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
   }
  
   /* Convert output data structure. */
   bank = (SnglInspiralTable *) LALCalloc(1, sizeof(SnglInspiralTable));
   if (bank == NULL){
-    ABORT( status, INSPIRALBANKGENERATIONH_EMEM,
-           INSPIRALBANKGENERATIONH_MSGEMEM );
+    ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
   }
   *first = bank;
   for( cnt = 0; cnt < *ntiles; cnt++ )
@@ -79,8 +71,7 @@ LALInspiralBankGeneration(
            SnglInspiralTable ) );
     if (bank == NULL)
     {
-      ABORT( status, INSPIRALBANKGENERATIONH_EMEM,
-             INSPIRALBANKGENERATIONH_MSGEMEM);
+      ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
     }
     bank->mass1 = coarseList[cnt].params.mass1;
     bank->mass2 = coarseList[cnt].params.mass2;
