@@ -40,7 +40,7 @@ class DataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
       self.add_ini_opts(cp,sec)
 
     self.add_condor_cmd('environment',
-      """LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH)""" )
+      """LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH);PYTHONPATH=$ENV(PYTHONPATH)""" )
 
     self.set_stderr_file('logs/datafind-$(macroinstrument)-$(macrostart)-$(macroend)-$(cluster)-$(process).err')
     self.set_stdout_file('cache/$(macroinstrument)-$(macrostart)-$(macroend).cache')
