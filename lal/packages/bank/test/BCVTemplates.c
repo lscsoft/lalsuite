@@ -1,58 +1,19 @@
-/********************************* <lalVerbatim file="FlatMeshTestCV">
-Author: Creighton, T. D.
+/********************************* <lalVerbatim file="BCVTemplatesCV">
+Author: B.S. Sathyaprakash
 $Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
 
-\subsection{Program \texttt{FlatMeshTest.c}}
-\label{ss:FlatMeshTest.c}
+\subsection{Program \texttt{BCVTemplates.c}}
+\label{ss:BCVTemplates.c}
 
-Creates a template mesh for an arbitrary but constant $n$-dimensional
-mismatch metric.
+Creates a template mesh for BCV (or, alternatively, for SPA but
+assuing a constant metric) using the mismatch metric.
 
 \subsubsection*{Usage}
-\begin{verbatim}
-FlatMeshTest [-o outfile] [-d debuglevel] [-m mismatch]
-             [eigenvectorfile inversefile rangefile]
-\end{verbatim}
 
 \subsubsection*{Description}
-
-This test program creates a template mesh for a parameter space with a
-constant mismatch metric.  The following option flags are accepted:
-\begin{itemize}
-\item[\texttt{-o}] Writes the output mesh to the file \verb@outfile@.
-\item[\texttt{-d}] Sets the debug level to \verb@debuglevel@.
-\item[\texttt{-m}] Sets the maximum allowed mismatch to
-\verb@mismatch@, a positive number less than 1.
-\end{itemize}
-Once the above options are processed, any remaining command-line
-arguments must be the names of three files containing information
-about the eigenvectors of the metric and the desired search range;
-these files are described below.  They are read using the function
-\verb@LALSReadVectorSequence()@.  If the \verb@-o@ option is not
-specified, results are written to \verb@stdout@; if other options or
-arguments are not specified, the information is taken from
-\verb@#define@d constants.
-
-\paragraph{\texttt{eigenvectorfile}:} This file contains the
-eigenvectors of the $n$-dimensional mismatch metric $\mathsf{g}_{ab}$
-described in \verb@FlatMesh.h@.  The file format is simply $n$ lines
-each containing $n$ whitespace-separated numbers in any standard
-floating-point format.  Each line lists the components of a particular
-eigenvector; the eigenvector must be normalized so that its squared
-magnitude is 1 over the corresponding eigenvalue.
-
-\paragraph{\texttt{inversefile}:} This file also consists of $n$ lines
-each with $n$ floating-point numbers.  It is simply the matrix inverse
-of the contents of \verb@eigenvectorfile@ taken as an $n\times n$
-matrix.
-
-\paragraph{\texttt{rangefile}:} This file consists of two lines of $n$
-floating-point numbers; these specify two opposite corners of a
-rectilinear region in parameter space to be covered by the mesh.
-Additional lines will be ignored.
 
 \subsubsection*{Exit codes}
 ****************************************** </lalLaTeX><lalErrTable> */
@@ -75,33 +36,6 @@ Additional lines will be ignored.
 
 \subsubsection*{Algorithm}
 
-For the most part this test program simply reads the input arguments
-and files, passes them to the function \verb@LALCreateFlatMesh()@
-using \verb@LALRectIntersect()@ to define the parameter-space
-boundary, and prints the resulting mesh.  However, there are two
-additional bits of processing that deserve comment.
-
-The rows of the matrix in \verb@eigenvectorfile@ are already of the
-form $\mathsf{e}^i_{(j)}/\sqrt{\lambda_{(j)}}$, as discussed in
-\verb@FlatMesh.h@.  To get the proper orthonormalized transformation
-matrix, one must simply multiply each element by
-$2m_\mathrm{thresh}/\sqrt{n}$.  Similarly, the inverse transformation
-matrix elements should be \emph{divided} by this number.
-
-In order to ensure \emph{complete} coverage of the desired parameter
-space, \verb@FlatMeshTest@ extends the boundaries of the rectilinear
-region specified in \verb@rangefile@ to include any mesh point whose
-patch volume touches on the desired search region.  If
-$\mathsf{M}^a{}_b$ is the renormalized transformation matrix described
-above, then the sum of the magnitudes of the components along a
-column, $\Delta x_j=\sum_i|M^i{}_j|$ represents the maximum extent of
-a mesh point's patch in the $j^\mathrm{th}$ dimension.  The algorithm
-in \verb@FlatMeshTest@ extends the rectangular search region by half
-this amount in each direction to ensure that any patch touching on the
-desired search volume is included.  This assumes that the boundary of
-the search region is ``soft''; i.e.\ that no harm will come of
-stepping slightly outside it.
-
 \subsubsection*{Uses}
 \begin{verbatim}
 lalDebugLevel
@@ -114,7 +48,7 @@ LALSCreateVector()              LALSDestroyVector()
 
 \subsubsection*{Notes}
 
-\vfill{\footnotesize\input{FlatMeshTestCV}}
+\vfill{\footnotesize\input{BCVTemplatesCV}}
 
 ******************************************************* </lalLaTeX> */
 

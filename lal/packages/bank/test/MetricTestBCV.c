@@ -1,3 +1,35 @@
+/********************************* <lalVerbatim file="MetricTestBCVCV">
+Author: B.S. Sathyaprakash
+$Id$
+**************************************************** </lalVerbatim> */
+
+/********************************************************** <lalLaTeX>
+
+\subsection{Program \texttt{MetricTestBCV.c}}
+\label{ss:MetricTestBCV.c}
+
+Creates a template mesh for BCV (or, alternatively, for SPA but
+assuing a constant metric) using the mismatch metric.
+
+\subsubsection*{Usage}
+
+\subsubsection*{Description}
+
+\subsubsection*{Exit codes}
+
+\subsubsection*{Algorithm}
+
+\subsubsection*{Uses}
+\begin{verbatim}
+lalDebugLevel
+\end{verbatim}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{MetricTestBCVCV}}
+
+******************************************************* </lalLaTeX> */
+
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
