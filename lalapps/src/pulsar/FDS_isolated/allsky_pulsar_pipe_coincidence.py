@@ -104,6 +104,7 @@ Fth = cp.get('fstat-params','Fth')
 freq_window = cp.get('polka-params','freq_window')
 alpha_window = cp.get('polka-params','alpha_window')
 delta_window = cp.get('polka-params','delta_window')
+coincidence_band = cp.get('polka-params','coincidence_band')
 
 # read chi-sq threshold params
 Fth_chisq = cp.get('chisq-params','Fth_chisq')
@@ -121,7 +122,7 @@ sifo2 = cp.get('chisq-params','sifo2')
 subdir=''.join([local_work_dir,'/','run.',str(job_id)])
 
 # figure out name of results file that we're using to compute the upper limit
-freq = float(start_freq) + float(job_id)
+freq = float(start_freq) + float(job_id)*float(coincidence_band)
 
 # names of Fstats files
 fstats1_zipped=''.join(['FstatsJOINED-1-',str(freq),'.gz'])
@@ -191,7 +192,8 @@ polka_out=''.join(['polka_out',''.join(['-',str(freq)])])
 polka_args = ' '.join(['./lalapps_polka','-1',FstatsFileName1,'-2',FstatsFileName2,'-f',\
                        str(freq_window),'-a',str(alpha_window),'-d',\
                        str(delta_window),'-o',polka_out,\
-                       '-3',FstatsFileName1,'-4',FstatsFileName2])
+                       '-3',FstatsFileName1,'-4',FstatsFileName2,\
+                       '-s',str(freq),'-e',str(freq+float(coincidence_band))])
 
 print 'running: ',polka_args
 os.system(polka_args)
