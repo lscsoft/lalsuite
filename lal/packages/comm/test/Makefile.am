@@ -15,3 +15,4 @@ CommTestMain_SOURCES = CommTestMain.c CommTestMaster.c CommTestSlave.c
 CommTestMain_LDADD = $(top_srcdir)/lib/liblal.a @MPILIBS@
 INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = Slave*.out Slave*.err machines killscript
+CLEANFILES = CommTestMain

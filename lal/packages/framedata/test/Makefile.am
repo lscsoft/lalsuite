@@ -17,3 +17,4 @@ SpecBufferTest_LDADD = $(top_srcdir)/lib/liblal.a
 DataBufferTest_LDADD = $(top_srcdir)/lib/liblal.a
 INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = Segment.* Spectrum.* Response.*
+CLEANFILES = FrameDataTest SpecBufferTest DataBufferTest
