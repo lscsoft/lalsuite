@@ -310,9 +310,12 @@ LALOneMinusChisqCdf (
    *  third test is necessary since there are some numbers x for 
    *  which (x>0.0) evaluates as TRUE but for which 1/x evaluates to inf
    */
-  if ( !( (*prob >= 0.0) && (*prob <= 1.0) && 
-        ( 1.0/(*prob) < LAL_REAL8_MAX ) )){
+  if ( !( (*prob >= 0.0) && (*prob <= 1.0) )){
     ABORT(status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  }
+
+  if (1.0/(*prob) > LAL_REAL8_MAX){
+    *prob = exp(-700.0);
   }
 
   DETATCHSTATUSPTR( status );
