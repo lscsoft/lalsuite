@@ -72,9 +72,9 @@ int main( void )
   SkyPosition      source;
   REAL8            delay;
   DetTimeAndASource     det1_and_source;
-  TwoDetsTimeAndASource dets_and_source;
+  /* TwoDetsTimeAndASource dets_and_source; */
   LALPlaceAndGPS        det1_and_gps;
-  LALPlaceAndGPS        det2_and_gps;
+  /* LALPlaceAndGPS        det2_and_gps; */
 
   /*
    * Set up a source that will be used in both LALTimeDelay() and

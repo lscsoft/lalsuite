@@ -11,7 +11,7 @@ INT4 lalDebugLevel = 0;
 
 NRCSID (TESTGPSTOGMST1C, "$Id$");
 
-int main(int argc, char *argv[])
+int main(void)
 {
   static LALStatus status;
   LIGOTimeGPS      gps = {0., 0.};

@@ -78,16 +78,16 @@ LALTimeDelayFromEarthCenter( LALStatus               *stat,
   LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
 
   /* latitude and longitude for detector */
-  REAL8 lat, lon;
+  /* REAL8 lat, lon; */
 
   /* cos(lat) and sin(lat) for detector */
-  REAL8 cosLat, sinLat;
+  /* REAL8 cosLat, sinLat; */
 
   /* local radius of curvature at detector */
-  REAL8 R;
+  /* REAL8 R; */
 
   /* radius of curvature plus height above ellipsoid for detector */
-  REAL8 Rh;
+  /* REAL8 Rh; */
 
   /* GMST of time of arrival at detector, in radians */
   REAL8 gmst1;
@@ -101,7 +101,7 @@ LALTimeDelayFromEarthCenter( LALStatus               *stat,
   REAL8       ehat_src[3];    /* unit vector of source location */
 
   /* location vector for the detector in Earth-fixed frame */
-  REAL8 detLoc[3];
+  /* REAL8 detLoc[3]; */
   REAL8 *p_detLoc;
 
 

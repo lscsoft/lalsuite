@@ -177,7 +177,7 @@ LALDateString (LALStatus     *status,
     break;
 
   default:
-    sprintf(tmpwday, "");
+    sprintf(tmpwday, "%c", '\0');
     break;
   }
   

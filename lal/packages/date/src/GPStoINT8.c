@@ -44,6 +44,7 @@ This modules contains two routines, one of which converts from
 #endif
 
 #include <lal/LALStdlib.h>
+#include <lal/Date.h>
 
 NRCSID( GPSTOINT8C, "$Id$" );
 

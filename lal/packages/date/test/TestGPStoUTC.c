@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
   LALLeapSecAccuracy  accuracy = LALLEAPSEC_LOOSE; /* prevent ABORT */
   CHARVector         *timestamp = NULL;
   char                refstamp[128];
-  char                infostr[256];
+  /* char                infostr[256]; */
 
   if (argc > 1)
       lalDebugLevel = atoi(argv[1]);

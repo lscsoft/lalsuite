@@ -17,13 +17,13 @@ int main(int argc, char *argv[])
 {
     static LALStatus stat;
     LIGOTimeGPS      gpstime;
-    REAL8            gmsthours, lmsthours;
+    /* REAL8            gmsthours, lmsthours; */
     REAL8            gmstsecs;
     LALDate          date;
     LALDate          mstdate;
     LALDetector      detector;
     LALPlaceAndDate  place_and_date;
-    LALPlaceAndGPS   place_and_gps;
+    /* LALPlaceAndGPS   place_and_gps; */
     char             refstr[256];
     char             tmpstr[128];
     LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;

@@ -85,8 +85,8 @@ main(int argc, char *argv[])
     INT4          ref_julian_day;
     INT4          julian_day;
     INT4          old_debuglvl;
-    REAL8         ref_mod_julian_day;
-    REAL8         mod_julian_day;
+    /* REAL8         ref_mod_julian_day;
+       REAL8         mod_julian_day; */
     REAL8         ref_julian_date;
     REAL8         julian_date;
     REAL8         ref_mod_julian_date;
