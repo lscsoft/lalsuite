@@ -79,7 +79,9 @@ FUNC (
     frame->GTimeS = t / (INT8)1000000000;
     frame->GTimeN = t % (INT8)1000000000;
     frame->dt = ncpy * series->deltaT;
+#if !defined FR_VERS || FR_VERS < 5000
     frame->localTime = 0;
+#endif
 
     /*** CHECK FSHIFT ***/
     vect = makeFrVect1D( frame, params->type, series->name, comment, seconds,

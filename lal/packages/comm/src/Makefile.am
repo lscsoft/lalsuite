@@ -1,12 +1,11 @@
 ## Process this file with automake to produce Makefile.in
-noinst_LTLIBRARIES = libcomm.la
 COMMSOURCES = SendRecv.c Exchange.c
 
 if MPI
+noinst_LTLIBRARIES = libcomm.la
 libcomm_la_SOURCES = $(COMMSOURCES)
 EXTRA_TEXSOURCES   =
 else
-libcomm_la_SOURCES = 
 EXTRA_TEXSOURCES   = $(COMMSOURCES)
 endif
 

@@ -58,7 +58,11 @@ FUNC (
   }
 
   tnow = EPOCH_TO_I8TIME( stream->epoch );
+#if defined FR_VERS && FR_VERS >= 5000
+  tbeg = 1e9 * vect->GTime;
+#else
   tbeg = SECNAN_TO_I8TIME( vect->GTimeS, vect->GTimeN );
+#endif
   if ( tnow < tbeg )
   {
     ABORT( status, FRAMESTREAMH_ETIME, FRAMESTREAMH_MSGETIME );
@@ -135,8 +139,13 @@ FUNC (
     {
       dest = series->data->data;
       need = series->data->length;
+#if defined FR_VERS && FR_VERS >= 5000
+      series->epoch.gpsSeconds = floor( vect->GTime );
+      series->epoch.gpsNanoSeconds = (INT8)( 1e9 * vect->GTime ) % (INT8)1000000000;
+#else
       series->epoch.gpsSeconds = vect->GTimeS;
       series->epoch.gpsNanoSeconds = vect->GTimeN;
+#endif
     }
 
     /* copy data */
