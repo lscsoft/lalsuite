@@ -32,6 +32,7 @@ RCSID("$Id$");
   " --help                       display this message\n"\
   " --version                    display version\n"\
   " --verbose                    verbose mode\n"\
+  " --cat-only                   only cat xml files\n"\
   " --text                       output file as text\n"\
   " --output FILE                write output data to FILE\n"
 
@@ -46,6 +47,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* getopt flags */
   static int text_flag;
   extern int vrbflg;
+  static int cat_flag;
 
   /* counters */
   INT4 i;
@@ -194,19 +196,22 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
   }
 
-  /* combine statistics */
-  for (thisStoch = stochHead; thisStoch; thisStoch = thisStoch->next)
+  if (!cat_flag)
   {
-    numerator += thisStoch->cc_stat / (thisStoch->cc_sigma * \
-        thisStoch->cc_sigma);
-    denominator += thisStoch->cc_sigma * thisStoch->cc_sigma;
-  }
-  yOpt = numerator / denominator;
-  sigmaOpt = 1/denominator;
+    /* combine statistics */
+    for (thisStoch = stochHead; thisStoch; thisStoch = thisStoch->next)
+    {
+      numerator += thisStoch->cc_stat / (thisStoch->cc_sigma * \
+          thisStoch->cc_sigma);
+      denominator += thisStoch->cc_sigma * thisStoch->cc_sigma;
+    }
+    yOpt = numerator / denominator;
+    sigmaOpt = 1/denominator;
 
-  /* print results */
-  fprintf(stdout, "    yOpt = %e\n", yOpt);
-  fprintf(stdout, "sigmaOpt = %e\n", sigmaOpt);
+    /* print results */
+    fprintf(stdout, "    yOpt = %e\n", yOpt);
+    fprintf(stdout, "sigmaOpt = %e\n", sigmaOpt);
+  }
 
   if (text_flag)
   {
