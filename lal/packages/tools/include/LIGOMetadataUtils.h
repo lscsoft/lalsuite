@@ -2,7 +2,7 @@
  * 
  * File Name: LIGOMetadataUtils.h
  *
- * Author: Brown, D. A.
+ * Author: Brown, D. A. and Fairhurst, S.
  * 
  * Revision: $Id$
  * 
@@ -11,7 +11,7 @@
 
 #if 0
 <lalVerbatim file="LIGOMetadataUtilsHV">
-Author: Brown, D. A.
+Author: Brown, D. A. and Fairhurst, S.
 $Id$
 </lalVerbatim> 
 <lalLaTeX>
@@ -64,16 +64,16 @@ NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 #define LIGOMETADATAUTILSH_ENNUL 2
 #define LIGOMETADATAUTILSH_ETIME 3
 #define LIGOMETADATAUTILSH_ECOOR 4
-#define LIGOMETADATAUTILSH_ESSGAP 5
-#define LIGOMETADATAUTILSH_ESSDUB 6
+#define LIGOMETADATAUTILSH_ESGAP 5
+#define LIGOMETADATAUTILSH_ESDUB 6
 #define LIGOMETADATAUTILSH_ETEST 7
 #define LIGOMETADATAUTILSH_EDET 8
 #define LIGOMETADATAUTILSH_MSGENULL "Null pointer"
 #define LIGOMETADATAUTILSH_MSGENNUL "Non-null pointer"
 #define LIGOMETADATAUTILSH_MSGETIME "Invalid GPS Time"
 #define LIGOMETADATAUTILSH_MSGECOOR "Invalid Coordinate System"
-#define LIGOMETADATAUTILSH_MSGESSGAP "Gap in Search Summary Input"
-#define LIGOMETADATAUTILSH_MSGESSDUB "Repeated data in Search Summary Input"
+#define LIGOMETADATAUTILSH_MSGESGAP "Gap in Search Summary Input"
+#define LIGOMETADATAUTILSH_MSGESDUB "Repeated data in Search Summary Input"
 #define LIGOMETADATAUTILSH_MSGETEST "Unknown parameter test for sorting events"
 #define LIGOMETADATAUTILSH_MSGEDET "Unknown detector"
 
@@ -84,6 +84,54 @@ NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 <lalLaTeX>
 \subsection*{Types}
 </lalLaTeX>
+\idx[Type]{LALPlaygroundDataMask}
+\idx[Type]{SnglInspiralParameterTest}
+\idx[Type]{SnglInspiralAccuracy}
+\idx[Type]{SnglInspiralClusterChoice}
+\idx[Type]{SnglBurstAccuracy}
+
+
+
+
+
+\subsubsection*{Type \texttt{LALPlaygroundDataMask}}
+#endif
+/* <lalVerbatim> */
+typedef enum 
+{
+  unspecified_data_type, 
+  playground_only,
+  exclude_play, 
+  all_data
+}
+LALPlaygroundDataMask;
+/*</lalVerbatim> */
+#if 0
+<lalLaTeX>
+The \texttt{LALPlaygroundDataMask} contains an enum type for describing the
+subset of data to be used, \texttt{playground\_only}, \texttt{exclude\_play}
+and \texttt{all\_data}.
+\subsubsection*{Type \texttt{LALPlaygroundDataMask}}
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
+typedef enum 
+{
+  unknown_ifo,
+  g1,
+  h1,
+  h2,
+  l1,
+  t1,
+  v1
+}  
+InterferometerLabel;
+/*</lalVerbatim> */
+#if 0
+<lalLaTeX>
+The \texttt{InterferometerLabel} contains an enum type for describing the 
+interferometer.
+</lalLaTeX>
 #endif
 
 
@@ -93,6 +141,12 @@ NRCSID( LIGOMETADATAUTILSH, "$Id$" );
  *
  */
 
+#if 0
+<lalLaTeX>
+\subsubsection*{Type \texttt{SnglInspiralParameterTest}}
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
 typedef enum 
 { 
   no_test,
@@ -101,18 +155,15 @@ typedef enum
   mchirp_and_eta 
 } 
 SnglInspiralParameterTest;
-
-
-typedef enum 
-{
-  unspecified_data_type, 
-  playground_only,
-  exclude_play, 
-  all_data
-}
-LALPlaygroundDataMask;
-
-
+/*</lalVerbatim> */
+#if 0
+<lalLaTeX>
+The \texttt{SnglInspiralParameterTest} contains an enum type for each of the
+tests of mass parameters which are used.
+\subsubsection*{Type \texttt{SnglInspiralAccuracy}}
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
 typedef struct
 tagSnglInspiralAccuracy
 {
@@ -128,8 +179,20 @@ tagSnglInspiralAccuracy
   SnglInspiralParameterTest test;
 }
 SnglInspiralAccuracy;
-
-
+/*</lalVerbatim> */
+#if 0
+<lalLaTeX>
+The \texttt{SnglInspiralAccuracy} structure contains parameters used for 
+testing coincidence between two or more single inspiral tables.  These include
+a timing accuracy \texttt{dt}, five mass accuracies \texttt{dm} (used for 
+testing \texttt{mass1} and \texttt{mass2}), \texttt{deta}, \texttt{dmchirp},
+\texttt{dpsi0} and \texttt{dpsi3}.  It also includes the parameters 
+\texttt{kappa} and \texttt{epsilon} which are used for testing consistency of
+effective distance.
+\subsubsection*{Type \texttt{SnglInspiralClusterChoice}}
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
 typedef enum 
 { 
   none,
@@ -138,7 +201,17 @@ typedef enum
   snr 
 } 
 SnglInspiralClusterChoice;
-
+/*</lalVerbatim> */
+#if 0
+<lalLaTeX>
+The \texttt{SnglInspiralClusterChoice} provides three choices for clustering
+a single inspiral table.  The\texttt{snr} clustering returns the trigger
+with the greatest signal to noise ratio; \texttt{snr\_and\_chisq} replaces
+the existing trigger if the new trigger has \textit{both} a greater snr and
+a smaller chi squared value; \texttt{snrsq\_over\_chisq} selects the trigger
+with the largest value of snr squared divided by the chi squared.
+</lalLaTeX>
+#endif
 
 /*
  *
@@ -146,7 +219,12 @@ SnglInspiralClusterChoice;
  *
  */
 
-
+#if 0
+<lalLaTeX>
+\subsubsection*{Type \texttt{SnglSnglBurstAccuracy}}
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
 typedef struct
 tagSnglBurstAccuracy
 {
@@ -157,6 +235,7 @@ tagSnglBurstAccuracy
   REAL4 dm;
 }
 SnglBurstAccuracy;
+/*</lalVerbatim> */
 
 
 /*
@@ -352,16 +431,6 @@ LALCreateTwoIFOCoincList(
     SnglInspiralAccuracy       *errorParams
     );
 
-
-void
-LALSnglInspiralLookup(
-    LALStatus                  *status,
-    SnglInspiralTable         **snglInspiralPtr,
-    CoincInspiralTable         *coincInspiral,
-    char                       *ifo 
-    );
-
-
 void
 LALAddSnglInspiralToCoinc(
     LALStatus                  *status,
@@ -369,13 +438,12 @@ LALAddSnglInspiralToCoinc(
     SnglInspiralTable          *snglInspiral
     );
 
-
 void
-LALCreateNewCoinc(
-    LALStatus                  *status,
-    CoincInspiralTable        **coincPtr,
-    CoincInspiralTable         *coincInspiral,
-    SnglInspiralTable          *snglInspiral
+LALSnglInspiralLookup(
+    LALStatus            *status,
+    SnglInspiralTable   **snglInspiralPtr,
+    CoincInspiralTable   *coincInspiral,
+    InterferometerLabel   ifo 
     );
 
 
@@ -387,6 +455,14 @@ LALSnglInspiralCoincTest(
     SnglInspiralAccuracy       *errorParams
     );
 
+
+void
+LALExtractCoincSngls(
+    LALStatus                  *status,
+    SnglInspiralTable         **snglPtr,
+    CoincInspiralTable         *coincInspiral,
+    LIGOTimeGPS                *gpsStartTime
+    );
 
 /* sim inspiral */
 
