@@ -1995,6 +1995,7 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " -h                    print this message\n");
   fprintf(stderr, " -V                    display version\n");
   fprintf(stderr, " --verbose             verbose mode\n");
+  fprintf(stderr, " --middle-segment      use middle segment for psd estimation\n");
   fprintf(stderr, " --recenter            recenter jobs\n");
   fprintf(stderr, " --post-analysis       post analysis\n");
   fprintf(stderr, " -z                    set lalDebugLevel\n");
