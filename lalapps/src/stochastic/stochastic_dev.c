@@ -57,8 +57,8 @@
 
 #include "stochastic_dev.h"
 
-NRCSID (STOCHASTICDEVC, "$Id$");
-RCSID ("$Id$");
+NRCSID(STOCHASTICDEVC, "$Id$");
+RCSID("$Id$");
 
 /* cvs info */
 #define CVS_ID "$Id$"
@@ -1861,8 +1861,8 @@ static void readDataPair(LALStatus *status,
   sampleRate = params->sampleRate;
 
   /* initialise status pointer */
-  INITSTATUS( status, "readDataPair", STOCHASTICDEVC );
-  ATTATCHSTATUSPTR( status );
+  INITSTATUS(status, "readDataPair", STOCHASTICDEVC);
+  ATTATCHSTATUSPTR(status);
 
   /* buffer start time */
   bufferStartTime.gpsSeconds = startTime - buffer;
@@ -1885,13 +1885,13 @@ static void readDataPair(LALStatus *status,
 
   /* open first frame cache */
   LALFrCacheImport(status->statusPtr, &frCacheOne, params->frameCacheOne);
-  CHECKSTATUSPTR( status );
+  CHECKSTATUSPTR(status);
   LALFrCacheOpen(status->statusPtr, &frStreamOne, frCacheOne);
-  CHECKSTATUSPTR( status );
+  CHECKSTATUSPTR(status);
 
   /* set frame reading mode for first stream */
   LALFrSetMode(status->statusPtr, LAL_FR_SILENT_MODE, frStreamOne);
-  CHECKSTATUSPTR( status );
+  CHECKSTATUSPTR(status);
 
   if (vrbflg)
   {
@@ -1900,10 +1900,10 @@ static void readDataPair(LALStatus *status,
 
   /* read first channel */
   LALFrSeek(status->statusPtr, &(bufferStartTime), frStreamOne);
-  CHECKSTATUSPTR( status );
+  CHECKSTATUSPTR(status);
   LALFrGetREAL4TimeSeries(status->statusPtr, streamPair->streamOne, \
       &frChanInOne, frStreamOne);
-  CHECKSTATUSPTR( status );
+  CHECKSTATUSPTR(status);
 
   /* resample */
   if (resampleRate != sampleRate)
@@ -1916,7 +1916,7 @@ static void readDataPair(LALStatus *status,
     /* resample */
     LALResampleREAL4TimeSeries(status->statusPtr, streamPair->streamOne, \
         &resampleParams);
-    CHECKSTATUSPTR( status );
+    CHECKSTATUSPTR(status);
   }
 
   if (strcmp(params->frameCacheOne, params->frameCacheTwo) == 0)
@@ -1929,10 +1929,10 @@ static void readDataPair(LALStatus *status,
 
     /* read in second channel */
     LALFrSeek(status->statusPtr, &(bufferStartTime), frStreamOne);
-    CHECKSTATUSPTR( status );
+    CHECKSTATUSPTR(status);
     LALFrGetREAL4TimeSeries(status->statusPtr, streamPair->streamTwo, \
         &frChanInTwo, frStreamOne);
-    CHECKSTATUSPTR( status );
+    CHECKSTATUSPTR(status);
 
     if (vrbflg)
     {
@@ -1941,7 +1941,7 @@ static void readDataPair(LALStatus *status,
 
     /* close frame cache */
     LALFrClose(status->statusPtr, &frStreamOne);
-    CHECKSTATUSPTR( status );
+    CHECKSTATUSPTR(status);
   }
   else
   {
@@ -1952,7 +1952,7 @@ static void readDataPair(LALStatus *status,
 
     /* close first frame cache */
     LALFrClose(status->statusPtr, &frStreamOne);
-    CHECKSTATUSPTR( status );
+    CHECKSTATUSPTR(status);
 
     if (vrbflg)
     {
@@ -1961,9 +1961,9 @@ static void readDataPair(LALStatus *status,
 
     /* open second frame cache and read in second channel */
     LALFrCacheImport(status->statusPtr, &frCacheTwo, params->frameCacheTwo);
-    CHECKSTATUSPTR( status );
+    CHECKSTATUSPTR(status);
     LALFrCacheOpen(status->statusPtr, &frStreamTwo, frCacheTwo);
-    CHECKSTATUSPTR( status );
+    CHECKSTATUSPTR(status);
 
     /* set frame reading mode for second stream */
     LALFrSetMode(status->statusPtr, LAL_FR_SILENT_MODE, frStreamTwo);
@@ -1976,10 +1976,10 @@ static void readDataPair(LALStatus *status,
 
     /* read in second channel */
     LALFrSeek(status->statusPtr, &(bufferStartTime), frStreamTwo);
-    CHECKSTATUSPTR( status );
+    CHECKSTATUSPTR(status);
     LALFrGetREAL4TimeSeries(status->statusPtr, streamPair->streamTwo, \
         &frChanInTwo, frStreamTwo);
-    CHECKSTATUSPTR( status );
+    CHECKSTATUSPTR(status);
 
     if (vrbflg)
     {
@@ -1988,7 +1988,7 @@ static void readDataPair(LALStatus *status,
 
     /* close second frame stream */
     LALFrClose(status->statusPtr, &frStreamTwo);
-    CHECKSTATUSPTR( status );
+    CHECKSTATUSPTR(status);
   }
 
   /* resample */
@@ -2002,20 +2002,20 @@ static void readDataPair(LALStatus *status,
     /* resample */
     LALResampleREAL4TimeSeries(status->statusPtr, streamPair->streamTwo, \
         &resampleParams);
-    CHECKSTATUSPTR( status );
+    CHECKSTATUSPTR(status);
   }
 
   /* remove buffer, and hence corruption due to resampling */
   LALShrinkREAL4TimeSeries(status->statusPtr, streamPair->streamOne, \
       resampleRate * buffer, params->length);
-  CHECKSTATUSPTR( status );
+  CHECKSTATUSPTR(status);
   LALShrinkREAL4TimeSeries(status->statusPtr, streamPair->streamOne, \
       resampleRate * buffer, params->length);
-  CHECKSTATUSPTR( status );
+  CHECKSTATUSPTR(status);
 
   /* return status */
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
 }
 
 /* function to estimate the psd */
@@ -2035,32 +2035,32 @@ static void psdEstimator(LALStatus *status,
   LALUnit psdUnits = {0,{0,0,1,0,0,0,2},{0,0,0,0,0,0,0}};
 
   /* initialise status pointer */
-  INITSTATUS( status, "psdEstimator", STOCHASTICDEVC );
-  ATTATCHSTATUSPTR( status );
+  INITSTATUS(status, "psdEstimator", STOCHASTICDEVC);
+  ATTATCHSTATUSPTR(status);
 
   /* allocate memory for psd data structures */
   LALCreateREAL4FrequencySeries(status->statusPtr, &psdA, "psdA", \
       params.gpsStartTime, 0, deltaF, psdUnits, params.psdTempLength);
-  CHECKSTATUSPTR( status );
+  CHECKSTATUSPTR(status);
   LALCreateREAL4FrequencySeries(status->statusPtr, &psdC, "psdC", \
       params.gpsStartTime, 0, deltaF, psdUnits, params.psdTempLength);
-  CHECKSTATUSPTR( status );
+  CHECKSTATUSPTR(status);
 
   /* compute uncalibrated PSDs */
   LALREAL4AverageSpectrum(status->statusPtr, psdA, input.segmentA, \
       params.psdParams);
-  CHECKSTATUSPTR( status );
+  CHECKSTATUSPTR(status);
   LALREAL4AverageSpectrum(status->statusPtr, psdC, input.segmentC, \
       params.psdParams);
-  CHECKSTATUSPTR( status );
+  CHECKSTATUSPTR(status);
 
   /* reduce to the optimal filter frequency range */
   LALShrinkREAL4FrequencySeries(status->statusPtr, psdA, params.numFMin, \
       params.filterLength);
-  CHECKSTATUSPTR( status );
+  CHECKSTATUSPTR(status);
   LALShrinkREAL4FrequencySeries(status->statusPtr, psdC, params.numFMin, \
       params.filterLength);
-  CHECKSTATUSPTR( status );
+  CHECKSTATUSPTR(status);
 
   for (i = 0; i < params.filterLength; i++)
   {
@@ -2076,13 +2076,13 @@ static void psdEstimator(LALStatus *status,
 
   /* clean up */
   LALDestroyREAL4FrequencySeries(status->statusPtr, psdA);
-  CHECKSTATUSPTR( status );
+  CHECKSTATUSPTR(status);
   LALDestroyREAL4FrequencySeries(status->statusPtr, psdC);
-  CHECKSTATUSPTR( status );
+  CHECKSTATUSPTR(status);
 
   /* return status */
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
 }
 
 /*
