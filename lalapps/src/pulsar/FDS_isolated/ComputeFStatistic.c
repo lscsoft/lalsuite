@@ -143,6 +143,7 @@ extern "C" {
 extern double fraction_done;
 /* FIXME: include proper header for this! */
 extern void set_search_pos(float RAdeg, float DEdeg);
+extern int boinc_init_graphics(void (*worker)());
 #endif
 
 void sighandler(int sig);
