@@ -57,7 +57,11 @@ extern double *fraction_done_hook;
 
 /* this is defined in C99 and *should* be in math.h.  Long term
    protect this with a HAVE_FINITE */
+#ifdef _WIN32
+#define finite _finite
+#else
 int finite(double);
+#endif
 
 struct PolkaCommandLineArgsTag 
 {
