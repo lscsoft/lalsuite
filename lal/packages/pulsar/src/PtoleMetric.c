@@ -201,7 +201,7 @@ void LALPtoleMetric( LALStatus *status,
           PTOLEMETRICH_MSGENULL );
   ASSERT( metric->data != NULL, status, PTOLEMETRICH_ENULL,
           PTOLEMETRICH_MSGENULL );
-  ASSERT( metric->length == (UINT4)(dim+2)*(dim+3)/2, status, PTOLEMETRICH_EDIM,
+  ASSERT( metric->length == (UINT4)(dim+1)*(dim+2)/2, status, PTOLEMETRICH_EDIM,
           PTOLEMETRICH_MSGEDIM );
 
   /* This section saves typing and makes the equations more legible. */
