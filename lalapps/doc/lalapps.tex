@@ -44,6 +44,11 @@
   \ifthenelse{\equal{#1}{xxx}}{\index{#2@\texttt{#2}}}%
   {\index{#2@\texttt{#2}}\index{#1!#2@\texttt{#2}}}}
 
+
+\newcommand\lal{\textsc{lal}}  
+\newcommand\lalapps{\textsc{lalapps}}  
+\newcommand\ligotools{\textsc{ligotools}}  
+
 \bibliographystyle{lalapps}
 
 \makeindex
@@ -63,6 +68,9 @@
 \tableofcontents
 
 \mainmatter
+
+\input{part_howto}
+
 
 \chapter{LALApps utilities}
 
