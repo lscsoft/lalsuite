@@ -1,0 +1,312 @@
+% This file is meant to be included in another document  
+\documentstyle{article}
+\begin{document}
+\section{\tt SignalTrackSearch()}
+
+\subsection{Purpose}
+% A short description of purpose. 
+Searches for curvilinear structures in 2 dimensional maps. For the
+purpose of data analysis these maps are ``time-frequency'' maps of the 
+the IFO data stream. (One can of course use this algorithm for other
+channels). This routine would normally called immediately after
+computing the ``time-frequency'' map in one of several different ways.
+
+\subsection{Synopsis}
+% Syntax: argument definitions, calling signature
+
+\begin{verbatim}
+#include "TrackSearch.h"
+
+void SignalTrackSearch( Status *,
+                        TrackSearchOut *,
+                        const TimeFreqRep *,
+                        TrackSearchParams *);
+
+typedef struct tagTrackSearchOut /* Output Structure of Track Search algorithm */
+{
+  INT4 numberOfCurves;           /* the number of curves found*/
+  Curve *curves;                 /* a pointer to a array of numberOfCurves curves */
+  TrackSearchStore store;       /* a pointer to the temporary storage space */
+} TrackSearchOut;
+
+typedef struct tagTimeFreqRep /* input structure; defined in TimeFreq.h*/
+{
+  TimeFreqRepType type;        /* type of the TFR */
+  INT4 fRow;                   /* number of freq bins in the TFR matrix */
+  INT4 tCol;                   /* number of time bins in the TFR matrix */
+  REAL4 *freqBin;	       /* freqs for each row of the matrix */
+  INT4 *timeInstant;           /* time instants for each column of the TFR */
+  REAL4 **map;                 /* TFR */
+} TimeFreqRep;
+
+
+typedef struct tagTrackSearchParams /* Parameter structure of Track search algorithm*/
+{  
+  INT4  height;   /* height of Map */
+  INT4  width;    /* width of map */
+  INT4  allocFlag;/* flag to alloc/dealloc temporary storage structure;
+		  flag must be = 1 the first time the function is called; 
+		  flag=0 -- no allocation of space
+		  flag=1 -- allocate memory and initialize store
+		  flag=2 -- free store and exit the function 
+		  */
+  REAL4 sigma; /* the width of the lines to search for (in pixels) */
+  REAL4 high;  /* the upper threshold on the 2nd derivative (along maximal direction)*/
+  REAL4 low;   /* the lower threshold on the 2nd derivative (along maximal direction)*/
+} TrackSearchParams;
+
+typedef struct tagCurve
+{
+  INT4 n; /* number of points in the curve */
+  CHAR junction;/* =1 if the curve has a junction and =0 if no junction */ 
+  INT4 *row; /* the row coordinates of the n points */
+  INT4 *col; /* the column coordinates of the n points */
+}Curve;
+
+
+typedef struct tagTrackSearchStore  /* Structure for storage space for the algorithm */
+{
+  INT4 height;            /* height of the TF map (increasing frequency direction) */
+  INT4 width;             /* width of the TF map (increasing time direction ) */
+  CHAR **isLine;          /* 2D map used to flag potential line points */
+  REAL4 **k[5];           /* arrays used to store the image convolved with the first 
+                             and second derivatives of the Gaussian kernel */
+  REAL4 **imageTemp;      /* A temporary 2D array to contain intermediate transformed 
+                             images; Also used to store the maximum eigenValue*/
+  REAL8 *gaussMask[3];    /* The Gaussian mask and its first and second derivatives. */
+  REAL4 *eigenVec;        /* Array to store vector in maximal direction each point 
+                             at each pixel point*/  
+  INT4  numLStartPoints; /* a variable which contains the number of possible starting 
+                            points for curves */
+  INT4  numLPoints;      /* A variable which contains the number of 
+                            possible line points */
+} TrackSearchStore;
+
+\end{verbatim}
+
+\subsection{Description}
+% A longer description of what this routine does
+
+{\tt SignalTrackSearch()}\ The routine is an adaptation of Steger's
+Curve recognition algorithm \cite{Steger}. The algorithm invokes differential geometric critera for
+identifying possible line points. There are three main steps involved:
+\begin{itemize}
+\item Compute the two first and three second derivatives of the map with
+respect to the row and column axis. This is done by convolving the
+map  with derivatives of Gaussian kernels. So the result is a
+derivative which is averaged over a Gaussian with a certain
+preselected width. 
+\item	Compute possible line Points by using thresholds on the
+value of the second derivative at each pixel in the maximal
+direction. (this is equivalent to putting a threshold on the curvature)
+By using two threshholds we can have two categories of line
+points. The pixels with a value of curvature larger than the higher
+threshhold are marked as line start points. These are the points where
+we will begin to connect lines in the next phase of the algorithm. The
+pixels with a value lying in between the two thresholds are marked as
+ordinary line points.
+\item We now connect the line points into curves. We start from line
+start points and keep going in a direction consistent with the
+derivative information at each pixel. We iteratively add points to the
+curve. Of course we must be careful to traverse in the two opposite
+directions from the line start points. 
+\end{itemize}
+\subsection{Operating Instructions}
+% Detailed usage 
+
+\begin{verbatim}
+{
+static Status status;
+static TrackSearchOut out;
+static TimeFreqRep in;
+static TrackSearchParams params;
+
+    /* fill up the input Structure using some time frequency
+    map generator routine; Please consult the documentation of
+    the TimeFrequency package for details */
+    params.height=in.tCol;
+    params.widht =in.fRow;
+    params.height=in.	
+    params.sigma=2.0; 
+    params.high = 3.0;
+    params.low = params.high/3;
+    /* set the allocFlag so that space can be allocated */
+    params.allocFlag=1;    
+    /* Search for curves */
+    SignalTrackSearch(&status, &out, &in, &params);
+    /* Output the results either in some file or compute relevant statistics*/
+    /* Free the space allocated for output structures */
+    for(i=0;i<out.numberOfCurves;i++){
+        LALFree(out.curves[i].row);
+        LALFree(out.curves[i].col);
+    }
+    if(out.curves!=NULL)
+        LALFree(out.curves);
+    out.curves=NULL;
+    /* set the allocFlag so that space can be deallocated */
+    params.allocFlag=2;    
+    SignalTrackSearch(&status, &out, &in, &params);
+}
+
+\end{verbatim}
+\subsubsection{Arguments}
+% Describe meaning of each argument
+
+\begin{itemize}
+\item 
+{\tt status\/} is a universal status structure. 
+Its contents are initially assigned by {\tt INITSTATUS()\/} and then 
+set by {\tt SignalTrackSearch()\/} on return. 
+Non-zero status codes indicate an error condition as specified in 
+Table~\ref{t:errors}
+\item{\tt out\/} is a pointer of structure type {\tt TrackSearchOut}.
+On output out.numberOfCurves contains the number of curves 
+detected. out.curves is a pointer to the beginning of an 
+array whose elements are of type {\tt Curves\/}. Each element of this 
+array contains information about a single curve {\em i.e.} the
+curvelength and the row and column coordinates of the line points
+belonging to the curve. These pointers have to be freed by the calling
+routine each time the routine is called.
+\item {\tt in \/} is a pointer to an input structure of type 
+{\tt TimeFreqRep} which is
+presumably generated by some time-frequency map generator routine.
+Please see the documenation for the TimeFreq package in the LAL
+library for more details.
+\item 
+{\tt params \/} is a structure of type {\tt TrackSearchParams\/}.
+params.high is the upper threshold and params.low is the lower
+threshhold. params.sigma is the width of the curves which we search
+for. params.allocFlag has to be set to unity the first time the
+routine is called. This will tell the {\tt SignalTrackSearch()\/}
+routine to allocate space for the temporary arrays. Since this routine
+will be called very often the allocated space is retained unless 
+params.allocFlag is set to 2 in a subsequent call.
+\end{itemize}
+
+\subsubsection{Error conditions}
+% What constitutes an error condition? What do the error codes mean?
+
+{\tt SignalTrackSearch()\/} sets the universal status structure on return. 
+Non-zero status codes indicate an error condition. 
+Error conditions are described in Table~\ref{t:errors}.
+
+\begin{table}
+
+\hoffset -1.7in
+
+\begin{tabular}{|r|l|}\hline
+status&	status\\
+code&	description\\\hline
+TS\_NULL\_POINTER&null pointer passed when non \\
+&NUll pointer expected\\
+TS\_NON\_NULL\_POINTER&Allocation of memory to\\
+& Non null pointer\\
+TS\_ALLOC&flag for allocating storage space \\
+&does not contain a valid
+value (0,1,2)\\
+TS\_UNITIALIZED\_MASKS&Gaussian masks appear \\
+&not to have been initialized\\
+TS\_MAP\_DIMENSION&Dimensions of Map have to be\\
+& each greater than 8\\
+TS\_ILLEGAL\_PARAMS&Illegal parameter values \\
+&( high and low should be positive and high>low)\\
+TS\_LINE\_START&The number of line start points \\
+&is not consistent with previous module\\
+TS\_ARRAY\_OVERFLOW&Array bounds can be crossed\\ 
+TS\_TOO\_MANY\_CURVES&Too many curves found in map\\
+TS\_OCTANT&octant cannot be greater than 4\\
+TS\_MASKSIZE&maskSize too small\\
+\hline
+\end{tabular}
+\caption{Error conditions for {\tt SignalTrackSearch()\/}}
+\label{t:errors}
+\end{table}                             
+\subsection{Algorithms}
+% Describe algorithm by which work is done
+The implementation of the Track search algorithm very closely follows
+what is described in \cite{Steger}. The algorithm is divided into
+three main components:
+\begin{itemize}
+\item Compute Convolutions
+\begin{enumerate}
+\item We compute the two first derivatives and the three second
+derivative by convolving the map with derivatives of a Gaussian
+Kernel. 
+\item Since the Gaussian derivative Kernels are separable the
+process can be accomplished as two one dimensional integrals. 
+\item At the boundries of the map we use reflective boundry conditions.
+\end{enumerate}	
+\item Select Line Points
+\begin{enumerate}
+\item Using the three directional derivatives we compute the Hessian
+and the two eigen values at each pixel. We select that eigen Value which is most
+negative. This corresponds to looking for ridges in the maps and not
+valleys.
+\item Using the first and the second derivatives we compute the
+subpixel position where the first derivative vanishes. We consider
+points as line points only if the subpixel position lies within the
+pixel itself. 
+\item If the eigen value is larger in magnitude than the parameter 
+{\tt high} which is a member of parameter structure then the pixel is
+marked as a line Start Point and that pixel is assigned a value of
+two. Otherwise if the  eigen value is larger in magnitude than the parameter 
+{\tt low} which is also a member of parameter structure then the pixel is
+marked as a ordinary line Point and assigned a value of unity.  
+\end{enumerate}	
+\item Connect Line Points
+\begin{enumerate}
+\item We first make an array where each element contains information
+about the x and y coordinate of the line points selected by the
+previous routine. Each element also contains a flag which is set to
+zero when the line point has been processed.  
+\item This array is sorted in such a way that the line points which
+have been marked as line start points occur before the ordinary line
+points. Also they are stored in the order of decreasing eigen value. 
+\item We begin searching for line points from the the line Start
+points. Each pixel has 8 possible neighbours. Since we also have
+information about the line direction at each point we do not search in
+all the 8 neighbouring pixels. 
+\item We iteratively add points to this contour until we reach a
+pixel which has no suitable neighbour. We will add a line point to the
+curve only if the difference in the directions of the lines in the two
+neighbouring pixels is less than $\pi/6$. If there are more than one
+neighbouring pixels satisfying this requirement then we choose that
+point which has the minimum value of following metric:
+$$
+d(P_1,P_2) = \sqrt{(px1-px2)^2 + (py1-py2)^2} + abs(\alpha-\beta),
+$$
+where px1,px2 are the subpixel line point x coordinates and py1,py2
+are the subpixel line point y coordinates for the two neighbouring
+pixels and $\alpha$ and $beta$ the the line direction angles in radians.
+
+\item We return to our beginning point and go in the opposite
+direction. 
+\item We join the two contours obtained from going off in opposite
+directions into one single contour.
+\item We continue to analyse other unprocessed line Start points.
+\end{enumerate}
+\end{itemize}
+
+
+\subsection{Tests}
+% Describe the tests that are part of the test suite
+
+The program {\tt testSTS.c\/} tests the function {\tt SignalTrackSearch()\/}.  
+The program reads in a pgm (ascii) file to fill up the input structure
+to the {\tt SignalTrackSearch()\/} routine. It calls the {\tt
+SignalTrackSearch()\/} routine and outputs the number of curves found,
+the length of each curve and lists the x and y coordinates of the
+curve points. An example pgm file is enclosed (a.pgm).
+  
+
+\subsection{References}
+% Any references for algorithms, tests, etc.
+
+\begin{thebibliography}{0}
+\bibitem{Steger} Carsten Steger, {\em An unbiased detector of
+curvilinear structures}, IEEE transactions on Pattern analysis and
+Mahine Intelligence, {\bf 20}, NO. 2, pp. 113-124, (1998).
+\end{thebibliography}
+
+
+\end{document}
