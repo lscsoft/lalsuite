@@ -184,9 +184,10 @@ int main( int argc, char *argv[] )
     LALCalloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
-  /* create the search summary table */
+  /* create the search summary and summvars table */
   searchsumm.searchSummaryTable = (SearchSummaryTable *)
     LALCalloc( 1, sizeof(SearchSummaryTable) );
+  memset( &searchsummvars, 0, sizeof(SearchSummvarsTable) );
 
   /* call the argument parse and check function */
   arg_parse_check( argc, argv, procparams );
