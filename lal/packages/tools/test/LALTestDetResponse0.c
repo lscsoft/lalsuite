@@ -58,7 +58,7 @@ NRCSID( LALTESTDETRESPONSE0C, "$Id$" );
 
 /* these two constants are for the sky grid */
 #define NUM_DEC 21
-#define NUM_RA  24
+#define NUM_RA  128
 
 #define DO_POINT_BY_POINT_TESTS 1
 #define DO_MATRIX_TESTS 1
@@ -654,8 +654,9 @@ void  skygrid_scalar_mult(skygrid_t result, const skygrid_t a, REAL4 b);
 void  setup_global_detectors_maybe(LALStatus *status);
 void  set_source_params(LALSource * source, const char *name, REAL8 ra_rad,
                         REAL8 dec_rad, REAL8 orien_rad);
-void print_source_maybe(const LALSource * source);
+void  print_source_maybe(const LALSource * source);
 void  setup_global_sources_maybe(void);
+void  crab_pulsar_test(LALStatus * status);
 
 BOOLEAN pass_special_locations_tests_p(LALStatus *status);
 
@@ -901,6 +902,13 @@ int main(int argc, char *argv[])
                           &interval);
         }
       printf("AUF WIEDERSEHEN!\n");
+      goto conclusion;
+    }
+
+  if (lalDebugLevel == 13)
+    {
+      /* lalDebugLevel = 1;  /* avoid verbose debug output */
+      crab_pulsar_test(&status);
       goto conclusion;
     }
 
@@ -3394,3 +3402,62 @@ void print_source_maybe(const LALSource * source)
       printf("Orientation: % 14.20e rad\n", source->orientation);
     }
 }
+
+
+
+void crab_pulsar_test(LALStatus * status)
+{
+  LALSource        crab_pulsar;
+  LALDetector      detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  LALDetAndSource  det_and_pulsar;
+  LALDetAMResponseSeries am_response_series = {NULL,NULL,NULL};
+  REAL4TimeSeries  plus_series, cross_series, scalar_series;
+  LALTimeIntervalAndNSample  time_info;
+
+  printf("MAHALO!\n");
+  fflush(stdout);
+
+  if (verbose_level & 4)
+    {
+      PrintLALDetector(&detector);
+    }
+
+  set_source_params(&crab_pulsar, "Crab Pulsar",
+                    deg_to_rad((5. + 34./60. + 32./3600.) * 15.),
+                    deg_to_rad(22. + 0. + 52./3600.), 0.);
+  print_source_maybe(&crab_pulsar);
+
+  det_and_pulsar.pDetector = &detector;
+  det_and_pulsar.pSource   = &crab_pulsar;
+
+  plus_series.data   = NULL;
+  cross_series.data  = NULL;
+  scalar_series.data = NULL;
+
+  am_response_series.pPlus   = &(plus_series);
+  am_response_series.pCross  = &(cross_series);
+  am_response_series.pScalar = &(scalar_series);
+
+  LALSCreateVector(status, &(am_response_series.pPlus->data), 1);
+  LALSCreateVector(status, &(am_response_series.pCross->data), 1);
+  LALSCreateVector(status, &(am_response_series.pScalar->data), 1);
+
+  time_info.epoch.gpsSeconds     = 709398013;
+  time_info.epoch.gpsNanoSeconds =         0;
+  time_info.deltaT               =       864;
+  time_info.nSample              =       100;
+  time_info.accuracy             = LALLEAPSEC_STRICT;
+
+  LALComputeDetAMResponseSeries(status, &am_response_series,
+                                &det_and_pulsar,
+                                &time_info);
+
+  LALSPrintTimeSeries(am_response_series.pPlus, "crab_plus.txt");
+  LALSPrintTimeSeries(am_response_series.pCross, "crab_cross.txt");
+
+  LALSDestroyVector(status, &(am_response_series.pPlus->data));
+  LALSDestroyVector(status, &(am_response_series.pCross->data));
+  LALSDestroyVector(status, &(am_response_series.pScalar->data));
+}
+
+
