@@ -657,12 +657,6 @@ LALSlopeConvolutionFilter( LALStatus                *status,
     datalength = input_data->length;
     datain = input_data->data;
     dataout = output_data->data;
-    /* check that the data array is of a usable length */
-    if ( (datalength < 0) ||
-	 (datalength > MAX_SLOPE_DETECTOR_FILTER_ORDER) ) {
-      ABORT( status, SLOPEDETECTORFILTERH_EINVFILTLEN, 
-	     SLOPEDETECTORFILTERH_MSGEINVFILTLEN );
-    }
     /* check that the taps bit is set to one */
     if ( *(fparams.taps_set) != 1 ) {
       ABORT( status, SLOPEDETECTORFILTERH_EINVALIDTAPSBIT, 
