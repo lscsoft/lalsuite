@@ -803,7 +803,7 @@ main (int argc, char **argv )
 		      list[j].params.psi0,
 		      list[j].params.psi3, 
 		      overlapout.max,
-		      fMax, list[j].nLayer, randIn.param.fFinal);
+		      fendBCV, list[j].nLayer, randIn.param.fFinal);
 	     
 	   }/*end of the bank process*/
 	 
