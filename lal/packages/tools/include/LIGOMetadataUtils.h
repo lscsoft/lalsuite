@@ -80,6 +80,15 @@ NRCSID( LIGOMETADATAUTILSH, "$Id$" );
  *
  */
 
+typedef enum 
+{ 
+  no_test,
+  m1_and_m2, 
+  psi0_and_psi3, 
+  mchirp_and_eta 
+} 
+SnglInspiralParameterTest;
+
 
 typedef struct
 tagSnglInspiralAccuracy
@@ -89,11 +98,14 @@ tagSnglInspiralAccuracy
   REAL4       kappa;
   INT8        dt;
   REAL4       dm;
+  REAL4       deta;
+  REAL4       dmchirp;
   REAL4       dpsi0;
   REAL4       dpsi3;
-  Approximant approximant;
+  SnglInspiralParameterTest test;
 }
 SnglInspiralAccuracy;
+
 
 typedef enum 
 { 

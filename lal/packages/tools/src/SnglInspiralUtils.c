@@ -227,6 +227,7 @@ LALCompareSnglInspiral (
 {
   INT8 ta, tb;
   REAL4 dm1, dm2;
+  REAL4 dmchirp, deta;
   REAL4 dpsi0, dpsi3;
   REAL4 sigmaRatio;
 
@@ -238,10 +239,10 @@ LALCompareSnglInspiral (
   LALGPStoINT8( status->statusPtr, &ta, &(aPtr->end_time) );
   LALGPStoINT8( status->statusPtr, &tb, &(bPtr->end_time) );
 
-  /* compate on triggger time coincidence */
+  /* compare on trigger time coincidence */
   if ( labs( ta - tb ) < params->dt )
   {
-    if ( params->approximant == BCV )
+    if ( params->test == psi0_and_psi3 )
     {
       dpsi0 = fabs( aPtr->psi0 - bPtr->psi0 );
       dpsi3 = fabs( aPtr->psi3 - bPtr->psi3 );
@@ -256,7 +257,7 @@ LALCompareSnglInspiral (
 	LALInfo( status, "Triggers are not coincident in psi0 and psi3" );
       }
     }
-    else if ( params->approximant == TaylorF2 )
+    else if ( params->test == m1_and_m2 )
     {  
       dm1 = fabs( aPtr->mass1 - bPtr->mass1 );
       dm2 = fabs( aPtr->mass2 - bPtr->mass2 );
@@ -281,14 +282,30 @@ LALCompareSnglInspiral (
         LALInfo( status, "Triggers fail mass coincidence test" );
       }
     }
+    else if ( params->test == mchirp_and_eta )
+    {  
+      dmchirp = fabs( aPtr->mchirp - bPtr->mchirp );
+      deta = fabs( aPtr->eta - bPtr->eta );
+
+      /* compare mchirp and eta parameters */
+      if ( dmchirp <= params->dmchirp && deta <= params->deta )
+      {
+        params->match = 1;
+	LALInfo( status, "Triggers are coincident in mchirp and eta" );
+      }
+      else
+      {
+        LALInfo( status, "Triggers fail mchirp, eta coincidence test" );
+      }
+    }
     else
     {
-      LALInfo( status, "error: unknown waveform approximant\n" );
+      LALInfo( status, "error: unknown test\n" );
     }
   }
   else
   {
-    LALInfo( status, "Triggers fails time coincidence test" );
+    LALInfo( status, "Triggers fail time coincidence test" );
   }
 
   DETATCHSTATUSPTR (status);
