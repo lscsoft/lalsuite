@@ -9,6 +9,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 
 #include <getopt.h>
 
@@ -17,28 +18,39 @@
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 
+#include <lalapps.h>
+
+NRCSID(STOPPC, "$Id$");
+RCSID("$Id$");
+
 /* cvs info */
 #define PROGRAM_NAME "stopp"
 #define CVS_ID "$Id$"
 
 #define USAGE \
-  "Usage: " PROGRAM_NAME " [options]\n"\
+  "Usage: " PROGRAM_NAME " [options] [xml files]\n"\
   " --help                       display this message\n"\
   " --version                    display version\n"\
-  " --input FILE                 read input data from FILE\n"\
   " --output FILE                write output data to FILE\n"
 
 INT4 main(INT4 argc, CHAR *argv[])
 {
+  /* status */
+  LALStatus status = blank_status;
+
+  /* counters */
+  INT4 i;
+
   /* program option variables */
-  CHAR *inputFileName = NULL;
   CHAR *outputFileName = NULL;
-  FILE *out = NULL;
 
   /* xml data structures */
+  LIGOLwXMLStream xmlStream;
   INT4 numSegments = 0;
   StochasticTable *stochHead = NULL;
   StochasticTable *thisStoch = NULL;
+  MetadataTable outputTable;
+  StochasticTable **stochHandle = NULL;
 
   /* parse command line arguments */
   while (1)
@@ -48,7 +60,6 @@ INT4 main(INT4 argc, CHAR *argv[])
     {
       {"help", no_argument, 0, 'h'},
       {"version", no_argument, 0, 'v'},
-      {"input", required_argument, 0, 'i'},
       {"output", required_argument, 0, 'o'},
       {0, 0, 0, 0}
     };
@@ -58,7 +69,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only(argc, argv, "hvi:o:", long_options, &option_index);
+    c = getopt_long_only(argc, argv, "hvo:", long_options, &option_index);
 
     /* detect the end of the options */
     if (c == - 1)
@@ -94,13 +105,6 @@ INT4 main(INT4 argc, CHAR *argv[])
         exit(0);
         break;
 
-      case 'i':
-        /* create storage for the input file name */
-        optarg_len = strlen(optarg) + 1;
-        inputFileName = (CHAR *)calloc(optarg_len, sizeof(CHAR));
-        memcpy(inputFileName, optarg, optarg_len);
-        break;
-
       case 'o':
         /* create storage for the output file name */
         optarg_len = strlen(optarg) + 1;
@@ -118,56 +122,70 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
   }
 
+  /* read in the input data from the rest of the arguments */
   if (optind < argc)
   {
-    fprintf(stderr, "extraneous command line arguments:\n");
-    while (optind < argc)
+    for (i = optind; i < argc; ++i)
     {
-      fprintf (stderr, "%s\n", argv[optind++]);
+      struct stat infileStatus;
+
+      /* if the named file does not exist, exit with an error */
+      if (stat(argv[i], &infileStatus) == -1)
+      {
+        fprintf(stderr, "Error opening input file %s\n", argv[i]);
+        exit(1);
+      }
+
+      if (!stochHead)
+      {
+        stochHandle = &stochHead;
+      }
+      else
+      {
+        stochHandle = &thisStoch->next;
+      }
+
+      /* read in the stochastic table */
+      numSegments = StochasticTableFromLIGOLw(stochHandle, argv[i]);
+
+      if (numSegments < 0)
+      {
+        fprintf(stderr, "error: unable to read stochastic_table from %s\n", \
+            argv[i]);
+        exit(1);
+      }
+      else if (numSegments > 0)
+      {
+        fprintf(stdout, "Read in %d segments from file %s\n", numSegments, \
+            argv[i]);
+
+        /* scroll to end of list */
+        thisStoch = *stochHandle;
+        while (thisStoch->next)
+        {
+          thisStoch = thisStoch->next;
+        }
+      }
     }
-    exit(1);
   }
 
-  /* read in the stochastic table */
-  numSegments = StochasticTableFromLIGOLw(&stochHead, inputFileName);
+  /* opening xml file stream */
+  memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
+  LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlStream, outputFileName), &status);
 
-  if (numSegments < 0)
+  /* write stochastic table */
+  if (stochHead)
   {
-    fprintf(stderr, "error: unable to read stochastic_table from %s\n", \
-        inputFileName);
-    exit(1);
-  }
-  else if (numSegments > 0)
-  {
-    fprintf(stdout, "Read in %d segments from file %s\n\n", numSegments, \
-        inputFileName);
-
-    /* open output file */
-    if ((out = fopen(outputFileName, "w")) == NULL)
-    {
-      fprintf(stderr, "Can't open file \"%s\" for output...\n", \
-          outputFileName);
-      exit(1);
-    }
-
-    /* write details of events */
-    for(thisStoch=stochHead; thisStoch; thisStoch=thisStoch->next)
-    {
-      fprintf(out, "%d %e %e\n", thisStoch->start_time.gpsSeconds, \
-          thisStoch->cc_stat, thisStoch->cc_sigma);
-    }
-
-    /* close output file */
-    fclose(out);
+    outputTable.stochasticTable = stochHead;
+    LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlStream, stochastic_table), \
+        &status);
+    LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlStream, outputTable, \
+          stochastic_table), &status);
+    LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlStream), &status);
   }
 
-  /* free stochastic table */
-  while (stochHead)
-  {
-    thisStoch = stochHead;
-    stochHead = stochHead->next;
-    LALFree(thisStoch);
-  }
+  /* close xml file */
+  LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlStream), &status);
 
   LALCheckMemoryLeaks();
   exit(0);
