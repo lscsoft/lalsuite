@@ -168,7 +168,8 @@ main (int argc, char **argv )
 
 
 
-  lalDebugLevel = LALERROR;
+  /*lalDebugLevel = LALERROR;*/
+  lalDebugLevel = 0;
   /* --- Initialisation of parameters and variables --- */
 
   ParametersInitialization(&coarseIn,&randIn,&otherIn);
@@ -181,7 +182,7 @@ main (int argc, char **argv )
   randIn.param.OmegaS  		= 0.;
   randIn.param.Theta   		= 0.;
   randIn.param.approximant 	= EOB;						/* Only to compute the length of "signal"*/
-  LALInspiralWaveLength (&status, &signal.length, randIn.param);
+  LAL_CALL(LALInspiralWaveLength (&status, &signal.length, randIn.param),&status);
    
   randIn.param.approximant = otherIn.signal;					/* Retrieve the actual approximant of the waveform to inject*/
   
@@ -193,7 +194,7 @@ main (int argc, char **argv )
 
   memset( &(coarseIn.shf), 0, sizeof(REAL8FrequencySeries) );
   coarseIn.shf.f0 	= 0;
-  LALDCreateVector( &status, &(coarseIn.shf.data), randIn.psd.length );
+  LAL_CALL(LALDCreateVector( &status, &(coarseIn.shf.data), randIn.psd.length ), &status);
   /* spectrum */    
   coarseIn.shf.deltaF 	= randIn.param.tSampling / signal.length;
   df = randIn.param.tSampling/(float) signal.length;
@@ -339,6 +340,7 @@ void InitRandomInspiralSignalIn(RandomInspiralSignalIn *randIn)
   randIn->psi3Max  	= BANKNUMBEROFTEMPLATES_PSI3MAX;	
   randIn->param.approximant 	= BANKNUMBEROFTEMPLATES_SIGNAL;			/* approximant of h, the signal		*/
   randIn->param.tSampling 	= BANKNUMBEROFTEMPLATES_TSAMPLING;			/* sampling 				*/
+  randIn->param.fCutoff 	= BANKNUMBEROFTEMPLATES_TSAMPLING/2.-1;			/* sampling 				*/
   randIn->param.startTime       = BANKNUMBEROFTEMPLATES_STARTTIME; 
   randIn->param.startPhase      = BANKNUMBEROFTEMPLATES_STARTPHASE; 
   randIn->param.nStartPad       = BANKNUMBEROFTEMPLATES_NSTARTPHASE;
