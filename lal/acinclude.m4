@@ -1,163 +1,9 @@
 dnl acinclude.m4
 
-AC_DEFUN(AC_LIB_FFTW,
-[AC_SEARCH_LIBS(fftw_one, sfftw fftw, ,
-[echo "**************************************************************"
- echo "* WARNING: Could not find the FFTW library libsfftw.a        *"
- echo "* or libfftw.a                                               *"
- echo "*                                                            *"
- echo "* You must install FFTW (v >= 2.0) on your system.           *"
- echo "* FFTW is avaliable from http://www.fftw.org                 *"
- echo "* FFTW must be configured with the --enable-float argument.  *"
- echo "* Install FFTW on your system using the commands:            *"
- echo "*                                                            *"
- echo "*   ./configure --enable-float                               *"
- echo "*   make                                                     *"
- echo "*   make install                                             *"
- echo "*                                                            *"
- echo "* If libfftw.a or libsfftw.a is in, e.g., /home/bob/lib, you *"
- echo "* must set the LIBS environment variable:                    *"
- echo "*                                                            *"
- echo "*   LIBS=-L/home/bob/lib                                     *"
- echo "*                                                            *"
- echo "* or:                                                        *"
- echo "*                                                            *"
- echo "*   setenv LIBS -L/home/bob/lib                              *"
- echo "*                                                            *"
- echo "* Remove the file config.cache before re-running configure.  *"
- echo "*                                                            *"
- echo "* Please see the instructions in the file INSTALL.           *"
- echo "**************************************************************"
-AC_MSG_ERROR([FFTW must be properly installed.])
-], -lm)
-])
-
-AC_DEFUN(AC_LIB_RFFTW,
-[AC_SEARCH_LIBS(rfftw_one, srfftw rfftw, ,
-[echo "**************************************************************"
- echo "* WARNING: Could not find the FFTW library libsrfftw.a       *"
- echo "* or librfftw.a                                              *"
- echo "*                                                            *"
- echo "* You must install FFTW (v >= 2.0) on your system.           *"
- echo "* FFTW is avaliable from http://www.fftw.org                 *"
- echo "* FFTW must be configured with the --enable-float argument.  *"
- echo "* Install FFTW on your system using the commands:            *"
- echo "*                                                            *"
- echo "*   ./configure --enable-float                               *"
- echo "*   make                                                     *"
- echo "*   make install                                             *"
- echo "*                                                            *"
- echo "* If librfftw.a or libsrfftw.a is in, e.g., /home/bob/lib,   *"
- echo "* you must set the LIBS environment variable:                *"
- echo "*                                                            *"
- echo "*   LIBS=-L/home/bob/lib                                     *"
- echo "*                                                            *"
- echo "* or:                                                        *"
- echo "*                                                            *"
- echo "*   setenv LIBS -L/home/bob/lib                              *"
- echo "*                                                            *"
- echo "* Remove the file config.cache before re-running configure.  *"
- echo "*                                                            *"
- echo "* Please see the instructions in the file INSTALL.           *"
- echo "**************************************************************"
-AC_MSG_ERROR(FFTW must be properly installed.)
-], -lm)
-])
-
-AC_DEFUN(AC_HEADER_FFTW,
-[AC_CHECK_HEADER(fftw.h, ,
-[echo "**************************************************************"
- echo "* WARNING: Could not find the FFTW header fftw.h or sfftw.h  *"
- echo "*                                                            *"
- echo "* You must install FFTW on your system.                      *"
- echo "* FFTW is avaliable from http://www.fftw.org                 *"
- echo "* FFTW must be configured with the --enable-float argument.  *"
- echo "* Install FFTW on your system using the commands:            *"
- echo "*                                                            *"
- echo "*   ./configure --enable-float                               *"
- echo "*   make                                                     *"
- echo "*   make install                                             *"
- echo "*                                                            *"
- echo "* If fftw.h or sfftw.h is in, e.g., /home/bob/include, you   *"
- echo "* must set the CPPFLAGS environment variable:                *"
- echo "*                                                            *"
- echo "*   CPPFLAGS=-I/home/bob/include                             *"
- echo "*                                                            *"
- echo "* or:                                                        *"
- echo "*                                                            *"
- echo "*   setenv CPPFLAGS -I/home/bob/include                      *"
- echo "*                                                            *"
- echo "* Remove the file config.cache before re-running configure.  *"
- echo "*                                                            *"
- echo "* Please see the instructions in the file INSTALL.           *"
- echo "**************************************************************"
-])])
-
-AC_DEFUN(AC_HEADER_RFFTW,
-[AC_CHECK_HEADER(rfftw.h, ,
-[echo "**************************************************************"
- echo "* WARNING: Could not find the FFTW header srfftw.h or        *"
- echo "* rfftw.h                                                    *"
- echo "*                                                            *"
- echo "* You must install FFTW on your system.                      *"
- echo "* FFTW is avaliable from http://www.fftw.org                 *"
- echo "* FFTW must be configured with the --enable-float argument.  *"
- echo "* Install FFTW on your system using the commands:            *"
- echo "*                                                            *"
- echo "*   ./configure --enable-float                               *"
- echo "*   make                                                     *"
- echo "*   make install                                             *"
- echo "*                                                            *"
- echo "* If rfftw.h or srfftw.h is in, e.g., /home/bob/include, you *"
- echo "* must set the CPPFLAGS environment variable:                *"
- echo "*                                                            *"
- echo "*   CPPFLAGS=-I/home/bob/include                             *"
- echo "*                                                            *"
- echo "* or:                                                        *"
- echo "*                                                            *"
- echo "*   setenv CPPFLAGS -I/home/bob/include                      *"
- echo "*                                                            *"
- echo "* Remove the file config.cache before re-running configure.  *"
- echo "*                                                            *"
- echo "* Please see the instructions in the file INSTALL.           *"
- echo "**************************************************************"
-])])
-
-
-AC_DEFUN(AC_FFTW_WORKS,
-[AC_MSG_CHECKING(whether FFTW works)
-AC_TRY_RUN([
-#include <stdio.h>
-#include <sfftw.h>
-int main() { return sizeof(fftw_real)-4; }
-],
-AC_MSG_RESULT(yes)
-AC_DEFINE(FFTW_PREFIX, 1, FFTW prefix),
-AC_TRY_RUN([
-#include <stdio.h>
-#include <fftw.h>
-int main() { return sizeof(fftw_real)-4; }
-],
-AC_MSG_RESULT(yes),
-AC_MSG_RESULT(no)
-echo "**************************************************************"
-echo "* WARNING: FFTW does not seem to be working.                 *"
-echo "* Possible problems:                                         *"
-echo "*   - FFTW version < 2.0                                     *"
-echo "*   - Compiler could not find header sfftw.h or fftw.h       *"
-echo "*   - FFTW was not configured with the --enable-float option *"
-echo "*                                                            *"
-echo "* Remove the file config.cache before re-running configure.  *"
-echo "*                                                            *"
-echo "* Please see the instructions in the file INSTALL.           *"
-echo "**************************************************************"
-AC_MSG_ERROR([FFTW must be properly installed.])
-))])
-
 AC_DEFUN(AC_WITH_EXTRA_CPPFLAGS,
 [AC_ARG_WITH(
 	extra_cppflags, 
-	[  --with-extra-cppflags   Additional C preprocessor flags],
+        [  --with-extra-cppflags=CPPFLAGS  additional C preprocessor flags],
 	[ if test -n "${with_extra_cppflags}"
 	  then
 	    CPPFLAGS="$CPPFLAGS ${with_extra_cppflags}";
@@ -168,7 +14,7 @@ AC_DEFUN(AC_WITH_EXTRA_CPPFLAGS,
 AC_DEFUN(AC_WITH_EXTRA_CFLAGS,
 [AC_ARG_WITH(
 	extra_cflags, 
-	[  --with-extra-cflags     Additional C compiler flags],
+        [  --with-extra-cflags=CFLAGS  additional C compiler flags],
 	[ if test -n "${with_extra_cflags}"
 	  then
 	    CFLAGS="$CFLAGS ${with_extra_cflags}";
@@ -179,13 +25,228 @@ AC_DEFUN(AC_WITH_EXTRA_CFLAGS,
 AC_DEFUN(AC_WITH_EXTRA_LDFLAGS,
 [AC_ARG_WITH(
 	extra_ldflags, 
-	[  --with-extra-ldflags    Additional linker flags],
+        [  --with-extra-ldflags=LDFLAGS  additional linker flags],
 	[ if test -n "${with_extra_ldflags}"
 	  then
 	    LDFLAGS="$LDFLAGS ${with_extra_ldflags}";
 	  fi
 	],)
 ])
+
+AC_DEFUN(AC_WITH_EXTRA_LIBS,
+[AC_ARG_WITH(
+	extra_libs, 
+        [  --with-extra-libs=LIBS  additional -l and -L linker flags],
+	[ if test -n "${with_extra_libs}"
+	  then
+	    LIBS="$LIBS ${with_extra_libs}";
+	  fi
+	],)
+])
+
+AC_DEFUN(AC_WITH_MPICC,
+[AC_ARG_WITH(
+        mpicc, 
+        [  --with-mpicc=MPICC      use the MPICC C compiler for MPI code],
+        [ if test -n "${with_mpicc}"
+          then
+            MPICC="${with_mpicc}";
+          fi
+        ],)
+])
+
+AC_DEFUN(AC_WITH_CC,
+[AC_ARG_WITH(
+        cc, 
+        [  --with-cc=CC            use the CC C compiler],
+        [ if test -n "${with_cc}"
+          then
+            CC="${with_cc}";
+          fi
+        ],)
+])
+
+AC_DEFUN(AC_ENABLE_FRAME,
+[AC_ARG_ENABLE(
+        frame,
+        [  --enable-frame          compile code that requires Frame library [default=no] ],
+        [ case "${enableval}" in
+            yes) frame=true  ;;
+            no)  frame=false ;;
+            *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
+          esac
+        ], [ frame=false ] )
+])
+
+AC_DEFUN(AC_ENABLE_MPI,
+[AC_ARG_ENABLE(
+        mpi,
+        [  --enable-mpi            compile code that requires MPI [default=no] ],
+        [ case "${enableval}" in
+            yes) mpi=true  ;;
+            no)  mpi=false ;;
+            *) AC_MSG_ERROR(bad value ${enableval} for --enable-mpi) ;;
+          esac
+        ], [ mpi=false ] )
+])
+
+AC_DEFUN(AC_ENABLE_DEBUG,
+[AC_ARG_ENABLE(
+        debug,
+        [  --enable-debug          include standard LAL debugging code [default=yes] ],
+        [ case "${enableval}" in
+            yes) ;;
+            no)  AC_DEFINE(NDEBUG, 1, Suppress debugging code) ;;
+            *) AC_MSG_ERROR(bad value for ${enableval} for --enable-debug) ;;
+          esac
+        ],)
+])
+
+AC_DEFUN(AC_ENABLE_MACROS,
+[AC_ARG_ENABLE(
+        macros,
+        [  --enable-macros         use LAL macros [default=yes] ],
+        [ case "${enableval}" in
+            yes) ;;
+            no)  AC_DEFINE(NOLALMACROS, 1, Use functions rather than macros) ;;
+            *) AC_MSG_ERROR(bad value for ${enableval} for --enable-debug) ;;
+          esac
+        ],)
+])
+
+AC_DEFUN(AC_FFTW_MSG_ERROR,
+[echo "**************************************************************"
+ echo "* You must install FFTW (v >= 2.0) on your system.           *"
+ echo "* FFTW is avaliable from http://www.fftw.org                 *"
+ echo "* FFTW must be configured with the --enable-float argument.  *"
+ echo "* Install FFTW on your system using the commands:            *"
+ echo "*                                                            *"
+ echo "*   ./configure --enable-float                               *"
+ echo "*   make                                                     *"
+ echo "*   make install                                             *"
+ echo "*                                                            *"
+ echo "* Remove the file config.cache before re-running configure.  *"
+ echo "*                                                            *"
+ echo "* Please see the instructions in the file INSTALL.           *"
+ echo "**************************************************************"
+AC_MSG_ERROR([single precision FFTW must be properly installed.])
+])
+
+AC_DEFUN(AC_SFFTW_WORKS,
+[AC_MSG_CHECKING(whether single precison FFTW works)
+AC_TRY_RUN([
+#include <stdio.h>
+#ifdef HAVE_SFFTW_H
+#include <sfftw.h>
+#elif HAVE_FFTW_H
+#include <fftw.h>
+#else
+#error "don't have either sfftw.h or fftw.h"
+#endif
+int main() { return sizeof(fftw_real) - 4; } ],
+AC_MSG_RESULT(yes),
+AC_MSG_RESULT(no)
+echo "**************************************************************"
+echo "* FFTW does not seem to be working.                          *"
+echo "* Possible problems:                                         *"
+echo "*   - FFTW version < 2.0                                     *"
+echo "*   - Compiler could not find header sfftw.h or fftw.h       *"
+echo "*   - FFTW was not configured with the --enable-float option *"
+AC_FFTW_MSG_ERROR
+)])
+
+AC_DEFUN(AC_SRFFTW_WORKS,
+[AC_MSG_CHECKING(whether single precison real FFTW works)
+AC_TRY_RUN([
+#include <stdio.h>
+#ifdef HAVE_SRFFTW_H
+#include <srfftw.h>
+#elif HAVE_RFFTW_H
+#include <rfftw.h>
+#else
+#error "don't have either srfftw.h or rfftw.h"
+#endif
+int main() { return sizeof(fftw_real) - 4; } ],
+AC_MSG_RESULT(yes),
+AC_MSG_RESULT(no)
+echo "**************************************************************"
+echo "* FFTW does not seem to be working.                          *"
+echo "* Possible problems:                                         *"
+echo "*   - FFTW version < 2.0                                     *"
+echo "*   - Compiler could not find header srfftw.h or rfftw.h     *"
+echo "*   - FFTW was not configured with the --enable-float option *"
+echo "**************************************************************"
+AC_FFTW_MSG_ERROR
+)])
+
+AC_DEFUN(AC_CHECK_FRAMELIB,
+[ if test "${frame}" = "true"; then
+        AC_CHECK_LIB(Frame, FrLibIni, ,
+          [AC_MSG_ERROR(couldn't find Frame library for --enable-frame)] , )
+        AC_MSG_CHECKING([whether Frame library version >= 3.85])
+        AC_TRY_RUN([#include "FrameL.h"
+          int main() { return FRAMELIB_VERSION < 3.85 ? 1 : 0 ; }],
+          AC_MSG_RESULT(yes),
+          [AC_MSG_RESULT(no),
+            AC_MSG_ERROR(FrameL.h not found or FRAMELIB_VERSION < 3.85)])
+  fi
+])
+
+AC_DEFUN(AC_CHECK_MPI,
+[ AC_CHECK_PROGS(MPICC, mpicc hcc, $CC)
+  AC_MSG_CHECKING(for mpicc flags)
+  SHOWARG=""
+  MPICPPFLAGS=""
+  MPICFLAGS=""
+  MPILDFLAGS=""
+  if (($MPICC -compile_info 1>/dev/null 2>/dev/null) && ($MPICC -link_info 1>/dev/null 2>/dev/null)) ; then
+    for mpiarg in `$MPICC -compile_info` ; do
+      case $mpiarg in
+        -D*) MPICPPFLAGS="$MPICPPFLAGS $mpiarg" ;;
+        -I*) MPICPPFLAGS="$MPICPPFLAGS $mpiarg" ;;
+      esac
+    done
+    for mpiarg in `$MPICC -link_info` ; do
+      case $mpiarg in
+        -L*) MPILDFLAGS="$MPILDFLAGS $mpiarg" ;;
+        -l*) MPILDFLAGS="$MPILDFLAGS $mpiarg" ;;
+      esac
+    done
+  else
+    if ($MPICC -show 1>/dev/null 2>/dev/null) ; then
+      SHOWARG="-show"
+    elif ($MPICC -showme 1>/dev/null 2>/dev/null) ; then
+      SHOWARG="-showme"
+    else
+      AC_MSG_WARN(couldn't determine mpi compile flags)
+    fi
+    if test -n "$SHOWARG" ; then
+      for mpiarg in `$MPICC $SHOWARG` ; do
+        case $mpiarg in
+          -D*) MPICPPFLAGS="$MPICPPFLAGS $mpiarg" ;;
+          -I*) MPICPPFLAGS="$MPICPPFLAGS $mpiarg" ;;
+          -L*) MPILDFLAGS="$MPILDFLAGS $mpiarg" ;;
+          -l*) MPILDFLAGS="$MPILDFLAGS $mpiarg" ;;
+          -Wl*) MPICFLAGS="$MPICFLAGS $mpiarg" ;;
+        esac
+      done
+    fi
+  fi
+  AC_MSG_RESULT($MPICPPFLAGS $MPICFLAGS $MPILDFLAGS)
+  LIBS="$LIBS $MPILDFLAGS"
+  CPPFLAGS="$CPPFLAGS $MPICPPFLAGS"
+  CFLAGS="$CFLAGS $MPICFLAGS"
+  AC_CHECK_HEADER(mpi.h, ,AC_MSG_ERROR(can't find mpi.h))
+  AC_MSG_CHECKING(whether mpi works)
+  AC_TRY_LINK([#include <mpi.h>
+    ], MPI_Finalize();,
+    AC_MSG_RESULT(yes),
+    AC_MSG_RESULT(no)
+    AC_MSG_ERROR(mpi does not work))
+])
+
+
+
 
 ## libtool.m4 - Configure libtool for the target system. -*-Shell-script-*-
 ## Copyright (C) 1996-1999, 2000 Free Software Foundation, Inc.

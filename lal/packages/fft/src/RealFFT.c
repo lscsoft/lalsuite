@@ -29,11 +29,13 @@
 
 #include "LALConfig.h"
 
-#ifdef FFTW_PREFIX
-#include "srfftw.h"
-#else /* not defined FFTW_PREFIX */
-#include "rfftw.h"
-#endif /* FFTW_PREFIX */
+#ifdef HAVE_SRFFTW_H
+#include <srfftw.h>
+#elif HAVE_RFFTW_H
+#include <rfftw.h>
+#else
+#error "don't have either srfftw.h or rfftw.h"
+#endif
 
 #include "LALStdlib.h"
 #include "SeqFactories.h"

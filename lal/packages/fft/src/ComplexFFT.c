@@ -29,11 +29,13 @@
 
 #include "LALConfig.h"
 
-#ifdef FFTW_PREFIX
-#include "sfftw.h"
-#else /* not defined FFTW_PREFIX */
-#include "fftw.h"
-#endif /* FFTW_PREFIX */
+#ifdef HAVE_SFFTW_H
+#include <sfftw.h>
+#elif HAVE_FFTW_H
+#include <fftw.h>
+#else
+#error "don't have either sfftw.h or fftw.h"
+#endif
 
 #include "LALStdlib.h"
 #include "AVFactories.h"

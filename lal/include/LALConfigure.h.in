@@ -48,11 +48,23 @@
 /* Define if you have the putenv function.  */
 #undef HAVE_PUTENV
 
+/* Define if you have the <fftw.h> header file.  */
+#undef HAVE_FFTW_H
+
 /* Define if you have the <getopt.h> header file.  */
 #undef HAVE_GETOPT_H
 
 /* Define if you have the <malloc.h> header file.  */
 #undef HAVE_MALLOC_H
+
+/* Define if you have the <rfftw.h> header file.  */
+#undef HAVE_RFFTW_H
+
+/* Define if you have the <sfftw.h> header file.  */
+#undef HAVE_SFFTW_H
+
+/* Define if you have the <srfftw.h> header file.  */
+#undef HAVE_SRFFTW_H
 
 /* Define if you have the <sys/time.h> header file.  */
 #undef HAVE_SYS_TIME_H
@@ -72,6 +84,9 @@
 /* Version number of package */
 #undef VERSION
 
-/* FFTW prefix */
-#undef FFTW_PREFIX
+/* Suppress debugging code */
+#undef NDEBUG
+
+/* Use functions rather than macros */
+#undef NOLALMACROS
 
