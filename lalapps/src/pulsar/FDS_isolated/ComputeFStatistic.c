@@ -33,11 +33,11 @@ RCSID( "$Id$");
 */
 
 /* If FILE_FILENAME is defined, then print the corresponding file  */
-#define FILE_FSTATS
-#define FILE_FMAX
 
-/*
+#define FILE_FSTATS
+/* #define FILE_FMAX */
 #define FILE_FLINES
+/*
 #define FILE_FTXT 
 #define FILE_PSD 
 #define FILE_PSDLINES 
@@ -411,7 +411,7 @@ int main(int argc,char *argv[])
 
 	  LAL_CALL ( LALDemod(&status, &Fstat, SFTData, DemodParams), &status);
 
-	  /*  This fills-in highFLines that are then used by discardFLines */
+	  /*  This fills-in highFLines that contains the outliers of F*/
 	  if (GV.FreqImax > 5) {
 	    LAL_CALL (EstimateFLines(&status), &status);
 	  }
@@ -2256,9 +2256,11 @@ INT4 EstimatePSDLines(LALStatus *status)
 
 } /* EstimatePSDLines() */
 
-/*******************************************************************************/
-/** Find outliers/clusters in the F-statistic array over frequency.
- */
+
+
+
+
+/** Find outliers and then clusters in the F-statistic array over frequency. These clusters get written in the global highFLines. */
 INT4 EstimateFLines(LALStatus *status)
 {
 #ifdef FILE_FTXT  
@@ -2267,12 +2269,10 @@ INT4 EstimateFLines(LALStatus *status)
 #ifdef FILE_FLINES  
   FILE *outfile1;
 #endif
-  INT4 i,j,Ntot;                         /* loop indices */
-  INT4 nbins=GV.FreqImax;                /* Number of points in F */
+  INT4 i,j,Ntot;   
+  INT4 nbins=GV.FreqImax;                /* Number of bins in F */
   REAL8Vector *F1=NULL; 
-  REAL8Vector *FloorF1=NULL;                        /* Square of SFT */
-  /* INT2 windowSize=(0.01/GV.dFreq);               0.1 is 1E-4*1000 */
-  INT2 windowSize=100;
+  REAL8Vector *FloorF1=NULL;             /* Square of SFT */
   REAL4 THR=10.0;
   
   REAL8 dmp;
@@ -2285,27 +2285,17 @@ INT4 EstimateFLines(LALStatus *status)
   Clusters       *SpLines=highFLines;
     
   INT2 smallBlock=1;
-  
   INT4 wings;
-
   nbins=(UINT4)nbins;
 
   THR=uvar_Fthreshold;
 
+/* 0.0002 is the max expected width of the F stat curve for signal */
+/* with ~ 10 h observation time */
 
-  /* wings=windowSize/2; */
-  /*  0.0002 is the max expected width of the F stat curve for signal */
-  /*  with ~ 10 h observation time */
-  /*  0.0001 = 0.0002/2 */
-  /*  let me put 0.005 */
   dmp=0.5+0.0002/GV.dFreq;
   wings=dmp;
 
-
-  if (windowSize > nbins){
-    windowSize = nbins/2.0;
-    /* printf("Had to change windowSize for running median in F floor estimate\n"); */
-  }
 
 #ifdef FILE_FTXT
   /*  file contains freq, PSD, noise floor */
@@ -2314,8 +2304,8 @@ INT4 EstimateFLines(LALStatus *status)
     return 1;
   }
 #endif
+  /*  file contanis freq, PSD, noise floor,lines */
 #ifdef FILE_FLINES  
-  /*  file contains freq, PSD, noise floor,lines */
   if(!(outfile1=fopen("FLines.txt","w"))){
     printf("Cannot open FLines.txt file\n");
     return 1;
@@ -2358,8 +2348,11 @@ INT4 EstimateFLines(LALStatus *status)
   outliersInput->ifmin=((uvar_Freq/GV.dFreq)+0.5);
   outliersInput->data = F1;
 
+  /*find values of F above THR and populate outliers with them */
   ComputeOutliers(outliersInput, outliersParams, outliers);
 
+
+  /*if no outliers were found clean and exit */
    if (outliers->Noutliers == 0){
 
 #ifdef FILE_FTXT
@@ -2368,8 +2361,8 @@ INT4 EstimateFLines(LALStatus *status)
        REAL4 freq;
        REAL8 r0,r1;
        freq=uvar_Freq + i*GV.dFreq;
-       r0=F1->data[i];
-       r1=FloorF1->data[i];
+       r0=F1->data[i]*2.0*medianbias;
+       r1=FloorF1->data[i]*2.0*medianbias;
        fprintf(outfile,"%f %E %E\n",freq,r0,r1);
      }
 #endif     
@@ -2397,6 +2390,8 @@ INT4 EstimateFLines(LALStatus *status)
    /*      fprintf(stderr,"Nclusters non zero \n"); */
    /*      fflush(stderr); */
 
+
+   /* if outliers are found get ready to identify clusters of outliers*/
    if (!(SpClParams=(ClustersParams *)LALMalloc(sizeof(ClustersParams)))){ 
      printf("Memory allocation failure for SpClusterParams");
      return 1;
@@ -2415,6 +2410,8 @@ INT4 EstimateFLines(LALStatus *status)
    clustersInput->outliersParams= outliersParams;
    clustersInput->outliers      = outliers;     
    
+   /* clusters of outliers in F get written in SpLines which is */
+   /* the global highFLines*/
    j=DetectClusters(clustersInput, SpClParams, SpLines);
    if (j!=0){
      printf("DetectClusters problem");
@@ -2433,25 +2430,25 @@ INT4 EstimateFLines(LALStatus *status)
 #ifdef FILE_FLINES  
    /*  FLines file contains: F, noise floor and lines. */
    for (i=0;i<Ntot;i++){ 
-     REAL4 freq;
+     REAL8 freq;
      REAL8 r0,r1,r2;
      j=SpLines->Iclust[i];
      freq=(uvar_Freq+SpLines->Iclust[i]*GV.dFreq);
      r0=F1->data[j];
-     r1=FloorF1->data[j];
-     r2=SpLines->clusters[i]*FloorF1->data[j];
-     fprintf(outfile1,"%f %E %E %E\n",freq,r0,r1,r2);
+     r1=FloorF1->data[j]*2.0*medianbias;
+     r2=SpLines->clusters[i]*FloorF1->data[j]*2.0*medianbias;
+     fprintf(outfile1,"%20.17f %E %E %E\n",freq,r0,r1,r2);
    }
 #endif
 #ifdef FILE_FTXT   
    /*  PSD.txt file contains freq, PSD, noise floor   */
    for (i=0;i<nbins;i++){ 
-     REAL4 freq;
+     REAL8 freq;
      REAL8 r0,r1;
      freq=uvar_Freq + i*GV.dFreq;
-     r0=F1->data[i];
-     r1=FloorF1->data[i];
-     fprintf(outfile,"%f %E %E\n",freq,r0,r1);
+     r0=F1->data[i]*2.0*medianbias;
+     r1=FloorF1->data[i]*2.0*medianbias;
+     fprintf(outfile,"%20.17f %E %E\n",freq,r0,r1);
    }
 #endif   
 
