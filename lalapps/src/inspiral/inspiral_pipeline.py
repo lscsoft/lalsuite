@@ -114,7 +114,7 @@ universe = %s
 executable = %s
 arguments = --gps-start-time $(start) --gps-end-time $(end) \\
   --channel-name $(channel) --calibration-cache $(calcache) \\
-  --frame-cache frcache-$(site)-$(frstart)-$(frend).out \\
+  --frame-cache cache/frcache-$(site)-$(frstart)-$(frend).out \\
  """ % (self.config['condor']['universe'],self.config['condor']['tmpltbank']),
     for sec in ['datacond','bank']:
       for arg in self.config[sec].keys():
@@ -139,7 +139,7 @@ universe = %s
 executable = %s
 arguments = --gps-start-time $(start) --gps-end-time $(end) \\
   --channel-name $(channel) --calibration-cache $(calcache) \\
-  --frame-cache frcache-$(site)-$(frstart)-$(frend).out \\
+  --frame-cache cache/frcache-$(site)-$(frstart)-$(frend).out \\
   --bank-file $(site)-TMPLTBANK-$(start)-$(chunklen).xml \\
  """ % (self.config['condor']['universe'],self.config['condor']['inspiral']),
     for sec in ['datacond','inspiral']:
