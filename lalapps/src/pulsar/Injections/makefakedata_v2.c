@@ -1458,7 +1458,7 @@ int write_timeseries(int iSFT){
       for (i=0;i<header.nsamples;i++) {
 	REAL8 ts=header.gps_sec-xaxis+header.tbase*i/header.nsamples;
 	pw=timeSeries->data->data[i];
-	fprintf(fp,"%16.9f %f\n",ts, pw);
+	fprintf(fp,"%16.9f %e\n",ts, pw);
       }
     }
     
