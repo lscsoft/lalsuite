@@ -41,16 +41,18 @@ elif [ ! -x "$newcode" ]; then
     exit -1;
 fi
 
-# signal parameters
-IFO=LLO
-ephemdir=${LAL_DATA_PATH}
-startTime=731210229
-timestamps=./testT8_1800
-refTime=$startTime
+# input parameters
+## FIXED
+ephemdir=${LAL_PREFIX}/share/lal
 Tsft=1800
 nTsft=20
+timestamps=./testT8_1800
+refTime=731210229
 fmin=300.0
 Band=10.0
+
+## VARY
+IFO=LLO
 aPlus=1.5
 aCross=0.7
 psi=0.5
@@ -99,7 +101,7 @@ time $newcode $newCL
 echo
 echo "comparison of resulting SFTs:"
 
-cmdline="$compCode -1 '${testDIR}/SFTtest_v2*' -2 '${testDIR}/SFTtest_v4*'"
+cmdline="$compCode -v -1 '${testDIR}/SFTtest_v2*' -2 '${testDIR}/SFTtest_v4*'"
 echo ${cmdline}
 eval ${cmdline}
 
