@@ -1157,29 +1157,33 @@ static StochasticTable *stochastic_search(LALStatus *status,
   /* counters */
   INT4 i, j, k;
 
-  /* variables */
-  INT4 num_intervals;
-  INT4 segment_shift;
+  /* data structures */
   REAL4Vector *cal_psd_one;
   REAL4Vector *cal_psd_two;
-  INT4 middle_segment;
   REAL4TimeSeries *segment_one = NULL;
   REAL4TimeSeries *segment_two = NULL;
   COMPLEX8FrequencySeries *response_one = NULL;
   COMPLEX8FrequencySeries *response_two = NULL;
-  LIGOTimeGPS seg_epoch;
-  LIGOTimeGPS analysis_epoch;
-  REAL8 delta_f;
-  LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
   REAL4FrequencySeries *psd_one = NULL;
   REAL4FrequencySeries *psd_two = NULL;
   REAL4FrequencySeries *inv_psd_one = NULL;
   REAL4FrequencySeries *inv_psd_two = NULL;
   REAL4FrequencySeries *opt_filter = NULL;
-  REAL8 sigma;
   COMPLEX8FrequencySeries *zero_pad_one = NULL;
   COMPLEX8FrequencySeries *zero_pad_two = NULL;
   COMPLEX8FrequencySeries *cc_spectra = NULL;
+  LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
+
+  /* variables */
+  INT4 num_intervals;
+  INT4 segment_shift;
+  INT4 middle_segment;
+  LIGOTimeGPS seg_epoch;
+  LIGOTimeGPS analysis_epoch;
+  REAL8 delta_f;
+
+  /* results */
+  REAL8 sigma;
   REAL8 y;
   StochasticTable *stochHead = NULL;
   StochasticTable *thisStoch = NULL;
