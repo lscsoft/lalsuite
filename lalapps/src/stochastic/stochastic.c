@@ -37,7 +37,6 @@
 #include "stochastic.h"
 
 /* C99 prototypes */
-double fabs(double x);
 double round(double x);
 
 NRCSID(STOCHASTICC, "$Id$");
@@ -1549,9 +1548,9 @@ void parse_options(INT4 argc, CHAR *argv[])
         }
         /* check that min frequency can be represented by the
          * sampling rate of the data and round accordingly */
-        if (fMin != fabs(round(fMin * PSD_WINDOW_DURATION)) / PSD_WINDOW_DURATION)
+        if (fMin != round(fMin * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION)
         {
-          fMin = fabs(round(fMin * PSD_WINDOW_DURATION)) / PSD_WINDOW_DURATION;
+          fMin = round(fMin * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION;
           fprintf(stderr, "warning: fMin has been rounded to %f\n", fMin);
         }
         ADD_PROCESS_PARAM("float", "%e", fMin);
@@ -1569,9 +1568,9 @@ void parse_options(INT4 argc, CHAR *argv[])
         }
         /* check that the max frequency can be represented by the
          * sampling rate of the data and round accordingly */
-        if (fMax != fabs(round(fMax * PSD_WINDOW_DURATION)) / PSD_WINDOW_DURATION)
+        if (fMax != round(fMax * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION)
         {
-          fMax = fabs(round(fMax * PSD_WINDOW_DURATION)) / PSD_WINDOW_DURATION;
+          fMax = round(fMax * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION;
           fprintf(stderr, "warning: fMax has been rounded to %f\n", fMax);
         }
         ADD_PROCESS_PARAM("float", "%e", fMax);
