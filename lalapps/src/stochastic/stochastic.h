@@ -34,6 +34,8 @@ static void readDataPair(LALStatus *status, StreamPair *streamPair,
 static void adam_readDataPair(LALStatus *status, StreamPair *streamPair,
 		ReadDataPairParams *params, REAL4TimeSeries *seriesOne,
 		REAL4TimeSeries *seriesTwo);
+
+/* helper functions */
 static REAL4TimeSeries *get_time_series(LALStatus *status, CHAR *ifo,
 		CHAR *cacheFile, CHAR *channel, LIGOTimeGPS start, LIGOTimeGPS end,
 		INT4 buffer);
@@ -43,6 +45,9 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status, FrStream *stream,
 		CHAR *channel, LIGOTimeGPS start, LIGOTimeGPS end);
 static REAL8 DeltaGPStoFloat(LALStatus *status, LIGOTimeGPS *end,
 		LIGOTimeGPS *start);
+static REAL4FrequencySeries *omega_gw(LALStatus *status, REAL4 alpha,
+		REAL8 fRef, REAL4 omegaRef, UINT4 length, REAL8 f0, REAL8 deltaF,
+    LIGOTimeGPS time);
 
 #ifdef  __cplusplus
 }

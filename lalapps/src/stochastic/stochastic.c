@@ -183,13 +183,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL4Vector *segOne[100], *segPadOne[100], *segTwo[100], *segPadTwo[100];
 
   /* simulated signal structures */
-  StochasticOmegaGWParameters parametersOmega;
   SSSimStochBGParams SBParams;
   SSSimStochBGInput SBInput;
   SSSimStochBGOutput SBOutput;
   REAL4TimeSeries *SimStochBGOne;
   REAL4TimeSeries *SimStochBGTwo;
-  REAL4FrequencySeries *MComegaGW;
+  REAL4FrequencySeries *MComegaGW = NULL;
   COMPLEX8FrequencySeries *MCresponseOne;
   COMPLEX8FrequencySeries *MCresponseTwo;
   COMPLEX8Vector *MCrespOne[100], *MCrespTwo[100];
@@ -276,7 +275,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   StochasticOptimalFilterCalInput optFilterIn;
 
   /* spectrum structures */
-  StochasticOmegaGWParameters omegaGWParams;
   REAL4FrequencySeries *omegaGW;
 
   /* structures for CC spectrum and CC statistics */
@@ -325,12 +323,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* add a resample buffer, if required */
   if ((sampleRate != resampleRate) || (high_pass_flag))
-  {
     padData = 1;
-    startTime += padData;
-    endTime -= padData;
-    duration -= 2 * padData;
-  }
   else
     padData = 0;
 
@@ -437,22 +430,9 @@ INT4 main(INT4 argc, CHAR *argv[])
     SBParams.SSimStochBGTimeSeries1Unit = lalADCCountUnit;
     SBParams.SSimStochBGTimeSeries2Unit = lalADCCountUnit;
 
-    /* omegaGW */
-    parametersOmega.length = MCfreqLength;
-    parametersOmega.f0 = 0;
-    parametersOmega.deltaF = MCdeltaF;
-    parametersOmega.alpha = alpha;
-    parametersOmega.fRef = fRef;
-    parametersOmega.omegaRef = omegaRef;
-
-    /* allocate memory */
-    LAL_CALL(LALCreateREAL4FrequencySeries(&status, &MComegaGW, "MComegaGW", \
-          gpsStartTime, 0, 1./resampleRate, lalDimensionlessUnit, \
-          MCfreqLength), &status);
-
     /* generate omegaGW */
-    LAL_CALL(LALStochasticOmegaGW(&status, MComegaGW, &parametersOmega), \
-        &status);
+    MComegaGW = omega_gw(&status, alpha, fRef, omegaRef, MCfreqLength, 0, \
+        MCdeltaF, gpsStartTime);
 
     /* response functions */
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
@@ -710,27 +690,11 @@ INT4 main(INT4 argc, CHAR *argv[])
         &ORFparams), &status);
 
   if (vrbflg)
-    fprintf(stdout, "Allocating memory for spectrum...\n");
-
-  /* allocate memory for spectrum */
-  LAL_CALL(LALCreateREAL4FrequencySeries(&status, &omegaGW, \
-        "omegaGW", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
-        filterLength), &status);
-
-  /* set omegaGW parameters */
-  omegaGWParams.alpha = alpha;
-  omegaGWParams.fRef = fRef;
-  omegaGWParams.omegaRef = omegaRef;
-  omegaGWParams.length = filterLength;
-  omegaGWParams.f0 = fMin;
-  omegaGWParams.deltaF = deltaF;
-
-  if (vrbflg)
     fprintf(stdout, "Generating spectrum for optimal filter...\n");
 
   /* generage omegaGW */
-  LAL_CALL(LALStochasticOmegaGW(&status, omegaGW, &omegaGWParams), \
-      &status);
+  omegaGW = omega_gw(&status, alpha, fRef, omegaRef, filterLength, \
+      fMin, deltaF, gpsStartTime);
 
   /* frequency mask */
   if (apply_mask_flag)
@@ -3315,6 +3279,39 @@ static REAL8 DeltaGPStoFloat(LALStatus *status,
 	LAL_CALL(LALDeltaGPS(status, &i, end, start), status);
 	LAL_CALL(LALIntervalToFloat(status, &d, &i), status);
 	return(d);
+}
+
+/* wrapper function to return the spectrum */
+static REAL4FrequencySeries *omega_gw(LALStatus *status,
+    REAL4 alpha,
+    REAL8 fRef,
+    REAL4 omegaRef,
+    UINT4 length,
+    REAL8 f0,
+    REAL8 deltaF,
+    LIGOTimeGPS time)
+{
+  /* variables */
+  REAL4FrequencySeries *series;
+  StochasticOmegaGWParameters params;
+
+  /* create and initialise frequency series */
+  LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "OmegaGW", time, f0, \
+        deltaF, lalDimensionlessUnit, length), status);
+
+  /* set parameters */
+  params.alpha = alpha;
+  params.fRef = fRef;
+  params.omegaRef = omegaRef;
+  params.length = length;
+  params.f0 = f0;
+  params.deltaF = deltaF;
+
+  /* calculate spectrum */
+  LAL_CALL(LALStochasticOmegaGW(status, series, &params), status);
+
+  /* return */
+  return(series);
 }
 
 /*
