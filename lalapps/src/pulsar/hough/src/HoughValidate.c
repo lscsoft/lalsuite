@@ -1,3 +1,4 @@
+
 /*-----------------------------------------------------------------------
  *
  * File Name: MCInjectComputeHough.c
@@ -76,7 +77,7 @@ int main(int argc, char *argv[]){
   REAL8 *spndnVec=NULL;
   static REAL8PeriodoPSD   periPSD;
   /* pgV is vector of peakgrams and pg1 is onepeakgram */
-  static UCHARPeakGram     *pg1, **pgV; 
+  static UCHARPeakGram    *pg1, **pgV; 
   UINT4  msp; /*number of spin-down parameters */
   INT4   uvar_ifo;
   CHAR   *uvar_SFTdir = NULL; /* the directory where the SFT  could be */
@@ -269,34 +270,52 @@ int main(int argc, char *argv[]){
 
     if (tempFbin - sftFminBin)
       {
-	printf(stderr, "Rounding error in calculating fminbin....be careful! \n");
+	fprintf(stderr, "Rounding error in calculating fminbin....be careful! \n");
       }
   }
 
   /* loop over sfts and select peaks */
 
+  /* first the memory allocation for the peakgramvector */
+  pgV = NULL;
+  pgV = (UCHARPeakGram **)LALMalloc(mObsCoh*sizeof(UCHARPeakGram *));  
+
+  /* memory for  peakgrams */
+  for (tempLoopId=0; tempLoopId < mObsCoh; tempLoopId++)
+    {
+      pgV[tempLoopId] = (UCHARPeakGram *)LALMalloc(sizeof(UCHARPeakGram));
+      pgV[tempLoopId]->length = sftlength; 
+      pgV[tempLoopId]->data = NULL; 
+      pgV[tempLoopId]->data = (UCHAR *)LALMalloc(sftlength* sizeof(UCHAR));
+    }
+
+  /* memory for periodogram and psd */ 
+  periPSD.periodogram.length = sftlength;
+  periPSD.periodogram.data = NULL;
+  periPSD.periodogram.data = (REAL8 *)LALMalloc(sftlength* sizeof(REAL8));
+  periPSD.psd.length = sftlength;
+  periPSD.psd.data = NULL;
+  periPSD.psd.data = (REAL8 *)LALMalloc(sftlength* sizeof(REAL8));
+
+
   for (tempLoopId=0; tempLoopId < mObsCoh; tempLoopId++){
 
-    /* first the memory allocation for the peakgrams */
-    pgV = (UCHARPeakGram **)LALMalloc(mObsCoh * sizeof(UCHARPeakGram *));
-    pg1 = pgV[tempLoopId];  
-    pg1->length = sftlength;
-    pg1->data = NULL;
-    pg1->data = (UCHAR *)LALMalloc(sftlength* sizeof(UCHAR));
-      
     /* calculate the periodogram */
     SUB( SFT2Periodogram(&status, &periPSD.periodogram, inputSFTs->data + tempLoopId ), &status );	
     
     /* calculate psd using running median */
     SUB( LALPeriodo2PSDrng( &status, &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed), &status );	
     
-    /* select sft bins to get peakgrams using threshold */
-    SUB( LALSelectPeakColorNoise(&status, pg1, &threshold,&periPSD), &status); 	
+    /* select sft bins to get peakgrams using threshold */    
+    SUB( LALSelectPeakColorNoise(&status, pgV[tempLoopId], &threshold,&periPSD), &status); 	
     
   } /* end of loop over sfts */
 
   /* having calculated the peakgrams we don't need the sfts anymore */
   SUB(LALDestroySFTVector(&status, &inputSFTs),&status );
+  /* we don't need the periodogram either */
+  LALFree(periPSD.periodogram.data);
+  LALFree(periPSD.psd.data);
 
   
   /* ****************************************************************/
@@ -309,8 +328,8 @@ int main(int argc, char *argv[]){
   { 
     UINT4    j; 
     for (j=0; j < mObsCoh; j++){
-      timeV.data[j].gpsSeconds = inputSFTs->data->epoch.gpsSeconds;
-      timeV.data[j].gpsNanoSeconds = inputSFTs->data->epoch.gpsNanoSeconds;
+      timeV.data[j].gpsSeconds = pgV[j]->epoch.gpsSeconds;
+      timeV.data[j].gpsNanoSeconds = pgV[j]->epoch.gpsNanoSeconds;
     }    
   }
   
@@ -398,12 +417,6 @@ int main(int argc, char *argv[]){
   pulsarTemplate.spindown.data = (REAL8 *)LALMalloc(msp*sizeof(REAL8));
  
   
-  periPSD.periodogram.length = sftlength;
-  periPSD.periodogram.data = NULL;
-  periPSD.periodogram.data = (REAL8 *)LALMalloc(sftlength* sizeof(REAL8));
-  periPSD.psd.length = sftlength;
-  periPSD.psd.data = NULL;
-  periPSD.psd.data = (REAL8 *)LALMalloc(sftlength* sizeof(REAL8));
   
   threshold = uvar_peakThreshold/normalizeThr; 
   
@@ -503,12 +516,10 @@ int main(int argc, char *argv[]){
   LALFree(spndnVec);
   
 
-  LALFree(periPSD.periodogram.data);
-  LALFree(periPSD.psd.data);
-
   for (tempLoopId = 0; tempLoopId < mObsCoh; tempLoopId++){
     pg1 = pgV[tempLoopId];  
     LALFree(pg1->data);
+    LALFree(pg1);
   }
   LALFree(pgV);
   

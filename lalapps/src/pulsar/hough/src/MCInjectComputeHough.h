@@ -107,8 +107,8 @@ NRCSID (MCINJECTCOMPUTEHOUGHH, "$Id$");
  */
 
 INT4 lalDebugLevel=1;
-#define EARTHEPHEMERIS "/afs/aeiw/grawave/Linux/lal/lal/packages/pulsar/test/earth03.dat"
-#define SUNEPHEMERIS "/afs/aeiw/grawave/Linux/lal/lal/packages/pulsar/test/sun03.dat"
+#define EARTHEPHEMERIS "./earth00-04.dat"
+#define SUNEPHEMERIS "./sun00-04.dat"
 
 #define ACCURACY 0.00000001 /* of the velocity calculation */
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
@@ -130,7 +130,8 @@ INT4 lalDebugLevel=1;
 #define H0MIN 1.0e-23
 #define NMCLOOP 10 /* number of Monte-Carlos */
 
-#define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs/"
+/* #define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs/" */
+#define SFTDIRECTORY "/home/badkri/L1sfts/"
 #define FILEOUT "./HoughMC"      /* prefix file output */
 
 /* to be removed ? */

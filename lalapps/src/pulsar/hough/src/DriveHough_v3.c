@@ -503,7 +503,7 @@ int main(int argc, char *argv[]){
     velPar.detector = detector;
     velPar.tBase = timeBase;
     velPar.vTol = ACCURACY;
-    velPar.edat = NULL;
+    velPar.edat = NULL; 
 
     /*  ephemeris info */
     edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
@@ -526,23 +526,34 @@ int main(int argc, char *argv[]){
       SUB( LALAvgDetectorVel ( &status, vel, &velPar), &status ); 
       
       {
-	/*         REAL8  midTimeBase; */
+	REAL8  midTimeBase; 
 	LIGOTimeGPS midTimeBaseGPS, tempGPS; 
+
+	/* convert half of timebase to GPS structure */	
+        midTimeBase = 0.5 * timeBase; 
+        SUB( LALFloatToGPS ( &status, &midTimeBaseGPS, &midTimeBase), &status); 
+
+	/* in case time to calculate velocity i smid time of sft */
+	/* add mid time base to start time of sft */
+ 	tempGPS.gpsSeconds = midTimeBaseGPS.gpsSeconds + timeV.time[j].gpsSeconds; 
+ 	tempGPS.gpsNanoSeconds = midTimeBaseGPS.gpsNanoSeconds + timeV.time[j].gpsNanoSeconds;  
 	
-	/*         midTimeBase = 0.5 * timeBase;  */
-	/*         SUB( LALFloatToGPS ( &status, &midTimeBaseGPS, &midTimeBase), &status); */
-	/* 	tempGPS.gpsSeconds = midTimeBaseGPS.gpsSeconds + timeV.time[j].gpsSeconds; */
-	/* 	tempGPS.gpsNanoSeconds = midTimeBaseGPS.gpsNanoSeconds + timeV.time[j].gpsNanoSeconds; */
-	tempGPS.gpsSeconds = timeV.time[j].gpsSeconds;
-	tempGPS.gpsNanoSeconds = timeV.time[j].gpsNanoSeconds;
+	/* for debugging purposes */
+	/*      in case time to calculate velocity is start time */
+	/* 	tempGPS.gpsSeconds = timeV.time[j].gpsSeconds;  */
+	/* 	tempGPS.gpsNanoSeconds = timeV.time[j].gpsNanoSeconds;  */
         SUB( LALDetectorVel ( &status, tempVel, &tempGPS, detector, edat), &status ); 
       }
 
-      velV.data[j].x= vel[0];
-      velV.data[j].y= vel[1];
-      velV.data[j].z= vel[2];   
+      /*       velV.data[j].x= vel[0]; */
+      /*       velV.data[j].y= vel[1]; */
+      /*       velV.data[j].z= vel[2];    */
 
       /* for debugging purposes */
+      velV.data[j].x= tempVel[0];
+      velV.data[j].y= tempVel[1];
+      velV.data[j].z= tempVel[2];   
+
       velVmid.data[j].x = tempVel[0];
       velVmid.data[j].y = tempVel[1];
       velVmid.data[j].z = tempVel[2];
