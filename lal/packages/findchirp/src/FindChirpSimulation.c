@@ -10,7 +10,9 @@
  */
 
 #include <lal/Units.h>
+#include <lal/Date.h>
 #include <lal/AVFactories.h>
+#include <lal/VectorOps.h>
 #include <lal/SeqFactories.h>
 #include <lal/LALNoiseModels.h>
 #include <lal/FindChirpEngine.h>
