@@ -466,6 +466,18 @@ LALFindChirpBCVTemplate (
   psi20 = 0.0; //tmplt->psi4;
 // work needed here...
 
+  /* template dependent normalisation */
+  distNorm = 2.0 * LAL_MRSUN_SI / (cannonDist * 1.0e6 * LAL_PC_SI);
+  distNorm *= params->dynRange;
+
+  fcTmplt->tmpltNorm = sqrt( (5.0*mu) / 96.0 ) *
+    pow( m / (LAL_PI*LAL_PI) , 1.0/3.0 ) *
+    pow( LAL_MTSUN_SI / (REAL4) params->deltaT, -1.0/6.0 );
+  
+  fcTmplt->tmpltNorm *= fcTmplt->tmpltNorm;
+  
+  fcTmplt->tmpltNorm *= distNorm * distNorm;
+  
   /* x1 */   // does this explanation suffice?
   x1 = pow( deltaF, -1.0/3.0 );
 // work needed here ... check x1
@@ -500,7 +512,21 @@ LALFindChirpBCVTemplate (
 // work needed here ... check psi  
 
       /* range reduction of psi1 */
-// work needed here...
+      while ( psi1 < -LAL_PI )
+	{
+	  psi1 += 2 * LAL_PI;
+	  psi0 += 2 * LAL_PI;
+	}
+      while ( psi1 > LAL_PI )
+	{
+	  psi1 -= 2 * LAL_PI;
+	  psi0 -= 2 * LAL_PI;
+	}
+
+      /* compute approximate sine and cosine of psi1 */
+      expPsi[k].im = - sin(psi);
+      expPsi[k].re =   cos(psi);
+// work needed here... expensive computation method
     }
 
   /* normal exit */
