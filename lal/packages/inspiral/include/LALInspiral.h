@@ -31,6 +31,7 @@ Header file for the template generation codes.
 # include <lal/LALConstants.h>
 # include <lal/SimulateCoherentGW.h>
 # include <lal/GeneratePPNInspiral.h>
+
  
 #ifdef  __cplusplus
 extern "C" {
@@ -62,15 +63,18 @@ NRCSID( LALINSPIRALH, "$Id$" );
 
 #define LALINSPIRALH_ENULL           1
 #define LALINSPIRALH_EMEM            2
-#define LALINSPIRALH_EDIV0           4
-#define LALINSPIRALH_ESIZE           8
-#define LALINSPIRALH_ECHOICE        16
-#define LALINSPIRALH_EORDER         32 
-#define LALINSPIRALH_EAPPROXIMANT   64 
-#define LALINSPIRALH_EPSI0         128 
-#define LALINSPIRALH_EPSI3         256 
-#define LALINSPIRALH_EALPHA        512
-#define LALINSPIRALH_EFCUTOFF     1024
+#define LALINSPIRALH_EDIV0           3
+#define LALINSPIRALH_ESIZE           4
+#define LALINSPIRALH_ECHOICE         5
+#define LALINSPIRALH_EORDER          6 
+#define LALINSPIRALH_EAPPROXIMANT    7 
+#define LALINSPIRALH_EPSI0           8 
+#define LALINSPIRALH_EPSI3           9 
+#define LALINSPIRALH_EALPHA         10
+#define LALINSPIRALH_EFCUTOFF       11
+#define LALINSPIRALH_ESTOPPED       12
+#define LALINSPIRALH_EROOTINIT     "Can't find good bracket for BisectionFindRoot"
+
 
 
 #define LALINSPIRALH_MSGENULL         "Arguments contained an unexpected null pointer"
@@ -84,6 +88,12 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_MSGEPSI3         "psi3 must be < 0"
 #define LALINSPIRALH_MSGEALPHA        "alpha must be defined positive"
 #define LALINSPIRALH_MSGEFCUTOFF      "fcutoff must be defined and > 0"
+#define LALINSPIRALH_MSGESTOPPED      "Waveform generation stopped"
+#define LALINSPIRALH_MSGEROOTINIT     "Can't find good bracket for BisectionFindRoot"
+
+
+
+
 
 /* </lalErrTable> */
 
@@ -769,7 +779,7 @@ tagPhiofVIntegrandIn
 /* Function prototypes */
 
 
-/* --- HERE ARE SOME USEFULE PROTOTYPE FOR LENGTH, PARAMETER CALCULATION... --- */
+/* --- HERE ARE SOME USEFUL PROTOTYPE FOR LENGTH, PARAMETER CALCULATION... --- */
 /*  <lalLaTeX>
 \newpage\input{LALInspiralParameterCalcC}
 </lalLaTeX>  */
@@ -777,6 +787,15 @@ tagPhiofVIntegrandIn
 void LALInspiralParameterCalc (
      LALStatus *status,
      InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralAmplitudeC}
+</lalLaTeX>  */
+
+void
+LALInspiralRestrictedAmplitude(
+			       LALStatus *status,
+			       InspiralTemplate  *params);
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralWaveLengthC}
