@@ -87,7 +87,10 @@ int main(int argc, char *argv[])
 { 
   
   /* EMPTY STUB */
+/*
   printf ("User said: %d arguments, which are %s %s %s ...\n", argc, argv[0], argv[1], argv[2]);
+*/
+  argc = 0; argv = NULL;
 
 
   /* sorry, something still should be written here */
