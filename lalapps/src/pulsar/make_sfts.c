@@ -568,8 +568,11 @@ int main(int argc,char *argv[]){
 	  else
 	    nshift=(int)(fshift-0.5);
 	  
-	  if (nshift)
+	  if (nshift){
 	    shifter(chan.data->data, npts, nshift);
+	    printf("Shifting %s data sample at time %d forward %d samples\n",
+		   argv[4], epoch.gpsSeconds, nshift);
+	  }
 	}
       }
 #endif
