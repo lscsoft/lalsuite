@@ -192,23 +192,6 @@ the linked list.
 #endif
 
 typedef struct
-tagFindChirpSimulationParams
-{
-  FindChirpSimulationType       simType;        /* type of simulation        */
-  UINT4                         simCount;       /* number of simulations     */
-  UINT4                         injectStartIdx; /* index of the first inj    */
-  UINT4                         numInject;      /* number of injections      */
-  InspiralEvent                *injectEvent;    /* events to inject          */
-  InspiralEvent                *loudestEvent;   /* array of loudest events   */
-  REAL4                        *signalNorm;     /* (s|s) for each dataSeg    */
-  REAL4                         mMin;           /* minimum mass for binary   */
-  REAL4                         mMax;           /* maximum mass for binary   */
-  REAL4                         gaussianVarsq;  /* variance squared of noise */
-  RandomParams                 *randomParams;   /* random seed container     */
-}
-FindChirpSimulationParams;
-
-typedef struct
 tagInspiralInjection
 {
   INT8                          coaTime;
@@ -223,6 +206,23 @@ tagInspiralInjection
   struct tagInspiralInjection  *next;
 }
 InspiralInjection;
+
+typedef struct
+tagFindChirpSimulationParams
+{
+  FindChirpSimulationType       simType;        /* type of simulation        */
+  UINT4                         simCount;       /* number of simulations     */
+  UINT4                         injectStartIdx; /* index of the first inj    */
+  InspiralInjection            *injectEvent;    /* events to inject          */
+  InspiralEvent                *loudestEvent;   /* array of loudest events   */
+  REAL4                        *signalNorm;     /* (s|s) for each dataSeg    */
+  REAL4                         mMin;           /* minimum mass for binary   */
+  REAL4                         mMax;           /* maximum mass for binary   */
+  REAL4                         gaussianVarsq;  /* variance squared of noise */
+  RandomParams                 *randomParams;   /* random seed container     */
+  REAL4TimeSeries              *chan;           /* pointer to the data chunk */
+}
+FindChirpSimulationParams;
 
 typedef struct
 tagFindChirpSlaveParams
@@ -324,6 +324,14 @@ void
 LALFindChirpDestroyTmpltNode ( 
     LALStatus                  *status,
     InspiralTemplateNode      **tmpltNode
+    );
+
+void
+LALFindChirpInjectSignals (
+    LALStatus                  *status,
+    REAL4TimeSeries            *chan,
+    InspiralInjection          *events,
+    COMPLEX8FrequencySeries    *resp
     );
 
 #ifdef  __cplusplus
