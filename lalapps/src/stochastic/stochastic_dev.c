@@ -258,15 +258,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   gpsStartTime.gpsSeconds = startTime;
   gpsStartTime.gpsNanoSeconds = 0;
 
-  /* open output file */
-  LALSnprintf(outputFilename, LALNameLength, "stoch-%s%s-%d-%d.dat", 
-      ifoOne, ifoTwo, (INT4)startTime, (INT4)endTime);
-  if ((out = fopen(outputFilename, "w")) == NULL)
-  {
-    fprintf(stderr, "Can't open file for output...\n");
-    exit(1);
-  }
-
   if (vrbflg)
   {
     fprintf(stdout, "Calculating number of segments...\n");
@@ -940,15 +931,21 @@ INT4 main(INT4 argc, CHAR *argv[])
           &highPassParam ), &status );
   }
 
-  /*
-   ** loop over segments **
-   */
+  /* open output file */
+  LALSnprintf(outputFilename, LALNameLength, "stoch-%s%s-%d-%d.dat", 
+      ifoOne, ifoTwo, (INT4)startTime, (INT4)endTime);
+  if ((out = fopen(outputFilename, "w")) == NULL)
+  {
+    fprintf(stderr, "Can't open file for output...\n");
+    exit(1);
+  }
 
   if (vrbflg)
   {
     fprintf(stdout, "Looping over %d segments...\n", numSegments);
   }
 
+  /* loop over segments */
   for (j = 0; j < numSegments; j++)
   {
     /* define segment epoch */
