@@ -64,6 +64,8 @@ int main( int argc, char **argv )
   char outFile[256] = "";
   char vetoRangeFile[256] = "";
   FILE *vrfile = NULL;
+  char unusedVetoFile[256] = "";
+  FILE *uvfile = NULL;
   char intext[256], temptext[256];
   char *arg, *val, opt='\0';
   size_t vallen;
@@ -357,6 +359,21 @@ int main( int argc, char **argv )
 	strncpy( vetoRangeFile, val, sizeof(vetoRangeFile) );
 	if ( vetoRangeFile[sizeof(vetoRangeFile)-1] != '\0' ) {
 	  printf( "Error: veto range file name is too long\n" ); return 1;
+	}
+	opt = '\0';
+      }
+      break;
+
+    case 'u':        /*-- Unused-veto dump file --*/
+      if ( val ) {
+	if ( strlen(unusedVetoFile) ) {
+	  printf( "Error: cannot produce multiple unused-veto dump files\n" );
+	  PrintUsage(); return 1;
+	}
+	strncpy( unusedVetoFile, val, sizeof(unusedVetoFile) );
+	if ( unusedVetoFile[sizeof(unusedVetoFile)-1] != '\0' ) {
+	  printf( "Error: unused-veto dump file name is too long\n" );
+	  return 1;
 	}
 	opt = '\0';
       }
@@ -701,6 +718,16 @@ int main( int argc, char **argv )
     }
   }
 
+  /*-- Open the output unused-veto dump file, if necessary --*/
+  if ( strlen(unusedVetoFile) > 0 ) {
+    uvfile = fopen( unusedVetoFile, "w" );
+    if ( uvfile == NULL ) {
+      printf( "Error opening unused-veto dump file %s\n", unusedVetoFile );
+      AbortAll( candEnv, vetoFile, nvetofiles, outEnv );
+      return 2;
+    }
+  }
+
 
   /*---------- Loop over rows in the candidate file ----------*/
 
@@ -887,9 +914,9 @@ int main( int argc, char **argv )
       be relevant --*/
     while ( vbufR != vbufW && tVetoPos[vbufR] < tCand ) {
       if ( debug >= 2 ) printf( " Discarding an event from the ring buffer\n" );
-      if ( ! usedVeto[vbufR] ) {
-	printf("Unused veto at %16.6f with duration=%9.6f, SNR=%10.4f\n",
-	        timeBaseD+tVeto[vbufR], tVetoDur[vbufR], tVetoSnr[vbufR] );
+      if ( uvfile && ! usedVeto[vbufR] ) {
+	fprintf( uvfile, "%16.6f %9.6f\n",
+		 timeBaseD+tVeto[vbufR], tVetoDur[vbufR] );
       }
       vbufR++; if ( vbufR == RINGBUFSIZE ) { vbufR = 0; }
     }
@@ -1092,9 +1119,10 @@ int main( int argc, char **argv )
       /*-- If this veto event is too long ago to be relevant, don't add it to
 	the ring buffer --*/
       if ( tdead2 < tCand ) {
-	/*-- Report event as unused --*/
-	printf("Unused veto at %16.6f with duration=%9.6f, SNR=%10.4f\n",
-	        timeBaseD+tUse, tDur, tSnr);
+	if ( uvfile ) {
+	  /*-- Report event as unused --*/
+	  fprintf( uvfile, "%16.6f %9.6f\n", timeBaseD+tUse, tDur );
+	}
 	continue;
       }
 
@@ -1144,9 +1172,9 @@ int main( int argc, char **argv )
 	  in the ring buffer, drop it --*/
 	if ( iveto == vbufR ) {
 	  if ( debug >= 2 ) printf( " Dropping an event from the ring buffer\n" );
-	  if ( ! usedVeto[vbufR] ) {
-	    printf("Unused veto at %16.6f with duration=%9.6f, SNR=%10.4f\n",
-		    timeBaseD+tVeto[vbufR], tVetoDur[vbufR], tVetoSnr[vbufR] );
+	  if ( uvfile && ! usedVeto[vbufR] ) {
+	    fprintf( uvfile, "%16.6f %9.6f\n",
+		     timeBaseD+tVeto[vbufR], tVetoDur[vbufR] );
 	  }
 	  vbufR++; if ( vbufR == RINGBUFSIZE ) { vbufR = 0; }
 	}
@@ -1208,13 +1236,15 @@ int main( int argc, char **argv )
 
   } /*-- End loop over candidate events --*/
 
-  /*-- Dump any unused vetoes still in the ring buffer --*/
-  while ( vbufR != vbufW ) {
-    if ( ! usedVeto[vbufR] ) {
-      printf("Unused veto at %16.6f with duration=%9.6f, SNR=%10.4f\n",
-	      timeBaseD+tVeto[vbufR], tVetoDur[vbufR], tVetoSnr[vbufR] );
+  if ( uvfile ) {
+    /*-- Dump any unused vetoes still in the ring buffer --*/
+    while ( vbufR != vbufW ) {
+      if ( ! usedVeto[vbufR] ) {
+	fprintf( uvfile, "%16.6f %9.6f\n",
+		 timeBaseD+tVeto[vbufR], tVetoDur[vbufR] );
+      }
+      vbufR++; if ( vbufR == RINGBUFSIZE ) { vbufR = 0; }
     }
-    vbufR++; if ( vbufR == RINGBUFSIZE ) { vbufR = 0; }
   }
 
   /*------ Close files ------*/
@@ -1261,6 +1291,9 @@ int main( int argc, char **argv )
 
   /*-- Close the veto range file, if it is open --*/
   if ( vrfile ) { fclose( vrfile ); }
+
+  /*-- Close the unused-veto dump file, if it is open --*/
+  if ( uvfile ) { fclose( uvfile ); }
 
   /*-- Fill cluster "fail" fields --*/
   for ( jRange=0; jRange<nRange; jRange++ ) {
@@ -1397,6 +1430,7 @@ void PrintUsage()
   printf( "Id: $\n" );
   printf( "\nNew syntax:   ivana <candidate_file> <veto_spec> [-r <range_spec>]\n"
           "                       [-o <output_file>] [-v <veto_range_file>]\n"
+	  "                       [-u <unused_veto_dump_file>]\n"
           "                       [-l] [-s <snr_cut>] [-c <chisq_cut>]\n"
           "                       [-M <min_live_interval>] [-C <clustering_window>]\n"
           "  Options introduced by hyphenated flags can appear in any order\n" );
@@ -1425,6 +1459,9 @@ void PrintUsage()
 	  "    LIGO_LW format.\n" );
   printf( "<veto_range_file> is the name of the output file to generate with veto time\n"
 	  "    ranges in ASCII format (each line containing a start time and a stop time).\n" );
+  printf( "<unused_veto_dump_file> is the name of an output ASCII file to generate with\n"
+	  "    the start time and duration of each veto trigger (within one of the\n"
+	  "    specified time ranges) which did not veto an event candidate.\n" );
   printf( "The '-l' flag causes statistics to be printed with more significant figures.\n" );
   printf( "<snr_cut> is an optional cut to ignore candidate events with SNR below the\n"
 	  "    specified value.\n" );
