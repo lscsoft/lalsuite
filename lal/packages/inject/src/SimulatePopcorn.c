@@ -91,31 +91,22 @@ static void Fmfunc (REAL4 *result, REAL4 phi, REAL4 costeta, REAL4 psi);
 static void Fscalfunc (REAL4 *result, REAL4 Fp, REAL4 Fm);
 
 
-/*Madau cosmic star formation rate */
-static void Rcfunc (REAL4 *result, REAL4 z)
-{
-  /*model of 1999*/
-  /*
-  *result = (0.23*exp(3.4*z)/(44.7+exp(3.8*z)));
-  */
-  /*model of 2001*/
-  *result = 0.15*(ho/0.65)/(1.+22.*exp(-3.4*z));
-  return;
-}
-
+/* flat Einstein de Sitter universe */
 static void Ezfunc (REAL4 *result, REAL4 z)
- {  
+ { 
   *result=sqrt(om*(1.+z)*(1.+z)*(1.+z)+ov);
   return;
  }
-/*comovile volume element: flat Einstein de Sitter universe */
 
+/*comovile volume element*/
 /*the factor c/Ho is omitted*/
-static void drfunc (LALStatus *s, REAL4 *result, REAL4 z1, void *p)
+static void drfunc (LALStatus *s, REAL4 *result, REAL4 z, void *p)
 {
+  REAL4 Ez;
   INITSTATUS (s, "drfunc", SIMULATEPOPCORNC);
   ATTATCHSTATUSPTR (s);
-  *result=1./sqrt((1.+z1)*(1.+z1)*(1.+om*z1)-ov*z1*(2.+z1));
+  Ezfunc(&Ez,z);
+  *result=1./Ez;
   CHECKSTATUSPTR (s);
   DETATCHSTATUSPTR (s);
   RETURN (s);
@@ -153,6 +144,16 @@ static void dVfunc (LALStatus *s, REAL4 *result, REAL4 z)
   RETURN (s);
  }
 
+/* Madau cosmic star formation rate */
+static void Rcfunc (REAL4 *result, REAL4 z)
+{
+  REAL4 Ez, corrfact;
+  Ezfunc(&Ez,z);
+  corrfact=(ho/0.65)*(Ez/sqrt((1.+z)*(1.+z)*(1.+z)));
+  /*model of 2001*/
+  *result = 0.15/(1.+22.*exp(-3.4*z));
+  return;
+}
 /*probability density of z */
 /*(dR/dz)/(Int[dR/dz,{z,0,5}]) where dR/dz = Rc*dV/(1+z) */
 /*the normalisation factor 12.25 correspond to a cosmological model with omega_matter=0.3 and omega_vacuum=0.7*/
@@ -451,7 +452,7 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
         psi=2.*LAL_PI*alea;
         LALUniformDeviate(status->statusPtr,&alea,randParams);
         if (alea<0.5){sgn=1.;}
-	 else{sgn=-1.;}
+         else{sgn=-1.;}
         LALUniformDeviate(status->statusPtr,&alea,randParams);
         costeta=sgn*alea;
         Fpfunc(&Fp, phi, costeta, psi); 
