@@ -95,6 +95,7 @@ typedef struct
 tagFindChirpSPDataParams
 {
   REAL4Vector                  *ampVec;
+  REAL4Vector                  *ampVecBCV;
   RealFFTPlan                  *fwdPlan;
   RealFFTPlan                  *invPlan;
   REAL4Vector                  *wVec;
@@ -122,8 +123,12 @@ FindChirpSPDataParams;
 
 \begin{description}
 \item[\texttt{REAL4Vector *ampVec}] A vector containing the frequency domain
-quantity $k/N$, where $k$ is the frequency series index and $N$ is the number
-of points in a data segment.
+quantity $(k/N)^{-7/6}$, where $k$ is the frequency series index and $N$ is the
+number of points in a data segment.
+
+\item[\texttt{REAL4Vector *ampVecBCV}] A vector containing the frequency domain
+quantity $(k/N)^{-1/2}$, where $k$ is the frequency series index and $N$ is the
+number of points in a data segment.
 
 \item[\texttt{REAL4Vector *fwdPlan}] An FFTW plan used to transform the
 time domain interferometer data $v(t_j)$ into its DFT $\tilde{v}_k$.
