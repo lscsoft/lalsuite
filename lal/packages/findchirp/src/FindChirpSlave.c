@@ -250,7 +250,7 @@ ExchNumTmpltsFilteredMPI (
 void
 LALFindChirpSlave (
     LALStatus                  *status, 
-    BOOLEAN                    *notFinished,
+    InspiralEvent             **outputEventHandle,
     DataSegmentVector          *dataSegVec,
     FindChirpSlaveParams       *params 
     )
@@ -263,7 +263,7 @@ LALFindChirpSlave (
   InspiralTemplateNode         *tmpltNodeHead    = NULL;
   InspiralTemplateNode         *currentTmpltNode = NULL;
   InspiralEvent                *eventList        = NULL;
-  InspiralEvent                *event            = NULL;
+  InspiralEvent               **eventListHandle  = NULL;
 #ifdef LAL_MPI_ENABLED
   UINT4                         numberOfTemplates;
   InitExchParams                initExchParams;
@@ -274,9 +274,43 @@ LALFindChirpSlave (
   INITSTATUS( status, "FindChirpSlave", FINDCHIRPSLAVEC );
   ATTATCHSTATUSPTR( status );
 
-#if 0
-  umask( 0 );
-#endif
+  ASSERT( outputEventHandle, status, 
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  ASSERT( !*outputEventHandle, status, 
+      FINDCHIRPENGINEH_ENNUL, FINDCHIRPENGINEH_MSGENNUL );
+
+  ASSERT( dataSegVec, status,
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  ASSERT( dataSegVec->data, status,
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  ASSERT( dataSegVec->data->chan, status,
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  ASSERT( dataSegVec->data->spec, status,
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  ASSERT( dataSegVec->data->resp, status,
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  
+  ASSERT( params, status,
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  ASSERT( params->rhosqThreshVec, status,
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  ASSERT( params->chisqThreshVec, status,
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  ASSERT( params->fcSegVec, status,
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  ASSERT( params->fcSegVec->data, status,
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  ASSERT( params->dataParams, status,
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  ASSERT( params->tmpltParams, status,
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  ASSERT( params->filterParams, status,
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  ASSERT( params->filterInput, status,
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  ASSERT( params->notFinished, status,
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  
 
   /*
    * 
@@ -288,6 +322,9 @@ LALFindChirpSlave (
 #ifdef LAL_MPI_ENABLED
   if ( params->useMPI )
   {
+    ASSERT( params->mpiComm, status,
+        FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+
     mpiComm = (MPI_Comm *) params->mpiComm;
     MPI_Comm_rank( initExchParams.mpiComm = *mpiComm, 
         &(initExchParams.myProcNum) );
@@ -349,7 +386,7 @@ LALFindChirpSlave (
   /* setting notFinished to zero (i.e. finished)                  */
   if ( ! tmpltBankHead )
   {
-    *notFinished = 0;
+    *(params->notFinished) = 0;
     goto exit;
   }
 
@@ -382,6 +419,12 @@ LALFindChirpSlave (
    *
    */
 
+
+  /* set the eventlist handle to contain the address of the eventList   */
+  /* passed in by the calling function. if no events are ever found     */
+  /* this remains NULL. If this is a bankSim, we free the events and    */
+  /* reset the value to be NULL                                         */
+  eventListHandle = outputEventHandle;
 
   /* if this is a simulation, initialize the simulation counter         */
   if ( params->simParams )
@@ -784,13 +827,30 @@ LALFindChirpSlave (
               currentTmplt->number, currentTmplt->mass1, currentTmplt->mass2 );
           fflush( stdout );
 #endif
+
           /* filter the data segment against the template */
-          LALFindChirpFilterSegment( status->statusPtr, &eventList, 
+          LALFindChirpFilterSegment( status->statusPtr, eventListHandle, 
               params->filterInput, params->filterParams );
           CHECKSTATUSPTR( status );
+
+          /* dereference the eventListHandle to get a pointer the events */
+          eventList = *eventListHandle;
+
 #if 0
-          fprintf( stdout, "events found at %p\n", eventList );
-          fflush( stdout );
+          {
+            InspiralEvent *tmpEvent = eventList;
+            UINT4          tmpEventCtr = 0;
+            
+            while ( tmpEvent )
+            {
+              tmpEventCtr++;
+              tmpEvent = tmpEvent->next;
+            }
+
+            fprintf( stdout, "slave: %u events found at %p\n", 
+                tmpEventCtr, eventList );
+            fflush( stdout );
+          }
 #endif
           /* process list of returned events */
           if ( eventList )
@@ -840,14 +900,14 @@ LALFindChirpSlave (
               /* if we just want the loudest event, save only the loudest */
               /* in the list for the data segment                         */
               InspiralEvent *loudestEvent = params->simParams->loudestEvent;
-              InspiralEvent *thisEvent;
 #if 0
               fprintf( stdout, "searching for loudest event\n" );
               fflush( stdout );
 #endif
-              for ( thisEvent = eventList; thisEvent; 
-                  thisEvent = thisEvent->next )
+              while ( eventList )
               {
+                InspiralEvent *thisEvent = eventList;
+
                 if ( thisEvent->snrsq > loudestEvent[i].snrsq )
                 {
 #if 0
@@ -864,33 +924,32 @@ LALFindChirpSlave (
                   loudestEvent[i].sigma   = thisEvent->sigma;
                   loudestEvent[i].effDist = thisEvent->effDist;
                 }
+
+                eventList = eventList->next;
+                LALFree( thisEvent );
+                thisEvent = NULL;
               }
+
+              /* reset the output event list handle */
+              *outputEventHandle = NULL;
+
+              ASSERT( ! *eventListHandle, status, 
+                  FINDCHIRPENGINEH_ENNUL, FINDCHIRPENGINEH_MSGENNUL );
             }
             else
             {
-#ifdef LAL_MPI_ENABLED
-              if ( params->useMPI )
-              {
-                OutputEventsMPI ( status->statusPtr, eventList, 
-                    initExchParams );
-                CHECKSTATUSPTR( status );
-              }
-              else
-#endif /* LAL_MPI_ENABLED */
-              {
-                OutputEventsFile ( status->statusPtr, eventList, 
-                    params->eventFilePtr );
-                CHECKSTATUSPTR( status );
-              }                
+              /* send a UINT4Vector of seg and tmplt numbers to the master */
             }
-
-            /* free the events */
-            while ( eventList )
+            
+            if ( eventList )
             {
-              InspiralEvent *current = eventList;
-              eventList = eventList->next;
-              LALFree( current );
-              current = NULL;
+              /* set the event list handle to the lastEvent->next pointer */
+              while ( eventList->next ) eventList = eventList->next;
+
+              eventListHandle = &(eventList->next);
+
+              ASSERT( ! *eventListHandle, status, 
+                  FINDCHIRPENGINEH_ENNUL, FINDCHIRPENGINEH_MSGENNUL );
             }
 
           } /* if ( eventList ) */
@@ -1005,7 +1064,7 @@ LALFindChirpSlave (
 #ifdef LAL_MPI_ENABLED
   if ( params->useMPI )
   {
-    *notFinished = 1;
+    *(params->notFinished) = 1;
     /* return the number of templates that we have just filtered to the */
     /* master so that it can caluclate progress information for the     */
     /* wrapperAPI                                                       */
@@ -1016,7 +1075,7 @@ LALFindChirpSlave (
   else
 #endif /* LAL_MPI_ENABLED */
   {
-    *notFinished = 0;
+    *(params->notFinished) = 0;
   }
 
   /* normal exit */
