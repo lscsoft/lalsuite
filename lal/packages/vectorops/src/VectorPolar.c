@@ -333,7 +333,7 @@ LALZVectorAngle (
   RETURN (status);
 }
 
-
+/* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>> */
 /* <lalVerbatim file="VectorPolarCP"> */
 void
 LALUnwrapREAL4Angle (
@@ -345,7 +345,8 @@ LALUnwrapREAL4Angle (
   REAL4    *a;
   REAL4    *b;
   INT4      n;
-  REAL4     cumsum;
+  INT8      countPI;
+  /*  REAL4     cumsum; */
   REAL4     phaseI;
   REAL4     phaseII;
   REAL4     diffph;
@@ -375,7 +376,8 @@ LALUnwrapREAL4Angle (
   b = out->data;
   n = out->length;
   
-  cumsum = 0.0;
+  countPI = 0;
+  /* cumsum = 0.0;*/
   phaseI = *a;
   *b = phaseI;
   --n;
@@ -388,15 +390,18 @@ LALUnwrapREAL4Angle (
     diffph = phaseII - phaseI;
     phaseI = phaseII;
     
-    cumsum += LAL_TWOPI*( (diffph < - LAL_PI) - (diffph > LAL_PI) );
-    
-    *b= phaseII + cumsum;
+    /* cumsum += LAL_TWOPI*( (diffph < - LAL_PI) - (diffph > LAL_PI) ); */
+    countPI += (diffph < -LAL_PI) - (diffph >  LAL_PI);
+
+    /* *b= phaseII + cumsum; */
+    *b= phaseII + LAL_TWOPI*( countPI );
+
   }
 
   RETURN (status);
 }
 
-
+/* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>> */
 /* <lalVerbatim file="VectorPolarCP"> */
 void
 LALUnwrapREAL8Angle (
@@ -408,7 +413,8 @@ LALUnwrapREAL8Angle (
   REAL8    *a;
   REAL8    *b;
   INT4      n;
-  REAL8     cumsum;
+  INT8      countPI;
+  /* REAL8     cumsum;*/
   REAL8     phaseI;
   REAL8     phaseII;
   REAL8     diffph;
@@ -438,7 +444,8 @@ LALUnwrapREAL8Angle (
   b = out->data;
   n = out->length;
   
-  cumsum = 0.0;
+  countPI = 0;  
+  /* cumsum = 0.0;*/
   phaseI = *a;
   *b = phaseI;
   --n;
@@ -451,9 +458,12 @@ LALUnwrapREAL8Angle (
     diffph = phaseII - phaseI;
     phaseI = phaseII;
     
-    cumsum += LAL_TWOPI*( (diffph < - LAL_PI) - (diffph > LAL_PI) );
-    
-    *b= phaseII + cumsum;
+    /* cumsum += LAL_TWOPI*( (diffph < - LAL_PI) - (diffph > LAL_PI) ); */
+    countPI += (diffph < -LAL_PI) - (diffph >  LAL_PI);
+
+    /* *b= phaseII + cumsum; */
+    *b= phaseII + LAL_TWOPI*( countPI );
+
   }
 
   RETURN (status);
