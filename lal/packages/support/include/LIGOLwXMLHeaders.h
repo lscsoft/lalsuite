@@ -384,8 +384,8 @@ fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:spin2y\" Type=\"real
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:spin2z\" Type=\"real_4\"/>\n" , fp ) && \
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:theta0\" Type=\"real_4\"/>\n" , fp ) && \
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:phi0\" Type=\"real_4\"/>\n" , fp ) && \
-fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:fLower\" Type=\"real_4\"/>\n" , fp ) && \
-fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:fFinal\" Type=\"real_4\"/>\n" , fp ) && \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:f_lower\" Type=\"real_4\"/>\n" , fp ) && \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:f_final\" Type=\"real_4\"/>\n" , fp ) && \
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:mchirp\" Type=\"real_4\"/>\n" , fp ) && \
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:eff_dist_h\" Type=\"real_4\"/>\n" , fp ) && \
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:eff_dist_l\" Type=\"real_4\"/>\n" , fp ) && \

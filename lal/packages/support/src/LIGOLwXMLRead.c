@@ -1255,8 +1255,8 @@ SimInspiralTableFromLIGOLw (
     {"spin2z",              -1, 39},
     {"theta0",              -1, 40},
     {"phi0",                -1, 41},
-    {"fLower",              -1, 42},
-    {"fFinal",              -1, 43},
+    {"f_fower",              -1, 42},
+    {"f_final",              -1, 43},
     {"mchirp",              -1, 44},
     {"eff_dist_h",          -1, 45},
     {"eff_dist_l",          -1, 46},
@@ -1505,11 +1505,11 @@ SimInspiralTableFromLIGOLw (
 	  }
 	else if ( tableDir[j].idx == 42 )
 	  {
-	    thisSim->fLower = r4colData;
+	    thisSim->f_lower = r4colData;
 	  }
 	else if ( tableDir[j].idx == 43 )
 	  {
-	    thisSim->fFinal = r4colData;
+	    thisSim->f_final = r4colData;
 	  }
 	else if ( tableDir[j].idx == 44 )
 	  {

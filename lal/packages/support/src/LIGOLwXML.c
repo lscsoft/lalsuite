@@ -540,8 +540,8 @@ LALWriteLIGOLwXMLTable (
             tablePtr.simInspiralTable->spin2z,
             tablePtr.simInspiralTable->theta0,
             tablePtr.simInspiralTable->phi0,
-            tablePtr.simInspiralTable->fLower,
-	    tablePtr.simInspiralTable->fFinal, 
+            tablePtr.simInspiralTable->f_lower,
+	    tablePtr.simInspiralTable->f_final, 
 	    /*here, I haven't used f_final as in sngl_inspiral as requested by the iul group */
             tablePtr.simInspiralTable->mchirp,
             tablePtr.simInspiralTable->eff_dist_h,
