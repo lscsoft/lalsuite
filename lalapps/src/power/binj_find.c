@@ -277,6 +277,8 @@ static SimBurstTable *read_injection_list(LALStatus *stat, char *filename, INT4 
 
 		LAL_CALL(LALSimBurstTableFromLIGOLw(stat, addpoint, line, start_time, end_time), stat);
 
+		*addpoint = trim_injection_list(*addpoint, options);
+
 		while (*addpoint)
 			addpoint = &(*addpoint)->next;
 	}
@@ -452,7 +454,9 @@ static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT4 *
 			injectionaddpoint = &(*injectionaddpoint)->next;
 
 		LAL_CALL(LALSnglBurstTableFromLIGOLw(stat, eventaddpoint, line), stat);
+
 		*eventaddpoint = trim_event_list(*eventaddpoint, options);
+
 		while(*eventaddpoint)
 			eventaddpoint = &(*eventaddpoint)->next;
 	}
@@ -665,7 +669,6 @@ int main(int argc, char **argv)
 	 */
 
 	simBurstList = read_injection_list(&stat, injectionFile, gpsStartTime, gpsEndTime, options);
-	simBurstList = trim_injection_list(simBurstList, options);
 
 	/*
 	 * Read the trigger list;  remove injections from the injection list
