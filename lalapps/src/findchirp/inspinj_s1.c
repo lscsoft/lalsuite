@@ -312,7 +312,7 @@ int inj_params( double *injPar )
 
   m1 = m1arr[i];
   m2 = m2arr[i];
-  injPar[mTotElem] = m1 * m2;
+  injPar[mTotElem] = m1 + m2;
   injPar[etaElem]  = m1 * m2 / ( ( m1 + m2 ) * ( m1 + m2 ) );
   injPar[incElem]  = -0.5 * M_PI + M_PI * my_urandom();
   injPar[phiElem]  = 2 * M_PI * my_urandom();
