@@ -226,7 +226,7 @@ def lt_coinc(segments,ligo_chunks,tama_segs,ifo_name,lt_inca_job,dt,
 
 
 def sire_segs(segments,output,file_name,sire_job,dag,playground_only=None,
-  usertag=None,tama_output=None,inj_file=None,cluster=None):
+  usertag=None,tama_output=None,slide_time=None,inj_file=None,cluster=None):
   """
   Perform coincidence test between single IFO LIGO data and TAMA data.
   Since the way we treat all this data is the same, this function is the same 
@@ -238,6 +238,8 @@ def sire_segs(segments,output,file_name,sire_job,dag,playground_only=None,
   dag = the DAG to attach the nodes to
   playground_only = flag playground only analysis
   usertag = the user tag for the job
+  tama_output = whether to output data in TAMA ascii format
+  slide_time = the time slide
   inj_file = the name of the xml file containing the injections
   cluster = flag clustering of the triggers coincident with injection
   """
@@ -267,7 +269,7 @@ def sire_segs(segments,output,file_name,sire_job,dag,playground_only=None,
       sire.add_var_opt('cluster-time',2*coinc_time)
 	  
   else:
-    sire.set_outputs(file_name,usertag,tama_output)
+    sire.set_outputs(file_name,usertag,slide_time,tama_output)
 
   dag.add_node(sire) 
 
@@ -1070,121 +1072,128 @@ if tama_coincidence:
 if tama_coincidence or slide_time:
   # a sire for all the coincidence configurations
   sire_segs(l1t1_inca_nodes,'output_a','L1-INCA_L1T1',sire_job,dag,
-    playground_only,usertag,tama_output)
+    playground_only,usertag,tama_output,slide_time)
   sire_segs(l1t1_inca_nodes,'output_b','T1-INCA_L1T1',sire_job,dag,
-    playground_only,usertag,tama_output)
+    playground_only,usertag,tama_output,slide_time)
   sire_segs(h1t1_inca_nodes,'output_a','H1-INCA_H1T1',sire_job,dag,
-    playground_only,usertag,tama_output)
+    playground_only,usertag,tama_output,slide_time)
   sire_segs(h1t1_inca_nodes,'output_b','T1-INCA_H1T1',sire_job,dag,
-    playground_only,usertag,tama_output)
+    playground_only,usertag,tama_output,slide_time)
   sire_segs(h2t1_inca_nodes,'output_a','H2-INCA_H2T1',sire_job,dag,
-    playground_only,usertag,tama_output)
+    playground_only,usertag,tama_output,slide_time)
   sire_segs(h2t1_inca_nodes,'output_b','T1-INCA_H2T1',sire_job,dag,
-    playground_only,usertag,tama_output)
+    playground_only,usertag,tama_output,slide_time)
   sire_segs(h1h2t1_inca2_nodes,'output_b','T1-INCA_H1H2T1',sire_job,dag,
-    playground_only,usertag,tama_output)
+    playground_only,usertag,tama_output,slide_time)
   sire_segs(h1h2t1_inca3_nodes,'output_a','H1-INCA_H1H2T1',sire_job,dag,
-    playground_only,usertag,tama_output)
+    playground_only,usertag,tama_output,slide_time)
   sire_segs(h1h2t1_inca3_nodes,'output_b','H2-INCA_H1H2T1',sire_job,dag,
-    playground_only,usertag,tama_output)
+    playground_only,usertag,tama_output,slide_time)
     # one last sire that contains all the coincident LIGO triggers.
   sire_segs(ligo_tama_inca_nodes,'output_a','LIGO-TAMA-COINCIDENT-TRIGGERS',
-    sire_job,dag,playground_only,usertag,tama_output)
+    sire_job,dag,playground_only,usertag,tama_output,slide_time)
   # and all the coincident TAMA triggers 
   sire_segs(ligo_tama_inca_nodes,'output_b','TAMA-LIGO-COINCIDENT-TRIGGERS',
-    sire_job,dag,playground_only,usertag,tama_output)
+    sire_job,dag,playground_only,usertag,tama_output,slide_time)
 
 if inj_file:
   if ligo_analysis:
     # sires to find all triggers coincident with injections:
+    # slide_time should be set to zero, since irrelevant for LIGO only analysis
     sire_segs(l1_single_inca_nodes,'output_a','L1-INCA_SINGLE_IFO',
-      sire_inj_job,dag,playground_only,usertag,tama_output,inj_file)
+      sire_inj_job,dag,playground_only,usertag,tama_output,0,inj_file)
     sire_segs(h1_single_inca_nodes,'output_a','H1-INCA_SINGLE_IFO',
-      sire_inj_job,dag,playground_only,usertag,tama_output,inj_file)
+      sire_inj_job,dag,playground_only,usertag,tama_output,0,inj_file)
     sire_segs(h2_single_inca_nodes,'output_a','H2-INCA_SINGLE_IFO',
-      sire_inj_job,dag,playground_only,usertag,tama_output,inj_file) 
+      sire_inj_job,dag,playground_only,usertag,tama_output,0,inj_file) 
     sire_segs(h1_h2_inca_nodes,'output_a','H1-INCA_H1H2',
-      sire_inj_job,dag,playground_only,usertag,tama_output,inj_file)
+      sire_inj_job,dag,playground_only,usertag,tama_output,0,inj_file)
     sire_segs(h1_h2_inca_nodes,'output_b','H2-INCA_H1H2',
-      sire_inj_job,dag,playground_only,usertag,tama_output,inj_file)
+      sire_inj_job,dag,playground_only,usertag,tama_output,0,inj_file)
     
    # clustered sires to find loudest triggers coincident with injections:
     cluster = 1
     sire_segs(l1_single_inca_nodes,'output_a','L1-INCA_SINGLE_IFO',
-      sire_cl_inj_job,dag,playground_only,usertag,tama_output,inj_file,cluster)
+      sire_cl_inj_job,dag,playground_only,usertag,tama_output,0,
+        inj_file,cluster)
     sire_segs(h1_single_inca_nodes,'output_a','H1-INCA_SINGLE_IFO',
-      sire_cl_inj_job,dag,playground_only,usertag,tama_output,inj_file,cluster)
+      sire_cl_inj_job,dag,playground_only,usertag,tama_output,0,
+        inj_file,cluster)
     sire_segs(h2_single_inca_nodes,'output_a','H2-INCA_SINGLE_IFO',
-      sire_cl_inj_job,dag,playground_only,usertag,tama_output,inj_file,cluster) 
+      sire_cl_inj_job,dag,playground_only,usertag,tama_output,0,
+        inj_file,cluster) 
     sire_segs(h1_h2_inca_nodes,'output_a','H1-INCA_H1H2',
-      sire_cl_inj_job,dag,playground_only,usertag,tama_output,inj_file,cluster)
+      sire_cl_inj_job,dag,playground_only,usertag,tama_output,0,
+        inj_file,cluster)
     sire_segs(h1_h2_inca_nodes,'output_b','H2-INCA_H1H2',
-      sire_cl_inj_job,dag,playground_only,usertag,tama_output,inj_file,cluster)
+      sire_cl_inj_job,dag,playground_only,usertag,tama_output,0,
+        inj_file,cluster)
   
   if tama_coincidence:
     # sire to find all TAMA triggers coincident with injections.
     sire_segs(tama_data_analyzed,'output','TAMA-INSPIRAL',
-	sire_inj_job,dag,playground_only,usertag,tama_output,inj_file)
+	sire_inj_job,dag,playground_only,usertag,tama_output,slide_time,inj_file)
     # a sire that contains all the TAMA triggers coincident with injections
     # in LIGO-TAMA times
     sire_segs(tama_segs_analyzed,'output','T1-INSPIRAL',
-	sire_inj_job,dag,playground_only,usertag,tama_output,inj_file)
+	sire_inj_job,dag,playground_only,usertag,tama_output,slide_time,inj_file)
 
     # sires to find all LT coincident triggers coincident with injections.
     sire_segs(l1t1_inca_nodes,'output_a','L1-INCA_L1T1',sire_inj_job,dag,
-      playground_only,usertag,tama_output,inj_file)
+      playground_only,usertag,tama_output,slide_time,inj_file)
     sire_segs(l1t1_inca_nodes,'output_b','T1-INCA_L1T1',sire_inj_job,dag,
-      playground_only,usertag,tama_output,inj_file)
+      playground_only,usertag,tama_output,slide_time,inj_file)
     sire_segs(h1t1_inca_nodes,'output_a','H1-INCA_H1T1',sire_inj_job,dag,
-      playground_only,usertag,tama_output,inj_file)
+      playground_only,usertag,tama_output,slide_time,inj_file)
     sire_segs(h1t1_inca_nodes,'output_b','T1-INCA_H1T1',sire_inj_job,dag,
-      playground_only,usertag,tama_output,inj_file)
+      playground_only,usertag,tama_output,slide_time,inj_file)
     sire_segs(h2t1_inca_nodes,'output_a','H2-INCA_H2T1',sire_inj_job,dag,
-      playground_only,usertag,tama_output,inj_file)
+      playground_only,usertag,tama_output,slide_time,inj_file)
     sire_segs(h2t1_inca_nodes,'output_b','T1-INCA_H2T1',sire_inj_job,dag,
-      playground_only,usertag,tama_output,inj_file)
+      playground_only,usertag,tama_output,slide_time,inj_file)
     sire_segs(h1h2t1_inca2_nodes,'output_b','T1-INCA_H1H2T1',sire_inj_job,dag,
-      playground_only,usertag,tama_output,inj_file)
+      playground_only,usertag,tama_output,slide_time,inj_file)
     sire_segs(h1h2t1_inca3_nodes,'output_a','H1-INCA_H1H2T1',sire_inj_job,dag,
-      playground_only,usertag,tama_output,inj_file)
+      playground_only,usertag,tama_output,slide_time,inj_file)
     sire_segs(h1h2t1_inca3_nodes,'output_b','H2-INCA_H1H2T1',sire_inj_job,dag,
-      playground_only,usertag,tama_output,inj_file)
+      playground_only,usertag,tama_output,slide_time,inj_file)
     # one last sire that contains all the TAMA triggers.
     sire_segs(ligo_tama_inca_nodes,'output_b','TAMA-LIGO-COINCIDENT-TRIGGERS',
-      sire_inj_job,dag,playground_only,usertag,tama_output,inj_file)
+      sire_inj_job,dag,playground_only,usertag,tama_output,slide_time,inj_file)
 
     # clustered sires to find loudest triggers coincident with injections:
     cluster = 1
     # TAMA triggers coincident with injections.
     sire_segs(tama_data_analyzed,'output','TAMA-INSPIRAL',sire_cl_inj_job,dag,
-      playground_only,usertag,tama_output,inj_file,cluster)
+      playground_only,usertag,tama_output,slide_time,inj_file,cluster)
     # a sire that contains all the TAMA triggers coincident with injections
     # in LIGO-TAMA times
     sire_segs(tama_segs_analyzed,'output','T1-INSPIRAL',sire_cl_inj_job,dag,
-      playground_only,usertag,tama_output,inj_file,cluster)
+      playground_only,usertag,tama_output,slide_time,inj_file,cluster)
 
     # sires to find all LT coincident triggers coincident with injections.
     sire_segs(l1t1_inca_nodes,'output_a','L1-INCA_L1T1',sire_cl_inj_job,dag,
-      playground_only,usertag,tama_output,inj_file,cluster)
+      playground_only,usertag,tama_output,slide_time,inj_file,cluster)
     sire_segs(l1t1_inca_nodes,'output_b','T1-INCA_L1T1',sire_cl_inj_job,dag,
-      playground_only,usertag,tama_output,inj_file,cluster)
+      playground_only,usertag,tama_output,slide_time,inj_file,cluster)
     sire_segs(h1t1_inca_nodes,'output_a','H1-INCA_H1T1',sire_cl_inj_job,dag,
-      playground_only,usertag,tama_output,inj_file,cluster)
+      playground_only,usertag,tama_output,slide_time,inj_file,cluster)
     sire_segs(h1t1_inca_nodes,'output_b','T1-INCA_H1T1',sire_cl_inj_job,dag,
-      playground_only,usertag,tama_output,inj_file,cluster)
+      playground_only,usertag,tama_output,slide_time,inj_file,cluster)
     sire_segs(h2t1_inca_nodes,'output_a','H2-INCA_H2T1',sire_cl_inj_job,dag,
-      playground_only,usertag,tama_output,inj_file,cluster)
+      playground_only,usertag,tama_output,slide_time,inj_file,cluster)
     sire_segs(h2t1_inca_nodes,'output_b','T1-INCA_H2T1',sire_cl_inj_job,dag,
-      playground_only,usertag,tama_output,inj_file,cluster)
+      playground_only,usertag,tama_output,slide_time,inj_file,cluster)
     sire_segs(h1h2t1_inca2_nodes,'output_b','T1-INCA_H1H2T1',sire_cl_inj_job,
-      dag, playground_only,usertag,tama_output,inj_file,cluster)
+      dag, playground_only,usertag,tama_output,slide_time,inj_file,cluster)
     sire_segs(h1h2t1_inca3_nodes,'output_a','H1-INCA_H1H2T1',sire_cl_inj_job,
-      dag, playground_only,usertag,tama_output,inj_file,cluster)
+      dag, playground_only,usertag,tama_output,slide_time,inj_file,cluster)
     sire_segs(h1h2t1_inca3_nodes,'output_b','H2-INCA_H1H2T1',sire_cl_inj_job,
-      dag, playground_only,usertag,tama_output,inj_file,cluster)
+      dag, playground_only,usertag,tama_output,slide_time,inj_file,cluster)
     # one last sire that contains all the TAMA triggers.
     sire_segs(ligo_tama_inca_nodes,'output_b','TAMA-LIGO-COINCIDENT-TRIGGERS',
-      sire_cl_inj_job,dag,playground_only,usertag,tama_output,inj_file,cluster)
+      sire_cl_inj_job,dag,playground_only,usertag,tama_output,slide_time,
+        inj_file,cluster)
 
 print "done"
 
