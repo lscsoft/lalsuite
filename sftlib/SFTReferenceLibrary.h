@@ -60,7 +60,7 @@ int ReadSFTHeader(FILE              *fp,          /* stream to read. Position un
 
 int ReadSFTData(FILE              *fp,       /* data file.  Position unchanged on return */
 		float             *data,     /* location where data should be written */
-		int               offset,    /* starting offset (in frequency bins) into data set */
+		int               firstbin,  /* first frequency bin to read from data set */
 		int               nsamples,  /* number of frequency bin samples to retrieve */
 		char              **comment, /* if non-NULL, will contain pointer to comment string */
 		struct headertag2 *info      /* if non-NULL, will contain header information */
@@ -100,8 +100,8 @@ int CheckSFTHeaderConsistency(struct headertag2 *headerone, /* pointer to earlie
 #define SFTEFIRSTINDEXNEG      24
 #define SFTENSAMPLESNOTPOS     25
 #define SFTEINSTRUMENTUNKNOWN  26
-#define SFTEINSTRUMENTILLEGAL  27
-
+#define SFTEBEFOREDATA         27
+#define SFTEAFTERDATA          28
 
 /* takes error code from above list and returns static human-readable
    description as null-terminated string */
@@ -111,7 +111,6 @@ const char *SFTErrorMessage(int errorcode);
 const char *ReferenceSFTLibraryVersion(void);
 
 /* internal functions for checking validity of detector-entry */
-int validDetector (const char *detector); 	/* detector-syntax valid? */
-int knownDetector (const char *detector);	/* known detector? */
+int unknownDetector (const char *detector);	/* returns zero if detector is known */
 
 #endif /* REFERENCESFTLIBRARY_H_ */

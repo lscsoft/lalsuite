@@ -192,9 +192,11 @@ const char *SFTErrorMessage(int errorcode) {
   case SFTENSAMPLESNOTPOS:
     return "SFT number of data samples is not positive";
   case SFTEINSTRUMENTUNKNOWN:
-    return "Unknown SFT instrument (detector)";
-  case SFTEINSTRUMENTILLEGAL:
-    return "Illegal detector-entry: must be a capital letter followed by a digit";
+    return "SFT detector not one of A1 B1 E1 G1 H1 H2 K1 L1 N1 O1 P1 T1 V1 V2";
+  case SFTEBEFOREDATA:
+    return "SFT data requested lies before available data";
+  case SFTEAFTERDATA:
+    return "SFT data requested lies after available data";
   }
   return "SFT Error Code not recognized";
 }
@@ -236,13 +238,16 @@ int WriteSFT(FILE *fp,            /* stream to write to */
   if (firstfreqindex<0)
     return SFTEFIRSTINDEXNEG;
 
+  /* check that number of samples is 1 or greater */
   if (nsamples<=0)
     return SFTENSAMPLESNOTPOS;
 
-  if (!validDetector (detector))
-    return SFTEINSTRUMENTILLEGAL;
+  /* check that detector type is defined and data is present */
+  if (!detector || !data)
+    return SFTENULLPOINTER;
 
-  if (!knownDetector(detector))
+  /* check that detector type is recognized */
+  if (strlen(detector)>2 || unknownDetector(detector))
     return SFTEINSTRUMENTUNKNOWN;
 
   /* comment length including null terminator to string must be an
@@ -454,30 +459,32 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
     }
   }
 
+  /* check that time stamps are in a valid range */
   if (header.gps_nsec < 0 || header.gps_nsec > 999999999) {
     retval=SFTEGPSNSEC;
     goto error;
   }
   
+  /* check that tbase is positive */
   if (header.tbase<=0.0) {
     retval=SFTETBASENOTPOS;
     goto error;
   }
 
+  /* check that first frequency index is non-negative */
   if (header.firstfreqindex<0){
     retval=SFTEFIRSTINDEXNEG;
     goto error;
   }
 
+  /* check that number of samples is 1 or greater */
   if (header.nsamples<=0){
     retval=SFTENSAMPLESNOTPOS;
     goto error;
   }
-
-  if (!validDetector (header.detector))
-    return SFTEINSTRUMENTILLEGAL;
   
-  if (!knownDetector (header.detector))
+  /* check that detector type is known */
+  if (header.version!=1 && unknownDetector(header.detector))
     return SFTEINSTRUMENTUNKNOWN;
 
   /* if user has asked for comment, store it */
@@ -532,7 +539,7 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
     *comment=mycomment;
 
   /* return header-info */
-  memcpy(info, &header, sizeof(header));  
+  *info=header;
 
   return SFTNOERROR;
 }
@@ -541,7 +548,7 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
 
 int ReadSFTData(FILE *fp,                /* data file.  Position left unchanged on return */
 		float *data,             /* location where data should be written */
-		int offset,              /* starting offset (in frequency bins) into data set */
+		int firstbin,            /* first frequency bin to read from data set */
 		int nsamples,            /* number of frequency bin samples to retrieve */
 		char **comment,          /* if non-NULL, will contain pointer to comment string */
 		struct headertag2 *info  /* if non-NULL, will contain header information */
@@ -565,12 +572,28 @@ int ReadSFTData(FILE *fp,                /* data file.  Position left unchanged 
   /* read header of SFT */
   if ((retval=ReadSFTHeader(fp, &myinfo, comment, &swapendian, 0)))
     goto error;
-  
+
+  /* sanity checks -- do we ask for data before the first frequency bin */
+  if (firstbin<myinfo.firstfreqindex) {
+    retval=SFTEBEFOREDATA;
+    goto error;
+  }
+
+  /* warning, after this subtraction firstbin contains the offset to
+     the first requested bin! */
+  firstbin -= myinfo.firstfreqindex;
+
+  /* sanity checks -- do we ask for data after the last frequency bin */
+  if ((firstbin+nsamples)> myinfo.nsamples) {
+    retval=SFTEAFTERDATA;
+    goto error;
+  }
+
   /* seek to start of data (skip comment if present) */
   if (myinfo.version == 1)
-    seekforward=sizeof(struct headertag1);
+    seekforward=sizeof(struct headertag1)+firstbin*2*sizeof(float);
   else
-    seekforward=sizeof(struct headertag2)+myinfo.comment_length;
+    seekforward=sizeof(struct headertag2)+myinfo.comment_length+firstbin*2*sizeof(float);
   if (fseek(fp, seekforward, SEEK_CUR)) {
     retval=SFTESEEK;
     goto error2;
@@ -603,7 +626,7 @@ int ReadSFTData(FILE *fp,                /* data file.  Position left unchanged 
 
   /* if no errors, return header information */
   if (info && !retval)
-    memcpy(info, &myinfo, sizeof(myinfo));
+    *info=myinfo;
   
   return retval;
 }
@@ -644,61 +667,39 @@ int CheckSFTHeaderConsistency(struct headertag2 *headerone, /* pointer to earlie
   return SFTNOERROR;
 }
 
-/* check that channel-prefix defining detector is valid.
- * returns 1 if valid, 0 otherwise */
-int validDetector (const char *detector)
-{
-  if (!detector)
-    return 0;
-
-  if ( isupper(detector[0]) && isdigit(detector[1]) )
-    return 1;
-  else
-    return 0;
-} /* validDetector() */
-
-/* check that channel-prefix defines a 'known' detector. 
- * The list of known detectors implemented here for now 
- * follows the list in Appendix D of LIGO-T970130-F-E:
+/* check that channel-prefix defines a 'known' detector.  The list of
+ * known detectors implemented here for now follows the list in
+ * Appendix D of LIGO-T970130-F-E:
  *
- * returns 1 if known, 0 otherwise */
-int knownDetector (const char *detector)
-{
-  char buf[3];
+ * returns 0 if known, error code otherwise */
+int unknownDetector (const char *detector) {
   int i;
   const char *knownDetectors[] = {
-    "T1",	/* TAMA_300 */
-    "V1",	/* Virgo_CITF */
-    "V2",	/* Virgo (3km) */
-    "G1",	/* GEO_600 */
-    "H2",	/* LHO_2k */
-    "H1",	/* LHO_4k */
-    "L1",	/* LLO_4k */
-    "P1",	/* CIT_40 */
-    "A1",	/* ALLEGRO */
-    "O1",	/* AURIGA */
-    "E1",	/* EXPLORER */
-    "B1",	/* NIOBE */
-    "N1",	/* Nautilus */
-    "K1",	/* ACIGA */
+    "A1",       /* ALLEGRO */
+    "B1",       /* NIOBE */
+    "E1",       /* EXPLORER */
+    "G1",       /* GEO_600 */
+    "H1",       /* LHO_4k */
+    "H2",       /* LHO_2k */
+    "K1",       /* ACIGA */
+    "L1",       /* LLO_4k */
+    "N1",       /* Nautilus */
+    "O1",       /* AURIGA */
+    "P1",       /* CIT_40 */
+    "T1",       /* TAMA_300 */
+    "V1",       /* Virgo_CITF */
+    "V2",       /* Virgo (3km) */
     NULL
   };
 
   if (!detector)
-    return 0;
+    return SFTENULLPOINTER;
 
-  buf[0] = detector[0];
-  buf[1] = detector[1];
-  buf[2] = 0;
-
-  i = 0;
-  while ( knownDetectors[i] )
-    {
-      if ( !strcmp (knownDetectors[i], buf) )
-	return 1;
-      i ++;
-    }
+  for (i=0; knownDetectors[i]; i++) {
+    if (!strncmp(knownDetectors[i], detector, 2))
+      return 0;
+  }
   
-  return 0;
+  return SFTEINSTRUMENTUNKNOWN;
 
-} /* knownDetector() */
+} /* uknownDetector() */

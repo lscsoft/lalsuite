@@ -51,10 +51,13 @@ int main(int argc, char **argv) {
 	printf("Timebase:             %-16f\n", info.tbase);
 	printf("First frequency bin:  %d\n", info.firstfreqindex);
 	printf("Number of freq bins:  %d\n", info.nsamples);
-	printf("Detector prefix:      %c%c\n", info.detector[0], info.detector[1]);
-	printf("64-bit CRC checksum:  %llu\n", info.crc64);
-	printf("Comment length bytes: %d\n", info.comment_length);
 	printf("Endian order:         %s\n", swapendian?"reversed":"native");
+	if (1 != info.version) {
+	  printf("Detector prefix:      %c%c\n", info.detector[0], info.detector[1]);
+	  printf("64-bit CRC checksum:  %llu\n", info.crc64);
+	  printf("Comment length bytes: %d\n", info.comment_length);
+	}
+
 	if (info.comment_length) {
 	  printf("Comment:              %s\n", mycomment);
 	  free(mycomment);
@@ -67,7 +70,7 @@ int main(int argc, char **argv) {
 	   header, and you already know (for example) the frequency bin
 	   offsets, etc, then you ONLY need to call ReadSFTData().  You
 	   don't need to call ReadSFTHeader() above. */
-	if ((err=ReadSFTData(fp, mydata, 0, info.nsamples, NULL, NULL))){
+	if ((err=ReadSFTData(fp, mydata, info.firstfreqindex, info.nsamples, NULL, NULL))){
 	  fprintf(stderr, "ReadSFTData failed with error %s\n", SFTErrorMessage(err));
 	  if (errno)
 	    perror(NULL);
@@ -75,9 +78,12 @@ int main(int argc, char **argv) {
 	}
 	else {
 	  int j;
-	  printf("Freq_bin  Real          Imaginary\n");
+	  printf("Freq_bin  Frequency_Hz             Real           Imaginary\n");
 	  for (j=0; j<info.nsamples; j++)
-	    printf("%8d  %e  %e\n", j+info.firstfreqindex, mydata[2*j], mydata[2*j+1]);
+	    printf("%8d  %18.18f  % e  % e\n",
+		   j+info.firstfreqindex, 
+		   (double)(j+info.firstfreqindex)/(double)info.tbase,
+		   mydata[2*j], mydata[2*j+1]);
 	  printf("\n");
 	  fflush(stdout);
 	  free(mydata);

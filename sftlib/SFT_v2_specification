@@ -1,7 +1,12 @@
+September 17, 2004
+------------------
+After discussion with the pulsar search group, added detector type to
+SFT header.
+
 September 14, 2004
 ------------------
-After discussions with the pulsar search group, updated spec to require that
-all SFT blocks share some common header info.
+After discussions with the pulsar search group, updated spec to
+require that all SFT blocks share some common header info.
 
 
 September 9, 2004
@@ -19,8 +24,8 @@ $Id$
 
 SFT Data Format Version 2 Specification
 
-An SFT is stored in a file.  The file is composed of concurrent SFT
-BLOCKS.
+An SFT is stored in a file. See below for file name convensions. The
+file is composed of concurrent SFT BLOCKS.
 
 Each SFT BLOCK is organized as follows:
 
@@ -91,7 +96,7 @@ In other words the GPS start time of a given block may or may not
 equal the GPS start time of the previous block plus the time baseline.
 
 
-Note that this HEADER corresponds to the C structure below
+Note that the HEADER corresponds to the C structure below
 struct SFTtag {
   REAL8  version:
   INT4   gps_sec;
@@ -180,16 +185,29 @@ crc64: The 64-bit CRC checksum of the 48+8*n+8*N bytes that make up
        The primitive polynomial is x^64 + x^4 + x^3 + x + 1.
        The CRC will be initialized to all ones (~0ULL).
 
-detector: a two-character prefix of the from 'Xn' characterizing the detector, where 
-	X is a single capital letter describing the site 
-		(H=Hanford, L=Livingston, G=GEO, V=Virgo, T=TAMA,...)
-	n is the detector number,
-	e.g. L1 for LLO, H1 for LHO4km, H2 for LHO2km, etc.
-	(this follows the naming convention for the channel-name prefix
-	 in the Frame-format, cf. LIGO-T970130-F-E:)  
+detector: two characters of the form 'Xn' characterizing the detector,
+       following the naming convention for the channel-name prefix
+       in the Frame-format, cf. LIGO-T970130-F-E.
+	X is a single capital letter describing the site.
+	n is the detector number.
+       Currently allowed names are:
+	  "A1",       /* ALLEGRO */
+  	  "B1",       /* NIOBE */
+    	  "E1",       /* EXPLORER */
+          "G1",       /* GEO_600 */
+          "H1",       /* LHO_4k */
+          "H2",       /* LHO_2k */
+          "K1",       /* ACIGA */
+          "L1",       /* LLO_4k */
+          "N1",       /* Nautilus */
+          "O1",       /* AURIGA */
+          "P1",       /* CIT_40 */
+          "T1",       /* TAMA_300 */
+          "V1",       /* Virgo_CITF */
+          "V2",       /* Virgo (3km) */
 
-padding:  These two bytes will be set to zero.  They are here so that all 8-byte
-          quantities are byte aligned with respect to the header.  This may permit
+padding:  These two bytes will be set to zero.  They are here so that all multi-byte
+          quantities are byte-aligned with respect to the header.  This may permit
           certain efficiencies and library usages on certain platforms/architectures.
 
 comment_length: The number of bytes that appear in ASCII COMMENT.
