@@ -252,6 +252,8 @@ int main(int argc, char* argv[]) {
 	}
       }
       else { 
+	int shouldbethere,my1=filepointer1;
+
 	/* missing data */
 	if (fp2==NULL){
 	  char fname[256];
@@ -264,6 +266,23 @@ int main(int argc, char* argv[]) {
 	}
         fprintf(fp2,"Data missing for SFT starting at %d\n",thistime);
 	fprintf(fp2,"Missing data GPS frames in range %d to %d\n",firstframe,lastframe);
+	
+	/* to list the missing frames, first step through all the
+	   frames that SHOULD be there */
+	for (shouldbethere=firstframe; shouldbethere<=lastframe; shouldbethere+=framesec){
+	  /* for each of these, step through the list are frames that ARE there */
+	  int arethere, foundit=0;
+	  for (arethere=my1; arethere<=filepointer2; arethere++)
+	    /* if we find the frame in the list, then break out of this inner loop */
+	    if (starttimes[arethere]==shouldbethere){
+	      my1=arethere;
+	      foundit=1;
+	      break;
+	    }
+	  /* see if we found it */ 
+	  if (!foundit)
+	    fprintf(fp2,"  Missing frame from %d to %d\n", shouldbethere, shouldbethere+framesec);
+	}
       }
     }
   }
