@@ -72,7 +72,7 @@ typedef struct tagBurstParameter {
   REAL4 *real4_;
   REAL4Vector *real4vector_;
 
-  BOOLEAN random;
+  INT4 random;
 } BurstParameter;
 /* </lalVerbatim> */
 
