@@ -1,6 +1,6 @@
 function [Dat,Segs] = read_burstdso_files(path,I,username);
 
-if(nargin==2)
+if(nargin<=2)
      [st,username] = system('whoami');
      if(st) 
      error('cannot get user name from whoami; use read_burstdso_files(path,I,username)');
