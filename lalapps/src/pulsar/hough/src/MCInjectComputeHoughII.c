@@ -1042,7 +1042,7 @@ void GenerateInjectTemplateParams(LALStatus   *status,
     
    /*
  *  norm = sqrt(dX1*dX1 + dX2*dX2); 
- *     /* calculate the mismatch in around the south pole
+ *     calculate the mismatch in around the south pole
  *     mismatch.delta = - LAL_PI_2 - norm;
  *     mismatch.alpha = acos(dX1/norm);
  *     acos gives angle in (0,pi) so need to correct if dX2 < 0 to get range in (0,2*pi) 

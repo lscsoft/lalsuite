@@ -12,8 +12,8 @@
  *     Note the naming convention!
  */
 
-#ifndef _MCINJECTCOMPUTEHOUGH_H
-#define _MCINJECTCOMPUTEHOUGH_H
+#ifndef _MCINJECTHOUGHS2_H
+#define _MCINJECTHOUGHS2_H
 
 #include <time.h>
 #include <math.h>
@@ -129,6 +129,7 @@ INT4 lalDebugLevel=1;
 #define NH0 1 /* number of h0 values to be anlyzed */
 #define H0MIN 1.0e-23
 #define NMCLOOP 10 /* number of Monte-Carlos */
+#define NTEMPLATES 16 /* number templates for each Monte-Carlo */
 
 #define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs/"
 #define FILEOUT "./HoughMC"      /* prefix file output */
@@ -193,6 +194,12 @@ void GenerateInjectParams(LALStatus  *status,
                         HoughTemplate        *templatePulsar,
 			HoughNearTemplates   *closeTemplates,
                         HoughInjectParams    *params);
+
+void ComputeFoft(LALStatus   *status,
+                 REAL8Vector          *foft,
+                 HoughTemplate        *pulsarTemplate,
+                 REAL8Vector          *timeDiffV,
+                 REAL8Cart3CoorVector *velV);
 
 /* ****************************************************** */
 

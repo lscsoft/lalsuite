@@ -39,7 +39,7 @@ Input shoud be from
    signals. 
 */
 
-#include "./MCInjectComputeHough.h" /* proper path*/
+#include "./MCInjectHoughS2.h" /* proper path*/
 
 
 /******************************************************
@@ -48,7 +48,6 @@ Input shoud be from
 
 NRCSID (MCINJECTHOUGHS2C, "$Id$");
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
 int main(int argc, char *argv[]){
 
@@ -58,6 +57,7 @@ int main(int argc, char *argv[]){
   static REAL8Cart3CoorVector velV;
   static REAL8Vector          timeDiffV;
   static REAL8Vector          foft;
+  static REAL8Vector          foftV[NTEMPLATES];
   static REAL8Vector          h0V;
  
   static HoughInjectParams    injectPar;
@@ -82,11 +82,13 @@ int main(int argc, char *argv[]){
     
   UINT4  msp; /*number of spin-down parameters */
   INT4   ifo;
-  CHAR   filelist[MAXFILES][MAXFILENAMELENGTH];
-  
+  CHAR   filelist[MAXFILES][MAXFILENAMELENGTH];  
   CHAR   *directory = NULL; /* the directory where the SFT  could be */
   CHAR   *fnameOut = NULL;               /* The output prefix filename */
-  UINT4  numberCount;
+  
+  UINT4  numberCount,maxNumberCount;
+  INT4   nTemplates, controlN, controlNH;
+  UINT4  numberCountV[NTEMPLATES];
    
   INT4   mObsCoh, nfSizeCylinder;
   INT8   f0Bin, fLastBin;           /* freq. bin to perform search */
@@ -138,6 +140,7 @@ int main(int argc, char *argv[]){
   h0Max = H0MIN;
   
   nMCloop = NMCLOOP;
+  nTemplates = NTEMPLATES;
   
   alpha = ALPHA;
   delta = DELTA;
@@ -742,13 +745,24 @@ int main(int argc, char *argv[]){
   foft.length = mObsCoh;
   foft.data = NULL;
   foft.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
+  {
+    UINT4 j;
+    for (j=0;j<nTemplates;++j) {
+      foftV[j].length = mObsCoh;
+      foftV[j].data = NULL;
+      foftV[j].data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
+    }
+  }
+
+
   /* ****************************************************************/
- 
-  
   /*  HERE SHOULD START THE MONTE-CARLO */
-  
-  
+    
   for(MCloopId=0; MCloopId < nMCloop; ++MCloopId){
+
+    controlN=1; /* checks if near template corresponds to max number count*/
+    controlNH=1;  /* checks if near template corresponds to max 
+    		number count for the highest h0 value */
     
     SUB( GenerateInjectParams(&status, &pulsarInject, &pulsarTemplate,
 			&closeTemplates, &injectPar), &status );
@@ -764,71 +778,53 @@ int main(int argc, char *argv[]){
     params.pulsar.f0=     pulsarInject.f0;
     params.pulsar.spindown=  &pulsarInject.spindown ;
     
-    
     SUB( LALGeneratePulsarSignal(&status, &signalTseries, &params ), &status);
     SUB( LALSignalToSFTs(&status, &outputSFTs, signalTseries, &sftParams), 
 	 &status);
-    
-    /* ****************************************************************/
-    /* writing the parameters into fpPar, following the format
-       MCloopId  I.f0 H.f0 I.f1 H.f1 I.alpha H.alpha I.delta H.delta I.phi0  I.psi
-       (not cos iota)  */
-    /* ****************************************************************/   
-    fprintf(fpPar," %d %f %f %g %g %f %f %f %f %f %f \n", 
-	    MCloopId, pulsarInject.f0, pulsarTemplate.f0,
-	    pulsarInject.spindown.data[0], pulsarTemplate.spindown.data[0],
-	    pulsarInject.longitude, pulsarTemplate.longitude,
-	    pulsarInject.latitude, pulsarTemplate.latitude,
-	    pulsarInject.phi0, pulsarInject.psi
-	    );
 	   
-    fprintf(fpNc, " %d ",  MCloopId);
-
     /* ****************************************************************/
-    /* Computing the frequency path f(t) = f0(t)* (1+v/c.n)  fot the Hough map */
+    /* Computing the frequency path f(t) = f0(t)* (1+v/c.n)  for */
+    /*  all the different templates */
     /* ****************************************************************/   
-    {
-      REAL8   f0new, vcProdn, timeDiffN;
-      REAL8   sourceDelta, sourceAlpha, cosDelta;
-      INT4   j,i, nspin, factorialN; 
-      REAL8Cart3Coor       sourceLocation;
-      
-      sourceDelta = pulsarTemplate.latitude;
-      sourceAlpha = pulsarTemplate.longitude;
-      cosDelta = cos(sourceDelta);
-      
-      sourceLocation.x = cosDelta* cos(sourceAlpha);
-      sourceLocation.y = cosDelta* sin(sourceAlpha);
-      sourceLocation.z = sin(sourceDelta);
-      
-      nspin = pulsarTemplate.spindown.length;
-      for (j=0; j<mObsCoh; ++j){  /* loop for all different time stamps */
-	vcProdn = velV.data[j].x * sourceLocation.x
-	  + velV.data[j].y * sourceLocation.y
-	  + velV.data[j].z * sourceLocation.z;
-	f0new = pulsarTemplate.f0;
-	factorialN = 1;
-	timeDiffN = timeDiffV.data[j];
-	
-	for (i=0; i<nspin;++i){ /* loop for spin-down values */
-	  factorialN *=(i+1);
-	  f0new += pulsarTemplate.spindown.data[i]* timeDiffN / factorialN;
-	  timeDiffN *= timeDiffN;
-	}
-	foft.data[j] = f0new * (1.0 +vcProdn);
-      }    
-    }
+
+    /* the geometrically nearest template */
+    SUB( ComputeFoft(&status, &foft,&pulsarTemplate,&timeDiffV,&velV), &status);
     
+    /* for all the 16 near templates */
+    {
+      UINT4 j,i,k, itemplate;
+      
+      itemplate =0;
+      for(j=0;j<2;++j){
+        pulsarTemplate.f0 = closeTemplates.f0[j];
+        for(i=0;i<2;++i){
+          pulsarTemplate.spindown.data[0] = closeTemplates.f1[i];
+	  for(k=0;k<4;++k){
+	    pulsarTemplate.latitude = closeTemplates.skytemp[k].delta;
+	    pulsarTemplate.longitude = closeTemplates.skytemp[k].alpha;
+            SUB( ComputeFoft(&status, &(foftV[itemplate]),
+	                   &pulsarTemplate,&timeDiffV,&velV), &status);
+            ++itemplate;
+	  }
+	}
+      }
+    }
+     
     /*  HERE THE LOOP FOR DIFFERENT H0 VALUES */
+    
+    fprintf(fpNc, " %d ",  MCloopId);
     
     for(h0loop=0; h0loop <nh0; ++h0loop){
       
-      INT4  j, i, index; 
+      INT4  j, i, index, itemplate; 
       COMPLEX8 *noise1SFT;
       COMPLEX8 *signal1SFT;
       COMPLEX8 *sumSFT;
       
       numberCount=0;
+      for(itemplate=0; itemplate<nTemplates; ++itemplate){
+        numberCountV[itemplate]=0;
+      }
       h0scale =h0V.data[h0loop]/h0V.data[0]; /* different for different h0 values */
       
       /* ****************************************************************/
@@ -856,19 +852,47 @@ int main(int argc, char *argv[]){
 	/* SUB( Periodo2PSDrng( &status, 
                      &periPSD.psd, &periPSD.periodogram, &blocksRngMed),  &status ); */	
 	SUB( LALSelectPeakColorNoise(&status,&pg1,&threshold,&periPSD), &status); 	
+
 	index = floor( foft.data[j]*timeBase -sftFminBin+0.5); 
 	numberCount+=pg1.data[index]; /* adds 0 or 1 to the counter*/
+
+        for (itemplate=0; itemplate<nTemplates; ++itemplate) {
+	  index = floor( foftV[itemplate].data[j]*timeBase -sftFminBin+0.5); 
+          numberCountV[itemplate]+=pg1.data[index];
+        }
       }
       
+      /*check the max number count */
+      maxNumberCount = numberCount;
+      for (itemplate=0; itemplate<nTemplates; ++itemplate) {
+         if( numberCountV[itemplate] > maxNumberCount ) {
+	   maxNumberCount = numberCountV[itemplate];
+	   controlN=0;
+	   if (h0loop == (nh0-1)) controlNH=0;
+	 }
+      }
       /******************************************************************/
       /* printing result in the proper file */
       /******************************************************************/
-      /*fprintf(fp[h0loop], " %d %d \n",  MCloopId, numberCount); */
-       fprintf(fpNc, " %d ", numberCount);
+      fprintf(fpNc, " %d ", maxNumberCount);
      
     } /* closing loop for different h0 values */
     fprintf(fpNc, " \n");
+    
+    
 
+    /* ****************************************************************/
+    /* writing the parameters into fpPar, following the format
+       MCloopId  I.f0 H.f0 I.f1 H.f1 I.alpha H.alpha I.delta H.delta I.phi0  I.psi
+       (not cos iota)  */
+    /* ****************************************************************/   
+    fprintf(fpPar," %d %f %f %g %g %f %f %f %f %f %f %d %d\n", 
+	    MCloopId, pulsarInject.f0, pulsarTemplate.f0,
+	    pulsarInject.spindown.data[0], pulsarTemplate.spindown.data[0],
+	    pulsarInject.longitude, pulsarTemplate.longitude,
+	    pulsarInject.latitude, pulsarTemplate.latitude,
+	    pulsarInject.phi0, pulsarInject.psi, controlN, controlNH
+	    );
     
     LALFree(signalTseries->data->data);
     LALFree(signalTseries->data);
@@ -901,6 +925,13 @@ int main(int argc, char *argv[]){
   LALFree(velV.data);
   LALFree(foft.data);
   LALFree(h0V.data);
+  {
+     UINT4 j;
+     for (j=0;j<nTemplates;++j) {
+        LALFree(foftV[j].data);
+     }
+   }
+
   
   LALFree(injectPar.spnFmax.data);
   LALFree(pulsarInject.spindown.data);
@@ -929,7 +960,7 @@ int main(int argc, char *argv[]){
 /***************************************************************************/
 void GenerateInjectParams(LALStatus   *status,
                         PulsarData           *injectPulsar,
-                        HoughPulsarTemplate  *templatePulsar,
+                        HoughTemplate        *templatePulsar,
 			HoughNearTemplates   *closeTemplates,
                         HoughInjectParams    *params){
 			
@@ -946,7 +977,7 @@ void GenerateInjectParams(LALStatus   *status,
   UINT4    msp;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "GenerateInjectTemplateParams", MCINJECTCOMPUTEHOUGHC);
+  INITSTATUS (status, "GenerateInjectParams", MCINJECTHOUGHS2C);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
@@ -1132,3 +1163,65 @@ void GenerateInjectParams(LALStatus   *status,
   RETURN (status);
 }
 
+
+/* ****************************************************************/
+/* Computing the frequency path f(t) = f0(t)* (1+v/c.n)   */
+/* ****************************************************************/   
+/******************************************************************/
+void ComputeFoft(LALStatus   *status,
+		 REAL8Vector          *foft,
+                 HoughTemplate        *pulsarTemplate,
+		 REAL8Vector          *timeDiffV,
+		 REAL8Cart3CoorVector *velV){
+  
+  INT4   mObsCoh;
+  REAL8   f0new, vcProdn, timeDiffN;
+  REAL8   sourceDelta, sourceAlpha, cosDelta;
+  INT4    j,i, nspin, factorialN; 
+  REAL8Cart3Coor  sourceLocation;
+  
+  /* --------------------------------------------- */
+  INITSTATUS (status, "ComputeFoft", MCINJECTHOUGHS2C);
+  ATTATCHSTATUSPTR (status);
+  
+  /*   Make sure the arguments are not NULL: */
+  ASSERT (foft,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (pulsarTemplate,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (timeDiffV,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (velV,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  
+  ASSERT (foft->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (timeDiffV->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (velV->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  
+  sourceDelta = pulsarTemplate->latitude;
+  sourceAlpha = pulsarTemplate->longitude;
+  cosDelta = cos(sourceDelta);
+  
+  sourceLocation.x = cosDelta* cos(sourceAlpha);
+  sourceLocation.y = cosDelta* sin(sourceAlpha);
+  sourceLocation.z = sin(sourceDelta);
+    
+  mObsCoh = foft->length;    
+  nspin = pulsarTemplate->spindown.length;
+  
+  for (j=0; j<mObsCoh; ++j){  /* loop for all different time stamps */
+    vcProdn = velV->data[j].x * sourceLocation.x
+      + velV->data[j].y * sourceLocation.y
+      + velV->data[j].z * sourceLocation.z;
+    f0new = pulsarTemplate->f0;
+    factorialN = 1;
+    timeDiffN = timeDiffV->data[j];
+    
+    for (i=0; i<nspin;++i){ /* loop for spin-down values */
+      factorialN *=(i+1);
+      f0new += pulsarTemplate->spindown.data[i]* timeDiffN / factorialN;
+      timeDiffN *= timeDiffN;
+    }
+    foft->data[j] = f0new * (1.0 +vcProdn);
+  }    
+    
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}			

@@ -86,7 +86,7 @@ NRCSID (MCINJECTCOMPUTEHOUGHH, "$Id$");
         Default: 1.6 (almost optimal)\n\
  [-w running median window size ] \n\
         To estimate the psd \n\
- 	Default: 25\n\
+ 	Default: 101\n\
  [-p alpha delta (in radians)] \n\
         Center of the sky patch (in radians) to be analysed.\n\
         Default: alpha = 0.0, delta = - pi/2 \n\
