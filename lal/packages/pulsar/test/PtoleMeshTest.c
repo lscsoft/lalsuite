@@ -1,5 +1,5 @@
 /************************************** <lalVerbatim file="PtoleMeshTestCV">
-Author: Owen, B. J.
+Author: Owen, B. J.,   Jones, D. I.  
 $Id$
 ********************************************************** </lalVerbatim> */
  
@@ -40,10 +40,16 @@ argument. (Default is 0.02.)
 The \texttt{-n} option sets the maximum number of nodes in the mesh to the
 option argument. (Default is $10^6$.)
 
-The \texttt{-r} option sets the radius (in arcminutes) of the circular sky
-patch. (The default value is set for the globular cluster 47 Tuc.) At the
-moment there is no option for another patch shape, but if you specify radius
-zero you will get an all-sky search.
+The texttt{-p} option causes the coordinates of the nodes to be written to 
+a file \texttt{mesh.dat}, for the benifit of users who don't have 
+\texttt{xmgrace} installed.  The format is one node per line, (RA, DEC), 
+with the angles in radians.
+
+The \texttt{-r} option sets the radius (in arcminutes) of the circular
+sky patch. (The default value is set for the globular cluster 47 Tuc.)
+At the moment there is no option for another patch shape, but if you
+specify radius zero you will get a search over a rectangular region
+whose limits in RA and dec are specified in the code.
 
 The \texttt{-t} option sets the duration of integration, in seconds. (The
 default is $10^5$ seconds, which is of order one day but is not an integer
@@ -101,6 +107,15 @@ NRCSID( PTOLEMESHTESTC, "$Id$" );
 #define MIN_FREQ     1e2                /* more or less arbitrary */
 #define MAX_FREQ     1e4                /* more or less arbitrary */
 
+/* IAN: Clumsy way of specifying rectangular search region if */
+/* the r=0 option is invoked.                                 */
+#define RA_min       0.0
+#define RA_max       0.999999*LAL_TWOPI
+#define dec_min     -LAL_PI_2
+#define dec_max      LAL_PI_2
+
+
+
 char *optarg = NULL;     /* option argument for getopt() */
 int  lalDebugLevel = 1;  /* default value */
 
@@ -111,13 +126,13 @@ void getMetric( LALStatus *, REAL4 [3], REAL4 [2], void * );
 static SkyPosition center;  /* center of search */
 REAL4              radius;  /* radius of search, in arcminutes */
 
-
 int main( int argc, char **argv )
 {
   static LALStatus     stat;      /* status structure */
   INT2                 opt;       /* command-line option character */
   BOOLEAN              errors;    /* whether or not to showcase error traps */
   BOOLEAN              grace;     /* whether or not to graph using xmgrace */
+  BOOLEAN              nonGrace;  /* whether or not to write to data file */
   TwoDMeshNode        *firstNode; /* head of linked list of nodes in mesh */
   static TwoDMeshParamStruc mesh; /* mesh parameters */
   static PtoleMetricIn search;    /* more mesh parameters */
@@ -129,9 +144,12 @@ int main( int argc, char **argv )
   LALFrDetector        site;      /* detector site */
   FILE                *fp;        /* where to write a plot */
 
+  
+
   /* Set default values. */
   errors = 0; /* BEN: this is unused right now */
   grace = 0;
+  nonGrace = 0;
   begin = 7e8;
   duration = 1e5;
   fMax = 1e3;
@@ -140,12 +158,12 @@ int main( int argc, char **argv )
   maxNodes = 1e6;
   /* This is (roughly) the center of globular cluster 47 Tuc. */
   center.system = COORDINATESYSTEM_EQUATORIAL;
-  center.longitude = (24.1/60)*LAL_PI_180*15;
+  center.longitude = (24.1/60)*LAL_PI_180;
   center.latitude = -(72+5./60)*LAL_PI_180;
-  radius = 30.9/60*LAL_PI_180;
+  radius = 24.0/60*LAL_PI_180;
 
   /* Parse and sanity-check the command-line options. */
-  while( (opt = getopt( argc, argv, "b:c:e:f:i:m:n:r:t:x" )) != -1 )
+  while( (opt = getopt( argc, argv, "b:c:e:f:im:n:pr:t:x" )) != -1 )
   {
     switch( opt )
     {
@@ -161,7 +179,7 @@ int main( int argc, char **argv )
         fprintf( stderr, "coordinates should be hh:mm:ss:dd:mm:ss\n" );
         return PTOLEMESHTESTC_EOPT;
       }
-      center.longitude = (a+b/60+c/3600)*LAL_PI_180*15;
+      center.longitude = (15*a+b/60+c/3600)*LAL_PI_180;
       center.latitude = (d+e/60+f/3600)*LAL_PI_180;
       break;
     case 'e':
@@ -177,6 +195,9 @@ int main( int argc, char **argv )
       break;
     case 'n':
       maxNodes = atoi( optarg );
+      break;
+    case 'p':
+      nonGrace = 1;
       break;
     case 'r':
       radius = LAL_PI_180/60*atof( optarg );
@@ -206,16 +227,19 @@ int main( int argc, char **argv )
   mesh.getRange = getRange;
   mesh.getMetric = getMetric;
   mesh.metricParams = (void *) &search;
-  if( radius == 0 ) {
-    mesh.domain[0] = 0;
-    mesh.domain[1] = LAL_TWOPI;
-    mesh.rangeParams = (void *) &search;
-  }
-  else {
-    mesh.domain[0] = center.longitude - radius;
-    mesh.domain[1] = center.longitude + radius;
-    mesh.rangeParams = NULL;
-  }
+  if( radius == 0 ) 
+    {
+      mesh.domain[0] = dec_min;
+      mesh.domain[1] = dec_max;
+      mesh.rangeParams = (void *) &search;
+    }
+  else 
+    {
+      mesh.domain[0] = center.latitude - radius;
+      mesh.domain[1] = center.latitude + radius;
+      mesh.rangeParams = NULL;
+
+    }
   search.position.system = COORDINATESYSTEM_EQUATORIAL;
   search.spindown = NULL;
   search.epoch.gpsSeconds = begin;
@@ -241,6 +265,19 @@ int main( int argc, char **argv )
     fclose( fp );
   }
 
+  /* Write what we've got to file mesh.dat */
+  if( nonGrace )
+  {
+    fp = fopen( "mesh.dat", "w" );
+    if( !fp )
+      return PTOLEMESHTESTC_EFIO;
+    TwoDMeshNode *node;
+    for( node = firstNode; node; node = node->next )
+      fprintf( fp, "%e %e\n", node->y, node->x );
+    fclose( fp );
+  }
+
+
   /* Clean up and leave. */
   LALDestroyTwoDMesh( &stat, &firstNode, &mesh.nOut );
   printf( "destroyed %d nodes\n", mesh.nOut );
@@ -258,17 +295,18 @@ void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *unused )
   /* Set up shop. */
   INITSTATUS( stat, "getRange", PTOLEMESHTESTC );
   ATTATCHSTATUSPTR( stat );
-
+  
   /* Search a circle. BEN: The 1.001 is a kludge. */
-  y[0] = center.latitude - sqrt( pow( radius*1.001, 2 )
-         - pow( x-center.longitude, 2 ) );
-  y[1] = center.latitude + sqrt( pow( radius*1.001, 2 )
-         - pow( x-center.longitude, 2 ) );
-
-  if( unused ) {
-    y[0] = -LAL_PI_2;
-    y[1] = LAL_PI_2;
-  }
+  y[0] = center.longitude - sqrt( pow( radius*1.001, 2 )
+				  - pow( x-center.latitude, 2 ) );
+  y[1] = center.longitude + sqrt( pow( radius*1.001, 2 )
+				  - pow( x-center.latitude, 2 ) );
+    
+  if( unused ) 
+    {
+      y[0] = RA_min;
+      y[1] = RA_max;
+    }
 
   /* Clean up and leave. */
   DETATCHSTATUSPTR( stat );
@@ -292,8 +330,9 @@ void getMetric( LALStatus *stat,
   TRY( LALDCreateVector( stat->statusPtr, &metric, 10 ), stat );
 
   /* Translate input. */
-  patch->position.longitude = x[0];
-  patch->position.latitude = x[1];
+  patch->position.longitude = x[1];
+  patch->position.latitude =  x[0];
+
 
   /* Call the real metric function. */
   LALPtoleMetric( stat->statusPtr, metric, patch );
@@ -306,10 +345,10 @@ void getMetric( LALStatus *stat,
   ENDFAIL( stat );
 
   /* Translate output. */
-  g[0] = metric->data[2];
-  g[1] = metric->data[5];
-  g[2] = metric->data[4];
-
+      g[1] = metric->data[2];
+      g[0] = metric->data[5];
+      g[2] = metric->data[4];
+ 
   /* Clean up and leave. */
   TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
   DETATCHSTATUSPTR( stat );
