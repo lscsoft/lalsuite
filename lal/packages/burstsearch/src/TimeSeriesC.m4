@@ -151,9 +151,7 @@ void `LALShrink'SERIESTYPE (
 
 	ASSERT(series != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(series->data != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(first + length <= series->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 	`XLALShrink'SERIESTYPE (series, first, length);
-	ASSERT(series->data->length == length, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 
 	RETURN(status);
 }
