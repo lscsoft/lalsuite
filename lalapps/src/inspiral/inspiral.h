@@ -22,6 +22,7 @@
 #include <fcntl.h>
 #include <regex.h>
 #include <time.h>
+#include <math.h>
 
 #include <FrameL.h>
 
@@ -178,6 +179,7 @@
 "                 --chisq-threshold 0.001 --verbose --debug-level NDEBUG\n" \
 "\n"
 
+double rint(double x);
 int snprintf(char *str, size_t size, const  char  *format, ...);
 char *strsep(char **stringp, const char *delim);
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams );

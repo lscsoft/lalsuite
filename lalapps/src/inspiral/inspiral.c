@@ -104,6 +104,8 @@ int main( int argc, char *argv[] )
   DataSegmentVector            *dataSegVec = NULL;
 
   /* structures for preconditioning */
+  COMPLEX8FrequencySeries       injResp;
+  COMPLEX8FrequencySeries      *injRespPtr;
   ResampleTSParams              resampleParams;
   LALWindowParams               wpars;
   AverageSpectrumParams         avgSpecParams;
@@ -170,6 +172,8 @@ int main( int argc, char *argv[] )
 
   /* call the argument parse and check function */
   arg_parse_check( argc, argv, procparams );
+  for ( this_proc_param = procparams.processParamsTable; this_proc_param->next;
+     this_proc_param = this_proc_param->next );
 
   /* fill the comment, if a user has specified on, or leave it blank */
   if ( ! *comment )
@@ -211,6 +215,16 @@ int main( int argc, char *argv[] )
 
   if ( vrbflg ) fprintf( stdout, "parsed %d templates from %s\n", 
       numTmplts, bankFileName );
+
+  /* save the minimal match of the bank in the process params */
+  this_proc_param = this_proc_param->next = (ProcessParamsTable *) 
+    LALCalloc( 1, sizeof(ProcessParamsTable) ); 
+  snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+      PROGRAM_NAME ); \
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--minimal-match" );
+  snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "float" ); 
+  snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%e", 
+      bankHead->minMatch );
 
   /* create the linked list of template nodes for coarse templates */
   for ( bankCurrent = bankHead; bankCurrent; bankCurrent = bankCurrent->next )
@@ -265,6 +279,7 @@ int main( int argc, char *argv[] )
   /* read the data channel time series from frames */
   LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
       &status );
+  memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
 
   /* close the frame file stream and destroy the cache */
   LAL_CALL( LALFrClose( &status, &frStream ), &status );
@@ -276,34 +291,13 @@ int main( int argc, char *argv[] )
       &chan, "ct", "RAW" );
 
   if ( vrbflg ) fprintf( stdout, "read channel %s from frame stream\n"
-      "got %d points with deltaT %e starting at GPS time %d sec %d ns\n", 
+      "got %d points with deltaT %e\nstarting at GPS time %d sec %d ns\n", 
       chan.name, chan.data->length, chan.deltaT, 
       chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
 
   /* set the time series parameters of the input data */
   memset( &resampleParams, 0, sizeof(ResampleTSParams) );
   resampleParams.deltaT = 1.0 / (REAL8) sampleRate;
-  resampleParams.filterType = firLSOne;
-  memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
-
-  /* if the input and requested sample rates differ, downsample the data */
-  if ( ! ( fabs( resampleParams.deltaT - chan.deltaT ) < epsilon ) )
-  {
-    if (vrbflg) fprintf( stdout, "resampling input data from %e to %e\n",
-        chan.deltaT, resampleParams.deltaT );
-
-    LAL_CALL( LALDecimateREAL4TimeSeries( &status, &chan, &resampleParams ),
-        &status );
-
-    if ( vrbflg ) fprintf( stdout, "channel %s resampled:\n"
-        "%d points with deltaT %e starting at GPS time %d sec %d ns\n", 
-        chan.name, chan.data->length, chan.deltaT, 
-        chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
-
-    /* write the resampled channel data as read in from the frame files */
-    if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
-        &chan, "ct", "RESAMP" );
-  }
 
 
   /*
@@ -317,13 +311,10 @@ int main( int argc, char *argv[] )
   memset( &resp, 0, sizeof(COMPLEX8FrequencySeries) );
   LAL_CALL( LALCCreateVector( &status, &(resp.data), numPoints / 2 + 1 ), 
       &status );
-  memcpy( &(spec.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
-  memcpy( &(resp.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
 
   /* set the parameters of the response to match the data */
   resp.epoch = gpsStartTime;
   resp.deltaF = (REAL8) sampleRate / (REAL8) numPoints;
-  resp.f0 = 0.0;
   resp.sampleUnits = strainPerCount;
   strcpy( resp.name, chan.name );
 
@@ -339,7 +330,7 @@ int main( int argc, char *argv[] )
 
   /*
    *
-   * inject signals into data
+   * inject signals into the raw, unresampled data
    *
    */
 
@@ -362,11 +353,49 @@ int main( int argc, char *argv[] )
       exit( 1 );
     }
 
+    /* determine if we need a higher resolution response to do the injections */
+    if ( fabs( resampleParams.deltaT - chan.deltaT ) < epsilon )
+    {
+      /* the data is already at the correct sample rate, just do injections */
+      injRespPtr = &resp;
+      memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
+    }
+    else
+    {
+      /* we need a different resolution of response function for injections */
+      REAL8 ratioDeltaT = 
+        ( chan.deltaT * 1.0e9 ) / ( resampleParams.deltaT * 1.0e9 );
+      UINT4 rateRatio = (UINT4) rint ( ratioDeltaT );
+      UINT4 rawNumPoints = rateRatio * numPoints;
+
+      memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
+      LAL_CALL( LALCCreateVector( &status, &(injResp.data), 
+            rawNumPoints / 2 + 1 ), &status );
+      injResp.epoch = gpsStartTime;
+      injResp.deltaF = 1.0 / ( rawNumPoints * chan.deltaT );
+      injResp.sampleUnits = strainPerCount;
+      strcpy( injResp.name, chan.name );
+
+      /* generate the response function for the current time */
+      if ( vrbflg ) fprintf( stdout, 
+          "generating high resolution response at time %d sec %d ns\n"
+          "length = %d points, deltaF = %e Hz\n",
+          resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
+          injResp.data->length, injResp.deltaF );
+      LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCacheName, ifo ),
+          &status );
+
+      injRespPtr = &injResp;
+
+      if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
+          outFrame, &resp, "strain/ct", "RESPONSE_INJ" );
+    }
+
     /* inject the signals, preserving the channel name (Tev mangles it) */
-    LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", chan.name );
-    LAL_CALL( LALFindChirpInjectSignals( &status, &chan, injections, &resp ),
-        &status );
-    LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", tmpChName );
+    strcpy( tmpChName, chan.name );
+    LAL_CALL( LALFindChirpInjectSignals( &status, &chan, injections, 
+          injRespPtr ), &status );
+    strcpy( chan.name, tmpChName );
 
     if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n", 
         numInjections, injectionFile, chan.name );
@@ -377,6 +406,41 @@ int main( int argc, char *argv[] )
       injections = injections->next;
       LALFree( thisInj );
     }
+
+    /* write the raw channel data plus injections to the output frame file */
+    if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+        &chan, "ct", "RAW_INJ" );
+
+    if ( injResp.data )
+      LAL_CALL( LALCDestroyVector( &status, &(injResp.data) ), &status );
+  }
+
+  
+  /*
+   *
+   * resample the data to the requested rate
+   *
+   */
+
+
+  /* if the input and requested sample rates differ, downsample the data */
+  resampleParams.filterType = LDASorderTen;
+  if ( ! ( fabs( resampleParams.deltaT - chan.deltaT ) < epsilon ) )
+  {
+    if (vrbflg) fprintf( stdout, "resampling input data from %e to %e\n",
+        chan.deltaT, resampleParams.deltaT );
+
+    LAL_CALL( LALResampleREAL4TimeSeries( &status, &chan, &resampleParams ),
+        &status );
+
+    if ( vrbflg ) fprintf( stdout, "channel %s resampled:\n"
+        "%d points with deltaT %e\nstarting at GPS time %d sec %d ns\n", 
+        chan.name, chan.data->length, chan.deltaT, 
+        chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
+
+    /* write the resampled channel data as read in from the frame files */
+    if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+        &chan, "ct", "RAW_RESAMP" );
   }
 
 
@@ -392,10 +456,10 @@ int main( int argc, char *argv[] )
   {
     PassBandParamStruc highpassParam;
     highpassParam.nMax = 4;
-    highpassParam.f1 = highPassFreq;
-    highpassParam.f2 = -1.0;
-    highpassParam.a1 = 0.1;
-    highpassParam.a2 = -1.0;
+    highpassParam.f1 = -1.0;
+    highpassParam.f2 = highPassFreq;
+    highpassParam.a1 = -1.0;
+    highpassParam.a2 = 0.1;
 
     if ( vrbflg ) fprintf( stdout, "highpassing data above %e\n", 
         highPassFreq );
@@ -408,14 +472,18 @@ int main( int argc, char *argv[] )
   if ( padData )
   {
     memmove( chan.data->data, chan.data->data + padData * sampleRate, 
-        chan.data->length - padData * sampleRate );
+        (chan.data->length - 2 * padData * sampleRate) * sizeof(REAL4) );
     LALRealloc( chan.data->data, 
         (chan.data->length - 2 * padData * sampleRate) * sizeof(REAL4) );
     chan.data->length -= 2 * padData * sampleRate;
+    chan.epoch.gpsSeconds += padData;
   }
+
   if ( vrbflg ) fprintf( stdout, "after removal of %d second padding at "
       "start and end:\ndata channel sample interval (deltaT) = %e\n"
-      "data channel length = %d\n", padData , chan.deltaT , chan.data->length );
+      "data channel length = %d\nstarting at %d sec %d ns\n", 
+      padData , chan.deltaT , chan.data->length, 
+      chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
 
   if ( writeFilterData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
       &chan, "ct", "FILTER" );
@@ -482,11 +550,11 @@ int main( int argc, char *argv[] )
   {
     case 0:
       avgSpecParams.method = useMean;
-      if ( vrbflg ) fprintf( stdout, "computing mean psd\n" );
+      if ( vrbflg ) fprintf( stdout, "computing mean psd" );
       break;
     case 1:
       avgSpecParams.method = useMedian;
-      if ( vrbflg ) fprintf( stdout, "computing median psd\n" );
+      if ( vrbflg ) fprintf( stdout, "computing median psd" );
       break;
   }
 
@@ -495,11 +563,13 @@ int main( int argc, char *argv[] )
   if ( badMeanPsd )
   {
     avgSpecParams.overlap = 0;
-    if ( vrbflg ) fprintf( stdout, "computing mean psd without overlap\n" );
+    if ( vrbflg ) fprintf( stdout, " without overlap\n" );
   }
   else
   {
     avgSpecParams.overlap = numPoints / 2;
+    if ( vrbflg ) 
+      fprintf( stdout, " with overlap %d\n", avgSpecParams.overlap );
   }
 
   LAL_CALL( LALCreateREAL4Window( &status, &(avgSpecParams.window),
@@ -879,6 +949,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"inverse-spec-length",     required_argument, 0,                'k'},
     {"dynamic-range-exponent",  required_argument, 0,                'l'},
     {"start-template",          required_argument, 0,                'm'},
+    {"minimal-match",           required_argument, 0,                'M'},
     {"stop-template",           required_argument, 0,                'n'},
     {"chisq-bins",              required_argument, 0,                'o'},
     {"calibration-cache",       required_argument, 0,                'p'},
@@ -919,7 +990,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     int option_index = 0;
 
     c = getopt_long( argc, argv, 
-        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:z:", 
+        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:M:n:o:p:q:r:s:t:u:v:w:x:z:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1198,6 +1269,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "int", "%d", startTemplate );
+        break;
+
+      case 'M':
+        /* minimal match option is ignored */
         break;
 
       case 'n':
