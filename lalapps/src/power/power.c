@@ -9,9 +9,12 @@
 #include <lal/EPData.h>
 #include <lal/EPSearch.h>
 #include <lal/BurstSearch.h>
+#include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOLwXML.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/Random.h>
 #include <lal/IIRFilter.h>
+#include <lalapps.h>
 
 typedef struct
 {
@@ -20,8 +23,7 @@ typedef struct
 }LALInitSearchParams;
 
 NRCSID( POWERC, "power $Id$");
-
-INT4 lalDebugLevel = LALMSGLVL3;
+RCSID( "power $Id$");
 
 #include <config.h>
 #ifndef HAVE_LIBLALFRAME
@@ -32,7 +34,7 @@ int main( void )
 }
 #else
 
-#define POWERC_NARGS  19
+#define POWERC_NARGS 19 
 
 #define POWERC_ENORM  0
 #define POWERC_ESUB   1
@@ -86,41 +88,44 @@ int main( void )
 #define POWERC_ARGSPECTYPE  17
 #define POWERC_ARGVWINTYPE  "--window"
 #define POWERC_ARGWINTYPE   18
+#define POWERC_ARGVHELP  "--help"
 
 #define TRUE       1
 #define FALSE      0
 
 /* Usage format string. */
-#define USAGE "Usage: %s \n"
-
+#define USAGE "Usage: %s --npts npoints --nseg nsegments --olap overlap \
+    --olapfctr olapfactor --minfbin nfbin --mintbin ntbin --flow flow \
+    --delf df --lngth bandwidth --nsigma sigma --alphdef alpha \
+    --segdcle nsegs --threshold threshold --etomstr nevents \
+    --framedir framedir --channel channel --simtype simtype \
+    --spectype spectype --window window --epoch sec nsec --numpts npts \
+    [--outfile filename] [--framecache filename] [--printSpectrum] [--help]\n"
 
 #define RESPONSE_REGEX "CAL-RESPONSE"
 #define CAV_GAIN_REGEX "CAL-CAV_GAIN"
 #define CAV_FAC_REGEX "CAL-CAV_FAC"
 #define OLOOP_FAC_REGEX "CAL-OLOOP_FAC"
 
-
-
 /******** <lalVerbatim file="TFTilesToBurstEventsCP"> ********/
 void
 LALPrintBurstEvent (
-               BurstEvent                           *burstEvent
+               FILE             *fpout,
+               SnglBurstTable   *burstEvent
                )
 /******** </lalVerbatim> ********/
 {
-    if ( burstEvent->confidence < 0.6 ){
-        fprintf(stdout,"%i %09i %f %f %f %f %f %e\n",
-                burstEvent->startTime,
-                burstEvent->startTimeNS,
-                burstEvent->duration,
-                burstEvent->centralFrequency,
-                burstEvent->bandwidth,
-                burstEvent->amplitude,
-                burstEvent->excessPower,
-                burstEvent->confidence
-               );
-        fflush(stdout);
-    }
+    fprintf(fpout,"%i %09i %f %f %f %f %f %e\n",
+            burstEvent->start_time.gpsSeconds,
+            burstEvent->start_time.gpsNanoSeconds,
+            burstEvent->duration,
+            burstEvent->central_freq,
+            burstEvent->bandwidth,
+            burstEvent->amplitude,
+            burstEvent->snr,
+            burstEvent->confidence
+           );
+    fflush(fpout);
 }
 
 /* Fill an array with white noise */
@@ -169,15 +174,20 @@ int main( int argc, char *argv[])
     LALInitSearchParams   initSearchParams;
     EPSearchParams       *params        = NULL;
     FrStream             *stream        = NULL;
+    FrCache              *frameCache    = NULL;
     FrChanIn              channelIn;
     INT4                  numPoints     = 4096;
     CHAR                 *dirname       = NULL;
+    CHAR                 *cachefile     = NULL;
+    CHAR                 *outputfile    = "tmp.out";
     REAL4TimeSeries       series;
     LIGOTimeGPS           epoch;
     BOOLEAN               epochSet      = FALSE;
     BOOLEAN               printSpectrum = FALSE;
-    BurstEvent           *burstEvent    = NULL;
-    
+    SnglBurstTable       *burstEvent    = NULL;
+    LIGOLwXMLStream     xmlStream;
+    MetadataTable        myTable;
+
     /* new application instance variables added 7/17/02 MSW */
     BOOLEAN               whiteNoise    = FALSE;   /* insertion of Gaussian white noise */
     BOOLEAN               sineBurst     = FALSE;   /* insertion of shaped sine burst */
@@ -189,6 +199,7 @@ int main( int argc, char *argv[])
     BOOLEAN               applyFilter   = FALSE;   /* enable IIR filter */
     REAL4                 noiseAmpl     = 1.0;     /* gain factor for white noise */
     INT4                  seed = 1;  /* TODO set non-zero for debugging 6/11/02 MSW */
+    FILE                 *fpout         = NULL;    /* output file */
 
     initSearchParams.argv = (CHAR **) LALMalloc( (size_t)(POWERC_NARGS * sizeof(CHAR*)) );
 
@@ -215,6 +226,10 @@ int main( int argc, char *argv[])
                 LALPrintError( USAGE, *argv );
                 return POWERC_EARG;
             }
+        }
+        else if ( !strcmp( argv[inarg], POWERC_ARGVHELP ) ) {
+                LALPrintError( USAGE, *argv );
+                return POWERC_EARG;
         }
         else if ( !strcmp( argv[inarg], POWERC_ARGVNSEG ) ) {
             if ( argc > inarg + 1 ) {
@@ -423,6 +438,28 @@ int main( int argc, char *argv[])
               return POWERC_EARG;
           }
         }
+        else if ( !strcmp( argv[inarg], "--framecache" ) )
+        {
+          /* enable loading frame data from disk using a cache file */
+          if ( argc > inarg + 1 ) {
+              inarg++;
+              cachefile = argv[inarg++];
+          }else{
+              LALPrintError( USAGE, *argv );
+              return POWERC_EARG;
+          }
+        }
+        else if ( !strcmp( argv[inarg], "--outfile" ) )
+        {
+          /* enable loading frame data from disk using a cache file */
+          if ( argc > inarg + 1 ) {
+              inarg++;
+              outputfile = argv[inarg++];
+          }else{
+              LALPrintError( USAGE, *argv );
+              return POWERC_EARG;
+          }
+        }
         else if ( !strcmp( argv[inarg], "--noise" ) )
         {
           /* enable insertion of Gaussian white noise */
@@ -484,10 +521,17 @@ int main( int argc, char *argv[])
     /*******************************************************************
     * INITIALIZE EVERYTHING                                            *
     *******************************************************************/
-    series.data = NULL;
+
+    /* Which error handler to use */
+    lal_errhandler = LAL_ERR_DFLT;
+    set_debug_level( "3" );
+
+    /* Make sure all pointers are NULL */
+    xmlStream.fp=NULL;
 
     /* create and initialize the time series vector */
-    LALCreateVector( &stat, &series.data, numPoints);
+    series.data = NULL;
+    LAL_CALL( LALCreateVector( &stat, &series.data, numPoints), &stat);
     for (index = 0; index < numPoints; index++) {
         series.data->data[index] = 0.0;
     }  
@@ -497,7 +541,7 @@ int main( int argc, char *argv[])
       series.epoch.gpsSeconds     = epoch.gpsSeconds;
       series.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
     }
-    strcpy(series.name, "what");
+    strcpy(series.name, "Data");
     series.deltaT = 4.8828e-4;
     series.f0 = 0.0;
     series.sampleUnits.powerOfTen = 0;
@@ -507,7 +551,8 @@ int main( int argc, char *argv[])
       series.sampleUnits.unitDenominatorMinusOne[index] = 0;
     }
     
-    EPInitSearch( &stat, &searchParams, initSearchParams.argv, initSearchParams.argc);
+    LAL_CALL( EPInitSearch( &stat, &searchParams, initSearchParams.argv, 
+                initSearchParams.argc), &stat);
     params = (EPSearchParams *) searchParams;
     params->printSpectrum = printSpectrum;
     
@@ -516,25 +561,35 @@ int main( int argc, char *argv[])
     *******************************************************************/
     
     /* only try to load frame if name is specified */
-    if (dirname)
+    if (dirname || cachefile)
     {
-      /* Open frame stream */
-      LALFrOpen( &stat, &stream, dirname, "*.gwf" );
+        if(dirname){
+            /* Open frame stream */
+            LAL_CALL( LALFrOpen( &stat, &stream, dirname, "*.gwf" ), &stat);
+        }
+        else if (cachefile){
+            /* Open frame cache */
+            LAL_CALL( LALFrCacheImport( &stat, &frameCache, cachefile ), &stat);
+            LAL_CALL( LALFrCacheOpen( &stat, &stream, frameCache ), &stat);
+            LAL_CALL( LALDestroyFrCache( &stat, &frameCache ), &stat );
+        }
+        /*
+         * Determine information about the channel and seek to the
+         * right place in the fram files 
+         */
+        LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream), &stat);
+        if ( epochSet )
+        {
+            series.epoch.gpsSeconds     = epoch.gpsSeconds;
+            series.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
+        }
+        LAL_CALL( LALFrSeek(&stat, &(series.epoch), stream), &stat);
 
-      /* Determine information about the channel */
-      LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream);
-      if ( epochSet )
-      {
-          series.epoch.gpsSeconds     = epoch.gpsSeconds;
-          series.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
-      }
-      LALFrSeek(&stat, &(series.epoch), stream);
+        /* get the data */
+        LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream), &stat);
 
-      /* get the data */
-      LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream);
-
-      /* close the frame stream */
-      LALFrClose( &stat, &stream );
+        /* close the frame stream */
+        LAL_CALL( LALFrClose( &stat, &stream ), &stat);
     }
 
     /* populate time series with white noise if specified */
@@ -618,15 +673,19 @@ int main( int argc, char *argv[])
     }
     
     /* write diagnostic info to disk */
-    LALPrintTimeSeries( &series, "./timeseries.dat" );
-    
+    if ( printSpectrum ){
+        LALPrintTimeSeries( &series, "./timeseries.dat" );
+    }
+
     /* Finally call condition data */
-    EPConditionData( &stat, &series, searchParams);
+    LAL_CALL( EPConditionData( &stat, &series, searchParams), &stat);
 
     
     /*******************************************************************
     * DO THE SEARCH                                                    *
     *******************************************************************/
+    LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outputfile), &stat);
+    LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_burst_table), &stat);
     while ( params->currentSegment < params->initParams->numSegments )
     {
         UINT4       tmpDutyCycle=0;
@@ -639,53 +698,41 @@ int main( int argc, char *argv[])
             dumCurrentSeg++;
         }
                 
-
         /* tell operator how we are doing */
-        fprintf(stderr,"Analyzing segments %i -- %i", params->currentSegment,
-          params->currentSegment + tmpDutyCycle - 1);
-        switch(params->initParams->method)
-        {
-          case useMean:
-            fprintf(stderr, ", using mean method.\n");
-            break;
-            
-          case useMedian:
-            fprintf(stderr, ", using median method.\n");
-            break;
-            
-          case useUnity:
-            fprintf(stderr, ", using unity method.\n");
-            break;
-            
-          default:
-            fprintf(stderr, ", using unknown method.\n");
-            break;
-        }
+        fprintf(stderr,"Analyzing segments %i -- %i\n", params->currentSegment,
+                params->currentSegment + tmpDutyCycle - 1);
 
         /* This is the main engine of the excess power method */ 
-        EPSearch (&stat, params, &burstEvent, tmpDutyCycle);
+        LAL_CALL( EPSearch (&stat, params, &burstEvent, tmpDutyCycle), &stat);
+
+        /* Write the results to the burst table */
+        LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable, 
+                    sngl_burst_table), &stat);
 
         /* free the temporary memory containing the events */
         while (burstEvent)
         {
-            BurstEvent *thisEvent;
+            SnglBurstTable *thisEvent;
             thisEvent = burstEvent;
-            burstEvent = burstEvent->nextEvent;
-            LALPrintBurstEvent(thisEvent);
+            burstEvent = burstEvent->next;
             LALFree( thisEvent );
         }
+        /* tell operator how we are doing */
+        fprintf(stderr,"Analyzing segments %i -- %i\n", params->currentSegment,
+                params->currentSegment + tmpDutyCycle - 1);
 
         /* increment to the next segment number to be analyzed */
         params->currentSegment += tmpDutyCycle;
     }
+    LAL_CALL( LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
+    LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
 
 
     /*******************************************************************
     * FINALIZE EVERYTHING                                            *
     *******************************************************************/
-    LALSDestroyVector( &stat, &(series.data) );
-    EPFinalizeSearch( &stat, &searchParams);
-    LALFree(initSearchParams.argv);
+    LAL_CALL( LALSDestroyVector( &stat, &(series.data) ), &stat);
+    LAL_CALL( EPFinalizeSearch( &stat, &searchParams), &stat);
     LALCheckMemoryLeaks();
 
     return 0;
