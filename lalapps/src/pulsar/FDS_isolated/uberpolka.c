@@ -135,9 +135,6 @@ int main(int argc,char *argv[])
   UINT4 i;
   INT4 iAlphaLowerEdge, iAlphaUpperEdge;
   lalDebugLevel = 0;
-#if USE_BOINC
-  static char resolved_filename[256];
-#endif
 
   /* Reads command line arguments */
   if (ReadCommandLine(argc,argv,&PolkaCommandLineArgs)) return 1;
@@ -275,6 +272,9 @@ int OutputCoincidences(struct PolkaCommandLineArgsTag CLA)
   INT4 *indicesCCfa=NULL;
   INT4 i;
   FILE *fpOut;
+#if USE_BOINC
+  static char resolved_filename[256];
+#endif
 
   /* allocate space */
   if (numCoincidences != 0){ 
