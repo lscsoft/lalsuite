@@ -6,8 +6,8 @@ noinst_LTLIBRARIES = libfindchirp.la
 
 FINDCHIRPSOURCES = FindChirpMemory.c FindChirpFilter.c \
   FindChirpChisq.c FindChirpSPData.c FindChirpSPTemplate.c \
-  FindChirpTmplt.c FindChirpLinkedList.c FindChirpSlave.c
-FINDCHIRPMPISOURCES = FindChirpExch.c FindChirpMaster.c 
+  FindChirpTmplt.c FindChirpLinkedList.c 
+FINDCHIRPMPISOURCES = FindChirpExch.c FindChirpMaster.c FindChirpSlave.c
 TWOINTERFFINDCHIRPSOURCES = TwoInterfFindChirpFilter.c
 
 if MPI
