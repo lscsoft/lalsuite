@@ -629,11 +629,6 @@ int main(int argc, char **argv)
 
 	lal_errhandler = LAL_ERR_EXIT;
 	set_debug_level("1");
-
-	/*
-	 * Parse arguments.
-	 */
-
 	set_option_defaults(&options);
 	parse_command_line(argc, argv, &options);
 
@@ -646,18 +641,14 @@ int main(int argc, char **argv)
 	/*
 	 * Read and trim the trigger list;  remove injections from the
 	 * injection list that lie outside the time intervals that were
-	 * actually analyzed according to the search summary tables.  Sort the
-	 * trigger list too.
+	 * actually analyzed according to the search summary tables.
 	 */
 
 	burstEventList = read_trigger_list(&stat, options.inputFile, &timeAnalyzed, &simBurstList, options);
-	if(options.verbose)
-		fprintf(stderr, "Sorting triggers...\n");
-	LAL_CALL(LALSortSnglBurst(&stat, &burstEventList, LALCompareSnglBurstByTime), &stat);
 
 	/*
-	 * For each injection, search the entire trigger list for the best
-	 * match (if any).
+	 * For each injection, search the trigger list for the best match (if
+	 * any).
 	 */
 
 	ninjected = ndetected = 0;
@@ -686,17 +677,17 @@ int main(int argc, char **argv)
 			continue;
 		ndetected++;
 
-		/* record the detected trigger */
-		*detTriggersAddPoint = LALMalloc(sizeof(**detTriggersAddPoint));
-		**detTriggersAddPoint = *bestmatch;
-		detTriggersAddPoint = &(*detTriggersAddPoint)->next;
-		*detTriggersAddPoint = NULL;
-
 		/* record the detected injection */
 		*detInjectionsAddPoint = LALMalloc(sizeof(**detInjectionsAddPoint));
 		**detInjectionsAddPoint = *injection;
 		detInjectionsAddPoint = &(*detInjectionsAddPoint)->next;
 		*detInjectionsAddPoint = NULL;
+
+		/* record the matching trigger */
+		*detTriggersAddPoint = LALMalloc(sizeof(**detTriggersAddPoint));
+		**detTriggersAddPoint = *bestmatch;
+		detTriggersAddPoint = &(*detTriggersAddPoint)->next;
+		*detTriggersAddPoint = NULL;
 	}
 
 	fprintf(stdout,"%19.9f seconds = %.1f hours analyzed\n", timeAnalyzed / 1e9, timeAnalyzed / 3.6e12);
@@ -727,7 +718,7 @@ int main(int argc, char **argv)
 	LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
 	LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
 
-	/* List of triggers corresponding to injection */
+	/* List of matching triggers */
 	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, options.outSnglFile), &stat);
 	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sngl_burst_table), &stat);
 	myTable.snglBurstTable = detectedTriggers;
