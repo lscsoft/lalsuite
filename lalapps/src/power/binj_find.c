@@ -712,8 +712,6 @@ int main(int argc, char **argv)
 			if (!accParams.match)
 				continue;
 
-			ndetected++;
-
 			/* pick the best event */
 			bestmatch = select_event(&stat, injection, bestmatch, event, options);
 		}
@@ -722,6 +720,7 @@ int main(int argc, char **argv)
 		 * injection */
 		if(!bestmatch)
 			continue;
+		ndetected++;
 
 		/* record the detected trigger */
 		*detTriggersAddPoint = LALCalloc(1, sizeof(**detTriggersAddPoint));
