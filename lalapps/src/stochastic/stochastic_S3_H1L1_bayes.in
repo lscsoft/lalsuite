@@ -11,8 +11,11 @@ universe = standard
 datafind = /ldcg/stow_pkgs/ldg-3.0/ldg/ldg-server/bin/LSCdataFind
 stochastic = @EXECPATH@/lalapps_stochastic
 
+[pipeline]
+version = $Id$
+
 [input]
-segments = S3_H1L1v03_nonplay_segs.txt
+segments = S3H1L1v05_selectedsegs.txt
 min_length = 180
 max_length = 1800
 channel = "dummy"

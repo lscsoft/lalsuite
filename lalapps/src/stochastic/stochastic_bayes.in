@@ -52,14 +52,14 @@ Usage: lalapps_stochastic_bayes [options]
 # parse the command line options to figure out what we should do
 shortop = "hvdsP:f:l:"
 longop = [
-"help",
-"version",
-"datafind",
-"stochastic",
-"priority=",
-"config-file=",
-"log-path="
-]
+  "help",
+  "version",
+  "datafind",
+  "stochastic",
+  "priority=",
+  "config-file=",
+  "log-path="
+  ]
 
 try:
   opts, args = getopt.getopt(sys.argv[1:], shortop, longop)
@@ -273,19 +273,22 @@ You also need to set the LSC_DATAFIND_SERVER environment variable eg.
 
 # write out a logfile
 log_fh = open(basename + '.pipeline.log', 'w')
-log_fh.write( "$Id$" + "\n\n" )
-log_fh.write( "Invoked with arguments:\n" )
+log_fh.write("$Id$" + "\n\n")
+log_fh.write("Invoked with arguments:\n")
 for o, a in opts:
-  log_fh.write( o + ' ' + a + '\n' )
-log_fh.write( "\n" )
+  log_fh.write(o + ' ' + a + '\n')
+
+log_fh.write("\nConfig file has the CVS strings:\n")
+log_fh.write(cp.get('pipeline','version') + "\n\n")
+
 log_fh.write( "Parsed " + str(len(data)) + " science segments\n" )
 total_data = 0
 for seg in data:
   for chunk in seg:
     total_data += len(chunk)
 print >> log_fh, "total data =", total_data
-print >> log_fh, "\n===========================================\n"
-print >> log_fh, data
+
+print >> log_fh, "\n", data
 for seg in data:
   print >> log_fh, seg
   for chunk in seg:
