@@ -53,7 +53,7 @@ static int getline(char *line, int max, FILE *fpin)
 /****************************************************************************
  * 
  * FUNCTION TESTS IF THE FILE CONTAINS ANY PLAYGROUND DATA
- * 
+ * Remember to check if doing S2 or S3
  ***************************************************************************/
 static int isPlayground(INT4 gpsStart, INT4 gpsEnd){
     INT4 runStart=729273613;
@@ -157,7 +157,7 @@ int main(int argc, char **argv)
 	    {"max-amplitude",   required_argument,  0,  'k'},
 	    {"min-snr",         required_argument,  0,  'l'},
 	    {"max-snr",         required_argument,  0,  'm'},
-	    {"noplayground",	required_argument,  0,	'n'},
+	    {"noplayground",	no_argument,        0,	'n'},
 	    {"help",		no_argument,	    0,	'o'}, 
 	    {"sort",		no_argument,	    0,	'p'},
 	    {0, 0, 0, 0}
