@@ -312,6 +312,7 @@ tagSnglInspiralTable
   REAL4         mass1;
   REAL4         mass2;
   REAL4         mchirp;
+  REAL4         mtotal;
   REAL4         eta;
   REAL4         tau0;
   REAL4         tau2;
@@ -321,12 +322,19 @@ tagSnglInspiralTable
   REAL4         ttotal;
   REAL4         psi0;
   REAL4         psi3;
+  REAL4         alpha;
+  REAL4         alpha1;
+  REAL4         alpha2;
+  REAL4         alpha3;
+  REAL4         alpha4;
+  REAL4         alpha5;
+  REAL4         alpha6;
+  REAL4         beta;
   REAL4         f_final;
   REAL4         snr;
   REAL4         chisq;
   INT4          chisq_dof;
   REAL8         sigmasq;
-  REAL4         alpha;
   EventIDColumn *event_id;
 }
 SnglInspiralTable;

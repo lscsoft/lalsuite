@@ -569,21 +569,29 @@ LALSnglInspiralTableFromLIGOLw (
     {"mass1",                   -1, 13},
     {"mass2",                   -1, 14},
     {"mchirp",                  -1, 15},
-    {"eta",                     -1, 16},
-    {"tau0",                    -1, 17},
-    {"tau2",                    -1, 18},
-    {"tau3",                    -1, 19},
-    {"tau4",                    -1, 20},
-    {"tau5",                    -1, 21},
-    {"ttotal",                  -1, 22},
-    {"psi0",                    -1, 23},
-    {"psi3",                    -1, 24},
-    {"f_final",                 -1, 25}, 
-    {"snr",                     -1, 26},
-    {"chisq",                   -1, 27},
-    {"chisq_dof",               -1, 28},
-    {"sigmasq",                 -1, 29},
-    {"alpha",                   -1, 30},
+    {"mtotal",                  -1, 16},
+    {"eta",                     -1, 17},
+    {"tau0",                    -1, 18},
+    {"tau2",                    -1, 19},
+    {"tau3",                    -1, 20},
+    {"tau4",                    -1, 21},
+    {"tau5",                    -1, 22},
+    {"ttotal",                  -1, 23},
+    {"psi0",                    -1, 24},
+    {"psi3",                    -1, 25},
+    {"alpha",                   -1, 26},
+    {"alpha1",                  -1, 27},
+    {"alpha2",                  -1, 28},
+    {"alpha3",                  -1, 29},
+    {"alpha4",                  -1, 30},
+    {"alpha5",                  -1, 31},
+    {"alpha6",                  -1, 32},
+    {"beta",                    -1, 33},
+    {"f_final",                 -1, 34}, 
+    {"snr",                     -1, 35},
+    {"chisq",                   -1, 36},
+    {"chisq_dof",               -1, 37},
+    {"sigmasq",                 -1, 38},
     {NULL,                       0, 0}
   };
 
@@ -729,63 +737,95 @@ LALSnglInspiralTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 16 )
         {
-          thisEvent->eta = r4colData;
+          thisEvent->mtotal = r4colData;
         }
         else if ( tableDir[j].idx == 17 )
         {
-          thisEvent->tau0 = r4colData;
+          thisEvent->eta = r4colData;
         }
         else if ( tableDir[j].idx == 18 )
         {
-          thisEvent->tau2 = r4colData;
+          thisEvent->tau0 = r4colData;
         }
         else if ( tableDir[j].idx == 19 )
         {
-          thisEvent->tau3 = r4colData;
+          thisEvent->tau2 = r4colData;
         }
         else if ( tableDir[j].idx == 20 )
         {
-          thisEvent->tau4 = r4colData;
+          thisEvent->tau3 = r4colData;
         }
         else if ( tableDir[j].idx == 21 )
         {
-          thisEvent->tau5 = r4colData;
+          thisEvent->tau4 = r4colData;
         }
         else if ( tableDir[j].idx == 22 )
         {
-          thisEvent->ttotal = r4colData;
+          thisEvent->tau5 = r4colData;
         }
         else if ( tableDir[j].idx == 23 )
         {
-          thisEvent->psi0 = r4colData;
+          thisEvent->ttotal = r4colData;
         }
         else if ( tableDir[j].idx == 24 )
         {
-          thisEvent->psi3 = r4colData;
+          thisEvent->psi0 = r4colData;
         }
         else if ( tableDir[j].idx == 25 )
         {
-          thisEvent->f_final = r4colData;
+          thisEvent->psi3 = r4colData;
         }
         else if ( tableDir[j].idx == 26 )
         {
-          thisEvent->snr = r4colData;
+          thisEvent->alpha = r4colData;
         }
         else if ( tableDir[j].idx == 27 )
         {
-          thisEvent->chisq = r4colData;
+          thisEvent->alpha1 = r4colData;
         }
         else if ( tableDir[j].idx == 28 )
         {
-          thisEvent->chisq_dof = i4colData;
+          thisEvent->alpha2 = r4colData;
         }
         else if ( tableDir[j].idx == 29 )
         {
-          thisEvent->sigmasq = r8colData;
+          thisEvent->alpha3 = r4colData;
         }
         else if ( tableDir[j].idx == 30 )
         {
-          thisEvent->alpha = r4colData;
+          thisEvent->alpha4 = r4colData;
+        }
+        else if ( tableDir[j].idx == 31 )
+        {
+          thisEvent->alpha5 = r4colData;
+        }
+        else if ( tableDir[j].idx == 32 )
+        {
+          thisEvent->alpha6 = r4colData;
+        }
+        else if ( tableDir[j].idx == 33 )
+        {
+          thisEvent->beta = r4colData;
+        }
+	else if ( tableDir[j].idx == 34 )
+        {
+          thisEvent->f_final = r4colData;
+        }
+        else if ( tableDir[j].idx == 35 )
+        {
+          thisEvent->snr = r4colData;
+        }
+        else if ( tableDir[j].idx == 36 )
+        {
+          thisEvent->chisq = r4colData;
+        }
+        else if ( tableDir[j].idx == 37 )
+        {
+          thisEvent->chisq_dof = i4colData;
+        }
+        else if ( tableDir[j].idx == 38 )
+        {
+          thisEvent->sigmasq = r8colData;
         }
         else
         {
@@ -856,7 +896,8 @@ InspiralTmpltBankFromLIGOLw (
     {"ttotal",  -1, 9},
     {"psi0",    -1, 10},
     {"psi3",    -1, 11},
-    {"f_final", -1, 12},
+    {"beta",    -1, 12},
+    {"f_final", -1, 13},
     {NULL,      0, 0}
   };
 
@@ -1016,6 +1057,10 @@ InspiralTmpltBankFromLIGOLw (
           thisTmplt->psi3 = colData;
         }
         else if ( tableDir[j].idx == 12 )
+        {
+          thisTmplt->beta = colData;
+        }
+	else if ( tableDir[j].idx == 13 )
         {
           thisTmplt->fFinal = colData;
         }
