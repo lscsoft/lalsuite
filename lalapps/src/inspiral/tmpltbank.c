@@ -157,7 +157,6 @@ int main ( int argc, char *argv[] )
 
   /* templates */
   InspiralCoarseBankIn          bankIn;
-  InspiralTemplateList         *coarseList = NULL;
   SnglInspiralTable            *tmplt  = NULL;
   INT4                          numCoarse = 0;
 
@@ -741,60 +740,29 @@ int main ( int argc, char *argv[] )
     fprintf( stdout, "generating template bank parameters... " );
     fflush( stdout );
   }
-  LAL_CALL( LALInspiralCreateCoarseBank( &status, &coarseList, &numCoarse, 
-        bankIn ), &status );
+  LAL_CALL( LALInspiralBankGeneration( &status, &bankIn, &tmplt, &numCoarse),
+            &status );
   if ( vrbflg )
   {
-    fprintf( stdout, "done\n" );
+    fprintf( stdout, "done all %d\n", numCoarse );
     fflush( stdout );
   }
 
-  /* convert the templates to sngl_inspiral structures for writing to XML */
   if ( numCoarse )
   {
-    tmplt = templateBank.snglInspiralTable = (SnglInspiralTable *)
-      LALCalloc( 1, sizeof(SnglInspiralTable) );
+    templateBank.snglInspiralTable = tmplt;
     LALSnprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), ifo );
-    LALSnprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
+    LALSnprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
         "tmpltbank" );
     LALSnprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
         channelName );
-    tmplt->mass1   = (REAL4) coarseList[0].params.mass1;
-    tmplt->mass2   = (REAL4) coarseList[0].params.mass2;
-    tmplt->mchirp  = (REAL4) coarseList[0].params.chirpMass;
-    tmplt->eta     = (REAL4) coarseList[0].params.eta;
-    tmplt->tau0    = (REAL4) coarseList[0].params.t0;
-    tmplt->tau2    = (REAL4) coarseList[0].params.t2;
-    tmplt->tau3    = (REAL4) coarseList[0].params.t3;
-    tmplt->tau4    = (REAL4) coarseList[0].params.t4;
-    tmplt->tau5    = (REAL4) coarseList[0].params.t5;
-    tmplt->ttotal  = (REAL4) coarseList[0].params.tC;
-    tmplt->psi0    = (REAL4) coarseList[0].params.psi0;
-    tmplt->psi3    = (REAL4) coarseList[0].params.psi3;
-    tmplt->f_final = (REAL4) coarseList[0].params.fFinal;
-
-    for ( i = 1; i < numCoarse; ++i )
+    while( (tmplt = tmplt->next) )
     {
-      tmplt = tmplt->next = (SnglInspiralTable *)
-        LALCalloc( 1, sizeof(SnglInspiralTable) );
       LALSnprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), ifo );
-      LALSnprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
+      LALSnprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "tmpltbank" );
       LALSnprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
           channelName );
-      tmplt->mass1   = (REAL4) coarseList[i].params.mass1;
-      tmplt->mass2   = (REAL4) coarseList[i].params.mass2;
-      tmplt->mchirp  = (REAL4) coarseList[i].params.chirpMass;
-      tmplt->eta     = (REAL4) coarseList[i].params.eta;
-      tmplt->tau0    = (REAL4) coarseList[i].params.t0;
-      tmplt->tau2    = (REAL4) coarseList[i].params.t2;
-      tmplt->tau3    = (REAL4) coarseList[i].params.t3;
-      tmplt->tau4    = (REAL4) coarseList[i].params.t4;
-      tmplt->tau5    = (REAL4) coarseList[i].params.t5;
-      tmplt->ttotal  = (REAL4) coarseList[i].params.tC;
-      tmplt->psi0    = (REAL4) coarseList[i].params.psi0;
-      tmplt->psi3    = (REAL4) coarseList[i].params.psi3;
-      tmplt->f_final = (REAL4) coarseList[i].params.fFinal;
     }
   }
 
@@ -809,7 +777,6 @@ int main ( int argc, char *argv[] )
    */
 
 
-  LALFree( coarseList );
   LAL_CALL( LALDDestroyVector( &status, &(bankIn.shf.data) ), &status );
   LAL_CALL( LALSDestroyVector( &status, &(chan.data) ), &status );
   LAL_CALL( LALSDestroyVector( &status, &(spec.data) ), &status );
@@ -1011,7 +978,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "                                 twoPN|twoPointFive|threePN|threePointFivePN)\n"\
 "  --approximant APPROX         set approximant of the waveform to APPROX\n"\
 "                                 (TaylorT1|TaylorT2|TaylorT3|TaylorF1|TaylorF2|\n"\
-"                                 PadeT1|PadeT2|EOB|BCV|SpinTaylorT3)\n"\
+"                                 PadeT1|PadeT2|EOB|BCV|SpinTaylorT3|BCVSpin)\n"\
 "  --space SPACE                grid up template bank with mass parameters SPACE\n"\
 "                                 (Tau0Tau2|Tau0Tau3|Psi0Psi3)\n"\
 "\n"\
@@ -1676,12 +1643,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           approximant = SpinTaylorT3;
         }
+        else if ( ! strcmp( "BCVSpin", optarg ) )
+        {
+          approximant = BCVSpin;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown order specified: "
               "%s (must be one of: TaylorT1, TaylorT2, TaylorT3, TaylorF1,\n"
-              "TaylorF2, PadeT1, PadeF1, EOB, BCV or SpinTaylorT3)\n", 
+              "TaylorF2, PadeT1, PadeF1, EOB, BCV, SpinTaylorT3, or BCVSpin)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
