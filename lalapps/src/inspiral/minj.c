@@ -132,7 +132,7 @@ int main( int argc, char *argv[] )
   CHAR         *userTag = NULL;
   REAL4         minMass = 0.1;
   REAL4         maxMass = 1.0;
-  REAL4         r_core = 8.5 * KPC;     /* core radius */
+  REAL4         r_core = 5.0 * KPC;     /* core radius */
   REAL4         r_max = 50.0 * KPC;     /* halo radius */
   REAL4         q = 1.0;                /* flatten halo */
 
