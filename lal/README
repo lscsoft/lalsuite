@@ -52,7 +52,7 @@ Instruction on how to do this are at
 http://www.lsc-group.phys.uwm.edu/daswg/docs/howto/lscsoft-cvs.html
 
 If you just wish to browse the source without contributing any code you may
-use the username anonymous and the password lal to access the archive.
+use the username anonymous and the password lscsoft to access the archive.
 
 To obtain the current working version of LAL first log into the lscsoft CVS
 server. Type the following command, replacing USERNAME with your lscsoft
@@ -60,7 +60,8 @@ username (or anonymous):
 
   cvs -d :pserver:USERNAME@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft login
 
-Enter your password when prompted (or enter lal if using the anonymous user).
+Enter your password when prompted (or enter lscsoft if using the anonymous
+user).
 
 * Note that some old versions of CVS (e.g. the version that comes with Mac OS
 X 10.3) cannot access the CVS server due to the server operating on port 2402
