@@ -27,13 +27,13 @@ ResampleTimeSeriesTest_LDADD = $(top_builddir)/packages/framedata/src/liblalfram
 #ComputeCalibrationFactorsTest_SOURCES = ComputeCalibrationFactorsTest.c
 #ComputeCalibrationFactorsTest_LDADD = $(top_builddir)/packages/framedata/src/liblalframe.la $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 endif
-EXTRA_DIST = ResampleTimeSeriesTest.c ComputeCalibrationFactorsTest.c
+EXTRA_DIST = ResampleTimeSeriesTest.c ComputeCalibrationFactorsTest.c LALIndTestDetRes.sh indTestDetResLHO.cfg indTestDetResLLO.cfg indTestDetResGEO.cfg
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 if FRAME
 #TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest ComputeCalibrationFactorsTest
-TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest
+TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse LALIndTestDetRes.sh ComputeTransferTest
 else
-TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest
+TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse LALIndTestDetRes.sh ComputeTransferTest
 endif
 MOSTLYCLEANFILES = .dvi-dep PrintVector.* transfer.out \
 	ff_diff_plus.txt ff_rms_diff_plus_vs_fudge.txt \
