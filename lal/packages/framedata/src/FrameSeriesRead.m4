@@ -78,6 +78,10 @@ FSFUNC (
   }
   memcpy( series->data->data, vect->FRDATA, series->data->length * sizeof( *series->data->data ) );
 
+  FrVectFree(vect);
+
+  vect=NULL;
+
   RETURN( status );
 }
 
@@ -125,6 +129,7 @@ FUNC (
   }
   if ( vect->type != FRTYPE )
   {
+    FrVectFree(vect);	
     ABORT( status, FRAMESTREAMH_ETYPE, FRAMESTREAMH_MSGETYPE );
   }
 
@@ -136,6 +141,7 @@ FUNC (
 #endif
   if ( tnow + 1000 < tbeg )  /* added 1000 ns to account for double precision */
   {
+    FrVectFree(vect);
     ABORT( status, FRAMESTREAMH_ETIME, FRAMESTREAMH_MSGETIME );
   }
 
@@ -156,6 +162,7 @@ FUNC (
 
   if ( ! series->data ) /* no data requested: return now */
   {
+    FrVectFree(vect);
     RETURN( status );
   }
   ASSERT( series->data->data, status, FRAMESTREAMH_ENULL,
@@ -171,14 +178,20 @@ FUNC (
   need = series->data->length;
   if ( noff > vect->nData )
   {
+    FrVectFree(vect);
     ABORT( status, FRAMESTREAMH_ETIME, FRAMESTREAMH_MSGETIME );
   }
 
   /* number of points to copy */
   ncpy = ( vect->nData - noff < need ) ? ( vect->nData - noff ) : need;
   memcpy( dest, vect->FRDATA + noff * mult, ncpy * sizeof( *series->data->data ) );
+
+  FrVectFree(vect);
+  vect=NULL;
+
   dest += ncpy;
   need -= ncpy;
+
 
   /* if still data remaining */
   while ( need )
@@ -186,11 +199,13 @@ FUNC (
     LALFrNext( status->statusPtr, stream );
     BEGINFAIL( status )
     {
+      if(vect) FrVectFree(vect);	
       memset( dest, 0, need * sizeof( *series->data->data ) );
     }
     ENDFAIL( status );
     if ( stream->state & LAL_FR_END )
     {
+      if(vect) FrVectFree(vect);	
       memset( dest, 0, need * sizeof( *series->data->data ) );
       ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
     }
@@ -204,6 +219,7 @@ FUNC (
     }
     if ( vect->type != FRTYPE )
     {
+      FrVectFree(vect);
       memset( dest, 0, need * sizeof( *series->data->data ) );
       ABORT( status, FRAMESTREAMH_ETYPE, FRAMESTREAMH_MSGETYPE );
     }
@@ -224,6 +240,12 @@ FUNC (
     /* copy data */
     ncpy = vect->nData < need ? vect->nData : need;
     memcpy( dest, vect->FRDATA, ncpy * sizeof( *series->data->data ) );
+
+
+  FrVectFree(vect);
+  vect=NULL;
+
+
     dest += ncpy;
     need -= ncpy;
   }
