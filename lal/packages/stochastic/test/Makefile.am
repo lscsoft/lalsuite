@@ -8,7 +8,8 @@ check_PROGRAMS = 	  StochasticCrossCorrelationStatisticTest \
           OverlapReductionFunctionTest          StochasticInverseNoiseTest \
           DirichletTest        \
 	  SCoarseGrainFrequencySeriesTest    DCoarseGrainFrequencySeriesTest \
-	  CCoarseGrainFrequencySeriesTest    ZCoarseGrainFrequencySeriesTest
+	  CCoarseGrainFrequencySeriesTest    ZCoarseGrainFrequencySeriesTest \
+          AstroOmegaTest
 
 #                   SFalseAlarmTest       SFalseDismissalTest  \
 #                   DFalseAlarmTest       SFDismissalVsFAlarmTest \
@@ -66,6 +67,8 @@ CCoarseGrainFrequencySeriesTest_SOURCES = CCoarseGrainFrequencySeriesTest.c Chec
 CCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 ZCoarseGrainFrequencySeriesTest_SOURCES = ZCoarseGrainFrequencySeriesTest.c CheckStatus.c
 ZCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+AstroOmegaTest_SOURCES = AstroOmegaTest.c
+AstroOmegaTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
 TESTS =	  StochasticCrossCorrelationStatisticTest \
@@ -77,7 +80,8 @@ TESTS =	  StochasticCrossCorrelationStatisticTest \
           OverlapReductionFunctionTest           StochasticInverseNoiseTest \
           DirichletTest        \
 	  SCoarseGrainFrequencySeriesTest  DCoarseGrainFrequencySeriesTest \
-	  CCoarseGrainFrequencySeriesTest  ZCoarseGrainFrequencySeriesTest
+	  CCoarseGrainFrequencySeriesTest  ZCoarseGrainFrequencySeriesTest \
+          AstroOmegaTest
 
 #    SFalseAlarmTest       SFalseDismissalTest  \
 #           DFalseAlarmTest       SFDismissalVsFAlarmTest \

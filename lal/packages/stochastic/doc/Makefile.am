@@ -13,7 +13,8 @@ DOCSOURCEFILES = stochastic.tex \
   stochasticOverlapLLOTAMA300.eps stochasticOverlapLLOTAMA300.pdf \
   stochasticOverlapLLOVIRGO.eps stochasticOverlapLLOVIRGO.pdf \
   stochasticOverlapVIRGOGEO600.eps stochasticOverlapVIRGOGEO600.pdf \
-  stochasticOverlapVIRGOTAMA300.eps stochasticOverlapVIRGOTAMA300.pdf
+  stochasticOverlapVIRGOTAMA300.eps stochasticOverlapVIRGOTAMA300.pdf \
+  omega_binary.eps omega_binary.pdf omega_pulsar.eps omega_pulsar.pdf
 MOSTLYCLEANFILES = .dvi-dep
 CLEANFILES = main.dvi main.pdf main.ps
 EXTRA_DIST = $(DOCSOURCEFILES)
