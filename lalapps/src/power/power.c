@@ -991,6 +991,7 @@ void parse_command_line(
 			exit(1);
 		}
 		geodata = TRUE;
+		ADD_PROCESS_PARAM("double", "%e", options.fcorner);
 		break;
 
 		case 'K':
@@ -1235,6 +1236,7 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
+		ADD_PROCESS_PARAM("int", "%d", options.FilterCorruption);
 		break;
 
 		/* option sets a flag */
