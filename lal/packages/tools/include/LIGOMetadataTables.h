@@ -108,6 +108,7 @@ typedef enum
   sim_burst_table,
   summ_value_table,
   sim_inst_params_table,
+  coinc_inspiral_table
 }
 MetadataTableType;
 /*</lalVerbatim> */
@@ -185,6 +186,7 @@ tagSearchSummaryTable
   LIGOTimeGPS   out_end_time;
   INT4          nevents;
   INT4          nnodes;
+  CHAR          ifos[LIGOMETA_IFOS_MAX];
 }
 SearchSummaryTable;
 /* </lalVerbatim> */
@@ -232,6 +234,7 @@ tagEventIDColumn
   struct tagSnglTransdataTable  *snglTransdataTable;
   struct tagSimInspiralTable    *simInspiralTable;
   struct tagSimBurstTable       *simBurstTable;
+  struct tagCoincInspiralTable  *coincInspiralTable;
 }
 EventIDColumn;
 /* </lalVerbatim> */
@@ -392,7 +395,34 @@ MultiInspiralTable;
 
 Document table.
 
-Document table.
+\subsubsection*{Type \texttt{CoincInspiralTable}}
+
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
+typedef struct
+tagCoincInspiralTable
+{
+  struct tagCoincInspiralTable *next;
+  CHAR                ifos[LIGOMETA_IFOS_MAX];
+  INT4                numIfos;
+  SnglInspiralTable  *G1Inspiral;
+  SnglInspiralTable  *H1Inspiral;
+  SnglInspiralTable  *H2Inspiral;
+  SnglInspiralTable  *L1Inspiral;
+  SnglInspiralTable  *T1Inspiral;
+  SnglInspiralTable  *V1Inspiral;
+}
+CoincInspiralTable;/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+The \texttt{CoincInspiralTable} contains a pointer to a SnglInspiral
+table for each of the six major interferometric detectors: G1, H1, H2,
+L1, T1 and V1.  In addition, it contains a field in which to store the
+number and names of the IFOs which have non-null SnglInspiralTables.
+This table is meant to provide a simple way to manipulate coincident
+triggers.
+
 
 \subsubsection*{Type \texttt{SimInspiralTable}}
 
