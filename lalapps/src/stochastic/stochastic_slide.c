@@ -298,7 +298,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* get number of segments */
   numSegments = (INT4)(intervalDuration / segmentDuration);
-   numJobs = (INT4)((stopTime - startTime) / segmentDuration ) -  (numSegments - 1);
+  numJobs = (INT4)((stopTime - startTime) / segmentDuration ) -  numSegments + 1;
   segMiddle = (INT4) ((numSegments - 1) / 2);
   segmentShift = segmentDuration;
 
@@ -321,6 +321,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   segmentLength = segmentDuration * resampleRate;
 
   /* set metadata fields for data segments */
+  strncpy(interval1.name, "interval1", LALNameLength);
+  strncpy(interval2.name, "interval2", LALNameLength);
+  interval1.sampleUnits = interval2.sampleUnits = lalADCCountUnit;
+  interval1.epoch = interval2.epoch = gpsStartTime;
+  interval1.deltaT = interval2.deltaT = 1./(REAL8)resampleRate;
+  interval1.f0 = interval2.f0 = 0;
  
   strncpy(segmentPad1.name, "segmentPad1", LALNameLength);
   strncpy(segmentPad2.name, "segmentPad2", LALNameLength);
@@ -340,6 +346,16 @@ INT4 main(INT4 argc, CHAR *argv[])
    {fprintf(stdout, "Allocating memory for data segments...\n");}
 
   /* allocate memory for data segments */
+
+  interval1.data = interval2.data = NULL;
+  LAL_CALL( LALSCreateVector( &status, &(interval1.data), intervalLength),
+            &status );
+  LAL_CALL( LALSCreateVector( &status, &(interval2.data), intervalLength),
+            &status );
+  memset( interval1.data->data, 0,
+          interval1.data->length * sizeof(*interval1.data->data));
+  memset( interval2.data->data, 0,
+          interval2.data->length * sizeof(*interval2.data->data));
 
   segmentPad1.data = segmentPad2.data = NULL;
   LAL_CALL( LALSCreateVector( &status, &(segmentPad1.data), segmentPadLength), 
@@ -1078,8 +1094,13 @@ INT4 main(INT4 argc, CHAR *argv[])
        if ((status.statusCode !=0)||(responseTemp2.data==NULL))
          {break;}   
        */
-       
+             
       /* reduce to the optimal filter frequency range */
+      if (verbose_flag)
+	{
+	  fprintf(stdout, "reduce to optimal filter range\n");
+	}
+
       response1.epoch = response2.epoch = gpsCalibTime;
       for (i = 0; i < filterLength; i++)
         {
@@ -1095,7 +1116,10 @@ INT4 main(INT4 argc, CHAR *argv[])
         }
 
       /* store in memory */
-
+      if (verbose_flag)
+       {
+         fprintf(stdout, "store the first response functions in memory\n");
+       }
       for (i = 0; i < filterLength ; i++)
        {
 	resp1[segLoop]->data[i] = response1.data->data[i];
@@ -1143,6 +1167,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     for (MCLoop = 0; MCLoop < NLoop; MCLoop ++)
      {	
+       /* initialize parameters for post analysis */
+       yOpt = 0.; inVarTheoSum = 0.;
 
        /* open output file */
        LALSnprintf( outputFilename1, LALNameLength, 
@@ -1155,6 +1181,11 @@ INT4 main(INT4 argc, CHAR *argv[])
 	           outputFilePath, ifo1, ifo2,
 	           (INT4)startTime, (INT4)stopTime, MCLoop);
 
+      if (verbose_flag)
+        {
+          fprintf(stdout, "initialize average PSDs\n");
+        }
+
       /* initialize average PSDs */
       for (i = 0; i < filterLength; i++)
         {
@@ -1166,6 +1197,10 @@ INT4 main(INT4 argc, CHAR *argv[])
       streamPair.stream1 = &segmentPad1;
       streamPair.stream2 = &segmentPad2;
 
+      if (verbose_flag)
+        {
+          fprintf(stdout, "loop over %d jobs\n", numJobs);
+        }
 
       /* loop over jobs (or segments to analyse) */
       /* need more work to include overlapping Hann */
