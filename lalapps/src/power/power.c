@@ -859,7 +859,6 @@ void parse_command_line(
  * ============================================================================
  */
 
-
 static REAL4TimeSeries *get_geo_data(
 	LALStatus *stat,
 	FrStream *stream,
@@ -881,9 +880,8 @@ static REAL4TimeSeries *get_geo_data(
 	/* get the data */
 	if(options.verbose)
 		fprintf(stderr, "get_geo_data(): reading %u samples at GPS time %u.%09u s\n", geo->data->length, start.gpsSeconds, start.gpsNanoSeconds);
-	LAL_CALL(LALFrGetREAL8TimeSeries(stat, geo, &channelIn, stream), stat);
-	geo->epoch = start;
-	LAL_CALL(LALFrSeek(stat, &geo->epoch, stream), stat);
+	LAL_CALL(LALFrGetREAL8TimeSeriesMetadata(stat, geo, &channelIn, stream), stat);
+	LAL_CALL(LALFrSeek(stat, &start, stream), stat);
 	LAL_CALL(LALFrGetREAL8TimeSeries(stat, geo, &channelIn, stream), stat);
 
 	/* high pass filter before casting REAL8 to REAL4 */
@@ -920,9 +918,8 @@ static REAL4TimeSeries *get_ligo_data(
 	/* get the data */
 	if(options.verbose)
 		fprintf(stderr, "get_ligo_data(): reading %u samples at GPS time %u.%09u s\n", series->data->length, start.gpsSeconds, start.gpsNanoSeconds);
-	LAL_CALL(LALFrGetREAL4TimeSeries(stat, series, &channelIn, stream), stat);
-	series->epoch = start;
-	LAL_CALL(LALFrSeek(stat, &series->epoch, stream), stat);
+	LAL_CALL(LALFrGetREAL4TimeSeriesMetadata(stat, series, &channelIn, stream), stat);
+	LAL_CALL(LALFrSeek(stat, &start, stream), stat);
 	LAL_CALL(LALFrGetREAL4TimeSeries(stat, series, &channelIn, stream), stat);
 
 	return(series);
