@@ -76,7 +76,6 @@ REAL8 uvar_metricMismatch;
 CHAR *uvar_skyRegion;
 CHAR *uvar_DataDir;
 CHAR *uvar_BaseName;
-INT4 uvar_debug;
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
 /*----------------------------------------------------------------------*/
@@ -150,17 +149,14 @@ int main(int argc,char *argv[])
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
 
   /* register all user-variable */
+  LAL_CALL (UVARgetDebugLevel (&status, argc, argv, 'v'), &status);
   LAL_CALL (initUserVars (&status), &status); 	
-
-  uvar_debug = lalDebugLevel;
 
   /* do ALL cmdline and cfgfile handling */
   LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);	
 
   if (uvar_help)
     exit (0);
-
-  lalDebugLevel = uvar_debug;	/* can only be done here! */
 
   LAL_CALL ( SetGlobalVariables (&status, &GV), &status);
 
@@ -345,8 +341,6 @@ initUserVars (LALStatus *stat)
   uvar_metricType =  LAL_METRIC_NONE;	
   uvar_metricMismatch = 0.02;
 
-  uvar_debug = lalDebugLevel;
-
   uvar_help = FALSE;
   uvar_outputLabel = NULL;
 
@@ -376,7 +370,6 @@ initUserVars (LALStatus *stat)
   regINTUserVar(stat, 	metricType,	'M', UVAR_OPTIONAL, "Template metric: 0=none, 1 = Ptole-analytic,\n\
                                     2 = Ptole-numeric 3=exact, 4=pseudo-isotropic");
   regREALUserVar(stat, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
-  regINTUserVar(stat, 	debug, 		'v', UVAR_OPTIONAL, "Set lalDebugLevel");
   regBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message");
   regSTRINGUserVar(stat,skyRegion, 	'R', UVAR_OPTIONAL, "Specify sky-region by polygon");
   regSTRINGUserVar(stat,outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
