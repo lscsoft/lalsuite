@@ -213,8 +213,21 @@ LALCompareSnglInspiral (
           (bPtr->snr - sigmaRatio * aPtr->snr < params->dRhoMinus) )
       {
         params->match = 1;
+        LALInfo( status, "Triggers are coincident" );
+      }
+      else
+      {
+        LALInfo( status, "Triggers fail snr coincidence test" );
       }
     }
+    else
+    {
+      LALInfo( status, "Triggers fail mass coincidence test" );
+    }
+  }
+  else
+  {
+    LALInfo( status, "Triggers fails time coincidence test" );
   }
 
   DETATCHSTATUSPTR (status);
