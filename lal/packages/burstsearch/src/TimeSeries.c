@@ -86,7 +86,7 @@ COMPLEX8TimeSeries *XLALCreateCOMPLEX8TimeSeries(
 	if(name)
 		strncpy(new->name, name, LALNameLength);
 	else
-		*new->name = '\0';
+		new->name[0] = '\0';
 	new->epoch = epoch;
 	new->f0 = f0;
 	new->deltaT = deltaT;
@@ -143,7 +143,7 @@ REAL4TimeSeries *XLALCreateREAL4TimeSeries(
 	if(name)
 		strncpy(new->name, name, LALNameLength);
 	else
-		*new->name = '\0';
+		new->name[0] = '\0';
 	new->epoch = epoch;
 	new->f0 = f0;
 	new->deltaT = deltaT;
@@ -216,6 +216,9 @@ void LALCutREAL4TimeSeries(
 	INITSTATUS(status, "LALCutREAL4TimeSeries", TIMESERIESC);
 
 	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(input != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(input->data != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(first_sample + num_samples <= input->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
 	*output = XLALCutREAL4TimeSeries(input, first_sample, num_samples);
 
@@ -225,24 +228,25 @@ void LALCutREAL4TimeSeries(
 }
 
 
-REAL4TimeSeries *XLALShrinkREAL4TimeSeries(
+void *XLALShrinkREAL4TimeSeries(
 	REAL4TimeSeries *series,
 	size_t first_sample,
 	size_t num_samples
 )
 {
-	if(series) {
-		series->data = XLALShrinkREAL4Sequence(series->data, first_sample, num_samples);
-		series->epoch = XLALAddFloatToGPS(series->epoch, first_sample * series->deltaT);
-	}
+	if(!series)
+		return(NULL);
 
-	return(series);
+	series->data = XLALShrinkREAL4Sequence(series->data, first_sample, num_samples);
+	series->epoch = XLALAddFloatToGPS(series->epoch, first_sample * series->deltaT);
+
+	return(series->data);
 }
 
 
 void LALShrinkREAL4TimeSeries(
 	LALStatus *status,
-	REAL4TimeSeries **series,
+	REAL4TimeSeries *series,
 	size_t first_sample,
 	size_t num_samples
 )
@@ -250,10 +254,10 @@ void LALShrinkREAL4TimeSeries(
 	INITSTATUS(status, "LALCutREAL4TimeSeries", TIMESERIESC);
 
 	ASSERT(series != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(series->data != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(first_sample + num_samples <= series->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
-	*series = XLALShrinkREAL4TimeSeries(*series, first_sample, num_samples);
-
-	ASSERT(*series != NULL, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	ASSERT(XLALShrinkREAL4TimeSeries(series, first_sample, num_samples), status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 
 	RETURN(status);
 }
