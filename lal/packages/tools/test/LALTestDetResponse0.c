@@ -55,8 +55,8 @@ NRCSID( LALTESTDETRESPONSE0C, "$Id$" );
 #define LALDR_MATRIXSIZE 3
 
 /* these two constants are for the sky grid */
-#define NUM_DEC 11
-#define NUM_RA  20
+#define NUM_DEC 21
+#define NUM_RA  24
 
 static const INT4 lim = NUM_RA * NUM_DEC;
 
@@ -74,6 +74,9 @@ const REAL8 zero_tolerance = 0.;
 REAL8 real8_tolerance = (REAL8)2.*LAL_REAL8_EPS;
 REAL4 real4_tolerance = (REAL4)2.*LAL_REAL4_EPS;
 
+/* this #if is so I can use Emacs's hide-ifdef-mode to make this
+   block invisible, making this file a little easier to scroll through */
+#if 1
 static void REAL4VectorSubtraction(const REAL4Vector * pA,
                                    const REAL4Vector * pB,
                                    REAL4Vector *pAminusB);
@@ -140,7 +143,7 @@ static BOOLEAN frdetector_ok_p(const LALFrDetector * const computed,
 
 static BOOLEAN detector_ok_p(const LALDetector * const computed,
                              const LALDetector * const expected);
-
+#endif
 
 static REAL8 deg_to_rad(REAL8 degrees)
 {
@@ -156,6 +159,8 @@ static REAL8 rad_to_deg(REAL8 radians)
 /* axis for LALDR_EulerRotation() */
 typedef enum { xAxis = 1, yAxis = 2, zAxis = 3 } LALDR_Axis_t;
 
+/* This #if is so I can hide this block in Emacs's hide-ifdef-mode */
+#if 1
 static void
 LALDR_Set3Vector(LALDR_3Vector * v,
                  REAL8 v1, REAL8 v2, REAL8 v3)
@@ -606,7 +611,7 @@ LALDR_EulerRotation(LALDR_33Matrix * rotationMatrix,
 
   return;
 }
-
+#endif
 
 
 REAL4 skygrid_avg(const skygrid_t response);
@@ -614,11 +619,28 @@ void  skygrid_square(skygrid_t square, const skygrid_t input);
 void  skygrid_sqrt(skygrid_t result, const skygrid_t input);
 INT4  skygrid_copy(skygrid_t dest, const skygrid_t src);
 void  skygrid_print(const skygrid_t input, const char * filename);
-void skygrid_add(skygrid_t sum, const skygrid_t a, const skygrid_t b);
-void skygrid_scalar_mult(skygrid_t result, const skygrid_t a, REAL4 b);
+void  skygrid_add(skygrid_t sum, const skygrid_t a, const skygrid_t b);
+void skygrid_subtract(skygrid_t sum, const skygrid_t a, const skygrid_t b);
+void  skygrid_scalar_mult(skygrid_t result, const skygrid_t a, REAL4 b);
+
+typedef enum
+  {
+    gwpol_scalar = 0,
+    gwpol_plus  = 1,
+    gwpol_cross = 2,
+  }
+GWPolarization;
+
+/* response function in local horizon coordinates (from GRASP)
+ * psi = source orientation
+ * theta = source polar angle = Pi/2 - altitude
+ * phi = source azimuth
+ * pol = selects which response, F+ or Fx, to compute */
+REAL4 resp_local(REAL8 psi, REAL8 theta, REAL8 phi, GWPolarization pol);
 
 FILE *xfopen(const char *path, const char *mode);
 
+/* Yes, I do mean for the following block to be commented out */
 #if 0
 /*
  * This computes the effective longitude and latitude of a detector, given
@@ -755,6 +777,9 @@ int main(int argc, char *argv[])
   INT4  i, j, count;
   REAL4 tolerance;
 
+  REAL8 tmpgmst;
+  LALMSTUnitsAndAcc tmp_uandacc;
+
   skygrid_t plus;
   skygrid_t cross;
   skygrid_t sqsum;
@@ -766,13 +791,19 @@ int main(int argc, char *argv[])
   skygrid_t tmpskygrid2;
   skygrid_t theta;
   skygrid_t phi;
+  REAL4    *plus_vec = NULL;
+  REAL4    *cross_vec = NULL;
   INT4 declim = (NUM_DEC-1)/2;
   FILE     *file_plus_sq_avg = NULL;
   FILE     *file_cross_sq_avg = NULL;
   FILE     *file_plus_at_0_0 = NULL;
   FILE     *file_cross_at_0_0 = NULL;
-  FILE     *file_plus_at_5_10 = NULL;
-  FILE     *file_cross_at_5_10 = NULL;
+  FILE     *file_plus_at_2_10 = NULL;
+  FILE     *file_cross_at_2_10 = NULL;
+  FILE     *file_cross_at_4_15 = NULL;
+  FILE     *file_plus_at_4_15 = NULL;
+  FILE     *file_cross_at_m4_15 = NULL;
+  FILE     *file_plus_at_m4_15 = NULL;
   FILE     *file_sum_sq_avg = NULL;
   FILE     *file_sum_sq = NULL;
   FILE     *file_theta = NULL;
@@ -784,6 +815,38 @@ int main(int argc, char *argv[])
 
   if (lalDebugLevel)
     verbose_p = TRUE;
+
+  /* this section is just for finding out a time when GMST is equal to 0 */
+  /* and the answer is:  GPS = 13675020:943750000 */
+  if (lalDebugLevel == 69)
+    {
+      REAL8 gmst1 = 0.;
+      gps.gpsSeconds     =  13675020;
+      gps.gpsNanoSeconds = 943728500;
+      gps_and_acc.gps = gps;
+      gps_and_acc.accuracy = LALLEAPSEC_STRICT;
+      tmp_uandacc.units = MST_RAD;
+      tmp_uandacc.accuracy = gps_and_acc.accuracy;
+      interval.seconds = 0;
+      interval.nanoSeconds =   1;
+      printf("2*Pi = % 22.14Le\n", 2. * LAL_PI);
+      for (k = 0; k < 4096; ++k)
+        {
+          /*  to avoid printing out all the LAL INFO messages */
+          lalDebugLevel = 0; 
+          LALGPStoGMST1(&status, &gmst1, &(gps_and_acc.gps),
+                        &tmp_uandacc);
+
+          printf("k = %9d; GPS = %d:%d;\t\tgmst1 = % 22.14e; gmst1-2*Pi = % 20.14Le\n",
+                 k, gps_and_acc.gps.gpsSeconds, gps_and_acc.gps.gpsNanoSeconds,
+                 gmst1, (gmst1-2.*LAL_PI));
+
+          /* increment observation time */
+          LALIncrementGPS(&status, &(gps_and_acc.gps), &(gps_and_acc.gps),
+                          &interval);
+        }
+      goto conclusion;
+    }
 
   /*
    * TEST -1: Test of almost_equal_real[48]_p() functions
@@ -1282,7 +1345,9 @@ int main(int argc, char *argv[])
   if (!detector_ok_p(&detector, &(lalCachedDetectors[LALDetectorIndexLHODIFF])))
     {
       if (verbose_p)
-        fprintf(stderr, "WARNING: LHO computed w/ Frame spec != LHO cached\n");
+        {
+          fprintf(stderr, "WARNING: LHO computed w/ Frame spec != LHO cached\n");
+        }
     }
 
 
@@ -1339,7 +1404,8 @@ int main(int argc, char *argv[])
   if (!detector_ok_p(&detector, &(lalCachedDetectors[LALDetectorIndexLHODIFF])))
     {
       if (verbose_p)
-        fprintf(stderr, "WARNING: LHO computed w/ numbers from LAL documentation != LHO cached\n");
+        fprintf(stderr,
+                "WARNING: LHO computed w/ numbers from LAL documentation != LHO cached\n");
     }
 
   if (verbose_p)
@@ -1549,6 +1615,72 @@ int main(int argc, char *argv[])
                           __LINE__);  
   
   print_small_separator_maybe();
+
+
+  /*** expect () */
+  pulsar.orientation = -LAL_PI_2;
+  pulsar.equatorialCoords.longitude = 0.;
+  pulsar.equatorialCoords.latitude = 0.;
+
+  strncpy(frdet.name, "TRIVIAL 1", LALNameLength);
+  frdet.vertexLongitudeRadians = 0.;
+  frdet.vertexLatitudeRadians  = LAL_PI_2;
+  frdet.vertexElevation        = 0.;
+  frdet.xArmAltitudeRadians    = 0.;
+  frdet.yArmAltitudeRadians    = 0.;
+  frdet.xArmAzimuthRadians     = deg_to_rad(180.);
+  frdet.yArmAzimuthRadians     = deg_to_rad( 90.);
+
+  LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
+
+  if (status.statusCode && lalDebugLevel)
+    {
+      fprintf(stderr,
+              "LALTestDetResponse0: LALCreateDetector failed, line %i, %s\n",
+              __LINE__, LALTESTDETRESPONSE0C);
+      REPORTSTATUS(&status);
+      return status.statusCode;
+    }
+
+  utcDate.unixDate.tm_sec = 46;
+  utcDate.unixDate.tm_min = 20;
+  utcDate.unixDate.tm_hour = 8;
+  utcDate.unixDate.tm_mday = 17;
+  utcDate.unixDate.tm_mon  = LALMONTH_MAY;
+  utcDate.unixDate.tm_year = 1994 - 1900;
+
+  accuracy = LALLEAPSEC_LOOSE;
+  LALUTCtoGPS(&status, &gps, &utcDate, &accuracy);
+
+  tmp_uandacc.units = MST_RAD;
+  tmp_uandacc.accuracy = accuracy;
+
+  LALGPStoGMST1(&status, &tmpgmst, &gps, &tmp_uandacc);
+
+  printf("GMST1 = % 14.9e rad.\n", tmpgmst);
+
+  expected_resp.plus = 0.5;
+  expected_resp.cross = 0.;
+  expected_resp.scalar = 0.;
+
+  det_and_pulsar.pDetector = &detector;
+  det_and_pulsar.pSource   = &pulsar;
+
+  PrintLALDetector(&detector);
+  fflush(stdout);
+
+  handle_detresponse_test(detresponse_ok_p(&status, &det_and_pulsar,
+                                           &gps, &expected_resp, tolerance),
+                          __LINE__);
+
+  print_small_separator_maybe();
+
+
+
+
+  /* HEREIAM */
+
+
 
   
   /* switch detector to LHO */
@@ -1761,7 +1893,7 @@ int main(int argc, char *argv[])
   /* time_info.nSample              = 17*24*60; */
   time_info.nSample              = 24*60;
   time_info.accuracy             = LALLEAPSEC_STRICT;
-  
+
   LALComputeDetAMResponseSeries(&status,
                                 &am_response_series,
                                 &det_and_pulsar,
@@ -1908,9 +2040,21 @@ int main(int argc, char *argv[])
 
   /* use Livingston */
   /* detector = lalCachedDetectors[LALDetectorIndexLLODIFF]; */
+
+  strncpy(frdet.name, "Reference", LALNameLength);
+  frdet.vertexLongitudeRadians = deg_to_rad(0.);
+  frdet.vertexLatitudeRadians  = deg_to_rad(90.);
+  frdet.xArmAltitudeRadians    = 0.;
+  frdet.yArmAltitudeRadians    = 0.;
+  frdet.xArmAzimuthRadians     = deg_to_rad(180.);
+  frdet.yArmAzimuthRadians     = deg_to_rad(90.);
+
+  LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);  
   
   if (lalDebugLevel >= 1)
     {
+      REAL8 gmst1 = 0.;
+      
       printf("\nStarting whole-sky test...\n");
       PrintLALDetector(&detector);
       count = 0;
@@ -1920,8 +2064,12 @@ int main(int argc, char *argv[])
       file_cross_sq_avg = xfopen("cross_sq_avg.txt", "w");
       file_plus_at_0_0  = xfopen("plus_at_0_0.txt", "w");
       file_cross_at_0_0 = xfopen("cross_at_0_0.txt", "w");
-      file_plus_at_5_10 = xfopen("plus_at_5_10.txt", "w");
-      file_cross_at_5_10 = xfopen("cross_at_5_10.txt", "w");
+      file_plus_at_2_10 = xfopen("plus_at_2_10.txt", "w");
+      file_cross_at_2_10 = xfopen("cross_at_2_10.txt", "w");
+      file_plus_at_4_15 = xfopen("plus_at_4_15.txt", "w");
+      file_cross_at_4_15 = xfopen("cross_at_4_15.txt", "w");
+      file_plus_at_m4_15 = xfopen("plus_at_m4_15.txt", "w");
+      file_cross_at_m4_15 = xfopen("cross_at_m4_15.txt", "w");
       file_sum_sq_avg = xfopen("sum_sq_avg.txt", "w");
       file_sum_sq = xfopen("sum_sq.txt", "w");
       file_theta = xfopen("theta.txt", "w");
@@ -1937,6 +2085,7 @@ int main(int argc, char *argv[])
 
       /* FIXME */
       /* only need to print out the (phi, theta) grid once */
+      /*
       for (j = 0; j < NUM_RA; ++j)
         {
           for (i = -declim; i <= declim; ++i)
@@ -1944,11 +2093,27 @@ int main(int argc, char *argv[])
               
             }
         }
-
-      printf("N sample = %d\n", time_info.nSample);
+      */
       
+      /* Set a GPS time that's close to 0h GMST1. Found this by trial and
+       * error:
+       * GPS = 13675020:943728537; gmst1 =   2.68743469376486e-10
+       * Later, need to use a Science Run time period. */
+      gps_and_acc.gps.gpsSeconds     =  13675020;
+      gps_and_acc.gps.gpsNanoSeconds = 943728537;
+      interval.seconds               =       600;
+      interval.nanoSeconds           =         0;
+      
+      printf("N sample = %d\n", time_info.nSample);
+
       for (k = 0; k < time_info.nSample; ++k)
         {
+          LALMSTUnitsAndAcc uandacc = { MST_RAD, gps_and_acc.accuracy};
+          LALGPStoGMST1(&status, &gmst1, &(gps_and_acc.gps), &uandacc);
+
+          if (lalDebugLevel)
+            printf("GRAR: k = %6d; gmst1 = % 20.14e\n", k, gmst1);
+                    
           for (j = 0; j < NUM_RA; ++j)
             {
               pulsar.equatorialCoords.longitude =
@@ -1959,10 +2124,13 @@ int main(int argc, char *argv[])
                   INT4 cnt = j*NUM_DEC + i + declim;
 
                   pulsar.equatorialCoords.latitude =
-                    acos((REAL8)i/(REAL8)NUM_DEC);
+                    asin((REAL8)i/(REAL8)declim);
 
+                  if (k == 0 && j == 0 && i == -declim)
+                    printf("FOO: gmst1 = % 20.14e\n", gmst1);
                   LALComputeDetAMResponse(&status, &am_response,
                                           &det_and_pulsar, &gps_and_acc);
+
                   plus[cnt]  = am_response.plus;
                   cross[cnt] = am_response.cross;
                   sqsum[cnt] = (plus[cnt] * plus[cnt])
@@ -1970,15 +2138,48 @@ int main(int argc, char *argv[])
 
                   if (i == 0 && j == 0)
                     {
-                      fprintf(file_plus_at_0_0, "% 14.9e\n", plus[cnt]);
-                      fprintf(file_cross_at_0_0, "% 14.9e\n", cross[cnt]);
-                      fprintf(file_sum_sq, "% 14.9e\n", sqsum[cnt]);
+#if 0                      
+                      printf("GMST AND DET @ First Time point\n");
+                      printf("GMST1 = % 14.9e rad\n", gmst1);
+                      PrintLALDetector(det_and_pulsar.pDetector);
+                      printf("Pulsar: \n");
+                      printf("    RA = % 14.9e\n",
+                             det_and_pulsar.pSource->equatorialCoords.longitude);
+                      printf("  Dec = % 14.9e\n",
+                             det_and_pulsar.pSource->equatorialCoords.latitude);
+                      printf(" Orien = % 14.9e\n",
+                             det_and_pulsar.pSource->orientation);
+#endif
+                      fprintf(file_plus_at_0_0, "%4d % 14.9e %9d % 14.9e\n",
+                              k, gmst1, gps_and_acc.gps.gpsSeconds, plus[cnt]);
+                      fprintf(file_cross_at_0_0, "%4d % 14.9e %9d % 14.9e\n",
+                              k, gmst1, gps_and_acc.gps.gpsSeconds,
+                              cross[cnt]);
+                      fprintf(file_sum_sq, "%4d % 14.9e %9d % 14.9e\n",
+                              k, gmst1, gps_and_acc.gps.gpsSeconds,
+                              sqsum[cnt]);
                     }
 
-                  if (i == 5 && j == 10)
+                  if (i == 2 && j == 10)
                     {
-                      fprintf(file_plus_at_5_10, "% 14.9e\n", plus[cnt]);
-                      fprintf(file_cross_at_5_10, "% 14.9e\n", cross[cnt]);
+                      fprintf(file_plus_at_2_10, "% 14.9e % 14.9e\n",
+                              gmst1, plus[cnt]);
+                      fprintf(file_cross_at_2_10, "% 14.9e % 14.9e\n",
+                              gmst1, cross[cnt]);
+                    }
+
+                  if (i == 4 && j == 15)
+                    {
+                      fprintf(file_plus_at_4_15, "% 14.9e % 14.9e\n", gmst1,
+                              plus[cnt]);
+                      fprintf(file_cross_at_4_15, "% 14.9e % 14.9e\n",
+                              gmst1, cross[cnt]);
+                    }
+
+                  if (i == -4 && j == 15)
+                    {
+                      fprintf(file_plus_at_m4_15, "% 14.9e\n", plus[cnt]);
+                      fprintf(file_cross_at_m4_15, "% 14.9e\n", cross[cnt]);
                     }
                 }
             }
@@ -1998,7 +2199,7 @@ int main(int argc, char *argv[])
 
           skygrid_add(sum_of_sq_time_avg, plus_sq_time_avg, cross_sq_time_avg);
 
-          if (k == 300)
+          if (k == 0)
             {
               skygrid_print(plus, "plus.txt");
               skygrid_print(cross, "cross.txt");
@@ -2006,6 +2207,7 @@ int main(int argc, char *argv[])
               skygrid_square(tmpskygrid, plus);
               skygrid_square(tmpskygrid2, cross);
               skygrid_add(tmpskygrid, tmpskygrid, tmpskygrid2);
+              printf("BAR: gmst1 = % 20.15g\n", gmst1);
               printf("avg(F+^2 + Fx^2) = % 14.8e\n", skygrid_avg(tmpskygrid));
             }
 
@@ -2023,8 +2225,12 @@ int main(int argc, char *argv[])
       fprintf(file_cross_sq_avg, "\n");
       fprintf(file_plus_at_0_0, "\n");
       fprintf(file_cross_at_0_0, "\n");
-      fprintf(file_plus_at_5_10, "\n");
-      fprintf(file_cross_at_5_10, "\n");
+      fprintf(file_plus_at_2_10, "\n");
+      fprintf(file_cross_at_2_10, "\n");
+      fprintf(file_plus_at_4_15, "\n");
+      fprintf(file_cross_at_4_15, "\n");
+      fprintf(file_plus_at_m4_15, "\n");
+      fprintf(file_cross_at_m4_15, "\n");
       fprintf(file_sum_sq_avg, "\n");
       fprintf(file_sum_sq, "\n");
 
@@ -2035,13 +2241,76 @@ int main(int argc, char *argv[])
       fclose(file_cross_sq_avg);
       fclose(file_plus_at_0_0);
       fclose(file_cross_at_0_0);
-      fclose(file_plus_at_5_10);
-      fclose(file_cross_at_5_10);
+      fclose(file_plus_at_2_10);
+      fclose(file_cross_at_2_10);
+      fclose(file_plus_at_4_15);
+      fclose(file_cross_at_4_15);
+      fclose(file_plus_at_m4_15);
+      fclose(file_cross_at_m4_15);
       fclose(file_sum_sq_avg);
       fclose(file_sum_sq);
       fclose(file_theta);
       fclose(file_phi);
     }
+
+  printf("GRASP plus = % 14.9e\n", resp_local(0., 0., 0., gwpol_plus));
+  printf("     cross = % 14.9e\n", resp_local(0., 0., 0., gwpol_cross));
+
+  printf("GRASP plus = % 14.9e\n", resp_local(LAL_PI_4, 0., 0., gwpol_plus));
+  printf("     cross = % 14.9e\n", resp_local(LAL_PI_4, 0., 0., gwpol_cross));
+
+  fflush(stdout);
+  
+  
+  {
+    REAL4 tmpsum = 0.;
+    skygrid_t resp_plus;
+    skygrid_t resp_cros;
+    skygrid_t tmp1, tmp2, tmp3;
+    
+    for (j = 0; j < NUM_RA; ++j)
+      {
+        REAL8 azimuth = (REAL8)j/(REAL8)NUM_RA * LAL_TWOPI;
+        
+        for (i = -declim; i <= declim; ++i)
+          {
+            INT4 cnt = j*NUM_DEC + i + declim;
+            REAL8 altitude = asin((REAL8)i/(REAL8)declim);
+
+            if (lalDebugLevel >= 4)
+              {
+                printf("azimuth  = % 14.9e deg\n", rad_to_deg(azimuth));
+                printf("altitude = % 14.9e deg\n", rad_to_deg(altitude));
+              }
+            
+            resp_plus[cnt] = resp_local(0., LAL_PI_2 - altitude, azimuth,
+                                        gwpol_plus);
+            resp_cros[cnt] = resp_local(0., LAL_PI_2 - altitude, azimuth,
+                                        gwpol_cross);
+          }
+      }
+
+    skygrid_print(resp_plus, "local_plus.txt");
+    skygrid_print(resp_cros, "local_cros.txt");
+
+    skygrid_square(tmp1, resp_plus);
+    skygrid_square(tmp2, resp_cros);
+    skygrid_add(tmp1, tmp1, tmp2);
+
+    skygrid_print(tmp1, "foobar.txt");
+    skygrid_print(tmp2, "barfoo.txt");
+    
+    printf("avg(F+^2 + Fx^2) using resp_local() = % 14.9e\n",
+           skygrid_avg(tmp1));
+
+    skygrid_print(plus, "lal_plus.txt");
+    skygrid_print(cross, "lal_cross.txt");
+    skygrid_subtract(tmp3, resp_plus, plus);
+    skygrid_print(tmp3, "diff_plus.txt");
+    skygrid_subtract(tmp3, resp_cros, cross);
+    skygrid_print(tmp3, "diff_cros.txt");
+  }
+
 
 
   /*
@@ -2053,6 +2322,7 @@ int main(int argc, char *argv[])
   LALSDestroyVector(&status, &(circ_series.data));
   LALSDestroyVector(&status, &(sum_series.data));
 
+ conclusion:
   LALCheckMemoryLeaks();
 
   return 0;
@@ -2062,7 +2332,8 @@ int main(int argc, char *argv[])
 /*
  * subtracts two REAL4Vectors; user must do all allocation beforehand
  */
-static void REAL4VectorSubtraction(const REAL4Vector *pA, const REAL4Vector *pB,
+static void REAL4VectorSubtraction(const REAL4Vector *pA,
+                                   const REAL4Vector *pB,
                                    REAL4Vector *pAminusB)
 {
   UINT4 i;
@@ -2152,12 +2423,17 @@ static BOOLEAN matrix_ok_p(LALDR_33Matrix * const computed,
   for (i = 0; i < 2; ++i)
     for (j = 0; j < 2; ++j)
       {
-        if (!almost_equal_real8_p((*computed)[i][j], (*expected)[i][j], tolerance))
+        if (!almost_equal_real8_p((*computed)[i][j], (*expected)[i][j],
+                                  tolerance))
           {
             if (verbose_p)
               {
-                LALDR_Print33Matrix(expected, "INFO: matrix_ok_p(): expected", 0, stdout, "");
-                LALDR_Print33Matrix(computed, "INFO: matrix_ok_p(): computed", 0, stdout, "");
+                LALDR_Print33Matrix(expected,
+                                    "INFO: matrix_ok_p(): expected",
+                                    0, stdout, "");
+                LALDR_Print33Matrix(computed,
+                                    "INFO: matrix_ok_p(): computed",
+                                    0, stdout, "");
               }
             
             return FALSE;
@@ -2183,8 +2459,10 @@ static BOOLEAN vector_ok_p(LALDR_3Vector * const computed,
         {
           if (verbose_p)
             {
-              LALDR_Print3Vector(computed, "INFO: vector_ok_p(): computed", stdout);
-              LALDR_Print3Vector(expected, "INFO: vector_ok_p(): expected", stdout);
+              LALDR_Print3Vector(computed, "INFO: vector_ok_p(): computed",
+                                 stdout);
+              LALDR_Print3Vector(expected, "INFO: vector_ok_p(): expected",
+                                 stdout);
             }
 
           return FALSE;
@@ -2527,13 +2805,27 @@ static BOOLEAN detector_ok_p(const LALDetector * const computed,
 
 REAL4 skygrid_avg(const skygrid_t response)
 {
-  INT4 i;
+  INT4 i, j;
+  INT4 declim = (NUM_DEC-1)/2;
   REAL4 retval = 0.;
 
+#if 1  
+  for (j = 0; j < NUM_RA; ++j)
+    {
+      for (i = -declim+1; i <= declim-1; ++i)
+        {
+          INT4 cnt = j*NUM_DEC + i + declim;
+          retval += response[cnt];
+        }
+    }
+#endif
+
+#if 0
   for (i = 0; i < lim; ++i)
     retval += response[i];
+#endif
 
-  retval /= lim;
+  retval /= lim-(2*NUM_RA);
 
   return retval;
 }
@@ -2601,6 +2893,14 @@ void skygrid_add(skygrid_t sum, const skygrid_t a, const skygrid_t b)
     sum[i] = a[i] + b[i];
 }
 
+void skygrid_subtract(skygrid_t sum, const skygrid_t a, const skygrid_t b)
+{
+  INT4 i;
+
+  for (i = 0; i < lim; ++i)
+    sum[i] = a[i] - b[i];
+}
+
 void skygrid_scalar_mult(skygrid_t result, const skygrid_t a, REAL4 b)
 {
   INT4 i;
@@ -2659,4 +2959,30 @@ FILE *xfopen(const char *path, const char *mode)
       exit(errno);
     }
   return f;
+}
+
+REAL4 resp_local(REAL8 psi, REAL8 theta, REAL8 phi, GWPolarization pol)
+{
+  REAL8 cos_theta, cos_sq_theta, cos_2_psi, sin_2_psi;
+  REAL8 half_cos_sq_theta_p1_cos_2_phi, cos_theta_sin_2_phi;
+  REAL8 retval;
+
+  cos_theta = cos(theta);
+  cos_sq_theta = cos_theta * cos_theta;
+  cos_2_psi = cos(2. * psi);
+  sin_2_psi = sin(2. * psi);
+  cos_theta_sin_2_phi = cos_theta * sin(2. * phi);
+  half_cos_sq_theta_p1_cos_2_phi = (cos_sq_theta + 1.) * cos(2. * phi) / 2.;
+  
+  
+  if (pol == gwpol_plus)
+    retval = half_cos_sq_theta_p1_cos_2_phi * cos_2_psi
+      - cos_theta_sin_2_phi * sin_2_psi;
+  else if (pol == gwpol_cross)
+    retval = half_cos_sq_theta_p1_cos_2_phi * sin_2_psi
+      + cos_theta_sin_2_phi * cos_2_psi;
+  else
+    retval = 0.;
+  
+  return (REAL4)retval;
 }
