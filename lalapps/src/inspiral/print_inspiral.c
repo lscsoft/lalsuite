@@ -349,7 +349,7 @@ int main ( int argc, char *argv[] )
     /* get only the playground events */
     numEvents = 0;
     eventHead = NULL;
-    if ( ((eventHandle[i].end_time.gpsSeconds - 729273613) % 6370) < 600 )
+    if ( ((eventHandle[i]->end_time.gpsSeconds - 729273613) % 6370) < 600 )
     {
       ++numEvents;
       if ( ! eventHead )
