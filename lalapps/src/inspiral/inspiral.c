@@ -62,11 +62,9 @@ CHAR *bankFileName      = NULL;         /* name of input template bank  */
 INT4  startTemplate     = -1;           /* index of first template      */
 INT4  stopTemplate      = -1;           /* index of last template       */
 INT4  numChisqBins      = -1;           /* number of chisq bins         */
-char  *rhosqStr         = NULL;         /* string of rhosq thresholds   */
-char  *chisqStr         = NULL;         /* string of chisq thresholds   */
-REAL4 *rhosqThresh      = NULL;         /* signal to noise thresholds   */
-REAL4 *chisqThresh      = NULL;         /* chisq veto thresholds        */
-int    eventCluster     = -1;           /* perform chirplen clustering  */
+REAL4 snrThresh         = -1;           /* signal to noise thresholds   */
+REAL4 chisqThresh       = -1;           /* chisq veto thresholds        */
+INT4  eventCluster      = -1;           /* perform chirplen clustering  */
 
 /* output parameters */
 int    enableOutput     = -1;           /* write out inspiral events    */
@@ -246,7 +244,7 @@ int main( int argc, char *argv[] )
 
   if ( writeRawData )
   {
-    outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &chan, "ct", "INPUT" );
+    outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &chan, "ct", "RAW" );
   }
 
   /* create the data segment vector */
@@ -395,9 +393,9 @@ int main( int argc, char *argv[] )
       &status );
 
   /* parse the thresholds */
-  fcFilterParams->rhosqThresh = atof( rhosqStr );
-  fcFilterParams->chisqThresh = atof( chisqStr );
-  fcFilterParams->maximiseOverChirp = 1;
+  fcFilterParams->rhosqThresh = snrThresh * snrThresh;
+  fcFilterParams->chisqThresh = chisqThresh;
+  fcFilterParams->maximiseOverChirp = eventCluster;
 
 
   /*
@@ -695,8 +693,6 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
 
   /* free the rest of the memory, check for memory leaks and exit */
-  LALFree( rhosqStr );
-  LALFree( chisqStr );
   LALFree( calCacheName );
   LALFree( frInCacheName );
   LALFree( bankFileName );
@@ -748,8 +744,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"stop-template",           required_argument, 0,                'n'},
     {"chisq-bins",              required_argument, 0,                'o'},
     {"calibration-cache",       required_argument, 0,                'p'},
-    {"rhosq-thresholds",        required_argument, 0,                'q'},
-    {"chisq-thresholds",        required_argument, 0,                'r'},
+    {"snr-threshold",           required_argument, 0,                'q'},
+    {"chisq-threshold",         required_argument, 0,                'r'},
     {"comment",                 required_argument, 0,                's'},
     {"enable-high-pass",        required_argument, 0,                't'},
     {"frame-cache",             required_argument, 0,                'u'},
@@ -1049,21 +1045,29 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'q':
+        snrThresh = atof( optarg );
+        if ( snrThresh < 0 )
         {
-          size_t rhosqlen = strlen( optarg );
-          rhosqStr = (char *) LALMalloc( ++rhosqlen );
-          memcpy( rhosqStr, optarg, rhosqlen );
-          ADD_PROCESS_PARAM( "string", "%s", optarg );
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "signal to noise threshold must be positive: "
+              "(%f specified)\n", 
+              long_options[option_index].name, snrThresh );
+          exit( 1 );
         }
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
       case 'r':
+        chisqThresh = atof( optarg );
+        if ( chisqThresh < 0 )
         {
-          size_t chisqlen = strlen( optarg );
-          chisqStr = (char *) LALMalloc( ++chisqlen );
-          memcpy( chisqStr, optarg, chisqlen );
-          ADD_PROCESS_PARAM( "string", "%s", optarg );
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "chi squared threshold must be positive: "
+              "(%f specified)\n", 
+              long_options[option_index].name, chisqThresh );
+          exit( 1 );
         }
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
       case 's':
@@ -1323,14 +1327,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
 
   /* check that the thresholds have been specified */
-  if ( ! rhosqStr )
+  if ( snrThresh < 0 )
   {
-    fprintf( stderr, "--rhosq-thresholds must be specified\n" );
+    fprintf( stderr, "--snr-threshold must be specified\n" );
     exit( 1 );
   }
-  if ( ! chisqStr )
+  if ( chisqThresh < 0 )
   {
-    fprintf( stderr, "--chisq-thresholds must be specified\n" );
+    fprintf( stderr, "--chisq-threshold must be specified\n" );
     exit( 1 );
   }
 
