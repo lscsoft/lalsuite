@@ -151,7 +151,7 @@ static void Rcfunc (REAL4 *result, REAL4 z)
   Ezfunc(&Ez,z);
   corrfact=(ho/0.65)*(Ez/sqrt((1.+z)*(1.+z)*(1.+z)));
   /*model of 2001*/
-  *result = 0.15/(1.+22.*exp(-3.4*z));
+  *result =corrfact*( 0.15/(1.+22.*exp(-3.4*z)));
   return;
 }
 /*probability density of z */
