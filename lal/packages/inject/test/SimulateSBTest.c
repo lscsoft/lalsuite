@@ -380,8 +380,8 @@ int main( int argc, char *argv[] ){
   /* check normalizations */
   totnorm=0.0;
   for (i=1;i<freqlen;i++){
-    REAL4 freq=i*SIMULATESBTESTC_RATE/SIMULATESBTESTC_LENGTH;
-    REAL4 resp=SIMULATESBTESTC_RMS/(sqrt(fnyquist)*s_of_f(freq));
+    REAL8 freq=i*SIMULATESBTESTC_RATE/SIMULATESBTESTC_LENGTH;
+    REAL8 resp=SIMULATESBTESTC_RMS/(sqrt(fnyquist)*s_of_f(freq));
     totnorm+=resp*resp*(omegaGW.data->data[i])/(freq*freq*freq);
   }
   totnorm*=0.3*LAL_H0FAC_SI*LAL_H0FAC_SI*SIMULATESBTESTC_RATE/(LAL_PI*LAL_PI*SIMULATESBTESTC_LENGTH);
