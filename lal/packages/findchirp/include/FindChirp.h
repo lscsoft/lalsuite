@@ -163,6 +163,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_EHETR 19
 #define FINDCHIRPH_EDFDT 20
 #define FINDCHIRPH_EAPRX 21
+#define FINDCHIRPH_EUAPX 22
 #define FINDCHIRPH_MSGENULL "Null pointer"
 #define FINDCHIRPH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPH_MSGEALOC "Memory allocation error"
@@ -180,6 +181,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_MSGEHETR "Attempting to simulate heterodyned GW"
 #define FINDCHIRPH_MSGEDFDT "Waveform sampling interval is too large"
 #define FINDCHIRPH_MSGEAPRX "Incorrect waveform approximant"
+#define FINDCHIRPH_MSGEUAPX "Unknown waveform approximant"
 /* </lalErrTable> */
 
 
