@@ -123,7 +123,6 @@ LALCreateTwoIFOCoincList(
   INT8                          currentTriggerNS[2];
   CoincInspiralTable           *coincHead = NULL;
   CoincInspiralTable           *thisCoinc = NULL;
-  INT4                          maxTC = 0;
   INT4                          numEvents = 0;
 
   INITSTATUS( status, "LALCreateTwoIFOCoincList", COINCINSPIRALUTILSC );
@@ -137,7 +136,6 @@ LALCreateTwoIFOCoincList(
   memset( currentTriggerNS, 0, 2 * sizeof(INT8) );
   memset( currentTrigger, 0, 2 * sizeof(SnglInspiralTable *) );
 
-  maxTC = errorParams->dt + 44;
   
   for ( currentTrigger[0] = snglInput; currentTrigger[0]->next;
       currentTrigger[0] = currentTrigger[0]->next)
@@ -152,7 +150,7 @@ LALCreateTwoIFOCoincList(
     LALGPStoINT8( status->statusPtr, &currentTriggerNS[1], 
           &(currentTrigger[1]->end_time) );
 
-    while ( (currentTriggerNS[1] - currentTriggerNS[0]) < maxTC )
+    while ( (currentTriggerNS[1] - currentTriggerNS[0]) < errorParams->dt )
     {
       /* check that triggers pass coincidence test */
       LALCompareSnglInspiral( status->statusPtr, currentTrigger[0], 
@@ -185,10 +183,17 @@ LALCreateTwoIFOCoincList(
       }
 
       /* scroll on to the next sngl inspiral */
-      currentTrigger[1] = currentTrigger[1]->next;
-      LALGPStoINT8( status->statusPtr, &currentTriggerNS[1], 
+      
+      if ( (currentTrigger[1] = currentTrigger[1]->next) )
+      {
+        LALGPStoINT8( status->statusPtr, &currentTriggerNS[1], 
             &(currentTrigger[1]->end_time) );
-
+      }
+      else
+      {
+        LALInfo(status, "Second trigger has reached end of list");
+        break;
+      }
     }
   }
 
@@ -302,7 +307,7 @@ LALSnglInspiralLookup(
     LALStatus            *status,
     SnglInspiralTable   **snglInspiralPtr,
     CoincInspiralTable   *coincInspiral,
-    InterferometerLabel   ifo 
+    InterferometerLabel   ifoLabel 
     )
 /* </lalVerbatim> */
 {
@@ -310,7 +315,7 @@ LALSnglInspiralLookup(
 
   INITSTATUS( status, "LALSnglInspiralLookup", COINCINSPIRALUTILSC );
 
-  switch ( ifo ) 
+  switch ( ifoLabel ) 
   {
     case g1:
       snglInspiralEntry = coincInspiral->G1Inspiral;
@@ -418,8 +423,6 @@ LALExtractCoincSngls(
   UINT4               eventNum = 1;
   INT4                j;
   
-  gpsStartTime = NULL;
-
   INITSTATUS( status, "LALExtractCoincSngls", COINCINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
@@ -427,8 +430,13 @@ LALExtractCoincSngls(
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
   ASSERT( ! (*snglPtr), status, 
       LIGOMETADATAUTILSH_ENNUL, LIGOMETADATAUTILSH_MSGENNUL );
-  ASSERT( coincInspiral, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  
+  if ( !coincInspiral )
+  {
+    LALInfo( status, "Empty coincInspiral passed to LALExtractCoincSngls");
+    DETATCHSTATUSPTR (status);
+    RETURN (status);
+  }
 
   /* loop over the linked list of coinc inspirals */
   for( thisCoinc = coincInspiral; thisCoinc; thisCoinc = thisCoinc->next,
@@ -460,10 +468,8 @@ LALExtractCoincSngls(
         
         /* create an eventId and populate the id */
         eventId = (EventIDColumn *) LALCalloc( 1, sizeof(EventIDColumn) );
-        /* XXX Commented until id is changed from UINT4 to UINT8 
         eventId->id = LAL_INT8_C(1000000000) * (INT8) gpsStartTime->gpsSeconds 
-          + (INT8) eventNum; XXX */
-       
+          + (INT8) eventNum;        
         thisSngl->event_id = eventId;
         eventId->snglInspiralTable = thisSngl;
       }
