@@ -388,6 +388,10 @@ Patrick Brady
 \end{entry}
 \clearpage
 
+\subsection{Program \texttt{lalapps\_binj}}
+\label{program:lalapps-binj}
+\idx[Program]{lalapps\_binj}
+
 \begin{entry}
 \item[Name]
 \verb$lalapps_binj$ --- produces burst injection data files.
@@ -406,6 +410,9 @@ Patrick Brady
 [\verb$--usertag$ \textsc{tag}]
 
 \item[Description] 
+\textbf{Warning:}  this is very beta code that we are just starting to
+test.   This documentation could be (is likely) out of date.
+
 \verb$lalapps_binj$
 generates a number of burst  parameters suitable  for using in a Monte
 Carlo injection to test the efficiency of a burst search.  The  various
@@ -455,6 +462,18 @@ Optional. The string \textsc{wave} will be written into the \texttt{waveform}
 column of the \texttt{sim\_burst} table output. This is used by the
 burst code to determine which type of waveforms it should inject into the
 data. Default is \texttt{SineGaussian}.
+
+\item[\texttt{--tau} \textsc{tau}]
+Optional.  The decay-time for sine-gaussian,  gaussian,  ringdown and
+ring-up waveforms.
+
+\item[\texttt{--freq} \textsc{freq}]
+Optional.  The central frequency for sine-gaussian,  ringdown and
+ring-up waveforms.
+
+\item[\texttt{--hpeak} \textsc{hpeak}]
+Optional.  The peak dimensionless strain for sine-gaussian,  gaussian,  ringdown and
+ring-up waveforms.
 
 \item[\texttt{--user-tag} \textsc{string}] Optional. Set the user tag for this
 job to be \textsc{string}. May also be specified on the command line as 
