@@ -193,7 +193,7 @@ LALStochasticInverseNoise( LALStatus                          *status,
   invNoise->deltaF = deltaF;
   hwInvNoise->deltaF = deltaF;
 
-  /* check that initial frequency is positive */
+  /* check that initial frequency is non-negative */
   f0 = wNoise->f0;
    if ( f0 < 0 ) {
      ABORT( status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
@@ -248,7 +248,7 @@ LALStochasticInverseNoise( LALStatus                          *status,
       sPtrIP = invNoise->data->data + 1;
       cPtrIPHW = hwInvNoise->data->data + 1;
   } /* if (f0 == 0) */
-  else /* heterodyning */
+  else
   {
     /* initialize pointers */
     sPtrPW = wNoise->data->data;

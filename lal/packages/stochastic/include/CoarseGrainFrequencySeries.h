@@ -114,5 +114,6 @@ LALCCoarseGrainFrequencySeries(LALStatus                        *status,
 
 \newpage\input{CoarseGrainFrequencySeriesC}
 \newpage\input{SCoarseGrainFrequencySeriesTestC}
+\newpage\input{CCoarseGrainFrequencySeriesTestC}
 
 *********************************************************** </lalLaTeX> */

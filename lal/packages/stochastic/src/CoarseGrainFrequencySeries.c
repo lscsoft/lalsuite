@@ -17,7 +17,7 @@ frequncy resolution.
 
 \subsubsection*{Description}
 
-This function is designed to facilitate approximation of integrals
+These functions are designed to facilitate approximation of integrals
 such as
 $$
 \int g(f)\,h(f)\,df
