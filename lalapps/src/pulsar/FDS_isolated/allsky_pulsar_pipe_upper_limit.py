@@ -147,7 +147,7 @@ subdir=''.join([local_work_dir,'/','ul-run.',str(job_id)])
 
 ipolka=0
 while ipolka < Npolka:
- freq_dmp = float(start_freq) + (float(job_id)+ipolka) * float(coincidence_band)
+ freq_dmp = float(start_freq) + float(job_id)*ipolka * float(coincidence_band)
  gzpd_res_in=''.join(['polka_out-',str(freq_dmp),'.gz'])
  res_in=''.join(['polka_out-',str(freq_dmp)])
  gzpd_res_file=''.join([starting_dir,'/polka_results/',gzpd_res_in])
@@ -210,7 +210,7 @@ shutil.copy(times2,subdir)
 #############################################
 ipolka=0
 while ipolka < Npolka:
- freq_dmp = float(start_freq) + (float(job_id)+ipolka) * float(coincidence_band)
+ freq_dmp = float(start_freq) + (float(job_id)*ipolka * float(coincidence_band))
  gzpd_res_in=''.join(['polka_out-',str(freq_dmp),'.gz'])
  res_in=''.join(['polka_out-',str(freq_dmp)])
  gzpd_res_file=''.join([starting_dir,'/polka_results/',gzpd_res_in])
@@ -268,7 +268,7 @@ os.system(extract_args)
 ipolka=0
 fa=100.0
 while ipolka < Npolka:
- freq_dmp = float(start_freq) + (float(job_id)+ipolka) * float(coincidence_band)
+ freq_dmp = float(start_freq) + float(job_id)*ipolka * float(coincidence_band)
  res_in=''.join(['polka_out-',str(freq_dmp)])
  results_file=open(res_in,mode='r')
  line=results_file.readline()
@@ -293,16 +293,14 @@ print ' *  *  * '
 cont=1
 confidence=0.0
 
-inj_out=''.join(['Injection.data-',str(freq)])
-inj_data_file=open(inj_out,mode='a')
 
 while cont:
   i=0
   counter=0
   while i < Ninj:
 
-    print '======================='
-    print 'Injection # ',i
+    #print '======================='
+    #print 'Injection # ',i
     # Random injection parameters:
     cosi=random.uniform(-1.0,1.0)
     Ap=(1+cosi**2)/2 * h0
@@ -386,7 +384,7 @@ while cont:
     alphaT=alpha+AngularDistance*math.cos(theta)
     deltaT=delta+AngularDistance*math.sin(theta)
     fstart=f0-float(freq_window)
-    print 'f0,fstart=',f0,fstart
+    #print 'f0,fstart=',f0,fstart
 
     # search for the signal 
     ifo=ifo1
@@ -517,11 +515,11 @@ while cont:
       Ifa2=math.log((1.0+F2/2.0))-(F2/2.0)      
       Ifa=Ifa1+Ifa2
 
-      print 'F values for the injections: ',F1,F2
-      print 'corresponding log false alarms: ' ,Ifa1,Ifa2
-      print 'joint log false alarm: ',Ifa
-      print 'false alarm of loudest event: ', fa
-      print ' '
+      #print 'F values for the injections: ',F1,F2
+      #print 'corresponding log false alarms: ' ,Ifa1,Ifa2
+      #print 'joint log false alarm: ',Ifa
+      #print 'false alarm of loudest event: ', fa
+      #print ' '
 
       if Ifa > fa:
         print '%Joint false alarm is too large:',Ifa,'Target was:',fa
@@ -532,7 +530,7 @@ while cont:
       
       if Ifa <= fa:
 
-        print '... continuing...'
+        #print '... continuing...'
 
         if F1 > float(Fth_chisq):
 
@@ -790,24 +788,31 @@ while cont:
 
         sys.stdout.flush()
         os.system('rm -rf signal1 signal2')            
-        print f0,alpha,delta,float(sF1), 2*float(sF1th), float(sF2), 2*float(sF2th),abs(float(sf1)-float(sf2)),h0,i+1,counter,float(counter)/float(i+1)
-        print ' '
-        print 'Ninj,tolerance,dh0= ',Ninj,tol,dh0
-        print 'current confidence,target confidence: ',float(counter)/float(i+1),c0
+        #print ' '
+        #print 'Ninj,tolerance,dh0= ',Ninj,tol,dh0
+        #print 'current confidence,target confidence: ',float(counter)/float(i+1),c0
 
       #end if Ifa <= fa  
     #end if injected signals are in coincidence  
     #increment i, independently of whether fa was big enough 
     i=i+1
     print 'counter,i= ',counter,i
-
+    inj_out=''.join(['Injection.data-',str(freq)])
+    #print 'injection data file',inj_out
+    inj_data_file=open(inj_out,mode='a')
+    print >>inj_data_file,f0,alpha,delta,alphaT,deltaT,sf1,sf2,float(sF1),2*float(sF1th), float(sF2), 2*float(sF2th),h0,i+1,counter,float(counter)/float(i+1)
+    inj_data_file.close()
+    shutil.copy(inj_out,starting_dir)
+  
   #end i-th injection, next injection
+  
+
   confidenceOLD=confidence  
   confidence=float(counter)/float(Ninj)
       # first ifo
   res_out=''.join(['Confidence.data-',str(freq)])
   outCdata_file=open(res_out,mode='a')
-  print >>outCdata_file,h0,confidence
+  print >>outCdata_file,Ninj,h0,confidence
   outCdata_file.close()
   shutil.copy(res_out,starting_dir)
    
