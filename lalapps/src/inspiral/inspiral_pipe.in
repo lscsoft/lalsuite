@@ -246,7 +246,8 @@ for seg in data:
 
   if do_datafind:
     dag.add_node(df1)
-    dag.add_node(df2)
+    if do_triginsp:
+      dag.add_node(df2)
 
   prev_df1 = df1
   prev_df2 = df2
