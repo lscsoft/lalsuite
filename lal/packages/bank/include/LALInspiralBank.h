@@ -104,6 +104,9 @@ We store the diagonalized metric together with the angle theta
 between the $\tau_0$-axis and the semi-major axis of the ambiguity ellipse.
 The members of this structure are:
 \begin{itemize}
+\item \texttt{G00}: 00-component of the metric in $(\tau_0,\tau_{2(3)})$ coordinates.
+\item \texttt{G11}: 11-component of the metric in $(\tau_0,\tau_{2(3)})$ coordinates.
+\item \texttt{G01}: 01-component of the metric in $(\tau_0,\tau_{2(3)})$ coordinates.
 \item \texttt{g00}: 00-component of the diagonalised metric.
 \item \texttt{g11}: 11-component of the diagonalised metric.
 \item \texttt{theta}:  Angle from tau0 to semi-major axis of the ellipse.
@@ -297,9 +300,14 @@ InspiralBankMassRange;
 typedef struct 
 tagInspiralMetric 
 {
+	REAL8            G00;     
+	REAL8            G11;     
+	REAL8            G01;     
+
 	REAL8            g00;     
 	REAL8            g11;     
 	REAL8            theta;   
+
 	CoordinateSpace  space;   
 } 
 InspiralMetric;

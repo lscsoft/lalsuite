@@ -55,10 +55,10 @@ main ( void )
    static INT4 i, j, nlist;
    static RectangleIn RectIn;
    static RectangleOut RectOut;
-   UINT4 numPSDpts = 1048476;
+   UINT4 numPSDpts = 262144;
    void *noisemodel = LALLIGOIPsd;
 
-   coarseIn.mmCoarse = 0.97;
+   coarseIn.mmCoarse = 0.90;
    coarseIn.mmFine = 0.97;
    coarseIn.fLower = 40.;
    coarseIn.fUpper = 2000;
@@ -107,7 +107,7 @@ main ( void )
      
      RectIn.dx = sqrt(2. * (1. - coarseIn.mmCoarse)/coarseList[j].metric.g00 );
      RectIn.dy = sqrt(2. * (1. - coarseIn.mmCoarse)/coarseList[j].metric.g11 );
-     RectIn.theta = coarseList[j].metric.theta;
+     RectIn.theta = fabs(coarseList[j].metric.theta);
      RectIn.x0 = coarseList[j].params.t0;
 
      switch (coarseIn.space) 

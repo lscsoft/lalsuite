@@ -130,7 +130,12 @@ void LALInspiralMoments(LALStatus         *status,
   *moment  = pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMin] );
   f = pars.shf->f0 + (REAL8) kMax * deltaF;
   *moment += pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMin] );
-
+  /* In the following line we should have kMax */
+  /* Changed by Sathya on June 30, 2002  */
+  /*
+  *moment += pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMin] );
+  */
+  *moment += pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMax] );
   kMin++;
   kMax--;
 

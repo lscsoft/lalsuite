@@ -7,7 +7,7 @@ Author: Sathyaprakash, B. S.
 \label{ss:bank:ChirpSpace.c}
 
 Test code for \texttt{LALInspiralParameterCalc} module.
-If the variable \texttt{type} is set to 0 the code works 
+If the variable \texttt{type} is set to 1 the code works 
 out the boundary of the region enclosed
 by the parameter space specified by {\em maximum total
 mass} and {\em minimum companion masses,} as given in \texttt{mmin} 
@@ -71,7 +71,7 @@ int main ( void ) {
    p.massChoice=m1Andm2;
    p.mass1 = compmmin;
 
-   if (type) finalmass=Mmax; else finalmass=Mmax;
+   if (type) finalmass=Mmax; else finalmass=mmax;
 
    for (m2=mmin; m2<=finalmass; m2+=0.01) {
       p.mass2 = pow(10.,m2);

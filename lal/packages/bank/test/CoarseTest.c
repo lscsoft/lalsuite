@@ -130,7 +130,7 @@ main ( void )
    InspiralCoarseBankIn *coarseIn=NULL;
    InspiralFineBankIn   *fineIn=NULL;
    INT4 i, j, clist=0, flist=0;
-   UINT4 numPSDpts = 1048576;
+   UINT4 numPSDpts = 262144;
    void *noisemodel = LALLIGOIPsd;
 
    coarseIn = (InspiralCoarseBankIn *)LALMalloc(sizeof(InspiralCoarseBankIn));
@@ -147,8 +147,8 @@ main ( void )
    coarseIn->fLower = 40.;
    coarseIn->fUpper = 400;
    coarseIn->iflso = 0;
-   coarseIn->tSampling = 2000L;
-   coarseIn->order = 3;
+   coarseIn->tSampling = 2048.L;
+   coarseIn->order = twoPN;
    coarseIn->approximant = TaylorT1;
    coarseIn->space = Tau0Tau3;
 

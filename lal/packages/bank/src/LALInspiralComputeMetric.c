@@ -292,7 +292,7 @@ metric introduced earlier and projecting out the $t_c$ coordinate, one finds tha
 g_{mn}  & = & \frac{1}{2}\sum_{k,l=0}^N \Psi_{mk} \Psi_{nl} 
 \biggl  [ J(17-k-l) - J(12-k) J(12-l) \biggr . \nonumber \\
 	& - & 	\biggl . \frac { \left ( J(9-k) - J(4)J(12-k) \right )
-		\left ( J(9-l) - J(4)J(12-l) \right )} {\left (J(1) - J(12-l)^2 \right)}
+		\left ( J(9-l) - J(4)J(12-l) \right )} {\left (J(1) - J(4)^2 \right)}
 \biggr ]
 \end{eqnarray}
 where $J$'s are the moments introduced earlier. 
@@ -372,7 +372,7 @@ LALInspiralComputeMetric
    static REAL8 Psi[Dim][Order];
    static REAL8 g[Dim][Dim];
 
-   REAL8 a, b, c, q, det;
+   REAL8 a, b, c, q, det, tmpa;
    UINT4 PNorder, m, n;
 
    INITSTATUS (status, "LALInspiralComputeMetric", LALINSPIRALCOMPUTEMETRICC);
@@ -438,16 +438,26 @@ LALInspiralComputeMetric
    c = g[1][1] * pow(2.*LAL_PI*params->fLower,2.); 
 
 
+   /*
+    * The metric in tau0-tau2,3 space.
+    */
+   metric->G00 = a;
+   metric->G01 = b;
+   metric->G11 = c;
+
      
    /* if (lalDebugLevel==1) 
     { 
-	    printf("%e %e\n", params->t0, params->t3 ); 
-	    printf("%e %e\n", a, b ); 
-	    printf("%e %e\n", b, c); 
+	    printf("%e %e\n", params->t0, params->t3); 
+	    printf("[%e %e]\n", a, b ); 
+	    printf("[%e %e]\n", b, c); 
     }
     */
    
    
+   /*
+    * Diagonalize the metric.
+    */
    det = a * c - b * b;
    q = sqrt( (a-c)*(a-c) + 4. * b*b );
    
@@ -461,13 +471,20 @@ LALInspiralComputeMetric
    }
    else
    {
-	   metric->theta = 0.5 * atan(2.*b/(a-c));
+	   /*
+	    * metric->theta = 0.5 * atan(2.*b/(a-c));
+	    *
+	    * We want to always measure the angle from the
+	    * semi-major axis to the tau0 axis which is given by
+	    * the following line as opposed to the line above
+	    */
+	   metric->theta = atan(b/(metric->g00 - c));
    }
 
 
    /* if (lalDebugLevel==1) 
     {
-       fprintf(stderr, "%e %e %e %e\n", det, metric->g00, metric->g11, metric->theta);
+       printf("%e %e %e %e %e %e %e\n", det, a, b, c, metric->g00, metric->g11, metric->theta);
     }
     */
 
