@@ -57,16 +57,16 @@ typedef enum {
   LLO,      /* LIGO Livingston Observatory */
   VIRGO,
   GEO600,
-  TAMA300
+  TAMA300,
+  NUMBEROFSITES
 }
 IFOsite;
 
 #define SITENAMELIST  { "LHO", "LLO", "VIRGO", "GEO600", "TAMA300" }
-#define NUMBEROFSITES ((int)(TAMA300 + 1))
 
 typedef struct tagSiteParameters {
   IFOsite   siteID;
-  CHAR*     siteName;
+  const CHAR*     siteName;
   REAL4     vertexNorth;
   REAL4     vertexWest;
   REAL4     arm1Orientation;

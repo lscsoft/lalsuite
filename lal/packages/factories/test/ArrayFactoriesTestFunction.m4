@@ -16,7 +16,7 @@ define(`DFUNC',`format(`LAL%sDestroyArray',TYPECODE)')
 define(`FUNC',`format(`%sArrayFactoriesTest',TYPECODE)')
 
 
-void FUNC ( void )
+static void FUNC ( void )
 {
   static UINT4   dims[3]    = { 1, 2, 4 };
   static UINT4   dbad[3]    = { 1, 0, 4 };

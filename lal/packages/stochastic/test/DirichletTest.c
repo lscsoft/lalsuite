@@ -40,12 +40,12 @@
 
 INT4 lalDebugLevel = 2; /* set to 2 to get full status information for tests */
 
-int check ( LALStatus*, INT4, CHAR* );
+int check ( LALStatus*, INT4, const CHAR* );
 
 NRCSID (MAIN, "$ID: DirichletTest.c$");
 
 int 
-main()
+main( void )
 {
    
    LALStatus               status  = {0};
@@ -164,7 +164,7 @@ main()
 /*------------------------------------------------------------------------*/
 
 int 
-check( LALStatus* status, INT4 code, CHAR* message )
+check( LALStatus* status, INT4 code, const CHAR* message )
 {
    if ( status->statusCode!= code ) {
      printf ( "FAIL: did not recognize \"%s\"\n", message );

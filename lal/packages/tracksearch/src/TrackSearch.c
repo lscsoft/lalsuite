@@ -496,7 +496,7 @@ ComputeLinePoints (LALStatus *status,
   }  
 }
 
-const static Offset offset[9]={{0,0},{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1}}; /*neighbouring pixels*/
+static const Offset offset[9]={{0,0},{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1}}; /*neighbouring pixels*/
 
 static void 
 ConnectLinePoints(LALStatus *status,
@@ -915,15 +915,14 @@ GetAngle(
 /* routine called by qsort  
    Compare the elements of the LinePoint array. 
 */
-INT4
+static int
 CompareLinePoints(const void *element1, const void *element2)
 {
-    
-    if( ((LinePoints *)element2)->pValue > ((LinePoints *)element1)->pValue)
+    if( ((const LinePoints *)element2)->pValue > ((const LinePoints *)element1)->pValue)
         return 1;
-    if( ((LinePoints *)element1)->pValue > ((LinePoints *)element2)->pValue)
+    if( ((const LinePoints *)element1)->pValue > ((const LinePoints *)element2)->pValue)
         return -1;    
-    if(((LinePoints *)element2)->eigen > ((LinePoints *)element1)->eigen)
+    if(((const LinePoints *)element2)->eigen > ((const LinePoints *)element1)->eigen)
         return 1;
     else
         return -1;      

@@ -40,7 +40,7 @@ Slave (LALStatus *status, MPIId id)
   LALMPISendMsg (status->statusPtr, &message, 0, MPI_COMM_WORLD);
   CHECKSTATUSPTR (status);
 
-  for (i = 0; i < vector->length; ++i)
+  for (i = 0; i < (INT4) vector->length; ++i)
   {
     vector->data[i] = i % 5 - 2;
   }

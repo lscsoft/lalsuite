@@ -55,7 +55,7 @@ main (int argc, char *argv[])
   static LALStatus        status;
   static REAL4Vector  *vector;
   static RandomParams *randpar;
-  INT4                 i;
+  UINT4                i;
 
   
   /*

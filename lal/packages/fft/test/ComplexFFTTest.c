@@ -51,7 +51,7 @@ static void
 ClearStatus( LALStatus *status );
 
 static void
-CheckErrorCodes();
+CheckErrorCodes( void );
 
 int
 main( int argc, char *argv[] )
@@ -89,7 +89,7 @@ main( int argc, char *argv[] )
   TestStatus( &stat, CODES( 0 ), 1 );
 
 
-  for ( i = 0; i < n; ++i )
+  for ( i = 0; i < (INT4) n; ++i )
   {
     avec->data[i].im = i % 5 - 2;
     avec->data[i].re = i % 3 - 1;
@@ -101,7 +101,7 @@ main( int argc, char *argv[] )
   LALCOMPLEX8VectorFFT( &stat, bvec, avec, pfwd );
   TestStatus( &stat, CODES( 0 ), 1 );
 
-  for ( i = 0; i < n; ++i )
+  for ( i = 0; i < (INT4) n; ++i )
   {
     fp ? fprintf( fp, "%+f\t%+f\n", bvec->data[i].re, bvec->data[i].im ) : 0;
   }
@@ -110,7 +110,7 @@ main( int argc, char *argv[] )
   LALCOMPLEX8VectorFFT( &stat, cvec, bvec, pinv );
   TestStatus( &stat, CODES( 0 ), 1 );
 
-  for ( i = 0; i < n; ++i )
+  for ( i = 0; i < (INT4) n; ++i )
   {
     cvec->data[i].re /= n;
     cvec->data[i].im /= n;
@@ -152,7 +152,7 @@ main( int argc, char *argv[] )
 
 
 static void
-CheckErrorCodes()
+CheckErrorCodes( void )
 {
   enum { Size = 19 };
   const UINT4 size = Size;

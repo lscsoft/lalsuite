@@ -290,11 +290,11 @@ LALComputeFrequencySeries (
   /* make sure sizes are reasonable and agree */
   n = dftParams->plan->size;
   ASSERT (n > 0, status, TFTRANSFORM_EPOSARG, TFTRANSFORM_MSGEPOSARG);
-  ASSERT (timeSeries->data->length == n, status,
+  ASSERT ((INT4)timeSeries->data->length == n, status,
           TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
-  ASSERT (freqSeries->data->length == n/2 + 1, status,
+  ASSERT ((INT4)freqSeries->data->length == n/2 + 1, status,
           TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
-  ASSERT (dftParams->window->length == n, status,
+  ASSERT ((INT4)dftParams->window->length == n, status,
           TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
 
 
@@ -548,9 +548,9 @@ LALTimeSeriesToTFPlane (
   tseglength = 2 * nforig;
 
   ASSERT( nforig>0, status, TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);  
-  ASSERT( tseglength == input->dftParams->plan->size, status, 
+  ASSERT( tseglength == (INT4)input->dftParams->plan->size, status, 
           TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
-  ASSERT( tseglength == input->dftParams->window->length, status, 
+  ASSERT( tseglength == (INT4)input->dftParams->window->length, status, 
           TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
 
   /* Supplied FFT plan must be in forward direction */
@@ -567,7 +567,7 @@ LALTimeSeriesToTFPlane (
 
   /* compute total length of data to be used to construct TF plane */
   ntotal = 2 * nt * nforig;
-  ASSERT(input->startT + ntotal <= timeSeries->data->length, status, 
+  ASSERT(input->startT + ntotal <= (INT4)timeSeries->data->length, status, 
          TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
 
   /* 
@@ -805,9 +805,9 @@ LALFreqSeriesToTFPlane (
   ASSERT( fseglength >= nt, status, TFTRANSFORM_EINCOMP, 
           TFTRANSFORM_MSGEINCOMP);
 
-  ASSERT( fseglength == input->dftParams->plan->size, status, 
+  ASSERT( fseglength == (INT4)input->dftParams->plan->size, status, 
           TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
-  ASSERT( fseglength == input->dftParams->window->length, status, 
+  ASSERT( fseglength == (INT4)input->dftParams->window->length, status, 
           TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
 
   /* Supplied FFT plan must be in inverse direction */
@@ -829,7 +829,7 @@ LALFreqSeriesToTFPlane (
   ntotal = nf * fseglength;
 
   /* make sure have enough data points in freq series */
-  ASSERT(ntotal + flow1<= freqSeries->data->length, status, 
+  ASSERT(ntotal + flow1<= (INT4)freqSeries->data->length, status, 
          TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
 
   /* sumofsquares parameter must be positive */

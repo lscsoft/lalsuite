@@ -92,7 +92,7 @@ LALDirichlet(LALStatus*              pstatus,
 
   /* check that output vector length agrees with length specified in */
   /* input parameters */
-  ASSERT(poutput->length==length,pstatus,DIRICHLET_ESIZEMM,
+  ASSERT((INT4)poutput->length==length,pstatus,DIRICHLET_ESIZEMM,
 	 DIRICHLET_MSGESIZEMM);
 
   /* check that pointer to data member of output vector is not null */

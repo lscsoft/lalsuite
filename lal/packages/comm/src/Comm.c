@@ -43,7 +43,7 @@ LALMPIExportEnvironment (
 
     /* calculate length to pass */
     len = strlen(env) + strlen(var) + 9;
-    ASSERT (len < sizeof(command), status, COMM_ESTRL, COMM_MSGESTRL);
+    ASSERT (len < (INT4)sizeof(command), status, COMM_ESTRL, COMM_MSGESTRL);
 
     /* copy variable into string */
     sprintf (command, "export %s=%s", env, var);
@@ -91,7 +91,7 @@ LALMPIDebug (
     ASSERT (params->progName, status, COMM_ENULL, COMM_MSGENULL);
 
     len = strlen(params->debugger) + strlen(params->progName) + 16;
-    ASSERT (len < sizeof(cmdstr), status, COMM_ESTRL, COMM_MSGESTRL);
+    ASSERT (len < (INT4)sizeof(cmdstr), status, COMM_ESTRL, COMM_MSGESTRL);
 
     procId = (INT4) getpid();
 

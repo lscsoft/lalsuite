@@ -1,3 +1,22 @@
+
+*******************************************************************************
+
+A message from the librarian:
+
+When developing a package for LAL, please test the code with gcc using the
+following compiler flags:
+
+  -g3 -O4 -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow
+  -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Waggregate-return
+  -fshort-enums -fno-common -Wnested-externs -Werror
+
+These flags provide a useful way to detect potential bugs.
+
+You can turn on these flags when configuring LAL (with gcc as the compiler)
+using the --with-gcc-flags configure option.
+
+*******************************************************************************
+
 There are two ways of developing code for a LAL package:
 
 (i)  installing LAL on you system and developing your package outside the lal

@@ -61,13 +61,13 @@ STrapezoid (
   }
   else
   {
-    REAL4 y0;
-    REAL4 y1;
-    input->function (status->statusPtr, &y0, input->xmin, params);
+    REAL4 y_0;
+    REAL4 y_1;
+    input->function (status->statusPtr, &y_0, input->xmin, params);
     CHECKSTATUSPTR (status);
-    input->function (status->statusPtr, &y1, input->xmax, params);
+    input->function (status->statusPtr, &y_1, input->xmax, params);
     CHECKSTATUSPTR (status);
-    output->integral = (input->xmax - input->xmin)*(y1 + y0)/2;
+    output->integral = (input->xmax - input->xmin)*(y_1 + y_0)/2;
   }
 
   DETATCHSTATUSPTR (status);
@@ -106,13 +106,13 @@ DTrapezoid (
   }
   else
   {
-    REAL8 y0;
-    REAL8 y1;
-    input->function (status->statusPtr, &y0, input->xmin, params);
+    REAL8 y_0;
+    REAL8 y_1;
+    input->function (status->statusPtr, &y_0, input->xmin, params);
     CHECKSTATUSPTR (status);
-    input->function (status->statusPtr, &y1, input->xmax, params);
+    input->function (status->statusPtr, &y_1, input->xmax, params);
     CHECKSTATUSPTR (status);
-    output->integral = (input->xmax - input->xmin)*(y1 + y0)/2;
+    output->integral = (input->xmax - input->xmin)*(y_1 + y_0)/2;
   }
 
   DETATCHSTATUSPTR (status);
@@ -135,6 +135,7 @@ ThreePow (INT4 n)
 static REAL4
 SEqualsX (REAL4 x, REAL4 a, REAL4 b, REAL4 *jac)
 {
+  a = b; /* do nothing with a and b */
   *jac = 1;
   return x;
 }
@@ -143,6 +144,7 @@ static REAL4
 SEqualsInvX (REAL4 x, REAL4 a, REAL4 b, REAL4 *jac)
 {
   REAL4 invx = 1/x;
+  a = b; /* do nothing with a and b */
   *jac = invx*invx;
   return invx;
 }
@@ -150,6 +152,7 @@ SEqualsInvX (REAL4 x, REAL4 a, REAL4 b, REAL4 *jac)
 static REAL4
 SEqualsAPlusXSq (REAL4 x, REAL4 a, REAL4 b, REAL4 *jac)
 {
+  b = 0; /* do nothing with b */
   *jac = 2*x;
   return a + x*x;
 }
@@ -157,6 +160,7 @@ SEqualsAPlusXSq (REAL4 x, REAL4 a, REAL4 b, REAL4 *jac)
 static REAL4
 SEqualsBMinusXSq (REAL4 x, REAL4 a, REAL4 b, REAL4 *jac)
 {
+  a = 0; /* do nothing with a */
   *jac = 2*x;
   return b - x*x;
 }
@@ -164,6 +168,7 @@ SEqualsBMinusXSq (REAL4 x, REAL4 a, REAL4 b, REAL4 *jac)
 static REAL4
 SEqualsMinusLogX (REAL4 x, REAL4 a, REAL4 b, REAL4 *jac)
 {
+  a = b; /* do nothing with a and b */
   *jac = 1/x;
   return -log(x);
 }
@@ -270,6 +275,7 @@ SMidpoint (
 static REAL8
 DEqualsX (REAL8 x, REAL8 a, REAL8 b, REAL8 *jac)
 {
+  a = b; /* do nothing with a and b */
   *jac = 1;
   return x;
 }
@@ -278,6 +284,7 @@ static REAL8
 DEqualsInvX (REAL8 x, REAL8 a, REAL8 b, REAL8 *jac)
 {
   REAL8 invx = 1/x;
+  a = b; /* do nothing with a and b */
   *jac = invx*invx;
   return invx;
 }
@@ -285,6 +292,7 @@ DEqualsInvX (REAL8 x, REAL8 a, REAL8 b, REAL8 *jac)
 static REAL8
 DEqualsAPlusXSq (REAL8 x, REAL8 a, REAL8 b, REAL8 *jac)
 {
+  b = 0; /* do nothing with b */
   *jac = 2*x;
   return a + x*x;
 }
@@ -292,6 +300,7 @@ DEqualsAPlusXSq (REAL8 x, REAL8 a, REAL8 b, REAL8 *jac)
 static REAL8
 DEqualsBMinusXSq (REAL8 x, REAL8 a, REAL8 b, REAL8 *jac)
 {
+  a = 0; /* do nothing with a */
   *jac = 2*x;
   return b - x*x;
 }
@@ -299,6 +308,7 @@ DEqualsBMinusXSq (REAL8 x, REAL8 a, REAL8 b, REAL8 *jac)
 static REAL8
 DEqualsMinusLogX (REAL8 x, REAL8 a, REAL8 b, REAL8 *jac)
 {
+  a = b; /* do nothing with a and b */
   *jac = 1/x;
   return -log(x);
 }

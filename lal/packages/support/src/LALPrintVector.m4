@@ -32,7 +32,7 @@ ifelse(TYPECODE,`U8',`define(`ARG',`(REAL8) vector->data[i]')')
 void FUNC ( VTYPE *vector ) 
 { /* </lalVerbatim> */
   int i;
-  static int fileno=0;
+  static int filenum=0;
   FILE *fp;
   char fname[256];
 
@@ -40,10 +40,10 @@ void FUNC ( VTYPE *vector )
   if (vector==NULL) return;
 
   /* open output file */
-  sprintf(fname,"TYPECODE" "PrintVector.%03d",fileno++);
+  sprintf(fname,"TYPECODE" "PrintVector.%03d",filenum++);
   fp=fopen(fname,"w");
 
-  for (i=0;i<vector->length;i++)
+  for (i=0;i<(int)vector->length;i++)
     fprintf(fp,FMT,i,ARG);
 
   fclose(fp);

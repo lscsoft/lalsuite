@@ -24,7 +24,7 @@ Master (LALStatus *status, MPIId id)
   MPIMessage   message;
   REAL4Vector *vector = NULL;
   INT4         numProcs;
-  INT4         i;
+  UINT4        i;
 
   INITSTATUS (status, "Master", COMMTESTMASTERC);
   ATTATCHSTATUSPTR (status);

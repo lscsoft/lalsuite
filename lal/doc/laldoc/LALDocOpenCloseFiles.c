@@ -7,7 +7,7 @@
 */
 
 FILE 
-*OpenAFile(char *file, char *rwa , int timeStamp  )
+*OpenAFile(const char *file, const char *rwa , int timeStamp  )
 {
         FILE *filePtr;
         time_t tp;

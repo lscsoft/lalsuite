@@ -79,7 +79,7 @@ LALInitializeFrameData (
     nbytes = sprintf (command, "ls %s/%s 2>/dev/null",
                       framePath, headNames[nameType]);
     ASSERT (nbytes > 0, status, FRAMEDATA_EREAD, FRAMEDATA_MSGEREAD);
-    ASSERT (nbytes < sizeof(command), status,
+    ASSERT (nbytes < (INT4)sizeof(command), status,
             FRAMEDATA_EREAD, FRAMEDATA_MSGEREAD);
 
     /* fp is a stream containing the filenames */
@@ -95,7 +95,7 @@ LALInitializeFrameData (
       fileName += numFiles*maxFileNameLength;
       if (EOF == fscanf (fp, "%s\n", fileName))
         break;
-      ASSERT (strlen(fileName) < maxFileNameLength, status,
+      ASSERT ((INT4)strlen(fileName) < maxFileNameLength, status,
               FRAMEDATA_EREAD, FRAMEDATA_MSGEREAD);
       ++numFiles;
     }
@@ -187,8 +187,11 @@ GetNewFrame (
     oldCalibTime = frameData->calibrationTime.gpsSeconds;
 
     /* get calibration info */
-    frameData->calibration =
-      FrStatDataFind (frame->detectProc, "sweptsine", frame->GTimeS);
+    {
+      char name[]="sweptsine"; /* hack to get non-const string */
+      frameData->calibration =
+        FrStatDataFind (frame->detectProc, name, frame->GTimeS);
+    }
     ASSERT (frameData->calibration, status,
             FRAMEDATA_ENOSS, FRAMEDATA_MSGENOSS);
 
@@ -204,14 +207,20 @@ GetNewFrame (
     }
 
     /* get IFO_DMRO */
-    frameData->dmro = dmro = FrAdcDataFind (frame, "IFO_DMRO");
+    {
+      char name[]="IFO_DMRO"; /* hack to get non-const string */
+      frameData->dmro = dmro = FrAdcDataFind (frame, name);
+    }
     ASSERT (dmro, status, FRAMEDATA_EDMRO, FRAMEDATA_MSGEDMRO);
 
     frameData->numDmro = dmro->data->nData;
     frameData->curDmro = 0;
 
     /* get IFO_Lock */
-    frameData->lock = lock = FrAdcDataFind (frame, "IFO_Lock");
+    {
+      char name[]="IFO_Lock"; /* hack to get non-const string */
+      frameData->lock = lock = FrAdcDataFind (frame, name);
+    }
     ASSERT (lock, status, FRAMEDATA_ELOCK, FRAMEDATA_MSGELOCK);
 
     frameData->numLock = lock->data->nData;
@@ -221,8 +230,11 @@ GetNewFrame (
     frameData->ratio = frameData->numDmro/frameData->numLock;
 
     /* get lock-low and lock-high values */
-    frameData->lockLowHigh =
-      FrStatDataFind (frame->detectProc, "locklo/lockhi", frame->GTimeS);
+    {
+      char name[] = "locklo/lockhi"; /* hack to get non-const string */
+      frameData->lockLowHigh =
+        FrStatDataFind (frame->detectProc, name, frame->GTimeS);
+    }
     ASSERT (frameData->lockLowHigh, status,
             FRAMEDATA_ELOHI, FRAMEDATA_MSGELOHI);
 
@@ -378,7 +390,7 @@ LALGetFrameData (
         INT4  remaining = frameData->numDmro - frameData->curDmro;
         INT4  ncopy     = remaining < needed ? remaining : needed;
         INT4  wordSize  = ((struct FrAdcData *)(frameData->dmro))->data->wSize;
-        INT4  wordRatio = wordSize > sizeof(INT2) ? wordSize/sizeof(INT2) : 1;
+        INT4  wordRatio = wordSize > (INT4)sizeof(INT2) ? wordSize/sizeof(INT2) : 1;
 
         /* copy the data if desired */
         if (!seek)
@@ -390,12 +402,12 @@ LALGetFrameData (
         /* if starting buffer: mark start time and time step */
         if (needed == numPoints)
         {
-          REAL8 time;
-          time  = frameData->frameStartTime.gpsSeconds;
-          time += 1e-9*frameData->frameStartTime.gpsNanoSeconds;
-          time += frameData->curDmro/frameData->sampleRate;
-          data->epoch.gpsSeconds     = (INT4)time;
-          data->epoch.gpsNanoSeconds = (INT4)fmod(1e9*time, 1e9);
+          REAL8 starttime;
+          starttime  = frameData->frameStartTime.gpsSeconds;
+          starttime += 1e-9*frameData->frameStartTime.gpsNanoSeconds;
+          starttime += frameData->curDmro/frameData->sampleRate;
+          data->epoch.gpsSeconds     = (INT4)starttime;
+          data->epoch.gpsNanoSeconds = (INT4)fmod(1e9*starttime, 1e9);
           data->deltaT               = 1/frameData->sampleRate;
           data->f0                   = 0;
         }
@@ -448,7 +460,7 @@ SplineFit (
 {
   REAL4Vector *yppvec = NULL;
   REAL4       *ypp;
-  INT4         n;
+  UINT4        n;
 
   INITSTATUS (status, "SplineFit", FRAMEDATAC);
   ATTATCHSTATUSPTR (status);
@@ -481,7 +493,8 @@ SplineFit (
     REAL4 *x = xinp->data;
     REAL4 *y = yinp->data;
 
-    INT4  i;
+    UINT4  i;
+    INT4   j;
 
     LALCreateVector (status->statusPtr, &uvec, n);
     CHECKSTATUSPTR (status);
@@ -506,9 +519,9 @@ SplineFit (
 
     /* backsubstitution loop */
     ypp[n-1] = 0;
-    for (i = n - 2; i >= 0; --i)
+    for (j = n - 2; j >= 0; --j)
     {
-      ypp[i] = ypp[i]*ypp[i+1] + u[i];
+      ypp[j] = ypp[j]*ypp[j+1] + u[j];
     }
 
     LALDestroyVector (status->statusPtr, &uvec);
@@ -522,8 +535,8 @@ SplineFit (
     REAL4 *y  = yinp->data;
     REAL4  dx = (x[n - 1] - x[0])/(yout->length - 1);
 
-    INT4 i;
-    INT4 j = 0;
+    UINT4 i;
+    UINT4 j = 0;
 
     for (i = 0; i < yout->length; ++i)
     {
@@ -582,7 +595,7 @@ LALGetFrameDataResponse (
   REAL4 *ssi;
   INT4   ssn;
   INT4   n;
-  INT4   i;
+  UINT4  i;
 
   INITSTATUS (status, "LALGetFrameDataResponse", FRAMEDATAC);
   ATTATCHSTATUSPTR (status);

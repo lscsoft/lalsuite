@@ -299,11 +299,11 @@ LALGetData (
   /* check sizes ... */
   numPoints = output->data->data->length;
   ASSERT (numPoints > 0, status, DATABUFFER_ESIZE, DATABUFFER_MSGESIZE);
-  ASSERT (buffer->dataBuffer->vectorLength == numPoints, status,
+  ASSERT ((INT4)buffer->dataBuffer->vectorLength == numPoints, status,
           DATABUFFER_ESZMM, DATABUFFER_MSGESZMM);
-  ASSERT (output->resp->data->length == numPoints/2 + 1, status,
+  ASSERT ((INT4)output->resp->data->length == numPoints/2 + 1, status,
           DATABUFFER_ESZMM, DATABUFFER_MSGESZMM);
-  ASSERT (output->spec->data->length == numPoints/2 + 1, status,
+  ASSERT ((INT4)output->spec->data->length == numPoints/2 + 1, status,
           DATABUFFER_ESZMM, DATABUFFER_MSGESZMM);
 
   /* make sure advance is reasonable */

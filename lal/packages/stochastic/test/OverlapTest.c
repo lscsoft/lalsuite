@@ -41,11 +41,11 @@
 #define PRINT 1 /* set to 1 to write overlap reduction functions to files */ 
 INT4 lalDebugLevel = 2; /* set to 2 to get full status information for tests */
 
-int check( LALStatus*, INT4, CHAR* );
+int check( LALStatus*, INT4, const CHAR* );
 
 NRCSID (MAIN, "$Id$");
 
-int main()
+int main( void )
 {
   LALStatus               status = {0};
   
@@ -166,7 +166,7 @@ int main()
 
 /*----------------------------------------------------------------------*/
 
-int check( LALStatus* status, INT4 code, CHAR* message) 
+int check( LALStatus* status, INT4 code, const CHAR* message) 
 {
   if ( status->statusCode!= code ) {
     printf( "FAIL: did not recognize \"%s\"\n", message );

@@ -51,7 +51,7 @@ int main(void)
   LALSCreateVector(&status, &signal, Nsignal);
 
   /*   signal->data[0]=1.0; */
-  for (column = 0; column < signal->length; column++)
+  for (column = 0; column < (INT4)signal->length; column++)
     signal->data[column]=(rand() % 10) / 2.0;
   
   /*     signal->data[column] = 1.0 - signal->data[column-1]; */
@@ -76,7 +76,7 @@ int main(void)
 
   LALCreateTimeFreqParam(&status, &param, &tfrIn);
 
-  for (column = 0; column < param->windowT->length; column++)
+  for (column = 0; column < (INT4)param->windowT->length; column++)
     param->windowT->data[column]=1.0;    
 
   /*   for (column = 0; column < param->windowF->length; column++) */
@@ -90,7 +90,7 @@ int main(void)
   /*--------------------------------------------------------------------*/
 
   printf("Signal:\n");
-  for (column= 0; column < signal->length; column++)
+  for (column= 0; column < (INT4)signal->length; column++)
     printf("%1.1f ",signal->data[column]);
   printf("\n\n");
 

@@ -84,15 +84,15 @@ void LALTfrSp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
   ASSERT (param->windowT->length%2 != 0, stat, TFR_EWSIZ, TFR_MSGEWSIZ);
 
   /* Make sure the window length is smaller than the number of freq bins: */
-  ASSERT (param->windowT->length < tfr->fRow, stat, TFR_EWSIZ, TFR_MSGEWSIZ);
+  ASSERT ((INT4)param->windowT->length < tfr->fRow, stat, TFR_EWSIZ, TFR_MSGEWSIZ);
  
   /* Make sure the timeInstant indicates existing time instants */
   for (column=0 ; column<tfr->tCol ; column++)
     {
-      if ((tfr->timeInstant[column] < 0) || (tfr->timeInstant[column] > (sig->length-1)))
+      if ((tfr->timeInstant[column] < 0) || (tfr->timeInstant[column] > (INT4)(sig->length-1)))
 	{
 	  ASSERT (tfr->timeInstant[column] > 0, stat, TFR_EBADT, TFR_MSGEBADT);
-	  ASSERT (tfr->timeInstant[column] < sig->length, stat, TFR_EBADT, TFR_MSGEBADT);
+	  ASSERT (tfr->timeInstant[column] < (INT4)sig->length, stat, TFR_EBADT, TFR_MSGEBADT);
 	}
     }
   

@@ -62,15 +62,15 @@ GetSiteParameters ( SiteParameters*, IFOsite );
 static void
 CalcSiteCoordinates ( SiteCoordinates*, SiteParameters* );
 
-static CHAR* siteNames[]=SITENAMELIST;
+static const CHAR* siteNames[]=SITENAMELIST;
 
 void
 LALOverlap ( LALStatus            *status,
 	  REAL4Vector       *vector,
 	  OverlapParameters *parameters )
 {
-  IFOsite          site1ID;
-  IFOsite          site2ID;
+  INT4             site1ID;
+  INT4             site2ID;
   INT4             length;
   REAL4            deltaF;
        
@@ -84,7 +84,7 @@ LALOverlap ( LALStatus            *status,
   REAL4  f;
   REAL4  sep[3];
   REAL4  distance;
-  REAL4  x1[3], y1[3];
+  REAL4  x1[3], y_1[3];
   REAL4  x2[3], y2[3];
   REAL4  x1DOTx2,  x1DOTy2,  y1DOTy2,  y1DOTx2;
   REAL4  x1DOTsep, x2DOTsep, y1DOTsep, y2DOTsep;
@@ -120,7 +120,7 @@ LALOverlap ( LALStatus            *status,
 
   /* check that output vector length agrees with length specified in */
   /* input parameters */
-  ASSERT(vector->length==length, status, OVERLAP_ESIZEMM, OVERLAP_MSGESIZEMM);
+  ASSERT((INT4)vector->length==length, status, OVERLAP_ESIZEMM, OVERLAP_MSGESIZEMM);
 
   /* check that pointer to data member of output vector is not null */
   ASSERT(vector->data!=NULL, status, OVERLAP_ENULLD, OVERLAP_MSGENULLD);
@@ -140,7 +140,7 @@ LALOverlap ( LALStatus            *status,
   for ( i=0; i<3; i++) {
     sep[i] = site1Coordinates.vertex[i]-site2Coordinates.vertex[i];
     x1[i]  = site1Coordinates.arm1[i];
-    y1[i]  = site1Coordinates.arm2[i];
+    y_1[i]  = site1Coordinates.arm2[i];
     x2[i]  = site2Coordinates.arm1[i];
     y2[i]  = site2Coordinates.arm2[i];
   }
@@ -157,12 +157,12 @@ LALOverlap ( LALStatus            *status,
 
   /* calculate dot products of unit arm vectors and separation vector */
   x1DOTx2   = x1[0]*x2[0]  + x1[1]*x2[1]  + x1[2]*x2[2];
-  y1DOTy2   = y1[0]*y2[0]  + y1[1]*y2[1]  + y1[2]*y2[2]; 
+  y1DOTy2   = y_1[0]*y2[0]  + y_1[1]*y2[1]  + y_1[2]*y2[2]; 
   x1DOTy2   = x1[0]*y2[0]  + x1[1]*y2[1]  + x1[2]*y2[2];
-  y1DOTx2   = y1[0]*x2[0]  + y1[1]*x2[1]  + y1[2]*x2[2];
+  y1DOTx2   = y_1[0]*x2[0]  + y_1[1]*x2[1]  + y_1[2]*x2[2];
   x1DOTsep  = x1[0]*sep[0] + x1[1]*sep[1] + x1[2]*sep[2];
   x2DOTsep  = x2[0]*sep[0] + x2[1]*sep[1] + x2[2]*sep[2];
-  y1DOTsep  = y1[0]*sep[0] + y1[1]*sep[1] + y1[2]*sep[2];
+  y1DOTsep  = y_1[0]*sep[0] + y_1[1]*sep[1] + y_1[2]*sep[2];
   y2DOTsep  = y2[0]*sep[0] + y2[1]*sep[1] + y2[2]*sep[2];
   
   /* calculate coefficients c1, c2, c3 for overlap reduction funtion */

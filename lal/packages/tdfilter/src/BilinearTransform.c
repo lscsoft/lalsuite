@@ -152,11 +152,15 @@ void LALWToZCOMPLEX8ZPGFilter(LALStatus            *stat,
   numZeros=filter->zeros->length;
   ASSERT(numZeros>=0,stat,ZPGFILTER_EBAD,ZPGFILTER_MSGEBAD);
   if(numZeros>0)
+  {
     ASSERT(filter->zeros->data,stat,ZPGFILTER_ENUL,ZPGFILTER_MSGENUL);
+  }
   numPoles=filter->poles->length;
   ASSERT(numPoles>=0,stat,ZPGFILTER_EBAD,ZPGFILTER_MSGEBAD);
   if(numPoles>0)
+  {
     ASSERT(filter->poles->data,stat,ZPGFILTER_ENUL,ZPGFILTER_MSGENUL);
+  }
 
   /* Compute the total number of zeros and poles in the w-plane,
      including those at w=infinity. */
@@ -174,10 +178,10 @@ void LALWToZCOMPLEX8ZPGFilter(LALStatus            *stat,
 
   /* Compute the revised number of zeros and poles in the z-plane,
      excluding those at z=infinity (w=-i). */
-  for(i=0,a=filter->zeros->data;i<filter->zeros->length;i++,a++)
+  for(i=0,a=filter->zeros->data;i<(INT4)filter->zeros->length;i++,a++)
     if((a->re==0.0)&&(a->im==-1.0))
       numZeros--;
-  for(i=0,a=filter->poles->data;i<filter->poles->length;i++,a++)
+  for(i=0,a=filter->poles->data;i<(INT4)filter->poles->length;i++,a++)
     if((a->re==0.0)&&(a->im==-1.0))
       numPoles--;
 
@@ -192,7 +196,7 @@ void LALWToZCOMPLEX8ZPGFilter(LALStatus            *stat,
   /* Transform existing zeros from w to z, except for those at w=-i,
      which are mapped to z=infinity.  At the same time, compute the
      gain correction factors. */
-  for(i=0,j=0,a=filter->zeros->data;i<filter->zeros->length;
+  for(i=0,j=0,a=filter->zeros->data;i<(INT4)filter->zeros->length;
       i++,a++,g++){
     REAL4 ar=a->re;
     REAL4 ai=a->im;
@@ -239,7 +243,9 @@ void LALWToZCOMPLEX8ZPGFilter(LALStatus            *stat,
   }
   /* Replace the old filter zeros with the new ones. */
   if(filter->zeros->length>0)
+  {
     TRY(LALCDestroyVector(stat->statusPtr,&(filter->zeros)),stat);
+  }
   filter->zeros=z;
   z=NULL;
 
@@ -249,7 +255,7 @@ void LALWToZCOMPLEX8ZPGFilter(LALStatus            *stat,
   /* Transform existing poles from w to z, except for those at w=-i,
      which are mapped to z=infinity.  At the same time, compute the
      gain correction factors. */
-  for(i=0,j=0,a=filter->poles->data;i<filter->poles->length;
+  for(i=0,j=0,a=filter->poles->data;i<(INT4)filter->poles->length;
       i++,a++,g++){
     REAL4 ar=a->re;
     REAL4 ai=a->im;
@@ -296,7 +302,9 @@ void LALWToZCOMPLEX8ZPGFilter(LALStatus            *stat,
   }
   /* Replace the old filter poles with the new ones. */
   if(filter->poles->length>0)
+  {
     TRY(LALCDestroyVector(stat->statusPtr,&(filter->poles)),stat);
+  }
   filter->poles=z;
   z=NULL;
 
@@ -387,11 +395,15 @@ void LALWToZCOMPLEX16ZPGFilter(LALStatus             *stat,
   numZeros=filter->zeros->length;
   ASSERT(numZeros>=0,stat,ZPGFILTER_EBAD,ZPGFILTER_MSGEBAD);
   if(numZeros>0)
+  {
     ASSERT(filter->zeros->data,stat,ZPGFILTER_ENUL,ZPGFILTER_MSGENUL);
+  }
   numPoles=filter->poles->length;
   ASSERT(numPoles>=0,stat,ZPGFILTER_EBAD,ZPGFILTER_MSGEBAD);
   if(numPoles>0)
+  {
     ASSERT(filter->poles->data,stat,ZPGFILTER_ENUL,ZPGFILTER_MSGENUL);
+  }
 
   /* Compute the total number of zeros and poles in the w-plane,
      including those at w=infinity. */
@@ -409,10 +421,10 @@ void LALWToZCOMPLEX16ZPGFilter(LALStatus             *stat,
 
   /* Compute the revised number of zeros and poles in the z-plane,
      excluding those at z=infinity (w=-i). */
-  for(i=0,a=filter->zeros->data;i<filter->zeros->length;i++,a++)
+  for(i=0,a=filter->zeros->data;i<(INT4)filter->zeros->length;i++,a++)
     if((a->re==0.0)&&(a->im==-1.0))
       numZeros--;
-  for(i=0,a=filter->poles->data;i<filter->poles->length;i++,a++)
+  for(i=0,a=filter->poles->data;i<(INT4)filter->poles->length;i++,a++)
     if((a->re==0.0)&&(a->im==-1.0))
       numPoles--;
 
@@ -427,7 +439,7 @@ void LALWToZCOMPLEX16ZPGFilter(LALStatus             *stat,
   /* Transform existing zeros from w to z, except for those at w=-i,
      which are mapped to z=infinity.  At the same time, compute the
      gain correction factors. */
-  for(i=0,j=0,a=filter->zeros->data;i<filter->zeros->length;
+  for(i=0,j=0,a=filter->zeros->data;i<(INT4)filter->zeros->length;
       i++,a++,g++){
     REAL8 ar=a->re;
     REAL8 ai=a->im;
@@ -474,7 +486,9 @@ void LALWToZCOMPLEX16ZPGFilter(LALStatus             *stat,
   }
   /* Replace the old filter zeros with the new ones. */
   if(filter->zeros->length>0)
+  {
     TRY(LALZDestroyVector(stat->statusPtr,&(filter->zeros)),stat);
+  }
   filter->zeros=z;
   z=NULL;
 
@@ -484,7 +498,7 @@ void LALWToZCOMPLEX16ZPGFilter(LALStatus             *stat,
   /* Transform existing poles from w to z, except for those at w=-i,
      which are mapped to z=infinity.  At the same time, compute the
      gain correction factors. */
-  for(i=0,j=0,a=filter->poles->data;i<filter->poles->length;
+  for(i=0,j=0,a=filter->poles->data;i<(INT4)filter->poles->length;
       i++,a++,g++){
     REAL8 ar=a->re;
     REAL8 ai=a->im;
@@ -531,7 +545,9 @@ void LALWToZCOMPLEX16ZPGFilter(LALStatus             *stat,
   }
   /* Replace the old filter poles with the new ones. */
   if(filter->poles->length>0)
+  {
     TRY(LALZDestroyVector(stat->statusPtr,&(filter->poles)),stat);
+  }
   filter->poles=z;
   z=NULL;
 

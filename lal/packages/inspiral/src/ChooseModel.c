@@ -125,6 +125,7 @@ static REAL8 Ft5(REAL8 v, expnCoeffs *ak) {
 
 static REAL8 ep0(REAL8 v, expnCoeffs *ak) {
    REAL8 x, energy;
+   ak = NULL; /* do nothing with ak */
    x = v*v;
    energy = -x;
    return (energy);

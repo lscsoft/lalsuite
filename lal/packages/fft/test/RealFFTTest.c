@@ -37,7 +37,7 @@ NRCSID (MAIN, "$Id$");
 
 int lalDebugLevel = 1;
 
-int main()
+int main( void )
 {
   const INT4 m = 4;   /* example length of sequence of vectors */
   const INT4 n = 32;  /* example vector length */
@@ -123,27 +123,27 @@ int main()
   printf ("\nSingle Forward FFT:\n");
   LALFwdRealFFT (&status, Hvec, hvec, pfwd);
   REPORTSTATUS (&status);
-  for (i = 0; i < Hvec->length; ++i)
+  for (i = 0; i < (INT4) Hvec->length; ++i)
     printf ("(% 9.3f, % 9.3f)\n", Hvec->data[i].re, Hvec->data[i].im);
 
   printf ("\nSingle Forward FFT Power:\n");
   LALRealPowerSpectrum (&status, Pvec, hvec, pfwd);
   REPORTSTATUS (&status);
-  for (i = 0; i < Pvec->length; ++i)
+  for (i = 0; i < (INT4) Pvec->length; ++i)
     printf ("%12.3f\n", Pvec->data[i]);
 
   printf ("\nSingle Inverse FFT:\n");
   LALInvRealFFT (&status, hvec, Hvec, pinv);
   REPORTSTATUS (&status);
-  for (i = 0; i < hvec->length; ++i)
+  for (i = 0; i < (INT4) hvec->length; ++i)
     printf ("% 9.3f\n", hvec->data[i]/n);
 
   printf ("\nMultiple Forward FFT:\n");
   LALFwdRealSequenceFFT (&status, Hseq, hseq, pfwd);
   REPORTSTATUS (&status);
-  for (i = 0; i < Hseq->vectorLength; ++i)
+  for (i = 0; i < (INT4) Hseq->vectorLength; ++i)
   {
-    for (j = 0; j < Hseq->length; ++j)
+    for (j = 0; j < (INT4) Hseq->length; ++j)
       printf ("(% 9.3f, % 9.3f)\t",
                     Hseq->data[i + j*Hseq->vectorLength].re,
                     Hseq->data[i + j*Hseq->vectorLength].im);
@@ -153,9 +153,9 @@ int main()
   printf ("\nMultiple Forward FFT Power:\n");
   LALRealSequencePowerSpectrum (&status, Pseq, hseq, pfwd);
   REPORTSTATUS (&status);
-  for (i = 0; i < Pseq->vectorLength; ++i)
+  for (i = 0; i < (INT4) Pseq->vectorLength; ++i)
   {
-    for (j = 0; j < Pseq->length; ++j)
+    for (j = 0; j < (INT4) Pseq->length; ++j)
       printf ("%12.3f\t", Pseq->data[i + j*Pseq->vectorLength]);
     printf ("\n");
   }
@@ -163,9 +163,9 @@ int main()
   printf ("\nMultiple Inverse FFT:\n");
   LALInvRealSequenceFFT (&status, hseq, Hseq, pinv);
   REPORTSTATUS (&status);
-  for (i = 0; i < hseq->vectorLength; ++i)
+  for (i = 0; i < (INT4) hseq->vectorLength; ++i)
   {
-    for (j = 0; j < hseq->length; ++j)
+    for (j = 0; j < (INT4) hseq->length; ++j)
       printf ("% 9.3f\t", hseq->data[i + j*hseq->vectorLength]/n);
     printf ("\n");
   }

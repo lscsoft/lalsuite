@@ -34,13 +34,13 @@
 
 NRCSID (WINDOW, "$Id$");
 
-static char *WindowTypeNames[] = WINDOWNAMELIST;
+static const char *WindowTypeNames[] = WINDOWNAMELIST;
 
 void LALWindow(LALStatus *status, REAL4Vector *vector, LALWindowParams *parameters) 
 {
-  INT4 i;
-  INT4 length;
-  WindowType windowtype;
+  UINT4 i;
+  UINT4 length;
+  INT4 windowtype;
   REAL8 wss;    /* window summed and squared */
   REAL8 win;
   REAL8 x,y,z;

@@ -82,7 +82,7 @@ NRCSID( PRINTVECTORTESTC, "$Id$" );
 
 INT4 lalDebugLevel = 3;
 
-int main( )
+int main( void )
 {
   LALStatus                status = {0};
 

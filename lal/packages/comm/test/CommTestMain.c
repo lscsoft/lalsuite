@@ -21,12 +21,6 @@ NRCSID (MAIN, "$Id$");
 #include "CommTestGlobal.h"
 #undef COMMTESTGLOBAL_INIT
 
-void
-Master (LALStatus *, MPIId);
-
-void
-Slave (LALStatus *, MPIId);
-
 int lalDebugLevel = 1;
 
 int

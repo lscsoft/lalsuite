@@ -40,6 +40,11 @@ typedef struct tagCCIn {		/* input structure                  		*/
 	INT2		plan;		/* 1 -> estimate plan, otherwise measure plan 	*/
 } CCIn;
 
+void 
+LALCrossCorr ( LALStatus *status,
+            REAL4  *out,
+            CCIn   *in     );
+
 #define CROSSCORR_EIN		1
 #define CROSSCORR_EOUT		2
 #define CROSSCORR_ENULL		4

@@ -16,12 +16,6 @@
 
 NRCSID (MAIN, "$Id$");
 
-void
-Master (LALStatus *, MPIId);
-
-void
-Slave (LALStatus *, MPIId);
-
 /* global variables */
 #define FINDCHIRPGLOBAL_INIT
 #include "FindChirpGlobal.h"

@@ -85,10 +85,10 @@ LALCrossCorr ( LALStatus *status,
 	N = in->g1->data->length;
 
 	/* compare lengths of time series vectors */
-	ASSERT(in->g2->data->length == N, status, CROSSCORR_ESIZE1, CROSSCORR_MSGESIZE1);
+	ASSERT((INT4)in->g2->data->length == N, status, CROSSCORR_ESIZE1, CROSSCORR_MSGESIZE1);
 
 	/* check length of kernel vector */
-	ASSERT(in->QmaxTilde->length == N, status, CROSSCORR_ESIZE2, CROSSCORR_MSGESIZE2);
+	ASSERT((INT4)in->QmaxTilde->length == N, status, CROSSCORR_ESIZE2, CROSSCORR_MSGESIZE2);
 
         /* allocate padded vectors and FFT vectors */
 	LALSCreateVector(status->statusPtr,&g1Bar,2*N-1);

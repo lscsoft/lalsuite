@@ -81,10 +81,10 @@ void LALTfrWv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
   /* Make sure the timeInstant indicates existing time instants */
   for (column=0 ; column<tfr->tCol ; column++)
     {
-      if ((tfr->timeInstant[column] < 0) || (tfr->timeInstant[column] > (sig->length-1)))
+      if ((tfr->timeInstant[column] < 0) || (tfr->timeInstant[column] > (INT4)(sig->length-1)))
 	{
 	  ASSERT (tfr->timeInstant[column] > 0, stat, TFR_EBADT, TFR_MSGEBADT);
-	  ASSERT (tfr->timeInstant[column] < sig->length, stat, TFR_EBADT, TFR_MSGEBADT);
+	  ASSERT (tfr->timeInstant[column] < (INT4)sig->length, stat, TFR_EBADT, TFR_MSGEBADT);
 	}
     }
   
@@ -102,7 +102,7 @@ void LALTfrWv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
 	lacf->data[row] = 0.0;
       
       time = tfr->timeInstant[column];
-      taumax = MIN (time, (sig->length -1 - time));
+      taumax = MIN (time, (INT4)(sig->length -1 - time));
       taumax = MIN (taumax, (tfr->fRow / 2 - 1));
       
       for (tau = -taumax; tau <= taumax; tau++)
@@ -112,7 +112,7 @@ void LALTfrWv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
         }
       
       tau=tfr->fRow/2;
-      if ((time<=sig->length-tau-1)&(time>=tau))
+      if ((time<=(INT4)sig->length-tau-1)&(time>=tau))
 	lacf->data[tau] =  sig->data[time+tau]*sig->data[time-tau];
       
       LALFwdRealFFT(stat->statusPtr, vtmp, lacf, plan);   

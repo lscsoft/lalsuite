@@ -88,16 +88,16 @@ void LALTfrPswv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPa
   ASSERT (param->windowF->length%2 != 0, stat, TFR_EWSIZ, TFR_MSGEWSIZ);
 
   /* Make sure the window length is smaller than the number of freq bins: */
-  ASSERT (param->windowT->length < tfr->fRow, stat, TFR_EWSIZ, TFR_MSGEWSIZ);
+  ASSERT ((INT4)param->windowT->length < tfr->fRow, stat, TFR_EWSIZ, TFR_MSGEWSIZ);
 /* ??   ASSERT (param->windowT->length%2 != 0, stat, TFR_EWSIZ, TFR_MSGEWSIZ);  */
 
   /* Make sure the timeInstant indicates existing time instants */
   for (column=0 ; column<tfr->tCol ; column++)
     {
-      if ((tfr->timeInstant[column] < 0) || (tfr->timeInstant[column] > (sig->length-1)))
+      if ((tfr->timeInstant[column] < 0) || (tfr->timeInstant[column] > (INT4)(sig->length-1)))
 	{
 	  ASSERT (tfr->timeInstant[column] > 0, stat, TFR_EBADT, TFR_MSGEBADT);
-	  ASSERT (tfr->timeInstant[column] < sig->length, stat, TFR_EBADT, TFR_MSGEBADT);
+	  ASSERT (tfr->timeInstant[column] < (INT4)sig->length, stat, TFR_EBADT, TFR_MSGEBADT);
 	}
     }
   
@@ -120,7 +120,7 @@ void LALTfrPswv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPa
 
       time = (int) tfr->timeInstant[column];
 
-      mumin = MIN(hwlT,(sig->length-time-1));
+      mumin = MIN(hwlT,(INT4)(sig->length-time-1));
       mumax = MIN(hwlT,time);
       
       normT = 0.0;
@@ -134,14 +134,14 @@ void LALTfrPswv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPa
 
       lacf->data[0] = R0;
 
-      taumax = MIN((time+hwlT),(sig->length-time-1+hwlT));
+      taumax = MIN((time+hwlT),(INT4)(sig->length-time-1+hwlT));
       taumax = MIN(taumax,(tfr->fRow / 2 - 1));
       taumax = MIN(taumax, hwlF);
 
       for (tau = 1; tau <= taumax; tau++)
 	{
 
-	  mumin = MIN(hwlT,(sig->length-time-1-tau));
+	  mumin = MIN(hwlT,(INT4)(sig->length-time-1-tau));
 	  mumax = MIN(hwlT,time-tau);
 
 	  normT = 0.0;
@@ -164,9 +164,9 @@ void LALTfrPswv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPa
         }
       
      tau = tfr->fRow/2;
-     if ((time<=sig->length-tau-1)&(time>=tau)&(tau<=hwlF))
+     if ((time<=(INT4)sig->length-tau-1)&(time>=tau)&(tau<=hwlF))
        {
-	 mumin = MIN(hwlT,(sig->length-time-1-tau));
+	 mumin = MIN(hwlT,(INT4)(sig->length-time-1-tau));
 	 mumax = MIN(hwlT,time-tau);
 	 
 	 normT = 0.0;

@@ -7,7 +7,7 @@
 NRCSID (TESTSTSC,"$Id$");
 
 INT4 lalDebugLevel=0;
-INT4 main()
+int main( void )
 {
   static LALStatus status;
   static TrackSearchOut out;

@@ -105,7 +105,9 @@ void LALSHeapSort(LALStatus      *stat,
 
   /* A vector of length 0 or 1 is already sorted. */
   if(n<2)
+  {
     RETURN(stat);
+  }
 
   /* Here is the heapsort algorithm. */
   j=n-1;
@@ -174,7 +176,9 @@ void LALSHeapIndex(LALStatus      *stat,
 
   /* A vector of length 0 or 1 is already sorted. */
   if(n<2)
+  {
     RETURN(stat);
+  }
 
   /* Here is the heapsort algorithm. */
   j=n-1;
@@ -240,8 +244,10 @@ void LALSHeapRank(LALStatus      *stat,
   /* Invert to get the rank vector. */
   indx=index->data;
   rnk=rank->data;
-  for(i=0;i<vector->length;i++)
+  for(i=0;i<(int)vector->length;i++)
+  {
     rnk[indx[i]]=i;
+  }
 
   /* Free memory and exit. */
   TRY(LALI4DestroyVector(stat->statusPtr,&index),stat);
@@ -272,7 +278,9 @@ void LALDHeapSort(LALStatus      *stat,
 
   /* A vector of length 0 or 1 is already sorted. */
   if(n<2)
+  {
     RETURN(stat);
+  }
 
   /* Here is the heapsort algorithm. */
   j=n-1;
@@ -336,12 +344,16 @@ void LALDHeapIndex(LALStatus      *stat,
 
   /* Initialize the index vector. */
   for(i=0,indx=index->data;i<n;i++,indx++)
+  {
     *indx=i;
+  }
   indx=index->data;
 
   /* A vector of length 0 or 1 is already sorted. */
   if(n<2)
+  {
     RETURN(stat);
+  }
 
   /* Here is the heapsort algorithm. */
   j=n-1;
@@ -407,7 +419,7 @@ void LALDHeapRank(LALStatus      *stat,
   /* Invert to get the rank vector. */
   indx=index->data;
   rnk=rank->data;
-  for(i=0;i<vector->length;i++)
+  for(i=0;i<(int)vector->length;i++)
     rnk[indx[i]]=i;
 
   /* Free memory and exit. */

@@ -137,7 +137,7 @@ main (int argc, char *argv[])
   LALSCreateVector (&status, &(tseries.data), ntot);
   TestStatus (&status, CODES(0), 1);
 
-  for(i=0; i< tseries.data->length; i++)
+  for(i=0; i< (INT4)tseries.data->length; i++)
     {
       tseries.data->data[i] = ff( (REAL4)(i)/ (REAL4)(ntot));
     };
@@ -639,7 +639,7 @@ main (int argc, char *argv[])
     LALSCreateVector (&status, &(tseries.data), ntot);
     TestStatus (&status, CODES(0), 1);
 
-    for(i=0; i< tseries.data->length; i++)
+    for(i=0; i< (INT4)tseries.data->length; i++)
       {
 	tseries.data->data[i] = ff( (REAL4)(i)/ (REAL4)(ntot));
       };
@@ -847,7 +847,7 @@ main (int argc, char *argv[])
     LALSCreateVector (&status, &(tseries.data), ntot);
     TestStatus (&status, CODES(0), 1);
 
-    for(i=0; i< tseries.data->length; i++)
+    for(i=0; i< (INT4)tseries.data->length; i++)
       {
 	tseries.data->data[i] = ff( (REAL4)(i)/ (REAL4)(ntot));
       };

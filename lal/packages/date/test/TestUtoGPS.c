@@ -17,7 +17,7 @@ NRCSID (TESTUTOGPSC, "$Id$");
 const time_t UTCGPS = 315964811;
 
 /* Taken from GRASP */
-void printone(LALStatus *status, const LIGOTimeUnix *time1)
+static void printone(LALStatus *status, LIGOTimeUnix *time1)
 {
     LIGOTimeGPS  gpstime;
     LALDate      laldate;
@@ -75,7 +75,7 @@ void printone(LALStatus *status, const LIGOTimeUnix *time1)
     RETURN (status);
 }
 
-void
+static void
 testunixtime(LALStatus *status, const LIGOTimeUnix *time1)
 {
     LIGOTimeUnix tmp;

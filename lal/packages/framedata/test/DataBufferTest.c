@@ -126,9 +126,9 @@ main (int argc, char *argv[])
     /* print data vector */
     if (output)
     {
-      FILE *fp;
-      CHAR  fname[64];
-      INT4  i;
+      FILE  *fp;
+      CHAR   fname[64];
+      UINT4  i;
 
       sprintf (fname, "Segment.%03d", seg);
       fp = fopen (fname, "w");
@@ -142,9 +142,9 @@ main (int argc, char *argv[])
     /* print spectrum */
     if (output)
     {
-      FILE *fp;
-      CHAR  fname[64];
-      INT4  i;
+      FILE  *fp;
+      CHAR   fname[64];
+      UINT4  i;
 
       sprintf (fname, "Spectrum.%03d", seg);
       fp = fopen (fname, "w");
@@ -158,9 +158,9 @@ main (int argc, char *argv[])
     /* print calibration info */
     if (output)
     {
-      FILE *fp;
-      CHAR  fname[64];
-      INT4  i;
+      FILE  *fp;
+      CHAR   fname[64];
+      UINT4  i;
 
       sprintf (fname, "Response.%03d", seg);
       fp = fopen (fname, "w");

@@ -28,7 +28,7 @@ ifelse(TYPECODE,`I8',`define(`ARG',`(REAL8) *data')')
 ifelse(TYPECODE,`U8',`define(`ARG',`(REAL8) *data')')
 
 /* <lalVerbatim file="PrintFrequencySeriesCP"> */
-void FUNC ( STYPE *series, CHAR *filename ) 
+void FUNC ( STYPE *series, const CHAR *filename ) 
 { /* </lalVerbatim> */
   REAL8 f;
   TYPE *data;

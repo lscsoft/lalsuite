@@ -42,7 +42,7 @@ NRCSID (MAIN, "$Id$");
 int lalDebugLevel = 2;
 
 int
-main ()
+main ( void )
 {
   const int size = 8;
   COMPLEX8Vector *z1 = NULL;
@@ -51,7 +51,7 @@ main ()
   REAL4Vector    *x1 = NULL;
   REAL4Vector    *x2 = NULL;
   REAL4Vector    *x3 = NULL;
-  REAL4Vector    *y1 = NULL;
+  REAL4Vector    *y_1 = NULL;
   REAL4Vector    *y2 = NULL;
   REAL4Vector    *y3 = NULL;
   static LALStatus   status;
@@ -63,7 +63,7 @@ main ()
   LALSCreateVector(&status, &x1, size);
   LALSCreateVector(&status, &x2, size);
   LALSCreateVector(&status, &x3, size);
-  LALSCreateVector(&status, &y1, size/2);
+  LALSCreateVector(&status, &y_1, size/2);
   y2         = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
   y2->data   = NULL;
   y2->length = size;
@@ -123,7 +123,7 @@ main ()
   LALSSVectorMultiply(&status, x3, x1, NULL);
   LALSSVectorMultiply(&status, x3, y2, x2);
   LALSSVectorMultiply(&status, y3, x1, x2);
-  LALSSVectorMultiply(&status, x3, x1, y1);
+  LALSSVectorMultiply(&status, x3, x1, y_1);
 
   LALCDestroyVector(&status, &z1);
   LALCDestroyVector(&status, &z2);
@@ -131,12 +131,12 @@ main ()
   LALSDestroyVector(&status, &x1);
   LALSDestroyVector(&status, &x2);
   LALSDestroyVector(&status, &x3);
-  LALSDestroyVector(&status, &y1);
+  LALSDestroyVector(&status, &y_1);
   LALFree(y2);
   LALFree(y3->data);
   LALFree(y3);
 
-  x1 = x2 = x3 = y1 = y2 = y3 = NULL;
+  x1 = x2 = x3 = y_1 = y2 = y3 = NULL;
   z1 = z2 = z3 = NULL;
   
   
@@ -173,7 +173,7 @@ main ()
            x3->data[i]);
   
   
-  LALSCreateVector(&status, &y1, size/2);
+  LALSCreateVector(&status, &y_1, size/2);
   
   y2         = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
   y2->data   = NULL;
@@ -187,20 +187,20 @@ main ()
   
     LALCVectorAbs(&status, x1, NULL);
     LALCVectorAbs(&status, NULL, z1);
-    LALCVectorAbs(&status, y1, z1);
+    LALCVectorAbs(&status, y_1, z1);
     LALCVectorAbs(&status, y2, z1);
     LALCVectorAbs(&status, y3, z1);
     
     
     LALCVectorAngle(&status, x2, NULL);
     LALCVectorAngle(&status, NULL, z1);
-    LALCVectorAngle(&status, y1, z1);
+    LALCVectorAngle(&status, y_1, z1);
     LALCVectorAngle(&status, y2, z1);
     LALCVectorAngle(&status, y3, z1);
     
     LALUnwrapREAL4Angle(&status, x3, NULL);   
     LALUnwrapREAL4Angle(&status, NULL, x2);   
-    LALUnwrapREAL4Angle(&status, y1, x2);   
+    LALUnwrapREAL4Angle(&status, y_1, x2);   
     LALUnwrapREAL4Angle(&status, y2, x2);   
     LALUnwrapREAL4Angle(&status, y3, x2);   
     LALUnwrapREAL4Angle(&status, x2, x2);   
@@ -212,7 +212,7 @@ main ()
   LALSDestroyVector(&status, &x2);
   LALSDestroyVector(&status, &x3);
   
-  LALSDestroyVector(&status, &y1);
+  LALSDestroyVector(&status, &y_1);
   LALFree(y2);
   LALFree(y3->data);
   LALFree(y3);

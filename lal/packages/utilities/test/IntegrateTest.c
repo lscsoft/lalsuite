@@ -38,7 +38,7 @@ NRCSID (MAIN, "$Id$");
  */
 
 
-void f1 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
+static void f1 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   REAL4  x2 = x*x;
   REAL4  x4 = x2*x2;
@@ -50,7 +50,7 @@ void f1 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
   RETURN (s);
 }
 
-void ff1 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
+static void ff1 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
 {
   REAL8  x2 = x*x;
   REAL8  x4 = x2*x2;
@@ -62,7 +62,7 @@ void ff1 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
   RETURN (s);
 }
 
-void f2 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
+static void f2 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n;
   INITSTATUS (s, "f2", MAIN);
@@ -72,7 +72,7 @@ void f2 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
   RETURN (s);
 }
 
-void ff2 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
+static void ff2 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
 {
   INT4 *n;
   INITSTATUS (s, "ff2", MAIN);
@@ -82,7 +82,7 @@ void ff2 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
   RETURN (s);
 }
 
-void f3 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
+static void f3 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n;
   INITSTATUS (s, "f3", MAIN);
@@ -92,7 +92,7 @@ void f3 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
   RETURN (s);
 }
 
-void ff3 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
+static void ff3 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
 {
   INT4 *n;
   INITSTATUS (s, "ff3", MAIN);
@@ -102,7 +102,7 @@ void ff3 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
   RETURN (s);
 }
 
-void f4 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
+static void f4 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n;
   INITSTATUS (s, "f4", MAIN);
@@ -112,7 +112,7 @@ void f4 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
   RETURN (s);
 }
 
-void ff4 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
+static void ff4 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
 {
   INT4 *n;
   INITSTATUS (s, "ff4", MAIN);
@@ -122,7 +122,7 @@ void ff4 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
   RETURN (s);
 }
 
-void f5 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
+static void f5 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n;
   INITSTATUS (s, "f5", MAIN);
@@ -132,7 +132,7 @@ void f5 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
   RETURN (s);
 }
 
-void ff5 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
+static void ff5 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
 {
   INT4 *n;
   INITSTATUS (s, "ff5", MAIN);
@@ -142,7 +142,7 @@ void ff5 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
   RETURN (s);
 }
 
-void g (LALStatus *s, REAL4 *z, REAL4 x, void *p)
+static void g (LALStatus *s, REAL4 *z, REAL4 x, void *p)
 {
   REAL4 y;
   INITSTATUS (s, "g", MAIN);
@@ -152,7 +152,7 @@ void g (LALStatus *s, REAL4 *z, REAL4 x, void *p)
   RETURN (s);
 }
 
-void gg (LALStatus *s, REAL8 *z, REAL8 x, void *p)
+static void gg (LALStatus *s, REAL8 *z, REAL8 x, void *p)
 {
   REAL8 y;
   INITSTATUS (s, "gg", MAIN);
@@ -162,7 +162,7 @@ void gg (LALStatus *s, REAL8 *z, REAL8 x, void *p)
   RETURN (s);
 }
 
-void h (LALStatus *s, REAL4 *z, REAL4 y, void *p)
+static void h (LALStatus *s, REAL4 *z, REAL4 y, void *p)
 {
   SIntegrateIn intinp;
   INITSTATUS (s, "h", MAIN);
@@ -178,7 +178,7 @@ void h (LALStatus *s, REAL4 *z, REAL4 y, void *p)
   RETURN (s);
 }
 
-void hh (LALStatus *s, REAL8 *z, REAL8 y, void *p)
+static void hh (LALStatus *s, REAL8 *z, REAL8 y, void *p)
 {
   DIntegrateIn intinp;
   INITSTATUS (s, "hh", MAIN);
@@ -201,14 +201,16 @@ void hh (LALStatus *s, REAL8 *z, REAL8 y, void *p)
  * not converge.  Make this routine fast... no status handling!
  *
  */
-void bad (LALStatus *s, REAL4 *y, REAL4 x, void *p)
+static void bad (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n = (INT4 *)p;
+  s = NULL; x = 0; /* do nothing with s and x */
   *y = *n = 1664525L*(*n) + 1013904223L;
 }
 
-void bbad (LALStatus *s, REAL8 *y, REAL8 x, void *p)
+static void bbad (LALStatus *s, REAL8 *y, REAL8 x, void *p)
 {
+  s = NULL; x = 0; /* do nothing with s and x */
   *y = (REAL8)(++(*(INT4 *)p));
 }
 
@@ -665,7 +667,7 @@ TestStatus (LALStatus *status, const char *ignored, int exitcode)
  * linked list of statuses.
  *
  */
-void
+static void
 ClearStatus (LALStatus *status)
 {
   if (status->statusPtr)

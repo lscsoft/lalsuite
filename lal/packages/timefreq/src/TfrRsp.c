@@ -101,15 +101,15 @@ void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPar
   ASSERT (nf == 1, stat, TFR_EFROW, TFR_MSGEFROW);
 
   /* Make sure the window length is smaller than the number of freq bins: */
-  ASSERT (param->windowT->length < tfr->fRow, stat, TFR_EWSIZ, TFR_MSGEWSIZ);
+  ASSERT ((INT4)param->windowT->length < tfr->fRow, stat, TFR_EWSIZ, TFR_MSGEWSIZ);
  
   /* Make sure the timeInstant indicates existing time instants */
   for (column=0 ; column<tfr->tCol ; column++)
     {
-      if ((tfr->timeInstant[column] < 0) || (tfr->timeInstant[column] > (sig->length-1)))
+      if ((tfr->timeInstant[column] < 0) || (tfr->timeInstant[column] > (INT4)(sig->length-1)))
 	{
 	  ASSERT (tfr->timeInstant[column] > 0, stat, TFR_EBADT, TFR_MSGEBADT);
-	  ASSERT (tfr->timeInstant[column] < sig->length, stat, TFR_EBADT, TFR_MSGEBADT);
+	  ASSERT (tfr->timeInstant[column] < (INT4)sig->length, stat, TFR_EBADT, TFR_MSGEBADT);
 	}
     }
   
@@ -130,7 +130,7 @@ void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPar
   
   hwl = (param->windowT->length - 1) / 2.0;
   
-  for (column = 0; column < param->windowT->length; column++)
+  for (column = 0; column < (INT4)param->windowT->length; column++)
     windowT->data[column] = param->windowT->data[column] * (column - hwl);
 
   TRY(LALDwindow(stat->statusPtr, param->windowT, windowD), stat);
@@ -183,7 +183,7 @@ void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPar
       normhatf = tfr->fRow / (2.0 * LAL_PI);
 
       eps = 0.0;
-      for (row = 0; row < sig->length - 1; row++)
+      for (row = 0; row < (INT4)sig->length - 1; row++)
 	eps = eps + sig->data[row]*sig->data[row];
       eps = 1.0E-6 * eps / sig->length;
 

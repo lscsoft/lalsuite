@@ -145,7 +145,7 @@ void LALTimeDomain2(LALStatus *status,
       t = (++count-params->nStartPad) * dt;
    } while (t < ak.tn);
 
-   while (count < signal->length) *(signal->data + count++) = 0.;
+   while (count < (INT4)signal->length) *(signal->data + count++) = 0.;
 
 
 	LALFree(yt->data);

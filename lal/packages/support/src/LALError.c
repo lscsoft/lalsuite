@@ -84,7 +84,7 @@ information, taken from the \verb@status@ structure, about the
 function currently being executed; it is used to track the progress of
 execution through nested function calls.  It returns the number of
 characters printed.  The message begins with the word \verb@Enter@ (if
-\verb@exit@ = 0) or \verb@Leave@ (if \verb@exit@ $\neq0$), to indicate
+\verb@exitflg@ = 0) or \verb@Leave@ (if \verb@exitflg@ $\neq0$), to indicate
 whether the flow of execution has just entered or is about to leave
 the function.  Tracking information is printed only if the value of
 the global \verb@lalDebugLevel@ is set to allow it.  \verb@LALTrace()@ is
@@ -237,13 +237,13 @@ LALInfo( LALStatus *status, const char *info )
 
 /* <lalVerbatim file="LALErrorCP"> */
 int
-LALTrace( LALStatus *status, int exit )
+LALTrace( LALStatus *status, int exitflg )
 { /* </lalVerbatim> */
   int n = 0;
   if ( lalDebugLevel & LALTRACE )
   {
     n = LALPrintError( "%s[%d]: function %s, file %s, line %d, %s\n",
-        exit ? "Leave" : "Enter", status->level, status->function,
+        exitflg ? "Leave" : "Enter", status->level, status->function,
         status->file, status->line, status->Id );
   }
   return n;
@@ -255,7 +255,7 @@ LALTrace( LALStatus *status, int exit )
 #define LALError( statusptr, statement ) 0
 #define LALWarning( statusptr, warning ) 0
 #define LALInfo( statusptr, info )       0
-#define LALTrace( statusptr, exit )      0
+#define LALTrace( statusptr, exitflg )   0
 
 #endif
 

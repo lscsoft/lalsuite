@@ -66,11 +66,11 @@ void LALDwindow (LALStatus *stat, REAL4Vector* window, REAL4Vector* dwindow)
   step = (window->data[0] + window->data[window->length - 1]) / 2.0;
   ramp = (window->data[window->length - 1] - window->data[0]) / (window->length - 1);
 
-  for (column = 0 ; column < window->length ; column++)
+  for (column = 0 ; column < (INT4)window->length ; column++)
     dwindow->data[column] = window->data[column] - step - ramp * (-hwl + column);
 
   dwin1 = 0.0;
-  for (column = 0 ; column < (window->length - 1) ; column++)
+  for (column = 0 ; column < (INT4)(window->length - 1) ; column++)
     {
       dwin2 = (dwindow->data[column+1] - dwin1) / 2.0 + ramp;
       dwin1 = dwindow->data[column];

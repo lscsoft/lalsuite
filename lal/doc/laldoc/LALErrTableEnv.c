@@ -5,7 +5,7 @@
  * Function that sets flag for Error Table environment.
  *
  */
-int SetErrTableFlags( LALEnvironment *ErrTableEnv, char *sourcefile , FILE *inSrc )
+int SetErrTableFlags( LALEnvironment *ErrTableEnv, const char *sourcefile , FILE *inSrc )
 {
         ErrTableEnv->OnFlag       = "<lalErrTable"   ;
         ErrTableEnv->OffFlag      = "</lalErrTable>" ;

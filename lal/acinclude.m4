@@ -1,6 +1,19 @@
 dnl acinclude.m4
 
-AC_DEFUN(AC_WITH_EXTRA_CPPFLAGS,
+AC_DEFUN(LAL_WITH_GCC_FLAGS,
+[AC_ARG_WITH(
+        gcc_flags,   
+        [  --with-gcc-flags        turn on strict gcc warning flags],
+        [ if test -n "${with_gcc_flags}"
+          then
+            lal_gcc_flags="-g3 -O4 -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Waggregate-return -fshort-enums -fno-common -Wnested-externs -Werror"
+          else
+            lal_gcc_flags=""
+          fi
+        ], [ lal_gcc_flags="" ] )
+])
+
+AC_DEFUN(LAL_WITH_EXTRA_CPPFLAGS,
 [AC_ARG_WITH(
 	extra_cppflags, 
         [  --with-extra-cppflags=CPPFLAGS  additional C preprocessor flags],
@@ -11,7 +24,7 @@ AC_DEFUN(AC_WITH_EXTRA_CPPFLAGS,
 	],)
 ])
 
-AC_DEFUN(AC_WITH_EXTRA_CFLAGS,
+AC_DEFUN(LAL_WITH_EXTRA_CFLAGS,
 [AC_ARG_WITH(
 	extra_cflags, 
         [  --with-extra-cflags=CFLAGS  additional C compiler flags],
@@ -22,7 +35,7 @@ AC_DEFUN(AC_WITH_EXTRA_CFLAGS,
 	],)
 ])
 
-AC_DEFUN(AC_WITH_EXTRA_LDFLAGS,
+AC_DEFUN(LAL_WITH_EXTRA_LDFLAGS,
 [AC_ARG_WITH(
 	extra_ldflags, 
         [  --with-extra-ldflags=LDFLAGS  additional linker flags],
@@ -33,7 +46,7 @@ AC_DEFUN(AC_WITH_EXTRA_LDFLAGS,
 	],)
 ])
 
-AC_DEFUN(AC_WITH_EXTRA_LIBS,
+AC_DEFUN(LAL_WITH_EXTRA_LIBS,
 [AC_ARG_WITH(
 	extra_libs, 
         [  --with-extra-libs=LIBS  additional -l and -L linker flags],
@@ -44,7 +57,7 @@ AC_DEFUN(AC_WITH_EXTRA_LIBS,
 	],)
 ])
 
-AC_DEFUN(AC_WITH_MPICC,
+AC_DEFUN(LAL_WITH_MPICC,
 [AC_ARG_WITH(
         mpicc, 
         [  --with-mpicc=MPICC      use the MPICC C compiler for MPI code],
@@ -55,7 +68,7 @@ AC_DEFUN(AC_WITH_MPICC,
         ],)
 ])
 
-AC_DEFUN(AC_WITH_CC,
+AC_DEFUN(LAL_WITH_CC,
 [AC_ARG_WITH(
         cc, 
         [  --with-cc=CC            use the CC C compiler],
@@ -66,7 +79,7 @@ AC_DEFUN(AC_WITH_CC,
         ],)
 ])
 
-AC_DEFUN(AC_ENABLE_FRAME,
+AC_DEFUN(LAL_ENABLE_FRAME,
 [AC_ARG_ENABLE(
         frame,
         [  --enable-frame          compile code that requires Frame library [default=no] ],
@@ -78,7 +91,7 @@ AC_DEFUN(AC_ENABLE_FRAME,
         ], [ frame=false ] )
 ])
 
-AC_DEFUN(AC_ENABLE_MPI,
+AC_DEFUN(LAL_ENABLE_MPI,
 [AC_ARG_ENABLE(
         mpi,
         [  --enable-mpi            compile code that requires MPI [default=no] ],
@@ -90,7 +103,7 @@ AC_DEFUN(AC_ENABLE_MPI,
         ], [ mpi=false ] )
 ])
 
-AC_DEFUN(AC_ENABLE_DEBUG,
+AC_DEFUN(LAL_ENABLE_DEBUG,
 [AC_ARG_ENABLE(
         debug,
         [  --enable-debug          include standard LAL debugging code [default=yes] ],
@@ -102,7 +115,7 @@ AC_DEFUN(AC_ENABLE_DEBUG,
         ],)
 ])
 
-AC_DEFUN(AC_ENABLE_MACROS,
+AC_DEFUN(LAL_ENABLE_MACROS,
 [AC_ARG_ENABLE(
         macros,
         [  --enable-macros         use LAL macros [default=yes] ],
@@ -114,7 +127,7 @@ AC_DEFUN(AC_ENABLE_MACROS,
         ],)
 ])
 
-AC_DEFUN(AC_FFTW_MSG_ERROR,
+AC_DEFUN(LAL_FFTW_MSG_ERROR,
 [echo "**************************************************************"
  echo "* You must install FFTW (v >= 2.0) on your system.           *"
  echo "* FFTW is avaliable from http://www.fftw.org                 *"
@@ -132,7 +145,7 @@ AC_DEFUN(AC_FFTW_MSG_ERROR,
 AC_MSG_ERROR([single precision FFTW must be properly installed.])
 ])
 
-AC_DEFUN(AC_SFFTW_WORKS,
+AC_DEFUN(LAL_SFFTW_WORKS,
 [AC_MSG_CHECKING(whether single precison FFTW works)
 AC_TRY_RUN([
 #include <stdio.h>
@@ -152,10 +165,10 @@ echo "* Possible problems:                                         *"
 echo "*   - FFTW version < 2.0                                     *"
 echo "*   - Compiler could not find header sfftw.h or fftw.h       *"
 echo "*   - FFTW was not configured with the --enable-float option *"
-AC_FFTW_MSG_ERROR
+LAL_FFTW_MSG_ERROR
 )])
 
-AC_DEFUN(AC_SRFFTW_WORKS,
+AC_DEFUN(LAL_SRFFTW_WORKS,
 [AC_MSG_CHECKING(whether single precison real FFTW works)
 AC_TRY_RUN([
 #include <stdio.h>
@@ -176,10 +189,10 @@ echo "*   - FFTW version < 2.0                                     *"
 echo "*   - Compiler could not find header srfftw.h or rfftw.h     *"
 echo "*   - FFTW was not configured with the --enable-float option *"
 echo "**************************************************************"
-AC_FFTW_MSG_ERROR
+LAL_FFTW_MSG_ERROR
 )])
 
-AC_DEFUN(AC_CHECK_FRAMELIB,
+AC_DEFUN(LAL_CHECK_FRAMELIB,
 [ if test "${frame}" = "true"; then
         AC_CHECK_LIB(Frame, FrLibIni, ,
           [AC_MSG_ERROR(couldn't find Frame library for --enable-frame)] , )
@@ -192,7 +205,7 @@ AC_DEFUN(AC_CHECK_FRAMELIB,
   fi
 ])
 
-AC_DEFUN(AC_CHECK_MPI,
+AC_DEFUN(LAL_CHECK_MPI,
 [ AC_CHECK_PROGS(MPICC, mpicc hcc, $CC)
   AC_MSG_CHECKING(for mpicc flags)
   SHOWARG=""

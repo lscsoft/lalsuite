@@ -67,7 +67,7 @@ LALCreateRandomParams (
     (*params)->i = BasicRandom ((*params)->i);
   }
 
-  for (n = 0; n < sizeof((*params)->v)/sizeof(INT4); ++n)
+  for (n = 0; n < (int)(sizeof((*params)->v)/sizeof(INT4)); ++n)
   {
     (*params)->v[n] = (*params)->i = BasicRandom ((*params)->i);
   }

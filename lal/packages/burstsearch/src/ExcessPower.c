@@ -63,8 +63,10 @@ static INT4 pow1(INT4 a, INT4 b)
 }
 
 
-static int TileCompare( TFTile **tiles1, TFTile **tiles2 )
+static int TileCompare( const void *t1, const void *t2 )
 {
+  TFTile * const *tiles1 = t1;
+  TFTile * const *tiles2 = t2;
   if ( (*tiles1)->alpha > (*tiles2)->alpha )
     return 1;
   if ( (*tiles1)->alpha < (*tiles2)->alpha )
@@ -262,7 +264,7 @@ LALAddWhiteNoise (
   LALNormalDeviates (status->statusPtr, vi, params);
   CHECKSTATUSPTR (status);
 
-  for(i=0;i<v->length;i++) 
+  for(i=0;i<(INT4)v->length;i++) 
     {
       v->data[i].re += noiseLevel * vr->data[i];
       v->data[i].im += noiseLevel * vi->data[i];
@@ -753,7 +755,7 @@ LALComputeExcessPower (
       
 
       INT4 j;
-      INT4 i;
+      INT4 ii;
       INT4 nf;
       INT4 nt;
       INT4 t1;
@@ -787,11 +789,11 @@ LALComputeExcessPower (
       sum=0.0;
       for(j=t1; j<=t2; j++)
 	{
-	  for(i=f1; i<=f2; i++)
+	  for(ii=f1; ii<=f2; ii++)
 	    {
 	      INT4 offset = j*nf;
 	      COMPLEX8 z;
-	      z = tfPlane->data[offset+i];
+	      z = tfPlane->data[offset+ii];
 	      sum += z.re*z.re + z.im*z.im;
 	    }
 	}
@@ -812,17 +814,17 @@ LALComputeExcessPower (
 
       if(numsigma > input->numSigmaMin)
 	{
-	  ChisqCdfIn input;
+	  ChisqCdfIn locinput;
 	  REAL8 alpha; /* false alarm probability */
 
 	  thisTile->firstCutFlag=TRUE;
 
 	  /* compute alpha value */
-	  input.chi2= sum;
-	  input.dof = dof;
-	  /* input->nonCentral not used by LALChisqCdf() */
+	  locinput.chi2= sum;
+	  locinput.dof = dof;
+	  /* locinput->nonCentral not used by LALChisqCdf() */
 
-	  LALOneMinusChisqCdf( status->statusPtr, &alpha, &input);
+	  LALOneMinusChisqCdf( status->statusPtr, &alpha, &locinput);
 
 	  /* 
            *  trap error where alpha=0.0.
@@ -1055,7 +1057,7 @@ LALComputeLikelihood (
 	  INT4 f1;
 	  INT4 f2;
 	  REAL8 dof;
-	  REAL8 lambda;
+	  REAL8 loclambda;
 	  REAL8 rho4;
 
 	  t1=thisTile->tstart;
@@ -1065,9 +1067,9 @@ LALComputeLikelihood (
 	  dof = (REAL8)(2*(t2-t1+1)*(f2-f1+1));
 	  rho4 = thisTile->excessPower * thisTile->excessPower;
 
-	  lambda = dof / (rho4 * thisTile->alpha);
+	  loclambda = dof / (rho4 * thisTile->alpha);
 
-	  avglambda += lambda * thisTile->weight;
+	  avglambda += loclambda * thisTile->weight;
 	}
 
       /* go onto next tile */

@@ -22,17 +22,17 @@ typedef void *(func) (void *p);
 typedef struct 
 tagLALEnviroment
 {  
-    char *OnFlag     ; /* String that turns the environment on          */
-    char *OffFlag    ; /* String that turns the environment off         */
-    char *closer     ; /* closeing brace ie ">"                         */
+    const char *OnFlag     ; /* String that turns the environment on          */
+    const char *OffFlag    ; /* String that turns the environment off         */
+    const char *closer     ; /* closeing brace ie ">"                         */
     int   On         ; /* 1 when in evironment, 0 when not              */
     FILE *InFilePtr  ; /* file ptr to input source                      */
     FILE *OutFilePtr ; /* file ptr  for output                          */
     char *fileName   ; /* file Name for output                          */
-    char *sourceFile ; /* source file being parsed                      */
+    const char *sourceFile ; /* source file being parsed                      */
     char *allCaps    ; /* string file.c -> FILEC                        */
     char *dfltFile   ; /* string file.H -> fileH.tex                    */
-    char *suffix     ; /* string added to filename ie ".tex"            */
+    const char *suffix     ; /* string added to filename ie ".tex"            */
     char *errCodePrfx; /* error codes prefix. Should agree with allCaps */
     int  cnvtnVioltn ; /* 1 if some convention is violated, 0 otherwise */
     int  lineCount   ; /* numbr of lines in environment (counting ends) */
@@ -40,7 +40,7 @@ tagLALEnviroment
     func *PostFix    ; /* a function that prepares end of output        */
 } LALEnvironment;
 
-FILE *OpenAFile(char * file, char *readwriteappend , int timestamp  );
+FILE *OpenAFile(const char *file, const char *readwriteappend, int timestamp );
 int   CloseAFile(FILE *filePtr, int timeStamp );
 
 int LalDocGetLine(char *line, int max, FILE *fpin);
@@ -49,8 +49,8 @@ int FindNameOfOutPutFile( char *line , LALEnvironment *LaTeXEnv );
 int FindDefaultFileName( LALEnvironment *Env );
 int ParseCommandLine( int argcount , char **argvector , char *source , 
                       FILE **ptrptrInput);
-int LALDocErr( char *message , char *sourceCodeFileName,
-               int laldocLineNumber, char *laldocSourceCodeFile,
+int LALDocErr( const char *message , const char *sourceCodeFileName,
+               int laldocLineNumber, const char *laldocSourceCodeFile,
                int fatal );
 int CleanExit( FILE *ptrInput , FILE *ptrOutput , 
                LALEnvironment *LaTeXEnv    ,
@@ -74,7 +74,7 @@ void *EndOfVerbatimEnv( void *recastToEnv );
 void TabAlign(char *out, char *in, int n, int tabsize);
 
 /* Functions specific to the Error Table environment */
-int SetErrTableFlags( LALEnvironment *ErrTableEnv, char *sourcefile , FILE *in);
+int SetErrTableFlags( LALEnvironment *ErrTableEnv, const char *sourcefile , FILE *in);
 int WriteErrTable(char *line , LALEnvironment *Env );
 void *TopOfErrTableEnv( void *recastToEnv );
 void *EndOfErrTableEnv( void *recastToEnv );

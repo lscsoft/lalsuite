@@ -52,11 +52,7 @@ LALCheckMemoryLeaks()
 
 int lalDebugLevel = 3;
 
-int raise (int sig)
-{
-  fprintf (stderr, "Ignored signal %d\n", sig);
-  return 1;
-}
+int raise (int sig);
 
 int main( void )
 {
@@ -164,4 +160,10 @@ int main( void )
   LALFree (p);
 
   return 0;
+}
+
+int raise (int sig)
+{
+  fprintf (stderr, "Ignored signal %d\n", sig);
+  return 1;
 }

@@ -17,7 +17,7 @@ define(`DFUNC',`format(`LAL%sDestroyVectorSequence',TYPECODE)')
 define(`FUNC',`format(`%sVectorSequenceFactoriesTest',TYPECODE)')
 
 
-void FUNC ( void )
+static void FUNC ( void )
 {
   CreateVectorSequenceIn input   = { 2, 8 };
   CreateVectorSequenceIn badslen = { 0, 8 };

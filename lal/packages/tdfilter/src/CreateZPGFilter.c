@@ -74,11 +74,15 @@ void LALCreateCOMPLEX8ZPGFilter(LALStatus            *stat,
   /* Allocate the data fields.  If the number of poles or zeros is 0,
      the corresponding field(s) should remain null. */
   if(numZeros>0)
+  {
     TRY(LALCCreateVector(stat->statusPtr,&((*output)->zeros),numZeros),
 	stat);
+  }
   if(numPoles>0)
+  {
     TRY(LALCCreateVector(stat->statusPtr,&((*output)->poles),numPoles),
 	stat);
+  }
 
   /* Normal exit */
   DETATCHSTATUSPTR(stat);
@@ -112,11 +116,15 @@ void LALCreateCOMPLEX16ZPGFilter(LALStatus             *stat,
   /* Allocate the data fields.  If the number of poles or zeros is 0,
      the corresponding field(s) should remain null. */
   if(numZeros>0)
+  {
     TRY(LALZCreateVector(stat->statusPtr,&((*output)->zeros),numZeros),
 	stat);
+  }
   if(numPoles>0)
+  {
     TRY(LALZCreateVector(stat->statusPtr,&((*output)->poles),numPoles),
 	stat);
+  }
 
   /* Normal exit */
   DETATCHSTATUSPTR(stat);

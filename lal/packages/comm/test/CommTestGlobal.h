@@ -29,4 +29,8 @@ NRCSID (COMMTESTGLOBALH, "$Id$");
 DECLARE (INT4, numPoints, 16);
 #undef DECLARE
 
+void Master (LALStatus *, MPIId);
+
+void Slave (LALStatus *, MPIId);
+
 #endif

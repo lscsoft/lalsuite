@@ -56,24 +56,24 @@ ClearStatus (LALStatus *status);
 static void
 F (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
-  REAL4 y0;
+  REAL4 y_0;
   INITSTATUS (s, "F", MAIN);
   ASSERT (y, s, 1, "Null pointer");
   ASSERT (p, s, 1, "Null pointer");
-  y0 = *(REAL4 *)p;
-  *y = y0 + x*x;
+  y_0 = *(REAL4 *)p;
+  *y = y_0 + x*x;
   RETURN (s);
 }
 
 static void
 FF (LALStatus *s, REAL8 *y, REAL8 x, void *p)
 {
-  REAL8 y0;
+  REAL8 y_0;
   INITSTATUS (s, "FF", MAIN);
   ASSERT (y, s, 1, "Null pointer");
   ASSERT (p, s, 1, "Null pointer");
-  y0 = *(REAL8 *)p;
-  *y = y0 + x*x;
+  y_0 = *(REAL8 *)p;
+  *y = y_0 + x*x;
   RETURN (s);
 }
 
@@ -84,7 +84,7 @@ main (int argc, char *argv[])
   static LALStatus  status;
   SFindRootIn    sinput;
   DFindRootIn    dinput;
-  REAL4          y0;
+  REAL4          y_0;
   REAL4          sroot;
   REAL8          yy0;
   REAL8          droot;
@@ -102,12 +102,12 @@ main (int argc, char *argv[])
 
   /*
    *
-   * Set up input structure and function parameter y0.
+   * Set up input structure and function parameter y_0.
    *
    */
 
 
-  y0              = -1;
+  y_0             = -1;
   sinput.function = F;
   sinput.xmin     = 1e-3;
   sinput.xmax     = 2e-3;
@@ -136,7 +136,7 @@ main (int argc, char *argv[])
     printf ("Initial domain: [%e,%e]\n", dinput.xmin, dinput.xmax);
   }
 
-  LALSBracketRoot (&status, &sinput, &y0);
+  LALSBracketRoot (&status, &sinput, &y_0);
   TestStatus (&status, CODES(0), 1);
 
   if (verbose)
@@ -165,7 +165,7 @@ main (int argc, char *argv[])
   }
 
 
-  LALSBisectionFindRoot (&status, &sroot, &sinput, &y0);
+  LALSBisectionFindRoot (&status, &sroot, &sinput, &y_0);
   TestStatus (&status, CODES(0), 1);
 
   if (verbose)
@@ -228,17 +228,17 @@ main (int argc, char *argv[])
     printf ("\n----- Null Pointer Error: Code 1 (10 times)\n");
   }
 
-  LALSBracketRoot (&status, NULL, &y0);
+  LALSBracketRoot (&status, NULL, &y_0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
   LALDBracketRoot (&status, NULL, &yy0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
 
-  LALSBisectionFindRoot (&status, NULL, &sinput, &y0);
+  LALSBisectionFindRoot (&status, NULL, &sinput, &y_0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
   LALDBisectionFindRoot (&status, NULL, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
 
-  LALSBisectionFindRoot (&status, &sroot, NULL, &y0);
+  LALSBisectionFindRoot (&status, &sroot, NULL, &y_0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
   LALDBisectionFindRoot (&status, &droot, NULL, &yy0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
@@ -246,12 +246,12 @@ main (int argc, char *argv[])
   sinput.function = NULL;
   dinput.function = NULL;
 
-  LALSBracketRoot (&status, &sinput, &y0);
+  LALSBracketRoot (&status, &sinput, &y_0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
   LALDBracketRoot (&status, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
 
-  LALSBisectionFindRoot (&status, &sroot, &sinput, &y0);
+  LALSBisectionFindRoot (&status, &sroot, &sinput, &y_0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
   LALDBisectionFindRoot (&status, &droot, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
@@ -270,7 +270,7 @@ main (int argc, char *argv[])
   dinput.xmin     = 5;
   dinput.xmax     = 5;
 
-  LALSBracketRoot (&status, &sinput, &y0);
+  LALSBracketRoot (&status, &sinput, &y_0);
   TestStatus (&status, CODES(FINDROOT_EIDOM), 1);
   LALDBracketRoot (&status, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_EIDOM), 1);
@@ -282,19 +282,19 @@ main (int argc, char *argv[])
     printf ("\n----- Maximum Iteration Exceeded: Code 4 (4 times)\n");
   }
   
-  y0              = 1; /* there is no root when y0 > 0 */
+  y_0             = 1; /* there is no root when y_0 > 0 */
   sinput.xmin     = -1e-18;
   sinput.xmax     = 1e-18;
-  yy0             = 1; /* there is no root when y0 > 0 */
+  yy0             = 1; /* there is no root when y_0 > 0 */
   dinput.xmin     = -1e-18;
   dinput.xmax     = 1e-18;
 
-  LALSBracketRoot (&status, &sinput, &y0);
+  LALSBracketRoot (&status, &sinput, &y_0);
   TestStatus (&status, CODES(FINDROOT_EMXIT), 1);
   LALDBracketRoot (&status, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_EMXIT), 1);
 
-  y0              = -1;
+  y_0             = -1;
   sinput.xmin     = 0;
   sinput.xmax     = 1e19;
   sinput.xacc     = 2e-38;
@@ -303,7 +303,7 @@ main (int argc, char *argv[])
   dinput.xmax     = 1e19;
   dinput.xacc     = 2e-38;
 
-  LALSBisectionFindRoot (&status, &sroot, &sinput, &y0);
+  LALSBisectionFindRoot (&status, &sroot, &sinput, &y_0);
   TestStatus (&status, CODES(FINDROOT_EMXIT), 1);
   LALDBisectionFindRoot (&status, &droot, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_EMXIT), 1);
@@ -322,7 +322,7 @@ main (int argc, char *argv[])
   dinput.xmax     = -3;
   dinput.xacc     = 1e-6;
 
-  LALSBisectionFindRoot (&status, &sroot, &sinput, &y0);
+  LALSBisectionFindRoot (&status, &sroot, &sinput, &y_0);
   TestStatus (&status, CODES(FINDROOT_EBRKT), 1);
   LALDBisectionFindRoot (&status, &droot, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_EBRKT), 1);

@@ -20,4 +20,8 @@ DECLARE (INT4, numSegments, 2);
 DECLARE (INT4, maxNumTemplates, 128);
 #undef DECLARE
 
+void Master (LALStatus *, MPIId);
+
+void Slave (LALStatus *, MPIId);
+
 #endif

@@ -10,7 +10,7 @@
 
 INT4 lalDebugLevel=1;
 
-void printf_timeseries (int n, double *signal, double delta, double t0) 
+static void printf_timeseries (int n, double *signal, double delta, double t0) 
 {
   int i=0;
   FILE *outfile1;
@@ -25,7 +25,7 @@ void printf_timeseries (int n, double *signal, double delta, double t0)
 }
 
 
-int main () {
+int main ( void ) {
    REAL8Vector signal;
    InspiralTemplate params;
    /*

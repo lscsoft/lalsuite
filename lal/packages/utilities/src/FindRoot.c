@@ -25,8 +25,8 @@ LALSBracketRoot (
   const INT4  imax = 64;
 
   INT4  i = 0;
-  REAL4 y1;
-  REAL4 y2;
+  REAL4 y_1;
+  REAL4 y_2;
 
   INITSTATUS (status, "LALSBracketRoot", FINDROOTC);
   ATTATCHSTATUSPTR (status);
@@ -41,16 +41,16 @@ LALSBracketRoot (
 
   /* evaluate function at endpoints */
 
-  inout->function (status->statusPtr, &y1, inout->xmin, params);
+  ((REAL4LALFunction *)inout->function)(status->statusPtr, &y_1, inout->xmin, params);
   CHECKSTATUSPTR (status);
 
-  inout->function (status->statusPtr, &y2, inout->xmax, params);
+  inout->function (status->statusPtr, &y_2, inout->xmax, params);
   CHECKSTATUSPTR (status);
 
   while (1)
   {
     /* break out if root has been bracketed */
-    if (y1*y2 < 0)
+    if (y_1*y_2 < 0)
     {
       break;
     }
@@ -59,18 +59,18 @@ LALSBracketRoot (
     ASSERT (i < imax, status, FINDROOT_EMXIT, FINDROOT_MSGEMXIT);
     ++i;
 
-    if (fabs(y1) < fabs(y2))
+    if (fabs(y_1) < fabs(y_2))
     {
       /* expand lower limit */
       inout->xmin += fac*(inout->xmin - inout->xmax);
-      inout->function (status->statusPtr, &y1, inout->xmin, params);
+      inout->function (status->statusPtr, &y_1, inout->xmin, params);
       CHECKSTATUSPTR (status);
     }
     else
     {
       /* expand upper limit */
       inout->xmax += fac*(inout->xmax - inout->xmin);
-      inout->function (status->statusPtr, &y2, inout->xmax, params);
+      inout->function (status->statusPtr, &y_2, inout->xmax, params);
       CHECKSTATUSPTR (status);
     }
 
@@ -92,8 +92,8 @@ LALDBracketRoot (
   const INT4  imax = 64;
 
   INT4  i = 0;
-  REAL8 y1;
-  REAL8 y2;
+  REAL8 y_1;
+  REAL8 y_2;
 
   INITSTATUS (status, "LALDBracketRoot", FINDROOTC);
   ATTATCHSTATUSPTR (status);
@@ -108,16 +108,16 @@ LALDBracketRoot (
 
   /* evaluate function at endpoints */
 
-  inout->function (status->statusPtr, &y1, inout->xmin, params);
+  inout->function (status->statusPtr, &y_1, inout->xmin, params);
   CHECKSTATUSPTR (status);
 
-  inout->function (status->statusPtr, &y2, inout->xmax, params);
+  inout->function (status->statusPtr, &y_2, inout->xmax, params);
   CHECKSTATUSPTR (status);
 
   while (1)
   {
     /* break out if root has been bracketed */
-    if (y1*y2 < 0)
+    if (y_1*y_2 < 0)
     {
       break;
     }
@@ -126,18 +126,18 @@ LALDBracketRoot (
     ASSERT (i < imax, status, FINDROOT_EMXIT, FINDROOT_MSGEMXIT);
     ++i;
 
-    if (fabs(y1) < fabs(y2))
+    if (fabs(y_1) < fabs(y_2))
     {
       /* expand lower limit */
       inout->xmin += fac*(inout->xmin - inout->xmax);
-      inout->function (status->statusPtr, &y1, inout->xmin, params);
+      inout->function (status->statusPtr, &y_1, inout->xmin, params);
       CHECKSTATUSPTR (status);
     }
     else
     {
       /* expand upper limit */
       inout->xmax += fac*(inout->xmax - inout->xmin);
-      inout->function (status->statusPtr, &y2, inout->xmax, params);
+      inout->function (status->statusPtr, &y_2, inout->xmax, params);
       CHECKSTATUSPTR (status);
     }
 
@@ -159,8 +159,8 @@ LALSBisectionFindRoot (
   const INT4 imax = 40;
 
   INT4  i = 0;
-  REAL4 y1;
-  REAL4 y2;
+  REAL4 y_1;
+  REAL4 y_2;
   REAL4 x;
   REAL4 dx;
 
@@ -175,15 +175,15 @@ LALSBisectionFindRoot (
 
   /* evaluate function at endpoints */
 
-  input->function (status->statusPtr, &y1, input->xmin, params);
+  input->function (status->statusPtr, &y_1, input->xmin, params);
   CHECKSTATUSPTR (status);
 
-  input->function (status->statusPtr, &y2, input->xmax, params);
+  input->function (status->statusPtr, &y_2, input->xmax, params);
   CHECKSTATUSPTR (status);
 
-  ASSERT (y1*y2 < 0, status, FINDROOT_EBRKT, FINDROOT_MSGEBRKT);
+  ASSERT (y_1*y_2 < 0, status, FINDROOT_EBRKT, FINDROOT_MSGEBRKT);
 
-  if (y1 < 0)
+  if (y_1 < 0)
   {
     /* start search at xmin and increase */
     x  = input->xmin;
@@ -251,8 +251,8 @@ LALDBisectionFindRoot (
   const INT4 imax = 80;
 
   INT4  i = 0;
-  REAL8 y1;
-  REAL8 y2;
+  REAL8 y_1;
+  REAL8 y_2;
   REAL8 x;
   REAL8 dx;
 
@@ -267,15 +267,15 @@ LALDBisectionFindRoot (
 
   /* evaluate function at endpoints */
 
-  input->function (status->statusPtr, &y1, input->xmin, params);
+  input->function (status->statusPtr, &y_1, input->xmin, params);
   CHECKSTATUSPTR (status);
 
-  input->function (status->statusPtr, &y2, input->xmax, params);
+  input->function (status->statusPtr, &y_2, input->xmax, params);
   CHECKSTATUSPTR (status);
 
-  ASSERT (y1*y2 < 0, status, FINDROOT_EBRKT, FINDROOT_MSGEBRKT);
+  ASSERT (y_1*y_2 < 0, status, FINDROOT_EBRKT, FINDROOT_MSGEBRKT);
 
-  if (y1 < 0)
+  if (y_1 < 0)
   {
     /* start search at xmin and increase */
     x  = input->xmin;

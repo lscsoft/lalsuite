@@ -163,7 +163,7 @@ LALLMST1 (LALStatus        *status,
        INT4           outunits)
 {
     REAL8 gmst;
-	REAL8 day;
+	REAL8 day = 0;
 
     INITSTATUS (status, "LALLMST1", LMST1C);
 

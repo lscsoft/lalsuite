@@ -43,10 +43,10 @@ NRCSID (CROSSCORRTESTC, "$Id$");
 
 INT4 lalDebugLevel = 0; /* set to 0 if we don't scare anyone with "failed ..." */
 
-int check ( LALStatus*, INT4, CHAR* );
+int check ( LALStatus*, INT4, const CHAR* );
 
 int 
-main()
+main( void )
 {
 	static	LALStatus status;
 	CCIn		in;
@@ -172,7 +172,7 @@ main()
  */
 
 int 
-check( LALStatus* status, INT4 code, CHAR* message )
+check( LALStatus* status, INT4 code, const CHAR* message )
 {
 	if ( status->statusCode != code ) {
 		fprintf(stderr, "FAIL: did not recognize \"%s\" \n", message);

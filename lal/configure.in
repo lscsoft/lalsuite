@@ -12,28 +12,26 @@ AC_DEFINE_UNQUOTED(LAL_VERSION_MINOR, $lal_version_minor, [LAL Version Minor Num
 AC_DEFINE_UNQUOTED(LAL_CONFIGURE_ARGS, "$ac_configure_args", [LAL Configure Arguments])
 AC_DEFINE_UNQUOTED(LAL_CONFIGURE_DATE, "$lal_configure_date", [LAL Configure Date])
 
-AC_WITH_CC
-AC_WITH_MPICC
-AC_WITH_EXTRA_CPPFLAGS
-AC_WITH_EXTRA_CFLAGS
-AC_WITH_EXTRA_LDFLAGS
-AC_WITH_EXTRA_LIBS
+LAL_WITH_CC
+LAL_WITH_MPICC
+LAL_WITH_EXTRA_CPPFLAGS
+LAL_WITH_EXTRA_CFLAGS
+LAL_WITH_EXTRA_LDFLAGS
+LAL_WITH_EXTRA_LIBS
+LAL_WITH_GCC_FLAGS
 
-AC_ENABLE_FRAME
-AC_ENABLE_MPI
+LAL_ENABLE_FRAME
+LAL_ENABLE_MPI
 AM_CONDITIONAL(FRAME, test x$frame = xtrue)
 AM_CONDITIONAL(MPI, test x$mpi = xtrue)
 AM_CONDITIONAL(FRAMEANDMPI, test x$frame = xtrue -a x$mpi = xtrue)
 
-AC_ENABLE_DEBUG
-AC_ENABLE_MACROS
+LAL_ENABLE_DEBUG
+LAL_ENABLE_MACROS
 
 dnl Checks for programs.
 AC_PROG_AWK
 AC_PROG_CC
-if test "$GCC" = yes; then
-  CFLAGS="$CFLAGS -Wall"
-fi
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
@@ -45,23 +43,23 @@ AC_CHECK_PROGS(DVIPS, dvips, echo)
 
 dnl Checks for libraries.
 AC_CHECK_LIB(m, sin)
-AC_SEARCH_LIBS(fftw_one, sfftw fftw, , AC_FFTW_MSG_ERROR, -lm)
-AC_SEARCH_LIBS(rfftw_one, srfftw rfftw, , AC_FFTW_MSG_ERROR, -lm)
+AC_SEARCH_LIBS(fftw_one, sfftw fftw, , LAL_FFTW_MSG_ERROR, -lm)
+AC_SEARCH_LIBS(rfftw_one, srfftw rfftw, , LAL_FFTW_MSG_ERROR, -lm)
 
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(sys/time.h unistd.h getopt.h malloc.h)
 AC_CHECK_HEADERS(sfftw.h fftw.h, break)
 AC_CHECK_HEADERS(srfftw.h rfftw.h, break)
-AC_SFFTW_WORKS
-AC_SRFFTW_WORKS
+LAL_SFFTW_WORKS
+LAL_SRFFTW_WORKS
 
 dnl Checks for optional libraries and header files.
 if test "${frame}" = "true"; then
-  AC_CHECK_FRAMELIB
+  LAL_CHECK_FRAMELIB
 fi
 if test "${mpi}" = "true"; then
-  AC_CHECK_MPI
+  LAL_CHECK_MPI
 fi
 
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -81,6 +79,11 @@ AC_CHECK_FUNCS(getopt)
 AC_CHECK_FUNCS(getopt_long)
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(putenv)
+
+dnl Add gcc specific flags --- must be done at end or tests will break!
+if test "$GCC" = yes; then
+  CFLAGS="$CFLAGS $lal_gcc_flags"
+fi
 
 AC_OUTPUT( Makefile                               \
            doc/Makefile                           \

@@ -45,8 +45,8 @@ int lalDebugLevel=2;
 /* modify this to turn on printing windows into files for checking */
 #define PRINT 1
 
-int
-check(LALStatus *status,INT4 code,CHAR * message)
+static int
+check(LALStatus *status,INT4 code,const CHAR * message)
 {
   if (status->statusCode != code) {
     printf("FAIL: did not recognize %s\n",message);
@@ -60,7 +60,7 @@ check(LALStatus *status,INT4 code,CHAR * message)
 }
 
 
-int main()
+int main( void )
 {
 
   static LALStatus status;     

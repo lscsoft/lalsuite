@@ -50,7 +50,7 @@ MPIId;
 typedef struct
 tagMPIDebugParams
 {
-  CHAR *debugger;
+  const CHAR *debugger;
   CHAR *progName;
   INT4  delay;
   INT4  myId;

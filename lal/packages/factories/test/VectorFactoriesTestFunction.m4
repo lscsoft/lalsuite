@@ -17,7 +17,7 @@ define(`DFUNC',`format(`LAL%sDestroyVector',TYPECODE)')
 define(`FUNC',`format(`%sVectorFactoriesTest',TYPECODE)')
 
 
-void FUNC ( void )
+static void FUNC ( void )
 {
   const  UINT4   length = 16;
   static LALStatus  status;

@@ -74,7 +74,7 @@ LALSPolynomialInterpolation (
 
   for (order = 1; order < n; ++order)
   {
-    INT4 imax = n - order;
+    UINT4 imax = n - order;
     for (i = 0; i < imax; ++i)
     {
       REAL4 xdn = params->x[i];
@@ -159,7 +159,7 @@ LALDPolynomialInterpolation (
 
   for (order = 1; order < n; ++order)
   {
-    INT4 imax = n - order;
+    UINT4 imax = n - order;
     for (i = 0; i < imax; ++i)
     {
       REAL8 xdn = params->x[i];

@@ -37,7 +37,7 @@ NRCSID (MAIN, "$Id$");
 
 int lalDebugLevel = 2;
 
-int main()
+int main( void )
 {
   const INT4 m = NumberWindowTypes;
   const INT4 n = 65536;
@@ -69,13 +69,13 @@ int main()
   LALEstimateFwdRealFFTPlan (&status, &plan, n);
 
   /* initialize raw data vector */
-  for (k = 0; k < hvec->length; ++k)
+  for (k = 0; k < (INT4) hvec->length; ++k)
     hvec->data[k] = sin(0.001*k);
 
   /* create window sum-of-squares vector */
   LALSCreateVector (&status, &wss, m);
 
-  for (j = 0; j < hseq->length; ++j)
+  for (j = 0; j < (INT4) hseq->length; ++j)
   {
     REAL4Vector   dum;
     REAL4Vector  *win  = NULL;
@@ -103,10 +103,10 @@ int main()
   LALRealSequencePowerSpectrum (&status, Pseq, hseq, plan);
 
   /* print power spectra omitting DC component */
-  for (k = 1; k < Pseq->vectorLength; ++k)
+  for (k = 1; k < (INT4) Pseq->vectorLength; ++k)
   {
     fprintf ( fp, "%d", k );
-    for (j = 0; j < Pseq->length; ++j)
+    for (j = 0; j < (INT4) Pseq->length; ++j)
     {
       REAL4 out = Pseq->data[k + j*Pseq->vectorLength]/wss->data[j];
       fprintf ( fp, "\t%e", ( out == 0 ? 1e-30 : out ) );

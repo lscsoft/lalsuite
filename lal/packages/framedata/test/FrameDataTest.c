@@ -115,9 +115,9 @@ main (int argc, char *argv[])
 
       if (output)
       {
-        FILE *fp;
-        CHAR  fname[64];
-        INT4  i;
+        FILE  *fp;
+        CHAR   fname[64];
+        UINT4  i;
 
         sprintf (fname, "Response.%03d", seg);
         fp = fopen (fname, "w");
@@ -137,9 +137,9 @@ main (int argc, char *argv[])
 
     if (output)
     {
-      FILE *fp;
-      CHAR  fname[64];
-      INT4  i;
+      FILE  *fp;
+      CHAR   fname[64];
+      UINT4  i;
 
       sprintf (fname, "Segment.%03d", seg);
       fp = fopen (fname, "w");

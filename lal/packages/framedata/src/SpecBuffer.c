@@ -29,8 +29,8 @@ LALComputeSpectrum (
 {
   REAL4Vector *tmp = NULL;
   REAL4        fac;
-  INT4         i;
-  INT4         n;
+  UINT4        i;
+  UINT4        n;
 
   INITSTATUS (status, "LALComputeSpectrum", SPECBUFFERC);
   ATTATCHSTATUSPTR (status);
@@ -245,7 +245,7 @@ LALAverageSpectrum (
     SpectrumBuffer       *buffer
     )
 {
-  INT4  i;
+  UINT4 i;
   INT4  spec;
   INT4  nspec;
   REAL4 fac;

@@ -642,6 +642,7 @@ package using the autodocumentation utilities, which the
 #endif
 #endif
 
+#include <stdlib.h>
 #include <string.h>
 
 #include <lal/LALMalloc.h>
@@ -690,7 +691,7 @@ extern int lalDebugLevel;
     (void) LALTrace( statusptr, 1 );                                          \
     return;                                                                   \
   }                                                                           \
-  else
+  else (void)(0)
 
 #define ATTATCHSTATUSPTR(statusptr)                                           \
   if ( !(statusptr)->statusPtr )                                              \
@@ -725,7 +726,7 @@ extern int lalDebugLevel;
     (void) LALTrace( statusptr, 1 );                                          \
     return;                                                                   \
   }                                                                           \
-  else
+  else (void)(0)
 
 #ifdef LAL_NDEBUG
 #define ASSERT( assertion, statusptr, code, mesg )
@@ -740,7 +741,7 @@ extern int lalDebugLevel;
     (void) LALTrace( statusptr, 1 );                                          \
     return;                                                                   \
   }                                                                           \
-  else
+  else (void)(0)
 #endif
 
 #define TRY( func, statusptr )                                                \
@@ -751,7 +752,7 @@ extern int lalDebugLevel;
     (void) LALTrace( statusptr, 1 );                                          \
     return;                                                                   \
   }                                                                           \
-  else
+  else (void)(0)
 
 #define CHECKSTATUSPTR( statusptr )                                           \
   if ( (statusptr)->statusPtr->statusCode )                                   \
@@ -761,7 +762,7 @@ extern int lalDebugLevel;
     (void) LALTrace( statusptr, 1 );                                          \
     return;                                                                   \
   }                                                                           \
-  else
+  else (void)(0)
 
 #define FREESTATUSPTR( statusptr )                                            \
   do                                                                          \
@@ -829,7 +830,7 @@ extern int lalDebugLevel;
                           __FILE__, __LINE__ );                               \
     return;                                                                   \
   }                                                                           \
-  else
+  else (void)(0)
 #endif
 
 #define TRY( func, statusptr )                                                \

@@ -89,6 +89,10 @@ not to be associated with any type of status message.  See the
 discussion in \verb+LALStatusMacros.h+ for more information about
 \verb+lalDebugLevel+.
 
+It is assumed that pointers of type \verb+size_t *+ have the most restrictive
+alignment.  If this is not true, then this code may not work except in
+non-debugging mode.  (It will probably produce bus errors.)
+
 \vfill{\footnotesize\input{LALMallocCV}}
 
 ******************************************************* </lalLaTeX> */
@@ -129,9 +133,11 @@ LALMalloc( size_t n )
   }
   else
   {
-    size_t  prefix = 2*sizeof( size_t );
-    char   *p;
-    int     i;
+    size_t  i;
+    size_t *p       = NULL;
+    char   *pc      = NULL;
+    size_t  nprefix = 2;
+    size_t  prefix  = nprefix*sizeof( size_t );
     int     newline = 0; /* need a new line */
 
     if ( lalDebugLevel & LALMEMINFO )
@@ -146,7 +152,8 @@ LALMalloc( size_t n )
       LALPrintError( "LALMalloc warning: zero size allocation\n" );
     }
   
-    p = (char *) malloc( padFactor*n + prefix );
+    p  = malloc( padFactor*n + prefix );
+    pc = (char *) p;
     if ( !p )
     {
       if ( lalDebugLevel & LALERROR )
@@ -159,11 +166,11 @@ LALMalloc( size_t n )
     }
   
     /* store the size in a known position */
-    ((size_t *) p)[0] = n;
-    ((size_t *) p)[1] = magic;
+    p[0] = n;
+    p[1] = magic;
     for ( i = 0; i < padFactor*n; ++i )
     {
-      p[i + prefix] = (char) (i ^ padding);
+      pc[i + prefix] = (char) (i ^ padding);
     }
 
     if ( lalDebugLevel & LALMEMINFO )
@@ -182,7 +189,7 @@ LALMalloc( size_t n )
     ++lalMallocCount;
 
     /* skip the size we stored previously */
-    return (void *) (p + prefix);
+    return (void *) (pc + prefix);
   }
 }
 
@@ -198,8 +205,9 @@ LALFree( void *p )
   }
   else
   {
-    size_t  prefix  = 2*sizeof( size_t );
-    char   *q       = ((char *) p) - prefix;
+    size_t  nprefix = 2;
+    size_t  prefix  = nprefix*sizeof( size_t );
+    size_t *q       = ((size_t *) p) - nprefix;
     int     newline = 0; /* need a new line */
 
     if ( !p )
@@ -223,9 +231,10 @@ LALFree( void *p )
     }
 
     {
-      size_t n       = ((size_t *) q)[0];
-      size_t myMagic = ((size_t *) q)[1];
-      size_t i;
+      size_t  n       = q[0];
+      size_t  myMagic = q[1];
+      char   *qc      = (char *) q;
+      size_t  i;
           
       if ( lalDebugLevel & LALMEMINFO )
       {
@@ -250,7 +259,7 @@ LALFree( void *p )
         return;
       }
 
-      if ( ( (INT4) n ) < 0 )
+      if ( ( (int) n ) < 0 )
       {
         if ( lalDebugLevel & LALERROR )
         {
@@ -264,7 +273,7 @@ LALFree( void *p )
       /* check for writing past end of array: */
       for ( i = n; i < padFactor*n; ++i )
       {
-        if ( q[i + prefix] != (char) (i ^ padding) )
+        if ( qc[i + prefix] != (char) (i ^ padding) )
         {
           if ( lalDebugLevel & LALERROR )
           {
@@ -293,7 +302,7 @@ LALFree( void *p )
       /* repad the memory */
       for ( i = 0; i < padFactor*n; ++i )
       {
-        q[i + prefix] = (char) (i ^ repadding);
+        qc[i + prefix] = (char) (i ^ repadding);
       }
 
       if ( lalDebugLevel & LALMEMINFO )
@@ -308,8 +317,8 @@ LALFree( void *p )
         }
       }
           
-      *((size_t *) q) = 0; /* set to zero to detect duplicate frees */
-      ((size_t *) q)[1] = ~magic;
+      q[0] = 0; /* set to zero to detect duplicate frees */
+      q[1] = ~magic;
 
       lalMallocTotal -= n;
       --lalMallocCount;
@@ -360,9 +369,9 @@ LALRealloc( void *p, size_t n )
   }
   else
   {
-    size_t  prefix = 2*sizeof( size_t );
-    char   *q = ((char *) p) - prefix;
-    size_t  m = ((size_t *) q)[0];      /* size of old array */
+    size_t  nprefix = 2;
+    size_t *q = ((size_t *) p) - nprefix;
+    size_t  m = q[0];      /* size of old array */
 
     if ( m == n ) /* no resizing necessary! */
     {

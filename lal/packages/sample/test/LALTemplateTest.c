@@ -19,7 +19,8 @@ int lalDebugLevel = 0;
    end of the file) */
 
 /* Define main function */
-int main( int argc, char **argv )
+/* int main( int argc, char **argv ) */
+int main( void )
 {
   /* Variable declarations */
   static LALStatus stat;

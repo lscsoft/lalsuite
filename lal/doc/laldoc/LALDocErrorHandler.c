@@ -6,8 +6,8 @@
 #include "LALDoc.h"
 
 int
-LALDocErr(char *msg, char *inFileName, int laldocLine , char *laldocSourceFile,
-          int fatal ) 
+LALDocErr(const char *msg, const char *inFileName, int laldocLine ,
+          const char *laldocSourceFile, int fatal ) 
 {
 
 fprintf(ptrLALErrorFile,"\n     %s    \n \

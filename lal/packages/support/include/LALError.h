@@ -71,7 +71,7 @@ int
 LALInfo( LALStatus *status, const char *info );
 
 int
-LALTrace( LALStatus *status, int exit );
+LALTrace( LALStatus *status, int exitflg );
 
 int
 LALInitStatus( LALStatus *status, const char *function, const char *id,
@@ -110,7 +110,7 @@ REPORTSTATUS( LALStatus *status );
 #define LALError( statusptr, statement ) 0
 #define LALWarning( statusptr, warning ) 0
 #define LALInfo( statusptr, info )       0
-#define LALTrace( statusptr, exit )      0
+#define LALTrace( statusptr, exitflg )   0
 
 #else
 
@@ -138,10 +138,10 @@ REPORTSTATUS( LALStatus *status );
         (statusptr)->file, (statusptr)->line, (statusptr)->Id, (info) )     \
       : 0 )
 
-#define LALTrace( statusptr, exit ) \
+#define LALTrace( statusptr, exitflg ) \
   ( lalDebugLevel & LALTRACE ? \
     LALPrintError( "%s[%d]: function %s, file %s, line %d, %s\n",      \
-        (exit) ? "Leave" : "Enter", (statusptr)->level, \
+        (exitflg) ? "Leave" : "Enter", (statusptr)->level, \
         (statusptr)->function, (statusptr)->file, (statusptr)->line, \
         (statusptr)->Id )     \
       : 0 )

@@ -84,7 +84,7 @@ INT4 lalDebugLevel=0;
 INT4 main(INT4 argc, CHAR **argv)
 {
   LALStatus stat = { 0 };       /* LALStatus pointer for subroutines. */
-  CHAR *fname=NULL;          /* The output filename. */
+  const CHAR *fname=NULL;    /* The output filename. */
   INT4 i;                    /* Index counter. */
   REAL4TimeSeries series;    /* Time series. */
   REAL4 *data;               /* Time series data. */

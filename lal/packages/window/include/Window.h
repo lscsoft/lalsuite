@@ -72,7 +72,7 @@ tagLALWindowParams
   INT4		length;		/* length of window */
   WindowType 	type;		/* type of window */
   REAL8   	sumofsquares;	/* sum of window squared  (returned) */
-  CHAR*		windowname;	/* pointer to a char string with window name */
+  const CHAR*	windowname;	/* pointer to a char string with window name */
 }
 LALWindowParams;
 

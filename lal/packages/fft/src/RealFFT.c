@@ -350,8 +350,8 @@ LALFwdRealFFT (
     )
 {
   REAL4Vector *vtmp = NULL;
-  INT4         n;
-  INT4         k;
+  UINT4        n;
+  UINT4        k;
 
   INITSTATUS (stat, "LALFwdRealFFT", REALFFTC);
   ATTATCHSTATUSPTR (stat);
@@ -419,8 +419,8 @@ LALInvRealFFT (
     )
 {
   REAL4Vector *vtmp = NULL;
-  INT4         n;
-  INT4         k;
+  UINT4        n;
+  UINT4        k;
 
   INITSTATUS (stat, "LALInvRealFFT", REALFFTC);
   ATTATCHSTATUSPTR (stat);
@@ -489,8 +489,8 @@ LALRealPowerSpectrum (
     )
 {
   REAL4Vector *vtmp = NULL;
-  INT4         n;
-  INT4         k;
+  UINT4        n;
+  UINT4        k;
 
   INITSTATUS (stat, "LALRealPowerSpectrum", REALFFTC);
   ATTATCHSTATUSPTR (stat);
@@ -557,10 +557,10 @@ LALFwdRealSequenceFFT (
   REAL4VectorSequence    *vtmp = NULL;
   CreateVectorSequenceIn  sqin; 
 
-  INT4 m;
-  INT4 n;
-  INT4 j;
-  INT4 k;
+  UINT4 m;
+  UINT4 n;
+  UINT4 j;
+  UINT4 k;
 
   INITSTATUS (stat, "LALFwdRealSequenceFFT", REALFFTC);
   ATTATCHSTATUSPTR (stat);
@@ -640,10 +640,10 @@ LALInvRealSequenceFFT (
   REAL4VectorSequence *vtmp = NULL;
   CreateVectorSequenceIn  sqin; 
 
-  INT4 m;
-  INT4 n;
-  INT4 j;
-  INT4 k;
+  UINT4 m;
+  UINT4 n;
+  UINT4 j;
+  UINT4 k;
 
   INITSTATUS (stat, "LALInvRealSequenceFFT", REALFFTC);
   ATTATCHSTATUSPTR (stat);
@@ -726,10 +726,10 @@ LALRealSequencePowerSpectrum (
   REAL4VectorSequence    *vtmp = NULL;
   CreateVectorSequenceIn  sqin; 
 
-  INT4 m;
-  INT4 n;
-  INT4 j;
-  INT4 k;
+  UINT4 m;
+  UINT4 n;
+  UINT4 j;
+  UINT4 k;
 
   INITSTATUS (stat, "LALRealSequencePowerSpectrum", REALFFTC);
   ATTATCHSTATUSPTR (stat);

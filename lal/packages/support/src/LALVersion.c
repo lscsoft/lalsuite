@@ -37,7 +37,7 @@ LALVersion( LALStatus *status, CHAR *message, UINT4 size, INT4 verbose )
   {
     ABORT( status, LALVERSIONH_ESPRN, LALVERSIONH_MSGESPRN );
   }
-  if ( nchar > size )
+  if ( nchar > (INT4) size )
   {
     ABORT( status, LALVERSIONH_ESHRT, LALVERSIONH_MSGESHRT );
   }

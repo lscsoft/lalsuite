@@ -51,7 +51,9 @@ LALREAL8Invert( LALStatus *stat, REAL8 *output, REAL8 input )
 
   /* This traps runtime errors. */
   if ( input == 0.0 )
+  {
     ABORT( stat, LALSAMPLEH_EDIV0, LALSAMPLEH_MSGEDIV0 );
+  }
 
   *output = 1.0/input;
   RETURN( stat );
