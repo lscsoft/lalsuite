@@ -53,7 +53,7 @@ NRCSID (SIMULATEPOPCORNH, "$Id$");
 \subsection*{Error conditions}
 \input{SimulatePopcornHErrTab}
 </lalLaTeX>
-/*
+*/
 /*
 <lalErrTable file="SimulatePopcornHErrTab"> 
 */
@@ -80,7 +80,7 @@ These constants define the cosmological model
 #define SIMULATEPOPCORN_OMEGAMATTER 0.3
 #define SIMULATEPOPCORN_OMEGAVACUUM 0.7
 /*\end{verbatim}*/
-/*</lalLaTeX>/*
+/*</lalLaTeX>*/
 /*<lalLaTeX>
 \subsection*{Structures}
 These are function pointers to functions that model burst waveforms.
@@ -88,7 +88,7 @@ These are function pointers to functions that model burst waveforms.
 \begin{verbatim}*/
 typedef void (REAL4LALWform) (REAL4 *output, REAL4 input);
 /*\end{verbatim}*/
-/*</lalLaTeX>/*
+/*</lalLaTeX>*/
 
 /*<lalLaTeX>
 The following structure contains the input of the simulation.

@@ -69,12 +69,12 @@ LALGenerateBurst(
   UINT4 n, i;          /* number of and index over samples */
   REAL8 t, dt, duration;         /* time, interval */
   REAL8 t0, tau, gtime;  /* central time, decay time, gaussian time */
-  REAL8 f0, phi0;      /* initial phase and frequency */
+  REAL8 f0/*, phi0*/;      /* initial phase and frequency */
   REAL8 twopif0;       /* 2*pi*f0 */
-  REAL8 f;             /* current value of frequency */
+  /* REAL8 f; */            /* current value of frequency */
   REAL4 hpeak;         /* peak strain for burst */
-  REAL4 df = 0.0;      /* maximum difference between f */
-  REAL8 phi;           /* current value of phase */
+  /* REAL4 df = 0.0;*/      /* maximum difference between f */
+  /* REAL8 phi; */          /* current value of phase */
   REAL4 *fData;        /* pointer to frequency data */
   REAL8 *phiData;      /* pointer to phase data */
   REAL4 *aData;        /* pointer to frequency data */
@@ -380,7 +380,7 @@ LALBurstInjectSignals(
   BurstParamStruc    burstParam;
   REAL4TimeSeries    signal;
   SimBurstTable     *simBurst=NULL;
-  LALDetector       *tmpDetector=NULL,*nullDetector=NULL;
+  LALDetector       *tmpDetector=NULL /*,*nullDetector=NULL*/;
 
   INITSTATUS( stat, "LALBurstInjectSignals", GENERATEBURSTC );
   ATTATCHSTATUSPTR( stat );

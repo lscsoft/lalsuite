@@ -252,7 +252,7 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
   LALDetectorPair detectors;
   REAL4FrequencySeries overlap;
   OverlapReductionFunctionParameters ORFparameters;
-  REAL4 gamma;
+  REAL4 mygamma;
   INT2 site0, site1;  
   /* Plans for FFTs and reverse FFTs */ 
   RealFFTPlan      *pfwd=NULL;  
@@ -525,12 +525,12 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
 
        for (j=0;j<Nfreq;j++)
         {
-         gamma=overlap.data->data[j]; 
-         Hvec[1]->data[j].re=(Hvec[0]->data[j].re*gamma 
-                     +sqrt(1-gamma*gamma)*Hvec[1]->data[j].re);
+         mygamma=overlap.data->data[j]; 
+         Hvec[1]->data[j].re=(Hvec[0]->data[j].re*mygamma 
+                     +sqrt(1-mygamma*mygamma)*Hvec[1]->data[j].re);
         
-         Hvec[1]->data[j].im=(Hvec[1]->data[j].im*gamma
-                     +sqrt(1-gamma*gamma)*Hvec[1]->data[j].im);
+         Hvec[1]->data[j].im=(Hvec[1]->data[j].im*mygamma
+                     +sqrt(1-mygamma*mygamma)*Hvec[1]->data[j].im);
          }
         LALSDestroyVector(status->statusPtr, &(overlap.data));   
       }

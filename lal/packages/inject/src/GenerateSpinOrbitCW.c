@@ -103,10 +103,10 @@ choose( UINT4 a, UINT4 b )
 {
   UINT4 numer = 1;
   UINT4 denom = 1;
-  UINT4 index = b + 1;
-  while ( --index ) {
-    numer *= a - b + index;
-    denom *= index;
+  UINT4 myindex = b + 1;
+  while ( --myindex ) {
+    numer *= a - b + myindex;
+    denom *= myindex;
   }
   return numer/denom;
 }
