@@ -202,7 +202,7 @@ typedef struct tagLALWindowParams {
   INT4        length;       /* length of window (input) */
   WindowType  type;         /* type of window (input) */
   REAL8       sumofsquares; /* sum of window squared  (output) */
-  CHAR*       windowname;   /* pointer to a char string with window name (output) */
+  const CHAR* windowname;   /* pointer to a char string with window name (output) */
 } LALWindowParams;
 
 
