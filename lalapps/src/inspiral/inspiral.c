@@ -1597,6 +1597,8 @@ int main( int argc, char *argv[] )
       case TaylorT2:
       case TaylorT3:
       case GeneratePPN:
+      case PadeT1:
+      case EOB:
         if ( vrbflg ) 
           fprintf( stdout, "findchirp conditioning data for TD\n" );
         LAL_CALL( LALFindChirpTDData( &status, fcSegVec, dataSegVec, 
@@ -1758,6 +1760,8 @@ int main( int argc, char *argv[] )
         case TaylorT2:
         case TaylorT3:
         case GeneratePPN:
+        case PadeT1:
+        case EOB:
           LAL_CALL( LALFindChirpTDTemplate( &status, fcFilterInput->fcTmplt, 
                 tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
           break;
@@ -1828,6 +1832,8 @@ int main( int argc, char *argv[] )
             case TaylorT2:
             case TaylorT3:
             case GeneratePPN:
+            case PadeT1:
+            case EOB:
               /* construct normalization for time domain templates... */
               LAL_CALL( LALFindChirpTDNormalize( &status, 
                     fcFilterInput->fcTmplt, fcFilterInput->segment, 
@@ -1995,6 +2001,8 @@ int main( int argc, char *argv[] )
         case TaylorT2:
         case TaylorT3:
         case GeneratePPN:
+        case PadeT1:
+        case EOB:
           /* the chisq bins need to be re-computed for the next template */
           for ( i = 0; i < fcSegVec->length ; ++i )
           {
@@ -3060,6 +3068,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         else if ( ! strcmp( "GeneratePPN", optarg ) )
         {
           approximant = GeneratePPN;
+        }
+        else if ( ! strcmp( "PadeT1", optarg ) )
+        {
+          approximant = PadeT1;
+        }
+        else if ( ! strcmp( "EOB", optarg ) )
+        {
+          approximant = EOB;
         }
         else if ( ! strcmp( "TaylorF2", optarg ) )
         {
