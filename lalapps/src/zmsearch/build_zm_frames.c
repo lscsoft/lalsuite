@@ -37,7 +37,7 @@ RCSID( "$Id$" );
 
 /* Usage format string. */       
 #define USAGE "Usage: %s --infileindex waveform id --channel channel suffix " \
-        "--nfiles #files --pad padtime(sec) " \
+        "--nfiles #files --frame-length framelength(sec:Must be power of 2) " \
         "[--verbose] [--printrawdata] [--printinterpolateddata] [--help]\n"
 
 #define MAX_LENGTH 32768
@@ -302,7 +302,43 @@ static void build_interpolate ( float **h, float **t, float **h_intpolat, float 
     }
   }
 }
+ 
+static void find_tpeak( float **hplus_intpolat, float **hcross_intpolat, float dt, INT4 nfiles, INT4 l, int *tpeak){
 
+  int i,j;
+
+  float Fplus, Fcross;
+  float **hsquare, **t;
+  float htmp;
+  int ttmp;
+
+  t = matrix(nfiles,l);
+  hsquare = matrix(nfiles,l);
+
+  Fplus = 1.0;
+  Fcross = 0.0;
+
+  for(i=0; i<nfiles;i++){
+    for(j=0;j<l;j++){
+      t[i][j] = j*dt;
+      hsquare[i][j] = Fplus*hplus_intpolat[i][j]*Fplus*hplus_intpolat[i][j] + Fcross*hcross_intpolat[i][j]*Fcross*hcross_intpolat[i][j];
+    }
+  }
+
+  for(i=0;i<nfiles;i++){
+    htmp = hsquare[i][0];
+    ttmp = 0;
+    for(j=1;j<l;j++){
+      if(hsquare[i][j] > htmp){
+	htmp = hsquare[i][j];  
+	ttmp = j;
+      }  
+    }
+    tpeak[i] = ttmp;
+  }
+
+  free_matrix(hsquare);
+}
 
 struct options_t {
  	CHAR *infileindex;
@@ -312,10 +348,9 @@ struct options_t {
 	int verbose;
 	int printrawdata;
 	int printinterpolateddata;
-	int topad;
 
 	INT4 samplerate;
-	INT4 pad;
+	REAL4 lframe ;
 	INT4 useZMWaveforms;
 	INT4 useOttWaveforms;
 	INT4 useWarrenWaveforms;
@@ -331,10 +366,9 @@ static void set_option_defaults(struct options_t *options)
 	options->verbose = FALSE;
 	options->printrawdata = FALSE;
 	options->printinterpolateddata = FALSE;
-	options->topad = 0;
 
 	options->samplerate = 0;
-	options->pad = 0;
+	options->lframe = 0;
 	options->useZMWaveforms = 0;
 	options->useOttWaveforms = 0;
 	options->useWarrenWaveforms = 0;
@@ -354,7 +388,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options)
 		{"channel",         required_argument,  NULL,  'b'},
 		{"nfiles",          required_argument,  NULL,  'c'},
 		{"sample-rate",     required_argument,  NULL,  'd'},
-		{"pad",             required_argument,  NULL,  'e'},
+		{"frame-length",    required_argument,  NULL,  'e'},
 		{"help",            no_argument,        NULL,  'o'}, 
 		{NULL, 0, NULL, 0}
 	};
@@ -402,8 +436,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options)
 			/*
 			 * output cache file name
 			 */
-			options->pad = atoi(optarg);
-			options->topad = 1;
+			options->lframe = atoi(optarg);
 			break;
 
 			case ':':
@@ -430,8 +463,8 @@ static void parse_command_line(int argc, char **argv, struct options_t *options)
 		exit(3);
 	}
 
-	if(!options->topad) {
-		LALPrintError( "Amount to be padded in seconds must be specified\n" );
+	if(!options->lframe) {
+		LALPrintError( "Frame length in seconds must be specified\n" );
 		exit(4);
 	}
 
@@ -454,16 +487,18 @@ int main(int argc, char **argv)
   struct options_t options;       /* command line */
 
   INT4 nfiles = 0;                /* no. of input files */
-  INT4 pad = 0;                   /* default value in seconds */
   REAL4 dt = 1.0/16384.0;         /* default sample rate */
 
   CHAR filename[30], outputfile[30];
 
   FILE *fp;
 
-  int i,j,l,N[2048];
+  int i,j,l,tshift,N[2048];
+  int lframe ;
   float n[2048];
   float x; 
+  int *tpeakindex;
+  int tpeakmax;
 
   float *time, *ampplus, *ampcross;
    
@@ -488,7 +523,7 @@ int main(int argc, char **argv)
   nfiles = options.nfiles;               /* no. of input files */
   if ( options.samplerate )
     dt = 1.0/options.samplerate;         /* required sample  rate */
-  pad = options.pad*options.samplerate;  /* no.of points to be padded with */
+  lframe = (int)(options.lframe*options.samplerate);  /* no.of points in the frame */
 
   /* allocate some memory */
   t = matrix(nfiles,MAX_LENGTH);
@@ -579,16 +614,10 @@ int main(int argc, char **argv)
     n[i] = (t[i][N[i]-1]-t[i][0])/dt;
   }
 
-  x=0;
-  if(n[1]>=n[0])
-    x = n[1];
-  else if(n[1]<=n[0])
-    x=n[0];
-  for(i=2;i<nfiles;i++){
-    if(n[i]>=x)
+  x=n[0];
+  for(i=1;i<nfiles;i++){
+    if(n[i]>x)
       x = n[i];
-    else if(n[i]<=x)
-      x = x;
   }
 
   for(i=0;pow(2,i)<x;++i){
@@ -621,32 +650,45 @@ int main(int argc, char **argv)
     }
   }
 
+  tpeakindex = malloc( nfiles*sizeof(float));
+  find_tpeak(hplus_intpolat, hcross_intpolat, dt, nfiles, l, tpeakindex);
+
+  tpeakmax = tpeakindex[0];
+  for(i=1;i<nfiles;i++){
+    if (tpeakindex[i] > tpeakmax)
+      tpeakmax = tpeakindex[i];
+  }
+
   free_matrix(t);
   free_matrix(hplus);
   free_matrix(hcross);
-
   /*********************************************************************** 
-   * Now pad the time series by the amount asked for and create the vector
+   * Now adjust the time series so that the peak is at the center of the 
+   * frame(whose length is specified by the user)
    **********************************************************************/
 
-  l += 2*pad;
-  
-  t_pad = matrix(nfiles,l);
-  hplus_pad = matrix(nfiles,l);
-  hcross_pad = matrix(nfiles,l);
+  if(lframe<2*tpeakmax){
+    fprintf(stderr,"Error: Have to increase the frame length. Make it greater than %e secs\n",2*tpeakmax*dt);
+    exit(8);
+  }
 
+  t_pad = matrix(nfiles,lframe);
+  hplus_pad = matrix(nfiles,lframe);
+  hcross_pad = matrix(nfiles,lframe);
+
+  tshift = 0;
   for ( i=0; i<nfiles; i++){
-    for (j=0; j<l; j++){
+    for (j=0; j<lframe; j++){
       t_pad[i][j] = j*dt;
-	hplus_pad[i][j] = 0;
-	hcross_pad[i][j] = 0;
+      hplus_pad[i][j] = 0;
+      hcross_pad[i][j] = 0;
     }
-    
-    for (j = pad; j < (l-pad); j++){
-      hplus_pad[i][j] = hplus_intpolat[i][j-pad];
-      hcross_pad[i][j] = hcross_intpolat[i][j-pad];
+    tshift = lframe/2 - tpeakindex[i];    
+    for (j = 0; j < l; j++){
+      hplus_pad[i][j+tshift] = hplus_intpolat[i][j];
+      hcross_pad[i][j+tshift] = hcross_intpolat[i][j];
     }
-  }  
+  }
 
   free_matrix(t_intpolat);
   free_matrix(hplus_intpolat);
@@ -658,7 +700,7 @@ int main(int argc, char **argv)
       snprintf(filename,30,"%s-%d-padded.dat", options.infileindex, i);
       /* write out the ZM waveforms */
       fp = fopen(filename,"w");
-      for(j=0;j<l;j++){  
+      for(j=0;j<lframe;j++){  
 	fprintf(fp, "%e\t%e\t%e\n", t_pad[i][j], hplus_pad[i][j], hcross_pad[i][j]);
       }
       fclose(fp);
@@ -666,7 +708,7 @@ int main(int argc, char **argv)
   }
 
   /* create the required vector to store the waveform */
-  LALSCreateVector( &stat, &(zmseries.data), l );
+  LALSCreateVector( &stat, &(zmseries.data), lframe );
   zmseries.deltaT = dt;
   if ( options.verbose)
     printf("deltaT = %e\n",zmseries.deltaT);
@@ -678,10 +720,10 @@ int main(int argc, char **argv)
    * Build the frames from the interpolated and padded waveforms
    ************************************************************/
   for(i=0;i<nfiles;i++){
-    snprintf(outputfile,30,"plus_%s_%0d",options.channel,i);
+    snprintf(outputfile,30,"plus_%s_%0d",options.infileindex,i);
 
     memset( zmseries.data->data, 0, zmseries.data->length*sizeof(REAL4) );
-    for(j=0;j<l;j++){
+    for(j=0;j<lframe;j++){
       zmseries.data->data[j]=hplus_pad[i][j];
     }
 
@@ -690,16 +732,20 @@ int main(int argc, char **argv)
   }
 
   for(i=0;i<nfiles;i++){
-    snprintf(outputfile,30,"cross_%s_%0d",options.channel,i);
+    snprintf(outputfile,30,"cross_%s_%0d",options.infileindex,i);
 
     memset( zmseries.data->data, 0, zmseries.data->length*sizeof(REAL4) );
-    for(j=0;j<l;j++){
+    for(j=0;j<lframe;j++){
       zmseries.data->data[j]=hcross_pad[i][j];
     }
 
     outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
         &zmseries, "strain", outputfile );
   }
+
+  free_matrix(t_pad);
+  free_matrix(hplus_pad);
+  free_matrix(hcross_pad);
 
   /****************************************************************
    * Write out the frame file containing all the different channels
@@ -709,6 +755,7 @@ int main(int argc, char **argv)
   FrameWrite( outFrame, frOutFile );
   FrFileOEnd( frOutFile );
 
+  LALCheckMemoryLeaks();
   return 0;
 }
 
