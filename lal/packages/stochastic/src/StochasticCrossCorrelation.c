@@ -14,9 +14,10 @@ Calculates the value of the standard optimally-filtered
 cross-correlation statistic for stochastic background searches.
 
 \subsubsection*{Prototypes}
-\input{StochasticCrossCorrelationCP}
 \index{\texttt{LALStochasticCrossCorrelationStatistic()}}
+\index{\texttt{LALHeterodynedStochasticCrossCorrelationStatistic()}}
 \index{\texttt{LALStochasticCrossCorrelationSpectrum()}}
+\input{StochasticCrossCorrelationCP}
 
 \subsubsection*{Description}
 \texttt{LALStochasticCrossCorrelationStatistic()} calculates the value
@@ -108,11 +109,15 @@ The value  of $Y$ is calculated via  a straightforward implementation
 of (\ref{stochastic:e:shortcut}) or (\ref{stochastic:e:heterodyned}).
 
 \subsubsection*{Uses}
+
+All three functions call
 \begin{verbatim}
+LALCCreateVector()
+LALCCVectorMultiplyConjugate()
+LALCDestroyVector()
+LALCCoarseGrainFrequencySeries()
 LALUnitMultiply()
 \end{verbatim}
-% LALUnitPair
-% lalHertzUnit
 
 \subsubsection*{Notes}
 \begin{itemize}
@@ -150,14 +155,15 @@ LALUnitMultiply()
 #include <lal/Units.h>
 
 NRCSID(STOCHASTICCROSSCORRELATIONC, 
-       "$Id$");
+"$Id$");
 
 /* <lalVerbatim file="StochasticCrossCorrelationCP"> */
 void
 LALStochasticCrossCorrelationStatistic(
             LALStatus                              *status,
 	    REAL4WithUnits                         *output,
-	    const StochasticCrossCorrelationInput  *input)
+	    const StochasticCrossCorrelationInput  *input,
+	    BOOLEAN                                 epochsMatch)
 /* </lalVerbatim> */
 {
 
@@ -306,11 +312,14 @@ LALStochasticCrossCorrelationStatistic(
   }
 
   /* epoch (start time) */
-  if ( (input->hBarTildeOne->epoch.gpsSeconds != 
-        input->hBarTildeTwo->epoch.gpsSeconds) 
-       ||
-       (input->hBarTildeOne->epoch.gpsNanoSeconds != 
-        input->hBarTildeTwo->epoch.gpsNanoSeconds) )
+  if ( epochsMatch
+       && ( (input->hBarTildeOne->epoch.gpsSeconds != 
+	     input->hBarTildeTwo->epoch.gpsSeconds) 
+	    ||
+	    (input->hBarTildeOne->epoch.gpsNanoSeconds != 
+	     input->hBarTildeTwo->epoch.gpsNanoSeconds) 
+	  )
+     )
   {
      ABORT( status,
          STOCHASTICCROSSCORRELATIONH_EMMTIME,
@@ -324,9 +333,9 @@ LALStochasticCrossCorrelationStatistic(
   TRY(LALCCreateVector(status->statusPtr, &(h1StarH2.data), streamLength),
       status);
 
-  LALCCVectorMultiplyConjugate(status->statusPtr, h1StarH2.data,
-			       input->hBarTildeTwo->data,
-			       input->hBarTildeOne->data);
+  LALCCVectorMultiplyConjugate( status->statusPtr, h1StarH2.data,
+				input->hBarTildeTwo->data,
+				input->hBarTildeOne->data );
 
   BEGINFAIL( status ) 
     TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2.data)), status);
@@ -413,8 +422,9 @@ LALStochasticCrossCorrelationStatistic(
 void
 LALStochasticHeterodynedCrossCorrelationStatistic(
             LALStatus                              *status,
-	    COMPLEX8WithUnits                         *output,
-	    const StochasticCrossCorrelationInput  *input)
+	    COMPLEX8WithUnits                      *output,
+	    const StochasticCrossCorrelationInput  *input,
+	    BOOLEAN                                 epochsMatch)
 /* </lalVerbatim> */
 {
 
@@ -563,11 +573,14 @@ LALStochasticHeterodynedCrossCorrelationStatistic(
   }
 
   /* epoch (start time) */
-  if ( (input->hBarTildeOne->epoch.gpsSeconds != 
-        input->hBarTildeTwo->epoch.gpsSeconds) 
-       ||
-       (input->hBarTildeOne->epoch.gpsNanoSeconds != 
-        input->hBarTildeTwo->epoch.gpsNanoSeconds) )
+  if ( epochsMatch
+       && ( (input->hBarTildeOne->epoch.gpsSeconds != 
+	     input->hBarTildeTwo->epoch.gpsSeconds) 
+	    ||
+	    (input->hBarTildeOne->epoch.gpsNanoSeconds != 
+	     input->hBarTildeTwo->epoch.gpsNanoSeconds) 
+	  )
+     )
   {
      ABORT( status,
          STOCHASTICCROSSCORRELATIONH_EMMTIME,
@@ -658,7 +671,8 @@ void
 LALStochasticCrossCorrelationSpectrum(
             LALStatus                              *status,
             COMPLEX8FrequencySeries                *output,
-            const StochasticCrossCorrelationInput  *input )
+	    const StochasticCrossCorrelationInput  *input,
+	    BOOLEAN                                 epochsMatch)
 /* </lalVerbatim> */
 {
 
@@ -821,11 +835,14 @@ LALStochasticCrossCorrelationSpectrum(
   }
 
   /* epoch (start time) */
-  if ( (input->hBarTildeOne->epoch.gpsSeconds != 
-        input->hBarTildeTwo->epoch.gpsSeconds) 
-       ||
-       (input->hBarTildeOne->epoch.gpsNanoSeconds != 
-        input->hBarTildeTwo->epoch.gpsNanoSeconds) )
+  if ( epochsMatch
+       && ( (input->hBarTildeOne->epoch.gpsSeconds != 
+	     input->hBarTildeTwo->epoch.gpsSeconds) 
+	    ||
+	    (input->hBarTildeOne->epoch.gpsNanoSeconds != 
+	     input->hBarTildeTwo->epoch.gpsNanoSeconds) 
+	  )
+     )
   {
      ABORT( status,
          STOCHASTICCROSSCORRELATIONH_EMMTIME,

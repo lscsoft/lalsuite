@@ -107,8 +107,10 @@ illustrated in Fig.~\ref{stochastic:f:CrossCorrFlowchart}.
   \texttt{CrossCorr} represents the module
   \texttt{StochasticCrossCorrelation.c} 
   (Sec.~\ref{stochastic:ss:StochasticCrossCorrelation.c})
-  containing the function
-  \texttt{LALStochasticCrossCorrelationStatistic()};
+  containing the functions 
+  \texttt{LALStochasticCrossCorrelationStatistic()},
+  \texttt{LALStochasticHeterodynedCrossCorrelationStatistic()},
+  and \texttt{LALStochasticCrossCorrelationSpectrum()},
   \texttt{ZeroPadAndFFT} represents the module
   \texttt{ZeroPadAndFFT.c} (Sec.~\ref{stochastic:ss:ZeroPadAndFFT.c})
   containing the functions
@@ -212,9 +214,13 @@ NRCSID( STOCHASTICCROSSCORRELATIONH,
 
 /********************************************************** <lalLaTeX>
 
-\subsubsection*{Structures associated with 
+\subsubsection*{Structures and prototypes associated with 
   \texttt{StochasticCrossCorrelation.c}
   (Sec.~\ref{stochastic:ss:StochasticCrossCorrelation.c})}
+
+\subsubsection*{Prototypes}
+
+\input{StochasticCrossCorrelationHPCC}
 
 \subsubsection*{\texttt{struct REAL4WithUnits}}
 \index{\texttt{REAL4WithUnits}}
@@ -240,10 +246,6 @@ typedef struct tagREAL4WithUnits {
 } REAL4WithUnits;
 
 /********************************************************** <lalLaTeX>
-
-\subsubsection*{Structures associated with 
-  \texttt{StochasticCrossCorrelation.c}
-  (Sec.~\ref{stochastic:ss:StochasticCrossCorrelation.c})}
 
 \subsubsection*{\texttt{struct COMPLEX8WithUnits}}
 \index{\texttt{COMPLEX8WithUnits}}
@@ -298,22 +300,30 @@ typedef struct tagStochasticCrossCorrelationInput {
   COMPLEX8FrequencySeries  *optimalFilter;
 } StochasticCrossCorrelationInput;
 
+/********** <lalVerbatim file="StochasticCrossCorrelationHPCC"> *********/
+
 void 
-LALStochasticCrossCorrelationStatistic(LALStatus             *status, 
-             REAL4WithUnits        *output,
-             const StochasticCrossCorrelationInput  *input);
+LALStochasticCrossCorrelationStatistic(
+            LALStatus                              *status,
+            REAL4WithUnits                         *output,
+            const StochasticCrossCorrelationInput  *input,
+            BOOLEAN                                 epochsMatch);
 
 void 
 LALStochasticHeterodynedCrossCorrelationStatistic(
-	     LALStatus        *status, 
-             COMPLEX8WithUnits        *output,
-             const StochasticCrossCorrelationInput  *input);
+            LALStatus                              *status,
+            COMPLEX8WithUnits                      *output,
+            const StochasticCrossCorrelationInput  *input,
+            BOOLEAN                                 epochsMatch);
 
 void 
-LALStochasticCrossCorrelationSpectrum(LALStatus             *status, 
-             COMPLEX8FrequencySeries                *output,
-             const StochasticCrossCorrelationInput  *input);
+LALStochasticCrossCorrelationSpectrum(
+            LALStatus                              *status,
+            COMPLEX8FrequencySeries                *output,
+            const StochasticCrossCorrelationInput  *input,
+            BOOLEAN                                 epochsMatch);
 
+/********** </lalVerbatim> *********/
 
   /*************************************************************
    *                                                           *
@@ -321,11 +331,31 @@ LALStochasticCrossCorrelationSpectrum(LALStatus             *status,
    *                                                           *
    *************************************************************/
 
+/********************************************************** <lalLaTeX>
+
+\subsubsection*{Prototypes associated with 
+  \texttt{ZeroPadAndFFT.c}
+  (Sec.~\ref{stochastic:ss:ZeroPadAndFFT.c})}
+
+\input{StochasticCrossCorrelationHPZP}
+
+********** </lalLaTeX> *********/
+
+/********** <lalVerbatim file="StochasticCrossCorrelationHPZP"> *********/
+
 void 
 LALSZeroPadAndFFT(LALStatus                *status, 
                   COMPLEX8FrequencySeries  *output, 
                   const REAL4TimeSeries    *input, 
                   RealFFTPlan              *fftPlan);
+
+void 
+LALCZeroPadAndFFT(LALStatus                *status, 
+                  COMPLEX8FrequencySeries  *output, 
+                  const COMPLEX8TimeSeries *input, 
+                  ComplexFFTPlan           *fftPlan);
+
+/********** </lalVerbatim> *********/
 
   /*************************************************************
    *                                                           *
@@ -337,9 +367,13 @@ LALSZeroPadAndFFT(LALStatus                *status,
 
 /********************************************************** <lalLaTeX>
 
-\subsubsection*{Structures associated with 
+\subsubsection*{Structures and protoypes associated with 
   \texttt{StochasticOptimalFilter.c}
   (Sec.~\ref{stochastic:ss:StochasticOptimalFilter.c})}
+
+\subsubsection*{Prototypes}
+
+\input{StochasticCrossCorrelationHPOF}
 
 \subsubsection*{\texttt{struct StochasticOptimalFilterInput}}
 \index{\texttt{StochasticOptimalFilterInput}}
@@ -388,11 +422,16 @@ typedef struct tagStochasticOptimalFilterInput {
   REAL4FrequencySeries     *unWhitenedInverseNoisePSD2;
 } StochasticOptimalFilterInput;
 
+/********** <lalVerbatim file="StochasticCrossCorrelationHPOF"> *********/
+
 void
-LALStochasticOptimalFilter(LALStatus                    *status,
-                       COMPLEX8FrequencySeries      *optimalFilter,
-                       const StochasticOptimalFilterInput           *input,
-                       const REAL8                   fRef);
+LALStochasticOptimalFilter(
+            LALStatus                           *status,
+            COMPLEX8FrequencySeries             *optimalFilter,
+            const StochasticOptimalFilterInput  *input,
+            const REAL8                          fRef);
+
+/********** </lalVerbatim> *********/
 
   /*************************************************************
    *                                                           *
@@ -402,9 +441,13 @@ LALStochasticOptimalFilter(LALStatus                    *status,
 
 /********************************************************** <lalLaTeX>
 
-\subsubsection*{Structures associated with 
+\subsubsection*{Structures and prototypes associated with 
   \texttt{StochasticInverseNoise.c}
   (Sec.~\ref{stochastic:ss:StochasticInverseNoise.c})}
+
+\subsubsection*{Prototypes}
+
+\input{StochasticCrossCorrelationHPIN}
 
 \subsubsection*{\texttt{struct StochasticInverseNoiseOutput}}
 \index{\texttt{StochasticInverseNoiseOutput}}
@@ -456,12 +499,15 @@ typedef struct tagStochasticInverseNoiseInput {
   COMPLEX8FrequencySeries  *whiteningFilter;
 } StochasticInverseNoiseInput;
 
+/********** <lalVerbatim file="StochasticCrossCorrelationHPIN"> *********/
 
 void
-LALStochasticInverseNoise(LALStatus                   *status,
-                        StochasticInverseNoiseOutput          *output,
-                        const StochasticInverseNoiseInput     *input);
+LALStochasticInverseNoise(
+            LALStatus                             *status,
+            StochasticInverseNoiseOutput          *output,
+            const StochasticInverseNoiseInput     *input);
 
+/********** </lalVerbatim> *********/
 
   /*************************************************************
    *                                                           *
@@ -471,9 +517,13 @@ LALStochasticInverseNoise(LALStatus                   *status,
 
 /********************************************************** <lalLaTeX>
 
-\subsubsection*{Structures associated with 
+\subsubsection*{Structures and protypes associated with 
   \texttt{StochasticOmegaGW.c}
   (Sec.~\ref{stochastic:ss:StochasticOmegaGW.c})}
+
+\subsubsection*{Prototypes}
+
+\input{StochasticCrossCorrelationHPOG}
 
 \subsubsection*{\texttt{struct StochasticOmegaGWParameters}}
 \index{\texttt{StochasticOmegaGWParameters}}
@@ -517,10 +567,15 @@ typedef struct tagStochasticOmegaGWParameters {
 }
 StochasticOmegaGWParameters;
 
+/********** <lalVerbatim file="StochasticCrossCorrelationHPOG"> *********/
+
 void
-LALStochasticOmegaGW(LALStatus                  *status,
-           REAL4FrequencySeries       *output,
-           const StochasticOmegaGWParameters    *parameters);
+LALStochasticOmegaGW (
+            LALStatus                          *status,
+            REAL4FrequencySeries               *output,
+            const StochasticOmegaGWParameters  *parameters);
+
+/********** </lalVerbatim> *********/
 
   /*************************************************************
    *                                                           *
@@ -531,9 +586,13 @@ LALStochasticOmegaGW(LALStatus                  *status,
 
 /********************************************************** <lalLaTeX>
 
-\subsubsection*{Structures associated with 
+\subsubsection*{Structures and prototypes associated with 
   \texttt{OverlapReductionFunction.c}
   (Sec.~\ref{stochastic:ss:OverlapReductionFunction.c})}
+
+\subsubsection*{Prototypes}
+
+\input{StochasticCrossCorrelationHPOR}
 
 \subsubsection*{\texttt{struct OverlapReductionFunctionParameters}}
 \index{\texttt{OverlapReductionFunctionParameters}}
@@ -587,11 +646,16 @@ typedef struct tagLALDetectorPair {
 }
 LALDetectorPair;
 
+/********** <lalVerbatim file="StochasticCrossCorrelationHPOR"> *********/
+
 void
-LALOverlapReductionFunction(LALStatus                     *status,
-                 REAL4FrequencySeries          *output,
-                 const LALDetectorPair              *detectors,
-                 const OverlapReductionFunctionParameters       *parameters);
+LALOverlapReductionFunction(
+                   LALStatus                                  *status,
+                   REAL4FrequencySeries                       *output,
+                   const LALDetectorPair                      *detectors,
+                   const OverlapReductionFunctionParameters   *parameters);
+
+/********** </lalVerbatim> *********/
 
 #ifdef  __cplusplus
 }

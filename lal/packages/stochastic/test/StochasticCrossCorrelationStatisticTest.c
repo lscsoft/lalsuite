@@ -1,4 +1,4 @@
-/****************** <lalVerbatim file="StochasticCrossCorrelationStatisticTestCV">
+/********* <lalVerbatim file="StochasticCrossCorrelationStatisticTestCV">
 Author: UTB Relativity Group; contact J. T. Whelan (original by S. Drasco)
 $Id$
 ********************************* </lalVerbatim> */
@@ -22,6 +22,7 @@ Options:
   -j filename    read second data stream from file filename
   -k filename    read optimal filter from file filename
   -n length      frequency series contain length points
+  -t             epochs need not match
 \end{verbatim}
 
 This program tests the function
@@ -166,7 +167,8 @@ extern int   optind;
 
 /* int lalDebugLevel = LALMSGLVL3; */
 int lalDebugLevel = LALNDEBUG;
-BOOLEAN optVerbose    = STOCHASTICCROSSCORRELATIONSTATISTICTESTC_FALSE;
+BOOLEAN optVerbose  = STOCHASTICCROSSCORRELATIONSTATISTICTESTC_FALSE;
+BOOLEAN optMatch    = STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE;
 UINT4 optLength     = 0;
 CHAR optData1File[LALNameLength] = "";
 CHAR optData2File[LALNameLength] = "";
@@ -274,7 +276,7 @@ int main( int argc, char *argv[] )
   if ( ! lalNoDebug )
   {
     /* test behavior for null pointer to output structure */
-    LALStochasticCrossCorrelationStatistic(&status, NULL, &input);
+    LALStochasticCrossCorrelationStatistic(&status, NULL, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -286,7 +288,7 @@ int main( int argc, char *argv[] )
            STOCHASTICCROSSCORRELATIONH_MSGENULLP);
     
     /* test behavior for null pointer to input structure */
-    LALStochasticCrossCorrelationStatistic(&status, &output, NULL);
+    LALStochasticCrossCorrelationStatistic(&status, &output, NULL, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -299,7 +301,7 @@ int main( int argc, char *argv[] )
     
     /* test behavior for null pointer to first data stream */
     input.hBarTildeOne = NULL;
-    LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+    LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -315,7 +317,7 @@ int main( int argc, char *argv[] )
     
     /* test behavior for null pointer to second data stream */
     input.hBarTildeTwo = NULL;
-    LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+    LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -331,7 +333,7 @@ int main( int argc, char *argv[] )
     
     /* test behavior for null pointer to optimal filter */
     input.optimalFilter = NULL;
-    LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+    LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -347,7 +349,7 @@ int main( int argc, char *argv[] )
     
     /* test behavior for null pointer to data member of first data stream */
     input.hBarTildeOne = &badData1;
-    LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+    LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -363,7 +365,7 @@ int main( int argc, char *argv[] )
     
     /* test behavior for null pointer to data member of second data stream */
     input.hBarTildeTwo = &badData2;
-    LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+    LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -379,7 +381,7 @@ int main( int argc, char *argv[] )
     
     /* test behavior for null pointer to data member of optimal filter */
     input.optimalFilter = &badFilter;
-    LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+    LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -408,7 +410,7 @@ int main( int argc, char *argv[] )
     
     /* test behavior for null pointer to data member of data member of first data stream */
     input.hBarTildeOne = &badData1;
-    LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+    LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -424,7 +426,7 @@ int main( int argc, char *argv[] )
     
     /* test behavior for null pointer to data member of data member of second data stream */
     input.hBarTildeTwo = &badData2;
-    LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+    LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -440,7 +442,7 @@ int main( int argc, char *argv[] )
     
     /* test behavior for null pointer to data member of data member of optimal filter */
     input.optimalFilter = &badFilter;
-    LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+    LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
                             STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -468,7 +470,7 @@ int main( int argc, char *argv[] )
     /* test behavior for zero length */
     goodData1.data->length = goodData2.data->length 
       = goodFilter.data->length = 0;
-    LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+    LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EZEROLEN,
                             STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN,
                             STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -485,7 +487,7 @@ int main( int argc, char *argv[] )
     /* test behavior for negative frequency spacing */
     goodData1.deltaF = goodData2.deltaF 
       = goodFilter.deltaF = -STOCHASTICCROSSCORRELATIONSTATISTICTESTC_DELTAF;
-    LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+    LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
                             STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF,
                             STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -499,7 +501,7 @@ int main( int argc, char *argv[] )
     /* test behavior for zero frequency spacing */
     goodData1.deltaF = goodData2.deltaF 
       = goodFilter.deltaF = 0;
-    LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+    LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
                             STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF,
                             STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -518,7 +520,7 @@ int main( int argc, char *argv[] )
   /* test behavior for negative start frequency */
   goodData1.f0 = goodData2.f0 
     = goodFilter.f0 = -20.0;
-  LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+  LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
                           STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN,
                           STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -536,7 +538,7 @@ int main( int argc, char *argv[] )
   /* test behavior for length mismatch
      between optimal filter and first data stream */
   goodData1.data->length = STOCHASTICCROSSCORRELATIONSTATISTICTESTC_LENGTH - 1;
-  LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+  LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
                           STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -553,7 +555,7 @@ int main( int argc, char *argv[] )
   /* test behavior for length mismatch
      between optimal filter and first data stream */
   goodData2.data->length = STOCHASTICCROSSCORRELATIONSTATISTICTESTC_LENGTH - 1;
-  LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+  LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
                           STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -570,7 +572,7 @@ int main( int argc, char *argv[] )
   /* test behavior for frequency spacing mismatch
      between optimal filter and first data stream */
   goodData1.deltaF = STOCHASTICCROSSCORRELATIONSTATISTICTESTC_DELTAF * 2.0;
-  LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+  LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF,
                           STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -587,7 +589,7 @@ int main( int argc, char *argv[] )
   /* test behavior for frequency spacing mismatch
      between optimal filter and second data stream */
   goodData2.deltaF = STOCHASTICCROSSCORRELATIONSTATISTICTESTC_DELTAF * 2.0;
-  LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+  LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF,
                           STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -604,7 +606,7 @@ int main( int argc, char *argv[] )
   /* test behavior for start frequency mismatch
      between optimal filter and first data stream */
   goodData1.f0 = STOCHASTICCROSSCORRELATIONSTATISTICTESTC_F0 + 2.0;
-  LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+  LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMFMIN,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN,
                           STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -621,7 +623,7 @@ int main( int argc, char *argv[] )
   /* test behavior for start frequency mismatch
      between optimal filter and second data stream */
   goodData2.f0 = STOCHASTICCROSSCORRELATIONSTATISTICTESTC_F0 + 2.0;
-  LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+  LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMFMIN,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN,
                           STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -637,7 +639,7 @@ int main( int argc, char *argv[] )
   
   /* test behavior for mismatch between epochs of data streams */
   goodData2.epoch = epoch2;
-  LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+  LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMTIME,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMTIME,
                           STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -646,7 +648,7 @@ int main( int argc, char *argv[] )
     return code;
   }
   goodData2.epoch = epoch3;
-  LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+  LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
   if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMTIME,
                           STOCHASTICCROSSCORRELATIONH_MSGEMMTIME,
                           STOCHASTICCROSSCORRELATIONSTATISTICTESTC_ECHK,
@@ -691,7 +693,7 @@ int main( int argc, char *argv[] )
     goodFilter.data->data[i].im = 0.0;
   }
 
-  LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+  LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
   if ( code = CheckStatus(&status, 0 , "",
                           STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
                           STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
@@ -806,7 +808,7 @@ int main( int argc, char *argv[] )
       = goodFilter.data->data[i].im = 0.0;
   }
   
-  LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+  LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
   if ( code = CheckStatus(&status, 0 , "",
                           STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
                           STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
@@ -970,7 +972,7 @@ int main( int argc, char *argv[] )
       return code;
     }
     /* Calculate CC Statistic */
-    LALStochasticCrossCorrelationStatistic(&status, &output, &input);
+    LALStochasticCrossCorrelationStatistic(&status, &output, &input, optMatch);
     if ( code = CheckStatus(&status, 0 , "",
                             STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EUSE,
                             STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEUSE) ) 
@@ -1060,6 +1062,7 @@ Usage (const char *program, int exitcode)
   fprintf (stderr, "  -j filename    read second data stream from file filename\n");
   fprintf (stderr, "  -k filename    read optimal filter from file filename\n");
   fprintf (stderr, "  -n length      frequency series contain length points\n");
+  fprintf (stderr, "  -t             epochs need not match\n");
   exit (exitcode);
 }
 
@@ -1076,7 +1079,7 @@ ParseOptions (int argc, char *argv[])
   {
     int c = -1;
 
-    c = getopt (argc, argv, "hqvd:i:j:k:n:");
+    c = getopt (argc, argv, "hqvd:i:j:k:n:t");
     if (c == -1)
     {
       break;
@@ -1084,6 +1087,10 @@ ParseOptions (int argc, char *argv[])
 
     switch (c)
     {
+      case 't': /* epochs need not match */
+        optMatch = STOCHASTICCROSSCORRELATIONSTATISTICTESTC_FALSE;
+        break;
+
       case 'i': /* specify file containing first data stream */
         strncpy (optData1File, optarg, LALNameLength);
         break;
