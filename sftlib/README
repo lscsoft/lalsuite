@@ -2,7 +2,10 @@ Here is a short how-to on this reference SFT version 2 library.
 $Id$
 
 TO BUILD/INSTALL
-----------
+----------------
+If working from CVS, run ./autogen.sh to make a configure script, then
+follow instructions below.  Otherwise, unpack the tarball, then:
+
 ./configure
 make
 make install (optional)
