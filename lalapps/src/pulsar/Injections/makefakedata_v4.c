@@ -383,7 +383,7 @@ int main(int argc,char *argv[]) {
 
   /* new stuff */
   UINT4 i;
-  static SFTVector SFTs;
+  SFTVector *SFTs = NULL;
   static REAL4TimeSeries Tseries;
   
   programname=argv[0];
@@ -591,10 +591,10 @@ int main(int argc,char *argv[]) {
 
     SUB ( LALSignalToSFTs (&status, &SFTs, &Tseries, &sftParams), &status);
 
-    for (i=0; i < SFTs.numSFTs; i++) 
+    for (i=0; i < SFTs->numSFTs; i++) 
       {
 	sprintf (fname, "SFT_comp.%05d", i);
-	write_SFT (&status, SFTs.SFTlist[i], fname);
+	write_SFT (&status, &(SFTs->SFTlist[i]), fname);
       }
 
   }
@@ -668,15 +668,8 @@ int main(int argc,char *argv[]) {
   } /* end of loop over different SFTs */
 
   /* free the stuff */
-  for (i=0; i < SFTs.numSFTs; i++) 
-    {
-      LALFree (SFTs.SFTlist[i]->data);
-      LALFree (SFTs.SFTlist[i]);
-    }
+  LALDestroySFTVector (&status, &SFTs);
 
-  LALFree ( SFTs.SFTlist );
-  SFTs.SFTlist = NULL;
-  
   LALFree (Tseries.data->data);
   LALFree (Tseries.data);
 

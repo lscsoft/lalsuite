@@ -110,38 +110,26 @@ typedef struct {
 typedef struct {
   UINT4 length;
   LIGOTimeGPS *data;
-} TimestampVector;
+} LIGOTimeGPSVector;
 
 
-typedef struct {
-  REAL8 Tsft;				/* length of an SFT in seconds */
-  TimestampVector *timestamps;		/* timestamps to use for SFT's (can be NULL) */
-  COMPLEX8Vector *noiseSFTs;		/* noise SFTs to be added to the output (can be NULL) */
-} SFTParams;
-
-
-/* we don't use the LAL-type COMPLEX8FrequencySeries to encode one SFT,
- * as we'll need lots of those and the 'name'-field alone has 64 bytes,
- * we might want up to sth like 1e5 SFT's, so the headers alone would use
- * up to 1e7 Bytes = 10 MBs, which seems a bit much overhead for nothing...
- *
- * -> so we optimize memory a little bit here by using our own custom-type
- * for representing an SFT containing just a subset of the most basic info:
- * (containing 24bytes, we might still end up using up to 2MB's or so...)
+/* just for reference: this is the FrequencySeries type: 
+ * { 
+ *   CHAR              name[LALNameLength]; 
+ *   LIGOTimeGPS       epoch; 
+ *   REAL8             f0;	 
+ *   REAL8             deltaF; 
+ *   LALUnit           sampleUnits
+ *   COMPLEX8Sequence *data; 
+ * } 
+ * COMPLEX8FrequencySeries; 
  */
-typedef struct {
-  LIGOTimeGPS	epoch; 
-  REAL8		f0;	 
-  REAL8		deltaF; 
-  UINT4		length;		/* number of frequency-bins */
-  COMPLEX8 	*data;
-} basicSFT;
+typedef COMPLEX8FrequencySeries SFTtype;	/* for the lazy */
 
-/* now we need a whole vector of those, so we define a 
- * "Vector"-type of SFTs  */
+/* we need a "Vector"-type of SFTs  */
 typedef struct {
   UINT4 	numSFTs;	/* number of SFTs */
-  basicSFT 	**SFTlist;	/* array of SFTs */
+  SFTtype 	*SFTlist;	/* array of SFTs */
 } SFTVector;
 
 
@@ -156,32 +144,30 @@ typedef struct {
   } header;
 */
 
-/* just for reference: this is the FrequencySeries type: 
- * { 
- *   CHAR              name[LALNameLength]; 
- *   LIGOTimeGPS       epoch; 
- *   REAL8             f0;	 
- *   REAL8             deltaF; 
- *   LALUnit           sampleUnits
- *   COMPLEX8Sequence *data; 
- * } 
- * COMPLEX8FrequencySeries; 
- */
+
+typedef struct {
+  REAL8 Tsft;				/* length of an SFT in seconds */
+  LIGOTimeGPSVector *timestamps;	/* timestamps to use for SFT's (can be NULL) */
+  SFTVector *noiseSFTs;			/* noise SFTs to be added to the output (can be NULL) */
+} SFTParams;
 
 
 
 /* Function prototypes */
 void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, const PulsarSignalParams *params);
-void LALSignalToSFTs (LALStatus *stat, SFTVector *outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params);
+void LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params);
 
-void write_SFT (LALStatus *stat, const basicSFT *sft, const CHAR *fname);
+void write_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname);
 void LALPrintR4TimeSeries (LALStatus *stat, const REAL4TimeSeries *series, const CHAR *fname);
 void PrintGWSignal (LALStatus *stat, const CoherentGW *signal, const CHAR *fname);
 void ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
 void ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
-void compare_SFTs (const basicSFT *sft1, const basicSFT *sft2);
-void LALCreateSFT (LALStatus *stat, basicSFT **outputSFT, UINT4 length);
-void LALDestroySFT (LALStatus *stat, basicSFT **inputSFT);
+void compare_SFTs (const SFTtype *sft1, const SFTtype *sft2);
+void LALCreateSFT (LALStatus *stat, SFTtype **outputSFT, UINT4 length);
+
+void LALCreateSFTVector (LALStatus *stat, SFTVector **output, UINT4 numSFTs, UINT4 SFTlen);
+void LALDestroySFTVector (LALStatus *stat, SFTVector **vect);
+void LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect);
 
 /********************************************************** <lalLaTeX>
 \newpage\input{LALSampleTestC}

@@ -38,20 +38,25 @@ This module generates a fake pulsar-signal, either for an isolated or a binary p
 /* prototypes for internal functions */
 static void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series, UINT4 set);
 static void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series, UINT4 set);
+static LIGOTimeGPSVector* getTimestamps (LALStatus *stat, const LIGOTimeGPS *tStart, REAL8 duration, REAL8 Tsft);
 /*----------------------------------------------------------------------*/
 
 NRCSID( PULSARSIGNALC, "$Id$");
 
 extern INT4 lalDebugLevel;
 
-/* FIXME!!!!!: this is done now according to makefakedata_v2, but it really points
-   to a bug in SimulateCoherentGW(), which should be traced at some point!!
-
+#define LTT 1000
+/* FIXME!!!!!: 
    -> we use this time-constant to make the signal start earlier and last longer than
    really required
-*/
-#define LTT 1000
 
+   This is done according to makefakedata_v2, but it really points
+   to a bug in SimulateCoherentGW(), which should be traced at some point!!
+*/
+
+/***********************************************************************
+ * generate a time-series at the detector for a given pulsar
+ ***********************************************************************/
 void
 LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, const PulsarSignalParams *params)
 {
@@ -179,39 +184,38 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, const PulsarS
 
 } /* LALGeneratePulsarSignal() */
 
-
+
 
 /*----------------------------------------------------------------------
  * take time-series as input, convert it into SFTs and add noise if given
  *----------------------------------------------------------------------*/
 void
-LALSignalToSFTs (LALStatus *stat, SFTVector *outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params)
+LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params)
 {
   UINT4 numSFTs;			/* number of SFTs */
-  UINT4 numSamples;			/* number of samples in each SFT */
+  UINT4 numSamples;			/* number of samples in each Tsft */
   UINT4 iSFT;
   REAL8 Band, samples;
   RealFFTPlan *pfwd = NULL;
-  TimestampVector *timestamps = NULL;
+  LIGOTimeGPSVector *timestamps = NULL;
   REAL4Vector timeStretch = {0,0};
-  COMPLEX8Vector FFT;
   LIGOTimeGPS tStart;			/* start time of input time-series */
   LIGOTimeGPS tLast;			/* start-time of last _possible_ SFT */
-  LIGOTimeGPS tt;			/* a running time-stamp */
   REAL8 duration, delay;
   UINT4 SFTlen;				/* number of samples in an SFT */
   UINT4 indexShift;
   const REAL8 eps = 1.e-14;		
+  SFTVector *sftvect = NULL;	/* return value. For better readability */
 
   INITSTATUS( stat, "AddSignalToSFTs", PULSARSIGNALC);
   ATTATCHSTATUSPTR( stat );
   
   ASSERT (outputSFTs != NULL, stat, PULSARSIGNALH_ENULL, PULSARSIGNALH_MSGENULL);
-  ASSERT (outputSFTs->SFTlist == NULL, stat,  PULSARSIGNALH_ENONULL,  PULSARSIGNALH_MSGENONULL);
+  ASSERT (*outputSFTs == NULL, stat,  PULSARSIGNALH_ENONULL,  PULSARSIGNALH_MSGENONULL);
   ASSERT (signal != NULL, stat, PULSARSIGNALH_ENULL, PULSARSIGNALH_MSGENULL);
   ASSERT (params != NULL, stat, PULSARSIGNALH_ENULL, PULSARSIGNALH_MSGENULL);
   if ( params->timestamps && params->noiseSFTs) {
-    ASSERT ( params->timestamps->length == params->noiseSFTs->length, stat,  
+    ASSERT ( params->timestamps->length == params->noiseSFTs->numSFTs, stat,  
 	     PULSARSIGNALH_ENUMSFTS,  PULSARSIGNALH_MSGENUMSFTS);
   }
 
@@ -222,11 +226,6 @@ LALSignalToSFTs (LALStatus *stat, SFTVector *outputSFTs, const REAL4TimeSeries *
   ASSERT ( abs(samples - numSamples)/samples < eps, stat, 
 	   PULSARSIGNALH_EINCONSBAND, PULSARSIGNALH_MSGEINCONSBAND);
   
-  /* FIXME: just for debugging */
-  printf ("\nFreqBand = %f\n", Band);
-  printf ("nsamples = %d\n", numSamples);
-  printf ("Tsft = %f\n", params->Tsft);
-
   /* Prepare FFT: compute plan for FFTW */
   /* FIXME: put some buffering */
   TRY (LALCreateForwardRealFFTPlan(stat->statusPtr, &pfwd, numSamples, 0), stat); 	
@@ -235,38 +234,24 @@ LALSignalToSFTs (LALStatus *stat, SFTVector *outputSFTs, const REAL4TimeSeries *
   tStart = signal->epoch;					/* start-time of time-series */
   duration = 1.0* signal->data->length * signal->deltaT;	/* total duration in seconds */
   /* get last possible start-time for an SFT */
-  TRY ( LALAddFloatToGPS (stat->statusPtr, &tLast, &tStart, duration), stat);
+  TRY ( LALAddFloatToGPS (stat->statusPtr, &tLast, &tStart, duration - params->Tsft), stat);
 
-  /* check timestamps and determine number of SFTs to be produced */
-  if (params->timestamps == NULL)	/* no timestamps: ==> cover total time-series */
+  /* for simplicity we _always_ work with timestamps. 
+   * Therefore, we have to generate them now if none have been provided by the user. */
+  if (params->timestamps == NULL)
     {
-      numSFTs = (UINT4)( duration / params->Tsft );			/* round down */
-
-      /* for simplicity we _always_ work with timestamps. Therefore, we have to 
-       * generate them now if none have been provided by the user. */
-      timestamps = LALCalloc (1, sizeof(TimestampVector));
-      if ( (timestamps->data = LALCalloc (1, numSFTs * sizeof (*timestamps->data) )) == NULL) {
+      timestamps = getTimestamps (stat->statusPtr, &tStart, duration, params->Tsft );
+      if (timestamps == NULL) {
 	ABORT (stat, PULSARSIGNALH_EMEM, PULSARSIGNALH_MSGEMEM);
       }
-      timestamps->length = numSFTs;
-      tt = tStart;	/* initialize to beginning */
-      for (iSFT = 0; iSFT < numSFTs; iSFT++)
-	{
-	  timestamps->data[iSFT] = tt;
-	  /* get next time-stamp */
-	  /* NOTE: we add the interval Tsft successively instead of
-	   * via iSFT*Tsft, because this way we avoid possible ns-rounding problems
-	   * with a REAL8 interval, which becomes critial from about 100days on...
-	   */
-	  TRY ( LALAddFloatToGPS( stat->statusPtr, &tt, &tt, params->Tsft), stat);
-	} /* for iSFT */
+      numSFTs = timestamps->length;
     }
-  else	/* ok, let's use them timestamps.. */
+  else	/* if given, check that they all lie within the permissible range */
     {
       REAL8 diff0, diff1;
       timestamps = params->timestamps;
       numSFTs = params->timestamps->length;
-      /* check that they all lie within the permissible range */
+
       for (iSFT = 0; iSFT < numSFTs; iSFT ++)
 	{
 	  TRY ( LALDeltaFloatGPS (stat->statusPtr, &diff0, &(timestamps->data[iSFT]), &tStart), stat);
@@ -277,60 +262,40 @@ LALSignalToSFTs (LALStatus *stat, SFTVector *outputSFTs, const REAL4TimeSeries *
 	}
     } /* if timestamps */
 
-  outputSFTs->numSFTs = numSFTs;
-  outputSFTs->SFTlist = LALCalloc (1, numSFTs * sizeof ( *(outputSFTs->SFTlist)));
-  if (outputSFTs->SFTlist == NULL) {
-    ABORT (stat, PULSARSIGNALH_EMEM, PULSARSIGNALH_MSGEMEM);
-  }
-  SFTlen = (UINT4)(1.0*numSamples/2 + 1);
-  FFT.length = SFTlen;		/* placeholder for the successive SFTs */
+  /* prepare SFT-vector for return */
+  SFTlen = (UINT4)(numSamples/2) + 1;		/* number of frequency-bins */
+  LALCreateSFTVector (stat->statusPtr, &sftvect, numSFTs, SFTlen);
+  BEGINFAIL (stat) {
+    if (params->timestamps == NULL)
+      LALDestroyTimestampVector (stat->statusPtr, &timestamps);
+  } ENDFAIL (stat);
 
   /* main loop: FFT the stuff */
   for (iSFT = 0; iSFT < numSFTs; iSFT++)
     {
-      if ( (FFT.data = LALCalloc (1, SFTlen * sizeof( *FFT.data ))) == NULL)
-	{
-	  UINT4 j;
-	  for (j=0; j < iSFT; j++) 
-	    {
-	      LALFree (outputSFTs->SFTlist[j]->data );
-	      LALFree (outputSFTs->SFTlist[j]);
-	    }
-	  LALDestroyRealFFTPlan(stat->statusPtr, &pfwd);	/* FIXME: do some buffering? */
-	  ABORT (stat, PULSARSIGNALH_EMEM, PULSARSIGNALH_MSGEMEM);
-	} 
-
-      /* now find the start-bin for this SFT in the time-series */
-      TRY (LALDeltaFloatGPS (stat->statusPtr, &delay, &(timestamps->data[iSFT]), &tStart), stat);
+      /* find the start-bin for this SFT in the time-series */
+      TRY ( LALDeltaFloatGPS (stat->statusPtr, &delay, &(timestamps->data[iSFT]), &tStart), stat);
       indexShift = (UINT4) (delay / signal->deltaT + 0.5);	/* round properly */
       timeStretch.length = numSamples;    
       timeStretch.data = signal->data->data + indexShift;	/* point to the right sample-bin */
 
       /* the central step: FFT the ith time-stretch into an SFT-slot */
-      LALForwardRealFFT (stat->statusPtr, &FFT, &timeStretch, pfwd);
+      LALForwardRealFFT (stat->statusPtr, (sftvect->SFTlist[iSFT].data), &timeStretch, pfwd);
       BEGINFAIL(stat) {
-	UINT4 j;
-	for (j=0; j < iSFT; j++) 
-	  {
-	    LALFree (outputSFTs->SFTlist[iSFT]->data);
-	    LALFree (outputSFTs->SFTlist[iSFT]);
-	  }
-	LALDestroyRealFFTPlan(stat->statusPtr, &pfwd);
+	LALDestroySFTVector (stat->statusPtr, &sftvect);
       } ENDFAIL(stat);
 
       /* now prepare the i'th output SFT with the result */
-      outputSFTs->SFTlist[iSFT] = LALCalloc (1, sizeof( **(outputSFTs->SFTlist) ));	/* head */
-      outputSFTs->SFTlist[iSFT]->epoch = timestamps->data[iSFT];	/* set the proper timestamp */
-      outputSFTs->SFTlist[iSFT]->f0 = signal->f0;		/* minimum frequency */
-      outputSFTs->SFTlist[iSFT]->deltaF = 1.0 / params->Tsft;	/* frequency-spacing */
-      outputSFTs->SFTlist[iSFT]->length = SFTlen;		/* number of SFT-samples */
-      outputSFTs->SFTlist[iSFT]->data = FFT.data;		/* move FFT-data into output-SFT */
+      sftvect->SFTlist[iSFT].epoch = timestamps->data[iSFT];	/* set the proper timestamp */
+      sftvect->SFTlist[iSFT].f0 = signal->f0;		/* minimum frequency */
+      sftvect->SFTlist[iSFT].deltaF = 1.0 / params->Tsft;	/* frequency-spacing */
 
     } /* for iSFT < numSFTs */ 
 
 
-  /* clean up */
+  /* clean up */ /* FIXME: buffering */
   LALDestroyRealFFTPlan(stat->statusPtr, &pfwd);
+
   /* did we get timestamps or did we make them? */
   if (params->timestamps == NULL)
     {
@@ -339,12 +304,14 @@ LALSignalToSFTs (LALStatus *stat, SFTVector *outputSFTs, const REAL4TimeSeries *
       timestamps = NULL;
     }
 
+  *outputSFTs = sftvect;
+
   DETATCHSTATUSPTR( stat );
   RETURN (stat);
 
-} /* AddSignalToSFTs() */
+} /* LALSignalToSFTs() */
 
-
+
 
 
 /*----------------------------------------------------------------------
@@ -451,6 +418,8 @@ ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS SSBin, const P
   RETURN (stat);
 
 } /* ConvertSSB2GPS() */
+
+
 
 /*----------------------------------------------------------------------
  * export a REAL4 time-series in an xmgrace graphics file 
@@ -586,7 +555,7 @@ write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series, UINT4 set)
 
 
 void 
-write_SFT (LALStatus *stat, const basicSFT *sft, const CHAR *fname)
+write_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
 {
   FILE *fp;
   REAL4 rpw,ipw;
@@ -615,10 +584,10 @@ write_SFT (LALStatus *stat, const basicSFT *sft, const CHAR *fname)
   header.gps_sec = sft->epoch.gpsSeconds;
   header.gps_nsec = sft->epoch.gpsNanoSeconds;
 
-  freqBand = (sft->length -1 ) * sft->deltaF;
-  header.tbase = (REAL4) ( (sft->length - 1.0) / freqBand);
+  freqBand = (sft->data->length -1 ) * sft->deltaF;
+  header.tbase = (REAL4) ( (sft->data->length - 1.0) / freqBand);
   header.firstfreqindex = (INT4)(sft->f0 * header.tbase + 0.5);
-  header.nsamples=sft->length - 1;
+  header.nsamples=sft->data->length - 1;
 
   printf ("\nwrite_SFT():\nfreqBand = %f\n", freqBand);
   printf ("f0 = %f\ndf = %f\nnsamples = %d\n", sft->f0, sft->deltaF, header.nsamples);
@@ -631,8 +600,8 @@ write_SFT (LALStatus *stat, const basicSFT *sft, const CHAR *fname)
 
   for (i=0; i < header.nsamples; i++)
     {
-      rpw = sft->data[i].re;
-      ipw = sft->data[i].im;
+      rpw = sft->data->data[i].re;
+      ipw = sft->data->data[i].im;
 
       if (fwrite((void*)&rpw, sizeof(REAL4), 1, fp) != 1) { 
 	ABORT (stat, PULSARSIGNALH_ESYS, PULSARSIGNALH_MSGESYS); 
@@ -652,22 +621,24 @@ write_SFT (LALStatus *stat, const basicSFT *sft, const CHAR *fname)
 
 /* little debug-function: compare two sft's and print relative errors */
 void
-compare_SFTs (const basicSFT *sft1, const basicSFT *sft2)
+compare_SFTs (const SFTtype *sft1, const SFTtype *sft2)
 {
   UINT4 i;
   REAL4 maxdiff = 0;
 
-  if (sft1->length != sft2->length) 
+  if (sft1->data->length != sft2->data->length) 
     {
-      printf ("\ncompare_SFTs(): lengths differ! %d != %d\n", sft1->length, sft2->length);
+      printf ("\ncompare_SFTs(): lengths differ! %d != %d\n", sft1->data->length, sft2->data->length);
       return;
     }
 #define MAX(x,y) (x > y ? x : y)
 
-  for (i=0; i < sft1->length; i++)
+  for (i=0; i < sft1->data->length; i++)
     {
-      maxdiff = MAX ( maxdiff, abs ( 2.0*(sft1->data[i].re - sft2->data[i].re) / (sft1->data[i].re + sft2->data[i].re) ) );
-      maxdiff = MAX ( maxdiff, abs ( 2.0*(sft1->data[i].im - sft2->data[i].im) / (sft1->data[i].im + sft2->data[i].im) ) );
+      maxdiff = MAX ( maxdiff, abs ( 2.0*(sft1->data->data[i].re - sft2->data->data[i].re) 
+				     / (sft1->data->data[i].re + sft2->data->data[i].re) ) );
+      maxdiff = MAX ( maxdiff, abs ( 2.0*(sft1->data->data[i].im - sft2->data->data[i].im) 
+				     / (sft1->data->data[i].im + sft2->data->data[i].im) ) );
     }
 
   printf ("\ncompare_SFTs(): maximal relative difference: %f\n", maxdiff);
@@ -675,42 +646,141 @@ compare_SFTs (const basicSFT *sft1, const basicSFT *sft2)
 } /* compare_SFTs() */
 
 
-/*----------------------------------------------------------------------
- * some trivial SFT "factories": allocate and deallocate a basic SFT 
- *----------------------------------------------------------------------*/
-void LALCreateSFT (LALStatus *stat, basicSFT **outputSFT, UINT4 length)
+
+/* create a whole vector of <numSFT> SFTs with <SFTlen> frequency-bins */
+void
+LALCreateSFTVector (LALStatus *stat, SFTVector **output, UINT4 numSFTs, UINT4 SFTlen)
 {
-  INITSTATUS( stat, "CreateSFT", PULSARSIGNALC);
+  UINT4 iSFT, j;
+  SFTVector *vect;	/* vector to be returned */
+  COMPLEX8Vector *data = NULL;
 
-  ASSERT (outputSFT != NULL, stat, PULSARSIGNALH_ENULL,  PULSARSIGNALH_MSGENULL);
-  ASSERT (*outputSFT == NULL, stat, PULSARSIGNALH_ENONULL,  PULSARSIGNALH_MSGENONULL);
+  INITSTATUS( stat, "CreateSFTVector", PULSARSIGNALC);
+  ATTATCHSTATUSPTR( stat );
 
-  if ( (*outputSFT = LALCalloc (1, sizeof(*outputSFT) )) == NULL) {
+  ASSERT (output != NULL, stat, PULSARSIGNALH_ENULL,  PULSARSIGNALH_MSGENULL);
+  ASSERT (*output == NULL, stat, PULSARSIGNALH_ENONULL,  PULSARSIGNALH_MSGENONULL);
+
+  vect = LALCalloc (1, sizeof(*vect) );
+  if (vect == NULL) {
     ABORT (stat, PULSARSIGNALH_EMEM, PULSARSIGNALH_MSGEMEM);
   }
+
+  vect->numSFTs = numSFTs;
+
+  vect->SFTlist = LALCalloc (1, numSFTs * sizeof ( *vect->SFTlist ) );
+  if (vect->SFTlist == NULL) {
+    LALFree (vect);
+    ABORT (stat, PULSARSIGNALH_EMEM, PULSARSIGNALH_MSGEMEM);
+  }
+
+  for (iSFT=0; iSFT < numSFTs; iSFT ++)
+    {
+      LALCCreateVector (stat->statusPtr, &data , SFTlen);
+      BEGINFAIL (stat) { /* crap, we have to de-allocate as far as we got so far... */
+	for (j=0; j<iSFT; j++)
+	  LALCDestroyVector (stat->statusPtr, (COMPLEX8Vector**)&(vect->SFTlist[j].data) );
+	LALFree (vect->SFTlist);
+	LALFree (vect);
+      } ENDFAIL (stat);
+
+      vect->SFTlist[iSFT].data = data;
+      data = NULL;
+
+    } /* for iSFT < numSFTs */
+
+  *output = vect;
+
+  DETATCHSTATUSPTR( stat );
+  RETURN (stat);
+
+} /* LALCreateSFTVector() */
+
+
+void
+LALDestroySFTVector (LALStatus *stat, SFTVector **vect)
+{
+  UINT4 i;
+
+  INITSTATUS( stat, "DestroySFTVector", PULSARSIGNALC);
+  ATTATCHSTATUSPTR( stat );
+
+  ASSERT (vect != NULL, stat, PULSARSIGNALH_ENULL,  PULSARSIGNALH_MSGENULL);
+  ASSERT (*vect != NULL, stat, PULSARSIGNALH_ENULL,  PULSARSIGNALH_MSGENULL);
+
   
-  if ( ((*outputSFT)->data = LALCalloc (1, length * sizeof( (*outputSFT)->data) )) == NULL) {
-    LALFree (*outputSFT);
-    ABORT (stat, PULSARSIGNALH_EMEM, PULSARSIGNALH_MSGEMEM);
-  }
+  for (i=0; i < (*vect)->numSFTs; i++)
+    LALCDestroyVector (stat->statusPtr, &((*vect)->SFTlist[i].data) );
 
-  (*outputSFT)->length = length;
+  LALFree ( (*vect)->SFTlist );
+  LALFree ( *vect );
 
+  *vect = NULL;
+
+  DETATCHSTATUSPTR( stat );
   RETURN (stat);
-} /* LALCreateSFT() */
 
-void LALDestroySFT (LALStatus *stat, basicSFT **inputSFT)
+} /* LALDestroySFTVector() */
+
+
+/***********************************************************************
+ * given a start-time, duration and Tsft, returns a list of timestamps
+ * covering this time-stretch.
+ * returns NULL on out-of-memory
+ ***********************************************************************/
+LIGOTimeGPSVector* 
+getTimestamps (LALStatus *stat, const LIGOTimeGPS *tStart, REAL8 duration, REAL8 Tsft)
 {
-  INITSTATUS( stat, "DestroySFT", PULSARSIGNALC);
+  UINT4 i;
+  UINT4 numSFTs;
+  LIGOTimeGPS tt;
+  LIGOTimeGPSVector *timestamps = NULL;
 
-  ASSERT (inputSFT != NULL, stat, PULSARSIGNALH_ENULL,  PULSARSIGNALH_MSGENULL);
+  numSFTs = (UINT4)( duration / Tsft );			/* floor */
+  timestamps = LALCalloc (1, sizeof( *timestamps) );
 
-  if ( (*inputSFT)->data != NULL ) {
-    LALFree ( (*inputSFT)->data );
-  }
-  LALFree ( *inputSFT );
+  timestamps->length = numSFTs;
+  if ( (timestamps->data = LALCalloc (1, numSFTs * sizeof (*timestamps->data) )) == NULL) 
+    return (NULL);
 
-  *inputSFT = NULL;
+  tt = *tStart;	/* initialize to start-time */
+  for (i = 0; i < numSFTs; i++)
+    {
+      timestamps->data[i] = tt;
+      /* get next time-stamp */
+      /* NOTE: we add the interval Tsft successively instead of
+       * via iSFT*Tsft, because this way we avoid possible ns-rounding problems
+       * with a REAL8 interval, which becomes critial from about 100days on...
+       */
+      LALAddFloatToGPS( stat, &tt, &tt, Tsft);
+      if (stat->statusCode != 0)
+	return (NULL);
 
+    } /* for i < numSFTs */
+  
+  return (timestamps);
+  
+} /* getTimestamps() */
+
+void
+LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect)
+{
+  UINT4 i;
+
+  INITSTATUS( stat, "DestroyTimestampVector", PULSARSIGNALC);
+  ATTATCHSTATUSPTR( stat );
+
+  ASSERT (vect != NULL, stat, PULSARSIGNALH_ENULL,  PULSARSIGNALH_MSGENULL);
+  ASSERT (*vect != NULL, stat, PULSARSIGNALH_ENULL,  PULSARSIGNALH_MSGENULL);
+
+  for (i=0; i < (*vect)->length; i++)
+    LALFree ( (*vect)->data);
+
+  LALFree ( *vect );
+  
+  *vect = NULL;
+
+  DETATCHSTATUSPTR( stat );
   RETURN (stat);
-} /* LALDestroySFT() */
+  
+} /* LALDestroyTimestampVector() */
