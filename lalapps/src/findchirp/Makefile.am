@@ -20,7 +20,7 @@ endif
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 pkgdata_DATA = BNSMasses.dat
-EXTRA_DIST = BNSMasses.dat
+EXTRA_DIST = BNSMasses.dat exc_resp.c trump.c trump.h event_utils.c ivana.c
 TESTS_ENVIRONMENT = LALAPPS_DATA_PATH=$(srcdir)
 TESTS = lalapps_inspinj_s1
 MOSTLYCLEANFILES = injepochs.ilwd injparams.ilwd injlog.txt

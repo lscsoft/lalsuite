@@ -13,6 +13,7 @@
 #include <math.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -93,6 +94,90 @@ double my_urandom( void )
   u = (double)(i) / (double)(randm + 1.0);
   return u;
 }
+
+/* computes Greenwich mean sidereal time in radians (2pi rad per day) */
+double greenwich_mean_sidereal_time( int gpssec, int gpsnan, int taiutc )
+{
+  int seconds; /* second of the day */
+  double t; /* time of day in fraction of entire day */
+  double TpU; /* teporal solar based unit */
+  double gmst;
+
+  seconds  = gpssec - 630720013; /* 630720013 is 0h 1Jan 2000 */
+  seconds += taiutc - 32;
+  seconds %= 24 * 3600; /* second of the day */
+  t = ( seconds + 1e-9 * gpsnan ) / ( 24.0 * 3600.0 );
+
+  /* TpU is time since 12h Jan 0, 2000 = Dec 31, 1999 12:00 (noon) */
+  TpU  = gpssec - 630676813; /* 630676813 is GPS time of 12h UTC 31 Dec 1999 */
+  TpU += taiutc - 32; /* TAI - UTC = 32 on 31 Dec 1999 */
+  TpU += 1e-9 * gpsnan;
+  TpU /= 36525.0 * 24.0 * 3600.0; /* TpU measured in centuries of 36525 days */
+
+  gmst  = 0.0929 * TpU;
+  gmst += 8640184.8138;
+  gmst *= TpU;
+  gmst /= 24.0 * 3600.0; /* convert from seconds to fractions of a day */
+  gmst += 0.279057325232;
+  gmst += t * 1.002737909265; /* + 5.89e-11 TU */
+  gmst  = fmod( gmst, 1.0 ); /* put in range 0 to 1 */
+  gmst *= 2 * M_PI; /* convert to radians (2pi rad per day) */
+  return gmst;
+}
+
+double eff_dist( double nx[], double ny[], double *injPar, double gmst )
+{
+  double mu;
+  double theta;
+  double phi;
+  double psi;
+  double splus;
+  double scross;
+  double x[3];
+  double y[3];
+  double d[3][3];
+  double eplus[3][3];
+  double ecross[3][3];
+  double fplus;
+  double fcross;
+  double deff;
+  int i;
+  int j;
+
+  theta = 0.5 * M_PI - injPar[latElem];
+  phi = injPar[lonElem] - gmst;
+  psi = injPar[psiElem];
+  mu = cos( injPar[incElem] );
+  splus = -( 1.0 + mu * mu );
+  scross = -2.0 * mu;
+
+  x[0] = +( sin( phi ) * cos( psi ) - sin( psi ) * cos( phi ) * cos( theta ) );
+  x[1] = -( cos( phi ) * cos( psi ) + sin( psi ) * sin( phi ) * cos( theta ) );
+  x[2] = sin( psi ) * sin( theta );
+  y[0] = -( sin( phi ) * sin( psi ) + cos( psi ) * cos( phi ) * cos( theta ) );
+  y[1] = +( cos( phi ) * sin( psi ) - cos( psi ) * sin( phi ) * cos( theta ) );
+  y[2] = cos( psi ) * sin( theta );
+
+  fplus = 0;
+  fcross = 0;
+  for ( i = 0; i < 3; ++i )
+  {
+    for ( j = 0; j < 3; ++j )
+    {
+      d[i][j]  = 0.5 * ( nx[i] * nx[j] - ny[i] * ny[j] );
+      eplus[i][j] = x[i] * x[j] - y[i] * y[j];
+      ecross[i][j] = x[i] * y[j] + y[i] * x[j];
+      fplus += d[i][j] * eplus[i][j];
+      fcross += d[i][j] * ecross[i][j];
+    }
+  }
+
+  deff  = 2.0 * injPar[distElem];
+  deff /= sqrt( splus*splus*fplus*fplus + scross*scross*fcross*fcross );
+
+  return deff;
+}
+
 
 /* convert galactic coords to equatorial coords (all angles in radians) */
 int galactic_to_equatorial( double *alpha, double *delta, double l, double b )
@@ -242,8 +327,12 @@ struct time_list { long long tinj; struct time_list *next; };
 
 int main( int argc, char *argv[] )
 {
-  const long gpsStartTime   = 714244440;  /* start time of S1 (GPS seconds) */
-  const long gpsStopTime    = 715580520;  /* stop time of S1 (GPS seconds)  */
+  double nxH[3] = { -0.2239, +0.7998, +0.5569 };
+  double nyH[3] = { -0.9140, +0.0261, -0.4049 };
+  double nxL[3] = { -0.9546, -0.1416, -0.2622 };
+  double nyL[3] = { +0.2977, -0.4879, -0.8205 };
+  const long gpsStartTime   = 714150013;  /* Aug 23, 2002  08:00:00 PDT */
+  const long gpsStopTime    = 715618813;  /* Sep 09, 2002  08:00:00 PDT */
   const double meanTimeStep = 1e2 / M_PI; /* seconds between injections     */
 
   long long tinj              = 1000000000LL * gpsStartTime;
@@ -354,15 +443,19 @@ int main( int argc, char *argv[] )
 
   fprintf( fp, "\t<real_4 ndim='2' dims='%d,%d' name='data' units='" UNITS "'>",
       numElem, ninj );
-  fprintf( fplog, "# GPS Time (s.ns)\tSource\tMtot (MSun)\tEta      \tDist (Mpc)\t"
-      "Incl (rad)\tPhase (rad)\tRA (rad)\tDEC (rad)\tPsi (rad)\n" );
+  fprintf( fplog, "# GPS Time (s.ns)\tGMST (h)\tSource\tMtot (MSun)\tEta      \tDist (Mpc)\t"
+      "Incl (rad)\tPhase (rad)\tRA (rad)\tDEC (rad)\tPsi (rad)\tDeffH (Mpc)\tDeffL (Mpc)\n" );
   tlistelem = &tlisthead;
   for ( inj = 0; inj < ninj; ++inj )
   {
     int elem;
     long tsec = (long)( tlistelem->tinj / 1000000000LL );
     long tnan = (long)( tlistelem->tinj % 1000000000LL );
-    fprintf( fplog, "%ld.%09ld", tsec, tnan );
+    double gmst;
+    double deffH;
+    double deffL;
+    gmst = greenwich_mean_sidereal_time( tsec, tnan, 32 );
+    fprintf( fplog, "%ld.%09ld\t%e", tsec, tnan, gmst * 12.0 / M_PI );
     tlistelem = tlistelem->next;
     inj_params( injPar );
     fprintf( fp, "%s%e", inj ? " " : "", injPar[0] );
@@ -375,7 +468,9 @@ int main( int argc, char *argv[] )
       else
         fprintf( fplog, "\t%e", injPar[elem] );
     }
-    fprintf( fplog, "\n" );
+    deffH = eff_dist( nxH, nyH, injPar, gmst );
+    deffL = eff_dist( nxL, nyL, injPar, gmst );
+    fprintf( fplog, "\t%e\t%e\n", deffH / MPC, deffL / MPC );
   }
 
   fprintf( fp, "</real_4>\n" );
