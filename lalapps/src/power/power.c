@@ -117,7 +117,7 @@ REAL4      noiseAmpl      = 1.0;    /* gain factor for white noise        */
 INT4       seed           = 1;      /* set non-zero to generate noise     */
 INT4       numPoints      = 4096;   /* number of samples from frames      */
 INT4       totalNumPoints = 0;      /* total number of points to analyze  */
-UINT4       totalNumSegs   = 0;      /* total number of points to analyze  */
+UINT4       totalNumSegs   = 0;      /* total number of segments to analyze  */
 INT8       gpsStartTimeNS = 0;      /* gps start time in nsec             */
 INT8       gpsStopTimeNS  = 0;      /* gps start time in nsec             */
 LIGOTimeGPS   startEpoch;           /* gps start time                     */
@@ -230,9 +230,20 @@ int main( int argc, char *argv[])
     /* loop over chunks of data small enough to fit into memory */
     while (totalNumSegs>0){
 
+      /* tell operator how we are doing */
+      if (verbose){
+	fprintf(stdout," %i segments left\n", totalNumSegs);
+      }
+      params->currentSegment  = 0;
+
       /* make sure you don't expect too many segments */
       if (params->initParams->numSegments > totalNumSegs)
         params->initParams->numSegments = totalNumSegs;
+
+      /* allocate memory for the conditioned segments */
+	params->epSegVec     = NULL;
+        LAL_CALL( LALCreateEPDataSegmentVector (&stat, &(params->epSegVec), 
+						params->initParams), &stat); 
 
       /* decrement the total number of segments */
       totalNumSegs -= params->initParams->numSegments;
@@ -443,6 +454,9 @@ int main( int argc, char *argv[])
     {
       INT4 i;
 
+      if ( verbose )
+        fprintf(stdout, "Using MDC frames for injections\n");
+
       /*open mdc cache */
       LAL_CALL( LALFrCacheImport( &stat, &frameCache, mdcCacheFile ), &stat);
       LAL_CALL( LALFrCacheOpen( &stat, &stream, frameCache ), &stat);
@@ -572,11 +586,16 @@ int main( int argc, char *argv[])
     {
       LAL_CALL( LALCDestroyVector( &stat, &(resp.data) ), &stat);
     }
+
+    /* destroy the epSegvec created at the begining of this loop */
+    LAL_CALL( LALDestroyEPDataSegmentVector( &stat, &(params->epSegVec) ), &stat);
+
+    } /*while (totalNumSegs>0){..  ends here*/
+
     if ( cachefile ) LALFree( cachefile ); 
     if ( dirname ) LALFree( dirname ); 
-
-    }
-
+    if ( mdcFlag ) LALFree( mdcparams->channelName );
+    if ( mdcFlag ) LALFree( mdcparams );
 
     /*******************************************************************
     * OUTPUT THE RESULTS 
@@ -645,18 +664,7 @@ int main( int argc, char *argv[])
     * FINALIZE EVERYTHING                                            *
     *******************************************************************/
     LAL_CALL( EPFinalizeSearch( &stat, &searchParams), &stat);
-
-    if ( calCacheFile )
-    {
-      LAL_CALL( LALCDestroyVector( &stat, &(resp.data) ), &stat);
-    }
-    if ( cachefile ) LALFree( cachefile ); 
-    if ( dirname ) LALFree( dirname ); 
-    if ( mdcFlag ) LALFree( mdcparams->channelName );
-    if ( mdcFlag ) LALFree( mdcparams );
-
     LALCheckMemoryLeaks();
-
     return 0;
 }
 
@@ -1453,10 +1461,10 @@ int initializeEPSearch(
         fprintf(stderr,"--stop-time must be specified");
         exit (1);
     }
-    LAL_CALL( LALINT8toGPS( &stat, &stopEpoch, &gpsStartTimeNS), &stat);
+    LAL_CALL( LALINT8toGPS( &stat, &stopEpoch, &gpsStopTimeNS), &stat);
 
     /* compute the total number of points to be analyzed */
-    totalNumPoints = (stopEpoch.gpsSeconds - startEpoch.gpsSeconds ) 
+    totalNumPoints = ( stopEpoch.gpsSeconds  - startEpoch.gpsSeconds ) 
       * sampleRate;
 
     /* compute the total number of segments to be analyzed */
@@ -1467,10 +1475,6 @@ int initializeEPSearch(
     params->tfTiling     = NULL;
     params->epSegVec     = NULL;
     params->numSlaves    = NULL;
-
-    /* allocate memory for the conditioned segments */
-    LAL_CALL( LALCreateEPDataSegmentVector (&stat, &(params->epSegVec), 
-                params->initParams), &stat);  
 
     /* initialize parameters */
     params->haveData        = 0;
