@@ -109,9 +109,6 @@ struct {
 
 struct time_list { long long tinj; struct time_list *next; };
 
-int putenv(char *string);
-
-
 
 /*
  *
