@@ -42,21 +42,21 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <gsl/gsl_interp.h>
 #include <gsl/gsl_spline.h>
 
-#include "filters-H1-S2.h"                      /* files that contains the filter coefficients */
-#define CHANNEL "H1:Calibrated-Strain"
-#define DATADIR "/data/hoft/H1/H"
-#define FRAMETYPE "H1_RDS_C02_LX"
+#include "filters-H2-S3.h"                      /* files that contains the filter coefficients */
+#define CHANNEL "H2:Calibrated-Strain"
+#define DATADIR "/mnt/scratch3/xavi/hoft/H2/"
+#define FRAMETYPE "H2_RDS_C01_LX"
 
 extern char *optarg;
 extern int optind, opterr, optopt;
 
 #define MAXLINERS 76800                   /* Max lines read in Freq Response files */
 #define MAXLINESEGS 10000                 /* Maximum number of science segments */
-#define To 60                             /* length of time used in table of alphas and betas (seconds)*/
+#define To 1                             /* length of time used in table of alphas and betas (seconds)*/
 #define T  16                             /* length of time calibrated per iteration (seconds) */
 #define SR 16384                          /* Sampling rate of data (Hz) */
 #define USR 16                            /* Upsampling factor */
-#define MAXALPHAS 10000                    /* Maximum number of calibration factors in a science segment */
+#define MAXALPHAS 100000                    /* Maximum number of calibration factors in a science segment */
 
 #define SLUDGEFACTOR 16384                 /* Number of samples in AS_Q to keep as extra sludge for smooth filtering */
 
@@ -213,8 +213,6 @@ int FreeMem(void);
 int main(int argc,char *argv[])
 {
 int i,j,DT,p; 
-FrOutPar opar = { DATADIR, FRAMETYPE, ProcDataChannel, 1, 0, 2 };
-
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
   if (ReadFiles(CommandLineArgs)) return 3;
@@ -366,8 +364,26 @@ FrOutPar opar = { DATADIR, FRAMETYPE, ProcDataChannel, 1, 0, 2 };
 	  /* WRITE A FRAME */
 	  strncpy( GV.h.name, CHANNEL, sizeof( GV.h.name ) );
 	  GV.h.epoch.gpsSeconds=GV.gpsepoch.gpsSeconds;
-	  LALFrWriteREAL8TimeSeries( &status, &GV.h, &opar );
-	  TESTSTATUS( &status );
+	  
+	  {
+	    char filename[256], nodenumber[16];
+
+	    strcpy(filename,DATADIR);
+	    sprintf(nodenumber,"s%03d/H",(GV.gpsepoch.gpsSeconds-751654515)/((757699249-751654515)/296)+1);
+	    strcat(filename,nodenumber);      
+
+	    {
+	      FrOutPar opar = { filename, FRAMETYPE, ProcDataChannel, 1, 0, 2 };
+ 
+	      LALFrWriteREAL8TimeSeries( &status, &GV.h, &opar );
+	      TESTSTATUS( &status );
+
+	      fprintf(stdout,"%s-%s-%d-%d.gwf\n",filename,FRAMETYPE,GV.h.epoch.gpsSeconds,DT);
+	    }
+
+	  }
+
+
 	  
 	  GV.gpsepoch.gpsSeconds += DT;
 
@@ -956,7 +972,7 @@ FILE *fpAlpha=NULL;
   /* If we have a user input factors file then open it */
   if(CLA.alphafile != NULL)
     {
-      fpAlpha=fopen(CLA.alphafile,"a");
+      fpAlpha=fopen(CLA.alphafile,"w");
       if (fpAlpha==NULL) 
 	{
 	  fprintf(stderr,"Could not open %s!\n",CLA.alphafile);
@@ -1008,18 +1024,20 @@ FILE *fpAlpha=NULL;
       params.asQ = &asq;
       params.exc = &exc;
       params.lineFrequency = CLA.f;
-      params.mu = CLA.mu;
+      /* params.mu = CLA.mu; 
       params.actuationFactor.re = GV.Af0.re ;
       params.actuationFactor.im = GV.Af0.im ;
       params.responseFactor = GV.Rf0;
       params.sensingFactor = GV.Cf0;
-	  
+*/	  
+
       LALComputeCalibrationFactors(&status,&factors,&params);
       TESTSTATUS( &status );
 
       GV.alpha[m]= factors.alpha.re;
       
       if( GV.alpha[m] < 0.3 ) outflag=1;  /* If any alpha is bad set a flag so we exit gracefully */
+      if( GV.alpha[m] > 1.7 ) outflag=1;  /* If any alpha is bad set a flag so we exit gracefully */
       
       be.re=be.im=0;
 
@@ -1030,7 +1048,11 @@ FILE *fpAlpha=NULL;
 
       if(CLA.alphafile != NULL)
 	{
-	  fprintf(fpAlpha,"%d %d %f %f %f %f\n",m,localgpsepoch.gpsSeconds,factors.alpha.re,factors.alpha.im,be.re,be.im);
+	  fprintf(fpAlpha,"%d %d %f %f %f %f %f %f %e %e %e %e %e %e\n",m,localgpsepoch.gpsSeconds,factors.alpha.re,factors.alpha.im,be.re,be.im,
+		  factors.alphabeta.re,factors.alphabeta.im,
+		  factors.asq.re*2/To,factors.asq.im*2/To,
+		  factors.darm.re*2/To,factors.darm.im*2/To,
+		  factors.exc.re*2/To,factors.exc.im*2/To);
 	}
 
       localgpsepoch.gpsSeconds = localgpsepoch.gpsSeconds+To;
@@ -1059,7 +1081,7 @@ FILE *fpAlpha=NULL;
 
   if(outflag == 1) fprintf(stderr,"There were invalid values of alpha at %d! Extiting ...\n", GV.gpsepoch.gpsSeconds);
 
-  return outflag;
+  return 0;
 }
 
 /*******************************************************************************/
