@@ -105,6 +105,7 @@ couple of minutes.
 </lalLaTeX> */
 
 #include <lal/LALStdio.h>
+#include <lal/FileIO.h>
 #include <lal/CLR.h>
 
 NRCSID (MAIN, "$Id$");

@@ -222,6 +222,7 @@ if ( lalDebugLevel & LALERROR )                                      \
 else (void)(0)
 
 #include <lal/LALStdio.h>
+#include <lal/FileIO.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDemod.h>
 

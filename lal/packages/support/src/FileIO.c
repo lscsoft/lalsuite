@@ -50,6 +50,7 @@ characters), \verb+LALOpenDataFile()+ returns \verb+NULL+ and sets
 #include <errno.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
+#include <lal/FileIO.h>
 
 /*
  * This needs to be in some source code somewhere,

@@ -3,6 +3,7 @@
    */
 
 #include <lal/LALStdio.h>
+#include <lal/FileIO.h>
 #include <lal/TrackSearch.h>
 
 NRCSID (TESTSTSC,"$Id$");

@@ -61,6 +61,7 @@ LALSReadVectorSequence()        LALDestroyVectorSequence()
 
 #include <stdlib.h>
 #include <lal/LALStdio.h>
+#include <lal/FileIO.h>
 #include <lal/LALStdlib.h>
 #include <lal/SeqFactories.h>
 #include "StreamInput.h"

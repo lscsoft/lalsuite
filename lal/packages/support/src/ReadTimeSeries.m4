@@ -48,6 +48,7 @@ functions, not in any production code.
 
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
+#include <lal/FileIO.h>
 #include <string.h>
 #include <lal/LALDatatypes.h>
 #include <lal/ReadFTSeries.h>

@@ -14,10 +14,12 @@ Provides standard LAL IO functions.
 \subsection*{Synopsis}
 \begin{verbatim}
 #include <lal/LALStdio.h>
+#include <lal/FileIO.h>
 \end{verbatim}
 
-\noindent This header covers the quasi-LAL IO functions and the LALsnprintf
-functions.
+\noindent These headers cover the quasi-LAL IO functions and the LALsnprintf
+functions.  Only use \texttt{FileIO.h} in test code that links to
+the \texttt{lalsupport} library.
 
 \vfill{\footnotesize\input{LALStdioHV}}
 \newpage\input{LALStdC}
@@ -41,9 +43,6 @@ NRCSID( LALSTDIOH, "$Id$" );
 
 #define LALFopen fopen
 #define LALFclose fclose
-
-FILE *
-LALOpenDataFile( const char * );
 
 int
 LALSnprintf( char *, size_t, const char *, ... );
