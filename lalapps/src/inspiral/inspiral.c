@@ -2633,6 +2633,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         if ( ! strcmp( "urandom", optarg ) )
         {
           randSeedType = urandom;
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
         else
         {
@@ -2775,10 +2776,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
 
   /* check event cluster option */
-  this_proc_param = this_proc_param->next = (ProcessParamsTable *)
-    calloc( 1, sizeof(ProcessParamsTable) );
   if ( eventCluster == 1 )
   {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
@@ -2788,6 +2789,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
   else if ( eventCluster == 0 )
   {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
