@@ -101,7 +101,7 @@ main(int argc, char *argv[])
   line1 = Fstats1->lines->tokens[nlines1-1];
   line2 = Fstats2->lines->tokens[nlines2-1];
 
-#define DONE_MARKER "0000000"
+#define DONE_MARKER "%DONE"
   if ( strcmp(line1, DONE_MARKER ) ) 
     {
       LALPrintError ("\nERROR: File '%s' is not properly terminated by '%s' marker!\n\n", uvar_Fname1, DONE_MARKER);
