@@ -1878,6 +1878,19 @@ int main( int argc, char *argv[] )
 
           if ( writeCData )
           {
+#if 0
+            COMPLEX8TimeSeries coherentInputData;
+            memset( &coherentInputData, 0, sizeof(COMPLEX8TimeSeries) );
+
+            LALFindChirpCreateCoherentInput( LALStatus *status,
+                  &coherentInputData, fcFilterParams->cVec, 
+                  SnglInspiralTable tmplt, corruptedDataLength );
+
+            outFrame = fr_add_proc_COMPLEX8TimeSeries( outFrame,
+                coherentInputData, "none", NULL );
+
+            LALCDestoryVector( coherentInputData->data );
+#endif
             CHAR cdataStr[LALNameLength];
             LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
                 "CData_%d", nCDataFr++ );
