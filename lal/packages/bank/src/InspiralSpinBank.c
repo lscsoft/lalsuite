@@ -32,7 +32,16 @@
  * within the distorted box. If the point is inside the distorted box, the
  * algorithm adds a template to the linked list. If not, it continues.
  *
- * The tiling is done with a body-centered cubic lattice.
+ * The tiling is done with a body-centered cubic lattice. People usually
+ * solve the non-overlapping bcc problem rather than the overlapping one
+ * here, so it's worth mentioning how we do it. I don't have time to stick
+ * in the 3D figures you need to show it properly, but you can figure out
+ * the spacing by finding the smallest sphere that contains the Wigner-Seitz
+ * cell. When you do that you find that the lattice constant (spacing
+ * between templates in the plane, in proper distance) is
+ * $(4/3)\sqrt{2\mu}$. So the coordinate spacing is that divided by the
+ * square root of the corresponding eigenvalue of the metric. (The vertical
+ * spacing in the bcc lattice is multiplied by a further 1/2.)
  *
  * \subsubsection*{Uses}
  *
