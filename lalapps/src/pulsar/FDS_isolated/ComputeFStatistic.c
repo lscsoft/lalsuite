@@ -53,7 +53,8 @@ BOOLEAN FILE_FSTATS = 1;
 #define FILE_FMAX
 #define FILE_FLINES
 #define FILE_FTXT 
-#define FILE_SPRNG 
+#define FILE_SPRNG
+#define FILE_AMCOEFFS
 */
 
 /*----------------------------------------------------------------------*/
@@ -238,6 +239,9 @@ extern "C" {
   static void swap8(char *location);
   void swapheader(struct headertag *thisheader);
   void getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, long *bytecounter, const CHAR *fstat_fname, const CHAR *ckp_fname);
+#ifdef FILE_AMCOEFFS
+  void PrintAMCoeffs (AMCoeffs* amc);
+#endif
 #ifdef __cplusplus
 }
 #endif
@@ -577,7 +581,10 @@ int main(int argc,char *argv[])
 #endif /* USE_BOINC and !NO_BOINC_GRAPHICS*/
 
       LAL_CALL (CreateDemodParams(stat), stat);
-      /* loop over spin params */
+#ifdef FILE_AMCOEFFS
+	  PrintAMCoeffs(DemodParams->amcoe);
+#endif
+	  /* loop over spin params */
       for (spdwn=0; spdwn <= GV.SpinImax; spdwn++)
 	{
 	  DemodParams->spinDwn[0] = uvar_f1dot + spdwn * uvar_df1dot;
@@ -2778,5 +2785,19 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, long *bytecounter, co
   RETURN(stat);
   
 } /* getChkptCounters() */ 
-
-
+#ifdef FILE_AMCOEFFS
+void PrintAMCoeffs (AMCoeffs* amc) {
+	UINT4 i;
+	FILE*fp;
+	fp=fopen("AMCoeffs.dump","w");
+	if (fp==NULL) return;
+	fprintf(fp,"a:\n");
+	for(i=0;i<amc->a->length;i++)
+		fprintf(fp,"%20.17f\n",amc->a->data[i]);
+	fprintf(fp,"b:\n");
+	for(i=0;i<amc->b->length;i++)
+		fprintf(fp,"%20.17f\n",amc->b->data[i]);
+	fprintf(fp,"A=%20.17f, B=%20.17f, C=%20.17f, D=%20.17f\n", amc->A, amc->B, amc->C, amc->D);
+	fclose(fp);
+}
+#endif
