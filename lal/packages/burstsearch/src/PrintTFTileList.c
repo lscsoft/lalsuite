@@ -130,6 +130,7 @@ LALPrintTFTileList (
   while ( (thisTile != NULL) && (tileCount < maxTiles))
     {
       PrintTFTile (status->statusPtr, fp, thisTile, tfTiling);
+      CHECKSTATUSPTR(status);
       tileCount++;
       thisTile = thisTile->nextTile;
     }
