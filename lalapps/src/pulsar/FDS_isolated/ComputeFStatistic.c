@@ -637,8 +637,10 @@ int main(int argc,char *argv[])
 #endif
 
   if (fpstat) {
-    /* this is our marker indicating 'finished' */
-    fprintf(fpstat, "0000000\n");
+    /* this is our marker indicating 'finished'.  What appears in the file is:
+    %DONE
+    on the final line */
+    fprintf(fpstat, "%%Done\n");
     fclose(fpstat);
   }
 
