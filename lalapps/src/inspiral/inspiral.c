@@ -35,8 +35,6 @@ RCSID( "$Id$" );
 /* debugging */
 extern int vrbflg;                      /* verbocity of lal function    */
 
-char *s = NULL;
-
 /* input data parameters */
 UINT8  gpsStartTimeNS   = 0;            /* input data GPS start time ns */
 LIGOTimeGPS gpsStartTime;               /* input data GPS start time    */
@@ -76,6 +74,7 @@ REAL4 chisqThresh       = -1;           /* chisq veto thresholds        */
 INT4  eventCluster      = -1;           /* perform chirplen clustering  */
 
 /* output parameters */
+CHAR  *userTag          = NULL;         /* string the user can tag with */
 int    enableOutput     = -1;           /* write out inspiral events    */
 int    writeRawData     = 0;            /* write the raw data to a file */
 int    writeFilterData  = 0;            /* write post injection data    */
@@ -992,9 +991,18 @@ int main( int argc, char *argv[] )
   if ( writeRawData || writeFilterData || writeResponse || writeSpectrum ||
       writeRhosq || writeChisq )
   {
-    snprintf( fname, sizeof(fname), "%s-INSPIRAL-%d-%d.gwf",
-        ifo, gpsStartTime.gpsSeconds,
-        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+    if ( userTag )
+    {
+      LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL_%s-%d-%d.gwf",
+          ifo, userTag, gpsStartTime.gpsSeconds,
+          gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+    }
+    else
+    {
+      LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL-%d-%d.gwf",
+          ifo, gpsStartTime.gpsSeconds,
+          gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+    }
     frOutFile = FrFileONew( fname, 0 );
     FrameWrite( outFrame, frOutFile );
     FrFileOEnd( frOutFile );
@@ -1006,9 +1014,18 @@ cleanexit:
 
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
-  snprintf( fname, sizeof(fname), "%s-INSPIRAL-%d-%d.xml",
-      ifo, gpsStartTime.gpsSeconds,
-      gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  if ( userTag )
+  {
+    LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL_%s-%d-%d.xml",
+        ifo, userTag, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  }
+  else
+  {
+    LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL-%d-%d.xml",
+        ifo, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  }
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
 
   /* write the process table */
@@ -1658,6 +1675,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'Z':
+        /* create storage for the usertag */
+        {
+          size_t usertaglen = strlen(optarg) + 1;
+          userTag = (CHAR *) calloc( usertaglen, sizeof(CHAR) );
+          memcpy( userTag, optarg, usertaglen );
+        }
+
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
         snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
