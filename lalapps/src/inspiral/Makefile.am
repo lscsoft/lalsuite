@@ -2,7 +2,7 @@
 # $Id$
 INSPIRALSRC = ligolwbank.h ligolwbank.c inspiral.h inspiral.c \
               inspiralfrutils.c inspiralfrutils.h
-TMPLTBANKSRC = ligolwbank.h ligolwbank.c tmpltbank.c \
+TMPLTBANKSRC = ligolwbank.h ligolwbank.c tmpltbank.c tmpltbank.h \
                inspiralfrutils.c inspiralfrutils.h
 TRIGTOTMPLTSRC = trigtotmplt.c ligolwbank.h ligolwbank.c
 PRINTINSPIRALSRC = print_inspiral.c ligolwbank.h ligolwbank.c
