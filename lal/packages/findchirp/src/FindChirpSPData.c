@@ -306,7 +306,7 @@ LALFindChirpSPData (
   COMPLEX8             *wtilde;
   REAL4                *tmpltPower;
   
-  INT2                 *data;
+  REAL4                *data;
   REAL4                *spec;
   COMPLEX8             *resp;
   
@@ -391,9 +391,9 @@ LALFindChirpSPData (
       FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
   ASSERT( dataSegVec->data, status,
       FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
-  ASSERT( dataSegVec->data->data, status,
+  ASSERT( dataSegVec->data->real4Data, status,
       FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
-  ASSERT( dataSegVec->data->data->data, status,
+  ASSERT( dataSegVec->data->real4Data->data, status,
       FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
 
 
@@ -432,7 +432,7 @@ LALFindChirpSPData (
     dataSeg      = &(dataSegVec->data[i]);
     fcSeg        = &(fcSegVec->data[i]);
 
-    data         = dataSeg->data->data->data;
+    data         = dataSeg->real4Data->data->data;
     spec         = dataSeg->spec->data->data;
     resp         = dataSeg->resp->data->data;
 
