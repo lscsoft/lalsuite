@@ -20,6 +20,7 @@
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
+#include <lal/TimeDelay.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataUtils.h>
@@ -82,7 +83,7 @@ static void print_usage(char *program)
       "\n"\
       "   --gps-start-time start_time  GPS second of data start time\n"\
       "   --gps-end-time   end_time    GPS second of data end time\n"\
-      "  [--check-times]               Check that all times were analyzed\n"\ 
+      "  [--check-times]               Check that all times were analyzed\n"\
       "\n"\
       "  [--g1-triggers]               input triggers from G1\n"\
       "  [--h1-triggers]               input triggers from H1\n"\
@@ -153,6 +154,9 @@ int main( int argc, char *argv[] )
   UINT4  numTriggers = 0;
   UINT4  numCoinc = 0;
   UINT4  numTrigs[LAL_NUM_IFO];
+
+  LALDetector          aDet;
+  LALDetector          bDet;
 
   SnglInspiralTable    *inspiralEventList = NULL;
   SnglInspiralTable    *thisInspiralTrigger = NULL;
@@ -267,7 +271,8 @@ int main( int argc, char *argv[] )
     calloc( 1, sizeof(SearchSummaryTable) );
 
   memset( &accuracyParams, 0, sizeof(InspiralAccuracyList) );
-  
+  memset( &aDet, 0, sizeof(LALDetector) );
+
   /* parse the arguments */
   while ( 1 )
   {
@@ -656,7 +661,7 @@ int main( int argc, char *argv[] )
 
 
   /* Store the IFOs we expect triggers from */
-  for( ifoNumber = 1; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
     if ( haveTrig[ifoNumber] )
     {
@@ -1005,12 +1010,26 @@ int main( int argc, char *argv[] )
     goto cleanexit;
   }
 
+  /* Populate the lightTravel matrix */
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    XLALReturnDetector( &aDet, ifoNumber );
+    
+    for ( i = 0; i < LAL_NUM_IFO; i++)
+    {
+      XLALReturnDetector( &bDet, i );
+      accuracyParams.lightTravelTime[ ifoNumber][ i ] = 
+        XLALLightTravelTime( &aDet, &bDet );
+    }
+  }
+
   /* 
    *  
    * check for two IFO coincidence
    *
    */
 
+  
   LAL_CALL( LALCreateTwoIFOCoincList(&status, &coincInspiralList,
         inspiralEventList, &accuracyParams ), &status); 
 
