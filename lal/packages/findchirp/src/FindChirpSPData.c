@@ -787,7 +787,7 @@ LALFindChirpBCVData (
 
   REAL4                *w;
   REAL4                *amp;
-  REAL4                *ampBCV; /* EM */
+  REAL4                *ampBCV; 
   COMPLEX8             *wtilde;
   REAL4		       *tmpltPower;
   REAL4		       *tmpltPowerBCV;
@@ -862,9 +862,9 @@ LALFindChirpBCVData (
   ASSERT( params->ampVec->data, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( params->ampVecBCV, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL ); /* EM*/
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL ); 
   ASSERT( params->ampVecBCV->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL ); /* EM*/
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   ASSERT( params->wVec, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
@@ -924,7 +924,7 @@ LALFindChirpBCVData (
 
   w             = params->wVec->data;
   amp           = params->ampVec->data;
-  ampBCV        = params->ampVecBCV->data; /* EM */
+  ampBCV        = params->ampVecBCV->data; 
   wtilde        = params->wtildeVec->data;
   tmpltPower    = params->tmpltPowerVec->data;
   tmpltPowerBCV = params->tmpltPowerVecBCV->data;
@@ -986,9 +986,9 @@ LALFindChirpBCVData (
     LALForwardRealFFT( status->statusPtr, fcSeg->data->data,
         dataVec, params->fwdPlan );
     CHECKSTATUSPTR( status );
-    LALForwardRealFFT( status->statusPtr, fcSeg->dataBCV->data, /* EM */
-        dataVec, params->fwdPlan );                             /* EM */
-    CHECKSTATUSPTR( status );                                   /* EM */
+    LALForwardRealFFT( status->statusPtr, fcSeg->dataBCV->data, 
+        dataVec, params->fwdPlan );                             
+    CHECKSTATUSPTR( status );                                   
 
     /* compute strain */
     for ( k = 0; k < fcSeg->data->data->length; ++k )
