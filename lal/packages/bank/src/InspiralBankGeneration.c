@@ -25,7 +25,7 @@ LALInspiralBankGeneration(
     
   ASSERT( input != NULL, status, LALINSPIRALBANKH_ENULL,
           LALINSPIRALBANKH_MSGENULL );
-  ASSERT( first == NULL, status, LALINSPIRALBANKH_ENULL,
+  ASSERT( *first == NULL, status, LALINSPIRALBANKH_ENULL,
           LALINSPIRALBANKH_MSGENULL );
 
   /* For nonspinning approximants, call LALInspiralCreateCoarseBank(). */
