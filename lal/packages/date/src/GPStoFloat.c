@@ -53,6 +53,8 @@ into the \texttt{REAL8} values incurs an error of approximately 1.e-7.
 
 NRCSID(GPSTOFLOATC, "$Id$");
 
+/* D'oh. rint(3) is not in the ANSI std. Thanks Jolien. */
+#define rint(x) floor(0.5 + (x))
 
 double rint( double );
 static const INT4 oneBillion = 1000000000;
@@ -130,7 +132,6 @@ void LALFloatToInterval(LALStatus *status,
   ASSERT(pInterval, status, DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
   ASSERT(pDeltaT, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
-  /* rint(3) is a Std C function that does rounding properly */
   pInterval->seconds     = (INT4)(*pDeltaT);
   pInterval->nanoSeconds = (INT4)rint((*pDeltaT -
                                        (REAL8)(pInterval->seconds)) *
