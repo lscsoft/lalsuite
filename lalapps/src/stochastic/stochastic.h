@@ -22,16 +22,10 @@ typedef struct tagStreamPair {
 	REAL4TimeSeries *streamTwo;
 } StreamPair;
 
-typedef struct tagReadDataPairParams {
-	INT4 start;
-	INT4 duration;
-	INT4 buffer;
-} ReadDataPairParams;
-
 static void parse_options(INT4 argc, CHAR *argv[]);
 static void readDataPair(LALStatus *status, StreamPair *streamPair,
-		ReadDataPairParams *params, REAL4TimeSeries *seriesOne,
-		REAL4TimeSeries *seriesTwo, LIGOTimeGPS start);
+		REAL4TimeSeries *seriesOne, REAL4TimeSeries *seriesTwo,
+		LIGOTimeGPS start);
 
 /* helper functions */
 static REAL4TimeSeries *get_time_series(LALStatus *status, CHAR *ifo,

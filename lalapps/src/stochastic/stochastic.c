@@ -142,7 +142,6 @@ CHAR *outputFilePath = NULL;
 /* program entry point */
 INT4 main(INT4 argc, CHAR *argv[])
 {
-  CHAR filename[FILENAME_MAX];
   /* lal initialisation variables */
   LALStatus status = blank_status;
   LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
@@ -177,7 +176,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 segmentShift;
   INT4 padData;
   LIGOTimeGPS gpsCalibTime;
-  ReadDataPairParams streamParams;
   StreamPair streamPair;
   REAL4TimeSeries *segmentOne;
   REAL4TimeSeries *segmentTwo;
@@ -394,8 +392,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* set segment input parameters */
-  streamParams.buffer = 0;
-  streamParams.duration = segmentDuration + 2 * padData;
   streamPair.streamOne = segmentPadOne;
   streamPair.streamTwo = segmentPadTwo;
 
@@ -813,16 +809,8 @@ INT4 main(INT4 argc, CHAR *argv[])
               gpsSegStartTime.gpsSeconds);
         }
 
-        streamParams.start = gpsSegStartTime.gpsSeconds;
-        readDataPair(&status, &streamPair, &streamParams, seriesOne, \
-            seriesTwo, gpsSegStartTime);
-
-        LALSnprintf(filename, FILENAME_MAX, "1-%d.dat", \
-            gpsSegStartTime.gpsSeconds);
-        LALSPrintTimeSeries(streamPair.streamOne, filename);
-        LALSnprintf(filename, FILENAME_MAX, "2-%d.dat", \
-            gpsSegStartTime.gpsSeconds);
-        LALSPrintTimeSeries(streamPair.streamTwo, filename);
+        readDataPair(&status, &streamPair, seriesOne, seriesTwo, \
+            gpsSegStartTime);
 
         /* store in memory */
         for (i = 0; i < segmentPadLength; i++)
@@ -1172,11 +1160,10 @@ INT4 main(INT4 argc, CHAR *argv[])
       /* save */
       if (vrbflg)
       {
-        fprintf(stdout, "interval %d:\n", interLoop + 1);
-        fprintf(stdout, "GPS time = %d\n", gpsStartTime.gpsSeconds);
-        fprintf(stdout, "y = %e\n", y);
-        fprintf(stdout, "sigmaTheo = %e\n", sqrt(varTheo));
-        fprintf(stdout, "varTheo = %e\n", varTheo);
+        fprintf(stdout, "interval %d\n", interLoop + 1);
+        fprintf(stdout, "  GPS time  = %d\n", gpsStartTime.gpsSeconds);
+        fprintf(stdout, "  y         = %e\n", y);
+        fprintf(stdout, "  sigmaTheo = %e\n", sqrt(varTheo));
       }
 
       /* allocate memory for table */
@@ -2369,7 +2356,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
 /* function to read data in frames */
 static void readDataPair(LALStatus *status,
     StreamPair *streamPair,
-    ReadDataPairParams *params,
     REAL4TimeSeries *seriesOne,
     REAL4TimeSeries *seriesTwo,
     LIGOTimeGPS start)
@@ -2386,8 +2372,7 @@ static void readDataPair(LALStatus *status,
   streamStart = seriesOne->epoch.gpsSeconds;
 
   /* get first bin required, and length */
-  /* add buffer as code expects a 1s buffer either side of the segment */
-  first = (params->start - streamStart) * resampleRate;
+  first = (start.gpsSeconds - streamStart) * resampleRate;
   length = (segmentDuration) * resampleRate;
 
   if (vrbflg)
