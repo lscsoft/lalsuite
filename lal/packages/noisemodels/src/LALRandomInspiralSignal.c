@@ -217,10 +217,33 @@ LALRandomInspiralSignal
 		*/
 	       
 	       randIn->param.totalMass = 2 * randIn->mMin  + 2 * epsilon1 * (randIn->mMax - randIn->mMin ) ;
-	       randIn->etaMin = (randIn->param.totalMass - randIn->mMin) * randIn->mMin / randIn->param.totalMass/randIn->param.totalMass;
-	       randIn->param.eta = randIn->etaMin + epsilon2 * (.25 - randIn->etaMin); 
-	       
-	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+	       randIn->etaMin = (randIn->mMax * randIn->mMin) / pow(randIn->mMax*2, 2.);
+	       randIn->MMax = randIn->mMax*2;
+		/*thomas::in principle that part of the code should be placed in the switch 
+		 * which follow that one (which check for the valididty of m1 and m2. 
+		 * However, for that case (where we can t a uniform total mass) we need to keep it
+		 * here. Otherwise there is a bias in the uniformity of the totalMass.
+		 *
+		 * So as soon as the total mass is set we search for an eta which gives 
+		 * valid values of individual masses. 
+		 * Sept 2004.
+		 * */
+	       while (valid==0){
+		       randIn->param.eta = randIn->etaMin + epsilon2 * (.25 - randIn->etaMin); 		       	       
+		       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+	       		if (
+			   randIn->param.mass1 >= randIn->mMin &&
+			   randIn->param.mass2 >= randIn->mMin &&
+			   randIn->param.totalMass <= randIn->MMax &&
+			   randIn->param.eta <= 0.25 &&    /*in principle that line is not needed ; it is always true*/
+			   randIn->param.eta >= randIn->etaMin &&
+			   randIn->param.mass1 <= randIn->mMax && 
+			   randIn->param.mass2 <= randIn->mMax )
+			   {
+				valid = 1;
+				}		
+		   	epsilon2 = (float) random()/(float)RAND_MAX;
+	       }
 	       break;  
 	     case t02: 
 	       /* chirptimes t0 and t2 are required in a specified range */
@@ -281,7 +304,9 @@ LALRandomInspiralSignal
 		   randIn->param.mass2 >= randIn->mMin &&
 		   randIn->param.totalMass <= randIn->MMax &&
 		   randIn->param.eta <= 0.25 &&
-		   randIn->param.eta >= randIn->etaMin
+		   randIn->param.eta >= randIn->etaMin &&
+		   randIn->param.mass1 <= randIn->mMax && 
+		   randIn->param.mass2 <= randIn->mMax 
 		   )
 		 
 		 {
