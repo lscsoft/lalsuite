@@ -206,6 +206,7 @@ LALInspiralStationaryPhaseApprox1 (
 	 signal->data[n-i] = -(REAL4) (amp * sin(psi));
       }
    }
+   params->fFinal = fn;
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }
