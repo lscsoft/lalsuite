@@ -450,16 +450,16 @@ void LALFloatToGPS(LALStatus *,
 </lalLaTeX> */
 void
 LALINT8toGPS ( 
-    LALStatus   *status,
-    LIGOTimeGPS *output, 
-    INT8         input 
+    LALStatus          *status,
+    LIGOTimeGPS        *output, 
+    INT8                input 
     );
 
 void
 LALGPStoINT8 ( 
-    LALStatus  *status,
-    INT8       *output, 
-    LIGOTimeGPS input 
+    LALStatus          *status,
+    INT8               *output, 
+    const LIGOTimeGPS  *input 
     );
 
 

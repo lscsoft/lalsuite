@@ -50,9 +50,9 @@ NRCSID( GPSTOINT8C, "$Id$" );
 #pragma <lalVerbatim file="GPStoINT8CP">
 void
 LALINT8toGPS ( 
-    LALStatus   *status,
-    LIGOTimeGPS *output, 
-    INT8         input 
+    LALStatus          *status,
+    LIGOTimeGPS        *output, 
+    INT8                input 
     )
 #pragma </lalVerbatim>
 {
@@ -70,16 +70,16 @@ LALINT8toGPS (
 #pragma <lalVerbatim file="GPStoINT8CP">
 void
 LALGPStoINT8 ( 
-    LALStatus  *status,
-    INT8       *output, 
-    LIGOTimeGPS input 
+    LALStatus          *status,
+    INT8               *output, 
+    const LIGOTimeGPS  *input 
     )
 #pragma </lalVerbatim>
 {
   INITSTATUS( status, "LALGPStoINT8", GPSTOINT8C );
   
-  *output = (INT8) input.gpsNanoSeconds 
-    + 1000000000LL * (INT8) input.gpsSeconds;
+  *output = (INT8) input->gpsNanoSeconds 
+    + 1000000000LL * (INT8) input->gpsSeconds;
 
   RETURN( status );
 }
