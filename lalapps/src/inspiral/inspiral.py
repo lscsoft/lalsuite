@@ -263,7 +263,7 @@ class SplitBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
     banks = []
     x = self.__bankfile.split('-')
-    for i in range( 0, self.__get_num_banks() ):
+    for i in range( 0, self.get_num_banks() ):
       banks.append("%s-%s_%2.2d-%s-%s" % (x[0], x[1], i, x[2], x[3]))
 
     return banks
