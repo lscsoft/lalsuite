@@ -221,8 +221,7 @@ void StackSlideInitSearch(
  params->ifoNickName = NULL;
  params->IFO = NULL;
  params->patchName = NULL;
-  
- params->sunEdatFile = NULL;
+  params->sunEdatFile = NULL;
  params->earthEdatFile = NULL;
  params->sftDirectory = NULL;
  params->outputFile = NULL;
@@ -235,6 +234,15 @@ void StackSlideInitSearch(
  params->deltaT = -1.0;
  
  params->gpsStartTimeNan = 0; /* 12/06/04 gam; search startTime is whole number; however gpsEpochStartTimeNan can be nonzero */
+ 
+/* 05/02/14 vir: initialize binary params */
+params->binaryFlag = 0;          /*the isolated case is the default*/
+params->OrbitalEccentricity = 0;
+params->ArgPeriapse = 0;
+params->TperiapseSSBSec = 0;
+params->TperiapseSSBNanoSec = 0;
+params->SMAcentral = 0;
+params->deltaSMA = 0;
  
  for (i = 1; i < argc; i++) {
 
@@ -358,9 +366,20 @@ void StackSlideInitSearch(
 		case 83: params->outputFile = (CHAR *) LALMalloc( (strlen( argv[i] ) + 1) * sizeof(CHAR) );
 		         strcpy(params->outputFile, argv[i]); break;
 		case 84: params->debugOptionFlag = (INT2)atoi(argv[i]); break;
+	        case 85: params->binaryFlag=(INT2)atoi(argv[i]); break;/*must be =1 for binaries */
+        /*added a few entries regarding the orbital motion and if binary alpha and delta*/
+                case 86: params->OrbitalEccentricity=(REAL8)atof(argv[i]); break;
+		case 87: params->alphaSX1=(REAL8)atof(argv[i]); break;
+		case 88: params->deltaSX1=(REAL8)atof(argv[i]); break;
+		case 89: params->ArgPeriapse=(REAL8)atof(argv[i]); break;
+		case 90: params->TperiapseSSBSec=(UINT4)atol(argv[i]); break;
+		case 91: params->TperiapseSSBNanoSec=(UINT4)atol(argv[i]); break;	 
+		case 92: params->SMAcentral=(REAL8)atof(argv[i]); break;
+		case 93: params->deltaSMA=(REAL8)atof(argv[i]); break;/*put this =0 if you don't want a random SMA*/
+
 	}
   } /* end for (i=1; i<argc; i++)  */
-
+ 
  #ifdef DEBUG_INPUTBLK_CODE
 	fprintf(stdout,"\n\nparams->numBLKs = %i \n", params->numBLKs);
 	fprintf(stdout,"params->nBinsPerBLK = %i \n", params->nBinsPerBLK);
@@ -623,6 +642,7 @@ void StackSlideInitSearch(
   	fflush(stdout);
   #endif
 
+
   /* Set up name of this DSO */
   params->dsoName = NULL;
   params->dsoName = (CHAR *) LALMalloc( (strlen( "DRIVESTACKSLIDE" ) + 1) * sizeof(CHAR) );
@@ -717,7 +737,6 @@ void StackSlideInitSearch(
 /* START SECTION: set up parameter space      */
 /*                                            */
 /**********************************************/
-
   #ifdef DEBUG_DRIVESTACKSLIDE
   	fprintf(stdout, "\nSTART SECTION: set up parameter space\n");
   	fflush(stdout);
@@ -778,7 +797,7 @@ void StackSlideInitSearch(
    CountOrAssignSkyPosData(params->skyPosData,&(params->numSkyPosTotal),1,params->stksldSkyPatchData);
 
    for(i=0;i<params->numFreqDerivTotal;i++)
-   {
+   { 
         for(k=0;k<params->numSpinDown;k++)
 	{
 		if (k == 0) {
@@ -812,10 +831,10 @@ void StackSlideInitSearch(
 /*                and process params tables       */
 /*                                                */
 /**************************************************/
-                         
+                        
        /* 02/09/04 gam;  prepare to output results in xml.  Note that if outputEventFlag < 1 then do not output xml. */ 
-       if (params->outputEventFlag > 0) {
-            CHAR *xmlFile;
+       if (params->outputEventFlag > 0) { 
+	                  CHAR *xmlFile;
             MetadataTable         proctable;
             MetadataTable         procparams;
 	    LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
@@ -887,13 +906,13 @@ void StackSlideInitSearch(
 
   CHECKSTATUSPTR (status);
   DETATCHSTATUSPTR (status); 
+
 }
 /******************************************/
 /*                                        */
 /* END FUNCTION: StackSlideInitSearch     */
 /*                                        */
 /******************************************/
-
 /********************************************/
 /*                                          */
 /* START FUNCTION: StackSlideConditionData  */
@@ -904,6 +923,7 @@ void StackSlideConditionData(
     StackSlideSearchParams *params
     )
 {
+
 
  INITSTATUS( status, "StackSlideConditionData", DRIVESTACKSLIDEC );
  ATTATCHSTATUSPTR (status);
@@ -958,7 +978,6 @@ void StackSlideConditionData(
   /* 07/09/04 gam; Use LALRngMedBias to correct bias in the median. */
   if ( (params->normalizationFlag & 4) > 0 )  {
      REAL8 tmpBiasFactor;
-           
      LALRngMedBias(status->statusPtr, &tmpBiasFactor, params->nBinsPerNRM);
      CHECKSTATUSPTR (status);
      params->normalizationParameter = (REAL4)tmpBiasFactor;   
@@ -1856,6 +1875,17 @@ void StackSlideApplySearch(
   stksldParams->timeStamps = params->timeStamps;
   stksldParams->numSpinDown = params->numSpinDown;
   stksldParams->edat = params->edat;
+
+  /* Feb 14/05 vir*/
+stksldParams->binaryFlag = params->binaryFlag;
+stksldParams->OrbitalEccentricity=params->OrbitalEccentricity;
+stksldParams->ArgPeriapse=params->ArgPeriapse;
+/*stksldParams->SemiMajorAxis->params->SemiMajorAxis;*/
+stksldParams->TperiapseSSBSec=params->TperiapseSSBSec;
+stksldParams->TperiapseSSBNanoSec=params->TperiapseSSBNanoSec;
+stksldParams->deltaSMA=params->deltaSMA;
+stksldParams->SMAcentral=params->SMAcentral;
+
   /* 12/03/04 gam */
   if ( ( (params->testFlag & 1) > 0 ) || ( (params->weightFlag & 1) > 0 ) ) {
     stksldParams->divideSUMsByNumSTKs = 0; /* FALSE if Hough Test or PowerFlux weighting is done. */
@@ -1874,7 +1904,7 @@ void StackSlideApplySearch(
              cachedDetector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
   } else if (strstr(params->IFO, "TAMA")) {
              cachedDetector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
-  } else {
+	       } else {
              /* "Invalid or null IFO" */
              ABORT( status, DRIVESTACKSLIDEH_EIFO, DRIVESTACKSLIDEH_MSGEIFO);
   }
@@ -1989,6 +2019,9 @@ void StackSlideApplySearch(
        }
     }
     
+/*from here only isolated stuff*/
+    if(params->binaryFlag==0){
+    
   /* 02/11/04 gam; Change code to process 1 SUM per job; Move for loop over SUMs here */
   for(kSUM=0;kSUM<params->numSUMsTotal;kSUM++) {
     
@@ -2020,9 +2053,8 @@ void StackSlideApplySearch(
     }
     
      /* 11/08/03 gam; Add in first version of StackSlide written by Mike Landry */     
-    StackSlide(status->statusPtr,params->SUMData,params->STKData,stksldParams);
+    StackSlideOld(status->statusPtr,params->SUMData,params->STKData,stksldParams); /*Feb 05/14 vir*/
     CHECKSTATUSPTR (status);
-                
     #ifdef INCLUDE_OUTPUTASCIISUMS_CODE
       /* 02/11/04 gam; Moved code to output one sum at a time */
       if (params->outputSUMFlag > 0) {           
@@ -2209,6 +2241,44 @@ void StackSlideApplySearch(
       } /* end else if (outputLoudestFromSUMs) */
       
   } /* 02/11/04 gam; new end for(kSUM=0;kSUM<params->numSUMsTotal;kSUM++) */
+    
+    }/* Feb/14/05 vir; end of if binaryFlag==0*/
+
+    /*Feb 14/05 vir: ADDED HERE BINARY CASE*/
+    
+if((params->binaryFlag & 1) == 1){
+ for(kSUM=0;kSUM < 1;kSUM++) {
+    
+ i = kSUM/numFreqDerivIncludingNoSpinDown;   /* 01/28/04 gam; index to params->skyPosData for this SUM; */
+    j = kSUM % numFreqDerivIncludingNoSpinDown; /* 01/28/04 gam; index to params->freqDerivData for this SUM; */    
+    stksldParams->skyPosData = &(params->skyPosData[i]);
+    if (params->numFreqDerivTotal != 0) {
+         stksldParams->freqDerivData = &(params->freqDerivData[j]);
+    }    
+
+	/*csParams->OrbitalEccentricity=params->OrbitalEccentricity;
+	csParams->ArgPeriapse=params->ArgPeriapse;
+	csParams->TperiapseSSB.gpsSeconds->params->TperiapseSSBSec;
+	csParams->TperiapseSSB.gpsNanoSeconds->params->TperiapseSSBNanoSec;
+	csParams->OrbitalPeriod=66960;
+	csParams->SemiMajorAxis=params->SMAcentral;*/
+
+    
+	            stksldParams->numSkyPosTotal=1;
+	    stksldParams->skyPosData[0][0]=params->alphaSX1;
+	    stksldParams->skyPosData[0][1]=params->deltaSX1;
+
+INT4 iSMA=0;
+INT4 iSMAmax=10;/*total number of point in par. space to investigate*/
+/*Call StackSlidebinary for every point in parameter space*/
+		/*for(iSMA=0; iSMA<iSMAmax; iSMA++ )*/
+		StackSlideBinary(status->statusPtr, stksldParams, params->STKData, params->SUMData);
+	printf("FindBinaryLoudest\n");
+	/*Look for loudest event in SUMData*/
+FindBinaryLoudest( params->SUMData, stksldParams );
+printf("the SemiMajorAxis is %f\n", stksldParams->SemiMajorAxis);
+ }
+}/*end of if binaryFlag==1*/
 
   /* 02/17/04 gam; output the loudest events */
   if ( (outputLoudestFromPeaks || outputLoudestFromSUMs) && (params->outputEventFlag > 0) ) {  
@@ -3392,6 +3462,36 @@ void RescaleSTKData(REAL4FrequencySeries **STKData, INT4 numSTKs, INT4 nBinsPerS
          }
      }
 } /* END RescaleSTKData */
+
+/*Feb 14/05 vir */
+/*Start Function FindBinaryLoudest*/
+
+void FindBinaryLoudest( REAL4FrequencySeries **SUMData, StackSlideParams *stksldParams)
+{
+	REAL8 max=0;
+	
+	INT4 iMinSTK=0; 
+	INT4 iMaxSTK=stksldParams->nBinsPerSUM;
+	
+	REAL8 peakFreq;
+	INT4 i;
+	INT4 indexFreq=0;
+	for (i=iMinSTK; i<iMaxSTK; i++)
+	{
+		if(SUMData[0]->data->data[i] > max)
+		{ max = SUMData[0]->data->data[i];
+		  indexFreq=i;
+		}
+	/*peakFreq=*/
+	}
+printf("Loudest binary peak is %f and index freq is %d\n", max,indexFreq);
+}
+
+
+/*End function FindBinaryLoudest*/
+
+
+
 
 /******************************************/
 /*                                        */

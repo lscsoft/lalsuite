@@ -87,7 +87,10 @@
 #include <lal/RngMedBias.h>
 /* 02/09/04 gam; next is needed for tables defined in LAL */
 #include <lal/LIGOMetadataTables.h>
+#include "StackSlideBinary.h"
 #include "StackSlide.h"
+
+
 /* #include <lal/LALStackSlide.h> Will need to switch to this version when StackSlide is in LAL. */
 /*********************************************/
 /*                                           */
@@ -422,6 +425,23 @@ typedef struct tagStackSlideSearchParams {
   REAL8   bandSTK;                   /* Band width of the STKs. */
   INT4    nBinsPerSTK;               /* Number of data points in the STKs in the STK frequency band */
 
+  /*Feb 14/05 vir: Added here a few entries addressing to the binary case, there will be an if in the command line options : if (binary) assign value to the following params*/
+ 
+INT2 binaryFlag;                   /* must be = 1 for binary and = 0 for isolated */
+
+REAL8 alphaSX1;  /*Sco-X1 right ascension to be assigned to skyPos[0][0]*/
+REAL8 deltaSX1;  /*Sco-X1 declination to be assigned to skyPos[0][1]*/
+REAL8 OrbitalEccentricity; 
+UINT4 TperiapseSSBSec;     /*assumed periapse passage time in seconds. REMEMBER: SOMEWHERE YOU MUST STATE:*/
+UINT4 TperiapseSSBNanoSec; /* params->TperiapseSSB.gpsSeconds=params->TperiapseSSBSec and the same for NanoSec*/
+REAL8 ArgPeriapse; /*argument of periapse: angle between the periapse and the line of nodes*/
+REAL8 SMAcentral; /*central value of SemiMajor axis in parameter space to be used in a MC search*/
+/*REAL8 Tpericentral;*/ /*central value of last periapse passage before obs time starts to be used in a MC search*/
+REAL4 deltaTperi; /*half-uncertainty on T periapse*/
+REAL8 deltaSMA; /*half uncertainty on the semi Major axis*/
+
+/*end of binary params*/
+  
   INT4    numSTKsPerSUM;             /* Number of STKs to use to make one SUM (Usually duration/tSTK) */
     INT4    numSUMsPerParamSpacePt;  /* Number of output SUMs per parameter space point = params->duration/params->tSUM. (Usually will = 1) */
     REAL8   tSUM;                      /* duration in seconds of output SUMs = tSTK*numSTKsPerSUM. (Usually = duration) */
@@ -688,6 +708,12 @@ void WeightSTKsIncludingBeamPattern(REAL4FrequencySeries **STKData,
            INT4 numSTKs, INT4 nBinsPerSTK, REAL8 tSTK);
 /* 11/01/04 gam; if (params->weightFlag & 8) > 0 rescale STKs with threshold5 to prevent dynamic range issues. */
 void RescaleSTKData(REAL4FrequencySeries **STKData, INT4 numSTKs, INT4 nBinsPerSTK,REAL4 RescaleFactor);
+void FindBinaryLoudest(REAL4FrequencySeries **SUMData, StackSlideParams *stksldParams);
+/*void StackSlideIsolated(	LALStatus *status, 
+			REAL4FrequencySeries **SUMData, 
+			REAL4FrequencySeries **STKData, 
+			StackSlideParams *params);*/
+
 /******************************************/
 /*                                        */
 /* END SECTION: prototype declarations    */

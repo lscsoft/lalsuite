@@ -28,7 +28,9 @@ Computes frequency model, slide stacks accordingly, and sum them.
 #include <math.h>
 #include <lal/LALConstants.h>
 #include <lal/LALBarycenter.h>
- 
+ #include <lal/Date.h>
+#include <lal/FindRoot.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -58,6 +60,23 @@ NRCSID (STACKSLIDEH, "$Id$");
 #define STACKSLIDECOMPUTESKYH_MSGENEGA "Bad Negative Value in StackSlideComputeSky"
 /* </lalErrTable>  */
 
+/* <lalErrTable file="ComputeSkyBinaryHErrorTable"> */
+#define COMPUTESKYBINARYH_ENULL 1
+#define COMPUTESKYBINARYH_ENNUL 2
+#define COMPUTESKYBINARYH_ERANG 3
+#define COMPUTESKYBINARYH_ENEGA 4
+#define COMPUTESKYBINARYH_MSGENULL "Null Pointer"
+#define COMPUTESKYBINARYH_MSGENNUL "Non-Null Pointer"
+#define COMPUTESKYBINARYH_MSGERANG "Input parameter out of range"
+#define COMPUTESKYBINARYH_MSGENEGA "Bad Negative Value"
+/* </lalErrTable>  */
+
+  
+#define ACC 1e-9
+
+
+
+
 /* <lalLaTeX>
 \subsection*{Structures}
 
@@ -70,7 +89,7 @@ struct StackSlideParams
 \end{description}
 </lalLaTeX> */
 
-typedef struct
+/*typedef struct
 tagStackSlideParams
 {
 	REAL8 **skyPosData;  
@@ -92,24 +111,72 @@ tagStackSlideParams
 	BarycenterInput *baryinput;
 	BOOLEAN divideSUMsByNumSTKs;
 }
-StackSlideParams;
+StackSlideParams;*/
+
+
+typedef struct
+tagStackSlideParams /* substituted tagStackSlideBinaryParams*/
+{
+	REAL8 **skyPosData;  
+	REAL8 **freqDerivData;  
+       	INT4 numSkyPosTotal;
+	INT4 numFreqDerivTotal;
+	BOOLEAN divideSUMsByNumSTKs;	
+	REAL8 f0STK;
+	REAL8 refFreq;
+	REAL8 f0SUM;
+	REAL8 tSTK;
+	REAL8 tSUM;
+	INT4  nBinsPerSUM;
+	INT4  numSTKs;
+	INT2 binaryFlag;
+	REAL8 dfSUM;
+	UINT4 gpsStartTimeSec;
+	UINT4 gpsStartTimeNan;
+	INT4 numSpinDown;
+	EphemerisData *edat;
+	LIGOTimeGPS *timeStamps;
+	BarycenterInput *baryinput;
+        REAL8 		SemiMajorAxis; /* orbital radius of binary (in sec) */
+        REAL8           OrbitalPeriod;         /* Period of binary (in sec) */
+        REAL8           OrbitalEccentricity;   /* Orbital eccentricy */
+        REAL8           ArgPeriapse;    /* Argument of Periapse */
+        UINT4 TperiapseSSBSec;
+	UINT4 TperiapseSSBNanoSec;
+	REAL8 deltaSMA;
+	REAL8 SMAcentral;
+        INT4 iFreqDeriv;
+}
+StackSlideParams; 
+
 
 typedef struct
 tagStackSlideSkyParams
 {
-	INT8            spinDwnOrder;   /* max spindown parameter order */
-	INT8            mObsSFT;        /* number of SFTs */
-	REAL8           tSFT;           /* timescale of SFT */
-	LIGOTimeGPS     *tGPS;          /* GPS time of 1st data sample of each SFT */
+	INT8		spinDwnOrder;	/* max spindown parameter order */
+	INT8		mObsSFT;	/* number of coherent timescales */
+	REAL8		tSFT;		/* timescale of SFT */
+	LIGOTimeGPS	*tGPS;		/* GPS time of 1st data sample of each SFT */
 	UINT4 gpsStartTimeSec;          /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
 	UINT4 gpsStartTimeNan;          /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
-	REAL8           *skyPos;        /* array of sky positions */
-	BarycenterInput *baryinput;
+	REAL8 		*skyPos; 	/* array of sky positions */
+        REAL8 		SemiMajorAxis;  /* orbital radius of binary (in sec) */
+        REAL8           OrbitalPeriod;         /* Period of binary (in sec) */
+        REAL8           OrbitalEccentricity;   /* Orbital eccentricy */
+        REAL8           ArgPeriapse;    /* Argument of Periapse */
+        LIGOTimeGPS     TperiapseSSB;   /* Instance of periapse passage measured in the SSB frame */
+	UINT4 gpsTperiapseSSBSec;
+	BarycenterInput *baryinput;	
 	EmissionTime *emit;
 	EarthState *earth;
 	EphemerisData *edat;
-}
+	REAL8 dInv;
+       }
 StackSlideSkyParams;
+
+
+
+
 
 typedef struct
 tagTdotsAndDeltaTs
@@ -119,14 +186,28 @@ tagTdotsAndDeltaTs
 }
 TdotsAndDeltaTs;
 
-void StackSlide(	LALStatus *status, 
+void StackSlideOld(	LALStatus *status, 
 			REAL4FrequencySeries **SUMData, 
 			REAL4FrequencySeries **STKData, 
+			StackSlideParams *params);
+
+void StackSlide(	LALStatus *status, 
+			REAL4FrequencySeries **SUMData, 
+			REAL4FrequencySeries **STKData,
+			TdotsAndDeltaTs *pTdotsAndDeltaTs,
 			StackSlideParams *params);
 
 void StackSlideComputeSky (LALStatus 	*status, 
 			TdotsAndDeltaTs 	*pTdotsAndDeltaTs,
 			StackSlideSkyParams 	*params);
+
+
+	
+void StackSlideComputeSkyBinary (LALStatus 	*status, 
+			TdotsAndDeltaTs 	*pTdotsAndDeltaTs, 
+			INT8 		iSkyCoh, 
+			StackSlideSkyParams 	*params);
+
 
 #ifdef __cplusplus
 }

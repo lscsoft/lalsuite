@@ -85,8 +85,8 @@ B_{s \alpha}=\mathcal{T}_{SFT}\dot{T}_{\alpha}\Delta T_{\alpha}^{s}
 
 </lalLaTeX> */
 
-#ifndef _STACKSLIDE_H
-#define _STACKSLIDE_H
+#ifndef _STACKSLIDEBINARY_H
+#define _STACKSLIDEBINARY_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -109,159 +109,19 @@ B_{s \alpha}=\mathcal{T}_{SFT}\dot{T}_{\alpha}\Delta T_{\alpha}^{s}
 #include <lal/DetResponse.h>
 #include <lal/DetectorSite.h>
 #include <lal/VectorOps.h>
+#include "StackSlide.h"
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
   
-  NRCSID (STACKSLIDEH, "$Id$");
-  
-   
-#define STACKSLIDEH_ENULL 1
-#define STACKSLIDEH_ENNUL 2
-#define STACKSLIDEH_ENEGA 4
-#define STACKSLIDEH_MSGENULL "Null Pointer"
-#define STACKSLIDEH_MSGENNUL "Non-Null Pointer"
-#define STACKSLIDEH_MSGENEGA "Bad Negative Value"
-#define STACKSLIDECOMPUTESKYH_ENULL 6
-#define STACKSLIDECOMPUTESKYH_ENNUL 8
-#define STACKSLIDECOMPUTESKYH_ENEGA 10
-#define STACKSLIDECOMPUTESKYH_MSGENULL "Null Pointer in StackSlideComputeSky"
-#define STACKSLIDECOMPUTESKYH_MSGENNUL "Non-Null Pointer in StackSlideComputeSky"
-#define STACKSLIDECOMPUTESKYH_MSGENEGA "Bad Negative Value in StackSlideComputeSky"
-/* </lalErrTable>  */
+  NRCSID (STACKSLIDEBINARYH, "$Id$");
 
-/* <lalLaTeX>
-\subsection*{Structures}
-
-\begin{verbatim}
-struct CSParams
-\end{verbatim}
-\index{\texttt{CSParams}}
-
-\noindent This structure contains the parameters for the \verb@ComputeSky()@ routine.  The parameters are:
-
-\begin{description}
-\item[\texttt{INT8 spinDwnOrder}] The maximal number of spindown parameters per spindown parameter set.
-\item[\texttt{INT8 mObsSFT}] The number of SFTs in the observation time.
-\item[\texttt{REAL8 tSFT}] The timescale of one SFT.
-\item[\texttt{LIGOTimeGPS *tGPS}] An array containing the GPS times of the first datum from each SFT.
-\item[\texttt{REAL8 *skyPos}] The array containing the sky patch coordinates.
-\item[\texttt{CHAR *sw}] A switch which turns modulation on/off. 
-\item[\texttt{void (*funcName)(REAL8 , REAL8 , REAL8 , REAL8 *, REAL8 *, const CHAR *sw)}] A function pointer, to make the use of different timing routines easy.
-\end{description}
-
-</lalLaTeX> */
-
-/* <lalErrTable file="ComputeSkyBinaryHErrorTable"> */
-#define COMPUTESKYBINARYH_ENULL 1
-#define COMPUTESKYBINARYH_ENNUL 2
-#define COMPUTESKYBINARYH_ERANG 3
-#define COMPUTESKYBINARYH_ENEGA 4
-#define COMPUTESKYBINARYH_MSGENULL "Null Pointer"
-#define COMPUTESKYBINARYH_MSGENNUL "Non-Null Pointer"
-#define COMPUTESKYBINARYH_MSGERANG "Input parameter out of range"
-#define COMPUTESKYBINARYH_MSGENEGA "Bad Negative Value"
-/* </lalErrTable>  */
-
-  
-#define ACC 1e-9
-
-typedef struct
-tagStackSlideParams /* substituted tagStackSlideBinaryParams*/
-{
-	REAL8 **skyPosData;  
-	REAL8 **freqDerivData;  
-       	INT4 numSkyPosTotal;
-	INT4 numFreqDerivTotal;
-	REAL8 f0STK;
-	REAL8 f0SUM;
-	REAL8 tSTK;
-	REAL8 tSUM;
-	INT4  nBinsPerSUM;
-	INT4  numSTKs;
-	INT2 binaryFlag;
-	REAL8 dfSUM;
-	UINT4 gpsStartTimeSec;
-	UINT4 gpsStartTimeNan;
-	INT4 numSpinDown;
-	EphemerisData *edat;
-	LIGOTimeGPS *timeStamps;
-	/* INT4 patchNumber; */
-	BarycenterInput *baryinput;
-        REAL8 		SemiMajorAxis;  /* orbital radius of binary (in sec) */
-        REAL8           OrbitalPeriod;         /* Period of binary (in sec) */
-        REAL8           OrbitalEccentricity;   /* Orbital eccentricy */
-        REAL8           ArgPeriapse;    /* Argument of Periapse */
-        UINT4 TperiapseSSBSec;
-	UINT4 TperiapseSSBNanoSec;
-	REAL8 deltaSMA;
-	REAL8 SMAcentral;
-        INT4 iFreqDeriv;
-}
-StackSlideParams; 
-
-
-typedef struct
-tagStackSlideSkyParams
-{
-	INT8		spinDwnOrder;	/* max spindown parameter order */
-	INT8		mObsSFT;	/* number of coherent timescales */
-	REAL8		tSFT;		/* timescale of SFT */
-	LIGOTimeGPS	*tGPS;		/* GPS time of 1st data sample of each SFT */
-	UINT4 gpsStartTimeSec;          /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
-	UINT4 gpsStartTimeNan;          /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
-	REAL8 		*skyPos; 	/* array of sky positions */
-        REAL8 		SemiMajorAxis;  /* orbital radius of binary (in sec) */
-        REAL8           OrbitalPeriod;         /* Period of binary (in sec) */
-        REAL8           OrbitalEccentricity;   /* Orbital eccentricy */
-        REAL8           ArgPeriapse;    /* Argument of Periapse */
-        LIGOTimeGPS     TperiapseSSB;   /* Instance of periapse passage measured in the SSB frame */
-	UINT4 gpsTperiapseSSBSec;
-	BarycenterInput *baryinput;	
-	EmissionTime *emit;
-	EarthState *earth;
-	EphemerisData *edat;
-	/*REAL8 alphaS-X1;
-	REAL8 deltaS-X1;*/
-	REAL8 dInv;
-       }
-StackSlideSkyParams;
-
-typedef struct
-tagTdotsAndDeltaTs
-{
-	REAL8		*vecTDots;	/* 1-d array of (dT/dt)'s for frequency calculation */
-	REAL8		**vecDeltaTs;	/* 2-d array of (T-T_0)'s for frequency calculation */
-}
-TdotsAndDeltaTs;
-
-
-void StackSlideBinary(     LALStatus *status, 
+  void StackSlideBinary(     LALStatus *status, 
 		       StackSlideParams *stksldParams,
 		       REAL4FrequencySeries **STKData,
 		       REAL4FrequencySeries **SUMData); /*make sure about the argument for the function*/
-
-void StackSlide(	LALStatus *status, 
-			REAL4FrequencySeries **SUMData, 
-			REAL4FrequencySeries **STKData,
-			TdotsAndDeltaTs *pTdotsAndDeltaTs,
-			StackSlideParams *params);
-
-
-	
-void StackSlideComputeSkyBinary (LALStatus 	*status, 
-			TdotsAndDeltaTs 	*pTdotsAndDeltaTs, 
-			INT8 		iSkyCoh, 
-			StackSlideSkyParams 	*params);
-		
-
-void StackSlideComputeSky (LALStatus 	*status, 
-			TdotsAndDeltaTs 	*pTdotsAndDeltaTs, 
-			/*INT8 		iSkyCoh, */
-			StackSlideSkyParams 	*params);
-
 
 
 
@@ -269,4 +129,4 @@ void StackSlideComputeSky (LALStatus 	*status,
 }
 #endif
 
-#endif /* _STACKSLIDE_H */
+#endif /* _STACKSLIDEBINARY_H */
