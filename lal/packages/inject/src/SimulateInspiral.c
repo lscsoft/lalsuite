@@ -84,7 +84,7 @@ defined and allocated outside of this block.
 
   /* Inject signal. */
   inspParams.timeC = output.epoch;
-  inspParams.timeC.gpsSeconts += DT;
+  inspParams.timeC.gpsSeconds += DT;
   inspParams.phiC = PHI; inspParams.mass1 = M1; inspParams.mass2 = M2;
   inspParams.signalAmplitude = SNR*SIGMA;
   inspParams.next = NULL;
@@ -170,11 +170,10 @@ LALGeneratePPNInspiral()      LALSSInjectTimeSeries()
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/SimulateInspiral.h>
 
-/* The lower cutoff frequency is defined as the point where the
-   sensitivity is reduced by a factor of CUTOFF, or as the frequency
-   FMIN (in Hz), whichever is higher. */
+/* The lower cutoff frequency, if not specified as an input paramster,
+   is defined as the point where the sensitivity is reduced by a
+   factor of SIMULATEINSPIRALC_CUTOFF: */
 #define SIMULATEINSPIRALC_CUTOFF (0.000001)
-#define SIMULATEINSPIRALC_FMIN   (10)
 
 NRCSID( SIMULATEINSPIRALC, "$Id$" );
 
@@ -187,7 +186,6 @@ LALSimulateInspiral( LALStatus                  *stat,
 { /* </lalVerbatim> */
   CHAR name[LALNameLength]; /* name of output time series */
   UINT4 i;                  /* an index */
-  REAL4 xferMax;            /* maximum amplitude of transfer function */
   COMPLEX8 *tData;          /* pointer to transfer function data */
   PPNParamStruc ppnParams;  /* the parameters of the inspiral */
   CoherentGW signal;        /* the signal generated */
@@ -233,31 +231,34 @@ LALSimulateInspiral( LALStatus                  *stat,
   dfInv = 1.0/transfer->deltaF;
   fOffset = -dfInv*transfer->f0;
 
-  /* Find the low-frequency cutoff of the transfer function, defined
-     as the point where the amplitude of the response drops to
+  /* If the low-frequency cutoff is not specified, find the point
+     where the amplitude of the response drops to
      SIMULATEINSPIRALC_CUTOFF times its maximum. */
-  xferMax = 0.0;
-  tData = transfer->data->data;
-  i = transfer->data->length;
-  while ( i-- ) {
-    REAL4 xfer = fabs( tData->re ) + fabs( tData->im );
-    if ( xfer > xferMax )
-      xferMax = xfer;
-    tData++;
+  memset( &ppnParams, 0, sizeof(PPNParamStruc) );
+  if ( params->fStart > 0.0 )
+    ppnParams.fStartIn = params->fStart;
+  else {
+    REAL4 xferMax = 0.0; /* maximum amplitude of transfer function */
+    tData = transfer->data->data;
+    i = transfer->data->length;
+    while ( i-- ) {
+      REAL4 xfer = fabs( tData->re ) + fabs( tData->im );
+      if ( xfer > xferMax )
+	xferMax = xfer;
+      tData++;
+    }
+    xferMax *= SIMULATEINSPIRALC_CUTOFF;
+    tData = transfer->data->data;
+    i = 0;
+    while ( fabs( tData->re ) + fabs( tData->im ) < xferMax ) {
+      tData++;
+      i++;
+    }
+    ppnParams.fStartIn = transfer->f0 + i*transfer->deltaF;
   }
-  xferMax *= SIMULATEINSPIRALC_CUTOFF;
-  tData = transfer->data->data;
-  i = 0;
-  while ( fabs( tData->re ) + fabs( tData->im ) < xferMax ) {
-    tData++;
-    i++;
-  }
-  ppnParams.fStartIn = transfer->f0 + i*transfer->deltaF;
-  if ( ppnParams.fStartIn < SIMULATEINSPIRALC_FMIN )
-    ppnParams.fStartIn = SIMULATEINSPIRALC_FMIN;
 
   /* Set up other parameters that won't change between injections. */
-  memset( &ppnParams, 0, sizeof(PPNParamStruc) );
+  memset( &signal, 0, sizeof(CoherentGW) );
   ppnParams.deltaT = output->deltaT;
   tData = transfer->data->data;
   strncpy( name, output->name, LALNameLength );
@@ -336,10 +337,12 @@ LALSimulateInspiral( LALStatus                  *stat,
       else
 	params->effDist = 1.0 / amp2;
     }
-    tc = 1000000000*params->timeC.gpsSeconds + params->timeC.gpsNanoSeconds;
-    tc -= (INT8)( 1000000000.0*ppnParams.tc );
-    signal.f->epoch.gpsSeconds = tc / 1000000000;
-    signal.f->epoch.gpsNanoSeconds = tc % 1000000000;
+    tc = params->timeC.gpsSeconds;
+    tc *= 1000000000L;
+    tc += params->timeC.gpsNanoSeconds;
+    tc -= (INT8)( 1000000000.0L*ppnParams.tc );
+    signal.f->epoch.gpsSeconds = tc / 1000000000L;
+    signal.f->epoch.gpsNanoSeconds = tc % 1000000000L;
 
     /* Inject the waveform into the output data, and reset everything
        for the next injection. */

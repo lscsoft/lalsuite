@@ -133,6 +133,12 @@ A negative number means the quantity is unspecified.  In general only
 one of these must be specified by the user; the simulation routine
 will set the other to be consistent with the first.
 
+\item[\texttt{REAL4 fStart}] The lower cutoff frequency at which
+waveform generation will begin, in Hz.  If $\leq0$, the cutoff
+frequency will be taken as the point where the instrument sensitivity
+function is $\sim10^{-6}$ of its optimal value, as determined from the
+transfer function.
+
 \item[\texttt{SimulateInspiralParamStruc *next}] Pointer to another
 inspiral event to be injected, or \verb@NULL@ if this is the last (or
 only) injection.
@@ -146,6 +152,7 @@ typedef struct tagSimulateInspiralParamStruc {
   REAL4 mass1, mass2;     /* binary masses (solar masses) */
   REAL4 signalAmplitude;  /* characteristic amplitude (counts) */
   REAL4 effDist;          /* effective distance (Mpc) */
+  REAL4 fStart;           /* waveform start frequency (Hz) */
   struct tagSimulateInspiralParamStruc *next; /* next node in list */
 } SimulateInspiralParamStruc;
 
