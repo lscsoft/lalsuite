@@ -356,6 +356,7 @@ int BOINC_ERR_EXIT(LALStatus  *stat, const char *func, const char *file, const i
 	    "\tfile %s, line %d\n",
 	    id, func, file, line );
     REPORTSTATUS(stat);
+    fprintf (stderr, "BOINC_ERR_EXIT: now calling boinc_finish()\n");
     boinc_finish( COMPUTEFSTAT_EXIT_LALCALLERROR+stat->statusCode );
   }
   /* should this call boinc_finish too?? */
@@ -3131,7 +3132,7 @@ void sighandler(int sig){
       if ( killcounter >= 4 )
 	{
 	  fprintf (stdout, "APP DEBUG: got 4th kill-signal, guess you mean it. Exiting now\n"); fflush(stdout);
-	  exit (COMPUTEFSTAT_EXIT_USER);
+	  boinc_finish(COMPUTEFSTAT_EXIT_USER);
 	}
       else
 	return;
