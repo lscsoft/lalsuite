@@ -1,3 +1,6 @@
+#ifndef _CFS_H
+#define _CFS_H
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <fcntl.h>
@@ -15,7 +18,7 @@
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/Date.h>
-#include "GenerateBinaryMesh_v1.h"
+
 #ifndef NOGLOB
 #include <glob.h>
 #endif
@@ -74,16 +77,6 @@ struct headertag {
     INT4  nsamples;
 } header;
   
-typedef struct BinaryTemplatetag {             /* BINARY-MOD - structure to store a single binary signal template */
-    REAL8       ProjSMaxis;
-    REAL8       Period;
-    LIGOTimeGPS TperiSSB;
-    REAL8       Eccentricity;
-    REAL8       ArgPeri;
-} BinaryTemplate;
 
-typedef struct BinaryTemplateBanktag {
-    BinaryMeshFileHeader BMFheader;
-    BinaryTemplate *BTB;       
-} BinaryTemplateBank;
 
+#endif
