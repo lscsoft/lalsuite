@@ -14,6 +14,7 @@ __version__ = '$Revision$'[11:-2]
 
 import string
 import exceptions
+import os
 from glue import pipeline
 
 
