@@ -22,7 +22,7 @@ timestamp color 1
 timestamp rot 0
 timestamp font 4
 timestamp char size 1.000000
-timestamp def "Fri Dec 22 12:22:35 2000"
+timestamp def "Wed Nov 21 18:58:36 2001"
 with g0
 g0 on
 g0 label off
@@ -34,10 +34,10 @@ g0 fixedpoint type 0
 g0 fixedpoint xy 0.000000, 0.000000
 g0 fixedpoint format general general
 g0 fixedpoint prec 6, 6
-    world xmin 0.4
-    world xmax 0.8
-    world ymin 0.115
-    world ymax 0.215
+    world xmin 0.15
+    world xmax 0.35
+    world ymin -5
+    world ymax 10
     stack world 0, 0, 0, 0 tick 0, 0, 0, 0
     view xmin 0.150000
     view xmax 0.850000
@@ -48,7 +48,7 @@ g0 fixedpoint prec 6, 6
     title size 1.500000
     title color 1
     title linewidth 1
-    subtitle "Templates in the t0-t2 and created in t0-t2 space"
+    subtitle ""
     subtitle font 4
     subtitle size 1.000000
     subtitle color 1
@@ -56,14 +56,14 @@ g0 fixedpoint prec 6, 6
     s0 symbol 0
     s0 symbol size 1.000000
     s0 symbol fill 0
-    s0 symbol color 1
+    s0 symbol color -1
     s0 symbol linewidth 1
     s0 symbol linestyle 1
     s0 symbol center false
     s0 symbol char 0
     s0 skip 0
     s0 linestyle 1
-    s0 linewidth 2
+    s0 linewidth 1
     s0 color 1
     s0 fill 0
     s0 fill with color
@@ -77,18 +77,18 @@ g0 fixedpoint prec 6, 6
     s0 errorbar riser linewidth 1
     s0 errorbar riser linestyle 1
     s0 xyz 0.000000, 0.000000
-    s0 comment "tmp1.dat"
+    s0 comment "RandomSignal.out"
     s1 symbol 0
     s1 symbol size 1.000000
     s1 symbol fill 0
-    s1 symbol color 2
+    s1 symbol color -1
     s1 symbol linewidth 1
     s1 symbol linestyle 1
     s1 symbol center false
     s1 symbol char 0
     s1 skip 0
     s1 linestyle 1
-    s1 linewidth 2
+    s1 linewidth 1
     s1 color 2
     s1 fill 0
     s1 fill with color
@@ -102,7 +102,7 @@ g0 fixedpoint prec 6, 6
     s1 errorbar riser linewidth 1
     s1 errorbar riser linestyle 1
     s1 xyz 0.000000, 0.000000
-    s1 comment "tmp1.dat"
+    s1 comment "RandomSignal.out"
     s2 symbol 0
     s2 symbol size 1.000000
     s2 symbol fill 0
@@ -113,7 +113,7 @@ g0 fixedpoint prec 6, 6
     s2 symbol char 0
     s2 skip 0
     s2 linestyle 1
-    s2 linewidth 2
+    s2 linewidth 1
     s2 color 3
     s2 fill 0
     s2 fill with color
@@ -127,60 +127,10 @@ g0 fixedpoint prec 6, 6
     s2 errorbar riser linewidth 1
     s2 errorbar riser linestyle 1
     s2 xyz 0.000000, 0.000000
-    s2 comment "tmp1.dat"
-    s3 symbol 2
-    s3 symbol size 0.290000
-    s3 symbol fill 1
-    s3 symbol color 4
-    s3 symbol linewidth 1
-    s3 symbol linestyle 1
-    s3 symbol center false
-    s3 symbol char 0
-    s3 skip 0
-    s3 linestyle 0
-    s3 linewidth 1
-    s3 color 4
-    s3 fill 0
-    s3 fill with color
-    s3 fill color 1
-    s3 fill pattern 0
-    s3 errorbar type BOTH
-    s3 errorbar length 1.000000
-    s3 errorbar linewidth 1
-    s3 errorbar linestyle 1
-    s3 errorbar riser on
-    s3 errorbar riser linewidth 1
-    s3 errorbar riser linestyle 1
-    s3 xyz 0.000000, 0.000000
-    s3 comment "tmp2.dat"
-    s4 symbol 9
-    s4 symbol size 0.960000
-    s4 symbol fill 0
-    s4 symbol color 10
-    s4 symbol linewidth 1
-    s4 symbol linestyle 1
-    s4 symbol center false
-    s4 symbol char 0
-    s4 skip 0
-    s4 linestyle 0
-    s4 linewidth 1
-    s4 color 10
-    s4 fill 0
-    s4 fill with color
-    s4 fill color 1
-    s4 fill pattern 0
-    s4 errorbar type BOTH
-    s4 errorbar length 1.000000
-    s4 errorbar linewidth 1
-    s4 errorbar linestyle 1
-    s4 errorbar riser on
-    s4 errorbar riser linewidth 1
-    s4 errorbar riser linestyle 1
-    s4 xyz 0.000000, 0.000000
-    s4 comment "tmp2.dat"
+    s2 comment "RandomSignal.out"
     xaxis  tick on
-    xaxis  tick major 0.1
-    xaxis  tick minor 0.05
+    xaxis  tick major 0.05
+    xaxis  tick minor 0.025
     xaxis  tick offsetx 0.000000
     xaxis  tick offsety 0.000000
     xaxis  label ""
@@ -233,8 +183,8 @@ g0 fixedpoint prec 6, 6
     xaxis  tick type auto
     xaxis  tick spec 0
     yaxis  tick on
-    yaxis  tick major 0.02
-    yaxis  tick minor 0.01
+    yaxis  tick major 5
+    yaxis  tick minor 2.5
     yaxis  tick offsetx 0.000000
     yaxis  tick offsety 0.000000
     yaxis  label ""
@@ -287,8 +237,8 @@ g0 fixedpoint prec 6, 6
     yaxis  tick type auto
     yaxis  tick spec 0
     zeroxaxis  tick on
-    zeroxaxis  tick major 0.1
-    zeroxaxis  tick minor 0.05
+    zeroxaxis  tick major 0.05
+    zeroxaxis  tick minor 0.025
     zeroxaxis  tick offsetx 0.000000
     zeroxaxis  tick offsety 0.000000
     zeroxaxis  label ""
@@ -341,8 +291,8 @@ g0 fixedpoint prec 6, 6
     zeroxaxis  tick type auto
     zeroxaxis  tick spec 0
     zeroyaxis  tick on
-    zeroyaxis  tick major 0.02
-    zeroyaxis  tick minor 0.01
+    zeroyaxis  tick major 5
+    zeroyaxis  tick minor 2.5
     zeroyaxis  tick offsetx 0.000000
     zeroyaxis  tick offsety 0.000000
     zeroyaxis  label ""
@@ -408,18 +358,16 @@ g0 fixedpoint prec 6, 6
     legend box color 1
     legend box linewidth 1
     legend box linestyle 1
-    legend x1 0.17033
-    legend y1 0.803954
+    legend x1 0.162088
+    legend y1 0.827018
     legend font 4
-    legend char size 1.000000
+    legend char size 0.700000
     legend linestyle 1
     legend linewidth 1
     legend color 1
-    legend string 0 "m1=mMin"
-    legend string 1 "m1+m2=MMax"
-    legend string 2 "m1=m2"
-    legend string 3 "Coarse Grid templates (0.9)"
-    legend string 4 "Signals with random paramers"
+    legend string 0 "Correlation of a signal with two orhogonal templates"
+    legend string 1 "Correlation of noise with two orthogonal templates"
+    legend string 2 "Correlation of noise+signal (at SNR 10) with two orthogonal templates"
     frame on
     frame type 0
     frame linestyle 1

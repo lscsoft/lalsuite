@@ -32,7 +32,17 @@ int main ()
    REAL8Vector psd;
    REAL8       df;
    INT4 i;
+   FILE *NoisePsdFile;
 
+   fprintf(stderr, "This test code computes the amplitude spectrum of 
+    GEO, LIGO, TAMA and VIRGO and writes them in NoisePSDTest.out in a
+    format suitable for display with xmgr/xgrace\n");
+
+   if ( (NoisePsdFile = fopen("NoisePSDTest.out", "w")) == NULL) 
+   {
+      fprintf(stderr, "Can't open output file\n");
+      exit(0);
+   }
    df = 1.0;
    psd.length = 8193;
 
@@ -41,23 +51,25 @@ int main ()
    LALNoiseSpectralDensity(&status, &psd, &LALGEOPsd, df); 
 
    for (i=2; i<(INT4)psd.length; i++) {
-        if (psd.data[i]) printf ("%d %e\n", i, psd.data[i]);
+        if (psd.data[i]) fprintf (NoisePsdFile, "%d %e\n", i, sqrt(psd.data[i]));
    }
-   printf("&\n");
+   fprintf(NoisePsdFile, "&\n");
    LALNoiseSpectralDensity(&status, &psd, &LALLIGOIPsd, df); 
    for (i=2; i<(INT4)psd.length; i++) {
-        if (psd.data[i]) printf ("%d %e\n", i, psd.data[i]);
+        if (psd.data[i]) fprintf (NoisePsdFile, "%d %e\n", i, sqrt(psd.data[i]));
    }
-   printf("&\n");
+   fprintf(NoisePsdFile, "&\n");
    LALNoiseSpectralDensity(&status, &psd, &LALVIRGOPsd, df); 
    for (i=2; i<(INT4)psd.length; i++) {
-        if (psd.data[i]) printf ("%d %e\n", i, psd.data[i]);
+        if (psd.data[i]) fprintf (NoisePsdFile, "%d %e\n", i, sqrt(psd.data[i]));
    }
-   printf("&\n");
+   fprintf(NoisePsdFile, "&\n");
    LALNoiseSpectralDensity(&status, &psd, &LALTAMAPsd, df); 
    for (i=2; i<(INT4)psd.length; i++) {
-        if (psd.data[i]) printf ("%d %e\n", i, psd.data[i]);
+        if (psd.data[i]) fprintf (NoisePsdFile, "%d %e\n", i, sqrt(psd.data[i]));
    }
+   LALFree(psd.data);
+   LALCheckMemoryLeaks();
   return 0;
 }
 

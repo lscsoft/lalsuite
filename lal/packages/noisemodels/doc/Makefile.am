@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-DOCSOURCEFILES = noisemodels.tex
+DOCSOURCEFILES = noisemodels.tex NoisePSDTest.pdf RandomSignal.pdf
 MOSTLYCLEANFILES = .dvi-dep
 CLEANFILES = main.dvi main.pdf main.ps
 EXTRA_DIST = $(DOCSOURCEFILES)

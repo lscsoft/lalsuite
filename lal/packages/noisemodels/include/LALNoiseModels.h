@@ -83,16 +83,16 @@ Detector;
 
 /*  <lalVerbatim file="LALNoiseModelsHS"> */
 typedef struct
-tagCorrelateIn {
+tagInspiralWaveCorrelateIn {
    REAL4Vector signal1, signal2;
    REAL8Vector psd;
    RealFFTPlan *revp;
 }
-CorrelateIn;
+InspiralWaveCorrelateIn;
 /* </lalVerbatim>  */
 
 /*  <lalLaTeX>
-\idx[Type]{CorrelateIn}
+\idx[Type]{InspiralWaveCorrelateIn}
 </lalLaTeX>  */
 
 /*  <lalVerbatim file="LALNoiseModelsHS"> */
@@ -114,11 +114,12 @@ typedef struct
 tagRandomInspiralSignalIn
 {
    InspiralTemplate param;
-   UINT8 useed;
-   REAL8 mMin, MMax, SignalAmp, NoiseAmp;
+   INT4 useed;
+   REAL8 mMin, MMax, SignalAmp, NoiseAmp, etaMin;
    INT4 type;
    REAL8Vector psd;
    RealFFTPlan *fwdp;
+   REAL8 t0Min, t0Max, tnMin, tnMax;
 } 
 RandomInspiralSignalIn;
 /*  </lalVerbatim>  */
@@ -129,31 +130,78 @@ RandomInspiralSignalIn;
 
 /*  <lalVerbatim file="LALNoiseModelsHS"> */
 typedef struct
-tagOverlapIn {
+tagInspiralWaveOverlapIn {
+   INT4 nBegin, nEnd;
    REAL4Vector signal;
    REAL8Vector psd;
    InspiralTemplate param;
    RealFFTPlan *fwdp, *revp;
 } 
-OverlapIn; 
+InspiralWaveOverlapIn; 
 /*  </lalVerbatim>  */
 
 /*  <lalLaTeX> 
-\idx[Type]{OverlapIn} 
+\idx[Type]{InspiralwaveOverlapIn} 
 </lalLaTeX>  */
 
 /*  <lalVerbatim file="LALNoiseModelsHS"> */
 typedef struct
-tagOverlapOut {
+tagInspiralWaveOverlapOut {
    REAL8 max, phase;
    INT4 bin;
 } 
-OverlapOut; 
+InspiralWaveOverlapOut; 
 /*  </lalVerbatim>  */
 
 /*  <lalLaTeX> 
-\idx[Type]{OverlapOut} 
+\idx[Type]{InspiralWaveOverlapOut} 
 </lalLaTeX>  */
+
+
+/*  <lalVerbatim file="LALNoiseModelsHS"> */
+typedef struct
+tagInspiralFindEventsIn {
+   INT4 nBegin, nEnd;
+   REAL8 Threshold;
+   REAL4Vector signal;
+   REAL8Vector psd;
+   InspiralTemplate param;
+   RealFFTPlan *fwdp, *revp;
+} 
+InspiralFindEventsIn; 
+/*  </lalVerbatim>  */
+
+/*  <lalLaTeX> 
+\index{\texttt{InspiralFindEventsIn}} 
+</lalLaTeX>  */
+
+/*  <lalVerbatim file="LALNoiseModelsHS"> */
+typedef struct
+tagInspiralFindEventsOut {
+   REAL8 max, phase;
+   INT4 bin;
+} 
+InspiralFindEventsOut; 
+/*  </lalVerbatim>  */
+
+/*  <lalLaTeX> 
+\index{\texttt{InspiralFindEventsOut}} 
+</lalLaTeX>  */
+
+
+/*  <lalVerbatim file="LALNoiseModelsHS"> */
+typedef struct
+tagStatsREAL4VectorOut
+{
+  REAL8 mean, var, stddev;
+} StatsREAL4VectorOut;
+/*  </lalVerbatim>  */
+
+/*  <lalLaTeX> 
+\index{\texttt{StatsREAL4VectorOut}} 
+</lalLaTeX>  */
+
+
 
 /*  <lalLaTeX>
 \vfill{\footnotesize\input{LALNoiseModelsHV}}
@@ -171,18 +219,18 @@ void LALNoiseSpectralDensity (LALStatus   *status,
                               REAL8       f);
 
 /* <lalLaTeX>
-\newpage\input{LALCorrelateC}
+\newpage\input{LALInspiralWaveCorrelateC}
 </lalLaTeX>  */
 
-void LALCorrelate (LALStatus   *status, 
+void LALInspiralWaveCorrelate (LALStatus   *status, 
                    REAL4Vector *output, 
-                   CorrelateIn in);
+                   InspiralWaveCorrelateIn in);
 
 /* <lalLaTeX>
-\newpage\input{LALNormaliseC}
+\newpage\input{LALInspiralWaveNormaliseC}
 </lalLaTeX>  */
 
-void LALNormalise (LALStatus   *status, 
+void LALInspiralWaveNormalise (LALStatus   *status, 
                    REAL4Vector *dh, 
                    REAL8       *norm, 
                    REAL8Vector psd);
@@ -221,27 +269,12 @@ void LALRandomInspiralSignal(LALStatus *status,
                              RandomInspiralSignalIn *randIn);
 
 /* <lalLaTeX>
-\newpage\input{LALGaussianNoiseC}
-</lalLaTeX>  */
-
-void LALGaussianNoise (LALStatus   *status,
-                       REAL4Vector *noisy, 
-                       UINT8       *seed);
-
-/* <lalLaTeX>
 \newpage\input{LALColoredNoiseC}
 </lalLaTeX>  */
 
 void LALColoredNoise (LALStatus   *status,
                       REAL4Vector *noisy, 
                       REAL8Vector psd);
-
-/* <lalLaTeX>
-\newpage\input{LALGaussianRandomNumberC}
-</lalLaTeX>  */
-
-void LALGaussianRandomNumber(LALStatus *status, 
-                             REAL4 *randnum);
 
 /* <lalLaTeX>
 \newpage\input{LALAddVectorsC}
@@ -257,8 +290,25 @@ void LALAddVectors(LALStatus *status,
 
 void LALInspiralWaveOverlap (LALStatus   *status,
                              REAL4Vector *output,
-                             OverlapOut  *overlapout,
-                             OverlapIn   *overlapin);
+                             InspiralWaveOverlapOut  *overlapout,
+                             InspiralWaveOverlapIn   *overlapin);
+
+/* <lalLaTeX>
+\newpage\input{LALInspiralFindEventsC}
+</lalLaTeX>  */
+
+void LALInspiralFindEvents (LALStatus   *status,
+                            INT4  *nEvents,
+                            InspiralFindEventsOut  **findeventsout,
+                            InspiralFindEventsIn   *findeventsin);
+
+/* <lalLaTeX>
+\newpage\input{LALStatsREAL4VectorC}
+</lalLaTeX>  */
+
+void LALStatsREAL4Vector(LALStatus *status, 
+                         StatsREAL4VectorOut *out, 
+                         REAL4Vector *vector);
 
 #ifdef  __cplusplus
 }

@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <lal/LALInspiral.h>
 
-INT4 lalDebugLevel=4;
+INT4 lalDebugLevel=0;
 
 int main () {
    static InspiralTemplate p;
@@ -17,8 +17,8 @@ int main () {
 /**************************************************/
 /* Change the parameters of the search space here */
 /**************************************************/
-   mmin = 5.0;
-   Mmax = 40.;
+   mmin = 3.0;
+   Mmax = 20.;
    mmin = log10(mmin);
    Mmax = log10(Mmax);
 
@@ -38,8 +38,8 @@ int main () {
       if (p.totalMass > totalMmax) break;
       printf("%e %e %e %e %e %e %e %e %e %e %e\n", 
          p.t0,
-         p.t2,
          p.t3,
+         p.t2,
          p.mass2,
          p.mass1, 
          p.t4,
@@ -58,8 +58,8 @@ int main () {
       LALInspiralParameterCalc (&status, &p);
       printf("%e %e %e %e %e %e %e %e %e %e %e\n", 
          p.t0,
-         p.t2,
          p.t3,
+         p.t2,
          p.mass2,
          p.mass1, 
          p.t4,
@@ -77,8 +77,8 @@ int main () {
       LALInspiralParameterCalc (&status, &p);
       printf("%e %e %e %e %e %e %e %e %e %e %e\n", 
          p.t0,
-         p.t2,
          p.t3,
+         p.t2,
          p.mass2,
          p.mass1, 
          p.t4,
