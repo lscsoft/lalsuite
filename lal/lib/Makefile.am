@@ -31,6 +31,7 @@ liblal_la_LIBADD = \
            $(top_builddir)/packages/factories/src/libfactories.la       \
            $(top_builddir)/packages/vectorops/src/libvectorops.la       \
            $(top_builddir)/packages/utilities/src/libutilities.la       \
+           $(top_builddir)/packages/inject/src/libinject.la             \
            $(top_builddir)/packages/date/src/libdate.la                 \
            $(top_builddir)/packages/tdfilter/src/libtdfilter.la         \
            $(top_builddir)/packages/window/src/libwindow.la             \
@@ -45,5 +46,4 @@ liblal_la_LIBADD = \
            $(top_builddir)/packages/fct/src/libfct.la                   \
            $(top_builddir)/packages/burstsearch/src/libburstsearch.la   \
            $(top_builddir)/packages/tracksearch/src/libtracksearch.la   \
-           $(top_builddir)/packages/inject/src/libinject.la             \
            $(PKG_FRAME) $(PKG_MPI) $(PKG_FRAMEANDMPI)

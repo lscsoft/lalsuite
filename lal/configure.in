@@ -132,6 +132,11 @@ AC_OUTPUT([Makefile                               \
            packages/vectorops/include/Makefile    \
            packages/vectorops/src/Makefile        \
            packages/vectorops/test/Makefile       \
+           packages/inject/Makefile               \
+           packages/inject/doc/Makefile           \
+           packages/inject/include/Makefile       \
+           packages/inject/src/Makefile           \
+           packages/inject/test/Makefile          \
            packages/utilities/Makefile            \
            packages/utilities/doc/Makefile        \
            packages/utilities/include/Makefile    \
@@ -222,10 +227,5 @@ AC_OUTPUT([Makefile                               \
            packages/tracksearch/include/Makefile  \
            packages/tracksearch/src/Makefile      \
            packages/tracksearch/test/Makefile     \
-           packages/inject/Makefile               \
-           packages/inject/doc/Makefile           \
-           packages/inject/include/Makefile       \
-           packages/inject/src/Makefile           \
-           packages/inject/test/Makefile          \
          ],[chmod +x doc/laldoc/ldoc-pkg.sh])
 
