@@ -209,15 +209,15 @@ LALInspiralSpinBankMetric(
   J17 = moments->j[17];
                                                                                                                                                 
   /* Set metric components as functions of moments. */
-  metric->data[0] = (REAL4) (1.5)*(J17-J12*J12-(J9-J4*J12)*(J9-J4*J12)/(J1-J4*J4));
-  metric->data[1] = (REAL4) (1.5)*(J14-J9*J12-(J6-J4*J9)*(J9-J4*J12)/(J1-J4*J4));
+  metric->data[0] = (REAL4) 0.5*(J17-J12*J12-(J9-J4*J12)*(J9-J4*J12)/(J1-J4*J4));
+  metric->data[1] = (REAL4) 0.5*(J14-J9*J12-(J6-J4*J9)*(J9-J4*J12)/(J1-J4*J4));
   metric->data[2] = (REAL4) 0;
-  metric->data[3] = (REAL4) (1.5)*(J14-J9*J12-(J6-J4*J9)*(J9-J4*J12)/(J1-J4*J4));
-  metric->data[4] = (REAL4) (1.5)*(J11-J9*J9-(J6-J4*J9)*(J6-J4*J9)/(J1-J4*J4));
+  metric->data[3] = (REAL4) 0.5*(J14-J9*J12-(J6-J4*J9)*(J9-J4*J12)/(J1-J4*J4));
+  metric->data[4] = (REAL4) 0.5*(J11-J9*J9-(J6-J4*J9)*(J6-J4*J9)/(J1-J4*J4));
   metric->data[5] = (REAL4) 0.0;
   metric->data[6] = (REAL4) 0.0;
   metric->data[7] = (REAL4) 0.0;
-  metric->data[8] = (REAL4) J11-J9*J9-(J6-J4*J9)*(J6-J4*J9)/(J1-J4*J4);
+  metric->data[8] = (REAL4) 0.5*(J11-J9*J9-(J6-J4*J9)*(J6-J4*J9)/(J1-J4*J4));
   
   DETATCHSTATUSPTR( status );
   RETURN( status );
