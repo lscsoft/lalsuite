@@ -782,6 +782,18 @@ int main(int argc, char *argv[]){
     SUB( LALSignalToSFTs(&status, &outputSFTs, signalTseries, &sftParams), 
 	 &status);
 	   
+   /* ****************************************************************/
+    /* writing the parameters into fpPar, following the format
+       MCloopId  I.f0 H.f0 I.f1 H.f1 I.alpha H.alpha I.delta H.delta I.phi0  I.psi
+       (not cos iota)  */
+    /* ****************************************************************/   
+    fprintf(fpPar," %d %f %f %g %g %f %f %f %f %f %f ", 
+	    MCloopId, pulsarInject.f0, pulsarTemplate.f0,
+	    pulsarInject.spindown.data[0], pulsarTemplate.spindown.data[0],
+	    pulsarInject.longitude, pulsarTemplate.longitude,
+	    pulsarInject.latitude, pulsarTemplate.latitude,
+	    pulsarInject.phi0, pulsarInject.psi
+	    );
     /* ****************************************************************/
     /* Computing the frequency path f(t) = f0(t)* (1+v/c.n)  for */
     /*  all the different templates */
@@ -884,15 +896,9 @@ int main(int argc, char *argv[]){
     /* ****************************************************************/
     /* writing the parameters into fpPar, following the format
        MCloopId  I.f0 H.f0 I.f1 H.f1 I.alpha H.alpha I.delta H.delta I.phi0  I.psi
-       (not cos iota)  */
+       (not cos iota) and now adding the 2 control */
     /* ****************************************************************/   
-    fprintf(fpPar," %d %f %f %g %g %f %f %f %f %f %f %d %d\n", 
-	    MCloopId, pulsarInject.f0, pulsarTemplate.f0,
-	    pulsarInject.spindown.data[0], pulsarTemplate.spindown.data[0],
-	    pulsarInject.longitude, pulsarTemplate.longitude,
-	    pulsarInject.latitude, pulsarTemplate.latitude,
-	    pulsarInject.phi0, pulsarInject.psi, controlN, controlNH
-	    );
+    fprintf(fpPar,"  %d %d \n",  controlN, controlNH );
     
     LALFree(signalTseries->data->data);
     LALFree(signalTseries->data);
