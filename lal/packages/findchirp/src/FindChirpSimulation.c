@@ -221,9 +221,9 @@ LALFindChirpInjectSignals (
     /* input fields */
     ppnParams.mTot = thisEvent->totalMass;
     ppnParams.eta  = thisEvent->eta;
-    ppnParams.d    = thisEvent->dist * LAL_PC_SI * 1000.0;
-    ppnParams.inc  = thisEvent->inclination * LAL_PI / 180.0;
-    ppnParams.phi  = thisEvent->coaPhase * LAL_PI / 180.0;
+    ppnParams.d    = thisEvent->dist;
+    ppnParams.inc  = thisEvent->inclination;
+    ppnParams.phi  = thisEvent->coaPhase;
 
     /* passed fields */
     ppnParams.position.longitude   = thisEvent->longitude;
@@ -261,9 +261,12 @@ LALFindChirpInjectSignals (
     /* if the waveform lies within the time series, inject it */
     if ( waveformStartTime >= chanStartTime )
     {
+      /* clear the signal structure */
+      memset( &signal, 0, sizeof(REAL4TimeSeries) );
+
       /* set the start times for injection */
       LALINT8toGPS( status->statusPtr, 
-          &(signal.epoch), waveformStartTime );
+          &(signal.epoch), &waveformStartTime );
       CHECKSTATUSPTR( status );
       memcpy( &(waveform.a->epoch), &(signal.epoch), 
           sizeof(LIGOTimeGPS) );
@@ -271,6 +274,11 @@ LALFindChirpInjectSignals (
           sizeof(LIGOTimeGPS) );
       memcpy( &(waveform.phi->epoch), &(signal.epoch), 
           sizeof(LIGOTimeGPS) );
+
+      /* set the parameters for the signal time series */
+      signal.deltaT = chan->deltaT;
+      signal.f0 = chan->f0;
+      signal.sampleUnits = lalADCCountUnit;
 
       /* simulate the detectors response to the inspiral */
       LALSCreateVector( status->statusPtr, &(signal.data), 
