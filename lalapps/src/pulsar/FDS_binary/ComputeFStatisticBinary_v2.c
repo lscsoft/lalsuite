@@ -19,6 +19,7 @@
 
 
 #include "ComputeFStatisticBinary_v2.h"    /* BINARY-MOD - Using modified header file */
+#include "GenerateBinaryMesh_v1.h"
 #include "clusters.h"
 #include "../FDS_isolated/DopplerScan.h"
 
