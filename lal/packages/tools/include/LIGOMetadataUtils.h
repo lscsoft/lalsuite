@@ -64,10 +64,20 @@ NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 #define LIGOMETADATAUTILSH_ENNUL 2
 #define LIGOMETADATAUTILSH_ETIME 3
 #define LIGOMETADATAUTILSH_ECOOR 4
+#define LIGOMETADATAUTILSH_ESSGAP 5
+#define LIGOMETADATAUTILSH_ESSDUB 6
+#define LIGOMETADATAUTILSH_ETEST 7
+#define LIGOMETADATAUTILSH_EDET 8
 #define LIGOMETADATAUTILSH_MSGENULL "Null pointer"
 #define LIGOMETADATAUTILSH_MSGENNUL "Non-null pointer"
 #define LIGOMETADATAUTILSH_MSGETIME "Invalid GPS Time"
 #define LIGOMETADATAUTILSH_MSGECOOR "Invalid Coordinate System"
+#define LIGOMETADATAUTILSH_MSGESSGAP "Gap in Search Summary Input"
+#define LIGOMETADATAUTILSH_MSGESSDUB "Repeated data in Search Summary Input"
+#define LIGOMETADATAUTILSH_MSGETEST "Unknown parameter test for sorting events"
+#define LIGOMETADATAUTILSH_MSGEDET "Unknown detector"
+
+
 /* </lalErrTable> */
 
 #if 0
@@ -91,6 +101,17 @@ typedef enum
   mchirp_and_eta 
 } 
 SnglInspiralParameterTest;
+
+
+typedef enum 
+{
+  unspecified_data_type, 
+  playground_only,
+  exclude_play, 
+  all_data
+}
+DataType 
+;
 
 
 typedef struct
@@ -155,6 +176,71 @@ LALPlaygroundInSearchSummary (
     );
 
 
+void
+LALTimeCheckSearchSummary (
+    LALStatus          *status,
+    SearchSummaryTable *ssTable,
+    LIGOTimeGPS        *startTime,
+    LIGOTimeGPS        *endTime
+    );
+ 
+int
+LALCompareSearchSummaryByInTime (
+    const void *a,
+    const void *b
+    );
+
+int
+LALCompareSearchSummaryByOutTime (
+    const void *a,
+    const void *b
+    );
+
+void
+LALTimeSortSearchSummary (
+    LALStatus            *status,
+    SearchSummaryTable  **summHead,
+    int(*comparfunc)    (const void *, const void *)
+    );
+
+void
+LALIfoScanSearchSummary(
+    LALStatus                  *status,
+    SearchSummaryTable        **output,
+    SearchSummaryTable         *input,
+    CHAR                       *ifo
+    );
+
+void
+LALCheckOutTimeFromSearchSummary (
+    LALStatus            *status,
+    SearchSummaryTable   *summList,
+    CHAR                 *ifo,
+    LIGOTimeGPS          *startTime,
+    LIGOTimeGPS          *endTime
+    );
+
+void
+LALIfoScanSummValue(
+    LALStatus                  *status,
+    SummValueTable            **output,
+    SummValueTable             *input,
+    CHAR                       *ifo
+    );
+
+int
+LALCompareSummValueByTime (
+    const void *a,
+    const void *b
+    );
+
+void
+LALTimeSortSummValue (
+    LALStatus            *status,
+    SummValueTable      **summHead,
+    int(*comparfunc)    (const void *, const void *)
+    );
+
 /*
  *
  * inspiral specific functions
@@ -176,13 +262,13 @@ LALCompareSnglInspiralByMass (
     );
 
 int
-LALCompareSnglInspiralByTime (
+LALCompareSnglInspiralByPsi (
     const void *a,
     const void *b
     );
 
 int
-LALCompareSnglInspiralByPsi (
+LALCompareSnglInspiralByTime (
     const void *a,
     const void *b
     );
@@ -196,20 +282,79 @@ LALCompareSnglInspiral (
     );
 
 void
-LALCompareSnglInspiralBCV (
-    LALStatus                *status,
-    SnglInspiralTable        *aPtr,
-    SnglInspiralTable        *bPtr,
-    SnglInspiralAccuracy     *params
-    ); 
-
-void
 LALClusterSnglInspiralTable (
     LALStatus                  *status,
     SnglInspiralTable          *inspiralEvent,
     INT8                        dtimeNS,
     SnglInspiralClusterChoice   clusterchoice
     );
+
+void
+LALTimeCutSingleInspiral(
+    LALStatus                  *status,
+    SnglInspiralTable         **eventHead,
+    LIGOTimeGPS                *startTime,
+    LIGOTimeGPS                *endTime
+    );
+
+void
+LALIfoScanSingleInspiral(
+    LALStatus                  *status,
+    SnglInspiralTable         **output,
+    SnglInspiralTable          *input,
+    CHAR                       *ifo
+    );
+
+
+void
+LALPlayTestSingleInspiral(
+    LALStatus                  *status,
+    SnglInspiralTable         **eventHead,
+    DataType                   *dataType
+    );
+
+
+void
+LALCreateTrigBank(
+    LALStatus                  *status,
+    SnglInspiralTable         **eventHead,
+    SnglInspiralParameterTest  *test
+    );
+
+void
+LALSnglInspiralLookup(
+    LALStatus                  *status,
+    SnglInspiralTable         **snglInspiralPtr,
+    CoincInspiralTable         *coincInspiral,
+    char                       *ifo 
+    );
+
+
+void
+LALAddSnglInspiralToCoinc(
+    LALStatus                  *status,
+    CoincInspiralTable        **coincPtr,
+    SnglInspiralTable          *snglInspiral
+    );
+
+
+void
+LALCreateNewCoinc(
+    LALStatus                  *status,
+    CoincInspiralTable        **coincPtr,
+    CoincInspiralTable         *coincInspiral,
+    SnglInspiralTable          *snglInspiral
+    );
+
+
+void
+LALSnglInspiralCoincTest(
+    LALStatus                  *status,
+    CoincInspiralTable         *coincInspiral,
+    SnglInspiralTable          *snglInspiral,
+    SnglInspiralAccuracy       *errorParams
+    );
+
 
 void
 LALGalacticInspiralParamsToSimInspiralTable(

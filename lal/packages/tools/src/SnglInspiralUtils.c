@@ -236,7 +236,6 @@ LALCompareSnglInspiral (
   REAL4 dm1, dm2;
   REAL4 dmchirp, deta;
   REAL4 dpsi0, dpsi3;
-  REAL4 sigmaRatio;
 
   INITSTATUS( status, "LALCompareSnglInspiral", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -390,6 +389,542 @@ LALClusterSnglInspiralTable (
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
+
+
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void
+LALTimeCutSingleInspiral(
+    LALStatus                  *status,
+    SnglInspiralTable         **eventHead,
+    LIGOTimeGPS                *startTime,
+    LIGOTimeGPS                *endTime
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable    *inspiralEventList = NULL;
+  SnglInspiralTable    *thisEvent = NULL;
+  SnglInspiralTable    *prevEvent = NULL;
+
+
+  INITSTATUS( status, "LALTimeCutSingleInspiral", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+
+
+
+  /* Remove all the triggers before and after the requested */
+  /* gps start and end times */
+
+  thisEvent = *eventHead;
+
+  while ( thisEvent )
+  {
+    SnglInspiralTable *tmpEvent = thisEvent;
+    thisEvent = thisEvent->next;
+
+    if ( tmpEvent->end_time.gpsSeconds >= startTime->gpsSeconds &&
+	tmpEvent->end_time.gpsSeconds < endTime->gpsSeconds )
+    {
+      /* keep this template */
+      if ( ! inspiralEventList  )
+      {
+	inspiralEventList = tmpEvent;
+      }
+      else
+      {
+	prevEvent->next = tmpEvent;
+      }
+      tmpEvent->next = NULL;
+      prevEvent = tmpEvent;
+    }
+    else
+    {
+      /* discard this template */
+      LALFree( tmpEvent );
+    }
+  }
+  *eventHead = inspiralEventList; 
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+}  
+
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void
+LALIfoScanSingleInspiral(
+    LALStatus                  *status,
+    SnglInspiralTable         **output,
+    SnglInspiralTable          *input,
+    CHAR                       *ifo
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable    *thisEvent = NULL;
+
+  INITSTATUS( status, "LALIfoCutSingleInspiral", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  /* check that output is null and input non-null */
+  ASSERT( !output, status, 
+      LIGOMETADATAUTILSH_ENNUL, LIGOMETADATAUTILSH_MSGENNUL );
+  ASSERT( input, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+
+  /* Scan through a linked list of sngl_inspiral tables and return a
+     pointer to the head of a linked list of tables for a specific IFO */
+
+  for( thisEvent = input; thisEvent; thisEvent = thisEvent->next );
+  {
+    SnglInspiralTable *keptEvent = NULL;
+
+    if ( !strcmp(thisEvent->ifo, ifo) ) 
+    {
+      /* IFOs match so write this entry to the output table */
+      if ( ! output  )
+      {
+	*output = keptEvent = (SnglInspiralTable *) 
+	  LALMalloc( sizeof(SnglInspiralTable) );
+      }
+      else
+      {
+	keptEvent = keptEvent->next = (SnglInspiralTable *) 
+	  LALMalloc( sizeof(SnglInspiralTable) );
+      }
+      keptEvent = thisEvent;
+      keptEvent->next = NULL;
+    }
+  }
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+}  
+
+
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void
+LALPlayTestSingleInspiral(
+    LALStatus                  *status,
+    SnglInspiralTable         **eventHead,
+    DataType                   *dataType
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable    *inspiralEventList = NULL;
+  SnglInspiralTable    *thisEvent = NULL;
+  SnglInspiralTable    *prevEvent = NULL;
+
+  INT8 triggerTime = 0;
+  INT4 isPlay = 0;
+  INT4 numTriggers;
+
+  INITSTATUS( status, "LALPlayTestSingleInspiral", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  /* Remove all the triggers which are not of the desired type */
+
+  numTriggers = 0;
+  thisEvent = *eventHead;
+
+  if ( (*dataType == playground_only) || (*dataType == exclude_play) )
+  {
+    while ( thisEvent )
+    {
+      SnglInspiralTable *tmpEvent = thisEvent;
+      thisEvent = thisEvent->next;
+
+      LALGPStoINT8( status->statusPtr, &triggerTime, &(tmpEvent->end_time) );
+      LALINT8NanoSecIsPlayground( status->statusPtr, &isPlay, &triggerTime );
+
+      if ( ( (*dataType == playground_only)  && isPlay ) || 
+	  ( (*dataType == exclude_play) && ! isPlay) )
+      {
+	/* keep this trigger */
+	if ( ! inspiralEventList  )
+	{
+	  inspiralEventList = tmpEvent;
+	}
+	else
+	{
+	  prevEvent->next = tmpEvent;
+	}
+	tmpEvent->next = NULL;
+	prevEvent = tmpEvent;
+	++numTriggers;
+      }
+      else
+      {
+	/* discard this template */
+	LALFree( tmpEvent );
+      }
+    }
+    *eventHead = inspiralEventList; 
+    if ( *dataType == playground_only )
+    {
+      /*LALInfo( status, "Kept %d playground triggers \n", numTriggers );*/
+    }
+    else if ( *dataType == exclude_play )
+    {
+      /*LALInfo( status, "Kept %d non-playground triggers \n", numTriggers );*/
+    }
+  }
+  else if ( *dataType == all_data )
+  {
+    LALInfo( status, "Keeping all triggers since all_data specified\n" );
+  }
+  else
+  {
+    LALInfo( status, "Unknown data type, returning no triggers\n" );
+    *eventHead = NULL;
+  }
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+}  
+
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void
+LALCreateTrigBank(
+    LALStatus                  *status,
+    SnglInspiralTable         **eventHead,
+    SnglInspiralParameterTest  *test
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable    *trigBankList = NULL;
+  SnglInspiralTable   **eventHandle = NULL;
+  SnglInspiralTable    *thisEvent = NULL;
+  SnglInspiralTable    *prevEvent = NULL;
+
+  INT4 numTriggers = 0;
+  INT4 numEvents = 0;
+  INT4 i = 0;
+
+  INITSTATUS( status, "LALCreateTrigBank", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+
+  /* count the number of events */
+  for ( thisEvent = *eventHead; thisEvent; thisEvent = thisEvent->next )
+  {
+    ++numEvents;
+  }
+
+  eventHandle = (SnglInspiralTable **) 
+    LALCalloc( numEvents, sizeof(SnglInspiralTable *) );
+
+  for ( i = 0, thisEvent = *eventHead; i < numEvents; 
+      ++i, thisEvent = thisEvent->next )
+  {
+    eventHandle[i] = thisEvent;
+  }
+
+  if ( *test == m1_and_m2 )
+  {	    
+    LALInfo( status, "sorting events by mass... " ); 
+    qsort( eventHandle, numEvents, sizeof(eventHandle[0]), 
+	LALCompareSnglInspiralByMass );
+    LALInfo( status, "done\n" ); 
+  }
+  else if ( *test == psi0_and_psi3 )
+  { 
+    LALInfo( status, "sorting events by psi... " );
+    qsort( eventHandle, numEvents, sizeof(eventHandle[0]),
+	LALCompareSnglInspiralByPsi );
+    LALInfo( status, "done\n" );
+  }
+  else
+  {
+    ABORT( status, LIGOMETADATAUTILSH_ETEST, LIGOMETADATAUTILSH_MSGETEST );
+  }
+
+  /* create a linked list of sorted templates */
+  LALInfo( status, "discarding template with duplicate masses: " );
+
+  numTriggers = 0;
+  trigBankList = prevEvent = eventHandle[0];
+  if ( trigBankList ) numTriggers = 1;
+
+  for ( i = 1; i < numEvents; ++i )
+  {
+    if ( *test == m1_and_m2 )
+    {
+      if ( (prevEvent->mass1 == eventHandle[i]->mass1)  &&
+	  (prevEvent->mass2 == eventHandle[i]->mass2) ) 
+      {
+	/* discard the event as it is a duplicate */
+	LALFree( eventHandle[i] );
+	LALInfo( status, "-" );
+      }
+      else
+      {
+	/* add the event to the linked list */
+	prevEvent = prevEvent->next = eventHandle[i];
+	LALInfo( status, "+" );
+      }
+    }
+    else if ( *test == psi0_and_psi3 )
+    {
+      if ( (prevEvent->psi0 == eventHandle[i]->psi0)  &&
+	  (prevEvent->psi3 == eventHandle[i]->psi3) )
+      {
+	/* discard the event as it is a duplicate */
+	LALFree( eventHandle[i] );
+	LALInfo( status, "-" );
+      }
+      else
+      {
+	/* add the event to the linked list */
+	prevEvent = prevEvent->next = eventHandle[i];
+	LALInfo( status, "+" );
+      }
+    }
+    else
+    {
+      ABORT( status, LIGOMETADATAUTILSH_ETEST, LIGOMETADATAUTILSH_MSGETEST );
+    }
+  }
+
+  /* if the list is non-emnpty, make sure it is terminated */
+  if ( prevEvent ) prevEvent->next = NULL;
+
+  LALFree( eventHandle );
+
+  /* return the head of the linked list in eventHead */
+
+  *eventHead = trigBankList; 
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+
+/* Function to return memory address of pointer to IFO inspiral table*/
+void
+LALSnglInspiralLookup(
+    LALStatus          *status,
+    SnglInspiralTable **snglInspiralPtr,
+    CoincInspiralTable *coincInspiral,
+    char               *ifo 
+    )
+{
+  INITSTATUS( status, "LALSnglInspiralLookup", SNGLINSPIRALUTILSC );
+  
+  switch ( ifo[0] ) 
+  {
+    case 'G':
+      snglInspiralPtr = &(coincInspiral->G1Inspiral);
+      break;
+
+    case 'H':
+      if ( !strcmp( ifo, "H1" ) )
+      {
+	snglInspiralPtr = &(coincInspiral->H1Inspiral);
+      }
+      else if (!strcmp( ifo, "H2" ) )
+      {
+	snglInspiralPtr = &(coincInspiral->H2Inspiral);
+      }
+      else
+      {
+	/* Invalid Hanford Detector */
+	snglInspiralPtr = NULL;
+      }	
+      break;
+
+    case 'L':
+      snglInspiralPtr = &(coincInspiral->L1Inspiral);
+      break;
+
+    case 'T':
+      snglInspiralPtr = &(coincInspiral->T1Inspiral);
+      break;
+
+    case 'V':
+      snglInspiralPtr = &(coincInspiral->V1Inspiral);
+      break;
+
+    default:
+      /* Invalid Detector Site */
+      snglInspiralPtr = NULL;
+  }
+
+  RETURN (status);
+}
+
+
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void
+LALAddSnglInspiralToCoinc(
+    LALStatus                  *status,
+    CoincInspiralTable        **coincPtr,
+    SnglInspiralTable          *snglInspiral
+    )
+/* </lalVerbatim> */
+{
+  CoincInspiralTable  *coincInspiral;
+  INITSTATUS( status, "LALAddSnglInspiralToCoinc", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  ASSERT( coincPtr, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  ASSERT( *coincPtr, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  ASSERT( snglInspiral, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+
+
+  coincInspiral = *coincPtr;
+
+  switch ( (snglInspiral->ifo)[0] ) 
+  {
+    case 'G':
+      coincInspiral->G1Inspiral = snglInspiral;
+      break;
+
+    case 'H':
+      if ( !strcmp( snglInspiral->ifo, "H1" ) )
+      {
+	coincInspiral->H1Inspiral = snglInspiral;
+      }
+      else if (!strcmp( snglInspiral->ifo, "H2" ) )
+      {
+	coincInspiral->H2Inspiral = snglInspiral;
+      }
+      else
+      {
+	/* Invalid Hanford Detector */
+	ABORT( status, LIGOMETADATAUTILSH_EDET, LIGOMETADATAUTILSH_MSGEDET );
+      }	
+      break;
+
+    case 'L':
+      coincInspiral->L1Inspiral = snglInspiral;
+      break;
+
+    case 'T':
+      coincInspiral->T1Inspiral = snglInspiral;
+      break;
+
+    case 'V':
+      coincInspiral->V1Inspiral = snglInspiral;
+      break;
+
+    default:
+      /* Invalid Detector Site */
+      ABORT( status, LIGOMETADATAUTILSH_EDET, LIGOMETADATAUTILSH_MSGEDET );
+  }
+
+  ++(coincInspiral->numIfos);
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void
+LALCreateNewCoinc(
+    LALStatus                  *status,
+    CoincInspiralTable        **coincPtr,
+    CoincInspiralTable         *coincInspiral,
+    SnglInspiralTable          *snglInspiral
+    )
+/* </lalVerbatim> */
+{
+  CoincInspiralTable  *newCoincInspiral;
+  INITSTATUS( status, "LALAddSnglInspiralToCoinc", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  ASSERT( coincPtr, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  ASSERT( *coincPtr, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  ASSERT( snglInspiral, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+
+
+  /* allocate memory for the new IFO coinc table */
+  newCoincInspiral = (CoincInspiralTable *) 
+    LALCalloc( 1, sizeof(CoincInspiralTable) );
+
+
+  /* copy over the single IFO event */
+  memcpy( newCoincInspiral, coincInspiral, sizeof(CoincInspiralTable) );
+
+
+  /* add the additional sngl_inspiral to the new coinc */
+  LALAddSnglInspiralToCoinc( status->statusPtr, &newCoincInspiral, 
+      snglInspiral );
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void
+LALSnglInspiralCoincTest(
+    LALStatus                  *status,
+    CoincInspiralTable         *coincInspiral,
+    SnglInspiralTable          *snglInspiral,
+    SnglInspiralAccuracy       *errorParams
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable    *thisCoincEntry;
+  INT4                  match = 1;
+  INT4                  j = 0;
+  static char         *ifoList[] = {"Unknown IFO", "G1", "H1", "H2", 
+    "L1", "T1", "V1"};
+    
+
+  INITSTATUS( status, "LALSnglInspiralCoincTest", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+
+  /* Loop over sngl_inspirals contained in coinc_inspiral */
+  for ( j = 1; j < 7; j++)
+  {
+    LALSnglInspiralLookup( status->statusPtr, &thisCoincEntry, coincInspiral, 
+	ifoList[j] );
+
+    if ( thisCoincEntry )
+    {
+      /* snglInspiral entry exists for this IFO, perform coincidence test */
+      if ( !strcmp( snglInspiral->ifo, thisCoincEntry->ifo ) )
+      {
+	LALInfo( status, "We already have a coinc from this IFO" );
+	errorParams->match = 0;
+      }
+
+      else
+      {
+	LALCompareSnglInspiral ( status->statusPtr, snglInspiral, 
+	    thisCoincEntry, errorParams );
+      }
+      /* set match to zero if no match.  Keep same if match */
+      match *= errorParams->match;
+    }
+
+    /* returm errorParams->match to be 1 if we match, zero otherwise */
+    errorParams->match = match;
+    if ( errorParams->match == 0 ) LALInfo( status, "Coincidence test failed" );
+    if ( errorParams->match == 0 ) LALInfo( status, "Coincidence test passed" );
+
+
+    DETATCHSTATUSPTR (status);
+    RETURN (status);
+  }
+}
+
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 void
@@ -562,7 +1097,7 @@ LALGalacticInspiralParamsToSimInspiralTable(
 }
 
 /* function to compute the site end time and effective distance of an event */
-static int site_time_and_dist( 
+static void site_time_and_dist( 
     LALStatus         *status,
     LALDetector       *detector,
     LIGOTimeGPS       *end_time,
@@ -570,7 +1105,6 @@ static int site_time_and_dist(
     SkyPosition       *skyPos,
     SimInspiralTable  *sim_inspiral)
 {
-  LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };
   LALGPSandAcc          gpsAndAcc;
   LALSource             source;
   LALPlaceAndGPS        placeAndGPS;
@@ -627,7 +1161,8 @@ static int site_time_and_dist(
   *eff_dist /= sqrt( 
       splus*splus*resp.plus*resp.plus + scross*scross*resp.cross*resp.cross );
 
-  return(0);
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 }
 
 
