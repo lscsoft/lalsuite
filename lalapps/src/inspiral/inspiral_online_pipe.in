@@ -124,7 +124,7 @@ inca_job.set_sub_file( basename + '.inca' + subsuffix )
 
 # set the name of the run in the calibration file
 mkcalfac_job.add_opt('run',cp.get('pipeline','run'))
-mkcalfac_job.add_opt('version',cp.get('mkcalfac','version'))
+mkcalfac_job.add_opt('version',cp.get('mkcal','version'))
 mkcalfac_job.add_opt('ifo',cp.get('pipeline','ifo'))
 
 # set up incas for single ifo mode
