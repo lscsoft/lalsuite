@@ -1282,15 +1282,15 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( injectionFile && injChanName )
   {
     fprintf( stderr, 
-	"Only one of --injection-file and --injection-channel may be given\n");
+	    "Only one of --injection-file and --injection-channel may be given\n");
     exit( 1 );
   }
 
-  /* if an injection channel has been specifice, need a frame cache */
-  if ( injectionFile && !frInCacheName )
+  /* if an injection channel has been specified, need a frame cache */
+  if ( injectionChanName && !frInCacheName )
   {
     fprintf( stderr, 
-	"If --injection-channel specifice, also require --frame-cache\n");
+	    "If --injection-channel specified, also require --frame-cache\n");
     exit( 1 );
   }
 
