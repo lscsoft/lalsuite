@@ -31,12 +31,12 @@ my $DATA_QUALITY_FILE = "/scratch/power/input/S2H1v02_segs-TEST.txt";
 my $PLAYGROUND_FILE  = "/scratch/power/input/s2-playground-TEST.txt";
 
 #path for CACHE_FILES
-my $CACHE_PATH = "/scratch/power/";
+my $CACHE_PATH = "/scratch/power";
 
 #OUTPUT FILES
 my $OUTPUT_PATH = "/scratch/power/tests";
-my $OUTPUT_FILE_ROOT  =  "/scratch/power/search$DATE-EPOCH";
-my $JOBS_TABLE = "/scratch/power/lal/power_jobs_$DATE.tbl";
+my $OUTPUT_FILE_ROOT  =  "search$DATE-EPOCH";
+my $JOBS_TABLE = "/scratch/power/power_jobs_$DATE.tbl";
 
 my $INSTRUMENT = "H";	
 my $TYPE = "RDS_R_L1";
@@ -187,7 +187,7 @@ sub  f_writeJobsTable {
 	print $tableFilePath, "\n";
 	open TABLE, ">>$tableFilePath" or die "Couldn't open $tableFilePath.";
 	print  "P\tpending\tstart=$startSec\tstop=$stopSec\tcache=$cachefile\t$xmlFile\n";
-	print TABLE  "0\tpending\t$startSec\t$stopSec\t$cachefile\t$xmlFile\n";
+	print TABLE  "P\tpending\t$startSec\t$stopSec\t$cachefile\t$xmlFile\n";
 	close TABLE;
 }
 

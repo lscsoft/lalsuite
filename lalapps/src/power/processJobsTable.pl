@@ -30,16 +30,16 @@ if(! $ARGV[0])
 my $DATE =$ARGV[0];	
 
 my %STATUS = (
-					P => Pending,
-					R => Running,
-					C => Complete,
-					U => User Review Required,
-					E => Error);
+					P => "Pending",
+					R => "Running",
+					C => "Complete",
+					U => "User Review Required",
+					E => "Error");
 
 #my $TIME_CHUNK_SIZE = 64;
 #my $TIME_CHUNK_MIN_SIZE = 16;
 
-#my $DATA_SET_NAME = "S2H1v02";
+my $DATA_SET_NAME = "S2H1v02";
 #my $DATA_QUALITY_FILE = "/home/dsmackin/lal/S2H1v02_segs-TEST.txt";
 #my $PLAYGROUND_FILE  = "/home/dsmackin/lal/s2-playground-TEST.txt";
 
@@ -50,9 +50,9 @@ my $CACHE_PATH = "/home/dsmackin/tmp/cache";
 my $OUTPUT_PATH = "/home/dsmackin/lal/tests";
 my $OUTPUT_FILE_ROOT  =  "search$DATE-EPOCH";
 my $CONDOR_SUBMIT_FILE = "Search-$DATA_SET_NAME-$DATE.sub";
-my $JOBS_TABLE = "/scratch/power/lal/power_jobs_$DATE.tbl";
+my $JOBS_TABLE = "/scratch/power/power_jobs_$DATE.tbl";
 
-my $JOBS_TABLE_FIELDS = 5;
+my $JOBS_TABLE_FIELDS = 6;
 
 my $INSTRUMENT = "H";	
 my $TYPE = "RDS_R_L1";
@@ -152,15 +152,10 @@ f_writeCondorSubmitFileHeaders( );
 
 # now create the submit script using quality data file and the 
 # the playground seconds hash array
-f_processJobsTable (
-									$DATA_QUALITY_FILE, 
-									$TIME_CHUNK_MIN_SIZE, 
-									$TIME_CHUNK_SIZE,
-									$playgroundSeconds);
+f_processJobsTable ($JOBS_TABLE);
 									
 f_submitJobs($CONDOR_SUBMIT_FILE);							
 									
-{
 
 #-----------------------------------------------------------------------------------
 # f_processJobsTable
@@ -172,11 +167,11 @@ f_submitJobs($CONDOR_SUBMIT_FILE);
 sub f_processJobsTable {
 
 	my ($jobsTableFile) = @_;
-	open JOBS_TABLE, $jobsTableFile;
+	open JOBS_TABLE, $jobsTableFile
 			or die "In f_processJobsTable: Couldn't open $jobsTableFile." ;	
 				
 	my $tmpTableFile = "jobsTable.tmp";
-	open TMP_TABLE, $jobsTableFile;
+	open TMP_TABLE, $jobsTableFile
 			or die "In f_processJobsTable: Couldn't open $tmpTableFile." ;	
 	
 	while(<JOBS_TABLE>){
@@ -185,12 +180,12 @@ sub f_processJobsTable {
 		#read in fields by splitting line on spaces
 		my @fields = split "\t";
 		
-		if (scalar $fields != $JOBS_TABLE_FIELDS) {
-			die "Expected $JOBS_TABLE_FIELDS fields in table. Found " . scalar($fields) .".\n";
+		if (scalar @fields != $JOBS_TABLE_FIELDS) {
+			die "Expected $JOBS_TABLE_FIELDS fields in $JOBS_TABLE. Found " . scalar(@fields) .".\n";
 		}
 		
 		#read columns into variables
-		my ($statusCode, $startSec, $stopSec, $framecache, $outfile)  = ($fields[0],$fields[2],$fields[3],$fields[4]);
+		my ($statusCode, $startSec, $stopSec, $framecache, $outfile)  = ($fields[0],$fields[2],$fields[3],$fields[4],$fields[5]);
 
 		if ($statusCode eq "P"){
 			f_writeJobToCondorSubmitFile($startSec,  $stopSec, $framecache, $outfile);
@@ -269,19 +264,19 @@ sub f_checkForProgramCompletion{
 		my @events = split "\n", $data;
 		my $numEvents = scalar(@events);
 		
-		print "$numEvents found for $outfile.\n");
+		print "$numEvents found for $outfile.\n";
 		$doc->dispose();
 		
-		if($numEvents > 0 ) {#return status complete
+		if($numEvents > 0 ) { #return status complete
 			return "C";
-		}else{ #Need the user to look into this job. There's probably an error.
+		} else { #Need the user to look into this job. There's probably an error.
 			return "U";
+		}
 	}
 
 	# The jobs not complete yet. Return R because it's still running
 	return "R";
 }
-
 
 #-----------------------------------------------------------------------------------
 #   f_writeJobToCondorSubmitFile
@@ -331,7 +326,7 @@ sub f_writeJobToCondorSubmitFile {
 POWER_ARGS
 
 	#if cmd is to include sine wave, add it to the args
-	if($INCLUDE_SINE_WAVE){ $args .= " --sine $FREQ $DELTA $AMPLITUDE $WIDTH";}
+	#if($INCLUDE_SINE_WAVE){ $args .= " --sine $FREQ $DELTA $AMPLITUDE $WIDTH";}
 
 	#clean the args string so that it is only one line
 	$args =~ s/(\n|\t)/ /g;
@@ -360,7 +355,7 @@ ARGUMENTS
 #-----------------------------------------------------------------------------------
 #  Returns 
 #-----------------------------------------------------------------------------------
-sub f_submitJobs{
+sub f_submitJobs {
 	my $jobsSubmitScript = shift;
 	
 	#submit the jobs
