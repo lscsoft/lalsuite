@@ -587,7 +587,7 @@ LALFindChirpFilterSegment (
     ignoreIndex = numPoints / 4;
   }
 
-#if 1
+#if 0
     fprintf( stdout, "filtering from %d to %d\n",
         ignoreIndex, numPoints - ignoreIndex );
     fflush( stdout );
