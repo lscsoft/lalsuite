@@ -300,7 +300,21 @@ EPSearch (
         redummy += fseries->data->data[j].re * fseries->data->data[j].re;
         imdummy += fseries->data->data[j].im * fseries->data->data[j].im;
       }
-      
+    /* write diagnostic info to disk */
+    if ( params->printSpectrum == TRUE )
+    { 
+        FILE *fp;
+        fp = fopen("./dummy.dat","w");
+        for (j=0 ; j<(INT4)fseries->data->length ; j++)
+        {
+            fprintf(fp, "%f\t%g\n", j*fseries->deltaF, 
+                    sqrt(fseries->data->data[j].re * fseries->data->data[j].re
+                        + fseries->data->data[j].im * fseries->data->data[j].im));
+        }    
+        fclose(fp);
+    }
+    
+
       /* create time-frequency tiling of plane.  */
       if ( params->tfTiling == NULL ){
         params->tfTilingInput->deltaF=fseries->deltaF;
@@ -739,11 +753,13 @@ void EPConditionData(
     /****************************************************************
      * 
      * check that there is enough data to construct the required segments
+     * :TODO:  This assumes that overlap is half the number of points
+     * in a segment
      *
      ****************************************************************/
 
     if ( series->data->length < 
-            params->initParams->numPoints * ( params->initParams->numSegments + 1 ) / 2 +
+            params->initParams->numPoints * ( params->initParams->numSegments - 1 ) / 2 +
             2 * params->ovrlap )
     {
         ABORT (status, EPSEARCHH_EDATZ, EPSEARCHH_MSGEDATZ); 
@@ -758,12 +774,15 @@ void EPConditionData(
      ****************************************************************/
     dataSegVec = params->epSegVec;
 
-    /* Set up for a highpass filter
+    /* Set up for a highpass filter */
     highpassParam.nMax = 4;
     fsafety = params->tfTilingInput->flow - 10.0;
-    highpassParam.f1 = fsafety > 100.0 ? 100.0 : fsafety;
+    highpassParam.f1 = fsafety > 150.0 ? 150.0 : fsafety;
+    highpassParam.f2 = -1.0;
     highpassParam.a1 = 0.1;
-    LALButterworthREAL4TimeSeries(status->statusPtr, series, &highpassParam); */
+    highpassParam.a2 = -1.0;
+    LALButterworthREAL4TimeSeries(status->statusPtr, series, &highpassParam);
+    CHECKSTATUSPTR (status);
             
     /* Point dummyData ovrlap into series to avoid corruption */
     dummyData = series->data->data;
