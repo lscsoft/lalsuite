@@ -92,8 +92,10 @@ CHAR *frameCacheOne = NULL;
 CHAR *frameCacheTwo = NULL;
 CHAR *calCacheOne = NULL;
 CHAR *calCacheTwo = NULL;
-CHAR channelOne[LALNameLength];
-CHAR channelTwo[LALNameLength];
+CHAR *channelOneTemp = NULL;
+CHAR *channelTwoTemp = NULL;
+CHAR *channelOne = NULL;
+CHAR *channelTwo = NULL;
 CHAR *ifoOne = NULL;
 CHAR *ifoTwo = NULL;
 INT4 siteOne;
@@ -1136,6 +1138,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   free(calCacheTwo);
   free(ifoOne);
   free(ifoTwo);
+  free(channelOne);
+  free(channelTwo);
 
   return 0;
 }
@@ -1156,6 +1160,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   " --f-max N                     maximal frequency\n"\
   " --ifo-one IFO                 ifo for first stream\n"\
   " --ifo-two IFO                 ifo for second stream\n"\
+  " --channel-one CHANNEL         channel for first stream\n"\
+  " --channel-two CHANNEL         channel for second stream\n"\
   " --frame-cache-one FILE        cache file for first stream\n"\
   " --frame-cache-two FILE        cache file for second stream\n"\
   " --calibration-cache-one FILE  first stream calibration cache\n"\
@@ -1201,6 +1207,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
       {"hann-duration", required_argument, 0, 'w'},
       {"ifo-one", required_argument, 0, 'i'},
       {"ifo-two", required_argument, 0, 'I'},
+      {"channel-one", required_argument, 0, 'c'},
+      {"channel-two", required_argument, 0, 'C'},
       {"frame-cache-one", required_argument, 0, 'd'},
       {"frame-cache-two", required_argument, 0, 'D'},
       {"calibration-cache-one", required_argument, 0, 'r'},
@@ -1220,7 +1228,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long(argc, argv, "ht:T:l:a:f:F:w:i:I:d:D:r:R:z:k:p:P:V", \
+    c = getopt_long(argc, argv, "ht:T:l:a:f:F:w:i:I:c:C:d:D:r:R:z:k:p:P:V", \
         long_options, &option_index);
 
     if (c == -1)
@@ -1413,17 +1421,14 @@ static void parseOptions(INT4 argc, CHAR *argv[])
         if (strncmp(ifoOne, "H1", 2) == 0)
         {
           siteOne = 0;
-          strncpy(channelOne, "H1:LSC-AS_Q", LALNameLength);
         }
         else if (strncmp(ifoOne, "H2", 2) == 0)
         {
           siteOne = 0;
-          strncpy(channelOne, "H2:LSC-AS_Q", LALNameLength);
         }
         else if (strncmp(ifoOne, "L1", 2) == 0)
         {
           siteOne = 1;
-          strncpy(channelOne, "L1:LSC-AS_Q", LALNameLength);
         }
         else
         {
@@ -1439,21 +1444,18 @@ static void parseOptions(INT4 argc, CHAR *argv[])
         ifoTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         memcpy(ifoTwo, optarg, optarg_len);
 
-        /* set site and channel */
+        /* set site */
         if (strncmp(ifoTwo, "H1", 2) == 0)
         {
           siteTwo = 0;
-          strncpy(channelTwo, "H1:LSC-AS_Q", LALNameLength);
         }
         else if (strncmp(ifoTwo, "H2", 2) == 0)
         {
           siteTwo = 0;
-          strncpy(channelTwo, "H2:LSC-AS_Q", LALNameLength);
         }
         else if (strncmp(ifoTwo, "L1", 2) == 0)
         {
           siteTwo = 1;
-          strncpy(channelTwo, "L1:LSC-AS_Q", LALNameLength);
         }
         else
         {
@@ -1461,6 +1463,22 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        break;
+
+      case 'c':
+        /* channel one */
+        optarg_len = strlen(optarg) + 4;
+        channelOneTemp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        channelOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(channelOneTemp, optarg, optarg_len);
+        break;
+
+      case 'C':
+        /* channel two */
+        optarg_len = strlen(optarg) + 4;
+        channelTwoTemp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        channelTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(channelTwoTemp, optarg, optarg_len);
         break;
 
       case 'd':
@@ -1724,6 +1742,18 @@ static void parseOptions(INT4 argc, CHAR *argv[])
     exit(1);
   }
 
+  /* channel */
+  if (channelOne == NULL)
+  {
+    fprintf(stderr, "--channel-one must be specified\n");
+    exit(1);
+  }
+  if (channelTwo == NULL)
+  {
+    fprintf(stderr, "--channel-two must be specified\n");
+    exit(1);
+  }
+
   /* frame cache */
   if (frameCacheOne == NULL)
   {
@@ -1846,6 +1876,18 @@ static void parseOptions(INT4 argc, CHAR *argv[])
         "equal to segment\nduration (%d)\n", hannDuration, segmentDuration);
     exit(1);
   }
+
+  /* perform postprocessing on arguments */
+
+  /* channels */
+  strcpy(channelOne, ifoOne);
+  strcpy(channelTwo, ifoTwo);
+  strcat(channelOne, ":");
+  strcat(channelTwo, ":");
+  strcat(channelOne, channelOneTemp);
+  strcat(channelTwo, channelTwoTemp);
+  free(channelOneTemp);
+  free(channelTwoTemp);
 
   return;
 }
