@@ -54,14 +54,16 @@ LALFindChirpCreateInspiralBank (
       FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
 
   /* make sure we only request a flat or a tmplt bank one deep */
-  if ( params->numLevel < 0 || params->numLevel > 1 )
+  if ( params->numLevel > 1 )
   {
     ABORT( status, FINDCHIRPENGINEH_ELVEL, FINDCHIRPENGINEH_MSGELVEL );
   }
 
   /* make sure this is always checked */
   if ( *bankHead ) 
+  {
     ABORT( status, FINDCHIRPENGINEH_ENNUL, FINDCHIRPENGINEH_MSGENNUL );
+  }
 
 
   /*
