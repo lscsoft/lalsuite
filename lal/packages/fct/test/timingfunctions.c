@@ -6,6 +6,7 @@
 #include <sys/times.h>
 
 /*includes for WallTimeVal()*/
+#include <time.h>
 #include <sys/time.h>
 
 double UserTimeVal(void);
