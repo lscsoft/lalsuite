@@ -25,12 +25,12 @@ class MkCalFacJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     cp = ConfigParser object from which options are read.
     """
     self.__executable = cp.get('condor','mkcalfac')
-    self.__universe = 'scheduler'
+    self.__universe = cp.get('condor','universe') 
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__init__(self,cp)
 
-    self.set_stdout_file('logs/mkcalfac-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/mkcalfac-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_stdout_file('logs/mkcalfac-$(macrorun)-$(macroifo)-$(macroversion)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/mkcalfac-$(macrorun)-$(macroifo)-$(macroversion)-$(cluster)-$(process).err')
     self.set_sub_file('mkcalfac.sub')
 
 
