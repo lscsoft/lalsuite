@@ -116,6 +116,8 @@ main ( void )
    randIn.param.tSampling = 4000.;
    randIn.param.signalAmplitude = 1.0;
    randIn.param.nEndPad = 0;
+   randIn.param.OmegaS = 0.0;
+   randIn.param.Theta = 0.0;
    randIn.param.order = twoPN;
    randIn.param.approximant = TaylorT2;
    randIn.param.massChoice = m1Andm2;
