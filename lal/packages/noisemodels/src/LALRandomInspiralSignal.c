@@ -71,7 +71,7 @@ User must specify the following quantities in the input structure
 \texttt {p.tSampling}         &        &   sampling rate in Hz\\
 \texttt {p.order}             &        &   order of the PN approximant of the signal \\
 \texttt {p.approximant}       &        &   PN approximation to be used for inspiral signal generation\\
-\texttt {p.massChoice}        &        &   space in which parameters are chosen; \texttt{m1Andm2, totalMassAndEta, t02, t03}\\\\
+\texttt {InputMasses massChoice}        & input &   space in which parameters are chosen; \texttt{m1Andm2, totalMassAndEta, t02, t03}\\\\
 \texttt {REAL8Vector psd}   &  input &   pre-computed power spectral density used for coloring the noise \\
 \texttt {RealFFTPlan *fwdp} &  input &   pre-computed fftw plan to compute forward Fourier transform   \\\\
 \texttt {REAL8 mMin}        &  input &   smallest component mass allowed   \\
@@ -184,20 +184,20 @@ LALRandomInspiralSignal
 	   {
 		   epsilon1 = (float) random()/(float)RAND_MAX;
 		   epsilon2 = (float) random()/(float)RAND_MAX;
-		   switch (randIn->param.massChoice) 
+		   switch (randIn->massChoice) 
 		   {
 			   case m1Andm2: 
-				   /* 
-				    * restriction is on the minimum and maximum individual 
-				    * masses of the two component stars. 
-				    */
-				   randIn->param.mass1 = randIn->mMin 
-					   + (randIn->mMax - randIn->mMin) * epsilon1;
-				   randIn->param.mass2 = randIn->mMin 
-					   + (randIn->mMax - randIn->mMin) * epsilon2;
-				   LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+				/* 
+				* restriction is on the minimum and maximum individual 
+				* masses of the two component stars. 
+				*/
+				 randIn->param.mass1 = randIn->mMin + 
+				 	(randIn->mMax - randIn->mMin) * epsilon1;
+			         randIn->param.mass2 = randIn->mMin  + 
+				 	(randIn->mMax - randIn->mMin) * epsilon2;
+		               	 LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
 				   break;
-			   case totalMassAndEta: 
+			    case totalMassAndEta: 
 				   /*
 				    * restriction is on the total mass of the binary 
 				    * and the minimum mass of the component stars
@@ -218,7 +218,7 @@ LALRandomInspiralSignal
 				   break;
 			   case t03: 
 				   /* chirptimes t0 and t3 are required in a specified range */
-				   randIn->param.t0 = randIn->t0Min + (randIn->t0Max - randIn->t0Min)*epsilon1;
+				  randIn->param.t0 = randIn->t0Min + (randIn->t0Max - randIn->t0Min)*epsilon1;
 				   randIn->param.t3 = randIn->tnMin + (randIn->tnMax - randIn->tnMin)*epsilon2;
 				   LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
 				   break;
@@ -236,7 +236,7 @@ LALRandomInspiralSignal
 		   /*
 		   printf("%e %e %e %e\n", randIn->param.t0, randIn->param.t3, randIn->param.mass1, randIn->param.mass2);
 		    */
-		   switch (randIn->param.massChoice) 
+		   switch (randIn->massChoice) 
 		   {
 			   case m1Andm2: 
 			   case t03: 
