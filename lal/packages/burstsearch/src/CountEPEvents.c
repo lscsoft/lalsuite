@@ -22,6 +22,7 @@ NRCSID (COUNTEPEVENTSC, "$Id$");
 #include <lal/Thresholds.h>
 #include <lal/ExcessPower.h>
 #include <lal/Random.h>
+#include <lal/BurstSearch.h>
 
 
 #define TRUE 1
@@ -82,5 +83,43 @@ LALCountEPEvents (
   RETURN (status);
 }
 
+
+/******** <lalVerbatim file="TFTilesToBurstEventsCP"> ********/
+void
+LALTFTileToBurstEvent (
+               LALStatus                            *status,
+               BurstEvent                           *burstEvent,
+               TFTile                               *event,
+               INT8                                  tstart,
+               REAL4                                 flow
+               )
+/******** </lalVerbatim> ********/
+{
+  INT8 dummyNS;
+
+  INITSTATUS (status, "LALCountEPEvents", COUNTEPEVENTSC);
+  ATTATCHSTATUSPTR(status);
+
+  /* make sure that arguments are not NULL */
+  ASSERT (event, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+  ASSERT (burstEvent, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+
+  dummyNS = tstart + (INT8) (1e9 * event->tstart * event->deltaT);
+  burstEvent->startTime        = (INT4) (dummyNS/1000000000L);
+  burstEvent->startTimeNS      = (INT4) (dummyNS%1000000000L);
+  burstEvent->duration         = (REAL4) (event->tend - event->tstart + 1.0) * 
+    event->deltaT;
+  burstEvent->centralFrequency = flow + 
+    (REAL4) (event->fstart + event->fend) / (2.0 * event->deltaT);
+  burstEvent->bandwidth        = (REAL4) (event->fend - event->fstart + 1.0) / 
+    (event->deltaT);
+  burstEvent->amplitude        = event->excessPower;
+  burstEvent->excessPower      = event->excessPower;
+  burstEvent->confidence       = event->alpha;
+
+  /* normal exit */
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
 
 

@@ -22,6 +22,7 @@ NRCSID (SORTTFTILINGC, "$Id$");
 #include <lal/Thresholds.h>
 #include <lal/ExcessPower.h>
 #include <lal/Random.h>
+#include <lal/BurstSearch.h>
 
 
 #define TRUE 1
@@ -135,6 +136,4 @@ LALSortTFTiling (
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
-
-
 

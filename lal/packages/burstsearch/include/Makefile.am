@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = Thresholds.h ExcessPower.h TFTransform.h
+pkginclude_HEADERS = Thresholds.h ExcessPower.h TFTransform.h BurstSearch.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 all-local: include-link
