@@ -401,7 +401,7 @@ ComputeLinePoints (LALStatus *status,
   REAL8 a,b,t; /* temporary variables */ 
   REAL8 px,py;  /* the subpixel line point positions */
   REAL4 *eigenVec; /* a pointer to the array containing the eigen vector and subpixel position */  
-  FILE* fp; /* temp added by cwt */
+  /*FILE* fp;*/ /* temp added by cwt */
 
   /* Initialize status structure   */ 
   INITSTATUS(status,"ComputeLinePoints",TRACKSEARCHC);
