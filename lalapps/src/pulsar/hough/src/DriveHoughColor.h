@@ -40,7 +40,7 @@
 #include <lal/LALRunningMedian.h>
 #include <lal/Velocity.h>
 #include <lal/Statistics.h>
-
+#include <lal/UserInput.h>
 #include <gsl/gsl_cdf.h>
 #include "./SFTbin.h"
 #include "./PeakSelect.h"
