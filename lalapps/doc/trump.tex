@@ -1,0 +1,62 @@
+\section{Program \texttt{lalapps\_trump}}
+\label{program:lalapps-trump}
+\idx[Program]{lalapps\_trump}
+
+\begin{entry}
+
+\item[Name]
+\verb$lalapps_trump$ --- produces an trumpd display showing the time
+series output of a selected channel in a lower window, and a simultaneously
+calculated FFT power spectrum in the upper window
+
+\item[Synopsis]
+\verb$lalapps_trump$ [\verb$--help$] [\verb$--veto$ \textit{filename}] 
+[\verb$--trigger$ \textit{filename}] [\verb$--times$ \textit{filename}
+\textit{safety}] [\verb$-o$ \textit{outfile}] 
+[\verb$--coincidence$ \textit{file1} \textit{file2} \textit{dt}]
+
+\item[Description]
+\verb$lalapps_trump$ manipulates the results of the inspiral search code
+and veto data stored in XML format to produce lists of candidate
+events for individual interferometers.   It can also be used to
+perform a coincidence analysis using the output written for each
+interferometer.  
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--help}]
+Print a help message.
+\item[\texttt{--veto} \textit{filename}]
+Name of the file containing metadata about the vetos to be applied to
+inspiral triggers.   This file can contain multiple lines.  Each line
+has the format:
+\begin{quote}
+\textit{name};\textit{filename};\textit{column};\textit{threshold};\textit{duration}
+\end{quote}
+Here \textit{name} is a character string;  \textit{filename} is a
+character string naming the xml file with the veto triggers;
+\textit{column} is the database column name to use for veto
+construction;  \textit{threshold} is a real number,  vetos have the
+value in \textit{column} bigger than this; \textit{duration} is a real
+number corresponding to the number of seconds to ignore around the
+veto trigger.
+
+\end{entry}
+
+\item[Example]
+To run the program,  type:
+\begin{verbatim}
+lalapps_trump --channel H2:LSC-AS_Q --framedir ./h1 --numpts 16384 \
+--epoch 693768272 0 --duration 1 --highpass 300 0.01 | xmgr -pipe
+\end{verbatim}
+This will search in directory \verb$./h1$ for frame files containing
+the channel \verb$H2:LSC-AS_Q$ and pipe the data starting at 693768272
+GPS seconds and 0 GPS nanonseconds to xmgr in segments containing 16384 
+points until 1 seconds of data has been reviewed.  The data is highpass 
+filtered to above 300 Hz with an attenuation of $0.1$;  the output is
+shown in Fig.~\ref{f:trump}
+
+\item[Author]
+Patrick Brady
+
+\end{entry}
