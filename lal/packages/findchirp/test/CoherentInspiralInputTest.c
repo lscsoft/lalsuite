@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------------- 
  * 
- * File Name: CoherentInspiralInput.c
+ * File Name: CoherentInspiralInputTest.c
  *
  * Author: Seader, S. E.  Brown, D.
  * 
@@ -12,9 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_GETOPT_H
 #include <getopt.h>
-#endif
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -55,106 +53,6 @@
 #include <lal/CoherentInspiral.h>
 #include <lal/LALStatusMacros.h>
 
-NRCSID( COHERENTINSPIRALINPUTC, "$Id$");
-
-/* JC: Please don't use rint ... it is not standard C89 */
-/* double rint(double x); */
-#define rint(x) floor((x)+0.5)
-
-static void
-LALFindChirpCreateCoherentInput( 
-     LALStatus                  *status,
-     COMPLEX8TimeSeries         **coherentInputData,
-     COMPLEX8TimeSeries         *input,
-     SnglInspiralTable          *tmplt,
-     REAL4                      coherentSegmentLength,
-     INT4                       corruptedDataLength 
-     )
-{
-  COMPLEX8TimeSeries      *cohInputData = NULL;
-  LIGOTimeGPS              end_time;
-  UINT8                    tmpltID = 0;
-  UINT8                    eventID = 0;
-  INT4                     numPoints = 0;
-  REAL4                    cohSegLength = 0.0;
-  INT4                     inputEpochSeconds = 0;
-  INT4                     inputEpochNanoSeconds = 0;
-  REAL8                    deltaT = 0.0;
-  INT4                     crupDataLength = 0;
-  INT4                     cohSegEnd = 0;
-  INT4                     cohSegStart = 0;
-  INT4                     nonCorruptEnd = 0;
-  INT4                     nonCorruptStart = 0;
-
-  INITSTATUS( status, "LALFindChirpCreateCoherentInput",
-	      COHERENTINSPIRALINPUTC );
-  ATTATCHSTATUSPTR( status );
-
-  /* Put series of ASSERT statements here to check validity of input params */
-
-
-  /* Get necessary info from input structures */
-  cohInputData = *coherentInputData = (COMPLEX8TimeSeries *)
-    LALCalloc(1, sizeof(COMPLEX8TimeSeries) );
-  end_time = tmplt->end_time;
-  eventID  = tmplt->event_id->id;
-  numPoints = input->data->length;
-  cohSegLength = coherentSegmentLength;
-  inputEpochSeconds = input->epoch.gpsSeconds;
-  inputEpochNanoSeconds = input->epoch.gpsNanoSeconds;
-  deltaT = input->deltaT;
-  crupDataLength = corruptedDataLength;
-
-  /* Now determine if the event lies in corrupted data */
-
-  nonCorruptStart = crupDataLength;
-  nonCorruptEnd = numPoints - crupDataLength;
-  cohSegStart = (INT4) rint( ((end_time.gpsSeconds + end_time.gpsNanoSeconds*1.0e-9) - (inputEpochSeconds + inputEpochNanoSeconds*1.0e-9)-cohSegLength)/deltaT - 1.0);
-  cohSegEnd = cohSegStart + 2* (INT4)cohSegLength/deltaT + 1;
-
-  if( cohSegEnd < nonCorruptEnd && cohSegStart >= nonCorruptStart )
-    {
-      /* The coherent chunk is outside of the corrupted data */
-
-      INT4 fullCohSegLength = 0;
-      fullCohSegLength = 2*cohSegLength/deltaT;
-
-      LALCCreateVector(status->statusPtr, &(cohInputData->data), fullCohSegLength);
-      memcpy(cohInputData->data->data, &(input->data->data[cohSegStart]), 2*cohSegLength/deltaT);
-    }
-  else if( (cohSegStart >= nonCorruptEnd) || (cohSegEnd <= nonCorruptStart) )
-    {
-      /* The coherent chunk is entirely within corrupted data */
-      /* The cohInputData will return a null value on exit of function */ 
-    }
-  else if( cohSegEnd >= nonCorruptEnd )
-    {
-      /* The coherent chunk is in corrupted data at the end of the segment */
-
-      INT4 overlap          = 0;
-      INT4 fullCohSegLength = 0;
-
-      overlap = cohSegEnd - nonCorruptEnd;
-      fullCohSegLength = 2*cohSegLength/deltaT - overlap;
-
-      LALCCreateVector( status->statusPtr, &(cohInputData->data), fullCohSegLength );
-      memcpy( cohInputData->data->data, &(input->data->data[cohSegStart]),fullCohSegLength);
-    }
-  else if( cohSegStart <= nonCorruptStart )
-    {
-      /* The coherent chunk is in corrupted data at the start of the segment */
-
-      INT4 overlap          = 0;
-      INT4 fullCohSegLength = 0;
-
-      overlap = nonCorruptStart - cohSegStart;
-      fullCohSegLength = 2*cohSegLength/deltaT - overlap;
-
-      LALCCreateVector( status->statusPtr, &(cohInputData->data), fullCohSegLength );
-      memcpy( cohInputData->data->data, &(input->data->data[cohSegStart + overlap]), fullCohSegLength);
-    }
-}
-
 
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
@@ -184,7 +82,7 @@ int main( int argc, char *argv[] )
       exit( 1 );
     }
   tmplt->event_id = (EventIDColumn *) LALCalloc( 1, sizeof(EventIDColumn));
-  tmplt->end_time.gpsSeconds = 751976330;
+  tmplt->end_time.gpsSeconds = 751976331;
   tmplt->end_time.gpsNanoSeconds = 234567999;
   tmplt->event_id->id = 1;
   corruptedDataLength = numPoints/4;
@@ -234,6 +132,7 @@ int main( int argc, char *argv[] )
   ClearStatus (&status);
 
   LALFree( input );
+  LALCheckMemoryLeaks();
 
   exit( 0 );
 }
