@@ -946,7 +946,7 @@ int main( int argc, char *argv[] )
 	"\t\t<real_8 name='time:step_size' units='sec'>%e</real_8>\n",
 	meanTimeStep );
     fprintf( fp, "\t<int_4u ndim='2' dims='2,%d' name='data' units='s,ns'>",
-	ninj );
+	(int) ninj );
     fprintf( fp, "%ld 0", gpsStartTime );
   }
 
@@ -998,7 +998,7 @@ int main( int argc, char *argv[] )
 
     fprintf( fp, 
 	"\t<real_4 ndim='2' dims='%d,%d' name='data' units='" UNITS "'>",
-	numElem, ninj );
+	numElem, (int) ninj );
   }
 
   tlistelem = &tlisthead;
