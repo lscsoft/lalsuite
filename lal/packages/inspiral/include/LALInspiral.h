@@ -30,6 +30,7 @@ Header file for the template generation codes.
 # include <lal/LALStdlib.h>
 # include <lal/LALConstants.h>
 # include <lal/SimulateCoherentGW.h>
+# include <lal/GeneratePPNInspiral.h>
  
 #ifdef  __cplusplus
 extern "C" {
@@ -59,21 +60,21 @@ NRCSID( LALINSPIRALH, "$Id$" );
 
 /* <lalErrTable> */
 
-#define LALINSPIRALH_ENULL   1
-#define LALINSPIRALH_EMEM    2
-#define LALINSPIRALH_EDIV0   4
-#define LALINSPIRALH_ESIZE   8
-#define LALINSPIRALH_ECHOICE 16
-#define LALINSPIRALH_EORDER  32 
+#define LALINSPIRALH_ENULL          1
+#define LALINSPIRALH_EMEM           2
+#define LALINSPIRALH_EDIV0          4
+#define LALINSPIRALH_ESIZE          8
+#define LALINSPIRALH_ECHOICE       16
+#define LALINSPIRALH_EORDER        32 
 #define LALINSPIRALH_EAPPROXIMANT  64 
 
 
-#define LALINSPIRALH_MSGENULL   "Arguments contained an unexpected null pointer"
-#define LALINSPIRALH_MSGEMEM    "Memory allocation error"
-#define LALINSPIRALH_MSGEDIV0   "Division by zero"
-#define LALINSPIRALH_MSGESIZE   "Invalid input range"
-#define LALINSPIRALH_MSGECHOICE "Invalid choice for an input parameter"
-#define LALINSPIRALH_MSGEORDER  "Invalid choice for order of PN models"
+#define LALINSPIRALH_MSGENULL         "Arguments contained an unexpected null pointer"
+#define LALINSPIRALH_MSGEMEM          "Memory allocation error"
+#define LALINSPIRALH_MSGEDIV0         "Division by zero"
+#define LALINSPIRALH_MSGESIZE         "Invalid input range"
+#define LALINSPIRALH_MSGECHOICE       "Invalid choice for an input parameter"
+#define LALINSPIRALH_MSGEORDER        "unknown order specified"
 #define LALINSPIRALH_MSGEAPPROXIMANT  "Invalid choice for order of PN models"
 
 
@@ -380,7 +381,7 @@ typedef enum {
    BCV,
    BCVSpin,
    SpinTaylorT3,
-   SpinTaylor,
+   SpinTaylor
  } Approximant;
 /* </lalVerbatim>  */
 
@@ -835,7 +836,9 @@ void LALInspiralWave1Templates(
 void LALInspiralWave1ForInjection(
      LALStatus        *status,
      CoherentGW *waveform,
-     InspiralTemplate *params);
+     InspiralTemplate *params,
+     PPNParamStruc  *ppnParams			     
+     );
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralWave2C}
@@ -855,7 +858,9 @@ void LALInspiralWave2Templates (
 void LALInspiralWave2ForInjection(
      LALStatus        *status,
      CoherentGW *waveform,
-     InspiralTemplate *params);
+     InspiralTemplate *params,
+     PPNParamStruc  *ppnParams			     
+     );
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralWave3C}
@@ -875,7 +880,8 @@ void LALInspiralWave3Templates (
 void LALInspiralWave3ForInjection(
      LALStatus        *status,
      CoherentGW *waveform,
-     InspiralTemplate *params);
+     InspiralTemplate *params,
+     PPNParamStruc  *ppnParams);
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralStationaryPhaseApprox1C}
@@ -911,7 +917,8 @@ void LALEOBWaveformTemplates(
 void LALEOBWaveformForInjection(
      LALStatus *status,
      CoherentGW *waveform,
-     InspiralTemplate *params);
+     InspiralTemplate *params,
+     PPNParamStruc  *ppnParams);
 
 /*  <lalLaTeX>
 \newpage\input{LALBCVWaveformC}
@@ -952,8 +959,9 @@ void
 LALSTPNWaveformForInjection (
 			    LALStatus        *status,
 			    CoherentGW       *waveform,
-			    InspiralTemplate *params
-			    ) ;
+			    InspiralTemplate *params,
+			    PPNParamStruc  *ppnParams);
+
 
 /* --- OTHER PROTOTYPES --- */
 
