@@ -108,12 +108,12 @@ NRCSID (GPSTOUTCC, "$Id$");
 struct tm *gmtime_r( const time_t *, struct tm * );
 char *asctime_r( const struct tm *, char * );
 
-/* latest time for which this routine will work: 2002-Sep-30 23:59:00 */
+/* latest time for which this routine will work: 2003-Mar-30 23:59:00 UTC */
 /* 24 leap seconds because of the two interpolated ones: 1970-Jan-1 and
  * 1970-Jan-22 */
-/* const INT4 maxtestedGPS = (24*365 + 8*366 + 5*31 + 3*30 + 28)*SECS_PER_DAY -
-   60 + 24; */
-static const INT4 maxtestedGPS = 717465553;
+/* GPS for maxtestedGPS computed using tconvert (part of ligotools) by
+   P. Shawhan */
+static const INT4 maxtestedGPS = 733103953;
 
 /*
  * Convert GPS seconds to UTC date-time contained in LALDate structure
@@ -474,7 +474,7 @@ LALUTCtoGPS (LALStatus                *status,
 
   /*
    * Check that time asked for is not after last known leap sec
-   * Use by: 2002-Sep-30 23:59:00
+   * Use by: 2003-Mar-30 23:59:00
    *
    * if date is later
    *    check accuracy param
@@ -486,10 +486,10 @@ LALUTCtoGPS (LALStatus                *status,
    * // date is not later
    * do the conversion
    */
-  if (p_utcDate->unixDate.tm_year > 102 ||
-      (p_utcDate->unixDate.tm_year == 102 &&
-       (p_utcDate->unixDate.tm_mon > 9 ||
-        (p_utcDate->unixDate.tm_mon == 9 &&
+  if (p_utcDate->unixDate.tm_year > 103 ||
+      (p_utcDate->unixDate.tm_year == 103 &&
+       (p_utcDate->unixDate.tm_mon > 2 ||
+        (p_utcDate->unixDate.tm_mon == 2 &&
          p_utcDate->unixDate.tm_mday == 30 &&
          p_utcDate->unixDate.tm_hour == 23 &&
          p_utcDate->unixDate.tm_min  == 59 &&
