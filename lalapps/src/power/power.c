@@ -596,7 +596,7 @@ int main( int argc, char *argv[])
         SnglBurstTable      *tmpEvent     = NULL;
         REAL4TimeSeries  *interval;
 
-        LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, params->currentSegment * params->ovrlap, min(32.5 / series.deltaT, (params->initParams->numSegments - params->currentSegment + 1) * params->ovrlap)), &stat);
+        LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, params->currentSegment * params->ovrlap, min(33.5 / series.deltaT, (params->initParams->numSegments - params->currentSegment + 1) * params->ovrlap)), &stat);
 
         /* count the segments to analyze */
         for ( tmpDutyCycle=0 ; tmpDutyCycle < params->initParams->segDutyCycle && 
