@@ -264,7 +264,7 @@ cp $f $f.pt
 sed 's/processtable\..//g' $f.pt > $f
 
 ./00boot
-./configure --with-extra-cppflags="-I/work/include -DNOGLOB"\
+./configure --with-extra-cppflags='-I/work/include -DNOGLOB'\
  --with-extra-libs=-L/work/lib --prefix=/work
 
 #build the lalapps library
@@ -297,7 +297,7 @@ cvs -d :pserver:anonymous@alien.ssl.berkeley.edu:/home/cvs/cvsroot\
 cd /work/lalapps
 
 # configure lalapps to use BOINC
-./configure --with-extra-cppflags="-I/work/include -DUSE_BOINC=1 -DNOGLOB"\
+./configure --with-extra-cppflags='-I/work/include -DUSE_BOINC=1 -DNOGLOB'\
  --with-extra-libs=-L/work/lib --prefix=/work
 
 cd src/pulsar/FDS_isolated
