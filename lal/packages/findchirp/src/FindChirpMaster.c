@@ -26,7 +26,9 @@ LALFindChirpMaster (
   INT4                          myRank;
   UINT4                         i;
   UINT4                         numTmpltExch = params->numTmpltExch;
-
+  InspiralEvent                *thisEvent = NULL;
+  InspiralTemplate             *fineBank  = NULL;
+  InspiralTemplateNode         *thisTmplt = NULL;
 
 
   INITSTATUS( status, "LALFindChirpMaster", INSPIRALMASTERC );
@@ -148,29 +150,49 @@ LALFindChirpMaster (
 
         /*
          *
-         * this is the guts of the heirarchical search
+         * this is the master part of the heirarchical search
          *
          */
 
 
-        /* ok... so we have an event list now what? */
+#if 0
 
+        /* loop through event list */
+        for ( thisEvent = *eventList; thisEvent; 
+            thisEvent = thisEvent->next )
+        { 
+          fprintf( stderr, "searching event at %p\n", thisEvent );
+          /* look for a template that matches the template id of the event */
+          for ( thisTmplt = params->tmpltHead; thisTmplt; 
+              thisTmplt = thisTmplt->next )
+          {
+            fprintf( stderr, "searching tmplt at %p\n", thisTmplt );
+            /* for each tmplt that we find, have we inserted that template? */
+            if ( thisEvent->tmplt.number == thisTmplt->tmpltPtr->number && 
+                ! thisTmplt->inserted )
+            {
+              /* insert the fine bank into the list to filter */
+              fprintf( stderr, "inserting fine bank %p \n", 
+                  thisTmplt->tmpltPtr->fine );
+              for ( fineBank = thisTmplt->tmpltPtr->fine; fineBank;
+                  fineBank = fineBank->next )
+              {
+                fprintf( stderr, "fine tmplt %p\n", fineBank );
+                LALFindChirpCreateTmpltNode( status->statusPtr, 
+                    fineBank, &(params->tmpltCurrent) );
+                CHECKSTATUSPTR( status );
 
-        /* work through the event list parsing for the template id */
+                params->numTmplts++;
+              }
 
+              thisTmplt->inserted = 1;
+            }
+          }
+        }
 
-        /* for each id that we find, have we inserted that template? */
+        fprintf( stderr, "event handler done\n" );
 
-        
-        /* if yes, skip it                                      */
-        /* if no, insert it in the list at the current template */
-        /* and increment the total number of templates          */
-
-
-        /* set the inserted flags */
-        
-
-        /* and carry on... */
+#endif
 
         break;
 

@@ -688,6 +688,8 @@ LALFindChirpFilterSegment (
 
           /* copy the template into the event */
           memcpy( &(thisEvent->tmplt), input->tmplt, sizeof(InspiralTemplate) );
+          thisEvent->tmplt.next = NULL;
+          thisEvent->tmplt.fine = NULL;
 
           /* set snrsq, chisq, sigma and effDist for this event */
           thisEvent->chisq   = params->chisqVec->data[thisEvent->timeIndex];

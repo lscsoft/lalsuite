@@ -107,6 +107,7 @@ tagFindChirpMasterParams
   MPI_Comm                     *mpiComm;
   UINT4                        *numSlaves;
   InspiralTemplateNode         *tmpltCurrent;
+  InspiralTemplateNode         *tmpltHead;
   UINT4                         numTmplts;
   BOOLEAN                      *notFinished;
   REAL4                        *fracRemaining;
