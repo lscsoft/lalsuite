@@ -605,6 +605,7 @@ main (INT4 argc, CHAR **argv )
   
    temporder  = coarseIn.order;
    coarseIn.order = 4; 			/* force to be 2PN otherwise the bank is not generated. has to be fixed in the bank itself*/
+   
    LAL_CALL(LALInspiralCreateCoarseBank(&status, &list, &nlist, coarseIn),&status);
    if (nlist==0) exit(0);	
    bankEfficiencyOverlapIn = (float*) malloc(sizeof(float*)* nlist);              	/* allocate memory to store the bank 	*/
@@ -613,7 +614,7 @@ main (INT4 argc, CHAR **argv )
 
   /* --- do we want to print the bank ? --- */
   if (otherIn.PrintBank) BEPrintBank(coarseIn, &list, nlist);				/* ascii format				*/
-  if (otherIn.PrintBankXml) BEPrintBankXml(list,  nlist, coarseIn, randIn, otherIn);					/* xml format				*/
+  if (otherIn.PrintBankXml) BEPrintBankXml(list,  nlist, coarseIn, randIn, otherIn);	/* xml format				*/
 
   /* --- Estimate the fft's plans --- */
   LAL_CALL(LALCreateForwardRealFFTPlan(&status, &fwdp, signal.length, 0), &status);
@@ -858,6 +859,7 @@ main (INT4 argc, CHAR **argv )
 				 &correlation, &overlapout, &overlapin,
 				 &Filter1, &Filter2, matrix, otherIn), 
 			       &status);
+
 	       break;
 	       case InQuadrature:
 		 if (coarseIn.approximant == BCV) /* bcv template but no apha maximization */
@@ -885,7 +887,7 @@ main (INT4 argc, CHAR **argv )
 		   }
 		 
 		 
-		 overlapout.alpha = -1;	       /* why ?? */
+		 overlapout.alpha = -1;	       /* since alpha is not initalized in that switch we give a  constante value */
 		 break;	     
 	       }     /* switch end */
 	     
@@ -1184,11 +1186,14 @@ ParseParameters(	INT4 			*argc,
       else if ( strcmp(argv[i],	"--sampling") 	== 0 ) {
   		coarseIn->tSampling = randIn->param.tSampling = atof(argv[++i]);  
 		randIn->param.fCutoff 	= coarseIn->tSampling/2. - 1.;
+		coarseIn->fUpper 	= coarseIn->tSampling/2. - 1.;
+
 	}      
       else if ( strcmp(argv[i],	"--mass-range")	== 0 ) 	{	
 		coarseIn->mMin = randIn->mMin = atof(argv[++i]); 
 		randIn->param.mass1 = randIn->param.mass2 = randIn->mMin;
 		coarseIn->mMax = randIn->mMax = atof(argv[++i]); 
+		
 	}
       else if ( strcmp(argv[i], "--m1") 	== 0 )
 	otherIn->m1 = atof(argv[++i]);	      
@@ -1344,6 +1349,11 @@ void CheckParams(InspiralCoarseBankIn coarseIn,
   if (coarseIn.approximant != BCV && otherIn.overlapMethod != InQuadrature)
     {
       BEPrintError("If the template are not BCV, the overlap \nmethod must be InQuadrature (use the \"--InQuadrature\" option)\n");
+      exit(0);
+    }
+  if (coarseIn.tSampling <= 2.*coarseIn.fUpper)
+    {
+      BEPrintError("arg given by  --freq-moment-bank should be < to half the value of the argument given by --sampling \n");
       exit(0);
     }
 
@@ -1541,7 +1551,9 @@ void LALCreateMomentVector(
   in.xmin 	= params->fLower;						/* Lower frequency of integral?	is it correct or should we put zero? 	*/
   in.xmax 	= params->tSampling/2.;						/* We dont' need to cut here		*/
   in.norm 	= 1./4.;							/* Some normalization			*/
-  in.norm*=psd->data->length*psd->data->length/2./2.;
+
+
+  in.norm*=params->tSampling * params->tSampling;
 
   /* The minimum and maximum frequency */
   kMin = (UINT8) floor( (in.xmin - psd->f0) / psd->deltaF );
@@ -2393,8 +2405,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   ADD_PROCESS_PARAM("float",	"%12.5f",	 "--fendbcv",		coarseIn.LowGM);
   ADD_PROCESS_PARAM("float",	"%12.5f",	 "--fendbcv",		coarseIn.HighGM);
   ADD_PROCESS_PARAM("float",	"%12.5f",	"--sampling",		coarseIn.tSampling);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--mass-range",		coarseIn.mMin);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--mass-range",		coarseIn.mMax);
+  ADD_PROCESS_PARAM("float",	"%12.5f",	"--mass-range",		randIn.mMin);
+  ADD_PROCESS_PARAM("float",	"%12.5f",	"--mass-range",		randIn.mMax);
   ADD_PROCESS_PARAM("float",	"%12.5f",	"--m1",			otherIn.m1);
   ADD_PROCESS_PARAM("float",	"%12.5f",	"--m2",			otherIn.m2);
   ADD_PROCESS_PARAM("float",	"%12.5f",	"--psi0",		otherIn.psi0);
