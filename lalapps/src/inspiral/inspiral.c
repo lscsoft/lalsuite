@@ -1123,13 +1123,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case '?':
-        fprintf( stderr, USAGE );
         exit( 1 );
         break;
 
       default:
         fprintf( stderr, "unknown error while parsing options\n" );
-        fprintf( stderr, USAGE );
         exit( 1 );
     }
   }
