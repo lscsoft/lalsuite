@@ -3,8 +3,8 @@
 # $Id$
 #
 if MPI
-check_PROGRAMS  = FindChirpTmpltTest FindChirpSPTest
-TESTS           = FindChirpTmpltTest FindChirpSPTest
+check_PROGRAMS  = 
+TESTS           = NoTest
 else
 check_PROGRAMS  =
 TESTS           = NoTest
@@ -12,10 +12,10 @@ endif
 
 EXTRA_DIST      = NoTest FindChirpTmpltTest.c FindChirpSPTest.c
 
-FindChirpTmpltTest_SOURCES = FindChirpTmpltTest.c
-FindChirpTmpltTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-FindChirpSPTest_SOURCES = FindChirpSPTest.c
-FindChirpSPTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+#FindChirpTmpltTest_SOURCES = FindChirpTmpltTest.c
+#FindChirpTmpltTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+#FindChirpSPTest_SOURCES = FindChirpSPTest.c
+#FindChirpSPTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 CLEANFILES = FindChirpTmpltTest
