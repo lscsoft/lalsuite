@@ -50,12 +50,12 @@ fprintf(fid,'\nIFO, target, startFreq, band = %s, %s, %g, %g\n',IFO,target,start
  
 fprintf('\n Table Loudest Events: \n\n');
 fprintf(fid,'\n Table Loudest Events: \n\n');
-fprintf('        RA          DEC       fDeriv     frequency       power         width \n');
-fprintf(fid,'        RA          DEC       fDeriv     frequency       power         width \n');
+fprintf('        RA          DEC       fDeriv        frequency       power         width \n');
+fprintf(fid,'        RA          DEC       fDeriv        frequency       power         width \n');
 for i=1:length(freqs)
   if (loudestEventPowers(i) > 0.0)
-    fprintf('%12.6f %12.6f %12.6f %12.6f %12.6f %12.6f\n',RAs(i),DECs(i),fDerivs(i),freqs(i),loudestEventPowers(i),widths(i));
-    fprintf(fid,'%12.6f %12.6f %12.6f %12.6f %12.6f %12.6f\n',RAs(i),DECs(i),fDerivs(i),freqs(i),loudestEventPowers(i),widths(i));
+    fprintf('%12.6f %12.6f %15.6e %12.6f %12.6f %12.6f\n',RAs(i),DECs(i),fDerivs(i),freqs(i),loudestEventPowers(i),widths(i));
+    fprintf(fid,'%12.6f %12.6f %15.6e %12.6f %12.6f %12.6f\n',RAs(i),DECs(i),fDerivs(i),freqs(i),loudestEventPowers(i),widths(i));
   end
 end
 % Set up overall loudest event, and print loudest event for each frequency band.
@@ -67,8 +67,8 @@ else
  [loudestEvent, i] = max(loudestEventPowers);
  fprintf('\nLoudest event found is: %g for RA, DEC, fDerivs, f, power, width: \n',loudestEvent);
  fprintf(fid,'\nLoudest event found is: %g for RA, DEC, fDerivs, f, power: \n',loudestEvent);
- fprintf('%12.6f %12.6f %12.6f %12.6f %12.6f %12.6f\n\n',RAs(i),DECs(i),fDerivs(i),freqs(i),loudestEventPowers(i),widths(i));
- fprintf(fid,'%12.6f %12.6f %12.6f %12.6f %12.6f %12.6f\n\n',RAs(i),DECs(i),fDerivs(i),freqs(i),loudestEventPowers(i),widths(i));
+ fprintf('%12.6f %12.6f %15.6e %12.6f %12.6f %12.6f\n\n',RAs(i),DECs(i),fDerivs(i),freqs(i),loudestEventPowers(i),widths(i));
+ fprintf(fid,'%12.6f %12.6f %15.6e %12.6f %12.6f %12.6f\n\n',RAs(i),DECs(i),fDerivs(i),freqs(i),loudestEventPowers(i),widths(i));
 end
 
 % Read in the Monte Carlo Simulation Files:
