@@ -606,7 +606,7 @@ LALInspiralWave3ForInjection (
 
   if ( (phase/2./LAL_PI) < 2. ){
     sprintf(message, "The waveform has only %lf cycles; we don't keep waveform with less than 2 cycles.", 
-	       phase/2./LAL_PI );
+	       (double)phase/2./(double)LAL_PI );
     LALWarning(status, message);
 
 

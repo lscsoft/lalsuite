@@ -25,7 +25,6 @@ LALInspiralTofVIntegrand.c\
 LALInspiralVelocity.c\
 LALInspiralWaveLength.c\
 LALInspiralWave.c\
-LALInspiralWaveForInjection.c\
 LALInspiralWave1.c\
 LALInspiralWave2.c\
 LALInspiralWave3.c\

@@ -1,5 +1,5 @@
 /*  <lalVerbatim file="LALInspiralWaveCV">
-Author: Churches, D. K and Sathyaprakash, B.S.
+Author: Churches, D. K and Sathyaprakash, B.S. and Cokelaer. T
 $Id$
 </lalVerbatim>  */
 
@@ -107,6 +107,7 @@ Depending on the user inputs one of the following functions is called:\\
 
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
+#include <lal/GeneratePPNInspiral.h>
 
 NRCSID (LALINSPIRALWAVEC, "$Id$");
 
@@ -240,8 +241,69 @@ LALInspiralWaveTemplates(
       case SpinTaylorT3:
            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
       break;
+      default: 
+      break;
    }
 
    DETATCHSTATUSPTR(status);
    RETURN (status);
 }
+
+
+
+NRCSID (LALINSPIRALWAVEFORINJECTIONC, "$Id$");
+
+/*  <lalVerbatim file="LALInspiralWaveForInjectionCP"> */
+void 
+LALInspiralWaveForInjection(
+   LALStatus        *status,
+   CoherentGW       *waveform,
+   InspiralTemplate *inspiralParams,
+   PPNParamStruc  *ppnParams)
+{ /* </lalVerbatim>  */
+
+   INITSTATUS(status, "LALInspiralWaveForInjection", LALINSPIRALWAVEFORINJECTIONC);
+   ATTATCHSTATUSPTR(status);
+
+   ASSERT (inspiralParams,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (ppnParams,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+
+   switch (inspiralParams->approximant) 
+     {
+     case TaylorT1:
+     case PadeT1:
+       LALInspiralWave1ForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);	
+       CHECKSTATUSPTR(status);
+       break;
+     case TaylorT2:
+       LALInspiralWave2ForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
+       CHECKSTATUSPTR(status);
+       break;
+     case TaylorT3:
+       LALInspiralWave3ForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
+       CHECKSTATUSPTR(status);
+       break;
+     case EOB:
+       LALEOBWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
+       CHECKSTATUSPTR(status);
+	   break;
+      case BCV:
+      case BCVSpin:
+      case TaylorF1:
+      case TaylorF2:
+      case PadeF1:
+           ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+	   break;
+      case SpinTaylor:
+	LALSTPNWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
+	CHECKSTATUSPTR(status);
+	break;
+     default:
+       break; 	
+   }
+
+   DETATCHSTATUSPTR(status);
+   RETURN (status);
+}
+

@@ -1143,8 +1143,8 @@ LALEOBWaveformForInjection (
 			    ) 
 { 
   /* </lalVerbatim> */
-  INT4 count, nn=4, ndx,length,i;
-  REAL8  eta, m, rn, r, rOld, s, p, q, dt, t,  v, omega, f, x;
+  INT4 count, nn=4, i;
+  REAL8  eta, m, rn, r, rOld, s, p, q, dt, t,  v, omega ;
   REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
 
   REAL4Vector *a=NULL;/* pointers to generated amplitude  data */
@@ -1546,7 +1546,7 @@ LALEOBWaveformForInjection (
 
   if ( (s/LAL_PI) < 2 ){
     sprintf(message, "The waveform has only %lf cycles; we don't keep waveform with less than 2 cycles.", 
-	       s/LAL_PI );
+	      (double) s/ (double)LAL_PI );
     LALWarning(status, message);
   }
   else
