@@ -384,6 +384,13 @@ LALIfoScanSingleInspiral(
     CHAR                       *ifo
     );
 
+void
+LALIfoCountSingleInspiral(
+    LALStatus                  *status,
+    UINT4                      *numTrigs,
+    SnglInspiralTable          *input,
+    InterferometerLabel         ifoLabel
+    );
 
 void
 LALPlayTestSingleInspiral(
@@ -443,7 +450,7 @@ LALSnglInspiralLookup(
     LALStatus            *status,
     SnglInspiralTable   **snglInspiralPtr,
     CoincInspiralTable   *coincInspiral,
-    InterferometerLabel   ifo 
+    InterferometerLabel   ifoLabel 
     );
 
 
