@@ -40,6 +40,7 @@ LALFclose()
 </lalLaTeX> */
 
 #include "LALInitBarycenter.h"
+#include <lal/FileIO.h>
 		 
 NRCSID(LALINITBARYCENTERC,"$Id$");
 		 
