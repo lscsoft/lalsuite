@@ -23,6 +23,8 @@ ldas-gridmon.ligo.caltech.edu "RDS_R_L3 H 733662523-733662524 adc(H1:LSC-AS_Q) x
 
 int main(int argc, char *argv[]) {
 
+  char nocondor = 0;
+
   char *fQuery; /* frame data */
 
   char *algorithms; /* algorithms */
@@ -45,17 +47,26 @@ int main(int argc, char *argv[]) {
   set_debug_level( "227" ); /* no memory debugging */
 
   if(argc<5) {
-    fprintf(stderr,"burstdso dataserver framesQuery algorithms filterParams [responseFiles] [fraction]\n");
+    fprintf(stderr,"burstdso [-nocondor] dataserver framesQuery algorithms filterParams [responseFiles] [fraction]\n");
     fprintf(stderr,"frameQuery, algorithms, filterParams and responseFiles can be files or strings\n");
     fprintf(stderr,"Pass an empty string (\"\") for responseFiles to use fraction without responseFiles\n");
     fprintf(stderr,"fraction: f0-f1\n");
     return 1;
   }
 
+  if(strstr(argv[1],"nocondor")) {
+    argc -= 1;
+    argv++;
+    nocondor=1;
+  }
+
   dataserver = argv[1];
   fQuery = argv[2];
   algo = argv[3];
   params = argv[4];
+
+
+
 
   /*****************************************/
   /* parse parameters */
@@ -194,9 +205,21 @@ int main(int argc, char *argv[]) {
   /* acquire data */
   /*****************************************/
   /* loop over lines in fQuery, get data, add to datacond callchain */
-  if(getFrameData(times, dataserver, &Nsymbols, &symbols)) {
-    fprintf(stderr,"ERROR: can't get frame data\n");
-    return 1;
+
+  if(nocondor) {
+
+    if(getFrameData(times, dataserver, &Nsymbols, &symbols)) {
+      fprintf(stderr,"ERROR: can't get frame data\n");
+      return 1;
+    }
+
+  } else {
+    
+    if(getFrameData(times, CACHEFILENAME, &Nsymbols, &symbols)) {
+      fprintf(stderr,"ERROR: can't get frame data\n");
+      return 1;
+    }
+
   }
 
   /*****************************************/

@@ -27,6 +27,8 @@ extern "C" {
 #define GW_STRAIN_DATA "GW_STRAIN_DATA"
 #define GW_STRAIN_PSD "GW_STRAIN_PSD"
 
+#define CACHEFILENAME "FrCacheFile"
+
 #define SABORT(I,M) fprintf(stderr,"ERROR: %i\n%s\n%s:%i\n",I,M,__FILE__,__LINE__); return 1
 
 #define RCHECKSTATUSPTR( statusptr ) \
@@ -197,6 +199,9 @@ LALFrGetSeriesType(
 int OutputSymbols(char *algorithms, 
 		 int *Nsymbols,
 		  datacond_symbol_type **symbols);
+
+int getFrameCache(char *fQuery, 
+		  char *dataserver);
 
 int getFrameData(char *fQuery, 
 		 char *dataserver,

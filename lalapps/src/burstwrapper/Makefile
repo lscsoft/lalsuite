@@ -1,8 +1,12 @@
 CC = gcc
 
-LAL = ${HOME}/LAL
-LALAPPS = ${HOME}/LALAPPS
-DATACOND = ${HOME}/datacond
+#LAL = ${HOME}/LAL
+#LALAPPS = ${HOME}/LALAPPS
+#DATACOND = ${HOME}/datacond
+
+LAL = $(LALLOCATION)
+LALAPPS = $(LALAPPSLOCATION)
+DATACOND = $(DATACONDLOCATION)
 
 LDFLAGS= \
 	-L$(DATACOND)/lib \
@@ -21,5 +25,10 @@ OBJS=getFrameData.o  getNonFrameData.o  InitSearch.o  RunSearch.o Translation.o 
 CFLAGS+=-g $(INCLUDES) 
 CXXFLAGS+=-g $(INCLUDES) 
 
+all : burstdso buildcache
+
 burstdso : $(OBJS) burstdso.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o burstdso burstdso.o $(OBJS) $(LIBS)
+
+buildcache : buildcache.o 
+	$(CXX) $(CXXFLAGS) -o buildcache buildcache.o 

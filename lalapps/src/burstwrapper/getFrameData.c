@@ -137,37 +137,47 @@ int getFrameData(char *fQuery,
 	}
 	
 	/* find the data */
-	{
-	  int fid = mkstemp(tname);
-	  if(fid==-1) {
-	    fprintf(stderr,"Can't create temp file\n");
+	if(!strstr(dataserver,"CACHEFILENAME")) {
+	  /* use LSCdataFind */
+	  {
+	    int fid = mkstemp(tname);
+	    if(fid==-1) {
+	      fprintf(stderr,"Can't create temp file\n");
+	      return 1;
+	    }
+	    close(fid);
+	  }
+	
+	  path = getenv("LSC_DATAGRID_CLIENT_LOCATION");
+	  if(!path) {
+	    fprintf(stderr,"Environment variable LSC_DATAGRID_CLIENT_LOCATION not set\n");
 	    return 1;
 	  }
-	  close(fid);
-	}
-	
-	path = getenv("LSC_DATAGRID_CLIENT_LOCATION");
-	if(!path) {
-	  fprintf(stderr,"Environment variable LSC_DATAGRID_CLIENT_LOCATION not set\n");
-	  return 1;
-	}
       
-	sprintf(cmd,"source %s/setup.sh; %s/ldg-client/bin/LSCdataFind --server %s --observatory %s --type %s --gps-start-time %s --gps-end-time %s --url-type file --lal-cache > %s", path, path, dataserver, IFO, type, T0, T1, tname);
+	  sprintf(cmd,"source %s/setup.sh; %s/ldg-client/bin/LSCdataFind --server %s --observatory %s --type %s --gps-start-time %s --gps-end-time %s --url-type file --lal-cache > %s", path, path, dataserver, IFO, type, T0, T1, tname);
 
-	if(system(cmd) == -1) {
-	  fprintf(stderr,"system call failed\n");
-	  perror("Error");
+	  if(system(cmd) == -1) {
+	    fprintf(stderr,"system call failed\n");
+	    perror("Error");
+	    unlink(tname);
+	    return 1;
+	  }
+
+	  /* get the data */
+	  LAL_CALL( LALFrCacheImport( &stat, &frameCache, tname ), &stat );
+	  LAL_CALL( LALFrCacheOpen( &stat, &stream, frameCache ), &stat );
+	  LAL_CALL( LALDestroyFrCache( &stat, &frameCache ), &stat );
+	
 	  unlink(tname);
-	  return 1;
+	} else {
+	  /* we have a cache file */
+	  /* get the data */
+	  LAL_CALL( LALFrCacheImport( &stat, &frameCache, dataserver ), &stat );
+	  LAL_CALL( LALFrCacheOpen( &stat, &stream, frameCache ), &stat );
+	  LAL_CALL( LALDestroyFrCache( &stat, &frameCache ), &stat );
 	}
 
-	/* get the data */
-	LAL_CALL( LALFrCacheImport( &stat, &frameCache, tname ), &stat );
-	LAL_CALL( LALFrCacheOpen( &stat, &stream, frameCache ), &stat );
-	LAL_CALL( LALDestroyFrCache( &stat, &frameCache ), &stat );
-	
-	unlink(tname);
-      
+
 	LAL_CALL( LALFrGetSeriesType(&stat, &otype, &stype, &ChannelIn, stream), &stat);
 
 	switch ( stype ) {
@@ -844,3 +854,6 @@ LALFrGetSeriesType(
 
   RETURN( status );
 }
+
+
+
