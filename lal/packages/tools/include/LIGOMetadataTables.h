@@ -233,7 +233,7 @@ typedef struct
 tagEventIDColumn
 {
   struct tagEventIDColumn *next;
-  UINT4  id;
+  UINT8  id;
   CHAR   textId[LIGOMETA_UNIQUE_MAX];
   UCHAR  dbUniqueId[LIGOMETA_DBUNIQUE_MAX];
   struct tagSnglBurstTable      *snglBurstTable;
@@ -461,7 +461,7 @@ tagSimInspiralTable
   REAL4          coa_phase;
   REAL4          polarization;
   REAL4          psi0;
-  REAL4		 psi3;
+  REAL4          psi3;
   REAL4          alpha;
   REAL4          alpha1;
   REAL4          alpha2;
