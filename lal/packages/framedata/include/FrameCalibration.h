@@ -61,7 +61,7 @@ NRCSID( FRAMECALIBRATIONH, "$Id$" );
 #define FRAMECALIBRATIONH_MSGENULL "No calibration generated: Null pointer"
 #define FRAMECALIBRATIONH_MSGENNUL "No calibration generated: Non-null pointer"
 #define FRAMECALIBRATIONH_MSGEMCHE "No calibration generated: unable to open calibration cache file"
-#define FRAMECALIBRATIONH_MSGECREF "No calibration generated: reference calibration in cache"
+#define FRAMECALIBRATIONH_MSGECREF "No calibration generated: no reference calibration in cache"
 #define FRAMECALIBRATIONH_MSGEOREF "No calibration generated: unable to open reference frame"
 #define FRAMECALIBRATIONH_MSGEDCHE "No calibration generated: error reference calibration cache"
 #define FRAMECALIBRATIONH_MSGEREFR "No calibration generated: error reading refernce calibration"
