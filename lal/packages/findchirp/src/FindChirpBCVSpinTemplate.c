@@ -88,10 +88,20 @@ LALFindChirpBCVSpinTemplate (
   INT4         kmax       = 0;    
   REAL4        distNorm;
   const REAL4  cannonDist = 1.0; /* Mpc */
+
+  INT4         i;
+  INT4         j;
+  REAL4                 factor;
+
  
 FILE        *fpTmpltIm      =  NULL;
 FILE        *fpTmpltRe      =  NULL;
+FILE        *fpTemplate     =  NULL;
 
+  RealFFTPlan           *prev = NULL;
+  REAL4Vector           *hVec = NULL;
+  REAL4Vector           *HVec = NULL;
+  REAL4                  invNumPoints;
  
   INITSTATUS( status, "LALFindChirpBCVSpinTemplate", FINDCHIRPSBCVTEMPLATEC );
   ATTATCHSTATUSPTR( status );
@@ -252,6 +262,7 @@ fprintf (stdout, "psi0 = %e \n", psi0);
 fpTmpltIm  =  fopen("tmpltIm.dat","w");
 fpTmpltRe  =  fopen("tmpltRe.dat","w");
 
+fpTemplate =  fopen("Template.dat","w");
 
   for ( k = kmin; k < kmax ; ++k )
     {
@@ -283,7 +294,7 @@ fpTmpltRe  =  fopen("tmpltRe.dat","w");
       /* XXX The sign of this is different than the SP filtering
        * because the data is conjugated instead of the template in the
        * BCV code */
-      expPsi[k].im =   sin(psi1);
+      expPsi[k].im =  - sin(psi1);
       expPsi[k].re =   cos(psi1);
 
 	fprintf (fpTmpltIm, "%d\t%e\n",k, expPsi[k].im);
@@ -302,9 +313,60 @@ fprintf (stdout, "expPsi[k].re = %e \n", expPsi[k].re);*/
 fclose (fpTmpltIm);
 fclose (fpTmpltRe);
 
-  /*code*/
+        LALCreateReverseRealFFTPlan(status->statusPtr, &prev, numPoints,0);
+        LALSCreateVector(status->statusPtr, &hVec, numPoints);
+        LALSCreateVector(status->statusPtr, &HVec, numPoints);
+
+       for (i=0; i<(numPoints); i++)
+        {
+           HVec->data[i] = 0.0;
+        }
+
+  factor = LAL_TWOPI * 0.5;
+
+
+       for (i=kmin; i<kmax; i++)
+        {
+                HVec->data[i]           =  expPsi[i].re *  cos((REAL4)i*factor) - expPsi[i].im *  sin((REAL4)i*factor);
+                HVec->data[numPoints-i] = expPsi[i].im *  cos((REAL4)i*factor) - expPsi[i].re *  sin((REAL4)i*factor);
+/* - to correct time reversal */
+        }
+                HVec->data[0] = 0.;
+                HVec->data[numPoints/2] = 0.;
+
+/*for ( i = 0; i < numPoints; ++i)
+                                                                                                                             
+        {
+           fprintf (fpTemplate, "%d\t%e\n", i, HVec->data[i]);
+        }*/
+
+
+fprintf (stdout, "before FFT \n");
+                                                                                                                             
+LALREAL4VectorFFT( status->statusPtr, hVec, HVec, prev );
+CHECKSTATUSPTR( status );
+                                                                                                                             
+fprintf (stdout, "after FFT \n");
+
+invNumPoints = 1.0 / ((REAL4) numPoints); 
+fprintf (stdout, "invNumPoints  %e\n", invNumPoints );
+
+for ( i = 0; i < numPoints; ++i)
+                                                                                                                             
+        {
+           hVec->data[i] *= invNumPoints;
+           fprintf (fpTemplate, "%d\t%e\n", i, hVec->data[i]);
+        }
+
+fclose (fpTemplate);
+
+LALDestroyRealFFTPlan ( status->statusPtr, &prev);
+LALSDestroyVector ( status->statusPtr, &hVec);
+LALSDestroyVector ( status->statusPtr, &HVec);
+  
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
+
 
