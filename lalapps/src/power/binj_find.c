@@ -358,13 +358,13 @@ static SimBurstTable **trim_injection_list(SimBurstTable **list, struct options_
 {
 	SimBurstTable *injection = *list;
 
-	while(injection && !keep_this_injection(injection, options))
-		injection = free_this_injection(injection);
+	while(*list && !keep_this_injection(*list, options))
+		*list = free_this_injection(*list);
 
-	if(!injection)
+	if(!*list)
 		return(list);
 
-	while(injection->next) {
+	for(injection = *list; injection->next; ) {
 		if(keep_this_injection(injection->next, options))
 			injection = injection->next;
 		else
@@ -593,15 +593,15 @@ static void free_events(SnglBurstTable *list)
 
 static SnglBurstTable **trim_event_list(SnglBurstTable **list, struct options_t options)
 {
-	SnglBurstTable *event = *list;
+	SnglBurstTable *event;
 
-	while(event && !keep_this_event(event, options))
-		event = free_this_event(event);
+	while(*list && !keep_this_event(*list, options))
+		*list = free_this_event(*list);
 
-	if(!event)
+	if(!*list)
 		return(list);
 
-	while(event->next) {
+	for(event = *list; event->next; ) {
 		if(keep_this_event(event->next, options))
 			event = event->next;
 		else
