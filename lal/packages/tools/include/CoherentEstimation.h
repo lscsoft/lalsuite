@@ -25,6 +25,7 @@ NRCSID( COHERENTESTIMATION, "$Id$" );
 #define COHERENTESTIMATIONH_EDST 4
 #define COHERENTESTIMATIONH_EICE 5
 #define COHERENTESTIMATIONH_ENUM 6
+#define COHERENTESTIMATIONH_EUIMP 7
 
 #define COHERENTESTIMATIONH_MSGEMEM "Memory allocation error"
 #define COHERENTESTIMATIONH_MSGENULL "NULL pointer"
@@ -32,6 +33,7 @@ NRCSID( COHERENTESTIMATION, "$Id$" );
 #define COHERENTESTIMATIONH_MSGEDST "input time series don't all have same start time"
 #define COHERENTESTIMATIONH_MSGEICE "invalid CoherentEstimation structure"
 #define COHERENTESTIMATIONH_MSGENUM "Numerical erorr"
+#define COHERENTESTIMATIONH_MSGEUIMP "Implemented only for 3 detectors"
 
 typedef struct tagDetectorsData {
 
@@ -50,10 +52,14 @@ typedef struct tagCoherentEstimation {
   BOOLEAN preProcessed;    /* set to 0 to for pre-processing */
   UINT2 nPreProcessed;     /* number of times to apply pre-proc filters */
 
-  REAL8 aplus, bplus, across, bcross; /* parameters of scale function */
-
   SkyPosition *position;   /* position of source (equatorial celestial coordinates) */
   REAL8 polAngle;          /* polarization angle: counter-clockwise angle x-axis makes with a line per- pendicular to meridian of source in Westward direction (i.e. North of West), in decimal radians. */
+
+  REAL8 plus2cross; /* ratio |s+|/|sx|, non-zero */
+
+  REAL8 plusDotcross; /* s+ sx / |s+| |sx| */
+
+  REAL8 **CMat; /* correlation matrix */
 
 } CoherentEstimation;
 
@@ -62,9 +68,9 @@ typedef struct tagCoherentEstimation {
 void
 LALCoherentEstimation ( 
 		       LALStatus          *stat,
-		       COMPLEX8TimeSeries *output,
+		       REAL4TimeSeries *output,
 		       CoherentEstimation *params,
-		       DetectorsData      *in 
+		       DetectorsData      *in
 	              );
 
 void 

@@ -7,22 +7,33 @@
 
 #define EPS 1.0e-7
 
+#define Cosh(x) cosh(x)
+#define ACosh(x) acosh(x)
+
 NRCSID( COHERENTESTIMATIONC, "$Id$" );
 
-
+double cosh(double);
+double acosh(double);
 
 void
 LALCoherentEstimation ( LALStatus          *stat,
-			COMPLEX8TimeSeries *output,
+			REAL4TimeSeries *output,
 			CoherentEstimation *params,
-			DetectorsData      *in ) {
+			DetectorsData      *in) {
   /* 
      NOTES:
      o destroys input (in)
      o order of in must be same as order of params->filters
      o output time wrt center of Earth
-     o output.re = plus, output.im = cross
   */
+
+  static INT4
+    SolveHomogeneous(
+		     REAL8 **Hmat,
+		     REAL8 *tmpAlpha,
+		     UINT4 N
+		     );
+
 
   INT4 i, j, /* counters */
     iPad, ePad, /* used for padding */
@@ -38,7 +49,17 @@ LALCoherentEstimation ( LALStatus          *stat,
   LALDetAndSource dAs; /* for responses */
   LALSource source; /* for responses */
   LIGOTimeGPS t0; /* start time of data */
-  REAL8 normPlus, normCross; /* for normalization */
+
+  REAL8 *alpha, *tmpAlpha; /* scale factor */
+  UINT4 Nlambda;
+  REAL8 a0, a1, a2, A0, A1, A2, A3, an, bn, cn, ab, ac, bc, p, q, C, maxLambda, tmpLambda;
+  REAL8 *lambda;
+  REAL8 **Hmat, **Cmat;
+
+  /*
+    {REAL8 tmp = Cosh(ACosh((double)3.02993)/3.0);
+    printf("%g\n",tmp);}
+  */
 
   /***********************************************************************/
   /* initialize status & validate input                                  */
@@ -46,9 +67,12 @@ LALCoherentEstimation ( LALStatus          *stat,
   INITSTATUS( stat, "LALCoherentEstimation", COHERENTESTIMATIONC);
   ATTATCHSTATUSPTR( stat );
 
+
   ASSERT ( in, stat, COHERENTESTIMATIONH_ENULL, COHERENTESTIMATIONH_MSGENULL );
   ASSERT ( in->data, stat, COHERENTESTIMATIONH_ENULL, COHERENTESTIMATIONH_MSGENULL );
   ASSERT ( in->Ndetectors > 0 && in->Ndetectors < 10, stat, COHERENTESTIMATIONH_E0DEC, COHERENTESTIMATIONH_MSGE0DEC );
+
+  ASSERT ( in->Ndetectors == 3, stat, COHERENTESTIMATIONH_EUIMP, COHERENTESTIMATIONH_MSGEUIMP );
 
   for(i=0;i<in->Ndetectors;i++) {
     ASSERT ( in->data[i].data, stat, COHERENTESTIMATIONH_E0DEC, COHERENTESTIMATIONH_MSGE0DEC );
@@ -104,11 +128,25 @@ LALCoherentEstimation ( LALStatus          *stat,
       TRY ( LALDDestroyVector (  stat->statusPtr,
 				 &tmpR8 ) , stat );
 
+      /* set first 1/16 s to zero to avoid transient */
+      bzero(in->data[i].data->data, sizeof(REAL4) * (UINT4)ceil(0.0635 / in->data[i].deltaT));
+
     }
 
     params->preProcessed = 1;
 
   }
+
+
+  /* update output parameters */
+  output->epoch = in->data[0].epoch;
+  output->deltaT = in->data[0].deltaT;
+  output->f0 = in->data[0].f0;
+  memcpy(&(output->sampleUnits), &(in->data[0].sampleUnits), sizeof(LALUnit));
+
+  /* make sure output is zero */
+  bzero(output->data->data, output->data->length * sizeof(REAL4));
+
 
 
   /***********************************************************************/
@@ -167,48 +205,122 @@ LALCoherentEstimation ( LALStatus          *stat,
   /***********************************************************************/
   /* Compute and store estimated data                                    */
   /***********************************************************************/
-  /* update output parameters */
-  output->epoch = in->data[0].epoch;
-  output->deltaT = in->data[0].deltaT;
-  output->f0 = in->data[0].f0;
-  memcpy(&(output->sampleUnits), &(in->data[0].sampleUnits), sizeof(LALUnit));
-
-  /* make sure output is zero */
-  bzero(output->data->data, output->data->length * sizeof(COMPLEX8));
-
   /* set time origine on detector with largest delay */
+  /*
   mDelay = tDelays[0];
   for(i=1; i<params->Ndetectors; i++) {
 	if(tDelays[i] > mDelay) {
 		mDelay = tDelays[i];
 	}
   }
+  */
+  mDelay = tDelays[0];
 
   for(i=0; i<params->Ndetectors; i++) {
     tDelays[i] -= mDelay;
   }
 
-  /* response function */
-  for(i=0; i<params->Ndetectors; i++) {
 
-    F[i].cross = F[i].cross / (fabs(F[i].cross) * (params->across + pow(fabs(F[i].cross), params->bcross)));
-    F[i].plus = F[i].plus / (fabs(F[i].plus) * ( params->aplus + pow(fabs(F[i].plus), params->bplus) ) );
-
+  alpha = (REAL8 *)LALMalloc(params->Ndetectors * sizeof(REAL8));
+  if(!alpha) {
+    ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
   }
 
-
-  normPlus = normCross = 0.0;
-  for(i=0; i<params->Ndetectors; i++) {
-    normCross += fabs(F[i].cross);
-    normPlus += F[i].plus*F[i].plus;
+  tmpAlpha = (REAL8 *)LALMalloc(params->Ndetectors * sizeof(REAL8));
+  if(!tmpAlpha) {
+    ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
   }
 
-  normPlus = sqrt(normPlus);
+  lambda = (REAL8 *)LALMalloc(params->Ndetectors * sizeof(REAL8));
+  if(!lambda) {
+    ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
+  }
 
-
+  Hmat = (REAL8 **)LALMalloc(params->Ndetectors * sizeof(REAL8 *));
+  if(!Hmat) {
+    ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
+  }
   for(i=0; i<params->Ndetectors; i++) {
-    F[i].plus /= normPlus;
-    F[i].cross /= normCross;
+    Hmat[i] = (REAL8 *)LALMalloc(params->Ndetectors * sizeof(REAL8));
+    if(!(Hmat[i])) {
+      ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
+    }
+  }
+
+  Cmat = params->CMat;
+
+  an = F[0].plus*F[0].plus*params->plus2cross + F[0].cross*F[0].cross/params->plus2cross + 2.0*F[0].plus*F[0].cross*params->plusDotcross;
+  bn = F[1].plus*F[1].plus*params->plus2cross + F[1].cross*F[1].cross/params->plus2cross + 2.0*F[1].plus*F[1].cross*params->plusDotcross;
+  cn = F[2].plus*F[2].plus*params->plus2cross + F[2].cross*F[2].cross/params->plus2cross + 2.0*F[2].plus*F[2].cross*params->plusDotcross;
+
+  ab = F[0].plus*F[1].plus*params->plus2cross + (F[0].plus*F[1].cross + F[0].cross*F[1].plus)*params->plusDotcross + F[0].cross*F[1].cross/params->plus2cross;
+  ac = F[0].plus*F[2].plus*params->plus2cross + (F[0].plus*F[2].cross + F[0].cross*F[2].plus)*params->plusDotcross + F[0].cross*F[2].cross/params->plus2cross;
+  bc = F[1].plus*F[2].plus*params->plus2cross + (F[1].plus*F[2].cross + F[1].cross*F[2].plus)*params->plusDotcross + F[1].cross*F[2].cross/params->plus2cross;
+
+  A0 = -ac*ac*bn-bc*bc*an-ab*ab*cn+2.0*ab*ac*bc+an*bn*cn;
+  A1 = -bc*bc*Cmat[0][0]+bn*cn*Cmat[0][0]+2.0*ac*bc*Cmat[0][1]-2.0*ab*cn*Cmat[0][1]-2.0*ac*bn*Cmat[0][2]+2.0*ab*bc*Cmat[0][2]-ac*ac*Cmat[1][1]+an*cn*Cmat[1][1]+2.0*ab*ac*Cmat[1][2]-2.0*an*bc*Cmat[1][2]-ab*ab*Cmat[2][2]+an*bn*Cmat[2][2];
+  A2 = -cn*Cmat[0][1]*Cmat[0][1]+2.0*bc*Cmat[0][1]*Cmat[0][2]-bn*Cmat[0][2]*Cmat[0][2]+cn*Cmat[0][0]*Cmat[1][1]-2.0*ac*Cmat[0][2]*Cmat[1][1]-2.0*bc*Cmat[0][0]*Cmat[1][2]+2.0*ac*Cmat[0][1]*Cmat[1][2]+2.0*ab*Cmat[0][2]*Cmat[1][2]-an*Cmat[1][2]*Cmat[1][2]+bn*Cmat[0][0]*Cmat[2][2]-2.0*ab*Cmat[0][1]*Cmat[2][2]+an*Cmat[1][1]*Cmat[2][2];
+  A3 = -Cmat[0][2]*Cmat[0][2]*Cmat[1][1]+2.0*Cmat[0][1]*Cmat[0][2]*Cmat[1][2]-Cmat[0][0]*Cmat[1][2]*Cmat[1][2]-Cmat[0][1]*Cmat[0][1]*Cmat[2][2]+Cmat[0][0]*Cmat[1][1]*Cmat[2][2];
+
+  a0 = A0/A3;
+  a1 = A1/A3;
+  a2 = A2/A3;
+
+  p = (3.0*a1-a2*a2)/3.0;
+  q = (9.0*a1*a2-27.0*a0-2.0*a2*a2*a2)/27.0;
+  C = 0.5*q*pow(3.0/fabs(p),1.5);
+
+  if(C>=1.0) {
+    Nlambda = 1;
+    lambda[0] = 2.0*sqrt(fabs(p)/3.0)*Cosh(ACosh(C)/3.0)-a2/3.0;
+  }
+  if(C<=-1.0) {
+    Nlambda = 1;
+    lambda[0] = -2.0*sqrt(fabs(p)/3.0)*Cosh(ACosh(fabs(C))/3.0)-a2/3.0;
+
+    /*
+    {REAL8 tmp = Cosh(ACosh(3.02993)/3.0);
+    printf("%g\n",tmp);}
+    */
+
+    /*
+    printf("%g\t%g\t%g\t%g\t%g\n",p,C,a2,lambda[0],-2.0*sqrt(fabs(p)/3.0)*Cosh(ACosh(fabs(C))/3.0)-a2/3.0);
+    */
+
+  }
+  if(fabs(C)<1.0) {
+    Nlambda = 3;
+    lambda[0] = 2.0*sqrt(fabs(p)/3.0)*cos(acos(C)/3.0)-a2/3.0;
+    lambda[1] = 2.0*sqrt(fabs(p)/3.0)*cos((acos(C)+2.0*LAL_PI)/3.0)-a2/3.0;
+    lambda[2] = 2.0*sqrt(fabs(p)/3.0)*cos((acos(C)+4.0*LAL_PI)/3.0)-a2/3.0;
+  }
+
+  maxLambda = -1e30;
+  for(i=0;i<Nlambda;i++) {
+    Hmat[0][0] = an + lambda[i]*Cmat[0][0];
+    Hmat[0][1] = Hmat[1][0] = ab + lambda[i]*Cmat[0][1];
+    Hmat[0][2] = Hmat[2][0] = ac + lambda[i]*Cmat[0][2];
+
+    Hmat[1][1] = bn + lambda[i]*Cmat[1][1];
+    Hmat[1][2] = Hmat[2][1] = bc + lambda[i]*Cmat[1][2];
+
+    Hmat[2][2] = cn + lambda[i]*Cmat[2][2];
+
+    /* note: following instruction modifies Hmat */
+    if(SolveHomogeneous(Hmat,tmpAlpha,params->Ndetectors)) {
+      ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
+    }
+
+    tmpLambda = (tmpAlpha[0]*tmpAlpha[0]*an+tmpAlpha[1]*tmpAlpha[1]*bn+tmpAlpha[2]*tmpAlpha[2]*cn+2.0*tmpAlpha[0]*tmpAlpha[1]*ab+2.0*tmpAlpha[0]*tmpAlpha[2]*ac+2.0*tmpAlpha[1]*tmpAlpha[2]*bc)/(tmpAlpha[0]*tmpAlpha[0]*Cmat[0][0]+tmpAlpha[1]*tmpAlpha[1]*Cmat[1][1]+tmpAlpha[2]*tmpAlpha[2]*Cmat[2][2]+2.0*tmpAlpha[0]*tmpAlpha[1]*Cmat[0][1]+2.0*tmpAlpha[0]*tmpAlpha[2]*Cmat[0][2]+2.0*tmpAlpha[1]*tmpAlpha[2]*Cmat[1][2]);
+
+    if(tmpLambda > maxLambda) {
+      memcpy(alpha,tmpAlpha,params->Ndetectors * sizeof(REAL8));
+      maxLambda = tmpLambda;
+    }
+
+    /*
+    printf("%u\t%g\t%g\t%g\t%g\n",i,lambda[i],alpha[0],alpha[1],alpha[2]);
+    */
   }
 
   /* loop */
@@ -245,18 +357,37 @@ LALCoherentEstimation ( LALStatus          *stat,
 
       y = p1 * in->data[i].data->data[del+j-1] + p2 * in->data[i].data->data[del+j];
 
-      output->data->data[j].re += y * F[i].plus;
-      output->data->data[j].im += y * F[i].cross;
-
+      output->data->data[j] += y * alpha[i];
     }
-
   }
+
+  /*
+  {
+    FILE *out;
+    out = fopen("test.dat","w");
+    for(j=0;j<output->data->length;j++) {
+      fprintf(out,"%g\t%g\n",output->data->data[j].re,output->data->data[j].im);
+    }
+    fclose(out);
+
+    exit(0);
+  }
+  */
 
   /***********************************************************************/
   /* clean up and normal return                                          */
   /***********************************************************************/
   LALFree(tDelays);
   LALFree(F);
+
+  LALFree(alpha);
+  LALFree(tmpAlpha);
+  LALFree(lambda);
+
+  for(i=0; i<params->Ndetectors; i++) {
+    LALFree(Hmat[i]);
+  }
+  LALFree(Hmat);
 
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
@@ -319,7 +450,269 @@ LALClearCoherentInfo (
 
   LALFree(dat->filters);
 
+  LALFree(dat->CMat);
+
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 
 }
+
+
+static REAL8 sqrarg;
+#define SQR(a) ((sqrarg=(a)) == 0.0 ? 0.0 : sqrarg*sqrarg)
+
+static REAL8 maxarg1,maxarg2;
+#define FMAX(a,b) (maxarg1=(a),maxarg2=(b),(maxarg1) > (maxarg2) ?\
+        (maxarg1) : (maxarg2))
+
+static INT4 iminarg1,iminarg2;
+#define IMIN(a,b) (iminarg1=(a),iminarg2=(b),(iminarg1) < (iminarg2) ?\
+        (iminarg1) : (iminarg2))
+
+#define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
+
+static INT4 SolveHomogeneous(
+		 REAL8 **a,
+		 REAL8 *Alpha,
+		 UINT4 m
+		 ) {
+  UINT4 n = m;
+  REAL8 *w;
+  REAL8 **v;
+
+  static REAL8 pythag(REAL8 a, REAL8 b);
+  INT4 flag,i,its,j,jj,k,l,nm;
+  REAL8 anorm,c,f,g,h,s,scale,x,y,z,*rv1, wmin;
+
+  /*
+  printf("det = %g\n",a[0][0]*(a[1][1]*a[2][2]-a[2][1]*a[1][2])-a[0][1]*(a[1][0]*a[2][2]-a[1][2]*a[2][0])+a[0][2]*(a[1][0]*a[2][1]-a[1][1]*a[2][0]));
+  */
+
+  w = (REAL8 *)LALMalloc(n * sizeof(REAL8));
+  if(!w) {
+    return 1;
+  }
+
+  v = (REAL8 **)LALMalloc(n * sizeof(REAL8 *));
+  if(!v) {
+    return 1;
+  }
+  for(i=0;i<n;i++) {
+    v[i] = (REAL8 *)LALMalloc(n * sizeof(REAL8));
+    if(!(v[i])) {
+      return 1;
+    }
+  }
+
+  rv1 = (REAL8 *)LALMalloc(n * sizeof(REAL8));
+  if(!rv1) {
+    return 1;
+  }
+
+  g=scale=anorm=0.0;
+  for (i=1;i<=n;i++) {
+    l=i+1;
+    rv1[i-1]=scale*g;
+    g=s=scale=0.0;
+    if (i <= m) {
+      for (k=i;k<=m;k++) scale += fabs(a[k-1][i-1]);
+      if (scale) {
+	for (k=i;k<=m;k++) {
+	  a[k-1][i-1] /= scale;
+	  s += a[k-1][i-1]*a[k-1][i-1];
+	}
+	f=a[i-1][i-1];
+	g = -SIGN(sqrt(s),f);
+	h=f*g-s;
+	a[i-1][i-1]=f-g;
+	for (j=l;j<=n;j++) {
+	  for (s=0.0,k=i;k<=m;k++) s += a[k-1][i-1]*a[k-1][j-1];
+	  f=s/h;
+	  for (k=i;k<=m;k++) a[k-1][j-1] += f*a[k-1][i-1];
+	}
+	for (k=i;k<=m;k++) a[k-1][i-1] *= scale;
+      }
+    }
+    w[i-1]=scale *g;
+    g=s=scale=0.0;
+    if (i <= m && i != n) {
+      for (k=l;k<=n;k++) scale += fabs(a[i-1][k-1]);
+      if (scale) {
+	for (k=l;k<=n;k++) {
+	  a[i-1][k-1] /= scale;
+	  s += a[i-1][k-1]*a[i-1][k-1];
+	}
+	f=a[i-1][l-1];
+	g = -SIGN(sqrt(s),f);
+	h=f*g-s;
+	a[i-1][l-1]=f-g;
+	for (k=l;k<=n;k++) rv1[k-1]=a[i-1][k-1]/h;
+	for (j=l;j<=m;j++) {
+	  for (s=0.0,k=l;k<=n;k++) s += a[j-1][k-1]*a[i-1][k-1];
+	  for (k=l;k<=n;k++) a[j-1][k-1] += s*rv1[k-1];
+	}
+	for (k=l;k<=n;k++) a[i-1][k-1] *= scale;
+      }
+    }
+    anorm=FMAX(anorm,(fabs(w[i-1])+fabs(rv1[i-1])));
+  }
+  for (i=n;i>=1;i--) {
+    if (i < n) {
+      if (g) {
+	for (j=l;j<=n;j++)
+	  v[j-1][i-1]=(a[i-1][j-1]/a[i-1][l-1])/g;
+	for (j=l;j<=n;j++) {
+	  for (s=0.0,k=l;k<=n;k++) s += a[i-1][k-1]*v[k-1][j-1];
+	  for (k=l;k<=n;k++) v[k-1][j-1] += s*v[k-1][i-1];
+	}
+      }
+      for (j=l;j<=n;j++) v[i-1][j-1]=v[j-1][i-1]=0.0;
+    }
+    v[i-1][i-1]=1.0;
+    g=rv1[i-1];
+    l=i;
+  }
+  for (i=IMIN(m,n);i>=1;i--) {
+    l=i+1;
+    g=w[i-1];
+    for (j=l;j<=n;j++) a[i-1][j-1]=0.0;
+    if (g) {
+      g=1.0/g;
+      for (j=l;j<=n;j++) {
+	for (s=0.0,k=l;k<=m;k++) s += a[k-1][i-1]*a[k-1][j-1];
+	f=(s/a[i-1][i-1])*g;
+	for (k=i;k<=m;k++) a[k-1][j-1] += f*a[k-1][i-1];
+      }
+      for (j=i;j<=m;j++) a[j-1][i-1] *= g;
+    } else for (j=i;j<=m;j++) a[j-1][i-1]=0.0;
+    ++a[i-1][i-1];
+  }
+  for (k=n;k>=1;k--) {
+    for (its=1;its<=30;its++) {
+      flag=1;
+      for (l=k;l>=1;l--) {
+	nm=l-1;
+	if ((REAL8)(fabs(rv1[l-1])+anorm) == anorm) {
+	  flag=0;
+	  break;
+	}
+	if ((REAL8)(fabs(w[nm-1])+anorm) == anorm) break;
+      }
+      if (flag) {
+	c=0.0;
+	s=1.0;
+	for (i=l;i<=k;i++) {
+	  f=s*rv1[i-1];
+	  rv1[i-1]=c*rv1[i-1];
+	  if ((REAL8)(fabs(f)+anorm) == anorm) break;
+	  g=w[i-1];
+	  h=pythag(f,g);
+	  w[i-1]=h;
+	  h=1.0/h;
+	  c=g*h;
+	  s = -f*h;
+	  for (j=1;j<=m;j++) {
+	    y=a[j-1][nm-1];
+	    z=a[j-1][i-1];
+	    a[j-1][nm-1]=y*c+z*s;
+	    a[j-1][i-1]=z*c-y*s;
+	  }
+	}
+      }
+      z=w[k-1];
+      if (l == k) {
+	if (z < 0.0) {
+	  w[k-1] = -z;
+	  for (j=1;j<=n;j++) v[j-1][k-1] = -v[j-1][k-1];
+	}
+	break;
+      }
+      if (its == 30) return 1;
+      x=w[l-1];
+      nm=k-1;
+      y=w[nm-1];
+      g=rv1[nm-1];
+      h=rv1[k-1];
+      f=((y-z)*(y+z)+(g-h)*(g+h))/(2.0*h*y);
+      g=pythag(f,1.0);
+      f=((x-z)*(x+z)+h*((y/(f+SIGN(g,f)))-h))/x;
+      c=s=1.0;
+      for (j=l;j<=nm;j++) {
+	i=j+1;
+	g=rv1[i-1];
+	y=w[i-1];
+	h=s*g;
+	g=c*g;
+	z=pythag(f,h);
+	rv1[j-1]=z;
+	c=f/z;
+	s=h/z;
+	f=x*c+g*s;
+	g = g*c-x*s;
+	h=y*s;
+	y *= c;
+	for (jj=1;jj<=n;jj++) {
+	  x=v[jj-1][j-1];
+	  z=v[jj-1][i-1];
+	  v[jj-1][j-1]=x*c+z*s;
+	  v[jj-1][i-1]=z*c-x*s;
+	}
+	z=pythag(f,h);
+	w[j-1]=z;
+	if (z) {
+	  z=1.0/z;
+	  c=f*z;
+	  s=h*z;
+	}
+	f=c*g+s*y;
+	x=c*y-s*g;
+	for (jj=1;jj<=m;jj++) {
+	  y=a[jj-1][j-1];
+	  z=a[jj-1][i-1];
+	  a[jj-1][j-1]=y*c+z*s;
+	  a[jj-1][i-1]=z*c-y*s;
+	}
+      }
+      rv1[l-1]=0.0;
+      rv1[k-1]=f;
+      w[k-1]=x;
+    }
+  }
+
+  i = 0;
+  wmin = fabs(w[0]);
+
+  for(j=1;j<n;j++) {
+    if(fabs(w[j]) < wmin) {
+      i = j;
+      wmin = fabs(w[j]);
+    }
+  }
+
+  for(j=0;j<n;j++) {
+    Alpha[j] = v[j][i];
+  }
+
+  LALFree(rv1);
+  LALFree(w);
+  for(i=0;i<n;i++) {
+    LALFree(v[i]);
+  }
+  LALFree(v);
+
+  return 0;
+}
+
+static REAL8 pythag(REAL8 a, REAL8 b)
+{
+        REAL8 absa,absb;
+        absa=fabs(a);
+        absb=fabs(b);
+        if (absa > absb) return absa*sqrt(1.0+SQR(absb/absa));
+        else return (absb == 0.0 ? 0.0 : absb*sqrt(1.0+SQR(absa/absb)));
+}
+
+#undef SIGN
+#undef FMAX
+#undef IMIN
+#undef SQR
