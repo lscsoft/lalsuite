@@ -34,6 +34,30 @@ RCSID("$Id$");
 #define TRUE  1
 #define FALSE 0
 
+struct options_t {
+	int verbose;
+
+	/* central_freq threshold */
+	INT4 maxCentralfreqFlag;
+	REAL4 maxCentralfreq;
+	INT4 minCentralfreqFlag;
+	REAL4 minCentralfreq;
+};
+
+/*
+ * Set the options to their defaults.
+ */
+
+static void set_option_defaults(struct options_t *options)
+{
+	options->verbose = 0;
+
+	options->maxCentralfreqFlag = 0;
+	options->maxCentralfreq = 0.0;
+	options->minCentralfreqFlag = 0;
+	options->minCentralfreq = 0.0;
+}
+
 /*
  * Read a line of text from a file, striping the newline character if read.
  * Return an empty string on any error.
@@ -80,21 +104,21 @@ static int isPlayground(INT4 gpsStart, INT4 gpsEnd)
  * per line.
  */
 
-static SimBurstTable *read_injection_table(LALStatus *stat, char *filename, INT4 start_time, INT4 end_time, int verbose)
+static SimBurstTable *read_injection_list(LALStatus *stat, char *filename, INT4 start_time, INT4 end_time, struct options_t options)
 {
 	FILE *infile;
 	char line[MAXSTR];
-	SimBurstTable *simBurstList = NULL;
-	SimBurstTable **addPoint = &simBurstList;
+	SimBurstTable *list = NULL;
+	SimBurstTable **addPoint = &list;
 
-	if (verbose)
+	if (options.verbose)
 		fprintf(stdout, "Reading in SimBurst Table\n");
 
 	if (!(infile = fopen(filename, "r")))
 		LALPrintError("Could not open input file\n");
 
 	while (getline(line, MAXSTR, infile)) {
-		if (verbose)
+		if (options.verbose)
 			fprintf(stderr, "Working on file %s\n", line);
 
 		LAL_CALL(LALSimBurstTableFromLIGOLw(stat, addPoint, line, start_time, end_time), stat);
@@ -105,7 +129,47 @@ static SimBurstTable *read_injection_table(LALStatus *stat, char *filename, INT4
 
 	fclose(infile);
 
-	return(simBurstList);
+	return(list);
+}
+
+
+/*
+ * Trim a SimBurstTable.
+ */
+
+static int keep_this_injection(SimBurstTable *injection, struct options_t options)
+{
+	if (options.minCentralfreqFlag && !(injection->freq > options.minCentralfreq))
+		return(FALSE);
+	if (options.maxCentralfreqFlag && !(injection->freq < options.maxCentralfreq))
+		return(FALSE);
+	return(TRUE);
+}
+
+static SimBurstTable *free_this_injection(SimBurstTable *injection)
+{
+	SimBurstTable *next = injection ? injection->next : NULL;
+	LALFree(injection);
+	return(next);
+}
+
+static SimBurstTable *trim_injection_list(SimBurstTable *injection, struct options_t options)
+{
+	SimBurstTable *head, *prev;
+
+	while(injection && !keep_this_injection(injection, options))
+		injection = free_this_injection(injection);
+	head = injection;
+
+	/* FIXME: don't check the first event again */
+	for(prev = injection; injection; injection = prev->next) {
+		if(keep_this_injection(injection, options))
+			prev = injection;
+		else
+			prev->next = free_this_injection(injection);
+	}
+
+	return(head);
 }
 
 
@@ -127,6 +191,8 @@ int main(int argc, char **argv)
 	INT4 ninjected = 0;
 	const long S2StartTime = 729273613;	/* Feb 14 2003 16:00:00 UTC */
 	const long S2StopTime = 734367613;	/* Apr 14 2003 15:00:00 UTC */
+
+	static struct options_t options;
 
 	/* filenames */
 	CHAR *inputFile = NULL;
@@ -150,12 +216,6 @@ int main(int argc, char **argv)
 	REAL4 minDuration = 0.0;
 	INT4 maxDurationFlag = 0;
 	REAL4 maxDuration = 0.0;
-
-	/* central_freq threshold */
-	INT4 maxCentralfreqFlag = 0;
-	REAL4 maxCentralfreq = 0.0;
-	INT4 minCentralfreqFlag = 0;
-	REAL4 minCentralfreq = 0.0;
 
 	/* bandwidth threshold */
 	INT4 maxBandwidthFlag = 0;
@@ -197,17 +257,16 @@ int main(int argc, char **argv)
 	MetadataTable myTable;
 	LIGOLwXMLStream xmlStream;
 
-	static int verbose_flag = 0;
-
   /*******************************************************************
    * BEGIN PARSE ARGUMENTS (inarg stores the current position)        *
    *******************************************************************/
+	set_option_defaults(&options);
 	int c;
 	while (1) {
 		/* getopt arguments */
 		static struct option long_options[] = {
 			/* these options set a flag */
-			{"verbose", no_argument, &verbose_flag, 1},
+			{"verbose", no_argument, &options.verbose, 1},
 			/* parameters which determine the output xml file */
 			{"input", required_argument, 0, 'a'},
 			{"injfile", required_argument, 0, 'b'},
@@ -284,14 +343,14 @@ int main(int argc, char **argv)
 
 		case 'g':
 			/* only events with centralfreq greater than this are selected */
-			minCentralfreqFlag = 1;
-			minCentralfreq = atof(optarg);
+			options.minCentralfreqFlag = 1;
+			options.minCentralfreq = atof(optarg);
 			break;
 
 		case 'h':
 			/* only events with centralfreq less than this are selected */
-			maxCentralfreqFlag = 1;
-			maxCentralfreq = atof(optarg);
+			options.maxCentralfreqFlag = 1;
+			options.maxCentralfreq = atof(optarg);
 			break;
 
 		case 'j':
@@ -362,39 +421,11 @@ int main(int argc, char **argv)
 	xmlStream.fp = NULL;
 
   /*******************************************************************
-   * Read the injection table                                        *
+   * Read and trim the injection list                                *
    *******************************************************************/
 
-	simBurstList = read_injection_table(&stat, injectionFile, gpsStartTime, gpsEndTime, verbose_flag);
-
-  /***************************************************** 
-   *  make any requested cuts                          *
-   *****************************************************/
-	tmpSimBurst = simBurstList;
-
-	while (tmpSimBurst) {
-		/* check min centralfreq */
-		if (minCentralfreqFlag && !(tmpSimBurst->freq > minCentralfreq))
-			pass = FALSE;
-		/* check max centralfreq */
-		if (maxCentralfreqFlag && !(tmpSimBurst->freq < maxCentralfreq))
-			pass = FALSE;
-
-		if (pass) {
-			if (outSimdummyList == NULL) {
-				outSimdummyList = currentSimBurst = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
-				prevSimBurst = currentSimBurst;
-			} else {
-				currentSimBurst = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
-				prevSimBurst->next = currentSimBurst;
-			}
-			memcpy(currentSimBurst, tmpSimBurst, sizeof(SimBurstTable));
-			prevSimBurst = currentSimBurst;
-			currentSimBurst = currentSimBurst->next = NULL;
-		}
-		tmpSimBurst = tmpSimBurst->next;
-		pass = TRUE;
-	}
+	simBurstList = read_injection_list(&stat, injectionFile, gpsStartTime, gpsEndTime, options);
+	simBurstList = trim_injection_list(simBurstList, options);
 
   /*****************************************************************
    * OPEN FILE WITH LIST OF Trigger XML FILES (one file per line)
@@ -415,7 +446,7 @@ int main(int argc, char **argv)
 	while (getline(line, MAXSTR, fpin)) {
 		INT4 tmpStartTime = 0, tmpEndTime = 0;
 
-		if (verbose_flag)
+		if (options.verbose)
 			fprintf(stderr, "Working on file %s\n", line);
 
     /**************************************************************
@@ -502,11 +533,11 @@ int main(int argc, char **argv)
 			pass = FALSE;
 
 		/* check min centralfreq */
-		if (minCentralfreqFlag && !(tmpEvent->central_freq > minCentralfreq))
+		if (options.minCentralfreqFlag && !(tmpEvent->central_freq > options.minCentralfreq))
 			pass = FALSE;
 
 		/* check max centralfreq */
-		if (maxCentralfreqFlag && !(tmpEvent->central_freq < maxCentralfreq))
+		if (options.maxCentralfreqFlag && !(tmpEvent->central_freq < options.maxCentralfreq))
 			pass = FALSE;
 
 		/* check max bandwidth */
