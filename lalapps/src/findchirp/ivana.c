@@ -1357,6 +1357,7 @@ ___Start__ _Dur_ __Veto__used__used% __Cand___cut___cut% _Clus___cut__cut% dead%
 /*===========================================================================*/
 void PrintUsage()
 {
+  printf( "Id: $\n" );
   printf( "\nNew syntax:   ivana <candidate_file> <veto_spec> [-r <range_spec>]\n"
           "                       [-o <output_file>] [-v <veto_range_file>]\n"
           "                       [-l] [-s <snr_cut>] [-c <chisq_cut>]\n"
