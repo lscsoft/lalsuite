@@ -147,7 +147,7 @@ int main(int argc, char **argv)
 
     /* injections */
     SimBurstTable           *simBurstList=NULL;
-    SimBurstTable           *currentSimBurst=NULL;
+    SimBurstTable           *currentSimBurst=NULL, *tmpSimBurst=NULL;
 
     /* comparison parameters */
     SnglBurstAccuracy        accParams;
@@ -313,22 +313,62 @@ int main(int argc, char **argv)
 
     
     /*****************************************************************
-     * OPEN FILE WITH LIST OF XML FILES (one file per line)
-     ****************************************************************/
-    if ( !(fpin = fopen(inputFile,"r")) ){
-      LALPrintError("Could not open input file\n");
-    }
-
-
-    /*****************************************************************
      * READ IN THE INJECTIONS
      ****************************************************************/
     if ( verbose_flag )
       fprintf(stdout, "Reading in SimBurst Table\n");
 
-    LAL_CALL( LALSimBurstTableFromLIGOLw ( &stat, &simBurstList, injectionFile,
+    /*****************************************************************
+     * OPEN FILE WITH LIST OF XML FILES (one file per line)
+     ****************************************************************/
+    if ( !(fpin = fopen(injectionFile,"r")) ){
+      LALPrintError("Could not open input file\n");
+    }
+
+    /*****************************************************************
+     * loop over the xml files
+     *****************************************************************/
+    currentSimBurst = tmpSimBurst = simBurstList = NULL;
+    while ( getline(line, MAXSTR, fpin) ){
+
+      fileCounter++;
+      if (verbose_flag)
+      {
+        fprintf(stderr,"Working on file %s\n", line);
+      }
+
+      /* Now the events themselves */
+      LAL_CALL( LALSimBurstTableFromLIGOLw ( &stat, &tmpSimBurst, line,
           gpsStartTime, gpsEndTime), &stat );
 
+      /* connect results to linked list */
+      if (currentSimBurst == NULL)
+      {
+        simBurstList = currentSimBurst = tmpSimBurst;
+      }
+      else
+      {
+        currentSimBurst->next = tmpSimBurst;
+      }
+
+      /* move to the end of the linked list for next input file */
+      while (currentSimBurst->next != NULL)
+      {
+        currentSimBurst = currentSimBurst->next;
+      }
+      tmpSimBurst = currentSimBurst->next;
+    }
+
+    fclose(fpin);
+
+
+
+    /*****************************************************************
+     * OPEN FILE WITH LIST OF XML FILES (one file per line)
+     ****************************************************************/
+    if ( !(fpin = fopen(inputFile,"r")) ){
+      LALPrintError("Could not open input file\n");
+    }
 
     /*****************************************************************
      * loop over the xml files
@@ -520,8 +560,8 @@ int main(int argc, char **argv)
     fprintf(stdout,"%d sec = %d hours analyzed\n",timeAnalyzed,
         timeAnalyzed/3600);
     fprintf(stdout,"Detected %i injections out of %i made\n",ndetected,
-        (INT4)(LAL_PI*timeAnalyzed/400.0));
-    fprintf(stdout,"Efficiency is %f \n", (REAL4)(400.0*
+        (INT4)(LAL_PI*timeAnalyzed/50.0));
+    fprintf(stdout,"Efficiency is %f \n", (REAL4)(50.0*
         (REAL4)(ndetected) / (REAL4)( timeAnalyzed ) / LAL_PI ) );
 
     /*****************************************************************
