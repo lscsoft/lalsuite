@@ -110,22 +110,22 @@ LALRotatePolarU()
 </lalLaTeX> */
 
 
-
 #include <lal/LUT.h>
+
 
 NRCSID (NDPARAMPLUTC, "$Id$");
 
 /* <lalVerbatim file="NDParamPLUTD"> */
 void LALNDHOUGHParamPLUT (LALStatus  *status,
                    HOUGHParamPLUT  *out,  /* parameters needed build LUT*/
-		   INT8              f0Bin, /* freq. bin to construct LUT */
+                   HOUGHSizePar    *size,
                    HOUGHDemodPar   *par)  /* demodulation parameters */
 { /* </lalVerbatim> */
 
   /* --------------------------------------------- */
   
   REAL8   f0;  /* frequency corresponding to f0Bin */
-  REAL8   patchSizeX, patchSizeY;
+  INT8    f0Bin;
   REAL8   deltaF;  /*  df=1/TCOH  */
   REAL8   delta;
   REAL8   vFactor;
@@ -146,29 +146,21 @@ void LALNDHOUGHParamPLUT (LALStatus  *status,
   /*   Make sure the arguments are not NULL: */ 
   ASSERT (out, status, LUTH_ENULL, LUTH_MSGENULL);
   ASSERT (par, status, LUTH_ENULL, LUTH_MSGENULL);
+  ASSERT (size, status, LUTH_ENULL, LUTH_MSGENULL);
+  
   /*   Make sure f0Bin  is not zero: */  
+  f0Bin = size->f0Bin;
   ASSERT (f0Bin, status, LUTH_EFREQ, LUTH_MSGEFREQ);
-  
-  /* -------------------------------------------   */
-  
-  deltaF = out->deltaF = par->deltaF;
-  patchSizeX = par->patchSizeX;
-  patchSizeY = par->patchSizeY;
-
-  /* make sure the patch size is not zero */
-  ASSERT (patchSizeX, status, LUTH_EFREQ, LUTH_MSGEFREQ);
-  ASSERT (patchSizeY, status, LUTH_EFREQ, LUTH_MSGEFREQ);
 
   out->f0Bin = f0Bin;
-  f0 = f0Bin * deltaF;  
+  deltaF = out->deltaF = size->deltaF;
 
-  /*  max. angle (rad.) from the pole to consider  */
-  /*  a circle as a line in the projected plane    */
-  /* Formula with patch size fixed  */
-  /* out->epsilon = 8.* LINERR * f0Bin* VEPI * VEPI / VTOT ;*/  
-  /* Formula for arbitrary patch size */
-  out->epsilon = 8.* LINERR / ( VTOT * f0Bin * patchSizeX * patchSizeY ); 
+  f0 = f0Bin * deltaF;
 
+  out->epsilon = size->epsilon;
+  out->nFreqValid = size->nFreqValid;  
+  /* -------------------------------------------   */
+  
 
   /* -------------------------------------------   */
   /* *********** xi calculation *****************  */
@@ -230,16 +222,6 @@ void LALNDHOUGHParamPLUT (LALStatus  *status,
   offset = out->offset = floor( 0.5 + freqOffset/deltaF );
   out->cosPhiMax0 = invModXi * (offset + 0.5) * deltaF;
   out->cosPhiMin0 = invModXi * (offset - 0.5) * deltaF;
-
-
-  /* nFreqValid = PIXERR / (patchSize * VTOT) */
-  /* take patchSize to be the largest of PatchSizeX and patchSizeY) */
-  if ( patchSizeX > patchSizeY ) {
-    out->nFreqValid = PIXERR / (patchSizeX * VTOT);
-  }
-  else {
-    out->nFreqValid = PIXERR / (patchSizeY * VTOT);
-  }
 
 
   /* -------------------------------------------   */
