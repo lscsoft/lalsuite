@@ -198,44 +198,33 @@ void LALComputeCalibrationFactors(
 
   /* Adjust excitation for the fact that it does not see the entire actuation function */
 
-  EXC.re /= 2.0*params->outputMatrix; 
-  EXC.im /= 2.0*params->outputMatrix; 
+  EXC.re *= params->mu; 
+  EXC.im *= params->mu; 
   
   /* ------------------------------ compute alpha*beta ------------------------------------- */
 
-  cdiv( &H, &DARM_CTRL, &EXC );
+  cdiv( &RD, &DARM_CTRL, &EXC );
 
-  RD=H;
-  RD.re += 1.0;
-
-  if ( fabs( RD.re ) < tiny && fabs( RD.im ) < tiny )
+  OneMinusRD.re=1.0-RD.re;
+  OneMinusRD.im=-RD.im;
+  
+  if ( fabs( OneMinusRD.re ) < tiny && fabs( OneMinusRD.im ) < tiny )
   {
     ABORT( status, CALIBRATIONH_EZERO, CALIBRATIONH_MSGEZERO );
   }
 
-  cdiv( &H, &H, &RD );
-  cdiv( &alphabeta, &H, &H0 );
-
-  alphabeta.re *= -1; /* change the sign of alpha*beta */
-  alphabeta.im *= -1;
-
-  H.re *= -1.0;
-  H.im *= -1.0;
+  cdiv( &alphabeta, &RD, &OneMinusRD );
+  cdiv( &alphabeta, &alphabeta, &H0 );
 
   /* ------------------------------- compute alpha ----------------------------------------- */
 
-  cdiv( &RA, &AS_Q, &EXC );
-  cdiv( &alpha, &RA, &C0 );
+  cdiv( &RQ, &AS_Q, &EXC );
+  cdiv( &alpha, &RQ, &OneMinusRD);
   cdiv( &alpha, &alpha, &A0 );
-
-  H.re = H.re+1.0;
-
-  cmul(&alpha,&alpha,&H);
-
-  alpha.re *= -1;    /* change the sign of alpha */
-  alpha.im *= -1;
+  cdiv( &alpha, &alpha, &C0 );
 
   /* ------------------ Done, now put alpha and alpha*beta in the output structure --------- */
+
   output->alphabeta=alphabeta;
   output->alpha=alpha;
 
