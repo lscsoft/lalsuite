@@ -12,7 +12,7 @@
 typedef struct Clusterstag {
   INT2  Nclusters;     /* how many clusters */
   UINT4  *NclustPoints; /* for each cluster: how many points it has */
-  UINT4  *Iclust;       /* index of each cluster point, for all clusters */
+  UINT4  *Iclust;       /* index of the first datum of each cluster */
   REAL8 *clusters;     /* value of ratio for each cluster point, for all clusters */
 } Clusters;
 
