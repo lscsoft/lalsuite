@@ -269,9 +269,8 @@ LALModComputeExcessPower (
       ASSERT((k1>=0) && (k1<=k2) && (k2<=nf), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
     
 
+      /*Calculatet the degrees of freedom of the TF tile */
       dof = (REAL8)(2*(t2-t1)*thisTile->deltaT*(k2-k1)*thisTile->deltaF);
-
-      /* printf("searching tile = %d whose dof = %f\n",count, dof);*/
 
       sum=0.0;
       for(j=t1; j<t2; j+=(INT4)((t2-t1)/dof))
@@ -297,16 +296,6 @@ LALModComputeExcessPower (
       numsigma = rho2 / sqrt(2*dof);
       thisTile->weight = 1.0;
 
-      /* printf(" sum calculated for tile no %d\n", count );*/
-      /*   count++;
-      fp = fopen("power.dat","a");
-      if((dof == 2) && (k1 == 0) && (k2 == 16) && (t1 == 0) && (t2 == 2) && (count==0)){
-	count++;
-	fprintf(fp,"%d %d %d %d %f %f %f\n",k1,k2,t1,t2,sumnorm,dof,sum);
-      }
-      fclose(fp); 
-      */
-
       /*
        *  need to compute an accurate value of likelihood only if
        *  excess power is greater than a few sigma
@@ -326,7 +315,6 @@ LALModComputeExcessPower (
 	  locinput.chi2= sum;
 	  locinput.dof = dof;
 	  /* locinput->nonCentral not used by LALChisqCdf() */
-
 	  LALOneMinusChisqCdf( status->statusPtr, &alpha, &locinput);
 
 	  /* 
