@@ -22,7 +22,14 @@ bin_PROGRAMS = $(RINGPROG) $(STRINGPROG)
 if FRAME
 if LALFRAME
 if LALMETAIO
-lalapps_ring_SOURCES = ring.c
+lalapps_ring_SOURCES = ring.c ring.h ring_option.c ring_filter.c ring_output.c \
+         errutil.c errutil.h \
+         gpstime.c gpstime.h \
+	 getdata.c getdata.h \
+	 injsgnl.c injsgnl.h \
+	 getresp.c getresp.h \
+	 spectrm.c spectrm.h \
+	 segment.c segment.h
 TESTS = ring_test.sh
 lalapps_StringSearch_SOURCES = StringSearch.c
 endif
