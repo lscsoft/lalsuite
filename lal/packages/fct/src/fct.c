@@ -77,6 +77,8 @@ const char** setup_errstr(void)
   errstr[FCT_EDATACUBE_MODE]  = "Invalid mode for adding a data cube";
   errstr[FCT_EDATACUBE_RANGE] = "Invalid range for data cube";
 
+  errstr[FCT_EOFAC] = "Oversampling factor must be != 0";
+
   errstr[FCT_EUNKNOWN] = "Unknown error";
   
   return &errstr[0];
@@ -107,9 +109,10 @@ fct_plan *fct_init_plan(int data_length,int number_of_dimensions,
   any other fct_ function. It generates an fct_plan structure which tells
   the other fct_ functions how to operate on the data. After calling 
   fct_init_plan, the user must specify both the phase functions using 
-  fct_add_phase_function and the FCT parameters over which to calculate
+  fct_set_phase_function and the FCT parameters over which to calculate
   the FCT using fct_add_indicies.*/
 {
+  int k = 0;
   fct_plan *plan = 0;
 
   /*Allocate memory for the plan structure*/
@@ -117,7 +120,7 @@ fct_plan *fct_init_plan(int data_length,int number_of_dimensions,
 
   /*Check to see if allocation was successful. Exit otherwise.*/
   if (plan == NULL) {
-    status->fct_errno = FCT_EMEM;
+    FCT_ERROR(status, FCT_EMEM);
     return 0;
   }
 
@@ -140,12 +143,27 @@ fct_plan *fct_init_plan(int data_length,int number_of_dimensions,
 
   /*Allocate memory for the phase_func function array*/
   plan->phase_functions
-    = fct_malloc(sizeof(function_pointer)*number_of_dimensions);
+    = fct_calloc(number_of_dimensions, sizeof(function_pointer));
 
   /*Check to make sure the allocation worked.*/
   if (plan->phase_functions == 0) {
-    status->fct_errno = FCT_EMEM;
+    FCT_ERROR(status, FCT_EMEM);
     return 0;
+  }
+
+  /* Allocate memory for the phase_func oversampling factor array */
+  plan->ofac = fct_calloc(number_of_dimensions, sizeof(*(plan->ofac)));
+
+  /*Check to make sure the allocation worked.*/
+  if (plan->ofac == 0) {
+    FCT_ERROR(status, FCT_EMEM);
+    return 0;
+  }
+
+  /* Initialise */
+  for (k = 0; k < number_of_dimensions; ++k)
+  {
+    plan->ofac[k] = 1;
   }
 
   return plan;
@@ -162,7 +180,7 @@ void fct_set_units(fct_plan *plan, float offset, float delta,
 {
   /*Check to make sure the plan structure is valid.*/
   if (plan == 0){
-    status->fct_errno = FCT_ENULL_PLAN;
+    FCT_ERROR(status, FCT_ENULL_PLAN);
     return;
   }
 
@@ -180,7 +198,7 @@ void fct_set_max_segments(fct_plan *plan, int max, fct_status* const status)
 {
   /*Check to make sure the plan structure is valid.*/
   if (plan == 0) {
-    status->fct_errno = FCT_ENULL_PLAN;
+    FCT_ERROR(status, FCT_ENULL_PLAN);
     return;
   }
 
@@ -189,27 +207,69 @@ void fct_set_max_segments(fct_plan *plan, int max, fct_status* const status)
 
 
 STORAGE_CLASS
-void fct_add_phase_function(fct_plan *plan,int dimension,function_pointer func,
+void fct_set_phase_function(fct_plan *plan,
+			    int dimension,
+			    function_pointer func,
 			    fct_status* const status)
-/*This function adds the phase function pointed to by func to the array of 
+/*This function sets the phase function pointed to by func to the array of 
   phase functions needed by the FCT. The phase function specified will be used
-  to calculate the phase along the dimension speficied by the variable
+  to calculate the phase along the dimension specified by the variable
   dimension. Before adding the 
   function, this routine checks for a valid plan pointer and dimension.*/
 {
   /*Check to make sure the plan structure is valid.*/
   if (plan == 0) {
-    status->fct_errno = FCT_ENULL_PLAN;
+    FCT_ERROR(status, FCT_ENULL_PLAN);
     return;
   }
 
-  /*Check to make sure the dimension is valid*/
+  /*
+    Check to make sure the dimension is valid. Note that for some reason
+    the indexing starts at 1, the 0th element is wasted.
+   */
   if (dimension <= 0 || (dimension >= plan->number_of_dimensions)) {
-    status->fct_errno = FCT_EDIM;
+    FCT_ERROR(status, FCT_EDIM);
     return;
   }
 
   plan->phase_functions[dimension] = func;
+}
+
+STORAGE_CLASS
+void fct_set_oversampling_factor(fct_plan *plan,
+				 int dimension,
+				 int ofac,
+				 fct_status* const status)
+/*This function sets the oversampling factor for the phase function for the
+  given dimension. Note that oversampling factors are initialised to 1 by
+  default.
+  Before adding the function, this routine checks for a valid plan pointer
+  and dimension.*/
+{
+  /*Check to make sure the plan structure is valid.*/
+  if (plan == 0) {
+    FCT_ERROR(status, FCT_ENULL_PLAN);
+    return;
+  }
+
+  /*
+    Check to make sure the dimension is valid. Note that for some reason
+    the indexing starts at 1, the 0th element is wasted.
+   */
+  if (dimension <= 0 || (dimension >= plan->number_of_dimensions)) {
+    FCT_ERROR(status, FCT_EDIM);
+    return;
+  }
+
+  /*
+    Check to make sure the oversampling factor is valid.
+   */
+  if (ofac == 0) {
+    FCT_ERROR(status, FCT_EOFAC);
+    return;
+  }
+
+  plan->ofac[dimension] = ofac;
 }
 
 
@@ -227,13 +287,13 @@ void fct_add_data_cube(fct_plan *const plan,
 
   /*Check to make sure the plan structure is valid.*/
   if (plan == 0) {
-    status->fct_errno = FCT_ENULL_PLAN;
+    FCT_ERROR(status, FCT_ENULL_PLAN);
     return;
   }
 
   /* Mask is unimplemented and should always be zero */
   if (mask != 0) {
-    status->fct_errno = FCT_ENONNULL_MASK;
+    FCT_ERROR(status, FCT_ENONNULL_MASK);
     return;
   }
 
@@ -243,7 +303,7 @@ void fct_add_data_cube(fct_plan *const plan,
 
   /*Check to make sure the memory was allocated.*/
   if (parameters == 0) {
-    status->fct_errno = FCT_EMEM;
+    FCT_ERROR(status, FCT_EMEM);
     return;
   }
 
@@ -252,6 +312,16 @@ void fct_add_data_cube(fct_plan *const plan,
   parameters->end_locations        = (int *)fct_malloc(sizeof(int)*(plan->number_of_dimensions));
   parameters->stride               = (int *)fct_malloc(sizeof(int)*(plan->number_of_dimensions));
   parameters->points_per_dimension = (int *)fct_malloc(sizeof(int)*(plan->number_of_dimensions));
+
+  /* Check the allocations */
+  if (   (parameters->start_locations == 0)
+      || (parameters->end_locations == 0)
+      || (parameters->stride == 0)
+      || (parameters->points_per_dimension == 0))
+  {
+    FCT_ERROR(status, FCT_EMEM);
+    return;
+  }
 
   /*Set the next and previous pointers to NULL*/
   parameters->next     = (data_cube *)NULL;
@@ -291,19 +361,19 @@ void fct_add_data_cube(fct_plan *const plan,
     /*The start and end location are user specified.*/
     /*First, check to make sure the user put in valid arrays*/
     if (start_locations == (int *)NULL){
-      status->fct_errno = FCT_ENULL_LOC;
+      FCT_ERROR(status, FCT_ENULL_LOC);
       return;
     }
     
     if (end_locations == (int *)NULL){
-      status->fct_errno = FCT_ENULL_LOC;
+      FCT_ERROR(status, FCT_ENULL_LOC);
       return;
     }
     
     for (k = 1; k<plan->number_of_dimensions; ++k) {
       if (end_locations[k] <= start_locations[k])
       {
-	status->fct_errno = FCT_EDATACUBE_RANGE;
+	FCT_ERROR(status, FCT_EDATACUBE_RANGE);
 	return;
       }
       parameters->start_locations[k] = start_locations[k];
@@ -314,7 +384,7 @@ void fct_add_data_cube(fct_plan *const plan,
     
   default:
     /*If neither of the above modes were specified, then give an error */
-    status->fct_errno = FCT_EDATACUBE_MODE;
+    FCT_ERROR(status, FCT_EDATACUBE_MODE);
     return;
   }
   
@@ -368,7 +438,7 @@ void fct_remove_data_cube(fct_plan *plan, fct_status* const status)
   
   /*Check to make sure the plan structure is valid.*/
   if (plan == 0) {
-    status->fct_errno = FCT_ENULL_PLAN;
+    FCT_ERROR(status, FCT_ENULL_PLAN);
     return;
   }
   
@@ -422,7 +492,7 @@ unsigned long fct_data_cube_size(fct_plan *plan, data_cube *cube,
 
   /*Check to make sure the plan structure is valid.*/
   if (plan == 0) {
-    status->fct_errno = FCT_ENULL_PLAN;
+    FCT_ERROR(status, FCT_ENULL_PLAN);
     return 0;
   }
 
@@ -456,13 +526,13 @@ unsigned long fct_output_data_size(fct_plan *plan, fct_status* const status)
 
   /*Check to make sure the plan structure is valid.*/
   if (plan == 0) {
-    status->fct_errno = FCT_ENULL_PLAN;
+    FCT_ERROR(status, FCT_ENULL_PLAN);
     return 0;
   }
   
   /*Check to make sure that a least one data_cube has been added to the list*/
   if (plan->parameter_list_start == (data_cube *)NULL) {
-    status->fct_errno = FCT_ENULL_DATACUBE;
+    FCT_ERROR(status, FCT_ENULL_DATACUBE);
     return 0;
   }
 
@@ -511,7 +581,7 @@ void fct_calculate(fct_plan *plan,
 
   /*Check to make sure the plan structure is valid.*/
   if (plan == 0) {
-    status->fct_errno = FCT_ENULL_PLAN;
+    FCT_ERROR(status, FCT_ENULL_PLAN);
     return;
   }
 
@@ -529,7 +599,7 @@ void fct_calculate(fct_plan *plan,
      pk_real             == NULL ||
      pk_imag             == NULL)
   {
-    status->fct_errno = FCT_EMEM;
+    FCT_ERROR(status, FCT_EMEM);
     return;
   }
     
@@ -539,7 +609,7 @@ void fct_calculate(fct_plan *plan,
 
   /*Check to make sure the workspace is allocated*/
   if (work_space == NULL) {
-    status->fct_errno = FCT_EMEM;
+    FCT_ERROR(status, FCT_EMEM);
     return;
   }
     
@@ -562,7 +632,7 @@ void fct_calculate(fct_plan *plan,
     pre_kernal = fct_malloc(sizeof(fct_real)*current->pre_kernal_length);
     
     if (pre_kernal == NULL) {
-      status->fct_errno = FCT_EMEM;
+      FCT_ERROR(status, FCT_EMEM);
       return;
     }
 
@@ -592,7 +662,8 @@ void fct_calculate(fct_plan *plan,
 	  rint_phase = plan->data_length*
 	    (*plan->phase_functions[dim+1])(plan->offset + plan->dt*j) + 0.5;
 
-	  partial_phase = (2.0*M_PI/plan->data_length)*rint_phase;
+	  partial_phase = 2.0*M_PI*rint_phase/
+	    (plan->ofac[dim+1]*plan->data_length);
 
 	  /* Original function with call to rint()
 
@@ -772,11 +843,12 @@ void fct_destroy_plan(fct_plan *plan, fct_status* const status)
 
   /*Check to make sure the plan structure is valid.*/
   if (plan == 0) {
-    status->fct_errno = FCT_ENULL_PLAN;
+    FCT_ERROR(status, FCT_ENULL_PLAN);
     return;
   }
 
   fct_free(plan->phase_functions);
+  fct_free(plan->ofac);
   fct_destroy_fft_plan(plan);
 
   current = plan->parameter_list_start;
@@ -801,7 +873,7 @@ void fct_destroy_data_cube(data_cube *cube, fct_status* const status)
 {
   /*First, make sure the pointer is not NULL.*/
   if (cube == (data_cube *)NULL) {
-    status->fct_errno = FCT_ENULL_DATACUBE;
+    FCT_ERROR(status, FCT_ENULL_DATACUBE);
     return;
   }
   

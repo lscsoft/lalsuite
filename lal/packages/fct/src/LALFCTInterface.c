@@ -81,7 +81,7 @@ void LALCreateFCTPlan(LALStatus* const status,
 
     for (i = 1; i < in->number_of_dimensions; ++i)
     {
-        fct_add_phase_function((*plan_ptr)->fctPlan, i, in->phase_fn[i-1],
+        fct_set_phase_function((*plan_ptr)->fctPlan, i, in->phase_fn[i-1],
                                (*plan_ptr)->status);
     }
 
@@ -107,6 +107,26 @@ void LALDestroyFCTPlan(LALStatus* const status,
 
     LALFree(*plan_ptr);
     *plan_ptr = 0;
+}
+
+void LALFCTSetOversamplingFactor(LALStatus* const status,
+                    const LALFCTSetOversamplingFactorInput* const in,
+                    LALFCTPlan* const plan)
+{
+    INITSTATUS(status, "LALFCTSetOversamplingFactors", LALFCTINTERFACEC);
+
+    ASSERT(plan != 0, status,
+           LALFCTINTERFACEH_ENULL, LALFCTINTERFACEH_MSGENULL);
+    ASSERT(in != 0, status,
+           LALFCTINTERFACEH_ENULL, LALFCTINTERFACEH_MSGENULL);
+
+    fct_set_oversampling_factor(plan->fctPlan, in->dim,
+				in->ofac, plan->status);
+
+    ASSERT(plan->status->fct_errno == 0, status,
+           LALFCTINTERFACEH_EINTERNAL, fct_strerror(plan->status->fct_errno));
+
+    plan->fct_initialised = 0;
 }
 
 void LALFCTSetUnits(LALStatus* const status,

@@ -141,6 +141,11 @@ typedef struct fct_plan_
   function_pointer  *phase_functions;          /*The array of phase functions
 						 used to calculate the FCT.*/
 
+  int               *ofac;                     /* Oversampling factors for
+                                                  each phase function - set
+                                                  all to 1 for "standard" FCT
+					       */
+
   data_cube         *parameter_list_start;     /*The start of a linked list of 
 						 structures defining the region
 						 in FCT parameter space to be 
@@ -187,6 +192,7 @@ enum FCTErrNo {
   FCT_ENULL_DATACUBE,
   FCT_EDATACUBE_MODE,
   FCT_EDATACUBE_RANGE,
+  FCT_EOFAC,
   FCT_EUNKNOWN
 };
 
@@ -195,7 +201,16 @@ enum FCTErrNo {
 typedef struct fct_status_
 {
   int fct_errno;  /* Non-zero value indicates an error */
+  const char* file;
+  int line;
 } fct_status;
+
+#define FCT_ERROR(s, errno) \
+{ \
+  s->fct_errno = errno; \
+  s->file = __FILE__; \
+  s->line = __LINE__; \
+}
 
 
 /* Function prototypes */
@@ -226,7 +241,7 @@ fct_plan            *fct_init_plan               (int data_length,
   any other fct_ function. It generates an fct_plan structure which tells
   the other fct_ functions how to operate on the data. After calling 
   fct_init_plan, the user must specify both the phase functions using 
-  fct_add_phase_function and the FCT parameters over which to calculate
+  fct_set_phase_function and the FCT parameters over which to calculate
   the FCT using fct_add_indicies.
   
   The returned value is a pointer to an fct_plan_ structure which is
@@ -253,7 +268,7 @@ void                fct_set_max_segments         (fct_plan *plan, int max,
 
 
 STORAGE_CLASS
-void                fct_add_phase_function       (fct_plan *plan,
+void                fct_set_phase_function       (fct_plan *plan,
 						  int dimension,
 						  function_pointer func,
 						  fct_status* const status);
@@ -262,6 +277,17 @@ void                fct_add_phase_function       (fct_plan *plan,
   to calculate the phase along the dimension speficied by the variable
   dimension. Before adding the function, this routine checks for a valid
   plan pointer and dimension.*/
+
+STORAGE_CLASS
+void fct_set_oversampling_factor(fct_plan *plan,
+				 int dimension,
+				 int ofac,
+				 fct_status* const status);
+/*This function sets the oversampling factor for the phase function for the
+  given dimension. Note that oversampling factors are initialised to 1 by
+  default.
+  Before adding the function, this routine checks for a valid plan pointer
+  and dimension.*/
 
 
 STORAGE_CLASS
