@@ -1,19 +1,19 @@
 ## Process this file with automake to produce Makefile.in
 noinst_LTLIBRARIES = libcomm.la
-COMM_SOURCES = SendRecv.c Exchange.c
+COMMSOURCES = SendRecv.c Exchange.c
 
 if MPI
-libcomm_la_SOURCES = $(COMM_SOURCES)
+libcomm_la_SOURCES = $(COMMSOURCES)
 EXTRA_TEXSOURCES   =
 else
 libcomm_la_SOURCES = 
-EXTRA_TEXSOURCES   = $(COMM_SOURCES)
+EXTRA_TEXSOURCES   = $(COMMSOURCES)
 endif
 
-EXTRA_DIST = $(COMM_SOURCES) \
+EXTRA_DIST = $(COMMSOURCES) \
   SendRecv.m4 SendRecvAtomic.m4 SendRecvVector.m4 SendRecvSeries.m4 \
   Exchange.m4 ExchangeObject.m4
-MAINTAINERCLEANFILES = $(COMM_SOURCES)
+MAINTAINERCLEANFILES = $(COMMSOURCES)
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep

@@ -1,18 +1,18 @@
 ## Process this file with automake to produce Makefile.in
 noinst_LTLIBRARIES = libframedata.la
 
-OLD_FRAMEDATA_SOURCES = FrameData.c SpecBuffer.c DataBuffer.c
-FRAMEDATA_SOURCES = FrameStream.c
+OLDFRAMEDATASOURCES = FrameData.c SpecBuffer.c DataBuffer.c
+FRAMEDATASOURCES = FrameStream.c
 
 if FRAME
-libframedata_la_SOURCES = $(FRAMEDATA_SOURCES)
+libframedata_la_SOURCES = $(FRAMEDATASOURCES)
 EXTRA_TEXSOURCES =
 else
 libframedata_la_SOURCES = 
-EXTRA_TEXSOURCES = $(FRAMEDATA_SOURCES)
+EXTRA_TEXSOURCES = $(FRAMEDATASOURCES)
 endif
 
-EXTRA_DIST = $(FRAMEDATA_SOURCES) $(OLD_FRAMEDATA_SOURCES)
+EXTRA_DIST = $(FRAMEDATASOURCES) $(OLDFRAMEDATASOURCES)
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep

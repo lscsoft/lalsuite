@@ -257,9 +257,18 @@ done
 echo "'" >> configure.in
 
 cat >> configure.in <<EOF
+if test x$mpi = xfalse; then
+  LIBLISTMPI=
+  LIBLISTMPIFRAME=
+fi
+if test x$frame = xfalse; then
+  LIBLISTFRAME=
+  LIBLISTMPIFRAME=
+fi
 PKGLIST="$lal_pkg_list"
 AC_SUBST(PKGLIST)
 AC_SUBST(LIBLISTBASE)
+AC_SUBST(LIBLISTMPI)
 AC_SUBST(LIBLISTMPI)
 AC_SUBST(LIBLISTFRAME)
 AC_SUBST(LIBLISTMPIFRAME)
