@@ -487,27 +487,30 @@ REAL4TimeSeries *rectangular_window(LALStatus *status,
 }
 
 /* function to return a hann window */
-REAL4Vector *hann_window(LALStatus *status,
+REAL4TimeSeries *hann_window(LALStatus *status,
+    REAL8 deltaT,
+    REAL8 f0,
     INT4 length)
 {
   /* variables */
-  REAL4Vector *series;
+  REAL4TimeSeries *series;
+  LIGOTimeGPS time;
   LALWindowParams params;
 
+  /* set time */
+  time.gpsSeconds = 0;
+  time.gpsNanoSeconds = 0;
+
   /* allocate memory */
-  series = XLALCreateVector(length);
-  if (!series)
-  {
-    fprintf(stderr, "failed to allocate memory for hann window...\n");
-    exit(1);
-  }
+  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, "window", time, f0, \
+        deltaT, lalDimensionlessUnit, length), status);
 
   /* set window parameters */
   params.length = length;
   params.type = Hann;
 
   /* generate window */
-  LAL_CALL(LALWindow(status, series, &params), status);
+  LAL_CALL(LALWindow(status, series->data, &params), status);
 
   return(series);
 }
