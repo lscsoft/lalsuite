@@ -126,6 +126,7 @@ LALWarning()
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
+#include <lal/DetectorSite.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 /* Hack until date header is installed first...
@@ -235,6 +236,13 @@ LALSimulateCoherentGW( LALStatus        *stat,
 	  SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
   ASSERT( detector->transfer->data->data, stat,
 	  SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
+  if ( !( detector->site ) ) {
+    LALInfo( stat, "Detector site absent; simulating h_plus with no"
+	     " propagation delays." );
+  } else {
+    LALWarning( stat, "Detector site structure not yet implemented!"
+		"  Treating as if absent." );
+  }
   ASSERT( output, stat,
 	  SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
   ASSERT( output->data, stat,
@@ -276,33 +284,43 @@ LALSimulateCoherentGW( LALStatus        *stat,
   in.length = (INT4)( output->data->length*output->deltaT/DELAYDT ) + 3;
   TRY( LALSCreateVector( stat->statusPtr, &delay, in.length ), stat );
   delayData = delay->data;
-  radius = ( LAL_REARTH_SI/LAL_C_SI )*cos( detector->latitude ) /
-    output->deltaT;
-  gpsTime.gpsSeconds = output->epoch.gpsSeconds - DELAYDT/2;
-  gpsTime.gpsNanoSeconds = output->epoch.gpsNanoSeconds;
-  for ( i = 0; i < (INT4)( in.length ); i++ ) {
-    LIGOTimeUnix unixTime; /* Unix time at current point */
-    LALDate date;          /* LALDate time at current point */
-    REAL8 lmst;            /* siderial time at current point (radians) */
 
-    LALGPStoU( stat->statusPtr, &unixTime, &gpsTime );
-    BEGINFAIL( stat )
-      TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
-    ENDFAIL( stat );
-    LALUtime( stat->statusPtr, &date, &unixTime );
-    BEGINFAIL( stat )
-      TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
-    ENDFAIL( stat );
-    /*
-    LALLMST1( stat->statusPtr, &lmst, &date, detector->longitude,
-	      MST_RAD );
-     */
-    lmst = 0;
-    BEGINFAIL( stat )
-      TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
-    ENDFAIL( stat );
-    delayData[i] = radius*cos( lmst - signal->ra );
-    gpsTime.gpsSeconds += DELAYDT;
+  /* At present this part is disabled! */
+  if ( 0 ) {
+    radius = 0.0;
+    /*    radius = ( LAL_REARTH_SI/LAL_C_SI )*cos( detector->latitude ) /
+	  output->deltaT;*/
+    gpsTime.gpsSeconds = output->epoch.gpsSeconds - DELAYDT/2;
+    gpsTime.gpsNanoSeconds = output->epoch.gpsNanoSeconds;
+    for ( i = 0; i < (INT4)( in.length ); i++ ) {
+      LIGOTimeUnix unixTime; /* Unix time at current point */
+      LALDate date;          /* LALDate time at current point */
+      REAL8 lmst;            /* siderial time at current point (radians) */
+      LALGPStoU( stat->statusPtr, &unixTime, &gpsTime );
+      BEGINFAIL( stat )
+	TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
+      ENDFAIL( stat );
+      LALUtime( stat->statusPtr, &date, &unixTime );
+      BEGINFAIL( stat )
+	TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
+      ENDFAIL( stat );
+      /*
+	LALLMST1( stat->statusPtr, &lmst, &date, detector->longitude,
+	MST_RAD );
+      */
+      lmst = 0;
+      BEGINFAIL( stat )
+	TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
+      ENDFAIL( stat );
+      delayData[i] = radius*cos( lmst - signal->ra );
+      gpsTime.gpsSeconds += DELAYDT;
+    }
+  }
+
+  /* This is the temporary kludge. */
+  else {
+    for ( i = 0; i < 2*(INT4)( in.length ); i+=2 )
+      delayData[i] = 0.0;
   }
 
   /* Generate the table of polarization response functions. */

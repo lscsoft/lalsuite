@@ -570,8 +570,7 @@ main(int argc, char **argv)
 
 
   /* Stub to specify the detector. */
-  detector.latitude = 0.0;
-  detector.longitude = 0.0;
+  detector.site = NULL;
 
 
   /*******************************************************************

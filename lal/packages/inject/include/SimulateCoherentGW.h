@@ -85,6 +85,7 @@ document those conventions.
 #define _SIMULATECOHERENTGW_H
 
 #include <lal/LALStdlib.h>
+#include <lal/DetectorSite.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -182,8 +183,7 @@ any time.  This structure has yet to be defined.
 
 typedef struct tagDetectorResponse {
   COMPLEX8FrequencySeries *transfer; /* frequency transfer function */
-  /* structure for storing polarization response information */
-  REAL4 latitude, longitude;
+  LALDetector *site;           /* detector location and orientation */
 } DetectorResponse;
 
 
