@@ -1,13 +1,19 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
-INSPIRALSRC = inspiral.c inspiral.h
+INSPIRALSRC = ligolwbank.h ligolwbank.c inspiral.h inspiral.c
+TMPLTBANKSRC = ligolwbank.h ligolwbank.c tmpltbank.c
 if FRAME
-bin_PROGRAMS = lalapps_inspiral
+if DATAFLOW
+bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank
 lalapps_inspiral_SOURCES = $(INSPIRALSRC)
+lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
 else
 bin_PROGRAMS = 
 endif
-EXTRA_DIST = $(INSPIRALSRC)
+else
+bin_PROGRAMS = 
+endif
+EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
