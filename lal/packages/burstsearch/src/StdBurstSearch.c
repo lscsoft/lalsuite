@@ -454,7 +454,15 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	  rp.Q = bptr->Q[l];
 
 	  LALRiceLikelihood(status->statusPtr, &q0, 0.0, &rp);
+	  if(status->statusPtr->statusCode) {
+	    char msg[1024];
+	    float fr = (REAL4)l / (data->data->deltaT * (REAL4)bptr->nTime); 
+	    sprintf(msg,"Error in LALRiceLikelihood at frequency %g Hz",fr);
+	    ABORT(status, 111, msg);
+	  }
+	  /*
 	  CHECKSTATUSPTR (status);
+	  */
 
 	  if(q0 > 0.0) {
 	    dfri.xacc = 1e-4 * rp.P;
