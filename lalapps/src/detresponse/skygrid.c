@@ -31,7 +31,7 @@ void init_skygrid(LALStatus *status)
 {
   num_ra = args_info.n_ra_arg;
   num_dec = args_info.n_dec_arg;
-  grid_lim = num_ra + num_dec;
+  grid_lim = num_ra * num_dec;
 
   LALU4CreateVector(status, &skygrid_dims, 2);
   skygrid_dims->data[0] = num_ra;
