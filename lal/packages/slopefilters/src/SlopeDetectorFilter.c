@@ -19,7 +19,7 @@ search algorithms for transients and bursts in the LIGO data.
 
 \subsubsection*{Description}
 
-The three fuctions prototyped above implement time domain linear and nonlinear
+The three fine fuctions prototyped above implement time domain linear and nonlinear
 filters on input data. The resulting output data is intended to enhance
 sensitivity to burst sources. 
 
