@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
-POWERSRCS = power.c Power.h 
+POWERSRCS = power.c power.h 
 if DATAFLOW
 DATAFLOWPROGRAMS = lalapps_snglBurstHistogram lalapps_burca lalapps_bread
 else
