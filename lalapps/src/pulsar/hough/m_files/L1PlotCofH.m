@@ -40,7 +40,7 @@ end
 axis([200 400 -0.05 1.05]);
 xlabel ('Frequency [Hz]'); 
 ylabel ('C(h_0)'); 
-title('S2: L1 1.0e-23 to 1.0e-22')
+title('S2: L1 5.0e-23 to 1.4e-22')
 %legend('All sky', 'North belt')
 
 

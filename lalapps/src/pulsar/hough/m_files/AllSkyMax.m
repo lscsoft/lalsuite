@@ -11,8 +11,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Directory = '/scratch/sintes/S2_clean/Driver_allsky/';
-Detector = 'L1';
-%Detector = 'H1';
+%Detector = 'L1';
+Detector = 'H1';
 DirName = '/skypatch_';
 prefix ='/freq_';
 sufix = '_stats';
