@@ -365,6 +365,27 @@ extern "C" {
 "      <Column Name=\"sim_inspiralgroup:sim_inspiral:inclination\" Type=\"real_4\"/>\n" \
 "      <Column Name=\"sim_inspiralgroup:sim_inspiral:coa_phase\" Type=\"real_4\"/>\n" \
 "      <Column Name=\"sim_inspiralgroup:sim_inspiral:polarization\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:psi0\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:psi3\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:alpha\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:alpha1\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:alpha2\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:alpha3\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:alpha4\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:alpha5\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:alpha6\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:beta\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:spin1x\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:spin1y\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:spin1z\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:spin2x\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:spin2y\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:spin2z\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:theta0\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:phi0\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:f_lower\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:f_final\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:mchirp\" Type=\"real_4\"/>\n" \
 "      <Column Name=\"sim_inspiralgroup:sim_inspiral:eff_dist_h\" Type=\"real_4\"/>\n" \
 "      <Column Name=\"sim_inspiralgroup:sim_inspiral:eff_dist_l\" Type=\"real_4\"/>\n" \
 "      <Column Name=\"sim_inspiralgroup:sim_inspiral:eff_dist_g\" Type=\"real_4\"/>\n" \
@@ -374,7 +395,7 @@ extern "C" {
 "      <Stream Name=\"sim_inspiralgroup:sim_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n"
 
 #define SIM_INSPIRAL_ROW \
-"         \"process:process_id:0\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%22.16e,\"%s\",%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"sim_inspiral:simulation_id:0\""
+"         \"process:process_id:0\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%22.16e,\"%s\",%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"sim_inspiral:simulation_id:0\""
 
 #define LIGOLW_XML_SIM_BURST \
 "   <Table Name=\"sim_burstgroup:sim_burst:table\">\n" \
