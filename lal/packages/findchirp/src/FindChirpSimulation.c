@@ -301,7 +301,10 @@ LALFindChirpInjectSignals (
 
       /* set the parameters for the signal time series */
       signal.deltaT = chan->deltaT;
-      signal.f0 = chan->f0;
+      if ( ( signal.f0 = chan->f0 ) != 0 )
+      {
+        ABORT( status, FINDCHIRPENGINEH_EHETR, FINDCHIRPENGINEH_MSGEHETR );
+      }
       signal.sampleUnits = lalADCCountUnit;
 
       /* simulate the detectors response to the inspiral */
