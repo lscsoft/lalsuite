@@ -107,29 +107,28 @@ REAL4 fRef = 100.0;
 REAL4 omegaRef = 1.;
 
 /* monte carlo parameters */
-/* at the moment the code cannot do monte carlo with overlapped Hann window */
-REAL4 scaleFactor;
-INT4 seed;
-INT4 NLoop;
+REAL4 scaleFactor = -1;
+INT4 seed = -1;
+INT4 NLoop = -1;
 
 /* window parameters */
 INT4 hannDuration = -1;
 
 /* high pass filtering parameters */
-REAL4 highPassFreq = 40.;
-REAL4 highPassAtten;
-INT4  highPassOrder = 6;
+REAL4 highPassFreq = -1;
+REAL4 highPassAtten = -1;
+INT4 highPassOrder = -1;
 
 /* number of bins for frequency masking */ 
-INT4 maskBin = 1;
+INT4 maskBin = -1;
 
 /* arguments associated with test flag */
-INT4 testInter;
-INT4 testSeg;
-INT4 testTrial;
+INT4 testInter = -1;
+INT4 testSeg = -1;
+INT4 testTrial = -1;
 
 /* output file */
-CHAR *outputFilePath;
+CHAR *outputFilePath = NULL;
 
 INT4 main(INT4 argc, CHAR *argv[])
 {
@@ -1795,11 +1794,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 }
 
 #define USAGE \
-  "Usage: lalapps_stochastic [options]\n"\
+  "Usage: " PROGRAM_NAME " [options]\n"\
   " -h, --help                          print this message\n"\
   " -v, --version                       display version\n"\
   " --verbose                           verbose mode\n"\
-  " --post-analysis                     post analysis\n"\
   " -z, --debug-level N                 set lalDebugLevel\n"\
   " -t, --gps-start-time N              GPS start time\n"\
   " -T, --gps-stop-time N               GPS stop time\n"\
@@ -1809,12 +1807,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   " -a, --resample-rate N               resample rate\n"\
   " -f, --f-min N                       minimum frequency\n"\
   " -F, --f-max N                       maximum frequency\n"\
-  " --high-pass-filter                  apply high pass filter\n"\
-  " -k, --hpf-frequency N               high pass filter knee frequency\n"\
-  " -p, --hpf-attenuation N             high pass filter attenuation\n"\
-  " -P, --hpf-order N                   high pass filter order\n"\
-  " --overlap-hann                      use overlap window\n"\
-  " -w, --hann-duration N               hann duration\n"\
   " -i, --ifo-one IFO                   ifo for first stream\n"\
   " -I, --ifo-two IFO                   ifo for second stream\n"\
   " -d, --frame-cache-one FILE          cache file for first stream\n"\
@@ -1822,18 +1814,25 @@ INT4 main(INT4 argc, CHAR *argv[])
   " -r, --calibration-cache-one FILE    first stream calibration cache\n"\
   " -R, --calibration-cache-two FILE    second stream calibration cache\n"\
   " -c, --calibration-offset N          offset for calibration time\n"\
+  " -S, --output-dir DIR                directory for output files\n"\
+  " -z, --debug-level N                 debugging level\n"\
+  " --post-analysis                     post analysis\n"\
+  " --overlap-hann                      use overlap window\n"\
+  " -w, --hann-duration N               hann duration\n"\
+  " --high-pass-filter                  apply high pass filter\n"\
+  " -k, --hpf-frequency N               high pass filter knee frequency\n"\
+  " -p, --hpf-attenuation N             high pass filter attenuation\n"\
+  " -P, --hpf-order N                   high pass filter order\n"\
   " --apply-mask                        apply frequency masking\n"\
   " -b, --mask-bin N                    number of bin for frequency mask\n"\
   " --inject                            inject a signal into the data\n"\
   " -o, --scale-factor N                scale factor for injection\n"\
   " -g, --seed N                        seed for injections\n"\
   " -N, --trials N                      number of trial for MC\n"\
-  " -S, --output-dir DIR                directory for output files\n"\
   " --test                              print intermediate results\n"\
   " -U, --test-interval N               interval number for test\n"\
   " -V, --test-segment N                segment number test\n"\
-  " -W, --test-trial N                  trial number for test\n"\
-  " -z, --debug-level N                 debugging level\n"
+  " -W, --test-trial N                  trial number for test\n"
 
 /* parse and check command line options */
 void parseOptions(INT4 argc, CHAR *argv[])
@@ -2345,70 +2344,173 @@ void parseOptions(INT4 argc, CHAR *argv[])
   /* start time */
   if (startTime == 0)
   {
-    fprintf(stderr, "Start time must be specified\n");
+    fprintf(stderr, "--gps-start-time must be specified\n");
     exit(1);
   }
 
   /* interval duration */
   if (intervalDuration == -1)
   {
-    fprintf(stderr, "Interval duration must be specified\n");
+    fprintf(stderr, "--interval-duration must be specified\n");
     exit(1);
   }
 
   /* segment duration */
   if (segmentDuration == -1)
   {
-    fprintf(stderr, "Segment duration must be specified\n");
+    fprintf(stderr, "--segment-duration must be specified\n");
     exit(1);
   }
 
   /* sample rate */
   if (sampleRate == -1)
   {
-    fprintf(stderr, "Sample rate must be specified\n");
+    fprintf(stderr, "--sample-rate must be specified\n");
     exit(1);
   }
 
   /* resample rate */
   if (resampleRate == -1)
   {
-    fprintf(stderr, "Resample rate must be specified\n");
+    fprintf(stderr, "--resample-rate must be specified\n");
     exit(1);
   }
 
   /* minimum frequency */
   if (fMin == -1)
   {
-    fprintf(stderr, "Minimum frequency must be specified\n");
+    fprintf(stderr, "--f-min must be specified\n");
     exit(1);
   }
 
   /* maximum frequency */
   if (fMax == -1)
   {
-    fprintf(stderr, "Maximum frequency must be specified\n");
+    fprintf(stderr, "--f-max must be specified\n");
     exit(1);
   }
 
   /* hann duration */
   if (hannDuration == -1)
   {
-    fprintf(stderr, "Hann duration must be specified\n");
+    fprintf(stderr, "--hann-duration must be specified\n");
     exit(1);
   }
 
-  /* ifo one */
+  /* ifo */
   if (ifo1 == NULL)
   {
-    fprintf(stderr, "First IFO must be specified\n");
+    fprintf(stderr, "--ifo-one must be specified\n");
+    exit(1);
+  }
+  if (ifo2 == NULL)
+  {
+    fprintf(stderr, "--ifo-two must be specified\n");
     exit(1);
   }
 
-  /* ifo two */
-  if (ifo2 == NULL)
+  /* frame cache */
+  if (frameCache1 == NULL)
   {
-    fprintf(stderr, "Second IFO must be specified\n");
+    fprintf(stderr, "--frame-cache-one must be specified\n");
+    exit(1);
+  }
+  if (site1 != site2)
+  {
+    /* only need second frame cache if ifos differ */
+    if (frameCache2 == NULL)
+    {
+      fprintf(stderr, "--frame-cache-two must be specified\n");
+      exit(1);
+    }
+  }
+
+  /* calibration cache */
+  if (calCache1 == NULL)
+  {
+    fprintf(stderr, "--calibration-cache-one must be specified\n");
+    exit(1);
+  }
+  if (calCache2 == NULL)
+  {
+    fprintf(stderr, "--calibration-cache-two must be specified\n");
+    exit(1);
+  }
+
+  /* high pass filter */
+  if (high_pass_flag)
+  {
+    if (highPassFreq == -1)
+    {
+      fprintf(stderr, "--hpf-frequency must be specified\n");
+      exit(1);
+    }
+    if (highPassAtten == -1)
+    {
+      fprintf(stderr, "--hpf-attenuation must be specified\n");
+      exit(1);
+    }
+    if (highPassOrder == -1)
+    {
+      fprintf(stderr, "--hpf-order must be specified\n");
+      exit(1);
+    }
+  }
+
+  /* mask */
+  if (apply_mask_flag)
+  {
+    if (maskBin == -1)
+    {
+      fprintf(stderr, "--mask-bin must be specified\n");
+      exit(1);
+    }
+  }
+
+  /* injections */
+  if (inject_flag)
+  {
+    if (scaleFactor == -1)
+    {
+      fprintf(stderr, "--scale-factor must be specified\n");
+      exit(1);
+    }
+    if (seed == -1)
+    {
+      fprintf(stderr, "--seed must be specified\n");
+      exit(1);
+    }
+    if (NLoop == -1)
+    {
+      fprintf(stderr, "--trials must be specified\n");
+      exit(1);
+    }
+  }
+
+  /* tests */
+  if (test_flag)
+  {
+    if (testInter == -1)
+    {
+      fprintf(stderr, "--test-interval must be specified\n");
+      exit(1);
+    }
+    if (testSeg == -1)
+    {
+      fprintf(stderr, "--test-segment must be specified\n");
+      exit(1);
+    }
+    if ((testTrial == -1) && (inject_flag))
+    {
+      fprintf(stderr, "--test-trial must be specified\n");
+      exit(1);
+    }
+  }
+
+  /* output dir */
+  if (outputFilePath == NULL)
+  {
+    fprintf(stderr, "--output-dir must be specified\n");
     exit(1);
   }
 
