@@ -93,6 +93,7 @@ tagRingSearchParams
   INT4                     searchMaster;
   INT4                     myProcNumber;
   INT4                     numSlaves;
+  UINT4                    numEvents;
   REAL4                    threshold;
   CHAR                     ifoName[3];
   INT4                     maximizeEvents;
@@ -134,6 +135,7 @@ RingSearchParams;
  * \item[\texttt{searchMaster}]  For MPI code: non-zero if search master.
  * \item[\texttt{myProcNumber}]  For MPI code: MPI comm rank.
  * \item[\texttt{numSlaves}]     For MPI code: number of slaves.
+ * \item[\texttt{numEvents}]     Cumulative number of events found.
  * \item[\texttt{threshold}]     SNR threshold for an event.
  * \item[\texttt{ifoName[3]}]    IFO name (e.g., ``H1,'' ``H2,'' ``L1,'' etc.).
  * \item[\texttt{maximizeEvents}] Non zero if events are maximized over arrival

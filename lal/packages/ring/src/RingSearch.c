@@ -220,6 +220,7 @@ LALRingSearch(
           timeNS += (INT8)( 1e9 * result.deltaT * j );
           if ( timeNS > lastTimeNS + gapTimeNS ) /* new event */
           {
+            ++params->numEvents;
             if ( *output ) /* create a new event */
             {
               thisEvent->next = LALCalloc( 1, sizeof( *thisEvent->next ) );
