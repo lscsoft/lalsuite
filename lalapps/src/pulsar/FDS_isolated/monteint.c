@@ -35,9 +35,9 @@ RCSID( "$Id$");
 #define TEST_MONTEINT
 #define TEST_MARGINALIZEPDF
 #define TEST_INTERPOLATE2D
-
 */
 #define EPHEM_YEARS  "00-04"
+
 
 
 #if ( defined(TEST_MONTEINT) || defined(TEST_MARGINALIZEPDF) || defined(TEST_INTERPOLATE2D) )
@@ -63,7 +63,7 @@ typedef struct {
   size_t warmupcalls;
   size_t maincalls;
   INT4 maxVegasStages;
-  CHAR *method;
+  const CHAR *method;
 } MonteCarloIntParams;
 
 typedef struct {
@@ -162,6 +162,47 @@ LALStatus global_status;
 #define BAYESFSTAT_EXIT_NOMEM          15  /* out of memory */
 
 
+
+
+/*----------------------------------------------------------------------*/
+/* Function declaration */
+/*----------------------------------------------------------------------*/
+void ABCLookUpTable(LALStatus *, ABCcoeffs *, BayesFstatParams *, REAL8 gridsize, UINT4 Ndelta, UINT4 Nalpha);
+void AllocateABCcoeffs(LALStatus *, ABCcoeffs *,UINT4 Ndelta, UINT4 Nalpha);
+
+void computeNorm(REAL8 *theNorm, REAL8 *theNormsigma, MonteCarloIntIn *, MonteCarloIntParams *);
+REAL8 confminuscdf(REAL8 theStrain, void *theParams);
+REAL8 DFunction(REAL8 *theVars, size_t theDimension, void *theParams);
+REAL8 DInverseWithIntMeasure(REAL8 *theVars, size_t theDimension, void *theParams);
+REAL8 DSquareWithIntMeasure(REAL8 *k, size_t dim, void *params);
+void filelength(LALStatus *, INT8 *length, CHAR *filename);
+void findRoot(LALStatus *, findRootOut *theOutputs, findRootParams *theFrparams);
+void FreeABCcoeffs(LALStatus *, ABCcoeffs *);
+void FreeBayesFstatParams(LALStatus *, BayesFstatParams *);
+void FreeConfigVariables(LALStatus *, ConfigVariables *);
+void FreeMem(LALStatus *, ConfigVariables *, BayesFstatParams *);
+void InitAMParams(LALStatus *, BayesFstatParams *, ConfigVariables *);
+void InitBayesFstatParams(LALStatus *, BayesFstatParams *, INT4 theArgc, CHAR *theArgv[]);
+void InitConfigVariables(LALStatus *, ConfigVariables *);
+void InitUserVars(LALStatus *);
+void integrateDSquare(LALStatus *status, BayesFstatParams *bfparams);  
+void Interpolate2DSphere(REAL8 *finterp, REAL8Vector *xvec, REAL8Vector *yvec, REAL8Array *func, REAL8 xval, REAL8 yval, REAL8 gridsize);
+REAL8 marginalizedNCPDF(REAL8 theStrain, BayesFstatParams *);
+void MonteCarloIntegrate(MonteCarloIntOut *, MonteCarloIntIn *, MonteCarloIntParams *);
+REAL8 ncpdfWithIntMeasure(REAL8 *theVars, size_t theDimension, void *theParams);
+REAL8 NormFunction(REAL8 theFstat);		    
+void ReadTimeStamps(LALStatus *, LIGOTimeGPS *timestamps, INT8 ntimestamps, CHAR *timestampsfile); 
+void testCode(LALStatus *theStatus, BayesFstatParams *theBfparams); 
+void testInterPolate2DSphere(LALStatus *status, BayesFstatParams *bfparams);
+void testInterPolate2DSphereCore(LALStatus *, BayesFstatParams *, REAL8 alpha, REAL8 delta);
+
+
+
+
+
+
+
+
 /*----------------------------------------------------------------------*/
 /* CODE starts here */
 /*----------------------------------------------------------------------*/
@@ -182,14 +223,6 @@ INT4
 main (INT4 argc, CHAR *argv[])
 {
   LALStatus *status = &global_status;
-  void InitBayesFstatParams(LALStatus *status, BayesFstatParams *bfparams, INT4 argc, CHAR *argv[]);
-  void findRoot(LALStatus *status, findRootOut *outputs, findRootParams *frparams);
-  void FreeBayesFstatParams(LALStatus *status, BayesFstatParams *bfparams);
-  REAL8 confminuscdf(REAL8 strain, void *params);
-  REAL8 marginalizedNCPDF(REAL8 strain, BayesFstatParams *bfparams);
-#ifdef TEST_CODE
-  void testCode(LALStatus *status, BayesFstatParams *bfparams); 
-#endif
 
   BayesFstatParams  *bfparams = NULL;
   findRootOut frout;
@@ -267,15 +300,6 @@ main (INT4 argc, CHAR *argv[])
  *----------------------------------------------------------------------*/
 void testCode(LALStatus *status, BayesFstatParams *bfparams) 
 {
-#ifdef TEST_MARGINALIZEPDF
-  REAL8 marginalizedNCPDF(REAL8 strain, BayesFstatParams *bfparams);
-#endif
-#ifdef TEST_MONTEINT
-  void integrateDSquare(LALStatus *status, BayesFstatParams *bfparams);  
-#endif
-#ifdef TEST_INTERPOLATE2D
-  void testInterPolate2DSphere(LALStatus *status, BayesFstatParams *bfparams);
-#endif
 
   INITSTATUS (status, "testCode", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -398,7 +422,6 @@ findRoot (LALStatus *status, findRootOut *frout, findRootParams *frparams)
  *----------------------------------------------------------------------*/
 REAL8 confminuscdf(REAL8 strain, void *params)
 {
-  REAL8 marginalizedNCPDF(REAL8 strain, BayesFstatParams *bfparams);
   BayesFstatParams *bfparams;
   bfparams = (BayesFstatParams *) params;
 
@@ -418,22 +441,23 @@ REAL8 confminuscdf(REAL8 strain, void *params)
 
 void MonteCarloIntegrate(MonteCarloIntOut *mciout, MonteCarloIntIn *mciin, MonteCarloIntParams *mciparams)
 {
-  void display_results (CHAR *title, REAL8 result, REAL8 error);
   REAL8 res, err;
   REAL8 *xl,*xu;
   INT4 ic;
   const gsl_rng_type *T;
 
-  gsl_rng *r;
-  gsl_monte_function G = { mciin->integrand, mciin->dimension, mciin->params };
-  gsl_rng_env_setup ();
-  T = gsl_rng_default;
-  r = gsl_rng_alloc (T);
-
   size_t warmupcalls = 10000;
   size_t calls = 500000;
   INT4 verboseflag = 0;
   INT4 maxVegasStages = 100;
+
+
+  gsl_rng *r;
+  gsl_rng_env_setup ();
+  T = gsl_rng_default;
+  r = gsl_rng_alloc (T);
+  gsl_monte_function G = { mciin->integrand, mciin->dimension, mciin->params };
+
 
   warmupcalls = mciparams->warmupcalls;
   calls = mciparams->maincalls;
@@ -462,7 +486,7 @@ void MonteCarloIntegrate(MonteCarloIntOut *mciout, MonteCarloIntIn *mciin, Monte
   gsl_monte_vegas_integrate (&G, xl, xu, mciin->dimension, warmupcalls, r, s,
 			     &res, &err);
   if(verboseflag >= 2) {
-    display_results (" vegas warm-up", res, err);
+    printf (" vegas warm-up: result = %g; sigma = %g\n ", res, err);
     printf ("%% converging...\n");
   }
 
@@ -486,7 +510,7 @@ void MonteCarloIntegrate(MonteCarloIntOut *mciout, MonteCarloIntIn *mciin, Monte
   }
 
   if(verboseflag >= 2) {
-    display_results (" vegas final", res, err);
+    printf (" vegas final: result = %g; sigma = %g\n ", res, err);
   }
 
   gsl_monte_vegas_free (s);
@@ -520,9 +544,6 @@ REAL8 marginalizedNCPDF(REAL8 strain, BayesFstatParams *bfparams)
   MonteCarloIntIn mciin;
   MonteCarloIntOut mciout;
 
-  void computeNorm(REAL8 *norm, REAL8 *normsigma, MonteCarloIntIn *mciin, MonteCarloIntParams *mciparams);
-  REAL8 NormFunction(REAL8 Fstat);		    
-  REAL8 ncpdfWithIntMeasure(REAL8 *k, size_t dim, void *params);
 
   mciparams.verboseflag = lalDebugLevel;
   mciparams.method = "vegas";
@@ -601,8 +622,6 @@ REAL8 marginalizedNCPDF(REAL8 strain, BayesFstatParams *bfparams)
  *----------------------------------------------------------------------*/
 void computeNorm(REAL8 *norm, REAL8 *normsigma, MonteCarloIntIn *mciin, MonteCarloIntParams *mciparams)
 {
-  void MonteCarloIntegrate(MonteCarloIntOut *mciout, MonteCarloIntIn *mciin, MonteCarloIntParams *mciparams);
-  REAL8 DInverseWithIntMeasure(REAL8 *k, size_t dim, void *params);
   MonteCarloIntOut mciout;
 
   mciout.result = 0.0;
@@ -661,7 +680,6 @@ ncpdfWithIntMeasure(REAL8 *k, size_t dim, void *params)
      The magic factor 6 makes the 95 % UL H_{0.95} around 1. 
   */
   REAL8 ncpdfvalue = 0.0;
-  REAL8 DFunction(REAL8 *k, size_t dim, void *params);
   REAL8 k1[4];
   REAL8 F;
   REAL8 dvalH;
@@ -706,13 +724,6 @@ ncpdfWithIntMeasure(REAL8 *k, size_t dim, void *params)
 void 
 InitBayesFstatParams(LALStatus *status, BayesFstatParams *bfparams, INT4 argc, CHAR *argv[])
 {
-  void InitUserVars(LALStatus *status);
-  void InitConfigVariables(LALStatus *status, ConfigVariables *cfg);
-  INT4 InitAMParams(LALStatus *status, BayesFstatParams *bfparams, ConfigVariables *cfg);
-  void AllocateABCcoeffs(LALStatus *status, ABCcoeffs *ABCs,UINT4 Ndelta, UINT4 Nalpha);
-  void ABCLookUpTable(LALStatus *status, ABCcoeffs *ABCs, BayesFstatParams *bfparams, REAL8 gridsize, UINT4 Ndelta, UINT4 Nalpha);
-  void FreeMem(LALStatus *status, ConfigVariables *, BayesFstatParams *);
-  void FreeConfigVariables(LALStatus *status, ConfigVariables *cfg);
 
   ConfigVariables *cfg = NULL;
 
@@ -1086,9 +1097,7 @@ filelength(LALStatus *status, INT8 *length, CHAR *filename)
 void
 InitAMParams(LALStatus *status, BayesFstatParams *bfparams, ConfigVariables *cfg)
 {
-  void ReadTimeStamps(LALStatus *status, LIGOTimeGPS *timestamps, INT8 ntimestamps, CHAR *timestampsfile); 
-  void filelength(LALStatus *status, INT8 *length, CHAR *filename);
-  void FreeMem(LALStatus *status, ConfigVariables *cfg, BayesFstatParams *bfparams);
+
 
   /* ASK ME!!!! IS THIS CORRECT? CAN THIS DISAPPEAR AFTER EXITING THIS FUNCTION? */
   EarthState earth;
@@ -1269,8 +1278,6 @@ ReadTimeStamps(LALStatus *status, LIGOTimeGPS *timestamps, INT8 ntimestamps, CHA
 
 void FreeMem(LALStatus *status, ConfigVariables *cfg, BayesFstatParams *bfparams)
 {
-  void FreeBayesFstatParams(LALStatus *status, BayesFstatParams *bfparams);
-  void FreeConfigVariables(LALStatus *status, ConfigVariables *cfg);
 
   INITSTATUS (status, "FreeMem", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1338,7 +1345,6 @@ void FreeConfigVariables(LALStatus *status, ConfigVariables *cfg)
 
 void FreeBayesFstatParams(LALStatus *status, BayesFstatParams *bfparams)
 {
-  void FreeABCcoeffs(LALStatus *status, ABCcoeffs *ABCs);
 
   INITSTATUS (status, "FreeBayesFstatParams", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1390,23 +1396,6 @@ void FreeBayesFstatParams(LALStatus *status, BayesFstatParams *bfparams)
 
 
 
-/*----------------------------------------------------------------------
- * FUNCTION void display_results().
- *
- *
- *
- *
- *
- *----------------------------------------------------------------------*/
-
-void
-display_results (CHAR *title, REAL8 result, REAL8 error)
-{
-  printf ("%% %s ==================\n", title);
-  printf ("%% result = %g\n", result);
-  printf ("%% sigma  = %g\n", error);
-} /* void display_results(). */
-
 
 /*----------------------------------------------------------------------
  * FUNCTION REAL8 NormFunction().
@@ -1451,7 +1440,7 @@ DFunction(REAL8 *k,
   /*  LALStatus *status = &global_status; */
   LALStatus status = global_status;
   BayesFstatParams *bfparams;
-  void Interpolate2DSphere(REAL8 *out, REAL8Vector *xvec, REAL8Vector *yvec, REAL8Array *func, REAL8 x, REAL8 y, REAL8 gridsize);
+
 
   REAL8 Dvalue = 0.0;
   REAL8 A, B, C;
@@ -1512,7 +1501,7 @@ void testInterPolate2DSphere(LALStatus *status, BayesFstatParams *bfparams)
 {
   REAL8 alpha, delta;
   UINT4 ic,N;
-  void testInterPolate2DSphereCore(LALStatus *status, BayesFstatParams *bfparams, REAL8 alpha, REAL8 delta);
+
 
   INITSTATUS (status, "testInterpolate2DSphere", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1548,7 +1537,7 @@ void testInterPolate2DSphereCore(LALStatus *status, BayesFstatParams *bfparams, 
   REAL8 A, B, C;
   REAL8 res = 0.0;
 
-  void Interpolate2DSphere(REAL8 *finterp, REAL8Vector *xvec, REAL8Vector *yvec, REAL8Array *func, REAL8 xval, REAL8 yval, REAL8 gridsize);
+
 
   INITSTATUS (status, "testInterpolate2DSphereCore", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1783,7 +1772,6 @@ ABCLookUpTable(LALStatus *status, ABCcoeffs *ABCs, BayesFstatParams *bfparams, R
 void 
 AllocateABCcoeffs(LALStatus *status, ABCcoeffs *ABCs,UINT4 Ndelta, UINT4 Nalpha)
 {
-  void FreeABCcoeffs(LALStatus *status, ABCcoeffs *ABCs);
 
   INITSTATUS (status, "AllocateABCcoeffs", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1881,7 +1869,6 @@ DInverseWithIntMeasure(REAL8 *k,
 	 size_t dim,
 	 void *params)
 {
-  REAL8 DFunction(REAL8 *k, size_t dim, void *params);
   REAL8 Dinv = 0.0;
 
   /* 
@@ -1913,7 +1900,6 @@ DSquareWithIntMeasure(REAL8 *k,
 	 size_t dim,
 	 void *params)
 {
-  REAL8 DFunction(REAL8 *k, size_t dim, void *params);
   REAL8 D2 = 0.0;
 
   /* 
@@ -1949,8 +1935,6 @@ void integrateDSquare(LALStatus *status, BayesFstatParams *bfparams)
   MonteCarloIntIn mciin;
 
   REAL8 norm;
-  REAL8 DSquareWithIntMeasure(REAL8 *k, size_t dim, void *params);
-  void MonteCarloIntegrate(MonteCarloIntOut *mciout, MonteCarloIntIn *mciin, MonteCarloIntParams *mciparams);
 
   INITSTATUS (status, "integrateDSquare", rcsid);
   ASSERT( bfparams != NULL, status, BAYESFSTATC_ENULL, BAYESFSTATC_MSGENULL);
