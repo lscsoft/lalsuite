@@ -70,6 +70,11 @@ typedef struct CandINDICESTag
   INT4 iFreq;
   INT4 iDelta;
   INT4 iAlpha;
+  INT4 iCand;
+  REAL8 f;        /* Frequency */
+  REAL8 Alpha;    /* longitude */
+  REAL8 Delta;    /* latitude */
+  REAL8 F;        /* Maximum value of F for the cluster */
 } CandINDICES;
 
 typedef struct CandidateTag 
@@ -82,7 +87,6 @@ typedef struct CandidateTag
   REAL8 *fa;       /* false alarm probability for that candidate */
   UINT4 *Ctag;     /* tag for candidate if it's been found in coincidence */
   INT4  *CtagCounter;     /* contains the cumulative sum of coincident candidates so far */
-  CandINDICES *CI;        /* indices for binning  */
 } CandidateList;
 
 typedef struct CoincidentCandidateTag 
@@ -109,26 +113,14 @@ typedef struct CoincidentPairsTag
 
 int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA);
 int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA);
-int compareC1IStructs(const void *ip, const void *jp);
-int compareC2IStructs(const void *ip, const void *jp);
-int compareCCfa(const void *ip, const void *jp);
-int compareCPfa(const void *ip, const void *jp);
-void locate(double xx[], int n, double x, int *j, int *indices);
-void ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname,struct PolkaCommandLineArgsTag CLA);
+void ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname);
+int compareCIStructs(const void *ip, const void *jp);
 
 extern INT4 lalDebugLevel;
 
 CandidateList CList1, CList2; /* treat up to 4 candidate files */
 
-CoincidentCandidate *CC;
-CoincidentPairs *CP;
-
-#ifndef FALSE
-#define FALSE (1==0)
-#endif
-#ifndef TRUE
-#define TRUE  (1==1)
-#endif
+CandINDICES *SortedC1,*SortedC2;
 
 /* main() mapped to polka() if using boinc */
 #if USE_BOINC
@@ -137,11 +129,7 @@ int polka(int argc,char *argv[])
 int main(int argc,char *argv[]) 
 #endif
 {
-  INT4 *indices1=NULL,*indices2=NULL,*indicesCCfa=NULL;
-  REAL8 MaxAngularDistance;
   UINT4 i;
-  UINT4 numCoincidences = 0;
-  FILE *fpOut;
   lalDebugLevel = 3;
 #if USE_BOINC
   static char resolved_filename[256];
@@ -153,143 +141,123 @@ int main(int argc,char *argv[])
   /* Reads in candidare files */
   if (ReadCandidateFiles(PolkaCommandLineArgs)) return 2;
 
-  /* create arrays of indices */
-  if (!(indices1=(INT4 *)LALMalloc(sizeof(INT4) * CList1.length))){
-    fprintf(stderr,"Unable to allocate index1 array in main\n");
-    return 1;
-  }
-  if (!(indices2=(INT4 *)LALMalloc(sizeof(INT4) * CList2.length))){
-    fprintf(stderr,"Unable to allocate index2 array in main\n");
-    return 1;
-  }
+  if (CList1.length != 0 && CList2.length != 0 )
+    {
+      /* create arrays of candidates to be sorted */
+      if (!(SortedC1=(CandINDICES *)LALMalloc(sizeof(CandINDICES) * CList1.length))){
+	fprintf(stderr,"Unable to allocate index1 array in main\n");
+	return 1;
+      }
+      if (!(SortedC2=(CandINDICES *)LALMalloc(sizeof(CandINDICES) * CList2.length))){
+	fprintf(stderr,"Unable to allocate index2 array in main\n");
+	return 1;
+      }
 
-  /* populate arrays of indices */
-  for (i=0;i<CList1.length;i++) indices1[i]=i;
-  for (i=0;i<CList2.length;i++) indices2[i]=i;
+      /* Initialise arrays of sorted candidates to use for bsearch */
+      for (i=0;i<CList1.length;i++) 
+	{
+	  SortedC1[i].f=CList1.f[i];
+	  SortedC1[i].Delta=CList1.Delta[i];
+	  SortedC1[i].Alpha=CList1.Alpha[i];
+	  SortedC1[i].F=CList1.F[i];
+	  SortedC1[i].iFreq=(INT4) (CList1.f[i]/(PolkaCommandLineArgs.Deltaf));
+	  SortedC1[i].iDelta=(INT4)(CList1.Delta[i]/(PolkaCommandLineArgs.DeltaDelta));
+	  SortedC1[i].iAlpha=0;
+	  SortedC1[i].iCand=i;
+	}
+      for (i=0;i<CList2.length;i++) 
+	{
+	  SortedC2[i].f=CList2.f[i];
+	  SortedC2[i].Delta=CList2.Delta[i];
+	  SortedC2[i].Alpha=CList2.Alpha[i];
+	  SortedC2[i].F=CList2.F[i];
+	  SortedC2[i].iFreq=(INT4) (CList2.f[i]/(PolkaCommandLineArgs.Deltaf));
+	  SortedC2[i].iDelta=(INT4)(CList2.Delta[i]/(PolkaCommandLineArgs.DeltaDelta));
+	  SortedC2[i].iAlpha=0;
+	  SortedC2[i].iCand=i;
+	}
 
-  /* sort arrays of indices in DECREASING order*/
-  qsort((void *)indices1, (size_t)CList1.length, sizeof(int), compareC1IStructs);
-  qsort((void *)indices2, (size_t)CList2.length, sizeof(int), compareC2IStructs);
+      /* sort arrays of candidates */
+      qsort(SortedC1, (size_t)CList1.length, sizeof(CandINDICES), compareCIStructs);
+      qsort(SortedC2, (size_t)CList2.length, sizeof(CandINDICES), compareCIStructs);
 
 
-  LALFree(indices1);
-  LALFree(indices2);
+      for (i=0; i < CList1.length; i++)
+	{
+	  if  (SortedC1[i].f >= PolkaCommandLineArgs.fmin && SortedC1[i].f <= PolkaCommandLineArgs.fmax)
+	    {
+	      CandINDICES *p;
+	      p=bsearch(&SortedC1[i],SortedC2,(size_t)CList2.length, sizeof(CandINDICES),compareCIStructs);
+	      if (p != NULL)
+		{
+		  fprintf(stdout,"%d %d %d %d\n",p->iFreq,p->iDelta,p->iAlpha,p->iCand);
+		}
+	    }
+	}
 
-  /* freeing a CList is a bit tedious, so we use a macro */
-#define freeCList(x) do { LALFree((x).f); LALFree((x).Alpha); LALFree((x).Delta); LALFree((x).F); LALFree((x).fa); LALFree((x).Ctag);LALFree((x).CtagCounter);LALFree((x).CI);} while(0)
+      LALFree(SortedC1);
+      LALFree(SortedC2);
+
+      /* freeing a CList is a bit tedious, so we use a macro */
+#define freeCList(x) do { LALFree((x).f); LALFree((x).Alpha); LALFree((x).Delta); LALFree((x).F); LALFree((x).fa); LALFree((x).Ctag);LALFree((x).CtagCounter);} while(0)
   
-  
-  
+      freeCList(CList1);
+      freeCList(CList2);
+    }
 
-  freeCList(CList1);
-  freeCList(CList2);
-  
   LALCheckMemoryLeaks(); 
 
   return 0;
 
 }
 
-
 /*******************************************************************************/
 
-/* Sorting function to sort 1st candidate indices DECREASING order of f, delta, alpha */
-int compareC1IStructs(const void *ip, const void *jp)
+/* Sorting function to sort 1st candidate indices INCREASING order of f, delta, alpha */
+int compareCIStructs(const void *a, const void *b)
 {
+  const CandINDICES *ip = a;
+  const CandINDICES *jp = b;
   INT4 ifreq1,ifreq2;
 
-  ifreq1=CList1.CI[*(const int *)ip].iFreq;
-  ifreq2=CList1.CI[*(const int *)jp].iFreq;
+  ifreq1=ip->iFreq;
+  ifreq2=jp->iFreq;
 
   if (ifreq1 < ifreq2)
-    return 1;
-
-  if (ifreq1 > ifreq2)
     return -1;
   
   if (ifreq1 == ifreq2)
     {
       INT4 iDelta1, iDelta2;
 
-      iDelta1=CList1.CI[*(const int *)ip].iDelta;
-      iDelta2=CList1.CI[*(const int *)jp].iDelta;
+      iDelta1=ip->iDelta;
+      iDelta2=jp->iDelta;
       
       if (iDelta1 < iDelta2)
-	return 1;
+	return -1;
 
       if (iDelta1 > iDelta2)
-	return -1;
+	return 1;
   
       if (iDelta1 == iDelta2)
 	{
 	  INT4 iAlpha1, iAlpha2;
 
-	  iAlpha1=CList1.CI[*(const int *)ip].iAlpha;
-	  iAlpha2=CList1.CI[*(const int *)jp].iAlpha;
+	  iAlpha1=ip->iAlpha;
+	  iAlpha2=jp->iAlpha;
       
 	  if (iAlpha1 < iAlpha2)
-	    return 1;
-
-	  if (iAlpha1 > iAlpha2)
 	    return -1;
 
-	  if (iAlpha1 == iAlpha2)
-	    return (ip < jp);
-	}
-    }
-  
-  return (ip < jp);
-
-}
-
-/*******************************************************************************/
-
-/* Sorting function to sort 1st candidate indices DECREASING order of f, delta, alpha */
-int compareC2IStructs(const void *ip, const void *jp)
-{
-  INT4 ifreq1,ifreq2;
-
-  ifreq1=CList2.CI[*(const int *)ip].iFreq;
-  ifreq2=CList2.CI[*(const int *)jp].iFreq;
-
-  if (ifreq1 < ifreq2)
-    return 1;
-
-  if (ifreq1 > ifreq2)
-    return -1;
-  
-  if (ifreq1 == ifreq2)
-    {
-      INT4 iDelta1, iDelta2;
-
-      iDelta1=CList2.CI[*(const int *)ip].iDelta;
-      iDelta2=CList2.CI[*(const int *)jp].iDelta;
-      
-      if (iDelta1 < iDelta2)
-	return 1;
-
-      if (iDelta1 > iDelta2)
-	return -1;
-  
-      if (iDelta1 == iDelta2)
-	{
-	  INT4 iAlpha1, iAlpha2;
-
-	  iAlpha1=CList2.CI[*(const int *)ip].iAlpha;
-	  iAlpha2=CList2.CI[*(const int *)jp].iAlpha;
-      
-	  if (iAlpha1 < iAlpha2)
+	  if (iAlpha1 > iAlpha2)
 	    return 1;
 
-	  if (iAlpha1 > iAlpha2)
-	    return -1;
-
 	  if (iAlpha1 == iAlpha2)
-	    return (ip < jp);
+	    return 0;
 	}
     }
 
-  return (ip < jp);
+  return 1;
 }
 
 /*******************************************************************************/
@@ -298,12 +266,12 @@ int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA)
 {
   LALStatus status = blank_status;	/* initialize status */
 
-  ReadOneCandidateFile (&status, &CList1, CLA.FstatsFile1,CLA);
+  ReadOneCandidateFile (&status, &CList1, CLA.FstatsFile1);
   if (status.statusCode != 0) {
     REPORTSTATUS (&status);
     return 1;
   }
-  ReadOneCandidateFile (&status, &CList2, CLA.FstatsFile2,CLA);
+  ReadOneCandidateFile (&status, &CList2, CLA.FstatsFile2);
   if (status.statusCode != 0) {
     REPORTSTATUS (&status);
     return 1;
@@ -318,7 +286,7 @@ int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA)
 #define DONE_MARKER "%DONE"
 /* read and parse the given candidate 'Fstats'-file fname into the candidate-list CList */
 void 
-ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname, struct PolkaCommandLineArgsTag CLA)
+ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname)
 {
   UINT4 i;
   UINT4 numlines;
@@ -367,9 +335,8 @@ ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname, 
   cands.fa    = LALCalloc (numlines, sizeof(REAL8));
   cands.Ctag  = LALCalloc (numlines, sizeof(UINT4));
   cands.CtagCounter  = LALCalloc (numlines, sizeof(INT4));
-  cands.CI  = LALCalloc (numlines, sizeof(CandINDICES));
 
-  if ( !cands.f || !cands.Alpha || !cands.Delta || !cands.F || !cands.fa || !cands.Ctag || !cands.CtagCounter || !cands.CI )
+  if ( !cands.f || !cands.Alpha || !cands.Delta || !cands.F || !cands.fa || !cands.Ctag || !cands.CtagCounter )
     {
       TRY( LALDestroyParsedDataFile ( stat->statusPtr, &Fstats ), stat);
       ABORT (stat, POLKAC_EMEM, POLKAC_MSGEMEM);
@@ -387,10 +354,6 @@ ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname, 
 		     "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
 		     " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT, 
 		     &(cands.f[i]), &(cands.Alpha[i]), &(cands.Delta[i]), &dmp, &dmp, &dmp, &(cands.F[i]) );
-
-      cands.CI[i].iFreq=(INT4) (cands.f[i]/(2*CLA.Deltaf));
-      cands.CI[i].iDelta=(INT4) (cands.Delta[i]/(2*CLA.DeltaDelta));
-      cands.CI[i].iAlpha=0;
 
 
       if ( read != 7 )
@@ -420,7 +383,6 @@ ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname, 
   CList->fa     = cands.fa;
   CList->Ctag   = cands.Ctag;
   CList->CtagCounter   = cands.CtagCounter;
-  CList->CI   = cands.CI;
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
