@@ -262,7 +262,8 @@ int main(int argc, char **argv)
   REAL8 dfSFT, dt;
   INT4 if0Min, if0Max, ifMin, ifMax;
   REAL8 f0Min, f0Max, fMin, f0Band, fWing;
-  INT4 nDeltaF;
+  INT4 nDeltaF,ntermsdivbytwo;
+
 
   LIGOTimeGPS *timeStamps;
 
@@ -453,13 +454,15 @@ int main(int argc, char **argv)
 
   {
     REAL8 tempf0Band;
+
+    ntermsdivbytwo=64;
     /* compute size of SFT wings */
     fWing = 2.0e-4 * f0;
     /* Adjust search band to include wings */
     f0Band += 2.0*fWing;
     tempf0Band = f0Band;
     tSFT=1.0e3;/*9.6e4/sqrt(f0);*/
-    nDeltaF = (INT4)(ceil(f0Band*tSFT));
+    nDeltaF = 2*ntermsdivbytwo+(INT4)(ceil(f0Band*tSFT));
       /* tSFT = (REAL8)nDeltaF/f0Band;*/
     oneOverSqrtTSFT = 1.0/sqrt(tSFT);
     /* Number of data in time series for 1 SFT */
@@ -479,12 +482,13 @@ int main(int argc, char **argv)
   }
   /* the hard-wired 64 is for the necessary NTERMS_COH_DIV_TWO*/
   /* index of the left side of the band, WITH WINGS */
-  ifMin=floor(f0/dfSFT)-nDeltaF/2-64;
+
+  ifMin=floor(f0/dfSFT)-nDeltaF/2;
   /* indexof the right side of the band, WITH WINGS */
-  ifMax=ifMin+nDeltaF+64;
+  ifMax=ifMin+nDeltaF;
   /* frequency of the left side of the band, WITH WINGS */
   fMin=dfSFT*ifMin;  
-  nDeltaF=(INT4)(ceil(f0Band/dfSFT));
+  nDeltaF=2*ntermsdivbytwo+(INT4)(ceil(f0Band/dfSFT));
   /* Number of SFTs which make one DeFT */ 
   mCohSFT=ceil(tCoh/tSFT);
   if (mCohSFT==0) mCohSFT=1;
