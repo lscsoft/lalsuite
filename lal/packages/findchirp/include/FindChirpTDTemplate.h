@@ -1,7 +1,7 @@
 /*---------------------------------------------------------
  *      File Name: FindChirpTDTemplate.h
  *      author: S. Babak
- *      
+ *       
  *----------------------------------------------------------
  */
 
@@ -9,15 +9,16 @@
 
 <lalVerbatim file="FindChirpTDTemplateHV">
 Author: S. Babak
+$Id$ 
 </lalVerbatim>
 
 <lalLaTeX>
 \section{Header \texttt{FindChirpTDTemplate.h}}
 \label{s:FindChirpTDT.h}
 
-This header file is a twin of FindChirpSP.h, FindChirpChisq.h and
-. 
-The main difference is that we filter data here using time domain waveforms.
+This header file is a twin of FindChirpSP.h. 
+It provides required structures and functions for filtering data
+using time domain waveforms.
 User can choose any waveform from the inspiral package:
 \\
 
@@ -53,24 +54,43 @@ extern "C" {
 
 NRCSID (FINDCHIRPTDTH, "$Id$");
 
-#define FINDCHIRPTDTEMPLATE_TLEN     1 
-#define FINDCHIRPTDTEMPLATE_MSGETLEN "Template is too long for a given data\
-					segment"
+#define FINDCHIRPTDTEMPLATE_TLEN	1 
+#define FINDCHIRPTDT_ETAPX 		2		
+#define FINDCHIRPTDTEMPLATE_EFLOW	3
+#define FINDCHIRPTDTEMPLATE_MSGETLEN "Template is too long for a given data segment"
+#define FINDCHIRPTDT_MSGETAPX "Unknown approximant: must be TaylorT1, TaylorT3, PadeT1, EOB"
+#define FINDCHIRPTDTEMPLATE_MSGEFLOW "Low frequency cutoff is different in fcTemplate and inspTemplate"
 
-typedef struct
+/*					
+typedef
 tagFindChirpChisqTDTParams{
    FindchirpChisqParams		*chisqParams,
    InspiralTemplate		*tmplt
 }FindChirpChisqTDTParams;
-
+*/
 
 void LALFindChirpTDTData(
    LALStatus 			*status,
    FindChirpSegmentVector	*fcSegVec,
    DataSegmentVector		*dataSegVec,
-   FindChirpSPDataParams	*params
+   FindChirpDataParams		*params
 );
 
+
+void LALFindChirpTDTemplate(
+   LALStatus			*status,
+   FindChirpTemplate		*fcTmplt,
+   InspiralTemplate		*tmplt,
+   FindChirpDataParams		*params  /* note that params are different */
+);
+
+void LALFindChirpTDFilterSegment(
+    LALStatus                  *status,
+    SnglInspiralTable         **eventList,
+    FindChirpFilterInput       *input,
+    FindChirpFilterParams      *params
+);
+/*
 void LALFindChirpTDTVeto(
    LALStatus			*status,
    REAL4Vector			*chisqVec,
@@ -85,20 +105,8 @@ void LALFindChirpDstatVeto(
    FindChirpChisqParams		*params
 );
 
-void LALFindChirpTDTemplate(
-   LALStatus			*status,
-   FindChirpTemplate		*fcTmplt,
-   InspiralTemplate		*tmplt,
-   FindChirpSPDataParams	*params  /* note that params are different */
-);
 
-void LALFindChirpTDTFilterSegment(
-    LALStatus                  *status,
-    SnglInspiralTable         **eventList,
-    FindChirpFilterInput       *input,
-    FindChirpFilterParams      *params
-);
-
+*/
 #endif /* _FINDCHIRPTDTH_H */
 
 
