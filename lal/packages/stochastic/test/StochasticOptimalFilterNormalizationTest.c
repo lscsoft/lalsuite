@@ -222,7 +222,6 @@ int main(int argc, char *argv[])
   LIGOTimeGPS              epoch = {1,0};
 
   REAL4FrequencySeries     overlap;
-  REAL4FrequencySeries     freqMask;
   REAL4FrequencySeries     omegaGW;
   REAL4FrequencySeries     invNoise1;
   REAL4FrequencySeries     invNoise2;
@@ -247,13 +246,6 @@ int main(int argc, char *argv[])
   overlap.data   = NULL;
   overlap.sampleUnits = lalDimensionlessUnit;
 
-  freqMask.name[0] = '\0';
-  freqMask.f0     = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_F0;
-  freqMask.deltaF = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_DELTAF;
-  freqMask.epoch  = epoch;
-  freqMask.data   = NULL;
-  freqMask.sampleUnits = lalDimensionlessUnit;
-
   realBadData = omegaGW = invNoise1 = invNoise2 = overlap;
 
   invNoise1.sampleUnits.unitNumerator[LALUnitIndexStrain] = -2;
@@ -268,22 +260,12 @@ int main(int argc, char *argv[])
   params.window1 = params.window2 = NULL;
 
   strncpy(overlap.name, "", LALNameLength);
-  strncpy(freqMask.name, "", LALNameLength);
 
   output.normalization = &normOut;
   output.variance = &varOut;
 
   /* allocate memory */
   LALSCreateVector(&status, &(overlap.data),
-                   STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LENGTH);
-  if ( ( code = CheckStatus(&status, 0 , "", 
-                            STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                            STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-  {
-    return code;
-  }
-
-  LALSCreateVector(&status, &(freqMask.data),
                    STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LENGTH);
   if ( ( code = CheckStatus(&status, 0 , "", 
                             STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
@@ -318,7 +300,6 @@ int main(int argc, char *argv[])
   }
 
   input.overlapReductionFunction = &overlap;
-  input.frequencyMask = &freqMask;
   input.omegaGW = &omegaGW;
   input.inverseNoisePSD1 = &invNoise1;
   input.inverseNoisePSD2 = &invNoise2;
@@ -362,20 +343,6 @@ int main(int argc, char *argv[])
     printf("  PASS: null pointer to overlap reduction function results in error:\n      \"%s\"\n",
            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.overlapReductionFunction = &overlap;
-    
-    /* test behavior for null pointer to freqMask */ 
-    input.frequencyMask = NULL;
-    LALStochasticOptimalFilterNormalization(&status, &output, &input, &params);
-    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-                              STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_ECHK,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGECHK) ) )
-    {
-      return code;
-    }
-    printf("  PASS: null pointer to freqMask results in error:\n      \"%s\"\n",
-           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-    input.frequencyMask = &freqMask;
     
     /* test behavior for null pointer to gravitational-wave spectrum */ 
     input.omegaGW = NULL;
@@ -800,7 +767,6 @@ int main(int argc, char *argv[])
 
   /* fill optimal input */
   input.overlapReductionFunction    = &(overlap);
-  input.frequencyMask               = &(freqMask);
   input.omegaGW                     = &(omegaGW);
   input.inverseNoisePSD1             = &(invNoise1);
   input.inverseNoisePSD2             = &(invNoise2);

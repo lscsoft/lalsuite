@@ -252,7 +252,7 @@ void
 LALStochasticOptimalFilterNormalization(
             LALStatus                                            *status,
             StochasticOptimalFilterNormalizationOutput           *output,
-            StochasticOptimalFilterNormalizationInput            *input,
+            const StochasticOptimalFilterNormalizationInput      *input,
             const StochasticOptimalFilterNormalizationParameters *parameters)
 /* </lalVerbatim> */
 {
@@ -267,7 +267,7 @@ LALStochasticOptimalFilterNormalization(
   REAL8      deltaF;
 
   /* normalization factor */
-  UINT4      i,j;
+  UINT4      i;
   UINT4      xRef;
   REAL4      omega1;
   REAL4      omega2;
@@ -412,17 +412,6 @@ LALStochasticOptimalFilterNormalization(
   }
 
   /*** done with null pointers ***/
-
-  /* set frequency mask to unity if not defined */
-  if (input->frequencyMask == NULL ) {
-    input->frequencyMask = input->overlapReductionFunction;
-    input->frequencyMask->sampleUnits = lalDimensionlessUnit;
-    for (j = 0; j < input->overlapReductionFunction->data->length; j++) {
-      input->frequencyMask->data->data[j] = 1.0;
-      printf("Result ***** : %f %d \n",  input->frequencyMask->data->data[j], j); 
-    }
-  }
-  
 
   /* extract parameters from overlap */
   length = input->overlapReductionFunction->data->length;
@@ -721,8 +710,7 @@ LALStochasticOptimalFilterNormalization(
     f6 = f3 * f3;
     
     omegaTimesGamma = input->omegaGW->data->data[i]
-      * input->overlapReductionFunction->data->data[i]
-      * input->frequencyMask->data->data[i];
+      * input->overlapReductionFunction->data->data[i];
     p1Inv = input->inverseNoisePSD1->data->data[i];
     p2Inv = input->inverseNoisePSD2->data->data[i];
     lambdaInv += omegaTimesGamma * omegaTimesGamma * p1Inv * p2Inv 
