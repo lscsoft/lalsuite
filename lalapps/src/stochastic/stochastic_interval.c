@@ -1960,7 +1960,11 @@ void readDataPair(LALStatus *status,
   CHECKSTATUSPTR (status);
   LALFrCacheOpen(status->statusPtr, &frStream1, frCache1);
   CHECKSTATUSPTR (status);
-	
+
+  /* the code fails if the data path is missing in the cache file*/ 
+  LALFrSetMode( status->statusPtr, 0, frStream1 );
+  CHECKSTATUSPTR (status); 	
+  
   if (verbose_flag)
    { fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn1.name);}
 
@@ -2009,6 +2013,10 @@ void readDataPair(LALStatus *status,
     CHECKSTATUSPTR (status);
     LALFrCacheOpen(status->statusPtr, &frStream2, frCache2);
     CHECKSTATUSPTR (status);
+    /* the code fails if the data path is missing in the cache file*/
+    LALFrSetMode( status->statusPtr, 0, frStream2 );
+    CHECKSTATUSPTR (status);
+
     if (verbose_flag)
      { fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn2.name);}
 
