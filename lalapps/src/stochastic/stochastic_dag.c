@@ -80,8 +80,8 @@ REAL8 deltaF;
 
 /* data parameters */
 LIGOTimeGPS gpsStartTime;
-UINT8 startTime = -1;
-UINT8 stopTime = -1;
+UINT8 startTime = 0;
+UINT8 stopTime = 0;
 INT4 intervalDuration = -1;
 INT4 segmentDuration = -1;
 INT4 calibOffset = -1;
@@ -2358,13 +2358,13 @@ void parseOptions(INT4 argc, CHAR *argv[])
   /* check for required arguments */
 
   /* start time */
-  if (startTime == -1)
+  if (startTime == 0)
   {
     fprintf(stderr, "--gps-start-time must be specified\n");
     exit(1);
   }
 
-  if (stopTime == -1)
+  if (stopTime == 0)
   {
     fprintf(stderr, "--gps-end-time must be specified\n");
     exit(1);
