@@ -38,6 +38,7 @@
  [--dm DM ]  
  [--dpsi0 DPSI0 ]
  [--dpsi3 DPSI3 ]
+ [--alphaf-cut ALPHAFCUT]
  [--dmchirp DM_CHIRP ]
  [--deta  DETA ]
  [--dt DT ]
@@ -91,7 +92,7 @@ by less then \textsc{DETA}.  Finally, if \textsc{psi0\_and\_psi3} is
 specified the \texttt{psi0} and \texttt{psi3} fields of the trigger must
 differ by less than \textsc{PSI0} and \textsc{PSI3}.  
 
-Additionally, if demanding coincidence over m1 and m2, it then tests to
+If demanding coincidence over m1 and m2, it then tests 
 that 
 %
 \begin{equation} \frac{\left|D_\mathrm{IFOA} -
@@ -109,8 +110,17 @@ where
 \begin{equation} \hat{\rho}_\mathrm{IFOB} = \frac{\sigma_\mathrm{IFOB}}
 {\sigma_\mathrm{IFOA}} \rho_\mathrm{IFOA} \, .  \end{equation} 
 %
+
+If demanding coincidence over $\psi_0$ and $\psi_3$, there is an additional
+cut applied in the triggers. The single-ifo triggers that have values
+of $\alpha_F$ greater than ALPHAFCUT (as specified in the 
+command line) are rejected. For that reason, the option 
+\texttt{--alphaf-cut} is required, if \texttt{--parameter-test} is
+set to \texttt{psi0\_and\_psi3}.
+
 If all the tests are passed, the events are considered to be coincident
 and written to the output file.
+
 
 The \texttt{--ifo-b-range-cut} option performs a test similar to
 (\ref{snrtest}) above to see whether we should expect a trigger in
@@ -282,6 +292,12 @@ $\delta \psi_0$.  If not supplied,  then $\delta  \psi_0 = 0$.
 \item[\texttt{--dpsi3} \textsc{$\delta \psi_3$}] Optional. Accept
 triggers as coincident if \textsc{$\psi_3$} parameters agree within
 $\delta \psi_3$.  If not supplied,  then $\delta  \psi_3 = 0$.
+
+\item[\texttt{--alphaf-cut} \textsc{ALPHAFCUT}] Required only if
+\texttt{--parameter-test} is set to \texttt{psi0\_and\_psi3}. Accept 
+only the single-ifo BCV triggers that have $\alpha_F$ less or
+equal to \textsc{ALPHAFCUT}. Affects only the coincidence part of
+the code and not the triggered-bank generation.
 
 \item[\texttt{--dmchirp} \textsc{$\delta mchirp$}] Optional. Accept
 triggers as coincident if mchirp agrees within $\delta mchirp$.  If not
