@@ -49,6 +49,7 @@ NRCSID( REALFFTH, "$Id$" );
 #define REALFFTH_EALOC 256
 #define REALFFTH_EFFTW 512
 #define REALFFTH_ESNGL 1024
+#define REALFFTH_EINTL 2048
 
 #define REALFFTH_MSGENULL "Null pointer"
 #define REALFFTH_MSGENNUL "Non-null pointer"
@@ -61,6 +62,8 @@ NRCSID( REALFFTH, "$Id$" );
 #define REALFFTH_MSGEALOC "Memory allocation failed"
 #define REALFFTH_MSGEFFTW "Error in FFTW"
 #define REALFFTH_MSGESNGL "FFTW library is not single-precision"
+#define REALFFTH_MSGEINTL "Error in Intel FFT library"
+
 
 /**** </lalErrTable> */
 /**** <lalLaTeX>

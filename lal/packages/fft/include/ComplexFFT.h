@@ -45,6 +45,8 @@ NRCSID( COMPLEXFFTH, "$Id$" );
 #define COMPLEXFFTH_EALOC 64
 #define COMPLEXFFTH_EFFTW 128
 #define COMPLEXFFTH_ESNGL 256
+#define COMPLEXFFTH_EINTL 512
+#define COMPLEXFFTH_ESIGN 1024
 
 #define COMPLEXFFTH_MSGENULL "Null pointer"
 #define COMPLEXFFTH_MSGENNUL "Non-null pointer"
@@ -55,6 +57,8 @@ NRCSID( COMPLEXFFTH, "$Id$" );
 #define COMPLEXFFTH_MSGEFFTW "Error in FFTW"
 #define COMPLEXFFTH_MSGEALOC "Memory allocation failed"
 #define COMPLEXFFTH_MSGESNGL "FFTW library is not single-precision"
+#define COMPLEXFFTH_MSGEINTL "Error in Intel FFT library"
+#define COMPLEXFFTH_MSGESIGN "Unknown sign of transform in plan"
 
 /**** </lalErrTable> */
 /**** <lalLaTeX>
