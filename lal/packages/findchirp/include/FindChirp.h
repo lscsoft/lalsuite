@@ -454,7 +454,6 @@ tagFindChirpFilterParams
   FindChirpChisqParams         *chisqParams;
   FindChirpChisqInput          *chisqInput;
   FindChirpChisqInput          *chisqInputBCV;
-  Approximant                   approximant;
 }
 FindChirpFilterParams;
 /* </lalVerbatim> */
