@@ -74,6 +74,446 @@
 
 NRCSID (VECTORMULTIPLYC, "$Id$");
 
+
+COMPLEX8Vector * XLALCCVectorDivide(
+    COMPLEX8Vector       *out,
+    const COMPLEX8Vector *in1,
+    const COMPLEX8Vector *in2
+    )
+{
+  static const char *func = "XLALCCVectorDivide";
+  COMPLEX8 *a;
+  COMPLEX8 *b;
+  COMPLEX8 *c;
+  INT4      n;
+
+  if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  if ( ! out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+  if ( in1->length != out->length || in2->length != out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+
+  a = in1->data;
+  b = in2->data;
+  c = out->data;
+  n = out->length;
+
+  while (n-- > 0)
+  {
+    REAL4 ar = a->re;
+    REAL4 ai = a->im;
+    REAL4 br = b->re;
+    REAL4 bi = b->im;
+
+    if (fabs(br) > fabs(bi))
+    {
+      REAL4 ratio = bi/br;
+      REAL4 denom = br + ratio*bi;
+
+      c->re = (ar + ratio*ai)/denom;
+      c->im = (ai - ratio*ar)/denom;
+    }
+    else
+    {
+      REAL4 ratio = br/bi;
+      REAL4 denom = bi + ratio*br;
+
+      c->re = (ar*ratio + ai)/denom;
+      c->im = (ai*ratio - ar)/denom;
+    }
+
+    ++a;
+    ++b;
+    ++c;
+  }
+
+  return out;
+}
+
+
+COMPLEX16Vector * XLALZZVectorDivide(
+    COMPLEX16Vector       *out,
+    const COMPLEX16Vector *in1,
+    const COMPLEX16Vector *in2
+    )
+{
+  static const char *func = "XLALZZVectorDivide";
+  COMPLEX16 *a;
+  COMPLEX16 *b;
+  COMPLEX16 *c;
+  INT4       n;
+
+  if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  if ( ! out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+  if ( in1->length != out->length || in2->length != out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+
+  a = in1->data;
+  b = in2->data;
+  c = out->data;
+  n = out->length;
+
+  while (n-- > 0)
+  {
+    REAL8 ar = a->re;
+    REAL8 ai = a->im;
+    REAL8 br = b->re;
+    REAL8 bi = b->im;
+
+    if (fabs(br) > fabs(bi))
+    {
+      REAL8 ratio = bi/br;
+      REAL8 denom = br + ratio*bi;
+
+      c->re = (ar + ratio*ai)/denom;
+      c->im = (ai - ratio*ar)/denom;
+    }
+    else
+    {
+      REAL8 ratio = br/bi;
+      REAL8 denom = bi + ratio*br;
+
+      c->re = (ar*ratio + ai)/denom;
+      c->im = (ai*ratio - ar)/denom;
+    }
+
+    ++a;
+    ++b;
+    ++c;
+  }
+
+  return out;
+}
+
+
+COMPLEX8Vector * XLALCCVectorMultiply(
+    COMPLEX8Vector       *out,
+    const COMPLEX8Vector *in1,
+    const COMPLEX8Vector *in2
+    )
+{
+  static const char *func = "XLALCCVectorMultiply";
+  COMPLEX8 *a;
+  COMPLEX8 *b;
+  COMPLEX8 *c;
+  INT4      n;
+
+  if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  if ( ! out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+  if ( in1->length != out->length || in2->length != out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+
+  a = in1->data;
+  b = in2->data;
+  c = out->data;
+  n = out->length;
+
+  while (n-- > 0)
+  {
+    REAL4 ar = a->re;
+    REAL4 ai = a->im;
+    REAL4 br = b->re;
+    REAL4 bi = b->im;
+
+    c->re = ar*br - ai*bi;
+    c->im = ar*bi + ai*br;
+
+    ++a;
+    ++b;
+    ++c;
+  }
+
+  return out;
+}
+
+
+COMPLEX16Vector * XLALZZVectorMultiply(
+    COMPLEX16Vector       *out,
+    const COMPLEX16Vector *in1,
+    const COMPLEX16Vector *in2
+    )
+{
+  static const char *func = "XLALZZVectorMultiply";
+  COMPLEX16 *a;
+  COMPLEX16 *b;
+  COMPLEX16 *c;
+  INT4       n;
+
+  if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  if ( ! out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+  if ( in1->length != out->length || in2->length != out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+
+  a = in1->data;
+  b = in2->data;
+  c = out->data;
+  n = out->length;
+
+  while (n-- > 0)
+  {
+    REAL8 ar = a->re;
+    REAL8 ai = a->im;
+    REAL8 br = b->re;
+    REAL8 bi = b->im;
+
+    c->re = ar*br - ai*bi;
+    c->im = ar*bi + ai*br;
+
+    ++a;
+    ++b;
+    ++c;
+  }
+
+  return out;
+}
+
+
+COMPLEX8Vector * XLALCCVectorMultiplyConjugate(
+    COMPLEX8Vector       *out,
+    const COMPLEX8Vector *in1,
+    const COMPLEX8Vector *in2
+    )
+{
+  static const char *func = "XLALCCVectorMultiplyConjugate";
+  COMPLEX8 *a;
+  COMPLEX8 *b;
+  COMPLEX8 *c;
+  INT4      n;
+
+  if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  if ( ! out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+  if ( in1->length != out->length || in2->length != out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+
+  a = in1->data;
+  b = in2->data;
+  c = out->data;
+  n = out->length;
+
+  while (n-- > 0)
+  {
+    REAL4 ar = a->re;
+    REAL4 ai = a->im;
+    REAL4 br = b->re;
+    REAL4 bi = b->im;
+
+    c->re = ar*br + ai*bi;
+    c->im = ai*br - ar*bi;
+
+    ++a;
+    ++b;
+    ++c;
+  }
+
+  return out;
+}
+
+
+COMPLEX16Vector * XLALZZVectorMultiplyConjugate(
+    COMPLEX16Vector       *out,
+    const COMPLEX16Vector *in1,
+    const COMPLEX16Vector *in2
+    )
+{
+  static const char *func = "XLALZZVectorMultiplyConjugate";
+  COMPLEX16 *a;
+  COMPLEX16 *b;
+  COMPLEX16 *c;
+  INT4       n;
+
+  if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  if ( ! out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+  if ( in1->length != out->length || in2->length != out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+
+  a = in1->data;
+  b = in2->data;
+  c = out->data;
+  n = out->length;
+
+  while (n-- > 0)
+  {
+    REAL8 ar = a->re;
+    REAL8 ai = a->im;
+    REAL8 br = b->re;
+    REAL8 bi = b->im;
+
+    c->re = ar*br + ai*bi;
+    c->im = ai*br - ar*bi;
+
+    ++a;
+    ++b;
+    ++c;
+  }
+
+  return out;
+}
+
+
+COMPLEX8Vector * XLALSCVectorMultiply(
+    COMPLEX8Vector       *out,
+    const REAL4Vector    *in1,
+    const COMPLEX8Vector *in2
+    )
+{
+  static const char *func = "XLALSCVectorMultiply";
+  REAL4    *a;
+  COMPLEX8 *b;
+  COMPLEX8 *c;
+  INT4      n;
+
+  if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  if ( ! out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+  if ( in1->length != out->length || in2->length != out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+
+  a = in1->data;
+  b = in2->data;
+  c = out->data;
+  n = out->length;
+
+  while (n-- > 0)
+  {
+    REAL4 fac = *a;
+    REAL4 br  = b->re;
+    REAL4 bi  = b->im;
+
+    c->re = fac*br;
+    c->im = fac*bi;
+
+    ++a;
+    ++b;
+    ++c;
+  }
+
+  return out;
+}
+
+COMPLEX16Vector * XLALDZVectorMultiply(
+    COMPLEX16Vector       *out,
+    const REAL8Vector     *in1,
+    const COMPLEX16Vector *in2
+    )
+{
+  static const char *func = "XLALDZVectorMultiply";
+  REAL8     *a;
+  COMPLEX16 *b;
+  COMPLEX16 *c;
+  INT4       n;
+
+  if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  if ( ! out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+  if ( in1->length != out->length || in2->length != out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+
+  a = in1->data;
+  b = in2->data;
+  c = out->data;
+  n = out->length;
+
+  while (n-- > 0)
+  {
+    REAL8 fac = *a;
+    REAL8 br  = b->re;
+    REAL8 bi  = b->im;
+
+    c->re = fac*br;
+    c->im = fac*bi;
+
+    ++a;
+    ++b;
+    ++c;
+  }
+
+  return out;
+}
+
+
+REAL4Vector * XLALSSVectorMultiply(
+    REAL4Vector          *out,
+    const REAL4Vector    *in1,
+    const REAL4Vector    *in2
+    )
+{
+  static const char *func = "XLALSSVectorMultiply";
+  REAL4 *a;
+  REAL4 *b;
+  REAL4 *c;
+  INT4   n;
+
+  if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  if ( ! out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+  if ( in1->length != out->length || in2->length != out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+
+  a = in1->data;
+  b = in2->data;
+  c = out->data;
+  n = out->length;
+
+  while (n-- > 0)
+    *c++ = (*a++)*(*b++);
+
+  return out;
+}
+
+
+REAL8Vector * XLALDDVectorMultiply(
+    REAL8Vector          *out,
+    const REAL8Vector    *in1,
+    const REAL8Vector    *in2
+    )
+{
+  static const char *func = "XLALDDVectorMultiply";
+  REAL8 *a;
+  REAL8 *b;
+  REAL8 *c;
+  INT4   n;
+
+  if ( ! out || ! in1 || !in2 || ! out->data || ! in1->data || ! in2->data )
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  if ( ! out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+  if ( in1->length != out->length || in2->length != out->length )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+
+  a = in1->data;
+  b = in2->data;
+  c = out->data;
+  n = out->length;
+
+  while (n-- > 0)
+    *c++ = (*a++)*(*b++);
+
+  return out;
+}
+
+
+/*
+ *
+ * LAL Routines.
+ *
+ */
+
+
+
 /* <lalVerbatim file="VectorMultiplyCP"> */
 void
 LALCCVectorDivide (

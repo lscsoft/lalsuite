@@ -49,6 +49,32 @@ NRCSID (VECTOROPSH, "$Id$");
 #define VECTOROPSH_MSGESAME "Input/Output data vectors are the same"
 /**** </lalErrTable> */
 
+/*
+ *
+ * XLAL Routines.
+ *
+ */
+
+/* sigle precision */
+COMPLEX8Vector * XLALCCVectorDivide( COMPLEX8Vector *out, const COMPLEX8Vector *in1, const COMPLEX8Vector *in2 );
+COMPLEX8Vector * XLALCCVectorMultiply( COMPLEX8Vector *out, const COMPLEX8Vector *in1, const COMPLEX8Vector *in2 );
+COMPLEX8Vector * XLALCCVectorMultiplyConjugate( COMPLEX8Vector *out, const COMPLEX8Vector *in1, const COMPLEX8Vector *in2 );
+COMPLEX8Vector * XLALSCVectorMultiply( COMPLEX8Vector *out, const REAL4Vector *in1, const COMPLEX8Vector *in2 );
+REAL4Vector * XLALSSVectorMultiply( REAL4Vector *out, const REAL4Vector *in1, const REAL4Vector *in2 );
+
+/* double precision */
+COMPLEX16Vector * XLALZZVectorDivide( COMPLEX16Vector *out, const COMPLEX16Vector *in1, const COMPLEX16Vector *in2 );
+COMPLEX16Vector * XLALZZVectorMultiply( COMPLEX16Vector *out, const COMPLEX16Vector *in1, const COMPLEX16Vector *in2 );
+COMPLEX16Vector * XLALZZVectorMultiplyConjugate( COMPLEX16Vector *out, const COMPLEX16Vector *in1, const COMPLEX16Vector *in2 );
+COMPLEX16Vector * XLALDZVectorMultiply( COMPLEX16Vector *out, const REAL8Vector *in1, const COMPLEX16Vector *in2 );
+REAL8Vector * XLALDDVectorMultiply( REAL8Vector *out, const REAL8Vector *in1, const REAL8Vector *in2 );
+
+/*
+ *
+ * LAL Routines.
+ *
+ */
+
 void
 LALCCVectorMultiply (
     LALStatus               *,
