@@ -1,12 +1,8 @@
 TODO
 -----
-* check timeseries without heterodyning
 
 * prepare a "test suite" for pulsar-signal generation
-
-* complete LALSignalToSFTs() (missing: add noise-SFTs)
-
-* test-check final SFTs against makefakedata_v2
+	--> test-check final SFTs against makefakedata_v2
 
 * write some documentation
 
@@ -33,3 +29,6 @@ done
 
 * check source-pos coordinates and "normalize" them if they 
    are 'non-canonical' -> mention in documentation 
+
+* complete LALSignalToSFTs() (missing: add noise-SFTs)
+	(done)
