@@ -38,7 +38,7 @@ int LAL_ERR_EXIT(
   if ( stat->statusCode )
   {
     FAILMSG( stat, func, file, line, id );
-    exit( stat->statusCode );
+    exit( 1 );
   }
   return stat->statusCode;
 }
