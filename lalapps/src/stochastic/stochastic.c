@@ -81,10 +81,10 @@ UINT8 stopTime;
 INT4 streamDuration = 60;
 INT4 segmentDuration = 60;
 INT4 calibDuration = 60;
-CHAR frameCacheOne[LALNameLength];
-CHAR frameCacheTwo[LALNameLength];
-CHAR calCacheOne[LALNameLength];
-CHAR calCacheTwo[LALNameLength];
+CHAR *frameCacheOne;
+CHAR *frameCacheTwo;
+CHAR *calCacheOne;
+CHAR *calCacheTwo;
 CHAR channelOne[LALNameLength];
 CHAR channelTwo[LALNameLength];
 CHAR ifoOne[LALNameLength];
@@ -1288,6 +1288,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
 		/* getopt_long stores the option here */
 		int option_index = 0;
+		size_t optarg_len;
 
 		c = getopt_long(argc, argv, "ht:T:l:a:f:F:w:i:I:d:D:r:R:o:g:z:V", \
 				long_options, &option_index);
@@ -1408,22 +1409,30 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
 			case 'd':
 				/* data cache one */
-				strncpy(frameCacheOne, optarg, LALNameLength);
+				optarg_len = strlen(optarg) + 1;
+				frameCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+				memcpy(frameCacheOne, optarg, optarg_len);
 				break;
 
 			case 'D':
 				/* data cache two */
-				strncpy(frameCacheTwo, optarg, LALNameLength);
+				optarg_len = strlen(optarg) + 1;
+				frameCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+				memcpy(frameCacheTwo, optarg, optarg_len);
 				break;
 
 			case 'r':
 				/* calibration cache one */
-				strncpy(calCacheOne, optarg, LALNameLength);
+				optarg_len = strlen(optarg) + 1;
+				calCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+				memcpy(calCacheOne, optarg, optarg_len);
 				break;
 
 			case 'R':
 				/* calibration cache two */
-				strncpy(calCacheTwo, optarg, LALNameLength);
+				optarg_len = strlen(optarg) + 1;
+				calCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+				memcpy(calCacheTwo, optarg, optarg_len);
 				break;
 
 			case 'o':
