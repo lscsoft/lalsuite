@@ -441,6 +441,7 @@ tagInspiralTemplate
   REAL8 signalAmplitude;
   REAL8 startPhase;
   REAL8 startTime;
+  INT4  ieta;
  
 /* Additional parameters for EOB waveforms */
 
@@ -493,7 +494,6 @@ tagInspiralTemplate
   REAL8 mu; 
   INT4  level;
   INT4  number;
-  INT4  ieta;
   INT4  nStartPad;
   INT4  nEndPad;
   REAL8 OmegaS;
