@@ -255,6 +255,8 @@ set templateArgPeriapse 0;
 set templateSMAcentral 0; 
 set templatedeltaSMA 0;
 set binaryFlag 0;
+set templatenMaxSMA 0;
+set templatenMaxTperi 0;
 set searchThresholdFlag  0;
 set searchThreshold1     0;
 set searchThreshold2     0;
