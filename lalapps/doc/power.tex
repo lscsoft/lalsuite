@@ -9,6 +9,80 @@ Put a summary of the excess power algorithm here .........
 \clearpage
 
 
+\subsection{Running the power code under Condor}
+\label{subsection:running_power}
+\idx[Running]{power}
+
+\begin{enumerate}
+
+\item copy the dag script (\texttt{burstinjburca\_pipeline.py}, if you are running
+on the double coincident data with injections) from the power dir. to
+your working dir.:
+\begin{verbatim}
+cp ~/src/lalapps/src/power/burstinjburca_pipeline.py ./
+\end{verbatim}
+
+\item copy the corresponding input file to \texttt{burst\_dag.ini} in your working
+directory:
+\begin{verbatim}
+cp ~/src/lalapps/src/power/burstinjburca_dag.ini ./burst_dag.ini
+\end{verbatim}
+
+\item now generate the data file with the relevant DQ
+flags using segwizard and name the file S2H1L1Science\_3.txt (if you
+want you can cp the file from one of my recent directories
+say \texttt{/scratch/saikat/realdata/poweburcainjec\_113003\_1} to your working
+dir. )
+
+\item Now at this point you have two options:   a) to generate the
+framecache files using LALdataFind or,    b) to use the framecache
+files that I have already generated.
+\begin{enumerate}
+
+\item This describes the  steps to follow if you want to generate your
+own frame cache files:    
+
+1) run
+the dag script as follows:    ./burstinjburca\_pipeline.py -f
+burst\_dag.ini -p -l /people/patrick/log     ( the log files will be
+written in the dir. /people/saikat/log; nowfor the proper running of
+LALdataFind make sure that the environmentis set correctly in the dag
+script, the environment should be set asfollows:environment
+=LD\_LIBRARY\_PATH=$ENV(LD_LIBRARY_PATH);PYTHONPATH=$ENV(PYTHONPATH)
+)    
+
+2)then submit the dag:
+\begin{verbatim}
+condor_submit_dag burst_dag.dag
+\end{verbatim}
+
+\item  This now describes the steps if you want to use the frame cache
+fileswhich have already been generated:    
+
+1) create a sim link to the relevant
+dir., for double coincident datado:
+\begin{verbatim}
+$ ln -s /scratch/saikat/realdata/H1L1_mod-dq_cache/ cache   
+\end{verbatim}
+
+2) then run the
+script: 
+\begin{verbatim}
+$ ./burstinjburca_pipeline.py -f burst_dag.ini -p -c -l/people/patrick/log    
+\end{verbatim}
+
+3) submit the dag:
+\begin{verbatim}
+$ condor_submit_dag burst_dag.dag
+\end{verbatim}
+So, as far as I could think these are all.....,Now about
+the H1 plot, do we need to generate that plot before we can postour
+triggers? If not then I was tinking may be I'll do that plot once Iget
+back to Milwaukee. Does that sound o.k.? 
+\end{enumerate}
+\end{enumerate}
+
+\clearpage
 \subsection{Program \texttt{lalapps\_power}}
 \label{program:lalapps-power}
 \idx[Program]{lalapps\_power}
@@ -463,6 +537,8 @@ Patrick Brady and Saikat Ray-Majumder
 [\verb$--quality$ \textsc{quality}]
 [\verb$--tau$ \textsc{tau}]
 [\verb$--hpeak$ \textsc{hpeak}]
+[\verb$--log-hpeak-min$ \textsc{log-hpeak-min}]
+[\verb$--log-hpeak-max$ \textsc{log-hpeak-max}]
 [\verb$--usertag$ \textsc{tag}]
 
 \item[Description] 
@@ -532,9 +608,20 @@ Optional. Seed the random number generator with the integer \textsc{seed}.
 Defaults to $1$.
 
 \item[\texttt{--coordinates} \textsc{coordinates}] 
-Optional.  The coordinate system to specify for the injections.  The
-default is \verb+EQUATORIAL+,   but another useful one is
-\verb+HORIZON+ to easily allow for injection from directly overhead.
+Optional.  The coordinate system to specify for the injections.  Use
+one of:
+\begin{itemize}
+\item \texttt{GEOGRAPHIC}
+\item \texttt{EQUATORIAL}
+\item \texttt{ECLIPTIC}
+\item \texttt{GALACTIC}
+\item \texttt{ZENITH}
+\end{itemize}
+The default is \verb+EQUATORIAL+.   Use \verb+ZENITH+ to describe an
+injection from directly above the detector with linear polarization
+with respect to the detector.  Note:  this is different than using
+\verb+HORIZON+ coordinates since the polarization angle is usually
+defined with respect to geo-centric coordinates.
 
 \item[\texttt{--flow} \textsc{flow}]
 Optional.  The code can generate injections at multiple frequencies.
@@ -590,6 +677,18 @@ ring-up waveforms.
 \item[\texttt{--hpeak} \textsc{hpeak}]
 Optional.  The peak dimensionless strain $h_0$ for sine-gaussian,  gaussian,  ringdown and
 ring-up waveforms.
+
+\item[\texttt{--log-hpeak-min} \textsc{log-hpeak-min}]
+Optional.  When this option is invoked,  a range of values of $h_0$
+such that $\log_{10}(h_0)$ is uniformly distributed in the range $[
+\textsc{log-hpeak-min}, \textsc{log-hpeak-max}]$.  If this option is
+used,  then \texttt{--log-hpeak-max} is required.
+
+\item[\texttt{--log-hpeak-max} \textsc{log-hpeak-max}]
+Optional.  When this option is invoked,  a range of values of $h_0$
+such that $\log_{10}(h_0)$ is uniformly distributed in the range $[
+\textsc{log-hpeak-min}, \textsc{log-hpeak-max}]$.  If this option is
+used,  then \texttt{--log-hpeak-min} is required.
 
 \item[\texttt{--user-tag} \textsc{string}] Optional. Set the user tag for this
 job to be \textsc{string}. May also be specified on the command line as 

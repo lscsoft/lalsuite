@@ -45,6 +45,8 @@
 "  --quality Q              quality factor for SG waveforms TAU=Q/(sqrt(2) pi F)\n"\
 "  --tau TAU                duration of SG waveforms.  Q overrides TAU setting\n"\
 "  --hpeak HPEAK            amplitude of SG injection in strain units\n"\
+"  --log-hpeak-min LOGHMIN  min amplitude of SG injection in strain units\n"\
+"  --log-hpeak-max LOGHMAX  max amplitude of SG injection in strain units\n"\
 "  --seed SEED              seed random number generator with SEED (1)\n"\
 "  --waveform NAME          set waveform type to NAME (SineGaussian)\n"\
 "  --user-tag STRING        set the usertag to STRING\n"\
@@ -263,9 +265,14 @@ int main( int argc, char *argv[] ){
   REAL4  fhigh=1000.0;
   REAL4  deltaf=0.0;
   REAL4  hpeak=1.0e-20;
+  INT4   useRandomStrain=0;
+  REAL4  log_hpeakMin=0.0;
+  REAL4  log_hpeakMax=0.0;
+  REAL4  logAmpRange=0.0;
 
   /* site end time */
   CHAR                  coordinates[LIGOMETA_COORDINATES_MAX];
+  INT4                  useZenith=0;
   LALPlaceAndGPS       *place_and_gps;
   LALDetector           lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
   LALDetector           llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
@@ -299,6 +306,8 @@ int main( int argc, char *argv[] ){
     {"fhigh",                   required_argument, 0,                'e'},
     {"deltaf",                  required_argument, 0,                'f'},
     {"quality",                 required_argument, 0,                'g'},
+    {"log-hpeak-min",           required_argument, 0,                'j'},
+    {"log-hpeak-max",           required_argument, 0,                'k'},
     {"seed",                    required_argument, 0,                's'},
     {"time-step",               required_argument, 0,                't'},
     {"waveform",                required_argument, 0,                'w'},
@@ -468,6 +477,22 @@ int main( int argc, char *argv[] ){
         }
         break;
 
+      case 'j':
+        {
+          useRandomStrain+=1;
+          log_hpeakMin = atof( optarg );
+          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", log_hpeakMin );
+        }
+        break;
+
+      case 'k':
+        {
+          useRandomStrain+=1;
+          log_hpeakMax = atof( optarg );
+          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", log_hpeakMax );
+        }
+        break;
+
       case 'z':
         {
           hpeak = atof( optarg );
@@ -478,6 +503,10 @@ int main( int argc, char *argv[] ){
       case 'c':
         LALSnprintf( coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR), "%s",
             optarg );
+
+        if( !(strcmp( coordinates, "ZENITH" )) )
+          useZenith=1;
+
         this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "string", "%le", optarg );
         break;
 
@@ -514,6 +543,17 @@ int main( int argc, char *argv[] ){
     }
   }
 
+  /* check some of the input parameters for consistency */
+  if( (useRandomStrain==1) )
+  {
+        fprintf( stderr, "Must supply upper and lower limits when using"
+            "random strain\n" );
+        exit( 1 );
+  }
+  else if ( (useRandomStrain == 2) )
+  {
+    logAmpRange = (log_hpeakMax - log_hpeakMin);
+  }
 
   /* initialize random number generator */
   LAL_CALL( LALCreateRandomParams( &status, &randParams, rand_seed ), &status);
@@ -590,15 +630,34 @@ int main( int argc, char *argv[] ){
       memcpy( this_sim_burst->coordinates, coordinates, 
           sizeof(CHAR) * LIGOMETA_COORDINATES_MAX );
 
-      LAL_CALL( LALUniformDeviate ( &status, &deviate, randParams ), &status);
-      this_sim_burst->longitude = 2.0 * LAL_PI * deviate;
 
-      LAL_CALL( LALUniformDeviate ( &status, &deviate, randParams ), &status);
-      this_sim_burst->latitude = LAL_PI/2.0 - acos(2.0*deviate-1.0) ;
+      /* sky location and polarizatoin angle */
+      if(useZenith)
+      {
+        this_sim_burst->longitude = 0.0;
+        this_sim_burst->latitude = 0.0;
+        this_sim_burst->polarization = 0.0;
+      }
+      else
+      {
+        LAL_CALL( LALUniformDeviate ( &status, &deviate, randParams ), &status);
+        this_sim_burst->longitude = 2.0 * LAL_PI * deviate;
 
-      LAL_CALL( LALUniformDeviate ( &status, &deviate, randParams ), &status);
-      this_sim_burst->polarization = 2.0 * LAL_PI * deviate;
+        LAL_CALL( LALUniformDeviate ( &status, &deviate, randParams ), &status);
+        this_sim_burst->latitude = LAL_PI/2.0 - acos(2.0*deviate-1.0) ;
 
+        LAL_CALL( LALUniformDeviate ( &status, &deviate, randParams ), &status);
+        this_sim_burst->polarization = 2.0 * LAL_PI * deviate;
+      }
+
+      /* compute amplitude information */
+      if(useRandomStrain)
+      {
+        LAL_CALL( LALUniformDeviate ( &status, &deviate, randParams ), &status);
+        hpeak = pow(10, logAmpRange * deviate + log_hpeakMin);
+      }
+
+      /* deal with the intrinsic signal parameters */
       this_sim_burst->hrss = sqrt( sqrt(2.0 * LAL_PI) * tau / 4.0 ) * hpeak;
       this_sim_burst->hpeak = hpeak;
       this_sim_burst->freq = freq;
@@ -607,6 +666,7 @@ int main( int argc, char *argv[] ){
       this_sim_burst->dtminus = 4.0 * tau;
       this_sim_burst->zm_number = 0;
 
+      /* set up for site arrival time calculation */
       place_and_gps->p_gps = &(this_sim_burst->geocent_peak_time);
       det_time_and_source->p_det_and_time = place_and_gps;
       sky_pos->longitude = this_sim_burst->longitude;
