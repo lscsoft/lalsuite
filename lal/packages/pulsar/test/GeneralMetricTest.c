@@ -288,19 +288,19 @@ int main( int argc, char *argv[] ) {
 
   /* Detector choice */
   if(detector==1)
-    tevpulse.site = lalCachedDetectors[LALDetectorIndexLHODIFF];
+    tevpulse.site = &lalCachedDetectors[LALDetectorIndexLHODIFF];
   if(detector==2)
-    tevpulse.site = lalCachedDetectors[LALDetectorIndexLLODIFF];
+    tevpulse.site = &lalCachedDetectors[LALDetectorIndexLLODIFF];
   if(detector==3)
-    tevpulse.site = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+    tevpulse.site = &lalCachedDetectors[LALDetectorIndexVIRGODIFF];
   if(detector==4)
-    tevpulse.site = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+    tevpulse.site = &lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   if(detector==5)
-    tevpulse.site = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
+    tevpulse.site = &lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
 
-  in.site = tevpulse.site.frDetector;
-  tevpulse.latitude = in.site.vertexLatitudeRadians;
-  tevpulse.longitude = in.site.vertexLongitudeRadians;
+  in.site = tevpulse.site;
+  tevpulse.latitude = in.site->frDetector.vertexLatitudeRadians;
+  tevpulse.longitude = in.site->frDetector.vertexLongitudeRadians;
 
 
   /* Ptolemetric constants */
@@ -338,7 +338,7 @@ int main( int argc, char *argv[] ) {
       return GENERALMETRICTESTC_ESUB;
     }
 
-   tevpulse.ephemeris = *eph;
+   tevpulse.ephemeris = eph;
 
    /* Choose CoherentMetric timing function */
    if(metric_code==2)

@@ -143,7 +143,6 @@ int main( int argc, char **argv )
   REAL4                begin;     /* start time of integration (seconds) */
   REAL4                duration;  /* duration of integration (seconds) */
   REAL4                fMax;      /* maximum frequency of search */
-  LALFrDetector        site;      /* detector site */
   FILE                *fp;        /* where to write a plot */
 
   
@@ -155,7 +154,6 @@ int main( int argc, char **argv )
   begin = 0.0;
   duration = 1e5;
   fMax = 1e3;
-  site = lalCachedDetectors[LALDetectorIndexGEO600DIFF].frDetector;
   mismatch = .02;
   maxNodes = 1e6;
   /* This is (roughly) the center of globular cluster 47 Tuc. */
@@ -248,7 +246,8 @@ int main( int argc, char **argv )
   search.epoch.gpsNanoSeconds = 0;
   search.duration = duration;
   search.maxFreq = fMax;
-  search.site = site;
+  /* BEN: make this flexible later */
+  search.site = &lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   firstNode = NULL;
   LALCreateTwoDMesh( &stat, &firstNode, &mesh );
   if( stat.statusCode )
