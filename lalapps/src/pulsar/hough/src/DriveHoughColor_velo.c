@@ -44,7 +44,7 @@ NRCSID (DRIVEHOUGHCOLORC, "$Id$");
  [-o outfile-basename] \n\
         This is a string that prefixes some output filenames.\n\
         It might contain a path. Filenames are formed by \n\
-        appending .<number>\n\
+        appending .<number> histo  and stats\n\
  	If not set, the program will write into ./outHM1/HM.<number>\n\
  [-V time-velocity data file]\n\
         This is a string of the output time-velocity data file.\n\
@@ -60,6 +60,9 @@ NRCSID (DRIVEHOUGHCOLORC, "$Id$");
         Threshold relative to the PSD for the selection of peak in the\n\
         time-frequency plane \n\
         Default: 1.6 (almost optimal)\n\
+ [-a Hough false alarm ] \n\
+        Hough false alarm for candidate selection \n\
+        Default: 0.00000001 \n\
  [-w running median window size ] \n\
         To estimate the psd \n\
  	Default: 25\n\
@@ -94,6 +97,8 @@ INT4 lalDebugLevel=1;
                               the averaged power in the search band */
 #define THRESHOLD 1.6 /* thresold for peak selection, with respect to the
                               the averaged power in the search band */
+#define FALSEALARM 0.00000001 /* Hough false alarm for candidate selection */
+			      
 #define F0 250.0          /*  frequency to build the LUT and start search */
 #define FBAND 2.0          /* search frequency band  (in Hz) */
 #define ALPHA 0.0		/* center of the sky patch (in radians) */
@@ -142,6 +147,8 @@ int main(int argc, char *argv[]){
   CHAR   *fnameVelocity = NULL;
   CHAR   *fnameTime = NULL;
 
+  REAL8  houghFalseAlarm;
+  INT4   houghThreshold;
   INT4   mObsCoh, nfSizeCylinder,iHmap;
   INT8   f0Bin, fLastBin;           /* freq. bin to perform search */
   INT8   fBin;
@@ -187,6 +194,8 @@ int main(int argc, char *argv[]){
   alpha = ALPHA;
   delta = DELTA;
 
+  houghFalseAlarm = FALSEALARM;
+  
   earthEphemeris = EARTHEPHEMERIS;
   sunEphemeris = SUNEPHEMERIS;
   
@@ -317,7 +326,18 @@ int main(int argc, char *argv[]){
 	  return DRIVEHOUGHCOLOR_EARG;
 	}
       }
-      /* Parse Running median window size. */
+     /* Parse Hough False alarm option. */
+      else if ( !strcmp( argv[arg], "-a" ) ) {
+	if ( argc > arg + 1 ) {
+	  arg++;
+	  houghFalseAlarm = atof(argv[arg++]);
+	} else {
+	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
+	  LALPrintError( USAGE, *argv );
+	  return DRIVEHOUGHCOLOR_EARG;
+	}
+      }
+     /* Parse Running median window size. */
       else if ( !strcmp( argv[arg], "-w" ) ) {
 	if ( argc > arg + 1 ) {
 	  arg++;
@@ -404,6 +424,24 @@ int main(int argc, char *argv[]){
       strcpy(filelist[j],globbuf.gl_pathv[j]);
     }
     globfree(&globbuf);	
+  }
+
+  /* ****************************************************************/
+  /*  computing the Hough threshold for a given false alarm  */
+  /*   HoughThreshold = N*alpha +sqrt(2N alpha (1-alpha))*erfc-1(2 alpha_h) */
+  /* ****************************************************************/
+  {
+    REAL8  alphaPeak, meanN, sigmaN, erfcInv;
+    
+    alphaPeak = exp(- peakThreshold);
+    
+    meanN = mObsCoh* alphaPeak;
+    sigmaN = sqrt(meanN *(1.0 - alphaPeak));
+    erfcInv = 3.9; /* Badri: to be changed using GSL*/
+    /* this should be  erfcInv =erfcinv(2.0 *houghFalseAlarm) */
+    
+    houghThreshold = meanN + sigmaN*sqrt(2.0)*erfcInv;
+    
   }
 
   /* ****************************************************************/
