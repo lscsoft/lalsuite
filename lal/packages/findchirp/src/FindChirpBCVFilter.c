@@ -94,10 +94,6 @@ LALFindChirpBCVFilterSegment (
   REAL4                 psi0, psi3, fFinal;
   CHAR infomsg[256];
 
-#if 0
-     FindChirpChisqInput  *chisqInput;
-     FindChirpChisqInput  *chisqInputBCV;
-#endif
 
   INITSTATUS( status, "LALFindChirpBCVFilter", FINDCHIRPBCVFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -178,6 +174,7 @@ LALFindChirpBCVFilterSegment (
       FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
   ASSERT( input->segment->approximant == BCV, status,
       FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
+
 
   /*
    *
@@ -449,8 +446,15 @@ LALFindChirpBCVFilterSegment (
 
   if( input->segment->chisqBinVec->length )
   {
-  /* sum up the template power */
-    for ( k = 1; k < input->segment->data->data->length-1; ++k )
+
+    /* 
+     * The correct number of chisq bins can be decided here,
+     * based on fFinal, and numChisqBins can be adjusted
+     * accordingly
+     */
+
+    /* sum up the template power */
+    for ( k = 1; k < kFinal; ++k )
     {
        Power    += 4.0 * a1 * a1 * tmpltPower[k] * tmpltPower[k];
        PowerBCV += 4.0 * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] ) 
@@ -458,7 +462,7 @@ LALFindChirpBCVFilterSegment (
     }
 
 
-  /* First set of chisq bins */
+    /* First set of chisq bins */
     increment = Power / (REAL4) numChisqBins ;
     nextBin   = increment;
     chisqPt   = 0;
@@ -467,7 +471,7 @@ LALFindChirpBCVFilterSegment (
     /* calculate the frequencies of the chi-squared bin boundaries */
     chisqBin[chisqPt++] = 0;
 
-    for ( k = 1; k < input->segment->data->data->length; ++k )
+    for ( k = 1; k < kFinal; ++k )
     {
       partSum += 4.0 * a1 * a1 * tmpltPower[k] * tmpltPower[k];
       if ( partSum >= nextBin )
@@ -488,7 +492,7 @@ LALFindChirpBCVFilterSegment (
     /* calculate the frequencies of the chi-squared bin boundaries */
     chisqBinBCV[chisqPt++] = 0;
 
-    for ( k = 1; k < input->segment->dataBCV->data->length; ++k )
+    for ( k = 1; k < kFinal; ++k )
     {
       partSum += 4.0 * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] ) 
                      * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] );
