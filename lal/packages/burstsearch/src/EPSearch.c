@@ -1,6 +1,6 @@
 /******** <lalVerbatim file="EPSearchCV"> ********
 Author: Brady, P
-$Id$
+Revision: $Id$
 ********* </lalVerbatim> ********/
 
 #include <math.h>
@@ -12,7 +12,6 @@ $Id$
 #include <lal/EPSearch.h>
 #include <lal/ExcessPower.h>
 #include <lal/FrequencySeries.h>
-#include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALErrno.h>
 #include <lal/LALRCSID.h>
@@ -20,37 +19,29 @@ $Id$
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/PrintFTSeries.h>
-#include <lal/Random.h>
 #include <lal/RealFFT.h>
 #include <lal/ResampleTimeSeries.h>
-#include <lal/SeqFactories.h>
-#include <lal/Thresholds.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/TimeSeries.h>
 #include <lal/Window.h>
 
-NRCSID (EPSEARCHC, "$Id$");
+NRCSID(EPSEARCHC, "$Id$");
 
 #define FALSE 0
 
 extern INT4 lalDebugLevel;
 
-/****************************************************************
- *
- * Weights tiles according to the number present of a given
- * time-frequency volume.
- *
- ***************************************************************/
+/*
+ * Weight tiles according to the number present of a given time-frequency
+ * volume.
+ */
 
 static INT4 DegreesOfFreedom(TFTile *tile)
 {
 	return(2 * (tile->tend - tile->tstart + 1) * (tile->fend - tile->fstart + 1));
 }
 
-static void WeighTFTileList (
-        TFTiling          *tfTiling,
-        INT4               maxDOF
-        )
+static void WeighTFTileList(TFTiling *tfTiling, INT4 maxDOF)
 {
 	TFTile *tile;
 	INT4 *weight = LALCalloc(2 * maxDOF, sizeof(*weight));
@@ -166,6 +157,67 @@ static SnglBurstTable **TFTilesToSnglBurstTable(TFTile *tile, SnglBurstTable **a
 }
 
 
+/*
+ * Print a frequency series.
+ */
+
+static void print_real4fseries(char *file, REAL4FrequencySeries *fseries)
+{
+	FILE *fp;
+	size_t i;
+
+#if 0
+	/* FIXME: why can't the linker find this function? */
+	LALSPrintFrequencySeries(fseries, file);
+#else
+	if(fp = fopen(file, "w")) {
+		for(i = 0; i < fseries->data->length; i++)
+			fprintf(fp, "%f\t%g\n", i * fseries->deltaF, fseries->data->data[i]);
+		fclose(fp);
+	}
+#endif
+}
+
+static void print_complex8fseries(char *file, COMPLEX8FrequencySeries *fseries)
+{
+	FILE *fp;
+	size_t i;
+
+#if 0
+	/* FIXME: why can't the linker find this function? */
+	LALCPrintFrequencySeries(fseries, file);
+#else
+	if(fp = fopen(file, "w")) {
+		for(i = 0; i < fseries->data->length; i++)
+			fprintf(fp, "%f\t%g\n", i * fseries->deltaF, sqrt(fseries->data->data[i].re * fseries->data->data[i].re + fseries->data->data[i].im * fseries->data->data[i].im));
+		fclose(fp);
+	}
+#endif
+}
+
+
+/*
+ * Normalize a complex8 fseries to a real4 average psd so that the rms of Re or
+ * Im is 1.
+ */
+
+static void normalize_to_psd(COMPLEX8FrequencySeries *fseries, REAL4FrequencySeries *psd)
+{
+	REAL4 factor;
+	size_t i;
+
+	for(i = 0; i < fseries->data->length; i++) {
+		factor = sqrt(psd->data->data[i] / 2.0);
+		fseries->data->data[i].re /= factor;
+		fseries->data->data[i].im /= factor;
+	}
+}
+
+
+/*
+ * Generate a linked list of burst events from a time series.
+ */
+
 /******** <lalVerbatim file="EPSearchCP"> ********/
 void
 EPSearch(
@@ -176,157 +228,195 @@ EPSearch(
 )
 /******** </lalVerbatim> ********/
 { 
-    int                       start_sample;
-    INT4                      j,freqcl;
-    COMPLEX8FrequencySeries  *fseries;
-    RealDFTParams            *dftparams = NULL;
-    LALWindowParams           winParams;
-    REAL4FrequencySeries     *AverageSpec;
-    REAL4TimeSeries          *cutTimeSeries;
-    INT4                      nevents, dumevents;
-    SnglBurstTable          **EventAddPoint = burstEvent;
-    TFTiling                 *tfTiling = NULL;
+	int                       start_sample;
+	INT4                      i;
+	COMPLEX8FrequencySeries  *fseries;
+	RealDFTParams            *dftparams = NULL;
+	LALWindowParams           winParams;
+	REAL4FrequencySeries     *AverageSpec;
+	REAL4TimeSeries          *cutTimeSeries;
+	INT4                      nevents, dumevents;
+	SnglBurstTable          **EventAddPoint = burstEvent;
+	TFTiling                 *tfTiling = NULL;
 
-    INITSTATUS(status, "EPSearch", EPSEARCHC);
-    ATTATCHSTATUSPTR(status);
+	INITSTATUS(status, "EPSearch", EPSEARCHC);
+	ATTATCHSTATUSPTR(status);
 
-    /* make sure that arguments are not NULL */
-    ASSERT(tseries != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-    ASSERT(params != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-    ASSERT(burstEvent != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	/*
+	 * Check arguments.
+	 */
 
-    /* Compute the average spectrum */
-    LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->windowLength / 2 + 1);
-    CHECKSTATUSPTR(status);
-    ComputeAverageSpectrum(status->statusPtr, AverageSpec, tseries, params);
-    CHECKSTATUSPTR(status);
-    if(params->printSpectrum) { 
-        FILE *fp = fopen("average_spectrum.dat","w");
-        for(j = 0; j < (INT4)AverageSpec->data->length; j++)
-            fprintf(fp, "%f\t%g\n", j*AverageSpec->deltaF, AverageSpec->data->data[j]);
-        fclose(fp);
-    }
+	ASSERT(tseries != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(params != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(burstEvent != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
-    /* assign temporary memory for the frequency data */
-    LALCreateCOMPLEX8FrequencySeries(status->statusPtr, &fseries, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->windowLength / 2 + 1);
-    CHECKSTATUSPTR(status);
+	/*
+	 * Compute the average spectrum.
+	 */
 
-    /* create the dft params */
-    winParams.type = params->windowType;
-    winParams.length = params->windowLength;
-    LALCreateRealDFTParams(status->statusPtr , &dftparams, &winParams, 1);
-    CHECKSTATUSPTR(status);
+	LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->windowLength / 2 + 1);
+	CHECKSTATUSPTR(status);
+	ComputeAverageSpectrum(status->statusPtr, AverageSpec, tseries, params);
+	CHECKSTATUSPTR(status);
 
-    /* loop over data applying excess power method */
-    for(start_sample = 0; start_sample + params->windowLength <= tseries->data->length; start_sample += params->windowShift) {
-      /* extract a windowLength of data from the time series */
-      LALCutREAL4TimeSeries(status->statusPtr, &cutTimeSeries, tseries,  start_sample, params->windowLength);
-      CHECKSTATUSPTR(status);
+	if(params->printSpectrum)
+		print_real4fseries("average_spectrum.dat", AverageSpec);
 
-      /* compute its DFT */
-      LALInfo(status->statusPtr, "Computing the frequency series");
-      CHECKSTATUSPTR(status);
-      LALComputeFrequencySeries(status->statusPtr, fseries, cutTimeSeries, dftparams);
-      CHECKSTATUSPTR(status);
-  
-      /* delete it */
-      LALDestroyREAL4TimeSeries(status->statusPtr, cutTimeSeries);
-      CHECKSTATUSPTR(status);
+	/*
+	 * Assign temporary memory for the frequency data.
+	 */
 
-      /* normalize the spectrum so that rms of Re or Im is 1 */
-      for(j=0 ; j<(INT4)fseries->data->length ; j++) {
-        REAL4 tmpVar;
-        tmpVar = sqrt( 2.0 / AverageSpec->data->data[j] );
-        fseries->data->data[j].re *= tmpVar;
-        fseries->data->data[j].im *= tmpVar;
-      }
+	LALCreateCOMPLEX8FrequencySeries(status->statusPtr, &fseries, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->windowLength / 2 + 1);
+	CHECKSTATUSPTR(status);
 
-      /* write diagnostic info to disk */
-      if(params->printSpectrum) { 
-        FILE *fp = fopen("frequency_series.dat","w");
-        for(j = 0; j < (INT4)fseries->data->length; j++)
-          fprintf(fp, "%f\t%g\n", j*fseries->deltaF, sqrt(fseries->data->data[j].re * fseries->data->data[j].re + fseries->data->data[j].im * fseries->data->data[j].im));
-        fclose(fp);
-      }
+	/*
+	 * Create the dft params.
+	 */
 
-      /* create time-frequency tiling of plane.  */
-      if(!tfTiling) {
-        /* the factor of 2 here is to account for the overlapping */
-        params->tfTilingInput->deltaF = 2.0 * fseries->deltaF;
-        LALCreateTFTiling(status->statusPtr, &tfTiling, params->tfTilingInput);
-        CHECKSTATUSPTR(status);
-      }
+	winParams.type = params->windowType;
+	winParams.length = params->windowLength;
+	LALCreateRealDFTParams(status->statusPtr , &dftparams, &winParams, 1);
+	CHECKSTATUSPTR(status);
 
-      /* compute the TFplanes for the data segment */
-      LALInfo(status->statusPtr, "Computing the TFPlanes");
-      CHECKSTATUSPTR(status);
-      LALComputeTFPlanes(status->statusPtr, tfTiling, fseries);
-      CHECKSTATUSPTR(status);
+	/*
+	 * Loop over data applying excess power method.
+	 */
 
-      /* search these planes */
-      LALInfo(status->statusPtr, "Computing the excess power");
-      CHECKSTATUSPTR(status);
-      LALComputeExcessPower (status->statusPtr, tfTiling, params->compEPInput);
-      CHECKSTATUSPTR(status);
+	for(start_sample = 0; start_sample + params->windowLength <= tseries->data->length; start_sample += params->windowShift) {
+		LALInfo(status->statusPtr, "Analyzing a window...");
+		CHECKSTATUSPTR(status);
+		/*
+		 * Extract a windowLength of data from the time series,
+		 * compute its DFT, then free it.
+		 */
 
-      /* compute the likelihood for slightly better detection method */
-      /*
-       * LALComputeLikelihood(status->statusPtr, &(params->lambda), tfTiling);
-       * CHECKSTATUSPTR(status);
-       */
+		LALInfo(status->statusPtr, "Computing the DFT");
+		CHECKSTATUSPTR(status);
+		LALCutREAL4TimeSeries(status->statusPtr, &cutTimeSeries, tseries,  start_sample, params->windowLength);
+		CHECKSTATUSPTR(status);
+		LALComputeFrequencySeries(status->statusPtr, fseries, cutTimeSeries, dftparams);
+		CHECKSTATUSPTR(status);
+		LALDestroyREAL4TimeSeries(status->statusPtr, cutTimeSeries);
+		CHECKSTATUSPTR(status);
 
-      /* sort the results. */
-      LALInfo(status->statusPtr, "Sorting TFTiling");
-      CHECKSTATUSPTR(status);
-      LALSortTFTiling(status->statusPtr, tfTiling);
-      CHECKSTATUSPTR(status);
+		/*
+		 * Normalize the frequency series to the average PSD.
+		 */
 
-      /* determine the weighting for each tile */
-      WeighTFTileList(tfTiling, 10000);
+		normalize_to_psd(fseries, AverageSpec);
 
-      /* convert the TFTiles into sngl_burst events for output */
-      EventAddPoint = TFTilesToSnglBurstTable(tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
+		if(params->printSpectrum)
+			print_complex8fseries("frequency_series.dat", fseries);
 
-      /* reset the flags on the tftiles */
-      tfTiling->planesComputed=FALSE;
-      tfTiling->excessPowerComputed=FALSE;
-      tfTiling->tilesSorted=FALSE;
-    }
+		/*
+		 * Create time-frequency tiling of plane.
+		 */
 
-    /* cluster the events if requested */
-    if(params->cluster && *burstEvent) {
-      j = nevents = 0;
-      do {
-        LALSortSnglBurst(status->statusPtr, burstEvent, LALCompareSnglBurstByTimeAndFreq);
-        CHECKSTATUSPTR(status);
-        dumevents = nevents;
-        LALClusterSnglBurstTable(status->statusPtr, *burstEvent, &nevents);
-        CHECKSTATUSPTR(status);
-      } while((dumevents != nevents) && (++j < 500));
-    }
+		if(!tfTiling) {
+			/* the factor of 2 here is to account for the
+			 * overlapping */
+			params->tfTilingInput->deltaF = 2.0 * fseries->deltaF;
+			LALCreateTFTiling(status->statusPtr, &tfTiling, params->tfTilingInput);
+			CHECKSTATUSPTR(status);
+		}
 
-    /* memory clean-up */
-    LALDestroyTFTiling(status->statusPtr, &tfTiling);
-    CHECKSTATUSPTR(status);
-    LALDestroyCOMPLEX8FrequencySeries(status->statusPtr, fseries);
-    CHECKSTATUSPTR(status);
-    LALDestroyRealDFTParams(status->statusPtr, &dftparams);
-    CHECKSTATUSPTR(status);
-    LALDestroyREAL4FrequencySeries(status->statusPtr, AverageSpec);
-    CHECKSTATUSPTR(status);
+		/*
+		 * Compute the TFplanes for the data segment.
+		 */
 
-    /* normal exit */
-    DETATCHSTATUSPTR(status);
-    RETURN(status);
+		LALInfo(status->statusPtr, "Computing the TFPlanes");
+		CHECKSTATUSPTR(status);
+		LALComputeTFPlanes(status->statusPtr, tfTiling, fseries);
+		CHECKSTATUSPTR(status);
+
+		/*
+		 * Search these planes.
+		 */
+
+		LALInfo(status->statusPtr, "Computing the excess power");
+		CHECKSTATUSPTR(status);
+		LALComputeExcessPower (status->statusPtr, tfTiling, params->compEPInput);
+		CHECKSTATUSPTR(status);
+
+		/*
+		 * Compute the likelihood for slightly better detection
+		 * method.
+		 */
+
+		/*LALComputeLikelihood(status->statusPtr, &(params->lambda),
+		tfTiling); CHECKSTATUSPTR(status);*/
+
+		/*
+		 * Sort the results.
+		 */
+
+		LALInfo(status->statusPtr, "Sorting TFTiling");
+		CHECKSTATUSPTR(status);
+		LALSortTFTiling(status->statusPtr, tfTiling);
+		CHECKSTATUSPTR(status);
+
+		/*
+		 * Determine the weighting for each tile.
+		 */
+
+		WeighTFTileList(tfTiling, 10000);
+
+		/*
+		 * Convert the TFTiles into sngl_burst events for output.
+		 */
+
+		EventAddPoint = TFTilesToSnglBurstTable(tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
+
+		/*
+		 * Reset the flags on the tftiles.
+		 */
+
+		tfTiling->planesComputed=FALSE;
+		tfTiling->excessPowerComputed=FALSE;
+		tfTiling->tilesSorted=FALSE;
+	}
+
+	/*
+	 * Cluster the events if requested.
+	 */
+
+	if(params->cluster && *burstEvent) {
+		i = nevents = 0;
+		do {
+			LALSortSnglBurst(status->statusPtr, burstEvent, LALCompareSnglBurstByTimeAndFreq);
+			CHECKSTATUSPTR(status);
+			dumevents = nevents;
+			LALClusterSnglBurstTable(status->statusPtr, *burstEvent, &nevents);
+			CHECKSTATUSPTR(status);
+		} while((dumevents != nevents) && (++i < 500));
+	}
+
+	/*
+	 * Memory clean-up.
+	 */
+
+	LALDestroyTFTiling(status->statusPtr, &tfTiling);
+	CHECKSTATUSPTR(status);
+	LALDestroyCOMPLEX8FrequencySeries(status->statusPtr, fseries);
+	CHECKSTATUSPTR(status);
+	LALDestroyRealDFTParams(status->statusPtr, &dftparams);
+	CHECKSTATUSPTR(status);
+	LALDestroyREAL4FrequencySeries(status->statusPtr, AverageSpec);
+	CHECKSTATUSPTR(status);
+
+	/*
+	 * Normal exit.
+	 */
+
+	DETATCHSTATUSPTR(status);
+	RETURN(status);
 }
 
 
-/********************************************************************
- *
- * This function conditions the time series prior to analysis
- * by the power code
- *
- ********************************************************************/
+/*
+ * Condition the time series prior to analysis by the power code
+ */
+
 /* <lalVerbatim file="EPConditionDataCP"> */
 void EPConditionData(
 	LALStatus        *status,
@@ -339,7 +429,7 @@ void EPConditionData(
 )
 /* </lalVerbatim> */
 {
-	ResampleTSParams    resampleParams = (ResampleTSParams) { };
+	ResampleTSParams    resampleParams = {};
 	const REAL8         epsilon = 1.0e-8;
 	REAL4               fsafety;
 	PassBandParamStruc  highpassParam;
