@@ -206,7 +206,6 @@ LALCompareSnglBurst(
   REAL4 fa1, fa2, fb1, fb2;
   REAL4 dm1, dm2;
   REAL4 sigmaRatio;
-  
 
   INITSTATUS (status, "LALCompareSnglBurst", SNGLBURSTUTILSC);
   ATTATCHSTATUSPTR (status);
@@ -222,8 +221,9 @@ LALCompareSnglBurst(
   fa2 = (aPtr->central_freq) + 0.5*(aPtr->bandwidth);
   fb1 = (bPtr->central_freq) - 0.5*(bPtr->bandwidth);
   fb2 = (bPtr->central_freq) + 0.5*(bPtr->bandwidth);
-  
+
  
+
   if(((tb1 >= ta1 && tb1 <= ta2) || (tb2 >= ta1 && tb2 <= ta2)) || ((ta1 >= tb1 && ta1 <= tb2) || (ta2 >= tb1 && ta2 <= tb2)))
      {
        if((fb1 >= fa1 && fb1 <= fa2) || (fb2 >= fa1 && fb2 <= fa2) || (fa1 >= fb1 && fa1 <= fb2) || (fa2 >= fb1 && fa2 <= fb2))
@@ -241,73 +241,113 @@ LALCompareSnglBurst(
 void
 LALClusterSnglBurstTable (
 	      LALStatus        *status,
-              SnglBurstTable   *burstEvent
+              SnglBurstTable   *burstEvent,
+	      INT4             *nevents
 	      )
 /* </lalVerbatim> */
 {
-  SnglBurstTable     *thisEvent=NULL,*prevEvent=NULL;
+  SnglBurstTable     *thisEvent=NULL,*prevEvent=NULL,*startEvent=NULL;
+  INT4 i, j;
+  INT4 n = 1;
+  INT4 tmpnum;
 
   INITSTATUS (status, "LALClusterSnglBurstTable", SNGLBURSTUTILSC);
   ATTATCHSTATUSPTR (status);
 
   thisEvent = burstEvent->next;
   prevEvent = burstEvent;
+  startEvent = burstEvent;
   while (thisEvent != NULL)
   {
-    /* cornerTime[0][0] = thisEvent->start_time,  etc */
-    INT8    cornerTime[2][2];
-    REAL4   cornerFreq[2][2];
+    INT8 tb1, tb2;
+    REAL4 fb1, fb2;
 
-    /* compute the time in nanosec for each event trigger */
-    LALGPStoINT8(status->statusPtr, &(cornerTime[1][0]), &(thisEvent->start_time));
+    LALGPStoINT8(status->statusPtr, &tb1, &(thisEvent->start_time));
     CHECKSTATUSPTR(status);
-    cornerTime[1][1] = cornerTime[1][0] + ( NANOSEC * thisEvent->duration );
+    tb2 = tb1 + ( NANOSEC * thisEvent->duration );
+    fb1 = thisEvent->central_freq - 0.5 * thisEvent->bandwidth;
+    fb2 = fb1 + thisEvent->bandwidth;
 
-    LALGPStoINT8(status->statusPtr, &(cornerTime[0][0]), &(prevEvent->start_time));
-    CHECKSTATUSPTR(status);
-    cornerTime[0][1] = cornerTime[0][0] + ( NANOSEC * prevEvent->duration );
+    prevEvent = startEvent;
+
+    for (i = n; i > 0; i--)
+      {   
+	INT8 ta1, ta2;
+	REAL4 fa1, fa2;
+
+	/*compute the time in nanosec for each event trigger */
+	LALGPStoINT8(status->statusPtr, &ta1, &(prevEvent->start_time));
+	CHECKSTATUSPTR(status);
+	ta2 = ta1 + ( NANOSEC * prevEvent->duration );
 
     /* compute the start and stop frequencies */
-    cornerFreq[1][0] = thisEvent->central_freq - 0.5 * thisEvent->bandwidth;
-    cornerFreq[1][1] = cornerFreq[1][0] + thisEvent->bandwidth;
-    cornerFreq[0][0] = prevEvent->central_freq - 0.5 * prevEvent->bandwidth;
-    cornerFreq[0][1] = cornerFreq[0][0] + prevEvent->bandwidth;
 
-    /* find overlapping events */
-    if ( ( (cornerTime[1][0]-cornerTime[0][0]) * 
-          (cornerTime[1][0]-cornerTime[0][1]) <= 0 ) &&
-        ( ((cornerFreq[1][0]-cornerFreq[0][0]) * 
-           (cornerFreq[1][0]-cornerFreq[0][1]) <=0 ) ||
-          ((cornerFreq[1][1]-cornerFreq[0][0]) * 
-           (cornerFreq[1][1]-cornerFreq[0][1]) <=0 ) ) )
-    {
-      cornerFreq[0][0] = cornerFreq[1][0] < cornerFreq[0][0] ? cornerFreq[1][0] :
-        cornerFreq[0][0];
-      cornerFreq[0][1] = cornerFreq[1][1] > cornerFreq[0][1] ? cornerFreq[1][1] :
-        cornerFreq[0][1];
-      cornerTime[0][1] = cornerTime[1][1] > cornerTime[0][1] ? cornerTime[1][1] :
-        cornerTime[0][1];
-      prevEvent->central_freq = 0.5 * (cornerFreq[0][0]+cornerFreq[0][1]);
-      prevEvent->bandwidth = (cornerFreq[0][1]-cornerFreq[0][0]);
-      prevEvent->duration = (REAL4)(cornerTime[0][1]-cornerTime[0][0])/1.0e9;
+	fa1 = prevEvent->central_freq - 0.5 * prevEvent->bandwidth;
+	fa2 = fa1 + prevEvent->bandwidth;
 
-      if ( prevEvent->confidence > thisEvent->confidence )
-      {
-        prevEvent->confidence = thisEvent->confidence;
+	/* find overlapping events */
+	if (((tb1 >= ta1 && tb1 <= ta2) || (tb2 >= ta1 && tb2 <= ta2)) || ((ta1 >= tb1 && ta1 <= tb2) || (ta2 >= tb1 && ta2 <= tb2)))
+	   {
+             if((fb1 >= fa1 && fb1 <= fa2) || (fb2 >= fa1 && fb2 <= fa2) || (fa1 >= fb1 && fa1 <= fb2) || (fa2 >= fb1 && fa2 <= fb2))
+	       {
+		 fa1 = fb1 < fa1 ? fb1 : fa1 ;
+		 fa2 = fb2 > fa2 ? fb2 : fa2 ;
+		 ta1 = tb1 < ta1 ? tb1 : ta1 ;
+		 ta2 = tb2 > ta2 ? tb2 : ta2 ;
+
+		 LALINT8toGPS(status->statusPtr, &(prevEvent->start_time), &ta1);
+		 prevEvent->central_freq = 0.5 * (fa1 + fa2);
+		 prevEvent->bandwidth = (fa2 - fa1);
+		 prevEvent->duration = (REAL4)(ta2 - ta1)/1.0e9;
+
+		 if ( prevEvent->confidence > thisEvent->confidence )
+		   {
+		     prevEvent->confidence = thisEvent->confidence;
+		   }
+
+		 /* otherwise just dump this event from cluster */
+		 for(j=1; j < i; j++)
+		   {
+		     prevEvent = prevEvent->next;
+		   }
+		 prevEvent->next = thisEvent->next;
+		 LALFree(thisEvent);
+		 break;
+	       }
+	     else 
+	       {
+		 /* otherwise keep this as a unique trigger */
+		 prevEvent = prevEvent->next;
+		 if ( i==1 )
+		   {
+		     n++;
+		   }
+	       }
+	   }
+	else 
+	  {
+	    /* otherwise keep this as a unique trigger */  
+	    prevEvent = prevEvent->next;
+	    if ( i==1 )
+	      {
+		n++;
+	      }
+	  }
       }
-
-      /* otherwise just dump this event from cluster */
-      prevEvent->next = thisEvent->next;
-      LALFree(thisEvent);
-      thisEvent = prevEvent->next;
-    }
-    else
-    {
-      /* otherwise keep this as a unique trigger */
-      prevEvent = thisEvent;
-      thisEvent = thisEvent->next;
-    }
+    thisEvent = prevEvent->next;    
   }
+
+
+  tmpnum = 1;
+  /*count the number of events in the modified list */
+
+  while (startEvent != NULL)
+    {
+      startEvent = startEvent->next;
+      tmpnum++;
+    }
+
+  *nevents = tmpnum;
 
   /* normal exit */
   DETATCHSTATUSPTR (status);
