@@ -152,8 +152,11 @@ System-specific installation instructions:
 
 SGI running IRIX 6.5.3 with gcc:
 
-Include the flag -n32 the list of compiler flags in the environment CFLAGS.
-Make sure that the compiler used is gcc by setting the environment CC to gcc.
+  * Include the flag -n32 the list of compiler flags in the environment CFLAGS.
+
+  * Make sure that the compiler used is gcc by setting the environment CC to
+    gcc.
+
 
 -------------------------------------------------------------------------------
 
@@ -163,4 +166,7 @@ Troubleshooting:
 * If you need to re-run configure after it has failed while checking for a
   working FFTW, FrameL, or MPI, make sure to remove the file config.cache.
 
+* The configure script assumes that ranlib is necessary unless it cannot find
+  the program in your path.  If ranlib is on your path and you don't need
+  ranlib, set the environment RANLIB to echo.
 
