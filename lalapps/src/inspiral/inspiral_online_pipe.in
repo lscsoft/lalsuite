@@ -170,6 +170,8 @@ mkcalfac.add_pre_script_arg('-s -o SenseMonitor.txt %s'
   % cp.get('mkcal','sensemon'))
 mkcalfac.set_ifo(ifo)
 mkcalfac.add_var_arg('SenseMonitor.txt')
+mkcalfac.set_post_script('/bin/ln -sf') 
+mkcalfac.add_post_script_arg(cp.get('mkcal','reference')) 
 dag.add_node(mkcalfac)
 
 for seg in data:
@@ -244,12 +246,11 @@ for sinca in sinca_nodes:
   inca.add_var_arg(sinca.get_output_a())
 inca_post_script = open( 'inca_post_script.sh', 'w' )
 run = cp.get('pipeline','run')
-inca_post_script.write("""#!/bin/sh
-cp ${1} /cluster/inspiral/%s/${1}
-ln -sf /cluster/inspiral/%s/${1} /cluster/inspiral/%s/INSPIRAL_%s.xml
+inca_post_script.write("""cp ${1} /cluster/inspiral/%s/${1}
+ln -sf /cluster/inspiral/%s/${1} /cluster/inspiral/%s/%s-INSPIRAL.xml
 """ % (run, run, run, ifo) )
 inca_post_script.close()
-inca.set_post_script('inca_post_script.sh')
+inca.set_post_script('/bin/sh inca_post_script.sh')
 inca.add_post_script_arg(inca.get_output_a())
 dag.add_node(inca)
 
