@@ -599,7 +599,6 @@ static REAL4Window *data_window(REAL8 deltaT,
     hann =  XLALCreateHannREAL4Window(hann_length);
 
     /* construct tukey window */
-    
     for (i = 0; i < hann_length / 2; i++)
       window->data->data[i] = hann->data->data[i];
     for (i = hann_length / 2; i < hann_length; i++)
