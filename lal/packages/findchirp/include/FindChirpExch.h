@@ -51,10 +51,12 @@ NRCSID (FINDCHIRPEXCHH, "$Id$");
 #define FINDCHIRPEXCHH_ENNUL 2
 #define FINDCHIRPEXCHH_ENOBJ 4
 #define FINDCHIRPEXCHH_EHAND 8
+#define FINDCHIRPEXCHH_EMPIE 16
 #define FINDCHIRPEXCHH_MSGENULL "Null pointer"
 #define FINDCHIRPEXCHH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPEXCHH_MSGENOBJ "Invalid number of objects"
 #define FINDCHIRPEXCHH_MSGEHAND "Wrong handshake"
+#define FINDCHIRPEXCHH_MSGEMPIE "Problem exchanging event list"
 /* </lalErrTable> */
 
 
