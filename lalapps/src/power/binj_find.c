@@ -116,11 +116,11 @@ static void set_option_defaults(struct options_t *options)
  * Return an empty string on any error.
  */
 
-static int getline(char *line, int max, FILE *fpin)
+static int getline(char *line, int max, FILE *file)
 {
 	char *end;
 
-	if(!fgets(line, max, fpin))
+	if(!fgets(line, max, file))
 		line[0] = '\0';
 	end = strchr(line, '\n');
 	if(end)
@@ -162,7 +162,7 @@ static SimBurstTable *read_injection_list(LALStatus *stat, char *filename, INT4 
 	FILE *infile;
 	char line[MAXSTR];
 	SimBurstTable *list = NULL;
-	SimBurstTable **addPoint = &list;
+	SimBurstTable **addpoint = &list;
 
 	if (options.verbose)
 		fprintf(stdout, "Reading in SimBurst Table\n");
@@ -174,10 +174,10 @@ static SimBurstTable *read_injection_list(LALStatus *stat, char *filename, INT4 
 		if (options.verbose)
 			fprintf(stderr, "Working on file %s\n", line);
 
-		LAL_CALL(LALSimBurstTableFromLIGOLw(stat, addPoint, line, start_time, end_time), stat);
+		LAL_CALL(LALSimBurstTableFromLIGOLw(stat, addpoint, line, start_time, end_time), stat);
 
-		while (*addPoint)
-			addPoint = &(*addPoint)->next;
+		while (*addpoint)
+			addpoint = &(*addpoint)->next;
 	}
 
 	fclose(infile);
@@ -223,6 +223,64 @@ static SimBurstTable *trim_injection_list(SimBurstTable *injection, struct optio
 	}
 
 	return(head);
+}
+
+
+/*
+ * Read trigger list, and trim injection list according to data that was
+ * analyzed.
+ */
+
+static INT4 read_search_summary(char *filename, FILE *fpout)
+{
+	SearchSummaryTable *searchSummary = NULL;
+	SearchSummaryTable *tmp;
+	INT4 start;
+	INT4 end;
+
+	SearchSummaryTableFromLIGOLw(&searchSummary, filename);
+
+	start = searchSummary->in_start_time.gpsSeconds;
+	end = searchSummary->in_end_time.gpsSeconds;
+
+	if(fpout)
+		fprintf(fpout, "%d  %d  %d\n", start, end, end - start);
+
+	while(searchSummary) {
+		tmp = searchSummary;
+		searchSummary = searchSummary->next;
+		LALFree(tmp);
+	}
+
+	return(end - start);
+}
+
+
+static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, struct options_t options)
+{
+	FILE *infile;
+	char line[MAXSTR];
+	SnglBurstTable *list = NULL;
+	SnglBurstTable **addpoint = &list;
+
+	if (!(infile = fopen(filename, "r")))
+		LALPrintError("Could not open input file\n");
+
+	while(getline(line, MAXSTR, infile)) {
+		if(options.verbose)
+			fprintf(stderr, "Working on file %s\n", line);
+
+		read_search_summary(line, NULL);
+
+		LAL_CALL(LALSnglBurstTableFromLIGOLw(stat, addpoint, line), stat);
+
+		while(*addpoint)
+			addpoint = &(*addpoint)->next;
+	}
+
+	fclose(infile);
+
+	return(list);
 }
 
 
@@ -598,15 +656,10 @@ int main(int argc, char **argv)
 	}
 
   /****************************************************************
-   * do any requested cuts
+   * do any requested cuts and sort the remaining triggers
    ***************************************************************/
 
 	burstEventList = trim_event_list(burstEventList, options);
-
-  /*****************************************************************
-   * sort the remaining triggers
-   *****************************************************************/
-
 	LAL_CALL(LALSortSnglBurst(&stat, &burstEventList, LALCompareSnglBurstByTime), &stat);
 
 
@@ -614,10 +667,8 @@ int main(int argc, char **argv)
    * first event in list
    *****************************************************************/
 
-	currentSimBurst = outSimList;
 	currentEvent = detEventList = burstEventList;
-
-	while (currentSimBurst != NULL) {
+	for (currentSimBurst = outSimList; currentSimBurst; currentSimBurst = currentSimBurst->next) {
 		/* check if the injection is made in the playground */
 		if ((options.playground && !(isPlayground(currentSimBurst->l_peak_time.gpsSeconds, currentSimBurst->l_peak_time.gpsSeconds))) == 0) {
 			ninjected++;
@@ -682,8 +733,6 @@ int main(int argc, char **argv)
 				currentEvent = currentEvent->next;
 			}
 		}
-
-		currentSimBurst = currentSimBurst->next;
 	}
 
 
