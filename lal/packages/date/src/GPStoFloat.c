@@ -92,26 +92,34 @@ LALFloatToGPS( LALStatus   *stat,
                LIGOTimeGPS *p_gps_time,  /* output - GPS time */
                const REAL8 *p_flt_time)  /* input - floating point GPS seconds */
 {  /* </lalVerbatim> */
+  INT4 secs, ns;
+  REAL8 inTime;
 
-  /* Don't blame me for these obtuse variable names */
-
-  REAL8 temp0, temp2, temp3;
-  REAL8 temp1, temp4;
-  
-  INITSTATUS(stat, "GPSFloatConversion", GPSTOFLOATC);
+  INITSTATUS(stat, "LALFloatToGPS", GPSTOFLOATC);
   ATTATCHSTATUSPTR(stat);
   
-  ASSERT(p_flt_time != NULL, stat, DATEH_ENULLINPUT,
-         DATEH_MSGENULLINPUT);
+  ASSERT(p_flt_time != NULL, stat, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
+  ASSERT(p_gps_time != NULL, stat, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
-  temp0 = floor(*p_flt_time);     /* this is tgps.S */
-  temp1 = (*p_flt_time) * 1.e10;
-  temp2 = fmod(temp1, 1.e10);
-  temp3 = fmod(temp1, 1.e2); 
-  temp4 = (temp2-temp3) * 0.1;
+  /* be generous and allow negative times */
+  if ( *p_flt_time < 0)
+    inTime = - *p_flt_time;
+  else
+    inTime = *p_flt_time;
 
-  p_gps_time->gpsSeconds     = (INT4)temp0;
-  p_gps_time->gpsNanoSeconds = (INT4)temp4;
+  secs = (INT4) inTime;
+  ns  = (INT4) ( ( inTime - secs ) * oneBillion + 0.5);	 /* round properly! *
+
+  /* flip sign if time was negative */
+  if ( *p_flt_time < 0)
+    {
+      secs *= -1;
+      ns *= -1;
+    }
+
+  /* return values */
+  p_gps_time->gpsSeconds     = secs;
+  p_gps_time->gpsNanoSeconds = ns;
   
   DETATCHSTATUSPTR(stat);
   RETURN(stat);

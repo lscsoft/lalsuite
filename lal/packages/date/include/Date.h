@@ -95,7 +95,6 @@ NRCSID (DATEH, "$Id$");
 #define DATEH_MSGEFORMATPARAMOUTOFRANGE "Format parameter out of range: must be one of LALLEAPSECunderscoreTAIUTC or LALLEAPSECunderscoreGPSUTC"
 #define DATEH_MSGEACCPARAMOUTOFRANGE "Accuracy parameter out of range: must be one of LALLEAPSECunderscoreSTRICT or LALLEAPSECunderscoreLOOSE"
 #define DATEH_MSGEDECRTIMETOOLARGE "Decrement amount too large: GPS time cannot be decremented to before the start of the GPS epoch."
-  
 
 /* </lalErrTable>
 

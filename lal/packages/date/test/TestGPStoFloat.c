@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
       
 
   /* 2 */
-  realTime = 987654321.123456;
+  realTime = 54321.123456789;
   LALFloatToGPS(&status, &gpsTime, &realTime);
 
   if (status.statusCode && lalDebugLevel)
@@ -62,16 +62,14 @@ int main(int argc, char *argv[])
 
   if (lalDebugLevel)
     {
-      printf("TestGPStoFloat: expected (%d, %d)\n                got      (%d, %d)\n",
-             987654321, 123456000, gpsTime.gpsSeconds,
-             gpsTime.gpsNanoSeconds);
+      printf("TestFloatToGPS: expected (%d, %d)\n                got      (%d, %d)\n",
+             54321, 123456789, gpsTime.gpsSeconds, gpsTime.gpsNanoSeconds);
     }
 
-  if (gpsTime.gpsSeconds != 987654321 || gpsTime.gpsNanoSeconds != 123456000)
+  if (gpsTime.gpsSeconds != 54321 || gpsTime.gpsNanoSeconds != 123456789)
     {
       fprintf(stderr, "TestGPStoFloat: LALFloatToGPS() returned wrong value; expected (%d, %d), got (%d, %d)\n",
-              987654321, 123456000, gpsTime.gpsSeconds,
-              gpsTime.gpsNanoSeconds);
+	      54321, 123456789, gpsTime.gpsSeconds, gpsTime.gpsNanoSeconds);
       return 2;
     }
 
