@@ -130,7 +130,7 @@ int main( int argc, char *argv[] )
 
   /* program variables */
   RandomParams *randParams = NULL;
-  REAL4  u, exponent, d3;
+  REAL4  u, exponent, d2;
   REAL4  deltaM, mtotal;
   /* XXX CHECK XXX */
   LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };
@@ -638,12 +638,12 @@ int main( int argc, char *argv[] )
      else if (ddistr == 2)
      /* uniform volume distribution */
      {
-       REAL4 d3min = dmin * dmin * dmin;
-       REAL4 d3max = dmax * dmax * dmax;
-       REAL4 deltad3 = d3max - d3min ;
+       REAL4 d2min = dmin * dmin ;
+       REAL4 d2max = dmax * dmax ;
+       REAL4 deltad2 = d2max - d2min ;
        LAL_CALL(  LALUniformDeviate(&status,&u,randParams),&status );
-       d3 = d3min + u * deltad3 ;
-       this_inj->distance = pow(d3, 1.0/3.0);
+       d2 = d2min + u * deltad2 ;
+       this_inj->distance = sqrt(d2);
      }
 
      this_inj->distance = this_inj->distance / 1000.0; /*convert to Mpc */
