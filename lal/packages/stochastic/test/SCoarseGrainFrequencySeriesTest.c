@@ -785,6 +785,14 @@ main( int argc, char *argv[] )
      return code;
    }
 
+   LALSDestroyVector(&status, &goodOutput.data);
+   if ( code = CheckStatus(&status, 0 , "",
+			   SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+                            SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   {
+     return code;
+   }
+
    LALCheckMemoryLeaks();
 
    printf("PASS: all tests\n");
