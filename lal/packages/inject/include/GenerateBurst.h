@@ -63,7 +63,9 @@ NRCSID( GENERATEBURSTH, "$Id$" );
 /******************************************** <lalVerbatim> */
 typedef enum{
   sineGaussian,
-  Gaussian
+  Gaussian,
+  Ringdown,
+  Ringup
 } SimBurstType;
 /******************************************** </lalVerbatim> */
 

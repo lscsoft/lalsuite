@@ -47,6 +47,8 @@ LALSnprintf()
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
+#include <lal/VectorOps.h>
+#include <lal/Inject.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GenerateBurst.h>
 #include <lal/LIGOMetadataTables.h>
@@ -99,7 +101,7 @@ LALGenerateBurst(
   /* Set up some other constants, to avoid repeated dereferencing. */
   duration = (REAL8)(simBurst->dtplus + simBurst->dtminus);
   dt = params->deltaT;
-  if ( n = (INT4) (2.0 * duration / dt) == 0 )
+  if ( ( n = (INT4) (2.0 * duration / dt) ) == 0 )
   {
     ABORT(stat, GENERATEBURSTH_EMEM, GENERATEBURSTH_MSGEMEM );
   }
@@ -202,7 +204,7 @@ LALGenerateBurst(
       t = i*dt;
       gtime = (t-t0)/tau;
       *(fData++) = f0;
-      *(phiData++) = twopif0 * t;
+      *(phiData++) = twopif0 * (t-t0);
       *(aData++) = hpeak * exp( - gtime * gtime );
       *(aData++) = 0.0;
     }
@@ -223,6 +225,44 @@ LALGenerateBurst(
       *(phiData++) = 0.0;
       *(aData++) = hpeak * exp( - gtime * gtime );
       *(aData++) = 0.0;
+    }
+  }
+  else if ( !( strcmp( simBurst->waveform, "Ringdown" ) ) )
+  {
+    TRY( LALDeltaGPS( stat->statusPtr, &dummyInterval, 
+          &(simBurst->geocent_peak_time), &startTime ), stat );
+    TRY( LALIntervalToFloat( stat->statusPtr, &t0, 
+          &dummyInterval ), stat );
+    for ( i = 0; i < n; i++ )
+    {
+      t = i * dt;
+      gtime = ( t - t0 ) / tau;
+      *fData++   = f0;
+      *phiData++ = twopif0 * ( t - t0 );
+      if ( gtime > 0 )
+        *aData++ = hpeak * exp( - gtime );
+      else
+        *aData++ = 0;
+      *aData++   = 0;
+    }
+  }
+  else if ( !( strcmp( simBurst->waveform, "Ringup" ) ) )
+  {
+    TRY( LALDeltaGPS( stat->statusPtr, &dummyInterval, 
+          &(simBurst->geocent_peak_time), &startTime ), stat );
+    TRY( LALIntervalToFloat( stat->statusPtr, &t0, 
+          &dummyInterval ), stat );
+    for ( i = 0; i < n; i++ )
+    {
+      t = i * dt;
+      gtime = ( t - t0 ) / tau;
+      *fData++   = f0;
+      *phiData++ = twopif0 * ( t - t0 );
+      if ( gtime < 0 )
+        *aData++ = hpeak * exp( gtime );
+      else
+        *aData++ = 0;
+      *aData++   = 0;
     }
   }
   else
@@ -356,7 +396,7 @@ LALBurstInjectSignals(
     /* generate the burst waveform information */
     burstParam.deltaT = series->deltaT;
     memset( &waveform, 0, sizeof(CoherentGW) );
-    LALGenerateBurst( &stat, &waveform, injections, &burstParam );
+    LALGenerateBurst( stat->statusPtr, &waveform, injections, &burstParam );
     CHECKSTATUSPTR( stat );
 
     /* convert this into an ADC signal */
