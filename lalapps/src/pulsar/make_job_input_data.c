@@ -22,7 +22,7 @@
 #define NODES 296
 
 /* If nonzero, you want to have a fixed number of segments per job */
-#define SEGSPERJOB 3
+#define SEGSPERJOB 0
 
 char filenames[FN][FILENAMEMAX+1],printed[FN];
 int starttimes[FN];
