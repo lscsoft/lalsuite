@@ -124,8 +124,82 @@ LALFindChirpBCVSpinTemplate (
   /*
    *
    * template dependent normalisation
+   * i need to check this & make necessary changes
    *
    */
+
+
+  /* template dependent normalisation */
+  distNorm = 2.0 * LAL_MRSUN_SI / (cannonDist * 1.0e6 * LAL_PC_SI);
+  distNorm *= params->dynRange;
+
+  fcTmplt->tmpltNorm = sqrt( (5.0*mu) / 96.0 ) *
+    pow( m / (LAL_PI*LAL_PI) , 1.0/3.0 ) *
+    pow( LAL_MTSUN_SI / (REAL4) params->deltaT, -1.0/6.0 );
+  
+  fcTmplt->tmpltNorm *= fcTmplt->tmpltNorm;
+  
+  fcTmplt->tmpltNorm *= distNorm * distNorm;
+  /* is this the same for BCVSpin? */
+  
+  
+  /* x1 */   /* does this explanation suffice? */
+  x1 = pow( deltaF, -1.0/3.0 );
+  /* XXX work needed here ... check x1 */
+
+  /* frequency cutoffs */
+  fHi  = tmplt->fFinal;
+  kmin = params->fLow / deltaF > 1 ? params->fLow / deltaF : 1;
+  kmax = fHi / deltaF < numPoints/2 ? fHi / deltaF : numPoints/2;
+  
+  /* compute psi0: used in range reduction */
+  {
+    REAL4 x    = x1 * xfac[kmin];
+    REAL4 psi  = 
+      psi20 + (x * x) * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
+    psi0 = -2 * LAL_PI * ( floor ( 0.5 * psi / LAL_PI ) );
+  }
+  /* XXX work needed here... check psi */
+
+
+  /*
+   *
+   * calculate the stationary phase chirp
+   *
+   */
+
+  for ( k = kmin; k < kmax ; ++k )
+    {
+      REAL4 x    = x1 * xfac[k];
+      REAL4 psi  = 
+        psi20 + (x * x) * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
+      REAL4 psi1 = psi + psi0;
+      REAL4 psi2;  /* defining psi2 every time through the loop necessary? */
+      /* XXX work needed here... check psi */
+      /* leaving psi calc here, needs to be inside template loop 
+       * but not inside loop over data segments 
+       */
+
+      /* range reduction of psi1 */
+      while ( psi1 < -LAL_PI )
+	{
+	  psi1 += 2 * LAL_PI;
+	  psi0 += 2 * LAL_PI;
+	}
+      while ( psi1 > LAL_PI )
+	{
+	  psi1 -= 2 * LAL_PI;
+	  psi0 -= 2 * LAL_PI;
+	}
+
+      /* compute approximate sine and cosine of psi1 */
+      /* XXX The sign of this is different than the SP filtering
+       * because the data is conjugated instead of the template in the
+       * BCV code */
+      expPsi[k].im =   sin(psi1);
+      expPsi[k].re =   cos(psi1);
+      /* XXX work needed here... expensive computation method */
+    }
 
   /*code*/
 
