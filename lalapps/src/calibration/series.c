@@ -12,7 +12,7 @@ double epoch_diff( const epoch *t2, const epoch *t1 )
   dt += (long long) t2->nan;
   dt -= 1000000000LL * (long long) t1->sec;
   dt -= (long long) t1->nan;
-  return (double)dt;
+  return 1e-9 * (double)dt;
 }
 
 void epoch_add( epoch *t1, epoch *t0, double dt )
@@ -112,7 +112,7 @@ FrameH *fr_add_proc_data( FrameH *frame, const struct series *ser )
   proc->data       = vect;
   proc->next       = frame->procData;
   frame->procData  = proc;
-  FrStrCpy( &proc->name, ser->name );
+  FrStrCpy( &proc->name, channel );
   FrStrCpy( &proc->comment, comment );
   for ( i = 0; i < ser->size; ++i )
   {

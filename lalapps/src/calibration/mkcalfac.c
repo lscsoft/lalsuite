@@ -49,13 +49,11 @@ int read_time_series( struct series *aser, struct series *abser,
     ;
   rewind( fp );
   sscanf( line, "%d", &t1 );
-  n -= t0;
-  n /= dt;
   aser->tend.sec  = t1 - dt;
   aser->tend.nan  = 0;
   abser->tend.sec = t1 - dt;
   abser->tend.nan = 0;
-  n = ( t1 - t0 ) / dt;
+  n = 1 + ( t1 - t0 ) / dt;
   aser->size  = n;
   abser->size = n;
 
@@ -201,10 +199,13 @@ int main( int argc, char *argv[] )
         fprintf( stderr, "Error: could not write file %s\n", abilwd );
         return 1;
       }
+      /* correct the end times */
+      epoch_add( &a.tend, &a.tbeg, a.step * a.size );
+      epoch_add( &ab.tend, &ab.tbeg, ab.step * ab.size );
       if ( ! frfile )
       {
         char fname[256];
-        int dt = (int)ceil( 1e-9 * a.tbeg.nan + a.step * a.size );
+        int dt = (int)ceil( epoch_diff( &a.tend, &a.tbeg ) );
         sprintf( fname, "%c-CAL_FAC-%d-%d.gwf", *ifo, a.tbeg.sec, dt );
         frfile = FrFileONew( fname, 0 );
       }
