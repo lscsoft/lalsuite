@@ -45,7 +45,7 @@
  * \end{verbatim}
  *
  * \subsubsection*{Notes}
- *
+ *err
  * Currently we use dummy functions for the metric and noise moments. These
  * should be updated, especially to account for real noise spectra.
  *
@@ -74,6 +74,13 @@
 
 #define INSPIRALSPINBANKC_ENONPOSITIVEMM 1
 #define INSPIRALSPINBANKC_MSGENONPOSITIVEMM "Minimum match value is not positive."
+#define INSPIRALSPINBANKC_EMASS_SPIN 2 
+#define INSPIRALSPINBANKC_MSGEMASS_SPIN "The mass or spin range specified is invalid"
+#define INSPIRALSPINBANKC_EMEM 3 
+#define INSPIRALSPINBANKC_MSGEMEM "Memory allocation error - not all memory was freed"
+#define INSPIRALSPINBANKC_ENOTILES 4 
+#define INSPIRALSPINBANKC_MSGENOTILES "No templates were generated"
+
 
 
 
@@ -115,13 +122,22 @@ LALInspiralSpinBank(
   REAL4 betaMax;             /* maximum spin parameter of binary */
   REAL4 f0;                  /* frequency of minimum of noise curve */
   INT2 bccFlag = 0;          /* determines offset for bcc tiling */
+  INT4 cnt = 0;		     /* loop counter set to value of ntiles */
 
   /* Set up status pointer. */
   INITSTATUS( status, "LALInspiralSpinBank", INSPIRALSPINBANKC );
   ATTATCHSTATUSPTR( status );
 
-  if (coarseIn.mmCoarse <= 0) ABORT(status, INSPIRALSPINBANKC_ENONPOSITIVEMM, INSPIRALSPINBANKC_MSGENONPOSITIVEMM);
-
+  /* Check to make sure that all the parameters are okay */
+  if (coarseIn.mmCoarse <= 0) 
+    ABORT(status, INSPIRALSPINBANKC_ENONPOSITIVEMM, INSPIRALSPINBANKC_MSGENONPOSITIVEMM);
+  /* These parameters have not been added to InspiralCoarseBankIn yet, but when they are the will need to be checked */
+/*  if ((coarseIn.m1Min <= 0) || (coarseIn.m2Min <= 0) || (coarseIn.m1Max <= 0) || (coarseIn.m2Max <= 0))
+      ABORT(status, INSPIRALSPINBANKC_EMASS_SPIN, INSPIRALSPINBANKC_EMSGMASS_SPIN);
+    if (coarseIn.betaMax < 0) 
+      ABORT(status, INSPIRALSPINBANKC_EMASS_SPIN, INSPIRALSPINBANKC_EMSGMASS_SPIN);
+*/
+    
   /* Get noise power moments and trig moments. */
   /* Hardcode this for the moment. */
   f0 = 164;
@@ -245,8 +261,14 @@ LALInspiralSpinBank(
   /* BEN: error check here */
   output = tmplt;
 
-  /* What if no templates were allocated? ABORT or what? */
-  if (!output) { }
+  /* What if no templates were allocated? ABORT */
+  if (!output) 
+  {  
+    TRY(LALU4DestroyVector(status->statusPtr,&metricDimensions),status);
+    TRY(LALSDestroyVector(status->statusPtr,&eigenval),status);
+    TRY(LALSDestroyArray(status->statusPtr, &metric),status);  
+    ABORT(status, INSPIRALSPINBANKC_ENOTILES, INSPIRALSPINBANKC_MSGENOTILES);
+  }
   
   
   /* Convert output to communicate with LALInspiralCreateCoarseBank(). */
@@ -262,15 +284,25 @@ LALInspiralSpinBank(
   
   /* Free the memory allocated for the linked list. */
   tmplt = output;
-  while (tmplt->next)
+  cnt = *ntiles;
+  while ((tmplt->next) && (cnt >= 0))
   {
     output = tmplt;
     tmplt = tmplt->next;
     LALFree(output);
+    --cnt;
   }/* while(tmptl) */
   
-/*  ASSERT(!tmplt->next) to make sure the deallocation worked
-    LALFree(tmplt)       free the final node */
+  /* Check that all of the deallocation worked  */
+  if ((tmplt->next) || (cnt != 1))
+  {
+    TRY(LALU4DestroyVector(status->statusPtr,&metricDimensions),status);
+    TRY(LALSDestroyVector(status->statusPtr,&eigenval),status);
+    TRY(LALSDestroyArray(status->statusPtr, &metric),status);  
+    ABORT(status, INSPIRALSPINBANKC_EMEM, INSPIRALSPINBANKC_MSGEMEM);
+  }
+  
+  LALFree(tmplt); /* Free the final node */
 
   /* Free the memory for the vectors and arrays allocated */
   TRY(LALU4DestroyVector(status->statusPtr,&metricDimensions),status);
