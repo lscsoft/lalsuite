@@ -1,0 +1,129 @@
+%!PS-Adobe-2.0 EPSF-2.0
+%%Title: Latitude and longitude definitions
+%%Creator: Teviet Creighton
+%%CreationDate: Thu Apr 19 15:52:22 2001
+%%Orientation: Portrait
+%%Pages: 0
+%%BoundingBox: 46 56 566 736
+%%EndComments
+
+
+% Draw bounding box.
+%176 226 moveto 176 566 lineto 436 566 lineto 436 226 lineto
+%closepath stroke
+
+% Define some constants.
+/b { 0.6 } def % squeeze factor of meridional ellipse
+/g { 15 } def  % tilt of meridional ellipse
+/dp { 15 } def % position angle of point P on meridional ellipse
+/x { -10 } def % rotation angle to x-axis from straight ahead
+/l { 40 } def  % approximate longitude
+
+% Derive some constants.
+
+% position angle of z pole on meridional ellipse
+/dz { b g sin g cos div atan } def
+
+% squeeze factor of equatorial ellipse
+/a { dz sin g cos mul b dz cos mul g sin mul add
+     dup mul neg 1 add sqrt } def
+
+% slope of meridional edges
+/m { b dz sin mul g sin mul dz cos g cos mul sub
+     b dz sin mul g cos mul dz cos g sin mul add div } def
+
+% slope of y-axis
+/y { x sin x cos div } def
+
+% Start plotting.
+306 396 translate 2 2 scale
+
+% Draw shaded arc of equatorial plane and sphere.
+gsave 0.9 setgray
+0 0 100 0 360 arc stroke
+1 a scale 0 0 100 0 360 arc stroke
+grestore
+
+% Clip to nodal line.
+gsave newpath -150 -150 m mul moveto 150 150 m mul lineto
+150 150 lineto -150 150 lineto closepath clip
+% Draw back arc of meridional ellipse.
+0.7 setgray g rotate b 1 scale newpath 0 0 100 90 180 arc stroke
+% Draw latitude angle.
+0 setgray dp rotate 60 0 moveto 57 -5 lineto 59 -5 lineto
+59 -64 0 -64 59 arcto pop pop pop pop 0 -66 lineto
+61 -66 61 -5 61 arcto pop pop pop pop 63 -5 lineto closepath fill
+grestore
+
+% Clip to meridional ellipse.
+gsave g rotate b 1 scale 0 0 100 0 360 arc closepath clip
+% Draw nodal line.
+1 b div 1 scale g neg rotate 0.7 setgray newpath
+-150 -150 m mul moveto 150 150 m mul lineto stroke
+grestore
+
+% Clip to left of forward arc of meridional ellipse.
+gsave g rotate b 1 scale 0 0 100 -90 90 arc
+-200 100 lineto -200 -100 lineto closepath clip
+% Draw front arc of equatorial ellipse.
+1 b div 1 scale g neg rotate 1 a scale 0 setgray newpath
+0 0 100 -180 0 arc stroke
+grestore
+
+% Clip to left of backward arc of meridional ellipse.
+gsave g rotate b 1 scale 0 0 100 90 270 arc
+-200 -100 lineto -200 100 lineto closepath clip
+% Draw back arc of equatorial ellipse in front of meridional plane.
+1 b div 1 scale g neg rotate 1 a scale 0.7 setgray newpath
+0 0 100 90 180 arc stroke
+grestore
+
+% Draw z-axis.
+0 setgray newpath
+-0.5 -0.5 y mul moveto 0 140 rlineto -2 -2 y mul rlineto 0 145 lineto
+2.5 2.5 y mul 140 add lineto -2 -2 y mul rlineto
+0.5 0.5 m mul 120 add lineto 0 120 lineto 0 0 lineto closepath fill
+0.7 setgray newpath
+0 0 moveto 0 120 lineto 0.5 0.5 m mul rlineto 0 -120 rlineto
+closepath fill
+
+% Draw outer sphere and meridional ellipse.
+gsave 0 setgray g rotate newpath
+0 0 100 90 270 arc b 1 scale 0 0 100 -90 90 arc closepath stroke
+grestore
+
+% Draw meridional plane.
+0 setgray newpath
+-120 -120 m mul 120 add moveto 120 120 m mul 120 add lineto
+120 120 m mul -120 add lineto -120 -120 m mul -120 add lineto
+closepath stroke
+
+% Draw origin O, point P, and radial line.
+0 0 2 0 360 arc closepath fill
+b dp cos mul g cos mul dp sin g sin mul sub 100 mul
+b dp cos mul g sin mul dp sin g cos mul add 100 mul
+2 copy 2 0 360 arc closepath fill
+moveto 0 0 lineto stroke
+
+% Draw x-axis and longitude angle.
+gsave 1 a scale x rotate 0 setgray
+-0.5 0 moveto -0.5 -140 lineto -2.5 -140 lineto 0 -150 lineto
+2.5 -140 lineto 0.5 -140 lineto 0.5 0 lineto closepath fill
+0 0 39 -90 -90 l add arc l rotate
+0 2 rlineto 5 -3 rlineto -5 -3 rlineto 0 2 rlineto l neg rotate
+0 0 41 -90 l add -90 arcn closepath fill
+grestore
+
+% Place labels.
+/Symbol findfont 10 scalefont setfont
+10 -23 moveto (l) show
+41 0 moveto (b) show
+/Times-Italic findfont 10 scalefont setfont
+-10 6 moveto (O) show
+54 39 moveto (P) show
+13 17 moveto (r) show
+-2 148 moveto (z) show
+-30 -55 moveto (x) show
+
+%showpage
+%%EOF

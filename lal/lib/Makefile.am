@@ -45,4 +45,5 @@ liblal_la_LIBADD = \
            $(top_builddir)/packages/fct/src/libfct.la                   \
            $(top_builddir)/packages/burstsearch/src/libburstsearch.la   \
            $(top_builddir)/packages/tracksearch/src/libtracksearch.la   \
+           $(top_builddir)/packages/inject/src/libinject.la             \
            $(PKG_FRAME) $(PKG_MPI) $(PKG_FRAMEANDMPI)

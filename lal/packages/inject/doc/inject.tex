@@ -1,0 +1,79 @@
+\chapter{Package \texttt{inject}}
+
+This package provides routines to simulate gravitational waves and
+their effect on a detector.  Conceptually, this can be divided into
+three stages:
+\begin{enumerate}
+\item Generating the gravitational waveform as produced by the source.
+The routines currently available are:
+\begin{description}
+\item[\texttt{GeneratePPNInspiral.h}] Provides routines to generate
+parametrized post-Newtonian inspiral waveforms up to 5/2 order.
+\end{description}
+
+\item Simulating a detector's theoretical response to an incoming
+gravitational wave.  The routines currently available are:
+\begin{description}
+\item[\texttt{SimulateCoherentGW.h}] Provides routines to simulate the
+detector response to a coherent wave with slowly-varying frequency and
+amplitude.
+\end{description}
+
+\item Injecting the detector's theoretical response with time into a
+(noisy) datastream.  This is done by a single set of generic routines
+in \verb@Inject.h@.
+\end{enumerate}
+
+As the package evolves, new source types may be added under item~1,
+and other (perhaps more generic) ways of simulating the detector
+response may be added under item~2.  Item~3, however, is unlikely to
+need much updating.
+
+\newpage\input{InjectH}
+\newpage\input{SimulateCoherentGWH}
+\newpage\input{GeneratePPNInspiralH}
+\newpage\input{SkyCoordinatesH}
+
+\newpage\begin{thebibliography}{1}
+\expandafter\ifx\csname bibnamefont\endcsname\relax
+  \def\bibnamefont#1{#1}\fi
+\expandafter\ifx\csname bibfnamefont\endcsname\relax
+  \def\bibfnamefont#1{#1}\fi
+\expandafter\ifx\csname url\endcsname\relax
+  \def\url#1{\texttt{#1}}\fi
+\expandafter\ifx\csname urlprefix\endcsname\relax\def\urlprefix{URL }\fi
+\providecommand{\bibinfo}[2]{#2}
+\providecommand{\eprint}[2][]{\url{#2}}
+
+\bibitem{GRASP_1.9.8:2000}
+\bibinfo{author}{\bibfnamefont{B.}~\bibnamefont{Allen}},
+  \emph{\bibinfo{title}{GRASP: a data analysis package for gravitational wave
+  detection}}, \bibinfo{address}{Department of Physics, P.O.\ Box 413,
+  University of Wisconsin, Milwaukee WI 53201, USA}, \bibinfo{edition}{1st} ed.
+  (\bibinfo{year}{2000}), \bibinfo{note}{\texttt{http:\slash\slash
+  www.lsc-group.phys.uwm.edu\slash$\sim$ballen\slash grasp-distribution}}.
+
+\bibitem{Will_C:1996}
+\bibinfo{author}{\bibfnamefont{C.~M.} \bibnamefont{Will}} \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{A.~G.} \bibnamefont{Wiseman}},
+  \bibinfo{journal}{Phys. Rev. D.}
+  \textbf{\bibinfo{volume}{54}}(\bibinfo{number}{8}), \bibinfo{pages}{4813}
+  (\bibinfo{year}{1996}).
+
+\bibitem{Anderson_W:2000}
+\bibinfo{author}{\bibfnamefont{W.~G.} \bibnamefont{Anderson}},
+  \bibinfo{author}{\bibfnamefont{P.~R.} \bibnamefont{Brady}},
+  \bibinfo{author}{\bibfnamefont{J.~D.~E.} \bibnamefont{Creighton}},
+  \bibnamefont{and} \bibinfo{author}{\bibfnamefont{\'E.~\'E.}
+  \bibnamefont{Flanagan}}, \emph{\bibinfo{title}{An excess power statistic for
+  detection of burst sources of gravitational radiation}}
+  (\bibinfo{year}{2000}), \bibinfo{note}{gr-qc/0008066}.
+
+\bibitem{Lang_K:1998}
+\bibinfo{author}{\bibfnamefont{K.~R.} \bibnamefont{Lang}},
+  \emph{\bibinfo{title}{Astrophysical Formulae, Volume II: Space, Time, Matter
+  and Cosmology}}, Astronomy and Astrophysics Library
+  (\bibinfo{publisher}{Springer-Verlag}, \bibinfo{address}{Berlin},
+  \bibinfo{year}{1998}), \bibinfo{edition}{3rd} ed.
+
+\end{thebibliography}

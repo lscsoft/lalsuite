@@ -3,7 +3,7 @@
 SUBDIRS = std support tools sample hello factories vectorops utilities date \
           tdfilter window fft timefreq clremoval stochastic inspiral        \
           noisemodels bank pulsar fct framedata comm findchirp burstsearch  \
-          tracksearch
+          tracksearch inject
 
 EXTRA_DIST = \
         $(srcdir)/templates/Makefile.am.example \
