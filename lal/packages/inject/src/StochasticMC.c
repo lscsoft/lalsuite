@@ -1,4 +1,3 @@
-
 /*
 <lalVerbatim file="StochasticMCCV">
 Author: Tania Regimbau, Sukanta Bose, Jeff Noel
@@ -18,9 +17,11 @@ Routine used by the stochastic DSO to do software injection.
 This routine simulates whitened time-domain signal in a pair 
 of detectors using Sukanta Bose's code SimulateSB.c.
 Long time-series are constructed by concatenating short segments of simulated data whitened with the adequate response function. Segments are sinusoidally spliced into consecutive segments using Jeff Noel's function SinusoidalSplice, in order to avoid discontinuities in the final time serie.     
-
+\idx{LALStochasticMCStand()}
+\subsubsection*{Description}
+This is a standalone version of the routine described above.
 \subsubsection*{Algorithm}
-The following program shows  how to use the routine StochasticMC.c.
+The following program shows how to use the routine StochasticMC.c.
 
 \begin verbatim
 #include <math.h>
@@ -54,7 +55,6 @@ The following program shows  how to use the routine StochasticMC.c.
 
 NRCSID(STOCHASTICTESTMCC, "$Id$");
 int main( ){
-
   
   static LALStatus status;
   SSSimStochBGOutput MCoutput;
@@ -84,8 +84,6 @@ int main( ){
   INT4 i, j;
   LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
   
-  
-
   CHAR Outfile1[LALNameLength];
   CHAR Outfile2[LALNameLength]; 
   FILE *pfone, *pftwo;
@@ -104,9 +102,7 @@ int main( ){
   MCparams.omegaRef = 1.; MCparams.alpha = 0;
   MCparams.site1 = 0; MCparams.site2 = 0; 
 
-  
   //set other parameters
-  
   length = MCparams.numseg * lengthseg;
   deltaT = 1./sRate;
   freqlen = lengthseg / 2 + 1;
@@ -180,13 +176,11 @@ int main( ){
   sensingFunction2.f0 = 0;
   sensingFunction2.sampleUnits = countPerStrain;
   sensingFunction2.data = sensing[1];
-
    
   memset(&oloopfactor1,0,sizeof(COMPLEX8TimeSeries));
   memset(&oloopfactor2,0,sizeof(COMPLEX8TimeSeries));
   memset(&sfactor1,0,sizeof(COMPLEX8TimeSeries));
   memset(&sfactor2,0,sizeof(COMPLEX8TimeSeries));
-
 
   oloopfactor1.epoch.gpsSeconds = timeref;
   oloopfactor1.epoch.gpsNanoSeconds = 0;
@@ -230,14 +224,12 @@ int main( ){
   epoch.gpsNanoSeconds = 0;
   calfacts1.epoch = epoch;calfacts2.epoch = epoch;
 
- 
   //write input parameters    
   MCinput.calfuncs1 = calfuncs1; 
   MCinput.calfuncs2 = calfuncs2;
   MCinput.calfacts1 = calfacts1; 
   MCinput.calfacts2 = calfacts2;
-  
- 
+   
   SimStochBG1.data = NULL;
   LALSCreateVector(&status, &(SimStochBG1.data), length);
   SimStochBG2.data = NULL;
@@ -248,7 +240,7 @@ int main( ){
 
   LALStochasticMC (&status,&MCoutput,&MCinput,&MCparams);
 
-  //just for test, create output files 
+  //create output files 
 
   if (print){
   LALSnprintf( Outfile1, LALNameLength * sizeof(CHAR),
@@ -282,12 +274,161 @@ int main( ){
 }
 \end verbatim
 
+The following program shows how to use the standalone version StochasticMCStand.c.
+\begin verbatim
+
+#include <math.h>
+#include <string.h>
+#include <stdio.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+#include <FrameL.h>
+#include <lal/LALStdio.h>
+#include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
+#include <lal/PrintFTSeries.h>
+#include <lal/FrameStream.h>
+#include <lal/FrameCalibration.h>
+#include <lal/Calibration.h>
+#include <lal/LALConstants.h>
+#include <lal/LALStatusMacros.h>
+#include <lal/StochasticCrossCorrelation.h>
+#include <lal/RealFFT.h>
+#include <lal/ComplexFFT.h>
+#include <lal/Units.h>
+#include <lal/StreamInput.h>
+#include <lal/PrintVector.h>
+#include <lal/Random.h>
+#include <lal/SimulateSB.h>
+#include "StochasticMC.h"
+
+NRCSID(STOCHASTICMCSTANDTESTC, "$Id$");
+
+int lalDebugLevel = LALINFO;
+int print =1;
+
+CHAR _Catalog1[LALNameLength] = "H1-CAL-729273600-734367600.cache";
+CHAR _Catalog2[LALNameLength] = "H1-CAL-729273600-734367600.cache";
+
+CHAR _IFO1[LALNameLength] = "H1";
+CHAR _IFO2[LALNameLength] = "H1";
+
+int main( ){
+
+  
+  static LALStatus status;
+  SSSimStochBGOutput MCoutput;
+  StochasticMCParams MCparams;
+  StochasticMCSInput MCinput;
+  //output structure
+  REAL4TimeSeries SimStochBG1;
+  REAL4TimeSeries SimStochBG2;
+
+  //input structure
+  CHAR *catalog1 = "H1-CAL-729273600-734367600.cache";
+  CHAR *catalog2 = "H2-CAL-729273600-734367600.cache";
+
+  CHAR *ifo1 = "H1";
+  CHAR *ifo2 = "H2";
+  
+  //parameters
+  UINT4 timeref, starttime, caltime;
+  UINT4 freqlen,length,lengthseg,spliceoffset;
+  REAL8 sRate,deltaT, deltaF;
+
+  INT4 i, j;
+  LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
+  
+  
+  CHAR Outfile1[LALNameLength];
+  CHAR Outfile2[LALNameLength]; 
+  FILE *pfone, *pftwo;
+  
+  status.statusPtr = NULL;
+  lengthseg = 61440;
+  sRate = 1024.;
+  starttime = 729331170;
+  
+  //write parameters 
+  MCparams.lengthseg = lengthseg; MCparams.numseg = 3;
+  MCparams.sRate = sRate;
+  MCparams.starttime = starttime;
+  MCparams.seed = 173;
+  MCparams.fRef = 100.; MCparams.f0 = 0.;
+  MCparams.omegaRef = 1.; MCparams.alpha = 0;
+  MCparams.site1 = 0; MCparams.site2 = 0; 
+
+  //write input parameters   
+  MCinput.ifo1 = _IFO1; 
+  MCinput.ifo2 = _IFO2;
+  MCinput.catalog1 = _Catalog1; 
+  MCinput.catalog2 = _Catalog2;
+
+  //set other parameters 
+  
+  length = MCparams.numseg * lengthseg;
+  deltaT = 1./sRate;
+  freqlen = lengthseg / 2 + 1;
+  spliceoffset =  lengthseg / (2 * sRate);
+  deltaF = 1.0/(deltaT*lengthseg);
+  timeref = 0; 
+  caltime = starttime + spliceoffset; 
+ 
+  SimStochBG1.data = NULL;
+  LALSCreateVector(&status, &(SimStochBG1.data), length);
+  SimStochBG2.data = NULL;
+  LALSCreateVector(&status, &(SimStochBG2.data), length);
+  
+  MCoutput.SSimStochBG1 = &SimStochBG1;
+  MCoutput.SSimStochBG2 = &SimStochBG2;
+
+  LALStochasticMCStand (&status,&MCoutput,&MCinput,&MCparams);
+
+  //create output files 
+
+  if (print){
+  LALSnprintf( Outfile1, LALNameLength * sizeof(CHAR),
+            "%s_1_%d.ilwd",_IFO1,starttime);
+  LALSnprintf( Outfile2, LALNameLength * sizeof(CHAR),
+            "%s_2_%d.ilwd",_IFO2,starttime);
+
+  //print output to ilwds
+     
+   if (print)
+    {
+     pfone=LALFopen(Outfile1,"w");pftwo=LALFopen(Outfile2,"w");
+     fprintf(pfone,"<?ilwd?>\n");fprintf(pftwo,"<?ilwd?>\n");
+     fprintf(pfone,"<ilwd comment='%s'",Outfile1);
+     fprintf(pfone," name='%s' size='1'>\n",Outfile1);
+     fprintf(pfone," <real_8 dims='%d' name='%s'>",length,Outfile1);
+     fprintf(pftwo,"<ilwd comment='%s'",Outfile2);
+     fprintf(pftwo," name='%s' size='1'>\n",Outfile2);
+     fprintf(pftwo," <real_8 dims='%d' name='%s'>",length,Outfile2);
+  
+     for(i=0;(UINT4)i<length;i++)
+       {
+        fprintf(pfone,"% e",SimStochBG1.data->data[i]);
+        fprintf(pftwo,"% e",SimStochBG2.data->data[i]);
+       } 
+     fprintf(pfone,"</real_8>");fprintf(pftwo,"</real_8>");
+     fprintf(pfone," </ilwd>");fprintf(pftwo," </ilwd>");       
+     LALFclose(pfone);LALFclose(pftwo);
+    }
+  }
+}
+\end{verbatim}
+
 \subsubsection*{Uses}
 \begin{verbatim}
 LALSSSimStochBGTimeSeries()
 LALExtractFrameResponse()
+LALUpdateCalibration()
+LALResponseConvert()
 \end{verbatim}
-
 </lalLaTeX> */
 
 
