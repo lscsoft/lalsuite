@@ -102,3 +102,21 @@ and DIRNAME is a directory number to place output job files.
 
 For example
 ./lalapps_make_job_input_data S1-H1.60 S1.LHO.full.sorted S1-H1.60-lists
+./lalapps_make_job_input_data S1-H2.60 S1.LHO.full.sorted S1-H2.60-lists
+./lalapps_make_job_input_data S1-L1.60 S1.LLO.full.sorted S1-L1.60-lists
+
+The output of this is a set of files containing paths to the data that
+is needed to build the SFTs, and the start times of the SFTs.  For
+example in the directory S1-H1.60-lists/ you will find:
+jobdata.00000.ffl  jobtimes.00000
+jobdata.00001.ffl  jobtimes.00001
+and so on.
+
+These jobdata files contain lists of frame files, and the jobtimes
+files contain lists of the corresponding start times.
+
+If data that is needed to make SFTs is missing, then a list of
+un-buildable SFTs and the corresponding missing GPS frame times can be
+found in the files joberror.XXXXX These joberror files are not
+produced unless there is missing data.  So ls joberror* will
+immediately reveal if any data files are missing.
