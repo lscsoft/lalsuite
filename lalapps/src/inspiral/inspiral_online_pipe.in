@@ -223,9 +223,9 @@ for seg in data:
     # create the inca that stitches the inspiral jobs back together
     sinca = inspiral.IncaNode(sinca_job)
     for insp in sub_insp:
-      inca.add_var_opt('ifo-a',ifo)
-      inca.add_var_opt('gps-start-time',chunk.start())
-      inca.add_var_opt('gps-end-time',chunk.end())
+      sinca.add_var_opt('ifo-a',ifo)
+      sinca.add_var_opt('gps-start-time',chunk.start())
+      sinca.add_var_opt('gps-end-time',chunk.end())
       sinca.add_parent(insp)
       sinca.add_var_arg(insp.get_output())
       dag.add_node(sinca)
