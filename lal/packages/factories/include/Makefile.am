@@ -2,6 +2,9 @@
 pkginclude_HEADERS = AVFactories.h SeqFactories.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
+MAINTAINERCLEANFILES = SeqFactories.h AVFactories.h
+EXTRA_DIST = SeqFactoriesH.m4 SeqFactoriesBaseH.m4 ArraySeqFactoriesBaseH.m4 \
+             AVFactoriesH.m4 VFactoriesBaseH.m4 AFactoriesBaseH.m4
 all-local: include-link
 dvi-local: .dvi-dep
 
