@@ -16,9 +16,17 @@ Contents:
 
     You can obtain FrameL from http://wwwlapp.in2p3.fr/virgo/FrameL
 
+    For MPI you can use either MPICH or LAM
+    (LAM is the chosen implementation for LDAS, but both work with LAL)
+
     You can obtain the MPICH implementation of MPI from
     http://www-unix.mcs.anl.gov/mpi/mpich
-    (this is the implementation that I have used in testing the LAL routines).
+
+    You can obtain the LAM implementation of MPI from
+    http://www.mpi.nd.edu/lam
+    (See http://www.ldas-sw.ligo.caltech.edu/doc/INSTALL.html
+     for instructions on building LAM for LDAS.)
+
 
     0.1.  To install FFTW on your system use the commands:
 
