@@ -9,6 +9,7 @@ $Id$
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
+#include <lal/LALDatatypes.h>
 #include <lal/SeqFactories.h>
 #include <lal/RealFFT.h>
 #include <lal/Thresholds.h>
@@ -97,8 +98,110 @@ void LALWeighTFTileList (
   RETURN (status);
 }
 
+static REAL4 square_modulus(COMPLEX8 z)
+{
+	return(z.re*z.re + z.im*z.im);
+}
 
+static void ComputeAverageSpectrum(
+	LALStatus *status,
+	REAL4 *AverageSpec,
+        EPSearchParams *params,
+	INT4 numSegs,
+	EPDataSegment *segment
+)
+{
+    int i, j;
+    COMPLEX8FrequencySeries fseries;
+    RealDFTParams *dftparams = NULL;
+    LALWindowParams winParams;
+    INT4 numPoints = params->initParams->numPoints;
+    AvgSpecMethod method = params->initParams->method;
 
+    INITSTATUS (status, "ComputeAverageSpectrum", EPSEARCHC);
+    ATTATCHSTATUSPTR (status);
+
+    /* create the dft params */
+    winParams.type = params->winParams.type;
+    winParams.length = 2 * params->ntotT;
+    LALCreateRealDFTParams(status->statusPtr , &dftparams, &winParams, 1);
+    CHECKSTATUSPTR(status);
+
+    /* Initialize the frequency series container */
+    strncpy(fseries.name, "anonymous", LALNameLength * sizeof(CHAR));
+    fseries.data = NULL;
+    LALCCreateVector(status->statusPtr, &fseries.data, numPoints + 1);
+    CHECKSTATUSPTR(status);
+
+    if (useMedian)
+    /* run new code using median to obtain power spectrum */
+    { /* loop over data computing spectrum */
+      /* allocate two dimensional array to hold power at each freq in each time slice */
+      INT4 flength = fseries.data->length;
+      REAL4 *ptr = LALMalloc(flength * numSegs * sizeof(*ptr));
+      ASSERT(ptr, status, EPSEARCHH_EMALLOC, EPSEARCHH_MSGEMALLOC);
+
+      /* obtain power spectrum in each time slice */
+      for (i = 0; i < numSegs; i++)
+      {
+        /* compute the DFT of input time series */
+        LALComputeFrequencySeries (status->statusPtr, &fseries, (segment + i)->data, dftparams);
+        CHECKSTATUSPTR (status);
+
+        /* copy modulus of DFT output into two dimensional array */
+        for (j=0 ; j < flength ; j++)
+          ptr[i * flength + j] = square_modulus(fseries.data->data[j]);
+      }  /* done computing spectrum */
+
+      /* find median value over time slices for each frequency */
+      for (j = 0; j < flength; j++)
+      {
+        EPMedian(&AverageSpec[j], ptr, j, flength, numSegs, status);
+        AverageSpec[j] /= LAL_LN2; /* scale to match mean method */
+      }
+
+      LALFree(ptr);     
+    }  /* end of new code using median */
+    
+    else if (method == useMean)
+    /* run original code using mean to obtain power spectrum */
+    {  /* loop over data computing spectrum */
+      for ( i=0 ; i < numSegs; i++)
+      {
+        /* compute the DFT of input time series */
+        LALComputeFrequencySeries (status->statusPtr, &fseries, (segment + i)->data, dftparams);
+        CHECKSTATUSPTR (status);
+
+        /* normalize the data stream so that rms of Re or Im is 1 */
+        for (j=0 ; j < (INT4)fseries.data->length ; j++)
+          AverageSpec[j] += square_modulus(fseries.data->data[j]);
+      }
+      for (j=0 ; j < (INT4)fseries.data->length ; j++)
+      {
+        AverageSpec[j] /= numSegs;
+      }
+    }  /* end of original code using mean */
+    
+    else if (method == useUnity)
+    /* force power spectrum to unity */
+    {
+      for (j=0 ; j < (INT4)fseries.data->length ; j++)
+        AverageSpec[j] = 1.0;
+    }
+
+    /* default case for unknown method */
+    else
+      ABORT (status, EPSEARCHH_EINCOMP, EPSEARCHH_MSGEINCOMP );
+
+    LALCDestroyVector(status->statusPtr, &fseries.data);
+    CHECKSTATUSPTR (status);
+    LALDestroyRealDFTParams (status->statusPtr, &dftparams);
+    CHECKSTATUSPTR (status);
+fprintf(stderr, "here\n");
+
+    DETATCHSTATUSPTR( status );
+    RETURN( status );
+}
 
 
 /******** <lalVerbatim file="EPSearchCP"> ********/
@@ -113,13 +216,14 @@ EPSearch (
 { 
     INT4                      i,j,freqcl;
     REAL4                     redummy, imdummy;
-    EPDataSegment            *dummySegment     = NULL;
+    EPDataSegment            *segment;
     SnglBurstTable           *currentEvent     = NULL;
     SnglBurstTable           *prevEvent        = NULL;
     COMPLEX8FrequencySeries  *fseries;
     RealDFTParams            *dftparams        = NULL;
     LALWindowParams           winParams;
-    REAL4                    *dummySpec        = NULL;
+    AverageSpectrumParams    AverageSpecParams;
+    REAL4                    *AverageSpec;
     INT4                      nevents, dumevents;
 
     INITSTATUS (status, "EPSearch", EPSEARCHC);
@@ -129,17 +233,16 @@ EPSearch (
     ASSERT (params, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
     ASSERT (burstEvent, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
 
-    /* Set up the window parameters */
-    winParams.type=params->winParams.type;
-    winParams.length=2 * params->ntotT;
-
     /* assign temporary memory for the frequency data */
     fseries = (COMPLEX8FrequencySeries *) LALMalloc (sizeof(COMPLEX8FrequencySeries));
     strncpy( fseries->name, "anonymous", LALNameLength * sizeof(CHAR) );
     fseries->data = NULL;
-    LALCCreateVector (status->statusPtr, &fseries->data, 
-        params->initParams->numPoints + 1);
+    LALCCreateVector (status->statusPtr, &fseries->data, params->initParams->numPoints + 1);
     CHECKSTATUSPTR (status);
+
+    /* Set up the window parameters */
+    winParams.type=params->winParams.type;
+    winParams.length=2 * params->ntotT;
 
     /* create the dft params */
     LALCreateRealDFTParams(status->statusPtr , &dftparams, &winParams, 1);
@@ -148,100 +251,11 @@ EPSearch (
     /* point to the start of event list */
     params->numEvents=0;
 
-    /* allocate temporary memory for spectrum */
-    dummySpec = (REAL4 *)LALMalloc(fseries->data->length * sizeof(REAL4));
-    for (j=0 ; j<(INT4)fseries->data->length ; j++)
-    {
-      dummySpec[j] = 0.0;
-    }
+    /* Compute the average spectrum */
+    AverageSpec = LALCalloc(fseries->data->length, sizeof(*AverageSpec));
+    ComputeAverageSpectrum(status->statusPtr, AverageSpec, params, tmpDutyCycle, params->epSegVec->data + params->currentSegment);
+    CHECKSTATUSPTR(status);
 
-    if (params->initParams->method == useMedian)
-    /* run new code using median to obtain power spectrum */
-    { /* loop over data computing spectrum */
-      /* allocate two dimensional array to hold power at each freq in each time slice */
-      INT4 flength = fseries->data->length;
-      INT4 numSegs = (INT4)tmpDutyCycle;
-      REAL4 *ptr = (REAL4 *)LALMalloc(flength * numSegs * sizeof(REAL4));
-      ASSERT(ptr, status, EPSEARCHH_EMALLOC, EPSEARCHH_MSGEMALLOC);
-
-      /* zero out memory array */
-      for (j = 0; j < flength; j++){
-          for (i = 0; i < numSegs; i++){
-              ptr[i * flength + j] = 0.0;
-          }
-      }
-
-      /* obtain power spectrum in each time slice */
-      for (i = 0; i < numSegs; i++)
-      {
-        /* point dummySegment to the segment to analyze */
-        dummySegment = params->epSegVec->data + params->currentSegment + i;
-
-        /* compute the DFT of input time series */
-        LALComputeFrequencySeries (status->statusPtr, fseries, 
-            dummySegment->data, dftparams);
-        CHECKSTATUSPTR (status);
-
-        /* copy modulus of DFT output into two dimensional array */
-        for (j=0 ; j < flength ; j++)
-        {
-          redummy = fseries->data->data[j].re ;
-          imdummy = fseries->data->data[j].im ;
-          ptr[i * flength + j] = redummy*redummy + imdummy*imdummy;
-        }
-      }  /* done computing spectrum */
-
-      /* find median value over time slices for each frequency */
-      for (j = 0; j < flength; j++)
-      {
-        EPMedian( &dummySpec[j], ptr, j, flength, numSegs, status);
-        dummySpec[j] /= LAL_LN2; /* scale to match mean method */
-      }
-
-      LALFree(ptr);     
-    }  /* end of new code using median */
-    
-    else if (params->initParams->method == useMean)
-    /* run original code using mean to obtain power spectrum */
-    {  /* loop over data computing spectrum */
-      for ( i=0 ; i<(INT4)tmpDutyCycle ; i++)
-      {
-        /* point dummySegment to the segment to analyze */
-        dummySegment = params->epSegVec->data + params->currentSegment + i;
-
-        /* compute the DFT of input time series */
-        LALComputeFrequencySeries (status->statusPtr, fseries, 
-            dummySegment->data, dftparams);
-        CHECKSTATUSPTR (status);
-
-        /* normalize the data stream so that rms of Re or Im is 1 */
-        redummy=imdummy=0.0;
-        for (j=0 ; j<(INT4)fseries->data->length ; j++)
-        {
-          redummy = fseries->data->data[j].re ;
-          imdummy = fseries->data->data[j].im ;
-          dummySpec[j] += redummy*redummy + imdummy*imdummy;
-        }
-      }
-      for (j=0 ; j<(INT4)fseries->data->length ; j++)
-      {
-        dummySpec[j] /= ((REAL4) tmpDutyCycle);
-      }
-    }  /* end of original code using mean */
-    
-    else if (params->initParams->method == useUnity)
-    /* force power spectrum to unity */
-    {
-      for (j=0 ; j<(INT4)fseries->data->length ; j++)
-        {dummySpec[j] = 1.0;}
-    }
-
-    /* default case for unknown method */
-    else
-    {
-        ABORT (status, EPSEARCHH_EINCOMP, EPSEARCHH_MSGEINCOMP );
-    }
-   
     /* write diagnostic info to disk */
     if ( params->printSpectrum == TRUE )
     { 
@@ -249,27 +263,27 @@ EPSearch (
         fp = fopen("./freqseries.dat","w");
         for (j=0 ; j<(INT4)fseries->data->length ; j++)
         {
-            fprintf(fp, "%f\t%g\n", j*fseries->deltaF, dummySpec[j]);
+            fprintf(fp, "%f\t%g\n", j*fseries->deltaF, AverageSpec[j]);
         }    
         fclose(fp);
     }
-    
+
     /* loop over data applying excess power method */
     for ( i=0 ; i<(INT4)tmpDutyCycle ; i++)
     {
 
-      /* point dummySegment to the segment to analyze */
-      dummySegment = params->epSegVec->data + params->currentSegment + i;
+      /* point segment to the segment to analyze */
+      segment = params->epSegVec->data + params->currentSegment + i;
 
       /* compute the DFT of input time series */
       LALInfo(status->statusPtr, "Computing the frequency series");
       CHECKSTATUSPTR (status);
       LALComputeFrequencySeries (status->statusPtr, fseries, 
-          dummySegment->data, dftparams);
+          segment->data, dftparams);
       CHECKSTATUSPTR (status);
 
       /* check that deltaF agrees with that of response */
-      if ( fabs( dummySegment->spec->deltaF - fseries->deltaF ) > 0.000001 )
+      if ( fabs( segment->spec->deltaF - fseries->deltaF ) > 0.000001 )
       {
         ABORT (status, EXCESSPOWERH_EDELF, EXCESSPOWERH_MSGEDELF );
       }
@@ -279,7 +293,7 @@ EPSearch (
       for (j=0 ; j<(INT4)fseries->data->length ; j++)
       {
         REAL4 tmpVar;
-        tmpVar = sqrt( 2.0 / dummySpec[j] );
+        tmpVar = sqrt( 2.0 / AverageSpec[j] );
         fseries->data->data[j].re *= tmpVar;
         fseries->data->data[j].im *= tmpVar;
         redummy += fseries->data->data[j].re * fseries->data->data[j].re;
@@ -357,8 +371,8 @@ EPSearch (
 
           /* convert epoch to GPS nanoseconds */
           tstartNS  = 1000000000L * 
-            (INT8) dummySegment->data->epoch.gpsSeconds;
-          tstartNS += (INT8) dummySegment->data->epoch.gpsNanoSeconds;
+            (INT8) segment->data->epoch.gpsSeconds;
+          tstartNS += (INT8) segment->data->epoch.gpsNanoSeconds;
 
           /* allocate memory for the burst event */
           if ( (*burstEvent) == NULL )
@@ -416,7 +430,7 @@ EPSearch (
     CHECKSTATUSPTR (status);
 
     /* destroy temporary spectrum */
-    LALFree(dummySpec);
+    LALFree(AverageSpec);
 
     /* destroy the dftparams for computing frequency series */
     LALDestroyRealDFTParams (status->statusPtr, &dftparams);
