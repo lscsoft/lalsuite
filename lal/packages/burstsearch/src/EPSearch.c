@@ -19,6 +19,7 @@ $Id$
 #include <lal/Random.h>
 #include <lal/BandPassTimeSeries.h>
 #include <lal/TimeFreqFFT.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/LALRCSID.h>
 
 NRCSID (EPSEARCHC, "$Id$");
@@ -304,20 +305,20 @@ EPSearch (
         redummy += fseries->data->data[j].re * fseries->data->data[j].re;
         imdummy += fseries->data->data[j].im * fseries->data->data[j].im;
       }
-    /* write diagnostic info to disk */
-    if ( params->printSpectrum == TRUE )
-    { 
+
+      /* write diagnostic info to disk */
+      if ( params->printSpectrum == TRUE )
+      { 
         FILE *fp;
         fp = fopen("./dummy.dat","w");
         for (j=0 ; j<(INT4)fseries->data->length ; j++)
         {
-            fprintf(fp, "%f\t%g\n", j*fseries->deltaF, 
-                    sqrt(fseries->data->data[j].re * fseries->data->data[j].re
-                        + fseries->data->data[j].im * fseries->data->data[j].im));
+          fprintf(fp, "%f\t%g\n", j*fseries->deltaF, 
+              sqrt(fseries->data->data[j].re * fseries->data->data[j].re
+                + fseries->data->data[j].im * fseries->data->data[j].im));
         }    
         fclose(fp);
-    }
-    
+      }
 
       /* create time-frequency tiling of plane.  */
       if ( params->tfTiling == NULL ){
@@ -407,6 +408,15 @@ EPSearch (
 
     }
 
+    /* cluster the events if requested */
+    if (params->cluster && (*burstEvent) != NULL){
+      LALSortSnglBurst(status->statusPtr, burstEvent, LALCompareSnglBurstByTimeAndFreq);
+      CHECKSTATUSPTR (status);
+
+      LALClusterSnglBurstTable(status->statusPtr, *burstEvent);
+      CHECKSTATUSPTR (status);
+    }
+    
     /* destroy time-frequency tiling of planes */
     LALDestroyTFTiling (status->statusPtr, &(params->tfTiling));
     CHECKSTATUSPTR (status);
