@@ -196,7 +196,9 @@ FSFUNC (
     FrStrCpy( &proc->comment, comment );
     proc->next = frame->procData;
     frame->procData = proc;
+    proc->classe = FrProcDataDef();
     proc->type = 2;
+    proc->data = vect;
     proc->subType = subtype;
     proc->tRange = deltaT;
     proc->fRange = series->data->length * series->deltaF;
