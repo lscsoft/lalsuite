@@ -399,16 +399,15 @@ LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
     }
 
     /* Appy frequency Doppler shift. */
-    upsilon = 2.0*atan2( sqrt( -onePlusEcc*cose ),
-			 sqrt( oneMinusEcc*( cose + 2.0 ) ) );
-    f *= f0 / ( 1.0 + vp*( cos( argument + upsilon ) + eCosOmega )
-		/onePlusEcc );
+    upsilon = 2.0*atan2( sqrt( -onePlusEcc*cose ), sqrt( oneMinusEcc*( cose + 2.0 ) ) );
+    f *= f0 / ( 1.0 + vp*( cos( argument + upsilon ) + eCosOmega ) /onePlusEcc );
     phi *= twopif0;
-    if ( fabs( f - fPrev ) > df )
+    if ( (i > 0) && (fabs( f - fPrev ) > df) )
       df = fabs( f - fPrev );
     *(fData++) = fPrev = f;
     *(phiData++) = phi + phi0;
-  }
+
+  } /* for i < n */
 
   /* Set output field and return. */
   params->dfdt = df*dt;
