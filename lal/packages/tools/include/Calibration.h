@@ -18,6 +18,7 @@
 #define _CALIBRATION_H
 
 #include <lal/LALDatatypes.h>
+#include <lal/BandPassTimeSeries.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -257,11 +258,24 @@ void LALComputeStrain(
     StrainIn               *input
     );
 
-int XLALGetFactors(
+void XLALGetFactors(
     LALStatus              *status,
     StrainOut              *output,    
     StrainIn               *input
     );
+
+int XLALhROverAlpha(REAL8TimeSeries *hR, StrainOut *output);
+int XLALhCTimesBeta(REAL8TimeSeries *hC, StrainOut *output);
+int XLALUpsamplehR(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor);
+
+void XLALMakeFilters(
+     LALStatus *status, 
+     REAL8IIRFilter *Cinv, 
+     REAL8IIRFilter *G,
+     REAL8IIRFilter *AA,
+     REAL8IIRFilter *AX,
+     REAL8IIRFilter *AY
+     );
 
 #ifdef  __cplusplus
 #pragma { /** to match the next brace **/
