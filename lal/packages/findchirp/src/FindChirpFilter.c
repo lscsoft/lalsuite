@@ -1953,7 +1953,7 @@ LALFindChirpBCVFilterSegment (
     InvTan2 = (REAL4) atan2(Num2, Den2 );
 
 
-    thisEvent->coa_phase = 0.5 * InvTan1 - 0.5 * InvTan2 ;
+    thisEvent->coa_phase = - 0.5 * InvTan1 + 0.5 * InvTan2 ;
     omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
     thisEvent->alpha = - input->segment->b2 * tan(omega) /
       ( input->segment->a1 + input->segment->b1*tan(omega) );
