@@ -29,7 +29,6 @@ LALCountEPEvents(
 /******** </lalVerbatim> ********/
 {
 	TFTile *tile;
-	*numEvents= 0;
 
 	INITSTATUS (status, "LALCountEPEvents", COUNTEPEVENTSC);
 	ATTATCHSTATUSPTR (status);
@@ -43,6 +42,7 @@ LALCountEPEvents(
 	/* check that tiles are sorted */
 	ASSERT(tfTiling->tilesSorted, status, EXCESSPOWERH_EORDER, EXCESSPOWERH_MSGEORDER);
 
+	*numEvents= 0;
 	for(tile = tfTiling->firstTile; tile && (tile->alpha <= alphaThreshold); tile = tile->nextTile)
 		*numEvents++;
 
