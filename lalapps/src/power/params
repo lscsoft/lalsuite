@@ -1,9 +1,12 @@
 #-----------------------------------------------------------------------------------
 # INSTRUMENT AND QUALITY FILE SETUP
 #-----------------------------------------------------------------------------------
-INSTRUMENT=H	#DON'T FORGET TO MAKE THIS MATCH WITH DATA CHANNEL
+	
 TYPE=RDS_R_L1
 
+#INSTRUMENT, DATA_SET_NAME, and DATA_QUALITY_FILE need to be matched 
+# lalapps_power parameter CHANNEL
+INSTRUMENT=H
 DATA_SET_NAME=S2H1v02
 DATA_QUALITY_FILE=/scratch/power/input/S2H1v02_segs.txt
 
@@ -51,7 +54,7 @@ CACHE_PATH=/scratch/power/cache
 
 
 #-----------------------------------------------------------------------------------
-# LALApps_power  PARAMETERS
+# lalapps_power  PARAMETERS
 #-----------------------------------------------------------------------------------
 # number of points to analyze per second
 # do not change this value
