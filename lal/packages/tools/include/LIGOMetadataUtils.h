@@ -110,8 +110,7 @@ typedef enum
   exclude_play, 
   all_data
 }
-DataType 
-;
+LALPlaygroundDataMask;
 
 
 typedef struct
