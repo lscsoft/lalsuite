@@ -571,7 +571,7 @@ LALCompareSnglBurst(
 	LALStatus *status,
 	const SnglBurstTable *a,
 	const SnglBurstTable *b,
-	int *match
+	int *difference
 );
 
 int
