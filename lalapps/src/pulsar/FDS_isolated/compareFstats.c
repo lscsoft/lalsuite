@@ -55,8 +55,9 @@ CHAR *uvar_Fname1;
 CHAR *uvar_Fname2;
 BOOLEAN uvar_help;
 
-#define relError(x,y) (fabs( (x)-(y) )/(x))
 #define max(x,y) ( (x) > (y) ? (x) : (y) )
+#define relError(x,y) (fabs( (x)-(y) )/ (max(fabs(x), fabs(y))))
+
 /*----------------------------------------------------------------------
  * main function 
  *----------------------------------------------------------------------*/
