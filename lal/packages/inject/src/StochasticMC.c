@@ -324,7 +324,7 @@ LALExtractFrameResponse()
 NRCSID(STOCHASTICMCC, "$Id$");
 
 
-int lalDebugLevel = LALINFO;
+/* int lalDebugLevel = LALINFO; */
 
 
 static void SinusoidalSplice(REAL4Vector **longData, REAL4Vector **shortData, REAL4Vector *output, UINT4 nSpliceSegs, UINT4 offset);
