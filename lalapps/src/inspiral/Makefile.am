@@ -20,14 +20,13 @@ endif
 else
 bin_PROGRAMS = 
 endif
-if PYTHON22
-bin_SCRIPTS = inspiral_pipeline.py
-else
-bin_SCRIPTS = 
-endif
+#if PYTHON22
+#bin_SCRIPTS = inspiral_pipeline.py
+#else
+#bin_SCRIPTS = 
+#endif
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
-             $(TRIGTOTMPLTSRC) $(PRINTINSPIRALSRC) \
-             inspiral_pipeline.py
+             $(TRIGTOTMPLTSRC) $(PRINTINSPIRALSRC)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
