@@ -399,6 +399,7 @@ int main(int argc,char *argv[])
       UINT4 k = indicesCCfa[i];  /* print out ordered by joint significance */
       fprintf(stdout,"%d %d %le\n", CList1.CtagCounter[CP[k].c1],CList2.CtagCounter[CP[k].c2],CP[k].fa);
     }
+  fprintf(stdout,"%%DONE\n");
 
 
   LALFree(indices1F);
