@@ -71,7 +71,8 @@ int main(int argc, char *argv[]){
 
   /* time and velocity vectors and files*/
   static LIGOTimeGPSVector1   timeV;
-  static REAL8Cart3CoorVector velV, velVmid;
+  static REAL8Cart3CoorVector velV;
+  /*   static REAL8Cart3CoorVector velVmid; */
   static REAL8Vector         timeDiffV;
 
   /* hough structures */
@@ -137,6 +138,10 @@ int main(int argc, char *argv[]){
 #ifdef PRINTTEMPLATES
   FILE *fpTemplates=NULL;
   CHAR fileTemplates[256];
+#endif
+
+#ifdef PRINTMAPS
+  CHAR fileMaps[256];
 #endif
 
 #ifdef TIMING
@@ -505,9 +510,9 @@ int main(int argc, char *argv[]){
   velV.data = NULL;
   velV.data = (REAL8Cart3Coor *)LALMalloc(mObsCoh*sizeof(REAL8Cart3Coor));
 
-  velVmid.length = mObsCoh;
-  velVmid.data = NULL;
-  velVmid.data = (REAL8Cart3Coor *)LALMalloc(mObsCoh*sizeof(REAL8Cart3Coor));
+/*   velVmid.length = mObsCoh; */
+/*   velVmid.data = NULL; */
+/*   velVmid.data = (REAL8Cart3Coor *)LALMalloc(mObsCoh*sizeof(REAL8Cart3Coor)); */
 
   {  
     VelocityPar   velPar;
@@ -575,9 +580,9 @@ int main(int argc, char *argv[]){
       velV.data[j].y= tempVel[1];
       velV.data[j].z= tempVel[2];   
 
-      velVmid.data[j].x = tempVel[0];
-      velVmid.data[j].y = tempVel[1];
-      velVmid.data[j].z = tempVel[2];
+      /*       velVmid.data[j].x = tempVel[0]; */
+      /*       velVmid.data[j].y = tempVel[1]; */
+      /*       velVmid.data[j].z = tempVel[2]; */
     }
     
     LALFree(edat->ephemE);
@@ -697,10 +702,14 @@ int main(int argc, char *argv[]){
 #ifdef PRINTEVENTS
       strcpy( fileEvents, filestats);
 #endif
+
 #ifdef PRINTTEMPLATES
       strcpy(fileTemplates, filestats);
 #endif
 
+#ifdef PRINTMAPS
+      strcpy(fileMaps, filestats);
+#endif
 
       /* create and open the stats file for writing */
       strcat(  filestats, "stats");
@@ -920,7 +929,8 @@ int main(int argc, char *argv[]){
 	  /* ********************* print results *********************** */
 	  
 #ifdef PRINTMAPS
-	  if( PrintHmap2m_file( &ht, uvar_dirnameOut, iHmap ) ) return 5;
+	  
+	  if( PrintHmap2m_file( &ht, fileMaps, iHmap ) ) return 5;
 #endif 
 	  
  
@@ -983,7 +993,7 @@ int main(int argc, char *argv[]){
 	      /* ***** print results *********************** */
 	      
 #ifdef PRINTMAPS
-	      if( PrintHmap2m_file( &ht, uvar_dirnameOut, iHmap ) ) return 5;
+	      if( PrintHmap2m_file( &ht, fileMaps, iHmap ) ) return 5;
 #endif
 	      
 	      fprintf(fp1, "%d %f %f %d %d %f %f %f %g\n",
