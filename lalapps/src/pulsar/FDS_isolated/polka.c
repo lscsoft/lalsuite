@@ -527,7 +527,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   INT4 c; 
   INT4 option_index = 0;
 
-  const char *optstring = "h1:2:3:4:f:a:d:m:M:o:";
+  const char *optstring = "h1:2:3:4:f:a:d:m:M:o:s:e:";
   struct option long_options[] =
     {
       {"fstatsfile1", 		required_argument, 0, 	'1'},
@@ -558,11 +558,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   /* Scan through list of command line arguments */
   while (1)
     {
-      c = getopt_long(argc, argv, optstring, long_options, &option_index);
-      
+      c = getopt_long(argc, argv, optstring, long_options, &option_index);      
       if (c == -1) 
 	break;
-
       switch (c) {
       case '1':
 	/* SFT directory */
