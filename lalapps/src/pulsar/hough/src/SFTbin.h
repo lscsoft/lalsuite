@@ -121,6 +121,7 @@ NRCSID (SFTBINH, "$Id$");
 #define SFTBINH_MSGEREAD "fread failed"
 #define SFTBINH_MSGEWRITE "fwrite failed"
 
+
 /* </lalErrTable>  */
 
 
@@ -245,6 +246,19 @@ void  Harmonics2Lines (LALStatus          *status,
 		       LineNoiseInfo      *lineInfo,
 		       LineHarmonicsInfo  *harmonicsInfo
 		       );
+
+void ChooseLines (LALStatus        *status,
+		  LineNoiseInfo    *outLine,
+		  LineNoiseInfo    *inLine,
+		  REAL8            freqMin,
+		  REAL8            freqMax
+		  );
+
+
+void CheckLines ( LALStatus           *status,
+		  INT4                *flag,
+		  LineNoiseInfo       *lines,
+		  REAL8               freq);
 
 
 void FindNumberLines (LALStatus        *status,

@@ -193,7 +193,7 @@ int main(int argc, char *argv[]){
   SUB( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",          &uvar_earthEphemeris),  &status);
   SUB( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",            &uvar_sunEphemeris),    &status);
   SUB( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT Directory",                 &uvar_sftDir),          &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "dirnameOut",      'o', UVAR_OPTIONAL, "Output directory",              &uvar_dirnameOut),        &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "dirnameOut",      'o', UVAR_OPTIONAL, "Output directory",              &uvar_dirnameOut),      &status);
   SUB( LALRegisterSTRINGUserVar( &status, "fbasenameOut",    'B', UVAR_OPTIONAL, "Output file basename",          &uvar_fbasenameOut),    &status);
   SUB( LALRegisterSTRINGUserVar( &status, "skyfile",         'P', UVAR_OPTIONAL, "Input skypatch file",           &uvar_skyfile),         &status);
 

@@ -51,8 +51,8 @@ INT4 lalDebugLevel=0;
 #define MAXFILENAMELENGTH 256
 /* defaults chosen for L1 */
 
-#define HARMONICSFILE "./harmonicsS2LLO4KC.txt" 
-#define NSTARFILE "./ALLSKYMAX"
+#define HARMONICSFILE "./harmonicsS2LHO4K_200_400.txt" 
+#define NSTARFILE "/home/badkri/H1results/ALLSKYMAX"
 #define CLEANNSTARFILE "./ALLSKYMAXCLEAN"
 #define WINDOWSIZE 100
 #define TRUE (1==1)
@@ -100,18 +100,18 @@ char *lalWatch;
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
 int main(int argc, char *argv[]){ 
   static LALStatus       status;  /* LALStatus pointer */ 
-  static LineNoiseInfo   lines;
+  static LineNoiseInfo   lines, lines2;
   static LineHarmonicsInfo harmonics; 
   
   INT4 nLines=0, count1, nHarmonicSets;
-  INT4 j, r, nstarMax;
+  INT4 j, r;
   FILE *fpNstar=NULL;
   FILE *fpOut=NULL;
   INT4 *nstarVec=NULL;
   REAL8 *freqVec=NULL;
   INT4 nstarNum=0, minBin, maxBin;
   REAL8 timeBase=1800.0, minFreq, maxFreq;
-
+  INT4 flag;
  
   /* user input variables */
   BOOLEAN uvar_help;
@@ -223,6 +223,16 @@ int main(int argc, char *argv[]){
   minFreq = freqVec[0];
   maxFreq = freqVec[nstarNum-1];
 
+  /* choose lines affecting frequency range */
+  lines2.nLines = nLines;
+  lines2.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+  lines2.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+  lines2.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+
+  SUB( ChooseLines (&status, &lines2, &lines, minFreq, maxFreq), &status); 
+  SUB( CheckLines (&status, &flag, &lines2, 202.0), &status); 
+
+
   /* clean the nstarVec */
   if ( nstarNum > 0 )
     {
@@ -276,7 +286,7 @@ int main(int argc, char *argv[]){
       fprintf(stderr, "unable to open file %s for writing \n", uvar_cleannstar);
       exit(0);
     }
-  for (j=0; j<nstarMax; j++)
+  for (j=0; j<nstarNum; j++)
     {
       fprintf(fpOut, "%d  %f \n", nstarVec[j], freqVec[j]);
     }
@@ -292,8 +302,13 @@ int main(int argc, char *argv[]){
       LALFree(lines.lineFreq);
       LALFree(lines.leftWing);
       LALFree(lines.rightWing);
+   
+      LALFree(lines2.lineFreq);
+      LALFree(lines2.leftWing);
+      LALFree(lines2.rightWing);
+
     }
- 
+
   if (nHarmonicSets > 0)
     {
       LALFree(harmonics.startFreq);
@@ -303,6 +318,7 @@ int main(int argc, char *argv[]){
       LALFree(harmonics.rightWing);
     }
 
+  SUB (LALDestroyUserVars(&status), &status);
   LALCheckMemoryLeaks(); 
 
   INFO( SFTCLEANC_MSGENORM );

@@ -725,6 +725,116 @@ void  ReadLineInfo (LALStatus     *status,
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+void ChooseLines (LALStatus        *status,
+		  LineNoiseInfo    *outLine,
+		  LineNoiseInfo    *inLine,
+		  REAL8            fMin,
+		  REAL8            fMax
+		  )
+{
+  /* this function takes a set of lines and a frequency range as input */
+  /* it returns a those lines which lie within the specified frequency range */
+  INT4 nLinesIn, nLinesOut, j;
+  REAL8 lineFreq, leftWing, rightWing;
+
+  INITSTATUS (status, "ChooseLines", SFTBINC);
+  ATTATCHSTATUSPTR (status);   
+
+  /* some sanity checks */
+  ASSERT (outLine, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
+  ASSERT (inLine, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
+  ASSERT (inLine->nLines > 0, status, SFTBINH_EVAL, SFTBINH_MSGEVAL);
+  ASSERT (outLine->nLines > 0, status, SFTBINH_EVAL, SFTBINH_MSGEVAL);
+  ASSERT (inLine->nLines - outLine->nLines == 0, status, SFTBINH_EVAL, SFTBINH_MSGEVAL);
+  ASSERT (fMin > 0, status, SFTBINH_EVAL, SFTBINH_MSGEVAL);
+  ASSERT (fMax > fMin, status, SFTBINH_EVAL, SFTBINH_MSGEVAL);
+
+  nLinesIn = inLine->nLines;
+  nLinesOut = 0;  
+  /* loop over lines in inLine structure and see if they are within bounds */
+  for(j=0; j<nLinesIn; j++)
+    {
+      lineFreq = inLine->lineFreq[j];
+      leftWing = inLine->leftWing[j];
+      rightWing = inLine->rightWing[j];
+      if ( (lineFreq >= fMin) && (lineFreq <= fMax))
+	{
+	  outLine->lineFreq[nLinesOut] = lineFreq;
+	  outLine->leftWing[nLinesOut] = leftWing;
+	  outLine->rightWing[nLinesOut] = rightWing;
+	  nLinesOut++;
+	} 
+      else if ( (lineFreq < fMin) && (lineFreq + rightWing > fMin) )
+	{
+	  outLine->lineFreq[nLinesOut] = lineFreq;
+	  outLine->leftWing[nLinesOut] = leftWing;
+	  outLine->rightWing[nLinesOut] = rightWing;
+	  nLinesOut++;
+	}
+      else if ( (lineFreq > fMax) && (lineFreq - leftWing < fMax) )
+	{
+	  outLine->lineFreq[nLinesOut] = lineFreq;
+	  outLine->leftWing[nLinesOut] = leftWing;
+	  outLine->rightWing[nLinesOut] = rightWing;
+	  nLinesOut++;
+	}
+    }
+
+  /* now reallocate memory for outLine */
+  outLine->nLines = nLinesOut;
+  outLine->lineFreq = (REAL8 *)LALRealloc(outLine->lineFreq, nLinesOut*sizeof(REAL8));
+  outLine->leftWing = (REAL8 *)LALRealloc(outLine->leftWing, nLinesOut*sizeof(REAL8));
+  outLine->rightWing = (REAL8 *)LALRealloc(outLine->rightWing, nLinesOut*sizeof(REAL8));
+
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}
+
+#define TRUE (1==1)
+#define FALSE (1==0)
+
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+void CheckLines ( LALStatus           *status,
+		  INT4                *countL,
+		  LineNoiseInfo       *lines,
+		  REAL8               freq)
+{
+  INT4 nLines, j;
+  REAL8 lineFreq, leftWing, rightWing, doppler;
+
+  INITSTATUS (status, "CheckLines", SFTBINC);
+  ATTATCHSTATUSPTR (status);   
+
+  /* sanity checks */
+  ASSERT (lines, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
+  ASSERT (countL, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
+  ASSERT (lines->nLines > 0, status, SFTBINH_EVAL, SFTBINH_MSGEVAL);
+
+  /* loop over lines and check if freq is affected by the lines */
+  nLines = lines->nLines;
+  countL = 0;
+  for (j=0; j<nLines; j++)
+    {
+      lineFreq = lines->lineFreq[j];
+      leftWing = lines->leftWing[j];
+      rightWing = lines->rightWing[j];
+      /* add doppler band to wings */
+      doppler = VTOT * (lineFreq + rightWing);
+      leftWing += doppler;
+      rightWing += doppler;
+      /* now chech if freq lies in range */
+      if ( (freq <= lineFreq + rightWing) && (freq >= lineFreq - leftWing))
+	countL++;  
+    }
+      
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* *******************************  <lalVerbatim file="SFTbinD"> */
 void CleanCOMPLEX8SFT (LALStatus          *status,
 		       SFTtype            *sft,
