@@ -41,6 +41,7 @@ char outputFilePath[256] = "";  /* path to output file, a many-frame frame file 
 float startFrequency = 0.0;     /* desired starting frequency for the narrow band */
 float bandwidth = 0.0;          /* width of the frequency band in the narrow band */
 int mergedSFT = 0;              /* flag for generating merged SFT instead of frame */
+float mysteryFactor = 1.0;      /* factor used to encrypt the data */
 
 int main ( int argc, char *argv[] )
 {
@@ -159,7 +160,7 @@ int main ( int argc, char *argv[] )
 "SYNOPSIS                                                                   \n"\
 "       lalapps_narrowBandExtract --input=PATH --output=PATH                \n"\
 "               --start-frequency=FREQUENCY --bandwidth=BANDWIDTH           \n"\
-"               --mergedSFT                                                 \n"\
+"               --mergedSFT  --mystery-factor=FACTOR                        \n"\
 "                                                                           \n"\
 "       lalapps_narrowBandExtract --help                                    \n"\
 "                                                                           \n"\
@@ -185,6 +186,10 @@ int main ( int argc, char *argv[] )
 "               generate a merged SFT file instead of a frame               \n"\
 "               file                                                        \n"\
 "                                                                           \n"\
+"       -y, --mystery-factor                                                \n"\
+"               secret factor that multiplies the data to make              \n"\
+"               it hard to infer strain values                              \n"\
+"                                                                           \n"\
 "       -h, --help                                                          \n"\
 "               print this usage message                                    \n"\
 "                                                                           \n"\
@@ -208,11 +213,12 @@ int parse_command_line(int argc, char *argv[])
                 {"start-frequency",     required_argument, 0,   'f'},
                 {"bandwidth",           required_argument, 0,   'b'},
                 {"mergedSFT",           no_argument,       0,   'm'},
-                {"help",                no_argument,       0,   'h'},
+		{"mystery-factor",      required_argument, 0,   'y'},
+                {"help",                 no_argument,       0,   'h'},
                 {0, 0, 0, 0}
         };
 
-        char *short_options = "i:o:f:b:hm";
+        char *short_options = "i:o:f:b:y:hm";
         int c;
 
         while ( 1 )
@@ -244,6 +250,12 @@ int parse_command_line(int argc, char *argv[])
                         case 'f':
                                 {
                                         startFrequency = atof(optarg);
+                                        break;
+                                }
+
+                        case 'y':
+                                {
+                                        mysteryFactor = atof(optarg);
                                         break;
                                 }
 
@@ -478,7 +490,7 @@ int read_sft( struct sftheader *header, float **dataF, const char *fname, float 
         
         for(i = 0; i < (fmaxindex - fminindex + 1); i++)
         {
-                (*dataF)[i] *= norm;
+                (*dataF)[i] *= norm * mysteryFactor;
         }
 
         /* for the new narrow band series set the new first index
