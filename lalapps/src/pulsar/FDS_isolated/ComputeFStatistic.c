@@ -236,7 +236,7 @@ int main(int argc,char *argv[])
   use_boinc_filename0(Fmaxfilename);
 #endif /* USE_BOINC */
   if (!(fpmax=fopen(Fmaxfilename,"w"))){
-    fprintf(stderr,"in Main: unable to open Fmax file\n");
+    fprintf(stderr,"in Main: unable to open Fmax file %s\n", Fmaxfilename);
     return 2;
   }
 #endif
