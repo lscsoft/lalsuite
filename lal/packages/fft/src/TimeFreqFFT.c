@@ -474,7 +474,7 @@ LALREAL4AverageSpectrum (
   }
 
   /* compute the number of segs, check that the length and overlap are valid */
-  numSeg = tSeries->data->length - params->overlap / tLength - params->overlap;
+  numSeg = (tSeries->data->length - params->overlap) / (tLength - params->overlap);
   if ( (tSeries->data->length - params->overlap) % (tLength - params->overlap) )
   {
     ABORT( status, TIMEFREQFFTH_EMISM, TIMEFREQFFTH_MSGEMISM );
