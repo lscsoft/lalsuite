@@ -1,6 +1,3 @@
-dnl m4 template for defining CreateArray for different types. 
-dnl To create the c-source for the typecode x variant, execute
-dnl     m4 -DTYPECODE=x template.m4 > xtemplate.c
 dnl $Id$
 ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')')
 ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')')
@@ -12,75 +9,18 @@ ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')
 ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')')
 ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')')
 ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
-ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`ATYPE',`format(`%sArray',TYPE)')
-define(`PROG',`format(`%sCreateArray',TYPECODE)')
-define(`PROGFILE',`format(`%s.c',PROG)')
-/*----------------------------------------------------------------------- 
- * 
- * File Name: PROGFILE
- * 
- * Revision: $Id$
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
- * PROG
- * 
- * SYNOPSIS 
- * void PROG (Status *, ATYPE **array, UINT4Vector *dimLength);
- * 
- * DESCRIPTION 
- * Create a ATYPE object. 
- * 
- * DIAGNOSTICS 
- * Illegal length, array == NULL, *array != NULL, malloc failure
- *
- * CALLS
- * LALMalloc
- * CreateVector
- * 
- * NOTES
- * 
- *-----------------------------------------------------------------------
- */
+define(`FUNC',`format(`%sCreateArray',TYPECODE)')
 
-#ifndef _STRING_H
-#include <string.h>
-#ifndef _STRING_H
-#define _STRING_H
-#endif
-#endif
 
-#ifndef _LALSTDLIB_H
-#include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _AVFACTORIES_H
-#include "AVFactories.h"
-#ifndef _AVFACTORIES_H
-#define _AVFACTORIES_H
-#endif
-#endif
-
-NRCSID (CREATEARRAYC, "$Id$");
-
-typedef TYPE  dtype;    /* change for different factory */
-typedef ATYPE atype;    /* change for different factory */
-
-void PROG (Status       *status, 
-           atype       **array,
-           UINT4Vector  *dimLength) 
+void FUNC ( Status *status, ATYPE **array, UINT4Vector *dimLength ) 
 {
   UINT4 arrayDataSize = 1;
   UINT4 numDims;
   UINT4 dim;
 
-  INITSTATUS (status, CREATEARRAYC);   
+  INITSTATUS (status, "FUNC", ARRAYFACTORIESC);   
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are sane */
@@ -94,9 +34,18 @@ void PROG (Status       *status,
 
   numDims = dimLength->length;
 
+  /* loop over dimensions to compute total size of array data */
+
+  for (dim = 0; dim < numDims; ++dim)
+  {
+    arrayDataSize *= dimLength->data[dim];
+  }
+
+  ASSERT (arrayDataSize, status, CREATEARRAY_ELENGTH, CREATEARRAY_MSGELENGTH);
+
   /* allocate memory for structure */
 
-  *array = (atype *) LALMalloc (sizeof(atype));
+  *array = ( ATYPE * ) LALMalloc ( sizeof( ATYPE ) );
   ASSERT (*array, status, CREATEARRAY_EMALLOC, CREATEARRAY_MSGEMALLOC);
 
   (*array)->dimLength = NULL;
@@ -108,26 +57,14 @@ void PROG (Status       *status,
   if (status->statusPtr->statusCode)
   {
     LALFree (*array);
+    *array = NULL;
     RETURN (status);   /* this returns a recursive error status code (-1) */
   }
   memcpy ((*array)->dimLength->data, dimLength->data, numDims*sizeof(UINT4));
-
-  /* loop over dimensions to compute total size of array data */
-
-  for (dim = 0; dim < numDims; ++dim)
-  {
-    arrayDataSize *= dimLength->data[dim];
-  }
-
-  if (!arrayDataSize)
-  {
-    LALFree (*array);
-    ABORT (status, CREATEARRAY_ELENGTH, CREATEARRAY_MSGELENGTH);
-  }
   
   /* allocate storage */
 
-  (*array)->data = (dtype *) LALMalloc (arrayDataSize*sizeof(dtype));
+  (*array)->data = ( TYPE * ) LALMalloc( arrayDataSize*sizeof( TYPE ) );
 
   if (!(*array)->data)
   {
@@ -137,6 +74,7 @@ void PROG (Status       *status,
     CHECKSTATUSPTR (status);  /* if this fails, there is a memory leak  */
 
     LALFree (*array);
+    *array = NULL;
     ABORT (status, CREATEARRAY_EMALLOC, CREATEARRAY_MSGEMALLOC);
   }
 

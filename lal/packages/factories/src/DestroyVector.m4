@@ -1,6 +1,3 @@
-dnl m4 template for defining DestroyVector for different types. 
-dnl To create the c-source for the typecode x program, execute
-dnl     m4 -DTYPECODE=x template.m4
 dnl $Id$
 ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')')
 ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')')
@@ -15,91 +12,41 @@ ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
 ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`VTYPE',`format(`%sVector',TYPE)')
-define(`PROG',`format(`%sDestroyVector',TYPECODE)')
-define(`CPROG',`format(`%sCreateVector',TYPECODE)')
-define(`PROGFILE',`format(`%s.c',PROG)')
-/*----------------------------------------------------------------------- 
- * 
- * File Name: PROGFILE
- * 
- * Author: Finn, L. S.
- * 
- * Revision: $Id$
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
- * PROG
- * 
- * SYNOPSIS 
- * void PROG ( Status *,  VTYPE **vector );
- * 
- * DESCRIPTION 
- * Returns to system storage allocated by CPROG
- * 
- * DIAGNOSTICS 
- * vector == NULL, *vector == NULL, (*vector)->data == NULL, free failure
- *
- * CALLS
- * LALFree
- * 
- * NOTES
- * 
- *-----------------------------------------------------------------------
- */
+define(`FUNC',`format(`%sDestroyVector',TYPECODE)')
 
-#ifndef _LALSTDLIB_H
-#include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _AVFACTORIES_H
-#include "AVFactories.h"
-#ifndef _AVFACTORIES_H
-#define _AVFACTORIES_H
-#endif
-#endif
-
-NRCSID (DESTROYVECTORC, "$Id$");
-
-typedef TYPE dtype;		/* change for different factory */
-typedef VTYPE vtype;		/* change for different factory */
-
-void PROG (Status *status, vtype **vector)
+void FUNC ( Status *status, VTYPE **vector )
 {
   /* 
    * Initialize status
    */
 
-  INITSTATUS (status, DESTROYVECTORC);	
+  INITSTATUS( status, "FUNC", VECTORFACTORIESC );	
       
   /* 
    * Check vector: is it non-NULL?
    */
 
-  ASSERT (vector != NULL, status, DESTROYVECTOR_EVPTR, DESTROYVECTOR_MSGEVPTR);
+  ASSERT( vector != NULL, status, DESTROYVECTOR_EVPTR, DESTROYVECTOR_MSGEVPTR );
 
   /* 
    * Check vector: does it point to non-NULL?
    */
 
-  ASSERT (*vector != NULL, status, DESTROYVECTOR_EUPTR, DESTROYVECTOR_MSGEUPTR);
+  ASSERT( *vector != NULL, status, DESTROYVECTOR_EUPTR, DESTROYVECTOR_MSGEUPTR );
 
   /*
    * Check data in vector: does it point to non-NULL
    */
 
-  ASSERT ((*vector)->data != NULL, status,
-          DESTROYVECTOR_EDPTR, DESTROYVECTOR_MSGEDPTR);
+  ASSERT( (*vector)->data != NULL, status,
+          DESTROYVECTOR_EDPTR, DESTROYVECTOR_MSGEDPTR );
 
   /* Ok, now let's free allocated storage */
 
-  LALFree ( (*vector)->data ); /* free allocated data */
-  LALFree ( *vector );	/* free vector struct itself */
+  LALFree( (*vector)->data ); /* free allocated data */
+  LALFree( *vector );	/* free vector struct itself */
 
   *vector = NULL;		/* make sure we don't point to freed struct */
 
-  RETURN (status);
+  RETURN( status );
 }

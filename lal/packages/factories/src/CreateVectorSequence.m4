@@ -1,6 +1,3 @@
-dnl m4 template for defining CreateArraySequence for different types. 
-dnl To create the c-source for the typecode x program, execute
-dnl     m4 -DTYPECODE=x template.m4
 dnl $Id$
 ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')')
 ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')')
@@ -15,66 +12,14 @@ ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
 ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`STYPE',`format(`%sVectorSequence',TYPE)')
-define(`PROG',`format(`%sCreateVectorSequence',TYPECODE)')
-define(`PROGFILE',`format(`%s.c',PROG)')
-/*----------------------------------------------------------------------- 
- * 
- * File Name: PROGFILE
- * 
- * Author: Finn, L. S.
- * 
- * Revision: $Id$
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
- * PROG
- * 
- * SYNOPSIS 
- * void PROG (Status *, STYPE **vseq, CreateVectorSequenceIn *in);
- * 
- * DESCRIPTION 
- * Create a STYPE object. 
- * 
- * DIAGNOSTICS 
- * Illegal sequence length, illegal vectorLength, vseq == NULL, 
- * *vseq != NULL, malloc failure 
- *
- * CALLS
- * LALMalloc
- * 
- * NOTES
- * 
- *-----------------------------------------------------------------------
- */
+define(`FUNC',`format(`%sCreateVectorSequence',TYPECODE)')
 
-#ifndef _LALSTDLIB_H
-#include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _SEQFACTORIES_H
-#include "SeqFactories.h"
-#ifndef _SEQFACTORIES_H
-#define _SEQFACTORIES_H
-#endif
-#endif
-
-NRCSID (CREATEVECTORSEQUENCEC, "$Id$");
-
-typedef TYPE dtype;		/* change for different factory */
-typedef STYPE stype;	/* change for different factory */
-
-void PROG (Status *status, 
-	    stype **vseq,
-	    CreateVectorSequenceIn *in) 
+void FUNC ( Status *status, STYPE **vseq, CreateVectorSequenceIn *in ) 
 {
   /* 
    * Initialize status
    */
-  INITSTATUS (status, CREATEVECTORSEQUENCEC);	
+  INITSTATUS( status, "FUNC", VECTORSEQUENCEFACTORIESC );	
 
   /* Check input structure: report if NULL */
 
@@ -108,7 +53,7 @@ void PROG (Status *status,
    * Allocate pointer
    */
 
-  *vseq = (stype *) LALMalloc(sizeof(stype));
+  *vseq = ( STYPE * ) LALMalloc( sizeof( STYPE ) );
   ASSERT (*vseq != NULL, status, CREATEVECSEQ_EMALLOC, CREATEVECSEQ_MSGEMALLOC);
 
   (*vseq)->length = 0;	/* length 0 until storage allocated */
@@ -121,8 +66,8 @@ void PROG (Status *status,
 
   {
     size_t tlength;
-    tlength = in->vectorLength * in->length * sizeof(dtype);
-    (*vseq)->data = (dtype *) LALMalloc (tlength);
+    tlength = in->vectorLength * in->length * sizeof( TYPE );
+    (*vseq)->data = ( TYPE * ) LALMalloc (tlength);
   }
 
   if (NULL == (*vseq)->data)
