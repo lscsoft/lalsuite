@@ -135,7 +135,10 @@ LALFindChirpSPTemplate (
   /* check that the parameter structure is set */
   /* to the correct waveform approximant       */
   if ( params->approximant != TaylorF2 )
+  {
     ABORT( status, FINDCHIRPSPH_EMAPX, FINDCHIRPSPH_MSGEMAPX );
+  }
+  LALInfo( status, "Generating template using FindChirpSP" );
 
 
   /*
