@@ -7,4 +7,8 @@ LALAPPS Configure:
 Datacond Configure:
 ../configure --prefix=/dso-test/jsylvest/datacond//stow_pkgs/ldas-1.0.86 --with-ilwd --with-ospace=/ldcg --with-fftw3=/ldcg --with-odbc-dm=DB2 --disable-static
 
+Also needed: ldg-2.0, in order to access grid resources
+
+Set the following environment variables to the relevent location before make:
+LALLOCATION LALAPPSLOCATION DATACONDLOCATION
 
