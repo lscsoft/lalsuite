@@ -64,6 +64,7 @@ BOOLEAN FILE_FSTATS = 1;
 #endif
 
 #if USE_BOINC
+#include <signal.h>
 #define USE_BOINC_DEBUG 0
 /* for getpid() */
 #include <sys/types.h>
@@ -87,13 +88,12 @@ void use_boinc_filename1(char** orig_name);
 void use_boinc_filename0(char* orig_name);
 
 
-void sighandler(int sig);
-
 #ifdef __cplusplus
 extern "C" {
 #endif
   /* FIXME: include proper header for this! */
 extern void set_search_pos(float RAdeg, float DEdeg);
+void sighandler(int sig);
 #ifdef __cplusplus
 }
 #endif
@@ -281,9 +281,6 @@ int main(int argc,char *argv[])
   /* set LAL error-handler */
 #if USE_BOINC
   lal_errhandler = BOINC_ERR_EXIT;
-#else
-  lal_errhandler = LAL_ERR_EXIT;
-#endif
 
   /* install signal handler for catching SEGV etc */
   sig_stat=&status;
@@ -294,6 +291,9 @@ int main(int argc,char *argv[])
   if (signal(SIGUSR1, sighandler)==SIG_IGN)
     signal(SIGUSR1, SIG_IGN);
 
+#else
+  lal_errhandler = LAL_ERR_EXIT;
+#endif
 
   /* register all user-variable */
   LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
@@ -2887,8 +2887,8 @@ int main(int argc, char *argv[]){
   return 222;
 }
 
-/* signal handlers */
 
+/* signal handlers */
 void sighandler(int sig){
   fprintf(stderr, "Application caught signal %d.\nStack Trace:\n", sig);
   
@@ -2900,14 +2900,6 @@ void sighandler(int sig){
   return;
 }
  
-
-
-
-
-
-
-
-
 #endif /*USE_BOINC*/
 
 
