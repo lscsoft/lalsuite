@@ -593,86 +593,171 @@ Patrick Brady
 
 \item[Synopsis]
 \verb$lalapps_inca$ 
-\verb$--ifo-a$ \textsc{trigfile.a} \verb$--ifo-b$ \textsc{trigfile.b} 
-\verb$--start-time$ \textsc{startcoincidence} \verb$--stop-time$ \textsc{endcoincidence} 
-\verb$--drhoplus$ \textsc{drhoplus} \verb$--drhominus$ \textsc{drhominus} 
-\verb$--dt$ \textsc{deltat} \verb$--dm$ \textsc{deltam} 
-\verb$--outfile$ \textsc{outfile} \verb$--noplayground$ 
 [\verb$--help$]
+[\verb$--verbose$]
+[\verb$--comment$ \textsc{comment}]
+[\verb$--debug-level$ \textsc{level}] \newline
+%
+[\verb$--no-playground$]
+[\verb$--playground-only$]
+\verb$--ifo-a$ \textsc{IFO} 
+\verb$--ifo-b$ \textsc{IFO} \newline
+%
+[\verb$--drhoplus$ \textsc{$\delta\rho_{+}$}]
+[\verb$--drhominus$ \textsc{$\delta\rho_{-}$}]
+[\verb$--dm$ \textsc{$\delta m$}]
+[\verb$--dt$ \textsc{$\delta t$}] \newline
+%
+\verb$--gps-start-time$ \textsc{seconds} 
+\verb$--gps-end-time$ \textsc{seconds} 
+\verb$--output$ \textsc{file} \newline
+%
+\textsc{(LIGO Lightweight XML files)}
 
 \item[Description] 
 \verb$lalapps_inca$ performs coincidence on triggers from the inspiral
-search code.  (At present it works for only two interferometers.) It
-must be called with at least one input file from each instrument. The
-default behavior outputs triggers during playground times to the file
-\textsc{outfile};  to obtain all triggers,  use the
-\verb$--noplayground$ flag.     
+search code.  At present it works for only two interferometers. The names
+of the two interferometers must be given. The default behavior outputs
+triggers during playground times to the file \textsc{file};  to obtain
+those triggers that are not in the playground, use the \verb$--no-playground$
+flag.     
 %Events can also be clustered
 %within \textsc{msec} msec or a template bank for triggered searches
 %can be constructed.
 
 \item[Options]\leavevmode
 \begin{entry}
-\item[\texttt{--ifo-a} \textsc{trigfile.a}] Required.  A LIGO lightweight
-XML file with triggers from interferometer A.  This argument can be
-called multiple times.  Triggers are sorted \emph{after} all files
-have been read in. 
+\item[\texttt{--no-playground}] Optional.  Record all triggers that are
+not in playground data.  The default behaviour returns only those triggers
+which lie in the playground data set.  
+
+\item[\texttt{--playground-only}] Optional.  Record only triggers that
+occour in the playground times.  This is the default behaviour.
+
+\item[\texttt{--ifo-a} \textsc{IFO}] Required. This is the name of the
+interfereometer to use as the interferometer A in the coincidence algorithm.
+It must be a two letter IFO code e.g. \texttt{L1}, \texttt{H1}, etc.
+
+\item[\texttt{--ifo-b} \textsc{IFO}] Required. This is the name of the
+interfereometer to use as the interferometer B in the coincidence algorithm.
+It must be a two letter IFO code e.g. \texttt{L1}, \texttt{H1}, etc.
 
 \item[\texttt{--ifo-b} \textsc{trigfile.b}] Required.  A LIGO lightweight
 XML file with triggers from interferometer B.  This argument can be
 called multiple times.  Triggers are sorted \emph{after} all files
 have been read in. 
 
-\item[\texttt{--start-time} \textsc{startcoincidence}] Optional.  Look for
-coincident triggers with end times after \textsc{startcoincidence}.
-If not supplied,  the $\textsc{startcoincidence} = 0$.
+\item[\texttt{--drhoplus} \textsc{$\delta\rho_+$}] Optional. Accept triggers
+with $\rho_B < (\sigma_B/\sigma_A) \rho_A + \delta\rho_+$ as possible
+coincidences.  If not supplied,  then $\delta\rho_+ = 0$.
 
-\item[\texttt{--stop-time} \textsc{endcoincidence}]  Optional. Look for
-coincident triggers with end times before \textsc{endcoincidence}.
-If not supplied,  then $\textsc{endcoincidence} = 977788813$, i.e.
-00:00 Dec 31, 2010 UTC.
+\item[\texttt{--drhominus} \textsc{$\delta\rho_-$}] Optional. Accept triggers
+with $\rho_B > (\sigma_B/\sigma_A) \rho_A - \delta\rho_-$ as possible
+coincidences.  If not supplied,  then $\delta\rho_- = 0$.
 
-\item[\texttt{--drhoplus} \textsc{drhoplus}] Optional. Accept triggers with
-$\rho_B < (\sigma_B/\sigma_A) \rho_A + \textsc{drhoplus}$ as
-possible coincidences.  If not supplied,  then $\textsc{drhoplus} =
-0$.
+\item[\texttt{--dm} \textsc{$\delta m$}] Optional. Accept triggers as
+coincident if both mass parameters agree within $\delta m$.  If not
+supplied,  then $\delta m = 0$.
 
-\item[\texttt{--drhominus} \textsc{drhominus}] Optional. Accept triggers with
-$\rho_B > (\sigma_B/\sigma_A) \rho_A - \textsc{drhominus}$ as
-possible coincidences.  If not supplied,  then $\textsc{drhominus} =
-0$.
+\item[\texttt{--dt} \textsc{$\delta t$}] Optional. Accept triggers as
+coincident if their end times agree within $\delta t$ milliseconds.  If not
+supplied,  then $\textsc{$\delta t$} = 0$.
 
-\item[\texttt{--dm} \textsc{deltam}] Optional. Accept triggers as coincident if
-both mass parameters agree within \textsc{deltam}.  If not supplied,  then 
-$\textsc{deltam} = 0$.
+\item[\texttt{--gps-start-time} \textsc{GPS seconds}] Required.  Look for
+coincident triggers with end times after \textsc{GPS seconds}.
 
-\item[\texttt{--dt} \textsc{deltat}] Optional. Accept triggers as coincident if
-their end times agree within \textsc{deltat} in msec.  If not supplied,  then 
-$\textsc{deltat} = 0$.
+\item[\texttt{--gps-end-time} \textsc{GPS seconds}] Required.  Look for
+coincident triggers with end times before \textsc{GPS seconds}.
 
-\item[\texttt{--outfile} \textsc{outfile}] Required.  Name of the file
+\item[\texttt{--output} \textsc{file}] Required.  Name of the file
 to be used for output.  The output format is LIGO lightweight XML with
-only a \texttt{sngl\_inspiral} table.
+a \texttt{process} and \texttt{process\_params} table. If any 
+coincident events are found, they will be written to a \texttt{sngl\_inspiral}
+table in the same file.
 
-\item[\texttt{--noplayground}] Optional.  Record all triggers.  The
-default behaviour returns only those triggers which lie in the
-playground data set.  
+%\item[\texttt{--cluster} \textsc{msec}] Optional.  Cluster triggers
+%within \textsc{msec} msec window.   The clustering algorithm
+%identifies the first trigger in a cluster,  then displaces it if its
+%\textsc{snr} is exceeded by an event with a smaller \textsc{chisq}.
 
-\item[\texttt{--cluster} \textsc{msec}] Optional.  Cluster triggers
-within \textsc{msec} msec window.   The clustering algorithm
-identifies the first trigger in a cluster,  then displaces it if its
-\textsc{snr} is exceeded by an event with a smaller \textsc{chisq}.
+\item[\texttt{--comment} \textsc{string}] Optional. Add \textsc{string} to the
+comment field in the process table. If not specified, no comment is added. 
+
+\item[\texttt{--user-tag} \textsc{string}] Optional. Set the user tag for this
+job to be \textsc{string}. May also be specified on the command line as 
+\texttt{-userTag} for LIGO database compatibility.
 
 \item[\texttt{--help}] Optional.  Print a help message.
 \end{entry}
 
+\item[\texttt{--debug-level} \textsc{level}] Optional. Set the LAL debug
+level to \textsc{level}. If not specified the default is 1.
+
+\item[Arguments]\leavevmode
+\begin{entry}
+\item[\texttt{[LIGO Lightweight XML files]}] The arguments to the program
+should be a list of LIGO Lightweight XML files containing the triggers from
+the two interfereometers. The input files can be in any order and do not need
+to be time ordered as \texttt{inca} will sort all the triggers once they are
+read in. If the program encounters a LIGO Lightweight XML containing triggers
+from an unknown interferometer (i.e. not IFO A or IFO B) it will exit with an
+error.
+\end{entry}
+
 \item[Example]
 \begin{verbatim}
-lalapps_inca --ifo-a L-INSPIRAL-734357353-1024.xml \
---ifo-b L-INSPIRAL-734357353-1024.xml --drhoplus 1.0 --drhominus 1.0 \
---dm 1.0 --dt 0.01 --outfile my.xml --start-time 734357353 \
---stop-time 734358353 --noplayground
+lalapps_inca --ifo-a L1 --ifo-b H1 \
+--drhoplus 1.0 --drhominus 1.0 --dm 1.0 --dt 0.01 \
+--gps-start-time 734357353 --gps-end-time 734358353 \
+--output L1H1-INCA-734357353-1024.xml \
+L1-INSPIRAL-734357353-1024.xml H1-INSPIRAL-734357353-1024.xml
 \end{verbatim}
+
+\item[Algorithm]
+The code maintains two poniters to triggers from each ifo,
+\texttt{currentTrigger[0]} and \texttt{currentTrigger[1]}, corresponding to
+the current trigger from IFO A and B respectively.
+
+\begin{enumerate}
+\item An empty linked list of triggers from each interferometer is created.
+Each input file is read in and the code determines which IFO the triggers in
+the file correspond to. The triggers are appended to the linked list for the
+corresponding interferometer.
+
+\item If there are no triggers read in from either of the interferometers,
+the code exits cleanly.
+
+\item The triggers for each interferometer is sorted by the \texttt{end\_time}
+of the trigger.
+
+\item \texttt{currentTrigger[0]} is set to point to the first trigger from IFO
+A that is after the specified GPS start time for coincidence. If no trigger is
+found after the start time, the code exits cleanly.
+
+\item Loop over each trigger from IFO A that occurs before the specified GPS
+end time for coincidence:
+\begin{enumerate}
+\item \texttt{currentTrigger[1]} is set to point to the first trigger from IFO
+B that is within the time coincidence window, $\delta t$, of
+\texttt{currentTrigger[0]}. If no IFO B trigger exists within this window,
+\texttt{currentTrigger[0]} is incremented to the next trigger from IFO A and
+the loop over IFO A triggers restarts.
+
+\item If the trigger \texttt{currentTrigger[0]} \emph{is, is not} in the
+playground data, start looping over triggers from IFO B.
+\begin{enumerate}
+\item For each trigger from IFO B that is within $\delta t$ of
+\texttt{currentTrigger[0]}, call \\
+\texttt{LALCompareSnglInspiral()} to check if the triggers match as determied
+by the options on the command line. If the trigger match, record them for
+later output as coincident triggers.
+
+\item If the \texttt{currentTrigger[1]} is not within $\delta t$, of
+\texttt{currentTrigger[0]} continue loop over triggers from IFO A.
+\end{enumerate}
+\end{enumerate}
+\end{enumerate}
+
 \item[Author] 
 Patrick Brady
 \end{entry}
