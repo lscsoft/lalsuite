@@ -15,7 +15,7 @@
 #include <lal/Date.h>
 #include <getopt.h>        /* do I still use it ?  */
 #include <lal/FindChirp.h>
-
+#include <gsl/gsl_histogram.h>
 
 #define MAXIFO 2
 #define BANKEFFICIENCY_PARAMS_ROW \
@@ -126,8 +126,10 @@
 #define BANKEFFICIENCY_FASTSIMULATION           0                               /* cheating code (dont use template far from injection; use with care */
 #define BANKEFFICIENCY_FMAXIMIZATION      	0				/* Print SNR function of fendBCV	*/
 #define BANKEFFICIENCY_PRINTOVERLAP             0				/* Print Best Overlap 			*/
-#define BANKEFFICIENCY_PRINTBESTOVERLAP             0				/* Print Best Overlap 			*/
-#define BANKEFFICIENCY_PRINTBESTTEMPLATE             0				/* Print Best Template 			*/
+#define BANKEFFICIENCY_PRINTBESTOVERLAP         0				/* Print Best Overlap 			*/
+#define BANKEFFICIENCY_PRINTBESTTEMPLATE        0				/* Print Best Template 			*/
+#define BANKEFFICIENCY_PRINTSNRHISTO  0				/* Print histogram of the n template correlation. 
+										   Useful with no signal option to see the distribution of false alarm rate */
 
 
 #define BANKEFFICIENCY_PRINTOVERLAP_FILE        "BE_BestOverlap.dat"		/* Print Best Overlap in a file		*/
@@ -233,7 +235,7 @@ typedef struct{
   INT4 lengthFactor;			/* multiply estimated length of filters by that factor */
   INT4 PrintOverlap;		
   INT4 PrintFilter;		
-		
+  INT4 PrintSNRHisto;		
   INT4 PrintBankOverlap;		/* print match of each templates 	*/
   INT4 PrintBank;			/* print bank of templates 		*/
   INT4 PrintBankXml;			/* print bank of templates 		*/
