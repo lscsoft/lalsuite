@@ -80,6 +80,7 @@ LALFindChirpSPTemplate (
   INT4          k          = 0;
   INT4          kmin       = 0;
   INT4          kmax       = 0;
+  CHAR          infomsg[512];
 
   REAL4         distNorm;
   const REAL4   cannonDist = 1.0; /* Mpc */
@@ -173,10 +174,15 @@ LALFindChirpSPTemplate (
   fcTmplt->tmpltNorm = sqrt( (5.0*mu) / 96.0 ) *
     pow( m / (LAL_PI*LAL_PI) , 1.0/3.0 ) *
     pow( LAL_MTSUN_SI / (REAL4) params->deltaT, -1.0/6.0 );
-
   fcTmplt->tmpltNorm *= fcTmplt->tmpltNorm;
-
   fcTmplt->tmpltNorm *= distNorm * distNorm;
+
+  if ( lalDebugLevel & LALINFO )
+  {
+    LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg), 
+        "tmpltNorm = %e\n", fcTmplt->tmpltNorm );
+    LALInfo( status, infomsg );
+  }
 
   /* pN constants */
   c0  = 3.0/(eta*128.0);

@@ -74,6 +74,7 @@ LALFindChirpTDTemplate (
   REAL8         deltaF;
   REAL8         sampleRate;
   const REAL4   cannonDist = 1.0; /* Mpc */
+  CHAR          infomsg[512];
 
   INITSTATUS( status, "LALFindChirpTDTemplate", FINDCHIRPTDTEMPLATEC );
   ATTATCHSTATUSPTR( status );
@@ -185,6 +186,13 @@ LALFindChirpTDTemplate (
   fcTmplt->tmpltNorm *= 2 * LAL_MRSUN_SI / ( cannonDist * 1.0e6 * LAL_PC_SI );
   fcTmplt->tmpltNorm *= params->dynRange;
   fcTmplt->tmpltNorm *= fcTmplt->tmpltNorm;
+
+  if ( lalDebugLevel & LALINFO )
+  {
+    LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg), 
+        "tmpltNorm = %e\n", fcTmplt->tmpltNorm );
+    LALInfo( status, infomsg );
+  }
 
   /* copy the template parameters to the finchirp template structure */
   memcpy( &(fcTmplt->tmplt), tmplt, sizeof(InspiralTemplate) );
