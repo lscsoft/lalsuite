@@ -101,7 +101,7 @@ SnglBurstTable * ring_filter(
           params->dynRangeFac ) );
 
     /* loop over segments */
-    for ( sgmnt = 0; sgmnt < bank->numTmplt; ++sgmnt )
+    for ( sgmnt = 0; sgmnt < segments->numSgmnt; ++sgmnt )
     {
       verbose( "filtering segment %d against template %d", sgmnt, tmplt );
 
