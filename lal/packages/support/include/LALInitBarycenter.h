@@ -41,8 +41,8 @@ NRCSID (LALINITBARYCENTERH,"$Id$");
 
 #define LALINITBARYCENTERH_EEPHFILE 32
 
-#define LALINITBARYCENTERH_MSGEOPEN "Could not open ephemeris file."
-#define LALINITBARYCENTERH_MSGEEPHFILE "Error in reading an ephemeris file."
+#define LALINITBARYCENTERH_MSGEOPEN "Could not open ephemeris file"
+#define LALINITBARYCENTERH_MSGEEPHFILE "Error in reading an ephemeris file"
 /* </lalErrTable> */
 
 /* <lalLaTeX>

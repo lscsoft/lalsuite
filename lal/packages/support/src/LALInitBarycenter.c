@@ -80,9 +80,14 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
     */
 
     /* CHECK THAT fp1 and fp2 are not NULL: */
-    if ( ( fp1 == NULL ) || ( fp2 == NULL ) ) {
-      ABORT (stat, LALINITBARYCENTERH_EOPEN, LALINITBARYCENTERH_MSGEOPEN);
-    }
+    if ( ( fp1 == NULL ) || ( fp2 == NULL ) ) 
+      {
+	CHAR msg[512];
+	LALSnprintf (msg, 512, "%s '%s'\n", LALINITBARYCENTERH_MSGEOPEN, 
+		     fp1 == NULL ? edat->ephiles.earthEphemeris : edat->ephiles.sunEphemeris);
+	msg[511] = 0;
+	ABORT (stat, LALINITBARYCENTERH_EOPEN, msg);
+      }
     
 /*reading first line of each file */
 
