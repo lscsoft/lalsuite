@@ -76,18 +76,18 @@ LALBCVWaveform(
 
   REAL8 f, df;
   REAL8 shift, phi, psi, amp0, amp;
-  REAL8 Sevenby6, Fiveby3, Twoby3, alpha;
+  REAL8 Sevenby6, Fiveby3, Twoby3, alpha_f;
   INT4 n, i;
 
   INITSTATUS(status, "LALBCVWaveform", LALBCVWAVEFORMC);
   ATTATCHSTATUSPTR(status);
 
-  ASSERT (signal,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT (signal,  status,       LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT (signal->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT (params,  status,       LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT (params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT (params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT (params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT (params->fLower > 0, status,     LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT (params->tSampling > 0, status,  LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
   n = signal->length;
   Twoby3 = 2.L/3.L;
@@ -95,7 +95,11 @@ LALBCVWaveform(
   Fiveby3 = 5.L/3.L;
 
   df = params->tSampling/(REAL8)n;
-  alpha = params->alpha / pow(params->fFinal, Twoby3);
+  params->fFinal = params->fCutoff; 
+  alpha_f = params->alpha / pow(params->fCutoff, Twoby3);
+
+
+  /* to do : check that a_f in [0,1]??*/
 
   /*
   totalMass = params->totalMass * LAL_MTSUN_SI;
@@ -117,7 +121,7 @@ LALBCVWaveform(
 
    */
 
-  amp0 = 1.0L;
+  amp0 = params->signalAmplitude;
   /*  Computing BCV waveform */
 
   signal->data[0] = 0.0;
@@ -140,7 +144,7 @@ LALBCVWaveform(
 	  {
           /* What shall we put for sign phi? for uspa it must be "-" */
               psi =  (shift*f + phi + params->psi0*pow(f,-Fiveby3) + params->psi3*pow(f,-Twoby3));
-	      amp = amp0 * (1. - alpha * pow(f,Twoby3)) * pow(f,-Sevenby6);
+	      amp = amp0 * (1. - alpha_f * pow(f,Twoby3)) * pow(f,-Sevenby6);
 	      
               signal->data[i] = (REAL4) (amp * cos(psi));
               signal->data[n-i] = (REAL4) (-amp * sin(psi));
@@ -221,7 +225,7 @@ LALBCVSpinWaveform(
   for(i=1;i<n/2;i++)
   {
 	  f = i*df;
-	  if (f < params->fLower || f > params->fFinal)
+	  if (f < params->fLower || f > params->fCutoff)
 	  {
 	  /* 
 	   * All frequency components below params->fLower and above fn are set to zero  
@@ -245,6 +249,9 @@ LALBCVSpinWaveform(
               signal->data[n-i] = (REAL4) (-amp * sin(psi));
           }
   }
+
+  params->fFinal = params->fCutoff;
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }

@@ -79,7 +79,7 @@ None
 #define  INSPIRALTEMPLATE_FCUTOFF 	1000.
 #define  INSPIRALTEMPLATE_FLOWER 	40.
 #define  INSPIRALTEMPLATE_TSAMPLING 	2048.
-#define  INSPIRALTEMPLATE_DISTANCE 	1.  
+#define  INSPIRALTEMPLATE_DISTANCE 	1.   /*MPC*/
 #define  INSPIRALTEMPLATE_SIGNALAMPLITUDE 1.
 #define  INSPIRALTEMPLATE_STARTPHASE    0.
 #define  INSPIRALTEMPLATE_STARTTIME     0.
@@ -126,74 +126,87 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
     {
       if (strcmp(argv[i], "--approximant")==0)
 	{
-	  if (strcmp(argv[++i],"TaylorT1")==0)
-	    params->approximant = TaylorT1;
-	  else if (strcmp(argv[i],"TaylorT2")==0)
-	    params->approximant = TaylorT2;
-	  else if (strcmp(argv[i],"TaylorT3")==0)
-	    params->approximant = TaylorT3;
-	  else if (strcmp(argv[i],"TaylorF1")==0)
-	    params->approximant = TaylorF1;
-	  else if (strcmp(argv[i],"TaylorF2")==0)
-	    params->approximant = TaylorF2;
-	  else if (strcmp(argv[i],"PadeT1")==0)
-	    params->approximant = PadeT1;
-	  else if (strcmp(argv[i],"PadeF1")==0)
-	    params->approximant = PadeF1;
-	  else if (strcmp(argv[i],"EOB")==0)
-	    params->approximant = EOB;
-	  else if (strcmp(argv[i],"BCV")==0)
+	  params->massChoice  = m1Andm2;
+	  if (strcmp(argv[++i],"TaylorT1")==0){
+	    params->massChoice  = psi0Andpsi3;}
+	  else if (strcmp(argv[i],"TaylorT2")==0){
+	    params->approximant = TaylorT2;}
+	  else if (strcmp(argv[i],"TaylorT3")==0){
+	    params->approximant = TaylorT3;}
+	  else if (strcmp(argv[i],"TaylorF1")==0){
+	    params->approximant = TaylorF1;}
+	  else if (strcmp(argv[i],"TaylorF2")==0){
+	    params->approximant = TaylorF2;}
+	  else if (strcmp(argv[i],"PadeT1")==0){
+	    params->approximant = PadeT1;}
+	  else if (strcmp(argv[i],"PadeF1")==0){
+	    params->approximant = PadeF1;}
+	  else if (strcmp(argv[i],"EOB")==0){
+	    params->approximant = EOB;}
+	  else if (strcmp(argv[i],"BCV")==0){
 	    params->approximant = BCV;
-	  else if (strcmp(argv[i],"BCVSpin")==0)
+	    params->massChoice  = psi0Andpsi3;
+	  }
+	  else if (strcmp(argv[i],"BCVSpin")==0){
+	    params->massChoice  = psi0Andpsi3;
 	    params->approximant = BCVSpin;
-	  else if (strcmp(argv[i],"SpinTaylorT3")==0)
-	    params->approximant = SpinTaylorT3;	 
-	  else params->approximant = TaylorT1; /*is it correct ? */
+	  }
+	  else if (strcmp(argv[i],"SpinTaylorT3")==0){
+	    params->approximant = SpinTaylorT3; }
+	  else {params->approximant = TaylorT1;} /*is it correct ? */
 	}/* SpinTaylor is not available here only for inject package*/
-      else if (strcmp(argv[i], "--order")==0)	       
-	params->order = atoi(argv[++i]);
-      else if (strcmp(argv[i],"--mass1")==0)
-	params->mass1 = atof(argv[++i]); 
-      else if (strcmp(argv[i],"--mass2")==0)
-	params->mass2 = atof(argv[++i]); 
-      else if (strcmp(argv[i],"--fCutoff")==0)
-	params->fCutoff = atof(argv[++i]);
-      else if (strcmp(argv[i],"--fLower")==0)
-	params->fLower = atof(argv[++i]);
-      else if (strcmp(argv[i],"--tSampling")==0)
-	params->tSampling = atof(argv[++i]); 
-      else if (strcmp(argv[i],"--signalAmplitude")==0)
-	params->signalAmplitude = atof(argv[++i]); 
-      else if (strcmp(argv[i],"--startPhase")==0)
-	params->signalAmplitude = atof(argv[++i]); 
-      else if (strcmp(argv[i],"--startTime")==0)
-	params->startTime = atof(argv[++i]); 
-      else if (strcmp(argv[i],"--Theta")==0)
-	params->Theta = atof(argv[++i]); 
-      else if (strcmp(argv[i],"--Zeta2")==0)
-	params->Zeta2 = atof(argv[++i]);      
-      else if (strcmp(argv[i],"--alpha")==0)
-	params->alpha = atof(argv[++i]); 
-      else if (strcmp(argv[i],"--alpha1")==0)
-	params->alpha1 = atof(argv[++i]); 
-      else if (strcmp(argv[i],"--alpha2")==0)
-	params->alpha2 = atof(argv[++i]); 
-      else if (strcmp(argv[i],"--beta")==0)
-	params->beta = atof(argv[++i]); 	  
-      else if (strcmp(argv[i],"--psi0")==0)
-	params->psi0 = atof(argv[++i]); 
-      else if (strcmp(argv[i],"--psi3")==0)
-	params->psi3 = atof(argv[++i]); 
-      else if (strcmp(argv[i],"--inclination")==0)
-	params->inclination = atof(argv[++i]); 
-      else if (strcmp(argv[i],"--orbitTheta0")==0)
-	params->orbitTheta0 = atof(argv[++i]); 
-      else if (strcmp(argv[i],"--orbitPhi0")==0)
-	params->orbitPhi0 = atof(argv[++i]); 
-      else if (strcmp(argv[i],"--sourceTheta")==0)
-	params->sourceTheta = atof(argv[++i]); 	  
-      else if (strcmp(argv[i],"--sourcePhi")==0)
-	params->sourcePhi = atof(argv[++i]); 
+      else if (strcmp(argv[i], "--order")==0){
+	params->order = atoi(argv[++i]);}
+      else if (strcmp(argv[i],"--mass1")==0){
+	params->mass1 = atof(argv[++i]);}
+      else if (strcmp(argv[i],"--mass2")==0){
+	params->mass2 = atof(argv[++i]);}
+      else if (strcmp(argv[i],"--massChoice")==0){
+	if (strcmp(argv[++i],"masses")==0){
+	  params->massChoice = m1Andm2;}
+	else if (strcmp(argv[i],"psi")==0){ 
+	  params->massChoice = psi0Andpsi3;}
+      }
+      else if (strcmp(argv[i],"--fCutoff")==0){
+	params->fCutoff = atof(argv[++i]);}
+      else if (strcmp(argv[i],"--fFinal")==0){
+	params->fFinal = atof(argv[++i]);}
+      else if (strcmp(argv[i],"--fLower")==0){
+	params->fLower = atof(argv[++i]);}
+      else if (strcmp(argv[i],"--tSampling")==0){
+	params->tSampling = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--distance")==0){
+	params->distance = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--startPhase")==0){
+	params->signalAmplitude = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--startTime")==0){
+	params->startTime = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--Theta")==0){
+	params->Theta = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--Zeta2")==0){
+	params->Zeta2 = atof(argv[++i]); } 
+      else if (strcmp(argv[i],"--alpha")==0){
+	params->alpha = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--alpha1")==0){
+	params->alpha1 = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--alpha2")==0){
+	params->alpha2 = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--beta")==0){
+	params->beta = atof(argv[++i]); }  
+      else if (strcmp(argv[i],"--psi0")==0){
+	params->psi0 = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--psi3")==0){
+	params->psi3 = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--inclination")==0){
+	params->inclination = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--orbitTheta0")==0){
+	params->orbitTheta0 = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--orbitPhi0")==0){
+	params->orbitPhi0 = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--sourceTheta")==0){
+	params->sourceTheta = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--sourcePhi")==0){
+	params->sourcePhi = atof(argv[++i]); }
       /* we need also the spin .Has to be checked*/
       else if (strcmp(argv[i],"--spin")==0)
 	{	 
@@ -208,14 +221,14 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	  params->spin2[2]= atof(argv[++i]);
 	  
 	}
-      else if (strcmp(argv[i],"--eccentricity")==0)
-	params->sourcePhi = atof(argv[++i]); 
-      else i++; /* if the option is not recongnized, we skip the next 
+      else if (strcmp(argv[i],"--eccentricity")==0){
+	params->sourcePhi = atof(argv[++i]); }
+       /* if the option is not recongnized, we skip the next 
 		   argument and go ahead. We don't want to quit */      
       i++;       
    }
   
-  LALInspiralITStructureCheck(status, *params);
+  LALInspiralITStructureCheck(status->statusPtr, *params);
   CHECKSTATUSPTR(status);
   
   DETATCHSTATUSPTR(status);
@@ -271,11 +284,45 @@ void LALInspiralITStructureCheck(LALStatus *status,
 				 InspiralTemplate params)
 /* </lalVerbatim> */
 {
-  if (params.approximant == PadeF1) {
-    ABORT(status,111,"Approximant not implemented" );
+
+  INITSTATUS( status, "LALInspiralITSStrucutreCheck", LALINSPIRALPARSEPARAMETERSC);
+  ATTATCHSTATUSPTR( status );
+
+  switch (params.approximant)
+    {
+    case BCV:
+      if (params.alpha < 0) {  
+	ABORT(status, LALINSPIRALH_EALPHA, LALINSPIRALH_MSGEALPHA);
+      }
+      else if (params.fCutoff < 0){
+	ABORT(status, LALINSPIRALH_EFCUTOFF,  LALINSPIRALH_MSGEFCUTOFF);
+      }
+      else if (params.psi0 < 0) {
+	ABORT(status, LALINSPIRALH_EPSI0,  LALINSPIRALH_MSGEPSI0);
+      }
+      else if (params.psi3 > 0) {
+	ABORT(status, LALINSPIRALH_EPSI3,  LALINSPIRALH_MSGEPSI3);
+      }
+       
+      break;
+    case PadeF1:    
+      ABORT(status, LALINSPIRALH_EAPPROXIMANT, LALINSPIRALH_MSGEAPPROXIMANT );
+      break;
+    case TaylorT1: 
+    case TaylorT2: 
+    case TaylorT3:
+    case BCVSpin:
+    case PadeT1:
+    case TaylorF1:
+    case EOB:
+    case TaylorF2:
+    case SpinTaylorT3:
+    case SpinTaylor:
+      break;
   }
-  
-  RETURN(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);    
 }
 
 /* <lalVerbatim file="LALInspiralITStructurePrintCP"> */
@@ -284,49 +331,51 @@ void LALInspiralITStructurePrint(LALStatus *status,
 /* </lalVerbatim> */
 {
   /* later */
-  printf("approximant = %-15.12d\n", params.approximant);
-  printf("order       = %-15.12d\n", params.order);
-  printf("mass1       = %-15.12f\n", params.mass1); 
-  printf("mass2       = %-15.12f\n", params.mass2);
-  printf("fcutoff     = %-15.12f\n", params.fCutoff);
-  printf("fLower      = %-15.12f\n", params.fLower);
-  printf("tsampling   = %-15.12f\n", params.tSampling);
-  printf("distance    = %-15.12f\n", params.distance);
-  printf("startPhase  = %-15.12f\n", params.startPhase);
-  printf("startTime   = %-15.12f\n", params.startTime);
+  printf("# approximant = %-15.12d\n", params.approximant);
+  printf("# order       = %-15.12d\n", params.order);
+  printf("# mass1       = %-15.12f\n", params.mass1); 
+  printf("# mass2       = %-15.12f\n", params.mass2);
+  printf("# fcutoff     = %-15.12f\n", params.fCutoff);
+  printf("# fLower      = %-15.12f\n", params.fLower);
+  printf("# tsampling   = %-15.12f\n", params.tSampling);
+  printf("# distance    = %-15.12f\n", params.distance);
+  printf("# startPhase  = %-15.12f\n", params.startPhase);
+  printf("# startTime   = %-15.12f\n", params.startTime);
 
-  printf("zeta2       = %-15.12f\n", params.Zeta2);
-  printf("omegaS      = %-15.12f\n", params.OmegaS);
+  printf("# zeta2       = %-15.12f\n", params.Zeta2);
+  printf("# omegaS      = %-15.12f\n", params.OmegaS);
 
-  printf("alpha       = %-15.12f\n", params.alpha);
-  printf("psi0        = %-15.12f\n", params.psi0);
-  printf("psi3        = %-15.12f\n", params.psi3);
-  printf("alpha1      = %-15.12f\n", params.alpha1);
-  printf("alpha2      = %-15.12f\n", params.alpha2);
-  printf("beta        = %-15.12f\n", params.beta);
+  printf("# alpha       = %-15.12f\n", params.alpha);
+  printf("# psi0        = %-15.12f\n", params.psi0);
+  printf("# psi3        = %-15.12f\n", params.psi3);
+  printf("# alpha1      = %-15.12f\n", params.alpha1);
+  printf("# alpha2      = %-15.12f\n", params.alpha2);
+  printf("# beta        = %-15.12f\n", params.beta);
 
-  printf("inclination = %-15.12f\n", params.inclination);
-  printf("orbitTheta0 = %-15.12f\n", params.orbitTheta0);
-  printf("orbitPhi0   = %-15.12f\n", params.orbitPhi0);
-  printf("sourceTheta = %-15.12f\n", params.sourceTheta);
-  printf("sourcePhi   = %-15.12f\n", params.sourcePhi);
+  printf("# inclination = %-15.12f\n", params.inclination);
+  printf("# orbitTheta0 = %-15.12f\n", params.orbitTheta0);
+  printf("# orbitPhi0   = %-15.12f\n", params.orbitPhi0);
+  printf("# sourceTheta = %-15.12f\n", params.sourceTheta);
+  printf("# sourcePhi   = %-15.12f\n", params.sourcePhi);
 
-  printf("eccentricity= %-15.12f\n", params.eccentricity);
+  printf("# eccentricity= %-15.12f\n", params.eccentricity);
 
 
 
 /* Paramters which are computed using LALInspiralParameterCalc */
 
-  printf("chirpMass   = %-15.12f\n", params.chirpMass); 
-  printf("eta         = %-15.12f\n", params.eta);
-  printf("totalMass   = %-15.12f\n", params.totalMass); 
-  printf("fFinal      = %-15.12f\n", params.fFinal);
-  printf("t0          = %-15.12f\n", params.t0); 
-  printf("t2          = %-15.12f\n", params.t2); 
-  printf("t3          = %-15.12f\n", params.t3); 
-  printf("t4          = %-15.12f\n", params.t4); 
-  printf("t5          = %-15.12f\n", params.t5); 
-  printf("tC          = %-15.12f\n", params.tC); 
+  printf("# chirpMass   = %-15.12f\n", params.chirpMass); 
+  printf("# eta         = %-15.12f\n", params.eta);
+  printf("# totalMass   = %-15.12f\n", params.totalMass); 
+  printf("# fFinal      = %-15.12f\n", params.fFinal);
+  printf("# t0          = %-15.12f\n", params.t0); 
+  printf("# t2          = %-15.12f\n", params.t2); 
+  printf("# t3          = %-15.12f\n", params.t3); 
+  printf("# t4          = %-15.12f\n", params.t4); 
+  printf("# t5          = %-15.12f\n", params.t5); 
+  printf("# tC          = %-15.12f\n", params.tC); 
+
+  printf("# massChoice  = %-15.12d\n", params.massChoice); 
 
   RETURN(status);
 }
@@ -390,25 +439,25 @@ void LALInspiralITStructureHelp()
 {
 
   fprintf(stderr,"InspiralTemplate Structure; parsing arguments\n");
-  fprintf(stderr,"--approximant \n");
-  fprintf(stderr,"--order       \n");
-  fprintf(stderr,"--mass1       \n"); 
-  fprintf(stderr,"--mass2       \n");
+  fprintf(stderr,"--approximant (TaylorT1, TaylorT2, TaylorT3, EOB, BCV, BCVSpin, PadeT1)\n");
+  fprintf(stderr,"--order       (0, 1, 2, 3, 4, 5, 6 (i.e. 4==twoPN)\n");
+  fprintf(stderr,"--mass1       (in solar mass)\n"); 
+  fprintf(stderr,"--mass2       (in solar mass)\n");
   fprintf(stderr,"--fcutoff     \n");
   fprintf(stderr,"--fLower      \n");
   fprintf(stderr,"--tsampling   \n");
   fprintf(stderr,"--distance    \n");
   fprintf(stderr,"--startPhase  \n");
   fprintf(stderr,"--startTime   \n");
-  fprintf(stderr,"--zeta2       \n");
-  fprintf(stderr,"--omegaS      \n");
+  fprintf(stderr,"--zeta2       (EOB 3PN)\n");
+  fprintf(stderr,"--omegaS      (EOB 3PN)\n");
 
-  fprintf(stderr,"--alpha       \n");
-  fprintf(stderr,"--psi0        \n");
-  fprintf(stderr,"--psi3        \n");
-  fprintf(stderr,"--alpha1      \n");
-  fprintf(stderr,"--alpha2      \n");
-  fprintf(stderr,"--beta        \n");
+  fprintf(stderr,"--alpha       (BCV must be > 0)\n");
+  fprintf(stderr,"--psi0        (BCV must be > 0)\n");
+  fprintf(stderr,"--psi3        (BCV must be < 0)\n");
+  fprintf(stderr,"--alpha1      (BCVSPin)\n");
+  fprintf(stderr,"--alpha2      (BCVSPin)\n");
+  fprintf(stderr,"--beta        (BCVSPIN)\n");
 
   fprintf(stderr,"--inclination \n");
   fprintf(stderr,"--orbitTheta0 \n");
