@@ -1,3 +1,4 @@
+/* -*- C -*- */
 /******** <lalVerbatim file="VectorIndexRangeCV"> ********
 Author: David Chin <dwchin@umich.edu> +1-734-709-9119
 $Id$
@@ -15,7 +16,7 @@ $Id$
 \subsection*{Uses}
  
 \begin{itemize}
-\item \texttt{LALDCreateVector}
+\item \texttt{LAL*CreateVector}
 \end{itemize}
 
 \subsection*{Notes}
