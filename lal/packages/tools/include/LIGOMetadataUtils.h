@@ -407,7 +407,19 @@ XLALCompareSnglBurstByStartTime(
 );
 
 int
+XLALCompareSnglBurstByTime(
+	const SnglBurstTable **a,
+	const SnglBurstTable **b
+);
+
+int
 XLALCompareSnglBurstByLowFreq(
+	const SnglBurstTable **a,
+	const SnglBurstTable **b
+);
+
+int
+XLALCompareSnglBurstByFreq(
 	const SnglBurstTable **a,
 	const SnglBurstTable **b
 );
@@ -420,26 +432,30 @@ XLALCompareSnglBurstByStartTimeAndLowFreq(
 
 void
 LALCompareSnglBurst(
-    LALStatus             *status,
-    SnglBurstTable        *aPtr,
-    SnglBurstTable        *bPtr,
-    SnglBurstAccuracy     *params
-    );
+	LALStatus *status,
+	const SnglBurstTable *a,
+	const SnglBurstTable *b,
+	int *match
+);
 
 void
 LALCompareSimBurstAndSnglBurst(
-    LALStatus             *status,
-    SimBurstTable         *aPtr,
-    SnglBurstTable        *bPtr,
-    SnglBurstAccuracy     *params
-    );
+	LALStatus *status,
+	const SimBurstTable *a,
+	const SnglBurstTable *b,
+	int *match
+);
 
 void
-LALClusterSnglBurstTable (
-	      LALStatus        *status,
-              SnglBurstTable   *burstEvent,
-	      INT4             *nevents
-	      );
+XLALClusterSnglBurstTable(
+	SnglBurstTable  *list
+);
+
+void
+LALClusterSnglBurstTable(
+	LALStatus       *status,
+	SnglBurstTable  *list
+);
 
 #if 0
 <lalLaTeX>
