@@ -518,6 +518,9 @@ int main(int argc, char **argv)
 	MetadataTable myTable;
 	LIGOLwXMLStream xmlStream;
 
+	/* switch variable */
+	int c;
+
 	/*
 	 * Initialize things.
 	 */
@@ -530,7 +533,6 @@ int main(int argc, char **argv)
 	 */
 
 	set_option_defaults(&options);
-	int c;
 	while (1) {
 		/* getopt arguments */
 		static struct option long_options[] = {
