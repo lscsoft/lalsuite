@@ -1,0 +1,66 @@
+
+\subsection{Module \texttt{HeapSort.c}}
+
+Sorts, indexes, or ranks vector elements using the heap sort
+algorithm.
+
+\subsubsection{Prototypes}
+\vspace{0.1in}
+\input{HeapSortD}
+
+\subsubsection{Description}
+
+These routines sort a vector \verb@*data@ (of type \verb@REAL4Vector@
+or \verb@REAL8Vector@) into ascending order using the in-place
+heapsort algorithm, or construct an index vector \verb@*index@ that
+indexes \verb@*data@ in increasing order (leaving \verb@*data@
+unchanged), or construct a rank vector \verb@*rank@ that gives the
+rank order of the corresponding \verb@*data@ element.
+
+The relationship between sorting, indexing, and ranking can be a bit
+confusing.  One way of looking at it is that the original array is
+ordered by index, while the sorted array is ordered by rank.  The
+index array gives the index as a function of rank; i.e.\ if you're
+looking for a given rank (say the 0th, or smallest element), the index
+array tells you where to look it up in the unsorted array:
+\begin{verbatim}
+unsorted_array[index[i]] = sorted_array[i]
+\end{verbatim}
+The rank array gives the rank as a function of index; i.e.\ it tells
+you where a given element in the unsorted array will appear in the
+sorted array:
+\begin{verbatim}
+unsorted_array[j] = sorted_array[rank[j]]
+\end{verbatim}
+Clearly these imply the following relationships, which can be used to
+construct the index array from the rank array or vice-versa:
+\begin{verbatim}
+index[rank[j]] = j
+rank[index[i]] = i
+\end{verbatim}
+
+\subsubsection{Algorithm}
+
+These routines use the standard heap sort algorithm described in
+Sec.~8.3 of Ref.~\cite{ptvf:1992}.
+
+The \verb@SHeapSort()@ and \verb@DHeapSort()@ routines are entirely
+in-place, with no auxiliary storage vector.  The \verb@SHeapIndex()@
+and \verb@DHeapIndex()@ routines are also technically in-place, but
+they require two input vectors (the data vector and the index vector),
+and leave the data vector unchanged.  The \verb@SHeapRank()@ and
+\verb@DHeapRank()@ routines require two input vectors (the data and
+rank vectors), and also allocate a temporary index vector internally;
+these routines are therefore the most memory-intensive.  All of these
+algorithms are $N\log_2(N)$ algorithms, regardless of the ordering of
+the initial dataset.
+
+
+\subsubsection{Uses}
+\begin{verbatim}
+I4CreateVector()
+I4DestroyVector()
+\end{verbatim}
+
+\subsubsection{Notes}
+

@@ -1,18 +1,9 @@
 ## Process this file with automake to produce Makefile.in
 noinst_LIBRARIES = liblal.a
 liblal_a_SOURCES = \
-        CCVectorDivide.c \
-        CCVectorMultiply.c \
-        CCVectorMultiplyConjugate.c \
-        CVectorAbs.c \
-        ZZVectorDivide.c   \
-        ZZVectorMultiply.c \
-        ZZVectorMultiplyConjugate.c \
-        ZVectorAbs.c \
-        SCVectorMultiply.c \
-        SSVectorMultiply.c \
-        DZVectorMultiply.c \
-        DDVectorMultiply.c
+        BilinearTransform.c      CreateZPGFilter.c        IIRFilter.c \
+        ButterworthTimeSeries.c  DestroyIIRFilter.c       IIRFilterVector.c \
+        CreateIIRFilter.c        DestroyZPGFilter.c       IIRFilterVectorR.c
 
 LIBLAL = $(top_srcdir)/lib/liblal.a
 INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include

@@ -1,0 +1,92 @@
+
+\subsection{Module \texttt{BilinearTransform.c}}
+
+Transforms the complex frequency coordinate of a ZPG filter.
+
+\subsubsection{Prototypes}
+\vspace{0.1in}
+\input{BilinearTransformD}
+
+\subsubsection{Description}
+
+These functions perform an in-place bilinear transformation on an
+object \verb@*filter@ of type \verb@<datatype>ZPGFilter@, transforming
+from $w$ to $z=(1+iw)/(1-iw)$.  Care is taken to ensure that zeros and
+poles at $w=\infty$ are correctly transformed to $z=-1$, and zeros and
+poles at $w=-i$ are correctly transformed to $z=\infty$.  In addition
+to simply relocating the zeros and poles, residual factors are also
+incorporated into the gain of the filter (i.e.\ the leading
+coefficient of the rational function).
+
+\subsubsection{Algorithm}
+
+The vectors \verb@filter->zeros@ and \verb@filter->poles@ only record
+those zeros and poles that have finite value.  If one includes the
+point $\infty$ on the complex plane, then a rational function always
+has the same number of zeros and poles: a number \verb@num@ that is
+the larger of \verb@z->zeros->length@ or \verb@z->poles->length@.  If
+one or the other vector has a smaller length, then after the
+transformation that vector will receive additional elements, with a
+complex value of $z=-1$, to bring its length up to \verb@num@.
+However, each vector will then \emph{lose} those elements that
+previously had values $w=-i$, (which are sent to $z=\infty$,) thus
+possibly decreasing the length of the vector.  These routines handle
+this by simply allocating a new vector for the transformed data, and
+freeing the old vector after the transformation.
+
+When transforming a zero $w_k$ on the complex plane, one makes use of
+the identity:
+$$
+(w - w_k) = -(w_k + i)\times\frac{z-z_k}{z+1} \; ,
+$$
+and similarly, when transforming a pole at $w_k$,
+$$
+(w - w_k)^{-1} = -(w_k + i)^{-1}\times\frac{z+1}{z-z_k} \; ,
+$$
+where $z=(1+iw)/(1-iw)$ and $z_k=(1+iw_k)/(1-iw_k)$.  If there are an
+equal number of poles and zeros being transformed, then the factors of
+$z+1$ will cancel; otherwise, the remaining factors correspond to the
+zeros or poles at $z=-1$ brought in from $w=\infty$.  The factor
+$(z-z_k)$ represents the transformation of the zero or pole at $w_k$.
+The important factor to note, though, is the factor $-(w_k+i)^{\pm1}$.
+This factor represents the change in the gain \verb@filter->gain@.
+When $w_k=-i$, the transformation is slightly different:
+$$
+(w + i) = \frac{2i}{z+1} \; ;
+$$
+thus the gain correction factor is $2i$ (rather than 0) in this case.
+
+The algorithms in this module computes and stores all the gain
+correction factors before applying them to the gain.  The correction
+factors are sorted in order of absolute magnitude, and are multiplied
+together in small- and large-magnitude pairs.  In this way one reduces
+the risk of overrunning the floating-point dynamical range during
+intermediate calculations.
+
+As a similar precaution, the routines in this module use the algorithm
+discussed in the \verb@VectorOps@ package whenever they perform
+complex division, to avoid intermediate results that mey be the
+product of two large numbers.  When transforming $z=(1+iw)/(1-iw)$,
+these routines also test for special cases (such as $w$ purely
+imaginary) that have qualitatively significant results ($z$ purely
+real), so that one doesn't end up with, for instance, an imaginary
+part of $10^{-12}$ instead of 0.
+
+\subsubsection{Uses}
+\begin{verbatim}
+I4CreateVector()
+SCreateVector()
+DCreateVector()
+CCreateVector()
+ZCreateVector()
+I4DestroyVector()
+SDestroyVector()
+DDestroyVector()
+CDestroyVector()
+ZDestroyVector()
+SHeapIndex()
+DHeapIndex()
+\end{verbatim}
+
+\subsubsection{Notes}
+

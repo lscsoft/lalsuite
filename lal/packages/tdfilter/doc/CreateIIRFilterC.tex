@@ -1,0 +1,74 @@
+
+\subsection{Module \texttt{CreateIIRFilter.c}}
+
+Creates IIR filter objects.
+
+\subsubsection{Prototypes}
+\vspace{0.1in}
+\input{CreateIIRFilterD}
+
+\subsubsection{Description}
+
+These functions create an object \verb@**output@ of type
+\verb@<datatype>IIRFilter@, where \verb@<datatype>@ is \verb@REAL4@ or
+\verb@REAL8@.  The filter coefficients are computed from the zeroes,
+poles, and gain of an input object \verb@*input@ of type
+\verb@COMPLEX8ZPGFilter@ or \verb@COMPLEX16ZPGFilter@, respectively.
+The ZPG filter should express the factored transfer function in the
+$z=\exp(2\pi if)$ plane.  Initially the output handle must be a valid
+handle (\verb@output@$\neq$\verb@NULL@) but should not point to an
+existing object (\verb@*output@=\verb@NULL@)
+
+\subsubsection{Algorithm}
+
+An IIR filter is a real time-domain filter, which imposes certain
+constraints on the zeros, poles, and gain of the filter transfer
+function.  The function \verb@Create<datatype>IIRFilter()@ deals with
+the constraints either by aborting if they are not met, or by
+adjusting the filter response so that they are met.  In the latter
+case, warning messages will be issued if the external parameter
+\verb@debuglevel@ is 1 or more.  The specific constraints, and how
+they are dealt with, are as follows:
+
+First, the filter must be \emph{causal}; that is, the output at any
+time can be generated entirely from the input at previous times.  In
+practice this means that the number of (finite) poles in the $z$ plane
+must equal or exceed the number of (finite) zeros.  If this is not the
+case, \verb@Create<datatype>IIRFilter()@ will add additional poles at
+$z=0$.  Effectively this is just adding a delay to the filter response
+in order to make it causal.
+
+Second, the filter should be \emph{stable}, which means that all poles
+should be located on or within the circle $|z|=1$.  This is not
+enforced by \verb@Create<datatype>IIRFilter()@, which can be used to
+make unstable filters; however, warnings will be issued if
+\verb@debuglevel@ is 1 or more.  (In some sense the first condition is
+a special case of this one, since a transfer function with more zeros
+than poles actually has corresponding poles at infinity.)
+
+Third, the filter must be \emph{physically realizable}; that is, the
+transfer function should expand to a rational function of $z$ with
+real coefficients.  Necessary and sufficient conditions for this are
+that the gain be real, and that all zeros and poles either be real or
+come in complex conjugate pairs.  The routine
+\verb@Create<datatype>IIRFilter()@ enforces this by using only the
+real part of the gain, and only the real or positive-imaginary zeros
+and poles; it assumes that the latter are paired with
+negative-imaginary conjugates.  The routine will abort if this
+assumption results in a change in the given number of zeros or poles,
+but will otherwise simply modify the filter response.  This allows
+\verb@debuglevel@=0 runs to proceed without lengthy and usually
+unnecessary error trapping; when \verb@debuglevel@ is 1 or more, the
+routine checks to make sure that each nonreal zero or pole does in
+fact have a complex-conjugate partner.
+
+\subsubsection{Uses}
+\begin{verbatim}
+debuglevel
+LALMalloc()
+SCreateVector()
+DCreateVector()
+\end{verbatim}
+
+\subsubsection{Notes}
+
