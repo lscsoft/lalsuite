@@ -379,9 +379,9 @@ LALUTCtoGPS (LALStatus                *status,
              const LALLeapSecAccuracy *pAccuracy);
 
 /* The following is from S.J. Berukoff, included at his request */
-/* begin lalLaTeX
+/* <lalLaTeX>
 \newpage\input{GPStoFloatC}
-end /lalLaTeX */
+</lalLaTeX> */
 void LALGPStoFloat (LALStatus *,
                      REAL8     *, 
                      LIGOTimeGPS *);

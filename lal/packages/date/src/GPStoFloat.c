@@ -24,7 +24,7 @@ This modules contains two routines, one of which converts from
 \texttt{LIGOTimeGPS} to \texttt{REAL8}, and the other, from 
 \texttt{REAL8} to \texttt{LIGOTimeGPS}.  Accuracy is on par with what one
 expects from a typical IEEE-compliant machine epsilon; thus, conversion 
-into the \texttt{REAL8} values incurs an error of approximately 1.e^{-7}.
+into the \texttt{REAL8} values incurs an error of approximately 1.e-7.
 
 \subsubsection*{Algorithm}
 
