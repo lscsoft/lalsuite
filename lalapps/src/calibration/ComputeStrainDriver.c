@@ -23,6 +23,8 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <time.h>
 #include <glob.h>
 #include <errno.h>
+#include <getopt.h>
+#include <stdarg.h>
 
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
@@ -39,6 +41,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/ConfigFile.h>
+#include <lal/TimeSeries.h>
 
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -60,6 +63,8 @@ struct CommandLineArgsTag {
   REAL8 D0Im;              /* Imaginary part of digital filter at cal line freq. */
   INT4 GPSStart;           /* Start GPS time for the segment to be calibrated */
   INT4 GPSEnd;             /* End GPS time for the segment to be calibrated */
+  INT4 testsensing;
+  INT4 testactuation;
   char *FrCacheFile;       /* Frame cache file for corresponding time */
   char *exc_chan;          /* excitation channel name */    
   char *darm_chan;         /* darm channel name */ 
@@ -72,15 +77,18 @@ struct CommandLineArgsTag {
 
 /* GLOBAL VARIABLES */
 
+
 StrainIn InputData;
 StrainOut OutputData;
 INT4 duration;
 LIGOTimeGPS gpsStartepoch;
 
 static LALStatus status;
-INT4 lalDebugLevel=3;
+INT4 lalDebugLevel=0;
 FrCache *framecache;                                           /* frame reading variables */
 FrStream *framestream=NULL;
+char ifo[2];
+char site[1];
 
 /***************************************************************************/
 
@@ -105,20 +113,66 @@ int FreeMem(void);
 
 int main(int argc,char *argv[])
 {
-  int p;
+#define FRAMETYPE "H1_RDS_C01_LX"
+#define CHANNELH "H1:Calibrated-Strain"
+#define CHANNELHC "H1:Control-Strain"
+#define CHANNELHR "H1:Residual-Strain"
+#define CHANNELA "H1:Alpha"
+#define CHANNELB "H1:Beta"
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
   if (ReadData(CommandLineArgs)) return 2;
   if (ReadFiltersFile(CommandLineArgs)) return 3;
   
-/*   LALComputeStrain(&status, &OutputData, &InputData); */
-/*   TESTSTATUS( &status ); */
+  LALComputeStrain(&status, &OutputData, &InputData);
+  TESTSTATUS( &status );
 
   if (WriteFiltersFile(CommandLineArgs)) return 4;
 
-/*   for (p=0; p < (INT4) OutputData.h.data->length; p++) { */
-/*      fprintf(stdout,"%e %1.17e\n",p*OutputData.h.deltaT,OutputData.h.data->data[p]);  */
-/*   } */
+  LALResizeREAL8TimeSeries(&status, &(OutputData.hR), (int)(InputData.wings/OutputData.hR.deltaT),
+			   OutputData.hR.data->length-2*(UINT4)(InputData.wings/OutputData.hR.deltaT));
+  TESTSTATUS( &status );
+  LALResizeREAL8TimeSeries(&status, &(OutputData.hC), (int)(InputData.wings/OutputData.hC.deltaT),
+			   OutputData.hC.data->length-2*(UINT4)(InputData.wings/OutputData.hC.deltaT));
+  TESTSTATUS( &status );
+  LALResizeREAL8TimeSeries(&status, &(OutputData.h), (int)(InputData.wings/OutputData.h.deltaT),
+			   OutputData.h.data->length-2*(UINT4)(InputData.wings/OutputData.h.deltaT));
+  TESTSTATUS( &status );
+
+  strncpy( OutputData.hR.name, CHANNELHR, sizeof( OutputData.hR.name ) );
+  strncpy( OutputData.hC.name, CHANNELHC, sizeof( OutputData.hC.name ) );
+  strncpy( OutputData.h.name,  CHANNELH, sizeof( OutputData.h.name  ) );
+
+  if (CommandLineArgs.testsensing)
+    {
+        
+      memset(site, 0, sizeof(site));
+      memcpy(site, CommandLineArgs.asq_chan, sizeof(site));
+      {
+	FrOutPar opar = { site, FRAMETYPE, ProcDataChannel, 1, 0, 2 };
+	
+	LALFrWriteREAL8TimeSeries( &status, &OutputData.hR, &opar );
+	TESTSTATUS( &status );
+      }
+    }else if(CommandLineArgs.testactuation){      
+      memset(site, 0, sizeof(site));
+      memcpy(site, CommandLineArgs.asq_chan, sizeof(site));
+      {
+	FrOutPar opar = { site, FRAMETYPE, ProcDataChannel, 1, 0, 2 };
+	
+	LALFrWriteREAL8TimeSeries( &status, &OutputData.hC, &opar );
+	TESTSTATUS( &status );
+      }
+    }else{
+      memset(site, 0, sizeof(site));
+      memcpy(site, CommandLineArgs.asq_chan, sizeof(site));
+      {
+	FrOutPar opar = { site, FRAMETYPE, ProcDataChannel, 1, 0, 2 };
+	
+	LALFrWriteREAL8TimeSeries( &status, &OutputData.h, &opar );
+	TESTSTATUS( &status );
+      }
+    }
 
   if(FreeMem()) return 8;
 
@@ -214,6 +268,16 @@ static FrChanIn chanin_exc;
   LALDCreateVector(&status,&OutputData.h.data,(UINT4)(duration/OutputData.h.deltaT +0.5));
   TESTSTATUS( &status );
 
+  OutputData.hC.epoch=InputData.AS_Q.epoch;
+  OutputData.hC.deltaT=InputData.AS_Q.deltaT;
+  LALDCreateVector(&status,&OutputData.hC.data,(UINT4)(duration/OutputData.hC.deltaT +0.5));
+  TESTSTATUS( &status );
+
+  OutputData.hR.epoch=InputData.AS_Q.epoch;
+  OutputData.hR.deltaT=InputData.AS_Q.deltaT;
+  LALDCreateVector(&status,&OutputData.hR.data,(UINT4)(duration/OutputData.hR.deltaT +0.5));
+  TESTSTATUS( &status );
+
   OutputData.alpha.deltaT=CLA.To;
   LALZCreateVector(&status,&OutputData.alpha.data,(UINT4)(duration/OutputData.alpha.deltaT +0.5));
   TESTSTATUS( &status );
@@ -234,9 +298,10 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
   LALParsedDataFile *Filters =NULL;	/* pre-parsed contents of Filters-file */
   int numlines,fileGPS,i,j,n;
   CHAR *thisline;
-  char gpsstr[3],sensingstr[7],usfstr[17], delaystr[5],servostr[5];
+  char gpsstr[3],sensingstr[7],usfstr[17], delaystr[5];
   char aastr[16],axstr[11],aystr[11];
-  int Corders[MAXFORDER], Gorders[MAXFORDER], AAorders[MAXFORDER], AXorders[MAXFORDER], AYorders[MAXFORDER];
+  int Corders[MAXFORDER], AAorders[MAXFORDER], AXorders[MAXFORDER], AYorders[MAXFORDER];
+  int historyflag=0;
 
   LALParseDataFile (&status, &Filters, CLA.filterfile);
   TESTSTATUS( &status );
@@ -261,6 +326,20 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
       LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
       return 1;
     }
+
+
+  if (fileGPS == OutputData.h.epoch.gpsSeconds+InputData.wings/2)
+    {
+      historyflag=1;
+      fprintf(stdout,"Filters file GPS time (%d) agrees with start of AS_Q time series plus half of the overlap (%d).\n",
+	      fileGPS, OutputData.h.epoch.gpsSeconds+InputData.wings/2);
+      fprintf(stdout,"Will use filter histories in file %s.\n",CLA.filterfile);    
+    }else{
+      fprintf(stderr,"GPS start time of time series plus half the overlap (%d) does not agree with filters file GPS time (%d).\n", 
+	      OutputData.h.epoch.gpsSeconds+InputData.wings/2,fileGPS);
+      fprintf(stderr,"Will NOT use filter histories in file %s.\n",CLA.filterfile);
+    }
+
 
   /**-----------------------------------------------------------------------**/
   /* read sensing function info */
@@ -331,6 +410,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
       for(l=0;l<Corders[n];l++) InputData.Cinv[n].recursCoef->data[l]=0.0;
       for(l=0;l<Corders[n]-1;l++) InputData.Cinv[n].history->data[l]=0.0;
     }
+
   for(n = 0; n < InputData.NCinv; n++)
     {
       /* read direct coeffs */
@@ -351,7 +431,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
       /* read histories; if this is the correct file */
       i++;/*advance one line */
       thisline = Filters->lines->tokens[i];	/* get line i */
-      if (fileGPS == OutputData.h.epoch.gpsSeconds)
+      if (historyflag)
 	{
 	  
 	  for (j=0; j < (int) InputData.Cinv[n].history->length; j++)
@@ -360,83 +440,6 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
 	    }
 	}
     }
-
-  /**-----------------------------------------------------------------------**/
-  /* Read in servo filters */
-  i++; /*advance one line */
-  thisline = Filters->lines->tokens[i];	/* get line i */
-  sscanf (thisline,"%s", servostr);
-  if ( strcmp(servostr, "SERVO" ) ) 
-    {
-      fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", thisline, CLA.filterfile, "SERVO");
-      LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
-      return 1;
-    }
-  /* Read number of sensing filters and their orders */
-  i++;/*advance one line */
-  thisline = Filters->lines->tokens[i];	/* get line i */
-  InputData.NG=strtol(thisline, &thisline,10);
-  /* FIXME: Check that InputData.NCinv < 100 */
-  for(j=0; j < InputData.NG; j++)
-    {
-      Gorders[j]=strtol(thisline, &thisline,10);
-    }  
-  if ( strcmp(thisline, " FILTERS_ORDERS" ) ) 
-    {
-      fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", thisline, CLA.filterfile, "FILTERS_ORDERS");
-      LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
-      return 1;      
-    }
-   
-  /* Allocate inverse sensing funtion filters */
-  InputData.G=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter) * InputData.NG); 
-
-  /* Allocate inverse sensing function filter */
-  for(n = 0; n < InputData.NG; n++)
-    {
-      int l;
-      InputData.G[n].directCoef=NULL;
-      InputData.G[n].recursCoef=NULL;
-      InputData.G[n].history=NULL;
-
-      LALDCreateVector(&status,&(InputData.G[n].directCoef),Gorders[n]);
-      LALDCreateVector(&status,&(InputData.G[n].recursCoef),Gorders[n]);
-      LALDCreateVector(&status,&(InputData.G[n].history),Gorders[n]-1);
-
-      for(l=0;l<Gorders[n];l++) InputData.G[n].directCoef->data[l]=0.0;
-      for(l=0;l<Gorders[n];l++) InputData.G[n].recursCoef->data[l]=0.0;
-      for(l=0;l<Gorders[n]-1;l++) InputData.G[n].history->data[l]=0.0;
-    }
-  for(n = 0; n < InputData.NG; n++)
-    {
-      /* read direct coeffs */
-      i++;/*advance one line */
-      thisline = Filters->lines->tokens[i];	/* get line i */
-      
-      for (j=0; j < (int) InputData.G[n].directCoef->length; j++)
-	{
-	  InputData.G[n].directCoef->data[j]=strtod(thisline, &thisline);
-	}      
-      /* read recursive coeffs */
-      i++;/*advance one line */
-      thisline = Filters->lines->tokens[i];	/* get line i */
-      for (j=0; j < (int) InputData.G[n].recursCoef->length; j++)
-	{
-	  InputData.G[n].recursCoef->data[j]=-strtod(thisline, &thisline);
-	}
-      /* read histories; if this is the correct file */
-      i++;/*advance one line */
-      thisline = Filters->lines->tokens[i];	/* get line i */
-      if (fileGPS == OutputData.h.epoch.gpsSeconds)
-	{
-	  
-	  for (j=0; j < (int) InputData.G[n].history->length; j++)
-	    {
-	      InputData.G[n].history->data[j]=strtod(thisline, &thisline);
-	    }
-	}
-    }
-
   /**-----------------------------------------------------------------------**/
   /* Read in analog actuation filters */
   i++; /*advance one line */
@@ -514,7 +517,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
       /* read histories; if this is the correct file */
       i++;/*advance one line */
       thisline = Filters->lines->tokens[i];	/* get line i */
-      if (fileGPS == OutputData.h.epoch.gpsSeconds)
+      if (historyflag)
 	{
 	  
 	  for (j=0; j < (int) InputData.AA[n].history->length; j++)
@@ -591,7 +594,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
       /* read histories; if this is the correct file */
       i++;/*advance one line */
       thisline = Filters->lines->tokens[i];	/* get line i */
-      if (fileGPS == OutputData.h.epoch.gpsSeconds)
+      if (historyflag)
 	{
 	  
 	  for (j=0; j < (int) InputData.AX[n].history->length; j++)
@@ -600,8 +603,6 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
 	    }
 	}
     }
-
-
   /**-----------------------------------------------------------------------**/
   /* Read in y-arm actuation filters */
   i++; /*advance one line */
@@ -669,7 +670,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
       /* read histories; if this is the correct file */
       i++;/*advance one line */
       thisline = Filters->lines->tokens[i];	/* get line i */
-      if (fileGPS == OutputData.h.epoch.gpsSeconds)
+      if (historyflag)
 	{
 	  
 	  for (j=0; j < (int) InputData.AY[n].history->length; j++)
@@ -697,7 +698,7 @@ int WriteFiltersFile(struct CommandLineArgsTag CLA)
 
   /* write GPS string */
   fprintf(FiltersFile,"%d GPS\n", (int)(OutputData.h.epoch.gpsSeconds
-					+OutputData.h.data->length*OutputData.h.deltaT));
+					+OutputData.h.data->length*OutputData.h.deltaT-3*InputData.wings/2));
   /* sengsing section */
   fprintf(FiltersFile,"SENSING\n");
   fprintf(FiltersFile,"%d UPSAMPLING_FACTOR\n",InputData.CinvUSF);
@@ -732,41 +733,6 @@ int WriteFiltersFile(struct CommandLineArgsTag CLA)
       for (j=0; j < (int)InputData.Cinv[n].history->length; j++)
 	{
 	  fprintf(FiltersFile,"%1.16e ", InputData.Cinv[n].history->data[j]);
-	} 
-      fprintf(FiltersFile,"\n");
-    }
-  
-  /* servo section */
-  fprintf(FiltersFile,"SERVO\n");
-  fprintf(FiltersFile,"%d ",InputData.NG);
-  n=0;
-  while (n < InputData.NG) 
-    { 
-      fprintf(FiltersFile,"%d ",InputData.G[n].directCoef->length);
-      n++;
-    }
-  fprintf(FiltersFile,"FILTERS_ORDERS\n");
-  
-  for(n = 0; n < InputData.NG; n++)
-    {
-      /* write direct coeffs */
-      for(j=0; j < (int)InputData.G[n].directCoef->length; j++)
-	{
-	  fprintf(FiltersFile,"%1.16e ", InputData.G[n].directCoef->data[j]);
-	}
-      fprintf(FiltersFile,"\n");
-      
-      /* write recursive coeffs */
-      for (j=0; j < (int)InputData.G[n].recursCoef->length; j++)
-	{
-	  fprintf(FiltersFile,"%1.16e ", -InputData.G[n].recursCoef->data[j]);
-	}
-      fprintf(FiltersFile,"\n");
-
-      /* write histories */
-      for (j=0; j < (int)InputData.G[n].history->length; j++)
-	{
-	  fprintf(FiltersFile,"%1.16e ", InputData.G[n].history->data[j]);
 	} 
       fprintf(FiltersFile,"\n");
     }
@@ -889,8 +855,29 @@ int WriteFiltersFile(struct CommandLineArgsTag CLA)
 
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA) 
 {
-  INT4 c, errflg = 0;
-  optarg = NULL;
+  INT4 errflg=0;
+  struct option long_options[] = {
+    {"cal-line-freq",       required_argument, NULL,           'f'},
+    {"factors-time",        required_argument, NULL,           't'},
+    {"filters-file",        required_argument, NULL,           'F'},
+    {"frame-cache",         required_argument, NULL,           'C'},
+    {"exc-channel",         required_argument, NULL,           'E'},
+    {"asq-channel",         required_argument, NULL,           'A'},
+    {"darm-channel",        required_argument, NULL,           'D'},
+    {"gps-end-time",        required_argument, NULL,           's'},
+    {"gps-start-time",      required_argument, NULL,           'e'},
+    {"olg-re",              required_argument, NULL,           'i'},
+    {"olg-im",              required_argument, NULL,           'j'},
+    {"servo-re",            required_argument, NULL,           'k'},
+    {"servo-im",            required_argument, NULL,           'l'},
+    {"wings",               required_argument, NULL,           'o'},
+    {"test-sensing",        no_argument, NULL,                 'r'},
+    {"test-actuation",      no_argument, NULL,                 'c'},
+    {"delta",               no_argument, NULL,                 'u'},
+    {"help",                no_argument, NULL,                 'h' },
+    {0, 0, 0, 0}
+  };
+  char args[] = "hrcuf:C:A:E:D:F:s:e:i:j:k:l:t:o:";
   
   /* Initialize default values */
   CLA->f=0.0;
@@ -906,10 +893,24 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->G0Im=0.0;
   CLA->D0Re=0.0;
   CLA->D0Im=0.0;
+  CLA->testsensing=0;
+  CLA->testactuation=0;
+
+  InputData.delta=0;
+  InputData.wings=0;
 
   /* Scan through list of command line arguments */
-  while (!errflg && ((c = getopt(argc, argv,"hf:C:A:E:D:s:e:i:j:k:l:t:F:"))!=-1))
-    switch (c) {
+  while ( 1 )
+  {
+    int option_index = 0; /* getopt_long stores long option here */
+    int c;
+
+    c = getopt_long_only( argc, argv, args, long_options, &option_index );
+    if ( c == -1 ) /* end of options */
+      break;
+
+    switch ( c )
+    {
     case 'f':
       /* calibration line frequency */
       CLA->f=atof(optarg);
@@ -962,9 +963,26 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /* calibration line frequency */
       CLA->D0Im=atof(optarg);
       break;
-   case 'h':
+    case 'u':
+      /* calibration line frequency */
+      InputData.delta=1;
+      break;
+    case 'r':
+      /* calibration line frequency */
+      CLA->testsensing=1;
+      InputData.testsensing=1;
+      break;
+    case 'c':
+      /* calibration line frequency */
+      CLA->testactuation=1;
+      break;
+    case 'o':
+      /* calibration line frequency */
+      InputData.wings=atoi(optarg);
+      break;
+    case 'h':
       /* print usage/help message */
-      fprintf(stdout,"All arguments are required. They are:\n");
+      fprintf(stdout,"Arguments are:\n");
       fprintf(stdout,"\t-f\tFLOAT\t Calibration line frequency in Hz.\n");
       fprintf(stdout,"\t-t\tFLOAT\t Factors integration time in seconds.\n");
       fprintf(stdout,"\t-i\tFLOAT\t Real part of the open loop gain at the calibration line frequency.\n");
@@ -978,6 +996,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t-A\tSTRING\t AS_Q channel name (eg, L1:LSC-AS_Q).\n");
       fprintf(stdout,"\t-E\tSTRING\t Excitation channel name (eg, L1:LSC-ETMX_EXC_DAQ)\n");
       fprintf(stdout,"\t-D\tSTRING\t Darm channel name (eg, L1:LSC-DARM_CTRL)\n");
+      fprintf(stdout,"\t-o\tINTEGER\t Size of wings in seconds.\n");
+      fprintf(stdout,"\t-r\tFLAG\t Output residual strain only.\n");
+      fprintf(stdout,"\t-c\tFLAG\t Output control strain only.\n");
+      fprintf(stdout,"\t-u\tFLAG\t Use unit impulse.\n");
+      fprintf(stdout,"\t-h\tFLAG\t This message\n");    
       exit(0);
       break;
     default:
@@ -987,6 +1010,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       exit(1);
       break;
     }
+  }
   if(CLA->f == 0.0)
     {
       fprintf(stderr,"No calibration line frequency specified.\n");
@@ -1066,6 +1090,12 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       return 1;
     }      
 
+   if ( (InputData.wings < 2) || (InputData.wings%2 != 0) )
+     {
+       fprintf(stderr,"Overlap %d is either not >=2, or not exactly divisible by two. Exiting.",InputData.wings);
+       return 1;
+     }
+
    /* Set some global variables */
    duration = CLA->GPSEnd - CLA->GPSStart;
    gpsStartepoch.gpsSeconds = CLA->GPSStart;
@@ -1099,16 +1129,6 @@ int FreeMem(void)
   }
   LALFree(InputData.Cinv);
 
-  for(p=0;p<InputData.NG;p++){
-    LALDDestroyVector(&status,&InputData.G[p].directCoef);
-    TESTSTATUS( &status );
-    LALDDestroyVector(&status,&InputData.G[p].recursCoef);
-    TESTSTATUS( &status );
-    LALDDestroyVector(&status,&InputData.G[p].history);   
-    TESTSTATUS( &status );
-  }
-  LALFree(InputData.G);
-
   for(p=0;p<InputData.NAA;p++){
     LALDDestroyVector(&status,&InputData.AA[p].directCoef);
     TESTSTATUS( &status );
@@ -1141,6 +1161,10 @@ int FreeMem(void)
 
   /* Free output data */
   LALDDestroyVector(&status,&OutputData.h.data);
+  TESTSTATUS( &status );
+  LALDDestroyVector(&status,&OutputData.hC.data);
+  TESTSTATUS( &status );
+  LALDDestroyVector(&status,&OutputData.hR.data);
   TESTSTATUS( &status );
   LALZDestroyVector(&status,&OutputData.alpha.data);
   TESTSTATUS( &status );
