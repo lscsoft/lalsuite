@@ -240,8 +240,12 @@ Appendix: how to use laldoc to generate documentation.
        make dvi
 
      Hint: if you want don't want to run latex in batchmode (which is the
-     default mode when LAL is configured), you can override the latex command
+     default mode when LAL is configured), you can override the tex flags
      by typing
+
+       make dvi TEXFLAGS=
+
+     You can also override the latex command by typing
 
        make dvi LATEX=latex
 

@@ -147,20 +147,25 @@ AM_PROG_LIBTOOL
 AC_CHECK_PROGS(LATEX, pdflatex latex, echo)
 AC_CHECK_PROGS(MKIND, makeindex, echo)
 AC_CHECK_PROGS(DVIPS, dvips, echo)
+if test -z "$TEXFLAGS"
+then
 AC_MSG_CHECKING(if $LATEX accepts --interaction=batchmode)
 cat > conflatextest.tex <<\CEOF
 \documentclass{article}
 \begin{document}
 \end{document}
 CEOF
-if $LATEX --interaction=batchmode conflatextest.tex >/dev/null 2>&1
+if $LATEX conflatextest.tex --interaction=batchmode >/dev/null 2>&1
 then
-LATEX="$LATEX --interaction=batchmode"
+TEXFLAGS="--interaction=batchmode"
 AC_MSG_RESULT(yes)
 else
+TEXFLAGS=""
 AC_MSG_RESULT(no)
 fi
 rm -f conflatextest.*
+fi
+AC_SUBST(TEXFLAGS)
 
 dnl Set needed compiler flags
 AC_MSG_CHECKING([for additional compiler flags])

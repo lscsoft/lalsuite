@@ -157,16 +157,7 @@ Contents:
           make dvi
 
           to run a suite of test programs and to latex the documentation files
-          to produce dvi (or pdf) files.  If you want to test the code that
-          reads frame files, type
-
-          LAL_FRAME_PATH=<framedata path> ; export LAL_FRAME_PATH
-
-          if you are using sh (or bash) or
-
-          setenv LAL_FRAME_PATH <framedata path>
-
-          if you are using csh (or tcsh), and then run make check.
+          to produce dvi (or pdf) files.
 
     1.2.  If you are installing LAL on your personal account, use:
 
@@ -198,16 +189,7 @@ Contents:
           make dvi
 
           to run a suite of test programs and to latex the documentation files
-          to produce dvi (or pdf) files.  If you want to test the code that
-          reads frame files, type
-
-          LAL_FRAME_PATH=<framedata path> ; export LAL_FRAME_PATH
-
-          if you are using sh (or bash) or
-
-          setenv LAL_FRAME_PATH <framedata path>
-
-          if you are using csh (or tcsh), and then run make check.
+          to produce dvi (or pdf) files.
 
 
 2.  Uninstalling the LAL package.
@@ -304,6 +286,12 @@ Troubleshooting:
 
 * "make dvi" must be run after "make" since make dvi requires the program
   laldoc must be compiled for "make dvi" to work.
+
+* If you want to use a different latex program than the one chosen by the
+  configure script, set it in the environment variable LATEX.  Also, if you
+  want to have different tex flags (e.g., you want to disable the batchmode
+  that the configure script uses) set the TEXFLAGS environment variable
+  to the flags you want (or a space if you don't want any flags used).
 
 * If you want to make a shared library version of LAL with frame library
   and/or MPI interface, you need to make a shared library version of the frame

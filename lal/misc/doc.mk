@@ -1,3 +1,4 @@
+TEXFLAGS = @TEXFLAGS@
 LATEX = @LATEX@
 MKIND = @MKIND@
 .dvi-dep: ../include/.dvi-dep ../src/.dvi-dep ../test/.dvi-dep
@@ -21,7 +22,8 @@ MKIND = @MKIND@
 	      $$cmd ; \
 	    fi ; \
 	  done
-	cd .adoc && ${LATEX} main && ${MKIND} main && ${LATEX} main && ${LATEX} main
+	cd .adoc && ${LATEX} main ${TEXFLAGS} && ${MKIND} main \
+	  && ${LATEX} main ${TEXFLAGS} && ${LATEX} main ${TEXFLAGS}
 	@ for file in main.dvi main.pdf main.ps ; do \
 	    if test -f .adoc/$$file ; then \
 	      test -f $$file || @LN_S@ .adoc/$$file . ; \
