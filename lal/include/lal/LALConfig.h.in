@@ -49,6 +49,9 @@
 /* Use pthread mutex lock for threadsafety */
 #undef LAL_PTHREAD_LOCK
 
+/* Define if using fftw3 library */
+#undef LAL_FFTW3_ENABLED
+
 /* Define if using Frame library */
 #undef LAL_FRAME_ENABLED
 

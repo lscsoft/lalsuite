@@ -88,6 +88,7 @@ LAL_WITH_EXTRA_LDFLAGS
 LAL_WITH_EXTRA_LIBS
 LAL_WITH_GCC_FLAGS
 
+LAL_ENABLE_FFTW3
 LAL_ENABLE_FRAME
 LAL_ENABLE_MPI
 AM_CONDITIONAL(FRAME, test x$frame = xtrue)
@@ -139,25 +140,40 @@ esac
 dnl Checks for libraries.
 lal_save_LIBS="$LIBS"
 AC_CHECK_LIB(m, sin)
-AC_CHECK_LIB(fftw3f, fftwf_execute_dft, ,
-[
-AC_SEARCH_LIBS(fftw_one, sfftw fftw, , LAL_FFTW_MSG_ERROR, -lm)
-AC_SEARCH_LIBS(rfftw_one, srfftw rfftw, , LAL_FFTW_MSG_ERROR, -lm)
-] , -lm )
-AC_CHECK_LIB(fftw3, fftw_execute_dft, , , -lm)
+lal_save_pre_fftw3_LIBS="$LIBS"
+if test "${fftw3}" = "true"; then
+  AC_CHECK_LIB(fftw3f, fftwf_execute_dft, , [AC_MSG_WARN(disabling fftw3)]
+    [fftw3="false"], -lm)
+fi
+if test "${fftw3}" = "true"; then
+  AC_CHECK_LIB(fftw3, fftw_execute_dft, , , -lm)
+fi
+if test "${fftw3}" = "true"; then
+  AC_CHECK_HEADERS(fftw3.h, , [AC_MSG_WARN(disabling fftw3)]
+    [fftw3="false"])
+fi
+if test "${fftw3}" = "true"; then
+  AC_DEFINE(LAL_FFTW3_ENABLED,1,Define if using fftw3 library)
+else
+  LIBS="$lal_save_pre_fftw3_LIBS"
+  AC_SEARCH_LIBS(fftw_one, sfftw fftw, , LAL_FFTW_MSG_ERROR, -lm)
+  AC_SEARCH_LIBS(rfftw_one, srfftw rfftw, , LAL_FFTW_MSG_ERROR, -lm)
+  AC_CHECK_HEADERS(sfftw.h fftw.h, break)
+  AC_CHECK_HEADERS(srfftw.h rfftw.h, break)
+fi
+
 
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(sys/time.h unistd.h getopt.h malloc.h)
-AC_CHECK_HEADERS(fftw3.h)
-AC_CHECK_HEADERS(sfftw.h fftw.h, break)
-AC_CHECK_HEADERS(srfftw.h rfftw.h, break)
 
 dnl AC_TRY_RUN needs to be done with libtool to avoid requirement of setting
 dnl LD_LIBRARY_PATH... redefine ac_link to use libtool:
 ac_link="./libtool $ac_link"
-LAL_SFFTW_WORKS
-LAL_SRFFTW_WORKS
+if test "${fftw3}" = "false"; then
+  LAL_SFFTW_WORKS
+  LAL_SRFFTW_WORKS
+fi
 
 dnl Checks for optional libraries and header files.
 if test "${frame}" = "true"; then

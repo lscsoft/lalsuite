@@ -79,6 +79,18 @@ AC_DEFUN(LAL_WITH_CC,
         ],)
 ])
 
+AC_DEFUN(LAL_ENABLE_FFTW3,
+[AC_ARG_ENABLE(
+        fftw3,
+        [  --enable-fftw3          use fftw3 [default=no] ],
+        [ case "${enableval}" in
+            yes) fftw3=true;;
+            no)  fftw3=false;;
+            *) AC_MSG_ERROR(bad value ${enableval} for --enable-fftw3) ;;
+          esac
+        ], [ fftw3=false ] )
+])
+
 AC_DEFUN(LAL_ENABLE_FRAME,
 [AC_ARG_ENABLE(
         frame,
@@ -160,10 +172,6 @@ AC_MSG_ERROR([single precision FFTW must be properly installed.])
 AC_DEFUN(LAL_SFFTW_WORKS,
 [AC_MSG_CHECKING(whether single precison FFTW works)
 AC_TRY_RUN([
-#if defined HAVE_LIBFFTW3F
-#include <fftw3.h>
-int main() { return 0; }
-#else
 #include <stdio.h>
 #ifdef HAVE_SFFTW_H
 #include <sfftw.h>
@@ -173,7 +181,7 @@ int main() { return 0; }
 #error "don't have either sfftw.h or fftw.h"
 #endif
 int main() { return (sizeof(fftw_real)!=4 || fftw_sizeof_fftw_real()!=4); }
-#endif ],
+],
 AC_MSG_RESULT(yes),
 AC_MSG_RESULT(no)
 [
@@ -191,10 +199,6 @@ AC_MSG_RESULT(unknown) ) ] )
 AC_DEFUN(LAL_SRFFTW_WORKS,
 [AC_MSG_CHECKING(whether single precison real FFTW works)
 AC_TRY_RUN([
-#if defined HAVE_LIBFFTW3F
-#include <fftw3.h>
-int main() { return 0; }
-#else
 #include <stdio.h>
 #ifdef HAVE_SRFFTW_H
 #include <srfftw.h>
@@ -204,7 +208,7 @@ int main() { return 0; }
 #error "don't have either srfftw.h or rfftw.h"
 #endif
 int main() { return sizeof(fftw_real) - 4; }
-#endif ],
+],
 AC_MSG_RESULT(yes),
 AC_MSG_RESULT(no)
 [
