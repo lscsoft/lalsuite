@@ -64,6 +64,17 @@ strncpy()
 \begin{itemize}
 \item Note that although $P(f)$ and $P^{\scriptstyle{\rm W}}(f)$
   are real, $P^{\scriptstyle{\rm HW}}(f)$ is \emph{complex}.
+\item The output units are constructed by combining the input units,
+  but under normal circumstances the units will be as follows:
+  \begin{eqnarray}
+    {} [P^{\scriptstyle{\rm W}}] &=& \textrm{count}^{2}\, \textrm{Hz}^{-1}\\
+    {} [\widetilde{R}] &=& 10^{18}\,\textrm{strain}^{-1}\,\textrm{count} \\
+    {} [1/P] &:=& [\widetilde{R}]^2 [P^{\scriptstyle{\rm W}}]
+    = 10^{36}\,\textrm{Hz}\,\textrm{strain}^{-2} \\
+    {} [1/P^{\scriptstyle{\rm HW}}] 
+    &:=&  [\widetilde{R}] [P^{\scriptstyle{\rm W}}]
+    = 10^{18}\,\textrm{Hz}\,\textrm{strain}^{-1}\,\textrm{count}^{-1}
+  \end{eqnarray}
 \end{itemize}
 
 \vfill{\footnotesize\input{StochasticInverseNoiseCV}}
@@ -186,7 +197,7 @@ LALStochasticInverseNoise( LALStatus                          *status,
   f0 = wNoise->f0;
    if ( f0 < 0 ) {
      ABORT( status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
-	    STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN );
+            STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN );
    }
 
   /* check that initial frequency of input series match */

@@ -178,7 +178,7 @@ LALUnitCompare()
     = \delta(f-f')P_i(f)
     \,
   \end{equation}
-  we demand that 
+  we demand that, up to powers of ten,
   \begin{equation}
     ([\gamma][\Omega_{\scriptstyle{\rm GW}}])^2
     =([\widetilde{h}_1][\widetilde{h}_2][T]^{-2})^2
@@ -189,13 +189,40 @@ LALUnitCompare()
   of the continuous approximation for the intended number of data
   points.  However, the limited dynamic range can pose a problem,
   especially in this routine, which uses numbers like $H_0^2$ which
-  are far from unity when expressed in the standard SI units.  This
-  routine should be modified to use the power-of-ten feature of the
-  \texttt{LALUnit} structure to bring the dynamic range in line.
+  are far from unity when expressed in the standard SI units.  To
+  avoid this problem, the application of (\ref{stochastic:e:lambda})
+  takes the units $H_0$ of to be $10^{-18}\,\textrm{s}^{-1}$ rather
+  than $\textrm{s}^{-1}$.  In these units $h_{100}H_0$ has a numerical
+  value of $3.2407792903$, and inclusion of $(h_{100}H_0)^2$ in an
+  expression doesn't risk single-precision overflow.  When %'
+  constructing the unit structure of its output,
+  \texttt{LALStochasticOptimalFilter()} uses the power-of-ten feature
+  of the \texttt{LALUnit} structure to account for the units of $H_0$.
 \item Although $Q(f)$ is real by construction, the whitened optimal
   filter $\widetilde{Q}^{\scriptstyle{\rm W}}(f)$ will in general be
   complex because the whitening filters $\widetilde{R}_i(f)$ for the
   two sites will be different.
+\item The expected units for the inputs and output of this function
+  are as follows (although the actual output units will be constructed
+  from the input units):
+  \begin{equation}
+    ([\gamma][\Omega_{\scriptstyle{\rm GW}}])^2
+    =([\widetilde{h}_1][\widetilde{h}_2][T]^{-2})^2
+    =[P_1][P_2][T]^{-2}
+  \end{equation}
+  \begin{eqnarray}
+    {} [\gamma] &=& \textrm{strain}^{2} \\
+    {} [\Omega_{\scriptstyle{\rm GW}}] &=& 1 \\
+    {} [1/P_{1,2}] &=& 10^{36}\,\textrm{Hz}\,\textrm{strain}^{-2} \\
+    {} [1/P^{\scriptstyle{\rm HW}}_{1,2}] 
+    &=& 10^{18}\,\textrm{Hz}\,\textrm{strain}^{-1}\,\textrm{count}^{-1} \\
+    {} [\widetilde{Q}^{\scriptstyle{\rm W}}] &:=&
+    10^{36} \left[\frac{1/P^{\scriptstyle{\rm HW}}_1}{1/P_1}\right]
+    \left[\frac{1/P^{\scriptstyle{\rm HW}}_2}{1/P_2}\right]
+    [\gamma]^{-1}
+    =
+    \textrm{count}^{-2}
+  \end{eqnarray}
 \end{itemize}
 
 \vfill{\footnotesize\input{StochasticOptimalFilterCV}}
@@ -546,15 +573,17 @@ LALStochasticOptimalFilter( LALStatus                          *status,
 
   /* check that units of gamma, Omega, P1 and P2 are consistent */
   /* we must have (gamma*Omega)^2 with the same units as f^2*P1*P2 */
+  /* up to a power of ten */
   unitPair1.unitOne = input->overlapReductionFunction->sampleUnits;
   unitPair1.unitTwo = input->omegaGW->sampleUnits;
   TRY( LALUnitMultiply(status->statusPtr, &unit, &unitPair1)
       , status );
-  power.numerator = 2;
+  power.numerator = -2;
   power.denominatorMinusOne = 0;
   TRY( LALUnitRaise(status->statusPtr, &(unitPair3.unitOne), &unit,
                     &power)
        , status );
+  power.numerator = 2;
   TRY( LALUnitRaise(status->statusPtr, &(unitPair2.unitOne), &lalHertzUnit,
                     &power)
        , status );
@@ -569,12 +598,16 @@ LALStochasticOptimalFilter( LALStatus                          *status,
        , status );
   TRY( LALUnitMultiply(status->statusPtr, &(unitPair3.unitTwo), &unitPair2)
       , status );
-  TRY( LALUnitCompare(status->statusPtr, &result, &unitPair3), status );
-  if ( ! result )
+  TRY( LALUnitMultiply(status->statusPtr, &unit, &unitPair3), status );
+
+  for (i=0; i<LALNumUnits; ++i)
   {
-    ABORT(status,
-         STOCHASTICCROSSCORRELATIONH_EWRONGUNITS,
-         STOCHASTICCROSSCORRELATIONH_MSGEWRONGUNITS);    
+    if ( unit.unitNumerator[i] || unit.unitDenominatorMinusOne[i] )
+      {
+        ABORT(status,
+              STOCHASTICCROSSCORRELATIONH_EWRONGUNITS,
+              STOCHASTICCROSSCORRELATIONH_MSGEWRONGUNITS);    
+      }
   }
 
   /* assign correct units to normalized optimal filter */
@@ -604,6 +637,10 @@ LALStochasticOptimalFilter( LALStatus                          *status,
   TRY( LALUnitRaise(status->statusPtr, &(optimalFilter->sampleUnits),
                     &unit, &power)
        , status );
+
+  /* Now change power of ten to account for scaled Hubble constant */
+
+  optimalFilter->sampleUnits.powerOfTen += 36;
   
   if (f0 == 0)
   {
@@ -652,7 +689,9 @@ LALStochasticOptimalFilter( LALStatus                          *status,
     }
 
     lambdaInv /= omegaRef 
-      * ( (20.0L * LAL_PI * LAL_PI) / (3.0L * LAL_H0FAC_SI * LAL_H0FAC_SI) );
+      * ( (20.0L * LAL_PI * LAL_PI) 
+          / ( 3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18) )
+          );
 
     optimalFilter->data->data[0].re = 0;
     optimalFilter->data->data[0].im = 0;
