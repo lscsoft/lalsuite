@@ -1568,6 +1568,10 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
   
   /* scan through the list of arguments on the command line 
      and get the input data filename*/
+
+  /* set default: */
+  earthdata = EARTHDATA;
+  sundata = SUNDATA;
   
   opterr=0;
 
