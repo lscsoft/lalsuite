@@ -93,20 +93,21 @@ typedef struct {
 
 /* <lalLaTeX>
 
-\subsubsection*{Structure \texttt{LALConfigData}}
-\idx[Type]{LALConfigData}
+\subsubsection*{Structure \texttt{LALParsedData}}
+\idx[Type]{LALParsedData}
 
-This structure holds the actual config-file contents in a pre-parsed
-form, namely stripped from all comments and ignored whitespaces, and
-separated into lines (taking into account line-continuation).
-This is used as the input structure for the config-variable reading routines.
+This structure is retured by \verb+LALParseDataFile()+ and holds the contents of an 
+ASCII data-file in a pre-parsed form, namely stripped from all comments (\verb+'#', ';'+), 
+spurious whitespaces, and separated into lines (taking into account line-continuation 
+by \verb+'\'+ at the end of lines).
+This is used as the input structure in the config-variable reading routines.
 
 </lalLaTeX> */
 /* <lalVerbatim> */
 typedef struct {
-  TokenList *lines;	/* list of pre-parsed config-file lines */
+  TokenList *lines;	/* list of pre-parsed data-file lines */
   BOOLEAN *wasRead;	/* keep track of successfully read lines for strictness-checking */
-} LALConfigData;
+} LALParsedDataFile;
 /* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -116,52 +117,52 @@ typedef struct {
 ******************************************************* </lalLaTeX> */
 
 /* Function prototypes */
-void LALLoadConfigFile (LALStatus *stat, LALConfigData **cfgdata, const CHAR *fname);
-void LALDestroyConfigData (LALStatus *stat, LALConfigData **cfgdata);
+void LALParseDataFile (LALStatus *stat, LALParsedDataFile **cfgdata, const CHAR *fname);
+void LALDestroyParsedDataFile (LALStatus *stat, LALParsedDataFile **cfgdata);
 
 void 
 LALReadConfigBOOLVariable (LALStatus *stat, 
 			  BOOLEAN *varp, 
-			  const LALConfigData *cfgdata, 
+			  const LALParsedDataFile *cfgdata, 
 			  const CHAR *varName, 
 			  BOOLEAN *wasRead);
 
 void
 LALReadConfigINT4Variable (LALStatus *stat,
 			   INT4 *varp, 
-			   const LALConfigData *cfgdata, 
+			   const LALParsedDataFile *cfgdata, 
 			   const CHAR *varName, 
 			   BOOLEAN *wasRead);
 
 void
 LALReadConfigREAL8Variable (LALStatus *stat, 
 			    REAL8 *varp, 
-			    const LALConfigData *cfgdata, 
+			    const LALParsedDataFile *cfgdata, 
 			    const CHAR *varName, 
 			    BOOLEAN *wasRead);
 
 void 
 LALReadConfigSTRINGVariable (LALStatus *stat, 
 			     CHAR **varp, 
-			     const LALConfigData *cfgdata, 
+			     const LALParsedDataFile *cfgdata, 
 			     const CHAR *varName,
 			     BOOLEAN *wasRead);
 
 void
 LALReadConfigSTRINGNVariable (LALStatus *stat, 
 			      CHARVector *varp,
-			      const LALConfigData *cfgdata, 
+			      const LALParsedDataFile *cfgdata, 
 			      const CHAR *varName,
 			      BOOLEAN *wasRead);
 
 void
 LALReadConfigVariable (LALStatus *stat, 
 		       void *varp,
-		       const LALConfigData *cfgdata,
+		       const LALParsedDataFile *cfgdata,
 		       const LALConfigVar *param,
 		       BOOLEAN *wasRead);
 
-void LALCheckConfigReadComplete (LALStatus *stat, const LALConfigData *cfgdata, ConfigStrictness strict);
+void LALCheckConfigReadComplete (LALStatus *stat, const LALParsedDataFile *cfgdata, ConfigStrictness strict);
 
 /* C++ protection. */
 /*

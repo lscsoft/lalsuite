@@ -137,7 +137,7 @@ LALRegisterSTRINGUserVar (LALStatus *stat,
  * effectively put an appropriate entry into UVAR_vars
  *
  * NOTE: don't use this directly, as it's not type-safe!!
- *      ==> use one of the 4 wrappers below!
+ *      ==> use one of the 4 wrappers above!
  *
  *----------------------------------------------------------------------*/
 static void
@@ -411,7 +411,7 @@ void
 LALUserVarReadCfgfile (LALStatus *stat, 
 		       const CHAR *cfgfile) 	   /* name of config-file */
 {/* </lalVerbatim> */
-  LALConfigData *cfg = NULL;
+  LALParsedDataFile *cfg = NULL;
   CHAR *stringbuf;
   LALUserVariable *ptr;
   BOOLEAN wasRead;
@@ -421,7 +421,7 @@ LALUserVarReadCfgfile (LALStatus *stat,
 
   ASSERT (UVAR_vars.next, stat, USERINPUTH_ENOUVARS,  USERINPUTH_MSGENOUVARS);
 
-  TRY (LALLoadConfigFile (stat->statusPtr, &cfg, cfgfile), stat);
+  TRY (LALParseDataFile (stat->statusPtr, &cfg, cfgfile), stat);
 
   /* step through all user-variable: read those with names from config-file */
   ptr = &UVAR_vars;
@@ -474,7 +474,7 @@ LALUserVarReadCfgfile (LALStatus *stat,
   /* ok, that should be it: check if there were more definitions we did not read */
   TRY (LALCheckConfigReadComplete (stat->statusPtr, cfg, CONFIGFILE_ERROR), stat);	/* be strict */
 
-  TRY( LALDestroyConfigData (stat->statusPtr, &cfg), stat);
+  TRY( LALDestroyParsedDataFile (stat->statusPtr, &cfg), stat);
 
   DETATCHSTATUSPTR(stat);
   RETURN (stat);
