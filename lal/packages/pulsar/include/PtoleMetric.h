@@ -45,6 +45,7 @@ approximation. Owen will write a short paper on this and other details.
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
 #include <lal/SkyCoordinates.h>
+#include <lal/LALBarycenter.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -105,7 +106,8 @@ tagPtoleMetricIn
   LIGOTimeGPS    epoch;
   REAL4          duration;
   REAL4          maxFreq;
-  LALFrDetector  site;
+  LALDetector    *site;
+  EphemerisData  *ephemeris;
 }
 PtoleMetricIn;
 
