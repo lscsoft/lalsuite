@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 if LALMETAIO
-LALMETAIOPROGRAMS = lalapps_exc_resp lalapps_ivana lalapps_inspmultiawg
+LALMETAIOPROGRAMS = lalapps_exc_resp lalapps_ivana lalapps_inspmultiawg lalapps_InspiralInjection
 else
 LALMETAIOPROGRAMS = 
 endif
@@ -9,11 +9,10 @@ bin_PROGRAMS = lalapps_inspawgfile $(LALMETAIOPROGRAMS) \
                lalapps_random_bank lalapps_chirplen lalapps_effdist\
                lalapps_BankEfficiency lalapps_BankEfficiencyRealPsd \
                lalapps_InspiralOverlap lalapps_inspiralDistance lalapps_DistanceVsMass \
-               lalapps_InspiralInjection lalapps_InspiralTools  
+               lalapps_InspiralTools  
 
 
 lalapps_DistanceVsMass_SOURCES = DistanceVsMass.c
-lalapps_InspiralInjection_SOURCES = InspiralInjection.c
 lalapps_inspiralDistance_SOURCES = inspiralDistance.c
 lalapps_inspawgfile_SOURCES = inspawgfile.c
 lalapps_random_bank_SOURCES = random_bank.c
@@ -28,6 +27,7 @@ if LALMETAIO
 lalapps_exc_resp_SOURCES = exc_resp.c
 lalapps_ivana_SOURCES = ivana.c
 lalapps_inspmultiawg_SOURCES = inspmultiawg.c 
+lalapps_InspiralInjection_SOURCES = InspiralInjection.c
 endif
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
