@@ -99,10 +99,19 @@ typedef struct {
 } PulsarSignalParams;
 
 
+typedef struct {
+  UINT4 Tsft;				/* length of SFTs in seconds */
+  LIGOTimeGPS *timestamps;		/* timestamps to use for SFT's (can be NULL) */
+  COMPLEX8Vector *noiseSFTs;		/* noise SFTs to add to signal (can be NULL) */
+} SFTParams;
+
 /* Function prototypes */
 void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, PulsarSignalParams *params);
 void LALPrintR4TimeSeries (LALStatus *stat, REAL4TimeSeries *series, const CHAR *fname);
 void PrintGWSignal (LALStatus *stat, CoherentGW *signal, const CHAR *fname);
+
+void AddSignalToSFTs (LALStatus *stat, COMPLEX8Vector **outputSFTs, REAL4TimeSeries *signal, SFTParams *params);
+
 void ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, PulsarSignalParams *params);
 void ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, PulsarSignalParams *params);
 

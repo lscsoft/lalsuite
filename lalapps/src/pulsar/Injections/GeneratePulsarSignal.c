@@ -419,3 +419,37 @@ write_timeSeriesR8 (FILE *fp, REAL8TimeSeries *series, UINT4 set)
   return;
 
 } /* write_timeSeriesR4() */
+
+/*----------------------------------------------------------------------
+ * take time-series as input, convert it into SFTs and add noise if given
+ *----------------------------------------------------------------------*/
+void
+AddSignalToSFTs (LALStatus *stat, COMPLEX8Vector **outputSFTs, REAL4TimeSeries *signal, SFTParams *params)
+{
+  UINT4 i, numSFTs, i0, iSFT;
+  REAL8 duration;
+
+  INITSTATUS( stat, "AddSignalToSFTs", PULSARSIGNALC);
+  ATTATCHSTATUSPTR( stat );
+  
+  ASSERT (outputSFTs != NULL, stat, PULSARSIGNALH_ENULL, PULSARSIGNALH_MSGENULL);
+  ASSERT (signal != NULL, stat, PULSARSIGNALH_ENULL, PULSARSIGNALH_MSGENULL);
+  ASSERT (params != NULL, stat, PULSARSIGNALH_ENULL, PULSARSIGNALH_MSGENULL);
+  ASSERT (*outputSFTs == NULL, stat,  PULSARSIGNALH_ENONULL,  PULSARSIGNALH_MSGENONULL);
+
+  /* determine number of SFT to be produced */
+  duration = 1.0* signal->data->length * signal->deltaT;
+  if (params->timestamps == NULL)
+    numSFTs = (UINT4)( duration / params->Tsft );
+  else
+    {
+      /* FIXME: stopped writing here!! */
+      for (i=0; i<10; i++)
+	;
+    }
+
+
+  DETATCHSTATUSPTR( stat );
+  RETURN (stat);
+
+} /* AddSignalToSFTs() */
