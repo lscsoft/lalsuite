@@ -31,30 +31,9 @@
 #include <lal/StreamOutput.h>
 
 #include "util.h"
+#include "skygrid.h"
 #include "cmdline.h"
 
-
-/* macro for minimum of two arguments */
-#define DETRESPONSE_MIN(a, b) (((a) < (b)) ? (a) : (b))
-
-/* number of grid points in declination and right ascension */
-#define NUM_DEC 81
-#define NUM_RA  193
-
-typedef REAL4 skygrid_t[NUM_RA * NUM_DEC];
-
-REAL4 skygrid_avg(const skygrid_t response);
-void  skygrid_square(skygrid_t square, const skygrid_t input);
-REAL4 skygrid_rms(const skygrid_t input);
-void  skygrid_sqrt(skygrid_t result, const skygrid_t input);
-INT4  skygrid_copy(skygrid_t dest, const skygrid_t src);
-void  skygrid_print(const LIGOTimeGPS * gps, const skygrid_t input,
-                    const char * filename);
-void  skygrid_fabs(skygrid_t absgrid, const skygrid_t input);
-void  skygrid_add(skygrid_t sum, const skygrid_t a, const skygrid_t b);
-void  skygrid_subtract(skygrid_t sum, const skygrid_t a, const skygrid_t b);
-void  skygrid_scalar_mult(skygrid_t result, const skygrid_t a, REAL4 b);
-void  skygrid_zero(skygrid_t a);
 
 /* wrap fopen(3) and fclose(3) */
 FILE *xfopen(const char *path, const char *mode);
