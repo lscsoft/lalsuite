@@ -81,18 +81,16 @@ for bandnumber=1:Nbands;
      if( CH(nh0)> 0.955)
        small = find( CH<0.945);
        if (length(small) ~= 0) 
-         h0min = h0vect(length(small));
-	 else 
-            if (h0vect(1) < 0.95)
+              h0min = h0vect(length(small));
+       elseif (CH(1) < 0.95)
               h0min = h0vect(1);
-            else
-              h0min = 0.7*h0vect(1);
-            end 
+       else
+              h0min = 0.95*h0vect(1); 
        end 
        large = find( CH > 0.955);
        h0max = h0vect(large(1));
      end
-     fprintf(fid2,'%d %d ', h0min, h0max );
+
 
      %%%%%%%%%%%%%%%%%getting 95% upper limit
       h01=h0vect(1);
@@ -130,7 +128,14 @@ for bandnumber=1:Nbands;
          slope = (h02 - h01)/(CL2 -CL1);
          UL = h01 + slope * (0.95 - CL1);
       end
-      fprintf(fid2,' %d \n', UL );
+      
+      if (UL < h0min)
+         h0min = 0.97 * UL;
+      end
+      if (UL > h0max)
+         h0max = 1.03 * UL;
+      end  
+      fprintf(fid2,'%d %d %d\n', h0min, h0max, UL );
  
   else
     for h0num=1:nh0
