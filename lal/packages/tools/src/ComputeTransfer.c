@@ -366,12 +366,12 @@ LALUpdateCalibration(
 
   /* locate correct value of a and ab -- ignore nanoseconds */
   dt = params->epoch.gpsSeconds - params->sensingFactor->epoch.gpsSeconds;
-  if ( dt < 0 )
+  if ( dt + ceil( params->sensingFactor->deltaT ) < 0 )
   {
     ABORT( status, CALIBRATIONH_ETIME, CALIBRATIONH_MSGETIME );
   }
-  /* first point AFTER requested time */
-  i = floor( dt / params->sensingFactor->deltaT ) + 1;
+  /* first point AT or AFTER requested time */
+  i = ceil( dt / params->sensingFactor->deltaT );
   if ( i >= params->sensingFactor->data->length )
   {
     ABORT( status, CALIBRATIONH_ETIME, CALIBRATIONH_MSGETIME );
