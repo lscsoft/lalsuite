@@ -102,7 +102,7 @@ size_t `XLALShrink'SEQUENCETYPE (
 	if(!sequence || !sequence->data)
 		return(0);
 
-	sequence->length = 0;
+	sequence->length = length;
 	memmove(sequence->data, sequence->data + first, length * sizeof(*sequence->data));
 	sequence->data = LALRealloc(sequence->data, length * sizeof(*sequence->data));
 	if(!sequence->data)
