@@ -176,7 +176,14 @@ LALGeneratePulsarSignal (LALStatus *stat,
   /* if pulsar is in binary-orbit, set binary parameters */
   if (params->orbit)
     {
-      sourceParams.orbitEpoch = params->orbit->orbitEpoch;
+      /*------------------------------------------------------------ */
+      /* temporary fix for comparison with Chris' code */
+      /*
+	TRY (LALConvertGPS2SSB (stat->statusPtr, &tmpTime, params->orbit->orbitEpoch, params), stat);
+	sourceParams.orbitEpoch = tmpTime;
+      */
+      sourceParams.orbitEpoch =  params->orbit->orbitEpoch;
+      /* ------------------------------------------------------------*/
       sourceParams.omega = params->orbit->omega;
       sourceParams.rPeriNorm = params->orbit->rPeriNorm;
       sourceParams.oneMinusEcc = params->orbit->oneMinusEcc;
@@ -194,10 +201,15 @@ LALGeneratePulsarSignal (LALStatus *stat,
     }
 
   /* sampling-timestep and length for source-parameters */
-  sourceParams.deltaT = 60;	/* in seconds; hardcoded default from makefakedata_v2 
-				 * this should be largely enough, at it only concerns
-				 * the amplitudes, and _phase_ of the signal, not h(t),
-				 * which will then be used for interpolation */
+  /* in seconds; hardcoded; was 60s in makefakedata_v2,
+   * but for fast binaries (e.g. SCO-X1) we need faster sampling 
+   * This does not seem to affect performance a lot (~4% in makefakedata),
+   * but we'll nevertheless make this sampling faster for binaries and slower
+   * for isolated pulsars */
+  if (params->orbit)
+    sourceParams.deltaT = 5;	/* for binaries */
+  else
+    sourceParams.deltaT = 60;	/* for isolated pulsars */
 
   /* start-time in SSB time */
   TRY (LALConvertGPS2SSB (stat->statusPtr, &t0, params->startTimeGPS, params), stat);
