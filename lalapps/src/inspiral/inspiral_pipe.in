@@ -124,7 +124,8 @@ cp = ConfigParser.ConfigParser()
 cp.read(config_file)
 
 # create a log file that the Condor jobs will write to
-basename = config_file.split('.')[0]
+inimatch = re.compile(r'\.ini')
+basename = re.sub(config_file,r'')
 tempfile.tempdir = log_path
 tempfile.template = basename + '.dag.log.'
 logfile = tempfile.mktemp()
