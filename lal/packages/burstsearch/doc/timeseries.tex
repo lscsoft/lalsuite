@@ -88,10 +88,12 @@ existing time series.
 \verb|Kipp Cannon <kipp@gravity.phys.uwm.edu>|
 
 
-\subsection{Shrinking Functions}
+\subsection{Resizing Functions}
 
 \subsubsection{Name}
 
+\texttt{XLALResize}\textit{timeseriestype}\texttt{()},
+\texttt{LALResize}\textit{timeseriestype}\texttt{()},
 \texttt{XLALShrink}\textit{timeseriestype}\texttt{()},
 \texttt{LALShrink}\textit{timeseriestype}\texttt{()}
 
@@ -100,11 +102,15 @@ existing time series.
 \begin{verbatim}
 #include <lal/TimeSeries.h>
 \end{verbatim}
-\input{TimeSeriesShrinkP}
+\input{TimeSeriesResizeP}
 
 \subsubsection{Description}
 
-These functions reduce an existing time series to a section of itself.
+These functions resize an existing time series.  The new time series will
+have the given length, and its contents will consist of that part of the
+original time series that started at sample first.  If first is negative,
+then the new time series is padded at the start by that many samples.  The
+time series' epoch is adjusted appropriately.
 
 \subsubsection{Author}
 

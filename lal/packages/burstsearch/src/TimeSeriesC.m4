@@ -124,9 +124,9 @@ void `LALCut'SERIESTYPE (
 }
 
 
-size_t `XLALShrink'SERIESTYPE (
+size_t `XLALResize'SERIESTYPE (
 	SERIESTYPE *series,
-	size_t first,
+	int first,
 	size_t length
 )
 {
@@ -134,7 +134,36 @@ size_t `XLALShrink'SERIESTYPE (
 		return(0);
 
 	XLALAddFloatToGPS(&series->epoch, first * series->deltaT);
-	return(`XLALShrink'SEQUENCETYPE (series->data, first, length));
+	return(`XLALResize'SEQUENCETYPE (series->data, first, length));
+}
+
+
+void `LALResize'SERIESTYPE (
+	LALStatus *status,
+	SERIESTYPE *series,
+	int first,
+	size_t length
+)
+{
+	size_t new_length;
+
+	INITSTATUS(status, "`LALResize'SERIESTYPE", TIMESERIESC);
+
+	ASSERT(series != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(series->data != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	new_length = `XLALResize'SERIESTYPE (series, first, length);
+	ASSERT(new_length == length, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	RETURN(status);
+}
+
+
+size_t `XLALShrink'SERIESTYPE (
+	SERIESTYPE *series,
+	size_t first,
+	size_t length
+)
+{
+	return(`XLALResize'SEQUENCETYPE (series->data, first, length));
 }
 
 
@@ -156,3 +185,4 @@ void `LALShrink'SERIESTYPE (
 	ASSERT(new_length == length, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 	RETURN(status);
 }
+
