@@ -465,7 +465,7 @@ int main(int argc, char **argv)
     fclose(fp);
 
     buildMultiInspiralEvents(&multInspEv, coincident_times, ifo, numIFO, 
-            INJECTIONS, dummyStart);
+            INJECTIONS, dummyStart, delm);
 
     fp = fopen("injections.dat","w");
     printInspiralEvents(fp,&ifo[0], 3, INJECTIONS);
