@@ -27,7 +27,7 @@ LAstroOmegaBinary()
 #include <lal/LALConfig.h>
 #include <lal/LALStdlib.h>
 #include <lal/Integrate.h>
-#include <lal/AstroOmega.h>
+#include "AstroOmega.h"
 
 NRCSID (ASTROOMEGATESTC, "$Id$");
 
@@ -37,16 +37,15 @@ static void SDensity (REAL8 *dEgw, REAL8 nu)
   }
 
 int lalDebugLevel = 0;
-int main (int argc, char* argv[])
+int main ()
  {
   static LALStatus status;
-  DIntegrateIn  zint;
   AstroOmegaGeneralParams generalp;
   AstroOmegaTemplatesParams pulsarp,modesp,binaryp;
   AstroOmegaGeneralSourceParams generalsp;
   AstroOmegaTemplatesSourceParams pulsarsp,modessp,binarysp;
   AstroOmegaCosmoParams cosmop;
-  REAL8 omegaz, zmax, nu, test;
+  REAL8 zmax, nu, test;
 
   cosmop.ho=0.68;
   cosmop.density_matter=0.3;
@@ -80,7 +79,7 @@ int main (int argc, char* argv[])
    } 
   else printf("omega(%f)= %.2e o.k\n", nu,test);
  /*binaries */
-  binarysp.fact=1.E-10;
+ /* binarysp.fact=1.E-10;
   binarysp.numax=1180.;
   binaryp.cosmoparams=cosmop;
   binaryp.tsourceparams=binarysp;
@@ -88,16 +87,15 @@ int main (int argc, char* argv[])
   LALAstroOmegaBinary (&status, &test, nu,&binaryp);
   if (fabs(test-6.28E-12)>1.E-14)
    {printf("error! the right value is 6.28E-12 no %.2e\n",test);
-   /*return 1;*/
    }
-  else printf("omega(%f)= %.2e o.k\n", nu,test);
+  else printf("omega(%f)= %.2e o.k\n", nu,test);*/
   /*r modes*/
   modessp.fact=1.36E-16;
   modessp.numax=1958.;
   modesp.cosmoparams=cosmop;
   modesp.tsourceparams=modessp;
   modesp.extraparams=&nu; 
-  LALAstroOmegaModes (&status, &test, nu,&modesp);
+  LALAstroOmegaModes (&status, &test, nu, &modesp);
   if (fabs(test-2.05E-12)>1.E-14) 
    {printf("error! the right value is 2.05E-12 no %.2e\n",test);
    /*return 1;*/
