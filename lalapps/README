@@ -113,7 +113,7 @@ removed it. You are now ready to continue.
 
 ------------------------------------------------------------------------------
 
-4. Decide how you want install the required software
+4. Decide how you want install LALApps, LAL and the required software
 
 You have the following options for installing the required software. Choose
 the one that suits you best and then follow the relevant instructions below.
@@ -135,7 +135,7 @@ the one that suits you best and then follow the relevant instructions below.
 
 ------------------------------------------------------------------------------
 
-5.1 Installing the required software from source
+5.1 Installing from source
 
 Choose a directory in which to install the required software (i.e. the
 software other than LAL and LALApps). 
@@ -229,7 +229,7 @@ reporting bugs.
 
 ------------------------------------------------------------------------------
 
-5.2 Installing the required software via LIGOtools. 
+5.2 Installing using LIGOtools. 
 
 NOTE: THE LIGOTOOLS INSTRUCTIONS HERE DO NOT CURRENTLY WORK SINCE GSL AND
 FFTW3 ARE NOT YET IN LIGOTOOLS. AS A TEMPORARY MEASURE PLEASE USE STEP 5.1
