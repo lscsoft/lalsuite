@@ -170,7 +170,7 @@ void
 LALReadConfigBOOLVariable (LALStatus *stat, BOOLEAN *varp, LALConfigData *cfgdata, const CHAR *varName)
 {
   static LALConfigVar param;
-  INT2 tmp;
+  INT2 tmp = -1;	/* NOTE: -1 means nothing has been read!! */
 
   param.varName = varName;
   param.fmt = "%" LAL_INT2_FORMAT;
@@ -178,7 +178,8 @@ LALReadConfigBOOLVariable (LALStatus *stat, BOOLEAN *varp, LALConfigData *cfgdat
 
   LALReadConfigVariable (stat, (void*) &tmp, cfgdata, &param);
   
-  *varp = (BOOLEAN) tmp;
+  if (tmp != -1)	/* only set value of something has been found */
+    *varp = (BOOLEAN) tmp;
 
   return;
 }
