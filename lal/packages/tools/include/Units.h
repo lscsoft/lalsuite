@@ -79,24 +79,25 @@ extern "C" {
 
 NRCSID (UNITSH, "$Id$");
 
-
 /******************************** <lalErrTable file="UnitsHErrTable"> */
 
 #define UNITSH_ENULLPIN         1
 #define UNITSH_ENULLPOUT        2
-#define UNITSH_ENULLPDOUT       3
+#define UNITSH_ENULLPD          3
 #define UNITSH_ENULLPPARAM      4
 #define UNITSH_ESTRINGSIZE      5
 #define UNITSH_EOVERFLOW        6
 #define UNITSH_ENONINT          7
+#define UNITSH_EPARSE           8
 
 #define UNITSH_MSGENULLPIN      "Null pointer to input"
 #define UNITSH_MSGENULLPOUT     "Null pointer to output"
-#define UNITSH_MSGENULLPDOUT    "Null pointer to data member of output vector"
-#define UNITSH_MSGENULLPPARAM   "Null pointer to input parameters"
+#define UNITSH_MSGENULLPD       "Null pointer to data member of vector"
+#define UNITSH_MSGENULLPPARAM   "Null pointer to parameters"
 #define UNITSH_MSGESTRINGSIZE   "Output string too short"
 #define UNITSH_MSGEOVERFLOW     "Exponent outside of (U)INT2 bounds"
 #define UNITSH_MSGENONINT       "Non-integer power of ten"
+#define UNITSH_MSGEPARSE        "Error parsing unit string"
 
 /************************************ </lalErrTable> */
 
@@ -168,6 +169,19 @@ void LALUnitRaise (LALStatus *status, LALUnit *output,
 
 void LALUnitAsString (LALStatus *status, CHARVector *output,
 		      const LALUnit *input);
+
+void 
+LALParseUnitString ( LALStatus *status,
+		     LALUnit *output,
+		     const CHARVector *input );
+
+enum { LALUnitNameSize = sizeof("strain") };
+enum { LALUnitTextSize = sizeof("10^-32768 m^-32768/32767 kg^-32768/32767 "
+				"s^-32768/32767 A^-32768/32767 " 
+				"K^-32768/32767 strain^-32768/32767 "
+				"count^-32768/32767") };
+
+extern const CHAR lalUnitName[LALNumUnits][LALUnitNameSize];
 
 /*********************************************************
  *                                                       *

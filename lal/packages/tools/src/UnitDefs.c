@@ -13,6 +13,7 @@ string corresponding to a unit structure.
 \subsubsection*{Prototypes}
 \input{UnitDefsCP}
 \index{\texttt{LALUnitAsString()}}
+\index{\texttt{LALParseUnitString()}}
 
 \subsubsection*{Description}
 
@@ -25,9 +26,20 @@ convenient way to check the units of a quantity.  A better method is
 to construct a unit structure containing the expected units, then
 compare that to the actual units using \texttt{LALUnitCompare()}.
 
+\texttt{LALParseUnitString()} reconstructs the original
+\texttt{LALUnit} structure from the string output by
+\texttt{LALUnitCompare()}.  It is very sensitive to the exact format
+of the string and is not intended for use in parsing user-entered
+strings.
+
 \subsubsection*{Algorithm}
-Moves through the unit structure, appending
+
+\texttt{LALUnitAsString()} moves through the unit structure, appending
 the appropriate text to the string as it goes along.
+
+\texttt{LALParseUnitString()} moves through the input string, one
+character at a time, building an \texttt{LALUnit} structure as a it
+goes along, so long as it encounters precisely the syntax expected.
 
 \subsubsection*{Uses}
 None.
@@ -149,15 +161,11 @@ D.~Halliday, R.~Resnick, and J.~Walker, \textit{Fundamentals of
 
 NRCSID( UNITDEFSC, "$Id$" );
 
+#define UNITDEFSCTEMPSIZE 20
+
 /* To convert a units structure to a string repesentation, we need to
  * define the names of the basic units.
  */
-
-enum { LALUnitNameSize = sizeof("strain") };
-/* enum { LALUnitTextSize = sizeof("10^-32768 m^-32768/32767 kg^-32768/32767 "
-				"s^-32768/32767 A^-32768/32767 " 
-				"K^-32768/32767 strain^-32768/32767 "
-				"count^-32768/32767") }; */
 
 const CHAR lalUnitName[LALNumUnits][LALUnitNameSize] = 
 {
@@ -234,13 +242,63 @@ const LALUnit lalGramUnit          = { -3, { 0, 1, 0, 0, 0, 0, 0}, { 0, 0, 0, 0,
 const LALUnit lalAttoStrainUnit    = {-18, { 0, 0, 0, 0, 0, 1, 0}, { 0, 0, 0, 0, 0, 0, 0} };
 const LALUnit lalPicoFaradUnit     = {-12, {-2,-1, 2, 2, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
 
+/* Static function to read a number into a character array */
+/* returns 0 on success, 1 on failure */
+/* leaves *charPtrPtr pointing to first non-digit */
+static int readNumber( char temp[], char **charPtrPtr )
+{
+  CHAR *tempPtr, *tempStopPtr;
+
+  tempPtr = temp;
+  /* make sure we don't fall off end of temporary array */
+  tempStopPtr = temp + UNITDEFSCTEMPSIZE;
+
+  if ( ! isdigit(**charPtrPtr) ) return 1;
+
+  do 
+  {
+    *tempPtr = **charPtrPtr;
+    ++tempPtr, ++*charPtrPtr;
+    if (tempPtr >= tempStopPtr) return 1;
+  }
+  while ( isdigit(**charPtrPtr) );
+  *tempPtr = '\0';
+  return 0;
+}
+
+/* Static function to read a string into a character array */
+/* returns 0 on success, 1 on failure */
+/* leaves *charPtrPtr pointing to first non-letter */
+static int readString( char temp[UNITDEFSCTEMPSIZE], char **charPtrPtr )
+{
+  CHAR *tempPtr, *tempStopPtr;
+
+  tempPtr = temp;
+  /* make sure we don't fall off end of temporary array */
+  tempStopPtr = temp + UNITDEFSCTEMPSIZE; 
+
+  if ( ! isalpha(**charPtrPtr) ) return 1;
+
+  do 
+  {
+    *tempPtr = **charPtrPtr;
+    ++tempPtr, ++*charPtrPtr;
+    if (tempPtr >= tempStopPtr) return 1;
+  }
+  while ( isalpha(**charPtrPtr) );
+  *tempPtr = '\0';
+  return 0;
+}
+
 /* <lalVerbatim file="UnitDefsCP"> */
 void 
-LALUnitAsString (LALStatus *status, CHARVector *output, const LALUnit *input)
+LALUnitAsString( LALStatus *status,
+		 CHARVector *output,
+		 const LALUnit *input )
 /* </lalVerbatim> */
 {
   UINT2        i;
-  CHAR         temp[20];
+  CHAR         temp[UNITDEFSCTEMPSIZE];
   INT2         numer;
   CHAR         *charPtr, *charStopPtr;
 
@@ -251,8 +309,8 @@ LALUnitAsString (LALStatus *status, CHARVector *output, const LALUnit *input)
 
   ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
 
-  ASSERT( output->data != NULL, status, UNITSH_ENULLPDOUT,
-	  UNITSH_MSGENULLPDOUT );
+  ASSERT( output->data != NULL, status, UNITSH_ENULLPD,
+	  UNITSH_MSGENULLPD );
 
   ASSERT( output->length > 0, status,
 	  UNITSH_ESTRINGSIZE, UNITSH_MSGESTRINGSIZE );
@@ -311,5 +369,158 @@ LALUnitAsString (LALStatus *status, CHARVector *output, const LALUnit *input)
   /* printf("Units are:\"%s\"\n",output->data);*/
 
   /* DETATCHSTATUSPTR(status); */
+  RETURN(status);
+}
+
+
+/* <lalVerbatim file="UnitDefsCP"> */
+void 
+LALParseUnitString ( LALStatus *status,
+		     LALUnit *output,
+		     const CHARVector *input )
+/* </lalVerbatim> */
+{
+  UINT2        i;
+  INT2         sign;
+  CHAR         temp[20];
+  CHAR         *charPtr, *charStopPtr;
+
+  INITSTATUS( status, "LALParseUnitString", UNITDEFSC );
+  /* ATTATCHSTATUSPTR (status); */
+
+  ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
+
+  ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
+
+  ASSERT( input->data != NULL, status, UNITSH_ENULLPD, UNITSH_MSGENULLPD );
+
+  /* ensure that there's a '\0' within the input CHARVector */
+  charPtr = input->data;
+  charStopPtr = charPtr + strlen(input->data); 
+  /* Should point to first '\0' in string */
+  if (charStopPtr >= charPtr + input->length) 
+  {
+    ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
+  }
+
+  /* Start with dimensionless (all zeros) and fill in from there */
+  *output = lalDimensionlessUnit;
+  
+  /* If the string is empty, it represents dimensionless */
+  if (charPtr == charStopPtr) RETURN(status);
+
+  /* Look for power of ten; note LALUnitsAsString is set up to say
+   * "10^1" rather than "10", so need not allow for missing '^'
+   */
+  if (*charPtr == '1' && *(charPtr+1) == '0' && *(charPtr+2) == '^') 
+  {
+    charPtr += 3; 
+    /* now pointing at first digit of power of ten (or minus sign) */
+
+    if ( *charPtr == '-'  ) 
+    {
+      sign = -1;
+      ++charPtr;
+    }
+    else 
+    {
+      sign = 1;
+    }
+    
+    /* read power of ten into temp[]; return value of 1 means failure */
+    if ( readNumber( temp, &charPtr ) ) 
+    {
+      ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
+    }
+    /* charPtr now points to one after end of power of ten */
+    
+    output->powerOfTen = sign*atoi(temp);    
+
+    /* If the power of ten was all there was, return */
+    if (*charPtr == '\0') RETURN(status);
+
+    if ( *charPtr != ' ') 
+    {
+      ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
+    }
+    
+    ++charPtr;
+  } /* if (*charPtr == '1' && *(charPtr+1) == '0' && *(charPtr+2) == '^') */
+
+  /* charPtr now points to start of first unit */
+
+  /* Read units and exponents, one unit per pass of the following do loop */
+  do
+  {
+    /* read unit name into temp[]; return value of 1 means failure */
+    if ( readString( temp, &charPtr ) ) {
+      ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
+    }
+    /* charPtr now points to one after end of unit name */
+
+    /* find which unit name this matches */
+    for (i=0; strcmp(temp,lalUnitName[i]); ++i)
+    {
+      if (i>=LALNumUnits) /* didn't find it */
+      {
+	ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
+      }
+    }
+
+    /* Make sure we haven't already read in this unit */
+    if ( output->unitNumerator[i] || output->unitDenominatorMinusOne[i] )
+    {
+      ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
+    }
+
+    if ( *charPtr == ' ' || *charPtr == '\0' )
+    { /* We have only one power of the unit */
+      output->unitNumerator[i] = 1;
+    }
+    else if ( *charPtr == '^' )
+    {
+      ++charPtr;
+      /* now points to the first digit of the exponent, or minus sign */
+
+      if ( *charPtr == '-'  ) 
+      {
+	sign = -1;
+	++charPtr;
+      }
+      else 
+      {
+	sign = 1;
+      }
+
+      /* read exponent numerator into temp[];
+	 return value of 1 means failure */
+      if ( readNumber( temp, &charPtr ) ) {
+	ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
+      }
+      output->unitNumerator[i] = sign * atoi(temp);
+
+      if ( *charPtr == '/' )
+      {
+	++charPtr;
+	/* now points to first digit of denominator */
+
+	/* read exponent denominator into temp[];
+	   return value of 1 means failure */
+	if ( readNumber( temp, &charPtr ) || temp[0] == '0') {
+	  ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
+	}
+	output->unitDenominatorMinusOne[i] = atoi(temp) - 1;
+      } /* if ( *charPtr == '/' ) */
+    } /* else if ( *charPtr == '^' ) */
+    else 
+    {
+      ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
+    }
+
+    if ( *charPtr == ' ') ++charPtr;
+
+  }
+  while ( *charPtr != '\0' );
+  
   RETURN(status);
 }
