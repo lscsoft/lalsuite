@@ -9,6 +9,44 @@
  *-----------------------------------------------------------------------
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <getopt.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <regex.h>
+#include <time.h>
+
+#include <FrameL.h>
+
+#include <lalapps.h>
+#include <series.h>
+#include <processtable.h>
+
+#include <lal/LALConfig.h>
+#include <lal/LALStdio.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALError.h>
+#include <lal/LALDatatypes.h>
+#include <lal/AVFactories.h>
+#include <lal/LALConstants.h>
+#include <lal/FrameStream.h>
+#include <lal/FrameCalibration.h>
+#include <lal/Window.h>
+#include <lal/TimeFreqFFT.h>
+#include <lal/IIRFilter.h>
+#include <lal/BandPassTimeSeries.h>
+#include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOLwXML.h>
+#include <lal/Date.h>
+#include <lal/Units.h>
+#include <lal/FindChirp.h>
+#include <lal/FindChirpSP.h>
+#include <lal/FindChirpChisq.h>
+#include <lal/FindChirpEngine.h>
 
 #define PROGRAM_NAME "lalapps_inspiral"
 
@@ -82,6 +120,8 @@
 "   --dynamic-range-exponent real_4 to keep the data in range a dynamic range\n"\
 "                                      scale factor is applied to the data as\n" \
 "                                      described in the findchirp documentation.\n"\
+"   --calibration string            location of a frame cache file containing\n"\
+"                                      calibration information.\n" \
 "\n" \
 "\n" \
 "FILTERING OPTIONS.\n" \
@@ -133,8 +173,25 @@
 
 #define RESULT_FILE "results.xml"
 #define BANK_FILE "tmpltbank.xml"
-#define RAWDATA_FILE "channel.txt"
-#define RESPONSE_FILE "response.txt"
-#define SPECTRUM_FILE "spectrum.txt"
-#define RHOSQ_FILE "rhosq.txt"
-#define CHISQ_FILE "chisq.txt"
+
+int snprintf(char *str, size_t size, const  char  *format, ...);
+char *strsep(char **stringp, const char *delim);
+int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
+FrameH *fr_add_proc_REAL4TimeSeries ( 
+    FrameH          *frame, 
+    REAL4TimeSeries *chan,
+    const char      *unit,
+    const char      *suffix
+    );
+FrameH *fr_add_proc_REAL4FrequencySeries ( 
+    FrameH               *frame, 
+    REAL4FrequencySeries *chan,
+    const char           *unit,
+    const char           *suffix
+    );
+FrameH *fr_add_proc_COMPLEX8FrequencySeries ( 
+    FrameH                  *frame, 
+    COMPLEX8FrequencySeries *chan,
+    const char              *unit,
+    const char              *suffix
+    );
