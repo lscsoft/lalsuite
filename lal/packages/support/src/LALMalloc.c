@@ -102,6 +102,7 @@ non-debugging mode.  (It will probably produce bus errors.)
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <pthread.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/LALMalloc.h>
@@ -118,6 +119,7 @@ static const size_t padding   = 0xDeadBeef;
 static const size_t repadding = 0xBeefDead;
 static const size_t magic     = 0xABadCafe;
 
+pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 static size_t lalMallocTotal = 0;
 static int    lalMallocCount = 0;
 extern int    lalDebugLevel;
@@ -185,8 +187,11 @@ LALMalloc( size_t n )
       }
     }
 
+    
+    pthread_mutex_lock( &mut );
     lalMallocTotal += n;
     ++lalMallocCount;
+    pthread_mutex_unlock( &mut );
 
     /* skip the size we stored previously */
     return (void *) (pc + prefix);
@@ -320,8 +325,11 @@ LALFree( void *p )
       q[0] = 0; /* set to zero to detect duplicate frees */
       q[1] = ~magic;
 
+      pthread_mutex_lock( &mut );
       lalMallocTotal -= n;
       --lalMallocCount;
+      pthread_mutex_unlock( &mut );
+
       free( q );
     }
   }
