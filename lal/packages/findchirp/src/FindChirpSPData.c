@@ -426,8 +426,15 @@ LALFindChirpSPData (
 
     outputData   = fcSeg->data->data->data;
 
-    chisqBin     = fcSeg->chisqBinVec->data;
-    numChisqBins = fcSeg->chisqBinVec->length - 1;
+    if ( fcSeg->chisqBinVec->length )
+    {
+      chisqBin     = fcSeg->chisqBinVec->data;
+      numChisqBins = fcSeg->chisqBinVec->length - 1;
+    }
+    else
+    {
+      numChisqBins = 0;
+    }
 
     ASSERT( params->wtildeVec->length == fcSeg->data->data->length, status,
         FINDCHIRPSPH_EMISM, FINDCHIRPSPH_MSGEMISM );
@@ -538,25 +545,28 @@ LALFindChirpSPData (
      */
 
 
-    increment = fcSeg->segNorm / (REAL4) numChisqBins;
-    nextBin   = increment;
-    chisqPt   = 0;
-    partSum   = 0.0;
-
-    /* calulate the frequencies of the chi-squared bin boundaries */
-    chisqBin[chisqPt++] = 0;
-
-    for ( k = 1; k < fcSeg->data->data->length; ++k ) 
+    if ( numChisqBins )
     {
-      partSum += tmpltPower[k];
-      if ( partSum >= nextBin ) 
+      increment = fcSeg->segNorm / (REAL4) numChisqBins;
+      nextBin   = increment;
+      chisqPt   = 0;
+      partSum   = 0.0;
+
+      /* calulate the frequencies of the chi-squared bin boundaries */
+      chisqBin[chisqPt++] = 0;
+
+      for ( k = 1; k < fcSeg->data->data->length; ++k ) 
       {
-        chisqBin[chisqPt++] = k;
-        nextBin += increment;
-        if ( chisqPt == numChisqBins ) break;
+        partSum += tmpltPower[k];
+        if ( partSum >= nextBin ) 
+        {
+          chisqBin[chisqPt++] = k;
+          nextBin += increment;
+          if ( chisqPt == numChisqBins ) break;
+        }
       }
+      chisqBin[numChisqBins] = fcSeg->data->data->length;
     }
-    chisqBin[numChisqBins] = fcSeg->data->data->length;
 
   } /* end loop over data segments */
 

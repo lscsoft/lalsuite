@@ -45,8 +45,23 @@ LALFindChirpChisqVetoInit (
   ASSERT( ! params->qtildeBinVec, status, 
       FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
 
-  ASSERT( numChisqBins > 0, status, 
+  ASSERT( numChisqBins >= 0, status, 
       FINDCHIRPCHISQH_ECHIZ, FINDCHIRPCHISQH_MSGECHIZ );
+
+
+  /*
+   *
+   * if numChisqBins is zero, don't initialize anything
+   *
+   */
+
+
+  if ( numChisqBins == 0 )
+  {
+    DETATCHSTATUSPTR( status );
+    RETURN( status );
+  }
+
 
 
   /*
@@ -121,6 +136,28 @@ LALFindChirpChisqVetoFinalize (
   INITSTATUS( status, "FindChirpChisqVetoInit", FINDCHIRPCHISQC );
   ATTATCHSTATUSPTR( status );
 
+
+  /*
+   *
+   * if numChisqBins is zero, don't finalize anything
+   *
+   */
+
+
+  if ( numChisqBins == 0 )
+  {
+    DETATCHSTATUSPTR( status );
+    RETURN( status );
+  }
+
+
+  /*
+   *
+   * check arguments
+   *
+   */
+
+
   ASSERT( params, status, 
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
   ASSERT( params->plan, status, 
@@ -129,8 +166,9 @@ LALFindChirpChisqVetoFinalize (
       FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
   ASSERT( params->qtildeBinVec, status, 
       FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
-  ASSERT( numChisqBins > 0, status, 
+  ASSERT( numChisqBins >= 0, status, 
       FINDCHIRPCHISQH_ECHIZ, FINDCHIRPCHISQH_MSGECHIZ );
+
 
   /*
    *

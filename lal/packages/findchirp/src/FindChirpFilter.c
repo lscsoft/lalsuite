@@ -625,8 +625,8 @@ LALFindChirpFilterSegment (
     /* if snrsq exceeds threshold at any point */
     if ( modqsq > modqsqThresh )
     {
-      /* compute chisq vector if it does not exist */
-      if ( ! haveChisq )
+      /* compute chisq vector if it does not exist and we want it */
+      if ( ! haveChisq  && input->segment->chisqBinVec->length )
       {
         memset( params->chisqVec->data, 0, 
             params->chisqVec->length * sizeof(REAL4) );
@@ -647,8 +647,10 @@ LALFindChirpFilterSegment (
         haveChisq = 1;
       }
 
-      /* if chisq drops below threshold start processing events */
-      if ( params->chisqVec->data[j] < params->chisqThresh )
+      /* if we have don't have a chisq or the chisq drops below threshold */
+      /* start processing events                                          */
+      if ( ! input->segment->chisqBinVec->length ||
+          params->chisqVec->data[j] < params->chisqThresh )
       {
         if ( ! *eventList )
         {
@@ -695,7 +697,14 @@ LALFindChirpFilterSegment (
           thisEvent->tmplt.fine = NULL;
 
           /* set snrsq, chisq, sigma and effDist for this event */
-          thisEvent->chisq   = params->chisqVec->data[thisEvent->timeIndex];
+          if ( input->segment->chisqBinVec->length )
+          {
+            thisEvent->chisq   = params->chisqVec->data[thisEvent->timeIndex];
+          }
+          else
+          {
+            thisEvent->chisq   = 0;
+          }
           thisEvent->sigma   = norm;
           thisEvent->effDist = (input->fcTmplt->tmpltNorm * 
               input->segment->segNorm * input->segment->segNorm) / thisEvent->snrsq;
@@ -745,7 +754,14 @@ LALFindChirpFilterSegment (
     memcpy( &(thisEvent->tmplt), input->tmplt, sizeof(InspiralTemplate) );
 
     /* set snrsq, chisq, sigma and effDist for this event */
-    thisEvent->chisq   = params->chisqVec->data[thisEvent->timeIndex];
+    if ( input->segment->chisqBinVec->length )
+    {
+      thisEvent->chisq = params->chisqVec->data[thisEvent->timeIndex];
+    }
+    else
+    {
+      thisEvent->chisq = 0;
+    }
     thisEvent->sigma   = norm;
     thisEvent->effDist = (input->fcTmplt->tmpltNorm * 
           input->segment->segNorm * input->segment->segNorm) / thisEvent->snrsq;

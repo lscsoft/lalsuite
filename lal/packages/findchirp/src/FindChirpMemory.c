@@ -255,7 +255,7 @@ LALCreateFindChirpSegmentVector (
       status, FINDCHIRPH_ESEGZ, FINDCHIRPH_MSGESEGZ );
   ASSERT( params->numPoints > 0, 
       status, FINDCHIRPH_ENUMZ, FINDCHIRPH_MSGENUMZ );
-  ASSERT( params->numChisqBins > 0, status, 
+  ASSERT( params->numChisqBins >= 0, status, 
       FINDCHIRPH_ECHIZ, FINDCHIRPH_MSGECHIZ );
 
 
@@ -305,11 +305,22 @@ LALCreateFindChirpSegmentVector (
     CHECKSTATUSPTR (status);
 
     /* chi squared frequency bins */
-    segPtr[i].chisqBinVec = NULL;
+    if ( params->numChisqBins )
+    {
+      segPtr[i].chisqBinVec = NULL;
 
-    LALU4CreateVector (status->statusPtr, 
-        &segPtr[i].chisqBinVec, params->numChisqBins + 1);
-    CHECKSTATUSPTR (status);
+      LALU4CreateVector (status->statusPtr, 
+          &segPtr[i].chisqBinVec, params->numChisqBins + 1);
+      CHECKSTATUSPTR (status);
+    }
+    else
+    {
+      segPtr[i].chisqBinVec = (UINT4Vector *) 
+        LALMalloc( sizeof(UINT4Vector) );
+
+      segPtr[i].chisqBinVec->length = 0;
+      segPtr[i].chisqBinVec->data = NULL;
+    }
 
     /* segment dependent part of normalisation */
     segPtr[i].segNorm = 0.0;
@@ -361,8 +372,15 @@ LALDestroyFindChirpSegmentVector (
     CHECKSTATUSPTR (status);
 
     /* chi squared frequency bins */
-    LALU4DestroyVector (status->statusPtr, &segPtr[i].chisqBinVec);
-    CHECKSTATUSPTR (status);
+    if ( segPtr[i].chisqBinVec->length )
+    {
+      LALU4DestroyVector (status->statusPtr, &segPtr[i].chisqBinVec);
+      CHECKSTATUSPTR (status);
+    }
+    else
+    {
+      LALFree( segPtr[i].chisqBinVec );
+    }
 
     /* frequency series pointer */
     LALFree (segPtr[i].data);
