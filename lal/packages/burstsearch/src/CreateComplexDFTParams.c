@@ -53,11 +53,9 @@ LALCreateComplexDFTParams (
 
 
   /*  Assign memory for *dftParams   */
-  *dftParams = (ComplexDFTParams *) LALMalloc(sizeof(ComplexDFTParams));
-
-  /*  Make sure that the allocation was succesful */
-  ASSERT (*dftParams, status, TFTRANSFORM_EMALLOC, TFTRANSFORM_MSGEMALLOC);
-
+  if ( !( *dftParams = (ComplexDFTParams *) LALMalloc(sizeof(ComplexDFTParams)) ) ){
+    ABORT (status, TFTRANSFORM_EMALLOC, TFTRANSFORM_MSGEMALLOC);
+  }
 
   /* fill in some values */
   (*dftParams)->window = NULL;

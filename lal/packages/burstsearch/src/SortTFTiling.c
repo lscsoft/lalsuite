@@ -90,11 +90,13 @@ LALSortTFTiling (
    */
 
   /* allocate memory for array of pointers to tiles */
+  tiles = NULL;
   tiles = (TFTile **) LALMalloc (numTiles * sizeof(TFTile *));
   
   /*  Make sure that the allocation was succesful */
-  ASSERT (tiles, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-
+  if ( !(tiles) ){
+    ABORT (status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+  }
 
   /* copy out pointers into array */
   tileCount=0;

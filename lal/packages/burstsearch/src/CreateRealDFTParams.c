@@ -49,13 +49,11 @@ LALCreateRealDFTParams (
   ASSERT( (sign==1) || (sign==-1), status, TFTRANSFORM_EINCOMP,
           TFTRANSFORM_MSGEINCOMP);
 
-  /*  Assign memory for *dftParams   */
-  *dftParams = (RealDFTParams *) LALMalloc(sizeof(RealDFTParams));
+  /*  Assign memory for *dftParams and check allocation */
+  if ( !( *dftParams = (RealDFTParams *) LALMalloc(sizeof(RealDFTParams)) ) ){
+    ABORT (status, TFTRANSFORM_EMALLOC, TFTRANSFORM_MSGEMALLOC);
+  }
   
-  /*  Make sure that the allocation was succesful */
-  ASSERT (*dftParams, status, TFTRANSFORM_EMALLOC, TFTRANSFORM_MSGEMALLOC);
-
-
   /* fill in some values */
   (*dftParams)->window = NULL;
   (*dftParams)->plan = NULL;

@@ -131,13 +131,17 @@ LALCreateTFTiling (
   *tfTiling = (TFTiling *) LALMalloc(sizeof(TFTiling));
   
   /*  Make sure that the allocation was succesful */
-  ASSERT (*tfTiling, status, EXCESSPOWERH_EMALLOC, EXCESSPOWERH_MSGEMALLOC);
+  if ( !(*tfTiling) ){
+    ABORT (status, EXCESSPOWERH_EMALLOC, EXCESSPOWERH_MSGEMALLOC);
+  }
 
   /* set some parameters */
   (*tfTiling)->numPlanes = numPlanes;
   (*tfTiling)->planesComputed = FALSE;
   (*tfTiling)->excessPowerComputed = FALSE;
   (*tfTiling)->tilesSorted = FALSE;
+  (*tfTiling)->tfp = NULL;
+  (*tfTiling)->dftParams = NULL;
 
   /* set things up for recursive generation of linked list below */
   currentTile = &((*tfTiling)->firstTile);
@@ -148,16 +152,21 @@ LALCreateTFTiling (
        LALMalloc (numPlanes*sizeof(COMPLEX8TimeFrequencyPlane *));
 
   /*  Make sure that the allocation was succesful */
-  ASSERT ((*tfTiling)->tfp, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-
+  if ( !((*tfTiling)->tfp) ){
+    LALFree( *tfTiling );
+    ABORT (status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+  }
 
   /* allocate memory for vector of pointers to DFTParams */
   (*tfTiling)->dftParams = (ComplexDFTParams **) 
        LALMalloc (numPlanes*sizeof(ComplexDFTParams *));
 
   /*  Make sure that the allocation was succesful */
-  ASSERT ((*tfTiling)->dftParams, status, EXCESSPOWERH_ENULLP, 
-          EXCESSPOWERH_MSGENULLP);
+  if ( !((*tfTiling)->dftParams) ){
+    LALFree( (*tfTiling)->tfp );
+    LALFree( *tfTiling );
+    ABORT (status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+  }
 
 
 

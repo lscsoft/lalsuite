@@ -52,6 +52,7 @@ DestroyTFTile (LALStatus *status, TFTile *tfTile)
 
   ASSERT(tfTile, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
 
+  /* count the tiles */
   tileCount=0;
   thisTile = tfTile;
   while (thisTile != NULL)
@@ -60,12 +61,14 @@ DestroyTFTile (LALStatus *status, TFTile *tfTile)
       thisTile = thisTile->nextTile;
     }
 
-
   /* allocate memory for array of pointers to tiles */
+  tiles = NULL;
   tiles = (TFTile **) LALMalloc (tileCount * sizeof(TFTile *));
   
   /*  Make sure that the allocation was succesful */
-  ASSERT (tiles, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+  if ( !(tiles) ){
+    ABORT (status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+  }
 
   tileCount=0;
   thisTile = tfTile;
