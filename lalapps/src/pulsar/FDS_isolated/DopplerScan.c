@@ -74,7 +74,8 @@ void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params );
 void getMetric( LALStatus *status, REAL4 g[3], REAL4 skypos[2], void *params );
 void LALMetricWrapper (LALStatus *stat, REAL8Vector *metric, PtoleMetricIn *params);
 void LALTemplateDistance (LALStatus *stat, REAL8 *dist, const DopplerPosition *pos1, const DopplerPosition *pos2);
-	
+REAL8 getDopplermax(EphemerisData *edat);
+
 void ConvertTwoDMesh2Grid ( LALStatus *stat, DopplerScanGrid **grid, const TwoDMeshNode *mesh2d, const SkyRegion *region );
 
 BOOLEAN pointInPolygon ( const SkyPosition *point, const SkyRegion *polygon );
@@ -1363,3 +1364,39 @@ printFrequencyShifts ( LALStatus *stat, const DopplerScanState *scan, const Dopp
   RETURN (stat);
 
 } /* printFrequencyShifts() */
+
+
+/** some temp test-code outputting the maximal possible dopper-shift
+ * |vE| + |vS| over the ephemeris */
+REAL8 
+getDopplermax(EphemerisData *edat)
+{
+#define mymax(a,b) ((a) > (b) ? (a) : (b))
+  UINT4 i;
+  REAL8 maxvE, maxvS;
+  REAL8 *vel, beta;
+      
+  maxvE = 0;
+  for (i=0; i < (UINT4)edat->nentriesE; i++)
+    {
+      vel = edat->ephemE[i].vel;
+      beta = sqrt( vel[0]*vel[0] + vel[1]*vel[1] + vel[2]*vel[2] );
+      maxvE = mymax( maxvE, beta );
+    }
+  
+  maxvS = 0;	
+  for (i=0; i < (UINT4)edat->nentriesS; i++)
+    {
+      vel = edat->ephemS[i].vel;
+      beta = sqrt( vel[0]*vel[0] + vel[1]*vel[1] + vel[2]*vel[2] );
+      maxvS = mymax( maxvS, beta );
+    }
+  
+  printf ("Maximal Doppler-shift to be expected from ephemeris: %e", maxvE + maxvS );
+
+  return (maxvE + maxvS);
+
+} /* getDopplermax() */
+
+
+
