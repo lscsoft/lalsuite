@@ -444,6 +444,15 @@ class CondorDAG:
     """
     self.__dag_file_path = path
 
+  def get_dag_file(self):
+    """
+    Return the path to the DAG file.
+    """
+    if not self.__log_file_path:
+      raise CondorDAGError, "No path for DAG file"
+    else:
+      return self.__dag_file_path
+
   def add_node(self,node):
     """
     Add a CondorDAGNode to this DAG. The CondorJob that the node uses is 
