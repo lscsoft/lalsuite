@@ -1812,7 +1812,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* get xml file name */
   if (userTag)
   {
-    LALSnprintf(xmlFileName, FILENAME_MAX, "%s%s-stochastic_%s-%d-%d.xml", \
+    LALSnprintf(xmlFileName, FILENAME_MAX, "%s%s-stochastic_%s_%d-%d.xml", \
         ifoOne, ifoTwo, userTag, startTime, endTime);
   }
   else
