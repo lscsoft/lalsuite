@@ -33,6 +33,7 @@ RCSID ("$Id$");
 #define MAKEFAKEDATAC_EFILE 	4
 #define MAKEFAKEDATAC_ENOARG 	5
 #define MAKEFAKEDATAC_EMEM 	6
+#define MAKEFAKEDATAC_EBINARYOUT 7
 
 #define MAKEFAKEDATAC_MSGENORM "Normal exit"
 #define MAKEFAKEDATAC_MSGESUB  "Subroutine failed"
@@ -41,6 +42,7 @@ RCSID ("$Id$");
 #define MAKEFAKEDATAC_MSGEFILE "File IO error"
 #define MAKEFAKEDATAC_MSGENOARG "Missing argument"
 #define MAKEFAKEDATAC_MSGEMEM 	"Out of memory..."
+#define MAKEFAKEDATAC_MSGEBINARYOUT "Error in writing binary-data to stdout"
 /* </lalErrTable> */
 
 /***************************************************/
@@ -53,13 +55,16 @@ typedef struct
 {
   EphemerisData edat;
   LALDetector Detector;  
-  LIGOTimeGPS startTime;
-  LIGOTimeGPS refTime;
+
+  LIGOTimeGPS startTimeGPS;
+  UINT4 duration;	/* seconds */
   LIGOTimeGPSVector *timestamps;
-  REAL8 duration;
+
+  LIGOTimeGPS refTime;
   REAL8 fmin_eff;	/* 'effective' fmin: round down such that fmin*Tsft = integer! */
   REAL8 fBand_eff;	/* increase correspondingly if fmin_eff < fMin */
   REAL8Vector *spindown;
+
   SFTVector *noiseSFTs;
   BOOLEAN binaryPulsar;
   LIGOTimeGPS orbitPeriTime;
@@ -88,23 +93,38 @@ static const ConfigVars_t empty_GV;
 /*----------------------------------------------------------------------*/
 /* User variables */
 /*----------------------------------------------------------------------*/
-CHAR *uvar_outSFTbname;
-CHAR *uvar_outTDDFile;
-CHAR *uvar_timestampsFile;
-CHAR *uvar_detector;
-REAL8 uvar_startTime;
-REAL8 uvar_refTime;
-CHAR *uvar_ephemDir;
-CHAR *uvar_ephemYear;
-CHAR *uvar_noiseSFTs;
-BOOLEAN uvar_doWindowing;
-BOOLEAN uvar_binaryoutput;
-BOOLEAN uvar_nomagic;
 BOOLEAN uvar_help;
-REAL8 uvar_Tsft;
-INT4 uvar_nTsft;
+
+/* output */
+CHAR *uvar_outSFTbname;
+
+BOOLEAN uvar_outputTDD;
+CHAR *uvar_TDDfile;
+BOOLEAN uvar_hardwareTDD;
+
+/* specify start + duration */
+CHAR *uvar_timestampsFile;
+INT4 uvar_startTime;	/* seconds */
+INT4 uvar_duration;	/* seconds */
+
+/* time-series sampling + heterodyning frequencies */
 REAL8 uvar_fmin;
 REAL8 uvar_Band;
+
+/* SFT params */
+REAL8 uvar_Tsft;
+
+/* noise to add [OPTIONAL] */
+CHAR *uvar_noiseSFTs;
+REAL8 uvar_noiseSigma;
+
+/* Detector and ephemeris */
+CHAR *uvar_detector;
+CHAR *uvar_ephemDir;
+CHAR *uvar_ephemYear;
+
+/* pulsar parameters [REQUIRED] */
+REAL8 uvar_refTime;
 REAL8 uvar_aPlus;
 REAL8 uvar_aCross;
 REAL8 uvar_psi;
@@ -116,7 +136,7 @@ REAL8 uvar_f1dot;
 REAL8 uvar_f2dot;
 REAL8 uvar_f3dot;
 
-/* orbital parameters */
+/* orbital parameters [OPTIONAL] */
 REAL8 uvar_orbitSemiMajorAxis;
 REAL8 uvar_orbitEccentricity;
 INT4  uvar_orbitTperiSSBsec;
@@ -127,8 +147,6 @@ REAL8 uvar_orbitArgPeriapse;
 /*----------------------------------------------------------------------*/
 
 
-/* Gaussian noise */
-REAL8 uvar_noiseSigma;
 
 extern int vrbflg;
 
@@ -141,7 +159,6 @@ main(int argc, char *argv[])
   LALStatus status = blank_status;	/* initialize status */
   ConfigVars_t GV = empty_GV;
   PulsarSignalParams params = empty_params;
-  SFTParams sftParams = empty_sftParams;
   SFTVector *SFTs = NULL;
   REAL4TimeSeries *Tseries = NULL;
   BinaryOrbitParams orbit;
@@ -194,100 +211,78 @@ main(int argc, char *argv[])
   params.ephemerides = &(GV.edat);
 
   /* characterize the output time-series */
-  params.startTimeGPS   = GV.startTime;
-  params.duration     	= (UINT4) ceil(GV.duration); /* length of time-series in seconds */
+  params.startTimeGPS   = GV.startTimeGPS;
+  params.duration     	= GV.duration; 		/* length of time-series in seconds */
   params.samplingRate 	= 2.0 * GV.fBand_eff;	/* sampling rate of time-series (= 2 * frequency-Band) */
   params.fHeterodyne  	= GV.fmin_eff;		/* heterodyning frequency for output time-series */
 
-  /*================================================================================*/
-  /* test new function SimulatePulsarSignal() */
-#if 0
-  {
-    REAL8 LMST, GMST;	/* local mean sidereal time */
-    LALPlaceAndGPS place_and_gps;
-    LALMSTUnitsAndAcc units_and_acc;
-    LALDate date;
-    CHARVector *dateString = NULL;
-    LIGOTimeGPS gps;
-    LALFrDetector det = params.site->frDetector;
-    REAL8 zeta;
-    REAL8TimeSeries *Tseries8 = NULL;
-  
-    LAL_CALL ( LALCHARCreateVector (&status, &dateString, 64), &status);	/* ARGHHHH ..... */
-
-    units_and_acc.accuracy = LALLEAPSEC_STRICT;
-    units_and_acc.units =   MST_DEG;	/* return-format of LMST */
- 
-    place_and_gps.p_detector = params.site;
-    place_and_gps.p_gps = &(params.startTimeGPS);
-
-    /*
-    LAL_CALL ( LALDateString (&status, dateString, &date), &status);
-    LAL_CALL (LALUTCtoGPS (&status, &gps, &date, &(units_and_acc.accuracy)), &status);
-    */
-                                                    
-    LAL_CALL (LALGPStoLMST1 (&status, &LMST, &place_and_gps, &units_and_acc), &status);
-
-    LAL_CALL (LALGPStoGMST1 (&status, &GMST, &(params.startTimeGPS), &units_and_acc), &status);
-
-    LAL_CALL (LALGPStoUTC (&status, &date, &(params.startTimeGPS), &(units_and_acc.accuracy) ), &status);
-    LAL_CALL ( LALDateString (&status, dateString, &date), &status);
-    printf ("DEBUG: GPS= %d, UTC = %s\n", params.startTimeGPS.gpsSeconds, dateString->data);
-    LAL_CALL ( LALDateString (&status, dateString, &date), &status);
-
-    printf ("DEBUG: Start-time: GPS= %d, UTC= %s; long=%f deg (x=%f, y=%f), LMST = %f, GMST = %f\n", 
-	    params.startTimeGPS.gpsSeconds, dateString->data, 
-	    (REAL8) (params.site->frDetector.vertexLongitudeRadians * (REAL8)LAL_180_PI), 
-	    params.site->location[0], params.site->location[1],
-	    LMST, GMST );
-
-    printf ("atan2 (y, x) = %f deg\n", atan2 (params.site->location[1], params.site->location[0]) * (REAL8)LAL_180_PI);
-
-
-    zeta = 1.0/(sin(det.xArmAzimuthRadians - det.yArmAzimuthRadians));
-    if(params.site->type == LALDETECTORTYPE_CYLBAR) zeta=1.0;
-    printf ("\nDEBUG: xArmAzimuth - yArmAzimut = %.10f, sin zeta = %f\n",
-	  det.xArmAzimuthRadians -  det.yArmAzimuthRadians, zeta );
-
-    LAL_CALL (LALSimulatePulsarSignal (&status, &Tseries8, &params), &status);
-
-  }
-#endif
-  /*================================================================================*/
-
-
   /*----------------------------------------
-   * generate the heterodyned time-series 
+   * generate the (heterodyned) time-series 
    *----------------------------------------*/
   LAL_CALL (LALGeneratePulsarSignal (&status, &Tseries, &params), &status );
 
-  if (lalDebugLevel >= 3)
-    {  
-      FILE *fp;
-      fp = fopen ("Tseries_v4.dat", "w");
-      write_timeSeriesR4 (fp, Tseries);
-      fclose (fp);
-    }
-
   /* add Gaussian noise if requested */
-  if ( (REAL4)uvar_noiseSigma > 0)
+  if ( (REAL4)uvar_noiseSigma > 0) {
+    LAL_CALL ( AddGaussianNoise (&status, Tseries, Tseries, (REAL4)uvar_noiseSigma), &status);
+  }
+
+
+  /* output time-series if requested */
+  if ( uvar_outputTDD )
     {
-      LAL_CALL ( AddGaussianNoise (&status, Tseries, Tseries, (REAL4)uvar_noiseSigma), &status);
-    }
+      FILE *fp;
+      
+      if ( !strcmp (uvar_TDDfile, "stdout") )
+	fp = stdout;
+      else if ( !strcmp (uvar_TDDfile, "stderr") )
+	fp = stderr;
+      else
+	{
+	  if ( (fp = fopen (uvar_TDDfile, "w")) == NULL)
+	    {
+	      perror ("Error opening outTDDfile for writing");
+	      LALPrintError ("TDDfile = %s\n", uvar_TDDfile );
+	      exit ( MAKEFAKEDATAC_EFILE );
+	    }
+	}
+
+      /* send timeseries data in binary-format to stdout for hardware-injections */
+      if ( uvar_hardwareTDD )
+	{
+	  REAL4 magic = 1234.5;
+	  UINT4  length = Tseries->data->length;
+	  REAL4 *datap = Tseries->data->data;
+    
+	  fwrite ( &magic, sizeof(magic), 1, stdout );
+	  if ( length != fwrite (datap, sizeof(datap[0]), length, stdout) )
+	    {
+	      perror( "Fatal error in writing binary data to stdout\n");
+	      exit (MAKEFAKEDATAC_EBINARYOUT);
+	    }
+	} /* binary output for hardware injections */
+      else
+	write_timeSeriesR4 (fp, Tseries);
+
+      if ( (fp != stdout) && (fp != stderr) )
+	fclose(fp);
+
+    } /* if outputting time-series */
+     
 
   /*----------------------------------------
    * last step: turn this timeseries into SFTs
+   * and output them to disk 
    *----------------------------------------*/
-  sftParams.Tsft = uvar_Tsft;
-  sftParams.timestamps = GV.timestamps;
-  sftParams.noiseSFTs = GV.noiseSFTs;
-
-  LAL_CALL ( LALSignalToSFTs (&status, &SFTs, Tseries, &sftParams), &status);
-
-
-  /* write SFTs to disk */
   if (uvar_outSFTbname)
     {
+      SFTParams sftParams = empty_sftParams;
+
+      sftParams.Tsft = uvar_Tsft;
+      sftParams.timestamps = GV.timestamps;
+      sftParams.noiseSFTs = GV.noiseSFTs;
+
+      LAL_CALL ( LALSignalToSFTs (&status, &SFTs, Tseries, &sftParams), &status);
+
       fname = LALCalloc (1, strlen (uvar_outSFTbname) + 10);
       for (i=0; i < SFTs->length; i++)
 	{
@@ -320,21 +315,9 @@ main(int argc, char *argv[])
  * we do all consistency-checks on user-input here
  *----------------------------------------------------------------------*/
 void
-InitMakefakedata (LALStatus *stat, 
-		  ConfigVars_t *cfg,
-		  int argc, 
-		  char *argv[])
+InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
 {
-  LALLeapSecFormatAndAcc leapParams = {  LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT };
-  INT4 leapSecs;
-  UINT4 msp = 0;	/* number of spindown-parameters */
-  CHAR *earthdata;
-  CHAR *sundata;
-  EphemerisData edat = empty_edat;
-  REAL8 duration;
-  LIGOTimeGPSVector *timestamps = NULL;
-  UINT4 imin, nsamples;
-  
+ 
   INITSTATUS( stat, "InitMakefakedata", rcsid );
   ATTATCHSTATUSPTR (stat);
 
@@ -347,40 +330,47 @@ InitMakefakedata (LALStatus *stat,
   if (uvar_help) 	/* if help was requested, we're done */
     exit (0);
 
-  /* check more complex input-dependencies */
-  if ( (!LALUserVarWasSet(&uvar_timestampsFile) && !LALUserVarWasSet(&uvar_startTime))
-       || (LALUserVarWasSet(&uvar_timestampsFile) && LALUserVarWasSet(&uvar_startTime)) )
+
+  /* ----- determine "reference time", i.e. SSB-time at which pulsar params are defined ---------- */
+  if (LALUserVarWasSet(&uvar_refTime)) 
     {
-      LALPrintError ("\nPlease specify either timestampsFile or startTime !\n\n");
-      ABORT (stat, MAKEFAKEDATAC_ENOARG, MAKEFAKEDATAC_MSGENOARG);
+      TRY ( LALFloatToGPS (stat->statusPtr, &(cfg->refTime), &uvar_refTime), stat);
+    } 
+  else	/* otherwise set to 0 ==> startTime in SSB will be used */
+    {
+      cfg->refTime.gpsSeconds = 0;
+      cfg->refTime.gpsNanoSeconds = 0;
     }
 
-  /* prepare vector of spindown parameters */
-  if (uvar_f3dot != 0) 		msp = 3;	/* counter number of spindowns */
-  else if (uvar_f2dot != 0)	msp = 2;
-  else if (uvar_f1dot != 0)	msp = 1;
-  else 				msp = 0;
-  if (msp) {
-    TRY (LALDCreateVector (stat->statusPtr, &(cfg->spindown), msp), stat);
-  }
-  switch (msp) 
-    {
-    case 3:
-      cfg->spindown->data[2] = uvar_f3dot;
-    case 2:
-      cfg->spindown->data[1] = uvar_f2dot;
-    case 1:
-      cfg->spindown->data[0] = uvar_f1dot;
-      break;
-    case 0:
-      break;
-    default:
-      LALPrintError ("\nmsp = %d makes no sense to me...\n\n", msp);
-      ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-    } /* switch(msp) */
+  /* ---------- prepare vector of spindown parameters ---------- */
+  {
+    UINT4 msp = 0;	/* number of spindown-parameters */
+    if (uvar_f3dot != 0) 		msp = 3;	/* counter number of spindowns */
+    else if (uvar_f2dot != 0)	msp = 2;
+    else if (uvar_f1dot != 0)	msp = 1;
+    else 				msp = 0;
+    if (msp) {
+      TRY (LALDCreateVector (stat->statusPtr, &(cfg->spindown), msp), stat);
+    }
+    switch (msp) 
+      {
+      case 3:
+	cfg->spindown->data[2] = uvar_f3dot;
+      case 2:
+	cfg->spindown->data[1] = uvar_f2dot;
+      case 1:
+	cfg->spindown->data[0] = uvar_f1dot;
+	break;
+      case 0:
+	break;
+      default:
+	LALPrintError ("\nmsp = %d makes no sense to me...\n\n", msp);
+	ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+      } /* switch(msp) */
 
-  
-  /* prepare detector */
+  } /* END: prepare spindown parameters */
+
+  /* ---------- prepare detector ---------- */
   if      (!strcmp(uvar_detector,"LHO"))   cfg->Detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
   else if (!strcmp(uvar_detector,"LLO"))   cfg->Detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
   else if (!strcmp(uvar_detector,"VIRGO")) cfg->Detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
@@ -392,40 +382,96 @@ InitMakefakedata (LALStatus *stat,
     ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
   }
 
-  /* read timestamps and set signal-duration */
-  cfg->timestamps = NULL;
-  if (uvar_timestampsFile) 
+  /* ---------- for SFT output: calculate effective fmin and Band ---------- */
+  if ( LALUserVarWasSet( &uvar_outSFTbname ) )
     {
-      LIGOTimeGPS t1, t0;
-      TRY (ReadTimestamps (stat->statusPtr, &timestamps, uvar_timestampsFile), stat);
-      if ((UINT4)uvar_nTsft > timestamps->length) {
-	LALPrintError ("\nTimestamps-file contains less than nTsft=%d entries!\n\n", uvar_nTsft);
+      UINT4 imin, nsamples;
+      
+      /* calculate "effective" fmin from uvar_fmin: following makefakedata_v2, we
+       * make sure that fmin_eff * Tsft = integer, such that freqBinIndex corresponds
+       * to a frequency-index of the non-heterodyned signal.
+       */
+      imin = (UINT4) floor( uvar_fmin * uvar_Tsft);
+      cfg->fmin_eff = (REAL8)imin / uvar_Tsft;
+
+      /* Increase Band correspondingly. */
+      cfg->fBand_eff = uvar_Band;
+      cfg->fBand_eff += (uvar_fmin - cfg->fmin_eff);
+      /* increase band further to make sure we get an integet number of frequency-bins in SFT */
+      nsamples = 2 * ceil(cfg->fBand_eff * uvar_Tsft);
+      cfg->fBand_eff = 1.0*nsamples/(2.0 * uvar_Tsft);
+      
+      if ( (cfg->fmin_eff != uvar_fmin) || (cfg->fBand_eff != uvar_Band) )
+	LALPrintError("\nWARNING: for SFT-creation we had to adjust (fmin,Band) to fmin_eff=%f and Band_eff=%f\n", 
+		      cfg->fmin_eff, cfg->fBand_eff);
+      
+    } /* END: SFT-specific corrections to fmin and Band */
+  else
+    { /* producing pure time-series output ==> no adjustments necessary */
+      cfg->fmin_eff = uvar_fmin;
+      cfg->fBand_eff = uvar_Band;
+    }
+
+  /* ---------- determine requested signal- start + duration ---------- */
+  {
+    /* check input consistency: *uvar_timestampsFile, uvar_startTime, uvar_duration */
+    BOOLEAN haveStart, haveDuration, haveTimestamps;
+    haveStart = LALUserVarWasSet (&uvar_startTime);
+    haveDuration = LALUserVarWasSet (&uvar_duration);
+    haveTimestamps = LALUserVarWasSet (&uvar_timestampsFile);
+    
+    if ( ! ( haveStart || haveTimestamps ) )
+      {
+	LALPrintError ("\nCould not infer start of observation-period (need either 'startTime' or 'timestampsFile')\n");
 	ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
       }
-      t1 = timestamps->data[uvar_nTsft-1];
-      t0 = timestamps->data[0];
-      TRY (LALDeltaFloatGPS(stat->statusPtr, &duration, &t1, &t0), stat);
-      duration += uvar_Tsft;
-    } 
-  else
-    duration = uvar_nTsft * uvar_Tsft;
+    if ( (haveStart || haveDuration) && haveTimestamps )
+      {
+	LALPrintError ("\nOverdetermined observation-period (both 'startTime'/'duration' and 'timestampsFile' given)\n");
+	ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+      }
 
-  cfg->duration = duration;
-  cfg->timestamps = timestamps;
+    if ( haveStart && !haveDuration )
+      {
+	LALPrintError ("\nCould not infer duration of observation-period (need 'duration')\n");
+	ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+      }
 
+    /* determine observation period (start + duration) */
+    if ( haveTimestamps )
+      {
+	LIGOTimeGPSVector *timestamps = NULL;
+	LIGOTimeGPS t1, t0;
+	REAL8 duration;
 
-  /* get observation start-time */
-  if (LALUserVarWasSet (&uvar_startTime)) {
-    TRY ( LALFloatToGPS (stat->statusPtr, &(cfg->startTime), &uvar_startTime), stat);
-  }
-  else
-    cfg->startTime = cfg->timestamps->data[0];
+	TRY (ReadTimestamps (stat->statusPtr, &timestamps, uvar_timestampsFile), stat);
 
-  /*----------------------------------------------------------------------
-   * Prepare quantities for barycentering 
-   */
+	t1 = timestamps->data[timestamps->length - 1 ];
+	t0 = timestamps->data[0];
+	TRY (LALDeltaFloatGPS(stat->statusPtr, &duration, &t1, &t0), stat);
+	duration += uvar_Tsft;
+
+	cfg->startTimeGPS = timestamps->data[0];
+	cfg->duration = (UINT4)ceil(duration+0.5);
+	cfg->timestamps = timestamps;
+      } /* haveTimestamps */
+    else
+      {
+	cfg->startTimeGPS.gpsSeconds = uvar_startTime;
+	cfg->startTimeGPS.gpsNanoSeconds = 0;
+	cfg->duration = (UINT4)uvar_duration;
+	cfg->timestamps = NULL;
+      } /* !haveTimestamps */
+
+  } /* END: setup signal start + duration */
+
+  /* -------------------- Prepare quantities for barycentering -------------------- */
   {
     UINT4 len;
+    INT4 leapSecs;
+    LALLeapSecFormatAndAcc leapParams;
+    EphemerisData edat = empty_edat;
+    CHAR *earthdata, *sundata;
 
     len = strlen(uvar_ephemYear) + 20;
 
@@ -454,7 +500,9 @@ InitMakefakedata (LALStatus *stat,
     edat.ephiles.sunEphemeris   = sundata;
         
     /* get leap-seconds since start of GPS-time */
-    TRY ( LALLeapSecs (stat->statusPtr, &leapSecs,  &(cfg->startTime), &leapParams), stat);
+    leapParams.format =  LALLEAPSEC_GPSUTC;
+    leapParams.accuracy = LALLEAPSEC_STRICT;	/* complain about missing leap-info */
+    TRY ( LALLeapSecs (stat->statusPtr, &leapSecs,  &(cfg->startTimeGPS), &leapParams), stat);
     edat.leap = (INT2) leapSecs;
 
     /* Init ephemerides */  
@@ -462,32 +510,14 @@ InitMakefakedata (LALStatus *stat,
     LALFree (earthdata);
     LALFree (sundata);
 
-    cfg->edat = edat;
+    cfg->edat = edat;	/* struct-copy */
+
   } /* END: prepare barycentering routines */
   /*----------------------------------------------------------------------*/
 
+  /* -------------------- handle binary orbital params if given -------------------- */
 
-  /* if reference-time was given for pulsar-parameters */
-  if (LALUserVarWasSet(&uvar_refTime)) {
-      TRY ( LALFloatToGPS (stat->statusPtr, &(cfg->refTime), &uvar_refTime), stat);
-  } else	/* otherwise set to 0, so startTime in SSB will be used */
-    cfg->refTime.gpsSeconds = cfg->refTime.gpsNanoSeconds = 0;
-  
-
-  /* calculate "effective" fmin from uvar_fmin: following makefakedata_v2, we
-   * make sure that fmin_eff * Tsft = integer, such that freqBinIndex corresponds
-   * to a frequency-index of the non-heterodyned signal.
-   */
-  imin = (UINT4) floor( uvar_fmin * uvar_Tsft);
-  cfg->fmin_eff = (REAL8)imin / uvar_Tsft;
-  /* Increase Band correspondingly. */
-  cfg->fBand_eff = uvar_Band;
-  cfg->fBand_eff += (uvar_fmin - cfg->fmin_eff);
-  /* increase band further to make sure we get an integet number of frequency-bins in SFT */
-  nsamples = 2 * ceil(cfg->fBand_eff * uvar_Tsft);
-  cfg->fBand_eff = 1.0*nsamples/(2.0 * uvar_Tsft);
-
-  /* if any orbital parameters specified, we need all of them (except for nano-seconds)! */
+  /* Consistency check: if any orbital parameters specified, we need all of them (except for nano-seconds)! */ 
   {
     BOOLEAN set1 = LALUserVarWasSet(&uvar_orbitSemiMajorAxis);
     BOOLEAN set2 = LALUserVarWasSet(&uvar_orbitEccentricity);
@@ -511,33 +541,31 @@ InitMakefakedata (LALStatus *stat,
 	}
 
     } /* if one or more orbital parameters were set */
-  } 
+  } /* END: binary orbital params */
 
 
-  /* EITHER add Gaussian noise OR real noise-sft's */
-  if ( LALUserVarWasSet(&uvar_noiseSFTs) && LALUserVarWasSet(&uvar_noiseSigma) )
-    {
-      LALPrintError ("\nERROR: only one of 'noiseSFTs' or 'noiseSigma' can be specified!\n\n");
-      ABORT (stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
-    }
+  /* -------------------- handle NOISE params -------------------- */
+  {
+    /* EITHER add Gaussian noise OR real noise-sft's */
+    if ( LALUserVarWasSet(&uvar_noiseSFTs) && LALUserVarWasSet(&uvar_noiseSigma) )
+      {
+	LALPrintError ("\nERROR: only one of 'noiseSFTs' or 'noiseSigma' can be specified!\n\n");
+	ABORT (stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+      }
 
-  /* if real noise-SFTs: load them in now */
-  if ( uvar_noiseSFTs && LALUserVarWasSet (&uvar_noiseSFTs))
-    {
-      REAL8 fMin, fMax;
-      fMin = cfg->fmin_eff;
-      fMax = fMin + cfg->fBand_eff;
-      TRY ( LALReadSFTfiles (stat->statusPtr, &(cfg->noiseSFTs), fMin, fMax, 0, uvar_noiseSFTs), stat);
-    } /* if uvar_noiseSFTs */
+    /* if real noise-SFTs: load them in now */
+    if ( uvar_noiseSFTs && LALUserVarWasSet (&uvar_noiseSFTs))
+      {
+	REAL8 fMin, fMax;
+	fMin = cfg->fmin_eff;
+	fMax = fMin + cfg->fBand_eff;
+	TRY ( LALReadSFTfiles (stat->statusPtr, &(cfg->noiseSFTs), fMin, fMax, 0, uvar_noiseSFTs), stat);
+      } /* if uvar_noiseSFTs */
 
+  } /* END: Noise params */
 
-  /* catch (yet) unsupported options */
-  if ( LALUserVarWasSet (&uvar_outTDDFile) )
-    {
-      LALPrintError ("\nSorry, time-domain output is currently not yet supported\n\n");
-      ABORT (stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
-    }
-  
+  /* ----------------------------------------------------------------------*/
+
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
 
@@ -561,9 +589,6 @@ InitUserVars (LALStatus *stat)
   uvar_ephemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
   strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
 
-  uvar_doWindowing = FALSE;
-  uvar_binaryoutput = FALSE;
-  uvar_nomagic = FALSE;
   uvar_help = FALSE;
   uvar_Tsft = 1800;
   uvar_f1dot = 0.0;
@@ -573,20 +598,44 @@ InitUserVars (LALStatus *stat)
   uvar_noiseSigma = 0;
   uvar_noiseSFTs = NULL;
 
+  uvar_outputTDD = FALSE;
+  uvar_hardwareTDD = FALSE;
+
+  uvar_fmin = 0;	/* no heterodyning by default */
+  uvar_Band = 8192;	/* 1/2 LIGO sampling rate by default */
+
+#define DEFAULT_TDDFILE "stdout"
+  uvar_TDDfile = LALCalloc(1, strlen(DEFAULT_TDDFILE)+1);
+  strcpy (uvar_TDDfile, DEFAULT_TDDFILE);
+
   /* now register all our user-variable */
 
+  /* output options */
   LALregSTRINGUserVar(stat, outSFTbname,'n', UVAR_OPTIONAL, "Path and basefilename of output SFT files");
-  LALregSTRINGUserVar(stat, outTDDFile,	't', UVAR_OPTIONAL, "Filename for output time-series");
+
+  LALregBOOLUserVar (stat,  outputTDD,  't', UVAR_OPTIONAL, "Output generated time-domain data (TDD)");
+  LALregSTRINGUserVar(stat, TDDfile,	'T', UVAR_OPTIONAL, "Filename for output time-series");
+  LALregBOOLUserVar(stat,   hardwareTDD,'b', UVAR_OPTIONAL, "Output timeseries in binary-format for hardware injections.");
+
+  /* detector and ephemeris */
   LALregSTRINGUserVar(stat, detector,  	'I', UVAR_REQUIRED, "Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME");
-  LALregREALUserVar(stat,   startTime,	'G', UVAR_OPTIONAL, "Detector GPS time to start data");
-  LALregREALUserVar(stat,   refTime, 	'S', UVAR_OPTIONAL, "Reference time tRef (in SSB) at which pulsar is defined");
   LALregSTRINGUserVar(stat, ephemDir,	'E', UVAR_OPTIONAL, "Directory path for ephemeris files");
   LALregSTRINGUserVar(stat, ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+
+  /* start + duration of timeseries */
+  LALregINTUserVar(stat,   startTime,	'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (GPS seconds)");
+  LALregINTUserVar(stat,   duration,	 0,  UVAR_OPTIONAL, "Duration of requested signal in seconds");
   LALregSTRINGUserVar(stat,timestampsFile,0, UVAR_OPTIONAL, "Timestamps file");
+
+  /* SFT properties */
   LALregREALUserVar(stat,   Tsft, 	 0 , UVAR_OPTIONAL, "SFT time baseline Tsft");
-  LALregINTUserVar(stat,    nTsft,	 0 , UVAR_REQUIRED, "Number of SFTs nTsft");
-  LALregREALUserVar(stat,   fmin,	 0 , UVAR_REQUIRED, "lowest frequency in output SFT");
-  LALregREALUserVar(stat,   Band,	 0 , UVAR_REQUIRED, "bandwidth of output SFT");
+
+  /* sampling and heterodyning frequencies */
+  LALregREALUserVar(stat,   fmin,	 0 , UVAR_OPTIONAL, "Lowest frequency in output SFT (= heterodyning frequency)");
+  LALregREALUserVar(stat,   Band,	 0 , UVAR_OPTIONAL, "bandwidth of output SFT in Hz (= 1/2 sampling frequency)");
+
+  /* pulsar params */
+  LALregREALUserVar(stat,   refTime, 	'S', UVAR_OPTIONAL, "Pulsar reference time tRef in SSB ('0' means: use startTimeSSB)");
   LALregREALUserVar(stat,   longitude,	 0 , UVAR_REQUIRED, "Right ascension [radians] alpha of pulsar");
   LALregREALUserVar(stat,   latitude, 	 0 , UVAR_REQUIRED, "Declination [radians] delta of pulsar");
   LALregREALUserVar(stat,   aPlus,	 0 , UVAR_REQUIRED, "Plus polarization amplitude aPlus");
@@ -597,10 +646,12 @@ InitUserVars (LALStatus *stat)
   LALregREALUserVar(stat,   f1dot,  	 0 , UVAR_OPTIONAL, "First spindown parameter f'");
   LALregREALUserVar(stat,   f2dot,  	 0 , UVAR_OPTIONAL, "Second spindown parameter f''");
   LALregREALUserVar(stat,   f3dot,  	 0 , UVAR_OPTIONAL, "Third spindown parameter f'''");
+
+  /* noise */
   LALregREALUserVar(stat,   noiseSigma,	 0 , UVAR_OPTIONAL, "Gaussian noise variance sigma");
   LALregSTRINGUserVar(stat, noiseSFTs,	'D', UVAR_OPTIONAL, "Glob-like pattern specifying noise-SFTs to be added to signal");  
 
-  /* the orbital parameters */
+  /* binary-system orbital parameters */
   LALregREALUserVar(stat,   orbitSemiMajorAxis, 0, UVAR_OPTIONAL, "Projected orbital semi-major axis in seconds (a/c)");
   LALregREALUserVar(stat,   orbitEccentricity,  0, UVAR_OPTIONAL, "Orbital eccentricity");
   LALregINTUserVar(stat,    orbitTperiSSBsec,   0, UVAR_OPTIONAL, "'observed' (SSB) time of periapsis passage. Seconds.");
@@ -659,8 +710,7 @@ void
 ReadTimestamps (LALStatus* stat, LIGOTimeGPSVector **timestamps, const CHAR *fname)
 {  
   FILE *fp;
-  UINT4 i;
-  INT4 secs, ns;
+  LIGOTimeGPSVector *ts = NULL;
 
   INITSTATUS( stat, "ReadTimestamps", rcsid );
   ATTATCHSTATUSPTR (stat);
@@ -674,21 +724,31 @@ ReadTimestamps (LALStatus* stat, LIGOTimeGPSVector **timestamps, const CHAR *fna
     ABORT (stat, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
   }
 
-  TRY ( LALCreateTimestampVector (stat->statusPtr, timestamps, uvar_nTsft), stat);    
+  /* initialize empty timestamps-vector*/
+  if ( (ts = LALCalloc(1, sizeof(LIGOTimeGPSVector))) == NULL) {
+    ABORT (stat, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM);
+  }
 
-  for ( i=0; i < (UINT4)uvar_nTsft; i++)
+  while(1)
     {
+      UINT4 secs, ns;
       if (fscanf ( fp, "%d  %d\n", &secs, &ns ) != 2)
-	{
-	  LALDestroyTimestampVector (stat->statusPtr, timestamps);
-	  LALPrintError("\nUnable to read datum from line # %d from file %s\n\n", i+1, fname);
-	  ABORT (stat, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
-	} /* if read-error */
-      (*timestamps)->data[i].gpsSeconds = secs;
-      (*timestamps)->data[i].gpsNanoSeconds = ns;
-    }  /* for i < nTsft */
-  
+	break;
+
+      /* make space for the new entry */
+      ts->length ++;
+      if ( (ts->data = LALRealloc (ts->data, ts->length * sizeof(ts->data[0])) ) == NULL) {
+	ABORT (stat, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM);
+      }
+      
+      ts->data[ts->length - 1].gpsSeconds = secs;
+      ts->data[ts->length - 1].gpsNanoSeconds = ns;
+
+    } /* while entries found */
   fclose(fp);
+
+  /* hand over timestamps vector */
+  (*timestamps) = ts;
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
