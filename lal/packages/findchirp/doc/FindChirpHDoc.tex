@@ -1,0 +1,160 @@
+The detection process for binary inspiral chirps is simply the construction of
+some statistic of the data followed by some test of the hypotheses ``there is
+a signal present in the data'' and ``there is no signal present in the data.''
+When these hypotheses are considered to be exclusive, the reception process
+reduces to the comparison of the statistic with some pre-assigned threshold.
+Thus, there are two issues: first, what is the \emph{optimal} statistic to
+construct, and second, how is the threshold to be determined.
+
+Here we show the construction of statistic for the maximum likelihood reciever
+used in the \texttt{findchirp} package. It can be shown \cite{wz} that this is
+the optimal statistic for detection of inspiral chirps.
+
+Suppose that the detector output is a dimensionless strain $h(t)$. We denote
+by $s(t)$ the waveform of the signal (i.e. chirp) that we wish to find in the
+data stream hidden in detector noise, $n(t)$. We assume that the noise samples
+are drawn from a stationary Normal distribution, though there may be
+correlations amongst the noise events (colored noise). The noise correlations
+may be expressed in terms of the one-sided noise power spectral density,
+\ospsd, defined in equation [\ref{findchirp:eqn:ospsd}]. The detector output
+is then
+\begin{equation}
+h(t) = s(t) + n(t).
+\end{equation}
+These functions are members of the Banach space $L_2$, so we may construct an
+inner product on this space $(\cdot\mid\cdot) : L_2 \times L_2 \rightarrow
+\mathcal{C}$ by
+\begin{equation}
+  (a\mid b) = \int_{-\infty}^\infty df\,
+  \frac{\tilde{a}^\ast(f)\tilde{b}(f)+\tilde{a}(f)\tilde{b}^\ast(f)}
+       {S_h(|f|)}.
+\end{equation}
+
+The signal we wish to recieve is, in general, arbitrary up to an unknown phase
+and amplitude. Thus we may write the signal as
+\begin{equation}
+s(t)=A\cos\theta\times h_c(t)+A\sin\theta\times h_s(t),
+\end{equation}
+where $A$ is the amplitude of the signal, $\theta$ is the unknown phase and
+$h_c(t)$ and $h_s(t)$ are the known waveforms of the signal with some fiducial
+normalisation. We suppose further that the waveforms are orthogonal, so
+\begin{equation}
+\left(h_c\mid h_s\right) = 0
+\end{equation}
+and
+\begin{equation}
+\left(h_c\mid h_c\right) = \left(h_s\mid h_s\right) = \sigma^2
+\end{equation}
+which defines the normalisation constant $\sigma$.
+
+The inspiral signals that we wish to recieve are much shorter than the
+observation time, and we do not know when the signal occour. We wish not only
+to detect these signals, but also to maesure their arrival time. To do so, we
+constuct the time series
+\begin{equation}
+x(t) = 2 \int_{\infty}^{\infty}df\,e^{2\pi i f t} 
+\frac{\tilde{h}(f) \tilde{h_c}^\ast(f)}{S_h\left(\left|f\right|\right)}
+\end{equation}
+and
+\begin{equation}
+y(t) = 2 \int_{\infty}^{\infty}df\,e^{2\pi i f t} 
+\frac{\tilde{h}(f) \tilde{h_s}^\ast(f)}{S_h\left(\left|f\right|\right)}.
+\end{equation}
+For each observation period, we construct the statistic
+\begin{equation}
+\rho(t) = \frac{1}{\sigma}\sqrt{x^2(t) + y^2(t)}
+\end{equation}
+and threshold on this statistic, which we call the signal-to-noise ratio
+(SNR).
+
+Since the time input data are real time series, we have $h(f) = h^\ast(-f)$
+and the inner product becomes
+\begin{equation}
+\left(a\mid b\right) = 2 \int_{-\infty}^{\infty}df\,
+\frac{\tilde{a}^\ast(f)\tilde{b}(f)}{S_h\left(\left|f\right|\right)}
+\end{equation}
+so the normalisation constant $\sigma$ is
+\begin{eqnarray}
+\sigma^2 &=& 2 \int_{-\infty}^{\infty}df\,
+\frac{\tilde{h_c}^\ast(f)\tilde{h_c}(f)}{S_h\left(\left|f\right|\right)} \\
+&=& \frac{\tilde{h_s}^\ast(f)\tilde{h_s}(f)}{S_h\left(\left|f\right|\right)}.
+\end{eqnarray}
+
+The filter that we have constructed is normalised according to the convention
+of Cutler and Flanagan \cite{cutflan}, so that in the case when the detector
+output is Gaussian noise, the filter output averaged over an ensemble of
+detectors with different realisatons of the noise is
+\begin{equation}
+\left\langle \rho^2 \right\rangle = \left\langle x^2 + y^2 \right\rangle = 2.
+\end{equation}
+
+Since the two chirp waveforms $\tilde{h_c}$ and $\tilde{h_s}$ are assumed to
+be orthogonal, it is possible to increase the efficency of the algorithm by
+contructing the single time $\rho(t)$ directly using a single complex inverse
+FFT rather than computing it from $x(t)$ and $y(t)$ which requires two real
+inverse FFTs. Let us write $x(t)$ in the following way
+\begin{eqnarray}
+x(t) 
+&=& 2 \left[ 
+\int_{-\infty}^{0} df\, e^{2\pi i f t} \frac{\tilde{h}(f)
+\tilde{h_c}^\ast(f)}{S_h\left(\left|f\right|\right)}
++ \int_{0}^{\infty} df\, e^{2\pi i f t} \frac{\tilde{h}(f)
+\tilde{h_c}^\ast(f)}{S_h\left(\left|f\right|\right)} 
+\right] \\
+&=& 2 \left[ 
+\int_{0}^{\infty} df\, e^{-2\pi i f t} \frac{\tilde{h}^\ast(f)
+\tilde{h_c}(f)}{S_h\left(\left|f\right|\right)}
++ \int_{0}^{\infty} df\, e^{2\pi i f t} \frac{\tilde{h}(f)
+\tilde{h_c}^\ast(f)}{S_h\left(\left|f\right|\right)} 
+\right] \\
+&=& 2 \left[ I^\ast + I \right],
+\end{eqnarray}
+similarly for $y(t)$
+\begin{eqnarray}
+y(t) 
+&=& 2 \left[ 
+\int_{-\infty}^{0} df\, e^{2\pi i f t} \frac{\tilde{h}(f)
+\tilde{h_s}^\ast(f)}{S_h\left(\left|f\right|\right)}
++ \int_{0}^{\infty} df\, e^{2\pi i f t} \frac{\tilde{h}(f)
+\tilde{h_s}^\ast(f)}{S_h\left(\left|f\right|\right)} 
+\right] \\
+&=& 2 \left[ 
+\int_{0}^{\infty} df\, e^{-2\pi i f t} \frac{\tilde{h}^\ast(f)
+\tilde{h_s}(f)}{S_h\left(\left|f\right|\right)}
++ \int_{0}^{\infty} df\, e^{2\pi i f t} \frac{\tilde{h}(f)
+\tilde{h_c}^\ast(f)}{S_h\left(\left|f\right|\right)} 
+\right] \\
+&=& 2 \left[ 
+\int_{0}^{\infty} df\, e^{-2\pi i f t} \frac{\tilde{h}^\ast(f)
+i\tilde{h_c}(f)}{S_h\left(\left|f\right|\right)}
++ \int_{0}^{\infty} df\, e^{2\pi i f t} \frac{\tilde{h}(f)
+(-i)\tilde{h_s}^\ast(f)}{S_h\left(\left|f\right|\right)} 
+\right] \\
+&=& -2i \left[ 
+- \int_{0}^{\infty} df\, e^{-2\pi i f t} \frac{\tilde{h}^\ast(f)
+\tilde{h_c}(f)}{S_h\left(\left|f\right|\right)}
++ \int_{0}^{\infty} df\, e^{2\pi i f t} \frac{\tilde{h}(f)
+\tilde{h_s}^\ast(f)}{S_h\left(\left|f\right|\right)} 
+\right] \\
+&=& -2i \left[ - I^\ast + I \right],
+\end{eqnarray}
+where $I$ is defined to be
+\begin{equation}
+I = \int_{0}^{\infty} df\, e^{2\pi i f t}\frac{\tilde{h}(f)
+\tilde{h_s}^\ast(f)}{S_h\left(\left|f\right|\right)}.
+\end{equation}
+Now we define the quantity $z(t)$ to be
+\begin{equation}
+z(t) = 4 I = 4 \int_{0}^{\infty} df\, e^{2\pi i f t}\frac{\tilde{h}(f)
+\tilde{h_s}^\ast(f)}{S_h\left(\left|f\right|\right)}
+\end{equation}
+and then
+\begin{eqnarray}
+x(t) &=& \Re z(t) \\
+y(t) &=& \Im z(t)
+\end{eqnarray}
+so the filter output becomes
+\begin{equation}
+\rho(t) = \frac{1}{\sigma} \sqrt{x^2(t) + y^2(t)} 
+= \frac{1}{\sigma} \sqrt{|z^2(t)|}
+\end{equation}
