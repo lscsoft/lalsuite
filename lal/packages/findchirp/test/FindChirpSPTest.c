@@ -405,10 +405,11 @@ main (int argc, char *argv[])
   tmpltParams->fLow     = fLow;
 
   /* filter parameters */
-  filterParams->deltaT          = deltaT;
-  filterParams->rhosqThresh     = rhosqThresh;
-  filterParams->chisqThresh     = chisqThresh;
-  filterParams->computeNegFreq  = 0;
+  filterParams->deltaT            = deltaT;
+  filterParams->rhosqThresh       = rhosqThresh;
+  filterParams->chisqThresh       = chisqThresh;
+  filterParams->computeNegFreq    = 0;
+  filterParams->maximiseOverChirp = 1;
 
   for ( l = 0; l < numTmplts; ++l, mass +=0.01 )
   {
