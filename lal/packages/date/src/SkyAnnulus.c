@@ -108,14 +108,20 @@ LALComputeSingleAnnulus (
 {
 
 
-  INITSTATUS( status, "LALComputeSingleAnnulus", SKYANNULUSSC );
+ 
 
   INT4 i,j, index;
   REAL4 alpha, delta;
   REAL8 time1, time2;
   REAL8 dt, dtLow, dtUpp;
   REAL8 deltat;
+
+  SkyPosition coords;
+  TwoDetsTimeAndASource tdtaas;
   
+
+  INITSTATUS( status, "LALComputeSingleAnnulus", SKYANNULUSSC );
+
   /* create vector */
   LALI2CreateVector( status, &sky, nx*ny); 
 
@@ -134,8 +140,12 @@ LALComputeSingleAnnulus (
       alpha= ((REAL4) i)*360./((REAL4) nx);
       delta= ((REAL4) j)*180.0/((REAL4) ny)-90.0;
 
-      SkyPosition coords= { alpha*LAL_PI_180, delta*LAL_PI_180, COORDINATESYSTEM_EQUATORIAL };
-      TwoDetsTimeAndASource tdtaas = { placetime1, placetime2, &coords };
+      coords.longitude=alpha*LAL_PI_180;
+      coords.latitude=delta*LAL_PI_180;
+      coords.system=COORDINATESYSTEM_EQUATORIAL;
+      tdtaas.p_det_and_time1=placetime1;
+      tdtaas.p_det_and_time2=placetime2;
+      tdtaas.p_source=&coords;
       
       /* check if this coordinate is in position */ 
       LALTimeDelay(status, &deltat, &tdtaas);
@@ -172,9 +182,12 @@ LALComputeTripleAnnuli (
 {
 
 
-  INITSTATUS( status, "LALComputeTripleAnnuli", SKYANNULUSSC );
+
   
   INT4 i,j, index;
+
+  INITSTATUS( status, "LALComputeTripleAnnuli", SKYANNULUSSC );
+
   LALI2CreateVector( status, &sky[0], nx*ny);
   LALI2CreateVector( status, &sky[1], nx*ny);
   LALI2CreateVector( status, &sky[2], nx*ny);
@@ -221,10 +234,12 @@ LALExistTripleAnnuli(
 {
 
 
-  INITSTATUS( status, "LALExistTripleAnnuli", SKYANNULUSSC );
+
   
   INT4 i,j,index;
   static INT2Vector* sky[4];
+
+  INITSTATUS( status, "LALExistTripleAnnuli", SKYANNULUSSC );
 
   /* compute triple anulli */
   LALComputeTripleAnnuli( status, sky, placetime1, placetime2, placetime3, 
