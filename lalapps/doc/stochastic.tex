@@ -11,6 +11,147 @@ backgrounds.
 \input{olapredfcn}
 
 \clearpage
+\section{Pipeline Description}
+
+The Stochastic Background pipeline is constructed as shown in Figure
+\ref{fig:stoch_blockdigram}. Each step in the pipeline is number and
+discussed below.
+
+\begin{figure}[htb!]
+\begin{center}
+\includegraphics[width=5in]{figures/stochastic_flowdiagram}
+\caption{Pipeline data flow diagram. Refer to the following text for
+descriptions of the blocks. The text is indexed by the numbers given
+in the diamonds next to the blocks.}
+\label{fig:stoch_blockdigram}
+\end{center}
+\end{figure}
+
+\begin{enumerate}
+
+\item \textbf{Data selection:}
+\begin{itemize}
+\item We identify GPS start times and stop times of all double
+coincident valid data using segwizard. For S2, all data quality flags
+were set except MICHFILT (since MICHFILT removes a significant amount of
+data which are useful for the stochastic analysis).
+\item Using the segwizard GPS start and stop times, raw strain data
+(Xn:LSC-AS\_Q) of length $\ge 62$~sec are read in from RDS-3 or raw
+frames. 60 seconds is the minimum size data stretch that we analyze. The
+extra 2 seconds is to account for filter transients introduced by
+downsampling and high pass filtering (details below).
+\end{itemize}
+
+\item \textbf{Data decimation:}
+Each data stretch pair is optionally high-pass filtered. For S2, we use
+a 6th-order Butterworth filter with a knee frequency (-3 dB) of 40 Hz.
+The first and last second of the downsampled, high-pass filtered data
+stretches are discarded to avoid corruption from filter transients.
+
+\item \textbf{Data partitioning:}
+The downsampled, high-pass filtered data stretches are partitioned into
+segments of length 60~sec. We choose 60~sec for the analysis of the S2
+data to match the sample rate of the calibration data.
+
+\item \textbf{Compute calibration:}
+Transfer functions (units of counts/attostrain) for each IFO are
+calculated from the frame-based calibration files for each 60-sec data
+segment, using the calibration data whose GPS time lies within this
+60-sec segment.
+
+\item \textbf{Software injections:}
+Simulated stochastic GW signals are injected into the data at this
+stage, if desired. The simulated GW strain data are multiplied by the
+instrument transfer functions in the frequency domain. This yields
+simulated detector output (units of counts) for a stochastic
+gravitational wave background which can be directly added to the raw
+data.
+
+\item \textbf{Power spectrum estimation:} 
+Power spectra are estimated for each 60-sec data segment (including the
+simulated stochastic GW signal, if it was injected into the data) using
+Welch's method of averaged periodograms, with 50\% overlapping Hann
+windows (4 second), and a 4-sec FFT length, corresponding to 29 averages
+used in the estimate. The power spectra are used to construct the
+optimal filter and theoretical variance for each of the 60-sec data
+stretch pair. The units of the spectra are raw counts$^2$/Hz.
+
+\item \textbf{Apply calibration:} 
+The transfer functions are used to create two sets of calibrated power
+spectra for each interferometer: fully calibrated power spectra (units
+of strain$^2$/Hz) and half-calibrated power spectra (units of
+strain$\cdot$count/Hz).
+
+\item \textbf{Frequency mask:}
+A frequency mask is created to remove discrete frequencies at which
+instrumental correlations exist. The mask is simply a vector with zeros
+at the positions corresponding to the discrete frequencies being
+excised, and unity values everywhere else. For S2, the mask removes the
+60 Hz mains frequency and its harmonics, as well as multiples of 16 Hz
+(the GPS-synchronized data acquisition buffer rate). We remove a single
+frequency bin (0.25 Hz bin width for S2) containing each of these lines.
+
+\item \textbf{SB filter factors:}
+\begin{itemize}
+\item The overlap reduction function for the two sites is calculated.
+\item The expected stochastic gravitational wave spectrum is set to
+$\Omega_{\mathrm{gw}}(f)={\mathrm{const}}$.
+\end{itemize}
+
+\item \textbf{Normalization, optimal filter \& variance:}
+\begin{itemize}
+\item The normalization factor, $\cal N$ for the optimal filter and
+theoretical variance, $\sigma_I$, for the CC statistic are calculated
+using the overlap reduction function, fully calibrated power spectra,
+and frequency mask. The summations over frequency to produce the
+normalization and theoretical variance are restricted from
+$f_{\mathrm{min}}$ to $f_{\mathrm{max}}$. For S2, we choose
+$f_{\mathrm{min}} = 50$~Hz and $f_{\mathrm{max}}=300$~Hz. The lower
+cutoff frequency is sufficiently greater than the knee frequency (40 Hz)
+of the high-pass filter to avoid having to modify the response function
+when calculating the optimal filter. The upper frequency yields more
+than 95\% of the maximum obtainable SNR.
+\item The optimal filter is constructed using the overlap reduction
+function, normalization factor, frequency mask, and half-calibrated
+power spectra. (The use of half-calibrated power spectra allows the
+optimal filter to be applied directly to uncalibrated data when
+calculating the cross-correlation spectrum.)
+\end{itemize}
+
+\item \textbf{Fourier transform:}
+The 60-sec data segments are windowed, zero-padded to twice their length
+(to avoid wrap-around problems when performing the correlation), and
+discrete-Fourier-transformed (DFT) to the frequency domain. For S2, we
+use either Tukey windows (with 0.5~s Hann turn-on and turn-off) or 50\%
+overlapping Hann windows.
+
+\item \textbf{Cross-correlation:}
+\begin{itemize}
+\item The cross-spectrum of the data pair is formed from the windowed,
+zero-padded, and DFTed data segments, and this spectrum is
+coarse-grained to match the frequency resolution and frequency cut-offs
+of the optimal filter. The resultant frequency series is then
+vector-multiplied with the optimal filter to yield the cross-correlation
+spectrum (i.e., the integrand of the cross-correlation statistic).
+\item The cross-correlation statistic value, $Y_I$, is calculated by
+summing the cross-correlation spectrum values (from $f_{\mathrm{min}}$ to
+$f_{\mathrm{max}}$), and multiplying by the frequency resolution (0.25~Hz).
+\item The cross-correlation statistic value ($Y_I$) and theoretical
+variance ($\sigma_I$) for each 60-sec data segment are written to a
+file. A weighted sum of the cross-correlation spectra (using the inverse
+theoretical variances) is also written to a file.
+\end{itemize}
+
+\item \textbf{Form $Y_{\mathrm{opt}}$:}
+The cross-correlation statistic values for all 60-sec data segments are
+optimally combined (weighting with the inverse variances), yielding a
+single point estimate for $\Omega_0$ over the full data set. A single
+statistical error bar on $\Omega_0$ is calculated from the theoretical
+variances.
+
+\end{enumerate}
+
+\clearpage
 \section{Program \prog{lalapps\_stochastic\_pipe}}
 \label{program:lalapps-stochastic-pipe}
 \idx[Program]{lalapps\_stochastic\_pipe}
@@ -289,142 +430,6 @@ Set the GEO high pass filter order to \parm{N}
 Adam Mercer, Tania Regimbau
 \end{entry}
 \clearpage
-
-\subsection{Pipeline Description}
-
-\begin{figure}[htbp]
-\begin{center}
-\includegraphics[width=5.5in]{figures/stochastic_flowdiagram.pdf}
-\caption{Pipeline data flow diagram. Refer to the following text
-	for descriptions of the blocks. The text is indexed by the numbers
-  given in the diamonds next to the blocks.}
-\label{fig:blockdigram}
-\end{center}
-\end{figure}
-
-\begin{enumerate}
-
-\item \textbf{Data selection:}
-\begin{itemize}
-\item We identify GPS start times and stop times of all double
-coincident valid data using segwizard. For S2, all data quality flags
-were set except MICHFILT (since MICHFILT removes a significant amount of
-data which are useful for the stochastic analysis).
-\item Using the segwizard GPS start and stop times, raw strain data
-(Xn:LSC-AS\_Q) of length $\ge 62$~sec are read in from RDS-3 or raw
-frames. 60 seconds is the minimum size data stretch that we analyze. The
-extra 2 seconds is to account for filter transients introduced by
-downsampling and high pass filtering (details below).
-\end{itemize}
-
-\item \textbf{Data decimation:}
-Each data stretch pair is optionally high-pass filtered. For S2, we use
-a 6th-order Butterworth filter with a knee frequency (-3 dB) of 40 Hz.
-The first and last second of the downsampled, high-pass filtered data
-stretches are discarded to avoid corruption from filter transients.
-
-\item \textbf{Data partitioning:}
-The downsampled, high-pass filtered data stretches are partitioned into
-segments of length 60~sec. We choose 60~sec for the analysis of the S2
-data to match the sample rate of the calibration data.
-
-\item \textbf{Compute calibration:}
-Transfer functions (units of counts/attostrain) for each IFO are
-calculated from the frame-based calibration files for each 60-sec data
-segment, using the calibration data whose GPS time lies within this
-60-sec segment.
-
-\item \textbf{Software injections:}
-Simulated stochastic GW signals are injected into the data at this
-stage, if desired. The simulated GW strain data are multiplied by the
-instrument transfer functions in the frequency domain. This yields
-simulated detector output (units of counts) for a stochastic
-gravitational wave background which can be directly added to the raw
-data.
-
-\item \textbf{Power spectrum estimation:} 
-Power spectra are estimated for each 60-sec data segment (including the
-simulated stochastic GW signal, if it was injected into the data) using
-Welch's method of averaged periodograms, with 50\% overlapping Hann
-windows (4 second), and a 4-sec FFT length, corresponding to 29 averages
-used in the estimate. The power spectra are used to construct the
-optimal filter and theoretical variance for each of the 60-sec data
-stretch pair. The units of the spectra are raw counts$^2$/Hz.
-
-\item \textbf{Apply calibration:} 
-The transfer functions are used to create two sets of calibrated power
-spectra for each interferometer: fully calibrated power spectra (units
-of strain$^2$/Hz) and half-calibrated power spectra (units of
-strain$\cdot$count/Hz).
-
-\item \textbf{Frequency mask:}
-A frequency mask is created to remove discrete frequencies at which
-instrumental correlations exist. The mask is simply a vector with zeros
-at the positions corresponding to the discrete frequencies being
-excised, and unity values everywhere else. For S2, the mask removes the
-60 Hz mains frequency and its harmonics, as well as multiples of 16 Hz
-(the GPS-synchronized data acquisition buffer rate). We remove a single
-frequency bin (0.25 Hz bin width for S2) containing each of these lines.
-
-\item \textbf{SB filter factors:}
-\begin{itemize}
-\item The overlap reduction function for the two sites is calculated.
-\item The expected stochastic gravitational wave spectrum is set to
-$\Omega_{\mathrm{gw}}(f)={\mathrm{const}}$.
-\end{itemize}
-
-\item \textbf{Normalization, optimal filter \& variance:}
-\begin{itemize}
-\item The normalization factor, $\cal N$ for the optimal filter and
-theoretical variance, $\sigma_I$, for the CC statistic are calculated
-using the overlap reduction function, fully calibrated power spectra,
-and frequency mask. The summations over frequency to produce the
-normalization and theoretical variance are restricted from
-$f_{\mathrm{min}}$ to $f_{\mathrm{max}}$. For S2, we choose
-$f_{\mathrm{min}} = 50$~Hz and $f_{\mathrm{max}}=300$~Hz. The lower
-cutoff frequency is sufficiently greater than the knee frequency (40 Hz)
-of the high-pass filter to avoid having to modify the response function
-when calculating the optimal filter. The upper frequency yields more
-than 95\% of the maximum obtainable SNR.
-\item The optimal filter is constructed using the overlap reduction
-function, normalization factor, frequency mask, and half-calibrated
-power spectra. (The use of half-calibrated power spectra allows the
-optimal filter to be applied directly to uncalibrated data when
-calculating the cross-correlation spectrum.)
-\end{itemize}
-
-\item \textbf{Fourier transform:}
-The 60-sec data segments are windowed, zero-padded to twice their length
-(to avoid wrap-around problems when performing the correlation), and
-discrete-Fourier-transformed (DFT) to the frequency domain. For S2, we
-use either Tukey windows (with 0.5~s Hann turn-on and turn-off) or 50\%
-overlapping Hann windows.
-
-\item \textbf{Cross-correlation:}
-\begin{itemize}
-\item The cross-spectrum of the data pair is formed from the windowed,
-zero-padded, and DFTed data segments, and this spectrum is
-coarse-grained to match the frequency resolution and frequency cut-offs
-of the optimal filter. The resultant frequency series is then
-vector-multiplied with the optimal filter to yield the cross-correlation
-spectrum (i.e., the integrand of the cross-correlation statistic).
-\item The cross-correlation statistic value, $Y_I$, is calculated by
-summing the cross-correlation spectrum values (from $f_{\mathrm{min}}$ to
-$f_{\mathrm{max}}$), and multiplying by the frequency resolution (0.25~Hz).
-\item The cross-correlation statistic value ($Y_I$) and theoretical
-variance ($\sigma_I$) for each 60-sec data segment are written to a
-file. A weighted sum of the cross-correlation spectra (using the inverse
-theoretical variances) is also written to a file.
-\end{itemize}
-
-\item \textbf{Form $Y_{\mathrm{opt}}$:}
-The cross-correlation statistic values for all 60-sec data segments are
-optimally combined (weighting with the inverse variances), yielding a
-single point estimate for $\Omega_0$ over the full data set. A single
-statistical error bar on $\Omega_0$ is calculated from the theoretical
-variances.
-
-\end{enumerate}
 
 \clearpage
 \section{Program \prog{lalapps\_stopp}}
