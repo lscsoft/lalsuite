@@ -291,11 +291,25 @@ LALFindChirpInjectSignals (
       ABORT( status, FINDCHIRPH_EDFDT, FINDCHIRPH_MSGEDFDT );
     }
 
-    /* get the gps start time of the signal to inject */
-    LALGPStoINT8( status->statusPtr, &waveformStartTime, 
-        &(thisEvent->geocent_end_time) );
-    CHECKSTATUSPTR( status );
-    waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
+    if ( thisEvent->geocent_end_time.gpsSeconds )
+    {
+      /* get the gps start time of the signal to inject */
+      LALGPStoINT8( status->statusPtr, &waveformStartTime, 
+          &(thisEvent->geocent_end_time) );
+      CHECKSTATUSPTR( status );
+      waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
+    }
+    else
+    {
+      /* center the waveform in the data segment */
+      LALGPStoINT8( status->statusPtr, &waveformStartTime, 
+          &(chan->epoch) );
+      CHECKSTATUSPTR( status );
+
+      waveformStartTime += (INT8) ( 1000000000.0 * 
+          ((REAL8) (chan->data->length - ppnParams.length) / 2) * chan->deltaT
+          );
+    }
 
     snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg), 
         "Injected waveform timing:\n"
