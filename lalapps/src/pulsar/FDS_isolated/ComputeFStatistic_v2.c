@@ -1875,8 +1875,8 @@ refineCOMPLEX16Vector (LALStatus *stat, COMPLEX16Vector **out, const COMPLEX16Ve
        * so we calculate all its derived quantities here: 
        */
       phaseN = LAL_TWOPI * x * oldLen;
-      d = 0.5 * sinf(phaseN);
-      b = 0.5 * (1.0 - cosf(phaseN));
+      d = 0.5 * sin(phaseN);
+      b = 0.5 * (1.0 - cos(phaseN));
 
       /* ---------- innermost loop: l over 2*Dterms around lstar ---------- */
       for (l = l0; l < l1; l++)
