@@ -44,7 +44,7 @@
 #define TDDOUBLE 1
 
 /* should we shift timestamps to compensate for timing errors */
-#define TIMESHIFT 1
+#define TIMESHIFT 0
 
 /* should we use the new 2*DF/SRATE normalization convention? */
 #define NEWNORM 1
@@ -91,7 +91,11 @@ int gethostname(char *name, int len);
 #endif
 
 /* This is an error handler that prints a bit of extra info */
+#ifdef __GNUC__
+void pout(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+#else
 void pout(char *fmt, ...)  ;
+#endif
 
 void pout(char *fmt, ...){
   va_list ap;
