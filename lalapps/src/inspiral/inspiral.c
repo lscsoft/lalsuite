@@ -1587,6 +1587,7 @@ int main( int argc, char *argv[] )
       case TaylorT1:
       case TaylorT2:
       case TaylorT3:
+      case GeneratePPN:
         if ( vrbflg ) 
           fprintf( stdout, "findchirp conditioning data for TD\n" );
         LAL_CALL( LALFindChirpTDData( &status, fcSegVec, dataSegVec, 
@@ -1747,6 +1748,7 @@ int main( int argc, char *argv[] )
         case TaylorT1:
         case TaylorT2:
         case TaylorT3:
+        case GeneratePPN:
           LAL_CALL( LALFindChirpTDTemplate( &status, fcFilterInput->fcTmplt, 
                 tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
           break;
@@ -1816,6 +1818,7 @@ int main( int argc, char *argv[] )
             case TaylorT1:
             case TaylorT2:
             case TaylorT3:
+            case GeneratePPN:
               /* construct normalization for time domain templates... */
               LAL_CALL( LALFindChirpTDNormalize( &status, 
                     fcFilterInput->fcTmplt, fcFilterInput->segment, 
@@ -1982,9 +1985,16 @@ int main( int argc, char *argv[] )
         case TaylorT1:
         case TaylorT2:
         case TaylorT3:
-          /* the chisq bins need to be re-comuted for the next template */
-          if ( fcFilterParams->chisqParams->chisqBinVec->data )
-            LALFree( fcFilterParams->chisqParams->chisqBinVec->data );
+        case GeneratePPN:
+          /* the chisq bins need to be re-computed for the next template */
+          for ( i = 0; i < fcSegVec->length ; ++i )
+          {
+            if ( fcSegVec->data[i].chisqBinVec->data )
+            {
+              LALFree( fcSegVec->data[i].chisqBinVec->data );
+              fcSegVec->data[i].chisqBinVec->data = NULL;
+            }
+          }
         default:
           break;
       }
@@ -3035,6 +3045,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         else if ( ! strcmp( "TaylorT3", optarg ) )
         {
           approximant = TaylorT3;
+        }
+        else if ( ! strcmp( "GeneratePPN", optarg ) )
+        {
+          approximant = GeneratePPN;
         }
         else if ( ! strcmp( "TaylorF2", optarg ) )
         {
