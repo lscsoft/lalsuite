@@ -215,6 +215,7 @@ AC_SUBST(LAL_MPI_ENABLED)
 AC_SUBST(LAL_FRAME_ENABLED)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_BIGENDIAN
 AC_C_CONST
 AC_C_STRINGIZE
 AC_TYPE_SIZE_T
