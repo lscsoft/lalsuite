@@ -189,8 +189,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL8 varTheo;
 
   /* input data segment */
+  INT4 numSegments;
   INT4 duration, durationEff, extrasec;
-  INT4 numSegments, numIntervals, segMiddle;
+  INT4 segsInInt, numIntervals, segMiddle;
   INT4 segmentLength, segmentPadLength, intervalLength;
   INT4 segmentShift;
   INT4 padData;
@@ -349,10 +350,11 @@ INT4 main(INT4 argc, CHAR *argv[])
     padData = 1;
   
   /* get number of segments */
-  numSegments = (INT4)(intervalDuration / segmentDuration);
   duration = endTime - startTime;
+  numSegments = duration / segmentDuration;
+  segsInInt = intervalDuration / segmentDuration;
   numIntervals = (numSegments * segmentDuration) / intervalDuration;
-  segMiddle = (INT4)((numSegments - 1) / 2);
+  segMiddle = (INT4)((segsInInt - 1) / 2);
   segmentShift = segmentDuration;
 
   /* recentre */
@@ -398,7 +400,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         gpsStartTime, 0, 1./resampleRate, lalDimensionlessUnit, \
         segmentPadLength), &status);
   
-  for (i = 0; i < numSegments; i++)
+  for (i = 0; i < segsInInt; i++)
   {
     segPadOne[i]= segPadTwo[i] = NULL;
     LAL_CALL(LALCreateVector(&status, &(segPadOne[i]), \
@@ -411,7 +413,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         segPadTwo[i]->length * sizeof(*segPadTwo[i]->data));
   }
 
-  for (i = 0; i < numSegments; i++)
+  for (i = 0; i < segsInInt; i++)
   {
     segOne[i]= segTwo[i] = NULL;
     LAL_CALL(LALCreateVector(&status, &(segOne[i]), segmentLength), &status);
@@ -477,7 +479,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           "MCresponseTwo", gpsCalibTime, 0, MCdeltaF, countPerStrain, \
           MCfreqLength), &status);
 
-    for (i = 0; i < numSegments; i++)
+    for (i = 0; i < segsInInt; i++)
     {
       MCrespOne[i]= MCrespTwo[i] = NULL;
       LAL_CALL(LALCCreateVector(&status, &(MCrespOne[i]), MCfreqLength), \
@@ -561,7 +563,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         "responseTwo", gpsCalibTime, fMin, deltaF, countPerAttoStrain, \
         filterLength), &status);
 
-  for (i = 0; i < numSegments; i++)
+  for (i = 0; i < segsInInt; i++)
   {
     respOne[i]= respTwo[i] = NULL;
     LAL_CALL(LALCCreateVector(&status, &(respOne[i]), filterLength), &status);
@@ -906,7 +908,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           /* read first interval and get response functions */
           lal_errhandler = LAL_ERR_RTRN;
 
-          for (segLoop = 0; segLoop < numSegments; segLoop++)
+          for (segLoop = 0; segLoop < segsInInt; segLoop++)
           {
             /* define segment epoch */
             gpsStartTime.gpsSeconds = startTime + (interLoop + segLoop) * \
@@ -1090,7 +1092,7 @@ INT4 main(INT4 argc, CHAR *argv[])
                 interLoop, numIntervals);
           }
           /* shift segments */
-          for (segLoop = 0; segLoop < numSegments - 1; segLoop++)
+          for (segLoop = 0; segLoop < segsInInt - 1; segLoop++)
           {
             for (i = 0; i < segmentPadLength; i++)
             {
@@ -1112,7 +1114,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
           /* read extra segment */
           gpsStartTime.gpsSeconds = startTime + (interLoop + \
-              numSegments - 1) * segmentDuration;
+              segsInInt - 1) * segmentDuration;
           gpsStartPadTime.gpsSeconds = gpsStartTime.gpsSeconds - padData;
           streamParams.start = gpsStartPadTime.gpsSeconds;
 
@@ -1129,15 +1131,15 @@ INT4 main(INT4 argc, CHAR *argv[])
           {
             clear_status(&status);
             firstpass = 1;
-            interLoop = interLoop + (numSegments -1);
+            interLoop = interLoop + (segsInInt -1);
             continue;
           }
 
           /* store in memory */
           for (i = 0; i < segmentPadLength ; i++)
           {
-            segPadOne[numSegments-1]->data[i] = segmentPadOne->data->data[i];
-            segPadTwo[numSegments-1]->data[i] = segmentPadTwo->data->data[i];
+            segPadOne[segsInInt-1]->data[i] = segmentPadOne->data->data[i];
+            segPadTwo[segsInInt-1]->data[i] = segmentPadTwo->data->data[i];
           }
 
           /* compute extra response function */
@@ -1233,8 +1235,8 @@ INT4 main(INT4 argc, CHAR *argv[])
           /* store in memory */
           for (i = 0; i < filterLength; i++)
           {
-            respOne[numSegments-1]->data[i] = responseOne->data->data[i];
-            respTwo[numSegments-1]->data[i] = responseTwo->data->data[i];
+            respOne[segsInInt-1]->data[i] = responseOne->data->data[i];
+            respTwo[segsInInt-1]->data[i] = responseTwo->data->data[i];
           }
 
           /* convert response function for use in the MC routine */
@@ -1258,8 +1260,8 @@ INT4 main(INT4 argc, CHAR *argv[])
             /* store in memory */
             for (i = 0; i < MCfreqLength; i++)
             {
-              MCrespOne[numSegments-1]->data[i] = MCresponseOne->data->data[i];
-              MCrespTwo[numSegments-1]->data[i] = MCresponseTwo->data->data[i];
+              MCrespOne[segsInInt-1]->data[i] = MCresponseOne->data->data[i];
+              MCrespTwo[segsInInt-1]->data[i] = MCresponseTwo->data->data[i];
             }
           }
         }
@@ -1271,7 +1273,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           calPsdTwo->data[i] = 0;
         }
 
-        for (segLoop = 0; segLoop < numSegments; segLoop++)
+        for (segLoop = 0; segLoop < segsInInt; segLoop++)
         {
           gpsStartTime.gpsSeconds = startTime + (interLoop + segLoop) * \
                                     segmentDuration;
@@ -1417,13 +1419,13 @@ INT4 main(INT4 argc, CHAR *argv[])
         {
           if (middle_segment_flag == 0)
           {
-            calPsdOne->data[i] = calPsdOne->data[i] / (REAL4)(numSegments - 1);
-            calPsdTwo->data[i] = calPsdTwo->data[i] / (REAL4)(numSegments - 1);
+            calPsdOne->data[i] = calPsdOne->data[i] / (REAL4)(segsInInt - 1);
+            calPsdTwo->data[i] = calPsdTwo->data[i] / (REAL4)(segsInInt - 1);
           }
           else
           {
-            calPsdOne->data[i] = calPsdOne->data[i] / (REAL4)numSegments;
-            calPsdTwo->data[i] = calPsdTwo->data[i] / (REAL4)numSegments;
+            calPsdOne->data[i] = calPsdOne->data[i] / (REAL4)segsInInt;
+            calPsdTwo->data[i] = calPsdTwo->data[i] / (REAL4)segsInInt;
           }
           calInvPsdOne->data->data[i] = 1. / calPsdOne->data[i];
           calInvPsdTwo->data->data[i] = 1. / calPsdTwo->data[i];
@@ -1683,7 +1685,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         &status);
     LAL_CALL(LALDestroyREAL4FrequencySeries(&status, MComegaGW), &status);
   }
-  for (i = 0; i <numSegments; i++)
+  for (i = 0; i <segsInInt; i++)
   {
     LAL_CALL(LALCDestroyVector(&status, &(respOne[i])), &status);
     LAL_CALL(LALCDestroyVector(&status, &(respTwo[i])), &status);
