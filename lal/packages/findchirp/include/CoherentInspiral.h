@@ -104,7 +104,7 @@ NRCSID (COHERENTINSPIRALH, "$Id$");
 </lalLaTeX>
 #endif
 /* structure for describing a binary insipral event */
-/* <lalVerbatim file="TwoInterfFindChirpHTwoInterfInspiralEvent"> */
+/* <lalVerbatim file="CoherentInspiralHCoherentInspiralEvent"> */
 typedef struct
 tagInspiralEventVector
 {
@@ -125,48 +125,37 @@ tagCoherentInspiralEvent
   REAL4                                  theta;
   REAL4                                  phi;
   LIGOTimeGPS                            time;
-  /*CHECK InspiralEventVector                   *inspEventVec; */
+  InspiralEventVector                   *inspEventVec;
   struct tagCoherentInspiralEvent       *next;
 }
 CoherentInspiralEvent;
 /* </lalVerbatim> */
 #if 0
 <lalLaTeX>
-\subsubsection*{Structure \texttt{TwoInterfInspiralEvent}}
-\idx[Type]{TwoInterfInspiralEvent}
+\subsubsection*{Structure \texttt{CoherentInspiralEvent}}
+\idx[Type]{CoherentInspiralEvent}
 
-%\input{TwoInterfFindChirpHTwoInterfInspiralEvent}
+%\input{CoherentInspiralHCoherentInspiralEvent}
 
 \noindent This structure describes inspiral events in the data of a pair 
-of detectors found by \texttt{TwoInterffindchirp}.
+of detectors found by \texttt{CoherentInspiralEventFilter}.
 The fields are:
 
 \begin{description}
-\item[\texttt{UINT4 twoInterfId}] A unique number assigned by the filter 
+\item[\texttt{UINT4 eventId}] A unique number assigned by the filter 
 routine to each network event it finds.
-
-\item[\texttt{UINT4 segmentNumber}] The id number of the 
-\texttt{FindChirpDataSegment} in the fiducial detector (chosen
-as detector 1 here) in which the event was found.
-
-\item[\texttt{LIGOTimeGPS time}] The GPS time in the fiducial detector at 
-which the event occured.
 
 \item[\texttt{UINT4 timeIndex}] The index in the fiducial detector at 
 which the event occured in the array containing the filter output.
 
-\item[\texttt{REAL4 snrsq}] The value of network $\rho^2$ for the event.
+\item[\texttt{REAL4 cohSNR}] The value of network $\rho^2$ for the event.
 
-\item[\texttt{InspiralEvent event1}] A pointer to a structure of type 
+\item[\texttt{InspiralEvent *inspEventVec}] A pointer to a structure of type 
 \texttt{InspiralEvent} to allow the construction of a linked list of events
-in detector 1.
+in participating detectors.
 
-\item[\texttt{InspiralEvent event2}] Similar to the \texttt{event1} structure,
-but for constructing a linked list of events
-in detector 2.
-
-\item[\texttt{struct tagTwoInterfInspiralEvent *next}] A pointer to a 
-structure of type \texttt{InspiralEvent} to allow the construction of 
+\item[\texttt{struct tagCoherentInspiralEvent *next}] A pointer to a 
+structure of type \texttt{CoherentInspiralEvent} to allow the construction of 
 a linked list of network events.
 \end{description}
 </lalLaTeX>
@@ -227,8 +216,8 @@ tagCoherentInspiralFilterParams
   REAL4                         deltaT;
   REAL4                         cohSNRThresh;
   BOOLEAN                       cohSNROut;
-  UINT2Vector                  *detIDVec;
-  DetectorVector               *detectorVec;
+  UINT2Vector                  *detIDVec; /* Note: H1, H2 are from same site, but are different detectors */
+  DetectorVector               *detectorVec; /*stores detectors' site info */
   REAL4TimeSeries              *cohSNRVec;
 }
 CoherentInspiralFilterParams;
@@ -241,7 +230,7 @@ CoherentInspiralFilterParams;
 \input{CoherentInspiralHCoherentInspiralFilterParams}
 
 \noindent This structure provides the parameters used by the
-\texttt{CoherentInspiralFilterSegment()} function.
+\texttt{CoherentInspiralFilter()} function.
 
 \begin{description}
 \item[\texttt{UINT4 numPoints}] Number of time-points in the $z$ series
