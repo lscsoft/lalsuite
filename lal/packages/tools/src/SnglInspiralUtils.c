@@ -54,7 +54,7 @@ NRCSID( SNGLINSPIRALUTILSC, "$Id$" );
 \idx{LALCreateTrigBank()}
 \idx{LALIncaCoincidenceTest()}
 \idx{LALTamaCoincidenceTest()}
-                                                                                
+
 
 \subsubsection*{Description}
 
@@ -344,6 +344,9 @@ LALClusterSnglInspiralTable (
 
   INITSTATUS( status, "LALClusterSnglInspiralTable", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
+
+  ASSERT( inspiralEvent, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
 
   thisEvent = inspiralEvent->next;
   prevEvent = inspiralEvent;
@@ -738,7 +741,7 @@ LALIncaCoincidenceTest(
   memset( coincidentEvents, 0, 2 * sizeof(SnglInspiralTable *) );
   memset( outEvent, 0, 2 * sizeof(SnglInspiralTable *) );
 
-  
+
   if ( ! ifoAInput )
   {
     LALInfo( status, "No input triggers from IFO A, exiting");
@@ -845,7 +848,9 @@ LALTamaCoincidenceTest(
   SnglInspiralTable    *currentTrigger[2];
   SnglInspiralTable    *coincidentEvents[2];
   SnglInspiralTable    *outEvent[2];
-  SnglInspiralTable    *currentEventHead, *currentEvent;
+  SnglInspiralTable    *currentEvent = NULL;
+  SnglInspiralTable    *timeCoincHead = NULL;
+  SnglInspiralTable    *thisTimeCoinc = NULL;
 
   INT8 ta,tb;
   INT4 j;
@@ -854,6 +859,8 @@ LALTamaCoincidenceTest(
   ATTATCHSTATUSPTR( status );
 
   memset( currentTrigger, 0, 2 * sizeof(SnglInspiralTable *) );
+  memset( coincidentEvents, 0, 2 * sizeof(SnglInspiralTable *) );
+  memset( outEvent, 0, 2 * sizeof(SnglInspiralTable *) );
 
   if ( ! ifoAInput )
   {
@@ -873,8 +880,8 @@ LALTamaCoincidenceTest(
     LALGPStoINT8( status->statusPtr, &ta, &(currentTrigger[0]->end_time) );
 
     LALInfo( status, printf("  using IFO A trigger at %d + %10.10f\n",
-        currentTrigger[0]->end_time.gpsSeconds, 
-        ((REAL4) currentTrigger[0]->end_time.gpsNanoSeconds * 1e-9) ));
+          currentTrigger[0]->end_time.gpsSeconds, 
+          ((REAL4) currentTrigger[0]->end_time.gpsNanoSeconds * 1e-9) ));
 
     /* spin ifo b until the current trigger is within the coinicdence */
     /* window of the current ifo a trigger                            */
@@ -890,8 +897,9 @@ LALTamaCoincidenceTest(
       currentTrigger[1] = currentTrigger[1]->next;
     }
 
+
     /* look for coincident events in B within the time window */
-    currentEventHead = currentEvent = currentTrigger[1];
+    currentEvent = currentTrigger[1];
 
     while ( currentTrigger[1] )
     {
@@ -905,43 +913,69 @@ LALTamaCoincidenceTest(
       }
       else
       {
-        currentEvent = currentEvent->next = currentTrigger[1];
-      }
-    }
-    currentEvent->next = NULL;
-
-    LALClusterSnglInspiralTable ( status->statusPtr, currentEventHead, 
-        2 * errorParams->dt, clusterchoice);
-
-    currentTrigger[1] = currentEventHead;
-
-    /* call the LAL function which compares events parameters */
-    LALCompareSnglInspiral( status->statusPtr, currentTrigger[0],
-        currentTrigger[1], errorParams );
-
-    if ( errorParams->match )
-    {
-      /* store this event for output */
-      LALInfo( status, "    >>> found coincidence <<<\n" );
-
-      for ( j = 0; j < 2; ++j )
-      {
-        if ( ! coincidentEvents[j] )
+        /* store all time coincident triggers */
+        if ( ! timeCoincHead )
         {
-          coincidentEvents[j] = outEvent[j] = (SnglInspiralTable *) 
+          timeCoincHead = thisTimeCoinc = (SnglInspiralTable *) 
             LALMalloc( sizeof(SnglInspiralTable) );
         }
         else
         {
-          outEvent[j] = outEvent[j]->next = (SnglInspiralTable *) 
+          thisTimeCoinc = thisTimeCoinc->next = (SnglInspiralTable *) 
             LALMalloc( sizeof(SnglInspiralTable) );
         }
 
-        memcpy( outEvent[j], currentTrigger[j], sizeof(SnglInspiralTable) );
-        outEvent[j]->next = NULL;
-      }  
-    }
+        memcpy( thisTimeCoinc, currentTrigger[1], 
+            sizeof(SnglInspiralTable) );
 
+        thisTimeCoinc->next = NULL;
+      }
+      currentTrigger[1] = currentTrigger[1]->next;
+     
+      
+    }  /* end loop over current events */
+
+
+    /* take the loudest time coincident trigger and compare other params */
+    if ( timeCoincHead )
+    {
+      LALClusterSnglInspiralTable ( status->statusPtr, timeCoincHead, 
+          2 * errorParams->dt, clusterchoice);
+
+      currentTrigger[1] = timeCoincHead;
+
+      
+      /* call the LAL function which compares events parameters */
+      LALCompareSnglInspiral( status->statusPtr, currentTrigger[0],
+          currentTrigger[1], errorParams );
+
+      if ( errorParams->match )
+      {
+        /* store this event for output */
+        LALInfo( status, "    >>> found coincidence <<<\n" );
+
+        for ( j = 0; j < 2; ++j )
+        {
+          if ( ! coincidentEvents[j] )
+          {
+            coincidentEvents[j] = outEvent[j] = (SnglInspiralTable *) 
+              LALMalloc( sizeof(SnglInspiralTable) );
+          }
+          else
+          {
+            outEvent[j] = outEvent[j]->next = (SnglInspiralTable *) 
+              LALMalloc( sizeof(SnglInspiralTable) );
+          }
+
+          memcpy( outEvent[j], currentTrigger[j], sizeof(SnglInspiralTable) );
+          outEvent[j]->next = NULL;
+        }  
+      }
+      
+      /* reset the list of time coincident triggers to null */
+      LALFree( timeCoincHead );
+      timeCoincHead = NULL;
+    }
     /* go back to saved current IFO B trigger */
     currentTrigger[1] = currentEvent;
 
