@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <FrameL.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
@@ -56,6 +57,11 @@ int main( void )
   INT4              error;
   UINT4             count;
   CHAR             *dirname;
+
+  /* test files are version 4 frames */
+  /* ignore this test if using earlier version of frame library */
+  if ( FRAMELIB_VERSION < 4 )
+    return 77;
 
   dirname = getenv( "LAL_FRAME_PATH" );
   LALOpenFrameStream( &status, &stream, dirname, NULL );
