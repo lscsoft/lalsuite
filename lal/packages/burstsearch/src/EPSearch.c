@@ -788,10 +788,10 @@ void EPConditionData(
     /* Set up for a highpass filter */
     highpassParam.nMax = 4;
     fsafety = params->tfTilingInput->flow - 10.0;
-    highpassParam.f1 = fsafety > 150.0 ? 150.0 : fsafety;
-    highpassParam.f2 = -1.0;
-    highpassParam.a1 = 0.1;
-    highpassParam.a2 = -1.0;
+    highpassParam.f2 = fsafety > 150.0 ? 150.0 : fsafety;
+    highpassParam.f1 = -1.0;
+    highpassParam.a2 = 0.1;
+    highpassParam.a1 = -1.0;
     LALButterworthREAL4TimeSeries(status->statusPtr, series, &highpassParam);
     CHECKSTATUSPTR (status);
             
