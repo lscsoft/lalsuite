@@ -676,7 +676,9 @@ static REAL4FrequencySeries *optimal_filter(LALStatus *status,
 
 /* wrapper function for estimating the psd */
 static REAL4FrequencySeries *estimate_psd(LALStatus *status,
-    REAL4TimeSeries *series)
+    REAL4TimeSeries *series,
+    REAL8 f0,
+    INT4 shrink_length)
 {
   /* variables */
   REAL4FrequencySeries *psd;
@@ -715,10 +717,14 @@ static REAL4FrequencySeries *estimate_psd(LALStatus *status,
   LAL_CALL(LALREAL4AverageSpectrum(status, psd, series, &psd_params), status);
 
   /* destroy fft plan */
-  XLALDestroyREAL4FFTPlan(plan);  
+  XLALDestroyREAL4FFTPlan(plan);
 
   /* free memory for window */
   XLALDestroyREAL4Window(window);
+
+  /* reduce to relevant frequency range */
+  LAL_CALL(LALShrinkREAL4FrequencySeries(status, psd, (INT4)(f0/deltaF), \
+        shrink_length), status);
 
   return(psd);
 }
@@ -1914,12 +1920,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 filterLength;
   INT4 numFMin;
   INT4 numFMax;
-  REAL4FrequencySeries *psdTempOne = NULL;
-  REAL4FrequencySeries *psdTempTwo = NULL;
-  REAL4FrequencySeries *psdOne;
-  REAL4FrequencySeries *psdTwo;
+  REAL4FrequencySeries *psdOne = NULL;
+  REAL4FrequencySeries *psdTwo = NULL;
   REAL4Vector *calPsdOne, *calPsdTwo;
-  LALUnit psdUnits = {0,{0,0,1,0,0,0,2},{0,0,0,0,0,0,0}};
 
   /* calibrated inverse noise data structures */
   REAL4FrequencySeries *calInvPsdOne = NULL;
@@ -2131,15 +2134,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* get lengths */
   filterLength = numFMax - numFMin + 1;
-
-  if (vrbflg)
-    fprintf(stdout, "Allocating memory for reduced frequency band PSDs...\n");
-
-  /* allocate memory for reduced frequency band PSDs */
-  LAL_CALL(LALCreateREAL4FrequencySeries(&status, &psdOne, "psdOne", \
-        gpsStartTime, fMin, deltaF, psdUnits, filterLength), &status);
-  LAL_CALL(LALCreateREAL4FrequencySeries(&status, &psdTwo, "psdTwo", \
-        gpsStartTime, fMin, deltaF, psdUnits, filterLength), &status);
 
   /* allocate memory for calibrated PSDs */
   calPsdOne = calPsdTwo = NULL;
@@ -2407,20 +2401,8 @@ INT4 main(INT4 argc, CHAR *argv[])
             fprintf(stdout, "Estimating PSDs...\n");
 
           /* compute uncalibrated PSDs */
-          psdTempOne = estimate_psd(&status, segmentOne);
-          psdTempTwo = estimate_psd(&status, segmentTwo);
-
-          if (vrbflg)
-          {
-            fprintf(stdout, "Getting appropriate frequency band for " \
-                "PSDs..\n");
-          }
-
-          /* reduce to the optimal filter frequency range */
-          LAL_CALL(LALCutREAL4FrequencySeries(&status, &psdOne, \
-                psdTempOne, numFMin, filterLength), &status);
-          LAL_CALL(LALCutREAL4FrequencySeries(&status, &psdTwo, \
-                psdTempTwo, numFMin, filterLength), &status);
+          psdOne = estimate_psd(&status, segmentOne, fMin, filterLength);
+          psdTwo = estimate_psd(&status, segmentTwo, fMin, filterLength);
 
           if (vrbflg)
             fprintf(stdout, "Generating inverse noise...\n");
@@ -2737,8 +2719,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* cleanup */
   XLALDestroyREAL4TimeSeries(segmentOne);
   XLALDestroyREAL4TimeSeries(segmentTwo);
-  XLALDestroyREAL4FrequencySeries(psdTempOne);
-  XLALDestroyREAL4FrequencySeries(psdTempTwo);
   XLALDestroyREAL4FrequencySeries(psdOne);
   XLALDestroyREAL4FrequencySeries(psdTwo);
   XLALDestroyREAL4Vector(calPsdOne);
