@@ -56,12 +56,6 @@
 /* 05/26/04 gam; Add whichMCSUM = which Monte Carlo SUM; default is -1. */
 /* 07/09/04 gam; If using running median, use LALRngMedBias to set params->normalizationParameter to correct bias in the median. */
 /* 08/30/04 gam; if (outputEventFlag & 4) > 0 set returnOneEventPerSUM to TRUE; only the loudest event from each SUM is then returned. */
-/* 10/28/04 gam; if (params->weightFlag & 1) > 0 then use PowerFlux weights from running median. Must have (params->normalizationFlag & 4) > 0 */
-/* 10/28/04 gam; change unused params->windowFilterFlag to REAL8 params->orientationAngle used to find F_+ and F_x with weightFlag or MC with fixed polarization angle */
-/* 11/01/04 gam; if (params->weightFlag & 8) > 0 rescale STKs with threshold5 to prevent dynamic range issues. */
-/* 12/06/04 gam; get params->sampleRate, = effective sample rate, from the SFTs; calculate params->deltaT after reading SFTs. */
-/* 12/06/04 gam; add params->gpsEpochStartTimeNan; get gpsEpochStartTime, gpsEpochStartTimeNan, and gpsStartTime from command line; */
-/* 12/06/04 gam; change calibrationFlag to cosInclinationAngle */
   
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
@@ -87,6 +81,7 @@
 #include <lal/RngMedBias.h>
 /* 02/09/04 gam; next is needed for tables defined in LAL */
 #include <lal/LIGOMetadataTables.h>
+#include "StackSlideBinary.h"
 #include "StackSlide.h"
 /* #include <lal/LALStackSlide.h> Will need to switch to this version when StackSlide is in LAL. */
 /*********************************************/
@@ -397,12 +392,11 @@ typedef struct tagStackSlideSearchParams {
   /* computed from these.                   */
   /*                                        */
   /******************************************/
-  
-  /* 12/06/04 gam; add params->gpsEpochStartTimeNan; get gpsEpochStartTime, gpsEpochStartTimeNan, and gpsStartTime from command line; */
-  UINT4   gpsEpochStartTimeSec;      /* GPS start time of data requested seconds */
-  UINT4   gpsEpochStartTimeNan;      /* GPS start time of data requested nanoseconds */
+
   UINT4   gpsStartTimeSec;           /* GPS start time of data requested seconds */
-    UINT4   gpsStartTimeNan;         /* GPS start time of data requested nanoseconds; currently fixed as zero. */
+  UINT4   gpsStartTimeNan;           /* GPS start time of data requested nanoseconds */
+  REAL8   sampleRate;                /* Sample rate of the time-domain data used to make the frequency-domain input data Blocks */
+    REAL8   deltaT;                    /* Time step size in seconds = 1.0/sampleRate */
   REAL8   duration;                  /* Total time being analyzed  */
 
   INT4    numBLKs;                   /* Number of input BLKs.  Not duration/tBLK if gaps are present */
@@ -421,7 +415,21 @@ typedef struct tagStackSlideSearchParams {
   REAL8   f0STK;                     /* Start frequency of STKs */
   REAL8   bandSTK;                   /* Band width of the STKs. */
   INT4    nBinsPerSTK;               /* Number of data points in the STKs in the STK frequency band */
+/*Add here a few entries addressing to the binary case, there will be an if in the command line options : if (binary) assign value to the following params*/
+  
+REAL8 alphaSX1;  /*Sco-X1 right ascension to be assigned to skyPos[0][0]*/
+REAL8 deltaSX1;  /*Sco-X1 declination to be assigned to skyPos[0][1]*/
+REAL8 OrbitalEccentricity; 
+UINT4 TperiapseSSBSec;     /*assumed periapse passage time in seconds. REMEMBER: SOMEWHERE YOU MUST STATE:*/
+UINT4 TperiapseSSBNanoSec; /* params->TperiapseSSB.gpsSeconds=params->TperiapseSSBSec and the same for NanoSec*/
+REAL8 ArgPeriapse; /*argument of periapse: angle between the periapse and the line of nodes*/
+REAL8 SMAcentral; /*central value of SemiMajor axis in parameter space to be used in a MC search*/
+/*REAL8 Tpericentral;*/ /*central value of last periapse passage before obs time starts to be used in a MC search*/
+REAL4 deltaTperi; /*half-uncertainty on T periapse*/
+REAL4 deltaSMA; /*half uncertainty on the semi Major axis*/
 
+/*end of binary params*/
+  
   INT4    numSTKsPerSUM;             /* Number of STKs to use to make one SUM (Usually duration/tSTK) */
     INT4    numSUMsPerParamSpacePt;  /* Number of output SUMs per parameter space point = params->duration/params->tSUM. (Usually will = 1) */
     REAL8   tSUM;                      /* duration in seconds of output SUMs = tSTK*numSTKsPerSUM. (Usually = duration) */
@@ -461,19 +469,21 @@ typedef struct tagStackSlideSearchParams {
   REAL4   threshold5;                /* unused */
   INT4    maxWidthBins;              /* maximum width in bins */
 
-  /* INT2    calibrationFlag; */     /* 12/06/04 gam */ /* Flag that specifies what calibration to do; -1 means Blks are already calibrated, 0 means leave uncalibrated; 1 calibrate  */
+  INT2    calibrationFlag;           /* Flag that specifies what calibration to do; -1 means Blks are already calibrated, 0 means leave uncalibrated; 1 calibrate  */
 
   INT2    weightFlag;                /* Flag that specifies whether to weight BLKs or STKs with a(t) or b(t).  */
 
-  REAL8   orientationAngle;          /* 10/28/04 gam; change unused params->windowFilterFlag to REAL8 params->orientationAngle used to find F_+ and F_x with weightFlag or MC with fixed polarization angle */
-  REAL8   cosInclinationAngle;       /* 12/06/04 gam */
-          
-  /* INT2    windowFilterFlag;       */   /* 10/28/04 gam */ /* Flag that specifies whether any filtering or windowing was done or should be done. (If < 0 then specifies what was done in the time domain) */
+  INT2    windowFilterFlag;          /* Flag that specifies whether any filtering or windowing was done or should be done. (If < 0 then specifies what was done in the time domain) */
   /* REAL8   windowFilterParam1;     */   /* 03/03/04 gam */ /* 1st parameter to use in windowing or filtering */
   /* REAL8   windowFilterParam2;     */   /* 02/17/04 gam */ /* 2nd paramter to use in windowing or filtering */
   /* REAL8   windowFilterParam3;     */   /* 02/17/04 gam */ /* 3rd paramter to use in windowing or filtering */
 
   INT2    normalizationFlag;         /* Flag that specifies what normalization to do.  If < 0 then specifies what normalization was already done. */
+
+   /*insert a binary flag*/
+  INT2 binaryFlag;                   /* must be = 1 for binary and = 0 for isolated */
+  
+  
   REAL8   f0NRM;                     /* Start frequency to normalize over to create NRMs */
   REAL8   bandNRM;                   /* Band width to normalize over to create NRMs. */
   INT4    nBinsPerNRM;               /* Number of data points to normalize over to create to creat NRMs */
@@ -552,11 +562,7 @@ typedef struct tagStackSlideSearchParams {
   /* START SECTION: other parameters        */
   /*                                        */
   /******************************************/
-  
-  /* 12/06/04 gam; get params->sampleRate, = effective sample rate, from the SFTs; calculate params->deltaT after reading SFTs. */
-  REAL8   sampleRate;                /* Sample rate of the time-domain data used to make the frequency-domain input data Blocks */
-  REAL8   deltaT;                    /* Time step size in seconds = 1.0/sampleRate */
-  
+
   CHAR  *dsoName;         /* Name of this DSO */ /* 11/05/01 gam */
 
   /* Basic beowulf node descriptors */
@@ -580,11 +586,6 @@ typedef struct tagStackSlideSearchParams {
   REAL4FrequencySeries **STKData;  /* Container for STKs */
   REAL4FrequencySeries **SUMData;  /* Container for SUMs */
 
-  REAL4Vector **savSTKData;              /* 10/28/04 gam; save STKs for reuse with powerFlux style weighting of STKs for each sky position */
-  REAL4Vector *detResponseTStampMidPts;  /* 10/28/04 gam; container for detector response F_+ or F_x for one sky position, one polarization angle, for midpoints of a timeStamps */
-  REAL4Vector **inverseSquareMedians;    /* 10/28/04 gam; container with inverse square medians for each STK for each frequency bin; for use with powerFlux style weighting of STKs */
-  REAL4Vector *sumInverseSquareMedians;  /* 10/28/04 gam; container with sum of inverse square medians for each frequency bin; for use with powerFlux style weighting of STKs. */
-  
   INT4 iMinBLK;      /* Index of minimum frequency in BLK band */
   INT4 iMaxBLK;      /* Index of maximum frequency in BLK band */
   INT4 iMinNRM;      /* Index of mimimum frequency to include when normalizing BLKs */
@@ -625,6 +626,11 @@ typedef struct tagStackSlideSearchParams {
   /*                                        */
   /******************************************/
 
+  INT4 gpsEpochStartTimeSec;
+  INT4 gpsEpochStartTimeNan;
+  REAL8 orientationAngle;
+  REAL8 cosInclinationAngle;
+
 }
 StackSlideSearchParams;
 
@@ -662,6 +668,9 @@ void StackSlideFinalizeSearch(
 void InitializePeaksArray( SnglStackSlidePeriodicTable *loudestPeaksArray, INT4 arraySize, REAL8 f0, REAL8 df, INT4 nBinsPerOutputEvent );
 void LALUpdateLoudestFromPeaks( SnglStackSlidePeriodicTable *loudestPeaksArray, const SnglStackSlidePeriodicTable *peaks, INT4 nBinsPerOutputEvent );
 void LALUpdateLoudestFromSUMs( SnglStackSlidePeriodicTable *loudestPeaksArray, const REAL4FrequencySeries *oneSUM, const LALUpdateLoudestStackSlideParams *params );
+
+void FindBinaryLoudest( REAL4FrequencySeries **SUMData, StackSlideParams *stksldParams);
+
 /* 01/14/04 gam; Function for finding peaks in StackSlide SUMs */
 /* void findStackSlidePeaks( const REAL4FrequencySeries *oneSUM, StackSlidePeak *peaks, REAL4 threshold1, REAL4 threshold2 ) */
 /* 01/20/04 gam; Change findStackSlidePeaks to LALFindStackSlidePeaks; put params into struct */
@@ -670,24 +679,6 @@ void LALUpdateLoudestFromSUMs( SnglStackSlidePeriodicTable *loudestPeaksArray, c
 /* void LALFindStackSlidePeaks( SnglStackSlidePeriodicTable **pntrToPeaksPntr, const REAL4FrequencySeries *oneSUM, LALFindStackSlidePeakParams *params ); */ /* 03/02/04 gam */
 void LALFindStackSlidePeaks( LALFindStackSlidePeakOutputs *outputs, const REAL4FrequencySeries *oneSUM, LALFindStackSlidePeakParams *params );
 void CountOrAssignSkyPosData(REAL8 **skyPosData, INT4 *numSkyPosTotal, BOOLEAN returnData, StackSlideSkyPatchParams *params); /* 01/31/04 gam*/
-/* 10/28/04 gam; function that saves inverse square medians for weighting STKs */                 
-void SaveInverseSquareMedians(REAL4Vector **inverseSquareMedians, REAL4Vector *sumInverseSquareMedians, INT2 weightFlag, REAL4Vector *medians, INT4 k, INT4 mediansOffset1, INT4 mediansOffset2, INT4 mediansLengthm1, INT4 nBinsPerSTK);
-/* 10/28/04 gam; savSTKDATA for reuse with powerFlux style weighting of STKs for each sky position */
-void SaveSTKData(REAL4Vector ** savSTKData, REAL4FrequencySeries **STKData, INT4 numSTKs, INT4 nBinsPerSTK);
-/* 10/28/04 gam; apply powerFlux style weights */
-void WeightSTKsWithoutBeamPattern(REAL4FrequencySeries **STKData, REAL4Vector **inverseSquareMedians, REAL4Vector *sumInverseSquareMedians, INT4 numSTKs, INT4 nBinsPerSTK);
-/* 10/28/04 gam; get squared detector response F_+^2 or F_x^2 for one sky position, one polarization angle, for midpoints of a timeStamps */
-void GetDetResponseTStampMidPts(LALStatus *stat, REAL4Vector *detResponseTStampMidPts, LIGOTimeGPS *timeStamps, INT4 numSTKs, REAL8 tSTK,
-     LALDetector *cachedDetector, REAL8 *skyPosData, REAL8 orientationAngle, CoordinateSystem coordSystem, INT2 plusOrCross);
-/* 10/28/04 gam; apply powerFlux style weights including detector beam pattern response */
-void WeightSTKsIncludingBeamPattern(REAL4FrequencySeries **STKData,
-           REAL4Vector ** savSTKData,
-           REAL4Vector **inverseSquareMedians,
-           REAL4Vector *sumInverseSquareMedians,
-           REAL4Vector *detResponseTStampMidPts,
-           INT4 numSTKs, INT4 nBinsPerSTK, REAL8 tSTK);
-/* 11/01/04 gam; if (params->weightFlag & 8) > 0 rescale STKs with threshold5 to prevent dynamic range issues. */
-void RescaleSTKData(REAL4FrequencySeries **STKData, INT4 numSTKs, INT4 nBinsPerSTK,REAL4 RescaleFactor);
 /******************************************/
 /*                                        */
 /* END SECTION: prototype declarations    */
