@@ -73,9 +73,6 @@ LALFindChirpComputeChisqBins(
     )
 /* </lalVerbatim> */
 {
-  INITSTATUS( status, "LALFindChirpComputeChisqBins", FINDCHIRPCHISQC );
-  ATTATCHSTATUSPTR( status );
-
   UINT4         k, incIdx;
   REAL4        *tmpltPower;
   UINT4        *chisqBin = NULL;
@@ -84,6 +81,10 @@ LALFindChirpComputeChisqBins(
   REAL4         increment;
   REAL4         nextBin;
   REAL4         partSum;
+
+  INITSTATUS( status, "LALFindChirpComputeChisqBins", FINDCHIRPCHISQC );
+  ATTATCHSTATUSPTR( status );
+
 
   ASSERT( chisqBinVec, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
