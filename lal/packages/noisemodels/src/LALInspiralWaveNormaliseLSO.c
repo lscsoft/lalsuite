@@ -26,17 +26,19 @@ part of the $k$th harmonic)
 H = \sum_{k=1}^{n/2-1} \frac{H_k^2 + H^2_{n-k}}{S_k}.
 \label{eq:inspiralnorm}
 \end{equation}
-{\bf The above is limited to
-frequency} {\tt in->fCutoff} and {\bf array elements of} {\tt filter} 
-corresponding to frequencies greater than {\tt in->fCutoff} are {\bf set
-to zero}.  Also, note that the zeroth and Nyquist frequency components 
+{\bf The above sum is limited to frequency} {\tt in->fCutoff.} 
+Also, note that the zeroth and Nyquist frequency components 
 are ignored in the computation of the norm. 
-The code replaces the original vector $H_k$ with {\it normalized
+Moreover, {\bf array elements of} {\tt filter} corresponding 
+to frequencies greater than {\tt in->fCutoff} are {\bf set to zero}.  
+That is, the code replaces the original vector $H_k$ with {\it normalized
 vector} using: 
 \begin{eqnarray}
-\widehat H_k & = & \frac {H_k}{\sqrt H}, \ \ \ {\tt k \times in\rightarrow df} \le {\tt in\rightarrow fCutoff},\nonumber \\
+\widehat H_k & = & \frac {H_k}{\sqrt H}, 
+\ \ \ {\tt k \times in\rightarrow df} \le {\tt in\rightarrow fCutoff},\nonumber \\
 & = & 0, \ \ \ {\tt k \times in\rightarrow df} > {\tt in\rightarrow fCutoff}.
 \end{eqnarray}
+In addition, the 0th and Nyquist frequency components are also set to zero.
 \subsubsection*{Algorithm}
 \subsubsection*{Uses}
 \begin{verbatim}
@@ -104,11 +106,6 @@ LALInspiralWaveNormaliseLSO
 
   (*norm) *= 2.;
 
-  /*
-  if (in->psd->data[0]) *norm += pow(filter->data[0], 2.)/(0.5*in->psd->data[0]);
-  f = nby2*in->df;
-  if (f<in->fCutoff) if (in->psd->data[nby2]) *norm += pow(filter->data[nby2], 2.)/(0.5*in->psd->data[nby2]);
-  */
   /* Set the 0th and Nyquist frequency bins to be zero. */
   filter->data[0] = filter->data[nby2] = 0.;
 
