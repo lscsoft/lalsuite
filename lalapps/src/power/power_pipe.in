@@ -177,8 +177,8 @@ if condor_prio:
 # PRB -- This is where I have to leave Duncan behind and understand
 # what he's actually done ...... ;)
 # get the pad and chunk lengths from the values in the ini file
-pad = int(cp.get('datafind', 'pad-data'))
-minduration = int(cp.get('pipeline', 'min-duration'))
+pad = int(cp.get('segmentation', 'pad-data'))
+minduration = int(cp.get('segmentation', 'min-duration'))
 
 # read science segs that are >= to min duration from the input file
 data = pipeline.ScienceData()
