@@ -48,6 +48,9 @@ static REAL8 DeltaGPStoFloat(LALStatus *status, LIGOTimeGPS *end,
 static REAL4FrequencySeries *omega_gw(LALStatus *status, REAL4 alpha,
 		REAL8 fRef, REAL4 omegaRef, UINT4 length, REAL8 f0, REAL8 deltaF,
     LIGOTimeGPS time);
+static REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
+    UINT4 length, REAL8 f0, REAL8 deltaF, INT4 siteOne, INT4 siteTwo,
+    LIGOTimeGPS time);
 
 #ifdef  __cplusplus
 }

@@ -665,31 +665,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* quantities needed to build the optimal filter */
 
   if (vrbflg)
-  {
-    fprintf(stdout, "Allocating memory for the overlap reduction " \
-        "function...\n");
-  }
-
-  /* allocate memory for overlap reduction function */
-  LAL_CALL(LALCreateREAL4FrequencySeries(&status, &overlap, \
-        "overlap", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
-        filterLength), &status);
-
-  /* set parameters for overlap reduction function */
-  ORFparams.length = filterLength;
-  ORFparams.f0 = fMin;
-  ORFparams.deltaF = deltaF;
-
-  /* set overlap reduction function detector pair */
-  detectors.detectorOne = lalCachedDetectors[siteOne];
-  detectors.detectorTwo = lalCachedDetectors[siteTwo];
-
-  if (vrbflg)
     fprintf(stdout, "Generating the overlap reduction function...\n");
 
   /* generate overlap reduction function */
-  LAL_CALL(LALOverlapReductionFunction(&status, overlap, &detectors, \
-        &ORFparams), &status);
+  overlap = overlap_reduction_function(&status, filterLength, fMin, deltaF, \
+      siteOne, siteTwo, gpsStartTime);
 
   if (vrbflg)
     fprintf(stdout, "Generating spectrum for optimal filter...\n");
@@ -3191,7 +3171,6 @@ static REAL4TimeSeries *get_ligo_data(LALStatus *status,
   LAL_CALL(LALFrSeek(status, &start, stream), status);
   LAL_CALL(LALFrGetREAL4TimeSeries(status, series, &channelIn, stream), status);
 
-  /* return */
   return(series);
 }
 
@@ -3253,7 +3232,6 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status,
   /* destroy geo series */
   LAL_CALL(LALDestroyREAL8TimeSeries(status, geo), status);
 
-  /* return */
   return(series);
 }
 
@@ -3298,7 +3276,40 @@ static REAL4FrequencySeries *omega_gw(LALStatus *status,
   /* calculate spectrum */
   LAL_CALL(LALStochasticOmegaGW(status, series, &params), status);
 
-  /* return */
+  return(series);
+}
+
+/* wrapper function to return overlap reduction function */
+static REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
+    UINT4 length,
+    REAL8 f0,
+    REAL8 deltaF,
+    INT4 siteOne,
+    INT4 siteTwo,
+    LIGOTimeGPS time)
+{
+  /* variables */
+  REAL4FrequencySeries *series;
+  OverlapReductionFunctionParameters params;
+  LALDetectorPair detectors;
+
+  /* create and initialise frequency series */
+  LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "Overlap", time, f0, \
+        deltaF, lalDimensionlessUnit, length), status);
+
+  /* set parameters */
+  params.length = length;
+  params.f0 = f0;
+  params.deltaF = deltaF;
+
+  /* set detectors */
+  detectors.detectorOne = lalCachedDetectors[siteOne];
+  detectors.detectorTwo = lalCachedDetectors[siteTwo];
+
+  /* calculate overlap reduction function */
+  LAL_CALL(LALOverlapReductionFunction(status, series, &detectors, &params), \
+      status);
+
   return(series);
 }
 
