@@ -152,7 +152,7 @@ CHAR *uvar_outputSkyGrid;
 CHAR *uvar_workingDir;
 BOOLEAN uvar_openDX;
 REAL8 uvar_dopplermax;
-UINT4 uvar_windowsize;
+INT4 uvar_windowsize;
 
 /* interpolation stuff */
 REAL8 uvar_overSampling;
@@ -668,7 +668,7 @@ int writeFLines(INT4 *maxIndex, REAL8 f0, REAL8 df){
   INT4 i,j,j1,j2,k,N;
   REAL8 max,logof2,mean,var,std,R,fr;
   INT4 imax;
-  INT4 err;
+  INT4 err = 0;
 
   logof2=medianbias;
  
@@ -1819,7 +1819,6 @@ refineCOMPLEX16Vector (LALStatus *stat, COMPLEX16Vector **out, const COMPLEX16Ve
   ASSERT ( out, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
   ASSERT ( in, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
   ASSERT ( *out == NULL, stat, COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
-  ASSERT ( newLen > 0, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
 
   oldLen = in->length;
   newLen = oldLen * refineby;

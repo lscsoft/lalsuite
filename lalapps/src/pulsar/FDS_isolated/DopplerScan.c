@@ -72,7 +72,7 @@ static PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 /* internal prototypes */
 void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params );
 void getMetric( LALStatus *status, REAL4 g[3], REAL4 skypos[2], void *params );
-void LALMetricWrapper (LALStatus *stat, REAL8Vector *metric, const PtoleMetricIn *params);
+void LALMetricWrapper (LALStatus *stat, REAL8Vector *metric, PtoleMetricIn *params);
 void LALTemplateDistance (LALStatus *stat, REAL8 *dist, const DopplerPosition *pos1, const DopplerPosition *pos2);
 	
 void ConvertTwoDMesh2Grid ( LALStatus *stat, DopplerScanGrid **grid, const TwoDMeshNode *mesh2d, const SkyRegion *region );
@@ -621,7 +621,7 @@ plotGrid (LALStatus *stat,
 void
 LALMetricWrapper (LALStatus *stat, 
 		  REAL8Vector *metric, 		/* output: metric (pre-allocated)*/
-		  const PtoleMetricIn *input) 	/* input-params for the metric */
+		  PtoleMetricIn *input) 	/* input-params for the metric */
 { /* </lalVerbatim> */
   MetricParamStruc params = empty_MetricParamStruc;
   PulsarTimesParamStruc spinParams = empty_PulsarTimesParamStruc;
@@ -1266,7 +1266,7 @@ printFrequencyShifts ( LALStatus *stat, const DopplerScanState *scan, const Dopp
   REAL8 tgps[2];
   EphemerisData *edat = init->ephemeris;
   UINT4 j;
-  REAL8 corr0, corr1, accN, accDot[3];
+  REAL8 corr1, accN, accDot[3];
   REAL8 Tobs, dT;
   REAL8 V0[3], V1[3], V2[3];
 
