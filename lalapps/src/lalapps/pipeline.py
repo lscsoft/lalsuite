@@ -188,7 +188,7 @@ class CondorJob:
     subfile.write( 'error = ' + self.__err_file + '\n' )
     subfile.write( 'output = ' + self.__out_file + '\n' )
     if self.__notification:
-      subfile.write( 'notification = ' + self.__notifcation + '\n' )
+      subfile.write( 'notification = ' + self.__notification + '\n' )
     subfile.write( 'queue ' + str(self.__queue) + '\n' )
 
     subfile.close()
