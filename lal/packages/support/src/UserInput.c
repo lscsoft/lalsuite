@@ -1,4 +1,7 @@
-/************************************ <lalVerbatim file="UserInputCV">
+/** \file UserInput.c
+ * Convenient unified handling of user-input via config-file and/or command-line.
+ */
+/* <lalVerbatim file="UserInputCV">
 Author: Prix, Reinhard
 $Id$
 ************************************* </lalVerbatim> */
@@ -41,30 +44,30 @@ extern INT4 lalDebugLevel;
 #define TRUE  (1==1)
 #define FALSE (1==0)
 
-/* --------------------
- * This structure defines a "user-variable", which can be read
- * automagically from command-line and/or config-file. 
- *     ** USED ONLY INTERNALLY !! ** 
- * --------------------     */
+/** Defines the type of a "user-variable": bool, int, real or string. 
+ * Should be used only internally !! 
+ */
 typedef enum {
-  UVAR_BOOL,	/* boolean */
-  UVAR_INT4,	/* integer */
-  UVAR_REAL8,	/* float */
-  UVAR_STRING	/* string */
+  UVAR_BOOL,	/**< boolean */
+  UVAR_INT4,	/**< integer */
+  UVAR_REAL8,	/**< float */
+  UVAR_STRING	/**< string */
 } UserVarType;
 
+/** Linked list to hold the complete information about the user-variables.
+ */
 typedef struct tagLALUserVariable {
-  const CHAR *name;	/* full name */
-  UserVarType type;	/* type: bool, int, float or string */
-  CHAR optchar;		/* cmd-line character */
-  const CHAR *help;	/* help-string */
-  void *varp;		/* pointer to the actual C-variable */
-  UserVarState state;	/* state (empty, default, set) */
+  const CHAR *name;	/**< full name */
+  UserVarType type;	/**< type: bool, int, float or string */
+  CHAR optchar;		/**< cmd-line character */
+  const CHAR *help;	/**< help-string */
+  void *varp;		/**< pointer to the actual C-variable */
+  UserVarState state;	/**< state (empty, default, set) */
   struct tagLALUserVariable *next; /* linked list */
 } LALUserVariable;
 
-/* this is the module-local linked list to store the user-variable */
-static LALUserVariable UVAR_vars;	/* empty head */
+/** The module-local linked list to hold the user-variables */
+static LALUserVariable UVAR_vars;	/**< empty head */
 
 /* needed for command-line parsing */
 extern char *optarg;
@@ -80,6 +83,7 @@ RegisterUserVar (LALStatus *stat,
 		 const CHAR *helpstr, 
 		 void *cvar);
 
+static void UvarValue2String (LALStatus *stat, CHAR **outstr, LALUserVariable *uvar);
 
 /* these are type-specific wrappers to allow tighter type-checking! */
 /* <lalVerbatim file="UserInputCP"> */
@@ -501,6 +505,7 @@ LALUserVarReadCfgfile (LALStatus *stat,
  * assemble all help-info from uvars into a help-string
  *----------------------------------------------------------------------*/
 #define UVAR_MAXHELPLINE  512	/* max length of one help-line */
+#define UVAR_MAXDEFSTR    100 	/* max length of default-string */
 /* <lalVerbatim file="UserInputCP"> */
 void
 LALUserVarHelpString (LALStatus *stat, 
@@ -509,8 +514,8 @@ LALUserVarHelpString (LALStatus *stat,
 { /* </lalVerbatim> */
 
   CHAR strbuf[UVAR_MAXHELPLINE];	/* should be enough for one line...*/
-  CHAR defaultstr[100]; /* for display of default-value */
-  CHAR optstr[10];	/* display of opt-char */
+  CHAR defaultstr[UVAR_MAXDEFSTR]; 	/* for display of default-value */
+  CHAR optstr[10];			/* display of opt-char */
   /* we need strings for UVAR_BOOL, UVAR_INT4, UVAR_REAL8, UVAR_STRING: */
   const CHAR *typestr[] = {"BOOL", "INT", "REAL", "STRING"}; 
   LALUserVariable *ptr;
@@ -518,6 +523,7 @@ LALUserVarHelpString (LALStatus *stat,
   size_t newlen = 0;
 
   INITSTATUS (stat, "LALUserVarHelpString", USERINPUTC);
+  ATTATCHSTATUSPTR (stat);
 
   ASSERT (UVAR_vars.next, stat, USERINPUTH_ENOUVARS,  USERINPUTH_MSGENOUVARS);
   ASSERT (helpstring != NULL, stat, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
@@ -556,34 +562,14 @@ LALUserVarHelpString (LALStatus *stat,
 	strcpy (defaultstr, "REQUIRED");
       else if (ptr->state & UVAR_HELP)
 	strcpy (defaultstr, "");
-      else
-	switch (ptr->type)	      /* info on default-value for this variable */
-	  {
-	  case UVAR_BOOL:
-	    sprintf (defaultstr, *(BOOLEAN*)(ptr->varp) ? "True" : "False");
-	    break;
-	  case UVAR_INT4:
-	    sprintf (defaultstr, "%d", *(INT4*)(ptr->varp) );
-	    break;
-	  case UVAR_REAL8:
-	    if (*(REAL8*)(ptr->varp) == 0)
-	      strcpy (defaultstr, "0.0");
-	    else
-	      sprintf (defaultstr, "%g", *(REAL8*)(ptr->varp) );
-	    break;
-	  case UVAR_STRING:
-	    if ( *(CHAR**)(ptr->varp) )
-	      sprintf (defaultstr, "\"%s\"", *(CHAR**)(ptr->varp) );
-	    else
-	      strcpy (defaultstr, "NULL");
-	    break;
-	    
-	  default:
-	    LALPrintError ("ERROR: unkown UserVariable-type encountered... this points to a coding error!\n");
-	    ABORT (stat, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
-	    break;
-
-	  } /* switch ptr->type */
+      else /* write the current default-value into a string */
+	{
+	  CHAR *valstr = NULL;
+	  TRY ( UvarValue2String(stat->statusPtr, &valstr, ptr), stat);
+	  strncpy (defaultstr, valstr, UVAR_MAXDEFSTR);	/* cut short for default-entry */
+	  defaultstr[UVAR_MAXDEFSTR-1] = 0;
+	  LALFree (valstr);
+	}
       
       if (ptr->optchar != 0)
 	sprintf (optstr, "(-%c)", ptr->optchar);
@@ -610,6 +596,7 @@ LALUserVarHelpString (LALStatus *stat,
 
   *helpstring = helpstr;
 
+  DETATCHSTATUSPTR(stat);
   RETURN(stat);
 
 } /* LALUserVarHelpString() */
@@ -806,3 +793,141 @@ LALGetDebugLevel (LALStatus *stat, int argc, char *argv[], CHAR optchar)
   RETURN (stat);
 
 } /* LALGetDebugLevel() */
+
+/** Return string recording the <em>complete</em> user-input.
+ * <em>NOTE:</em> we only record user-variables that have been set
+ * by the user.
+ * \param[out] **outstr	the string containing the user-input record.
+ * \param[in] format	return as config-file or command-line
+ */
+void
+LALUserVarGetRecord (LALStatus *stat, CHAR **outstr,  UserVarRecFormat format)
+{
+  LALUserVariable *ptr = NULL;
+  CHAR *record = NULL;
+  CHAR *valstr;		/* buffer to hold value-string */
+  CHAR *append;
+  UINT4 len, appendlen;
+
+  INITSTATUS( stat, "LALUserVarGetRecord", USERINPUTC);
+  ATTATCHSTATUSPTR(stat);
+
+  ASSERT (outstr, stat, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+  ASSERT (*outstr == NULL, stat, USERINPUTH_ENONULL,USERINPUTH_MSGENONULL);
+
+  /* initialize return-string */
+  record = LALMalloc (1);
+  record[0] = 0;
+  len = 0;
+
+  ptr = &UVAR_vars;
+  while ( (ptr = ptr->next) )   /* we skip the possible lalDebugLevel-entry for now (FIXME?) */
+    {
+      if ( (ptr->state & UVAR_WAS_SET) == FALSE )	/* skip unset variables */
+	continue;
+
+      valstr = NULL;
+      TRY ( UvarValue2String (stat->statusPtr, &valstr, ptr), stat);
+
+      appendlen = strlen(ptr->name) + strlen(valstr) + 10; 
+      if ( (append = LALMalloc(appendlen)) == NULL) {
+	ABORT (stat,  USERINPUTH_EMEM,  USERINPUTH_MSGEMEM);
+      }
+
+      switch (format)
+	{
+	case UVAR_RECFMT_CFGFILE:
+	  sprintf (append, "%s = %s\n", ptr->name, valstr);
+	  break;
+	case UVAR_RECFMT_CMDLINE:
+	  sprintf (append, " --%s=%s", ptr->name, valstr);
+	  break;
+	default:
+	  ABORT (stat, USERINPUTH_ERECFORMAT, USERINPUTH_MSGERECFORMAT);
+	  break;
+	} /* switch (format) */
+
+      len += strlen(append);
+      if ( (record = LALRealloc (record, len+1)) == NULL ) {
+	ABORT (stat,  USERINPUTH_EMEM,  USERINPUTH_MSGEMEM);
+      }
+
+      strcat (record, append);
+
+      LALFree (valstr);
+      LALFree (append);
+    } /* while ptr->next */
+  
+  *outstr = record;
+
+  DETATCHSTATUSPTR(stat);
+  RETURN (stat);
+
+} /* LALUserVarGetRecord() */
+
+
+/* Return the value of the given UserVariable as a string.
+ * For INTERNAL use only!
+ */
+void
+UvarValue2String (LALStatus *stat, CHAR **outstr, LALUserVariable *uvar)
+{
+  CHAR *str = NULL;
+  CHAR *ptr;
+  CHAR buf[512];	/* buffer for producing non-string values */
+
+  INITSTATUS( stat, "Value2String", USERINPUTC);
+
+  ASSERT (outstr, stat, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+  ASSERT (*outstr == NULL, stat, USERINPUTH_ENONULL,USERINPUTH_MSGENONULL);
+  ASSERT (uvar, stat, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+  ASSERT (uvar->varp, stat, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+
+  switch (uvar->type)	      /* info on default-value for this variable */
+    {
+    case UVAR_BOOL:
+      sprintf (buf, *(BOOLEAN*)(uvar->varp) ? "TRUE" : "FALSE");
+      break;
+    case UVAR_INT4:
+      sprintf (buf, "%" LAL_INT4_FORMAT, *(INT4*)(uvar->varp) );
+      break;
+    case UVAR_REAL8:
+      if (*(REAL8*)(uvar->varp) == 0)
+	strcpy (buf, "0.0");	/* makes it more explicit that's it a REAL */
+      else
+	sprintf (buf, "%g", *(REAL8*)(uvar->varp) );
+      break;
+    case UVAR_STRING:
+      ptr = *(CHAR**)(uvar->varp);
+      if ( ptr != NULL )
+	{
+	  if ( (str = LALMalloc ( strlen(ptr) + 3 )) == NULL) {
+	    ABORT (stat,  USERINPUTH_EMEM,  USERINPUTH_MSGEMEM);
+	  }
+	  sprintf (str, "\"%s\"", ptr);
+	}
+      else
+	strcpy (buf, "NULL");
+      break;
+      
+    default:
+      LALPrintError ("ERROR: unkown UserVariable-type encountered... this points to a coding error!\n");
+      ABORT (stat, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+      break;
+      
+    } /* switch uvar->type */
+
+  if (str == NULL)
+    {
+      if ( (str = LALMalloc (strlen(buf) + 1)) == NULL) {
+	ABORT (stat,  USERINPUTH_EMEM,  USERINPUTH_MSGEMEM);
+      }
+      strcpy (str, buf);
+    }
+  
+  *outstr = str;
+	
+  RETURN (stat);
+
+} /* UvarValue2String() */
+

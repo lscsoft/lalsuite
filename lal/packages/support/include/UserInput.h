@@ -1,4 +1,7 @@
-/************************************ <lalVerbatim file="UserInputHV">
+/** \file UserInput.h
+ * Module for general parsing of "user input" from config-file and/or command-line.
+ */
+/* <lalVerbatim file="UserInputHV">
 Author: Prix, Reinhard
 $Id$
 ************************************* </lalVerbatim> */
@@ -41,6 +44,7 @@ NRCSID( USERINPUTH, "$Id$");
 #define USERINPUTH_ENOTSET	8
 #define USERINPUTH_EDEBUG	9
 #define USERINPUTH_EONECONFIG   10
+#define USERINPUTH_ERECFORMAT   11
 
 
 #define USERINPUTH_MSGENULL 	"Arguments contained an unexpected null pointer."
@@ -53,7 +57,7 @@ NRCSID( USERINPUTH, "$Id$");
 #define USERINPUTH_MSGENOTSET	"Required user-variable was not set"
 #define USERINPUTH_MSGEDEBUG	"lalDebugLevel can only be read before ANY mallocs(), even hidden.."
 #define USERINPUTH_MSGEONECONFIG "Currently one ONE config-file can be specified using '@'"
-
+#define USERINPUTH_MSGERECFORMAT   "Unknown format for recording user-input"
 /*************************************************** </lalErrTable> */
 
 /* <lalLaTeX> 
@@ -105,14 +109,22 @@ TRY(LALRegisterSTRINGUserVar((stat)->statusPtr, #name, option, flag, help, &(uva
 ******************************************************* </lalLaTeX> */
 
 
-/* state-flags: required, has_default, was_set */
+/** state-flags: required, has_default, was_set */
 typedef enum {
-  UVAR_OPTIONAL		= 0,	/* not required, and hasn't been set */
-  UVAR_REQUIRED 	= 1,	/* we require the user to set this variable */
-  UVAR_HELP		= 2,	/* special variable: trigger output of help-string */
-  UVAR_WAS_SET 		= (1<<7)/* flag that user-var has this set by user */
+  UVAR_OPTIONAL		= 0,	/**< not required, and hasn't been set */
+  UVAR_REQUIRED 	= 1,	/**< we require the user to set this variable */
+  UVAR_HELP		= 2,	/**< special variable: trigger output of help-string */
+  UVAR_WAS_SET 		= (1<<7)/**< flag that this user-var has been set by user */
 } UserVarState;
 
+/** Format for UserVar-record: configFile- or cmdLine-style.
+ * This determines the format of the string returned from LALUserVarGetRecord().
+ */
+typedef enum {
+  UVAR_RECFMT_CFGFILE,	/**< return UserVars as a config-file */
+  UVAR_RECFMT_CMDLINE,	/**< return UserVars as a command-line */
+  UVAR_RECFMT_LAST
+} UserVarRecFormat;
 
 /* Function prototypes */
 void LALRegisterREALUserVar(LALStatus *stat, 
@@ -155,6 +167,7 @@ void LALUserVarHelpString (LALStatus *stat, CHAR **helpstring, const CHAR *progn
 void LALUserVarCheckRequired (LALStatus *stat);
 INT4 LALUserVarWasSet (void *cvar);
 void LALGetDebugLevel (LALStatus *stat, int argc, char *argv[], CHAR optchar);
+void LALUserVarGetRecord (LALStatus *stat, CHAR **outstr,  UserVarRecFormat format);
 
 #ifdef  __cplusplus
 }
