@@ -195,21 +195,6 @@ LALTFTileToBurstEvent (
                );
 
 
-
-/************************************************************/
-/* new method added to obtain median of power spectrum data */
-/* M. Williamsen  7/17/02                                   */
-/************************************************************/
-
-REAL4
-EPMedian (
-            REAL4            *p,
-            INT4              j,
-            INT4              flength,
-            INT4              numSegs,
-            LALStatus        *status
-         );
-  
 #ifdef  __cplusplus
 }
 #endif  /* C++ protection. */

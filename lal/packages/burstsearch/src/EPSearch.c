@@ -28,6 +28,7 @@ NRCSID (EPSEARCHC, "$Id$");
 
 extern INT4 lalDebugLevel;
 
+static void EPMedian(REAL4 *ans, REAL4 *p, INT4 j, INT4 flength, INT4 numSegs, LALStatus *status);
 
 /****************************************************************
  *
@@ -189,7 +190,7 @@ EPSearch (
       /* find median value over time slices for each frequency */
       for (j = 0; j < flength; j++)
       {
-        dummySpec[j] = EPMedian(ptr, j, flength, numSegs, status);
+        EPMedian( &dummySpec[j], ptr, j, flength, numSegs, status);
         dummySpec[j] /= LAL_LN2; /* scale to match mean method */
       }
 
@@ -432,7 +433,7 @@ EPSearch (
 /* assumes inputs are positive, sorts in descending order    */
 /*************************************************************/
 
-static REAL4 EPMedian(REAL4 *p, INT4 j, INT4 flength, INT4 numSegs, LALStatus *status)
+static void EPMedian(REAL4 *ans, REAL4 *p, INT4 j, INT4 flength, INT4 numSegs, LALStatus *status)
 {
     /* p points to array of power spectra data over time slices */
     /* j is desired frequency offset into power spectra array   */
@@ -449,6 +450,7 @@ static REAL4 EPMedian(REAL4 *p, INT4 j, INT4 flength, INT4 numSegs, LALStatus *s
 
     /* allocate memory array for insert sort, test for success */
     REAL4 *s = (REAL4 *)LALMalloc(numSegs * sizeof(REAL4));
+    *ans = 0;
     ASSERT(s, status, EPSEARCHH_EMALLOC, EPSEARCHH_MSGEMALLOC);
 
     /* zero out the sort array */
@@ -492,7 +494,8 @@ static REAL4 EPMedian(REAL4 *p, INT4 j, INT4 flength, INT4 numSegs, LALStatus *s
     /* free memory used for sort array */
     LALFree(s);
 
-    return returnVal;
+    *ans = returnVal;
+    return;
 }
 
 
