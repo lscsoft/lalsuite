@@ -1024,7 +1024,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           for (segLoop = 0; segLoop < numSegments; segLoop++)
            {
             /* define segment epoch */
-            gpsStartTime.gpsSeconds = startTime + interLoop * intervalDuration + segLoop * segmentDuration;
+            gpsStartTime.gpsSeconds = startTime + (interLoop + segLoop) * segmentDuration;
             gpsStartPadTime.gpsSeconds = gpsStartTime.gpsSeconds - padData;
             segmentPad1.epoch = segmentPad2.epoch = gpsStartPadTime;
 
@@ -1199,7 +1199,7 @@ INT4 main(INT4 argc, CHAR *argv[])
             {
              clear_status(&status);
              firstpass = 1; 
-             interLoop = interLoop + segLoop;
+             interLoop = interLoop + (numSegments -1);
              continue;
              }
 
@@ -1233,7 +1233,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 		{
 		  clear_status(&status);
 		  firstpass = 1;
-		  interLoop = interLoop + segLoop;
+		  interLoop = interLoop + (numSegments - 1);
 		  continue;
 		}
 
@@ -1248,7 +1248,7 @@ INT4 main(INT4 argc, CHAR *argv[])
                {
                 clear_status(&status);
                 firstpass = 1; 
-                interLoop = interLoop + segLoop;
+                interLoop = interLoop + (numSegments - 1);
                 continue;
                }
               else
