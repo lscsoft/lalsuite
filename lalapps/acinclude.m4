@@ -99,7 +99,7 @@ AC_DEFUN([LALAPPS_ENABLE_METAIO],
   [ case "${enableval}" in
       yes) metaio=true;;
       no)  metaio=false ;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-metaio) ;;
     esac
   ], [ metaio=true ] )
 ])
