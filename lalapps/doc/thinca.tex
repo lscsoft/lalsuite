@@ -1,0 +1,258 @@
+\section{Program \texttt{lalapps\_inca}}
+\label{program:lalapps-inca}
+\idx[Program]{lalapps\_inca}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_thinca$ --- program does the inspiral coincidence analysis.
+
+\item[Synopsis]
+\prog{lalapps\_thinca} \newline \hspace*{0.5in}
+[\option{--help}] \newline \hspace*{0.5in} 
+[\option{--verbose}] \newline \hspace*{0.5in} 
+[\option{--version}] \newline \hspace*{0.5in}
+\option{--debug-level}~\parm{level} \newline \hspace*{0.5in} 
+[\option{--user-tag}~\parm{usertag}] \newline \hspace*{0.5in} 
+\option{--gps-start-time}~\parm{start\_time} \newline \hspace*{0.5in}           
+\option{--gps-end-time}~\parm{end\_time} \newline \hspace*{0.5in}            
+[\option{--g1-triggers}]  \newline \hspace*{0.5in}
+[\option{--h1-triggers}]  \newline \hspace*{0.5in}
+[\option{--h2-triggers}]  \newline \hspace*{0.5in}
+[\option{--l1-triggers}]  \newline \hspace*{0.5in}
+[\option{--t1-triggers}]  \newline \hspace*{0.5in}
+[\option{--v1-triggers}]  \newline \hspace*{0.5in}
+\option{--parameter-test}
+\parm{(m1\_and\_m2|psi0\_and\_psi3|mchirp\_and\_eta)}
+\newline \hspace*{0.5in}
+[\option{--dm}]~\parm{dm} \newline \hspace*{0.5in}
+[\option{--psi0}]~\parm{dpsi0} \newline \hspace*{0.5in}
+[\option{--psi3}]~\parm{dpsi3} \newline \hspace*{0.5in}
+[\option{--dmchirp}]~\parm{dmchirp} \newline \hspace*{0.5in}
+[\option{--deta}]~\parm{deta} \newline \hspace*{0.5in}
+\option{--dt}~\parm{dt} \newline \hspace*{0.5in}
+\option{--data-type}~\parm{(playground\_only|exclude\_play|all\_data)} 
+\newline \hspace*{0.5in}
+\option{LIGOLW XML input files} 
+
+\item[Description --- General] 
+
+\verb$lalapps_thinca$ performs a coincidence test between triggers from
+different interferometers.  It reads in triggers from up to four instruments
+and returns coincident triggers.  At present, the code returns all double
+coincident triggers --- it does not check for triple or quadruple coincidences
+even if there are more than two active detectors.
+
+The user specifies which instruments there will be triggers input from with
+the \texttt{g1-triggers}, \texttt{h1-triggers} etc. options.  If less than two
+of these are specified, the program exits as there cannot be coincidence.  The
+triggers are then read in from the list of LIGO Lightweight XML files given
+after the last command line argument.  The code only keeps triggers which
+occur between the \textsc{start\_time} and the \textsc{end\_time}.  If the
+\texttt{check-times} option is specified, then the input search summary tables
+are checked to ensure that we have searched all data between the
+\textsc{start\_time} and \textsc{end\_time} in all relevant ifos.  Following
+this, we discard the non-playground triggers if \textsc{playground\_only} was
+specified and any playground triggers if \textsc{exclude\_play} was specified.
+At this stage, we check that there are triggers from at least two instruments,
+if not, the code exits without testing for coincidences. 
+
+The code now tests for any pairs of coincident triggers.  This is done in the
+function \texttt{LALCreateTwoIFOCoincList()}.  Triggers are considered
+coincident if their end times differ by less than \textsc{dt} and their mass
+parameters pass coincidence.  We test on one of \texttt{(m1\_and\_m2 |
+mchirp\_and\_eta | psi0\_and\_psi3)}, making use of \textsc{dm};
+\textsc{dpsi0} and \textsc{dpsi3}; \textsc{dmchirp} and \textsc{deta}
+respectively to test the relevant mass parameters.  Additionally, if demanding
+coincidence over m1 and m2, it then tests that 
+%
+\begin{equation} \frac{\left|D_\mathrm{IFOA} -
+  D_\mathrm{IFOA}\right|}{D_\mathrm{IFOA}} <
+  \frac{\epsilon}{\rho_\mathrm{IFOB}} + \kappa.  \end{equation}
+% 
+Currently, the values of $\kappa$ and $\epsilon$ are hardwired to $1000$ and
+$2$ respectively.  This essentially disables the effective distance test.
+Additionally, the time and mass coincidence parameters are the same for all
+interferometer pairs.  This should be changed as our timing resolution between
+H1 and H2 will be better than between other sites, also different instruments
+may have better parameter estimation accuaracy.  At the end of the process, we
+have a list of pairs of triggers from different instruments which pass the
+time and mass coincidence tests.  These need to be searched for triple and
+quadruple coincidences, but this has not yet been implemented.
+
+The coincident triggers are written into a single LIGO Lightweight XML file.
+In order that the coincident triggers can be easily located, the
+\textsc{event\_id} field is populated.  This is a \texttt{UINT8} which is
+populated with \textsc{start\_time} $\times 10^{9} +$ an integer identifier.
+The integer identifier is unique within the file, so the overall \textsc{id}
+will be unique.  
+
+The output file is named
+\begin{center}
+\texttt{IFOS-THINCA\_USERTAG-GPSSTARTTIME-DURATION.xml}\\
+\end{center}
+where \textsc{IFOS} is a list of the active ifos in alphabetical order.  The
+file contains \texttt{process}, \texttt{process\_params},
+\texttt{search\_summvars} and \texttt{search\_summary} tables that describe
+the search.  Additionally there is a \texttt{summ\_value} table which contains
+the summ values which were contained in the input files (in aniticipation of
+performing a distance cut) as well as the \texttt{sngl\_inspiral} table
+containing the coincident events.
+
+\item[Options]\leavevmode
+\begin{entry}
+
+\item[\texttt{--data-type}(playground\_only|exclude\_play|all\_data)]
+Required.  Specify whether the code should use only the playground, exclude
+the playground or use all the data. 
+
+\item[\texttt{--gps-start-time} \textsc{start\_time}] Required.  Look
+for coincident triggers with end times after \textsc{start\_time}.
+
+\item[\texttt{--gps-end-time} \textsc{end\_time}] Required.  Look for
+coincident triggers with end times before \textsc{end\_time}.
+
+
+\item[\texttt{--g1-triggers}] Optional.  Specify that triggers from G1 will be
+provided.
+
+\item[\texttt{--h1-triggers}] Optional.  Specify that triggers from H1 will be
+provided.
+\item[\texttt{--h2-triggers}] Optional.  Specify that triggers from H2 will be
+provided.
+
+\item[\texttt{--l1-triggers}] Optional.  Specify that triggers from L1 will be
+provided.
+\item[\texttt{--t1-triggers}] Optional.  Specify that triggers from T1 will be
+provided.
+\item[\texttt{--v1-triggers}] Optional.  Specify that triggers from V1 will be
+provided.  Note: while having triggers from each of the instruments is
+optional, the code requires triggers from at least two instruments, otherwise
+it is impossible to do coincidence.
+
+\item[\texttt{--check-times}] Optional.  If this flag is set, the code checks
+the input search summary tables to verify that the data for each of the
+requested interferometers was analyzed once and only once between the
+\textsc{start\_time} and \textsc{end\_time}.  By default, the code will not
+perform this check.
+
+\item[\texttt{--parameter-test}
+(m1\_and\_m2|psi0\_and\_psi3|mchirp\_and\_eta)]
+Required. Choose which parameters to use when testing for coincidenc.
+Depending on which test is chosen, the allowed windows on the appropriate
+parameters should be set as described below.
+
+\item[\texttt{--dm} \textsc{dm}] Optional. Accept triggers as coincident if
+both m1 and m2 agree within \textsc{dm}.  If not supplied, then \textsc{dm}$=
+0$.
+
+\item[\texttt{--dpsi0} \textsc{dpsi0}] Optional. Accept
+triggers as coincident if $\psi_{0}$ parameters agree within
+\textsc{dpsi0}.  If not supplied,  then \textsc{dpsi0}$= 0$.
+
+\item[\texttt{--dpsi3} \textsc{dpsi3}] Optional. Accept
+triggers as coincident if $\psi_{3}$ parameters agree within
+\textsc{dpsi3}.  If not supplied,  then \textsc{dpsi3}$= 0$.
+
+\item[\texttt{--dmchirp} \textsc{dmchirp}] Optional. Accept
+triggers as coincident if mchirp agrees within \textsc{dmchirp}.  If not
+supplied, then \textsc{dmchirp}$ = 0$.
+
+\item[\texttt{--deta} \textsc{deta}] Optional. Accept triggers
+as coincident if $\eta$ agrees within \textsc{deta}.  If not supplied,
+then \textsc{deta} $= 0$.
+
+\item[\texttt{--dt} \textsc{dt}] Required. Accept triggers as
+coincident if their end times agree within \textsc{dt} milliseconds.  
+
+
+\item[\texttt{--comment} \textsc{string}] Optional. Add \textsc{string}
+to the comment field in the process table. If not specified, no comment
+is added. 
+
+\item[\texttt{--user-tag} \textsc{usertag}] Optional. Set the user tag for
+this job to be \textsc{usertag}. May also be specified on the command line as
+\texttt{-userTag} for LIGO database compatibility.  This will affect the
+naming of the output file.
+
+\item[\texttt{--verbose}] Enable the output of informational messages.
+
+\item[\texttt{--help}] Optional.  Print a help message and exit.
+
+\item[\texttt{--version}] Optional.  Print out the author, CVS version and
+tag information and exit.
+
+\item[\texttt{--debug-level} \textsc{level}] Optional. Set the LAL debug
+level to \textsc{level}. If not specified the default is 1.
+
+\end{entry}
+
+\item[Arguments]\leavevmode
+\begin{entry}
+\item[\texttt{[LIGO Lightweight XML files]}] The arguments to the program
+should be a list of LIGO Lightweight XML files containing the triggers from
+the two interferometers. The input files can be in any order and do not need
+to be time ordered as \texttt{inca} will sort all the triggers once they are
+read in. If the program encounters a LIGO Lightweight XML containing triggers
+from an unknown interferometer (i.e. not IFO A or IFO B) it will exit with an
+error.
+\end{entry}
+
+\item[Example]
+\begin{verbatim}
+lalapps_inca \
+--playground-only  --dm 0.03 --kappa 1000.0 --ifo-b H1 --ifo-a L1 \
+--user-tag SNR6_INJ --debug-level 33 --gps-start-time 734323079
+--gps-end-time 734324999 --epsilon 2.0 --dt 11.0 \
+L1-INSPIRAL_INJ-734323015-2048.xml H1-INSPIRAL_INJ-734323015-2048.xml
+\end{verbatim}
+
+\item[Algorithm]
+The code maintains two pointers to triggers from each ifo,
+\texttt{currentTrigger[0]} and \texttt{currentTrigger[1]}, corresponding to
+the current trigger from IFO A and B respectively.
+
+\begin{enumerate}
+\item An empty linked list of triggers from each interferometer is created.
+Each input file is read in and the code determines which IFO the triggers in
+the file correspond to. The triggers are appended to the linked list for the
+corresponding interferometer.
+
+\item If there are no triggers read in from either of the interferometers,
+the code exits cleanly.
+
+\item The triggers for each interferometer is sorted by the \texttt{end\_time}
+of the trigger.
+
+\item \texttt{currentTrigger[0]} is set to point to the first trigger from IFO
+A that is after the specified GPS start time for coincidence. If no trigger is
+found after the start time, the code exits cleanly.
+
+\item Loop over each trigger from IFO A that occurs before the specified GPS
+end time for coincidence:
+\begin{enumerate}
+\item \texttt{currentTrigger[1]} is set to point to the first trigger from IFO
+B that is within the time coincidence window, $\delta t$, of
+\texttt{currentTrigger[0]}. If no IFO B trigger exists within this window,
+\texttt{currentTrigger[0]} is incremented to the next trigger from IFO A and
+the loop over IFO A triggers restarts.
+
+\item If the trigger \texttt{currentTrigger[0]} \emph{is, is not} in the
+playground data, start looping over triggers from IFO B.
+\begin{enumerate}
+\item For each trigger from IFO B that is within $\delta t$ of
+\texttt{currentTrigger[0]}
+\item Call \texttt{LALCompareSnglInspiral()} to check if the triggers match as
+determined by the options on the command line. If the trigger match, record
+them for later output as coincident triggers.
+\end{enumerate}
+
+\item Increment \texttt{currentTrigger[0]} and continue loop over triggers
+from IFO A.
+\end{enumerate}
+\end{enumerate}
+
+\item[Author] 
+Patrick Brady, Duncan Brown and Steve Fairhurst
+\end{entry}
+
+
