@@ -80,6 +80,8 @@ class InspiralPipeline:
     self.basename = config_file.split('.')[0]
     tempfile.template = self.basename
     self.logfile = tempfile.mktemp()
+    t_fh = open( self.logfile, "w" )
+    t_fh.close()
 
   def parsesegs(self):
     self.segments = []
