@@ -128,9 +128,9 @@ INT4  highPassOrder = -1;
 REAL4 geoScaleFactor = 1e18;
 
 /* GEO high pass filter parameters */
-REAL4 geoHighPassFreq = -1; /* 70; */
-INT4  geoHighPassOrder = -1; /* 8; */
-REAL4 geoHighPassAtten = -1; /* 0.9; */
+REAL4 geoHighPassFreq = -1;
+INT4  geoHighPassOrder = -1;
+REAL4 geoHighPassAtten = -1;
 
 /* number of bins for frequency masking */
 INT4 maskBin = -1;
