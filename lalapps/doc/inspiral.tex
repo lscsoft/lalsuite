@@ -298,23 +298,48 @@ lalapps_inspiral --enable-output --enable-high-pass 50.0
 \begin{verbatim}
 Usage: inspiral_pipeline.py [OPTIONS]
 
-   -f, --config-file FILE       use configuration file FILE
-   -v, --version                print version information and exit
-   -h, --help                   print help information
-   -c, --cache                  query LDR to generate cache files
-   -b, --bank                   run the bank generation code in the DAG
-   -i, --inspiral               run the inspiral code in the DAG
+   -f, --config-file FILE   use configuration file FILE
+   -p, --play               only create chunks that overlap with playground
+   -v, --version            print version information and exit
+   -h, --help               print help information
+   -c, --cache              flag the frame cache query as done
+   -b, --bank               flag the bank generation and cache query as done
 
-This program generates a DAG to run the inspiral code. The configuration
-file should specify the parameters needed to run the jobs and must be
-specified with the --config-file (or -f) option.
+This program generates a DAG to run the inspiral code. The configuration file 
+should specify the parameters needed to run the jobs and must be specified 
+with the --config-file (or -f) option. See the LALapps documentation for more
+information on the syntax of the configuation file.
 
-If the --cache (or -c) option is specified the DAG will generate frame
-cache files by querying LDR, otherwise these will be expected to exist.
+A file containing science segments to be analyzed should be specified in the 
+[input] section of the configuration file with a line such as
 
-The DAG will have each template bank generation job marked as done unless the
---bank (or -b) option is given. Similarly the DAG will have the inspiral jobs
-marked as done unless the --inspiral (or -i) option is given. If the bank
-generation is not specified and the inspiral is specifed, the DAG will 
-expect the banks to have been previously generated with the correct names.
+segments = S2TripleCoincidetScienceSegments.txt
+
+This should contain four whitespace separated coulumns:
+
+  segment_id    gps_start_time  gps_end_time    duration
+
+that define the science segments to be used. Lines starting with # are ignored.
+
+The length of the number of inspiral segments, their overlap and length is 
+determined from the config file and the length of an inspiral chunk is
+computed (typically this is 1024 seconds for S2).
+
+The chunks start and stop times are computed from the science segment times
+and used to build the DAG.
+
+If the --play (or -p) flag is specified, then only chunks that overlap the S2
+playground defined by:
+
+  ((t - 729273613) % 6370) < 600
+
+are included in the DAG.
+
+If the --cache (or -c) option is specifed, the generation of the frame cache 
+files is marked as done in the DAG. The cache files are expected to exist by
+the bank generation and inspiral codes.
+
+If the --bank (or -b) option is specified, both the frame cache query and
+generation of the template bank are marked as done. The cache files and
+template banks are expected to exist by the inspiral code.
 \end{verbatim}
