@@ -20,9 +20,10 @@ RCSID( "$Id$" );
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
 
+/* define the parameters for a 1.4,1.4 sloar mass standard candle with snr 8 */
 #define CANDLE_MASS1 1.4
 #define CANDLE_MASS2 1.4
-#define CANDLE_RHOSQ 8.0
+#define CANDLE_RHOSQ 64.0
 
 /*
  *
