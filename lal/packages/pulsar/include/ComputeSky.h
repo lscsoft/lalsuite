@@ -143,7 +143,7 @@ tagCSParams
 	LIGOTimeGPS	*tGPS;		/* GPS time of 1st data sample of each SFT */
 	REAL8 		*skyPos; 	/* array of sky positions */
 	const CHAR 	*sw;		/* switch to turn on/off modulation */
-	void (*funcName)(REAL8 , REAL8 , REAL8 , REAL8 *, REAL8 *, const CHAR *sw);
+	void (*funcName)(REAL8 , REAL8 , REAL8 , REAL8 *, REAL8 *);
 }
 CSParams;
 
