@@ -88,7 +88,6 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
 enum { mTotElem, etaElem, distElem, incElem, phiElem, lonElem, latElem,
   psiElem, numElem };
 
-FILE *fplog;
 SimInspiralTable *this_sim_insp;
 
 const int randm = 2147483647;
@@ -532,7 +531,7 @@ int read_source_data( void )
  */
 
 
-int sky_position( double *dist, double *alpha, double *delta )
+int sky_position( double *dist, double *alpha, double *delta, char *source )
 {
   static double *ratio;
   static double *frac;
@@ -571,7 +570,8 @@ int sky_position( double *dist, double *alpha, double *delta )
   for ( i = 0; i < num_source; ++i )
     if ( u < frac[i] )
     {
-      fprintf( fplog, "\t%s", source_data[i].name );
+      LALSnprintf( source, sizeof(source)/sizeof(*source), 
+          "%s", source_data[i].name );
       *dist  = source_data[i].dist;
       *alpha = source_data[i].ra;
       *delta = source_data[i].dec;
@@ -579,7 +579,7 @@ int sky_position( double *dist, double *alpha, double *delta )
     }
 
   /* galactic event */
-  fprintf( fplog, "\tMW" );
+  LALSnprintf( source, sizeof(source)/sizeof(*source), "MW" );
   return galactic_sky_position( dist, alpha, delta );
 }
 
@@ -591,7 +591,7 @@ int sky_position( double *dist, double *alpha, double *delta )
  */
 
 
-int inj_params( double *injPar )
+int inj_params( double *injPar, char *source )
 {
   static double *m1arr;
   static double *m2arr;
@@ -606,7 +606,7 @@ int inj_params( double *injPar )
   if ( ! n )
     n = read_source_mass_data( &m1arr, &m2arr );
 
-  sky_position( &dist, &alpha, &delta );
+  sky_position( &dist, &alpha, &delta, source );
   i = (size_t)( n * my_urandom() );
 
   m1 = m1arr[i];
@@ -879,9 +879,6 @@ int main( int argc, char *argv[] )
   this_sim_insp = injections.simInspiralTable = (SimInspiralTable *)
     calloc( 1, sizeof(SimInspiralTable) );
 
-  /* open logfile for injection parameters */
-  fplog = fopen( "injlog.txt", "w" );
-
   /* make injection times at intervals of 100/pi seconds */
   ninj = 1;
   tlistelem = &tlisthead;
@@ -980,10 +977,6 @@ int main( int argc, char *argv[] )
         numElem, ninj );
   }
 
-  fprintf( fplog, "# GPS Time (s.ns)\tGMST (h)\tSource\tMtot (MSun)\tEta"
-      "      \tDist (Mpc)\tIncl (rad)\tPhase (rad)\tRA (rad)\tDEC (rad)\t"
-      "Psi (rad)\tLHO time (h)\tLLO time (h)\tDeffH (Mpc)\tDeffL (Mpc)\n" );
-
   tlistelem = &tlisthead;
 
   for ( inj = 0; inj < ninj; ++inj )
@@ -1001,28 +994,17 @@ int main( int argc, char *argv[] )
 
     gmst =  greenwich_mean_sidereal_time( tsec, tnan, 32 );
 
-    fprintf( fplog, "%ld.%09ld\t%e", tsec, tnan, 
-        (this_sim_insp->end_time_gmst = gmst * 12.0 / LAL_PI) );
     tlistelem = tlistelem->next;
 
-    inj_params( injPar );
+    inj_params( injPar, this_sim_insp->source );
 
     if ( ilwd ) fprintf( fp, "%s%e", inj ? " " : "", injPar[0] );
-    fprintf( fplog, "\t%e", injPar[0] );
 
     for ( elem = 1; elem < numElem; ++elem )
     {
       if ( ilwd )
       {
         fprintf( fp, " %e", injPar[elem] );
-      }
-      if ( elem == distElem )
-      {
-        fprintf( fplog, "\t%e", injPar[elem] / MPC );
-      }
-      else
-      {
-        fprintf( fplog, "\t%e", injPar[elem] );
       }
     }
 
@@ -1040,7 +1022,6 @@ int main( int argc, char *argv[] )
     this_sim_insp->eff_dist_l = deffL = eff_dist( nxL, nyL, injPar, gmst )/MPC;
 
     site_time_of_day( &todH, &todL, tsec, tnan );
-    fprintf( fplog, "\t%e\t%e\t%e\t%e\n", todH, todL, deffH, deffL );
 
     if ( inj < ninj - 1 )
     {
@@ -1055,8 +1036,6 @@ int main( int argc, char *argv[] )
     fputs( "</ilwd>\n", fp );
     fclose( fp );
   }
-
-  fclose( fplog );
 
   memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
 
