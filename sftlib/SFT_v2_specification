@@ -132,7 +132,7 @@ nsamples: The number of complex samples in DATA.  nsamples=N.  Its
           allowed range is 1 to S/2+1 inclusive
 
 crc64: The 64-bit CRC checksum of the 48+8*n+8*N bytes that make up
-       the SFT, with the 8 bytes that labeled crc64 set to zero.  The
+       the SFT, with the 8 bytes labeled crc64 set to zero.  The
        CRC checksum will be evaluated using the
        polynomial D800000000000000 (base-16) =
        1101100000000000000000000000000000000000000000000000000000000000 (base-2).
