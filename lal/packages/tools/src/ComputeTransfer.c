@@ -34,7 +34,7 @@ T(f) = c_{\mathrm{gain}}
 where 
 \begin{equation}
 \textrm{zero}(f,z) = \left\{ \begin{array}{ll}
-(i f / z) - 1 & \textrm{ when } z\neq 0 \\
+(i f / z) + 1 & \textrm{ when } z\neq 0 \\
 i f & \textrm{ when } z = 0
 \end{array}
 \right.
@@ -152,7 +152,7 @@ LALComputeTransfer( LALStatus                 *stat,
     /* loop over zeroes */
     for (i = 0 ; i < calrec->zeros->length ; i++)
     {
-      factor.re = (- calrec->zeros->data[i]);
+      factor.re = (calrec->zeros->data[i]);
       factor.im = f;
       product( &dummy, &dummyC, &factor);
       dummyC.re=dummy.re;
