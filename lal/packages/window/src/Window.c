@@ -28,6 +28,7 @@
  */
 
 #include <math.h>
+#include "LALConstants.h"
 #include "LALStdlib.h"
 #include "Window.h"
 
@@ -71,7 +72,7 @@ Window (Status *status, REAL4Vector *vector, WindowParams *parameters)
   wss=0.0;
   for (i=0;i<length;i++)
   {
-    x=(2.0*M_PI*i)/length;
+    x=(2.0*LAL_PI*i)/length;
     y=fabs(2.0*i/length-1.0);
 
     switch (windowtype)
@@ -107,7 +108,7 @@ Window (Status *status, REAL4Vector *vector, WindowParams *parameters)
 
     /* Papoulis window */
     case Papoulis:
-      win=1.0/M_PI*sin(M_PI*y)+(1.0-y)*cos(M_PI*y);
+      win=1.0/LAL_PI*sin(LAL_PI*y)+(1.0-y)*cos(LAL_PI*y);
       break;
 
     case Hamming:

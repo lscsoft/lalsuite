@@ -50,6 +50,7 @@
  */
 
 #include "LALStdlib.h"
+#include "LALConstants.h"
 #include <math.h>
 #include "Overlap.h"
 
@@ -184,7 +185,7 @@ Overlap ( Status            *status,
   for ( i=0; i<length; i++ ) {
 
     f = i*deltaF;
-    alpha = 2*M_PI*f*distance/C_LIGHT;
+    alpha = 2*LAL_PI*f*distance/C_LIGHT;
     alpha2 = alpha*alpha;
 
     /* if the argument is close to zero, use power series */
@@ -314,7 +315,7 @@ static void CalcSiteCoordinates ( SiteCoordinates*   siteCoordinates,
   REAL4    denom;
   REAL4    north[3], east[3];
 
-  const REAL4  convFactor = M_PI/180.0;
+  const REAL4  convFactor = LAL_PI/180.0;
 
   /* convert angles from degrees to radians */
   psi  =      convFactor*siteParameters->vertexNorth;
