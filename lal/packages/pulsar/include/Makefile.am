@@ -2,7 +2,9 @@
 pkginclude_HEADERS = FlatMesh.h TwoDMesh.h PulsarTimes.h StackMetric.h \
 	Resample.h LALComputeAM.h ComputeSky.h LALDemod.h FoldAmplitudes.h \
 	LALBarycenter.h PtoleMetric.h PulsarCat.h \
-        HeterodynePulsar.h FitToPulsar.h BinaryPulsarTiming.h
+        HeterodynePulsar.h FitToPulsar.h BinaryPulsarTiming.h \
+	PulsarDataTypes.h
+
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 all-local: include-link
