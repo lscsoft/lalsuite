@@ -97,8 +97,8 @@ arguments = --lal-cache \\
   --start $(frstart) --end $(frend)
 environment = LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH)
 log = %s.log
-error = frcache-$(site)-$(frstart)-$(frend).err
-output = frcache-$(site)-$(frstart)-$(frend).out
+error = datafind/frcache-$(site)-$(frstart)-$(frend).err
+output = cache/frcache-$(site)-$(frstart)-$(frend).out
 notification = never
 queue
 """ % (self.config['condor']['datafind'],
@@ -125,8 +125,8 @@ arguments = --gps-start-time $(start) --gps-end-time $(end) \\
           print >> sub_fh, "--" + arg, self.config[sec][arg], 
     print >> sub_fh, """
 log = %s.log
-error = tmpltbank-$(ifo)-$(start)-$(end).err
-output = tmpltbank-$(ifo)-$(start)-$(end).out
+error = bank/tmpltbank-$(ifo)-$(start)-$(end).err
+output = bank/tmpltbank-$(ifo)-$(start)-$(end).out
 notification = never
 queue""" % self.basename
     sub_fh.close()
@@ -151,8 +151,8 @@ arguments = --gps-start-time $(start) --gps-end-time $(end) \\
           print >> sub_fh, "--" + arg, self.config[sec][arg], 
     print >> sub_fh, """
 log = %s.log
-error = inspiral-$(ifo)-$(start)-$(end).err
-output = inspiral-$(ifo)-$(start)-$(end).out
+error = inspiral/inspiral-$(ifo)-$(start)-$(end).err
+output = inspiral/inspiral-$(ifo)-$(start)-$(end).out
 notification = never
 queue
 """ % (self.basename)
@@ -273,6 +273,15 @@ if not config_file:
   print >> sys.stderr, "No configuration file specified."
   print >> sys.stderr, "Use -f FILE or --config-file FILE to specify location."
   sys.exit(1)
+
+try: os.mkdir('cache')
+except: pass
+try: os.mkdir('datafind')
+except: pass
+try: os.mkdir('bank')
+except: pass
+try: os.mkdir('inspiral')
+except: pass
 
 pipeline = InspiralPipeline(config_file)
 pipeline.parsesegs()
