@@ -489,10 +489,10 @@ void EPInitSearch(
     if ( !(*params)->tfTilingInput || !(*params)-> initParams ||
          !(*params)-> compEPInput || !(*params)->channelName )
     {
-        LALFree ((*params)->tfTilingInput); (*params)->tfTilingInput = NULL;
-        LALFree ((*params)->initParams); (*params)->initParams = NULL;
-        LALFree ((*params)->compEPInput); (*params)->compEPInput = NULL;
-	LALFree ((*params)->channelName); (*params)->channelName = NULL;
+        LALFree ((*params)->tfTilingInput);
+        LALFree ((*params)->initParams);
+        LALFree ((*params)->compEPInput);
+	LALFree ((*params)->channelName);
         LALFree (*params); *params = NULL;
         ABORT (status, EPSEARCHH_EALOC, EPSEARCHH_MSGEALOC);
     }
@@ -741,20 +741,6 @@ void EPConditionData(
         }
 
         dummySegment->data->f0 = 0.0;
-
-      /* copy the spectrum:  this does nothing at the moment */
-      dummySegment->spec->data->length = (ptsPerSeg/2 + 1);
-      strncpy( dummySegment->spec->name, INPUTNAME_SPECTRUM,
-          LALNameLength * sizeof(CHAR) );
-      dummySegment->spec->deltaF = 1.0 / 
-          ( series->deltaT * (REAL4) ptsPerSeg );
-
-      dummySegment->spec->epoch.gpsSeconds =
-          dummySegment->data->epoch.gpsSeconds;
-      dummySegment->spec->epoch.gpsNanoSeconds = 
-          dummySegment->data->epoch.gpsNanoSeconds;
-
-      dummySegment->spec->f0 = 0.0;
     }
 
     /****************************************************************
