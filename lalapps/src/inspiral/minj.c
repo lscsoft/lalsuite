@@ -582,6 +582,11 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALGalacticInspiralParamsToSimInspiralTable( &status,
           this_inj, &galacticPar, randParams ), &status );
 
+    /* set the source and waveform fields */
+    LALSnprintf( this_inj->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR), "MW" );
+    LALSnprintf( this_inj->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), 
+        "GeneratePPNtwoPN" );
+
     /* increment the injection time */
     LAL_CALL( LALAddFloatToGPS( &status, &gpsStartTime, &gpsStartTime, 
           meanTimeStep ), &status );
