@@ -220,6 +220,7 @@ static void print_usage(char *program)
 "	 --tfplane-method <method>\n" \
 "	 --tile-overlap-factor <factor>\n" \
 "	 --threshold <threshold>\n" \
+"	[--useOverWhitening]\n" \
 "	[--user-tag <comment>]\n" \
 "	[--verbose]\n" \
 "	 --window <window>\n" \
@@ -413,6 +414,7 @@ void parse_command_line(
 	char msg[240];
 	int args_are_bad = FALSE;
 	int printSpectrum;
+	int useOverWhitening;
 	int c;
 	int option_index;
 	int ram = 0;
@@ -460,6 +462,7 @@ void parse_command_line(
 		{"tfplane-method",      required_argument, NULL,           'n'},
 		{"tile-overlap-factor", required_argument, NULL,           'f'},
 		{"threshold",           required_argument, NULL,           'g'},
+		{"useOverWhitening",    no_argument, &useOverWhitening,   TRUE},  
 		{"user-tag",            required_argument, NULL,           'h'},
 		{"verbose",             no_argument, &options.verbose,    TRUE},
 		{"window",              required_argument, NULL,           'i'},
@@ -510,6 +513,7 @@ void parse_command_line(
 	mdcCacheFile = NULL;	/* default */
 	mdcparams = NULL;	/* default */
 	printSpectrum = FALSE;	/* default */
+	useOverWhitening = FALSE; /* default */
 	resampFiltType = -1;	/* default */
 
 	/*
@@ -939,6 +943,7 @@ void parse_command_line(
 	 */
 
 	params->printSpectrum = printSpectrum;
+	params->useOverWhitening = useOverWhitening;
 
 	if(options.verbose) {
 		fprintf(stderr, "%s: available RAM limits analysis to %d samples\n", argv[0], options.maxSeriesLength);
