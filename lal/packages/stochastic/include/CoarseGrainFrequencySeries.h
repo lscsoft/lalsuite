@@ -104,9 +104,21 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
 			       const FrequencySamplingParams  *params);
 
 void
+LALDCoarseGrainFrequencySeries(LALStatus                      *status,
+			       REAL8FrequencySeries           *output,
+			       const REAL8FrequencySeries     *input,
+			       const FrequencySamplingParams  *params);
+
+void
 LALCCoarseGrainFrequencySeries(LALStatus                        *status,
 			       COMPLEX8FrequencySeries          *output,
 			       const COMPLEX8FrequencySeries    *input,
+			       const FrequencySamplingParams    *params);
+
+void
+LALZCoarseGrainFrequencySeries(LALStatus                        *status,
+			       COMPLEX16FrequencySeries          *output,
+			       const COMPLEX16FrequencySeries    *input,
 			       const FrequencySamplingParams    *params);
 
 #ifdef  __cplusplus
@@ -119,6 +131,8 @@ LALCCoarseGrainFrequencySeries(LALStatus                        *status,
 
 \newpage\input{CoarseGrainFrequencySeriesC}
 \newpage\input{SCoarseGrainFrequencySeriesTestC}
+\newpage\input{DCoarseGrainFrequencySeriesTestC}
 \newpage\input{CCoarseGrainFrequencySeriesTestC}
+\newpage\input{ZCoarseGrainFrequencySeriesTestC}
 
 *********************************************************** </lalLaTeX> */

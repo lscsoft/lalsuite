@@ -6,7 +6,8 @@ check_PROGRAMS = 	  StochasticCrossCorrelationStatisticTest \
           StochasticOptimalFilterTest           StochasticOmegaGWTest \
           OverlapReductionFunctionTest           StochasticInverseNoiseTest \
           DirichletTest        \
-	  SCoarseGrainFrequencySeriesTest    CCoarseGrainFrequencySeriesTest
+	  SCoarseGrainFrequencySeriesTest    DCoarseGrainFrequencySeriesTest \
+	  CCoarseGrainFrequencySeriesTest    ZCoarseGrainFrequencySeriesTest
 
 #                   SFalseAlarmTest       SFalseDismissalTest  \
 #                   DFalseAlarmTest       SFDismissalVsFAlarmTest \
@@ -55,8 +56,12 @@ DirichletTest_SOURCES = DirichletTest.c
 DirichletTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 SCoarseGrainFrequencySeriesTest_SOURCES = SCoarseGrainFrequencySeriesTest.c CheckStatus.c
 SCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+DCoarseGrainFrequencySeriesTest_SOURCES = DCoarseGrainFrequencySeriesTest.c CheckStatus.c
+DCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 CCoarseGrainFrequencySeriesTest_SOURCES = CCoarseGrainFrequencySeriesTest.c CheckStatus.c
 CCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+ZCoarseGrainFrequencySeriesTest_SOURCES = ZCoarseGrainFrequencySeriesTest.c CheckStatus.c
+ZCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
 TESTS =	  StochasticCrossCorrelationStatisticTest \
@@ -66,7 +71,8 @@ TESTS =	  StochasticCrossCorrelationStatisticTest \
           StochasticOptimalFilterTest           StochasticOmegaGWTest \
           OverlapReductionFunctionTest           StochasticInverseNoiseTest \
           DirichletTest        \
-	  SCoarseGrainFrequencySeriesTest
+	  SCoarseGrainFrequencySeriesTest  DCoarseGrainFrequencySeriesTest \
+	  CCoarseGrainFrequencySeriesTest  ZCoarseGrainFrequencySeriesTest
 
 #    SFalseAlarmTest       SFalseDismissalTest  \
 #           DFalseAlarmTest       SFDismissalVsFAlarmTest \
