@@ -475,7 +475,7 @@ GetInspiralMoments (
    CHECKSTATUSPTR(status);
    in.norm = moments->j[7];
 
-   if (lalDebugLevel && LALINFO)
+   if (lalDebugLevel & LALINFO)
    {
 	   fprintf (stderr, "a01=%e a21=%e a22=%e a31=%e a41=%e a42=%e a43=%e \n", 
 			   moments->a01, moments->a21, moments->a22, moments->a31, 
