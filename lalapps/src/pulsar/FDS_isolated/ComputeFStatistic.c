@@ -403,7 +403,22 @@ int main(int argc,char *argv[])
   LAL_CALL (initUserVars(stat), stat); 	
 
   /* do ALL cmdline and cfgfile handling */
-  LAL_CALL (LALUserVarReadAllInput(stat, argc,argv), stat);	
+#if USE_BOINC
+  /* handle config file request with boinc_resolve_filename */
+  /* NOTE: @configfile must be at the beginning of the command line! */
+  if (argv[0][0] == '@') {
+    char resfname[256];
+    if (!boinc_resolve_filename(argv[0]+1,resfname,sizeof(resfname)))
+      LAL_CALL (LALUserVarReadCfgfile (stat, resfname), stat);
+    else
+      fprintf(stderr,"WARNING: Can't boinc-resolve config file \"%s\"\n", argv[0]+1);
+  }
+
+  /* parse the rest of the command line */
+  LAL_CALL (LALUserVarReadCmdline(stat,argc,argv),stat);
+#else
+  LAL_CALL (LALUserVarReadAllInput(stat,argc,argv),stat);	
+#endif
 
   if (uvar_help)	/* if help was requested, we're done here */
     return COMPUTEFSTAT_EXIT_USAGE;
