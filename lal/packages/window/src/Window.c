@@ -60,6 +60,7 @@ These window functions are shown in Fig.~\ref{f:window} for $N=1024$.
 #include <math.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
 #include <lal/Window.h>
 
 NRCSID (WINDOW, "$Id$");

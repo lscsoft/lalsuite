@@ -180,10 +180,12 @@ static void dAstroOmegaSource (LALStatus *s, REAL8 *domegaz, REAL8 z, void *p)
   RETURN (s);
  }
  
+#if 0
 static void SDensity (REAL8 *dEgw, REAL8 nu)
  {  
   *dEgw=pow(nu,3.);
   return;
   }
+#endif
 
 

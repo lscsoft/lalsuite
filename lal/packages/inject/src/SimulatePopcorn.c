@@ -105,6 +105,7 @@ static void drfunc (LALStatus *s, REAL4 *result, REAL4 z, void *p)
   REAL4 Ez;
   INITSTATUS (s, "drfunc", SIMULATEPOPCORNC);
   ATTATCHSTATUSPTR (s);
+  p = NULL;
   Ezfunc(&Ez,z);
   *result=1./Ez;
   CHECKSTATUSPTR (s);
