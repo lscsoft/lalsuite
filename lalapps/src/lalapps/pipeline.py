@@ -61,6 +61,7 @@ class CondorJob:
 
     # These are set by methods in the class
     self.__options = {}
+    self.__short_options = {}
     self.__arguments = []
     self.__condor_cmds = {}
     self.__notification = None
@@ -92,10 +93,24 @@ class CondorJob:
     always be added before any command line arguments. The name of the option
     is prefixed with double hyphen and the program is expected to parse it
     with getopt_long().
-    arg = command line option to add.
+    opt = command line option to add.
     value = value to pass to the option (None for no argument).
     """
     self.__options[opt] = value
+
+  def add_short_opt(self, opt, value):
+    """
+    Add a command line option to the executable. The order that the arguments
+    will be appended to the command line is not guaranteed, but they will
+    always be added before any command line arguments. The name of the option
+    is prefixed with single hyphen and the program is expected to parse it
+    with getopt() or getopt_long() (if a single character option), or
+    getopt_long_only() (if multiple characters).  Long and (single-character)
+    short options may be mixed if the executable permits this.
+    opt = command line option to add.
+    value = value to pass to the option (None for no argument).
+    """
+    self.__short_options[opt] = value
 
   def add_ini_opts(self, cp, section):
     """
@@ -185,13 +200,18 @@ class CondorJob:
     subfile.write( 'universe = ' + self.__universe + '\n' )
     subfile.write( 'executable = ' + self.__executable + '\n' )
 
-    if self.__options.keys() or self.arguments:
+    if self.__options.keys() or self.__short_options.keys() or self.arguments:
       subfile.write( 'arguments =' )
       for c in self.__options.keys():
         if self.__options[c]:
           subfile.write( ' --' + c + ' ' + self.__options[c] )
         else:
           subfile.write( ' --' + c )
+      for c in self.__short_options.keys():
+        if self.__short_options[c]:
+          subfile.write( ' -' + c + ' ' + self.__short_options[c] )
+        else:
+          subfile.write( ' -' + c )
       for c in self.__arguments:
         subfile.write( ' ' + c )
       subfile.write( '\n' )
@@ -269,6 +289,7 @@ class CondorDAGNode:
     self.__pre_script_args = []
     self.__post_script = None
     self.__post_script_args = []
+    self.__macros = {}
     self.__opts = {}
     self.__args = []
     self.__retry = 0
@@ -323,10 +344,23 @@ class CondorDAGNode:
     r = str( long( random.random() * 100000000000000000L ) )
     a = str( self.__class__ )
     self.__name = md5.md5(t + r + a).hexdigest()
-    
+
+  def add_macro(self,name,value):
+    """
+    Add a variable (macro) for this node.  This can be different for
+    each node in the DAG, even if they use the same CondorJob.  Within
+    the CondorJob, the value of the macro can be referenced as
+    '$(name)' -- for instance, to define a unique output or error file
+    for each node.
+    name = macro name.
+    value = value of the macro for this node in the DAG
+    """
+    macro = self.__bad_macro_chars.sub( r'', name )
+    self.__opts[macro] = value
+
   def add_var_opt(self,opt,value):
     """
-    Add the a variable (macro) options for this node. If the option
+    Add a variable (macro) option for this node. If the option
     specified does not exist in the CondorJob, it is added so the submit
     file will be correct when written.
     opt = option name.
@@ -367,8 +401,10 @@ class CondorDAGNode:
     descriptor.
     fh = descriptor of open DAG file.
     """
-    if self.__opts.keys() or self.__vars:
+    if self.__macros.keys() or self.__opts.keys() or self.__args:
       fh.write( 'VARS ' + self.__name )
+    for k in self.__macros.keys():
+      fh.write( ' ' + str(k) + '="' + str(self.__macros[k]) + '"' )
     for k in self.__opts.keys():
       fh.write( ' ' + str(k) + '="' + str(self.__opts[k]) + '"' )
     if self.__args:
@@ -480,7 +516,7 @@ class CondorDAG:
     """
     Write all the nodes in the DAG to the DAG file.
     """
-    if not self.__log_file_path:
+    if not self.__dag_file_path:
       raise CondorDAGError, "No path for DAG file"
     try:
       dagfile = open( self.__dag_file_path, 'w' )
