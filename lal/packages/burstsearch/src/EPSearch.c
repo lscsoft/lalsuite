@@ -188,7 +188,7 @@ EPSearch (
       for (j = 0; j < flength; j++)
       {
         dummySpec[j] = EPMedian(ptr, j, flength, numSegs, status);
-        dummySpec[j] *= sqrt(2.0); /* scale to match mean method */
+        dummySpec[j] /= LAL_LN2; /* scale to match mean method */
       }
 
       LALFree(ptr);     
