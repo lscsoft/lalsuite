@@ -225,16 +225,14 @@ int main(int argc,char *argv[]);
 void initUserVars (LALStatus *stat);
 INT4 ReadSFTData (void);
 void InitFStat (LALStatus *status, ConfigVariables *cfg);
-INT4 NormaliseSFTData(void);
 void CreateDemodParams (LALStatus *status);
 void CreateBinaryDemodParams (LALStatus *status);
 void CreateNautilusDetector (LALStatus *status, LALDetector *Detector);
 void Freemem (LALStatus *status);
 void EstimateFLines(LALStatus *status);
-INT4 NormaliseSFTDataRngMdn (LALStatus *status);
+void NormaliseSFTDataRngMdn (LALStatus *status);
 INT4 EstimateSignalParameters(INT4 * maxIndex);
 INT4 writeFLines(INT4 *maxIndex);
-INT4 EstimateFloor(REAL8Vector *Sp, INT2 windowSize, REAL8Vector *SpFloor);
 int compare(const void *ip, const void *jp);
 INT4 writeFaFb(INT4 *maxIndex);
 void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit *scanInit);
@@ -1940,10 +1938,14 @@ EstimateFLines(LALStatus *stat)
 
 } /* EstimateFLines() */
 
-/***********************************************************************/
+
 /** Normalise the SFT-array \em SFTData by the running median.
+ * The running median windowSize in this routine determines 
+ * the sample bias which, instead of log(2.0), must be 
+ * multiplied by F statistics.
  */
-INT4 NormaliseSFTDataRngMdn(LALStatus *status)
+void 
+NormaliseSFTDataRngMdn(LALStatus *stat)
 {
   INT4 i,j,m,lpc,il;                         /* loop indices */
   INT4 Ntot;
@@ -1953,25 +1955,21 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
   INT2 windowSize=uvar_windowsize;                  /* Running Median Window Size*/
   REAL4 xre,xim,xreNorm,ximNorm;
 
+  INITSTATUS( stat, "NormaliseSFTDataRngMdn", rcsid );
+  ATTATCHSTATUSPTR (stat);
 
-  /* The running median windowSize in this routine determines 
-     the sample bias which, instead of log(2.0), must be 
-     multiplied by F statistics.
-  */
-
-  if (uvar_SignalOnly != 1)
-    LALRngMedBias (status, &medianbias, windowSize);
-
-  LALDCreateVector(status, &Sp, GV.nsamples);
-  LALDCreateVector(status, &RngMdnSp, GV.nsamples);
-
-  if(!(N= (REAL8 *) LALCalloc(GV.nsamples,sizeof(REAL8)))){ 
-    printf("Memory allocation failure of N");
-    return 0;
+  if ( !uvar_SignalOnly ) {
+    TRY( LALRngMedBias (stat->statusPtr, &medianbias, windowSize), stat);
   }
-   if(!(Sp1= (REAL8 *) LALCalloc(GV.nsamples,sizeof(REAL8)))){ 
-    printf("Memory allocation failure of Sp1");
-    return 0;
+
+  TRY ( LALDCreateVector(stat->statusPtr, &Sp, GV.nsamples), stat);
+  TRY ( LALDCreateVector(stat->statusPtr, &RngMdnSp, GV.nsamples), stat);
+
+  if( (N = (REAL8 *) LALCalloc(GV.nsamples,sizeof(REAL8))) == NULL) {
+    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+  }
+  if( (Sp1 = (REAL8 *) LALCalloc(GV.nsamples,sizeof(REAL8))) == NULL) { 
+    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
 
   /* loop over each SFTs */
@@ -1991,7 +1989,7 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
       }
       
       /* Compute running median */
-      EstimateFloor(Sp, windowSize, RngMdnSp);
+      TRY ( EstimateFloor(stat->statusPtr, Sp, windowSize, RngMdnSp), stat);
 
       /* compute how many cluster points in all */
       /* substitute the line profiles value in RngMdnSp */
@@ -2038,11 +2036,13 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
 
   LALFree(N);
   LALFree(Sp1);
-  LALDDestroyVector(status, &RngMdnSp);
-  LALDDestroyVector(status, &Sp);
-  
-  return 0;
 
+  TRY ( LALDDestroyVector(stat->statusPtr, &RngMdnSp), stat);
+  TRY ( LALDDestroyVector(stat->statusPtr, &Sp), stat);
+
+  DETATCHSTATUSPTR(stat);
+  RETURN(stat);
+  
 } /* NormaliseSFTDataRngMed() */
 
 /**************************************************************************************/

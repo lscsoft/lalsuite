@@ -65,9 +65,9 @@ typedef struct ClustersInputtag {
 
 /* Function Prototypes */
 
-void DetectClusters(LALStatus *stat, ClustersInput *input, ClustersParams *clParams, Clusters *output);
+void DetectClusters(LALStatus *, ClustersInput *input, ClustersParams *clParams, Clusters *output);
 int ComputeOutliers(OutliersInput *outliersInput, OutliersParams *outlierParams, Outliers *outliers);
-int EstimateFloor(REAL8Vector *input, INT2 windowSize, REAL8Vector *output);
+void EstimateFloor(LALStatus *, REAL8Vector *input, INT2 windowSize, REAL8Vector *output);
 
 #ifdef  __cplusplus
 }

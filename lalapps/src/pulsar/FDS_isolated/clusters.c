@@ -10,7 +10,8 @@
 #include <lal/LALStdlib.h>
 #include <math.h>
 #include "clusters.h"
-#include "rngmed.h"
+
+#include <lal/LALRunningMedian.h>
 
 NRCSID( CLUSTERSC, "$Id$");
 
@@ -19,44 +20,58 @@ NRCSID( CLUSTERSC, "$Id$");
 #define CLUSTERSC_ENONULL		2
 #define CLUSTERSC_EMEM			3
 #define CLUSTERSC_ESYS      		4
-#define CLUSTERSC_ECLUSTER		5
+#define CLUSTERSC_ETMP			5
 
 
 #define CLUSTERSC_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define CLUSTERSC_MSGENONULL		"Input pointer was not NULL"
 #define CLUSTERSC_MSGEMEM		"Out of memory"
 #define CLUSTERSC_MSGESYS		"System call failed (probably file IO)"
-#define CLUSTERSC_MSGECLUSTER		"Something failed in cluster-detection"
+#define CLUSTERSC_MSGETMP		"Something failed in subroutine.(FIXME)"
 
-/*this code estimates the floor of a givendata set by the running median.*/
-int EstimateFloor(REAL8Vector *input, INT2 windowSize, REAL8Vector *output){
-  /* input : vector (N points) over which the running median code is ran with a  */
-  /* blocksize = windowsize */
-  /* the output of the running median code has N - blocksize+1 points.  */
-  /* the output of this routine has N points. The missing blocksize points */
-  /* are set equal to the nearest last value of the output of th erunnning median. */
-
-
+/** Estimates the floor of a givendata set by the running median.
+ * input : vector (N points) over which the running median code is ran with a  
+ * blocksize = windowsize 
+ * the output of the running median code has N - blocksize+1 points. 
+ * the output of this routine has N points. The missing blocksize points 
+ * are set equal to the nearest last value of the output of th erunnning median.
+ */
+void
+EstimateFloor(LALStatus *stat, REAL8Vector *input, INT2 windowSize, REAL8Vector *output)
+{
   UINT4 start,start2;
   UINT4 lpc;
   UINT4 nbins=input->length;
   REAL4 halfWindow;
   REAL8 *dmp;
-
   INT4 M;
 
+  INITSTATUS( stat, "EstimateFloor", CLUSTERSC);
+  ATTATCHSTATUSPTR (stat); 
 
   M = nbins-windowSize+1;
-  if(!(dmp= (double *) LALCalloc(M,sizeof(double)))){ 
-    printf("dmp Memory allocation failure");
-    return 1;
+  if( (dmp = (REAL8 *) LALCalloc(M,sizeof(REAL8))) == NULL) {
+    ABORT (stat, CLUSTERSC_EMEM, CLUSTERSC_MSGEMEM);
   }
   
-  /* Call rngmed */
-  if (rngmed(input->data, nbins, windowSize, dmp)) {
-    fprintf(stderr,"Problem in rngmed()\n");
-    return 1;
+  /* wrapper for the LALrngmed function to work in here: 
+     the original call here was:
+     > rngmed(input->data, nbins, windowSize, dmp)
+     with the prototype: 
+     > int rngmed(const double *data, unsigned int lendata, unsigned int nblocks, double *medians);
+     while the new prototype is :
+     > LALDRunningMedian(LALStatus*, REAL8Sequence *medians,const REAL8Sequence *input, LALRunningMedianPar param)
+  */
+  {      
+    LALRunningMedianPar par;
+    par.blocksize = windowSize;
+    REAL8Vector medians;
+    medians.length = M;
+    medians.data = dmp;
+    /* now cross your fingers and make a sacrifice to the gods.. */
+    TRY ( LALDRunningMedian(stat->statusPtr, &medians, input, par), stat);
   }
+
 
   /* start is the index of outdata at which the actual rmgmed begins*/
   halfWindow=windowSize/2.0;
@@ -76,8 +91,10 @@ int EstimateFloor(REAL8Vector *input, INT2 windowSize, REAL8Vector *output){
   
   LALFree(dmp);
 
-  return 0;
-}
+  DETATCHSTATUSPTR(stat);
+  RETURN(stat);
+
+} /* EstimateFloor() */
 
 
 
@@ -257,22 +274,27 @@ DetectClusters(LALStatus *stat, ClustersInput *input, ClustersParams *clParams, 
 	  imax2 = i;
 	}
       }
-      
-      rngmed(RDMP2, k, smallBlock, RDMP1);
-
-#if 0
-      int rngmed(const double *data, unsigned int lendata, unsigned int nblocks, double *medians);
-void
-LALDRunningMedian( LALStatus *status, REAL8Sequence *medians, REAL8Sequence *input, LALRunningMedianPar param);
-typedef struct tagLALRunningMedianPar
-{
-  UINT4 blocksize;
-}
-LALRunningMedianPar;
-
-#endif 
 
 
+      /* wrapper for the new rngmed-function to work in here: 
+	 the original call here was:
+	 > rngmed(RDMP2, k, smallBlock, RDMP1);
+	 with the prototype: 
+	 > int rngmed(const double *data, unsigned int lendata, unsigned int nblocks, double *medians);
+	 while the new prototype is :
+	 > LALDRunningMedian(LALStatus*, REAL8Sequence *medians,const REAL8Sequence *input, LALRunningMedianPar param)
+      */
+      {      
+	LALRunningMedianPar par;
+	par.blocksize = smallBlock;
+	REAL8Vector inData, medians;
+	inData.length = k;
+	inData.data = RDMP2;
+	medians.length = output->NclustPoints[lpc];
+	medians.data = RDMP1;
+	/* now cross our fingers and make some sacrifice to the gods.. */
+	TRY ( LALDRunningMedian(stat->statusPtr, &medians, &inData, par), stat);
+      }
       
       /*  compute max of output data */
       max1=0;
@@ -332,7 +354,7 @@ LALRunningMedianPar;
     LALFree(output->Iclust);
     LALFree(output->NclustPoints);
     LALFree(output->clusters);
-    ABORT (stat, CLUSTERSC_ECLUSTER, CLUSTERSC_MSGECLUSTER);
+    ABORT (stat, CLUSTERSC_ETMP, CLUSTERSC_MSGETMP);
   }
    
   LALFree(Iclust);

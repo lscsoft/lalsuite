@@ -2362,8 +2362,10 @@ EstimateFLines(LALStatus *stat)
 
 } /* EstimateFLines() */
 
-/***********************************************************************/
 /** Normalise the SFT-array \em SFTData by the running median.
+ * The running median windowSize in this routine determines 
+ * the sample bias which, instead of log(2.0), must be 
+ * multiplied by F statistics.
  */
 void 
 NormaliseSFTDataRngMdn(LALStatus *stat)
@@ -2421,9 +2423,7 @@ NormaliseSFTDataRngMdn(LALStatus *stat)
       }
       
       /* Compute running median */
-      if (EstimateFloor(Sp, windowSize, RngMdnSp)) {
-	ABORT (stat, COMPUTEFSTATC_ECLUSTER, COMPUTEFSTATC_MSGECLUSTER);
-      }
+      TRY ( EstimateFloor(stat->statusPtr, Sp, windowSize, RngMdnSp), stat);
 
       /* compute how many cluster points in all */
       /* substitute the line profiles value in RngMdnSp */
