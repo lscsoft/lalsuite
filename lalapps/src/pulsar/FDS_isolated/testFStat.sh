@@ -1,5 +1,12 @@
 #!/bin/sh
-sftdir=".."
+
+## allow 'make test' to work from builddir != srcdir
+if [ -z "${srcdir}" ]; then
+    srcdir=.
+fi
+  
+sftdir="${srcdir}/.."
+
 sftbase="SFT.0000"
 IFO="LHO"
 FCOMPARE="./compareFstats"
@@ -22,7 +29,7 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     echo
     echo "The default-code used is '$CFS_DEFAULT'"
     echo
-    exit
+    exit 1
 fi
 
 if [ x$1 = x ]; then
@@ -74,10 +81,11 @@ time $prog $CFSparams1 $extra_args
 echo
 echo -n "Comparing output-file 'Fstats' with reference-version 'Fstats.ref1' ... "
 
-if $FCOMPARE -1 ./Fstats -2 ./Fstats.ref1 ; then
+if $FCOMPARE -1 ./Fstats -2 ${srcdir}/Fstats.ref1 ; then
     echo "OK."
 else
     echo "OUCH... files differ. Something might be wrong..."
+    exit 2
 fi
 
 ## Test2: using an isotropic Grid
@@ -93,10 +101,11 @@ time $prog $CFSparams2 $extra_args
 echo
 echo -n "Comparing output-file 'Fstats' with reference-version 'Fstats.ref2' ... "
 
-if $FCOMPARE -1 ./Fstats -2 ./Fstats.ref2 ; then
+if $FCOMPARE -1 ./Fstats -2 ${srcdir}/Fstats.ref2 ; then
     echo "OK."
 else
     echo "OUCH... files differ. Something might be wrong..."
+    exit 2
 fi
 
 
@@ -114,16 +123,18 @@ echo "$prog $CFSparams3"
 if ! "$prog" $CFSparams3; then
     echo "failed... exiting.";
     echo
-    exit
+    exit 2
 fi
 
 echo
 echo -n "Comparing output-file 'Fstats' with reference-version 'Fstats.ref3' ... "
 
-if $FCOMPARE -1 ./Fstats -2 ./Fstats.ref3 ; then
+if $FCOMPARE -1 ./Fstats -2 ${srcdir}/Fstats.ref3 ; then
     echo "OK."
     echo
+    exit 0
 else
     echo "OUCH... files differ. Something might be wrong..."
     echo
+    exit 2
 fi
