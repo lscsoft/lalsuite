@@ -111,8 +111,6 @@ INT4 maskBin = -1;
 
 INT4 main(INT4 argc, CHAR *argv[])
 {
-  /* variable declarations */
-
   /* status pointer */
   LALStatus status;
 
@@ -238,16 +236,16 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL4WithUnits ccStat;
   COMPLEX8FrequencySeries ccSpectrum;
 
-  /* error handler */
+  /* set default error behaviour */
   status.statusPtr = NULL;
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
+  set_debug_level("33");
 
   /* parse command line options */
   parseOptions(argc, argv);
 
   /* should a resample buffer be applied */
-  if (sampleRate == resampleRate)
+  if ((sampleRate == resampleRate) || (high_pass_flag == 0))
   {
     padData = 0;
   }
