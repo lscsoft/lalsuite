@@ -601,7 +601,7 @@ int main(int argc, char **argv)
 	 * Sort the triggers
 	 */
 
-	LAL_CALL(LALSortSnglBurst(&stat, &burstEventList, LALCompareSnglBurstByTime), &stat);
+	LAL_CALL(LALSortSnglBurst(&stat, &burstEventList, XLALCompareSnglBurstByStartTime), &stat);
 
 
 	/*

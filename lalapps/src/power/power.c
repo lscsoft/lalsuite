@@ -1322,7 +1322,7 @@ static SnglBurstTable *cluster_events(LALStatus *stat, SnglBurstTable *event, in
 		return(NULL);
 
 	do {
-		LAL_CALL(LALSortSnglBurst(stat, &event, LALCompareSnglBurstByTimeAndFreq), stat);
+		LAL_CALL(LALSortSnglBurst(stat, &event, XLALCompareSnglBurstByStartTimeAndLowFreq), stat);
 		lastevents = events;
 		LAL_CALL(LALClusterSnglBurstTable(stat, event, &events), stat);
 	} while((events != lastevents) && (++iterations < limit));

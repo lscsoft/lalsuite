@@ -332,7 +332,7 @@ int main(int argc, char **argv)
         if ( burstEventList[j] )
         {
             LAL_CALL( LALSortSnglBurst(&stat, &(burstEventList[j]), 
-                        LALCompareSnglBurstByTime ), &stat);
+                        XLALCompareSnglBurstByStartTime ), &stat);
         }
     }
 
