@@ -549,13 +549,13 @@ LALStochasticOptimalFilter( LALStatus                          *status,
          STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
   /** check for reference frequency lower and upper limits **/ 
-  if ( fRef < deltaF )
+  if ( fRef < f0 + deltaF )
   {
     ABORT(status,
          STOCHASTICCROSSCORRELATIONH_EOORFREF,
          STOCHASTICCROSSCORRELATIONH_MSGEOORFREF);
   }
-  if ( fRef > ((length-1)*deltaF) )
+  if ( fRef > f0 + ((REAL8)(length-1)*deltaF) )
   {
     ABORT(status,
          STOCHASTICCROSSCORRELATIONH_EOORFREF,
