@@ -296,8 +296,10 @@ INT4 main(INT4 argc, CHAR *argv[])
     segmentShift = segmentDuration;
   }
 
-  /* get stream length */
+  /* get lengths */
   streamLength = streamDuration * resampleRate;
+  intervalLength = intervalDuration * resampleRate;
+  segmentLength = segmentDuration * resampleRate;
 
   if (vrbflg)
   {
@@ -327,12 +329,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* set stream data structures */
   streamPair.streamOne = streamOne;
   streamPair.streamTwo = streamTwo;
-
-  /* set length for data intervals */
-  intervalLength = intervalDuration * resampleRate;
-
-  /* set length for data segments */
-  segmentLength = segmentDuration * resampleRate;
 
   if (vrbflg)
   {
