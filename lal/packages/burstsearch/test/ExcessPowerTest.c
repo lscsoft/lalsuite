@@ -214,10 +214,10 @@ main (int argc, char *argv[])
   {
     RealFFTPlan            *pinv = NULL;
 
-    LALEstimateInvRealFFTPlan (&status, &pinv, ntotT);
+    LALCreateReverseRealFFTPlan (&status, &pinv, ntotT, 0);
     TestStatus (&status, CODES(0), 1);
 
-    LALInvRealFFT (&status, tseries.data, fseries.data, pinv);
+    LALReverseRealFFT (&status, tseries.data, fseries.data, pinv);
     TestStatus (&status, CODES(0), 1);
 
     LALDestroyRealFFTPlan     (&status, &pinv);
