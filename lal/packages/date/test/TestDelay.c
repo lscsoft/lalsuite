@@ -90,12 +90,12 @@ int main( void )
    * 0.N)
    */
   strcpy(frdet1.name, "TEST IFO 1");
-  frdet1.vertexLongitudeDegrees = 0.;
-  frdet1.vertexLatitudeDegrees  = 0.;
+  frdet1.vertexLongitudeRadians = 0.;
+  frdet1.vertexLatitudeRadians  = 0.;
   frdet1.vertexElevation        = 0.;
   frdet1.xArmAltitudeRadians    = 0.;
-  frdet1.xArmAzimuthRadians     = 3. * LAL_PI_2;
-  frdet1.yArmAltitudeRadians    = 0.;
+  frdet1.xArmAzimuthRadians     = 0.;
+  frdet1.yArmAltitudeRadians    = LAL_PI_2;
   frdet1.yArmAzimuthRadians     = 0.;
 
   LALCreateDetector(&stat, &detector1, &frdet1, LALDETECTORTYPE_IFODIFF);
@@ -118,13 +118,13 @@ int main( void )
     
 
   strcpy(frdet2.name, "TEST IFO 2");
-  frdet2.vertexLongitudeDegrees = 90.;
-  frdet2.vertexLatitudeDegrees  = 0.;
+  frdet2.vertexLongitudeRadians = LAL_PI_2;
+  frdet2.vertexLatitudeRadians  = 0.;
   frdet2.vertexElevation        = 0.;
   frdet2.xArmAltitudeRadians    = 0.;
-  frdet2.xArmAzimuthRadians     = 3. * LAL_PI_2;
+  frdet2.xArmAzimuthRadians     = 0.;
   frdet2.yArmAltitudeRadians    = 0.;
-  frdet2.yArmAzimuthRadians     = 0.;
+  frdet2.yArmAzimuthRadians     = LAL_PI_2;
 
   LALCreateDetector(&stat, &detector2, &frdet2, LALDETECTORTYPE_IFODIFF);
   if (stat.statusCode && lalDebugLevel > 0)
