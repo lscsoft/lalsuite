@@ -23,16 +23,16 @@ NRCSID(EPSEARCHH, "$Id$");
 
 typedef struct
 tagEPSearchParams {
-	CHAR                  *channelName;
-	BOOLEAN                printSpectrum;
-	INT4                   eventLimit;
-	UINT4                  windowLength;
-	UINT4                  windowShift;
-	REAL8                  alphaThreshold;
-	AvgSpecMethod          method;
-	CreateTFTilingIn      *tfTilingInput;
-	ComputeExcessPowerIn  *compEPInput;
-	WindowType             windowType;
+	CHAR                 *channelName;
+	BOOLEAN               printSpectrum;
+	INT4                  eventLimit;
+	UINT4                 windowLength;
+	UINT4                 windowShift;
+	REAL8                 alphaThreshold;
+	AvgSpecMethod         method;
+	CreateTFTilingIn      tfTilingInput;
+	ComputeExcessPowerIn  compEPInput;
+	WindowType            windowType;
 } EPSearchParams;
 
 void

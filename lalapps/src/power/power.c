@@ -340,25 +340,12 @@ void parse_command_line(
 	};
 
 	/*
-	 * Allocate memory.
-	 */
-
-	params->tfTilingInput = LALMalloc(sizeof(*params->tfTilingInput));
-	params->compEPInput = LALMalloc(sizeof(*params->compEPInput));
-	if(!params->tfTilingInput || !params->compEPInput) {
-		LALFree(params->tfTilingInput);
-		LALFree(params->compEPInput);
-		print_alloc_fail(argv[0], "");
-		exit(1);
-	}
-
-	/*
 	 * Set parameter defaults.
 	 */
 
 	params->channelName = NULL;
 	params->eventLimit = 999;
-	params->tfTilingInput->maxTileBand = 64.0;
+	params->tfTilingInput.maxTileBand = 64.0;
 	params->windowShift = 0;
 
 	options.cluster = FALSE;
@@ -392,13 +379,13 @@ void parse_command_line(
 
 	do switch(c = getopt_long(argc, argv, "", long_options, &option_index)) {
 		case 'A':
-		params->tfTilingInput->length = atoi(optarg);
-		if(params->tfTilingInput->length <= 0) {
-			sprintf(msg, "must be > 0 (%i specified)", params->tfTilingInput->length);
+		params->tfTilingInput.length = atoi(optarg);
+		if(params->tfTilingInput.length <= 0) {
+			sprintf(msg, "must be > 0 (%i specified)", params->tfTilingInput.length);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput->length);
+		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput.length);
 		break;
 
 		case 'B':
@@ -420,13 +407,13 @@ void parse_command_line(
 		break;
 
 		case 'E':
-		params->compEPInput->alphaDefault = atof(optarg);
-		if(params->compEPInput->alphaDefault <= 0.0 || params->compEPInput->alphaDefault >= 1.0) {
-			sprintf(msg, "must be in range [0,1] (%f specified)", params->compEPInput->alphaDefault);
+		params->compEPInput.alphaDefault = atof(optarg);
+		if(params->compEPInput.alphaDefault <= 0.0 || params->compEPInput.alphaDefault >= 1.0) {
+			sprintf(msg, "must be in range [0,1] (%f specified)", params->compEPInput.alphaDefault);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("float", "%e", params->compEPInput->alphaDefault);
+		ADD_PROCESS_PARAM("float", "%e", params->compEPInput.alphaDefault);
 		break;
 
 		case 'F':
@@ -524,13 +511,13 @@ void parse_command_line(
 		break;
 
 		case 'Q':
-		params->tfTilingInput->flow = atof(optarg);
-		if(params->tfTilingInput->flow < 0.0) {
-			sprintf(msg,"must be >= 0.0 (%f specified)", params->tfTilingInput->flow);
+		params->tfTilingInput.flow = atof(optarg);
+		if(params->tfTilingInput.flow < 0.0) {
+			sprintf(msg,"must be >= 0.0 (%f specified)", params->tfTilingInput.flow);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("float", "%e", params->tfTilingInput->flow);
+		ADD_PROCESS_PARAM("float", "%e", params->tfTilingInput.flow);
 		break;
 
 		case 'R':
@@ -551,23 +538,23 @@ void parse_command_line(
 		break;
 
 		case 'T':
-		params->tfTilingInput->minFreqBins = atoi(optarg);
-		if(params->tfTilingInput->minFreqBins <= 0) {
-			sprintf(msg,"must be > 0 (%i specified)", params->tfTilingInput->minFreqBins);
+		params->tfTilingInput.minFreqBins = atoi(optarg);
+		if(params->tfTilingInput.minFreqBins <= 0) {
+			sprintf(msg,"must be > 0 (%i specified)", params->tfTilingInput.minFreqBins);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput->minFreqBins);
+		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput.minFreqBins);
 		break;
 
 		case 'U':
-		params->tfTilingInput->minTimeBins = atoi(optarg);
-		if(params->tfTilingInput->minTimeBins <= 0) {
-			sprintf(msg,"must be > 0 (%i specified)", params->tfTilingInput->minTimeBins);
+		params->tfTilingInput.minTimeBins = atoi(optarg);
+		if(params->tfTilingInput.minTimeBins <= 0) {
+			sprintf(msg,"must be > 0 (%i specified)", params->tfTilingInput.minTimeBins);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput->minTimeBins);
+		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput.minTimeBins);
 		break;
 
 		case 'V':
@@ -592,13 +579,13 @@ void parse_command_line(
 		break;
 
 		case 'X':
-		params->compEPInput->numSigmaMin = atof(optarg);
-		if(params->compEPInput->numSigmaMin <= 1.0) {
-			sprintf(msg, "must be > 0 (%f specified)", params->compEPInput->numSigmaMin);
+		params->compEPInput.numSigmaMin = atof(optarg);
+		if(params->compEPInput.numSigmaMin <= 1.0) {
+			sprintf(msg, "must be > 0 (%f specified)", params->compEPInput.numSigmaMin);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("float", "%e", params->compEPInput->numSigmaMin);
+		ADD_PROCESS_PARAM("float", "%e", params->compEPInput.numSigmaMin);
 		break;
 
 		case 'Y':
@@ -670,13 +657,13 @@ void parse_command_line(
 		break;
 
 		case 'f':
-		params->tfTilingInput->overlapFactor = atoi(optarg);
-		if(params->tfTilingInput->overlapFactor < 0) {
-			sprintf(msg, "must be > 0 (%i specified)", params->tfTilingInput->overlapFactor);
+		params->tfTilingInput.overlapFactor = atoi(optarg);
+		if(params->tfTilingInput.overlapFactor < 0) {
+			sprintf(msg, "must be > 0 (%i specified)", params->tfTilingInput.overlapFactor);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput->overlapFactor);
+		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput.overlapFactor);
 		break;
 
 		case 'g':
@@ -809,7 +796,7 @@ static REAL4TimeSeries *get_geo_data(
 
 	/* high pass filter before casting REAL8 to REAL4 */
 	highpassParam.nMax = 4;
-	fsafety = params->tfTilingInput->flow - 10.0;
+	fsafety = params->tfTilingInput.flow - 10.0;
 	highpassParam.f2 = fsafety > options.fcorner ? options.fcorner : fsafety;
 	highpassParam.f1 = -1.0;
 	highpassParam.a2 = 0.1;
@@ -1242,7 +1229,7 @@ int main( int argc, char *argv[])
 		 * Condition the time series data.
 		 */
 
-		LAL_CALL(EPConditionData(&stat, series, params.tfTilingInput->flow, 1.0 / targetSampleRate, resampFiltType, options.FilterCorruption, &params), &stat);
+		LAL_CALL(EPConditionData(&stat, series, params.tfTilingInput.flow, 1.0 / targetSampleRate, resampFiltType, options.FilterCorruption, &params), &stat);
 
 		if(options.verbose)
 			fprintf(stderr, "Got %i points to analyse after conditioning\n", series->data->length);
@@ -1342,9 +1329,6 @@ int main( int argc, char *argv[])
 		burstEvent = burstEvent->next;
 		LALFree(event);
 	}
-
-	LALFree(params.compEPInput);
-	LALFree(params.tfTilingInput);
 
 	LALCheckMemoryLeaks();
 	exit(0);

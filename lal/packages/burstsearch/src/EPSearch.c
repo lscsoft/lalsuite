@@ -127,7 +127,7 @@ static SnglBurstTable *TFTileToBurstEvent(
 	event->duration = (tile->tend - tile->tstart + 1) * tile->deltaT;
 	event->peak_time = XLALAddFloatToGPS(event->start_time, 0.5 * event->duration);
 	event->bandwidth = (tile->fend - tile->fstart + 1) / tile->deltaT;
-	event->central_freq = params->tfTilingInput->flow + tile->fstart/tile->deltaT + (0.5 * event->bandwidth);
+	event->central_freq = params->tfTilingInput.flow + tile->fstart/tile->deltaT + (0.5 * event->bandwidth);
 	event->amplitude = tile->excessPower;
 	event->snr = tile->excessPower;
 
@@ -316,8 +316,8 @@ EPSearch(
 		if(!tfTiling) {
 			/* the factor of 2 here is to account for the
 			 * overlapping */
-			params->tfTilingInput->deltaF = 2.0 * fseries->deltaF;
-			LALCreateTFTiling(status->statusPtr, &tfTiling, params->tfTilingInput);
+			params->tfTilingInput.deltaF = 2.0 * fseries->deltaF;
+			LALCreateTFTiling(status->statusPtr, &tfTiling, &params->tfTilingInput);
 			CHECKSTATUSPTR(status);
 		}
 
@@ -336,7 +336,7 @@ EPSearch(
 
 		LALInfo(status->statusPtr, "Computing the excess power");
 		CHECKSTATUSPTR(status);
-		LALComputeExcessPower (status->statusPtr, tfTiling, params->compEPInput);
+		LALComputeExcessPower (status->statusPtr, tfTiling, &params->compEPInput);
 		CHECKSTATUSPTR(status);
 
 		/*
@@ -442,7 +442,7 @@ void EPConditionData(
 	 */
 
 	highpassParam.nMax = 4;
-	fsafety = params->tfTilingInput->flow - 10.0;
+	fsafety = params->tfTilingInput.flow - 10.0;
 	highpassParam.f2 = fsafety > 150.0 ? 150.0 : fsafety;
 	highpassParam.f1 = -1.0;
 	highpassParam.a2 = 0.1;
