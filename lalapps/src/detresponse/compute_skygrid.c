@@ -18,10 +18,6 @@ static const double rad2deg = 180./(double)LAL_PI;
 static const double     eps = 23.5;
 static const double  clight = 2.998e8;
 
-/* ephemerides files for the year 2003 */
-static char * const earth_filename = "earth03.dat"; 
-static char * const sun_filename = "sun03.dat";
-
 static double vorbrel;
 
 /*
@@ -53,17 +49,17 @@ static double doppler(LALStatus * status,
   }
   
   /* NOTE: from the LALBarycenter() file, here's
-    * how to compute the unit vector pointing to a 
-    * source of RA=alpha, Dec=delta [the vector is
-      * in the J2000 frame]
-    *
-    *     sinTheta=sin(LAL_PI/2.0-delta);
-  *     // s is vector that points towards source 
-    *     s[2]=cos(LAL_PI/2.0-delta); 
-  *     // in Cartesian coords based on J2000
-    *     s[1]=sinTheta*sin(alpha);
-  *     // 0=x,1=y,2=z 
-    *     s[0]=sinTheta*cos(alpha);   */
+   * how to compute the unit vector pointing to a 
+   * source of RA=alpha, Dec=delta [the vector is
+   * in the J2000 frame]
+   *
+   *     sinTheta=sin(LAL_PI/2.0-delta);
+   *     // s is vector that points towards source 
+   *     s[2]=cos(LAL_PI/2.0-delta); 
+   *     // in Cartesian coords based on J2000
+   *     s[1]=sinTheta*sin(alpha);
+   *     // 0=x,1=y,2=z 
+   *     s[0]=sinTheta*cos(alpha);   */
   
   sin_theta = sin(LAL_PI_2 - source_loc->latitude);   
   e_source[2] = cos(LAL_PI_2 - source_loc->latitude);
@@ -76,9 +72,7 @@ static double doppler(LALStatus * status,
     doppler_factor += velocity[i] * e_source[i];
 
   /* printf("doppler_factor = %20.14e\n", doppler_factor); */
-  
-  LALCheckMemoryLeaks();
-  
+    
   return doppler_factor;
 }
 
@@ -160,7 +154,7 @@ static double relval(double ra, double dec, int i, int nrelvals)
  *   - want to not reach the poles in Dec
  *
  */
-void compute_skygrid(LALStatus * status)
+void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data)
 {
   LALDetector             detector;
   LALFrDetector           fr_detector;
@@ -196,7 +190,7 @@ void compute_skygrid(LALStatus * status)
 
   /* initialize skygrid_t stuff */
   init_skygrid(status);
-
+  
   /* useful numbers */
   num_ra = args_info.n_ra_arg;
   num_dec = args_info.n_dec_arg;
@@ -319,10 +313,7 @@ void compute_skygrid(LALStatus * status)
   
   /* set up inputs to LALDetectorVel() */
   detectorvel_inputs.detector = detector;
-  detectorvel_inputs.edat     = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  detectorvel_inputs.edat->ephiles.earthEphemeris = earth_filename;
-  detectorvel_inputs.edat->ephiles.sunEphemeris = sun_filename;
-  LALInitBarycenter(status, (detectorvel_inputs.edat));
+  detectorvel_inputs.edat     = p_ephemeris_data;
   
   /*
    * compute response over whole sky
@@ -550,8 +541,6 @@ void compute_skygrid(LALStatus * status)
     skygrid_print(status, &start_time, grid_sum_sq, sum_file_name);
     skygrid_print(status, &start_time, grid_relfreq, relfreq_file_name);
   }
-
-  LALFree(detectorvel_inputs.edat);
   
   free_skygrid(status, &grid_cros_sq);
   free_skygrid(status, &grid_plus_sq);
@@ -559,8 +548,6 @@ void compute_skygrid(LALStatus * status)
   free_skygrid(status, &grid_relfreq);
   
   cleanup_skygrid(status);
-    
-  LALCheckMemoryLeaks();
   
   return;
 } /* END: compute_skygrid() */
