@@ -76,7 +76,7 @@ extern int vrbflg;
 /* sampling parameters */
 INT4 sampleRate = -1;
 INT4 resampleRate = -1;
-REAL8 deltaF;
+REAL8 deltaF = 0.25;
 
 /* data parameters */
 LIGOTimeGPS gpsStartTime;
