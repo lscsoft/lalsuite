@@ -2474,7 +2474,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --write-spectrum             write the uncalibrated psd to a frame\n"\
 "  --write-snrsq                write the snr time series for each data segment\n"\
 "  --write-chisq                write the r^2 time series for each data segment\n"\
-"  --write-cdata                write the c=x+iy complex time series for each data segment\n"\
+"  --write-cdata                write the complex filter output for each data segment\n"\
 "\n"
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
