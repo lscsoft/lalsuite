@@ -54,6 +54,10 @@ LALHO()
 
 NRCSID (SFTFILEIOC, "$Id$");
 
+
+static void endian_swap(CHAR * pdata, UINT4 dsize, size_t nelements);
+static void ByteSwapSFTHeader (LALStatus *stat, SFTHeader *header);
+
 /*
  * The functions that make up the guts of this module
  */
@@ -86,9 +90,12 @@ void LALReadSFTheader (LALStatus  *status,
   /* read the header */
   errorcode = fread( (void *)&header1, sizeof(SFTHeader), 1, fp);
   ASSERT (errorcode ==1, status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
-  ASSERT (header1.endian ==1, status, SFTFILEIOH_EENDIAN, SFTFILEIOH_MSGEENDIAN);
 
-  header->endian     = header1.endian;
+  if (header1.version != 1) {
+    ABORT (status, SFTFILEIOH_EVERSION, SFTFILEIOH_MSGEVERSION);
+  }
+
+  header->version     = header1.version;
   header->gpsSeconds = header1.gpsSeconds;
   header->gpsNanoSeconds = header1.gpsNanoSeconds;
   header->timeBase       = header1.timeBase;
@@ -133,7 +140,9 @@ void LALReadSFTtype(LALStatus  *status,
   /* read the header */
   errorcode = fread( (void *)&header1, sizeof(SFTHeader), 1, fp);
   ASSERT (errorcode == 1,      status, SFTFILEIOH_EHEADER, SFTFILEIOH_MSGEHEADER);
-  ASSERT (header1.endian == 1, status, SFTFILEIOH_EENDIAN, SFTFILEIOH_MSGEENDIAN);
+  if (header1.version != 1) {
+    ABORT (status, SFTFILEIOH_EVERSION, SFTFILEIOH_MSGEVERSION);
+  }
   
   /* check that the data we want is in the file and it is correct */
   ASSERT (header1.timeBase > 0.0, status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
@@ -218,7 +227,7 @@ LALWriteSFTtoFile (LALStatus  *status,
   ASSERT (outfname, status, SFTFILEIOH_ENULL, SFTFILEIOH_MSGENULL); 
 
   /* fill in the header information */
-  header.endian = 1.0;
+  header.version = 1.0;
   header.gpsSeconds = sft->epoch.gpsSeconds;
   header.gpsNanoSeconds = sft->epoch.gpsNanoSeconds;
   header.timeBase = 1.0 / sft->deltaF;
@@ -263,7 +272,7 @@ LALWriteSFTtoFile (LALStatus  *status,
 } /* WriteSFTtoFile() */
 
 /*----------------------------------------------------------------------
- * Reinhard draft versions of SFT IO functions, 
+ * Reinhards draft versions of SFT IO functions, 
  * which combines Alicia's ReadSFTbinHeader1() and ReadSFTtype()
  *----------------------------------------------------------------------*/
 
@@ -282,6 +291,8 @@ LALReadSFTfile (LALStatus *status,
   SFTtype *outputSFT;
   UINT4 i;
   REAL4 factor;
+  BOOLEAN swapEndian = 0;
+  REAL8 version;
   
 
   INITSTATUS (status, "ReadSFTfile", SFTFILEIOC);
@@ -297,14 +308,26 @@ LALReadSFTfile (LALStatus *status,
   }
   
   /* read the header */
-  
   if (fread( &header, sizeof(header), 1, fp) != 1) {
     ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
   }
-  if (header.endian != 1) {
-    ABORT (status, SFTFILEIOH_EENDIAN, SFTFILEIOH_MSGEENDIAN);
+  version = header.version;
+  /* check endian-ness and SFT-version */
+  if (version > 1000000) {
+    endian_swap ((CHAR*)&version, sizeof(REAL8), 1);
+    swapEndian = 1;
   }
 
+  /* this is currently only supporting SFT version 1.0 ! */
+  if (version > 1.0) {
+    ABORT (status, SFTFILEIOH_EVERSION, SFTFILEIOH_MSGEVERSION);
+  }
+  
+  /* do byte-swapping for header if needed */
+  if (swapEndian) {
+    TRY ( ByteSwapSFTHeader (status->statusPtr, &header), status);
+  }
+   
   deltaF = 1.0 / header.timeBase;
   f0 = header.fminBinIndex * deltaF;
   Band = header.length * deltaF;
@@ -348,6 +371,10 @@ LALReadSFTfile (LALStatus *status,
   }
   fclose(fp);
 
+  /* do endian byte-swapping on the data if required */
+
+  /* FIXME: continue here */
+
   /* is this correct  ? */
   /* or if the data is normalized properly, there will be no need to consider. */
   factor = 1.0 * SFTlen / header.length;
@@ -372,3 +399,62 @@ LALReadSFTfile (LALStatus *status,
   RETURN(status);
 
 } /* LALReadSFTfile() */
+
+/***********************************************************************
+ * internal helper functions
+ ***********************************************************************/
+/* a little endian-swapper needed for SFT reading/writing */
+void 
+endian_swap(CHAR * pdata, size_t dsize, UINT4 nelements)
+{
+  UINT4 i, j, indx;
+  CHAR tempbyte;
+
+  if (dsize <= 1) return;
+
+  for (i=0; i<nelements; i++)
+    {
+      indx = dsize;
+      for (j=0; j<dsize/2; j++)
+	{
+	  tempbyte = pdata[j];
+	  indx = indx - 1;
+	  pdata[j] = pdata[indx];
+	  pdata[indx] = tempbyte;
+	}
+      
+      pdata = pdata + dsize;
+    }
+  
+  return;
+
+} /* endian swap */
+
+/*----------------------------------------------------------------------
+ * do correct byte-swapping for a whole SFT-header
+ * 
+ * currently only SFT-v1.0 is supported
+ *----------------------------------------------------------------------*/
+void
+ByteSwapSFTHeader (LALStatus *stat, SFTHeader *header)
+{
+  INITSTATUS (stat, "LALByteSwapSFTHeader", SFTFILEIOC);
+
+  /* we have to do this one by one, because memory-alignment
+   * is not guaranteed !! 
+   */
+  endian_swap ((CHAR*)&(header->version), sizeof(REAL8), 1);
+
+  if (header->version > 1) {
+    ABORT (stat, SFTFILEIOH_EVERSION, SFTFILEIOH_MSGEVERSION);
+  }
+
+  endian_swap ((CHAR*)&(header->gpsSeconds), sizeof(INT4), 1);
+  endian_swap ((CHAR*)&(header->gpsNanoSeconds), sizeof(INT4), 1);
+  endian_swap ((CHAR*)&(header->timeBase), sizeof(REAL8), 1);
+  endian_swap ((CHAR*)&(header->fminBinIndex), sizeof(INT4), 1);
+  endian_swap ((CHAR*)&(header->length), sizeof(INT4), 1);
+
+  RETURN (stat);
+
+} /* ByteSwapSFTHeader() */
