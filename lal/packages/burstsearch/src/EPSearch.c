@@ -709,11 +709,6 @@ void EPConditionData(
         EPDataSegment *dummySegment = dataSegVec->data + i;
         INT4 ptsPerSeg = 2 * params->initParams->numPoints;
 
-        /* 
-         * Would only have relevance in a standalone code.  For wrapperAPI,  
-         * we know how much data we are getting
-         */
-        dummySegment->endOfData = 0;
         /* this should be set to a unique number for each segment   */
         dummySegment->number = i;
 
