@@ -71,7 +71,7 @@ with \texttt{condor\_submit\_dag}
 
 \begin{verbatim}
 > lalapps_stochastic_pipe --log-path /home/ram/dag_logs \
-     --datafind --stochastic --config-file stochastic_H1L1.ini
+     --datafind --stochastic --stopp --config-file stochastic_H1L1.ini
 > condor_submit_dag stochastic_H1L1.dag
 \end{verbatim}
 
@@ -397,6 +397,15 @@ write output data to \parm{FILE}
 \end{entry}
 
 \item[Example]
+
+\begin{verbatim}
+> lalapps_stopp --output S3-H1L1-STOCHASTIC.xml \
+>   H1L1-STOCHASTIC-753601044-753601242.xml \
+>   H1L1-STOCHASTIC-753620042-753620352.xml \
+>   H1L1-STOCHASTIC-753638864-753639462.xml \
+>   H1L1-STOCHASTIC-753785374-753785707.xml \
+>   H1L1-STOCHASTIC-753791744-753792342.xml
+\end{verbatim}
 
 \item[Author]
 Adam Mercer
