@@ -196,6 +196,7 @@ int polka(int argc,char *argv[]);
 #define COMPUTEFSTAT_EXIT_CANTUNZIP      17  /* unable to zip Fstats file */
 #define COMPUTEFSTAT_EXIT_CANTRENAME     18  /* unable to zip Fstats file */
 #define COMPUTEFSTAT_EXIT_NOPOLKADEL     19  /* no // found in command line */
+#define COMPUTEFSTAT_EXIT_USER     	 20  /* user asked for exit */
 #define COMPUTEFSTAT_EXIT_LALCALLERROR  100  /* this is added to the LAL status to get BOINC exit value */
 
 /*----------------------------------------------------------------------
@@ -241,6 +242,9 @@ REAL8 uvar_startTime;
 REAL8 uvar_endTime;
 #if BOINC_COMPRESS
 BOOLEAN uvar_useCompression;
+#endif
+#ifdef USE_BOINC
+INT4 uvar_maxIterations;	/* for boinc-debugging: stop after maxIterations */
 #endif
 /*----------------------------------------------------------------------*/
 /* some other global variables */
@@ -660,6 +664,16 @@ int main(int argc,char *argv[])
       
       LAL_CALL (NextDopplerPos( stat, &dopplerpos, &thisScan ), stat);
 
+#if USE_BOINC
+      /* BOINC-DEBUG don't do more than maxIterations skypositions for debugging */
+      if ( uvar_maxIterations && (loopcounter > uvar_maxIterations) )
+	{
+	  thisScan.state = STATE_FINISHED;
+	  fprintf (stdout, "APP DEBUG: done maxIterations==%d skypositions, considering this finished now.(DEBUG).\n",
+		   uvar_maxIterations); fflush(stdout);
+	}
+#endif
+      
       /* Have we scanned all DopplerPositions yet? */
       if (thisScan.state == STATE_FINISHED)
 	break;
@@ -854,6 +868,7 @@ initUserVars (LALStatus *stat)
 #if USE_BOINC
   uvar_doCheckpointing = TRUE;
   uvar_expLALDemod = TRUE;
+  uvar_maxIterations = 0;
 #else
   uvar_doCheckpointing = FALSE;
   uvar_expLALDemod = FALSE;
@@ -905,6 +920,9 @@ initUserVars (LALStatus *stat)
   LALregREALUserVar(stat, 	endTime, 	 0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time >= this value. Default:");
 #if BOINC_COMPRESS
   LALregBOOLUserVar(stat,	useCompression,  0,  UVAR_OPTIONAL, "BOINC: use compression for download/uploading data");
+#endif
+#if USE_BOINC
+  LALregINTUserVar(stat,	maxIterations,  0,  UVAR_OPTIONAL, "BOINC DEBUG: do maximally this many skypositions (0 means ALL)");
 #endif
 
   DETATCHSTATUSPTR (stat);
@@ -2995,27 +3013,35 @@ int main(int argc, char *argv[]){
       system(commandstring);
       sleep(20);
     }
-  }
+  } /* DEBUGGING */
 #endif
 
   globargc=argc;
   globargv=argv;
-    
+
+  /* install signal-handler for SIGTERM, SIGINT and SIGABRT(?) 
+   * NOTE: it is critical to catch SIGINT, because a user
+   * pressing Ctrl-C under boinc should not directly kill the
+   * app (which is attached to the same terminal), but the app 
+   * should wait for the client to send <quit/> and cleanly exit. 
+   */
+  boinc_set_signal_handler(SIGTERM, sighandler);
+  boinc_set_signal_handler(SIGINT, sighandler);
+  boinc_set_signal_handler(SIGABRT, sighandler);
+
   /* install signal handler (for ALL threads) for catching
-     Segmentation violations, floating point exceptions, Bus
-     violations and Illegal instructions */
-  if (!skipsighandler) {
-    if (signal(SIGSEGV, sighandler)==SIG_IGN)
-      signal(SIGSEGV, SIG_IGN);
-    if (signal(SIGFPE, sighandler)==SIG_IGN)
-      signal(SIGFPE, SIG_IGN);
+   * Segmentation violations, floating point exceptions, Bus
+   * violations and Illegal instructions */
+  if ( !skipsighandler )
+    {
+      boinc_set_signal_handler(SIGSEGV, sighandler);
+      boinc_set_signal_handler(SIGFPE, sighandler);
+      boinc_set_signal_handler(SIGILL, sighandler);
 #ifndef _MSC_VER
-    if (signal(SIGBUS, sighandler)==SIG_IGN)
-      signal(SIGBUS, SIG_IGN);
+      boinc_set_signal_handler(SIGBUS, sighandler);
 #endif
-    if (signal(SIGILL, sighandler)==SIG_IGN)
-      signal(SIGILL, SIG_IGN);
-  }
+    } /* if !skipsighandler */
+  
   
 #if (BOINC_GRAPHICS == 1)
   set_search_pos_hook = set_search_pos;
@@ -3071,20 +3097,41 @@ int main(int argc, char *argv[]){
 void sighandler(int sig){
   void *array[64];
   size_t size;
-  
+  static int killcounter = 0;
+
+  /* RP: not sure what this is for. FIXME: better remove?
 #ifndef _WIN32
   sigset_t signalset;
   sigemptyset(&signalset);
   sigaddset(&signalset, sig);
   pthread_sigmask(SIG_BLOCK, &signalset, NULL);
 #endif
+  */
 
   LALStatus *mystat = &global_status;	  /* the only place in the universe where we're
 					   * allowed to use the global_status struct !! */
   /* lets start by ignoring ANY further occurences of this signal
      (hopefully just in THIS thread, if truly implementing POSIX threads */
   
-  fprintf(stderr, "Application caught signal %d\n", sig);
+  fprintf(stdout, "APP DEBUG: Application caught signal %d\n", sig); fflush(stdout);
+
+  /* ignore TERM interrupts once  */
+  if ( sig == SIGTERM || sig == SIGINT )
+    {
+      killcounter ++;
+
+      if ( killcounter >= 4 )
+	{
+	  fprintf (stdout, "APP DEBUG: got 4th kill-signal, guess you mean it. Exiting now\n"); fflush(stdout);
+	  exit (COMPUTEFSTAT_EXIT_USER);
+	}
+      else
+	{     
+	  fprintf (stdout, "APP DEBUG: got kill-signal %d times. Will exit at 4th time\n", killcounter);fflush(stdout);
+	  return;
+	}
+    } /* termination signals */
+
   if (mystat)
     fprintf(stderr, "Stack trace of LAL functions in worker thread:\n");
   while (mystat) {
