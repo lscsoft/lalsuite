@@ -38,10 +38,18 @@ NRCSID( LIGOMETADATAUTILSC, "$Id$" );
 \vspace{0.1in}
 \input{LIGOMetadataUtilsCP}
 \idx{LALPlaygroundInSearchSummary()}
-
+\idx{LALCompareSearchSummaryByInTime()}
+\idx{LALCompareSearchSummaryByOutTime ()}
+\idx{LALTimeSortSearchSummary()}
+\idx{LALIfoScanSearchSummary()}
+\idx{LALIfoScanSummValue()}
+\idx{LALCompareSummValueByTime()}
+\idx{LALTimeSortSummValue()}
+\idx{LALCheckOutTimeFromSearchSummary()}
+  
 \subsubsection*{Description}
 
-\noindent The function \texttt{LALPlaygroundInSearchSummary()} determines the
+The function \texttt{LALPlaygroundInSearchSummary()} determines the
 ammount of time in the search summary table \texttt{ssTable} that overlaps
 with playground data. The time between \texttt{in\_start\_time} and
 \texttt{in\_end\_time} that overlaps with playground is returned in
@@ -49,13 +57,40 @@ with playground data. The time between \texttt{in\_start\_time} and
 \texttt{out\_end\_time} that overlaps with playground is returned in
 \texttt{outPlayTime}.
 
+\texttt{LALCompareSearchSummaryByInTime()} is a function to compare the in
+times in two search summary tables.  It returns 1 if the
+\texttt{in\_start\_time} of the first table is after the
+\texttt{in\_start\_time} of the second and -1 if it is before.  If the two
+\texttt{in\_start\_time}s are identical, the test is repeated on the
+\texttt{in\_end\_time}s.  If these are also equal, the comparison returns 0.
+\texttt{LALCompareSearchSummaryByOutTime()} operates in a similar manner, but
+uses the out, rather than in, times.
+
+\texttt{LALTimeSortSearchSummary()} will time sort a linked list of search
+summary tables.  You can sort on in our out start time depending which
+\texttt{comparfunc} is specified.
+
+\texttt{LALIfoScanSearchSummary()} steps through a linked list of search
+summary tables and returns a pointer \texttt{output} to a linked list of those
+tables whos \texttt{ifos} field matches the string \texttt{ifos}.
+
+
+\texttt{LALIfoScanSummValue()}, \texttt{LALCompareSummValueByTime()} and
+\texttt{LALTimeSortSummValue()} performs the same functions as described
+above.  The only difference being that they act on summ value tables.
+
+Finally, \texttt{LALCheckOutTimeFromSearchSummary()} verifies that all times
+between the specified \texttt{startTime} and \texttt{endTime} have been
+searched precisely once for the given \texttt{ifo}.
+
+ 
 \subsubsection*{Algorithm}
 
 \noindent None.
 
 \subsubsection*{Uses}
 
-\noindent None.
+\noindent LALGPStoINT8, LALCalloc, LALMalloc, LALFree.
 
 \subsubsection*{Notes}
 %% Any relevant notes.
@@ -105,35 +140,35 @@ static INT8 PlaygroundOverlap( INT8 seg_end, INT8 seg_length )
     if ( seg_length > play_length )
     {
       if ( (seg_length < end_mod_play) && 
-	  (end_mod_play < play_length + seg_length ) )
+          (end_mod_play < play_length + seg_length ) )
       {
-	return play_length + seg_length - end_mod_play;
+        return play_length + seg_length - end_mod_play;
       }
       else if ( (play_length <= end_mod_play) && 
-	  (end_mod_play <= seg_length ) )
+          (end_mod_play <= seg_length ) )
       {
-	return play_length;
+        return play_length;
       }
       else if ( end_mod_play < play_length )
       {
-	return end_mod_play;
+        return end_mod_play;
       }
     }
     else if ( seg_length <= play_length )
     {
       if ( (play_length < end_mod_play) && 
-	  (end_mod_play < seg_length + play_length ) )
+          (end_mod_play < seg_length + play_length ) )
       {
-	return play_length + seg_length - end_mod_play;
+        return play_length + seg_length - end_mod_play;
       }
       else if ( (seg_length <= end_mod_play) && 
-	  (end_mod_play <= play_length ) )
+          (end_mod_play <= play_length ) )
       {
-	return seg_length;
+        return seg_length;
       }
       else if ( end_mod_play < seg_length )
       {
-	return end_mod_play;
+        return end_mod_play;
       }
     }
     else
@@ -394,13 +429,13 @@ LALIfoScanSearchSummary(
       /* IFOs match so write this entry to the output table */
       if ( ! *output  )
       {
-	*output = keptSumm = (SearchSummaryTable *) 
-	  LALMalloc( sizeof(SearchSummaryTable) );
+        *output = keptSumm = (SearchSummaryTable *) 
+          LALMalloc( sizeof(SearchSummaryTable) );
       }
       else
       {
-	keptSumm = keptSumm->next = (SearchSummaryTable *) 
-	  LALMalloc( sizeof(SearchSummaryTable) );
+        keptSumm = keptSumm->next = (SearchSummaryTable *) 
+          LALMalloc( sizeof(SearchSummaryTable) );
       }
       memcpy(keptSumm, thisSearchSumm, sizeof(SearchSummaryTable));
       keptSumm->next = NULL;
@@ -461,7 +496,7 @@ LALCheckOutTimeFromSearchSummary (
       thisSearchSumm = thisSearchSumm->next )
   {
     LALGPStoINT8( status->statusPtr, &outStartNS, 
-	&(thisSearchSumm->out_start_time) );
+        &(thisSearchSumm->out_start_time) );
     CHECKSTATUSPTR( status );
 
     if ( outStartNS < startTimeNS )    
@@ -469,12 +504,12 @@ LALCheckOutTimeFromSearchSummary (
       /* file starts before requested start time */
       if ( outEndNS > startTimeNS )
       {
-	/* file is partially in requested times, update unsearchedStart */
-	LALGPStoINT8( status->statusPtr, &outEndNS, 
-	    &(thisSearchSumm->out_end_time) );
-	CHECKSTATUSPTR( status );
+        /* file is partially in requested times, update unsearchedStart */
+        LALGPStoINT8( status->statusPtr, &outEndNS, 
+            &(thisSearchSumm->out_end_time) );
+        CHECKSTATUSPTR( status );
 
-	unsearchedStartNS = outEndNS;
+        unsearchedStartNS = outEndNS;
       }
     }
     else if ( outStartNS == unsearchedStartNS )
@@ -482,7 +517,7 @@ LALCheckOutTimeFromSearchSummary (
       /* this file starts at the beginning of the unsearched data */
       /* calculate the end time and set unsearched start to this */
       LALGPStoINT8( status->statusPtr, &outEndNS, 
-	  &(thisSearchSumm->out_end_time) );
+          &(thisSearchSumm->out_end_time) );
       CHECKSTATUSPTR( status );
 
       unsearchedStartNS = outEndNS;
@@ -490,7 +525,7 @@ LALCheckOutTimeFromSearchSummary (
     else if ( outStartNS > unsearchedStartNS )
     {
       /* there is a gap in the searched data between unsearchedStart
-	 and outStart */
+         and outStart */
       ABORT( status, LIGOMETADATAUTILSH_ESGAP, LIGOMETADATAUTILSH_MSGESGAP );
     }
     else if ( outStartNS < unsearchedStartNS )    
@@ -555,13 +590,13 @@ LALIfoScanSummValue(
       /* IFOs match so write this entry to the output table */
       if ( ! *output  )
       {
-	*output = keptSumm = (SummValueTable *) 
-	  LALMalloc( sizeof(SummValueTable) );
+        *output = keptSumm = (SummValueTable *) 
+          LALMalloc( sizeof(SummValueTable) );
       }
       else
       {
-	keptSumm = keptSumm->next = (SummValueTable *) 
-	  LALMalloc( sizeof(SummValueTable) );
+        keptSumm = keptSumm->next = (SummValueTable *) 
+          LALMalloc( sizeof(SummValueTable) );
       }
       memcpy(keptSumm, thisSummValue, sizeof(SummValueTable));
       keptSumm->next = NULL;
