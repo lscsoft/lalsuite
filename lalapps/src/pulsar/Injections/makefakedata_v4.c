@@ -57,6 +57,7 @@ typedef struct
   LIGOTimeGPSVector *timestamps;
   REAL8 duration;
   REAL8 fmin_eff;	/* 'effective' fmin: round down such that fmin*Tsft = integer! */
+  REAL8 fBand_eff;	/* increase correspondingly if fmin_eff < fMin */
   REAL8Vector *spindown;
   SFTVector *noiseSFTs;
   BOOLEAN binaryPulsar;
@@ -194,7 +195,7 @@ main(int argc, char *argv[])
   /* characterize the output time-series */
   params.startTimeGPS   = GV.startTime;
   params.duration     	= (UINT4) ceil(GV.duration); /* length of time-series in seconds */
-  params.samplingRate 	= 2.0 * uvar_Band;	/* sampling rate of time-series (= 2 * frequency-Band) */
+  params.samplingRate 	= 2.0 * GV.fBand_eff;	/* sampling rate of time-series (= 2 * frequency-Band) */
   params.fHeterodyne  	= GV.fmin_eff;		/* heterodyning frequency for output time-series */
 
   /*================================================================================*/
@@ -331,7 +332,7 @@ InitMakefakedata (LALStatus *stat,
   EphemerisData edat = empty_edat;
   REAL8 duration;
   LIGOTimeGPSVector *timestamps = NULL;
-  UINT4 imin;
+  UINT4 imin, nsamples;
   
   INITSTATUS( stat, "InitMakefakedata", rcsid );
   ATTATCHSTATUSPTR (stat);
@@ -448,10 +449,16 @@ InitMakefakedata (LALStatus *stat,
 
   /* calculate "effective" fmin from uvar_fmin: following makefakedata_v2, we
    * make sure that fmin_eff * Tsft = integer, such that freqBinIndex corresponds
-   * to a frequency-index of the non-heterodyned signal
+   * to a frequency-index of the non-heterodyned signal.
    */
   imin = (UINT4) floor( uvar_fmin * uvar_Tsft);
   cfg->fmin_eff = (REAL8)imin / uvar_Tsft;
+  /* Increase Band correspondingly. */
+  cfg->fBand_eff = uvar_Band;
+  cfg->fBand_eff += (uvar_fmin - cfg->fmin_eff);
+  /* increase band further to make sure we get an integet number of frequency-bins in SFT */
+  nsamples = 2 * ceil(cfg->fBand_eff * uvar_Tsft);
+  cfg->fBand_eff = 1.0*nsamples/(2.0 * uvar_Tsft);
 
   /* if any orbital parameters specified, we need all of them (except for nano-seconds)! */
   {
@@ -492,7 +499,7 @@ InitMakefakedata (LALStatus *stat,
     {
       REAL8 fMin, fMax;
       fMin = cfg->fmin_eff;
-      fMax = fMin + uvar_Band;
+      fMax = fMin + cfg->fBand_eff;
       TRY ( LALReadSFTfiles (stat->statusPtr, &(cfg->noiseSFTs), fMin, fMax, 0, uvar_noiseSFTs), stat);
     } /* if uvar_noiseSFTs */
 
