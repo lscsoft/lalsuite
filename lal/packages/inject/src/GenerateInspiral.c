@@ -149,6 +149,10 @@ void LALGenerateInspiral(
 					&approximant);  
   CHECKSTATUSPTR(status);
 
+  /* Well a priori, we do not need that anymore. Indeed it seems that 
+   * it has been decided to put that switch within FindChirpSimulation. 
+   * It means that we do enter in that file only for non PPN cases....
+   * Any way I keep it for the time being. It was working fine like that though.
   /* --- switch for the model approximant  --- */
   if  (approximant == PPN )
     {
@@ -168,7 +172,7 @@ void LALGenerateInspiral(
       inspiralParams.order       = order;
       /* we fill ppnParams. Redundant with FindChirpSimulation.c but at 
        * least we are sure to fill the structure. Later we can delete
-	* the equivalent part within FindChirpSimulation */      
+	* the equivalent part within FindChirpSimulation.  */      
       LALGenerateInspiralPopulatePPN(	status->statusPtr, 
 		      			ppnParams, 
 					thisEvent);
@@ -179,11 +183,13 @@ void LALGenerateInspiral(
 						thisEvent, 
 						ppnParams);
       CHECKSTATUSPTR(status);      
-      /* some additional spin parameters ? Has to be checked*/
+      /* some additional spin parameters ? Has to be checked. 
+       * For the time being there is no way to use that with xml file injection anyway.
+       * */
       LALGenerateInspiralPopulateInspiralSpin(	status ->statusPtr, 
 		      				&inspiralParams);		
       CHECKSTATUSPTR(status);      
-      /* the waveform generation*/
+      /* the waveform generation itself*/
       LALInspiralWaveForInjection(	status->statusPtr,
 		      			waveform, 
 					&inspiralParams, 
@@ -206,37 +212,36 @@ void LALGenerateInspiral(
 
  LALSnprintf( msg, sizeof(msg)/sizeof(*msg),
         "Injected waveform parameters:\n"
-        "ppnParams->mTot 	= %e\n"
-        "ppnParams->eta 	= %e\n"
-        "ppnParams->d 		= %e\n"
-        "ppnParams->inc 	= %e\n"
-        "ppnParams->phi 	= %e\n"
-	"ppnParams->psi      	= %e\n"
-        "ppnParams->fStartIn 	= %e\n"
-	"ppnParams->fStopIn	= %e\n"
-        "ppnParams->psi         = %e\n"
-        "ppnParams->position.longitude 	= %e\n"
-        "ppnParams->position.latitude  	= %e\n"
-	"ppnParams->position.system	  	= %e\n"
-	"ppnParams->epoch.gpsSeconds		= %e\n"       
-	"ppnParams->epoch.gpsNanoSeconds	= %e\n"
-        " ppnParams->tC  =%e\n"
-        " ppnParams->dfdt  =%e\n", 
+        "ppnParams->mTot\t= %e\n"
+        "ppnParams->eta\t= %e\n"
+        "ppnParams->d\t= %e\n"
+        "ppnParams->inc\t= %e\n"
+        "ppnParams->phi\t= %e\n"
+	"ppnParams->psi\t= %e\n"
+        "ppnParams->fStartIn\t= %e\n"
+	"ppnParams->fStopIn\t= %e\n"
+        "ppnParams->position.longitude\t= %e\n"
+        "ppnParams->position.latitude\t= %e\n"
+	"ppnParams->position.system\t= %e\n"
+	"ppnParams->epoch.gpsSeconds\t= %e\n"       
+	"ppnParams->epoch.gpsNanoSeconds\t= %e\n"
+        " ppnParams->tC\t= %e\n"
+        " ppnParams->dfdt\t =%e\n", 
         ppnParams->mTot, 
         ppnParams->eta, 
         ppnParams->d,
         ppnParams->inc,
-        ppnParams->psi,
-        ppnParams->phi, 
+        ppnParams->phi,
+        ppnParams->psi, 
 	ppnParams->fStartIn,
 	ppnParams->fStopIn,	
-        ppnParams->psi,
         ppnParams->position.longitude,
         ppnParams->position.latitude,
 	ppnParams->position.system,
 	ppnParams->epoch.gpsSeconds,	
   	ppnParams->epoch.gpsNanoSeconds,
-	      ppnParams->tc, ppnParams->dfdt );     
+	ppnParams->tc,
+       	ppnParams->dfdt );     
   LALInfo( status, msg );
   
   /*  if (approximant==SpinTaylorT3)  ComputeSpin(&inspiralParams);*/
@@ -244,6 +249,9 @@ void LALGenerateInspiral(
   DETATCHSTATUSPTR( status );
   RETURN(status);
 }
+
+
+
 
 /* <lalVerbatim file="LALGenerateInspiralGetModelFromStringCP"> */
 void LALGenerateInspiralGetModelFromString(LALStatus 	*status,
@@ -433,7 +441,7 @@ void  LALGenerateInspiralPopulatePPN(LALStatus             *status,
   
   /* frequency cutoffs */
   ppnParams->fStartIn = 40.0;   /* It has to be a parameter in thisEvent*/
-  ppnParams->fStopIn  = -1.0 /  /* fCutoff of the inspiral package ?? */
+  ppnParams->fStopIn  = -1.0 /  /* fCutoff of the inspiral package ?? why negative ?*/
     (6.0 * sqrt(6.0) * LAL_PI * ppnParams->mTot * LAL_MTSUN_SI);
   
   /* passed fields */
@@ -444,39 +452,6 @@ void  LALGenerateInspiralPopulatePPN(LALStatus             *status,
   ppnParams->epoch.gpsSeconds     = 0;  
   ppnParams->epoch.gpsNanoSeconds = 0;  
   
-  LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
-        "Injected waveform parameters:\n"
-        "ppnParams->mTot 	= %e\n"
-        "ppnParams->eta 	= %e\n"
-        "ppnParams->d 		= %e\n"
-        "ppnParams->inc 	= %e\n"
-        "ppnParams->phi 	= %e\n"
-	"ppnParams->psi      	= %e\n"
-        "ppnParams->fStartIn 	= %e\n"
-	"ppnParams->fStopIn	= %e\n"
-        "ppnParams->psi 	= %e\n"
-        "ppnParams->position.longitude 	= %e\n"
-        "ppnParams->position.latitude  	= %e\n"
-	"ppnParams->position.system	  	= %e\n"
-	"ppnParams->epoch.gpsSeconds		= %e\n"       
-  	"ppnParams->epoch.gpsNanoSeconds	= %e\n",   
-        ppnParams->mTot, 
-        ppnParams->eta, 
-        ppnParams->d,
-        ppnParams->inc,
-        ppnParams->psi,
-        ppnParams->phi, 
-	ppnParams->fStartIn,
-	ppnParams->fStopIn,	
-        ppnParams->psi,
-        ppnParams->position.longitude,
-        ppnParams->position.latitude,
-	ppnParams->position.system,
-	ppnParams->epoch.gpsSeconds,	
-  	ppnParams->epoch.gpsNanoSeconds );
-        
-        
-  LALInfo( status, warnMsg );
 
   DETATCHSTATUSPTR( status );
   RETURN( status );  
