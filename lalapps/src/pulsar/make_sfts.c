@@ -334,7 +334,7 @@ int main(int argc,char *argv[]){
       LALButterworthREAL4TimeSeries(&status, &chan, &filterpar);
       TESTSTATUS(&status);
 
-      // Turn on windowing
+      /* Turn on windowing */
 #if (1)
       /* window data.  Off portion */
       for (i=0; i<WINSTART; i++) {
