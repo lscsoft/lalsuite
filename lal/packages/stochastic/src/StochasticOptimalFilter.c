@@ -195,7 +195,7 @@ LALStochasticOptimalFilterCal(
     const StochasticOptimalFilterCalInput *input,
     const REAL4WithUnits                  *lambda)
 {
-  REAL4 gamma;
+  REAL4 mygamma;
   REAL4 omega;
   REAL4 p1WInv;
   REAL4 p2WInv;
@@ -418,7 +418,7 @@ LALStochasticOptimalFilterCal(
   /* Now tmpUnit1 has units of Omega/H0^2 */
 
   /* Now we need to set the Optimal Filter Units equal to the units of
-   * lambda*gamma*Omega*f^-3*P1W^-1*P2W^-1) */
+   * lambda*mygamma*Omega*f^-3*P1W^-1*P2W^-1) */
 
   unitPair.unitOne = &(input->calibratedInverseNoisePSD1->sampleUnits);
   unitPair.unitTwo = &(input->calibratedInverseNoisePSD2->sampleUnits);
@@ -447,7 +447,7 @@ LALStochasticOptimalFilterCal(
   unitPair.unitTwo = &(input->overlapReductionFunction->sampleUnits);
   TRY(LALUnitMultiply(status->statusPtr, &tmpUnit2, &unitPair), status);
 
-  /* tmpUnit2 now holds units of gamma*Omega*f^-3*P1W^-1*P2W^-1) */
+  /* tmpUnit2 now holds units of mygamma*Omega*f^-3*P1W^-1*P2W^-1) */
 
   unitPair.unitOne = &(lambda->units);
   unitPair.unitTwo = &tmpUnit2;
@@ -466,11 +466,11 @@ LALStochasticOptimalFilterCal(
     f3 = f * f * f;
 
     omega = input->omegaGW->data->data[i];
-    gamma = input->overlapReductionFunction->data->data[i];
+    mygamma = input->overlapReductionFunction->data->data[i];
     p1WInv = input->calibratedInverseNoisePSD1->data->data[i];
     p2WInv = input->calibratedInverseNoisePSD2->data->data[i];
 		
-		realFactor = (gamma * omega * lambda->value) / f3;
+		realFactor = (mygamma * omega * lambda->value) / f3;
 
     optimalFilter->data->data[i] = realFactor * p1WInv * p2WInv;
 	}
@@ -488,7 +488,7 @@ LALStochasticOptimalFilter(
     const REAL4WithUnits               *lambda)
 /* </lalVerbatim> */
 {
-  REAL4 gamma;
+  REAL4 mygamma;
   REAL4 omega;
   COMPLEX8 p1HWInv;
   COMPLEX8 p2HWInv;
@@ -712,7 +712,7 @@ LALStochasticOptimalFilter(
   /* Now tmpUnit1 has units of Omega/H0^2 */
 
   /* Now we need to set the Optimal Filter Units equal to the units of */
-  /* lambda*gamma*Omega*f^-3*P1HW^-1*P2HW^-1) */
+  /* lambda*mygamma*Omega*f^-3*P1HW^-1*P2HW^-1) */
 
   unitPair.unitOne = &(input->halfCalibratedInverseNoisePSD1->sampleUnits);
   unitPair.unitTwo = &(input->halfCalibratedInverseNoisePSD2->sampleUnits);
@@ -741,7 +741,7 @@ LALStochasticOptimalFilter(
   unitPair.unitTwo = &(input->overlapReductionFunction->sampleUnits);
   TRY(LALUnitMultiply(status->statusPtr, &tmpUnit2, &unitPair), status);
 
-  /* tmpUnit2 now holds units of gamma*Omega*f^-3*P1HW^-1*P2HW^-1) */
+  /* tmpUnit2 now holds units of mygamma*Omega*f^-3*P1HW^-1*P2HW^-1) */
 
   unitPair.unitOne = &(lambda->units);
   unitPair.unitTwo = &tmpUnit2;
@@ -761,13 +761,13 @@ LALStochasticOptimalFilter(
     f3 = f * f * f;
     
     omega = input->omegaGW->data->data[i];
-    gamma = input->overlapReductionFunction->data->data[i];
+    mygamma = input->overlapReductionFunction->data->data[i];
     p1HWInv = input->halfCalibratedInverseNoisePSD1->data->data[i];
     p2HWInv = input->halfCalibratedInverseNoisePSD2->data->data[i];
     
     cPtrOptimalFilter = &(optimalFilter->data->data[i]);
     
-    realFactor = (gamma * omega * lambda->value) / f3;
+    realFactor = (mygamma * omega * lambda->value) / f3;
     
     cPtrOptimalFilter->re = realFactor * ((p1HWInv.re * p2HWInv.re) + \
         (p1HWInv.im * p2HWInv.im));
