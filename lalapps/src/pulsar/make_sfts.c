@@ -52,6 +52,12 @@
 /* provide data to Teviet for working on LAL filtering */
 #define PRINTTEV 0
 
+/* check of changing knee frequency */
+#define HIGHFREQ 0
+
+/* check of insensitivity to LSB of gravity-wave channel */
+#define QUANTIZATION_TEST 1
+
 /* debug level for LAL */
 INT4 lalDebugLevel = LALERROR | LALWARNING | LALINFO;
 
@@ -457,9 +463,13 @@ int main(int argc,char *argv[]){
   /* set filtering parameters */
   filterpar.name = "Butterworth High Pass";
   filterpar.nMax  = 5;
+#if HIGHFREQ
+  filterpar.f2 = 300.0;
+#else
   filterpar.f2 = 100.0;
+#endif
   filterpar.a2 = 0.5;
-  
+ 
 /* values that are 'not given' = out of range */
   filterpar.f1 = -1.0;
   filterpar.a1 = -1.0;
@@ -591,10 +601,28 @@ int main(int argc,char *argv[]){
 #if PRINT50
       print50(frvect->dataF, "FRAMEDATA");
 #endif
-
       /* copy data */
       for (i=0;i<npts;i++){
 	chan.data->data[i]=frvect->dataF[i];
+#if QUANTIZATION_TEST
+	{
+	  /* Note -- this mask MAY depend on big versus little endian.
+	     Currently correct for x86 (little endian, format is
+	     E...ESM...M, where E=exponent, S=sign, M=mantissa and MSB
+	     is to the left.) */
+	  const unsigned int mask = ~(0x01);
+	  union {
+	    float f;
+	    unsigned int i;
+	  } maskfloat;
+	  
+	  /* zero LSB for testing quantization noise */
+	  maskfloat.f=chan.data->data[i];
+	  maskfloat.i &= mask;
+	  chan.data->data[i]=maskfloat.f;
+	}
+#endif
+	
 #if NEWNORM
 	/* Normalize data according to the GEO SFT specifications */
 	chan.data->data[i]*=(((double)DF)/(0.5*(double)SRATE));
