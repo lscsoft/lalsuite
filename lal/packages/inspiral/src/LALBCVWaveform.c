@@ -76,7 +76,7 @@ LALBCVWaveform(
 
   REAL8 f, df;
   REAL8 shift, phi, psi, amp0, amp;
-  REAL8 Sevenby6, Fiveby3, Twoby3, alpha_f;
+  REAL8 Sevenby6, Fiveby3, Twoby3, alpha;
   INT4 n, i;
 
   INITSTATUS(status, "LALBCVWaveform", LALBCVWAVEFORMC);
@@ -96,7 +96,7 @@ LALBCVWaveform(
 
   df = params->tSampling/(REAL8)n;
   params->fFinal = params->fCutoff; 
-  alpha_f = params->alpha / pow(params->fCutoff, Twoby3);
+  alpha = params->alpha / pow(params->fCutoff, Twoby3);
 
 
   /* to do : check that a_f in [0,1]??*/
@@ -144,7 +144,7 @@ LALBCVWaveform(
 	  {
           /* What shall we put for sign phi? for uspa it must be "-" */
               psi =  (shift*f + phi + params->psi0*pow(f,-Fiveby3) + params->psi3*pow(f,-Twoby3));
-	      amp = amp0 * (1. - alpha_f * pow(f,Twoby3)) * pow(f,-Sevenby6);
+	      amp = amp0 * (1. - alpha * pow(f,Twoby3)) * pow(f,-Sevenby6);
 	      
               signal->data[i] = (REAL4) (amp * cos(psi));
               signal->data[n-i] = (REAL4) (-amp * sin(psi));
