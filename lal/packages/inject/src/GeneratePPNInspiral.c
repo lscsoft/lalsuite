@@ -220,6 +220,7 @@ LALWarning()
  *********************************************************************/
 
 #include <math.h>
+#include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/Units.h>

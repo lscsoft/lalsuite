@@ -18,23 +18,21 @@ with dithering.
 
 \subsubsection*{Description}
 
-This function dithers the contents of \verb@*output@, adds the
+The function \verb@LALSI2InjectVector()@ (i.e.\ ``Single-precision to
+\verb@INT2@'') dithers the contents of \verb@*output@, adds the
 contents of \verb@*signal@, and rounds to the nearest integer, storing
 the result back in \verb@*output@.  If desired, the random parameters
 for the dithering can be created outside this routine and passed in as
 \verb@*params@ (see \verb@Random.h@); if this pointer is \verb@NULL@,
 the parameters will be generated internally.
 
-The characters \verb@SI2@ refer to ``Single-precision (i.e.\
-\verb@REAL4@) to \verb@INT2@''.  At present I see no need for other
-injection routines, since LIGO data will be 2-byte integers, and since
-the dynamic range of a \verb@REAL8@ is completely inappropriate for
-injection into integer data.  However, the namespace convention does
-allow for other routines to be added.
+The function \verb@LALSSInjectVector()@ (i.e.\ ``Single-precision to
+single-precision'') simply adds the contents of \verb@*signal@ to
+\verb@*output@ where they overlap, without performing any dithering.
 
 \subsubsection*{Algorithm}
 
-The dithering is done with a flat random distribution as described in
+Dithering is done with a flat random distribution as described in
 \verb@Inject.h@.  Injected values outside the dynamic range of the
 output force the output to its ``rails'' of $-2^{8N-1}$ or
 $2^{8N-1}-1$, where $N$ is the number of bytes in the integer.  The
@@ -130,5 +128,34 @@ LALSI2InjectVector( LALStatus    *stat,
     TRY( LALDestroyRandomParams( stat->statusPtr, &internal ), stat );
   }
   DETATCHSTATUSPTR( stat );
+  RETURN( stat );
+}
+
+
+/* <lalVerbatim file="InjectVectorCP"> */
+void
+LALSSInjectVector( LALStatus    *stat,
+		   REAL4Vector  *output,
+		   REAL4Vector  *signal )
+{ /* </lalVerbatim> */
+  UINT4 n;  /* number of samples injected */
+  UINT4 i;  /* an index */
+
+  INITSTATUS( stat, "LALSSInjectVector", INJECTVECTORC );
+
+  /* Make sure parameter structures and their fields exist. */
+  ASSERT( signal, stat, INJECTH_ENUL, INJECTH_MSGENUL );
+  ASSERT( signal->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
+  ASSERT( output, stat, INJECTH_ENUL, INJECTH_MSGENUL );
+  ASSERT( output->data, stat, INJECTH_ENUL, INJECTH_MSGENUL );
+
+  /* Find out how many samples will be injected. */
+  n = output->length;
+  if ( n > signal->length )
+    n = signal->length;
+
+  /* Inject and exit. */
+  for ( i = 0; i < n; i++ )
+    output->data[i] += signal->data[i];
   RETURN( stat );
 }

@@ -57,6 +57,23 @@ been subjected to the same whitening and amplification, so that the
 units of $x(t_k)$ are normalized ADC counts (although it is still a
 real number, not an integer).
 
+The dithering routines should be used whenever one is injecting a
+signal into a time series representing raw digitized data.  In some
+data storage specifications, ADC output is not stored as an integer,
+but as a floating-point number representing an integer value.  Such
+data must be cast to integers before being passed to the digitizing
+routines.
+
+This header also provides even simpler routines for injecting a signal
+into floating-point data, without dithering.  These should only be
+used when the data is genuinely continuous in character.  This can
+include data derived by applying floating-point operations on ADC
+channels (e.g.\ digital filters, linear combinations of channels,
+etc.), but not data that simply represents ADC output in
+floating-point format.  The assumption here is that the numerical
+post-processing of the ADC data completely masks any statistical
+signiatures of the digitization.
+
 ******************************************************* </lalLaTeX> */
 
 #ifndef _INJECT_H
@@ -67,6 +84,7 @@ real number, not an integer).
 
 #ifdef  __cplusplus
 extern "C" {
+#pragma }
 #endif
 
 NRCSID( INJECTH, "$Id$" );
@@ -102,6 +120,11 @@ LALSI2InjectVector( LALStatus    *stat,
 		    REAL4Vector  *signal,
 		    RandomParams *params );
 
+void
+LALSSInjectVector( LALStatus    *stat,
+		   REAL4Vector  *output,
+		   REAL4Vector  *signal );
+
 /* <lalLaTeX>
 \newpage\input{InjectTimeSeriesC}
 </lalLaTeX> */
@@ -111,11 +134,17 @@ LALSI2InjectTimeSeries( LALStatus       *stat,
 			REAL4TimeSeries *signal,
 			RandomParams    *params );
 
+void
+LALSSInjectTimeSeries( LALStatus       *stat,
+		       REAL4TimeSeries *output,
+		       REAL4TimeSeries *signal );
+
 /* <lalLaTeX>
 \newpage\input{BasicInjectTestC}
 </lalLaTeX> */
 
 #ifdef  __cplusplus
+#pragma {
 }
 #endif
 

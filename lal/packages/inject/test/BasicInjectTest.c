@@ -138,6 +138,7 @@ LALNormalDeviates()
 
 #include <math.h>
 #include <stdlib.h>
+#include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/SeqFactories.h>
