@@ -49,7 +49,7 @@ Usage: lalapps_inspiral_pipe [options]
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvdtiTICpmjs:u:P:f:l:"
+shortop = "hvdtiTICpmju:P:f:l:"
 longop = [
   "help",
   "version",
@@ -231,30 +231,7 @@ data.make_chunks_from_unused(length,overlap/2,playground_only,overlap/2)
 
 # only process jobs that were missed with the bad playground algorithm
 if missing_play:
-  bad_data = pipeline.ScienceData()
-  bad_data.read(cp.get('input','segments'),length)
-  bad_data.make_chunks_bad_play(length,overlap,playground_only)
-  bad_data.make_chunks_from_unused_bad_play(
-    length,overlap/2,playground_only,overlap/2)
-
-  good_segs = []
-  bad_segs = []
-
-  for i in range(len(data)):
-    good_segs.append({})
-    bad_segs.append({})
-    
-    for chunk in data[i]:
-      good_segs[i][chunk.start()] = chunk
-    for chunk in bad_data[i]:
-      bad_segs[i][chunk.start()] = chunk
-
-    print 'good_segs[%d] = %s' % (i,str(good_segs[i]))
-    print 'bad_segs[%d]  = %s' % (i,str(bad_segs[i]))
-  
-  for i in range(len(data)):
-    new_chunks = [k for k in good_segs[i] if k not in bad_segs[i]]
-    data[i]._ScienceSegment__chunks = new_chunks
+  pass
 
 # get the order of the ifos to filter
 ifo1 = cp.get('pipeline','ifo1')
@@ -330,7 +307,7 @@ for seg in data:
       dag.add_node(insp1)
 
     trigbank = inspiral.TrigToTmpltNode(trig_job)
-    trigbank.add_var_arg(insp1.get_output())
+    trigbank.set_input(insp1.get_output())
     trigbank.set_start(chunk.start())
     trigbank.set_end(chunk.end())
     if usertag:

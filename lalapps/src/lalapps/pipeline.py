@@ -688,13 +688,12 @@ class ScienceSegment:
   def make_chunks_bad_play(self,length=0,overlap=0,play=0,sl=0):
     """
     Divides the science segment into chunks of length seconds overlapped by
-    overlap seconds using the INCORRECT playground algorithm that may miss
-    chunks. If the play option is set, only chunks that contain S2 playground
-    data are generated. If the user has a more complicated way of generating
-    chunks, this method should be overriden in a sub-class.  Any data at the
-    end of the ScienceSegment that is too short to contain a chunk is ignored.
-    The length of this unused data is stored and can be retrieved with the
-    unused() method.
+    overlap seconds. If the play option is set, only chunks that contain S2
+    playground data are generated. If the user has a more complicated way
+    of generating chunks, this method should be overriden in a sub-class.
+    Any data at the end of the ScienceSegment that is too short to contain a 
+    chunk is ignored. The length of this unused data is stored and can be
+    retrieved with the unused() method.
     length = length of chunk in seconds.
     overlap = overlap between chunks in seconds.
     play = only generate chunks that overlap with S2 playground data.
@@ -731,8 +730,9 @@ class ScienceSegment:
     start = self.start()
     increment = length - overlap
     while time_left >= length:
+      middle = start + length / 2
       end = start + length
-      if (not play) or (play and ((end-sl-729273613) % 6370 < length + 600)):
+      if (not play) or (play and (((end-sl-729273613) % 6370) < (600+length))):
         self.__chunks.append(AnalysisChunk(start,end))
       start += increment
       time_left -= increment
@@ -844,15 +844,14 @@ class ScienceData:
 
   def make_chunks_bad_play(self,length,overlap,play,sl=0):
     """
-    Divide each ScienceSegment contained in this object into AnalysisChunks
-    using the INCORRECT playground algorithm which may miss some chunks.
+    Divide each ScienceSegment contained in this object into AnalysisChunks.
     length = length of chunk in seconds.
     overlap = overlap between segments.
     play = if true, only generate chunks that overlap with S2 playground data.
     sl = slide by sl seconds before determining playground data.
     """
     for seg in self.__sci_segs:
-      seg.make_chunks(length,overlap,play,sl)
+      seg.make_chunks_bad_play(length,overlap,play,sl)
 
   def make_chunks(self,length,overlap,play,sl=0):
     """
@@ -863,36 +862,10 @@ class ScienceData:
     sl = slide by sl seconds before determining playground data.
     """
     for seg in self.__sci_segs:
-      seg.make_chunks_bad_play(length,overlap,play,sl)
+      seg.make_chunks(length,overlap,play,sl)
 
   def make_chunks_from_unused_bad_play(
     self,length,trig_overlap,play,min_length,sl=0):
-    """
-    Create an extra chunk that uses up the unused data in the science
-    segment using the INCORRECT playground algorithm which may miss some
-    chunks.
-    length = length of chunk in seconds.
-    trig_overlap = length of time start generating triggers before the
-    start of the unused data.
-    play = if true, only generate chunks that overlap with S2 playground data.
-    min_length = the unused data must be greater than min_length to make a
-    chunk.
-    sl = slide by sl seconds before determining playground data.
-    """
-    for seg in self.__sci_segs:
-      # if there is unused data longer than the minimum chunk length
-      if seg.unused() > min_length:
-        start = seg.end() - length
-        end = seg.end()
-        middle = start + length / 2
-        pstart = end - seg.unused() - trig_overlap
-        pmiddle = pstart + (end - pstart) / 2
-        if (not play) or ( play 
-          and ( s2play(pstart-sl) or s2play(pmiddle-sl) or s2play(end-sl) ) ):
-          seg.add_chunk(start, end, end - seg.unused() - trig_overlap )
-        seg.set_unused(0)
-
-  def make_chunks_from_unused(self,length,trig_overlap,play,min_length,sl=0):
     """
     Create an extra chunk that uses up the unused data in the science
     segment.
@@ -909,6 +882,31 @@ class ScienceData:
       if seg.unused() > min_length:
         start = seg.end() - length
         end = seg.end()
-        if (not play) or (play and ((end-sl-729273613) % 6370 < length + 600)):
+        middle = start + length / 2
+        if (not play) or ( play 
+          and ( s2play(start-sl) or s2play(middle-sl) or s2play(end-sl) ) ):
+          seg.add_chunk(start, end, end - seg.unused() - trig_overlap )
+        seg.set_unused(0)
+      
+  def make_chunks_from_unused(
+    self,length,trig_overlap,play,min_length,sl=0):
+    """
+    Create an extra chunk that uses up the unused data in the science
+    segment.
+    length = length of chunk in seconds.
+    trig_overlap = length of time start generating triggers before the
+    start of the unused data.
+    play = if true, only generate chunks that overlap with S2 playground data.
+    min_length = the unused data must be greater than min_length to make a
+    chunk.
+    sl = slide by sl seconds before determining playground data.
+    """
+    for seg in self.__sci_segs:
+      # if there is unused data longer than the minimum chunk length
+      if seg.unused() > min_length:
+        start = seg.end() - length
+        end = seg.end()
+        middle = start + length / 2
+        if (not play) or (play and (((end-sl-729273613)%6370) < (600+length))):
           seg.add_chunk(start, end, end - seg.unused() - trig_overlap )
         seg.set_unused(0)
