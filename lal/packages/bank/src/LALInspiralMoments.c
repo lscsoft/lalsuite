@@ -76,6 +76,7 @@ void LALInspiralMoments(LALStatus         *status,
 { /* </lalVerbatim> */
 
   REAL8 f;
+  REAL8 momentTmp;
   REAL8 fMin;
   REAL8 fMax;
   REAL8 deltaF;
@@ -125,24 +126,33 @@ void LALInspiralMoments(LALStatus         *status,
     kMax = (UINT8) floor( (pars.xmax - pars.shf->f0) / deltaF );
   }
 
+  momentTmp = 0.;
   /* the first and last points of the integral */
   f = pars.shf->f0 + (REAL8) kMin * deltaF;
-  *moment  = pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMin] );
+  if (pars.shf->data->data[kMin]) momentTmp  = pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMin] );
+  *moment = momentTmp;
+
+  momentTmp = 0.;
   f = pars.shf->f0 + (REAL8) kMax * deltaF;
-  *moment += pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMin] );
+  if (pars.shf->data->data[kMin]) momentTmp = pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMin] );
+  (*moment) += momentTmp;
   /* In the following line we should have kMax */
   /* Changed by Sathya on June 30, 2002  */
   /*
   *moment += pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMin] );
   */
-  *moment += pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMax] );
+  momentTmp = 0.;
+  if (pars.shf->data->data[kMax]) momentTmp = pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMax] );
+  (*moment) += momentTmp;
   kMin++;
   kMax--;
 
   for ( k = kMin; k < kMax; ++k )
   {
+    momentTmp = 0.;
     f = pars.shf->f0 + (REAL8) k * deltaF;
-    *moment += pow( f, -(pars.ndx) ) / pars.shf->data->data[k];
+    if (pars.shf->data->data[k]) momentTmp = pow( f, -(pars.ndx) ) / pars.shf->data->data[k];
+    (*moment) += momentTmp;
   }
 
   *moment *= deltaF;

@@ -131,6 +131,7 @@ void LALInspiralComputeParams(LALStatus            *status,
         exit(0);
   }
   LALInspiralParameterCalc(status->statusPtr, pars);
+  pars->fCutoff = 1./(pow(6.,1.5) * LAL_PI * pars->totalMass * LAL_MTSUN_SI);
   CHECKSTATUSPTR(status);
 
   DETATCHSTATUSPTR(status);
