@@ -31,6 +31,7 @@ The general procedure is the following:
 ******************************************************* </lalLaTeX> */
 #include "getopt.h"
 
+#include <lal/LALStdio.h>
 #include <lal/UserInput.h>
 
 NRCSID( USERINPUTC, "$Id$");
@@ -355,16 +356,18 @@ LALUserVarReadCfgfile (LALStatus *stat,
 /*----------------------------------------------------------------------
  * assemble all help-info from uvars into a help-string
  *----------------------------------------------------------------------*/
+#define UVAR_MAXHELPLINE  512	/* max length of one help-line */
 void
 LALUserVarHelpString (LALStatus *stat, 
 		      CHAR **helpstring) /* output: allocated here! */
 {
-  UINT4 mem;
-  CHAR strbuf[512];	/* should be enough for one line...*/
+  CHAR strbuf[UVAR_MAXHELPLINE];	/* should be enough for one line...*/
   CHAR defaultstr[100]; /* for display of default-value */
   /* we need strings for UVAR_BOOL, UVAR_INT4, UVAR_REAL8, UVAR_STRING: */
   const CHAR *typestr[] = {"BOOL", "INT", "FLOAT", "STRING"}; 
   LALUserVariable *ptr;
+  CHAR *helpstr = NULL;
+  size_t newlen = 0;
 
   INITSTATUS (stat, "LALUserVarHelpString", USERINPUTC);
 
@@ -372,22 +375,7 @@ LALUserVarHelpString (LALStatus *stat,
   ASSERT (helpstring != NULL, stat, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
   ASSERT ( *helpstring == NULL, stat, USERINPUTH_ENONULL, USERINPUTH_MSGENONULL);
 
-  /* estimate (hopefully) upper-limit on memory requirements*/
-  mem = 0;
-  ptr = &UVAR_vars;
-  while ( (ptr=ptr->next) != NULL )
-    {
-      mem += 20;	/* for filling characters (be generous)*/
-      if (ptr->name)
-	mem += strlen (ptr->name);
-      if (ptr->help)
-	mem += strlen (ptr->help);
-    } /* ptr->next */
-  
-  if ( (*helpstring = LALCalloc (1, mem)) == NULL ) {
-    ABORT (stat,  USERINPUTH_EMEM,  USERINPUTH_MSGEMEM);
-  }
-  
+  /* put together the help-string. Allocate memory on-the-fly... */
   ptr = &UVAR_vars;
   while ( (ptr=ptr->next) != NULL)
     {
@@ -416,17 +404,25 @@ LALUserVarHelpString (LALStatus *stat,
 
 	} /* switch ptr->type */
 
-      sprintf (strbuf, "   --%-14s (-%c) \t%s\t%s  (Default: %s)\n", 
+      LALSnprintf (strbuf, UVAR_MAXHELPLINE,  "   --%-14s (-%c) \t%s\t%s  (Default: %s)\n", 
 	       ptr->name ? ptr->name : "-NONE-", 
 	       ptr->optchar, 
 	       typestr[ptr->type], 
 	       ptr->help ? ptr->help : "-NONE-",
 	       defaultstr);
 
-      strcat (*helpstring, strbuf);	/* add this line to the helpstring */
+      /* now increase allocated memory by the right amount */
+      newlen += strlen (strbuf) + 1;
+      helpstr = LALRealloc (helpstr, newlen);
+      if ( helpstr == NULL) {
+	ABORT (stat, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
+      }
+
+      strcat (helpstr, strbuf);	/* add this line to the helpstring */
 
     } /* while ptr->next */
 
+  *helpstring = helpstr;
 
   RETURN(stat);
 
