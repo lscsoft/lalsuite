@@ -9,8 +9,7 @@ bin_PROGRAMS = lalapps_olapredfcn $(LALFRAMEPROGRAMS)
 lalapps_olapredfcn_SOURCES = olapredfcn.c olapredfcn.h olapredfcn_args.c \
                              olapredfcn_bars.c
 if LALFRAME
-lalapps_stochastic_SOURCES = stochastic.c \
-                             stochastic.h
+lalapps_stochastic_SOURCES = stochastic.c stochastic.h
 endif
 bin_SCRIPTS = lalapps_stochastic_pipe
 pythonlibdir = ${prefix}/lib/python
