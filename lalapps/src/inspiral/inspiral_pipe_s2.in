@@ -504,7 +504,19 @@ for seg in l1_data:
 print "done"
 
 ##############################################################################
-# Step 6: Determine which of the H1 master chunks needs to be filtered
+# Step 6: Determine which of the H2 only master chunks needs to be filtered
+l1_h2_chunks_analyzed = []
+
+print "setting up jobs to filter H2 double coincident data...",
+sys.stdout.flush()
+(prev_df,l1_h2_chunks_analyzed) = analyze_lho_ifo(
+  l1_h2_data,l1_chunks_analyzed,h2_data,
+  'H2',insp_job,trig_job,df_job,h2_snr,h2_chisq,pad,max_slide,prev_df,
+  dag,usertag)
+print "done"
+
+##############################################################################
+# Step 7: Determine which of the H1 master chunks needs to be filtered
 h1_chunks_analyzed = []
 
 print "setting up jobs to filter H1 data...",
@@ -515,17 +527,6 @@ sys.stdout.flush()
   dag,usertag)
 print "done"
 
-##############################################################################
-# Step 7: Determine which of the H2 only master chunks needs to be filtered
-l1_h2_chunks_analyzed = []
-
-print "setting up jobs to filter H2 double coincident data...",
-sys.stdout.flush()
-(prev_df,l1_h2_chunks_analyzed) = analyze_lho_ifo(
-  l1_h2_data,l1_chunks_analyzed,h2_data,
-  'H2',insp_job,trig_job,df_job,h2_snr,h2_chisq,pad,max_slide,prev_df,
-  dag,usertag)
-print "done"
 
 ##############################################################################
 ## Any thing below here needs to be redone for each time slide ###############
