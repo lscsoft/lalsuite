@@ -15,7 +15,7 @@ extern "C" {
 #define BUFFERSIZE 1024                                                                   
 
 /* Maximum fractional doppler shift */
-#define DOPPLERMAX 1.05e-4
+#define DOPPLERMAX 1.046e-4
 
 /* (Half the ) number of terms to keep in the Dirichlet kernel sum */
 #define NTERMS 32
