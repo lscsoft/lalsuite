@@ -45,10 +45,10 @@ RCSID( "power $Id$");
 
 #include <config.h>
 #ifndef HAVE_LIBLALFRAME
-int main( void )
+int main(void)
 {
-  fputs( "Disabled: LALApps compiled with non-frame-enabled LAL\n", stderr );
-  return 77;
+	fputs("Disabled: LALApps compiled with non-frame-enabled LAL\n", stderr);
+	exit(77);
 }
 #else
 
@@ -118,7 +118,11 @@ static size_t min(size_t a, size_t b)
  * length and window shift.
  */
 
-static size_t window_commensurate(size_t psdlength, size_t windowlength, size_t windowshift)
+static size_t window_commensurate(
+	size_t psdlength,
+	size_t windowlength,
+	size_t windowshift
+)
 {
 	if(psdlength < windowlength)
 		return(0);
@@ -195,7 +199,14 @@ static REAL4TimeSeries *get_ligo_data(
 	return(series);
 }
 
-static REAL4TimeSeries *get_time_series(LALStatus *stat, const char *dirname, const char *cachefile, LIGOTimeGPS epoch, EPSearchParams *params, size_t length)
+static REAL4TimeSeries *get_time_series(
+	LALStatus *stat,
+	const char *dirname,
+	const char *cachefile,
+	LIGOTimeGPS epoch,
+	EPSearchParams *params,
+	size_t length
+)
 {
 	REAL4TimeSeries *series;
 	FrStream *stream = NULL;
@@ -231,25 +242,22 @@ static REAL4TimeSeries *get_time_series(LALStatus *stat, const char *dirname, co
  */
 
 static void makeWhiteNoise(
-	LALStatus        *stat,
-	REAL4TimeSeries  *series,
-	INT4              seed,
-	REAL4             amplitude
+	LALStatus *stat,
+	REAL4TimeSeries *series,
+	INT4 seed,
+	REAL4 amplitude
 )
 {
 	size_t i;
 	static RandomParams *rparams = NULL;
 
-	/* generate Gaussian white noise with unit variance */
 	LAL_CALL(LALCreateRandomParams(stat, &rparams, seed), stat);
 	LAL_CALL(LALNormalDeviates(stat, series->data, rparams), stat);
 	LAL_CALL(LALDestroyRandomParams(stat, &rparams), stat);
 
-	/* apply gain factor to noise in time series */
 	for(i = 0; i < series->data->length; i++)
 		series->data->data[i] *= amplitude;
 
-	/* verbosity */
 	if(options.verbose) {
 		REAL4 norm = 0.0;
 		for(i = 0; i < series->data->length; i++)
@@ -257,6 +265,87 @@ static void makeWhiteNoise(
 		fprintf(stderr, "the norm is %e\n", sqrt(norm / series->data->length));
 	}
 }
+
+
+/*
+ * ============================================================================
+ *                             Response function
+ * ============================================================================
+ */
+
+static COMPLEX8FrequencySeries *generate_response(
+	LALStatus *stat,
+	LIGOTimeGPS epoch,
+	size_t length
+)
+{
+	COMPLEX8FrequencySeries *response;
+	size_t i;
+	const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
+	CalibrationUpdateParams calfacts;
+
+	memset(&calfacts, 0, sizeof(calfacts));
+	calfacts.ifo = ifo;
+
+	LAL_CALL(LALCreateCOMPLEX8FrequencySeries(stat, &response, channelIn.name, epoch, 0.0, (REAL8) frameSampleRate / (REAL8) length, strainPerCount, length / 2 + 1), stat);
+
+	if(options.verbose) 
+		fprintf(stderr, "generating response at time %d sec %d ns\n", response->epoch.gpsSeconds, response->epoch.gpsNanoSeconds );
+
+	/* getting the response is handled differently for geo */
+	if(geodata)
+		for(i = 0; i < response->data->length; i++) {
+			response->data->data[i].re = 1.0;
+			response->data->data[i].im = 0.0;
+		}
+	else
+		LAL_CALL(LALExtractFrameResponse(stat, response, calCacheFile, &calfacts), stat);
+
+	return(response);
+} 
+
+
+/*
+ * ============================================================================
+ *                              Burst injections
+ * ============================================================================
+ */
+
+static void add_burst_injections(
+	LALStatus *stat,
+	REAL4TimeSeries *series,
+	COMPLEX8FrequencySeries *resp
+)
+{
+	INT4 startTime = series->epoch.gpsSeconds;
+	INT4 stopTime = startTime + series->data->length * series->deltaT;
+	SimBurstTable *injections = NULL;
+
+	if(!calCacheFile) {
+		fprintf(stderr, "Must supply calibration information for injections\n");
+		exit(1);
+	}
+
+	if(options.verbose)
+		fprintf(stderr, "Reading in SimBurst Table\n");
+
+	LAL_CALL(LALSimBurstTableFromLIGOLw(stat, &injections, injectionFile, startTime, stopTime), stat);
+
+	if(options.verbose)
+		fprintf(stderr, "Injecting signals into time series\n");
+
+	LAL_CALL(LALBurstInjectSignals(stat, series, injections, resp), stat); 
+
+	if(options.verbose)
+		fprintf(stderr, "Finished making the injections\n");
+
+	while(injections) {
+		SimBurstTable *thisEvent = injections;
+		injections = injections->next;
+		LALFree(thisEvent);
+	}
+}
+
 
 
 /*
@@ -296,10 +385,6 @@ static void add_mdc_injections(LALStatus *stat, const char *mdcCacheFile, REAL4T
 	/* add the mdc signal to the given time series */
 	for(i = 0; i < series->data->length; i++)
 		series->data->data[i] += mdc->data->data[i];
-
-	/* write diagnostic info to disk */
-	if(options.printData)
-		LALPrintTimeSeries(series, "./timeseriesasqmdc.dat");
 
 	/* clean up */
 	LAL_CALL(LALDestroyREAL4TimeSeries(stat, mdc), stat);
@@ -385,33 +470,25 @@ int main( int argc, char *argv[])
 	LALStatus                 stat;
 	LALLeapSecAccuracy        accuracy = LALLEAPSEC_LOOSE;
 	EPSearchParams            params;
-	LIGOTimeGPS               epoch = {0, 0};
-	REAL4                     minFreq = 0.0;
+	LIGOTimeGPS               epoch;
 	size_t                    start_sample;
 	int                       usedNumPoints;
-	INT4                      numPoints; /* number of samples from frames */
+	INT4                      numPoints;
 	CHAR                      outfilename[256];
-
-	/* data storage */
 	REAL4TimeSeries          *series = NULL;
-	COMPLEX8FrequencySeries  *resp = NULL;
-
-	/* Burst events */
+	COMPLEX8FrequencySeries  *response = NULL;
 	SnglBurstTable           *burstEvent = NULL;
 	SnglBurstTable          **EventAddPoint = &burstEvent;
 	MetadataTable             procTable;
 	MetadataTable             procparams;
 	MetadataTable             searchsumm;
 
-
-	/* Which error handler to use */
-	lal_errhandler = LAL_ERR_EXIT;
-	set_debug_level("3");
-
-
 	/*
 	 * Initialize everything
 	 */
+
+	lal_errhandler = LAL_ERR_EXIT;
+	set_debug_level("3");
 
 	memset(&stat, 0, sizeof(stat));
 
@@ -438,12 +515,14 @@ int main( int argc, char *argv[])
 	searchsumm.searchSummaryTable->in_start_time = options.startEpoch;
 	searchsumm.searchSummaryTable->in_end_time = options.stopEpoch;
 
-	/*set the min. freq to be searched for */
-	minFreq = params.tfTilingInput->flow;
-
 
 	/*
-	 * Loop over data small enough to fit into memory 
+	 * ====================================================================
+	 *                         Outer Loop
+	 * ====================================================================
+	 *
+	 * Split the total length of time to be analyzed into time series
+	 * small enough to fit in RAM.
 	 */
 
 	epoch = options.startEpoch;
@@ -457,13 +536,16 @@ int main( int argc, char *argv[])
 		if(options.verbose)
 			fprintf(stderr, "reading %i points...\n", numPoints);
 
-		/************************************************************
-		 * GET AND CONDITION THE DATA                               *
-		 ************************************************************/
+		/*
+		 * Get the data
+		 */
 
 		series = get_time_series(&stat, dirname, cachefile, epoch, &params, numPoints);
 
-		/* populate time series with white noise if requested */
+		/*
+		 * Add white noise to the time series if requested
+		 */
+
 		if(whiteNoise) {
 			if(!series) {
 				size_t i;
@@ -474,93 +556,52 @@ int main( int argc, char *argv[])
 			makeWhiteNoise(&stat, series, options.seed, options.noiseAmpl);
 		}
 
-		/* write diagnostic info to disk */
+		/*
+		 * Write diagnostic info to disk
+		 */
+
 		if(options.printData)
 			LALPrintTimeSeries(series, "./timeseriesasq.dat");
 
-		/* create the response function */
-		if(calCacheFile) {
-			size_t i;
-			const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
-
-			LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&stat, &resp, channelIn.name, epoch, 0.0, (REAL8) frameSampleRate / (REAL8) numPoints, strainPerCount, numPoints / 2 + 1), &stat);
-
-			/* generate the response function for the current
-			 * time */
-			if(options.verbose) 
-				fprintf(stderr, "generating response at time %d sec %d ns\n", resp->epoch.gpsSeconds, resp->epoch.gpsNanoSeconds );
-
-			/* getting the response is handled differently for
-			 * geo */
-			if(geodata)
-				for(i = 0; i < resp->data->length; i++) {
-					resp->data->data[i].re = 1.0;
-					resp->data->data[i].im = 0.0;
-				}
-			else {
-				CalibrationUpdateParams calfacts;
-				memset(&calfacts, 0, sizeof(calfacts));
-				calfacts.ifo = ifo;
-				LAL_CALL(LALExtractFrameResponse(&stat, resp, calCacheFile, &calfacts), &stat);
-			}
-		} 
-
-      /*****************************************************************
-       * Add injections into the time series:  
-       *****************************************************************/
-      if( injectionFile )
-      {
-        INT4  startTime = series->epoch.gpsSeconds;
-        INT4  stopTime = startTime + (INT4)(series->data->length * series->deltaT);
-        SimBurstTable *injections = NULL;
-
-        if ( !calCacheFile )
-        {
-          fprintf(stderr, "Must supply calibration information for injections\n");
-          exit(1);
-        }
-
-        /* read in list from file and make the injections */
-        if(options.verbose)
-          fprintf(stderr, "Reading in SimBurst Table\n");
-
-        LAL_CALL( LALSimBurstTableFromLIGOLw ( &stat, &injections, injectionFile,
-              startTime, stopTime), &stat );
-
-        if(options.verbose)
-          fprintf(stderr, "Injecting signals into time series\n");
-
-        LAL_CALL(LALBurstInjectSignals(&stat, series, injections, resp), &stat); 
-
-        while(injections) {
-          SimBurstTable *thisEvent = injections;
-          injections = injections->next;
-          LALFree(thisEvent);
-        }
-
-        if(options.verbose)
-          fprintf(stderr, "Finished making the injections\n");
-
-        /* write diagnostic info to disk */
-        if(options.printData)
-          LALPrintTimeSeries(series, "./injections.dat");
-      }
-
 		/*
-		 * Add MDC injections if requested.
+		 * Create the response function
 		 */
 
-		if(mdcCacheFile)
+		if(calCacheFile)
+			response = generate_response(&stat, series->epoch, series->data->length);
+
+		/*
+		 * Add burst injections into the time series if requested.
+		 */
+
+		if(injectionFile) {
+			add_burst_injections(&stat, series, response);
+			if(options.printData)
+				LALPrintTimeSeries(series, "./injections.dat");
+		}
+
+		/*
+		 * Add MDC injections into the time series if requested.
+		 */
+
+		if(mdcCacheFile) {
 			add_mdc_injections(&stat, mdcCacheFile, series);
+			if(options.printData)
+				LALPrintTimeSeries(series, "./timeseriesasqmdc.dat");
+		}
 
 		/*
-		 * Condition data.
+		 * Condition the time series data.
 		 */
 
-		LAL_CALL(EPConditionData(&stat, series, minFreq, 1.0 / targetSampleRate, resampFiltType, options.FilterCorruption, &params), &stat);
+		LAL_CALL(EPConditionData(&stat, series, params.tfTilingInput->flow, 1.0 / targetSampleRate, resampFiltType, options.FilterCorruption, &params), &stat);
+
+		if(options.verbose)
+			fprintf(stderr, "Got %i points to analyse after conditioning\n", series->data->length);
 
 		/*
-		 * Update the analyzed start and end times.
+		 * Store the start and end times of the data that actually
+		 * gets analyzed.
 		 */
 
 		if(!searchsumm.searchSummaryTable->out_start_time.gpsSeconds)
@@ -568,13 +609,17 @@ int main( int argc, char *argv[])
 		LAL_CALL(LALAddFloatToGPS(&stat, &searchsumm.searchSummaryTable->out_end_time, &series->epoch, series->deltaT * series->data->length), &stat);
 
 
-		/***********************************************
-		 * DO THE SEARCH                               *
-		 ***********************************************/
+		/*
+		 * ============================================================
+		 *                 Inner Loop
+		 * ============================================================
+		 *
+		 * Take the data in this run and analyze it in intervals
+		 * corresponding to the length of time for which the
+		 * instrument's noise is stationary.
+		 */
 
-		if(options.verbose)
-			fprintf(stderr, "Got %i points to analyse after conditioning\n", series->data->length);
-
+		/* check if we have enough data */
 		if(options.PSDAverageLength > series->data->length) {
 			options.PSDAverageLength = window_commensurate(series->data->length, params.windowLength, params.windowShift);
 			if(options.verbose)
@@ -584,14 +629,19 @@ int main( int argc, char *argv[])
 		for(start_sample = 0; start_sample + (params.windowLength - params.windowShift) < series->data->length; start_sample += options.PSDAverageLength - (params.windowLength - params.windowShift)) {
 			REAL4TimeSeries *interval;
 
+			/* shift last piece backwards to align with end of
+			 * time series. */
 			if(start_sample + options.PSDAverageLength > series->data->length)
 				start_sample = series->data->length - options.PSDAverageLength;
 
+			/* extract the data to analyze */
 			LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, series, start_sample, options.PSDAverageLength), &stat);
 
 			if(options.verbose)
 				fprintf(stderr, "Analyzing samples %i -- %i\n", start_sample, start_sample + interval->data->length);
 
+			/* generate a list of burst events from the time
+			 * series. */
 			LAL_CALL(EPSearch(&stat, interval, &params, EventAddPoint), &stat);
 			while(*EventAddPoint)
 				EventAddPoint = &(*EventAddPoint)->next;
@@ -606,7 +656,7 @@ int main( int argc, char *argv[])
 
 		LAL_CALL(LALAddFloatToGPS(&stat, &epoch, &epoch, (numPoints - 2.0 * options.FilterCorruption * frameSampleRate / targetSampleRate) / (REAL8) frameSampleRate), &stat);
 		LAL_CALL(LALDestroyREAL4TimeSeries(&stat, series), &stat);
-		LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&stat, resp), &stat);
+		LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&stat, response), &stat);
 	}
 
 	/*
