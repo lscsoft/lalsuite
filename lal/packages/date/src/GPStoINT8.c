@@ -52,16 +52,16 @@ void
 LALINT8toGPS ( 
     LALStatus          *status,
     LIGOTimeGPS        *output, 
-    INT8                input 
+    const INT8         *input 
     )
 #pragma </lalVerbatim>
 {
-  INT8 s = input / 1000000000LL;
+  INT8 s = (*input) / 1000000000LL;
 
   INITSTATUS( status, "LALINT8toGPS", GPSTOINT8C );
   
   output->gpsSeconds = (INT4)( s );
-  output->gpsNanoSeconds = (INT4)( input - 1000000000LL*s );
+  output->gpsNanoSeconds = (INT4)( (*input) - 1000000000LL*s );
 
   RETURN( status );
 }

@@ -437,13 +437,13 @@ LALLeapSecs (LALStatus                    *status,
 /* <lalLaTeX>
 \newpage\input{GPStoFloatC}
 </lalLaTeX> */
-void LALGPStoFloat (LALStatus *,
-                    REAL8     *, 
-                    const LIGOTimeGPS *);
+void LALGPStoFloat (LALStatus *status,
+                    REAL8     *output, 
+                    const LIGOTimeGPS *input);
 
-void LALFloatToGPS(LALStatus *, 
-                   LIGOTimeGPS *, 
-                   const REAL8 *);
+void LALFloatToGPS(LALStatus *status, 
+                   LIGOTimeGPS *output, 
+                   const REAL8 *input);
 
 /* <lalLaTeX>
 \newpage\input{GPStoINT8C}
@@ -452,7 +452,7 @@ void
 LALINT8toGPS ( 
     LALStatus          *status,
     LIGOTimeGPS        *output, 
-    INT8                input 
+    const INT8         *input 
     );
 
 void

@@ -3,7 +3,7 @@
 # $Id$
 #
 check_PROGRAMS = TestJulianDay TestLMST TestLMST2 TestDelay TestDateString \
-                 TestGPStoUTC TestUTCtoGPS TestGPStoGMST1 #TestLeapSecs TestGPStoFloat
+                 TestGPStoUTC TestUTCtoGPS TestGPStoGMST1 TestLeapSecs TestGPStoFloat
 TestJulianDay_SOURCES = TestJulianDay.c
 TestJulianDay_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 TestLMST_SOURCES = TestLMST.c
