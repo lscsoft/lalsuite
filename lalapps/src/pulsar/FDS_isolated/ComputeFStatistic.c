@@ -132,7 +132,6 @@ int boincmain(int argc, char *argv[]);
 void worker();
 
 /* hooks for communication with the graphics thread */
-void* graphics_lib_handle;
 void (*set_search_pos_hook)(float,float) = NULL;
 int (*boinc_init_graphics_hook)(void (*worker)()) = NULL;
 double *fraction_done_hook = NULL;
@@ -2852,14 +2851,18 @@ char **globargv=NULL;
 void worker() {
 
 #if (BOINC_GRAPHICS == 2) 
-  if (!(set_search_pos_hook = dlsym(graphics_lib_handle,"set_search_pos"))) {
-    fprintf(stderr, "unable to resolve set_search_pos(): %s\n", dlerror());
-    boinc_finish(1);
+  if (graphics_lib_handle) {
+    if (!(set_search_pos_hook = dlsym(graphics_lib_handle,"set_search_pos"))) {
+      fprintf(stderr, "unable to resolve set_search_pos(): %s\n", dlerror());
+      boinc_finish(1);
+    }
+    if (!(fraction_done_hook = dlsym(graphics_lib_handle,"fraction_done"))) {
+      fprintf(stderr, "unable to resolve fraction_done(): %s\n", dlerror());
+      boinc_finish(1);
+    }
   }
-  if (!(fraction_done_hook = dlsym(graphics_lib_handle,"fraction_done"))) {
-    fprintf(stderr, "unable to resolve fraction_done(): %s\n", dlerror());
-    boinc_finish(1);
-  }
+  else
+    fprintf(stderr,"graphics_lib_handle NULL: running without graphics\n");
 #endif
 
 #ifndef RUN_POLKA
