@@ -10,7 +10,7 @@ Computes the phase model coefficients necessary for a successful demodulation.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{ComputeSkyCP}
-\idx{ComputeSky()}
+\index{\texttt{ComputeSky()}}
 
 \subsubsection*{Description}
 Given an input index which refers to the sky patch under consideration, this
@@ -45,78 +45,109 @@ values are calculated using the analytical formulae given in the
 
 #include <math.h>
 #include <lal/LALConstants.h>
-#include <lal/ComputeSky.h>
+#include "ComputeSky.h"
+#include "LALBarycenter.h"
 
 NRCSID (COMPUTESKYC, "$Id ComputeSky.c $");
 
+static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps);
+static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f);
 
 /* <lalVerbatim file="ComputeSkyCP"> */
 void ComputeSky	(LALStatus	*status, 
-			REAL8 	*skyConst, 
-			INT4 		iSkyCoh, 
-			CSParams 	*params)
+		 REAL8 	*skyConst, 
+		 INT8 		iSkyCoh, 
+		 CSParams 	*params)
 {  /* </lalVerbatim> */
-
-	INT4	m, n;
+  
+  INT4	m, n;
 	REAL8	t;
 	REAL8	basedTbary;
+	
 	REAL8	dTbary;
 	REAL8	tBary;
-	REAL8	tDot;
-	REAL8	t0;
 	REAL8	tB0;
-	
-
-INITSTATUS (status, "ComputeSky", COMPUTESKYC);
-ATTATCHSTATUSPTR(status);
-	
+	INITSTATUS (status, "ComputeSky", COMPUTESKYC);
+ ATTATCHSTATUSPTR(status);
+ 
 /* Check for non-negativity of sky positions in SkyCoh[] */
-ASSERT(iSkyCoh>=0, status, COMPUTESKYH_ENEGA, COMPUTESKYH_MSGENEGA);
-
+ ASSERT(iSkyCoh>=0, status, COMPUTESKYH_ENEGA, COMPUTESKYH_MSGENEGA);
+ 
 /* Check to make sure sky positions are loaded */
-ASSERT(params->skyPos!=NULL, status, COMPUTESKYH_ENULL, COMPUTESKYH_MSGENULL);
-ASSERT(params->skyPos!=NULL, status, COMPUTESKYH_ENULL, COMPUTESKYH_MSGENULL);
-
+ ASSERT(params->skyPos!=NULL, status, COMPUTESKYH_ENULL, COMPUTESKYH_MSGENULL);
+ ASSERT(params->skyPos!=NULL, status, COMPUTESKYH_ENULL, COMPUTESKYH_MSGENULL);
+ 
 /* Check to make sure parameters are loaded and reasonable */
-ASSERT(params->spinDwnOrder>=0, status, COMPUTESKYH_ENEGA, COMPUTESKYH_MSGENEGA);
-ASSERT(params->mObsSFT>=0, status, COMPUTESKYH_ENEGA, COMPUTESKYH_MSGENEGA);
-ASSERT(params->tSFT>=0, status, COMPUTESKYH_ENEGA, COMPUTESKYH_MSGENEGA);
+ ASSERT(params->spinDwnOrder>=0, status, COMPUTESKYH_ENEGA, COMPUTESKYH_MSGENEGA);
+ ASSERT(params->mObsSFT>=0, status, COMPUTESKYH_ENEGA, COMPUTESKYH_MSGENEGA);
+ ASSERT(params->tSFT>=0, status, COMPUTESKYH_ENEGA, COMPUTESKYH_MSGENEGA);
+ 
+ for(n=0;n<params->mObsSFT;n++)
+   {
+     ASSERT(params->tGPS[n].gpsSeconds>=0, status, COMPUTESKYH_ENEGA, 	COMPUTESKYH_MSGENEGA);
+   }
+ 
+ /* Check to make sure pointer to output is not NULL */
+ ASSERT(skyConst!=NULL, status, COMPUTESKYH_ENNUL, COMPUTESKYH_MSGENNUL);
+ 
+ params->baryinput->tgps.gpsSeconds=params->tGPS[0].gpsSeconds;
+ params->baryinput->tgps.gpsNanoSeconds=params->tGPS[0].gpsNanoSeconds;
+ 
+ params->baryinput->alpha=params->skyPos[iSkyCoh];
+ params->baryinput->delta=params->skyPos[iSkyCoh+1];
+ 
+ LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat);
+  
+ LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth);
+ 
+ TimeToFloat(&tB0, &(params->emit->te));
+ for (n=0; n<params->mObsSFT; n++) 
+   {
+     t=(REAL8)(params->tGPS[n].gpsSeconds)+(REAL8)(params->tGPS[n].gpsNanoSeconds)*1.0E-9+0.5*params->tSFT; 
+     
+     FloatToTime(&(params->baryinput->tgps), &t);
+	
+     LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat);
+     LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth);
+     
+     TimeToFloat(&tBary, &(params->emit->te));
 
-for(n=0;n<params->mObsSFT;n++)
+     dTbary = tBary-tB0;		
+     
+     for (m=0; m<params->spinDwnOrder+1; m++) 
+       {
+	 basedTbary = pow(dTbary, (REAL8)m);
+	 skyConst[2*n*(params->spinDwnOrder+1)+2*(INT4)m]=1.0/((REAL8)m+1.0)*basedTbary*dTbary-0.5*params->tSFT*params->emit->tDot*basedTbary;
+	 skyConst[2*n*(params->spinDwnOrder+1)+2*(INT4)m+1]= params->tSFT*params->emit->tDot*basedTbary;
+       }
+   } 
+ /* Normal Exit */
+ DETATCHSTATUSPTR(status);
+ RETURN(status);
+}
+
+
+/* Internal routines */
+static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps)
 {
-	ASSERT(params->tGPS[n].gpsSeconds>=0, status, COMPUTESKYH_ENEGA, 	COMPUTESKYH_MSGENEGA);
+  INT4 x, y;
+
+  x=tgps->gpsSeconds;
+  y=tgps->gpsNanoSeconds;
+  *f=(REAL8)x+(REAL8)y*1.e-9;
 }
 
-/* Check to make sure pointer to output is not NULL */
-ASSERT(skyConst!=NULL, status, COMPUTESKYH_ENNUL, COMPUTESKYH_MSGENNUL);
+static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f)
+{
+  REAL8 temp0, temp2, temp3;
+  REAL8 temp1, temp4;
+  
+  temp0 = floor(*f);     /* this is tgps.S */
+  temp1 = (*f) * 1.e10;
+  temp2 = fmod(temp1, 1.e10);
+  temp3 = fmod(temp1, 1.e2); 
+  temp4 = (temp2-temp3) * 0.1;
 
-/* Check to make sure a tdb-like function is being used */
-ASSERT((*(params->funcName))!=NULL, status, COMPUTESKYH_ENNUL, COMPUTESKYH_MSGENNUL);
-
-/* calculation of Barycenter.c parameters */
-		t0=(REAL8)params->tGPS[0].gpsSeconds*1.0+(REAL8)params->tGPS[0].gpsNanoSeconds*1.0E-9;
-	
-	(*(params->funcName))(params->skyPos[iSkyCoh], params->skyPos[iSkyCoh+1], t0, &tB0, &tDot);
-	
-	for (n=0; n<params->mObsSFT; n++) 
-	{
-		t=(REAL8)(params->tGPS[n].gpsSeconds)+(REAL8)(params->tGPS[n].gpsNanoSeconds)*1.0E-9+0.5*params->tSFT; 
-	
-		(*(params->funcName))(params->skyPos[iSkyCoh], params->skyPos[iSkyCoh+1], t, &tBary, &tDot);
-		
-		dTbary = tBary-tB0;		
-
-		for (m=0; m<params->spinDwnOrder+1; m++) 
-		{
-			basedTbary = pow(dTbary, (REAL8)m);
-			skyConst[2*n*(params->spinDwnOrder+1)+2*(INT4)m]=1.0/((REAL8)m+1.0)*basedTbary*dTbary-0.5*params->tSFT*tDot*basedTbary;
-			skyConst[2*n*(params->spinDwnOrder+1)+2*(INT4)m+1]= params->tSFT*tDot*basedTbary;
-			
- 		}
-	} 
-	  /* writes the length of the vector of sky constants */
-	/* Normal Exit */
-	DETATCHSTATUSPTR(status);
-	RETURN(status);
+  tgps->gpsSeconds = (INT4)temp0;
+  tgps->gpsNanoSeconds = (INT4)temp4;
 }
-

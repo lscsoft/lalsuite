@@ -88,21 +88,22 @@ B_{s \alpha}=\mathcal{T}_{SFT}\dot{T}_{\alpha}\Delta T_{\alpha}^{s}
 #define _COMPUTESKY_H
  
 #include <lal/LALStdlib.h>
+#include "LALBarycenter.h"
  
 #ifdef __cplusplus
 extern "C" {
 #endif
- 
-NRCSID (COMPUTESKYH, "$Id: ComputeSky.h");
- 
-/* Author-defined error codes */
-/* <lalLaTeX>  
-\subsection*{Error conditions}
-\vspace{0.1in}
-\input{ComputeSkyHErrorTable}
-
-</lalLaTeX> */
-
+  
+  NRCSID (COMPUTESKYH, "$Id: ComputeSky.h");
+  
+  /* Author-defined error codes */
+  /* <lalLaTeX>  
+     \subsection*{Error conditions}
+     \vspace{0.1in}
+     \input{ComputeSkyHErrorTable}
+     
+     </lalLaTeX> */
+  
 /* <lalErrTable file="ComputeSkyHErrorTable"> */
 #define COMPUTESKYH_ENULL 1
 #define COMPUTESKYH_ENNUL 2
@@ -118,13 +119,13 @@ NRCSID (COMPUTESKYH, "$Id: ComputeSky.h");
 \begin{verbatim}
 struct CSParams
 \end{verbatim}
-\idx[Type]{CSParams}
+\index{\texttt{CSParams}}
 
 \noindent This structure contains the parameters for the \verb@ComputeSky()@ routine.  The parameters are:
 
 \begin{description}
-\item[\texttt{INT4 spinDwnOrder}] The maximal number of spindown parameters per spindown parameter set.
-\item[\texttt{INT4 mObsSFT}] The number of SFTs in the observation time.
+\item[\texttt{INT8 spinDwnOrder}] The maximal number of spindown parameters per spindown parameter set.
+\item[\texttt{INT8 mObsSFT}] The number of SFTs in the observation time.
 \item[\texttt{REAL8 tSFT}] The timescale of one SFT.
 \item[\texttt{LIGOTimeGPS *tGPS}] An array containing the GPS times of the first datum from each SFT.
 \item[\texttt{REAL8 *skyPos}] The array containing the sky patch coordinates.
@@ -137,13 +138,15 @@ struct CSParams
 typedef struct
 tagCSParams
 {
-	INT4		spinDwnOrder;	/* max spindown parameter order */
-	INT4		mObsSFT;	/* number of coherent timescales */
+	INT8		spinDwnOrder;	/* max spindown parameter order */
+	INT8		mObsSFT;	/* number of coherent timescales */
 	REAL8		tSFT;		/* timescale of SFT */
 	LIGOTimeGPS	*tGPS;		/* GPS time of 1st data sample of each SFT */
 	REAL8 		*skyPos; 	/* array of sky positions */
-	const CHAR 	*sw;		/* switch to turn on/off modulation */
-	void (*funcName)(REAL8 , REAL8 , REAL8 , REAL8 *, REAL8 *);
+	BarycenterInput *baryinput;	
+	EmissionTime *emit;
+	EarthState *earth;
+	EphemerisData *edat;
 }
 CSParams;
 
@@ -154,7 +157,7 @@ CSParams;
 
 void ComputeSky (LALStatus *status, 
 			REAL8 		*skyConst, 
-			INT4 		iSkyCoh,
+			INT8 		iSkyCoh,
 			CSParams 	*params);
 		
 
