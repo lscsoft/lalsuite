@@ -57,6 +57,7 @@ int raise (int sig);
 int main( int argc, char *argv[] )
 {
 #if defined(NDEBUG) || defined(LAL_NDEBUG) /* debugging is turned off */
+  argc = 0; argv = NULL;
   return 77; /* don't do any testing */
 #else
   int    *p;

@@ -108,23 +108,34 @@ int main (int argc, char *argv[])
   LALDCreateVector (&status, &yy, ArraySize);
   TestStatus (&status, CODES(0), 1);
 
-  printf ("Initial data:\n");
-  printf ("y = P(x) = 7 - 8x + 2x^2 + 2x^3 - x^4\n");
-  printf ("-----------------\n");
-  printf ("x\ty\n");
-  printf ("=================\n");
+  if ( verbose )
+    printf ("Initial data:\n");
+  if ( verbose )
+    printf ("y = P(x) = 7 - 8x + 2x^2 + 2x^3 - x^4\n");
+  if ( verbose )
+    printf ("-----------------\n");
+  if ( verbose )
+    printf ("x\ty\n");
+  if ( verbose )
+    printf ("=================\n");
   for (i = 0; i < ArraySize; ++i)
   {
     REAL4 xi = x->data[i] = xx->data[i] = i*i;
     y->data[i] = yy->data[i] = 7 + xi*(-8 + xi*(2 + xi*(2 - xi)));
-    printf ("%.0f\t%.0f\n", x->data[i], y->data[i]);
+    if ( verbose )
+      printf ("%.0f\t%.0f\n", x->data[i], y->data[i]);
   }
-  printf ("-----------------\n");
+  if ( verbose )
+    printf ("-----------------\n");
 
-  printf ("\nInterpolate to x = 0.3:\n");
-  printf ("---------------------------------\n");
-  printf ("order\ty\t\tdy\n");
-  printf ("=================================\n");
+  if ( verbose )
+    printf ("\nInterpolate to x = 0.3:\n");
+  if ( verbose )
+    printf ("---------------------------------\n");
+  if ( verbose )
+    printf ("order\ty\t\tdy\n");
+  if ( verbose )
+    printf ("=================================\n");
   sintpar.x = x->data;
   sintpar.y = y->data;
   dintpar.x = xx->data;
@@ -137,15 +148,21 @@ int main (int argc, char *argv[])
     TestStatus (&status, CODES(0), 1);
     LALDPolynomialInterpolation (&status, &dintout, 0.3, &dintpar);
     TestStatus (&status, CODES(0), 1);
-    printf ("%d\t%f\t%f\t%f\t%f\n", i - 1,
-            sintout.y, sintout.dy, dintout.y, dintout.dy);
+    if ( verbose )
+      printf ("%d\t%f\t%f\t%f\t%f\n", i - 1,
+          sintout.y, sintout.dy, dintout.y, dintout.dy);
   }
-  printf ("---------------------------------\n");
+  if ( verbose )
+    printf ("---------------------------------\n");
 
-  printf ("\nExtrapolate to x = -0.3:\n");
-  printf ("---------------------------------\n");
-  printf ("order\ty\t\tdy\n");
-  printf ("=================================\n");
+  if ( verbose )
+    printf ("\nExtrapolate to x = -0.3:\n");
+  if ( verbose )
+    printf ("---------------------------------\n");
+  if ( verbose )
+    printf ("order\ty\t\tdy\n");
+  if ( verbose )
+    printf ("=================================\n");
   sintpar.x = x->data;
   sintpar.y = y->data;
   dintpar.x = xx->data;
@@ -158,10 +175,12 @@ int main (int argc, char *argv[])
     TestStatus (&status, CODES(0), 1);
     LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
     TestStatus (&status, CODES(0), 1);
-    printf ("%d\t%f\t%f\t%f\t%f\n", i - 1,
-            sintout.y, sintout.dy, dintout.y, dintout.dy);
+    if ( verbose )
+      printf ("%d\t%f\t%f\t%f\t%f\n", i - 1,
+          sintout.y, sintout.dy, dintout.y, dintout.dy);
   }
-  printf ("---------------------------------\n");
+  if ( verbose )
+    printf ("---------------------------------\n");
 
 
   LALSDestroyVector (&status, &x);
@@ -185,63 +204,82 @@ int main (int argc, char *argv[])
   TestStatus (&status, CODES(0), 1);
 
 
-  printf ("\nCheck error conditions:\n");
+#ifndef LAL_NDEBUG
 
-  printf ("\nNull pointer:\r");
-  LALSPolynomialInterpolation (&status, NULL, -0.3, &sintpar);
-  TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
-  LALDPolynomialInterpolation (&status, NULL, -0.3, &dintpar);
-  TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
-  printf ("Null pointer check passed.\n");
+  if ( ! lalNoDebug )
+  {
+    if ( verbose )
+      printf ("\nCheck error conditions:\n");
 
-  printf ("\nNull pointer:\r");
-  LALSPolynomialInterpolation (&status, &sintout, -0.3, NULL);
-  TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
-  LALDPolynomialInterpolation (&status, &dintout, -0.3, NULL);
-  TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
-  printf ("Null pointer check passed.\n");
+    if ( verbose )
+      printf ("\nNull pointer:\r");
+    LALSPolynomialInterpolation (&status, NULL, -0.3, &sintpar);
+    TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
+    LALDPolynomialInterpolation (&status, NULL, -0.3, &dintpar);
+    TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
+    if ( verbose )
+      printf ("Null pointer check passed.\n");
 
-  sintpar.x = NULL;
-  dintpar.x = NULL;
-  printf ("\nNull pointer:\r");
-  LALSPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
-  TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
-  LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
-  TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
-  printf ("Null pointer check passed.\n");
+    if ( verbose )
+      printf ("\nNull pointer:\r");
+    LALSPolynomialInterpolation (&status, &sintout, -0.3, NULL);
+    TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
+    LALDPolynomialInterpolation (&status, &dintout, -0.3, NULL);
+    TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
+    if ( verbose )
+      printf ("Null pointer check passed.\n");
 
-  sintpar.x = x->data;
-  sintpar.y = NULL;
-  dintpar.x = xx->data;
-  dintpar.y = NULL;
-  printf ("\nNull pointer:\r");
-  LALSPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
-  TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
-  LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
-  TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
-  printf ("Null pointer check passed.\n");
+    sintpar.x = NULL;
+    dintpar.x = NULL;
+    if ( verbose )
+      printf ("\nNull pointer:\r");
+    LALSPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
+    TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
+    LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
+    TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
+    if ( verbose )
+      printf ("Null pointer check passed.\n");
 
-  sintpar.y = y->data;
-  sintpar.n = 1;
-  dintpar.y = yy->data;
-  dintpar.n = 1;
-  printf ("\nInvalid size:\r");
-  LALSPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
-  TestStatus (&status, CODES(INTERPOLATEH_ESIZE), 1);
-  LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
-  TestStatus (&status, CODES(INTERPOLATEH_ESIZE), 1);
-  printf ("Invalid size check passed.\n");
+    sintpar.x = x->data;
+    sintpar.y = NULL;
+    dintpar.x = xx->data;
+    dintpar.y = NULL;
+    if ( verbose )
+      printf ("\nNull pointer:\r");
+    LALSPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
+    TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
+    LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
+    TestStatus (&status, CODES(INTERPOLATEH_ENULL), 1);
+    if ( verbose )
+      printf ("Null pointer check passed.\n");
 
-  x->data[1]  = x->data[0]  = 2;
-  xx->data[1] = xx->data[0] = 2;
-  sintpar.n = 3;
-  dintpar.n = 3;
-  printf ("\nZero divide:\r");
-  LALSPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
-  TestStatus (&status, CODES(INTERPOLATEH_EZERO), 1);
-  LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
-  TestStatus (&status, CODES(INTERPOLATEH_EZERO), 1);
-  printf ("Zero divide check passed.\n");
+    sintpar.y = y->data;
+    sintpar.n = 1;
+    dintpar.y = yy->data;
+    dintpar.n = 1;
+    if ( verbose )
+      printf ("\nInvalid size:\r");
+    LALSPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
+    TestStatus (&status, CODES(INTERPOLATEH_ESIZE), 1);
+    LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
+    TestStatus (&status, CODES(INTERPOLATEH_ESIZE), 1);
+    if ( verbose )
+      printf ("Invalid size check passed.\n");
+
+    x->data[1]  = x->data[0]  = 2;
+    xx->data[1] = xx->data[0] = 2;
+    sintpar.n = 3;
+    dintpar.n = 3;
+    if ( verbose )
+      printf ("\nZero divide:\r");
+    LALSPolynomialInterpolation (&status, &sintout, -0.3, &sintpar);
+    TestStatus (&status, CODES(INTERPOLATEH_EZERO), 1);
+    LALDPolynomialInterpolation (&status, &dintout, -0.3, &dintpar);
+    TestStatus (&status, CODES(INTERPOLATEH_EZERO), 1);
+    if ( verbose )
+      printf ("Zero divide check passed.\n");
+  }
+#endif 
 
 
   LALSDestroyVector (&status, &x);
@@ -311,7 +349,7 @@ TestStatus (LALStatus *status, const char *ignored, int exitcode)
  * linked list of statuses.
  *
  */
-void
+  void
 ClearStatus (LALStatus *status)
 {
   if (status->statusPtr)
@@ -328,7 +366,7 @@ ClearStatus (LALStatus *status)
  * Prints a usage message for program program and exits with code exitcode.
  *
  */
-static void
+  static void
 Usage (const char *program, int exitcode)
 {
   fprintf (stderr, "Usage: %s [options]\n", program);

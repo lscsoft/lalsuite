@@ -204,6 +204,7 @@ static void h (LALStatus *s, REAL4 *z, REAL4 y, void *p)
   INITSTATUS (s, "h", MAIN);
   ATTATCHSTATUSPTR (s);
   ASSERT (!p, s, 2, "Non-null pointer");
+  p = NULL;
   intinp.function = g;
   intinp.xmin     = 0;
   intinp.xmax     = sqrt(y);
@@ -220,6 +221,7 @@ static void hh (LALStatus *s, REAL8 *z, REAL8 y, void *p)
   INITSTATUS (s, "hh", MAIN);
   ATTATCHSTATUSPTR (s);
   ASSERT (!p, s, 2, "Non-null pointer");
+  p = NULL;
   intinp.function = gg;
   intinp.xmin     = 0;
   intinp.xmax     = sqrt(y);
@@ -289,8 +291,9 @@ int main (int argc, char *argv[])
    */
 
 
-  printf ("Test 1:"
-          " Integrate a regular function over a closed interval.\n");
+  if ( verbose )
+    printf ("Test 1:"
+        " Integrate a regular function over a closed interval.\n");
 
   sintinp.function = f1;
   sintinp.xmin     = 0;
@@ -305,23 +308,31 @@ int main (int argc, char *argv[])
   expect = 8.153364119811650205L;
   LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
   TestStatus (&status, CODES(0), 1);
-  printf ("number of function calls: %d\n", count);
-  printf ("result: %.15f\n", sresult);
-  printf ("expect: %.15Lf\n", expect);
+  if ( verbose )
+    printf ("number of function calls: %d\n", count);
+  if ( verbose )
+    printf ("result: %.15f\n", sresult);
+  if ( verbose )
+    printf ("expect: %.15Lf\n", expect);
   if (fabs(sresult - expect) > sepsilon*fabs(expect))
   {
-    fprintf (stderr, "Integration did not achieve desired accuracy!\n");
+    if ( verbose )
+      fprintf (stderr, "Integration did not achieve desired accuracy!\n");
     return 1;
   }
   count = 0;
   LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(0), 1);
-  printf ("number of function calls: %d\n", count);
-  printf ("result: %.15f\n", dresult);
-  printf ("expect: %.15Lf\n", expect);
+  if ( verbose )
+    printf ("number of function calls: %d\n", count);
+  if ( verbose )
+    printf ("result: %.15f\n", dresult);
+  if ( verbose )
+    printf ("expect: %.15Lf\n", expect);
   if (fabs(dresult - expect) > depsilon*fabs(expect))
   {
-    fprintf (stderr, "Integration did not achieve desired accuracy!\n");
+    if ( verbose )
+      fprintf (stderr, "Integration did not achieve desired accuracy!\n");
     return 1;
   }
 
@@ -333,8 +344,9 @@ int main (int argc, char *argv[])
    */
 
 
-  printf ("\nTest 2:"
-          " Integrate to infinity a function with power-law fall-off.\n");
+  if ( verbose )
+    printf ("\nTest 2:"
+        " Integrate to infinity a function with power-law fall-off.\n");
   sintinp.function = f2;
   sintinp.xmin     = 10;
   sintinp.xmax     = 1e30;
@@ -348,24 +360,32 @@ int main (int argc, char *argv[])
   expect = 1.0L/200.0L;
   LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
   TestStatus (&status, CODES(0), 1);
-  printf ("number of function calls: %d\n", count);
-  printf ("result: %.15f\n", sresult);
-  printf ("expect: %.15Lf\n", expect);
+  if ( verbose )
+    printf ("number of function calls: %d\n", count);
+  if ( verbose )
+    printf ("result: %.15f\n", sresult);
+  if ( verbose )
+    printf ("expect: %.15Lf\n", expect);
   if (fabs(sresult - expect) > sepsilon*fabs(expect))
   {
-    fprintf (stderr, "Integration did not achieve desired accuracy!\n");
+    if ( verbose )
+      fprintf (stderr, "Integration did not achieve desired accuracy!\n");
     return 1;
   }
 
   count = 0;
   LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(0), 1);
-  printf ("number of function calls: %d\n", count);
-  printf ("result: %.15f\n", dresult);
-  printf ("expect: %.15Lf\n", expect);
+  if ( verbose )
+    printf ("number of function calls: %d\n", count);
+  if ( verbose )
+    printf ("result: %.15f\n", dresult);
+  if ( verbose )
+    printf ("expect: %.15Lf\n", expect);
   if (fabs(dresult - expect) > depsilon*fabs(expect))
   {
-    fprintf (stderr, "Integration did not achieve desired accuracy!\n");
+    if ( verbose )
+      fprintf (stderr, "Integration did not achieve desired accuracy!\n");
     return 1;
   }
 
@@ -377,8 +397,9 @@ int main (int argc, char *argv[])
    */
 
 
-  printf ("\nTest 3:"
-          " Integrate to infinity a function that falls off exponentially.");
+  if ( verbose )
+    printf ("\nTest 3:"
+        " Integrate to infinity a function that falls off exponentially.");
   sintinp.function = f3;
   sintinp.xmin     = 2;
   sintinp.xmax     = 1e30;
@@ -392,24 +413,32 @@ int main (int argc, char *argv[])
   expect = 0.0570261239928920483L;
   LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
   TestStatus (&status, CODES(0), 1);
-  printf ("number of function calls: %d\n", count);
-  printf ("result: %.15f\n", sresult);
-  printf ("expect: %.15Lf\n", expect);
+  if ( verbose )
+    printf ("number of function calls: %d\n", count);
+  if ( verbose )
+    printf ("result: %.15f\n", sresult);
+  if ( verbose )
+    printf ("expect: %.15Lf\n", expect);
   if (fabs(sresult - expect) > sepsilon*fabs(expect))
   {
-    fprintf (stderr, "Integration did not achieve desired accuracy!\n");
+    if ( verbose )
+      fprintf (stderr, "Integration did not achieve desired accuracy!\n");
     return 1;
   }
 
   count = 0;
   LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(0), 1);
-  printf ("number of function calls: %d\n", count);
-  printf ("result: %.15f\n", dresult);
-  printf ("expect: %.15Lf\n", expect);
+  if ( verbose )
+    printf ("number of function calls: %d\n", count);
+  if ( verbose )
+    printf ("result: %.15f\n", dresult);
+  if ( verbose )
+    printf ("expect: %.15Lf\n", expect);
   if (fabs(dresult - expect) > depsilon*fabs(expect))
   {
-    fprintf (stderr, "Integration did not achieve desired accuracy!\n");
+    if ( verbose )
+      fprintf (stderr, "Integration did not achieve desired accuracy!\n");
     return 1;
   }
   
@@ -421,8 +450,9 @@ int main (int argc, char *argv[])
    */
 
 
-  printf ("\nTest 4:"
-          " Integrate an integrable singularity at the lower limit.\n");
+  if ( verbose )
+    printf ("\nTest 4:"
+        " Integrate an integrable singularity at the lower limit.\n");
   sintinp.function = f4;
   sintinp.xmin     = 0;
   sintinp.xmax     = 1;
@@ -436,11 +466,15 @@ int main (int argc, char *argv[])
   expect = 2.0L;
   LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
   TestStatus (&status, CODES(0), 1);
-  printf ("number of function calls: %d\n", count);
-  printf ("result: %.15f\n", sresult);
-  printf ("expect: %.15Lf\n", expect);
+  if ( verbose )
+    printf ("number of function calls: %d\n", count);
+  if ( verbose )
+    printf ("result: %.15f\n", sresult);
+  if ( verbose )
+    printf ("expect: %.15Lf\n", expect);
   if (fabs(sresult - expect) > sepsilon*fabs(expect))
   {
+  if ( verbose )
     fprintf (stderr, "Integration did not achieve desired accuracy!\n");
     return 1;
   }
@@ -448,12 +482,16 @@ int main (int argc, char *argv[])
   count  = 0;
   LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(0), 1);
-  printf ("number of function calls: %d\n", count);
-  printf ("result: %.15f\n", dresult);
-  printf ("expect: %.15Lf\n", expect);
+  if ( verbose )
+    printf ("number of function calls: %d\n", count);
+  if ( verbose )
+    printf ("result: %.15f\n", dresult);
+  if ( verbose )
+    printf ("expect: %.15Lf\n", expect);
   if (fabs(dresult - expect) > depsilon*fabs(expect))
   {
-    fprintf (stderr, "Integration did not achieve desired accuracy!\n");
+    if ( verbose )
+      fprintf (stderr, "Integration did not achieve desired accuracy!\n");
     return 1;
   }
 
@@ -465,8 +503,9 @@ int main (int argc, char *argv[])
    */
 
 
-  printf ("\nTest 5:"
-          " Integrate an integrable singularity at the upper limit.\n");
+  if ( verbose )
+    printf ("\nTest 5:"
+        " Integrate an integrable singularity at the upper limit.\n");
   sintinp.function = f5;
   sintinp.xmin     = 4;
   sintinp.xmax     = 5;
@@ -480,12 +519,16 @@ int main (int argc, char *argv[])
   expect = 6.5L;
   LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
   TestStatus (&status, CODES(0), 1);
-  printf ("number of function calls: %d\n", count);
-  printf ("result: %.15f\n", sresult);
-  printf ("expect: %.15Lf\n", expect);
+  if ( verbose )
+    printf ("number of function calls: %d\n", count);
+  if ( verbose )
+    printf ("result: %.15f\n", sresult);
+  if ( verbose )
+    printf ("expect: %.15Lf\n", expect);
   /* this doesn't work so well: multiply tolerance by factor of three */
   if (fabs(sresult - expect) > 3*sepsilon*fabs(expect))
   {
+    if ( verbose )
     fprintf (stderr, "Integration did not achieve desired accuracy!\n");
     return 1;
   }
@@ -493,12 +536,16 @@ int main (int argc, char *argv[])
   count  = 0;
   LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(0), 1);
-  printf ("number of function calls: %d\n", count);
-  printf ("result: %.15f\n", dresult);
-  printf ("expect: %.15Lf\n", expect);
+  if ( verbose )
+    printf ("number of function calls: %d\n", count);
+  if ( verbose )
+    printf ("result: %.15f\n", dresult);
+  if ( verbose )
+    printf ("expect: %.15Lf\n", expect);
   /* this doesn't work so well: multiply tolerance by factor of three */
   if (fabs(dresult - expect) > 3*depsilon*fabs(expect))
   {
+    if ( verbose )
     fprintf (stderr, "Integration did not achieve desired accuracy!\n");
     return 1;
   }
@@ -511,6 +558,7 @@ int main (int argc, char *argv[])
    */
 
 
+  if ( verbose )
   printf ("\nTest 6: Two-dimensional integral.\n");
   sintinp.function = h;
   sintinp.xmin     = 0;
@@ -524,17 +572,23 @@ int main (int argc, char *argv[])
   expect = 0.88274109326014810823L;
   LALSRombergIntegrate (&status, &sresult, &sintinp, NULL);
   TestStatus (&status, CODES(0), 1);
-  printf ("result: %.15f\n", sresult);
-  printf ("expect: %.15Lf\n", expect);
+  if ( verbose )
+    printf ("result: %.15f\n", sresult);
+  if ( verbose )
+    printf ("expect: %.15Lf\n", expect);
   /* integral isn't very accurate because we needed to use an open interval */
-  printf ("error:  %.2f%%\n", 100*fabs(sresult - expect)/fabs(expect));
+  if ( verbose )
+    printf ("error:  %.2f%%\n", 100*fabs(sresult - expect)/fabs(expect));
   /*
    * don't do 2d double-precision: it takes too long!
    *
    * LALDRombergIntegrate (&status, &dresult, &dintinp, NULL);
    * TestStatus (&status, CODES(0), 1);
+   * if ( verbose )
    * printf ("result: %.15f\n", dresult);
+   * if ( verbose )
    * printf ("expect: %.15Lf\n", expect);
+   * if ( verbose )
    * printf ("error:  %.2f%%\n", 100*fabs(dresult - expect)/fabs(expect));
    *
    */
@@ -549,101 +603,122 @@ int main (int argc, char *argv[])
    *
    */
 
+#ifndef LAL_NDEBUG
 
-  printf ("\nChecking error conditions:\n");
+  if ( ! lalNoDebug )
+  {
+    if ( verbose )
+      printf ("\nChecking error conditions:\n");
 
-  printf ("\nNull pointer:\r");
-  LALSRombergIntegrate (&status, NULL, &sintinp, &count);
-  TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
-  LALDRombergIntegrate (&status, NULL, &dintinp, &count);
-  TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
-  printf ("Null pointer check passed.\n");
+    if ( verbose )
+      printf ("\nNull pointer:\r");
+    LALSRombergIntegrate (&status, NULL, &sintinp, &count);
+    TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
+    LALDRombergIntegrate (&status, NULL, &dintinp, &count);
+    TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
+    if ( verbose )
+      printf ("Null pointer check passed.\n");
 
-  printf ("\nNull pointer:\r");
-  LALSRombergIntegrate (&status, &sresult, NULL, &count);
-  TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
-  LALDRombergIntegrate (&status, &dresult, NULL, &count);
-  TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
-  printf ("Null pointer check passed.\n");
+    if ( verbose )
+      printf ("\nNull pointer:\r");
+    LALSRombergIntegrate (&status, &sresult, NULL, &count);
+    TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
+    LALDRombergIntegrate (&status, &dresult, NULL, &count);
+    TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
+    if ( verbose )
+      printf ("Null pointer check passed.\n");
 
-  printf ("\nNull pointer:\r");
-  sintinp.function = NULL;
-  sintinp.xmin     = 0;
-  sintinp.xmax     = 2;
-  sintinp.type     = ClosedInterval;
-  dintinp.function = NULL;
-  dintinp.xmin     = 0;
-  dintinp.xmax     = 2;
-  dintinp.type     = ClosedInterval;
-  LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
-  TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
-  LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
-  TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
-  printf ("Null pointer check passed.\n");
+    if ( verbose )
+      printf ("\nNull pointer:\r");
+    sintinp.function = NULL;
+    sintinp.xmin     = 0;
+    sintinp.xmax     = 2;
+    sintinp.type     = ClosedInterval;
+    dintinp.function = NULL;
+    dintinp.xmin     = 0;
+    dintinp.xmax     = 2;
+    dintinp.type     = ClosedInterval;
+    LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
+    TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
+    LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
+    TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
+    if ( verbose )
+      printf ("Null pointer check passed.\n");
 
-  printf ("\nInvalid domain:\r");
-  sintinp.function = f1;
-  sintinp.xmin     = 0;
-  sintinp.xmax     = 0;
-  sintinp.type     = ClosedInterval;
-  dintinp.function = ff1;
-  dintinp.xmin     = 0;
-  dintinp.xmax     = 0;
-  dintinp.type     = ClosedInterval;
-  LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
-  TestStatus (&status, CODES(INTEGRATEH_EIDOM), 1);
-  LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
-  TestStatus (&status, CODES(INTEGRATEH_EIDOM), 1);
-  printf ("Invalid domain check passed.\n");
+    if ( verbose )
+      printf ("\nInvalid domain:\r");
+    sintinp.function = f1;
+    sintinp.xmin     = 0;
+    sintinp.xmax     = 0;
+    sintinp.type     = ClosedInterval;
+    dintinp.function = ff1;
+    dintinp.xmin     = 0;
+    dintinp.xmax     = 0;
+    dintinp.type     = ClosedInterval;
+    LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
+    TestStatus (&status, CODES(INTEGRATEH_EIDOM), 1);
+    LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
+    TestStatus (&status, CODES(INTEGRATEH_EIDOM), 1);
+    if ( verbose )
+      printf ("Invalid domain check passed.\n");
 
-  printf ("\nUnknown integral type:\r");
-  sintinp.function = f1;
-  sintinp.xmin     = 0;
-  sintinp.xmax     = 2;
-  sintinp.type     = 999;
-  dintinp.function = ff1;
-  dintinp.xmin     = 0;
-  dintinp.xmax     = 2;
-  dintinp.type     = 999;
-  LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
-  TestStatus (&status, CODES(INTEGRATEH_ETYPE), 1);
-  LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
-  TestStatus (&status, CODES(INTEGRATEH_ETYPE), 1);
-  printf ("Unknown integral type check passed.\n");
+    if ( verbose )
+      printf ("\nUnknown integral type:\r");
+    sintinp.function = f1;
+    sintinp.xmin     = 0;
+    sintinp.xmax     = 2;
+    sintinp.type     = 999;
+    dintinp.function = ff1;
+    dintinp.xmin     = 0;
+    dintinp.xmax     = 2;
+    dintinp.type     = 999;
+    LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
+    TestStatus (&status, CODES(INTEGRATEH_ETYPE), 1);
+    LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
+    TestStatus (&status, CODES(INTEGRATEH_ETYPE), 1);
+    if ( verbose )
+      printf ("Unknown integral type check passed.\n");
 
-  printf ("\nMaximum iterations exceeded:\r");
-  sintinp.function = bad;  /* bad is a quick random number generator */
-  sintinp.xmin     = 0;
-  sintinp.xmax     = 2;
-  sintinp.type     = ClosedInterval;
-  dintinp.function = bbad;  /* bbad is a quick random number generator */
-  dintinp.xmin     = 0;
-  dintinp.xmax     = 2;
-  dintinp.type     = ClosedInterval;
-  count            = 13;   /* count is now used as a random number seed */
-  LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
-  TestStatus (&status, CODES(INTEGRATEH_EMXIT), 1);
-  count = 1;
-  LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
-  TestStatus (&status, CODES(INTEGRATEH_EMXIT), 1);
-  printf ("Maximum iterations exceeded check passed.\n");
+    if ( verbose )
+      printf ("\nMaximum iterations exceeded:\r");
+    sintinp.function = bad;  /* bad is a quick random number generator */
+    sintinp.xmin     = 0;
+    sintinp.xmax     = 2;
+    sintinp.type     = ClosedInterval;
+    dintinp.function = bbad;  /* bbad is a quick random number generator */
+    dintinp.xmin     = 0;
+    dintinp.xmax     = 2;
+    dintinp.type     = ClosedInterval;
+    count            = 13;   /* count is now used as a random number seed */
+    LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
+    TestStatus (&status, CODES(INTEGRATEH_EMXIT), 1);
+    count = 1;
+    LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
+    TestStatus (&status, CODES(INTEGRATEH_EMXIT), 1);
+    if ( verbose )
+      printf ("Maximum iterations exceeded check passed.\n");
 
-  printf ("\nRecursive error:\r");
-  sintinp.function = f1;
-  sintinp.xmin     = 0;
-  sintinp.xmax     = 2;
-  sintinp.type     = ClosedInterval;
-  dintinp.function = ff1;
-  dintinp.xmin     = 0;
-  dintinp.xmax     = 2;
-  dintinp.type     = ClosedInterval;
-  LALSRombergIntegrate (&status, &sresult, &sintinp, NULL);
-  TestStatus (&status, CODES(-1), 1);
-  ClearStatus (&status);
-  LALDRombergIntegrate (&status, &dresult, &dintinp, NULL);
-  TestStatus (&status, CODES(-1), 1);
-  printf ("Recursive error check passed.\n");
-  ClearStatus (&status);
+    if ( verbose )
+      printf ("\nRecursive error:\r");
+    sintinp.function = f1;
+    sintinp.xmin     = 0;
+    sintinp.xmax     = 2;
+    sintinp.type     = ClosedInterval;
+    dintinp.function = ff1;
+    dintinp.xmin     = 0;
+    dintinp.xmax     = 2;
+    dintinp.type     = ClosedInterval;
+    LALSRombergIntegrate (&status, &sresult, &sintinp, NULL);
+    TestStatus (&status, CODES(-1), 1);
+    ClearStatus (&status);
+    LALDRombergIntegrate (&status, &dresult, &dintinp, NULL);
+    TestStatus (&status, CODES(-1), 1);
+    if ( verbose )
+      printf ("Recursive error check passed.\n");
+    ClearStatus (&status);
+  }
+
+#endif
 
   return 0;
 }

@@ -81,6 +81,10 @@ static void FUNC ( void )
     TestStatus( &status, CODES( SEQFACTORIESH_EDPTR ), 1 );
   }
 
+#else
+  badslen.length = 0;
+  badvlen.vectorLength = 0;
+  sequence = &sstore;
 #endif
 
   LALCheckMemoryLeaks();

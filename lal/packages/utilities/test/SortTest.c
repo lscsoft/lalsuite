@@ -23,16 +23,16 @@ A program to test sorting routines.
 
 \subsubsection*{Usage}
 \begin{verbatim}
-SortTest [-s seed] [-d [debug-level]]
+SortTest [-s seed] [-d [debug-level]] [-v]
 \end{verbatim}
 
 \subsubsection*{Description}
 
 This test program creates rank and index arrays for an unordered list
 of numbers, and then sorts the list.  The data for the list are
-generated randomly, and the output is to \verb@stdout@ unless
-redirected.  \verb@SortTest@ returns 0 if it executes successfully,
-and 1 if any of the subroutines fail.
+generated randomly, and the output is to \verb@stdout@ if \verb@-v@ is
+specified (unless redirected).  \verb@SortTest@ returns 0 if it executes
+successfully, and 1 if any of the subroutines fail.
 
 The \verb@-s@ option sets the seed for the random number generator; if
 \verb@seed@ is set to zero (or if no \verb@-s@ option is given) then
@@ -91,6 +91,7 @@ int main(int argc, char **argv)
   static LALStatus stat;
   INT4         i;
   INT4         seed=0;
+  INT4         verbose=0;
   INT4Vector   *index=NULL;
   REAL4Vector  *data=NULL;
   RandomParams *params=NULL;
@@ -109,6 +110,8 @@ int main(int argc, char **argv)
 	argc--;
       }else
 	lalDebugLevel=1;
+    }else if(!strcmp(argv[i],"-v")){
+      verbose=1;
     }else
       LALPrintError("%s: Ignoring argument: %s\n",argv[0],argv[i]);
   }
@@ -151,10 +154,13 @@ int main(int argc, char **argv)
     REPORTSTATUS(&stat);
     return SORTTEST_ESUB;
   }
-  fprintf(stdout,  " Data    Rank\n");
+  if ( verbose )
+    fprintf(stdout,  " Data    Rank\n");
   for(i=0;i<NPTS;i++)
-    fprintf(stdout," %4.2f     %2i\n",data->data[i],index->data[i]);
-  fprintf(stdout,"\n");
+    if ( verbose )
+      fprintf(stdout," %4.2f     %2i\n",data->data[i],index->data[i]);
+  if ( verbose )
+    fprintf(stdout,"\n");
 
   /* Index and sort data; print sorted data and indecies. */
   LALSHeapIndex(&stat,index,data);
@@ -169,9 +175,11 @@ int main(int argc, char **argv)
     REPORTSTATUS(&stat);
     return SORTTEST_ESUB;
   }
-  fprintf(stdout,  "Sorted  Index\n");
+  if ( verbose )
+    fprintf(stdout,  "Sorted  Index\n");
   for(i=0;i<NPTS;i++)
-    fprintf(stdout," %4.2f     %2i\n",data->data[i],index->data[i]);
+    if ( verbose )
+      fprintf(stdout," %4.2f     %2i\n",data->data[i],index->data[i]);
 
   /* Free and clear. */
   LALI4DestroyVector(&stat,&index);

@@ -73,6 +73,8 @@ static void FUNC ( void )
     TestStatus( &status, CODES( AVFACTORIESH_EDPTR ), 1 );
   }
 
+#else
+  vector = &vstore;
 #endif
 
   LALCheckMemoryLeaks();

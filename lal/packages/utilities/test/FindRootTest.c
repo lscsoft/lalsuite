@@ -236,131 +236,139 @@ main (int argc, char *argv[])
    *
    */
 
+#ifndef LAL_NDEBUG
 
-  if (verbose || lalDebugLevel)
+  if ( ! lalNoDebug )
   {
-    printf ("\n===== Check Errors =====\n");
-  }
 
-  /* recursive error from an error occurring in the function */
-
-  if (verbose)
-  {
-    printf ("\n----- Recursive Error: Code -1 (2 times)\n");
-  }
-
-  LALSBracketRoot (&status, &sinput, NULL);
-  TestStatus  (&status, CODES(-1), 1);
-  ClearStatus (&status);
-  LALDBracketRoot (&status, &dinput, NULL);
-  TestStatus  (&status, CODES(-1), 1);
-  ClearStatus (&status);
-
-  /* one of the arguments is a null pointer */
-
-  if (verbose)
-  {
-    printf ("\n----- Null Pointer Error: Code 1 (10 times)\n");
-  }
-
-  LALSBracketRoot (&status, NULL, &y_0);
-  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
-  LALDBracketRoot (&status, NULL, &yy0);
-  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
-
-  LALSBisectionFindRoot (&status, NULL, &sinput, &y_0);
-  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
-  LALDBisectionFindRoot (&status, NULL, &dinput, &yy0);
-  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
-
-  LALSBisectionFindRoot (&status, &sroot, NULL, &y_0);
-  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
-  LALDBisectionFindRoot (&status, &droot, NULL, &yy0);
-  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
-
-  sinput.function = NULL;
-  dinput.function = NULL;
-
-  LALSBracketRoot (&status, &sinput, &y_0);
-  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
-  LALDBracketRoot (&status, &dinput, &yy0);
-  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
-
-  LALSBisectionFindRoot (&status, &sroot, &sinput, &y_0);
-  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
-  LALDBisectionFindRoot (&status, &droot, &dinput, &yy0);
-  TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
-
-  /* invalid initial domain error for BracketRoot() */
-
-  if (verbose)
-  {
-    printf ("\n----- Invalid Initial Domain: Code 2 (2 times)\n");
-  }
-
-  sinput.function = F;
-  sinput.xmin     = 5;
-  sinput.xmax     = 5;
-  dinput.function = FF;
-  dinput.xmin     = 5;
-  dinput.xmax     = 5;
-
-  LALSBracketRoot (&status, &sinput, &y_0);
-  TestStatus (&status, CODES(FINDROOTH_EIDOM), 1);
-  LALDBracketRoot (&status, &dinput, &yy0);
-  TestStatus (&status, CODES(FINDROOTH_EIDOM), 1);
-
-  /* maximum iterations exceeded error */
-
-  if (verbose)
-  {
-    printf ("\n----- Maximum Iteration Exceeded: Code 4 (4 times)\n");
-  }
+    if (verbose || lalDebugLevel)
+    {
+      printf ("\n===== Check Errors =====\n");
+    }
   
-  y_0             = 1; /* there is no root when y_0 > 0 */
-  sinput.xmin     = -1e-18;
-  sinput.xmax     = 1e-18;
-  yy0             = 1; /* there is no root when y_0 > 0 */
-  dinput.xmin     = -1e-18;
-  dinput.xmax     = 1e-18;
+    /* recursive error from an error occurring in the function */
 
-  LALSBracketRoot (&status, &sinput, &y_0);
-  TestStatus (&status, CODES(FINDROOTH_EMXIT), 1);
-  LALDBracketRoot (&status, &dinput, &yy0);
-  TestStatus (&status, CODES(FINDROOTH_EMXIT), 1);
+    if (verbose)
+    {
+      printf ("\n----- Recursive Error: Code -1 (2 times)\n");
+    }
 
-  y_0             = -1;
-  sinput.xmin     = 0;
-  sinput.xmax     = 1e19;
-  sinput.xacc     = 2e-38;
-  yy0             = -1;
-  dinput.xmin     = 0;
-  dinput.xmax     = 1e19;
-  dinput.xacc     = 2e-38;
+    LALSBracketRoot (&status, &sinput, NULL);
+    TestStatus  (&status, CODES(-1), 1);
+    ClearStatus (&status);
+    LALDBracketRoot (&status, &dinput, NULL);
+    TestStatus  (&status, CODES(-1), 1);
+    ClearStatus (&status);
 
-  LALSBisectionFindRoot (&status, &sroot, &sinput, &y_0);
-  TestStatus (&status, CODES(FINDROOTH_EMXIT), 1);
-  LALDBisectionFindRoot (&status, &droot, &dinput, &yy0);
-  TestStatus (&status, CODES(FINDROOTH_EMXIT), 1);
+    /* one of the arguments is a null pointer */
 
-  /* root not bracketed error in BisectionFindRoot() */
+    if (verbose)
+    {
+      printf ("\n----- Null Pointer Error: Code 1 (10 times)\n");
+    }
 
-  if (verbose)
-  {
-    printf ("\n----- Root Not Bracketed: Code 8 (2 times)\n");
+    LALSBracketRoot (&status, NULL, &y_0);
+    TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
+    LALDBracketRoot (&status, NULL, &yy0);
+    TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
+
+    LALSBisectionFindRoot (&status, NULL, &sinput, &y_0);
+    TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
+    LALDBisectionFindRoot (&status, NULL, &dinput, &yy0);
+    TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
+
+    LALSBisectionFindRoot (&status, &sroot, NULL, &y_0);
+    TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
+    LALDBisectionFindRoot (&status, &droot, NULL, &yy0);
+    TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
+
+    sinput.function = NULL;
+    dinput.function = NULL;
+
+    LALSBracketRoot (&status, &sinput, &y_0);
+    TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
+    LALDBracketRoot (&status, &dinput, &yy0);
+    TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
+
+    LALSBisectionFindRoot (&status, &sroot, &sinput, &y_0);
+    TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
+    LALDBisectionFindRoot (&status, &droot, &dinput, &yy0);
+    TestStatus (&status, CODES(FINDROOTH_ENULL), 1);
+
+    /* invalid initial domain error for BracketRoot() */
+
+    if (verbose)
+    {
+      printf ("\n----- Invalid Initial Domain: Code 2 (2 times)\n");
+    }
+
+    sinput.function = F;
+    sinput.xmin     = 5;
+    sinput.xmax     = 5;
+    dinput.function = FF;
+    dinput.xmin     = 5;
+    dinput.xmax     = 5;
+
+    LALSBracketRoot (&status, &sinput, &y_0);
+    TestStatus (&status, CODES(FINDROOTH_EIDOM), 1);
+    LALDBracketRoot (&status, &dinput, &yy0);
+    TestStatus (&status, CODES(FINDROOTH_EIDOM), 1);
+
+    /* maximum iterations exceeded error */
+
+    if (verbose)
+    {
+      printf ("\n----- Maximum Iteration Exceeded: Code 4 (4 times)\n");
+    }
+
+    y_0             = 1; /* there is no root when y_0 > 0 */
+    sinput.xmin     = -1e-18;
+    sinput.xmax     = 1e-18;
+    yy0             = 1; /* there is no root when y_0 > 0 */
+    dinput.xmin     = -1e-18;
+    dinput.xmax     = 1e-18;
+
+    LALSBracketRoot (&status, &sinput, &y_0);
+    TestStatus (&status, CODES(FINDROOTH_EMXIT), 1);
+    LALDBracketRoot (&status, &dinput, &yy0);
+    TestStatus (&status, CODES(FINDROOTH_EMXIT), 1);
+
+    y_0             = -1;
+    sinput.xmin     = 0;
+    sinput.xmax     = 1e19;
+    sinput.xacc     = 2e-38;
+    yy0             = -1;
+    dinput.xmin     = 0;
+    dinput.xmax     = 1e19;
+    dinput.xacc     = 2e-38;
+
+    LALSBisectionFindRoot (&status, &sroot, &sinput, &y_0);
+    TestStatus (&status, CODES(FINDROOTH_EMXIT), 1);
+    LALDBisectionFindRoot (&status, &droot, &dinput, &yy0);
+    TestStatus (&status, CODES(FINDROOTH_EMXIT), 1);
+
+    /* root not bracketed error in BisectionFindRoot() */
+
+    if (verbose)
+    {
+      printf ("\n----- Root Not Bracketed: Code 8 (2 times)\n");
+    }
+
+    sinput.xmin     = -5;
+    sinput.xmax     = -3;
+    sinput.xacc     = 1e-6;
+    dinput.xmin     = -5;
+    dinput.xmax     = -3;
+    dinput.xacc     = 1e-6;
+
+    LALSBisectionFindRoot (&status, &sroot, &sinput, &y_0);
+    TestStatus (&status, CODES(FINDROOTH_EBRKT), 1);
+    LALDBisectionFindRoot (&status, &droot, &dinput, &yy0);
+    TestStatus (&status, CODES(FINDROOTH_EBRKT), 1);
+
   }
 
-  sinput.xmin     = -5;
-  sinput.xmax     = -3;
-  sinput.xacc     = 1e-6;
-  dinput.xmin     = -5;
-  dinput.xmax     = -3;
-  dinput.xacc     = 1e-6;
-
-  LALSBisectionFindRoot (&status, &sroot, &sinput, &y_0);
-  TestStatus (&status, CODES(FINDROOTH_EBRKT), 1);
-  LALDBisectionFindRoot (&status, &droot, &dinput, &yy0);
-  TestStatus (&status, CODES(FINDROOTH_EBRKT), 1);
+#endif
 
   return 0;
 }

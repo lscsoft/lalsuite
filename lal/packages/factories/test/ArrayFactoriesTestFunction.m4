@@ -91,6 +91,12 @@ static void FUNC ( void )
     ClearStatus( &status );
   }
 
+#else
+  array = &astore;
+  array->data = &datum;
+  badLength1.data = NULL;
+  badLength2.length = 0;
+  badLength3.data = dbad;
 #endif
 
   LALCheckMemoryLeaks();

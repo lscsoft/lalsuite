@@ -191,75 +191,80 @@ main (int argc, char *argv[])
    */
 
 
-  if (verbose || lalDebugLevel)
+#ifndef LAL_NDEBUG
+  if ( ! lalNoDebug )
   {
-    printf ("\n===== Check Errors =====\n");
+    if (verbose || lalDebugLevel)
+    {
+      printf ("\n===== Check Errors =====\n");
+    }
+
+    /* non-null pointer error */
+
+    if (verbose)
+    {
+      printf ("\n----- Non-Null Pointer Error: Code 2\n");
+    }
+
+    LALCreateRandomParams (&status, &randpar, 0);
+    TestStatus (&status, CODES(RANDOMH_ENNUL), 1);
+
+    /* null pointer error */
+
+    if (verbose)
+    {
+      printf ("\n----- Null Pointer Error: Code 1 (8 times)\n");
+    }
+
+    LALCreateRandomParams (&status, NULL, 0);
+    TestStatus (&status, CODES(RANDOMH_ENULL), 1);
+
+    LALDestroyRandomParams (&status, NULL);
+    TestStatus (&status, CODES(RANDOMH_ENULL), 1);
+
+    {
+      RandomParams *tmp = NULL;
+      LALDestroyRandomParams (&status, &tmp);
+    }
+    TestStatus (&status, CODES(RANDOMH_ENULL), 1);
+
+    LALUniformDeviate (&status, NULL, randpar);
+    TestStatus (&status, CODES(RANDOMH_ENULL), 1);
+
+    LALUniformDeviate (&status, vector->data, NULL);
+    TestStatus (&status, CODES(RANDOMH_ENULL), 1);
+
+    LALNormalDeviates (&status, NULL, randpar);
+    TestStatus (&status, CODES(RANDOMH_ENULL), 1);
+
+    {
+      REAL4Vector tmp;
+      tmp.length = 10;
+      tmp.data   = NULL;
+      LALNormalDeviates (&status, &tmp, randpar);
+    }
+    TestStatus (&status, CODES(RANDOMH_ENULL), 1);
+
+    LALNormalDeviates (&status, vector, NULL);
+    TestStatus (&status, CODES(RANDOMH_ENULL), 1);
+
+    /* vector length error */
+
+    if (verbose)
+    {
+      printf ("\n----- Invalid Length Error: Code 4\n");
+    }
+
+    {
+      REAL4Vector tmp;
+      tmp.length = 0;
+      tmp.data   = (REAL4 *)1;
+      LALNormalDeviates (&status, &tmp, randpar);
+    }
+    TestStatus (&status, CODES(RANDOMH_ESIZE), 1);
   }
+#endif
 
-  /* non-null pointer error */
-
-  if (verbose)
-  {
-    printf ("\n----- Non-Null Pointer Error: Code 2\n");
-  }
-
-  LALCreateRandomParams (&status, &randpar, 0);
-  TestStatus (&status, CODES(RANDOMH_ENNUL), 1);
-
-  /* null pointer error */
-
-  if (verbose)
-  {
-    printf ("\n----- Null Pointer Error: Code 1 (8 times)\n");
-  }
-
-  LALCreateRandomParams (&status, NULL, 0);
-  TestStatus (&status, CODES(RANDOMH_ENULL), 1);
-
-  LALDestroyRandomParams (&status, NULL);
-  TestStatus (&status, CODES(RANDOMH_ENULL), 1);
-
-  {
-    RandomParams *tmp = NULL;
-    LALDestroyRandomParams (&status, &tmp);
-  }
-  TestStatus (&status, CODES(RANDOMH_ENULL), 1);
-
-  LALUniformDeviate (&status, NULL, randpar);
-  TestStatus (&status, CODES(RANDOMH_ENULL), 1);
-  
-  LALUniformDeviate (&status, vector->data, NULL);
-  TestStatus (&status, CODES(RANDOMH_ENULL), 1);
-
-  LALNormalDeviates (&status, NULL, randpar);
-  TestStatus (&status, CODES(RANDOMH_ENULL), 1);
-
-  {
-    REAL4Vector tmp;
-    tmp.length = 10;
-    tmp.data   = NULL;
-    LALNormalDeviates (&status, &tmp, randpar);
-  }
-  TestStatus (&status, CODES(RANDOMH_ENULL), 1);
-  
-  LALNormalDeviates (&status, vector, NULL);
-  TestStatus (&status, CODES(RANDOMH_ENULL), 1);
-
-  /* vector length error */
-
-  if (verbose)
-  {
-    printf ("\n----- Invalid Length Error: Code 4\n");
-  }
-
-  {
-    REAL4Vector tmp;
-    tmp.length = 0;
-    tmp.data   = (REAL4 *)1;
-    LALNormalDeviates (&status, &tmp, randpar);
-  }
-  TestStatus (&status, CODES(RANDOMH_ESIZE), 1);
-  
 
   /*
    *
