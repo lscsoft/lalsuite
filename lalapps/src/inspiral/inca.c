@@ -206,8 +206,8 @@ int main( int argc, char *argv[] )
   SummValueTable       *inspEffRange[MAXIFO];
   SummValueTable       *currentEffRange[MAXIFO];
   
-  SearchSummvarsTable       *inputFiles;
-  SearchSummvarsTable       *thisInputFile;
+  SearchSummvarsTable  *inputFiles = NULL;
+  SearchSummvarsTable  *thisInputFile = NULL;
 
   MetadataTable         proctable;
   MetadataTable         processParamsTable;
@@ -700,7 +700,7 @@ int main( int argc, char *argv[] )
       if ( vrbflg ) fprintf( stdout, 
           "storing input file name %s in search summvars table\n", argv[i] );
       
-      if ( !inputFiles )
+      if ( ! inputFiles )
       {
 	inputFiles = thisInputFile = (SearchSummvarsTable *)
 	  LALCalloc( 1, sizeof(SearchSummvarsTable) );
@@ -1449,14 +1449,14 @@ cleanexit:
   free( proctable.processTable );
   free( searchsumm.searchSummaryTable );
 
-  while( processParamsTable.processParamsTable )
+  while ( processParamsTable.processParamsTable )
   {
     this_proc_param = processParamsTable.processParamsTable;
     processParamsTable.processParamsTable = this_proc_param->next;
     free( this_proc_param );
   }
 
-  while( inputFiles )
+  while ( inputFiles )
   {
     thisInputFile = inputFiles;
     inputFiles = thisInputFile->next;
@@ -1465,7 +1465,6 @@ cleanexit:
 
   for( j = 0; j < numIFO; ++j )
   {
-    
     while ( inspEffRange[j] )
     {
       currentEffRange[j] = inspEffRange[j];
