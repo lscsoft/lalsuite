@@ -179,16 +179,6 @@ DetectClusters(LALStatus *stat, ClustersInput *input, ClustersParams *clParams, 
     }
   }/*end loop on outliers*/
   
-  /* 
-     MAP: please check if it is correct to delete the lines that
-     follow.  The problem is that (i+1-k) below can exceed the allowed
-     range of the array!
-  */
-#if 0
-  /* WARNING: SEGV AHEAD!! */
-  NclustPoints[Nclust]=input->outliers->outlierIndexes[i]-input->outliers->outlierIndexes[i0]+1;
-  Iclust[Nclust]=input->outliers->outlierIndexes[i+1-k];  
-#endif
 
   if (Nclust == 0){
     Iclust[Nclust]=input->outliers->outlierIndexes[Nclust];
