@@ -81,17 +81,23 @@ def analyze_ifo(ifo_data,ifo_name,ifo_to_do,tmplt_job,insp_job,df_job,snr,
   chunks_analyzed = []
   # loop over the master science segments
   for seg in ifo_data:
+
     # make sure that we do not do a data find more than once per science segment
     done_df_for_seg = None
+
     # loop over the master analysis chunks in the science segment
     for chunk in seg:
       done_this_chunk = 0
+
       # now loop over all the data that we need to filter
       for seg_to_do in ifo_to_do:
+
         # if the current chunk is in one of the segments we need to filter
         if inspiral.overlap_test(chunk,seg_to_do) and not done_this_chunk:
+
           # make sure we only filter the master chunk once
           done_this_chunk = 1
+
           # make sure we have done one and only one datafind for the segment
           if not done_df_for_seg:
             df = pipeline.LSCDataFindNode(df_job)
@@ -102,32 +108,35 @@ def analyze_ifo(ifo_data,ifo_name,ifo_to_do,tmplt_job,insp_job,df_job,snr,
             if do_datafind: dag.add_node(df)
             prev_df = df
             done_df_for_seg = 1
+
 	  # make a template bank job for the master chunk
 	  bank = inspiral.TmpltBankNode(tmplt_job)
 	  bank.set_start(chunk.start())
 	  bank.set_end(chunk.end())
 	  bank.set_ifo(ifo_name)
 	  bank.set_cache(df.get_output())
-    bank.calibration()
-    if do_datafind: bank.add_parent(df)
-    if do_tmpltbank: dag.add_node(bank)
+          bank.calibration()
+          if do_datafind: bank.add_parent(df)
+          if do_tmpltbank: dag.add_node(bank)
+
 	  # make an inspiral job for the master chunk
-    insp = inspiral.InspiralNode(insp_job)
-    insp.set_start(chunk.start())
-    insp.set_end(chunk.end())
-    insp.add_var_opt('snr-threshold',snr)
-    insp.add_var_opt('chisq-threshold',chisq)
-    insp.add_var_opt('trig-start-time',chunk.trig_start())
-    insp.add_var_opt('trig-end-time',chunk.trig_end())
-    insp.set_ifo(ifo_name)
-    insp.set_cache(df.get_output())
-    insp.calibration()
-    insp.set_bank(bank.get_output())
-    if do_datafind: insp.add_parent(bank)
-    if do_tmpltbank: insp.add_parent(bank)
-    if do_inspiral: dag.add_node(insp)
+          insp = inspiral.InspiralNode(insp_job)
+          insp.set_start(chunk.start())
+          insp.set_end(chunk.end())
+          insp.add_var_opt('snr-threshold',snr)
+          insp.add_var_opt('chisq-threshold',chisq)
+          insp.add_var_opt('trig-start-time',chunk.trig_start())
+          insp.add_var_opt('trig-end-time',chunk.trig_end())
+          insp.set_ifo(ifo_name)
+          insp.set_cache(df.get_output())
+          insp.calibration()
+          insp.set_bank(bank.get_output())
+          if do_datafind: insp.add_parent(bank)
+          if do_tmpltbank: insp.add_parent(bank)
+          if do_inspiral: dag.add_node(insp)
+
 	  # store this chunk in the list of filtered L1 data
-    chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
+          chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
 
   return tuple([prev_df,chunks_analyzed])
 
@@ -637,6 +646,8 @@ if do_l1:
   l1_data.make_chunks(length,overlap,playground_only,0,overlap/2)
   l1_data.make_chunks_from_unused(length,overlap/2,playground_only,
       0,0,overlap/2)
+
+print "done"
 
 ##############################################################################
 #   Step 2: determine analyzable times
