@@ -135,8 +135,7 @@ LALFindChirpSPTemplateInit (
 
   for (k = 1; k < outputPtr->xfacVec->length; ++k) 
     xfac[k] = pow( (REAL4) k, exponent );
-
-
+  
   /* normal exit */
   DETATCHSTATUSPTR( status );
   RETURN (status);
@@ -320,7 +319,7 @@ LALFindChirpSPTemplate (
 
   /*
    *
-   * caclulate the stationary phase chirp
+   * calculate the stationary phase chirp
    *
    */
 
@@ -378,5 +377,135 @@ LALFindChirpSPTemplate (
 }
 
 
+
+/* <lalVerbatim file="FindChirpBCVTemplateCP"> */    // WORK IN PROGRESS 30/10 DW.....
+void
+LALFindChirpBCVTemplate (
+    LALStatus                  *status,
+    FindChirpTemplate          *fcTmplt,
+    InspiralTemplate           *tmplt,
+    FindChirpSPTmpltParams     *params
+    )
+/* </lalVerbatim> */
+{
+  UINT4        numPoints  = 0;
+  REAL4        deltaF     = 0.0;
+  REAL4        m          = 0.0;  
+  REAL4        eta        = 0.0; 
+  REAL4        mu         = 0.0;  // now only used in normalisation
+  COMPLEX8    *expPsi     = NULL;
+  REAL4       *xfac       = NULL;
+  REAL4        x1         = 0.0;  
+  REAL4        psi0       = 0.0;
+  REAL4        psi00      = 0.0;
+  REAL4        psi05      = 0.0;
+  REAL4        psi10      = 0.0;
+  REAL4        psi15      = 0.0;
+  REAL4        psi20      = 0.0;        
+  REAL4        fHi        = 0.0;  
+  INT4         k          = 0;    
+  INT4         kmin       = 0;     
+  INT4         kmax       = 0;    
+  REAL4        distNorm;
+  const REAL4  cannonDist = 1.0; /* Mpc */
+  
+  INITSTATUS( status, "LALFindChirpSPTemplate", FINDCHIRPSPTEMPLATEC );
+  ATTATCHSTATUSPTR( status );
+
+
+  /*
+   *
+   * check that the arguments are reasonable
+   *
+   */
+  
+
+  /* check that the output structures exist */
+  ASSERT( fcTmplt, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( fcTmplt->data, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( fcTmplt->data->data, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+
+  /* check that the parameter structure exists */         
+  ASSERT( params, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+
+  /* check that the timestep is positive */
+  ASSERT( params->deltaT > 0, status,                        
+      FINDCHIRPSPH_EDELT, FINDCHIRPSPH_MSGEDELT );
+
+  /* check that the input exists */
+  ASSERT( tmplt, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+
+
+  /*
+   *
+   * compute the stationary phase template
+   *
+   */
+
+
+  /* set up pointers */
+  expPsi    = fcTmplt->data->data;
+  xfac      = params->xfacVec->data;
+  numPoints = fcTmplt->data->length;
+
+  /* zero output */
+  memset( expPsi, 0, numPoints * sizeof(COMPLEX8) );
+
+  /* parameters */
+  deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints ); // not defined in tmplt
+  m      = tmplt->totalMass;  // correct?
+  eta    = tmplt->eta;        
+  mu     = tmplt->mu;         // now only used in normalisation
+// work needed here...
+
+  /* psi coefficients */
+  psi00 = tmplt->psi0;        // BCV only uses psi0, psi15:
+  psi05 = 0.0; //tmplt->psi1; // -> psi1,2,4 don't exist in tmplt 
+  psi10 = 0.0; //tmplt->psi2; // -> use if statements to define these?
+  psi15 = tmplt->psi3;        // & which name convention to use?
+  psi20 = 0.0; //tmplt->psi4;
+// work needed here...
+
+  /* x1 */   // does this explanation suffice?
+  x1 = pow( deltaF, -1.0/3.0 );
+// work needed here ... check x1
+
+  /* frequency cutoffs */
+  fHi  = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * m * LAL_MTSUN_SI);
+  kmin = params->fLow / deltaF > 1 ? params->fLow / deltaF : 1;
+  kmax = fHi / deltaF < numPoints/2 ? fHi / deltaF : numPoints/2;
+  
+  /* compute psi0: used in range reduction */
+  {
+    REAL4 x    = x1 * xfac[kmin];
+    REAL4 psi  = psi20 + x * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
+          psi0 = -2 * LAL_PI * ( floor ( 0.5 * psi / LAL_PI ) );
+  }
+// work needed here ... check psi
+
+
+  /*
+   *
+   * calculate the stationary phase chirp
+   *
+   */
+
+
+  for ( k = kmin; k < kmax ; ++k )
+    {
+      REAL4 x    = x1 * xfac[k];
+      REAL4 psi  = psi20 + x * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
+      REAL4 psi1 = psi + psi0;
+      REAL4 psi2;  // defining psi2 every time through the loop necessary?
+// work needed here ... check psi  
+
+      /* range reduction of psi1 */
+// work needed here...
+    }
+
+  /* normal exit */
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
 
 

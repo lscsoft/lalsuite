@@ -270,6 +270,13 @@ LALFindChirpSPTemplateFinalize (
     FindChirpSPTmpltParams    **output
     );
 
+void
+LALFindChirpBCVTemplate (
+    LALStatus                  *status,
+    FindChirpTemplate          *fcTmplt,
+    InspiralTemplate           *tmplt,
+    FindChirpSPTmpltParams     *params
+    );
 
 #ifdef  __cplusplus
 #pragma {
