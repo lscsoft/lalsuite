@@ -101,7 +101,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALMathematica.h>
 #include <lal/LALNoiseModels.h>
-#include <lal/InspiralBankGeneration.h>
 
 extern char *optarg;
 
