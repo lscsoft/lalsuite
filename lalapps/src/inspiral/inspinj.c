@@ -665,7 +665,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "ha:b:f:s:t:w:i", long_options, &option_index );
+        "hf:m:a:b:t:s:w:i", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
