@@ -88,6 +88,7 @@ int main( int argc, char *argv[] )
 
   CHAR  fileName[FILENAME_MAX];
 
+  INT4  have_ifo_a_trigger = 0;
   INT4  isPlay = 0;
   INT8  ta, tb;
 
@@ -600,19 +601,26 @@ int main( int argc, char *argv[] )
 
           for ( j = 0; j < MAXIFO; ++j )
           {
-            if ( ! coincidentEvents[j] )
+            /* only record the triggers from the primary ifo once */
+            if ( j || ( ! j && ! have_ifo_a_trigger ) )
             {
-              coincidentEvents[j] = outEvent[j] = (SnglInspiralTable *) 
-                LALMalloc( sizeof(SnglInspiralTable) );
-            }
-            else
-            {
-              outEvent[j] = outEvent[j]->next = (SnglInspiralTable *) 
-                LALMalloc( sizeof(SnglInspiralTable) );
-            }
+              if ( ! coincidentEvents[j] )
+              {
+                coincidentEvents[j] = outEvent[j] = (SnglInspiralTable *) 
+                  LALMalloc( sizeof(SnglInspiralTable) );
+              }
+              else
+              {
+                outEvent[j] = outEvent[j]->next = (SnglInspiralTable *) 
+                  LALMalloc( sizeof(SnglInspiralTable) );
+              }
 
-            memcpy( outEvent[j], currentTrigger[j], sizeof(SnglInspiralTable) );
-            outEvent[j]->next = NULL;
+              memcpy( outEvent[j], currentTrigger[j], 
+                  sizeof(SnglInspiralTable) );
+              outEvent[j]->next = NULL;
+
+              have_ifo_a_trigger = 1;
+            }
           }
 
         }
@@ -623,6 +631,7 @@ int main( int argc, char *argv[] )
 
       /* go back to saved current IFO B trigger */
       currentTrigger[1] = currentEvent;
+      have_ifo_a_trigger = 0;
 
     } /* end if ( IFO A is playground ) */
 
