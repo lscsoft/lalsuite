@@ -44,7 +44,7 @@ LALFindChirpBCVSpinFilterSegment (
     SnglInspiralTable         **eventList,
     FindChirpFilterInput       *input,
     FindChirpFilterParams      *params,             
-    FindChirpSPDataParams      *inputParams,
+    FindChirpSPDataParams      *fcDataParams,
     FindChirpSegmentVector     *fcSegVec,
     DataSegmentVector          *dataSegVec
   )
@@ -214,13 +214,13 @@ LALFindChirpBCVSpinFilterSegment (
 
 
 
-  amp         = inputParams->ampVec->data;
-  ampBCV      = inputParams->ampVecBCV->data;
-  ampBCVSpin1 = inputParams->ampVecBCVSpin1->data;
-  ampBCVSpin2 = inputParams->ampVecBCVSpin2->data;
+  amp         = fcDataParams->ampVec->data;
+  ampBCV      = fcDataParams->ampVecBCV->data;
+  ampBCVSpin1 = fcDataParams->ampVecBCVSpin1->data;
+  ampBCVSpin2 = fcDataParams->ampVecBCVSpin2->data;
 
   
-  wtilde     = inputParams->wtildeVec->data;
+  wtilde     = fcDataParams->wtildeVec->data;
 
   for ( k = 1; k < fcSeg->data->data->length; ++k )
   {
