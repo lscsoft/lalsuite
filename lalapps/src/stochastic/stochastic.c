@@ -175,7 +175,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 segmentLength, segmentPadLength, intervalLength;
   INT4 segmentShift;
   INT4 padData;
-  LIGOTimeGPS gpsStartPadTime, gpsCalibTime;
+  LIGOTimeGPS gpsCalibTime;
   ReadDataPairParams streamParams;
   StreamPair streamPair;
   REAL4TimeSeries *segmentOne;
@@ -256,9 +256,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   UINT4 fftDataLength;
 
   /* overlap reduction function */
-  LALDetectorPair detectors;
   REAL4FrequencySeries *overlap;
-  OverlapReductionFunctionParameters ORFparams;
 
   /* frequency mask structures */
   REAL4FrequencySeries *mask;
@@ -352,8 +350,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* initialize gps time structure */
   gpsStartTime.gpsSeconds = startTime;
   gpsStartTime.gpsNanoSeconds = 0;
-  gpsStartPadTime.gpsSeconds = startTime - padData;
-  gpsStartPadTime.gpsNanoSeconds = 0;
   gpsCalibTime.gpsSeconds = startTime + calibOffset;
   gpsCalibTime.gpsNanoSeconds = 0;
 
@@ -418,10 +414,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     /* create vectors to store the simulated signal */
     LAL_CALL(LALCreateREAL4TimeSeries(&status, &SimStochBGOne, \
-          "Whitened-SimulatedSB1", gpsStartPadTime, 0, 1./resampleRate, \
+          "Whitened-SimulatedSB1", gpsStartTime, 0, 1./resampleRate, \
           lalDimensionlessUnit, segmentPadLength), &status);
     LAL_CALL(LALCreateREAL4TimeSeries(&status, &SimStochBGTwo, \
-          "Whitened-SimulatedSB2", gpsStartPadTime, 0, 1./resampleRate, \
+          "Whitened-SimulatedSB2", gpsStartTime, 0, 1./resampleRate, \
           lalDimensionlessUnit, segmentPadLength), &status);
 
     /* define parameters for SimulateSB */
@@ -664,17 +660,15 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* quantities needed to build the optimal filter */
 
+  /* generate overlap reduction function */
   if (vrbflg)
     fprintf(stdout, "Generating the overlap reduction function...\n");
-
-  /* generate overlap reduction function */
   overlap = overlap_reduction_function(&status, filterLength, fMin, deltaF, \
       siteOne, siteTwo, gpsStartTime);
 
+  /* generage omegaGW */
   if (vrbflg)
     fprintf(stdout, "Generating spectrum for optimal filter...\n");
-
-  /* generage omegaGW */
   omegaGW = omega_gw(&status, alpha, fRef, omegaRef, filterLength, \
       fMin, deltaF, gpsStartTime);
 
@@ -818,20 +812,26 @@ INT4 main(INT4 argc, CHAR *argv[])
         /* loop over segments */
         for (segLoop = 0; segLoop < segsInInt; segLoop++)
         {
-          /* define segment epoch */
-          gpsStartTime.gpsSeconds = startTime + (interLoop + segLoop) * \
-                                    segmentDuration;
-          gpsStartPadTime.gpsSeconds = gpsStartTime.gpsSeconds - padData;
-          segmentPadOne->epoch = gpsStartPadTime;
-          segmentPadTwo->epoch = gpsStartPadTime;
+          /* get segment start time */
+          gpsSegStartTime.gpsSeconds = gpsStartTime.gpsSeconds + \
+                                       (interLoop * intervalDuration) + \
+                                       (segLoop * segmentDuration);
+          gpsSegStartTime.gpsNanoSeconds = 0;
+          gpsSegEndTime.gpsSeconds = gpsSegStartTime.gpsSeconds + \
+                                     segmentDuration;
+          segmentPadOne->epoch = gpsSegStartTime;
+          segmentPadTwo->epoch = gpsSegStartTime;
+
+          printf("!!! segment start = %d\n", gpsSegStartTime.gpsSeconds);
+          printf("!!! segment end   = %d\n", gpsSegEndTime.gpsSeconds);
 
           if (vrbflg)
           {
             fprintf(stdout, "request data at GPS time %d\n", \
-                gpsStartTime.gpsSeconds);
+                gpsSegStartTime.gpsSeconds);
           }
 
-          streamParams.start = gpsStartPadTime.gpsSeconds;
+          streamParams.start = gpsSegStartTime.gpsSeconds;
           adam_readDataPair(&status, &streamPair, &streamParams, \
                 seriesOne, seriesTwo);
 
@@ -853,7 +853,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           }
 
           /* compute response functions */
-          gpsCalibTime.gpsSeconds = gpsStartTime.gpsSeconds  + calibOffset;
+          gpsCalibTime.gpsSeconds = gpsSegStartTime.gpsSeconds + calibOffset;
           responseOne->epoch = gpsCalibTime;
           responseTwo->epoch = gpsCalibTime;
 
@@ -871,8 +871,8 @@ INT4 main(INT4 argc, CHAR *argv[])
             responseTempOne->epoch = gpsCalibTime;
             if (vrbflg)
             {
-              fprintf(stdout, "request GPS time %d for %s\n", \
-                  gpsCalibTime.gpsSeconds, ifoOne);
+              fprintf(stdout, "Getting response function for %s at %d\n", \
+                  ifoOne, gpsCalibTime.gpsSeconds);
             }
             memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
             calfacts.ifo = ifoOne;
@@ -914,8 +914,8 @@ INT4 main(INT4 argc, CHAR *argv[])
             responseTempTwo->epoch = gpsCalibTime;
             if (vrbflg)
             {
-              fprintf(stdout, "request GPS time %d for %s\n", \
-                  gpsCalibTime.gpsSeconds, ifoTwo);
+              fprintf(stdout, "Getting response function for %s at %d\n", \
+                  ifoOne, gpsCalibTime.gpsSeconds);
             }
             memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
             calfacts.ifo = ifoTwo;
@@ -1021,15 +1021,12 @@ INT4 main(INT4 argc, CHAR *argv[])
         }
 
         /* read extra segment */
-        gpsStartTime.gpsSeconds = startTime + (interLoop + \
-            segsInInt - 1) * segmentDuration;
-        gpsStartPadTime.gpsSeconds = gpsStartTime.gpsSeconds - padData;
-        streamParams.start = gpsStartPadTime.gpsSeconds;
+        streamParams.start = gpsSegStartTime.gpsSeconds;
 
         if (vrbflg)
         {
           fprintf( stdout, "read end segment at GPS %d... \n", \
-              gpsStartPadTime.gpsSeconds);
+              gpsSegStartTime.gpsSeconds);
         }
 
         adam_readDataPair(&status, &streamPair, &streamParams, \
@@ -1184,14 +1181,17 @@ INT4 main(INT4 argc, CHAR *argv[])
 
       for (segLoop = 0; segLoop < segsInInt; segLoop++)
       {
-        gpsStartTime.gpsSeconds = startTime + (interLoop + segLoop) * \
-                                  segmentDuration;
-        gpsStartPadTime.gpsSeconds = gpsStartTime.gpsSeconds - padData;
-        segmentPadOne->epoch = gpsStartPadTime;
-        segmentPadTwo->epoch = gpsStartPadTime;
-        segmentOne->epoch = gpsStartTime;
-        segmentTwo->epoch = gpsStartTime;
-        gpsCalibTime.gpsSeconds = gpsStartTime.gpsSeconds  + calibOffset;
+        gpsSegStartTime.gpsSeconds = gpsStartTime.gpsSeconds + \
+                                     (interLoop * intervalDuration) + \
+                                     (segLoop * segmentDuration);
+        gpsSegStartTime.gpsNanoSeconds = 0;
+        gpsSegEndTime.gpsSeconds = gpsSegStartTime.gpsSeconds + \
+                                   segmentDuration;
+        segmentPadOne->epoch = gpsSegStartTime;
+        segmentPadTwo->epoch = gpsSegStartTime;
+        segmentOne->epoch = gpsSegStartTime;
+        segmentTwo->epoch = gpsSegStartTime;
+        gpsCalibTime.gpsSeconds = gpsSegStartTime.gpsSeconds + calibOffset;
         responseOne->epoch = gpsCalibTime;
         responseTwo->epoch = gpsCalibTime;
 
@@ -1211,8 +1211,8 @@ INT4 main(INT4 argc, CHAR *argv[])
           }
 
           /* set parameters for monte carlo */
-          SimStochBGOne->epoch = gpsStartPadTime;
-          SimStochBGTwo->epoch = gpsStartPadTime;
+          SimStochBGOne->epoch = gpsSegStartTime;
+          SimStochBGTwo->epoch = gpsSegStartTime;
           SBParams.seed = seed;
 
           /* define input structure for SimulateSB */
@@ -1355,15 +1355,9 @@ INT4 main(INT4 argc, CHAR *argv[])
         fprintf(stdout, "Generating optimal filter...\n");
 
       /* build optimal filter */
-      optFilter->epoch = gpsStartTime;
+      optFilter->epoch = gpsSegStartTime;
       LAL_CALL(LALStochasticOptimalFilterCal(&status, optFilter, \
             &optFilterIn, &normLambda), &status);
-
-      /* analyse middle segment */
-      gpsStartTime.gpsSeconds = startTime + (interLoop + segMiddle) * \
-                                segmentDuration;
-      segmentOne->epoch = gpsStartTime;
-      segmentTwo->epoch = gpsStartTime;
 
       if (vrbflg)
       {
