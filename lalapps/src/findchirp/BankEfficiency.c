@@ -4,6 +4,8 @@
  * ************************************************************* */
 
 /* to do
+ * put the check loop inside the main loop by forcing ntrials to be=1 
+ * and force to use only one template equalk to the signal
  * 2 - print in a file output correlation in time 
  * 3 - print in a file 3d correlation*/
 
@@ -40,57 +42,61 @@ RCSID(  "$Id$");
 #define BANKEFFICIENCY_MSGEINPUT "Error reading file"
 #define BANKEFFICIENCY_MSGEMEM   "Out of memory"
 
+#define BANKEFFICIENCY_MSGPARSER   "missing arguments ?? ; "
+
 /* --- some constantes --- 
  * useful to fill  InspiralTemplate, Bank and otherIn structure */
 #define BANKEFFICIENCY_ALPHABANK       		0.01
 #define BANKEFFICIENCY_ALPHASIGNAL    		0.
 #define BANKEFFICIENCY_BANK          		BCV
-#define BANKEFFICIENCY_FLOWER       		  40.
+#define BANKEFFICIENCY_FLOWER       		40.
 #define BANKEFFICIENCY_FUPPER       		1000.
 #define BANKEFFICIENCY_HIGHGM                   6 
 #define BANKEFFICIENCY_IETA	                1
+#define BANKEFFICIENCY_IFLSO           		0.
 #define BANKEFFICIENCY_LOWGM                    3
-#define BANKEFFICIENCY_SIGNALAMP      		10.
-#define BANKEFFICIENCY_ORDER_SIGNAL     	twoPN
-#define BANKEFFICIENCY_ORDER_TEMPLATE   	twoPN
 #define BANKEFFICIENCY_MMCOARSE     		0.8
 #define BANKEFFICIENCY_MMFINE       		0.9
 #define BANKEFFICIENCY_MMIN            		5.
 #define BANKEFFICIENCY_MMAX           		20.
-#define BANKEFFICIENCY_SPACE    		Psi0Psi3
-#define BANKEFFICIENCY_IFLSO           		0.
+#define BANKEFFICIENCY_NOISEMODEL           	"LIGOI"
+#define BANKEFFICIENCY_NENDPAD         		0
+#define BANKEFFICIENCY_NFCUT           		5
+#define BANKEFFICIENCY_NOISEAMPLITUDE  		1.
+#define BANKEFFICIENCY_NSTARTPHASE  		1000
+#define BANKEFFICIENCY_NTRIALS         		1
 #define BANKEFFICIENCY_PSI0MIN        		10.
 #define BANKEFFICIENCY_PSI0MAX    		250000.
 #define BANKEFFICIENCY_PSI3MIN     		-2200.
 #define BANKEFFICIENCY_PSI3MAX       		-10.
-#define BANKEFFICIENCY_NFCUT           		5
+#define BANKEFFICIENCY_ORDER_SIGNAL     	twoPN
+#define BANKEFFICIENCY_ORDER_TEMPLATE   	twoPN
 #define BANKEFFICIENCY_SIGNAL  			TaylorT1
-#define BANKEFFICIENCY_TEMPLATE        		BCV
-#define BANKEFFICIENCY_TYPE            		0
-#define BANKEFFICIENCY_SIGNALAMP      		10.
+#define BANKEFFICIENCY_SIGNALAMPLITUDE 		10.
+#define BANKEFFICIENCY_SPACE    		Psi0Psi3
 #define BANKEFFICIENCY_STARTTIME       		0.
 #define BANKEFFICIENCY_STARTPHASE    		0.
+#define BANKEFFICIENCY_TEMPLATE        		BCV
+#define BANKEFFICIENCY_TYPE            		0
 #define BANKEFFICIENCY_TSAMPLING    		2048.
-#define BANKEFFICIENCY_NSTARTPHASE  		1000
-#define BANKEFFICIENCY_SIGNALAMPLITUDE 		10.
-#define BANKEFFICIENCY_SIGNALAMP      		10.
-#define BANKEFFICIENCY_NENDPAD         		0
-#define BANKEFFICIENCY_NOISEAMP        		1.
-#define BANKEFFICIENCY_NTRIALS         		2
 #define BANKEFFICIENCY_USEED        		122888
 /* Other Parameters  1 = true ; 0 = false	*/
 #define BANKEFFICIENCY_QUIETFLAG       	        0 				/* silent 				*/ 
 #define BANKEFFICIENCY_AMBIGUITYFUNCTION      	0				/* Print Ambiguity function		*/
 #define BANKEFFICIENCY_FMAXIMIZATION      	0				/* Print SNR function of fendBCV	*/
 #define BANKEFFICIENCY_PRINTOVERLAP             0				/* Print Best Overlap 			*/
+#define BANKEFFICIENCY_PRINTOVERLAP_FILE        "BE_BestOverlap.dat"		/* Print Best Overlap in a file		*/
 #define BANKEFFICIENCY_PRINTFILTER              0				/* Print corresponding Filter		*/
-#define BANKEFFICIENCY_PRINTBANK		0				/* print the bank of template 		*/
+#define BANKEFFICIENCY_PRINTBANK		0				/* print the template bank		*/
+#define BANKEFFICIENCY_PRINTBANK_FILEASCII	"BE_Bank.dat"			/* print template bank in a file	*/
+#define BANKEFFICIENCY_PRINTBANK_FILEXML	"BE_Bank.xml"			/* print template bank in a file	*/
 #define BANKEFFICIENCY_PRINTBANKOVERLAP		0				/* print the overlap of the templates	*/
 #define BANKEFFICIENCY_PRINTTEMPLATE    	0				/* print the  BCV final template	*/
 #define BANKEFFICIENCY_CHECK                    0				/* Just check that SNR=1 for identical parameters */
 #define BANKEFFICIENCY_RANDOMINJECTION		1				/* Type of injection: random  ?		*/		
 #define BANKEFFICIENCY_REGULARINJECTION		0				/* Type of injection: regular ?		*/		
 
+#define BANKEFFICIENCY_PSD_FILE			"BE_PSD.dat"			/* Print Psd in a file			*/
 /* --- temporary flag for the sampling of real psd --- */
 #define DeltaT      				256 
 
@@ -303,7 +309,7 @@ PrintResults(InspiralTemplate       	bank,
 	    REAL8 			a,
 	    UINT4 			b);
 
-/* Print the overlap for each template in the bank 
+/* Print each  template bank overlap 
  * */
 void
 PrintBankOverlap(InspiralTemplateList 	**list,
@@ -311,13 +317,14 @@ PrintBankOverlap(InspiralTemplateList 	**list,
 		 float 			*overlap,
 		 InspiralCoarseBankIn 	coarseIn);
 
-/* Print the bank in ascii format 
+/* Print the template bank coordinates in ascii format 
  * */
 void BEPrintBank(InspiralCoarseBankIn 	coarse, 
 		 InspiralTemplateList 	**list,
 		 UINT4 			nlist);
 
-/* print the bank in ascii format */
+/* print the template bank coordinates  in xml format 
+ * */
 void BEPrintBankXml(InspiralTemplateList *coarseList,
 		    UINT4 		 numCoarse);
 
@@ -341,7 +348,7 @@ void BEPrintError(char *chaine);
  * ==================== THE MAIN PROGRAM ==================== 
  * */
 int
-main (int argc, char **argv ) 
+main (INT4 argc, CHAR **argv ) 
 {
   /* --- Variables ---*/
   /*comments on variables will come later */
@@ -407,10 +414,9 @@ main (int argc, char **argv )
   FILE                          *Foutput;					/* to print some output in files	*/
 
   float 			*bankEfficiencyOverlapIn;			
-  
   /* --- main code start here --- */ 
   /* --- Debugging level --- */
-  lalDebugLevel=0;
+  lalDebugLevel = 0;
  
   /* --- Some initialization --- */
   ParametersInitialization(	&coarseIn, 
@@ -454,8 +460,8 @@ main (int argc, char **argv )
   randIn.psd.data 	= (REAL8*) LALMalloc(sizeof(REAL8)*randIn.psd.length); /* randin allocation			*/
   
   /* --- Compute Noise Spectral Density --- */
-  df = randIn.param.tSampling/(float) signal.length;				/* frequency resolution			 */
-  switch (otherIn.NoiseModel)
+  df = randIn.param.tSampling/(float) signal.length;				/* frequency resolution			*/
+  switch (otherIn.NoiseModel)							/* model choice				*/
     {
     case LIGOI:  
       noisemodel = LALLIGOIPsd ; 
@@ -473,11 +479,9 @@ main (int argc, char **argv )
       noisemodel = LALTAMAPsd;  
       LAL_CALL(LALNoiseSpectralDensity (&status, coarseIn.shf.data, noisemodel, df), &status);
       break;
-    case REALPSD:
+    case REALPSD:								/* has to be done properly. */
       /* Read psd dans le fichier InputPSD.dat */
-
       Finput = fopen(otherIn.filename,"r");
-
       for (i=0; i<coarseIn.shf.data->length; i++)
 	{
 	  /* factor DeltaT since the input data have a sampling frequency of 1./DeltaT */
@@ -495,7 +499,7 @@ main (int argc, char **argv )
 
 
   /* --- save the psd in the file psd.dat --- */
-  Foutput= fopen("psd.dat","w");
+  Foutput= fopen(BANKEFFICIENCY_PSD_FILE,"w");
   for (i=1; i<coarseIn.shf.data->length; i++)
     fprintf(Foutput, "%lf %e\n",(float)i, coarseIn.shf.data->data[i]);  
   fclose(Foutput);
@@ -513,13 +517,13 @@ main (int argc, char **argv )
    coarseIn.order = 4; 			/* force to be 2PN otherwise the bank is not generated. has to be fixed in the bank itself*/
    LAL_CALL(LALInspiralCreateCoarseBank(&status, &list, &nlist, coarseIn),&status);
    if (nlist==0) exit(0);	
-   bankEfficiencyOverlapIn = (float*) malloc(sizeof(float*)* nlist);              /* allocate memory to store the bank 	*/
-   for (il=0; il<nlist; il++) 							/* get back the order 			*/
+   bankEfficiencyOverlapIn = (float*) malloc(sizeof(float*)* nlist);              	/* allocate memory to store the bank 	*/
+   for (il=0; il<nlist; il++) 								/* get back the order 			*/
      (list[il]).params.order = temporder;
 
   /* --- do we want to print the bank ? --- */
-  if (otherIn.PrintBank) BEPrintBank(coarseIn, &list, nlist);
-  if (otherIn.PrintBank) BEPrintBankXml(list,  nlist);/*xml format*/
+  if (otherIn.PrintBank) BEPrintBank(coarseIn, &list, nlist);				/* ascii format				*/
+  if (otherIn.PrintBank) BEPrintBankXml(list,  nlist);					/* xml format				*/
 
   /* --- Estimate the fft's plans --- */
   LAL_CALL(LALCreateForwardRealFFTPlan(&status, &fwdp, signal.length, 0), &status);
@@ -668,14 +672,17 @@ main (int argc, char **argv )
     j = nlist +1;
     /* --- if requested we print the correlation in a file--- */
     if (otherIn.PrintOverlap){
-     Foutput  = fopen("correlation_check.dat","w");
+     Foutput  = fopen(BANKEFFICIENCY_PRINTOVERLAP_FILE,"w");
      for ( i = 0; i < correlation.length; i++)
 	fprintf(Foutput,"%f %f\n", i*df, correlation.data[i]);
      fclose(Foutput);
     }
   }
   else{										 /* --- the real code is here --- */
-    /* --- The main loop --- */ 
+    /* --- The main loop --- */
+
+	Foutput = fopen("FF.sr4","w");
+	fclose(Foutput); 
     while (otherIn.ntrials--) 
       {
         randIn.param.approximant    	= otherIn.signal;  			/* The waveform parameter for injection */
@@ -756,24 +763,9 @@ main (int argc, char **argv )
 	       
 	       /* The overlap given two filters and the input signal*/
 	       LAL_CALL(LALWaveOverlapBCV(&status, 
-				 &correlation,
-				 &overlapout,
-				 &overlapin,
-				 &Filter1,
-				 &Filter2,
-				 matrix,
-				 otherIn),&status);
-		/* --- here we just keep the max of the overalp 
-		 * corresponding to one template in the bank. later 
-		 * we might use that information and save it in a file.
-		 * */	
-	       bankEfficiencyOverlapIn[j] = overlapout.max; 
-	       /* --- if overlap is the largest one, then we keep some 
-		* other information . Later we might just use the previous 
-		* vector. Keep everything and use it outside the bank 
-		* process --- */	     
-	       KeepHighestValues(overlapout, j, l, fendBCV, 
-				 &overlapoutmax, &jmax, &lmax, &fMax);
+				 &correlation, &overlapout, &overlapin,
+				 &Filter1, &Filter2, matrix, otherIn), 
+			       &status);
 	       break;
 	       case InQuadrature:
 		 if (coarseIn.approximant == BCV) /* bcv template but no apha maximization */
@@ -781,14 +773,8 @@ main (int argc, char **argv )
 		     fendBCV  			=  list[j].params.fFinal;  
 		     overlapin.param.fCutoff 	= fendBCV;
 		     overlapin.param.fFinal 	= fendBCV;
-		     for (i=0; i<signal.length; i++)
-			  correlation.data[i] = 0.;	   	   	  
-		     
+		     for (i=0; i<signal.length; i++) correlation.data[i] = 0.;	   	   	  
 		     LAL_CALL(LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin), &status);
-   		     /* see comments in the BCV part just few lines above */
-		     bankEfficiencyOverlapIn[j] = overlapout.max; 
-		     KeepHighestValues(overlapout, j, l, fendBCV, 
-				       &overlapoutmax, &jmax, &lmax, &fMax);
 		   }    
 		 else	/* --- classical version of overlap using non bcv templates. 
 			   thus flso has to  be fixed manually --- */
@@ -802,19 +788,27 @@ main (int argc, char **argv )
 		     
 		     overlapin.param.fFinal  = fendBCV;		    
 		     overlapin.param.fCutoff = fendBCV;
-		     
 		     for (i=0; i<signal.length; i++) correlation.data[i] = 0.;	   	   	  
-		     
-		     
 		     LAL_CALL(LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin), &status);
-		     bankEfficiencyOverlapIn[j] = overlapout.max; 
-		     KeepHighestValues(overlapout, j, l, fendBCV, &overlapoutmax,  &jmax, &lmax, &fMax);
 		   }
 		 
 		 
 		 overlapout.alpha = -1;	       /* why ?? */
 		 break;	     
-	       }/* switch end */
+	       }     /* switch end */
+	     
+	       /* --- if overlap is the largest one, then we keep some 
+		* other information . Later we might just use the previous 
+		* vector. Keep everything and use it outside the bank 
+		* process --- */	     
+	     bankEfficiencyOverlapIn[j] = overlapout.max; 
+	       /* --- if overlap is the largest one, then we keep some 
+		* other information . Later we might just use the previous 
+		* vector. Keep everything and use it outside the bank 
+		* process --- */	     
+	     KeepHighestValues(overlapout, j, l, fendBCV, &overlapoutmax,  &jmax, &lmax, &fMax);
+	     
+	     
 	   }/*end of the bank process*/
 	 
 	 
@@ -822,6 +816,7 @@ main (int argc, char **argv )
 	 /* --- first, do we want to print the bank results (ambiguity function)*/
 	 if (otherIn.PrintBankOverlap) 
 	   PrintBankOverlap(&list, nlist ,  bankEfficiencyOverlapIn, coarseIn);
+	
 	 
 	 /* Then print the maximum overlap over the whole bank and the corresponding 
 	  * parameter of the templates, injected signal and so on. This is the main results
@@ -986,7 +981,7 @@ void InitRandomInspiralSignalIn(RandomInspiralSignalIn *randIn)
 {
   randIn->useed         	= BANKEFFICIENCY_USEED;				/* seed for random MC simulation 	*/ 
   randIn->type          	= BANKEFFICIENCY_TYPE;				/* type of simulation 			*/
-  randIn->SignalAmp     	= BANKEFFICIENCY_SIGNALAMP;			/* if x = n +h 				*/
+  randIn->SignalAmp     	= BANKEFFICIENCY_SIGNALAMPLITUDE;		/* if x = n +h 				*/
   randIn->param.order   	= BANKEFFICIENCY_ORDER_SIGNAL;   		/* and its order			*/
   randIn->param.alpha		= BANKEFFICIENCY_ALPHASIGNAL; 			/* alpha value of BCV 			*/
   randIn->param.ieta    	= BANKEFFICIENCY_IETA; 				/*					*/
@@ -1012,7 +1007,7 @@ void InitRandomInspiralSignalIn(RandomInspiralSignalIn *randIn)
   randIn->param.nStartPad       = BANKEFFICIENCY_NSTARTPHASE;
   randIn->param.signalAmplitude = BANKEFFICIENCY_SIGNALAMPLITUDE;
   randIn->param.nEndPad         = BANKEFFICIENCY_NENDPAD;
-  randIn->NoiseAmp              = BANKEFFICIENCY_NOISEAMP;
+  randIn->NoiseAmp              = BANKEFFICIENCY_NOISEAMPLITUDE;
 }
 
 /* ****************************************************************************
@@ -1047,8 +1042,8 @@ void InitOtherParamIn(OtherParamIn *otherIn)
  *  Function to parse user parameters 
  *  ************************************************************************ */
 void 
-ParseParameters(	int 			*argc, 
-			char 			**argv,
+ParseParameters(	INT4 			*argc, 
+			CHAR 			**argv,
 			InspiralCoarseBankIn 	*coarseIn,
 			RandomInspiralSignalIn 	*randIn,
 			OtherParamIn    	*otherIn)
@@ -1088,8 +1083,9 @@ ParseParameters(	int 			*argc,
 		coarseIn->psi3Max = randIn->psi0Max = atof(argv[++i]);
 		coarseIn->psi3Min = randIn->psi3Min = atof(argv[++i]);
 	}
-      else if ( strcmp(argv[i],	"--mm")		==0)	
-      	  coarseIn->mmCoarse =atof(argv[++i]);	
+      else if ( strcmp(argv[i],	"--mm")		==0){
+	     coarseIn->mmCoarse = atof(argv[++i]);
+      }	  
       else if ( strcmp(argv[i],	"--number-fcut")	==0)  
   	  coarseIn->numFcutTemplates = atoi(argv[++i]);	
       else if ( strcmp(argv[i],	"--simulation-type")	==0)	     	
@@ -1122,10 +1118,11 @@ ParseParameters(	int 			*argc,
 	  else if (strcmp(argv[i], "VIRGO") 	== 0)  	otherIn->NoiseModel = VIRGO;
 	  else if (strcmp(argv[i], "TAMA") 	== 0)   otherIn->NoiseModel = TAMA;
 	  else if (strcmp(argv[i], "GEO") 	== 0)   otherIn->NoiseModel = GEO;
-	  else {
+	  else 
+	    {
 	      otherIn->NoiseModel = REALPSD;
 	      otherIn->filename= argv[i];
-	    }
+	    }	  
 	}
       else if ( strcmp(argv[i],"--quiet")		==0)     otherIn->quietFlag 		= 1;
       else if ( strcmp(argv[i],"--InQuadrature")	==0)     otherIn->overlapMethod 	= InQuadrature;
@@ -1185,7 +1182,6 @@ ParseParameters(	int 			*argc,
 
 
 
-
 /* --- Function to check validity of some parsed parameters (TODO)--- */
 void CheckParams(InspiralCoarseBankIn coarseIn,
 		 RandomInspiralSignalIn randIn,
@@ -1212,7 +1208,10 @@ void CheckParams(InspiralCoarseBankIn coarseIn,
 	BEPrintError("psi range should be [psiMin psiMax]; take care of the sign. (i.e. -10 -2000 or 10 2000)\n");
       	exit(0);
     }
-
+  if (coarseIn.mMin > coarseIn.mMax )
+  {
+	  BEPrintError("in option --mass-range, first argument shoukd be < to the second one\n");
+  }
   if (coarseIn.approximant != BCV && otherIn.overlapMethod != InQuadrature)
     {
       BEPrintError("If the template are not BCV, the overlap \nmethod must be InQuadrature (use the \"--InQuadrature\" option)\n");
@@ -1251,59 +1250,71 @@ void Help(	InspiralCoarseBankIn   coarseIn,
   fprintf(stderr,"\nPURPOSE: Test efficiency of bank of templates using Monte-Carlo simulations\n");
 
   fprintf(stderr,"\nUSAGE:  [options]\n");
-  fprintf(stderr,"The options are (with default values in brackets)\n");
-  fprintf(stderr,"All options should be followed by a number except -quiet\n");
-  fprintf(stderr,"      --alpha-bank   : BCV amplitude correction parameter 			(%7.2f)\n", 
+  fprintf(stderr,"There are two categories of options (default values in brackets)\n");
+  fprintf(stderr,"First options must be followed by one or two arguments:\n\n");
+  fprintf(stderr,"--alpha-bank		: BCV amplitude correction parameter 			(%7.2f)\n", 
 	       	  BANKEFFICIENCY_ALPHABANK);
-  fprintf(stderr,"    --alpha-signal   : BCV amplitude correction parameter 			(%7.2f)\n",    
+  fprintf(stderr,"--alpha-signal		: BCV amplitude correction parameter 			(%7.2f)\n",    
 		  BANKEFFICIENCY_ALPHASIGNAL);
-  fprintf(stderr,"              --fl   : lower frequency cutoff             			(%7.2f) Hz\n", 
+  fprintf(stderr,"--fl			: lower frequency cutoff             			(%7.2f) Hz\n", 
 		  BANKEFFICIENCY_FLOWER);
-  fprintf(stderr,"        --fend-bcv   : Lower and highest values of bcv frequency cutoff 	(%7.2d, %7.2d)\n", 
+  fprintf(stderr,"--fend-bcv		: Lower and highest values of bcv frequency cutoff 	(%7.2d, %7.2d)\n", 
 		  BANKEFFICIENCY_LOWGM, 
 		  BANKEFFICIENCY_HIGHGM);
-  fprintf(stderr,"      --mass-range   : minimal mass of component stars    			(%7.2f, %7.2f) Mo\n",
+  fprintf(stderr,"--mass-range		: minimal mass of component stars    			(%7.2f, %7.2f) Mo\n",
 		  BANKEFFICIENCY_MMIN, 
 		  BANKEFFICIENCY_MMAX);
-  fprintf(stderr,"              --mm   : minimal match for template bank    			(%7.3f)\n",   
+  fprintf(stderr,"--mm			: minimal match for template bank    			(%7.3f)\n",   
 		  BANKEFFICIENCY_MMCOARSE);
-  fprintf(stderr,"     --number-fcut   : number of layers in Fcut dimension 			(%7.2d)\n",  
+  fprintf(stderr,"--noise-amplitude	: use it with simulation-type <> 0 			(%7.2f)\n",  
+		  BANKEFFICIENCY_NOISEAMPLITUDE); 
+  fprintf(stderr,"--noise-model		: design sensitivity to use(LIGOI, VIRGO, GEO, TAMA	(%s)\n",
+		BANKEFFICIENCY_NOISEMODEL);
+  fprintf(stderr,"--number-fcut		: number of layers in Fcut dimension 			(%7.2d)\n",  
 		  BANKEFFICIENCY_NFCUT);
-  fprintf(stderr,"          --ntrial   : number of trials                   			(%d)\n",      
+  fprintf(stderr,"--ntrial		: number of trials                   			(%7.2d)\n",      
 		  BANKEFFICIENCY_NTRIALS);
-  fprintf(stderr,"      --psi0-range   : psi0 range in the bank					(%7.2f, %7.2f) \n", 
+  fprintf(stderr,"--psi0-range		: psi0 range in the bank				(%7.2f, %7.2f) \n", 
 		  BANKEFFICIENCY_PSI0MIN, 
 		  BANKEFFICIENCY_PSI0MAX);
-  fprintf(stderr,"      --psi3-range   : psi3 range in the bank 				(%7.2f, (%7.2f) \n", 
+  fprintf(stderr,"--psi3-range		: psi3 range in the bank 				(%7.2f, %7.2f) \n", 
 		  BANKEFFICIENCY_PSI3MAX, 
 		  BANKEFFICIENCY_PSI3MIN);
-  fprintf(stderr,"        --template   : PN model for template bank, e.g. BCV 			(%d)\n\n",   
+  fprintf(stderr,"--template		: PN model for template bank, e.g. BCV 			(%7.2d)\n",   
 		  BANKEFFICIENCY_TEMPLATE);
-  fprintf(stderr,"            --seed   : seed for random generation         			(%d)\n",      
+  fprintf(stderr,"--sampling		: sampling frequency             			(%7.2f)\n",      
+		  BANKEFFICIENCY_TSAMPLING);
+  fprintf(stderr,"--seed			: seed for random generation         			(%7.2d)\n",      
 		  BANKEFFICIENCY_USEED);
-  fprintf(stderr,"          --signal   : model to inject in Monte-Carlo, e.g. EOB            	(%d)\n",      
+  fprintf(stderr,"--signal		: model to inject in Monte-Carlo, e.g. EOB            	(%7.2d)\n",      
 		  BANKEFFICIENCY_SIGNAL);
-  fprintf(stderr,"    --signal-order   : order of PN model                                   	(%7.2d)\n",    
+  fprintf(stderr,"--signal-order		: order of PN model                                   	(%7.2d)\n",    
 		  BANKEFFICIENCY_ORDER_SIGNAL);
-  fprintf(stderr," --simulation-type   : type of simulation, 0, 1 or 2      			(%d)\n\n",    
+  fprintf(stderr,"--simulation-type	: type of simulation, 0, 1 or 2      			(%7.2d)\n",    
 		  BANKEFFICIENCY_TYPE);
-  fprintf(stderr,"  --template-order   : order of signal to injec                            	(%7.2d)\n",    
+  fprintf(stderr,"--template-order	: order of signal to injec                            	(%7.2d)\n",    
 		  BANKEFFICIENCY_ORDER_TEMPLATE);
-  fprintf(stderr,"--signal-amplitude   : amplitude of the signal                             	(%7.2f)\n",   
-		  BANKEFFICIENCY_SIGNALAMP);
+  fprintf(stderr,"--signal-amplitude	: amplitude of the signal                             	(%7.2f)\n",   
+		  BANKEFFICIENCY_SIGNALAMPLITUDE);
 
 
 
-  
-  fprintf(stderr,"Verbose Options \n");
-  fprintf(stderr,"     --check : For a given random waveform, we compute overlap with same parameter (should get overlap=1)\n");
-  fprintf(stderr,"     --FMaximization     : Maximize over Ending frequency (%d)\n",    		BANKEFFICIENCY_FMAXIMIZATION);
-  fprintf(stderr,"     --PrintOverlap      : Print Overlap given by the best template (%d)\n",  BANKEFFICIENCY_PRINTOVERLAP);
-  fprintf(stderr,"     --PrintFilter       : Print filters giving the best overlap template (%d)\n",    BANKEFFICIENCY_PRINTFILTER);
-  fprintf(stderr,"     --print-ambiguity-function : print ambiguity function (bank overlap)(%d)\n", BANKEFFICIENCY_AMBIGUITYFUNCTION);
-  fprintf(stderr,"     --InQuadrature 	: Overlap is compute without alpha maximization\n");
-  fprintf(stderr,"     --quiet   	: if this flag is present, the output is restricted to the minimum\n");
-  fprintf(stderr,"     --InputPSD	: to give the name of real PSD\n");
+  fprintf(stderr,"\n --\nThe second category doesn't take any arguments.\n Those options are mainly used to print results in files\n");
+  fprintf(stderr,"Verbose Options \n\n");
+  fprintf(stderr,"     --check		: For a given random waveform, we compute overlap with same parameter (should get overlap=1)\n");
+  /*fprintf(stderr,"     --FMaximization	: Maximize over Ending frequency 			(%d)\n", BANKEFFICIENCY_FMAXIMIZATION);
+  fprintf(stderr,"     --PrintOverlap	: Print Overlap given by the best template 		(%d)\n", BANKEFFICIENCY_PRINTOVERLAP);
+  fprintf(stderr,"     --PrintFilter	: Print filters giving the best overlap template 	(%d)\n", BANKEFFICIENCY_PRINTFILTER);
+  fprintf(stderr,"     --print-ambiguity-function : print ambiguity function (bank overlap)	(%d)\n", BANKEFFICIENCY_AMBIGUITYFUNCTION);*/
+  fprintf(stderr,"     --print-bank	: Print the bank in ascii and xml format (%s)		(%d)\n", 
+		  BANKEFFICIENCY_PRINTBANK_FILEASCII,
+		  BANKEFFICIENCY_PRINTBANK);
+  fprintf(stderr,"     --print-overlap	: Print the overlap given by the best template	(%s)	(%d)\n", 
+		  BANKEFFICIENCY_PRINTOVERLAP_FILE, 
+		  BANKEFFICIENCY_PRINTOVERLAP);
+  fprintf(stderr,"     --InQuadrature	: Overlap is compute without alpha maximization\n");
+  fprintf(stderr,"     --quiet		: if this flag is present, the output is restricted to the minimum\n");
+/*  fprintf(stderr,"     --InputPSD	: to give the name of real PSD\n");*/
   /*to avoid boring warning*/
   temp = coarseIn.approximant;
   temp =  randIn.useed;
@@ -1794,9 +1805,9 @@ BEPrintBank(	InspiralCoarseBankIn coarseIn,
   FILE 		*output;
 
 
-  output = fopen("bank.dat","w");
+  output = fopen(BANKEFFICIENCY_PRINTBANK_FILEASCII,"w");
 
-  fprintf(output, "#Number of Coarse Bank Templates=%d\n",nlist);
+  fprintf(output,"#Number of Coarse Bank Templates=%d\n",nlist);
   if (coarseIn.approximant == BCV)
 	fprintf(output, "#psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n", 
 	 	coarseIn.psi0Min, coarseIn.psi0Max, coarseIn.psi3Min, coarseIn.psi3Max);
@@ -1826,8 +1837,9 @@ BEPrintBank(	InspiralCoarseBankIn coarseIn,
   fclose(output);
 }
 
-
-
+/* personal function. Should not be used. output hte bank  overlaps in a binary
+ * file to be used with DES3.
+ * */
 void
 PrintBankOverlap(
 		 InspiralTemplateList 	**list,
@@ -1857,7 +1869,7 @@ PrintBankOverlap(
   double theta, myphi, fac;
 
 
-  output1 = fopen("FF.sr4", "w");
+  output1 = fopen("FF.sr4", "a+");
   output2 = fopen("FF.dim", "w");
    dx0 = sqrt(2.L * (1.L - minimalMatch)/(*list)[0].metric.g00 );
    dx3 = sqrt(2.L * (1.L - minimalMatch)/(*list)[0].metric.g11 );
@@ -2029,7 +2041,9 @@ void PrintWaves(LALStatus *status	,
 
 
 /* routine to print the bank in a xml file*/
-/* should add the status variable since we call sone lal functions here */
+/* should add the status variable since we call sone lal functions here 
+ * this routine is not well commented and won't be in close future.
+ * */
 void 
 BEPrintBankXml(
 	       InspiralTemplateList *coarseList, 
@@ -2040,14 +2054,14 @@ BEPrintBankXml(
   SnglInspiralTable     *tmplt  = NULL;
   CHAR  ifo[3];                           /* two character ifo code       */
   CHAR *channelName = NULL;               /* channel string               */
-  UINT4 i;  
+  UINT4 	i;  
   LIGOLwXMLStream       results;
   CHAR  fname[256];
-  LIGOTimeGPS gpsStartTime = { 0, 0 };    /* input data GPS start time    */
-  LIGOTimeGPS gpsEndTime = { 0, 0 };      /* input data GPS end time      */
+  LIGOTimeGPS gpsStartTime 	= { 0, 0 };    /* input data GPS start time    */
+  LIGOTimeGPS gpsEndTime 	= { 0, 0 };      /* input data GPS end time      */
 
 
-  LALSnprintf( fname, sizeof(fname), "TMPLTBANK.xml",
+  LALSnprintf( fname, sizeof(fname), BANKEFFICIENCY_PRINTBANK_FILEXML ,
 	       ifo, gpsStartTime.gpsSeconds,
 	       gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   
@@ -2111,7 +2125,6 @@ BEPrintBankXml(
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
   
-
   if ( templateBank.snglInspiralTable )
     {
       LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sngl_inspiral_table ), 
@@ -2128,11 +2141,8 @@ BEPrintBankXml(
       LALFree( tmplt );
     }
   
-  
   /* close the output xml file */
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
-
-
 }
 
 
