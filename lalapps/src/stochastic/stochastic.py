@@ -72,7 +72,7 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
   def set_ifo_one(self, ifo):
     """
     Set the interferometer code to use as IFO One.
-    ifo = IFO code (e.g. L1, H1 or H2).
+    @param ifo: IFO code (e.g. L1, H1, H2 or G1).
     """
     self.add_var_opt('ifo-one', ifo)
     self.__ifo_one = ifo
@@ -86,7 +86,7 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
   def set_ifo_two(self, ifo):
     """
     Set the interferometer code to use as IFO Two.
-    ifo = IFO code (e.g. L1, H1 or H2).
+    @param ifo: IFO code (e.g. L1, H1, H2 or G1).
     """
     self.add_var_opt('ifo-two', ifo)
     self.__ifo_two = ifo
@@ -101,7 +101,7 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     Set the LAL frame cache to to use. The frame cache is passed to the job
     with the --frame-cache-one argument.
-    file = calibration file to use.
+    @param file: calibration file to use.
     """
     self.add_var_opt('frame-cache-one', file)
 
@@ -109,7 +109,7 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     Set the LAL frame cache to to use. The frame cache is passed to the job
     with the --frame-cache-two argument.
-    file = calibration file to use.
+    @param file: calibration file to use.
     """
     self.add_var_opt('frame-cache-two', file)
 
@@ -118,6 +118,8 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     Set the path to the calibration cache file for the given IFO. During
     S2, the Hanford 2km IFO had two calibration epochs, so if the start
     time is during S2, we use the correct cache file.
+    @param ifo: IFO code (e.g. L1, H1, H2 or G1).
+    @param start: GPS time for calibration.
     """
     cal_path = self.job().get_config('calibration','path')
 
@@ -137,6 +139,8 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     Set the path to the calibration cache file for the given IFO. During
     S2, the Hanford 2km IFO had two calibration epochs, so if the start
     time is during S2, we use the correct cache file.
+    @param ifo: IFO code (e.g. L1, H1, H2 or G1).
+    @param start: GPS time for calibration.
     """
     cal_path = self.job().get_config('calibration','path')
 
@@ -154,38 +158,30 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
   def set_f_min(self,f_min):
     """
     Set the minimum frequency
+    @param f_min: Minimum frequency.
     """
     self.add_var_opt('f-min',f_min)
     self.__f_min = f_min
 
-  def get_f_min(self):
-    """
-    Return the minimum frequency
-    """
-    return self.__f_min
-
   def set_f_max(self,f_max):
     """
     Set the maximum frequency
+    @param f_max: Maximum frequency.
     """
     self.add_var_opt('f-max',f_max)
     self.__f_max = f_max
 
-  def get_f_max(self):
-    """
-    Return the maximum frequency
-    """
-    return self.__f_max
-
   def set_f_ref(self,f_ref):
     """
     Set the reference frequency
+    @param f_ref: Reference frequency.
     """
     self.add_var_opt('f-ref',f_ref)
 
   def set_user_tag(self,usertag):
     """
     Set the user tag
+    @param usertag: User tag to append to job.
     """
     self.add_var_opt('user-tag',usertag)
     self.__usertag = usertag
@@ -193,6 +189,7 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
   def set_output_dir(self,dir):
     """
     Set the output directory
+    @param dir: Directory for output files.
     """
     self.add_var_opt('output-dir',dir)
     self.__output_dir = dir
@@ -203,11 +200,11 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     kept synchronized with the name of the output file in stochastic.c.
     """
     if not self.get_start() or not self.get_end() or not \
-      self.get_ifo_one() or not self.get_ifo_two():
+      self.__ifo_one or not self.__ifo_two:
         raise StochasticError, "Start time, end time, ifo one or ifo " \
           "two has not been set"
 
-    basename = self.get_ifo_one() + self.get_ifo_two() + '-' + 'STOCHASTIC'
+    basename = self.__ifo_one + self.__ifo_two + '-' + 'STOCHASTIC'
 
     if self.__usertag:
       basename += '_' + self.__usertag
