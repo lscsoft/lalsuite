@@ -395,12 +395,12 @@ GetData (
   {
     INT4            blockno = buffer->nextData/numPoints;
     INT2TimeSeries *tseries = (buffer->blockArray + blockno)->framedata;
-    REAL4           time;
-    time  = tseries->epoch.gpsSeconds + 1e-9*tseries->epoch.gpsNanoSeconds;
-    time += (buffer->nextData%numPoints)*tseries->deltaT;
-    
-    output->data->epoch.gpsSeconds     = time;
-    output->data->epoch.gpsNanoSeconds = fmod (1e9*time, 1e9);
+    INT8            timeNS;
+    timeNS  = 1000000000L*(INT8)(tseries->epoch.gpsSeconds);
+    timeNS += tseries->epoch.gpsNanoSeconds;
+    timeNS += (INT8)(1e9*(buffer->nextData%numPoints)*tseries->deltaT);
+    output->data->epoch.gpsSeconds     = (INT4)(timeNS/1000000000L);
+    output->data->epoch.gpsNanoSeconds = (INT4)(timeNS%1000000000L);
     output->data->deltaT = tseries->deltaT;
     output->data->f0     = tseries->f0;
   }
