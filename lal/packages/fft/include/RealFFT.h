@@ -9,7 +9,7 @@ $Id$
 \section{Header \texttt{RealFFT.h}}
 \label{s:RealFFT.h}
 
-Generates random numbers.
+Performs real-to-complex and complex-to-real FFTs.
 
 \subsection*{Synopsis}
 \begin{verbatim}

@@ -47,28 +47,30 @@ unless the user understands the packing used in FFTW.
 
 The routines \texttt{LALFwdRealFFT()} and \texttt{LALInvRealFFT()} perform the
 forward (real-to-complex) and inverse (complex-to-real) FFTs using the plans.
-The discrete Fourier transform $H_k$, $k=0\ldots \lfloor n/2\rfloor$ ($n/2$ rounded down),
-of a vector $h_j$, $j=0\ldots n-1$, of length $n$ is defined by
+The discrete Fourier transform $H_k$, $k=0\ldots \lfloor n/2\rfloor$ ($n/2$
+rounded down), of a vector $h_j$, $j=0\ldots n-1$, of length $n$ is defined by
 \[
   H_k = \sum_{j=0}^{n-1} h_j e^{2\pi ijk/n}
 \]
 and, similarly, the inverse Fourier transform is defined by
 \[
-  h_j = \frac{1}{n}\sum_{k=0}^{\lfloor n/2\rfloor} H_k e^{-2\pi ijk/n}.
+  h_j = \frac{1}{n} \sum_{k=0}^{n-1} H_k e^{-2\pi ijk/n}
 \]
-However, the present implementation of the inverse FFT omits the factor of
-$1/n$.
+where $H_k$ for $\lfloor n/2\rfloor<k<n$ can be obtained from the relation
+$H_k=H_{n-k}^\ast$.  The present implementation of the inverse FFT omits the
+factor of $1/n$.
 
 The routines in this package require that the vector $h_j$, $j=0\ldots n-1$ be
-real; consequently, $H_k=H_{n-k}^\ast$ ($0\le k\le\lfloor n/2\rfloor$), i.e., the negative
-frequency Fourier components are the complex conjugate of the positive
-frequency Fourier components when the data is real.  Therefore, one need
-compute and store only the first $\lfloor n/2\rfloor+1$ components of $H_k$; only
-the values of $H_k$ for $k=0\ldots \lfloor n/2\rfloor$ are returned (integer division is
-rounded down, e.g., $\lfloor 7/2\rfloor=3$).
+real; consequently, $H_k=H_{n-k}^\ast$ ($0\le k\le\lfloor n/2\rfloor$), i.e.,
+the negative frequency Fourier components are the complex conjugate of the
+positive frequency Fourier components when the data is real.  Therefore, one
+need compute and store only the first $\lfloor n/2\rfloor+1$ components of
+$H_k$; only the values of $H_k$ for $k=0\ldots \lfloor n/2\rfloor$ are
+returned (integer division is rounded down, e.g., $\lfloor 7/2\rfloor=3$).
 
 The routine \texttt{LALRealPowerSpectrum()} computes the power spectrum
-$P_k=|H_k|^2$, $k=0\ldots \lfloor n/2\rfloor$, of the data $h_j$, $j=0\ldots n-1$.
+$P_k=|H_k|^2$, $k=0\ldots \lfloor n/2\rfloor$, of the data $h_j$,
+$j=0\ldots n-1$.
 
 The routines \texttt{LALFwdRealSequenceFFT()} and
 \texttt{LALInvRealSequenceFFT()} operate on sequences of vectors

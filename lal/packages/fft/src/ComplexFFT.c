@@ -8,7 +8,7 @@ $Id$
 \subsection{Module \texttt{ComplexFFT.c}}
 \label{ss:ComplexFFT.c}
 
-Functions for performing real FFTs.
+Functions for performing complex FFTs.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}

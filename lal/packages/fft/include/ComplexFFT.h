@@ -9,7 +9,7 @@ $Id$
 \section{Header \texttt{ComplexFFT.h}}
 \label{s:ComplexFFT.h}
 
-Generates random numbers.
+Performs complex-to-complex FFTs.
 
 \subsection*{Synopsis}
 \begin{verbatim}
