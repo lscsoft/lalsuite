@@ -54,13 +54,10 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define  ninty4by3etc  18.687902694437592603 /* (94/3 -41/31*pi*pi) */
 
 /*  <lalLaTeX>
-
 \subsection*{Error codes}
-
 </lalLaTeX>  */
 
 /* <lalErrTable> */
-
 #define LALINSPIRALH_ENULL           1
 #define LALINSPIRALH_EMEM            2
 #define LALINSPIRALH_EDIV0           3
@@ -72,9 +69,10 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_EPSI3           9 
 #define LALINSPIRALH_EALPHA         10
 #define LALINSPIRALH_EFCUTOFF       11
-#define LALINSPIRALH_ESTOPPED       12
-#define LALINSPIRALH_EROOTINIT     "Can't find good bracket for BisectionFindRoot"
-
+#define LALINSPIRALH_ENOWAVEFORM    12
+#define LALINSPIRALH_ESTOPPED       13
+#define LALINSPIRALH_EROOTINIT      14
+#define LALINSPIRALH_EFLOWER        15  
 
 
 #define LALINSPIRALH_MSGENULL         "Arguments contained an unexpected null pointer"
@@ -88,14 +86,13 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_MSGEPSI3         "psi3 must be < 0"
 #define LALINSPIRALH_MSGEALPHA        "alpha must be defined positive"
 #define LALINSPIRALH_MSGEFCUTOFF      "fcutoff must be defined and > 0"
+#define LALINSPIRALH_MSGENOWAVEFORM   "No Waveform generated"
 #define LALINSPIRALH_MSGESTOPPED      "Waveform generation stopped"
 #define LALINSPIRALH_MSGEROOTINIT     "Can't find good bracket for BisectionFindRoot"
+#define LALINSPIRALH_MSGEFLOWER       "fLower too low in comparison to flso"
 
+/** ---------------------------------------------------------------------  </lalErrTable> */
 
-
-
-
-/* </lalErrTable> */
 
 
 /* <lalLaTeX>
@@ -333,7 +330,7 @@ This structure contains various post-Newtonian and P-approximant expansion
 \input{LALInspiralRungeKuttaH}
 
 \end{enumerate}
-</lalLaTeX>  */
+--------------------------------------------------------------------- </lalLaTeX>  */
 
 /* <lalVerbatim file="LALEtaTau0Tau2InH">  */
 typedef struct
@@ -772,9 +769,32 @@ tagPhiofVIntegrandIn
 \idx[Type]{PhiofVIntegrandIn}
 </lalLaTeX>  */
 
+
+
+/* <lalVerbatim file="LALInspiralInitH">  */
+typedef struct
+tagInspiralInit
+{
+  UINT4      nbins;
+  expnCoeffs ak;
+  expnFunc   func;
+
+}  InspiralInit;
+/* </lalVerbatim>  */
+
+/* <lalLaTeX>
+\idx[Type]{PhiofVIntegrandIn}
+</lalLaTeX>  */
+
+
+
+
 /*  <lalLaTeX>
 \vfill{\footnotesize\input{LALInspiralHV}}
 </lalLaTeX>  */
+
+
+
 
 /* Function prototypes */
 
@@ -792,10 +812,9 @@ void LALInspiralParameterCalc (
 \newpage\input{LALInspiralAmplitudeC}
 </lalLaTeX>  */
 
-void
-LALInspiralRestrictedAmplitude(
-			       LALStatus *status,
-			       InspiralTemplate  *params);
+void LALInspiralRestrictedAmplitude(
+     LALStatus *status,
+     InspiralTemplate  *params);
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralWaveLengthC}
@@ -826,6 +845,16 @@ void LALInspiralSetup (
      expnCoeffs *ak,
      InspiralTemplate *params);
 
+/*  <lalLaTeX>
+\newpage\input{LALInspiralInitC}
+</lalLaTeX>  */
+void 
+LALInspiralInit(
+	LALStatus        *status, 
+	InspiralTemplate *params, 
+	InspiralInit     *paramsInit);
+
+
 /* --- HERE ARE THE WAVEFORMS/MODELS PROTOTYPES --- */
 
 /*  <lalLaTeX>
@@ -842,6 +871,13 @@ void LALInspiralWaveTemplates(
      REAL4Vector *filter1,
      REAL4Vector *filter2,
      InspiralTemplate *params);
+
+void 
+LALInspiralWaveForInjection(
+   LALStatus        *status,
+   CoherentGW       *waveform,
+   InspiralTemplate *params,
+   PPNParamStruc  *ppnParams);
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralWave1C}
@@ -1296,24 +1332,35 @@ void LALRungeKutta4(
 /*  <lalLaTeX>
 \newpage\input{LALInspiralParseParametersC}
 </lalLaTeX>  */
-void LALInspiralITStructureParseParameters(LALStatus *status,
-					   UINT4 argc,
-					   CHAR **argv,
-					   InspiralTemplate *params);
+void
+LALInspiralITStructureParseParameters(
+	LALStatus *status,
+	UINT4 argc,
+	CHAR **argv,
+	InspiralTemplate *params);
 
-void LALInspiralITStructureInit2Dummy(LALStatus *status, 
-				      InspiralTemplate *params);
+void
+LALInspiralITStructureInit2Dummy(
+	LALStatus *status, 
+	InspiralTemplate *params);
 
-void LALInspiralITStructureCheck(LALStatus *status, 
-				 InspiralTemplate  params);
+void
+LALInspiralITStructureCheck(
+	LALStatus *status, 
+	InspiralTemplate  params);
 
-void LALInspiralITStructureSetDefault(LALStatus *status, 
-				      InspiralTemplate *params);
+void 
+LALInspiralITStructureSetDefault(
+	LALStatus *status, 
+	InspiralTemplate *params);
 
-void LALInspiralITStructurePrint(LALStatus *status, 
-				 InspiralTemplate  params);
+void
+LALInspiralITStructurePrint(
+	LALStatus *status, 
+	InspiralTemplate  params);
 
-void LALInspiralITStructureHelp();
+void
+LALInspiralITStructureHelp();
 
 /* --- TEST PROTOTYPES --- */
 
