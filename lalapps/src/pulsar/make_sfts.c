@@ -66,6 +66,13 @@
 /* make calibrated SFTs starting with calibrated data */
 #define USETDCALDATA 1
 
+/* Use high pass filtering.  This *should* NOT be needed when working
+   in the time domain with S3 data, which is already aggresively
+   high-pass filtered at 40 Hz.
+*/
+#define HIGHPASS_FILTER 0
+
+
 /* debug level for LAL */
 INT4 lalDebugLevel = LALERROR | LALWARNING | LALINFO | LALNMEMDBG;
 
@@ -762,6 +769,7 @@ int main(int argc,char *argv[]){
       printmemuse();
 #endif
 
+#if HIGHPASS_FILTER
       /* put into doubles */
       for (i=0; i<npts; i++)
 	chand.data->data[i]=chan.data->data[i];
@@ -773,16 +781,21 @@ int main(int argc,char *argv[]){
       /* and copy back */
       for (i=0; i<npts; i++)
 	chan.data->data[i]=chand.data->data[i];
+#endif /* HIGHPASS_FILTER */
+
 
       /* to save memory, get rid of vector */
       LALDDestroyVector( &status, &chand.data );
       TESTSTATUS( &status );
       chand.data=NULL;
-#else
+#else /* #if TDDOUBLE */
+#if HIGHPASS_FILTER
+
       /* apply high-pass Butterworth filter */
       LALButterworthREAL4TimeSeries(&status, &chan, &filterpar);
       TESTSTATUS(&status);
-#endif
+#endif /* HIGHPASS_FILTER */
+#endif /* TDDOUBLE */
 
 #if TRACKMEMUSE
     printf("[After FILT] Memory usage at iteration %d is:\n", count);
