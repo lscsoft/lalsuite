@@ -161,7 +161,7 @@ void LALUCHAR2HOUGHPeak(LALStatus  *status,
 void LALPeriodo2PSDrng (LALStatus  *status,
                      REAL8Periodogram1    *psd,
                      REAL8Periodogram1    *peri,
-                     UINT2                *blocksRNG);
+                     INT4                *blocksRNG);
 
 void LALSelectPeakColorNoise(LALStatus  *status,
              UCHARPeakGram        *pg,

@@ -92,7 +92,7 @@ int main(int argc, char *argv[]){
   REAL8  peakThreshold, normalizeThr;
   REAL8  f0, fSearchBand, timeBase, deltaF, alpha, delta;
   REAL8  patchSizeAlpha, patchSizeDelta;
-  UINT2  blocksRngMed;
+  INT4  blocksRngMed;
   REAL8  threshold, h0scale;
 
   UINT4  sftlength; 

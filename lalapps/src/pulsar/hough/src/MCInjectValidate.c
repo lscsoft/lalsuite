@@ -437,11 +437,8 @@ int main(int argc, char *argv[]){
       SUB( SFT2Periodogram(&status, &periPSD.periodogram, inputSFTs->data + tempLoopId ), &status );	
       
       /* calculate psd using running median */
-      {
-	UINT2 ublkRngMed;
-	ublkRngMed = uvar_blocksRngMed;
-	SUB( LALPeriodo2PSDrng( &status, &periPSD.psd, &periPSD.periodogram, &ublkRngMed), &status );	
-      }
+      SUB( LALPeriodo2PSDrng( &status, &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed), &status );	
+      
       /* select sft bins to get peakgrams using threshold */
       SUB( LALSelectPeakColorNoise(&status,&pg1,&threshold,&periPSD), &status); 	
       
