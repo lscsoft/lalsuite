@@ -520,7 +520,7 @@ LALInspiralWave2ForInjection(
 
     *(inject_hc->data + i)    = (REAL4) amp ;
     *(inject_hp->data + i)    = (REAL4) amp;
-    //  I have to divide by 2 here to get same kind of results as in wave1
+    /*  I have to divide by 2 here to get same kind of results as in wave1 */
     *(inject_phase->data + i) = (REAL8) (phase);
     *(inject_freq->data + i)  = (REAL4) v*v*v / unitHz;
          
