@@ -1905,16 +1905,18 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   INT4 yymin,yymax;
   INT4 noIn, noIn1, noIn2;
   REAL8 ylower;
-  REAL8 yupper;
+  REAL8 yupper,kkpos;
   REAL4 kkk;
  
-  if(xc < patch->xMin) return;  /* non optimized */
-  
+ 
   /*********************************************************/
   noIn = 0;
   noIn1= 0; /* upper quadrant */
   noIn2= 0; /* lower quadrant */
-
+  *noInP = noIn;
+ 
+  if(xc < patch->xMin) return;  /* non optimized */
+  
   /*********************************************************/
   /* Reduction of the interval to look at */
   /*********************************************************/
@@ -1923,7 +1925,7 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   yupper = MIN( patch->yMax, yc+radius);
 
  /* convert  to the values of the 'near' y-pixel */  
-  yymax  = floor(yupper/patch->deltaY+patch->ySide/2.-0.5);
+  yymax  = floor((REAL4) (yupper/patch->deltaY -0.5) + (REAL4) (0.5*patch->ySide));
   
   
   kkk = (ylower/patch->deltaY - 0.5);
@@ -1931,6 +1933,9 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   yymin  = ceil( kkk );
    /* yymin  = ceil( (ylower/patch->deltaY-0.5) +patch->ySide/2.); */
 
+  /* getting the pixel center */
+  ylower = patch->yCoor[yymin];
+  yupper = patch->yCoor[yymax];
   
 
   /*********************************************************/
@@ -1942,17 +1947,26 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
     
     /* setting the yymax value */
     /* in case of no over-flow problems !!! */
-    x1 = xc - sqrt( radius*radius -(yupper-yc)*(yupper-yc));
+    
+    kkpos= (radius-(yupper-yc) )*(radius+(yupper-yc) );
+    kkpos= fabs(kkpos);
+    
+     x1 = xc - sqrt( kkpos);
+/*     x1 = xc - sqrt( radius*radius -(yupper-yc)*(yupper-yc)); */
 
     if( (x1 >= patch->xMin) && (x1 <= patch->xMax) ){
       noIn1= 1; /* does intersect and yymax is the value to return! */
     }
     else{
       if( x1 > patch->xMax ){
-	y1 = yc + sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));
+        kkpos = (radius-(patch->xMax-xc))*(radius+(patch->xMax-xc));
+	kkpos= fabs(kkpos);
+	y1 = yc + sqrt(kkpos);
+
+	/* y1 = yc + sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));*/
 	if( y1>=patch->yMin ){
 	  noIn1 = 1;
-	  yymax = floor(y1/patch->deltaY+patch->ySide/2.-0.5);
+	  yymax = floor((REAL4) (y1/patch->deltaY-0.5) + (REAL4) (0.5*patch->ySide));
 	}
       }
     }
@@ -1965,16 +1979,25 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
     REAL8 x1,y1;
 
     /*setting the yymin value */
-    x1 = xc - sqrt( radius*radius -(yc-ylower)*(yc-ylower));
+    kkpos= (radius-(yc-ylower) )*(radius+(yc-ylower) );
+    kkpos= fabs(kkpos);
+    x1 = xc - sqrt( kkpos);
+    /* x1 = xc - sqrt( radius*radius -(yc-ylower)*(yc-ylower)); */
+
     if( (x1 >= patch->xMin) && (x1 <= patch->xMax) ){
       noIn2 = 1; /* does intersect and yymin is the value to return! */
     }
     else{
       if( x1 > patch->xMax ){
-	y1 = yc - sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));
+        kkpos = (radius-(patch->xMax-xc))*(radius+(patch->xMax-xc));
+	kkpos= fabs(kkpos);
+	y1 = yc - sqrt(kkpos);
+
+	/* y1 = yc - sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));*/
+	
 	if( y1<=patch->yMax ){
 	  noIn2 = 1;
-	  yymin = ceil(y1/patch->deltaY+patch->ySide/2.-0.5);
+	  yymin = ceil((REAL4) (y1/patch->deltaY-0.5)+(REAL4)(0.5*patch->ySide));
 	}
       }
     }
@@ -1988,11 +2011,18 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
     REAL8 x1,y1;
     
     noIn = 1;
-    x1 = xc - sqrt( radius*radius -(yc-ylower)*(yc-ylower));
+    kkpos= (radius-(yc-ylower) )*(radius+(yc-ylower) );
+    kkpos= fabs(kkpos);
+    x1 = xc - sqrt( kkpos);
+    /* x1 = xc - sqrt( radius*radius -(yc-ylower)*(yc-ylower));*/
+    
     if( x1 < patch->xMin ){    
       /* the value yymin, needs to be set correctly */
-      y1 = yc + sqrt( radius*radius -(patch->xMin-xc)*(patch->xMin-xc));
-      yymin = ceil( y1/patch->deltaY+patch->ySide/2.-0.5 );
+      kkpos = (radius-(patch->xMin-xc))*(radius+(patch->xMin-xc));
+      kkpos= fabs(kkpos);
+      y1 = yc + sqrt(kkpos);
+      /*y1 = yc + sqrt( radius*radius -(patch->xMin-xc)*(patch->xMin-xc));*/
+      yymin = ceil( (REAL4) (y1/patch->deltaY-0.5)+ (REAL4)(0.5*patch->ySide) );
     }
   }
 
@@ -2002,12 +2032,20 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
     /* the value yymax, needs to be set correctly */
     REAL8 x1,y1;
  
-   noIn = 1;
-    x1 = xc - sqrt( radius*radius -(yupper-yc)*(yupper-yc));
+    noIn = 1;   
+    kkpos= (radius-(yupper-yc) )*(radius+(yupper-yc) );
+    kkpos= fabs(kkpos);
+    x1 = xc - sqrt( kkpos);
+ 
+    /* x1 = xc - sqrt( radius*radius -(yupper-yc)*(yupper-yc));*/
     if( x1 < patch->xMin ){    
       /* the value yymin, needs to be set correctly */
-      y1 = yc - sqrt( radius*radius -(patch->xMin-xc)*(patch->xMin-xc));
-      yymax = floor( y1/patch->deltaY+patch->ySide/2.-0.5 );
+      kkpos = (radius-(patch->xMin-xc))*(radius+(patch->xMin-xc));
+      kkpos= fabs(kkpos);
+      y1 = yc - sqrt(kkpos);
+
+      /*y1 = yc - sqrt( radius*radius -(patch->xMin-xc)*(patch->xMin-xc));*/
+      yymax = floor( (REAL4) (y1/patch->deltaY-0.5)+ (REAL4)(0.5*patch->ySide));
     }
   }
 
@@ -2046,14 +2084,15 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   INT4 noIn, noIn1, noIn2;
   REAL8 ylower;
   REAL4 kkk;
-  REAL8 yupper;
+  REAL8 yupper, kkpos;
  
-  if( xc > patch->xMax ) return;  /* non optimized */
-
+  
  /*********************************************************/
   noIn = 0;
   noIn1= 0; /* upper quadrant */
   noIn2= 0; /* lower quadrant */
+  *noInP = noIn;
+  if( xc > patch->xMax ) return;  /* non optimized */
 
   /*********************************************************/
   /* Reduction of the interval to look at */
@@ -2062,14 +2101,18 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   yupper = MIN( patch->yMax, yc+radius);
 
   /* convert to the value of the 'near' y-pixel */ 
-  yymax  = floor(yupper/patch->deltaY+patch->ySide/2.-0.5);
+  yymax = floor((REAL4) (yupper/patch->deltaY -0.5) + (REAL4) (0.5*patch->ySide));   
  
   kkk = (ylower/patch->deltaY - 0.5);
   kkk += 0.5*patch->ySide;
   yymin  = ceil( kkk );
    /* yymin  = ceil( (ylower/patch->deltaY-0.5) +patch->ySide/2.); */
  
-  
+  /* getting the pixel center */
+  ylower = patch->yCoor[yymin];
+  yupper = patch->yCoor[yymax];
+
+ 
   /*********************************************************/
   /* looking at the upper-right quadrant */
   /*********************************************************/
@@ -2078,17 +2121,28 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
     REAL8 x1,y1;
 
     /* in case of no over-flow problems !!! */
-    x1 = xc + sqrt( radius*radius -(yupper-yc)*(yupper-yc));
+    
+    kkpos= (radius-(yupper-yc) )*(radius+(yupper-yc) );
+    kkpos= fabs(kkpos);
+    x1 = xc + sqrt( kkpos);
+
+    /* x1 = xc + sqrt( radius*radius -(yupper-yc)*(yupper-yc));*/
 
     if( (x1 >= patch->xMin) && (x1 <= patch->xMax) ){
       noIn1 = 1; /* does intersect and yymax is the value to return! */
     }
     else{
       if( x1 < patch->xMin ){
-	y1 = yc + sqrt(radius*radius -(patch->xMin-xc)*(patch->xMin-xc));
+        kkpos = (radius-(patch->xMin-xc))*(radius+(patch->xMin-xc));
+        kkpos= fabs(kkpos);
+        y1 = yc + sqrt(kkpos);
+     
+	/*y1 = yc + sqrt(radius*radius -(patch->xMin-xc)*(patch->xMin-xc));*/
 	if( y1>=patch->yMin ){
 	  noIn1  = 1;
-	  yymax = floor(y1/patch->deltaY+patch->ySide/2.-0.5);
+	  yymax = floor((REAL4) (y1/patch->deltaY-0.5) + (REAL4) (0.5*patch->ySide));
+
+	  /* yymax = floor(y1/patch->deltaY+patch->ySide/2.-0.5);*/
 	}
       }
     }
@@ -2100,17 +2154,27 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 
   if( yc > patch->yMin ){
     REAL8 x1,y1;
+    
+    kkpos= (radius-(yc-ylower) )*(radius+(yc-ylower) );
+    kkpos= fabs(kkpos);
+    x1 = xc + sqrt( kkpos);
 
-    x1 = xc + sqrt( radius*radius -(yc-ylower)*(yc-ylower));
+    /* x1 = xc + sqrt( radius*radius -(yc-ylower)*(yc-ylower));*/
     if( (x1 >= patch->xMin) && (x1 <= patch->xMax) ){
       noIn2 = 1; /* does intersect and yymin is the value to return! */
     }
     else{
       if( x1 < patch->xMin ){
-	y1 = yc - sqrt( radius*radius -(patch->xMin-xc)*(patch->xMin-xc));
+        kkpos = (radius-(patch->xMin-xc))*(radius+(patch->xMin-xc));
+        kkpos= fabs(kkpos);
+        y1 = yc - sqrt(kkpos);
+	
+	/* y1 = yc - sqrt( radius*radius -(patch->xMin-xc)*(patch->xMin-xc));*/
 	if( y1<=patch->yMax ){
 	  noIn2  = 1;
-	  yymin = ceil(y1/patch->deltaY+patch->ySide/2.-0.5);
+	  yymin = ceil((REAL4) (y1/patch->deltaY-0.5)+(REAL4)(0.5*patch->ySide));
+
+	  /* yymin = ceil(y1/patch->deltaY+patch->ySide/2.-0.5);*/
 	}
       }
     }
@@ -2124,11 +2188,21 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
     REAL8 x1,y1;
     
     noIn = 1;
-    x1 = xc + sqrt( radius*radius -(yc-ylower)*(yc-ylower));
+    kkpos= (radius-(yc-ylower) )*(radius+(yc-ylower) );
+    kkpos= fabs(kkpos);
+    x1 = xc + sqrt( kkpos);
+
+    /* x1 = xc + sqrt( radius*radius -(yc-ylower)*(yc-ylower));*/
     if( x1 > patch->xMax ){    
       /* the value yymin, needs to be set correctly */
-      y1 = yc + sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));
-      yymin = ceil( y1/patch->deltaY+patch->ySide/2.-0.5 );
+      kkpos = (radius-(patch->xMax-xc))*(radius+(patch->xMax-xc));
+      kkpos= fabs(kkpos);
+      y1 = yc + sqrt(kkpos);
+
+      /* y1 = yc + sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));*/
+      /* yymin = ceil( y1/patch->deltaY+patch->ySide/2.-0.5 ); */
+      yymin = ceil( (REAL4) (y1/patch->deltaY-0.5)+ (REAL4)(0.5*patch->ySide) );
+
     }
   }
 
@@ -2138,12 +2212,21 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
     /* the value yymax, needs to be set correctly */
     REAL8 x1,y1;
  
-   noIn = 1;
-    x1 = xc + sqrt( radius*radius -(yupper-yc)*(yupper-yc));
+    noIn = 1;
+    kkpos= (radius-(yupper-yc) )*(radius+(yupper-yc) );
+    kkpos= fabs(kkpos);
+    x1 = xc + sqrt( kkpos);
+    /* x1 = xc + sqrt( radius*radius -(yupper-yc)*(yupper-yc)); */
     if( x1 > patch->xMax ){    
       /* the value yymin, needs to be set correctly */
-      y1 = yc - sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));
-      yymax = floor( y1/patch->deltaY+patch->ySide/2.-0.5 );
+      kkpos = (radius-(patch->xMax-xc))*(radius+(patch->xMax-xc));
+      kkpos= fabs(kkpos);
+      y1 = yc - sqrt(kkpos);
+
+      /* y1 = yc - sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));*/     
+      /* yymax = floor( y1/patch->deltaY+patch->ySide/2.-0.5 ); */
+      yymax = floor( (REAL4) (y1/patch->deltaY-0.5)+ (REAL4)(0.5*patch->ySide));
+
     }
   }
 
@@ -2192,10 +2275,16 @@ static void DrawLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   INT4 jj;
 
   for(jj=yymin; jj<=yymax; ++jj){
-    REAL8   realx;
+    REAL8   realx, kkpos;
     INT4    index;
-    realx = xc - sqrt( radius*radius - (yc-patch->yCoor[jj])*( yc-patch->yCoor[jj]) );
-    index = ceil(realx/patch->deltaX+patch->xSide/2. -0.5);
+    
+    kkpos = (radius-(yc-patch->yCoor[jj]) )*(radius+ (yc-patch->yCoor[jj]));
+    kkpos= fabs(kkpos);
+    realx = xc - sqrt(kkpos);
+    
+    /*realx = xc - sqrt( radius*radius 
+    	- (yc-patch->yCoor[jj])*(yc-patch->yCoor[jj]) ); */
+    index = ceil((REAL4) (realx/patch->deltaX-0.5)+ (REAL4)(0.5*patch->xSide) );
     if( index<0 ) index=0;
     column[jj] = index;
   }
@@ -2215,10 +2304,16 @@ static void DrawRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   INT4 jj;
 
   for(jj=yymin; jj<=yymax; ++jj){
-    REAL8  realx;
+    REAL8  realx,kkpos;
     INT4   index;
-    realx = xc + sqrt( radius*radius - (yc-patch->yCoor[jj])*( yc-patch->yCoor[jj]) );
-    index = ceil(realx/patch->deltaX+patch->xSide/2. -0.5);
+    
+    kkpos = (radius-(yc-patch->yCoor[jj]) )*(radius+ (yc-patch->yCoor[jj]));
+    kkpos= fabs(kkpos);
+    realx = xc + sqrt(kkpos);
+    
+    /*realx = xc + sqrt( radius*radius 
+    	- (yc-patch->yCoor[jj])*( yc-patch->yCoor[jj]) ); */
+    index = ceil((REAL4)(realx/patch->deltaX-0.5)+(REAL4)(0.5*patch->xSide));
     if( index > patch->xSide-1 ) index=patch->xSide;
     column[jj] = index;
   }
