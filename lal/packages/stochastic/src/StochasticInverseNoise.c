@@ -100,8 +100,8 @@ LALStochasticInverseNoise( LALStatus                          *status,
                            const StochasticInverseNoiseInput  *input )
 /* </lalVerbatim> */
 {
-  REAL4          deltaF;
-  REAL4          f0;
+  REAL8          deltaF;
+  REAL8          f0;
   UINT4          length;
 
   REAL4FrequencySeries          *invNoise;
