@@ -287,6 +287,7 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
   def set_user_tag(self,usertag):
     self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
 
   def get_user_tag(self):
     return self.__usertag
