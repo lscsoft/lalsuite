@@ -15,6 +15,15 @@
  * FrameCalibrationTest
  * \end{verbatim}
  *
+ * \subsection*{Usage}
+ * \begin{verbatim}
+ * FrameCalibrationTest [options]
+ * Options:
+ *   -h         print this message
+ *   -o         write calibration to file
+ *   -v         verbose: print extra information
+ * \end{verbatim}
+ *
  * \subsubsection*{Description}
  *
  * For each GPS time in the array \verb+calTime+, this program attemps to
@@ -42,13 +51,32 @@
  * test directory before running make check.
  * 
  * If the required calibration data is missing, then the test is not executed.
+ *
+ * \subsubsection*{Exit codes}
+ * \begin{tabular}{|c|l|}
+ * \hline
+ *  Code & Explanation                   \\
+ * \hline
+ * \tt 0 & Success, normal exit.         \\
+ * \tt 1 & Subroutine failed.            \\
+ * \tt77 & Ignored failure: Test frame data not found. \\
+ * \hline
+ * \end{tabular}
+ *
+ * \subsubsection*{Uses}
+ * \subsubsection*{Notes}
  * 
  **** </lalLaTeX> */
 
-#include <FrameL.h>
 
 #include <stdio.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+#include <FrameL.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
@@ -65,7 +93,18 @@
 
 INT4 lalDebugLevel =  LALINFO;
 
-int main( void )
+extern char *optarg;
+extern int   optind;
+int verbose = 0;
+int output = 0;
+
+static void
+Usage (const char *program, int exitflag);
+
+static void
+ParseOptions (int argc, char *argv[]);
+
+int main( int argc, char *argv[] )
 {
   UINT4 i;
 
@@ -82,6 +121,8 @@ int main( void )
 
   COMPLEX8FrequencySeries       response;
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
+
+  ParseOptions (argc, argv);
 
   /* clear the response function and create storage for the frequency series */
   memset( &response, 0, sizeof(COMPLEX8FrequencySeries) );
@@ -103,28 +144,40 @@ int main( void )
     LALSnprintf( calCacheName, LALNameLength * sizeof(CHAR), CAL_CATALOG,
         cacheTime[i % 2] );
     response.epoch.gpsSeconds = calTime[i];
-    fprintf( stdout, "Getting calibration for GPS time %d from cache file %s\n",
-        response.epoch.gpsSeconds, calCacheName );
-    fflush( stdout );
+    if ( verbose )
+    {
+      fprintf( stdout, "Calibration for GPS time %d from %s\n",
+          response.epoch.gpsSeconds, calCacheName );
+      fflush( stdout );
+    }
 
     /* create the response function */
     LALExtractFrameResponse( &status, &response, calCacheName, ifo );
     if ( status.statusCode == FRAMECALIBRATIONH_EOREF )
     {
-      LALPrintError( "%s\n", status.statusDescription );
+      if ( verbose )
+      {
+        LALPrintError( "%s\n", status.statusDescription );
+      }
       return 77;
     }
     else if ( status.statusCode == FRAMECALIBRATIONH_ECREF ||
         status.statusCode == FRAMECALIBRATIONH_ECFAC )
     {
-      LALPrintError( " %s\n", status.statusDescription );
+      if ( verbose )
+      {
+        LALPrintError( " %s\n", status.statusDescription );
+      }
     }
     else if ( status.statusCode == -1 && status.statusPtr &&
         ( status.statusPtr->statusCode == CALIBRATIONH_ETIME ||
           status.statusPtr->statusCode == CALIBRATIONH_EZERO ||
           status.statusPtr->statusCode == FRAMESTREAMH_EDONE ) )
     {
-      LALPrintError( "%s\n", status.statusPtr->statusDescription );
+      if ( verbose )
+      {
+        LALPrintError( "%s\n", status.statusPtr->statusDescription );
+      }
       LALFree( status.statusPtr );
       status.statusPtr = NULL;
     }
@@ -133,11 +186,17 @@ int main( void )
       TESTSTATUS( &status );
 
       /* print out the response function */
-      fprintf( stdout, "Calibration updated\n" );
-      fflush( stdout );
-      LALSnprintf( outFile, LALNameLength * sizeof(CHAR),
-          "Response-%s-%d.txt", ifo, response.epoch.gpsSeconds );
-      LALCPrintFrequencySeries( &response, outFile );
+      if ( verbose )
+      {
+        fprintf( stdout, "Calibration updated\n" );
+        fflush( stdout );
+      }
+      if ( output )
+      {
+        LALSnprintf( outFile, LALNameLength * sizeof(CHAR),
+            "Response-%s-%d.txt", ifo, response.epoch.gpsSeconds );
+        LALCPrintFrequencySeries( &response, outFile );
+      }
     }
   }
 
@@ -147,4 +206,53 @@ int main( void )
 
   LALCheckMemoryLeaks();
   return 0;
+}
+
+static void
+Usage (const char *program, int exitcode)
+{
+  fprintf (stderr, "Usage: %s [options]\n", program);
+  fprintf (stderr, "Options:\n");
+  fprintf (stderr, "  -h         print this message\n");
+  fprintf (stderr, "  -o         write calibration to file\n");
+  fprintf (stderr, "  -v         verbose: print extra information\n");
+  exit (exitcode);
+}
+
+static void
+ParseOptions (int argc, char *argv[])
+{
+  while (1)
+  {
+    int c = -1;
+    c = getopt (argc, argv, "hvo");
+    if (c == -1)
+    {
+      break;
+    }
+    switch (c)
+    {
+      case 'o': /* sets flag to write output files */
+        ++output;
+        break;
+
+      case 'v': /* verbose */
+        ++verbose;
+        break;
+
+      case 'h':
+        Usage (argv[0], 0);
+        break;
+
+      default:
+        Usage (argv[0], 1);
+    }
+  }
+
+  if (optind < argc)
+  {
+    Usage (argv[0], 1);
+  }
+
+  return;
 }
