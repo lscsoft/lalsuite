@@ -17,6 +17,7 @@ RCSID("$Id$");
 /* Usage format string. */
 #define USAGE "Usage: %s --input filename --output filename " \
 	"--trig-start-time time --trig-stop-time time " \
+	"[--outtxt txt filename] " \
 	"[--max-confidence maximum conf] [--noplayground] [--sort] [--cluster] " \
 	"[--min-duration min dur] [--max-duration max dur] " \
 	"[--min-centralfreq min central_freq] [--max-centralfreq max central_freq] " \
@@ -62,6 +63,7 @@ static int getline(char *line, int max, FILE *file)
 struct options_t {
 	int verbose;
 	int cluster;
+	int outtxt;
 	int playground;
 	int noplayground;
 	int sort;
@@ -115,6 +117,7 @@ static void set_option_defaults(struct options_t *options)
 {
 	options->verbose = FALSE;
 	options->cluster = FALSE;
+	options->outtxt = FALSE;
 	options->playground = FALSE;
 	options->noplayground = FALSE;
 	options->sort = FALSE;
@@ -156,7 +159,7 @@ static void set_option_defaults(struct options_t *options)
  * Parse command line arguments.
  */
 
-static void parse_command_line(int argc, char **argv, struct options_t *options, char **infile, char **outfile)
+static void parse_command_line(int argc, char **argv, struct options_t *options, char **infile, char **outfile, char **outtxt)
 {
 	struct option long_options[] = {
 		/* these options set a flag */
@@ -164,8 +167,8 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 		{"cluster",         no_argument,        &options->cluster, TRUE},
 		/* parameters which determine the output xml file */
 		{"input",           required_argument,  NULL,  'a'},
+		{"outtxt",          required_argument,  NULL,  'b'},
 		{"output",          required_argument,  NULL,  'c'},
-		{"outfile",         required_argument,  NULL,  'c'},
 		{"max-confidence",  required_argument,  NULL,  'd'},
 		{"min-duration",    required_argument,  NULL,  'e'},
 		{"max-duration",    required_argument,  NULL,  'f'},
@@ -187,7 +190,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 	int c;
 	int option_index;
 
-	*infile = *outfile = NULL;
+	*infile = *outfile = *outtxt = NULL;
 
 	do {
 		switch(c = getopt_long(argc, argv, "a:c:d:e:f:g:h:i:", long_options, &option_index)) {
@@ -200,6 +203,14 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 			 * file containing list of xml files to use
 			 */
 			*infile = optarg;
+			break;
+
+			case 'b':
+			/*
+			 * output txt file name
+			 */
+			options->outtxt = TRUE;
+			*outtxt = optarg;
 			break;	
 
 			case 'c':
@@ -333,6 +344,11 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 
 	if(!*infile) {
 		LALPrintError( "Must supply an xml file to parse\n" );
+		exit(SNGLBURSTREADER_EARG);
+	}
+
+	if(!*outtxt && options->outtxt) {
+		LALPrintError( "Output txt file name must be specified\n" );
 		exit(SNGLBURSTREADER_EARG);
 	}
 
@@ -507,6 +523,32 @@ static long int count_events(SnglBurstTable *event)
 }
 
 
+static int output_txt_file(FILE *fpout, SnglBurstTable *snglBursts){
+  SnglBurstTable *thisEvent=NULL;
+
+  thisEvent = snglBursts;
+  fprintf(fpout,"# %s\n",thisEvent->ifo);
+  fprintf(fpout,"# start_time,start_time_ns,peak_time,peak_time_ns,duration,central_freq,bandwidth,snr,confidence\n");
+  fflush(fpout);
+
+  while ( thisEvent ){
+    fprintf(fpout,"%d,%d,%d,%d,%f,%f,%f,%f,%e\n",
+	    thisEvent->start_time.gpsSeconds,
+	    thisEvent->start_time.gpsNanoSeconds,
+	    thisEvent->peak_time.gpsSeconds,
+	    thisEvent->peak_time.gpsNanoSeconds,
+	    thisEvent->duration,
+	    thisEvent->central_freq,
+	    thisEvent->bandwidth,
+	    thisEvent->snr,
+	    thisEvent->confidence
+	    );
+    thisEvent = thisEvent->next;
+  }
+
+  return 0;
+}
+
 /*
  * Entry Point
  */
@@ -518,7 +560,7 @@ int main(int argc, char **argv)
 	FILE              *fpout;
 	INT4              timeAnalyzed;
 	CHAR              line[MAXSTR];
-	CHAR              *infile, *outfile;
+	CHAR              *infile, *outfile, *outtxt;
 	SnglBurstTable    *burstEventList;
 	SnglBurstTable    **addpoint;
 	MetadataTable     myTable;
@@ -532,7 +574,7 @@ int main(int argc, char **argv)
 	 */
 
 	set_option_defaults(&options);
-	parse_command_line(argc, argv, &options, &infile, &outfile);
+	parse_command_line(argc, argv, &options, &infile, &outfile, &outtxt);
 
 	lal_errhandler = LAL_ERR_EXIT;
 	set_debug_level("1");
@@ -629,6 +671,16 @@ int main(int argc, char **argv)
 
 	LAL_CALL(LALSortSnglBurst(&stat, &burstEventList, XLALCompareSnglBurstByStartTime), &stat);
 
+
+	/*
+	 * Write output txt file if asked for
+	 */
+
+	if( options.outtxt ){	
+	  fpout = fopen(outtxt,"w");  
+	  output_txt_file(fpout, burstEventList);
+	  fclose(fpout);
+	}
 
 	/*
 	 * Write output xml file
