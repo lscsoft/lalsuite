@@ -9,6 +9,7 @@ MKIND = @MKIND@
 
 dvi-local:
 	rm -f *.aux
+	sed '/^[A-Z]/s/$$/\\\\/' $(top_srcdir)/AUTHORS > AUTHORS.tex
 	@ docdir=`cd $(top_srcdir)/doc && pwd` ; \
           sources="$$docdir/ligodcc.cls $$docdir/lal.sty $$docdir/lalspec.tex $$docdir/lsd.tex $$docdir/lsdFig* $$docdir/merger.*"; \
           for file in $$sources ; do \
