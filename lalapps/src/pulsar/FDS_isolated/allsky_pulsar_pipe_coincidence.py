@@ -270,7 +270,7 @@ for line in polka_file:
     chisq_file=open('chisq.txt',mode='r')
 
     for line in chisq_file:
-      [crap,crap,crap,crap,schisq1]=line.split(None,5)
+      [crap,crap,crap,schisq1]=line.split(None,5)
       print 'chi sq from data:',schisq1
 
     chisq1=float(schisq1)
@@ -341,7 +341,7 @@ for line in polka_file:
     chisq_file=open('chisq.txt',mode='r')
 
     for line in chisq_file:
-      [crap,crap,crap,crap,schisq2]=line.split(None,5)
+      [crap,crap,crap,schisq2]=line.split(None,5)
       print 'chi sq from data:',schisq2
     chisq2=float(schisq2)
 
