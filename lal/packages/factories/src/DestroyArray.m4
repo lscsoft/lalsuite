@@ -14,7 +14,7 @@ define(`ATYPE',`format(`%sArray',TYPE)')
 define(`FUNC',`format(`LAL%sDestroyArray',TYPECODE)')
 
 /* <lalVerbatim file="ArrayFactoriesD"> */
-void FUNC ( Status *status, ATYPE **array )
+void FUNC ( LALStatus *status, ATYPE **array )
 { /* </lalVerbatim> */
   INITSTATUS (status, "FUNC", ARRAYFACTORIESC);	
   ATTATCHSTATUSPTR (status);

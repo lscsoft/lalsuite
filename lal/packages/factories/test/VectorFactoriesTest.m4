@@ -82,10 +82,10 @@ static void
 ParseOptions (int argc, char *argv[]);
 
 static void
-TestStatus (Status *status, const char *expectedCodes, int exitCode);
+TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
 static void
-ClearStatus (Status *status);
+ClearStatus (LALStatus *status);
 
 define(`TYPECODE',`Z')
 include(`VectorFactoriesTestFunction.m4')
@@ -153,7 +153,7 @@ int main( int argc, char *argv[] )
  *
  */
 static void
-TestStatus (Status *status, const char *ignored, int exitcode)
+TestStatus (LALStatus *status, const char *ignored, int exitcode)
 {
   char  str[64];
   char *tok;
@@ -199,7 +199,7 @@ TestStatus (Status *status, const char *ignored, int exitcode)
  *
  */
 void
-ClearStatus (Status *status)
+ClearStatus (LALStatus *status)
 {
   if (status->statusPtr)
   {

@@ -20,7 +20,7 @@ define(`FUNC',`format(`%sVectorFactoriesTest',TYPECODE)')
 void FUNC ( void )
 {
   const  UINT4   length = 16;
-  static Status  status;
+  static LALStatus  status;
   static VTYPE  *vector;
   static VTYPE   vstore;
 

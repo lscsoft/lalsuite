@@ -15,7 +15,7 @@ define(`STYPE',`format(`%sVectorSequence',TYPE)')
 define(`FUNC',`format(`LAL%sDestroyVectorSequence',TYPECODE)')
 
 /* <lalVerbatim file="VectorSequenceFactoriesD"> */
-void FUNC ( Status *status, STYPE **vseq )
+void FUNC ( LALStatus *status, STYPE **vseq )
 { /* </lalVerbatim> */
   /* 
    * Initialize status

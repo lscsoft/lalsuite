@@ -22,7 +22,7 @@ void FUNC ( void )
   CreateVectorSequenceIn input   = { 2, 8 };
   CreateVectorSequenceIn badslen = { 0, 8 };
   CreateVectorSequenceIn badvlen = { 2, 0 };
-  static Status  status;
+  static LALStatus  status;
   static VTYPE  *sequence;
   static VTYPE   sstore;
 

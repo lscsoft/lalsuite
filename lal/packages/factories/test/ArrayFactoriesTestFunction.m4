@@ -24,7 +24,7 @@ void FUNC ( void )
   UINT4Vector    badLength1 = { 3, NULL };
   UINT4Vector    badLength2 = { 0, dims };
   UINT4Vector    badLength3 = { 3, dbad };
-  static Status  status;
+  static LALStatus  status;
   static VTYPE  *array;
   static VTYPE   astore;
   static TYPE    datum;

@@ -14,7 +14,7 @@ define(`ATYPE',`format(`%sArray',TYPE)')
 define(`FUNC',`format(`LAL%sCreateArray',TYPECODE)')
 
 /* <lalVerbatim file="ArrayFactoriesD"> */
-void FUNC ( Status *status, ATYPE **array, UINT4Vector *dimLength ) 
+void FUNC ( LALStatus *status, ATYPE **array, UINT4Vector *dimLength ) 
 { /* </lalVerbatim> */
   UINT4 arrayDataSize = 1;
   UINT4 numDims;

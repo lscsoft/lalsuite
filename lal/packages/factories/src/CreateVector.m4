@@ -15,7 +15,7 @@ define(`VTYPE',`format(`%sVector',TYPE)')
 define(`FUNC',`format(`LAL%sCreateVector',TYPECODE)')
 
 /* <lalVerbatim file="VectorFactoriesD"> */
-void FUNC ( Status *status, VTYPE **vector, UINT4 length ) 
+void FUNC ( LALStatus *status, VTYPE **vector, UINT4 length ) 
 { /* </lalVerbatim> */
   /* 
    * Initialize status structure

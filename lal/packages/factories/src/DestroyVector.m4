@@ -15,7 +15,7 @@ define(`VTYPE',`format(`%sVector',TYPE)')
 define(`FUNC',`format(`LAL%sDestroyVector',TYPECODE)')
 
 /* <lalVerbatim file="VectorFactoriesD"> */
-void FUNC ( Status *status, VTYPE **vector )
+void FUNC ( LALStatus *status, VTYPE **vector )
 { /* </lalVerbatim> */
   /* 
    * Initialize status
