@@ -1943,7 +1943,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   StochasticOptimalFilterNormalizationParameters normParams;
   REAL4WithUnits normLambda;
   REAL4WithUnits normSigma;
-  REAL8 lambda;
 
   /* structures for optimal filter */
   REAL4FrequencySeries *optFilter = NULL;
@@ -2460,8 +2459,6 @@ INT4 main(INT4 argc, CHAR *argv[])
       /* compute variance and normalisation for optimal filter */
       LAL_CALL(LALStochasticOptimalFilterNormalization(&status, \
             &normOutput, &normInput, &normParams), &status);
-      lambda = (REAL8)(normLambda.value * \
-          pow(10.,normLambda.units.powerOfTen));
       varTheo = (REAL8)(segmentDuration * normSigma.value * \
           pow(10.,normSigma.units.powerOfTen));
 
