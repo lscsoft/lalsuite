@@ -79,7 +79,8 @@ int main(int argc, char* argv[]) {
      that this string is 9+3+4=16 digits long */
   while (1==(code=fscanf(fp,"%s",bigbuff))){
     /* check that file name is not too long for array */
-    int namelen;
+    int namelen, i, deltat;
+
     bigbuff[1023]='\0';
     namelen=strlen(bigbuff);
     if (namelen>FILENAMEMAX){
@@ -90,7 +91,30 @@ int main(int argc, char* argv[]) {
     
     /* save file name in array */
     strcpy(filenames[fileno], bigbuff);
-    
+
+    /* locate the start time and length of the data */
+    for (i=strlen(filenames[fileno])-1; i>=0; i--)
+      if (filenames[fileno][i]=='-')
+	break;
+
+    /* does dash appear as separator in the right place */
+    if (i<9){
+      fprintf(stderr,"Filename:\n%s\nat line: %d of file: %s\ndoesn't have '-' separator in right place\n", 
+	      filenames[fileno], fileno, argv[2]);
+      exit(1); 
+    }
+
+    /* get start time and duration of file from name */
+    starttimes[fileno]=atoi(filenames[fileno]+i-9);
+    deltat=atoi(filenames[fileno]+i+1);
+
+    /* check that duration is what's expected */
+    if (deltat!=FRAMELEN){
+            fprintf(stderr,"Filename:\n%s\nat line: %d of file: %s\n has length %d (!= FRAMELEN=%d)\n", 
+	      filenames[fileno], fileno, argv[2], deltat, FRAMELEN);
+      exit(1); 
+    }
+
     /* the magic 16 in the next line follows from the file-naming convention above! */
     starttimes[fileno]=atoi(filenames[fileno]+strlen(filenames[fileno])-16);
     fileno++;
