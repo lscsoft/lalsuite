@@ -1968,12 +1968,6 @@ void readDataPair(LALStatus *status,
   CHECKSTATUSPTR( status );
   memset(dataStreamOne.data->data, 0, \
       dataStreamOne.data->length * sizeof(*dataStreamOne.data->data));
-
-  /* set frame reading mode */
-  LALFrSetMode(status->statusPtr, LAL_FR_SILENT_MODE, frStreamOne);
-  CHECKSTATUSPTR( status );
-  LALFrSetMode(status->statusPtr, LAL_FR_SILENT_MODE, frStreamTwo);
-  CHECKSTATUSPTR( status );
   
   if (vrbflg)
   {
@@ -1984,6 +1978,10 @@ void readDataPair(LALStatus *status,
   LALFrCacheImport(status->statusPtr, &frCacheOne, params->frameCacheOne);
   CHECKSTATUSPTR( status );
   LALFrCacheOpen(status->statusPtr, &frStreamOne, frCacheOne);
+  CHECKSTATUSPTR( status );
+
+  /* set frame reading mode for first stream */
+  LALFrSetMode(status->statusPtr, LAL_FR_SILENT_MODE, frStreamOne);
   CHECKSTATUSPTR( status );
 
   if (vrbflg)
@@ -2069,6 +2067,10 @@ void readDataPair(LALStatus *status,
     LALFrCacheImport(status->statusPtr, &frCacheTwo, params->frameCacheTwo);
     CHECKSTATUSPTR( status );
     LALFrCacheOpen(status->statusPtr, &frStreamTwo, frCacheTwo);
+    CHECKSTATUSPTR( status );
+
+    /* set frame reading mode for second stream */
+    LALFrSetMode(status->statusPtr, LAL_FR_SILENT_MODE, frStreamTwo);
     CHECKSTATUSPTR( status );
 
     if (vrbflg)
