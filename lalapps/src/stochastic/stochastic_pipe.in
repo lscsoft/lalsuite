@@ -176,7 +176,7 @@ max_length = int(cp.get('input','max_length'))
 
 # read science segs that are greater or equal to a chunk from the input file
 data = pipeline.ScienceData()
-data.read(cp.get('input','segments'),min_length,0,1)
+data.read(cp.get('input','segments'),min_length)
 
 # create the chunks from the science segments
 data.make_chunks(max_length)
