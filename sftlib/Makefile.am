@@ -35,3 +35,4 @@ EXTRA_DIST      =      $(docs_DATA)
 
 CLEANFILES      =      SFT-test[1-7] SFT-bad[1-9] SFT-bad1[0-4] SFT-good
 
+TESTS		=      run_validate.sh
