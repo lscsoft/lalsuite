@@ -319,7 +319,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
   /* Now find thisEvent in the inner half */
   for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ )
     {
-      REAL4 maximum =0.0;
+      REAL4 maximum = 0.0;
       INT4 pmax=p;
 
       if (fabs(vector->data[p]) > CLA.threshold)
@@ -357,7 +357,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	      p++;
 	    }
 
-	  peaktime = timeNS + (INT8)( 1e9 * GV.ht_proc.deltaT * pmax );
+	  peaktime = timeNS + (INT8)( 1e9 * GV.ht_proc.deltaT * (pmax-pstart) );
 	  duration = GV.ht_proc.deltaT * ( (p-1) - pstart );
 
 	  /* Now copy stuff into event */
