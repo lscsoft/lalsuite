@@ -8,12 +8,13 @@ SIRESRC = sire.c
 INSPINJSRC = inspinj.c
 MINJSRC = minj.c
 SPLITBANKSRC = splitbank.c
+TAMA2LIGOLWSRC = tama2ligolw.c
 if LALFRAME
 if LALMETAIO
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_inca lalapps_sire \
                lalapps_inspinj lalapps_splitbank \
-               lalapps_minj
+               lalapps_minj lalapps_tama2ligolw
 lalapps_inspiral_SOURCES = $(INSPIRALSRC)
 lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
 lalapps_inca_SOURCES = $(INCASRC)
@@ -21,6 +22,7 @@ lalapps_sire_SOURCES = $(SIRESRC)
 lalapps_inspinj_SOURCES = $(INSPINJSRC)
 lalapps_minj_SOURCES = $(MINJSRC)
 lalapps_splitbank_SOURCES = $(SPLITBANKSRC)
+lalapps_tama2ligolw_SOURCES = $(TAMA2LIGOLWSRC)
 else
 bin_PROGRAMS = 
 endif
