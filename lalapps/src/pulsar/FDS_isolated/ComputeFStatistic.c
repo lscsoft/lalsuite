@@ -224,7 +224,7 @@ int main(int argc,char *argv[])
   UINT4 loopcounter;
 
 
-  lalDebugLevel = 0;  
+  lalDebugLevel = 0 ;  
   vrbflg = 1;	/* verbose error-messages */
 
 #if USE_BOINC
@@ -1477,11 +1477,19 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     fp=fopen(cfg->filelist[0],"rb");
     /* read in the header from the file */
     errorcode=fread((void*)&header,sizeof(header),1,fp);
+
     if (errorcode!=1) 
       {
 	LALPrintError ("\nNo header in data file %s\n\n", cfg->filelist[0]);
 	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
+    
+    if (-1 == reverse_endian) {
+      if (header.endian==1.0)
+	reverse_endian=0;
+      else
+	reverse_endian=1;
+    }
     
     if (reverse_endian)
       swapheader(&header);
