@@ -61,6 +61,7 @@ int main(void)
 
 /* Parameters from command line */
 static struct {
+	CHAR *calCacheFile;         /* name of the calibration cache file  */
 	int cluster;                /* TRUE == perform clustering          */
 	CHAR *comment;              /* user comment                        */
 	int FilterCorruption;       /* samples corrupted by conditioning   */
@@ -91,7 +92,6 @@ INT4 frameSampleRate;               /* sample rate of the frame data       */
 INT4 targetSampleRate;              /* sample rate after resampling        */
 
 /* data conditioning parameters */
-CHAR *calCacheFile;                 /* name of the calibration cache file  */
 CHAR *injectionFile;                /* file with list of injections        */
 CHAR *mdcCacheFile;                 /* name of mdc signal cache file       */
 ResampleTSFilter resampFiltType;
@@ -348,6 +348,7 @@ void parse_command_line(
 	params->tfTilingInput.maxTileBand = 64.0;
 	params->windowShift = 0;
 
+	options.calCacheFile = NULL;
 	options.cluster = FALSE;
 	options.comment = "";
 	options.fcorner = 100.0;
@@ -359,7 +360,6 @@ void parse_command_line(
 	options.verbose = FALSE;
 
 	cachefile = NULL;
-	calCacheFile = NULL;
 	dirname = NULL;
 	frameSampleRate = 0;
 	geodata = FALSE;
@@ -389,8 +389,8 @@ void parse_command_line(
 		break;
 
 		case 'B':
-		calCacheFile = optarg;
-		ADD_PROCESS_PARAM("string", "%s", calCacheFile);
+		options.calCacheFile = optarg;
+		ADD_PROCESS_PARAM("string", "%s", options.calCacheFile);
 		break;
 
 		case 'C':
@@ -909,6 +909,7 @@ static void makeWhiteNoise(
 
 static COMPLEX8FrequencySeries *generate_response(
 	LALStatus *stat,
+	const char *calcachefile,
 	LIGOTimeGPS epoch,
 	size_t length
 )
@@ -933,7 +934,7 @@ static COMPLEX8FrequencySeries *generate_response(
 			response->data->data[i].im = 0.0;
 		}
 	else
-		LAL_CALL(LALExtractFrameResponse(stat, response, calCacheFile, &calfacts), stat);
+		LAL_CALL(LALExtractFrameResponse(stat, response, calcachefile, &calfacts), stat);
 
 	return(response);
 } 
@@ -955,7 +956,7 @@ static void add_burst_injections(
 	INT4 stopTime = startTime + series->data->length * series->deltaT;
 	SimBurstTable *injections = NULL;
 
-	if(!calCacheFile) {
+	if(!resp) {
 		fprintf(stderr, "Must supply calibration information for injections\n");
 		exit(1);
 	}
@@ -1161,7 +1162,6 @@ int main( int argc, char *argv[])
 	INT4                      numPoints;
 	CHAR                      outfilename[256];
 	REAL4TimeSeries          *series = NULL;
-	COMPLEX8FrequencySeries  *response = NULL;
 	SnglBurstTable           *burstEvent = NULL;
 	SnglBurstTable          **EventAddPoint = &burstEvent;
 	MetadataTable             procTable;
@@ -1249,20 +1249,23 @@ int main( int argc, char *argv[])
 			LALPrintTimeSeries(series, "./timeseriesasq.dat");
 
 		/*
-		 * Create the response function
-		 */
-
-		if(calCacheFile)
-			response = generate_response(&stat, series->epoch, series->data->length);
-
-		/*
 		 * Add burst injections into the time series if requested.
 		 */
 
 		if(injectionFile) {
+			COMPLEX8FrequencySeries  *response = NULL;
+
+			/* Create the response function */
+			if(options.calCacheFile)
+				response = generate_response(&stat, options.calCacheFile, series->epoch, series->data->length);
+
+			/* perform injections */
 			add_burst_injections(&stat, series, response);
 			if(options.printData)
 				LALPrintTimeSeries(series, "./injections.dat");
+
+			/* clean up */
+			LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&stat, response), &stat);
 		}
 
 		/*
@@ -1306,7 +1309,6 @@ int main( int argc, char *argv[])
 
 		LAL_CALL(LALAddFloatToGPS(&stat, &epoch, &epoch, (numPoints - 2.0 * options.FilterCorruption * frameSampleRate / targetSampleRate) / (REAL8) frameSampleRate), &stat);
 		LAL_CALL(LALDestroyREAL4TimeSeries(&stat, series), &stat);
-		LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&stat, response), &stat);
 	}
 
 	/*
