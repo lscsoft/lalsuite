@@ -59,7 +59,7 @@ ComputeSpectrum (
   /* make sure that these do not divide by zero... */
   ASSERT (timeSeries->deltaT, status, SPECBUFFER_EZERO, SPECBUFFER_MSGEZERO);
   ASSERT (parameters->wss, status, SPECBUFFER_EZERO, SPECBUFFER_MSGEZERO);
-  spectrum->deltaF = 1/timeSeries->deltaT;
+  spectrum->deltaF = 1/(timeSeries->deltaT*timeSeries->data->length);
   fac              = timeSeries->deltaT/parameters->wss;
 
   for (i = 0; i < n; ++i)

@@ -645,7 +645,7 @@ GetFrameDataResponse (
 
   response->epoch  = frameData->calibrationTime;
   response->f0     = 0;
-  response->deltaF = frameData->sampleRate;
+  response->deltaF = 0.5*frameData->sampleRate/response->data->length;
 
   DestroyVector (status->statusPtr, &re);
   CHECKSTATUSPTR (status);
