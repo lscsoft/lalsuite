@@ -395,6 +395,8 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
               COARSEGRAINFREQUENCYSERIESC );
   ATTATCHSTATUSPTR(status);
 
+  /* printf("entering function\n"); */
+
   /* checks for null pointers: */
 
   /*    output series */
@@ -455,6 +457,16 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
   ASSERT(lengthFine != 0, status,
          COARSEGRAINFREQUENCYSERIESH_EZEROLEN,
          COARSEGRAINFREQUENCYSERIESH_MSGEZEROLEN);
+
+  /* coarse-grained resolution must not be finer than fine-grained */
+  /* printf("res ratio %f/%f\n",deltaFCoarse,deltaFFine);*/
+
+  if (deltaFCoarse < deltaFFine)
+  {
+    ABORT( status,
+         COARSEGRAINFREQUENCYSERIESH_EOORCOARSE,
+         COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE);	 
+  }
 
   /*    start frequency must not be negative */
 
@@ -518,12 +530,21 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
            COARSEGRAINFREQUENCYSERIESH_MSGEOORCOARSE );
   } 
 
+  /*
+  printf("survived checks\n");
+
+  printf("res ratio %f/%f = %f\n",deltaFCoarse,deltaFFine,resRatio);
+  printf("offset (%f-%f)/%f = %f\n",f0Coarse,f0Fine,deltaFFine,offset);
+  */
+
   if (f0Coarse == 0.0) 
   {
     /* DC component */
     
     lamMax = (resRatio / 2.0) - 0.5 ;
     lMax = (UINT4) floor(lamMax);
+
+    /* printf("%f %d %d\n",lamMax,lMax,lengthFine); */
 
     if ( lamMax != (REAL4) lMax )
     {
@@ -555,6 +576,8 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
     lamMin = offset + ( (REAL4) k - 0.5 ) * resRatio + 0.5 ;
     lMin = (UINT4) ceil(lamMin);
 
+    /* printf("%f %d\n",lamMin,lMin); */
+
     if ( lamMin != (REAL4) lMin ) {
       value.re = ( (REAL4) lMin - lamMin ) * input->data->data[lMin-1].re;
       value.im = ( (REAL4) lMin - lamMin ) * input->data->data[lMin-1].im;
@@ -566,6 +589,8 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
 
     lamMax = offset + ( (REAL4) k + 0.5 ) * resRatio - 0.5 ;
     lMax = (UINT4) floor(lamMax);    
+
+    /*    printf("%f %d %d\n",lamMax,lMax,lengthFine); */
 
     for ( l = lMin ; l <= lMax ; ++l) 
     {
