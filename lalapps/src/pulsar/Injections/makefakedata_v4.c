@@ -195,6 +195,7 @@ main(int argc, char *argv[])
   params.pulsar.aCross		   = uvar_aCross;
   params.pulsar.phi0		   = uvar_phi0;
   params.pulsar.f0		   = uvar_f0;
+  params.pulsar.spindown           = GV.spindown;
 
   /* orbital params */
   if (GV.binaryPulsar)
