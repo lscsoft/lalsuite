@@ -61,7 +61,8 @@ void LALComputeAM (LALStatus          *status,
   EarthState earth;            /* earth information needed for LALBarycenter */
   EmissionTime emit;           /* output of LALBarycenter                    */
   LALDetAMResponse response;   /* output of LALComputeDetAMResponse          */
-  
+  LALGPSandAcc timeAndAcc;     /* parameter structure to LALComputeAMResponse*/
+
   REAL4 sumA2=0.0;
   REAL4 sumB2=0.0;
   REAL4 sumAB=0.0;             /* variables to store scalar products         */
@@ -85,6 +86,9 @@ void LALComputeAM (LALStatus          *status,
   cos2psi = cos(2.0 * params->polAngle); 
   sin2psi = sin(2.0 * params->polAngle);  
 
+
+  timeAndAcc.accuracy=params->leapAcc;
+
   /* Note the length is the same for the b vector */
   for(i=0; i<length; ++i)
     {
@@ -95,9 +99,9 @@ void LALComputeAM (LALStatus          *status,
       LALBarycenterEarth(status->statusPtr, &earth, &(ts[i]), params->edat);
       params->baryinput->tgps = ts[i];
       LALBarycenter(status->statusPtr, &emit, params->baryinput, &earth);
-      
+      timeAndAcc.gps=params->baryinput->tgps;      
       /* Compute F_plus, F_cross */
-      LALComputeDetAMResponse(status->statusPtr, &response, params->das, &params->baryinput->tgps );
+      LALComputeDetAMResponse(status->statusPtr, &response, params->das, &timeAndAcc);
       
       /*  Compute a, b from JKS eq 10,11
        *  a = zeta * (F_plus*cos(2\psi)-F_cross*sin(2\psi))

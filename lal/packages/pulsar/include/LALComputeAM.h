@@ -88,7 +88,7 @@ struct AMCoeffsParams
 \item[\texttt{LALDetAndSource *das}]  Detector and source information
 \item[\texttt{LALFrDetector}]  Detector geometry information
 \item[\texttt{REAL4 polAngle}]  Polarization angle
-\item[\texttt{REAL4 tObs}]  Observation time
+\item[\texttt{LALLeapSecAccuracy leapAcc}] Leap sec accuracy 
 \end{description}
 </lalLaTeX> */
 
@@ -110,9 +110,7 @@ typedef struct AMCoeffsParamsTag
   LALDetAndSource      *das;        /* det and source information     */
   LALFrDetector        *det;        /* detector geometry              */
   REAL4                polAngle;    /* polarization angle             */
-  INT4                mObsSFT;     /* number of SFTs in obs time     */
-  LIGOTimeGPS          ts0;
-  LIGOTimeGPS          tsEnd;
+  LALLeapSecAccuracy  leapAcc;     /* accuracy in def of leap sec */
 } AMCoeffsParams;
 
 
