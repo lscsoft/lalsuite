@@ -43,6 +43,11 @@ extern INT4 lalDebugLevel;
  *
  ***************************************************************/
 
+static INT4 DegreesOfFreedom(TFTile *tile)
+{
+	return(2 * (tile->tend - tile->tstart + 1) * (tile->fend - tile->fstart + 1));
+}
+
 /******** <lalVerbatim file="LALWeighTFTileListCP"> ********/
 void LALWeighTFTileList (
         LALStatus         *status,
@@ -51,53 +56,28 @@ void LALWeighTFTileList (
         )
 /******** </lalVerbatim> ********/
 {
-  TFTile *thisTile;
-  INT4   *tmparray;
-  INT4    i=0;
+	TFTile *tile;
+	INT4 *weight;
 
-  INITSTATUS (status, "LALPrintTFTileList", EPSEARCHC);
-  ATTATCHSTATUSPTR (status);
+	INITSTATUS(status, "LALPrintTFTileList", EPSEARCHC);
+	ATTATCHSTATUSPTR(status);
 
-  ASSERT(tfTiling, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP); 
-  ASSERT(tfTiling->firstTile, status, EXCESSPOWERH_ENULLP, \
-         EXCESSPOWERH_MSGENULLP); 
+	ASSERT(tfTiling, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP); 
+	ASSERT(tfTiling->firstTile, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP); 
 
-  
-  tmparray = (INT4 *) LALMalloc (2*maxDOF*sizeof(INT4));
-  for (i=0 ; i < 2*maxDOF ; i++){
-        tmparray[i]=0;
-  }
+	weight = LALCalloc(2 * maxDOF, sizeof(*weight));
 
-  thisTile = tfTiling->firstTile;
-  while ( (thisTile != NULL) )
-  {
-      INT4 t1 = thisTile->tstart;
-      INT4 t2 = thisTile->tend;
-      INT4 f1 = thisTile->fstart;
-      INT4 f2 = thisTile->fend;
-      INT4 dof = 2*(t2-t1+1)*(f2-f1+1);
-      tmparray[dof]+=1;
+	for(tile = tfTiling->firstTile; tile; tile = tile->nextTile)
+		weight[DegreesOfFreedom(tile)]++;
 
-      thisTile = thisTile->nextTile;
-  }
-  thisTile = tfTiling->firstTile;
-  while ( (thisTile != NULL) )
-  {
-      INT4 t1 = thisTile->tstart;
-      INT4 t2 = thisTile->tend;
-      INT4 f1 = thisTile->fstart;
-      INT4 f2 = thisTile->fend;
-      INT4 dof = 2*(t2-t1+1)*(f2-f1+1);
+	for(tile = tfTiling->firstTile; tile; tile = tile->nextTile)
+		tile->weight = weight[DegreesOfFreedom(tile)];
 
-      thisTile->weight=(REAL4)tmparray[dof];
-      thisTile = thisTile->nextTile;
-  }
+	LALFree(weight);
 
-  LALFree(tmparray);
-
-  /* Normal exit */
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+	/* Normal exit */
+	DETATCHSTATUSPTR(status);
+	RETURN(status);
 }
 
 
@@ -149,6 +129,33 @@ static void ComputeAverageSpectrum(
 }
 
 
+/*
+ * Convert a linked list of tiles to a linked list of burst events.
+ */
+
+static INT4 TFTilesToSnglBurstTable(LALStatus *status, TFTile *tile, SnglBurstTable **event, LIGOTimeGPS *epoch, EPSearchParams *params)
+{
+	INT4 numevents;
+	INT8 tstartNS;
+
+	LALInfo(status->statusPtr, "Converting times into sngl_burst events");
+	CHECKSTATUSPTR (status);
+
+	for(numevents = 0; tile && (tile->alpha <= params->alphaThreshold/tile->weight) && (numevents < params->events2Master); tile = tile->nextTile, numevents++) {
+		LALGPStoINT8(status->statusPtr, &tstartNS, epoch);
+
+		*event = LALMalloc(sizeof(**event));
+
+		LALTFTileToBurstEvent(status->statusPtr, *event, tile, tstartNS, params); 
+		CHECKSTATUSPTR(status);
+
+		event = &(*event)->next;
+	}
+
+	return(numevents);
+}
+
+
 /******** <lalVerbatim file="EPSearchCP"> ********/
 void
 EPSearch (
@@ -161,14 +168,14 @@ EPSearch (
 { 
     int                       start_sample;
     INT4                      j,freqcl;
-    SnglBurstTable           *currentEvent     = NULL;
-    SnglBurstTable           *prevEvent        = NULL;
     COMPLEX8FrequencySeries  *fseries;
     RealDFTParams            *dftparams        = NULL;
     LALWindowParams           winParams;
     REAL4FrequencySeries     *AverageSpec;
     REAL4TimeSeries          *cutTimeSeries;
     INT4                      nevents, dumevents;
+    SnglBurstTable          **EventAddPoint = burstEvent;
+    TFTiling                 *tfTiling;	/* FIXME: use this instead of params->tfTiling */
 
     INITSTATUS (status, "EPSearch", EPSEARCHC);
     ATTATCHSTATUSPTR (status);
@@ -285,80 +292,35 @@ EPSearch (
       CHECKSTATUSPTR (status);
 
       /* determine the weighting for each tile */
-      LALWeighTFTileList ( status->statusPtr, params->tfTiling, 10000);
-      CHECKSTATUSPTR (status);
+      LALWeighTFTileList(status->statusPtr, params->tfTiling, 10000);
+      CHECKSTATUSPTR(status);
 
       /* convert the TFTiles into sngl_burst events for output */
-      LALInfo(status->statusPtr, "Converting times into sngl_burst events");
-      CHECKSTATUSPTR (status);
-      {
-        TFTile *thisTile = params->tfTiling->firstTile;
-        INT4 tileCount   = 0;
-
-        while ( (thisTile != NULL) 
-                && (thisTile->alpha <= params->alphaThreshold/thisTile->weight) 
-                && (tileCount < params->events2Master) )
-        {
-          INT8 tstartNS = 0;
-
-          /* increment local and global counter */
-          tileCount++;
-          (params->numEvents)++;
-
-          /* convert epoch to GPS nanoseconds */
-	  LALGPStoINT8(status->statusPtr, &tstartNS, &fseries->epoch);
-
-          /* allocate memory for the burst event */
-          if ( (*burstEvent) == NULL )
-          {
-            currentEvent=(*burstEvent)=(SnglBurstTable *) 
-              LALMalloc( sizeof(SnglBurstTable) );
-          }
-          else 
-          {
-            currentEvent = (SnglBurstTable *) 
-              LALMalloc( sizeof(SnglBurstTable) );
-          }
-
-          /* build a burst event from TFTile */
-          LALTFTileToBurstEvent(status->statusPtr, currentEvent, thisTile,
-              tstartNS, params); 
-          CHECKSTATUSPTR (status);
-
-          /* point to the next event */
-          currentEvent->next = NULL;
-          if (prevEvent != NULL) prevEvent->next = currentEvent;
-          prevEvent = currentEvent;
-          currentEvent = currentEvent->next;
-          thisTile = thisTile->nextTile;
-        }
-      }
+      params->numEvents += TFTilesToSnglBurstTable(status, params->tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
+      while(*EventAddPoint)
+        EventAddPoint = &(*EventAddPoint)->next;
 
       /* reset the flags on the tftiles */
       params->tfTiling->planesComputed=FALSE;
       params->tfTiling->excessPowerComputed=FALSE;
       params->tfTiling->tilesSorted=FALSE;
     }
-  
+
     nevents = 0;
     dumevents = 1;
     j = 0;
     /* cluster the events if requested */
-    if (params->cluster && (*burstEvent) != NULL)
-      {
-	while ( (dumevents != nevents) && j < 500) 
-	{
-	  dumevents = nevents;
-	  LALSortSnglBurst(status->statusPtr, burstEvent, 
-              LALCompareSnglBurstByTimeAndFreq);
-	  CHECKSTATUSPTR (status);
-	  LALClusterSnglBurstTable(status->statusPtr, *burstEvent, 
-              &nevents);
-	  CHECKSTATUSPTR (status);
-	  j++;
-	}
+    if(params->cluster && *burstEvent) {
+      while((dumevents != nevents) && j < 500) {
+        dumevents = nevents;
+        LALSortSnglBurst(status->statusPtr, burstEvent, LALCompareSnglBurstByTimeAndFreq);
+        CHECKSTATUSPTR (status);
+        LALClusterSnglBurstTable(status->statusPtr, *burstEvent, &nevents);
+        CHECKSTATUSPTR (status);
+        j++;
       }
-    
+    }
+
     /* memory clean-up */
     LALDestroyTFTiling (status->statusPtr, &(params->tfTiling));
     CHECKSTATUSPTR (status);
