@@ -421,8 +421,8 @@ LALUserVarReadCfgfile (LALStatus *stat,
 	  break;
 	case UVAR_STRING:
 	  stringbuf = NULL;
-	  TRY( LALReadConfigSTRINGVariable (stat->statusPtr, &stringbuf, cfg, ptr->name ), stat);
-	  if (stringbuf)	/* did we find something? */
+	  TRY( LALReadConfigSTRINGVariable (stat->statusPtr, &stringbuf, cfg, ptr->name, &wasRead), stat);
+	  if ( wasRead && stringbuf)	/* did we find something? */
 	    {
 	      if ( *(CHAR**)(ptr->varp) != NULL)	 /* something allocated here before? */
 		LALFree ( *(CHAR**)(ptr->varp) );

@@ -372,9 +372,9 @@ LALReadConfigBOOLVariable (LALStatus *stat,
   *wasRead = FALSE;
 
   /* first read the value as a string */
-  TRY (LALReadConfigSTRINGVariable (stat->statusPtr, &tmp, cfgdata, varName), stat);
+  TRY (LALReadConfigSTRINGVariable (stat->statusPtr, &tmp, cfgdata, varName, wasRead), stat);
 
-  if (tmp) /* if we read anything at all... */
+  if (*wasRead && tmp) /* if we read anything at all... */
     {
       /* try to parse it as a bool */
       if (      !strcmp(tmp, "yes") || !strcmp(tmp, "true") || !strcmp(tmp,"1") )
@@ -395,7 +395,7 @@ LALReadConfigBOOLVariable (LALStatus *stat,
 	  *wasRead = TRUE;
 	}
 
-    } /* if tmp */
+    } /* if wasRead && tmp */
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -465,10 +465,10 @@ void
 LALReadConfigSTRINGVariable (LALStatus *stat, 
 			     CHAR **varp, 		/* output: string, allocated here! */
 			     const LALConfigData *cfgdata, /* pre-parsed config-data */
-			     const CHAR *varName)	/* variable-name to be read */
+			     const CHAR *varName,	/* variable-name to be read */
+			     BOOLEAN *wasRead)			     
 { /* </lalVerbatim> */
   LALConfigVar param = {0,0,0};
-  BOOLEAN wasRead = FALSE;
 
   INITSTATUS( stat, "LALReadConfigSTRINGVariable", CONFIGFILEC );
 
@@ -476,9 +476,9 @@ LALReadConfigSTRINGVariable (LALStatus *stat,
   param.fmt = FMT_STRING;
   param.strictness = CONFIGFILE_IGNORE;
 
-  LALReadConfigVariable (stat, (void*) varp, cfgdata, &param, &wasRead);
-  
-  if (!wasRead)	/* if reading failed, we report it by NULL-string */
+  LALReadConfigVariable (stat, (void*) varp, cfgdata, &param, wasRead);
+
+  if (! (*wasRead) )
     *varp = NULL;
 
   RETURN (stat);
@@ -522,9 +522,9 @@ LALReadConfigSTRINGNVariable (LALStatus *stat,
   ASSERT( varp->data != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
   ASSERT( varp->length != 0, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
   
-  TRY (LALReadConfigSTRINGVariable (stat->statusPtr, &tmp, cfgdata, varName), stat);
+  TRY (LALReadConfigSTRINGVariable (stat->statusPtr, &tmp, cfgdata, varName, wasRead), stat);
 
-  if (tmp != NULL)
+  if (*wasRead && tmp)
     {
       strncpy (varp->data, tmp, varp->length - 1);
       varp->data[varp->length-1] = '\0';

@@ -144,7 +144,8 @@ void
 LALReadConfigSTRINGVariable (LALStatus *stat, 
 			     CHAR **varp, 
 			     const LALConfigData *cfgdata, 
-			     const CHAR *varName);
+			     const CHAR *varName,
+			     BOOLEAN *wasRead);
 
 void
 LALReadConfigSTRINGNVariable (LALStatus *stat, 

@@ -111,7 +111,7 @@ int main(int argc, char *argv[]){
   SUB (LALLoadConfigFile (&status, &cfgdata, "ConfigFileSample.cfg"), &status);
 
   SUB (LALReadConfigREAL8Variable  (&status, &somefloat, cfgdata, "float1", &wasRead), &status);
-  SUB (LALReadConfigSTRINGVariable (&status, &string1,   cfgdata, "string1"), &status);
+  SUB (LALReadConfigSTRINGVariable (&status, &string1,   cfgdata, "string1", &wasRead), &status);
 
   SUB (LALReadConfigINT4Variable   (&status, &someint,   cfgdata, "int1", &wasRead), &status);
 
