@@ -5,7 +5,7 @@
 /*                                                                               */
 /*                  University of Glasgow - last modified 26/03/2004             */
 /*********************************************************************************/
-$Id$
+
 #include "TargetedPulsars.h" 
 
 #define CONDOR 1 
@@ -32,7 +32,7 @@ main( int argc, char *argv[])
   REAL4 wc;
   REAL8Vector *tt, *alpha, *beta, *tab;
   REAL8 RA[MAXPSRS], DEC[MAXPSRS], f0[MAXPSRS], f1[MAXPSRS], f2[MAXPSRS];
-  REAL8 H0, phaseH0, C0, phaseC0, a, b, ab, tg, f=0, jnknum1;
+  REAL8 H0, phaseH0, C0, phaseC0, a, b, ab, tg, f=0, jnknum1,jnknum2;
   REAL8 ra_sec, dec_sec, pf0, pmra, pmdec,ffepoch, posepoch, fepoch_gps;
   REAL8 pf1, pf2, s_ra, s_dec;
   LIGOTimeGPS fepoch[MAXPSRS],epoch; 
@@ -57,7 +57,7 @@ the variable condor is defined, then read in the first argument jobnum from stdi
     fprintf(stderr,"Input files are taken from DIR1\n");
     fprintf(stderr,"Output files are put into DIR2\n");
     fprintf(stderr,"DETECTOR is either H1, H2, or L1\n");
-    fprintf(stderr,"Run - 2 (S2) or 3 (S3)\n");
+    fprintf(stderr,"Run - 1 (s1) or 2 (S2) or 3 (S3)\n");
     fprintf(stderr,"injections? 0 for no, 1 for yes\n");
     fprintf(stderr,"There were argc=%d arguments:\n",argc);
     fflush(stderr);
@@ -72,7 +72,7 @@ the variable condor is defined, then read in the first argument jobnum from stdi
 #endif 
 
    irun = atoi(argv[5]);
-   if (irun != 2 && irun != 3)
+   if (irun !=1 && irun != 2 && irun != 3)
    {
       fprintf(stderr, "irun = ??? Should be 2 (S2) or 3 (S3)!\n");
       return(1);
@@ -154,7 +154,14 @@ file is slighly different for the hardware injections */
       else {ffepoch = 0.0;}
   
     /*adjust RA and DEC to epoch at beg of run */
-    if (irun==2)
+    
+    if (irun==1)
+    {
+       REF_MJD = S1_MJD;
+       REF_GPS_SECS = S1_GPS_SECS;
+    }
+    
+    else if (irun==2)
     {
        REF_MJD = S2_MJD;
        REF_GPS_SECS = S2_GPS_SECS;
@@ -166,7 +173,7 @@ file is slighly different for the hardware injections */
     }
     else 
     {
-      fprintf(stderr, "irun must be either 2 or 3!\n");
+      fprintf(stderr, "irun must be either 1 or 2 or 3!\n");
       return(1);
     }   
     
@@ -181,9 +188,9 @@ file is slighly different for the hardware injections */
     fepoch[counter].gpsSeconds = (INT4)floor(fepoch_gps);
     fepoch[counter].gpsNanoSeconds = (INT4)floor((fmod(fepoch_gps, 1.0)*1.e9)); 
 
-/* if S2 hardware injections then hardwire the frequency epochs here
+/* if S2 hardware injections then hardwire the positional epochs here
 - due to fact that I did not have these epochs in MJD format so easier to 
-just put them in manually here */	    
+just put them in manually here, not hardwired for S3 injections*/	    
     if (iflag==1 && irun==2)
     {      
       if ((f0[counter]*2.0) < 1285.0) /* thus signal 1*/
@@ -385,11 +392,13 @@ just put them in manually here */
       sprintf(abfile,"%s/calibration/%salphabeta.txt",argv[2],argv[4]);
   
       fpab = tryopen(abfile,"r");
-      fscanf(fpab, "%s%s%s%s%s", &jnkstr1[0], &jnkstr2[0], &jnkstr3[0], &jnkstr4[0], &jnkstr5[0]);
-    
+      if (irun==2||irun==3)
+        fscanf(fpab, "%s%s%s%s%s", &jnkstr1[0], &jnkstr2[0], &jnkstr3[0], &jnkstr4[0], &jnkstr5[0]);
+      
       i = 0;
       while (!feof(fpab)){
-        fscanf(fpab, "%lf%lf%lf%lf%lf", &tg, &ab, &a, &b, &jnknum1);
+        if (irun==2||irun==3) fscanf(fpab, "%lf%lf%lf%lf%lf", &tg, &ab, &a, &b, &jnknum1);
+        else if (irun==1) fscanf(fpab,     "%lf%lf%lf%lf%lf%lf", &tg, &ab, &a, &b, &jnknum1,&jnknum2);
         if (a>=ALPHAMIN && a<=ALPHAMAX){
           tab->data[i] = tg;
           alpha->data[i] = a;
