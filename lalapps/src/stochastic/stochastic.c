@@ -728,7 +728,7 @@ static REAL4FrequencySeries *optimal_filter(LALStatus *status,
   return(series);
 }
 
-
+/* usage info */
 #define USAGE \
   "Usage: " PROGRAM_NAME " [options]\n"\
   " --help                        print this message\n"\
