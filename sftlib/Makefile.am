@@ -47,7 +47,8 @@ $(docname).pdf : $(docname).tex ligodcc.cls pdfdraftcopy.sty
 	pdflatex $(docname).tex
 
 # add documentation-sources to distribution
-EXTRA_DIST      =      $(docsources)
+EXTRA_DIST      =      $(docs_DATA) \
+                       run_validate.sh
 
 CLEANFILES      =      SFT-test[1-7] SFT-bad[1-9] SFT-bad1[0-4] SFT-good *.aux *.log $(docname).pdf
 
