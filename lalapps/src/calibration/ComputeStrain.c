@@ -12,6 +12,7 @@
 int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", stderr);return 1;}
 #else
 
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -42,10 +43,10 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <gsl/gsl_interp.h>
 #include <gsl/gsl_spline.h>
 
-#include "filters-H2-S3.h"                      /* files that contains the filter coefficients */
-#define CHANNEL "H2:Calibrated-Strain"
-#define DATADIR "/mnt/scratch3/xavi/hoft/H2/"
-#define FRAMETYPE "H2_RDS_C01_LX"
+#include "filters-H1-S3.h"                      /* files that contains the filter coefficients */
+#define CHANNEL "H1:Calibrated-Strain"
+#define DATADIR "/home/siemens/lscsoft/lalapps/src/calibration/data/"
+#define FRAMETYPE "H1_RDS_C01_LX"
 
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -97,10 +98,10 @@ static COMPLEX16 *cdiv( COMPLEX16 *pc, COMPLEX16 *pa, COMPLEX16 *pb )
 /* STRUCTURES */
 struct CommandLineArgsTag {
   REAL8 f;                 /* Frequency of the calibration line */
-  REAL8 mu;                 /* Fraction of actuation seen by excitation channel */
-  char *RFile;             /* Text file with the response funtion */
-  char *CFile;             /* Text file with the sensing function */
-  char *AFile;             /* Text file with the actuation function */
+  REAL8 G0Re;              /* Real part of open loop gain at cal line freq.*/
+  REAL8 G0Im;              /* Imaginary part of open loop gain at cal line freq. */
+  REAL8 D0Re;              /* Real part of digital filter at cal line freq.*/
+  REAL8 D0Im;              /* Imaginary part of digital filter at cal line freq. */
   char *FrCacheFile;       /* Frame cache file */
   char *SegmentsFile;      /* Text file with the segments */
   char *exc_chan;          /* excitation channel name */    
@@ -115,17 +116,6 @@ struct SegmentListTag {
   INT4 gpsend;            /* number of segments starting at tgps */
   INT4 seglength;         /* length of segment in seconds */       
 } SegmentList;
-
-typedef
-struct MyIIRFilter {
-  INT4 yOrder;
-  INT4 xOrder;
-  REAL8 a[20];
-  REAL8 b[20];
-  REAL8 yhist[20];
-  REAL8 xhist[20];
-} MyIIRFilter;
-
 
 typedef 
 struct GlobalVariablesTag {
@@ -378,7 +368,7 @@ int i,j,DT,p;
 	      LALFrWriteREAL8TimeSeries( &status, &GV.h, &opar );
 	      TESTSTATUS( &status );
 
-	      fprintf(stdout,"%s-%s-%d-%d.gwf\n",filename,FRAMETYPE,GV.h.epoch.gpsSeconds,DT);
+/* 	      fprintf(stdout,"%s-%s-%d-%d.gwf\n",filename,FRAMETYPE,GV.h.epoch.gpsSeconds,DT); */
 	    }
 
 	  }
@@ -691,7 +681,7 @@ int UpsamplehR(int up_factor)
 int hROverAlpha(int i)
 {
   int n;
-  REAL8 time,InterpolatedAlpha;
+  double time,InterpolatedAlpha;
 
   gsl_interp_accel *acc_alpha = gsl_interp_accel_alloc();      /* GSL spline interpolation stuff */
   gsl_spline *spline_alpha = gsl_spline_alloc(gsl_interp_cspline,(UINT4)GV.duration/To);
@@ -705,6 +695,7 @@ int hROverAlpha(int i)
     
     GV.hR.data->data[n] /= InterpolatedAlpha;
     time=time+GV.hR.deltaT;
+
   }
 
   /* clean up GSL spline interpolation stuff */
@@ -1024,12 +1015,10 @@ FILE *fpAlpha=NULL;
       params.asQ = &asq;
       params.exc = &exc;
       params.lineFrequency = CLA.f;
-      /* params.mu = CLA.mu; 
-      params.actuationFactor.re = GV.Af0.re ;
-      params.actuationFactor.im = GV.Af0.im ;
-      params.responseFactor = GV.Rf0;
-      params.sensingFactor = GV.Cf0;
-*/	  
+      params.openloop.re =  CLA.G0Re;
+      params.openloop.im =  CLA.G0Im;
+      params.digital.re = CLA.D0Re;
+      params.digital.im = CLA.D0Im;
 
       LALComputeCalibrationFactors(&status,&factors,&params);
       TESTSTATUS( &status );
@@ -1039,16 +1028,13 @@ FILE *fpAlpha=NULL;
       if( GV.alpha[m] < 0.3 ) outflag=1;  /* If any alpha is bad set a flag so we exit gracefully */
       if( GV.alpha[m] > 1.7 ) outflag=1;  /* If any alpha is bad set a flag so we exit gracefully */
       
-      be.re=be.im=0;
+      GV.beta[m]= factors.beta.re;
 
-      if( GV.alpha[m] != 0 ) cdiv(&be,&factors.alphabeta,&factors.alpha); /* If any alpha is not zero perform complex division */
-
-      GV.beta[m] = be.re;
       GV.ta_interp[m]=m*To;
 
       if(CLA.alphafile != NULL)
 	{
-	  fprintf(fpAlpha,"%d %d %f %f %f %f %f %f %e %e %e %e %e %e\n",m,localgpsepoch.gpsSeconds,factors.alpha.re,factors.alpha.im,be.re,be.im,
+	  fprintf(fpAlpha,"%d %d %e %e %e %e %e %e %e %e %e %e %e %e\n",m,localgpsepoch.gpsSeconds,factors.alpha.re,factors.alpha.im,be.re,be.im,
 		  factors.alphabeta.re,factors.alphabeta.im,
 		  factors.asq.re*2/To,factors.asq.im*2/To,
 		  factors.darm.re*2/To,factors.darm.im*2/To,
@@ -1090,103 +1076,7 @@ int ReadFiles(struct CommandLineArgsTag CLA)
 {
   char line[256];
   INT4 i;
-  FILE *fpS,*fpR,*fpA,*fpSeg;
-  REAL8 Cmag,Cphase,Rmag,Rphase,Amag,Aphase,freq,x,y;
-  static COMPLEX16FrequencySeries R0;
-  static COMPLEX16FrequencySeries C0;
-  static COMPLEX16FrequencySeries A0;
-
-  /* Allocate space for response and sensing functions; just enough to read first 1200Hz */
-  LALZCreateVector( &status, &R0.data, MAXLINERS);
-  TESTSTATUS( &status );
-  LALZCreateVector( &status, &C0.data, MAXLINERS);
-  TESTSTATUS( &status );
-  LALZCreateVector( &status, &A0.data, MAXLINERS);
-  TESTSTATUS( &status );
-
-  /* Fill in R0, C0 data */
-  R0.f0=0.0;
-  R0.deltaF=1.0/64.0;                   /*ACHTUNG: HARDWIRED !!*/
-  C0.f0=0.0;
-  C0.deltaF=1.0/64.0;                   /*ACHTUNG: HARDWIRED !!*/
-  A0.f0=0.0;
-  A0.deltaF=1.0/64.0;                   /*ACHTUNG: HARDWIRED !!*/
-
- /* This is kinda messy... Unfortunately there's no good way of doing this */ 
- /* ------ Open and read Sensing file ------ */
- i=0;
- fpS=fopen(CLA.CFile,"r");
- if (fpS==NULL) 
-   {
-     fprintf(stderr,"That's weird... %s doesn't exist!\n",CLA.CFile);
-     return 1;
-   }
- while(fgets(line,sizeof(line),fpS))
-   {
-     if(*line == '#') continue;
-     if(*line == '%') continue;
-     if (i > MAXLINERS-1)
-       {
-	 /* done reading file */
-	 break;
-       }
-     sscanf(line,"%le %le %le",&freq,&Cmag,&Cphase);
-     C0.data->data[i].re=Cmag*cos(Cphase);
-     C0.data->data[i].im=Cmag*sin(Cphase);
-     i++;
-   }
- fclose(fpS);     
- /* -- close Sensing file -- */
-
- /* ------ Open and read Response file ------ */
- i=0;
- fpR=fopen(CLA.RFile,"r");
- if (fpR==NULL) 
-   {
-     fprintf(stderr,"That's weird... %s doesn't exist!\n",CLA.RFile);
-     return 1;
-   }
- while(fgets(line,sizeof(line),fpR))
-   {
-     if(*line == '#') continue;
-     if(*line == '%') continue;
-     if (i > MAXLINERS-1)
-       {
-	 /* done reading file */
-	 break;
-       }
-     sscanf(line,"%le %le %le",&freq,&Rmag,&Rphase);
-     R0.data->data[i].re=Rmag*cos(Rphase);
-     R0.data->data[i].im=Rmag*sin(Rphase);
-     i++;
-   }
- fclose(fpR);     
- /* -- close Sensing file -- */
-
- /* ------ Open and read Response file ------ */
- i=0;
- fpA=fopen(CLA.AFile,"r");
- if (fpA==NULL) 
-   {
-     fprintf(stderr,"That's weird... %s doesn't exist!\n",CLA.AFile);
-     return 1;
-   }
- while(fgets(line,sizeof(line),fpA))
-   {
-     if(*line == '#') continue;
-     if(*line == '%') continue;
-     if (i > MAXLINERS-1)
-       {
-	 /* done reading file */
-	 break;
-       }
-     sscanf(line,"%le %le %le",&freq,&Amag,&Aphase);
-     A0.data->data[i].re=Amag*cos(Aphase);
-     A0.data->data[i].im=Amag*sin(Aphase);
-     i++;
-   }
- fclose(fpA);     
- /* -- close Sensing file -- */
+  FILE *fpSeg;
 
  /* ------ Open and read Segment file ------ */
  i=0;
@@ -1212,35 +1102,6 @@ int ReadFiles(struct CommandLineArgsTag CLA)
  fclose(fpSeg);     
  /* -- close Sensing file -- */
 
-  /* compute global varibles GV.Cf0, GV.Af0 and GV.Rf0 at correct frequency */
-  /* use linear interpolation */
-
-  x = modf( CLA.f / R0.deltaF, &y );
-  i = floor( y );
-  GV.Rf0.re  = ( 1 - x ) * R0.data->data[i].re;
-  GV.Rf0.re += x * R0.data->data[i].re;
-  GV.Rf0.im  = ( 1 - x ) * R0.data->data[i].im;
-  GV.Rf0.im += x * R0.data->data[i].im;
-  x = modf( CLA.f / C0.deltaF, &y );
-  i = floor( y );
-  GV.Cf0.re  = ( 1 - x ) * C0.data->data[i].re;
-  GV.Cf0.re += x * C0.data->data[i].re;
-  GV.Cf0.im  = ( 1 - x ) * C0.data->data[i].im;
-  GV.Cf0.im += x * C0.data->data[i].im;
-  x = modf( CLA.f / A0.deltaF, &y );
-  i = floor( y );
-  GV.Af0.re  = ( 1 - x ) * A0.data->data[i].re;
-  GV.Af0.re += x * A0.data->data[i].re;
-  GV.Af0.im  = ( 1 - x ) * A0.data->data[i].im;
-  GV.Af0.im += x * A0.data->data[i].im;
-
-  /* clean up */
- LALZDestroyVector(&status,&R0.data);
- TESTSTATUS( &status );
- LALZDestroyVector(&status,&C0.data);
- TESTSTATUS( &status );
- LALZDestroyVector(&status,&A0.data);
- TESTSTATUS( &status );
 
  return 0;
 }
@@ -1254,10 +1115,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   
   /* Initialize default values */
   CLA->f=0.0;
-  CLA->mu=0.0;  
-  CLA->RFile=NULL;
-  CLA->CFile=NULL;   
-  CLA->AFile=NULL;   
+  CLA->G0Re=0.0;
+  CLA->G0Im=0.0;
+  CLA->D0Re=0.0;
+  CLA->D0Im=0.0;
   CLA->FrCacheFile=NULL;
   CLA->SegmentsFile=NULL;
   CLA->exc_chan=NULL;
@@ -1266,35 +1127,35 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->alphafile=NULL;
 
   /* Scan through list of command line arguments */
-  while (!errflg && ((c = getopt(argc, argv,"hf:F:r:S:c:A:E:D:a:m:b:"))!=-1))
+  while (!errflg && ((c = getopt(argc, argv,"hf:F:S:A:E:D:b:i:j:k:l:"))!=-1))
     switch (c) {
     case 'f':
       /* calibration line frequency */
       CLA->f=atof(optarg);
       break;
-    case 'm':
-      /* darm to etmx output matrix value */
-      CLA->mu=atof(optarg);
-      break;
     case 'F':
       /* name of frame cache file */
       CLA->FrCacheFile=optarg;
       break;
-    case 'r':
-      /* name of response file */
-      CLA->RFile=optarg;
-      break;
-    case 'c':
-      /* name of sensing file */
-      CLA->CFile=optarg;
-      break;
-    case 'a':
-      /* name of actuation file */
-      CLA->AFile=optarg;
-      break;
     case 'S':
       /* name of segments file */
       CLA->SegmentsFile=optarg;
+      break;
+    case 'i':
+      /* calibration line frequency */
+      CLA->G0Re=atof(optarg);
+      break;
+    case 'j':
+      /* calibration line frequency */
+      CLA->G0Im=atof(optarg);
+      break;
+    case 'k':
+      /* calibration line frequency */
+      CLA->D0Re=atof(optarg);
+      break;
+    case 'l':
+      /* calibration line frequency */
+      CLA->D0Im=atof(optarg);
       break;
     case 'E':
       /* name of excitation channel */
@@ -1316,11 +1177,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /* print usage/help message */
       fprintf(stdout,"All arguments are required except -b. They are:\n");
       fprintf(stdout,"\t-f\tFLOAT\t Calibration line frequency in Hz.\n");
-      fprintf(stdout,"\t-m\tFLOAT\t Fraction of the actuation seen by excitation channel (=1 if injected into darm,Gx/(Ky Gy- Kx Gx)...).\n");
+      fprintf(stdout,"\t-i\tFLOAT\t Real part of the open loop gain at the calibration line frequency.\n");
+      fprintf(stdout,"\t-j\tFLOAT\t Imaginary part of the open loop gain at the calibration line frequency.\n");
+      fprintf(stdout,"\t-k\tFLOAT\t Real part of the digital filter at the calibration line frequency.\n");
+      fprintf(stdout,"\t-l\tFLOAT\t Imaginary part of digital filter at the calibration line frequency.\n");
       fprintf(stdout,"\t-F\tSTRING\t Name of frame cache file.\n");
-      fprintf(stdout,"\t-r\tSTRING\t Name of response function file.\n");
-      fprintf(stdout,"\t-c\tSTRING\t Name of sensing function file.\n");
-      fprintf(stdout,"\t-a\tSTRING\t Name of actuation function file.\n");
       fprintf(stdout,"\t-S\tSTRING\t Name of segment list file.\n");
       fprintf(stdout,"\t-A\tSTRING\t AS_Q channel name (eg, L1:LSC-AS_Q).\n");
       fprintf(stdout,"\t-E\tSTRING\t Excitation channel name (eg, L1:LSC-ETMX_EXC_DAQ)\n");
@@ -1338,30 +1199,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   if(CLA->f == 0)
     {
       fprintf(stderr,"No calibration line frequency specified.\n");
-      fprintf(stderr,"Try ./ComputeStrain -h \n");
-      return 1;
-    }      
-  if(CLA->mu == 0)
-    {
-      fprintf(stderr,"No value of the output matrix to x arm specified.\n");
-      fprintf(stderr,"Try ./ComputeStrain -h \n");
-      return 1;
-    }      
-  if(CLA->CFile == NULL)
-    {
-      fprintf(stderr,"No sensing function file specified.\n");
-      fprintf(stderr,"Try ./ComputeStrain -h \n");
-      return 1;
-    }      
-  if(CLA->RFile == NULL)
-    {
-      fprintf(stderr,"No response function file specified.\n");
-      fprintf(stderr,"Try ./ComputeStrain -h \n");
-      return 1;
-    }      
-  if(CLA->AFile == NULL)
-    {
-      fprintf(stderr,"No actuation function file specified.\n");
       fprintf(stderr,"Try ./ComputeStrain -h \n");
       return 1;
     }      
@@ -1392,6 +1229,30 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
    if(CLA->asq_chan == NULL)
     {
       fprintf(stderr,"No asq channel specified.\n");
+      fprintf(stderr,"Try ./ComputeStrain -h \n");
+      return 1;
+    }      
+  if(CLA->G0Re == 0.0 )
+    {
+      fprintf(stderr,"No real part of open loop gain specified.\n");
+      fprintf(stderr,"Try ./ComputeStrain -h \n");
+      return 1;
+    }      
+  if(CLA->G0Im == 0.0 )
+    {
+      fprintf(stderr,"No imaginary part of open loop gain specified.\n");
+      fprintf(stderr,"Try ./ComputeStrain -h \n");
+      return 1;
+    }      
+  if(CLA->D0Re == 0.0 )
+    {
+      fprintf(stderr,"No real part of digital filter specified.\n");
+      fprintf(stderr,"Try ./ComputeStrain -h \n");
+      return 1;
+    }      
+  if(CLA->D0Im == 0.0 )
+    {
+      fprintf(stderr,"No imaginary part of digital filter specified.\n");
       fprintf(stderr,"Try ./ComputeStrain -h \n");
       return 1;
     }      
