@@ -516,7 +516,7 @@ LALFindChirpSlave (
             chanVec, params->simParams->randomParams );
         CHECKSTATUSPTR( status );
 
-        for ( j = 0; j < tdLength; ++j )
+        for ( j = 0; j < chanVec->length; ++j )
         {
           chan[j] *= gaussianVar;
         }
