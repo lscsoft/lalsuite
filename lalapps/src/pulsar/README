@@ -1,3 +1,4 @@
+
 LALAPPS package for making SFTs in GEO format
 
 Author: Bruce Allen ballen@gravity.phys.uwm.edu
@@ -27,22 +28,20 @@ Note that you may get some "permission denied" errors if you don't
 have read permissions for all of the data.  This won't cause you any
 problems, unless you need access
 
-[Note: You can monitor the action of this script by using tail
-S1-alldata.]
-
 This script does two things.
 
 First, it loops over all the nodes on the cluster, looking under
 /netdata/sXXX for any files of type *.gwf.  These file names are
-combined into a single text file called S1-alldata, where S1 will be
-replaced by the run name.
+combined into a single text file called alldata, where S1 will be
+replaced by the run name.  [Note: You can monitor the initial action
+of this script by using tail alldata.]
 
 Second, it makes four lists of data (S1.LLO.full.sorted,
 S1.LLO.RDS.sorted, S1.LHO.full.sorted, S1.LHO.RDS.sorted) which are
 sorted by GPS time.  S1 is replaced by the run name.
 
 INPUTS:  listing of "*.gwf" files under /netdata/s001 - /netdata/s296
-OUTPUTS: S1-alldata, S1.LLO.full.sorted,  S1.LHO.full.sorted, S1.LLO.RDS.sorted,  S1.LHO.RDS.sorted
+OUTPUTS: alldata, S1.LLO.full.sorted,  S1.LHO.full.sorted, S1.LLO.RDS.sorted,  S1.LHO.RDS.sorted
 
 ================================================================================
 
@@ -55,7 +54,10 @@ which you will want to make SFTs. The files:
   S1-H2segments.txt
   S1-L1segments.txt
 contain this data for the S1 run.  The files were obtained from
-Gabriella Gonzalez's web page and contain two lines of text, that
+Gabriella Gonzalez's web page:
+http://www.phys.lsu.edu/faculty/gonzalez/S1LockStats/
+http://www.phys.lsu.edu/faculty/gonzalez/S2LockStats/
+and contain two lines of text, that
 will be ignored by the SFT code, followed by three columns of
 integers:
 START-GPS   STOP-GPS   LENGTH
@@ -97,6 +99,7 @@ where the SFT-making code can find the data that it needs.  Do do
 this, first create an directory to contain the output (lists of files
 and times)
 mkdir S1-H1.60-lists S1-H2.60-lists S1-L1.60-lists 
+mkdir S2-H1.60-lists S2-H2.60-lists S2-L1.60-lists 
 
 Then run the executable
 ./lalapps_make_job_input_data FILE1 FILE2 DIRNAME
@@ -122,15 +125,16 @@ files contain lists of the corresponding start times.
 If data that is needed to make SFTs is missing, then a list of
 un-buildable SFTs and the corresponding missing GPS frame times can be
 found in the files joberror.XXXXX These joberror files are not
-produced unless there is missing data.  So ls joberror* will
-immediately reveal if any data files are missing.
+produced unless there is missing data.  So
+ls joberror* 
+will immediately reveal if any data files are missing.
+
+INPUTS: S1-H1.60 (list of segment start times/lengths)
+        S1.LHO.*.sorted (list of Frame files/locations on system)
+OUTPUTS: jobtimes.*, jobdata.*.ffl, joberror.* files
 
 ================================================================================
 
 STEP 3:
 
-You are now ready to make the SFTs.  This is done by running condor jobs.
-Here are the steps:
-
-Make a working directory containing the files you have made
-
+Make the SFTs.  You do this by running a condor job.  The condor
