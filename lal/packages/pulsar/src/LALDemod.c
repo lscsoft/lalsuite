@@ -96,9 +96,7 @@ None
 
 #include "LALDemod.h"
 
-
 NRCSID(LALDEMODC, "$Id$");
-
 /* <lalVerbatim file="LALDemodD"> */
 
 void LALDemod(LALStatus *stat, 
