@@ -29,9 +29,6 @@ class MkCalFacJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__init__(self,cp)
 
-    for sec in ['mkcal']:
-      self.add_ini_opts(cp,sec)
-  
     self.set_stdout_file('logs/mkcalfac-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/mkcalfac-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('mkcalfac.sub')
