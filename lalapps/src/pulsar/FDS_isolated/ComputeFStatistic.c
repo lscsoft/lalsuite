@@ -115,18 +115,6 @@ BOOLEAN FILE_FSTATS = 1;
 #include "boinc_zip.h"
 #endif
 
-/* Fixme: include header for this */
-#ifdef _MSC_VER
-#ifndef __BOOL_DEFINED 
-#if _MSC_VER >= 1200
-#define bool char
-#else
-#define bool int
-#endif
-#endif
-extern bool boinc_time_to_checkpoint();
-#endif
-
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
 #endif
@@ -322,8 +310,12 @@ extern "C" {
 #define EPHEM_YEARS  "00-04"
 #define SFT_BNAME  "SFT"
 
+#ifndef TRUE 
 #define TRUE (1==1)
+#endif
+#ifndef FALSE
 #define FALSE (1==0)
+#endif
 
 extern int vrbflg;
 
