@@ -988,7 +988,7 @@ int main(int argc, char *argv[]){
 #endif      
 
 #ifdef PRINTTEMPLATES
-	  SUB( PrintHoughTemplates (&status, fpTemplates, &ht, &patch, &parDem), &status);
+	  SUB( PrintHoughEvents (&status, fpTemplates, 0.0, &ht, &patch, &parDem), &status);
 #endif
 
 	  ++iHmap;
@@ -1038,7 +1038,7 @@ int main(int argc, char *argv[]){
 #endif    
 
 #ifdef PRINTTEMPLATES
-	  SUB( PrintHoughTemplates (&status, fpTemplates, &ht, &patch, &parDem), &status);
+	  SUB( PrintHoughEvents (&status, fpTemplates, 0.0, &ht, &patch, &parDem), &status);
 #endif
 
 	      ++iHmap;
@@ -1371,65 +1371,6 @@ void PrintHoughEvents (LALStatus       *status,
 /* >>>>>>>>>>>>>>>>>>>>>*************************<<<<<<<<<<<<<<<<<<<< */
 
 
-/* >>>>>>>>>>>>>>>>>>>>>*************************<<<<<<<<<<<<<<<<<<<< */
-/******************************************************************/
-/*  Find and print events to a given open file */
-/******************************************************************/
-void PrintHoughTemplates (LALStatus       *status,
-        	      FILE            *fpTemplates,
-		      HOUGHMapTotal   *ht,
-	    	      HOUGHPatchGrid  *patch,
-	 	      HOUGHDemodPar   *parDem)
-{
-
-  REAL8UnitPolarCoor sourceLocation;
-  UINT2    xPos, yPos, xSide, ySide;
-  INT4     temp;
-  REAL8    f0;
-  /* --------------------------------------------- */
-  INITSTATUS (status, "PrintHoughEvents", DRIVEHOUGHCOLORC);
-  ATTATCHSTATUSPTR (status);
-  
- /* make sure arguments are not null */
-  ASSERT (patch , status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL);
-  ASSERT (parDem, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL);
-  ASSERT (ht, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL);
-
- /* make sure input hough map is ok*/
-  ASSERT (ht->xSide > 0, status, DRIVEHOUGHCOLOR_EBAD,DRIVEHOUGHCOLOR_MSGEBAD);
-  ASSERT (ht->ySide > 0, status, DRIVEHOUGHCOLOR_EBAD,DRIVEHOUGHCOLOR_MSGEBAD);
-  
-  /* read input parameters */
-  xSide = ht->xSide;
-  ySide = ht->ySide; 
-  
-  f0=(ht->f0Bin)*(ht->deltaF);
-  
-  for(yPos =0; yPos<ySide; yPos++){
-    for(xPos =0; xPos<xSide; xPos++){
-      /* read the current number count */
-      temp = ht->map[yPos*xSide + xPos];
-      TRY( Stereo2SkyLocation(status->statusPtr, 
-			      &sourceLocation,xPos,yPos,patch, parDem), status);
-      if (ht->spinRes.length) {
-	fprintf(fpTemplates, "%d %f %f %f %g \n", 
-		temp, sourceLocation.alpha, sourceLocation.delta, 
-		f0, ht->spinRes.data[0]);
-      }
-      else {
-	fprintf(fpTemplates, "%d %f %f %f %g \n", 
-		temp, sourceLocation.alpha, sourceLocation.delta, 
-		f0,0.00);
-      }
-    }
-  }
-  	 
-  DETATCHSTATUSPTR (status);
-  /* normal exit */
-  RETURN (status);
-}    
-
-/* >>>>>>>>>>>>>>Remove this last one. Not used any more<<<<<<<<<<<<< */
 
 
 
