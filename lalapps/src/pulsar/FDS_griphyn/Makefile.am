@@ -1,14 +1,14 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 if FRAME
-FRAMEPROGRAMS = lalapps_extractSFTband
+FRAMEPROGRAMS = lalapps_narrowBandExtract
 else
 FRAMEPROGRAMS = 
 endif
 bin_PROGRAMS = $(FRAMEPROGRAMS)
 bin_SCRIPTS = lalapps_GatherLFN lalapps_QueryMetadataLFN
 if FRAME
-lalapps_extractSFTband_SOURCES = extractSFTband.c
+lalapps_narrowBandExtract_SOURCES = narrowBandExtract.c
 endif
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
