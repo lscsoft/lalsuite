@@ -4,8 +4,6 @@
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-#AM_LDFLAGS = -all-static
-AM_CFLAGS = -g -ggdb
 
 if FRAME
 FRAMEPROGRAMS = lalapps_FrComputeFStatistic
