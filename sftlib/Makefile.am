@@ -29,7 +29,10 @@ docsdir=$(docdir)
 
 docs_DATA       =      README \
                        SFT_v2_specification \
-                       SCCB_2004_09_09
+                       SCCB_2004_09_09 \
+                       T040164-00.tex \
+                       ligodcc.cls \
+                       pdfdraftcopy.sty
 
 EXTRA_DIST      =      $(docs_DATA)
 
