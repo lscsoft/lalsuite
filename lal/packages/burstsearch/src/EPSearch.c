@@ -178,48 +178,40 @@ EPSearch (
     ASSERT (params, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
     ASSERT (burstEvent, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
 
+    /* Compute the average spectrum */
+    LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->initParams->numPoints + 1);
+    CHECKSTATUSPTR(status);
+    ComputeAverageSpectrum(status->statusPtr, AverageSpec, tseries, params);
+    CHECKSTATUSPTR(status);
+    if ( params->printSpectrum == TRUE )
+    { 
+        FILE *fp;
+        fp = fopen("average_spectrum.dat","w");
+        for (j=0 ; j<(INT4)AverageSpec->data->length ; j++)
+        {
+            fprintf(fp, "%f\t%g\n", j*AverageSpec->deltaF, AverageSpec->data->data[j]);
+        }    
+        fclose(fp);
+    }
+
     /* assign temporary memory for the frequency data */
-    fseries = (COMPLEX8FrequencySeries *) LALMalloc (sizeof(COMPLEX8FrequencySeries));
-    strncpy( fseries->name, "anonymous", LALNameLength * sizeof(CHAR) );
-    fseries->data = NULL;
-    LALCCreateVector (status->statusPtr, &fseries->data, params->initParams->numPoints + 1);
+    LALCreateCOMPLEX8FrequencySeries(status->statusPtr, &fseries, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->initParams->numPoints + 1);
     CHECKSTATUSPTR (status);
 
-    /* Set up the window parameters */
+    /* create the dft params */
     winParams.type=params->winParams.type;
     winParams.length=2 * params->ntotT;
-
-    /* create the dft params */
     LALCreateRealDFTParams(status->statusPtr , &dftparams, &winParams, 1);
     CHECKSTATUSPTR (status);
 
     /* point to the start of event list */
     params->numEvents=0;
 
-    /* Compute the average spectrum */
-    LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, fseries->data->length);
-    CHECKSTATUSPTR(status);
-
-    ComputeAverageSpectrum(status->statusPtr, AverageSpec, tseries, params);
-    CHECKSTATUSPTR(status);
-
-    /* write diagnostic info to disk */
-    if ( params->printSpectrum == TRUE )
-    { 
-        FILE *fp;
-        fp = fopen("./freqseries.dat","w");
-        for (j=0 ; j<(INT4)fseries->data->length ; j++)
-        {
-            fprintf(fp, "%f\t%g\n", j*fseries->deltaF, AverageSpec->data->data[j]);
-        }    
-        fclose(fp);
-    }
-
     /* loop over data applying excess power method */
-    for(start_sample = 0; start_sample <= tseries->data->length - (2.0/tseries->deltaT); start_sample += params->ovrlap)
+    for(start_sample = 0; start_sample <= tseries->data->length - lround(2.0 / tseries->deltaT); start_sample += params->ovrlap)
     {
       /* Cut out two sec long time series */
-      LALCutREAL4TimeSeries(status->statusPtr, &cutTimeSeries, tseries,  start_sample, (2.0 / tseries->deltaT));
+      LALCutREAL4TimeSeries(status->statusPtr, &cutTimeSeries, tseries,  start_sample, lround(2.0 / tseries->deltaT));
       CHECKSTATUSPTR (status);
 
       /* compute the DFT of input time series: NOTE:We are using
@@ -228,8 +220,7 @@ EPSearch (
        */
       LALInfo(status->statusPtr, "Computing the frequency series");
       CHECKSTATUSPTR (status);
-      LALComputeFrequencySeries (status->statusPtr, fseries, 
-          cutTimeSeries, dftparams);
+      LALComputeFrequencySeries (status->statusPtr, fseries, cutTimeSeries, dftparams);
       CHECKSTATUSPTR (status);
 
       /* normalize the data stream so that rms of Re or Im is 1 */
@@ -245,7 +236,7 @@ EPSearch (
       if ( params->printSpectrum == TRUE )
       { 
         FILE *fp;
-        fp = fopen("./dummy.dat","w");
+        fp = fopen("frequency_series.dat","w");
         for (j=0 ; j<(INT4)fseries->data->length ; j++)
         {
           fprintf(fp, "%f\t%g\n", j*fseries->deltaF, 
@@ -311,8 +302,7 @@ EPSearch (
           (params->numEvents)++;
 
           /* convert epoch to GPS nanoseconds */
-          tstartNS  = 1000000000L * 
-            (INT8) cutTimeSeries->epoch.gpsSeconds;
+          tstartNS  = 1000000000L * (INT8) cutTimeSeries->epoch.gpsSeconds;
           tstartNS += (INT8) cutTimeSeries->epoch.gpsNanoSeconds;
 
           /* allocate memory for the burst event */
@@ -370,21 +360,15 @@ EPSearch (
 	}
       }
     
-    /* destroy time-frequency tiling of planes */
+    /* memory clean-up */
     LALDestroyTFTiling (status->statusPtr, &(params->tfTiling));
     CHECKSTATUSPTR (status);
-
-    /* destroy average spectrum */
-    LALDestroyREAL4FrequencySeries(status->statusPtr, AverageSpec);
-
-    /* destroy the dftparams for computing frequency series */
+    LALDestroyCOMPLEX8FrequencySeries (status->statusPtr, fseries);
+    CHECKSTATUSPTR (status);
     LALDestroyRealDFTParams (status->statusPtr, &dftparams);
     CHECKSTATUSPTR (status);
-
-    /* destroy temporary memory for the frequency data */
-    LALCDestroyVector (status->statusPtr, &fseries->data);
+    LALDestroyREAL4FrequencySeries(status->statusPtr, AverageSpec);
     CHECKSTATUSPTR (status);
-    LALFree(fseries);
 
     /* normal exit */
     DETATCHSTATUSPTR (status);
