@@ -36,6 +36,7 @@ AC_CHECK_PROGS(LATEX, pdflatex latex, echo)
 AC_CHECK_PROGS(MKIND, makeindex, echo)
 AC_CHECK_PROGS(DVIPS, dvips, echo)
 AC_CHECK_PROGS(BIBTEX, bibtex, echo)
+AC_CHECK_PROGS(PYTHON, python2.2, echo)
 
 dnl Checks for libraries.
 AC_CHECK_LIB(m, sin)
@@ -73,6 +74,7 @@ AC_MSG_RESULT(no))
 
 AM_CONDITIONAL(FRAME, test x$frame = xtrue)
 AM_CONDITIONAL(DATAFLOW, test x$dataflow = xtrue)
+AM_CONDITIONAL(PYTHON22, test x$PYTHON = "xpython2.2" )
 AC_DEFINE_UNQUOTED(PREFIX, "$prefix", [Install prefix])
 
 AC_OUTPUT( 				\
