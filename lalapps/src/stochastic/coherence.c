@@ -73,7 +73,7 @@ static int condor_flag = 0;
 INT4 sampleRate = 16384;
 INT4 resampleRate = 1024;
 REAL8 deltaF = 0.25;
-INT4 numFFT = 10.;
+INT4 numFFT = 10;
 /* data parameters */
 LIGOTimeGPS gpsStartTime, gpsCalibTime;
 UINT8 startTime = 730793098;
@@ -99,7 +99,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 numSegments;
   INT4 segmentDuration;
   INT4 segmentLength;
-  INT4 segmentShift;
   INT4 padData;
   ReadDataPairParams streamParams;
   StreamPair streamPair;
@@ -127,7 +126,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 
   /* read parameters into input parameter file */
-  if (condor_flag == 1)
+  if (condor_flag )
    { 
      fscanf(stdin,"%d\n",&startTime, &startTime);
      fscanf(stdin,"%d\n",&stopTime, &stopTime);
@@ -140,12 +139,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* get number of segments */
   segmentDuration = numFFT * (1. / deltaF);
   numSegments = (INT4)((stopTime - startTime) / segmentDuration );
-  segmentShift = segmentDuration / 2;
-  if (overlap_hann_flag)
-   {
-    numSegments = 2 * numSegments - 1;
-    segmentShift = segmentDuration / 2;
-   }
 
   /* set length for data segments */
   segmentLength = segmentDuration * resampleRate;
@@ -197,8 +190,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   windowPSDLength = (UINT4)(resampleRate / deltaF);
 
   /* set parameters for PSD estimation */
-  overlapPSDLength = windowPSDLength / 2;
-  psdLength = (windowPSDLength / 2) + 1;
+  if (overlap_flag)
+   { overlapPSDLength = windowPSDLength / 2;}
+  else 
+    { overlapPSDLength = 0;}
 
   /* set metadata fields for PSDs */
   strncpy(psd1.name, "psd1", LALNameLength);
