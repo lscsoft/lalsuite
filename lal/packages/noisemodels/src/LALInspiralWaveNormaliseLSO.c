@@ -109,7 +109,7 @@ LALInspiralWaveNormaliseLSO
   /* Set the 0th and Nyquist frequency bins to be zero. */
   filter->data[0] = filter->data[nby2] = 0.;
 
-  *norm /= ((double) n * in->samplingRate);
+  *norm /= ((double) n / in->samplingRate);
   *norm = sqrt(*norm);
   
   for (i=0; i<n; i++)
