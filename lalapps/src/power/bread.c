@@ -40,7 +40,7 @@ int gethostname(char *name, int len);
 	"[--min-centralfreq min central_freq] [--max-centralfreq max central_freq] " \
 	"[--max-bandwidth max bw] [--min-bandwidth min bw] " \
 	"[--min-amplitude min amp] [--max-amplitude max amp] " \
-	"[--min-snr min snr] [--max-snr max snr] " \
+	"[--min-snr min snr] [--max-snr max snr] [--globtrig]" \
 	"[--help]\n"
 
 #define SNGLBURSTREADER_EARG   1
@@ -62,6 +62,7 @@ int gethostname(char *name, int len);
 struct options_t {
 	int verbose;
 	int cluster;
+	int globtrig;
 	int outtxt;
 	int playground;
 	int noplayground;
@@ -116,6 +117,7 @@ static void set_option_defaults(struct options_t *options)
 {
 	options->verbose = FALSE;
 	options->cluster = FALSE;
+	options->globtrig = FALSE;
 	options->outtxt = FALSE;
 	options->playground = FALSE;
 	options->noplayground = FALSE;
@@ -164,6 +166,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 		/* these options set a flag */
 		{"verbose",         no_argument,        &options->verbose, TRUE},
 		{"cluster",         no_argument,        &options->cluster, TRUE},
+		{"globtrig",        no_argument,        &options->globtrig, TRUE},
 		/* parameters which determine the output xml file */
 		{"input",           required_argument,  NULL,  'a'},
 		{"outtxt",          required_argument,  NULL,  'b'},
@@ -341,7 +344,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 		exit(SNGLBURSTREADER_EARG);
 	}
 
-	if(!*infile) {
+	if(!*infile && (options->globtrig == FALSE)) {
 		LALPrintError( "Must supply an xml file to parse\n" );
 		exit(SNGLBURSTREADER_EARG);
 	}
@@ -654,8 +657,14 @@ int main(int argc, char **argv)
 	 * Loop over the xml input files
 	 */
 
-	/* open the file cache and create an internal cache */
-	LAL_CALL(LALFrCacheImport(&stat, &fileCache, infile), &stat);
+	/* open the file cache and create an internal cache if the file cache 
+	 * is provided, else
+	 * use glob to get the xml files into an internal cache
+	 */
+	if (options.globtrig)
+	  LAL_CALL( LALFrCacheGenerate(&stat, &fileCache, NULL, "*.xml" ), &stat);
+	else
+	  LAL_CALL(LALFrCacheImport(&stat, &fileCache, infile), &stat);
 	if ( options.trigStartTimeFlag || options.trigStopTimeFlag ){
 		fileCacheSieve.srcRegEx=NULL;
 		fileCacheSieve.dscRegEx=NULL;
