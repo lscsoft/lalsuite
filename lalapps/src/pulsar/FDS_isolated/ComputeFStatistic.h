@@ -5,7 +5,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <glob.h>
 #include <time.h>
 #include <errno.h>
 #include <lal/AVFactories.h>
@@ -15,7 +14,9 @@
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/Date.h>
-
+#ifndef NOGLOB
+#include <glob.h>
+#endif
 #define BUFFERSIZE 1024                                                                   
 
 /* Maximum fractional doppler shift */

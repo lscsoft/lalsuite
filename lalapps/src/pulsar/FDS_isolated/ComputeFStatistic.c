@@ -19,7 +19,9 @@ RCSID( "$Id$");
 
 
 /* BOINC should be set to 1 to be run under BOINC */
+#ifndef USE_BOINC
 #define USE_BOINC 0
+#endif
 #if USE_BOINC
 #define USE_BOINC_DEBUG 0
 /* for getpid() */
@@ -1198,7 +1200,9 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   FILE *fp;
   size_t errorcode;
   INT4 fileno=0;   
+#ifndef NOGLOB
   glob_t globbuf;
+#endif
   LIGOTimeGPS starttime;
 
   INITSTATUS (status, "SetGlobalVariables", rcsid);
@@ -1316,6 +1320,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     strcat(command, uvar_BaseName);
     strcat(command,"*");
     
+#ifndef NOGLOB
     globbuf.gl_offs = 1;
     glob(command, GLOB_ERR, NULL, &globbuf);
     
@@ -1338,6 +1343,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 	  }
       }
     globfree(&globbuf);
+#endif
   }
   cfg->SFTno=fileno; /* remember this is 1 more than the index value */
 
