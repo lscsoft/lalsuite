@@ -86,6 +86,12 @@ int main(int argc, char* argv[]) {
       exit(1);
     }
     
+    /* check that there is still space left */
+    if (fileno>=FN){
+      fprintf(stderr, "Too many files: %d.  Please recompile with bigger FN=%d\n", fileno, FN);
+      exit(1);
+    }
+
     /* save file name in array */
     strcpy(filenames[fileno], bigbuff);
 

@@ -23,6 +23,7 @@ To start, generate a (sorted) list of all the data on the cluster.
 This can be done by running the script:
    ./make_cluster_data_list S2
 which takes a single argument, which is the name of the run.
+[Clean-up step: rm alldata S2*sorted*]
 
 Note that you may get some "permission denied" errors if you don't
 have read permissions for all of the data.  This won't cause you any
