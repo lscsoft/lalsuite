@@ -125,6 +125,7 @@ tagCoherentInspiralEvent
   REAL4                                  theta;
   REAL4                                  phi;
   LIGOTimeGPS                            time;
+  LIGOTimeGPS                            end_time;
   InspiralEventVector                   *inspEventVec;
   struct tagCoherentInspiralEvent       *next;
 }
