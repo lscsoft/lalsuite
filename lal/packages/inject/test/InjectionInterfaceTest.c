@@ -186,7 +186,6 @@ int main(int argc, char **argv)
     ts.data->data[k] = 0.;
   }
 
-  fprintf(stderr, "before reading xml file \n");
 
   lenfile = strlen(INJECTIONINTERFACETEST_INJECTIONXMLFILE) + 1;
   filename = (CHAR *) calloc (lenfile, sizeof(CHAR *));
@@ -205,7 +204,6 @@ int main(int argc, char **argv)
       ERROR(INJECTIONINTERFACETESTC_EINJECT, INJECTIONINTERFACETESTC_MSGEINJECT, 0);
       exit( 1 );
     }
-  fprintf(stderr, "%lf %lf \n", injections->mass1, injections->mass2);
   /* --- inject here --- */
   SUB( LALFindChirpInjectSignals( &status,
 				  &ts, 
