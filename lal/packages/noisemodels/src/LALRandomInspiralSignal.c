@@ -289,7 +289,7 @@ LALRandomInspiralSignal
 					   fLSO = 1.L/(LAL_PI * pow (6.L,1.5) * randIn->param.totalMass * LAL_MTSUN_SI);
 					   fend = fLSO + (fLR - fLSO) * epsilon1;
 					   if (fend > randIn->param.tSampling/2. || fend < randIn->param.fLower) break;
-					   randIn->param.fendBCV = fend;
+					   randIn->param.fFinal = fend;
 					   valid = 1;
 				   }
 				   break;

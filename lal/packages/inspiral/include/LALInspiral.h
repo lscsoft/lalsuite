@@ -163,7 +163,6 @@ The inspiral waveform parameter structure containing information about the
   \item \texttt { distance:} Distance to the binary in seconds
   \item \texttt { psi0:} BCV parameter $\psi_0.$
   \item \texttt { psi3:} BCV parameter $\psi_3.$
-  \item \texttt { fendBCV:} BCV cutoff frequency $f_{\rm cut}$
   \item \texttt { alpha:} BCV amplitude correction factor $\alpha f_{\rm cut}^{2/3}$
   \item \texttt { eccentricity:} initial eccentricity of the orbit  (currently not in use)
   \item \texttt { totalMass:} total mass of the binary $m=m_1+m_2$ in solar mass (input/output).
@@ -424,7 +423,6 @@ tagInspiralTemplate
 
 /* Parameters which are currently might be used */
 
-  REAL8 fendBCV;
   REAL8 eccentricity;
 
 /* Paramters which are computed using LALInspiralParameterCalc */

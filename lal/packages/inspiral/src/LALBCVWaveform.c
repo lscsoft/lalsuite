@@ -16,7 +16,7 @@
  * \item {\tt params:} Input containing binary chirp parameters; 
  * it is necessary and sufficent to specify the following parameters
  * of the {\tt params} structure: 
- * {\tt psi0, psi3, alpha, fendBCV, nStartPad, fLower, tSampling}.  
+ * {\tt psi0, psi3, alpha, fendBCV(fFinal), nStartPad, fLower, tSampling}.  
  * All other parameters in {\tt params} are ignored.  \end{itemize} 
  * \input{LALBCVSpinWaveformCP}
  * \idx{LALLALBCVSpinWaveform()} 
@@ -25,7 +25,7 @@
  * \item {\tt params:} Input containing binary chirp parameters; 
  * it is necessary and sufficent to specify the following parameters
  * of the {\tt params} structure: 
- * {\tt psi0, psi3, alpha1, alpha2, beta, fendBCV, nStartPad, fLower, tSampling}.  
+ * {\tt psi0, psi3, alpha1, alpha2, beta, fendBCV(fFinal), nStartPad, fLower, tSampling}.  
  * All other parameters in {\tt params} are ignored.  \end{itemize} * 
  * 
  * \subsubsection*{Description}
@@ -95,7 +95,7 @@ LALBCVWaveform(
   Fiveby3 = 5.L/3.L;
 
   df = params->tSampling/(REAL8)n;
-  alpha = params->alpha / pow(params->fendBCV, Twoby3);
+  alpha = params->alpha / pow(params->fFinal, Twoby3);
 
   /*
   totalMass = params->totalMass * LAL_MTSUN_SI;
@@ -122,13 +122,12 @@ LALBCVWaveform(
 
   signal->data[0] = 0.0;
   signal->data[n/2] = 0.0;
-  params->fFinal = params->fendBCV;
 
   for(i=1;i<n/2;i++)
   {
 	  f = i*df;
     
-	  if (f < params->fLower || f > params->fendBCV)
+	  if (f < params->fLower || f > params->fFinal)
 	  {
 	  /* 
 	   * All frequency components below params->fLower and above fn are set to zero  
@@ -219,11 +218,10 @@ LALBCVSpinWaveform(
 
 
 
-  params->fFinal = params->fendBCV;
   for(i=1;i<n/2;i++)
   {
 	  f = i*df;
-	  if (f < params->fLower || f > params->fendBCV)
+	  if (f < params->fLower || f > params->fFinal)
 	  {
 	  /* 
 	   * All frequency components below params->fLower and above fn are set to zero  
