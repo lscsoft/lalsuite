@@ -102,7 +102,9 @@ InspiralTemplateNode;
 
 typedef enum
 {
-  fcGaussianNoise = 2,
+  fcNoSim,
+  fcCreateRhosqVec,
+  fcGaussianNoise,
   fcGaussianNoiseInject,
   fcRealDataInject,
   fcBankMinimalMatch
@@ -168,11 +170,14 @@ typedef struct
 tagFindChirpMasterParams
 {
   UINT4                         numTmpltExch;
+  UINT4                         numTmpltsTotal;
   UINT4                         numTmpltsToFilter;
   UINT4                         numTmpltsFiltered;
   UINT4                        *inspiralDebugFlagPtr;
+  UINT4Vector                  *bankSentVec;
   MPI_Comm                     *mpiComm;
   UINT4                        *numSlaves;
+  InspiralTemplate             *tmpltBankHead;
   InspiralTemplateNode         *currentTmpltNode;
   InspiralTemplateNode         *tmpltNodeHead;
 }
