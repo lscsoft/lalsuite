@@ -176,7 +176,7 @@ of the test code look like.
 \begin{verbatim}
 lalDebugLevel
 LALMalloc()
-LALFopen()
+LALOpenDataFile()
 LALFclose()
 LALSCreateVector()
 LALCreateRandomParams()
@@ -184,7 +184,7 @@ LALNormalDeviates()
 LALDestroyRandomParams()
 LALSDestroyVector()
 LALCCreateVector()
-LALMeasureInvComplexFFTPlan()
+LALCreateForwardComplexFFTPlan()
 LALCOMPLEX8VectorFFT()
 LALCDestroyVector()
 LALDestroyComplexFFTPlan()
@@ -207,7 +207,7 @@ The implementation of the code here is intended to give a general outline of wha
 #endif
 
 /* Usage */
-#define USAGE "Usage: %s [-i basicInputsFile] [-m] [-n] [-d] [-o]\n"
+#define USAGE "Usage: %s [-i basicInputsFile] [-n] [-d] [-o]\n"
 
 
 /* Error macro, taken from ResampleTest.c in LAL's pulsar/test package */
@@ -228,7 +228,7 @@ else (void)(0)
 
 NRCSID(LALDEMODTESTC, "$Id$");
 
-void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot, const CHAR *sw);
+void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot);
 
 int lalDebugLevel =3;
 
@@ -286,7 +286,7 @@ int main(int argc, char **argv)
 	CHAR filename[13];
 	REAL8 factor;
 	INT2 arg;
-	void (*funcName)(REAL8, REAL8, REAL8, REAL8 *, REAL8 *, const CHAR *);
+	void (*funcName)(REAL8, REAL8, REAL8, REAL8 *, REAL8 *);
 	
 /* Comment out the following when printing the 'extra' output */
 /*****
@@ -326,13 +326,6 @@ int main(int argc, char **argv)
 			}
 		}
 		
-		/* turn modulation on?  if string is not NULL, it will be */
-		else if(!strcmp(argv[arg],"-m"))
-		{
-			modulation="n";
-			arg++;
-		}
-		
 		/* turn noise on? if string is not NULL, it will be */
 		else if(!strcmp(argv[arg],"-n"))
 		{
@@ -357,7 +350,7 @@ int main(int argc, char **argv)
 		/* default: no input file specified */
 		else if(basicInputsFile==NULL)
 		{
-			bif=LALFopen("in.data","r");
+			bif=LALOpenDataFile("in.data");
 		}
 		
 		/* erroneous command line argument */
@@ -402,7 +395,7 @@ funcName=tdb;
 	
 /***** GET INPUTS FROM FILES *****/
 
-	bif=LALFopen(basicInputsFile,"r");
+	bif=LALOpenDataFile(basicInputsFile);
 	
 	fscanf(bif, "%lf\n%lf\n%lf\n%lf\n%lf\n%lf\n%d\n%le\n%le\n%le\n%le\n%le\n%lf\n%lf\n%d\n%le\n%le\n%le\n%le\n%le\n%lf\n%lf\n",
 	&tObs, &tCoh, &factor, &SNR, &f0Band, &f0,
@@ -514,7 +507,7 @@ if(noi!=NULL)
 	LALCCreateVector(&status, &fvec, (UINT4)nDeltaF);
 	
 	/* Compute plan for FFTW */
-	LALMeasureInvComplexFFTPlan(&status, &pfwd, (UINT4)nDeltaF);
+	LALCreateForwardComplexFFTPlan(&status, &pfwd, (UINT4)nDeltaF, 1);
 	
 	/* Create vector to hold time series */
 	LALCCreateVector(&status, &tvec, (UINT4)nDeltaF);
@@ -536,7 +529,7 @@ if(noi!=NULL)
 	ts0=(REAL8)(timeStamps[0].gpsSeconds)+	 
 		(REAL8)(timeStamps[0].gpsNanoSeconds)*1.0E-9;
 	(*funcName)((REAL8)signalParams->skyP->alpha,(REAL8)signalParams->skyP->delta,	 
-		ts0, &baseTbary0, &tDot, modulation);
+		ts0, &baseTbary0, &tDot);
 
 	/*****
 	*****
@@ -560,7 +553,7 @@ if(noi!=NULL)
 			t=ts+tn+(REAL8)i*dtEFF;
 			/* conversion again */
 			(*funcName)((REAL8)signalParams->skyP->alpha,
-				(REAL8)signalParams->skyP->delta, (REAL8)t, &tBary,  							&tDot, modulation);
+				(REAL8)signalParams->skyP->delta, (REAL8)t, &tBary,  							&tDot);
 			
 			/* pipeline for better performance */
 			dTbary=tBary-baseTbary0;
@@ -688,7 +681,6 @@ if(noi!=NULL)
 	csParams->spinDwnOrder=templateParams->spind->m;
 	csParams->mObsSFT=mObsSFT;
 	csParams->tSFT=tSFT;
-	csParams->sw=modulation;
 	csParams->funcName=funcName;
 	iSkyCoh=0;
 
@@ -836,7 +828,7 @@ if(noi!=NULL)
 /* Note: this routine will be replaced by Barycenter(), written  */
 /* by C. Cutler, Albert-Einstein-Institut.  			 */
 
-void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot, const CHAR *sw) 
+void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot) 
 {
 
 	/*RA alpha and DEC delta have their usual meanings, but units 
@@ -897,14 +889,10 @@ void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot, const CHA
 	
 	/* switch to turn mod off/on */
 	/* note that 'off' negates the function of the code! */
-	if(sw!=NULL){
+
 	*T=T_bary; 
- 	*Tdot=Tdot_bary;}
-	
-	else {
-	*T=t_GPS;
-	*Tdot=1.0;}
-	
+ 	*Tdot=Tdot_bary;
+		
 	}
 
 void times(REAL8 tSFT, int howMany, LIGOTimeGPS *ts, INT4 sw)
