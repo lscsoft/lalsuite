@@ -326,7 +326,8 @@ int main ( int argc, char *argv[] )
   if ( vrbflg ) 
     fprintf( stdout, "reading sngl_inspiral table from %s\n", inputFileName );
 
-  numEvents = SnglInspiralTableFromLIGOLw( &eventHead, inputFileName, 0, -1 );
+  numEvents = 
+    LALSnglInspiralTableFromLIGOLw( &eventHead, inputFileName, 0, -1 );
 
   if ( numEvents < 0 )
   {
