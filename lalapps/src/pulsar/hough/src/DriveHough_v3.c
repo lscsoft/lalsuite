@@ -91,7 +91,7 @@ int main(int argc, char *argv[]){
 
   /* skypatch info */
   REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; 
-  INT4   nSkyPatches, skyCounter; 
+  INT4   nSkyPatches, skyCounter=0; 
 
   /* log file and strings */
   FILE   *fpLog=NULL;
@@ -685,8 +685,9 @@ int main(int argc, char *argv[]){
 	fprintf(stderr,"Unable to find file %s for writing\n", filestats);
 	return DRIVEHOUGHCOLOR_EFILE;
       }
-      setlinebuf(fp1); /*line buffered on */  
-      
+      /*setlinebuf(fp1);*/ /*line buffered on */  
+      setvbuf(fp1, (char *)NULL, _IOLBF, 0);      
+
 #ifdef PRINTEVENTS
       /* create and open the events list file */
       strcat(  fileEvents, "events");
