@@ -2,7 +2,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 
-INT4 lalDebugLevel = 0;
+INT4 lalDebugLevel = LALALLDBG;
 
 NRCSID (LALTESTJULIANDAYC, "$Id$");
 

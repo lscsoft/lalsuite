@@ -31,6 +31,56 @@ table of leap seconds is compiled in: this \emph{must} be updated whenever
 a new leap second is introduced.  The latest leap second included is
 1999-Jan-01.
 
+The conversion from UTC to GPS is done by counting the amount of elapsed 
+time since the GPS epoch origin, 1980-Jan-06 00:00:00 UTC.  Again, leap
+seconds are accounted for by a static table (different from the one used in
+GPS to UTC) which \emph{must} be updated whenever a new leap seconds is
+introduced.  The latest leap second included is 1999-Jan-01.
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+
+\textbf{Known deficiencies:} \texttt{LALUTCtoGPS()} is not well-tested for
+dates before 1980-Jan-06, although it will produce output (negative values
+of \texttt{gpsSeconds},\texttt{gpsNanoSeconds} field set to negative as
+well).
+
+\textbf{Example:} To convert a GPS time to UTC, and then back to GPS:
+
+\begin{verbatim}
+
+#include <lal/LALStdlib.h>
+#include <lal/Date.h>
+
+int main(int argc, char *argv[])
+{
+    static LALStatus   status;
+    LIGOTimeGPS        gps = {615081613, 123456789};
+    LALDate            date;
+    LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
+    CHARVector        *timestamp = NULL;
+
+    LALCHARCreateVector(&status, &timestamp, (UINT4)128);
+
+    LALGPStoUTC(&status, &date, &gps, &accuracy);
+
+    LALDateString(&status, timestamp, &date);
+
+    printf("GPS (%d, %d) = %s\n", gps.gpsSeconds, gps.gpsNanoSeconds,
+           timestamp->data);
+
+    LALUTCtoGPS(&status, &gps, &date, &accuracy);
+
+    printf("%s = GPS (%d, %d)\n", timestamp->data, gps.gpsSeconds,
+           gps.gpsNanoSeconds);
+
+    return 0;
+}
+
+\end{verbatim}
+
+
 </lalLaTeX> */
 
 #include <lal/LALRCSID.h>
@@ -85,12 +135,13 @@ static const time_t leaps[]={
 /*
  * Convert GPS seconds to UTC date-time contained in LALDate structure
  */
+/* <lalVerbatim file="GPStoUTCCP"> */
 void
 LALGPStoUTC (LALStatus                *status,
              LALDate                  *p_utcDate,
              const LIGOTimeGPS        *p_gpsTime,
              const LALLeapSecAccuracy *p_accuracy)
-{
+{ /* </lalVerbatim> */
   time_t unixTime;
   /* latest time for which this routine will work: 2002-Mar-31 23:59:00 */
   /* 24 leap seconds because of the two interpolated ones: 1970-Jan-1 and
@@ -158,22 +209,12 @@ LALGPStoUTC (LALStatus                *status,
        * compute date struct
        */
 
-      if (p_gpsTime->gpsSeconds > maxtestedGPS)
-        {
-          /* check accuracy param */
-          if (*p_accuracy == LALLEAPSEC_STRICT)  /* strict accuracy */
-            {
-              ABORT(status, DATEH_ERANGEGPSTOUTC, DATEH_MSGERANGEGPSTOUTC);
-            }
-          else if (*p_accuracy == LALLEAPSEC_LOOSE) /* loose accuracy */
-            {
-              LALWarning(status, "may be missing leap seconds");
-            }
-          else
-            {
-              LALWarning(status, "may be missing leap seconds");
-            }
-        }
+      if (p_gpsTime->gpsSeconds > maxtestedGPS) { /* check accuracy param
+        */ if (*p_accuracy == LALLEAPSEC_STRICT) /* strict accuracy */ {
+        ABORT(status, DATEH_ERANGEGPSTOUTC, DATEH_MSGERANGEGPSTOUTC); }
+        else if (*p_accuracy == LALLEAPSEC_LOOSE) /* loose accuracy */ {
+        LALWarning(status, "may be missing leap seconds"); } else {
+        LALWarning(status, "may be missing leap seconds"); } }
 
       /* compute date struct */
       gmtime_r(&unixTime, &tmputc);
@@ -230,7 +271,7 @@ LALGPStoUTC (LALStatus                *status,
   p_utcDate->residualNanoSeconds = p_gpsTime->gpsNanoSeconds;
 
   RETURN (status);
-}
+} /* END: LALGPStoUTC() */
 
 static time_t days_in_year(const LALDate *p_utcDate)
 {
@@ -311,12 +352,13 @@ static leap_sec_t leap_sec_data[] =
     {99, 0, 1},
   };
 
+/* <lalVerbatim file="GPStoUTCCP"> */
 void
 LALUTCtoGPS (LALStatus                *status,
              LIGOTimeGPS              *p_gpsTime,
              const LALDate            *p_utcDate,
              const LALLeapSecAccuracy *p_accuracy)
-{
+{ /* </lalVerbatim> */
   time_t secs_gps;
   time_t ddays = 0;
   time_t dsecs = 0;
@@ -544,4 +586,4 @@ LALUTCtoGPS (LALStatus                *status,
     }
 
   RETURN (status);
-}
+} /* END: LALUTCtoGPS() */

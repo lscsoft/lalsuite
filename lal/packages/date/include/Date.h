@@ -27,7 +27,9 @@ information.  The various time systems are discussed in~\cite{esaa:1992}.
 #define _DATE_H
 
 /* the following two preprocessor defines are to include the prototypes for
- * gmtime_r() and asctime_r() from /usr/include/time.h */
+ * gmtime_r() and asctime_r() from /usr/include/time.h
+ * HOWEVER, they do no good if -ansi is used in gcc: warnings are generated
+ * that the prototypes have not been seen */
 
 /* HP-UX and Solaris */
 #ifndef _REENTRANT
@@ -182,8 +184,8 @@ This structure is used for storing intervals of \texttt{LIGOTimeGPS}
 and \texttt{LIGOTimeUnix} times.  The fields are:
 
 \begin{description}
-\item[\texttt{REAL4 seconds}] Integral part of the time interval
-\item[\texttt{REAL4 nanoSeconds}] Residual nanoseconds (\textit{i.e.}
+\item{\texttt{REAL4 seconds}} Integral part of the time interval
+\item{\texttt{REAL4 nanoSeconds}} Residual nanoseconds (\textit{i.e.}
   fractional part, in nanoseconds)
 \end{description}
 
@@ -210,9 +212,9 @@ This structure is an extension of \texttt{LALUnixDate} to include residual
 nanosecond information.  The fields are:
 
 \begin{description}
-\item[\texttt{LALUnixDate unixDate}] Unix date in \texttt{struct tm}
+\item{\texttt{LALUnixDate unixDate}} Unix date in \texttt{struct tm}
   format 
-\item[\texttt{INT4 residualNanoSeconds}] Residual nanoseconds
+\item{\texttt{INT4 residualNanoSeconds}} Residual nanoseconds
 \end{description}
 </lalLaTeX> */
 
@@ -239,8 +241,8 @@ This structure stores pointers to a \texttt{LALDetector} and a
 structures for passing to functions.  The fields are:
 
 \begin{description}
-\item{\verb+LALDetector *p_detector+} Pointer to a detector
-\item{\verb+LIGOTimeGPS *p_gps+} Pointer to a GPS time structure
+\item{\texttt{LALDetector *pDetector}} Pointer to a detector
+\item{\texttt{LIGOTimeGPS *pGps}} Pointer to a GPS time structure
 \end{description}
 
 </lalLaTeX> */
@@ -268,8 +270,8 @@ detector and a pointer to a date.  This is another convenience
 structure, used in calling \texttt{LALLMST1()}.  The fields are:
 
 \begin{description}
-\item{\verb+LALDetector *p_detector+} Pointer to a detector
-\item{\verb+LALDate *p_date+} Pointer to a date
+\item{\texttt{LALDetector *pDetector}} Pointer to a detector
+\item{\texttt{LALDate *pDate}} Pointer to a date
 \end{description}
 
 </lalLaTeX> */
@@ -331,14 +333,14 @@ void LALGPStoGMST1( LALStatus         *status,
 
 void LALLMST1 (LALStatus             *status,
                REAL8                 *lmst,            /* output - LMST1 */
-               const LALPlaceAndDate *place_and_date,  /* input -
-                                                            location
-                                                            and date */ 
+               const LALPlaceAndDate *placeAndDate,  /* input -
+                                                          location
+                                                          and date */ 
                LALMSTUnits            outunits);         /* LMST1 units */
 
 void LALGPStoLMST1( LALStatus             *status,
                     REAL8                 *lmst,      /* output - LMST1 */
-                    const LALPlaceAndGPS  *place_and_gps, /* input -
+                    const LALPlaceAndGPS  *placeAndGps, /* input -
                                                                location and
                                                                GPS */  
                     LALMSTUnits            outunits);       /* LMST1 units */
@@ -353,18 +355,20 @@ void LALSecsToLALDate(LALStatus*,
 
 
 
-/* FOOBAR! Put LALLATEX stuff here for GPStoUTC */
+/* <lalLaTeX>
+\newpage\input{GPStoUTCC}
+</lalLaTeX> */
 void
 LALGPStoUTC (LALStatus                *status,
-             LALDate                  *p_utcDate,
-             const LIGOTimeGPS        *p_gpsTime,
-             const LALLeapSecAccuracy *p_accuracy);
+             LALDate                  *pUtcDate,
+             const LIGOTimeGPS        *pGpsTime,
+             const LALLeapSecAccuracy *pAccuracy);
 
 void
 LALUTCtoGPS (LALStatus                *status,
-             LIGOTimeGPS              *p_gpsTime,
-             const LALDate            *p_utcDate,
-             const LALLeapSecAccuracy *p_accuracy);
+             LIGOTimeGPS              *pGpsTime,
+             const LALDate            *pUtcDate,
+             const LALLeapSecAccuracy *pAccuracy);
 
 
 #ifdef  __cplusplus

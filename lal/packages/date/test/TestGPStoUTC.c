@@ -16,7 +16,7 @@ int main(void)
   static LALStatus    status;
   LIGOTimeGPS         gpsTime = {0, 0};
   LALDate             utcDate;
-  LALLeapSecAccuracy  accuracy = LALLEAPSEC_LOOSE;
+  LALLeapSecAccuracy  accuracy = LALLEAPSEC_STRICT;
   CHARVector         *timestamp = NULL;
   char                refstamp[128];
 
@@ -91,12 +91,28 @@ int main(void)
   if (strcmp(refstamp, timestamp->data) != 0)
     {
       LALCHARDestroyVector(&status, &timestamp);
+      if (status.statusCode && lalDebugLevel > 0)
+        {
+          fprintf(stderr,
+                  "TestGPStoUTC: LALCHARDestroyVector() failed, line %i, %s\n",
+                  __LINE__, LALTESTGPSTOUTC);
+          REPORTSTATUS(&status);
+          return status.statusCode;
+        }
       REPORTSTATUS(&status);
       LALCheckMemoryLeaks();
       return 1;
     }
 
   LALCHARDestroyVector(&status, &timestamp);
+  if (status.statusCode && lalDebugLevel > 0)
+    {
+      fprintf(stderr,
+              "TestGPStoUTC: LALCHARDestroyVector() failed, line %i, %s\n",
+              __LINE__, LALTESTGPSTOUTC);
+      REPORTSTATUS(&status);
+      return status.statusCode;
+    }
   REPORTSTATUS(&status);
   LALCheckMemoryLeaks();
   return 0;

@@ -65,7 +65,7 @@ values of $\pm 0.5, \pm 1.5, \pm 2.5,
 
 \subsubsection*{Uses}
 
-
+\subsubsection*{Notes}
 
 Here is a simple example:
 
@@ -131,7 +131,6 @@ main(int argc, char *argv[])
 }
 \end{verbatim}
 
-\subsubsection*{Notes}
 
 From~\cite{esaa:1992}:
 
@@ -139,7 +138,7 @@ From~\cite{esaa:1992}:
   Universal Time (UT) is the measure of time used as the basis for all
   civil time-keeping.  It conforms closely to the mean diurnal motion
   of the Sun.  The apparent diurnal motion of the Sun involves both
-  the nonuniform diurnal rotation of the Earth and th motion of the
+  the nonuniform diurnal rotation of the Earth and the motion of the
   Earth in its orbit around the Sun.  Although it would be possible to
   define a system of time measurement in terms of the hour angle of
   the Sun, such a system could never be related precisely to sidereal

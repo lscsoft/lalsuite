@@ -75,14 +75,15 @@ analyzable data from before 1900-Mar.
 
 \subsubsection*{Uses}
 
+
+\subsubsection*{Notes}
+
 Suppose we would like to get the Julian Date for
 today.  The following program would accomplish this:
 
 \begin{verbatim}
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
-
-INT4 debuglevel = 2;
 
 NRCSID (TESTJULIANDAYC, "Id");
 
@@ -118,7 +119,6 @@ main(int argc, char *argv[])
 
 \end{verbatim}
 
-\subsubsection*{Notes}
 
 
 </lalLaTeX> */

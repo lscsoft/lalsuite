@@ -22,13 +22,21 @@ int main(void)
     CHARVector      *timestamp = NULL;
 
     LALCHARCreateVector(&stat, &timestamp, (UINT4)64);
-    REPORTSTATUS (&stat);
-
+    if (status.statusCode && lalDebugLevel > 0)
+      {
+        fprintf(stderr,
+                "TestDateString: error in LALCHARCreateVector, line %i, %s\n",
+                __LINE__, LALTESTDATESTRINGC);
+        REPORTSTATUS(&status);
+        return status.statusCode;
+      }
+    REPORTSTATUS(&status);
+        
     tmpsecs = (24*365 + 8*366 + 2*31 + 28)*86400 - 1;
     gmtime_r(&tmpsecs, &(date.unixDate));
 
     LALDateString(&stat, timestamp, &date);
-
+    
     if (stat.statusCode && lalDebugLevel > 0)
       {
         fprintf(stderr,

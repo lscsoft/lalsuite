@@ -99,6 +99,14 @@ int main( void )
   frdet1.yArmAzimuthRadians     = 0.;
 
   LALCreateDetector(&stat, &detector1, &frdet1, LALDETECTORTYPE_IFODIFF);
+  if (status.statusCode && lalDebugLevel > 0)
+    {
+      fprintf(stderr, "TestDelay: LALCreateDetector failed, line %i, %s\n",
+              __LINE__, LALTESTDELAYC);
+      REPORTSTATUS(&status);
+      return status.statusCode;
+    }
+  REPORTSTATUS(&status);
 
   /*
    * Expect the location vector to be (R, 0, 0): R = radius of Earth
@@ -119,8 +127,14 @@ int main( void )
   frdet2.yArmAzimuthRadians     = 0.;
 
   LALCreateDetector(&stat, &detector2, &frdet2, LALDETECTORTYPE_IFODIFF);
-  if (lalDebugLevel > 2)
-    REPORTSTATUS(&stat);
+  if (status.statusCode && lalDebugLevel > 0)
+    {
+      fprintf(stderr, "TestDelay: LALCreateDetector failed, line %i, %s\n",
+              __LINE__, LALTESTDELAYC);
+      REPORTSTATUS(&status);
+      return status.statusCode;
+    }  
+  REPORTSTATUS(&stat);
 
   /*
    * Set a GPS time that's close to 0h GMST1. (Found this by trial and
@@ -136,8 +150,15 @@ int main( void )
   det1_and_source.p_source       = &source;
 
   LALTimeDelayFromEarthCenter(&stat, &delay, &det1_and_source);
-  if (lalDebugLevel > 2)
-    REPORTSTATUS(&stat);
+  if (status.statusCode && lalDebugLevel > 0)
+    {
+      fprintf(stderr,
+              "TestDelay: LALTimeDelayFromEarthCenter() failed, line %i, %s\n",
+              __LINE__, LALTESTDELAYC);
+      REPORTSTATUS(&status);
+      return status.statusCode;
+    }
+  REPORTSTATUS(&stat);
 
   /*
    * Expect delay to be roughly c/R, where c=speed of light,
