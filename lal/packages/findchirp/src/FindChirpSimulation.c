@@ -200,7 +200,7 @@ LALFindChirpInjectSignals (
         "ppnParams.inc = %e\n"
         "ppnParams.phi = %e\n"
         "ppnParams.psi = %e\n"
-        "ppnParams.position.longitude = %e\n", 
+        "ppnParams.position.longitude = %e\n"
         "ppnParams.position.latitude = %e\n", 
         ppnParams.mTot, 
         ppnParams.eta, 
