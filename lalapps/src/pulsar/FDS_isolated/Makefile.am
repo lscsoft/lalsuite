@@ -12,7 +12,7 @@ endif
 
 bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF \
 	lalapps_polka lalapps_FstatShapeTestLAL compareFstats ComputeFStatistic_v2 \
-	lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh filterFStat  \
+	lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh 
 	ComputeFStatistic_v2_old
 
 EXTRA_PROGRAMS = $(FRAMEPROGRAMS)
@@ -41,8 +41,6 @@ lalapps_extractSFTband_SOURCES=extractSFTband.c
 lalapps_FindSh_SOURCES=FindSh.c FindSh.h clusters.c clusters.h
 
 compareFstats_SOURCES = compareFstats.c
-
-filterFStat_SOURCES = filterFStat.c
 
 ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c clusters.c clusters.h  \
 	DopplerScan.c DopplerScan.h NeighboringGridPoints.c
