@@ -30,7 +30,7 @@
  * Macros for constants used in date and time related functions.
  */
 
-/* Fundamental epoch J2000.0 */
+/* Julian date of Fundamental epoch J2000.0 */
 #define J2000_0 2451545.0
 
 /* Reference Julian Day for Mean Julian Day/Date */
