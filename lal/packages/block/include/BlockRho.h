@@ -53,7 +53,7 @@ NRCSID( BLOCKRHOH, "$Id$");
 #define BLOCKRHOH_MSGEALOC "Memory allocation error"
 #define BLOCKRHOH_MSGENUMZ "Data segment length is zero"
 #define	BLOCKRHOH_MSGEARG  "Error parsing command-line arguments"
-#define BLOCKRHOH_MSGEDATA "Too few input data points to create useable search data"
+#define BLOCKRHOH_MSGEDATA "Too few input data points to define a Rho statistic"
 
 /******** </lalErrTable> ********/
 
