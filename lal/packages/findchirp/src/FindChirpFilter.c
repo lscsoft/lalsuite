@@ -688,8 +688,8 @@ LALFindChirpFilterSegment (
   /* if full snrsq vector is required, store the snrsq */
   if ( params->rhosqVec ) 
   {
-    snprintf( params->rhosqVec->name, LALNameLength * sizeof(CHAR),
-        "%s:rhosq:output", input->segment->data->name );
+    memcpy( params->rhosqVec->name, input->segment->data->name,
+        LALNameLength * sizeof(CHAR) );
     memcpy( &(params->rhosqVec->epoch), &(input->segment->data->epoch), 
         sizeof(LIGOTimeGPS) );
     params->rhosqVec->deltaT = input->segment->deltaT;
