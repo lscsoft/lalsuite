@@ -83,22 +83,22 @@ This example shows how to add a package called "mypackage" to LAL.
      (b) make sure all your headers are listed in the "all-local:" dependency,
          so change this from
      
-         all-local: $(top_builddir)/include/LALSample.h   \
-                    $(top_builddir)/include/LALTemplate.h
+         all-local: $(top_builddir)/include/lal/LALSample.h   \
+                    $(top_builddir)/include/lal/LALTemplate.h
      
          to
      
-         all-local: $(top_builddir)/include/MyHeaderA.h \
-                    $(top_builddir)/include/MyHeaderB.h \
-                    $(top_builddir)/include/MyHeaderC.h
+         all-local: $(top_builddir)/include/lal/MyHeaderA.h \
+                    $(top_builddir)/include/lal/MyHeaderB.h \
+                    $(top_builddir)/include/lal/MyHeaderC.h
      
          Note the backslash to continue the line until the last header.
      
      (c) for each header file listed in all-local there should be a make
          instruction to copy the header to the top level-include directory:
      
-          $(top_builddir)/include/MyHeaderA.h: MyHeaderA.h
-                cp -f $(srcdir)/MyHeaderA.h $(top_builddir)/include
+          $(top_builddir)/include/lal/MyHeaderA.h: MyHeaderA.h
+                cp -f $(srcdir)/MyHeaderA.h $(top_builddir)/include/lal
 
           and so on, remembering that it should be a <TAB> on the second
           line, not spaces.
