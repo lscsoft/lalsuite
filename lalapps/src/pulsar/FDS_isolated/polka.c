@@ -18,8 +18,8 @@
 #include <lal/LALMalloc.h>
 #include <lal/LALConstants.h>
 
-#define MAXCANDIDATES   300000     /* Maximum # of allowed candidates */
-#define MAXCOINC   300000     /* Maximum # of allowed coincident candidates */
+#define MAXCANDIDATES   5000000     /* Maximum # of allowed candidates */
+#define MAXCOINC   5000000     /* Maximum # of allowed coincident candidates */
 
 struct CommandLineArgsTag 
 {
@@ -161,6 +161,9 @@ int main(int argc,char *argv[])
 	  n2[2]=sin(Delta2);
 
 	  AngularDistance=acos(n1[0]*n2[0]+n1[1]*n2[1]+n1[2]*n2[2]);
+
+
+
 
 	  difff=fabs(f1 - C2.f[indices2f[f]]);
 
