@@ -248,17 +248,17 @@ LALInspiralSpinBank(
   REAL4 mass;            		/* total mass of binary */
   REAL4 eta = 0.;             		/* symmetric mass ratio of binary */
   REAL4 betaMax;             		/* maximum spin parameter of binary */
-  REAL4 f0 = 164.0;  			/* frequency of minimum of noise curve */
+  REAL4 f0 = -1;  			/* frequency of minimum of noise curve */
   INT2 bccFlag = 0;      		/* determines offset for bcc tiling */
   INT4 cnt = 0;				/* loop counter set to value of ntiles */
-  REAL8 minfreq = 1.0;			/* temp variable used to find noise min */
+  REAL4 shf0 = 1;			/* used to find minimum of shf */
   
   /* Set up status pointer. */
   INITSTATUS( status, "LALInspiralSpinBank", INSPIRALSPINBANKC );
   ATTATCHSTATUSPTR( status );
   
   
-  /* Check to make sure that all the parameters are okay */
+  /* Check that minimal match is OK. */
   ASSERT( coarseIn.mmCoarse > 0, status, LALINSPIRALBANKH_ECHOICE,
           LALINSPIRALBANKH_MSGECHOICE );
   ASSERT( coarseIn.mmCoarse < 1, status, LALINSPIRALBANKH_ECHOICE,
@@ -270,6 +270,11 @@ LALInspiralSpinBank(
           LALINSPIRALBANKH_MSGECHOICE );
   ASSERT( coarseIn.MMax > 2*coarseIn.mMin, status, LALINSPIRALBANKH_ECHOICE,
           LALINSPIRALBANKH_MSGECHOICE );
+  /* Check that noise curve exists. */
+  ASSERT( coarseIn.shf.data, status, LALINSPIRALBANKH_ENULL,
+          LALINSPIRALBANKH_MSGENULL );
+  ASSERT( coarseIn.shf.data->data, status, LALINSPIRALBANKH_ENULL,
+          LALINSPIRALBANKH_MSGENULL );
 
   /*These parameters have not been added to InspiralCoarseBankIn yet, but when they are the will need to be checked */
   /*
@@ -277,47 +282,38 @@ LALInspiralSpinBank(
       ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
   */
 
-  /* Get 3x3 parameter-space metric. */
+  /* Allocate memory for 3x3 parameter-space metric. */
   /* BEN: mess creating all these structures & adding TRYs etc */
   /* BEN: do it by hand, since it's so simple? */
-
   LALU4CreateVector( status->statusPtr, &metricDimensions, (UINT4) 2 );
   BEGINFAIL(status)
     cleanup(status->statusPtr, &metric, &metricDimensions, &eigenval, output, tmplt, ntiles);
   ENDFAIL(status);
-  
   metricDimensions->data[0] = 3;
   metricDimensions->data[1] = 3;
-
   LALSCreateArray( status->statusPtr, &metric, metricDimensions );
   BEGINFAIL(status)
     cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt, ntiles);
   ENDFAIL(status);
 
-  /* REMEMBER we must give inspiralTemplate some frequency parameters ASK BEN */  
-  inspiralTemplate.fLower  = 30;    	/* These are arbitrarily chosen for now */
-  inspiralTemplate.fCutoff = 2000;	/* They are necessary for LALInspiralGetMoments() */
- 
-  /* Test to see if a PSD is present. If so, calculate the noise curve minimum and set to 
-     f0 then run LALGetInspiralMoments(); else cleanup & ABORT*/
-  if(coarseIn.shf.data && coarseIn.shf.data->data){ 
-    /* Calculate Noise curve minimum f0 */
-    for(cnt = 0; cnt < (INT4) coarseIn.shf.data->length; cnt++){
-      if ((coarseIn.shf.data->data[cnt]) && (coarseIn.shf.data->data[cnt] <= minfreq)){
-        f0 = (REAL4) coarseIn.shf.deltaF * cnt;
-        minfreq = coarseIn.shf.data->data[cnt];
-        }
-      }
-    LALGetInspiralMoments( status->statusPtr, &moments, &coarseIn.shf, &inspiralTemplate );
-    BEGINFAIL(status)                                                           
-      cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
-    ENDFAIL(status);
+  /* Set f0 to frequency of minimum of noise curve. */
+  for( cnt = 0; cnt < (INT4) coarseIn.shf.data->length; cnt++ )
+  {
+    if( coarseIn.shf.data->data[cnt] > 0 && coarseIn.shf.data->data[cnt] <
+        shf0 )
+    {
+      f0 = (REAL4) coarseIn.shf.deltaF * cnt;
+      shf0 = coarseIn.shf.data->data[cnt];
     }
-
-  else{
-    cleanup(status->statusPtr, &metric, &metricDimensions, &eigenval, output, tmplt, ntiles);
-    ABORT(status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-    }
+  }
+  /* Compute noise moments. */
+  inspiralTemplate.fLower = coarseIn.fLower;
+  inspiralTemplate.fCutoff = coarseIn.fUpper;
+  LALGetInspiralMoments( status->statusPtr, &moments, &coarseIn.shf,
+                         &inspiralTemplate );
+  BEGINFAIL(status)                                                           
+    cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
+  ENDFAIL(status);
 
   /* Call the metric */
   LALInspiralSpinBankMetric(status->statusPtr, metric, &moments, &inspiralTemplate, &f0);	
@@ -337,20 +333,21 @@ LALInspiralSpinBank(
   ENDFAIL(status);
     
   /* Set stepsizes and xp-yp rotation angle from metric. */
-  if((eigenval->data[0]==0.) || (eigenval->data[1]==0.) || (eigenval->data[2]==0.)){
+  if( eigenval->data[0] <= 0 || eigenval->data[1] <=0 || eigenval->data[2]
+      <= 0 )
+  {
     ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
-    }
-  dxp = 1.333333*sqrt(2*coarseIn.mmCoarse/eigenval->data[0]);
-  dyp = 1.333333*sqrt(2*coarseIn.mmCoarse/eigenval->data[1]);
-  dzp = 0.6666667*sqrt(2*coarseIn.mmCoarse/eigenval->data[2]);
+  }
+  dxp = 1.333333*sqrt(2*(1-coarseIn.mmCoarse)/eigenval->data[0]);
+  dyp = 1.333333*sqrt(2*(1-coarseIn.mmCoarse)/eigenval->data[1]);
+  dzp = 0.6666667*sqrt(2*(1-coarseIn.mmCoarse)/eigenval->data[2]);
   theta = atan2( -metric->data[3], -metric->data[0] );
 
-  /* Hardcode mass range etc for the moment. */
+  /* Hardcode mass range on higher mass for the moment. */
   m2Min = coarseIn.mMin*LAL_MTSUN_SI;
-  m2Max = coarseIn.MMax*LAL_MTSUN_SI;
+  m2Max = coarseIn.MMax*LAL_MTSUN_SI/2;
   m1Min = 2.0*m2Max;
   m1Max = 15.0*LAL_MTSUN_SI - m2Max;
-
 
   /* Set box on unprimed coordinates including region. */
   x0 = 0.9*(3.0/128) / (pow(LAL_PI*f0*(m1Max+m2Max),1.666667)*(m1Max*m2Max/pow(m1Max+m2Max,2)));
@@ -387,7 +384,8 @@ LALInspiralSpinBank(
         y = calculateY(0, yp0, xp, dxp, yp, dyp, bccFlag, theta);
         z = calculateZ(0, zp, dzp);
         /* Test to see if the point is in the search region */
-        if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+        if( test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0) )
+        {
           tmplt = tmplt->next = (ISBNode *) LALCalloc( 1, sizeof(ISBNode));
           /* check to see if calloc worked */
           if (!tmplt){
@@ -408,7 +406,7 @@ LALInspiralSpinBank(
           tmplt->psi3 = y;
           tmplt->beta = z;
           ++(*ntiles);
-          }
+        }
 
         /* CHECK BEHIND ------------------------------------------------------------- */
         /* Test a spot dx behind */
@@ -717,10 +715,4 @@ static INT4 test(REAL4 x,
   if (z > betaMax)
     return 0;
   return 1;
-  }
-  
-
-
-
-
-
+}
