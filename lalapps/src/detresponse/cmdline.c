@@ -60,9 +60,9 @@ cmdline_parser_print_help (void)
   printf("  -i, --sampling-interval=DOUBLE  sampling time interval, in seconds\n");
   printf("      --n-ra=INT                  Number of grid points in RA  (default=`256')\n");
   printf("      --n-dec=INT                 Number of grid points in Dec  (default=`64')\n");
-  printf("      --start-ra=INT              Starting RA index (>= 0)\n");
+  printf("      --start-ra=INT              Starting RA index (>= 0)  (default=`0')\n");
   printf("      --count-ra=INT              Number of sub-grid points in RA\n");
-  printf("      --start-dec=INT             Starting Dec index (>= 0)\n");
+  printf("      --start-dec=INT             Starting Dec index (>= 0)  (default=`0')\n");
   printf("      --count-dec=INT             Number of sub-grid points in Dec\n");
   printf("  -F, --format=STRING             output format  (default=`mam')\n");
   printf("  -O, --output-dir=STRING         Output directory  (default=`.')\n");
@@ -127,6 +127,8 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
   args_info->start_time_nanosec_arg = 0 ;\
   args_info->n_ra_arg = 256 ;\
   args_info->n_dec_arg = 64 ;\
+  args_info->start_ra_arg = 0 ;\
+  args_info->start_dec_arg = 0 ;\
   args_info->format_arg = gengetopt_strdup("mam") ;\
   args_info->output_dir_arg = gengetopt_strdup(".") ;\
   args_info->verbosity_arg = 0 ;\
@@ -529,26 +531,6 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
   if (! args_info->n_dec_given)
     {
       fprintf (stderr, "%s: '--n-dec' option required\n", CMDLINE_PARSER_PACKAGE);
-      missing_required_options = 1;
-    }
-  if (! args_info->start_ra_given)
-    {
-      fprintf (stderr, "%s: '--start-ra' option required\n", CMDLINE_PARSER_PACKAGE);
-      missing_required_options = 1;
-    }
-  if (! args_info->count_ra_given)
-    {
-      fprintf (stderr, "%s: '--count-ra' option required\n", CMDLINE_PARSER_PACKAGE);
-      missing_required_options = 1;
-    }
-  if (! args_info->start_dec_given)
-    {
-      fprintf (stderr, "%s: '--start-dec' option required\n", CMDLINE_PARSER_PACKAGE);
-      missing_required_options = 1;
-    }
-  if (! args_info->count_dec_given)
-    {
-      fprintf (stderr, "%s: '--count-dec' option required\n", CMDLINE_PARSER_PACKAGE);
       missing_required_options = 1;
     }
   if ( missing_required_options )

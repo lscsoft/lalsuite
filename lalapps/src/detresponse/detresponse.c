@@ -46,6 +46,12 @@ main(int argc, char **argv)
 
   if (args_info.debug_given)
     lalDebugLevel = args_info.debug_arg;
+
+  if (!args_info.count_ra_given)
+  	args_info.count_ra_arg = args_info.n_ra_arg-args_info.start_ra_arg;
+    
+  if (!args_info.count_dec_given)
+  	args_info.count_dec_arg = args_info.n_dec_arg-args_info.start_dec_arg;
     
   printf("lalDebugLevel = %d\n", lalDebugLevel);
     
