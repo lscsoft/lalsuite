@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = std support hello factories vectorops utilities date tdfilter \
+SUBDIRS = std support sample hello factories vectorops utilities date tdfilter \
           window fft timefreq stochastic inspiral framedata comm findchirp \
           burstsearch tracksearch
 
