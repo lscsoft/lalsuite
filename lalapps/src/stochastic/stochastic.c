@@ -350,7 +350,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   seriesTwo = get_time_series(&status, ifoTwo, frameCacheTwo, channelTwo, \
       gpsStartTime, gpsEndTime);
 
-  exit(1);*/
+  exit(1);
+  */
 
   /* initialize gps time structure */
   gpsStartTime.gpsSeconds = startTime;
@@ -1869,8 +1870,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
       case 'b':
         /* start time */
         startTime = atoi(optarg);
-
-        /* check */
         if (startTime < 441217609)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -1887,16 +1886,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
               startTime);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("int", "%ld", startTime);
-
         break;
 
       case 'c':
         /* end time */
         endTime = atoi(optarg);
-
-        /* check */
         if (endTime < 441217609)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -1913,16 +1908,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
               endTime);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("int", "%ld", endTime);
-
         break;
 
       case 'd':
         /* interval duration */
         intervalDuration = atoi(optarg);
-
-        /* check */
         if (intervalDuration <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -1930,16 +1921,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
               long_options[option_index].name, intervalDuration);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("int", "%d", intervalDuration);
-
         break;
 
       case 'e':
         /* segment duration */
         segmentDuration = atoi(optarg);
-
-        /* check */
         if (segmentDuration <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -1947,16 +1934,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
               long_options[option_index].name, segmentDuration);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("int", "%d", segmentDuration);
-
         break;
 
       case 'f':
         /* sample rate */
         sampleRate = atoi(optarg);
-
-        /* check */
         if (sampleRate < 2 || sampleRate > 16384 || sampleRate % 2)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -1965,16 +1948,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
               sampleRate);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("int", "%d", sampleRate);
-
         break;
 
       case 'g':
         /* resampling */
         resampleRate = atoi(optarg);
-
-        /* check */
         if (resampleRate < 2 || resampleRate > 16384 || resampleRate % 2)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -1983,7 +1962,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
               resampleRate);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("int", "%d", resampleRate);
 
         break;
@@ -1991,8 +1969,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
       case 'h':
         /* minimal frequency */
         fMin = atoi(optarg);
-
-        /* check */
         if (fMin < 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -2000,16 +1976,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
               long_options[option_index].name, fMin);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("int", "%d", fMin);
-
         break;
 
       case 'i':
         /* maximal frequency */
         fMax = atoi(optarg);
-
-        /* check */
         if (fMax < 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -2017,16 +1989,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
               long_options[option_index].name, fMax);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("int", "%d", fMax);
-
         break;
 
       case 'j':
         /* hann window duration */
         hannDuration = atoi(optarg);
-
-        /* check */
         if (hannDuration < 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -2034,16 +2002,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
               long_options[option_index].name, hannDuration);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("int", "%d", hannDuration);
-
         break;
 
       case 'k':
         /* high pass knee filter frequency  */
         highPassFreq = atof(optarg);
-
-        /* check */
         if (highPassFreq < 0)
         {
           fprintf(stderr, "Invalid argument tp --%s:\n" \
@@ -2052,16 +2016,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
               highPassFreq);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("float", "%e", highPassFreq);
-
         break;
 
       case 'l':
         /* high pass filter attenuation  */
         highPassAtten = atof(optarg);
-
-        /* check */
         if ((highPassAtten < 0.0) || (highPassAtten > 1.0))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -2070,16 +2030,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
               highPassAtten);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("float", "%e", highPassAtten);
-
         break;
 
       case 'm':
         /* high pass filter order  */
         highPassOrder = atoi(optarg);
-
-        /* check */
         if (highPassOrder <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -2088,16 +2044,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
               highPassOrder);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("int", "%d", highPassOrder);
-
         break;
 
       case 'n':
         /* GEO high pass knee filter frequency */
         geoHighPassFreq = atof(optarg);
-
-        /* check */
         if (geoHighPassFreq < 0)
         {
           fprintf(stderr, "Invalid argument tp --%s:\n" \
@@ -2106,16 +2058,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
               geoHighPassFreq);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("float", "%e", geoHighPassFreq);
-
         break;
 
       case 'o':
         /*GEO high pass filter attenuation */
         geoHighPassAtten = atof(optarg);
-
-        /* check */
         if ((geoHighPassAtten < 0.0) || (geoHighPassAtten > 1.0))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -2124,16 +2072,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
               geoHighPassAtten);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("float", "%e", geoHighPassAtten);
-
         break;
 
       case 'p':
         /* GEO high pass filter order */
         geoHighPassOrder = atoi(optarg);
-
-        /* check */
         if (geoHighPassOrder <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -2142,9 +2086,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
               geoHighPassOrder);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("int", "%d", geoHighPassOrder);
-
         break;
 
       case 'q':
@@ -2152,32 +2094,20 @@ static void parse_options(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 1;
         ifoOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         strncpy(ifoOne, optarg, optarg_len);
-
-        /* check and set site */
         if (strncmp(ifoOne, "H1", 2) == 0)
-        {
           siteOne = 0;
-        }
         else if (strncmp(ifoOne, "H2", 2) == 0)
-        {
           siteOne = 0;
-        }
         else if (strncmp(ifoOne, "L1", 2) == 0)
-        {
           siteOne = 1;
-        }
         else if (strncmp(ifoOne, "G1", 2) == 0)
-        {
           siteOne = 3;
-        }
         else
         {
           fprintf(stderr, "First IFO not recognised...\n");
           exit(1);
         }
-
         ADD_PROCESS_PARAM("string", "%s", ifoOne);
-
         break;
 
       case 'r':
@@ -2185,32 +2115,20 @@ static void parse_options(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 1;
         ifoTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         strncpy(ifoTwo, optarg, optarg_len);
-
-        /* check and set site */
         if (strncmp(ifoTwo, "H1", 2) == 0)
-        {
           siteTwo = 0;
-        }
         else if (strncmp(ifoTwo, "H2", 2) == 0)
-        {
           siteTwo = 0;
-        }
         else if (strncmp(ifoTwo, "L1", 2) == 0)
-        {
           siteTwo = 1;
-        }
         else if (strncmp(ifoTwo, "G1", 2) == 0)
-        {
           siteOne = 3;
-        }
         else
         {
           fprintf(stderr, "Second IFO not recognised...\n");
           exit(1);
         }
-
         ADD_PROCESS_PARAM("string", "%s", ifoTwo);
-
         break;
 
       case 's':
@@ -2236,8 +2154,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 1;
         frameCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         strncpy(frameCacheOne, optarg, optarg_len);
-
-        /* check that file exists */
         if ((stat(frameCacheOne, &fileStatus) == -1) && (errno = ENOENT))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -2245,9 +2161,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
               long_options[option_index].name, frameCacheOne);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("string", "%s", frameCacheOne);
-
         break;
 
       case 'v':
@@ -2255,8 +2169,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 1;
         frameCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         strncpy(frameCacheTwo, optarg, optarg_len);
-
-        /* check that file exists */
         if ((stat(frameCacheTwo, &fileStatus) == -1) && (errno = ENOENT))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -2264,9 +2176,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
               long_options[option_index].name, frameCacheTwo);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("string", "%s", frameCacheTwo);
-
         break;
 
       case 'w':
@@ -2274,8 +2184,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 1;
         calCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         strncpy(calCacheOne, optarg, optarg_len);
-
-        /* check that file exists */
         if ((stat(calCacheOne, &fileStatus) == -1) && (errno = ENOENT))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -2283,9 +2191,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
               long_options[option_index].name, calCacheOne);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("string", "%s", calCacheOne);
-
         break;
 
       case 'x':
@@ -2293,8 +2199,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 1;
         calCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         strncpy(calCacheTwo, optarg, optarg_len);
-
-        /* check that file exists */
         if ((stat(calCacheTwo, &fileStatus) == -1) && (errno = ENOENT))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -2302,9 +2206,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
               long_options[option_index].name, calCacheTwo);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("string", "%s", calCacheTwo);
-
         break;
 
       case 'y':
@@ -2316,8 +2218,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
       case 'z':
         /* number of bins to mask for frequency mask */
         maskBin = atoi(optarg);
-
-        /* check */
         if (maskBin <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -2325,9 +2225,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
               "(%d specified)\n", long_options[option_index].name, maskBin);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("int", "%d", maskBin);
-
         break;
 
       case 'A':
@@ -2345,8 +2243,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
       case 'C':
         /* number of trials */
         NLoop = atoi(optarg);
-
-        /* check */
         if (NLoop <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -2354,9 +2250,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
               "(%d specified)\n", long_options[option_index].name, NLoop);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("int", "%d", NLoop);
-
         break;
 
       case 'D':
@@ -2364,8 +2258,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 1;
         outputFilePath = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         strncpy(outputFilePath, optarg, optarg_len);
-
-        /* check */
         if ((stat(outputFilePath, &fileStatus) == -1) && (errno = ENOENT))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -2373,9 +2265,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
               long_options[option_index].name, outputFilePath);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("string", "%s", outputFilePath);
-
         break;
 
       case 'E':
@@ -2399,8 +2289,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
       case 'H':
         /* filter reference frequency */
         fRef = atof(optarg);
-
-        /* check */
         if (fRef < 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -2408,16 +2296,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
               "(%f specified)\n", long_options[option_index].name, fRef);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("float", "%e", fRef);
-
         break;
 
       case 'I':
         /* filter reference omega */
         omegaRef = atof(optarg);
-
-        /* check */
         if (omegaRef <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -2425,9 +2309,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
               long_options[option_index].name, omegaRef);
           exit(1);
         }
-
         ADD_PROCESS_PARAM("float", "%e", omegaRef);
-
         break;
 
       case 'J':
