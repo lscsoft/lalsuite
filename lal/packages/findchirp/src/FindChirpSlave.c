@@ -498,60 +498,61 @@ LALFindChirpSlave (
       else if ( params->simParams->simType == fcGaussianNoise ||
           params->simParams->simType == fcGaussianNoiseInject )
       {
-        /* replace the data in the segment with gaussian noise */
-        for ( i = 0; i < dataSegVec->length; ++i, ++currentDataSeg )
+        /* replace the data with gaussian noise */
+        REAL4Vector  *chanVec = params->simParams->chan->data;
+
+        REAL4        *chan = chanVec->data;
+        REAL4        *spec = dataSegVec->data->spec->data->data;
+        COMPLEX8     *resp = dataSegVec->data->resp->data->data;
+
+        REAL4         gaussianVarsq = params->simParams->gaussianVarsq;
+        REAL4         gaussianVar = sqrt( gaussianVarsq );
+
+        REAL4         respFactor = 1.0 / 
+          ( gaussianVar * (REAL4) sqrt( 2.0 * deltaT ) );
+
+        /* fill data channel with gaussian noise */
+        LALNormalDeviates( status->statusPtr, 
+            chanVec, params->simParams->randomParams );
+        CHECKSTATUSPTR( status );
+
+        for ( j = 0; j < tdLength; ++j )
         {
-          REAL4Vector  *dataVec = currentDataSeg->chan->data;
+          chan[j] *= gaussianVar;
+        }
 
-          REAL4        *data = currentDataSeg->chan->data->data;
-          REAL4        *spec = currentDataSeg->spec->data->data;
-          COMPLEX8     *resp = currentDataSeg->resp->data->data;
+        spectrum = 2.0 * gaussianVarsq * deltaT;
 
-          REAL4         gaussianVarsq = params->simParams->gaussianVarsq;
-          REAL4         gaussianVar = sqrt( gaussianVarsq );
+        LALLIGOIPsd( NULL, &minPsd, (REAL8) params->dataParams->fLow );
 
-          REAL4         respFactor = 1.0 / 
-            ( gaussianVar * (REAL4) sqrt( 2.0 * deltaT ) );
-
-          /* fill data channel with gaussian noise */
-          LALNormalDeviates( status->statusPtr, 
-              dataVec, params->simParams->randomParams );
-          CHECKSTATUSPTR( status );
-
-          for ( j = 0; j < tdLength; ++j )
+        for( k = 0; k < fdLength; ++k )
+        {
+          REAL8 psd;
+          REAL8 freq = (REAL8) k * deltaF;
+          if ( freq < params->dataParams->fLow )
           {
-            data[j] *= gaussianVar;
+            resp[k].re = 1.0 / (REAL4) sqrt( psdFactor * minPsd );
+            resp[k].re *= respFactor;
           }
-
-          spectrum = 2.0 * gaussianVarsq * deltaT;
-
-          LALLIGOIPsd( NULL, &minPsd, (REAL8) params->dataParams->fLow );
-
-          for( k = 0; k < fdLength; ++k )
+          else
           {
-            REAL8 psd;
-            REAL8 freq = (REAL8) k * deltaF;
-            if ( freq < params->dataParams->fLow )
-            {
-              resp[k].re = 1.0 / (REAL4) sqrt( psdFactor * minPsd );
-              resp[k].re *= respFactor;
-            }
-            else
-            {
-              LALLIGOIPsd( NULL, &psd, freq );
-              resp[k].re = 1.0 / (REAL4) sqrt( psdFactor * psd );
-              resp[k].re *= respFactor;
-            }
-            resp[k].im = 0.0;
-            spec[k] = spectrum;
+            LALLIGOIPsd( NULL, &psd, freq );
+            resp[k].re = 1.0 / (REAL4) sqrt( psdFactor * psd );
+            resp[k].re *= respFactor;
           }
+          resp[k].im = 0.0;
+          spec[k] = spectrum;
         }
       }
 
       if ( params->simParams->simType == fcGaussianNoiseInject ||
           params->simParams->simType == fcRealDataInject )
       {
-        /* inject a signal into the input data stream */
+        /* inject signals into the input data stream */
+        LALFindChirpInjectSignals( status->statusPtr, 
+            params->simParams->chan, params->simParams->injectEvent, 
+            dataSegVec->data->resp );
+        CHECKSTATUSPTR( status );
       }
 
       /* unless this is a min match sim we need to (re)condition the data */
