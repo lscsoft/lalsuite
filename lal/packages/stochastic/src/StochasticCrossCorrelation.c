@@ -13,6 +13,7 @@ cross-correlation statistic for stochastic background searches.
 \subsubsection*{Prototypes}
 \input{StochasticCrossCorrelationCP}
 \index{\texttt{LALStochasticCrossCorrelationStatistic()}}
+\index{\texttt{LALStochasticCrossCorrelationSpectrum()}}
 
 \subsubsection*{Description}
 \texttt{LALStochasticCrossCorrelationStatistic()} calculates the value
@@ -407,9 +408,10 @@ LALStochasticCrossCorrelationStatistic(LALStatus                              *s
 
 /* <lalVerbatim file="StochasticCrossCorrelationCP"> */
 void
-LALStochasticCrossCorrelationSpectrum(LALStatus                              *status,
-                                      COMPLEX8FrequencySeries                *output,
-                                      const StochasticCrossCorrelationInput  *input)
+LALStochasticCrossCorrelationSpectrum(
+            LALStatus                              *status,
+            COMPLEX8FrequencySeries                *output,
+            const StochasticCrossCorrelationInput  *input )
 /* </lalVerbatim> */
 {
 
