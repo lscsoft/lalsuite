@@ -192,8 +192,8 @@ This structure is used for storing intervals of \texttt{LIGOTimeGPS}
 and \texttt{LIGOTimeUnix} times.  The fields are:
 
 \begin{description}
-\item{\texttt{REAL4 seconds}} Integral part of the time interval
-\item{\texttt{REAL4 nanoSeconds}} Residual nanoseconds (\textit{i.e.}
+\item{\texttt{INT4 seconds}} Integral part of the time interval
+\item{\texttt{INT4 nanoSeconds}} Residual nanoseconds (\textit{i.e.}
   fractional part, in nanoseconds)
 \end{description}
 
