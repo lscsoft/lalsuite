@@ -134,7 +134,7 @@ int main(int argc, char **argv)
   FILE		*output;             /* output result*/
   
    /* --- for debugging --- */
-  lalDebugLevel = 7 ;
+  lalDebugLevel = 7;
   program       = *argv;
 
   /* --- Start Main part here --- */
@@ -169,6 +169,8 @@ int main(int argc, char **argv)
   						       /* ..with the xml file			*/ 
   ts.sampleUnits 	= lalADCCountUnit;	       /*  UNITY ?? 				*/
   ts.deltaT 		= 1./sampling;		       /* sampling				*/
+ ts.name[0]='L'; 
+
   fs.deltaF 		= sampling / numPoints;	       /* idem for fs				*/
   fs.sampleUnits 	= lalADCCountUnit;
 
