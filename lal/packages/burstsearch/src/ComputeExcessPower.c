@@ -45,7 +45,7 @@ LALComputeExcessPower (
   ATTATCHSTATUSPTR (status);
 
 
-    /* make sure that arguments are not NULL */
+  /* make sure that arguments are not NULL */
   ASSERT (tfTiling, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
   ASSERT (tfTiling->tfp, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
   ASSERT (tfTiling->dftParams, status, EXCESSPOWERH_ENULLP, 
@@ -53,18 +53,20 @@ LALComputeExcessPower (
   ASSERT (tfTiling->firstTile, status, EXCESSPOWERH_ENULLP, 
           EXCESSPOWERH_MSGENULLP);
   ASSERT (input, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-  ASSERT (input->numSigmaMin >= 1.0, status, EXCESSPOWERH_EINCOMP,
-          EXCESSPOWERH_MSGEINCOMP);
-  ASSERT ((input->alphaDefault >0.0) && (input->alphaDefault < 1.0), 
-          status, EXCESSPOWERH_EINCOMP, EXCESSPOWERH_MSGEINCOMP);
-  
 
-  ASSERT (tfTiling->numPlanes>0, status, EXCESSPOWERH_EPOSARG,
-          EXCESSPOWERH_MSGEPOSARG);
+  /* check on some parameter values */
+  if ( (input->numSigmaMin < 1.0) || (input->alphaDefault < 0.0) ||
+          (input->alphaDefault > 1.0) ){
+      ABORT(status, EXCESSPOWERH_EINCOMP, EXCESSPOWERH_MSGEINCOMP);
+  }
+  if ( !(tfTiling->numPlanes>0) ){
+      ABORT(status, EXCESSPOWERH_EPOSARG, EXCESSPOWERH_MSGEPOSARG);
+  }
 
   /* make sure TF planes have already been computed */
-  ASSERT (tfTiling->planesComputed, status, EXCESSPOWERH_EORDER,
-          EXCESSPOWERH_MSGEORDER);
+  if ( ! (tfTiling->planesComputed) ){
+      ABORT(status, EXCESSPOWERH_EORDER, EXCESSPOWERH_MSGEORDER);
+  }
 
   for(i=0; i<tfTiling->numPlanes; i++)
     {
