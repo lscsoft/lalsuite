@@ -70,9 +70,11 @@ LALCreateMetaTableDir(
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
         {
-          if ( (tmpTableDir[i].pos = MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
+          if ( (tmpTableDir[i].pos = 
+                MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
           {
-            fprintf( stderr, "unable to find column %s\n", tmpTableDir[i].name );
+            fprintf( stderr, "unable to find column %s\n", 
+                tmpTableDir[i].name );
             ABORT(status,LIGOLWXMLREADH_ENCOL,LIGOLWXMLREADH_MSGENCOL);
           }
         }
@@ -121,8 +123,8 @@ LALSnglBurstTableFromLIGOLw (
   struct MetaioParseEnvironment         parseEnv;
   const  MetaioParseEnv                 env = &parseEnv;
   MetaTableDirectory                   *tableDir;
-  
-  INITSTATUS( status, "LALCreateMetaTableDir", LIGOLWXMLREADC );
+
+  INITSTATUS( status, "LALSnglBurstTableFromLIGOLw", LIGOLWXMLREADC );
   ATTATCHSTATUSPTR (status);
 
   /* check that the event handle and pointer are vaid */
@@ -134,7 +136,7 @@ LALSnglBurstTableFromLIGOLw (
   {
     ABORT(status, LIGOLWXMLREADH_ENNUL, LIGOLWXMLREADH_MSGENNUL);
   }
-  
+
   /* open the sngl_burst XML file */
   mioStatus = MetaioOpenTable( env, fileName, "sngl_burst" );
   if ( mioStatus )
@@ -308,7 +310,7 @@ LALSnglInspiralTableFromLIGOLw (
     fprintf( stderr, "non-null pointer passed as pointer to event list" );
     return -1;
   }
-  
+
   /* open the sngl_inspiral table template bank file */
   mioStatus = MetaioOpenTable( env, fileName, "sngl_inspiral" );
   if ( mioStatus )
@@ -362,7 +364,7 @@ LALSnglInspiralTableFromLIGOLw (
         MetaioClose( env );
         return -1;
       }
-      
+
       /* parse the contents of the row into the InspiralTemplate structure */
       for ( j = 0; tableDir[j].name; ++j )
       {
