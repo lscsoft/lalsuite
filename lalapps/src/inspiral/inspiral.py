@@ -65,9 +65,9 @@ class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
       self.add_ini_args(cp,sec)
 
     self.set_stdout_file(
-      'logs/tmpltbank-$(channel-name)-$(gps-start-time)-$(gps-end-time).out')
+      'logs/tmpltbank-$(channelname)-$(gpsstarttime)-$(gpsendtime).out')
     self.set_stderr_file(
-      'logs/tmpltbank-$(channel-name)-$(gps-start-time)-$(gps-end-time).err')
+      'logs/tmpltbank-$(channelname)-$(gpsstarttime)-$(gpsendtime).err')
     self.set_sub_file('tmpltbank.sub')
     
 
@@ -92,9 +92,9 @@ class InspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
       self.add_ini_args(cp,sec)
 
     self.set_stdout_file(
-      'logs/inspiral-$(channel-name)-$(gps-start-time)-$(gps-end-time).out')
+      'logs/inspiral-$(channelname)-$(gpsstarttime)-$(gpsendtime).out')
     self.set_stderr_file(
-      'logs/inspiral-$(channel-name)-$(gps-start-time)-$(gps-end-time).err')
+      'logs/inspiral-$(channelname)-$(gpsstarttime)-$(gpsendtime).err')
     self.set_sub_file('inspiral.sub')
     
 
@@ -119,9 +119,9 @@ class TrigToTmpltJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
       self.add_ini_args(cp,sec)
     
     self.set_stdout_file(
-      'logs/trigtotmplt-$(channel-name)-$(gps-start-time)-$(gps-end-time).out')
+      'logs/trigtotmplt-$(channelname)-$(gpsstarttime)-$(gpsendtime).out')
     self.set_stderr_file(
-      'logs/trigtotmplt-$(channel-name)-$(gps-start-time)-$(gps-end-time).err')
+      'logs/trigtotmplt-$(channelname)-$(gpsstarttime)-$(gpsendtime).err')
     self.set_sub_file('trigtotmplt.sub')
 
 
@@ -145,8 +145,8 @@ class IncaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['inca']:
       self.add_ini_args(cp,sec)
 
-    self.set_stdout_file('logs/inca-$(gps-start-time)-$(gps-end-time).out')
-    self.set_stderr_file('logs/inca-$(gps-start-time)-$(gps-end-time).err')
+    self.set_stdout_file('logs/inca-$(gpsstarttime)-$(gpsendtime).out')
+    self.set_stderr_file('logs/inca-$(gpsstarttime)-$(gpsendtime).err')
     self.set_sub_file('inca.sub')
 
 
