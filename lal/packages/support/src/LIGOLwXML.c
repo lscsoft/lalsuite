@@ -190,6 +190,16 @@ LALEndLIGOLwXMLTable (
   RETURN( status );
 }
 
+/* macro to print a comma on subsequent table rows */
+#define FIRST_TABLE_ROW \
+        if ( xml->first ) \
+        { \
+          xml->first = 0; \
+        } else \
+        { \
+          fprintf( xml->fp, ",\n" ); \
+        }
+
 /* <lalVerbatim file="LIGOLwXMLCP"> */
 void
 LALWriteLIGOLwXMLTable (
@@ -212,13 +222,6 @@ LALWriteLIGOLwXMLTable (
   {
     ABORT( status, LIGOLWXMLH_ETMSM, LIGOLWXMLH_MSGETMSM );
   }
-  if ( xml->first )
-  {
-    xml->first = 0;
-  } else
-  {
-    fprintf( xml->fp, ",\n" );
-  }
   switch( table )
   {
     case no_table:
@@ -227,6 +230,7 @@ LALWriteLIGOLwXMLTable (
     case process_table:
       while( tablePtr.processTable )
       {
+        FIRST_TABLE_ROW
         fprintf( xml->fp, PROCESS_ROW,
             tablePtr.processTable->program,
             tablePtr.processTable->version,
@@ -249,6 +253,7 @@ LALWriteLIGOLwXMLTable (
     case process_params_table:
       while( tablePtr.processParamsTable )
       {
+        FIRST_TABLE_ROW
         fprintf( xml->fp, PROCESS_PARAMS_ROW,
             tablePtr.processParamsTable->program,
             tablePtr.processParamsTable->param,
@@ -261,6 +266,7 @@ LALWriteLIGOLwXMLTable (
     case search_summary_table:
       while( tablePtr.searchSummaryTable )
       {
+        FIRST_TABLE_ROW
         fprintf( xml->fp, SEARCH_SUMMARY_ROW,
             tablePtr.searchSummaryTable->comment,
             tablePtr.searchSummaryTable->in_start_time.gpsSeconds,
@@ -280,6 +286,7 @@ LALWriteLIGOLwXMLTable (
     case search_summvars_table:
       while( tablePtr.searchSummvarsTable )
       {
+        FIRST_TABLE_ROW
         fprintf( xml->fp, SEARCH_SUMMVARS_ROW,
             tablePtr.searchSummvarsTable->name,
             tablePtr.searchSummvarsTable->string,
@@ -291,6 +298,7 @@ LALWriteLIGOLwXMLTable (
     case sngl_burst_table:
       while( tablePtr.snglBurstTable )
       {
+        FIRST_TABLE_ROW
         fprintf( xml->fp, SNGL_BURST_ROW,
             tablePtr.snglBurstTable->ifo,
             tablePtr.snglBurstTable->search,
@@ -310,6 +318,7 @@ LALWriteLIGOLwXMLTable (
     case sngl_inspiral_table:
       while( tablePtr.snglInspiralTable )
       {
+        FIRST_TABLE_ROW
         fprintf( xml->fp, SNGL_INSPIRAL_ROW,
             tablePtr.snglInspiralTable->ifo,
             tablePtr.snglInspiralTable->search,
@@ -344,6 +353,7 @@ LALWriteLIGOLwXMLTable (
     case summ_value_table:
       while( tablePtr.summValueTable )
       {
+        FIRST_TABLE_ROW
         fprintf( xml->fp, SUMM_VALUE_ROW,
             tablePtr.summValueTable->program,
             tablePtr.summValueTable->start_time.gpsSeconds,
@@ -363,3 +373,5 @@ LALWriteLIGOLwXMLTable (
   }
   RETURN( status );
 }
+
+#undef FIRST_TABLE_ROW /* undefine first table row macro */
