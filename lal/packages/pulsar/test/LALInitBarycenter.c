@@ -61,12 +61,13 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
     INITSTATUS(stat,"LALInitBarycenter",LALINITBARYCENTERC);
     ATTATCHSTATUSPTR(stat);
 
-    fp1 = fopen(edat->ephiles.earthEphemeris,"r");  
-    fp2 = fopen(edat->ephiles.sunEphemeris,"r");  
+    fp1 = LALOpenDataFile(edat->ephiles.earthEphemeris);  
+    fp2 = LALOpenDataFile(edat->ephiles.sunEphemeris);  
 
     /* CHECK THAT fp1 and fp2 are not NULL: */
-   ASSERT (fp1 != NULL, stat, LALINITBARYCENTERH_EOPEN, LALINITBARYCENTERH_MSGEOPEN);
-   ASSERT (fp2 != NULL, stat, LALINITBARYCENTERH_EOPEN, LALINITBARYCENTERH_MSGEOPEN);
+    if ( ( fp1 == NULL ) || ( fp2 == NULL ) ) {
+      ABORT (stat, LALINITBARYCENTERH_EOPEN, LALINITBARYCENTERH_MSGEOPEN);
+    }
     
 /*reading first line of each file */
 
