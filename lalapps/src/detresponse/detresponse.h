@@ -32,7 +32,6 @@
 
 
 #include "cmdline.h"
-#include "mystrncasecmp.h"
 
 /* macro for minimum of two arguments */
 #define DETRESPONSE_MIN(a, b) (((a) < (b)) ? (a) : (b))
