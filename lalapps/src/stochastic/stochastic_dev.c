@@ -185,12 +185,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL4FrequencySeries psdTwo;
 
   /* response functions */
-  COMPLEX8FrequencySeries responseTempOneA;
-  COMPLEX8FrequencySeries responseTempOneB;
-  COMPLEX8FrequencySeries responseTempOneC;
-  COMPLEX8FrequencySeries responseTempTwoA;
-  COMPLEX8FrequencySeries responseTempTwoB;
-  COMPLEX8FrequencySeries responseTempTwoC;
+  COMPLEX8FrequencySeries *responseTempOneA;
+  COMPLEX8FrequencySeries *responseTempOneB;
+  COMPLEX8FrequencySeries *responseTempOneC;
+  COMPLEX8FrequencySeries *responseTempTwoA;
+  COMPLEX8FrequencySeries *responseTempTwoB;
+  COMPLEX8FrequencySeries *responseTempTwoC;
   COMPLEX8FrequencySeries responseOneA;
   COMPLEX8FrequencySeries responseOneB;
   COMPLEX8FrequencySeries responseOneC;
@@ -333,6 +333,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* set length for data intervals */
   intervalLength = intervalDuration * resampleRate;
 
+  if (vrbflg)
+  {
+    fprintf(stdout, "Allocating memory for data intervals...\n");
+  }
+
   /* set metadata fields for data intervals */
   strncpy(intervalOne.name, "intervalOne", LALNameLength);
   strncpy(intervalTwo.name, "intervalTwo", LALNameLength);
@@ -343,10 +348,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   intervalOne.f0 = 0;
   intervalTwo.f0 = 0;
 
-  if (vrbflg)
-  {
-    fprintf(stdout, "Allocating memory for data intervals...\n");
-  }
 
   /* allocate memory for data intervals */
   intervalOne.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
@@ -416,7 +417,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   {
     fprintf(stdout, "Allocating memory for PSDs...\n");
   }
-
+  
   /* allocate memory for PSDs */
   psdTempOne.data = NULL;
   psdTempTwo.data = NULL;
@@ -491,36 +492,24 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* allocate memory for response functions */
-  responseTempOneA.data = NULL;
-  responseTempOneB.data = NULL;
-  responseTempOneC.data = NULL;
-  responseTempTwoA.data = NULL;
-  responseTempTwoB.data = NULL;
-  responseTempTwoC.data = NULL;
-  LAL_CALL( LALCCreateVector(&status, &(responseTempOneA.data), respLength), \
-      &status );
-  LAL_CALL( LALCCreateVector(&status, &(responseTempOneB.data), respLength), \
-      &status );
-  LAL_CALL( LALCCreateVector(&status, &(responseTempOneC.data), respLength), \
-      &status );
-  LAL_CALL( LALCCreateVector(&status, &(responseTempTwoA.data), respLength), \
-      &status );
-  LAL_CALL( LALCCreateVector(&status, &(responseTempTwoB.data), respLength), \
-      &status );
-  LAL_CALL( LALCCreateVector(&status, &(responseTempTwoC.data), respLength), \
-      &status );
-  memset(responseTempOneA.data->data, 0, \
-      responseTempOneA.data->length * sizeof(*responseTempOneA.data->data));
-  memset(responseTempOneB.data->data, 0, \
-      responseTempOneB.data->length * sizeof(*responseTempOneB.data->data));
-  memset(responseTempOneC.data->data, 0, \
-      responseTempOneC.data->length * sizeof(*responseTempOneC.data->data));
-  memset(responseTempTwoA.data->data, 0, \
-      responseTempTwoA.data->length * sizeof(*responseTempTwoA.data->data));
-  memset(responseTempTwoB.data->data, 0, \
-      responseTempTwoB.data->length * sizeof(*responseTempTwoB.data->data));
-  memset(responseTempTwoC.data->data, 0, \
-      responseTempTwoC.data->length * sizeof(*responseTempTwoC.data->data));
+  LAL_CALL( LALCreateCOMPLEX8FrequencySeries(&status, &responseTempOneA, \
+        "responseTempOneA", gpsStartTime, 0, deltaF, countPerAttoStrain, \
+        respLength), &status );      
+  LAL_CALL( LALCreateCOMPLEX8FrequencySeries(&status, &responseTempOneB, \
+        "responseTempOneB", gpsStartTime, 0, deltaF, countPerAttoStrain, \
+        respLength), &status );      
+  LAL_CALL( LALCreateCOMPLEX8FrequencySeries(&status, &responseTempOneC, \
+        "responseTempOneC", gpsStartTime, 0, deltaF, countPerAttoStrain, \
+        respLength), &status );      
+  LAL_CALL( LALCreateCOMPLEX8FrequencySeries(&status, &responseTempTwoA, \
+        "responseTempTwoA", gpsStartTime, 0, deltaF, countPerAttoStrain, \
+        respLength), &status );      
+  LAL_CALL( LALCreateCOMPLEX8FrequencySeries(&status, &responseTempTwoB, \
+        "responseTempTwoB", gpsStartTime, 0, deltaF, countPerAttoStrain, \
+        respLength), &status );      
+  LAL_CALL( LALCreateCOMPLEX8FrequencySeries(&status, &responseTempTwoC, \
+        "responseTempTwoC", gpsStartTime, 0, deltaF, countPerAttoStrain, \
+        respLength), &status );      
 
   /* reduced frequency band response functions */
   /* set metadata fields for reduced frequency band response functions */
@@ -1103,35 +1092,35 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* compute response function */
-    responseTempOneA.epoch = gpsSegmentAStart;
-    responseTempOneB.epoch = gpsSegmentBStart;
-    responseTempOneC.epoch = gpsSegmentCStart;
-    responseTempTwoA.epoch = gpsSegmentAStart;
-    responseTempTwoB.epoch = gpsSegmentBStart;
-    responseTempTwoC.epoch = gpsSegmentCStart;
+    responseTempOneA->epoch = gpsSegmentAStart;
+    responseTempOneB->epoch = gpsSegmentBStart;
+    responseTempOneC->epoch = gpsSegmentCStart;
+    responseTempTwoA->epoch = gpsSegmentAStart;
+    responseTempTwoB->epoch = gpsSegmentBStart;
+    responseTempTwoC->epoch = gpsSegmentCStart;
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoOne;
-    LAL_CALL( LALExtractFrameResponse(&status, &responseTempOneA, \
+    LAL_CALL( LALExtractFrameResponse(&status, responseTempOneA, \
           calCacheOne, &calfacts), &status );
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoOne;
-    LAL_CALL( LALExtractFrameResponse(&status, &responseTempOneB, \
+    LAL_CALL( LALExtractFrameResponse(&status, responseTempOneB, \
           calCacheOne, &calfacts), &status );
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoOne;
-    LAL_CALL( LALExtractFrameResponse(&status, &responseTempOneC, \
+    LAL_CALL( LALExtractFrameResponse(&status, responseTempOneC, \
           calCacheOne, &calfacts), &status );
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoTwo;
-    LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwoA, \
+    LAL_CALL( LALExtractFrameResponse(&status, responseTempTwoA, \
           calCacheTwo, &calfacts), &status );
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoTwo;
-    LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwoB, \
+    LAL_CALL( LALExtractFrameResponse(&status, responseTempTwoB, \
           calCacheTwo, &calfacts), &status );
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoTwo;
-    LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwoC, \
+    LAL_CALL( LALExtractFrameResponse(&status, responseTempTwoC, \
           calCacheTwo, &calfacts), &status );
 
     if (vrbflg)
@@ -1141,12 +1130,12 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* reduce to the optimal filter frequency range */
-    responseOneA.data->data = responseTempOneA.data->data + numFMin;
-    responseOneB.data->data = responseTempOneB.data->data + numFMin;
-    responseOneC.data->data = responseTempOneC.data->data + numFMin;
-    responseTwoA.data->data = responseTempTwoA.data->data + numFMin;
-    responseTwoB.data->data = responseTempTwoB.data->data + numFMin;
-    responseTwoC.data->data = responseTempTwoC.data->data + numFMin;
+    responseOneA.data->data = responseTempOneA->data->data + numFMin;
+    responseOneB.data->data = responseTempOneB->data->data + numFMin;
+    responseOneC.data->data = responseTempOneC->data->data + numFMin;
+    responseTwoA.data->data = responseTempTwoA->data->data + numFMin;
+    responseTwoB.data->data = responseTempTwoB->data->data + numFMin;
+    responseTwoC.data->data = responseTempTwoC->data->data + numFMin;
 
     /* output the results */
     if (debug_flag)
@@ -1296,12 +1285,18 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALFree(responseTwoA.data);
   LALFree(responseTwoB.data);
   LALFree(responseTwoC.data);
-  LAL_CALL( LALCDestroyVector(&status, &(responseTempOneA.data)), &status );
-  LAL_CALL( LALCDestroyVector(&status, &(responseTempOneB.data)), &status );
-  LAL_CALL( LALCDestroyVector(&status, &(responseTempOneC.data)), &status );
-  LAL_CALL( LALCDestroyVector(&status, &(responseTempTwoA.data)), &status );
-  LAL_CALL( LALCDestroyVector(&status, &(responseTempTwoB.data)), &status );
-  LAL_CALL( LALCDestroyVector(&status, &(responseTempTwoC.data)), &status );
+  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries(&status, responseTempOneA), \
+      &status );
+  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries(&status, responseTempOneB), \
+      &status );
+  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries(&status, responseTempOneC), \
+      &status );
+  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries(&status, responseTempTwoA), \
+      &status );
+  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries(&status, responseTempTwoB), \
+      &status );
+  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries(&status, responseTempTwoC), \
+      &status );
   LAL_CALL( LALDestroyVector(&status, &(calInvPSDOne.data)), &status );
   LAL_CALL( LALDestroyVector(&status, &(calInvPSDTwo.data)), &status );
   LAL_CALL( LALDestroyVector(&status, &(overlap.data)), &status );
