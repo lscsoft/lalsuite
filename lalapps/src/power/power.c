@@ -664,8 +664,8 @@ void parse_command_line(
 		case 'Q':
 		params->tfTilingInput.flow = atof(optarg);
 		params->tfPlaneParams.flow = atof(optarg);
-		if(params->tfTilingInput.flow < 0.0) {
-			sprintf(msg,"must be >= 0.0 (%f specified)", params->tfTilingInput.flow);
+		if((params->tfTilingInput.flow < 0.0) || (params->tfTilingInput.flow > 150.0)) {
+			sprintf(msg,"must be between 0 Hz and 150 Hz inclusively (%f specified)", params->tfTilingInput.flow);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
