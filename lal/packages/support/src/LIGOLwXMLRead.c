@@ -1255,8 +1255,8 @@ SimInspiralTableFromLIGOLw (
     {"spin2z",              -1, 39},
     {"theta0",              -1, 40},
     {"phi0",                -1, 41},
-    {"fLower",             -1, 42},
-    {"fFinal",             -1, 43},
+    {"fLower",              -1, 42},
+    {"fFinal",              -1, 43},
     {"mchirp",              -1, 44},
     {"eff_dist_h",          -1, 45},
     {"eff_dist_l",          -1, 46},
@@ -1278,7 +1278,7 @@ SimInspiralTableFromLIGOLw (
     return -1;
   }
   
-  /* open the sngl_inspiral table file */
+  /* open the sim_inspiral table file */
   mioStatus = MetaioOpenTable( env, fileName, "sim_inspiral" );
   if ( mioStatus )
   {
@@ -1287,7 +1287,7 @@ SimInspiralTableFromLIGOLw (
     return -1;
   }
 
-  /* figure out the column positions of the template parameters */
+  /* figure out the column positions of the simulated parameters */
   for ( i = 0; tableDir[i].name; ++i )
   {
     if ( (tableDir[i].pos = MetaioFindColumn( env, tableDir[i].name )) < 0 )
@@ -1511,27 +1511,27 @@ SimInspiralTableFromLIGOLw (
 	  {
 	    thisSim->fFinal = r4colData;
 	  }
-	else if ( tableDir[j].idx == 43 )
+	else if ( tableDir[j].idx == 44 )
 	  {
 	    thisSim->mchirp = r4colData;
 	  }
-        else if ( tableDir[j].idx == 44 )
+        else if ( tableDir[j].idx == 45 )
 	  {
 	    thisSim->eff_dist_h = r4colData;
 	  }
-        else if ( tableDir[j].idx == 45 )
+        else if ( tableDir[j].idx == 46 )
 	  {
 	    thisSim->eff_dist_l = r4colData;
 	  }
-        else if ( tableDir[j].idx == 46 )
+        else if ( tableDir[j].idx == 47 )
 	  {
 	    thisSim->eff_dist_g = r4colData;
 	  }
-        else if ( tableDir[j].idx == 47 )
+        else if ( tableDir[j].idx == 48 )
 	  {
 	    thisSim->eff_dist_t = r4colData;
 	  }
-        else if ( tableDir[j].idx == 48 )
+        else if ( tableDir[j].idx == 49 )
 	  {
 	    thisSim->eff_dist_v = r4colData;
 	  }
