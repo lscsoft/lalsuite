@@ -94,7 +94,6 @@ UINT8 startTime = 751957183;
 UINT8 endTime = 751957783;
 INT4 intervalDuration = 180;
 INT4 segmentDuration = 60;
-INT4 calibDuration = 60;
 INT4 calibOffset = 29;
 CHAR *frameCacheOne = NULL;
 CHAR *frameCacheTwo = NULL;
