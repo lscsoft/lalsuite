@@ -37,6 +37,7 @@
 /* this is defined in C99 and *should* be in math.h.  Long term
    protect this with a HAVE_FINITE */
 #ifdef _MSC_VER
+#include <float.h>
 #define finite _finite
 #else
 int finite(double);
