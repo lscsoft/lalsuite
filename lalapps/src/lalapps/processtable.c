@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <lalapps.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -9,7 +8,9 @@
 #include <fcntl.h>
 #include <regex.h>
 #include <pwd.h>
+#include <unistd.h>
 #include <time.h>
+#include <lalapps.h>
 
 #include <lal/LALMalloc.h>
 #include <lal/LALStatusMacros.h>
@@ -45,6 +46,7 @@ populate_process_table (
   const char cvs_date_format[] = CVS_DATE_FMT;
   char date_string[256];
   size_t cvsstrlen;
+  uid_t userid;
   struct passwd *pwent;
   char *cvsstrstart, *cvsstrend;
   LALDate laldate;
@@ -107,9 +109,10 @@ populate_process_table (
     perror( "could not determine host name" );
     exit( 1 );
   }
-  if ( ! (pwent = getpwuid( getuid() )) )
+  userid = geteuid();
+  if ( ! (pwent = getpwuid( userid )) )
   {
-    perror( "could not get password structure" );
+    LALSnprintf( ptable->username, LIGOMETA_USERNAME_MAX - 1, "%d", userid );
   }
   strncpy( ptable->username, pwent->pw_name, LIGOMETA_USERNAME_MAX - 1);
 
