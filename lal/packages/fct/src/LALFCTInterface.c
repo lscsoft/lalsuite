@@ -18,7 +18,7 @@ tagLALFCTPlan
     UINT4 num_data_cubes;
     BOOLEAN fct_initialised;
 }
-/* LALFCTPlan */;
+ /* LALFCTPlan */ ;
 
 void LALCreateFCTPlan(LALStatus* const status,
                       LALFCTPlan** plan_ptr,
