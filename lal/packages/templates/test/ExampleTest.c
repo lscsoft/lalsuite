@@ -153,13 +153,13 @@ int main( int argc, char *argv[] )
    **     if ( ! lalNoDebug )
    **     {
    **       LALExample( &status, NULL, &input, &params );
-   **       if ( status.statusCode != EXAMPLEH_ENULLP
-   **            || strcmp( status.statusDescription, EXAMPLEH_MSGENULLP ) )
+   **       if ( status.statusCode != EXAMPLEH_ENULL
+   **            || strcmp( status.statusDescription, EXAMPLEH_MSGENULL ) )
    **       {
    **         fprintf( stderr, "incorrect error code %d and message %s\n",
    **             status.statusCode, status.statusDescription );
    **         fprintf( stderr, "expecting error code %d and message %s\n",
-   **             EXAMPLEH_ENULLP, EXAMPLEH_MSGENULLP );
+   **             EXAMPLEH_ENULL, EXAMPLEH_MSGENULL );
    **         return FAIL_CODE;
    **       }
    **

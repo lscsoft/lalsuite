@@ -50,12 +50,14 @@ NRCSID( EXAMPLEH, "$Id$" );
 
 /** DEFINE ERROR CODES AND MESSAGES **/
 /**** <lalErrTable file="ExampleHE"> */
-#define EXAMPLEH_ENULLP 1
-#define EXAMPLEH_EALLOC 2
-#define EXAMPLEH_EOTHER 4
-#define EXAMPLEH_MSGENULLP "Null pointer"
-#define EXAMPLEH_MSGEALLOC "Memory allocation error"
-#define EXAMPLEH_MSGEOTHER "Some other error"
+#define EXAMPLEH_ENULL 1
+#define EXAMPLEH_EALOC 2
+#define EXAMPLEH_EIEIO 4
+#define EXAMPLEH_EMOTE 8
+#define EXAMPLEH_MSGENULL "Null pointer"
+#define EXAMPLEH_MSGEALOC "Memory allocation error"
+#define EXAMPLEH_MSGEIEIO "Have bought the barn"
+#define EXAMPLEH_MSGEMOTE "I can't believe this is happening!"
 /**** </lalErrTable> */
 
 /** DEFINE NEW STRUCTURES AND TYPES **/

@@ -88,8 +88,9 @@ NRCSID( EXAMPLEC, "$Id$" );
  **       )
  **   {
  **     INITSTATUS( status, "LALSubroutine", EXAMPLEC );
- **     ASSERT( message, status, EXAMPLEH_ENULLP, EXAMPLEH_MSGENULLP );
- **     ASSERT( string, status, EXAMPLEH_ENULLP, EXAMPLEH_MSGENULLP );
+ **     ASSERT( strlen > 0, status, EXAMPLEH_EIEIO, EXAMPLEH_MSGEIEIO );
+ **     ASSERT( message, status, EXAMPLEH_ENULL, EXAMPLEH_MSGENULL );
+ **     ASSERT( string, status, EXAMPLEH_ENULL, EXAMPLEH_MSGENULL );
  **     memcpy( string, message, strlen );
  **     string[strlen] = 0;
  **     RETURN( status );
@@ -133,18 +134,18 @@ LALExample(
   /**
    ** check validity of arguments, for example:
    **
-   **   ASSERT( output, status, EXAMPLEH_ENULLP, EXAMPLEH_MSGENULLP );
+   **   ASSERT( output, status, EXAMPLEH_ENULL, EXAMPLEH_MSGENULL );
    **
    ** all assert statements are removed when debugging is disabled, so
    ** you should never do anything like:
    **
-   **   ASSERT( strlen = strsize - 1 > 0, status, EXAMPLEH_EOTHER,
-   **       EXAMPLEH_MSGEOTHER );  !!! BAD !!!
+   **   ASSERT( strlen = strsize - 1 > 0, status, EXAMPLEH_EMOTE,
+   **       EXAMPLEH_MSGEMOTE );  !!! BAD !!!
    **
    ** instead do:
    **
    **   strlen = strsize - 1;
-   **   ASSERT( strlen > 0, status, EXAMPLEH_EOTHER, EXAMPLEH_MSGEOTHER );
+   **   ASSERT( strlen > 0, status, EXAMPLEH_EMOTE, EXAMPLEH_MSGEMOTE );
    **
    **/
 
@@ -164,7 +165,7 @@ LALExample(
    **   str = LALMalloc( strsz );
    **   if ( ! str )
    **   {
-   **     ABORT( status, EXAMPLEH_EALLOC, EXAMPLEH_MSGEALLOC );
+   **     ABORT( status, EXAMPLEH_EALOC, EXAMPLEH_MSGEALOC );
    **   }
    **
    ** (note: always use ABORT rather than ASSERT to do this)
