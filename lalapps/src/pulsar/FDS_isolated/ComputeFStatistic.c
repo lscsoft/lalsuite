@@ -114,10 +114,6 @@ char *fstatbuff=NULL;
 int boincmain(int argc, char *argv[]);
 void worker();
 
-#ifdef RUN_POLKA
-int polka(int argc,char *argv[]);
-#endif
-
 extern double fraction_done;
 void use_boinc_filename1(char** orig_name);
 void use_boinc_filename0(char* orig_name);
@@ -129,6 +125,11 @@ extern "C" {
   /* FIXME: include proper header for this! */
 extern void set_search_pos(float RAdeg, float DEdeg);
 void sighandler(int sig);
+
+#ifdef RUN_POLKA
+int polka(int argc,char *argv[]);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
