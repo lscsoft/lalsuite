@@ -5,14 +5,15 @@
 
 % load the file with all the maximun numbercount per frequency already cleaned
 %NC=load('AllSkyMax_4k_H1_0.005c');
-NC=load('/local_data/badkri/S2results/CLEAN_H1');
+%NC=load('/local_data/badkri/S2results/CLEAN_H1');
+NC=load('/home/sintes/S2_ligo/AllSkyMax_2k_H2_0.005c2');
 
 %the directory where the MC results are placed
-DirectoryMC = '/local_data/badkri/MC_allsky/';
-Detector = 'H1_newline';
+DirectoryMC = '/home/sintes/S2_ligo/MC_allsky/';
+Detector = 'H2';
 
 MCfilepath = strcat(DirectoryMC,Detector);
-MCfilepre  = strcat(MCfilepath,'/MC_H1_');
+MCfilepre  = strcat(MCfilepath,'/MC_H2_');
 
 fileoutput1 = strcat(Detector,'_CofH');
 fid1 = fopen(fileoutput1, 'w');
@@ -69,7 +70,7 @@ for bandnumber=1:Nbands;
      %getting the confidence level for each h0 value
      for h0num=1:nh0
        x=Ncount(:, h0num+1);
-       kkcount = find(x>maxNC);
+       kkcount = find(x>=maxNC);
        CH(h0num) = length(kkcount)/length(x);
        fprintf(fid1,' %d %d ', h0vect(h0num), CH(h0num) );
      end
