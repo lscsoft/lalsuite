@@ -72,8 +72,8 @@ LALTFTileToBurstEvent(
 	ASSERT(params, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
 	event->next = NULL;
-	memset(event->ifo, 0, LIGOMETA_IFO_MAX);
 	strncpy(event->ifo, params->channelName, 2);
+	event->ifo[2] = '\0';
 	strncpy(event->search, "power", LIGOMETA_SEARCH_MAX);
 	strncpy(event->channel, params->channelName, LIGOMETA_CHANNEL_MAX);
 
