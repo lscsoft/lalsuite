@@ -741,7 +741,7 @@ int writeFaFb(INT4 *maxIndex)
   CHAR noiseswitch[16];
   CHAR clusterno[16];
   INT4 N;
-  FILE * fp;
+  FILE * fp=NULL;
   REAL8 bias=1.0;
   CHAR FaFbfilename[256];
   
