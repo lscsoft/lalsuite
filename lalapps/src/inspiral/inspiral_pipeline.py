@@ -132,7 +132,7 @@ queue""" % self.basename
     sub_fh.close()
 
   def inspiralsub(self):
-    boolargs = re.compile(r'(disable-high-pass|enable-event-cluster|verbose)')
+    boolargs = re.compile(r'(disable-high-pass|enable-event-cluster|verbose|enable-output|disable-output)')
     sub_fh = open( self.basename + '.inspiral.condor', 'w' )
     print >> sub_fh, """\
 universe = %s
@@ -141,7 +141,7 @@ arguments = --gps-start-time $(start) --gps-end-time $(end) \\
   --channel-name $(channel) --calibration-cache $(calcache) \\
   --frame-cache frcache-$(site)-$(frstart)-$(frend).out \\
   --bank-file $(site)-TMPLTBANK-$(start)-$(chunklen).xml \\
- """ % (self.config['condor']['datafind'],self.config['condor']['tmpltbank']),
+ """ % (self.config['condor']['universe'],self.config['condor']['inspiral']),
     for sec in ['datacond','inspiral']:
       for arg in self.config[sec].keys():
         if boolargs.match(arg):
@@ -184,9 +184,9 @@ queue
         print >> dag_fh, 'JOB %s %s.tmpltbank.condor' % (jobname,self.basename),
         if bank: print >> dag_fh, 'done',
         print >> dag_fh, """
-VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" chunklen="%d" channel="%s" calcache="%s"\
-""" % ( jobname,site,ifo,seg.startpad,seg.endpad,chunk.start,chunk.end,
-chunk.length,chan,self.config['input'][string.lower(ifo) + '-cal'])
+VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" channel="%s" calcache="%s"\
+""" % ( jobname,site,ifo,seg.startpad,seg.endpad,chunk.start,chunk.end,chan,
+self.config['input'][string.lower(ifo) + '-cal'])
         print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
 
     # jobs to run the inspiral code
@@ -197,9 +197,9 @@ chunk.length,chan,self.config['input'][string.lower(ifo) + '-cal'])
         print >> dag_fh, 'JOB %s %s.inspiral.condor' % (jobname,self.basename),
         if inspiral: print >> dag_fh, 'done',
         print >> dag_fh, """
-VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" channel="%s" calcache="%s"\
-""" % ( jobname,site,ifo,seg.startpad,seg.endpad,chunk.start,chunk.end,chan,
-self.config['input'][string.lower(ifo) + '-cal'])
+VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" chunklen="%d" channel="%s" calcache="%s"\
+""" % ( jobname,site,ifo,seg.startpad,seg.endpad,chunk.start,chunk.end,
+chunk.length,chan,self.config['input'][string.lower(ifo) + '-cal'])
         print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
     dag_fh.close()
 
