@@ -553,9 +553,9 @@ int main( int argc, char *argv[])
 
 		/* FIXME: this case should be handled in a way that doesn't cause us to omit data */
 		if(options.psdAverageLength > series.data->length)
-			options.psdAverageLength = window_commensurate(series.data->length, 2 * params->windowLength, params->windowShift);
+			options.psdAverageLength = window_commensurate(series.data->length, params->windowLength, params->windowShift);
 
-		for(start_sample = 0; start_sample + (2 * params->windowLength - params->windowShift) < series.data->length; start_sample += options.psdAverageLength - (2 * params->windowLength - params->windowShift)) {
+		for(start_sample = 0; start_sample + (params->windowLength - params->windowShift) < series.data->length; start_sample += options.psdAverageLength - (params->windowLength - params->windowShift)) {
 			REAL4TimeSeries *interval;
 
 			if(start_sample + options.psdAverageLength > series.data->length)
@@ -1315,7 +1315,7 @@ void initializeEPSearch(
 	 * length and shift.
 	 */
 
-	options.psdAverageLength = window_commensurate(options.psdAverageLength, 2 * (*params)->windowLength, (*params)->windowShift);
+	options.psdAverageLength = window_commensurate(options.psdAverageLength, (*params)->windowLength, (*params)->windowShift);
 
 	/*
 	 * Miscellaneous chores.

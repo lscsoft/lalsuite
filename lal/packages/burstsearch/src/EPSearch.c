@@ -100,7 +100,7 @@ static void ComputeAverageSpectrum(
 	ATTATCHSTATUSPTR(status);
 
 	winParams.type = params->windowType;
-	winParams.length = 2 * params->windowLength;
+	winParams.length = params->windowLength;
 	LALCreateREAL4Window(status->statusPtr, &spec_params.window, &winParams);
 	CHECKSTATUSPTR(status);
 	LALCreateForwardRealFFTPlan(status->statusPtr, &spec_params.plan, spec_params.window->data->length, 0);
@@ -183,7 +183,7 @@ EPSearch (
     ASSERT(burstEvent, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
 
     /* Compute the average spectrum */
-    LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->windowLength + 1);
+    LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->windowLength / 2 + 1);
     CHECKSTATUSPTR(status);
     ComputeAverageSpectrum(status->statusPtr, AverageSpec, tseries, params);
     CHECKSTATUSPTR(status);
@@ -195,19 +195,19 @@ EPSearch (
     }
 
     /* assign temporary memory for the frequency data */
-    LALCreateCOMPLEX8FrequencySeries(status->statusPtr, &fseries, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->windowLength + 1);
+    LALCreateCOMPLEX8FrequencySeries(status->statusPtr, &fseries, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->windowLength / 2 + 1);
     CHECKSTATUSPTR(status);
 
     /* create the dft params */
     winParams.type = params->windowType;
-    winParams.length = 2 * params->windowLength;
+    winParams.length = params->windowLength;
     LALCreateRealDFTParams(status->statusPtr , &dftparams, &winParams, 1);
     CHECKSTATUSPTR(status);
 
     /* loop over data applying excess power method */
-    for(start_sample = 0; start_sample + 2 * params->windowLength <= tseries->data->length; start_sample += params->windowShift) {
-      /* extract two windowLengths from the time series */
-      LALCutREAL4TimeSeries(status->statusPtr, &cutTimeSeries, tseries,  start_sample, 2 * params->windowLength);
+    for(start_sample = 0; start_sample + params->windowLength <= tseries->data->length; start_sample += params->windowShift) {
+      /* extract a windowLength of data from the time series */
+      LALCutREAL4TimeSeries(status->statusPtr, &cutTimeSeries, tseries,  start_sample, params->windowLength);
       CHECKSTATUSPTR(status);
 
       /* compute its DFT */
