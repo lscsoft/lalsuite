@@ -509,6 +509,10 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	/*****************************************************************/
 	/**                           bandwidth                         **/
 	/*****************************************************************/
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+\item To estimate the bandwidth, the power measurements in the bandwidth identified by the ETG are added in decreasing order until 50\% of the total power in the ETG band is achieved. The difference between the maximum and the minimum frequencies used in the sum is the bandwidth measurement.
+********* </lalLaTeX> ********/
+
 	if(FPower) {
 	  REAL8 tPower = 0.0;
 	  REAL8 thr, ts;
@@ -560,6 +564,10 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	/*****************************************************************/
 	/**                             time                            **/
 	/*****************************************************************/
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+\item In the time domain, the full segment is splitted in to overlapping subsegments, and a whitening filter is trained on every subsegment. The impulse response of each filter is measured.
+********* </lalLaTeX> ********/
+
 	start_index = (UINT4)floor((REAL8)(input->start_time.gpsSeconds - data->data->epoch.gpsSeconds)/data->data->deltaT + 1E-9*((REAL8)input->start_time.gpsNanoSeconds - (REAL8)data->data->epoch.gpsNanoSeconds)/data->data->deltaT);
 	nTime = (UINT4)floor(input->duration / data->data->deltaT);
 	if(nTime == 0) {
@@ -724,6 +732,10 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 
 	}
 
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+\item For each trigger, the data are then whitened and bandpassed to the band identified by the ETG.
+********* </lalLaTeX> ********/
+
 	/* look at whitened data near the burst */
 	llo = start_index;
 	lhi = start_index + nTime;
@@ -829,6 +841,10 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	  /* correct estimated time for filter delay */
 	  mfi -= filter_delay;
 
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+\item The time of maximum excursion in the resulting time series is corrected for the filter delay, and is save in start\_time.
+********* </lalLaTeX> ********/
+
 	  /* put max time into "start_time" */
 	  start_time.gpsSeconds = data->data->epoch.gpsSeconds + (INT4)floor((REAL8)mfi * data->data->deltaT);
 	  start_time.gpsNanoSeconds = (INT4)floor(1E9*((REAL8)mfi * data->data->deltaT - floor((REAL8)mfi * data->data->deltaT))) + data->data->epoch.gpsNanoSeconds;
@@ -837,9 +853,13 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	    (start_time.gpsNanoSeconds)-=1000000000;
 	  }
 
+
 	/*****************************************************************/
 	/**                          duration                           **/
 	/*****************************************************************/
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+\item The duration is computed exactly like the bandwidth, except with the whitened and bandpassed data.
+********* </lalLaTeX> ********/
 
 	  FPower = NULL;
 	  if(lhi > llo+1) {
@@ -907,6 +927,9 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	/*****************************************************************/
 	/**                         confidence                          **/
 	/*****************************************************************/
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+\item The confidence is the log10 of the minimum of the confidence calculated in the time domain and in the frequency domain.
+********* </lalLaTeX> ********/
 	if(llikf < llikt) {
 	  confidence = llikf;
 	} else {
