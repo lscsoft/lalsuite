@@ -372,6 +372,13 @@ int OutputCoincidences(struct PolkaCommandLineArgsTag CLA)
 #endif
   fclose(fpOut);
 
+  if (numCoincidences != 0){ 
+    LALFree ( CC );
+    LALFree ( CP );
+    LALFree(indicesCCfa);
+
+  }
+
   return 0;
 }
 
