@@ -9,8 +9,7 @@
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="LALXMGRInterfaceCV">
+/******************************** <lalVerbatim file="LALXMGRInterfaceCV">
 Author: Brady, P. R., and Brown D. A.
 $Id$
 </lalVerbatim>
@@ -22,8 +21,7 @@ $Id$
 Functions for creating XMGR graphs from LAL structures and functions.
 
 \vfill{\footnotesize\input{LALXMGRInterfaceCV}}
-</lalLaTeX>
-#endif
+</lalLaTeX> ************************************************************/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -83,7 +81,9 @@ LALXMGROpenFile (
 
   INITSTATUS( status, "LALXMGROpenFile", LALXMGRINTERFACEC );
 
-  ASSERT( !fp, status, 
+  ASSERT( fp, status, 
+      LALXMGRINTERFACEH_ENULL, LALXMGRINTERFACEH_MSGENULL );
+  ASSERT( !(*fp), status,
       LALXMGRINTERFACEH_ENNUL, LALXMGRINTERFACEH_MSGENNUL );
   ASSERT( fileName, status, 
       LALXMGRINTERFACEH_ENULL, LALXMGRINTERFACEH_MSGENULL );
@@ -116,7 +116,7 @@ LALXMGRCloseFile (
 
   ASSERT( fp, status, LALXMGRINTERFACEH_ENULL, LALXMGRINTERFACEH_MSGENULL );
 
-  if ( ! fclose( fp ) )
+  if ( fclose( fp ) )
   {
     ABORT( status, LALXMGRINTERFACEH_EFCLO, LALXMGRINTERFACEH_MSGEFCLO );
   }
@@ -134,7 +134,7 @@ LALXMGRCreateGraph (
   XMGRGraph            *graph;
   XMGRGraph            *newGraph;
 
-  INITSTATUS( status, "LALXMGRCloseFile", LALXMGRINTERFACEC );
+  INITSTATUS( status, "LALXMGRCreateGraph", LALXMGRINTERFACEC );
   ATTATCHSTATUSPTR( status );
 
   ASSERT( graphVec, status, 
