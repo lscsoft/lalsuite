@@ -69,7 +69,7 @@ Computes the thresholds on the power at every frequency, using a best fit to the
 \vfill{\footnotesize\input{TFCThresholdsCV}}
 ********* </lalLaTeX> ********/
 
-#define EPS 1.0e-6 /* error on Romberg integration */
+#define EPS 1.0e-8 /* error on Romberg integration */
 static BOOLEAN numError = 0;
 
 void
@@ -105,9 +105,7 @@ LALTFCRiceThreshold ( LALStatus *status,
 			   thr->varRe[i] + thr->varIm[i],
 			   thr->eGoal);
 
-    /*
-    if(numError) {ABORT(status,TFCTHRESHOLDSH_ENERR,TFCTHRESHOLDSH_MSGENERR);}
-    */
+    if(numError > 1) {ABORT(status,TFCTHRESHOLDSH_ENERR,TFCTHRESHOLDSH_MSGENERR);}
     
     if(numError) {rho[i] = 1e30;}
   }
@@ -189,8 +187,8 @@ static REAL4 RombergInt(REAL4 (*func)(REAL4, REAL8, REAL8), REAL4 a, REAL4 b,
                 }
                 h[j+1]=0.25*h[j];
         }
-	numError = 1;
-        return 0.0;
+	numError = 2;
+        return 1.0;
 }
 #undef JMAX
 #undef JMAXP
@@ -246,7 +244,7 @@ static void PolynomialInterpolation(REAL4 xa[], REAL4 ya[], INT4 n, REAL4 x, REA
                         hp=xa[i+m]-x;
                         w=c[i+1]-d[i];
                         if ( (den=ho-hp) == 0.0) {
-			  numError = 1;
+			  numError = 2;
 			  return;
 			}
                         den=w/den;
@@ -279,7 +277,7 @@ static void free_vector(REAL4 *v, long nl)
 
 
 
-#define MAXIT 1000
+#define MAXIT 20000
 
 static REAL4 NewtonRoot(void (*funcd)(REAL4, REAL4 *, REAL4 *, REAL8, REAL8, REAL8), 
              REAL4 x1, REAL4 x2,
@@ -293,7 +291,7 @@ static REAL4 NewtonRoot(void (*funcd)(REAL4, REAL4 *, REAL4 *, REAL8, REAL8, REA
         (*funcd)(x1,&fl,&df,P0,Q,bpp);
         (*funcd)(x2,&fh,&df,P0,Q,bpp);
         if ((fl > 0.0 && fh > 0.0) || (fl < 0.0 && fh < 0.0)) {
-	  numError = 1;
+	  numError = 2;
 	  return 0.0;
 	}
 
@@ -331,8 +329,10 @@ static REAL4 NewtonRoot(void (*funcd)(REAL4, REAL4 *, REAL4 *, REAL8, REAL8, REA
                 else
                         xh=rts;
         }
+	/*
 	numError = 1;
-        return 0.0;
+	*/
+        return rts;
 }
 #undef MAXIT
 
