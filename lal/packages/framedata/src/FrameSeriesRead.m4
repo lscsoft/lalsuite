@@ -172,7 +172,19 @@ FUNC (
     /* advance a frame */
     /* failure is benign, so we return results */
     TRY( LALFrNext( status->statusPtr, stream ), status );
-    stream->epoch = keep;
+    if ( ! stream->gap )
+    {
+      stream->epoch = keep;
+    }
+  }
+
+  if ( stream->err )
+  {
+    ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
+  }
+  if ( stream->end )
+  {
+    ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
   }
 
   DETATCHSTATUSPTR( status );
