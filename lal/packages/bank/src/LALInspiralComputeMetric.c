@@ -444,8 +444,8 @@ transformation   matrix */
    trans[2][0] = 0.0;
    trans[1][1] = -5.0*t_0*c0/(3.0*totmass);
    trans[1][2] = -t_0*c0/eta;
-   ASSERT (metric->space>=0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-   ASSERT (metric->space<=1, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT ((INT4)metric->space>=0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT ((INT4)metric->space<=1, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
 
    switch (metric->space) {
       case Tau0Tau2:

@@ -52,7 +52,6 @@ main ( void )
    static InspiralCoarseBankIn coarseIn;
    static InspiralFineBankIn   fineIn;
    static INT4 i, j, nlist;
-   static InspiralBankParams bankPars;
    static RectangleIn RectIn;
    static RectangleOut RectOut;
 

@@ -191,7 +191,7 @@ void LALInspiralCreateCoarseBank(LALStatus            *status,
   InspiralTemplate *tempPars;
   InspiralMetric metric;
   INT4 validPars, pass;
-  REAL8 a25, x01, x02, x11, x12, dist1, dist2, ndx1, ndx2;
+  REAL8 x01, x02, x11, x12, dist1, dist2, ndx1, ndx2, a25;
 
   INITSTATUS (status, "LALInspiralCreateCoarseBank", LALINSPIRALCREATECOARSEBANKC);
   ATTATCHSTATUSPTR(status);
@@ -203,9 +203,12 @@ void LALInspiralCreateCoarseBank(LALStatus            *status,
   ASSERT (coarseIn.fLower > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
   ASSERT (coarseIn.tSampling > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
   ASSERT (coarseIn.tSampling >= 2.*coarseIn.fUpper, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-  ASSERT (coarseIn.space >= 0, status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
-  ASSERT (coarseIn.space <= 1, status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
+  ASSERT ((INT4)coarseIn.space >= 0, status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
+  ASSERT ((INT4)coarseIn.space <= 1, status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
   
+  ndx1 = 0.0;
+  ndx2 = 0.0;
+  a25 = 0.0;
 /* Number of templates is nlist */
   *nlist = 0;
 

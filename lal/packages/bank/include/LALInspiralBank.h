@@ -342,13 +342,6 @@ LALInspiralUpdateParams(
 %\newpage\input{LALInspiralWaveLengthC}
 </lalLaTeX>  */
 
-void 
-LALInspiralWaveLength(
-   LALStatus           *status, 
-   INT4             *length,
-   InspiralTemplate p
-);
-
 /* <lalLaTeX>
 \newpage\input{LALMatrixTransformC}
 </lalLaTeX>  */

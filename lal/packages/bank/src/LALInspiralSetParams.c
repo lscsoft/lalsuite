@@ -55,8 +55,8 @@ void LALInspiralSetParams(LALStatus            *status,
    INITSTATUS (status, "LALInspiralSetParams", LALINSPIRALSETPARAMSC);
    ATTATCHSTATUSPTR(status);
    ASSERT (tempPars,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-   ASSERT (coarseIn.space >= 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-   ASSERT (coarseIn.space <= 1, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT ((INT4)coarseIn.space >= 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT ((INT4)coarseIn.space <= 1, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
 
    switch (coarseIn.space) {
       case Tau0Tau2:

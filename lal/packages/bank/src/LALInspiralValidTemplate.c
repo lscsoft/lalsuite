@@ -148,7 +148,6 @@ LALInspiralValidTemplate(
   InspiralCoarseBankIn coarseIn)
 {  /*  </lalVerbatim>  */
 
-  InspiralBankParams bankParams2;
 
   INITSTATUS (status, "LALInspiralValidTemplate", LALINSPIRALVALIDTEMPLATEC);
   ATTATCHSTATUSPTR(status);
