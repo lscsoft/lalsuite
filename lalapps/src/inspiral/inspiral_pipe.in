@@ -171,6 +171,10 @@ first_df2 = None
 insp_nodes = []
 
 for seg in data:
+  # skip science segments with no chunks
+  if not len(seg):
+    continue
+
   # find all the data
   df1 = inspiral.DataFindNode(df_job)
   df1.set_start(seg.start() - pad)
