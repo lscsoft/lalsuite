@@ -158,12 +158,21 @@ LALMalloc( size_t n )
     pc = (char *) p;
     if ( !p )
     {
-      if ( lalDebugLevel & LALERROR )
+      /* Omitted... should check for NULL returned.
+      lalRaiseHook( SIGSEGV, "%sLALMalloc error: out of memory\n",
+          newline ? "\n" : "" );
+       */
+      if ( lalDebugLevel &  LALMEMINFO )
       {
-        newline = newline ? LALPrintError( "\n" ),0 : 0;
-        LALPrintError( "LALMalloc error: out of memory\n" );
+        if ( newline )
+        {
+          LALPrintError( "... out of memory\n" );
+        }
+        else
+        {
+          LALPrintError( "LALMalloc: out of memory\n" );
+        }
       }
-      raise( SIGSEGV );
       return NULL;
     }
   
@@ -217,21 +226,13 @@ LALFree( void *p )
 
     if ( !p )
     {
-      if ( lalDebugLevel & LALERROR )
-      {
-        LALPrintError( "LALFree error: tried to free NULL pointer\n" );
-      }
-      raise( SIGSEGV );
+      lalRaiseHook( SIGSEGV, "LALFree error: tried to free NULL pointer\n" );
       return;
     }
 
     if ( !q )
     {
-      if ( lalDebugLevel & LALERROR )
-      {
-        LALPrintError( "LALFree error: tried to free NULL+TWOINTS pointer\n" );
-      }
-      raise( SIGSEGV );
+      lalRaiseHook( SIGSEGV, "LALFree error: tried to free NULL+TWOINTS pointer\n" );
       return;
     }
 
@@ -255,23 +256,15 @@ LALFree( void *p )
           
       if ( myMagic != magic )
       {
-        if ( lalDebugLevel & LALERROR )
-        {
-          newline = newline ? LALPrintError( "\n" ),0 : 0;
-          LALPrintError( "LALFree error: wrong magic\n" );
-        }
-        raise( SIGSEGV );
+        lalRaiseHook( SIGSEGV, "%sLALFree error: wrong magic\n",
+            newline ? "\n" : "" );
         return;
       }
 
       if ( ( (int) n ) < 0 )
       {
-        if ( lalDebugLevel & LALERROR )
-        {
-          newline = newline ? LALPrintError( "\n" ),0 : 0;
-          LALPrintError( "LALFree error: corrupt size descriptor\n" );
-        }
-        raise( SIGSEGV );
+        lalRaiseHook( SIGSEGV, "%sLALFree error: corrupt size descriptor\n",
+            newline ? "\n" : "" );
         return;
       }
           
@@ -280,14 +273,9 @@ LALFree( void *p )
       {
         if ( qc[i + prefix] != (char) (i ^ padding) )
         {
-          if ( lalDebugLevel & LALERROR )
-          {
-            newline = newline ? LALPrintError( "\n" ),0 : 0;
-            LALPrintError( "LALFree error: array bounds overwritten\n" );
-            LALPrintError( "Byte %ld past end of array has changed\n",
-                           i - n + 1 );
-          }
-          raise( SIGSEGV );
+          lalRaiseHook( SIGSEGV, "%sLALFree error: array bounds overwritten\n"
+              "Byte %ld past end of array has changed\n", newline ? "\n" : "",
+              i - n + 1 );
           return;
         }
       }
@@ -295,12 +283,8 @@ LALFree( void *p )
       /* see if there is enough allocated memory to be freed */
       if ( lalMallocTotal < n )
       {
-        if ( lalDebugLevel & LALERROR )
-        {
-          newline = newline ? LALPrintError( "\n" ),0 : 0;
-          LALPrintError( "LALFree error: lalMallocTotal too small\n" );
-        }
-        raise( SIGSEGV );
+        lalRaiseHook( SIGSEGV, "%sLALFree error: lalMallocTotal too small\n",
+            newline ? "\n" : 0 );
         return;
       }
 
@@ -412,13 +396,9 @@ LALCheckMemoryLeaks( void )
 
   if ( lalMallocTotal || lalMallocCount )
   {
-    if ( lalDebugLevel & LALERROR || lalDebugLevel & LALWARNING )
-    {
-      LALPrintError( "LALCheckMemoryLeaks: memory leak\n" );
-      LALPrintError( "lalMallocCount = %d allocs\n", lalMallocCount );
-      LALPrintError( "lalMallocTotal = %ld bytes\n", (long)lalMallocTotal );
-    }
-    raise( SIGSEGV );
+    lalRaiseHook( SIGSEGV, "LALCheckMemoryLeaks: memory leak\n"
+        "lalMallocCount = %d allocs\n", "lalMallocTotal = %ld bytes\n",
+        lalMallocCount, (long)lalMallocTotal );
     return;
   }
 

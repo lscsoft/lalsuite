@@ -55,8 +55,14 @@ enum { LALMSGLVL3  = LALERROR | LALWARNING | LALINFO };
 enum { LALMEMTRACE = LALTRACE | LALMEMINFO };
 enum { LALALLDBG   = ~0 };
 
+extern int  ( *lalRaiseHook )( int, const char *, ... );
+extern void ( *lalAbortHook )( const char *, ... );
+
 int
 LALPrintError( const char *fmt, ... );
+
+int
+LALRaise( int sig, const char *fmt, ... );
 
 void
 LALAbort( const char *fmt, ... );

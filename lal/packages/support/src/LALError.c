@@ -12,7 +12,10 @@ production code, except in very specific circumstances.
 
 \subsubsection*{Prototypes}
 \input{LALErrorCP}
+\index{\texttt{lalRaiseHook}}
+\index{\texttt{lalAbortHook}}
 \index{\texttt{LALPrintError()}}
+\index{\texttt{LALRaise()}}
 \index{\texttt{LALAbort()}}
 \index{\texttt{LALError()}}
 \index{\texttt{LALWarning()}}
@@ -41,6 +44,18 @@ should use \verb@LALError()@, \verb@LALWarning()@, and
 \verb@LALInfo()@ to report their status, rather than calling
 \verb@LALPrintError()@ directly.
 
+\paragraph{\texttt{LALRaise()}} prints a formatted string to an error
+logging device, as above, and then raises the requested signal.
+Standard LAL routines should \emph{not} terminate execution, but should
+instead return control to the calling routine, reporting errors through their
+\verb@LALStatus@ structure.  Programmers should never 
+invoke \verb@LALRaise()@ explicitly.
+A hook to a \verb@LALRaise()@-type function, \verb@lalRaiseHook@, is provided,
+should the user wish to change the default behavior of \verb@LALRaise()@
+(i.e., the LAL library always uses \verb@lalRaiseHook@ rather than
+\verb@LALRaise@, but \verb@lalRaiseHook@ is set to \verb@LALRaise@ by
+default).
+
 \paragraph{\texttt{LALAbort()}} prints a formatted string to an error
 logging device, as above, and then terminates program execution.
 Usually this is done by raising a \verb@SIGABRT@ signal, but this can
@@ -52,6 +67,11 @@ return control to the calling routine, reporting errors through their
 abort.  This is done automatically by the \verb@INITSTATUS()@ macro
 (see \verb@LALStatusMacros.h@), so programmers should never need to
 invoke \verb@LALAbort()@ explicitly.
+A hook to a \verb@LALAbort()@-type function, \verb@lalAbortHook@, is provided,
+should the user wish to change the default behavior of \verb@LALAbort()@
+(i.e., the LAL library always uses \verb@lalAbortHook@ rather than
+\verb@LALAbort@, but \verb@lalAbortHook@ is set to \verb@LALAbort@ by
+default).
 
 \paragraph{\texttt{LALError()}} prints the \verb@statement@
 string to the error log, provided that the value of the global
@@ -176,8 +196,20 @@ LALPrintError( const char *fmt, ... )
   return n;
 }
 
+/* <lalVerbatim file="LALErrorCP"> */
+int ( *lalRaiseHook )( int, const char *, ... ) = LALRaise;
+int
+LALRaise( int sig, const char *fmt, ... )
+{ /* </lalVerbatim> */
+  va_list ap;
+  va_start( ap, fmt );
+  vfprintf( stderr, fmt, ap );
+  va_end( ap );
+  return raise( sig );
+}
 
 /* <lalVerbatim file="LALErrorCP"> */
+void ( *lalAbortHook )( const char *, ... ) = LALAbort;
 void
 LALAbort( const char *fmt, ... )
 { /* </lalVerbatim> */
@@ -284,9 +316,9 @@ LALInitStatus( LALStatus *status, const char *function, const char *id,
   }
   else
   {
-    LALAbort( "Abort: function %s, file %s, line %d, %s\n"
-              "       Null status pointer passed to function\n",
-              function, file, line, id );
+    lalAbortHook( "Abort: function %s, file %s, line %d, %s\n"
+                  "       Null status pointer passed to function\n",
+                  function, file, line, id );
   }
   return exitcode;
 }

@@ -6,7 +6,8 @@ Read the file INSTALL for installation instructions.
 
 The INSTALL file also includes instructions for compiling the documentation.
 Once compiled, the documentation will be in the file doc/lsd.dvi or
-doc/lsd.pdf
+doc/lsd.pdf and the LAL specification guide will be in the file
+doc/lalspec.dvi or doc/lalspec.pdf
 
 This code requires the FFTW (Fastest Fourier Transform in the West) package.
 This package can be obtained from http://www.fftw.org
@@ -49,7 +50,3 @@ The file README.bugs gives instructions for filing bug reports for LAL.
 
 
 The file README.contrib gives instructions for including a package in LAL.
-
-
-
-See the document lalspec.pdf for LAL specification and style guide.

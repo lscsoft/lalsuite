@@ -750,9 +750,9 @@ extern const int lalNoDebug;
     }                                                                         \
   }                                                                           \
   else                                                                        \
-    LALAbort( "Abort: function %s, file %s, line %d, %s\n"                    \
-              "       Null status pointer passed to function\n",              \
-              (funcname), __FILE__, __LINE__, (id) )
+    lalAbortHook( "Abort: function %s, file %s, line %d, %s\n"                \
+                  "       Null status pointer passed to function\n",          \
+                  (funcname), __FILE__, __LINE__, (id) )
 
 #define RETURN( statusptr )                                                   \
   if ( 1 )                                                                    \
