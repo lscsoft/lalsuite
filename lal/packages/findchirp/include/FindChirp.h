@@ -768,6 +768,16 @@ LALDestroyFindChirpInput (
     );
 
 void
+LALFindChirpCreateCoherentInput( 
+     LALStatus                  *status,
+     COMPLEX8TimeSeries         **coherentInputData,
+     COMPLEX8TimeSeries         *input,
+     SnglInspiralTable          *templt,
+     REAL4                      coherentSegmentLength,
+     INT4                       corruptedDataLength 
+     );
+
+void
 LALFindChirpFilterSegment (
     LALStatus                  *status,
     SnglInspiralTable         **eventList,
