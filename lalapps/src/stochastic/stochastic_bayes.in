@@ -149,7 +149,7 @@ stoch_job = stochastic.StochasticJob(cp)
 if usertag:
   subsuffix = '.' + usertag + '.sub'
 else:
-  subsuffix = 'dag'
+  subsuffix = '.sub'
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 stoch_job.set_sub_file( basename + '.stochastic' + subsuffix )
 
