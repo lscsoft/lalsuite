@@ -377,7 +377,7 @@ extern "C" {
 "      <Stream Name=\"sim_inst_paramsgroup:sim_inst_params:table\" Type=\"Local\" Delimiter=\",\">\n"
 
 #define SIM_INST_PARAMS_ROW \
-"         \"sim_inst:simulation_id:0\",\"%s\",\"%s\",\"%22.16e\""
+"         \"sim_inst:simulation_id:0\",\"%s\",\"%s\",%22.16e"
 
 #ifdef  __cplusplus
 #pragma {
