@@ -288,18 +288,28 @@ Duncan Brown
 [\verb$--comment$ \textsc{comment}]
 [\verb$--debug-level$ \textsc{level}] \newline
 %
-[\verb$--no-playground$]
-[\verb$--playground-only$]
-\verb$--ifo-a$ \textsc{IFOA} 
-\verb$--ifo-b$ \textsc{IFOB} \newline
+\verb$--gps-start-time$ \textsc{seconds} \quad 
+\verb$--gps-end-time$ \textsc{seconds} 
 %
-[\verb$--epsilon$ \textsc{$\epsilon$}]
-[\verb$--kappa$ \textsc{$\kappa$}]
+\verb$--ifo-a$ \textsc{IFOA} 
+[\verb$--ifo-b$ \textsc{IFOB}] \newline
+%
+[\verb$--user-tag$ \textsc{usertag}]
+[\verb$--no-playground$]
+[\verb$--playground-only$] \newline
+%
+[\verb$--triggered-bank$ \textsc{file}
+\verb$--minimal-match$  \textsc{M}] 
 [\verb$--dm$ \textsc{$\delta m$}]
 [\verb$--dt$ \textsc{$\delta t$}] \newline
 %
-\verb$--gps-start-time$ \textsc{seconds} 
-\verb$--gps-end-time$ \textsc{seconds} 
+[\verb$--epsilon$ \textsc{$\epsilon$}]
+[\verb$--kappa$ \textsc{$\kappa$}]
+[\verb$--ifo-b-snr-threshold$ \textsc{SNRSTAR}]
+[\verb$--ifo-b-range-cut$] \newline 
+%
+[\verb$--silde-time$ \textsc{sec}]
+[\verb$--slide-time-ns$ \textsc{ns}] 
 [\verb$--write-uniq-triggers$] \newline
 %
 \textsc{(LIGO Lightweight XML files)}
@@ -345,12 +355,52 @@ It then tests to that
 < \frac{\epsilon}{\rho_\mathrm{IFOB}} + \kappa.
 \end{equation}
 This is equivalent to testing that
-\begin{equation}
+\begin{equation}\label{snrtest}
 \left|\rho_\mathrm{IFOB} - \hat{\rho}_\mathrm{IFOB}\right| 
-< \epsilon + \kappa\rho_\mathrm{IFOB}.
+< \epsilon + \kappa\rho_\mathrm{IFOB},
 \end{equation}
+where $\hat{\rho}_\mathrm{IFOB} = \frac{\sigma_\mathrm{IFOB}}
+{\sigma_\mathrm{IFOA}} \rho_\mathrm{IFOA}$.
 If all three tests pass, the events are considered to be coincident and
 written to the output file.
+
+The \texttt{--ifo-b-range-cut} option performs a test similar to 
+(\ref{snrtest}) above to see whether we should expect a trigger in 
+\textsc{IFOB}.  There are three possibilities, which depend upon the 
+value of the \textsc{SNRSTAR} threshold for \textsc{IFOB}, denoted 
+$\rho_\mathrm{IFOB}^{*}$.
+
+\begin{enumerate}
+
+\item In this case we, the expected signal to noise ratio in \textsc{IFOB} is
+above our threshold:
+\begin{equation} 
+\rho_\mathrm{IFOB}^{*} < \frac{(\hat{\rho}_\mathrm{IFOB} - \epsilon)}
+    {1 + \kappa} , 
+\end{equation}
+so we look for a coincident trigger.  We only keep the 
+\textsc{IFOA} trigger if one is found in coincidence in \textsc{IFOB}.
+
+\item In this case, our the allowed range of signal to noise ratio in 
+\textsc{IFOB} is partly above and partly below our threshold: 
+\begin{equation}
+\frac{(\hat{\rho}_\mathrm{IFOB} - \epsilon)} {1 + \kappa} < 
+\rho_\mathrm{IFOB}^{*} <
+\frac{(\hat{\rho}_\mathrm{IFOB} + \epsilon)} {1 - \kappa} .
+\end{equation}
+We search \textsc{IFOB} for triggers and record a coincident trigger if found.
+Otherwise, we just record the \textsc{IFOA} trigger.
+
+\item In this case, the trigger is not visible to \textsc{IFOB}:
+\begin{equation}
+\rho_\mathrm{IFOB}^{*} <
+\frac{(\hat{\rho}_\mathrm{IFOB} + \epsilon)} {1 - \kappa} .
+\end{equation}
+We do not search \textsc{IFOB}, but do keep the trigger from \textsc{IFOA}.
+
+\end{enumerate}
+
+  
 
 \item[Options]\leavevmode
 \begin{entry}
@@ -376,6 +426,15 @@ $\epsilon = 2$ will be used.
 \item[\texttt{--kappa} \textsc{$\kappa$}] Optional. Set the value of
 $\kappa$ in the effective distance test. If not given the default of
 $\kappa= 0.01$ will be used.
+
+\item[\texttt{--ifo-b-snr-threshold} \textsc{SNRSTAR}] Optional.  Set the 
+value of the signal to noise threshold for \textsc{IFOB}.  This is used in
+determining which triggers \textsc{IFOB} has a chance to see.  The default
+value 
+
+\item[\texttt{--ifo-b-range-cut}] Optional.  Use effective distance test to
+see whether \textsc{IFOB} has a chance of seeing trigger before performing 
+the search.
 
 \item[\texttt{--dm} \textsc{$\delta m$}] Optional. Accept triggers as
 coincident if both mass parameters agree within $\delta m$.  If not

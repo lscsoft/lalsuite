@@ -40,6 +40,9 @@ RCSID("$Id$");
 #define INCA_MSGEFILE  "Could not open file"
 
 #define MAXIFO 2
+#define IFOB_SNRTHRESH 6
+#define KAPPA 0.01
+#define EPSILON 2
 
 /* Usage format string. */
 #define USAGE \
@@ -51,7 +54,7 @@ RCSID("$Id$");
 "  --comment STRING          set the process table comment to STRING\n"\
 "\n"\
 "  --gps-start-time SEC      GPS second of data start time\n"\
-"  --gps-start-time-ns NS    GPS nanosecond of data start time\n"\
+"  --gps-end-time SEC        GPS second of data end time\n"\
 "\n"\
 "  --silde-time SEC          slide triggers by SEC when determining playground\n"\
 "  --slide-time-ns NS        slide triggers by NS when determining playground\n"\
@@ -64,7 +67,8 @@ RCSID("$Id$");
 "\n"\
 "  --epsilon ERROR           set effective distance test epsilon (default 2)\n"\
 "  --kappa ERROR             set effective distance test kappa (default 0.01)\n"\
-"  --ifo-b-range D           limit dist cut to second ifo range +/- D (default 0)\n"\
+"  --ifo-b-snr-threshold SNR set minimum snr in IFO B (default 6)\n"\
+"  --ifo-b-range-cut         test range of IFO B to see if sensitive to trigger\n"\
 "  --dm mass                 mass coincidence window (default 0)\n"\
 "  --dt time                 time coincidence window (milliseconds)\n"\
 "\n"\
@@ -143,15 +147,17 @@ int main( int argc, char *argv[] )
   INT4  numEvents = 0;
   INT4  numIFO;
   INT4  have_ifo_a_trigger = 0;
+  INT4	keep_a_trig = 0;
+  INT4	dont_search_b = 0;
   INT4  isPlay = 0;
   INT8  ta, tb, tp;
   INT4  numTriggers[MAXIFO];
   INT4  inStartTime = -1;
   INT4  inEndTime = -1;
   REAL4 minMatch = -1;
-  UINT4 useRangeCut = 0;
-  REAL4 rangeError = 0;
-  /* REAL4 ifoBRange = 0; */
+  INT4 useRangeCut = 0;
+  REAL4 ifob_snrthresh = IFOB_SNRTHRESH;
+  REAL4	d_range[MAXIFO];
 
   SnglInspiralTable    *inspiralEventList[MAXIFO];
   SnglInspiralTable    *currentTrigger[MAXIFO];
@@ -161,6 +167,9 @@ int main( int argc, char *argv[] )
   SnglInspiralTable    *coincidentEvents[MAXIFO];
   SnglInspiralAccuracy  errorParams;
 
+  SummValueTable       *inspEffRange[MAXIFO];
+  SummValueTable       *currentEffRange[MAXIFO];
+  
   MetadataTable         proctable;
   MetadataTable         processParamsTable;
   MetadataTable         searchsumm;
@@ -177,13 +186,14 @@ int main( int argc, char *argv[] )
     {"no-playground",           no_argument,       &usePlayground,    0 },
     {"playground-only",         no_argument,       &usePlayground,    1 },
     {"write-uniq-triggers",     no_argument,       &writeUniqTrigs,   1 },
+    {"ifo-b-range-cut",		no_argument,       &useRangeCut,      1 },
     {"ifo-a",                   required_argument, 0,                'a'},
     {"ifo-b",                   required_argument, 0,                'b'},
     {"epsilon",                 required_argument, 0,                'e'},
     {"triggered-bank",          required_argument, 0,                'T'},
     {"minimal-match",           required_argument, 0,                'M'},
     {"kappa",                   required_argument, 0,                'k'},
-    {"ifo-b-range",             required_argument, 0,                'R'},
+    {"ifo-b-snr-threshold",     required_argument, 0,                'S'},
     {"dm",                      required_argument, 0,                'm'},
     {"dt",                      required_argument, 0,                't'},
     {"gps-start-time",          required_argument, 0,                'q'},
@@ -231,10 +241,11 @@ int main( int argc, char *argv[] )
   memset( coincidentEvents, 0, MAXIFO * sizeof(SnglInspiralTable *) );
   memset( outEvent, 0, MAXIFO * sizeof(SnglInspiralTable *) );
   memset( numTriggers, 0, MAXIFO * sizeof(INT4) );
+  memset( inspEffRange, 0 , MAXIFO * sizeof(SummValueTable *) ); 
 
   /* default values */
-  errorParams.epsilon = 2.0;
-  errorParams.kappa = 0.01;
+  errorParams.epsilon = EPSILON;
+  errorParams.kappa = KAPPA;
 
   /* parse the arguments */
   while ( 1 )
@@ -245,7 +256,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:e:k:m:t:q:r:s:hz:Z:M:T:", long_options, &option_index );
+        "a:b:e:k:m:t:q:r:s:hz:Z:M:T:S:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == -1 )
@@ -309,23 +320,19 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
-      case 'R':
-        /* limit the effective distance cut to the range of second ifo */
-        useRangeCut = 1;
-        rangeError = atof(optarg);
-        if ( rangeError > 1.0 || rangeError < 0.0 )
+      case 'S':
+        /* set the snr threshold in ifo b.  Used when deciding if ifo b
+	 * could have seen the triggers. */
+        ifob_snrthresh = atof(optarg);
+        if ( ifob_snrthresh < 0.0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "error in in second ifo range test must be in interval [0,1]:"
+              "IFO B snr threshold must be positive"
               "(%s given)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "float", "%s", optarg );
-        /* XXX abort if range cut is given since it's not implemented yet XXX */
-        fprintf( stderr, "--%s not get implemented, aborting!\n", 
-            long_options[option_index].name );
-        abort();
         break;
 
       case 'm':
@@ -521,6 +528,19 @@ int main( int argc, char *argv[] )
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
+  /* store the ifo b range cut option */
+  if ( useRangeCut )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--ifo-b-range-cut" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+
   /* store the playground argument in the process_params */
   LALSnprintf( processParamsTable.processParamsTable->program, 
       LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
@@ -597,6 +617,91 @@ int main( int argc, char *argv[] )
         LALFree( inputSummary );
         inputSummary = NULL;
       }
+      
+      if ( useRangeCut )
+      {
+	INT4 haveSummValue = 0;
+	SummValueTable *thisSummValue = NULL;
+
+	if ( vrbflg ) fprintf( stdout, 
+	      "reading summ_value table from file: %s\n", argv[i] );
+	
+	haveSummValue = SummValueTableFromLIGOLw( &thisSummValue, argv[i] );
+	
+	if ( haveSummValue < 1 || ! thisSummValue )
+	{
+	  fprintf( stderr, "error: unable to read summ_value table from %s\n", 
+	      argv[i] );
+	  exit( 1 );
+	}
+	else
+	{
+	  INT4 knownIFO = 0;
+	  SummValueTable *tempSummValue = NULL;
+
+	  if ( vrbflg ) fprintf( stdout, 
+	     "checking summ_value table for inspiral effective distance\n" );
+ 
+	  while ( thisSummValue )
+          {  
+	    if ( strncmp( thisSummValue->name, "inspiral_effective_distance",
+		  LIGOMETA_SUMMVALUE_NAME_MAX ) )
+	    {
+	      /* not an effective distance -- discard */
+	      tempSummValue = thisSummValue;
+	      thisSummValue = thisSummValue->next;
+	      LALFree( tempSummValue );
+	    }
+	    else
+	    {
+	      /* check that effective distance was calculated using 
+	       * 1.4_1.4 solar mass inspiral and snr = 8 */
+	      if ( strncmp( thisSummValue->comment, "1.4_1.4_8",
+		  LIGOMETA_SUMMVALUE_COMM_MAX ) )
+	      {
+		fprintf( stderr, "error: effective distance not calculated\n");
+		fprintf( stderr, "using 1.4-1.4 solar mass, snr = 8\n");
+		fprintf( stderr, "comment was %s\n", thisSummValue->comment );
+		exit( 1 );
+	      }
+	      else
+	      {
+		/* locate the ifo associated to this summ_value and store it */
+		for ( j = 0; j < numIFO ; ++j )
+		{
+		  if ( ! strncmp( ifoName[j], thisSummValue->ifo,
+		      LIGOMETA_IFO_MAX ) )
+		  {
+		    knownIFO = 1;
+
+		    if ( ! inspEffRange[j] )
+		    {
+		      /* store the head of the linked list */
+		      inspEffRange[j] = currentEffRange[j] = thisSummValue;
+		    }
+		    else
+		    {
+		      /* append to the end of the linked list */
+		      currentEffRange[j]->next = thisSummValue;
+		      currentEffRange[j] = currentEffRange[j]->next;
+		    }
+		    currentEffRange[j]->next = NULL;
+		    thisSummValue = thisSummValue->next;
+		    break;
+		  }
+		}
+		if ( ! knownIFO )
+		{
+		  /* catch an unknown ifo name among the input files */
+		  fprintf( stderr, "Error: unknown interferometer %s\n", 
+		    thisSummValue->ifo );
+		  exit( 1 );
+		}
+	      } /* close for ( j = 0; j < numIFO ; ++j ) */
+	    }
+          } /* close while ( thisSummValue ) */
+	}
+      } /* close if( useRangeCut ) */
 
       if ( vrbflg ) 
         fprintf( stdout, "reading triggers from file: %s\n", argv[i] );
@@ -816,7 +921,7 @@ int main( int argc, char *argv[] )
         fprintf( stdout, "  trigger is not playground\n" );
       }
     }
-
+   
     /* spin ifo b until the current trigger is within the coinicdence */
     /* window of the current ifo a trigger                            */
     while ( currentTrigger[1] )
@@ -835,83 +940,193 @@ int main( int argc, char *argv[] )
 
     /* if we are playground only and the trigger is in playground or we are */
     /* not using playground and the trigger is not in the playground...     */
-    if ( ( usePlayground && isPlay ) || ( ! usePlayground && ! isPlay) )
+    if ( ( usePlayground && isPlay ) || ( ! usePlayground && ! isPlay)) 
     {
-      if ( vrbflg ) 
-        fprintf( stdout, "  start loop over IFO B trigger at %d + %10.10f\n",
+ 
+      /* determine whether we should expect to see a trigger in ifo b */
+      if ( useRangeCut )
+      {
+	REAL4 lower_limit = 0;
+	REAL4 upper_limit = 0;
+	/* get the relevant values of inspiral_effective_distance from */
+	/* the summ_value table */
+	for ( j = 0; j < numIFO; ++j )
+	{
+	  currentEffRange[j]=inspEffRange[j];
+	  d_range[j] = 0;
+	  while ( currentEffRange[j] )
+	  {
+	    INT8 ts, te;
+	    LAL_CALL( LALGPStoINT8( &status, &ts, 
+		&(currentEffRange[j]->start_time) ), &status );
+	    LAL_CALL( LALGPStoINT8( &status, &te, 
+		&(currentEffRange[j]->end_time) ), &status );
+	  
+	    if ( (ts < ta) && (ta < te) )
+	    {
+	      /* use this value of inspiral_effective_distance */
+	      d_range[j] = currentEffRange[j]->value;
+	      if( vrbflg ) fprintf( stdout,
+		"range for %s is %f Mpc\n",  ifoName[j], d_range[j]);
+	      break;
+	    }
+	    currentEffRange[j] = currentEffRange[j]->next;
+	  }
+	  if ( d_range[j] <= 0 )
+	  {
+	    fprintf( stderr, "error: unable to find range for %s\n", 
+		ifoName[j]);
+	    exit( 1 );
+	  }
+	}
+
+	/* test whether we expect to be able to see anything in IFO B */
+	/* calculate lowest and highest allowed SNRs in IFO B */
+	lower_limit = ( ( d_range[1] / d_range[0] ) * currentTrigger[0]->snr 
+	    - errorParams.epsilon) / ( 1 + errorParams.kappa);
+	if ( errorParams.kappa < 1 )
+	{
+	  upper_limit = ( ( d_range[1] / d_range[0] ) * currentTrigger[0]->snr 
+	  + errorParams.epsilon) / ( 1 - errorParams.kappa);
+	}
+	else 
+	{
+	  upper_limit = 0;
+	}
+      
+	if ( vrbflg ) 
+	{
+	  fprintf( stdout, 
+	    "trigger in IFO B expected to have SNR between %f and %f\n",
+	    lower_limit, upper_limit );
+	  fprintf( stdout, "SNR threshold in IFO B is %f\n", ifob_snrthresh );
+	}
+	if ( ifob_snrthresh <= lower_limit )
+	{
+	  if ( vrbflg ) fprintf( stdout, 
+	      "looking for a coincident trigger in IFO B\n" );
+	  keep_a_trig = 0;
+	  dont_search_b = 0;
+	}
+	else if ( upper_limit  && ( ifob_snrthresh > upper_limit ) )
+	{
+	  if ( vrbflg ) fprintf( stdout, 
+	      "don't expect a trigger in IFO B, keep IFO A trigger\n" );
+	  keep_a_trig = 1;
+	  dont_search_b = 1;
+	}
+	else
+	{
+	  if ( vrbflg ) fprintf( stdout, 
+	      "we may see a trigger in IFO B, keep IFO A regardless\n" );
+	  keep_a_trig = 1;
+	  dont_search_b = 0;
+	}
+      } /* closes if ( useRangeCut ) */
+
+      if ( ! dont_search_b )
+      {
+	if ( vrbflg &&  currentTrigger[1] ) fprintf( stdout, 
+	    "  start loop over IFO B trigger at %d + %10.10f\n",
             currentTrigger[1]->end_time.gpsSeconds, 
             ((REAL4)currentTrigger[1]->end_time.gpsNanoSeconds * 1e-9) );
+	  
+	/* look for coincident events in B within the time window */
+	currentEvent = currentTrigger[1];
 
-      /* look for coincident events in B within the time window */
-      currentEvent = currentTrigger[1];
+	while ( currentTrigger[1] )
+	{
+	  LAL_CALL( LALGPStoINT8( &status, &tb, 
+		&(currentTrigger[1]->end_time) ), &status );
 
-      while ( currentTrigger[1] )
-      {
-        LAL_CALL( LALGPStoINT8( &status, &tb, &(currentTrigger[1]->end_time) ), 
-            &status );
-
-        if (tb > ta + errorParams.dt )
-        {
-          /* we are outside the time coincidence so move to the next event */
-          break;
-        }
-        else
-        {
-          /* call the LAL function which compares events parameters */
-          if ( vrbflg ) 
-            fprintf( stdout, "    comparing IFO B trigger at %d + %10.10f\n",
+	  if (tb > ta + errorParams.dt )
+	  {
+	    /* we are outside the time coincidence so move to the next event */
+	    break;
+	  }
+	  else
+	  {
+	    /* call the LAL function which compares events parameters */
+	    if ( vrbflg ) fprintf( stdout, 
+		"    comparing IFO B trigger at %d + %10.10f\n",
                 currentTrigger[1]->end_time.gpsSeconds, 
                 ((REAL4)currentTrigger[1]->end_time.gpsNanoSeconds * 1e-9) );
 
-          LAL_CALL( LALCompareSnglInspiral( &status, currentTrigger[0],
+	    LAL_CALL( LALCompareSnglInspiral( &status, currentTrigger[0],
                 currentTrigger[1], &errorParams ), &status );
-        }
+	  }
 
-        if ( errorParams.match )
-        {
-          /* store this event for output */
-          if ( vrbflg )
-            fprintf( stdout, "    >>> found coincidence <<<\n" );
+	  if ( errorParams.match )
+	  {
+	    /* store this event for output */
+	    if ( vrbflg )
+	      fprintf( stdout, "    >>> found coincidence <<<\n" );
 
-          for ( j = 0; j < numIFO; ++j )
-          {
-            /* only record the triggers from the primary ifo once */
-            if ( ! writeUniqTrigs || j || ( ! j && ! have_ifo_a_trigger ) )
-            {
-              if ( ! coincidentEvents[j] )
-              {
-                coincidentEvents[j] = outEvent[j] = (SnglInspiralTable *) 
-                  LALMalloc( sizeof(SnglInspiralTable) );
-              }
-              else
-              {
-                outEvent[j] = outEvent[j]->next = (SnglInspiralTable *) 
-                  LALMalloc( sizeof(SnglInspiralTable) );
-              }
+	    for ( j = 0; j < numIFO; ++j )
+	    {
+	      /* only record the triggers from the primary ifo once */
+	      if ( ! writeUniqTrigs || j || ( ! j && ! have_ifo_a_trigger ) )
+	      {
+		if ( ! coincidentEvents[j] )
+		{
+		  coincidentEvents[j] = outEvent[j] = (SnglInspiralTable *) 
+		      LALMalloc( sizeof(SnglInspiralTable) );
+		}
+		else
+		{
+		  outEvent[j] = outEvent[j]->next = (SnglInspiralTable *) 
+		      LALMalloc( sizeof(SnglInspiralTable) );
+		}
 
-              memcpy( outEvent[j], currentTrigger[j], 
-                  sizeof(SnglInspiralTable) );
-              outEvent[j]->next = NULL;
+		memcpy( outEvent[j], currentTrigger[j], 
+		      sizeof(SnglInspiralTable) );
+		outEvent[j]->next = NULL;
 
-              ++numTriggers[j];
-              have_ifo_a_trigger = 1;
-            }
-          }
+		++numTriggers[j];
+		have_ifo_a_trigger = 1;
+	      }
+	    }
+	  }
 
-        }
+	  currentTrigger[1] = currentTrigger[1]->next;
 
-        currentTrigger[1] = currentTrigger[1]->next;
+	} /* end loop over current events */
 
-      } /* end loop over current events */
+	/* go back to saved current IFO B trigger */
+	currentTrigger[1] = currentEvent;
 
-      /* go back to saved current IFO B trigger */
-      currentTrigger[1] = currentEvent;
+      } /* end loop over ! dont_search_b */
+        
+      
+      if ( keep_a_trig && ! have_ifo_a_trigger )
+      {
+	if ( vrbflg ) fprintf( stdout, 
+	  "kept trigger from IFO A although no coincident trigger in IFO B\n");
+	if ( ! coincidentEvents[0] )
+	{
+	  coincidentEvents[0] = outEvent[0] = (SnglInspiralTable *) 
+	      LALMalloc( sizeof(SnglInspiralTable) );
+	}
+	else
+	{
+	  outEvent[0] = outEvent[0]->next = (SnglInspiralTable *) 
+	      LALMalloc( sizeof(SnglInspiralTable) );         
+	}
+
+	memcpy( outEvent[0], currentTrigger[0],  sizeof(SnglInspiralTable) );
+	outEvent[0]->next = NULL;
+
+	++numTriggers[0];
+      }
+
       have_ifo_a_trigger = 0;
-
+      
+      
     } /* end if ( IFO A is playground ) */
 
     /* go to the next ifo a trigger */
-    currentTrigger[0] = currentTrigger[0]->next;
+        currentTrigger[0] = currentTrigger[0]->next;
+
 
   } /* end loop over ifo A events */
 
@@ -1032,7 +1247,14 @@ cleanexit:
 
   for( j = 0; j < numIFO; ++j )
   {
-
+    
+    while ( inspEffRange[j] )
+    {
+      currentEffRange[j] = inspEffRange[j];
+      inspEffRange[j] = inspEffRange[j]->next;
+      LALFree( currentEffRange[j] );
+    }
+      
     while ( coincidentEvents[j] )
     {
       currentEvent = coincidentEvents[j];
