@@ -376,7 +376,8 @@ const	INT4		two = 2;
 		fom->data[k - 2] = exp( fom->data[k - 2] ) * sqrt(2 * LAL_PI);
 
 		/*  fom = fom.*rootRatio  */
-		rootRatio = sqrt(N/k * (N - k));
+		rootRatio = sqrt(((REAL8)(N))/(k * (N - k)));
+
 		fom->data[k - 2] = fom->data[k - 2]* rootRatio;
        	}
 
