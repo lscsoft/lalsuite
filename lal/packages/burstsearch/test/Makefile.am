@@ -16,8 +16,8 @@ ThresholdsTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(t
 TFTransformTest_SOURCES = TFTransformTest.c
 TFTransformTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
-ExcessPowerTest_SOURCES = ExcessPowerTest.c
-ExcessPowerTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+#ExcessPowerTest_SOURCES = ExcessPowerTest.c
+#ExcessPowerTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
