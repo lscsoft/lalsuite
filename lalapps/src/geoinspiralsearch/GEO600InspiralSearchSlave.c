@@ -77,16 +77,15 @@ LALDestroyRealFFTPlan
 /***************************** </lalErrTable> */
 
 #include <config.h>
-#if defined HAVE_MPI_H && defined HAVE_GSL_FFT_REAL_H
+#if defined HAVE_MPI_H && defined HAVE_GSL_GSL_FFT_REAL_H
 
 #include <lal/LALInspiralBank.h>
 #include <lal/RealFFT.h>
 #include <lal/Window.h>
 #include <lal/Comm.h>
 #include <mpi.h>
-#include <lal/GEO600InspiralSearch.h>
-#include <lal/FrameRead.h>
-#include <gsl_fft_real.h>
+#include <GEO600InspiralSearch.h>
+#include <gsl/gsl_fft_real.h>
 
 #define WORKTAG 1
  
