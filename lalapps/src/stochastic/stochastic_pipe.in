@@ -32,7 +32,7 @@ import stochastic
 
 # program usage
 def usage():
-msg = """\
+  msg = """\
 Usage: lalapps_stochastic_pipe [options]
 
   -h, --help               display this message
