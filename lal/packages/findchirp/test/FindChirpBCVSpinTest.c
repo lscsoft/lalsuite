@@ -454,15 +454,16 @@ main (int argc, char *argv[])
       tmplt->eta       = tmplt->mu / tmplt->totalMass;
       tmplt->approximant = BCVSpin;
       
-      tmplt->fFinal 	= 1000;
-      tmplt->psi0       = 205008;
-      tmplt->psi3       = -1619;
-
+      tmplt->fFinal 	= 1800;
+      tmplt->psi0       = 944071;
+      tmplt->psi3       = -2982;
+      tmplt->beta       = 0; 	
+      
       tmpltParams->fLow  = fLow;
       tmpltParams->deltaT = deltaT;
 }
 
-    LALFindChirpBCVSpinTemplate (&status, filterInput->fcTmplt, tmplt, tmpltParams);
+    LALFindChirpBCVSpinTemplate (&status, filterInput->fcTmplt, tmplt, tmpltParams, dataParams);
     TestStatus (&status, "0", 1);
     ClearStatus (&status);
 
