@@ -2,11 +2,11 @@
 noinst_LTLIBRARIES = libsupport.la
 lib_LTLIBRARIES = liblalsupport.la
 
-libsupport_la_SOURCES = LALStd.c LALVersion.c LALMalloc.c LALError.c
+libsupport_la_SOURCES = LALStd.c LALVersion.c LALMalloc.c LALError.c \
+  StringToken.c StringConvert.c
 
 liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \
   PrintTimeSeries.c ReadFrequencySeries.c ReadTimeSeries.c \
-  StringToken.c StringConvert.c \
   StreamVectorInput.c StreamVectorSequenceInput.c StreamSequenceInput.c \
   StreamSeriesInput.c StreamSeriesOutput.c \
   LALInitBarycenter.c LALXMGRInterface.c
