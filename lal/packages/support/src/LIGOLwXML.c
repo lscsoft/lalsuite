@@ -124,7 +124,7 @@ This requires editing the table specific reading codes in
 
 \end{itemize}
 
- 
+
 \vfill{\footnotesize\input{LIGOLwXMLCV}}
 
 </lalLaTeX>
@@ -278,13 +278,13 @@ LALEndLIGOLwXMLTable (
 
 /* macro to print a comma on subsequent table rows */
 #define FIRST_TABLE_ROW \
-        if ( xml->first ) \
-        { \
-          xml->first = 0; \
-        } else \
-        { \
-          fprintf( xml->fp, ",\n" ); \
-        }
+  if ( xml->first ) \
+{ \
+  xml->first = 0; \
+} else \
+{ \
+  fprintf( xml->fp, ",\n" ); \
+}
 
 /* <lalVerbatim file="LIGOLwXMLCP"> */
 void
@@ -317,22 +317,22 @@ LALWriteLIGOLwXMLTable (
       while( tablePtr.processTable )
       {
         FIRST_TABLE_ROW
-        fprintf( xml->fp, PROCESS_ROW,
-            tablePtr.processTable->program,
-            tablePtr.processTable->version,
-            tablePtr.processTable->cvs_repository,
-            tablePtr.processTable->cvs_entry_time.gpsSeconds,
-            tablePtr.processTable->comment,
-            tablePtr.processTable->is_online,
-            tablePtr.processTable->node,
-            tablePtr.processTable->username,
-            tablePtr.processTable->unix_procid,
-            tablePtr.processTable->start_time.gpsSeconds,
-            tablePtr.processTable->end_time.gpsSeconds,
-            tablePtr.processTable->jobid,
-            tablePtr.processTable->domain,
-            tablePtr.processTable->ifos
-            );
+          fprintf( xml->fp, PROCESS_ROW,
+              tablePtr.processTable->program,
+              tablePtr.processTable->version,
+              tablePtr.processTable->cvs_repository,
+              tablePtr.processTable->cvs_entry_time.gpsSeconds,
+              tablePtr.processTable->comment,
+              tablePtr.processTable->is_online,
+              tablePtr.processTable->node,
+              tablePtr.processTable->username,
+              tablePtr.processTable->unix_procid,
+              tablePtr.processTable->start_time.gpsSeconds,
+              tablePtr.processTable->end_time.gpsSeconds,
+              tablePtr.processTable->jobid,
+              tablePtr.processTable->domain,
+              tablePtr.processTable->ifos
+              );
         tablePtr.processTable = tablePtr.processTable->next;
       }
       break;
@@ -340,12 +340,12 @@ LALWriteLIGOLwXMLTable (
       while( tablePtr.processParamsTable )
       {
         FIRST_TABLE_ROW
-        fprintf( xml->fp, PROCESS_PARAMS_ROW,
-            tablePtr.processParamsTable->program,
-            tablePtr.processParamsTable->param,
-            tablePtr.processParamsTable->type,
-            tablePtr.processParamsTable->value
-            );
+          fprintf( xml->fp, PROCESS_PARAMS_ROW,
+              tablePtr.processParamsTable->program,
+              tablePtr.processParamsTable->param,
+              tablePtr.processParamsTable->type,
+              tablePtr.processParamsTable->value
+              );
         tablePtr.processParamsTable = tablePtr.processParamsTable->next;
       }
       break;
@@ -353,20 +353,21 @@ LALWriteLIGOLwXMLTable (
       while( tablePtr.searchSummaryTable )
       {
         FIRST_TABLE_ROW
-        fprintf( xml->fp, SEARCH_SUMMARY_ROW,
-            lalCVSTag,
-            tablePtr.searchSummaryTable->comment,
-            tablePtr.searchSummaryTable->in_start_time.gpsSeconds,
-            tablePtr.searchSummaryTable->in_start_time.gpsNanoSeconds,
-            tablePtr.searchSummaryTable->in_end_time.gpsSeconds,
-            tablePtr.searchSummaryTable->in_end_time.gpsNanoSeconds,
-            tablePtr.searchSummaryTable->out_start_time.gpsSeconds,
-            tablePtr.searchSummaryTable->out_start_time.gpsNanoSeconds,
-            tablePtr.searchSummaryTable->out_end_time.gpsSeconds,
-            tablePtr.searchSummaryTable->out_end_time.gpsNanoSeconds,
-            tablePtr.searchSummaryTable->nevents,
-            tablePtr.searchSummaryTable->nnodes
-            );
+          fprintf( xml->fp, SEARCH_SUMMARY_ROW,
+              lalCVSTag,
+              tablePtr.searchSummaryTable->comment,
+              tablePtr.searchSummaryTable->ifos,
+              tablePtr.searchSummaryTable->in_start_time.gpsSeconds,
+              tablePtr.searchSummaryTable->in_start_time.gpsNanoSeconds,
+              tablePtr.searchSummaryTable->in_end_time.gpsSeconds,
+              tablePtr.searchSummaryTable->in_end_time.gpsNanoSeconds,
+              tablePtr.searchSummaryTable->out_start_time.gpsSeconds,
+              tablePtr.searchSummaryTable->out_start_time.gpsNanoSeconds,
+              tablePtr.searchSummaryTable->out_end_time.gpsSeconds,
+              tablePtr.searchSummaryTable->out_end_time.gpsNanoSeconds,
+              tablePtr.searchSummaryTable->nevents,
+              tablePtr.searchSummaryTable->nnodes
+              );
         tablePtr.searchSummaryTable = tablePtr.searchSummaryTable->next;
       }
       break;
@@ -374,11 +375,11 @@ LALWriteLIGOLwXMLTable (
       while( tablePtr.searchSummvarsTable )
       {
         FIRST_TABLE_ROW
-        fprintf( xml->fp, SEARCH_SUMMVARS_ROW,
-            tablePtr.searchSummvarsTable->name,
-            tablePtr.searchSummvarsTable->string,
-            tablePtr.searchSummvarsTable->value
-            );
+          fprintf( xml->fp, SEARCH_SUMMVARS_ROW,
+              tablePtr.searchSummvarsTable->name,
+              tablePtr.searchSummvarsTable->string,
+              tablePtr.searchSummvarsTable->value
+              );
         tablePtr.searchSummvarsTable = tablePtr.searchSummvarsTable->next;
       }
       break;
@@ -386,21 +387,21 @@ LALWriteLIGOLwXMLTable (
       while( tablePtr.snglBurstTable )
       {
         FIRST_TABLE_ROW
-        fprintf( xml->fp, SNGL_BURST_ROW,
-            tablePtr.snglBurstTable->ifo,
-            tablePtr.snglBurstTable->search,
-            tablePtr.snglBurstTable->channel,
-            tablePtr.snglBurstTable->start_time.gpsSeconds,
-            tablePtr.snglBurstTable->start_time.gpsNanoSeconds,
-	    tablePtr.snglBurstTable->peak_time.gpsSeconds,
-            tablePtr.snglBurstTable->peak_time.gpsNanoSeconds,
-            tablePtr.snglBurstTable->duration,
-            tablePtr.snglBurstTable->central_freq,
-            tablePtr.snglBurstTable->bandwidth,
-            tablePtr.snglBurstTable->amplitude,
-            tablePtr.snglBurstTable->snr,
-            tablePtr.snglBurstTable->confidence
-            );
+          fprintf( xml->fp, SNGL_BURST_ROW,
+              tablePtr.snglBurstTable->ifo,
+              tablePtr.snglBurstTable->search,
+              tablePtr.snglBurstTable->channel,
+              tablePtr.snglBurstTable->start_time.gpsSeconds,
+              tablePtr.snglBurstTable->start_time.gpsNanoSeconds,
+              tablePtr.snglBurstTable->peak_time.gpsSeconds,
+              tablePtr.snglBurstTable->peak_time.gpsNanoSeconds,
+              tablePtr.snglBurstTable->duration,
+              tablePtr.snglBurstTable->central_freq,
+              tablePtr.snglBurstTable->bandwidth,
+              tablePtr.snglBurstTable->amplitude,
+              tablePtr.snglBurstTable->snr,
+              tablePtr.snglBurstTable->confidence
+              );
         tablePtr.snglBurstTable = tablePtr.snglBurstTable->next;
       }
       break;
@@ -413,48 +414,48 @@ LALWriteLIGOLwXMLTable (
           id = tablePtr.snglInspiralTable->event_id->id;
         }
         FIRST_TABLE_ROW
-        fprintf( xml->fp, SNGL_INSPIRAL_ROW,
-            tablePtr.snglInspiralTable->ifo,
-            tablePtr.snglInspiralTable->search,
-            tablePtr.snglInspiralTable->channel,
-            tablePtr.snglInspiralTable->end_time.gpsSeconds,
-            tablePtr.snglInspiralTable->end_time.gpsNanoSeconds,
-            tablePtr.snglInspiralTable->end_time_gmst,
-            tablePtr.snglInspiralTable->impulse_time.gpsSeconds,
-            tablePtr.snglInspiralTable->impulse_time.gpsNanoSeconds,
-            tablePtr.snglInspiralTable->template_duration,
-            tablePtr.snglInspiralTable->event_duration,
-            tablePtr.snglInspiralTable->amplitude,
-            tablePtr.snglInspiralTable->eff_distance,
-            tablePtr.snglInspiralTable->coa_phase,
-            tablePtr.snglInspiralTable->mass1,
-            tablePtr.snglInspiralTable->mass2,
-            tablePtr.snglInspiralTable->mchirp,
-            tablePtr.snglInspiralTable->mtotal,
-            tablePtr.snglInspiralTable->eta,
-            tablePtr.snglInspiralTable->tau0,
-            tablePtr.snglInspiralTable->tau2,
-            tablePtr.snglInspiralTable->tau3,
-            tablePtr.snglInspiralTable->tau4,
-            tablePtr.snglInspiralTable->tau5,
-            tablePtr.snglInspiralTable->ttotal,
-            tablePtr.snglInspiralTable->psi0,
-            tablePtr.snglInspiralTable->psi3,
-            tablePtr.snglInspiralTable->alpha,
-            tablePtr.snglInspiralTable->alpha1,
-            tablePtr.snglInspiralTable->alpha2,
-            tablePtr.snglInspiralTable->alpha3,
-            tablePtr.snglInspiralTable->alpha4,
-            tablePtr.snglInspiralTable->alpha5,
-            tablePtr.snglInspiralTable->alpha6,
-            tablePtr.snglInspiralTable->beta,
-            tablePtr.snglInspiralTable->f_final,
-            tablePtr.snglInspiralTable->snr,
-            tablePtr.snglInspiralTable->chisq,
-            tablePtr.snglInspiralTable->chisq_dof,
-            tablePtr.snglInspiralTable->sigmasq,
-            id
-            );
+          fprintf( xml->fp, SNGL_INSPIRAL_ROW,
+              tablePtr.snglInspiralTable->ifo,
+              tablePtr.snglInspiralTable->search,
+              tablePtr.snglInspiralTable->channel,
+              tablePtr.snglInspiralTable->end_time.gpsSeconds,
+              tablePtr.snglInspiralTable->end_time.gpsNanoSeconds,
+              tablePtr.snglInspiralTable->end_time_gmst,
+              tablePtr.snglInspiralTable->impulse_time.gpsSeconds,
+              tablePtr.snglInspiralTable->impulse_time.gpsNanoSeconds,
+              tablePtr.snglInspiralTable->template_duration,
+              tablePtr.snglInspiralTable->event_duration,
+              tablePtr.snglInspiralTable->amplitude,
+              tablePtr.snglInspiralTable->eff_distance,
+              tablePtr.snglInspiralTable->coa_phase,
+              tablePtr.snglInspiralTable->mass1,
+              tablePtr.snglInspiralTable->mass2,
+              tablePtr.snglInspiralTable->mchirp,
+              tablePtr.snglInspiralTable->mtotal,
+              tablePtr.snglInspiralTable->eta,
+              tablePtr.snglInspiralTable->tau0,
+              tablePtr.snglInspiralTable->tau2,
+              tablePtr.snglInspiralTable->tau3,
+              tablePtr.snglInspiralTable->tau4,
+              tablePtr.snglInspiralTable->tau5,
+              tablePtr.snglInspiralTable->ttotal,
+              tablePtr.snglInspiralTable->psi0,
+              tablePtr.snglInspiralTable->psi3,
+              tablePtr.snglInspiralTable->alpha,
+              tablePtr.snglInspiralTable->alpha1,
+              tablePtr.snglInspiralTable->alpha2,
+              tablePtr.snglInspiralTable->alpha3,
+              tablePtr.snglInspiralTable->alpha4,
+              tablePtr.snglInspiralTable->alpha5,
+              tablePtr.snglInspiralTable->alpha6,
+              tablePtr.snglInspiralTable->beta,
+              tablePtr.snglInspiralTable->f_final,
+              tablePtr.snglInspiralTable->snr,
+              tablePtr.snglInspiralTable->chisq,
+              tablePtr.snglInspiralTable->chisq_dof,
+              tablePtr.snglInspiralTable->sigmasq,
+              id
+                );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
       }
       break;
@@ -462,40 +463,40 @@ LALWriteLIGOLwXMLTable (
       while( tablePtr.multiInspiralTable )
       {
         FIRST_TABLE_ROW
-        fprintf( xml->fp, MULTI_INSPIRAL_ROW,
-            tablePtr.multiInspiralTable->ifos,
-            tablePtr.multiInspiralTable->search,
-            tablePtr.multiInspiralTable->end_time.gpsSeconds,
-            tablePtr.multiInspiralTable->end_time.gpsNanoSeconds,
-            tablePtr.multiInspiralTable->end_time_gmst,
-            tablePtr.multiInspiralTable->impulse_time.gpsSeconds,
-            tablePtr.multiInspiralTable->impulse_time.gpsNanoSeconds,
-            tablePtr.multiInspiralTable->amplitude,
-            tablePtr.multiInspiralTable->ifo1_eff_distance,
-            tablePtr.multiInspiralTable->ifo2_eff_distance,
-            tablePtr.multiInspiralTable->eff_distance,
-            tablePtr.multiInspiralTable->coa_phase,
-            tablePtr.multiInspiralTable->mass1,
-            tablePtr.multiInspiralTable->mass2,
-            tablePtr.multiInspiralTable->mchirp,
-            tablePtr.multiInspiralTable->eta,
-            tablePtr.multiInspiralTable->tau0,
-            tablePtr.multiInspiralTable->tau2,
-            tablePtr.multiInspiralTable->tau3,
-            tablePtr.multiInspiralTable->tau4,
-            tablePtr.multiInspiralTable->tau5,
-            tablePtr.multiInspiralTable->ttotal,
-            tablePtr.multiInspiralTable->ifo1_snr,
-            tablePtr.multiInspiralTable->ifo2_snr,
-            tablePtr.multiInspiralTable->snr,
-            tablePtr.multiInspiralTable->chisq,
-            tablePtr.multiInspiralTable->chisq_dof,
-            tablePtr.multiInspiralTable->sigmasq,
-            tablePtr.multiInspiralTable->ligo_axis_ra,
-            tablePtr.multiInspiralTable->ligo_axis_dec,
-            tablePtr.multiInspiralTable->ligo_angle,
-            tablePtr.multiInspiralTable->ligo_angle_sig
-            );
+          fprintf( xml->fp, MULTI_INSPIRAL_ROW,
+              tablePtr.multiInspiralTable->ifos,
+              tablePtr.multiInspiralTable->search,
+              tablePtr.multiInspiralTable->end_time.gpsSeconds,
+              tablePtr.multiInspiralTable->end_time.gpsNanoSeconds,
+              tablePtr.multiInspiralTable->end_time_gmst,
+              tablePtr.multiInspiralTable->impulse_time.gpsSeconds,
+              tablePtr.multiInspiralTable->impulse_time.gpsNanoSeconds,
+              tablePtr.multiInspiralTable->amplitude,
+              tablePtr.multiInspiralTable->ifo1_eff_distance,
+              tablePtr.multiInspiralTable->ifo2_eff_distance,
+              tablePtr.multiInspiralTable->eff_distance,
+              tablePtr.multiInspiralTable->coa_phase,
+              tablePtr.multiInspiralTable->mass1,
+              tablePtr.multiInspiralTable->mass2,
+              tablePtr.multiInspiralTable->mchirp,
+              tablePtr.multiInspiralTable->eta,
+              tablePtr.multiInspiralTable->tau0,
+              tablePtr.multiInspiralTable->tau2,
+              tablePtr.multiInspiralTable->tau3,
+              tablePtr.multiInspiralTable->tau4,
+              tablePtr.multiInspiralTable->tau5,
+              tablePtr.multiInspiralTable->ttotal,
+              tablePtr.multiInspiralTable->ifo1_snr,
+              tablePtr.multiInspiralTable->ifo2_snr,
+              tablePtr.multiInspiralTable->snr,
+              tablePtr.multiInspiralTable->chisq,
+              tablePtr.multiInspiralTable->chisq_dof,
+              tablePtr.multiInspiralTable->sigmasq,
+              tablePtr.multiInspiralTable->ligo_axis_ra,
+              tablePtr.multiInspiralTable->ligo_axis_dec,
+              tablePtr.multiInspiralTable->ligo_angle,
+              tablePtr.multiInspiralTable->ligo_angle_sig
+                );
         tablePtr.multiInspiralTable = tablePtr.multiInspiralTable->next;
       }
       break;
@@ -503,59 +504,59 @@ LALWriteLIGOLwXMLTable (
       while( tablePtr.simInspiralTable )
       {
         FIRST_TABLE_ROW
-        fprintf( xml->fp, SIM_INSPIRAL_ROW,
-            tablePtr.simInspiralTable->waveform,
-            tablePtr.simInspiralTable->geocent_end_time.gpsSeconds,
-            tablePtr.simInspiralTable->geocent_end_time.gpsNanoSeconds,
-            tablePtr.simInspiralTable->h_end_time.gpsSeconds,
-            tablePtr.simInspiralTable->h_end_time.gpsNanoSeconds,
-            tablePtr.simInspiralTable->l_end_time.gpsSeconds,
-            tablePtr.simInspiralTable->l_end_time.gpsNanoSeconds,
-	    tablePtr.simInspiralTable->g_end_time.gpsSeconds,
-            tablePtr.simInspiralTable->g_end_time.gpsNanoSeconds,
-            tablePtr.simInspiralTable->t_end_time.gpsSeconds,
-            tablePtr.simInspiralTable->t_end_time.gpsNanoSeconds,
-            tablePtr.simInspiralTable->v_end_time.gpsSeconds,
-            tablePtr.simInspiralTable->v_end_time.gpsNanoSeconds,
-            tablePtr.simInspiralTable->end_time_gmst,
-            tablePtr.simInspiralTable->source,
-            tablePtr.simInspiralTable->mass1,
-            tablePtr.simInspiralTable->mass2,
-            tablePtr.simInspiralTable->eta,
-            tablePtr.simInspiralTable->distance,
-            tablePtr.simInspiralTable->longitude,
-            tablePtr.simInspiralTable->latitude,
-            tablePtr.simInspiralTable->inclination,
-            tablePtr.simInspiralTable->coa_phase,
-            tablePtr.simInspiralTable->polarization,
-            tablePtr.simInspiralTable->psi0,
-            tablePtr.simInspiralTable->psi3,
-            tablePtr.simInspiralTable->alpha,
-            tablePtr.simInspiralTable->alpha1,
-            tablePtr.simInspiralTable->alpha2,
-            tablePtr.simInspiralTable->alpha3,
-            tablePtr.simInspiralTable->alpha4,
-            tablePtr.simInspiralTable->alpha5,
-            tablePtr.simInspiralTable->alpha6,
-            tablePtr.simInspiralTable->beta,
-            tablePtr.simInspiralTable->spin1x,
-            tablePtr.simInspiralTable->spin1y,
-            tablePtr.simInspiralTable->spin1z,
-            tablePtr.simInspiralTable->spin2x,
-            tablePtr.simInspiralTable->spin2y,
-            tablePtr.simInspiralTable->spin2z,
-            tablePtr.simInspiralTable->theta0,
-            tablePtr.simInspiralTable->phi0,
-            tablePtr.simInspiralTable->f_lower,
-	    tablePtr.simInspiralTable->f_final, 
-	    /*here, I haven't used f_final as in sngl_inspiral as requested by the iul group */
-            tablePtr.simInspiralTable->mchirp,
-            tablePtr.simInspiralTable->eff_dist_h,
-            tablePtr.simInspiralTable->eff_dist_l,
-	    tablePtr.simInspiralTable->eff_dist_g,
-            tablePtr.simInspiralTable->eff_dist_t,
-            tablePtr.simInspiralTable->eff_dist_v
-            );
+          fprintf( xml->fp, SIM_INSPIRAL_ROW,
+              tablePtr.simInspiralTable->waveform,
+              tablePtr.simInspiralTable->geocent_end_time.gpsSeconds,
+              tablePtr.simInspiralTable->geocent_end_time.gpsNanoSeconds,
+              tablePtr.simInspiralTable->h_end_time.gpsSeconds,
+              tablePtr.simInspiralTable->h_end_time.gpsNanoSeconds,
+              tablePtr.simInspiralTable->l_end_time.gpsSeconds,
+              tablePtr.simInspiralTable->l_end_time.gpsNanoSeconds,
+              tablePtr.simInspiralTable->g_end_time.gpsSeconds,
+              tablePtr.simInspiralTable->g_end_time.gpsNanoSeconds,
+              tablePtr.simInspiralTable->t_end_time.gpsSeconds,
+              tablePtr.simInspiralTable->t_end_time.gpsNanoSeconds,
+              tablePtr.simInspiralTable->v_end_time.gpsSeconds,
+              tablePtr.simInspiralTable->v_end_time.gpsNanoSeconds,
+              tablePtr.simInspiralTable->end_time_gmst,
+              tablePtr.simInspiralTable->source,
+              tablePtr.simInspiralTable->mass1,
+              tablePtr.simInspiralTable->mass2,
+              tablePtr.simInspiralTable->eta,
+              tablePtr.simInspiralTable->distance,
+              tablePtr.simInspiralTable->longitude,
+              tablePtr.simInspiralTable->latitude,
+              tablePtr.simInspiralTable->inclination,
+              tablePtr.simInspiralTable->coa_phase,
+              tablePtr.simInspiralTable->polarization,
+              tablePtr.simInspiralTable->psi0,
+              tablePtr.simInspiralTable->psi3,
+              tablePtr.simInspiralTable->alpha,
+              tablePtr.simInspiralTable->alpha1,
+              tablePtr.simInspiralTable->alpha2,
+              tablePtr.simInspiralTable->alpha3,
+              tablePtr.simInspiralTable->alpha4,
+              tablePtr.simInspiralTable->alpha5,
+              tablePtr.simInspiralTable->alpha6,
+              tablePtr.simInspiralTable->beta,
+              tablePtr.simInspiralTable->spin1x,
+              tablePtr.simInspiralTable->spin1y,
+              tablePtr.simInspiralTable->spin1z,
+              tablePtr.simInspiralTable->spin2x,
+              tablePtr.simInspiralTable->spin2y,
+              tablePtr.simInspiralTable->spin2z,
+              tablePtr.simInspiralTable->theta0,
+              tablePtr.simInspiralTable->phi0,
+              tablePtr.simInspiralTable->f_lower,
+              tablePtr.simInspiralTable->f_final, 
+              /*here, I haven't used f_final as in sngl_inspiral as requested by the iul group */
+              tablePtr.simInspiralTable->mchirp,
+              tablePtr.simInspiralTable->eff_dist_h,
+              tablePtr.simInspiralTable->eff_dist_l,
+              tablePtr.simInspiralTable->eff_dist_g,
+              tablePtr.simInspiralTable->eff_dist_t,
+              tablePtr.simInspiralTable->eff_dist_v
+                );
         tablePtr.simInspiralTable = tablePtr.simInspiralTable->next;
       }
       break;
@@ -563,27 +564,27 @@ LALWriteLIGOLwXMLTable (
       while( tablePtr.simBurstTable )
       {
         FIRST_TABLE_ROW
-        fprintf( xml->fp, SIM_BURST_ROW,
-            tablePtr.simBurstTable->waveform,
-            tablePtr.simBurstTable->geocent_peak_time.gpsSeconds,
-            tablePtr.simBurstTable->geocent_peak_time.gpsNanoSeconds,
-            tablePtr.simBurstTable->h_peak_time.gpsSeconds,
-            tablePtr.simBurstTable->h_peak_time.gpsNanoSeconds,
-            tablePtr.simBurstTable->l_peak_time.gpsSeconds,
-            tablePtr.simBurstTable->l_peak_time.gpsNanoSeconds,
-            tablePtr.simBurstTable->peak_time_gmst,
-            tablePtr.simBurstTable->dtminus,
-            tablePtr.simBurstTable->dtplus,
-            tablePtr.simBurstTable->longitude,
-            tablePtr.simBurstTable->latitude,
-            tablePtr.simBurstTable->coordinates,
-            tablePtr.simBurstTable->polarization,
-            tablePtr.simBurstTable->hrss,
-            tablePtr.simBurstTable->hpeak,
-            tablePtr.simBurstTable->freq,
-            tablePtr.simBurstTable->tau,
-            tablePtr.simBurstTable->zm_number
-            );
+          fprintf( xml->fp, SIM_BURST_ROW,
+              tablePtr.simBurstTable->waveform,
+              tablePtr.simBurstTable->geocent_peak_time.gpsSeconds,
+              tablePtr.simBurstTable->geocent_peak_time.gpsNanoSeconds,
+              tablePtr.simBurstTable->h_peak_time.gpsSeconds,
+              tablePtr.simBurstTable->h_peak_time.gpsNanoSeconds,
+              tablePtr.simBurstTable->l_peak_time.gpsSeconds,
+              tablePtr.simBurstTable->l_peak_time.gpsNanoSeconds,
+              tablePtr.simBurstTable->peak_time_gmst,
+              tablePtr.simBurstTable->dtminus,
+              tablePtr.simBurstTable->dtplus,
+              tablePtr.simBurstTable->longitude,
+              tablePtr.simBurstTable->latitude,
+              tablePtr.simBurstTable->coordinates,
+              tablePtr.simBurstTable->polarization,
+              tablePtr.simBurstTable->hrss,
+              tablePtr.simBurstTable->hpeak,
+              tablePtr.simBurstTable->freq,
+              tablePtr.simBurstTable->tau,
+              tablePtr.simBurstTable->zm_number
+              );
         tablePtr.simBurstTable = tablePtr.simBurstTable->next;
       }
       break;
@@ -591,17 +592,17 @@ LALWriteLIGOLwXMLTable (
       while( tablePtr.summValueTable )
       {
         FIRST_TABLE_ROW
-        fprintf( xml->fp, SUMM_VALUE_ROW,
-            tablePtr.summValueTable->program,
-            tablePtr.summValueTable->start_time.gpsSeconds,
-            tablePtr.summValueTable->start_time.gpsNanoSeconds,
-            tablePtr.summValueTable->end_time.gpsSeconds,
-            tablePtr.summValueTable->end_time.gpsNanoSeconds,
-            tablePtr.summValueTable->ifo,
-            tablePtr.summValueTable->name,
-            tablePtr.summValueTable->value,
-            tablePtr.summValueTable->comment
-            );
+          fprintf( xml->fp, SUMM_VALUE_ROW,
+              tablePtr.summValueTable->program,
+              tablePtr.summValueTable->start_time.gpsSeconds,
+              tablePtr.summValueTable->start_time.gpsNanoSeconds,
+              tablePtr.summValueTable->end_time.gpsSeconds,
+              tablePtr.summValueTable->end_time.gpsNanoSeconds,
+              tablePtr.summValueTable->ifo,
+              tablePtr.summValueTable->name,
+              tablePtr.summValueTable->value,
+              tablePtr.summValueTable->comment
+              );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
       }
       break;
@@ -609,32 +610,32 @@ LALWriteLIGOLwXMLTable (
       while( tablePtr.simInstParamsTable )
       {
         FIRST_TABLE_ROW
-        fprintf( xml->fp, SIM_INST_PARAMS_ROW,
-            tablePtr.simInstParamsTable->name,
-            tablePtr.simInstParamsTable->comment,
-            tablePtr.simInstParamsTable->value
-            );
+          fprintf( xml->fp, SIM_INST_PARAMS_ROW,
+              tablePtr.simInstParamsTable->name,
+              tablePtr.simInstParamsTable->comment,
+              tablePtr.simInstParamsTable->value
+              );
         tablePtr.simInstParamsTable = tablePtr.simInstParamsTable->next;
       }
       break;
-		case stochastic_table:
+    case stochastic_table:
       while( tablePtr.stochasticTable )
       {
         FIRST_TABLE_ROW
-        fprintf( xml->fp, STOCHASTIC_ROW,
-            tablePtr.stochasticTable->ifo_one,
-            tablePtr.stochasticTable->ifo_two,
-            tablePtr.stochasticTable->channel_one,
-            tablePtr.stochasticTable->channel_two,
-            tablePtr.stochasticTable->start_time.gpsSeconds,
-            tablePtr.stochasticTable->start_time.gpsNanoSeconds,
-            tablePtr.stochasticTable->duration.gpsSeconds,
-            tablePtr.stochasticTable->duration.gpsNanoSeconds,
-            tablePtr.stochasticTable->f_min,
-            tablePtr.stochasticTable->f_max,
-            tablePtr.stochasticTable->cc_stat,
-            tablePtr.stochasticTable->cc_sigma
-            );
+          fprintf( xml->fp, STOCHASTIC_ROW,
+              tablePtr.stochasticTable->ifo_one,
+              tablePtr.stochasticTable->ifo_two,
+              tablePtr.stochasticTable->channel_one,
+              tablePtr.stochasticTable->channel_two,
+              tablePtr.stochasticTable->start_time.gpsSeconds,
+              tablePtr.stochasticTable->start_time.gpsNanoSeconds,
+              tablePtr.stochasticTable->duration.gpsSeconds,
+              tablePtr.stochasticTable->duration.gpsNanoSeconds,
+              tablePtr.stochasticTable->f_min,
+              tablePtr.stochasticTable->f_max,
+              tablePtr.stochasticTable->cc_stat,
+              tablePtr.stochasticTable->cc_sigma
+              );
         tablePtr.stochasticTable = tablePtr.stochasticTable->next;
       }
       break;
@@ -642,65 +643,65 @@ LALWriteLIGOLwXMLTable (
       while( tablePtr.stochSummTable )
       {
         FIRST_TABLE_ROW
-        fprintf( xml->fp, STOCH_SUMM_ROW,
-            tablePtr.stochSummTable->ifo_one,
-            tablePtr.stochSummTable->ifo_two,
-            tablePtr.stochSummTable->channel_one,
-            tablePtr.stochSummTable->channel_two,
-            tablePtr.stochSummTable->start_time.gpsSeconds,
-            tablePtr.stochSummTable->start_time.gpsNanoSeconds,
-            tablePtr.stochSummTable->end_time.gpsSeconds,
-            tablePtr.stochSummTable->end_time.gpsNanoSeconds,
-            tablePtr.stochSummTable->f_min,
-            tablePtr.stochSummTable->f_max,
-            tablePtr.stochSummTable->y_opt,
-            tablePtr.stochSummTable->error
-            );
+          fprintf( xml->fp, STOCH_SUMM_ROW,
+              tablePtr.stochSummTable->ifo_one,
+              tablePtr.stochSummTable->ifo_two,
+              tablePtr.stochSummTable->channel_one,
+              tablePtr.stochSummTable->channel_two,
+              tablePtr.stochSummTable->start_time.gpsSeconds,
+              tablePtr.stochSummTable->start_time.gpsNanoSeconds,
+              tablePtr.stochSummTable->end_time.gpsSeconds,
+              tablePtr.stochSummTable->end_time.gpsNanoSeconds,
+              tablePtr.stochSummTable->f_min,
+              tablePtr.stochSummTable->f_max,
+              tablePtr.stochSummTable->y_opt,
+              tablePtr.stochSummTable->error
+              );
         tablePtr.stochSummTable = tablePtr.stochSummTable->next;
       }
       break;
-  case ext_triggers_table:
-    while( tablePtr.extTriggerTable )
+    case ext_triggers_table:
+      while( tablePtr.extTriggerTable )
       {
-	FIRST_TABLE_ROW
-	  fprintf( xml->fp, EXT_TRIGGERS_ROW,
-		   tablePtr.extTriggerTable->det_alts,
-		   tablePtr.extTriggerTable->det_band,
-		   tablePtr.extTriggerTable->det_fluence,
-		   tablePtr.extTriggerTable->det_fluence_int,
-		   tablePtr.extTriggerTable->det_name,
-		   tablePtr.extTriggerTable->det_peak,
-		   tablePtr.extTriggerTable->det_peak_int,
-		   tablePtr.extTriggerTable->det_snr,
-		   tablePtr.extTriggerTable->email_time,
-		   tablePtr.extTriggerTable->event_dec,
-		   tablePtr.extTriggerTable->event_dec_err,
-		   tablePtr.extTriggerTable->event_epoch,
-		   tablePtr.extTriggerTable->event_err_type,
-		   tablePtr.extTriggerTable->event_ra,
-		   tablePtr.extTriggerTable->event_ra_err,
-		   tablePtr.extTriggerTable->start_time,
-		   tablePtr.extTriggerTable->start_time_ns,
-		   tablePtr.extTriggerTable->event_type,
-		   tablePtr.extTriggerTable->event_z,
-		   tablePtr.extTriggerTable->event_z_err,
-		   tablePtr.extTriggerTable->notice_comments,
-		   tablePtr.extTriggerTable->notice_id,
-		   tablePtr.extTriggerTable->notice_sequence,
-		   tablePtr.extTriggerTable->notice_time,
-		   tablePtr.extTriggerTable->notice_type,
-		   tablePtr.extTriggerTable->notice_url,
-		   tablePtr.extTriggerTable->obs_fov_dec,
-		   tablePtr.extTriggerTable->obs_fov_dec_width,
-		   tablePtr.extTriggerTable->obs_fov_ra,
-		   tablePtr.extTriggerTable->obs_fov_ra_width,
-		   tablePtr.extTriggerTable->obs_loc_ele,
-		   tablePtr.extTriggerTable->obs_loc_lat,
-		   tablePtr.extTriggerTable->obs_loc_long
-		   );
-	tablePtr.extTriggerTable = tablePtr.extTriggerTable->next;
+        FIRST_TABLE_ROW
+          fprintf( xml->fp, EXT_TRIGGERS_ROW,
+              tablePtr.extTriggerTable->det_alts,
+              tablePtr.extTriggerTable->det_band,
+              tablePtr.extTriggerTable->det_fluence,
+              tablePtr.extTriggerTable->det_fluence_int,
+              tablePtr.extTriggerTable->det_name,
+              tablePtr.extTriggerTable->det_peak,
+              tablePtr.extTriggerTable->det_peak_int,
+              tablePtr.extTriggerTable->det_snr,
+              tablePtr.extTriggerTable->email_time,
+              tablePtr.extTriggerTable->event_dec,
+              tablePtr.extTriggerTable->event_dec_err,
+              tablePtr.extTriggerTable->event_epoch,
+              tablePtr.extTriggerTable->event_err_type,
+              tablePtr.extTriggerTable->event_ra,
+              tablePtr.extTriggerTable->event_ra_err,
+              tablePtr.extTriggerTable->start_time,
+              tablePtr.extTriggerTable->start_time_ns,
+              tablePtr.extTriggerTable->event_type,
+              tablePtr.extTriggerTable->event_z,
+              tablePtr.extTriggerTable->event_z_err,
+              tablePtr.extTriggerTable->notice_comments,
+              tablePtr.extTriggerTable->notice_id,
+              tablePtr.extTriggerTable->notice_sequence,
+              tablePtr.extTriggerTable->notice_time,
+              tablePtr.extTriggerTable->notice_type,
+              tablePtr.extTriggerTable->notice_url,
+              tablePtr.extTriggerTable->obs_fov_dec,
+              tablePtr.extTriggerTable->obs_fov_dec_width,
+              tablePtr.extTriggerTable->obs_fov_ra,
+              tablePtr.extTriggerTable->obs_fov_ra_width,
+              tablePtr.extTriggerTable->obs_loc_ele,
+              tablePtr.extTriggerTable->obs_loc_lat,
+              tablePtr.extTriggerTable->obs_loc_long
+                );
+        tablePtr.extTriggerTable = tablePtr.extTriggerTable->next;
       }
-			break;
+      break;
     default:
       ABORT( status, LIGOLWXMLH_EUTAB, LIGOLWXMLH_MSGEUTAB );
   }

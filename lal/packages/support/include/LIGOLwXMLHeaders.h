@@ -206,6 +206,7 @@ fputs( "      <Column Name=\"search_summarygroup:search_summary:shared_object\" 
 fputs( "      <Column Name=\"search_summarygroup:search_summary:lalwrapper_cvs_tag\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"search_summarygroup:search_summary:lal_cvs_tag\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"search_summarygroup:search_summary:comment\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"search_summarygroup:search_summary:ifos\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"search_summarygroup:search_summary:in_start_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"search_summarygroup:search_summary:in_start_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"search_summarygroup:search_summary:in_end_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
@@ -219,7 +220,7 @@ fputs( "      <Column Name=\"search_summarygroup:search_summary:nnodes\" Type=\"
 fputs( "      <Stream Name=\"search_summarygroup:search_summary:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SEARCH_SUMMARY_ROW \
-"         \"process:process_id:0\",\"standalone\",\" \",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d"
+"         \"process:process_id:0\",\"standalone\",\" \",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d"
 
 #define PRINT_LIGOLW_XML_SEARCH_SUMMVARS(fp) (  \
 fputs( "   <Table Name=\"search_summvarsgroup:search_summvars:table\">\n", fp ) == EOF || \

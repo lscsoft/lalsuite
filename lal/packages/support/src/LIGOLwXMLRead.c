@@ -47,7 +47,7 @@ files.
 \idx{SummValueTableFromLIGOLw()}
 \idx{LALStochasticTableFromLIGOLw()}
 \idx{LALStochSummTableFromLIGOLw()}
-    
+
 \subsubsection*{Description}
 
 The routine \verb+LALCreateMetaTableDir+ constructs a \verb+MetaTableDirectory+
@@ -57,107 +57,107 @@ information.  This then allows other routines to parse the contents of an XML
 file and correctly interpret the entries.  Currently, this has been implemented
 only for the \verb+sngl_burst+ and \verb+sim_burst+ tables.  When reading these
 tables, a call is made to \verb+LALCreateMetaTableDir+.  For all other tables,
-the directory is constructed internally by the reading code.
+  the directory is constructed internally by the reading code.
 
-The routine \verb+LALSnglBurstTableFromLIGOLw+ reads in a \verb+single_burst+
-table from a LIGOLwXML file  specified in \verb+fileName+; \verb+eventHead+
-provides a pointer to the head of a linked list of \verb+SnglBurstTable+s
-containing the events.  The routine is passed the \verb+fileName+ of an XML file
-containing a \verb+sngl_burst+ table.  First, the table is opened using
-\verb+MetaioOpenTable+.  Then a directory of the table is generated using
-\verb+LALCreateMetaTableDir+.  Rows of the table are read in sequentially from
-the file.  Each entry in the row is stored in the appopriate entry of a
-\verb+SnglBurstTable+ which is appended to the end of a linked list of such
-tables.  When all rows have been read in, the file is closed using
-\verb+MetaioClose+.  \verb+eventHead+ is set to point to the head of the linked
-list of \verb+SnglBurstTable+s.  
+  The routine \verb+LALSnglBurstTableFromLIGOLw+ reads in a \verb+single_burst+
+  table from a LIGOLwXML file  specified in \verb+fileName+; \verb+eventHead+
+  provides a pointer to the head of a linked list of \verb+SnglBurstTable+s
+  containing the events.  The routine is passed the \verb+fileName+ of an XML file
+  containing a \verb+sngl_burst+ table.  First, the table is opened using
+  \verb+MetaioOpenTable+.  Then a directory of the table is generated using
+  \verb+LALCreateMetaTableDir+.  Rows of the table are read in sequentially from
+  the file.  Each entry in the row is stored in the appopriate entry of a
+  \verb+SnglBurstTable+ which is appended to the end of a linked list of such
+  tables.  When all rows have been read in, the file is closed using
+  \verb+MetaioClose+.  \verb+eventHead+ is set to point to the head of the linked
+  list of \verb+SnglBurstTable+s.  
 
-The routine \verb+LALSimBurstTableFromLIGOLw+ reads in a \verb+sim_burst+ table
-from the LIGOLwXML file specified in \verb+fileName+; \verb+eventHead+ provides a pointer to the head of
-a linked list of \verb+SimBurstTables+ containing the events.  It operates in a
-similar manner to \verb+LALSnglBurstTableFromLIGOLw+.  Additionally, a
-\verb+startTime+ and \verb+stopTime+ are be specified.  Only simulated events
-occuring between these times are returned.  If the \verb+endTime+ is set to
-zero, then all events are returned.
+  The routine \verb+LALSimBurstTableFromLIGOLw+ reads in a \verb+sim_burst+ table
+  from the LIGOLwXML file specified in \verb+fileName+; \verb+eventHead+ provides a pointer to the head of
+  a linked list of \verb+SimBurstTables+ containing the events.  It operates in a
+  similar manner to \verb+LALSnglBurstTableFromLIGOLw+.  Additionally, a
+  \verb+startTime+ and \verb+stopTime+ are be specified.  Only simulated events
+  occuring between these times are returned.  If the \verb+endTime+ is set to
+  zero, then all events are returned.
 
-The routine \verb+LALSnglInspiralTableFromLIGOLw+ reads in a
-\verb+sngl_inspiral+ table from the LIGOLwXML file specified in \verb+fileName+.
-It returns the number of triggers read in and \verb+eventHead+ provides a
-pointer to the head of a linked list of \verb+SnglInspiralTable+s containing the
-events.  It will return all events between the \verb+startEvent+ and
-\verb+stopEvent+; if these are set to 0 and -1 respectively, all events are
-returned.
+  The routine \verb+LALSnglInspiralTableFromLIGOLw+ reads in a
+  \verb+sngl_inspiral+ table from the LIGOLwXML file specified in \verb+fileName+.
+  It returns the number of triggers read in and \verb+eventHead+ provides a
+  pointer to the head of a linked list of \verb+SnglInspiralTable+s containing the
+  events.  It will return all events between the \verb+startEvent+ and
+  \verb+stopEvent+; if these are set to 0 and -1 respectively, all events are
+  returned.
 
-The routine \verb+InspiralTmpltBankFromLIGOLw+ reads in a \verb+sngl_inspiral+
-table from the LIGOLwXML file specified in \verb+fileName+. It returns the
-number of templates read in and \verb+bankHead+ provides a pointer to the head
-of a linked list of \verb+InspiralTemplate+s containing the templates read in.
-It will return all events between the \verb+startTmplt+ and \verb+stopTmplt+; if
-these are set to 0 and -1 respectively, all events are returned.  Although a
-\verb+sngl_inspiral+ table is read in, only those entries relevant for an
-InspiralTemplate are read in and stored.
+  The routine \verb+InspiralTmpltBankFromLIGOLw+ reads in a \verb+sngl_inspiral+
+  table from the LIGOLwXML file specified in \verb+fileName+. It returns the
+  number of templates read in and \verb+bankHead+ provides a pointer to the head
+  of a linked list of \verb+InspiralTemplate+s containing the templates read in.
+  It will return all events between the \verb+startTmplt+ and \verb+stopTmplt+; if
+  these are set to 0 and -1 respectively, all events are returned.  Although a
+  \verb+sngl_inspiral+ table is read in, only those entries relevant for an
+  InspiralTemplate are read in and stored.
 
-The routine \verb+SimInspiralTableFromLIGOLw+ reads in a \verb+sim_inspiral+
-table from the LIGOLwXML file specified in \verb+fileName+.  It returns the
-number of rows read in and \verb+SimHead+ provides a pointer to the head of a
-linked list of \verb+SimInspiralTable+s containing the events.  Additionally, a
-\verb+startTime+ and \verb+endTime+ are specified.  Only simulated events
-occuring between these times are returned.  If the \verb+endTime+ is set to
-zero, then all events are returned.
+  The routine \verb+SimInspiralTableFromLIGOLw+ reads in a \verb+sim_inspiral+
+  table from the LIGOLwXML file specified in \verb+fileName+.  It returns the
+  number of rows read in and \verb+SimHead+ provides a pointer to the head of a
+  linked list of \verb+SimInspiralTable+s containing the events.  Additionally, a
+  \verb+startTime+ and \verb+endTime+ are specified.  Only simulated events
+  occuring between these times are returned.  If the \verb+endTime+ is set to
+  zero, then all events are returned.
 
-The routine \verb+SearchSummaryTableFromLIGOLw+ reads in a \verb+search_summary+
-table from the LIGOLwXML file specified in \verb+fileName+.  It returns the
-number of rows read in and \verb+sumHead+ provides a pointer to the head of a
-linked list of \verb+SearchSummaryTable+s.
+  The routine \verb+SearchSummaryTableFromLIGOLw+ reads in a \verb+search_summary+
+  table from the LIGOLwXML file specified in \verb+fileName+.  It returns the
+  number of rows read in and \verb+sumHead+ provides a pointer to the head of a
+  linked list of \verb+SearchSummaryTable+s.
 
-The routine \verb+SummValueTableFromLIGOLw+ reads in a \verb+summ_value+
-table from the LIGOLwXML file specified in \verb+fileName+.  It returns the
-number of rows read in and \verb+sumHead+ provides a pointer to the head of a
-linked list of \verb+SummValueTable+s.
+  The routine \verb+SummValueTableFromLIGOLw+ reads in a \verb+summ_value+
+  table from the LIGOLwXML file specified in \verb+fileName+.  It returns the
+  number of rows read in and \verb+sumHead+ provides a pointer to the head of a
+  linked list of \verb+SummValueTable+s.
 
-The routine \verb+LALStochasticTableFromLIGOLw+ reads in a
-\verb+stochastic_table+ table from the LIGOLwXML file specified in
-\verb+fileName+.  It returns the number of rows read in and
-\verb+stochHead+ provides a pointer to the head of a linked list of
-\verb+StochasticTable+s.
+  The routine \verb+LALStochasticTableFromLIGOLw+ reads in a
+  \verb+stochastic_table+ table from the LIGOLwXML file specified in
+  \verb+fileName+.  It returns the number of rows read in and
+  \verb+stochHead+ provides a pointer to the head of a linked list of
+  \verb+StochasticTable+s.
 
-The routine \verb+LALStochSummTableFromLIGOLw+ reads in a
-\verb+stoch_summ_table+ table from the LIGOLwXML file specified in
-\verb+fileName+.  It returns the number of rows read in and
-\verb+stochSummHead+ provides a pointer to the head of a linked list of
-\verb+StochSummTable+s.
+  The routine \verb+LALStochSummTableFromLIGOLw+ reads in a
+  \verb+stoch_summ_table+ table from the LIGOLwXML file specified in
+  \verb+fileName+.  It returns the number of rows read in and
+  \verb+stochSummHead+ provides a pointer to the head of a linked list of
+  \verb+StochSummTable+s.
 
 
-\subsubsection*{Algorithm}
+  \subsubsection*{Algorithm}
 
-None.
+  None.
 
-\subsubsection*{Uses}
-Functions in the Metaio library:
-\begin{itemize}
-\item \verb+MetaioFindColumn+
-\item \verb+MetaioGetRow+
-\item \verb+MetaioOpenTable+
-\item \verb+MetaioClose+
-\end{itemize}
-\subsubsection*{Notes}
- 
-%% Any relevant notes.
- 
-\vfill{\footnotesize\input{LIGOLwXMLReadCV}}
+  \subsubsection*{Uses}
+  Functions in the Metaio library:
+  \begin{itemize}
+  \item \verb+MetaioFindColumn+
+  \item \verb+MetaioGetRow+
+  \item \verb+MetaioOpenTable+
+  \item \verb+MetaioClose+
+  \end{itemize}
+  \subsubsection*{Notes}
 
-</lalLaTeX>
+  %% Any relevant notes.
+
+  \vfill{\footnotesize\input{LIGOLwXMLReadCV}}
+
+  </lalLaTeX>
 #endif
 
-/* <lalVerbatim file="LIGOLwXMLReadCP"> */
-void
-LALCreateMetaTableDir(
-    LALStatus              *status,
-    MetaTableDirectory    **tableDir,
-    const MetaioParseEnv    env,
-    MetadataTableType       table
-    )
-/* </lalVerbatim> */
+  /* <lalVerbatim file="LIGOLwXMLReadCP"> */
+  void
+  LALCreateMetaTableDir(
+      LALStatus              *status,
+      MetaTableDirectory    **tableDir,
+      const MetaioParseEnv    env,
+      MetadataTableType       table
+      )
+  /* </lalVerbatim> */
 {
   INT4 i;
 
@@ -274,13 +274,13 @@ LALCreateMetaTableDir(
 }
 
 #define CLOBBER_EVENTS \
-    while ( *eventHead ); \
-    { \
-      thisEvent = *eventHead; \
-      *eventHead = (*eventHead)->next; \
-      LALFree( thisEvent ); \
-      thisEvent = NULL; \
-    }
+  while ( *eventHead ); \
+{ \
+  thisEvent = *eventHead; \
+  *eventHead = (*eventHead)->next; \
+  LALFree( thisEvent ); \
+  thisEvent = NULL; \
+}
 
 /* <lalVerbatim file="LIGOLwXMLReadCP"> */
 void
@@ -708,7 +708,7 @@ LALSnglInspiralTableFromLIGOLw (
     if ( (tableDir[i].pos = MetaioFindColumn( env, tableDir[i].name )) < 0 )
     {
       fprintf( stderr, "unable to find column %s\n", tableDir[i].name );
-      
+
       if ( ! strcmp(tableDir[i].name, "event_id") )
       {
         fprintf( stderr, 
@@ -764,7 +764,7 @@ LALSnglInspiralTableFromLIGOLw (
         REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
         INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
         UINT8 i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
-        
+
         if ( tableDir[j].idx == 0 )
         {
           LALSnprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), 
@@ -963,13 +963,13 @@ LALSnglInspiralTableFromLIGOLw (
 #undef CLOBBER_EVENTS
 
 #define CLOBBER_BANK \
-    while ( *bankHead ); \
-    { \
-      thisTmplt = *bankHead; \
-      *bankHead = (*bankHead)->next; \
-      LALFree( thisTmplt ); \
-      thisTmplt = NULL; \
-    }
+  while ( *bankHead ); \
+{ \
+  thisTmplt = *bankHead; \
+  *bankHead = (*bankHead)->next; \
+  LALFree( thisTmplt ); \
+  thisTmplt = NULL; \
+}
 
 /* <lalVerbatim file="LIGOLwXMLReadCP"> */
 int
@@ -1019,7 +1019,7 @@ InspiralTmpltBankFromLIGOLw (
     fprintf( stderr, "non-null pointer passed as pointer to template bank" );
     return -1;
   }
-  
+
 
   /* open the procress_params table from the bank file */
   mioStatus = MetaioOpenTable( env, fileName, "process_params" );
@@ -1056,7 +1056,7 @@ InspiralTmpltBankFromLIGOLw (
   }
 
   MetaioClose( env );
-  
+
   /* open the sngl_inspiral table template bank file */
   mioStatus = MetaioOpenTable( env, fileName, "sngl_inspiral" );
   if ( mioStatus )
@@ -1110,7 +1110,7 @@ InspiralTmpltBankFromLIGOLw (
         MetaioClose( env );
         return -1;
       }
-      
+
       /* parse the contents of the row into the InspiralTemplate structure */
       for ( j = 0; tableDir[j].name; ++j )
       {
@@ -1186,7 +1186,7 @@ InspiralTmpltBankFromLIGOLw (
         thisTmplt->mu = thisTmplt->mass1 * thisTmplt->mass2 / 
           thisTmplt->totalMass;
       }
-      
+
       /* set the match determined from the bank generation process params */
       thisTmplt->minMatch = minMatch;
 
@@ -1209,13 +1209,13 @@ InspiralTmpltBankFromLIGOLw (
 }
 
 #define CLOBBER_SIM \
-    while ( *simHead ); \
-    { \
-      thisSim = *simHead; \
-      *simHead = (*simHead)->next; \
-      LALFree( thisSim ); \
-      thisSim = NULL; \
-    }
+  while ( *simHead ); \
+{ \
+  thisSim = *simHead; \
+  *simHead = (*simHead)->next; \
+  LALFree( thisSim ); \
+  thisSim = NULL; \
+}
 
 /* <lalVerbatim file="LIGOLwXMLReadCP"> */
 int
@@ -1298,7 +1298,7 @@ SimInspiralTableFromLIGOLw (
     fprintf( stderr, "non-null pointer passed as pointer to simulation list" );
     return -1;
   }
-  
+
   /* open the sim_inspiral table file */
   mioStatus = MetaioOpenTable( env, fileName, "sim_inspiral" );
   if ( mioStatus )
@@ -1357,7 +1357,7 @@ SimInspiralTableFromLIGOLw (
         if ( tableDir[j].idx == 0 )
         {
           LALSnprintf(thisSim->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
-            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
         }    
         else if ( tableDir[j].idx == 1 )    
         {
@@ -1414,7 +1414,7 @@ SimInspiralTableFromLIGOLw (
         else if ( tableDir[j].idx == 14 )
         {
           LALSnprintf(thisSim->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR),
-            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
         }
         else if ( tableDir[j].idx == 15 )
         {
@@ -1448,7 +1448,7 @@ SimInspiralTableFromLIGOLw (
         {
           thisSim->coa_phase = r4colData;
         } 
-	else if ( tableDir[j].idx == 23 )
+        else if ( tableDir[j].idx == 23 )
         {
           thisSim->polarization = r4colData;
         }
@@ -1563,7 +1563,7 @@ SimInspiralTableFromLIGOLw (
           return -1;
         }
       }
-      
+
       /* increase the count of rows parsed */
       ++nrows;       
     }
@@ -1599,16 +1599,17 @@ SearchSummaryTableFromLIGOLw (
   MetaTableDirectory tableDir[] =
   {
     {"comment",                 -1, 0},
-    {"in_start_time",           -1, 1},
-    {"in_start_time_ns",        -1, 2},
-    {"in_end_time",             -1, 3},
-    {"in_end_time_ns",          -1, 4},
-    {"out_start_time",          -1, 5},
-    {"out_start_time_ns",       -1, 6},
-    {"out_end_time",            -1, 7},
-    {"out_end_time_ns",         -1, 8},
-    {"nevents",                 -1, 9},
-    {"nnodes",                  -1, 10},
+    {"ifos",                    -1, 1},
+    {"in_start_time",           -1, 2},
+    {"in_start_time_ns",        -1, 3},
+    {"in_end_time",             -1, 4},
+    {"in_end_time_ns",          -1, 5},
+    {"out_start_time",          -1, 6},
+    {"out_start_time_ns",       -1, 7},
+    {"out_end_time",            -1, 8},
+    {"out_end_time_ns",         -1, 9},
+    {"nevents",                 -1, 10},
+    {"nnodes",                  -1, 11},
     {NULL,                       0, 0}
   };
 
@@ -1623,7 +1624,7 @@ SearchSummaryTableFromLIGOLw (
     fprintf( stderr, "non-null pointer passed as pointer to search summary" );
     return -1;
   }
-  
+
   /* open the search_summary table in the file file */
   mioStatus = MetaioOpenTable( env, fileName, "search_summary" );
   if ( mioStatus )
@@ -1639,8 +1640,17 @@ SearchSummaryTableFromLIGOLw (
     if ( (tableDir[i].pos = MetaioFindColumn( env, tableDir[i].name )) < 0 )
     {
       fprintf( stderr, "unable to find column %s\n", tableDir[i].name );
-      MetaioClose(env);
-      return -1;
+
+      if ( ! strcmp(tableDir[i].name, "ifos") )
+      {
+        fprintf( stderr, 
+            "The ifos column is not populated, reading from process table\n");
+      }
+      else
+      {
+        MetaioClose(env);
+        return -1;
+      }
     }
   }
 
@@ -1663,41 +1673,51 @@ SearchSummaryTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 1 )
       {
-        (*sumHead)->in_start_time.gpsSeconds = intData;
+        if ( tableDir[j].pos > 0 )
+        {
+          LALSnprintf( (*sumHead)->ifos, 
+              LIGOMETA_COMMENT_MAX * sizeof(CHAR), "%s", 
+              env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+        }
       }
+
       else if ( tableDir[j].idx == 2 )
       {
-        (*sumHead)->in_start_time.gpsNanoSeconds = intData;
+        (*sumHead)->in_start_time.gpsSeconds = intData;
       }
       else if ( tableDir[j].idx == 3 )
       {
-        (*sumHead)->in_end_time.gpsSeconds = intData;
+        (*sumHead)->in_start_time.gpsNanoSeconds = intData;
       }
       else if ( tableDir[j].idx == 4 )
       {
-        (*sumHead)->in_end_time.gpsNanoSeconds = intData;
+        (*sumHead)->in_end_time.gpsSeconds = intData;
       }
       else if ( tableDir[j].idx == 5 )
       {
-        (*sumHead)->out_start_time.gpsSeconds = intData;
+        (*sumHead)->in_end_time.gpsNanoSeconds = intData;
       }
       else if ( tableDir[j].idx == 6 )
       {
-        (*sumHead)->out_start_time.gpsNanoSeconds = intData;
+        (*sumHead)->out_start_time.gpsSeconds = intData;
       }
       else if ( tableDir[j].idx == 7 )
       {
-        (*sumHead)->out_end_time.gpsSeconds = intData;
+        (*sumHead)->out_start_time.gpsNanoSeconds = intData;
       }
       else if ( tableDir[j].idx == 8 )
       {
-        (*sumHead)->out_end_time.gpsNanoSeconds = intData;
+        (*sumHead)->out_end_time.gpsSeconds = intData;
       }
       else if ( tableDir[j].idx == 9 )
       {
-        (*sumHead)->nevents = intData;
+        (*sumHead)->out_end_time.gpsNanoSeconds = intData;
       }
       else if ( tableDir[j].idx == 10 )
+      {
+        (*sumHead)->nevents = intData;
+      }
+      else if ( tableDir[j].idx == 11 )
       {
         (*sumHead)->nnodes = intData;
       }
@@ -1723,18 +1743,51 @@ SearchSummaryTableFromLIGOLw (
 
   /* we have sucesfully parsed table */
   MetaioClose( env );
+
+  /* populate the ifos field from the process table if it was not populated */
+  for ( j = 1; tableDir[j].name; ++j )
+  {
+    if ( tableDir[j].idx == 1 && tableDir[j].pos < 0 )
+    {
+      int ifosProcess;
+      mioStatus = MetaioOpenTable( env, fileName, "process" );
+      if ( mioStatus )
+      {
+        fprintf( stderr, "error opening process table from file %s\n", 
+            fileName );
+        return -1;
+      }
+
+      /* figure out where the ifos column is */
+      if ( (ifosProcess = MetaioFindColumn( env, "ifos" )) < 0 )
+      {
+        fprintf( stderr, "unable to find ifos column in process table\n" );
+        MetaioClose(env);
+        return -1;
+      }
+
+      /* write ifos from the process table into the search summary structure*/
+      while ( (mioStatus = MetaioGetRow(env)) == 1 )
+      {
+        LALSnprintf( (*sumHead)->ifos, LIGOMETA_COMMENT_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[ifosProcess].data.lstring.data );
+      }
+      MetaioClose( env );
+      break;
+    }
+  }
   return nrows;  
 }
 
 
 #define CLOBBER_VAL \
-    while ( *sumHead ); \
-    { \
-      thisValue = *sumHead; \
-      *sumHead = (*sumHead)->next; \
-      LALFree( thisValue ); \
-      thisValue = NULL; \
-    }
+  while ( *sumHead ); \
+{ \
+  thisValue = *sumHead; \
+  *sumHead = (*sumHead)->next; \
+  LALFree( thisValue ); \
+  thisValue = NULL; \
+}
 
 
 /* <lalVerbatim file="LIGOLwXMLReadCP"> */
@@ -1775,7 +1828,7 @@ SummValueTableFromLIGOLw (
     fprintf( stderr, "non-null pointer passed as pointer to summ value" );
     return -1;
   }
-  
+
   /* open the summ_value table in the file file */
   mioStatus = MetaioOpenTable( env, fileName, "summ_value" );
   if ( mioStatus )
@@ -1804,12 +1857,12 @@ SummValueTableFromLIGOLw (
     if ( ! *sumHead )
     {
       thisValue = *sumHead = (SummValueTable *) 
-    LALCalloc( 1, sizeof(SummValueTable) );
+        LALCalloc( 1, sizeof(SummValueTable) );
     }
     else
     {
       thisValue = thisValue->next = (SummValueTable *) 
-          LALCalloc( 1, sizeof(SummValueTable) );
+        LALCalloc( 1, sizeof(SummValueTable) );
     }
     if ( ! thisValue )
     {
@@ -1849,13 +1902,13 @@ SummValueTableFromLIGOLw (
       else if ( tableDir[j].idx == 5 )
       {
         LALSnprintf( thisValue->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
-          "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 6 )
       {
         LALSnprintf( thisValue->name, LIGOMETA_SUMMVALUE_NAME_MAX * 
-          sizeof(CHAR), "%s",
-          env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+            sizeof(CHAR), "%s",
+            env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 7 )
       {
@@ -1864,8 +1917,8 @@ SummValueTableFromLIGOLw (
       else if ( tableDir[j].idx == 8 )
       {
         LALSnprintf( thisValue->comment, LIGOMETA_SUMMVALUE_NAME_MAX * 
-          sizeof(CHAR), "%s",
-          env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+            sizeof(CHAR), "%s",
+            env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else
       {
@@ -1895,13 +1948,13 @@ SummValueTableFromLIGOLw (
 #undef CLOBBER_VAL
 
 #define CLOBBER_STOCH_VAL \
-    while (*stochHead); \
-    { \
-      thisValue = *stochHead; \
-      *stochHead = (*stochHead)->next; \
-      LALFree( thisValue ); \
-      thisValue = NULL; \
-    }
+  while (*stochHead); \
+{ \
+  thisValue = *stochHead; \
+  *stochHead = (*stochHead)->next; \
+  LALFree( thisValue ); \
+  thisValue = NULL; \
+}
 
 /* <lalVerbatim file="LIGOLwXMLReadCP"> */
 int
@@ -2076,13 +2129,13 @@ LALStochasticTableFromLIGOLw (
 #undef CLOBBER_STOCH_VAL
 
 #define CLOBBER_STOCH_SUMM_VAL \
-    while (*stochSummHead); \
-    { \
-      thisValue = *stochSummHead; \
-      *stochSummHead = (*stochSummHead)->next; \
-      LALFree( thisValue ); \
-      thisValue = NULL; \
-    }
+  while (*stochSummHead); \
+{ \
+  thisValue = *stochSummHead; \
+  *stochSummHead = (*stochSummHead)->next; \
+  LALFree( thisValue ); \
+  thisValue = NULL; \
+}
 
 /* <lalVerbatim file="LIGOLwXMLReadCP"> */
 int
@@ -2258,13 +2311,13 @@ LALStochSummTableFromLIGOLw (
 
 
 #define CLOBBER_EVENTS \
-    while ( *eventHead ); \
-    { \
-      thisEvent = *eventHead; \
-      *eventHead = (*eventHead)->next; \
-      LALFree( thisEvent ); \
-      thisEvent = NULL; \
-    }
+  while ( *eventHead ); \
+{ \
+  thisEvent = *eventHead; \
+  *eventHead = (*eventHead)->next; \
+  LALFree( thisEvent ); \
+  thisEvent = NULL; \
+}
 
 
 
@@ -2410,140 +2463,140 @@ LALExtTriggerTableFromLIGOLw (
           LALSnprintf( thisEvent->det_fluence, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }  
-	else if ( tableDir[j].idx == 3 )
+        else if ( tableDir[j].idx == 3 )
         {
           LALSnprintf( thisEvent->det_fluence_int, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }  
-	else if ( tableDir[j].idx == 4 )
+        else if ( tableDir[j].idx == 4 )
         {
           LALSnprintf( thisEvent->det_name, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
-	else if ( tableDir[j].idx == 5 )
+        else if ( tableDir[j].idx == 5 )
         {
           LALSnprintf( thisEvent->det_peak, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }  
-	else if ( tableDir[j].idx == 6 )
+        else if ( tableDir[j].idx == 6 )
         {
           LALSnprintf( thisEvent->det_peak_int, LIGOMETA_STD * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }  
-	else if ( tableDir[j].idx == 7 )
-	  {
-	    LALSnprintf( thisEvent->det_snr, LIGOMETA_STD * sizeof(CHAR),
-			 "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-	  } 
-	else if ( tableDir[j].idx == 8 )
-	  {
-	    thisEvent->email_time = i4colData;
-	  }
-	else if ( tableDir[j].idx == 9 )
-	  {
-	    thisEvent->event_dec = r4colData;
-	  }
-	else if ( tableDir[j].idx == 10 )
-	  {
-	    thisEvent->event_dec_err = r4colData;
-	  }
-	else if ( tableDir[j].idx == 11 )
-	  {  
-	    LALSnprintf( thisEvent->event_epoch, LIGOMETA_STD * sizeof(CHAR),
-			 "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-	  }
-	else if ( tableDir[j].idx == 12 )
-	  {
-	    LALSnprintf( thisEvent->event_err_type, LIGOMETA_STD * sizeof(CHAR),
-			 "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-	  }
-	else if ( tableDir[j].idx == 13 )
-	  {
-	    thisEvent->event_ra = r4colData;
-	  }
-	else if ( tableDir[j].idx == 14 )
-	  {
-	    thisEvent->event_ra_err = r4colData;
-	  }
-	else if ( tableDir[j].idx == 15 )
-	  {
-	    thisEvent->start_time = i4colData;
-	    /*  printf("start time:%d\n",i4colData); */
-	  }
-	else if ( tableDir[j].idx == 16 )
-	  {
-	    thisEvent->start_time_ns = i4colData;
-	  }	
-	else if ( tableDir[j].idx == 17 )
-	  {
-	    LALSnprintf( thisEvent->event_type, LIGOMETA_STD * sizeof(CHAR),
-			 "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-	  }
-	else if ( tableDir[j].idx == 18 )
-	  {
-	    thisEvent->event_z = r4colData;
-	  }
-	else if ( tableDir[j].idx == 19 )
-	  {
-	    thisEvent->event_z_err = r4colData;
-	  }
-	else if ( tableDir[j].idx == 20 )
-	  {
-	    LALSnprintf( thisEvent->notice_comments, LIGOMETA_STD * sizeof(CHAR),
-			 "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-	  }	
-	else if ( tableDir[j].idx == 21 )
-	  {
-	    LALSnprintf( thisEvent->notice_id, LIGOMETA_STD * sizeof(CHAR),
-			 "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-	  }
-	else if ( tableDir[j].idx == 22 )
-	  {
-	    LALSnprintf( thisEvent->notice_sequence, LIGOMETA_STD * sizeof(CHAR),
-			 "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-	  }
-	else if ( tableDir[j].idx == 23 )
-	  {
-	    thisEvent->notice_time = i4colData;
-	  }
-	else if ( tableDir[j].idx == 24 )
-	  {
-	    LALSnprintf( thisEvent->notice_type, LIGOMETA_STD * sizeof(CHAR),
-			 "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-	  }
-	else if ( tableDir[j].idx == 25 )
-	  {
-	    LALSnprintf( thisEvent->notice_url, LIGOMETA_STD * sizeof(CHAR),
-			 "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-	  }	
+        else if ( tableDir[j].idx == 7 )
+        {
+          LALSnprintf( thisEvent->det_snr, LIGOMETA_STD * sizeof(CHAR),
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+        } 
+        else if ( tableDir[j].idx == 8 )
+        {
+          thisEvent->email_time = i4colData;
+        }
+        else if ( tableDir[j].idx == 9 )
+        {
+          thisEvent->event_dec = r4colData;
+        }
+        else if ( tableDir[j].idx == 10 )
+        {
+          thisEvent->event_dec_err = r4colData;
+        }
+        else if ( tableDir[j].idx == 11 )
+        {  
+          LALSnprintf( thisEvent->event_epoch, LIGOMETA_STD * sizeof(CHAR),
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+        }
+        else if ( tableDir[j].idx == 12 )
+        {
+          LALSnprintf( thisEvent->event_err_type, LIGOMETA_STD * sizeof(CHAR),
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+        }
+        else if ( tableDir[j].idx == 13 )
+        {
+          thisEvent->event_ra = r4colData;
+        }
+        else if ( tableDir[j].idx == 14 )
+        {
+          thisEvent->event_ra_err = r4colData;
+        }
+        else if ( tableDir[j].idx == 15 )
+        {
+          thisEvent->start_time = i4colData;
+          /*  printf("start time:%d\n",i4colData); */
+        }
+        else if ( tableDir[j].idx == 16 )
+        {
+          thisEvent->start_time_ns = i4colData;
+        }	
+        else if ( tableDir[j].idx == 17 )
+        {
+          LALSnprintf( thisEvent->event_type, LIGOMETA_STD * sizeof(CHAR),
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+        }
+        else if ( tableDir[j].idx == 18 )
+        {
+          thisEvent->event_z = r4colData;
+        }
+        else if ( tableDir[j].idx == 19 )
+        {
+          thisEvent->event_z_err = r4colData;
+        }
+        else if ( tableDir[j].idx == 20 )
+        {
+          LALSnprintf( thisEvent->notice_comments, LIGOMETA_STD * sizeof(CHAR),
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+        }	
+        else if ( tableDir[j].idx == 21 )
+        {
+          LALSnprintf( thisEvent->notice_id, LIGOMETA_STD * sizeof(CHAR),
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+        }
+        else if ( tableDir[j].idx == 22 )
+        {
+          LALSnprintf( thisEvent->notice_sequence, LIGOMETA_STD * sizeof(CHAR),
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+        }
+        else if ( tableDir[j].idx == 23 )
+        {
+          thisEvent->notice_time = i4colData;
+        }
+        else if ( tableDir[j].idx == 24 )
+        {
+          LALSnprintf( thisEvent->notice_type, LIGOMETA_STD * sizeof(CHAR),
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+        }
+        else if ( tableDir[j].idx == 25 )
+        {
+          LALSnprintf( thisEvent->notice_url, LIGOMETA_STD * sizeof(CHAR),
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+        }	
         else if ( tableDir[j].idx == 26 )
-	  {
-	    thisEvent->obs_fov_dec = r4colData;
-	  }
+        {
+          thisEvent->obs_fov_dec = r4colData;
+        }
         else if ( tableDir[j].idx == 27 )
-	  {
-	    thisEvent->obs_fov_dec_width = r4colData;
-	  }
+        {
+          thisEvent->obs_fov_dec_width = r4colData;
+        }
         else if ( tableDir[j].idx == 28 )
-	  {
-	    thisEvent->obs_fov_ra = r4colData;
-	  }
+        {
+          thisEvent->obs_fov_ra = r4colData;
+        }
         else if ( tableDir[j].idx == 29 )
-	  {
-	    thisEvent->obs_fov_ra_width = i4colData;
-	  }
+        {
+          thisEvent->obs_fov_ra_width = i4colData;
+        }
         else if ( tableDir[j].idx == 30 )
-	  {
-	    thisEvent->obs_loc_ele = r4colData;
-	  }
+        {
+          thisEvent->obs_loc_ele = r4colData;
+        }
         else if ( tableDir[j].idx == 31 )
-	  {
-	    thisEvent->obs_loc_lat = r4colData;
-	  }
+        {
+          thisEvent->obs_loc_lat = r4colData;
+        }
         else if ( tableDir[j].idx == 32 )
-	  {
-	    thisEvent->obs_loc_long = r4colData;
-	  }
+        {
+          thisEvent->obs_loc_long = r4colData;
+        }
         else
         {
           CLOBBER_EVENTS;
@@ -2561,14 +2614,14 @@ LALExtTriggerTableFromLIGOLw (
      because that file is generated corrupted (by just adding new triggers
      in new lines */
   /*
-  if ( mioStatus == -1 )
-  {
-    fprintf( stderr, "error parsing after row %d\n", i );
-    CLOBBER_EVENTS;
-    MetaioClose( env );
-    return -1;
-  }
-  */
+     if ( mioStatus == -1 )
+     {
+     fprintf( stderr, "error parsing after row %d\n", i );
+     CLOBBER_EVENTS;
+     MetaioClose( env );
+     return -1;
+     }
+   */
 
   /* we have sucesfully parsed temples */
   MetaioClose( env );
