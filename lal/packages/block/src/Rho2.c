@@ -373,11 +373,11 @@ const	INT4		two = 2;
 		fom->data[k - 2] = fom->data[k - 2] + temp->data[k - 2];
 
 		/*  fom = exp(fom)*sqrt(2*pi)  */
-		fom->data[k - 2] = exp( fom->data[k - 2] ) * sqrt(2 * LAL_PI);
+		fom->data[k - 2] = fom->data[k - 2] + log(2 * LAL_PI)/2.0;
 
 		/*  fom = fom.*rootRatio  */
-		rootRatio = sqrt(((REAL8)(N))/(k * (N - k)));
-		fom->data[k - 2] = fom->data[k - 2]* rootRatio;
+		rootRatio = ((REAL8)(N))/(k * (N - k));
+		fom->data[k - 2] = fom->data[k - 2] + log( rootRatio ) / 2.0;
        	}
 
 	LALDCreateVector( status->statusPtr, &fomWithoutMargins, fom->length - (2 * (*marginOfExclusion)));
@@ -392,9 +392,16 @@ const	INT4		two = 2;
 	LALDMax( status->statusPtr, rpeak, fomWithoutMargins, index);
         CHECKSTATUSPTR( status );
 
+	for( k = 0; k < (INT4)(fomWithoutMargins->length); k++ )
+	  {
+	    fomWithoutMargins->data[k] = exp(fomWithoutMargins->data[k]);
+	  }	
+
 	/*  r = sum(fom)  */
 	LALDSum( status->statusPtr, result, fomWithoutMargins);
 	CHECKSTATUSPTR( status );
+
+	(*result) = log((*result));
 
 	/*  ndx = ndx + 2  */
 	(*index) = (*index) + 1;
