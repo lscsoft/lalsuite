@@ -10,7 +10,7 @@ zero-pole-gain representation.
 
 \item[Synopsis]
 \verb$lal_ZPG2Transfer$ [\verb$-z nz z_1 ... z_nz$] [\verb$-p np p_1 .... p_np$] 
-                         [\verb$-g gain$] [\verb$-f npoints fmin fmax$]
+                         [\verb$-g gain$] [\verb$-f npoints fmin fmax$] [\verb$-t$]
                          [\verb$-o outfile$] [\verb$-i ilwdfile$]
                          
 \item[Description]
@@ -31,6 +31,10 @@ The number of zeros \verb$np$ followed
 by a space and a white space list of \emph{real} poles specified in units of Hz.
 \item[\texttt{-g gain}] 
 The gain of the filter.
+\item[\texttt{-t}]
+If this flag is used,  then the ilwd will indicate units of
+counts/attostrain.  The user must correctly choose the zeros, poles,
+and gains,  it is not handled automatically.
 \item[\texttt{-f npoints fmin fmax}] 
 Information about the frequency series.  \verb$npoints$ is the number
 of points in the series,  \verb$fmin$ is the lowest frequency to be

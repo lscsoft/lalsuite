@@ -28,7 +28,7 @@ NRCSID( RESPONSEC, "$Id$" );
 /* Usage format string. */
 #define USAGE "Usage: %s [-z nz z_1 ... z_nz] [-p np p_1 .... p_np] 
                          [-g gain] [-f npoints fmin fmax] [-o outfile]
-                         [-i ilwdfile] \n"
+                         [-i ilwdfile] [-t] \n"
 
 /* Macros for printing errors and testing subroutines. */
 #define ERROR( code, msg, statement )                                \
@@ -63,6 +63,7 @@ int main(int argc, char **argv)
   FILE *fp = NULL;                /* generic file pointer */
   REAL4 fmax=1024.0;              /* max freq */
   REAL4 fmin;
+  INT4  response=1;               /* compute response if 1, transfer if 0 */
 
   /*  Create memory for the transfer function */
   calrec.transfer = (COMPLEX8FrequencySeries *)LALMalloc( 
@@ -98,6 +99,10 @@ int main(int argc, char **argv)
         LALPrintError( USAGE, *argv );
         return RESPONSEC_EARG;
       }
+    }
+    else if ( !strcmp( argv[arg], "-t" ) ) {
+	arg++;
+	response = 0;
     }
     /* Parse zeros option. */
     else if ( !strcmp( argv[arg], "-z" ) ) {
@@ -196,12 +201,21 @@ int main(int argc, char **argv)
       return RESPONSEC_EFILE;
     }
     fprintf( fp, ilwdTop );
-    fprintf( fp, "        <real_8 name='start_freq' units='hz'>%16.16e</real_8>\n",0.0);
+    fprintf( fp, "        <real_8 name='start_freq' units='hz'>%16.16e</real_8>\n",
+        0.0);
     fprintf( fp, "        <real_8 name='stop_freq' units='hz'>%16.16e</real_8>\n",
         fmax);
     fprintf( fp, "        <real_8 name='freq:step_size' units='hz'>%16.16e</real_8>\n",
         calrec.transfer->deltaF);
-    fprintf( fp, "        <complex_8 dims='%i' name='data' units='strain/volt'>",npoints);
+    if ( response ){
+      fprintf( fp, "        <complex_8 dims='%i' name='data' units='strain/count'>",
+          npoints);
+    }
+    else {
+      fprintf( fp, "        <complex_8 dims='%i' name='data' units='counts/attostrain'>",
+          npoints);
+    }
+
     for(i=0;i<npoints;i++){
       REAL4 re, im;
       re = calrec.transfer->data->data[i].re;
