@@ -89,7 +89,9 @@ void ckpt_and_exit( void );
 extern int vrbflg;                      /* verbocity of lal function    */
 
 /* checkpointing */
-INT4 dataCheckpoint = 0;                /* condor checkpoint after data */
+INT4  dataCheckpoint = 0;               /* condor checkpoint after data */
+CHAR  ckptPath[FILENAME_MAX];           /* input and ckpt file path     */
+CHAR  outputPath[FILENAME_MAX];         /* output data file path        */
 
 /* input data parameters */
 INT8  gpsStartTimeNS   = 0;             /* input data GPS start time ns */
@@ -288,6 +290,10 @@ int main( int argc, char *argv[] )
   searchsumm.searchSummaryTable = (SearchSummaryTable *)
     calloc( 1, sizeof(SearchSummaryTable) );
   searchsummvars.searchSummvarsTable = NULL;
+
+  /* zero out the checkpoint and output paths */
+  memset( ckptPath, 0, FILENAME_MAX * sizeof(CHAR) );
+  memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );
 
   /* call the argument parse and check function */
   arg_parse_check( argc, argv, procparams );
@@ -850,6 +856,11 @@ int main( int argc, char *argv[] )
 #ifdef LALAPPS_CONDOR
     condor_compress_ckpt = 0;
     LALSnprintf( fname, sizeof(fname)/sizeof(*fname), "%s.ckpt", fileName );
+    if ( ckptPath[0] )
+    {
+      LALSnprintf( fname, sizeof(fname)/sizeof(*fname), 
+          "%s/%s", ckptPath, fname );
+    }
     if ( vrbflg ) fprintf( stdout, "checkpointing to file %s\n", fname );
     init_image_with_file_name( fname );
     ckpt_and_exit();
@@ -1694,26 +1705,37 @@ int main( int argc, char *argv[] )
    */
 
 
-  if ( vrbflg ) fprintf( stdout, "writing frame data to disk\n" );
-
   /* write the output frame */
   if ( writeRawData || writeFilterData || writeResponse || writeSpectrum ||
       writeRhosq || writeChisq )
   {
-    LALSnprintf( fname, sizeof(fname), "%s.gwf", fileName );
+    LALSnprintf( fname, sizeof(fname) / sizeof(*fname), "%s.gwf", fileName );
+    if ( outputPath[0] )
+    {
+      LALSnprintf( fname, sizeof(fname) / sizeof(*fname), 
+          "%s/%s", outputPath, fname );
+    }
+    if ( vrbflg ) fprintf( stdout, "writing frame data to %s... ", fname );
     frOutFile = FrFileONew( fname, 0 );
     FrameWrite( outFrame, frOutFile );
     FrFileOEnd( frOutFile );
+    if ( vrbflg ) fprintf( stdout, "done\n" );
   }
 
-  if ( vrbflg ) fprintf( stdout, "writing xml data to disk\n" );
 
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
   LALSnprintf( fname, sizeof(fname), "%s.xml", fileName );
+  if ( outputPath[0] )
+  {
+    LALSnprintf( fname, sizeof(fname) / sizeof(*fname), 
+        "%s/%s", outputPath, fname );
+  }
+  if ( vrbflg ) fprintf( stdout, "writing XML data to %s...\n", fname );
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
 
   /* write the process table */
+  if ( vrbflg ) fprintf( stdout, "  process table...\n" );
   LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
         &accuracy ), &status );
@@ -1725,6 +1747,7 @@ int main( int argc, char *argv[] )
   free( proctable.processTable );
 
   /* write the process params table */
+  if ( vrbflg ) fprintf( stdout, "  process_params table...\n" );
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ), 
       &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, procparams, 
@@ -1738,6 +1761,7 @@ int main( int argc, char *argv[] )
   }
   
   /* write the search summary table */
+  if ( vrbflg ) fprintf( stdout, "  search_summary table...\n" );
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
         search_summary_table ), &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm, 
@@ -1747,6 +1771,7 @@ int main( int argc, char *argv[] )
   /* write the search summvars table */
   if ( numTmplts )
   {
+    if ( vrbflg ) fprintf( stdout, "  search_summvars table...\n" );
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
           search_summvars_table ), &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsummvars, 
@@ -1763,6 +1788,7 @@ int main( int argc, char *argv[] )
   /* write the summ_value table with the standard candle distance */
   if ( ! bankSim )
   {
+    if ( vrbflg ) fprintf( stdout, "  summ_value table...\n" );
     LALSnprintf( summvalue.summValueTable->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
     summvalue.summValueTable->version = 0;
@@ -1793,7 +1819,7 @@ int main( int argc, char *argv[] )
     SnglInspiralTable *lastEvent = NULL;
 
     /* sort the inspiral events by time */
-    if ( vrbflg ) fprintf( stdout, "sorting events by time... " );
+    if ( vrbflg ) fprintf( stdout, "  sorting events by time... " );
     LAL_CALL( LALSortSnglInspiral( &status, &(savedEvents.snglInspiralTable),
           LALCompareSnglInspiralByTime), &status );
     if ( vrbflg ) fprintf( stdout, "done\n" );
@@ -1803,7 +1829,7 @@ int main( int argc, char *argv[] )
     if ( trigStartTimeNS || trigEndTimeNS )
     {
       if ( vrbflg ) fprintf( stdout, 
-          "discarding triggers outside trig start/end time... " );
+          "  discarding triggers outside trig start/end time... " );
 
       while ( event )
       {
@@ -1845,6 +1871,7 @@ int main( int argc, char *argv[] )
     /* if we haven't thrown all the triggers away, write sngl_inspiral table */
     if ( savedEvents.snglInspiralTable )
     {
+      if ( vrbflg ) fprintf( stdout, "  sngl_inspiral table...\n" );
       LAL_CALL( LALBeginLIGOLwXMLTable( &status, 
             &results, sngl_inspiral_table ), &status );
       LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, 
@@ -1862,6 +1889,7 @@ int main( int argc, char *argv[] )
   /* write the template bank simulation results to the xml */
   if ( bankSim && simResults.simInstParamsTable )
   {
+    if ( vrbflg ) fprintf( stdout, "  sim_inst table...\n" );
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, 
           &results, sim_inst_params_table ), &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, simResults, 
@@ -1878,6 +1906,7 @@ int main( int argc, char *argv[] )
 
   /* close the output xml file */
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
+  if ( vrbflg ) fprintf( stdout, "done. XML file closed\n" );
 
   /* free the rest of the memory, check for memory leaks and exit */
   if ( injectionFile ) free ( injectionFile ); 
@@ -1974,6 +2003,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --sim-maximum-mass M         set maximum mass of bank injected signal to M\n"\
 "\n"\
 "  --data-checkpoint            checkpoint and exit after data is read in\n"\
+"  --checkpoint-path PATH       write checkpoint file under PATH\n"\
+"  --output-path PATH           write output data to PATH\n"\
 "\n"\
 "  --write-raw-data             write raw data to a frame file\n"\
 "  --write-filter-data          write data that is passed to filter to a frame\n"\
@@ -2039,6 +2070,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"sim-minimum-mass",        required_argument, 0,                'U'},
     {"sim-maximum-mass",        required_argument, 0,                'W'},
     {"gaussian-noise",          required_argument, 0,                'G'},
+    {"checkpoint-path",         required_argument, 0,                'N'},
+    {"output-path",             required_argument, 0,                'O'},
     {"debug-level",             required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
@@ -2075,8 +2108,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:M:n:o:p:F:"
-        "q:r:R:s:t:H:T:I:u:v:w:x:U:V:G:X:Y:K:L:z:Z:", 
+        "A:B:C:D:F:G:H:I:J:K:L:M:N:O:R:T:U:V:W:X:Y:Z:"
+        "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:z:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -2349,7 +2382,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         fLow = (REAL4) atof( optarg );
         if ( fLow < 0 )
         {
-          fprintf( stdout, "invalid argument to --%s:\n"
+          fprintf( stderr, "invalid argument to --%s:\n"
               "low frequency cutoff is less than 0 Hz: "
               "(%f Hz specified)\n",
               long_options[option_index].name, fLow );
@@ -2559,7 +2592,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         highPassFreq = (REAL4) atof( optarg );
         if ( highPassFreq <= 0 )
         {
-          fprintf( stdout, "invalid argument to --%s:\n"
+          fprintf( stderr, "invalid argument to --%s:\n"
               "high pass filter frequency must be greater than 0 Hz: "
               "(%f Hz specified)\n",
               long_options[option_index].name, highPassFreq );
@@ -2572,7 +2605,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         highPassOrder = (INT4) atoi( optarg );
         if ( highPassOrder <= 0 )
         {
-          fprintf( stdout, "invalid argument to --%s:\n"
+          fprintf( stderr, "invalid argument to --%s:\n"
               "high pass filter order must be greater than 0: "
               "(%d specified)\n",
               long_options[option_index].name, highPassOrder );
@@ -2585,7 +2618,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         highPassAtten = (REAL4) atof( optarg );
         if ( highPassAtten < 0.0 || highPassAtten > 1.0 )
         {
-          fprintf( stdout, "invalid argument to --%s:\n"
+          fprintf( stderr, "invalid argument to --%s:\n"
               "high pass attenuation must be in the range [0:1]: "
               "(%f specified)\n",
               long_options[option_index].name, highPassAtten );
@@ -2689,7 +2722,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         bankMinMass = (REAL4) atof( optarg );
         if ( bankMinMass <= 0 )
         {
-          fprintf( stdout, "invalid argument to --%s:\n"
+          fprintf( stderr, "invalid argument to --%s:\n"
               "miniumum component mass must be > 0: "
               "(%f solar masses specified)\n",
               long_options[option_index].name, bankMinMass );
@@ -2702,7 +2735,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         bankMaxMass = (REAL4) atof( optarg );
         if ( bankMaxMass <= 0 )
         {
-          fprintf( stdout, "invalid argument to --%s:\n"
+          fprintf( stderr, "invalid argument to --%s:\n"
               "maxiumum component mass must be > 0: "
               "(%f solar masses specified)\n",
               long_options[option_index].name, bankMaxMass );
@@ -2715,7 +2748,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         gaussVar = (REAL4) atof( optarg );
         if ( gaussVar < 0 )
         {
-          fprintf( stdout, "invalid argument to --%s:\n"
+          fprintf( stderr, "invalid argument to --%s:\n"
               "variance of gaussian noise must be >= 0: "
               "(%f specified)\n",
               long_options[option_index].name, gaussVar );
@@ -2727,6 +2760,28 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
             "WARNING: replacing input data with white gaussian noise\n"
             "WARNING: replacing response function with unity\n" );
         break;
+
+      case 'N':
+        if ( LALSnprintf( ckptPath, FILENAME_MAX * sizeof(CHAR), 
+              "%s", optarg ) < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s\n"
+              "local path %s too long: string truncated\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+
+      case 'O':
+        if ( LALSnprintf( outputPath, FILENAME_MAX * sizeof(CHAR), 
+              "%s", optarg ) < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s\n"
+              "output path %s too long: string truncated\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
 
       case 'z':
         set_debug_level( optarg );
