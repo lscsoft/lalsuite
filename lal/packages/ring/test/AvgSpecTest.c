@@ -47,6 +47,7 @@ int main( void )
 
   spar.segsize = segsz;
   spar.fwdplan = NULL;
+  spar.wintype = Hann;
   LALCreateForwardRealFFTPlan( &status, &spar.fwdplan, segsz, 0 );
 
   LALMedianSpectrum( &status, &spec, &data, &spar );
