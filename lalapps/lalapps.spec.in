@@ -1,0 +1,46 @@
+%define _prefix @prefix@
+%define _mandir %{_prefix}/share/man
+%define _sysconfdir %{_prefix}/etc
+Name: @PACKAGE@
+Version: @VERSION@
+Release: 1
+Summary: LSC Algorithm Library Applications
+Copyright: LSC
+Group: LAL
+Source: %{name}-%{version}.tar.gz
+URL: http://www.lsc-group.phys.uwm.edu/daswg/projects/lalapps.html
+Packager: Duncan Brown <dbrown@ligo.caltech.edu>
+BuildRoot: %{_tmppath}/%{name}-%{version}-root
+Requires: gsl fftw3 libframe libmetaio lal
+Prefix: %{_prefix}
+
+%description
+The LSC Algorithm Library Applications for gravitational wave data analysis.
+This package contains applications that are built on tools in the LSC
+Algorithm Library.
+
+%prep
+%setup -q
+
+%build
+nightly_version=@NIGHTLY_VERSION@
+%configure --enable-nightly=${nightly_version:-no} --disable-debug
+%{__make}
+
+%install
+%makeinstall
+
+%post
+ldconfig
+
+%postun
+ldconfig
+
+%clean
+[ ${RPM_BUILD_ROOT} != "/" ] && rm -Rf ${RPM_BUILD_ROOT}
+rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
+
+%files
+%defattr(-,root,root)
+%{_bindir}/lalapps_version
+%{_bindir}/lalapps_*
