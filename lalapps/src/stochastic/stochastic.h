@@ -7,8 +7,8 @@
  * $Id$
  */
 
-#ifndef _PIPELINE_H
-#define _PIPELINE_H
+#ifndef _STOCHASTIC_H
+#define _STOCHASTIC_H
 
 #include <lal/Calibration.h>
 #include <lal/DetectorSite.h>
@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-NRCSID (PIPELINEH, "$Id$" );
+NRCSID (STOCHASTICH, "$Id$" );
 
 typedef struct tagStreamPair {
 	REAL4TimeSeries *streamOne;
@@ -77,4 +77,4 @@ void SinusoidalSplice(REAL4Vector **longData, REAL4Vector **shortData,
 }
 #endif
 
-#endif /* _PIPELINE_H */
+#endif /* _STOCHASTIC_H */
