@@ -7,7 +7,7 @@
 #define N 100000
 
 /* max number of lines in FILE2 (sorted list of data) */
-#define FN 200000
+#define FN 400000
 
 /* number of SFTs for each job file to produce */
 #define SFTPERJOB 50
