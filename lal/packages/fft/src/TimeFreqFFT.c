@@ -737,9 +737,6 @@ LALTimeFreqRealFFT(
     RealFFTPlan             *plan
     )
 { /* </lalVerbatim> */
-  LALUnitPair unitPair;
-  UINT4 k;
-
   INITSTATUS( status, "LALTimeFreqRealFFT", TIMEFREQFFTC );
 
   ASSERT( plan, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
@@ -770,9 +767,6 @@ LALFreqTimeRealFFT(
     RealFFTPlan             *plan
     )
 { /* </lalVerbatim> */
-  LALUnitPair unitPair;
-  UINT4 j;
-
   INITSTATUS( status, "LALFreqTimeRealFFT", TIMEFREQFFTC );
   ATTATCHSTATUSPTR( status );
 
@@ -890,7 +884,7 @@ LALREAL4AverageSpectrum (
   REAL4                 psdNorm = 0;      /* factor to multiply windows data */
   REAL4                 fftRe, fftIm;     /* real and imag parts of fft      */
   REAL4                *s;                /* work space for computing mean   */
-  REAL4                *psdSeg;           /* storage for individual specta   */
+  REAL4                *psdSeg = NULL;    /* storage for individual specta   */
   LALUnit               unit;
   LALUnitPair           pair;
   /* RAT4                  negRootTwo = { -1, 1 }; */

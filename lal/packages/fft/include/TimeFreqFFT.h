@@ -168,6 +168,62 @@ LALCreateRealDFTParams (
         );
 
 /* XXX this should be removed XXX */
+
+/*
+ *
+ * XLAL Functions
+ *
+ */
+
+int XLALREAL4TimeFreqFFT(
+    COMPLEX8FrequencySeries *freq, 
+    REAL4TimeSeries         *time,
+    REAL4FFTPlan            *plan
+    );
+
+int XLALREAL4FreqTimeFFT(
+    REAL4TimeSeries         *time,
+    COMPLEX8FrequencySeries *freq, 
+    REAL4FFTPlan            *plan
+    );
+
+int XLALREAL8TimeFreqFFT(
+    COMPLEX16FrequencySeries *freq, 
+    REAL8TimeSeries         *time,
+    REAL8FFTPlan            *plan
+    );
+
+int XLALREAL8FreqTimeFFT(
+    REAL8TimeSeries         *time,
+    COMPLEX16FrequencySeries *freq, 
+    REAL8FFTPlan            *plan
+    );
+
+int XLALCOMPLEX8TimeFreqFFT(
+    COMPLEX8FrequencySeries *freq,
+    COMPLEX8TimeSeries      *time,
+    COMPLEX8FFTPlan         *plan
+    );
+
+int XLALCOMPLEX8FreqTimeFFT(
+    COMPLEX8TimeSeries      *time,
+    COMPLEX8FrequencySeries *freq,
+    COMPLEX8FFTPlan         *plan
+    );
+
+int XLALCOMPLEX16TimeFreqFFT(
+    COMPLEX16FrequencySeries *freq,
+    COMPLEX16TimeSeries      *time,
+    COMPLEX16FFTPlan         *plan
+    );
+
+int XLALCOMPLEX16FreqTimeFFT(
+    COMPLEX16TimeSeries      *time,
+    COMPLEX16FrequencySeries *freq,
+    COMPLEX16FFTPlan         *plan
+    );
+
+
 void
 LALDestroyRealDFTParams (
         LALStatus                        *status, 
