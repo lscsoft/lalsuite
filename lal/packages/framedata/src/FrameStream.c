@@ -155,6 +155,10 @@ static struct FrFile *URLFrFileINew( FrFileInfo *file )
       }
     }
     frfile = FrFileINew( path );
+    if ( ! frfile && lalDebugLevel )
+    {
+      LALPrintError( "Error opening frame file %s\n", path );
+    }
   }
   else
   {
@@ -935,7 +939,7 @@ LALFrNext(
     FrStream    *stream
     )
 { /* </lalVerbatim> */
-  INITSTATUS( status, "LALNextFrame", FRAMESTREAMC );  
+  INITSTATUS( status, "LALFrNext", FRAMESTREAMC );  
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   if ( stream->state & LAL_FR_ERR )
   {
