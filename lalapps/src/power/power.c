@@ -196,7 +196,7 @@ static void print_usage(char *program)
 "	 --gps-start-time-ns <nanoseconds>\n" \
 "	[--help]\n" \
 "	[--injection-file <file name>]\n" \
-"	 --low-freq-cutoff <flow>\n" \
+"	 --low-freq-cutoff <Hz>\n" \
 "	[--mdc-cache <cache file>]\n" \
 "	[--mdc-channel <channel name>]\n" \
 "	 --min-freq-bin <nfbin>\n" \
@@ -345,6 +345,12 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 			got_all_arguments = FALSE;
 		}
 	}
+
+	if(!cachefile && !dirname && (options.noiseAmpl < 0.0)) {
+		fprintf(stderr, "%s: must provide at least one of --frame-cache, --frame-dir or --noise-amplitude\n", prog);
+		arg_is_missing = TRUE;
+	}
+	
 	return(got_all_arguments);
 }
 
@@ -936,6 +942,8 @@ static REAL4TimeSeries *get_time_series(
 	FrCache *frameCache = NULL;
 
 	/* Open frame stream */
+	if(cachefile && dirname && options.verbose)
+		fprintf(stderr, "%s: warning: --frame-cache ignored (using --frame-dir)\n");
 	if(dirname)
 		LAL_CALL(LALFrOpen(stat, &stream, dirname, "*.gwf"), stat);
 	else if(cachefile) {
