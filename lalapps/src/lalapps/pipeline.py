@@ -197,6 +197,7 @@ class CondorDAGJob(CondorJob):
     CondorJob.__init__(self, universe, executable, 1)
     self.__notifcation = 'never'
     self.__var_args = []
+    self.__bad_macro_chars = re.compile(r'-_]')
 
   def add_var_arg(self, arg):
     """
@@ -207,7 +208,8 @@ class CondorDAGJob(CondorJob):
     """
     if arg not in self.__var_args:
       self.__var_args.append(arg)
-      self.add_arg(arg,'$(' + arg + ')')
+      macro = self.__bad_macro_chars( r'', arg )
+      self.add_arg(arg,'$(' + macro + ')')
 
 
 
@@ -229,6 +231,7 @@ class CondorDAGNode:
     self.__vars = {}
     self.__retry = 0
     self.__parents = []
+    self.__bad_macro_chars = re.compile(r'-_]')
     self.set_name()
 
   def __repr__(self):
@@ -257,7 +260,8 @@ class CondorDAGNode:
     var = option name.
     value = value of the option for this node in the DAG.
     """
-    self.__vars[var] = value
+    macro = self.__bad_macro_chars( r'', arg )
+    self.__vars[macro] = value
     self.__job.add_var_arg(var)
 
   def set_retry(self, retry):
