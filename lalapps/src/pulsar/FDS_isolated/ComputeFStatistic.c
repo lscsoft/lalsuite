@@ -2188,7 +2188,7 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
   REAL8Vector *Sp=NULL, *RngMdnSp=NULL;   /* |SFT|^2 and its rngmdn  */
   REAL8 B;                          /* SFT Bandwidth */
   REAL8 deltaT,norm,*N, *Sp1;
-  INT2 windowSize=20;                  /* Running Median Window Size*/
+  INT2 windowSize=50;                  /* Running Median Window Size*/
   REAL4 xre,xim,xreNorm,ximNorm;
 
 
