@@ -1,4 +1,3 @@
-
 ## Process this file with automake to produce Makefile.in
 # $Id$
 
@@ -11,7 +10,10 @@ else
 FRAMEPROGRAMS = 
 endif
 
-bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF lalapps_polka lalapps_FstatShapeTestLAL ComputeFStatisticBinary  compareFstats $(FRAMEPROGRAMS) ComputeFStatistic_v2 lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh
+bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF \
+	lalapps_polka lalapps_FstatShapeTestLAL compareFstats ComputeFStatistic_v2 \
+	lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh  \
+	$(FRAMEPROGRAMS) 
 
 CFSsources = 	ComputeFStatistic.h		\
 		rngmed.c rngmed.h clusters.c clusters.h  	\
@@ -36,8 +38,6 @@ lalapps_makeInvetofile_SOURCES=makeInvetofile.c
 lalapps_extractSFTband_SOURCES=extractSFTband.c
 
 lalapps_FindSh_SOURCES=FindSh.c FindSh.h clusters.c clusters.h rngmed.c rngmed.h
-
-ComputeFStatisticBinary_SOURCES = ComputeFStatisticBinary.c ComputeFStatisticBinary.h rngmed.c rngmed.h clusters.c clusters.h
 
 compareFstats_SOURCES = compareFstats.c
 
