@@ -523,6 +523,7 @@ if playground_only:
 elif slide_time:
   inca_job.add_opt('all-data',' ')
   s_inca_job.add_opt('all-data',' ')
+  lt_inca_job.add_opt('all_data',' ')
   sire_job.add_opt('all-data',' ')
   sire_inj_job.add_opt('all-data',' ')
   sire_cl_inj_job.add_opt('all-data',' ')
@@ -536,7 +537,7 @@ else:
 
 #############################################################################
 # add the slide argument to inca if we are doing a background estimation
-if slide_time:
+if slide_time or quick_slide:
   lt_inca_job.add_opt('slide-time',str(slide_time))
   if slide_time_ns:
     lt_inca_job.add_opt('slide-time-ns',str(slide_time))
@@ -1225,8 +1226,18 @@ if quick_slide:
   s2start = 729273613
   s2end = 734367613
 
-  # do inca to get coincidence between H1 triggers and TAMA triggers
 
+  # setup the 2 sire filed
+  sire_ligo = inspiral.SireNode(sire_job)
+  sire_tama = inspiral.SireNode(sire_job)
+  
+  fname_ligo = 'LIGO-TAMA-COINCIDENT-TRIGGERS' + quick_slide + '.input'
+  fname_tama = 'TAMA-LIGO-COINCIDENT-TRIGGERS' + quick_slide + '.input'
+  
+  fl = open(fname_ligo, 'w')
+  ft = open(fname_tama, 'w')
+  
+  # do inca to get coincidence between H1 triggers and TAMA triggers
   for ifo in ['H1', 'H2', 'L1', 'H1H2']:
     lt_inca = inspiral.IncaNode(lt_inca_job)
     lt_inca.set_start(s2start)
@@ -1252,6 +1263,28 @@ if quick_slide:
       lt_inca.add_var_arg(ifo + '-INCA_SINGLE_IFO.xml')
     lt_inca.add_var_arg('TAMA-INSPIRAL.xml')
     dag.add_node(lt_inca) 
+
+    sire_ligo.add_parent( lt_inca )
+    sire_tama.add_parent( lt_inca )
+
+    fl.write('%s\n' % lt_inca.get_dag_node().get_output_a())
+    ft.write('%s\n' % lt_inca.get_dag_node().get_output_b())
+    
+  fl.close()
+  ft.close()
+
+  # do two sires to get the LIGO triggers and the TAMA triggers
+  sire_ligo.add_var_opt('input',fname)
+  sire_tama.add_var_opt('input',fname)
+  
+  sire_ligo.set_outputs(fname_ligo,usertag,cluster,slide_time,tama_output)
+  sire_tama.set_outputs(fname_tama,usertag,cluster,slide_time,tama_output)
+
+  dag.add_node(sire_ligo) 
+  dag.add_node(sire_tama) 
+
+
+  
 
 ##############################################################################
 # Write out the DAG, help message and log file
