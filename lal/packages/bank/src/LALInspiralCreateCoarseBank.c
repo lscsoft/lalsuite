@@ -555,6 +555,8 @@ LALInspiralCreatePNCoarseBank(
     ndx1 = 0.4L;
     ndx2 = 2.5L;
     break;
+  case Psi0Psi3:
+    break;
   }
   
   bankParsOld = bankPars;
@@ -835,6 +837,9 @@ LALInspiralCreateBCVBank(
 		(*list)[j].params.tSampling= coarseIn.tSampling;
 		(*list)[j].params.distance =  1.;
 		(*list)[j].params.signalAmplitude= 1.;
+		(*list)[j].params.approximant= BCV;
+		(*list)[j].params.massChoice= psi0Andpsi3;
+		(*list)[j].params.order= twoPN;
 		(*list)[j].metric = metric;
 	}
 
