@@ -202,7 +202,7 @@ LALUnitCompare()
 
 ******************************************************* </lalLaTeX> */ 
 
-/**************************** <lalLaTeX file=StochasticOptimalFilterCB">
+/**************************** <lalLaTeX file="StochasticOptimalFilterCB">
 \bibitem{stochastic:Allen:1997}
   B.~Allen
   ``The stochastic gravity-wave background: sources and detection''
