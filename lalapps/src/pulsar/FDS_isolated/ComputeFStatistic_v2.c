@@ -164,6 +164,7 @@ CHAR *uvar_binarytemplatefile;  /* BINARY-MOD - added for binary template file *
 INT4 uvar_windowsize;          /* BINARY-MOD - added because of shorter SFT's */
 REAL8 uvar_Freq;
 REAL8 uvar_overSampling;
+BOOLEAN uvar_useInterpolation;
 REAL8 uvar_FreqBand;
 REAL8 uvar_Alpha;
 REAL8 uvar_dAlpha;
@@ -240,12 +241,12 @@ INT4 EstimateSignalParameters(INT4 * maxIndex);
 INT4 writeFLines(INT4 *maxIndex);
 int compare(const void *ip, const void *jp);
 INT4 writeFaFb(INT4 *maxIndex);
-void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit *scanInit);
 void WriteFStatLog (LALStatus *stat, CHAR *argv[]);
 int ReadBinaryTemplateBank(LALStatus *status);
 
 void NewLALDemod(LALStatus *stat, FStatisticBand **FBand, FFT **input, NewDemodPar *params); 
 void writeCOMPLEX16Vector(LALStatus *stat, COMPLEX16Vector *vect, const CHAR *fname);
+const char *va(const char *format, ...);	/* little var-arg string helper function */
 
 /*----------------------------------------------------------------------*/
 /* some local defines */
@@ -350,16 +351,9 @@ int main(int argc,char *argv[])
     scanInit.skyGridFile = uvar_skyGridFile;
   
     if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
-    /*----------------------------------------------------------------------
-     * Helper function (Yousuke): 
-     * Refine the skyRegion to search only at neighboring grid points of the 
-     * center of the original skyRegion. 
-     *----------------------------------------------------------------------*/
-    if ( uvar_searchNeighbors ) {
-      LAL_CALL ( InitDopplerScanOnRefinedGrid ( &status, &thisScan, &scanInit ), &status );
-    } else {
-      LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status); 
-    }
+
+    LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status); 
+
     /*----------------------------------------------------------------------*/
     if (lalDebugLevel) LALPrintError ("done.\n");
     if ( uvar_outputSkyGrid ) {
@@ -487,24 +481,24 @@ int main(int argc,char *argv[])
 	    {
 	      COMPLEX16Vector *FaRefined = NULL;
 
-	      if (uvar_overSampling == 1)
+	      if ( uvar_useInterpolation && (uvar_overSampling != 1) )
 		{
-		  /*
-		  LAL_CALL (writeCOMPLEX16Vector(&status, FBand->Fa, "Fa_native.dat"), &status);
-		  */
-		  LAL_CALL (refineCOMPLEX16Vector(&status, &FaRefined, FBand->Fa, 2*FBand->Fa->length, uvar_Dterms), 
-			    &status);
-		  /*
-		  LAL_CALL (writeCOMPLEX16Vector(&status, FaRefined, "Fa_refined.dat"), &status);
-		  */
+		  LAL_CALL (refineCOMPLEX16Vector(&status, &FaRefined, FBand->Fa, uvar_overSampling*FBand->Fa->length, uvar_Dterms), &status);
+
+		  if (lalDebugLevel) 
+		    {
+		      LAL_CALL (writeCOMPLEX16Vector(&status, FaRefined, va("Fa_interpolated_%f.dat", uvar_overSampling) ), &status);
+		      LAL_CALL (writeCOMPLEX16Vector(&status, FBand->Fa, "Fa_natural.dat"), &status);
+		    }
 		  LAL_CALL (LALZDestroyVector (&status, &FaRefined), &status);
-		}
-	      else if (uvar_overSampling == 2) {
-		/*
-		LAL_CALL (writeCOMPLEX16Vector(&status, FBand->Fa, "Fa_oversampled_2.dat"), &status);
-		*/
+		  
+		} /* if useInterpolation */
+
+	      if (lalDebugLevel && !uvar_useInterpolation) {
+		LAL_CALL (writeCOMPLEX16Vector(&status, FBand->Fa, va("Fa_oversampled_%f.dat", uvar_overSampling) ), &status);
 	      }
-	    }
+
+	    } /* loopcounter == 0 (interpolation-testing) */
 
 	  /* FIXME: to keep cluster-stuff working, we provide the "translation" from FBand back into old Fstats-struct */
 	  Fstat.F = FBand->F->data;
@@ -624,6 +618,7 @@ initUserVars (LALStatus *stat)
   uvar_Dterms 	= 16;
   uvar_FreqBand = 0.0;
   uvar_overSampling = 2.0;
+  uvar_useInterpolation = FALSE;	/* use LALDemod() for oversampling by default */
 
   uvar_binary=FALSE;       /* BINARY-MOD - Set binary flag to FALSE for safety */
 
@@ -678,7 +673,6 @@ initUserVars (LALStatus *stat)
   LALregINTUserVar(stat,	Dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
   LALregREALUserVar(stat, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
   LALregREALUserVar(stat, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
-  LALregREALUserVar(stat, 	overSampling,	'r', UVAR_OPTIONAL, "Oversampling factor for frequency resolution.");
   LALregREALUserVar(stat, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
   LALregREALUserVar(stat, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
   LALregREALUserVar(stat, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
@@ -712,7 +706,9 @@ initUserVars (LALStatus *stat)
 
   LALregBOOLUserVar(stat,	openDX,	 	 0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
   LALregSTRINGUserVar(stat,     workingDir,     'w', UVAR_OPTIONAL, "Directory to be made the working directory, . is default");
-  LALregBOOLUserVar(stat,	searchNeighbors, 0,  UVAR_OPTIONAL, "Refine the skyregion to search only at neighboring grid points of the center of the original sky region.");
+
+  LALregREALUserVar(stat, 	overSampling,	'r', UVAR_OPTIONAL, "Oversampling factor for frequency resolution.");
+  LALregBOOLUserVar(stat,	useInterpolation, 0, UVAR_OPTIONAL, "Use Interpolation instead of LALDemod() for the oversampling.");
 
 
   DETATCHSTATUSPTR (stat);
@@ -1419,7 +1415,10 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
    */
  if (!uvar_binary)
    {
-     cfg->dFreq = 1.0 / (cfg->tObs*uvar_overSampling);	
+     cfg->dFreq = 1.0 / cfg->tObs;
+     if (! uvar_useInterpolation)
+       cfg->dFreq /= uvar_overSampling;
+
      cfg->FreqImax = (INT4)(uvar_FreqBand/cfg->dFreq + 0.5) + 1;  /*Number of frequency values to calculate F for */
    }
 
