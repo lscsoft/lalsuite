@@ -1551,6 +1551,12 @@ void readDataPair(LALStatus *status,
   memset(dataStreamOne.data->data, 0, \
       dataStreamOne.data->length * sizeof(*dataStreamOne.data->data));
 
+  /* set frame reading mode */
+  LALFrSetMode(status->statusPtr, LAL_FR_SILENT_MODE, frStreamOne);
+  CHECKSTATUSPTR( status );
+  LALFrSetMode(status->statusPtr, LAL_FR_SILENT_MODE, frStreamTwo);
+  CHECKSTATUSPTR( status );
+  
   if (vrbflg)
   {
     fprintf(stdout, "Opening first frame cache...\n");
