@@ -323,6 +323,19 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALSnprintf(xmlFileName, FILENAME_MAX, "%s%s-stochastic-%d-%d.xml", \
       ifoOne, ifoTwo, startTime, endTime);
 
+  /* get output file name base name */
+  if (outputFilePath)
+  {
+    LALSnprintf(outputFilename, FILENAME_MAX, \
+        "%s/%s%s-stochastic-%d-%d", outputFilePath, ifoOne, ifoTwo, \
+        startTime, endTime);
+  }
+  else
+  {
+    LALSnprintf(outputFilename, FILENAME_MAX, "%s%s-stochastic-%d-%d", \
+        ifoOne, ifoTwo, startTime, endTime);
+  }
+
   /* only add a buffer if the data is going to be resample and/or high
    * pass filtered */
   if ((sampleRate == resampleRate) && (high_pass_flag == 0))
@@ -931,10 +944,16 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* initialize parameters for post analysis */
     yOpt = 0;
 
-    /* open output file */
-    LALSnprintf(outputFilename, LALNameLength, \
-        "%s/stat-%s%s-%lld-%lld-%d.dat", outputFilePath, ifoOne, ifoTwo, \
-        startTime, endTime, MCLoop);
+    /* get output filename */
+    if (inject_flag)
+    {
+      LALSnprintf(outputFilename, FILENAME_MAX, "%s-%d.dat", outputFilename, \
+          MCLoop);
+    }
+    else
+    {
+      LALSnprintf(outputFilename, FILENAME_MAX, "%s.dat", outputFilename);
+    }
 
     for (n = 0; n < N; n++)
     {
