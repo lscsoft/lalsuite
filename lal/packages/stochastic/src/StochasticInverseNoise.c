@@ -103,26 +103,27 @@ strncpy()
 NRCSID(STOCHASTICINVERSENOISEC, "$Id$");
 
 void
-LALStochasticInverseNoiseCal( LALStatus                          *status,
-                              StochasticInverseNoiseCalOutput    *output,
-                              const StochasticInverseNoiseInput  *input )
+LALStochasticInverseNoiseCal(
+    LALStatus                         *status,
+    StochasticInverseNoiseCalOutput   *output,
+    const StochasticInverseNoiseInput *input )
 {
-  REAL8          deltaF;
-  REAL8          f0;
-  UINT4          length;
+  REAL8 deltaF;
+  REAL8 f0;
+  UINT4 length;
 
-  REAL4          *sPtrPW, *sPtrIP, *sStopPtr;
-  COMPLEX8       *cPtrR, *cPtrIPHC;
+  REAL4 *sPtrPW, *sPtrIP, *sStopPtr;
+  COMPLEX8 *cPtrR, *cPtrIPHC;
   
-  RAT4        power;
+  RAT4 power;
   LALUnitPair unitPair;
-  LALUnit     wInvNoiseUnits;
+  LALUnit wInvNoiseUnits;
 
   COMPLEX8FrequencySeries hcInvNoise;
 
   /* initialize status structure */
-  INITSTATUS( status, "LALStochasticInverseNoiseCal", STOCHASTICINVERSENOISEC );
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS(status, "LALStochasticInverseNoiseCal", STOCHASTICINVERSENOISEC);
+  ATTATCHSTATUSPTR(status);
 
   /*****************************************************************
    *                                                               *
@@ -130,74 +131,104 @@ LALStochasticInverseNoiseCal( LALStatus                          *status,
    *                                                               *
    *****************************************************************/
 
-
-
   /* check that pointer to input structure is not null */
-  ASSERT( input != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
+  ASSERT(input != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to output structure is not null */
-  ASSERT( output != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
+  ASSERT(output != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
  
   /* check that pointers to members of input structure are not null */
-  ASSERT( wNoise != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
-  ASSERT( wFilter != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
+  ASSERT(wNoise != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  ASSERT(wFilter != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointers to members of output structure are not null */
-  ASSERT( invNoise != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
+  ASSERT(invNoise != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
   
   
   /* check that pointers to data members of series are not null */
-  ASSERT( wNoise->data != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
-  ASSERT( wFilter->data != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
-  ASSERT( invNoise->data != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
+  ASSERT(wNoise->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  ASSERT(wFilter->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  ASSERT(invNoise->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
   
   /* check that pointers to data-data members of series are not null */
-  ASSERT( wNoise->data->data != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
-  ASSERT( wFilter->data->data != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );  
-  ASSERT( invNoise->data->data != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
-  
+  ASSERT(wNoise->data->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  ASSERT(wFilter->data->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  ASSERT(invNoise->data->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that length is not zero */
   length = wNoise->data->length;
-  ASSERT(length > 0, status, STOCHASTICCROSSCORRELATIONH_EZEROLEN, STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
+  ASSERT(length > 0, status, \
+      STOCHASTICCROSSCORRELATIONH_EZEROLEN, \
+      STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
 
   /* check that lengths of all series match */
-  if ( wFilter->data->length != length ) {
-    ABORT( status, STOCHASTICCROSSCORRELATIONH_EMMLEN, STOCHASTICCROSSCORRELATIONH_MSGEMMLEN );
+  if (wFilter->data->length != length)
+  {
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
-  if ( invNoise->data->length != length ) {
-    ABORT( status, STOCHASTICCROSSCORRELATIONH_EMMLEN, STOCHASTICCROSSCORRELATIONH_MSGEMMLEN );
+  if (invNoise->data->length != length)
+  {
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
-  
 
   /* check that frequency spacing is positive */
   deltaF = wNoise->deltaF;
-  ASSERT(deltaF > 0, status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF, 
-         STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
+  ASSERT(deltaF > 0, status, \
+      STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF, \
+      STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
 
   /* check that frequency spacings of input series match */
-  if ( wFilter->deltaF != deltaF ) {
-    ABORT( status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF );
+  if (wFilter->deltaF != deltaF)
+  {
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
+
   /* set frequency spacing of output series */
   invNoise->deltaF = deltaF;
 
   /* check that initial frequency is non-negative */
   f0 = wNoise->f0;
-   if ( f0 < 0 ) {
-     ABORT( status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
-            STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN );
-   }
+  if (f0 < 0)
+  {
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN, \
+        STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN);
+  }
 
   /* check that initial frequency of input series match */
-  if ( wFilter->f0 != f0 ) {
-    ABORT( status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN );
+  if (wFilter->f0 != f0)
+  {
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
 
   /* set initial frequency of output series */
@@ -207,57 +238,54 @@ LALStochasticInverseNoiseCal( LALStatus                          *status,
   invNoise->epoch = wNoise->epoch;
 
   /*---------------Valid data here---------------*/
-  
 
-  strncpy(invNoise->name,"Calibrated invserse noise PSD",LALNameLength);
-  strncpy(hcInvNoise.name,"half-calibrated invserse noise PSD",LALNameLength);
+  strncpy(invNoise->name, "Calibrated invserse noise PSD", LALNameLength);
+  strncpy(hcInvNoise.name, "half-calibrated invserse noise PSD", LALNameLength);
 
   hcInvNoise.deltaF = deltaF;
   hcInvNoise.f0 = f0;
   hcInvNoise.epoch = wNoise->epoch;
 
   /* allocate memory for half calibrated inverse noise */
-  hcInvNoise.data  = NULL;
-  TRY( LALCCreateVector(status->statusPtr, &(hcInvNoise.data), length), 
-       status );
-  memset( hcInvNoise.data->data, 0, 
-          hcInvNoise.data->length * sizeof(*hcInvNoise.data->data));
+  hcInvNoise.data = NULL;
+  TRY(LALCCreateVector(status->statusPtr, &(hcInvNoise.data), length), status);
+  memset(hcInvNoise.data->data, 0, \
+      hcInvNoise.data->length * sizeof(*hcInvNoise.data->data));
   
   /* unit structure manipulation */
 
   /* Find units of uncalibrated inverse power spectrum */
   power.numerator = -1;
   power.denominatorMinusOne = 0;
-  TRY(LALUnitRaise(status->statusPtr, &wInvNoiseUnits, 
-		   &(wNoise->sampleUnits), &power)
-      , status);
+  TRY(LALUnitRaise(status->statusPtr, &wInvNoiseUnits, \
+        &(wNoise->sampleUnits), &power), status);
 
-  /* multiply by response function units to get half-calibrated inv noise units */
+  /* multiply by response function units to get half-calibrated inv noise
+   * units */
   unitPair.unitOne = &(wFilter->sampleUnits);
   unitPair.unitTwo = &wInvNoiseUnits;
-  TRY(LALUnitMultiply(status->statusPtr, &(hcInvNoise.sampleUnits),
-                      &unitPair)
-      , status);
+  TRY(LALUnitMultiply(status->statusPtr, &(hcInvNoise.sampleUnits), \
+        &unitPair), status);
 
   /* multiply by response function units to get calibrated inv noise units */
   unitPair.unitTwo = &(hcInvNoise.sampleUnits);
-  TRY(LALUnitMultiply(status->statusPtr, &(invNoise->sampleUnits),
-                      &unitPair)
-      , status);
+  TRY(LALUnitMultiply(status->statusPtr, &(invNoise->sampleUnits), \
+        &unitPair), status);
 
   sStopPtr = wNoise->data->data + length;
 
   if (f0 == 0)
   {
-      /* set DC channel to zero */
-      hcInvNoise.data->data[0].re = hcInvNoise.data->data[0].im =
-      invNoise->data->data[0] = 0;
+    /* set DC channel to zero */
+    hcInvNoise.data->data[0].re = 0;
+    hcInvNoise.data->data[0].im = 0;
+    invNoise->data->data[0] = 0;
 
-      /* initialize pointers */
-      sPtrPW = wNoise->data->data + 1;
-      cPtrR = wFilter->data->data + 1;
-      sPtrIP = invNoise->data->data + 1;
-      cPtrIPHC = hcInvNoise.data->data + 1;
+    /* initialize pointers */
+    sPtrPW = wNoise->data->data + 1;
+    cPtrR = wFilter->data->data + 1;
+    sPtrIP = invNoise->data->data + 1;
+    cPtrIPHC = hcInvNoise.data->data + 1;
   } /* if (f0 == 0) */
   else
   {
@@ -268,12 +296,9 @@ LALStochasticInverseNoiseCal( LALStatus                          *status,
     cPtrIPHC = hcInvNoise.data->data;
   }
 
-
-  for ( ;
-        sPtrPW < sStopPtr ;
-        ++sPtrPW, ++cPtrR, ++sPtrIP, ++cPtrIPHC )
+  for (; sPtrPW < sStopPtr ; ++sPtrPW, ++cPtrR, ++sPtrIP, ++cPtrIPHC)
   {
-    *sPtrIP = ( cPtrR->re*cPtrR->re + cPtrR->im*cPtrR->im ) / *sPtrPW;
+    *sPtrIP = (cPtrR->re*cPtrR->re + cPtrR->im*cPtrR->im) / *sPtrPW;
   }
 
   DETATCHSTATUSPTR(status);
@@ -282,25 +307,26 @@ LALStochasticInverseNoiseCal( LALStatus                          *status,
 
 /* <lalVerbatim file="StochasticInverseNoiseCP"> */
 void
-LALStochasticInverseNoise( LALStatus                          *status,
-                           StochasticInverseNoiseOutput       *output,
-                           const StochasticInverseNoiseInput  *input )
+LALStochasticInverseNoise(
+    LALStatus                         *status,
+    StochasticInverseNoiseOutput      *output,
+    const StochasticInverseNoiseInput *input )
 /* </lalVerbatim> */
 {
-  REAL8          deltaF;
-  REAL8          f0;
-  UINT4          length;
+  REAL8 deltaF;
+  REAL8 f0;
+  UINT4 length;
 
-  REAL4          *sPtrPW, *sPtrIP, *sStopPtr;
-  COMPLEX8       *cPtrR, *cPtrIPHC;
+  REAL4 *sPtrPW, *sPtrIP, *sStopPtr;
+  COMPLEX8 *cPtrR, *cPtrIPHC;
 
-  RAT4        power;
+  RAT4 power;
   LALUnitPair unitPair;
-  LALUnit     wInvNoiseUnits;
+  LALUnit wInvNoiseUnits;
 
   /* initialize status structure */
-  INITSTATUS( status, "LALStochasticInverseNoise", STOCHASTICINVERSENOISEC );
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS(status, "LALStochasticInverseNoise", STOCHASTICINVERSENOISEC);
+  ATTATCHSTATUSPTR(status);
 
   /*****************************************************************
    *                                                               *
@@ -308,80 +334,121 @@ LALStochasticInverseNoise( LALStatus                          *status,
    *                                                               *
    *****************************************************************/
 
-
-
   /* check that pointer to input structure is not null */
-  ASSERT( input != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
+  ASSERT(input != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to output structure is not null */
-  ASSERT( output != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
+  ASSERT(output != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
  
   /* check that pointers to members of input structure are not null */
-  ASSERT( wNoise != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
-  ASSERT( wFilter != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
+  ASSERT(wNoise != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  ASSERT(wFilter != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointers to members of output structure are not null */
-  ASSERT( invNoise != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
-  ASSERT( hwInvNoise != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
+  ASSERT(invNoise != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  ASSERT(hwInvNoise != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
   
   /* check that pointers to data members of series are not null */
-  ASSERT( wNoise->data != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
-  ASSERT( wFilter->data != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
-  ASSERT( invNoise->data != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
-  ASSERT( hwInvNoise->data != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
+  ASSERT(wNoise->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  ASSERT(wFilter->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  ASSERT(invNoise->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  ASSERT(hwInvNoise->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointers to data-data members of series are not null */
-  ASSERT( wNoise->data->data != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
-  ASSERT( wFilter->data->data != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );  
-  ASSERT( invNoise->data->data != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
-  ASSERT( hwInvNoise->data->data != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
+  ASSERT(wNoise->data->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  ASSERT(wFilter->data->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  ASSERT(invNoise->data->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  ASSERT(hwInvNoise->data->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that length is not zero */
   length = wNoise->data->length;
-  ASSERT(length > 0, status, STOCHASTICCROSSCORRELATIONH_EZEROLEN, STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
+  ASSERT(length > 0, status, \
+      STOCHASTICCROSSCORRELATIONH_EZEROLEN, \
+      STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
 
   /* check that lengths of all series match */
-  if ( wFilter->data->length != length ) {
-    ABORT( status, STOCHASTICCROSSCORRELATIONH_EMMLEN, STOCHASTICCROSSCORRELATIONH_MSGEMMLEN );
+  if (wFilter->data->length != length)
+  {
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
-  if ( invNoise->data->length != length ) {
-    ABORT( status, STOCHASTICCROSSCORRELATIONH_EMMLEN, STOCHASTICCROSSCORRELATIONH_MSGEMMLEN );
+  if (invNoise->data->length != length)
+  {
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
-  if ( hwInvNoise->data->length != length ) {
-    ABORT( status, STOCHASTICCROSSCORRELATIONH_EMMLEN, STOCHASTICCROSSCORRELATIONH_MSGEMMLEN );
+  if (hwInvNoise->data->length != length)
+  {
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
   /* check that frequency spacing is positive */
   deltaF = wNoise->deltaF;
-  ASSERT(deltaF > 0, status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF, 
-         STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
+  ASSERT(deltaF > 0, status, \
+      STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF, \
+      STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
 
   /* check that frequency spacings of input series match */
-  if ( wFilter->deltaF != deltaF ) {
-    ABORT( status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF );
+  if (wFilter->deltaF != deltaF)
+  {
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
+
   /* set frequency spacing of output series */
   invNoise->deltaF = deltaF;
   hwInvNoise->deltaF = deltaF;
 
   /* check that initial frequency is non-negative */
   f0 = wNoise->f0;
-   if ( f0 < 0 ) {
-     ABORT( status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
-            STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN );
-   }
+  if (f0 < 0)
+  {
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN, \
+        STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN);
+  }
 
   /* check that initial frequency of input series match */
-  if ( wFilter->f0 != f0 ) {
-    ABORT( status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN );
+  if (wFilter->f0 != f0)
+  {
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
 
   /* set initial frequency of output series */
@@ -393,44 +460,44 @@ LALStochasticInverseNoise( LALStatus                          *status,
 
   /*---------------Valid data here---------------*/
   
-  strncpy(invNoise->name,"Calibrated invserse noise PSD",LALNameLength);
-  strncpy(hwInvNoise->name,"half-calibrated invserse noise PSD",LALNameLength);
+  strncpy(invNoise->name, "Calibrated invserse noise PSD", LALNameLength);
+  strncpy(hwInvNoise->name, "half-calibrated invserse noise PSD", \
+      LALNameLength);
 
   /* unit structure manipulation */
 
   /* Find units of uncalibrated inverse power spectrum */
   power.numerator = -1;
   power.denominatorMinusOne = 0;
-  TRY(LALUnitRaise(status->statusPtr, &wInvNoiseUnits, 
-		   &(wNoise->sampleUnits), &power)
-      , status);
+  TRY(LALUnitRaise(status->statusPtr, &wInvNoiseUnits, \
+        &(wNoise->sampleUnits), &power), status);
 
-  /* multiply by response function units to get half-calibrated inv noise units */
+  /* multiply by response function units to get half-calibrated inv noise
+   * units */
   unitPair.unitOne = &(wFilter->sampleUnits);
   unitPair.unitTwo = &wInvNoiseUnits;
-  TRY(LALUnitMultiply(status->statusPtr, &(hwInvNoise->sampleUnits),
-                      &unitPair)
-      , status);
+  TRY(LALUnitMultiply(status->statusPtr, &(hwInvNoise->sampleUnits), \
+        &unitPair), status);
 
   /* multiply by response function units to get calibrated inv noise units */
   unitPair.unitTwo = &(hwInvNoise->sampleUnits);
-  TRY(LALUnitMultiply(status->statusPtr, &(invNoise->sampleUnits),
-                      &unitPair)
-      , status);
+  TRY(LALUnitMultiply(status->statusPtr, &(invNoise->sampleUnits), \
+        &unitPair), status);
 
   sStopPtr = wNoise->data->data + length;
 
   if (f0 == 0)
   {
-      /* set DC channel to zero */
-      hwInvNoise->data->data[0].re = hwInvNoise->data->data[0].im =
-      invNoise->data->data[0] = 0;
+    /* set DC channel to zero */
+    hwInvNoise->data->data[0].re = 0;
+    hwInvNoise->data->data[0].im = 0;
+    invNoise->data->data[0] = 0;
 
-      /* initialize pointers */
-      sPtrPW = wNoise->data->data + 1;
-      cPtrR = wFilter->data->data + 1;
-      sPtrIP = invNoise->data->data + 1;
-      cPtrIPHC = hwInvNoise->data->data + 1;
+    /* initialize pointers */
+    sPtrPW = wNoise->data->data + 1;
+    cPtrR = wFilter->data->data + 1;
+    sPtrIP = invNoise->data->data + 1;
+    cPtrIPHC = hwInvNoise->data->data + 1;
   } /* if (f0 == 0) */
   else
   {
@@ -441,15 +508,13 @@ LALStochasticInverseNoise( LALStatus                          *status,
     cPtrIPHC = hwInvNoise->data->data;
   }
 
-
-  for ( ;
-        sPtrPW < sStopPtr ;
-        ++sPtrPW, ++cPtrR, ++sPtrIP, ++cPtrIPHC )
+  for (; sPtrPW < sStopPtr ; ++sPtrPW, ++cPtrR, ++sPtrIP, ++cPtrIPHC)
   {
-    *sPtrIP = ( cPtrR->re*cPtrR->re + cPtrR->im*cPtrR->im ) / *sPtrPW;
+    *sPtrIP = (cPtrR->re*cPtrR->re + cPtrR->im*cPtrR->im) / *sPtrPW;
     cPtrIPHC->re = cPtrR->re / *sPtrPW;
+
     /* minus sign because of complex conjugate */
-    cPtrIPHC->im = - cPtrR->im / *sPtrPW; 
+    cPtrIPHC->im = -cPtrR->im / *sPtrPW; 
   }
 
   DETATCHSTATUSPTR(status);

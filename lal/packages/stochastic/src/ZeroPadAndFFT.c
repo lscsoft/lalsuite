@@ -136,21 +136,18 @@ NRCSID(ZEROPADANDFFTC,
        "$Id$");
 
 /* <lalVerbatim file="ZeroPadAndFFTCP"> */
-void 
-LALSZeroPadAndFFT(LALStatus                *status, 
-                  COMPLEX8FrequencySeries  *output, 
-                  const REAL4TimeSeries    *input, 
-                  SZeroPadAndFFTParameters *parameters)
+void
+LALSZeroPadAndFFT(
+    LALStatus                *status,
+    COMPLEX8FrequencySeries  *output,
+    const REAL4TimeSeries    *input,
+    SZeroPadAndFFTParameters *parameters)
 /* </lalVerbatim> */
 {
-
-  UINT4            length, fullLength;
-
-  REAL8            deltaT;
-
+  UINT4 length, fullLength;
+  REAL8 deltaT;
   REAL4TimeSeries  hBar;
-
-  REAL4           *sPtr, *sStopPtr, *hBarPtr, *windowPtr;
+  REAL4 *sPtr, *sStopPtr, *hBarPtr, *windowPtr;
 
   /* initialize status structure */
   INITSTATUS(status, "LALSZeroPadAndFFT", ZEROPADANDFFTC);
@@ -159,106 +156,101 @@ LALSZeroPadAndFFT(LALStatus                *status,
   /* ERROR CHECKING --------------------------------------------------- */
 
   /* check that pointer to real timer series for input is non-null */
-  ASSERT(input != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(input != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to data member of real time series for input is 
-     non-null */
-  ASSERT(input->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+   * non-null */
+  ASSERT(input->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that length of data member of real time series for input is 
-     not equal to zero */
+   * not equal to zero */
   length = input->data->length;
-  ASSERT(length != 0, status,
-         STOCHASTICCROSSCORRELATIONH_EZEROLEN,
-         STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
+  ASSERT(length != 0, status, \
+      STOCHASTICCROSSCORRELATIONH_EZEROLEN, \
+      STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
 
   /* check that pointer to data-data member of real time series for input 
-     is non-null */
-  ASSERT(input->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+   * is non-null */
+  ASSERT(input->data->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to parameter structure is non-null */
-  ASSERT(parameters != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(parameters != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to FFT plan parameter is non-null */
-  ASSERT(parameters->fftPlan != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(parameters->fftPlan != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* These checks are only relevant if a window function is specified */
-
   if (parameters->window != NULL)
   {
     /* check that pointer to data member of window function is non-null */
-    ASSERT(parameters->window->data != NULL, status, 
-           STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    ASSERT(parameters->window->data != NULL, status, \
+        STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+        STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
     /* check that window function is same length as input time series */
-    if ( parameters->window->length != length )
+    if (parameters->window->length != length)
     {
-      ABORT(  status,
-              STOCHASTICCROSSCORRELATIONH_EMMLEN,
-              STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+      ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
+          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
     }
   }
 
   /* check that zero-padded output is not shorter than input */
   fullLength = parameters->length;
-
-  if (fullLength < length) {
-    ABORT(  status,
-         STOCHASTICCROSSCORRELATIONH_EMMLEN,
-         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+  if (fullLength < length)
+  {
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
   /* check that pointer to complex frequency series for output is non-null */
-  ASSERT(output != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(output != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* check that pointer to data member of complex frequency series for 
-     output is non-null */
-  ASSERT(output->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  /* check that pointer to data member of complex frequency series for
+   * output is non-null */
+  ASSERT(output->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that length of complex frequency series for output
      is consistent with length of zero-padded input */
-  if ( fullLength/2 + 1 != output->data->length )
+  if (fullLength/2 + 1 != output->data->length)
   {
-    ABORT(  status,
-         STOCHASTICCROSSCORRELATIONH_EMMLEN,
-         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
   /* check that pointer to data-data member of complex frequency series 
-     for output is non-null */
-  ASSERT(output->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+   * for output is non-null */
+  ASSERT(output->data->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
   
   /* check that heterodyning frequency of real frequency series for
-     the input is equal to zero */
+   * the input is equal to zero */
   if (input->f0 != 0)
   {
-     ABORT(status,STOCHASTICCROSSCORRELATIONH_ENONZEROHETERO,
-           STOCHASTICCROSSCORRELATIONH_MSGENONZEROHETERO); 
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_ENONZEROHETERO, \
+           STOCHASTICCROSSCORRELATIONH_MSGENONZEROHETERO);
   }
 
   /* check that frequency spacing is positive */
   deltaT = input->deltaT;
-  ASSERT(deltaT > 0, status, 
-         STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAT,
-         STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAT);
-
+  ASSERT(deltaT > 0, status, \
+      STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAT, \
+      STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAT);
 
   /* EVERYTHING OKAY HERE! -------------------------------------------- */
 
@@ -269,49 +261,50 @@ LALSZeroPadAndFFT(LALStatus                *status,
   /* allocate memory for zero-padded vector */
   TRY(LALSCreateVector(status->statusPtr, &(hBar.data), fullLength), status);
 
-  if ( parameters->window == NULL ) 
+  if (parameters->window == NULL)
   {
-    sPtr = memcpy( hBar.data->data, input->data->data, length*sizeof(REAL4) );
-    if ( sPtr != hBar.data->data )
+    sPtr = memcpy(hBar.data->data, input->data->data, length * sizeof(REAL4));
+    if (sPtr != hBar.data->data)
     {
       TRY(LALSDestroyVector(status->statusPtr, &(hBar.data)), status);
-      ABORT(status, STOCHASTICCROSSCORRELATIONH_EMEMORY,
-            STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
+      ABORT(status, STOCHASTICCROSSCORRELATIONH_EMEMORY, \
+          STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
     }
   }
   else 
   {
     /* window data */
     sStopPtr = input->data->data + input->data->length;
-    for ( sPtr = input->data->data, hBarPtr = hBar.data->data,
-            windowPtr = parameters->window->data ;
-          sPtr < sStopPtr ;
-          ++sPtr, ++hBarPtr, ++windowPtr )
+    for (sPtr = input->data->data, hBarPtr = hBar.data->data, \
+        windowPtr = parameters->window->data ; sPtr < sStopPtr ; \
+        ++sPtr, ++hBarPtr, ++windowPtr)
     {
       *(hBarPtr) = *(sPtr) * *(windowPtr);
     }
   }
 
   /* zero pad */
-  sPtr =
-    memset(hBar.data->data + length, 0, (fullLength - length)*sizeof(REAL4));
-  if ( sPtr != hBar.data->data + length )
+  sPtr = memset(hBar.data->data + length, 0, \
+      (fullLength - length) * sizeof(REAL4));
+
+  if (sPtr != hBar.data->data + length)
   {
     TRY(LALSDestroyVector(status->statusPtr, &(hBar.data)), status);
-    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMEMORY,
-          STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMEMORY, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMEMORY);
   }
   
   /* take DFT */
   LALTimeFreqRealFFT(status->statusPtr, output, &hBar, parameters->fftPlan);
+
   /* Can't use TRY because we have memory allocated */
-  BEGINFAIL( status ) 
+  BEGINFAIL(status)
     TRY(LALSDestroyVector(status->statusPtr, &(hBar.data)), status);
-  ENDFAIL( status ); 
+  ENDFAIL(status); 
 
   /* fill output parameters */
-  strncpy(output->name,"Fourier Transform of Zero-Padded Time Series",
-          LALNameLength);
+  strncpy(output->name, "Fourier Transform of Zero-Padded Time Series", \
+      LALNameLength);
 
   /* clean up */
   TRY(LALSDestroyVector(status->statusPtr, &(hBar.data)), status);
@@ -323,22 +316,19 @@ LALSZeroPadAndFFT(LALStatus                *status,
 } /* SZeroPadAndFFT() */
 
 /* <lalVerbatim file="ZeroPadAndFFTCP"> */
-void 
-LALCZeroPadAndFFT(LALStatus                *status, 
-                  COMPLEX8FrequencySeries  *output, 
-                  const COMPLEX8TimeSeries *input, 
-                  CZeroPadAndFFTParameters *parameters)
+void
+LALCZeroPadAndFFT(
+    LALStatus                *status,
+    COMPLEX8FrequencySeries  *output, 
+    const COMPLEX8TimeSeries *input, 
+    CZeroPadAndFFTParameters *parameters)
 /* </lalVerbatim> */
 {
-
-  UINT4               length, fullLength;
-
-  REAL8               deltaT;
-
+  UINT4 length, fullLength;
+  REAL8 deltaT;
   COMPLEX8TimeSeries  hBar;
-
-  COMPLEX8           *cPtr, *cStopPtr, *hBarPtr;
-  REAL4              *windowPtr;
+  COMPLEX8 *cPtr, *cStopPtr, *hBarPtr;
+  REAL4 *windowPtr;
 
   /* initialize status structure */
   INITSTATUS(status, "LALCZeroPadAndFFT", ZEROPADANDFFTC);
@@ -347,98 +337,93 @@ LALCZeroPadAndFFT(LALStatus                *status,
   /* ERROR CHECKING --------------------------------------------------- */
 
   /* check that pointer to real time series for input is non-null */
-  ASSERT(input != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(input != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to data member of real time series for input is 
-     non-null */
-  ASSERT(input->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+   * non-null */
+  ASSERT(input->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that length of data member of real time series for input is 
-     not equal to zero */
+   * not equal to zero */
   length = input->data->length;
-  ASSERT(length != 0, status,
-         STOCHASTICCROSSCORRELATIONH_EZEROLEN,
-         STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
+  ASSERT(length != 0, status, \
+      STOCHASTICCROSSCORRELATIONH_EZEROLEN, \
+      STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
 
   /* check that pointer to data-data member of real time series for input 
-     is non-null */
-  ASSERT(input->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-
+   * is non-null */
+  ASSERT(input->data->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to parameter structure is non-null */
-  ASSERT(parameters != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(parameters != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to FFT plan parameter is non-null */
-  ASSERT(parameters->fftPlan != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(parameters->fftPlan != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* These checks are only relevant if a window function is specified */
-
   if (parameters->window != NULL)
   {
     /* check that pointer to data member of window function is non-null */
-    ASSERT(parameters->window->data != NULL, status, 
-           STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    ASSERT(parameters->window->data != NULL, status, \
+        STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+        STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     
     /* check that window function is same length as input time series */
-    if ( parameters->window->length != length ) {
-      ABORT(  status,
-              STOCHASTICCROSSCORRELATIONH_EMMLEN,
-              STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+    if (parameters->window->length != length)
+    {
+      ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
+          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
     }
   }    
 
   /* check that zero-padded output is not shorter than input */
   fullLength = parameters->length;
-
-  if (fullLength < length) {
-    ABORT(  status,
-         STOCHASTICCROSSCORRELATIONH_EMMLEN,
-         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+  if (fullLength < length)
+  {
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
   /* check that pointer to complex frequency series for output is non-null */
-  ASSERT(output != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(output != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to data member of complex frequency series for 
-     output is non-null */
-  ASSERT(output->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+   * output is non-null */
+  ASSERT(output->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that length of complex frequency series for output
-     is consistent with length of zero-padded input */
-  if ( fullLength != output->data->length )
+   * is consistent with length of zero-padded input */
+  if (fullLength != output->data->length)
   {
-    ABORT(  status,
-         STOCHASTICCROSSCORRELATIONH_EMMLEN,
-         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
   /* check that pointer to data-data member of complex frequency series 
-     for output is non-null */
-  ASSERT(output->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+   * for output is non-null */
+  ASSERT(output->data->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that frequency spacing is positive */
   deltaT = input->deltaT;
-  ASSERT(deltaT > 0, status, 
-         STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAT,
-         STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAT);
-
+  ASSERT(deltaT > 0, status, \
+      STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAT, \
+      STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAT);
 
   /* EVERYTHING OKAY HERE! -------------------------------------------- */
 
@@ -449,24 +434,24 @@ LALCZeroPadAndFFT(LALStatus                *status,
   /* allocate memory for zero-padded vector */
   TRY(LALCCreateVector(status->statusPtr, &(hBar.data), fullLength), status);
 
-  if ( parameters->window == NULL ) 
+  if (parameters->window == NULL) 
   {
-    cPtr = memcpy( hBar.data->data, input->data->data, length*sizeof(COMPLEX8) );
-    if ( cPtr != hBar.data->data )
+    cPtr = memcpy(hBar.data->data, input->data->data, \
+        length * sizeof(COMPLEX8));
+    if (cPtr != hBar.data->data)
     {
       TRY(LALCDestroyVector(status->statusPtr, &(hBar.data)), status);
-      ABORT(status, STOCHASTICCROSSCORRELATIONH_EMEMORY,
-            STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
+      ABORT(status, STOCHASTICCROSSCORRELATIONH_EMEMORY, \
+          STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
     }
   }
   else 
   {
     /* window data */
     cStopPtr = input->data->data + input->data->length;
-    for ( cPtr = input->data->data, hBarPtr = hBar.data->data,
-            windowPtr = parameters->window->data ;
-          cPtr < cStopPtr ;
-          ++cPtr, ++hBarPtr, ++windowPtr )
+    for (cPtr = input->data->data, hBarPtr = hBar.data->data, \
+        windowPtr = parameters->window->data ; cPtr < cStopPtr ; \
+        ++cPtr, ++hBarPtr, ++windowPtr )
     {
       hBarPtr->re = cPtr->re * *(windowPtr);
       hBarPtr->im = cPtr->im * *(windowPtr);
@@ -474,25 +459,27 @@ LALCZeroPadAndFFT(LALStatus                *status,
   }
 
   /* zero pad */
-  cPtr = 
-    memset(hBar.data->data + length, 0, (fullLength - length)*sizeof(COMPLEX8));
-  if ( cPtr != hBar.data->data + length )
+  cPtr = memset(hBar.data->data + length, 0, \
+      (fullLength - length) * sizeof(COMPLEX8));
+
+  if (cPtr != hBar.data->data + length)
   {
     TRY(LALCDestroyVector(status->statusPtr, &(hBar.data)), status);
-    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMEMORY,
-          STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMEMORY, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
   }
 
   /* take DFT */
   LALTimeFreqComplexFFT(status->statusPtr, output, &hBar, parameters->fftPlan);
+
   /* Can't use TRY because we have memory allocated */
-  BEGINFAIL( status ) 
+  BEGINFAIL(status) 
     TRY(LALCDestroyVector(status->statusPtr, &(hBar.data)), status);
-  ENDFAIL( status ); 
+  ENDFAIL(status); 
 
   /* fill output parameters */
-  strncpy(output->name,"Fourier Transform of Zero-Padded Time Series",
-          LALNameLength);
+  strncpy(output->name, "Fourier Transform of Zero-Padded Time Series", \
+      LALNameLength);
 
   /* clean up */
   TRY(LALCDestroyVector(status->statusPtr, &(hBar.data)), status);

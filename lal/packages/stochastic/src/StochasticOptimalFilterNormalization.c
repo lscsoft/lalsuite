@@ -250,164 +250,163 @@ NRCSID (STOCHASTICOPTIMALFILTERC,
 /* <lalVerbatim file="StochasticOptimalFilterNormalizationCP"> */
 void
 LALStochasticOptimalFilterNormalization(
-            LALStatus                                            *status,
-            StochasticOptimalFilterNormalizationOutput           *output,
-            const StochasticOptimalFilterNormalizationInput      *input,
-            const StochasticOptimalFilterNormalizationParameters *parameters)
+    LALStatus                                            *status,
+    StochasticOptimalFilterNormalizationOutput           *output,
+    const StochasticOptimalFilterNormalizationInput      *input,
+    const StochasticOptimalFilterNormalizationParameters *parameters)
 /* </lalVerbatim> */
 {
+  REAL4 omegaTimesGamma;
+  REAL4 p1Inv;
+  REAL4 p2Inv;
 
-  REAL4     omegaTimesGamma;
-  REAL4     p1Inv;
-  REAL4     p2Inv;
-
-  REAL8      f;
-  REAL8      f0;
-  REAL8      f3;
-  REAL8      deltaF;
+  REAL8 f;
+  REAL8 f0;
+  REAL8 f3;
+  REAL8 deltaF;
 
   /* normalization factor */
-  UINT4      i;
-  UINT4      xRef;
-  REAL4      omega1;
-  REAL4      omega2;
-  REAL8      freq1;
-  REAL8      freq2;
-  REAL4      exponent;
-  REAL4      omegaRef;   
-  REAL8      lambdaInv;
-  REAL8      f6; 
+  UINT4 i;
+  UINT4 xRef;
+  REAL4 omega1;
+  REAL4 omega2;
+  REAL8 freq1;
+  REAL8 freq2;
+  REAL4 exponent;
+  REAL4 omegaRef;   
+  REAL8 lambdaInv;
+  REAL8 f6; 
 
   /* windowing */
-  REAL4      w2, meanW2, meanW4;
-  REAL4      *sPtrW1, *sPtrW2, *sStopPtr;
-  UINT4      winLength = 0;
+  REAL4 w2, meanW2, meanW4;
+  REAL4 *sPtrW1, *sPtrW2, *sStopPtr;
+  UINT4 winLength = 0;
 
-  UINT4       length;
+  UINT4 length;
 
-  RAT4        power;
+  RAT4 power;
   LALUnitPair unitPair;
-  LALUnit     tmpUnit1, tmpUnit2, checkUnit;
-  REAL4WithUnits    *lamPtr;
+  LALUnit tmpUnit1, tmpUnit2, checkUnit;
+  REAL4WithUnits *lamPtr;
 
   /* initialize status pointer */
-  INITSTATUS(status, "LALStochasticOptimalFilterNormalization", STOCHASTICOPTIMALFILTERC);
+  INITSTATUS(status, "LALStochasticOptimalFilterNormalization", \
+      STOCHASTICOPTIMALFILTERC);
   ATTATCHSTATUSPTR(status);
 
   /* ERROR CHECKING ----------------------------------------------------- */
 
   /***** check for null pointers *****/
   /* input structure */
-  ASSERT(input != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(input != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* output structure */
-  ASSERT(output != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(output != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* parameter structure */
-  ASSERT(parameters != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(parameters != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
  
   /* overlap member of input */
-  ASSERT(input->overlapReductionFunction != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(input->overlapReductionFunction != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* omega member of input */
-  ASSERT(input->omegaGW != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(input->omegaGW != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* inverse noise 1 of input */
-  ASSERT(input->inverseNoisePSD1 != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(input->inverseNoisePSD1 != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* inverse noise 2 of input */
-  ASSERT(input->inverseNoisePSD2 != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(input->inverseNoisePSD2 != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data member of overlap */
-  ASSERT(input->overlapReductionFunction->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(input->overlapReductionFunction->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data member of omega */
-  ASSERT(input->omegaGW->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(input->omegaGW->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data member of inverse noise 1 */
-  ASSERT(input->inverseNoisePSD1->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(input->inverseNoisePSD1->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data member of inverse noise 2 */
-  ASSERT(input->inverseNoisePSD2->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(input->inverseNoisePSD2->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data-data member of overlap */
-  ASSERT(input->overlapReductionFunction->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(input->overlapReductionFunction->data->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data-data member of omega */
-  ASSERT(input->omegaGW->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(input->omegaGW->data->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data-data member of inverse noise 1 */
-  ASSERT(input->inverseNoisePSD1->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(input->inverseNoisePSD1->data->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data-data member of inverse noise 2 */
-  ASSERT(input->inverseNoisePSD2->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(input->inverseNoisePSD2->data->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* Checks that only apply if windowing is specified */
 
-  if ( parameters->window1 || parameters->window2 )
-  {     
+  if (parameters->window1 || parameters->window2)
+  {
     /* window 1 parameter */
-    ASSERT(parameters->window1 != NULL, status, 
-           STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    ASSERT(parameters->window1 != NULL, status, \
+        STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+        STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     
     /* window 2 parameter */
-    ASSERT(parameters->window2 != NULL, status, 
-           STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    ASSERT(parameters->window2 != NULL, status, \
+        STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+        STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     
     /* data member of window 1 */
-    ASSERT(parameters->window1->data != NULL, status, 
-           STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    ASSERT(parameters->window1->data != NULL, status, \
+        STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+        STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
     /* data member of window 2 */
-    ASSERT(parameters->window2->data != NULL, status, 
-           STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    ASSERT(parameters->window2->data != NULL, status, \
+        STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+        STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     
     winLength = parameters->window1->length;
 
-    ASSERT(winLength != 0, status,
-           STOCHASTICCROSSCORRELATIONH_EZEROLEN,
-           STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
+    ASSERT(winLength != 0, status, \
+        STOCHASTICCROSSCORRELATIONH_EZEROLEN, \
+        STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
     
     /* Check that windows are the same length */
-    if ( parameters->window2->length != winLength )
+    if (parameters->window2->length != winLength)
     {
-      ABORT(status,
-            STOCHASTICCROSSCORRELATIONH_EMMLEN,
-            STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+      ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
+          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
     }
   }
 
@@ -415,100 +414,88 @@ LALStochasticOptimalFilterNormalization(
 
   /* extract parameters from overlap */
   length = input->overlapReductionFunction->data->length;
-  f0     = input->overlapReductionFunction->f0;
+  f0 = input->overlapReductionFunction->f0;
   deltaF = input->overlapReductionFunction->deltaF;
 
   /**** check for legality ****/
   /* length must be positive */
-  ASSERT(length != 0, status,
-         STOCHASTICCROSSCORRELATIONH_EZEROLEN,
-         STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
+  ASSERT(length != 0, status, \
+      STOCHASTICCROSSCORRELATIONH_EZEROLEN, \
+      STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
 
   /* start frequency must not be negative */
   if (f0 < 0)
   {
-    ABORT( status,
-         STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
-         STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN );
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN, \
+        STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN);
   }
 
   /* frequency spacing must be positive */
-  ASSERT(deltaF > 0, status, 
-         STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
-         STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
+  ASSERT(deltaF > 0, status, \
+      STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF, \
+      STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
 
   /** check for mismatches **/
   /* length */
   if (input->omegaGW->data->length != length) 
   {
-    ABORT(status,
-         STOCHASTICCROSSCORRELATIONH_EMMLEN,
-         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
   if (input->inverseNoisePSD1->data->length != length) 
   {
-    ABORT(status,
-         STOCHASTICCROSSCORRELATIONH_EMMLEN,
-         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
   if (input->inverseNoisePSD2->data->length != length) 
   {
-    ABORT(status,
-         STOCHASTICCROSSCORRELATIONH_EMMLEN,
-         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
   /* initial frequency */
   if (input->omegaGW->f0 != f0) 
   {
-    ABORT(status,
-         STOCHASTICCROSSCORRELATIONH_EMMFMIN,
-         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
   if (input->inverseNoisePSD1->f0 != f0) 
   {
-    ABORT(status,
-         STOCHASTICCROSSCORRELATIONH_EMMFMIN,
-         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
   if (input->inverseNoisePSD2->f0 != f0) 
   {
-    ABORT(status,
-         STOCHASTICCROSSCORRELATIONH_EMMFMIN,
-         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMFMIN, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
 
   /* frequency spacing */
   if (input->omegaGW->deltaF != deltaF) 
   {
-    ABORT(status,
-         STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
-         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
   if (input->inverseNoisePSD1->deltaF != deltaF) 
   {
-    ABORT(status,
-         STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
-         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
   if (input->inverseNoisePSD2->deltaF != deltaF) 
   {
-    ABORT(status,
-         STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
-         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
   /** check for reference frequency lower and upper limits **/ 
-  if ( parameters->fRef < f0 + deltaF )
+  if (parameters->fRef < f0 + deltaF)
   {
-    ABORT(status,
-         STOCHASTICCROSSCORRELATIONH_EOORFREF,
-         STOCHASTICCROSSCORRELATIONH_MSGEOORFREF);
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EOORFREF, \
+        STOCHASTICCROSSCORRELATIONH_MSGEOORFREF);
   }
-  if ( parameters->fRef > f0 + ((REAL8)(length-1)*deltaF) )
+  if (parameters->fRef > f0 + ((REAL8)(length-1)*deltaF))
   {
-    ABORT(status,
-         STOCHASTICCROSSCORRELATIONH_EOORFREF,
-         STOCHASTICCROSSCORRELATIONH_MSGEOORFREF);
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EOORFREF, \
+        STOCHASTICCROSSCORRELATIONH_MSGEOORFREF);
   }
 
   /* EVERYHTING OKAY HERE! ---------------------------------------------- */
@@ -516,58 +503,56 @@ LALStochasticOptimalFilterNormalization(
   /* All the powers we use are integers, so we can do this once here */
   power.denominatorMinusOne = 0;
 
-  /* check that units of gamma, Omega, P1 and P2 are consistent */
-  /* we must have (gamma*Omega)^2 with the same units as f^2*P1*P2 */
-  /* up to a power of ten */
-  /* We check this by constructing checkUnit = f^2*P1*P2*(gamma*Omega)^-2 */
-
-
+  /* check that units of gamma, Omega, P1 and P2 are consistent
+   * we must have (gamma*Omega)^2 with the same units as f^2*P1*P2
+   * up to a power of ten. We check this by constructing
+   * checkUnit = f^2*P1*P2*(gamma*Omega)^-2 */
   unitPair.unitOne = &(input->inverseNoisePSD1->sampleUnits);
   unitPair.unitTwo = &(input->inverseNoisePSD2->sampleUnits);
-  TRY( LALUnitMultiply(status->statusPtr, &tmpUnit1, &unitPair)
-      , status );
+  TRY(LALUnitMultiply(status->statusPtr, &tmpUnit1, &unitPair), status);
+
   /* tmpUnit1 holds units of 1/(P1*P2) */
 
   power.numerator = -1;
-  TRY( LALUnitRaise(status->statusPtr, &tmpUnit2, &tmpUnit1, &power)
-       , status );
+  TRY(LALUnitRaise(status->statusPtr, &tmpUnit2, &tmpUnit1, &power), status);
+
   /* tmpUnit2 holds units of P1*P2 */
 
   unitPair.unitOne = &(input->overlapReductionFunction->sampleUnits);
   unitPair.unitTwo = &(input->omegaGW->sampleUnits);
-  TRY( LALUnitMultiply(status->statusPtr, &tmpUnit1, &unitPair)
-      , status );
+  TRY(LALUnitMultiply(status->statusPtr, &tmpUnit1, &unitPair), status);
+
   /* tmpUnit1 holds units of Omega*Gamma */
 
   unitPair.unitOne = &tmpUnit1;
   unitPair.unitTwo = &lalSecondUnit;
-  TRY( LALUnitMultiply(status->statusPtr, &checkUnit, &unitPair)
-      , status );
+  TRY(LALUnitMultiply(status->statusPtr, &checkUnit, &unitPair), status);
+
   /* checkUnit holds units of f^-1*Omega*Gamma */
 
   power.numerator = -2;
-  TRY( LALUnitRaise(status->statusPtr, &tmpUnit1, &checkUnit, &power)
-       , status );
+  TRY(LALUnitRaise(status->statusPtr, &tmpUnit1, &checkUnit, &power), status);
+
   /* tmpUnit1 holds units of f^2*(Omega*Gamma)^-2 */
 
   /** unitPair.unitOne = &tmpUnit1; **/
   /** Commented out because it's redundant with the last assignment **/
+  
   unitPair.unitTwo = &tmpUnit2;
 
-  TRY( LALUnitMultiply(status->statusPtr, &checkUnit, &unitPair)
-       , status );
+  TRY(LALUnitMultiply(status->statusPtr, &checkUnit, &unitPair), status);
+
   /* checkUnit holds units of f^2*P1*P2(Omega*Gamma)^-2 */
 
   /*** Check that checkUnit is dimensionless up to a power of ten ***/
 
   for (i=0; i<LALNumUnits; ++i)
   {
-    if ( checkUnit.unitNumerator[i] || checkUnit.unitDenominatorMinusOne[i] )
-      {
-        ABORT(status,
-              STOCHASTICCROSSCORRELATIONH_EWRONGUNITS,
-              STOCHASTICCROSSCORRELATIONH_MSGEWRONGUNITS);    
-      }
+    if (checkUnit.unitNumerator[i] || checkUnit.unitDenominatorMinusOne[i])
+    {
+      ABORT(status, STOCHASTICCROSSCORRELATIONH_EWRONGUNITS, \
+          STOCHASTICCROSSCORRELATIONH_MSGEWRONGUNITS);
+    }
   }
 
   /******* Set tmpUnit1 to dims of Omega/H0^2 ******/
@@ -580,36 +565,32 @@ LALStochasticOptimalFilterNormalization(
   tmpUnit1.powerOfTen -= 18;
 
   /* Now set tmpUnit2 to dims of H0^-2 */
-  power.numerator    = -2;
-  TRY( LALUnitRaise(status->statusPtr, &tmpUnit2, &tmpUnit1, &power)
-       , status );
-
+  power.numerator = -2;
+  TRY(LALUnitRaise(status->statusPtr, &tmpUnit2, &tmpUnit1, &power), status);
   unitPair.unitOne = &(input->omegaGW->sampleUnits);
   unitPair.unitTwo = &tmpUnit2;
-  
-  TRY( LALUnitMultiply(status->statusPtr, &tmpUnit1, &unitPair), status );
+  TRY(LALUnitMultiply(status->statusPtr, &tmpUnit1, &unitPair), status);
+
   /* Now tmpUnit1 has units of Omega/H0^2 */
 
   /******* assign correct units to normalization constant ********/
-  /* These are Omega/H0^2*f^5*P1*P2*(gamma*Omega)^-2 */
-  /* which is the same as tmpUnit1*f^3*checkUnit */
-
-
+  /* These are Omega/H0^2*f^5*P1*P2*(gamma*Omega)^-2
+   * which is the same as tmpUnit1*f^3*checkUnit */
   unitPair.unitOne = &tmpUnit1;
   unitPair.unitTwo = &checkUnit;
-  TRY( LALUnitMultiply(status->statusPtr, &tmpUnit2, &unitPair)
-       , status );
+  TRY(LALUnitMultiply(status->statusPtr, &tmpUnit2, &unitPair), status);
+
   /* tmpUnit2 has units of Omega/H0^2*f^2*P1*P2*(gamma*Omega)^-2 */
 
   /* Now that we've used checkUnit, we don't need it any more and */
   /* can use it for temp storage (of f^3) */
   power.numerator = 3;
-  TRY( LALUnitRaise(status->statusPtr, &checkUnit, &lalHertzUnit, &power)
-       , status );
+  TRY(LALUnitRaise(status->statusPtr, &checkUnit, &lalHertzUnit, &power), \
+      status);
 
   /* In case the normalization output was NULL, we need to allocate it
-     since we still use it as an intermediate; we do so here to
-     minimize the BEGINFAIL/ENDFAIL pairs needed */
+   * since we still use it as an intermediate; we do so here to
+   * minimize the BEGINFAIL/ENDFAIL pairs needed */
 
   if (output->normalization != NULL) 
   {
@@ -617,46 +598,44 @@ LALStochasticOptimalFilterNormalization(
   }
   else 
   {
-    lamPtr = (REAL4WithUnits*) LALMalloc(sizeof(REAL4WithUnits));
+    lamPtr = (REAL4WithUnits*)LALMalloc(sizeof(REAL4WithUnits));
   }
 
   unitPair.unitOne = &tmpUnit2;
+  
   /* unitPair.unitTwo = &checkUnit; */
   /** Commented out because it's redundant with the last assignment **/
+
   LALUnitMultiply(status->statusPtr, &(lamPtr->units), &unitPair);
 
-  BEGINFAIL( status ) 
+  BEGINFAIL(status) 
     if (output->normalization == NULL) LALFree(lamPtr);
-  ENDFAIL( status );
+  ENDFAIL(status);
 
   if (output->variance != NULL) 
   {
     /******* assign correct units to variance per time of CC stat ********/
-    
     unitPair.unitOne = &(lamPtr->units);
     unitPair.unitTwo = &tmpUnit1;
     
-    LALUnitMultiply(status->statusPtr,
-                    &(output->variance->units), &unitPair);
+    LALUnitMultiply(status->statusPtr, &(output->variance->units), &unitPair);
     
-    BEGINFAIL( status ) 
+    BEGINFAIL(status) 
       if (output->normalization == NULL) LALFree(lamPtr);
-    ENDFAIL( status );
+    ENDFAIL(status);
   }
 
-
   /* Calculate properties of windows */
-
-  if ( parameters->window1 == NULL )
+  if (parameters->window1 == NULL)
   {
     meanW2 = meanW4 = 1.0;
   }
   else
   {
     meanW2 = meanW4 = 0.0;
-    for ( sPtrW1 = parameters->window1->data, sPtrW2 = parameters->window2->data,
-            sStopPtr = sPtrW1 + winLength;
-          sPtrW1 < sStopPtr; ++sPtrW1, ++sPtrW2 )
+    for (sPtrW1 = parameters->window1->data, \
+        sPtrW2 = parameters->window2->data, sStopPtr = sPtrW1 + winLength; \
+        sPtrW1 < sStopPtr; ++sPtrW1, ++sPtrW2)
     {
       w2 = *sPtrW1 * *sPtrW2;
       meanW2 += w2;
@@ -665,10 +644,9 @@ LALStochasticOptimalFilterNormalization(
     meanW2 /= winLength;
     meanW4 /= winLength;
 
-    if ( meanW2 <= 0 )
+    if (meanW2 <= 0)
     {
-      ABORT(status, 
-            STOCHASTICCROSSCORRELATIONH_ENONPOSWIN,
+      ABORT(status, STOCHASTICCROSSCORRELATIONH_ENONPOSWIN, \
             STOCHASTICCROSSCORRELATIONH_MSGENONPOSWIN);
     }
   }
@@ -676,21 +654,20 @@ LALStochasticOptimalFilterNormalization(
   /************** calculate lambda ***********************/
   /* find omegaRef */
   xRef = (UINT4)((parameters->fRef - f0)/deltaF);
-  if ( ((parameters->fRef - f0)/deltaF) == (REAL8)(xRef) )
+  if (((parameters->fRef - f0)/deltaF) == (REAL8)(xRef))
   {
     omegaRef = input->omegaGW->data->data[xRef];
   }
   else
   {
-    omega1   = input->omegaGW->data->data[xRef];
-    omega2   = input->omegaGW->data->data[xRef+1];
-    freq1    = f0 + xRef * deltaF; 
-    freq2    = f0 + (xRef + 1) * deltaF;
+    omega1 = input->omegaGW->data->data[xRef];
+    omega2 = input->omegaGW->data->data[xRef+1];
+    freq1 = f0 + xRef * deltaF; 
+    freq2 = f0 + (xRef + 1) * deltaF;
     if (omega1 <= 0)
     {
-      ABORT( status,
-             STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA,
-             STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA );
+      ABORT(status, STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA, \
+          STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA);
     }
     else
     {
@@ -702,40 +679,37 @@ LALStochasticOptimalFilterNormalization(
   /* calculate inverse lambda value */
   lambdaInv = 0.0; 
 
-  for ( i = ( f0 == 0 ? 1 : 0 ) ; i < length; ++i)
+  for (i = (f0 == 0 ? 1 : 0) ; i < length; ++i)
   {
     f = f0 + deltaF * (REAL8) i;
 
     f3 = f * f * f;
     f6 = f3 * f3;
     
-    omegaTimesGamma = input->omegaGW->data->data[i]
-      * input->overlapReductionFunction->data->data[i];
+    omegaTimesGamma = input->omegaGW->data->data[i] * \
+                      input->overlapReductionFunction->data->data[i];
     p1Inv = input->inverseNoisePSD1->data->data[i];
     p2Inv = input->inverseNoisePSD2->data->data[i];
-    lambdaInv += omegaTimesGamma * omegaTimesGamma * p1Inv * p2Inv 
-      / f6;
+    lambdaInv += (omegaTimesGamma * omegaTimesGamma * p1Inv * p2Inv) / f6;
   }
 
-  lambdaInv /= ( omegaRef / deltaF )
-    * ( (20.0L * LAL_PI * LAL_PI) 
-        / ( 3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18) * meanW2 )
-        );
-  
-  if ( !parameters->heterodyned ) lambdaInv *= 2.0;
+  lambdaInv /= (omegaRef / deltaF) * ((20.0L * LAL_PI * LAL_PI) / \
+      (3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18) * meanW2));
+
+  if (!parameters->heterodyned)
+    lambdaInv *= 2.0;
   
   lamPtr->value = 1 / lambdaInv;
 
   if (output->variance != NULL) 
   {
-    output->variance->value 
-      = (meanW4/meanW2) * ( (5.0L * LAL_PI * LAL_PI) 
-          / ( 3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18) ) )
-      * omegaRef / lambdaInv;
+    output->variance->value = (meanW4/meanW2) * ((5.0L * LAL_PI * LAL_PI) / \
+        (3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18))) * \
+                              omegaRef / lambdaInv;
   }
-  if (output->normalization == NULL) LALFree(lamPtr);
+  if (output->normalization == NULL)
+    LALFree(lamPtr);
   
   DETATCHSTATUSPTR(status);
   RETURN(status);
-
 }

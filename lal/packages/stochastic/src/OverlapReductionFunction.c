@@ -244,7 +244,7 @@ strncpy()
 #include <string.h>
 #include <lal/StochasticCrossCorrelation.h>
 
-NRCSID( OVERLAPREDUCTIONFUNCTIONC, "$Id$");
+NRCSID(OVERLAPREDUCTIONFUNCTIONC, "$Id$");
 
 static void evaluateBessels(REAL4 rho[3], REAL4 alpha);
 static REAL4 cartesianInnerProduct(REAL4 a[3], REAL4 b[3]);
@@ -252,127 +252,147 @@ static REAL4 cartesianInnerProduct(REAL4 a[3], REAL4 b[3]);
 /* <lalVerbatim file="OverlapReductionFunctionCP"> */
 void
 LALOverlapReductionFunction(
-                      LALStatus                                *status,
-                      REAL4FrequencySeries                     *output,
-                      const LALDetectorPair                    *detectors,
-                      const OverlapReductionFunctionParameters *parameters)
+    LALStatus                                *status,
+    REAL4FrequencySeries                     *output,
+    const LALDetectorPair                    *detectors,
+    const OverlapReductionFunctionParameters *parameters)
 /* </lalVerbatim> */
 {
-  UINT4            length;
-  REAL8            deltaF;
-  REAL8            f0; 
-
-  UINT4  i, j;
-  REAL4  trace1, trace2;
-  REAL4  d1DotS[3], d2DotS[3];
-  REAL4  s[3];
-  REAL4  distance;
-  REAL4  c1, c2, c3;
-  REAL4  alpha, alpha0, deltaAlpha;
-  REAL4  rho[3];
-  REAL4  d1[3][3], d2[3][3]; 
-
-  RAT4   power;
+  UINT4 length;
+  REAL8 deltaF;
+  REAL8 f0;
+  UINT4 i, j;
+  REAL4 trace1, trace2;
+  REAL4 d1DotS[3], d2DotS[3];
+  REAL4 s[3];
+  REAL4 distance;
+  REAL4 c1, c2, c3;
+  REAL4 alpha, alpha0, deltaAlpha;
+  REAL4 rho[3];
+  REAL4 d1[3][3], d2[3][3];
+  RAT4 power;
 
   /* initialize status structure */
-  INITSTATUS( status, "LALOverlapReductionFunction", OVERLAPREDUCTIONFUNCTIONC );
+  INITSTATUS(status, "LALOverlapReductionFunction", OVERLAPREDUCTIONFUNCTIONC);
   ATTATCHSTATUSPTR(status);
 
   /* check that pointer to parameters is not null */
-  ASSERT(parameters!=NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(parameters!=NULL, status, \
+			STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* check that specified length of output vector is > 0 */ 
+  /* check that specified length of output vector is > 0 */
   length = parameters->length;
-  ASSERT(length>0, status, STOCHASTICCROSSCORRELATIONH_EZEROLEN, STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
+  ASSERT(length > 0, status, \
+			STOCHASTICCROSSCORRELATIONH_EZEROLEN, \
+      STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
 
   /* check that frequency spacing is > 0 */
   deltaF = parameters->deltaF;
-  ASSERT(deltaF > 0, status, 
-         STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF, STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
+  ASSERT(deltaF > 0, status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF, \
+      STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
          
-  /* check that minimum frequency is >= 0 */ 
+  /* check that minimum frequency is >= 0 */
   f0 = parameters->f0;
-  if(f0 < 0)
+  if (f0 < 0)
   {
-    ABORT( status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
-           STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN);
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN, \
+				STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN);
   }
 
   /* check that pointer to output frequency series is not null */
-  ASSERT(output!=NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(output != NULL, status, \
+			STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+			STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* check that pointer to data member of output frequency series is 
-     not null */
-  ASSERT(output->data!=NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  /* check that pointer to data member of output frequency series is
+	 * not null */
+  ASSERT(output->data != NULL, status, \
+			STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+			STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* check that length of the data member of output frequency series 
-     agrees with length specified in input parameters */
-  if(output->data->length!=length){
-     ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+  /* check that length of the data member of output frequency series
+	 * agrees with length specified in input parameters */
+  if(output->data->length != length)
+	{
+		ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
+				STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
-  
+
   /* check that pointer to data-data member of output vector is not null */
-  ASSERT(output->data->data!=NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(output->data->data != NULL, status, \
+			STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+			STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to input structure is not null */
-  ASSERT(detectors!=NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(detectors != NULL, status, \
+			STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+			STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* everything okay here -------------------------------------------- */
 
   /* the overlap reduction function has units of strain^2 */
   power.numerator = 2;
   power.denominatorMinusOne = 0;
-  TRY( LALUnitRaise(status->statusPtr, &(output->sampleUnits),
-                    &lalStrainUnit, &power), status );
-
-  strncpy(output->name,"Overlap reduction function", LALNameLength);
+  TRY(LALUnitRaise(status->statusPtr, &(output->sampleUnits), \
+				&lalStrainUnit, &power), status);
 
   /* set parameters for output */
+  strncpy(output->name, "Overlap reduction function", LALNameLength);
   output->epoch.gpsSeconds = 0.0;
   output->epoch.gpsNanoSeconds = 0.0;
   output->deltaF = parameters->deltaF;
   output->f0 = parameters->f0;
 
   /* calculate separation vector between sites */
-  for ( i=0; i<3; i++) {
-    s[i] = (REAL4) (detectors->detectorOne.location[i] -
-                      detectors->detectorTwo.location[i]);
-    d1[i][i] = detectors->detectorOne.response[i][i];
+  for (i = 0; i < 3; i++)
+	{
+		s[i] = (REAL4)(detectors->detectorOne.location[i] - \
+				detectors->detectorTwo.location[i]);
+		d1[i][i] = detectors->detectorOne.response[i][i];
     d2[i][i] = detectors->detectorTwo.response[i][i];
-    for ( j=i; j<3; j++) {
+
+		for (j = i; j<3; j++) {
       d1[i][j] = d1[j][i] = detectors->detectorOne.response[i][j];
       d2[i][j] = d2[j][i] = detectors->detectorTwo.response[i][j];
-      ASSERT( d1[j][i] == detectors->detectorOne.response[j][i], status,
-              STOCHASTICCROSSCORRELATIONH_ENONSYMDIJ, STOCHASTICCROSSCORRELATIONH_MSGENONSYMDIJ);
-      ASSERT( d2[j][i] == detectors->detectorTwo.response[j][i], status, 
-              STOCHASTICCROSSCORRELATIONH_ENONSYMDIJ, STOCHASTICCROSSCORRELATIONH_MSGENONSYMDIJ);
-    }
-  }
 
-  /* calculate distance between sites, in meters */
-  distance = sqrt( cartesianInnerProduct(s,s) );
+			/* check for non symmetric response tensor */
+      ASSERT(d1[j][i] == detectors->detectorOne.response[j][i], status, \
+					STOCHASTICCROSSCORRELATIONH_ENONSYMDIJ, \
+					STOCHASTICCROSSCORRELATIONH_MSGENONSYMDIJ);
+      ASSERT(d2[j][i] == detectors->detectorTwo.response[j][i], status, \
+					STOCHASTICCROSSCORRELATIONH_ENONSYMDIJ, \
+					STOCHASTICCROSSCORRELATIONH_MSGENONSYMDIJ);
+		}
+	}
+
+	/* calculate distance between sites, in meters */
+  distance = sqrt(cartesianInnerProduct(s,s));
 
   /* calculate unit separation vector */
-  if ( distance != 0 ) {
-    for ( i=0; i<3; i++ ) {
+  if (distance != 0)
+	{
+		for (i = 0; i < 3; i++)
+		{
       s[i] /= distance;
     }
   }
 
   trace1 = d1[0][0] + d1[1][1] + d1[2][2];
-  if (trace1) {
+  if (trace1)
+	{
     trace1 /= 3.0;
-    for ( i=0; i<3; i++ ) {
+    for (i = 0; i < 3; i++)
+		{
       d1[i][i] -= trace1;
     }
   }
   trace2 = d2[0][0] + d2[1][1] + d2[2][2];
-  if (trace2) {
+  if (trace2)
+	{
     trace2 /= 3.0;
-    for ( i=0; i<3; i++ ) {
+    for (i = 0; i < 3; i++)
+		{
       d2[i][i] -= trace2;
     }
   }
@@ -381,88 +401,92 @@ LALOverlapReductionFunction(
 
   /* c1 = d1 : d2 */
   c1 = 0;
-  for ( i=0; i<3; i++ ) {
-    for ( j=0; j<3; j++) {
-      c1 += d1[i][j] *  d2[i][j];
+  for (i = 0; i < 3; i++)
+	{
+    for (j = 0; j < 3; j++)
+		{
+      c1 += d1[i][j] * d2[i][j];
     }
   }
 
-  for ( i=0; i<3; i++ ) {
+  for (i = 0; i < 3; i++)
+	{
     d1DotS[i] = cartesianInnerProduct(d1[i], s);
     d2DotS[i] = cartesianInnerProduct(d2[i], s);
   }
 
   /* c2 = s . d1 . d2 . s */
-  c2  = cartesianInnerProduct(d1DotS, d2DotS);
+  c2 = cartesianInnerProduct(d1DotS, d2DotS);
 
   /* c3 = (s . d1 . s)(s . d2 . s) */
   c3 = cartesianInnerProduct(s, d1DotS) * cartesianInnerProduct(s, d2DotS);
 
-  distance *= (2*LAL_PI/LAL_C_SI);
+  distance *= (2 * LAL_PI / LAL_C_SI);
   deltaAlpha = deltaF * distance;
-  alpha0     =     f0 * distance;
+  alpha0 = f0 * distance;
 
   if (f0 == 0) 
   {
-    for (i=0; i<length; ++i)
+    for (i = 0; i < length; ++i)
     {
-      alpha = deltaAlpha * (REAL4) i;
-      evaluateBessels(rho,alpha);
-      output->data->data[i] = c1 * rho[0] + c2 * rho[1] + c3 * rho [2];
-    }   
+      alpha = deltaAlpha * (REAL4)i;
+      evaluateBessels(rho, alpha);
+      output->data->data[i] = c1 * rho[0] + c2 * rho[1] + c3 * rho[2];
+    }
   }
-  else 
+  else
   {
-    for (i=0; i<length; ++i)
+    for (i = 0; i < length; ++i)
     {
-      alpha = alpha0 + deltaAlpha * (REAL4) i;
-      evaluateBessels(rho,alpha);
-      output->data->data[i] = c1 * rho[0] + c2 * rho[1] + c3 * rho [2];
+      alpha = alpha0 + deltaAlpha * (REAL4)i;
+      evaluateBessels(rho, alpha);
+      output->data->data[i] = c1 * rho[0] + c2 * rho[1] + c3 * rho[2];
     }   
   }
 
   /* normal exit */
   DETATCHSTATUSPTR(status);
-  RETURN (status);
+  RETURN(status);
 }
 
 static void evaluateBessels(REAL4 rho[3], REAL4 alpha)
 {
-  REAL8  alpha2, alpha4;
-  REAL8  s, c;
-  REAL8  b0, b1, b2;
+  REAL8 alpha2, alpha4;
+  REAL8 s, c;
+  REAL8 b0, b1, b2;
 
-
-  alpha2 = alpha*alpha;
+  alpha2 = alpha * alpha;
 
   /* if the argument is close to zero, use power series */
-  if ( alpha<0.01 ) {
-    alpha4 = alpha2*alpha2;
-    b0 =  1.0 - alpha2/6.0  + alpha4/120.0;
+  if (alpha < 0.01)
+	{
+		alpha4 = alpha2 * alpha2;
+    b0 = 1.0 - alpha2/6.0 + alpha4/120.0;
     b1 = 1.0/3.0 - alpha2/30.0 + alpha4/840.0;
     b2 = 1.0/15.0 - alpha2/210.0 + alpha4/7560.0;
   }
-  else {
-    s = sin(alpha);
+  else
+	{
+		s = sin(alpha);
     c = cos(alpha);
     
     /* define spherical bessel functions j0, j1, j2 */
 
     b0 = s/alpha; /* = j0 */
     b1 = (b0 - c)/alpha;
-    b2 = (3.0*b1 - s)/alpha;
+    b2 = ((3.0 * b1) - s) / alpha;
     b1 /= alpha; /* = j1/alpha */
     b2 /= alpha2; /* = j2/alpha2 */
   }
   
-  rho[0] =  5.0*b0 - 10.0*b1 +  5.0*b2;
+  rho[0] = 5.0*b0 - 10.0*b1 + 5.0*b2;
   rho[1] = -10.0*b0 + 40.0*b1 - 50.0*b2;
-  rho[2] =  2.5*b0 - 25.0*b1 + 87.5*b2;
+  rho[2] = 2.5*b0 - 25.0*b1 + 87.5*b2;
 
   return;
 }
 
 static REAL4 cartesianInnerProduct(REAL4 a[3], REAL4 b[3])
 {
-  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 }

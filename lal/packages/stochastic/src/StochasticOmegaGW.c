@@ -101,136 +101,144 @@ NRCSID (STOCHASTICOMEGAGWC, "$Id$");
 
 /* <lalVerbatim file="StochasticOmegaGWCP"> */
 void
-LALStochasticOmegaGW( LALStatus                         *status,
-		      REAL4FrequencySeries              *output,
-		      const StochasticOmegaGWParameters *parameters )
+LALStochasticOmegaGW(
+    LALStatus                         *status,
+    REAL4FrequencySeries              *output,
+    const StochasticOmegaGWParameters *parameters)
 /* </lalVerbatim> */
 {
-  REAL4*     sPtr;
-  REAL4*     sStopPtr;
+  REAL4* sPtr;
+  REAL4* sStopPtr;
 
-  REAL4      alpha;
-  REAL8      f0;
-  REAL8      deltaF;
-  REAL4      x, deltaX, x0;   /* x = f / fRef */
-  REAL8      fRef;
-  REAL4      omegaRef;
-  UINT4       i;
+  REAL4 alpha;
+  REAL8 f0;
+  REAL8 deltaF;
+  REAL4 x, deltaX, x0;   /* x = f / fRef */
+  REAL8 fRef;
+  REAL4 omegaRef;
+  UINT4 i;
 
-  UINT4       length;
+  UINT4 length;
 
   INITSTATUS(status, "LALStochasticOmegaGW", STOCHASTICOMEGAGWC);
 
   /* ERROR CHECKING -------------------------------------------------- */
 
   /* check that pointer to input parameters is non-null */
-  ASSERT(parameters != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(parameters != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that frequency spacing is greater than zero */
-  deltaF     = parameters->deltaF;
-  ASSERT(deltaF > 0, status, 
-         STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF, STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
+  deltaF = parameters->deltaF;
+  ASSERT(deltaF > 0, status, \
+      STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF, \
+      STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
 
   /* check that length parameter is greater than zero */
-  length     = parameters->length;
-  ASSERT(length > 0, status, 
-         STOCHASTICCROSSCORRELATIONH_EZEROLEN, STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
+  length = parameters->length;
+  ASSERT(length > 0, status, \
+      STOCHASTICCROSSCORRELATIONH_EZEROLEN, \
+      STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
 
   /* check that heterodyning doesn't include negative physical frequencies */
 
-  f0         = parameters->f0;
-
-  if(f0 < 0)
+  f0 = parameters->f0;
+  if (f0 < 0)
   {
-    ABORT( status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
-	   STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN);
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN, \
+        STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN);
   }
 
   /* check that pointer to real frequency series for output is non-null */
-  ASSERT(output != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  ASSERT(output != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to data member of real frequency series for 
-     output is non-null */
-  ASSERT(output->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+   * output is non-null */
+  ASSERT(output->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that length of data member of real frequency series for output
-     equals length specified in input parameters */
-  if(output->data->length != length)
-     {
-      ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
-     }
-
-  /* check that pointer to data-data member of real frequency series for 
-     output is non-null */
-  ASSERT(output->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-
-  fRef       = parameters->fRef;
-  /* check that the fRef value is positive */
-  if (fRef <= 0.0)
+   * equals length specified in input parameters */
+  if (output->data->length != length)
   {
-    ABORT(status, STOCHASTICCROSSCORRELATIONH_EOORFREF,STOCHASTICCROSSCORRELATIONH_MSGEOORFREF);
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
+        STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
-  omegaRef   = parameters->omegaRef;
+  /* check that pointer to data-data member of real frequency series for
+   * output is non-null */
+  ASSERT(output->data->data != NULL, status, \
+      STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
+      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  /* check that the fRef value is positive */
+  fRef = parameters->fRef;
+  if (fRef <= 0.0)
+  {
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EOORFREF, \
+        STOCHASTICCROSSCORRELATIONH_MSGEOORFREF);
+  }
+
   /* check that omegaRef is larger than zero */
+  omegaRef = parameters->omegaRef;
   if (omegaRef <= 0)
   {
-    ABORT(status, STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA,STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA);
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA, \
+        STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA);
   }
 
   /* EVERYTHING OKAY HERE! -------------------------------------------- */
 
-  alpha      = parameters->alpha;
+  alpha = parameters->alpha;
 
   /* assign output to be dimensionless */
   output->sampleUnits = lalDimensionlessUnit;
 
-  strncpy(output->name,"Gravitational wave strength OmegaGW", LALNameLength);
+  strncpy(output->name, "Gravitational wave strength OmegaGW", LALNameLength);
 
   /* assign parameters to frequency series */
-  output->epoch.gpsSeconds      = 0;
-  output->epoch.gpsNanoSeconds  = 0;
-  output->f0     = f0;
+  output->epoch.gpsSeconds = 0;
+  output->epoch.gpsNanoSeconds = 0;
+  output->f0 = f0;
   output->deltaF = deltaF;
 
   deltaX = deltaF / fRef;
   x0 = f0 / fRef;
 
   /* assign pointers */
-  sStopPtr    = output->data->data + length;
+  sStopPtr = output->data->data + length;
 
   /* calculate output(f) values */
-
-  if (alpha == 0) {
-    for (sPtr = output->data->data;
-	 sPtr < sStopPtr; ++sPtr) {
+  if (alpha == 0){
+    for (sPtr = output->data->data; sPtr < sStopPtr; ++sPtr)
+    {
       *sPtr = omegaRef;
     }
   }
-  else {
+  else
+  {
     if (f0 == 0) 
     {
       output->data->data[0] = (alpha>0 ? 0 : LAL_REAL4_MAX);
       for (i=1 ; i < length ; ++i)
       {
-	x = deltaX * (REAL4) i;
-	output->data->data[i] = omegaRef * pow(x,alpha);
+        x = deltaX * (REAL4) i;
+        output->data->data[i] = omegaRef * pow(x,alpha);
       }
     }
     else 
     {
       for (i=0 ; i < length ; ++i)
       {
-	x = x0 + deltaX * (REAL4) i;
-	output->data->data[i] = omegaRef * pow(x,alpha);
+        x = x0 + deltaX * (REAL4) i;
+        output->data->data[i] = omegaRef * pow(x,alpha);
       }
     }
   }
   
   RETURN(status);
-
 }
