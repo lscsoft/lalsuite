@@ -339,6 +339,36 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 }
 
 
+/*
+ * Read and discard the search summary table from a LIGO LW burst trigger
+ * file.  Return the time (seconds) encompassed by the file.
+ */
+
+static INT4 read_search_summary(char *filename, FILE *fpout)
+{
+	SearchSummaryTable *searchSummary = NULL;
+	SearchSummaryTable *tmp;
+	INT4 start;
+	INT4 end;
+
+	SearchSummaryTableFromLIGOLw(&searchSummary, filename);
+
+	start = searchSummary->in_start_time.gpsSeconds;
+	end = searchSummary->in_end_time.gpsSeconds;
+
+	if(fpout)
+		fprintf(fpout, "%d  %d  %d\n", start, end, end - start);
+
+	while(searchSummary) {
+		tmp = searchSummary;
+		searchSummary = searchSummary->next;
+		LALFree(tmp);
+	}
+
+	return(end - start);
+}
+
+
 /****************************************************************************
  * 
  * FUNCTION TESTS IF THE FILE CONTAINS ANY PLAYGROUND DATA
@@ -368,27 +398,25 @@ static int isPlayground(INT4 gpsStart, INT4 gpsEnd)
 
 int main(int argc, char **argv)
 {
-	static LALStatus         stat;
-	FILE                     *fpin=NULL;
-	FILE                     *fpout=NULL;
-	INT4                     fileCounter=0;
+	static LALStatus  stat;
+	FILE              *fpin=NULL;
+	FILE              *fpout;
+	INT4              fileCounter=0;
 
 	/*number of events*/
-	INT8                     numEvents;
+	INT8              numEvents;
 
 	/*searchsummary info */
-	SearchSummaryTable      *searchSummary=NULL;
-	INT4                    timeAnalyzed=0;
+	INT4              timeAnalyzed=0;
 
+	CHAR              line[MAXSTR];
 
-	CHAR                     line[MAXSTR];
-
-	CHAR                     *infile=NULL,*outfile=NULL;
-	SnglBurstTable        *tmpEvent=NULL,*currentEvent=NULL,*prevEvent=NULL;
-	SnglBurstTable         burstEvent,*burstEventList=NULL,*outEventList=NULL;
-	MetadataTable             myTable;
-	LIGOLwXMLStream           xmlStream;
-	struct options_t options;
+	CHAR              *infile=NULL,*outfile=NULL;
+	SnglBurstTable    *tmpEvent=NULL,*currentEvent=NULL,*prevEvent=NULL;
+	SnglBurstTable    burstEvent,*burstEventList=NULL,*outEventList=NULL;
+	MetadataTable     myTable;
+	LIGOLwXMLStream   xmlStream;
+	struct options_t  options;
 
 
 	/*******************************************************************
@@ -412,43 +440,28 @@ int main(int argc, char **argv)
         LALPrintError("Could not open input file\n");
     }
 
-    /*****************************************************************
-     * loop over the xml files
-     *****************************************************************/
+	/*****************************************************************
+	 * loop over the xml files
+	 *****************************************************************/
 	currentEvent = tmpEvent = burstEventList = NULL;
+
 	if (options.verbose) {
 		fpout = fopen("./EPjobstartstop.dat","w");
-		fprintf(fpout,"#This file contains the start & stop times of all jobs that succeded\n" );
-	}
-    while ( getline(line, MAXSTR, fpin) ) {
+		fprintf(fpout, "# This file contains the start & stop times of all jobs that succeded\n");
+	} else
+		fpout = NULL;
 
-      INT4 tmpStartTime=0,tmpEndTime=0;
-
-      fileCounter++;
+	while ( getline(line, MAXSTR, fpin) ) {
+		fileCounter++;
 		if (options.verbose)
 			fprintf(stderr,"Working on file %s\n", line);
 
-      /*Read the searchsummary table */
-      SearchSummaryTableFromLIGOLw( &searchSummary, line);
-      tmpStartTime=searchSummary->in_start_time.gpsSeconds;
-      tmpEndTime=searchSummary->in_end_time.gpsSeconds;
 
-		/*write out the start and stop time */
-		if (options.verbose) {
-			fprintf(fpout,"%d  %d  %d\n",tmpStartTime,tmpEndTime,tmpEndTime-tmpStartTime );
+		/*
+		 * Read the search summary table
+		 */
 
-			/*total time analysed */
-			timeAnalyzed += (tmpEndTime-tmpStartTime);
-		}
-
-      while (searchSummary)
-	{
-	  SearchSummaryTable *thisEvent;
-	  thisEvent = searchSummary;
-	  searchSummary = searchSummary->next;
-	  LALFree( thisEvent );
-	}
-      searchSummary = NULL; 
+		timeAnalyzed += read_search_summary(line, fpout);
 
       /*read in the Sngl_Burst table */
       LAL_CALL( LALSnglBurstTableFromLIGOLw (&stat, &tmpEvent, 
