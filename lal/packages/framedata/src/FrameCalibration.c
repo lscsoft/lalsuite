@@ -85,6 +85,7 @@
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/Calibration.h>
+#include <lal/Date.h>
 #include <lal/FrameStream.h>
 #include <lal/FrameCalibration.h>
 
