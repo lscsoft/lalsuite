@@ -12,25 +12,26 @@ Test code for the inspiral bank modules.
 \subsubsection*{Usage}
 \begin{verbatim}
 BankEfficiency [options]
-
-
 The options are :
-   -alpha : BCV amplitude correction parameter
-   -approximant : Post-Newtonian model such as TaylorT1, PadeT1, EOB, BCV ...  
--fl : lower frequency cutoff             
--mMin : minimal mass of component stars   
--mMax : maximal mass of component stars    
--mm : minimal match for template bank   
--n : number of trials                  
--numFcut : number of layers in Fcut dimension
--order : order of PN model                  
--quiet : if this flag is present, the output is restricted to the min
--seed : seed for random generation         
--sigAmp : amplitude of the signal            
--simType : type of simulation, 0, 1 or 2    
--x0Max : Max value of psi0 
--x1Min : Min value of psi  
-		  
+USAGE: lalapps_BankEfficiency [options]
+The options are (with default values in brackets)\n");
+      -quiet : if this flag is present, the output is restricted to the minimum
+          -n : number of trials
+         -fl : lower frequency cutoff
+       -mMin : minimal mass of component stars
+       -mMax : maximal mass of component stars
+      -x0Max : Max value of psi0 (%7.2f)
+      -x1Min : Min value of psi3 (%7.2f)
+      -alpha : BCV amplitude correction parameter
+    -numFcut : number of layers in Fcut dimension
+         -mm : minimal match for template bank
+    -simType : type of simulation, 0, 1 or 2
+-approximant : PN model for Monte-Carlo (TaylorT1, ...)
+     -signal : same as -approximant
+   -template : PN model for template bank (TaylorT1, ...)
+      -order : order of PN model
+       -seed : seed for random generation
+     -sigAmp : amplitude of the signal
 
 \end{verbatim}
 
@@ -138,7 +139,7 @@ main (  int argc, char **argv )
    coarseIn.psi3Max = 1.e1;
    coarseIn.alpha = 0.L;
    coarseIn.numFcutTemplates = 5;
-   coarseIn.approximant = TaylorT1;
+   coarseIn.approximant = template;
 
    randIn.useed = 128092;
    randIn.type = 0;
@@ -237,38 +238,29 @@ main (  int argc, char **argv )
 	   {
 		   fprintf(stderr,"\nUSAGE: %s [options]\n", argv[0]);
 		   fprintf(stderr,"The options are (with default values in brackets)\n");
+		   fprintf(stderr,"All options should be followed by a number except -quiet\n");
 		   fprintf(stderr,"      -quiet : if this flag is present, the output is restricted to the minimum\n");
 		   fprintf(stderr,"          -n : number of trials                   (%d)\n",       ntrials);
+		   fprintf(stderr,"       -seed : seed for random generation         (%d)\n",       randIn.useed);
+		   fprintf(stderr,"    -simType : type of simulation, 0, 1 or 2      (%d)\n\n",     randIn.type);
 		   fprintf(stderr,"         -fl : lower frequency cutoff             (%7.2f) Hz\n", coarseIn.fLower);
 		   fprintf(stderr,"       -mMin : minimal mass of component stars    (%7.2f) Mo\n", coarseIn.mMin);
 		   fprintf(stderr,"       -mMax : maximal mass of component stars    (%7.2f) Mo\n", coarseIn.mMax);
-		   fprintf(stderr,"      -x0Max : Max value of psi0 (%7.2f)\n\n",                   coarseIn.psi0Max);
-		   fprintf(stderr,"      -x1Min : Min value of psi3 (%7.2f)\n\n",                   coarseIn.psi3Min);
+		   fprintf(stderr,"      -x0Max : Max value of psi0 (%7.2f)\n",                     coarseIn.psi0Max);
+		   fprintf(stderr,"      -x1Min : Min value of psi3 (%7.2f)\n",                     coarseIn.psi3Min);
 		   fprintf(stderr,"      -alpha : BCV amplitude correction parameter (%7.2f)\n",    coarseIn.alpha);
 		   fprintf(stderr,"    -numFcut : number of layers in Fcut dimension (%7.2d)\n",    coarseIn.numFcutTemplates);
 		   fprintf(stderr,"         -mm : minimal match for template bank    (%7.3f)\n",    coarseIn.mmCoarse);
-		   fprintf(stderr,"    -simType : type of simulation, 0, 1 or 2      (%d)\n\n",     randIn.type);
-		   fprintf(stderr,"-approximant : PN model for Monte-Carlo (TaylorT1, ...) (%d)\n", randIn.param.approximant);
+		   fprintf(stderr,"   -template : PN model for template bank, e.g. BCV (%d)\n\n",   coarseIn.approximant);
+		   fprintf(stderr,"-approximant : PN model for Monte-Carlo, e.g. EOB (%d)\n",       randIn.param.approximant);
 		   fprintf(stderr,"     -signal : same as -approximant\n");
-		   fprintf(stderr,"   -template : PN model for template bank (TaylorT1, ...) (%d)\n", coarseIn.approximant);
 		   fprintf(stderr,"      -order : order of PN model                  (%7.2d)\n",    randIn.param.order);
-		   fprintf(stderr,"       -seed : seed for random generation         (%d)\n",       randIn.useed);
 		   fprintf(stderr,"     -sigAmp : amplitude of the signal            (%7.2f)\n",    randIn.SignalAmp);
 		   return 1;	
 
 	   }
 	   i++;       
    }
-
-   /*
-   fprintf(stderr, "This test code does three things:\n");
-   fprintf(stderr, "(a) Creates a filter bank at a certain minimal match\n");
-   fprintf(stderr, "(b) Generates signals with random parmeters\n");
-   fprintf(stderr, "(c) Filters each of these signals with the a \n");
-   fprintf(stderr, "subset of templates close to the random signal \n");
-   fprintf(stderr, "and reports the best SNR achived\n");
-   fprintf(stderr, "Results of the run are written on to stdout\n");
-   */
 
 
 /*---------------------------------------------------------------------------*/
