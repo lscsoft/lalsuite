@@ -318,7 +318,7 @@ int main( int argc, char *argv[] )
         optarg_len = strlen( optarg ) + 1;
         inputGlob = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( inputGlob, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        ADD_PROCESS_PARAM( "string", "'%s'", optarg );
         break;
 
       case 'i':
@@ -1238,10 +1238,10 @@ int main( int argc, char *argv[] )
 
       if ( thisEvent )
       {
-        /* discard any remaining inspiral triggers */
-        /* as we have run out of injections        */
-        tmpEvent = thisEvent->next;
-        thisEvent->next = NULL;
+        /* discard any remaining inspiral triggers -- including thisEvent */
+        /* as we have run out of injections */
+        tmpEvent = thisEvent;
+        prevEvent->next = NULL;
         while ( tmpEvent )
         {
           thisEvent = tmpEvent;
