@@ -1593,7 +1593,7 @@ LALFindChirpBCVFilterSegment (
        	   }
 	   else
 	   {
-	      InvTan1 = atan( Num1 / Den1 );
+	      InvTan1 = (REAL4) atan( Num1 / Den1 );
 	   }
 
 	   if ( Den2 == 0 )
@@ -1609,7 +1609,7 @@ LALFindChirpBCVFilterSegment (
            }
            else
            {
-              InvTan2 = atan( Num2 / Den2 );
+              InvTan2 = (REAL4) atan( Num2 / Den2 );
            }
 
 	   thisEvent->coa_phase = 0.5 * InvTan1 - 0.5 * InvTan2 ;
@@ -1715,6 +1715,52 @@ LALFindChirpBCVFilterSegment (
     strncpy( thisEvent->channel, input->segment->data->name + 3,
         (LALNameLength - 3) * sizeof(CHAR) );
     thisEvent->impulse_time = thisEvent->end_time;
+
+    /* record coalescence phase and alpha */
+
+    /* calculate the numerators and the denominators */
+    Num1 = qBCV[timeIndex].re + q[timeIndex].im ;
+    Num2 = qBCV[timeIndex].re - q[timeIndex].re ;
+    Den1 = q[timeIndex].re - qBCV[timeIndex].im ;
+    Den2 = q[timeIndex].re + qBCV[timeIndex].im ;
+
+    if ( Den1 == 0 )
+    {
+      if ( Num1 >= 0 )
+      {
+        InvTan1 = LAL_PI / 2.0;
+      }
+      else
+      {
+        InvTan1 = - LAL_PI / 2.0 ;
+      }
+    }
+    else
+    {
+      InvTan1 = (REAL4) atan( Num1 / Den1 );
+    }
+
+    if ( Den2 == 0 )
+    {
+      if ( Num2 >= 0 )
+      {
+        InvTan2 = LAL_PI / 2.0;
+      }
+      else
+      {
+        InvTan2 = - LAL_PI / 2.0 ;
+      }
+    }
+    else
+    {
+      InvTan2 = (REAL4) atan( Num2 / Den2 );
+    }
+
+    thisEvent->coa_phase = 0.5 * InvTan1 - 0.5 * InvTan2 ;
+    omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
+    thisEvent->alpha = - input->segment->b2 * tan(omega) /
+        ( input->segment->a1 + input->segment->b1*tan(omega) );
+	
 
     /* copy the template into the event */
     thisEvent->psi0   = (REAL4) input->tmplt->psi0;   
