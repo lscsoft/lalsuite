@@ -106,7 +106,44 @@ LALCreateFindChirpInput (
   }
   ENDFAIL( status );
 
+  /* create memory for BCVSpin orthonormalised amplitude vectors */
+  if ( params->approximant == BCVSpin )
+  {
+  	LALDCreateVector (status->statusPtr, &(outputPtr->fcTmplt->A1BCVSpin), 
+      		((params->numPoints)/2)+1 );
+	BEGINFAIL( status )
+	{
+	    LALFree( outputPtr->fcTmplt );
+	    outputPtr->fcTmplt = NULL;
+	    LALFree( *output );
+	    *output = NULL;
+	}
+	ENDFAIL( status );
+	   
+ 	LALDCreateVector (status->statusPtr, &(outputPtr->fcTmplt->A2BCVSpin),
+	        ((params->numPoints)/2)+1 );
+        BEGINFAIL( status )
+	{
+	    LALFree( outputPtr->fcTmplt );
+	    outputPtr->fcTmplt = NULL;
+	    LALFree( *output );
+	    *output = NULL;
+	}
+	ENDFAIL( status );
 
+	LALDCreateVector (status->statusPtr, &(outputPtr->fcTmplt->A3BCVSpin),
+	            ((params->numPoints)/2)+1 );
+	BEGINFAIL( status )
+	{
+	     LALFree( outputPtr->fcTmplt );
+	     outputPtr->fcTmplt = NULL;
+	     LALFree( *output );
+	     *output = NULL;
+	}
+	ENDFAIL( status );  
+  }	  
+
+  
   /* normal exit */
   DETATCHSTATUSPTR( status );
   RETURN( status );
@@ -154,6 +191,26 @@ LALDestroyFindChirpInput (
   LALCDestroyVector( status->statusPtr, &(outputPtr->fcTmplt->data) );
   CHECKSTATUSPTR( status );
 
+  /* destroy BCVSpin amplitude vectors */
+  if (outputPtr->fcTmplt->A1BCVSpin)
+  {
+  	LALDDestroyVector( status->statusPtr, &(outputPtr->fcTmplt->A1BCVSpin) );
+	CHECKSTATUSPTR( status );	
+  }	  
+  
+  if (outputPtr->fcTmplt->A2BCVSpin)
+  {
+         LALDDestroyVector( status->statusPtr, &(outputPtr->fcTmplt->A2BCVSpin) );
+         CHECKSTATUSPTR( status );
+  }
+
+  if (outputPtr->fcTmplt->A3BCVSpin)
+  {
+         LALDDestroyVector( status->statusPtr, &(outputPtr->fcTmplt->A3BCVSpin) );
+         CHECKSTATUSPTR( status );
+  }
+    
+  
   /* destroy the chirp template structure */
   LALFree( outputPtr->fcTmplt );
 
