@@ -460,10 +460,10 @@ LALFindChirpBCVTemplate (
 
   /* psi coefficients */
   psi00 = tmplt->psi0;        /* BCV only uses psi0, psi15:            */
-  psi05 = 0.0; //tmplt->psi1; /* -> psi1,2,4 don't exist in tmplt      */
-  psi10 = 0.0; //tmplt->psi2; /* -> use if statements to define these? */
+  psi05 = 0.0; /*tmplt->psi1;*/ /* -> psi1,2,4 don't exist in tmplt      */
+  psi10 = 0.0; /*tmplt->psi2;*/ /* -> use if statements to define these? */
   psi15 = tmplt->psi3;        /* & which name convention to use?       */
-  psi20 = 0.0; //tmplt->psi4;
+  psi20 = 0.0; /*tmplt->psi4;*/
 /* work needed here... */
 
   /* template dependent normalisation */
