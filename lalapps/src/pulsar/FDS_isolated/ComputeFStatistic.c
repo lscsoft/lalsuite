@@ -64,6 +64,11 @@ extern int boinc_init_graphics();
 extern int boinc_finish_graphics();
 void use_boinc_filename1(char** orig_name);
 void use_boinc_filename0(char* orig_name);
+
+/* for current search position, used in starsphere.C revision 4.6 or greater */
+extern float search_RAdeg;
+extern float search_DEdeg;
+
 #endif /* USE_BOINC */
 
 
@@ -371,7 +376,13 @@ int main(int argc,char *argv[])
 
       Alpha = thisPoint.longitude;
       Delta = thisPoint.latitude;
-      
+#if USE_BOINC
+      /* pass current search position, for use with starsphere.C
+	 revision 4.6 or greater. */
+      search_RAdeg = (float)Alpha;
+      search_DEdeg = (float)Delta;
+#endif /* USE_BOINC */
+
       LAL_CALL (CreateDemodParams(&status), &status);
       /* loop over spin params */
       for (spdwn=0; spdwn <= GV.SpinImax; spdwn++)
