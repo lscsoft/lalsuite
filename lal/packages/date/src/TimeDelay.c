@@ -37,7 +37,7 @@ Note that GPS time is passed with both the detectors.  The GPS time of the
 second detector is \emph{ignored}, and the GPS time for the first detector
 is taken to be the time when the signal arrives at the center of the
 Earth.  In practice, this time will be the time of detection of a signal at
-the first detector, but, as in Anderson, \emph{et al.}, we make this
+the first detector, but, as in Anderson, \textit{et al.}, we make this
 approximation as it makes little difference.  This time is used to compute
 a GMST which gives us the orientation of the Earth.
 

@@ -145,6 +145,16 @@ int main(int argc, char **argv)
   if (!increment_gps_ok(&status, &deltaT, &gps, &expected_gps))
     return FAILURE;
 
+
+  /* try passing the same pointer to struct as input and output */
+  gps.gpsSeconds     =    0;
+  gps.gpsNanoSeconds =    0;
+  deltaT.seconds     =   13;
+  deltaT.nanoSeconds =  100;
+  expected_gps.gpsSeconds =  13;
+  expected_gps.gpsNanoSeconds = 100;
+
+
   /* END: test of LALIncrementGPS() */
 
   /*
@@ -429,7 +439,6 @@ static BOOLEAN increment_gps_ok(LALStatus *status,
                                 const LIGOTimeGPS *p_init_gps,
                                 const LIGOTimeGPS *p_expected_gps)
 {
-  LIGOTimeGPS         incremented_gps;
   LALGPSCompareResult cmprslt;
 
   if (verbose_p)
@@ -442,8 +451,8 @@ static BOOLEAN increment_gps_ok(LALStatus *status,
              p_expected_gps->gpsNanoSeconds);
     }
 
-  LALIncrementGPS(status, &incremented_gps, p_init_gps, p_delta);
-  LALCompareGPS(status, &cmprslt, p_expected_gps, &incremented_gps);
+  LALIncrementGPS(status, p_init_gps, p_init_gps, p_delta);
+  LALCompareGPS(status, &cmprslt, p_expected_gps, p_init_gps);
 
   if (status->statusCode && lalDebugLevel > 0)
     {
@@ -455,14 +464,14 @@ static BOOLEAN increment_gps_ok(LALStatus *status,
 
   if (verbose_p)
     {
-      printf("got_gps:      %9d:%09d\n", incremented_gps.gpsSeconds,
-             incremented_gps.gpsNanoSeconds);
+      printf("got_gps:      %9d:%09d\n", p_init_gps->gpsSeconds,
+             p_init_gps->gpsNanoSeconds);
     }
   
   if (cmprslt != LALGPS_EQUAL)
     {
       print_incr_errmsg_maybe("LALIncrementGPS() failed",
-                              p_expected_gps, &incremented_gps);
+                              p_expected_gps, p_init_gps);
       return FALSE;
     }
   else
@@ -478,7 +487,6 @@ static BOOLEAN decrement_gps_ok(LALStatus *status,
                                 const LIGOTimeGPS *p_init_gps,
                                 const LIGOTimeGPS *p_expected_gps)
 {
-  LIGOTimeGPS         decremented_gps;
   LALGPSCompareResult cmprslt;
 
   if (verbose_p)
@@ -493,20 +501,21 @@ static BOOLEAN decrement_gps_ok(LALStatus *status,
              p_expected_gps->gpsNanoSeconds);
     }
 
-  LALDecrementGPS(status, &decremented_gps, p_init_gps, p_delta);
+  LALDecrementGPS(status, p_init_gps, p_init_gps, p_delta);
 
   if (verbose_p)
     {
-      printf("got_gps:      %9d:%09d\n", decremented_gps.gpsSeconds,
-             decremented_gps.gpsNanoSeconds);
+      printf("got_gps:      %9d:%09d\n", p_init_gps->gpsSeconds,
+             p_init_gps->gpsNanoSeconds);
     }
 
-  LALCompareGPS(status, &cmprslt, p_expected_gps, &decremented_gps);
+  /* um, if this fails.... */
+  LALCompareGPS(status, &cmprslt, p_expected_gps, p_init_gps);
 
   if (cmprslt != LALGPS_EQUAL)
     {
       print_incr_errmsg_maybe("LALIncrementGPS() failed",
-                              p_expected_gps, &decremented_gps);
+                              p_expected_gps, p_init_gps);
       return FALSE;
     }
   else

@@ -47,6 +47,27 @@ the GPS times they operate on into a floating point representation.
 
 \subsubsection*{Notes}
 
+In the \texttt{LALIncrementGPS()} and \texttt{LALDecrementGPS()}
+routines, it is legal to pass a pointer to the same \texttt{LIGOTimeGPS}
+structure as input and output, \textit{e.g.}
+
+\begin{verbatim}
+  LALStatus status;
+  LIGOTimeGPS gps;
+  LALTimeInterval interval;
+
+  ...
+
+  gps.gpsSeconds = 10;
+  gps.gpsNanoSeconds = 25;
+  interval.seconds = 13;
+  interval.nanoSeconds = 1000;
+
+  LALIncrementGPS(&status, &gps, &gps, &interval);
+
+\end{verbatim}
+
+
 \vfill{\footnotesize\input{IncrementGPSCV}}
 </lalLaTeX>
 #endif
@@ -68,22 +89,27 @@ LALIncrementGPS (LALStatus             *status,
                  const LALTimeInterval *pDeltaT) /* input: interval to increment by */
 #pragma </lalVerbatim>
 {
+  LIGOTimeGPS tmp_gps;
+
   INITSTATUS( status, "LALIncrementGPS", INCREMENTGPSC );
   ATTATCHSTATUSPTR(status);
 
-  *pIncrementedGPS = *pInitialGPS;
+  tmp_gps = *pInitialGPS;
 
-  pIncrementedGPS->gpsSeconds += pDeltaT->seconds;
+  tmp_gps.gpsSeconds += pDeltaT->seconds;
 
-  if (pIncrementedGPS->gpsNanoSeconds + pDeltaT->nanoSeconds > oneBillion)
+  if (tmp_gps.gpsNanoSeconds + pDeltaT->nanoSeconds > oneBillion)
     {
-      ++(pIncrementedGPS->gpsSeconds);
-      pIncrementedGPS->gpsNanoSeconds += (pDeltaT->nanoSeconds - oneBillion);
+      ++(tmp_gps.gpsSeconds);
+      tmp_gps.gpsNanoSeconds += (pDeltaT->nanoSeconds - oneBillion);
     }
   else
     {
-      pIncrementedGPS->gpsNanoSeconds += pDeltaT->nanoSeconds;
+      tmp_gps.gpsNanoSeconds += pDeltaT->nanoSeconds;
     }
+
+   /* assign the computed values */
+   *pIncrementedGPS = tmp_gps;
 
   DETATCHSTATUSPTR(status);
   RETURN( status );
@@ -101,6 +127,8 @@ LALDecrementGPS (LALStatus             *status,
 #pragma </lalVerbatim>
 {
   LIGOTimeGPS         deltaT_gps;
+  LIGOTimeGPS         tmp_gps;    /* tmp so that we can use a call like:
+                                     LALDecrementGPS(&stat, &gps, &gps, &interval)*/
   LALGPSCompareResult comparison_result;
   
   INITSTATUS( status, "LALDecrementGPS", INCREMENTGPSC );
@@ -110,7 +138,7 @@ LALDecrementGPS (LALStatus             *status,
   ASSERT(pInitialGPS, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
   ASSERT(pDeltaT, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
-  *pDecrementedGPS = *pInitialGPS;
+  tmp_gps = *pInitialGPS;
 
   /* Need to try to prevent going into negative GPS times, which
      are undefined; can do this easily by making the DeltaT into a GPS time
@@ -126,18 +154,21 @@ LALDecrementGPS (LALStatus             *status,
 
   if (pInitialGPS->gpsNanoSeconds < pDeltaT->nanoSeconds)
     {
-      pDecrementedGPS->gpsNanoSeconds = oneBillion
+      tmp_gps.gpsNanoSeconds = oneBillion
         + pInitialGPS->gpsNanoSeconds - pDeltaT->nanoSeconds;
-      pDecrementedGPS->gpsSeconds = pInitialGPS->gpsSeconds - 1
+      tmp_gps.gpsSeconds = pInitialGPS->gpsSeconds - 1
         - pDeltaT->seconds;
     }
   else
     {
-      pDecrementedGPS->gpsNanoSeconds = pInitialGPS->gpsNanoSeconds
+      tmp_gps.gpsNanoSeconds = pInitialGPS->gpsNanoSeconds
         - pDeltaT->nanoSeconds;
-      pDecrementedGPS->gpsSeconds = pInitialGPS->gpsSeconds
+      tmp_gps.gpsSeconds = pInitialGPS->gpsSeconds
         - pDeltaT->seconds;
     }
+
+  /* assign the computed values */
+  *pDecrementedGPS = tmp_gps;
 
   DETATCHSTATUSPTR(status);
   RETURN(status);

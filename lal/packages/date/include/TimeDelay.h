@@ -90,7 +90,7 @@ TwoDetsTimeAndASource;
 /* <lalLaTeX>
 
 \begin{verbatim}
-DetTimeAndASource}
+DetTimeAndASource
 \end{verbatim}
 \idx[Type]{DetTimeAndASource}
 
