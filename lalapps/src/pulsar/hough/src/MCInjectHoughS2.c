@@ -110,7 +110,7 @@ int main(int argc, char *argv[]){
   UINT4  nMCloop;
 
   UINT4 MCloopId;
-  UINT4 h0loop;
+  INT4 h0loop;
   
   FILE  *fpPar = NULL;
   FILE  *fpH0 = NULL;
@@ -402,19 +402,22 @@ int main(int argc, char *argv[]){
     strcpy( filename, fnameOut);
     strcat( filename, "_par");
     fpPar= fopen(filename, "w"); /* where to write the parameters */
-    setlinebuf(fpPar);  /* line buffered on */
-    
+    /*setlinebuf(fpPar);*/  /* line buffered on */
+    setvbuf(fpPar, (char *)NULL, _IOLBF, 0);
+
    	/* the  file  with the h0 values */
     strcpy( filename, fnameOut);
     strcat( filename, "_h0");
     fpH0= fopen(filename, "w"); /* where to write the parameters */
-    setlinebuf(fpH0);  /* line buffered on */
-        
+    /*setlinebuf(fpH0); */ /* line buffered on */
+    setvbuf(fpH0, (char *)NULL, _IOLBF, 0); 
+   
    	/* the  file  with the the number-counts for different h0 values */
     strcpy( filename, fnameOut);
     strcat( filename, "_nc");
     fpNc= fopen(filename, "w"); /* where to write the parameters */
-    setlinebuf(fpNc);  /* line buffered on */
+    /*setlinebuf(fpNc);*/  /* line buffered on */
+    setvbuf(fpNc, (char *)NULL, _IOLBF, 0);
 
     for (k=0; k<nh0; ++k){ fprintf(fpH0, "%g \n",  h0V.data[k] ); }  
     fclose(fpH0);
@@ -707,7 +710,7 @@ int main(int argc, char *argv[]){
   foft.data = NULL;
   foft.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
   {
-    UINT4 j;
+    INT4 j;
     for (j=0;j<nTemplates;++j) {
       foftV[j].length = mObsCoh;
       foftV[j].data = NULL;
@@ -898,7 +901,7 @@ int main(int argc, char *argv[]){
   LALFree(foft.data);
   LALFree(h0V.data);
   {
-     UINT4 j;
+     INT4 j;
      for (j=0;j<nTemplates;++j) {
         LALFree(foftV[j].data);
      }
