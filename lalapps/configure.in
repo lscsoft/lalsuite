@@ -30,6 +30,15 @@ LALAPPS_ENABLE_CONDOR
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
 
+dnl Remove -all-static from ldflags
+allstatic=`echo $LDFLAGS | sed '/-all-static/!d'`
+if test "x$allstatic" = "x" ; then
+  allstatic="false"
+else
+  LDFLAGS=`echo $LDFLAGS | sed s/-all-static//g`
+  allstatic="true"
+fi
+
 dnl Checks for programs.
 AC_PROG_AWK
 AC_PROG_CC
@@ -164,6 +173,11 @@ AM_CONDITIONAL(LALMETAIO, test x$lalmetaio = xtrue)
 AM_CONDITIONAL(DATAFLOW, test x$metaio = xtrue)
 AM_CONDITIONAL(PYTHON22, python -V 2>&1 | grep 2.2 >/dev/null )
 AC_DEFINE_UNQUOTED(PREFIX, "$prefix", [Install prefix])
+
+dnl restore all static to ldflags
+if test "${allstatic}" = "true" ; then
+  LDFLAGS="-all-static $LDFLAGS"
+fi
 
 AC_OUTPUT( 				\
 	Makefile 			\
