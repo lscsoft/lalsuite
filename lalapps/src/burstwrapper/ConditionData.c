@@ -14,8 +14,15 @@
      the datatype of the output data in square brackets,
      for instance:
      output(cavfaccplx,_,_,H2:CAL-CAV_FAC,H2 cavity factor [COMPLEX8TimeSeries]);
+
+     Possible data types are:
+     COMPLEX8FrequencySeries
+     COMPLEX8TimeSeries
+     REAL4Sequence
+     REAL8TimeSeries
+
      Note that this is not necessary if the output type
-     is a single precision time series. */
+     is a single precision time series (REAL4TimeSeries). */
   /*****************************************/
 int OutputSymbols(char *algorithms, 
 		  int *Nsymbols,
@@ -110,8 +117,16 @@ int OutputSymbols(char *algorithms,
 	if(strstr(s, "COMPLEX8TimeSeries")) {
 	  (*symbols + *Nsymbols)->s_translator = TranslateCOMPLEX8TimeSeries;
 	} else {
-	  /* default is REAL4 time series */
-	  (*symbols + *Nsymbols)->s_translator = TranslateREAL4TimeSeries;
+	  if(strstr(s, "REAL4Sequence")) {
+	    (*symbols + *Nsymbols)->s_translator = TranslateREAL4Sequence;
+	  } else {
+	    if(strstr(s, "REAL8TimeSeries")) {
+	      (*symbols + *Nsymbols)->s_translator = TranslateREAL8TimeSeries;
+	    } else {
+	      /* default is REAL4 time series */
+	      (*symbols + *Nsymbols)->s_translator = TranslateREAL4TimeSeries;
+	    }
+	  }
 	}
       }
 
