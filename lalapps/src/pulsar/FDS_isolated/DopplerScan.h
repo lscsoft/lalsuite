@@ -41,7 +41,7 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 </lalLaTeX>
 ***************************************************** <lalErrTable> */
 #define DOPPLERSCANH_ENULL 		1
-#define DOPPLERSCANH_ENOINIT 		2
+#define DOPPLERSCANH_ENOTREADY 		2
 #define DOPPLERSCANH_ESYS      		3
 #define DOPPLERSCANH_E2DSKY		4
 #define DOPPLERSCANH_E2DSTEP		5
@@ -54,7 +54,7 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 #define DOPPLERSCANH_EINPUT		12
 
 #define DOPPLERSCANH_MSGENULL 		"Arguments contained an unexpected null pointer"
-#define DOPPLERSCANH_MSGENOINIT 	"DopplerScan module has not been initialized"
+#define DOPPLERSCANH_MSGENOTREADY 	"Doppler scan is uninitialized or has finished"
 #define DOPPLERSCANH_MSGESYS		"System call failed (probably file IO)"
 #define DOPPLERSCANH_MSGE2DSKY		"Either need one sky-point or a polygon. (2 sky-points where given)"
 #define DOPPLERSCANH_MSGE2DSTEP		"If not using the metric, you need to specify _both_ dDelta and dAlpha"
@@ -68,16 +68,15 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 
 /*************************************************** </lalErrTable> */
 
-typedef enum
-{
-  LAL_METRIC_NONE = 0,
-  LAL_METRIC_PTOLE_ANALYTIC,	/* analytic ptolemaic approx for the metric */
-  LAL_METRIC_COHERENT_PTOLE,	/* numerical metric using ptole-approximation in timing */
-  LAL_METRIC_COHERENT_EPHEM,	/* numerical exact metric using ephemeris-timing */
-  LAL_METRIC_LAST
-} PulsarMetricType;
+/* a Doppler-scan can be in one of the following states */
+enum {
+  STATE_IDLE = 0,   	/* not initialized yet */
+  STATE_READY,		/* initialized and ready */
+  STATE_FINISHED,
+  STATE_LAST
+};
 
-  /* NOTE: if you change these, you also need to adapt the help-string + cfs_example-file !! */
+/* NOTE: if you change these, you also need to adapt the help-string + cfs_example-file !! */
 typedef enum
 {
   GRID_FLAT,			/* "flat" sky-grid: fixed step-size (dAlpha,dDelta) */
@@ -90,7 +89,7 @@ typedef enum
 /* this structure is handed over to InitDopplerScan() */  
 typedef struct {
   DopplerGridType gridType;	/* which type of grid to generate */  
-  PulsarMetricType metricType; 	/* which metric to use if GRID_METRIC */
+  LALPulsarMetricType metricType; 	/* which metric to use if GRID_METRIC */
 
   REAL8 dAlpha;			/* step-sizes for GRID_FLAT */
   REAL8 dDelta;
@@ -110,8 +109,8 @@ typedef struct {
 
 typedef struct {
   SkyPosition skypos;
+  REAL8 freq;
   REAL8Vector spindowns;
-  BOOLEAN finished;
 } DopplerPosition;
 
 

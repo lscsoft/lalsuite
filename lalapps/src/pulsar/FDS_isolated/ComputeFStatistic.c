@@ -16,8 +16,6 @@
 #include "clusters.h"
 #include "DopplerScan.h"
 
-
-
 RCSID( "$Id$");
 
 /* BOINC should be set to 1 to be run under BOINC */
@@ -162,6 +160,13 @@ INT4 NormaliseSFTData(void);
 
 void initUserVars (LALStatus *stat);
 
+/*----------------------------------------------------------------------
+ * Helper function (Yousuke): 
+ * Refine the skyRegion to search only at neighboring grid points of the 
+ * center of the original skyRegion. 
+ *----------------------------------------------------------------------*/
+void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit *scanInit);
+
 #define EPHEM_YEARS  "00-04"
 #define SFT_BNAME  "SFT"
 
@@ -181,22 +186,13 @@ int main(int argc,char *argv[])
   SkyPosition thisPoint;
   CHAR Fstatsfilename[256];         /* Fstats file name*/
   CHAR Fmaxfilename[256];           /* Fmax file name*/
-  INT4 ic,s;
+  INT4 s;
   DopplerScanInit scanInit;
   LIGOTimeGPS t0, t1;
   REAL8 duration;
   FILE *fpOut=NULL;
   UINT4 counter;
   LALStatus status = blank_status;	/* initialize status */
-
-
-/*----------------------------------------------------------------------
- * Helper function (Yousuke): 
- * Refine the skyRegion to search only at neighboring grid points of the 
- * center of the original skyRegion. 
- *----------------------------------------------------------------------*/
-  void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit *scanInit);
-
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -353,7 +349,7 @@ int main(int argc,char *argv[])
       LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
 
       /* Have we scanned all DopplerPositions yet? */
-      if (dopplerpos.finished)  
+      if (thisScan.state == STATE_FINISHED)
 	break;
 
       LALNormalizeSkyPosition (&status, &thisPoint, &(dopplerpos.skypos) );
@@ -489,7 +485,7 @@ initUserVars (LALStatus *stat)
   uvar_f1dotBand = 0.0;
   
   uvar_Fthreshold = 10.0;
-  uvar_metricType =  LAL_METRIC_PTOLE_ANALYTIC;
+  uvar_metricType =  LAL_PMETRIC_COH_PTOLE_ANALYTIC;
   uvar_gridType = GRID_FLAT;
 
   uvar_metricMismatch = 0.02;
@@ -1306,7 +1302,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 #endif
     {
       fprintf(stderr, "in Main: unable to change directory to %s\n", uvar_workingDir);
-      return 2;
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
 #if USE_BOINC
@@ -1529,7 +1525,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta) );
     haveGridFile   = (uvar_skyGridFile != NULL);
     needGridFile   = (uvar_gridType == GRID_FILE);
-    haveMetric     = (uvar_metricType > LAL_METRIC_NONE);
+    haveMetric     = (uvar_metricType > LAL_PMETRIC_NONE);
     needMetric     = (uvar_gridType == GRID_METRIC);
     setMetric      = LALUserVarWasSet (&uvar_metricType);
 

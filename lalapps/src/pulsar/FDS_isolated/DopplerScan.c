@@ -55,21 +55,6 @@ enum {
 
 static int meshOrder = ORDER_DELTA_ALPHA;
 
-/* internal structure to be passed to getMetric() 
- * containing all the parameters used there: */
-typedef struct {
-  PtoleMetricIn *metricParams;	/* the actual parameters for the metric-functions */
-  PulsarMetricType metricType;	/* which metric to use: NONE, PTOLE, COHERENT, ... */
-} getMetricParams_t;
-
-/* the SkyScanner can be in one of the following states */
-enum {
-  STATE_IDLE = 0,   	/* not initialized yet */
-  STATE_READY,		/* initialized and ready */
-  STATE_FINISHED,
-  STATE_LAST
-};
-
 #define MIN(x,y) (x < y ? x : y)
 #define MAX(x,y) (x > y ? x : y)
 
@@ -88,11 +73,10 @@ static PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 /* internal prototypes */
 void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params );
 void getMetric( LALStatus *status, REAL4 g[3], REAL4 skypos[2], void *params );
-void LALMetricWrapper (LALStatus *stat, REAL8Vector *metric, const PtoleMetricIn *input, PulsarMetricType metricType);
-
+void LALMetricWrapper (LALStatus *stat, REAL8Vector *metric, const PtoleMetricIn *params);
+void LALTemplateDistance (LALStatus *stat, REAL8 *dist, const DopplerPosition *pos1, const DopplerPosition *pos2);
 	
-void ConvertTwoDMesh2Grid ( LALStatus *stat, DopplerScanGrid **grid, 
-			    const TwoDMeshNode *mesh2d, const SkyRegion *region );
+void ConvertTwoDMesh2Grid ( LALStatus *stat, DopplerScanGrid **grid, const TwoDMeshNode *mesh2d, const SkyRegion *region );
 
 BOOLEAN pointInPolygon ( const SkyPosition *point, const SkyRegion *polygon );
 
@@ -244,7 +228,7 @@ FreeDopplerScan (LALStatus *stat, DopplerScanState *scan)
   if ( scan->state == STATE_IDLE )
     {
       LALError (stat, "\nTrying to free an uninitialized DopplerScan.\n");
-      ABORT (stat, DOPPLERSCANH_ENOINIT, DOPPLERSCANH_MSGENOINIT);
+      ABORT (stat, DOPPLERSCANH_ENOTREADY, DOPPLERSCANH_MSGENOTREADY);
     }
   else if ( scan->state != STATE_FINISHED )
     LALWarning (stat, "freeing unfinished DopplerScan.");
@@ -300,35 +284,28 @@ NextDopplerPos( LALStatus *stat, DopplerPosition *pos, DopplerScanState *scan)
   /* This traps coding errors in the calling routine. */
   ASSERT( pos != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
 
-  pos->finished = 0;
-
   switch( scan->state )
     {
     case STATE_IDLE:
-      ABORT( stat, DOPPLERSCANH_ENOINIT, DOPPLERSCANH_MSGENOINIT );
+    case STATE_FINISHED:
+      ABORT (stat, DOPPLERSCANH_ENOTREADY, DOPPLERSCANH_MSGENOTREADY);
       break;
 
     case STATE_READY:  
       if (scan->gridNode == NULL) 	/* we're done */
-	{
-	  pos->finished = 1;
-	  scan->state = STATE_FINISHED;
-	}
+	scan->state = STATE_FINISHED;
       else
 	{
 	  pos->skypos.longitude = scan->gridNode->alpha;
 	  pos->skypos.latitude =  scan->gridNode->delta;
 
-	  pos->spindowns.length = 0; /*  FIXME */
+	  pos->spindowns.length = 0; /*  FIXME: no spindowns for now */
 
 	  scan->gridNode = scan->gridNode->next;
 	}
       break;
-      
-    case STATE_FINISHED:
-      pos->finished = 1;  /*  signal to caller that we've finished */
-      break;
-    }
+
+    } /* switch scan->stat */
 
   RETURN( stat );
 
@@ -393,9 +370,7 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
 {
   INT2 dim;  	/* dimension of (full) parameter space (incl. freq) */
   REAL8Vector   *metric = NULL;  /* for output of metric */
-  getMetricParams_t *ourParams = (getMetricParams_t*) params;
-  PtoleMetricIn *metricpar = ourParams->metricParams;
-  PulsarMetricType metricType = ourParams->metricType;
+  PtoleMetricIn *metricpar = (PtoleMetricIn*) params;
 
   /* Set up shop. */
   INITSTATUS( stat, "getMetric", DOPPLERSCANC );
@@ -421,7 +396,7 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
   /* before we call the metric: make sure the sky-position  is "normalized" */
   TRY ( LALNormalizeSkyPosition (stat->statusPtr, &(metricpar->position), &(metricpar->position)), stat);
 
-  TRY ( LALMetricWrapper( stat->statusPtr, metric, metricpar, metricType), stat);
+  TRY ( LALMetricWrapper( stat->statusPtr, metric, metricpar), stat);
 
   BEGINFAIL( stat )
     TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
@@ -483,7 +458,6 @@ plotGrid (LALStatus *stat,
   REAL8 alpha, delta;
   UINT4 set, i;
   UINT4 dim;
-  PulsarMetricType metricType;
 
   const CHAR *xmgrHeader = 
     "@version 50103\n"
@@ -538,8 +512,7 @@ plotGrid (LALStatus *stat,
 
 
   /* if metric is given: plot ellipses */
-  metricType = init->metricType;
-  if ( ( metricType > LAL_METRIC_NONE) && (metricType < LAL_METRIC_LAST) )
+  if ( ( init->metricType > LAL_PMETRIC_NONE) && (init->metricType < LAL_PMETRIC_LAST) )
     {
       REAL8Vector  *metric = NULL;   /* Parameter-space metric: for plotting ellipses */
       REAL8 gaa, gad, gdd, angle, smaj, smin;
@@ -549,6 +522,7 @@ plotGrid (LALStatus *stat,
       set++;
 
       /* set up the metric parameters common to all sky-points */
+      metricPar.metricType = init->metricType;
       metricPar.position.system = COORDINATESYSTEM_EQUATORIAL;
       metricPar.spindown = LALCalloc ( 1, sizeof(REAL4Vector) );
       metricPar.spindown->length=0;
@@ -575,7 +549,7 @@ plotGrid (LALStatus *stat,
 	  /* make sure we "normalize" point before calling metric */
 	  TRY( LALNormalizeSkyPosition (stat->statusPtr, &(metricPar.position), &(metricPar.position) ), stat);
 
-	  TRY( LALMetricWrapper( stat->statusPtr, metric, &metricPar, init->metricType ), stat);
+	  TRY( LALMetricWrapper( stat->statusPtr, metric, &metricPar), stat);
 
 	  TRY (LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
 
@@ -643,8 +617,7 @@ plotGrid (LALStatus *stat,
 void
 LALMetricWrapper (LALStatus *stat, 
 		  REAL8Vector *metric, 		/* output: metric (pre-allocated)*/
-		  const PtoleMetricIn *input, 	/* input-params for the metric */
-		  PulsarMetricType metricType)	/* which type of metric to use */
+		  const PtoleMetricIn *input) 	/* input-params for the metric */
 { /* </lalVerbatim> */
   MetricParamStruc params = empty_MetricParamStruc;
   PulsarTimesParamStruc spinParams = empty_PulsarTimesParamStruc;
@@ -658,18 +631,18 @@ LALMetricWrapper (LALStatus *stat,
 
   ASSERT ( input, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
   ASSERT ( input->spindown, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
-  if (metricType == LAL_METRIC_COHERENT_EPHEM) {
+  if (input->metricType == LAL_PMETRIC_COH_EPHEM) {
     ASSERT ( input->ephemeris != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   }
 
-  switch (metricType)
+  switch (input->metricType)
     {
-    case LAL_METRIC_PTOLE_ANALYTIC: /* use Ben&Ian's analytic ptolemaic metric */
+    case LAL_PMETRIC_COH_PTOLE_ANALYTIC: /* use Ben&Ian's analytic ptolemaic metric */
       TRY ( LALPtoleMetric (stat->statusPtr, metric, input), stat);
       break;
 
-    case LAL_METRIC_COHERENT_PTOLE:   /* use CoherentMetric + Ptolemaic timing */
-    case LAL_METRIC_COHERENT_EPHEM:   /* use CoherentMetric + ephemeris timing */
+    case LAL_PMETRIC_COH_PTOLE_NUMERIC:   /* use CoherentMetric + Ptolemaic timing */
+    case LAL_PMETRIC_COH_EPHEM:   /* use CoherentMetric + ephemeris timing */
       nSpin = input->spindown->length;
 
       /* Set up constant parameters for barycentre transformation. */
@@ -681,7 +654,7 @@ LALMetricWrapper (LALStatus *stat,
       TRY( LALGetEarthTimes( stat->statusPtr, &baryParams ), stat );
 
       /* set timing-function for earth-motion: either ptolemaic or ephemeris */
-      if (metricType == LAL_METRIC_COHERENT_PTOLE)
+      if (input->metricType == LAL_PMETRIC_COH_PTOLE_NUMERIC)
 	{
 	  baryParams.t1 = LALTBaryPtolemaic;
 	  baryParams.dt1 = LALDTBaryPtolemaic;
@@ -745,7 +718,7 @@ LALMetricWrapper (LALStatus *stat,
       break;
 
     default:
-      LALPrintError ("Unknown metric type `%d`\n", metricType);
+      LALPrintError ("Unknown metric type `%d`\n", input->metricType);
       ABORT (stat, DOPPLERSCANH_EMETRIC,  DOPPLERSCANH_MSGEMETRIC);
       break;
       
@@ -1099,7 +1072,6 @@ buildMetricGrid (LALStatus *stat, DopplerScanGrid **grid, SkyRegion *skyRegion, 
   TwoDMeshNode *mesh2d = NULL;
   TwoDMeshParamStruc meshpar = empty_meshpar;
   PtoleMetricIn metricpar = empty_metricpar;
-  getMetricParams_t getMetricParams;
 
   INITSTATUS( stat, "makeMetricGrid", DOPPLERSCANC );
   ATTATCHSTATUSPTR (stat);
@@ -1107,7 +1079,7 @@ buildMetricGrid (LALStatus *stat, DopplerScanGrid **grid, SkyRegion *skyRegion, 
   ASSERT ( grid, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   ASSERT ( skyRegion, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   ASSERT ( *grid == NULL, stat, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL);
-  ASSERT ( (init->metricType > LAL_METRIC_NONE) && (init->metricType < LAL_METRIC_LAST), 
+  ASSERT ( (init->metricType > LAL_PMETRIC_NONE) && (init->metricType < LAL_PMETRIC_LAST), 
 	   stat, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
 
   thisPoint = skyRegion->lowerLeft;	/* start from lower-left corner */
@@ -1134,12 +1106,11 @@ buildMetricGrid (LALStatus *stat, DopplerScanGrid **grid, SkyRegion *skyRegion, 
       
   /* helper-function: range and metric */
   meshpar.getMetric = getMetric;
-  /* and its parameters: metric-parms & which metric */
-  getMetricParams.metricParams = &(metricpar);
-  getMetricParams.metricType = init->metricType;
-  meshpar.metricParams = (void *) &(getMetricParams);
+  /* and its parameters: metric-parms */
+  meshpar.metricParams = (void *) &metricpar;
 
   /* set up the metric parameters proper (using PtoleMetricIn as container-type) */
+  metricpar.metricType = init->metricType;
   metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
   /* currently, CreateVector's are broken as they don't allow length=0 */
   /*      TRY( LALSCreateVector( stat->statusPtr, &(scan->MetricPar.spindown), 0 ), stat ); 	*/
