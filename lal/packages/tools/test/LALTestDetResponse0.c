@@ -54,6 +54,8 @@ NRCSID( LALTESTDETRESPONSE0C, "$Id$" );
 #define TRUE  1
 #define LALDR_MATRIXSIZE 3
 
+#define TESTDR_MIN(a, b) ((a < b) ? (a) : (b))
+
 /* these two constants are for the sky grid */
 #define NUM_DEC 21
 #define NUM_RA  24
@@ -66,13 +68,26 @@ typedef REAL8 LALDR_33Matrix[3][3];
 typedef REAL4 skygrid_t[NUM_RA * NUM_DEC];
 
 
+
+/*
+ * globals
+ */
 int        lalDebugLevel = 0;
 BOOLEAN    verbose_p     = FALSE;
+int        verbose_level = 0;
+BOOLEAN    global_detectors_set_p = FALSE;
 const INT4 oneBillion    = 1000000000;
 
 const REAL8 zero_tolerance = 0.;
 REAL8 real8_tolerance = (REAL8)2.*LAL_REAL8_EPS;
 REAL4 real4_tolerance = (REAL4)2.*LAL_REAL4_EPS;
+
+LALDetector det_north_pole;
+LALDetector det_south_pole;
+LALDetector det_green_equator;
+LALDetector det_green_tropic_of_cancer;
+LALDetector det_foo_tropic_of_cancer;
+
 
 /* this #if is so I can use Emacs's hide-ifdef-mode to make this
    block invisible, making this file a little easier to scroll through */
@@ -616,12 +631,16 @@ LALDR_EulerRotation(LALDR_33Matrix * rotationMatrix,
 
 REAL4 skygrid_avg(const skygrid_t response);
 void  skygrid_square(skygrid_t square, const skygrid_t input);
+REAL4 skygrid_rms(const skygrid_t input);
 void  skygrid_sqrt(skygrid_t result, const skygrid_t input);
 INT4  skygrid_copy(skygrid_t dest, const skygrid_t src);
 void  skygrid_print(const skygrid_t input, const char * filename);
+void skygrid_fabs(skygrid_t absgrid, const skygrid_t input);
 void  skygrid_add(skygrid_t sum, const skygrid_t a, const skygrid_t b);
-void skygrid_subtract(skygrid_t sum, const skygrid_t a, const skygrid_t b);
+void  skygrid_subtract(skygrid_t sum, const skygrid_t a, const skygrid_t b);
 void  skygrid_scalar_mult(skygrid_t result, const skygrid_t a, REAL4 b);
+
+void  setup_global_detectors(LALStatus *status);
 
 typedef enum
   {
@@ -638,9 +657,13 @@ GWPolarization;
  * pol = selects which response, F+ or Fx, to compute */
 REAL4 resp_local(REAL8 psi, REAL8 theta, REAL8 phi, GWPolarization pol);
 
+/* error-handled fopen */
 FILE *xfopen(const char *path, const char *mode);
 
-/* Yes, I do mean for the following block to be commented out */
+/* wrapped strncpy() to guarantee NUL termination */
+char *strlcpy(char *dst, const char *src, size_t len);
+
+/* Yes, I do mean for the following block to be #if'ed out */
 #if 0
 /*
  * This computes the effective longitude and latitude of a detector, given
@@ -773,7 +796,7 @@ int main(int argc, char *argv[])
 
   LALTimeInterval           interval;
 
-  UINT4 k;
+  INT4  k;
   INT4  i, j, count;
   REAL4 tolerance;
 
@@ -808,13 +831,19 @@ int main(int argc, char *argv[])
   FILE     *file_sum_sq = NULL;
   FILE     *file_theta = NULL;
   FILE     *file_phi   = NULL;
-  
-  
-  if (argc == 2)
-    lalDebugLevel = atoi(argv[1]);
 
-  if (lalDebugLevel)
-    verbose_p = TRUE;
+  if (argc < 3)
+    {
+      fprintf(stderr, "Usage: LALTestDetResponse0 debug_level verbosity_level\n");
+      exit(0);
+    }
+  
+  lalDebugLevel = atoi(argv[1]);
+  verbose_level = atoi(argv[2]);
+  verbose_p     = verbose_level;
+
+  setup_global_detectors(&status);
+
 
   /* this section is just for finding out a time when GMST is equal to 0 */
   /* and the answer is:  GPS = 13675020:943750000 */
@@ -837,14 +866,15 @@ int main(int argc, char *argv[])
           LALGPStoGMST1(&status, &gmst1, &(gps_and_acc.gps),
                         &tmp_uandacc);
 
-          printf("k = %9d; GPS = %d:%d;\t\tgmst1 = % 22.14e; gmst1-2*Pi = % 20.14Le\n",
+          printf("k = %9d; GPS = %d:%d;\t\tgmst1 = % 22.14e; gmst1-2*Pi = % 20.14e\n",
                  k, gps_and_acc.gps.gpsSeconds, gps_and_acc.gps.gpsNanoSeconds,
-                 gmst1, (gmst1-2.*LAL_PI));
+                 gmst1, (gmst1-2.*(double)LAL_PI));
 
           /* increment observation time */
           LALIncrementGPS(&status, &(gps_and_acc.gps), &(gps_and_acc.gps),
                           &interval);
         }
+      printf("AUF WIEDERSEHEN!\n");
       goto conclusion;
     }
 
@@ -1273,14 +1303,7 @@ int main(int argc, char *argv[])
       printf("Manual inspection required.\n");
     }
 
-  /* Now, here's where the docs for LALFrDetector differ
-     from the official Frame spec: LIGO-T970130-F-E
-
-     LIGO doc says azimuth of arms are measured East from North
-     (i.e. the conventional definition of bearing)
-     LALFrDetector says that azimuth is measured North from East
-  */
-  strncpy(frdet.name, "Reference", LALNameLength);
+  (void)strlcpy(frdet.name, "Reference", LALNameLength);
   frdet.vertexLongitudeRadians = deg_to_rad(0.);
   frdet.vertexLatitudeRadians  = deg_to_rad(0.);
   frdet.vertexElevation        = 0.;
@@ -1331,7 +1354,7 @@ int main(int argc, char *argv[])
 
   /* First, pass a LALFrDetector using Frame spec for azimuths (East of
      North) */
-  strncpy(frdet.name, "LHO, from FrDetector struct (Frame spec)", LALNameLength);
+  (void)strncpy(frdet.name, "LHO, from FrDetector struct (Frame spec)", LALNameLength);
   frdet.vertexLongitudeRadians = (REAL8)deg_to_rad(-119. - 25./60. - 27.5657/3600.);
   frdet.vertexLatitudeRadians  = (REAL8)deg_to_rad(46. + 27./60. + 18.528/3600.);
   frdet.vertexElevation        = 142.554;
@@ -1360,7 +1383,7 @@ int main(int argc, char *argv[])
 
   /* Second, pass a LALFrDetector using LAL (package-tools) spec for azi
      (counterclockwise from East) */
-  strncpy(frdet.name, "LHO, from FrDetector struct (package-tools spec)",
+  (void)strncpy(frdet.name, "LHO, from FrDetector struct (package-tools spec)",
           LALNameLength);
   frdet.vertexLongitudeRadians  = (REAL8)deg_to_rad(-119. - 25./60. - 27.5657/3600.);
   frdet.vertexLatitudeRadians  = (REAL8)deg_to_rad(46. + 27./60. + 18.528/3600.);
@@ -1388,7 +1411,7 @@ int main(int argc, char *argv[])
     }
 
   /* Third, use data from the CreateDetector (DetectorSite.h) doco */
-  strncpy(frdet.name, "LHO, from FrDetector struct (numbers from doco)",
+  (void)strncpy(frdet.name, "LHO, from FrDetector struct (numbers from doco)",
           LALNameLength);
   frdet.vertexLongitudeRadians  = (REAL8)deg_to_rad(-119. - 25./60. - 27.5657/3600.);
   frdet.vertexLatitudeRadians  = (REAL8)deg_to_rad(46. + 27./60. + 18.528/3600.);
@@ -1436,7 +1459,7 @@ int main(int argc, char *argv[])
    * My "greenwich_equator" from the old AM code is at location (0,0),
    * with arms pointing south and west.
    */
-  strncpy(frdet.name, "TRIVIAL 1", LALNameLength);
+  (void)strncpy(frdet.name, "TRIVIAL 1", LALNameLength);
   frdet.vertexLongitudeRadians = 0.;
   frdet.vertexLatitudeRadians  = 0.;
   frdet.vertexElevation        = 0.;
@@ -1487,7 +1510,7 @@ int main(int argc, char *argv[])
   gps.gpsNanoSeconds = 640000000;
 
   /* Set up a source at (RA=0, Dec=0, orientation=0, at time GMST1=0) */
-  strncpy(pulsar.name, "TEST PULSAR 1", LALNameLength);
+  (void)strncpy(pulsar.name, "TEST PULSAR 1", LALNameLength);
   pulsar.equatorialCoords.longitude = 0.;  /* RA */
   pulsar.equatorialCoords.latitude  = 0.;  /* Dec */
   pulsar.equatorialCoords.system    = COORDINATESYSTEM_EQUATORIAL;
@@ -1546,7 +1569,7 @@ int main(int argc, char *argv[])
   print_small_separator_maybe();
 
   /* switch detector to something less trivial */
-  strncpy(frdet.name, "TRIVIAL 2", LALNameLength);
+  (void)strncpy(frdet.name, "TRIVIAL 2", LALNameLength);
   frdet.vertexLongitudeRadians = deg_to_rad(0.);
   frdet.vertexLatitudeRadians  = deg_to_rad(15.);
   frdet.vertexElevation        = 0.;
@@ -1561,7 +1584,7 @@ int main(int argc, char *argv[])
     PrintLALDetector(&detector);
 
   /* switch source to be overhead the detector */
-  strncpy(pulsar.name, "TEST PULSAR 2", LALNameLength);
+  (void)strncpy(pulsar.name, "TEST PULSAR 2", LALNameLength);
   pulsar.equatorialCoords.longitude = deg_to_rad(0.);
   pulsar.equatorialCoords.latitude  = deg_to_rad(15.);
   pulsar.orientation                = -LAL_PI_2;
@@ -1622,7 +1645,7 @@ int main(int argc, char *argv[])
   pulsar.equatorialCoords.longitude = 0.;
   pulsar.equatorialCoords.latitude = 0.;
 
-  strncpy(frdet.name, "TRIVIAL 1", LALNameLength);
+  (void)strncpy(frdet.name, "TRIVIAL 1", LALNameLength);
   frdet.vertexLongitudeRadians = 0.;
   frdet.vertexLatitudeRadians  = LAL_PI_2;
   frdet.vertexElevation        = 0.;
@@ -1687,7 +1710,7 @@ int main(int argc, char *argv[])
   detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
 
   /* switch source */
-  strncpy(pulsar.name, "TEST PULSAR 3", LALNameLength);
+  (void)strncpy(pulsar.name, "TEST PULSAR 3", LALNameLength);
   pulsar.equatorialCoords.longitude = deg_to_rad(16.037547 * 15.);
   pulsar.equatorialCoords.latitude  = deg_to_rad(46.475430);
   pulsar.orientation                = -LAL_PI_2;
@@ -1717,7 +1740,7 @@ int main(int argc, char *argv[])
   print_small_separator_maybe();
 
   /* change to even less trivial detector */
-  strncpy(frdet.name, "TRIVIAL 3", LALNameLength);
+  (void)strncpy(frdet.name, "TRIVIAL 3", LALNameLength);
   frdet.vertexLongitudeRadians = deg_to_rad(15.);
 
   LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
@@ -1755,7 +1778,7 @@ int main(int argc, char *argv[])
   goto skip; /* FIXME: skip this for now -- i know it fails */
 
   /* use LALFrDetector structure for convenience */
-  strncpy(frdet.name, "Reference", LALNameLength);
+  (void)strncpy(frdet.name, "Reference", LALNameLength);
   frdet.vertexLongitudeRadians = deg_to_rad(240.592343);
   frdet.vertexLatitudeRadians  = deg_to_rad( 46.455147);
   frdet.xArmAltitudeRadians    = 0.;
@@ -1765,7 +1788,7 @@ int main(int argc, char *argv[])
 
   LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);  
   
-  strncpy(pulsar.name, "TEST PULSAR 2", LALNameLength);
+  (void)strncpy(pulsar.name, "TEST PULSAR 2", LALNameLength);
   pulsar.equatorialCoords.longitude = deg_to_rad(0.);  /* RA */
   pulsar.equatorialCoords.latitude  = deg_to_rad(0.);  /* Dec */
   pulsar.equatorialCoords.system    = COORDINATESYSTEM_EQUATORIAL;
@@ -1835,11 +1858,11 @@ int main(int argc, char *argv[])
   detector.response[0][2] = detector.response[2][0] = 0.;
   detector.response[1][2] = detector.response[2][1] = 0.;
   detector.type = LALDETECTORTYPE_ABSENT;
-  strncpy(detector.frDetector.name, "FAKE", LALNameLength);
+  (void)strncpy(detector.frDetector.name, "FAKE", LALNameLength);
 
 
   /* Make a fake detector by specifying frame format detector */
-  strncpy(frdet.name, "FAKE FAKE, NOT THE REAL MCCOY", LALNameLength);
+  (void)strncpy(frdet.name, "FAKE FAKE, NOT THE REAL MCCOY", LALNameLength);
   frdet.vertexLongitudeRadians = (REAL8)deg_to_rad(0.);
   frdet.vertexLatitudeRadians  = (REAL8)deg_to_rad(90.); /* @ N pole */
   frdet.vertexElevation        = 0.;
@@ -1966,7 +1989,7 @@ int main(int argc, char *argv[])
       sum_series.sampleUnits = lalDimensionlessUnit;
 
       mean = 0.;
-      for (k = 0; k < circ_series.data->length; ++k)
+      for (k = 0; k < (INT4)(circ_series.data->length); ++k)
         {
           /* sqrt(Fplus^2 + Fcross^2) */
           circ_series.data->data[k] =
@@ -1996,21 +2019,21 @@ int main(int argc, char *argv[])
   if (lalDebugLevel >= 8)
     {
       printf("plus: (");
-      for (k = 0; k < time_info.nSample; ++k)
+      for (k = 0; k < (INT4)(time_info.nSample); ++k)
         {
           printf("% 14.6e, ", am_response_series.pPlus->data->data[k]);
         }
       printf(")\n");
 
       printf("cross: (");
-      for (k = 0; k < time_info.nSample; ++k)
+      for (k = 0; k < (INT4)(time_info.nSample); ++k)
         {
           printf("% 14.6e, ", am_response_series.pCross->data->data[k]);
         }
       printf(")\n");
 
       printf("scalar: (");
-      for (k = 0; k < time_info.nSample; ++k)
+      for (k = 0; k < (INT4)(time_info.nSample); ++k)
         {
           printf("% 14.6e, ", am_response_series.pScalar->data->data[k]);
         }
@@ -2019,7 +2042,7 @@ int main(int argc, char *argv[])
 
       /* print out quadrature sum of plus- and cross-response */
       printf("sqrt(PLUS^2 + CROSS^2): (");
-      for (k = 0; k < time_info.nSample; ++k)
+      for (k = 0; k < (INT4)(time_info.nSample); ++k)
         {
           printf("% 1.6e, ", sqrt(am_response_series.pPlus->data->data[k] *
                                   am_response_series.pPlus->data->data[k] +
@@ -2037,11 +2060,12 @@ int main(int argc, char *argv[])
    * Loop over whole sky
    */
   printf("ALOHA\n");
+  printf("time_info.nSample = %d\n", time_info.nSample);
 
   /* use Livingston */
   /* detector = lalCachedDetectors[LALDetectorIndexLLODIFF]; */
 
-  strncpy(frdet.name, "Reference", LALNameLength);
+  (void)strncpy(frdet.name, "Reference", LALNameLength);
   frdet.vertexLongitudeRadians = deg_to_rad(0.);
   frdet.vertexLatitudeRadians  = deg_to_rad(90.);
   frdet.xArmAltitudeRadians    = 0.;
@@ -2060,20 +2084,20 @@ int main(int argc, char *argv[])
       count = 0;
       printf("NUM_RA = %d; NUM_DEC = %d\n", NUM_RA, NUM_DEC);
 
-      file_plus_sq_avg  = xfopen("plus_sq_avg.txt", "w");
-      file_cross_sq_avg = xfopen("cross_sq_avg.txt", "w");
-      file_plus_at_0_0  = xfopen("plus_at_0_0.txt", "w");
-      file_cross_at_0_0 = xfopen("cross_at_0_0.txt", "w");
-      file_plus_at_2_10 = xfopen("plus_at_2_10.txt", "w");
-      file_cross_at_2_10 = xfopen("cross_at_2_10.txt", "w");
-      file_plus_at_4_15 = xfopen("plus_at_4_15.txt", "w");
-      file_cross_at_4_15 = xfopen("cross_at_4_15.txt", "w");
-      file_plus_at_m4_15 = xfopen("plus_at_m4_15.txt", "w");
+      file_plus_sq_avg    = xfopen("plus_sq_avg.txt", "w");
+      file_cross_sq_avg   = xfopen("cross_sq_avg.txt", "w");
+      file_plus_at_0_0    = xfopen("plus_at_0_0.txt", "w");
+      file_cross_at_0_0   = xfopen("cross_at_0_0.txt", "w");
+      file_plus_at_2_10   = xfopen("plus_at_2_10.txt", "w");
+      file_cross_at_2_10  = xfopen("cross_at_2_10.txt", "w");
+      file_plus_at_4_15   = xfopen("plus_at_4_15.txt", "w");
+      file_cross_at_4_15  = xfopen("cross_at_4_15.txt", "w");
+      file_plus_at_m4_15  = xfopen("plus_at_m4_15.txt", "w");
       file_cross_at_m4_15 = xfopen("cross_at_m4_15.txt", "w");
-      file_sum_sq_avg = xfopen("sum_sq_avg.txt", "w");
-      file_sum_sq = xfopen("sum_sq.txt", "w");
-      file_theta = xfopen("theta.txt", "w");
-      file_phi   = xfopen("phi.txt", "w");
+      file_sum_sq_avg     = xfopen("sum_sq_avg.txt", "w");
+      file_sum_sq         = xfopen("sum_sq.txt", "w");
+      file_theta          = xfopen("theta.txt", "w");
+      file_phi            = xfopen("phi.txt", "w");
 
       printf("Done opening files.\n");
       
@@ -2081,7 +2105,7 @@ int main(int argc, char *argv[])
       gps.gpsNanoSeconds = time_info.epoch.gpsNanoSeconds;
       LALFloatToInterval(&status, &interval, &(time_info.deltaT));
 
-      printf("CUBAAN\n");
+      printf("Time info set.\n");
 
       /* FIXME */
       /* only need to print out the (phi, theta) grid once */
@@ -2106,12 +2130,12 @@ int main(int argc, char *argv[])
       
       printf("N sample = %d\n", time_info.nSample);
 
-      for (k = 0; k < time_info.nSample; ++k)
+      for (k = 0; k < (int)time_info.nSample; ++k)
         {
           LALMSTUnitsAndAcc uandacc = { MST_RAD, gps_and_acc.accuracy};
           LALGPStoGMST1(&status, &gmst1, &(gps_and_acc.gps), &uandacc);
 
-          if (lalDebugLevel)
+          if (verbose_level & 16)
             printf("GRAR: k = %6d; gmst1 = % 20.14e\n", k, gmst1);
                     
           for (j = 0; j < NUM_RA; ++j)
@@ -2122,6 +2146,9 @@ int main(int argc, char *argv[])
               for (i = -declim; i <= declim; ++i)
                 {
                   INT4 cnt = j*NUM_DEC + i + declim;
+
+                  if (verbose_level & 16)
+                    printf("OY: k = %6d; j = %6d; i = %6d\n", k, j, i);
 
                   pulsar.equatorialCoords.latitude =
                     asin((REAL8)i/(REAL8)declim);
@@ -2207,7 +2234,7 @@ int main(int argc, char *argv[])
               skygrid_square(tmpskygrid, plus);
               skygrid_square(tmpskygrid2, cross);
               skygrid_add(tmpskygrid, tmpskygrid, tmpskygrid2);
-              printf("BAR: gmst1 = % 20.15g\n", gmst1);
+              printf("BAR: gmst1 = % 20.15e\n", gmst1);
               printf("avg(F+^2 + Fx^2) = % 14.8e\n", skygrid_avg(tmpskygrid));
             }
 
@@ -2261,57 +2288,118 @@ int main(int argc, char *argv[])
 
   fflush(stdout);
   
-  
+
+  /* compute the response using a local horizon coordinate system */
   {
     REAL4 tmpsum = 0.;
+    REAL8 gmst1 = 0.;
     skygrid_t resp_plus;
     skygrid_t resp_cros;
     skygrid_t tmp1, tmp2, tmp3;
-    
+    REAL8 fudge_factor;
+    FILE *rms_diff_plus_file = (FILE *)NULL;
+    FILE *rms_diff_cros_file = (FILE *)NULL;
+
+    printf("\n\nSTARTING COMPARISON TEST NOW...\n");
+
+    rms_diff_plus_file = xfopen("rms_diff_plus_vs_fudge.txt", "w");
+    rms_diff_cros_file = xfopen("rms_diff_cros_vs_fudge.txt", "w");
+
+    /* recompute LAL response at pole... */
+    gps_and_acc.gps.gpsSeconds     =  13675020;
+    gps_and_acc.gps.gpsNanoSeconds = 943728537;
+    LALMSTUnitsAndAcc uandacc = { MST_RAD, gps_and_acc.accuracy};
+    LALGPStoGMST1(&status, &gmst1, &(gps_and_acc.gps), &uandacc);
+
     for (j = 0; j < NUM_RA; ++j)
       {
-        REAL8 azimuth = (REAL8)j/(REAL8)NUM_RA * LAL_TWOPI;
+        pulsar.equatorialCoords.longitude =
+          (REAL8)j/(REAL8)NUM_RA * LAL_TWOPI; /* RA */
         
         for (i = -declim; i <= declim; ++i)
           {
             INT4 cnt = j*NUM_DEC + i + declim;
-            REAL8 altitude = asin((REAL8)i/(REAL8)declim);
-
-            if (lalDebugLevel >= 4)
-              {
-                printf("azimuth  = % 14.9e deg\n", rad_to_deg(azimuth));
-                printf("altitude = % 14.9e deg\n", rad_to_deg(altitude));
-              }
             
-            resp_plus[cnt] = resp_local(0., LAL_PI_2 - altitude, azimuth,
-                                        gwpol_plus);
-            resp_cros[cnt] = resp_local(0., LAL_PI_2 - altitude, azimuth,
-                                        gwpol_cross);
+            pulsar.equatorialCoords.latitude =
+              asin((REAL8)i/(REAL8)declim);
+
+            LALComputeDetAMResponse(&status, &am_response,
+                                    &det_and_pulsar, &gps_and_acc);
+            
+            plus[cnt]  = am_response.plus;
+            cross[cnt] = am_response.cross;
           }
       }
 
-    skygrid_print(resp_plus, "local_plus.txt");
-    skygrid_print(resp_cros, "local_cros.txt");
+    /* loop over fudge factors */
+    printf("   Starting to loop over fudge_factor...\n");
+    for (k = -128; k < 129; ++k)
+      {
+        if (verbose_level & 8)
+          printf("k = %d\n", k);
+        
+        fudge_factor = ((double)k) / 256. * (double)LAL_PI_2/16.;
+        
+        for (j = 0; j < NUM_RA; ++j)
+          {
+            REAL8 azimuth = (REAL8)j/(REAL8)NUM_RA * LAL_TWOPI + fudge_factor;
+        
+            for (i = -declim; i <= declim; ++i)
+              {
+                INT4 cnt = j*NUM_DEC + i + declim;
+                REAL8 altitude = asin((REAL8)i/(REAL8)declim);
 
-    skygrid_square(tmp1, resp_plus);
-    skygrid_square(tmp2, resp_cros);
-    skygrid_add(tmp1, tmp1, tmp2);
+                if (lalDebugLevel >= 4)
+                  {
+                    printf("azimuth  = % 14.9e deg\n", rad_to_deg(azimuth));
+                    printf("altitude = % 14.9e deg\n", rad_to_deg(altitude));
+                  }
+            
+                resp_plus[cnt] = resp_local(0., LAL_PI_2 - altitude, azimuth,
+                                            gwpol_plus);
+                resp_cros[cnt] = resp_local(0., LAL_PI_2 - altitude, azimuth,
+                                            gwpol_cross);
+              }
+          }
 
-    skygrid_print(tmp1, "foobar.txt");
-    skygrid_print(tmp2, "barfoo.txt");
-    
-    printf("avg(F+^2 + Fx^2) using resp_local() = % 14.9e\n",
-           skygrid_avg(tmp1));
 
-    skygrid_print(plus, "lal_plus.txt");
-    skygrid_print(cross, "lal_cross.txt");
-    skygrid_subtract(tmp3, resp_plus, plus);
-    skygrid_print(tmp3, "diff_plus.txt");
-    skygrid_subtract(tmp3, resp_cros, cross);
-    skygrid_print(tmp3, "diff_cros.txt");
+        if (k == 0)
+          {
+            skygrid_print(resp_plus, "local_plus.txt");
+            skygrid_print(resp_cros, "local_cros.txt");
+
+            skygrid_print(plus, "lal_plus.txt");
+            skygrid_print(cross, "lal_cross.txt");
+            
+            skygrid_subtract(tmp3, resp_plus, plus);
+            skygrid_fabs(tmp3, tmp3);
+            skygrid_print(tmp3, "diff_plus.txt");
+
+            skygrid_subtract(tmp3, resp_cros, cross);
+            skygrid_fabs(tmp3, tmp3);
+            skygrid_print(tmp3, "diff_cros.txt");
+          }
+
+        skygrid_square(tmp1, resp_plus);
+        skygrid_square(tmp2, resp_cros);
+        skygrid_add(tmp1, tmp1, tmp2);
+
+        printf("avg(F+^2 + Fx^2) using resp_local() = % 14.9e\n",
+               skygrid_avg(tmp1));
+
+        skygrid_subtract(tmp3, resp_plus, plus);
+        printf("RMS difference for plus  = % 20.14e\n", skygrid_rms(tmp3));
+        fprintf(rms_diff_plus_file, "% 20.14e    % 20.14e\n",
+                fudge_factor, skygrid_rms(tmp3));
+        printf("RMS difference for cross = % 20.14e\n", skygrid_rms(tmp3));
+        fprintf(rms_diff_cros_file, "% 20.14e    % 20.14e\n", 
+                fudge_factor, skygrid_rms(tmp3));
+      } /* for (k = -128; ..) */
+    printf("... Done with looping over fudge_factor.\n");
   }
 
 
+  printf("\n\nGOODBYE.\n");
 
   /*
    * Housekeeping
@@ -2809,7 +2897,6 @@ REAL4 skygrid_avg(const skygrid_t response)
   INT4 declim = (NUM_DEC-1)/2;
   REAL4 retval = 0.;
 
-#if 1  
   for (j = 0; j < NUM_RA; ++j)
     {
       for (i = -declim+1; i <= declim-1; ++i)
@@ -2818,14 +2905,13 @@ REAL4 skygrid_avg(const skygrid_t response)
           retval += response[cnt];
         }
     }
-#endif
 
-#if 0
+  /*
   for (i = 0; i < lim; ++i)
     retval += response[i];
-#endif
+  */
 
-  retval /= lim-(2*NUM_RA);
+  retval /= lim;
 
   return retval;
 }
@@ -2840,9 +2926,10 @@ void skygrid_square(skygrid_t square, const skygrid_t input)
   for (i = 0; i < lim; ++i)
     square[i] = (input[i]) * (input[i]);
   
- }
+}
 
 
+
 
 void skygrid_sqrt(skygrid_t result, const skygrid_t input)
 {
@@ -2850,6 +2937,16 @@ void skygrid_sqrt(skygrid_t result, const skygrid_t input)
 
   for (i = 0; i < lim; ++i)
     result[i] = (REAL4)sqrt((double)(input[i]));
+}
+
+
+
+REAL4 skygrid_rms(const skygrid_t input)
+{
+  skygrid_t tmpgrid;
+
+  skygrid_square(tmpgrid, input);
+  return (REAL4)(sqrt(skygrid_avg(tmpgrid)));
 }
 
 
@@ -2881,6 +2978,16 @@ void skygrid_print(const skygrid_t input, const char * filename)
     }
 
   fclose(outfile);
+}
+
+
+
+void skygrid_fabs(skygrid_t absgrid, const skygrid_t input)
+{
+  INT4 i;
+
+  for (i = 0; i < lim; ++i)
+    absgrid[i] = fabs(input[i]);
 }
 
 
@@ -2985,4 +3092,123 @@ REAL4 resp_local(REAL8 psi, REAL8 theta, REAL8 phi, GWPolarization pol)
     retval = 0.;
   
   return (REAL4)retval;
+}
+
+
+
+void setup_global_detectors(LALStatus *status)
+{
+  /*
+    LALDetector det_north_pole;
+    LALDetector det_south_pole;
+    LALDetector det_green_equator;
+    LALDetector det_green_tropic_of_cancer;
+    LALDetector det_foo_tropic_of_cancer;
+  */
+  LALFrDetector frdet;
+
+  if (global_detectors_set_p == TRUE)
+    {
+      return;
+    }
+  else
+    {
+      /* Det. @ North Pole */
+      (void)strlcpy(frdet.name, "North Pole", LALNameLength);
+      frdet.vertexLongitudeRadians = deg_to_rad(0.);
+      frdet.vertexLatitudeRadians  = deg_to_rad(0.);
+      frdet.vertexElevation        = 0.;
+      frdet.xArmAltitudeRadians    = 0.;
+      frdet.yArmAltitudeRadians    = 0.;
+      frdet.xArmAzimuthRadians     = deg_to_rad(90.);
+      frdet.yArmAzimuthRadians     = deg_to_rad(180.);
+
+      LALCreateDetector(status, &det_north_pole, &frdet,
+                        LALDETECTORTYPE_IFODIFF);
+
+      if (verbose_level & 4)
+        PrintLALDetector(&det_north_pole);  
+  
+      /* Det. @ South Pole */
+      (void)strlcpy(frdet.name, "South Pole", LALNameLength);
+      frdet.vertexLongitudeRadians = deg_to_rad(0.);
+      frdet.vertexLatitudeRadians  = deg_to_rad(-90.);
+      frdet.vertexElevation        = 0.;
+      frdet.xArmAltitudeRadians    = 0.;
+      frdet.yArmAltitudeRadians    = 0.;
+      frdet.xArmAzimuthRadians     = deg_to_rad(90.);
+      frdet.yArmAzimuthRadians     = deg_to_rad(180.);
+
+      LALCreateDetector(status, &det_south_pole, &frdet,
+                        LALDETECTORTYPE_IFODIFF);
+
+      if (verbose_level & 4)
+        PrintLALDetector(&det_south_pole);  
+
+      /* Det. @ (0, 0) on Earth */
+      (void)strlcpy(frdet.name, "Greenwich-Equator", LALNameLength);
+      frdet.vertexLongitudeRadians = deg_to_rad(0.);
+      frdet.vertexLatitudeRadians  = deg_to_rad(0.);
+      frdet.vertexElevation        = 0.;
+      frdet.xArmAltitudeRadians    = 0.;
+      frdet.yArmAltitudeRadians    = 0.;
+      frdet.xArmAzimuthRadians     = deg_to_rad(90.);  /* East */
+      frdet.yArmAzimuthRadians     = deg_to_rad(180.); /* South */
+
+      LALCreateDetector(status, &det_green_equator, &frdet,
+                        LALDETECTORTYPE_IFODIFF);
+
+      if (verbose_level & 4)
+        PrintLALDetector(&det_green_equator);
+
+      /* Det. @ (0, 23.5) on Earth */
+      (void)strlcpy(frdet.name, "Greenwich-Tropic of Cancer", LALNameLength);
+      frdet.vertexLongitudeRadians = deg_to_rad(0.);
+      frdet.vertexLatitudeRadians  = deg_to_rad(23.5);
+      frdet.vertexElevation        = 0.;
+      frdet.xArmAltitudeRadians    = 0.;
+      frdet.yArmAltitudeRadians    = 0.;
+      frdet.xArmAzimuthRadians     = deg_to_rad(90.);  /* East */
+      frdet.yArmAzimuthRadians     = deg_to_rad(180.); /* South */
+
+      LALCreateDetector(status, &det_green_tropic_of_cancer, &frdet,
+                        LALDETECTORTYPE_IFODIFF);
+
+      if (verbose_level & 4)
+        PrintLALDetector(&det_green_tropic_of_cancer);
+
+      /* Det. @ (38.4, 23.5) on Earth */
+      (void)strlcpy(frdet.name, "Foo-Tropic of Cancer", LALNameLength);
+      frdet.vertexLongitudeRadians = deg_to_rad(38.4);
+      frdet.vertexLatitudeRadians  = deg_to_rad(23.5);
+      frdet.vertexElevation        = 0.;
+      frdet.xArmAltitudeRadians    = 0.;
+      frdet.yArmAltitudeRadians    = 0.;
+      frdet.xArmAzimuthRadians     = deg_to_rad(90.);  /* East */
+      frdet.yArmAzimuthRadians     = deg_to_rad(180.); /* South */
+
+      LALCreateDetector(status, &det_foo_tropic_of_cancer, &frdet,
+                        LALDETECTORTYPE_IFODIFF);
+
+      if (verbose_level & 4)
+        PrintLALDetector(&det_foo_tropic_of_cancer);
+
+      global_detectors_set_p = TRUE;
+    }
+} /* END: setup_global_detectors() */
+
+
+
+char *strlcpy(char *dst, const char *src, size_t len)
+{
+  char *retval = strncpy(dst, src, len);
+  if (verbose_level & 4)
+    {
+      printf("sizeof(dst) = %lu\n", sizeof(dst));
+      printf("strlen(src) = %lu\n", strlen(src));
+      printf("TESTDR_MIN(len, strlen(src)+1) = %lu\n",
+             TESTDR_MIN(len, strlen(src)+1));
+    }
+  dst[TESTDR_MIN(len, strlen(src) + 1) - 1] = '\0';
+  return retval;
 }
