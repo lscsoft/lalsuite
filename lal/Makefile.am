@@ -86,7 +86,7 @@ echo "*       C-shell [tcsh] users: please add the following          *";\
 echo "*       lines to your .login file                               *";\
 echo "*                                                               *";\
 printf "*           setenv LAL_LOCATION %-31s *\n" $(prefix) ;\
-echo '*           source $${LAL_LOCATION}/etc/lal-user-env.sh          *';\
+echo '*           source $${LAL_LOCATION}/etc/lal-user-env.csh         *';\
 echo "*                                                               *";\
 echo "*****************************************************************"
 
