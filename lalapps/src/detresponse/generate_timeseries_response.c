@@ -10,6 +10,8 @@
 
 void generate_timeseries_response(LALStatus * status)
 {
+  LALDetector               test_detector;
+  LALFrDetector             test_frdetector;
   LALSource                 source;
   LALDetector               detector;
   LALDetAndSource           det_and_src = {NULL,NULL};
@@ -19,11 +21,13 @@ void generate_timeseries_response(LALStatus * status)
   char  cross_file_name[LALNameLength];
   char  plus_file_name[LALNameLength];
 
+  
+
   /* null out strings */
   cross_file_name[0] = '\0';
   plus_file_name[0] = '\0';
 
-    if (args_info.detector_given)
+  if (args_info.detector_given)
     {
       if (mystrncasecmp(args_info.detector_arg,"lho", LALNameLength) == 0)
         detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
@@ -37,6 +41,22 @@ void generate_timeseries_response(LALStatus * status)
         detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
       else if (mystrncasecmp(args_info.detector_arg,"cit", LALNameLength) == 0)
         detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
+      else if (mystrncasecmp(args_info.detector_arg,"test", LALNameLength) == 0)
+        {
+          (void)mystrlcpy(test_frdetector.name, "TEST - North Pole", LALNameLength);
+          test_frdetector.vertexLongitudeRadians = 0.;
+          test_frdetector.vertexLatitudeRadians  = LAL_PI_2;
+          test_frdetector.vertexElevation        = 0.;
+          test_frdetector.xArmAltitudeRadians    = 0.;
+          test_frdetector.yArmAltitudeRadians    = 0.;
+          test_frdetector.xArmAzimuthRadians     = LAL_PI_2;
+          test_frdetector.yArmAzimuthRadians     = 0.;
+
+          LALCreateDetector(status, &test_detector, &test_frdetector,
+                            LALDETECTORTYPE_IFODIFF);
+
+          detector = test_detector;
+        }
       else
         {
           /* unknown detector -- exit with error */

@@ -24,7 +24,7 @@ struct gengetopt_args_info
   double right_ascension_arg;	/* Right Ascension of source, in rad.  */
   double declination_arg;	/* Declination of source, in rad.  */
   double orientation_arg;	/* Orientation of source, in rad.  */
-  char * detector_arg;	/* Detector name; legal names: lho, llo, virgo, geo, tama, cit.  */
+  char * detector_arg;	/* Detector name; legal names: lho, llo, virgo, geo, tama, cit, test.  */
   int start_time_sec_arg;	/* GPS seconds field of start time of observation.  */
   int start_time_nanosec_arg;	/* GPS nanoseconds field of start time of observation (default='0').  */
   int nsample_arg;	/* number of samples.  */
