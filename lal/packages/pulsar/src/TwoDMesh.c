@@ -216,7 +216,7 @@ LALRefineTwoDMesh( LALStatus    *stat,
              (-1), completely above the fine tile (+1), or overlapping
              it (0).  We store this information in two INT2's,
              below. */
-	  INT2 overlap[0] = { 0, 0 };
+	  INT2 overlap[2] = { 0, 0 };
 
 	  /* Compute height and slope of coarse tile in the sheared
              coordinates of the fine mesh tile. */
