@@ -2934,6 +2934,7 @@ void worker() {
   /* compress the file if it exists */
   if (uvar_useCompression && !retval) {
     int boinczipret;
+    remove("temp.zip");
     boinczipret=boinc_zip(ZIP_IT, "temp.zip" , Outputfilename);
     if (boinczipret) {
       fprintf(stderr, "Error in zipping file %s to temp.zip.  Return value %d\n", Outputfilename, boinczipret);
