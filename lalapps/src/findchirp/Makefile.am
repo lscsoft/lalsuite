@@ -8,9 +8,11 @@ endif
 bin_PROGRAMS = lalapps_inspawgfile $(LALMETAIOPROGRAMS) \
                lalapps_random_bank lalapps_chirplen lalapps_effdist\
                lalapps_BankEfficiency lalapps_BankEfficiencyRealPsd \
-               lalapps_InspiralOverlap lalapps_InspiralTools  
+               lalapps_InspiralOverlap lalapps_inspiralDistance lalapps_DistanceVsMass lalapps_InspiralTools  
 
 
+lalapps_DistanceVsMass_SOURCES = DistanceVsMass.c
+lalapps_inspiralDistance_SOURCES = inspiralDistance.c
 lalapps_inspawgfile_SOURCES = inspawgfile.c
 lalapps_random_bank_SOURCES = random_bank.c
 lalapps_chirplen_SOURCES = chirplen.c

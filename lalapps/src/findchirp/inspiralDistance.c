@@ -27,9 +27,9 @@ int main (int argc, char **argv)
    
 	if (argc !=7 )
 	{
-		fprintf(stderr, "\n*****************************\n");
+		fprintf(stderr, "-----------------------------\n");
 		fprintf(stderr, "Usage:%s mass1/solarMass mass2/solarMass rhoRMS fLow LO ispec < PSD_File\n",argv[0]);
-		fprintf(stderr, "*****************************\n");
+		fprintf(stderr, "-----------------------------\n");
 		exit(1);
 	}
 
