@@ -45,8 +45,8 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 
 #include "filters-H1-S3.h"                      /* files that contains the filter coefficients */
 #define CHANNEL "H1:Calibrated-Strain"
-#define DATADIR "/home/siemens/lscsoft/lalapps/src/calibration/data/"
-#define FRAMETYPE "H1_RDS_C01_LX"
+#define DATADIR "/scratch4/xavi/hoft/S3/H1/H"
+#define FRAMETYPE "H1_RDS_C02_LX"
 
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -59,39 +59,12 @@ extern int optind, opterr, optopt;
 #define USR 16                            /* Upsampling factor */
 #define MAXALPHAS 100000                    /* Maximum number of calibration factors in a science segment */
 
-#define SLUDGEFACTOR 16384                 /* Number of samples in AS_Q to keep as extra sludge for smooth filtering */
+#define SLUDGEFACTOR 32764                 /* Number of samples in AS_Q to keep as extra sludge for smooth filtering */
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
 
-
-/***************************************************************************/
-/* Complex division routine -- used to calculate beta from alpha and alpha*beta */
-static COMPLEX16 *cdiv( COMPLEX16 *pc, COMPLEX16 *pa, COMPLEX16 *pb )
-{
-  COMPLEX16 a = *pa;
-  COMPLEX16 b = *pb;
-  COMPLEX16 c;
-  REAL8 rat;
-  REAL8 den;
-  if ( fabs( b.re ) > fabs( b.im ) )
-  {
-    rat = b.im / b.re;
-    den = b.re + rat * b.im;
-    c.re = ( a.re + rat * a.im ) / den;
-    c.im = ( a.im - rat * a.re ) / den;
-  }
-  else
-  {
-    rat = b.re / b.im;
-    den = b.im + rat * b.re;
-    c.re = ( a.re * rat + a.im ) / den;
-    c.im = ( a.im * rat - a.re ) / den;
-  }
-  *pc = c;
-  return pc;
-}
 
 /***************************************************************************/
 
@@ -126,6 +99,7 @@ REAL8 ta_interp[MAXALPHAS],alpha[MAXALPHAS],beta[MAXALPHAS];   /* Arrays that co
 LIGOTimeGPS gpsepoch;               /* Global variables epoch and duration used to calculate the calibration factors */
 INT4 duration;                      /* they are set every science segment to GPS start time and duration of segment */
 MyIIRFilter Cinv,G[NGfilt],AA,AX[NAXfilt],AY[NAYfilt];    /* Inverse sensing, servo, analog actuation, digital x actuation  digital y actuation */
+MyIIRFilter ADW, AADW;  /* dewhitening and anti dewhiytwening filters in actuation */
 REAL8TimeSeries AS_Q,hR,hC,uphR,hCx,hCy,h;                /* AS_Q, Residual, control and total strains; up... time series are upsampled */
 REAL8TimeSeries hipasssludge,lopasssludge;                /* Sludge for high and low pass filtering of data */
 REAL8TimeSeries hipasssludgeR,hipasssludgeC;              /* Sludge for high filtering of contral and residual signals */
@@ -267,10 +241,10 @@ int i,j,DT,p;
 	  if(HighPass1(j)) return 4;
 
 	  /* Copy AS_Q into residual and control signal time series */  
-	  for (p=0; p<GV.hR.data->length; p++) {
+	  for (p=0; p<(int)GV.hR.data->length; p++) {
 	    GV.hR.data->data[p]=GV.AS_Q.data->data[p];
 	  }
-	  for (p=0; p<GV.hC.data->length; p++) {
+	  for (p=0; p<(int)GV.hC.data->length; p++) {
 	    GV.hC.data->data[p]=GV.AS_Q.data->data[p];
 	  }
 
@@ -302,15 +276,15 @@ int i,j,DT,p;
 	    if (FilterSeries(&GV.G[p],&GV.hC, SLUDGEFACTOR)) return 5;
 	  }
 	  /* Adjust to account for servo gain */ 
-	  for (p=0; p<GV.hC.data->length;p++) {
+	  for (p=0; p<(int)GV.hC.data->length;p++) {
 	    GV.hC.data->data[p]= ServoGain*GV.hC.data->data[p];
  	  }
 
 	  /* Copy data into x and y time series for parallel filtering */
-	  for (p=0; p<GV.hCx.data->length; p++) {
+	  for (p=0; p<(int)GV.hCx.data->length; p++) {
 	    GV.hCx.data->data[p]=GV.hC.data->data[p];
 	  }
-	  for (p=0; p<GV.hCy.data->length; p++) {
+	  for (p=0; p<(int)GV.hCy.data->length; p++) {
 	    GV.hCy.data->data[p]=GV.hC.data->data[p];
 	  }
 
@@ -319,7 +293,7 @@ int i,j,DT,p;
 	    if (FilterSeries(&GV.AX[p],&GV.hCx,SLUDGEFACTOR)) return 5;
 	  }
 	  /* Adjust to account for digital gain on x-arm*/ 
-	  for (p=0; p<GV.hC.data->length;p++) {
+	  for (p=0; p<(int)GV.hC.data->length;p++) {
 	    GV.hCx.data->data[p] *= AXGain;
  	  }
 
@@ -328,17 +302,23 @@ int i,j,DT,p;
 	    if (FilterSeries(&GV.AY[p],&GV.hCy,SLUDGEFACTOR)) return 5;
 	  }
 	  /* Adjust to account for digital gain on y-arm*/ 
-	  for (p=0; p<GV.hC.data->length;p++) {
+	  for (p=0; p<(int)GV.hC.data->length;p++) {
 	    GV.hCy.data->data[p] *= AYGain;
  	  }
 
 	  /* add x-arm and y-arm together */
-	  for (p=0; p<GV.hC.data->length; p++) {
+	  for (p=0; p<(int)GV.hC.data->length; p++) {
 	    GV.hC.data->data[p]=(GV.hCx.data->data[p]+GV.hCy.data->data[p])/2;
 	  }
 
  	  /* filter through analog part of actuation */ 
 	  if (FilterSeries(&GV.AA,&GV.hC,SLUDGEFACTOR)) return 5;
+
+ 	  /* filter through Dewhitener in actuation */ 
+	  if (FilterSeries(&GV.ADW,&GV.hC,SLUDGEFACTOR)) return 5;
+
+ 	  /* filter through Anti-Dewhitener in actuation */ 
+	  if (FilterSeries(&GV.AADW,&GV.hC,SLUDGEFACTOR)) return 5;
 
 
 	  /******** COMPUTE NET CALIBRATED STRAIN **********/
@@ -347,7 +327,7 @@ int i,j,DT,p;
 	  if(HighPass2(j)) return 4;
 
 	  /* add control and residual signals together */
-	  for (p=0; p<GV.h.data->length; p++) {
+	  for (p=0; p<(int)GV.h.data->length; p++) {
 	    GV.h.data->data[p]= GV.hR.data->data[p]+ GV.hC.data->data[p];
 	  }
 
@@ -356,11 +336,12 @@ int i,j,DT,p;
 	  GV.h.epoch.gpsSeconds=GV.gpsepoch.gpsSeconds;
 	  
 	  {
-	    char filename[256], nodenumber[16];
+	    char filename[256];
+/* 	    char nodenumber[16]; */
 
 	    strcpy(filename,DATADIR);
-	    sprintf(nodenumber,"s%03d/H",(GV.gpsepoch.gpsSeconds-751654515)/((757699249-751654515)/296)+1);
-	    strcat(filename,nodenumber);      
+/* 	    sprintf(nodenumber,"s%03d/H",(GV.gpsepoch.gpsSeconds-751654515)/((757699249-751654515)/296)+1); */
+/* 	    strcat(filename,nodenumber);       */
 
 	    {
 	      FrOutPar opar = { filename, FRAMETYPE, ProcDataChannel, 1, 0, 2 };
@@ -368,7 +349,7 @@ int i,j,DT,p;
 	      LALFrWriteREAL8TimeSeries( &status, &GV.h, &opar );
 	      TESTSTATUS( &status );
 
-/* 	      fprintf(stdout,"%s-%s-%d-%d.gwf\n",filename,FRAMETYPE,GV.h.epoch.gpsSeconds,DT); */
+	      fprintf(stdout,"%s-%s-%d-%d.gwf\n",filename,FRAMETYPE,GV.h.epoch.gpsSeconds,DT);
 	    }
 
 	  }
@@ -571,7 +552,7 @@ int DownsamplehR(void)
 {
   int n;
 
-  for (n=0; n<GV.hR.data->length; n++) {
+  for (n=0; n<(int)GV.hR.data->length; n++) {
     GV.hR.data->data[n]=GV.uphR.data->data[n*USR];
   }
 
@@ -590,7 +571,7 @@ int FilterSeries(MyIIRFilter *F, REAL8TimeSeries *TSeries, int sludge)
   /* It's very important here to only filter up to the end of T: Do not filter sludge yet! 
    History gets messed up */
 
-  for (n=0; n<TSeries->data->length-sludge;n++) {
+  for (n=0; n<(int)TSeries->data->length-sludge;n++) {
 
     xsum=0.0;
     ysum=0.0;
@@ -623,7 +604,7 @@ int FilterSeries(MyIIRFilter *F, REAL8TimeSeries *TSeries, int sludge)
 
   /* Filter sludge here; we filter it with a separate filter H so history of F does not get messed up */
   H=*F;
-  for (n=TSeries->data->length-sludge; n<TSeries->data->length;n++) 
+  for (n=TSeries->data->length-sludge; n<(int)TSeries->data->length;n++) 
     {
       xsum=0.0;
       ysum=0.0;
@@ -664,12 +645,12 @@ int UpsamplehR(int up_factor)
   int n;
 
   /* Set all values to 0 */
-  for (n=0; n<GV.uphR.data->length; n++) {
+  for (n=0; n<(int)GV.uphR.data->length; n++) {
     GV.uphR.data->data[n] = 0.0;
   }
 
   /* Set one in every USR to the value of hR x USR */
-  for (n=0; n<GV.hR.data->length; n++) {
+  for (n=0; n<(int)GV.hR.data->length; n++) {
     GV.uphR.data->data[n * up_factor] = up_factor * GV.hR.data->data[n];
   }
 
@@ -689,7 +670,7 @@ int hROverAlpha(int i)
 
   time=GV.gpsepoch.gpsSeconds-GV.SL[i].gpsstart;    /* time variable */
 
-  for (n = 0; n < GV.hR.data->length; n++) {
+  for (n = 0; n < (int)GV.hR.data->length; n++) {
 
     InterpolatedAlpha=gsl_spline_eval(spline_alpha,time,acc_alpha);
     
@@ -718,7 +699,7 @@ int hCTimesBeta(int i)
 
   time=GV.gpsepoch.gpsSeconds-GV.SL[i].gpsstart;  /* time variable shifted by alphawings */
 
-  for (n = 0; n < GV.hC.data->length; n++) {
+  for (n = 0; n < (int)GV.hC.data->length; n++) {
 
     InterpolatedBeta=gsl_spline_eval(spline_beta,time,acc_beta);
     
@@ -754,7 +735,7 @@ int ReadDTsecondsofData(struct CommandLineArgsTag CLA, int DT)
   TESTSTATUS( &status );
 
   /* Store AS_Q as double */  
-  for (p=0; p<GV.AS_Q.data->length; p++) {
+  for (p=0; p<(int)GV.AS_Q.data->length; p++) {
     GV.AS_Q.data->data[p]=lAS_Q.data->data[p];
   }
 
@@ -837,17 +818,33 @@ int MakeFilters(void)
     for(l=0;l<GV.G[n].xOrder-1;l++) GV.G[n].xhist[l]=0.0;
   }
 
+  GV.AA.yOrder= A_0_Rord;
+  GV.AA.xOrder= A_0_Dord;
 
-    GV.AA.yOrder= A_0_Rord;
-    GV.AA.xOrder= A_0_Dord;
+  /* Fill coefficient vectors with coefficients from filters.h */
+  for(l=0;l<GV.AA.xOrder;l++) GV.AA.b[l]=A_0_D[l];
+  for(l=0;l<GV.AA.yOrder;l++) GV.AA.a[l]=A_0_R[l];
+  for(l=0;l<GV.AA.yOrder-1;l++) GV.AA.yhist[l]=0.0;
+  for(l=0;l<GV.AA.xOrder-1;l++) GV.AA.xhist[l]=0.0;
 
-    /* Fill coefficient vectors with coefficients from filters.h */
-    for(l=0;l<GV.AA.xOrder;l++) GV.AA.b[l]=A_0_D[l];
-    for(l=0;l<GV.AA.yOrder;l++) GV.AA.a[l]=A_0_R[l];
-    for(l=0;l<GV.AA.yOrder-1;l++) GV.AA.yhist[l]=0.0;
-    for(l=0;l<GV.AA.xOrder-1;l++) GV.AA.xhist[l]=0.0;
+  GV.ADW.yOrder= A_DW_Ord;
+  GV.ADW.xOrder= A_DW_Ord;
 
+  /* Fill coefficient vectors with coefficients from filters.h */
+  for(l=0;l<GV.ADW.xOrder;l++) GV.ADW.b[l]=A_DW_D[l];
+  for(l=0;l<GV.ADW.yOrder;l++) GV.ADW.a[l]=A_DW_R[l];
+  for(l=0;l<GV.ADW.yOrder-1;l++) GV.ADW.yhist[l]=0.0;
+  for(l=0;l<GV.ADW.xOrder-1;l++) GV.ADW.xhist[l]=0.0;
 
+  GV.AADW.yOrder= A_ADW_Ord;
+  GV.AADW.xOrder= A_ADW_Ord;
+  
+  /* Fill coefficient vectors with coefficients from filters.h */
+  for(l=0;l<GV.AADW.xOrder;l++) GV.AADW.b[l]=A_ADW_D[l];
+  for(l=0;l<GV.AADW.yOrder;l++) GV.AADW.a[l]=A_ADW_R[l];
+  for(l=0;l<GV.AADW.yOrder-1;l++) GV.AADW.yhist[l]=0.0;
+  for(l=0;l<GV.AADW.xOrder-1;l++) GV.AADW.xhist[l]=0.0;
+    
   for(n=0;n<NAXfilt;n++){
     GV.AX[n].yOrder=A_digital_Rord;
     GV.AX[n].xOrder=A_digital_Dord;
@@ -895,7 +892,6 @@ REAL4Vector *asqwin=NULL,*excwin=NULL,*darmwin=NULL;  /* windows */
 
 LALWindowParams winparams;
 
-COMPLEX16 be;
 INT4 k,m,outflag=0;
 LIGOTimeGPS localgpsepoch=GV.gpsepoch; /* Local variable epoch used to calculate the calibration factors */
  
@@ -1034,7 +1030,8 @@ FILE *fpAlpha=NULL;
 
       if(CLA.alphafile != NULL)
 	{
-	  fprintf(fpAlpha,"%d %d %e %e %e %e %e %e %e %e %e %e %e %e\n",m,localgpsepoch.gpsSeconds,factors.alpha.re,factors.alpha.im,be.re,be.im,
+	  fprintf(fpAlpha,"%d %d %e %e %e %e %e %e %e %e %e %e %e %e\n",m,localgpsepoch.gpsSeconds,factors.alpha.re,factors.alpha.im,
+		  factors.beta.re,factors.beta.im,
 		  factors.alphabeta.re,factors.alphabeta.im,
 		  factors.asq.re*2/To,factors.asq.im*2/To,
 		  factors.darm.re*2/To,factors.darm.im*2/To,
@@ -1065,7 +1062,7 @@ FILE *fpAlpha=NULL;
     }
 
 
-  if(outflag == 1) fprintf(stderr,"There were invalid values of alpha at %d! Extiting ...\n", GV.gpsepoch.gpsSeconds);
+  if(outflag == 1) fprintf(stderr,"There were invalid values of alpha at %d! \n", GV.gpsepoch.gpsSeconds);
 
   return 0;
 }
