@@ -69,11 +69,12 @@ populate_process_table (
   /* cvs repository */
   memset( ptable->cvs_repository, 0, LIGOMETA_CVS_REPOSITORY_MAX );
   cvsstrstart = cvs_source + (size_t) strlen(source_str) + 1;
-  cvsstrend = strstr( cvs_source, CVS_DELIM );
+  cvsstrend = strstr( cvs_source, ",v" CVS_DELIM );
   cvsstrlen = cvsstrend - cvsstrstart;
   memcpy( ptable->cvs_repository, cvsstrstart, 
-      cvsstrlen < LIGOMETA_CVS_REPOSITORY_MAX - 1 ?
-      cvsstrlen : LIGOMETA_CVS_REPOSITORY_MAX - 1 );
+      cvsstrlen < LIGOMETA_CVS_REPOSITORY_MAX - 4 ?
+      cvsstrlen : LIGOMETA_CVS_REPOSITORY_MAX - 4 );
+  sprintf( ptable->cvs_repository + cvsstrlen, "\\,v" );
 
   /* cvs check in time */
   memset( date_string, 0, 256 );
