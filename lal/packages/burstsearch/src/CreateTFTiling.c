@@ -319,8 +319,6 @@ LALModCreateTFTiling (
 /******** </lalVerbatim> *********/
 {
   INT4          numPlanes;
-  INT4          nf;
-  INT4          i;
   INT4          tileCount=0;
 
   REAL8         fhigh;        /* max frequency of the TF plane */
