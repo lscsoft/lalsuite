@@ -81,6 +81,7 @@ tagCalFactors
 {
   COMPLEX16 alpha;    
   COMPLEX16 alphabeta;
+  COMPLEX16 beta;
   COMPLEX16 exc;    
   COMPLEX16 asq;    
   COMPLEX16 darm;   
@@ -100,10 +101,8 @@ typedef struct
 tagUpdateFactorsParams
 {
    REAL8 lineFrequency;
-   REAL8 mu;
-   COMPLEX16 actuationFactor;
-   COMPLEX16 responseFactor;
-   COMPLEX16 sensingFactor;
+   COMPLEX16 openloop;
+   COMPLEX16 digital;
    REAL4TimeSeries *darmCtrl;
    REAL4TimeSeries *asQ;
    REAL4TimeSeries *exc;
