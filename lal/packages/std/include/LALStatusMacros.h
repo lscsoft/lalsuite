@@ -381,6 +381,8 @@ do                                                                    \
 	      __LINE__,__FILE__,(id));                                \
       LALAbort(msg);                                                  \
     }                                                                 \
+  ASSERT(!(statusptr)->statusPtr,statusptr,-2,                        \
+	 "INITSTATUS: non-null status pointer");                      \
   level = (statusptr)->level;                                         \
   memset((statusptr),0,sizeof(Status));                               \
   (statusptr)->level = level > 0 ? level : 1 ;                        \
