@@ -806,7 +806,7 @@ class CondorDAG:
         # write the group if this node has one
         if node.get_vds_group():
           template = """\
-     <profile namespace="vds" key="group">%s</group>
+     <profile namespace="vds" key="group">%s</profile>
 """
           xml = xml + template % (node.get_vds_group())
 
