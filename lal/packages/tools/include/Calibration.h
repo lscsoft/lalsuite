@@ -205,11 +205,13 @@ struct StrainOutTag {
   REAL8TimeSeries hR;         /* timeseries containing the residual signal */
   COMPLEX16TimeSeries alpha; /* alpha time series */
   COMPLEX16TimeSeries beta;  /* beta time series */
+  COMPLEX16TimeSeries alphabeta; /* alpha time series */
 } StrainOut;
                                                                                                                                
 typedef
 struct StrainInTag {
   REAL4TimeSeries AS_Q ;   /* timeseries containing ASQ */
+  REAL4TimeSeries DARM_ERR;/* timeseries containing DARM_ERR */
   REAL4TimeSeries DARM ;   /* timeseries containing DARM_CTRL */
   REAL4TimeSeries EXC ;    /* timeseries containing the excitation */
   COMPLEX16 Do;            /* digital filter at cal line frequency */
@@ -300,7 +302,7 @@ void LALFreeFilter(LALStatus *status,
 		   REAL8IIRFilter *F2, 
 		   int ORDER);
 
-int XLALhROverAlpha(REAL8TimeSeries *hR, StrainOut *output);
+int XLALhROverAlphaBeta(REAL8TimeSeries *hR, StrainOut *output);
 int XLALhCTimesBeta(REAL8TimeSeries *hC, StrainOut *output);
 int XLALUpsamplehR(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor);
 
