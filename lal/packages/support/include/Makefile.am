@@ -6,7 +6,7 @@ pkginclude_HEADERS = LALStdio.h LALVersion.h LALMalloc.h LALError.h \
                      LALInitBarycenter.h LALXMGRInterface.h \
                      LIGOLwXML.h LIGOLwXMLHeaders.h \
                      LIGOLwXMLRead.h ReadNoiseSpectrum.h  SFTfileIO.h \
-                     UserInput.h ConfigFile.h
+                     UserInput.h ConfigFile.h LALMathematica.h
 
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
