@@ -626,6 +626,11 @@ LALFindChirpSlave (
           rawChannel, &highpassParam );
       CHECKSTATUSPTR (status);
 
+      if ( ! (params->simParams && params->simParams->injectEvent) )
+      {
+        LALFree( rawChannel );
+      }
+
       params->bandPassed = 1;
     }
 
