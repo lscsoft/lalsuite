@@ -100,55 +100,38 @@ NRCSID( FRAMECACHEC, "$Id$" );
 #define XSTR( x ) #x
 #define STR( x ) XSTR( x )
 
-/* <lalVerbatim file="FrameCacheCP"> */
-void LALFrCacheImport(
-    LALStatus   *status,
-    FrCache    **output,
-    const CHAR  *fname
-    )
-{ /* </lalVerbatim> */
+static int FrStatCompare( const void *p1, const void *p2 );
+
+FrCache * XLALFrImportCache( const char *fname )
+{
+  static const char *func = "XLALFrImportCache";
   UINT4 numLines = 0;
   CHAR  line[1024];
   FILE *fp;
   FrCache *cache;
 
-  INITSTATUS( status, "LALFrCacheImport", FRAMECACHEC );
-  ATTATCHSTATUSPTR( status );
-  ASSERT( output, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
-  ASSERT( ! *output, status, FRAMECACHEH_ENNUL, FRAMECACHEH_MSGENNUL );
-  ASSERT( fname, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
-
   fp = LALFopen( fname, "r" );
   if ( ! fp )
-  {
-    ABORT( status, FRAMECACHEH_EIEIO, FRAMECACHEH_MSGEIEIO );
-  }
+    XLAL_ERROR_NULL( func, XLAL_EIO );
   numLines = 0;
   while ( fgets( line, sizeof( line ), fp ) )
   {
     if ( strlen( line ) > sizeof( line ) - 2 )
-    {
-      ABORT( status, FRAMECACHEH_ELINE, FRAMECACHEH_MSGELINE );
-    }
+      XLAL_ERROR_NULL( func, XLAL_EBADLEN );
     ++numLines;
   }
   if ( ! numLines )
-  {
-    ABORT( status, FRAMECACHEH_EIEIO, FRAMECACHEH_MSGEIEIO );
-  }
+    XLAL_ERROR_NULL( func, XLAL_EIO );
 
-  cache = *output = LALCalloc( 1, sizeof( **output ) );
+  cache = LALCalloc( 1, sizeof( *cache ) );
   if ( ! cache )
-  {
-    ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
-  }
+    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
   cache->numFrameFiles = numLines;
   cache->frameFiles = LALCalloc( numLines, sizeof( *cache->frameFiles ) );
   if ( ! cache->frameFiles )
   {
-    LALFree( *output );
-    *output = NULL;
-    ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
+    LALFree( cache );
+    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
   }
 
   rewind( fp );
@@ -165,23 +148,13 @@ void LALFrCacheImport(
     sscanf( line, "%n%*[a-zA-Z0-9_+#-]%n %n%*[a-zA-Z0-9_+#-]%n %*"
         STR( TMPSTRLEN ) "s %*" STR( TMPSTRLEN ) "s %n%*s%n",
         &src0, &src1, &dsc0, &dsc1, &url0, &url1 );
-    file->source = LALMalloc( src1 - src0 + 1 );
-    if ( ! file->source )
-    {
-      TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-      ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
-    }
+    file->source      = LALMalloc( src1 - src0 + 1 );
     file->description = LALMalloc( dsc1 - dsc0 + 1 );
-    if ( ! file->description )
+    file->url         = LALMalloc( url1 - url0 + 1 );
+    if ( ! file->source || ! file->description || ! file->url )
     {
-      TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-      ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
-    }
-    file->url = LALMalloc( url1 - url0 + 1 );
-    if ( ! file->url )
-    {
-      TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-      ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
+      XLALFrDestroyCache( cache );
+      XLAL_ERROR_NULL( func, XLAL_ENOMEM );
     }
     c = sscanf( line, "%[a-zA-Z0-9_+#-] %[a-zA-Z0-9_+#-] %" STR( TMPSTRLEN )
         "s %" STR( TMPSTRLEN ) "s %s", file->source, file->description,
@@ -210,11 +183,375 @@ void LALFrCacheImport(
       file->duration = 0; /* invalid value */
     }
   }
-
   LALFclose( fp );
-  DETATCHSTATUSPTR( status );
+  return cache;
+}
+
+
+FrCache * XLALFrSieveCache( FrCache *input, FrCacheSieve *params )
+{ /* </lalVerbatim> */
+  static const char *func = "XLALFrSieveCache";
+  FrCache *cache;
+
+  regex_t srcReg;
+  regex_t dscReg;
+  regex_t urlReg;
+
+  UINT4 n;
+  UINT4 i;
+
+  if ( params->srcRegEx )
+    regcomp( &srcReg, params->srcRegEx, REG_NOSUB );
+  if ( params->dscRegEx )
+    regcomp( &dscReg, params->dscRegEx, REG_NOSUB );
+  if ( params->urlRegEx )
+    regcomp( &urlReg, params->urlRegEx, REG_NOSUB );
+
+  n = 0;
+  for ( i = 0; i < input->numFrameFiles; ++i )
+  {
+    FrStat *file = input->frameFiles + i;
+    if ( params->earliestTime > 0 )
+      if ( params->earliestTime > file->startTime + file->duration )
+        continue; /* file is too early */
+    if ( params->latestTime > 0 )
+      if ( file->startTime <= 0 || params->latestTime < file->startTime )
+        continue; /* file is too late */
+    if ( params->srcRegEx )
+      if ( ! file->source || regexec( &srcReg, file->source, 0, NULL, 0 ) )
+        continue; /* source doesn't match regex */
+    if ( params->dscRegEx )
+      if ( ! file->description
+          || regexec( &dscReg, file->description, 0, NULL, 0 ) )
+      continue; /* description doesn't match regex */
+    if ( params->urlRegEx )
+      if ( ! file->source || regexec( &urlReg, file->source, 0, NULL, 0 ) )
+        continue; /* url doesn't match regex */
+    ++n;
+  }
+
+  cache = LALCalloc( 1, sizeof( *cache ) );
+  if ( ! cache )
+    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+
+  cache->numFrameFiles = n;
+  if ( ! cache->numFrameFiles )
+    cache->frameFiles = NULL;
+  else
+  {
+    cache->frameFiles = LALCalloc( n, sizeof( *cache->frameFiles ) );
+    if ( ! cache->frameFiles )
+    {
+      LALFree( cache );
+      XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    }
+
+    n = 0;
+    for ( i = 0; i < input->numFrameFiles; ++i )
+    {
+      FrStat *file = input->frameFiles + i;
+      if ( params->earliestTime > 0 )
+        if ( params->earliestTime > file->startTime + file->duration )
+          continue; /* file is too early */
+      if ( params->latestTime > 0 )
+        if ( file->startTime <= 0 || params->latestTime < file->startTime )
+          continue; /* file is too late */
+      if ( params->srcRegEx )
+        if ( ! file->source || regexec( &srcReg, file->source, 0, NULL, 0 ) )
+          continue; /* source doesn't match regex */
+      if ( params->dscRegEx )
+        if ( ! file->description
+            || regexec( &dscReg, file->description, 0, NULL, 0 ) )
+          continue; /* description doesn't match regex */
+      if ( params->urlRegEx )
+        if ( ! file->source || regexec( &urlReg, file->source, 0, NULL, 0 ) )
+          continue; /* url doesn't match regex */
+
+      /* copy frame file stat */
+      cache->frameFiles[n] = *file;
+      if ( file->source )
+      {
+        size_t size = strlen( file->source ) + 1;
+        cache->frameFiles[n].source = LALMalloc( size );
+        if ( ! cache->frameFiles[n].source )
+        {
+          XLALFrDestroyCache( cache );
+          XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+        }
+        memcpy( cache->frameFiles[n].source, file->source, size );
+      }
+      if ( file->description )
+      {
+        size_t size = strlen( file->description ) + 1;
+        cache->frameFiles[n].description = LALMalloc( size );
+        if ( ! cache->frameFiles[n].description )
+        {
+          XLALFrDestroyCache( cache );
+          XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+        }
+        memcpy( cache->frameFiles[n].description, file->description, size );
+      }
+      if ( file->url )
+      {
+        size_t size = strlen( file->url ) + 1;
+        cache->frameFiles[n].url = LALMalloc( size );
+        if ( ! cache->frameFiles[n].url )
+        {
+          XLALFrDestroyCache( cache );
+          XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+        }
+        memcpy( cache->frameFiles[n].url, file->url, size );
+      }
+      ++n;
+    }
+
+    qsort( cache->frameFiles, cache->numFrameFiles, 
+        sizeof( *cache->frameFiles ), FrStatCompare );
+  }
+
+  if ( params->srcRegEx ) regfree( &srcReg );
+  if ( params->dscRegEx ) regfree( &dscReg );
+  if ( params->urlRegEx ) regfree( &urlReg );
+
+  return cache;
+}
+
+
+FrCache * XLALFrGenerateCache( const CHAR *dirstr, const CHAR *fnptrn )
+{
+  static const char *func = "XLALFrGenerateCache";
+  FrCache *cache;
+  glob_t g;
+  int globflags = 0;
+  int i;
+
+  fnptrn = fnptrn ? fnptrn : "*.gwf";
+  dirstr = dirstr ? dirstr : ".";
+
+  if ( fnptrn[0] && 
+      ( fnptrn[0] == '/'
+        || ( fnptrn[0] == '.' && fnptrn[1] &&
+          ( fnptrn[1] == '/' || ( fnptrn[1] == '.' && fnptrn[2] == '/' ) ) )
+      )
+     )
+    glob( fnptrn, globflags, NULL, &g );
+  else /* prepend path from dirname */
+  {
+    CHAR  path[MAXPATHLEN];
+    CHAR  dirname[MAXPATHLEN];
+    CHAR *nextdir;
+    strncpy( dirname, dirstr,  sizeof( dirname ) - 1 );
+    do
+    {
+      nextdir = strchr( dirname, ':' );
+      if ( nextdir )
+        *nextdir++ = 0;
+      LALSnprintf( path, sizeof( path ) - 1, "%s/%s", 
+          *dirname ? dirname : ".", fnptrn );
+      glob( path, globflags, NULL, &g );
+      globflags |= GLOB_APPEND;
+    }
+    while ( nextdir );
+  }
+
+  if ( ! g.gl_pathc )
+    XLAL_ERROR_NULL( func, XLAL_EIO );
+
+  cache = LALCalloc( 1, sizeof( *cache ) );
+  if ( ! cache )
+  {
+    globfree( &g );
+    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+  }
+  cache->numFrameFiles = g.gl_pathc;
+  cache->frameFiles = LALCalloc( g.gl_pathc, sizeof( *cache->frameFiles ) );
+  if ( ! cache->frameFiles )
+  {
+    globfree( &g );
+    LALFree( cache );
+    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+  }
+
+  /* copy file names */
+  for ( i = 0; i < g.gl_pathc; ++i )
+  {
+    FrStat *file = cache->frameFiles + i;
+    char src[MAXPATHLEN];
+    char dsc[MAXPATHLEN];
+    int t0 = 0;
+    int dt = 0;
+    char *path = g.gl_pathv[i];
+    char *base = strrchr( path, '/' );
+    int c;
+    if ( ! base )
+      base = path;
+    else
+      ++base; /* one past the final '/' */
+    if ( *path == '/' ) /* absolute path */
+    {
+      size_t urlsz = strlen( path ) + sizeof( "file://localhost" );
+      file->url = LALMalloc( urlsz );
+      if ( ! file->url )
+      {
+        globfree( &g );
+        XLALFrDestroyCache( cache );
+        XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+      }
+      LALSnprintf( file->url, urlsz, "file://localhost%s", path );
+    }
+    else /* relative path */
+    {
+      size_t urlsz = strlen( path ) + sizeof( "file://localhost" );
+      CHAR cwd[MAXPATHLEN];
+      getcwd( cwd, MAXPATHLEN - 1 );
+      urlsz += strlen( cwd ) + 1;
+      file->url = LALMalloc( urlsz );
+      if ( ! file->url )
+      {
+        globfree( &g );
+        XLALFrDestroyCache( cache );
+        XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+      }
+      LALSnprintf( file->url, urlsz, "file://localhost%s/%s", cwd, path );
+    }
+
+    /* extract src, dsc, t0, and dt from file name */
+    c = sscanf( base ? base : path, "%[a-zA-Z0-9_+#]-%[a-zA-Z0-9_+#]-%d-%d",
+        src, dsc, &t0, &dt );
+    if ( c == 4 ) /* expected format */
+    {
+      file->source = LALMalloc( strlen( src ) + 1 );
+      if ( ! file->source )
+      {
+        globfree( &g );
+        XLALFrDestroyCache( cache );
+        XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+      }
+      strcpy( file->source, src );
+      file->description = LALMalloc( strlen( dsc ) + 1 );
+      if ( ! file->description )
+      {
+        globfree( &g );
+        XLALFrDestroyCache( cache );
+        XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+      }
+      strcpy( file->description, dsc );
+      file->startTime = t0;
+      file->duration = dt;
+    }
+  }
+
+  globfree( &g );
+
+  qsort( cache->frameFiles, cache->numFrameFiles, sizeof( *cache->frameFiles ),
+      FrStatCompare );
+
+  return cache;
+}
+
+
+int XLALFrExportCache( FrCache *cache, const CHAR *fname )
+{ 
+  static const char *func = "XLALFrExportCache";
+  UINT4 i;
+  FILE *fp;
+
+  if ( ! cache || ! fname )
+    XLAL_ERROR( func, XLAL_EFAULT );
+
+  fp = LALFopen( fname, "w" );
+  if ( ! fp )
+    XLAL_ERROR( func, XLAL_EIO );
+
+  for ( i = 0; i < cache->numFrameFiles; ++i )
+  {
+    FrStat *file = cache->frameFiles + i;
+    char t0[TMPSTRLEN + 1];
+    char dt[TMPSTRLEN + 1];
+    int c;
+    if ( file->startTime > 0 )
+      LALSnprintf( t0, sizeof( t0 ), "%d", file->startTime );
+    else
+      strncpy( t0, "-", sizeof( t0 ) );
+    if ( file->duration > 0 )
+      LALSnprintf( dt, sizeof( dt ), "%d", file->duration );
+    else
+      LALSnprintf( dt, sizeof( dt ), "-" );
+
+    c = fprintf( fp, "%s %s %s %s %s\n", file->source ? file->source : "-",
+        file->description ? file->description : "-", t0, dt,
+        file->url ? file->url : "-" );
+    if ( c < 1 )
+      XLAL_ERROR( func, XLAL_EIO );
+  }
+  LALFclose( fp );
+  return 0;
+}
+
+
+void XLALFrDestroyCache( FrCache *cache )
+{
+  if ( cache )
+  {
+    UINT4 i;
+    for ( i = 0; i < cache->numFrameFiles; ++i )
+    {
+      FrStat *file = cache->frameFiles + i;
+      if ( file->source )
+        LALFree( file->source );
+      if ( file->description )
+        LALFree( file->description );
+      if ( file->url )
+        LALFree( file->url );
+    }
+    if ( cache->frameFiles ) 
+      LALFree( cache->frameFiles );
+    LALFree( cache );
+  }
+  return;
+}
+
+
+
+/*
+ *
+ * LAL Routines
+ *
+ */
+
+
+void LALFrCacheImport(
+    LALStatus   *status,
+    FrCache    **output,
+    const CHAR  *fname
+    )
+{ /* </lalVerbatim> */
+  INITSTATUS( status, "LALFrCacheImport", FRAMECACHEC );
+  ASSERT( output, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
+  ASSERT( ! *output, status, FRAMECACHEH_ENNUL, FRAMECACHEH_MSGENNUL );
+  ASSERT( fname, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
+
+  *output = XLALFrImportCache( fname );
+  if ( ! *output )
+  {
+    int errnum = xlalErrno;
+    XLALClearErrno();
+    switch ( errnum )
+    {
+      case XLAL_EIO:
+        ABORT( status, FRAMECACHEH_EIEIO, FRAMECACHEH_MSGEIEIO );
+      case XLAL_EBADLEN:
+        ABORT( status, FRAMECACHEH_ELINE, FRAMECACHEH_MSGELINE );
+      case XLAL_ENOMEM:
+        ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
+      default:
+        ABORTXLAL( status );
+    }
+  }
+
   RETURN( status );
 }
+
 
 /* <lalVerbatim file="FrameCacheCP"> */
 void LALFrCacheExport(
@@ -223,51 +560,19 @@ void LALFrCacheExport(
     const CHAR *fname
     )
 { /* </lalVerbatim> */
-  UINT4 i;
-  FILE *fp;
-
   INITSTATUS( status, "LALFrCacheExport", FRAMECACHEC );
   ASSERT( cache, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
   ASSERT( fname, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
 
-  fp = LALFopen( fname, "w" );
-  if ( ! fp )
+  if ( XLALFrExportCache( cache, fname ) < 0 )
   {
+    XLALClearErrno();
     ABORT( status, FRAMECACHEH_EIEIO, FRAMECACHEH_MSGEIEIO );
   }
-  for ( i = 0; i < cache->numFrameFiles; ++i )
-  {
-    FrStat *file = cache->frameFiles + i;
-    char t0[TMPSTRLEN + 1];
-    char dt[TMPSTRLEN + 1];
-    int c;
-    if ( file->startTime > 0 )
-    {
-      LALSnprintf( t0, sizeof( t0 ), "%d", file->startTime );
-    }
-    else
-    {
-      strncpy( t0, "-", sizeof( t0 ) );
-    }
-    if ( file->duration > 0 )
-    {
-      LALSnprintf( dt, sizeof( dt ), "%d", file->duration );
-    }
-    else
-    {
-      strncpy( dt, "-", sizeof( dt ) );
-    }
-    c = fprintf( fp, "%s %s %s %s %s\n", file->source ? file->source : "-",
-        file->description ? file->description : "-", t0, dt,
-        file->url ? file->url : "-" );
-    if ( c < 1 )
-    {
-      ABORT( status, FRAMECACHEH_EIEIO, FRAMECACHEH_MSGEIEIO );
-    }
-  }
-  LALFclose( fp );
+
   RETURN( status );
 }
+
 
 /* <lalVerbatim file="FrameCacheCP"> */
 void
@@ -276,36 +581,75 @@ LALDestroyFrCache(
     FrCache   **cache
     )
 { /* </lalVerbatim> */
-  UINT4 i;
   INITSTATUS( status, "LALDestroyFrCache", FRAMECACHEC );
   ASSERT( cache, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
   ASSERT( *cache, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
 
-  for ( i = 0; i < (*cache)->numFrameFiles; ++i )
-  {
-    FrStat *file = (*cache)->frameFiles + i;
-    if ( file->source )
-    {
-      LALFree( file->source );
-    }
-    if ( file->description )
-    {
-      LALFree( file->description );
-    }
-    if ( file->url )
-    {
-      LALFree( file->url );
-    }
-    memset( file, 0, sizeof( *file ) );
-  }
-
-  if ( (*cache)->numFrameFiles ) 
-    LALFree( (*cache)->frameFiles );
-  LALFree( *cache );
+  XLALFrDestroyCache( *cache );
   *cache = NULL;
 
   RETURN( status );
 }
+
+
+/* <lalVerbatim file="FrameCacheCP"> */
+void
+LALFrCacheSieve(
+    LALStatus     *status,
+    FrCache      **output,
+    FrCache       *input,
+    FrCacheSieve  *params
+    )
+{ /* </lalVerbatim> */
+  INITSTATUS( status, "LALFrCacheSieve", FRAMECACHEC );
+  ASSERT( output, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
+  ASSERT( ! *output, status, FRAMECACHEH_ENNUL, FRAMECACHEH_MSGENNUL );
+  ASSERT( input, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
+  ASSERT( params, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
+
+  *output = XLALFrSieveCache( input, params );
+  if ( ! *output )
+  {
+    XLALClearErrno();
+    ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
+  }
+
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="FrameCacheCP"> */
+void
+LALFrCacheGenerate(
+    LALStatus   *status,
+    FrCache    **output,
+    const CHAR  *dirstr,
+    const CHAR  *fnptrn
+    )
+{ /* </lalVerbatim> */
+  INITSTATUS( status, "LALFrCacheGenerate", FRAMECACHEC );
+  ASSERT( output, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
+  ASSERT( ! *output, status, FRAMECACHEH_ENNUL, FRAMECACHEH_MSGENNUL );
+
+  *output = XLALFrGenerateCache( dirstr, fnptrn );
+  if ( ! *output )
+  {
+    int errnum = xlalErrno;
+    XLALClearErrno();
+    switch ( errnum )
+    {
+      case XLAL_EIO:
+        ABORT( status, FRAMECACHEH_EPATH, FRAMECACHEH_MSGEPATH );
+      case XLAL_ENOMEM:
+        ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
+      default:
+        ABORTXLAL( status );
+    }
+  }
+
+  RETURN( status );
+}
+
 
 static int FrStatCompare( const void *p1, const void *p2 )
 {
@@ -352,300 +696,4 @@ static int FrStatCompare( const void *p1, const void *p2 )
       ans = 0;
 
   return ans;
-}
-
-/* <lalVerbatim file="FrameCacheCP"> */
-void
-LALFrCacheSieve(
-    LALStatus     *status,
-    FrCache      **output,
-    FrCache       *input,
-    FrCacheSieve  *params
-    )
-{ /* </lalVerbatim> */
-  FrCache *cache;
-
-  regex_t srcReg;
-  regex_t dscReg;
-  regex_t urlReg;
-
-  UINT4 n;
-  UINT4 i;
-
-  INITSTATUS( status, "LALFrCacheSieve", FRAMECACHEC );
-  ATTATCHSTATUSPTR( status );
-  ASSERT( output, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
-  ASSERT( ! *output, status, FRAMECACHEH_ENNUL, FRAMECACHEH_MSGENNUL );
-  ASSERT( input, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
-  ASSERT( params, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
-
-  if ( params->srcRegEx )
-    regcomp( &srcReg, params->srcRegEx, REG_NOSUB );
-  if ( params->dscRegEx )
-    regcomp( &dscReg, params->dscRegEx, REG_NOSUB );
-  if ( params->urlRegEx )
-    regcomp( &urlReg, params->urlRegEx, REG_NOSUB );
-
-  n = 0;
-  for ( i = 0; i < input->numFrameFiles; ++i )
-  {
-    FrStat *file = input->frameFiles + i;
-    if ( params->earliestTime > 0 )
-      if ( params->earliestTime > file->startTime + file->duration )
-        continue; /* file is too early */
-    if ( params->latestTime > 0 )
-      if ( file->startTime <= 0 || params->latestTime < file->startTime )
-        continue; /* file is too late */
-    if ( params->srcRegEx )
-      if ( ! file->source || regexec( &srcReg, file->source, 0, NULL, 0 ) )
-        continue; /* source doesn't match regex */
-    if ( params->dscRegEx )
-      if ( ! file->description
-          || regexec( &dscReg, file->description, 0, NULL, 0 ) )
-      continue; /* description doesn't match regex */
-    if ( params->urlRegEx )
-      if ( ! file->source || regexec( &urlReg, file->source, 0, NULL, 0 ) )
-        continue; /* url doesn't match regex */
-    ++n;
-  }
-
-  cache = *output = LALCalloc( 1, sizeof( **output ) );
-  if ( ! cache )
-  {
-    ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
-  }
-  cache->numFrameFiles = n;
-  if ( ! cache->numFrameFiles )
-  {
-    cache->frameFiles = NULL;
-  }
-  else
-  {
-    cache->frameFiles = LALCalloc( n, sizeof( *cache->frameFiles ) );
-    if ( ! cache->frameFiles )
-    {
-      LALFree( *output );
-      *output = NULL;
-      ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
-    }
-
-    n = 0;
-    for ( i = 0; i < input->numFrameFiles; ++i )
-    {
-      FrStat *file = input->frameFiles + i;
-      if ( params->earliestTime > 0 )
-        if ( params->earliestTime > file->startTime + file->duration )
-          continue; /* file is too early */
-      if ( params->latestTime > 0 )
-        if ( file->startTime <= 0 || params->latestTime < file->startTime )
-          continue; /* file is too late */
-      if ( params->srcRegEx )
-        if ( ! file->source || regexec( &srcReg, file->source, 0, NULL, 0 ) )
-          continue; /* source doesn't match regex */
-      if ( params->dscRegEx )
-        if ( ! file->description
-            || regexec( &dscReg, file->description, 0, NULL, 0 ) )
-          continue; /* description doesn't match regex */
-      if ( params->urlRegEx )
-        if ( ! file->source || regexec( &urlReg, file->source, 0, NULL, 0 ) )
-          continue; /* url doesn't match regex */
-
-      /* copy frame file stat */
-      cache->frameFiles[n] = *file;
-      if ( file->source )
-      {
-        size_t size = strlen( file->source ) + 1;
-        cache->frameFiles[n].source = LALMalloc( size );
-        if ( ! cache->frameFiles[n].source )
-        {
-          TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-          ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
-        }
-        memcpy( cache->frameFiles[n].source, file->source, size );
-      }
-      if ( file->description )
-      {
-        size_t size = strlen( file->description ) + 1;
-        cache->frameFiles[n].description = LALMalloc( size );
-        if ( ! cache->frameFiles[n].description )
-        {
-          TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-          ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
-        }
-        memcpy( cache->frameFiles[n].description, file->description, size );
-      }
-      if ( file->url )
-      {
-        size_t size = strlen( file->url ) + 1;
-        cache->frameFiles[n].url = LALMalloc( size );
-        if ( ! cache->frameFiles[n].url )
-        {
-          TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-          ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
-        }
-        memcpy( cache->frameFiles[n].url, file->url, size );
-      }
-      ++n;
-    }
-
-    qsort( cache->frameFiles, cache->numFrameFiles, 
-        sizeof( *cache->frameFiles ), FrStatCompare );
-  }
-
-  if ( params->srcRegEx ) regfree( &srcReg );
-  if ( params->dscRegEx ) regfree( &dscReg );
-  if ( params->urlRegEx ) regfree( &urlReg );
-
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-}
-
-/* <lalVerbatim file="FrameCacheCP"> */
-void
-LALFrCacheGenerate(
-    LALStatus   *status,
-    FrCache    **output,
-    const CHAR  *dirstr,
-    const CHAR  *fnptrn
-    )
-{ /* </lalVerbatim> */
-  FrCache *cache;
-  glob_t g;
-  int globflags = 0;
-  int i;
-
-  INITSTATUS( status, "LALFrCacheGenerate", FRAMECACHEC );
-  ATTATCHSTATUSPTR( status );
-  ASSERT( output, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
-  ASSERT( ! *output, status, FRAMECACHEH_ENNUL, FRAMECACHEH_MSGENNUL );
-
-  fnptrn = fnptrn ? fnptrn : "*.gwf";
-  dirstr = dirstr ? dirstr : ".";
-
-  if ( fnptrn[0] && 
-      ( fnptrn[0] == '/'
-        || ( fnptrn[0] == '.' && fnptrn[1] &&
-          ( fnptrn[1] == '/' || ( fnptrn[1] == '.' && fnptrn[2] == '/' ) ) )
-      )
-     )
-  {
-    glob( fnptrn, globflags, NULL, &g );
-  }
-  else /* prepend path from dirname */
-  {
-    CHAR  path[MAXPATHLEN];
-    CHAR  dirname[MAXPATHLEN];
-    CHAR *nextdir;
-    strncpy( dirname, dirstr,  sizeof( dirname ) - 1 );
-    do
-    {
-      nextdir = strchr( dirname, ':' );
-      if ( nextdir )
-        *nextdir++ = 0;
-      LALSnprintf( path, sizeof( path ) - 1, "%s/%s", 
-          *dirname ? dirname : ".", fnptrn );
-      glob( path, globflags, NULL, &g );
-      globflags |= GLOB_APPEND;
-    }
-    while ( nextdir );
-  }
-
-  if ( ! g.gl_pathc )
-  {
-    globfree( &g );
-    ABORT( status, FRAMECACHEH_EPATH, FRAMECACHEH_MSGEPATH );
-  }
-
-  cache = *output = LALCalloc( 1, sizeof( **output ) );
-  if ( ! cache )
-  {
-    globfree( &g );
-    ABORT( status, FRAMECACHEH_EPATH, FRAMECACHEH_MSGEPATH );
-  }
-  cache->numFrameFiles = g.gl_pathc;
-  cache->frameFiles = LALCalloc( g.gl_pathc, sizeof( *cache->frameFiles ) );
-  if ( ! cache->frameFiles )
-  {
-    globfree( &g );
-    LALFree( *output );
-    *output = NULL;
-    ABORT( status, FRAMECACHEH_EPATH, FRAMECACHEH_MSGEPATH );
-  }
-
-  /* copy file names */
-  for ( i = 0; i < g.gl_pathc; ++i )
-  {
-    FrStat *file = cache->frameFiles + i;
-    char src[MAXPATHLEN];
-    char dsc[MAXPATHLEN];
-    int t0 = 0;
-    int dt = 0;
-    char *path = g.gl_pathv[i];
-    char *base = strrchr( path, '/' );
-    int c;
-    if ( ! base )
-      base = path;
-    else
-      ++base; /* one past the final '/' */
-    if ( *path == '/' ) /* absolute path */
-    {
-      size_t urlsz = strlen( path ) + sizeof( "file://localhost" );
-      file->url = LALMalloc( urlsz );
-      if ( ! file->url )
-      {
-        globfree( &g );
-        TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-        ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
-      }
-      LALSnprintf( file->url, urlsz, "file://localhost%s", path );
-    }
-    else /* relative path */
-    {
-      size_t urlsz = strlen( path ) + sizeof( "file://localhost" );
-      CHAR cwd[MAXPATHLEN];
-      getcwd( cwd, MAXPATHLEN - 1 );
-      urlsz += strlen( cwd ) + 1;
-      file->url = LALMalloc( urlsz );
-      if ( ! file->url )
-      {
-        globfree( &g );
-        TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-        ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
-      }
-      LALSnprintf( file->url, urlsz, "file://localhost%s/%s", cwd, path );
-    }
-
-    /* extract src, dsc, t0, and dt from file name */
-    c = sscanf( base ? base : path, "%[a-zA-Z0-9_+#]-%[a-zA-Z0-9_+#]-%d-%d",
-        src, dsc, &t0, &dt );
-    if ( c == 4 ) /* expected format */
-    {
-      file->source = LALMalloc( strlen( src ) + 1 );
-      if ( ! file->source )
-      {
-        globfree( &g );
-        TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-        ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
-      }
-      strcpy( file->source, src );
-      file->description = LALMalloc( strlen( dsc ) + 1 );
-      if ( ! file->description )
-      {
-        globfree( &g );
-        TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-        ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
-      }
-      strcpy( file->description, dsc );
-      file->startTime = t0;
-      file->duration = dt;
-    }
-  }
-
-  globfree( &g );
-
-  qsort( cache->frameFiles, cache->numFrameFiles, sizeof( *cache->frameFiles ),
-      FrStatCompare );
-
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
 }

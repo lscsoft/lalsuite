@@ -144,6 +144,11 @@ FrCacheSieve;
  *
  **** </lalLaTeX> */
 
+FrCache * XLALFrImportCache( const char *fname );
+FrCache * XLALFrSieveCache( FrCache *input, FrCacheSieve *params );
+FrCache * XLALFrGenerateCache( const CHAR *dirstr, const CHAR *fnptrn );
+int XLALFrExportCache( FrCache *cache, const CHAR *fname );
+void XLALFrDestroyCache( FrCache *cache );
 
 void LALFrCacheImport(
     LALStatus   *status,

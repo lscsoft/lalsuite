@@ -381,51 +381,38 @@ static FrVect * FrVectReadInfo( FrFile *iFile, FRULONG *pos )
   return v;
 }
 
-/* <lalVerbatim file="FrameSeriesCP"> */
-void
-LALFrGetTimeSeriesType(
-    LALStatus   *status,
-    LALTYPECODE *output,
-    FrChanIn    *chanin,
-    FrStream    *stream
-    )
-{ /* </lalVerbatim> */
+int XLALFrGetTimeSeriesType( const char *channel, FrStream *stream )
+{
+  static const char *func = "XLALFrGetTimeSeriesType";
   FrChanType chantype;
-  INT4 type = -1;
   FrTOCts    *ts   = NULL;
   FrProcData *proc = NULL;
   FrAdcData  *adc  = NULL;
   FrSimData  *sim  = NULL;
-  INITSTATUS( status, "FUNC", FRAMESERIESC );  
+  int type = -1;
 
-  ASSERT( output, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  ASSERT( chanin, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  ASSERT( chanin->name, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-
+  if ( ! channel || ! stream )
+    XLAL_ERROR( func, XLAL_EFAULT );
   if ( stream->state & LAL_FR_ERR )
-  {
-    ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
-  }
+    XLAL_ERROR( func, XLAL_EIO );
   if ( stream->state & LAL_FR_END )
-  {
-    ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
-  }
+    XLAL_ERROR( func, XLAL_EIO );
 
   if ( ! stream->file->toc )
   {
     if ( FrTOCReadFull( stream->file ) == NULL )
     {
-      LALPrintError( "Error opening frame TOC %s\n", stream->file );
+      XLALPrintError( "XLAL Error - %s: could not open frame TOC %s\n",
+          func, stream->file );
       stream->state |= LAL_FR_ERR | LAL_FR_TOC;
-      ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
+      XLAL_ERROR( func, XLAL_EIO );
     }
   }
 
   /* scan adc channels */
   chantype = LAL_ADC_CHAN;
   ts = stream->file->toc->adc;
-  while ( ts && strcmp( chanin->name, ts->name ) )
+  while ( ts && strcmp( channel, ts->name ) )
     ts = ts->next;
 
   if ( ! ts )
@@ -433,7 +420,7 @@ LALFrGetTimeSeriesType(
     /* scan sim channels */
     chantype = LAL_SIM_CHAN;
     ts = stream->file->toc->sim;
-    while ( ts && strcmp( chanin->name, ts->name ) )
+    while ( ts && strcmp( channel, ts->name ) )
       ts = ts->next;
   }
 
@@ -442,7 +429,7 @@ LALFrGetTimeSeriesType(
     /* scan proc channels */
     chantype = LAL_PROC_CHAN;
     ts = stream->file->toc->proc;
-    while ( ts && strcmp( chanin->name, ts->name ) )
+    while ( ts && strcmp( channel, ts->name ) )
       ts = ts->next;
   }
 
@@ -483,45 +470,79 @@ LALFrGetTimeSeriesType(
   switch ( type )
   {
     case FR_VECT_C:
-      *output = LAL_CHAR_TYPE_CODE;
-      break;
+      return LAL_CHAR_TYPE_CODE;
     case FR_VECT_2S:
-      *output = LAL_I2_TYPE_CODE;
-      break;
+      return LAL_I2_TYPE_CODE;
     case FR_VECT_4S:
-      *output = LAL_I4_TYPE_CODE;
-      break;
+      return LAL_I4_TYPE_CODE;
     case FR_VECT_8S:
-      *output = LAL_I8_TYPE_CODE;
-      break;
+      return LAL_I8_TYPE_CODE;
     case FR_VECT_1U:
-      *output = LAL_UCHAR_TYPE_CODE;
-      break;
+      return LAL_UCHAR_TYPE_CODE;
     case FR_VECT_2U:
-      *output = LAL_U2_TYPE_CODE;
-      break;
+      return LAL_U2_TYPE_CODE;
     case FR_VECT_4U:
-      *output = LAL_U4_TYPE_CODE;
-      break;
+      return LAL_U4_TYPE_CODE;
     case FR_VECT_8U:
-      *output = LAL_U8_TYPE_CODE;
-      break;
+      return LAL_U8_TYPE_CODE;
     case FR_VECT_4R:
-      *output = LAL_S_TYPE_CODE;
-      break;
+      return LAL_S_TYPE_CODE;
     case FR_VECT_8R:
-      *output = LAL_D_TYPE_CODE;
-      break;
+      return LAL_D_TYPE_CODE;
     case FR_VECT_C8:
-      *output = LAL_C_TYPE_CODE;
-      break;
+      return LAL_C_TYPE_CODE;
     case FR_VECT_C16:
-      *output = LAL_Z_TYPE_CODE;
-      break;
+      return LAL_Z_TYPE_CODE;
     default:
-      ABORT( status, FRAMESTREAMH_ETYPE, FRAMESTREAMH_MSGETYPE );      
+      XLAL_ERROR( func, XLAL_ETYPE );
   }
 
+  XLAL_ERROR( func, XLAL_ETYPE );
+}
+
+/* <lalVerbatim file="FrameSeriesCP"> */
+void
+LALFrGetTimeSeriesType(
+    LALStatus   *status,
+    LALTYPECODE *output,
+    FrChanIn    *chanin,
+    FrStream    *stream
+    )
+{ /* </lalVerbatim> */
+  int type;
+  INITSTATUS( status, "LALFrGetTimeSeriesType", FRAMESERIESC );  
+
+  ASSERT( output, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
+  ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
+  ASSERT( chanin, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
+  ASSERT( chanin->name, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
+
+  if ( stream->state & LAL_FR_ERR )
+  {
+    ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
+  }
+  if ( stream->state & LAL_FR_END )
+  {
+    ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
+  }
+
+  type = XLALFrGetTimeSeriesType( chanin->name, stream );
+  if ( type < 0 )
+  {
+    int errnum = xlalErrno;
+    XLALClearErrno();
+    switch ( errnum )
+    {
+      case XLAL_EIO:
+        ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
+      case XLAL_ETYPE:
+        ABORT( status, FRAMESTREAMH_ETYPE, FRAMESTREAMH_MSGETYPE );      
+      default:
+        ABORTXLAL( status );
+    }
+  }
+
+  *output = type;
   RETURN( status );
 }
 

@@ -236,6 +236,48 @@ FrOutPar;
  *
  **** </lalLaTeX> */
 
+FrStream * XLALFrCacheOpen( FrCache *cache );
+FrStream * XLALFrOpen( const char *dirname, const char *pattern );
+int XLALFrClose( FrStream *stream );
+int XLALFrSetMode( FrStream *stream, int mode );
+int XLALFrState( FrStream *stream );
+int XLALFrClearErr( FrStream *stream );
+int XLALFrRewind( FrStream *stream );
+int XLALFrNext( FrStream *stream );
+int XLALFrSeek( FrStream *stream, LIGOTimeGPS *epoch );
+int XLALFrTell( LIGOTimeGPS *epoch, FrStream *stream );
+int XLALFrGetpos( FrPos *position, FrStream *stream );
+int XLALFrSetpos( FrStream *stream, FrPos *position );
+int XLALFrGetTimeSeriesType( const char *channel, FrStream *stream );
+int XLALFrGetINT2TimeSeries( INT2TimeSeries *series, FrStream *stream );
+int XLALFrGetINT4TimeSeries( INT4TimeSeries *series, FrStream *stream );
+int XLALFrGetINT8TimeSeries( INT8TimeSeries *series, FrStream *stream );
+int XLALFrGetREAL4TimeSeries( REAL4TimeSeries *series, FrStream *stream );
+int XLALFrGetREAL8TimeSeries( REAL8TimeSeries *series, FrStream *stream );
+int XLALFrGetCOMPLEX8TimeSeries( COMPLEX8TimeSeries *series, FrStream *stream );
+int XLALFrGetCOMPLEX16TimeSeries( COMPLEX16TimeSeries *series, FrStream *stream );
+int XLALFrGetINT2TimeSeriesMetadata( INT2TimeSeries *series, FrStream *stream );
+int XLALFrGetINT4TimeSeriesMetadata( INT4TimeSeries *series, FrStream *stream );
+int XLALFrGetINT8TimeSeriesMetadata( INT8TimeSeries *series, FrStream *stream );
+int XLALFrGetREAL4TimeSeriesMetadata( REAL4TimeSeries *series, FrStream *stream );
+int XLALFrGetREAL8TimeSeriesMetadata( REAL8TimeSeries *series, FrStream *stream );
+int XLALFrGetCOMPLEX8TimeSeriesMetadata( COMPLEX8TimeSeries *series, FrStream *stream );
+int XLALFrGetCOMPLEX16TimeSeriesMetadata( COMPLEX16TimeSeries *series, FrStream *stream );
+int XLALFrGetINT2FrequencySeries( INT2FrequencySeries *series, FrStream *stream );
+int XLALFrGetINT4FrequencySeries( INT4FrequencySeries *series, FrStream *stream );
+int XLALFrGetINT8FrequencySeries( INT8FrequencySeries *series, FrStream *stream );
+int XLALFrGetREAL4FrequencySeries( REAL4FrequencySeries *series, FrStream *stream );
+int XLALFrGetREAL8FrequencySeries( REAL8FrequencySeries *series, FrStream *stream );
+int XLALFrGetCOMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series, FrStream *stream );
+int XLALFrGetCOMPLEX16FrequencySeries( COMPLEX16FrequencySeries *series, FrStream *stream );
+
+
+/*
+ *
+ * LAL Routines.
+ *
+ */
+
 void
 LALFrCacheOpen(
     LALStatus  *status,
