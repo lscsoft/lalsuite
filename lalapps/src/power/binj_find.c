@@ -11,6 +11,8 @@
 #include <lal/LIGOMetadataUtils.h>
 #include <lalapps.h>
 
+long long int llabs(long long int j);	/* LAL's not written in ANSI C.  Get over it */
+
 RCSID("$Id$");
 
 #define MAXSTR 2048
@@ -21,7 +23,7 @@ RCSID("$Id$");
 /* Usage format string. */
 #define USAGE "Usage: %s --input infile  --injfile injectionfile \
      --injmadefile filename --detsnglfile filename --injfoundfile filename \
-     [--noplayground] [--help]\n"
+     --best-confidence|--best-peaktime [--noplayground] [--help]\n"
 
 #define BINJ_FIND_EARG   1
 #define BINJ_FIND_EROW   2
@@ -45,6 +47,9 @@ struct options_t {
 
 	int playground;
 	int noplayground;
+
+	int best_confidence;
+	int best_peaktime;
 
 	/* central_freq threshold */
 	INT4 maxCentralfreqFlag;
@@ -89,6 +94,9 @@ static void set_option_defaults(struct options_t *options)
 
 	options->playground = FALSE;
 	options->noplayground = FALSE;
+
+	options->best_confidence = FALSE;
+	options->best_peaktime = FALSE;
 
 	options->maxCentralfreqFlag = 0;
 	options->maxCentralfreq = 0.0;
@@ -160,6 +168,35 @@ static int isPlayground(INT4 gpsStart, INT4 gpsEnd)
 	segMiddle = (segMiddle - runStart) % playInterval;
 
 	return(segStart < playLength || segEnd < playLength || segMiddle < playLength);
+}
+
+
+/*
+ * Pick the best of two events.
+ */
+
+static SnglBurstTable *select_event(LALStatus *stat, SimBurstTable *injection, SnglBurstTable *a, SnglBurstTable *b, struct options_t options)
+{
+	if(!a)
+		return(b);
+	if(!b)
+		return(a);
+
+	if(options.best_confidence)
+		return(a->confidence > b->confidence ? a : b);
+
+	if(options.best_peaktime) {
+		INT8 injtime, atime, btime;
+
+		LAL_CALL(LALGPStoINT8(stat, &injtime, &injection->l_peak_time), stat);
+		LAL_CALL(LALGPStoINT8(stat, &atime, &a->peak_time), stat);
+		LAL_CALL(LALGPStoINT8(stat, &btime, &b->peak_time), stat);
+
+		return(llabs(atime - injtime) < llabs(btime - injtime) ? a : b);
+	}
+
+	/* control cannot reach here */
+	return(NULL);
 }
 
 
@@ -436,6 +473,7 @@ static SnglBurstTable *trim_event_list(SnglBurstTable *event, struct options_t o
  * =============================================================================
  */
 
+
 int main(int argc, char **argv)
 {
 	static LALStatus stat;
@@ -512,6 +550,8 @@ int main(int argc, char **argv)
 			{"help", no_argument, NULL, 'o'},
 			{"sort", no_argument, NULL, 'p'},
 			{"detsnglfile", required_argument, NULL, 'q'},
+			{"best-confidence", no_argument, &options.best_confidence, 1},
+			{"best-peaktime", no_argument, &options.best_peaktime, 1},
 			{NULL, 0, NULL, 0}
 		};
 		/* getopt_long stores the option index here. */
@@ -605,6 +645,11 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
+	if(!(options.best_confidence ^ options.best_peaktime)) {
+		LALPrintError("Must specify exactly one of --best-confidence or --best-peaktime\n");
+		exit(BINJ_FIND_EARG);
+	}
+
 	if (!injmadeFile || !inputFile || !injectionFile || !outSnglFile) {
 		LALPrintError("Input file, injection file, output trig. file and output inj. file " "            names must be specified\n");
 		exit(BINJ_FIND_EARG);
@@ -653,18 +698,17 @@ int main(int argc, char **argv)
 			if (burstStartTime > injPeakTime)
 				break;
 
-			/* check if the injection's centre frequency and peak
-			 * time lie within the trigger's time-frequency volume
-			 * */
+			/* if the injection's centre frequency and peak time
+			 * don't lie within the trigger's time-frequency
+			 * volume, move to next event */
 			LAL_CALL(LALCompareSimBurstAndSnglBurst(&stat, injection, event, &accParams), &stat);
-
-			/* if not, move to next event */
 			if (!accParams.match)
 				continue;
 
 			ndetected++;
-			bestmatch = event;
-			break;
+
+			/* pick the best event */
+			bestmatch = select_event(&stat, injection, bestmatch, event, options);
 		}
 
 		/* if we didn't detect a matching event, continue to next
