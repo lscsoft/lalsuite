@@ -12,16 +12,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <regex.h>
 #include <time.h>
 #include <math.h>
 
@@ -38,7 +33,6 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
@@ -55,7 +49,7 @@
 
 NRCSID( COHERENTINSPIRALINPUTC, "$Id$");
 
-double rint(double x);
+#define rint(x) (floor((x)+0.5))
 double modf( double value, double *integerPart );
 
 void
