@@ -28,7 +28,6 @@ LALFindChirpChisqVetoInit (
     )
 {
   UINT4                         l, m;
-  COMPLEX8                     *qtildeBin = NULL;
 
   INITSTATUS( status, "FindChirpChisqVetoInit", FINDCHIRPCHISQC );
   ATTATCHSTATUSPTR( status );
