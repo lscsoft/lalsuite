@@ -66,6 +66,8 @@ LALCreateMetaTableDir(
           {"amplitude",               -1, 8},
           {"snr",                     -1, 9},
           {"confidence",              -1, 10},
+          {"peak_time",               -1, 11},
+          {"peak_time_ns",            -1, 12},
           {NULL,                       0, 0}
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
@@ -268,6 +270,14 @@ LALSnglBurstTableFromLIGOLw (
       else if ( tableDir[j].idx == 10 )
       {
         thisEvent->confidence = r4colData;
+      }
+      else if ( tableDir[j].idx == 11 )
+      {
+        thisEvent->peak_time.gpsSeconds = i4colData;
+      }
+      else if ( tableDir[j].idx == 12 )
+      {
+        thisEvent->peak_time.gpsNanoSeconds = i4colData;
       }
       else
       {
