@@ -72,6 +72,8 @@ NRCSID( FRAMESTREAMH, "$Id$" );
 /**** <lalLaTeX>
  *
  * \subsection*{Structures}
+ * \idx[Type]{FrState}
+ * \idx[Type]{FrFileInfo}
  * \idx[Type]{FrStream}
  * \idx[Type]{FrPos}
  * \idx[Type]{ChannelType}
@@ -80,7 +82,36 @@ NRCSID( FRAMESTREAMH, "$Id$" );
  *
  **** </lalLaTeX> */
 /**** <lalVerbatim> */
-typedef struct tagFrStream FrStream;
+typedef enum
+{
+  LAL_FR_OK  = 0,  /* nominal */
+  LAL_FR_ERR = 1,  /* error in frame stream */
+  LAL_FR_END = 2,  /* end of frame stream */
+  LAL_FR_GAP = 4,  /* gap in frame stream */
+  LAL_FR_URL = 8,  /* error opening frame URL */
+  LAL_FR_TOC = 16  /* error reading frame TOC */
+}
+FrState;
+struct FrFile;
+typedef struct tagFrFileInfo
+{
+  INT4  ind;
+  CHAR *url;
+  INT4  t0;
+  INT4  dt;
+}
+FrFileInfo;
+typedef struct tagFrStream
+{
+  FrState        state;
+  LIGOTimeGPS    epoch;
+  UINT4          nfile;
+  FrFileInfo    *flist;
+  UINT4          fnum;
+  struct FrFile *file;
+  INT4           pos;
+}
+FrStream;
 /**** </lalVerbatim> */
 /**** <lalLaTeX>
  *
@@ -93,9 +124,8 @@ typedef struct
 tagFrPos
 {
   LIGOTimeGPS epoch;
-  UINT4       filenum;
-  UINT4       frame;
-  UINT4       run;
+  UINT4       fnum;
+  INT4        pos;
 }
 FrPos;
 /**** </lalVerbatim> */
@@ -107,20 +137,22 @@ FrPos;
  * \begin{description}
  * \item[\texttt{epoch}] the GPS time of the open frame when the record
  *     was made.
- * \item[\texttt{filenum}] the file number of a list of frame files that was
+ * \item[\texttt{fnum}] the file number of a list of frame files that was
  *     open when the record was made.
- * \item[\texttt{frame}] the frame number of the frames within the
- *     frame file that was open when the record was made.
- * \item[\texttt{run}] the run number of the frames within the
+ * \item[\texttt{pos}] the position within the
  *     frame file that was open when the record was made.
  * \end{description}
  *
  **** </lalLaTeX> */
 /**** <lalVerbatim> */
 typedef enum
-tagChannelType
-{ ProcDataChannel, ADCDataChannel, SimDataChannel }
-ChannelType;
+{ LAL_ADC_CHAN, LAL_SIM_CHAN, LAL_PROC_CHAN }
+FrChanType;
+/* for backwards compatability... */
+#define ChannelType FrChanType
+#define ProcDataChannel LAL_PROC_CHAN
+#define ADCDataChannel  LAL_ADC_CHAN
+#define SimDataChannel  LAL_SIM_CHAN
 /**** </lalVerbatim> */
 /**** <lalLaTeX>
  * 
@@ -302,6 +334,87 @@ LALFrGetREAL8TimeSeries(
     REAL8TimeSeries *series,
     FrChanIn        *chanin,
     FrStream        *stream
+    );
+
+void
+LALFrGetCOMPLEX8TimeSeries(
+    LALStatus          *status,
+    COMPLEX8TimeSeries *series,
+    FrChanIn           *chanin,
+    FrStream           *stream
+    );
+
+void
+LALFrGetCOMPLEX16TimeSeries(
+    LALStatus           *status,
+    COMPLEX16TimeSeries *series,
+    FrChanIn            *chanin,
+    FrStream            *stream
+    );
+
+
+void
+LALFrGetINT2FrequencySeries(
+    LALStatus      *status,
+    INT2FrequencySeries *series,
+    FrChanIn       *chanin,
+    FrStream       *stream
+    );
+
+void
+LALFrGetINT4FrequencySeries(
+    LALStatus      *status,
+    INT4FrequencySeries *series,
+    FrChanIn       *chanin,
+    FrStream       *stream
+    );
+
+void
+LALFrGetINT8FrequencySeries(
+    LALStatus      *status,
+    INT8FrequencySeries *series,
+    FrChanIn       *chanin,
+    FrStream       *stream
+    );
+
+void
+LALFrGetREAL4FrequencySeries(
+    LALStatus       *status,
+    REAL4FrequencySeries *series,
+    FrChanIn        *chanin,
+    FrStream        *stream
+    );
+
+void
+LALFrGetREAL8FrequencySeries(
+    LALStatus       *status,
+    REAL8FrequencySeries *series,
+    FrChanIn        *chanin,
+    FrStream        *stream
+    );
+
+void
+LALFrGetCOMPLEX8FrequencySeries(
+    LALStatus          *status,
+    COMPLEX8FrequencySeries *series,
+    FrChanIn           *chanin,
+    FrStream           *stream
+    );
+
+void
+LALFrGetCOMPLEX16FrequencySeries(
+    LALStatus           *status,
+    COMPLEX16FrequencySeries *series,
+    FrChanIn            *chanin,
+    FrStream            *stream
+    );
+
+
+void
+LALFrWriteINT2TimeSeries(
+    LALStatus       *status,
+    INT2TimeSeries  *series,
+    FrOutPar        *params
     );
 
 void

@@ -79,7 +79,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/FrameCache.h>
 #include <lal/FrameStream.h>
-#include <FrameStreamDef.h>
 
 NRCSID( FRAMESTREAMC, "$Id$" );
 
@@ -91,73 +90,600 @@ NRCSID( FRAMESTREAMC, "$Id$" );
  */
 
 
-/* open a specified frame file URL for input */
+
+#include <errno.h>
+#include <unistd.h>
+#include <sys/param.h>
+#define STR( x ) #x
+#define XSTR( x ) STR( x )
+#define MAXPROTOCOLLEN 16
 static struct FrFile *URLFrFileINew( FrFileInfo *file )
 {
-  FrFile *frfile = NULL;
-  if ( file && file->url )
+  struct FrFile *frfile = NULL;
+  char prot[MAXPROTOCOLLEN + 1] = "";
+  char host[MAXHOSTNAMELEN + 1] = "";
+  char path[MAXPATHLEN + 1]     = "";
+  int n;
+
+  /* get protocol, hostname, and path */
+  if ( ! file || ! file->url )
   {
-    if ( ! strncmp( file->url, "file:/", 6 ) )
-    {
-      frfile = FrFileINew( file->url + 5 );
-    }
+    errno = EFAULT;
+    return NULL;
+  }
+  n = sscanf( file->url, "%" XSTR( MAXPROTOCOLLEN ) "[^:]://%"
+      XSTR( MAXHOSTNAMELEN ) "[^/]%" XSTR( MAXPATHLEN ) "s", prot, host, path );
+  if ( n != 3 ) /* perhaps the hostname has been omitted */
+  {
+    n = sscanf( file->url, "%" XSTR( MAXPROTOCOLLEN ) "[^:]://%"
+        XSTR( MAXPATHLEN ) "s", prot, path );
+    if ( n == 2 )
+      strcpy( host, "localhost" );
     else
     {
-      if ( lalDebugLevel & LALWARNING )
-      {
-        LALPrintError( "Warning: function %s, file %s, line %d, %s\n"
-            "        %s\n", "URLFrFileINew", __FILE__, __LINE__, FRAMESTREAMC,
-            "Unknown URL Type" );
-      }
+      strncpy( path, file->url, MAXPATHLEN );
+      strcpy( prot, "none" );
     }
   }
+
+  /* process various protocols */
+  if ( ! strcmp( prot, "none" ) )
+  { /* assume a file on the localhost */
+    /* TODO: should check for leading ~ */
+    frfile = FrFileINew( path );
+  }
+  else if ( ! strcmp( prot, "file" ) )
+  {
+    if ( strcmp( host, "localhost" ) )
+    { /* make sure the host *is* localhost */
+      char localhost[MAXHOSTNAMELEN + 1];
+      gethostname( localhost, MAXHOSTNAMELEN );
+      if ( strcmp( host, localhost ) )
+      { /* nope */
+        fprintf( stderr, "Can not read files from remote hosts.\n" );
+        errno = EINVAL;
+        return NULL;
+      }
+    }
+    frfile = FrFileINew( path );
+  }
+  else
+  {
+    fprintf( stderr, "Unsupported protocol %s.", prot );
+    errno = EINVAL;
+    return NULL;
+  }
+
   return frfile;
 }
 
-/* compare frame file infos for sorting by time */
-static int FileListSortCompare( const void *p1, const void *p2 )
+static void free_flist( FrFileInfo *flist )
 {
-  const FrFileInfo *file1 = p1;
-  const FrFileInfo *file2 = p2;
-  int ans = 0;
-  if ( file1->t0 < file2->t0 )
-    ans = -1;
-  else if ( file1->t0 > file2->t0 )
-    ans = 1;
-  return ans;
-}
-
-/* compare frame file infos for selecting a time */
-static int FileListSelectCompare( const void *p1, const void *p2 )
-{
-  const FrFileInfo *key  = p1;
-  const FrFileInfo *file = p2;
-  int ans = 0;
-  if ( key->t0 < file->t0 )
-    ans = -1;
-  else if ( key->t0 >= file->t0 + file->dt )
-    ans = 1;
-  return ans;
-}
-
-/* destroy a frame file list */
-static void
-LALDestroyFrFileList(
-    LALStatus   *status,
-    FrFileInfo **list
-    )
-{
-  FrFileInfo *file;
-  INITSTATUS( status, "LALDestroyFrFileList", FRAMESTREAMC );  
-  file = *list;
-  while ( file->ind >= 0 && file->url )
+  FrFileInfo *p = flist;
+  if ( ! p )
+    return;
+  while ( p->ind > -1 )
   {
-    LALFree( file->url );
-    ++file;
+    if ( p->url )
+      LALFree( p->url );
+    memset( p, 0, sizeof( *p ) );
+    ++p;
   }
-  LALFree( *list );
-  *list = NULL;
-  RETURN( status );
+  LALFree( flist );
+  return;
+}
+
+#include <glob.h>
+static FrStream *fr_open( const char *pattern )
+{
+  char host[MAXHOSTNAMELEN + 1] = "localhost";
+  glob_t g;
+  int i;
+  FrStream *stream;
+
+  if ( ! pattern )
+    pattern = "*.gwf";
+  if ( gethostname( host, MAXHOSTNAMELEN ) )
+    return NULL;
+  g.gl_offs = 0;
+  if ( glob( pattern, GLOB_DOOFFS, NULL, &g ) )
+    return NULL;
+
+  stream = LALCalloc( 1, sizeof( *stream ) );
+  if ( ! stream )
+  {
+    errno = ENOMEM;
+    return NULL;
+  }
+  stream->nfile = g.gl_matchc;
+  stream->flist = LALCalloc( stream->nfile + 1, sizeof( *stream->flist ) );
+  if ( ! stream->flist )
+  {
+    errno = ENOMEM;
+    LALFree( stream );
+    return NULL;
+  }
+
+  for ( i = 0; i < g.gl_matchc; ++i )
+  {
+    int t0 = 0;
+    int dt = 0;
+    char *path = g.gl_pathv[i];
+    char *base = strrchr( path, '/' );
+    stream->flist[i].ind = i;
+    if ( ! base )
+      base = path;
+    if ( *path == '/' ) /* absolute path */
+    {
+      stream->flist[i].url = LALMalloc( sizeof( "file://" )
+          + strlen( host ) + strlen( path ) );
+      if ( ! stream->flist[i].url )
+      {
+        errno = ENOMEM;
+        free_flist( stream->flist );
+        LALFree( stream );
+        return NULL;
+      }
+      sprintf( stream->flist[i].url, "file://%s%s", host, path );
+    }
+    else
+    {
+      char cwd[MAXPATHLEN + 1] = "./";
+      getcwd( cwd, MAXPATHLEN );
+      stream->flist[i].url = LALMalloc( sizeof( "file://" )
+          + strlen( host ) + strlen( cwd ) + strlen( path ) );
+      if ( ! stream->flist[i].url )
+      {
+        errno = ENOMEM;
+        free_flist( stream->flist );
+        LALFree( stream );
+        return NULL;
+      }
+      sprintf( stream->flist[i].url, "file://%s%s/%s", host, cwd, path );
+    }
+    /* get t0 and dt from file name */
+    if ( 2 == sscanf( base ? base : path, "%*[^-]-%*[^-]-%d-%d.gwf", &t0, &dt )
+        && t0 > 0 && dt > 0 )
+    {
+      stream->flist[i].t0 = t0;
+      stream->flist[i].dt = dt;
+    }
+    else /* have to open the file to determine t0 and dt */
+    {
+      stream->file = URLFrFileINew( stream->flist + i );
+      if ( ! stream->file )
+      {
+        free_flist( stream->flist );
+        LALFree( stream );
+        return NULL;
+      }
+      if ( FrTOCReadFull( stream->file ) == NULL )
+      {
+        FrFileIEnd( stream->file );
+        free_flist( stream->flist );
+        LALFree( stream );
+        return NULL;
+      }
+      t0 = floor( stream->file->toc->GTimeS[0] );
+      dt = ceil( (double)stream->file->toc->GTimeS[0]
+            + 1e-9 * (double)stream->file->toc->GTimeN[0]
+            + stream->file->toc->dt[0] ) - t0;
+      stream->flist[i].t0 = t0;
+      stream->flist[i].dt = dt;
+    }
+  }
+  stream->flist[stream->nfile].ind = -1;
+  stream->file = URLFrFileINew( stream->flist );
+  if ( ! stream->file )
+  {
+    free_flist( stream->flist );
+    LALFree( stream );
+    return NULL;
+  }
+  if ( FrTOCReadFull( stream->file ) == NULL )
+  {
+    FrFileIEnd( stream->file );
+    free_flist( stream->flist );
+    LALFree( stream );
+    return NULL;
+  }
+  stream->epoch.gpsSeconds     = stream->file->toc->GTimeS[0];
+  stream->epoch.gpsNanoSeconds = stream->file->toc->GTimeN[0];
+  return stream;
+}
+
+static int fr_close( FrStream *stream )
+{
+  if ( ! stream )
+  {
+    errno = EFAULT;
+    return EOF;
+  }
+  FrFileIEnd( stream->file );
+  free_flist( stream->flist );
+  memset( stream, 0, sizeof( *stream ) );
+  return 0;
+}
+
+static int fr_state( FrStream *stream )
+{
+  if ( ! stream )
+  {
+    errno = EFAULT;
+    return EOF;
+  }
+  return stream->state;
+}
+
+static void fr_clearerr( FrStream *stream )
+{
+  if ( ! stream )
+    errno = EFAULT;
+  else
+    stream->state = LAL_FR_OK;
+  return;
+}
+
+static int fr_rewind( FrStream *stream )
+{
+  if ( ! stream )
+  {
+    errno = EFAULT;
+    return EOF;
+  }
+  if ( stream->file )
+  {
+    FrFileIEnd( stream->file );
+    stream->file = NULL;
+  }
+  stream->pos   = 0;
+  stream->fnum  = 0;
+  stream->file  = URLFrFileINew( stream->flist );
+  stream->state = LAL_FR_OK;
+  if ( ! stream->file )
+  {
+    stream->state |= LAL_FR_ERR | LAL_FR_URL;
+    return EOF;
+  }
+  if ( FrTOCReadFull( stream->file ) == NULL )
+  {
+    FrFileIEnd( stream->file );
+    stream->file   = NULL;
+    stream->state |= LAL_FR_ERR | LAL_FR_TOC;
+    return EOF;
+  }
+  stream->epoch.gpsSeconds     = stream->file->toc->GTimeS[0];
+  stream->epoch.gpsNanoSeconds = stream->file->toc->GTimeN[0];
+  return 0;
+}
+
+static int fr_next( FrStream *stream )
+{
+  /* timing accuracy: tenth of a sample interval for a 16kHz fast channel */
+  const INT8 tacc = (INT8)floor( 0.1 * 1e9 / 16384.0 );
+  INT8 tnow = 0;
+  INT8 texp = 0;
+  INT8 tact;
+
+  if ( ! stream )
+  {
+    errno = EFAULT;
+    return EOF;
+  }
+
+  if ( stream->state & LAL_FR_END )
+    return EOF;
+
+  /* turn off gap bit */
+  stream->state &= ~LAL_FR_GAP;
+
+  /* FIXME: assume that stream->file is open */
+  if ( stream->file && stream->file->toc )
+  {
+    if ( stream->pos < stream->file->toc->nFrame )
+    {
+      tnow  = (INT8)1000000000 * (INT8)stream->file->toc->GTimeS[stream->pos];
+      tnow += stream->file->toc->GTimeN[stream->pos];
+      texp  = tnow;
+      texp += (INT8)floor( 1e9 * stream->file->toc->dt[stream->pos] );
+      ++stream->pos;
+    }
+    if ( stream->pos >= stream->file->toc->nFrame )
+    {
+      FrFileIEnd( stream->file );
+      stream->file = NULL;
+      stream->pos = 0;
+      ++stream->fnum;
+    }
+  }
+
+  /* open a new file if necessary */
+  if ( ! stream->file )
+  {
+    stream->pos = 0;
+    if ( stream->fnum >= stream->nfile )
+    {
+      stream->state |= LAL_FR_END;
+      return EOF;
+    }
+    stream->pos  = 0;
+    stream->file = URLFrFileINew( stream->flist + stream->fnum );
+    if ( ! stream->file )
+    {
+      stream->state |= LAL_FR_ERR | LAL_FR_URL;
+      return EOF;
+    }
+  }
+
+  /* open TOC if necessary */
+  if ( ! stream->file->toc )
+  {
+    if ( FrTOCReadFull( stream->file ) == NULL )
+    {
+      FrFileIEnd( stream->file );
+      stream->file   = NULL;
+      stream->state |= LAL_FR_ERR | LAL_FR_TOC;
+      return EOF;
+    }
+  }
+
+  /* compute actual start time of this new frame */
+  tact  = (INT8)1000000000 * (INT8)stream->file->toc->GTimeS[stream->pos];
+  tact += (INT8)stream->file->toc->GTimeN[stream->pos];
+  stream->epoch.gpsSeconds     = stream->file->toc->GTimeS[stream->pos];
+  stream->epoch.gpsNanoSeconds = stream->file->toc->GTimeN[stream->pos];
+
+  if ( abs( texp - tact ) > tacc ) /* there is a gap */
+    stream->state |= LAL_FR_GAP;
+
+  return 0;
+}
+
+/* compare routine for binary search bsearch to locate the first file
+ * containing wanted time, or the first file after a gap if the wanted time
+ * occurs during a gap */
+static int flist_tcompare( const void *key, const void *ptr )
+{
+  const FrFileInfo *file = ptr; /* this file */
+  const FrFileInfo *prev = file - 1; /* the previous file */
+  double twant = *((double*)key);
+  if ( twant < file->t0 )
+  {
+    /* check if previous file was before wanted time */
+    if ( file->ind > 0 && twant > prev->t0 + prev->dt )
+      return 0; /* gap during wanted time and this is first file after gap */
+    return -1; /* this file is after wanted time */
+  }
+  if ( twant > file->t0 + file->dt )
+    return 1; /* this file is before wanted time */
+  if ( file->ind > 0 && twant < prev->t0 + prev->dt )
+    return -1; /* the previous file contains wanted time too */
+  return 0;
+}
+
+static int fr_seek( FrStream *stream, LIGOTimeGPS *epoch )
+{
+  FrFileInfo *file1;
+  FrFileInfo *file2;
+  double twant;
+  UINT4 i;
+
+  if ( ! stream || ! epoch )
+  {
+    errno = EFAULT;
+    return EOF;
+  }
+
+  if ( stream->file )
+  {
+    FrFileIEnd( stream->file );
+    stream->file = NULL;
+    stream->pos = 0;
+  }
+
+  /* clear EOF or GAP states; preserve ERR state */
+  if ( stream->state & LAL_FR_ERR )
+    stream->state = LAL_FR_ERR;
+  else
+    stream->state = LAL_FR_OK;
+
+  /* if epoch is before first file */
+  file1 = stream->flist;
+  if ( epoch->gpsSeconds < file1->t0 )
+  {
+    errno = EINVAL;
+    return fr_rewind( stream );
+    stream->state |= LAL_FR_GAP;
+  }
+
+  /* if epoch is after last file */
+  file2 = stream->flist + stream->nfile - 1;
+  if ( epoch->gpsSeconds > file2->t0 + file2->dt )
+  {
+    errno = EINVAL;
+    stream->fnum   = stream->nfile;
+    stream->state |= LAL_FR_END;
+    return EOF;
+  }
+
+  /* search for the correct file in the list */
+  twant = epoch->gpsSeconds + 1e-9 * epoch->gpsNanoSeconds;
+  file1 = bsearch( &twant, stream->flist, stream->nfile,
+      sizeof( *stream->flist ), flist_tcompare );
+  if ( ! file1 ) /* no matching file: loop from beginning (should NOT happen) */
+    file1 = stream->flist;
+
+  /* find first file after time */
+  for ( i = file1->ind; i < stream->nfile; ++i )
+  {
+    file1 = stream->flist + i;
+    if ( epoch->gpsSeconds >= file1->t0
+        && epoch->gpsSeconds < file1->t0 + file1->dt )
+    {
+      double tbeg;
+      double tend;
+      stream->fnum = i;
+      stream->file = URLFrFileINew( file1 );
+      if ( ! stream->file )
+      {
+        stream->state |= LAL_FR_ERR | LAL_FR_URL;
+        return EOF;
+      }
+      if ( FrTOCReadFull( stream->file ) == NULL )
+      {
+        FrFileIEnd( stream->file );
+        stream->file   = NULL;
+        stream->state |= LAL_FR_ERR | LAL_FR_TOC;
+        return EOF;
+      }
+      for ( stream->pos = 0; stream->pos < stream->file->toc->nFrame;
+          ++stream->pos )
+      {
+        tbeg  = stream->file->toc->GTimeS[stream->pos];
+        tbeg += 1e9 * stream->file->toc->GTimeN[stream->pos];
+        tend  = tbeg + stream->file->toc->dt[stream->pos];
+        if ( twant >= tbeg && twant < tend ) /* this is the frame */
+        {
+          goto found;
+        }
+        if ( twant < tbeg ) /* detect a gap */
+        {
+          stream->state |= LAL_FR_GAP;
+          goto found;
+        }
+      }
+      /* not in this frame file: close it */
+      FrFileIEnd( stream->file );
+      stream->file = NULL;
+      stream->pos = 0;
+    }
+    if ( epoch->gpsSeconds < file1->t0 ) /* detect a gap */
+    {
+      stream->state |= LAL_FR_GAP;
+      stream->fnum   = i;
+      stream->file   = URLFrFileINew( file1 );
+      stream->pos    = 0;
+      if ( ! stream->file )
+      {
+        stream->state |= LAL_FR_ERR | LAL_FR_URL;
+        return EOF;
+      }
+      if ( FrTOCReadFull( stream->file ) == NULL )
+      {
+        FrFileIEnd( stream->file );
+        stream->file   = NULL;
+        stream->state |= LAL_FR_ERR | LAL_FR_TOC;
+        return EOF;
+      }
+      goto found;
+    }
+  }
+found:
+
+  /* set time of stream */
+  if ( stream->state & LAL_FR_GAP )
+  {
+    stream->epoch.gpsSeconds     = stream->file->toc->GTimeS[stream->pos];
+    stream->epoch.gpsNanoSeconds = stream->file->toc->GTimeN[stream->pos];
+  }
+  else
+  {
+    stream->epoch = *epoch;
+  }
+
+  return 0;
+}
+
+static int fr_tell( FrStream *stream, LIGOTimeGPS *epoch )
+{
+  if ( ! stream || ! epoch )
+  {
+    errno = EFAULT;
+    return EOF;
+  }
+  *epoch = stream->epoch;
+  return 0;
+}
+
+static int fr_getpos( FrStream *stream, FrPos *position )
+{
+  if ( ! stream || ! position )
+  {
+    errno = EFAULT;
+    return EOF;
+  }
+  position->epoch = stream->epoch;
+  position->fnum  = stream->fnum;
+  position->pos   = stream->pos;
+  return 0;
+}
+
+static int fr_setpos( FrStream *stream, FrPos *position )
+{
+  if ( ! stream || ! position )
+  {
+    errno = EFAULT;
+    return EOF;
+  }
+  /* clear EOF or GAP states; preserve ERR state */
+  if ( stream->state & LAL_FR_ERR )
+    stream->state = LAL_FR_ERR;
+  else
+    stream->state = LAL_FR_OK;
+  stream->epoch = position->epoch;
+  if ( stream->fnum != position->fnum )
+  {
+    if ( stream->file )
+    {
+      FrFileIEnd( stream->file );
+      stream->file = NULL;
+    }
+    if ( position->fnum >= stream->fnum )
+    {
+      errno = EINVAL;
+      stream->fnum  = stream->nfile;
+      stream->state |= LAL_FR_END;
+      return EOF;
+    }
+    stream->fnum = position->fnum;
+    stream->file = URLFrFileINew( stream->flist + stream->fnum );
+    if ( ! stream->file )
+    {
+      stream->state |= LAL_FR_ERR | LAL_FR_URL;
+      return EOF;
+    }
+  }
+  if ( ! stream->file->toc )
+  {
+    if ( FrTOCReadFull( stream->file ) == NULL )
+    {
+      FrFileIEnd( stream->file );
+      stream->file   = NULL;
+      stream->state |= LAL_FR_ERR | LAL_FR_TOC;
+      return EOF;
+    }
+  }
+  stream->pos = position->pos;
+  if ( stream->pos > stream->file->toc->nFrame )
+  {
+    errno = EINVAL;
+    stream->state |= LAL_FR_ERR;
+    return EOF;
+  }
+  return 0;
+}
+
+
+/* compare routine for qsort to sort flists in increasing order of start time */
+static int flist_compare( const void *p, const void *q )
+{
+  const FrFileInfo *file1 = p;
+  const FrFileInfo *file2 = q;
+  if ( file1->t0 < file2->t0 )
+    return -1;
+  if ( file1->t0 > file2->t0 )
+    return 1;
+  return 0;
 }
 
 /* create a frame file list from a cache */
@@ -171,7 +697,6 @@ LALCreateFrFileList(
   FrFileInfo *list;
   UINT4 i;
   INITSTATUS( status, "LALCreateFrFileList", FRAMESTREAMC );  
-  ATTATCHSTATUSPTR( status );
   list = *output = LALCalloc( cache->numFrameFiles + 1, sizeof( *list ) );
   list[cache->numFrameFiles].ind = -1; /* indicates end */
   for ( i = 0; i < cache->numFrameFiles; ++i )
@@ -180,7 +705,9 @@ LALCreateFrFileList(
     list[i].url = LALMalloc( strlen( file->url ) + 1 );
     if ( ! list[i].url )
     {
-      TRY( LALDestroyFrFileList( status->statusPtr, output ), status );
+      free_flist( *output );
+      LALFree( *output );
+      *output = NULL;
       ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
     }
     strcpy( list[i].url, file->url );
@@ -192,38 +719,34 @@ LALCreateFrFileList(
     else
     {
       struct FrFile *frfile;
-      struct FrameH *frame;
-      double endTime;
       frfile = URLFrFileINew( list + i );
       if ( ! frfile )
       {
-        TRY( LALDestroyFrFileList( status->statusPtr, output ), status );
+        free_flist( *output );
+        LALFree( *output );
+        *output = NULL;
         ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
       }
-      frame = FrameRead( frfile );
-      if ( ! frame )
+      if ( FrTOCReadFull( frfile ) == NULL )
       {
-        TRY( LALDestroyFrFileList( status->statusPtr, output ), status );
+        FrFileIEnd( frfile );
+        free_flist( *output );
+        LALFree( *output );
         ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
       }
-      list[i].t0 = frame->GTimeS;
-      do
-      {
-        endTime  = frame->GTimeS + 1e-9 * frame->GTimeN;
-        endTime += frame->dt;
-        FrameFree( frame );
-      }
-      while ( ( frame = FrameRead( frfile ) ) );
-      list[i].dt = ceil( endTime ) - list[i].t0;
+      /* TODO: loop over frames */
+      list[i].t0 = floor( frfile->toc->GTimeS[0] );
+      list[i].dt = ceil( (double)frfile->toc->GTimeS[0]
+          + 1e-9 * (double)frfile->toc->GTimeN[0]
+          + frfile->toc->dt[0] ) - list[i].t0;
       FrFileIEnd( frfile );
     }
   }
 
-  qsort( list, cache->numFrameFiles, sizeof( *list ), FileListSortCompare );
+  qsort( list, cache->numFrameFiles, sizeof( *list ), flist_compare );
   for ( i = 0; i < cache->numFrameFiles; ++i )
     list[i].ind = i;
 
-  DETATCHSTATUSPTR( status );
   RETURN( status );
 }
 
@@ -261,8 +784,8 @@ LALFrCacheOpen(
     ABORT( status, FRAMESTREAMH_EALOC, FRAMESTREAMH_MSGEALOC );
   }
 
-  stream->numfiles = cache->numFrameFiles;
-  LALCreateFrFileList( status->statusPtr, &stream->filelist, cache );
+  stream->nfile = cache->numFrameFiles;
+  LALCreateFrFileList( status->statusPtr, &stream->flist, cache );
   BEGINFAIL( status )
   {
     LALFree( *output );
@@ -272,27 +795,26 @@ LALFrCacheOpen(
 
   FrLibIni( NULL, stderr, 0 );
 
-  stream->frfile = URLFrFileINew( stream->filelist );
-  if ( ! stream->frfile )
+  stream->file = URLFrFileINew( stream->flist );
+  if ( ! stream->file )
   {
-    TRY( LALDestroyFrFileList( status->statusPtr, &stream->filelist ), status );
+    free_flist( stream->flist );
     LALFree( *output );
     *output = NULL;
     ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
   }
 
-  stream->frame = FrameRead( stream->frfile );
-  if ( ! stream->frame )
+  if ( FrTOCReadFull( stream->file ) == NULL )
   {
-    FrFileIEnd( stream->frfile );
-    TRY( LALDestroyFrFileList( status->statusPtr, &stream->filelist ), status );
+    FrFileIEnd( stream->file );
+    free_flist( stream->flist );
     LALFree( *output );
     *output = NULL;
     ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
   }
 
-  stream->epoch.gpsSeconds     = stream->frame->GTimeS;
-  stream->epoch.gpsNanoSeconds = stream->frame->GTimeN;
+  stream->epoch.gpsSeconds     = stream->file->toc->GTimeS[0];
+  stream->epoch.gpsNanoSeconds = stream->file->toc->GTimeN[0];
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
@@ -347,15 +869,11 @@ LALFrClose(
     )
 { /* </lalVerbatim> */
   INITSTATUS( status, "LALFrClose", FRAMESTREAMC );  
-  ATTATCHSTATUSPTR( status );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( *stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  FrameFree( (*stream)->frame );
-  FrFileIEnd( (*stream)->frfile );
-  TRY( LALDestroyFrFileList( status->statusPtr, &(*stream)->filelist ), status );
+  fr_close( *stream );
   LALFree( *stream );
   *stream = NULL;
-  DETATCHSTATUSPTR( status );
   RETURN( status );
 }
 
@@ -371,84 +889,9 @@ LALFrEnd(
   INITSTATUS( status, "LALFrEnd", FRAMESTREAMC );  
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( end, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  *end = stream->end;
+  *end = fr_state( stream ) & LAL_FR_END;
   RETURN( status );
 }
-
-
-/* <lalVerbatim file="FrameStreamCP"> */
-void
-LALFrNext(
-    LALStatus *status,
-    FrStream  *stream
-    )
-{ /* </lalVerbatim> */
-  /* timing accuracy: tenth of a sample interval for a 16kHz fast channel */
-  const INT8 tacc = (INT8)floor( 0.1 * 1e9 / 16384.0 );
-  INT8 texp;
-  INT8 tact;
-  INITSTATUS( status, "LALNextFrame", FRAMESTREAMC );  
-  ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-
-  if ( stream->err )
-  {
-    ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
-  }
-  if ( stream->end )
-  {
-    ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
-  }
-  stream->gap = 0;
-
-  /* compute expected start time of the next frame */
-  texp  = SECNAN_TO_I8TIME( stream->frame->GTimeS, stream->frame->GTimeN );
-  texp += (INT8)floor( 1e9 * stream->frame->dt );
-
-  FrameFree( stream->frame );
-  stream->frame = FrameRead( stream->frfile );
-
-  if ( ! stream->frame ) /* no more frames in file */
-  {
-    FrFileIEnd( stream->frfile );
-    stream->frfile = NULL;
-    ++stream->filenum;
-
-    /* no more frame files: close stream */
-    if ( stream->filenum >= stream->numfiles )
-    {
-      stream->end = EOF;
-      RETURN( status );
-    }
-
-    stream->frfile = URLFrFileINew( stream->filelist + stream->filenum );
-    if ( ! stream->frfile )
-    {
-      stream->err = FRAMESTREAMH_EOPEN; /* error: couldn't read frame file! */
-      ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
-    }
-
-    stream->frame = FrameRead( stream->frfile );
-    if ( ! stream->frame )
-    {
-      stream->err = FRAMESTREAMH_EREAD; /* error: empty frame file! */
-      ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
-    }
-  }
-
-  /* compute actual start time of this new frame */
-  tact = SECNAN_TO_I8TIME( stream->frame->GTimeS, stream->frame->GTimeN );
-  stream->epoch.gpsSeconds     = stream->frame->GTimeS;
-  stream->epoch.gpsNanoSeconds = stream->frame->GTimeN;
-
-  if ( abs( texp - tact ) > tacc ) /* there is a gap */
-  {
-    LALInfo( status, "Gap in frame data." );
-    stream->gap = 1;
-  }
-
-  RETURN( status );
-}
-
 
 /* <lalVerbatim file="FrameStreamCP"> */
 void
@@ -459,37 +902,61 @@ LALFrRewind(
 { /* </lalVerbatim> */
   INITSTATUS( status, "LALFrRewind", FRAMESTREAMC );  
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-
-  if ( stream->frame )
+  if ( fr_rewind( stream ) )
   {
-    FrameFree( stream->frame );
+    if ( stream->state & LAL_FR_URL ) /* problem was in opening a file */
+    {
+      ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
+    }
+    if ( stream->state & LAL_FR_TOC ) /* problem was in reading a file */
+    {
+      ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
+    }
   }
-  if ( stream->frfile )
-  {
-    FrFileIEnd( stream->frfile );
-  }
-  stream->filenum = 0;
-  stream->end     = 0;
-  stream->err     = 0;
-  stream->gap     = 0;
-  stream->frfile  = URLFrFileINew( stream->filelist );
-  if ( ! stream->frfile )
-  {
-    stream->err = FRAMESTREAMH_EOPEN; /* error: couldn't read frame file! */
-    ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
-  }
-  stream->frame = FrameRead( stream->frfile );
-  if ( ! stream->frame )
-  {
-    stream->err = FRAMESTREAMH_EREAD; /* error: empty frame file! */
-    ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
-  }
-  stream->epoch.gpsSeconds     = stream->frame->GTimeS;
-  stream->epoch.gpsNanoSeconds = stream->frame->GTimeN;
-
   RETURN( status );
 }
 
+
+/* <lalVerbatim file="FrameStreamCP"> */
+void
+LALFrNext(
+    LALStatus   *status,
+    FrStream    *stream
+    )
+{ /* </lalVerbatim> */
+  INITSTATUS( status, "LALNextFrame", FRAMESTREAMC );  
+  ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
+  if ( stream->state & LAL_FR_ERR )
+  {
+    ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
+  }
+  if ( stream->state & LAL_FR_END )
+  {
+    ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
+  }
+
+  if ( fr_next( stream ) )
+  {
+    if ( stream->state & LAL_FR_ERR )
+    {
+      if ( stream->state & LAL_FR_URL ) /* must have failed to open a file */
+      {
+        ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
+      }
+      if ( stream->state & LAL_FR_TOC ) /* must have failed to read a file */
+      {
+        ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
+      }
+    }
+  }
+
+  if ( stream->state & LAL_FR_GAP )
+  {
+    LALInfo( status, "Gap in frame data." );
+  }
+
+  RETURN( status );
+}
 
 /* <lalVerbatim file="FrameStreamCP"> */
 void
@@ -499,127 +966,46 @@ LALFrSeek(
     FrStream    *stream
     )
 { /* </lalVerbatim> */
-  FrFileInfo  key;
-  FrFileInfo *file;
-  INT4 overlap = 0;
-
   INITSTATUS( status, "LALFrSeek", FRAMESTREAMC );  
-  ATTATCHSTATUSPTR( status );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( epoch, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-
-  if ( stream->frame )
+  if ( stream->state & LAL_FR_ERR )
   {
-    FrameFree( stream->frame );
-    stream->frame = NULL;
-  }
-  if ( stream->frfile )
-  {
-    FrFileIEnd( stream->frfile );
-    stream->frfile = NULL;
-  }
-  stream->end = 0;
-  stream->err = 0;
-  stream->gap = 0;
-
-  file = stream->filelist;
-  if ( epoch->gpsSeconds < file->t0 )
-  {
-    TRY( LALFrRewind( status->statusPtr, stream ), status );
-    LALWarning( status, "Requested time before first frame." );
-    stream->gap = 1; /* requested time is just too early */
-    DETATCHSTATUSPTR( status );
-    RETURN( status );
+    ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
   }
 
-  file = stream->filelist + stream->numfiles - 1;
-  if ( epoch->gpsSeconds > file->t0 + file->dt )
+  if ( fr_seek( stream, epoch ) )
   {
-    LALWarning( status, "Requested time after last frame." );
-    stream->filenum = stream->numfiles;
-    stream->end = EOF;
-    DETATCHSTATUSPTR( status );
-    RETURN( status );
-  }
-
-  key.t0 = epoch->gpsSeconds;
-  file = bsearch( &key, stream->filelist, stream->numfiles,
-      sizeof( *stream->filelist ), FileListSelectCompare );
-  if ( file ) /* check for possible overlap */
-  {
-    FrFileInfo *file2;
-    file2 = stream->filelist + file->ind - 1;
-    if ( file->ind > 0 && epoch->gpsSeconds < file2->t0 + file2->dt )
-    { /* choose earlier file */
-      overlap = 1;
-      file = file2;
-    }
-    file2 = stream->filelist + file->ind + 1;
-    if ( file->ind + 2 < (int)stream->numfiles && file2->t0 < epoch->gpsSeconds )
+    if ( stream->state & LAL_FR_ERR )
     {
-      overlap = 1;
-    }
-  }
-  else /* no match found: must be in a gap */
-  {
-    UINT4 i;
-    stream->gap = 1;
-    LALWarning( status, "Requested time in gap in frame data." );
-    /* scan frame list in order to find earliest file after time requested */
-    for ( i = 0; i < stream->numfiles; ++i )
-    {
-      file = stream->filelist + i;
-      if ( file->t0 > epoch->gpsSeconds )
-        break;
-    }
-  }
-
-  stream->filenum = file->ind;
-  stream->frfile  = URLFrFileINew( stream->filelist + stream->filenum );
-  if ( ! stream->frfile )
-  {
-    stream->err = FRAMESTREAMH_EOPEN;
-    ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
-  }
-
-  if ( stream->gap ) /* just open first frame in file */
-  {
-    stream->frame = FrameRead( stream->frfile );
-  }
-  else
-  {
-    double twant = epoch->gpsSeconds + 1e-9 * epoch->gpsNanoSeconds;
-    stream->frame = FrameReadT( stream->frfile, twant );
-    if ( overlap && ! stream->frame ) /* could be in the other frame file */
-    {
-      ++stream->filenum;
-      stream->frfile = URLFrFileINew( stream->filelist + stream->filenum );
-      if ( ! stream->frfile )
+      if ( stream->state & LAL_FR_URL ) /* must have failed to open a file */
       {
-        stream->err = FRAMESTREAMH_EOPEN;
         ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
       }
-      stream->frame = FrameReadT( stream->frfile, twant );
+      if ( stream->state & LAL_FR_TOC ) /* must have failed to read a file */
+      {
+        ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
+      }
     }
-    /* FIXME: probably can't handle gaps within a frame file */
+    else
+    {
+      if ( stream->state & LAL_FR_GAP ) /* too early */
+      {
+        LALWarning( status, "Requested time before first frame." );
+        RETURN( status );
+      }
+      if ( stream->state & LAL_FR_END ) /* too late */
+      {
+        LALWarning( status, "Requested time after last frame." );
+        RETURN( status );
+      }
+    }
   }
-  if ( ! stream->frame )
+  
+  if ( stream->state & LAL_FR_GAP )
   {
-    stream->err = FRAMESTREAMH_EREAD;
-    ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
+    LALWarning( status, "Requested time in gap in frame data." );
   }
-
-  if ( stream->gap )
-  {
-    stream->epoch.gpsSeconds     = stream->frame->GTimeS;
-    stream->epoch.gpsNanoSeconds = stream->frame->GTimeN;
-  }
-  else
-  {
-    stream->epoch = *epoch;
-  }
-
-  DETATCHSTATUSPTR( status );
   RETURN( status );
 }
 
@@ -635,7 +1021,11 @@ LALFrTell(
   INITSTATUS( status, "LALFrTell", FRAMESTREAMC );  
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( epoch, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  *epoch = stream->epoch;
+  if ( stream->state & LAL_FR_ERR )
+  {
+    ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
+  }
+  fr_tell( stream, epoch );
   RETURN( status );
 }
 
@@ -651,10 +1041,11 @@ LALFrGetPos(
   INITSTATUS( status, "LALFrGetPos", FRAMESTREAMC );  
   ASSERT( position, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  position->epoch   = stream->epoch;
-  position->filenum = stream->filenum;
-  position->frame   = stream->frame->frame;
-  position->run     = stream->frame->run;
+  if ( stream->state & LAL_FR_ERR )
+  {
+    ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
+  }
+  fr_getpos( stream, position );
   RETURN( status );
 }
 
@@ -670,42 +1061,24 @@ LALFrSetPos(
   INITSTATUS( status, "LALFrSetPos", FRAMESTREAMC );  
   ASSERT( position, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-
-  stream->epoch = position->epoch;
-  if ( stream->filenum == position->filenum
-      && stream->frame->frame == position->frame
-      && stream->frame->run == position->run )
+  if ( stream->state & LAL_FR_ERR )
   {
-    RETURN( status );
+    ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
   }
-
-  if ( stream->frame )
+  errno = 0;
+  if ( fr_setpos( stream, position ) )
   {
-    FrameFree( stream->frame );
-    stream->frame = NULL;
+    if ( stream->state & LAL_FR_ERR )
+    {
+      if ( stream->state & LAL_FR_URL ) /* must have failed to open a file */
+      {
+        ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
+      }
+      if ( stream->state & LAL_FR_TOC ) /* must have failed to read a file */
+      {
+        ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
+      }
+    }
   }
-  if ( stream->frfile )
-  {
-    FrFileIEnd( stream->frfile );
-    stream->frfile = NULL;
-  }
-  stream->filenum = position->filenum;
-  stream->frfile  = URLFrFileINew( stream->filelist + stream->filenum );
-  if ( ! stream->frfile )
-  {
-    stream->err = FRAMESTREAMH_EOPEN;
-    ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
-  }
-
-  stream->frame = FrameReadN( stream->frfile, position->run, position->frame );
-  if ( ! stream->frame )
-  {
-    stream->err = FRAMESTREAMH_EREAD;
-    ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
-  }
-
-  stream->end = 0;
-  stream->err = 0;
-  stream->gap = 0;
   RETURN( status );
 }

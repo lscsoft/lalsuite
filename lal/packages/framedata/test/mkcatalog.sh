@@ -26,6 +26,6 @@ for file in $frfiles; do
   command='printf "%s %s %s %s "'
   eval $command $basename $out || fail
   IFS="$IFS_save"
-  command='echo "file:$destdir/$basename.gwf"'
+  command='echo "file://localhost$destdir/$basename.gwf"'
   eval $command $out || fail
 done

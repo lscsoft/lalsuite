@@ -33,7 +33,7 @@ dvi-local: .dvi-dep
 
 catalog.test:
 	$(srcdir)/mkcatalog.sh catalog.test $(srcdir) $(srcdir)
-	echo "X EMPTY 0 0 file:/dev/null" >> catalog.test
+	echo "X EMPTY 0 0 file:///dev/null" >> catalog.test
 
 catalog:
 	$(srcdir)/mkcatalog.sh catalog $(srcdir) $(pkgdatadir)

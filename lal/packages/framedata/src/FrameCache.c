@@ -33,7 +33,19 @@
  *     of the end of the data contained in the frame file and the GPS time in
  *     seconds (rounded down) of the start of the data contained in the frame
  *     file.
- * \item[URL] the URL of the frame data.
+ * \item[URL] the URL of the frame data.  If the protocol (i.e.,
+ *     \verb+file://+ or \verb+http://+) is missing then it is assumed that
+ *     this is the absolute or relative path of a frame file.  File URLs
+ *     must have a fully-qualified domain name or the word \verb+localhost+
+ *     if on the localhost (or else localhost is assumed if absent).
+ *     Examples:
+ *     \begin{verbatim}
+ *     file://machine.university.edu/usr/share/lal/F-TEST-600000000-60.gwf
+ *     file://localhost/usr/share/lal/F-TEST-600000000-60.gwf
+ *     file:///usr/share/lal/F-TEST-600000000-60.gwf
+ *     /usr/share/lal/F-TEST-600000000-60.gwf
+ *     F-TEST-600000000-60.gwf
+ *     \end{verbatim}
  * \end{description}
  * Other types of metadata, such as the md5 checksum and the file size, are not
  * used by these LAL routines.  The format of the catalogues is
@@ -42,9 +54,9 @@
  * \end{verbatim}
  * for example:
  * \begin{verbatim}
- * H R 600000000 16 file:/data/frames/H-R-600000000-16.gwf
- * H R 600000016 16 file:/data/frames/H-R-600000016-16.gwf
- * H R 600000032 16 file:/data/frames/H-R-600000032-16.gwf
+ * F TEST 600000000 60 file://localhost/usr/share/lal/F-TEST-600000000-60.gwf
+ * F TEST 600000060 60 file://localhost/usr/share/lal/F-TEST-600000060-60.gwf
+ * F TEST 600000120 60 file://localhost/usr/share/lal/F-TEST-600000120-60.gwf
  * \end{verbatim}
  * If any data is missing or unknown, it is represented in the catalogue by a
  * single hyphen (\texttt{-}).
@@ -674,13 +686,13 @@ LALFrCacheGenerate(
                 file->duration = m;
             }
           }
-          file->url = LALMalloc( strlen( fname ) + 6 );
+          file->url = LALMalloc( strlen( fname ) + strlen( "file://localhost" ) + 1 );
           if ( ! file->url )
           {
             TRY( LALDestroyFrCache( status->statusPtr, output ), status );
             ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
           }
-          sprintf( file->url, "file:%s", fname );
+          sprintf( file->url, "file://localhost%s", fname );
           ++n;
         }
       }

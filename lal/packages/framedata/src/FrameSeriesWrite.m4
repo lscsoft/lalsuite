@@ -1,9 +1,13 @@
+ifelse(TYPE,`COMPLEX16',`define(`FRTYPE',`FR_VECT_16C')')
+ifelse(TYPE,`COMPLEX8',`define(`FRTYPE',`FR_VECT_8C')')
 ifelse(TYPE,`REAL8',`define(`FRTYPE',`FR_VECT_8R')')
 ifelse(TYPE,`REAL4',`define(`FRTYPE',`FR_VECT_4R')')
 ifelse(TYPE,`INT8',`define(`FRTYPE',`FR_VECT_8S')')
 ifelse(TYPE,`INT4',`define(`FRTYPE',`FR_VECT_4S')')
 ifelse(TYPE,`INT2',`define(`FRTYPE',`FR_VECT_2S')')
 
+ifelse(TYPE,`COMPLEX16',`define(`FRDATA',`dataD')')
+ifelse(TYPE,`COMPLEX8',`define(`FRDATA',`dataD')')
 ifelse(TYPE,`REAL8',`define(`FRDATA',`dataD')')
 ifelse(TYPE,`REAL4',`define(`FRDATA',`dataF')')
 ifelse(TYPE,`INT8',`define(`FRDATA',`dataL')')

@@ -1,9 +1,13 @@
+ifelse(TYPE,`COMPLEX16',`define(`FRTYPE',`FR_VECT_16C')')
+ifelse(TYPE,`COMPLEX8',`define(`FRTYPE',`FR_VECT_8C')')
 ifelse(TYPE,`REAL8',`define(`FRTYPE',`FR_VECT_8R')')
 ifelse(TYPE,`REAL4',`define(`FRTYPE',`FR_VECT_4R')')
 ifelse(TYPE,`INT8',`define(`FRTYPE',`FR_VECT_8S')')
 ifelse(TYPE,`INT4',`define(`FRTYPE',`FR_VECT_4S')')
 ifelse(TYPE,`INT2',`define(`FRTYPE',`FR_VECT_2S')')
 
+ifelse(TYPE,`COMPLEX16',`define(`FRDATA',`dataD')')
+ifelse(TYPE,`COMPLEX8',`define(`FRDATA',`dataF')')
 ifelse(TYPE,`REAL8',`define(`FRDATA',`dataD')')
 ifelse(TYPE,`REAL4',`define(`FRDATA',`dataF')')
 ifelse(TYPE,`INT8',`define(`FRDATA',`dataL')')
@@ -11,7 +15,72 @@ ifelse(TYPE,`INT4',`define(`FRDATA',`dataI')')
 ifelse(TYPE,`INT2',`define(`FRDATA',`dataS')')
 
 define(`STYPE',`format(`%sTimeSeries',TYPE)')
+define(`FSTYPE',`format(`%sFrequencySeries',TYPE)')
 define(`FUNC',`format(`LALFrGet%s',STYPE)')
+define(`FSFUNC',`format(`LALFrGet%s',FSTYPE)')
+
+/* <lalVerbatim file="FrameSeriesCP"> */
+void
+FSFUNC (
+    LALStatus		*status,
+    FSTYPE	*series,
+    FrChanIn		*chanin,
+    FrStream		*stream
+    )
+{ /* </lalVerbatim> */
+  struct FrVect	*vect;
+  INITSTATUS( status, "FSFUNC", FRAMESERIESC );  
+
+  ASSERT( series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
+  ASSERT( ! series->data, status, FRAMESTREAMH_ENNUL, FRAMESTREAMH_MSGENNUL );
+  ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
+
+  if ( stream->state & LAL_FR_ERR )
+  {
+    ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
+  }
+  if ( stream->state & LAL_FR_END )
+  {
+    ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
+  }
+
+  strncpy( series->name, chanin->name, sizeof( series->name ) );
+  vect = loadFrVect( stream, series->name );
+  if ( ! vect || ! vect->data )
+  {
+    ABORT( status, FRAMESTREAMH_ECHAN, FRAMESTREAMH_MSGECHAN );
+  }
+  if ( vect->type != FRTYPE )
+  {
+    ABORT( status, FRAMESTREAMH_ETYPE, FRAMESTREAMH_MSGETYPE );
+  }
+
+#if defined FR_VERS && FR_VERS >= 5000
+  series->epoch.gpsSeconds     = floor( vect->GTime );
+  series->epoch.gpsNanoSeconds = floor( 1e9 * ( vect->GTime - floor( vect->GTime ) ) );
+#else
+  series->epoch.gpsSeconds     = vect->GTimeS;
+  series->epoch.gpsNanoSeconds = vect->GTimeN;
+#endif
+  series->deltaF = vect->dx[0];
+  series->f0 = 0; /* FIXME: should get correct value... */
+  series->sampleUnits = lalADCCountUnit;
+  series->data = LALCalloc( 1, sizeof( *series->data ) );
+  if ( ! series->data )
+  {
+    ABORT( status, FRAMESTREAMH_EALOC, FRAMESTREAMH_MSGEALOC );
+  }
+  series->data->length = vect->nData;
+  series->data->data = LALMalloc( series->data->length * sizeof( *series->data->data ) );
+  if ( ! series->data->data )
+  {
+    ABORT( status, FRAMESTREAMH_EALOC, FRAMESTREAMH_MSGEALOC );
+  }
+  memcpy( series->data->data, vect->FRDATA, series->data->length * sizeof( *series->data->data ) );
+
+  RETURN( status );
+}
+
 
 /* <lalVerbatim file="FrameSeriesCP"> */
 void
@@ -38,17 +107,17 @@ FUNC (
   ASSERT( series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
 
-  if ( stream->err )
+  if ( stream->state & LAL_FR_ERR )
   {
     ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
   }
-  if ( stream->end )
+  if ( stream->state & LAL_FR_END )
   {
     ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
   }
 
   strncpy( series->name, chanin->name, sizeof( series->name ) );
-  vect = loadFrVect( stream->frame, series->name, chanin->type );
+  vect = loadFrVect( stream, series->name );
   if ( ! vect || ! vect->data )
   {
     ABORT( status, FRAMESTREAMH_ECHAN, FRAMESTREAMH_MSGECHAN );
@@ -117,14 +186,14 @@ FUNC (
       memset( dest, 0, need * sizeof( *series->data->data ) );
     }
     ENDFAIL( status );
-    if ( stream->end )
+    if ( stream->state & LAL_FR_END )
     {
       memset( dest, 0, need * sizeof( *series->data->data ) );
       ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
     }
 
     /* load more data */
-    vect = loadFrVect( stream->frame, series->name, chanin->type );
+    vect = loadFrVect( stream, series->name );
     if ( ! vect || ! vect->data )
     {
       memset( dest, 0, need * sizeof( *series->data->data ) );
@@ -136,7 +205,7 @@ FUNC (
       ABORT( status, FRAMESTREAMH_ETYPE, FRAMESTREAMH_MSGETYPE );
     }
 
-    if ( stream->gap ) /* gap in data */
+    if ( stream->state & LAL_FR_GAP ) /* gap in data */
     {
       dest = series->data->data;
       need = series->data->length;
@@ -163,8 +232,8 @@ FUNC (
       + (INT8)floor( 1e9 * series->data->length * series->deltaT + 0.5 ) );
 
   /* check to see that we are still within current frame */
-  tend  = SECNAN_TO_I8TIME( stream->frame->GTimeS, stream->frame->GTimeN );
-  tend += (INT8)floor( 1e9 * stream->frame->dt );
+  tend  = SECNAN_TO_I8TIME( stream->file->toc->GTimeS[stream->pos], stream->file->toc->GTimeN[stream->pos] );
+  tend += (INT8)floor( 1e9 * stream->file->toc->dt[stream->pos] );
   if ( tend <= EPOCH_TO_I8TIME( stream->epoch ) )
   {
     LIGOTimeGPS keep;
@@ -172,17 +241,17 @@ FUNC (
     /* advance a frame */
     /* failure is benign, so we return results */
     TRY( LALFrNext( status->statusPtr, stream ), status );
-    if ( ! stream->gap )
+    if ( ! stream->state & LAL_FR_GAP )
     {
       stream->epoch = keep;
     }
   }
 
-  if ( stream->err )
+  if ( stream->state & LAL_FR_ERR )
   {
     ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
   }
-  if ( stream->end )
+  if ( stream->state & LAL_FR_END )
   {
     ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
   }

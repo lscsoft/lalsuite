@@ -16,7 +16,22 @@
  * \idx{LALFrGetINT8TimeSeries}
  * \idx{LALFrGetREAL4TimeSeries}
  * \idx{LALFrGetREAL8TimeSeries}
+ * \idx{LALFrGetCOMPLEX8TimeSeries}
+ * \idx{LALFrGetCOMPLEX16TimeSeries}
+ * \idx{LALFrGetINT2FrequencySeries}
+ * \idx{LALFrGetINT4FrequencySeries}
+ * \idx{LALFrGetINT8FrequencySeries}
+ * \idx{LALFrGetREAL4FrequencySeries}
+ * \idx{LALFrGetREAL8FrequencySeries}
+ * \idx{LALFrGetCOMPLEX8FrequencySeries}
+ * \idx{LALFrGetCOMPLEX16FrequencySeries}
+ * \idx{LALFrWriteINT2TimeSeries}
+ * \idx{LALFrWriteINT4TimeSeries}
+ * \idx{LALFrWriteINT8TimeSeries}
  * \idx{LALFrWriteREAL4TimeSeries}
+ * \idx{LALFrWriteREAL8TimeSeries}
+ * \idx{LALFrWriteCOMPLEX8TimeSeries}
+ * \idx{LALFrWriteCOMPLEX16TimeSeries}
  * \idx{LALFrGetTimeSeriesType}
  *
  * \subsubsection*{Description}
@@ -62,9 +77,19 @@
 #include <lal/Units.h>
 #include <lal/FrameCache.h>
 #include <lal/FrameStream.h>
-#include <FrameStreamDef.h>
 
 NRCSID( FRAMESERIESC, "$Id$" );
+
+/* Useful macros */
+#define SECNAN_TO_I8TIME( sec, nan ) \
+  ((INT8)1000000000*(INT8)(sec)+(INT8)(nan))
+/* Dangerous!!!: */
+#define EPOCH_TO_I8TIME( epoch ) \
+  SECNAN_TO_I8TIME( (epoch).gpsSeconds, (epoch).gpsNanoSeconds )
+#define SET_EPOCH( pepoch, i8time ) \
+  do { INT8 t=(i8time); LIGOTimeGPS *pe=(pepoch); \
+    pe->gpsSeconds=t/(INT8)1000000000; pe->gpsNanoSeconds=t%(INT8)1000000000; \
+  } while( 0 )
 
 
 /*
@@ -72,25 +97,84 @@ NRCSID( FRAMESERIESC, "$Id$" );
  * Routine to load a FrVect associated with a given channel from a given frame.
  *
  */
-static struct FrVect *loadFrVect( struct FrameH *frame, char *name, int chtype )
+static struct FrVect *loadFrVect( FrStream *stream, const char *channel )
 {
-  struct FrVect *vect = NULL;
-  if ( chtype == ProcDataChannel )
+  char        chan[256];
+  FrAdcData  *adc;
+  FrSimData  *sim;
+  FrProcData *proc;
+  FrChanType  type;
+  FrVect     *vect;
+  FrTOCts    *ts;
+  double      tstart;
+  strncpy( chan, channel, sizeof( chan ) - 1 );
+  if ( ! stream->file->toc )
   {
-    struct FrProcData *proc = FrProcDataFind( frame, name );
-    vect = proc ? proc->data : NULL;
+    if ( FrTOCReadFull( stream->file ) == 0 )
+    {
+      stream->state |= LAL_FR_ERR | LAL_FR_TOC;
+      return NULL;
+    }
   }
-  else if ( chtype == ADCDataChannel )
+  tstart  = stream->file->toc->GTimeS[stream->pos];
+  tstart += 1e-9 * stream->file->toc->GTimeN[stream->pos];
+  ts = stream->file->toc->adc;
+  /* scan adc data channels */
+  type = LAL_ADC_CHAN;
+  while ( ts && strcmp( channel, ts->name ) )
+    ts = ts->next;
+  if ( ! ts )
   {
-    struct FrAdcData *adc = FrAdcDataFind( frame, name );
-    vect = adc ? adc->data : NULL;
+    /* scan sim data channels */
+    type = LAL_SIM_CHAN;
+    ts = stream->file->toc->proc;
+    while ( ts && strcmp( channel, ts->name ) )
+      ts = ts->next;
   }
-  else if ( chtype == SimDataChannel )
+  if ( ! ts )
   {
-    struct FrSimData *sim = FrSimDataFind( frame, name );
-    vect = sim ? sim->data : NULL;
+    /* scan proc data channels */
+    type = LAL_PROC_CHAN;
+    ts = stream->file->toc->sim;
+    while ( ts && strcmp( channel, ts->name ) )
+      ts = ts->next;
   }
-  return vect;
+  if ( ! ts )
+    return NULL;
+
+  FrTOCSetPos( stream->file, ts->position[stream->pos] );
+  switch ( type )
+  {
+    case LAL_ADC_CHAN:
+      adc = FrAdcDataRead( stream->file );
+      if ( ! adc ) /* only happens if memory allocation error */
+        return NULL;
+      vect = FrVectReadNext( stream->file, tstart, chan );
+      vect = FrVectCopy( vect );
+      FrAdcDataFree( adc );
+      break;
+    case LAL_SIM_CHAN:
+      sim = FrSimDataRead( stream->file );
+      if ( ! sim ) /* only happens if memory allocation error */
+        return NULL;
+      vect = FrVectReadNext( stream->file, tstart, chan );
+      vect = FrVectCopy( vect );
+      FrSimDataFree( sim );
+      break;
+    case LAL_PROC_CHAN:
+      proc = FrProcDataRead( stream->file );
+      if ( ! proc ) /* only happens if memory allocation error */
+        return NULL;
+      vect = FrVectReadNext( stream->file, tstart, chan );
+      vect = FrVectCopy( vect );
+      FrProcDataFree( proc );
+      break;
+    default:
+      return NULL;
+  }
+  if ( vect && vect->compress )
+    FrVectExpand( vect );
+  return vect; 
 }
 
 
@@ -167,6 +251,106 @@ static struct FrVect *makeFrVect1D( struct FrameH *frame, int chtype,
   return vect;
 }
 
+static FrVect * FrVectReadInfo( FrFile *iFile, FRULONG *pos )
+{
+  FrVect *v;
+  unsigned short type;
+  FRULONG localpos;
+  if ( FrFileIGoToNextRecord( iFile ) != iFile->vectorType )
+    return NULL;
+  v = calloc( 1, sizeof( FrVect ) );
+  if ( ! v )
+  {
+    iFile->error = FR_ERROR_MALLOC_FAILED;
+    return NULL;
+  }
+  FrReadHeader( iFile, v );
+  FrReadSChar( iFile, &v->name );
+  FrReadShortU( iFile, &v->compress );
+  if ( v->compress == 256 )
+    v->compress = 0; /* we will swap bytes at reading time */
+  FrReadShortU( iFile, &type );
+  v->type = type;
+  switch ( v->type )
+  {
+    case FR_VECT_4R:
+      v->wSize = sizeof( float );
+      break;
+    case FR_VECT_8R:
+      v->wSize = sizeof( double );
+      break;
+    case FR_VECT_C:
+      v->wSize = sizeof( char );
+      break;
+    case FR_VECT_1U:
+      v->wSize = sizeof( char );
+      break;
+    case FR_VECT_2S:
+      v->wSize = sizeof( short );
+      break;
+    case FR_VECT_2U:
+      v->wSize = sizeof( short );
+      break;
+    case FR_VECT_4S:
+      v->wSize = sizeof( int );
+      break;
+    case FR_VECT_4U:
+      v->wSize = sizeof( int );
+      break;
+    case FR_VECT_8S:
+      v->wSize = sizeof( FRLONG );
+      break;
+    case FR_VECT_8U:
+      v->wSize = sizeof( FRLONG );
+      break;
+    case FR_VECT_8C:
+      v->wSize = 2 * sizeof( float );
+      break;
+    case FR_VECT_16C:
+      v->wSize = 2 * sizeof( double );
+      break;
+    case FR_VECT_8H:
+      v->wSize = 2 * sizeof( float );
+      break;
+    case FR_VECT_16H:
+      v->wSize = 2 * sizeof( double );
+      break;
+    default:
+      v->wSize = 0;
+  }
+  if ( iFile->fmtVersion > 5 )
+  {
+    FrReadLong( iFile, (FRLONG *)&v->nData );
+    FrReadLong( iFile, (FRLONG *)&v->nBytes );
+  }
+  else
+  {
+    unsigned int nData, nBytes;
+    FrReadIntU( iFile, &nData );
+    FrReadIntU( iFile, &nBytes );
+    v->nData  = nData;
+    v->nBytes = nBytes;
+  }
+  v->space = v->nData;
+
+  /* skip the data */
+  localpos = FrIOTell( iFile->frfd );
+  if ( pos )
+    *pos = localpos;
+  localpos += v->nBytes;
+  FrIOSet( iFile->frfd, localpos );
+  FrReadIntU( iFile, &v->nDim );
+  FrReadVL( iFile, (FRLONG**)&v->nx, v->nDim );
+  FrReadVD( iFile, &v->dx, v->nDim );
+  FrReadVD( iFile, &v->startX, v->nDim );
+  FrReadVQ( iFile, &v->unitX, v->nDim );
+  FrReadSChar( iFile, &v->unitY );
+  FrReadStruct( iFile, &v->next );
+ 
+  if ( pos )
+    *pos = localpos;
+  return v;
+}
 
 /* <lalVerbatim file="FrameSeriesCP"> */
 void
@@ -177,7 +361,12 @@ LALFrGetTimeSeriesType(
     FrStream    *stream
     )
 { /* </lalVerbatim> */
+  FrChanType chantype;
   INT4 type = -1;
+  FrTOCts    *ts   = NULL;
+  FrProcData *proc = NULL;
+  FrAdcData  *adc  = NULL;
+  FrSimData  *sim  = NULL;
   INITSTATUS( status, "FUNC", FRAMESERIESC );  
 
   ASSERT( output, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
@@ -185,36 +374,80 @@ LALFrGetTimeSeriesType(
   ASSERT( chanin, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( chanin->name, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
 
-  if ( stream->err )
+  if ( stream->state & LAL_FR_ERR )
   {
     ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
   }
-  if ( stream->end )
+  if ( stream->state & LAL_FR_END )
   {
     ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
   }
 
-  if ( chanin->type == ProcDataChannel )
+  if ( ! stream->file->toc )
   {
-    FrProcData *proc = stream->frame ? stream->frame->procData : NULL;
-    while ( proc && proc->name && strcmp( proc->name, chanin->name ) )
-      proc = proc->next;
-    type = ( proc && proc->data ) ? proc->data->type : -1;
+    if ( FrTOCReadFull( stream->file ) == NULL )
+    {
+      stream->state |= LAL_FR_ERR | LAL_FR_TOC;
+      ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
+    }
   }
-  else if ( chanin->type == ADCDataChannel )
+
+  /* scan adc channels */
+  chantype = LAL_ADC_CHAN;
+  ts = stream->file->toc->adc;
+  while ( ts && strcmp( chanin->name, ts->name ) )
+    ts = ts->next;
+
+  if ( ! ts )
   {
-    FrAdcData *adc = ( stream->frame && stream->frame->rawData )
-      ? stream->frame->rawData->firstAdc : NULL;
-    while ( adc && adc->name && strcmp( adc->name, chanin->name ) )
-      adc = adc->next;
-    type = ( adc && adc->data ) ? adc->data->type : -1;
+    /* scan sim channels */
+    chantype = LAL_SIM_CHAN;
+    ts = stream->file->toc->sim;
+    while ( ts && strcmp( chanin->name, ts->name ) )
+      ts = ts->next;
   }
-  else if ( chanin->type == SimDataChannel )
+
+  if ( ! ts )
   {
-    FrSimData *sim = stream->frame ? stream->frame->simData : NULL;
-    while ( sim && sim->name && strcmp( sim->name, chanin->name ) )
-      sim = sim->next;
-    type = ( sim && sim->data ) ? sim->data->type : -1;
+    /* scan proc channels */
+    chantype = LAL_PROC_CHAN;
+    ts = stream->file->toc->proc;
+    while ( ts && strcmp( chanin->name, ts->name ) )
+      ts = ts->next;
+  }
+
+  if ( ts ) /* the channel was found */
+  {
+    FrTOCSetPos( stream->file, ts->position[0] );
+    switch ( chantype )
+    {
+      case LAL_ADC_CHAN:
+        if ( ( adc = FrAdcDataRead( stream->file ) ) )
+        {
+          adc->data = FrVectReadInfo( stream->file, NULL );
+          type = adc->data ? adc->data->type : -1;
+          FrAdcDataFree( adc );
+        }
+        break;
+      case LAL_SIM_CHAN:
+        if ( ( sim = FrSimDataRead( stream->file ) ) )
+        {
+          sim->data = FrVectReadInfo( stream->file, NULL );
+          type = sim->data ? sim->data->type : -1;
+          FrSimDataFree( sim );
+        }
+        break;
+      case LAL_PROC_CHAN:
+        if ( ( proc = FrProcDataRead( stream->file ) ) )
+        {
+          proc->data = FrVectReadInfo( stream->file, NULL );
+          type = proc->data ? proc->data->type : -1;
+          FrProcDataFree( proc );
+        }
+        break;
+      default:
+        type = -1;
+    }
   }
 
   switch ( type )
@@ -262,6 +495,14 @@ LALFrGetTimeSeriesType(
   RETURN( status );
 }
 
+
+define(`TYPE',`COMPLEX16')
+include(`FrameSeriesRead.m4')
+include(`FrameSeriesWrite.m4')
+
+define(`TYPE',`COMPLEX8')
+include(`FrameSeriesRead.m4')
+include(`FrameSeriesWrite.m4')
 
 define(`TYPE',`REAL8')
 include(`FrameSeriesRead.m4')
