@@ -22,6 +22,7 @@ $Id$
 #include <lal/LPC.h>
 #include <lal/AVFactories.h>
 #include <lal/BandPassTimeSeries.h>
+#include <lal/Sort.h>
 #include <math.h>
 #include <strings.h>
 
@@ -195,6 +196,11 @@ Description of the function...
 
     case 1:
       /* the real thing */
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+\subsection*{Algorithm}
+\begin{itemize}      
+********* </lalLaTeX> ********/
+
       {
 	BurstOutputSpecStat *bptr, *blg;
 	UINT4 start_index;
@@ -206,21 +212,35 @@ Description of the function...
 	UINT4 i, k, l, nTime;
 	INT4 didel;
 	UINT4 filter_delay;
+	REAL8Vector *FPower;
 
 	/*****************************************************************/
 	/**                      default parameters                     **/
 	/*****************************************************************/
+
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+\item Hardcoded parameters:
+********* </lalLaTeX> ********/
+/* <lalVerbatim> */
 	UINT4 wforder = 16; /* order of FIR whitening filter */
 	UINT4 eolap = (UINT4)(0.5/data->data->deltaT); /* e1 goes from 0 to N/2; e2 goes from N/2-eolap to N-1 */
 	REAL8 duration_increase = 2.0; /* factor increasing duration of a burst in psd calculations, to account for windowing */
 
 	REAL4 bandSafe = 1000.0 * data->data->deltaT; /* extra data for bandpass, in seconds */
-	REAL4 bandDf = 6e-3*0.5/data->data->deltaT;  /* with of transition band */
-	REAL4 bandAttenuation = 0.01;
+	REAL4 bandDf = 6e-3*0.5/data->data->deltaT;  /* width of transition band at 500 Hz; scaled linearly in frequency */
+	REAL4 bandAttenuation = 0.01; /* attenuation outside of band */
 
+	REAL4 bandwidthPF = 0.5; /* fraction of burst power in bandwidth */
+
+	REAL4 durationPF = 0.5; /* fraction of burst power in duration */
+/* </lalVerbatim> */
 	/*****************************************************************/
 	/**                          frequency                          **/
 	/*****************************************************************/
+
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+\item The code keeps a bank of statistics for the power in frequency bands, with one spectrogram for every burst duration (within an accuracy of 10 $\mu$s.
+********* </lalLaTeX> ********/
 
 	/* scan to see if we have the stats for that duration */
 	blg = NULL;
@@ -249,6 +269,10 @@ Description of the function...
 	    bsstat = bptr;
 	  }
 
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+To create a new entry for a given burst duration, a segment size of (burst duration * duration\_increase) is defined.
+********* </lalLaTeX> ********/
+
 	  bptr->duration = input->duration;
 	  bptr->nTime = (UINT4)floor(input->duration * duration_increase / data->data->deltaT);
 	  if(bptr->nTime < 2) {
@@ -271,6 +295,10 @@ Description of the function...
 	  CHECKSTATUSPTR (status);
 	  bptr->pfwd = pfwd;
 
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+A parabolic window function is used.
+********* </lalLaTeX> ********/
+
 	  bptr->wwin = wwin = (REAL4 *)LALMalloc(bptr->nTime * sizeof(REAL4));
 	  if(!(wwin)) {ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM);}
 
@@ -280,6 +308,10 @@ Description of the function...
 	    wwin[k] = 1.0 - pow(((REAL4)k-nn2)/nn2,2.0);
 	    bptr->norm += wwin[k] * wwin[k];
 	  }
+
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+The response function is resampled to the frequency resolution defined by the segment duration.
+********* </lalLaTeX> ********/
 
 	  bptr->resp = (COMPLEX8FrequencySeries *)LALCalloc(1, sizeof(COMPLEX8FrequencySeries));
 	  if(!(bptr->resp)) {ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM);}
@@ -294,6 +326,10 @@ Description of the function...
 
 	  Dvec->length = bptr->nTime;
 	  Hvec->length = bptr->nTime / 2 + 1;
+
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+The whole analysis segment is divided in non-overlapping subsegments which are windowed, FFTed, squared and normalized, multiplied by the response function.
+********* </lalLaTeX> ********/
 
 	  for(k=0;k<data->data->data->vectorLength / bptr->nTime; k++) {
 
@@ -318,6 +354,10 @@ Description of the function...
 
 	  }
 
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+The sum and sum-squared of the power in each frequency band are saved and used to compute the P0 and Q parameters of the Rice distribution.
+********* </lalLaTeX> ********/
+
 	  for(l=0;l<bptr->nFreq;l++) {
 
 	    REAL8 Pm, P2, R;
@@ -341,6 +381,9 @@ Description of the function...
 	}
 
 
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+\item The frequency representation of the segment containing the burst is calculated exactly as above.
+********* </lalLaTeX> ********/
 	/* now compute fft of burst */
 	start_index = (UINT4)floor((REAL8)(input->start_time.gpsSeconds - data->data->epoch.gpsSeconds)/data->data->deltaT + 1E-9*((REAL8)input->start_time.gpsNanoSeconds - (REAL8)data->data->epoch.gpsNanoSeconds)/data->data->deltaT);
 
@@ -362,6 +405,10 @@ Description of the function...
 	LALForwardRealFFT(status->statusPtr, Hvec, Dvec, bptr->pfwd);
 	CHECKSTATUSPTR (status);
 
+
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+\item For all frequencies in the band identified by the ETG, a maximum likelihood estimation (using the Rice fit) of the signal power is produced.
+********* </lalLaTeX> ********/
 	/* get max likelihood */
 	mfi = 0;
 	mlik = -1.0;
@@ -380,6 +427,12 @@ Description of the function...
 
 	if(lhi < llo) {
 	  lhi = llo;
+	}
+
+	FPower = NULL;
+	if(lhi>llo) {
+	  LALDCreateVector(status->statusPtr, &(FPower),lhi-llo);
+	  CHECKSTATUSPTR (status);
 	}
 
 	for(l=llo;l<lhi;l++) {
@@ -430,22 +483,76 @@ Description of the function...
 
 	  }
 
+	  FPower->data[l-llo] = Pmax;
+
 	}
 
+
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+\item The snr is the sqrt of the sum (over in-band frequencies) of (estimated signal power / background noise (i.e., P0) + line power (i.e. Q)).
+********* </lalLaTeX> ********/
 	/* get linear snr */
 	snr = sqrt(snr);
 
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+\item central\_freq is set to the in-band frequency with the largest signal power.
+********* </lalLaTeX> ********/
 	/* set "central_freq" to maximum of power */
 	central_freq = (REAL4)mfi / (data->data->deltaT * (REAL4)bptr->nTime);	
 
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+\item amplitude is set to sqrt(maximum of power over in-band frequency bins / Nyquist frequency).
+********* </lalLaTeX> ********/
 	/* set amplitude to sqrt(maximum of power); get strain per rtHz */
 	amplitude = sqrt(mlik * 2.0 * data->data->deltaT);
 
 	/*****************************************************************/
 	/**                           bandwidth                         **/
 	/*****************************************************************/
+	if(FPower) {
+	  REAL8 tPower = 0.0;
+	  REAL8 thr, ts;
+	  INT4Vector *idx = NULL;
+	  INT4 lo,hi;
 
-	bandwidth = 0.0;
+	  LALI4CreateVector(status->statusPtr, &idx, FPower->length);
+	  CHECKSTATUSPTR (status);
+
+	  for(l=0;l<FPower->length;l++) {
+	    tPower += FPower->data[l];
+	  }
+
+	  thr = tPower * (1.0 - bandwidthPF);
+
+	  LALDHeapIndex(status->statusPtr, idx, FPower);
+	  CHECKSTATUSPTR (status);
+
+	  for(ts=0.0, l=0;l<FPower->length;l++) {
+	    ts += FPower->data[l];
+	    if(ts > thr) {break;}
+	  }
+
+	  if(l == FPower->length) {
+	    bandwidth = 1.0 / (data->data->deltaT * (REAL4)bptr->nTime);
+	  } else {
+	    for(lo=hi=idx->data[l];l<FPower->length;l++) {
+	      if(idx->data[l]<lo) {lo = idx->data[l];}
+	      if(hi<idx->data[l]) {hi = idx->data[l];}
+	    }
+	  }
+
+	  bandwidth = (1+hi-lo) / (data->data->deltaT * (REAL4)bptr->nTime);
+
+	  LALI4DestroyVector(status->statusPtr, &idx);
+	  CHECKSTATUSPTR (status);
+	} else {
+	  bandwidth = 1.0 / (data->data->deltaT * (REAL4)bptr->nTime);
+	}
+
+	if(FPower) {
+	  LALDDestroyVector(status->statusPtr, &FPower);
+	  CHECKSTATUSPTR (status);
+	}
 
 	/*****************************************************************/
 	/**                             time                            **/
@@ -668,7 +775,7 @@ Description of the function...
 	  hipas.nMax = 0;
 	  hipas.f2 = input->central_freq - 0.5 * input->bandwidth;
 	  hipas.a2 = 0.95;
-	  hipas.f1 = hipas.f2 - bandDf;
+	  hipas.f1 = hipas.f2 - bandDf * input->central_freq / 500.0;
 	  hipas.a1 = bandAttenuation;
 
 	  if(hipas.f1 > 0.0) {
@@ -679,7 +786,7 @@ Description of the function...
 	  lopas.nMax = 0;
 	  lopas.f1 = input->central_freq + 0.5 * input->bandwidth;
 	  lopas.a1 = 0.95;
-	  lopas.f2 = lopas.f1 + bandDf;
+	  lopas.f2 = lopas.f1 + bandDf * input->central_freq / 500.0;
 	  lopas.a2 = bandAttenuation;
 	  if(lopas.f2 < 0.5/banddata.deltaT) {
 	    LALDButterworthREAL4TimeSeries(status->statusPtr,&banddata,&lopas);
@@ -716,26 +823,80 @@ Description of the function...
 
 	  }
 
-	  LALDestroyVector(status->statusPtr,&bdat);
-	  CHECKSTATUSPTR (status);
-	}
+	  /* correct estimated time for filter delay */
+	  mfi -= filter_delay;
 
-	/* correct estimated time for filter delay */
-	mfi -= filter_delay;
-
-	/* put max time into "start_time" */
-	start_time.gpsSeconds = data->data->epoch.gpsSeconds + (INT4)floor((REAL8)mfi * data->data->deltaT);
-	start_time.gpsNanoSeconds = (INT4)floor(1E9*((REAL8)mfi * data->data->deltaT - floor((REAL8)mfi * data->data->deltaT))) + data->data->epoch.gpsNanoSeconds;
-	if(start_time.gpsNanoSeconds >= 1000000000) {
-	  (start_time.gpsSeconds)++;
-	  (start_time.gpsNanoSeconds)-=1000000000;
-	}
+	  /* put max time into "start_time" */
+	  start_time.gpsSeconds = data->data->epoch.gpsSeconds + (INT4)floor((REAL8)mfi * data->data->deltaT);
+	  start_time.gpsNanoSeconds = (INT4)floor(1E9*((REAL8)mfi * data->data->deltaT - floor((REAL8)mfi * data->data->deltaT))) + data->data->epoch.gpsNanoSeconds;
+	  if(start_time.gpsNanoSeconds >= 1000000000) {
+	    (start_time.gpsSeconds)++;
+	    (start_time.gpsNanoSeconds)-=1000000000;
+	  }
 
 	/*****************************************************************/
 	/**                          duration                           **/
 	/*****************************************************************/
 
-	duration = 0.0;
+	  FPower = NULL;
+	  if(lhi > llo+1) {
+	    LALDCreateVector(status->statusPtr, &(FPower),lhi-llo-1);
+	    CHECKSTATUSPTR (status);
+	  }
+
+	  for(l=llo+1; l<lhi; l++) {
+	    FPower->data[l-llo-1] = r4ptr[l] * r4ptr[l];
+	  }
+
+	  if(FPower) {
+	    REAL8 tPower = 0.0;
+	    REAL8 thr, ts;
+	    INT4Vector *idx = NULL;
+	    INT4 lo,hi;
+
+	    LALI4CreateVector(status->statusPtr, &idx, FPower->length);
+	    CHECKSTATUSPTR (status);
+
+	    for(l=0;l<FPower->length;l++) {
+	      tPower += FPower->data[l];
+	    }
+
+	    thr = tPower * (1.0 - durationPF);
+
+	    LALDHeapIndex(status->statusPtr, idx, FPower);
+	    CHECKSTATUSPTR (status);
+
+	    for(ts=0.0, l=0;l<FPower->length;l++) {
+	      ts += FPower->data[l];
+	      if(ts > thr) {break;}
+	    }
+
+	    if(l == FPower->length) {
+	      duration = data->data->deltaT;
+	    } else {
+	      for(lo=hi=idx->data[l];l<FPower->length;l++) {
+		if(idx->data[l]<lo) {lo = idx->data[l];}
+		if(hi<idx->data[l]) {hi = idx->data[l];}
+	      }
+
+	      duration = (1+hi-lo) * data->data->deltaT;
+	    }
+
+	    LALI4DestroyVector(status->statusPtr, &idx);
+	    CHECKSTATUSPTR (status);
+	  } else {
+	    duration = data->data->deltaT;
+	  }
+
+	  if(FPower) {
+	    LALDDestroyVector(status->statusPtr, &FPower);
+	    CHECKSTATUSPTR (status);
+	  }
+
+	  LALDestroyVector(status->statusPtr,&bdat);
+	  CHECKSTATUSPTR (status);
+	}
+
 
 	/*****************************************************************/
 	/**                         confidence                          **/
@@ -789,6 +950,10 @@ Description of the function...
     Input = Input->next;
 
   }
+
+/******** <lalLaTeX file="StdBurstSearchC"> ********
+\end{itemize}
+********* </lalLaTeX> ********/
 
   /* Normal exit */
   DETATCHSTATUSPTR (status);
