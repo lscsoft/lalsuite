@@ -980,61 +980,65 @@ foreach l1 $SegmentList {
 		    ## Calibration
 		    ################################################################################
 
-		    ## Frame type for CalFac
-		    set FTypeCALFAC CAL_FAC_V03
-		    append FTypeCALFAC "_$IFO2"
+		    if { $start_time < 734400013 } {
+			
+			## S2
+
+			## Frame type for CalFac
+			set FTypeCALFAC CAL_FAC_V03
+			append FTypeCALFAC "_$IFO2"
 
 
-		    ## L1 reference times for calibration
-		    set l1calstart 731488397
+			## L1 reference times for calibration
+			set l1calstart 731488397
 
-		    ## H1 reference times for calibration
-		    set h1calstart 734073939
+			## H1 reference times for calibration
+			set h1calstart 734073939
 
-		    ## H2 reference times for calibration
-		    if { $start_time <= 731849042 } {
-			set h2calstart 734234126
-		    } else {
-			set h2calstart 734234127
-		    }
+			## H2 reference times for calibration
+			if { $start_time <= 731849042 } {
+			    set h2calstart 734234126
+			} else {
+			    set h2calstart 734234127
+			}
 
-		    ## Times for reference data
-		    set h1caltimes ${h1calstart}-[expr $h1calstart + 64 ]
-		    set h2caltimes ${h2calstart}-[expr $h2calstart + 64 ]
-		    set l1caltimes ${l1calstart}-[expr $l1calstart + 64 ]
+			## Times for reference data
+			set h1caltimes ${h1calstart}-[expr $h1calstart + 64 ]
+			set h2caltimes ${h2calstart}-[expr $h2calstart + 64 ]
+			set l1caltimes ${l1calstart}-[expr $l1calstart + 64 ]
 
-		    ## Get IFO independent time
-		    set caltimes $ifo2
-		    append caltimes "caltimes" 
-		    set caltimes [ set $caltimes ]
-
-		    ## set channel names
-		    set h1oloop [ mkchannelnt $IFO2:CAL-OLOOP_FAC ]
-		    set h1cavfac [ mkchannelnt $IFO2:CAL-CAV_FAC ]
-		    set h1gain [ mkchannelnt $IFO2:CAL-CAV_GAIN ]
-		    set h1resp [ mkchannelnt $IFO2:CAL-RESPONSE ]
-
-
-		    if { $IFO2 == "H2" } {
-			## For H2, hard-coded location of reference calibration
-			set frqueryREF "CAL_REF_V03_$IFO2 $IFO /ldas_outgoing/mirror/frames/S2/LHO/cal/H-CAL_REF_V03_H2-${h2calstart}-64.gwf $caltimes proc($IFO2:CAL-CAV_GAIN!0!7000.0001!) h1gain\nCAL_REF_V03_$IFO2 $IFO /ldas_outgoing/mirror/frames/S2/LHO/cal/H-CAL_REF_V03_H2-${h2calstart}-64.gwf $caltimes proc($IFO2:CAL-RESPONSE!0!7000.0001!) h1resp"
-		    } else {
-			## For H1 or L1, used standard file location
-			set frqueryREF "CAL_REF_V03_$IFO2 $IFO $caltimes proc($IFO2:CAL-CAV_GAIN!0!7000.0001!) h1gain\nCAL_REF_V03_$IFO2 $IFO $caltimes proc($IFO2:CAL-RESPONSE!0!7000.0001!) h1resp "
-		    } 
-
-		    ## Frame query for calibration frames
-		    set frqueryFAC "$FTypeCALFAC $IFO $ctimes proc($IFO2:CAL-OLOOP_FAC) h1oloop\n$FTypeCALFAC $IFO $ctimes proc($IFO2:CAL-CAV_FAC) h1cavfac"
+			## Get IFO independent time
+			set caltimes $ifo2
+			append caltimes "caltimes" 
+			set caltimes [ set $caltimes ]
+			
+			## set channel names
+			set h1oloop [ mkchannelnt $IFO2:CAL-OLOOP_FAC ]
+			set h1cavfac [ mkchannelnt $IFO2:CAL-CAV_FAC ]
+			set h1gain [ mkchannelnt $IFO2:CAL-CAV_GAIN ]
+			set h1resp [ mkchannelnt $IFO2:CAL-RESPONSE ]
 
 
-		    ## Calibration aliases (LDAS only)
-		    set calaliases "                   h1oloop  = $h1oloop;
+			if { $IFO2 == "H2" } {
+			    ## For H2, hard-coded location of reference calibration
+			    set frqueryREF "CAL_REF_V03_$IFO2 $IFO /ldas_outgoing/mirror/frames/S2/LHO/cal/H-CAL_REF_V03_H2-${h2calstart}-64.gwf $caltimes proc($IFO2:CAL-CAV_GAIN!0!7000.0001!) h1gain\nCAL_REF_V03_$IFO2 $IFO /ldas_outgoing/mirror/frames/S2/LHO/cal/H-CAL_REF_V03_H2-${h2calstart}-64.gwf $caltimes proc($IFO2:CAL-RESPONSE!0!7000.0001!) h1resp"
+			} else {
+			    ## For H1 or L1, used standard file location
+			    set frqueryREF "CAL_REF_V03_$IFO2 $IFO $caltimes proc($IFO2:CAL-CAV_GAIN!0!7000.0001!) h1gain\nCAL_REF_V03_$IFO2 $IFO $caltimes proc($IFO2:CAL-RESPONSE!0!7000.0001!) h1resp "
+			} 
+
+			## Frame query for calibration frames
+			set frqueryFAC "$FTypeCALFAC $IFO $ctimes proc($IFO2:CAL-OLOOP_FAC) h1oloop\n$FTypeCALFAC $IFO $ctimes proc($IFO2:CAL-CAV_FAC) h1cavfac"
+			
+			
+			## Calibration aliases (LDAS only)
+			set calaliases "                   h1oloop  = $h1oloop;
                    h1cavfac = $h1cavfac;
                    h1gain   = $h1gain;
                    h1resp   = $h1resp;"
 
-		    ## Calibration algorithms
-		    set calalgo "
+			## Calibration algorithms
+			set calalgo "
                         cavfac = float(h1cavfac);
                         cavfaccplx = complex(cavfac);
 
@@ -1053,6 +1057,77 @@ foreach l1 $SegmentList {
                         h1oloopf = float(h1oloop);
                         h1oloopf = complex(h1oloopf);
 "
+		    }
+
+		    
+		    if { $start_time > 734400013 } {
+
+			## S3
+
+			set FTypeCALFAC CAL_FAC_V01
+			append FTypeCALFAC "_$IFO2"
+
+			# Magic times for calibration
+			set l1caltimes "753424982-753425045"
+
+			set h1caltimes "757806384-757806447"
+			
+			set h2caltimes "758175883-758175946"
+
+			## get caltimes for the right IFO
+			set caltimes $ifo2
+			append caltimes "caltimes" 
+			set caltimes [ set $caltimes ]
+
+			## set ref frame type
+			if { $IFO2 == "L1" } {
+			    set CALREFTYPE "CAL_REF_V01P1_L1"
+			} else {
+			    set CALREFTYPE "CAL_REF_V01_$IFO2"
+			}
+
+			## define frame query
+			set frqueryREF " { $CALREFTYPE $IFO {} $caltimes Proc($IFO2:CAL-CAV_GAIN!0!7000.0001!,$IFO2:CAL-RESPONSE!0!7000.0001!) } "
+		     
+
+			## set calibration channel name
+			set h1oloop [ mkchannelnt $IFO2:CAL-OLOOP_FAC ]
+			set h1cavfac [ mkchannelnt $IFO2:CAL-CAV_FAC ]
+			set h1gain [ mkchannelnt $IFO2:CAL-CAV_GAIN ]
+			set h1resp [ mkchannelnt $IFO2:CAL-RESPONSE ]
+
+			## get alpha's/beta's
+			set frqueryFAC " { $FTypeCALFAC $IFO {} $ctimes Proc($IFO2:CAL-OLOOP_FAC,$IFO2:CAL-CAV_FAC) } "
+
+			## datacond aliases for calibration
+			set calaliases "                   h1oloop  = $h1oloop;
+                   h1cavfac = $h1cavfac;
+                   h1gain   = $h1gain;
+                   h1resp   = $h1resp;"
+
+
+			## datacond algorithms for calibration
+			set calalgo "
+                        cavfac = float(h1cavfac);
+                        cavfaccplx = complex(cavfac);
+
+                        output(cavfaccplx,_,_,$IFO2:CAL-CAV_FAC,$IFO2 cavity factor);
+
+                        oloop = float(h1oloop);
+                        oloopcplx = complex(oloop);
+
+                        output(oloopcplx,_,_,$IFO2:CAL-OLOOP_FAC,$IFO2 open loop factor);
+                        output(h1gain,_,_,$IFO2:CAL-CAV_GAIN,$IFO2 reference cavity gain);
+                        output(h1resp,_,_,$IFO2:CAL-RESPONSE,$IFO2 reference response);
+
+                        h1cavfacf = float(h1cavfac);
+                        h1cavfacf = complex(h1cavfacf);
+
+                        h1oloopf = float(h1oloop);
+                        h1oloopf = complex(h1oloopf);
+"
+		    }
+
 
 		    ## if NoCalibration is defined:
 		    if { [ info exists NoCalibration ] } {
