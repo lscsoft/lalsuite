@@ -289,6 +289,10 @@ extern "C" {
 "      <Column Name=\"sim_inspiralgroup:sim_inspiral:waveform\" Type=\"lstring\"/>\n" \
 "      <Column Name=\"sim_inspiralgroup:sim_inspiral:geocent_end_time\" Type=\"int_4s\"/>\n" \
 "      <Column Name=\"sim_inspiralgroup:sim_inspiral:geocent_end_time_ns\" Type=\"int_4s\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:h_end_time\" Type=\"int_4s\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:h_end_time_ns\" Type=\"int_4s\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:l_end_time\" Type=\"int_4s\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:l_end_time_ns\" Type=\"int_4s\"/>\n" \
 "      <Column Name=\"sim_inspiralgroup:sim_inspiral:end_time_gmst\" Type=\"real_4\"/>\n" \
 "      <Column Name=\"sim_inspiralgroup:sim_inspiral:source\" Type=\"lstring\"/>\n" \
 "      <Column Name=\"sim_inspiralgroup:sim_inspiral:mtotal\" Type=\"real_4\"/>\n" \
@@ -305,7 +309,7 @@ extern "C" {
 "      <Stream Name=\"sim_inspiralgroup:sim_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n"
 
 #define SIM_INSPIRAL_ROW \
-"         \"process:process_id:0\",\"%s\",%d,%d,%e,\"%s\",%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"sim_inspiral:simulation_id:0\""
+"         \"process:process_id:0\",\"%s\",%d,%d,%d,%d,%d,%d,%e,\"%s\",%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"sim_inspiral:simulation_id:0\""
 
 #define LIGOLW_XML_SUMM_VALUE \
 "   <Table Name=\"summ_valuegroup:summ_value:table\">\n" \

@@ -225,6 +225,8 @@ tagEventIDColumn
   struct tagSummValueTable      *summValueTable;
   struct tagMultiInspiralTable  *multiInspiralTable;
   struct tagSnglTransdataTable  *snglTransdataTable;
+  struct tagSimInspiralTable    *simInspiralTable;
+  struct tagSimBurstTable       *simBurstTable;
 }
 EventIDColumn;
 /* </lalVerbatim> */
@@ -379,6 +381,8 @@ tagSimInspiralTable
   struct tagSimInspiralTable *next;
   CHAR           waveform[LIGOMETA_WAVEFORM_MAX];
   LIGOTimeGPS    geocent_end_time;
+  LIGOTimeGPS    h_end_time;
+  LIGOTimeGPS    l_end_time;
   REAL4          end_time_gmst;
   CHAR           source[LIGOMETA_SOURCE_MAX];
   REAL4          mtotal;
@@ -391,6 +395,7 @@ tagSimInspiralTable
   REAL4          polarization;
   REAL4          eff_dist_h;
   REAL4          eff_dist_l;
+  EventIDColumn *event_id;
 }
 SimInspiralTable;
 /* </lalVerbatim> */
@@ -419,6 +424,7 @@ tagSimBurstTable
   REAL4          freq;
   REAL4          tau;
   INT4           zmNumber;
+  EventIDColumn *event_id;
 }
 SimBurstTable;
 /* </lalVerbatim> */
