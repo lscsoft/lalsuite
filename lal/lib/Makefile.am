@@ -24,6 +24,7 @@ endif
 
 liblal_la_LIBADD = \
            $(top_builddir)/packages/support/src/libsupport.la           \
+           $(top_builddir)/packages/tools/src/libtools.la               \
            $(top_builddir)/packages/sample/src/libsample.la             \
            $(top_builddir)/packages/hello/src/libhello.la               \
            $(top_builddir)/packages/factories/src/libfactories.la       \

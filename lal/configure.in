@@ -103,6 +103,11 @@ AC_OUTPUT( Makefile                               \
            packages/support/include/Makefile      \
            packages/support/src/Makefile          \
            packages/support/test/Makefile         \
+           packages/tools/Makefile                \
+           packages/tools/doc/Makefile            \
+           packages/tools/include/Makefile        \
+           packages/tools/src/Makefile            \
+           packages/tools/test/Makefile           \
            packages/sample/Makefile               \
            packages/sample/doc/Makefile           \
            packages/sample/include/Makefile       \
