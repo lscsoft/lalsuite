@@ -519,7 +519,7 @@ EOF
 if test "$AUTOCONF25" = "yes"; then
 cat >> $CONFIGFILE <<\EOF
 AC_OUTPUT_COMMANDS([chmod +x lal-config])
-AC_CONFIG_FILES([lal.spec])
+dnl AC_CONFIG_FILES([lal.spec])
 AC_CONFIG_FILES([lal.pc])
 AC_CONFIG_FILES([lalframe.pc])
 AC_CONFIG_FILES([lalmetaio.pc])
