@@ -62,7 +62,7 @@ static BOOLEAN          rhosqout        = 0;
 static BOOLEAN          verbose         = 0;
 static INT4             numPoints       = 32768; /*128; 32768;*/
 static INT4             numSegments     = 8;
-static INT4             numTmplts       = 8;
+static INT4             numTmplts       = 1; /* 8; */ 
 static INT4             numChisqBins    = 0;  /* changed default to zero */
 static INT4             srate           = 8192;
 static REAL4            sigmasq         = 64.0;
@@ -195,10 +195,6 @@ main (int argc, char *argv[])
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
 
-
-fprintf (stdout, "numPoints (testfile) = %d \n", numPoints);
-
-
   LALFindChirpFilterInit (&status, &filterParams, initParams);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
@@ -291,7 +287,7 @@ fprintf (stdout, "numPoints (testfile) = %d \n", numPoints);
         REAL4 noise;
         REAL4 ifodmro;
 
-        noise = floor( 0.5 + sigma * noiseVec->data[j] );
+        noise =  0.5 + sigma * noiseVec->data[j];
 
         if ( noise > -2048 && noise < 2047 ) 
           ifodmro= noise;
@@ -413,14 +409,9 @@ fprintf (stdout, "numPoints (testfile) = %d \n", numPoints);
   dataParams->dynRange     = dynRange;
   dataParams->invSpecTrunc = invSpecTrunc;
 
- /* fprintf (stdout, "just before LALFindBCVSpinData call \n" )*/;
-   
-
   LALFindChirpBCVSpinData (&status, fcSegVec, dataSegVec, dataParams);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
-
- /* fprintf (stdout, "just before start of template loop \n" );*/
 
   /*
    *
@@ -467,25 +458,13 @@ fprintf (stdout, "numPoints (testfile) = %d \n", numPoints);
       tmplt->psi0       = 205008;
       tmplt->psi3       = -1619;
 
-fprintf (stdout, "deltaT (testfile) = %e \n", deltaT);
-fprintf (stdout, "fLow (testfile) = %e \n", fLow);
-
-
-
       tmpltParams->fLow  = fLow;
       tmpltParams->deltaT = deltaT;
 }
 
-
-
-fprintf (stdout, "just before LALFindChirpBCVSpinTemplate call \n" );
-
-
     LALFindChirpBCVSpinTemplate (&status, filterInput->fcTmplt, tmplt, tmpltParams);
     TestStatus (&status, "0", 1);
     ClearStatus (&status);
-
-fprintf (stdout, "just after LALFindChirpBCVSpinTemplate call \n" );
 
 
     /*
@@ -494,19 +473,19 @@ fprintf (stdout, "just after LALFindChirpBCVSpinTemplate call \n" );
      *
      */
 
+    fprintf (stdout, "numSegments %d\n", numSegments);
+
     for ( i = 0; i < numSegments; ++i )
     {
+     
+      fprintf (stdout, "segment number %d\n", i);  
+    
       filterInput->segment = fcSegVec->data + i;
 
       event = NULL;
 
-/* fprintf (stdout, "just before LALFindChirpBCVSpinFilter call \n" );*/
-
-
-      LALFindChirpBCVSpinFilterSegment (&status, &event, filterInput, filterParams, dataParams, fcSegVec, dataSegVec);
+      LALFindChirpBCVSpinFilterSegment (&status, &event, filterInput, filterParams, dataParams);
       TestStatus (&status, "0", 1);
-
-/* fprintf (stdout, "just after LALFindChirpBCVSpinFilter call \n" );*/
 
 
    /*   if ( event )
