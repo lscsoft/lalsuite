@@ -58,7 +58,7 @@ int lalDebugLevel = 0;
 
 /* A local macro for printing error messages */
 #define EXIT( code, program, message )                                \
-  do {                                                                \
+  if ( 1 ) {                                                          \
     if (( lalDebugLevel & LALERROR ) && (code))                          \
       LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"\
                      "        %s\n", (code), (program), __FILE__,     \
@@ -68,7 +68,7 @@ int lalDebugLevel = 0;
                      "        %s\n", (program), __FILE__, __LINE__,   \
                      LALSAMPLETESTC, (message) );                     \
     return (code);                                                    \
-  } while (0)
+  } else (void)(0)
 
 /* The main function */
 int
@@ -79,7 +79,9 @@ main( int argc, char **argv )
 
   /* Parse input line. */
   if ( argc == 1 )
+  {
     EXIT( LALSAMPLETESTC_ENOM, argv[0], LALSAMPLETESTC_MSGENOM );
+  }
   else if ( argc == 4 )
     lalDebugLevel = atoi( argv[3] );
   else if ( argc != 3 )
@@ -92,7 +94,9 @@ main( int argc, char **argv )
   /* Compute ratio. */
   LALREAL8Divide( &stat, &ratio, atof( argv[1] ), atof( argv[2] ) );
   if ( stat.statusCode )
+  {
     EXIT( LALSAMPLETESTC_ESUB, argv[0], LALSAMPLETESTC_MSGESUB );
+  }
 
   /* Print result. */
   printf( "Ratio: %f / %f = %f\n", atof( argv[1] ), atof( argv[2] ),
