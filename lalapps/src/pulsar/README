@@ -40,7 +40,7 @@ Second, it makes four lists of data (S1.LLO.full.sorted,
 S1.LLO.RDS.sorted, S1.LHO.full.sorted, S1.LHO.RDS.sorted) which are
 sorted by GPS time.  S1 is replaced by the run name.
 
-INPUTS:  listing of "*.gwf" files under /netdata/s001 - /netdata/s296
+INPUTS:  listing of "*.gwf" files under /netdat[ac]/s001 - /netdat[ac]/s296
 OUTPUTS: alldata, S1.LLO.full.sorted,  S1.LHO.full.sorted, S1.LLO.RDS.sorted,  S1.LHO.RDS.sorted
 
 ================================================================================

@@ -61,8 +61,7 @@ tagFrStream
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 666; } else ((void)0)
 
-/* IFO for which LSC-AS_Q channel will be taken, sample rate in Hz */
-#define CHANNEL "H1"
+/* IFO sample rate in Hz */
 #define SRATE 16384
 
 /* If DOUBLEDATA not defined, use REAL4 in SFT files */
@@ -316,6 +315,7 @@ int main(int argc,char *argv[]){
       /* We found all needed data -- output an SFT! */
       FILE *fpsft;
       unsigned int i;
+      int k;
 
       /* set up LAL time series object sample interval, time epoch */
       strcpy(chan.name, chname);
@@ -377,15 +377,15 @@ int main(int argc,char *argv[]){
 #endif    
 
       /* Write SFT */
-      for (i=0;i<header.nsamples;i++){
+      for (k=0; k<header.nsamples; k++){
 #ifdef DOUBLEDATA
-	REAL8 rpw=fvec->data[i+firstbin].re;
-	REAL8 ipw=fvec->data[i+firstbin].im;
+	REAL8 rpw=fvec->data[k+firstbin].re;
+	REAL8 ipw=fvec->data[k+firstbin].im;
 	INT4 errorcode1=fwrite((void*)&rpw, sizeof(REAL8),1,fpsft);
 	INT4 errorcode2=fwrite((void*)&ipw, sizeof(REAL8),1,fpsft);  
 #else 
-	REAL4 rpw=fvec->data[i+firstbin].re;
-	REAL4 ipw=fvec->data[i+firstbin].im;
+	REAL4 rpw=fvec->data[k+firstbin].re;
+	REAL4 ipw=fvec->data[k+firstbin].im;
 	INT4 errorcode1=fwrite((void*)&rpw, sizeof(REAL4),1,fpsft);
   	INT4 errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
 #endif
