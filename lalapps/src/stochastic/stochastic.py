@@ -114,7 +114,7 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     cal_path = self.job().get_config('calibration','path')
 
-    if (ifo == 'H2'):
+    if ((ifo == 'H2') and (start >= 729273613) and (start <= 734367613)):
       if start < int(self.job().get_config('calibration','H2-cal-epoch-boundary')):
         cal_file = self.job().get_config('calibration','H2-1')
       else:
@@ -133,7 +133,7 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     cal_path = self.job().get_config('calibration','path')
 
-    if (ifo == 'H2'):
+    if ((ifo == 'H2') and (start >= 729273613) and (start <= 734367613)):
       if start < int(self.job().get_config('calibration','H2-cal-epoch-boundary')):
         cal_file = self.job().get_config('calibration','H2-1')
       else:
