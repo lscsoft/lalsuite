@@ -323,7 +323,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   memset(comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR));
 
   /* parse command line options */
-  parseOptions(argc, argv);
+  parse_options(argc, argv);
 
   /* get xml file name */
   LALSnprintf(xmlFileName, FILENAME_MAX, "%s%s-stochastic-%d-%d.xml", \
@@ -1765,7 +1765,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   " --user-tag STRING             set the process_params usertag to STRING\n"
 
 /* parse command line options */
-static void parseOptions(INT4 argc, CHAR *argv[])
+static void parse_options(INT4 argc, CHAR *argv[])
 {
   int c = -1;
   struct stat fileStatus;
