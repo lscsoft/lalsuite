@@ -21,7 +21,7 @@
 #include <lal/GeneratePulsarSignal.h>
 
 
-RCSID ("$Id");
+RCSID ("$Id$");
 
 /* Error codes and messages */
 /* <lalErrTable file="MAKEFAKEDATACErrorTable"> */
