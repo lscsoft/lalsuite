@@ -1,6 +1,9 @@
 #!/bin/sh
-#THETEST=./CLRTest
-THETEST=./NoTest
+
+# This test takes a while... disable it if this is a problem
+THETEST=./CLRTest
+#THETEST=./NoTest
+
 if test -r CLRindata.asc
 then
   $THETEST
