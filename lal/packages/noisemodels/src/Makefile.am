@@ -7,6 +7,8 @@ LALInspiralWaveCorrelate.c\
 LALGEOPsd.c\
 LALLIGOIPsd.c\
 LALNoiseSpectralDensity.c\
+LALInspiralComputeChisq.c\
+LALInspiralComputeSNRIntegrand.c\
 LALInspiralFindEvents.c\
 LALInspiralFindLoudestEvent.c\
 LALInspiralWaveNormalise.c\
@@ -19,4 +21,5 @@ INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+
 

@@ -27,6 +27,7 @@ tagRandomInspiralSignalIn
    INT4 type;
 
    REAL8 mMin;
+   REAL8 mMax;
    REAL8 MMax;
    REAL8 SignalAmp;
    REAL8 NoiseAmp;
@@ -70,10 +71,11 @@ User must specify the following quantities in the input structure
 \texttt {p.tSampling}         &        &   sampling rate in Hz\\
 \texttt {p.order}             &        &   order of the PN approximant of the signal \\
 \texttt {p.approximant}       &        &   PN approximation to be used for inspiral signal generation\\
-\texttt {p.massChoice}        &        &   space in which parameters are chosen; \texttt{m1Andm2, t02, t03}\\\\
+\texttt {p.massChoice}        &        &   space in which parameters are chosen; \texttt{m1Andm2, totalMassAndEta, t02, t03}\\\\
 \texttt {REAL8Vector psd}   &  input &   pre-computed power spectral density used for coloring the noise \\
 \texttt {RealFFTPlan *fwdp} &  input &   pre-computed fftw plan to compute forward Fourier transform   \\\\
 \texttt {REAL8 mMin}        &  input &   smallest component mass allowed   \\
+\texttt {REAL8 mMax}        &  input &   largest component mass allowed   {\bf OR} \\
 \texttt {REAL8 MMax}        &  input &   largest total mass allowed   \\
 \texttt {REAL8 SignalAmp}   &  input &   amplitude of the signal (relevant only when \texttt{type=2})   \\
 \texttt {REAL8 NoiseAmp}    &  input &   amplitude of noise (relevant only when \texttt{type=2})   \\
@@ -93,11 +95,15 @@ only if \texttt{param.massChoice {\rm is} t02 {\rm or} t03}} \\
 \caption{Input structure needed for the function \texttt{LALRandomInspiralSignal}}.
 \end{table}
 When repeatedly called, the parameters of the signal will be 
-uniformly distributed in the space of (a) component masses if  
+uniformly distributed in the space of 
+(a) component masses in the range \texttt{[randIn.mMin, randIn.mMax]} if  
 \texttt{param.massChoice=m1Andm2},
-(b) Newtonian and first post-Newtonian chirp times if 
+(b) component masses greater than \texttt{randIn.mMin} and total mass 
+less than \texttt{randIn.MMax} if  
+\texttt{param.massChoice=totalMassAndEta},
+(c) Newtonian and first post-Newtonian chirp times if 
 \texttt{param.massChoice=t02} and
-(c) Newtonian and 1.5 post-Newtonian chirp times if 
+(d) Newtonian and 1.5 post-Newtonian chirp times if 
 \texttt{param.massChoice=t03}.
 
 \subsubsection*{Algorithm}
@@ -131,6 +137,7 @@ LALAddVectors
 #define srandom( seed ) srand( seed )
 
 NRCSID (LALRANDOMINSPIRALSIGNALC, "$Id$");
+
 /*  <lalVerbatim file="LALRandomInspiralSignalCP"> */
 
 void
@@ -175,34 +182,73 @@ LALRandomInspiralSignal
 		   {
 			   case m1Andm2: 
 				   randIn->param.mass1 = randIn->mMin 
+					   + (randIn->mMax - randIn->mMin) * e1;
+				   randIn->param.mass2 = randIn->mMin 
+					   + (randIn->mMax - randIn->mMin) * e2;
+				   break;
+			   case totalMassAndEta: 
+				   randIn->param.mass1 = randIn->mMin 
 					   + (randIn->MMax - 2.*randIn->mMin) * e1;
 				   randIn->param.mass2 = randIn->mMin 
 					   + (randIn->MMax - randIn->param.mass1 - randIn->mMin) * e2;
 				   break;
 			   case t02: 
-				   randIn->param.t0 = randIn->t0Min+(randIn->t0Max-randIn->t0Min)*e1;
-				   randIn->param.t2 = randIn->tnMin+(randIn->tnMax-randIn->tnMin)*e2;
+				   randIn->param.t0 = randIn->t0Min + (randIn->t0Max - randIn->t0Min)*e1;
+				   randIn->param.t2 = randIn->tnMin + (randIn->tnMax - randIn->tnMin)*e2;
 				   break;
 			   case t03: 
-				   randIn->param.t0 = randIn->t0Min+(randIn->t0Max-randIn->t0Min)*e1;
-				   randIn->param.t3 = randIn->tnMin+(randIn->tnMax-randIn->tnMin)*e2;
+				   randIn->param.t0 = randIn->t0Min + (randIn->t0Max - randIn->t0Min)*e1;
+				   randIn->param.t3 = randIn->tnMin + (randIn->tnMax - randIn->tnMin)*e2;
 				   break;
 			   default:
 				   ABORT (status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
 				   break;
 		   }
 		   LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+		   /*
+		   printf("%e %e %e %e\n", randIn->param.t0, randIn->param.t3, randIn->param.mass1, randIn->param.mass2);
+		    */
 
-		   if (randIn->param.mass1 > randIn->mMin &&
-				   randIn->param.mass2 > randIn->mMin &&
-				   randIn->param.totalMass < randIn->MMax &&
-				   randIn->param.eta <= 0.25 &&
-				   randIn->param.eta > randIn->etaMin)
+		   /*
+		    * The following imposes a range in which minComponent masses
+		    * and max total mass are restricted. The one below gives a
+		    * range in which min and max of component masses are fixed
+		   */
+		   switch (randIn->param.massChoice) 
 		   {
-			   valid = 1;
+			   case m1Andm2: 
+			   case t03: 
+			   case t02: 
+				   if (
+						   randIn->param.mass1 >= randIn->mMin &&
+						   randIn->param.mass2 >= randIn->mMin &&
+						   randIn->param.mass1 <= randIn->mMax &&
+						   randIn->param.mass2 <= randIn->mMax &&
+						   randIn->param.eta <= 0.25 &&
+						   randIn->param.eta >= randIn->etaMin
+				      )
+				   {
+					   valid = 1;
+				   }
+				   break;
+			   case totalMassAndEta: 
+				   if (
+						   randIn->param.mass1 >= randIn->mMin &&
+						   randIn->param.mass2 >= randIn->mMin &&
+						   randIn->param.totalMass <= randIn->MMax &&
+						   randIn->param.eta <= 0.25 &&
+						   randIn->param.eta >= randIn->etaMin
+				      )
+		   
+				   {
+					   valid = 1;
+				   }
+				   break;
+		   
 		   }
 	   }
    }
+
 
    switch (randIn->type) 
    {

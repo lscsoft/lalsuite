@@ -124,6 +124,8 @@ tagRandomInspiralSignalIn
    INT4 type;        /* Type of signal required to be generated */
 
    REAL8 mMin;       /* smallest component mass allowed */
+   REAL8 mMax;       /* largest component mass allowed */
+                     /* OR */
    REAL8 MMax;       /* largest total mass allowed */
    REAL8 SignalAmp;  /* amplitude of the signal (relevant only when type=2) */
    REAL8 NoiseAmp;   /* amplitude of noise (relevant only when type=2) */
@@ -186,6 +188,7 @@ InspiralWaveOverlapOut;
 typedef struct
 tagInspiralFindEventsIn 
 {
+   UINT4            currentGPSTime;
    INT4             nBegin;
    INT4             nEnd;
    REAL8            Threshold;
@@ -211,12 +214,20 @@ InspiralFindEventsIn;
 typedef struct
 tagInspiralEventsList 
 {
-   REAL8            max;
-   REAL8            phase;
-   REAL8            eventTime;
-   REAL8            eventTime_ns;
-
    UINT4            bin;
+
+   INT4             endTime;
+   INT4             endTimeNS;
+   INT4             impulseTime;
+   INT4             impulseTimeNS;
+   INT4             chisqDOF;
+
+   REAL8            amplitude;
+   REAL8            effDistance;
+   REAL8            phase;
+   REAL8            snr;
+   REAL8            sigmasq;
+   REAL8            chisq;
 
    InspiralTemplate param;
 } 
@@ -239,6 +250,44 @@ tagStatsREAL4VectorOut
   REAL8 max;
 } 
 StatsREAL4VectorOut;
+/*  </lalVerbatim>  */
+
+
+
+/*  <lalVerbatim file="LALNoiseModelsHS"> */
+typedef struct
+tagInspiralChisqDataVec
+{
+  REAL4Vector *SNRIntegrand;
+  REAL8Vector *psd;
+} 
+InspiralChisqDataVec;
+/*  </lalVerbatim>  */
+
+/*  <lalVerbatim file="LALNoiseModelsHS"> */
+typedef struct
+tagInspiralChisqParams
+{
+	INT4 nBins;   /* number of chi-squared bins to use */
+
+	REAL8 totalMass;
+	REAL8 fLower;
+	REAL8 deltaT; /* sampling interval */
+} 
+InspiralChisqParams;
+/*  </lalVerbatim>  */
+
+
+/*  <lalVerbatim file="LALNoiseModelsHS"> */
+typedef struct
+tagInspiralSNRIntegrandParams
+{
+	INT4  lag;    /* the value of the lag which produced the largest correlation */
+
+	REAL8 phase;  /* phase of the correlation where the max occurs */
+	REAL8 deltaT; /* sampling interval */
+} 
+InspiralSNRIntegrandParams;
 /*  </lalVerbatim>  */
 
 /*  <lalLaTeX> 
@@ -412,6 +461,35 @@ LALStatsREAL4Vector
    StatsREAL4VectorOut *out, 
    REAL4Vector *vector
    );
+
+
+/* <lalLaTeX>
+\newpage\input{LALInspiralComputeChisq}
+</lalLaTeX>  */
+
+void 
+LALInspiralComputeChisq
+   (
+   LALStatus *status, 
+   REAL4 *chisq,
+   InspiralChisqDataVec *input,
+   InspiralChisqParams *params
+   );
+
+
+/* <lalLaTeX>
+\newpage\input{LALInspiralComputeSNRIntegrand}
+</lalLaTeX>  */
+
+void 
+LALInspiralComputeSNRIntegrand
+   (
+   LALStatus *status, 
+   REAL4Vector *output,
+   InspiralWaveCorrelateIn corrin,
+   InspiralSNRIntegrandParams *params
+   );
+
 
 /* <lalLaTeX>
 \newpage\input{FilterTestC}

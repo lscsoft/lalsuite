@@ -35,6 +35,7 @@ LALInspiralWaveCorrelate
 NRCSID (LALINSPIRALFINDEVENTSC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralFindEventsCP"> */
+
 void
 LALInspiralFindEvents 
    (
@@ -56,16 +57,29 @@ LALInspiralFindEvents
 
 
    REAL8 dt;
+   REAL8 df;
+   REAL8 f;
    REAL8 norm;
+   REAL8 flso;
+   REAL8 distanceNorm;
+   REAL8 msevenby3;
    REAL8 x;
    REAL8 y;
    REAL8 z;
+
+   REAL8 totalMass;
+   REAL8 eta;
+   REAL8 dist;
 
    REAL4Vector filter1;
    REAL4Vector filter2;
    REAL4Vector output1;
    REAL4Vector output2;
    REAL4Vector buffer;
+
+	   
+   StatsREAL4VectorOut statsout1;
+   StatsREAL4VectorOut statsout2;
 
    InspiralWaveCorrelateIn corrin;
 
@@ -84,7 +98,9 @@ LALInspiralFindEvents
    ASSERT (findeventsin->nBegin <= (INT4)output1.length,  status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
 
 
-   dt = 1./findeventsin->param.tSampling;
+   dt = 1.L/findeventsin->param.tSampling;
+   df = 1.L/(output1.length * dt);
+
    nBegin = findeventsin->nBegin;
    nEnd = findeventsin->signal.length - findeventsin->nEnd;
 
@@ -157,16 +173,15 @@ LALInspiralFindEvents
    LALInspiralWaveCorrelate(status->statusPtr, &output2, corrin);
    CHECKSTATUSPTR(status);
 
+	   
+   for (i=nBegin;i<nEnd;i++) 
+	   buffer.data[i-nBegin] = output1.data[i];
+   LALStatsREAL4Vector(status->statusPtr, &statsout1, &buffer);
+
+   CHECKSTATUSPTR(status);
    if (findeventsin->displayCorrelationStats)
    {
    
-	   StatsREAL4VectorOut statsout1;
-	   StatsREAL4VectorOut statsout2;
-
-	   for (i=nBegin;i<nEnd;i++) 
-		   buffer.data[i-nBegin] = output1.data[i];
-	   LALStatsREAL4Vector(status->statusPtr, &statsout1, &buffer);
-	   CHECKSTATUSPTR(status);
 	   fprintf(stderr, "mean=%e std=%e max=%e\n", statsout1.mean, statsout1.stddev, statsout1.max);   
    
 	   for (i=nBegin;i<nEnd;i++) 
@@ -186,8 +201,26 @@ LALInspiralFindEvents
    }
 
    *nEvents = 0;
+   msevenby3 = -7.L/3.L;
+   distanceNorm = 0.;
+   totalMass = findeventsin->param.totalMass*LAL_MTSUN_SI;
+   eta = findeventsin->param.eta;
+   flso = 1.L/(pow(6.L,1.5L)*totalMass*LAL_PI);
+   for (i=1; i<findeventsin->psd.length; i++)
+   {
+	   f = i*df;
+	   if (f > flso) break;
+	   if (findeventsin->psd.data[i]) distanceNorm += pow(f,msevenby3)/findeventsin->psd.data[i];
+   }
+   distanceNorm = sqrt(distanceNorm);
+   distanceNorm *= df * pow(totalMass, 5.L/6.L) * sqrt(5.L*eta/12.L)/pow(LAL_PI,2.L/3.L) ;
+   /*
+   printf("FindEvents: %e %e %e %e\n", flso, totalMass/LAL_MTSUN_SI, eta, distanceNorm);
+   */
    
    for (i=nBegin; i<nEnd; i++) {
+
+       double eSec;
        x = output1.data[i];
        y = output2.data[i];
        z = sqrt(x*x + y*y);
@@ -197,22 +230,38 @@ LALInspiralFindEvents
           {
              ABORT(status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
           }
-          (*eventlist)[*nEvents].max = z;
-          (*eventlist)[*nEvents].bin = i;
-          (*eventlist)[*nEvents].eventTime = (double) i * dt;
-	  /* The following line needs to be amended appropriately after
-	     confirming what eventTime_ns stands for
-	  */
-          (*eventlist)[*nEvents].eventTime_ns = (double) i * dt * 2.;
+
+          dist = distanceNorm/ z;
+          (*eventlist)[*nEvents].param = findeventsin->param;
           (*eventlist)[*nEvents].phase = atan2(y,x);
+          (*eventlist)[*nEvents].effDistance = LAL_C_SI * dist / LAL_PC_SI /1.e6;
+          (*eventlist)[*nEvents].amplitude = 4.*eta*(totalMass/dist)*pow(LAL_PI*totalMass*100.,2.L/3.L);
+          (*eventlist)[*nEvents].snr = z;
+          (*eventlist)[*nEvents].bin = i;
+
+	  eSec = (double) i / findeventsin->param.tSampling;
+          (*eventlist)[*nEvents].impulseTime = findeventsin->currentGPSTime + (int) eSec;
+          (*eventlist)[*nEvents].impulseTimeNS = (int) (1.e9 * (eSec - (int) eSec));
+	  eSec += findeventsin->param.tC;
+          (*eventlist)[*nEvents].endTime = findeventsin->currentGPSTime + (int) eSec;
+          (*eventlist)[*nEvents].endTimeNS = (int) (1.e9 * (eSec - (int) eSec));
+
+          (*eventlist)[*nEvents].sigmasq = statsout1.stddev;
+          (*eventlist)[*nEvents].chisq = 0.L;
+          (*eventlist)[*nEvents].chisqDOF = i;
           (*nEvents)++;
           if (*nEvents > nEventsMax)
           {
-             ABORT (status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
+		  
+		  goto endAnalysis;
+		  /*
+		   * ABORT (status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
+		   */
           }
        }
    }
 
+   endAnalysis:
    LALFree(filter1.data);
    LALFree(filter2.data);
    LALFree(output1.data);

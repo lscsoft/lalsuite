@@ -83,7 +83,16 @@ LALInspiralWaveNormalise
 	*norm += (pow(in->data[i], 2.) + pow(in->data[k], 2.))/psdvalue;
      }
   }
-  *norm += pow(in->data[0],2.) + pow(in->data[nby2],2.);
+
+  /* If we want to add the negative frequency components as well now is
+   * the time to do that before 0th and Nyquist contributions are added
+   */
+
+  *norm *= 2.;
+
+  if (psd.data[nby2]) *norm += pow(in->data[nby2], 2.)/psd.data[nby2];
+  if (psd.data[0]) *norm += pow(in->data[0], 2.)/psd.data[0];
+
   *norm = sqrt(*norm);
   
   for (i=0; i<n; i++)

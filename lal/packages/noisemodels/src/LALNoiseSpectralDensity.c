@@ -99,10 +99,10 @@ LALNoiseSpectralDensity
    */
    if (NoisePsd == LALGEOPsd) {
            s0 = 1.e-46;
-           fs = 10.;
+           fs = 30.;
    } else if(NoisePsd == LALLIGOIPsd) {
            s0 = 9.0e-46;
-           fs = 10.;
+           fs = 30.;
    } else if(NoisePsd == LALTAMAPsd) {
            s0 = 75.e-46;
            fs = 75.;
@@ -120,13 +120,13 @@ LALNoiseSpectralDensity
     * Set DC and Nyquist components to zero
     */
 
-   psd->data[0] = psd->data[n] = 0.;
+   psd->data[0] = 0.;
 
-   for (i=1; i<n; i++) 
+   for (i=0; i<=n; i++) 
    {
       f = i*df;
 
-      if (f>fs) 
+      if (f>=fs) 
       {
          (*NoisePsd)(status->statusPtr, &shf, f);
          psd->data[i] = s0 * shf;

@@ -70,7 +70,9 @@ LALInspiralWaveCorrelate
   ASSERT (corrin.signal1.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
   ASSERT (corrin.signal2.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
   ASSERT (corrin.psd.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+
   ASSERT (corrin.signal1.length == corrin.signal2.length, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
+  ASSERT (output->length == corrin.signal1.length, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
   ASSERT (corrin.psd.length == corrin.signal1.length/2+1, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
 
   n = corrin.signal1.length;
@@ -96,13 +98,16 @@ LALInspiralWaveCorrelate
         i1 = corrin.signal1.data[k];
         i2 = corrin.signal2.data[k];
 
-        output->data[i] = (r1*r2 + i1*i2) / psd;
-        output->data[k] = (i1*r2 - r1*i2) / psd;
+        buff.data[i] = (r1*r2 + i1*i2) / psd;
+        buff.data[k] = (i1*r2 - r1*i2) / psd;
+	/*
+	 * printf("%d %e %e\n", i, buff.data[i], buff.data[k]);
+	 */
 
      } else {
 
-        output->data[i] = 0;
-        output->data[k] = 0;
+        buff.data[i] = 0;
+        buff.data[k] = 0;
      }
   }
   psd = corrin.psd.data[0];
@@ -110,11 +115,14 @@ LALInspiralWaveCorrelate
   {
      r1 = corrin.signal1.data[0];
      r2 = corrin.signal2.data[0];
-     output->data[0] = r1*r2 / psd;
+     buff.data[0] = r1*r2 / psd;
+     /*
+      * printf("%d %e %e\n", i, buff.data[0], buff.data[0]);
+      */
   }
   else
   {
-     output->data[0] = 0;
+     buff.data[0] = 0;
   }
 
   psd = corrin.psd.data[nby2];
@@ -122,21 +130,24 @@ LALInspiralWaveCorrelate
   {
      r1 = corrin.signal1.data[nby2];
      r2 = corrin.signal2.data[nby2];
-     output->data[nby2] = r1*r2 / psd;
+     buff.data[nby2] = r1*r2 / psd;
+     /*
+      * printf("%d %e %e\n", i, buff.data[nby2], buff.data[nby2]);
+      */
   }
   else
   {
-     output->data[nby2] = 0;
+     buff.data[nby2] = 0;
   }
 
-  LALREAL4VectorFFT(status->statusPtr,&buff,output,corrin.revp);
+  LALREAL4VectorFFT(status->statusPtr,output,&buff,corrin.revp);
   CHECKSTATUSPTR(status);
+  for (i=0; i<n; i++) output->data[i] /= (double) n;
 
-  for (i=0; i< n; i++) 
-  {
-	  output->data[i] = buff.data[i];
-  }
 
+  /* 
+   * printf("&\n");
+   */
   LALFree(buff.data);
   DETATCHSTATUSPTR(status);
   RETURN(status);
