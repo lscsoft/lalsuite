@@ -126,6 +126,7 @@ static void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 static LIGOTimeGPSVector* make_timestamps (const LIGOTimeGPS *tStart, REAL8 duration, REAL8 Tsft);
 static int check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1);
 static void checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF);
+static REAL4 mymax (REAL4 x, REAL4 y);
 /*----------------------------------------------------------------------*/
 
 NRCSID( GENERATEPULSARSIGNALC, "$Id$");
@@ -162,7 +163,7 @@ LALGeneratePulsarSignal (LALStatus *stat,
   CoherentGW sourceSignal = emptySignal;
   DetectorResponse detector;
   REAL8 SSBduration;
-  LIGOTimeGPS time = {0,0};
+  LIGOTimeGPS tmpTime = {0,0};
   REAL4TimeSeries *output;
   UINT4 i;
 
@@ -205,19 +206,19 @@ LALGeneratePulsarSignal (LALStatus *stat,
   sourceParams.deltaT = 60;	/* in seconds; hardcoded default from makefakedata_v2 */
 
   /* start-time in SSB time */
-  TRY (LALConvertGPS2SSB (stat->statusPtr, &time, params->startTimeGPS, params), stat);
-  sourceParams.epoch = time;
+  TRY (LALConvertGPS2SSB (stat->statusPtr, &tmpTime, params->startTimeGPS, params), stat);
+  sourceParams.epoch = tmpTime;
   /* ----------
      FIXME: argh, circumvent some mysterious bug in SimulateCoherentGW()... */
   sourceParams.epoch.gpsSeconds -= 0.75*LTT;
   /*----------*/
 
-  time = params->startTimeGPS;
-  TRY ( LALAddFloatToGPS (stat->statusPtr, &time, &time, params->duration), stat);
+  tmpTime = params->startTimeGPS;
+  TRY ( LALAddFloatToGPS (stat->statusPtr, &tmpTime, &tmpTime, params->duration), stat);
 
-  TRY (LALConvertGPS2SSB (stat->statusPtr, &time, time, params), stat);	 /* convert time to SSB */
+  TRY (LALConvertGPS2SSB (stat->statusPtr, &tmpTime, tmpTime, params), stat);	 /* convert time to SSB */
 
-  TRY (LALDeltaFloatGPS (stat->statusPtr, &SSBduration, &time, &(sourceParams.spinEpoch)), stat);
+  TRY (LALDeltaFloatGPS (stat->statusPtr, &SSBduration, &tmpTime, &(sourceParams.spinEpoch)), stat);
   sourceParams.length = (UINT4)( SSBduration / sourceParams.deltaT );
   /* ----------
      FIXME: argh, circumvent some mysterious bug in SimulateCoherentGW()... */
@@ -262,8 +263,8 @@ LALGeneratePulsarSignal (LALStatus *stat,
   /* we need to set the heterodyne epoch in GPS time, but we want to use
    * the pulsar reference-time for that (which is in SSB), so we have to convert it first
    */
-  TRY ( LALConvertSSB2GPS (stat->statusPtr, &time, params->pulsar.TRefSSB, params), stat);
-  detector.heterodyneEpoch = time;
+  TRY ( LALConvertSSB2GPS (stat->statusPtr, &tmpTime, params->pulsar.TRefSSB, params), stat);
+  detector.heterodyneEpoch = tmpTime;
   
   /* ok, we  need to prepare the output time-series */
   if ( (output = LALCalloc (1, sizeof (*output) )) == NULL) {
@@ -917,7 +918,7 @@ PrintR4TimeSeries (LALStatus *stat, const REAL4TimeSeries *series, const CHAR *f
 {
   FILE *fp = NULL;
   UINT4 set;
-  CHAR *xmgrHeader = 
+  const CHAR *xmgrHeader = 
     "@version 50103\n"
     "@xaxis label \"T (sec)\"\n"
     "@yaxis label \"A\"\n";
@@ -959,7 +960,7 @@ PrintGWSignal (LALStatus *stat, const CoherentGW *signal, const CHAR *fname)
 {
   FILE *fp;
   UINT4 set;
-  CHAR *xmgrHeader = 
+  const CHAR *xmgrHeader = 
     "@version 50103\n"
     "@xaxis label \"T (sec)\"\n"
     "@yaxis label \"A\"\n";
@@ -1176,7 +1177,7 @@ LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
   REAL8 f0, df, ff;
   UINT4 set, nsamples;
 
-  CHAR *xmgrHeader = 
+  const CHAR *xmgrHeader = 
     "@version 50103\n"
     "@xaxis label \"f (Hz)\"\n";
 
