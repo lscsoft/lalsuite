@@ -1020,7 +1020,7 @@ for seg in h1_single_data:
   total_time += seg.dur()
 print >> log_fh, "\n total time", total_time, "seconds"
 
-if output_segs:
+if output_segs and len(h1_single_data)
   if playground_only:
     f = open('h1_play_segs_analyzed.txt', 'w')
   else:  
@@ -1040,7 +1040,7 @@ for seg in h2_single_data:
   total_time += seg.dur()
 print >> log_fh, "\n total time", total_time, "seconds"
 
-if output_segs:
+if output_segs and len(h2_single_data):
   if playground_only:
     f = open('h2_play_segs_analyzed.txt', 'w')
   else:  
@@ -1060,7 +1060,7 @@ for seg in l1_single_data:
   total_time += seg.dur()
 print >> log_fh, "\n total time", total_time, "seconds"
 
-if output_segs:
+if output_segs and len(l1_single_data):
   if playground_only:
     f = open('l1_play_segs_analyzed.txt', 'w')
   else:  
@@ -1080,7 +1080,7 @@ for seg in h1_h2_double_data:
   total_time += seg.dur()
 print >> log_fh, "\n total time", total_time, "seconds"
 
-if output_segs:
+if output_segs and len(h1_h2_double_data):
   if playground_only:
     f = open('h1_h2_play_segs_analyzed.txt', 'w')
   else:  
@@ -1099,7 +1099,7 @@ for seg in h1_l1_double_data:
   total_time += seg.dur()
 print >> log_fh, "\n total time", total_time, "seconds"
 
-if output_segs:
+if output_segs and len(h1_l1_double_data):
   if playground_only:
     f = open('h1_l1_play_segs_analyzed.txt', 'w')
   else:  
@@ -1118,7 +1118,7 @@ for seg in h2_l1_double_data:
   total_time += seg.dur()
 print >> log_fh, "\n total time", total_time, "seconds"
 
-if output_segs:
+if output_segs and len(h2_l1_double_data):
   if playground_only:
     f = open('h2_l1_play_segs_analyzed.txt', 'w')
   else:  
@@ -1138,7 +1138,7 @@ for seg in h1_h2_l1_triple_data:
   total_time += seg.dur()
 print >> log_fh, "\n total time", total_time, "seconds"
 
-if output_segs:
+if output_segs and len(h1_h2_l1_triple_data):
   if playground_only:
     f = open('h1_h2_l1_play_segs_analyzed.txt', 'w')
   else:  
