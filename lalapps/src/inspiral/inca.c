@@ -2,7 +2,7 @@
  * 
  * File Name: inca.c
  *
- * Author: Brady, P. R. and Brown, D. A.
+ * Author: Brady, P. R., Brown, D. A. and Fairhurst, S.
  * 
  * Revision: $Id$
  * 
@@ -60,8 +60,8 @@ RCSID("$Id$");
 "  --gps-start-time SEC      GPS second of data start time\n"\
 "  --gps-end-time SEC        GPS second of data end time\n"\
 "\n"\
-"  --silde-time SEC          slide triggers by SEC when determining playground\n"\
-"  --slide-time-ns NS        slide triggers by NS when determining playground\n"\
+"  --silde-time SEC          slide all triggers of IFOB by SEC\n"\
+"  --slide-time-ns NS        slide all triggers of IFOB by NS\n"\
 "\n"\
 "  --ifo-a ifo_name          name of first ifo (e.g. L1, H1 or H2)\n"\
 "  --ifo-b ifo_name          name of second ifo (e.g. L1, H1 or H2)\n"\
@@ -180,7 +180,7 @@ int main( int argc, char *argv[] )
   CHAR *xmlFileName;
 
   LIGOTimeGPS slideData = {0,0};
-  INT8  slideDataNS;
+  INT8  slideDataNS = 0;
   INT4  numEvents = 0;
   INT4  numIFO;
   INT4  have_ifo_a_trigger = 0;
@@ -875,11 +875,38 @@ int main( int argc, char *argv[] )
               /* append to the end of the linked list */
               currentTrigger[j]->next = inputData;
             }
+	    
+	    if ( slideDataNS && j == 1 && vrbflg)  fprintf( stdout, 
+		"Doing a time slide of %d sec %d nanosec on IFOB triggers",
+		slideData.gpsSeconds, slideData.gpsNanoSeconds );	
+
             while ( currentTrigger[j]->next )
             {
               /* spin on to the end of the linked list */
+	      /* doing time slides if necessary */
+	      if ( slideDataNS && j == 1 )
+	      {
+		INT8 trigTimeNS = 0;
+		LAL_CALL( LALGPStoINT8( &status, &trigTimeNS, 
+		      &(currentTrigger[j]->end_time) ), &status );
+		trigTimeNS += slideDataNS;
+		LAL_CALL( LALINT8toGPS( &status, 
+		      &(currentTrigger[j]->end_time), &trigTimeNS ), 
+		    &status );
+	      }     
               currentTrigger[j] = currentTrigger[j]->next;
             }
+	    
+	    /* slide the last trigger */
+	    if ( slideDataNS && j == 1)
+	    {
+	      INT8 trigTimeNS = 0;
+	      LAL_CALL( LALGPStoINT8( &status, &trigTimeNS, 
+		      &(currentTrigger[j]->end_time) ), &status );
+	      trigTimeNS += slideDataNS;
+	      LAL_CALL( LALINT8toGPS( &status, &(currentTrigger[j]->end_time), 
+		    &trigTimeNS ), &status );
+	    }
 
             /* store number of triggers from ifo a for trigtotmplt algorithm */
             if ( j == 0 ) 
@@ -1126,9 +1153,6 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALGPStoINT8( &status, &ta, &(currentTrigger[0]->end_time) ), 
         &status );
 
-    /* use the proper trigger times to determine playground */
-    tp = ta - slideDataNS;
-
     LAL_CALL( LALINT8NanoSecIsPlayground( &status, &isPlay, &tp ), &status );
 
     if ( vrbflg )
@@ -1159,9 +1183,12 @@ int main( int argc, char *argv[] )
       currentTrigger[1] = currentTrigger[1]->next;
     }
 
-    /* if we are playground only and the trigger is in playground or we are */
-    /* not using playground and the trigger is not in the playground...     */
-    if ( ( usePlayground && isPlay ) || ( ! usePlayground && ! isPlay)) 
+    /* if we are playground only and the trigger is in playground or 
+     * we are not using playground and the trigger is not in theplayground or
+     * we have a non-zer time-slide ... */
+
+    if ( ( usePlayground && isPlay ) || ( ! usePlayground && ! isPlay) ||
+	(slideDataNS) )
     {
  
       /* determine whether we should expect to see a trigger in ifo b  */
