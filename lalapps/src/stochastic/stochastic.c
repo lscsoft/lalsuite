@@ -165,6 +165,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   LIGOTimeGPS gpsEndTime;
   LIGOTimeGPS gpsSegStartTime;
   LIGOTimeGPS gpsSegEndTime;
+  LIGOTimeGPS gpsAnalysisTime;
   REAL4TimeSeries *seriesOne;
   REAL4TimeSeries *seriesTwo;
 
@@ -803,6 +804,12 @@ INT4 main(INT4 argc, CHAR *argv[])
         segmentPadOne->epoch = gpsSegStartTime;
         segmentPadTwo->epoch = gpsSegStartTime;
 
+        /* is this the analysis segment */
+        if (segLoop == segMiddle)
+        {
+          gpsAnalysisTime = gpsSegStartTime;
+        }
+
         if (vrbflg)
         {
           fprintf(stdout, "request data at GPS time %d\n", \
@@ -1031,7 +1038,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         if ((middle_segment_flag == 0) && (segLoop == segMiddle))
         {
           if (vrbflg)
-            fprintf(stdout, "ignoring middle segment..\n");
+            fprintf(stdout, "Ignoring middle segment..\n");
         }
         else
         {
@@ -1115,8 +1122,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
       if (vrbflg)
       {
-        fprintf(stdout, "analysing segment at GPS %d\n", \
-            gpsStartTime.gpsSeconds);
+        fprintf(stdout, "Analysing segment at GPS %d\n", \
+            gpsAnalysisTime.gpsSeconds);
       }
 
       for (i = 0; i < segmentLength; i++)
@@ -1161,7 +1168,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       if (vrbflg)
       {
         fprintf(stdout, "interval %d\n", interLoop + 1);
-        fprintf(stdout, "  GPS time  = %d\n", gpsStartTime.gpsSeconds);
+        fprintf(stdout, "  GPS time  = %d\n", gpsAnalysisTime.gpsSeconds);
         fprintf(stdout, "  y         = %e\n", y);
         fprintf(stdout, "  sigmaTheo = %e\n", sqrt(varTheo));
       }
