@@ -105,8 +105,11 @@ same vector of string as the power dso.
   EPInitSearch(status->statusPtr, (void *)(&EPparams), argv, argc);
   CHECKSTATUSPTR (status);
 
-  EPConditionData(status->statusPtr, &tmp, EPparams);
-  CHECKSTATUSPTR (status);
+  /*Commented this out when modified the EPConditionData prototype
+   * and functionality. Saikat 2004/08/10
+   */
+  /* EPConditionData(status->statusPtr, &tmp, EPparams);
+     CHECKSTATUSPTR (status);*/
   
   EPSearch(status->statusPtr, EPparams, &burstEvent, EPparams->initParams->segDutyCycle);
   CHECKSTATUSPTR (status);
