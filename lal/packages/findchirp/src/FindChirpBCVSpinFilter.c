@@ -81,13 +81,17 @@ LALFindChirpBCVSpinFilterSegment (
   COMPLEX8              *wtilde;  /* need new pointer name? */
   REAL4                 *amp;
   REAL4                 *ampBCV;
+  REAL4                 *ampBCVSpin1;
+  REAL4                 *ampBCVSpin2;
   REAL4                 I = 0.0;
   REAL4                 J = 0.0;
   REAL4                 K = 0.0;
   REAL4                 L = 0.0;
   REAL4                 M = 0.0;
   REAL4                 Beta; /* Spin parameter, value from bank or external loop */  
+  REAL4                 rootI;
   REAL4                 denominator;
+  REAL4                 rootDenominator;
   REAL4                 denominator1;
   REAL4                 a1;
   REAL4                 a2;                  
@@ -205,27 +209,44 @@ LALFindChirpBCVSpinFilterSegment (
 
 
 
-  amp        = inputParams->ampVec->data;
-  ampBCV     = inputParams->ampVecBCV->data;
+  amp         = inputParams->ampVec->data;
+  ampBCV      = inputParams->ampVecBCV->data;
+  ampBCVSpin1 = inputParams->ampVecBCVSpin1->data;
+  ampBCVSpin2 = inputParams->ampVecBCVSpin2->data;
+
+  
   wtilde     = inputParams->wtildeVec->data;
 
   for ( k = 1; k < fcSeg->data->data->length; ++k )
   {
-    I += 4.0 * amp[k] * amp[k] * wtilde[k].re ;
-    J += 4.0 * amp[k] * amp[k] * wtilde[k].re * 
-      cos(Beta * amp[k] / ampBCV[k]);                
-    K += 4.0 * amp[k] * amp[k] * wtilde[k].re * 
-      sin(Beta * amp[k] / ampBCV[k]);
-    L += 4.0 * amp[k] * amp[k] * wtilde[k].re * 
-      sin(2 * Beta * amp[k] / ampBCV[k]);
-    M += 4.0 * amp[k] * amp[k] * wtilde[k].re * 
-      cos(2 * Beta * amp[k] / ampBCV[k]);
+    I += amp[k] * amp[k] * wtilde[k].re ;
+    J += amp[k] * amp[k] * wtilde[k].re * 
+      cos(Beta * ampBCVSpin2[k]);                
+    K += amp[k] * amp[k] * wtilde[k].re * 
+      sin(Beta * ampBCVSpin2[k]);
+    L += amp[k] * amp[k] * wtilde[k].re * 
+      sin(2 * Beta * ampBCVSpin2[k]);
+    M += amp[k] * amp[k] * wtilde[k].re * 
+      cos(2 * Beta * ampBCVSpin2[k]);
   }
 
- denominator = I*M  +  0.5*pow(I,2) - pow(J,2);
- denominator1 = sqrt ( 0.25 * pow(I,3) + M*(pow(J,2) - 
+  /* Taking multiplucation outside loop lessens cost */
+
+  I *= 4;
+  J *= 4;
+  K *= 4;
+  L *= 4;
+  M *= 4;
+
+  /* Expensive or well used quantities calc before loop */
+
+ rootI           = sqrt(I);
+ denominator     = I*M  +  0.5*pow(I,2) - pow(J,2);
+ rootDenominator = sqrt(denominator);
+ denominator1    = sqrt ( 0.25 * pow(I,3) + M*(pow(J,2) - 
         pow(K,2)) - 0.5*(pow(J,2) + pow(K,2)) - I*(pow(L,2) + 
         pow(M,2)) + 2*J*K*L );
+
 
   /* 
    * the calculation of the orthonormalised 
@@ -236,12 +257,12 @@ LALFindChirpBCVSpinFilterSegment (
 
  for ( k = 1; k < fcSeg->data->data->length; ++k )
   {
-  a1 = 1.0 * amp[k]/ sqrt(I) ;
+  a1 = amp[k]/ rootI ;
 
-  a2 = 1.0 * amp[k]/sqrt(denominator) * (I * cos(Beta * amp[k]) -  J);
+  a2 = amp[k]/rootDenominator * (I * cos(Beta * ampBCVSpin2[k]) -  J);
 
-  a3 = 1.0 * amp[k]/denominator1 * ( sin(Beta * amp[k]) - 
-      (I*L - J*K)*cos(Beta * amp[k])/denominator + 
+  a3 = amp[k]/denominator1 * ( sin(Beta * ampBCVSpin2[k]) - 
+      (I*L - J*K)*cos(Beta * ampBCVSpin2[k])/denominator + 
       (J*L - K*M + 0.5*I*K)/denominator );
   }
   
@@ -277,7 +298,7 @@ LALFindChirpBCVSpinFilterSegment (
   for ( k = 1; k < numPoints/2; ++k )
   {
     REAL4 r        = inputData1[k].re;
-    REAL4 s        = 0.0 - inputData1[k].im;    /* note complex conjugate */
+    REAL4 s        = 0.0 - inputData1[k].im;         /* note complex conjugate */
     /* REAL4 rBCV     = inputData2[k].re;
        REAL4 sBCV     = 0.0 - inputData2[k].im; */   /* note complex conjugate */
     /* REAL4 rBCVSpin = inputData3[k].re;
