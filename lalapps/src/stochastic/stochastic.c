@@ -305,7 +305,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   StochasticCrossCorrelationCalInput ccIn;
   BOOLEAN epochsMatch = 1;
   REAL4WithUnits ccStat;
-  COMPLEX8FrequencySeries ccSpectrum;
+  COMPLEX8FrequencySeries *ccSpectrum;
+  CHAR ccFilename[FILENAME_MAX];
 
   /* error handler */
   status.statusPtr = NULL;
@@ -851,21 +852,13 @@ INT4 main(INT4 argc, CHAR *argv[])
   optFilterIn.calibratedInverseNoisePSD1 = calInvPsdOne;
   optFilterIn.calibratedInverseNoisePSD2 = calInvPsdTwo;
 
-  /* set metadata fields for CC spectrum */
-  strncpy(ccSpectrum.name, "ccSpectrum", LALNameLength);
-  ccSpectrum.epoch = gpsStartTime;
-  ccSpectrum.deltaF = deltaF;
-  ccSpectrum.f0 = fMin;
-
   if (vrbflg)
     fprintf(stdout, "Allocating memory for CC Spectrum...\n");
 
   /* allocate memory for CC spectrum*/
-  ccSpectrum.data = NULL;
-  LAL_CALL(LALCCreateVector(&status, &(ccSpectrum.data), filterLength), \
-      &status);
-  memset(ccSpectrum.data->data, 0, \
-      ccSpectrum.data->length * sizeof(*ccSpectrum.data->data));
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &ccSpectrum, \
+        "ccSpectrum", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
+        filterLength), &status);
 
   /* set CC inputs */
   ccIn.hBarTildeOne = hBarTildeOne;
@@ -1494,11 +1487,15 @@ INT4 main(INT4 argc, CHAR *argv[])
         }
 
         LAL_CALL(LALStochasticCrossCorrelationSpectrumCal(&status, \
-              &ccSpectrum, &ccIn, epochsMatch), &status);
+              ccSpectrum, &ccIn, epochsMatch), &status);
 
         /* save */
         if (vrbflg)
-          LALCPrintFrequencySeries(&ccSpectrum, "ccSpectrum.dat");
+        {
+          LALSnprintf(ccFilename, FILENAME_MAX, "%s%s-ccSpectra-%d-%d.dat", \
+              ifoOne, ifoTwo, startTime, segmentDuration);
+          LALCPrintFrequencySeries(ccSpectrum, ccFilename);
+        }
 
         /* cc statistic */
         LAL_CALL(LALStochasticCrossCorrelationStatisticCal(&status, &ccStat, \
