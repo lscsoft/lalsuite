@@ -4,6 +4,7 @@ DOCSOURCEFILES = inject.tex \
   inject_binary.eps inject_binary.pdf \
   inject_ascend.eps inject_ascend.pdf \
   inject_eanomaly.eps inject_eanomaly.pdf \
+  inject_hanomaly.eps inject_hanomaly.pdf \
   inject_ecliptic.eps inject_ecliptic.pdf \
   inject_galactic.eps inject_galactic.pdf \
   inject_geodetic.eps inject_geodetic.pdf \

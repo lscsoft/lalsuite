@@ -369,7 +369,7 @@ LALGenerateParabolicSpinOrbitCW( LALStatus             *,
 				 SpinOrbitCWParamStruc *params );
 
 /* <lalLaTeX>
-%\newpage\input{GenerateHyperbolicSpinOrbitCWC}
+\newpage\input{GenerateHyperbolicSpinOrbitCWC}
 </lalLaTeX> */
 void
 LALGenerateHyperbolicSpinOrbitCW( LALStatus             *,
