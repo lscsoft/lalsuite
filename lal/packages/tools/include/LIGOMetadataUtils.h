@@ -650,7 +650,8 @@ LALCompareSnglBurstSnglInspiral(
 	LALStatus *status,
 	const SnglBurstTable *a,
 	const SnglInspiralTable *b,
-	int *difference
+	int *difference,
+	INT8 deltaT
 );
 
 int
