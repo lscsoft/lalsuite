@@ -44,6 +44,10 @@ This program has ugly code for testing the SFT file reading and writing.
 </lalLaTeX> */
 
 
+#include <config.h>
+#ifdef WORDS_BIGENDIAN 
+int main( void ) { return 77; }
+#else
 #include <lal/SFTfileIO.h>
 
 NRCSID (SFTFILEIOTESTC, "$Id$");
@@ -209,7 +213,6 @@ int main(int argc, char *argv[]){
     return SFTFILEIOTESTC_ESFTDIFF;
   }
 
-#ifndef WORDS_BIGENDIAN 
   printf ("Testing LALReadSFtheader() and LALReadSFTtype()\n");
   SUB( LALReadSFTheader( &status, &header, fname),  &status );
   f0 = header.fminBinIndex / header.timeBase;
@@ -246,19 +249,17 @@ int main(int argc, char *argv[]){
     return SFTFILEIOTESTC_ESFTDIFF;
   }
 
-#endif
-  
   SUB( LALCDestroyVector (&status, &(sft0.data) ), &status);
   SUB( LALCDestroyVector (&status, &(sft1->data) ), &status);
   SUB( LALCDestroyVector (&status, &(sft2->data) ),  &status );
   LALFree ( sft1 );
   LALFree ( sft2 );
   
-
   LALCheckMemoryLeaks(); 
 
   INFO( SFTFILEIOTESTC_MSGENORM );
   return SFTFILEIOTESTC_ENORM;
 }
+#endif
 
 

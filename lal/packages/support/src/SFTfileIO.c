@@ -55,7 +55,7 @@ LALHO()
 NRCSID (SFTFILEIOC, "$Id$");
 
 
-static void endian_swap(CHAR * pdata, UINT4 dsize, size_t nelements);
+static void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
 static void ByteSwapSFTHeader (LALStatus *stat, SFTHeader *header);
 
 /*
@@ -419,8 +419,8 @@ LALReadSFTfile (LALStatus *status,
  * internal helper functions
  ***********************************************************************/
 /* a little endian-swapper needed for SFT reading/writing */
-void 
-endian_swap(CHAR * pdata, size_t dsize, UINT4 nelements)
+static void 
+endian_swap(CHAR * pdata, size_t dsize, size_t nelements)
 {
   UINT4 i, j, indx;
   CHAR tempbyte;
