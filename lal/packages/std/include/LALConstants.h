@@ -273,9 +273,9 @@ Name & Value & Description \\
 \hline
 \tt LAL\_REARTH\_SI & $6.378140\times10^6\,\mathrm{m}$ &
 	Earth equatorial radius \\
-\tt LAL_AWGS84_SI   & $6.378137\times10^6\,\mathrm{m}$ &
+\tt LAL\_AWGS84\_SI & $6.378137\times10^6\,\mathrm{m}$ &
         Semimajor axis of WGS-84 Reference Ellipsoid \\
-\tt LAL_BWGS84_SI   & $6.356752314\times10^6\,\mathrm{m}$ &
+\tt LAL\_BWGS84\_SI & $6.356752314\times10^6\,\mathrm{m}$ &
         Semiminor axis of WGS-84 Reference Ellipsoid \\
 \tt LAL\_MEARTH\_SI & $5.97370\times10^{24}\,\mathrm{kg}$ & Earth mass \\
 \tt LAL\_IEARTH     & $0.409092804\,\mathrm{rad}$ &
