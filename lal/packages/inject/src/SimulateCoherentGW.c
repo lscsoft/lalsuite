@@ -777,7 +777,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
   if ( n < 0 ) {
     LALWarning( stat, "Signal ends before the start of the output"
 		" time series." );
-    n = 0;
+    n = -1;
   }
 
   /* Compute the values of i for which signal->f is given. */
