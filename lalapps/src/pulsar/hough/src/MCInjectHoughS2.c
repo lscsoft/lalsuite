@@ -130,7 +130,7 @@ int main(int argc, char *argv[]){
   REAL8  threshold, h0scale;
 
   UINT4  sftlength; 
-  INT4   sftHeaderlength;
+  INT4   sftHeaderlength, fWings;
   REAL4  sftRenorm; 
   INT4   sftFminBin;
   REAL8  fHeterodyne;
@@ -298,57 +298,6 @@ int main(int argc, char *argv[]){
   msp = 1; /*only one spin-down */
 
 
-  /* find number of harmonics */
-  SUB( FindNumberHarmonics (&status, &harmonics, uvar_harmonicsfile), &status); 
-  nHarmonicSets = harmonics.nHarmonicSets; 
-  
-  /* convert harmonics to explicit lines */
-  if (nHarmonicSets > 0)
-    {
-      harmonics.startFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
-      harmonics.gapFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
-      harmonics.numHarmonics = (INT4 *)LALMalloc(harmonics.nHarmonicSets * sizeof(INT4));
-      harmonics.leftWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
-      harmonics.rightWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
-    
-
-      SUB( ReadHarmonicsInfo( &status, &harmonics, uvar_harmonicsfile ), &status);
-      
-      nLines = 0;
-      for (count1=0; count1 < nHarmonicSets; count1++)
-	{
-	  nLines += *(harmonics.numHarmonics + count1);
-	}
-
-      if (nLines > 0)
-	{
-	  lines2.nLines = nLines;
-	  lines2.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-	  lines2.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-	  lines2.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-
-	  lines.nLines = nLines;
-	  lines.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-	  lines.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-	  lines.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-	  	  
-	  SUB( Harmonics2Lines( &status, &lines2, &harmonics), &status);
-	  
-	  SUB( ChooseLines (&status, &lines, &lines2, uvar_f0, uvar_f0 + uvar_fSearchBand), &status); 
-
-	  LALFree(lines2.lineFreq);
-	  LALFree(lines2.leftWing);
-	  LALFree(lines2.rightWing);
-	}
-
-      LALFree(harmonics.startFreq);
-      LALFree(harmonics.gapFreq);
-      LALFree(harmonics.numHarmonics);
-      LALFree(harmonics.leftWing);
-      LALFree(harmonics.rightWing);
-      
-    }
-
 
   /* computing h0 values and preparing  output files */
   h0V.length=uvar_nh0;
@@ -461,7 +410,7 @@ int main(int argc, char *argv[]){
        possible spin-down-up  and running median block size*/
   /* ****************************************************************/
   {    
-    INT4   length, fWings;
+    INT4   length;
  
     f0Bin = floor(uvar_f0*timeBase + 0.5);     /* initial frequency to be analyzed */
     length =  uvar_fSearchBand*timeBase; 
@@ -497,6 +446,85 @@ int main(int argc, char *argv[]){
       ++sft;
     }    
   }
+
+  /* real line noise information */
+  /* find number of harmonics */
+  SUB( FindNumberHarmonics (&status, &harmonics, uvar_harmonicsfile), &status); 
+  nHarmonicSets = harmonics.nHarmonicSets; 
+  
+  /* convert harmonics to explicit lines */
+  if (nHarmonicSets > 0)
+    {
+      harmonics.startFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+      harmonics.gapFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+      harmonics.numHarmonics = (INT4 *)LALMalloc(harmonics.nHarmonicSets * sizeof(INT4));
+      harmonics.leftWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+      harmonics.rightWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+    
+
+      SUB( ReadHarmonicsInfo( &status, &harmonics, uvar_harmonicsfile ), &status);
+      
+      nLines = 0;
+      for (count1=0; count1 < nHarmonicSets; count1++)
+	{
+	  nLines += *(harmonics.numHarmonics + count1);
+	}
+
+      if (nLines > 0)
+	{
+          REAL8 dopplerFreq;
+
+	  lines2.nLines = nLines;
+	  lines2.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+	  lines2.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+	  lines2.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+
+	  lines.nLines = nLines;
+	  lines.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+	  lines.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+	  lines.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+	  	  
+	  SUB( Harmonics2Lines( &status, &lines2, &harmonics), &status);
+          
+	  dopplerFreq = fWings/timeBase;
+	  SUB( ChooseLines (&status, &lines, &lines2, uvar_f0 - dopplerFreq, 
+			    uvar_f0 + uvar_fSearchBand + dopplerFreq), &status); 
+
+	  LALFree(lines2.lineFreq);
+	  LALFree(lines2.leftWing);
+	  LALFree(lines2.rightWing);
+	}
+
+      LALFree(harmonics.startFreq);
+      LALFree(harmonics.gapFreq);
+      LALFree(harmonics.numHarmonics);
+      LALFree(harmonics.leftWing);
+      LALFree(harmonics.rightWing);
+      
+    }  /* done with reading line noise info */
+
+
+
+  /* check that the band is not covered by lines */
+  {
+    INT4  counter=0, j, flag;
+    REAL8 sampFreq, stepFreq;
+    stepFreq = (uvar_fSearchBand + 2*fWings/timeBase)/100.0;
+    for (j=0; j<100; j++)
+      {
+	sampFreq = uvar_f0 - fWings/timeBase + j*stepFreq;
+	SUB( CheckLines (&status, &flag, &lines2, sampFreq), &status); 
+	if ( flag>0 ) counter++;
+      }
+    /* exit if less than 10% of band is good */
+    if (counter < 10 )
+      {
+	fprintf(stdout, "Too many lines in this band...nothing to do! \n");
+	exit(0);
+      }
+  }
+
+
   
   /******************************************************************/
   /* compute the time difference relative to startTime for all SFT */
@@ -700,7 +728,7 @@ int main(int argc, char *argv[]){
     		number count for the highest h0 value */
     
     SUB( GenerateInjectParams(&status, &pulsarInject, &pulsarTemplate,
-			&closeTemplates, &injectPar), &status );
+			&closeTemplates, &injectPar, &lines), &status );
     
     /*  params.pulsar.TRefSSB=  ? ; */
     params.pulsar.position.longitude = pulsarInject.longitude;
@@ -915,7 +943,8 @@ void GenerateInjectParams(LALStatus   *status,
                         PulsarData           *injectPulsar,
                         HoughTemplate        *templatePulsar,
 			HoughNearTemplates   *closeTemplates,
-                        HoughInjectParams    *params){
+                        HoughInjectParams    *params,
+			LineNoiseInfo        *lines  ){
 			
   INT4          seed=0; /* seed generated using current time */
   REAL4         randval;
@@ -937,7 +966,7 @@ void GenerateInjectParams(LALStatus   *status,
   ASSERT (injectPulsar,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
   ASSERT (templatePulsar, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
   ASSERT (params, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  
+  ASSERT (lines, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
   
   /*  ++++++++++++++++++from makefakedata
    * Modified so as to not create random number parameters with seed
@@ -983,31 +1012,18 @@ void GenerateInjectParams(LALStatus   *status,
   TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
   f0 = params->fmin + (params->fSearchBand) * randval;
   
-  /* veto the 0.25 harmonics and corresponding doppler band for S2*/
+  /* veto the frequency if it is affected by a line */
   {
-    INT4 veto25;
-    REAL8 fmax, fmin, f25, f50, f75, dopp;
-    
-    veto25=1;
-    while(veto25){
-      fmax=ceil(f0);
-      fmin= fmax -1.0;
-      f25= fmin+0.25;
-      f50= fmin+0.5;
-      f75= fmin+0.75;
-      dopp= fmax*VTOT;
-      
-      if( ( (fmin+dopp< f0) && (f0<f25-dopp) ) 
-        || ( (f25+dopp< f0) && (f0<f50-dopp) ) 
-	|| ( (f50+dopp< f0) && (f0<f75-dopp) ) 
-	|| ( (f75+dopp< f0) && (f0<fmax-dopp)) ){ /* it is fine*/
-        veto25=0;
-      } else{ /* should be vetoed, generating a new f0 and test it again */
-        TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
-        f0 = params->fmin + (params->fSearchBand) * randval;
-      }
-      
-    }
+    INT4 veto=1;
+    while( veto > 0 ){
+
+      TRY( CheckLines (status->statusPtr, &veto, lines, f0 ), status); 
+      if ( veto > 0 )
+	{
+	  TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
+	  f0 = params->fmin + (params->fSearchBand) * randval;
+	}
+    } /* end of while loop */
   }
    
   injectPulsar->f0 = f0;

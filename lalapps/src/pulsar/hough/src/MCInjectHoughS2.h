@@ -163,7 +163,8 @@ void GenerateInjectParams(LALStatus  *status,
                         PulsarData           *injectPulsar,
                         HoughTemplate        *templatePulsar,
 			HoughNearTemplates   *closeTemplates,
-                        HoughInjectParams    *params);
+                        HoughInjectParams    *params,
+			LineNoiseInfo        *lines  );
 
 void ComputeFoft(LALStatus   *status,
                  REAL8Vector          *foft,
