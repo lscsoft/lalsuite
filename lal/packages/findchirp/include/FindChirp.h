@@ -19,7 +19,7 @@ $Id$
 \section{Header \texttt{FindChirp.h}}
 \label{s:FindChirp.h}
 
-\noindent This header provides core protypes, structures and functions to
+\noindent This header provides core prototypes, structures and functions to
 filter interferometer data for binary inspiral chirps.
 
 \subsubsection*{Synopsis}
@@ -368,6 +368,39 @@ phase templates the post-Newtonian order is always two.
 
 \end{description}
 
+\subsubsection*{Structure \texttt{Clustering}}
+\idx[Type]{Clustering}
+
+\noindent This structure contains the possible methods by which
+to maximize over a chirp in a data segment.
+</lalLaTeX>
+#endif
+
+/* <lalVerbatim> */
+typedef enum {
+   noClustering,
+   tmplt,
+   window
+ } 
+Clustering;
+/* </lalVerbatim> */
+
+#if 0
+<lalLaTeX>
+
+\begin{description}
+\item[\texttt{noClustering}] The decision to do no clustering
+of events.
+
+\item[\texttt{tmplt}] Cluster over the length of the data segment.
+
+\item[\texttt{window}] Cluster over a given number of seconds
+given by the argument to the flag \texttt{--cluster-window}
+(required to be less than the length of the data segment).
+
+\end{description}
+</lalLaTeX> 
+
 \subsubsection*{Structure \texttt{FindChirpFilterParams}}
 \idx[Type]{FindChirpFilterParams}
 
@@ -377,24 +410,16 @@ phase templates the post-Newtonian order is always two.
 </lalLaTeX>
 #endif
 /* <lalVerbatim> */
-typedef enum {
-   noClustering,
-   tmplt,
-   window
- } Clustering;
-/* </lalVerbatim> */
-
-/* <lalVerbatim> */
 typedef struct
 tagFindChirpFilterParams
 {
   REAL8                         deltaT;
-  REAL4				clusterWindow;			/*XXX*/
+  REAL4				clusterWindow;			
   REAL4                         rhosqThresh;
   REAL4                         chisqThresh;
   REAL4                         norm;
   UINT4                         maximiseOverChirp;
-  Clustering			clusterMethod;			/*XXX*/
+  Clustering			clusterMethod;		
   Approximant                   approximant;
   COMPLEX8Vector               *qVec;
   COMPLEX8Vector               *qVecBCV;
@@ -528,6 +553,7 @@ function.
 \end{description}
 </lalLaTeX>
 #endif
+
 
 /*
  *
