@@ -1546,14 +1546,7 @@ LALFindChirpBCVFilterSegment (
     REAL4 b1 = input->segment->b1;  
     REAL4 b2 = input->segment->b2; 
 
-    if (chirpTime < 0.00025)
-    {
-      deltaEventIndex = (UINT4) rint( (0.00025 / deltaT) + 1.0 );
-    }
-    else
-    {
-      deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
-    }
+    deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
 
     /* ignore corrupted data at start and end */
     ignoreIndex = ( input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
@@ -1835,54 +1828,15 @@ LALFindChirpBCVFilterSegment (
           Den1 = q[timeIndex].re - qBCV[timeIndex].im ;
           Den2 = q[timeIndex].re + qBCV[timeIndex].im ;
 
-          if ( Den1 == 0 )
-          {
-            if ( Num1 >= 0 )
-            {
-              InvTan1 = LAL_PI / 2.0;
-            }
-            else 
-            {
-              InvTan1 = 3.0 * LAL_PI / 2.0 ;
-            }
-          }
-          else if ( Den1 > 0 )
-          {
-            InvTan1 = (REAL4) atan( Num1 / Den1 );
-          }
-          else 
-          {  
-            InvTan1 = LAL_PI + (REAL4) atan( Num1 / Den1 ) ;
-          }
-
-
-          if ( Den2 == 0 )
-          {
-            if ( Num2 >= 0 )
-            {
-              InvTan2 = LAL_PI / 2.0;
-            }
-            else
-            {
-              InvTan2 = 3.0 * LAL_PI / 2.0 ;
-            }
-          }
-          else if ( Den2 > 0 )
-          {
-            InvTan2 = (REAL4) atan( Num2 / Den2 );
-          }
-          else
-          {
-            InvTan2 = LAL_PI + (REAL4) atan(Num2 / Den2 );
-          }
-
+          InvTan1 = (REAL4) atan2(Num1, Den1) ;
+          InvTan2 = (REAL4) atan2(Num2, Den2);
 
           thisEvent->coa_phase = 0.5 * InvTan1 - 0.5 * InvTan2 ;
           omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
           thisEvent->alpha = - input->segment->b2 * tan(omega) / 
             ( input->segment->a1 + input->segment->b1*tan(omega) );
           /* actually record alpha * fcut^(2/3) which must be b/t 0 and 1 */
-          /* thisEvent->alpha *= pow((input->tmplt->fFinal) , 2.0/3.0);   */
+          thisEvent->alpha *= pow((input->tmplt->fFinal) , 2.0/3.0);   
 
           /* copy the template into the event */
           thisEvent->psi0   = (REAL4) input->tmplt->psi0; 
@@ -1991,46 +1945,8 @@ LALFindChirpBCVFilterSegment (
     Den1 = q[timeIndex].re - qBCV[timeIndex].im ;
     Den2 = q[timeIndex].re + qBCV[timeIndex].im ;
 
-    if ( Den1 == 0 )
-    {
-      if ( Num1 >= 0 )
-      {
-        InvTan1 = LAL_PI / 2.0;
-      }
-      else
-      {
-        InvTan1 = 3.0 * LAL_PI / 2.0 ;
-      }
-    }
-    else if (Den1 > 0)
-    {
-      InvTan1 = (REAL4) atan( Num1 / Den1 );
-    }
-    else
-    {
-      InvTan1 = LAL_PI + (REAL4) atan( Num1 / Den1 );
-    }
-
-
-    if ( Den2 == 0 )
-    {
-      if ( Num2 >= 0 )
-      {
-        InvTan2 = LAL_PI / 2.0;
-      }
-      else
-      {
-        InvTan2 = 3.0 * LAL_PI / 2.0 ;
-      }
-    }
-    else if ( Den2 > 0 )
-    {
-      InvTan2 = (REAL4) atan( Num2 / Den2 );
-    }
-    else
-    {
-      InvTan2 = LAL_PI + (REAL4) atan( Num2 / Den2 );
-    }
+    InvTan1 = (REAL4) atan2(Num1, Den1);
+    InvTan2 = (REAL4) atan2(Num2, Den2 );
 
 
     thisEvent->coa_phase = 0.5 * InvTan1 - 0.5 * InvTan2 ;
@@ -2038,7 +1954,7 @@ LALFindChirpBCVFilterSegment (
     thisEvent->alpha = - input->segment->b2 * tan(omega) /
       ( input->segment->a1 + input->segment->b1*tan(omega) );
     /* actually record alpha * fcut^(2/3) which must be b/t 0 and 1 */
-    /* thisEvent->alpha *= pow( (input->tmplt->fFinal), 2.0/3.0);   */
+    thisEvent->alpha *= pow( (input->tmplt->fFinal), 2.0/3.0);   
 
 
     /* copy the template into the event */
