@@ -82,7 +82,6 @@ static INT8 PlaygroundOverlap( INT8 seg_end, INT8 seg_length )
   /* if no overlap with playground, return zero */
   if ( end_mod_play >= play_length + seg_length )
   {
-    fprintf( stdout, "return 0LL\n" );
     return 0LL;
   }
   else
@@ -164,19 +163,13 @@ LALPlaygroundInSearchSummary (
   LALINT8toGPS( status->statusPtr, inPlayTime, &playNS );
   CHECKSTATUSPTR( status );
   
-  fprintf( stdout, "ssTable->out_start_time = %d, ssTable->out_end_time = %d\n",
-      ssTable->out_start_time.gpsSeconds, ssTable->out_end_time.gpsSeconds );
-  fflush( stdout );
-
   LALGPStoINT8( status->statusPtr, &startNS, &(ssTable->out_start_time) );
   CHECKSTATUSPTR( status );
   LALGPStoINT8( status->statusPtr, &endNS, &(ssTable->out_end_time) );
   CHECKSTATUSPTR( status );
   lengthNS = endNS - startNS;
 
-  fprintf( stdout, "lengthNS = %lld\nendNS = %lld\n", lengthNS, endNS );
   playNS = PlaygroundOverlap( endNS, lengthNS );
-  fprintf( stdout, "playNS = %lld\n", playNS );
   if ( playNS < 0 )
   {
     ABORT( status, LIGOMETADATAUTILSH_ETIME, LIGOMETADATAUTILSH_MSGETIME );
