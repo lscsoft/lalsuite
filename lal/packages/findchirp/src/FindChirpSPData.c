@@ -124,8 +124,6 @@ LALFindChirpSPData (
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   /* check that the parameter values are reasonable */
-  ASSERT( params->deltaT > 0, status,
-      FINDCHIRPSPH_EDELT, FINDCHIRPSPH_MSGEDELT );
   ASSERT( params->fLow >= 0, status,
       FINDCHIRPSPH_EFLOW, FINDCHIRPSPH_MSGEFLOW );
   ASSERT( params->dynRange > 0, status,

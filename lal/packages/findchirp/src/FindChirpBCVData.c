@@ -162,8 +162,6 @@ LALFindChirpBCVData (
       FINDCHIRPBCVH_ENULL, FINDCHIRPBCVH_MSGENULL );
 
   /* check that the parameter values are reasonable */
-  ASSERT( params->deltaT > 0, status,
-      FINDCHIRPBCVH_EDELT, FINDCHIRPBCVH_MSGEDELT );
   ASSERT( params->fLow >= 0, status,
       FINDCHIRPBCVH_EFLOW, FINDCHIRPBCVH_MSGEFLOW );
   ASSERT( params->dynRange > 0, status,

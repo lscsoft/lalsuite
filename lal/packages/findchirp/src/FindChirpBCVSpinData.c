@@ -90,7 +90,6 @@ LALFindChirpBCVSpinData (
   UINT4                 numChisqBins;
 
   REAL8                 *ampBCVSpin2;
-  REAL4                 deltaT;
 
   FindChirpSegment     *fcSeg;
   DataSegment          *dataSeg;
@@ -159,8 +158,6 @@ LALFindChirpBCVSpinData (
       FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
 
   /* check that the parameter values are reasonable */
-  ASSERT( params->deltaT > 0, status,
-      FINDCHIRPBCVSPINH_EDELT, FINDCHIRPBCVSPINH_MSGEDELT );
   ASSERT( params->fLow >= 0, status,
       FINDCHIRPBCVSPINH_EFLOW, FINDCHIRPBCVSPINH_MSGEFLOW );
   ASSERT( params->dynRange > 0, status,
@@ -195,7 +192,6 @@ LALFindChirpBCVSpinData (
   tmpltPower    = params->tmpltPowerVec->data;
   tmpltPowerBCV = params->tmpltPowerVecBCV->data;
   ampBCVSpin2   = params->ampVecBCVSpin2->data;
-  deltaT        = params->deltaT;
 
   /*
    *

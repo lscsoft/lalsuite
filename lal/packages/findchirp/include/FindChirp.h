@@ -259,7 +259,6 @@ tagFindChirpDataParams
   COMPLEX8Vector               *wtildeVec;
   REAL4Vector                  *tmpltPowerVec;
   REAL4Vector                  *tmpltPowerVecBCV;
-  REAL4                         deltaT;
   REAL4                         fLow;
   REAL4                         dynRange;
   UINT4                         invSpecTrunc;
@@ -323,11 +322,6 @@ contains the quantity
 \mathtt{tmpltPowerBCV[k]} = \frac{f^{-1}}{\ospsd}
 \end{equation}
 
-
-\item[\texttt{REAL4 deltaT}] {\color{red} FIXME} The sampling interval 
-$\Delta t$. Should be a \texttt{REAL8} or derived from the input time series
-\texttt{chan}.
-
 \item[\texttt{REAL4 fLow}] The low frequency cutoff for the algorithm. All
 data is zero below this frequency.
 
@@ -348,7 +342,7 @@ truncation is performed.
 typedef struct
 tagFindChirpTmpltParams
 {
-  REAL4                         deltaT;
+  REAL8                         deltaT;
   REAL4                         fLow;
   REAL4                         dynRange;
   REAL4Vector                  *xfacVec;
@@ -371,8 +365,7 @@ It should be initialized by \texttt{FindChirpTmpltInit()} and destroyed by
 \texttt{FindChirpTmpltFinalize()}. The fields are:
 
 \begin{description}
-\item[\texttt{REAL4 *deltaT}] {\color{red} FIXME} The sampling interval 
-$\Delta t$. Should be a \texttt{REAL8}.
+\item[\texttt{REAL8 deltaT}] The sampling interval $\Delta t$.
 
 \item[\texttt{REAL4 fLow}] The low frequency cutoff for the algorithm. All
 data is zero below this frequency.
@@ -395,7 +388,7 @@ domain quantity $k^{-7/6}$.
 typedef struct
 tagFindChirpFilterParams
 {
-  REAL4                         deltaT;
+  REAL8                         deltaT;
   REAL4                         rhosqThresh;
   REAL4                         chisqThresh;
   REAL4                         norm;
@@ -431,8 +424,8 @@ FindChirpFilterParams;
 \texttt{FindChirpFilterSegment()} function.
 
 \begin{description}
-\item[\texttt{REAL4 deltaT}] The timestep for the sampled data. Must be
-set on entry.  {FIXME: This should be a \texttt{REAL8}}
+\item[\texttt{REAL8 deltaT}] The timestep for the sampled data. Must be
+set on entry.
 
 \item[\texttt{REAL4 rhosqThresh}] The value to threshold signal to noise
 ratio square, $\rho^2$, on. If the signal to noise exceeds this value, then a
