@@ -335,8 +335,10 @@ LALFindChirpChisqVeto (
       FINDCHIRPCHISQH_ECHIZ, FINDCHIRPCHISQH_MSGECHIZ );
 
   /* check that the bank match has been set */
-  ASSERT( params->bankMatch > 0 && params->bankMatch <= 1, status, 
-      FINDCHIRPCHISQH_EMTCH, FINDCHIRPCHISQH_MSGEMTCH );
+  if ( params->bankMatch < 0 || params->bankMatch > 1 )
+  {
+    ABORT( status, FINDCHIRPCHISQH_EMTCH, FINDCHIRPCHISQH_MSGEMTCH );
+  }
 
 
   /*
