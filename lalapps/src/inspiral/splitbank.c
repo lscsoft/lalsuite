@@ -204,7 +204,7 @@ int main ( int argc, char *argv[] )
         LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
             "--%s", long_options[option_index].name );
         LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "int" );
-        LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, "%s", 
+        LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, "%d", 
             numOutBanks );
         break;
 
