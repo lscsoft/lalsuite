@@ -2596,13 +2596,14 @@ int main(int argc, char *argv[]){
   if (signal(SIGILL, sighandler)==SIG_IGN)
     signal(SIGILL, SIG_IGN);
 
-  /* boinc_init() needs to be run before any boinc_api functions are used */
 #if 0
   boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED | BOINC_DIAG_REDIRECTSTDERR | BOINC_DIAG_TRACETOSTDERR);
 #endif
-  boinc_init();
-
+  
 #if NO_BOINC_GRAPHICS
+  /* boinc_init() or boinc_init_graphics() needs to be run before any
+     boinc_api functions are used */
+  boinc_init();
   worker();
 #else
   { 
@@ -2613,7 +2614,7 @@ int main(int argc, char *argv[]){
     boinc_finish(1234+retval);
   }
 #endif
-
+  
   /* we never get here!! */
   return 222;
 }
