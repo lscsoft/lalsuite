@@ -198,6 +198,7 @@ LALModFreqSeriesToTFPlane (
   INT4               nf;
   INT4               ntotal;
   INT4               offset;
+  UINT4              windowShift;
 
   INT4               flow1;
   INT4               fseglength;
@@ -241,7 +242,7 @@ LALModFreqSeriesToTFPlane (
   nf = tfp->params->freqBins;   
   ASSERT(nf > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
   
-
+  windowShift = input->windowShift;
   /* check a couple more input parameters */
   ASSERT(freqSeries->deltaF>0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);  
   ASSERT(tfp->params->deltaT>0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);  
@@ -404,7 +405,7 @@ LALModFreqSeriesToTFPlane (
     /* Copy the result into appropriate spot in output structure */
     for(j=0; j< nt; j++)
     {
-      tfp->data[j*nf+i].re = snr->data[(j+1)*filterlen] / norm;
+      tfp->data[j*nf+i].re = snr->data[windowShift+(j*filterlen)] / norm;
       tfp->data[j*nf+i].im = 0.0;
     }
   }
@@ -454,6 +455,7 @@ LALModModFreqSeriesToTFPlane (
   INT4               nf;
   INT4               ntotal;
   INT4               offset;
+  UINT4              windowShift;
 
   INT4               flow1;
   INT4               fseglength;
@@ -500,7 +502,7 @@ LALModModFreqSeriesToTFPlane (
   nf = tfp->params->freqBins;   
   ASSERT(nf > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
   
-
+  windowShift = input->windowShift;
   /* check a couple more input parameters */
   ASSERT(freqSeries->deltaF>0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);  
   ASSERT(tfp->params->deltaT>0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);  
@@ -704,7 +706,7 @@ LALModModFreqSeriesToTFPlane (
     /* Copy the result into appropriate spot in output structure */    
     for(j=0; j< nt; j++)
       {
-	tfp->data[j*nf+i].re = snr->data[(j*(INT4)(delT/dt))+8192] / norm;
+	tfp->data[j*nf+i].re = snr->data[(j*(INT4)(delT/dt))+windowShift] / norm;
 	tfp->data[j*nf+i].im = 0.0;
       }
   }

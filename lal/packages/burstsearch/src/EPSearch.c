@@ -55,6 +55,26 @@ static void WeighTFTileList(TFTiling *tfTiling, INT4 maxDOF)
 }
 
 
+static INT4 ModDegreesOfFreedom(TFTile *tile)
+{
+	return(2 * (tile->tend - tile->tstart)*tile->deltaT * (tile->fend - tile->fstart)*tile->deltaF);
+}
+
+static void ModWeighTFTileList(TFTiling *tfTiling, INT4 maxDOF)
+{
+	TFTile *tile;
+	INT4 *weight = LALCalloc(2 * maxDOF, sizeof(*weight));
+
+	for(tile = tfTiling->firstTile; tile; tile = tile->nextTile)
+		weight[ModDegreesOfFreedom(tile)]++;
+
+	for(tile = tfTiling->firstTile; tile; tile = tile->nextTile)
+		tile->weight = weight[ModDegreesOfFreedom(tile)];
+
+	LALFree(weight);
+}
+
+
 /*
  * Compute the average spectrum for the given time series
  */
@@ -141,12 +161,66 @@ static SnglBurstTable *TFTileToBurstEvent(
 }
 
 
+static SnglBurstTable *ModTFTileToBurstEvent(
+	TFTile *tile,
+	LIGOTimeGPS *epoch,
+	EPSearchParams *params  
+)
+{
+	SnglBurstTable *event = LALMalloc(sizeof(*event));
+	if(!event)
+		return(NULL);
+
+	event->next = NULL;
+	strncpy(event->ifo, params->channelName, 2);
+	event->ifo[2] = '\0';
+	strncpy(event->search, "power", LIGOMETA_SEARCH_MAX);
+	strncpy(event->channel, params->channelName, LIGOMETA_CHANNEL_MAX);
+
+	event->start_time = *epoch;
+	XLALAddFloatToGPS(&event->start_time, (0.5 + (tile->tstart * tile->deltaT)));
+	event->duration = (tile->tend - tile->tstart ) * tile->deltaT;
+	event->peak_time = event->start_time;
+	XLALAddFloatToGPS(&event->peak_time, 0.5 * event->duration);
+	event->bandwidth = (tile->fend - tile->fstart ) * tile->deltaF;
+	event->central_freq = params->tfTilingInput.flow + tile->fstart*tile->deltaF + (0.5 * event->bandwidth);
+	event->amplitude = tile->excessPower;
+	event->snr = tile->excessPower;
+
+	if(tile->alpha < 0)
+		event->confidence =  LAL_REAL4_MAX;
+	else if(tile->alpha == 0)
+		event->confidence = -LAL_REAL4_MAX;
+	else
+		event->confidence =  log(tile->alpha);
+
+	event->event_id = NULL;
+
+	return(event);
+}
+
+
 static SnglBurstTable **TFTilesToSnglBurstTable(TFTile *tile, SnglBurstTable **addpoint, LIGOTimeGPS *epoch, EPSearchParams *params)
 {
 	INT4 count;
 
 	for(count = 0; tile && (tile->alpha <= params->alphaThreshold/tile->weight) && (count < params->eventLimit); tile = tile->nextTile, count++) {
 		*addpoint = TFTileToBurstEvent(tile, epoch, params); 
+
+		if(*addpoint)
+			addpoint = &(*addpoint)->next;
+	}
+
+	return(addpoint);
+}
+
+
+static SnglBurstTable **ModTFTilesToSnglBurstTable(TFTile *tile, SnglBurstTable **addpoint, LIGOTimeGPS *epoch, EPSearchParams *params)
+{
+	INT4 count;
+
+	for(count = 0; tile && (tile->alpha <= params->alphaThreshold/tile->weight) && (count < params->eventLimit); tile = tile->nextTile, count++) {
+		*addpoint = ModTFTileToBurstEvent(tile, epoch, params); 
 
 		if(*addpoint)
 			addpoint = &(*addpoint)->next;
@@ -289,11 +363,19 @@ EPSearch(
 
 		LALInfo(status->statusPtr, "Computing the DFT");
 		CHECKSTATUSPTR(status);
+
 		LALCutREAL4TimeSeries(status->statusPtr, &cutTimeSeries, tseries,  start_sample, params->windowLength);
 		CHECKSTATUSPTR(status);
+
 		LALComputeFrequencySeries(status->statusPtr, fseries, cutTimeSeries, dftparams);
 		CHECKSTATUSPTR(status);
-		
+
+		/* calculate the duration for which tiles are to be created
+		 * in the Single TFPlane
+		 */ 
+		if (params->tfPlaneMethod == useSingleTFPlane)
+		  params->tfPlaneParams.timeDuration = (params->windowLength - 2*params->windowShift)*cutTimeSeries->deltaT;
+
 		LALDestroyREAL4TimeSeries(status->statusPtr, cutTimeSeries);
 		CHECKSTATUSPTR(status);
 		
@@ -309,22 +391,15 @@ EPSearch(
 		/*
 		 * Create time-frequency tiling of plane.
 		 */
-		
-		/****************************************************
-                 * This needs to be fixed so that it is not hard coded.
-                 * Used in the new TF plane: Saikat
-                 ****************************************************/
-		params->tfPlaneParams.timeDuration = 1;
-		/****************************************************/
 
 		if(!tfTiling) {
 			/* the factor of 2 here is to account for the
 			 * overlapping */
 			params->tfTilingInput.deltaF = 2.0 * fseries->deltaF;
-			LALCreateTFTiling(status->statusPtr, &tfTiling, &params->tfTilingInput);
-
-			/*To be used for the new TF plane */
-			/*LALModCreateTFTiling(status->statusPtr, &tfTiling, &params->tfTilingInput, &params->tfPlaneParams);*/
+			if (params->tfPlaneMethod == useMultipleTFPlane)
+			  LALCreateTFTiling(status->statusPtr, &tfTiling, &params->tfTilingInput);
+			else
+			  LALModCreateTFTiling(status->statusPtr, &tfTiling, &params->tfTilingInput, &params->tfPlaneParams);
 			CHECKSTATUSPTR(status);
 		}
 
@@ -334,10 +409,10 @@ EPSearch(
 
 		LALInfo(status->statusPtr, "Computing the TFPlanes");
 		CHECKSTATUSPTR(status);
-		LALComputeTFPlanes(status->statusPtr, tfTiling, fseries);
-
-		/*For the new TF plane */
-		/*LALModComputeTFPlanes(status->statusPtr, tfTiling, fseries);*/
+		if (params->tfPlaneMethod == useMultipleTFPlane)
+		  LALComputeTFPlanes(status->statusPtr, tfTiling, fseries, params->windowShift);
+		else
+		  LALModComputeTFPlanes(status->statusPtr, tfTiling, fseries, params->windowShift);
 		CHECKSTATUSPTR(status);
 
                  /*
@@ -346,10 +421,10 @@ EPSearch(
 
 		LALInfo(status->statusPtr, "Computing the excess power");
 		CHECKSTATUSPTR(status);
-		LALComputeExcessPower (status->statusPtr, tfTiling, &params->compEPInput);
-
-		/*For the new TF plane */
-		/*LALModComputeExcessPower (status->statusPtr, tfTiling, &params->compEPInput);*/
+		if (params->tfPlaneMethod == useMultipleTFPlane)
+		  LALComputeExcessPower (status->statusPtr, tfTiling, &params->compEPInput);
+		else
+		  LALModComputeExcessPower (status->statusPtr, tfTiling, &params->compEPInput);
 		CHECKSTATUSPTR(status);
 	  
 		/*
@@ -372,14 +447,18 @@ EPSearch(
 		/*
 		 * Determine the weighting for each tile.
 		 */
-
-		WeighTFTileList(tfTiling, 10000);
+		if (params->tfPlaneMethod == useMultipleTFPlane)
+		  WeighTFTileList(tfTiling, 10000);
+		else 
+		  ModWeighTFTileList(tfTiling, 10000);
 
 		/*
 		 * Convert the TFTiles into sngl_burst events for output.
 		 */
-
-		EventAddPoint = TFTilesToSnglBurstTable(tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
+		if (params->tfPlaneMethod == useMultipleTFPlane)
+		  EventAddPoint = TFTilesToSnglBurstTable(tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
+		else
+		  EventAddPoint = ModTFTilesToSnglBurstTable(tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
 
 		/*
 		 * Reset the flags on the tftiles.

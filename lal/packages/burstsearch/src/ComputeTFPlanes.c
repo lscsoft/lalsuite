@@ -36,7 +36,8 @@ void
 LALComputeTFPlanes (
 		 LALStatus                             *status,
 		 TFTiling                           *tfTiling,
-		 COMPLEX8FrequencySeries            *freqSeries
+		 COMPLEX8FrequencySeries            *freqSeries,
+		 UINT4                              windowShift
 		 )
 /******** </lalVerbatim> ********/
 {
@@ -74,6 +75,7 @@ LALComputeTFPlanes (
       /* setup input structure for computing TF transform */
       transformparams.startT=0;  /* not used for horizontal transforms */
       transformparams.dftParams=*thisDftParams;
+      transformparams.windowShift = windowShift;
 
       /* Compute TF transform */
       LALInfo(status->statusPtr, "Converting Frequency series to TFPlane");
@@ -98,7 +100,8 @@ void
 LALModComputeTFPlanes (
 		 LALStatus                             *status,
 		 TFTiling                           *tfTiling,
-		 COMPLEX8FrequencySeries            *freqSeries
+		 COMPLEX8FrequencySeries            *freqSeries,
+		 UINT4                              windowShift
 		 )
 /******** </lalVerbatim> ********/
 {
@@ -136,6 +139,7 @@ LALModComputeTFPlanes (
       /* setup input structure for computing TF transform */
       transformparams.startT=0;  /* not used for horizontal transforms */
       transformparams.dftParams=*thisDftParams;
+      transformparams.windowShift = windowShift;
       /* Compute TF transform */
       LALInfo(status->statusPtr, "Converting Frequency series to TFPlane");
       CHECKSTATUSPTR (status);

@@ -217,6 +217,7 @@ static void print_usage(char *program)
 "	 --resample-filter <filter type>\n" \
 "	[--seed <seed>]\n" \
 "	 --target-sample-rate <Hz>\n" \
+"	 --tfplane-method <method> \n" \	
 "	 --tile-overlap-factor <factor>\n" \
 "	 --threshold <threshold>\n" \
 "	[--user-tag <comment>]\n" \
@@ -456,6 +457,7 @@ void parse_command_line(
 		{"resample-filter",     required_argument, NULL,           'b'},
 		{"seed",                required_argument, NULL,           'c'},
 		{"target-sample-rate",  required_argument, NULL,           'e'},
+		{"tfplane-method",      required_argument, NULL,           'n'},
 		{"tile-overlap-factor", required_argument, NULL,           'f'},
 		{"threshold",           required_argument, NULL,           'g'},
 		{"user-tag",            required_argument, NULL,           'h'},
@@ -872,6 +874,20 @@ void parse_command_line(
 		}
 		ADD_PROCESS_PARAM("float");
 		break;
+
+		case 'n':
+		if(!strcmp(optarg, "useSingleTFPlane"))
+			params->tfPlaneMethod = useSingleTFPlane;
+		else if(!strcmp(optarg, "useMultipleTFPlane"))
+			params->tfPlaneMethod = useMultipleTFPlane;
+		else {
+			sprintf(msg, "must be \"useSingleTFPlane\" or \"useMultipleTFPlane\"");
+			print_bad_argument(argv[0], long_options[option_index].name, msg);
+			args_are_bad = TRUE;
+		}
+		ADD_PROCESS_PARAM("string");
+		break;
+
 
 		/* option sets a flag */
 		case 0:
