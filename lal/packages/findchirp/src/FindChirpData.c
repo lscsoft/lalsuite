@@ -82,6 +82,8 @@ LALFindChirpDataInit (
     case TaylorT3:
     case TaylorF2:
     case GeneratePPN:
+    case PadeT1:
+    case EOB:
     case FindChirpSP:
     case BCV:
     case BCVSpin:

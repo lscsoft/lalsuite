@@ -258,6 +258,8 @@ LALFindChirpChisqVeto (
     case TaylorT3:
     case TaylorF2:
     case GeneratePPN:
+    case PadeT1:
+    case EOB:
     case FindChirpSP:
       break;
     default:

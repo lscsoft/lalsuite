@@ -141,6 +141,14 @@ LALFindChirpTDTemplate (
       LALInfo( status, "Generating template using GeneratePPN" );
       break;
 
+    case PadeT1:
+      LALInfo( status, "Generating template using PadeT1" );
+      break;
+
+    case EOB:
+      LALInfo( status, "Generating template using EOB" );
+      break;
+
     default:
       ABORT( status, FINDCHIRPTDH_EMAPX, FINDCHIRPTDH_MSGEMAPX );
       break;
@@ -361,6 +369,8 @@ LALFindChirpTDNormalize(
     case TaylorT2:
     case TaylorT3:
     case GeneratePPN:
+    case PadeT1:
+    case EOB:
       break;
     default:
       ABORT( status, FINDCHIRPTDH_EMAPX, FINDCHIRPTDH_MSGEMAPX );
