@@ -79,7 +79,6 @@ static void print_usage(char *program)
       "  [--check-times]               Check that all times were analyzed\n"\
       "   --input-ifo      input_ifo   the name of the input IFO triggers\n"\
       "   --output-ifo     output_ifo  the name of the IFO for which to create the bank\n"\
-      "   --ifo-tag        ifotag      write the ifotag in the output file name\n"\
       "   --parameter-test test        set parameters with which to test coincidence:\n"\
       "                                (m1_and_m2|psi0_and_psi3)\n"\
       "  --data-type DATA_TYPE         specify the data type, must be one of\n"\
