@@ -121,11 +121,15 @@ int main(int argc, char *argv[]){
   CHAR tempstr1[256], tempstr2[256]; 
 
   /* set defaults */
-  harmonicfname = HARMONICFILE; 
+  harmonicfname = (CHAR *)LALMalloc(256 * sizeof(CHAR));
+  strcpy(harmonicfname,HARMONICFILE); 
   fStart = STARTFREQ;
   fBand = BANDFREQ;  
-  inputSFTDir = INPUTSFTDIR;
-  outputSFTDir = OUTPUTSFTDIR;
+  inputSFTDir = (CHAR *)LALMalloc(256 * sizeof(CHAR));
+  strcpy(inputSFTDir, INPUTSFTDIR);
+
+  outputSFTDir = (CHAR *)LALMalloc(256 * sizeof(CHAR));
+  strcpy(outputSFTDir, OUTPUTSFTDIR);
   window = WINDOWSIZE;
 
   /********************************************************/  
@@ -253,7 +257,7 @@ int main(int argc, char *argv[]){
 { 
     CHAR     command[256];
     glob_t   globbuf;
-    INT4    j;
+    INT4    jj;
      
     strcpy(command, inputSFTDir);
     strcat(command, "/*SFT*.*");
@@ -276,8 +280,8 @@ int main(int argc, char *argv[]){
        globbuf.gl_pathv[fileno]   that one can copy into whatever as:
        strcpy(filelist[fileno],globbuf.gl_pathv[fileno]);  */
     
-    for (j=0; j < mObsCoh; j++){
-      strcpy(filelist[j],globbuf.gl_pathv[j]);
+    for (jj=0; jj < mObsCoh; jj++){
+      strcpy(filelist[jj],globbuf.gl_pathv[jj]);
     }
     globfree(&globbuf);	
   }
@@ -321,6 +325,10 @@ int main(int argc, char *argv[]){
       LALFree(harmonics.leftWing);
       LALFree(harmonics.rightWing);
     }
+
+  LALFree(harmonicfname);
+  LALFree(inputSFTDir);
+  LALFree(outputSFTDir);
 
   LALCheckMemoryLeaks(); 
 
