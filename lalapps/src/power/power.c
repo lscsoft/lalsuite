@@ -1,4 +1,13 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <getopt.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <regex.h>
+#include <time.h>
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
@@ -12,9 +21,16 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/PrintFTSeries.h>
+#include <lal/ResampleTimeSeries.h>
 #include <lal/Random.h>
+#include <lal/Date.h>
+#include <lal/Units.h>
 #include <lal/IIRFilter.h>
+#include <lal/TimeFreqFFT.h>
 #include <lalapps.h>
+#include <processtable.h>
+
+#define PROGRAM_NAME "power"
 
 typedef struct
 {
@@ -24,6 +40,10 @@ typedef struct
 
 NRCSID( POWERC, "power $Id$");
 RCSID( "power $Id$");
+
+#define CVS_REVISION "$Revision$"
+#define CVS_SOURCE "$Source$"
+#define CVS_DATE "$Date$"
 
 #include <config.h>
 #ifndef HAVE_LIBLALFRAME
@@ -36,21 +56,23 @@ int main( void )
 
 #define POWERC_NARGS 19 
 
-#define POWERC_ENORM  0
-#define POWERC_ESUB   1
-#define POWERC_EARG   2
-#define POWERC_EVAL   3
-#define POWERC_EFILE  4
-#define POWERC_EINPUT 5
-#define POWERC_EMEM   6
+#define POWERC_ENORM    0
+#define POWERC_ESUB     1
+#define POWERC_EARG     2
+#define POWERC_EVAL     3
+#define POWERC_EFILE    4
+#define POWERC_EINPUT   5
+#define POWERC_EMEM     6
+#define POWERC_ENOEPOCH 7
 
-#define POWERC_MSGENORM  "Normal exit"
-#define POWERC_MSGESUB   "Subroutine failed"
-#define POWERC_MSGEARG   "Error parsing arguments"
-#define POWERC_MSGEVAL   "Input argument out of valid range"
-#define POWERC_MSGEFILE  "Could not open file"
-#define POWERC_MSGEINPUT "Error reading file"
-#define POWERC_MSGEMEM   "Out of memory"
+#define POWERC_MSGENORM         "Normal exit"
+#define POWERC_MSGESUB          "Subroutine failed"
+#define POWERC_MSGEARG          "Error parsing arguments"
+#define POWERC_MSGEVAL          "Input argument out of valid range"
+#define POWERC_MSGEFILE         "Could not open file"
+#define POWERC_MSGEINPUT        "Error reading file"
+#define POWERC_MSGEMEM          "Out of memory"
+#define POWERC_MSGENOEPOCH      "Epoch must be provided"
 
 #define POWERC_ARGVNPTS     "--npts"
 #define POWERC_ARGNPTS      1
@@ -98,35 +120,17 @@ int main( void )
     --olapfctr olapfactor --minfbin nfbin --mintbin ntbin --flow flow \
     --delf df --lngth bandwidth --nsigma sigma --alphdef alpha \
     --segdcle nsegs --threshold threshold --etomstr nevents \
-    --framedir framedir --channel channel --simtype simtype \
+    --framedir framedir --channel channel --simtype simtype --srate srate\
     --spectype spectype --window window --epoch sec nsec --numpts npts \
-    [--outfile filename] [--framecache filename] [--printSpectrum] [--help]\n"
+    [--comment comment] [--framecache filename] [--printSpectrum] \
+    [--verbose] [--dbglevel lalDebugLevel] [--help]\n"
 
 #define RESPONSE_REGEX "CAL-RESPONSE"
 #define CAV_GAIN_REGEX "CAL-CAV_GAIN"
 #define CAV_FAC_REGEX "CAL-CAV_FAC"
 #define OLOOP_FAC_REGEX "CAL-OLOOP_FAC"
 
-/******** <lalVerbatim file="TFTilesToBurstEventsCP"> ********/
-void
-LALPrintBurstEvent (
-               FILE             *fpout,
-               SnglBurstTable   *burstEvent
-               )
-/******** </lalVerbatim> ********/
-{
-    fprintf(fpout,"%i %09i %f %f %f %f %f %e\n",
-            burstEvent->start_time.gpsSeconds,
-            burstEvent->start_time.gpsNanoSeconds,
-            burstEvent->duration,
-            burstEvent->central_freq,
-            burstEvent->bandwidth,
-            burstEvent->amplitude,
-            burstEvent->snr,
-            burstEvent->confidence
-           );
-    fflush(fpout);
-}
+#define OLDWAY 0
 
 /* Fill an array with white noise */
 static void makeWhiteNoise(
@@ -163,57 +167,88 @@ static void makeWhiteNoise(
     RETURN (status);
 }
 
+/* declare the parsing function which is at the end of the file */
+int initializeEPSearch( int argc, char *argv[], void **searchParams,
+        MetadataTable  procparams );
+
+
+/* some global output flags */
+INT4               verbose       = FALSE;
+INT4               printSpectrum = FALSE;
+INT4               printData     = FALSE;
+INT4               whiteNoise    = FALSE;   /* insertion of Gaussian white noise */
+
+/* global variables */
+FrChanIn   channelIn;               /* channnel information               */
+CHAR       site[2];                 /* one character site                 */
+CHAR       ifo[3];                  /* two character interferometer       */
+CHAR       comment[LIGOMETA_COMMENT_MAX]; /* string in output file name   */
+CHAR      *cachefile     = NULL;    /* name of file with frame cache info */
+CHAR      *dirname       = NULL;    /* name of directory with frames      */
+REAL4      noiseAmpl     = 1.0;     /* gain factor for white noise        */
+INT4       seed          = 1;       /* set non-zero to generate noise     */
+INT4       numPoints     = 4096;    /* number of samples from frames      */
+INT8       gpsStartTimeNS = 0;      /* gps start time in nsec             */
+LIGOTimeGPS   epoch;                /* gps start time                     */
+INT4       sampleRate    = 2048;    /* sample rate in Hz                  */
 
 
 
 int main( int argc, char *argv[])
 {
     static LALStatus      stat;
+    LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
+
     INT4                  inarg         = 1;
     void                 *searchParams  = NULL;
     LALInitSearchParams   initSearchParams;
     EPSearchParams       *params        = NULL;
     FrStream             *stream        = NULL;
     FrCache              *frameCache    = NULL;
-    FrChanIn              channelIn;
-    INT4                  numPoints     = 4096;
-    CHAR                 *dirname       = NULL;
-    CHAR                 *cachefile     = NULL;
-    CHAR                 *outputfile    = "tmp.out";
+    CHAR                  fname[256];
     REAL4TimeSeries       series;
-    LIGOTimeGPS           epoch;
     BOOLEAN               epochSet      = FALSE;
-    BOOLEAN               printSpectrum = FALSE;
-    SnglBurstTable       *burstEvent    = NULL;
-    LIGOLwXMLStream     xmlStream;
-    MetadataTable        myTable;
 
+    /* Burst events */
+    SnglBurstTable      *burstEvent    = NULL;
+    SnglBurstTable      *nextEvent     = NULL;
+    MetadataTable        myTable;
+    MetadataTable        procTable;
+    MetadataTable        procparams;
+    MetadataTable        searchsumm;
+    ProcessParamsTable   *this_proc_param;
+    LIGOLwXMLStream      xmlStream;
+
+   
     /* new application instance variables added 7/17/02 MSW */
-    BOOLEAN               whiteNoise    = FALSE;   /* insertion of Gaussian white noise */
-    BOOLEAN               sineBurst     = FALSE;   /* insertion of shaped sine burst */
+    BOOLEAN               sineBurst     = FALSE;   /* insertion of shaped sine burst  */
     REAL4                 sineFreq      = 100.0;   /* nominal frequency of sine burst */
     REAL4                 sineOffset    = 1.0;     /* sin-burst center in time series */
-    REAL4                 sineAmpl      = 1.0;     /* peak amplitude of sine burst */
+    REAL4                 sineAmpl      = 1.0;     /* peak amplitude of sine burst    */
     REAL4                 sineWidth     = 1.0;     /* width (in sigmas) of sine burst */
-    INT4                  index         = 0;       /* global loop index */
-    BOOLEAN               applyFilter   = FALSE;   /* enable IIR filter */
-    REAL4                 noiseAmpl     = 1.0;     /* gain factor for white noise */
-    INT4                  seed = 1;  /* TODO set non-zero for debugging 6/11/02 MSW */
-    FILE                 *fpout         = NULL;    /* output file */
 
-    initSearchParams.argv = (CHAR **) LALMalloc( (size_t)(POWERC_NARGS * sizeof(CHAR*)) );
+    
+    /* Must allocate memory for the argv in dso code */
+    initSearchParams.argv = (CHAR **) LALMalloc( (size_t)(POWERC_NARGS * 
+                sizeof(CHAR*)) );
+    
+    /* Which error handler to use */
+    lal_errhandler = LAL_ERR_EXIT;
+    set_debug_level( "3" );
 
+#if OLDWAY
     /*******************************************************************
-    * PARSE ARGUMENTS (inarg stores the current position)               *
+    * BEGIN PARSE ARGUMENTS (inarg stores the current position)        *
     *******************************************************************/
 
     if (argc <= 1){
-        LALPrintError( USAGE, *argv );
+        fprintf(stderr,  USAGE, *argv );
         return 0;
     }
     
     initSearchParams.argc = 1;
     initSearchParams.argv[0] = "-filterparams";
+    memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
     while ( inarg < argc ) {
         /* Parse output file option. */
@@ -223,12 +258,12 @@ int main( int argc, char *argv[])
                 initSearchParams.argv[POWERC_ARGNPTS] = argv[inarg++];
                 initSearchParams.argc++;
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
         else if ( !strcmp( argv[inarg], POWERC_ARGVHELP ) ) {
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
         }
         else if ( !strcmp( argv[inarg], POWERC_ARGVNSEG ) ) {
@@ -237,7 +272,7 @@ int main( int argc, char *argv[])
                 initSearchParams.argv[POWERC_ARGNSEG] = argv[inarg++];
                 initSearchParams.argc++;
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
@@ -247,7 +282,7 @@ int main( int argc, char *argv[])
                 initSearchParams.argv[POWERC_ARGOLAP] = argv[inarg++];
                 initSearchParams.argc++;
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
@@ -257,7 +292,7 @@ int main( int argc, char *argv[])
                 initSearchParams.argv[POWERC_ARGOLAPFCTR] = argv[inarg++];
                 initSearchParams.argc++;
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
@@ -267,7 +302,7 @@ int main( int argc, char *argv[])
                 initSearchParams.argv[POWERC_ARGMINFBIN] = argv[inarg++];
                 initSearchParams.argc++;
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
@@ -277,7 +312,7 @@ int main( int argc, char *argv[])
                 initSearchParams.argv[POWERC_ARGMINTBIN] = argv[inarg++];
                 initSearchParams.argc++;
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
@@ -287,7 +322,7 @@ int main( int argc, char *argv[])
                 initSearchParams.argv[POWERC_ARGFLOW] = argv[inarg++];
                 initSearchParams.argc++;
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
@@ -297,7 +332,7 @@ int main( int argc, char *argv[])
                 initSearchParams.argv[POWERC_ARGDELF] = argv[inarg++];
                 initSearchParams.argc++;
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
@@ -307,7 +342,7 @@ int main( int argc, char *argv[])
                 initSearchParams.argv[POWERC_ARGLNGTH] = argv[inarg++];
                 initSearchParams.argc++;
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
@@ -317,7 +352,7 @@ int main( int argc, char *argv[])
                 initSearchParams.argv[POWERC_ARGNSIGMA] = argv[inarg++];
                 initSearchParams.argc++;
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
@@ -327,7 +362,7 @@ int main( int argc, char *argv[])
                 initSearchParams.argv[POWERC_ARGALPHDEF] = argv[inarg++];
                 initSearchParams.argc++;
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
@@ -337,7 +372,7 @@ int main( int argc, char *argv[])
                 initSearchParams.argv[POWERC_ARGSEGDCLE] = argv[inarg++];
                 initSearchParams.argc++;
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
@@ -347,7 +382,7 @@ int main( int argc, char *argv[])
                 initSearchParams.argv[POWERC_ARGALPHTH] = argv[inarg++];
                 initSearchParams.argc++;
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
@@ -357,7 +392,7 @@ int main( int argc, char *argv[])
                 initSearchParams.argv[POWERC_ARGE2MSTR] = argv[inarg++];
                 initSearchParams.argc++;
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
@@ -368,8 +403,15 @@ int main( int argc, char *argv[])
                 initSearchParams.argc++;
                 channelIn.name = initSearchParams.argv[POWERC_ARGCHANNEL];
                 channelIn.type = ADCDataChannel;
+
+                /* copy the first character to site and the first two to ifo */
+                memset( site, 0, sizeof(site) );
+                memset( ifo, 0, sizeof(ifo) );
+                memcpy( site, channelIn.name, sizeof(site) - 1 );
+                memcpy( ifo, channelIn.name, sizeof(ifo) - 1 );
+
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
@@ -379,7 +421,7 @@ int main( int argc, char *argv[])
                 initSearchParams.argv[POWERC_ARGSPECTYPE] = argv[inarg++];
                 initSearchParams.argc++;
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
@@ -389,7 +431,7 @@ int main( int argc, char *argv[])
                 initSearchParams.argv[POWERC_ARGSIMTYPE] = argv[inarg++];
                 initSearchParams.argc++;
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
@@ -399,7 +441,7 @@ int main( int argc, char *argv[])
                 initSearchParams.argv[POWERC_ARGWINTYPE] = argv[inarg++];
                 initSearchParams.argc++;
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
@@ -410,20 +452,20 @@ int main( int argc, char *argv[])
                 epoch.gpsNanoSeconds = atoi( argv[inarg++] );
                 epochSet = TRUE;
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
-        else if ( !strcmp( argv[inarg], "--printSpectrum" ) ) {
+        else if ( !strcmp( argv[inarg], "--srate" ) ) {
             inarg++;
-            printSpectrum = TRUE;
+            sampleRate = atoi( argv[inarg++] );
         }
         else if ( !strcmp( argv[inarg], "--numpts" ) ) {
             if ( argc > inarg + 1 ) {
                 inarg++;
                 numPoints = atoi( argv[inarg++] );
             }else{
-                LALPrintError( USAGE, *argv );
+                fprintf(stderr,  USAGE, *argv );
                 return POWERC_EARG;
             }
         }
@@ -434,7 +476,7 @@ int main( int argc, char *argv[])
               inarg++;
               dirname = argv[inarg++];
           }else{
-              LALPrintError( USAGE, *argv );
+              fprintf(stderr,  USAGE, *argv );
               return POWERC_EARG;
           }
         }
@@ -445,18 +487,38 @@ int main( int argc, char *argv[])
               inarg++;
               cachefile = argv[inarg++];
           }else{
-              LALPrintError( USAGE, *argv );
+              fprintf(stderr,  USAGE, *argv );
               return POWERC_EARG;
           }
         }
-        else if ( !strcmp( argv[inarg], "--outfile" ) )
+        /* set the lalDebugLevel to something useful */
+        else if ( !strcmp( argv[inarg], "--dbglevel" ) ) {
+            inarg++;
+            set_debug_level( argv[inarg++] );
+        }
+        /* print out the spectrum */
+        else if ( !strcmp( argv[inarg], "--printSpectrum" ) ) {
+            inarg++;
+            printSpectrum = TRUE;
+        }
+        /* print out the time series */
+        else if ( !strcmp( argv[inarg], "--printData" ) ) {
+            inarg++;
+            printData = TRUE;
+        }
+        /* print out informational messages */
+        else if ( !strcmp( argv[inarg], "--verbose" ) ) {
+            inarg++;
+            verbose = TRUE;
+        }
+        else if ( !strcmp( argv[inarg], "--comment" ) )
         {
           /* enable loading frame data from disk using a cache file */
           if ( argc > inarg + 1 ) {
               inarg++;
-              outputfile = argv[inarg++];
+              snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", argv[inarg++]);
           }else{
-              LALPrintError( USAGE, *argv );
+              fprintf(stderr,  USAGE, *argv );
               return POWERC_EARG;
           }
         }
@@ -498,63 +560,85 @@ int main( int argc, char *argv[])
             }
           }
         }
-        else if ( !strcmp( argv[inarg], "--filter" ) )
-        {
-          /* enable IIR filter */
-          /* no numeric parameters are expected */
-          applyFilter = TRUE;
-          inarg++;
-        }
         /* Check for unrecognized options. */
         else if ( argv[inarg][0] == '-' ) {
-            LALPrintError( "Unrecognized options\n" );
+            fprintf(stderr,  "Unrecognized options\n" );
             return POWERC_EARG;
         }
         /* Default case for unknown arguments */
         else
         {
-          LALPrintError( "Unknown arguments\n" );
+          fprintf(stderr,  "Unknown arguments\n" );
           return POWERC_EARG;
         }
-    } /* End of argument parsing loop. */
+    }
+    /*******************************************************************
+    * END PARSE ARGUMENTS                                              *
+    *******************************************************************/
+#endif
 
+
+
+    
     /*******************************************************************
     * INITIALIZE EVERYTHING                                            *
     *******************************************************************/
 
-    /* Which error handler to use */
-    lal_errhandler = LAL_ERR_EXIT;
-    set_debug_level( "3" );
+    /* create the process and process params tables */
+    procTable.processTable = (ProcessTable *) 
+        LALCalloc( 1, sizeof(ProcessTable) );
+    LAL_CALL( LALGPSTimeNow ( &stat, &(procTable.processTable->start_time),
+                &accuracy ), &stat );
+    LAL_CALL( populate_process_table( &stat, procTable.processTable, 
+                PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &stat );
+    this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
+        LALCalloc( 1, sizeof(ProcessParamsTable) );
 
-    /* Make sure all pointers are NULL */
-    xmlStream.fp=NULL;
+#if (!OLDWAY)
+    /* parse arguments and fill procparams table */
+    initializeEPSearch( argc, argv, &searchParams, procparams);
+#endif
+
+    /* create the search summary table */
+    searchsumm.searchSummaryTable = (SearchSummaryTable *)
+        LALCalloc( 1, sizeof(SearchSummaryTable) );
+
+    /* fill the comment, if a user has specified one, or leave it blank */
+    if ( ! *comment )
+    {
+        snprintf( procTable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+    } else {
+        snprintf( procTable.processTable->comment, LIGOMETA_COMMENT_MAX,
+                "%s", comment );
+    }
 
     /* create and initialize the time series vector */
     series.data = NULL;
     LAL_CALL( LALCreateVector( &stat, &series.data, numPoints), &stat);
-    for (index = 0; index < numPoints; index++) {
-        series.data->data[index] = 0.0;
-    }  
-    
-    if ( epochSet )
+    memset( series.data->data, 0, series.data->length*sizeof(REAL4) );
+#if OLDWAY
+    if ( !epochSet )
     {
-      series.epoch.gpsSeconds     = epoch.gpsSeconds;
-      series.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
+        fprintf(stderr, POWERC_MSGENOEPOCH);
+        return POWERC_ENOEPOCH;
     }
+#endif
+    series.epoch.gpsSeconds     = epoch.gpsSeconds;
+    series.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
     strcpy(series.name, "Data");
-    series.deltaT = 4.8828e-4;
+    series.deltaT = 1.0/((REAL8) sampleRate);
     series.f0 = 0.0;
-    series.sampleUnits.powerOfTen = 0;
-    for (index = 0; index < LALNumUnits; index++)
-    {
-      series.sampleUnits.unitNumerator[index] = 0;
-      series.sampleUnits.unitDenominatorMinusOne[index] = 0;
-    }
-    
+    series.sampleUnits = lalADCCountUnit;
+   
+#if OLDWAY
     LAL_CALL( EPInitSearch( &stat, &searchParams, initSearchParams.argv, 
                 initSearchParams.argc), &stat);
+#endif
     params = (EPSearchParams *) searchParams;
     params->printSpectrum = printSpectrum;
+    
+
+
     
     /*******************************************************************
     * GET AND CONDITION THE DATA                                       *
@@ -578,11 +662,8 @@ int main( int argc, char *argv[])
          * right place in the fram files 
          */
         LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream), &stat);
-        if ( epochSet )
-        {
-            series.epoch.gpsSeconds     = epoch.gpsSeconds;
-            series.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
-        }
+        series.epoch.gpsSeconds     = epoch.gpsSeconds;
+        series.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
         LAL_CALL( LALFrSeek(&stat, &(series.epoch), stream), &stat);
 
         /* get the data */
@@ -617,79 +698,22 @@ int main( int argc, char *argv[])
       }
     }
     
-    /* apply IIR filter to input time series */
-    if (applyFilter)
-    {
-      /* IIR filter coefficients obtained from MatLab */
-      /* numerator coefficients are 'direct', denominator coefficients are 'recursive' */
-      /* NOTE: sign change required for all recursive coefficients from MatLab */
-      /* coefficients shown are for 4th order band reject at 1 kHz */
-#define FILTER_ORDER 4
-#define DEGRADE   0.125
-      REAL4 mydirectCoef[FILTER_ORDER + 1] =
-        {
-          0.6640677019464 + DEGRADE * -1.0,
-         -2.4578369166290 + DEGRADE *  2.9719655202650,
-          3.6023622225730 + DEGRADE * -3.4861344923810,
-         -2.4578369166290 + DEGRADE *  1.9437083129930,
-          0.6640677019464 + DEGRADE * -0.4443631340847
-        };
-      REAL4 myrecursCoef[FILTER_ORDER + 1] =
-        {
-         -1.0000000000000,       /* this coefficient must = -1 */
-          2.9719655202650,
-         -3.4861344923810,
-          1.9437083129930,
-         -0.4443631340847
-        };
-      REAL4 myhistory[FILTER_ORDER] =
-        {0.0, 0.0, 0.0, 0.0}; /* history length equals filter order */
-
-      /* allocate local data structures */
-      REAL4IIRFilter myfilter;
-      REAL4Vector mydirectVector;
-      REAL4Vector myrecursVector;
-      REAL4Vector myhistoryVector;
-
-      /* populate filter structs */
-      myfilter.name = "my_filter";
-      mydirectVector.length  = FILTER_ORDER + 1;  /* same as array sizes, above */
-      myrecursVector.length  = FILTER_ORDER + 1;
-      myhistoryVector.length = FILTER_ORDER;
-      mydirectVector.data    = mydirectCoef;
-      myrecursVector.data    = myrecursCoef;
-      myhistoryVector.data   = myhistory;
-      myfilter.deltaT        = series.deltaT;
-      myfilter.directCoef    = &mydirectVector;
-      myfilter.recursCoef    = &myrecursVector;
-      myfilter.history       = &myhistoryVector;
-
-      /* apply instant-by-instant filter to fill pipeline */
-      for (index = 0; index < numPoints; index++)
-        {LALSIIRFilter(series.data->data[index], &myfilter);}  /* discard filter output */
-
-      /* apply IIR in place to modify input vector */
-      LALIIRFilterREAL4Vector(&stat, series.data, &myfilter);
-    }
-    
     /* write diagnostic info to disk */
-    if ( printSpectrum ){
+    if ( printData ){
         LALPrintTimeSeries( &series, "./timeseries.dat" );
     }
 
     /* Finally call condition data */
     LAL_CALL( EPConditionData( &stat, &series, searchParams), &stat);
 
-    
     /*******************************************************************
     * DO THE SEARCH                                                    *
     *******************************************************************/
-    LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outputfile), &stat);
-    LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_burst_table), &stat);
     while ( params->currentSegment < params->initParams->numSegments )
     {
-        UINT4       tmpDutyCycle=0;
-        UINT4       dumCurrentSeg=params->currentSegment;
+        UINT4                tmpDutyCycle=0;
+        UINT4                dumCurrentSeg=params->currentSegment;
+        SnglBurstTable      *tmpEvent     = NULL;
 
         /* count the segments to analyze */
         for ( tmpDutyCycle=0 ; tmpDutyCycle < params->initParams->segDutyCycle && 
@@ -699,32 +723,98 @@ int main( int argc, char *argv[])
         }
                 
         /* tell operator how we are doing */
-        fprintf(stderr,"Analyzing segments %i -- %i\n", params->currentSegment,
-                params->currentSegment + tmpDutyCycle - 1);
+        if (verbose){
+            fprintf(stdout,"Analyzing segments %i -- %i\n", params->currentSegment,
+                    params->currentSegment + tmpDutyCycle - 1);
+        }
 
         /* This is the main engine of the excess power method */ 
-        LAL_CALL( EPSearch (&stat, params, &burstEvent, tmpDutyCycle), &stat);
+        LAL_CALL( EPSearch (&stat, params, &tmpEvent, tmpDutyCycle), &stat);
 
-        /* Write the results to the burst table */
-        myTable.snglBurstTable=burstEvent;
-        LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable, 
-                    sngl_burst_table), &stat);
-
-        /* free the temporary memory containing the events */
-        while (burstEvent)
-        {
-            SnglBurstTable *thisEvent;
-            thisEvent = burstEvent;
-            burstEvent = burstEvent->next;
-            LALFree( thisEvent );
+        /* add events to event list */
+        if (burstEvent == NULL){
+            nextEvent = burstEvent = 
+                (SnglBurstTable *)LALMalloc( sizeof(SnglBurstTable) );
+        } else {
+            nextEvent->next = (SnglBurstTable *)LALMalloc( sizeof(SnglBurstTable) );
+            nextEvent = nextEvent->next;
         }
+        memcpy(nextEvent, tmpEvent, sizeof(SnglBurstTable));
+
+        /* locate end of event list */
+        while (nextEvent->next){
+            nextEvent = nextEvent->next;
+        }
+
+        /* free the head of the temporary list */
+        LALFree( tmpEvent );
+        tmpEvent = NULL;
 
         /* increment to the next segment number to be analyzed */
         params->currentSegment += tmpDutyCycle;
     }
-    LAL_CALL( LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
-    LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
 
+
+    /*******************************************************************
+    * OUTPUT THE RESULTS 
+    *******************************************************************/
+    memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
+    snprintf( fname, sizeof(fname), "%s-%s-POWER-%d-%d.xml",
+            site, comment, epoch.gpsSeconds, (INT4)(series.deltaT * numPoints));
+    LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, fname), &stat);
+
+
+    /* write the process table */
+    snprintf( procTable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo );
+    LAL_CALL( LALGPSTimeNow ( &stat, &(procTable.processTable->end_time),
+                &accuracy ), &stat );
+    LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, process_table ), 
+            &stat );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, procTable, 
+                process_table ), &stat );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
+    LALFree( procTable.processTable );
+
+    
+    /* write the process params table */
+    LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, process_params_table ), 
+            &stat );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, procparams, 
+                process_params_table ), &stat );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
+    while( procparams.processParamsTable )
+    {
+        this_proc_param = procparams.processParamsTable;
+        procparams.processParamsTable = this_proc_param->next;
+        LALFree( this_proc_param );
+    }
+
+    
+    /* write the search summary table */
+    LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, search_summary_table ), 
+            &stat );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, searchsumm, 
+                search_summary_table ), &stat );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
+    LALFree( searchsumm.searchSummaryTable );
+
+
+    /* Write the results to the burst table */
+    LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_burst_table), &stat);
+    myTable.snglBurstTable=burstEvent;
+    LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable, 
+                sngl_burst_table), &stat);
+    while (burstEvent)
+    {
+        SnglBurstTable *thisEvent;
+        thisEvent = burstEvent;
+        burstEvent = burstEvent->next;
+        LALFree( thisEvent );
+    }
+    LAL_CALL( LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
+
+    /* close the xml stream */
+    LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
 
     /*******************************************************************
     * FINALIZE EVERYTHING                                            *
@@ -732,6 +822,631 @@ int main( int argc, char *argv[])
     LAL_CALL( LALSDestroyVector( &stat, &(series.data) ), &stat);
     LAL_CALL( EPFinalizeSearch( &stat, &searchParams), &stat);
     LALCheckMemoryLeaks();
+
+    return 0;
+}
+
+
+
+/*************************************************************************
+ * FUNCTION TO INITIALIZE AND PARSE ARGUMENTS
+ *************************************************************************/
+
+#define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
+this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+  LALCalloc( 1, sizeof(ProcessParamsTable) ); \
+  snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+      PROGRAM_NAME ); \
+      snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+          long_options[option_index].name ); \
+          snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+          snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+
+int initializeEPSearch( 
+        int            argc, 
+        char          *argv[], 
+        void         **searchParams,
+        MetadataTable  procparams 
+        )
+{ 
+    /* getopt arguments */
+    struct option long_options[] =
+    {
+        /* these options set a flag */
+        {"verbose",                 no_argument,       &verbose,           TRUE },
+        /* these options don't set a flag */
+        {"alphdef",                 required_argument, 0,                 'a'}, 
+        {"channel",                 required_argument, 0,                 'b'}, 
+        {"comment",                 required_argument, 0,                 'c'}, 
+        {"delf",                    required_argument, 0,                 'd'}, 
+        {"etomstr",                 required_argument, 0,                 'e'}, 
+        {"flow",                    required_argument, 0,                 'f'}, 
+        {"framecache",              required_argument, 0,                 'g'}, 
+        {"framedir",                required_argument, 0,                 'i'}, 
+        {"help",                    no_argument,       0,                 'h'}, 
+        {"lngth",                   required_argument, 0,                 'j'}, 
+        {"minfbin",                 required_argument, 0,                 'k'}, 
+        {"mintbin",                 required_argument, 0,                 'l'}, 
+        {"npts",                    required_argument, 0,                 'm'},
+        {"noiseamp",                required_argument, 0,                 'n'}, 
+        {"numpts",                  required_argument, 0,                 'o'}, 
+        {"nseg",                    required_argument, 0,                 'p'}, 
+        {"nsigma",                  required_argument, 0,                 'q'}, 
+        {"olap",                    required_argument, 0,                 'r'}, 
+        {"olapfctr",                required_argument, 0,                 's'}, 
+        {"segdcle",                 required_argument, 0,                 't'}, 
+        {"simtype",                 required_argument, 0,                 'u'}, 
+        {"spectype",                required_argument, 0,                 'v'}, 
+        {"start_time",              required_argument, 0,                 'x'}, 
+        {"start_time_ns",           required_argument, 0,                 'y'}, 
+        {"srate",                   required_argument, 0,                 'z'}, 
+        {"sine",                    required_argument, 0,                 'A'}, 
+        {"seed",                    required_argument, 0,                 'E'}, 
+        {"threshold",               required_argument, 0,                 'B'}, 
+        {"window",                  required_argument, 0,                 'C'}, 
+        {"dbglevel",                required_argument, 0,                 'D'},
+        /* output options */
+        {"printData",               no_argument,       &printData,         1 },
+        {"printSpectrum",           no_argument,       &printData,         1 },
+        {0, 0, 0, 0}
+    };
+    int c;
+    ProcessParamsTable *this_proc_param = procparams.processParamsTable;
+    EPSearchParams     *params;
+    LALStatus           stat = blank_status;
+
+    /*
+     *
+     * allocate memory 
+     *
+     */
+
+    *searchParams = params = LALMalloc (sizeof( EPSearchParams )); 
+    if ( !params )
+    {
+        fprintf(stderr, "Memory allocation failed for searchParams\n");
+        exit(1);
+    }
+
+    params->tfTilingInput = 
+        (CreateTFTilingIn *) LALMalloc (sizeof(CreateTFTilingIn));
+    if ( !params->tfTilingInput )
+    {
+        LALFree (*searchParams); *searchParams = NULL;
+        fprintf(stderr, "Memory allocation failed for tfTilingInput\n");
+        exit(1);
+    }
+
+    params->initParams = (EPInitParams *) LALMalloc (sizeof(EPInitParams));
+    if ( !params-> initParams)
+    {
+        LALFree (params->tfTilingInput); params->tfTilingInput = NULL;
+        LALFree (*searchParams); *searchParams = NULL;
+        fprintf(stderr, "Memory allocation failed for initParams\n");
+        exit(1);
+    }
+
+    params->compEPInput = 
+        (ComputeExcessPowerIn *) LALMalloc (sizeof(ComputeExcessPowerIn));
+    if ( !params-> compEPInput)
+    {
+        LALFree (params->initParams); params->initParams = NULL;
+        LALFree (params->tfTilingInput); params->tfTilingInput = NULL;
+        LALFree (*searchParams); *searchParams = NULL;
+        fprintf(stderr, "Memory allocation failed for compEPInput\n");
+        exit(1);
+    }
+
+    while ( 1 )
+    {
+        /* getopt_long stores long option here */
+        int option_index = 0;
+
+        c = getopt_long_only( argc, argv, 
+                "a:b:c:d:e:f:g:i:h:j:k:l:m:n:o:p:q:r:s:t:u:v:x:y:z:A:E:B:C:D:",
+                long_options, &option_index );
+
+        /* detect the end of the options */
+        if ( c == - 1 )
+        {
+            break;
+        }
+
+        switch ( c )
+        {
+            case 0:
+                /* if this option set a flag, do nothing else now */
+                if ( long_options[option_index].flag != 0 )
+                {
+                    break;
+                }
+                else
+                {
+                    fprintf( stderr, "error parsing option %s with argument %s\n",
+                            long_options[option_index].name, optarg );
+                    exit( 1 );
+                }
+                break;
+
+            case 'a':
+                /* default value of alpha used in search code */
+                {
+                    REAL4 alphaDflt = atof( optarg );
+                    if ( alphaDflt <= 0.0 || alphaDflt >= 1.0 ){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be in range [0,1]\n"
+                                "(%f specified)\n",
+                                long_options[option_index].name, alphaDflt );
+                        exit( 1 );
+                    }
+                    /* default alpha value for tiles with sigma < numSigmaMin */
+                    params->compEPInput->alphaDefault     = alphaDflt;                    
+                    ADD_PROCESS_PARAM( "float", "%e", alphaDflt );
+                }
+                break;
+
+            case 'b':
+                /* channel to be used in the analysis */
+                params->channelName = (CHAR *) LALMalloc(strlen( optarg )+1 );
+                if (! params->channelName ){
+                    fprintf(stderr,"Error allocating memory for channel name\n");
+                }
+                strcpy( params->channelName, optarg );
+                channelIn.name = params->channelName;
+                channelIn.type = ADCDataChannel;
+
+                /* copy the first character to site and the first two to ifo */
+                memset( site, 0, sizeof(site) );
+                memset( ifo, 0, sizeof(ifo) );
+                memcpy( site, channelIn.name, sizeof(site) - 1 );
+                memcpy( ifo, channelIn.name, sizeof(ifo) - 1 );
+                ADD_PROCESS_PARAM( "string", "%s", optarg );
+                break;
+
+            case 'c':
+                /* comment string to be used in output file name */
+                snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+                ADD_PROCESS_PARAM( "string", "%s", optarg );
+                break;
+
+            case 'd':
+                /* Frequency resolution of first TF plane */
+                {
+                    REAL4 delf = atof( optarg );
+                    if ( delf <= 0.0 ){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be >= 0 (%f specified)\n",
+                                long_options[option_index].name, delf );
+                        exit( 1 );
+                    }
+                    /* default alpha value for tiles with sigma < numSigmaMin */
+                    params->tfTilingInput->deltaF = delf;
+                    ADD_PROCESS_PARAM( "float", "%e", delf );
+                }
+                break;
+
+            case 'e':
+                /* the number of communicated events (integer) */
+                {
+                    INT4 events = atoi( optarg );
+                    if ( events < 1 || events > 999 ){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be in range [1:999] (%i specified)\n",
+                                long_options[option_index].name, events );
+                        exit( 1 );
+                    }
+                    /* EK - Max. number of events to communicate to master */
+                    params->events2Master = events;
+                    ADD_PROCESS_PARAM( "int", "%d", events );
+                }
+                break;
+
+            case 'f':
+                /* Lowest frequency in Hz to be searched */
+                {
+                    REAL4 flow = atof( optarg );
+                    if ( flow < 0.0 ){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be >= 0.0 (%f specified)\n",
+                                long_options[option_index].name, flow );
+                        exit( 1 );
+                    }
+                    params->tfTilingInput->flow = flow;
+                    ADD_PROCESS_PARAM( "float", "%f", flow );
+                }
+                break;
+
+            case 'g':
+                /* the frame cache file name */
+                {
+                    size_t len = strlen(optarg) + 1;
+                    cachefile = (CHAR *) LALCalloc( len , sizeof(CHAR));
+                    memcpy( cachefile, optarg, len);
+                    ADD_PROCESS_PARAM( "string", "%s", optarg);
+                }
+                break;
+
+            case 'i':
+                /* directory containing frames */
+                {
+                    size_t len = strlen(optarg) + 1;
+                    dirname =  (CHAR *) LALCalloc( len , sizeof(CHAR));
+                    memcpy( dirname, optarg, len);
+                    ADD_PROCESS_PARAM( "string", "%s", optarg);
+                }
+                break;
+
+            case 'h':
+                /* print out short help information */
+                fprintf(stderr,  USAGE, *argv );
+                exit( 0 );
+                break;
+
+            case 'j':
+                /* frequency bandwidth */
+                {
+                    INT4 tmplength = atoi(optarg);
+                    if (tmplength <= 0){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be > 0 (%i specified)\n",
+                                long_options[option_index].name, tmplength);
+                        exit( 1 );
+                    }
+                    params->tfTilingInput->length = tmplength;
+                    ADD_PROCESS_PARAM( "int", "%d", tmplength );                    
+                }
+                break;
+
+            case 'k':
+                /* minimum number of freq bins allowed in a search */
+                {
+                    INT4 minfbin = atoi(optarg);
+                    if (minfbin <= 0){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be > 0 (%i specified)\n",
+                                long_options[option_index].name, minfbin);
+                        exit( 1 );
+                    }
+                    params->tfTilingInput->minFreqBins = minfbin;
+                    ADD_PROCESS_PARAM( "int", "%d", minfbin );                    
+                }
+                break;
+
+            case 'l':
+                /* minimum number of time bins allowed in a search */
+                {
+                    INT4 mintbin = atoi(optarg);
+                    if (mintbin <= 0){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be > 0 (%i specified)\n",
+                                long_options[option_index].name, mintbin);
+                        exit( 1 );
+                    }
+                    params->tfTilingInput->minTimeBins = mintbin;
+                    ADD_PROCESS_PARAM( "int", "%d", mintbin );                    
+                }
+                break;
+
+
+            case 'm':
+                /* minimum number of time bins allowed in a search */
+                {
+                    INT4 tmpm = atoi(optarg);
+                    if (tmpm <= 0){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be > 0 (%i specified)\n",
+                                long_options[option_index].name, tmpm);
+                        exit( 1 );
+                    }
+                    params->initParams->numPoints = tmpm;
+                    params->ntotT = params->initParams->numPoints;      
+                    ADD_PROCESS_PARAM( "int", "%d", tmpm );                    
+                }
+                break;
+
+            case 'n':
+                /* turn on white noise simulation at this amplitude */
+                {
+                    REAL4 tmpamp = atof(optarg);
+                    whiteNoise = TRUE;
+                    if (tmpamp <= 0.0){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be > 0 (%f specified)\n",
+                                long_options[option_index].name, tmpamp);
+                        exit( 1 );
+                    }
+                    noiseAmpl = tmpamp;
+                    ADD_PROCESS_PARAM( "float", "%e", tmpamp );                    
+                }
+                break;
+
+            case 'o':
+                /* number of data points to read in */
+                {
+                    INT4 tmpn = atoi(optarg);
+                    if (tmpn <= 0){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be > 0 (%i specified)\n",
+                                long_options[option_index].name, tmpn);
+                        exit( 1 );
+                    }
+                    numPoints = tmpn;
+                    ADD_PROCESS_PARAM( "int", "%d", tmpn );                    
+                }
+                break;
+
+            case 'p':
+                /* number of data points to read in */
+                {
+                    INT4 tmpseg = atoi(optarg);
+                    if (tmpseg <= 0){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be > 0 (%i specified)\n",
+                                long_options[option_index].name, tmpseg);
+                        exit( 1 );
+                    }
+                    params->initParams->numSegments = tmpseg;
+                    ADD_PROCESS_PARAM( "int", "%d", tmpseg );                    
+                }
+                break;
+
+            case 'q':
+                /* number of sigma below which we ignore tile */
+                {
+                    REAL4 tmpsigma = atof(optarg);
+                    if (tmpsigma <= 1.0){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be > 0 (%f specified)\n",
+                                long_options[option_index].name, tmpsigma);
+                        exit( 1 );
+                    }
+                    params->compEPInput->numSigmaMin  = tmpsigma;
+                    ADD_PROCESS_PARAM( "float", "%e", tmpsigma );  
+                }
+                break;
+
+            case 'r':
+                /* Overlap betweeen segments (# of points) */
+                {
+                    INT4 tmpolap = atoi(optarg);
+                    if (tmpolap < 0){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be > 0 (%i specified)\n",
+                                long_options[option_index].name, tmpolap);
+                        exit( 1 );
+                    }
+                    params->ovrlap = tmpolap;
+                    ADD_PROCESS_PARAM( "int", "%d", tmpolap ); 
+                }
+                break;
+
+            case 's':
+                /* Amount of overlap between neighboring TF tiles */
+                {
+                    INT4 tmpolap = atoi(optarg);
+                    if (tmpolap < 0){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be > 0 (%i specified)\n",
+                                long_options[option_index].name, tmpolap);
+                        exit( 1 );
+                    }
+                    params->tfTilingInput->overlapFactor = tmpolap;
+                    ADD_PROCESS_PARAM( "int", "%d", tmpolap ); 
+                }
+                break;
+
+
+            case 't':
+                /* Number of segments sent to slave */
+                {
+                    INT4 tmpseg = atoi(optarg);
+                    if (tmpseg < 0){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be > 0 (%i specified)\n",
+                                long_options[option_index].name, tmpseg);
+                        exit( 1 );
+                    }
+                    params->initParams->segDutyCycle      = tmpseg; 
+                    ADD_PROCESS_PARAM( "int", "%d", tmpseg ); 
+                }
+                break;
+
+
+            case 'u':
+                /* Simulation type:  currently ignored. */
+                {
+                    INT4 tmpsim = atoi(optarg);
+                    if (tmpsim < 0 || tmpsim > 3){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be > 0 (%i specified)\n",
+                                long_options[option_index].name, tmpsim);
+                        exit( 1 );
+                    }
+                    tmpsim = 0;
+                    params->simType =  tmpsim;
+                    ADD_PROCESS_PARAM( "int", "%d", tmpsim ); 
+                }
+                break;
+
+            case 'v':
+                /* Spectrum method to use */
+                if ( !strcmp( optarg, "useMean" ) ) {
+                    params->initParams->method            = useMean;
+                } 
+                else if ( !strcmp( optarg, "useMedian" ) ) {
+                    params->initParams->method            = useMedian;
+                }
+                else {
+
+                    fprintf(stderr,"invalid argument to --%s:\n"
+                            "Must be useMean/useMedian (%s specified)\n",
+                            long_options[option_index].name, optarg);
+                    exit( 1 );
+                }
+                ADD_PROCESS_PARAM( "string", "%s", optarg);
+                break;
+
+
+            case 'x':
+                {
+                    long int gstartt = atol( optarg );
+                    if ( gstartt < 441417609 )
+                    {
+                        fprintf( stderr, "invalid argument to --%s:\n"
+                                "GPS start time is prior to " 
+                                "Jan 01, 1994  00:00:00 UTC:\n"
+                                "(%ld specified)\n",
+                                long_options[option_index].name, gstartt );
+                        exit( 1 );
+                    }
+                    if ( gstartt > 999999999 )
+                    {
+                        fprintf( stderr, "invalid argument to --%s:\n"
+                                "GPS start time is after " 
+                                "Sep 14, 2011  01:46:26 UTC:\n"
+                                "(%ld specified)\n", 
+                                long_options[option_index].name, gstartt );
+                        exit( 1 );
+                    }
+                    gpsStartTimeNS += (UINT8) gstartt * 1000000000LL;
+                    ADD_PROCESS_PARAM( "int", "%ld", gstartt );
+                }
+                break;
+
+            case 'y':
+                {
+                    long int gstarttns = atol( optarg );
+                    if ( gstarttns < 0 )
+                    {
+                        fprintf( stderr, "invalid argument to --%s:\n"
+                                "GPS start time nanoseconds is negative\n",
+                                long_options[option_index].name );
+                        exit( 1 );
+                    }
+                    if ( gstarttns > 999999999 )
+                    {
+                        fprintf( stderr, "invalid argument to --%s:\n"
+                                "GPS start time nanoseconds is greater than unity:\n" 
+                                "Must be <= 999999999 (%ld specified)\n", 
+                                long_options[option_index].name, gstarttns );
+                        exit( 1 );
+                    }
+                    gpsStartTimeNS += (UINT8) gstarttns;
+                    ADD_PROCESS_PARAM( "int", "%ld", gstarttns );
+                }
+                break;
+
+            case 'z':
+                /* sample rate in Hz */
+                {
+                    INT4 tmpsrate = atoi(optarg);
+                    if (tmpsrate <= 0){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be > 0 (%i specified)\n",
+                                long_options[option_index].name, tmpsrate);
+                        exit( 1 );
+                    }
+                    sampleRate = tmpsrate; 
+                    ADD_PROCESS_PARAM( "int", "%d", tmpsrate ); 
+                }
+                break;
+
+ 
+            case 'E':
+                /* seed for noise simulations */
+                {
+                    INT4 tmpseed = atoi(optarg);
+                    if (tmpseed <= 0){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be > 0 (%i specified)\n",
+                                long_options[option_index].name, tmpseed);
+                        exit( 1 );
+                    }
+                    seed = tmpseed; 
+                    ADD_PROCESS_PARAM( "int", "%d", tmpseed ); 
+                }
+                break;
+
+            case 'B':
+                /* Identify events with alpha less that this value */
+                {
+                    REAL4 tmpth = atof(optarg);
+                    if (tmpth < 0.0){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be > 0 (%f specified)\n",
+                                long_options[option_index].name, tmpth);
+                        exit( 1 );
+                    }
+                    params->alphaThreshold = tmpth;              
+                    ADD_PROCESS_PARAM( "float", "%e", tmpth );  
+                }
+                break;
+
+            case 'C':
+                /* Window to use on the data */
+                {
+                    INT4 tmpwin = atoi(optarg);
+                    if (tmpwin < 0 || tmpwin > 6){
+                        fprintf(stderr,"invalid argument to --%s:\n"
+                                "Must be > 0 (%i specified)\n",
+                                long_options[option_index].name, tmpwin);
+                        exit( 1 );
+                    }
+                    params->winParams.type                = tmpwin;
+                    ADD_PROCESS_PARAM( "int", "%d", tmpwin ); 
+                }
+                break;
+
+            case 'D':
+                /* set the lalDebugLevel to something useful */
+                {
+                    set_debug_level( optarg );
+                    ADD_PROCESS_PARAM( "int", "%d", atoi(optarg) ); 
+                }
+                break;
+
+            case '?':
+                exit( 1 );
+                break;
+
+            default:
+                fprintf( stderr, "unknown error while parsing options\n" );
+                exit( 1 );
+        }
+    }
+
+    if ( optind < argc )
+    {
+        fprintf( stderr, "extraneous command line arguments:\n" );
+        while ( optind < argc )
+        {
+            fprintf ( stderr, "%s\n", argv[optind++] );
+        }
+        exit( 1 );
+    }
+
+    /* check that start time was specified & fill the epoch structure */
+    if ( !gpsStartTimeNS ){
+        fprintf(stderr,"--start-time must be specified");
+        exit (1);
+    }
+    LAL_CALL( LALINT8toGPS( &stat, &epoch, &gpsStartTimeNS), &stat);
+
+    /* initialize parameter structures */
+    params->tfTiling     = NULL;
+    params->epSegVec     = NULL;
+    params->numSlaves    = NULL;
+
+    /* allocate memory for the conditioned segments */
+    LAL_CALL( LALCreateEPDataSegmentVector (&stat, &(params->epSegVec), 
+                params->initParams), &stat);  
+
+    /* initialize parameters */
+    params->haveData        = 0;
+    params->currentSegment  = 0;
+    params->numEvents       = 0;
+    params->searchMaster    = 0;
+    params->tfTilingInput->maxTileBand = 64.0;
 
     return 0;
 }
