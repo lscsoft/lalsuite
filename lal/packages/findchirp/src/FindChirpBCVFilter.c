@@ -2,7 +2,7 @@
  * 
  * File Name: FindChirpBCVFilter.c
  *
- * Author: Brown, D. A., BCV-Modifications by Messaritaki E.
+ * Author: Brown, D. A. and Messaritaki E.
  * 
  * Revision: $Id$
  * 
@@ -46,7 +46,7 @@ LALFindChirpBCVFilterSegment (
     )
 /* </lalVerbatim> */
 {
-  UINT4                 j, k;
+  UINT4                 j, k, kFinal;
   UINT4                 numPoints;
   UINT4                 deltaEventIndex;
   UINT4                 ignoreIndex;
@@ -59,7 +59,15 @@ LALFindChirpBCVFilterSegment (
   REAL4                 modChisqThresh;
   UINT4                 numChisqBins;
   UINT4                 eventStartIdx = 0;
+  UINT4                *chisqBin    = NULL;
+  UINT4                *chisqBinBCV = NULL;
+  UINT4                 chisqPt;
   REAL4                 chirpTime     = 0;
+  REAL4                 Power = 0.0;
+  REAL4                 PowerBCV = 0.0;
+  REAL4                 increment, nextBin, partSum;
+  REAL4                *tmpltPower;
+  REAL4                *tmpltPowerBCV;
   BOOLEAN               haveChisq     = 0;
   COMPLEX8             *qtilde        = NULL; 
   COMPLEX8             *qtildeBCV     = NULL; 
@@ -70,9 +78,9 @@ LALFindChirpBCVFilterSegment (
   COMPLEX8             *tmpltSignal   = NULL;
   SnglInspiralTable    *thisEvent     = NULL;
   LALMSTUnitsAndAcc     gmstUnits;
-  REAL4                 a1;
-  REAL4                 b1;                  
-  REAL4                 b2;                  
+  REAL4                 a1 = 0.0;
+  REAL4                 b1 = 0.0;                  
+  REAL4                 b2 = 0.0;                  
   REAL4                 templateNorm;
   REAL4                 modqsq;
   REAL4                 omega;
@@ -82,7 +90,8 @@ LALFindChirpBCVFilterSegment (
   REAL4                 Den2;
   REAL4                 InvTan1;
   REAL4                 InvTan2;
-  REAL4                 m;
+  REAL4                 m, eps;
+  REAL4                 psi0, psi3, fFinal;
 
 #if 0
      FindChirpChisqInput  *chisqInput;
@@ -190,10 +199,19 @@ LALFindChirpBCVFilterSegment (
   tmpltSignal   = input->fcTmplt->data->data;
   templateNorm  = input->fcTmplt->tmpltNorm;
   deltaT        = params->deltaT;
+  tmpltPower    = input->segment->tmpltPowerVec->data;
+  tmpltPowerBCV = input->segment->tmpltPowerVecBCV->data;
+
 
   /* the length of the chisq bin vec is the number of bin   */
   /* _boundaries_ so the number of chisq bins is length - 1 */
-  numChisqBins = input->segment->chisqBinVec->length - 1;
+  if ( input->segment->chisqBinVec->length )
+  {
+    numChisqBins = input->segment->chisqBinVec->length - 1;
+    chisqBin    = input->segment->chisqBinVec->data;
+    chisqBinBCV = input->segment->chisqBinVecBCV->data;
+  }
+
 
   /* number of points in a segment */
   numPoints = params->qVec->length;
@@ -202,6 +220,10 @@ LALFindChirpBCVFilterSegment (
   gmstUnits.units = MST_HRS;
   gmstUnits.accuracy = LALLEAPSEC_STRICT;
 
+  /* template parameters */
+  psi0 = input->tmplt->psi0;  
+  psi3 = input->tmplt->psi3;
+  fFinal = input->tmplt->fFinal;
 
   /*
    *
@@ -214,9 +236,6 @@ LALFindChirpBCVFilterSegment (
     /* length of the chirp:                                            */
     /* calculated according to chirplen, using the values of M and eta */
     /* for the BCV tempaltes, as calculated using psi0 and psi3        */ 
-    REAL4 psi0 = input->tmplt->psi0;
-    REAL4 psi3 = input->tmplt->psi3;
-    REAL4 fFinal = input->tmplt->fFinal;
 
     /* REAL4 eta = input->tmplt->eta; */
 
@@ -236,10 +255,6 @@ LALFindChirpBCVFilterSegment (
     REAL4 x3 = x*x2;
     REAL4 x4 = x2*x2;
     REAL4 x8 = x4*x4;
-
-    /* k that corresponds to fFinal, currently not used      */
-    /* UINT4 kFinal = floor( numPoints * deltaT * fFinal ); */  
-    /* BCV normalization parameters */
 
     chirpTime = fabs(c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8);
     deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
@@ -279,10 +294,44 @@ LALFindChirpBCVFilterSegment (
     LALInfo( status, infomsg );
   }
 
+  /* k that corresponds to fFinal, currently not used      */
+  kFinal = floor( numPoints * deltaT * fFinal ); 
+
+
+  /*
+   * decide which value of k is closest to kFinal, and choose
+   * a1, b1 and b2 accordingly
+   */
+
+  /* error parameter in k */
+  eps = 10.0 ;
+
+  for ( k = 0 ; input->segment->a1->length - 1 ; ++k )
+  {
+    if ( fabs( k - kFinal ) < eps )
+    {
+      a1 = input->segment->a1->data[k];
+      b1 = input->segment->b1->data[k];
+      b2 = input->segment->b2->data[k];
+      eps = fabs( k - kFinal );
+    }
+  }
+
+  /*
+   * make sure that non-zero values have been assigned to a1, b1 and b2
+   */
+
+  eps = 0.00000001; 
+  if ( a1 < eps || b1 < eps || b2 < eps )
+  {
+    ABORT(status, FINDCHIRPBCVH_EZNRM, FINDCHIRPBCVH_MSGEZNRM);
+  }
+
 
   /*
    *
    * compute qtilde, qtildeBCV, and q, qBCV 
+   * using the correct combination of inputData and inputDataBCV
    *
    */
 
@@ -293,10 +342,10 @@ LALFindChirpBCVFilterSegment (
   /* qtilde positive frequency, not DC or nyquist */
   for ( k = 1; k < numPoints/2; ++k )
   {
-    REAL4 r    = inputData[k].re;
-    REAL4 s    = inputData[k].im;    
-    REAL4 rBCV = inputDataBCV[k].re;
-    REAL4 sBCV = inputDataBCV[k].im; 
+    REAL4 r    = a1 * inputData[k].re;
+    REAL4 s    = a1 * inputData[k].im;    
+    REAL4 rBCV = b1 * inputData[k].re + b2 * inputDataBCV[k].re;
+    REAL4 sBCV = b1 * inputData[k].im + b2 * inputDataBCV[k].im; 
     REAL4 x = tmpltSignal[k].re;
     REAL4 y = 0.0 - tmpltSignal[k].im; /* note complex conjugate */     
 
@@ -311,10 +360,10 @@ LALFindChirpBCVFilterSegment (
   {
     for ( k = numPoints/2 + 2; k < numPoints - 1; ++k )
     {
-      REAL4 r = inputData[k].re;
-      REAL4 s = inputData[k].im;    
-      REAL4 rBCV = inputDataBCV[k].re;
-      REAL4 sBCV = inputDataBCV[k].im; 
+      REAL4 r    = a1 * inputData[k].re;
+      REAL4 s    = a1 * inputData[k].im;
+      REAL4 rBCV = b1 * inputData[k].re + b2 * inputDataBCV[k].re;
+      REAL4 sBCV = b1 * inputData[k].im + b2 * inputDataBCV[k].im;
       REAL4 x = tmpltSignal[k].re;
       REAL4 y = 0.0 - tmpltSignal[k].im; /* note complex conjugate */
 
@@ -407,6 +456,69 @@ LALFindChirpBCVFilterSegment (
   }
 
 
+  /*
+   * calculation of the chisq bin boundaries
+   */
+
+  /* sum up the template power */
+  for ( k = 1; k < input->segment->data->data->length; ++k )
+  {
+     Power    += 4.0 * a1 * a1 * tmpltPower[k] * tmpltPower[k];
+     PowerBCV += 4.0 * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] ) 
+                     * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] );
+  }
+
+
+  /* First set of chisq bins */
+  if( numChisqBins )
+  {
+    increment = Power / (REAL4) numChisqBins ;
+    nextBin   = increment;
+    chisqPt   = 0;
+    partSum   = 0.0;
+
+    /* calculate the frequencies of the chi-squared bin boundaries */
+    chisqBin[chisqPt++] = 0;
+
+    for ( k = 1; k < input->segment->data->data->length; ++k )
+    {
+      partSum += 4.0 * a1 * a1 * tmpltPower[k] * tmpltPower[k];
+      if ( partSum >= nextBin )
+      {
+        chisqBin[chisqPt++] = k;
+        nextBin += increment;
+        if ( chisqPt == numChisqBins ) break;
+      }
+    }
+    chisqBin[numChisqBins] = input->segment->data->data->length;
+  }
+
+  /* Second set of chisq bins */
+  if ( numChisqBins ) 
+  {
+    increment = PowerBCV / (REAL4) numChisqBins;
+    nextBin   = increment;
+    chisqPt   = 0;
+    partSum   = 0.0;
+                      
+    /* calculate the frequencies of the chi-squared bin boundaries */
+    chisqBinBCV[chisqPt++] = 0;
+
+    for ( k = 1; k < input->segment->dataBCV->data->length; ++k )
+    {
+      partSum += 4.0 * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] ) 
+                     * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] );
+      if ( partSum >= nextBin )
+      {
+        chisqBinBCV[chisqPt++] = k;
+        nextBin += increment;
+        if ( chisqPt == numChisqBins ) break;
+      }
+    } 
+    chisqBinBCV[numChisqBins] = input->segment->dataBCV->data->length;
+  }
+
+
   /* look for an events in the filter output */
   for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )
   {
@@ -423,6 +535,7 @@ LALFindChirpBCVFilterSegment (
     /* if snrsq exceeds threshold at any point */
     if ( modqsq > modqsqThresh )                  
     {
+
       /* compute chisq vector if it does not exist and we want it */
       if ( ! haveChisq  && input->segment->chisqBinVec->length )
       {
@@ -439,9 +552,9 @@ LALFindChirpBCVFilterSegment (
         params->chisqParams->chisqBinVec    = input->segment->chisqBinVec;
         params->chisqParams->chisqBinVecBCV = input->segment->chisqBinVecBCV;
         params->chisqParams->norm           = norm;
-        params->chisqParams->a1             = input->segment->a1 ;
-        params->chisqParams->b1             = input->segment->b1 ;
-        params->chisqParams->b2             = input->segment->b2 ;
+        params->chisqParams->a1             = a1 ;
+        params->chisqParams->b1             = b1 ;
+        params->chisqParams->b2             = b2 ;
 #if 0
         params->chisqParams->bankMatch   = input->tmplt->minMatch;
 #endif
@@ -528,10 +641,12 @@ LALFindChirpBCVFilterSegment (
 
           thisEvent->coa_phase = - 0.5 * InvTan1 + 0.5 * InvTan2 ;
           omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
-          thisEvent->alpha = - input->segment->b2 * tan(omega) / 
-            ( input->segment->a1 + input->segment->b1*tan(omega) );
+          thisEvent->alpha = - b2 * tan(omega) / ( a1 + b1*tan(omega) );
+          thisEvent->alpha *= pow(deltaT, 2/3);
+#if 0
           /* actually record alpha * fcut^(2/3) which must be b/t 0 and 1 */
           thisEvent->alpha *= pow((input->tmplt->fFinal) , 2.0/3.0);   
+#endif
 
           /* copy the template into the event */
           thisEvent->psi0   = (REAL4) input->tmplt->psi0; 
@@ -650,10 +765,12 @@ LALFindChirpBCVFilterSegment (
 
     thisEvent->coa_phase = - 0.5 * InvTan1 + 0.5 * InvTan2 ;
     omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
-    thisEvent->alpha = - input->segment->b2 * tan(omega) /
-      ( input->segment->a1 + input->segment->b1*tan(omega) );
+    thisEvent->alpha = - b2 * tan(omega) / ( a1 + b1*tan(omega) );
+    thisEvent->alpha *= pow(deltaT, 2/3); /* correct units */
+#if 0
     /* actually record alpha * fcut^(2/3) which must be b/t 0 and 1 */
     thisEvent->alpha *= pow( (input->tmplt->fFinal), 2.0/3.0);   
+#endif
 
 
     /* copy the template into the event */

@@ -438,7 +438,7 @@ LALCreateFindChirpSegmentVector (
     )
 /* </lalVerbatim> */
 {
-  UINT4                         i;
+  UINT4                         i,k;
   FindChirpSegmentVector       *vectorPtr;
   FindChirpSegment             *segPtr;
 
@@ -562,9 +562,13 @@ LALCreateFindChirpSegmentVector (
 
     /* segment dependent part of normalisation */
     segPtr[i].segNorm = 0.0;
-    segPtr[i].a1 = 0.0;
-    segPtr[i].b1 = 0.0;
-    segPtr[i].b2 = 0.0;
+
+    for ( k = 0; k < vectorPtr->data->data->data->length; ++k )
+    {
+      segPtr[i].a1->data[k] = 0.0;
+      segPtr[i].b1->data[k] = 0.0;
+      segPtr[i].b2->data[k] = 0.0;
+    }
 
     /* segment id number (invalid) */
     segPtr[i].number = -1;

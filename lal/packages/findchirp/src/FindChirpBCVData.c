@@ -2,7 +2,7 @@
  * 
  * File Name: FindChirpBCVData.c
  *
- * Author: Brown D. A., BCV-Modifications: Messaritaki E.
+ * Author: Brown D. A. and Messaritaki E.
  * 
  * Revision: $Id$
  * 
@@ -11,7 +11,7 @@
 
 #if 0 
 <lalVerbatim file="FindChirpBCVDataCV">
-Author: Brown, D. A., BCV-Modifications: Messaritaki E.
+Author: Brown, D. A. and Messaritaki E.
 $Id$
 </lalVerbatim> 
 
@@ -378,9 +378,6 @@ LALFindChirpBCVData (
      */
 
 
-    fcSeg->a1 = 0.0;
-    fcSeg->b1 = 0.0;
-    fcSeg->b2 = 0.0;
     fcSeg->segNorm = 0.0;
     Power    = 0.0;
     PowerBCV = 0.0;
@@ -391,6 +388,10 @@ LALFindChirpBCVData (
 
     for ( k = 0; k < cut; ++k )
     {
+      fcSeg->a1->data[k] = 0.0;
+      fcSeg->b1->data[k] = 0.0;
+      fcSeg->b2->data[k] = 0.0;
+      
       outputData[k].re = 0.0;
       outputData[k].im = 0.0;
       outputDataBCV[k].re = 0.0;
@@ -411,30 +412,33 @@ LALFindChirpBCVData (
       I73 += 4.0 * amp[k] * amp[k] * wtilde[k].re ;
       I53 += 4.0 * amp[k] *  ampBCV[k] * wtilde[k].re ;
       I1 += 4.0 * ampBCV[k] * ampBCV[k] * wtilde[k].re;  
+
+      /* calculation of a1, b1 and b2 for each ending frequency */
+      fcSeg->a1->data[k] = 1.0 / sqrt(I73) ;
+      fcSeg->b2->data[k] = 1.0 / sqrt( I1 - I53*I53/I73 ) ;
+      fcSeg->b1->data[k] = - I53 * fcSeg->b2->data[k] / I73 ;
     }
 
-    fcSeg->a1 = 1.0 / sqrt(I73) ;
-    fcSeg->b2 = 1.0 / sqrt( I1 - I53*I53/I73 ) ;
-    fcSeg->b1 = - I53 * fcSeg->b2 / I73 ;
+#if 0
+    fcSeg->a1->data[k] = 1.0 / sqrt(I73) ;
+    fcSeg->b2->data[k] = 1.0 / sqrt( I1 - I53*I53/I73 ) ;
+    fcSeg->b1->data[k] = - I53 * fcSeg->b2 / I73 ;
+#endif
 
     for ( k = 1; k < fcSeg->data->data->length; ++k )
     {
-      tmpltPower[k]    = 4.0 * fcSeg->a1 * fcSeg->a1 * amp[k] * amp[k] 
-        * wtilde[k].re;
-      Power += tmpltPower[k];
-      tmpltPowerBCV[k] = 4.0 * ( fcSeg->b1 * amp[k] + fcSeg->b2 * ampBCV[k] )
-        * ( fcSeg->b1 * amp[k] + fcSeg->b2 * ampBCV[k] ) * wtilde[k].re;
-      PowerBCV += tmpltPowerBCV[k] ;
+      tmpltPower[k]    = amp[k] * sqrt(wtilde[k].re);
+      Power += tmpltPower[k]; 
+      tmpltPowerBCV[k] = ampBCV[k] * sqrt(wtilde[k].re);
+      PowerBCV += tmpltPowerBCV[k] ; 
     }
 
     for ( k = cut; k < fcSeg->data->data->length; ++k )
     {
-      outputData[k].re  *= 4.0 * fcSeg->a1 * amp[k] * wtilde[k].re ;
-      outputData[k].im  *= 4.0 * fcSeg->a1 * amp[k] * wtilde[k].re ;
-      outputDataBCV[k].re *= 4.0 * (fcSeg->b1 * amp[k] + fcSeg->b2 *
-          ampBCV[k] ) * wtilde[k].re ; 
-      outputDataBCV[k].im *= 4.0 * (fcSeg->b1 * amp[k] + fcSeg->b2 *
-          ampBCV[k] ) * wtilde[k].re ;
+      outputData[k].re  *= 4.0 * amp[k] * wtilde[k].re ;
+      outputData[k].im  *= 4.0 * amp[k] * wtilde[k].re ;
+      outputDataBCV[k].re *= 4.0 * ampBCV[k] * wtilde[k].re ;
+      outputDataBCV[k].im *= 4.0 * ampBCV[k] * wtilde[k].re ;
     }
 
     /* set output frequency series parameters */

@@ -2,7 +2,7 @@
  * 
  * File Name: FindChirpBCVChisq.c
  *
- * Author: Anderson, W. G., and Brown, D. A., BCV-Modifications: Messaritaki E.
+ * Author: Anderson, W. G., and Brown, D. A. and Messaritaki E.
  * 
  * Revision: $Id$
  * 
