@@ -1016,6 +1016,8 @@ INT4 main(INT4 argc, CHAR *argv[])
        {	
         if (firstpass)
          { 
+	   if (verbose_flag)
+	     {fprintf(stdout, "First Pass\n interval %d out of %d\n", interLoop, numIntervals);}
           /** read first interval and get response functions **/
           lal_errhandler = LAL_ERR_RTRN; 
                   
@@ -1036,7 +1038,7 @@ INT4 main(INT4 argc, CHAR *argv[])
      
             /* skip segment if data not found or corrupted with 0 values */    
    
-            if ((status.statusCode !=0)||(segment1.data==NULL)||(segment2.data==NULL))
+            if (status.statusCode !=0)
              {
               clear_status(&status);
               firstpass = 1; pathology = 1;
@@ -1046,7 +1048,7 @@ INT4 main(INT4 argc, CHAR *argv[])
  
             else
 	     { 
-               firstpass = 0; pathology = 0;
+              
                /* store in memory */
                for (i = 0; i < segmentPadLength; i ++)
                 {
@@ -1067,15 +1069,23 @@ INT4 main(INT4 argc, CHAR *argv[])
                calfacts.ifo = ifo1;          
                LAL_CALL( LALExtractFrameResponse( &status, &responseTemp1, calCache1,
                                                   &calfacts), &status );
-     
+
+               /* skip segment if data not found or corrupted with 0 values */   
+               if ((status.statusCode !=0)||(responseTemp1.data==NULL))
+		 {
+		   clear_status(&status);
+		   firstpass = 1; pathology = 1;
+		   interLoop = interLoop + segLoop;
+		   break;
+                 }
+
                memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
                calfacts.ifo = ifo2;
                LAL_CALL( LALExtractFrameResponse(&status, &responseTemp2, calCache2,
                                                   &calfacts), &status );
                 
                /* skip segment if data not found or corrupted with 0 values */    
-   
-               if ((status.statusCode !=0)||(responseTemp1.data==NULL)||(responseTemp2.data==NULL))
+               if ((status.statusCode !=0)||(responseTemp2.data==NULL))
                 {
                  clear_status(&status);
                  firstpass = 1; pathology = 1;
@@ -1084,7 +1094,7 @@ INT4 main(INT4 argc, CHAR *argv[])
                 }
                 else
 		 { 
-                  firstpass = 0; pathology = 0;
+                 
                   /* reduce to the optimal filter frequency range */
                   if (verbose_flag)
 	           {
@@ -1131,7 +1141,17 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 	     }
 	   }
-          if (pathology==1) {pathology = 0; continue;}
+	  
+          if (pathology==1) 
+            {
+              if (verbose_flag)
+		{fprintf(stdout, "\n \n BREAK\n \n");}
+              pathology = 0; firstpass = 1; 
+              continue;
+            }
+	  else {firstpass = 0;}
+    
+
          }
 	  /* if firstpass = 0, shift data and read extra segment */ 
 	 else
@@ -1139,7 +1159,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	    lal_errhandler = LAL_ERR_RTRN;
             if (verbose_flag)
 	     {
-	      fprintf( stdout, "shift segments\n");
+              fprintf(stdout, "Shift Segment\n interval %d out of %d\n", interLoop, numIntervals);
 	     }
             /* shift segments */
             for (segLoop = 0; segLoop < numSegments - 1; segLoop++)
@@ -1175,7 +1195,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
            LAL_CALL(readDataPair(&status, &streamPair, &streamParams), &status);
            /* skip segment if data not found or corrupted with 0 values */    
-           if ((status.statusCode !=0)||(segmentPad1.data==NULL)||(segmentPad2.data==NULL))
+           if (status.statusCode !=0)
             {
              clear_status(&status);
              firstpass = 1; 
@@ -1206,6 +1226,17 @@ INT4 main(INT4 argc, CHAR *argv[])
               calfacts.ifo = ifo1;
               LAL_CALL( LALExtractFrameResponse( &status, &responseTemp1, calCache1,
                                                  &calfacts), &status );
+
+              /* skip segment if data not found or corrupted with 0 values */
+
+              if ((status.statusCode !=0)||(responseTemp1.data==NULL))
+		{
+		  clear_status(&status);
+		  firstpass = 1;
+		  interLoop = interLoop + segLoop;
+		  continue;
+		}
+
               memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
               calfacts.ifo = ifo2;
               LAL_CALL( LALExtractFrameResponse( &status, &responseTemp2, calCache2,
@@ -1213,7 +1244,7 @@ INT4 main(INT4 argc, CHAR *argv[])
                 
               /* skip segment if data not found or corrupted with 0 values */    
    
-              if ((status.statusCode !=0)||(responseTemp1.data==NULL)||(responseTemp2.data==NULL))
+              if ((status.statusCode !=0)||(responseTemp2.data==NULL))
                {
                 clear_status(&status);
                 firstpass = 1; 
@@ -1222,7 +1253,7 @@ INT4 main(INT4 argc, CHAR *argv[])
                }
               else
 	       {
-		 firstpass = 0; pathology = 0;
+		 pathology = 0;
                 /* reduce to the optimal filter frequency range */
                 response1.epoch = response2.epoch = gpsCalibTime;
                 for (i = 0; i < filterLength; i++)
