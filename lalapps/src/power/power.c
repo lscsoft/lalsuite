@@ -706,6 +706,7 @@ int main( int argc, char *argv[])
         LAL_CALL( EPSearch (&stat, params, &burstEvent, tmpDutyCycle), &stat);
 
         /* Write the results to the burst table */
+        myTable.snglBurstTable=burstEvent;
         LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable, 
                     sngl_burst_table), &stat);
 
@@ -717,9 +718,6 @@ int main( int argc, char *argv[])
             burstEvent = burstEvent->next;
             LALFree( thisEvent );
         }
-        /* tell operator how we are doing */
-        fprintf(stderr,"Analyzing segments %i -- %i\n", params->currentSegment,
-                params->currentSegment + tmpDutyCycle - 1);
 
         /* increment to the next segment number to be analyzed */
         params->currentSegment += tmpDutyCycle;
