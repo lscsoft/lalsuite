@@ -547,7 +547,7 @@ LALCoincidenceWavelet(LALStatus *status,
 	  fflush(stderr);
 	}
     
-      if(one->data->length != n+1 || two->data->length != n+1 ) 
+      if((int)one->data->length != (int)n+1 || (int)two->data->length != (int)n+1 ) 
 	{
 	  fprintf(stderr,"LALCoincidence:n1!=n2, n1=%d, n2=%d\n", one->data->length, two->data->length);
 	  fflush(stderr);

@@ -28,7 +28,7 @@ static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right)
 static void _unitCopy(LALUnit *source, LALUnit *destination);
 static void _calibrate(Wavelet *in, COMPLEX8FrequencySeries *R, 
 		       COMPLEX8FrequencySeries *C,
-		       REAL8TimeSeries *alpha, REAL8TimeSeries *gamma, 
+		       REAL8TimeSeries *alpha, REAL8TimeSeries *mygamma, 
 		       ClusterWavelet *w, UINT4 offset);
 static void _interpolate(InputPercentileWavelet  *input);
 static REAL4 _polypredict(REAL4 *pL, REAL4 *pC, REAL4 *pR, int m);
@@ -71,8 +71,8 @@ static int _compareAbs(const void *a, const void *b);
 
 static void _clusterProperties(ClusterWavelet *w);
 
-static void _doubleToSecNan(double t, INT4 *sec, INT4 *nan);
-static double _secNanToDouble(UINT4 sec, UINT4 nan);
+static void _doubleToSecNan(double t, INT4 *sec, INT4 *mynan);
+static double _secNanToDouble(UINT4 sec, UINT4 mynan);
 /* static int _nanoSeconds2steps(REAL4TimeSeries *ts, int nanoseconds); */
 
 static void _freeREAL4TimeSeries(REAL4TimeSeries **t);
@@ -108,7 +108,7 @@ static void _setFilterS(Wavelet *w);
 static void _setFilterD(Wavelet *w);
 static void _setFilterH(Wavelet *w);
 static void _setFilterM(Wavelet *w);
-static void _writeWavelet(Wavelet *w, FILE *out);
+/* static void _writeWavelet(Wavelet *w, FILE *out); */
 
 static const double dbc1[2]={0.70710678118655,0.70710678118655};
 
@@ -2215,7 +2215,7 @@ static void _interpolate(InputPercentileWavelet  *input)
   Outputw2tWavelet *out2=(Outputw2tWavelet *)LALCalloc(1,sizeof(Outputw2tWavelet));
   INT4 i, M, j, k;
   REAL4TimeSeries *a, *b;
-  REAL4 *pb, *pa;
+  /* REAL4 *pb, *pa; */
 
   in1.w=input->in;
   in1.ldeep=input->int_extradeep;
@@ -2235,7 +2235,7 @@ static void _interpolate(InputPercentileWavelet  *input)
       _getLayer(&a,i,out1->w);
       _assignREAL4TimeSeries(&b,a);
       for(k=input->int_n;
-	  k<a->data->length - input->int_n;
+	  (int)k<(int)a->data->length - (int)input->int_n;
 	  k++)
 	{
 	  /*
@@ -2251,7 +2251,7 @@ static void _interpolate(InputPercentileWavelet  *input)
 	  fflush(stdout);
 	  */
 	} 
-      for(j=0;j<a->data->length;j++)
+      for(j=0;(int)j<(int)a->data->length;j++)
 	{
 	  /*	  printf("-->j=%d\n",j);fflush(stdout);*/
 	  a->data->data[j]-=b->data->data[j];
@@ -2293,7 +2293,7 @@ static REAL4 _polypredict(REAL4 *pL, REAL4 *pC, REAL4 *pR, int m)
 
 static void _calibrate(Wavelet *in, COMPLEX8FrequencySeries *R,
 		       COMPLEX8FrequencySeries *C,
-		       REAL8TimeSeries *alpha, REAL8TimeSeries *gamma,
+		       REAL8TimeSeries *alpha, REAL8TimeSeries *mygamma,
 		       ClusterWavelet *w, UINT4 offset)
 {
   UINT4 i, j, k, M;
@@ -2303,14 +2303,16 @@ static void _calibrate(Wavelet *in, COMPLEX8FrequencySeries *R,
   COMPLEX8 R0, C0;
   REAL4* pR;
 
+  offset = 0;
+
   /*
-  printf("_calibrate: R=%p C=%p alpha=%p gamma=%p w=%p in->data=%p\n", R, C, alpha, gamma, w, in->data);fflush(stdout);
+  printf("_calibrate: R=%p C=%p alpha=%p gamma=%p w=%p in->data=%p\n", R, C, alpha, mygamma, w, in->data);fflush(stdout);
   printf("_calibrate: R->data=%p C->data=%p alpha->data=%p gamma->data=%p in->data->data=%p\n", 
-	 R->data, C->data,alpha->data, gamma->data,in->data->data);fflush(stdout);
+	 R->data, C->data,alpha->data, mygamma->data,in->data->data);fflush(stdout);
   printf("_calibrate: R->data->data=%p C->data->data=%p alpha->data->data=%p gamma->data->data=%p in->data->data->data=%p\n", 
-	 R->data->data, C->data->data, alpha->data->data, gamma->data->data,in->data->data->data);fflush(stdout);
+	 R->data->data, C->data->data, alpha->data->data, mygamma->data->data,in->data->data->data);fflush(stdout);
   printf("_calibrate: R->data->length=%d C->data->length=%d alpha->data->length=%d gamma->data->length=%d in->data->data->length=%d\n",
-         R->data->length, C->data->length, alpha->data->length, gamma->data->length, in->data->data->length);fflush(stdout);
+         R->data->length, C->data->length, alpha->data->length, mygamma->data->length, in->data->data->length);fflush(stdout);
   */
 
   _initCOMPLEX8(&one,1,0);
@@ -2345,14 +2347,14 @@ static void _calibrate(Wavelet *in, COMPLEX8FrequencySeries *R,
 	  
           _multiplyCOMPLEX8(&R0, &C0, &tmp1);
           _minusCOMPLEX8(&tmp1,&one,&tmp2);
-          _initCOMPLEX8(&tmp3,gamma->data->data[j+j_start],0);
+          _initCOMPLEX8(&tmp3,mygamma->data->data[j+j_start],0);
           _multiplyCOMPLEX8(&tmp3,&tmp2,&tmp1);
           _plusCOMPLEX8(&tmp1,&one,&tmp2);
 	  
 	  
 	  if(j+j_start>=alpha->data->length)
 	    {
-	      printf("_calibrate: j+j_start=%d\n"); fflush(stdout);
+	      /* printf("_calibrate: j+j_start=%d\n"); */ fflush(stdout);
 	      exit(5);
 	    }
 	  
@@ -2650,6 +2652,8 @@ static double _percentile(Wavelet *wavelet, double nonZeroFraction,
   REAL4 **aPtr, **bPtr;
   REAL4 x;
 
+  keepAmplitudes = 0;
+
   M = _getMaxLayer(wavelet)+1;
   nS=wavelet->data->data->length/M;
   boundaryL=nonZeroFraction*nS/2+0.5;
@@ -2730,8 +2734,8 @@ static double _percentile(Wavelet *wavelet, double nonZeroFraction,
 
 static int _compare(const void *a, const void *b)
 {
-  REAL4 **A=(REAL4 **)a;
-  REAL4 **B=(REAL4 **)b;
+  const REAL4 * const *A=(const REAL4 * const *)a;
+  const REAL4 * const *B=(const REAL4 * const *)b;
   if(**A < **B) return -1;
   if(**A == **B) return 0;
   if(**A > **B) return 1;
@@ -2740,8 +2744,8 @@ static int _compare(const void *a, const void *b)
 
 static int _compareAbs(const void *a, const void *b)
 {
-  REAL4 **A=(REAL4 **)a;
-  REAL4 **B=(REAL4 **)b;
+  const REAL4 * const *A=(const REAL4 * const *)a;
+  const REAL4 * const *B=(const REAL4 * const *)b;
 
   REAL4 AA=fabs(**A);
   REAL4 BB=fabs(**B);
@@ -2755,11 +2759,11 @@ static int _compareAbs(const void *a, const void *b)
 
 static void _clusterProperties(ClusterWavelet *w)
 {
-  UINT4 i, j, f, ff, t, count;
+  UINT4 i, j, f, ff = 0, t/*, count*/;
   double a,b;
   double delta_t, delta_f;
   double x;
-  UINT4 N,M,min,max;
+  UINT4 N,M/*,min,max*/;
   Slice s;
   UINT4 time_steps_in_layer, time_steps_in_sublayer;
 
@@ -3116,15 +3120,15 @@ static REAL4 _noise(ClusterWavelet *w, INT4 number, INT4 time_steps_in_sublayer)
   return 1/sqrt(noise/w->coreSize[number]);
 }
 
-static void _doubleToSecNan(double t, INT4 *sec, INT4 *nan)
+static void _doubleToSecNan(double t, INT4 *sec, INT4 *mynan)
 {
   *sec=(INT4)t;
-  *nan=(INT4)((t-*sec)*pow(10,9));
+  *mynan=(INT4)((t-*sec)*pow(10,9));
 }
 
-static double _secNanToDouble(UINT4 sec, UINT4 nan)
+static double _secNanToDouble(UINT4 sec, UINT4 mynan)
 {
-  double t= ((double)sec + (double)nan/pow(10,9));
+  double t= ((double)sec + (double)mynan/pow(10,9));
   return t;
 }
 
@@ -3183,7 +3187,7 @@ static void _createClusterWavelet(ClusterWavelet **w)
   (*w)->delta_f=1.0;
   (*w)->nsubintervals=1;
   (*w)->M=0;
-  (*w)->nalpha;
+  /*(*w)->nalpha; */
   (*w)->error=NO_ERRORS;
 }
 
@@ -3367,12 +3371,12 @@ static void _freeClusterWavelet(ClusterWavelet **w)
       if((*w)->centralTime!=NULL)
 	{
 	  LALFree((*w)->centralTime);
-	  (*w)->centralTime;
+	  /* (*w)->centralTime; */
 	}
       if((*w)->centralFrequency!=NULL)
         {
           LALFree((*w)->centralFrequency);
-          (*w)->centralFrequency;
+          /* (*w)->centralFrequency; */
         }
                                                                                                                             
       if((*w)->duration!=NULL)
@@ -4524,6 +4528,7 @@ static void _unitCopy(LALUnit *source, LALUnit *destination)
     }
 }
 
+#if 0
 static void _writeWavelet(Wavelet *w, FILE *out)
 {
   UINT4 i;
@@ -4547,7 +4552,7 @@ static void _writeWavelet(Wavelet *w, FILE *out)
   fprintf(out,"\n\n");
   fflush(stdout);
 }
-
+#endif
 
 
 #endif
