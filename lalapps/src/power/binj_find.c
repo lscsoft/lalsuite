@@ -227,24 +227,54 @@ static SimBurstTable *trim_injection_list(SimBurstTable *injection, struct optio
 
 
 /*
- * Read trigger list, and trim injection list according to data that was
+ * Extract the injections that lie between the given start and end times.
+ */
+
+static SimBurstTable *extract_injections(LALStatus *stat, SimBurstTable *injection, INT8 start, INT8 end)
+{
+	SimBurstTable *head = NULL;
+	SimBurstTable **addpoint = &head;
+	INT8 peaktime;
+
+	while(injection) {
+		LAL_CALL(LALGPStoINT8(stat, &peaktime, &injection->l_peak_time), stat);
+		if ((start < peaktime) && (peaktime < end)) {
+			*addpoint = LALMalloc(sizeof(**addpoint));
+			**addpoint = *injection;
+			addpoint = &(*addpoint)->next;
+			*addpoint = NULL;
+		}
+	}
+
+	return(head);
+}
+
+
+/*
+ * Read trigger list, and trim injection list according to times that were
  * analyzed.
  */
 
-static INT4 read_search_summary(char *filename, FILE *fpout)
+static INT4 read_search_summary_start_end(char *filename, INT4 *start, INT4 *end, FILE *fpout)
 {
 	SearchSummaryTable *searchSummary = NULL;
 	SearchSummaryTable *tmp;
-	INT4 start;
-	INT4 end;
+	INT4 local_start, local_end;
+
+	/* allow for NULL pointers if the calling code doesn't care about these
+	 * results */
+	if(!start)
+		start = &local_start;
+	if(!end)
+		end = &local_end;
 
 	SearchSummaryTableFromLIGOLw(&searchSummary, filename);
 
-	start = searchSummary->in_start_time.gpsSeconds;
-	end = searchSummary->in_end_time.gpsSeconds;
+	*start = searchSummary->in_start_time.gpsSeconds;
+	*end = searchSummary->in_end_time.gpsSeconds;
 
 	if(fpout)
-		fprintf(fpout, "%d  %d  %d\n", start, end, end - start);
+		fprintf(fpout, "%d  %d  %d\n", *start, *end, *end - *start);
 
 	while(searchSummary) {
 		tmp = searchSummary;
@@ -252,16 +282,19 @@ static INT4 read_search_summary(char *filename, FILE *fpout)
 		LALFree(tmp);
 	}
 
-	return(end - start);
+	return(*end - *start);
 }
 
 
-static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, struct options_t options)
+static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, SimBurstTable **injection, struct options_t options)
 {
 	FILE *infile;
 	char line[MAXSTR];
 	SnglBurstTable *list = NULL;
-	SnglBurstTable **addpoint = &list;
+	SnglBurstTable **eventaddpoint = &list;
+	SimBurstTable *newinjection = NULL;
+	SimBurstTable **injectionaddpoint = &newinjection;
+	INT4 start, end;
 
 	if (!(infile = fopen(filename, "r")))
 		LALPrintError("Could not open input file\n");
@@ -270,13 +303,23 @@ static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, struct
 		if(options.verbose)
 			fprintf(stderr, "Working on file %s\n", line);
 
-		read_search_summary(line, NULL);
+		read_search_summary_start_end(line, &start, &end, NULL);
 
-		LAL_CALL(LALSnglBurstTableFromLIGOLw(stat, addpoint, line), stat);
+		*injectionaddpoint = extract_injections(stat, *injection, start + 1000000000LL, end * 1000000000LL);
+		while (*injectionaddpoint)
+			injectionaddpoint = &(*injectionaddpoint)->next;
 
-		while(*addpoint)
-			addpoint = &(*addpoint)->next;
+		LAL_CALL(LALSnglBurstTableFromLIGOLw(stat, eventaddpoint, line), stat);
+		while (*eventaddpoint)
+			eventaddpoint = &(*eventaddpoint)->next;
 	}
+
+	while(*injection) {
+		SimBurstTable *tmp = *injection;
+		*injection = (*injection)->next;
+		LALFree(tmp);
+	}
+	*injection = newinjection;
 
 	fclose(infile);
 
@@ -360,7 +403,6 @@ static SnglBurstTable *trim_event_list(SnglBurstTable *event, struct options_t o
 int main(int argc, char **argv)
 {
 	static LALStatus stat;
-	FILE *fpin = NULL;
 
 	INT4 sort = FALSE;
 	size_t len = 0;
@@ -384,21 +426,16 @@ int main(int argc, char **argv)
 	INT8 injPeakTime = 0;
 	INT8 burstStartTime = 0;
 
-	CHAR line[MAXSTR];
-
-	/* search summary */
-	SearchSummaryTable *searchSummary = NULL;
-
 	/* triggers */
 	SnglBurstTable *tmpEvent = NULL, *currentEvent = NULL;
 	SnglBurstTable burstEvent, *burstEventList = NULL;
 	SnglBurstTable *detEventList = NULL, *detTrigList = NULL, *prevTrig = NULL;
 
 	/* injections */
-	SimBurstTable *simBurstList = NULL, *outSimdummyList = NULL;
+	SimBurstTable *simBurstList = NULL;
 	SimBurstTable *currentSimBurst = NULL, *tmpSimBurst = NULL;
 	SimBurstTable *injSimList = NULL, *prevSimBurst = NULL;
-	SimBurstTable *injFoundList = NULL, *outSimList = NULL;
+	SimBurstTable *injFoundList = NULL;
 	SimBurstTable *tmpInjFound = NULL, *prevInjFound = NULL;
 
 	/* comparison parameters */
@@ -569,91 +606,12 @@ int main(int argc, char **argv)
 	simBurstList = trim_injection_list(simBurstList, options);
 
   /*****************************************************************
-   * OPEN FILE WITH LIST OF Trigger XML FILES (one file per line)
-   ****************************************************************/
-	if (!(fpin = fopen(inputFile, "r")))
-		LALPrintError("Could not open input file\n");
-
-  /*****************************************************************
-   * loop over the xml files
+   * Read the trigger list;  remove injections from the injection list that lie
+   * outside the time intervals that were actually analyzed according to the
+   * search summary tables.
    *****************************************************************/
-	tmpSimBurst = NULL;
-	tmpSimBurst = outSimdummyList;
 
-	/* convert time of first injection in the list to INT8 */
-	LAL_CALL(LALGPStoINT8(&stat, &injPeakTime, &(tmpSimBurst->l_peak_time)), &stat);
-
-	currentEvent = tmpEvent = burstEventList = NULL;
-	while (getline(line, MAXSTR, fpin)) {
-		INT4 tmpStartTime = 0, tmpEndTime = 0;
-
-		if (options.verbose)
-			fprintf(stderr, "Working on file %s\n", line);
-
-    /**************************************************************
-     * Get the searchsummary info to create the LIST of INJECTIONS 
-     * corresponding to jobs that actually succeeded. 
-     **************************************************************/
-
-		SearchSummaryTableFromLIGOLw(&searchSummary, line);
-		tmpStartTime = searchSummary->in_start_time.gpsSeconds;
-		tmpEndTime = searchSummary->in_end_time.gpsSeconds;
-
-		/*
-		 * Go to the injection in the list which is made after the  
-		 * current job started
-		 */
-		while (tmpStartTime * 1000000000LL > injPeakTime) {
-			tmpSimBurst = tmpSimBurst->next;
-			LAL_CALL(LALGPStoINT8(&stat, &injPeakTime, &(tmpSimBurst->l_peak_time)), &stat);
-		}
-
-		/*
-		 * Link the injections which lie inside the 
-		 * duration of the current job
-		 */
-
-		while ((tmpStartTime * 1000000000LL < injPeakTime)
-		       && (injPeakTime < tmpEndTime * 1000000000LL)
-		       && (tmpSimBurst->next != NULL)) {
-			if (outSimList == NULL) {
-				outSimList = currentSimBurst = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
-				prevSimBurst = currentSimBurst;
-			} else {
-				currentSimBurst = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
-				prevSimBurst->next = currentSimBurst;
-			}
-			memcpy(currentSimBurst, tmpSimBurst, sizeof(SimBurstTable));
-			prevSimBurst = currentSimBurst;
-			currentSimBurst = currentSimBurst->next = NULL;
-			tmpSimBurst = tmpSimBurst->next;
-
-			LAL_CALL(LALGPStoINT8(&stat, &injPeakTime, &(tmpSimBurst->l_peak_time)), &stat);
-		}
-
-
-		while (searchSummary) {
-			SearchSummaryTable *thisEvent;
-			thisEvent = searchSummary;
-			searchSummary = searchSummary->next;
-			LALFree(thisEvent);
-		}
-		searchSummary = NULL;
-
-		/* Now the events themselves */
-		LAL_CALL(LALSnglBurstTableFromLIGOLw(&stat, &tmpEvent, line), &stat);
-
-		/* connect results to linked list */
-		if (currentEvent == NULL)
-			burstEventList = currentEvent = tmpEvent;
-		else
-			currentEvent->next = tmpEvent;
-
-		/* move to the end of the linked list for next input file */
-		while (currentEvent->next != NULL)
-			currentEvent = currentEvent->next;
-		tmpEvent = currentEvent->next;
-	}
+	burstEventList = read_trigger_list(&stat, inputFile, &simBurstList, options);
 
   /****************************************************************
    * do any requested cuts and sort the remaining triggers
@@ -668,7 +626,7 @@ int main(int argc, char **argv)
    *****************************************************************/
 
 	currentEvent = detEventList = burstEventList;
-	for (currentSimBurst = outSimList; currentSimBurst; currentSimBurst = currentSimBurst->next) {
+	for (currentSimBurst = simBurstList; currentSimBurst; currentSimBurst = currentSimBurst->next) {
 		/* check if the injection is made in the playground */
 		if ((options.playground && !(isPlayground(currentSimBurst->l_peak_time.gpsSeconds, currentSimBurst->l_peak_time.gpsSeconds))) == 0) {
 			ninjected++;
