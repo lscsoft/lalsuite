@@ -86,7 +86,7 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
 }
 
 enum { mTotElem, etaElem, distElem, incElem, phiElem, lonElem, latElem,
-  psiElem, numElem };
+  psiElem, m1Elem, m2Elem, numElem };
 
 SimInspiralTable *this_sim_insp;
 
@@ -609,8 +609,8 @@ int inj_params( double *injPar, char *source )
   sky_position( &dist, &alpha, &delta, source );
   i = (size_t)( n * my_urandom() );
 
-  m1 = m1arr[i];
-  m2 = m2arr[i];
+  injPar[m1Elem] = m1 = m1arr[i];
+  injPar[m2Elem] = m2 = m2arr[i];
   injPar[mTotElem] = m1 + m2;
   injPar[etaElem]  = m1 * m2 / ( ( m1 + m2 ) * ( m1 + m2 ) );
   injPar[incElem]  = acos( -1.0 + 2.0 * my_urandom() );
@@ -1014,6 +1014,8 @@ int main( int argc, char *argv[] )
 
     memcpy( this_sim_insp->waveform, waveform, 
         sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
+    this_sim_insp->mass1 = injPar[m1Elem];
+    this_sim_insp->mass2 = injPar[m2Elem];
     this_sim_insp->mtotal = injPar[mTotElem];
     this_sim_insp->eta = injPar[etaElem];
     this_sim_insp->distance = injPar[distElem] / MPC;
@@ -1066,11 +1068,14 @@ int main( int argc, char *argv[] )
           process_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
 
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_params_table ), 
-        &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, procparams, 
-          process_params_table ), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
+    if ( procparams.processParamsTable )
+    {
+      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_params_table ), 
+          &status );
+      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, procparams, 
+            process_params_table ), &status );
+      LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
+    }
 
     if ( injections.simInspiralTable )
     {
