@@ -37,27 +37,6 @@ typedef struct tagReadDataPairParams {
 	INT4 resampleRate;
 } ReadDataPairParams;
 
-typedef struct tagMonteCarloInput {
-	CHAR *ifoOne;
-	CHAR *ifoTwo;
-	CHAR *calCacheOne;
-	CHAR *calCacheTwo;
-} MonteCarloInput;
-
-typedef struct tagMonteCarloParams {
-	UINT4 lengthSegment;
-	UINT4 numSegment;
-	UINT4 sampleRate;
-	UINT8 startTime;
-	INT4  seed;
-	REAL8 fRef;
-	REAL8 f0;
-	REAL8 omegaRef;
-	REAL8 alpha;
-	INT4  siteOne;
-	INT4  siteTwo;
-} MonteCarloParams;
-
 void parseOptions(INT4 argc, CHAR *argv[]);
 void displayUsage(INT4 exitcode);
 void readDataPair(LALStatus *status, StreamPair *streamPair,
