@@ -148,6 +148,7 @@ void SHeapSort(Status      *stat,
 	data[i]=data[k];
 	i=k;
 	k<<=1;
+        k++;
       }else
 	k=j+1;
     }
@@ -219,6 +220,7 @@ void SHeapIndex(Status      *stat,
 	indx[i]=indx[k];
 	i=k;
 	k<<=1;
+        k++;
       }else
 	k=j+1;
     }
@@ -313,6 +315,7 @@ void DHeapSort(Status      *stat,
 	data[i]=data[k];
 	i=k;
 	k<<=1;
+        k++;
       }else
 	k=j+1;
     }
@@ -384,6 +387,7 @@ void DHeapIndex(Status      *stat,
 	indx[i]=indx[k];
 	i=k;
 	k<<=1;
+        k++;
       }else
 	k=j+1;
     }
