@@ -256,7 +256,6 @@ int main(int argc,char *argv[]){
     struct stat buff;
     char sftname[256];
     int filesize=(INT4)(DF*tbase);
-    int before;
 
     /* time of correct start */
     epoch.gpsSeconds=starts[count];
@@ -278,24 +277,24 @@ int main(int argc,char *argv[]){
     }
     
     /* read in correct data */
-    before=errno;
+    errno=0;
     frvect = FrFileIGetVAdc(frfile, chname, epoch.gpsSeconds, tbase, 0);
-    if (errno!=before){
+    if (errno){
       char command[256];
       pout("System error when reading Frame data: %s\n", strerror(errno));
-      pout("Following is output of ls -l on files\n");
+      pout("Following is output of ls -l on Frame file list:\n");
       sprintf(command, "cat %s | xargs ls -l 1>&2", framelist);
       system(command);
       return 3;
     }
     
-    if (frvect == NULL) {
+    if (frvect==NULL) {
       pout( "Data missing between times %d and %d\n",epoch.gpsSeconds,epoch.gpsSeconds+tbase);
       continue;
     }
     
     /* Check that data type is correct */
-    if ( frvect->type != FR_VECT_4R ){
+    if (frvect->type != FR_VECT_4R){
       pout( "Wrong data type (notFR_VECT_4R) found in frame!\n" );
       return(5);
     }
