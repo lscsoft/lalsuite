@@ -200,7 +200,6 @@ int SPInit(
   LALFindChirpDataInit( &status, spDataParams, initParams );
   TEST_STATUS( &status );
 
-  (*spDataParams)->deltaT       = 1 / srate;
   (*spDataParams)->fLow         = fmin;
   (*spDataParams)->dynRange     = dynRange;
   (*spDataParams)->invSpecTrunc = trunc;
@@ -249,7 +248,6 @@ int TDInit(
   for ( i = 0; i < (*tdDataParams)->ampVec->length; ++i )
     (*tdDataParams)->ampVec->data[i] = 1;
 
-  (*tdDataParams)->deltaT       = 1 / srate;
   (*tdDataParams)->fLow         = fmin;
   (*tdDataParams)->dynRange     = dynRange;
   (*tdDataParams)->invSpecTrunc = trunc;

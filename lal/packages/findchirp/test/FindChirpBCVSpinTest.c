@@ -28,9 +28,9 @@
 #include <lal/DataBuffer.h>
 #include <lal/Random.h>
 #include <lal/LALInspiral.h>
+#include <lal/FindChirpDatatypes.h>
 #include <lal/FindChirp.h>
-#include <lal/FindChirp.h>
-#include <lal/TwoInterfFindChirp.h>
+#include <lal/FindChirpBCVSpin.h>
 
 NRCSID (MAIN, "$Id$");
 
@@ -128,7 +128,7 @@ main (int argc, char *argv[])
   FindChirpFilterInput         *filterInput = NULL;
 
   InspiralTemplate             *tmplt = NULL;
-  InspiralEvent                *event = NULL;
+  SnglInspiralTable            *event = NULL;
 
   
   /*
@@ -413,7 +413,6 @@ main (int argc, char *argv[])
   dynRange = pow( 2.0, dynRange );
 
   /* set parameters */
-  dataParams->deltaT       = deltaT;
   dataParams->fLow         = fLow;
   dataParams->dynRange     = dynRange;
   dataParams->invSpecTrunc = invSpecTrunc;

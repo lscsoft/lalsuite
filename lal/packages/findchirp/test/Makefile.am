@@ -11,7 +11,7 @@ EXTRA_TEXSOURCES = NoTest.sh
 
 #FindChirpTmpltTest_SOURCES = FindChirpTmpltTest.c
 #FindChirpTmpltTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-FindChirpTDTest_SOURCES = FindChirpTDTest.c
+FindChirpTDTest_SOURCES = FindChirpTDTest.c FindChirpTDTest.h
 FindChirpTDTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 FindChirpBCVSpinTest_SOURCES = FindChirpBCVSpinTest.c
 LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
