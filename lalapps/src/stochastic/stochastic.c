@@ -31,6 +31,8 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataTables.h>
 
+#include <lal/PrintVector.h>
+
 #include <lalapps.h>
 #include <processtable.h>
 
@@ -198,7 +200,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
   /* window for segment data streams */
-  REAL4TimeSeries dataWindow;
+  REAL4TimeSeries *dataWindow;
 
   /* hann window */
   INT4 hannLength;
@@ -555,28 +557,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   inverseNoiseOutOne.calibratedInverseNoisePSD = calInvPsdOne;
   inverseNoiseOutTwo.calibratedInverseNoisePSD = calInvPsdTwo;
 
-  /* set window parameters for segment data streams */
-  strncpy(dataWindow.name, "dataWindow", LALNameLength);
-  dataWindow.sampleUnits = lalDimensionlessUnit;
-  dataWindow.deltaT = 1./resampleRate;
-  dataWindow.f0 = 0;
-
-  if (vrbflg)
-    fprintf(stdout, "Allocating memory for data segment window...\n");
-
-  /* allocate memory for segment window */
-  dataWindow.data = NULL;
-  LAL_CALL(LALSCreateVector(&status, &(dataWindow.data), segmentLength), \
-      &status);
-  memset(dataWindow.data->data, 0, \
-      dataWindow.data->length * sizeof(*dataWindow.data->data));
-
   if (vrbflg)
     fprintf(stdout, "Generating data segment window...\n");
 
-  /* generate window */
-  for (i = 0; i < segmentLength; i++)
-    dataWindow.data->data[i] = 1.;
+  dataWindow = rectangular_window(&status, seriesOne->deltaT, 0, segmentLength);
+
+  LALSPrintTimeSeries(dataWindow, "window.dat");
 
   if (overlap_hann_flag)
     hannDuration = segmentDuration;
@@ -599,11 +585,11 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     /* construct Tukey window */
     for (i = 0; i < hannLength / 2; i++)
-      dataWindow.data->data[i] = hannWindow->data[i];
+      dataWindow->data->data[i] = hannWindow->data[i];
 
     for (i = segmentLength - (hannLength / 2); i < segmentLength; i++)
     {
-      dataWindow.data->data[i] = hannWindow->data[i - \
+      dataWindow->data->data[i] = hannWindow->data[i - \
                                  segmentLength + hannLength];
     }
   }
@@ -639,7 +625,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* set zeropad parameters */
   zeroPadParams.fftPlan = fftDataPlan;
-  zeroPadParams.window = dataWindow.data;
+  zeroPadParams.window = dataWindow->data;
   zeroPadParams.length = zeroPadLength;
 
   /* quantities needed to build the optimal filter */
@@ -732,7 +718,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* set normalisation parameters */
   normParams.fRef = fRef;
   normParams.heterodyned = 0;
-  normParams.window1 = normParams.window2 = dataWindow.data;
+  normParams.window1 = normParams.window2 = dataWindow->data;
 
   /* set normalisation input */
   normInput.overlapReductionFunction = overlap;
@@ -1334,7 +1320,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, calInvPsdTwo), &status);
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, overlap), &status);
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, omegaGW), &status);
-  LAL_CALL(LALDestroyVector(&status, &(dataWindow.data)), &status);
+  LAL_CALL(LALDestroyREAL4TimeSeries(&status, dataWindow), &status);
   if (hannDuration != 0)
   {
     LAL_CALL(LALDestroyVector(&status, &hannWindow), &status );
