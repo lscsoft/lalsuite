@@ -146,6 +146,7 @@ main(int argc, char **argv)
 
 /* Number of templates is nlist */
 
+  fp = fopen("BCVTemplatesFlatMesh.out", "w");
   dim = DIM;
   nlist = 0;
 
@@ -192,10 +193,10 @@ main(int argc, char **argv)
   LALInspiralComputeMetricBCV(&status, &metric, &shf, &params);
   */
 
-  fprintf(stderr, "%e %e %e\n", metric.G00, metric.G01, metric.G11);
-  fprintf(stderr, "%e %e %e\n", metric.g00, metric.g11, metric.theta);
-  fprintf(stderr, "dp0=%e dp1=%e\n", sqrt (mismatch/metric.G00), sqrt (mismatch/metric.G11));
-  fprintf(stderr, "dP0=%e dP1=%e\n", sqrt (mismatch/metric.g00), sqrt (mismatch/metric.g11));
+  fprintf(fp, "%e %e %e\n", metric.G00, metric.G01, metric.G11);
+  fprintf(fp, "%e %e %e\n", metric.g00, metric.g11, metric.theta);
+  fprintf(fp, "dp0=%e dp1=%e\n", sqrt (mismatch/metric.G00), sqrt (mismatch/metric.G11));
+  fprintf(fp, "dP0=%e dP1=%e\n", sqrt (mismatch/metric.g00), sqrt (mismatch/metric.g11));
   {
     CreateVectorSequenceIn in;
     in.length = dim;
@@ -240,9 +241,9 @@ main(int argc, char **argv)
 	  matrixInv->data[2] = -matrix->data[2]/det;
 	  matrixInv->data[3] = matrix->data[0]/det;
 
-          for (i=0; i<2*dim; i+=2) fprintf(stderr, "%e\t%e\n", matrix->data[i], matrix->data[i+1]);
-          fprintf(stderr, "Det=%e\n", det);
-          for (i=0; i<2*dim; i+=2) fprintf(stderr, "%e\t%e\n", matrixInv->data[i], matrixInv->data[i+1]);
+          for (i=0; i<2*dim; i+=2) fprintf(fp, "%e\t%e\n", matrix->data[i], matrix->data[i+1]);
+          fprintf(fp, "Det=%e\n", det);
+          for (i=0; i<2*dim; i+=2) fprintf(fp, "%e\t%e\n", matrixInv->data[i], matrixInv->data[i+1]);
   }
 
 	  
@@ -369,12 +370,13 @@ main(int argc, char **argv)
 	bankParams.x0 = (REAL8) data[k++];
 	bankParams.x1 = (REAL8) data[k++];
 	LALInspiralValidParams(&status, &valid, bankParams, coarseIn);
-        if (valid) fprintf(stdout, "%10.3e %10.3e\n", bankParams.x0, bankParams.x1);
+        if (valid) fprintf(fp, "%10.3e %10.3e\n", bankParams.x0, bankParams.x1);
     }
   }
 
   /* Free the mesh, and exit. */
   SUB( LALSDestroyVectorSequence( &status, &mesh ), &status );
+  LALDDestroyVector(&status, &shf.data);
   LALCheckMemoryLeaks();
   INFO( FLATMESHTESTC_MSGENORM );
   return FLATMESHTESTC_ENORM;

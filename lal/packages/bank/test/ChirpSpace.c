@@ -34,14 +34,16 @@ LALInspiralParameterCalc
 #include <stdio.h>
 #include <lal/LALInspiral.h>
 
-INT4 lalDebugLevel=4;
+INT4 lalDebugLevel=0;
 
 int main ( void ) {
    static InspiralTemplate p;
    static LALStatus status;
    double mmin, mmax, Mmax, totalMmax, compmmin, m1, m2, finalmass;
    UINT2 type;
-
+   FILE *fpr;
+  
+   fpr = fopen("ChirSpace.out", "w");
    /*
     Change the parameters of the search space here 
    
@@ -67,7 +69,7 @@ int main ( void ) {
 
    totalMmax = pow(10.,Mmax);
    compmmin = pow(10.,mmin);
-   fprintf(stderr, "mmin=%e Mmax=%e\n", pow(10., mmin), pow(10., Mmax));
+   fprintf(fpr, "#mmin=%e Mmax=%e\n", pow(10., mmin), pow(10., Mmax));
 
    p.massChoice=m1Andm2;
    p.mass1 = compmmin;
@@ -78,7 +80,7 @@ int main ( void ) {
       p.mass2 = pow(10.,m2);
       LALInspiralParameterCalc (&status, &p);
       if (p.totalMass > totalMmax) break;
-      printf("%e %e %e %e %e %e %e %e %e %e %e\n", 
+      fprintf(fpr, "%e %e %e %e %e %e %e %e %e %e %e\n", 
          p.t0,
          p.t3,
          p.t2,
@@ -91,7 +93,7 @@ int main ( void ) {
          p.chirpMass,
          p.tC);
    }
-   printf("&\n");
+   fprintf(fpr, "&\n");
 
    if (type)
    {
@@ -101,7 +103,7 @@ int main ( void ) {
 		   p.mass2 = pow(10.,m2);
 		   if ((p.mass1=p.totalMass - p.mass2) > p.totalMass/2.) break;
 		   LALInspiralParameterCalc (&status, &p);
-		   printf("%e %e %e %e %e %e %e %e %e %e %e\n", 
+		   fprintf(fpr, "%e %e %e %e %e %e %e %e %e %e %e\n", 
 				   p.t0,
 				   p.t3,
 				   p.t2,
@@ -125,7 +127,7 @@ int main ( void ) {
 		   LALInspiralParameterCalc (&status, &p);
       
 		   if (p.totalMass > totalMmax) break;
-		   printf("%e %e %e %e %e %e %e %e %e %e %e\n", 
+		   fprintf(fpr, "%e %e %e %e %e %e %e %e %e %e %e\n", 
 				   p.t0,
 				   p.t3,
 				   p.t2,
@@ -139,13 +141,13 @@ int main ( void ) {
 				   p.tC);
 	   }
    }
-   printf("&\n");
+   fprintf(fpr, "&\n");
    p.massChoice=totalMassAndEta;
    p.eta = 0.25;
    for (m2=log10(totalMmax); m2>=mmin; m2-=0.01) {
       if ((p.totalMass = pow(10.,m2)) < 2.*compmmin) break;
       LALInspiralParameterCalc (&status, &p);
-      printf("%e %e %e %e %e %e %e %e %e %e %e\n", 
+      fprintf(fpr, "%e %e %e %e %e %e %e %e %e %e %e\n", 
          p.t0,
          p.t3,
          p.t2,

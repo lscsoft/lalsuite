@@ -70,6 +70,9 @@ main()
   void *noisemodel = LALLIGOIPsd;
   InspiralMomentsEtc moments;
   REAL8 mismatch;
+  FILE *fpr;
+
+  fpr = fopen("MetricTest.out", "w");
 
   mismatch = 0.10L;
 
@@ -114,10 +117,10 @@ main()
 	  
   GetInspiralMoments (&status, &moments, &shf, &params);
   LALInspiralComputeMetric(&status, &metric, &params, &moments);
-  fprintf(stderr, "%e %e %e\n", metric.G00, metric.G01, metric.G11);
-  fprintf(stderr, "%e %e %e\n", metric.g00, metric.g11, metric.theta);
-  fprintf(stderr, "dP0=%e dP1=%e\n", sqrt (mismatch/metric.G00), sqrt (mismatch/metric.G11));
-  fprintf(stderr, "dp0=%e dp1=%e\n", sqrt (mismatch/metric.g00), sqrt (mismatch/metric.g11));
+  fprintf(fpr, "#%e %e %e\n", metric.G00, metric.G01, metric.G11);
+  fprintf(fpr, "#%e %e %e\n", metric.g00, metric.g11, metric.theta);
+  fprintf(fpr, "#dP0=%e dP1=%e\n", sqrt (mismatch/metric.G00), sqrt (mismatch/metric.G11));
+  fprintf(fpr, "#dp0=%e dp1=%e\n", sqrt (mismatch/metric.g00), sqrt (mismatch/metric.g11));
   {
   double MM;
   double dp0, dp1;
@@ -133,15 +136,16 @@ main()
       for ( dp1= dp1min; dp1<=dp1max+d1 ; dp1+=d1)
 	{  
 	  
-	  MM = 1. - (metric.G00 * dp0 * dp0
-		  +  metric.G01 * dp0 * dp1
-		  +  metric.G01 * dp1 * dp0
-		  +  metric.G11 * dp1 * dp1);
-	  printf("%f %f %f\n", dp0, dp1, MM);	  
+	  MM = 1. - (metric.G00 * dp0 * dp0 +  metric.G01 * dp0 * dp1
+		  +  metric.G01 * dp1 * dp0 +  metric.G11 * dp1 * dp1);
+	  fprintf(fpr, "%f %f %f\n", dp0, dp1, MM);	  
 	}
-              printf("\n");
+              fprintf(fpr,"\n");
     }
   }
+
+  LALDDestroyVector(&status, &(shf.data));
+  LALCheckMemoryLeaks();
   return 0;
 }
 

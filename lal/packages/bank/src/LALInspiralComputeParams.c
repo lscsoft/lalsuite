@@ -127,11 +127,13 @@ void LALInspiralComputeParams(LALStatus            *status,
         pars->massChoice = t03;
         break;
      default:
-        fprintf(stderr, "LALInspiralComputeParams: No choice for parameter space");
-        exit(0);
+	if (lalDebugLevel&LALINFO)
+	{
+		LALPrintError("LALInspiralComputeParams: No choice for parameter space");
+	}
   }
   LALInspiralParameterCalc(status->statusPtr, pars);
-  pars->fCutoff = 1./(pow(6.,1.5) * LAL_PI * pars->totalMass * LAL_MTSUN_SI);
+  pars->fCutoff = 1.L/(pow(6.L,1.5L) * LAL_PI * pars->totalMass * LAL_MTSUN_SI);
   CHECKSTATUSPTR(status);
 
   DETATCHSTATUSPTR(status);

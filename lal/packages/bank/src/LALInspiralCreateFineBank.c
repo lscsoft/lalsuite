@@ -180,6 +180,7 @@ void LALInspiralCreateFineBank(LALStatus            *status,
          if (!(*outlist = (InspiralTemplateList*) 
             LALRealloc(*outlist, sizeof(InspiralTemplateList)*(*nlist+1)))) {
             ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+	    outlist = NULL;
          }
          (*outlist)[*nlist].params = *tempPars;
          ++(*nlist); 

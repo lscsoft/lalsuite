@@ -35,19 +35,21 @@ lalDebugLevel
 #include <lal/LALNoiseModels.h>
 #include <lal/AVFactories.h>
 
-INT4 lalDebugLevel=1;
+INT4 lalDebugLevel=0;
 
 int 
 main ( void )
 {  
   InspiralMetric metric;
-  LALStatus            *status = LALCalloc(1, sizeof(*status));
+  static LALStatus status;
   InspiralTemplate     *params;
   REAL8FrequencySeries    psd;
   void *(noisemodel) = LALLIGOIPsd;
-  UINT4 numPSDpts = 262144;    
+  UINT4 numPSDpts = 65536;    
   REAL8 tSampling;
   REAL8 mismatch;
+  FILE *fpr;
+  fpr = fopen("MetricTestBCV.out", "w");
 
   mismatch = 0.03;
   params = (InspiralTemplate *)LALMalloc(sizeof(InspiralTemplate));
@@ -60,16 +62,16 @@ main ( void )
 
   memset( &(psd), 0, sizeof(REAL8FrequencySeries) );
   psd.f0 = 0;
-  LALDCreateVector( status, &(psd.data), numPSDpts );
+  LALDCreateVector(&status, &(psd.data), numPSDpts );
   psd.deltaF = tSampling / (2.L*(REAL8) psd.data->length + 1.L);
-  LALNoiseSpectralDensity (status, psd.data, noisemodel, psd.deltaF );
+  LALNoiseSpectralDensity (&status, psd.data, noisemodel, psd.deltaF );
    
-  LALInspiralComputeMetricBCV(status->statusPtr, &metric, &psd, params);
+  LALInspiralComputeMetricBCV(&status, &metric, &psd, params);
 
-  fprintf(stderr, "%e %e %e\n", metric.G00, metric.G01, metric.G11);
-  fprintf(stderr, "%e %e %e\n", metric.g00, metric.g11, metric.theta);
-  fprintf(stderr, "dp0=%e dp1=%e\n", sqrt (mismatch/metric.G00), sqrt (mismatch/metric.G11));
-  fprintf(stderr, "dP0=%e dP1=%e\n", sqrt (mismatch/metric.g00), sqrt (mismatch/metric.g11));
+  fprintf(fpr, "#%e %e %e\n", metric.G00, metric.G01, metric.G11);
+  fprintf(fpr, "#%e %e %e\n", metric.g00, metric.g11, metric.theta);
+  fprintf(fpr, "#dp0=%e dp1=%e\n", sqrt (mismatch/metric.G00), sqrt (mismatch/metric.G11));
+  fprintf(fpr, "#dP0=%e dP1=%e\n", sqrt (mismatch/metric.g00), sqrt (mismatch/metric.g11));
 
   
   {
@@ -83,22 +85,20 @@ main ( void )
   double d0=(dp0max-dp0min)/(double)n;
   double d1=(dp1max-dp1min)/(double)n;
   for ( dp0= dp0min; dp0<=dp0max ; dp0+=d0)
-    {
+  {
       for ( dp1= dp1min; dp1<=dp1max ; dp1+=d1)
-	{  
-	  
-	  MM = 1. - (metric.G00 * dp0 * dp0
-		  +  metric.G01 * dp0 * dp1
-		  +  metric.G01 * dp1 * dp0
-		  +  metric.G11 * dp1 * dp1);
-	  printf("%f %f %f\n", dp0, dp1, MM);	  
-	}
-              printf("\n");
-    }
+      {  
+	  MM = 1. - (metric.G00 * dp0 * dp0 +  metric.G01 * dp0 * dp1
+		  +  metric.G01 * dp1 * dp0 +  metric.G11 * dp1 * dp1);
+	  fprintf(fpr, "%f %f %f\n", dp0, dp1, MM);	  
+      }
+      fprintf(fpr, "\n");
+  }
   }
 
-
-
+  LALFree(params);
+  LALDDestroyVector(&status, &(psd.data) );
+  LALCheckMemoryLeaks();
   return 0;
 
 }

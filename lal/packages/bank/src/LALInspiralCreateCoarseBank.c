@@ -368,27 +368,34 @@ LALRalloc()
 #include <lal/LALInspiralBank.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
+#include <lal/LALStdio.h>
 
 static void
-GetInspiralMoments (
-		LALStatus            *status,
-		InspiralMomentsEtc   *moments,
-		REAL8FrequencySeries *psd,
-		InspiralTemplate     *params );
+GetInspiralMoments 
+(
+   LALStatus            *status,
+   InspiralMomentsEtc   *moments,
+   REAL8FrequencySeries *psd,
+   InspiralTemplate     *params 
+);
 
 static void 
-PSItoMasses (
-	InspiralTemplate *params, 
-	UINT4 *valid);
+PSItoMasses 
+(
+   InspiralTemplate *params, 
+   UINT4 *valid
+);
 
 
 
-
-
-
-
-
-
+static void 
+LALInspiralCreatePNCoarseBank
+(
+   LALStatus            *status, 
+   InspiralTemplateList **list, 
+   INT4                 *nlist,
+   InspiralCoarseBankIn coarseIn
+);
 
 
 NRCSID(LALINSPIRALCREATECOARSEBANKC, "$Id$");
@@ -402,6 +409,60 @@ LALInspiralCreateCoarseBank(
 		INT4                 *nlist,
 		InspiralCoarseBankIn coarseIn) 
 {  /*  </lalVerbatim>  */
+  
+	INITSTATUS (status, "LALInspiralCreateCoarseBank", LALINSPIRALCREATECOARSEBANKC);
+	ATTATCHSTATUSPTR(status);
+
+  
+	ASSERT (coarseIn.shf.data, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+	ASSERT (coarseIn.shf.data->data, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+	ASSERT (coarseIn.mmCoarse > 0.L, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+	ASSERT (coarseIn.mmCoarse < 1.L, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+	ASSERT (coarseIn.fLower > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+	ASSERT (coarseIn.tSampling > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+	ASSERT (coarseIn.tSampling >= 2.*coarseIn.fUpper, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+	ASSERT ((INT4)coarseIn.space >= 0, status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
+	ASSERT ((INT4)coarseIn.space <= 1, status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
+  
+	switch (coarseIn.approximant)
+	{
+      		case BCV: 
+      			LALInspiralCreateBCVBank(status->statusPtr, list, nlist, coarseIn);
+      			break;
+      		case TaylorT1: 
+      		case TaylorT2: 
+      		case TaylorT3: 
+      		case TaylorF1: 
+      		case TaylorF2: 
+      		case PadeT1: 
+      		case PadeF1: 
+      		case EOB: 
+      			LALInspiralCreatePNCoarseBank(status->statusPtr, list, nlist, coarseIn);
+      			break;
+		default:
+			if ( lalDebugLevel&LALINFO ) 
+			{
+				LALInfo(status, "Invalid choice in coarseIn.approximant\n");
+				LALPrintError("\tInvalid choice in coarseIn.approximant\n");
+			}
+			break;
+	}
+      			
+	DETATCHSTATUSPTR(status);
+	RETURN (status);
+
+}
+
+
+
+
+static void 
+LALInspiralCreatePNCoarseBank(
+		LALStatus            *status, 
+		InspiralTemplateList **list, 
+		INT4                 *nlist,
+		InspiralCoarseBankIn coarseIn) 
+{  
 
   InspiralBankParams bankPars, bankParsOld;
   InspiralTemplate *tempPars;
@@ -412,19 +473,11 @@ LALInspiralCreateCoarseBank(
 
   INITSTATUS (status, "LALInspiralCreateCoarseBank", LALINSPIRALCREATECOARSEBANKC);
   ATTATCHSTATUSPTR(status);
-  
-  ASSERT (coarseIn.shf.data, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-  ASSERT (coarseIn.shf.data->data, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+	
   ASSERT (coarseIn.mMin > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
   ASSERT (coarseIn.mMax > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
   ASSERT (coarseIn.MMax >= 2.*coarseIn.mMin, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-  ASSERT (coarseIn.mmCoarse > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-  ASSERT (coarseIn.fLower > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-  ASSERT (coarseIn.tSampling > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-  ASSERT (coarseIn.tSampling >= 2.*coarseIn.fUpper, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-  ASSERT ((INT4)coarseIn.space >= 0, status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
-  ASSERT ((INT4)coarseIn.space <= 1, status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
-  
+	
   ndx1 = 0.0;
   ndx2 = 0.0;
   a25 = 0.0;
@@ -678,13 +731,11 @@ GetInspiralMoments (
    CHECKSTATUSPTR(status);
    in.norm = moments->j[7];
 
-   if (lalDebugLevel & LALINFO)
+   if (lalDebugLevel&LALINFO)
    {
-	   fprintf (stderr, "a01=%e a21=%e a22=%e a31=%e a41=%e a42=%e a43=%e \n", 
+	   LALPrintError ("a01=%e a21=%e a22=%e a31=%e a41=%e a42=%e a43=%e j7=%e\n", 
 			   moments->a01, moments->a21, moments->a22, moments->a31, 
-			   moments->a41, moments->a42, moments->a43);
-   
-	   fprintf(stderr, "j7=%e\n", moments->j[7]);
+			   moments->a41, moments->a42, moments->a43, moments->j[7]);
    }
 
    /* Then compute the normalised moments of the noise PSD from 1/3 to 17/3. */
@@ -694,7 +745,7 @@ GetInspiralMoments (
 	   in.ndx = (REAL8) k /3.L; 
 	   LALInspiralMoments(status->statusPtr,&moments->j[k],in);  
 	   CHECKSTATUSPTR(status);
-	   if (lalDebugLevel==1) fprintf(stderr, "j%1i=%e\n", k,moments->j[k]);
+	   if (lalDebugLevel&LALINFO) LALPrintError("j%1i=%e\n", k, moments->j[k]);
    }
    /* Moments are done: Rescale deltaF and f0 back to their original values */
 
@@ -719,30 +770,39 @@ LALInspiralCreateBCVBank(
 {  /*  </lalVerbatim>  */
 
 	UINT4 j;
+	INT4 nlistOld;
 	static InspiralBankParams bankParams;
 	static InspiralMetric metric;
 	static InspiralTemplate params;
 	static CreateVectorSequenceIn in; 
 	static REAL4VectorSequence *tempList=NULL;
-	REAL8 dx0, dx1;
   
 	INITSTATUS (status, "LALInspiralCreateBCVBank", LALINSPIRALCREATECOARSEBANKC);
 	ATTATCHSTATUSPTR(status);
   
+  
+	ASSERT (coarseIn.psi0Min > 0., status,LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+	ASSERT (coarseIn.psi0Max > coarseIn.psi0Min, status,LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+	ASSERT (coarseIn.psi3Min < 0.*coarseIn.mMin, status,LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+	ASSERT (coarseIn.psi3Max > coarseIn.psi3Min, status,LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+
 	params.fLower = coarseIn.fLower;
 	params.fCutoff = coarseIn.fUpper;
 	params.alpha = coarseIn.alpha;
 	LALInspiralComputeMetricBCV(status->statusPtr, &metric, &coarseIn.shf, &params);
 
-	dx0 = sqrt(2.L * (1.L-coarseIn.mmCoarse)/metric.g00);
-	dx1 = sqrt(2.L * (1.L-coarseIn.mmCoarse)/metric.g11);
   
-	fprintf(stderr, "%e %e %e\n", metric.G00, metric.G01, metric.G11);
-	fprintf(stderr, "%e %e %e\n", metric.g00, metric.g11, metric.theta);
-	fprintf(stderr, "dp0=%e dp1=%e\n", dx0, dx1);
+	if (lalDebugLevel&LALINFO) 
+	{
+		REAL8 dx0, dx1;
 
-	/*
-	*/
+		dx0 = sqrt(2.L * (1.L-coarseIn.mmCoarse)/metric.g00);
+		dx1 = sqrt(2.L * (1.L-coarseIn.mmCoarse)/metric.g11);
+		LALPrintError("G00=%e G01=%e G11=%e\n", metric.G00, metric.G01, metric.G11);
+		LALPrintError("g00=%e g11=%e theta=%e\n", metric.g00, metric.g11, metric.theta);
+		LALPrintError("dp0=%e dp1=%e\n", dx0, dx1);
+	}
+
 	bankParams.metric = &metric;
 	bankParams.minimalMatch = coarseIn.mmCoarse;
 	bankParams.x0Min = coarseIn.psi0Min;
@@ -777,9 +837,14 @@ LALInspiralCreateBCVBank(
 		(*list)[j].params.signalAmplitude= 1.;
 		(*list)[j].metric = metric;
 	}
-	fprintf(stderr, "Num templates before=%d \n", *nlist);
+
+	nlistOld = *nlist;
 	LALInspiralBCVFcutBank( status->statusPtr, list, nlist, coarseIn.numFcutTemplates) ;
-	fprintf(stderr, "Num templates after=%d \n", *nlist);
+
+	if (lalDebugLevel&LALINFO) 
+	{
+		LALPrintError("Templates before %d and after %d calling LALInspiralBCVBank\n", nlistOld, *nlist);
+	}
     
 	LALSDestroyVectorSequence(status->statusPtr, &tempList);
 

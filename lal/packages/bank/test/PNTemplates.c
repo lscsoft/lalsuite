@@ -69,7 +69,9 @@ main(int argc, char **argv)
   static InspiralMomentsEtc moments;
   static InspiralBankParams   bankParams; 
   static CreateVectorSequenceIn in; 
-    UINT4 valid;
+  UINT4 valid;
+  FILE *fpr;
+  fpr = fopen("PNTemplates.out", "w");
 
 /* Number of templates is nlist */
 
@@ -127,14 +129,14 @@ main(int argc, char **argv)
   dx0 = sqrt(2.L * (1.L-coarseIn.mmCoarse)/metric.g00);
   dx1 = sqrt(2.L * (1.L-coarseIn.mmCoarse)/metric.g11);
 
-  fprintf(stderr, "%e %e %e\n", metric.G00, metric.G01, metric.G11);
-  fprintf(stderr, "%e %e %e\n", metric.g00, metric.g11, metric.theta);
-  fprintf(stderr, "dp0=%e dp1=%e\n", dx0, dx1);
+  fprintf(fpr, "%e %e %e\n", metric.G00, metric.G01, metric.G11);
+  fprintf(fpr, "%e %e %e\n", metric.g00, metric.g11, metric.theta);
+  fprintf(fpr, "dp0=%e dp1=%e\n", dx0, dx1);
 
   bankParams.metric = &metric;
   bankParams.minimalMatch = coarseIn.mmCoarse;
-  bankParams.x0Min = 0.30;
-  bankParams.x0Max = 43.00; 
+  bankParams.x0Min = 3.0;
+  bankParams.x0Max = 10.00; 
   bankParams.x1Min = 0.15;
   bankParams.x1Max = 1.25;
 
@@ -146,7 +148,7 @@ main(int argc, char **argv)
   LALInspiralCreateFlatBank(&status, list, &bankParams);
   nlist = list->length;
 
-  fprintf(stderr, "Number of templates=%d dx0=%e dx1=%e\n", nlist, bankParams.dx0, bankParams.dx1);
+  fprintf(fpr, "Number of templates=%d dx0=%e dx1=%e\n", nlist, bankParams.dx0, bankParams.dx1);
                    
 
   /* Prepare to print result. */
@@ -161,11 +163,10 @@ main(int argc, char **argv)
 	    bankParams.x0 = (REAL8) list->data[2*j];
 	    bankParams.x1 = (REAL8) list->data[2*j+1];
 	    LALInspiralValidParams(&status, &valid, bankParams, coarseIn);
-	    if (valid) fprintf(stdout, "%10.4f %10.4f %10.3f %10.3f\n", 
+	    if (valid) fprintf(fpr, "%10.4f %10.4f %10.3f %10.3f\n", 
 			    bankParams.x0, bankParams.x1);
     }
   }
-  exit(0);
   {
     UINT4 j;
     UINT4 valid;
@@ -192,22 +193,20 @@ main(int argc, char **argv)
         if (valid) 
 	{
 		LALRectangleVertices(&status, &RectOut, &RectIn);
-		printf("%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n", 
+		fprintf(fpr, "%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n", 
 				RectOut.x1, RectOut.y1, 
 				RectOut.x2, RectOut.y2, 
 				RectOut.x3, RectOut.y3, 
 				RectOut.x4, RectOut.y4, 
 				RectOut.x5, RectOut.y5);
-		printf("&\n");
+		fprintf(fpr, "&\n");
 	}
     }
   }
   /* Free the list, and exit. */
-  /*
-  LALFree (list->data);
-  LALFree (list);
+  if (list != NULL) LALFree (list);
+  LALDDestroyVector(&status, &(shf.data) );
   LALCheckMemoryLeaks();
-  */
 }
 
 

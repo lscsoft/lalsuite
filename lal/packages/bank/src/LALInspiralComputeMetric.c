@@ -342,6 +342,7 @@ InspiralComputeMetricGetPsiCoefficients(
 
 static void
 LALGetInspiralMomentsBCV (
+		          LALStatus               *status,
 			  InspiralMomentsEtcBCV   *moments,
 			  REAL8FrequencySeries    *psd,
 			  InspiralTemplate        *params );
@@ -441,16 +442,6 @@ LALInspiralComputeMetric
    metric->G01 = b;
    metric->G11 = c;
 
-     
-   /* if (lalDebugLevel==1) 
-    { 
-	    printf("%e %e\n", params->t0, params->t3); 
-	    printf("[%e %e]\n", a, b ); 
-	    printf("[%e %e]\n", b, c); 
-    }
-    */
-   
-   
    /*
     * Diagonalize the metric.
     */
@@ -477,12 +468,6 @@ LALInspiralComputeMetric
 	   metric->theta = atan(b/(metric->g00 - c));
    }
 
-
-   /* if (lalDebugLevel==1) 
-    {
-       printf("%e %e %e %e %e %e %e\n", det, a, b, c, metric->g00, metric->g11, metric->theta);
-    }
-    */
 
    DETATCHSTATUSPTR(status);
    RETURN(status);
@@ -530,15 +515,16 @@ LALInspiralComputeMetricBCV
 
   static REAL8 g[Dim][Dim];
   static InspiralMomentsEtcBCV moments;
-  
-
-  
   double num;
+   
+  INITSTATUS (status, "LALInspiralComputeMetric", LALINSPIRALCOMPUTEMETRICC);
+  ATTATCHSTATUSPTR(status);
 
   moments.alpha = params->alpha;
   moments.n0 = 5.L/3.L;
   moments.n15 = 2.L/3.L;
-  LALGetInspiralMomentsBCV(&moments, psd, params);
+
+  LALGetInspiralMomentsBCV(status->statusPtr, &moments, psd, params);
 
   num =  moments.M3[0][0] *moments.M3[1][1] 
     - moments.M3[0][1] * moments.M3[1][0];
@@ -594,11 +580,14 @@ LALInspiralComputeMetricBCV
 		   metric->theta = atan(b/(metric->g00 - c));
 	   }
    }
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
 }
 
 
 static void
 LALGetInspiralMomentsBCV (
+		LALStatus               *status,
 		InspiralMomentsEtcBCV   *moments,
 		REAL8FrequencySeries    *psd,
 		InspiralTemplate        *params 
@@ -610,11 +599,8 @@ LALGetInspiralMomentsBCV (
   double q;
   long i;
   
-  LALStatus  *status = LALCalloc(1, sizeof(*status));
-  ;
   INITSTATUS (status, "LALInspiralComputeMetricBCV", LALINSPIRALCOMPUTEMETRICC);
   ATTATCHSTATUSPTR(status);
-  
   
   /* rewrite the following lines in proper way (normalisation factor) */
   
@@ -698,33 +684,33 @@ LALGetInspiralMomentsBCV (
    
    moments->M3[1][0]=moments->M3[0][1] ;
 
-
-
-
-
-  /* 
-   in.shf->deltaF *= params->fLower;
-   printf("#M1=\n");
-   printf("#%15.12lf %15.12lf \n# %15.12lf %15.12lf\n",
-	    moments->M1[0][0],
-	    moments->M1[0][1],
-	    moments->M1[1][0],
-	    moments->M1[1][1] );
-    printf("#M2=\n");
+   if (lalDebugLevel&LALINFO)
+   {
+	   LALPrintError("#M1=\n");
+	   LALPrintError("#%15.12lf %15.12lf \n# %15.12lf %15.12lf\n",
+			   moments->M1[0][0],
+			   moments->M1[0][1],
+			   moments->M1[1][0],
+			   moments->M1[1][1] );
      
-     printf("#%15.12lf %15.12lf \n# %15.12lf %15.12lf\n",
-	    moments->M2[0][0],
-	    moments->M2[0][1],
-	    moments->M2[1][0],
-	    moments->M2[1][1] );
-     printf("#M3=\n");     
-     printf("#%15.12lf %15.12lf \n# %15.12lf %15.12lf\n",
-	    moments->M3[0][0],
-	    moments->M3[0][1],
-	    moments->M3[1][0],
-	    moments->M3[1][1] );
-     printf("\n");
-*/
+	   LALPrintError("#M2=\n");
+	   LALPrintError("#%15.12lf %15.12lf \n# %15.12lf %15.12lf\n",
+			   moments->M2[0][0],
+			   moments->M2[0][1],
+     
+			   moments->M2[1][0],
+			   moments->M2[1][1] );
+     
+	   LALPrintError("#M3=\n");     
+	   LALPrintError("#%15.12lf %15.12lf \n# %15.12lf %15.12lf\n",
+			   moments->M3[0][0],
+			   moments->M3[0][1],
+			   moments->M3[1][0],
+			   moments->M3[1][1] );
+   }
+
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
 }
 
 #undef Dim

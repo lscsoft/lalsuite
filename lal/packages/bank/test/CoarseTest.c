@@ -126,12 +126,15 @@ main ( void )
 {
    InspiralTemplateList *coarseList=NULL;
    InspiralTemplateList *fineList=NULL;
-   LALStatus* status = LALCalloc(1, sizeof(*status));
+   static LALStatus status;
    InspiralCoarseBankIn *coarseIn=NULL;
    InspiralFineBankIn   *fineIn=NULL;
    INT4 i, j, clist=0, flist=0;
    UINT4 numPSDpts = 262144;
    void *noisemodel = LALLIGOIPsd;
+   FILE *fpr;
+  
+   fpr = fopen("CoarseTest.out", "w");
 
    coarseIn = (InspiralCoarseBankIn *)LALMalloc(sizeof(InspiralCoarseBankIn));
    fineIn = (InspiralFineBankIn *)LALMalloc(sizeof(InspiralFineBankIn));
@@ -159,17 +162,17 @@ main ( void )
    /* fill the psd */
    memset( &(coarseIn->shf), 0, sizeof(REAL8FrequencySeries) );
    coarseIn->shf.f0 = 0;
-   LALDCreateVector( status, &(coarseIn->shf.data), numPSDpts );
+   LALDCreateVector(&status, &(coarseIn->shf.data), numPSDpts );
    coarseIn->shf.deltaF = coarseIn->tSampling / ( 2.L * (REAL8) coarseIn->shf.data->length + 1.L);
-   LALNoiseSpectralDensity (status, coarseIn->shf.data, noisemodel, coarseIn->shf.deltaF );
+   LALNoiseSpectralDensity (&status, coarseIn->shf.data, noisemodel, coarseIn->shf.deltaF );
    
    coarseIn->iflso = 0.;
-   LALInspiralCreateCoarseBank(status, &coarseList, &clist, *coarseIn);
+   LALInspiralCreateCoarseBank(&status, &coarseList, &clist, *coarseIn);
 
-   fprintf(stderr, "clist=%d\n",clist);
+   fprintf(fpr, "#clist=%d\n",clist);
    for (i=0; i<clist; i++) 
    {
-      printf("%e %e %e %e %e %e %e\n", 
+      fprintf(fpr, "%e %e %e %e %e %e %e\n", 
          coarseList[i].params.t0, 
          coarseList[i].params.t3, 
          coarseList[i].params.t2, 
@@ -179,17 +182,16 @@ main ( void )
          coarseList[i].params.mass2);
    }
 
-  printf("&\n");
-  exit(0);
+  fprintf(fpr, "&\n");
 
   fineIn->coarseIn = *coarseIn;
   for (j=0; j<clist; j+=48) 
   {
      fineIn->templateList = coarseList[j];
-     LALInspiralCreateFineBank(status, &fineList, &flist, *fineIn);
-     fprintf(stderr, "flist=%d\n",flist);
+     LALInspiralCreateFineBank(&status, &fineList, &flist, *fineIn);
+     fprintf(fpr, "#flist=%d\n",flist);
      for (i=0; i<flist; i++) {
-        printf("%e %e %e %e %e %e %e\n", 
+        fprintf(fpr, "%e %e %e %e %e %e %e\n", 
         fineList[i].params.t0, 
         fineList[i].params.t3, 
         fineList[i].params.t2, 
@@ -202,12 +204,11 @@ main ( void )
      fineList = NULL;
      flist = 0;
   }
+  LALDDestroyVector(&status, &(coarseIn->shf.data) );
   if (fineList!=NULL) LALFree(fineList);
-  LALDDestroyVector( status, &(coarseIn->shf.data) );
   if (coarseList!=NULL) LALFree(coarseList);
   if (coarseIn!=NULL) LALFree(coarseIn);
   if (fineIn!=NULL) LALFree(fineIn);
-  LALFree(status);
   LALCheckMemoryLeaks();
 
   return(0);
