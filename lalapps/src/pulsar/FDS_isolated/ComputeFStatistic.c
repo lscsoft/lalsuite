@@ -241,7 +241,7 @@ extern "C" {
   void swapheader(struct headertag *thisheader);
   void getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, long *bytecounter, const CHAR *fstat_fname, const CHAR *ckp_fname);
 #ifdef FILE_AMCOEFFS
-  void PrintAMCoeffs (AMCoeffs* amc);
+  void PrintAMCoeffs (REAL8 Alpha, REAL8 Delta, AMCoeffs* amc);
 #endif
 #ifdef __cplusplus
 }
@@ -588,7 +588,7 @@ int main(int argc,char *argv[])
 
       LAL_CALL (CreateDemodParams(stat), stat);
 #ifdef FILE_AMCOEFFS
-	  PrintAMCoeffs(DemodParams->amcoe);
+	  PrintAMCoeffs(Alpha, Delta, DemodParams->amcoe);
 #endif
 	  /* loop over spin params */
       for (spdwn=0; spdwn <= GV.SpinImax; spdwn++)
@@ -2819,18 +2819,20 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, long *bytecounter, co
   
 } /* getChkptCounters() */ 
 #ifdef FILE_AMCOEFFS
-void PrintAMCoeffs (AMCoeffs* amc) {
+void PrintAMCoeffs (REAL8 Alpha, REAL8 Delta, AMCoeffs* amc) {
 	UINT4 i;
 	FILE*fp;
-	fp=fopen("AMCoeffs.dump","w");
+	fp=fopen("AMCoeffs.dump","a");
 	if (fp==NULL) return;
+	fprintf(fp,"Alpha=%20.17f, Delta=%20.17f\n", Alpha, Delta);
 	fprintf(fp,"a:\n");
 	for(i=0;i<amc->a->length;i++)
 		fprintf(fp,"%20.17f\n",amc->a->data[i]);
 	fprintf(fp,"b:\n");
 	for(i=0;i<amc->b->length;i++)
 		fprintf(fp,"%20.17f\n",amc->b->data[i]);
-	fprintf(fp,"A=%20.17f, B=%20.17f, C=%20.17f, D=%20.17f\n", amc->A, amc->B, amc->C, amc->D);
+	fprintf(fp,"A=%20.17f, B=%20.17f, C=%20.17f, D=%20.17f\n\n",
+		amc->A, amc->B, amc->C, amc->D);
 	fclose(fp);
 }
 #endif
