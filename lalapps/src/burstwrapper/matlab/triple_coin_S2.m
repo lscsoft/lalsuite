@@ -13,10 +13,10 @@ kk=1;
 
 % path to ETG data that has been processed by the sblit c program; need 3 directories: H1, H2, L1
 %path = '/home/jsylvest/S2/S2v2.2/Sblit'; % 130-400 Hz band
-%path = '/home/jsylvest/S2/S2.B2.Full/Sblit'; % 400-1000 Hz band
+%path = '/home/jsylvest/S2/S2.B2.Full/Sblit/Scratch.0.0'; % 400-1000 Hz band
 
-path = '/home/jsylvest/S2/GA2/Sblit/Scratch.-130,-400/';
-%path = '/home/jsylvest/S2/GA2/Sblit/Scratch.-400,-1000/';
+path = '/home/jsylvest/S2/White/Sblit/Scratch.-130,-400/';
+%path = '/home/jsylvest/S2/BO2/Sblit/Scratch.-400,-1000/';
 
 % Cuts on the SNR for 130-400 Hz band
 SNRL1 = 10.6138;
@@ -28,6 +28,8 @@ SNRH2 = 2.8218;
 %SNRH1 = 5.9738;
 %SNRH2 = 5.9738;
 
+disp(path);
+disp(num2str([SNRL1 SNRH1 SNRH2]));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Load data
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -64,6 +66,131 @@ catch % do this if first time
 
 end % try block
 
+ % cut to playground
+ [pst,pen] = textread('/home/jsylvest/S2/S2playgnd.txt','%n %n');
+ sT5=load2('/home/jsylvest/S2/S2CommonSegments.mat');
+ T5 = sT5.T5;
+
+ disp('H1 playgnd...');
+tic
+ 
+ % first reject segments which overlap with playgnd    
+ IS = [];
+ for p=1:length(pst)
+     J = find(H1Segs.time_s <= pen(p) & H1Segs.time_s+300 >= pst(p));
+     IS = [ IS ; J(:) ];
+ end
+
+ % make common set of segments between bands
+ [junk,IT] = setdiff(H1Segs.time_s,T5);
+ IS = [ IS ; IT(:) ];
+
+ IS = unique(IS);
+
+ % now remove events from bad segments
+ I = [];
+ for p=1:length(IS)
+     J = find(H1.start_time_s >= H1Segs.time_s(IS(p)) & H1.start_time_s <= H1Segs.time_s(IS(p))+300);
+     I = [ I ; J(:) ];
+ end
+ I = unique(I);
+ I = setdiff(1:length(H1.start_time_s),I);
+
+ H1.start_time_s = H1.start_time_s(I);
+ H1.start_time_ns = H1.start_time_ns(I);
+ H1.duration = H1.duration(I);
+ H1.central_freq = H1.central_freq(I);
+ H1.bandwidth = H1.bandwidth(I);
+ H1.amplitude = H1.amplitude(I);
+ H1.snr = H1.snr(I);
+ H1.confidence = H1.confidence(I);
+
+ IS = setdiff(1:length(H1Segs.time_s),IS);
+ H1Segs.time_s = H1Segs.time_s(IS);
+ H1Segs.time_ns = H1Segs.time_ns(IS);
+ H1Segs.Nevents = H1Segs.Nevents(IS);
+
+toc
+
+ disp('H2 playgnd...');
+tic
+ % first reject segments which overlap with playgnd    
+ IS = [];
+ for p=1:length(pst)
+     J = find(H2Segs.time_s <= pen(p) & H2Segs.time_s+300 >= pst(p));
+     IS = [ IS ; J(:) ];
+ end
+
+ % make common set of segments between bands
+ [junk, IT] = setdiff(H2Segs.time_s,T5);
+ IS = [ IS ; IT(:) ];
+
+ IS = unique(IS);
+
+ % now remove events from bad segments
+ I = [];
+ for p=1:length(IS)
+     J = find(H2.start_time_s >= H2Segs.time_s(IS(p)) & H2.start_time_s <= H2Segs.time_s(IS(p))+300);
+     I = [ I ; J(:) ];
+ end
+ I = unique(I);
+ I = setdiff(1:length(H2.start_time_s),I);
+
+ H2.start_time_s = H2.start_time_s(I);
+ H2.start_time_ns = H2.start_time_ns(I);
+ H2.duration = H2.duration(I);
+ H2.central_freq = H2.central_freq(I);
+ H2.bandwidth = H2.bandwidth(I);
+ H2.amplitude = H2.amplitude(I);
+ H2.snr = H2.snr(I);
+ H2.confidence = H2.confidence(I);
+
+ IS = setdiff(1:length(H2Segs.time_s),IS);
+ H2Segs.time_s = H2Segs.time_s(IS);
+ H2Segs.time_ns = H2Segs.time_ns(IS);
+ H2Segs.Nevents = H2Segs.Nevents(IS);
+
+toc
+
+ disp('L1 playgnd...');
+tic 
+ % first reject segments which overlap with playgnd    
+ IS = [];
+ for p=1:length(pst)
+     J = find(L1Segs.time_s <= pen(p) & L1Segs.time_s+300 >= pst(p));
+     IS = [ IS ; J(:) ];
+ end
+
+ % make common set of segments between bands
+ [junk, IT] = setdiff(L1Segs.time_s,T5);
+ IS = [ IS ; IT(:) ];
+
+ IS = unique(IS);
+
+ % now remove events from bad segments
+ I = [];
+ for p=1:length(IS)
+     J = find(L1.start_time_s >= L1Segs.time_s(IS(p)) & L1.start_time_s <= L1Segs.time_s(IS(p))+300);
+     I = [ I ; J(:) ];
+ end
+ I = unique(I);
+ I = setdiff(1:length(L1.start_time_s),I);
+
+ L1.start_time_s = L1.start_time_s(I);
+ L1.start_time_ns = L1.start_time_ns(I);
+ L1.duration = L1.duration(I);
+ L1.central_freq = L1.central_freq(I);
+ L1.bandwidth = L1.bandwidth(I);
+ L1.amplitude = L1.amplitude(I);
+ L1.snr = L1.snr(I);
+ L1.confidence = L1.confidence(I);
+
+ IS = setdiff(1:length(L1Segs.time_s),IS);
+ L1Segs.time_s = L1Segs.time_s(IS);
+ L1Segs.time_ns = L1Segs.time_ns(IS);
+ L1Segs.Nevents = L1Segs.Nevents(IS);
+
+toc
 
  % peak time: add nanoseconds in
  TL1 = L1.start_time_s+1E-9*L1.start_time_ns;
@@ -325,6 +452,10 @@ end % while(sum(gL1) > 0)
 
      end % for k=1:length(L1S)
 
+     % zero-lag good times:
+     GT = intersect(H1S,H2S);
+     GT = intersect(GT,L1S);
+
 
      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      % Build final event list
@@ -378,5 +509,12 @@ fclose(fid);
 fid = fopen([path '/livetime.dat'],'w');
 
 fprintf(fid,'%g\t%g\n',[dt' Olap']');
+
+fclose(fid)
+
+% analyzed times
+fid = fopen([path '/times.dat'],'w');
+
+fprintf(fid,'%f\n',GT');
 
 fclose(fid)
