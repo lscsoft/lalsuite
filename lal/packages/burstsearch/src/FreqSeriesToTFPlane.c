@@ -436,6 +436,7 @@ LALModFreqSeriesToTFPlane (
 }
 
 
+/******** <lalVerbatim file="ModFreqSeriesToTFPlaneCP"> ********/
 void
 LALModModFreqSeriesToTFPlane (
     LALStatus                            *status,

@@ -96,6 +96,7 @@ LALComputeTFPlanes (
 }
 
 
+/******** <lalVerbatim file="ComputeTFPlanesCP"> ********/
 void
 LALModComputeTFPlanes (
 		 LALStatus                             *status,
