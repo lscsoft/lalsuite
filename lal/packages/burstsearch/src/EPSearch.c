@@ -283,7 +283,12 @@ static void normalize_to_psd(COMPLEX8FrequencySeries *fseries, REAL4FrequencySer
 	size_t i;
 
 	for(i = 0; i < fseries->data->length; i++) {
-		factor = 2.0 * sqrt(fseries->deltaF / psd->data->data[i]);
+		/* FIXME: it is an error for this to occur in the band of
+		 * interest.  The entire PSD window should be thrown out */
+		if(psd->data->data[i] == 0.0)
+			factor = 0.0;
+		else
+			factor = 2.0 * sqrt(fseries->deltaF / psd->data->data[i]);
 		fseries->data->data[i].re *= factor;
 		fseries->data->data[i].im *= factor;
 	}
