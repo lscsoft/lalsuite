@@ -9,18 +9,24 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <getopt.h>
+
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 
+/* cvs info */
+#define PROGRAM_NAME "stopp"
+#define CVS_ID "$Id$"
+
 #define USAGE \
-	"Usage: inputOutput [options]\n"\
-"\n"\
-"  --help                       display this message\n"\
-"  --input FILE                 read input data from FILE\n"\
-"  --output FILE                write output data to FILE\n"\
+	"Usage: " PROGRAM_NAME " [options]\n"\
+  " --help                       display this message\n"\
+  " --version                    display version\n"\
+  " --input FILE                 read input data from FILE\n"\
+  " --output FILE                write output data to FILE\n"
 
 int main( int argc, char *argv[] )
 {
@@ -46,9 +52,10 @@ int main( int argc, char *argv[] )
 		/* getopt arguments */
 		static struct option long_options[] = 
 		{
-			{"help",                    no_argument,            0,              'h'},
-			{"input",                   required_argument,      0,              'i'},
-			{"output",                  required_argument,      0,              'o'},
+			{"help", no_argument, 0, 'h'},
+      {"version", no_argument, 0, 'v'},
+			{"input", required_argument, 0, 'i'},
+			{"output", required_argument, 0, 'o'},
 			{0, 0, 0, 0}
 		};
 		int c;
@@ -57,70 +64,77 @@ int main( int argc, char *argv[] )
 		int option_index = 0;
 		size_t optarg_len;
 
-		c = getopt_long_only ( argc, argv, "hi:o:s:", 
-				long_options, &option_index );
+		c = getopt_long_only(argc, argv, "hvi:o:", long_options, &option_index);
 
 		/* detect the end of the options */
-		if ( c == - 1 )
+		if (c == - 1)
+    {
+      /* end of options, break loop */
 			break;
+    }
 
-		switch ( c )
+		switch (c)
 		{
 			case 0:
-				/* if this option set a flag, do nothing else now */
-				if ( long_options[option_index].flag != 0 )
-				{
-					break;
-				}
-				else
-				{
-					fprintf( stderr, "error parsing option %s with argument %s\n",
-							long_options[option_index].name, optarg );
-					exit( 1 );
-				}
-				break;
+        /* If this option set a flag, do nothing else now. */
+        if (long_options[option_index].flag != 0)
+        {
+          break;
+        }
+        else
+        {
+          fprintf(stderr, "error parseing option %s with argument %s\n", \
+              long_options[option_index].name, optarg);
+          exit(1);
+        }
+        break;
 
 			case 'h':
-				fprintf( stdout, USAGE );
-				exit( 0 );
+				fprintf(stdout, USAGE);
+				exit(0);
 				break;
+
+      case 'v':
+        /* display version info and exit */
+        fprintf(stdout, "Stochastic Post Processing\n" CVS_ID "\n");
+        exit(0);
+        break;
 
 			case 'i':
 				/* create storage for the input file name */
-				optarg_len = strlen( optarg ) + 1;
-				inputFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-				memcpy( inputFileName, optarg, optarg_len );
+				optarg_len = strlen(optarg) + 1;
+				inputFileName = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+				memcpy(inputFileName, optarg, optarg_len);
 				break;
 
 			case 'o':
 				/* create storage for the output file name */
-				optarg_len = strlen( optarg ) + 1;
-				outputFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-				memcpy( outputFileName, optarg, optarg_len );
+				optarg_len = strlen(optarg) + 1;
+				outputFileName = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+				memcpy(outputFileName, optarg, optarg_len);
 				break;
 
 			case '?':
-				exit( 1 );
+				exit(1);
 				break;
 
 			default:
-				fprintf( stderr, "unknown error while parsing options\n" );
-				exit( 1 );
+				fprintf(stderr, "unknown error while parsing options\n");
+				exit(1);
 		}   
 	}
 
-	if ( optind < argc )
+	if (optind < argc)
 	{
-		fprintf( stderr, "extraneous command line arguments:\n" );
-		while ( optind < argc )
+		fprintf(stderr, "extraneous command line arguments:\n");
+		while (optind < argc)
 		{
-			fprintf ( stderr, "%s\n", argv[optind++] );
+			fprintf (stderr, "%s\n", argv[optind++]);
 		}
-		exit( 1 );
+		exit(1);
 	}
 
 	/* read in the stochastic table */
-
 	numSegments = StochasticTableFromLIGOLw(&stochHead, inputFileName);
 
 	if (numSegments < 0)  
@@ -161,7 +175,7 @@ int main( int argc, char *argv[] )
 	}
 
 	LALCheckMemoryLeaks();
-	exit( 0 );
+	exit(0);
 }
 
 /*
