@@ -9,18 +9,60 @@
  *-----------------------------------------------------------------------
  */
 
+#if 0
+<lalVerbatim file="FindChirpExchCV">
+Author: Allen, B., Brown, D. A. and Creighton, J. D. E.
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+\subsection{Module \texttt{FindChirpExch.c}}
+\label{ss:FindChirpExch.c}
+
+This module functions to exchange \texttt{findchirp} specific data types
+using MPI.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{FindChirpExchCP}
+\idx{LALExchangeDataSegment()}
+\idx{LALExchangeInspiralTemplate()}
+\idx{LALExchangeInspiralEventList()}
+\idx{LALExchangeTemplateBank()}
+
+\subsubsection*{Description}
+
+
+\subsubsection*{Algorithm}
+
+None.
+
+\subsubsection*{Uses}
+\begin{verbatim}
+LALCalloc()
+LALFree()
+\end{verbatim}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{FindChirpExchCV}}
+</lalLaTeX>
+#endif
+
 #include <lal/LALStdlib.h>
 #include <lal/DataBuffer.h>
 #include <lal/FindChirpExch.h>
 
 NRCSID (FINDCHIRPEXCHC, "$Id$");
 
+#pragma <lalVerbatim file="FindChirpExchCP">
 void
 LALExchangeDataSegment (
-    LALStatus      *status,
-    DataSegment *segment,
-    ExchParams  *exchParams
+    LALStatus          *status,
+    DataSegment        *segment,
+    ExchParams         *exchParams
     )
+#pragma </lalVerbatim>
 {
   CHARVector box; /* a box to hold some bytes of data */
 
@@ -99,12 +141,14 @@ LALExchangeDataSegment (
 }
 
 
+#pragma <lalVerbatim file="FindChirpExchCP">
 void
 LALExchangeInspiralTemplate (
-    LALStatus           *status,
-    InspiralTemplate *tmplt,
-    ExchParams       *exchParams
+    LALStatus          *status,
+    InspiralTemplate   *tmplt,
+    ExchParams         *exchParams
     )
+#pragma </lalVerbatim>
 {
   CHARVector box; /* a box to hold some bytes of data */
 
@@ -167,12 +211,14 @@ LALExchangeInspiralTemplate (
 }
 
 
+#pragma <lalVerbatim file="FindChirpExchCP">
 void
 LALExchangeInspiralEvent (
-    LALStatus        *status,
-    InspiralEvent *event,
-    ExchParams    *exchParams
+    LALStatus          *status,
+    InspiralEvent      *event,
+    ExchParams         *exchParams
     )
+#pragma </lalVerbatim>
 {
   CHARVector box; /* a box to hold some bytes of data */
 
@@ -209,12 +255,14 @@ LALExchangeInspiralEvent (
 }
 
 
+#pragma <lalVerbatim file="FindChirpExchCP">
 void
 LALExchangeInspiralEventList (
-    LALStatus     *status,
-    InspiralEvent **eventHead,
-    ExchParams    *exchParams
+    LALStatus          *status,
+    InspiralEvent     **eventHead,
+    ExchParams         *exchParams
     )
+#pragma </lalVerbatim>
 {
   InspiralEvent   *eventCurrent = NULL;
   InspiralEvent   *prev         = NULL;
@@ -334,12 +382,15 @@ LALExchangeInspiralEventList (
   RETURN (status);
 }
 
+
+#pragma <lalVerbatim file="FindChirpExchCP">
 void
 LALExchangeTemplateBank (
-    LALStatus         *status,
-    InspiralTemplate **tmpltHead,
-    ExchParams        *exchParms
-                 )
+    LALStatus          *status,
+    InspiralTemplate  **tmpltHead,
+    ExchParams          *exchParms
+    )
+#pragma </lalVerbatim>
 {
   InspiralTemplate   *tmpltCurrent = NULL;
   InspiralTemplate   *tmpltFine    = NULL;
@@ -366,12 +417,14 @@ LALExchangeTemplateBank (
       /* exchange the fine grids */
       if (tmpltCurrent->fine != NULL)
       {
-        LALExchangeTemplateBank (status->statusPtr, &(tmpltCurrent->fine), exchParms);
+        LALExchangeTemplateBank (status->statusPtr, 
+            &(tmpltCurrent->fine), exchParms);
         CHECKSTATUSPTR (status);
       }
     }
 
-    ASSERT (!tmpltCurrent, status, FINDCHIRPEXCHH_ENNUL, FINDCHIRPEXCHH_MSGENNUL);
+    ASSERT (!tmpltCurrent, status, 
+        FINDCHIRPEXCHH_ENNUL, FINDCHIRPEXCHH_MSGENNUL);
 
   }
   else /* I am receiving */

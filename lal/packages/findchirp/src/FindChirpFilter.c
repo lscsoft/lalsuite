@@ -16,35 +16,7 @@ $Id$
 </lalVerbatim>
 
 <lalLaTeX>
-\subsection{Module \texttt{FindChirpFilter.c}}
-\label{ss:FindChirpFilter.c}
-
-Functions.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpFilterCP}
-\idx{LALCreateFindChirpInput()}
-\idx{LALDestroyFindChirpInput()}
-\idx{LALFindChirpFilterInit()}
-\idx{LALFindChirpFilterFinalize()}
-\idx{LALFindChirpFilterSegment()}
-
-\subsubsection*{Description}
-
-The function \texttt{LALCreateFindChirpFilterInput()} ...
-
-\subsubsection*{Algorithm}
-
-Filter.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALCalloc()
-LALFree()
-\end{verbatim}
-
-\subsubsection*{Notes}
+\input{FindChirpFilterCDoc}
 
 \vfill{\footnotesize\input{FindChirpFilterCV}}
 </lalLaTeX>

@@ -6,9 +6,18 @@ reduces to the comparison of the statistic with some pre-assigned threshold.
 Thus, there are two issues: first, what is the \emph{optimal} statistic to
 construct, and second, how is the threshold to be determined.
 
-Here we show the construction of statistic for the maximum likelihood reciever
+We show the construct the statistic for the maximum likelihood reciever
 used in the \texttt{findchirp} package. It can be shown \cite{wz} that this is
-the optimal statistic for detection of inspiral chirps.
+the optimal statistic for detection of inspiral chirps when the waveform of
+the chirp is known.
+
+The modules under this header provide a way to constuct the statistic
+$\rho^2(t)$ from data pre-conditioned using other functions from the
+\texttt{findchirp} package and to perform a comparison with the pre-assigned
+thresold to generate events, calling the \texttt{FindChirpChisq} function to
+perform a $\chi^2$ veto on the events, if requested.
+
+\subsubsection*{Construction of the Matched Filter}
 
 Suppose that the detector output is a dimensionless strain $h(t)$. We denote
 by $s(t)$ the waveform of the signal (i.e. chirp) that we wish to find in the
@@ -31,13 +40,27 @@ inner product on this space $(\cdot\mid\cdot) : L_2 \times L_2 \rightarrow
 \end{equation}
 
 The signal we wish to recieve is, in general, arbitrary up to an unknown phase
-and amplitude. Thus we may write the signal as
+and amplitude. The signal is given by
 \begin{equation}
-s(t)=A\cos\theta\times h_c(t)+A\sin\theta\times h_s(t),
+s(t)= F_{+}h_{+}(t) + F_{\times}h_{\times}(t),
 \end{equation}
-where $A$ is the amplitude of the signal, $\theta$ is the unknown phase and
-$h_c(t)$ and $h_s(t)$ are the known waveforms of the signal with some fiducial
-normalisation. We suppose further that the waveforms are orthogonal, so
+where $h_{+}(t)$ and $h_{\times}(t)$ are the two polarizations of the
+gravitational wave signal and $F_{+}$ and $F_{\times}$ are the detector beam
+pattern funtions. The ``$+$'' (plus) polarization is given by
+\begin{equation}
+h_{+}(t) = -\frac{T_\odot c}{D}(1 + \cos^2 i)h_c(t)
+\end{equation}
+and the ``$\times$'' (cross) polarization is given by
+\begin{equation}
+h_{+}(t) = -\frac{2 T_\odot c}{D}(\cos i)h_s(t).
+\end{equation}
+where $D$ is the distance to the source and $i$ is the inclination angle
+(radians) of the angular momentum axis relative to the line-of-sight. The
+waveforms $h_c(t)$ and $h_s(t)$ are refered to as the cosine and sine
+polarizations of the inspiral signal.
+
+We suppose further that the sine and cosine polarizatuons of the inspiral
+signal are orthogonal, that is
 \begin{equation}
 \left(h_c\mid h_s\right) = 0
 \end{equation}
@@ -167,8 +190,4 @@ We can then compare this statistic to some pre-assigned threshold and decide
 whether or not events are present in the data or construct a veto statistic
 as desired.
 
-The modules under this header provide a way to constuct the statistic
-$\rho^2(t)$ from data pre-conditioned using other functions from the
-\texttt{findchirp} package and to perform a comparison with the pre-assigned
-thresold to generate events, calling the \texttt{FindChirpChisq} function to
-perform a $\chi^2$ veto on the events, if requested.
+\subsubsection*{Construction of the Digital Filter}

@@ -10,7 +10,7 @@
  */
 
 #if 0
-<lalVerbatim file="FindChirpEngineHV">
+<lalVerbatim file="FindChirpExchHV">
 Author: Allen, B., Brown, D. A. and Creighton, J. D. E.
 $Id$
 </lalVerbatim> 
@@ -18,9 +18,16 @@ $Id$
 <lalLaTeX>
 
 \section{Header \texttt{FindChirpExch.h}}
-\label{s:FindChirp.h}
+\label{s:FindChirpExch.h}
 
-Provides routines to filter IFO data for binary inspiral chirps.
+Provides routines for MPI communication of various \texttt{findchirp} specific
+data types.
+
+\subsection*{Synopsis}
+
+\begin{verbatim}
+#include <lal/FindChirpExch.h>
+\end{verbatim}
 
 </lalLaTeX>
 #endif
@@ -59,6 +66,23 @@ NRCSID (FINDCHIRPEXCHH, "$Id$");
 #define FINDCHIRPEXCHH_MSGEMPIE "Problem exchanging event list"
 /* </lalErrTable> */
 
+#if 0
+<lalLaTeX>
+\subsection*{Types}
+</lalLaTeX>
+#endif
+
+#if 0
+<lalLaTeX>
+\vfill{\footnotesize\input{FindChirpExchHV}}
+</lalLaTeX> 
+#endif
+
+#if 0
+<lalLaTeX>
+\newpage\input{FindChirpExchC}
+</lalLaTeX>
+#endif
 
 void
 LALExchangeDataSegment (

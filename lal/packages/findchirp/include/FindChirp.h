@@ -121,8 +121,6 @@ waveform generator.
 
 \item[\texttt{injectGenPPN}] The \texttt{LALGeneratePPNInspiral()} function
 from the \texttt{inject} package.
-
-\item[\texttt{fctFCT}] The \texttt{fct} algorithm was used to find the chirp.
 \end{description}
 </lalLaTeX>
 #endif

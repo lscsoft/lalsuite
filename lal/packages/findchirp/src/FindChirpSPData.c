@@ -19,50 +19,7 @@ $Id$
 \subsection{Module \texttt{FindChirpSPData.c}}
 \label{ss:FindChirpSPData.c}
 
-Provides functions to condition the input data from the interferometer
-to a form that can be used by the \texttt{FindChirpFilter()} function.
-
-At the present time this also includes the template independent part of the
-stationary phase filter.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpSPDataCP}
-\idx{LALFindChirpSPDataInit()}
-\idx{LALFindChirpSPDataFinalize()}
-\idx{LALFindChirpSPData()}
-
-The function \texttt{LALFindChirpSPDataInit()} takes as input the address
-of a structure of type \texttt{FindChirpInitParams} containing the correct
-values to intialize a search. It creates a structure of type
-\texttt{FindChirpSPDataParams} as described above and returns its address.
-
-The function \texttt{LALFindChirpSPDataFinalize()} takes as the address
-of a structure of type \texttt{FindChirpSPDataParams} destroys this 
-structure and sets the address to NULL.
-
-The function \texttt{LALFindChirpSPData()} conditions the interferometer data
-as described by the algorithm below.
-
-\subsubsection*{Algorithm}
-
-Blah.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALCalloc()
-LALFree()
-LALCreateVector()
-LALDestroyVector()
-LALCreateForwardRealFFTPlan()
-LALDestroyRealFFTPlan()
-LALCCreateVector()
-LALCDestroyVector()
-LALForwardRealFFT()
-LALReverseRealFFT()
-\end{verbatim}
-
-\subsubsection*{Notes}
+\input{FindChirpSPDataCDoc}
 
 \vfill{\footnotesize\input{FindChirpSPDataCV}}
 </lalLaTeX> 
