@@ -98,7 +98,7 @@ LIGOTimeGPS gpsStartTime;               /* input data GPS start time    */
 INT8  gpsEndTimeNS      = 0;            /* input data GPS end time ns   */
 LIGOTimeGPS gpsEndTime;                 /* input data GPS end time      */
 INT8  inputLengthNS     = 0;            /* input data length ns         */
-INT4  numRespPoints     = 0;            /* num points for calc response */
+INT4  numRespPoints     = -1;            /* num points for calc response */
 
 CHAR  *fqChanName       = NULL;         /* name of data channel         */
 CHAR  *frInCacheName    = NULL;         /* cache file containing frames */
