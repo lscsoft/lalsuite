@@ -164,7 +164,7 @@ static void  pzfunc (LALStatus *s, REAL4 *result, REAL4 z)
   ATTATCHSTATUSPTR (s);
   dVfunc(s->statusPtr,&dV,z);
   Rcfunc(&Rc,z);
-  *result=27.11**Rc*dV/(1.+z);
+  *result=27.11*(0.65/ho)*Rc*dV/(1.+z);
   CHECKSTATUSPTR (s);
   DETATCHSTATUSPTR (s);
   RETURN (s);
