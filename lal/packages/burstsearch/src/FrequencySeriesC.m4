@@ -1,0 +1,81 @@
+dnl $Id$
+define(SERIESTYPE,DATATYPE`FrequencySeries')
+define(SEQUENCETYPE,DATATYPE`Sequence')
+void `XLALDestroy'SERIESTYPE (
+	SERIESTYPE *series
+)
+{
+	if(series)
+		`XLALDestroy'SEQUENCETYPE (series->data);
+	LALFree(series);
+}
+
+
+void `LALDestroy'SERIESTYPE (
+	LALStatus *status,
+	SERIESTYPE *series
+)
+{
+	INITSTATUS(status, "`LALDestroy'SERIESTYPE", FREQUENCYSERIESC);
+
+	`XLALDestroy'SERIESTYPE (series);
+
+	RETURN(status);
+}
+
+
+SERIESTYPE *`XLALCreate'SERIESTYPE (
+	CHAR *name,
+	LIGOTimeGPS epoch,
+	REAL8 f0,
+	REAL8 deltaF,
+	LALUnit sampleUnits,
+	size_t length
+)
+{
+	SERIESTYPE *new;
+	SEQUENCETYPE *sequence;
+
+	new = LALMalloc(sizeof(*new));
+	sequence = `XLALCreate'SEQUENCETYPE (length);
+	if(!new || !sequence) {
+		LALFree(new);
+		`XLALDestroy'SEQUENCETYPE (sequence);
+		return(NULL);
+	}
+
+	if(new->name)
+		strncpy(new->name, name, LALNameLength);
+	else
+		new->name[0] = '\0';
+	new->epoch = epoch;
+	new->f0 = f0;
+	new->deltaF = deltaF;
+	new->sampleUnits = sampleUnits;
+	new->data = sequence;
+
+	return(new);
+}
+
+
+void `LALCreate'SERIESTYPE (
+	LALStatus *status,
+	SERIESTYPE **output,
+	CHAR *name,
+	LIGOTimeGPS epoch,
+	REAL8 f0,
+	REAL8 deltaF,
+	LALUnit sampleUnits,
+	size_t length
+)
+{
+	INITSTATUS(status, "`LALCreate'SERIESTYPE", FREQUENCYSERIESC);
+
+	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+
+	*output = `XLALCreate'SERIESTYPE (name, epoch, f0, deltaF, sampleUnits, length);
+
+	ASSERT(*output != NULL, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+
+	RETURN(status);
+}
