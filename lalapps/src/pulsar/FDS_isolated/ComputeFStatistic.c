@@ -13,7 +13,7 @@
 #include "clusters.h"
 #include "DopplerScan.h"
 
-#include "ConfigFile.h"
+#include "UserInput.h"
 
 NRCSID( COMPUTEFSTATISTIC, "$Id$");
 
@@ -170,7 +170,7 @@ int main(int argc,char *argv[])
   } /* for cmd-line */
   /*----------------------------------------------------------------------*/
 
-  ReadUserInput (&status, argc,argv, uvars);
+  LALReadUserInput (&status, argc,argv, uvars);
 
   /* print help-string and exit if -h was specified */
   if (uvar_help)
@@ -178,7 +178,7 @@ int main(int argc,char *argv[])
       /* little hack here: default for uvar_help = False, therefore we have to set that back: */
       uvar_help = 0;
       CHAR *helpstr = NULL;
-      GetUvarHelpString (&status, &helpstr, uvars);
+      LALGetUvarHelpString (&status, &helpstr, uvars);
       printf ("Arguments are (short alternative arguments in brackets):\n");
       printf (helpstr);
       LALFree (helpstr);
@@ -1353,7 +1353,7 @@ int Freemem(void)
   LALFree(DemodParams);
 
   /* Free config-Variables and userInput stuff */
-  FreeUserVars (&status, uvars);
+  LALFreeUserVars (&status, uvars);
 
   /* Free DopplerScan-stuff (grid) */
   FreeDopplerScan (&status, &thisScan);

@@ -85,7 +85,6 @@ NRCSID( CONFIGFILEH, "$Id$" );
 #define CONFIGFILEH_ESTRICT		7
 #define CONFIGFILEH_EUNKNOWN		8
 #define CONFIGFILEH_EMEM		9
-#define CONFIGFILEH_EOPT		10
 
 #define CONFIGFILEH_MSGENULL 		"Arguments contained an unexpected null pointer."
 #define CONFIGFILEH_MSGEFILE		"File error."
@@ -96,7 +95,6 @@ NRCSID( CONFIGFILEH, "$Id$" );
 #define CONFIGFILEH_MSGESTRICT		"Strictness parameter out of range"
 #define CONFIGFILEH_MSGEUNKNOWN		"Unknown config-file entry found"
 #define CONFIGFILEH_MSGEMEM		"Out of memory"
-#define CONFIGFILEH_MSGEOPT		"Unknown command-line option encountered"
 
 /*************************************************** </lalErrTable> */
 
@@ -185,26 +183,6 @@ typedef struct {
 } LALConfigData;
 
 
-typedef enum {
-  UVAR_BOOL,
-  UVAR_INT4,
-  UVAR_REAL8,
-  UVAR_CHAR
-} UserVarType;
-
-typedef struct {
-  const CHAR *name;	/* full name */
-  UserVarType type;	/* bool, int, float or char */
-  CHAR optchar;		/* cmd-line character */
-  const CHAR *help;
-  void *varp;		/* pointer to the actual C-variable */
-} UserVariable;
-
-
-#define regUserVar(name,type,option,help) { #name, type, option, help, &(uvar_ ## name) }
-
-
-
 /********************************************************** <lalLaTeX>
 \vfill{\footnotesize\input{ConfigFileHV}}
 \newpage\input{ConfigFileC}
@@ -224,12 +202,6 @@ void LALReadConfigSTRINGVariable (LALStatus *stat, CHAR **varp, LALConfigData *c
 void LALReadConfigSTRINGNVariable (LALStatus *stat, CHARVector *varp, LALConfigData *cfgdata, const CHAR *varName);
 void LALCheckConfigReadComplete (LALStatus *stat, LALConfigData *cfgdata, INT4 strictness);
 
-
-void ReadCmdlineInput (LALStatus *stat, int argc, char *argv[], UserVariable *uvars);
-void ReadCfgfileInput (LALStatus *stat, const CHAR *cfgfile, UserVariable *uvars );
-void FreeUserVars (LALStatus *stat, UserVariable *uvars);
-void GetUvarHelpString (LALStatus *stat, CHAR **helpstring, UserVariable *uvars);
-void ReadUserInput (LALStatus *stat, int argc, char *argv[], UserVariable *uvars);
 
 #ifdef  __cplusplus
 }
