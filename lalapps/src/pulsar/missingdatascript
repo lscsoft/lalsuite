@@ -1,5 +1,19 @@
 # /bin/bash
+rm -f missing.L1
 echo "# /bin/bash > missing.L1"
 grep Missing /scratch2/ballen/S2-L1.60-lists/joberror.00208 | \
 awk '{print "LALdataFind --instrument L --start " $7 "  --end "  $9 " -l --type RDS_R_L1" }' >> missing.L1
 chmod +x missing.L1
+
+rm -f missing.H1
+echo "# /bin/bash > missing.H1"
+grep Missing /scratch2/ballen/S2-H1.60-lists/joberror.00208 | \
+awk '{print "LALdataFind --instrument H --start " $7 "  --end "  $9 " -l --type RDS_R_H1" }' >> missing.H1
+chmod +x missing.H1
+
+rm -f missing.H2
+echo "# /bin/bash > missing.H2"
+grep Missing /scratch2/ballen/S2-H2.60-lists/joberror.00208 | \
+awk '{print "LALdataFind --instrument H --start " $7 "  --end "  $9 " -l --type RDS_R_H2" }' >> missing.H2
+chmod +x missing.H2
+
