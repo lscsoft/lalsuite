@@ -941,7 +941,7 @@ void GenerateInjectTemplateParams(LALStatus   *status,
   REAL8    f0, deltaF, deltaX;
   REAL8    latitude, longitude;  /* of the source in radians */
   INT8    f0bin;
-  INT4    msp;
+  UINT4    msp;
   
   /* --------------------------------------------- */
   INITSTATUS (status, "GenerateInjectTemplateParams", MCINJECTCOMPUTEHOUGHC);
@@ -1024,12 +1024,30 @@ void GenerateInjectTemplateParams(LALStatus   *status,
   }
   injectPulsar->longitude = longitude;
   injectPulsar->latitude  = latitude;   
-  /* mismatch with the template */
-  TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
-  templatePulsar->longitude = longitude + deltaX*(randval-0.5);
-  TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
-  templatePulsar->latitude  =  latitude + deltaX*(randval-0.5);  
-  
+  {
+    REAL8 dX1, dX2, norm; 
+    REAL8UnitPolarCoor mismatch, template, par; 
+    par.alpha = injectPulsar->longitude;
+    par.delta = injectPulsar->latitude; 
+
+    /* mismatch with the template in stereographic plane */
+    TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
+    dX1 = deltaX*(randval-0.5);
+    TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
+    dX2 = deltaX*(randval-0.5);
+    norm = sqrt(dX1*dX1 + dX2*dX2); 
+
+    /* calculate the mismatch in around the south pole*/ 
+    mismatch.delta = - LAL_PI_2 - norm;
+    mismatch.alpha = acos(dX1/norm);
+    
+    /* inverse rotate the mismatch from the south pole to desired location */
+    TRY( LALInvRotatePolarU( status->statusPtr, &template, &mismatch, &par), status);
+
+    templatePulsar->longitude = template.alpha; 
+    templatePulsar->latitude = template.delta; 
+  }
+
   /* now the spindown if any */
   msp = params->spnFmax.length ;
   ASSERT (templatePulsar->spindown.length == msp, status, DRIVEHOUGHCOLOR_EBAD,
@@ -1040,7 +1058,7 @@ void GenerateInjectTemplateParams(LALStatus   *status,
   if(msp){ /*if there are spin-down values */
     REAL8 deltaFk, spink;
     REAL8 timeObsInv;
-    INT4   i;
+    UINT4   i;
     ASSERT (injectPulsar->spindown.data,  status, DRIVEHOUGHCOLOR_ENULL, 
 	    DRIVEHOUGHCOLOR_MSGENULL);
     ASSERT (templatePulsar->spindown.data,  status, DRIVEHOUGHCOLOR_ENULL, 
