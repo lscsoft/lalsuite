@@ -89,7 +89,7 @@ LALINT8toGPS (
 /* <lalVerbatim file="GPStoINT8CP"> */
 INT8
 XLALGPStoINT8 ( 
-    LIGOTimeGPS *input
+    const LIGOTimeGPS *input
 )
 /* </lalVerbatim> */
 {

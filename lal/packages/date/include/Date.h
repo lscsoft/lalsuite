@@ -562,7 +562,7 @@ LALINT8toGPS (
 
 INT8
 XLALGPStoINT8 ( 
-    LIGOTimeGPS *input 
+    const LIGOTimeGPS *input 
     );
 
 void
