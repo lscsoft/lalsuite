@@ -4,7 +4,7 @@ bin_PROGRAMS = lalapps_detresponse lalapps_test_gridding lalapps_test_earth
 lalapps_detresponse_SOURCES = detresponse.c detresponse.h util.c util.h set_source_params.c generate_timeseries_response.c compute_skygrid.c cmdline.c cmdline.h skygrid.c skygrid.h 
 lalapps_test_gridding_SOURCES = test_gridding.c util.c util.h skygrid.c skygrid.h make_gridding.c make_gridding.h
 lalapps_test_earth_SOURCES = test_earth.c util.c util.h skygrid.c skygrid.h
-lalapps_dopplergrid_SOURCES = util.c util.h dopplergrid.c
+# lalapps_dopplergrid_SOURCES = util.c util.h dopplergrid.c
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I.
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
