@@ -116,6 +116,7 @@ AC_OUTPUT( 				\
 	src/ring/Makefile		\
 	src/pulsar/Makefile		\
 	src/pulsar/FDS_isolated/Makefile \
+	src/pulsar/Injections/Makefile	 \
 	src/inspiral/Makefile		\
 	src/zmsearch/Makefile		\
 	src/detresponse/Makefile	\
