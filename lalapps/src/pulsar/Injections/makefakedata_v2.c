@@ -277,7 +277,7 @@ char *sundata;
 /* timebaseline of SFT in sec, band SFT in Hz */
 REAL4 Tsft,B,sigma;
 /* smallest frequency in the band B */
-REAL8 fmin;
+REAL8 global_fmin;
 /* How many SFTS we'll produce*/
 INT4 nTsft; 
 
@@ -741,7 +741,7 @@ int correct_phase(LALStatus* status, int iSFT) {
   REAL8 cosx,sinx,x;
   COMPLEX8 fvec1;
 
-  x=2.0*LAL_PI*fmin*Tsft*iSFT;
+  x=2.0*LAL_PI*global_fmin*Tsft*iSFT;
   cosx=cos(x);
   sinx=sin(x);
   for (i = 0; i < fvec->length; ++i){
@@ -1017,7 +1017,7 @@ int prepare_timeSeries(void) {
   timeSeries->data->data = (REAL4 *)LALMalloc(timeSeries->data->length*sizeof(REAL4));
   timeSeries->deltaT=Tsft/timeSeries->data->length;
 
-  timeSeries->f0=fmin;
+  timeSeries->f0=global_fmin;
 
   return 0;
 }
@@ -1246,18 +1246,18 @@ int read_and_add_freq_domain_noise(LALStatus* status, int iSFT) {
 
 
   /* check frequency range */
-  if ((INT4)(fmin*Tsft+0.5) < header.firstfreqindex){
+  if ((INT4)(global_fmin*Tsft+0.5) < header.firstfreqindex){
     error("Frequency band of noise data out of range !\n");
     return 1;
   }
 
-  if ( ((INT4)(fmin*Tsft+0.5)+fvec->length-1) > (header.firstfreqindex + header.nsamples)){
+  if ( (INT4)((global_fmin*Tsft+0.5)+fvec->length-1) > (header.firstfreqindex + header.nsamples)){
     error("Frequency band of noise data out of range !\n");
     return 1;
   }
 
   /* seek to position */
-  if (0 != fseek(fp, myRound((fmin*Tsft - header.firstfreqindex) * 4.0 * 2.0), SEEK_CUR)){
+  if (0 != fseek(fp, myRound((global_fmin*Tsft - header.firstfreqindex) * 4.0 * 2.0), SEEK_CUR)){
     syserror("file too short (could'n fssek to position\n");
     return 1;
   }
@@ -1361,7 +1361,7 @@ int write_SFTS(int iSFT){
   header.gps_sec=timestamps[iSFT].gpsSeconds;
   header.gps_nsec=timestamps[iSFT].gpsNanoSeconds;
   header.tbase=Tsft;
-  header.firstfreqindex=(INT4)(fmin*Tsft+0.5);
+  header.firstfreqindex=(INT4)(global_fmin*Tsft+0.5);
   header.nsamples=fvec->length-1;
   
   /* write header */
@@ -1449,7 +1449,7 @@ int write_timeseries(int iSFT){
     header.gps_sec=timestamps[iSFT].gpsSeconds;
     header.gps_nsec=timestamps[iSFT].gpsNanoSeconds;
     header.tbase=Tsft;
-    header.firstfreqindex=(INT4)(fmin*Tsft);
+    header.firstfreqindex=(INT4)(global_fmin*Tsft);
     header.nsamples=timeSeries->data->length;
     
     /* write header */
@@ -1734,7 +1734,7 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
   if (parseI4(fp, "# of SFTs nTsft", &nTsft))
     return 1;
 
-  if (parseR8(fp, "minimum frequency fmin", &fmin))
+  if (parseR8(fp, "minimum frequency fmin", &global_fmin))
     return 1;
 
   if (parseR4(fp, "bandwidth B", &B))
@@ -1796,9 +1796,9 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
   
   fclose(fp);
   
-  /* update global variables fmin, B */
-  imin=floor(fmin*Tsft);
-  fmin=imin/Tsft;
+  /* update global variables global_fmin, B */
+  imin=floor(global_fmin*Tsft);
+  global_fmin=imin/Tsft;
   /*idealized heterodyning in a band of amplitude B*/
   nsamples=2*ceil(B*Tsft);
   B=(nsamples/2)/Tsft;
