@@ -1,6 +1,5 @@
 #include <unistd.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
@@ -43,6 +42,6 @@ struct headertag
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 int ReadSFTDirectory(struct CommandLineArgsTag CLA);
 int ComputePSD(struct CommandLineArgsTag CLA);
-int Freemem();
+int Freemem(void);
 
 

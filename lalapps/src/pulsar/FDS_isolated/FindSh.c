@@ -50,7 +50,6 @@ int ComputePSD(struct CommandLineArgsTag CLA)
   size_t errorcode;
   REAL8 ShAve=0.0,SpAve=0.0,ShInv;
   REAL8Vector *Sp=NULL, *RngMdnSp=NULL;   /* |SFT|^2 and its rngmdn  */
-
   ndeltaf=band+1;
 
   LALDCreateVector(&status, &Sp, (UINT4) ndeltaf);
@@ -127,7 +126,7 @@ int ComputePSD(struct CommandLineArgsTag CLA)
 	 }
 
       /* Compute running median */
-      EstimateFloor(Sp, 50, RngMdnSp);
+      EstimateFloor(&status, Sp, 50, RngMdnSp);
 
       /* Average */
       ShAve=0.0;
