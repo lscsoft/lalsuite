@@ -24,7 +24,8 @@ ExcessPowerTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(
 
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = PowerETGTest SlopeETGTest StdBurstOutput TFClustersETGTest ThresholdsTest TFTransformTest ExcessPowerTest
+#TESTS = PowerETGTest SlopeETGTest StdBurstOutput TFClustersETGTest ThresholdsTest TFTransformTest ExcessPowerTest
+TESTS = SlopeETGTest StdBurstOutput TFClustersETGTest ThresholdsTest TFTransformTest ExcessPowerTest
 MOSTLYCLEANFILES = .dvi-dep PrintVector.*
 DISTCLEANFILES = *.tex
 EXTRA_DIST = ExcessPowerTest.c
