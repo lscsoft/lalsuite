@@ -215,8 +215,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* zeropad and fft structures */
   SZeroPadAndFFTParameters zeroPadParams;
   RealFFTPlan *fftDataPlan = NULL;
-  COMPLEX8FrequencySeries hBarTildeOne;
-  COMPLEX8FrequencySeries hBarTildeTwo;
+  COMPLEX8FrequencySeries *hBarTildeOne;
+  COMPLEX8FrequencySeries *hBarTildeTwo;
   UINT4 zeroPadLength;
   UINT4 fftDataLength;
 
@@ -548,26 +548,18 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALCreateForwardRealFFTPlan(&status, &fftDataPlan, \
         zeroPadLength, 0), &status);
 
-  /* set metadata fields for zeropad ffts */
-  strncpy(hBarTildeOne.name, "hBarTildeOne", LALNameLength);
-  strncpy(hBarTildeTwo.name, "hBarTildeTwo", LALNameLength);
-
   if (vrbflg)
   {
     fprintf(stdout, "Allocating memory for zeropad...\n");
   }
 
   /* allocate memory for zeropad */
-  hBarTildeOne.data = NULL;
-  hBarTildeTwo.data = NULL;
-  LAL_CALL(LALCCreateVector(&status, &(hBarTildeOne.data), fftDataLength), \
-      &status);
-  LAL_CALL(LALCCreateVector(&status, &(hBarTildeTwo.data), fftDataLength), \
-      &status);
-  memset(hBarTildeOne.data->data, 0, \
-      hBarTildeOne.data->length * sizeof(*hBarTildeOne.data->data));
-  memset(hBarTildeTwo.data->data, 0, \
-      hBarTildeTwo.data->length * sizeof(*hBarTildeTwo.data->data));
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &hBarTildeOne, \
+        "hBarTildeOne", gpsStartTime, 0, deltaF, lalDimensionlessUnit, \
+        fftDataLength), &status);
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &hBarTildeTwo, \
+        "hBarTildeTwo", gpsStartTime, 0, deltaF, lalDimensionlessUnit, \
+        fftDataLength), &status);
 
   /* set zeropad parameters */
   zeroPadParams.fftPlan = fftDataPlan;
@@ -819,8 +811,8 @@ INT4 main(INT4 argc, CHAR *argv[])
       ccSpectrum.data->length * sizeof(*ccSpectrum.data->data));
 
   /* set CC inputs */
-  ccIn.hBarTildeOne = &hBarTildeOne;
-  ccIn.hBarTildeTwo = &hBarTildeTwo;
+  ccIn.hBarTildeOne = hBarTildeOne;
+  ccIn.hBarTildeTwo = hBarTildeTwo;
   ccIn.responseFunctionOne = respOneB;
   ccIn.responseFunctionTwo = respTwoB;
   ccIn.optimalFilter = &optFilter;
@@ -944,9 +936,9 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* zero pad and fft */
-    LAL_CALL(LALSZeroPadAndFFT(&status, &hBarTildeOne, segmentOneB, \
+    LAL_CALL(LALSZeroPadAndFFT(&status, hBarTildeOne, segmentOneB, \
           &zeroPadParams), &status);
-    LAL_CALL(LALSZeroPadAndFFT(&status, &hBarTildeTwo, segmentTwoB, \
+    LAL_CALL(LALSZeroPadAndFFT(&status, hBarTildeTwo, segmentTwoB, \
           &zeroPadParams), &status);
 
     /* save */
@@ -954,10 +946,10 @@ INT4 main(INT4 argc, CHAR *argv[])
     {
       LALSnprintf(debugFilename, LALNameLength, "%d-hBarTilde1.dat", \
           gpsSegmentBStart.gpsSeconds);
-      LALCPrintFrequencySeries(&hBarTildeOne, debugFilename);
+      LALCPrintFrequencySeries(hBarTildeOne, debugFilename);
       LALSnprintf(debugFilename, LALNameLength, "%d-hBarTilde2.dat", \
           gpsSegmentBStart.gpsSeconds);
-      LALCPrintFrequencySeries(&hBarTildeTwo, debugFilename);
+      LALCPrintFrequencySeries(hBarTildeTwo, debugFilename);
     }
 
     if (vrbflg)
@@ -1167,6 +1159,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, respTwoC), &status);
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, calInvPSDOne), &status);
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, calInvPSDTwo), &status);
+  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, hBarTildeOne), &status);
+  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, hBarTildeTwo), &status);
   LAL_CALL(LALDestroyVector(&status, &(overlap.data)), &status);
   LAL_CALL(LALDestroyVector(&status, &(omegaGW.data)), &status);
   LAL_CALL(LALDestroyVector(&status, &(dataWindow.data)), &status);
@@ -1179,8 +1173,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   {
     LAL_CALL(LALDestroyVector(&status, &hannWindow), &status);
   }
-  LAL_CALL(LALCDestroyVector(&status, &(hBarTildeOne.data)), &status);
-  LAL_CALL(LALCDestroyVector(&status, &(hBarTildeTwo.data)), &status);
 
   /* free calloc'd memory */
   free(frameCacheOne);
