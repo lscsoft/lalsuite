@@ -526,7 +526,8 @@ int main ( int argc, char *argv[] )
     tmplt->ttotal = (REAL4) coarseList[0].params.tC;
     tmplt->psi0   = (REAL4) coarseList[0].params.psi0;
     tmplt->psi3   = (REAL4) coarseList[0].params.psi3;
-    tmplt->f_cut  = (REAL4) coarseList[0].params.fendBCV;
+    /*have replaced fendBCV by fFinal in the following line. Thomas jan 2004*/
+    tmplt->f_cut  = (REAL4) coarseList[0].params.fFinal;
 
     for ( i = 1; i < numCoarse; ++i )
     {
@@ -549,7 +550,8 @@ int main ( int argc, char *argv[] )
       tmplt->ttotal = (REAL4) coarseList[i].params.tC;
       tmplt->psi0   = (REAL4) coarseList[i].params.psi0;
       tmplt->psi3   = (REAL4) coarseList[i].params.psi3;
-      tmplt->f_cut  = (REAL4) coarseList[i].params.fendBCV;
+      /*have replaced fendBCV by fFinal in the following line. Thomas jan 2004*/
+      tmplt->f_cut  = (REAL4) coarseList[i].params.fFinal;
     }
   }
 
