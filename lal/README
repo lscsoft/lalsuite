@@ -54,8 +54,8 @@ http://www.lsc-group.phys.uwm.edu/daswg/docs/howto/lscsoft-cvs.html
 If you just wish to browse the source without contributing any code you may
 use the user name anonymous and the password lscsoft to access the archive.
 
-To obtain the current working version of LAL first log into the lscsoft CVS
-server. Type the following command, replacing USERNAME with your lscsoft
+To obtain the current development version of LAL first log into the lscsoft
+CVS server. Type the following command, replacing USERNAME with your lscsoft
 user name (or anonymous): 
 
   cvs -d :pserver:USERNAME@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft login
