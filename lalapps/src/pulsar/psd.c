@@ -9,9 +9,9 @@
 #include "psd.h"
 INT4 SFTno,RealSFTno;                /* Global variables that keep track of no of SFTs */
 INT4 lalDebugLevel=3;
-REAL4 *p,*po;
+REAL4 *p;
 char filelist[MAXFILES][MAXFILENAMELENGTH];
-float N,deltaT;
+double N,deltaT,*po;
 
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -49,7 +49,7 @@ int ComputePSD(struct CommandLineArgsTag CLA)
   FILE *fp,*fpo;
   INT4 i,j=0;
   size_t errorcode;
-  float f,Sh;
+  double f,Sh;
   char filename[256];
 
   for (i=0;i<SFTno;i++)       /* Loop over SFTs           */
@@ -102,7 +102,7 @@ int ComputePSD(struct CommandLineArgsTag CLA)
 	   int jre=2*j;
 	   int jim=jre+1;
 
-	   po[j]=po[j]+(p[jre]*p[jre]+p[jim]*p[jim])/((REAL4) SFTno);
+	   po[j]=po[j]+(p[jre]*p[jre]+p[jim]*p[jim])/((REAL8) SFTno);
 	 }
       
       }
@@ -198,7 +198,7 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA)
 
   /* Allocate pointers for SFT data -- to be used later */
   p=(REAL4 *)LALMalloc(2*header.nsamples*sizeof(REAL4));
-  po=(REAL4 *)LALMalloc(header.nsamples*sizeof(REAL4));
+  po=(REAL8 *)LALMalloc(header.nsamples*sizeof(REAL8));
 
   for (j=0;j<header.nsamples;j++)
     {
