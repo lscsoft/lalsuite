@@ -1998,6 +1998,8 @@ static void _clusterProperties(ClusterWavelet *w)
   w->delta_t=delta_t;
   w->delta_f=delta_f;
 
+  /* printf("delta_f=%g\n",delta_f);*/
+
   M = _getMaxLayer(w->wavelet)+1;
 
   if(w->noise_rms_flag)
@@ -2008,6 +2010,7 @@ static void _clusterProperties(ClusterWavelet *w)
 	  w->avgPSD[i]=0.0;
 	  count=0;
 	  min=(int)(i*delta_f/w->psd->deltaF);
+	  if(min==0) min++;
 	  max=(int)((i+1)*delta_f/w->psd->deltaF);
 	  if(max<w->psd->data->length)
 	    {
@@ -2190,12 +2193,15 @@ static REAL4 _noise(ClusterWavelet *w, INT4 number)
 {
   REAL4 noise=0.0;
   int i,j;
+  int freq;
 
-  for(i=0;i<w->coreSize[number];i++)
+  for(i=0;i<w->volumes[number];i++)
     {
-      noise+=w->norm50[w->pMask[w->cList[number][i]]->frequency]*
-	w->norm50[w->pMask[w->cList[number][i]]->frequency]*
-	w->avgPSD[w->pMask[w->cList[number][i]]->frequency];
+      freq=w->pMask[w->cList[number][i]]->frequency;      
+      if(w->pMask[w->cList[number][i]]->core && freq!=0)
+	{
+	  noise+=w->norm50[freq]*w->norm50[freq]*w->avgPSD[freq];
+	}
     }
   return sqrt(noise);
 }
