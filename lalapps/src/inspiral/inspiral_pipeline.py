@@ -194,48 +194,56 @@ notification = never
 queue
 """ % (self.logfile)
 
-  def builddag(self,cache,bank):
+  def builddag(self,cache,bank,inspiral):
     chan = self.config['input']['channel-name']
     site = chan[0]
     ifo  = chan[0:2]
     dag_fh = open( self.basename + ".dag", "w" )
     
     # jobs to generate the frame cache files
-    for seg in self.segments:
-      jobname = 'frcache_%s_%d_%d' % (site,seg.startpad,seg.endpad)
-      print >> dag_fh, 'JOB %s %s.frcache.sub' % (jobname,self.basename),
-      if cache: print >> dag_fh, 'DONE',
-      print >> dag_fh, '\nVARS %s site="%s" frstart="%s" frend="%s"' % (
-      jobname, site, seg.startpad, seg.endpad )
-    for i in range(1,len(self.segments)):
-      print >> dag_fh, 'PARENT frcache_%s_%s_%s CHILD frcache_%s_%s_%s' % (
-        site,self.segments[i-1].startpad,self.segments[i-1].endpad,
-        site,self.segments[i].startpad,self.segments[i].endpad)
+    if cache:
+      for seg in self.segments:
+        jobname = 'frcache_%s_%d_%d' % (site,seg.startpad,seg.endpad)
+        print >> dag_fh, 'JOB %s %s.frcache.sub' % (jobname,self.basename),
+        print >> dag_fh, """
+VARS %s site="%s" frstart="%s" frend="%s"\
+""" % ( jobname, site, seg.startpad, seg.endpad )
+      for i in range(1,len(self.segments)):
+        print >> dag_fh, 'PARENT frcache_%s_%s_%s CHILD frcache_%s_%s_%s' % (
+          site,self.segments[i-1].startpad,self.segments[i-1].endpad,
+          site,self.segments[i].startpad,self.segments[i].endpad)
     
     # jobs to generate the template banks
-    for seg in self.segments:
-      parent = 'frcache_%s_%s_%s' % (site,seg.startpad,seg.endpad)
-      for chunk in seg.chunks:
-        jobname = 'tmpltbank_%s_%s_%s' % (ifo,chunk.start,chunk.end)
-        print >> dag_fh, 'JOB %s %s.tmpltbank.sub' % (jobname,self.basename),
-        if bank: print >> dag_fh, 'DONE',
-        print >> dag_fh, """
+    if bank:
+      for seg in self.segments:
+        parent = 'frcache_%s_%s_%s' % (site,seg.startpad,seg.endpad)
+        for chunk in seg.chunks:
+          jobname = 'tmpltbank_%s_%s_%s' % (ifo,chunk.start,chunk.end)
+          print >> dag_fh, 'JOB %s %s.tmpltbank.sub' % (jobname,self.basename),
+          print >> dag_fh, """
 VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" channel="%s" calcache="%s"\
 """ % ( jobname,site,ifo,seg.startpad,seg.endpad,chunk.start,chunk.end,chan,
 self.config['input'][string.lower(ifo) + '-cal'])
-        print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
+          if cache:
+            print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
 
     # jobs to run the inspiral code
-    for seg in self.segments:
-      for chunk in seg.chunks:
-        parent = 'tmpltbank_%s_%s_%s' % (ifo,chunk.start,chunk.end)
-        jobname = 'inspiral_%s_%s_%s' % (ifo,chunk.start,chunk.end)
-        print >> dag_fh, 'JOB %s %s.inspiral.sub' % (jobname,self.basename),
-        print >> dag_fh, """
+    if inspiral:
+      for seg in self.segments:
+        for chunk in seg.chunks:
+          jobname = 'inspiral_%s_%s_%s' % (ifo,chunk.start,chunk.end)
+          print >> dag_fh, 'JOB %s %s.inspiral.sub' % (jobname,self.basename),
+          print >> dag_fh, """
 VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" chunklen="%d" channel="%s" calcache="%s"\
 """ % ( jobname,site,ifo,seg.startpad,seg.endpad,chunk.start,chunk.end,
 chunk.length,chan,self.config['input'][string.lower(ifo) + '-cal'])
-        print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
+          if bank:
+            parent = 'tmpltbank_%s_%s_%s' % (ifo,chunk.start,chunk.end)
+            print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
+          if not bank and cache:
+            parent = 'frcache_%s_%s_%s' % (site,seg.startpad,seg.endpad)
+            print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
+
     dag_fh.close()
 
 def usage():
@@ -246,8 +254,9 @@ Usage: inspiral_pipeline.py [OPTIONS]
    -p, --play               only create chunks that overlap with playground
    -v, --version            print version information and exit
    -h, --help               print help information
-   -c, --cache              flag the frame cache query as done
-   -b, --bank               flag the bank generation and cache query as done
+   -c, --cache              generate the frame cache files
+   -b, --bank               execute the bank generation code
+   -i, --inspiral           run the inspiral code
    -l, --log-path           directory to write condor log file
 
 This program generates a DAG to run the inspiral code. The configuration file 
@@ -285,13 +294,16 @@ playground defined by:
 
 are included in the DAG.
 
-If the --cache (or -c) option is specifed, the generation of the frame cache 
-files is marked as done in the DAG. The cache files are expected to exist by
-the bank generation and inspiral codes.
+If the --cache (or -c) option is specifed, then LALdataFind is run to generate
+a LAL frame cache file as the first node in the DAG. If this option is not
+specified, then the cache files are expected to exist by the bank generation
+and inspiral codes.
 
-If the --bank (or -b) option is specified, both the frame cache query and
-generation of the template bank are marked as done. The cache files and
-template banks are expected to exist by the inspiral code.
+If the --bank (or -b) option is specified, then a template bank is generated
+for each chunk of data. If this option is not specified then the inspiral code
+expects a bank to already exist.
+
+If the --inspiral (or -i) option is specified, then the inspiral code is run.
 \
 """
   print msg
@@ -315,8 +327,9 @@ except getopt.GetoptError:
   sys.exit(1)
 
 config_file = None
-no_cache = None
-no_bank = None
+do_cache = None
+do_bank = None
+do_inspiral = None
 play_only = None
 log_path = None
 
@@ -330,10 +343,11 @@ for o, a in opts:
   if o in ("-f", "--config-file"):
     config_file = a
   if o in ("-c", "--cache"):
-    no_cache = 1
+    do_cache = 1
   if o in ("-b", "--bank"):
-    no_cache = 1
-    no_bank = 1
+    do_bank = 1
+  if o in ("-i", "--inspiral"):
+    do_inspiral = 1
   if o in ("-p", "--play"):
     play_only = 1
   if o in ("-l", "--log-path"):
@@ -366,4 +380,4 @@ pipeline.status(play_only)
 pipeline.frcachesub()
 pipeline.banksub()
 pipeline.inspiralsub()
-pipeline.builddag(no_cache,no_bank)
+pipeline.builddag(do_cache,do_bank,do_inspiral)
