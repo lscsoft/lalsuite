@@ -26,7 +26,9 @@ Author: Sathyaprakash, B.S.
 </lalLaTeX>  */
 
 #include <config.h>
-#if defined HAVE_GSL_GSL_FFT_REAL_H && defined HAVE_MYSQL_H
+#if defined HAVE_GSL_GSL_FFT_REAL_H && defined HAVE_LIBGSL \
+  && defined HAVE_MYSQL_H && defined HAVE_LIBMYSQLCLIENT \
+  && defined HAVE_FRAMEL_H && defined HAVE_LIBFRAME
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>

@@ -77,7 +77,10 @@ LALDestroyRealFFTPlan
 /***************************** </lalErrTable> */
 
 #include <config.h>
-#if defined HAVE_MPI_H && defined HAVE_GSL_GSL_FFT_REAL_H
+#if defined HAVE_GSL_GSL_FFT_REAL_H && defined HAVE_LIBGSL \
+  && defined HAVE_MYSQL_H && defined HAVE_LIBMYSQLCLIENT \
+  && defined HAVE_FRAMEL_H && defined HAVE_LIBFRAME \
+  && defined HAVE_MPI_H
 
 #include <lal/LALInspiralBank.h>
 #include <lal/RealFFT.h>
