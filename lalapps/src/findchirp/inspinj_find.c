@@ -631,7 +631,7 @@ int main(int argc, char **argv)
   }
 
   currentInspiralEvent = inspiralEventList;
-  prevInspiralEvent = NULL;
+  prevInspiralEvent = inspiralEventList =  NULL;
   
   /* check for events and playground, and event satisfying SNR */
   while( currentInspiralEvent ) 
@@ -659,7 +659,13 @@ int main(int argc, char **argv)
       }
     }
   }
-  
+ 
+  /* remove all events after the last kept one */
+  if ( prevInspiralEvent )
+  {
+    prevInspiralEvent->next = NULL;
+  }
+
   /* sort the events */
   LAL_CALL( LALSortSnglInspiral( &stat, &inspiralEventList, 
     *LALCompareSnglInspiralByTime), &stat);
