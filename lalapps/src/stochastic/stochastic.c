@@ -1780,50 +1780,50 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 #define USAGE \
   "Usage: " PROGRAM_NAME " [options]\n"\
-  " -h, --help                        print this message\n"\
-  " -v, --version                     display version\n"\
-  "     --verbose                     verbose mode\n"\
-  " -z, --debug-level N               set lalDebugLevel\n"\
-  " -t, --gps-start-time N            GPS start time\n"\
-  " -T, --gps-end-time N              GPS end time\n"\
-  " -L, --interval-duration N         interval duration\n"\
-  " -l, --segment-duration N          segment duration\n"\
-  " -A, --sample-rate N               sample rate\n"\
-  " -a, --resample-rate N             resample rate\n"\
-  " -f, --f-min N                     minimal frequency\n"\
-  " -F, --f-max N                     maximal frequency\n"\
-  " -i, --ifo-one IFO                 ifo for first stream\n"\
-  " -I, --ifo-two IFO                 ifo for second stream\n"\
-  " -z, --channel-one CHANNEL         channel for first stream\n"\
-  " -Z, --channel-two CHANNEL         channel for second stream\n"\
-  " -d, --frame-cache-one FILE        cache file for first stream\n"\
-  " -D, --frame-cache-two FILE        cache file for second stream\n"\
-  " -r, --calibration-cache-one FILE  first stream calibration cache\n"\
-  " -R, --calibration-cache-two FILE  second stream calibration cache\n"\
-  " -c, --calibration-offset N        calibration offset\n"\
-  "     --apply-mask                  apply frequency masking\n"\
-  " -b, --mask-bin N                  number of bins to mask\n"\
-  "     --overlap-hann                overlaping hann windows\n"\
-  " -w, --hann-duration N             hann duration\n"\
-  "     --high-pass-filter            apply high pass filtering\n"\
-  " -k, --hpf-frequency N             high pass filter knee frequency\n"\
-  " -p, --hpf-attenuation N           high pass filter attenuation\n"\
-  " -P, --hpf-order N                 high pass filter order\n"\
-  "     --recenter                    recenter jobs\n"\
-  "     --post-analysis               perform post analysis\n"\
-  "     --middle-segment              use middle segment in PSD estimation\n"\
-  "     --inject                      inject a signal into the data\n"\
-  " -o, --scale-factor N              scale factor for injection\n"\
-  " -g, --seed N                      random seed\n"\
-  " -N, --trials N                    number of trials for Monte Carlo\n"\
-  " -S, --output-dir DIR              directory for output files\n"\
-  "     --test                        output intermediate results\n"\
-  " -U, --test-interval N             interval to test\n"\
-  " -V, --test-segment N              segment to test\n"\
-  " -W, --test-trial N                trail to test\n"\
-  " -K, --geo-hpf-frequency N         GEO high pass filter knee frequency\n"\
-  " -q, --geo-hpf-attenuation N       GEO high pass filter attenuation\n"\
-  " -Q, --geo-hpf-order N             GEO high pass filter order\n"
+  " --help                        print this message\n"\
+  " --version                     display version\n"\
+  " --verbose                     verbose mode\n"\
+  " --debug-level N               set lalDebugLevel\n"\
+  " --gps-start-time N            GPS start time\n"\
+  " --gps-end-time N              GPS end time\n"\
+  " --interval-duration N         interval duration\n"\
+  " --segment-duration N          segment duration\n"\
+  " --sample-rate N               sample rate\n"\
+  " --resample-rate N             resample rate\n"\
+  " --f-min N                     minimal frequency\n"\
+  " --f-max N                     maximal frequency\n"\
+  " --ifo-one IFO                 ifo for first stream\n"\
+  " --ifo-two IFO                 ifo for second stream\n"\
+  " --channel-one CHANNEL         channel for first stream\n"\
+  " --channel-two CHANNEL         channel for second stream\n"\
+  " --frame-cache-one FILE        cache file for first stream\n"\
+  " --frame-cache-two FILE        cache file for second stream\n"\
+  " --calibration-cache-one FILE  first stream calibration cache\n"\
+  " --calibration-cache-two FILE  second stream calibration cache\n"\
+  " --calibration-offset N        calibration offset\n"\
+  " --apply-mask                  apply frequency masking\n"\
+  " --mask-bin N                  number of bins to mask\n"\
+  " --overlap-hann                overlaping hann windows\n"\
+  " --hann-duration N             hann duration\n"\
+  " --high-pass-filter            apply high pass filtering\n"\
+  " --hpf-frequency N             high pass filter knee frequency\n"\
+  " --hpf-attenuation N           high pass filter attenuation\n"\
+  " --hpf-order N                 high pass filter order\n"\
+  " --recenter                    recenter jobs\n"\
+  " --post-analysis               perform post analysis\n"\
+  " --middle-segment              use middle segment in PSD estimation\n"\
+  " --inject                      inject a signal into the data\n"\
+  " --scale-factor N              scale factor for injection\n"\
+  " --seed N                      random seed\n"\
+  " --trials N                    number of trials for Monte Carlo\n"\
+  " --output-dir DIR              directory for output files\n"\
+  " --test                        output intermediate results\n"\
+  " --test-interval N             interval to test\n"\
+  " --test-segment N              segment to test\n"\
+  " --test-trial N                trail to test\n"\
+  " --geo-hpf-frequency N         GEO high pass filter knee frequency\n"\
+  " --geo-hpf-attenuation N       GEO high pass filter attenuation\n"\
+  " --geo-hpf-order N             GEO high pass filter order\n"
 
 /* parse command line options */
 static void parseOptions(INT4 argc, CHAR *argv[])
