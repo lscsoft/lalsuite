@@ -63,11 +63,11 @@ NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 typedef struct
 tagSnglInspiralAccuracy
 {
-    INT4  match;
-    REAL4 dRhoPlus;
-    REAL4 dRhoMinus;
-    INT8  dtime;
-    REAL4 dm;
+  INT4  match;
+  REAL4 epsilon;
+  REAL4 kappa;
+  INT8  dt;
+  REAL4 dm;
 }
 SnglInspiralAccuracy;
 

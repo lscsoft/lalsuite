@@ -201,24 +201,25 @@ LALCompareSnglInspiral (
   LALGPStoINT8( status->statusPtr, &ta, &(aPtr->end_time) );
   LALGPStoINT8( status->statusPtr, &tb, &(bPtr->end_time) );
 
-  if ( labs(ta-tb) < params->dtime )
+  /* compate on triggger time coincidence */
+  if ( labs( ta - tb ) < params->dt )
   {
     dm1 = fabs( aPtr->mass1 - bPtr->mass1 );
     dm2 = fabs( aPtr->mass2 - bPtr->mass2 );
 
+    /* compare mass1 and mass2 parameters */
     if ( dm1 <= params->dm && dm2 <= params->dm )
     {
-      sigmaRatio = sqrt(bPtr->sigmasq / aPtr->sigmasq);
-
-      if ( (sigmaRatio * aPtr->snr -  bPtr->snr < params->dRhoPlus) &&
-          (bPtr->snr - sigmaRatio * aPtr->snr < params->dRhoMinus) )
+      if ( fabs( 
+            (aPtr->eff_distance - bPtr->eff_distance) / aPtr->eff_distance
+            ) < params->epsilon / bPtr->snr + params->kappa )
       {
         params->match = 1;
-        LALInfo( status, "Triggers are coincident" );
+        LALInfo( status, "Triggers are coincident in eff_distance" );
       }
       else
       {
-        LALInfo( status, "Triggers fail snr coincidence test" );
+        LALInfo( status, "Triggers fail eff_distance coincidence test" );
       }
     }
     else
