@@ -292,7 +292,7 @@ InitMakefakedata (LALStatus *stat,
   if ( (!LALUserVarWasSet(&uvar_timestampsFile) && !LALUserVarWasSet(&uvar_startTime))
        || (LALUserVarWasSet(&uvar_timestampsFile) && LALUserVarWasSet(&uvar_startTime)) )
     {
-      LALPrintError ("Please specify either timestampsFile or startTime !\n");
+      LALPrintError ("\nPlease specify either timestampsFile or startTime !\n\n");
       ABORT (stat, MAKEFAKEDATAC_ENOARG, MAKEFAKEDATAC_MSGENOARG);
     }
 
@@ -316,7 +316,7 @@ InitMakefakedata (LALStatus *stat,
     case 0:
       break;
     default:
-      LALPrintError ("msp = %d makes no sense to me...\n", msp);
+      LALPrintError ("\nmsp = %d makes no sense to me...\n\n", msp);
       ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     } /* switch(msp) */
 
@@ -329,7 +329,7 @@ InitMakefakedata (LALStatus *stat,
   else if (!strcmp(uvar_detector,"TAMA"))  cfg->Detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
   else if (!strcmp(uvar_detector,"CIT"))   cfg->Detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
   else {
-    LALPrintError ("Unknown detector specified: `%s\n`", uvar_detector);
+    LALPrintError ("\nUnknown detector specified: `%s\n\n", uvar_detector);
     ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
   }
 
@@ -340,7 +340,7 @@ InitMakefakedata (LALStatus *stat,
       LIGOTimeGPS t1, t0;
       TRY (ReadTimestamps (stat->statusPtr, &timestamps, uvar_timestampsFile), stat);
       if ((UINT4)uvar_nTsft > timestamps->length) {
-	LALPrintError ("Timestamps-file contains less than nTsft=%d entries!\n", uvar_nTsft);
+	LALPrintError ("\nTimestamps-file contains less than nTsft=%d entries!\n\n", uvar_nTsft);
 	ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
       }
       t1 = timestamps->data[uvar_nTsft-1];
@@ -406,20 +406,27 @@ InitMakefakedata (LALStatus *stat,
     BOOLEAN set6 = LALUserVarWasSet(&uvar_orbitTperiSSBns);
     if (set1 || set2 || set3 || set4 || set5 || set6)
     {
-      if (! (set1 && set2 && set3 && set4 && set5) ) {
-	LALPrintError ("Please either specify  ALL orbital parameters or NONE!\n");
-	ABORT (stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
-      }
+      if ( (uvar_orbitSemiMajorAxis > 0) && !(set1 && set2 && set3 && set4 && set5) ) 
+	{
+	  LALPrintError ("\nPlease either specify  ALL orbital parameters or NONE!\n\n");
+	  ABORT (stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+	}
       cfg->binaryPulsar = TRUE;
 
-    } /* if at least one orbital parameter was set */
+      if ( (uvar_orbitEccentricity < 0) || (uvar_orbitEccentricity > 1) )
+	{
+	  LALPrintError ("\nEccentricity has to lie within [0, 1]\n\n");
+	  ABORT (stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+	}
+
+    } /* if one or more orbital parameters were set */
   } 
 
 
   /* EITHER add Gaussian noise OR real noise-sft's */
   if ( LALUserVarWasSet(&uvar_noiseDir) && LALUserVarWasSet(&uvar_noiseSigma) )
     {
-      LALPrintError ("ERROR: only one of 'noiseDir' or 'noiseSigma' can be specified!\n");
+      LALPrintError ("\nERROR: only one of 'noiseDir' or 'noiseSigma' can be specified!\n\n");
       ABORT (stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
     }
 
@@ -429,7 +436,7 @@ InitMakefakedata (LALStatus *stat,
       CHAR *fpat;
       REAL8 fmin, fmax;
       if( (fpat = LALCalloc (1, strlen(uvar_noiseDir) + 10)) == NULL) {
-	LALPrintError ("Out of memory, .. arghhh\n");
+	LALPrintError ("\nOut of memory, .. arghhh\n\n");
 	ABORT (stat, MAKEFAKEDATAC_ESUB, MAKEFAKEDATAC_MSGESUB);
       }
       strcpy (fpat, uvar_noiseDir);
@@ -444,7 +451,7 @@ InitMakefakedata (LALStatus *stat,
   /* catch (yet) unsupported options */
   if ( LALUserVarWasSet (&uvar_outTDDFile) )
     {
-      LALPrintError ("Sorry, time-domain output is currently not yet supported\n");
+      LALPrintError ("\nSorry, time-domain output is currently not yet supported\n\n");
       ABORT (stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
     }
   
@@ -576,7 +583,7 @@ ReadTimestamps (LALStatus* stat, LIGOTimeGPSVector **timestamps, const CHAR *fna
   ASSERT (*timestamps == NULL, stat, MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 
   if ( (fp = fopen( fname, "r")) == NULL) {
-    LALPrintError("Unable to open timestampsname file %s\n", fname);
+    LALPrintError("\nUnable to open timestampsname file %s\n\n", fname);
     ABORT (stat, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
   }
 
@@ -587,7 +594,7 @@ ReadTimestamps (LALStatus* stat, LIGOTimeGPSVector **timestamps, const CHAR *fna
       if (fscanf ( fp, "%d  %d\n", &secs, &ns ) != 2)
 	{
 	  LALDestroyTimestampVector (stat->statusPtr, timestamps);
-	  LALPrintError("Unable to read datum from line # %d from file %s\n", i+1, fname);
+	  LALPrintError("\nUnable to read datum from line # %d from file %s\n\n", i+1, fname);
 	  ABORT (stat, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
 	} /* if read-error */
       (*timestamps)->data[i].gpsSeconds = secs;
@@ -641,13 +648,13 @@ AddGaussianNoise (LALStatus* status, REAL4TimeSeries *outSeries, REAL4TimeSeries
   
   if ( (devrandom = fopen("/dev/urandom","r")) == NULL )
     {
-      LALPrintError ("Could not open '/dev/urandom'\n");
+      LALPrintError ("\nCould not open '/dev/urandom'\n\n");
       ABORT (status, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
     }
 
   if ( fread( (void*)&seed, sizeof(INT4), 1, devrandom) != 1)
     {
-      LALPrintError ("Could not read from '/dev/urandom'\n");
+      LALPrintError ("\nCould not read from '/dev/urandom'\n\n");
       fclose(devrandom);
       ABORT (status, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
     }
