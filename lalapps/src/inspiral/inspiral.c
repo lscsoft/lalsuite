@@ -53,6 +53,7 @@ INT4   highPass         = -1;           /* enable high pass on raw data */
 REAL4  highPassFreq     = 0;            /* high pass frequency          */
 REAL4  fLow             = -1;           /* low frequency cutoff         */
 INT4   specType         = -1;           /* use median or mean psd       */
+INT4   badMeanPsd       = 0;            /* use a mean with no overlap   */
 INT4   invSpecTrunc     = -1;           /* length of inverse spec (s)   */
 REAL4  dynRangeExponent = -1;           /* exponent of dynamic range    */
 CHAR  *calCacheName     = NULL;         /* location of calibration data */
@@ -90,8 +91,10 @@ int main( int argc, char *argv[] )
   FrChanIn      frChan;
 
   /* frame output data */
-  struct FrFile *frOutFile = NULL;
-  struct FrameH *outFrame  = NULL;
+  struct FrFile *frOutFile  = NULL;
+  struct FrameH *outFrame   = NULL;
+  UINT4          nRhosqFr = 0;
+  UINT4          nChisqFr = 0;
 
   /* raw input data storage */
   REAL4TimeSeries               chan;
@@ -192,7 +195,7 @@ int main( int argc, char *argv[] )
   fcInitParams->numPoints      = numPoints;
   fcInitParams->numSegments    = numSegments;
   fcInitParams->numChisqBins   = numChisqBins;
-  fcInitParams->createRhosqVec = writeRhosq + writeChisq;
+  fcInitParams->createRhosqVec = writeRhosq;
   fcInitParams->ovrlap         = ovrlap;
 
 
@@ -333,7 +336,14 @@ int main( int argc, char *argv[] )
    
   wpars.type = Hann;
   wpars.length = numPoints;
-  avgSpecParams.overlap = numPoints / 2;
+  if ( badMeanPsd )
+  {
+    avgSpecParams.overlap = 0;
+  }
+  else
+  {
+    avgSpecParams.overlap = numPoints / 2;
+  }
 
   LAL_CALL( LALCreateREAL4Window( &status, &(avgSpecParams.window),
         &wpars ), &status );
@@ -440,6 +450,32 @@ int main( int argc, char *argv[] )
         fcFilterInput->segment = fcSegVec->data + i;
         LAL_CALL( LALFindChirpFilterSegment( &status, 
               &eventList, fcFilterInput, fcFilterParams ), &status );
+
+        if ( writeRhosq )
+        {
+          CHAR snrsqStr[LALNameLength];
+          LALSnprintf( snrsqStr, LALNameLength*sizeof(CHAR), 
+              "SNRSQ_%d", nRhosqFr++ );
+          strcpy( fcFilterParams->rhosqVec->name, chan.name );
+          outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+              fcFilterParams->rhosqVec, "none", snrsqStr );
+        }
+
+        if ( writeChisq )
+        {
+          CHAR chisqStr[LALNameLength];
+          REAL4TimeSeries chisqts;
+          LALSnprintf( chisqStr, LALNameLength*sizeof(CHAR), 
+              "CHISQ_%d", nChisqFr++ );
+          chisqts.epoch = fcFilterInput->segment->data->epoch;
+          memcpy( &(chisqts.name), fcFilterInput->segment->data->name,
+              LALNameLength * sizeof(CHAR) );
+          chisqts.deltaT = fcFilterInput->segment->deltaT;
+          chisqts.data = fcFilterParams->chisqVec;
+          outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+              &chisqts, "none", chisqStr );
+        }
+
       }
 
       /*  test if filter returned any events */
@@ -538,28 +574,6 @@ int main( int argc, char *argv[] )
   } /* end loop over linked list */
 
 
-  /*
-   *
-   * write the filter data to disk
-   *
-   */
-
-
-  if ( writeRhosq )
-  {
-    strcpy( fcFilterParams->rhosqVec->name, chan.name );
-    outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
-        fcFilterParams->rhosqVec, "none", "SNRSQ" );
-  }
-
-  if ( writeChisq )
-  {
-    REAL4TimeSeries chisqts;
-    memcpy( &chisqts, fcFilterParams->rhosqVec, sizeof(REAL4TimeSeries) );
-    chisqts.data = fcFilterParams->chisqVec;
-    outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
-        &chisqts, "none", "CHISQ" );
-  }
 
 
   /*
@@ -729,7 +743,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"disable-high-pass",       no_argument,       &highPass,         0 },
     /* these options don't set a flag */
     {"gps-start-time",          required_argument, 0,                'a'},
+    {"gps-start-time-ns",       required_argument, 0,                'A'},
     {"gps-end-time",            required_argument, 0,                'b'},
+    {"gps-end-time-ns",         required_argument, 0,                'B'},
     {"channel-name",            required_argument, 0,                'c'},
     {"segment-length",          required_argument, 0,                'd'},
     {"number-of-segments",      required_argument, 0,                'e'},
@@ -779,7 +795,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     int option_index = 0;
 
     c = getopt_long( argc, argv, 
-        "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:z:", 
+        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:z:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -825,8 +841,31 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                 long_options[option_index].name, gstartt );
             exit( 1 );
           }
-          gpsStartTimeNS = (UINT8) gstartt * 1000000000LL;
+          gpsStartTimeNS += (UINT8) gstartt * 1000000000LL;
           ADD_PROCESS_PARAM( "int", "%ld", gstartt );
+        }
+        break;
+
+      case 'A':
+        {
+          long int gstarttns = atol( optarg );
+          if ( gstarttns < 0 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS start time nanoseconds is negative\n",
+                long_options[option_index].name );
+            exit( 1 );
+          }
+          if ( gstarttns > 999999999 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS start time nanoseconds is greater than unity:\n" 
+                "Must be <= 999999999 (%ld specified)\n", 
+                long_options[option_index].name, gstarttns );
+            exit( 1 );
+          }
+          gpsStartTimeNS += (UINT8) gstarttns;
+          ADD_PROCESS_PARAM( "int", "%ld", gstarttns );
         }
         break;
 
@@ -851,8 +890,32 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                 long_options[option_index].name, gendt );
             exit( 1 );
           }            
-          gpsEndTimeNS = (UINT8) gendt * 1000000000LL;
+          gpsEndTimeNS += (UINT8) gendt * 1000000000LL;
           ADD_PROCESS_PARAM( "int", "%ld", gendt );
+        }
+        break;
+
+      case 'B':
+        {
+          long int gendtns = atol( optarg );
+          if ( gendtns < 0 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS end time nanoseconds is negative\n",
+                long_options[option_index].name );
+            exit( 1 );
+          }
+          else if ( gendtns > 999999999 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS end time nanoseconds is greater than unity:\n" 
+                "Must be <= 999999999:\n"
+                "(%ld specified)\n", 
+                long_options[option_index].name, gendtns );
+            exit( 1 );
+          }            
+          gpsEndTimeNS += (UINT8) gendtns;
+          ADD_PROCESS_PARAM( "int", "%ld", gendtns );
         }
         break;
 
@@ -964,6 +1027,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         else if ( ! strcmp( "median", optarg ) )
         {
           specType = 1;
+        }
+        else if ( ! strcmp( "bad-mean", optarg ) )
+        {
+          specType = 0;
+          badMeanPsd = 1;
         }
         else
         {
