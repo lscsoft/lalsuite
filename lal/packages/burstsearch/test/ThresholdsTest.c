@@ -217,6 +217,9 @@ main (int argc, char *argv[])
    *
    */
 
+#ifndef LAL_NDEBUG
+  if ( ! lalNoDebug )
+  {
 
   if (verbose || lalDebugLevel)
   {
@@ -382,6 +385,9 @@ main (int argc, char *argv[])
   TestStatus (&status, CODES(THRESHOLDSH_EBADPROB), 1);
   /* set it back to original value for remaining tests */
   input3.falseDismissal= beta;  
+
+  }
+#endif
 
   LALCheckMemoryLeaks ();
 

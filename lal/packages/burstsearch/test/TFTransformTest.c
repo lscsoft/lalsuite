@@ -283,6 +283,9 @@ main (int argc, char *argv[])
    *                                                                       * 
    *************************************************************************/
 
+#ifndef LAL_NDEBUG
+  if ( ! lalNoDebug )
+  {
 
   if (verbose || lalDebugLevel)
   {
@@ -1054,6 +1057,8 @@ main (int argc, char *argv[])
 
   }
 
+  }
+#endif
 
   LALCheckMemoryLeaks ();
 
