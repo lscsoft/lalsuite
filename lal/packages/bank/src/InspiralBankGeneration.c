@@ -79,6 +79,8 @@ LALInspiralBankGeneration(
     bank = (*first)->next;
     LALFree( *first );
     *first = bank;
+    /* free the coarse list returned by create coarse bank */
+    LALFree( coarseList );
     break;
 
   case BCVSpin:
