@@ -124,11 +124,6 @@ int main( int argc, char *argv[] )
     }
     else if ( strstr( argv[arg], "-ifo" ) )
     {
-      if ( ifo )
-      {
-        fprintf( stderr, "Error: ifo \"%s\" already specified\n", ifo );
-        USAGE( argv[0] );
-      }
       if ( ! run )
       {
         fprintf( stderr, "Error: run not specified\n" );
@@ -211,10 +206,10 @@ int main( int argc, char *argv[] )
       }
       frame = fr_add_proc_data( frame, &a );
       frame = fr_add_proc_data( frame, &ab );
-      FrameWrite( frame, frfile );
     }
   }
 
+  FrameWrite( frame, frfile );
   FrFileOEnd( frfile );
   return 0;
 }
