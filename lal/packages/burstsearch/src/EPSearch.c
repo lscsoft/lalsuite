@@ -136,7 +136,7 @@ static void ComputeAverageSpectrum(
     LALCCreateVector(status->statusPtr, &fseries.data, numPoints + 1);
     CHECKSTATUSPTR(status);
 
-    if (useMedian)
+    if (method == useMedian)
     /* run new code using median to obtain power spectrum */
     { /* loop over data computing spectrum */
       /* allocate two dimensional array to hold power at each freq in each time slice */
@@ -430,7 +430,7 @@ EPSearch (
     LALDestroyTFTiling (status->statusPtr, &(params->tfTiling));
     CHECKSTATUSPTR (status);
 
-    /* destroy temporary spectrum */
+    /* destroy average spectrum */
     LALDestroyREAL4FrequencySeries(status->statusPtr, AverageSpec);
 
     /* destroy the dftparams for computing frequency series */
