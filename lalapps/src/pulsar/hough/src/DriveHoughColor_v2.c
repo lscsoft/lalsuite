@@ -49,7 +49,7 @@ NRCSID (DRIVEHOUGHCOLORC, "$Id$");
  [-V time-velocity data file]\n\
         This is a string of the output time-velocity data file.\n\
         It might contain a path.\n\
-        If not set, the program will write on ./velocity.data	\n\
+        If not set, the program will write on ./velocity.data \n\
  [-f first search frequency (in Hz)] \n\
         Lowest search frequency in Hz. \n\
         Default: 250.0 Hz\n\
