@@ -65,8 +65,8 @@ RCSID("$Id$");
 extern int errno;
 
 /* variables for getopt options parsing */
-char *optarg;
-int optind;
+extern char *optarg;
+extern int optind;
 
 /* flags for getopt_long */
 static int middle_segment_flag;
