@@ -4,7 +4,7 @@ check_PROGRAMS = PrintVectorTest\
                  StreamSeriesInputTest SFTfileIOTest \
 		 ConfigFileTest UserInputTest LALMath3DPlotTest LALMathNDPlotTest
 
-noinst_DATA = StreamInput.data StreamSeriesInput.data inputsft.0 ConfigFileSample.cfg
+noinst_DATA = StreamInput.data StreamSeriesInput.data inputsft.0 inputsft.1 ConfigFileSample.cfg
 EXTRA_DIST = $(DATA)
 
 PrintVectorTest_SOURCES = PrintVectorTest.c
