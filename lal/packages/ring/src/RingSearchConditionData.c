@@ -77,14 +77,25 @@ LALRingSearchConditionData(
    *
    */
 
-  if ( params->lowFrequency > 0 )
+  if ( params->highpassFrequency > params->lowFrequency )
+  {
+    LALWarning( status,
+        "highpass frequency should be less than low frequency" );
+  }
+  if ( params->highpassFrequency == 0 )
+  {
+    LALInfo( status, "highpass frequency set to low frequency\n"
+        "	(use a negative highpass frequency to disable)" );
+    params->highpassFrequency = params->lowFrequency;
+  }
+  if ( params->highpassFrequency > 0 )
   {
     PassBandParamStruc highpassParams;
-    highpassParams.nMax = 4;
+    highpassParams.nMax =  8;
     highpassParams.f1   = -1;
     highpassParams.a1   = -1;
-    highpassParams.f2   = params->lowFrequency;
-    highpassParams.a2   = 0.1;
+    highpassParams.f2   = params->highpassFrequency;
+    highpassParams.a2   = 0.9; /* this means 10% attenuation at f2 */
     LALDButterworthREAL4TimeSeries( status->statusPtr, data->channel,
         &highpassParams );
     CHECKSTATUSPTR( status );

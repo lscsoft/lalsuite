@@ -40,6 +40,8 @@
  *   [default is zero --- no inverse spectrum truncation].
  * \item[\texttt{-flow} \textit{flow}] Set the low frequency cutoff to
  *   \textit{flow} Hz [default is zero].
+ * \item[\texttt{-fhighpass} \textit{fhighpass}] Highpass filter the data at
+ *   frequency \textit{flow} Hz (negative to disable) [default is zero].
  * \item[\texttt{-fmin} \textit{fmin}] Set the minimum ring frequency of the
  *   bank to \textit{fmin} Hz [no default --- manditory].
  * \item[\texttt{-fmax} \textit{fmax}] Set the maximum ring frequency of the
@@ -136,6 +138,11 @@ void LALRingSearchInit(
     else if ( strstr( *argv, "-flow" ) )
     {
       params->lowFrequency = atof( *++argv );
+      --argc;
+    }
+    else if ( strstr( *argv, "-fhighpass" ) )
+    {
+      params->highpassFrequency = atof( *++argv );
       --argc;
     }
     else if ( strstr( *argv, "-fmin" ) )

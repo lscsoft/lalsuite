@@ -87,6 +87,7 @@ tagRingSearchParams
   REAL4                    dynRangeFac;
   UINT4                    invSpecTrunc;
   REAL4                    lowFrequency;
+  REAL4                    highpassFrequency;
   REAL4                    minFrequency;
   REAL4                    maxFrequency;
   REAL4                    minQuality;
