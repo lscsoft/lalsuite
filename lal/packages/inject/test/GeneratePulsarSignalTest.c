@@ -3,6 +3,11 @@ Author: Mendell, G.
 $Id$
 **************************************************** </lalVerbatim> */
 
+/* NOTES: */
+/* 10/08/04 gam; fix indexing into trig lookup tables (LUTs) by having table go from -2*pi to 2*pi */
+/* 10/12/04 gam; include INCLUDE_SEQUENTIAL_MISMATCH to make make pulsar parameters more varied. */
+/* 10/12/04 gam; update error conditions. */
+
 /********************************************************** <lalLaTeX>
 
 \subsection{Program \texttt{GeneratePulsarSignalTest.c}}
@@ -29,11 +34,15 @@ not the phases.
 ****************************************** </lalLaTeX><lalErrTable> */
 #define GENERATEPULSARSIGNALTESTC_ENORM  0
 #define GENERATEPULSARSIGNALTESTC_EIFO   1
-#define GENERATEPULSARSIGNALTESTC_EMOD  2
+#define GENERATEPULSARSIGNALTESTC_EMOD   2
+#define GENERATEPULSARSIGNALTESTC_EBIN   3
+#define GENERATEPULSARSIGNALTESTC_EBINS  4
 
 #define GENERATEPULSARSIGNALTESTC_MSGENORM  "Normal exit"
 #define GENERATEPULSARSIGNALTESTC_MSGEIFO   "IFO not supported"
-#define GENERATEPULSARSIGNALTESTC_MSGEMOD   "Error modulus of SFTs from LALSignalToSFTs and LALFastGeneratePulsarSFTs differ"
+#define GENERATEPULSARSIGNALTESTC_MSGEMOD   "SFT max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs"
+#define GENERATEPULSARSIGNALTESTC_MSGEEBIN  "SFT freq with max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs by more than 1 bin"
+#define GENERATEPULSARSIGNALTESTC_MSGEEBINS "SFTs freq with max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs too often"
 /******************************************** </lalErrTable><lalLaTeX>
 
 \subsubsection*{Notes}
@@ -58,7 +67,9 @@ example uses of the functions tested by this code.
 /* #define PRINT_DIFFATMAXPOWER */
 /* #define PRINT_ERRORATMAXPOWER */
 /* #define PRINT_OVERALLMAXDIFFSFTPOWER */
+#define INCLUDE_SEQUENTIAL_MISMATCH
 /* #define INCLUDE_RANDVAL_MISMATCH */
+
 
 #include <stdio.h>
 #include <string.h>
@@ -200,7 +211,9 @@ void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
   REAL4 tmpDiffSFTMod, sftMod, fastSFTMod;
   REAL4 smallMod = 1.e-30;
   REAL4 epsDiffMod;
-  
+  REAL4 epsBinErrorRate;   /* 10/12/04 gam; Allowed bin error rate */  
+  INT4  binErrorCount = 0; /* 10/12/04 gam; Count number of bin errors  */
+    
   /* randval is always set to a default value or given a random value to generate certain signal parameters or mismatch */  
   REAL4 randval;
   #ifdef INCLUDE_RANDVAL_MISMATCH  
@@ -353,12 +366,15 @@ void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
   pSkyConstAndZeroPsiAMResponse->fCrossZeroPsi = (REAL4 *)LALMalloc(numSFTs*sizeof(REAL4));
   pSFTandSignalParams = (SFTandSignalParams *)LALMalloc(sizeof(SFTandSignalParams));
   /* create lookup table (LUT) values for doing trig */
-  pSFTandSignalParams->resTrig = 64; /* length sinVal and cosVal; resolution of trig functions = 2pi/resTrig */
+  /* pSFTandSignalParams->resTrig = 64; */ /* length sinVal and cosVal; resolution of trig functions = 2pi/resTrig */
+  /* pSFTandSignalParams->resTrig = 128; */ /* 10/08/04 gam; length sinVal and cosVal; domain = -2pi to 2pi inclusive; resolution = 4pi/resTrig */
+  pSFTandSignalParams->resTrig = 0; /* 10/12/04 gam; turn off using LUTs since this is more typical. */
   pSFTandSignalParams->trigArg = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
   pSFTandSignalParams->sinVal  = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
   pSFTandSignalParams->cosVal  = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
   for (k=0; k<=pSFTandSignalParams->resTrig; k++) {
-     pSFTandSignalParams->trigArg[k]= ((REAL8)LAL_TWOPI) * ((REAL8)k) / ((REAL8)pSFTandSignalParams->resTrig);
+     /* pSFTandSignalParams->trigArg[k]= ((REAL8)LAL_TWOPI) * ((REAL8)k) / ((REAL8)pSFTandSignalParams->resTrig); */ /* 10/08/04 gam */
+     pSFTandSignalParams->trigArg[k]= -1.0*((REAL8)LAL_TWOPI) + 2.0 * ((REAL8)LAL_TWOPI) * ((REAL8)k) / ((REAL8)pSFTandSignalParams->resTrig);
      pSFTandSignalParams->sinVal[k]=sin( pSFTandSignalParams->trigArg[k] );
      pSFTandSignalParams->cosVal[k]=cos( pSFTandSignalParams->trigArg[k] );
   }
@@ -375,6 +391,9 @@ void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
 
     /* set source sky position declination (DEC) */
     randval = 0.5; /* Gives default value */
+    #ifdef INCLUDE_SEQUENTIAL_MISMATCH
+      randval = ( (REAL4)(iSky) )/( (REAL4)(numSkyPosTotal) );
+    #endif
     #ifdef INCLUDE_RANDVAL_MISMATCH
        LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status);
     #endif    
@@ -388,6 +407,9 @@ void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
 
     /* set source sky position right ascension (RA) */
     randval = 0.5; /* Gives default value */
+    #ifdef INCLUDE_SEQUENTIAL_MISMATCH
+      randval = ( (REAL4)(iSky) )/( (REAL4)(numSkyPosTotal) );
+    #endif    
     #ifdef INCLUDE_RANDVAL_MISMATCH
       LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status);
     #endif    
@@ -411,6 +433,13 @@ void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
      if (numSpinDown > 0) {
        for(k=0;k<numSpinDown;k++) {
          randval = 0.5; /* Gives default value */
+         #ifdef INCLUDE_SEQUENTIAL_MISMATCH
+            if (freqDerivData[jDeriv][k] < 0.0) {
+               randval = ( (REAL4)(iSky) )/( (REAL4)(numSkyPosTotal) );
+            } else {
+               randval = 0.5; /* If derivative is not negative (i.e., it is zero) then do not add in mismatch; keep it zero. */
+            }
+         #endif
          #ifdef INCLUDE_RANDVAL_MISMATCH
            LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status);
          #endif
@@ -437,6 +466,9 @@ void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
 
        /* set source orientation psi */
        randval = 0.5; /* Gives default value */
+       #ifdef INCLUDE_SEQUENTIAL_MISMATCH
+            randval = ( (REAL4)(iFreq) )/( (REAL4)(nBinsSGNL) );
+       #endif       
        #ifdef INCLUDE_RANDVAL_MISMATCH
           LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status);
        #endif
@@ -444,6 +476,9 @@ void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
     
        /* set angle between source spin axis and direction from source to SSB, cosIota */
        randval = 1.0; /* Gives default value */
+       #ifdef INCLUDE_SEQUENTIAL_MISMATCH
+            randval = ( (REAL4)(iFreq) )/( (REAL4)(nBinsSGNL) );
+       #endif
        #ifdef INCLUDE_RANDVAL_MISMATCH
           LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status);
        #endif
@@ -455,6 +490,9 @@ void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
 
        /* get random value for phi0 */
        randval = 0.125; /* Gives default value pi/4*/
+       #ifdef INCLUDE_SEQUENTIAL_MISMATCH
+            randval = ( (REAL4)(iFreq) )/( (REAL4)(nBinsSGNL) );
+       #endif
        #ifdef INCLUDE_RANDVAL_MISMATCH
           LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status);
        #endif
@@ -505,8 +543,8 @@ void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
             REAL4  fPlus;
             REAL4  fCross;
             i=SFTINDEX_TO_PRINT; /* index of which outputSFT to output */
-            fPlus = pSkyConstAndZeroPsiAMResponse->fPlusZeroPsi[i]*cos(pPulsarSignalParams->pulsar.psi) + pSkyConstAndZeroPsiAMResponse->fCrossZeroPsi[i]*sin(pPulsarSignalParams->pulsar.psi);
-            fCross = pSkyConstAndZeroPsiAMResponse->fCrossZeroPsi[i]*cos(pPulsarSignalParams->pulsar.psi) - pSkyConstAndZeroPsiAMResponse->fPlusZeroPsi[i]*sin(pPulsarSignalParams->pulsar.psi);
+            fPlus = pSkyConstAndZeroPsiAMResponse->fPlusZeroPsi[i]*cos(2.0*pPulsarSignalParams->pulsar.psi) + pSkyConstAndZeroPsiAMResponse->fCrossZeroPsi[i]*sin(2.0*pPulsarSignalParams->pulsar.psi);
+            fCross = pSkyConstAndZeroPsiAMResponse->fCrossZeroPsi[i]*cos(2.0*pPulsarSignalParams->pulsar.psi) - pSkyConstAndZeroPsiAMResponse->fPlusZeroPsi[i]*sin(2.0*pPulsarSignalParams->pulsar.psi);
             fprintf(stdout,"iFreq = %i, inject h_0 = %23.10e \n",iFreq,h_0);
             fprintf(stdout,"iFreq = %i, inject cosIota = %23.10e, A_+ = %23.10e, A_x = %23.10e \n",iFreq,cosIota,pPulsarSignalParams->pulsar.aPlus,pPulsarSignalParams->pulsar.aCross);
             fprintf(stdout,"iFreq = %i, inject psi = %23.10e \n",iFreq,pPulsarSignalParams->pulsar.psi);
@@ -524,7 +562,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
        #endif
               
        /* find maximum difference in power */
-       epsDiffMod = 0.10; /* maximum allowed percent difference (NOTE CURRENTLY NOT USED TO GENERATE ERROR) */
+       epsDiffMod = 0.20; /* maximum allowed percent difference */ /* 10/12/04 gam */
        overallMaxDiffSFTMod = 0.0;
        iOverallMaxDiffSFTMod = -1;
        jOverallMaxDiff = -1;
@@ -569,7 +607,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
           }
           #ifdef PRINT_MAXSFTPOWER
             fprintf(stdout,"maxSFTMod, testNumber %i, SFT %i, bin %i = %g \n",testNumber,i,jMaxMod,maxMod);
-            fprintf(stdout,"maxSFTMod, testNumber %i, SFT %i, bin %i = %g \n",testNumber,i,jFastMaxMod,fastMaxMod);
+            fprintf(stdout,"maxFastSFTMod, testNumber %i, SFT %i, bin %i = %g \n",testNumber,i,jFastMaxMod,fastMaxMod);
             fflush(stdout);
           #endif
           #ifdef PRINT_MAXDIFFSFTPOWER
@@ -592,9 +630,16 @@ void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
               /* break; */ /* only report 1 error per test */
             }
           #endif
-          /* if ( (diffAtMaxPower > epsDiffMod) || (jMaxMod != jFastMaxMod) ) {
+          if (jMaxMod != jFastMaxMod) {
+              binErrorCount++; /* 10/12/04 gam; count up bin errors; if too ABORT at bottom of code */
+          }
+          if ( diffAtMaxPower > epsDiffMod ) {
             ABORT( status, GENERATEPULSARSIGNALTESTC_EMOD, GENERATEPULSARSIGNALTESTC_MSGEMOD);
-          } */
+          }
+          /* 10/12/04 gam; turn on test above and add test below */
+          if ( fabs(((REAL8)(jMaxMod - jFastMaxMod))) >  1.1 ) {
+            ABORT( status, GENERATEPULSARSIGNALTESTC_EBIN,   GENERATEPULSARSIGNALTESTC_MSGEEBIN);
+          }
        } /* END for(i = 0; i < numSFTs; i++) */
        #ifdef PRINT_OVERALLMAXDIFFSFTPOWER
          fprintf(stdout,"overallMaxDiffSFTMod, testNumber = %i, SFT %i, bin %i = %g \n",testNumber,iOverallMaxDiffSFTMod,jOverallMaxDiff,overallMaxDiffSFTMod);
@@ -627,6 +672,12 @@ void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
   /* END SECTION: LOOP OVER SKY POSITIONS                  */
   /*                                                       */
   /*********************************************************/
+       
+  /* 10/12/04 gam; check if too many bin errors */
+  epsBinErrorRate = 0.20;  /* 10/12/04 gam; maximum allowed bin errors */  
+  if ( (((REAL4)binErrorCount)/((REAL4)testNumber)) > epsBinErrorRate ) {
+            ABORT( status, GENERATEPULSARSIGNALTESTC_EBINS, GENERATEPULSARSIGNALTESTC_MSGEEBINS);
+  }
   
   #ifdef INCLUDE_RANDVAL_MISMATCH
     LALDestroyRandomParams(status->statusPtr, &randPar);

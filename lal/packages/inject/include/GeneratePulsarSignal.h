@@ -5,6 +5,7 @@ $Id$
 
 /* NOTES: */
 /* 07/14/04 gam; add functions LALFastGeneratePulsarSFTs and LALComputeSkyAndZeroPsiAMResponse */
+/* 10/08/04 gam; fix indexing into trig lookup tables (LUTs) by having table go from -2*pi to 2*pi */
 
 /********************************************************** <lalLaTeX>
 \section{Header \texttt{GeneratePulsarSignal.h}}
@@ -59,6 +60,7 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 #define GENERATEPULSARSIGNALH_ENOISEBAND	11
 #define GENERATEPULSARSIGNALH_ENOISEBINS	12
 #define GENERATEPULSARSIGNALH_EBADCOORDS	13
+#define GENERATEPULSARSIGNALH_ELUTS		14
 
 #define GENERATEPULSARSIGNALH_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define GENERATEPULSARSIGNALH_MSGENONULL	"Output pointer is not NULL"
@@ -73,6 +75,7 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 #define GENERATEPULSARSIGNALH_MSGENOISEBAND	"Frequency band of noise-SFTs inconsistent with signal"
 #define GENERATEPULSARSIGNALH_MSGENOISEBINS	"Frequency bins of noise-SFTs inconsistent with signal"
 #define GENERATEPULSARSIGNALH_MSGEBADCOORDS	"Current code requires sky position in equatorial coordinates"
+#define GENERATEPULSARSIGNALH_MSGELUTS		"Lookup tables (LUTs) for trig functions must be defined on domain -2pi to 2pi inclusive"
 /*************************************************** </lalErrTable> */
 
 /*************************************************** 
@@ -127,7 +130,7 @@ typedef struct {
 
 Parameters defining the pulsar signal and SFTs used by \verb+LALFastGeneratePulsarSFTs()+.  Lookup tables (LUTs) are
 used for trig functions if \verb+resTrig+ $> 0$; the user must then initialize \verb+trigArg+, \verb+sinVal+, and
-\verb+cosVal+.  See \verb+GeneratePulsarSignalTest.c+ for an example.
+\verb+cosVal+ on the domain -2pi to 2pi inclusive.  See \verb+GeneratePulsarSignalTest.c+ for an example.
 
 </lalLaTeX> */
 /* <lalVerbatim> */
@@ -135,7 +138,7 @@ typedef struct {
    PulsarSignalParams *pSigParams; 
    SFTParams *pSFTParams;
    INT4  nSamples;  /* nsample from noise SFT header; 2x this equals effective number of time samples  */
-   INT4  resTrig;   /* length sinVal and cosVal; resolution of trig functions = 2pi/resTrig */
+   INT4  resTrig;   /* length sinVal, cosVal; domain: -2pi to 2pi; resolution = 4pi/resTrig */
    REAL8 *trigArg;  /* array of arguments to hold lookup table (LUT) values for doing trig calls */
    REAL8 *sinVal;   /* sinVal holds lookup table (LUT) values for doing trig sin calls */
    REAL8 *cosVal;   /* cosVal holds lookup table (LUT) values for doing trig cos calls */
@@ -146,7 +149,7 @@ typedef struct {
 \subsubsection*{Structure \texttt{SkyConstAndZeroPsiAMResponse}}
 
 Sky Constants and beam pattern response functions used by \verb+LALFastGeneratePulsarSFTs()+.
-These are output from \verb+SkyConstAndZeroPsiAMResponse()+.
+These are output from \verb+LALComputeSkyAndZeroPsiAMResponse()+.
 
 </lalLaTeX> */
 /* <lalVerbatim> */
@@ -172,17 +175,11 @@ void LALSimulatePulsarSignal (LALStatus *stat, REAL8TimeSeries **timeSeries, con
 
 void LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params);
 
-void 
-LALComputeSkyAndZeroPsiAMResponse (LALStatus *stat, SkyConstAndZeroPsiAMResponse *output, const SFTandSignalParams *params);
-void 
-LALFastGeneratePulsarSFTs (LALStatus *stat, SFTVector **outputSFTs, const SkyConstAndZeroPsiAMResponse *input, const SFTandSignalParams *params);
-
-
-
+void LALComputeSkyAndZeroPsiAMResponse (LALStatus *stat, SkyConstAndZeroPsiAMResponse *output, const SFTandSignalParams *params);
+void LALFastGeneratePulsarSFTs (LALStatus *stat, SFTVector **outputSFTs, const SkyConstAndZeroPsiAMResponse *input, const SFTandSignalParams *params);
 
 void LALConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
 void LALConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
-
 
 /********************************************************** <lalLaTeX>
 %% \newpage\input{LALSampleTestC}

@@ -5,6 +5,8 @@ $Id$
 
 /* NOTES: */
 /* 07/14/04 gam; add functions LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs */
+/* 10/08/04 gam; fix indexing into trig lookup tables (LUTs) by having table go from -2*pi to 2*pi */
+/* 10/12/04 gam; When computing fCross and fPlus need to use 2.0*psi. */
 
 /********************************************************** <lalLaTeX>
 \subsection{Module \texttt{GeneratePulsarSignal.c}}
@@ -131,9 +133,9 @@ h(t) = F_+(t) A_+ {\rm cos}\Phi(t) + F_\times(t) A_\times {\rm sin}\Phi(t),
 $$
 where $F_+$ and $F_\times$ are the usual beam pattern response functions, 
 $A_+$ and $A_\times$ are the amplitudes of the gravitational wave for the
-plus and cross polarizations, and $\Phi$ is the phase, which contains modulations
-due to doppler shifts due to relative motion between the source and the
-detector and spin evolution of the source.  (The functions discussed here
+plus and cross polarizations, and $\Phi$ is the phase.  The phase contains modulations
+from doppler shifts due to the relative motion between the source and the
+detector and the spin evolution of the source.  (The functions discussed here
 support both isolated sources and those in binary systems. The binary case
 has not been tested.)
 
@@ -148,13 +150,13 @@ $$
 h_j \approx F_{+ 1/2} A_+ {\rm cos} [\Phi_{1/2} + 2\pi f_{1/2}(t_0 + t_j - t_{1/2})]
 + F_{\times 1/2} A_\times {\rm sin} [\Phi_{1/2} + 2\pi f_{1/2}(t_0 + t_j - t_{1/2})],
 $$
-where $t_0$ is the time as the start of an SFT, and $t_{1/2} - t_0 = T_{\rm sft}/2$,
+where $t_0$ is the time as the start of the SFT, and $t_{1/2} - t_0 = T_{\rm sft}/2$,
 where $T_{\rm sft}$ is the duration of one SFT.  This simplifies to
 $$
 h_j \approx F_{+ 1/2} A_+ {\rm cos} (\Phi_0 + 2\pi f_{1/2}t_j)
 + F_{\times 1/2} A_\times {\rm sin} (\Phi_0 + 2\pi f_{1/2}t_j),
 $$
-where $\Phi_0$ is the phase at the start of SFT
+where $\Phi_0$ is the phase at the start of the SFT
 (not the initial phase at the start of the observation), i.e.,
 $$
 \Phi_0 = \Phi_{1/2} - 2 \pi f_{1/2} (T_{\rm sft} / 2).
@@ -201,35 +203,25 @@ and then call LALFastGeneratePulsarSFTs for each set of signal parameters at tha
 sky position.  Thus, one could perform a Monte Carlo simulation, as shown
 by the pseudo code:
 
-loop over sky positions \{
+\begin{verbatim}
 
-  ...
-  
-  LALComputeSkyAndZeroPsiAMResponse();
-  
-  ...
-  
-  loop over spindown {\
-  
-    ...
-    
-    loop over frequencies \{
-    
-    ...
-    
-      LALFastGeneratePulsarSFTs();
-      
-    ...
-    
-    \}
-    
-    ...  
-    
-  \}
-  
-  ...
-  
-\}
+loop over sky positions {
+   ...
+   LALComputeSkyAndZeroPsiAMResponse();
+   ...
+   loop over spindown {
+      ...
+      loop over frequencies {
+         ...
+         LALFastGeneratePulsarSFTs();
+         ...
+      }
+      ...  
+   }
+   ...
+}
+
+\end{verbatim}
 
 \subsubsection*{Notes on LALFastGeneratePulsarSFTs}
 
@@ -645,9 +637,10 @@ LALSignalToSFTs (LALStatus *stat,
  * LALFastGeneratePulsarSFTs used these to find F_+ and F_x for NONZERO Psi.
  *--------------------------------------------------------------------------*/
 /* <lalVerbatim file="GeneratePulsarSignalCP"> */
-void LALComputeSkyAndZeroPsiAMResponse (LALStatus *stat,
-                                        SkyConstAndZeroPsiAMResponse *output,
-                                        const SFTandSignalParams *params)
+void
+LALComputeSkyAndZeroPsiAMResponse (LALStatus *stat,
+                                   SkyConstAndZeroPsiAMResponse *output,
+                                   const SFTandSignalParams *params)
 { /* </lalVerbatim> */
   INT4 i;
   INT4 numSFTs;                      /* number of SFTs */
@@ -772,10 +765,11 @@ void LALComputeSkyAndZeroPsiAMResponse (LALStatus *stat,
  * Analytic expressions are used to find each SFT
  *--------------------------------------------------------------------------*/
 /* <lalVerbatim file="GeneratePulsarSignalCP"> */
-void LALFastGeneratePulsarSFTs (LALStatus *stat,
-                                SFTVector **outputSFTs,
-                                const SkyConstAndZeroPsiAMResponse *input,
-                                const SFTandSignalParams *params)
+void 
+LALFastGeneratePulsarSFTs (LALStatus *stat,
+                           SFTVector **outputSFTs,
+                           const SkyConstAndZeroPsiAMResponse *input,
+                           const SFTandSignalParams *params)
 { /* </lalVerbatim> */
   INT4 numSFTs;                 /* number of SFTs */
   REAL4 N;                      /* N = number of time-samples that would have been used to generate SFTs directly */
@@ -783,7 +777,8 @@ void LALFastGeneratePulsarSFTs (LALStatus *stat,
   INT4 SFTlen;                  /* number of frequency bins in an SFT */
   REAL8 tSFT, f0, band, f0Signal, deltaF;
   REAL4 fPlus, fCross, psi, phi0Signal;
-  REAL4 halfAPlus, halfACross, cosPsi, sinPsi;
+  /* REAL4 halfAPlus, halfACross, cosPsi, sinPsi; */ /* 10/12/04 gam */
+  REAL4 halfAPlus, halfACross, cos2Psi, sin2Psi;
   REAL8 realA, imagA, xSum, ySum, xTmp, yTmp; /* xSum, ySum and xTmp are the same as xSum, ySum, and x in LALDemod; yTmp is -y from LALDemod plus phi0Signal */
   REAL8 realQcc, imagQcc, realPcc, imagPcc, realTmp, imagTmp;  /* Pcc is the complex conjugate of P in LALDemod; Qcc is the complex conjugate of Q in LALDemod times exp(i*phi0Signal) */
   REAL8 kappa;   /* kappa = index of freq at midpoint of SFT which is usually not an integer */
@@ -795,6 +790,7 @@ void LALFastGeneratePulsarSFTs (LALStatus *stat,
   REAL8 smallX=0.000000001;
   /* Next are for LUT for trig calls */
   INT4 indexTrig;
+  REAL8 halfResTrig = ((REAL8)params->resTrig)/2.0; /* 10/08/04 gam; fix indexing into trig lookup tables (LUTs) by having table go from -2*pi to 2*pi */
   REAL8 varTmp, dTmp, dTmp2, sinTmp, cosTmp;
 
   INITSTATUS( stat, "LALFastGeneratePulsarSFTs", GENERATEPULSARSIGNALC);
@@ -811,6 +807,14 @@ void LALFastGeneratePulsarSFTs (LALStatus *stat,
   if ( params->pSFTParams->timestamps && params->pSFTParams->noiseSFTs) {
     ASSERT ( params->pSFTParams->timestamps->length == params->pSFTParams->noiseSFTs->length, stat,  
       GENERATEPULSARSIGNALH_ENUMSFTS,  GENERATEPULSARSIGNALH_MSGENUMSFTS);
+  }
+  
+  /* 10/08/04 gam; fix indexing into trig lookup tables (LUTs) by having table go from -2*pi to 2*pi */
+  if (params->resTrig > 0) {
+     ASSERT ( fabs( ( params->trigArg[0] + ((REAL8)LAL_TWOPI) )/ ((REAL8)LAL_TWOPI) ) < ( 2.0e-6*((REAL8)LAL_TWOPI) / params->resTrig ), stat,
+           GENERATEPULSARSIGNALH_ELUTS,  GENERATEPULSARSIGNALH_MSGELUTS);
+     ASSERT ( fabs( ( params->trigArg[params->resTrig] - ((REAL8)LAL_TWOPI) ) / ((REAL8)LAL_TWOPI)  ) < ( 2.0e-6*((REAL8)LAL_TWOPI) / params->resTrig ), stat,
+           GENERATEPULSARSIGNALH_ELUTS,  GENERATEPULSARSIGNALH_MSGELUTS);
   }
           
   /* SFT parameters */  
@@ -839,8 +843,10 @@ void LALFastGeneratePulsarSFTs (LALStatus *stat,
   halfAPlus = 0.5*N*params->pSigParams->pulsar.aPlus;
   halfACross = 0.5*N*params->pSigParams->pulsar.aCross;
   psi = params->pSigParams->pulsar.psi;
-  cosPsi = (REAL4)cos(psi);
-  sinPsi = (REAL4)sin(psi);  
+  /* cosPsi = (REAL4)cos(psi);
+  sinPsi = (REAL4)sin(psi); */ /* 10/12/04 gam */
+  cos2Psi = (REAL4)cos(2.0*psi);
+  sin2Psi = (REAL4)sin(2.0*psi);
   f0Signal = params->pSigParams->pulsar.f0;
   phi0Signal = params->pSigParams->pulsar.phi0;
   if (params->pSigParams->pulsar.spindown) {
@@ -855,8 +861,10 @@ void LALFastGeneratePulsarSFTs (LALStatus *stat,
       thisSFT = &(sftvect->data[iSFT]); /* select the SFT to work on */
 
       /* find fPlus, fCross, and the real and imaginary parts of the modulated amplitude, realA and imagA */
-      fPlus = input->fPlusZeroPsi[iSFT]*cosPsi + input->fCrossZeroPsi[iSFT]*sinPsi;
-      fCross = input->fCrossZeroPsi[iSFT]*cosPsi - input->fPlusZeroPsi[iSFT]*sinPsi;
+      /* fPlus = input->fPlusZeroPsi[iSFT]*cosPsi + input->fCrossZeroPsi[iSFT]*sinPsi;
+      fCross = input->fCrossZeroPsi[iSFT]*cosPsi - input->fPlusZeroPsi[iSFT]*sinPsi; */ /* 10/12/04 gam */
+      fPlus = input->fPlusZeroPsi[iSFT]*cos2Psi + input->fCrossZeroPsi[iSFT]*sin2Psi;
+      fCross = input->fCrossZeroPsi[iSFT]*cos2Psi - input->fPlusZeroPsi[iSFT]*sin2Psi;
       realA = (REAL8)(halfAPlus*fPlus);
       imagA = (REAL8)(halfACross*fCross);
 
@@ -885,7 +893,8 @@ void LALFastGeneratePulsarSFTs (LALStatus *stat,
         /* Using LUT to find cos(yTmp) and sin(yTmp) */
         yTmp = phi0Signal/real8TwoPi + f0Signal*input->skyConst[tmpInt-1] + ySum;
         varTmp = yTmp-(INT4)yTmp;
-        indexTrig=(INT4)(varTmp*params->resTrig+0.5);
+        /* indexTrig=(INT4)(varTmp*params->resTrig+0.5); */ /* 10/08/04 gam */
+        indexTrig=(INT4)((varTmp + 1.0)*halfResTrig + 0.5);
         dTmp = real8TwoPi*varTmp - params->trigArg[indexTrig];
         dTmp2 = 0.5*dTmp*dTmp;
         sinTmp = params->sinVal[indexTrig];
@@ -896,7 +905,8 @@ void LALFastGeneratePulsarSFTs (LALStatus *stat,
         /* Find sin(2*pi*kappa) and 1 - cos(2*pi*kappa) */
         /* Using LUT to find sin(2*pi*kappa) and 1 - cos(2*pi*kappa) */
         varTmp = kappa-(INT4)kappa;
-        indexTrig=(INT4)(varTmp*params->resTrig+0.5);
+        /* indexTrig=(INT4)(varTmp*params->resTrig+0.5); */
+        indexTrig=(INT4)((varTmp + 1.0)*halfResTrig + 0.5); /* 10/08/04 gam */
         dTmp = real8TwoPi*varTmp - params->trigArg[indexTrig];
         dTmp2 = 0.5*dTmp*dTmp;
         sinTmp = params->sinVal[indexTrig];
