@@ -152,6 +152,8 @@ tagRandomInspiralSignalIn
    REAL8 psi3Min;      /* smallest 1.5 PN psi-parameter */
    REAL8 psi3Max;      /* largest 1.5 PN psi-parameter */
 
+   INT4  coalescenceTime ;/* bin in which is maximum of the chirp (coalescence time)*/
+
 } 
 RandomInspiralSignalIn;
 /*  </lalVerbatim>  */

@@ -149,6 +149,9 @@ LALRandomInspiralSignal
    )
 {  /*  </lalVerbatim>  */
 
+  REAL8 maxTemp; /* temporary variable*/
+  INT4 iMax;     /* temporary indice */
+  INT4 indice;
    REAL8 epsilon1, epsilon2, norm;
    REAL4Vector noisy, buff;
    AddVectorsIn addIn;
@@ -383,6 +386,19 @@ LALRandomInspiralSignal
 	   LALREAL4VectorFFT(status->statusPtr, signal, &buff, randIn->fwdp);
 	   CHECKSTATUSPTR(status);
 	 }
+
+       /* we might want to know where is the signal injected*/
+       maxTemp  = 0;
+       iMax     = 0;
+       for ( indice = 0 ; indice< signal->length; indice++)
+	 {
+	   if (fabs(signal->data[indice]) > maxTemp){
+	     iMax = indice;
+	     maxTemp = fabs(signal->data[indice]);
+	   }
+	 }
+       randIn->coalescenceTime = iMax;
+
        LALInspiralWaveNormaliseLSO(status->statusPtr, signal, &norm, &normin);
        CHECKSTATUSPTR(status);
        break;
@@ -449,6 +465,16 @@ LALRandomInspiralSignal
 		 LALREAL4VectorFFT(status->statusPtr, &buff, signal, randIn->fwdp);
 		 CHECKSTATUSPTR(status);
 	 }
+	 maxTemp  = 0; 
+	 iMax     = 0;
+	 for ( indice = 0 ; indice< signal->length; indice++)
+	   {
+	     if (fabs(signal->data[indice]) > maxTemp){
+	       iMax = indice;
+	       maxTemp = fabs(signal->data[indice]);
+	     }
+	   }
+	 randIn->coalescenceTime = iMax;
 	 LALInspiralWaveNormaliseLSO(status->statusPtr, &buff, &norm, &normin);
          CHECKSTATUSPTR(status);
 
