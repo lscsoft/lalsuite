@@ -197,6 +197,7 @@ int    writeResponse    = 0;            /* write response function used */
 int    writeSpectrum    = 0;            /* write computed psd to file   */
 int    writeRhosq       = 0;            /* write rhosq time series      */
 int    writeChisq       = 0;            /* write chisq time series      */
+int    writeZData       = 0;            /* write complex time series z  */
 
 /* other command line args */
 CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
@@ -222,6 +223,7 @@ int main( int argc, char *argv[] )
   struct FrameH *outFrame   = NULL;
   UINT4          nRhosqFr = 0;
   UINT4          nChisqFr = 0;
+  UINT4          nZDataFr = 0;
 
   /* raw input data storage */
   REAL4TimeSeries               chan;
@@ -409,6 +411,59 @@ int main( int argc, char *argv[] )
 
   /* create the dynamic range exponent */
   dynRange = pow( 2.0, dynRangeExponent );
+
+
+  /*shawn start*/
+
+
+  /*  FrStream *frStream2 = NULL;
+      FrChanIn frChan2;  */  /*= "L1:LSC-AS_Q_ZData_0";*/
+  /* COMPLEX8TimeSeries zdatainput;*/
+  /*char dirName[50] = "/home/sseader/LIGO/INSPIRAL/S3/playground/";
+    char fileName[50] = "L1-INSPIRAL-752237488-512ZData.gwf";*/
+ 
+  /*  INT4 namelen;
+  INT4 namelen2;
+  INT4 namelen3;
+  CHAR *chanName = NULL;
+  CHAR *dirName = NULL;
+  CHAR * fileName = NULL;
+  namelen = strlen("L1:LSC-AS_Q_ZData_0") + 1;
+  namelen2 = strlen("/home/sseader/LIGO/INSPIRAL/S3/playground/") + 1;
+  namelen3 = strlen("L1-INSPIRAL-752237488-512ZData.gwf") + 1;
+  chanName = (CHAR *) calloc(namelen,sizeof(CHAR));
+  dirName = (CHAR *) calloc(namelen2,sizeof(CHAR));
+  fileName = (CHAR *) calloc(namelen3,sizeof(CHAR));
+  memcpy( chanName, "L1:LSC-AS_Q_ZData_0", namelen);
+  memcpy( dirName, "/home/sseader/LIGO/INSPIRAL/S3/playground/", namelen2);
+  memcpy( fileName, "L1-INSPIRAL-752237488-512ZData.gwf", namelen3);
+  frChan2.name = chanName; 
+
+  memset( &zdatainput, 0, sizeof(COMPLEX8TimeSeries) );
+  LAL_CALL( LALCCreateVector( &status, &(zdatainput.data), 524288 ), 
+      &status );
+
+
+  LAL_CALL( LALFrOpen(&status,&frStream2,dirName,fileName), &status);
+  LAL_CALL( LALFrGetCOMPLEX8TimeSeries( &status, &zdatainput, &frChan2, frStream2), &status);
+
+  fprintf(stdout,"some zdata %f %f \n", zdatainput.data->data[0].re,zdatainput.data->data[0].im);*/
+    /* set the parameters of the response to match the data */
+  /*resp.epoch.gpsSeconds = chan.epoch.gpsSeconds + padData;
+  resp.epoch.gpsNanoSeconds = chan.epoch.gpsNanoSeconds;
+  resp.deltaF = (REAL8) sampleRate / (REAL8) numPoints;
+  resp.sampleUnits = strainPerCount;
+  strcpy( resp.name, chan.name );*/
+
+
+
+
+  /*  LAL_CALL( LALFrClose( &status, &frStream2), &status);*/
+
+
+
+  /*shawn end*/
+
 
 
   /*
@@ -1289,7 +1344,7 @@ int main( int argc, char *argv[] )
   fcInitParams->createRhosqVec = writeRhosq;
   fcInitParams->ovrlap         = ovrlap;
   fcInitParams->approximant    = approximant;
-
+  fcInitParams->createZVec     = writeZData;
 
   /*
    *
@@ -1790,7 +1845,8 @@ int main( int argc, char *argv[] )
           if ( approximant == TaylorF2 )
           {
             LAL_CALL( LALFindChirpFilterSegment( &status, 
-                  &eventList, fcFilterInput, fcFilterParams ), &status );
+                  &eventList, fcFilterInput, fcFilterParams ), &status ); 
+	    fprintf(stdout,"CHECK filtered the segment\n");
           }
           else if ( approximant == BCV )
           {
@@ -1819,6 +1875,18 @@ int main( int argc, char *argv[] )
             outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
                 fcFilterParams->rhosqVec, "none", snrsqStr );
           }
+
+          if ( writeZData )
+	  {
+	    CHAR zdataStr[LALNameLength];
+	    LALSnprintf( zdataStr, LALNameLength*sizeof(CHAR),
+			 "ZData_%d", nZDataFr++ );
+	    strcpy( fcFilterParams->zVec->name, chan.name );
+	    outFrame = fr_add_proc_COMPLEX8TimeSeries( outFrame, 
+	        fcFilterParams->zVec, "none", zdataStr );
+	  }
+
+
 
           if ( writeChisq )
           {
@@ -2070,7 +2138,7 @@ int main( int argc, char *argv[] )
 
   /* write the output frame */
   if ( writeRawData || writeFilterData || writeResponse || writeSpectrum ||
-      writeRhosq || writeChisq )
+      writeRhosq || writeChisq || writeZData )
   {
     if ( outputPath[0] )
     {
@@ -2404,6 +2472,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --write-spectrum             write the uncalibrated psd to a frame\n"\
 "  --write-snrsq                write the snr time series for each data segment\n"\
 "  --write-chisq                write the r^2 time series for each data segment\n"\
+"  --write-zdata                write the z=x+iy complex time series for each data segment\n"\
 "\n"
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
@@ -2483,6 +2552,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"write-spectrum",          no_argument,       &writeSpectrum,    1 },
     {"write-snrsq",             no_argument,       &writeRhosq,       1 },
     {"write-chisq",             no_argument,       &writeChisq,       1 },
+    {"write-zdata",             no_argument,       &writeZData,       1 },
     {0, 0, 0, 0}
   };
   int c;
