@@ -20,7 +20,11 @@ $Id$
 \label{s:FindChirp.h}
 
 \noindent Provides core protypes, structures and functions to filter
-interferometer data for binary inspiral chirps.  The important definitions
+interferometer data for binary inspiral chirps.  
+
+\subsection*{Binary Neutron Stars}
+
+The important definitions
 are as follows:
 
 \begin{enumerate}
@@ -104,13 +108,14 @@ and
 D_\mathrm{eff}^2 = \mathtt{tmpltNorm}\cdot \mathtt{segNorm}^2\cdot |q_j|^{-2}
 \end{equation}
 
-\subsection*{Synopsis}
+\subsubsection*{Synopsis}
 
 \begin{verbatim}
 #include <lal/FindChirp.h>
 \end{verbatim}
 
 \input{FindChirpHDoc}
+
 \input{FindChirpBCVHDoc}
 </lalLaTeX>
 #endif
