@@ -662,8 +662,6 @@ LALFindChirpFilterSegment (
           thisEvent->id = eventId++;
 
           /* record the segment id that the event was found in */
-          fprintf( stderr, "found event in segment %d\n",
-              input->segment->number );
           thisEvent->segmentNumber = input->segment->number;
 
           /* stick minimal data into the event */

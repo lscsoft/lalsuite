@@ -157,14 +157,8 @@ LALFindChirpSlave (
       eventList = NULL;
 
       /* should we filter this segment against this template? */
-      fprintf( stderr, "checking segment %d... %d\n", 
-          fcSegVec->data[i].number,
-          bankCurrent->segmentIdVec->data[fcSegVec->data[i].number] );
       if ( bankCurrent->segmentIdVec->data[fcSegVec->data[i].number] )
       {
-        fprintf( stderr, "filtering segment %d\n", 
-            fcSegVec->data[i].number );
-
         params->filterInput->segment = fcSegVec->data + i;
 
         /* filter the data segment against the template */
@@ -208,11 +202,8 @@ LALFindChirpSlave (
 
   } /* end loop over linked list */
 
-
-  fprintf( stderr, "destroying inspiral bank... " );
   LALFindChirpDestroyInspiralBank( status->statusPtr, &bankHead );
   CHECKSTATUSPTR( status );
-  fprintf( stderr, "done\n" );
 
   *notFinished = 1;
 

@@ -174,8 +174,6 @@ LALFindChirpMaster (
          */
 
 
-        fprintf( stderr, "event handler started\n" );
-
         /* this is a dog: i should think of a better way to do this     */
 
         /* we are guaranteed that a the linked list of events will      */
@@ -185,23 +183,16 @@ LALFindChirpMaster (
         thisEvent = *eventList;
         tmpltInsert = params->tmpltCurrent;
 
-        fprintf( stderr, "searching event at %p\n", thisEvent );
-
         /* look for a template that matches the template of the event */
         for ( thisTmplt = params->tmpltHead; thisTmplt; 
             thisTmplt = thisTmplt->next )
         {
-          fprintf( stderr, "searching tmplt at %p\n", thisTmplt );
-
           if ( thisEvent->tmplt.number == thisTmplt->tmpltPtr->number )
           {
             /* insert the fine bank into the list to filter */
-            fprintf( stderr, "inserting fine bank %p \n",
-                thisTmplt->tmpltPtr->fine );
             for ( fineBank = thisTmplt->tmpltPtr->fine; fineBank;
                 fineBank = fineBank->next )
             {
-              fprintf( stderr, "fine tmplt %p\n", fineBank );
               LALFindChirpCreateTmpltNode( status->statusPtr, 
                   fineBank, &tmpltInsert );
               CHECKSTATUSPTR( status );
@@ -214,8 +205,6 @@ LALFindChirpMaster (
             }
           }
         }
-
-        fprintf( stderr, "event handler done\n" );
 
         break;
 
