@@ -171,10 +171,6 @@ first_df2 = None
 insp_nodes = []
 
 for seg in data:
-  # skip science segments with no chunks
-  if not len(seg):
-    continue
-
   # find all the data
   df1 = inspiral.DataFindNode(df_job)
   df1.set_start(seg.start() - pad)
@@ -184,7 +180,7 @@ for seg in data:
     df1.add_parent(prev_df1)
 
   df2 = inspiral.DataFindNode(df_job)
-  if not first_df2:
+  if not first_df2 and len(chunk):
     first_df2 = df2
   df2.set_start(seg.start() - pad)
   df2.set_end(seg.end() + pad)
@@ -192,12 +188,13 @@ for seg in data:
   if prev_df2: 
     df2.add_parent(prev_df2)
 
-  if do_datafind:
+  if do_datafind and len(chunk):
     dag.add_node(df1)
     dag.add_node(df2)
 
-  prev_df1 = df1
-  prev_df2 = df2
+  if len(chunk):
+    prev_df1 = df1
+    prev_df2 = df2
 
   seg_insp_nodes = []
 
@@ -266,8 +263,6 @@ if do_datafind:
     
 # now find coincidences between the two inspiral jobs
 for i in range(len(data)):
-  if not len(data[i]):
-    continue
   for j in range(len(data[i])):
     chunk = data[i][j]
     inca = inspiral.IncaNode(inca_job)
