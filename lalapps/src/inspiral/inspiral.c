@@ -745,7 +745,14 @@ int main( int argc, char *argv[] )
       candle.effDistance = sqrt( candle.sigmasq / candle.rhosq );
 
       if ( vrbflg ) 
-        fprintf( stdout, "candle.effDistance = %e Mpc\n", candle.effDistance );
+      {
+        fprintf( stdout, "candle m = %e\ncandle mu = %e\n"
+            "candle.rhosq = %e\nchan.deltaT = %e\n"
+            "numPoints = %d\nfcSegVec->data->segNorm = %e\n"
+            "candleTmpltNorm = %e\ncandle.effDistance = %e Mpc\n",
+            m, mu, candle.rhosq, chan.deltaT, numPoints, 
+            fcSegVec->data->segNorm, candleTmpltNorm, candle.effDistance );
+      }
     }
   
 
