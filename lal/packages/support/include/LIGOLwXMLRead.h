@@ -120,14 +120,6 @@ LALSnglInspiralTableFromLIGOLw (
 /* these functions need to be lalified, but they are in support... */
 
 int
-SnglInspiralTableFromLIGOLw (
-    SnglInspiralTable **eventHead,
-    CHAR               *fileName,
-    INT4                startEvent,
-    INT4                stopEvent
-    );
-
-int
 InspiralTmpltBankFromLIGOLw (
     InspiralTemplate   **bankHead,
     CHAR                *fileName,
