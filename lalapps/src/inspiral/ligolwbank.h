@@ -15,8 +15,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <metaio.h>
+#include <lal/LALConstants.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALInspiralBank.h>
+#include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXMLHeaders.h>
 
 int
@@ -28,11 +30,11 @@ InspiralTmpltBankFromLIGOLw (
     );
 
 int
-InspiralTmpltBankToLIGOLw (
-    InspiralTemplate   **bankHead,
+SimInspiralTableFromLIGOLw (
+    SimInspiralTable   **simHead,
     CHAR                *fileName,
-    INT4                startTmplt,
-    INT4                stopTmplt
+    INT4                 startTime,
+    INT4                 endTime
     );
 
 #endif

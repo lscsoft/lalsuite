@@ -57,6 +57,7 @@ INT4   badMeanPsd       = 0;            /* use a mean with no overlap   */
 INT4   invSpecTrunc     = -1;           /* length of inverse spec (s)   */
 REAL4  dynRangeExponent = -1;           /* exponent of dynamic range    */
 CHAR  *calCacheName     = NULL;         /* location of calibration data */
+CHAR  *injectionFile    = NULL;         /* name of file containing injs */
 
 /* matched filter parameters */
 CHAR *bankFileName      = NULL;         /* name of input template bank  */
@@ -254,7 +255,70 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALInitializeDataSegmentVector( &status, &dataSegVec,
         &chan, &spec, &resp, fcInitParams ), &status );
 
+  /* set the parameters of the response to match the data and spectrum */
+  resp.epoch = chan.epoch;
+  resp.deltaF = 1.0 / ((REAL8) numPoints * chan.deltaT) ;
+  resp.f0 = 0.0;
+  resp.sampleUnits = strainPerCount;
 
+  /* generate the response function for the current time */
+  LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, ifo ),
+      &status );
+
+  if ( writeResponse )
+  {
+    strcpy( resp.name, chan.name );
+    outFrame = fr_add_proc_COMPLEX8FrequencySeries( outFrame, 
+        &resp, "strain/ct", "RESPONSE" );
+  }
+
+
+  /*
+   *
+   * inject signals into data
+   *
+   */
+
+
+  if ( injectionFile )
+  {
+    INT4 injSafety = 0; /* get injections within 10 mins of the segment */
+    int  numInjections = 0;
+    SimInspiralTable    *injections = NULL;
+    SimInspiralTable    *thisInj = NULL;
+    CHAR tmpChName[LALNameLength];
+
+    /* read in the injection data from XML */
+    numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
+        gpsStartTime.gpsSeconds - injSafety, 
+        gpsEndTime.gpsSeconds + injSafety );
+    if ( numInjections < 0 )
+    {
+      fprintf( stderr, "error: cannot read injection file" );
+      exit( 1 );
+    }
+    
+    /* inject the signals, preserving the channel name (Tev mangles it) */
+    LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", chan.name );
+    LAL_CALL( LALFindChirpInjectSignals( &status, &chan, injections, &resp ),
+        &status );
+    LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", tmpChName );
+
+    if ( vrbflg )
+    {
+      fprintf( stdout, "injected %d signals from %s into %s\n", 
+          numInjections, injectionFile, chan.name );
+    }
+
+    while ( injections )
+    {
+      thisInj = injections;
+      injections = injections->next;
+      LALFree( thisInj );
+    }
+  }
+
+  
   /*
    *
    * create a (possibly heirarcical) template bank
@@ -286,12 +350,6 @@ int main( int argc, char *argv[] )
     if ( !tmpltHead ) tmpltHead = tmpltCurrent;
   }
 
-
-  /*
-   *
-   * inject signals into data if required
-   *
-   */
 
 
   /*
@@ -367,23 +425,6 @@ int main( int argc, char *argv[] )
         &spec, "ct/sqrtHz", "PSD" );
   }
 
-  /* set the parameters of the response to match the data and spectrum */
-  memcpy( &(resp.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
-  resp.deltaF = spec.deltaF;
-  resp.f0 = spec.f0;
-  resp.sampleUnits = strainPerCount;
-
-  /* generate the response function for the current time */
-  LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, ifo ),
-      &status );
-
-  /* write the calibration data to a file */
-  if ( writeResponse )
-  {
-    strcpy( resp.name, chan.name );
-    outFrame = fr_add_proc_COMPLEX8FrequencySeries( outFrame, 
-        &resp, "strain/ct", "RESPONSE" );
-  }
 
   /*
    *
@@ -718,6 +759,10 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
 
   /* free the rest of the memory, check for memory leaks and exit */
+  if ( injectionFile )
+  {
+    LALFree( injectionFile );
+  }
   LALFree( calCacheName );
   LALFree( frInCacheName );
   LALFree( bankFileName );
@@ -776,6 +821,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"comment",                 required_argument, 0,                's'},
     {"enable-high-pass",        required_argument, 0,                't'},
     {"frame-cache",             required_argument, 0,                'u'},
+    {"injection-file",          required_argument, 0,                'w'},
     {"bank-file",               required_argument, 0,                'v'},
     {"debug-level",             required_argument, 0,                'z'},
     /* frame writing options */
@@ -806,7 +852,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     int option_index = 0;
 
     c = getopt_long( argc, argv, 
-        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:z:", 
+        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:z:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1193,6 +1239,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           size_t bfnamelen = strlen(optarg) + 1;
           bankFileName = (CHAR *) LALCalloc( bfnamelen, sizeof(CHAR));
           memcpy( bankFileName, optarg, bfnamelen );
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
+        }
+        break;
+
+      case 'w':
+        {
+          /* create storage for the injection file name */
+          size_t ifnamelen = strlen(optarg) + 1;
+          injectionFile = (CHAR *) LALCalloc( ifnamelen, sizeof(CHAR));
+          memcpy( injectionFile, optarg, ifnamelen );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
         break;

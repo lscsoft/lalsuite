@@ -91,10 +91,10 @@
 "LIGO lightweight XML file containing the template parameters.\n" \
 "\n" \
 "   --frame-cache lstring        name of the cache file containing input data\n" \
-"   --gps-start-time             GPS start (seconds) of data to be filtered\n" \
-"   --gps-start-time-ns          GPS start (nanoseconds) of data to be filtered\n" \
-"   --gps-stop-time              GPS stop time (seconds) of data to be filtered\n" \
-"   --gps-stop-time              GPS stop time (nanoseconds) of data to be filtered\n" \
+"   --gps-start-time             GPS start (seconds) of input data\n" \
+"   --gps-start-time-ns          GPS start (nanoseconds) of input data\n" \
+"   --gps-stop-time              GPS stop time (seconds) of input data\n" \
+"   --gps-stop-time              GPS stop time (nanoseconds) of input data\n" \
 "   --channel-name lstring       name of the channel to filter (e.g. H1:LSC-AS_Q)\n" \
 "   --segment-length int_4u      length of each individual segment\n" \
 "   --number-of-segments int_4u  numer of segments to break the data into\n" \
@@ -140,7 +140,7 @@
 "numer of chi squared bins is set to 0 then the chi squared veto is disabled.\n" \
 "\n" \
 "   --chisq-bins int_4u         number chi squared veto frequency bins\n" \
-"   --rhosq-thresholds real_4   list of signal to noise thresholds\n" \
+"   --snr-thresholds real_4     list of signal to noise thresholds\n" \
 "   --chisq-thresholds real_4   list of chi squared thresholds\n" \
 "   --enable-event-cluster      enable the event clustering algorithm\n" \
 "   --disable-event-cluster     disable the event clustering algorithm\n" \
@@ -173,7 +173,7 @@
 "                 --sample-rate 4096 --chisq-bins 8\n" \
 "                 --low-frequency-cutoff 100.0 --spectrum-type mean\n" \
 "                 --inverse-spec-length 0 --dynamic-range-exponent 69.0\n" \
-"                 --channel-name H1:LSC-AS_Q --rhosq-threshold 1.0\n" \
+"                 --channel-name H1:LSC-AS_Q --snr-threshold 1.0\n" \
 "                 --chisq-threshold 0.001 --verbose --debug-level NDEBUG\n" \
 "\n"
 
