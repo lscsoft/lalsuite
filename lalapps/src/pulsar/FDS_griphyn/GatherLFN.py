@@ -263,15 +263,15 @@ def usage():
 
         msg = """\
 NAME
-        QueryRLS
+        GatherLFN
 
 SYNOPSIS
-        QueryRLS --input=PATH --server=URL [ --bucket=DIRECTORY ]
+        GatherLFN --input=PATH --server=URL [ --bucket=DIRECTORY ]
                 [ --output=PATH ] [ --bucket=PATH ]
 
-        QueryRLS --version
+        GatherLFN --version
 
-        QueryRLS --help
+        GatherLFN --help
 
 DESCRIPTION
         Query the RLS server to find the LFNs listed in the 
@@ -302,7 +302,7 @@ DESCRIPTION
 
 EXAMPLE
 
-$ QueryRLS --input=LFNlist --server=rls://hydra.phys.uwm.edu 
+$ GatherLFN --input=LFNlist --server=rls://hydra.phys.uwm.edu 
         --output=LFNpaths
 
 """
