@@ -656,6 +656,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"frame-cache",             required_argument, 0,                'u'},
     {"pad-data",                required_argument, 0,                'x'},
     {"debug-level",             required_argument, 0,                'z'},
+    {"user-tag",                required_argument, 0,                'Z'},
+    {"userTag",                 required_argument, 0,                'Z'},
     {"resample-filter",         required_argument, 0,                'R'},
     /* template bank generation parameters */
     {"minimum-mass",            required_argument, 0,                'A'},
@@ -690,8 +692,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     /* getopt_long stores long option here */
     int option_index = 0;
 
-    c = getopt_long( argc, argv, 
-        "a:b:c:d:e:g:h:i:j:p:s:t:u:x:z:A:B:C:D:E:F:G:R:", 
+    c = getopt_long_only( argc, argv, 
+        "a:b:c:d:e:g:h:i:j:p:s:t:u:x:z:A:B:C:D:E:F:G:R:Z:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -960,6 +962,17 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'z':
         set_debug_level( optarg );
+        break;
+
+      case 'Z':
+        this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+          LALCalloc( 1, sizeof(ProcessParamsTable) );
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+            PROGRAM_NAME );
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+            optarg );
         break;
 
       case 'A':
