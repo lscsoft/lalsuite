@@ -121,6 +121,7 @@ LALTFTileToBurstEvent (
     (event->deltaT);
   burstEvent->amplitude        = event->excessPower;
   burstEvent->snr              = event->excessPower;
+  burstEvent->next             = NULL;
 
   /* THIS NEEDS TO FIXED */
   sprintf( burstEvent->ifo ,"XX");
