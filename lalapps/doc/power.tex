@@ -404,61 +404,56 @@ not include spaces and should use underscores instead.
 \item[Options]\leavevmode
 \begin{entry}
 \item[\option{--bandwidth} \parm{bandwidth}]
-\item[\texttt{--lngth} \textsc{lngth}] may be determined by the following
+This option sets the bandwidth in which the search is to be performed.  The
+integer parameter \parm{bandwidth} is related to the physical bandwidth by
 formula
 \[
-\mbox{\textsc{lngth}} = T \times ({f_{\mathrm{high}} - f_{\mathrm{low}}}) .
+\mbox{\parm{bandwidth}}
+   = T \times (f_{\mathrm{high} - f_{\mathrm{low}}}).
 \]
-This is an integer which determines the maximum frequency bandwidth
-over which a signal is expected.  
 
 \item[\option{--calibration-cache} \parm{cache file}]
-\item[\texttt{--calibration-cache} \textsc{calcache}] A LAL format frame
-cache file.    The \textsc{calcache} can be a filename in the local
-directory,  or a filename including absolute path.   These cache files are
-explained in the \emph{framedata} package in LAL. A calibration cache file
-should give information for the frames needed to construct the relevant
-calibration information from the reference calibrations and the $\alpha$
-and $\beta$ coefficients.   
+\parm{cache file} specifies the path to a LAL format frame cache file in
+which is described the locations of the \texttt{.gwf} frame files needed to
+provide the calibration data ($\alpha$ and $\beta$ coefficients) for the
+analysis.  Cache files are explained in the ``framedata'' package in LAL.
 
 \item[\option{--channel-name} \parm{string}]
-\item[\texttt{--channel-name} \textsc{channel}] The name used to identify
-the data to be analyzed;  a character string matching the channel name in
-the frame files,  e.g. \texttt{H2:LSC-AS\_Q}.
+Set the name of the data channel to analyze to \parm{string}.  This must
+match the name of one of the data channels in the input frame files.  For
+example, \verb|H2:LSC-AS_Q|.
 
 \item[\option{--cluster}]
-\item[\texttt{--cluster}] Apply a clustering algorithm to tiles identified
-by the excess power code.  The result is reduction of overlapping triggers
-to a single trigger which covers a square time-frequency volume which
-encompasses all overlapping trigger regions.   The signal-to-noise and the
-confidence associated with a clustered trigger belong to the most
-significant excess-power trigger in the cluster.  [This is a protoype
-option.  Its behavior is not robustly tested.  Treat with care and look at
-the code to insure understanding.]
+Enable a clustering algorithm.  The result is the reduction of overlapping
+triggers to a single trigger which covers a square time-frequency volume
+which encompasses all overlapping trigger regions.   The signal-to-noise
+and the confidence associated with a clustered trigger belong to the most
+significant excess-power trigger in the cluster.  \emph{Note:}  The
+algorithm is in a prototyping stage, and its behaviour is not robustly
+tested.  Treat with care, and look at the code to insure you understand the
+implication of enabling this option.
 
 \item[\option{--debug-level} \parm{level}]
-\item[\texttt{--dbglevel}] Set the lalDebugLevel.  The default is
-\texttt{LALMSGLVL2}.   A useful setting is 65 which turns off memory
-padding,  but keeps memory tracking and error messages.   If you want
-to turn off memory tracking completely,  then use 33.
+Sets the LAL debug level to \parm{level}.  The default value is
+\texttt{LALMSGLVL2}.  A useful setting is 65 which turns off memory
+padding, but keeps memory tracking and error messages.  If you want to turn
+off memory tracking completely, then use 33.
 
 \item[\option{--default-alpha} \parm{alpha}]
-\item[\texttt{--alphdef} --\textsc{alphdef}] default alpha value for tiles
-with sigma < numSigmaMin; a real number. Currently see LAL
-\texttt{burstsearch} package for details.
+Set the default alpha value for tiles with sigma < numSigmaMin to
+\parm{alpha}.  See the LAL ``burstsearch'' package for details.
 
 \item[\option{--event-limit} \parm{count}]
-\item[\texttt{--etomstr} \textsc{etomstr}] Number of events to be accepted
-from a search over \textsc{npts} of data;  must be an integer.
+Limit the number of events reported in each time interval corresponding to
+the PSD average length to \parm{count}.
 
 \item[\option{--filter-corruption} \parm{samples}]
 
 \item[\option{--frame-cache} \parm{cache file}]
-\item[\texttt{--frame-cache} \textsc{frcache}] A LAL format frame
-cache file.    The \textsc{frcache} can be a filename in the local
-directory,  or a filename including absolute path.   These cache files
-are explained in the \emph{framedata} package in LAL and can be
-constructed by making calls to \emph{LALdataFind} on some systems.
+Obtain the locations of input \texttt{.gwf} frame files from the LAL frame
+cache file \parm{cache file}.  LAL frame cache files are explained in the
+``framedata'' package in LAL and can be constructed by making calls to
+\prog{LSCDataFind} on some systems.
 
 \item[\option{--frame-dir} \parm{directory}]
 
