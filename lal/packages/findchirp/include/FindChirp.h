@@ -22,101 +22,12 @@ $Id$
 \noindent Provides core protypes, structures and functions to filter
 interferometer data for binary inspiral chirps.  
 
-\subsection*{Binary Neutron Stars}
-
-The important definitions
-are as follows:
-
-\begin{enumerate}
-\item The equation for a stationary phase 2-pN inspiral chirp
-\begin{equation}
-\tilde{h_c}(f_k) = \left(\frac{5\mu}{96M_\odot}\right)^{\frac{1}{2}}
-                   \left(\frac{M}{\pi^2M_\odot}\right)^{\frac{1}{3}}
-                   f_k^{-\frac{7}{6}} T_\odot^{-\frac{1}{6}}
-                   \exp\left(i\Psi(f_k;M,\eta)\right)
-\end{equation}
-where
-\begin{equation}
-\Psi(f_k;M,\eta) = C_0 x_k \left(C_{2.0} + x_k \left(C_{1.5} 
-             + x_k \left(C_{1.0} + x_k^2 \right)\right)\right),
-\end{equation}
-\begin{equation}
-x_k = \left(\pi M f_k\right)^\frac{1}{3},
-\end{equation}
-and the post-Newtonian coefficents are
-\begin{eqnarray}
-C_{0} &=& \frac{3}{128\eta} \\
-C_{1.0} &=& \frac{3\,715}{756} + \frac{55\eta}{9} \\
-C_{1.5} &=& -16\pi \\
-C_{2.0} &=& \frac{15\,293\,365}{508\,032} + \frac{27\,145\eta}{504} +
-            \frac{3\,085\eta^2}{72}
-\end{eqnarray}
-
-\item Signal-to-noise ratio $\rho$. We actually compute $\rho^2$:
-given by
-\begin{equation}
-\rho^2(t_j) = \frac{16}{\sigma^2} \left( \frac{\Delta t}{N} \right)^2
-              \left(\frac{2T_\odot c}{1\mathrm{Mpc}}\right)^2 d^2 A^2(M,\eta)
-  \left|\sum_{k=0}^{N/2} e^{2\pi ijk/N}
-       \frac{d R\tilde{v}_k k^{-\frac{7}{6}} e^{-i\Psi(f_k;M,\eta)}}
-         {|d R|^2 S_v(|f_k|)}
-  \right|^2
-\end{equation}
-
-\item The matched filter normalization $\sigma^2$:
-\begin{equation}
-\sigma^2 = 4 \left(\frac{\Delta t}{N}\right)
-           \left(\frac{2T_\odot c}{1\mathrm{Mpc}}\right)^2 d^2 A^2(M,\eta)
-           \sum_{k=0}^{N/2} \frac{k^{-\frac{7}{3}}}{|dR|^2S_v(|f_k|)}
-\end{equation}
-
-\item The effective distance to a source $D_\mathrm{eff}$:
-\begin{equation}
-D_\mathrm{eff} = \frac{\sigma^2}{\rho^2}
-\end{equation}
-
-\item The template dependent normalization
-\begin{equation}
-\mathtt{tmpltNorm} = \left(\frac{2T_\odot c}{1\mathrm{Mpc}}\right)^2
-                     d^2 A^2(M,\eta)
-\end{equation}
-
-\item The segment dependent normalization
-\begin{equation}
-\mathtt{segNorm} = \sum_{k=0}^{N/2} \frac{k^{-\frac{7}{3}}}{|dR|^2 S_v(|f_k|)}
-\end{equation}
-
-\item The un-normalized matched filter output
-\begin{equation}
-q_j = \sum_{k=0}^{N/2} e^{2\pi ijk/N} 
-      \frac{ dR \tilde{v}_k k^{-\frac{7}{6}} e^{-i\Psi(f_k;M,\eta)}}
-           {|dR|^2 S_v(|f_k|)}
-\end{equation}
-\end{enumerate}
-
-Then the quantities that we compute in the code are just:
-\begin{equation}
-\rho^2(t_j) = \frac{16}{\sigma^2}\left(\frac{\Delta t}{N}\right)^2
-\cdot\mathtt{tmpltNorm}\cdot|q_j|^2,
-\end{equation}
-\begin{equation}
-\sigma^2 = 4\left(\frac{\Delta t}{N}\right) \cdot
-           \mathtt{tmpltNorm}\cdot\mathtt{segNorm}
-\end{equation}
-and
-\begin{equation}
-D_\mathrm{eff}^2 = \mathtt{tmpltNorm}\cdot \mathtt{segNorm}^2\cdot |q_j|^{-2}
-\end{equation}
-
 \subsubsection*{Synopsis}
 
 \begin{verbatim}
 #include <lal/FindChirp.h>
 \end{verbatim}
 
-\input{FindChirpHDoc}
-
-\input{FindChirpBCVHDoc}
 </lalLaTeX>
 #endif
 
@@ -196,11 +107,16 @@ NRCSID (FINDCHIRPH, "$Id$");
 #if 0
 <lalLaTeX>
 \subsection*{Types}
+
+\subsubsection*{Structure \texttt{FindChirpInitParams}}
+\idx[Type]{FindChirpInitParams}
+
+\noindent This structure provides the essential information for the
+filter initialisation and memory allocation functions used by findchirp.
+
 </lalLaTeX>
 #endif
-
-/* --- parameter structure for all init funtions ------------------------- */
-/* <lalVerbatim file="FindChirpHFindChirpInitParams"> */
+/* <lalVerbatim> */
 typedef struct
 tagFindChirpInitParams
 {
@@ -216,36 +132,45 @@ FindChirpInitParams;
 /* </lalVerbatim> */
 #if 0
 <lalLaTeX>
-\subsubsection*{Structure \texttt{FindChirpInitParams}}
-\idx[Type]{FindChirpInitParams}
-
-\input{FindChirpHFindChirpInitParams}
-
-\noindent This structure provides the essential information for the
-filter initialisation and memory allocation functions used in the
-\texttt{FindChirp} package.
 
 \begin{description}
 \item[\texttt{UINT4 numSegments}] The number of data segments to allocate
 storage for.
 
 \item[\texttt{UINT4 numPoints}] The number of discrete data points in each
-data segment. 
+data segment $N$. 
 
 \item[\texttt{UINT4 numChisqBins}] The number of bins used to contruct the
-$\chi^2$ veto.
+$\chi^2$ veto $p$.
 
-\item[\texttt{BOOLEAN createRhosqVec}] Debugging flag that controls whether
-or not the function \texttt{FindChirpFilterSegment()} should store the output
-of the filter, $\rho^2(t)$, as well as the events. Memory is only allocated
-for this vector if the flag is set to 1.
+\item[\texttt{BOOLEAN createRhosqVec}] Flag that controls whether or not the
+function \texttt{FindChirpFilterSegment()} should store the output of the
+filter, $\rho^2(t)$, as well as the events. Memory is allocated for this
+vector if the flag is set to 1.
+
+\item[\texttt{BOOLEAN createCVec}] Flag that controls whether or not the
+function \texttt{FindChirpFilterSegment()} should store the complex
+filter output $x(t) + i y(t)$ needed by the coherent inspiral code.
+Memory is allocated for this vector if the flag is set to 1.
+
+\item[\texttt{Approximant approximant}] Initialize the findchirp routines
+to fiter with templates of type \texttt{approximant}. Valid approximants are
+TaylorT1, TaylorT2, TaylorT3, TaylorF2, BCV and BCVSpin.
+
 \end{description}
+
+\subsubsection*{Structure \texttt{FindChirpDataParams}}
+\idx[Type]{FindChirpDataParams}
+
+\noindent This structure contains the parameters needed to call the data 
+conditioning functions \texttt{FindChirpSPData()}, \texttt{FindChirpTDData()},
+\texttt{FindChirpBCVData()} or \texttt{FindChirpBCVSpinData()}. It should be
+initialized by \texttt{FindChirpDataInit()} and destroyed by
+\texttt{FindChirpDataFinalize()}.
+
 </lalLaTeX>
 #endif
-
-
-/* --- the parameter structure for the data conditioning function -------- */
-/* <lalVerbatim file="FindChirpHFindChirpDataParams"> */
+/* <lalVerbatim> */
 typedef struct
 tagFindChirpDataParams
 {
@@ -268,45 +193,43 @@ FindChirpDataParams;
 /* </lalVerbatim> */
 #if 0
 <lalLaTeX>
-\subsubsection*{Structure \texttt{FindChirpDataParams}}
-\idx[Type]{FindChirpDataParams}
-
-\input{FindChirpHFindChirpDataParams}
-
-\noindent This structure contains the parameters needed to call the
-\texttt{FindChirpSPData()} function. It should be initialized by
-\texttt{FindChirpDataInit()} and destroyed by
-\texttt{FindChirpDataFinalize()}. The fields are:
 
 \begin{description}
 \item[\texttt{REAL4Vector *ampVec}] A vector containing the frequency domain
 quantity $(k/N)^{-7/6}$, where $k$ is the frequency series index and $N$ is the
-number of points in a data segment.
+number of points in a data segment. NB: for time domain templates, this is set
+to unity by the function \texttt{FindChirpTDData()}.
 
 \item[\texttt{REAL4Vector *ampVecBCV}] A vector containing the frequency domain
 quantity $(k/N)^{-1/2}$, where $k$ is the frequency series index and $N$ is the
 number of points in a data segment.
 
+\item[\texttt{REAL4Vector *ampVecBCVSpin1}] Undocumented spinning BCV
+amplitude vector.
+
+\item[\texttt{REAL4Vector *ampVecBCVSpin2}] Undocumented spinning BCV
+amplitude vector.
+
 \item[\texttt{REAL4Vector *fwdPlan}] An FFTW plan used to transform the
 time domain interferometer data $v(t_j)$ into its DFT $\tilde{v}_k$.
 
-\item[\texttt{REAL4Vector *fwdPlan}] An FFTW plan used to transform the
+\item[\texttt{REAL4Vector *invPlan}] An FFTW plan used to transform the
 dimensionless frequency domain interferometer strain $\tilde{w}_k$ into 
 the quantity $N w(t_j)$ to allow time domain trunction of the inverse 
 power spectrum.
-
-\item[\texttt{REAL4Vector *vVec}] {\color{red} FIXME} A vector to contain
-the time domain interferometer output $v(t_j)$. This is obsolete since LIGO
-gives us $v(t_j)$ as floats. The 40m prototype gave integers which needed to
-be cast to floats.
 
 \item[\texttt{REAL4Vector *wVec}] A vector used as workspace when truncating
 the imverse power spectrum in the time domain.
 
 \item[\texttt{COMPLEX8Vector *wtildeVec}] A vector which on exit from
-\texttt{FindChirpSPData()} contains the inverse of the strain one sided power
-spectral density, after trunction in the time domain, that is
-$ \tilde{w}_k = {1}/{\ospsd}$.
+the data conditioning function contains the inverse of the strain one sided
+power spectral density, after trunction in the time domain, \emph{for the last
+data segment conditioned.} Typically all the data segments are conditioned
+using the same power spectrum, so this quantity is identical for all data
+segments. It contains:
+\begin{equation}
+\tilde{w}_k = {1}/{\ospsd}.
+\end{equation}
 
 \item[\texttt{REAL4Vector *tmpltPowerVec}] A vector which on exit from
 \texttt{FindChirpSPData()} or from \texttt{FindChirpBCVData()} 
@@ -325,7 +248,7 @@ contains the quantity
 \item[\texttt{REAL4 fLow}] The low frequency cutoff for the algorithm. All
 data is zero below this frequency.
 
-\item[\texttt{REAL4 dynRange}] A dynamic range factor which cancells from
+\item[\texttt{REAL4 dynRange}] A dynamic range factor $d$ which cancels from
 the filter output (if set correctly in \texttt{FindChirpSPTmplt()} as well).
 This allows quantities to be stored in the range of \texttt{REAL4} rather
 than \texttt{REAL8}.
@@ -333,12 +256,22 @@ than \texttt{REAL8}.
 \item[\texttt{UINT4 invSpecTrunc}] The length to which to truncate the inverse
 power spectral density of the data in the time domain. If set to zero, no
 truncation is performed.
+
+\item[\texttt{Approximant approximant}] Condition the data for templates of
+type \texttt{approximant}. Valid approximants are TaylorT1, TaylorT2,
+TaylorT3, TaylorF2, BCV and BCVSpin.
+
 \end{description}
+
+\subsubsection*{Structure \texttt{FindChirpTmpltParams}}
+\idx[Type]{FindChirpTmpltParams}
+
+\noindent This structure contains the parameters for generation of templates
+by the various template generation functions provided in finchirp.
+
 </lalLaTeX>
 #endif
-
-/* --- vector of DataSegment, as defined the framedata package ----------- */
-/* <lalVerbatim file="FindChirpHFindChirpTmpltParams"> */
+/* <lalVerbatim> */
 typedef struct
 tagFindChirpTmpltParams
 {
@@ -346,45 +279,53 @@ tagFindChirpTmpltParams
   REAL4                         fLow;
   REAL4                         dynRange;
   REAL4Vector                  *xfacVec;
-  Approximant                   approximant;
   RealFFTPlan                  *fwdPlan;
+  Approximant                   approximant;
 }
 FindChirpTmpltParams;
 /* </lalVerbatim> */
 #if 0
 <lalLaTeX>
-\subsubsection*{Structure \texttt{FindChirpTmpltParams}}
-\idx[Type]{FindChirpTmpltParams}
-
-\input{FindChirpHFindChirpTmpltParams}
-
-\noindent This structure contains the parameters for generation of stationary
-phase templates by the function \texttt{FindChirpSPTmplt()},
-\texttt{FindChirpBCVTmplt()} or \texttt{FindChirpBCVSpinTmplt()}
-It should be initialized by \texttt{FindChirpTmpltInit()} and destroyed by
-\texttt{FindChirpTmpltFinalize()}. The fields are:
 
 \begin{description}
-\item[\texttt{REAL8 deltaT}] The sampling interval $\Delta t$.
+\item[\texttt{REAL8 deltaT}] The sampling interval $\Delta t$ of the input 
+data channel.
 
 \item[\texttt{REAL4 fLow}] The low frequency cutoff for the algorithm. All
 data is zero below this frequency.
 
-\item[\texttt{REAL4 dynRange}] A dynamic range factor which cancells from
+\item[\texttt{REAL4 dynRange}] A dynamic range factor $d$ which cancels from
 the filter output (if set correctly in \texttt{FindChirpSPData()} as well).
 This allows quantities to be stored in the range of \texttt{REAL4} rather
 than \texttt{REAL8}.
 
-\item[\texttt{REAL4Vector *xfacVec}] A vector containing the frequency 
-domain quantity $k^{-7/6}$.
+\item[\texttt{REAL4Vector *xfacVec}] For frequency domain templates, this is a
+vector of length $N/2+1$ which contains the quantity $k^{-7/6}$. For time
+domain templates, this is a workspace vector of length $N$ which contains the
+time domain template generated by the inspiral package, shifted so that the
+end of the template is at the end of the vector. This vector is Fourier
+transformed to obtain the quantity findchirp template $\tilde{T}_k$.
+
+\item[\texttt{REAL4Vector *fwdPlan}] For time domain templates, an FFTW plan
+used to transform the time domain data stored in \texttt{xfacVec} into its DFT
+which is stored in the findchirp template.
+
+\item[\texttt{Approximant approximant}] Generate templates of type
+\texttt{approximant}. Valid approximants are TaylorT1, TaylorT2, TaylorT3,
+TaylorF2, BCV and BCVSpin. For time domain and stationary phase templates
+the post-Newtonian order is always two.
+
 \end{description}
+
+\subsubsection*{Structure \texttt{FindChirpFilterParams}}
+\idx[Type]{FindChirpFilterParams}
+
+\noindent This structure provides the parameters used by the
+\texttt{FindChirpFilterSegment()} function.
+
 </lalLaTeX>
 #endif
-
-
-
-/* --- parameter structure for the filtering function -------------------- */
-/* <lalVerbatim file="FindChirpHFindChirpFilterParams"> */
+/* <lalVerbatim> */
 typedef struct
 tagFindChirpFilterParams
 {
@@ -415,17 +356,10 @@ FindChirpFilterParams;
 /* </lalVerbatim> */
 #if 0
 <lalLaTeX>
-\subsubsection*{Structure \texttt{FindChirpFilterParams}}
-\idx[Type]{FindChirpFilterParams}
-
-\input{FindChirpHFindChirpFilterParams}
-
-\noindent This structure provides the parameters used by the
-\texttt{FindChirpFilterSegment()} function.
 
 \begin{description}
-\item[\texttt{REAL8 deltaT}] The timestep for the sampled data. Must be
-set on entry.
+\item[\texttt{REAL8 deltaT}] The timestep for the sampled data $\Delta t$.
+Must be set on entry.
 
 \item[\texttt{REAL4 rhosqThresh}] The value to threshold signal to noise
 ratio square, $\rho^2$, on. If the signal to noise exceeds this value, then a
@@ -447,23 +381,47 @@ $\rho^2(t_j)$ by
 maximised over chirp lengths. Otherwise record all points that pass
 the $\rho^2$ threshold as events.
 
+\item[\texttt{Approximant approximant}] Filter the data using templates of
+type \texttt{approximant}. Valid approximants are TaylorT1, TaylorT2,
+TaylorT3, TaylorF2, BCV and BCVSpin. The value of \texttt{approximant} here
+must match that in the findchirp data segment and findchirp template used
+as input.
+
 \item[\texttt{COMPLEX8Vector *qVec}] Pointer to vector allocated by 
 \texttt{FindChirpFilterInit()} to store the quantity $q_j$. Set to the
 value of $q_j$ on exit. Must not be NULL.
 
 \item[\texttt{COMPLEX8Vector *qVecBCV}] Pointer to the additional vector
-required for the BCV templates, allocated by
-\texttt{FindChirpFilterInit()} to store the quantity $q_j$. Set to the
-value of $q_j$ on exit. Must not be NULL.
+required for the BCV templates, allocated by \texttt{FindChirpFilterInit()}.
+
+\item[\texttt{COMPLEX8Vector *qVecBCVSpin1}] Pointer to the additional vector
+required for filtering spinning BCV templates, allocated by
+\texttt{FindChirpFilterInit()}.
+
+\item[\texttt{COMPLEX8Vector *qVecBCVSpin2}] Pointer to the additional vector
+required for filtering spinning BCV templates, allocated by
+\texttt{FindChirpFilterInit()}.
 
 \item[\texttt{COMPLEX8Vector *qtildeVec}] Pointer to vector allocated by 
-\texttt{FindChirpFilterInit()} to store the quantity $\tilde{q}_k$. Set to the
-value of $\tilde{q}_k$ on exit. Must not be NULL
+\texttt{FindChirpFilterInit()} to store the quantity $\tilde{q}_k$, given by
+\begin{equation}
+\tilde{q}_k = 
+\tilde{F}_k \tilde{T}_k^\ast \quad 0 < k < \frac{N}{2},
+\end{equation}
+and $0$ otherwise. Set to the value of $\tilde{q}_k$ on exit. Must not be
+NULL.
 
 \item[\texttt{COMPLEX8Vector *qtildeVecBCV}] Pointer to the additional
-vector required for the BCV templates, allocated by 
-\texttt{FindChirpFilterInit()} to store the quantity $\tilde{q}_k$. Set to the
-value of $\tilde{q}_k$ on exit. Must not be NULL
+vector required for filtering BCV templates, allocated by 
+\texttt{FindChirpFilterInit()}.
+
+\item[\texttt{COMPLEX8Vector *qtildeVecBCVSpin1}] Pointer to the additional
+vector required for filtering spinning BCV templates, allocated by 
+\texttt{FindChirpFilterInit()}.
+
+\item[\texttt{COMPLEX8Vector *qtildeVecBCVSpin2}] Pointer to the additional
+vector required for filtering spinning BCV templates, allocated by 
+\texttt{FindChirpFilterInit()}.
 
 \item[\texttt{ComplexFFTPlan *invPlan}] Pointer to FFTW plan created by 
 \texttt{FindChirpFilterInit()} to transform the quantity $\tilde{q}_k$ to
@@ -471,6 +429,9 @@ ${q}_j$ usimg the inverse DFT. Must not be NULL.
 
 \item[\texttt{REAL4Vector *rhosqVec}] Pointer to a vector that is set to
 $\rho^2(t_j)$ on exit. If NULL $\rho^2(t_j)$ is not stored.
+
+\item[\texttt{COMPLEX8Vector *rhosqVec}] Pointer to a vector that is set to
+$\rho(t_j) = x(t_j) + iy(t_j)$ on exit. If NULL, the quantity is not stored.
 
 \item[\texttt{REAL4Vector *chisqVec}] Workspace vector used to compute and
 store $\chi^2(t_j)$. Must not be NULL if \texttt{numChisqBins} is greater than
@@ -481,8 +442,7 @@ structure for \texttt{FindChirpChisqVeto()} function. Must not be NULL if
 \texttt{numChisqBins} is greater than zero.
 
 \item[\texttt{FindChirpChisqInput *chisqInput}] Pointer to input data
-structure for the \texttt{FindChirpChisqVeto()} function
-and the \texttt{FindCHirpBCVChisqVeto()}. Must not be NULL if
+structure for the \texttt{FindChirpChisqVeto()} function.  Must not be NULL if
 \texttt{numChisqBins} is greater than zero.
 
 \item[\texttt{FindChirpChisqInput *chisqInputBCV}] Pointer to input data
@@ -503,13 +463,16 @@ if \texttt{numChisqBins} is greater than zero.
 
 #if 0
 <lalLaTeX>
-\subsubsection*{Filter function input structures}
+
+\subsubsection*{Structure \texttt{FindChirpFilterInput}}
+\idx[Type]{FindChirpFilterInput}
+
+\noindent This structure groups the input data required for the 
+\texttt{FindChirpFilterSegment()} function into a single structure.
+
 </lalLaTeX>
 #endif
-
-
-/* --- input to the filtering functions --------------------------------- */
-/* <lalVerbatim file="FindChirpHFindChirpFilterInput"> */
+/* <lalVerbatim> */
 typedef struct
 tagFindChirpFilterInput
 {
@@ -520,29 +483,15 @@ FindChirpFilterInput;
 /* </lalVerbatim> */
 #if 0
 <lalLaTeX>
-\subsubsection*{Structure \texttt{FindChirpFilterInput}}
-\idx[Type]{FindChirpSegmentVector}
-
-\input{FindChirpHFindChirpFilterInput}
-
-\noindent This structure groups the input data required for the 
-\texttt{FindChirpFilterSegment()} function into a single structure.
 
 \begin{description}
-\item[\texttt{InspiralTemplate *tmplt}] Pointer the structure that contains
-the parameters of the template chirp.
-
 \item[\texttt{FindChirpTemplate *fcTmplt}] Pointer to the input template
 in a form that can be used by \texttt{FindChirpFilterSegment()}
 
 \item[\texttt{FindChirpSegment *segment}] Pointer to the input data segment
 in a form that can be used by \texttt{FindChirpFilterSegment()}
 \end{description}
-</lalLaTeX>
-#endif
 
-#if 0
-<lalLaTeX>
 \vfill{\footnotesize\input{FindChirpHV}}
 </lalLaTeX> 
 #endif
@@ -624,6 +573,54 @@ LALFindChirpDestroyTmpltNode (
 
 /*
  *
+ * function prototypes for initialization, finalization and filter functions
+ *
+ */
+
+
+#if 0
+<lalLaTeX>
+\newpage\input{FindChirpFilterC}
+</lalLaTeX>
+#endif
+
+void
+LALFindChirpFilterInit (
+    LALStatus                  *status,
+    FindChirpFilterParams     **output,
+    FindChirpInitParams        *params
+    );
+
+void
+LALFindChirpFilterFinalize (
+    LALStatus                  *status,
+    FindChirpFilterParams     **output
+    );
+
+void
+LALCreateFindChirpInput (
+    LALStatus                  *status,
+    FindChirpFilterInput      **output,
+    FindChirpInitParams        *params
+    );
+
+void
+LALDestroyFindChirpInput (
+    LALStatus                  *status,
+    FindChirpFilterInput      **output
+    );
+
+void
+LALFindChirpFilterSegment (
+    LALStatus                  *status,
+    SnglInspiralTable         **eventList,
+    FindChirpFilterInput       *input,
+    FindChirpFilterParams      *params
+    );
+
+
+/*
+ *
  * function prototypes for initialization, finalization of data functions
  *
  */
@@ -675,63 +672,6 @@ LALFindChirpTemplateFinalize (
     LALStatus                  *status,
     FindChirpTmpltParams      **output
     );
-
-
-/*
- *
- * function prototypes for initialization, finalization and filter functions
- *
- */
-
-
-#if 0
-<lalLaTeX>
-\newpage\input{FindChirpFilterC}
-</lalLaTeX>
-#endif
-
-void
-LALFindChirpFilterInit (
-    LALStatus                  *status,
-    FindChirpFilterParams     **output,
-    FindChirpInitParams        *params
-    );
-
-void
-LALFindChirpFilterFinalize (
-    LALStatus                  *status,
-    FindChirpFilterParams     **output
-    );
-
-void
-LALCreateFindChirpInput (
-    LALStatus                  *status,
-    FindChirpFilterInput      **output,
-    FindChirpInitParams        *params
-    );
-
-void
-LALDestroyFindChirpInput (
-    LALStatus                  *status,
-    FindChirpFilterInput      **output
-    );
-
-void
-LALFindChirpFilterSegment (
-    LALStatus                  *status,
-    SnglInspiralTable         **eventList,
-    FindChirpFilterInput       *input,
-    FindChirpFilterParams      *params
-    );
-
-void
-LALFindChirpBCVFilterSegment (
-    LALStatus                  *status,
-    SnglInspiralTable         **eventList,
-    FindChirpFilterInput       *input,
-    FindChirpFilterParams      *params
-    );
-
 
 
 #if 0

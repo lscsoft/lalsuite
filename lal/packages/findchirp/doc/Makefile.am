@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 DOCSOURCEFILES = findchirp.tex \
-                 FindChirpHDoc.tex FindChirpChisqHDoc.tex \
+                 FindChirpChisqHDoc.tex \
                  FindChirpSPHDoc.tex FindChirpSPDataCDoc.tex \
                  FindChirpEngineHDoc.tex FindChirpFilterCDoc.tex \
                  FindChirpEngineCDoc.tex FindChirpBCVHDoc.tex \

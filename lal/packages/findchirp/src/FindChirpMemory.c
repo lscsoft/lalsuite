@@ -20,17 +20,32 @@ $Id$
 \label{ss:FindChirpMemory.c}
 
 Memory management functions for creating and destroying input data and 
-workspace memory for the \texttt{FindChirpFilter()} function.
+workspace memory for findchirp.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{FindChirpMemoryCP}
+\idx{LALInitializeDataSegmentVector()}
+\idx{LALFinalizeDataSegmentVector()}
 \idx{LALCreateDataSegmentVector()}
 \idx{LALDestroyDataSegmentVector()}
 \idx{LALCreateFindChirpSegmentVector()}
 \idx{LALDestroyFindChirpSegmentVector()}
 
 \subsubsection*{Description}
+
+The function \texttt{LALInitializeDataSegmentVector()} creates a vector of
+\texttt{DataSegment} structures of length and dimension specified in the
+\texttt{FindChirpInitParams} structure. The data segments are created using
+the input data in \texttt{chan}, \texttt{spec} and \texttt{resp}. No storage
+is allocated for the actual data in the data segments, instead the data
+segment \texttt{chan}, \texttt{spec} and \texttt{resp} pointers are pointed at 
+the input data appropriately. This means that the input \texttt{chan},
+\texttt{spec} and \texttt{resp} time and frequency series must persist for the
+duration of the filtering process.
+
+The function \texttt{LALFinalizeDataSegmentVector()} frees any memory
+allocated by the function \texttt{LALInitializeDataSegmentVector()}.
 
 The function \texttt{LALCreateDataSegmentVector()} creates a vector of
 \texttt{DataSegment} structures of length and dimension specified in the
@@ -52,7 +67,15 @@ the \texttt{FindChirpSegmentVector} at address \texttt{*vector}.
 
 \subsubsection*{Algorithm}
 
-None.
+The chan pointers in the data segment vector created by \texttt{LALInitializeDataSegmentVector()} are set as follows:
+\begin{enumerate}
+\item The chan first pointer is pointed is pointed at the beginning of the
+input data chan.
+
+\item The input chan pointer is incremented by the length of the data segment
+minus the data segment overlap and the next data segment chan pointer is set
+to this memory address.
+\end{enumerate}
 
 \subsubsection*{Uses}
 \begin{verbatim}
