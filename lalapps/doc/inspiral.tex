@@ -52,8 +52,8 @@
 \option{--chisq-bins}~\parm{P} \newline \hspace*{0.5in}                
 \option{--snr-threshold}~\parm{RHO} \newline \hspace*{0.5in}           
 \option{--chisq-threshold}~\parm{X} \newline \hspace*{0.5in}          
-\option{--enable-event-cluster} \newline \hspace*{0.5in}          
-\option{--disable-event-cluster} \newline \hspace*{0.5in}        
+\option{--cluster-method}~\parm{MTHD} \newline \hspace*{0.5in}          
+[\option{--cluster-window}~\parm{SEC}] \newline \hspace*{0.5in}        
 \option{--enable-output} \newline \hspace*{0.5in}                
 \option{--disable-output} \newline \hspace*{0.5in}                
 [\option{--trig-start-time}~\parm{SEC}] \newline \hspace*{0.5in}       
@@ -211,11 +211,11 @@ threshold to \parm{RHO}.
 \item[\option{--chisq-threshold}~\parm{X}] Set threshold on $chi^2$.  
 Where $chi^2 < X * ( p + rho^2 * delta^2 )$
 
-\item[\option{--enable-event-cluster}] Turn on maximization over chirp 
-length.
+\item[\option{--cluster-method}~\parm{MTHD}] Set clustering method 
+with which to maximize over a chirp to \parm{MTHD}.
 
-\item[\option{--disable-event-cluster}] Turn off maximization over chirp 
-length. You have a choice between enabling or disabling event cluster.
+\item[\option{--cluster-window}~\parm{SEC}] Optional. If \parm{MTHD} is
+set to window, then the window length must be specified in seconds \parm{SEC}.
 
 \item[\option{--enable-output}] Write the results to a LIGO LW XML file.
 
@@ -303,7 +303,7 @@ lalapps_inspiral \
 --minimal-match 0.9 \
 --segment-overlap 524288 \
 --inverse-spec-length 16 \
---enable-event-cluster \
+--cluster-method none \
 --dynamic-range-exponent 69.0 \ 
 --chisq-bins 15 \
 --enable-output \
@@ -313,5 +313,5 @@ lalapps_inspiral \
 
 
 
-\item[Author] Duncan Brown, Andres Rodriguez 
+\item[Author] Duncan Brown, Andres Rodriguez, Darren Woods 
 \end{entry}
