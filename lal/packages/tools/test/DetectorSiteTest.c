@@ -5,7 +5,7 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 \subsection{Program \texttt{DetectorSiteTest.c}}
-\label{ss:DetectorSiteTest.c}
+\label{tools:ss:DetectorSiteTest.c}
 
 Tests the detector response and site parameter structures and the
 routine to create one from the other.
@@ -43,16 +43,7 @@ for the two LIGO sites.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALStatus
-LALStatus
-LALDetector
-LALFrDetector
-LALDetectorType
-LALNumCachedDetectors
-LALIFODIFFDETECTOR
-LALDetectorIndexLHODIFF
-LALDetectorIndexLLODIFF
-lalCachedDetectors[]
+LALCreateDetector()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -95,7 +86,8 @@ TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 static void
 ClearStatus (LALStatus *status);
 
-NRCSID( DETECTORSITETESTC, "$Id$" );
+NRCSID( DETECTORSITETESTC, "$Id: DetectorSiteTest.c,v 1.7 2001/05/16 00:51:11 r
+osa Exp $" );
 
 #define DETECTORSITETESTC_LOCTOL 3e-2
 #define DETECTORSITETESTC_RESTOL 1e-06
@@ -113,24 +105,24 @@ static void
 PrintLALDetector(LALDetector *detector)
 {
   printf( "  = { { %.15e, %.15e, %.15e },\n", detector->location[0],
-	  detector->location[1], detector->location[2] );
+          detector->location[1], detector->location[2] );
   printf( "      { { %.15g, %.15g, %.15g },\n", detector->response[0][0],
-	  detector->response[0][1], detector->response[0][2]);
+          detector->response[0][1], detector->response[0][2]);
   printf( "        { %.15g, %.15g, %.15g },\n", detector->response[1][0],
-	  detector->response[1][1], detector->response[1][2]);
+          detector->response[1][1], detector->response[1][2]);
   printf( "        { %.15g, %.15g, %.15g } },\n", detector->response[2][0],
-	  detector->response[2][1], detector->response[2][2]);
+          detector->response[2][1], detector->response[2][2]);
   printf("      { \"%s\",\n", detector->frDetector.name);
   printf("        %.15g, %.15g, %.15g,\n",
-	 detector->frDetector.vertexLongitudeDegrees,
-	 detector->frDetector.vertexLatitudeDegrees,
-	 detector->frDetector.vertexElevation);
+         detector->frDetector.vertexLongitudeDegrees,
+         detector->frDetector.vertexLatitudeDegrees,
+         detector->frDetector.vertexElevation);
   printf("        %.15e, %.15g,\n",
-	 detector->frDetector.xArmAltitudeRadians,
-	 detector->frDetector.xArmAzimuthRadians);
+         detector->frDetector.xArmAltitudeRadians,
+         detector->frDetector.xArmAzimuthRadians);
   printf("        %.15e, %.15g } }\n",
-	 detector->frDetector.yArmAltitudeRadians,
-	 detector->frDetector.yArmAzimuthRadians);
+         detector->frDetector.yArmAltitudeRadians,
+         detector->frDetector.yArmAzimuthRadians);
   return;
 }
 
@@ -152,17 +144,17 @@ CheckDetector(LALStatus *status, LALDetector *cachedDetector)
   LALCreateDetector( status, &constructedDetector, &frDetector, type );
   TestStatus( status, CODES(0), DETECTORSITETESTC_EFLS );
 
-  printf("  Enum'ed type is %d (LALIFODIFFDETECTOR=%d)\n", 
-	 constructedDetector.type, LALIFODIFFDETECTOR);
+  printf("  Enum'ed type is %d (LALDETECTORTYPE_IFODIFF=%d)\n",
+         constructedDetector.type, LALDETECTORTYPE_IFODIFF);
 
   for (i=0; i<3; ++i)
   {
     printf("  x[%d]:\n    cached: %.15g calc: %.15g diff: %g\n", i+1,
-	   cachedDetector->location[i],
-	   constructedDetector.location[i],
-	   cachedDetector->location[i] - constructedDetector.location[i]);
+           cachedDetector->location[i],
+           constructedDetector.location[i],
+           cachedDetector->location[i] - constructedDetector.location[i]);
     if ( cachedDetector->location[i] - constructedDetector.location[i]
-	 >= DETECTORSITETESTC_LOCTOL )
+         >= DETECTORSITETESTC_LOCTOL )
     {
       return DETECTORSITETESTC_EFLS;
     }
@@ -173,85 +165,85 @@ CheckDetector(LALStatus *status, LALDetector *cachedDetector)
     for (j=0; j<3; ++j)
     {
       printf("  d[%d,%d]:\n    cached: %g calc: %g diff: %g\n", i+1, j+1,
-	     cachedDetector->response[i][j],
-	     constructedDetector.response[i][j],
-	     cachedDetector->response[i][j] 
-	     - constructedDetector.response[i][j]);
-      if ( cachedDetector->response[i][j] 
-	   - constructedDetector.response[i][j] >= DETECTORSITETESTC_RESTOL )
+             cachedDetector->response[i][j],
+             constructedDetector.response[i][j],
+             cachedDetector->response[i][j]
+             - constructedDetector.response[i][j]);
+      if ( cachedDetector->response[i][j]
+           - constructedDetector.response[i][j] >= DETECTORSITETESTC_RESTOL )
       {
-	return DETECTORSITETESTC_EFLS;
+        return DETECTORSITETESTC_EFLS;
       }
     }
   }
 
   printf("  Latitude:\n    cached: %g calc: %g diff: %g\n",
-	 cachedDetector->frDetector.vertexLatitudeDegrees,
-	 constructedDetector.frDetector.vertexLatitudeDegrees,	
-	 cachedDetector->frDetector.vertexLatitudeDegrees -
-	 constructedDetector.frDetector.vertexLatitudeDegrees);
+         cachedDetector->frDetector.vertexLatitudeDegrees,
+         constructedDetector.frDetector.vertexLatitudeDegrees,
+         cachedDetector->frDetector.vertexLatitudeDegrees -
+         constructedDetector.frDetector.vertexLatitudeDegrees);
 
   if ( cachedDetector->frDetector.vertexLatitudeDegrees !=
-	 constructedDetector.frDetector.vertexLatitudeDegrees)
+         constructedDetector.frDetector.vertexLatitudeDegrees)
   {
     return DETECTORSITETESTC_EFLS;
   }
 
   printf("  Longitude:\n    cached: %g calc: %g diff: %g\n",
-	 cachedDetector->frDetector.vertexLongitudeDegrees,
-	 constructedDetector.frDetector.vertexLongitudeDegrees,	
-	 cachedDetector->frDetector.vertexLongitudeDegrees -
-	 constructedDetector.frDetector.vertexLongitudeDegrees);
+         cachedDetector->frDetector.vertexLongitudeDegrees,
+         constructedDetector.frDetector.vertexLongitudeDegrees,
+         cachedDetector->frDetector.vertexLongitudeDegrees -
+         constructedDetector.frDetector.vertexLongitudeDegrees);
 
   if ( cachedDetector->frDetector.vertexLongitudeDegrees !=
-	 constructedDetector.frDetector.vertexLongitudeDegrees)
+         constructedDetector.frDetector.vertexLongitudeDegrees)
   {
     return DETECTORSITETESTC_EFLS;
   }
 
   printf("  X Arm altitide:\n    cached: %g calc: %g diff: %g\n",
-	 cachedDetector->frDetector.xArmAltitudeRadians,
-	 constructedDetector.frDetector.xArmAltitudeRadians,	
-	 cachedDetector->frDetector.xArmAltitudeRadians -
-	 constructedDetector.frDetector.xArmAltitudeRadians);
+         cachedDetector->frDetector.xArmAltitudeRadians,
+         constructedDetector.frDetector.xArmAltitudeRadians,
+         cachedDetector->frDetector.xArmAltitudeRadians -
+         constructedDetector.frDetector.xArmAltitudeRadians);
 
   if ( cachedDetector->frDetector.xArmAltitudeRadians !=
-	 constructedDetector.frDetector.xArmAltitudeRadians)
+         constructedDetector.frDetector.xArmAltitudeRadians)
   {
     return DETECTORSITETESTC_EFLS;
   }
 
   printf("  X Arm azimuth:\n    cached: %g calc: %g diff: %g\n",
-	 cachedDetector->frDetector.xArmAzimuthRadians,
-	 constructedDetector.frDetector.xArmAzimuthRadians,	
-	 cachedDetector->frDetector.xArmAzimuthRadians -
-	 constructedDetector.frDetector.xArmAzimuthRadians);
+         cachedDetector->frDetector.xArmAzimuthRadians,
+         constructedDetector.frDetector.xArmAzimuthRadians,
+         cachedDetector->frDetector.xArmAzimuthRadians -
+         constructedDetector.frDetector.xArmAzimuthRadians);
 
   if ( cachedDetector->frDetector.xArmAzimuthRadians !=
-	 constructedDetector.frDetector.xArmAzimuthRadians)
+         constructedDetector.frDetector.xArmAzimuthRadians)
   {
     return DETECTORSITETESTC_EFLS;
   }
 
   printf("  Y Arm altitide:\n    cached: %g calc: %g diff: %g\n",
-	 cachedDetector->frDetector.yArmAltitudeRadians,
-	 constructedDetector.frDetector.yArmAltitudeRadians,	
-	 cachedDetector->frDetector.yArmAltitudeRadians -
-	 constructedDetector.frDetector.yArmAltitudeRadians);
+         cachedDetector->frDetector.yArmAltitudeRadians,
+         constructedDetector.frDetector.yArmAltitudeRadians,
+         cachedDetector->frDetector.yArmAltitudeRadians -
+         constructedDetector.frDetector.yArmAltitudeRadians);
   if ( cachedDetector->frDetector.yArmAltitudeRadians !=
-	 constructedDetector.frDetector.yArmAltitudeRadians)
+         constructedDetector.frDetector.yArmAltitudeRadians)
   {
     return DETECTORSITETESTC_EFLS;
   }
 
   printf("  Y Arm azimuth:\n    cached: %g calc: %g diff: %g\n",
-	 cachedDetector->frDetector.yArmAzimuthRadians,
-	 constructedDetector.frDetector.yArmAzimuthRadians,	
-	 cachedDetector->frDetector.yArmAzimuthRadians -
-	 constructedDetector.frDetector.yArmAzimuthRadians);
+         cachedDetector->frDetector.yArmAzimuthRadians,
+         constructedDetector.frDetector.yArmAzimuthRadians,
+         cachedDetector->frDetector.yArmAzimuthRadians -
+         constructedDetector.frDetector.yArmAzimuthRadians);
 
   if ( cachedDetector->frDetector.yArmAzimuthRadians !=
-	 constructedDetector.frDetector.yArmAzimuthRadians)
+         constructedDetector.frDetector.yArmAzimuthRadians)
   {
     return DETECTORSITETESTC_EFLS;
   }
@@ -265,12 +257,12 @@ int main( int argc, char *argv[] )
   static LALStatus     status;
   int                  code;
 
-  /* 
+  /*
   LALFrDetector testFrDetector = {"Test Site",
-				  0.0, 0.0, 0.0,
-				  0.0, 0.0,
-				  0.0, LAL_PI_2 };
-  LALFrDetector lhoFrDetector 
+                                  0.0, 0.0, 0.0,
+                                  0.0, 0.0,
+                                  0.0, LAL_PI_2 };
+  LALFrDetector lhoFrDetector
     = {"LIGO Hanford Observatory",
        -119.40765714,   46.4551467,           142.544,
          -6.195e-4,      2.199104,
@@ -282,29 +274,29 @@ int main( int argc, char *argv[] )
          -6.107e-4,      5.021600 };
   */
   /*
-  LALDetector          testDetector 
+  LALDetector          testDetector
     = { {  4510094.634714941322397L,   4510094.634714941322397L,      0.0L },
       { {  0.0,        0.0,        0.0       },
-	{  0.0,        0.0,        0.0       },
-	{  0.0,        0.0,        0.0       }
+        {  0.0,        0.0,        0.0       },
+        {  0.0,        0.0,        0.0       }
       },
-      LALIFODIFFDETECTOR,
+      LALDETECTORTYPE_IFODIFF,
       { "Test Interferometer",
-	  45.0L,          0.0L,           100.0,
-	   0.0,           0.0,
-	   0.0,           0.0
+          45.0L,          0.0L,           100.0,
+           0.0,           0.0,
+           0.0,           0.0
       }
     };
     = { {  4517590.8789357600195508L,   0.0L,    4487348.40860601410662157L },
       { {  0.0,        0.0,        0.0       },
-	{  0.0,        0.0,        0.0       },
-	{  0.0,        0.0,        0.0       }
+        {  0.0,        0.0,        0.0       },
+        {  0.0,        0.0,        0.0       }
       },
-      LALIFODIFFDETECTOR,
+      LALDETECTORTYPE_IFODIFF,
       { "Test Interferometer",
-	   0.0L,         45.0L,           0.0,
-	   0.0,           0.0,
-	   0.0,           0.0
+           0.0L,         45.0L,           0.0,
+           0.0,           0.0,
+           0.0,           0.0
       }
     };
   */
@@ -328,6 +320,35 @@ int main( int argc, char *argv[] )
     return code;
   }
 
+  printf("Checking VIRGO...\n");
+  cachedDetector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+  if ( code = CheckDetector( &status, &cachedDetector ) )
+  {
+    return code;
+  }
+
+  printf("Checking GEO600...\n");
+  cachedDetector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  if ( code = CheckDetector( &status, &cachedDetector ) )
+  {
+    return code;
+  }
+
+
+  printf("Checking TAMA300...\n");
+  cachedDetector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
+  if ( code = CheckDetector( &status, &cachedDetector ) )
+  {
+    return code;
+  }
+
+  printf("Checking CIT40...\n");
+  cachedDetector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
+  if ( code = CheckDetector( &status, &cachedDetector ) )
+  {
+    return code;
+  }
+
   /*
   printf("Checking trivial detector...\n");
 
@@ -335,7 +356,7 @@ int main( int argc, char *argv[] )
   {
     return code;
   }
-  
+
   */
   /*
 
@@ -352,12 +373,12 @@ int main( int argc, char *argv[] )
   PrintLALDetector( &lalDetector );
 
   printf("%15g %15g %15g\n\n", lalDetector.location[0],
-	 lalDetector.location[1], lalDetector.location[2]);
+         lalDetector.location[1], lalDetector.location[2]);
 
-  for (i=0; i<3; ++i) 
+  for (i=0; i<3; ++i)
   {
     printf("%15g %15g %15g\n", lalDetector.response[i][0],
-	   lalDetector.response[i][1], lalDetector.response[i][2]);
+           lalDetector.response[i][1], lalDetector.response[i][2]);
   }
   */
 
@@ -507,3 +528,4 @@ ParseOptions (int argc, char *argv[])
 
   return;
 }
+
