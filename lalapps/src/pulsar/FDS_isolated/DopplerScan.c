@@ -46,6 +46,14 @@ detector sensitivity pattern (.. in the future).
 
 NRCSID( DOPPLERSCANC, "$Id$" );
 
+/* TwoDMesh() can have either of two preferred directions of meshing: */
+enum {
+  ORDER_ALPHA_DELTA,
+  ORDER_DELTA_ALPHA
+};
+
+static int meshOrder = ORDER_DELTA_ALPHA;
+
 /* the SkyScanner can be in one of the following states */
 enum {
   STATE_IDLE,   	/* not initialized yet */
@@ -119,9 +127,17 @@ InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit init)
 
   /* some general mesh-settings are needed in any case (metric or not) */
   meshpar.getRange = getRange;
-      
-  meshpar.domain[0] = scan->skyRegion.lowerLeft.longitude;
-  meshpar.domain[1] = scan->skyRegion.upperRight.longitude;
+
+  if (meshOrder == ORDER_ALPHA_DELTA)
+    {
+      meshpar.domain[0] = scan->skyRegion.lowerLeft.longitude;
+      meshpar.domain[1] = scan->skyRegion.upperRight.longitude;
+    }
+  else
+    {
+      meshpar.domain[0] = scan->skyRegion.lowerLeft.latitude;
+      meshpar.domain[1] = scan->skyRegion.upperRight.latitude;
+    }
 
   meshpar.rangeParams = (void*) &(scan->skyRegion); 
 
@@ -376,8 +392,16 @@ void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params )
   nix = x;	/* avoid compiler warning */
   
   /* for now: we return the fixed y-range, indendent of x */
-  y[0] = region->lowerLeft.latitude;
-  y[1] = region->upperRight.latitude;
+  if (meshOrder == ORDER_ALPHA_DELTA)
+    {
+      y[0] = region->lowerLeft.latitude;
+      y[1] = region->upperRight.latitude;
+    }
+  else
+    {
+      y[0] = region->lowerLeft.longitude;
+      y[1] = region->upperRight.longitude;
+    }
 
 
   /* Clean up and leave. */
@@ -411,8 +435,16 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
   TRY( LALDCreateVector( stat->statusPtr, &metric, dim*(dim+1)/2 ), stat );
 
   /* Call the metric function. (Ptole or Coherent, which is handled by wrapper) */
-  metricpar->position.longitude = skypos[0];
-  metricpar->position.latitude =  skypos[1];
+  if (meshOrder == ORDER_ALPHA_DELTA)
+    {
+      metricpar->position.longitude = skypos[0];
+      metricpar->position.latitude =  skypos[1];
+    }
+  else
+    {
+      metricpar->position.longitude = skypos[1];
+      metricpar->position.latitude =  skypos[0];
+    }
 
   TRY ( LALMetricWrapper( stat->statusPtr, metric, metricpar, useMetric), stat);
 
@@ -432,9 +464,19 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
 #define INDEX_AD (1 + 2*(2+1)/2)	/* g_ad */
 
   /* Translate output. Careful about the coordinate-order here!! */
-  g[0] = metric->data[INDEX_AA]; /* gxx */
-  g[1] = metric->data[INDEX_DD]; /* gyy */
+  if (meshOrder == ORDER_ALPHA_DELTA)
+    {
+      g[0] = metric->data[INDEX_AA]; /* gxx */
+      g[1] = metric->data[INDEX_DD]; /* gyy */
+    }
+  else
+    {
+      g[0] = metric->data[INDEX_DD]; /* gxx */
+      g[1] = metric->data[INDEX_AA]; /* gyy */
+    }
+
   g[2] = metric->data[INDEX_AD]; /* gxy = g21: 1 + 2*(2+1)/2 = 4; */
+
  
   /* Clean up and leave. */
   TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
@@ -580,38 +622,6 @@ printGrid (LALStatus *stat, DopplerScanGrid *grid, SkyRegion *region, TwoDMeshPa
   RETURN (stat);
 
 } /* printGrid */
-
-/*-------------------------------------------------------------------------
- * flip x and y in grid
- *------------------------------------------------------------------------*/
-void
-gridFlipOrder ( TwoDMeshNode *grid )
-{
-  REAL4 tmp;
-  TwoDMeshNode *node = grid;
-
-  while (node)
-    {
-      tmp = node->x;
-      node->x = node->y;
-      node->y = tmp;
-      
-      /* ok, we can't fully preserve the interval-info, as it's incomplete,
-	 but I don't see a use for that anyway. Certainly not in ComputeFstatistic
-	 or in DopplerScan for that matter...
-	 -> we replace dy[0],dy[1] by its mean value
-      */
-      tmp = (node->dy[1] - node->dy[0])/2.0;
-      node->dy[0] = -node->dx;
-      node->dy[1] = node->dx;
-      node->dx = tmp;
-
-      node = node->next;
-    } /* while node */
-
-  return;
-
-}  /* gridFlipOrder() */
 
 /*----------------------------------------------------------------------
  * this is a "wrapper" to provide a uniform interface to PtoleMetric() 
@@ -866,13 +876,21 @@ ConvertTwoDMesh2Grid ( LALStatus *stat, DopplerScanGrid **grid, TwoDMeshNode *me
   
   while (node2d)
     {
-      point.longitude = node2d->x;
-      point.latitude = node2d->y;
+      if (meshOrder == ORDER_ALPHA_DELTA)
+	{
+	  point.longitude = node2d->x;
+	  point.latitude = node2d->y;
+	}
+      else
+	{
+	  point.longitude = node2d->y;
+	  point.latitude = node2d->x;
+	}
       
       if (pointInPolygon (&point, region) )
 	{
-	  node->alpha = node2d->x;
-	  node->delta = node2d->y;
+	  node->alpha = point.longitude;
+	  node->delta = point.latitude;
 
 	  if ( (node->next = (DopplerScanGrid*) LALCalloc (1, sizeof(DopplerScanGrid) )) == NULL) {
 	    ABORT ( stat, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM );
