@@ -2009,7 +2009,7 @@ static void readDataPair(LALStatus *status,
   LALShrinkREAL4TimeSeries(status->statusPtr, streamPair->streamOne, \
       resampleRate * buffer, params->length);
   CHECKSTATUSPTR(status);
-  LALShrinkREAL4TimeSeries(status->statusPtr, streamPair->streamOne, \
+  LALShrinkREAL4TimeSeries(status->statusPtr, streamPair->streamTwo, \
       resampleRate * buffer, params->length);
   CHECKSTATUSPTR(status);
 
