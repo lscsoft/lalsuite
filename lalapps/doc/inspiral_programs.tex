@@ -1,0 +1,1417 @@
+\chapter{Inspiral Search Programs}
+\label{chapter:inspiral}
+
+This section of \textsc{LALApps} contains programs that can be used to search
+interferometer data for inspiral signals using templated matched filtering and
+associated veto strategies.
+
+\clearpage
+\section{Program \texttt{lalapps\_inspiral\_pipe}}
+\label{program:inspiral-pipeline}
+\idx[Program]{inspiral\_pipeline.py}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_inspiral_pipe$ --- python script to generate Condor DAGs to
+run the inspiral pipeline.
+
+\item[Synopsis]
+\begin{verbatim}
+  -h, --help               display this message
+  -v, --version            print version information and exit
+  -u, --user-tag TAG       tag the job with TAG (overrides value in ini file)
+
+  -d, --datafind           run LALdataFind to create frame cache files
+  -t, --template-bank      run lalapps_tmpltbank to generate a template bank
+  -i, --inspiral           run lalapps_inspiral on the first IFO
+  -T, --triggered-bank     run lalapps_trigtotmplt to generate a triggered bank
+  -I, --triggered-inspiral run lalapps_inspiral on the second IFO
+  -C, --coincidence        run lalapps_inca on the triggers from both IFOs
+
+  -j, --injections         add simulated inspirals from injection file
+
+  -p, --playground-only    only create chunks that overlap with playground
+  -P, --priority PRIO      run jobs with condor priority PRIO
+
+  -f, --config-file FILE   use configuration file FILE
+  -l, --log-path PATH      directory to write condor log file
+\end{verbatim}
+
+\item[Description] \verb$lalapps_inspiral_pipe$ generates a Condor DAG to run
+the inspiral analysis pipeline. The configuration file should specify the
+parameters needed to run the jobs and must be specified with the
+\verb$--config-file$ option.  A file containing science segments to be
+analyzed should be specified in the \verb$[input]$ section of the
+configuration file with a line such as
+\begin{verbatim}
+segments = S2H1L1v03_selectedsegs.txt
+\end{verbatim}
+This should contain four whitespace separated columns:
+\begin{verbatim}
+  segment_id    gps_start_time  gps_end_time    duration
+\end{verbatim}
+that define the science segments to be used. Lines starting with an octothorpe
+are ignored.
+
+The analysis chunk size is determined from the number of data segments and
+their length and overlap specified in config file. A chunk length is typically
+this is 1024 seconds for S2.  The chunks start and stop times are computed
+from the science segment times and used to build the DAG.
+
+The once the DAG file has been created it should be submitted to the Condor
+pool with the \verb$condor_submit_dag$ command.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--help}] Display a brief usage summary.
+\end{entry}
+
+\item[Example]
+Generate a DAG to run an inspiral search on the first IFO. The generated
+DAG is then submitted with \texttt{condor\_submit\_dag}
+\begin{verbatim}
+lalapps_inspiral_pipe --log-path /people/duncan/dag_logs \
+--datafind --template-bank --inspiral --playground-only \
+--config-file l1_s2.ini
+
+condor_submit_dag l1_s2.dag
+\end{verbatim}
+
+\item[Author] 
+Duncan Brown
+\end{entry}
+
+\clearpage
+\section{Program \texttt{lalapps\_tmpltbank}}
+\label{program:lalapps-tmpltbank}
+\idx[Program]{lalapps\_tmpltbank}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_tmpltbank$ --- program to generate inspiral template banks.
+
+\item[Synopsis]
+\begin{verbatim}
+  --help                       display this message
+  --verbose                    print progress information
+  --debug-level LEVEL          set the LAL debug level to LEVEL
+  --user-tag STRING            set the process_params usertag to STRING
+  --comment STRING             set the process table comment to STRING
+
+  --gps-start-time SEC         GPS second of data start time
+  --gps-end-time SEC           GPS second of data end time
+  --pad-data T                 pad the data start and end time by T seconds
+
+  --frame-cache                obtain frame data from LAL frame cache FILE
+  --calibration-cache FILE     obtain calibration from LAL frame cache FILE
+  --channel-name CHAN          read data from interferometer channel CHAN
+
+  --sample-rate F              filter data at F Hz, downsampling if necessary
+  --resample-filter TYPE       set resample filter to TYPE [ldas|butterworth]
+
+  --disable-high-pass          turn off the IIR highpass filter
+  --enable-high-pass F         high pass data above F Hz using an IIR filter
+  --spectrum-type TYPE         use PSD estimator TYPE [mean|median]
+
+  --segment-length N           set data segment length to N points
+  --number-of-segments N       set number of data segments to N
+
+  --low-frequency-cutoff F     do not filter below F Hz
+  --high-frequency-cutoff F    upper frequency cutoff in Hz
+
+  --minimum-mass MASS          set minimum component mass of bank to MASS
+  --maximum-mass MASS          set maximum component mass of bank to MASS
+  --minimal-match M            generate bank with minimal match M
+
+  --order ORDER                set post-Newtonian order of the waveform to ORDER
+                                 (newtonian|oneHalfPN|onePN|onePointFivePN|
+                                 twoPN|twoPointFive|threePN|threePointFivePN)
+  --approximant APPROX         set approximant of the waveform to APPROX
+                                 (TaylorT1|TaylorT2|TaylorT3|TaylorF1|TaylorF2|
+                                 PadeT1|PadeT2|EOB|BCV|SpinTaylorT3)
+  --space SPACE                grid up template bank with mass parameters SPACE
+                                 (Tau0Tau2|Tau0Tau3)
+
+  --write-raw-data             write raw data to a frame file
+  --write-response             write the computed response function to a frame
+  --write-spectrum             write the uncalibrated psd to a frame
+  --write-strain-spectrum      write the calibrated strain psd to a text file
+\end{verbatim}
+
+\item[Description] 
+\verb$lalapps_tmpltbank$ is a stand alone code for generating inspiral
+template banks for LIGO data with the LAL bank package.  The code generates a
+calibrated power spectrum at the specified time for the requested channel and
+uses this to compute the template bank.  See the LAL bank package
+documentation for detailed information on the algorithms used to generate the
+banks.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--help}] Display a brief usage summary.
+\end{entry}
+
+\item[Example]
+\begin{verbatim}
+lalapps_tmpltbank \
+--gps-start-time 734357353 --gps-end-time 734358377 \
+--frame-cache cache/L-734357345-734361107.cache \
+--segment-length 1048576 --number-of-segments 7 \
+--pad-data 7 --sample-rate 4096 --resample-filter ldas \
+--enable-high-pass 5.000000e+01 --spectrum-type median
+--low-frequency-cutoff 7.000000e+01 --high-frequency-cutoff 2.048000e+03 \
+--minimum-mass 1.000000e+00  --maximum-mass 3.000000e+00 \
+--minimal-match 9.700000e-01 --calibration-cache  \
+/ldas_outgoing/calibration/cache_files/L1-CAL-V03-729273600-734367600.cache \
+--space Tau0Tau3 --approximant TaylorT1 --order twoPN \
+--channel-name L1:LSC-AS_Q --debug-level 33
+\end{verbatim}
+
+\item[Author] 
+Duncan Brown
+\end{entry}
+\clearpage
+
+\section{Program \texttt{lalapps\_inspiral}}
+\label{program:lalapps-inspiral}
+\idx[Program]{lalapps\_inspiral}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_inspiral$ --- stand alone inspiral search code
+
+\item[Synopsis]
+\begin{verbatim}
+  --help                       display this message
+  --verbose                    print progress information
+  --debug-level LEVEL          set the LAL debug level to LEVEL
+  --user-tag STRING            set the process_params usertag to STRING
+  --comment STRING             set the process table comment to STRING
+
+  --gps-start-time SEC         GPS second of data start time
+  --gps-start-time-ns NS       GPS nanosecond of data start time
+  --gps-end-time SEC           GPS second of data end time
+  --gps-end-time-ns NS         GPS nanosecond of data end time
+  --pad-data T                 pad the data start and end time by T seconds
+
+  --frame-cache                obtain frame data from LAL frame cache FILE
+  --calibration-cache FILE     obtain calibration from LAL frame cache FILE
+  --channel-name CHAN          read data from interferometer channel CHAN
+
+  --injection-file FILE        inject simulated inspiral signals from FILE
+  --inject-overhead            inject signals directly overhead detector
+
+  --bank-file FILE             read template bank parameters from FILE
+  --minimal-match M            override bank minimal match with M (sets delta)
+  --start-template N           start filtering at template number N in bank
+  --stop-templateN             stop filtering at template number N in bank
+
+  --sample-rate F              filter data at F Hz, downsampling if necessary
+  --resample-filter TYPE       set resample filter to TYPE (ldas|butterworth)
+
+  --disable-high-pass          turn off the IIR highpass filter
+  --enable-high-pass F         high pass data above F Hz using an IIR filter
+  --spectrum-type TYPE         use PSD estimator TYPE (mean|median)
+
+  --segment-length N           set data segment length to N points
+  --number-of-segments N       set number of data segments to N
+  --segment-overlap N          overlap data segments by N points
+
+  --low-frequency-cutoff F     do not filter below F Hz
+  --inverse-spec-length T      set length of inverse spectrum to T seconds
+  --dynamic-range-exponent X   set dynamic range scaling to 2^X
+
+  --chisq-bins P               set number of chisq veto bins to P
+  --snr-threshold RHO          set signal-to-noise threshold to RHO
+  --chisq-threshold X          threshold on chi^2 < X * ( p + rho^2 * delta^2 )
+  --enable-event-cluster       turn on maximization over chirp length
+  --disable-event-cluster      turn off maximization over chirp length
+
+  --approximant APPROX         approximant to be used. {TaylorF2|BCV}
+
+  --enable-output              write the results to a LIGO LW XML file
+  --disable-output             do not write LIGO LW XML output file
+
+  --write-raw-data             write raw data to a frame file
+  --write-filter-data          write data that is passed to filter to a frame
+  --write-response             write the computed response function to a frame
+  --write-spectrum             write the uncalibrated psd to a frame
+  --write-snrsq                write the snr time series for each data segment
+  --write-chisq                write the r^2 time series for each data segment
+\end{verbatim}
+
+\item[Description] 
+\verb$lalapps_inspiral$ is a stand alone code for performing matched filtering
+of LIGO data for gravitational wave signals and Monte Carlo analysis.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--help}] Display a brief usage summary.
+\end{entry}
+
+\item[Example]
+\begin{verbatim}
+lalapps_inspiral \
+--enable-output --inverse-spec-length 16  --segment-length 1048576 \
+--low-frequency-cutoff 7.000000e+01 --pad-data 8 \
+--bank-file L1-TMPLTBANK-734357353-1024.xml \
+--sample-rate 4096 --chisq-threshold 20.0 --resample-filter ldas \
+--channel-name L1:LSC-AS_Q --calibration-cache \
+/ldas_outgoing/calibration/cache_files/L1-CAL-V03-729273600-734367600.cache \
+--segment-overlap 524288  --snr-threshold 8.0 \
+--frame-cache cache/L-734357345-734361107.cache \
+--number-of-segments 7 --dynamic-range-exponent 6.900000e+01 \
+--enable-high-pass 5.000000e+01 --debug-level 33 \
+--gps-start-time 734357353 --gps-end-time 734358377 \
+--chisq-bins 8 --spectrum-type median --enable-event-cluster \
+--minimal-match 9.700000e-01 --approximant TaylorF2
+\end{verbatim}
+
+\item[Author] 
+Duncan Brown
+\end{entry}
+\clearpage
+
+\section{Program \texttt{lalapps\_inca}}
+\label{program:lalapps-inca}
+\idx[Program]{lalapps\_inca}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_inca$ --- program does inspiral coincidence analysis.
+
+\item[Synopsis]
+\begin{verbatim}
+  --help                    display this message
+  --verbose                 print progress information
+  --version                 print version information and exit
+  --debug-level LEVEL       set the LAL debug level to LEVEL
+  --user-tag STRING         set the process_params usertag to STRING
+  --ifo-tag STRING          set the ifo-tag to STRING - for file naming
+  --comment STRING          set the process table comment to STRING
+ 
+  --gps-start-time SEC      GPS second of data start time
+  --gps-end-time SEC        GPS second of data end time
+ 
+  --silde-time SEC          slide all triggers of IFOB by SEC
+  --slide-time-ns NS        slide all triggers of IFOB by NS
+ 
+  --ifo-a IFOA              name of first ifo (e.g. L1, H1 or H2)
+  --ifo-b IFOB              name of second ifo (e.g. L1, H1 or H2)
+ 
+  --triggered-bank FILE     write a triggered bank insted of doing inca
+  --minimal-match M         set minimal match of triggered bank to M
+ 
+  --epsilon ERROR           set effective distance test epsilon (default 2)
+  --kappa ERROR             set effective distance test kappa (default 0.01)
+  --ifo-b-snr-threshold SNR set minimum snr in IFO B (default 6)
+  --ifo-b-range-cut         test range of IFO B to see if sensitive to trigger
+  --paramenter-test TEST    set the desired parameters to test coincidence
+                            for inca: (m1_and_m2|psi0_and_psi3|mchirp_and_eta)
+                            for triggered bank (m1_and_m2|psi0_and_psi3)
+  --dm Dm                   mass coincidence window (default 0)
+  --dpsi0 Dpsi0             psi0 coincidence window
+  --dpsi3 Dpsi3             psi3 coincidence window
+  --dmchirp Dmchirp         mchirp coincidence window
+  --deta  Deta              eta coincidence window
+  --dt Dt                   time coincidence window (milliseconds)
+ 
+  --no-playground           do not select triggers from playground
+  --playground-only         only use triggers that are in playground
+  --write-uniq-triggers     make sure triggers from IFO A are unique
+
+\end{verbatim}
+
+\textsc{(LIGO Lightweight XML files)}
+
+\item[Description --- Coincidence Testing] 
+
+\verb$lalapps_inca$ performs coincidence on triggers from the inspiral search
+code.  At present it works for only two interferometers.  The names of the two
+interferometers must be given. Output is written to LIGO lightweight XML files.
+Two XML output files are written.  The output files contain \texttt{process},
+\texttt{process\_params} and \texttt{search\_summary} tables that describe the
+search. The primary ifo output file contains the triggers from \textsc{IFOA}
+that are found to be in coincidence with triggers in \textsc{IFOB}. The
+secondary output file contains the triggers from \textsc{IFOB} that are found
+to be in coincidence with the triggers from \textsc{IFOA}.  Each trigger in the
+\textsc{IFOA} file corresponds to the coincident trigger in the \textsc{IFOB}
+file, so there may be duplicate \textsc{IFOA} triggers.  To prevent this,
+specify the \verb$--write-uniq-triggers$ option.
+
+The output files are named in the standard way for inspiral pipeline output.
+The primary triggers are in a file named\\
+\begin{center}
+\texttt{IFOA-INCA\_IFOTAG\_USERTAG-GPSSTARTTIME-DURATION.xml}\\
+\end{center}
+and the secondary triggers are in a file named\\
+\begin{center}
+\texttt{IFOB-INCA\_IFOTAG\_USERTAG-GPSSTARTTIME-DURATION.xml}\\
+\end{center}
+
+If a \texttt{--user-tag} or \texttt{--ifo-tag} is not specified on the command
+line, the \texttt{\_USERTAG} or \texttt{\_IFOTAG} part of the filename will be
+omitted.
+
+The default behaviour outputs triggers during playground times only. To obtain
+those triggers that are not in the playground, use the \verb$--no-playground$
+flag.     
+
+\texttt{lalapps\_inca} tests for coincidence in time as well as another set of
+trigger parameters.  The allowed parameter choices are specified by
+\verb$--parameter-test$ \texttt{TEST}, where \texttt{TEST} is one of
+m1\_and\_m2, psi0\_and\_psi3, mchirp\_and\_eta.  \texttt{lalapps\_inca} calls
+the LAL function \texttt{LALCompareSnglInspiral()} to test if two triggers are
+coincident. This first tests that the time of the triggers is coincidence to
+within $\delta t$.  It then tests that the other parameters of the trigger are
+coincident within the input ranges provided.  Additionally, if demanding
+coincidence over m1 and m2, it then tests to that 
+%
+\begin{equation} 
+  \frac{\left|D_\mathrm{IFOA} - D_\mathrm{IFOA}\right|}{D_\mathrm{IFOA}} < 
+  \frac{\epsilon}{\rho_\mathrm{IFOB}} + \kappa.  
+\end{equation}
+% 
+This is equivalent to testing that 
+%
+\begin{equation}\label{snrtest} 
+  \left|\rho_\mathrm{IFOB} - \hat{\rho}_\mathrm{IFOB}\right| < 
+  \epsilon + \kappa\rho_\mathrm{IFOB},
+\end{equation} 
+%
+where 
+%
+\begin{equation} 
+  \hat{\rho}_\mathrm{IFOB} = \frac{\sigma_\mathrm{IFOB}}
+  {\sigma_\mathrm{IFOA}} \rho_\mathrm{IFOA} \, .  
+\end{equation} 
+%
+If all the tests are passed, the events are considered to be coincident and
+written to the output file.
+
+The \texttt{--ifo-b-range-cut} option performs a test similar to
+(\ref{snrtest}) above to see whether we should expect a trigger in
+\textsc{IFOB}.  There are three possibilities, which depend upon the value of
+the \textsc{SNRSTAR} threshold for \textsc{IFOB}, denoted
+$\rho_\mathrm{IFOB}^{*}$.
+
+\begin{enumerate}
+
+\item In this case, the expected signal to noise ratio in \textsc{IFOB} is
+above our threshold:
+%
+\begin{equation} 
+  \rho_\mathrm{IFOB}^{*} < \frac{(\hat{\rho}_\mathrm{IFOB} - \epsilon)}
+  {1 + \kappa} , 
+\end{equation}
+%
+so we look for a coincident trigger.  We only keep the 
+\textsc{IFOA} trigger if one is found in coincidence in \textsc{IFOB}.
+
+\item In this case, our the allowed range of signal to noise ratio in 
+\textsc{IFOB} is partly above and partly below our threshold: 
+%
+\begin{equation}
+  \frac{(\hat{\rho}_\mathrm{IFOB} - \epsilon)} {1 + \kappa} < 
+  \rho_\mathrm{IFOB}^{*} <
+  \frac{(\hat{\rho}_\mathrm{IFOB} + \epsilon)} {1 - \kappa} .
+\end{equation}
+%
+We search \textsc{IFOB} for triggers and record a coincident trigger if found.
+Otherwise, we just record the \textsc{IFOA} trigger.
+
+\item In this case, the trigger is not visible to \textsc{IFOB}:
+%
+\begin{equation}
+  \rho_\mathrm{IFOB}^{*} <
+  \frac{(\hat{\rho}_\mathrm{IFOB} + \epsilon)} {1 - \kappa} .
+\end{equation}
+%
+We do not search \textsc{IFOB}, but do keep the trigger from \textsc{IFOA}.
+
+\end{enumerate}
+
+\item[Description --- Triggered Bank] 
+  
+If the option \verb$--triggered-bank$ is specified, then \texttt{lalapps\_inca}
+will produce a triggered template bank from the input xml files.  In this case,
+the code expects triggers from only a single interferometer, {IFOA}.  The
+triggered bank is formed by first sorting the templates in time, and discarding
+any which are before the time specified with \verb$--gps-start-time$ or after
+the time specified with \verb$--gps-end-time$.  The templates are then sorted
+according to the given \verb$--parameter-test$, which must be one of m1\_and\_m2
+or psi0\_and\_psi3.  Duplicate templates are discarded and what remains is
+output to the \texttt{FILE} specified by the \verb$--triggered-bank$ argument.
+The output file contain \texttt{process}, \texttt{process\_params},
+\texttt{search\_summary} and \texttt{sngl\_inspiral} tables.  
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--no-playground}] Optional.  Record all triggers that are
+not in playground data.  The default behavior returns only those triggers
+which lie in the playground data set.  
+
+\item[\texttt{--playground-only}] Optional.  Record only triggers that
+occur in the playground times.  This is the default behavior.
+
+\item[\texttt{--ifo-a} \textsc{IFOA}] Required. This is the name of the
+interferometer to use as the interferometer A in the coincidence algorithm.
+It must be a two letter IFO code e.g. \texttt{L1}, \texttt{H1}, etc.
+
+\item[\texttt{--ifo-b} \textsc{IFOB}] Required. This is the name of the
+interferometer to use as the interferometer B in the coincidence algorithm.
+It must be a two letter IFO code e.g. \texttt{L1}, \texttt{H1}, etc.
+
+\item[\texttt{--epsilon} \textsc{$\epsilon$}] Optional. Set the value of
+$\epsilon$ in the effective distance test. If not given the default of
+$\epsilon = 2$ will be used.
+
+\item[\texttt{--kappa} \textsc{$\kappa$}] Optional. Set the value of
+$\kappa$ in the effective distance test. If not given the default of
+$\kappa= 0.01$ will be used.
+
+\item[\texttt{--ifo-b-snr-threshold} \textsc{SNRSTAR}] Optional.  Set the 
+value of the signal to noise threshold for \textsc{IFOB}.  This is used in
+determining which triggers \textsc{IFOB} has a chance to see.  The default
+value 
+
+\item[\texttt{--ifo-b-range-cut}] Optional.  Use effective distance test to
+see whether \textsc{IFOB} has a chance of seeing trigger before performing 
+the search.
+
+\item[\texttt{--parameter-test} TEST] Required. Choose which parameters to use 
+when testing for coincidence (m1\_and\_m2|psi0\_and\_psi3|mchirp\_and\_eta).  
+Depending on which test is chosen, the allowed windows on the appropriate 
+parameters should be set as described below.
+
+\item[\texttt{--dm} \textsc{$\delta m$}] Optional. Accept triggers as
+coincident if both m1 and m2 agree within $\delta m$.  If not
+supplied,  then $\delta m = 0$.
+
+\item[\texttt{--dpsi0} \textsc{$\delta \psi_0$}] Optional. Accept triggers as
+coincident if \textsc{$\psi_0$} parameters agree within $\delta \psi_0$.  If not
+supplied,  then $\delta  \psi_0 = 0$.
+
+\item[\texttt{--dpsi3} \textsc{$\delta \psi_3$}] Optional. Accept triggers as
+coincident if \textsc{$\psi_3$} parameters agree within $\delta \psi_3$. 
+ If not supplied,  then $\delta  \psi_3 = 0$.
+
+\item[\texttt{--dmchirp} \textsc{$\delta mchirp$}] Optional. Accept triggers as
+coincident if mchirp agrees within $\delta mchirp$.  If not
+supplied,  then $\delta mchirp = 0$.
+
+\item[\texttt{--deta} \textsc{$\delta \eta$}] Optional. Accept triggers as
+coincident if $eta$ agrees within $\delta \eta$.  If not
+supplied,  then $\delta \eta = 0$.
+
+\item[\texttt{--dt} \textsc{$\delta t$}] Optional. Accept triggers as
+coincident if their end times agree within $\delta t$ milliseconds.  If not
+supplied,  then $\textsc{$\delta t$} = 0$.
+
+\item[\texttt{--gps-start-time} \textsc{GPS seconds}] Required.  Look for
+coincident triggers with end times after \textsc{GPS seconds}.
+
+\item[\texttt{--gps-end-time} \textsc{GPS seconds}] Required.  Look for
+coincident triggers with end times before \textsc{GPS seconds}.
+
+\item[\texttt{--write-uniq-triggers}] Optional.  The default behavior is to
+only write all triggers from IFO A. However, a trigger from IFO A
+may match two or more triggers from IFO B, so it may be duplicated in the 
+output. Specifying this option causes only unique IFO A triggers to be
+written.
+
+\item[\texttt{--comment} \textsc{string}] Optional. Add \textsc{string} to the
+comment field in the process table. If not specified, no comment is added. 
+
+\item[\texttt{--user-tag} \textsc{string}] Optional. Set the user tag for this
+job to be \textsc{string}. May also be specified on the command line as 
+\texttt{-userTag} for LIGO database compatibility.
+
+\item[\texttt{--help}] Optional.  Print a help message.
+
+\item[\texttt{--debug-level} \textsc{level}] Optional. Set the LAL debug
+level to \textsc{level}. If not specified the default is 1.
+
+\end{entry}
+
+\item[Arguments]\leavevmode
+\begin{entry}
+\item[\texttt{[LIGO Lightweight XML files]}] The arguments to the program
+should be a list of LIGO Lightweight XML files containing the triggers from
+the two interferometers. The input files can be in any order and do not need
+to be time ordered as \texttt{inca} will sort all the triggers once they are
+read in. If the program encounters a LIGO Lightweight XML containing triggers
+from an unknown interferometer (i.e. not IFO A or IFO B) it will exit with an
+error.
+\end{entry}
+
+\item[Example]
+\begin{verbatim}
+lalapps_inca \
+--playground-only  --dm 0.03 --kappa 1000.0 --ifo-b H1 --ifo-a L1 \
+--user-tag SNR6_INJ --debug-level 33 --gps-start-time 734323079
+--gps-end-time 734324999 --epsilon 2.0 --dt 11.0 \
+L1-INSPIRAL_INJ-734323015-2048.xml H1-INSPIRAL_INJ-734323015-2048.xml
+\end{verbatim}
+
+\item[Algorithm]
+The code maintains two pointers to triggers from each ifo,
+\texttt{currentTrigger[0]} and \texttt{currentTrigger[1]}, corresponding to
+the current trigger from IFO A and B respectively.
+
+\begin{enumerate}
+\item An empty linked list of triggers from each interferometer is created.
+Each input file is read in and the code determines which IFO the triggers in
+the file correspond to. The triggers are appended to the linked list for the
+corresponding interferometer.
+
+\item If there are no triggers read in from either of the interferometers,
+the code exits cleanly.
+
+\item The triggers for each interferometer is sorted by the \texttt{end\_time}
+of the trigger.
+
+\item \texttt{currentTrigger[0]} is set to point to the first trigger from IFO
+A that is after the specified GPS start time for coincidence. If no trigger is
+found after the start time, the code exits cleanly.
+
+\item Loop over each trigger from IFO A that occurs before the specified GPS
+end time for coincidence:
+\begin{enumerate}
+\item \texttt{currentTrigger[1]} is set to point to the first trigger from IFO
+B that is within the time coincidence window, $\delta t$, of
+\texttt{currentTrigger[0]}. If no IFO B trigger exists within this window,
+\texttt{currentTrigger[0]} is incremented to the next trigger from IFO A and
+the loop over IFO A triggers restarts.
+
+\item If the trigger \texttt{currentTrigger[0]} \emph{is, is not} in the
+playground data, start looping over triggers from IFO B.
+\begin{enumerate}
+\item For each trigger from IFO B that is within $\delta t$ of
+\texttt{currentTrigger[0]}
+\item Call \texttt{LALCompareSnglInspiral()} to check if the triggers match as
+determined by the options on the command line. If the trigger match, record
+them for later output as coincident triggers.
+\end{enumerate}
+
+\item Increment \texttt{currentTrigger[0]} and continue loop over triggers
+from IFO A.
+\end{enumerate}
+\end{enumerate}
+
+\item[Author] 
+Patrick Brady, Duncan Brown and Steve Fairhurst
+\end{entry}
+
+
+\clearpage
+\section{Program \texttt{lalapps\_sire}}
+\label{program:lalapps-sire}
+\idx[Program]{lalapps\_sire}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_sire$ --- single inspiral trigger reader and inspiral injections
+analysis
+
+\item[Synopsis]
+\verb$lalapps_sire$ \quad
+[\texttt{--help}]
+[\texttt{--verbose}]
+[\texttt{--debug-level} \textsc{level}] \newline
+%
+[\texttt{--user-tag} \textsc{usertag}] 
+[\texttt{--comment} \textsc{comment}] \newline
+%
+(\texttt{--glob} \textsc{globfiles} $|$ \texttt{--input} \textsc{inputfile})
+\texttt{--output} \textsc{outfile}
+[\texttt{--summary-file} \textsc{summfile}] \newline
+%
+(\texttt{--playground-only} $|$ 
+\texttt{--exclude-playground} $|$
+\texttt{--all-data})\newline
+%
+[\texttt{--snr-threshold} \textsc{$\rho_\ast$}]\quad
+[\texttt{--cluster-algorithm} \textsc{choice}
+\texttt{--cluster-time} \textsc{$t_\mathrm{coinc}$}]\newline
+%
+[\texttt{--injection-file} \textsc{injfile} 
+\texttt{--injection-coincidence} \textsc{$t_\mathrm{inj}$}\newline
+\quad[\texttt{--missed-injections} \textsc{missedfile}]
+[\texttt{--hardware-injections} \textsc{$t_\mathrm{hardware}$}]\newline
+%
+[\texttt{--tama-output} \textsc{tamafile}] \quad
+[\texttt{--disable-trig-start-time}]
+
+\item[Description] 
+\verb$lalapps_sire$ processes the LIGO lightweight XML files produced by the
+standalone inspiral analysis code \verb$lalapps_inspiral$ or the inspiral
+coincidence analysis code \verb$lalapps_inca$. It can be used to concatenate
+individual \verb$sngl_inspiral$ tables from multiple XML files which contain a
+\verb$search_summary$ table into a single XML file. This may be performed with
+or without clustering and signal-to-noise ratio cuts. It can also write a
+summary file containing the number of triggers and the total time analyzed,
+computed from the \verb$search_summary$ table.
+
+The list of input files may be specified by either of POSIX system glob,
+\textsc{globfiles}, or by giving the path to a text file, \textsc{inputfile},
+that contains relative or absolute paths to the required input files.
+
+If the \texttt{--injection-file} option is specified, \verb$lalapps_sire$ also
+reads in a list of \verb$sim_inspiral$ rows from the file \textsc{injfile}.
+It determines how may of the injections have a trigger coincident to within
+$t_\mathrm{inj}$ milliseconds. The output file, \textsc{outfile}, will contain
+\verb$sim_inspiral$ rows for all coincident (found) events. The summary file
+will contain numbers of missed and found events and the efficiency of
+detection of the injections.  Only injections that are within the input data
+times are processed, so the injection file can span a time larger than the
+input data and efficiencies will be correct. Missed injections can be written
+to the file \textsc{missedfile}, if desired.
+
+Note that the default LAL debug level for \verb$lalapps_sire$ is $33$, rather
+than the usual $1$. This turns of memory allocation and leak checking to
+increase the speed of run time. The \texttt{--debug-level} option can be used
+to increase the level of debug checking used by the LAL functions.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--help}] Optional. Print a help message to the standard output
+and then exit with status code $0$.
+
+\item[\texttt{--verbose}] Print progress information to the standard output 
+while executing.
+
+\item[\texttt{--debug-level} \textsc{level}] Optional. Set the LAL debug level
+to \textsc{level}. Note that the default debug level is $33$ which includes
+LAL error checking but excludes memory checking.  To enable memory checking
+set the debug level to 1.
+
+\item[\texttt{--user-tag} \textsc{usertag}] Optional. Add the user tag string 
+\textsc{usertag} to the \verb$process_params$ table in the output XML file.
+
+\item[\texttt{--comment} \textsc{comment}] Optional. Add the string
+\textsc{comment} to the \verb$process$ table in the output XML file.
+
+\item[\texttt{--glob} \textsc{globfiles}] Must be given if the
+\texttt{--input} option is not used. Read the input triggers from the
+LIGO lightweight XML files that match the regular expression
+\textsc{globfiles}. The POSIX system call \verb$glob()$ is used to determine
+which files are read in. Mutually exclusive with the \texttt{--input} option.
+
+\item[\texttt{--input} \textsc{inputfile}] Must be given if the
+\texttt{--glob} option is not used. Read the input triggers from the list of
+LIGO lightweight XML files in \textsc{inputfile} which must be a plain text
+file containing relative or absolute paths to the files.  Mutually exclusive
+with the \texttt{--glob} option.
+
+\item[\texttt{--output} \textsc{outfile}] Required. Write the concatenated
+\verb$sngl_inspiral$ tables to the LIGO lightweight XML file \textsc{outfile}.
+If injection analysis is performed the \verb$sim_inspiral$ rows from the input
+injection file that are coincident with a trigger are also written to this
+file (i.e. the found injections).
+
+\item[\texttt{--playground-only}] Analyze \emph{only} triggers (and
+injections) that \emph{are} in playground times specified by the post-S1
+playground algorithm.
+
+\item[\texttt{--exclude-playground}] Analyze \emph{only} triggers (and
+injections) that \emph{are not} in playground times specified by the post-S1
+playground algorithm.
+
+\item[\texttt{--all-data}] Analyze \emph{all} triggers (and injections) from
+the input files.
+
+\item[\texttt{--snr-threshold} \textsc{$\rho_\ast$}] Optional. Discard all
+input triggers that have a signal-to-noise ratio $\rho < \rho_\ast$.
+
+\item[\texttt{--cluster-algorithm} \textsc{choice}] Optional. Use the
+clustering algorithm \textsc{choice} to cluster the \verb$sngl_inspiral$ rows
+in the output file before writing them to disk. The options for
+\textsc{choice} are \verb$snr_and_chisq$, \verb$snrsq_over_chisq$ or
+\verb$snr$. The clustering is performed by the LAL function
+\verb$LALClusterSnglInspiralTable()$ and documentation for the clustering can
+be found in the \texttt{tools} package of the LAL Software Documentation.
+
+\item[\texttt{--cluster-time} \textsc{$t_\mathrm{coinc}$}] Required if the 
+\texttt{--cluster-algorithm} option is specified. Use the time window
+$t_\mathrm{coinc}$ for the clustering algorithm.
+
+\item[\texttt{--injection-file} \textsc{injfile}] Optional. If this option is
+given, \verb$lalapps_sire$ reads in \verb$sim_inspiral$ rows from the file
+\textsc{injfile} and performs an injection alaysis of the triggers.
+
+\item[\texttt{--injection-coincidence} \textsc{$t_\mathrm{inj}$}] Required if
+the \texttt{--injection-file} option is specified. Set the injection
+coincidence window to $\pm t_\mathrm{inj}$ milliseconds.
+
+\item[\texttt{--missed-injections} \textsc{missedfile}] Optional, can only be
+specified if \texttt{--injection-file} has been specified. If any injections
+are \emph{not} found, write the \verb$sim_inspiral$ rows for these missed
+injections to the LIGO lightweight file \textsc{missedfile}.
+
+\item[\texttt{--hardware-injections} \textsc{$t_\mathrm{hardware}$}] Optional,
+can only be specified if \texttt{--injection-file} has been specified.
+Increment the end times of the injections read from \textsc{injfile} by
+$t_\mathrm{hardware}$ seconds. Used for injection analysis of hardware
+injections where the input \verb$sim_inspiral$ rows contain the time offset of
+the injection from  $t_\mathrm{hardware}$.
+
+\item[\texttt{--tama-output} \textsc{tamafile}] Optional, if specified produces
+an output text file \textsc{tamafile} for use in collaboration with TAMA, in
+addition to the usual LIGO lightweight XML file.  The following quantities are
+recorded for each trigger in the text file:
+
+\begin{itemize}
+\item trigger time (as a double precision real)
+\item total mass, $M_{\mathrm{TOT}}$
+\item the mass ratio, $\eta$
+\item the signal to noise ratio, $\rho$
+\item the value of $\chi^2$
+\item the effective distance to the trigger, $d_{eff}$.
+\end{itemize}
+
+
+\item[\texttt{--disable-trig-start-time}] Optional, should only be used by
+maintainers. Disable checking of the \texttt{--trig-start-time} option in the
+input files. \emph{Using this option may caused total analyzed times to be
+reported incorrectly.} See note in algorithm section below.
+\end{entry}
+
+\item[Example 1] Read in all playground triggers files from the current
+directory that match the expression 
+\begin{verbatim}
+L1-INSPIRAL_INJ-7*
+\end{verbatim}
+Discard all triggers below signal-to-noise ratio $10$ and report the number of
+injections from file 
+\begin{verbatim}
+HL-INJECTIONS_45-729273613-5094000.xml
+\end{verbatim}
+that are coincident to within $20$ milliseconds with the remaining triggers.
+Write an XML file containing the coincident triggers and injections, an XML
+file containing the injections not coincident with a trigger and a text
+summary file of the analysis, which will contain the total time analyzed and
+the efficiency. Report the progress to the standard output and perform LAL
+memory checking:
+\begin{verbatim}
+lalapps_sire \
+--glob "L1-INSPIRAL_INJ-7*" --output out_10.xml --summary-file summ_10.txt \
+--playground-only --verbose --debug-level 1 --snr-threshold 10.0 \
+--injection-file HL-INJECTIONS_45-729273613-5094000.xml \
+--injection-coincidence 20 --missed-injections missed_10.xml
+\end{verbatim}
+
+\item[Example 2] Read in all the XML files from the list in the plain text
+file \verb$H1-INSPIRAL.txt$ and discard all the triggers that \emph{are} in
+the playground. Write the remaining triggers to the XML file
+\verb$H1-INSPIRAL.xml$ and write a text summary file containing the time
+analyzed to \verb$H1-INSPIRAL_summary.txt$:
+\begin{verbatim}
+lalapps_sire \
+--input H1-INSPIRAL.txt --exclude-playground \
+--output H1-INSPIRAL.xml --summary-file H1-INSPIRAL_summary.txt
+\end{verbatim}
+
+\item[Notes]
+\begin{enumerate}
+\item The post-S1 playground algorithm is defined to be
+\begin{equation}
+t \ \textrm{is playground} \iff t - 729273613 < 600 (\textrm{mod}\ 6370).
+\end{equation}
+
+\item If a given trigger \verb$end_time,end_time_ns$, $t_\mathrm{trig}$ is
+coincident to within $\pm t_\mathrm{inj}$ seconds of an injection \emph{site}
+end time, given by \verb$h_end_time,h_end_time_ns$ or
+\verb$l_end_time,l_end_time_ns$ then the injection is considered to be found
+and the trigger coincident with an injection.
+
+\item Early versions of the inspiral code contained a bug that causes the
+\verb$out_start_time$ column of the \verb$search_summary$ table to be set
+incorrectly if a non-zero \texttt{--trig-start-time} option is specified.
+\verb$lalapps_sire$ corrects for this by checking for the value of
+\texttt{--trig-start-time} in the \verb$process_params$ table and using it to
+override the value of \verb$out_start_time$ in the \verb$search_summary$
+table. To disable this behaviour, use the \texttt{--disable-trig-start-time}
+option. Note that specifying this option may cause some analyzed data times to
+be double counted and so the amount of analyzed data will be incorrectly
+reported.
+\end{enumerate}
+
+\item[Author] 
+Patrick Brady, Duncan Brown and Steve Fairhurst
+\end{entry}
+
+
+\clearpage
+\section{Program \texttt{lalapps\_inspinj}}
+\label{program:lalapps-inspinj}
+\idx[Program]{lalapps\_inspinj}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_inspinj$ --- produces inspiral injection data files.
+
+\item[Synopsis]
+\verb$lalapps_inspinj$ \quad
+%
+[\texttt{--help}]\quad
+\texttt{--source-file} \textsc{sfile} \quad
+\texttt{--mass-file} \textsc{mfile}\newline
+%
+[\texttt{--gps-start-time} \textsc{tstart}]\quad 
+[\texttt{--gps-end-time} \textsc{tend}]\newline
+%
+[\texttt{--time-step} \textsc{tstep}]
+[\texttt{--time-interval} \textsc{tinterval}]\newline
+%
+[\texttt{--seed} \textsc{seed}]\quad
+[\texttt{--waveform} \textsc{wave}]\quad
+[\texttt{--usertag} \textsc{tag}]\newline
+%
+[\texttt{--tama-output}]\quad
+[\texttt{--ilwd}]
+
+\item[Description] 
+\verb$lalapps_inspinj$
+generates a number of inspiral  parameters suitable  for using in a Monte
+Carlo injection to test the efficiency of a inspiral search.  The  various
+parameters (detailed  below)  are randomly chosen and are appropriate for a
+particular population of binary neutron stars  whose spatial  distribution
+includes the Milky Way and a number of extragalactic objects that are  input
+in  a  datafile.  The  possible  mass pairs for the binary neutron star com-
+panions are also specified in a (different) datafile.
+
+The output of this program  is  a  list  of  the  injected events,  starting
+at  the specified start time and ending at the specified end time.  One 
+injection with random inspiral parameters will be made every specified time
+step, and will be randomly placed within the specified time interval.  
+The output is written to a file name in the standard inspiral pipeline format:
+\begin{center}
+\begin{verbatim}
+HL-INJECTIONS_USERTAG_SEED-GPSSTART-DURATION.xml
+\end{verbatim}
+\end{center}
+where \verb$USERTAG$ is \textsc{tag} as specfied on the command line, 
+\verb$SEED$ is the  value  of  the random number seed chosen and 
+\verb$GPSSTART$ and \verb$DURATION$ describes the GPS time interval that
+the file covers. The file is in the standard LIGO lightweight XML format
+containing a \texttt{sim\_inspiral} table that describes the injections.
+In addition, an ASCII log file called \verb$injlog.txt$ is also written.
+If a \texttt{--user-tag} is not specified on the command line, the
+\texttt{\_USERTAG} part of the filename will be omitted.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--help}] Print a help message.
+
+\item[\texttt{--source-file} \textsc{sfile}]
+Optional. Data file containing spatial distribution of  extragalactic  objects.
+Default  is  the file \verb+inspsrcs.dat+ provided by LALApps.
+
+\item[\texttt{--mass-file} \textsc{mfile}]
+Optional. Data file containing mass pairs  for  the binary  neutron  star
+companions.   Default is the file \verb+BNSMasses.dat+ provided by LALApps.
+
+\item[\texttt{--gps-start-time} \textsc{tstart}]
+Optional.  Start time of the injection data to be created. Defaults to the
+start of S2, Feb 14 2003 16:00:00 UTC (GPS time 729273613)
+
+\item[\texttt{--gps-end-time} \textsc{tend}]
+Optional. End time of the injection data to be created. Defaults to the end of
+S2, Apr 14 2003 15:00:00 UTC (GPS time 734367613).
+
+\item[\texttt{--time-step} \textsc{tstep}]
+Optional. Sets the time step interval between injections. The injections will
+occur with an average spacing of \textsc{tstep} seconds. Defaults to 
+$2630/\pi$.
+
+\item[\texttt{--time-interval} \textsc{tinterval}]
+Optional. Sets the time interval during which an injection can occur. 
+Injections are uniformly distributed over the interval.  Setting \textsc{tstep}
+to $6370$ and \textsc{tinterval} to 600 guarantees there will be one injection
+into each playground segment and they will be randomly distributed within the
+playground times.
+
+\item[\texttt{--seed} \textsc{seed}]
+Optional. Seed the random number generator with the integer \textsc{seed}.
+Defaults to $1$.
+
+\item[\texttt{--waveform} \textsc{wave}]
+Optional. The string \textsc{wave} will be written into the \texttt{waveform}
+column of the \texttt{sim\_inspiral} table output. This is used by the
+inspiral code to determine which type of waveforms it should inject into the
+data. Defaults is \texttt{GeneratePPNtwoPN}.
+
+\item[\texttt{--user-tag} \textsc{string}] Optional. Set the user tag for this
+job to be \textsc{string}. May also be specified on the command line as 
+\texttt{-userTag} for LIGO database compatibility.
+
+\item[\texttt{--tama-output}]
+Optional.  If this option is given, \verb+lalapps_inspinj+ also produces a 
+text output file:
+\begin{center}
+\begin{verbatim}
+HLT-INJECTIONS_USERTAG_SEED-GPSSTART-DURATION.txt
+\end{verbatim}
+\end{center}
+which contains the following fields:
+
+\begin{itemize}
+\item geocentric end time
+\item Hanford end time
+\item Livingston end time
+\item Tama end time
+\item total mass, $M_{\mathrm{TOT}}$
+\item mass ratio, $\eta$
+\item distance to source (in Mpc)
+\item longitude
+\item latitude
+\item inclination
+\item coalescence phase
+\item polarization
+\end{itemize}
+
+In the above, all times are recorded as double precision real numbers and all
+angles are in radians.  
+
+\item[\texttt{--ilwd}] Optional. If this option is given,
+\verb+lalapps_inspinj+ also produces two ILWD-format files, injepochs.ilwd and
+injparams.ilwd, that contain, respectively, the  GPS  times  suitable for
+inspiral injections, and the intrinsic inspiral signal parameters to be used
+for  those injections.
+
+The  file  injepochs.ilwd  contains  a sequence of integer pairs representing
+the injection GPS time in  seconds  and residual  nano-seconds.   The file
+injparams.ilwd contains the intrinsic binary parameters for each injection,
+which is  a  sequence  of  eight  real  numbers representing (in order) (1) the
+total mass of the binary system  (in  solar masses),  (2)  the  dimensionless
+reduced mass --- reduced mass per unit total mass --- in the range from  0
+(extreme mass  ratio)  to  0.25 (equal masses), (3) the distance to the system
+in meters, (4) the inclination  of  the  binary system  orbit  to the plane of
+the sky in radians, (5) the coalescence phase in radians, (6)  the  longitude
+to  the direction  of  the  source in radians, (7) the latitude to the
+direction of the source in radians, (8) and the polar- ization angle of the
+source in radians.
+\end{entry}
+
+\item[Example]
+\begin{verbatim}
+lalapps_inspinj --seed 45\
+--source-file inspsrcs.dat --mass-file BNSMasses.dat
+\end{verbatim}
+
+\item[Environment]\leavevmode
+\begin{entry}
+\item[LALAPPS\_DATA\_PATH] Directory to look for the default mass
+file \verb+BNSMasses.dat+ and the default source file \verb+inspsrcs.dat+.
+\end{entry}
+
+
+\item[Author] 
+Jolien Creighton, Patrick Brady, Duncan Brown
+\end{entry}
+
+
+
+\clearpage
+\section{Program \texttt{lalapps\_inspfrinj}}
+\label{program:lalapps-inspfrinj}
+\idx[Program]{lalapps\_inspfrinj}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_inspfrinj$ --- performs inspiral injections into frame data.
+
+\item[Synopsis]
+\begin{verbatim}
+lalapps_inspfrinj [options]
+ 
+  --help                    display this message
+  --verbose                 print progress information
+  --version                 print version information and exit
+  --debug-level LEVEL       set the LAL debug level to LEVEL
+  --user-tag STRING         set the process_params usertag to STRING
+  --comment STRING          set the process table comment to STRING
+ 
+  --gps-start-time SEC      GPS second of data start time
+  --gps-start-time-ns NS    GPS nanosecond of data start time
+  --gps-end-time SEC        GPS second of data end time
+  --gps-end-time-ns NS      GPS nanosecond of data end time
+ 
+  --frame-cache             obtain frame data from LAL frame cache FILE
+  --calibration-cache FILE  obtain calibration from LAL frame cache FILE
+  --calibrated-data TYPE    calibrated data of TYPE real_4 or real_8
+  --num-resp-points N       num points to determine response function (4194304)
+  --channel-name CHAN       read data from interferometer channel CHAN
+ 
+  --injection-file FILE     inject simulated inspiral signals from FILE
+  --inject-overhead         inject signals from overhead detector
+  --inject-safety SEC       inject signals ending up to SEC after gps end time
+ 
+  --write-raw-data          write out the raw frame files
+  --write-inj-only          write out frames containing only injections
+  --write-raw-plus-inj      write out frames containing raw data with inj
+ 
+  --output-frame-length SEC write out data in frames of length SEC
+  --output-file-name OUTPUT set output file names to OUTPUT-GPSTIME-LENGTH.gwf
+                   if not set, default to IFO-INSPFRINJ-GPSTIME-LENGTH.gwf
+ 
+  --ifo  IFO                specify the IFO (only if not reading frames)
+  --sample-rate             data sample rate (only if not reading frames)
+\end{verbatim}
+
+\item[Description] 
+
+\verb$lalapps_frinspinj$ performs inspiral injections into frame files.
+This code is essentially a copy of those parts of
+\verb$lalapps_inspiral$ responsible for reading in the data and
+performing the injections.  The injection details are read in from the 
+\verb$sim_inspiral$ table of a LIGO lightweight xml file.  
+
+The code operates in two different ways.  If a \verb$frame-cache$ file
+is specified, then the raw data is read in.  This data can either be
+uncalibrated, in which case a calibration cache must be specified, or
+calibrated, in which case the \verb$--calibrated-data$ flag must be set.
+At present the code only works with real 4 data.  The injection data is
+then calculated from the signals in the \verb$sim_inspiral$ table.  The
+response function is either unity for strain data or is computed from
+the calibration cache.  When working with uncalibrated data, the number
+of points used to determine the response function will have an effect,
+albeit minor, on the injection signals.  By default, the value
+\verb$--num-resp-points$ is set to 4194304.  This matches the value
+used by lalapps\_inspiral when working with 256 second segments and a
+channel sampled at 16384 Hz.  The output frames can contain any of
+the following: raw data, injection only and raw plus injection.  
+
+If no input frame data is given, the code can produce strain data
+injections for the relevant interferometer.  In this case, it is
+necessary to specify the sample rate for the output data.  Since no
+input data is read in, the output data can only contain the injection
+only channel.
+
+The output of \verb$lalapps_frinspinj$ is an xml file and one or several
+frame files.  The xml file contains
+\verb$process$, \verb$process_params$, \verb$search_summary$ and
+\verb$sim_inspiral$ tables and is named (unless set on the command line):
+\begin{center}
+\texttt{IFO-INSPFRINJ\_USERTAG-GPSSTARTTIME-DURATION.xml}\\
+\end{center}
+where \texttt{GPSSTARTTIME} and \texttt{DURATION} are the start time and
+duration passed to the code.  If \verb$--output-file-name$ is set to
+\verb$OUTPUT$ on the command line, the xml will be named
+\begin{center}
+\texttt{OUTPUT\_USERTAG-GPSSTARTTIME-DURATION.xml}.\\
+\end{center}
+The \verb$sim_inspiral$ table contains a list of all injections which
+were performed into the specified data.  The length of output frame
+files is specified by \verb$output-frame-length$.  Unless otherwise set
+on the command line, output frames are named: 
+\begin{center}
+\texttt{IFO-INSPFRINJ\_USERTAG-FRAMESTARTTIME-FRAMELENGTH.gwf}\\
+\end{center}
+The channels stored in the output frame are determined by which of
+\verb$--write-raw-data$, \verb$--write-inj-only$ and
+\verb$--write-raw-plus-inj$ are selected.  The channel names are
+\verb$CHAN$, \verb$CHAN_INSP_INJ_ONLY$ and
+\verb$CHAN_RAW_PLUS_INSP_INJ$.  In the case where no input data is
+given, the single output channel name is \verb$IFO:STRAIN_INSP_INJ_ONLY$.
+
+\item[Example]
+\begin{verbatim}
+lalapps_frinspinj --gps-start-time 732758030  --gps-end-time 732760078 \
+  --frame-cache cache/L-732758022-732763688.cache --channel-name L1:LSC-AS_Q\	
+  --calibration-cache cache_files/L1-CAL-V03-729273600-734367600.cache \
+  --injection-file HL-INJECTIONS_4096-729273613-5094000.xml \
+  --inject-safety 50 --output-frame-length 16 \
+  --write-raw-data   --write-inj-only   --write-raw-plus-inj 
+\end{verbatim}
+
+\item[Author] 
+Steve Fairhurst
+\end{entry}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% PROGRAM:   inspmultiawg
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\clearpage
+\section{Program \texttt{lalapps\_inspmultiawg}}
+\label{program:lalapps-inspmultiawg}
+\idx[Program]{lalapps\_inspmultiawg}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_inspmultiawg$ --- injects specified inspiral chirps into zero
+data.  Intended for producing the hardware injection data.
+
+\item[Synopsis]
+\begin{verbatim}
+--help               display this message
+--source SFILE       source file containing details of injection
+--actuation ACTFILE  file containing the actuation function
+--darm2inj DCFACTOR  calibration between darm_ctrl and injection point
+--summary SUMFILE    write details of injections to file
+--ifo IFO            name of interferomter (optional)
+--flow FSTART        start frequency of injection (default 40 Hz)
+--fhigh FSTOP        end frequency of injection (default: end at ISCO)
+--smooth QFAC        ringdown the end of the injection with Q factor Qfac
+--length LENGTH      length of the data (default 64 seconds)
+--samplerate FREQ    rate at which data is sampled (default 16384Hz)
+--debug-level DEBUG  the lal debug level
+--user-tag TAG       user-tag added to output file names
+\end{verbatim}
+
+\item[Description] 
+\verb$lalapps_inspmultiawg$ injects inspiral chirps into zero data.  The 
+details of several chirps can be specified using the command \verb$--source$,  
+otherwise, a single inspiral of two 1.4 solar mass neutron stars will be 
+injected.  Each chirp is injected into a new file containing zero data of
+$\texttt{LENGTH}$ seconds, sampled at $\texttt{FREQ}$ Hz, and each injection begins at the beginning of the data.  The actuation function can be provided in
+$\texttt{ACTFILE}$.  Additionally, there is a parameter $\texttt{DCFACTOR}$ 
+which is used to convert between the actuation function and the "response 
+function" between ETM\_EXC and strain.  The chirp is output to a file
+named
+\begin{verbatim}
+TAG_inspiral_NUMBER_IFO.out
+\end{verbatim}
+where $\texttt{TAG}$ is the user-tag, $\texttt{IFO}$ is the name of the 
+interferometer, and $\texttt{NUMBER}$ is the injection number.  A summary of
+the injections performed can be saved in $\texttt{SUMFILE}$.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--sourcefile} \textsc{sfile}] Optional.  Reads source information 
+from the file \textsc{sfile}.  If absent, it injects a single 
+1.4$M_\odot$--1.4$M_\odot$ inspiral, optimally oriented, at a distance
+of $1.0 \textrm{Mpc}$.
+
+\item[\texttt{--actuation} \textsc{actfile}] Optional. Reads a detector
+ actuation function from the file \textsc{actfile}.  If absent, it generates 
+raw dimensionless strain.  The actuation function should contain 3 columns; frequency, followed by amplitude and phase. 
+
+
+\item[\texttt{--darm2inj} \textsc{dcfactor}] Optional.  Multiplicative
+factor used in calculating the response function from the actuation
+function.  More specifically, the actuation function is given by 
+%
+\begin{equation}
+   x_{C} = A(f) \times \mathrm{DARM}\_\mathrm{CRTL} \, .
+\end{equation}
+%
+while we are taking the response function to be:
+%
+\begin{equation}
+   h(f) = R(f) \times \mathrm{ETM}\_\mathrm{EXC} \, .
+\end{equation}
+%
+Then, $\textsc{dcfactor}$ is given by
+%
+\begin{equation}
+   A(f) = \mathrm{DCFACTOR} \times R(f) \, .
+\end{equation}
+
+\item[\texttt{--smooth} \textsc{qfac}]  Optional.  This will smooth out
+the end of the injected inspiral.  After the inspiral, the frequency of
+the waveform will be held constant while the amplitude is exponentially
+decreased as $a = a_{\mathrm{final}} \exp(- \pi f_{\mathrm{final}} t /
+\textsc{qfac})$.  Here, $t$ is the amount of time after the end of the
+inspiral.
+
+\item[\texttt{--summary} \textsc{sumfile}] Optional. The \textsc{sumfile} format
+is LIGO lightweight XML with \texttt{process}, \texttt{process\_params} and
+\texttt{sim\_inspiral} tables.  The \texttt{sim\_inspiral} table contains
+details of all the injections performed.  The details of the injection are
+obtained from the source file.
+
+\item[\texttt{--length} \textsc{sec}] Optional.  Specify the length of data into
+which the signal will be injected.  The default is 64 seconds.
+
+\item[\texttt{--samplerate} \textsc{freq}] Optional.  Specify the rate at which
+the data is sampled.  The default is 16384 Hz.
+
+\item[\texttt{--ifo} \textsc{ifo}] Optional.  Give the name of the
+interferometer for which the injections are intended.  This is only used in
+naming the output files.
+
+\item[\texttt{--user-tag} \textsc{tag}] Optional.  A user-tag which is
+used in naming the output files.
+
+\item[\texttt{--flow} \textsc{fstart}] Optional.  Give the start frequency
+\textsc{fstart} for the inspiral.  The default is 40 Hz
+
+\item[\texttt{--fhigh} \textsc{fstop}] Optional.  Give the end frequency
+\textsc{fstop} for the inspiral.  The default behaviour is that the inspiral
+will continue to ISCO.  If set to a negative number, the generator will use its
+absolute value as the terminating frequency, but will ignore post-Newtonian
+breakdown. 
+
+\item[\texttt{--debug-level} \textsc{debug}]  Optional.  Set the LAL debug
+level.  The default is 33.
+
+\item[\texttt{--help}] Optional.  Print a help message.
+\end{entry}
+
+\paragraph{Format for \texttt{sourcefile}:} The source file consists
+of any number of lines of data, each specifying a chirp waveform.
+Each line must begin with a character code (\verb@CHAR@ equal to one
+of \verb@'i'@, \verb@'f'@, or \verb@'c'@), followed by 6
+whitespace-delimited numerical fields: the epoch of the chirp
+(\verb@INT8@ seconds), the two binary masses (\verb@REAL4@
+$M_\odot$), the distance to the source (\verb@REAL4@ Mpc), and the
+source's inclination and phase at coalescence (\verb@REAL4@ degrees).
+The character codes have the following meanings:
+\begin{itemize}
+\item[\texttt{'i'}] The epoch represents the GPS time of the start of
+the chirp waveform.
+\item[\texttt{'f'}] The epoch represents the GPS time of the end of
+the chirp waveform.
+\item[\texttt{'c'}] The epoch represents the GPS time when the
+binaries would coalesce in the point-mass approximation.
+\end{itemize}
+Since the injection is started at time $t=0$, it is recommended that the
+\texttt{'i'} option is used.
+
+Thus a typical input line for two $1.4M_\odot$ objects at 1.1 Mpc
+inclined $30^\circ$ with an initial phase of $45^\circ$, beginning at
+70 seconds (after the start of the injections), will have the following line in the input
+file:
+\begin{verbatim}
+i 70 1.4 1.4 1.1 30.0 45.0
+\end{verbatim}
+The time parameter (in this case 70 sec) does not affect the output data in any
+way.  It is simply stored in the \texttt{sim\_inspiral} table of the
+\textsc{sumfile}, in order to make analysis of the injections easier.
+
+\paragraph{Format for \texttt{actfile}:} The actuation function $A(f)$
+gives the transformation from DARM\_CTRL to $X_{C}$ via $X_{C} = A(f) 
+\times \mathrm{DARM}\_\mathrm{CRTL}$.   It is combined with
+\textsc{dcfactor} as desribed above to give the response function from
+the exitation channel to strain as
+$\tilde{h}(f)=R(f) \times \mathrm{ETM}_\mathrm{EXC}(f)$.  This is inverted internally 
+to give the \emph{transfer function} $T(f)=1/R(f)$. 
+
+The format for \verb@actfile@ is three columns of \verb@REAL4@ data giving the 
+frequency followed by the amplitude and phase of the actuation function
+at that frequency.  This is the format which is produced by the
+calibration team.
+
+\paragraph{Format for the data output:} The data output in the files
+\verb$TAG_inspiral_NUMBER_IFO.txt$ is a single column of \verb$REAL4$ ADC data.
+
+\item[Example]
+\begin{verbatim}
+lalapps_inspmultiawg --source s3.sources \
+--actuation E10-H1-ACTUATION.txt --darm2inj 8000\ 
+--summary summ.xml --ifo H1 --smooth 5
+\end{verbatim}
+
+\item[Author] 
+Steve Fairhurst
+\end{entry}
+\clearpage
+
+
+\section{Program \texttt{lalapps\_splitbank}}
+\label{program:lalapps-splitbank}
+\idx[Program]{lalapps\_splitbank}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_splitbank$ --- splits a template bank file into several smaller
+files
+
+\item[Synopsis]
+\verb$lalapps_splitbank$ 
+[\verb$--help$]
+[\verb$--verbose$]
+[\verb$--version$]
+[\verb$--debug-level$ \textsc{level}] \newline
+[\verb$--user-tag$ \textsc{string}]
+[\verb$--comment$ \textsc{string}] \newline
+\verb$--bank-file$ \textsc{file}
+\verb$--number-of-banks$ \textsc{n}
+\verb$--minimal-match$ \textsc{m}
+
+\item[Description] 
+\verb$lalapps_splitbank$ splits a LIGO\_LW XML file containing inspiral
+templates in a \texttt{sngl\_inspiral} table into several smaller bank
+files. This allows a template bank to be split across several inspiral 
+jobs and then recombined with \texttt{lalapps\_inca} or
+\texttt{lalapps\_sire}.
+
+The name of the output template bank files is derived from the name of 
+the input bank file and the number of files that the bank should be split
+into. For example, if the input bank file:\\
+\begin{center}
+\texttt{H1-TRIGBANK\_L1-729330491-2048.xml}\\
+\end{center}
+is split into 3 output files, then these will be named:\\
+\begin{center}
+\texttt{H1-TRIGBANK\_L1\_00-729330491-2048.xml}\\
+\texttt{H1-TRIGBANK\_L1\_01-729330491-2048.xml}\\
+\texttt{H1-TRIGBANK\_L1\_02-729330491-2048.xml}\\
+\end{center}
+The naming convention is to insert the bank file number after the usertag part
+of the filename and before the GPS start time part of the file name.
+
+In the case that the input file contains no templates, empty output bank files
+are generated. This is done since DAGman does not implement decision rules
+yet, so the nodes in the DAG must be identical regardless of the data flowing
+through them.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--help}] Optional. Print a usage summary and exit.
+
+\item[\texttt{--verbose}] Optional. Print debugging information to the
+standard output while executing.
+
+\item[\texttt{--version}] Optional.  Print the CVS id and exit.
+
+\item[\texttt{--debug-level} \textsc{level}] Optional. Set the LAL debug
+level to \textsc{level}. If not specified the default is 1.
+
+\item[\texttt{--user-tag} \textsc{string}] Optional. Set the user tag in
+the \texttt{process\_params} table to \textsc{string}. Note that this does
+not set the user tag in the output filename, as it does in other inspiral
+pipeline tools. The output filename is derived strictly from the number of
+output banks and the input bank file name.
+
+\item[\texttt{--comment} \textsc{string}] Optional. Set the comment column in
+the output \texttt{process} table to \textsc{string}.
+
+\item[\texttt{--bank-file} \textsc{file}] Required. Read the templates from
+the \texttt{sngl\_inspiral} table in \textsc{file}.
+
+\item[\texttt{--number-of-banks} \textsc{n}] Required. Split the input
+template banks into \textsc{n} output bank files.
+
+\item[\texttt{--minimal-match} \textsc{m}] Required. Set the minimal match of
+the output template bank file to \textsc{m}.
+\end{entry}
+
+\item[Example]
+\begin{verbatim}
+lalapps_splitbank --bank-file L1-TMPLTBANK-732488741-2048.xml \
+--number-of-banks 3 --minimal-match 0.97
+\end{verbatim}
+
+\item[Algorithm]
+\texttt{lalapps\_splitbank} counts the number of templates in the input file.
+It increments this by one and divides by the number of template banks to
+generate using standard integer division. This gives the upper limit on the
+number of templates in a single output file.
+
+\item[Author] 
+Duncan Brown
+\end{entry}
+
+
+\clearpage
+\input{BankEfficiency.tex}
+\clearpage
+\input{BankNumber.tex}
