@@ -139,24 +139,6 @@ AddVectorsIn;
 </lalLaTeX>  */
 
 
-/* <lalVerbatim file="LALInputMassesH">  */
-typedef enum {
-   m1Andm2,
-   totalMassAndEta,
-   totalMassAndMu,
-   t01,
-   t02,
-   t03,
-   t04,
-   psi0Andpsi3
- } InputMasses;
-/* </lalVerbatim>  */
-
-/* <lalLaTeX>
-\idx[Type]{InputMasses}
-</lalLaTeX>  */
-
-
 
 /*  <lalVerbatim file="LALNoiseModelsHS"> */
 typedef struct 
@@ -174,7 +156,6 @@ tagRandomInspiralSignalIn
    REAL8 etaMin;     /* smallest value of the symmetric mass ratio */
    InspiralTemplate 
 	 param;      /* parameter stuct; user to specify certain params. */
-   InputMasses massChoice; /* enum used to specify parameter choice */
    REAL8Vector psd;  /* power spectral density used for coloring the noise */
    RealFFTPlan *fwdp;/* pre-computed fftw plan for forward fftw */
 
