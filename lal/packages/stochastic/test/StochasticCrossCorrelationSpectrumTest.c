@@ -655,8 +655,8 @@ int main( int argc, char *argv[] )
     goodData1.data->data[i].im = x;
     goodData2.data->data[i].re = 1.0/goodData1.data->data[i].re;
     goodData2.data->data[i].im = -1.0/goodData1.data->data[i].im;
-    goodFilter.data->data[i].re 
-      = x * (2-x);
+    goodFilter.data->data[i].re = x * (2-x);
+    goodFilter.data->data[i].im = 0.0;
   }
 
   LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
