@@ -36,7 +36,7 @@ main ( void )
   FindChirpCreateBankParams    *createBankParams;
 
   const UINT4                   numSegments = 7;
-  const UINT4                   numPts = 131073;
+  const UINT4                   numPts = 262144;
   UINT4                         k;
   
   /*
@@ -93,7 +93,7 @@ main ( void )
   bankIn->shf.f0 = 0.0;
   bankIn->shf.deltaF = bankIn->tSampling / numPts;
 
-  LALDCreateVector( &stat, &(bankIn->shf.data), numPts );
+  LALDCreateVector( &stat, &(bankIn->shf.data), numPts / 2 + 1 );
   REPORTSTATUS( &stat );
   if ( stat.statusCode ) return stat.statusCode;
 
