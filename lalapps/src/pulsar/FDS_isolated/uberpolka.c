@@ -205,7 +205,7 @@ int main(int argc,char *argv[])
                 }/* loop over frequencies */    
             } /* check that frequency lies between two input bounds */
 #if USE_BOINC
-          local_fraction_done = (double)CLength1 / (double)i *0.01 +0.99;
+          local_fraction_done = (double)CLength1 / (double)i / 100.0 + 0.99;
           /* update progress, the last % is reserved for polka */
           boinc_fraction_done(local_fraction_done);
           /* pass variable externally to graphics routines */
