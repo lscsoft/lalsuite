@@ -31,7 +31,7 @@ the second detector.
 
 \subsubsection*{Algorithm}
 
-TBA. See Anderson, \textit{et al.} \cite{ABCF:2000} in the mean time.
+TBA. See Anderson, \textit{et al.} \cite{tools:Anderson:2000} in the mean time.
 
 Note that GPS time is passed with both the detectors.  The GPS time of the
 second detector is \emph{ignored}, and the GPS time for the first detector

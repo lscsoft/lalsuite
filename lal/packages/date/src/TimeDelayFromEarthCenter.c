@@ -39,7 +39,7 @@ projected distance.
 
 The GPS time for the detector is taken to be the time when the signal
 arrives at the center of the Earth.  As in Anderson, \textit{et al.}
-\cite{ABCF:2000}, we make this approximation as this makes little
+\cite{tools:Anderson:2000}, we make this approximation as this makes little
 difference.
 
 \subsubsection*{Uses}

@@ -29,7 +29,7 @@ vector of response for some length of time.
 \subsubsection*{Algorithm}
 
 This code is a translation of the algorithm in the Maple worksheet by
-Anderson, \textit{et al.}~\cite{ABCF:2000}.  We compute the $h$-tensors for
+Anderson, \textit{et al.}~\cite{tools:Anderson:2000}.  We compute the $h$-tensors for
 $+$- and $\times$-polarized in the Earth-fixed frame, and then contract
 them (take the scalar product) with the detector response tensors as
 described in the \texttt{DetectorSite.h} section of the \texttt{tools}
