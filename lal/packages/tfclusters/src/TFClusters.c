@@ -926,6 +926,9 @@ LALMergeClusterLists (
     ASSERT ( A->params, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
   }
   else {
+    LALCopyCList(status->statusPtr, out_, B);
+    CHECKSTATUSPTR (status);
+
     DETATCHSTATUSPTR (status);
     RETURN (status); 
   }
@@ -938,6 +941,9 @@ LALMergeClusterLists (
     ASSERT ( B->params, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
   }
   else {
+    LALCopyCList(status->statusPtr, out_, A);
+    CHECKSTATUSPTR (status);
+
     DETATCHSTATUSPTR (status);
     RETURN (status); 
   }
@@ -1246,7 +1252,7 @@ Make a copy of \texttt{*src} onto \texttt{*dest}.
 \subsubsection*{Notes}
 \begin{itemize}
 \item \texttt{*src}, if not empty, will be overwritten.
-\item \texttt{*out} must be initialized by a proper call to \texttt{LALInitCList()} before calling this function.
+\item \texttt{*dest} must be initialized by a proper call to \texttt{LALInitCList()} before calling this function.
 \end{itemize}
 \vfill{\footnotesize\input{TFClustersCV}}
 ********* </lalLaTeX> ********/
@@ -1273,30 +1279,32 @@ LALCopyCList (
 
   dest->nclusters = src->nclusters;
 
-  dest->sizes = (UINT4*)LALMalloc(src->nclusters * sizeof(UINT4));
-  if(!dest->sizes) {
-    ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );
-  }
-  memcpy(dest->sizes, src->sizes, src->nclusters * sizeof(UINT4));
+  if(src->nclusters) {
+
+    dest->sizes = (UINT4*)LALMalloc(src->nclusters * sizeof(UINT4));
+    if(!dest->sizes) {
+      ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );
+    }
+    memcpy(dest->sizes, src->sizes, src->nclusters * sizeof(UINT4));
 
   
-  dest->t = (UINT4 **)LALMalloc(src->nclusters * sizeof(UINT4 *));
-  if(!dest->t) {ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
-  dest->f = (UINT4 **)LALMalloc(src->nclusters * sizeof(UINT4 *));
-  if(!dest->f) {ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
-  dest->P = (REAL8 **)LALMalloc(src->nclusters * sizeof(REAL8 *));
-  if(!dest->P) {ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
+    dest->t = (UINT4 **)LALMalloc(src->nclusters * sizeof(UINT4 *));
+    if(!dest->t) {ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
+    dest->f = (UINT4 **)LALMalloc(src->nclusters * sizeof(UINT4 *));
+    if(!dest->f) {ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
+    dest->P = (REAL8 **)LALMalloc(src->nclusters * sizeof(REAL8 *));
+    if(!dest->P) {ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
 
-  for(i=0; i<src->nclusters; i++) {
-    dest->t[i] = (UINT4 *)LALMalloc(src->sizes[i] * sizeof(UINT4));
-    dest->f[i] = (UINT4 *)LALMalloc(src->sizes[i] * sizeof(UINT4));
-    dest->P[i] = (REAL8 *)LALMalloc(src->sizes[i] * sizeof(REAL8));
-
-    memcpy(dest->t[i], src->t[i], src->sizes[i] * sizeof(UINT4));
-    memcpy(dest->f[i], src->f[i], src->sizes[i] * sizeof(UINT4));
-    memcpy(dest->P[i], src->P[i], src->sizes[i] * sizeof(REAL8));
+    for(i=0; i<src->nclusters; i++) {
+      dest->t[i] = (UINT4 *)LALMalloc(src->sizes[i] * sizeof(UINT4));
+      dest->f[i] = (UINT4 *)LALMalloc(src->sizes[i] * sizeof(UINT4));
+      dest->P[i] = (REAL8 *)LALMalloc(src->sizes[i] * sizeof(REAL8));
+      
+      memcpy(dest->t[i], src->t[i], src->sizes[i] * sizeof(UINT4));
+      memcpy(dest->f[i], src->f[i], src->sizes[i] * sizeof(UINT4));
+      memcpy(dest->P[i], src->P[i], src->sizes[i] * sizeof(REAL8));
+    }
   }
-
 
   dest->params = (TFPlaneParams *)LALMalloc(sizeof(TFPlaneParams));
   memcpy(dest->params, src->params, sizeof(TFPlaneParams));
