@@ -40,16 +40,10 @@ Provides functions to drive the filtering functions in the package
 #include <stdlib.h>
 #include <strings.h>
 #include <lal/LALStdlib.h>
-#include <lal/Random.h>
 #include <lal/DataBuffer.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/FindChirp.h>
-#include <lal/FindChirpSP.h>
-#include <lal/GeneratePPNInspiral.h>
-#include <lal/SimulateCoherentGW.h>
-#include <lal/Units.h>
-#include <lal/Inject.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -69,12 +63,10 @@ NRCSID (FINDCHIRPENGINEHH, "$Id$");
 #define FINDCHIRPENGINEH_ENNUL 2
 #define FINDCHIRPENGINEH_EALOC 3
 #define FINDCHIRPENGINEH_ELVEL 4
-#define FINDCHIRPENGINEH_EHETR 5
 #define FINDCHIRPENGINEH_MSGENULL "Null pointer"
 #define FINDCHIRPENGINEH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPENGINEH_MSGEALOC "Memory allocation error"
 #define FINDCHIRPENGINEH_MSGELVEL "Invalid heriarchical template bank level"
-#define FINDCHIRPENGINEH_MSGEHETR "Attempting to simulate heterodyned GW"
 /* </lalErrTable> */
 
 

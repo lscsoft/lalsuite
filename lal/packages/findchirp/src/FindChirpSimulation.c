@@ -9,19 +9,73 @@
  *-----------------------------------------------------------------------
  */
 
+#if 0 
+<lalVerbatim file="FindChirpSimulationCV">
+Author: Brown, D. A. and Creighton, T. D
+$Id$
+</lalVerbatim> 
+
+<lalLaTeX>
+\subsection{Module \texttt{FindChirpSimulation.c}}
+\label{ss:FindChirpSimulation.c}
+
+\noindent Provides an interface between code build from \texttt{findchirp} and
+various simulation packages for injecting chirps into data.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{FindChirpSimulationCP}
+\idx{LALFindChirpInjectSignals()}
+\idx{LALRandomPPNParamStruc()}
+
+\begin{description}
+\item[\texttt{LALFindChirpInjectSignals()}] injects the signals described
+in the linked list of \texttt{SimInspiralTable} structures \texttt{events}
+into the data \texttt{chan}. The response function \texttt{resp} should
+contain the response function to use when injecting the signals into the data.
+
+\item[\texttt{LALRandomPPNParamStruc()}] populates the \texttt{PPNParamStruc}
+pointed to by \texttt{ppnParams} with a random pair of masses. The mass
+range is set by the \texttt{mMin} and \texttt{mMax} fields of 
+\texttt{massParams}. The \texttt{tSampling} and \texttt{fLower} fields of 
+\texttt{massParams} should be set to the desired sampling rate and 
+low frequency cutoff of the signal respectively.
+\end{description}
+
+\subsubsection*{Algorithm}
+
+\noindent None.
+
+\subsubsection*{Notes}
+\subsubsection*{Uses}
+\begin{verbatim}
+LALCalloc()
+LALFree()
+\end{verbatim}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{FindChirpSimulationCV}}
+</lalLaTeX> 
+#endif
+
 #include <lal/Units.h>
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
 #include <lal/VectorOps.h>
 #include <lal/SeqFactories.h>
+#include <lal/Random.h>
 #include <lal/DetectorSite.h>
-#include <lal/LALNoiseModels.h>
+#include <lal/GeneratePPNInspiral.h>
+#include <lal/SimulateCoherentGW.h>
+#include <lal/Inject.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LALInspiralBank.h>
 #include <lal/FindChirp.h>
-#include <lal/FindChirpEngine.h>
 
 NRCSID( FINDCHIRPSIMULATIONC, "$Id$" );
 
+/* <lalVerbatim file="FindChirpSimulationCP"> */
 void
 LALFindChirpInjectSignals (
     LALStatus                  *status,
@@ -29,6 +83,7 @@ LALFindChirpInjectSignals (
     SimInspiralTable           *events,
     COMPLEX8FrequencySeries    *resp
     )
+/* </lalVerbatim> */
 {
   UINT4                 k;
   DetectorResponse      detector;
@@ -45,21 +100,21 @@ LALFindChirpInjectSignals (
   ATTATCHSTATUSPTR( status );
 
   ASSERT( chan, status, 
-      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( chan->data, status, 
-      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( chan->data->data, status, 
-      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   ASSERT( events, status, 
-      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   ASSERT( resp, status, 
-      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( resp->data, status, 
-      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( resp->data->data, status, 
-      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
 
   /*
@@ -91,7 +146,7 @@ LALFindChirpInjectSignals (
     LALCalloc( 1, sizeof(COMPLEX8FrequencySeries) );
   if ( ! detector.transfer ) 
   {
-    ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
+    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
   }
   memcpy( &(detector.transfer->epoch), &(resp->epoch),
       sizeof(LIGOTimeGPS) );
@@ -269,7 +324,7 @@ LALFindChirpInjectSignals (
     signal.deltaT = chan->deltaT;
     if ( ( signal.f0 = chan->f0 ) != 0 )
     {
-      ABORT( status, FINDCHIRPENGINEH_EHETR, FINDCHIRPENGINEH_MSGEHETR );
+      ABORT( status, FINDCHIRPH_EHETR, FINDCHIRPH_MSGEHETR );
     }
     signal.sampleUnits = lalADCCountUnit;
 
@@ -310,6 +365,66 @@ LALFindChirpInjectSignals (
   if ( detector.site ) LALFree( detector.site );
   LALFree( detector.transfer );
 
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="FindChirpSimulationCP"> */
+void
+LALRandomPPNParamStruc (
+    LALStatus                  *status,
+    PPNParamStruc              *PPNparams,
+    InspiralCoarseBankIn       *massParams,
+    RandomParams               *randomParams
+    )
+/* </lalVerbatim> */
+{
+  REAL4 m1, m2;
+  REAL8 mDiff;
+  REAL8 cannonDist = 1.0e6;       /* cannonical distance in pc */
+
+  INITSTATUS( status, "LALRandomPPNParamStruc", FINDCHIRPSIMULATIONC );
+  ATTATCHSTATUSPTR( status );
+
+  ASSERT( PPNparams, status,
+      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( massParams, status,
+      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( randomParams, status,
+      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+
+  /* fixed parameters. */
+  PPNparams->position.latitude = PPNparams->position.longitude = 0.0;
+  PPNparams->position.system = COORDINATESYSTEM_EQUATORIAL;
+  PPNparams->psi = 0.0;
+  PPNparams->lengthIn = 0;
+  PPNparams->epoch.gpsSeconds = 0;
+  PPNparams->epoch.gpsNanoSeconds = 0;
+  PPNparams->deltaT = massParams->tSampling;
+
+  /* set up the masses */
+  mDiff = massParams->mMax - massParams->mMin;
+  TRY( LALUniformDeviate( status->statusPtr, &m1, randomParams ), status );
+  TRY( LALUniformDeviate( status->statusPtr, &m2, randomParams ), status );
+  m1 = massParams->mMin + mDiff * m1;
+  m2 = massParams->mMin + mDiff * m2;
+  PPNparams->mTot = m1 + m2;
+  PPNparams->eta = m1 * m2 / ( PPNparams->mTot * PPNparams->mTot );
+
+  /* other params */
+  PPNparams->inc = 0.0;
+  PPNparams->phi = 0.0;
+  PPNparams->d = cannonDist * LAL_PC_SI;
+  PPNparams->fStartIn = massParams->fLower;
+
+  /* fStopIn is negative to allow bypass of the bad pn waveform stop */
+  PPNparams->fStopIn = -1.0 / 
+    (6.0 * sqrt(6.0) * LAL_PI * PPNparams->mTot * LAL_MTSUN_SI);
+
+  /* ppn parameter */
+  PPNparams->ppn = NULL;
+  
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }

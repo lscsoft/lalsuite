@@ -122,6 +122,8 @@ D_\mathrm{eff} = \mathtt{tmpltNorm}\cdot \mathtt{segNorm}^2\cdot |q_j|^{-2}
 #include <lal/DataBuffer.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LALInspiral.h>
+#include <lal/LALInspiralBank.h>
+#include <lal/GeneratePPNInspiral.h>
 #include <lal/FindChirpChisq.h>
 
 #ifdef  __cplusplus
@@ -152,6 +154,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_ECHIT 16
 #define FINDCHIRPH_ECRUP 17
 #define FINDCHIRPH_ESMSM 18
+#define FINDCHIRPH_EHETR 19
 #define FINDCHIRPH_MSGENULL "Null pointer"
 #define FINDCHIRPH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPH_MSGEALOC "Memory allocation error"
@@ -166,6 +169,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_MSGECHIT "Chisq threshold is zero or negative"
 #define FINDCHIRPH_MSGECRUP "Chirp length or invSpecTrunc too long for length of data segment"
 #define FINDCHIRPH_MSGESMSM "Size mismatch between vectors"
+#define FINDCHIRPH_MSGEHETR "Attempting to simulate heterodyned GW"
 /* </lalErrTable> */
 
 
@@ -679,7 +683,7 @@ LALFindChirpFilterSegment (
 
 #if 0
 <lalLaTeX>
-%% \newpage\input{FindChirpSimulationC}
+\newpage\input{FindChirpSimulationC}
 </lalLaTeX>
 #endif
 
@@ -689,6 +693,14 @@ LALFindChirpInjectSignals (
     REAL4TimeSeries            *chan,
     SimInspiralTable           *events,
     COMPLEX8FrequencySeries    *resp
+    );
+
+void
+LALRandomPPNParamStruc (
+    LALStatus                  *status,
+    PPNParamStruc              *PPNparams,
+    InspiralCoarseBankIn       *massParams,
+    RandomParams               *randomParams
     );
 
 #ifdef  __cplusplus
