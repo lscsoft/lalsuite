@@ -105,8 +105,10 @@
 
 #include<lal/LALStdlib.h>
 #include<lal/LALStatusMacros.h>
+#if 0
 #include<lal/LALInspiral.h>
 #include<lal/LALInspiralBank.h>
+#endif
 #include<lal/LALDatatypes.h>
 #include<lal/LIGOMetadataTables.h>
 
@@ -116,6 +118,7 @@
 /* </lalErrTable> */
 
 
+#if 0
 /* Inspiral Group structure for lalapps tmpltbank.c searches 100-199 */
 /* <lalVerbatim file="TemplateBankGenerationHT-InspiralTmpltBankCInput"> */
 typedef struct {
@@ -141,7 +144,9 @@ typedef struct {
      Approximant approximant;	/* approximation method         */
      CoordinateSpace space;  	/* coordinate space used        */
      InspiralBankMassRange massRange;
-     INT4   ntiles;		/*number of templates made 	*/
+     INT4    ntiles;		/*number of templates made 	*/
+     REAL4   mmFine;		/* not implemented? */
+     INT4    iflso;		/* not implemented? */
   /* InspiralTemplate Parameters */
      
  
@@ -176,17 +181,18 @@ typedef union {
      } MakeTemplateBankInput;     
 
 /* </lalVerbatim> */
+#endif
      
 /* <lalVerbatim file="TemplateBankGenerationHT-TemplateBankType"> */
 typedef enum {
   /* Binary Inspiral Searches 100-199 */
-     BCVType=100,
-     BCVSpinType=101,
-     PrecessingType=102,
+     BCVType,
+     BCVSpinType,
+     PrecessingType,
   /* Pulsar Searches 200-299 */
-     Pulsar=200,
+     Pulsar,
   /* Burst Searches 300-399 */
-     Burst=300
+     Burst
   /* Other Searches 400-499 Etc... */ 
      } TemplateBankType;
 
@@ -232,6 +238,7 @@ LALNDTemplateBank(
        	NDTemplateBankOutput **);
 
 
+#if 0
 void 
 LALMakeTemplateBank(
      	LALStatus *,
@@ -239,4 +246,4 @@ LALMakeTemplateBank(
      	MakeTemplateBankInput *,
      	MetadataTable *); 
      /* LALMakeTemplateBank(); */
-
+#endif
