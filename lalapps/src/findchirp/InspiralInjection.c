@@ -1,8 +1,7 @@
- /* ****************************
+ /* **************************************
   * * Author: Thomas Cokelaer.
-  * ****************************/
-
-
+  * Documentatin in lalapps.pdf in ./doc
+  * *************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,37 +11,36 @@
 #include <series.h>
 #include <processtable.h>
 #include <lalappsfrutils.h>
-
-
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
+
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
+
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
-#include <lal/FindChirpSP.h>
-#include <lal/FindChirpChisq.h>
-#include <lal/FindChirpEngine.h>
 #include <lal/PrintFTSeries.h>
 
 
 RCSID(  "$Id$");
 
 
-/* Temporary version */
+/* Temporary version ; haven't taken care of units, time and so on 
+ * for the time being */
 int main()
 {
   
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
  
   CHAR  *injectionFile = NULL;         
-  int k, startTime, endTime;
+  int  startTime, endTime;
+  UINT4 k;
 
   LALStatus            status = blank_status;
   SimInspiralTable    *injections = NULL;
@@ -65,7 +63,7 @@ int main()
   LAL_CALL( LALSCreateVector( &status, &(ts.data), numPoints), &status);	/* and ts null				*/
   memset( &fs, 0, sizeof(COMPLEX8FrequencySeries));				/* idem for fs				*/
   LAL_CALL( LALCCreateVector( &status, &(fs.data), numPoints / 2 + 1 ), 
-      &status );
+    &status );
 
   ts.epoch.gpsSeconds = 729273610;						/* gps time of the time series		*/
   startTime = 729273610;							/* gps start time and end time of ..	*/	
@@ -99,12 +97,12 @@ int main()
   for (k=0; k<numPoints; k++)   {
       fprintf(output,"%i %e\n", k,ts.data->data[k]);
     }
-fclose(output);
+  fclose(output);
   return 0;
 }
 
 
-
+/* An example of xml file to be used with this file */
 
 
 
