@@ -85,6 +85,7 @@ void LALPtoleMetric( LALStatus *status,
                      PtoleMetricIn *input )
 { /* </lalVerbatim> */
 INT2 j, k;              /* Loop counters */
+REAL8 temp1, temp2, temp3, temp4;  /* Dummy variables for spindown components*/
 REAL8 R_o, R_s;         /* Amplitude of daily/yearly modulation, s */
 REAL8 lat, lon;         /* latitude and longitude of detector site */
 REAL8 omega_s, omega_o; /* Ang freq of daily/yearly modulation, rad/s */
@@ -458,27 +459,62 @@ if( input->spindown )
 
 /* Spindown-RA: 1+(j+2)*(j+3)/2 */
 metric->data[1+(j+2)*(j+3)/2] = 0;
-for (k=j+1; k>=0; k--)
-     metric->data[1+(j+2)*(j+3)/2] += pow(-1,(k+1)/2)*factrl(j+1)
+temp1=0;
+temp2=0;
+for (k=j+1; k>=0; k--) {
+  /*metric->data[1+(j+2)*(j+3)/2] += pow(-1,(k+1)/2)*factrl(j+1)
      /factrl(j+1-k)/pow(D_p_s,k)*((k%2)?sin_p_s:cos_p_s);
      metric->data[1+(j+2)*(j+3)/2] += pow(-1,j/2)/pow(D_p_s,j+1)*factrl(j+1)
      *((j%2)?cos(phi_s_i):sin(phi_s_i));
      metric->data[1+(j+2)*(j+3)/2] -= (cos_p_s-cos(phi_s_i))/(j+2);
      metric->data[1+(j+2)*(j+3)/2] *= -pow(LAL_TWOPI*input->maxFreq,2)*R_s*cos_l
-     *cos_d/omega_s/(j+1);
-
+     *cos_d/omega_s/(j+1);*/
+   temp1+=pow(-1,(k+1)/2)*factrl(j+1)
+     /factrl(j+1-k)/pow(D_p_s,k)*((k%2)?sin_p_s:cos_p_s);
+   temp2+=pow(-1,(k+1)/2)*factrl(j+1)
+     /factrl(j+1-k)/pow(D_p_o,k)*((k%2)?sin_p_o:cos_p_o);
+ }
+temp1+=pow(-1,j/2)/pow(D_p_s,j+1)*factrl(j+1)
+     *((j%2)?cos(phi_s_i):sin(phi_s_i));
+temp2+=pow(-1,j/2)/pow(D_p_o,j+1)*factrl(j+1)
+     *((j%2)?cos(phi_o_i):sin(phi_o_i));
+temp1-=(cos_p_s-cos(phi_s_i))/(j+2);
+temp2-=(cos_p_o-cos(phi_o_i))/(j+2);
+temp1*=-pow(LAL_TWOPI*input->maxFreq,2)*R_s*cos_l
+  *cos_d/omega_s/(j+1);
+temp2*=-pow(LAL_TWOPI*input->maxFreq,2)*R_o*cos_i
+  *cos_d/omega_o/(j+1);
+ metric->data[1+(j+2)*(j+3)/2]+=temp1+temp2;
 /* Spindown-dec: 2+(j+2)*(j+3)/2 */
 metric->data[2+(j+2)*(j+3)/2] = 0;
-for (k=j+1; k>=0; k--)
-     metric->data[2+(j+2)*(j+3)/2] -= pow(-1,k/2)*factrl(j+1)/factrl(j+1-k)
+temp3=0;
+temp4=0;
+for (k=j+1; k>=0; k--) {
+  /*metric->data[2+(j+2)*(j+3)/2] -= pow(-1,k/2)*factrl(j+1)/factrl(j+1-k)
      /pow(D_p_s,k)*((k%2)?cos_p_s:sin_p_s);
      metric->data[2+(j+2)*(j+3)/2] += pow(-1,(j+1)/2)/pow(D_p_s,j+1)
      *factrl(j+1)*((j%2)?sin(phi_s_i):cos(phi_s_i));
      metric->data[2+(j+2)*(j+3)/2] += (sin_p_s-sin(phi_s_i))/(j+2);
      metric->data[2+(j+2)*(j+3)/2] *= pow(LAL_TWOPI*input->maxFreq,2)*R_s*cos_l
      *sin_d/omega_s/(j+1);
-} /* for( j... ) */
-
+}    for( j... ) */
+  temp3-=pow(-1,k/2)*factrl(j+1)/factrl(j+1-k)
+     /pow(D_p_s,k)*((k%2)?cos_p_s:sin_p_s);
+  temp4-=pow(-1,k/2)*factrl(j+1)/factrl(j+1-k)
+     /pow(D_p_o,k)*((k%2)?cos_p_o:sin_p_o);
+}
+temp3+=pow(-1,(j+1)/2)/pow(D_p_s,j+1)
+     *factrl(j+1)*((j%2)?sin(phi_s_i):cos(phi_s_i));
+temp4+=pow(-1,(j+1)/2)/pow(D_p_o,j+1)
+     *factrl(j+1)*((j%2)?sin(phi_o_i):cos(phi_o_i));
+temp3+=(sin_p_s-sin(phi_s_i))/(j+2);
+temp4+=(sin_p_o-sin(phi_o_i))/(j+2);
+temp3*=pow(LAL_TWOPI*input->maxFreq,2)*R_s*cos_l
+     *sin_d/omega_s/(j+1);
+temp4*=pow(LAL_TWOPI*input->maxFreq,2)*R_s*cos_i
+     *sin_d/omega_o/(j+1);
+ metric->data[2+(j+2)*(j+3)/2]=temp3+temp4;
+}
   /* f0-spindown : 0+(j+2)*(j+3)/2 */
 if( input->spindown )
      for (j=1; j<=dim-2; j++)
