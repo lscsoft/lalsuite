@@ -1295,6 +1295,22 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
       Fstat.Fb = NULL;
     }
 
+  /* safety-check: only allow EITHER of skyRegion OR (Alpha,AlphaBand, Delta, DeltaBand) */
+  if ( !UVARwasSet(&uvar_skyRegion) && (!UVARwasSet(&uvar_Alpha)||!UVARwasSet(&uvar_Delta)) ) 
+    {
+      LALPrintError ("Either (Alpha,Delta) or a skyRegion have to be specified!\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
+  /* now check that only one of those two has been given! ;) */
+  if ( UVARwasSet(&uvar_skyRegion) 
+       && (UVARwasSet(&uvar_Alpha)||UVARwasSet(&uvar_Delta)
+	   ||UVARwasSet(&uvar_dAlpha)||UVARwasSet(&uvar_dDelta)
+	   ||UVARwasSet(&uvar_AlphaBand)||UVARwasSet(&uvar_DeltaBand)) ) 
+    {
+      LALPrintError ("ATTENTION: you can only specify *either* (Alpha,Delta,AlphaBand,DeltaBand) *or* skyRegion !\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
+
   /* ----------------------------------------------------------------------*/
   /* prepare sky-region string if user provided the old alpha, dalpha, etc. 
    * this is a bit of a cheat, as user did not really specify uvar_skyRegion 
