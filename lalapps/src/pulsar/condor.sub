@@ -8,5 +8,8 @@ notification = Never
 arguments  =  $(Process)  /scratch/ballen/S2-L1.60-lists /scratch/ballen/S2-L1.60-sft L1
 on_exit_remove = (ExitBySignal == False) || ((ExitBySignal == True) && (ExitSignal != 11))
 initialdir = /scratch/ballen/S2-L1.60-condor
+
+environment = DOUBLEDATA=0;WINDOWDATA=1;PRINTFREQSERIES=0;
+
 #queue 296
 queue 5
