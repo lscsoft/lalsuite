@@ -309,7 +309,7 @@ int main(int argc,char *argv[])
     }
 #if USE_BOINC
   /* write end marker */
-  fprintf("%%DONE\n");	
+  fprintf(fpOut,"%%DONE\n");	
   Outputfilename=PolkaCommandLineArgs.OutputFile;
 #endif
   fclose(fpOut);
