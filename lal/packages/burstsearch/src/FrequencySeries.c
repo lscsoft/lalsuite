@@ -1,3 +1,9 @@
+/* <lalVerbatim file="FrequencySeriesCV">
+Author: Cannon, K. C.
+$Id$
+</lalVerbatim>
+ */
+
 #include <string.h>
 
 #include <lal/LALDatatypes.h>

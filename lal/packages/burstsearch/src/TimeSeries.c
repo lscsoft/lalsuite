@@ -1,3 +1,9 @@
+/* <lalVerbatim file="TimeSeriesCV">
+Author: Cannon, K. C.
+$Id$
+</lalVerbatim>
+ */
+
 #include <lal/Date.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
