@@ -686,7 +686,7 @@ int unknownDetector (const char *detector) {
     return SFTENULLPOINTER;
 
   for (i=0; knownDetectors[i]; i++) {
-    if (!strncmp(knownDetectors[i], detector, 2))
+    if (knownDetectors[i][0]==detector[0] && knownDetectors[i][1]==detector[1])
       return 0;
   }
   
