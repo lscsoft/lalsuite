@@ -36,7 +36,8 @@ struct headertag2 {
   int                 firstfreqindex;
   int                 nsamples;
   unsigned long long  crc64;
-  int                 padding;
+  char                detector[2];
+  char                padding[2];
   int                 comment_length;
 };
 
@@ -46,6 +47,7 @@ int WriteSFT(FILE   *fp,            /* stream to write to.  On return, is at the
 	     double tbase,          /* time baseline of SFTs */
 	     int    firstfreqindex, /* index of first frequency bin included in data (0=DC)*/
 	     int    nsamples,       /* number of frequency bins to include in SFT */
+	     const char *detector,  /* channel-prefix defining detector */
 	     char   *comment,       /* null-terminated comment string to include in SFT */
 	     float  *data           /* points to nsamples x 2 x floats (Real/Imag)  */
 	     );
@@ -98,6 +100,7 @@ int CheckSFTHeaderConsistency(struct headertag2 *headerone, /* pointer to earlie
 #define SFTEFIRSTINDEXNEG      24
 #define SFTENSAMPLESNOTPOS     25
 #define SFTEINSTRUMENTUNKNOWN  26
+#define SFTEINSTRUMENTILLEGAL  27
 
 
 /* takes error code from above list and returns static human-readable
@@ -105,6 +108,10 @@ int CheckSFTHeaderConsistency(struct headertag2 *headerone, /* pointer to earlie
 const char *SFTErrorMessage(int errorcode);
 
 /* returns a null-terminated string with the package version (eg, 2.0) */
-const char *ReferenceSFTLibraryVersion();
+const char *ReferenceSFTLibraryVersion(void);
+
+/* internal functions for checking validity of detector-entry */
+int validDetector (const char *detector); 	/* detector-syntax valid? */
+int knownDetector (const char *detector);	/* known detector? */
 
 #endif /* REFERENCESFTLIBRARY_H_ */
