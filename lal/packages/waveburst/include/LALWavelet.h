@@ -255,6 +255,7 @@ tagClusterWavelet
   Wavelet *wavelet;
 
   REAL4 *medians;
+  REAL4 *norm50;
 
   UINT4 pMaskCount;
   UINT4 clusterCount;

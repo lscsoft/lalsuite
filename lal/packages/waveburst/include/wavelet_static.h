@@ -33,7 +33,8 @@ static int _clusterR(ClusterWavelet *wavelet, int k);
 
 static BOOLEAN _allocateWavelet(Wavelet **wavelet);
 
-static double _percentile(Wavelet *wavelet, double nonZeroFraction, BOOLEAN keepAmplitudes, REAL4 **median); 
+static double _percentile(Wavelet *wavelet, double nonZeroFraction, 
+			  BOOLEAN keepAmplitudes, REAL4 **median, REAL4 **norm50); 
 static int _compare(const void *a, const void *b);
 static void _clusterProperties(ClusterWavelet *w);
 
@@ -267,6 +268,7 @@ static void _assignWavelet(Wavelet **left,Wavelet *right)
 static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right)
 {
   UINT4 i,j;
+  int M;
   _createClusterWavelet(left);
   if(right->wavelet!=NULL) _assignWavelet(&(*left)->wavelet,right->wavelet);
   (*left)->pMaskCount=right->pMaskCount;
@@ -279,12 +281,21 @@ static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right)
   (*left)->nonZeroFractionAfterVetoes=right->nonZeroFractionAfterVetoes;
   (*left)->pixelSwapApplied=right->pixelSwapApplied;
   (*left)->pixelMixerApplied=right->pixelMixerApplied;
+  M = _getMaxLayer(right->wavelet)+1;
   if(right->medians!=NULL)
     {
-      (*left)->medians=(REAL4*)LALCalloc(right->wavelet->level,sizeof(REAL4));
-      for(i=0;i<right->wavelet->level;i++)
+      (*left)->medians=(REAL4*)LALCalloc(M,sizeof(REAL4));
+      for(i=0;i<M;i++)
 	{
 	  (*left)->medians[i]=right->medians[i];
+	}
+    }
+  if(right->norm50!=NULL)
+    {
+      (*left)->norm50=(REAL4*)LALCalloc(M,sizeof(REAL4));
+      for(i=0;i<M;i++)
+	{
+	  (*left)->norm50[i]=right->norm50[i];
 	}
     }
   if(right->pMask!=NULL)
@@ -1128,7 +1139,7 @@ static void _freeOutCluster(OutputClusterWavelet **cl)
 }
 
 static double _percentile(Wavelet *wavelet, double nonZeroFraction, 
-			  BOOLEAN keepAmplitudes, REAL4 **median)
+			  BOOLEAN keepAmplitudes, REAL4 **median, REAL4 **norm50)
 {
 
   INT4 i, j, M, nS, boundary1, boundary2;
@@ -1140,6 +1151,7 @@ static double _percentile(Wavelet *wavelet, double nonZeroFraction,
   aPtr=(REAL4**)LALMalloc((sizeof(REAL4*)*nS));
 
   *median=(REAL4*)LALCalloc(M,sizeof(REAL4));
+  *norm50=(REAL4*)LALCalloc(M,sizeof(REAL4));
 
   for(i=0; i<M; i++){
     _getLayer(&a,i,wavelet);
@@ -1149,6 +1161,13 @@ static double _percentile(Wavelet *wavelet, double nonZeroFraction,
     }
 
     qsort(aPtr,nS,sizeof(REAL4*),_compare);
+
+    (*norm50)[i]=
+      -((*aPtr[nS/4]) + (*aPtr[nS/4+1]))/2+
+      ((*aPtr[(3*nS)/4]) + (*aPtr[(3*nS)/4-1]))/2;
+    (*norm50)[i]/=2;
+
+/*     printf("In percentile: i=%d norm=%f\n",i,(*norm50)[i]);fflush(stdout); */
 
     if(nS%2==0){
       (*median)[i]=(*aPtr[nS/2-1] + *aPtr[nS/2])/2;
@@ -1204,7 +1223,7 @@ static int _compare(const void *a, const void *b)
 static void _clusterProperties(ClusterWavelet *w)
 {
   UINT4 i, j, f, ff, t;
-  double a;
+  double a,b;
   double delta_t, delta_f;
   double x;
   int N;
@@ -1283,10 +1302,13 @@ static void _clusterProperties(ClusterWavelet *w)
 	    {
 	      w->coreSize[i]++;
 	      a=w->pMask[w->cList[i][j]]->amplitude;
+	      b=w->pMask[w->cList[i][j]]->amplitudeOriginal;
+	      b-=w->medians[w->pMask[w->cList[i][j]]->frequency];
+	      b/=w->norm50[w->pMask[w->cList[i][j]]->frequency];
 	      if(a>0) w->correlation[i]++;
 	      if(a<0) w->correlation[i]--;
 	      w->likelihood[i]+=log(fabs(a));
-	      w->power[i]+=a*a;
+	      w->power[i]+=b*b;
 	      if(w->maxAmplitude[i]<fabs(a)) w->maxAmplitude[i]=fabs(a);
 
 	      f=w->pMask[w->cList[i][j]]->frequency;
@@ -1385,6 +1407,7 @@ static void _createClusterWavelet(ClusterWavelet **w)
   *w=(ClusterWavelet*)LALMalloc(sizeof(ClusterWavelet));
   (*w)->wavelet=NULL;
   (*w)->medians=NULL;
+  (*w)->norm50=NULL;
   (*w)->pMaskCount=0;
   (*w)->clusterCount=0;
   (*w)->clusterCountFinal=0;
@@ -1432,6 +1455,11 @@ static void _freeClusterWavelet(ClusterWavelet **w)
     {
       LALFree((*w)->medians);
       (*w)->medians=NULL;
+    }
+  if((*w)->norm50!=NULL)
+    {
+      LALFree((*w)->norm50);
+      (*w)->norm50=NULL;
     }
   if((*w)->pMask!=NULL)
     {

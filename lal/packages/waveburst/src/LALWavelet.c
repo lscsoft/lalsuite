@@ -123,6 +123,7 @@ LALPercentileWavelet( LALStatus *status,
 		      InputPercentileWavelet  *input)
 /******** </lalVerbatim> ********/
 {
+  int i;
 
   INITSTATUS( status, "LALPercentileWavelet", LALWAVELETC );
   ATTATCHSTATUSPTR (status);
@@ -135,7 +136,12 @@ LALPercentileWavelet( LALStatus *status,
   _assignWavelet(&((*output)->out->wavelet),input->in);
   (*output)->out->nonZeroFractionAfterPercentile=
     _percentile((*output)->out->wavelet, input->nonZeroFraction, 
-		FALSE, &(*output)->out->medians);
+		FALSE, &(*output)->out->medians, &(*output)->out->norm50);
+
+  for(i=0;i<32;i++)
+    {
+      printf("LALPercentileWavelet: i=%d, norm=%f\n",i,(*output)->out->norm50[i]); fflush(stdout);
+    }
 
   if(fabs((*output)->out->nonZeroFractionAfterPercentile - input->nonZeroFraction) > maxError1)
     {
@@ -191,14 +197,13 @@ LALPixelMixerWavelet(LALStatus *status,
   INT4 i, j, nS;
   RandomParams *rparams;
   REAL4 x;
-  INT4 seed=0;
 
   INITSTATUS( status, "LALPixelMixerWavelet", LALWAVELETC );
   ATTATCHSTATUSPTR (status);
 
   nS=input->in->wavelet->data->data->length;
 
-  LALCreateRandomParams(status->statusPtr,&rparams,seed);
+  LALCreateRandomParams(status->statusPtr,&rparams,input->seed);
 
   _assignClusterWavelet(&(*output)->out, input->in);
 
