@@ -49,6 +49,7 @@ extern "C" {
 #endif
 
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LALInspiral.h>
 
 NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 
@@ -83,13 +84,14 @@ NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 typedef struct
 tagSnglInspiralAccuracy
 {
-  INT4  match;
-  REAL4 epsilon;
-  REAL4 kappa;
-  INT8  dt;
-  REAL4 dm;
-  REAL4 dpsi0;
-  REAL4 dpsi3;
+  INT4        match;
+  REAL4       epsilon;
+  REAL4       kappa;
+  INT8        dt;
+  REAL4       dm;
+  REAL4       dpsi0;
+  REAL4       dpsi3;
+  Approximant approximant;
 }
 SnglInspiralAccuracy;
 
@@ -118,7 +120,6 @@ tagSnglBurstAccuracy
   REAL4 dRhoMinus;
   INT8  dtime;
   REAL4 dm;
-
 }
 SnglBurstAccuracy;
 
