@@ -811,8 +811,8 @@ LALGeneratePPNInspiral( LALStatus     *stat,
   output->f->sampleUnits = lalHertzUnit;
   output->phi->sampleUnits = lalDimensionlessUnit;
   LALSnprintf( output->a->name, LALNameLength, "PPN inspiral amplitudes" );
-  LALSnprintf( output->a->name, LALNameLength, "PPN inspiral frequency" );
-  LALSnprintf( output->a->name, LALNameLength, "PPN inspiral phase" );
+  LALSnprintf( output->f->name, LALNameLength, "PPN inspiral frequency" );
+  LALSnprintf( output->phi->name, LALNameLength, "PPN inspiral phase" );
   a = output->a->data->data;
   f = output->f->data->data;
   phi = output->phi->data->data;

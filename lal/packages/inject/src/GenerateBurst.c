@@ -149,8 +149,8 @@ LALGenerateBurst(
   output->f->sampleUnits = lalHertzUnit;
   output->phi->sampleUnits = lalDimensionlessUnit;
   LALSnprintf( output->a->name, LALNameLength, "Burst amplitudes" );
-  LALSnprintf( output->a->name, LALNameLength, "Burst frequency" );
-  LALSnprintf( output->a->name, LALNameLength, "Burst phase" );
+  LALSnprintf( output->f->name, LALNameLength, "Burst frequency" );
+  LALSnprintf( output->phi->name, LALNameLength, "Burst phase" );
 
   /* Allocate phase and frequency arrays. */
   LALSCreateVector( stat->statusPtr, &( output->f->data ), n );

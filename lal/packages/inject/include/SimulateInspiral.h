@@ -162,9 +162,9 @@ typedef struct tagSimulateInspiralParamStruc {
 
 We define here the conventions we use when talking about
 signal-to-noise ratios in coloured and white noise.  You may also want
-to read the signal processing conventions in Secs.~\ref{??}
-and~\ref{??} of the \verb@findchirp@ package, since this section is
-esentially a summary and extension of those conventions.
+to read the signal processing conventions in Secs.~.1.1 and~.1.2 of
+the \verb@findchirp@ package, since this section is esentially a
+summary and extension of those conventions.
 
 \subsubsection*{Signal-to-noise definitions}
 
@@ -259,8 +259,8 @@ $\Delta t$, we find that different time samples are uncorrelated:
 \end{equation}
 where $\sigma_n^2$ is the variance in the sampled noise.  This can be
 proven using the definitions of the discrete inverse FFT and discrete
-power spectrum given in Eqs.~(\ref{??}) and~(\ref{??}) of the
-\verb@findchirp@ package:
+power spectrum given in Eqs.~(.9) and~(.19) of the \verb@findchirp@
+package:
 \begin{eqnarray}
 \langle n(t_j)n(t_{j'})^*\rangle
 & = & \frac{1}{N^2}\sum_{k=0}^{N-1}\sum_{k'=0}^{N-1}

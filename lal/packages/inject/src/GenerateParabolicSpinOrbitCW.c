@@ -318,8 +318,8 @@ LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
   output->f->sampleUnits = lalHertzUnit;
   output->phi->sampleUnits = lalDimensionlessUnit;
   LALSnprintf( output->a->name, LALNameLength, "CW amplitudes" );
-  LALSnprintf( output->a->name, LALNameLength, "CW frequency" );
-  LALSnprintf( output->a->name, LALNameLength, "CW phase" );
+  LALSnprintf( output->f->name, LALNameLength, "CW frequency" );
+  LALSnprintf( output->phi->name, LALNameLength, "CW phase" );
 
   /* Allocate phase and frequency arrays. */
   LALSCreateVector( stat->statusPtr, &( output->f->data ), n );

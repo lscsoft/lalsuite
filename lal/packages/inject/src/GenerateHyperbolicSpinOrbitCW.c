@@ -43,7 +43,7 @@ For hyperbolic orbits, we combine Eqs.~(\ref{eq:spinorbit-tr}),
 directly as a function of $E$:
 \begin{eqnarray}
 t_r = t_p & + & \left(\frac{r_p \sin i}{c}\right)\sin\omega \nonumber\\
-\label{eq:tr-e1}
+\label{eq:tr-e3}
 	& + & \frac{1}{n} \left( -E +
 		\left[v_p(e-1)\cos\omega + e\right]\sinh E
 		- \left[v_p\sqrt{\frac{e-1}{e+1}}\sin\omega\right]
@@ -54,7 +54,7 @@ periapsis and $n=\dot{\upsilon}_p\sqrt{(1-e)^3/(1+e)}$ is a normalized
 angular speed for the orbit (the hyperbolic analogue of the mean
 angular speed for closed orbits).  For simplicity we write this as:
 \begin{equation}
-\label{eq:tr-e2}
+\label{eq:tr-e4}
 t_r = T_p + \frac{1}{n}\left( E + A\sinh E + B[\cosh E - 1] \right) \;,
 \end{equation}
 \begin{wrapfigure}{r}{0.28\textwidth}
@@ -333,8 +333,8 @@ LALGenerateHyperbolicSpinOrbitCW( LALStatus             *stat,
   output->f->sampleUnits = lalHertzUnit;
   output->phi->sampleUnits = lalDimensionlessUnit;
   LALSnprintf( output->a->name, LALNameLength, "CW amplitudes" );
-  LALSnprintf( output->a->name, LALNameLength, "CW frequency" );
-  LALSnprintf( output->a->name, LALNameLength, "CW phase" );
+  LALSnprintf( output->f->name, LALNameLength, "CW frequency" );
+  LALSnprintf( output->phi->name, LALNameLength, "CW phase" );
 
   /* Allocate phase and frequency arrays. */
   LALSCreateVector( stat->statusPtr, &( output->f->data ), n );
