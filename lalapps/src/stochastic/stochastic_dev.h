@@ -54,7 +54,7 @@ typedef struct tagPSDEstimatorParams {
 static void parseOptions(INT4 argc, CHAR *argv[]);
 static void readDataPair(LALStatus *status, StreamPair *streamPair, \
 		ReadDataPairParams *params);
-static void psdEstimator(LALStatus *status, REAL4FrequencySeries output, \
+static void psdEstimator(LALStatus *status, REAL4FrequencySeries *output, \
     PSDEstimatorInput input, PSDEstimatorParams params);
 
 #ifdef  __cplusplus
