@@ -779,8 +779,8 @@ LALClustersPowerThreshold (
 			   )
 {
   UINT4 i,j;
-  REAL4 po;
-  REAL4 prob;
+  REAL4 po, P0;
+  REAL4 prob, norm;
 
   INITSTATUS (status, "LALClustersPowerThreshold", TFCLUSTERSC);
   ATTATCHSTATUSPTR (status);
@@ -836,14 +836,20 @@ LALClustersPowerThreshold (
   /* run the power threshold test */
   for(i=0; i<in->nclusters; i++) { /* loop over input clusters */
     
-    for(po = 0.0, j = 0; j<in->sizes[i]; j++)
+    for(po = 0.0, P0=0.0, j = 0; j<in->sizes[i]; j++) {
       po += in->P[i][j];
-        
-    for(j = 0; j<in->sizes[i]; j++)
-      po -= dir->rho[in->f[i][j]];
+      P0 += dir->rho[in->f[i][j]];
+    }
+     
+    po -= P0;
 
     incgam(status->statusPtr, (float)in->sizes[i], po, &prob);
     CHECKSTATUSPTR (status);
+
+    incgam(status->statusPtr, (float)in->sizes[i], P0, &norm);
+    CHECKSTATUSPTR (status);
+
+    prob /= norm;
 
     if(prob < dir->alpha) { /* we have a winner */
 
