@@ -106,7 +106,7 @@ CHAR   ifo[3];                          /* two character ifo code       */
 CHAR  *channelName      = NULL;         /* channel string               */
 CHAR   outfileName[FILENAME_MAX];       /* output file name             */
 
-enum { undefined, real_4, real_8 } cal_data = undefined; /* cal data type */
+enum { undefined, real_4, real_8 } calData = undefined; /* cal data type */
 
 /* data conditioning parameters */
 INT4   sampleRate       = -1;           /* sample rate of filter data   */
@@ -361,7 +361,7 @@ int main( int argc, char *argv[] )
       injResp.deltaF = 1.0 / ( numRespPoints * inj.deltaT );
       strcpy( injResp.name, inj.name );
 
-      if ( frInCacheName && ! cal_data)
+      if ( calCache )
       {
 	/* generate the response function for the current time */
 	if ( vrbflg ) fprintf( stdout, 
@@ -977,11 +977,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	{
 	  if ( ! strcmp( "real_4", optarg ) )
 	  {
-	    cal_data = real_4;
+	    calData = real_4;
 	  }
 	  else if ( ! strcmp( "real_8", optarg ) )
 	  {
-	    cal_data = real_8;
+	    calData = real_8;
 	    fprintf( stderr, "Sorry, code not currently set up to\n"
 		"run on real_8 data\n" );
 	    exit( 1 );
@@ -1172,6 +1172,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
 
   /* check validity of input data time */
+  
+  /* start time specified */
   if ( ! gpsStartTimeNS )
   {
     fprintf( stderr, "--gps-start-time must be specified\n" );
@@ -1179,6 +1181,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
   LAL_CALL( LALINT8toGPS( &status, &gpsStartTime, &gpsStartTimeNS ), 
       &status );
+
+  /* end time specified */
   if ( ! gpsEndTimeNS )
   {
     fprintf( stderr, "--gps-end-time must be specified\n" );
@@ -1186,6 +1190,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
   LAL_CALL( LALINT8toGPS( &status, &gpsEndTime, &gpsEndTimeNS ), 
       &status );
+
+  /* end after start */
   if ( gpsEndTimeNS <= gpsStartTimeNS )
   {
     fprintf( stderr, "invalid gps time range: "
@@ -1193,6 +1199,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds );
     exit( 1 );
   }
+  
   /* calculate the length of the data in NS */
   inputLengthNS = ( gpsEndTimeNS - gpsStartTimeNS );
 
@@ -1224,13 +1231,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       fprintf( stderr, "--channel-name must be specified\n" );
       exit( 1 );
     }
-    /* check a calibration cache has been specified */
-    if ( ! calCacheName && ! cal_data )
-    {
-      fprintf( stderr, "Either --calibration-cache must be specified,\n" 
-	  "or must run on --calibrated-data.\n");
-      exit( 1 );
-    }
   }
   else
   {
@@ -1248,6 +1248,22 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	  "can be specified when --frame-cache not given\n");
     }
   }
+
+  /* check that have one of: calibrated-data or a calibration-cache  */
+  if ( ! calCacheName && ! calData )
+  {
+    fprintf( stderr, "Either --calibration-cache must be specified,\n" 
+	"or must run on --calibrated-data.\n");
+    exit( 1 );
+  }
+  else if ( calCacheName && calData )
+  {
+    fprintf( stderr, 
+	"Only one of --calibration-cache and --calibrated-data\n"
+	"should be specified\n.");
+    exit( 1 );
+  }
+    
 
   /* check that we have then number of points to determine response fn */
   if ( numRespPoints < 0 )
