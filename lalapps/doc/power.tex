@@ -477,41 +477,42 @@ Patrick Brady,  Kipp Cannon and Saikat Ray Majumder
 
 \subsection{Algorithmic Implementation}
 
-This section of \textsc{LALApps} contains programs that can be used to
-perform burst searches using the excess power algorithm.   
 The Excess Power search method is motivated by the classical theory of
 signal detection in Gaussian noise.  The method is the optimal search
 strategy~\cite{Anderson:2000yy} having only knowledge of the time duration
 and frequency band of the expected signal,  but having no other
 information about the power distribution in advance of detection. 
 
-The method is most easily explained by a concrete example.
-The data is first high-pass filtered using a Butterworth high pass filter.
-Then suppose Excess Power processed data at 16384 Hz in 1 second segments 
-which overlap each other by 0.5 seconds. Each of these segments is then 
-windowed (using a Welch window) and transformed into the frequency domain 
+Consider a sampled time-series $s_j$ consisting of $N$ data points
+sampled once per $\Delta$ seconds.  In our case,  this data has been
+high-pss filtered using a Butterworth filter as described in
+Sec.~\ref{ss:butterworth} but this does not change the algorithm,  so
+we ignore it here.  This data is then windowed (using a user specified
+window) and transformed into the frequency domain
 \begin{equation}
-\tilde{s}_k =  \sum_{j=0}^{N-1}\frac{\Delta}{\sigma_w}w_js_j e^{-2 \pi i j k /N}
+\tilde{s}_k =  \frac{\Delta}{\sigma_w} \sum_{j=0}^{N-1} w_js_j e^{-2 \pi i j k /N}
 \end{equation}
-where $N=16\, 384$, $s_j$ is the filtered gravitational 
-wave channel, $\Delta$ is the sampling time interval, $w_j$ is the window
-function and $\sigma_w$ is  
+where $w_j$ is the window function and $\sigma_w$ is  
 \begin{equation}
-{\sigma_w}^2 = \frac{1}{N}\sum_{j=0}^{N-1}{w_j}^2
+{\sigma_w}^2 = \frac{1}{N}\sum_{j=0}^{N-1}{w_j}^2 \; .
 \end{equation}
-
-Now the input to the Excess Power search code is the whitened 
-frequency domain signal,
+Finally,  the data is whitened
 \begin{equation}
 \hat{s}_k = 2\sqrt{\frac{\Delta f}{P_k}}\tilde{s}_k
 \end{equation}
-where $\Delta f = \frac{1}{N\Delta}$ is the sampling frequency interval and 
-$P_k = 2 \Delta f\langle|\tilde{H}_k^2| \rangle$ is the 
-power spectral estimate.  This spectrum is estimated by the median
-power at each frequency for a number of overlapping 1 second segments.
+where $\Delta f = {1}/{N\Delta}$ is the sampling frequency interval and 
+$P_k = 2 \Delta f\langle|\tilde{s}_k^2| \rangle$ is the 
+power spectral estimate.  This spectrum is estimated using the median
+power at each frequency for a number of overlapping segments.
 The use of the median avoids bias in the spectrum caused by the
 presence of a gravitational wave or other large non-astrophysical
-transients present in any of the segments.   
+transients present in any of the segments.   Notice that 
+\begin{equation}
+\langle | \hat{s}_k |^2 \rangle = 2 \; .
+\end{equation}
+If the original time series contains only Gaussian noise,  this
+construction makes the real and imaginary parts of
+each frequency component a unit variance Gaussian random variable. 
 
 \subsubsection{The filter}
 
