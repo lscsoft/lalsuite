@@ -1,5 +1,4 @@
 #!/usr/bin/perl -w
-use strict;
 #-----------------------------------------------------------------------------------
 # processJobsTable.pl 
 #-----------------------------------------------------------------------------------
@@ -16,20 +15,33 @@ use strict;
 # July, 2003 - Dennis Mackin <dsmackin@stupidlinux.com>  - Created the original version of the script
 # $Id$
 #-----------------------------------------------------------------------------------
+use strict;
 
-#-----------------------------------------------------------------------------------
-#  GLOBAL VARIABLES
-#-----------------------------------------------------------------------------------
+#Add the program path and the users entire path to @INC (where perl searches for modules)
+my $programPath = $0;
+# now clean the filename off the path
+$programPath =~ s/(\w+)\.pl$//;
+
+print $programPath,"\n\n";
+use lib split(":", $ENV{'PATH'}), qw($programPath);
+
+#load the power tools module which contains functions shared by the scripts
+use power_tools;
+
 # Check to make sure date of table is included as arg
-my $USAGE = "\nusage: countJobsTable.pl  YYMMDD RUN_NUM \n\n";
+my $USAGE = "\nusage: processJobsTable.pl  PARAMETERS_FILE YYMMDD-RUN_NUM \n\n";
 if(! $ARGV[1])
 {
 	die $USAGE;
 }
-#my $DATE = f_getDateYYMMDD();
-my $DATE =$ARGV[0];	
 
-my $runNum = $ARGV[1];
+#get the date and runNum
+# NEED TO ADD ERROR CHECKING HERE !!!!
+my ($DATE, $RUN_NUM) = split '-', $ARGV[1];	
+
+my $parametersFile = $ARGV[0];
+
+my $params = f_parseParametersFile($parametersFile);
 
 my %STATUS = (
 					P => "Pending",
@@ -38,124 +50,28 @@ my %STATUS = (
 					U => "User Review Required",
 					E => "Error");
 
-#my $TIME_CHUNK_SIZE = 64;
-#my $TIME_CHUNK_MIN_SIZE = 16;
-
-my $DATA_SET_NAME = "S2H1v02";
-#my $DATA_QUALITY_FILE = "/home/dsmackin/lal/S2H1v02_segs-TEST.txt";
-#my $PLAYGROUND_FILE  = "/home/dsmackin/lal/s2-playground-TEST.txt";
-
-#path for CACHE_FILES
-my $CACHE_PATH = "/home/dsmackin/tmp/cache";
-
-my $EXECUTABLE = "/home/dsmackin/bin/lalapps_power";
-
-#OUTPUT FILES
-my $OUTPUT_PATH = "/scratch/power/tests/$DATE-$runNum";
-my $OUTPUT_FILE_ROOT  =  "search$DATE-EPOCH";
-my $CONDOR_SUBMIT_FILE = "$OUTPUT_PATH/Search-$DATA_SET_NAME-$DATE.sub";
-my $JOBS_TABLE = "$OUTPUT_PATH/power_jobs_$DATE.tbl";
-my $LOG = "$OUTPUT_PATH/processTable-$DATE.log";
-
-my $JOBS_TABLE_FIELDS = 6;
-
-my $INSTRUMENT = "H";	
-my $TYPE = "RDS_R_L1";
-
-#-----------------------------------------------------------------------------------
-# LALApps_power  PARAMETERS
-#-----------------------------------------------------------------------------------
-
-# $SEED is used for the random number generator used to create random noise.
-#my $SEED = 4;
-
-# number of points to analyze per second
-# do not change this value
-my $NPTS = 16384;
-
-# do not change, must be $NPTS/2
-my $OLAP =  $NPTS/2;
-
-# leave these 3 values as they are
-my $OLAPFCTR = 3;
-my $MINFBIN = 2;
-my $MINTBIN = 2;
-
-#the lower end of the frequency spectrum to analyze; set to 60 for S2 data
-my $FLOW = 60.0;
-
-#do not change
-my $DELF = 1.0;
-
-#Upper limit on frequency.
-# This value must be a power of 2
-my $LNGTH = 1024;
-
-# Standard diviation; can change this value but make bigger not smaller
-my $NSIGMA = 2.0;
-
-#can change but not very relevant at this stage
-my $ALPHADEF = 0.5;
-
-# Segment duty cycle. Data should take $SEGDCLE segments at a go
-my $SEGDCLE = 64;
-
-# If the probability of an event occuring from background noise
-# is less than the threshold, then an event is considered an Event
-# trigger generator (ETG). This number should be between 1.0e-09 and
-# 1.0e-05
-my $THRESHOLD = "10.0e-10";
-
-# Controls how many events get written out per segment
-my $ETOMSTR = 10;
-
-# The source of the data
-my $CHANNEL = "H2:LSC-AS_Q";
-#my $FRAMECACHE = "/scratch/LALcaches/S2-RDS-LHO.cache	";
-
-# does not currently do anything but keep it set to 0
-my $SIMTYPE = 0;
-
-# can be useMedian or useMean
-my $SPECTYPE = "useMedian";
-
-# Must be an integer. 2 works well.
-my $WINDOW = 2;
-
-# start time for data analysis
-my $EPOCH = 729273613;
-
-#numpts = (number of points in first segment) + (number of points in each offset)(number of offsets)
-# Do not change this value
-# NUMPTS is dynamically set when needed
-#my $NUMPTS = $NPTS + ($NPTS - $OLAP)*($NSEG-1) + 2*$OLAP;
-
-# If you want to create a file with the print spectrum, uncomment the line with "--printSpectrum"
-#	If you don't want the print spectrum output file, uncomment the line without "--printSpectrum"
-my $PRINT_SPECTRUM = "";
-#my $PRINT_SPECTRUM = "--printSpectrum";
-
-# Name of the XML output file
-#my $OUTFILE = "REALSEARCH-$date-SEED_$SEED-GPS_$EPOCH-LENGTH_$LNGTH.xml";
-
 #-----------------------------------------------------------------------------------
 #  MAIN
 #-----------------------------------------------------------------------------------
 
-open LOG, ">>$LOG";
+my $startTime = time();
+
+#set the path for all program output files
+my $runPath = ${$params}{OUTPUT_PATH}  . "/$DATE-$RUN_NUM";
+
+#build the parameter dependent globals
+my $JOBS_TABLE = "$runPath/power_jobs.tbl";
+my $CONDOR_SUBMIT_FILE = "$runPath/power_jobs.sub";
+
+open LOG, ">>$runPath/" . ${$params}{'LOG'};
 
 my $t = localtime();
-print LOG  "Began run at $t\n";
+print LOG "Starting $0 at: $t\n"; # $0 stores program name
+print "Starting $0 at: $t\n";
 
 #set up the condor submit file by writing executable line 
 # and other statements relevant to all the jobs to be submitted
 f_writeCondorSubmitFileHeaders( );
-
-#playgroundSeconds is a reference to a hash array that contains all the playground
-# seconds.
-#my $playgroundSeconds = lf_getPlaygroundSeconds($PLAYGROUND_FILE);
-#my $countPlaygroundSecs =0;
-
 
 # now create the submit script using quality data file and the 
 # the playground seconds hash array. The return code is one
@@ -167,8 +83,8 @@ if ($returnCode){
 }
 
 $t = localtime();
-print "Completed run at $t\n";
-print LOG "Submitted run at $t\n";
+print "Submitted jobs at $t\n";
+print LOG "Submitted jobs at $t\n";
 close LOG;		
 									
 
@@ -201,15 +117,16 @@ sub f_processJobsTable {
 		#read in fields by splitting line on spaces
 		my @fields = split "\t";
 		
-		if (scalar @fields != $JOBS_TABLE_FIELDS) {
-			die "Expected $JOBS_TABLE_FIELDS fields in $JOBS_TABLE. Found " . scalar(@fields) .".\n";
+		if (scalar @fields != ${$params}{'JOBS_TABLE_FIELDS'}) {
+			die "Expected " . ${$params}{'JOBS_TABLE_FIELDS'} . " fields in $JOBS_TABLE. Found " . scalar(@fields)  . ".\n";
 		}
 		
 		#read columns into variables
 		my ($statusCode, $startSec, $stopSec, $framecache, $outfile)  = ($fields[0],$fields[2],$fields[3],$fields[4],$fields[5]);
 
-		if ($statusCode eq "P"){
-			print LOG "Adding $startSec - $stopSec to submit file\n.";
+		if($statusCode eq "C" or $statusCode eq "E"){
+			next; #nothing to do
+		}elsif ($statusCode eq "P"){
 			f_writeJobToCondorSubmitFile($startSec,  $stopSec, $framecache, $outfile);
 			$submitCondor = 1;
 			$statusCode = "R";
@@ -243,7 +160,7 @@ sub f_writeCondorSubmitFileHeaders{
 	my $stmts = << "STATEMENTS";
 Getenv = True
 Universe = Vanilla
-Executable = $EXECUTABLE
+Executable = ${$params}{'EXECUTABLE'}
 STATEMENTS
 
 	open ("CONDOR_SUB", ">$CONDOR_SUBMIT_FILE") or die "Couldn't open $CONDOR_SUBMIT_FILE.";
@@ -298,8 +215,8 @@ sub f_checkForProgramCompletion{
 		}
 	}
 
-	# The jobs not complete yet. Return R because it's still running
-	return "R";
+	# No output. Return E for errror
+	return "E";
 }
 
 #-----------------------------------------------------------------------------------
@@ -315,42 +232,40 @@ sub f_checkForProgramCompletion{
 sub f_writeJobToCondorSubmitFile {
 
 	my ($startSec, $stopSec, $framecache, $outfile) = @_;
+	my $duration = $stopSec - $startSec;
 	
 	#number of segments = (2*number of seconds) - 1
 	my $epoch = $startSec;
 	my $nseg = 2*($stopSec - $startSec) - 1;
-	my $numpts = $NPTS + ($NPTS - $OLAP)*( $nseg-1)+ 2*$OLAP;
+	my $olap = ${$params}{'NPTS'}/2;
+	my $numpts = ${$params}{'NPTS'} + (${$params}{'NPTS'} - $olap)*( $nseg-1)+ 2*$olap;
 	my $condorCmd;
 
 	# BUILD THE ARGS
 	my $args = << "POWER_ARGS";
-		--npts $NPTS
+		--npts ${$params}{'NPTS'}
 		--nseg $nseg
-		--olap $OLAP
-		--olapfctr $OLAPFCTR
-		--minfbin $MINFBIN
-		--mintbin $MINTBIN
-		--flow $FLOW
-		--delf $DELF
-		--lngth $LNGTH
-		--nsigma $NSIGMA
-		--alphdef $ALPHADEF
-		--segdcle $SEGDCLE
-		--threshold $THRESHOLD
-		--etomstr $ETOMSTR
-		--channel $CHANNEL
+		--olap $olap
+		--olapfctr ${$params}{'OLAPFCTR'}
+		--minfbin ${$params}{'MINFBIN'}
+		--mintbin ${$params}{'MINTBIN'}
+		--flow ${$params}{'FLOW'}
+		--delf ${$params}{'DELF'}
+		--lngth ${$params}{'LNGTH'}
+		--nsigma ${$params}{'NSIGMA'}
+		--alphdef ${$params}{'ALPHADEF'}
+		--segdcle ${$params}{'SEGDCLE'}
+		--threshold ${$params}{'THRESHOLD'}
+		--etomstr ${$params}{'ETOMSTR'}
+		--channel ${$params}{'CHANNEL'}
 		--framecache $framecache		
-		--simtype $SIMTYPE
-		--spectype $SPECTYPE
-		--window $WINDOW
+		--simtype ${$params}{'SIMTYPE'}
+		--spectype ${$params}{'SPECTYPE'}
+		--window ${$params}{'WINDOW'}
 		--epoch $epoch 0
 		--numpts $numpts
-		$PRINT_SPECTRUM
 		--outfile  $outfile
 POWER_ARGS
-
-	#if cmd is to include sine wave, add it to the args
-	#if($INCLUDE_SINE_WAVE){ $args .= " --sine $FREQ $DELTA $AMPLITUDE $WIDTH";}
 
 	#clean the args string so that it is only one line
 	$args =~ s/(\n|\t)/ /g;
@@ -358,9 +273,9 @@ POWER_ARGS
 	#create the condor command
 	$condorCmd =<< "ARGUMENTS";
 		Arguments      = $args
-		Output     = $OUTPUT_PATH/out/$OUTPUT_FILE_ROOT$epoch.out
-		Error      = $OUTPUT_PATH/err/$OUTPUT_FILE_ROOT$epoch.err
-		Log        = $OUTPUT_PATH/log/$OUTPUT_FILE_ROOT$epoch.log
+		Output     = $runPath/out/$epoch-$duration.out
+		Error      = $runPath/err/$epoch-$duration.err
+		Log        = $runPath/log/$epoch-$duration.log
 		Queue
 
 ARGUMENTS
@@ -387,35 +302,4 @@ sub f_submitJobs {
 	
 	#call rescedule to minimize delay before jobs are started
 	system("/opt/condor/sbin/condor_reschedule");
-}
-
-#-----------------------------------------------------------------------------------
-#  f_getDateYYMMDD
-#-----------------------------------------------------------------------------------
-#  Returns date as YYMMDD
-#-----------------------------------------------------------------------------------
-sub f_getDateYYMMDD{
-    my %month = (
-                Jan => '01',
-                Feb => '02',
-                Mar => '03',
-                Apr => '04',
-                May => '05',
-                Jun => '06',
-                Jul => '07',
-                Aug => '08',
-                Sep => '09',
-                Oct => '10',
-                Nov => '11',
-                Dec => '12'
-                );
-    my @timeparts = split(" ", localtime());
-
-    #add in leading 0 for day if needed
-    if ($timeparts[2]<10) {$timeparts[2] = "0" . $timeparts[2];};
-
-	 #change YYYY to YY
-	 $timeparts[4] =~ s/^20//;
-
-    return "$timeparts[4]$month{$timeparts[1]}$timeparts[2]";
 }

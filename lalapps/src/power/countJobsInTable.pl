@@ -9,66 +9,59 @@
 #-----------------------------------------------------------------------------------
 use strict;
 
+#Add the program path and the users entire path to @INC (where perl searches for modules)
+my $programPath = $0;
+# now clean the filename off the path
+$programPath =~ s/(\w+)\.pl$//;
+
+use lib split(":", $ENV{'PATH'}), qw($programPath);
+
+#load the power tools module which contains functions shared by the scripts
+use power_tools;
+
 # Check to make sure date of table is included as arg
-my $USAGE = "\nusage: countJobsTable.pl  YYMMDD RUN_NUM \n\n";
+my $USAGE = "\nusage: countJobsTable.pl PARAMETERS_FILE YYMMDD-RUN_NUM  \n\n";
 if(! $ARGV[1])
 {
 	die $USAGE;
 }
-#my $DATE = f_getDateYYMMDD();
-my $DATE =$ARGV[0];	
 
-my $runNum = $ARGV[1];
-my $JOBS_TABLE = "/scratch/power/tests/$DATE-$runNum/power_jobs_$DATE.tbl";
+#get the date and runNum
+# NEED TO ADD ERROR CHECKING HERE !!!!
+my ($DATE, $RUN_NUM) = split '-', $ARGV[1];	
+
+my $parametersPath = $ARGV[0];
+my $params = f_parseParametersFile($parametersPath);
+
+#set the path for all program output files
+my $runPath = ${$params}{OUTPUT_PATH}  . "/$DATE-$RUN_NUM";
+#build the parameter dependent globals
+my $JOBS_TABLE = "$runPath/power_jobs.tbl";
 
 print "\nCounting jobs in table $JOBS_TABLE.\n\n";	
 open TABLE, "$JOBS_TABLE" or die "Couldn't open $JOBS_TABLE.\n";
 
 my $i=0;
 my %statusCount = ( );
+my $amountOfData = 0;
 while(<TABLE>){
 	chomp;
-	my @fields = split "\t";
+	my ($statusCode, $statusDescription, $startSec, $endSec, $cache, $xml) = split "\t";
 	$i++;
-	if ($statusCount{$fields[0]}){
-		$statusCount{$fields[0]}++;
+	if ($statusCount{$statusCode}){
+		$statusCount{$statusCode}++;
 	}else{
-		$statusCount{$fields[0]} = 1;
+		$statusCount{$statusCode} = 1;
 	}
+	
+	#get the length of data 
+	#my @parts = reverse split "-", $fields[4];
+	#$amountOfData += scalar($parts[0]);
+	$amountOfData += $endSec - $startSec;
 }
 
 foreach(sort keys %statusCount){
 	print "$_=", $statusCount{$_},"\n";
 }
-print "\n$i jobs total in table.\n";
-
-#-----------------------------------------------------------------------------------
-#  f_getDateYYMMDD
-#-----------------------------------------------------------------------------------
-#  Returns date as YYMMDD
-#-----------------------------------------------------------------------------------
-sub f_getDateYYMMDD{
-    my %month = (
-                Jan => '01',
-                Feb => '02',
-                Mar => '03',
-                Apr => '04',
-                May => '05',
-                Jun => '06',
-                Jul => '07',
-                Aug => '08',
-                Sep => '09',
-                Oct => '10',
-                Nov => '11',
-                Dec => '12'
-                );
-    my @timeparts = split(" ", localtime());
-
-    #add in leading 0 for day if needed
-    if ($timeparts[2]<10) {$timeparts[2] = "0" . $timeparts[2];};
-
-	 #change YYYY to YY
-	 $timeparts[4] =~ s/^20//;
-
-    return "$timeparts[4]$month{$timeparts[1]}$timeparts[2]";
-}
+print "\nTOTAL = $i \n";
+print "Total Data Analyzed: $amountOfData\n\n";
