@@ -34,6 +34,7 @@ main (int argc, char *argv[])
   InspiralCoarseBankIn         *bankIn;
   FindChirpCreateBankParams    *createBankParams;
 
+  const UINT4                   numSegments = 7;
   
   /*
    *
@@ -53,8 +54,8 @@ main (int argc, char *argv[])
   /* bank generation parameters */
   bankIn->mMin          = 1.0;
   bankIn->MMax          = 10.0;
-  bankIn->mmCoarse      = 0.90;
-  bankIn->mmFine        = 0.98;
+  bankIn->mmCoarse      = 0.50;
+  bankIn->mmFine        = 0.70;
   bankIn->fLower        = 40.;
   bankIn->fUpper        = 2000;
   bankIn->iflso         = 0;
@@ -76,8 +77,9 @@ main (int argc, char *argv[])
     return 1;
   }
 
-  /* request a flat template bank */
-  createBankParams->numLevel = 0;
+  /* request a heirarchical template bank */
+  createBankParams->numLevel = 1;
+  createBankParams->numSegments = numSegments;
 
 
   /*
@@ -123,6 +125,7 @@ PrintInspiralBank (
     FILE                *fp
     )
 {
+  INT4                 i;
   InspiralTemplate    *current;
 
   INITSTATUS( status, "PrintInspiralBank", MAIN );
@@ -146,6 +149,13 @@ PrintInspiralBank (
         current->mass1, current->mass2, current->totalMass,
         current->eta, current->mu,
         current->next, current->fine );
+    fprintf( fp, "   > " );
+    for ( i = 0; i < current->numSegments; ++i )
+    {
+      fprintf( fp, "segmentId[%d] = %d  ",
+          i, current->segmentId[i] );
+    }
+    fprintf( fp, "\n\n" );
     fflush( fp );
     if ( current->fine )
     {

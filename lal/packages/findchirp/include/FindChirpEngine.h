@@ -65,6 +65,7 @@ NRCSID (FINDCHIRPENGINEHH, "$Id$");
 #define FINDCHIRPENGINEH_ERANK 9
 #define FINDCHIRPENGINEH_EUEXT 10
 #define FINDCHIRPENGINEH_ELVEL 11
+#define FINDCHIRPENGINEH_ESEGZ 12
 #define FINDCHIRPENGINEH_MSGENULL "Null pointer"
 #define FINDCHIRPENGINEH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPENGINEH_MSGENUMZ "Data segment length is zero"
@@ -76,6 +77,7 @@ NRCSID (FINDCHIRPENGINEHH, "$Id$");
 #define FINDCHIRPENGINEH_MSGERANK "Search node has incorrect rank"
 #define FINDCHIRPENGINEH_MSGEUEXT "Unrecognised exchange type"
 #define FINDCHIRPENGINEH_MSGELVEL "Invalid heriarchical template bank level"
+#define FINDCHIRPENGINEH_MSGESEGZ "Number of data segments is zero"
 /* </lalErrTable> */
 
 
@@ -131,6 +133,7 @@ typedef struct
 tagFindChirpCreateBankParams
 {
   INT4                          numCoarse;
+  UINT4                         numSegments;
   UINT4                         numLevel;
 }
 FindChirpCreateBankParams;

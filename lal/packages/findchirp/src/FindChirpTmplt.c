@@ -59,6 +59,12 @@ LALFindChirpCreateInspiralBank (
     ABORT( status, FINDCHIRPENGINEH_ELVEL, FINDCHIRPENGINEH_MSGELVEL );
   }
 
+  /* make sure that we are filtering a non zero number of segments */
+  if ( params->numSegments <= 0 )
+  {
+    ABORT( status, FINDCHIRPENGINEH_ELVEL, FINDCHIRPENGINEH_MSGELVEL );
+  }
+
   /* make sure this is always checked */
   if ( *bankHead ) 
   {
@@ -98,6 +104,22 @@ LALFindChirpCreateInspiralBank (
   tmpltPtr->next = NULL;
   tmpltPtr->fine = NULL;
 
+  /* create the list of segments to be filtered and turn them all on */
+  tmpltPtr->numSegments = params->numSegments;
+  tmpltPtr->segmentId = (INT4 *) 
+    LALCalloc( params->numSegments, sizeof(INT4) );
+  if ( ! tmpltPtr->segmentId )
+  {
+    LALFree( coarseList );
+    TRY( LALFindChirpDestroyInspiralBank( status->statusPtr, bankHead ),
+        status );
+    ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
+  }
+  for ( i = 0; i < params->numSegments; ++i )
+  {
+    tmpltPtr->segmentId[i] = 1;
+  }
+
   /* ...and the rest of the bank */
   for ( tmpltCounter = 1; tmpltCounter < params->numCoarse; ++tmpltCounter )
   {
@@ -118,6 +140,23 @@ LALFindChirpCreateInspiralBank (
     tmpltPtr->level = 0;
     tmpltPtr->next = NULL;
     tmpltPtr->fine = NULL;
+
+    /* create the list of segments to be filtered and turn them all on */
+    tmpltPtr->numSegments = params->numSegments;
+    tmpltPtr->segmentId = (INT4 *) 
+      LALCalloc( params->numSegments, sizeof(INT4) );
+    if ( ! tmpltPtr->segmentId )
+    {
+      LALFree( coarseList );
+      TRY( LALFindChirpDestroyInspiralBank( status->statusPtr, bankHead ),
+          status );
+      ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
+    }
+    for ( i = 0; i < params->numSegments; ++i )
+    {
+      tmpltPtr->segmentId[i] = 1;
+    }
+
   }
 
 
@@ -159,6 +198,7 @@ LALFindChirpCreateInspiralBank (
       {
         LALFree( coarseList );
         LALFree( fineList );
+        LALFree( fineBankIn );
         TRY( LALFindChirpDestroyInspiralBank( status->statusPtr, bankHead ),
             status );
       }
@@ -174,6 +214,7 @@ LALFindChirpCreateInspiralBank (
         {
           LALFree( coarseList );
           LALFree( fineList );
+          LALFree( fineBankIn );
           TRY( LALFindChirpDestroyInspiralBank( status->statusPtr, bankHead ),
               status );
           ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
@@ -186,6 +227,20 @@ LALFindChirpCreateInspiralBank (
         fineTmpltPtr->next = NULL;
         fineTmpltPtr->fine = NULL;
 
+        /* create the list of segments to be filtered */
+        fineTmpltPtr->numSegments = params->numSegments;
+        fineTmpltPtr->segmentId = (INT4 *) 
+          LALCalloc( params->numSegments, sizeof(INT4) );
+        if ( ! fineTmpltPtr->segmentId )
+        {
+          LALFree( coarseList );
+          LALFree( fineList );
+          LALFree( fineBankIn );
+          TRY( LALFindChirpDestroyInspiralBank( status->statusPtr, bankHead ),
+              status );
+          ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
+        }
+
         /* ...and the rest of the fine bank */
         for ( i = 1; i < numFine; ++i )
         {
@@ -195,6 +250,7 @@ LALFindChirpCreateInspiralBank (
           {
             LALFree( coarseList );
             LALFree( fineList );
+            LALFree( fineBankIn );
             TRY( LALFindChirpDestroyInspiralBank( status->statusPtr, bankHead ),
                 status );
             ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
@@ -207,6 +263,20 @@ LALFindChirpCreateInspiralBank (
           fineTmpltPtr->level = 1;
           fineTmpltPtr->next = NULL;
           fineTmpltPtr->fine = NULL;
+
+          /* create the list of segments to be filtered */
+          fineTmpltPtr->numSegments = params->numSegments;
+          fineTmpltPtr->segmentId = (INT4 *) 
+            LALCalloc( params->numSegments, sizeof(INT4) );
+          if ( ! fineTmpltPtr->segmentId )
+          {
+            LALFree( coarseList );
+            LALFree( fineList );
+            LALFree( fineBankIn );
+            TRY( LALFindChirpDestroyInspiralBank( status->statusPtr, bankHead ),
+                status );
+            ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
+          }
         }
 
       } /* end if any fine templates returned */
@@ -260,6 +330,7 @@ LALFindChirpDestroyInspiralBank (
       CHECKSTATUSPTR( status );
     }
     *bankHead = (*bankHead)->next;
+    LALFree( current->segmentId );
     LALFree( current );
   }
 
