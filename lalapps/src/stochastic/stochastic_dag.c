@@ -500,7 +500,6 @@ INT4 main(INT4 argc, CHAR *argv[])
     MComegaGW.data = NULL;
     LAL_CALL( LALSCreateVector(&status, &(MComegaGW.data), MCfreqLength), \
         &status );
-
     memset(MComegaGW.data->data, 0,
         MComegaGW.data->length * sizeof(*MComegaGW.data->data));
 
@@ -522,7 +521,6 @@ INT4 main(INT4 argc, CHAR *argv[])
         &status );
     LAL_CALL( LALCCreateVector(&status, &(MCresponse2.data), MCfreqLength), \
         &status );
-
     memset(MCresponse1.data->data, 0, \
         MCresponse1.data->length * sizeof(*MCresponse1.data->data));
     memset(MCresponse2.data->data, 0, \
@@ -535,7 +533,6 @@ INT4 main(INT4 argc, CHAR *argv[])
           &status );
       LAL_CALL( LALCCreateVector( &status, &(MCresp2[i]), MCfreqLength), \
           &status );
-
       memset(MCresp1[i]->data, 0, \
           MCresp1[i]->length * sizeof(*MCresp1[i]->data));
       memset(MCresp2[i]->data, 0, \
@@ -627,7 +624,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* allocate memory for response functions */
-  responseTemp1.data = responseTemp2.data = NULL;
+  responseTemp1.data = NULL;
+  responseTemp2.data = NULL;
   LAL_CALL( LALCCreateVector(&status, &(responseTemp1.data), respLength), \
       &status );
   LAL_CALL( LALCCreateVector(&status, &(responseTemp2.data), respLength), \
@@ -653,15 +651,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* allocate memory for reduced frequency band response functions */
-  response1.data = response2.data = NULL;
-  LAL_CALL( LALCCreateVector(&status, &(response1.data), filterLength), \
-      &status );
-  LAL_CALL( LALCCreateVector(&status, &(response2.data), filterLength), \
-      &status );
-  memset(response1.data->data, 0, \
-      response1.data->length * sizeof(*response1.data->data));
-  memset(response2.data->data, 0, \
-      response2.data->length * sizeof(*response2.data->data));
+  response1.data = (COMPLEX8Sequence*)LALCalloc(1, sizeof(COMPLEX8Sequence));
+  response2.data = (COMPLEX8Sequence*)LALCalloc(1, sizeof(COMPLEX8Sequence));
+  response1.data->length = filterLength;
+  response2.data->length = filterLength;
 
   for (i = 0; i < numSegments; i++)
   {
@@ -1759,8 +1752,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL( LALDestroyVector(&status, &(calPsd2)), &status );
   LAL_CALL( LALCDestroyVector(&status, &(responseTemp1.data)), &status );
   LAL_CALL( LALCDestroyVector(&status, &(responseTemp2.data)), &status );
-  LAL_CALL( LALCDestroyVector(&status, &(response1.data)), &status );
-  LAL_CALL( LALCDestroyVector(&status, &(response2.data)), &status );
+  LALFree(response1.data);
+  LALFree(response2.data);
   LAL_CALL( LALDestroyVector(&status, &(optFilter.data)), &status );
   LAL_CALL( LALDestroyVector(&status, &(calInvPsd1.data)), &status );
   LAL_CALL( LALDestroyVector(&status, &(calInvPsd2.data)), &status );
