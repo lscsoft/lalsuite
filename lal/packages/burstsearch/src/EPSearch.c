@@ -203,7 +203,7 @@ static void normalize_to_psd(COMPLEX8FrequencySeries *fseries, REAL4FrequencySer
 	size_t i;
 
 	for(i = 0; i < fseries->data->length; i++) {
-		factor = sqrt(2.0/psd->data->data[i] )*sqrt(2*fseries->deltaF);
+		factor = 2.0 * sqrt(fseries->deltaF / psd->data->data[i]);
 		fseries->data->data[i].re *= factor;
 		fseries->data->data[i].im *= factor;
 	}
@@ -302,7 +302,7 @@ EPSearch(
 		normalize_to_psd(fseries, AverageSpec);
 
 		if(params->printSpectrum)
-		  print_complex8fseries("frequency_series.dat", fseries);
+			print_complex8fseries("frequency_series.dat", fseries);
 
 		/*
 		 * Create time-frequency tiling of plane.
