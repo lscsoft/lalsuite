@@ -1,3 +1,4 @@
+#include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -26,6 +27,10 @@ NRCSID (MAIN, "$Id$");
   par_ = par_->next; \
   par_->real4_ = (REAL4 *)LALCalloc(1, sizeof(REAL4)); \
   *(par_->real4_) = str_
+
+#ifndef WORDS_BIGENDIAN
+  static void endian_swap(char * pdata, int dsize, int nelements);
+#endif
 
 INT4 lalDebugLevel = 0; /* set to 2 for full debug, painfully slow with tfclusters */   
 
@@ -129,6 +134,10 @@ INT4 main(INT4 argc, CHAR *argv[]) {
       printf("%s %s\t%i\t%i\t%g\t%g\t%s\t%i\t%g\t%g\t%s\t%s\t%s\t%i\n", optr->snglTransdataTable->ifo, optr->snglTransdataTable->name, optr->snglTransdataTable->dimensions, optr->snglTransdataTable->x_bins, optr->snglTransdataTable->x_start, optr->snglTransdataTable->x_end, optr->snglTransdataTable->x_units, optr->snglTransdataTable->y_bins, optr->snglTransdataTable->y_start, optr->snglTransdataTable->y_end, optr->snglTransdataTable->y_units, optr->snglTransdataTable->data_type, optr->snglTransdataTable->data_units, optr->snglTransdataTable->transdata_length);
 
       memcpy(&nclusters, optr->snglTransdataTable->trans_data, sizeof(UINT4));
+#ifndef WORDS_BIGENDIAN
+      endian_swap((char *)(&nclusters), sizeof(UINT4), 1);
+#endif
+
       for(i=0;i<nclusters;i++) {
 
 	UINT4 ti,fi;
@@ -137,6 +146,12 @@ INT4 main(INT4 argc, CHAR *argv[]) {
 	memcpy(&ti, optr->snglTransdataTable->trans_data+sizeof(UINT4)+i*(2*sizeof(UINT4)+sizeof(REAL8)), sizeof(UINT4));
 	memcpy(&fi, optr->snglTransdataTable->trans_data+sizeof(UINT4)+sizeof(UINT4)+i*(2*sizeof(UINT4)+sizeof(REAL8)), sizeof(UINT4));
 	memcpy(&P, optr->snglTransdataTable->trans_data+2*sizeof(UINT4)+sizeof(UINT4)+i*(2*sizeof(UINT4)+sizeof(REAL8)), sizeof(UINT4));
+
+#ifndef WORDS_BIGENDIAN
+      endian_swap((char *)(&ti), sizeof(UINT4), 1);
+      endian_swap((char *)(&fi), sizeof(UINT4), 1);
+      endian_swap((char *)(&P), sizeof(REAL8), 1);
+#endif
 
 	printf("%u\t%u\t%g\n", ti, fi, P);
 
@@ -208,3 +223,33 @@ INT4 main(INT4 argc, CHAR *argv[]) {
   return 0;
 
 }
+
+
+#ifndef WORDS_BIGENDIAN
+static void endian_swap(char * pdata, int dsize, int nelements)
+
+{
+
+        int i,j,indx;
+        char tempbyte;
+
+        if (dsize <= 1) return;
+
+        for (i=0; i<nelements; i++)
+        {
+                indx = dsize;
+                for (j=0; j<dsize/2; j++)
+                {
+                        tempbyte = pdata[j];
+                        indx = indx - 1;
+                        pdata[j] = pdata[indx];
+                        pdata[indx] = tempbyte;
+                }
+
+                pdata = pdata + dsize;
+        }
+
+        return;
+
+}
+#endif
