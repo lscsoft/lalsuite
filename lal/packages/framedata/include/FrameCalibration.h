@@ -21,6 +21,7 @@
 
 #include <lal/LALDatatypes.h>
 #include <lal/Calibration.h>
+#include <lal/FrameCache.h>
 #ifndef _FRAMECALIBRATION_H
 #define _FRAMECALIBRATION_H
 
@@ -88,7 +89,7 @@ void
 LALExtractFrameResponse(
     LALStatus               *status,
     COMPLEX8FrequencySeries *output,
-    const CHAR              *catalog,
+    FrCache                 *calCache,
     CalibrationUpdateParams *calfacts
     );
 

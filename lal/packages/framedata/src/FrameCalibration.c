@@ -18,8 +18,8 @@
  *
  * The routine \texttt{LALFrameExtractResponse()} extracts the necessary
  * calibration information from the frames. The frames used to construct
- * the calibration are located using the specified catalog. The function
- * constructs a response function (as a frequency series) from this
+ * the calibration are located using the specified LAL frame cache. The
+ * function constructs a response function (as a frequency series) from this
  * information.  The fourth argument is a pointer to a CalibrationUpdateParams
  * structure.  If the ifo field is non-\texttt{NULL} then this
  * string specifies the detector (H1, H2, L1, etc.) for which the calibration
@@ -45,7 +45,8 @@
  * frequency step size should be set to the required value so that the routine
  * can interpolate the response function to the required frequencies.
  * \end{enumerate}
- * The format of the frame catalog must be as follows.
+ * The format of the LAL frame cache must contain frames of the following
+ * types.
  * \begin{enumerate}
  * \item It must contain an entry for one frame of type \verb+CAL_REF+ which 
  * contains the response and cavity gain frequency series that will be up
@@ -111,8 +112,7 @@ NRCSID( FRAMECALIBRATIONC, "$Id$" );
   } \
   if ( C0.data ) { \
     TRY( LALCDestroyVector( status->statusPtr, &C0.data ), status ); \
-  } \
-  TRY( LALDestroyFrCache( status->statusPtr, &calCache ), status );
+  }
 
 #define OPEN_FAC \
       LALFrCacheOpen( status->statusPtr, &facStream, facCache ); \
@@ -151,14 +151,13 @@ void
 LALExtractFrameResponse(
     LALStatus               *status,
     COMPLEX8FrequencySeries *output,
-    const CHAR              *catalog,
+    FrCache                 *calCache,
     CalibrationUpdateParams *calfacts
     )
 
 { /* </lalVerbatim> */
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
-  FrCache      *calCache  = NULL;
   FrCache      *refCache  = NULL;
   FrCache      *facCache  = NULL;
   FrStream     *refStream = NULL;
@@ -194,7 +193,7 @@ LALExtractFrameResponse(
       FRAMECALIBRATIONH_ENULL, FRAMECALIBRATIONH_MSGENULL );
   ASSERT( output->data->data, status, 
       FRAMECALIBRATIONH_ENULL, FRAMECALIBRATIONH_MSGENULL );
-  ASSERT( catalog, status, 
+  ASSERT( calCache, status, 
       FRAMECALIBRATIONH_ENULL, FRAMECALIBRATIONH_MSGENULL );
   ASSERT( calfacts, status, 
       FRAMECALIBRATIONH_ENULL, FRAMECALIBRATIONH_MSGENULL );
@@ -229,21 +228,6 @@ LALExtractFrameResponse(
   calfacts->epoch = output->epoch;
   frameChan.name = channelName;
 
-  
-  /* 
-   *
-   * open the calibration cache file 
-   *
-   */
-
-
-  LALFrCacheImport( status->statusPtr, &calCache, catalog );
-  if ( status->statusPtr->statusCode )
-  {
-    ABORT( status, FRAMECALIBRATIONH_EMCHE, FRAMECALIBRATIONH_MSGEMCHE );
-  }
-  memset( &sieve, 0, sizeof(FrCacheSieve) );
-
 
   /*
    *
@@ -253,6 +237,7 @@ LALExtractFrameResponse(
   
 
   /* sieve the calibration cache for the reference frame */
+  memset( &sieve, 0, sizeof(FrCacheSieve) );
   sieve.dscRegEx = REF_TYPE;
   LALFrCacheSieve( status->statusPtr, &refCache, calCache, &sieve );
   if ( status->statusPtr->statusCode || ! refCache->numFrameFiles )
@@ -262,7 +247,6 @@ LALExtractFrameResponse(
     {
       TRY( LALDestroyFrCache( status->statusPtr, &refCache ), status );
     }
-    TRY( LALDestroyFrCache( status->statusPtr, &calCache ), status );
     ABORT( status, FRAMECALIBRATIONH_ECREF, FRAMECALIBRATIONH_MSGECREF );
   }
 
@@ -271,7 +255,6 @@ LALExtractFrameResponse(
   if ( status->statusPtr->statusCode )
   {
     /* if we don't have a reference calibration, we can't do anything */
-    TRY( LALDestroyFrCache( status->statusPtr, &calCache ), status );
     TRY( LALDestroyFrCache( status->statusPtr, &refCache ), status );
     ABORT( status, FRAMECALIBRATIONH_EOREF, FRAMECALIBRATIONH_MSGEOREF );
   }
@@ -291,7 +274,6 @@ LALExtractFrameResponse(
   {
     /* if we don't have a reference calibration, we can't do anything */
     TRY( LALDestroyFrCache( status->statusPtr, &refCache ), status );
-    TRY( LALDestroyFrCache( status->statusPtr, &calCache ), status );
     ABORT( status, FRAMECALIBRATIONH_EREFR, FRAMECALIBRATIONH_MSGEREFR );
   }
   
@@ -623,8 +605,6 @@ LALExtractFrameResponse(
   CHECKSTATUSPTR( status );
 
   /* free the allocated memory */
-  LALDestroyFrCache( status->statusPtr, &calCache );
-  CHECKSTATUSPTR( status );
   LALCDestroyVector( status->statusPtr, &R0.data );
   CHECKSTATUSPTR( status );
   LALCDestroyVector( status->statusPtr, &C0.data );
