@@ -129,7 +129,7 @@ typedef struct tagFSTFstatPair {
   LALFstat *FaFbTest;    /*!< F, Fa, Fb of the test data file */
 } FSTFstatPair;
 
-/*! pair of observed signal and veto signal  */
+/*! pair of the cluster information of observed data and veto signal  */
 typedef struct tagFSTClustInfoPair {
   FSTClustInfo ObsvCI;
   FSTClustInfo TestCI;
@@ -145,38 +145,37 @@ typedef struct tagFSTFVetoStat {
 /*----------------------------------------------------------------------------------
  function prototype
 ----------------------------------------------------------------------------------*/
-void HandleComArg( LALStatus *, FSTUserInput *, INT4 argc, CHAR ** argv );
+static void HandleComArg( LALStatus *, FSTUserInput *, INT4 argc, CHAR ** argv );
 /*! Read file header information into FSTClusterInfoPair */
-void ReadClusterInfo( LALStatus *, FSTClustInfoPair *, FSTUserInput * );
+static void ReadClusterInfo( LALStatus *, FSTClustInfoPair *, FSTUserInput * );
 /*! Read frequency, Fa Fb from files and store them in FSTFstatPair */
-void ReadData( LALStatus *, FSTFstatPair *, FSTUserInput * );
+static void ReadData( LALStatus *, FSTFstatPair *, FSTUserInput * );
 /*! Compute Veto statistic */
-void ComputeVetoStatistic( LALStatus *, 
-			   FSTFVetoStat *,                 /*!< output veto statistic and degrees of freedom. */ 
-			   FSTFstatPair *FaFbPair,         /*!< input Fa Fb of observed data and veto signal. */
-			   FSTClustInfoPair *clustInfoPair /*!< input cluster information of observed data and veto signal. */);
+static void ComputeVetoStatistic( LALStatus *, 
+				  FSTFVetoStat *,                 /*!< output veto statistic and degrees of freedom. */ 
+				  FSTFstatPair *FaFbPair,         /*!< input Fa Fb of observed data and veto signal. */
+				  FSTClustInfoPair *clustInfoPair /*!< input cluster information of observed data and veto signal. */);
 
-void showHelp( LALStatus *status, FSTUserInput *cla );
+static void showHelp( LALStatus *status, FSTUserInput *cla );
 /*! Compute chi-square P probability density */ 
-void LALChi2CDFP( LALStatus *, REAL8 *chi2cdfp, const REAL8 *data, const REAL8 *dof );
+static void LALChi2CDFP( LALStatus *, REAL8 *chi2cdfp, const REAL8 *data, const REAL8 *dof );
 
 /*! Helper function: find local maxima of cluster */
-void SummitFinder( LALStatus *, REAL8Vector *output, FSTFstatPair *FaFbPair, REAL8 *threshold );
+static void SummitFinder( LALStatus *, REAL8Vector *output, FSTFstatPair *FaFbPair, REAL8 *threshold );
 /*! Core routine: compute veto statistic */
-void ComputeVetoStatisticCore( LALStatus *, REAL8 *vetoStat, FSTFstatPair *FaFbPair, FSTControlParameters * );
+static void ComputeVetoStatisticCore( LALStatus *, REAL8 *vetoStat, FSTFstatPair *FaFbPair, FSTControlParameters * );
 /*! Helper function: find offset between some local maxima of observed data and some local maxima of veto (test) signal */
-void ShiftData( LALStatus *, FSTClustInfo *test,  REAL8 *shift );
+static void ShiftData( LALStatus *, FSTClustInfo *test,  REAL8 *shift );
 /*! Helper function: Reform observed and veto (test) signal to compare them */
-void RearrangeData( LALStatus *, FSTControlParameters *, FSTClustInfoPair * );
+static void RearrangeData( LALStatus *, FSTControlParameters *, FSTClustInfoPair * );
 
 /*! C99 round replacement */
-REAL8 myRound(REAL8);
+static REAL8 myRound(REAL8);
 /*! Compute incomplete gamma function */
-void LALGammaInc( LALStatus *status, REAL8 *output, const REAL8 *input, const REAL8 *param );
+static void LALGammaInc( LALStatus *s, REAL8 *output, const REAL8 *input, const REAL8 *param );
 
 /*! Compute natural logarithm of gamma function */
-void LALGammaLn( LALStatus *status, REAL8 *out, const REAL8 *in );
-
+static void LALGammaLn( LALStatus *, REAL8 *out, const REAL8 *in );
 
 
 /*! defined in lalapps.h */
@@ -204,7 +203,6 @@ INT4 main(INT4 argc, CHAR ** argv)
   /* lal_errhandler = LAL_ERR_RTRN;  */
   /* This make the code print out the error infos. See lalapps.h and .c */
   vrbflg = 1;
-
 
 
   LAL_CALL( HandleComArg( &status, &cla, argc, argv ), &status );
@@ -328,7 +326,7 @@ INT4 main(INT4 argc, CHAR ** argv)
 /*-----------------------------------------------------------------*/
 /*                                                                 */
 /*-----------------------------------------------------------------*/
-void 
+static void 
 HandleComArg( LALStatus *status, 
 	      FSTUserInput *cla, /*!< output */ 
 	      INT4 argc,      /*!< input */
@@ -390,7 +388,7 @@ HandleComArg( LALStatus *status,
 /*-----------------------------------------------------------------*/
 /* ShowHelp                                                        */
 /*-----------------------------------------------------------------*/
-void 
+static void 
 showHelp( LALStatus *status, 
 	  FSTUserInput *cla /*!< input */) 
 {
@@ -436,14 +434,16 @@ showHelp( LALStatus *status,
 /*-----------------------------------------------------------------*/
 /* Read file header information into FSTClusterInfoPair            */
 /*-----------------------------------------------------------------*/
-void 
+static void 
 ReadClusterInfo( LALStatus *status, 
 		 FSTClustInfoPair *clustInfoPair, /*!< output */
 		 FSTUserInput *cla /*!< input */)
 { 
   const INT8 maxDataPoints = 1048576; /* = 2^20 */
-  /* We will malloc 10 REAL8 arrays of length less than maxDataPoints.
-     maxDataPoints * 10 * 8 byte = 80 MB. 
+  /* We will alloc 13 REAL8 arrays of length less than maxDataPoints.
+     maxDataPoints * 13 * 8 byte = 104 MB. 
+     12 = (f, Fa, Fb, F) for the observed data and the veto signal.
+     1  = the internal variable "searchFreq".
   */
 
 
@@ -611,22 +611,22 @@ ReadClusterInfo( LALStatus *status,
 /*-----------------------------------------------------------------*/
 /* Compute Veto statistic                                          */
 /*-----------------------------------------------------------------*/
-void 
+static void 
 ComputeVetoStatistic( LALStatus *status, 
 		      FSTFVetoStat *vetoStatistic, /*!< output */
 		      FSTFstatPair *FaFbPair, /*!< input */
 		      FSTClustInfoPair *clustInfoPair /*!< input */)
 { 
-  UINT4 iiter; /*!counter */
-  REAL8 errorTol = LAL_REAL4_EPS/1000.0; /*!1.1920e-7/10^3 = 1e-10 */
+  UINT4 iiter; /* counter */
+  REAL8 errorTol = LAL_REAL4_EPS/1000.0; /* 1.1920e-7/10^3 = 1e-10 */
   REAL8 fmaxT,startFreqT;
   REAL8 sftmp;
-  REAL8Vector *searchFreq = NULL;  /*!Frequency toward which the veto signal will be shifted. */
-  REAL8 vetoStatMin = LAL_REAL4_MAX; /*!3.4e38 */
-  REAL8 vetoStat = 0.0; /*!veto statistic: ideally follows Chi^2 distribution. */
-  REAL8 df = 0.0;       /*!degrees of freedom of the chi square distribution */
+  REAL8Vector *searchFreq = NULL;  /* Frequency toward which the veto signal will be shifted. */
+  REAL8 vetoStatMin = LAL_REAL4_MAX; /*3.4e38 */
+  REAL8 vetoStat = 0.0; /* veto statistic: ideally follows Chi^2 distribution. */
+  REAL8 df = 0.0;       /* degrees of freedom of the chi square distribution */
   REAL8 searchFreqmin = 0.0;
-  REAL8 threshold, thr = 0.5; /*!threshold to find "summits = local maxima" of the cluster. */
+  REAL8 threshold, thr = 0.5; /* threshold to find "summits = local maxima" of the cluster. */
 
   FSTControlParameters CP; 
 
@@ -743,7 +743,7 @@ ComputeVetoStatistic( LALStatus *status,
 /* Helper function for ComputeVetoStatistic():                     */
 /*   Find local maxima of cluster                                  */                                                                    
 /*-----------------------------------------------------------------*/
-void 
+static void 
 SummitFinder( LALStatus *status, 
 	      REAL8Vector *searchFreq, /*!<  output. Memory must be pre-allocated */
 	      FSTFstatPair *FaFbPair,  /*!<  input */
@@ -780,7 +780,7 @@ SummitFinder( LALStatus *status,
 /* find offset between some local maxima of observed data and some */
 /* local maxima of veto (test) signal                              */   
 /*-----------------------------------------------------------------*/
-void 
+static void 
 ShiftData( LALStatus *status, 
 	   FSTClustInfo *TestCI, /*!< input/output */
 	   REAL8 *searchFreq     /*!< input */)
@@ -815,7 +815,7 @@ ShiftData( LALStatus *status,
 /* Reform observed and veto (test) signal to compare them.         */
 /* Adjust the ndata, starting frequencies, and so on.              */
 /*-----------------------------------------------------------------*/
-void 
+static void 
 RearrangeData( LALStatus *status, 
 	       FSTControlParameters *CP, /* output */
 	       FSTClustInfoPair *clustInfoPair  /* intput */)
@@ -826,6 +826,8 @@ RearrangeData( LALStatus *status,
   INT4 indexOffset=0;
   INT4 indexStepO=1,indexStepT=1;
   REAL8 errorTol = LAL_REAL4_EPS;
+
+
 
   INITSTATUS( status, "RearrangeData", rcsid );
   ASSERT ( clustInfoPair, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
@@ -921,7 +923,7 @@ RearrangeData( LALStatus *status,
 /*-----------------------------------------------------------------
  * Replacement for C99 round(). 
  *-----------------------------------------------------------------*/
-REAL8 myRound( REAL8 x )
+static REAL8 myRound( REAL8 x )
 {
   REAL8 sign=1.0;
   REAL8 roundedValue=0.0;
@@ -942,7 +944,7 @@ REAL8 myRound( REAL8 x )
 /*-----------------------------------------------------------------*/
 /* Read frequency, Fa Fb from files and store them in FSTFstatPair */
 /*-----------------------------------------------------------------*/
-void 
+static void 
 ReadData( LALStatus *status, 
 	  FSTFstatPair *FaFbPair, /*!< output. Memory must be pre-allocated.  */
 	  FSTUserInput *cla       /*!< input = filenames */)
@@ -1028,7 +1030,7 @@ ReadData( LALStatus *status,
 /* ComputeVetoStatistic() core routine:                            */
 /* Compute veto statistic                                          */ 
 /*-----------------------------------------------------------------*/
-void 
+static void 
 ComputeVetoStatisticCore( LALStatus *status, 
 			  REAL8 *vetoStatistic, /*!< outputs */
 			  FSTFstatPair *FaFbPair,  /*!< inputs */
@@ -1158,7 +1160,7 @@ ComputeVetoStatisticCore( LALStatus *status,
  * DOMAIN OF DEFINITION: dof>0 && data >=0.                    
  * AUTHOR: Yousuke Itoh                     
  *-----------------------------------------------------------------*/
-void 
+static void 
 LALChi2CDFP( LALStatus *status, 
 	     REAL8 *cdfp, /*!< output chi-square cumulative probability */
 	     const REAL8 *data, /*!< input sample data */ 
@@ -1211,7 +1213,7 @@ LALChi2CDFP( LALStatus *status,
  * AUTHOR: Yousuke Itoh                     
  *                     
  *-----------------------------------------------------------------*/
-void 
+static void 
 LALGammaInc( LALStatus *status, 
 	     REAL8 *output, 
 	     const REAL8 *input, 
@@ -1222,6 +1224,7 @@ LALGammaInc( LALStatus *status,
   REAL8 errormax = LAL_REAL8_EPS;
   REAL8 a0, a1, b0, b1, del, sum, gmln;
   REAL8 fac, n, g, gold, ana, anf;
+
 
   INITSTATUS( status, "LALGammaInc", rcsid );
 
@@ -1339,7 +1342,7 @@ LALGammaInc( LALStatus *status,
  *
  * AUTHOR: Yousuke Itoh                     
  *-----------------------------------------------------------------*/
-void 
+static void 
 LALGammaLn( LALStatus *status, 
 	    REAL8 *output, 
 	    const REAL8 *input )
