@@ -42,7 +42,7 @@ Define the function:
 \begin{verbatim}
 void F (Status *status, REAL4 *y, REAL4 x, void *y0)
 {
-  INITSTATUS (status);
+  INITSTATUS (status, "Function F()");
   ASSERT (y0, status, 1, "Null pointer");
   *y = *(REAL4 *)y0 + x*x;
   RETURN (status);

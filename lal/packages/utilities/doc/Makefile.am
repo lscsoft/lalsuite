@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
-TEXFILES = Random.tex FindRoot.tex Sort.tex
-DVIFILES = Random.dvi FindRoot.dvi Sort.dvi
+TEXFILES = Random.tex FindRoot.tex Integrate.tex Interpolate.tex Sort.tex
+DVIFILES = Random.dvi FindRoot.dvi Integrate.dvi Interpolate.dvi Sort.dvi
 SUFFIXES = .tex .dvi
 MOSTLYCLEANFILES = *.log *.aux
 CLEANFILES = *.dvi

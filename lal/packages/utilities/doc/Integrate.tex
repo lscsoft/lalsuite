@@ -1,0 +1,159 @@
+\documentclass{article}
+\begin{document}
+
+\section{Integrate}
+
+Integrates a function.
+
+\subsection{Synopsis}
+\begin{verbatim}
+#include "Random.h"
+
+typedef void (REAL4LALFunction) (Status *s, REAL4 *y, REAL4 x, void *p);
+
+typedef enum
+{
+  ClosedInterval,     /* evaluate integral on a closed interval             */
+  OpenInterval,       /* evaluate integral on an open interval              */
+  SingularLowerLimit, /* integrate an inv sqrt singularity at lower limit   */
+  SingularUpperLimit, /* integrate an inv sqrt singularity at upper limit   */
+  InfiniteDomainPow,  /* integrate infinite domain with power-law falloff   */
+  InfiniteDomainExp   /* integrate infinite domain with exponential falloff */
+}
+IntegralType;
+
+typedef struct
+tagIntegrateIn
+{
+  REAL4LALFunction *function;
+  REAL4             xmax;
+  REAL4             xmin;
+  IntegralType      type;
+}
+IntegrateIn;
+
+void
+RombergIntegrate (
+    Status      *status,
+    REAL4       *result,
+    IntegrateIn *input,
+    void        *params
+    );
+\end{verbatim}
+
+\subsection{Description}
+
+The structure \verb+IntegrateIn+ contains the function, the range of
+integration, and the type of integral, i.e., the method to grid the domain.
+The types of integration are the following: I.\@ \verb+ClosedInterval+
+indicates that the integral should be computed on equal-spaced domain
+intervals including the boundary.  II.\@ \verb+OpenInterval+ indicates that
+the integral should be computed on intervals of the domain not including the
+boundary.  III.\@ \verb+SingularLowerLimit+ indicates that the integral should
+be evaluated on an open interval with a transformation so that a
+inverse-square-root singularity at the lower limit can be integrated.
+IV.\@ \verb+SingularUpperLimit+ is the same as above but for a singularity at
+the upper limit.  V.\@ \verb+InfiniteDomainPow+ indicates that the integral
+should be evaluated over an semi-infinite domain---appropriate when both
+limits have the same sign (though one is very large) and when the integrand
+vanishes faster than $x^{-1}$ at infinity.  VI.\@ \verb+InfiniteDomainExp+
+indicates that the integral should be evaluated over an infinite domain
+starting at \verb+xmin+ and going to infinity (\verb+xmax+ is ignored)---the
+integrand should vanish exponentially for large $x$.
+
+The routine \verb+RombergIntegrate+ performs the integral specified by the
+structure \verb+input+ and the result is returned as \verb+result+.  Any
+additional parameters (other than the integration variable $x$) can be passed
+as \verb+params+.  The routine \verb+RombergIntegrate+ does not use
+\verb+params+ but just passes it to the integrand.
+
+\subsection{Operating Instructions}
+
+The following program performs the integral $\int_0^2F(x)dx$ where
+$F(x)=x^4\log(x+\sqrt{x^2+1})$.
+
+\begin{verbatim}
+#include <math.h>
+#include "LALStdlib.h"
+#include "Integrate.h"
+
+void F (Status *s, REAL4 *y, REAL4 x, void *p)
+{
+  REAL4  x2 = x*x;
+  REAL4  x4 = x2*x2;
+  INITSTATUS (s, "Function F()");
+  ASSERT (!p, s, 1, "Non-null pointer");
+  *y = x4*log(x + sqrt(x2 + 1));
+  RETURN (s);
+}
+
+int main ()
+{
+  const REAL4   epsilon = 1e-6;
+  long double   expect  = 8.153364119811650205L;
+  static Status status;
+  IntegrateIn   intinp;
+  REAL4         result;
+
+  intinp.function = F;
+  intinp.xmin     = 0;
+  intinp.xmax     = 2;
+  intinp.type     = ClosedInterval;
+
+  RombergIntegrate (&status, &result, &intinp, NULL);
+  if (fabs(result - expect) > epsilon*fabs(expect))
+  {
+    /* integration did not achieve desired accuracy --- exit failure */
+    return 1;
+  }
+
+  return 0;
+}
+\end{verbatim}
+
+\subsection{Options}
+
+\subsection{Error conditions}
+
+This function sets the universal status structure on return.
+Error conditions are described in the following table.
+
+\begin{table}
+\begin{tabular}{|r|l|p{2in}|}\hline
+status  & status          & Description\\
+code    & description     & \\\hline
+\verb+INTEGRATE_ENULL 1+ & Null pointer & \\
+\verb+INTEGRATE_ETYPE 2+ & Unknown integral type & \\
+\verb+INTEGRATE_EIDOM 4+ & Invalid domain & \\
+\verb+INTEGRATE_EMXIT 8+ & Maximum iterations exceeded & \\
+\hline
+\end{tabular}
+\caption{Error conditions for RombergIntegrate function}\label{tbl:CV}
+\end{table}
+
+\subsection{Algorithms}
+
+This is an implementation of the Romberg integrating function \verb+qromb+ in
+Numerical Recipes~\cite{ptvf:1992}.
+
+\subsection{Accuracy}
+
+The fractional accuracy of the integral returned should be $1\times10^{-6}$.
+However, this is highly dependent on the nature of the function.
+
+\subsection{Uses}
+
+This routine uses the function \verb+PolynomialInterpolation()+.
+
+\subsection{Notes}
+
+\subsection{References}
+\begin{thebibliography}{0}
+\bibitem{ptvf:1992}
+  W. H. Press, S. A. Teukolsky, W. T. Vetterling, and B. P. Flannery,
+  \textit{Numerical Recipes in C: The Art of Scientific Computing}, 2nd ed.
+  (Cambridge University Press, Cambridge, England, 1992).
+\end{thebibliography}
+
+\end{document}
+
