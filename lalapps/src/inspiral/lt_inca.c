@@ -520,15 +520,22 @@ int main( int argc, char *argv[] )
   /* calculate the slide time in nanoseconds */
   LAL_CALL( LALGPStoINT8( &status, &slideDataNS, &slideData ), &status );
 
-  /* check that a playground option is not specified if */
-  /* doing a slide                        */
-  if (  slideDataNS && dataType )
+  if (  slideDataNS )
   {
-    fprintf( stderr, "Should not specify --playground-only, --no-playground"
-        "or --all-data for a time slide\n" );
-    exit( 1 );
+    /* check that a dataType option is not specified if */
+    /* doing a slide                        */
+    if ( dataType )
+    {
+      fprintf( stderr, "Should not specify --playground-only, --no-playground"
+          "or --all-data for a time slide\n" );
+      exit( 1 );
+    }
+    else
+    {
+      dataType = all_data;
+    }
   }
-
+    
   /* fill the comment, if a user has specified one, or leave it blank */
   if ( ! *comment )
   {
