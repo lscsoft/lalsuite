@@ -15,6 +15,7 @@ NRCSID (FREQSERIESTOTFPLANEC, "$Id$");
 #include <stdlib.h>
 #include <math.h>
 #include <lal/ComplexFFT.h>
+#include <lal/Date.h>
 #include <lal/LALConstants.h>
 #include <lal/LALErrno.h>
 #include <lal/LALStdlib.h>
@@ -456,7 +457,6 @@ LALModModFreqSeriesToTFPlane (
   INT4               nt;
   INT4               nf;
   INT4               ntotal;
-  INT4               offset;
   UINT4              windowShift;
 
   INT4               flow1;
@@ -468,9 +468,8 @@ LALModModFreqSeriesToTFPlane (
   REAL4          delT=0;
   REAL4          dt=0;
   REAL4          twopiOverNumpts=0;
-  REAL4          norm = 0.0;
   INT4           filterlen=0;
-  FILE           *fp;
+  /* FILE           *fp;  */
 
   RealFFTPlan *pfwd = NULL;   /* FFTW uses a plan to assess best FFT method */
   RealFFTPlan *prev = NULL;   /* This one is for the reverse FFT */
@@ -636,7 +635,7 @@ LALModModFreqSeriesToTFPlane (
  
     /* PRB - Multiply the filter by the data.  Don't forget complex
      * conjugate and any other relevant information */
-    for(j =(fcut+(i*fseglength)); (unsigned) j < (fcut+(2*fwindow)+((i+1)*fseglength)); j++)
+    for(j =(fcut+(i*fseglength)); j < (fcut+(2*fwindow)+((i+1)*fseglength)); j++)
     {
       REAL4 reFilter = tmp->data[j-i*fseglength].re/sqrt(psd->data->data[j]);
       REAL4 imFilter = tmp->data[j-i*fseglength].im/sqrt(psd->data->data[j]);
@@ -649,7 +648,7 @@ LALModModFreqSeriesToTFPlane (
       normalisation[i] += (reFilter*reFilter + imFilter*imFilter);
     }
 
-    for( j=(fcut+(2*fwindow)+((i+1)*fseglength)) ; j < freqSeries->data->length; j++)
+    for( j=(fcut+(2*fwindow)+((i+1)*fseglength)) ; (unsigned)j < freqSeries->data->length; j++)
     {
       REAL4 reFilter = 0.0;
       REAL4 imFilter = 0.0;
