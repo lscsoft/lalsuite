@@ -8,12 +8,13 @@ This section of \textsc{LALApps} contains programs that can be used to
 perform burst searches using the excess power algorithm.   
 The Excess Power search method is motivated by the classical theory of
 signal detection in Gaussian noise.  The method is the optimal search
-strategy~\cite{Anderson:2000yy} having knowledge of only of the time duration
+strategy~\cite{Anderson:2000yy} having only knowledge of the time duration
 and frequency band of the expected signal,  but having no other
 information about the power distribution in advance of detection. 
 
+The method is most easily explained by a concrete example.
 The data is first high-pass filtered using a Butterworth high pass filter.
-Then suppose Excess Power processed data at 16384Hz in 1 second segments 
+Then suppose Excess Power processed data at 16384 Hz in 1 second segments 
 which overlap each other by 0.5 seconds. Each of these segments is then 
 windowed (using a Welch window) and transformed into the frequency domain 
 \begin{equation}
@@ -26,8 +27,8 @@ function and $\sigma_w$ is
 {\sigma_w}^2 = \frac{1}{N}\sum_{j=0}^{N-1}{w_j}^2
 \end{equation}
 
- The input to the Excess Power search code is the whitened 
-frequency domain signal.  The whitened data are given by
+Now the input to the Excess Power search code is the whitened 
+frequency domain signal,
 \begin{equation}
 \tilde{s}_k = \sqrt{2\Delta f}\sqrt{\frac{2}{P_k}}\tilde{H}_k
 \end{equation}
@@ -66,7 +67,7 @@ time-frequency plane.  The list of tiles is designed to explore all
 possible start times, frequency bands and durations subject to the
 following constraints.  Tiles have a minimum time duration either
 equal to the minimum time resolution of the particular time-frequency
-plane or equal to $1/64 \textrm{ s}$,  whichever is greater.  The
+plane or equal to $2/64 \textrm{ s}$,  whichever is greater.  The
 maximum frequency band of any tile is $64 \textrm{ Hz}$.  The tiles
 have a maximum time duration of $0.5 \textrm{ s}$ and corresponding
 minimum frequency band of $2 \textrm{ Hz}$;  tiles always have integer
@@ -116,7 +117,7 @@ application of the high pass filter:
 Bottom 2 panels: Time series after Butterworth} \label{fig:checkbuttertimeseries}
 \end{center}
 \end{figure}
-The impulse response in the Figure~\ref{fig:checkbuttertimeseries} shows  
+The impulse response in Figure~\ref{fig:checkbuttertimeseries} shows  
 time domain ringing produced by the filter. Maximum amplitude of 
 the ringing is upto about $1.5$\% of the original time series amplitude.
 However ringing in the side lobes die down to almost zero within about
