@@ -85,7 +85,7 @@ enum WAVETYPE {HAAR,
 
 enum TREETYPE {DIADIC, BINARY};
 
-enum SLICETYPE {F,L};  
+  /*enum SLICETYPE {F,L};  */
 
 enum COINCIDENCETYPE {GG,GV};
 
@@ -93,7 +93,7 @@ enum COINCIDENCETYPE {GG,GV};
 typedef struct
 tagSlice
 {
-  enum SLICETYPE type;
+  /*  enum SLICETYPE type;*/
   UINT4 start;
   UINT4 size;
   UINT4 step;

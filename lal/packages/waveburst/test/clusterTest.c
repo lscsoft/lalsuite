@@ -82,11 +82,11 @@ static void releaseMemory(ClusterWavelet **is,
 static void readClusterWaveletIs(ClusterWavelet **w, char *fileName);
 static void readClusterWaveletShould(ClusterWavelet **w, char *fileName);
 
-int main( int argc, char *argv[] )
+int main( )
 {
-  static LALStatus status;
+  /*  static LALStatus status;*/
   int errors=0;
-  int i;
+
 
   ClusterWavelet *is;
   ClusterWavelet *should;
@@ -118,7 +118,7 @@ int main( int argc, char *argv[] )
 
       readClusterWaveletIs(&is,testRecord.waveletFileName);
       readClusterWaveletShould(&should,testRecord.shouldFileName);
-      readParams(p,testRecord.paramsFileName);
+      /*      readParams(p,testRecord.paramsFileName);*/
 
       _clusterMain(is);
 
@@ -146,8 +146,8 @@ int main( int argc, char *argv[] )
 }
 
 
-static void readParams(clusterParameters *p, char *fileName)
-{
+/*static void readParams(clusterParameters *p, char *fileName)*/
+/*{*/
 /*    FILE *in; */
 /*    in=LALOpenDataFile(fileName); */
 /*    if(in==NULL) */
@@ -158,7 +158,7 @@ static void readParams(clusterParameters *p, char *fileName)
 
 /*    fscanf(in,"%d %d %d",&p->nc,&p->aura,&p->nF); */
 /*    LALFclose(in);   */
-}
+/*}*/
 
 
 static void releaseMemory(ClusterWavelet **input, 

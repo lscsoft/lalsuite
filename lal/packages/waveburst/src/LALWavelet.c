@@ -45,6 +45,8 @@ Wavelet, ...
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LALWavelet.h>
+#include <lal/Random.h>
+#include <lal/AVFactories.h>
 #include <math.h>
 
 /******* DEFINE RCS ID STRING ************/
@@ -177,14 +179,16 @@ LALPixelMixerWavelet(LALStatus *status,
 		     InputPixelMixerWavelet *input)
 {
   INT4 i, j, nS;
-
+  RandomParams *rparams;
+  REAL4 x;
+  INT4 seed=0;
 
   INITSTATUS( status, "LALPixelMixerWavelet", LALWAVELETC );
   ATTATCHSTATUSPTR (status);
 
   nS=input->in->wavelet->data->data->length;
 
-  srandom(input->seed);
+  LALCreateRandomParams(status->statusPtr,&rparams,seed);
 
   _assignClusterWavelet(&(*output)->out, input->in);
 
@@ -199,7 +203,8 @@ LALPixelMixerWavelet(LALStatus *status,
 	{
 	  do
 	    {
-	      j=random()%nS;
+	      LALUniformDeviate(status->statusPtr,&x,rparams);
+	      j=(INT4)(x*(nS-1));
 	    }
 	  while((*output)->out->wavelet->data->data->data[j] != 0.0);
 	  (*output)->out->wavelet->data->data->data[j] = 
@@ -208,12 +213,13 @@ LALPixelMixerWavelet(LALStatus *status,
     }
 
   (*output)->out->pixelMixerApplied=TRUE;
+  LALDestroyRandomParams(status->statusPtr,&rparams);
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 
-
+/*
 void
 LALFractionWavelet( LALStatus *status,
 		    OutputFractionWavelet **output,
@@ -285,7 +291,7 @@ LALFractionWavelet( LALStatus *status,
       dR = nr/((REAL4)2147483647.0);
       n4 = nS/4;
 
-      S=_getSliceF(i,pw);
+      _getSliceF(i,pw,&S);
 
       kS = S.step;
       p = pw->data->data->data+S.start;
@@ -394,7 +400,7 @@ LALFractionWavelet( LALStatus *status,
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
-
+*/
 
 
 void
@@ -498,7 +504,6 @@ LALClusterWavelet(LALStatus *status,
 		  OutputClusterWavelet **output,
 		  InputClusterWavelet *input){
 
-  double nonZeroFraction;
   int ncluster;
 
   INITSTATUS( status, "LALClusterWavelet", LALWAVELETC );

@@ -75,7 +75,7 @@ static void releaseMemory(InputLayerWavelet **input,
 			  REAL4TimeSeries **layer);
 static void readWavelet(Wavelet **wavelet, char *fileName);
 
-int main( int argc, char *argv[] )
+int main( )
 {
   static LALStatus status;
   int errors=0;

@@ -2,17 +2,18 @@
 #define WAVELET_STATIC_H
 
 #include <math.h>
+#include <strings.h>
 #include "lal/LALWavelet.h"
 
-static int _f2l(int level, int index);
+static int _f2l(int level, int indx);
 static int _l2f(int level, int layer);
-static Slice _getSliceL(int level, int layer, Wavelet *wavelet);
-static Slice _getSliceF(int index, Wavelet *wavelet);
+static void _getSliceL(int level, int layer, Wavelet *wavelet, Slice *slice);
+static void _getSliceF(int indx, Wavelet *wavelet, Slice *slice);
 static int _getOffset(int level,int layer);
-static int _getMaxLevel(Wavelet *wavelet, int n);
+static int _getMaxLevel(Wavelet *wavelet, UINT4 n);
 static int _getMaxLayer(Wavelet *wavelet);
 static UINT4 _limit(Slice s);
-static int _getLayer(REAL4TimeSeries **layerOut, int index, Wavelet *wavelet);
+static int _getLayer(REAL4TimeSeries **layerOut, int indx, Wavelet *wavelet);
 static void _putLayer(REAL4TimeSeries *layerData, int layer, Wavelet *wavelet);
 static void _assignREAL4TimeSeriesMetadata(REAL4TimeSeries **left, REAL4TimeSeries *right);
 static void _assignREAL4TimeSeries(REAL4TimeSeries **left, REAL4TimeSeries *right);
@@ -41,19 +42,21 @@ double _secNanToDouble(UINT4 sec, UINT4 nan);
 static int _nanoSeconds2steps(REAL4TimeSeries *ts, int nanoseconds);
 
 static void _freeREAL4TimeSeries(REAL4TimeSeries **t);
-
 static void _freeWavelet(Wavelet **w);
 static void _freeClusterWavelet(ClusterWavelet **w);
-
 static void _freeOutPercentile(OutputPercentileWavelet **p);
 static void _freeOutCoincidence(OutputCoincidenceWavelet **co);
 static void _freeOutCluster(OutputClusterWavelet **cl);
 
 static void _setAmplitudes(ClusterWavelet *w);
 
-static int _f2l(int level, int index)
+
+
+
+
+static int _f2l(int level, int indx)
 {
-  int n = index;
+  int n = indx;
   int j,i;
   for(i=level-1; i>=1; i--) {
     j = ((1<<i) & (n));
@@ -74,29 +77,27 @@ static int _l2f(int level, int layer)
   return n;
 }
 
-static Slice _getSliceL(int level, int layer, Wavelet *wavelet)
+static void _getSliceL(int level, int layer, Wavelet *wavelet, Slice *slice)
 {
-  Slice slice;
   UINT4 waveletSize=wavelet->data->data->length;
   
-  slice.start=_getOffset(level,layer);
-  slice.step=(1<<level);
-  slice.size=(waveletSize>>level);
-  if(slice.start+(slice.size-1)*slice.step+1 > waveletSize)
+  slice->start=_getOffset(level,layer);
+  slice->step=(1<<level);
+  slice->size=(waveletSize>>level);
+  if(slice->start+(slice->size-1)*slice->step+1 > waveletSize)
     {
       fprintf(stderr,"Inconsistent slice: start=%d, step=%d, size=%d, waveletSize=%d\n",
-	      slice.start, slice.step, slice.size, waveletSize);
-      slice.size=-1;
+	      slice->start, slice->step, slice->size, waveletSize);
+      slice->size=-1;
     }
-  return slice;
 }
 
-static Slice _getSliceF(int index, Wavelet *wavelet)
+static void _getSliceF(int indx, Wavelet *wavelet, Slice *slice)
 {
-  int level=wavelet->level;
-  int layer=abs(index);
-  
 
+  int level=wavelet->level;
+  int layer=abs(indx);
+  
   int maxLayer=(wavelet->treeType==BINARY) ? ((1<<level) - 1) : level;
 
   if(layer>maxLayer){
@@ -106,7 +107,7 @@ static Slice _getSliceF(int index, Wavelet *wavelet)
   }
 
   if(wavelet->treeType==BINARY){
-    if(index>0) layer=_f2l(level,layer);
+    if(indx>0) layer=_f2l(level,layer);
   }
   else{
       if(layer) {               
@@ -117,7 +118,7 @@ static Slice _getSliceF(int index, Wavelet *wavelet)
 	 layer = 0;
       }
   }
-  return _getSliceL(level,layer,wavelet);
+  _getSliceL(level,layer,wavelet,slice);
 }
 
 static int _getOffset(int level,int layer)
@@ -128,7 +129,7 @@ static int _getOffset(int level,int layer)
   return n;
 }
 
-static int _getMaxLevel(Wavelet *wavelet, int n)
+static int _getMaxLevel(Wavelet *wavelet, UINT4 n)
 {
   int maxLevel = 0;
   for(; (n>=2*wavelet->HPFilterLength) && (n>=2*wavelet->LPFilterLength) && !(n&1); n/=2) maxLevel++;
@@ -137,7 +138,7 @@ static int _getMaxLevel(Wavelet *wavelet, int n)
 
 static int _getMaxLayer(Wavelet *wavelet)
 { 
-  return (wavelet->treeType==BINARY) ? (1<<wavelet->level)-1 : wavelet->level;
+  return ((wavelet->treeType==BINARY) ? (1<<(int)wavelet->level)-1 : (int)wavelet->level);
 }
 
 static UINT4 _limit(Slice s)
@@ -145,20 +146,20 @@ static UINT4 _limit(Slice s)
   return s.start + (s.size-1)*s.step + 1; 
 }
 
-static int _getLayer(REAL4TimeSeries **layerOut, int index, Wavelet *wavelet)
+static int _getLayer(REAL4TimeSeries **layerOut, int indx, Wavelet *wavelet)
 {
   char name[LALNameLength];
-  int layer;
+
   Slice s;
-  int i,k;
-  int waveletSize=wavelet->data->data->length;
+  UINT4 i;
+  UINT4 waveletSize=wavelet->data->data->length;
   int maxLayer=_getMaxLayer(wavelet);
 
-  sprintf(name,"layer index=%d of wavelet ",index);
+  sprintf(name,"layer indx=%d of wavelet ",indx);
   strcat(name,wavelet->data->name);
 
-  if(index>maxLayer) index=maxLayer;
-  s=_getSliceF(index,wavelet);
+  if(indx>maxLayer) indx=maxLayer;
+  _getSliceF(indx,wavelet,&s);
 
   if(_limit(s)<=waveletSize){
     _assignREAL4TimeSeriesMetadata(layerOut, wavelet->data);
@@ -175,7 +176,7 @@ static int _getLayer(REAL4TimeSeries **layerOut, int index, Wavelet *wavelet)
     for(i=0;i<s.size;i++){
       (*layerOut)->data->data[i]=wavelet->data->data->data[s.start+s.step*i];
     }
-    return index;
+    return indx;
   }
   else{
     return -1;
@@ -184,9 +185,9 @@ static int _getLayer(REAL4TimeSeries **layerOut, int index, Wavelet *wavelet)
 
 static void _putLayer(REAL4TimeSeries *layerData, int layer, Wavelet *wavelet)
 {
-  int i;
-  Slice s=_getSliceF(layer,wavelet);
-  
+  UINT4 i;
+  Slice s;
+  _getSliceF(layer,wavelet,&s);
   if(s.size < layerData->data->length || 
      _limit(s) > wavelet->data->data->length) {
     fprintf(stderr,"Invalid layer size\n");
@@ -229,7 +230,7 @@ static void _assignREAL4TimeSeriesMetadata(REAL4TimeSeries **left, REAL4TimeSeri
 /* REAL4TimeSeries copy constructor */
 static void _assignREAL4TimeSeries(REAL4TimeSeries **left, REAL4TimeSeries *right)
 {
-  int i;
+  UINT4 i;
   _assignREAL4TimeSeriesMetadata(left,right);
   strcpy((*left)->name,right->name);
   (*left)->data->data=(REAL4*)LALCalloc(right->data->length,sizeof(REAL4));
@@ -246,7 +247,7 @@ static void _assignREAL4TimeSeries(REAL4TimeSeries **left, REAL4TimeSeries *righ
 /* wavelet copy constructor */
 static void _assignWavelet(Wavelet **left,Wavelet *right)
 {
-  int i;
+
   *left=(Wavelet*)LALMalloc(sizeof(Wavelet));
   if(*left==NULL)
     {
@@ -265,7 +266,7 @@ static void _assignWavelet(Wavelet **left,Wavelet *right)
 
 static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right)
 {
-  int i,j;
+  UINT4 i,j;
   _createClusterWavelet(left);
   if(right->wavelet!=NULL) _assignWavelet(&(*left)->wavelet,right->wavelet);
   (*left)->pMaskCount=right->pMaskCount;
@@ -767,7 +768,7 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura, Wavelet *origina
     i = w->pMask[k]->frequency;
     j = w->pMask[k]->time;
 
-    S = _getSliceF(i,w->wavelet); 
+    _getSliceF(i,w->wavelet,&S); 
     w->pMask[k]->amplitude=-1.0;
     w->pMask[k]->amplitudeOriginal=-1.0;
     w->pMask[k]->amplitude=w->wavelet->data->data->data[S.start+S.step*j];
@@ -952,7 +953,7 @@ static int _clusterMain(ClusterWavelet *w)
   size_t i,m;
   size_t ncluster = 0;
   size_t n = w->pMaskCount;
-  int k;
+  UINT4 k;
 
 
   w->cList=(UINT4**)LALCalloc(n,sizeof(UINT4*));
@@ -1023,7 +1024,7 @@ static int _clusterR(ClusterWavelet *w, int k)
   UINT4 i,j;
   int volume = 1;
   int ncluster;
-  int n;
+  UINT4 n;
   UINT4 *p;
 
 
@@ -1153,14 +1154,14 @@ static double _percentile(Wavelet *wavelet, double nonZeroFraction,
       (*median)[i]=(*aPtr[nS/2-1] + *aPtr[nS/2])/2;
       boundary1=nonZeroFraction*nS/2;
       for(j=0;j<boundary1;j++){
-	*aPtr[j]=-((REAL4)nS)/2.0/(j+1.0);
+	if(!keepAmplitudes) *aPtr[j]=-((REAL4)nS)/2.0/(j+1.0);
       }
       boundary2=nS-boundary1;
       for(j=boundary1;j<boundary2;j++){
 	*aPtr[j]=0.0;
       }
       for(j=boundary2;j<nS;j++){
-	*aPtr[j]=((REAL4)nS)/2.0/(nS-j);
+	if(!keepAmplitudes) *aPtr[j]=((REAL4)nS)/2.0/(nS-j);
       }
     }
     else{
@@ -1168,14 +1169,14 @@ static double _percentile(Wavelet *wavelet, double nonZeroFraction,
       /* so far no difference below */
       boundary1=(int)(nonZeroFraction*nS/2);
       for(j=0;j<boundary1;j++){
-	*aPtr[j]=-((REAL4)nS)/2.0/(j+1);
+	if(!keepAmplitudes) *aPtr[j]=-((REAL4)nS)/2.0/(j+1);
       }
       boundary2=nS/2+boundary1;
       for(j=boundary1;j<=boundary2;j++){
 	*aPtr[j]=0.0;
       }
       for(j=boundary2+1;j<nS;j++){
-	*aPtr[j]=((REAL4)nS)/2.0/(nS-j);
+	if(!keepAmplitudes) *aPtr[j]=((REAL4)nS)/2.0/(nS-j);
       }
     }
     _putLayer(a, i, wavelet);
@@ -1185,7 +1186,6 @@ static double _percentile(Wavelet *wavelet, double nonZeroFraction,
   _getLayer(&a,0,wavelet);
   bzero(a->data->data, a->data->length*sizeof(REAL4));
   _putLayer(a,0,wavelet);
-
   LALFree(aPtr);
 
   return nonZeroFraction;
@@ -1198,14 +1198,15 @@ static int _compare(const void *a, const void *b)
   if(**A < **B) return -1;
   if(**A == **B) return 0;
   if(**A > **B) return 1;
+  return -2;
 }
 
 static void _clusterProperties(ClusterWavelet *w)
 {
-  int i, j, f, ff, t;
+  UINT4 i, j, f, ff, t;
   double a;
   double delta_t, delta_f;
-  double t_min, t_max, duration, x;
+  double x;
   int N;
   Slice s;
 
@@ -1289,7 +1290,7 @@ static void _clusterProperties(ClusterWavelet *w)
 	      if(w->maxAmplitude[i]<fabs(a)) w->maxAmplitude[i]=fabs(a);
 
 	      f=w->pMask[w->cList[i][j]]->frequency;
-	      s=_getSliceF(f,w->wavelet);
+	      _getSliceF(f,w->wavelet,&s);
 	      ff=s.size/N;
 
 	      t=w->pMask[w->cList[i][j]]->time/((double)ff);
@@ -1420,7 +1421,7 @@ static void _createClusterWavelet(ClusterWavelet **w)
 
 static void _freeClusterWavelet(ClusterWavelet **w)
 {
-  int i;
+  UINT4 i;
   if((*w)->wavelet!=NULL)
     {
       _freeWavelet(&(*w)->wavelet);
@@ -1556,7 +1557,7 @@ static void _freeClusterWavelet(ClusterWavelet **w)
 
 static void _setAmplitudes(ClusterWavelet *w)
 {
-  int i,k,f,t;
+  UINT4 i,k,f,t;
   Slice s;
 
 
@@ -1566,7 +1567,7 @@ static void _setAmplitudes(ClusterWavelet *w)
     {
       f=w->pMask[i]->frequency;
       t=w->pMask[i]->time;
-      s=_getSliceF(f,w->wavelet);
+      _getSliceF(f,w->wavelet,&s);
       k=s.start+s.step*t;
       w->wavelet->data->data->data[k]=w->pMask[i]->amplitude;
     }

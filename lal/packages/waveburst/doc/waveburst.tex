@@ -1,14 +1,5 @@
 \chapter{Package \texttt{waveburst}}
 
-Waveburst DSO accepts from datacon AS\_Q channels from two interferometers
-to which wavelet transform
-was applied, performs percentile transform on each frequency layer to
-select n\% of the pixels (each pixel represents wavelet amplitude 
-for the corresponding time frequency range) with the biggest amplitudes and
-zero out the rest, the resulting 2D matrices are ANDed to zero out pixels that
-are not in time-frequency coincidence, clustering is performed on the remaining
-non-zero pixels to further select only clusters satisfying certain
-criteria on cluster size, power, correlation, etc. The results are written
-to waveburst and waveburst\_mime tables in the database.
+A collection of routines needed for Waveburst DSO. 
 
 \newpage\input{LALWaveletH}

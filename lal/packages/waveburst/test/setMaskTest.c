@@ -83,9 +83,9 @@ static void releaseMemory(ClusterWavelet **is,
 static void readClusterWaveletIs(ClusterWavelet **wavelet, char *fileName);
 static void readClusterWaveletShould(ClusterWavelet **wavelet, char *fileName);
 
-int main( int argc, char *argv[] )
+int main( )
 {
-  static LALStatus status;
+  /*  static LALStatus status;*/
   int errors=0;
 
   ClusterWavelet *is;

@@ -15,21 +15,21 @@ tagTest
   BOOLEAN result;
 } Test;
 
-static void _readTestRecord(FILE *in, Test *t);
+/*static void _readTestRecord(FILE *in, Test *t);*/
 /*time series and its metadata*/
-static void _readWavelet_TS(Wavelet **wavelet, FILE *in);
+/*static void _readWavelet_TS(Wavelet **wavelet, FILE *in);*/
 /*same as readWavelet + pMask*/
-static void _readWavelet_TS_PM(ClusterWavelet **w, FILE *in);
+/*static void _readWavelet_TS_PM(ClusterWavelet **w, FILE *in);*/
 /* everyting */
 static void _readWavelet_ALL(ClusterWavelet **w, FILE *in);
-static void _readREAL4TimeSeries(REAL4TimeSeries **t, char* fileName);
-static int _compareREAL4TimeSeries(REAL4TimeSeries *is, REAL4TimeSeries *should, BOOLEAN debug);
-static int _compareWavelet_MD(Wavelet *is, Wavelet *should, BOOLEAN debug);
-static int _compareWavelets_MD_TS(Wavelet *is, Wavelet *should, BOOLEAN debug);
-static int _compareWavelets_MD_TS_PM(ClusterWavelet *is, ClusterWavelet *should, BOOLEAN debug);
+/*static void _readREAL4TimeSeries(REAL4TimeSeries **t, char* fileName);*/
+/*static int _compareREAL4TimeSeries(REAL4TimeSeries *is, REAL4TimeSeries *should, BOOLEAN debug);*/
+/*static int _compareWavelet_MD(Wavelet *is, Wavelet *should, BOOLEAN debug);*/
+/*static int _compareWavelets_MD_TS(Wavelet *is, Wavelet *should, BOOLEAN debug);*/
+/*static int _compareWavelets_MD_TS_PM(ClusterWavelet *is, ClusterWavelet *should, BOOLEAN debug);*/
 static int _compareWavelets_ALL(ClusterWavelet *is, ClusterWavelet *should, BOOLEAN debug);
-static void _writeWavelet(Wavelet *w, FILE *out);
-static void _writeREAL4TimeSeries(REAL4TimeSeries *t, FILE *out);
+/*static void _writeWavelet(Wavelet *w, FILE *out);*/
+/*static void _writeREAL4TimeSeries(REAL4TimeSeries *t, FILE *out);*/
 static void _writePixel(PixelWavelet *pix, FILE *out);
 
 
@@ -40,7 +40,7 @@ static void readTestRecord(FILE *in, Test *t)
 
 static void readWavelet_TS(Wavelet **wavelet, FILE *in)
 {
-  int i;
+  UINT4 i;
   char tmp[maxStrLen];
   char *ptr;
 
@@ -110,8 +110,8 @@ static void readWavelet_TS_PM(ClusterWavelet **w, FILE *in)
 static void readWavelet_ALL(ClusterWavelet **w, FILE *in)
 {
   UINT4 i,j;
-  char tmp[maxStrLen];
-  char *ptr;
+
+
 
   readWavelet_TS_PM(w,in);
 
@@ -147,7 +147,7 @@ static void readWavelet_ALL(ClusterWavelet **w, FILE *in)
 static void readREAL4TimeSeries(REAL4TimeSeries **t, char* fileName)
 {
   FILE *in;
-  int i;
+  UINT4 i;
   char tmp[maxStrLen];
   char *ptr;
 
@@ -190,7 +190,7 @@ static void readREAL4TimeSeries(REAL4TimeSeries **t, char* fileName)
 static int compareREAL4TimeSeries(REAL4TimeSeries *is, REAL4TimeSeries *should, BOOLEAN debug)
 {
   int mismatch=0;
-  int i;
+  UINT4 i;
   
   if(is->epoch.gpsSeconds!=should->epoch.gpsSeconds || debug) 
     {
@@ -289,7 +289,7 @@ static int compareWavelets_MD_TS_PM(ClusterWavelet *is, ClusterWavelet *should, 
   if(is->pMaskCount!=should->pMaskCount || debug)
     {
       mismatch++;
-      printf("Wavelet pMaskCount: is=%ld should=%ld\n",is->pMaskCount,should->pMaskCount);      
+      printf("Wavelet pMaskCount: is=%d should=%d\n",is->pMaskCount,should->pMaskCount);      
     }
 
   for(i=0;i<is->pMaskCount;i++)
@@ -297,38 +297,38 @@ static int compareWavelets_MD_TS_PM(ClusterWavelet *is, ClusterWavelet *should, 
       if(is->pMask[i]->time!=should->pMask[i]->time || debug)
 	{
 	  mismatch++;
-	  printf("Wavelet pMask[%ld]->time: is=%ld should=%ld\n",i,
+	  printf("Wavelet pMask[%d]->time: is=%d should=%d\n",i,
 		 is->pMask[i]->time,should->pMask[i]->time);
 	}
       if(is->pMask[i]->frequency!=should->pMask[i]->frequency || debug)
 	{
 	  mismatch++;
-	  printf("Wavelet pMask[%ld]->frequency: is=%ld should=%ld\n",i,
+	  printf("Wavelet pMask[%d]->frequency: is=%d should=%d\n",i,
 		 is->pMask[i]->frequency,should->pMask[i]->frequency);
 	}
       if(is->pMask[i]->clusterID!=should->pMask[i]->clusterID || debug)
 	{
 	  mismatch++;
-	  printf("Wavelet pMask[%ld]->clusterID: is=%ld should=%ld\n",i,
+	  printf("Wavelet pMask[%d]->clusterID: is=%d should=%d\n",i,
 		 is->pMask[i]->clusterID,should->pMask[i]->clusterID);
 	}
       if(is->pMask[i]->core!=should->pMask[i]->core || debug)
 	{
 	  mismatch++;
-	  printf("Wavelet pMask[%ld]->core: is=%d should=%d\n",i,
+	  printf("Wavelet pMask[%d]->core: is=%d should=%d\n",i,
 		 is->pMask[i]->core,should->pMask[i]->core);
 	}
       if(is->pMask[i]->neighborsCount!=should->pMask[i]->neighborsCount || debug)
 	{
 	  mismatch++;
-	  printf("Wavelet pMask[%ld]->neighborsCount: is=%ld should=%ld\n",i,
+	  printf("Wavelet pMask[%d]->neighborsCount: is=%d should=%d\n",i,
 		 is->pMask[i]->neighborsCount,should->pMask[i]->neighborsCount);
 	}
       if(fabs(is->pMask[i]->amplitude - 
 	      should->pMask[i]->amplitude) > maxError || debug)
 	{
 	  mismatch++;
-	  printf("Wavelet pMask[%ld]->amplitude: is=%f should=%f\n",i,
+	  printf("Wavelet pMask[%d]->amplitude: is=%f should=%f\n",i,
 		 is->pMask[i]->amplitude, should->pMask[i]->amplitude);
 	}
 
@@ -337,7 +337,7 @@ static int compareWavelets_MD_TS_PM(ClusterWavelet *is, ClusterWavelet *should, 
 	  if(is->pMask[i]->neighbors[j] != should->pMask[i]->neighbors[j] || debug)
 	    {
 	      mismatch++;
-	      printf("Wavelet pMask[%ld]->neighbors[%ld]: is=%ld should=%ld\n",i,j,
+	      printf("Wavelet pMask[%d]->neighbors[%d]: is=%d should=%d\n",i,j,
 		     is->pMask[i]->neighbors[j],should->pMask[i]->neighbors[j]);
 	    }
 	}
@@ -355,7 +355,7 @@ static int compareWavelets_ALL(ClusterWavelet *is, ClusterWavelet *should, BOOLE
   if(is->clusterCount!=should->clusterCount || debug)
     {
       mismatch++;
-      printf("Wavelet clusterCount: is=%ld should=%ld\n",
+      printf("Wavelet clusterCount: is=%d should=%d\n",
 	     is->clusterCount,should->clusterCount);
     }
 
@@ -364,13 +364,13 @@ static int compareWavelets_ALL(ClusterWavelet *is, ClusterWavelet *should, BOOLE
       if(is->sCuts[i]!=should->sCuts[i] || debug)
 	{
 	  mismatch++;
-	  printf("Wavelet sCuts[%ld]: is=%d should=%d\n",
+	  printf("Wavelet sCuts[%d]: is=%d should=%d\n",
 		 i,is->sCuts[i],should->sCuts[i]);
 	}
       if(is->volumes[i]!=should->volumes[i] || debug)
 	{
 	  mismatch++;
-	  printf("Wavelet volumes[%ld]: is=%ld should=%ld\n",
+	  printf("Wavelet volumes[%d]: is=%d should=%d\n",
 		 i,is->volumes[i],should->volumes[i]);
 	}
       for(j=0;j<is->volumes[i];j++)
@@ -378,7 +378,7 @@ static int compareWavelets_ALL(ClusterWavelet *is, ClusterWavelet *should, BOOLE
 	  if(is->cList[i][j]!=should->cList[i][j] || debug)
 	    {
 	      mismatch++;
-	      printf("Wavelet cList[%ld][%ld]: is=%ld should=%ld\n",
+	      printf("Wavelet cList[%d][%d]: is=%d should=%d\n",
 		     i,j,is->cList[i][j],should->cList[i][j]);
 	    }
 	}
@@ -389,7 +389,7 @@ static int compareWavelets_ALL(ClusterWavelet *is, ClusterWavelet *should, BOOLE
 
 static void writeWavelet(Wavelet *w, FILE *out)
 {
-  int i;
+  UINT4 i;
   fprintf(out,"%d\n",w->type);
   fprintf(out,"%d\n",w->border);
   fprintf(out,"%d\n",w->treeType);
@@ -413,7 +413,7 @@ static void writeWavelet(Wavelet *w, FILE *out)
 
 static void writeREAL4TimeSeries(REAL4TimeSeries *t, FILE *out)
 {
-  int i;
+  UINT4 i;
   fprintf(out,"%s\n",t->name);
   fprintf(out,"%d\n",t->epoch.gpsSeconds);
   fprintf(out,"%d\n",t->epoch.gpsNanoSeconds);
@@ -423,14 +423,14 @@ static void writeREAL4TimeSeries(REAL4TimeSeries *t, FILE *out)
   
   for(i=0;i<t->data->length;i++)
     {
-      fprintf(out,"%f ",&t->data->data[i]);
+      fprintf(out,"%f ",t->data->data[i]);
     }
   fprintf(out,"\n\n");
 }
 
 static void printSlice(Slice *s)
 {
-  printf("Slice: start=%ld, size=%ld, step=%ld\n",s->start,s->size,s->step);
+  printf("Slice: start=%d, size=%d, step=%d\n",s->start,s->size,s->step);
 }
 
 static void _writePixel(PixelWavelet *pix, FILE *out)
