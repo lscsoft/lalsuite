@@ -292,7 +292,6 @@ int main(int argc,char *argv[])
       return 2;
     }
 
-  if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
   /* prepare initialization of DopplerScanner to step through paramter space */
   scanInit.dAlpha = uvar_dAlpha;
   scanInit.dDelta = uvar_dDelta;
@@ -350,15 +349,6 @@ int main(int argc,char *argv[])
 		   "end\n" );
 	}
     } /* if outputFstat */
-
-  if (uvar_outputFstat)   
-    {
-      if ( (fpOut = fopen (uvar_outputFstat, "w")) == NULL)
-	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
-	  exit(-1);
-	}      
-    } 
   
   if (lalDebugLevel) LALPrintError ("\nStarting main search-loop.. \n");
 
@@ -411,7 +401,6 @@ int main(int argc,char *argv[])
 	  if ( fpOut )
 	    {
 	      UINT4 i;
-	      printf("outputting isolated Fstat\n");
 	      for(i=0;i < FBand->length ;i++)
 		{
 		  fprintf (fpOut, "%20.17f %20.17f %20.17f %20.17f\n", 
