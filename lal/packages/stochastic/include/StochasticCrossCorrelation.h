@@ -567,7 +567,8 @@ LALOverlapReductionFunction(LALStatus                     *status,
 \vfill{\footnotesize\input{StochasticCrossCorrelationHV}}
 
 \newpage\input{StochasticCrossCorrelationC}
-\newpage\input{StochasticCrossCorrelationTestC}
+\newpage\input{StochasticCrossCorrelationStatisticTestC}
+\newpage\input{StochasticCrossCorrelationSpectrumTestC}
 \newpage\input{ZeroPadAndFFTC}
 \newpage\input{SZeroPadAndFFTTestC}
 \newpage\input{StochasticOptimalFilterC}
