@@ -8,21 +8,20 @@ This section of \textsc{LALApps} contains programs that can be used to
 perform burst searches using the excess power algorithm.   
 The Excess Power search method is motivated by the classical theory of
 signal detection in Gaussian noise.  The method is the optimal search
-strategy having knowledge only of the time duration
+strategy~\cite{Anderson:2000yy} having knowledge of only of the time duration
 and frequency band of the expected signal,  but having no other
 information about the power distribution in advance of detection. 
 
-Suppose Excess Power processed data at 16384Hz in 1 second segments 
-which overlap each other by 0.5 seconds. The data is high-pass 
-filtered using a 
-Butterworth high pass filter.  Each segment is then windowed (using
-a Welch window) and transformed into the frequency domain 
+The data is first high-pass filtered using a Butterworth high pass filter.
+Then suppose Excess Power processed data at 16384Hz in 1 second segments 
+which overlap each other by 0.5 seconds. Each of these segments is then 
+windowed (using a Welch window) and transformed into the frequency domain 
 \begin{equation}
 \tilde{H}_k =  \sum_{j=0}^{N-1}\frac{\Delta}{\sigma_w}w_jh_j e^{-2 \pi i j k /N}
 \end{equation}
 where $N=16\, 384$, $h_j$ is the filtered gravitational 
 wave channel, $\Delta$ is the sampling time interval, $w_j$ is the window
-function and $\sigma_w$ is given by 
+function and $\sigma_w$ is  
 \begin{equation}
 {\sigma_w}^2 = \frac{1}{N}\sum_{j=0}^{N-1}{w_j}^2
 \end{equation}
@@ -30,12 +29,12 @@ function and $\sigma_w$ is given by
  The input to the Excess Power search code is the whitened 
 frequency domain signal.  The whitened data are given by
 \begin{equation}
-\tilde{w}_k = \frac{ 2 \tilde{s}_k } {\sqrt{ P_k }}
+\tilde{s}_k = \sqrt{2\Delta f}\sqrt{\frac{2}{P_k}}\tilde{H}_k
 \end{equation}
-where $P_k = 2 \langle \tilde{n}_k \tilde{n}_k^\ast \rangle$ is a
+where $\Delta f = \frac{1}{N\Delta}$ is the sampling frequency interval and 
+$P_k = 2 \Delta f\langle|\tilde{H}_k^2| \rangle$ is the 
 power spectral estimate.  This spectrum is estimated by the median
-power at each frequency for 64 overlapping 1 second segments with a
-correction to match the normalization to the mean in Gaussian noise.
+power at each frequency for a number of overlapping 1 second segments.
 The use of the median avoids bias in the spectrum caused by the
 presence of a gravitational wave or other large non-astrophysical
 transients present in any of the segments.   
@@ -96,145 +95,79 @@ This method is crude and might account for the bad timing accuracy
 currently observed for short duration bursts.  We will address these
 issues in future versions of the algorithm.
 
-%The excess power search is implemented in \textsc{lal/lalapps}.  This
-%description applies to the implimentation used in the S2 analysis.
-%There are some shortcomings of the current implementation which are
-%evident in the bad timing accuracy for short duration bursts;   these
-%issues will be addressed in the next release.   The essential features
-%of the search method will remain however. 
-
-The number of parameters available for tuning the performance of the
-Excess Power method is limited primarily to the threshold $\alpha$ for
-each of the single interferometers, i.e., the threshold on the
-probability that a measurement of excess power comes from fluctuations
-of Gaussian noise.  For the purpose of tuning the algorithm on the S2
-playground, the time series was analyzed at 16384Hz but the tiles over
-which excess power was searched were limited from $130 \textrm{ Hz}$
-to $1154 \textrm{ Hz}$.  As with the tuning of all the ETGs, a false
-alarm rate of O(10)~$\mu$Hz was targeted.  The S2 playground data set
-(time-shifted 46 times, $5 \textrm{ s}$ apart between $\pm 115
-\textrm{ s}$, in order to increase the statistics) was used for the
-tuning analysis.  Sine-Gaussian injections were used to establish the
-strain sensitivity of the Excess Power search method as well as
-establish the inter-site time coincidence windows; these were 235 Hz,
-Q=9 signals of varying amplitude so that to fully scan the algorithm's
-efficiency.  The values of $\alpha$ chosen for the three LIGO
-instruments, L1, H1, H2 were $10^{-40}$,  $10^{-9}$ and $10^{-9}$
-respectively; these resulted to single-interferometer counting rate of
-events at the $0.03 \textrm{ Hz}$,  $0.30 \textrm{ Hz}$, and $0.58
-\textrm{ Hz}$ level over the playground.  The time-coincidence of
-multi-interferometer events was established if the times of the
-single-interferometer events fall within $350 \textrm{ ms}$ from each
-other.  The false alarm rate for the Excess Power method as measured
-by the playground analysis was $32 \pm XX$~$\mu$Hz.
-
-
-%The power spectral estimation (or equivalently whitening) of the data
-%is critical to the efficiency of this method.   The non-stationarity
-%of the noise floor requires estimation of the power spectrum to be
-%done dynamically following trends in the data.    During initial 
-%testing,  it was found that a significant bias could be introduced
-%into the analysis if the a mean estimate of the power spectrum was
-%used.   In this process,  we switched to the use of a median estimate.
-%This has the benefit of correctly modeling the underlying noise
-%without any significant bias leaking in from a large amplitude signal
-%or noise burst.
-
 \clearpage
 
 \subsection{Butterworth Filter used in Excess Power Search}
 
-The LIGO data, till science run S3, has been found to be very noisy 
-at frequencies lower than 100 Hz. This motivates us to implement a 
-Butterworth high pass filter in our search method to get rid off these 
-low frequency noise components. 
+The LIGO data is dominated by noise at low frequencies. We 
+therefore apply a Butterworth high pass filter to get rid off these 
+low frequency noise components. Here we report on a set of tests 
+that were performed to check the performance of the high pass filter.
 
-Here we report on a set of tests that were performed to check the
-performance of our high pass filter.
-
-We decided to use simulated data: a $\delta$ function to perform the 
-tests. Figure~\ref{fig:checkbuttertimeseries} shows the time series before 
-and after the application of the high pass filter:
+Of primary interest to us is the impulse response and frequency response 
+of the filter. Figure~\ref{fig:checkbuttertimeseries} shows the 
+time series containing a $\delta$ function before and after the 
+application of the high pass filter:
 \begin{figure}[h]
 \begin{center}
 \includegraphics[width=0.9\textwidth]{figures/checkbuttertimeseries}
+\includegraphics[width=0.9\textwidth]{figures/butter894comptimeseries}
 \caption{Top panel: Time series before Butterworth and 
-Bottom panel: Time series after Butterworth} \label{fig:checkbuttertimeseries}
+Bottom 2 panels: Time series after Butterworth} \label{fig:checkbuttertimeseries}
 \end{center}
 \end{figure}
+The impulse response in the Figure~\ref{fig:checkbuttertimeseries} shows  
+time domain ringing produced by the filter. Maximum amplitude of 
+the ringing is upto about $1.5$\% of the original time series amplitude.
+However ringing in the side lobes die down to almost zero within about
+20 milliseconds on both sides of the $\delta$ function. This ringing may
+affect the timing resolution in real search, but we are yet
+to quantify that effect.  
 
-The parameters that were used to define the Butterworth filter are:
-
-\begin{tabular}{|l|l|r|} \hline
-  f2  & 120 Hz. \\ \hline
-  a2  & 0.1     \\ \hline
-  nMax  & 4     \\ \hline
-\end{tabular} \label{tab:butter}
-
-where :
+The Butterworth filter is created using the LAL routine,
+\texttt{LALButterworthREAL4TimeSeries()} which uses the following 
+parameters to specify the filter:
 \begin{itemize}
-  \item f2 denotes the low frequency cut off 
-  \item a2 denotes the attenuation at f2. It gives a measure of power
+  \item the low frequency cut off, f2. 
+  \item The attenuation at f2. It gives a measure of power
     that is allowed to pass at f2.
-  \item nMax denotes the filter order.
+  \item The filter order, nMax.
 \end{itemize}
 
-Then we looked at the frequency response of the filter: 
-Figure~\ref{fig:butterworthtest4}
+The frequency response of the filter is shown in Figure~\ref{fig:butterworthtest4} 
+where the chosen parameters were $f2 = 120Hz$, $a2 = 0.1$ and $nMax = 4$.
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.8\textwidth]{figures/butterworthtest4}
-\includegraphics[width=0.8\textwidth]{figures/testattenuation4}
+\includegraphics[width=0.9\textwidth]{figures/butterworthtest4}
+\includegraphics[width=0.9\textwidth]{figures/testattenuation4}
 \caption{Frequency response of the high pass filter} \label{fig:butterworthtest4} 
 \end{figure}
-
 The red dotted line shows the spectrum which was measured without
 the high pass filter while the blue line shows the spectrum after the data was 
 high passed. From Figure~\ref{fig:butterworthtest4} 
-it is evident that roughly all the frequency content below 100 Hz. is being
-blocked which is kind of what we want. 
+it is evident that most of the frequency content below 100 Hz is being
+blocked as desired. However this choice of parameters leeds to the 
+undesirable feature that the signal power is suppressed all the way upto
+$210$ Hz.                                         . 
 
-Now for these tests we had set the low frequency cutoff, \emph{flow}, at 130 Hz.
-Then according to the present implementation of the filter, \emph{f2} is 
-(\emph{flow}-10Hz.) which is 120 Hz. and attenuation(\emph{a2}) 
-at 120 Hz. is 0.1. We also expect that at \emph{flow}(130 Hz. in these tests) 
-the output power, with the filter, matches with the power at the same frequency 
-without the filter.
-
-However from Figure~\ref{fig:testattenuation4} it is quite clear that though 
-the attenuation  at 120 Hz. is 0.1, as expected, the two spectra don't match 
-at 130 Hz.(low frequency cutoff). In fact the two spectra match at 210 Hz.
-
-To get rid off this feature we tested a Butterworth filter of 
-order(\emph{nMax}) 8 and attenuation(\emph{a2}) 0.9 at 120 Hz.: 
-Figure~\ref{fig:testattenuation8_9}
+The Excess Power code is configured to search for bursts above some 
+minimal frequency, flow. It is therefore desirable to have little
+or no attenuation above that frequency. The choice of Butterworth filter 
+parameters that appear to achieve that are: 
+\begin{itemize}
+\item cutoff frequency,$f2 = flow - 10 Hz$
+\item attenuatoin, $a2 = 0.9$
+\item order, $Nmax = 8$
+\end{itemize}
+The frequency response of such a filter with $f2 = 120 Hz$ is shown in
+Figure~\ref{fig:testattenuation8_9} 
 \begin{figure}
 \centering
-\includegraphics[width=0.8\textwidth]{figures/testattenuation8_9}
-\includegraphics[width=0.8\textwidth]{figures/testattenuation8_9zoomed}
+\includegraphics[width=0.9\textwidth]{figures/testattenuation8_9}
+\includegraphics[width=0.9\textwidth]{figures/testattenuation8_9zoomed}
 \caption{Comparison of the spectra: Filter order 8 and attenuation 0.9}
 \label{fig:testattenuation8_9}
 \end{figure}
-
-Now if one compares the spectra in Figure~\ref{fig:testattenuation8_9zoomed},
-the two meet exactly at 130 Hz. which is what we want. 
-
-The Figure~\ref{fig:butter894comptimeseries} shows the high passed time series 
-in the time domain:
-\begin{figure}
-\centering
-\includegraphics[width=0.8\textwidth]{figures/butter894comptimeseries}
-\caption{Comparison of high passed time series: zoomed in} \label{fig:butter894comptimeseries}
-\end{figure}
-
-As a result we have decided to use a Butterworth filter with the following 
-set of parameters:
-
-\begin{tabular}{|l|l|r|} \hline
-  f2  & 120 Hz. \\ \hline
-  a2  & 0.9     \\ \hline
-  nMax  & 8     \\ \hline
-\end{tabular} \label{tab:butterfinal}
 
 \clearpage
 
