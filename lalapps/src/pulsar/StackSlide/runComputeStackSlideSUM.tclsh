@@ -17,6 +17,7 @@
 # 04/15/04 gam; add optional debug_option as last command line argument.
 # 04/15/04 gam; update instructions.
 # 04/26/04 gam; change example jobs for intial entry into LALapps.
+# 09/03/04 gam; update examples to work with new test SFTS in LALapps.
 
 set ::CONDOR_MODE 0; # #02/27/04 default is false.
 set ::RUN 0;         #02/27/04 default value false.
@@ -103,26 +104,25 @@ if { $argc < 13 || $argc > 15} {
     Print " ";    
     Print "Example 1 (run in standalone mode):";
     Print " ";
-    # Print "$argv0 G1 714153733 600 1010.7 1 60 10 . testPulsar.params runStackSlideSearchOn60sSFTs.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myout.txt run"; # 01/28/04 gam
-    Print "$argv0 G1 714153733 600 1010.7 1 60 10 \"../*SFT.*\" testPulsar.params runStackSlideSearchOn60sSFTs.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myout.txt run";    
+    Print "$argv0 H1 731210229 18000 300.2 .05 1800 10 \"../*SFT.*\" testPulsar.params runStackSlideSearch.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myout.txt run";
     Print " ";    
-    Print "Returns the StackSlide SUM for G1 for a 1 Hz band centered on 1010.7 Hz using 10 SFTs of duration 60 s located in the directory above for GPS times \[714153733, 714153733 + 600), the parameters specified in testPulsar.params, and the Ephemeris data in \$LALPREFIX/share/lal/sun00-04.dat and \$LALPREFIX/share/lal/earth00-04.dat.";
+    Print "Returns the StackSlide SUM for H1 for a .05 Hz band centered on 300.2 Hz using 10 SFTs of duration 1800 s located in the directory above for GPS times \[731210229, 731210229 + 18000), the parameters specified in testPulsar.params, and the Ephemeris data in \$LALPREFIX/share/lal/sun00-04.dat and \$LALPREFIX/share/lal/earth00-04.dat.";
     Print " ";    
     Print "Example 2 (run in standalone mode with debug_option 1):"; # 04/15/04 gam
     Print " ";
-    Print "$argv0 G1 714153733 600 1010.7 1 60 10 \"../*SFT.*\" testPulsar.params runStackSlideSearchOn60sSFTs.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myout.txt run 1";
+    Print "$argv0 H1 731210229 18000 300.2 .05 1800 10 \"../*SFT.*\" testPulsar.params runStackSlideSearch.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myout.txt run 1";
     Print " ";
     Print "Same as example 1, but the command line arguments are printed to the screen in the form of a tcl resource file.";
     Print " ";
     Print "Example 3 (run in standalone mode with debug_option 2):";
     Print " ";
-    Print "$argv0 G1 714153733 600 1010.7 1 60 10 \"../*SFT.*\" testPulsar.params runStackSlideSearchOn60sSFTs.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myout.txt run 2";
+    Print "$argv0 H1 731210229 18000 300.2 .05 1800 10 \"../*SFT.*\" testPulsar.params runStackSlideSearch.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myout.txt run 2";
     Print " ";    
-    Print "Same as example 1, but a table with events printed to the screen.";    
+    Print "Same as example 1, but a table with events is printed to the screen.";
     Print " ";
     Print "Example 4 (output condor arguments):";
     Print " ";    
-    Print "$argv0 G1 714153733 600 1010.7 1 60 10 \"../*SFT.*\" testPulsar.params runStackSlideSearchOn60sSFTs.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myout.txt condor";
+    Print "$argv0 H1 731210229 18000 300.2 .05 1800 10 \"../*SFT.*\" testPulsar.params runStackSlideSearch.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myout.txt condor";
     Print " ";
     Print "Use the condor option with \">> condorsubmitfile.sub\" to append this job to a condor submit file.";
     if { $argc > 0} {

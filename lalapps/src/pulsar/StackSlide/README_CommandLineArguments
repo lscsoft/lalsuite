@@ -7,36 +7,36 @@
 #Example command line arguments for ComputeStackSlide: 
 
 #(Note that sampleRate is not used in the StackSlide analysis; it is included to note deltaT and the Nyquist frequency.)
-set gpsStartTimeSec                  714153733; #1  UINT4 analysis start time sec at the detector. 
+set gpsStartTimeSec                  731210229; #1  UINT4 analysis start time sec at the detector. 
 set gpsStartTimeNan                          0; #2  UNIT4 analysis start time nan at the detector. 
 set sampleRate          4.0960000000000000e+03; #3  REAL8 time domain sample rate (deltaT = 1/sampleRate). 
-set params->duration    6.0000000000000000e+02; #4  REAL8 analysis duration 
+set params->duration    1.8000000000000000e+04; #4  REAL8 analysis duration 
 
 set numBLKs                                 10; #5  INT4 input number of blocks of data (e.g., actual number of SFTs used in this job). 
-set tBLK                6.0000000000000000e+01; #6  REAL8 time baseline of input BLKs (e.g., of SFTs). 
-set tEffBLK             6.0000000000000000e+01; #7  REAL8 effective time baseline of input BLKs (e.g., not tBLK if oversampling used). 
-set f0BLK               1.0095000000000000e+03; #8  REAL8 start frequency of the input BLKs. 
-set bandBLK             2.3999999999999999e+00; #9  REAL8 frequency band of input BLKs. 
-set nBinsPerBLK                            144; #10 INT4 number of frequency bins one BLKs. 
+set tBLK                1.8000000000000000e+03; #6  REAL8 time baseline of input BLKs (e.g., of SFTs). 
+set tEffBLK             1.8000000000000000e+03; #7  REAL8 effective time baseline of input BLKs (e.g., not tBLK if oversampling used). 
+set f0BLK               3.0000999999999999e+02; #8  REAL8 start frequency of the input BLKs. 
+set bandBLK             3.8000000000000000e-01; #9  REAL8 frequency band of input BLKs. 
+set nBinsPerBLK                            684; #10 INT4 number of frequency bins one BLKs. 
 
 set numBLKsPerSTK                            1; #11 INT4 number BLKs used to make one STK. 
-set tEffSTK             6.0000000000000000e+01; #12 REAL8 effective time baseline of STKs (deltaF = 1/tEffSTK). 
-set f0STK               1.0095000000000000e+03; #13 REAL8 start frequency of STKs. 
-set bandSTK             2.3999999999999999e+00; #14 REAL8 frequency band of STKs. 
-set nBinsPerSTK                            144; #15 INT4 number of frequency bins in one STK. 
+set tEffSTK             1.8000000000000000e+03; #12 REAL8 effective time baseline of STKs (deltaF = 1/tEffSTK). 
+set f0STK               3.0000999999999999e+02; #13 REAL8 start frequency of STKs. 
+set bandSTK             3.8000000000000000e-01; #14 REAL8 frequency band of STKs. 
+set nBinsPerSTK                            684; #15 INT4 number of frequency bins in one STK. 
 
 set numSTKsPerSUM                           10; #16 INT4 number of STKs used to make one SUM. 
-set tEffSUM             6.0000000000000000e+01; #17 REAL8 effective time baseline of SUMs (deltaF = 1/tEffSUM). 
-set f0SUM               1.0102000000000000e+03; #18 REAL8 start frequency of SUMs. 
-set bandSUM             1.0000000000000000e+00; #19 REAL8 frequency band of SUMs. 
-set nBinsPerSUM                             60; #20 INT4 number of frequency bins in one SUM. 
+set tEffSUM             1.8000000000000000e+03; #17 REAL8 effective time baseline of SUMs (deltaF = 1/tEffSUM). 
+set f0SUM               3.0017500000000001e+02; #18 REAL8 start frequency of SUMs. 
+set bandSUM             5.0000000000000003e-02; #19 REAL8 frequency band of SUMs. 
+set nBinsPerSUM                             90; #20 INT4 number of frequency bins in one SUM. 
 
-set ifoNickName                             G1; #21 CHAR* H2, H1, L1, or G1. 
-set IFO                                    GEO; #22 CHAR* LHO, LLO, or GEO. 
+set ifoNickName                             H1; #21 CHAR* H2, H1, L1, or G1. 
+set IFO                                    LHO; #22 CHAR* LHO, LLO, or GEO. 
 set patchName                       testPulsar; #23 CHAR* a name to identify this search (e.g., S2 Galactic Center).
 set patchNumber                              0; #24 INT4 a number to identify this search. 
 
-set tDomainChannel               G1:LSC-AS_Q; #25 CHAR* time domain channel name that produced BLKs. 
+set tDomainChannel               H1:LSC-AS_Q; #25 CHAR* time domain channel name that produced BLKs. 
 set fDomainChannel                    input; #26 CHAR* freq domain channel name of BLKs 
 
 set inputDataTypeFlag                        0; #27 INT2 input data type. 
@@ -72,8 +72,8 @@ set windowFilterFlag                         0; #40 INT2 whether to window or fi
 # Note that < 0 and 0 are only options currently supported. 
 
 set normalizationFlag                        4; #41 INT2 what normalization to do. 
-set f0NRM               1.0095000000000000e+03; #42 REAL8 frequency to start with when finding norms. 
-set bandNRM             2.3999999999999999e+00; #43 REAL8 frequency band to use when finding norms. 
+set f0NRM               3.0000999999999999e+02; #42 REAL8 frequency to start with when finding norms. 
+set bandNRM             3.8000000000000000e-01; #43 REAL8 frequency band to use when finding norms. 
 set nBinsPerNRM                             50; #44 INT4 number of frequency bins to use when finding norms. 
 set normalizationParameter  0.0000000000000000e+00; #45 REAL4 see uses below. 
 #The thresholdFlag rules are: 
