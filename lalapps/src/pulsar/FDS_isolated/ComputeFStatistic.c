@@ -2882,10 +2882,13 @@ void worker() {
     /* remove checkpoint-files */
     remove (ckp_fname);
     remove (ckptfname1);
-	remove (Fstatsfilename);
-    remove (Fstatsfilename1);
+    /* keep Fstats files while testing - should be deleted as
+       temp files with the BOINC slots directory anyway
+      remove (Fstatsfilename);
+      remove (Fstatsfilename1);
+    */
   } else {
-	Outputfilename=Fstatsfilename;
+    Outputfilename=Fstatsfilename;
     remove (ckp_fname);
   }
 #endif
