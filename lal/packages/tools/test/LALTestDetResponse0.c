@@ -1886,7 +1886,8 @@ static BOOLEAN matrix_ok_p(LALDR_33Matrix * computed,
   for (i = 0; i < 2; ++i)
     for (j = 0; j < 2; ++j)
       {
-        if (!almost_equal_real8_p((*computed)[i][j], (*expected)[i][j],
+        if (!almost_equal_real8_p((REAL8)((*computed)[i][j]),
+                                  (REAL8)((*expected)[i][j]),
                                   tolerance))
           {
             if (verbose_p)
@@ -1943,6 +1944,7 @@ static BOOLEAN vector_ok_p(LALDR_3Vector * computed,
 }
 
 
+
 
 static BOOLEAN vector_relative_ok_p(LALDR_3Vector * computed,
                                     LALDR_3Vector * expected,
@@ -2265,9 +2267,29 @@ static BOOLEAN frdetector_ok_p(LALFrDetector * computed,
 static BOOLEAN detector_ok_p(LALDetector * computed,
                              LALDetector * expected)
 {
+  LALDR_33Matrix tmp_computed;
+  LALDR_33Matrix tmp_expected;
+
+  LALDR_Set33Matrix(&tmp_computed,
+                    computed->response[0][0], computed->response[0][1],
+                    computed->response[0][2],
+                    computed->response[1][0], computed->response[1][1],
+                    computed->response[1][2],
+                    computed->response[2][0], computed->response[2][1],
+                    computed->response[2][2]);
+
+  LALDR_Set33Matrix(&tmp_expected,
+                    expected->response[0][0], expected->response[0][1],
+                    expected->response[0][2],
+                    expected->response[1][0], expected->response[1][1],
+                    expected->response[1][2],
+                    expected->response[2][0], expected->response[2][1],
+                    expected->response[2][2]);
+             
+                    
   return (vector_relative_ok_p(&(computed->location), &(expected->location),
-                               1.e-4)
-          && matrix_ok_p(&(computed->response), &(expected->response), 1.e-4)
+                                1.e-4)
+          && matrix_ok_p(&tmp_computed, &tmp_expected, 1.e-4)
           && computed->type == expected->type
           && frdetector_ok_p(&(computed->frDetector), &(expected->frDetector)));
 }
