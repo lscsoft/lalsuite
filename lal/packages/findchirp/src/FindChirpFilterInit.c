@@ -683,17 +683,16 @@ LALFindChirpFilterInit (
   
   /*
    *
-   * create vector to store z data, if required
+   * create vector to store c data, if required
    *
    */
   
   
-# if 0
-  if ( params->createZVec )
+  if ( params->createCVec )
     {
-      outputPtr->zVec = (COMPLEX8TimeSeries *) 
+      outputPtr->cVec = (COMPLEX8TimeSeries *) 
 	LALCalloc( 1, sizeof(COMPLEX8TimeSeries) );
-      LALCCreateVector (status->statusPtr, &(outputPtr->zVec->data), 
+      LALCCreateVector (status->statusPtr, &(outputPtr->cVec->data), 
 			params->numPoints);
       /*
       BEGINFAIL( status )	{
@@ -752,7 +751,6 @@ LALFindChirpFilterInit (
     }
     ENDFAIL( status );*/
   }    
-#endif
 
 
   /* normal exit */
@@ -892,15 +890,13 @@ LALFindChirpFilterFinalize (
     LALFree( outputPtr->rhosqVec );
   }    
 
-#if 0
-  if ( outputPtr->zVec )
+  if ( outputPtr->cVec )
   {
-    LALCDestroyVector( status->statusPtr, &(outputPtr->zVec->data) );
+    LALCDestroyVector( status->statusPtr, &(outputPtr->cVec->data) );
     CHECKSTATUSPTR( status );
 
-    LALFree( outputPtr->zVec );
+    LALFree( outputPtr->cVec );
   }    
-#endif
 
 
   /*

@@ -234,7 +234,7 @@ CoherentInspiralFilterParams;
 \texttt{CoherentInspiralFilter()} function.
 
 \begin{description}
-\item[\texttt{UINT4 numPoints}] Number of time-points in the $z$ series
+\item[\texttt{UINT4 numPoints}] Number of time-points in the $c$ series
 from each detector. This determines the number of time-points in the
 \texttt{cohSNRVec} time-series.
 
@@ -254,41 +254,41 @@ $\rho^2(t_j)$ on exit. If NULL $\rho^2(t_j)$ is not stored.
 #endif
 
 /* --- input to the CoherentInspiral filtering functions --------- */
-/* <lalVerbatim file="CoherentInspiralHCoherentInspiralZVector"> */
+/* <lalVerbatim file="CoherentInspiralHCoherentInspiralCVector"> */
 typedef struct
-tagCoherentInspiralZVector
+tagCoherentInspiralCVector
 {
   UINT4                   numDetectors;
-  COMPLEX8TimeSeries     *zData;
+  COMPLEX8TimeSeries     *cData;
 }
-CoherentInspiralZVector;
+CoherentInspiralCVector;
 /* </lalVerbatim> */
 #if 0
 <lalLaTeX>
-\subsubsection*{Structure \texttt{CoherentInspiralZVector}}
-\idx[Type]{CoherentInspiralZVector}
+\subsubsection*{Structure \texttt{CoherentInspiralCVector}}
+\idx[Type]{CoherentInspiralCVector}
 
-\input{CoherentInspiralHCoherentInspiralZVector}
+\input{CoherentInspiralHCoherentInspiralCVector}
 
-\noindent This structure groups the $z = x+iy$ outputs of $M$ detectors 
+\noindent This structure groups the $c = x+iy$ outputs of $M$ detectors 
 into an ordered set. The FindChirpFilter code, when separately run on the 
-data from multiple detectors, outputs a \texttt{COMPLEX8TimeSeries}, $z$, for
+data from multiple detectors, outputs a \texttt{COMPLEX8TimeSeries}, $c$, for
 each detector. If a coherent search is to be performed on the data from
 these $M$ detectors, one of the inputs required is the 
-\texttt{CoherentInspiralZVector} structure with a default vector 
+\texttt{CoherentInspiralCVector} structure with a default vector 
 \texttt{length} of $M=6$ and with the vector index ordered as 0=H1, 1=L1, 
 2=V (Virgo), 3=G (GEO), 4=T (Tama), (just like the lalcached detector siteIDs) 
 and 5=H2. If a coherent search is to be performed on, say, the data from 
 H1, L1, Virgo, and GEO, then the \texttt{length} 
 member above will be set to 6 (by default), but the pointers to the fourth and 
 fifth \texttt{COMPLEX8TimeSeries} will be set to NULL; the remainder will 
-point to the $z$ outputs from the above 4 detectors, in that order.
+point to the $c$ outputs from the above 4 detectors, in that order.
 
 \begin{description}
 \item[\texttt{UINT4  length}] Length of the vector; set to 6 (by default) 
 for the total number of operating (or nearly so) interferometers.
 
-\item[\texttt{COMPLEX8TimeSeries  *zData}] Pointer to the z outputs of 
+\item[\texttt{COMPLEX8TimeSeries  *cData}] Pointer to the c outputs of 
 the 6 interferometers.
 \end{description}
 </lalLaTeX>
@@ -301,7 +301,7 @@ tagCoherentInspiralFilterInput
 {
   InspiralTemplate            *tmplt;
   CoherentInspiralBeamVector  *beamVec;
-  CoherentInspiralZVector     *multiZData;
+  CoherentInspiralCVector     *multiCData;
 }
 CoherentInspiralFilterInput;
 /* </lalVerbatim> */
@@ -313,7 +313,7 @@ CoherentInspiralFilterInput;
 \input{CoherentInspiralFilterHCoherentInspiralFilterInput}
 
 \noindent This structure provides the essential information for
-computing the coherent SNR from the $z$ outputs of multiple detectors.
+computing the coherent SNR from the $c$ outputs of multiple detectors.
 In addition to this, the code requires the beam-pattern coefficients 
 for the different detectors. These coefficients are currently 
 computed by a Mathematica code and are read in as ascii files directly
@@ -321,8 +321,8 @@ by the coherent code. But there are plans for the future where a new member
 will be added to this structure to store these coefficients.
 
 \begin{description}
-\item[\texttt{CoherentInspiralZVector   *multiZData}] Pointer to the vector
-of COMPLEX8TimeSeries, namely, \texttt{CoherentInspiralZVector}.
+\item[\texttt{CoherentInspiralCVector   *multiCData}] Pointer to the vector
+of COMPLEX8TimeSeries, namely, \texttt{CoherentInspiralCVector}.
 \end{description}
 </lalLaTeX>
 #endif

@@ -52,8 +52,8 @@ LALCoherentInspiralFilterInputInit (
   CoherentInspiralFilterInput     *inputPtr;
   CoherentInspiralBeamVector      *beamVecPtr;
   DetectorBeamArray               *detBeamArray;
-  CoherentInspiralZVector         *zVecPtr;
-  COMPLEX8TimeSeries              *zData;
+  CoherentInspiralCVector         *cVecPtr;
+  COMPLEX8TimeSeries              *cData;
   
   INITSTATUS( status, "LALCoherentInspiralFilterInputInit",
 	      COHERENTINSPIRALFILTERC );
@@ -163,38 +163,38 @@ LALCoherentInspiralFilterInputInit (
   
   /*
    *
-   * create the CoherentInspiralZVector structure
+   * create the CoherentInspiralCVector structure
    *
    */
   
-  /* allocate memory for the zData vector  */  
-  zVecPtr = (*input)->multiZData = (CoherentInspiralZVector *)
-    LALCalloc (1, sizeof(CoherentInspiralZVector));
-  if ( !zVecPtr )
+  /* allocate memory for the cData vector  */  
+  cVecPtr = (*input)->multiCData = (CoherentInspiralCVector *)
+    LALCalloc (1, sizeof(CoherentInspiralCVector));
+  if ( !cVecPtr )
     {
       ABORT( status, COHERENTINSPIRALH_EALOC, COHERENTINSPIRALH_MSGEALOC);
     }
   
   /* set the number of detectors in the vector */
-  zVecPtr->numDetectors = params->numDetectors;
+  cVecPtr->numDetectors = params->numDetectors;
   
-  zVecPtr->zData = (COMPLEX8TimeSeries *)
-    LALCalloc (1, zVecPtr->numDetectors*sizeof(COMPLEX8TimeSeries));
-  if ( !zData )
+  cVecPtr->cData = (COMPLEX8TimeSeries *)
+    LALCalloc (1, cVecPtr->numDetectors*sizeof(COMPLEX8TimeSeries));
+  if ( !cData )
     {
-      LALFree( zVecPtr );
-      zVecPtr = NULL;
+      LALFree( cVecPtr );
+      cVecPtr = NULL;
       LALFree( inputPtr );
       *input = NULL;
       ABORT( status, COHERENTINSPIRALH_EALOC, COHERENTINSPIRALH_MSGEALOC);
     }
   
-  for ( i = 0 ; i < zVecPtr->numDetectors ; i++ ) {
-    LALCCreateVector (status->statusPtr, &(zVecPtr->zData[i].data), 
+  for ( i = 0 ; i < cVecPtr->numDetectors ; i++ ) {
+    LALCCreateVector (status->statusPtr, &(cVecPtr->cData[i].data), 
 		      params->numPoints);
     BEGINFAIL( status ) {
-      LALFree( zVecPtr );
-      zVecPtr = NULL;
+      LALFree( cVecPtr );
+      cVecPtr = NULL;
       LALFree( inputPtr );
       *input = NULL;
     }
@@ -216,7 +216,7 @@ LALCoherentInspiralFilterInputFinalize (
   CoherentInspiralBeamVector      *beamVecPtr;
   DetectorBeamArray               *detBeamArray;
   CoherentInspiralFilterInput     *inputPtr;
-  CoherentInspiralZVector         *zVecPtr;
+  CoherentInspiralCVector         *cVecPtr;
 
   INITSTATUS( status, "LALCoherentInspiralFilterInputFinalize",
 	      COHERENTINSPIRALFILTERC );
@@ -236,20 +236,20 @@ LALCoherentInspiralFilterInputFinalize (
   
   /*
    *
-   * destroy the contents of the CoherentInspiralZVector structure
+   * destroy the contents of the CoherentInspiralCVector structure
    *
    */
   
-  zVecPtr = (*input)->multiZData;
+  cVecPtr = (*input)->multiCData;
   
-  for ( l = 0 ; l < zVecPtr->numDetectors ; l++ ) {
-    if (zVecPtr->zData[l].data != NULL ) {
-      LALCDestroyVector( status->statusPtr, &(zVecPtr->zData[l].data) );
+  for ( l = 0 ; l < cVecPtr->numDetectors ; l++ ) {
+    if (cVecPtr->cData[l].data != NULL ) {
+      LALCDestroyVector( status->statusPtr, &(cVecPtr->cData[l].data) );
       CHECKSTATUSPTR( status );
     }
   }
-  LALFree( zVecPtr );
-  zVecPtr = NULL;  
+  LALFree( cVecPtr );
+  cVecPtr = NULL;  
 
   /*
    *
@@ -487,7 +487,7 @@ LALCoherentInspiralFilterSegment (
   UINT4                               eventStartIdx = 0;
   INT4                                slidePoints[3] = {0,0,0};
   REAL4                               buffer = 0; /* account for timeing errors */
-  REAL4                               timingError = 0.002; /* allowed timing error of 2 ms */
+  REAL4                               timingError = 0.00025; /* allowed timing error of 2 ms */
   REAL4                               n;
   REAL4                               s[4][3];/* up to 4 distances; in 3D space */
   REAL4                               deltaT = 0.0;
@@ -502,7 +502,7 @@ LALCoherentInspiralFilterSegment (
   BOOLEAN                             unresolvedEvent = 0;
   LALMSTUnitsAndAcc                   gmstUnits;
   LALDetector                        *detector = NULL;
-  COMPLEX8TimeSeries                 *zData = NULL;
+  COMPLEX8TimeSeries                 *cData = NULL;
   CoherentInspiralEvent              *thisEvent = NULL;
   MultiInspiralTable                 *cohEvent  = NULL; 
   CoherentInspiralBeamVector         *beamVec = NULL;
@@ -586,10 +586,10 @@ LALCoherentInspiralFilterSegment (
   beamVec = input->beamVec;
   
   
-  /*** get detector z outputs ***/
+  /*** get detector c outputs ***/
   
-  /* read in the z-data for multiple detectors */
-  zData = input->multiZData->zData;
+  /* read in the c-data for multiple detectors */
+  cData = input->multiCData->cData;
 
   
   /*** get detector-site locations */
@@ -655,7 +655,7 @@ LALCoherentInspiralFilterSegment (
 	      {
 		if(m >=0 && m<numPoints)
 		  {
-		    cohSNRLocal = (1 / sqrt(2)) * sqrt( (zData[0].data->data[k].re + zData[1].data->data[m].re)*(zData[0].data->data[k].re + zData[1].data->data[m].re) + (zData[0].data->data[k].im + zData[1].data->data[m].im)*(zData[0].data->data[k].im + zData[1].data->data[m].im));
+		    cohSNRLocal = (1 / sqrt(2)) * sqrt( (cData[0].data->data[k].re + cData[1].data->data[m].re)*(cData[0].data->data[k].re + cData[1].data->data[m].re) + (cData[0].data->data[k].im + cData[1].data->data[m].im)*(cData[0].data->data[k].im + cData[1].data->data[m].im));
 
 		    if(cohSNRLocal > cohSNR)
 		      {
@@ -788,7 +788,7 @@ LALCoherentInspiralFilterSegment (
 	      {
 		if(q >= 0 && q < numPoints)
 		  {
-		    cohSNRLocal = sqrt(zData[0].data->data[k].re*zData[0].data->data[k].re + zData[1].data->data[q].re*zData[1].data->data[q].re + zData[0].data->data[k].im*zData[0].data->data[k].im + zData[1].data->data[q].im*zData[1].data->data[q].im);
+		    cohSNRLocal = sqrt(cData[0].data->data[k].re*cData[0].data->data[k].re + cData[1].data->data[q].re*cData[1].data->data[q].re + cData[0].data->data[k].im*cData[0].data->data[k].im + cData[1].data->data[q].im*cData[1].data->data[q].im);
 		    if(cohSNRLocal > cohSNR)
 		      {
 			cohSNR = cohSNRLocal; 
@@ -839,7 +839,7 @@ LALCoherentInspiralFilterSegment (
 		      {
 			if(q >= 0 && q < numPoints)
 			  {
-			    cohSNRLocal = sqrt( 0.5 * ((zData[0].data->data[k].re + zData[2].data->data[m].re)*(zData[0].data->data[k].re + zData[2].data->data[m].re) + (zData[0].data->data[k].im + zData[2].data->data[m].im)*(zData[0].data->data[k].im + zData[2].data->data[m].im)) + zData[1].data->data[q].re*zData[1].data->data[q].re + zData[1].data->data[q].im*zData[1].data->data[q].im);
+			    cohSNRLocal = sqrt( 0.5 * ((cData[0].data->data[k].re + cData[2].data->data[m].re)*(cData[0].data->data[k].re + cData[2].data->data[m].re) + (cData[0].data->data[k].im + cData[2].data->data[m].im)*(cData[0].data->data[k].im + cData[2].data->data[m].im)) + cData[1].data->data[q].re*cData[1].data->data[q].re + cData[1].data->data[q].im*cData[1].data->data[q].im);
 		    		    		  
 			    if(cohSNRLocal > cohSNR)
 			      {
@@ -898,7 +898,7 @@ LALCoherentInspiralFilterSegment (
 			  {
 			    if (w >= 0 && w < numPoints)
 			      {
-				cohSNRLocal = sqrt( ( beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] )*( zData[0].data->data[k].re*zData[0].data->data[k].re + zData[0].data->data[k].im*zData[0].data->data[k].im ) + ( beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] )*( zData[1].data->data[q].re*zData[1].data->data[q].re + zData[1].data->data[q].im*zData[1].data->data[q].im ) + ( beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] )*( zData[2].data->data[w].re*zData[2].data->data[w].re + zData[2].data->data[w].im*zData[2].data->data[w].im ) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])*(zData[0].data->data[k].re * zData[1].data->data[q].re + zData[0].data->data[k].im * zData[1].data->data[q].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(zData[0].data->data[k].re*zData[2].data->data[w].re + zData[0].data->data[k].im * zData[2].data->data[w].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(zData[1].data->data[q].re * zData[2].data->data[w].re + zData[1].data->data[q].im *zData[2].data->data[w].im));
+				cohSNRLocal = sqrt( ( beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] )*( cData[0].data->data[k].re*cData[0].data->data[k].re + cData[0].data->data[k].im*cData[0].data->data[k].im ) + ( beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] )*( cData[1].data->data[q].re*cData[1].data->data[q].re + cData[1].data->data[q].im*cData[1].data->data[q].im ) + ( beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] )*( cData[2].data->data[w].re*cData[2].data->data[w].re + cData[2].data->data[w].im*cData[2].data->data[w].im ) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re * cData[1].data->data[q].re + cData[0].data->data[k].im * cData[1].data->data[q].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re*cData[2].data->data[w].re + cData[0].data->data[k].im * cData[2].data->data[w].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[1].data->data[q].re * cData[2].data->data[w].re + cData[1].data->data[q].im *cData[2].data->data[w].im));
 			      
 				if(cohSNRLocal > cohSNR)
 				  {
@@ -970,7 +970,7 @@ LALCoherentInspiralFilterSegment (
 				  {
 				    if (w >= 0 && w < numPoints)
 				      {
-					cohSNRLocal = sqrt( 0.5*( beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] )*( zData[0].data->data[k].re*zData[0].data->data[k].re + zData[0].data->data[k].im*zData[0].data->data[k].im + zData[3].data->data[m].re*zData[3].data->data[m].re + zData[3].data->data[m].im*zData[3].data->data[m].im + 2*(zData[0].data->data[k].re*zData[3].data->data[m].re + zData[0].data->data[k].im*zData[3].data->data[m].im)) + ( beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] )*( zData[1].data->data[q].re*zData[1].data->data[q].re + zData[1].data->data[q].im*zData[1].data->data[q].im ) + ( beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]  + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] )*( zData[2].data->data[w].re*zData[2].data->data[w].re + zData[2].data->data[w].im*zData[2].data->data[w].im ) + sqrt(2)*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])*(zData[0].data->data[k].re*zData[1].data->data[q].re + zData[0].data->data[k].im*zData[1].data->data[q].im + zData[3].data->data[m].re*zData[1].data->data[q].re + zData[3].data->data[m].im*zData[1].data->data[q].im) + sqrt(2)*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(zData[0].data->data[k].re*zData[2].data->data[w].re + zData[0].data->data[k].im*zData[2].data->data[w].im + zData[3].data->data[m].re*zData[2].data->data[w].re + zData[3].data->data[m].im*zData[2].data->data[w].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(zData[1].data->data[q].re*zData[2].data->data[w].re + zData[1].data->data[q].im*zData[2].data->data[w].im));
+					cohSNRLocal = sqrt( 0.5*( beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] )*( cData[0].data->data[k].re*cData[0].data->data[k].re + cData[0].data->data[k].im*cData[0].data->data[k].im + cData[3].data->data[m].re*cData[3].data->data[m].re + cData[3].data->data[m].im*cData[3].data->data[m].im + 2*(cData[0].data->data[k].re*cData[3].data->data[m].re + cData[0].data->data[k].im*cData[3].data->data[m].im)) + ( beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] )*( cData[1].data->data[q].re*cData[1].data->data[q].re + cData[1].data->data[q].im*cData[1].data->data[q].im ) + ( beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]  + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] )*( cData[2].data->data[w].re*cData[2].data->data[w].re + cData[2].data->data[w].im*cData[2].data->data[w].im ) + sqrt(2)*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re*cData[1].data->data[q].re + cData[0].data->data[k].im*cData[1].data->data[q].im + cData[3].data->data[m].re*cData[1].data->data[q].re + cData[3].data->data[m].im*cData[1].data->data[q].im) + sqrt(2)*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re*cData[2].data->data[w].re + cData[0].data->data[k].im*cData[2].data->data[w].im + cData[3].data->data[m].re*cData[2].data->data[w].re + cData[3].data->data[m].im*cData[2].data->data[w].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[1].data->data[q].re*cData[2].data->data[w].re + cData[1].data->data[q].im*cData[2].data->data[w].im));
 			      
 					if(cohSNRLocal > cohSNR)
 					  {
@@ -1050,7 +1050,7 @@ LALCoherentInspiralFilterSegment (
 				  {
 				    if(j >=0 && j < numPoints)
 				      {
-					cohSNRLocal = sqrt( ( beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] )*( zData[0].data->data[k].re*zData[0].data->data[k].re + zData[0].data->data[k].im*zData[0].data->data[k].im ) + ( beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] )*( zData[1].data->data[q].re*zData[1].data->data[q].re + zData[1].data->data[q].im*zData[1].data->data[q].im ) + ( beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] )*( zData[2].data->data[w].re*zData[2].data->data[w].re + zData[2].data->data[w].im*zData[2].data->data[w].im ) + ( beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3] )*( zData[3].data->data[j].re*zData[3].data->data[j].re + zData[3].data->data[j].im*zData[3].data->data[j].im ) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])*(zData[0].data->data[k].re * zData[1].data->data[q].re + zData[0].data->data[k].im * zData[1].data->data[q].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(zData[0].data->data[k].re*zData[2].data->data[w].re + zData[0].data->data[k].im * zData[2].data->data[w].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(zData[0].data->data[k].re*zData[3].data->data[j].re + zData[0].data->data[k].im*zData[3].data->data[j].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(zData[1].data->data[q].re * zData[2].data->data[w].re + zData[1].data->data[q].im*zData[2].data->data[w].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(zData[1].data->data[q].re*zData[3].data->data[j].re + zData[1].data->data[q].im*zData[3].data->data[j].im) + 2*(beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(zData[2].data->data[w].re*zData[3].data->data[j].re + zData[2].data->data[w].im * zData[3].data->data[j].im));
+					cohSNRLocal = sqrt( ( beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] )*( cData[0].data->data[k].re*cData[0].data->data[k].re + cData[0].data->data[k].im*cData[0].data->data[k].im ) + ( beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] )*( cData[1].data->data[q].re*cData[1].data->data[q].re + cData[1].data->data[q].im*cData[1].data->data[q].im ) + ( beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] )*( cData[2].data->data[w].re*cData[2].data->data[w].re + cData[2].data->data[w].im*cData[2].data->data[w].im ) + ( beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3] )*( cData[3].data->data[j].re*cData[3].data->data[j].re + cData[3].data->data[j].im*cData[3].data->data[j].im ) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re * cData[1].data->data[q].re + cData[0].data->data[k].im * cData[1].data->data[q].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re*cData[2].data->data[w].re + cData[0].data->data[k].im * cData[2].data->data[w].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re*cData[3].data->data[j].re + cData[0].data->data[k].im*cData[3].data->data[j].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[1].data->data[q].re * cData[2].data->data[w].re + cData[1].data->data[q].im*cData[2].data->data[w].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(cData[1].data->data[q].re*cData[3].data->data[j].re + cData[1].data->data[q].im*cData[3].data->data[j].im) + 2*(beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(cData[2].data->data[w].re*cData[3].data->data[j].re + cData[2].data->data[w].im * cData[3].data->data[j].im));
 				      
 					if(cohSNRLocal > cohSNR)
 					  {

@@ -117,15 +117,13 @@ LALFindChirpFilterSegment (
         FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   }
 
-#if 0
-  if ( params->zVec )
+  if ( params->cVec )
   {
-    ASSERT( params->zVec->data->data, status,
+    ASSERT( params->cVec->data->data, status,
         FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL  );
-    ASSERT( params->zVec->data, status,
+    ASSERT( params->cVec->data, status,
         FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   }
-#endif
 
   /* if a chisqVec vector has been created, check we can store data in it */
   if ( params->chisqVec ) 
@@ -306,10 +304,8 @@ LALFindChirpFilterSegment (
   if ( params->rhosqVec )
     memset( params->rhosqVec->data->data, 0, numPoints * sizeof( REAL4 ) );
 
-#if 0
-  if (params->zVec )
-    memset( params->zVec->data->data, 0, numPoints * sizeof( COMPLEX8 ) ); 
-#endif
+  if (params->cVec )
+    memset( params->cVec->data->data, 0, numPoints * sizeof( COMPLEX8 ) ); 
 
   /* normalisation */
   params->norm = norm = 
@@ -354,22 +350,20 @@ LALFindChirpFilterSegment (
     }
   }
 
-#if 0
- if ( params->zVec ) 
+ if ( params->cVec ) 
   {
-    memcpy( params->zVec->name, input->segment->data->name,
+    memcpy( params->cVec->name, input->segment->data->name,
         LALNameLength * sizeof(CHAR) );
-    memcpy( &(params->zVec->epoch), &(input->segment->data->epoch), 
+    memcpy( &(params->cVec->epoch), &(input->segment->data->epoch), 
         sizeof(LIGOTimeGPS) );
-    params->zVec->deltaT = input->segment->deltaT;
+    params->cVec->deltaT = input->segment->deltaT;
 
     for ( j = 0; j < numPoints; ++j )
     {
-      params->zVec->data->data[j].re = sqrt(norm) * q[j].re;
-      params->zVec->data->data[j].im = sqrt(norm) * q[j].im;
+      params->cVec->data->data[j].re = sqrt(norm) * q[j].re;
+      params->cVec->data->data[j].im = sqrt(norm) * q[j].im;
     }
   }
-#endif
 
   /* look for an events in the filter output */
   for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )
