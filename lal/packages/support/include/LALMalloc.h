@@ -14,9 +14,12 @@ Provides standard LAL memory allocation/deallocation routines.
 #include "LALMalloc.h"
 \end{verbatim}
 
-\noindent This header covers routines that replace the standard \verb+malloc+,
-\verb+calloc+, \verb+realloc+, and \verb+free+.  All memory allocation and
-deallocation in LAL should use these replacement functions.
+\noindent This header covers routines that replace the standard
+\verb+malloc()+, \verb+calloc()+, \verb+realloc()+, and \verb+free()+.
+All memory allocation and deallocation in LAL should use these
+replacement functions.  If the \verb+NDEBUG+ flag is set at compile
+time, the LAL routines are \verb+#define+d to be the same as the
+standard C routines.
 
 \vfill{\footnotesize\input{LALMallocHV}}
 \newpage\input{LALMallocC}
@@ -53,6 +56,14 @@ LALRealloc( void *p, size_t n );
 void
 LALCheckMemoryLeaks( void );
 
+
+#ifdef NDEBUG
+#define LALMalloc( n )        malloc( n )
+#define LALFree( p )          free( p )
+#define LALCalloc( m, n )     calloc( m, n )
+#define LALRealloc( p, n )    realloc( p, n )
+#define LALCheckMemoryLeaks()
+#endif /* NDEBUG */
 
 #ifdef  __cplusplus
 }
