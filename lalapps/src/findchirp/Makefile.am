@@ -2,7 +2,7 @@
 # $Id$
 if LALMETAIO
 LALMETAIOPROGRAMS = lalapps_exc_resp lalapps_ivana lalapps_inspmultiawg \
-                    lalapps_chirplen lalapps_BankEfficiency
+                    lalapps_chirplen 
 else
 LALMETAIOPROGRAMS = 
 endif
