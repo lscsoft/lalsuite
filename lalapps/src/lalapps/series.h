@@ -9,10 +9,11 @@ extern "C" {
 
 NRCSID( SERIESH, "$Id$" );
 
-typedef enum { Time, Freq } domain;
+typedef enum { Time, Freq, Trans } domain;
 
 #define IS_TIME( domain_ ) ( domain_ == Time )
-#define IS_FREQ( domain_ ) ( domain_ == Freq )
+#define IS_FREQ( domain_ ) ( ( domain_ == Freq ) || ( domain_ == Trans ) )
+#define IS_TRANS( domain_ ) ( domain_ == Trans )
 
 struct series
 {

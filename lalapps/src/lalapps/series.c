@@ -141,7 +141,11 @@ FrameH *fr_add_proc_data( FrameH *frame, const struct series *ser )
   proc = calloc( 1, sizeof( *proc ) );
   proc->classe     = FrProcDataDef();
 #if defined FR_VERS && FR_VERS < 5000
-  proc->sampleRate = IS_TIME( ser->dom) ? 1.0 / ser->step : -1;
+  proc->sampleRate = IS_TIME( ser->dom ) ? 1.0 / ser->step : -1;
+#endif
+#if defined FR_VERS && FR_VERS >= 6000
+  proc->type = IS_TIME( ser->dom ) ? 1 : 2;
+  proc->subType = IS_TRANS( ser->dom ) ? 6 : 3;
 #endif
   proc->fShift     = 0;
   proc->data       = vect;

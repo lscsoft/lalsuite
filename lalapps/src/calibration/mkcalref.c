@@ -26,7 +26,7 @@ int read_freq_series( struct series *ser, const char *fname )
   fp = fopen( fname, "r" );
   n = 0;
 
-  ser->dom = Freq;
+  ser->dom = Trans;
   ser->type = FR_VECT_8C;
   
   /* count lines */
