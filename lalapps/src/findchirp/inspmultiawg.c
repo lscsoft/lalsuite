@@ -37,13 +37,13 @@ RCSID( "$Id$" );
 
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-  calloc( 1, sizeof(ProcessParamsTable) ); \
-  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-  PROGRAM_NAME ); \
-  LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
-  long_options[option_index].name ); \
-  LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-  LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+calloc( 1, sizeof(ProcessParamsTable) ); \
+LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+    PROGRAM_NAME ); \
+LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+    long_options[option_index].name ); \
+LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 #define INSPAWGFILEC_ENORM  0
 #define INSPAWGFILEC_ESUB   1
@@ -84,7 +84,7 @@ RCSID( "$Id$" );
 
 /* Usage format string. */
 #define USAGE \
-"%s [options]\n"\
+  "%s [options]\n"\
 "  --help               display this message\n"\
 "  --source sfile       source file containing details of injection\n"\
 "  --actuation actfile  file containing the actuation function\n"\
@@ -103,23 +103,23 @@ RCSID( "$Id$" );
 
 /* Macros for printing errors and info subroutines. */
 #define ERROR( code, msg, statement )                                \
-do                                                                   \
+  do                                                                   \
 if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
   LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
-		 "        %s %s\n", (code), *argv, __FILE__,         \
-		 __LINE__, rcsid, statement ? statement : \
-                 "", (msg) );                                        \
+      "        %s %s\n", (code), *argv, __FILE__,         \
+      __LINE__, rcsid, statement ? statement : \
+      "", (msg) );                                        \
 }                                                                    \
 while (0)
 
 #define INFO( statement )                                            \
-do                                                                   \
+  do                                                                   \
 if ( lalDebugLevel & LALINFO )                                       \
 {                                                                    \
   LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
-		 "        %s\n", *argv, __FILE__, __LINE__,          \
-		 rcsid, (statement) );                    \
+      "        %s\n", *argv, __FILE__, __LINE__,          \
+      rcsid, (statement) );                    \
 }                                                                    \
 while (0)
 
@@ -129,7 +129,7 @@ while (0)
  *
  *****************************************************************************/
 
-int
+  int
 main(int argc, char **argv)
 {
   /* Command-line parsing variables. */
@@ -151,7 +151,7 @@ main(int argc, char **argv)
   REAL4 fstop  = FSTOP;	      /* stop frequency */
   INT4	xmloutput = FALSE;  
   LIGOTimeGPS inj_length; /* length of the injection */  
- 
+
   /* File reading variables. */
   FILE		       *fp = NULL,*fq = NULL;  /* generic file pointer */
   BOOLEAN		ok = 1;	    /* whether input format is correct */
@@ -166,7 +166,7 @@ main(int argc, char **argv)
   SimInspiralTable     *simEventList=NULL;
   MetadataTable	        simTable;
 
-  
+
   /* Other global variables. */
   DetectorResponse detector;   /* the detector in question */
   REAL4TimeSeries output;      /* detector ADC output */
@@ -174,7 +174,7 @@ main(int argc, char **argv)
   REAL4	  Qfac = 0; /* Q factor for the "ringdown" */
   INT4	  smoothEnd = FALSE; /* do we include the "ringdown" */
   REAL4	  dcfactor = 1; /* calibration factor between darm and inj */
-  
+
   /*******************************************************************
    * BEGIN PARSE ARGUMENTS					     *
    *******************************************************************/
@@ -183,7 +183,7 @@ main(int argc, char **argv)
   lal_errhandler = LAL_ERR_EXIT;
   set_debug_level( "33" );
 
-  
+
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) 
     calloc( 1, sizeof(ProcessTable) );
@@ -194,7 +194,7 @@ main(int argc, char **argv)
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
 
-  
+
   while (1)
   {
     /* getopt arguments */
@@ -245,61 +245,61 @@ main(int argc, char **argv)
         break;
 
       case 'a':
-	/* Parse source file option. */
-	{
-	  sourcefile = optarg;
-	  ADD_PROCESS_PARAM( "string", "%s", sourcefile );
-	}
-	break;
+        /* Parse source file option. */
+        {
+          sourcefile = optarg;
+          ADD_PROCESS_PARAM( "string", "%s", sourcefile );
+        }
+        break;
 
       case 'b':
         /* Parse actuation file option. */
-	{
-	  actfile = optarg;
-	  ADD_PROCESS_PARAM( "string", "%s", actfile );
-	}
-	break;
+        {
+          actfile = optarg;
+          ADD_PROCESS_PARAM( "string", "%s", actfile );
+        }
+        break;
 
       case 'c':
-	/* Parse summfile option */
-      	{
-	  summfile = optarg;
-	  xmloutput = TRUE;
-	  ADD_PROCESS_PARAM( "string", "%s", summfile );
-	}
-	break;
+        /* Parse summfile option */
+        {
+          summfile = optarg;
+          xmloutput = TRUE;
+          ADD_PROCESS_PARAM( "string", "%s", summfile );
+        }
+        break;
 
       case 'd':
-	/* IFO */
-	{
-	  LALSnprintf( ifo, sizeof(ifo), optarg);
-	  ADD_PROCESS_PARAM( "ifo", "%s", ifo );
-	}
-	break;
-	
+        /* IFO */
+        {
+          LALSnprintf( ifo, sizeof(ifo), optarg);
+          ADD_PROCESS_PARAM( "ifo", "%s", ifo );
+        }
+        break;
+
       case 'e':
-	/* Calibration between darm and injection */
-	{
-	dcfactor = atof( optarg );
-	  ADD_PROCESS_PARAM( "float", "%e", dcfactor );
-	}
-	break;
-	
+        /* Calibration between darm and injection */
+        {
+          dcfactor = atof( optarg );
+          ADD_PROCESS_PARAM( "float", "%e", dcfactor );
+        }
+        break;
+
       case 'f':
-	/* Specify length of data segment */
-	{
-	  length = atoi( optarg );
-	  ADD_PROCESS_PARAM( "int", "%d", length );
+        /* Specify length of data segment */
+        {
+          length = atoi( optarg );
+          ADD_PROCESS_PARAM( "int", "%d", length );
         }
         break;
 
       case 'g':
-	/* Specify the sampling rate of the channel */
-	{
-	  freq = atoi( optarg );
-	  ADD_PROCESS_PARAM( "int", "%d", freq );
-	}
-	break;
+        /* Specify the sampling rate of the channel */
+        {
+          freq = atoi( optarg );
+          ADD_PROCESS_PARAM( "int", "%d", freq );
+        }
+        break;
 
       case 'h':
         /* print help */
@@ -310,57 +310,57 @@ main(int argc, char **argv)
         break;
 
       case 'i':
-	/* end the injection with a "ringdown", Q factor = Q */
-	{
-	  Qfac = atof( optarg );
-	  ADD_PROCESS_PARAM( "float", "%e", Qfac );
-	  smoothEnd = TRUE;
-	}
-	break;	
-	  
+        /* end the injection with a "ringdown", Q factor = Q */
+        {
+          Qfac = atof( optarg );
+          ADD_PROCESS_PARAM( "float", "%e", Qfac );
+          smoothEnd = TRUE;
+        }
+        break;	
+
       case 'j':
-	/* Parse start frequency */
-	{
-	  fstart = atof( optarg );
-	  ADD_PROCESS_PARAM( "float", "%e", fstart );
-	}
-	break;
+        /* Parse start frequency */
+        {
+          fstart = atof( optarg );
+          ADD_PROCESS_PARAM( "float", "%e", fstart );
+        }
+        break;
 
       case 'k':
-      	/* Parse stop frequency */
-	{
-	  fstopset = TRUE;
-	  fstop = atof( optarg );
-	  ADD_PROCESS_PARAM( "float", "%e", fstop );
-	}
-	break;
-	
+        /* Parse stop frequency */
+        {
+          fstopset = TRUE;
+          fstop = atof( optarg );
+          ADD_PROCESS_PARAM( "float", "%e", fstop );
+        }
+        break;
+
       case 'l':
-	/* Parse debug level option. */
-	{
-	  set_debug_level( optarg );
-	  ADD_PROCESS_PARAM( "string", "%e", optarg );
-	}
-	break;
+        /* Parse debug level option. */
+        {
+          set_debug_level( optarg );
+          ADD_PROCESS_PARAM( "string", "%e", optarg );
+        }
+        break;
 
       case 'm':
         /* Parse user-tag. */
-	{
-	  tag = optarg;
-	  ADD_PROCESS_PARAM( "string", "%s", tag );
-	}
-	break;
+        {
+          tag = optarg;
+          ADD_PROCESS_PARAM( "string", "%s", tag );
+        }
+        break;
 
-	
+
       default:
-	{
-	  fprintf( stderr, "unknown error while parsing options\n" );	 
-	  return INSPAWGFILEC_EARG;
-	}
+        {
+          fprintf( stderr, "unknown error while parsing options\n" );	 
+          return INSPAWGFILEC_EARG;
+        }
 
     }
   }
-    
+
   if ( optind < argc )
   {
     fprintf( stderr, "extraneous command line arguments:\n" );
@@ -371,11 +371,11 @@ main(int argc, char **argv)
     exit( 1 );
   }
 
-  
+
   /*******************************************************************
    * initialize things
    *******************************************************************/
-    memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
+  memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
 
   /*******************************************************************
    * SETUP                                                           *
@@ -392,7 +392,7 @@ main(int argc, char **argv)
   }
   detector.transfer->data = NULL;
   detector.site = NULL;
-  
+
   /* Set up units. */
   {
     RAT4 negOne = { -1, 0 };
@@ -404,13 +404,13 @@ main(int argc, char **argv)
     LAL_CALL( LALUnitRaise( &stat, &unit, pair.unitTwo, &negOne ), &stat );
     pair.unitTwo = &unit;
     LAL_CALL( LALUnitMultiply( &stat, &(detector.transfer->sampleUnits),
-			  &pair ), &stat );
+          &pair ), &stat );
   }
 
   /* Read actuation function -- which is stored as a 3 column vector.
      the first column is the frequency, second is amplitude, third is
      phase. */
-  
+
   if ( actfile ) 
   {
     REAL4VectorSequence *actuation = NULL; /* actuation as vector sequence */
@@ -430,11 +430,11 @@ main(int argc, char **argv)
       ERROR( INSPAWGFILEC_EINPUT, INSPAWGFILEC_MSGEINPUT, actfile );
       return INSPAWGFILEC_EINPUT;
     }
-    
+
     /* extract f0 and deltaF from the actuation function */
     detector.transfer->f0 = actuation->data[0];
     detector.transfer->deltaF = actuation->data[3] - actuation->data[0];
-    
+
     /* Read and convert body to a COMPLEX8Vector. */
 
     LAL_CALL( LALCCreateVector( &stat, &response, actuation->length ), &stat );
@@ -442,9 +442,9 @@ main(int argc, char **argv)
     for ( i = 0; i < response->length; i++ ) 
     {
       response->data[i].re = actuation->data[3*i-2] * 
-	cos( actuation->data[3*i-1] ) / dcfactor;
+        cos( actuation->data[3*i-1] ) / dcfactor;
       response->data[i].im = actuation->data[3*i-2] * 
-	sin( actuation->data[3*i-1] ) / dcfactor;
+        sin( actuation->data[3*i-1] ) / dcfactor;
       unity->data[i].re = 1.0;
       unity->data[i].im = 0.0;
     }
@@ -453,9 +453,9 @@ main(int argc, char **argv)
 
     /* convert response function to transfer function */    
     LAL_CALL( LALCCreateVector( &stat, &( detector.transfer->data ),
-			   response->length ), &stat );
+          response->length ), &stat );
     LAL_CALL( LALCCVectorDivide( &stat, detector.transfer->data, unity,
-			    response ), &stat );
+          response ), &stat );
     LAL_CALL( LALCDestroyVector( &stat, &response ), &stat );
     LAL_CALL( LALCDestroyVector( &stat, &unity ), &stat );
   }
@@ -468,7 +468,7 @@ main(int argc, char **argv)
     detector.transfer->f0 = 0.0;
     detector.transfer->deltaF = 1.5*fstop;
     LAL_CALL( LALCCreateVector( &stat, &( detector.transfer->data ), 2 ),
-	 &stat );
+        &stat );
     detector.transfer->data->data[0].re = 1.0;
     detector.transfer->data->data[1].re = 1.0;
     detector.transfer->data->data[0].im = 0.0;
@@ -476,19 +476,19 @@ main(int argc, char **argv)
   }
 
 
-  
+
 
   /*******************************************************************
    * INJECTION                                                       *
    *******************************************************************/
-    
+
   /* Open sourcefile. */
   if ( sourcefile ) 
   {
     if ( ( fp = fopen( sourcefile, "r" ) ) == NULL )
     {
       ERROR( INSPAWGFILEC_EFILE, INSPAWGFILEC_MSGEFILE,
-	     sourcefile );
+          sourcefile );
       return INSPAWGFILEC_EFILE;
     }
   }
@@ -508,16 +508,16 @@ main(int argc, char **argv)
     if ( sourcefile ) 
     {
       ok &= ( fscanf( fp, "%c %lli %f %f %f %f %f\n", &timeCode,
-		      &epoch, &m1, &m2, &dist, &inc, &phic ) == 7 );
+            &epoch, &m1, &m2, &dist, &inc, &phic ) == 7 );
       if ( ok )
       {
-	fprintf(stderr, "%c %lli %f %f %f %f %f\n", timeCode,
-		      epoch, m1, m2, dist, inc, phic );  fflush(stderr);
-	ppnParams.mTot = m1 + m2;
-	ppnParams.eta = m1*m2/( ppnParams.mTot*ppnParams.mTot );
-	ppnParams.d = dist*LAL_PC_SI*1000000.0;
-	ppnParams.inc = inc*LAL_PI/180.0;
-	ppnParams.phi = phic*LAL_PI/180.0;
+        fprintf(stderr, "%c %lli %f %f %f %f %f\n", timeCode,
+            epoch, m1, m2, dist, inc, phic );  fflush(stderr);
+        ppnParams.mTot = m1 + m2;
+        ppnParams.eta = m1*m2/( ppnParams.mTot*ppnParams.mTot );
+        ppnParams.d = dist*LAL_PC_SI*1000000.0;
+        ppnParams.inc = inc*LAL_PI/180.0;
+        ppnParams.phi = phic*LAL_PI/180.0;
       }
     } 
     else 
@@ -542,12 +542,12 @@ main(int argc, char **argv)
       /* set end frequency to fstop, if given, otherwise continue to ISCO */
       if ( fstopset == TRUE )
       {
-	ppnParams.fStopIn = fstop;
+        ppnParams.fStopIn = fstop;
       }
       else
       {
-	ppnParams.fStopIn =  -1.0 / 
-	  (6.0 * sqrt(6.0) * LAL_PI * ppnParams.mTot * LAL_MTSUN_SI);
+        ppnParams.fStopIn =  -1.0 / 
+          (6.0 * sqrt(6.0) * LAL_PI * ppnParams.mTot * LAL_MTSUN_SI);
       }
       ppnParams.lengthIn = 0;
       ppnParams.ppn = NULL;
@@ -557,15 +557,15 @@ main(int argc, char **argv)
       /* Generate empty output file to which injection will be added. */
       output.epoch.gpsSeconds = 0;
       output.epoch.gpsNanoSeconds = 0;
-      dt = (DT*freq)/FREQ;
+      dt = (DT*FREQ)/freq;
       npt = length*freq;
       output.deltaT = dt; 
       LAL_CALL( LALSCreateVector( &stat, &( output.data ), npt ), &stat );
       memset( output.data->data, 0, npt*sizeof(REAL4) );
-      
+
       /* Generate waveform at zero epoch. */
       LAL_CALL( LALGeneratePPNInspiral( &stat, &waveform, &ppnParams ),
-	   &stat );
+          &stat );
       LALSnprintf( message, MSGLEN, "%d: %s", ppnParams.termCode,
           ppnParams.termDescription );
       INFO( message );
@@ -579,24 +579,24 @@ main(int argc, char **argv)
       if ( ppnParams.dfdt > 2.0 ) 
       {
         LALPrintError( "Waveform sampling interval is too large:\n"
-		       "\tmaximum df*dt = %f", ppnParams.dfdt );
+            "\tmaximum df*dt = %f", ppnParams.dfdt );
       }
-      
+
       /* add the smooth ending */
       if( smoothEnd == TRUE )
       {
-	wf = &waveform;
-	LAL_CALL( LALGenerateInspiralSmooth( &stat, &wf, &ppnParams, 
-	      &Qfac ), &stat );
-	waveform = *wf;
+        wf = &waveform;
+        LAL_CALL( LALGenerateInspiralSmooth( &stat, &wf, &ppnParams, 
+              &Qfac ), &stat );
+        waveform = *wf;
       }
-      
+
       /* Compute epoch for waveform. */
       time = waveform.a->data->length*DELTAT;
       if ( timeCode == 'f' )
-	epoch -= (INT8)( 1000000000.0*time );
+        epoch -= (INT8)( 1000000000.0*time );
       else if ( timeCode == 'c' )
-	epoch -= (INT8)( 1000000000.0*ppnParams.tc );
+        epoch -= (INT8)( 1000000000.0*ppnParams.tc );
       LALINT8toGPS( &stat, &( waveform.a->epoch ), &epoch );
       waveform.f->epoch = waveform.phi->epoch = waveform.a->epoch;
 
@@ -608,13 +608,13 @@ main(int argc, char **argv)
       signal.data = NULL;
       time = ( time + 2.0 )/signal.deltaT;
       LAL_CALL( LALSCreateVector( &stat, &( signal.data ), (UINT4)time ),
-	   &stat );
+          &stat );
       LAL_CALL( LALSimulateCoherentGW( &stat, &signal, &waveform,
-				  &detector ), &stat );
+            &detector ), &stat );
       LAL_CALL( LALSSInjectTimeSeries( &stat, &output, &signal ),
-	   &stat );
+          &stat );
       LAL_CALL( LALSDestroyVectorSequence( &stat, &( waveform.a->data ) ),
-	   &stat );
+          &stat );
       LAL_CALL( LALSDestroyVector( &stat, &( waveform.f->data ) ), &stat );
       LAL_CALL( LALDDestroyVector( &stat, &( waveform.phi->data ) ), &stat );
       LALFree( waveform.a );
@@ -628,29 +628,29 @@ main(int argc, char **argv)
       /* allocate memory for storing the injected events */
       if (prevSimEvent == NULL)
       {
-	currentSimEvent = simEventList = (SimInspiralTable *)            
-	  LALCalloc( 1 , sizeof(SimInspiralTable) );
+        currentSimEvent = simEventList = (SimInspiralTable *)            
+          LALCalloc( 1 , sizeof(SimInspiralTable) );
       }
       else
       {
-	currentSimEvent = (SimInspiralTable *)
-	  LALCalloc( 1 , sizeof(SimInspiralTable) );
-	prevSimEvent->next = currentSimEvent;
+        currentSimEvent = (SimInspiralTable *)
+          LALCalloc( 1 , sizeof(SimInspiralTable) );
+        prevSimEvent->next = currentSimEvent;
       }
       /* add information about current event */
       LALSnprintf(currentSimEvent->waveform, sizeof(currentSimEvent->waveform),
-	  "GeneratePPNtwoPN");
-      
+          "GeneratePPNtwoPN");
+
       LALFloatToGPS( &stat, &inj_length, &(ppnParams.tc));
       currentSimEvent->geocent_end_time.gpsSeconds = 
-	    epoch + inj_length.gpsSeconds;
+        epoch + inj_length.gpsSeconds;
       currentSimEvent->geocent_end_time.gpsNanoSeconds = 
-	    inj_length.gpsNanoSeconds;
+        inj_length.gpsNanoSeconds;
       currentSimEvent->h_end_time = currentSimEvent->l_end_time = 
-	    currentSimEvent->geocent_end_time;
+        currentSimEvent->geocent_end_time;
       currentSimEvent->end_time_gmst = 0;
-       LALSnprintf(currentSimEvent->source, sizeof(currentSimEvent->waveform),
-	  "HW");
+      LALSnprintf(currentSimEvent->source, sizeof(currentSimEvent->waveform),
+          "HW");
       currentSimEvent->mass1 = m1;
       currentSimEvent->mass2 = m2;
       currentSimEvent->eta = ppnParams.eta;
@@ -661,45 +661,45 @@ main(int argc, char **argv)
       currentSimEvent->coa_phase = phic;
       currentSimEvent->eff_dist_h = dist;
       currentSimEvent->eff_dist_l = dist;
-      
+
       prevSimEvent = currentSimEvent;
-      
+
       /* Print output file. */
       if ( tag ) 
       {
-	if ( !strcmp(ifo,"") )
-	{
-	  LALSnprintf( fname, sizeof(fname), "%s_inspiral_%d.out", tag, 
-	      numinjects);
-	}
-	else
-	{
-	  LALSnprintf( fname, sizeof(fname), "%s_inspiral_%d_%s.out",
-	    tag, numinjects, ifo);
-	}
+        if ( !strcmp(ifo,"") )
+        {
+          LALSnprintf( fname, sizeof(fname), "%s_inspiral_%d.out", tag, 
+              numinjects);
+        }
+        else
+        {
+          LALSnprintf( fname, sizeof(fname), "%s_inspiral_%d_%s.out",
+              tag, numinjects, ifo);
+        }
       }	
       else
       {
-	if ( !strcmp(ifo,"") )
-	{
-	  LALSnprintf( fname, sizeof(fname), "inspiral_%d.out", numinjects);
-	}
-	else
-	{
-	  LALSnprintf( fname, sizeof(fname), "inspiral_%d_%s.out",
-	    numinjects, ifo);
-	}
+        if ( !strcmp(ifo,"") )
+        {
+          LALSnprintf( fname, sizeof(fname), "inspiral_%d.out", numinjects);
+        }
+        else
+        {
+          LALSnprintf( fname, sizeof(fname), "inspiral_%d_%s.out",
+              numinjects, ifo);
+        }
       }
-      
+
       if ( ( fq = fopen( fname, "w" ) ) == NULL ) 
       {
-	ERROR( INSPAWGFILEC_EFILE, INSPAWGFILEC_MSGEFILE,fname );
-	return INSPAWGFILEC_EFILE;
+        ERROR( INSPAWGFILEC_EFILE, INSPAWGFILEC_MSGEFILE,fname );
+        return INSPAWGFILEC_EFILE;
       }
       for ( i = 0; i < output.data->length; i++ )
-	  fprintf( fq, "%e\n", output.data->data[i] );
+        fprintf( fq, "%e\n", output.data->data[i] );
       fclose( fq ); 
-      
+
       /* destroy current injection */
       LAL_CALL( LALSDestroyVector( &stat, &( output.data ) ), &stat );    
     }
@@ -709,7 +709,7 @@ main(int argc, char **argv)
     {
       ok = 0;
     }
-    
+
   }
 
   /* Input file is exhausted (or has a badly-formatted line ). */
@@ -717,7 +717,7 @@ main(int argc, char **argv)
   {  
     fclose( fp );
   }
- /*****************************************************************
+  /*****************************************************************
    * open summary xml file
    *****************************************************************/
   if ( summfile )
@@ -727,12 +727,12 @@ main(int argc, char **argv)
 
     /* write out the process and process params tables */
     LAL_CALL( LALGPSTimeNow ( &stat, &(proctable.processTable->end_time),
-        &accuracy ), &stat );
-  
+          &accuracy ), &stat );
+
     LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, process_table ), 
-      &stat );
+        &stat );
     LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, proctable, 
-        process_table ), &stat );
+          process_table ), &stat );
     LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
     LALFree( proctable.processTable );
 
@@ -745,9 +745,9 @@ main(int argc, char **argv)
 
     /* write the process params table */
     LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, 
-        process_params_table ),	&stat );
+          process_params_table ),	&stat );
     LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, procparams, 
-        process_params_table ), &stat );
+          process_params_table ), &stat );
     LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
     while( procparams.processParamsTable )
     {
@@ -755,24 +755,23 @@ main(int argc, char **argv)
       procparams.processParamsTable = this_proc_param->next;
       LALFree( this_proc_param );
     }
-   
+
     /* Write the list of injections to the sim table */
     if ( simEventList )
     {
       LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sim_inspiral_table),
-	  &stat);
+          &stat);
       simTable.simInspiralTable = simEventList;
       LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, simTable, 
-          sim_inspiral_table), &stat);
+            sim_inspiral_table), &stat);
       LAL_CALL( LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
-  
+
       /* free the temporary memory containing the events */
       while (simEventList)
       {
-	SimInspiralTable *currentSimEvent;
-	currentSimEvent = simEventList;
-	simEventList = simEventList->next;
-	LALFree( currentSimEvent );
+        currentSimEvent = simEventList;
+        simEventList = simEventList->next;
+        LALFree( currentSimEvent );
       }
     }
 
@@ -784,7 +783,7 @@ main(int argc, char **argv)
    * CLEANUP                                                         *
    *******************************************************************/
 
-  
+
   /* Destroy remaining memory. */
   LAL_CALL( LALCDestroyVector( &stat, &( detector.transfer->data ) ), &stat );
   LALFree( detector.transfer );
