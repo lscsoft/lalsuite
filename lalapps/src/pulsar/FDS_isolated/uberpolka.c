@@ -206,57 +206,70 @@ int main(int argc,char *argv[])
 	{
 	  if  (SortedC1[i].f >= PolkaCommandLineArgs.fmin && SortedC1[i].f <= PolkaCommandLineArgs.fmax)
 	    {
-	      CandINDICES *p;
+	      int iFreq2, iAlpha2,iDelta2;
 
-	      /* TO DO: Here I need to put in a loop to run bsearch etc. on all surrounding boxes, for now I just have the 
-	       central box */
-
-	      p=bsearch(&SortedC1[i],SortedC2,(size_t)CList2.length, sizeof(CandINDICES),compareCIStructs);
-
-	      if (p != NULL)
+	      /* Loop to run bsearch etc. on all surrounding boxes */
+	      for (iFreq2=SortedC1[i].iFreq-1; iFreq2 <= SortedC1[i].iFreq+1; iFreq2++)
 		{
-		  /* Now we've found at least one candidate */
-		  /* we need to move to the right edge (without segfaulting!) */
-		  if ( p->iCandSorted > 0)
+		  for (iAlpha2=SortedC1[i].iAlpha-1; iAlpha2 <= SortedC1[i].iAlpha+1; iAlpha2++)
 		    {
-		      INT4 keepgoing = 1;
-		      while ( keepgoing )
+		      for (iDelta2=SortedC1[i].iDelta-1; iDelta2 <= SortedC1[i].iDelta+1; iDelta2++)
 			{
-			  if( (p->iFreq == (p-1)->iFreq) && ( p->iDelta == (p-1)->iDelta) && ( p->iAlpha == (p-1)->iAlpha)) 
-			    {
-			      p--;
-			    }else{
-			      keepgoing=0;
-			    }
-			  if ( p->iCandSorted == 0 )
-			    {
-			      keepgoing=0;
-			    }
-			}
-		    }
-		  /* Now p points to first coincident event in the second list */
+			  CandINDICES *p, can;
+			  INT4 keepgoing;
 
-		  /* Now loop over candidates found in the second list and do the fine coincidence test */
-		  {
-		    INT4 keepgoing = 1;
-		    while (keepgoing)
-		      {
-			if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) return 3;
-			if ( p->iCandSorted ==  (int)CList2.length - 1)
-			  {
-			    keepgoing=0;
-			    continue;
-			  }
-			if( (p->iFreq == (p+1)->iFreq) && ( p->iDelta == (p+1)->iDelta) && ( p->iAlpha == (p+1)->iAlpha)) 
-			  {
-			    p++;
-			  }else{
-			    keepgoing=0;
-			  }
-		      }
-		  }
+			  can.iFreq=iFreq2;
+			  can.iAlpha=iAlpha2;
+			  can.iDelta=iDelta2;
+			  
+			  p=bsearch(&can,SortedC2,(size_t)CList2.length, sizeof(CandINDICES),compareCIStructs);
 
-		} /* check that besearch was non-null */
+			  if (p != NULL)
+			    {
+			      /* Now we've found at least one candidate */
+			      /* we need to move to the right edge (without segfaulting!) */
+			      if ( p->iCandSorted > 0)
+				{
+				  keepgoing = 1;
+				  while ( keepgoing )
+				    {
+				      if( (p->iFreq == (p-1)->iFreq) && ( p->iDelta == (p-1)->iDelta) && ( p->iAlpha == (p-1)->iAlpha)) 
+					{
+					  p--;
+					}else{
+					  keepgoing=0;
+					}
+				      if ( p->iCandSorted == 0 )
+					{
+					  keepgoing=0;
+					}
+				    }
+				}
+			      /* Now p points to first coincident event in the second list */
+			      
+			      /* Now loop over candidates found in the second list and do the fine coincidence test */
+			      keepgoing = 1;
+			      while (keepgoing)
+				{
+				  if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) return 3;
+				  if ( p->iCandSorted ==  (int)CList2.length - 1)
+				    {
+				      keepgoing=0;
+				      continue;
+				    }
+				  if( (p->iFreq == (p+1)->iFreq) && ( p->iDelta == (p+1)->iDelta) && ( p->iAlpha == (p+1)->iAlpha)) 
+				    {
+				      p++;
+				    }else{
+				      keepgoing=0;
+				    }
+				}
+
+
+			    }/* check that besearch was non-null */
+			} /* loop over deltas */
+		    } /* loop over alphas */
+		}/* loop over frequencies */    
 	    } /* check that frequency lies between two input bounds */
 	} /* loop over 1st candidate list */
 
