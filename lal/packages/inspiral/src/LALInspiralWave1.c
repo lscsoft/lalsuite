@@ -104,7 +104,8 @@ LALInspiralWave1(
    CHECKSTATUSPTR(status);
    LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
    CHECKSTATUSPTR(status);
-
+   
+    
    values.length = dvalues.length = valuesNew.length =
    yt.length = dym.length = dyt.length = n;
    dummy.length = n * 6;
@@ -118,7 +119,9 @@ LALInspiralWave1(
    yt.data = &dummy.data[3*n];
    dym.data = &dummy.data[4*n];
    dyt.data = &dummy.data[5*n];
-
+   
+   params->nStartPad = 0;
+   
    m = ak.totalmass;
    dt = 1./params->tSampling;
    fu = params->fCutoff;
@@ -181,11 +184,11 @@ LALInspiralWave1(
    in4.dyt = &dyt;
 
    count = 0;
-   while (count < params->nStartPad) 
+  /* while (count < params->nStartPad) 
    {
        *(signal->data + count) = 0.;
        count++;
-   }
+   }*/
 
    t = 0.0;
    piM = LAL_PI * m;
@@ -204,6 +207,7 @@ LALInspiralWave1(
       f = v*v*v/piM;
    } while (t < ak.tn && f<fHigh);
    params->fFinal = f;
+   params->tC = t;       
 
    while (count < (int)signal->length) 
    {
@@ -340,11 +344,12 @@ LALInspiralWave1Templates(
    in4.dyt = &dyt;
 
    count = 0;
-   while (count < params->nStartPad) 
+   params->nStartPad = 0;
+   /*while (count < params->nStartPad) 
    {
       *(signal1->data + count) = *(signal2->data + count) = 0.;
       count++;
-   }
+   }*/
 
    t = 0.0;
    do {
@@ -365,7 +370,7 @@ LALInspiralWave1Templates(
       f = v*v*v/piM;
    } while (t < ak.tn && f<fHigh);
    params->fFinal = f;
-
+   params->tC = t;
    while (count < (int)signal1->length) 
    {
       *(signal1->data + count) = *(signal2->data + count) = 0.;

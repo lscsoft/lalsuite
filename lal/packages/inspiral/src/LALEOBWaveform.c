@@ -710,10 +710,10 @@ Userful for debugging: Make sure a solution for r exists.
        exit(0);
      }
 
-   params->rInitial = r;
+   /*params->rInitial = r;
    params->vInitial = v;
    params->rLightRing = rn;
-
+   */
 /* 
    LALInspiralPhasing1(v) gives the GW phase (= twice the orbital phase).
    The ODEs we solve give the orbital phase. Therefore, set the
@@ -820,8 +820,8 @@ switch (params->order)
 /*----------------------------------------------------------------- 
 Record the final cutoff frequency of BD Waveforms for record keeping 
 -----------------------------------------------------------------*/
-   params->rFinal = rOld;
-   params->vFinal = v;
+   /*params->rFinal = rOld;
+   params->vFinal = v;*/
    params->fFinal = pow(v,3.)/(LAL_PI*m);
    while (count < (INT4)signal->length) 
    {
@@ -1001,10 +1001,10 @@ Userful for debugging: Make sure a solution for r exists.
        exit(0);
      }
 
-   params->rInitial = r;
+   /*params->rInitial = r;
    params->vInitial = v;
    params->rLightRing = rn;
-
+*/
 /* 
    LALInspiralPhasing1(v) gives the GW phase (= twice the orbital phase).
    The ODEs we solve give the orbital phase. Therefore, set the
@@ -1112,9 +1112,9 @@ Userful for debugging: Make sure a solution for r exists.
 /*----------------------------------------------------------------- 
 Record the final cutoff frequency of BD Waveforms for record keeping 
 -----------------------------------------------------------------*/
-   params->rFinal = rOld;
+   /*params->rFinal = rOld;
+   params->vFinal = v;*/
    params->fFinal = pow(v,3.)/(LAL_PI*m);
-   params->vFinal = v;
    while (count < (INT4)signal1->length) 
    {
       *(signal1->data + count) = *(signal2->data + count) = 0.;
@@ -1327,10 +1327,10 @@ LALEOBWaveformForInjection (
        exit(0);
      }
   
-  params->rInitial = r;
+  /*params->rInitial = r;
   params->vInitial = v;
-  params->rLightRing = rn;
-  
+  params->rLightRing = rn; */
+
   in3.totalmass = ak.totalmass;
   in3.dEnergy = func.dEnergy;
   in3.flux = func.flux;
@@ -1433,9 +1433,9 @@ LALEOBWaveformForInjection (
   /*----------------------------------------------------------------- 
     Record the final cutoff frequency of BD Waveforms for record keeping 
     -----------------------------------------------------------------*/
-  params->rFinal = rOld;
+  /*params->rFinal = rOld;
+  params->vFinal = v;*/
   params->fFinal = pow(v,3.)/(LAL_PI*m);
-  params->vFinal = v;
   phiC =  phi->data[count-1] ;
 
   for (i=0; i<count;i++)
