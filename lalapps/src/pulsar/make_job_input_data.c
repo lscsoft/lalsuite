@@ -1,17 +1,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
-
-/* max number of lines in FILE1 */
+/* max number of lines in FILE1 (list of locked stretches) */
 #define N 100000
-/* max number of lines in FILE2 */
+
+/* max number of lines in FILE2 (sorted list of data) */
 #define FN 200000
 
-#define SFTPERJOB 50 /* number of SFTs for each job file to produce */
-#define FRAMELEN 16  /* number of seconds in a frame */
+/* number of SFTs for each job file to produce */
+#define SFTPERJOB 50
 
-char filenames[FN][75],printed[FN];
+/* number of seconds in a frame */
+#define FRAMELEN 16
+
+/* Maximum length of the path to a frame file */
+#define FILENAMEMAX 66
+
+/* Number of nodes on cluster (approximate number of jobs desired) */
+#define NODES 296
+
+char filenames[FN][FILENAMEMAX+1],printed[FN];
 int starttimes[FN];
 int nseg[N],tseg[N],tbase[N];
 
@@ -19,9 +29,10 @@ int nseg[N],tseg[N],tbase[N];
 /* Second argument is ordered file names */
 int main(int argc, char* argv[]) {
   FILE *fp,*fp1=NULL,*fp2=NULL;
-  int *nstart,*tstart,*bstart;
+  int *nstart,*tstart,*bstart,code,totalsegs=0;
   int locksegs=0,i,j=0,k,firstframe,lastframe,nframes;
   int jobno=0,segno=0,filepointer1=0,filepointer2=0,fileno=0,thistime;
+  char bigbuff[1024];
 
   if (argc!=4) {
 	fprintf(stderr,"Syntax:\n%s FILE1 FILE2 DIRNAME\n",argv[0]);
@@ -32,32 +43,63 @@ int main(int argc, char* argv[]) {
   }
  
   /* read file containing list of segment numbers and start times */
-  fp=fopen(argv[1],"r");
-  if (fp==NULL){
+  if (!(fp=fopen(argv[1],"r"))){
+    perror("Could not open file");
     fprintf(stderr,"Unable to open file %s for reading\n",argv[1]);
     exit(1);
   }
   nstart=nseg;
   tstart=tseg;
   bstart=tbase;
-  while (3==fscanf(fp,"%d%d%d",nstart++,tstart++,bstart++));
+  while (3==(code=fscanf(fp,"%d%d%d",nstart++,tstart++,bstart++))){
+    totalsegs+=*(nstart-1);
+  }
+
+  if (code!=EOF){
+    fprintf(stderr,"File %s terminated unexpectedly at line %d\n", argv[1], nstart-nseg);
+    exit(1); 
+  }
   fclose(fp);
   locksegs=nstart-nseg-1;
 
-  /* read file containing file names "in order".  Assumes end of */
-  /* filename is of the form TGPS-XX.gwf where TGPS is 9 digits */
-  fp=fopen(argv[2],"r");
-    if (fp==NULL){
+  printf("Total number of segments is %d, in %d locked stretches\n", totalsegs, locksegs);
+
+  /* open read file containing file names "in order".  */
+  if (!(fp=fopen(argv[2],"r"))){
+    perror("Could not open file");
     fprintf(stderr,"Unable to open file %s for reading\n",argv[2]);
     exit(1);
   }
-  while (1==fscanf(fp,"%s",filenames[fileno])){
+  
+  /* parse file containing files names in order Assumes end of
+     filename is of the form TGPS-XX.gwf where TGPS is 9 digits.  Note
+     that this string is 9+3+4=16 digits long */
+  while (1==(code=fscanf(fp,"%s",bigbuff))){
+    /* check that file name is not too long for array */
+    int namelen;
+    bigbuff[1023]='\0';
+    namelen=strlen(bigbuff);
+    if (namelen>FILENAMEMAX){
+      fprintf(stderr,"File name %s length %d too large.  Recompile %s with bigger FILENAMEMAX\n",
+	      bigbuff, namelen, argv[0]);
+      exit(1);
+    }
+    
+    /* save file name in array */
+    strcpy(filenames[fileno], bigbuff);
+    
     /* the magic 16 in the next line follows from the file-naming convention above! */
     starttimes[fileno]=atoi(filenames[fileno]+strlen(filenames[fileno])-16);
     fileno++;
   };
-  fclose(fp);
 
+  /* Check that file of frame file names was in expected format */
+  if (code!=EOF){
+    fprintf(stderr,"File %s terminated unexpectedly at line %d\n", argv[2], fileno);
+    exit(1); 
+  }
+  fclose(fp);
+  
   /* clear array to keep track of what is printed */
   for (i=0;i<fileno;i++)
     printed[i]=0;
@@ -70,8 +112,8 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  /* start writing job description files */
-  /* loop over all locked segments */
+  /* start writing job description files loop over all locked segments
+     spread the pain equally over the different nodes. */
   for (i=0;i<locksegs;i++){
     for (k=0;k<nseg[i];k++){
       if (segno%SFTPERJOB==0){
@@ -100,11 +142,13 @@ int main(int argc, char* argv[]) {
 	/* open new files */
 	sprintf(fname,"%s/jobtimes.%05d",argv[3],jobno);
 	if (!(fp=fopen(fname,"w"))){
+	  perror("Could not write file");
 	  fprintf(stderr,"Unable to open file %s for writing.\n",fname);
 	  return 1;
 	};
 	sprintf(fname,"%s/jobdata.%05d.ffl",argv[3],jobno++);
 	if (!(fp1=fopen(fname,"w"))){
+	  perror("Could not write file");
 	  fprintf(stderr,"Unable to open file %s for writing.\n",fname);
 	  return 1;
 	};
@@ -153,6 +197,7 @@ int main(int argc, char* argv[]) {
 	  char fname[256];
 	  sprintf(fname,"%s/joberror.%05d",argv[3],jobno);
 	  if (!(fp2=fopen(fname,"w"))){
+	    perror("Could not write file");
 	    fprintf(stderr,"Unable to open file %s for writing.\n",fname);
 	    return 1;
 	  }; 
