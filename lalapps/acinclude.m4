@@ -56,6 +56,19 @@ AC_DEFUN([LALAPPS_WITH_EXTRA_LIBS],
 	],)
 ])
 
+AC_DEFUN([LALAPPS_WITH_GCC_FLAGS],
+[AC_ARG_WITH(
+        [gcc_flags],   
+        [  --with-gcc-flags        turn on strict gcc warning flags],
+        [ if test -n "${with_gcc_flags}"
+          then
+            lalapps_gcc_flags="-g3 -O4 -ansi -pedantic -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Waggregate-return -fno-common -Wnested-externs -D__NO_STRING_INLINES"
+          else
+            lalapps_gcc_flags=""
+          fi
+        ], [ lalapps_gcc_flags="" ] )
+])
+
 AC_DEFUN([LALAPPS_WITH_CC],
 [AC_ARG_WITH(
         cc, 
