@@ -976,6 +976,11 @@ INT4 main(INT4 argc, CHAR *argv[])
 		LALSPrintTimeSeries(&streamTwo, "stream2.dat");
 	}
 
+	if (verbose_flag)
+	{
+		fprintf(stdout, "High pass filtering...\n");
+	}
+
 	/* high pass filter */
 	if (high_pass_flag)
 	{
@@ -997,7 +1002,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	for (segLoop = 0; segLoop < numSegments; segLoop++)
 	{
 		/* define segment epoch */
-		gpsStartTime.gpsSeconds = startTime + (segLoop * segmentDuration);
+		gpsStartTime.gpsSeconds = startTime + (segLoop * segmentShift);
 		gpsCalTime.gpsSeconds = gpsStartTime.gpsSeconds;
 		segmentOne.epoch = gpsStartTime;
 		segmentTwo.epoch = gpsStartTime;
@@ -1012,9 +1017,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 		for (i = 0; i < segmentLength ; i++)
 		{
 			segmentOne.data->data[i] = streamOne.data->data[i + \
-				(segLoop * segmentLength)];
+				(segLoop * segmentShift * resampleRate)];
 			segmentTwo.data->data[i] = streamTwo.data->data[i + \
-				(segLoop * segmentLength)];
+				(segLoop * segmentShift * resampleRate)];
 		}
 
 		/* simulate signal */
