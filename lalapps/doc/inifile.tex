@@ -1,0 +1,97 @@
+\begin{verbatim}
+; S2 inspiral pipeline configuration script.
+; 
+; $Id$
+;
+; this is the configuration file for the inspiral DAG generation program that
+; creates a condor DAG to run the inspiral analysis pipeline.
+
+[condor]
+universe = standard
+datafind  = LSCdataFind
+tmpltbank = lalapps_tmpltbank
+inspiral  = lalapps_inspiral
+trigtotmplt = lalapps_inca
+inca = lalapps_inca
+
+[pipeline]
+version = $Id$
+user-tag = 
+ifo1 = L1
+ifo2 = H1
+ifo1-snr-threshold = 6.0
+ifo2-snr-threshold = 6.0
+ifo1-chisq-threshold = 100.0
+ifo2-chisq-threshold = 100.0
+
+[input]
+segments = S2H1L1v04_selectedsegs.txt
+channel = LSC-AS_Q
+
+[calibration]
+path = /ldas_outgoing/calibration/cache_files
+L1 = L1-CAL-V03-729273600-734367600.cache
+H1 = H1-CAL-V03-729273600-734367600.cache
+H2-1 = H2-CAL-V03-729296220-731849040.cache
+H2-2 = H2-CAL-V03-731849076-734367576.cache
+H2-cal-epoch-boundary = 731849076
+
+[datafind]
+type = RDS_R_L1
+lal-cache = 
+
+[data]
+pad-data = 8
+segment-length = 1048576
+number-of-segments = 15
+sample-rate = 4096
+resample-filter = ldas
+enable-high-pass = 100.0
+spectrum-type = median
+low-frequency-cutoff = 100.0
+high-pass-order = 8
+high-pass-attenuation = 0.1
+
+[tmpltbank]
+minimum-mass = 3.0 
+maximum-mass = 20.0
+minimal-match = 0.95
+high-frequency-cutoff = 2048.0
+order = twoPN
+approximant = BCV
+space = Psi0Psi3
+debug-level = 33
+minimum-psi0 = 10.0
+maximum-psi0 = 550000.0
+minimum-psi3 = -4000.0
+maximum-psi3 = -10.0
+alpha = 0.0
+maximum-fcut-tmplts = 3
+
+[inspiral]
+minimal-match = 0.9
+segment-overlap = 524288
+inverse-spec-length = 16
+dynamic-range-exponent = 69.0
+enable-output = 
+enable-event-cluster = 
+chisq-bins = 0
+debug-level = 33
+approximant = BCV
+
+[trigtotmplt]
+minimal-match = 0.95
+parameter-test = psi0_and_psi3
+debug-level = 33
+
+[inca]
+playground-only =
+epsilon = 2.0
+kappa = 5000.0
+dt = 15.0
+dm = 0.03
+dpsi0 = 0.0
+dpsi3 = 0.0
+parameter-test = psi0_and_psi3
+debug-level = 33
+\end{verbatim}
