@@ -99,5 +99,17 @@ deliberate choice.
 
 Noted.
 
+After discussion the pulgroup has added some additional requirements
+to the spec, namely that
+
+The SFT blocks in a given SFT file are required to have:
+(1) identical version numbers
+(2) monotonically increasing GPS times
+(3) identical values of tbase
+(4) identical values of first_frequency_index
+(5) identical values of nsamples
+(6) come from the same instrument and instrument channel
+
+
 Cheers,
 	Bruce Allen for the Pulsar Search Group.
