@@ -680,6 +680,10 @@ int freemem(LALStatus* status){
   if (fvecn)
     LALCDestroyVector(status, &fvecn);  
 
+  LALFree (earthdata);
+  LALFree (sundata);
+  if ( noisedir ) LALFree(noisedir);
+
   return 0;
 }
 
@@ -1585,8 +1589,10 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
      and get the input data filename*/
 
   /* set default: */
-  earthdata = EARTHDATA;
-  sundata = SUNDATA;
+  earthdata = LALCalloc(1, strlen(EARTHDATA) + 1);
+  strcpy (earthdata, EARTHDATA);
+  sundata = LALCalloc(1, strlen(SUNDATA)+1);
+  strcpy (sundata, SUNDATA);
   
   opterr=0;
 
@@ -1670,9 +1676,11 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
       }
       break;
     case 'E':    
+      if ( earthdata ) LALFree(earthdata);
+      if ( sundata ) LALFree(sundata);
       /* path to ephemeris files */
-      if (!(earthdata=(char *)malloc((strlen(optarg)+strlen(EARTHDATA)+2))) ||
-	  !(sundata=  (char *)malloc((strlen(optarg)+strlen(SUNDATA)+2)))) {
+      if (!(earthdata=(CHAR *)LALMalloc((strlen(optarg)+strlen(EARTHDATA)+2))) ||
+	  !(sundata=  (CHAR *)LALMalloc((strlen(optarg)+strlen(SUNDATA)+2)))) {
 	syserror("No memory remaining to store filenames for Ephemeris data\n");
 	exit(1);
       }
@@ -1681,7 +1689,7 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
       sprintf(sundata,  "%s/%s", optarg, SUNDATA);
       break;
     case 'D':
-      if (!(noisedir=(char *)malloc((strlen(optarg)+2)))){
+      if (!(noisedir=(CHAR *)LALMalloc((strlen(optarg)+2)))){
 	syserror("No memory remaining to store input sft dir name\n");
 	exit(1);
       }
