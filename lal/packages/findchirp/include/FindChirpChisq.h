@@ -51,6 +51,7 @@ NRCSID (SPFINDCHIRPCHISQH, "$Id$");
 \subsection*{Error codes} 
 </lalLaTeX>
 #endif
+/* <lalErrTable> */
 #define FINDCHIRPCHISQH_ENULL 1
 #define FINDCHIRPCHISQH_ENNUL 2
 #define FINDCHIRPCHISQH_ENUMZ 3
@@ -65,6 +66,7 @@ NRCSID (SPFINDCHIRPCHISQH, "$Id$");
 #define FINDCHIRPCHISQH_MSGEALOC "Memory allocation error"
 #define FINDCHIRPCHISQH_MSGEUAPX "Unknown waveform approximant"
 #define FINDCHIRPCHISQH_MSGEIAPX "Incorrect waveform approximant"
+/* </lalErrTable> */
 
 #if 0
 <lalLaTeX>
