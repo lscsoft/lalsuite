@@ -218,7 +218,7 @@ int main( int argc, char *argv[] ) {
   tau=1.;
   f1 = 1./tau;
   f0 = 1000;
-  numSpindown = 1;
+  numSpindown = 0;
 
 
   /* Parse options. */
