@@ -71,6 +71,7 @@ NRCSID (FINDCHIRPBCVSPINH, "$Id$");
 #define FINDCHIRPBCVSPINH_EDIVZ 11
 #define FINDCHIRPBCVSPINH_EMAPX 12
 #define FINDCHIRPBCVSPINH_EUAPX 13
+#define FINDCHIRPBCVSPINH_ECLUW 14
 #define FINDCHIRPBCVSPINH_MSGENULL "Null pointer"
 #define FINDCHIRPBCVSPINH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPBCVSPINH_MSGEALOC "Memory allocation error"
@@ -84,6 +85,8 @@ NRCSID (FINDCHIRPBCVSPINH, "$Id$");
 #define FINDCHIRPBCVSPINH_MSGEDIVZ "Attempting to divide by zero"
 #define FINDCHIRPBCVSPINH_MSGEMAPX "Mismatch in waveform approximant (BCV/TaylorF2)"
 #define FINDCHIRPBCVSPINH_MSGEUAPX "Unknown approximant: must be BCV or TaylorF2"
+#define FINDCHIRPBCVSPINH_MSGECLUW "Unacceptable max-over-chirp clustering method for BCVSpin"
+
 /* </lalErrTable> */
 
 #if 0
