@@ -74,9 +74,9 @@ where $P_\mathrm{rot}$ is a sidereal day, $P_\mathrm{rev}$ a sidereal
 year, $t_\mathrm{midnight}$ the time of a sidereal midnight at the
 prime meridian, and $t_\mathrm{autumn}$ is the time of an autumnal
 equinox.  In other words, $\theta_\mathrm{rot}=0$ corresponds to the
-Earth lying on the positive ${\hat\mathrm{e}}_x$ axis and
+Earth lying on the positive $\mathbf{\hat{e}}_x$ axis and
 $\theta_\mathrm{rev}=0$ corresponds to a point with zero longitude
-lying in the ${\hat\mathrm{e}}_x$ direction from the Earth's axis.  If
+lying in the $\mathbf{\hat{e}}_x$ direction from the Earth's axis.  If
 the detector has a north latitude $\lambda$ and an east longitude $l$,
 then the detector position is:
 \begin{eqnarray}
