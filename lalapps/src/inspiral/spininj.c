@@ -34,7 +34,7 @@
 #include <lal/TimeDelay.h>
 
 
-NRCSID( INSPIRALINJECTIONC, "$Id$");
+NRCSID( SPININJC, "$Id$");
 RCSID( "$Id$" );
 
 #define CVS_ID_STRING "$Id$"
@@ -42,10 +42,10 @@ RCSID( "$Id$" );
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
-#define PROGRAM_NAME "inspiralInjection"
+#define PROGRAM_NAME "spininj"
 
 #define USAGE \
-"lalapps_inspiralInjection [options]\n"\
+"lalapps_spininj [options]\n"\
 "\nDefaults are shown in brackets\n\n" \
 "  --help                   display this message\n"\
 "  --verbose                print mass and galactocentic cartesian coordinates\n"\
@@ -84,14 +84,14 @@ const INT4            S2StopTime  = 734367613; /* Apr 14 2003 15:00:00 UTC */
 
 
 typedef enum{
-  II_m1Andm2,
-  II_totalMassU
+  SPININJ_m1Andm2,
+  SPININJ_totalMassU
 } massEnum;
 
 typedef enum{
-  II_distanceUniform,
-    II_distanceLogUniform, 
-    II_volumeUniform
+  SPININJ_distanceUniform,
+    SPININJ_distanceLogUniform, 
+    SPININJ_volumeUniform
 } distributionEnum;
 
 
@@ -99,7 +99,7 @@ typedef enum{
 typedef struct{
   double  min;
   double  max;
-} IIrange;
+} SPININJrange;
 
 
 typedef struct {
@@ -107,17 +107,17 @@ typedef struct {
   LIGOTimeGPS     gpsStartTime;
   LIGOTimeGPS     gpsEndTime;
   UINT4           randSeed;
-  IIrange         distance;
-  IIrange         m1, m2;
+  SPININJrange         distance;
+  SPININJrange         m1, m2;
   REAL8           timeInterval;
   REAL8           meanTimeStep;
   CHAR            waveform[LIGOMETA_WAVEFORM_MAX];  
   CHAR            *userTag ;  
   massEnum         mdistr;
   distributionEnum ddistr;
-  IIrange         spin1,  spin2;
-  IIrange         theta0, phi0;
-  IIrange         coa_phase;
+  SPININJrange         spin1,  spin2;
+  SPININJrange         theta0, phi0;
+  SPININJrange         coa_phase;
 } InspiralInjectionParameters;
 
 
@@ -340,7 +340,7 @@ void LALSetIndividualMasses(LALStatus                   *status,
   REAL4 u, mtotal; 
 
   switch(params.mdistr){
-  case  II_m1Andm2:
+  case  SPININJ_m1Andm2:
     LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
     this_inj->mass1 = params.m1.min + u * deltaM1;
     LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
@@ -348,7 +348,7 @@ void LALSetIndividualMasses(LALStatus                   *status,
     mtotal = this_inj->mass1 + this_inj->mass2 ;
     this_inj->eta = this_inj->mass1 * this_inj->mass2 / ( mtotal * mtotal );
     break;
-  case II_totalMassU:
+  case SPININJ_totalMassU:
     mtotal = params.m1.min + params.m2.min;
     LAL_CALL( LALUniformDeviate( status, &u, randParams ), status);
     mtotal += u* (deltaM1+deltaM2);
@@ -415,13 +415,13 @@ void LALSetDistance(LALStatus *status,
 
 
   switch (params.ddistr){
-  case II_distanceUniform:
+  case SPININJ_distanceUniform:
     LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
     this_inj->distance = params.distance.min + u * (params.distance.max - params.distance.min);
 
     break;
     
-  case II_distanceLogUniform:
+  case SPININJ_distanceLogUniform:
     lmin = log10(params.distance.min);
     lmax = log10(params.distance.max);
     deltaL = lmax - lmin;
@@ -430,7 +430,7 @@ void LALSetDistance(LALStatus *status,
     this_inj->distance = pow(10.0,(REAL4) exponent);
     break;
     
-  case II_volumeUniform:
+  case SPININJ_volumeUniform:
     d3min = params.distance.min * params.distance.min * params.distance.min;
     d3max = params.distance.max * params.distance.max * params.distance.max;
     deltad3 = d3max - d3min ;
