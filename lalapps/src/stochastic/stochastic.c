@@ -196,7 +196,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   LIGOTimeGPS gpsStartPadTime, gpsCalibTime;
   ReadDataPairParams streamParams;
   StreamPair streamPair;
-  REAL4TimeSeries segmentOne, segmentTwo, segmentPadOne, segmentPadTwo;
+  REAL4TimeSeries *segmentOne;
+  REAL4TimeSeries *segmentTwo;
+  REAL4TimeSeries *segmentPadOne;
+  REAL4TimeSeries *segmentPadTwo;
   REAL4Vector *segOne[100], *segPadOne[100], *segTwo[100], *segPadTwo[100];
 
   /* simulated signal structures */
@@ -357,43 +360,23 @@ INT4 main(INT4 argc, CHAR *argv[])
   segmentPadLength = (segmentDuration + (2 * padData)) * resampleRate;
   segmentLength = segmentDuration * resampleRate;
 
-  /* set metadata fields for data segments */
-  strncpy(segmentPadOne.name, "segmentPadOne", LALNameLength);
-  strncpy(segmentPadTwo.name, "segmentPadTwo", LALNameLength);
-  segmentPadOne.sampleUnits = segmentPadTwo.sampleUnits = lalADCCountUnit;
-  segmentPadOne.epoch = segmentPadTwo.epoch = gpsStartTime;
-  segmentPadOne.deltaT = segmentPadTwo.deltaT = 1./(REAL8)resampleRate;
-  segmentPadOne.f0 = segmentPadTwo.f0 = 0;
-  strncpy(segmentOne.name, "segmentOne", LALNameLength);
-  strncpy(segmentTwo.name, "segmentTwo", LALNameLength);
-  segmentOne.sampleUnits = segmentTwo.sampleUnits = lalADCCountUnit;
-  segmentOne.epoch = segmentTwo.epoch = gpsStartTime;
-  segmentOne.deltaT = segmentTwo.deltaT = 1./(REAL8)resampleRate;
-  segmentOne.f0 = segmentTwo.f0 = 0;
-
   if (vrbflg)
     fprintf(stdout, "Allocating memory for data segments...\n");
 
   /* allocate memory for data segments */
-  segmentPadOne.data = segmentPadTwo.data = NULL;
-  LAL_CALL(LALSCreateVector(&status, &(segmentPadOne.data), \
-        segmentPadLength), &status);
-  LAL_CALL(LALSCreateVector(&status, &(segmentPadTwo.data), \
-        segmentPadLength), &status);
-  memset(segmentPadOne.data->data, 0, \
-      segmentPadOne.data->length * sizeof(*segmentPadOne.data->data));
-  memset(segmentPadTwo.data->data, 0, \
-      segmentPadTwo.data->length * sizeof(*segmentPadTwo.data->data));
-  segmentOne.data = segmentTwo.data = NULL;
-  LAL_CALL(LALSCreateVector(&status, &(segmentOne.data), \
+  LAL_CALL(LALCreateREAL4TimeSeries(&status, &segmentOne, "segmentOne", \
+        gpsStartTime, 0, 1./resampleRate, lalDimensionlessUnit, \
         segmentLength), &status);
-  LAL_CALL(LALSCreateVector(&status, &(segmentTwo.data), \
+  LAL_CALL(LALCreateREAL4TimeSeries(&status, &segmentTwo, "segmentTwo", \
+        gpsStartTime, 0, 1./resampleRate, lalDimensionlessUnit, \
         segmentLength), &status);
-  memset(segmentOne.data->data, 0, \
-      segmentOne.data->length * sizeof(*segmentOne.data->data));
-  memset(segmentTwo.data->data, 0, \
-      segmentTwo.data->length * sizeof(*segmentTwo.data->data));
-
+  LAL_CALL(LALCreateREAL4TimeSeries(&status, &segmentPadOne, "segmentPadOne", \
+        gpsStartTime, 0, 1./resampleRate, lalDimensionlessUnit, \
+        segmentPadLength), &status);
+  LAL_CALL(LALCreateREAL4TimeSeries(&status, &segmentPadTwo, "segmentPadTwo", \
+        gpsStartTime, 0, 1./resampleRate, lalDimensionlessUnit, \
+        segmentPadLength), &status);
+  
   for (i = 0; i < numSegments; i++)
   {
     segPadOne[i]= segPadTwo[i] = NULL;
@@ -419,8 +402,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* set segment input parameters */
   streamParams.buffer = 0;
   streamParams.duration = segmentDuration + 2 * padData;
-  streamPair.streamOne = &segmentPadOne;
-  streamPair.streamTwo = &segmentPadTwo;
+  streamPair.streamOne = segmentPadOne;
+  streamPair.streamTwo = segmentPadTwo;
 
   if (inject_flag)
   {
@@ -1019,7 +1002,8 @@ INT4 main(INT4 argc, CHAR *argv[])
             gpsStartTime.gpsSeconds = startTime + (interLoop + segLoop) * \
                                       segmentDuration;
             gpsStartPadTime.gpsSeconds = gpsStartTime.gpsSeconds - padData;
-            segmentPadOne.epoch = segmentPadTwo.epoch = gpsStartPadTime;
+            segmentPadOne->epoch = gpsStartPadTime;
+            segmentPadTwo->epoch = gpsStartPadTime;
 
             if (vrbflg)
             {
@@ -1044,8 +1028,8 @@ INT4 main(INT4 argc, CHAR *argv[])
             /* store in memory */
             for (i = 0; i < segmentPadLength; i++)
             {
-              segPadOne[segLoop]->data[i] = segmentPadOne.data->data[i];
-              segPadTwo[segLoop]->data[i] = segmentPadTwo.data->data[i];
+              segPadOne[segLoop]->data[i] = segmentPadOne->data->data[i];
+              segPadTwo[segLoop]->data[i] = segmentPadTwo->data->data[i];
             }
 
             /* compute response functions */
@@ -1240,8 +1224,8 @@ INT4 main(INT4 argc, CHAR *argv[])
           /* store in memory */
           for (i = 0; i < segmentPadLength ; i++)
           {
-            segPadOne[numSegments-1]->data[i] = segmentPadOne.data->data[i];
-            segPadTwo[numSegments-1]->data[i] = segmentPadTwo.data->data[i];
+            segPadOne[numSegments-1]->data[i] = segmentPadOne->data->data[i];
+            segPadTwo[numSegments-1]->data[i] = segmentPadTwo->data->data[i];
           }
 
           /* compute extra response function */
@@ -1378,8 +1362,10 @@ INT4 main(INT4 argc, CHAR *argv[])
           gpsStartTime.gpsSeconds = startTime + (interLoop + segLoop) * \
                                     segmentDuration;
           gpsStartPadTime.gpsSeconds = gpsStartTime.gpsSeconds - padData;
-          segmentPadOne.epoch = segmentPadTwo.epoch = gpsStartPadTime;
-          segmentOne.epoch = segmentTwo.epoch = gpsStartTime;
+          segmentPadOne->epoch = gpsStartPadTime;
+          segmentPadTwo->epoch = gpsStartPadTime;
+          segmentOne->epoch = gpsStartTime;
+          segmentTwo->epoch = gpsStartTime;
           gpsCalibTime.gpsSeconds = gpsStartTime.gpsSeconds  + calibOffset;
           responseOne.epoch = responseTwo.epoch = gpsCalibTime;
 
@@ -1418,9 +1404,9 @@ INT4 main(INT4 argc, CHAR *argv[])
             /* multiply by scale factor and inject into real data */
             for (i = 0; i < segmentPadLength ; i++)
             {
-              segmentPadOne.data->data[i] = segPadOne[segLoop]->data[i] + \
+              segmentPadOne->data->data[i] = segPadOne[segLoop]->data[i] + \
                 (scaleFactor * SimStochBGOne.data->data[i]);
-              segmentPadTwo.data->data[i] = segPadTwo[segLoop]->data[i] + \
+              segmentPadTwo->data->data[i] = segPadTwo[segLoop]->data[i] + \
                 (scaleFactor * SimStochBGTwo.data->data[i]);
             }
 
@@ -1431,34 +1417,34 @@ INT4 main(INT4 argc, CHAR *argv[])
           {
             for (i = 0; i < segmentPadLength; i++)
             {
-              segmentPadOne.data->data[i] = segPadOne[segLoop]->data[i];
-              segmentPadTwo.data->data[i] = segPadTwo[segLoop]->data[i];
+              segmentPadOne->data->data[i] = segPadOne[segLoop]->data[i];
+              segmentPadTwo->data->data[i] = segPadTwo[segLoop]->data[i];
             }
           }
 
           /* high pass fitering */
           if (high_pass_flag)
           {
-            LAL_CALL(LALButterworthREAL4TimeSeries(&status, &segmentPadOne, \
+            LAL_CALL(LALButterworthREAL4TimeSeries(&status, segmentPadOne, \
                   &highpassParam), &status);
-            LAL_CALL(LALButterworthREAL4TimeSeries(&status, &segmentPadTwo, \
+            LAL_CALL(LALButterworthREAL4TimeSeries(&status, segmentPadTwo, \
                   &highpassParam), &status);
           }
 
           /* throw away pad data on each side of the segment */
           for (i = 0; i < segmentLength; i++)
           {
-            segmentOne.data->data[i] = segmentPadOne.data->data[i + padData * \
-                                     resampleRate];
-            segmentTwo.data->data[i] = segmentPadTwo.data->data[i + padData * \
-                                     resampleRate];
+            segmentOne->data->data[i] = segmentPadOne->data->data[i + \
+                                        padData * resampleRate];
+            segmentTwo->data->data[i] = segmentPadTwo->data->data[i + \
+                                        padData * resampleRate];
           }
 
           /* store in memory */
           for (i = 0; i < segmentLength; i++)
           {
-            segOne[segLoop]->data[i] = segmentOne.data->data[i];
-            segTwo[segLoop]->data[i] = segmentTwo.data->data[i];
+            segOne[segLoop]->data[i] = segmentOne->data->data[i];
+            segTwo[segLoop]->data[i] = segmentTwo->data->data[i];
           }
 
           if ((middle_segment_flag == 0) && (segLoop == segMiddle))
@@ -1473,9 +1459,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 
             /* compute uncalibrated PSDs */
             LAL_CALL(LALREAL4AverageSpectrum(&status, &psdTempOne, \
-                  &segmentOne, &specparPSD), &status);
+                  segmentOne, &specparPSD), &status);
             LAL_CALL(LALREAL4AverageSpectrum(&status, &psdTempTwo, \
-                  &segmentTwo, &specparPSD), &status);
+                  segmentTwo, &specparPSD), &status);
 
             if (vrbflg)
             {
@@ -1549,7 +1535,8 @@ INT4 main(INT4 argc, CHAR *argv[])
         /* analyse middle segment */
         gpsStartTime.gpsSeconds = startTime + (interLoop + segMiddle) * \
                                   segmentDuration;
-        segmentOne.epoch = segmentTwo.epoch = gpsStartTime;
+        segmentOne->epoch = gpsStartTime;
+        segmentTwo->epoch = gpsStartTime;
 
         if (vrbflg)
         {
@@ -1559,14 +1546,14 @@ INT4 main(INT4 argc, CHAR *argv[])
 
         for (i = 0; i < segmentLength; i++)
         {
-          segmentOne.data->data[i] = segOne[segMiddle]->data[i];
-          segmentTwo.data->data[i] = segTwo[segMiddle]->data[i];
+          segmentOne->data->data[i] = segOne[segMiddle]->data[i];
+          segmentTwo->data->data[i] = segTwo[segMiddle]->data[i];
         }
 
         /* zero pad and fft */
-        LAL_CALL(LALSZeroPadAndFFT(&status, &hBarTildeOne, &segmentOne, \
+        LAL_CALL(LALSZeroPadAndFFT(&status, &hBarTildeOne, segmentOne, \
               &zeroPadParams), &status);
-        LAL_CALL(LALSZeroPadAndFFT(&status, &hBarTildeTwo, &segmentTwo, \
+        LAL_CALL(LALSZeroPadAndFFT(&status, &hBarTildeTwo, segmentTwo, \
               &zeroPadParams), &status);
 
         if (vrbflg)
@@ -1736,12 +1723,13 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlStream), &status);
 
   /* cleanup */
+  LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentOne), &status);
+  LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentTwo), &status);
+  LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentPadOne), &status);
+  LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentPadTwo), &status);
+
   LAL_CALL(LALDestroyRealFFTPlan(&status, &(specparPSD.plan)), &status);
   LAL_CALL(LALDestroyRealFFTPlan(&status, &fftDataPlan), &status);
-  LAL_CALL(LALDestroyVector(&status, &(segmentPadOne.data)), &status);
-  LAL_CALL(LALDestroyVector(&status, &(segmentPadTwo.data)), &status);
-  LAL_CALL(LALDestroyVector(&status, &(segmentOne.data)), &status);
-  LAL_CALL(LALDestroyVector(&status, &(segmentTwo.data)), &status);
   LAL_CALL(LALDestroyVector(&status, &(psdTempOne.data)), &status);
   LAL_CALL(LALDestroyVector(&status, &(psdTempTwo.data)), &status);
   LAL_CALL(LALDestroyVector(&status, &(psdOne.data)), &status);
