@@ -443,8 +443,8 @@ GetInspiralMoments (
    
    /* setup the input structure needed in the computation of the moments */
 
-   in.shf->f0 = params->fLower/params->fLower;
    in.shf = psd;
+   in.shf->f0 = params->fLower/params->fLower;
    in.shf->deltaF /= params->fLower;
    in.xmin = params->fLower/params->fLower;
    in.xmax = params->fCutoff/params->fLower;
