@@ -27,6 +27,7 @@ $Id$
 #include <lal/TimeDelay.h>
 #include <lal/DetectorSite.h>
 #include <lal/AVFactories.h>
+#include <lal/SkyAnnulus.h>
 
 NRCSID( SKYANNULUSSC, "$Id$" );
 

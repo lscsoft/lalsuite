@@ -82,8 +82,8 @@ void
 LALComputeSingleAnnulus ( 
 		   LALStatus          *status,
 		   INT2Vector         *sky,
-		   const LALPlaceAndGPS     *placetime1,
-		   const LALPlaceAndGPS     *placetime2,
+		   LALPlaceAndGPS     *placetime1,
+		   LALPlaceAndGPS     *placetime2,
 		   REAL4              dtErr,
 		   INT2               nx,
 		   INT2               ny
