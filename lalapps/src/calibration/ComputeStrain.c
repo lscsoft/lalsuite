@@ -94,7 +94,7 @@ static COMPLEX16 *cdiv( COMPLEX16 *pc, COMPLEX16 *pa, COMPLEX16 *pb )
 /* STRUCTURES */
 struct CommandLineArgsTag {
   REAL8 f;                 /* Frequency of the calibration line */
-  REAL8 k;                 /* Value of output matrix to x arm */
+  REAL8 mu;                 /* Fraction of actuation seen by excitation channel */
   char *RFile;             /* Text file with the response funtion */
   char *CFile;             /* Text file with the sensing function */
   char *AFile;             /* Text file with the actuation function */
@@ -1005,7 +1005,7 @@ FILE *fpAlpha=NULL;
       params.asQ = &asq;
       params.exc = &exc;
       params.lineFrequency = CLA.f;
-      params.outputMatrix = CLA.k;
+      params.mu = CLA.mu;
       params.actuationFactor.re = GV.Af0.re ;
       params.actuationFactor.im = GV.Af0.im ;
       params.responseFactor = GV.Rf0;
@@ -1229,7 +1229,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   
   /* Initialize default values */
   CLA->f=0.0;
-  CLA->k=0.0;  
+  CLA->mu=0.0;  
   CLA->RFile=NULL;
   CLA->CFile=NULL;   
   CLA->AFile=NULL;   
@@ -1241,15 +1241,15 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->alphafile=NULL;
 
   /* Scan through list of command line arguments */
-  while (!errflg && ((c = getopt(argc, argv,"hf:F:r:S:c:A:E:D:a:k:b:"))!=-1))
+  while (!errflg && ((c = getopt(argc, argv,"hf:F:r:S:c:A:E:D:a:m:b:"))!=-1))
     switch (c) {
     case 'f':
       /* calibration line frequency */
       CLA->f=atof(optarg);
       break;
-    case 'k':
+    case 'm':
       /* darm to etmx output matrix value */
-      CLA->k=atof(optarg);
+      CLA->mu=atof(optarg);
       break;
     case 'F':
       /* name of frame cache file */
@@ -1291,7 +1291,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /* print usage/help message */
       fprintf(stdout,"All arguments are required except -b. They are:\n");
       fprintf(stdout,"\t-f\tFLOAT\t Calibration line frequency in Hz.\n");
-      fprintf(stdout,"\t-k\tFLOAT\t Output matrix darm to etmx.\n");
+      fprintf(stdout,"\t-m\tFLOAT\t Fraction of the actuation seen by excitation channel (=1 if injected into darm,Gx/(Ky Gy- Kx Gx)...).\n");
       fprintf(stdout,"\t-F\tSTRING\t Name of frame cache file.\n");
       fprintf(stdout,"\t-r\tSTRING\t Name of response function file.\n");
       fprintf(stdout,"\t-c\tSTRING\t Name of sensing function file.\n");
@@ -1316,7 +1316,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Try ./ComputeStrain -h \n");
       return 1;
     }      
-  if(CLA->k == 0)
+  if(CLA->mu == 0)
     {
       fprintf(stderr,"No value of the output matrix to x arm specified.\n");
       fprintf(stderr,"Try ./ComputeStrain -h \n");
