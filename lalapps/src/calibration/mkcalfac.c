@@ -3,9 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <FrameL.h>
-#include "series.h"
+#include <series.h>
 
 int lalDebugLevel = 0;
+
+int isnan(double value);
 
 char *get_next_line( char *line, size_t size, FILE *fp )
 {
@@ -26,8 +28,10 @@ int read_time_series( struct series *aser, struct series *abser,
   int dt;
   FILE *fp;
 
-  aser->type = Time;
-  abser->type = Time;
+  aser->dom = Time;
+  aser->type = FR_VECT_8C;
+  abser->dom = Time;
+  abser->type = FR_VECT_8C;
 
   fp = fopen( fname, "r" );
 
@@ -37,10 +41,10 @@ int read_time_series( struct series *aser, struct series *abser,
   sscanf( line, "%d", &dt );
   dt -= t0;
 
-  aser->tbeg.sec  = t0;
-  aser->tbeg.nan  = 0;
-  abser->tbeg.sec = t0;
-  abser->tbeg.nan = 0;
+  aser->tbeg.gpsSeconds  = t0;
+  aser->tbeg.gpsNanoSeconds  = 0;
+  abser->tbeg.gpsSeconds = t0;
+  abser->tbeg.gpsNanoSeconds = 0;
   aser->step  = dt;
   abser->step = dt;
 
@@ -49,10 +53,10 @@ int read_time_series( struct series *aser, struct series *abser,
     ;
   rewind( fp );
   sscanf( line, "%d", &t1 );
-  aser->tend.sec  = t1 - dt;
-  aser->tend.nan  = 0;
-  abser->tend.sec = t1 - dt;
-  abser->tend.nan = 0;
+  aser->tend.gpsSeconds  = t1 - dt;
+  aser->tend.gpsNanoSeconds  = 0;
+  abser->tend.gpsSeconds = t1 - dt;
+  abser->tend.gpsNanoSeconds = 0;
   n = 1 + ( t1 - t0 ) / dt;
   aser->size  = n;
   abser->size = n;
@@ -92,7 +96,7 @@ int read_time_series( struct series *aser, struct series *abser,
 
 int main( int argc, char *argv[] )
 {
-  static epoch  tbeg;
+  static LIGOTimeGPS  tbeg;
   static size_t size;
   static float  step;
   static char   site;
@@ -168,8 +172,9 @@ int main( int argc, char *argv[] )
       }
       if ( size )
       {
-        if ( size != a.size || step != a.step
-            || tbeg.sec != a.tbeg.sec || tbeg.nan != a.tbeg.nan )
+        if ( size != a.size || step != a.step 
+            || tbeg.gpsSeconds != a.tbeg.gpsSeconds || 
+            tbeg.gpsNanoSeconds != a.tbeg.gpsNanoSeconds )
         {
           fprintf( stderr, "Error: data domain mismatch\n" );
           fprintf( stderr, "Error: all series must have same time range\n" );
@@ -201,9 +206,14 @@ int main( int argc, char *argv[] )
       {
         char fname[256];
         int dt = (int)ceil( epoch_diff( &a.tend, &a.tbeg ) );
-        sprintf( fname, "%c-CAL_FAC-%d-%d.gwf", *ifo, a.tbeg.sec, dt );
+        sprintf( fname, "%c-CAL_FAC-%d-%d.gwf", *ifo, a.tbeg.gpsSeconds, dt );
         frfile = FrFileONew( fname, 0 );
       }
+      /* don't mangle the channel names for frames */
+      a.name  = aname;
+      ab.name = abname;
+      sprintf( aname, "%s:" A_CHANNEL, ifo );
+      sprintf( abname, "%s:" AB_CHANNEL, ifo );
       frame = fr_add_proc_data( frame, &a );
       frame = fr_add_proc_data( frame, &ab );
     }

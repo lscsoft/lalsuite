@@ -7,6 +7,8 @@
 
 int lalDebugLevel = 0;
 
+int isnan(double value);
+
 char *get_next_line( char *line, size_t size, FILE *fp )
 {
   char *s;
@@ -25,7 +27,8 @@ int read_freq_series( struct series *ser, const char *fname )
   fp = fopen( fname, "r" );
   n = 0;
 
-  ser->type = Freq;
+  ser->dom = Freq;
+  ser->type = FR_VECT_8C;
   
   /* count lines */
   while ( get_next_line( line, sizeof( line ), fp ) )
@@ -181,8 +184,8 @@ int main( int argc, char *argv[] )
       R.unit = "strain/ct";
       C.name = Cname;
       C.unit = "ct/strain";
-      R.tbeg.sec = C.tbeg.sec = sec;
-      R.tbeg.nan = C.tbeg.nan = 0;
+      R.tbeg.gpsSeconds = C.tbeg.gpsSeconds = sec;
+      R.tbeg.gpsNanoSeconds = C.tbeg.gpsNanoSeconds = 0;
       code = read_freq_series( &R, argv[arg] );
       if ( ! code )
       {
@@ -229,10 +232,15 @@ int main( int argc, char *argv[] )
       if ( ! frfile )
       {
         char fname[256];
-        int dt = (int)ceil( 1e-9 * R.tbeg.nan + 1.0 / R.step );
-        sprintf( fname, "%c-CAL_REF-%d-%d.gwf", *ifo, R.tbeg.sec, dt );
+        int dt = (int)ceil( 1e-9 * R.tbeg.gpsNanoSeconds + 1.0 / R.step );
+        sprintf( fname, "%c-CAL_REF-%d-%d.gwf", *ifo, R.tbeg.gpsSeconds, dt );
         frfile = FrFileONew( fname, 0 );
       }
+      /* don't mangle the channel names for frames */
+      R.name = Rname;
+      C.name = Cname;
+      sprintf( Rname, "%s:" R_CHANNEL, ifo );
+      sprintf( Cname, "%s:" C_CHANNEL, ifo );
       frame = fr_add_proc_data( frame, &R );
       frame = fr_add_proc_data( frame, &C );
       FrameWrite( frame, frfile );
