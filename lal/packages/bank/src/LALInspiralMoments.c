@@ -71,35 +71,76 @@ void LALInspiralMoments(LALStatus         *status,
                         InspiralMomentsIn pars)
 { /* </lalVerbatim> */
 
-   REAL8 fMax;
-   DIntegrateIn In;
-   void *funcparams = (void *) &pars;
+  REAL8 f;
+  REAL8 fMin;
+  REAL8 fMax;
+  REAL8 deltaF;
+  UINT4 k;
+  UINT4 kMin;
+  UINT4 kMax;
 
-   INITSTATUS (status, "LALInspiralMoments", LALINSPIRALMOMENTSC);
-   ATTATCHSTATUSPTR(status);
+  INITSTATUS (status, "LALInspiralMoments", LALINSPIRALMOMENTSC);
+  ATTATCHSTATUSPTR(status);
 
-   ASSERT (pars.shf, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-   ASSERT (pars.shf->data, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-   ASSERT (pars.shf->data->data, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+  ASSERT (pars.shf, status, 
+      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+  ASSERT (pars.shf->data, status, 
+      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+  ASSERT (pars.shf->data->data, status, 
+      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
 
-   /* make sure that the minimum and maximum of the integral are within */
-   /* the frequency series                                              */
-   fMax = pars.shf->f0 + (REAL8) pars.shf->data->length * 
-     pars.shf->deltaF;
-   if ( pars.xmin < pars.shf->f0 || pars.xmax > fMax )
-   {
-     ABORT( status, 999, "limits outside range of frequency series" );
-   }
+  /* make sure that the minimum and maximum of the integral are within */
+  /* the frequency series                                              */
+  fMax = pars.shf->f0 + (REAL8) pars.shf->data->length * 
+    pars.shf->deltaF;
+  if ( pars.xmin < pars.shf->f0 || pars.xmax > fMax )
+  {
+    ABORT( status, 999, "limits outside range of frequency series" );
+  }
 
-   In.function = LALInspiralMomentsIntegrand;
-   In.xmin = pars.xmin;
-   In.xmax = pars.xmax;
-   In.type = ClosedInterval;
+  /* the minimum and maximum frequency where we have four points */
+  deltaF = pars.shf->deltaF;
+  fMin = pars.shf->f0 + deltaF;
+  fMax = pars.shf->f0 + ((REAL8) pars.shf->data->length - 2 ) * deltaF;
 
-   LALDRombergIntegrate (status->statusPtr, moment, &In, funcparams);
-   CHECKSTATUSPTR(status);
+  if ( pars.xmin <= fMin )
+  {
+    kMin = 1;
+  }
+  else
+  {
+    kMin = (UINT8) floor( (pars.xmin - pars.shf->f0) / deltaF );
+  }
 
-   *moment /= pars.norm;
-   DETATCHSTATUSPTR(status);
-   RETURN (status);
+  if ( pars.xmax >= fMax )
+  {
+    kMax = pars.shf->data->length - 1;
+  }
+  else
+  {
+    kMax = (UINT8) floor( (pars.xmax - pars.shf->f0) / deltaF );
+  }
+
+  /* the first and last points of the integral */
+  f = pars.shf->f0 + (REAL8) kMin * deltaF;
+  *moment  = pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMin] );
+  f = pars.shf->f0 + (REAL8) kMax * deltaF;
+  *moment += pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMin] );
+
+  kMin++;
+  kMax--;
+
+  for ( k = kMin; k < kMax; ++k )
+  {
+    f = pars.shf->f0 + (REAL8) k * deltaF;
+    *moment += pow( f, -(pars.ndx) ) / pars.shf->data->data[k];
+  }
+
+  *moment *= deltaF;
+
+  /* now divide the moment by the specified norm */
+  *moment /= pars.norm;
+
+  DETATCHSTATUSPTR(status);
+  RETURN (status);
 }
