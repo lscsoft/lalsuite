@@ -1255,7 +1255,7 @@ SimInspiralTableFromLIGOLw (
     {"spin2z",              -1, 39},
     {"theta0",              -1, 40},
     {"phi0",                -1, 41},
-    {"f_fower",              -1, 42},
+    {"f_lower",              -1, 42},
     {"f_final",              -1, 43},
     {"mchirp",              -1, 44},
     {"eff_dist_h",          -1, 45},
