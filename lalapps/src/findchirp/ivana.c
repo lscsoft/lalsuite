@@ -7,23 +7,27 @@ gcc -g ivana.c -I$LIGOTOOLS/include -L$LIGOTOOLS/lib -ldataflow -lsocket -lnsl\
     -o ivana
 
 Usage example:
-ivana ../data/H2_ASQ_triple_c5.xml '../data/H2_MICHCTRL_triple.xml(-0.3,0.3)' \
-    triple_ranges.txt
+ivana ../data/H2_ASQ_triple_c5.xml \
+    '../data/H2_MICHCTRL_triple.xml(-0.3,0.3,1.5)' triple_ranges.txt
 
 =============================================================================*/
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <lal/LALStdlib.h>
 #include "metaio.h"
+
+/* CLUSWINDOW determines how candidate events are grouped into clusters.  It
+   is the maximum time between consecutive candidate events. */
+#define CLUSWINDOW 1.0
+/* MINLIVETIMEINTERVAL is the time associated with Patrick's "veto clustering"
+   criterion.  It is the minimum length of a time interval between veto
+   events which can be considered live. */
+#define MINLIVEINTERVAL 4.0
 
 #define RINGBUFSIZE 16384
 #define MAXTIMERANGES 1024
-#define CLUSWINDOW 0.1
 #define MAXVETOFILES 8
-
-INT4 lalDebugLevel = LALMSGLVL3;
 
 /*====== Structure definitions ==============================================*/
 typedef struct Range_struct {
@@ -42,8 +46,10 @@ typedef struct VetoFile_struct {
   FILE *datFile;
   double winNeg;
   double winPos;
-  int colS, colNS, colDur;
+  float snrRatio;
+  int colS, colNS, colDur, colSnr;
   double tLast, tLastNeg, tLastPos;
+  float lastSnr;
   int readit;
   int eof;
 } VetoFile;
@@ -82,9 +88,10 @@ int main( int argc, char **argv )
   int nvetofiles = 0;
   int ivfile, jvfile;
 
-  double tCand, tCandLast=-999.0, tDeadNeg=0.0, tDeadPos=0.0;
+  double tCand, tCandLast=-999.0, tDeadNeg=-2.0e9, tDeadPos=-2.0e9;
+  float snrCand;
   double tdead1, tdead2;
-  int iCandS, iCandNS;
+  int iCandS, iCandNS, iCandSnr;
   int status, status2, ostatus, candeof=0;
   int iveto, iarg, iposarg=0, ipos, pass, clusPass;
   char ttext[64];
@@ -96,6 +103,7 @@ int main( int argc, char **argv )
   double dur;
   double tLastNeg = 0.0;
   double tUseNeg = 0.0, tUsePos;
+  float snrThresh;
   int usevfile;
 
   struct MetaioParseEnvironment candParseEnv, outParseEnv;
@@ -109,6 +117,7 @@ int main( int argc, char **argv )
   int vbufR = 0;
   double tVetoNeg[RINGBUFSIZE];
   double tVetoPos[RINGBUFSIZE];
+  float cSnrThresh[RINGBUFSIZE];
   Range* rVeto[RINGBUFSIZE];
   int usedVeto[RINGBUFSIZE];
 
@@ -123,6 +132,7 @@ int main( int argc, char **argv )
     vetoFile[ivfile].tLast = 0.0;
     vetoFile[ivfile].tLastNeg = 0.0;
     vetoFile[ivfile].tLastPos = 0.0;
+    vetoFile[ivfile].lastSnr = 0.0;
     vetoFile[ivfile].readit = 1;
     vetoFile[ivfile].eof = 0;
   }
@@ -132,7 +142,6 @@ int main( int argc, char **argv )
 
   for ( iarg=1; iarg<argc; iarg++ ) {
     arg = argv[iarg];
-    if ( strlen(arg) == 0 ) continue;
 
     /*-- First check for a flag (a dash followed by a non-digit) --*/
     if ( *arg == '-' && strchr("0123456789",arg[1])==NULL ) {
@@ -163,6 +172,11 @@ int main( int argc, char **argv )
 
     case 2:
       /*-- Veto specification (comma-sep list of filename/window pairs) --*/
+
+      /*-- If veto specification is blank, skip it --*/
+      if ( *arg == '\0' ) {
+	break;
+      }
 
       do {
 
@@ -212,6 +226,7 @@ int main( int argc, char **argv )
 	/*-- Set defaults for window --*/
 	vFile->winNeg = 0.0;
 	vFile->winPos = 0.0;
+	vFile->snrRatio = 1000000.0;
 
 	/*-- Copy the window specification string --*/
 	strncpy( vetospec, chptr, sizeof(vetospec) );
@@ -231,6 +246,9 @@ int main( int argc, char **argv )
 	    break;
 	  case 2:
 	    sscanf( tokptr, "%lf", &(vFile->winPos) );
+	    break;
+	  case 3:
+	    sscanf( tokptr, "%f", &(vFile->snrRatio) );
 	    break;
 	  }
 	  chptr = NULL;
@@ -408,6 +426,9 @@ int main( int argc, char **argv )
       return 4;
     }
 
+    /*-- It is OK for the "SNR" column to be absent --*/
+    iCandSnr = MetaioFindColumn( candEnv, "snr" );
+
   }
 
   /*-- Open file(s) of vetoes --*/
@@ -468,6 +489,9 @@ int main( int argc, char **argv )
 
       /*-- It is OK for the duration column to be absent --*/
       vFile->colDur = MetaioFindColumn( vFile->env, "duration" );
+
+      /*-- It is OK for the SNR column to be absent --*/
+      vFile->colSnr = MetaioFindColumn( vFile->env, "snr" );
 
     }
 
@@ -547,6 +571,8 @@ int main( int argc, char **argv )
 	}
   
 	tCand = (double) ( atoi(ttext) - timeBase ) + secfrac + 0.5*dur;
+	/*-- I'm not sure if an "SNR" or "significance" is in the file --*/
+	snrCand = 1.0;
 	pass = 1;
 	if ( debug >= 2 ) printf( "tCand is %.4lf\n", tCand );
 	break;
@@ -588,6 +614,14 @@ int main( int argc, char **argv )
 	/*-- Get the time of this event candidate --*/
 	tCand = (double) ( table->elt[iCandS].data.int_4s - timeBase )
 	  + 1.0e-9 * (double) table->elt[iCandNS].data.int_4s;
+
+	/*-- Also get the SNR (if known) --*/
+	if ( iCandSnr >= 0 ) {
+	  snrCand = table->elt[iCandSnr].data.real_4;
+	} else {
+	  snrCand = 1.0;
+	}
+
 	pass = 1;
 	if ( debug >= 2 ) printf( "tCand is %.4lf\n", tCand );
 
@@ -619,7 +653,9 @@ int main( int argc, char **argv )
     /*-- Check if candidate event falls between ranges (or beyond end of
       last range) --*/
     if ( tCand < cRange->t1 ) continue;
+    /*
     if ( tCand > cRange->t2 ) continue;
+    */
 
     if ( ! candeof ) cRange->nCand++;
 
@@ -678,6 +714,11 @@ int main( int argc, char **argv )
 	      vFile->tLast = (double) ( atoi(ttext) - timeBase ) + secfrac;
 	      vFile->tLastNeg = vFile->tLast + vFile->winNeg;
 	      vFile->tLastPos = vFile->tLast + dur + vFile->winPos;
+
+	      /*-- I'm not sure whether an SNR or significance is given in a
+		.dat file, so just set the SNR to 1 --*/
+	      vFile->lastSnr = 1.0;
+
 	      break;
 	    }
 
@@ -703,6 +744,12 @@ int main( int argc, char **argv )
 	      dur = 0.0;
 	    }
 
+	    if ( vFile->colSnr >= 0 ) {
+	      vFile->lastSnr = table->elt[vFile->colSnr].data.real_4;
+	    } else {
+	      vFile->lastSnr = 1.0;
+	    }
+
 	    vFile->tLast =
 	      (double) ( table->elt[vFile->colS].data.int_4s - timeBase )
 	      + 1.0e-9 * (double) table->elt[vFile->colNS].data.int_4s;
@@ -716,7 +763,7 @@ int main( int argc, char **argv )
 	    continue;
 	  }
 
-	  if ( debug >= 2 )
+	  if ( debug >= 3 )
 	    printf( " vFile %2d has tLast=%.4lf, duration=%.4lf\n",
 		    ivfile, vFile->tLast, dur );
 
@@ -732,7 +779,13 @@ int main( int argc, char **argv )
 	if ( vFile->eof ) continue;
 	if ( vFile->tLastNeg < tUseNeg ) {
 	  tUseNeg = vFile->tLastNeg;
+	  /*-- Account for Patrick's "veto clustering" criterion --*/
+	  if ( tUseNeg > tUsePos && tUseNeg-tUsePos < MINLIVEINTERVAL ) {
+	    /*-- Extend the vetoed interval backward --*/
+	    tUseNeg = tUsePos;
+	  }
 	  tUsePos = vFile->tLastPos;
+	  snrThresh = vFile->snrRatio * vFile->lastSnr;
 	  usevfile = ivfile;
 	}
       }
@@ -740,7 +793,7 @@ int main( int argc, char **argv )
       /*-- If there are no veto events left, break out of the loop --*/
       if ( usevfile < 0 ) break;
 
-      if ( debug >= 2 ) printf( " Times to use: %.3f, %.3f\n",
+      if ( debug >= 3 ) printf( " Times to use: %.3f, %.3f\n",
 				tUseNeg, tUsePos );
 
       /*-- Mark this veto file to be read again --*/
@@ -755,7 +808,7 @@ int main( int argc, char **argv )
       if ( tUsePos < vRange->t1 ) continue;
 
       /*-- If beyond end of last range, ignore any remaining events --*/
-      if ( tUseNeg >= vRange->t2 ) {
+      if ( iRangeV == nRange-1 && tUseNeg >= vRange->t2 ) {
 	allPast = 1;
 	break;
       }
@@ -801,6 +854,7 @@ int main( int argc, char **argv )
       /*-- Add this veto event to the ring buffer --*/
       tVetoNeg[vbufW] = tUseNeg;
       tVetoPos[vbufW] = tUsePos;
+      cSnrThresh[vbufW] = snrThresh;
       rVeto[vbufW] = vRange;
       usedVeto[vbufW] = 0;
       vbufW++; if ( vbufW == RINGBUFSIZE ) { vbufW = 0; }
@@ -834,13 +888,26 @@ int main( int argc, char **argv )
 	
       } else if ( tVetoNeg[iveto] <= tCand ) {
 	/*-- This veto event overlaps with the candidate event! --*/
-	pass = 0;
+
+	/*-- Always consider this veto event to be "used", even if the
+	  candidate event has such a large SNR that it is not actually vetoed
+	  --*/
 	if ( usedVeto[iveto] == 0 ) {
 	  rVeto[iveto]->nVetoUsed++;
 	  usedVeto[iveto] = 1;
 	}
-	if ( debug >= 1 ) printf( "Coinc: cand=%.4lf, veto=%.4lf to %.4lf\n",
-				  tCand, tVetoNeg[iveto], tVetoPos[iveto] );
+
+	/*-- If candidate SNR is below the threshold, veto the event --*/
+	if ( snrCand < cSnrThresh[iveto] ) {
+	  pass = 0;
+	  if ( debug >= 1 ) printf( "Coinc: cand=%.4lf, veto=%.4lf to %.4lf\n",
+				    tCand, tVetoNeg[iveto], tVetoPos[iveto] );
+	} else {
+	  if ( debug >= 1 ) printf( "Coinc but big SNR: cand=%.4lf (SNR=%.2f),"
+				    "veto=%.4lf to %.4lf (SNR thresh=%.2f)\n",
+				    tCand, snrCand, tVetoNeg[iveto],
+				    tVetoPos[iveto], cSnrThresh[iveto] );
+	}
 
       } else {
 	/*-- This veto event is too far in the future, and since the veto
@@ -921,10 +988,13 @@ int main( int argc, char **argv )
 
   /*------ Report results ------*/
 
-  printf( "Candidate clustering window = %.5f seconds\n", CLUSWINDOW );
+  printf( "Candidate clustering window = %.2f seconds\n", CLUSWINDOW );
+  printf( "Minimum live interval between vetoes = %.2f seconds\n",
+	  MINLIVEINTERVAL );
   for ( ivfile=0; ivfile<nvetofiles; ivfile++ )
-    printf( "Veto: %s (%.3f,%.3f)\n", vetoFile[ivfile].filename,
-	    vetoFile[ivfile].winNeg, vetoFile[ivfile].winPos );
+    printf( "Veto: %s (%.3f,%.3f,%.3f)\n", vetoFile[ivfile].filename,
+	    vetoFile[ivfile].winNeg, vetoFile[ivfile].winPos,
+	    vetoFile[ivfile].snrRatio );
 
 /* FORMAT:
 ___Start__ _Dur_ __Veto__used__used% __Cand___cut___cut% _Clus___cut__cut% dead%
@@ -1002,20 +1072,31 @@ ___Start__ _Dur_ __Veto__used__used% __Cand___cut___cut% _Clus___cut__cut% dead%
 /*===========================================================================*/
 void PrintUsage()
 {
-  printf( "Usage:  ivana <candidate file> <veto spec> [<range spec>]\n" );
+  printf( "Usage:  ivana <candidate file> <veto spec> [<range spec>]"
+	  " [<output file>]\n" );
   printf( "  <candidate file> is simply the name of a LIGO_LW table file.\n" );
   printf( "  <veto spec> consists of one or more items separated by commas."
-	  "  Each item has\n      the form '<file>(<negWindow>,<posWindow>)'."
-	  "  NOTE: Enclose <veto spec>\n      in quotes to prevent the shell"
-	  " from interpreting the parentheses!\n"
-	  "      Examples:  'mich_ctrl5.xml(-0.1,+1.1)'\n                 "
-	  "'mich_ctrl5.xml(-0.4,0.4),../data/H2_POBQ_snr7.xml(-0.3,0.3)'\n" );
+                             "  Each item has\n"
+          "      the form '<file>(<negWindow>,<posWindow>[,<snrRatio>])'."
+                             "  <snrRatio> is\n"
+	  "      optional; if specified, then signal candidates will NOT be"
+                             " vetoed if the\n"
+	  "      signal SNR exceeds the veto SNR by a factor of <snrRatio>"
+	                     " or greater.\n"
+	  "      NOTE: Enclose <veto spec> in quotes to prevent the shell"
+	                     " from\n"
+	  "      interpreting the parentheses!\n"
+	  "      Examples:  'mich_ctrl5.xml(-0.5,+1,1.5)'\n"
+	  "                 'mich_ctrl5.xml(-0.4,0.4),../data/H2_POBQ_snr7.xml"
+	                     "(-.3,.3,2)'\n" );
   printf( "  <range spec> can be a GPS time range separated by a dash,\n"
 	  "      e.g. '693960000-693961000', or the name of a file containing"
 	  " a list of\n      ranges of that form (one per line, optionally"
 	  " followed by a comment).\n      If omitted, the range is taken to"
 	  " extend from the first candidate event\n      to the last candidate"
 	  " event.\n" );
+  printf( "  <output file> is the name of the output file to store all"
+	  " un-vetoed events in\n      LIGO_LW format.\n" );
 
   return;
 }
