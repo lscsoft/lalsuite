@@ -182,6 +182,7 @@ fi
 
 AC_OUTPUT( 				\
 	Makefile 			\
+        lalapps.spec                    \
 	doc/Makefile 			\
 	man/Makefile 			\
 	src/Makefile			\

@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 SUBDIRS = src doc man
-EXTRA_DIST = acconfig.h
+EXTRA_DIST = acconfig.h lalapps.spec.in lalapps.spec
 
 # cvs-clean: more than maintainer-clean, this cleans
 # everything not in the cvs archive.
@@ -17,3 +17,4 @@ cvs-clean: maintainer-clean
 	rm -f config.cache
 	rm -f config.status
 	rm -f config.log
+	rm -f lalapps.spec
