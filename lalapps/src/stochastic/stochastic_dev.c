@@ -226,7 +226,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* frequency mask structures */
   REAL4FrequencySeries *mask;
-  REAL4FrequencySeries *maskTemp;
   INT4 nBin;
 
   /* spectrum structures */
@@ -592,12 +591,9 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* allocate memory for frequency mask */
-    LAL_CALL(LALCreateREAL4FrequencySeries(&status, &maskTemp, \
-          "maskTemp", gpsStartTime, 0, deltaF, lalDimensionlessUnit, \
-          respLength), &status);
     LAL_CALL(LALCreateREAL4FrequencySeries(&status, &mask, \
           "mask", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
-          filterLength), &status);
+          respLength), &status);
 
     if (vrbflg)
     {
@@ -607,7 +603,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* set all values to 1 */
     for (i = 0; i < respLength; i++)
     {
-      maskTemp->data->data[i] = 1.;
+      mask->data->data[i] = 1.;
     }
 
     if (vrbflg)
@@ -618,17 +614,17 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* remove multiples of 16 Hz */
     for (i = 0; i < respLength; i += (UINT4)(16 / deltaF))
     {
-      maskTemp->data->data[i] = 0.;
+      mask->data->data[i] = 0.;
 
       for (k = 0; k < nBin; k++)
       {
         if ((i + 1 + k) < respLength)
         {
-          maskTemp->data->data[i + 1 + k] = 0.;
+          mask->data->data[i + 1 + k] = 0.;
         }
         if ((i - 1 - k) > 0)
         {
-          maskTemp->data->data[i - 1 - k] = 0.;
+          mask->data->data[i - 1 - k] = 0.;
         }
       }
     }
@@ -641,17 +637,17 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* remove multiples of 60 Hz */
     for (i = 0; i < respLength; i += (UINT4)(60 / deltaF))
     {
-      maskTemp->data->data[i] = 0.;
+      mask->data->data[i] = 0.;
 
       for (k = 0; k < nBin; k++)
       {
         if ((i + 1 + k) < respLength)
         {
-          maskTemp->data->data[i + 1 + k] = 0.;
+          mask->data->data[i + 1 + k] = 0.;
         }
         if ((i - 1 - k) > 0)
         {
-          maskTemp->data->data[i - 1 - k] = 0.;
+          mask->data->data[i - 1 - k] = 0.;
         }
       }
     }
@@ -662,11 +658,8 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* get appropriate band */
-    LAL_CALL(LALCutREAL4FrequencySeries(&status, &mask, \
-          maskTemp, numFMin, filterLength), &status);
-
-    /* destroy temp structure */
-    LAL_CALL(LALDestroyREAL4FrequencySeries(&status, maskTemp), &status);
+    LAL_CALL(LALShrinkREAL4FrequencySeries(&status, mask, \
+          numFMin, filterLength), &status);
 
     if (debug_flag)
     {
