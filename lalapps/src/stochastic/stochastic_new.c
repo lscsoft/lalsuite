@@ -84,7 +84,7 @@ REAL8 deltaF = 0.25;
 LIGOTimeGPS gpsStartTime, gpsCalibTime;
 UINT8 startTime = 730793098;
 UINT8 stopTime = 730793218;
-INT4 segmentBigDuration = 60;
+INT4 segmentBigDuration = 600;
 INT4 segmentDuration = 60;
 INT4 calibDuration = 60;
 INT4 calibOffset = 0;
@@ -241,7 +241,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL8 lambda;
 
   /* structures for optimal filter */
-  REAL4FrequencySeries optFilterAvg, optFilter;
+  REAL4FrequencySeries optFilter;
+  REAL4Vector *optFilterAvg;
   StochasticOptimalFilterCalInput optFilterIn;
 
    /* spectrum structures */
@@ -889,12 +890,6 @@ INT4 main(INT4 argc, CHAR *argv[])
    optFilter.epoch = gpsStartTime;
    optFilter.deltaF = deltaF;
    optFilter.f0 = fMin;
-
-   strncpy(optFilter.name, "optFilterAvg", LALNameLength);
-   optFilterAvg.epoch = gpsStartTime;
-   optFilterAvg.deltaF = deltaF;
-   optFilterAvg.f0 = fMin;
-   optFilterAvg.sampleUnits = optFilter.sampleUnits;
  
    if (verbose_flag)
     { fprintf(stdout, "Allocating memory for optimal filter...\n");}
@@ -906,12 +901,12 @@ INT4 main(INT4 argc, CHAR *argv[])
    memset( optFilter.data->data, 0, 
            optFilter.data->length * sizeof(*optFilter.data->data));
 
-   optFilterAvg.data = NULL;
-   LAL_CALL( LALCreateVector(&status, &(optFilterAvg.data), filterLength), 
+   optFilterAvg  = NULL;
+   LAL_CALL( LALCreateVector(&status, &(optFilterAvg), filterLength),
              &status );
-   memset( optFilter.data->data, 0, 
-           optFilter.data->length * sizeof(*optFilterAvg.data->data));
- 
+   memset( optFilterAvg->data, 0,
+           optFilterAvg->length * sizeof(*optFilterAvg->data));
+   
    /* set optimal filter inputs */
    optFilterIn.overlapReductionFunction = &overlap;
    optFilterIn.omegaGW = &omegaGW;
@@ -936,7 +931,7 @@ INT4 main(INT4 argc, CHAR *argv[])
    ccIn.hBarTildeTwo = &hBarTilde2;
    ccIn.responseFunctionOne = &response1;
    ccIn.responseFunctionTwo = &response2;
-   ccIn.optimalFilter = &optFilterAvg;
+   ccIn.optimalFilter = &optFilter;
  	
    
 
@@ -1076,7 +1071,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	 /* initialize average optimal filter and variance */
          for (i = 0; i < filterLength; i++)
              {
-	      optFilterAvg.data->data[i] = 0.;
+	      optFilterAvg->data[i] = 0.;
              }
 
          varTheoAvg = 0.;
@@ -1212,8 +1207,7 @@ INT4 main(INT4 argc, CHAR *argv[])
              
  	    for (i = 0; i < filterLength; i++)
 	      {
-	       optFilterAvg.data->data[i] =  
-                 optFilterAvg.data->data[i] + optFilter.data->data[i];
+	       optFilterAvg->data[i] =  optFilterAvg->data[i] + optFilter.data->data[i];
 	      }
           	    
 	  }
@@ -1222,8 +1216,8 @@ INT4 main(INT4 argc, CHAR *argv[])
           
           for (i = 0; i < filterLength; i++)
 	     {
-	      optFilterAvg.data->data[i] = optFilterAvg.data->data[i] / (REAL4)numSegments;
-	     }
+	      optFilter.data->data[i] = optFilterAvg->data[i] / (REAL4)numSegments;
+	      }
 	  
 	  varTheoAvg = 	varTheoAvg / numSegments;
 
@@ -1289,7 +1283,7 @@ INT4 main(INT4 argc, CHAR *argv[])
            fclose(out);
 	   }
        }
-     }
+    }
        
    lal_errhandler = LAL_ERR_EXIT;
 
@@ -1315,7 +1309,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       LAL_CALL( LALDestroyVector(&status, &(seg2[i])), &status );
     }
    LAL_CALL( LALDestroyVector(&status, &(optFilter.data)), &status );
-   LAL_CALL( LALDestroyVector(&status, &(optFilterAvg.data)), &status );
+   LAL_CALL( LALDestroyVector(&status, &(optFilterAvg)), &status );
    LAL_CALL( LALDestroyVector(&status, &(calInvPSD1.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(calInvPSD2.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(overlap.data)), &status );
