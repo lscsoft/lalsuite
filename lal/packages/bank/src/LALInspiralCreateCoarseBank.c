@@ -288,14 +288,16 @@ less than $1/4,$ a necessary condition so that the component
 masses are found to be real. However, we do not demand that the
 symmetric mass ratio is less than a quarter. If the total mass 
 is non-negative then we compute the $(f_{\rm lso}, f_{\rm lr})$
-and choose a user specified number of templates uniformly
-spaced in this range.
+and choose a user specified {\tt numFcutTemplates} number of 
+templates with their cutoff frequency {\tt list->fendBCV} defined
+uniformly spaced in the range $[f_{\rm lso},\ f_{\rm lr}].$
 
 Furthermore, this routine discards all templates for which
-either the mass is not defined or when defined $f_{\rm }$ is
-larger than the user input lower cutoff frequency of templaes.
-Thus, the number of templates returned by this routine code
-be more or less than the input number of templates.
+either the mass is not defined or, when defined, {\tt list->fendBCV} is
+smaller than the user defined lower frequency cutoff or larger
+than the Nyquist frequency of templates.
+Thus, the number of templates returned by this routine could 
+be larger or fewer than the input number of templates.
 
 \subsubsection*{Algorithm}
 Given $(\psi_0, \psi_3)$ one can solve for $(M, \eta)$ using:
@@ -754,6 +756,7 @@ LALInspiralBCVFcutBank(
   
 	INITSTATUS (status, "LALInspiralBCVFcutBank", LALINSPIRALCREATECOARSEBANKC);
 	ATTATCHSTATUSPTR(status);
+			  
 	nf=numFcutTemplates;
 	ndx = nlist = *NList;
 	frac = (1.L - 1.L/pow(2.L, 1.5L)) / (nf-1.L);
@@ -773,21 +776,22 @@ LALInspiralBCVFcutBank(
 			for (i=0; i<nf; i++)
 			{
 				fendBCV = fMax * (1.L - i * frac);
+	
+				if ((*list)[j].params.tSampling <=0)
+				{
+					ABORT(status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+				}
 					
-				if (fendBCV > (*list)[j].params.fLower)
+				if (fendBCV > (*list)[j].params.fLower && fendBCV < (*list)[j].params.tSampling/2.)
 				{
 					ndx++;
-	
 					if (!(*list = (InspiralTemplateList*) LALRealloc(*list, ndx*sizeof(InspiralTemplateList)))) 
-        
 					{
-		
 						ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
 	
 					}
 					(*list)[ndx-1] = (*list)[j];
 					(*list)[ndx-1].params.fendBCV = fendBCV;
-					(*list)[ndx-1].params.fCutoff = fendBCV;
 				}
 			}
 		}
