@@ -127,39 +127,15 @@ int main( int argc, char *argv[] )
     char abilwd[64];
     if ( strstr( argv[arg], "--run" ) )
     {
-      if ( run )
-      {
-        fprintf( stderr, "Error: run \"%s\" already specified\n", run );
-        exit( 1 );
-      }
       run = argv[++arg];
     }
     else if ( strstr( argv[arg], "--ifo" ) )
     {
-      if ( ! run )
-      {
-        fprintf( stderr, "Error: run not specified\n" );
-        exit( 1 );
-      }
       ifo = argv[++arg];
-      if ( site && site != *ifo )
-      {
-        fprintf( stderr, "Error: ifos must all be at same site\n" );
-        return 1;
-      }
       site = *ifo;
-      sprintf( aname, "%s\\:" A_CHANNEL, ifo );
-      sprintf( ailwd, "%s-%s-" A_CHANNEL ".ilwd", run, ifo );
-      sprintf( abname, "%s\\:" AB_CHANNEL, ifo );
-      sprintf( abilwd, "%s-%s-" AB_CHANNEL ".ilwd", run, ifo );
     }
     else if ( strstr( argv[arg], "--ver" ) )
     {
-      if ( ! run || ! ifo )
-      {
-        fprintf( stderr, "Error: run and/or ifo not specified\n" );
-        exit( 1 );
-      }
       ver = argv[++arg];
     }
     else if ( strstr( argv[arg], "--help" ) )
@@ -189,6 +165,11 @@ int main( int argc, char *argv[] )
         exit( 1 );
       }
       done = 1;
+      /* output file names */
+      sprintf( aname, "%s\\:" A_CHANNEL, ifo );
+      sprintf( ailwd, "%s-%s-" A_CHANNEL ".ilwd", run, ifo );
+      sprintf( abname, "%s\\:" AB_CHANNEL, ifo );
+      sprintf( abilwd, "%s-%s-" AB_CHANNEL ".ilwd", run, ifo );
       /* get a and ab data and metadata */
       a.name  = aname;
       a.unit  = "none";
