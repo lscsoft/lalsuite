@@ -25,6 +25,7 @@ Just change the InspiralTemplate strcuture parameters in the c file.
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
+#include <lal/GeneratePPNInspiral.h>
 
 NRCSID( LALSTPNWaveformTestC, "$Id: LALSTPNWaveformTest.c,v 1.1 2004/05/05 20:06:23 thomas Exp");
 
@@ -33,6 +34,7 @@ int main(int argc, char **argv) {
     static LALStatus 	mystatus;
     CoherentGW 		thewaveform;
     InspiralTemplate 	parameters;
+    PPNParamStruc       ppnParams;
     FILE 		*outputfile;
     INT4 		i,length;
     REAL8		dt;
@@ -72,7 +74,7 @@ int main(int argc, char **argv) {
     thewaveform.shift 	= 0;
 
     /* --- now we can call the injection function --- */
-    LALSTPNWaveformForInjection(&mystatus,&thewaveform,&parameters);
+    LALSTPNWaveformForInjection(&mystatus,&thewaveform,&parameters, &ppnParams);
 
 
 
