@@ -82,10 +82,9 @@
 #include <lal/LALStatusMacros.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALMathematica.h>
-                                                                                                                                                
-#define INSTRUCTIONS    fprintf(nb, "This notebook may be evaluated recursively by typing ctrl+A and then shift+enter.  HOWEVER, depending on the number of templates and dimensions this maybe undesirable either for time or for risk of crashing your computer.  It is recommended that each section be evluated as needed.  The Initialization and User Variables sections affect the notebook globally.  They must be evaluated first.  The 3-dimensional projections are iteratively represented in the sections below the User Varibles as PointList (x1, x2, x3) etc.  By evaluating the entire Image Generation sections you also create may create animated plots (if AnimationPlot := True) but they may be time (and memory) consuming.  If you only wish to plot a still image I suggest that you leave the user variable AnimationPlot := False.")
-                                                                                                                                              
-                                                                                                                                                
+
+#define INSTRUCTIONS    fprintf(nb, "Running this entire notebook using ctrl+A and shift+enter may crash your computer.  Evaluate each section as needed.  The Initialization and User Variables sections must be evaluated first.  The 3-dimensional projections are represented in the sections below User Varibles as PointList (x1, x2, x3) etc.  Evaluating the entire Image Generation sections creates animated plots (if AnimationPlot := True).  If (AnimationPlot := False) you get only still plots, saving time and memory.")
+
 NRCSID(LALMATHNDPLOTC, "$Id$");
                                                                                                                                                 
 /* <lalVerbatim file="LALMathNDPlotCP"> */
@@ -99,7 +98,6 @@ LALMathNDPlot( LALStatus *stat,
   FILE *nb;                             /* pointer to the notebook file */
   INT4 jflag = 0;                       /* flag to justify the output data */
   MathNDPointList *list;                /* loop counter */
-  INT4 loop = 0;
   REAL4 PtSize = 0.02;
   INT4 counter = 0;
   INT4 dim = first->coordinates->length;
@@ -110,12 +108,15 @@ LALMathNDPlot( LALStatus *stat,
                                                                                                                                                 
   INITSTATUS( stat, "LALMathNDPlot", LALMATHNDPLOTC );
   
-  /* Check that the PointList isn't NULL */                                                                                                       if (!first)
+  /* Check that the PointList isn't NULL */
+  if (!first) {
     ABORT(stat, LALMATHEMATICAH_ENULL, LALMATHEMATICAH_MSGENULL);
+  }
   
   /* Open a file for writing a notebook */
-  if ((nb = fopen("MathNDNotebook.nb", "w")) == NULL)
+  if ((nb = fopen("MathNDNotebook.nb", "w")) == NULL) {
     ABORT(stat, LALMATHEMATICAH_EFILE, LALMATHEMATICAH_MSGEFILE);
+  }
   
   /* Appropriately handle the inputs for ntiles and pointsize to assure
      that a propter pointSize is chosen.  Also print a warning if the 
@@ -140,8 +141,9 @@ LALMathNDPlot( LALStatus *stat,
         printf("\nWARNING!!! The value of argument ntiles (%i) != the MathNDPointList length (%i)\n",
                *ntiles, counter);
       }
-    if (*ntiles <=0)
+    if (*ntiles <=0) {
       ABORT(stat, LALMATHEMATICAH_EVAL, LALMATHEMATICAH_MSGEVAL);
+    }
     PtSize = 0.50*(1.0/(pow((*ntiles),0.333333)));
     if (*ntiles > 10000)
       printf("\nWARNING!!! More than 10,000 tiles may crash Mathematica:)\n");

@@ -188,3 +188,9 @@ LALMath3DPlot( LALStatus *stat,
                Math3DPointList *first, 
                INT4 *ntiles, 
                REAL4 *pointSize);
+
+void
+LALMathNDPlot( LALStatus *stat,
+               MathNDPointList *first,
+               INT4 *ntiles,
+               REAL4 *pointSize );
