@@ -157,6 +157,7 @@ LALLoadConfigFile (LALStatus *stat,
 { /* </lalVerbatim> */
 
   CHARSequence *rawdata = NULL;
+  CHAR *path = NULL;
   FILE *fp;
 
   INITSTATUS( stat, "LALLoadConfigFile", CONFIGFILEC );
@@ -166,10 +167,25 @@ LALLoadConfigFile (LALStatus *stat,
   ASSERT (fname != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
 
 
-  if ( (fp = LALOpenDataFile(fname)) == NULL) {
-    LALPrintError ("Could not open config-file: `%s`\n\n", fname);
+  /* NOTE: we use LALOpenDataFile() but we don't want to use LAL_DATA_PATH 
+   * config-files are always assumed to be either local or specified with
+   * the appropriate path. 
+   * 
+   * Therefore ==> if no path is given, refer it to "./"
+   */
+  if ( (fname[0] != '.') || (fname[0] != '/') )
+    {
+      if ( (path = LALCalloc (1, strlen(fname)+5 )) == NULL) {
+	ABORT (stat, CONFIGFILEH_EMEM, CONFIGFILEH_MSGEMEM);
+      }
+      sprintf (path, "./%s", fname);
+    }
+
+  if ( (fp = LALOpenDataFile(path)) == NULL) {
+    LALPrintError ("Could not open config-file: `%s`\n\n", path);
     ABORT (stat, CONFIGFILEH_EFILE, CONFIGFILEH_MSGEFILE);
   }
+  LALFree (path);
 
   LALCHARReadSequence (stat->statusPtr, &rawdata, fp);
   fclose (fp);
