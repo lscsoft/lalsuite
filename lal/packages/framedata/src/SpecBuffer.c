@@ -9,6 +9,7 @@
  *-----------------------------------------------------------------------
  */
 
+#include <math.h>
 #include "LALStdlib.h"
 #include "AVFactories.h"
 #include "RealFFT.h"
@@ -60,7 +61,7 @@ ComputeSpectrum (
   ASSERT (timeSeries->deltaT, status, SPECBUFFER_EZERO, SPECBUFFER_MSGEZERO);
   ASSERT (parameters->wss, status, SPECBUFFER_EZERO, SPECBUFFER_MSGEZERO);
   spectrum->deltaF = 1/(timeSeries->deltaT*timeSeries->data->length);
-  fac              = timeSeries->deltaT/parameters->wss;
+  fac              = sqrt( timeSeries->deltaT/parameters->wss );
 
   for (i = 0; i < n; ++i)
   {
@@ -86,7 +87,7 @@ CreateSpectrumBuffer (
     SpectrumBufferPar  *params
     )
 {
-  WindowParams winparams;
+  LALWindowParams winparams;
   INT4 specSize;
   INT4 spec;
 
@@ -146,7 +147,7 @@ CreateSpectrumBuffer (
 
   winparams.length = params->numPoints;
   winparams.type   = params->windowType;
-  Window (status->statusPtr, (*buffer)->specParams->window, &winparams);
+  LALWindow (status->statusPtr, (*buffer)->specParams->window, &winparams);
   CHECKSTATUSPTR (status);
   (*buffer)->specParams->windowType = winparams.type;
   (*buffer)->specParams->wss        = winparams.sumofsquares;
