@@ -615,7 +615,7 @@ int main(int argc, char *argv[]){
   injectPar.patchSizeDelta = patchSizeDelta; 
   injectPar.pixelFactor = PIXELFACTOR;
   injectPar.vTotC = VTOT;
-  injectPar.timeObs =timeDiffV.data[mObsCoh-1]+ timeBase;
+  injectPar.timeObs =timeDiffV.data[mObsCoh-1] + 0.5 * timeBase;
   
   injectPar.spnFmax.data = NULL; 
   injectPar.spnFmax.length=msp;   /*only 1 spin */
