@@ -100,7 +100,7 @@ typedef struct ISBNode
 } ISBNode;
 
 
-static void cleanup(LALStatus *s,
+static void cleanup(LALStatus *,
     REAL4Array 	**, 
     UINT4Vector **, 
     REAL4Vector **, 
@@ -149,6 +149,7 @@ static INT4 test(
     ); /* test() prototype */
 
 /* END - Internal structures and functions --------------------------------- */
+
 static void
 LALInspiralSpinBankMetric(
    LALStatus 		*,
@@ -157,8 +158,6 @@ LALInspiralSpinBankMetric(
    InspiralTemplate	*,
    REAL4		*
    ); /* LALInspiralSpinBankMetric() Prototype */
-
-
 
 
 
@@ -209,11 +208,13 @@ LALInspiralSpinBankMetric(
   J17 = moments->j[17];
                                                                                                                                                 
   /* Set metric components as functions of moments. */
+
   metric->data[0] = (REAL4) 0.5*(J17-J12*J12-(J9-J4*J12)*(J9-J4*J12)/(J1-J4*J4));
   metric->data[1] = (REAL4) 0.5*(J14-J9*J12-(J6-J4*J9)*(J9-J4*J12)/(J1-J4*J4));
   metric->data[2] = (REAL4) 0;
   metric->data[3] = (REAL4) 0.5*(J14-J9*J12-(J6-J4*J9)*(J9-J4*J12)/(J1-J4*J4));
   metric->data[4] = (REAL4) 0.5*(J11-J9*J9-(J6-J4*J9)*(J6-J4*J9)/(J1-J4*J4));
+
   metric->data[5] = (REAL4) 0.0;
   metric->data[6] = (REAL4) 0.0;
   metric->data[7] = (REAL4) 0.0;
@@ -401,6 +402,11 @@ LALInspiralSpinBank(
             ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
           }
           /* Mark that one a keeper and increase the number of tiles */
+          mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
+          eta = 16.0457 * pow( -x*x/y/y/y/y/y, 0.3333333 );
+          m1 = 0.5*mass* (1 + sqrt(1 - 4*eta));
+          m2 = 0.5*mass* (1 - sqrt(1 - 4*eta));
+
           tmplt->mass1 = m1;
           tmplt->mass2 = m2;
           tmplt->eta = eta;
@@ -423,6 +429,11 @@ LALInspiralSpinBank(
               cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
               }
+            mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
+            eta = 16.0457 * pow( -x*x/y/y/y/y/y, 0.3333333 );
+            m1 = 0.5*mass* (1 + sqrt(1 - 4*eta));
+            m2 = 0.5*mass* (1 - sqrt(1 - 4*eta));
+
             tmplt->mass1 = m1;
             tmplt->mass2 = m2;
             tmplt->eta = eta;
@@ -445,6 +456,11 @@ LALInspiralSpinBank(
               cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
               }
+            mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
+            eta = 16.0457 * pow( -x*x/y/y/y/y/y, 0.3333333 );
+            m1 = 0.5*mass* (1 + sqrt(1 - 4*eta));
+            m2 = 0.5*mass* (1 - sqrt(1 - 4*eta));
+
             tmplt->mass1 = m1;
             tmplt->mass2 = m2;
             tmplt->eta = eta;
@@ -467,6 +483,11 @@ LALInspiralSpinBank(
               cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
               }
+            mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
+            eta = 16.0457 * pow( -x*x/y/y/y/y/y, 0.3333333 );
+            m1 = 0.5*mass* (1 + sqrt(1 - 4*eta));
+            m2 = 0.5*mass* (1 - sqrt(1 - 4*eta));
+ 
             tmplt->mass1 = m1;
             tmplt->mass2 = m2;
             tmplt->eta = eta;
@@ -492,7 +513,12 @@ LALInspiralSpinBank(
               cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
               }
-            tmplt->mass1 = m1;
+            mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
+            eta = 16.0457 * pow( -x*x/y/y/y/y/y, 0.3333333 );
+            m1 = 0.5*mass* (1 + sqrt(1 - 4*eta));
+            m2 = 0.5*mass* (1 - sqrt(1 - 4*eta));
+
+	    tmplt->mass1 = m1;
             tmplt->mass2 = m2;
             tmplt->eta = eta;
             tmplt->chirpMass = pow(m1*m2,0.6)/pow(m1+m2,0.2);
@@ -514,6 +540,11 @@ LALInspiralSpinBank(
               cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
               }
+            mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
+            eta = 16.0457 * pow( -x*x/y/y/y/y/y, 0.3333333 );
+            m1 = 0.5*mass* (1 + sqrt(1 - 4*eta));
+            m2 = 0.5*mass* (1 - sqrt(1 - 4*eta));
+
             tmplt->mass1 = m1;
             tmplt->mass2 = m2;
             tmplt->eta = eta;
@@ -536,6 +567,11 @@ LALInspiralSpinBank(
               cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
               }
+            mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
+            eta = 16.0457 * pow( -x*x/y/y/y/y/y, 0.3333333 );
+            m1 = 0.5*mass* (1 + sqrt(1 - 4*eta));
+            m2 = 0.5*mass* (1 - sqrt(1 - 4*eta));
+
             tmplt->mass1 = m1;
             tmplt->mass2 = m2;
             tmplt->eta = eta;

@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = ChirpSpace CoarseTest CoarseTest2 MetricTest MetricTestBCV BCVTemplates PNTemplates BCVTemplatesFlatMesh InspiralSpinBankTest
+check_PROGRAMS = ChirpSpace CoarseTest CoarseTest2 MetricTest MetricTestBCV BCVTemplates PNTemplates BCVTemplatesFlatMesh InspiralSpinBankTest InspiralSpinBankwNDTemplateBankTest
 ChirpSpace_SOURCES = ChirpSpace.c
 ChirpSpace_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
@@ -26,8 +26,12 @@ BCVTemplatesFlatMesh_LDADD = $(top_builddir)/packages/support/src/liblalsupport.
 
 InspiralSpinBankTest_SOURCES = InspiralSpinBankTest.c
 InspiralSpinBankTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+
+InspiralSpinBankwNDTemplateBankTest_SOURCES = InspiralSpinBankwNDTemplateBankTest.c
+InspiralSpinBankwNDTemplateBankTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = ChirpSpace CoarseTest CoarseTest2 MetricTest MetricTestBCV PNTemplates BCVTemplates BCVTemplatesFlatMesh InspiralSpinBankTest
+TESTS = ChirpSpace CoarseTest CoarseTest2 MetricTest MetricTestBCV PNTemplates BCVTemplates BCVTemplatesFlatMesh InspiralSpinBankTest InspiralSpinBankwNDTemplateBankTest
 EXTRA_DIST = CoarseTest.par demo 
 MOSTLYCLEANFILES = .dvi-dep *.out
 DISTCLEANFILES = *.tex

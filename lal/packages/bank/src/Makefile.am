@@ -18,7 +18,9 @@ LALInspiralValidParams.c\
 LALInspiralValidTemplate.c\
 LALInverse3.c\
 LALMatrixTransform.c\
-LALRectangleVertices.c
+LALRectangleVertices.c\
+InspiralBankGeneration.c\
+InspiralSpinBankwNDTemplateBank.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex

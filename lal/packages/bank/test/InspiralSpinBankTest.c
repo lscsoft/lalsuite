@@ -136,7 +136,9 @@ int main(int argc, char *argv[]){
   REAL4 F0 = 164.0; /* Roughly the minimum of the noise curve */
                     /* This should be calculated */ 
   REAL8 minfreq = 1;
-   
+  FILE *plot;
+  plot = fopen("plot.dat", "w");  
+ 
   if ((list = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
     LALError(&stat, INSPIRALSPINBANKTESTC_MSGEMEM);
     printf(INSPIRALSPINBANKTESTC_MSGEMEM);
@@ -236,7 +238,11 @@ int main(int argc, char *argv[]){
   }
     
   printf("\nThese parameters yeild %i tiles.\n\n\n", ntiles);
-
+  
+  for(loop=0; loop < ntiles; loop++){
+    fprintf(plot, "%f\t%f\n", Tiles[loop].params.mass1/LAL_MTSUN_SI, Tiles[loop].params.mass2/LAL_MTSUN_SI);
+    }
+  
   /* Mathematica Plot Stuff */
   if (Math3DPlot){
     for(loop=0; loop < (ntiles); loop++){
