@@ -194,7 +194,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 segsInInt, numIntervals, segMiddle;
   INT4 segmentLength, segmentPadLength, intervalLength;
   INT4 segmentShift;
-  INT4 padData;
+  INT4 padData = 0;
   LIGOTimeGPS gpsStartPadTime, gpsCalibTime;
   ReadDataPairParams streamParams;
   StreamPair streamPair;
@@ -341,13 +341,6 @@ INT4 main(INT4 argc, CHAR *argv[])
     LALSnprintf(baseName, FILENAME_MAX, "%s%s-stochastic-%d-%d", \
         ifoOne, ifoTwo, startTime, endTime);
   }
-
-  /* only add a buffer if the data is going to be resample and/or high
-   * pass filtered */
-  if ((sampleRate == resampleRate) && (high_pass_flag == 0))
-    padData = 0;
-  else
-    padData = 1;
   
   /* get number of segments */
   duration = endTime - startTime;
@@ -360,11 +353,19 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* recentre */
   if (recentre_flag)
   {
-    durationEff = (INT4)(((duration - (2 * padData)) / segmentDuration ) * \
-                  segmentDuration);
+    durationEff = numSegments * segmentDuration;
     extrasec = duration - durationEff;
-    startTime = startTime + (INT4)(extrasec / 2);
+    startTime += extrasec / 2;
     endTime = startTime + durationEff;
+  }
+
+  /* add a resample buffer, if required */
+  if ((sampleRate != resampleRate) || (high_pass_flag))
+  {
+    padData = 1;
+    startTime += padData;
+    endTime -= padData;
+    duration -= 2 * padData;
   }
 
   if (overlap_hann_flag)
