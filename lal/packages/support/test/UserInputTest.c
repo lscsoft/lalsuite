@@ -85,8 +85,12 @@ do {                                                                 \
 
 int main(int argc, char *argv[])
 { 
-  static LALStatus       status;  
+  
+  /* EMPTY STUB */
+  printf ("User said: %d arguments, which are %s %s %s ...\n", argc, argv[0], argv[1], argv[2]);
 
+
+  /* sorry, something still should be written here */
   LALCheckMemoryLeaks(); 
   
   return (USERINPUTTESTC_ENORM);

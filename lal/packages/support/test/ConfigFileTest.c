@@ -110,6 +110,9 @@ int main(int argc, char *argv[]){
   REAL8 somefloat;
   BOOLEAN wasRead = FALSE;
 
+  if ( argc > 1 )
+    LALPrintError ("WARNING: commond-line arguments useless here \n");
+
   SUB (LALParseDataFile (&status, &cfgdata, "ConfigFileSample.cfg"), &status);
 
   SUB (LALReadConfigREAL8Variable  (&status, &somefloat, cfgdata, "float1", &wasRead), &status);

@@ -962,11 +962,13 @@ DestroyStringVector (StringVector *strings)
 
 } /* DestroyStringVector () */
 
+/* comparison function for strings */
+ typedef CHAR * charptr;	/* little trick to shut compiler-warnings up */
 static int mycomp (const void *p1, const void *p2)
 {
-  const CHAR *s1 = *( (const CHAR**)p1 );
-  const CHAR *s2 = *( (const CHAR**)p2 );
-  return (strcmp (s1, s2 ) );
+  const charptr *s1 = (const charptr *) p1;
+  const charptr *s2 = (const charptr *) p2;
+  return (strcmp ( *s1, *s2 ) );
 }
 
 /* sort string-vector alphabetically */
