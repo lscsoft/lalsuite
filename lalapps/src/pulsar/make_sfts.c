@@ -144,15 +144,16 @@ int deltatime(const char *instrument, int gpstime){
   int l1time[][4]={
     {714177080, 714855840, -121, 678760},
     {714855841, 715618813, -120, 762972},
-    /* array is null terminated */
-    {0,         0,           0,  0},
+    /* array is null terminated with value to use if time range not found */
+    {0,         INT_MAX,           -121,  0},
   };
   
   /* corrections for Hanford H1 during S1 */
   int h1time[][4]={
-    {714335520, 715618813, -95, 1283293},
-    /* array is null terminated */
-    {0,         0,           0,  0},
+    {714335520, 715618813,   -95, 1283293},
+    /* array is null terminated with value to use if time range not
+       found */
+    {0,         INT_MAX,     -95,  0},
   };
   
   /* corrections for Hanford H2 during S1, cut and paste from Table 1
@@ -178,8 +179,9 @@ int deltatime(const char *instrument, int gpstime){
     {715545240, 715556400,  814, 11160},
     {715556640, 715594020, -163, 37380},
     {715594140, 715618800,   81, 24660},
-    /* array is null terminated */
-    {0,         0,           0,  0},
+    /* array is null terminated with value to use if time range not
+       found */
+    {0,          INT_MAX,           0,  0},
   };
 
   /* select the correct instrument */
@@ -199,11 +201,11 @@ int deltatime(const char *instrument, int gpstime){
   for (i=0; data[i][0]; i++)
     if (data[i][0]<=gpstime && gpstime<=data[i][1])
       return data[i][2];
-  
-  /* we didn't find the time range, so return 0 */
-  return 0;
-}
 
+  /* value we should use if time range NOT found */
+  return data[i][2];
+
+}
 
 /* check a number of bounary values of the timing correction */
 void checktimingcorrections(){
@@ -214,6 +216,12 @@ void checktimingcorrections(){
     return;
   }
   
+  /* L1 checks */
+  checkone(10, "L1");
+  checkone(10000, "L1");
+  checkone(715618799, "L1");
+  printf("\n");
+
   /* H1 checks */
   checkone(10, "H1");
   checkone(10000, "H1");
@@ -235,9 +243,7 @@ void checktimingcorrections(){
   checkone(715618799, "H2"); 
   checkone(715618800, "H2"); 
   checkone(715618801, "H2"); 
-  exit(0);
 }
-
 
 /* Utility function for cyclically shifting an array "in place".
    Written for clarity and simplicity, not for efficiency.
@@ -315,7 +321,27 @@ int main(int argc,char *argv[]){
   FrVect *frvect;        
   
 #if (0)
+  /* check the timing correction code */
   checktimingcorrections();
+  exit(0);
+#endif
+
+#if (0)
+  /* check the shifter code */
+  {
+    float fun[30];
+    int i;
+    
+    for (i=0; i<30; i++)
+      fun[i]=(float) i;
+    
+    shifter(fun, 30, -2);
+    
+    for (i=0;i<30;i++)
+      printf("%2d: %f\n", i, fun[i]);
+    
+  }
+  exit(0);
 #endif
 
   printf("Normal startup\n");
