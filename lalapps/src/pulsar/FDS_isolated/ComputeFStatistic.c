@@ -409,8 +409,9 @@ int main(int argc,char *argv[])
   /* NOTE: @configfile must be at the beginning of the command line! */
   if (argv[1][0] == '@') 
     {
-      if (boinc_resolve_filename(argv[1]+1,resfname,sizeof(resfname)))
-	fprintf(stderr,"WARNING: Can't boinc-resolve config file \"%s\"\n", argv[0]+1);
+      resfname[0] = '@';
+      if (boinc_resolve_filename(argv[1]+1,resfname+1,sizeof(resfname)))
+	fprintf(stderr,"WARNING: Can't boinc-resolve config file \"%s\"\n", argv[1]+1);
       else
 	{
 	  /* hack the command-line: replace config-file by boinc-resolved path */
