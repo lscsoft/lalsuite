@@ -117,6 +117,15 @@ LALFindChirpBCVSpinFilterSegment (
   REAL8                 rootDenominator;
   REAL8                 numerator1;
   REAL8                 denominator1;
+ 
+/* REAL4                 A1A1             = 0.0;
+ REAL4                 A2A2             = 0.0;
+ REAL4                 A3A3             = 0.0;
+ REAL4                 A1A2             = 0.0;
+ REAL4                 A1A3             = 0.0;
+ REAL4                 A2A3             = 0.0;*/
+	   
+
   
   INITSTATUS( status, "LALFindChirpBCVSpinFilter", FINDCHIRPBCVSPINFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -231,7 +240,41 @@ LALFindChirpBCVSpinFilterSegment (
  
   /* finding cross product of data with itself,  
      to be used for normalisation later  */
- 
+
+ /* checking orthonormalisation of A vectors */
+        
+  
+  /*  {
+           fprintf (stdout, "Checking orthonormalisation of amplitude vectors \n");
+                                                                                                                                                
+           for (k=1; k < numPoints/2; ++k)
+           {
+                                                                                                                                             
+	            A1A1 += A1Vec[k] * A1Vec[k] * wtilde[k].re;
+	            A2A2 += A2Vec[k] * A2Vec[k] * wtilde[k].re;
+	            A3A3 += A3Vec[k] * A3Vec[k] * wtilde[k].re;
+	            A1A2 += A1Vec[k] * A2Vec[k] * wtilde[k].re;
+	            A1A3 += A1Vec[k] * A3Vec[k] * wtilde[k].re;
+	            A2A3 += A2Vec[k] * A3Vec[k] * wtilde[k].re;
+	   }
+	                                                                                                                                                 
+	   A1A1 *= 4 * deltaF;
+	   A2A2 *= 4 * deltaF;
+	   A3A3 *= 4 * deltaF;
+	   A1A2 *= 4 * deltaF;
+	   A1A3 *= 4 * deltaF;
+	   A2A3 *= 4 * deltaF;
+						                                                                                                                                                 
+	  fprintf (stdout, "A1hat cross A1hat %e\n", A1A1);
+	  fprintf (stdout, "A2hat cross A2hat %e\n", A2A2);
+	  fprintf (stdout, "A3hat cross A3hat %e\n", A3A3);
+	  fprintf (stdout, "A1hat cross A2hat %e\n", A1A2);
+	  fprintf (stdout, "A1hat cross A3hat %e\n", A1A3);
+	  fprintf (stdout, "A2hat cross A3hat %e\n\n", A2A3);
+  } */
+  
+    
+  
   	normData = 0.; 
  
   	for (k = 0; k < (numPoints/2)+1; ++k )
@@ -344,7 +387,8 @@ LALFindChirpBCVSpinFilterSegment (
                                                                                                                            
 	for ( j = 0; j < numPoints; ++j)
 	{
-  		REAL4 	rhoSq = 
+
+		REAL4 	rhoSq = 
 			( ( q[j].re * q[j].re + q[j].im * q[j].im ) + 
    	                ( qBCVSpin1[j].re * qBCVSpin1[j].re 
 			+ qBCVSpin1[j].im * qBCVSpin1[j].im ) + 
@@ -373,7 +417,7 @@ LALFindChirpBCVSpinFilterSegment (
   /* ignore corrupted data at start and end */
   ignoreIndex = ( input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
   
-  fprintf (stdout, "ignoreIndex = %d\n", ignoreIndex);
+  /* fprintf (stdout, "ignoreIndex = %d\n", ignoreIndex);*/
   
   if ( ignoreIndex > numPoints / 4 )
   {
@@ -387,38 +431,60 @@ LALFindChirpBCVSpinFilterSegment (
   /* REMOVE THIS */
     
   
-  fprintf (stdout, "ignoreIndex = %d\n", ignoreIndex);
+ /* fprintf (stdout, "ignoreIndex = %d\n", ignoreIndex);*/
    
 
-
-  if (input->fcTmplt->tmplt.beta == 0)
+  rhosqThresh = params->rhosqThresh;
+  modqsqThresh = rhosqThresh;
+   
+/*  fprintf (stdout, "beta = %e\n", input->fcTmplt->tmplt.beta);*/
+  
+  if (input->fcTmplt->tmplt.beta == 0.0)
   {
- 	params->rhosqThresh = 69;
-	fprintf (stdout, "beta = 0 so changing rhosq thresh = %e\n ", params->rhosqThresh);
+          rhosqThresh = 69;
+	  modqsqThresh = 69;
+  	/*  fprintf (stdout, "beta = 0 so changing rhosq thresh = %e\n ", rhosqThresh);*/
   }
   
-  rhosqThresh = params->rhosqThresh;
-  modqsqThresh = rhosqThresh;  
+/*  fprintf (stdout, "modqsqThresh = %e\n", modqsqThresh);
+  fprintf (stdout, "rhosqThresh = %e\n",  rhosqThresh); */
   
+   
   /* look for an event in the filter output */
   for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )
   {
-         REAL4 rhoSq   
-		= ( ( q[j].re * q[j].re + q[j].im * q[j].im ) +
-                    ( qBCVSpin1[j].re * qBCVSpin1[j].re 
-		    + qBCVSpin1[j].im * qBCVSpin1[j].im ) +
-                    ( qBCVSpin2[j].re * qBCVSpin2[j].re 
-		    + qBCVSpin2[j].im * qBCVSpin2[j].im ) )
-                    * normFacSq;
-                
-	
-	 
+         REAL4 rhoSq = ( 
+		  ( q[j].re * q[j].re ) + 
+		  ( q[j].im * q[j].im ) +
+                  ( qBCVSpin1[j].re * qBCVSpin1[j].re ) +
+		  ( qBCVSpin1[j].im * qBCVSpin1[j].im ) +
+                  ( qBCVSpin2[j].re * qBCVSpin2[j].re ) +
+		  ( qBCVSpin2[j].im * qBCVSpin2[j].im ) )
+                  * normFacSq;
+   	 
 	rho    = pow(rhoSq, 0.5);
+   
 	invRho = 1/rho;
+	
+	
 	
 	/* if snrsq exceeds threshold at any point */
    	if ( rhoSq > modqsqThresh )
     	{
+
+      /*  fprintf (stdout, "\n");
+        fprintf (stdout, "normFac = %e\n", normFac);
+        fprintf (stdout, "normFacSq = %e\n", normFacSq);
+	fprintf (stdout, "rhoSq = %e\n", rhoSq);
+        fprintf (stdout, "q[j].re = %e\n", q[j].re );
+	fprintf (stdout, "q[j].im = %e\n", q[j].im );
+	fprintf (stdout, "qBCVSpin1[j].re = %e\n", qBCVSpin1[j].re );
+	fprintf (stdout, "qBCVSpin1[j].im = %e\n", qBCVSpin1[j].im );
+	fprintf (stdout, "qBCVSpin2[j].re = %e\n", qBCVSpin2[j].re );
+	fprintf (stdout, "qBCVSpin2[j].im = %e\n", qBCVSpin2[j].im );
+        fprintf (stdout, "rho = %e\n", rho);
+        fprintf (stdout, "invRho = %e\n", invRho);*/
+		
 		if (! *eventList )    /* if *eventlist is empty */        
                 {
  			/* store the start of the crossing */
@@ -437,6 +503,26 @@ LALFindChirpBCVSpinFilterSegment (
 			for the clustering algorithm */
           		thisEvent->end_time.gpsSeconds = j;
           		thisEvent->snr = rho;
+   			
+			alpha1hat = q[j].re * invRho * normFac;
+ 	 	 	alpha4hat = q[j].im * invRho * normFac;
+			alpha2hat = qBCVSpin1[j].re * invRho * normFac;
+			alpha5hat = qBCVSpin1[j].im * invRho * normFac;
+			alpha3hat = qBCVSpin2[j].re * invRho * normFac;
+			alpha6hat = qBCVSpin2[j].im * invRho * normFac;
+		/*													                           		     fprintf (stdout, "alpha1hat = %e\n", alpha1hat);
+		        fprintf (stdout, "alpha2hat = %e\n", alpha2hat);
+			fprintf (stdout, "alpha3hat = %e\n", alpha3hat);
+			fprintf (stdout, "alpha4hat = %e\n", alpha4hat);
+			fprintf (stdout, "alpha5hat = %e\n", alpha5hat);
+			fprintf (stdout, "alpha6hat = %e\n", alpha6hat);*/
+                			                   									                                     thisEvent->alpha1 = alpha1hat;
+		        thisEvent->alpha2 = alpha2hat;
+			thisEvent->alpha3 = alpha3hat;
+			thisEvent->alpha4 = alpha4hat;
+			thisEvent->alpha5 = alpha5hat;
+			thisEvent->alpha6 = alpha6hat;
+			
 		} 
 
                 /* check to see if snr>threshold 
@@ -449,6 +535,26 @@ LALFindChirpBCVSpinFilterSegment (
           		/* this is the same event so update maximum */
           		thisEvent->end_time.gpsSeconds = j;
           		thisEvent->snr = rho;
+
+                         alpha1hat = q[j].re * invRho * normFac;
+			 alpha4hat = q[j].im * invRho * normFac;
+			 alpha2hat = qBCVSpin1[j].re * invRho * normFac;
+			 alpha5hat = qBCVSpin1[j].im * invRho * normFac;
+			 alpha3hat = qBCVSpin2[j].re * invRho * normFac;
+			 alpha6hat = qBCVSpin2[j].im * invRho * normFac;
+			                                                                                                                                          /*    fprintf (stdout, "alpha1hat = %e\n", alpha1hat);
+			 fprintf (stdout, "alpha2hat = %e\n", alpha2hat);
+			 fprintf (stdout, "alpha3hat = %e\n", alpha3hat);
+			 fprintf (stdout, "alpha4hat = %e\n", alpha4hat);
+			 fprintf (stdout, "alpha5hat = %e\n", alpha5hat);
+			 fprintf (stdout, "alpha6hat = %e\n", alpha6hat);*/
+			                                                                                                                                              thisEvent->alpha1 = alpha1hat;
+			 thisEvent->alpha2 = alpha2hat;
+			 thisEvent->alpha3 = alpha3hat;
+			 thisEvent->alpha4 = alpha4hat;
+			 thisEvent->alpha5 = alpha5hat;
+			 thisEvent->alpha6 = alpha6hat;
+			
                 }
 
 
@@ -487,22 +593,6 @@ LALFindChirpBCVSpinFilterSegment (
               			(LALNameLength - 3) * sizeof(CHAR) );
          		thisEvent->impulse_time = thisEvent->end_time;
                                                                                                              	
-                	/*calculate and record the alpha values */
-
-			alpha1hat = q[j].re * invRho;
-        		alpha4hat = q[j].im * invRho;
-        		alpha2hat = qBCVSpin1[j].re * invRho;
-        		alpha5hat = qBCVSpin1[j].im * invRho;
-        		alpha3hat = qBCVSpin2[j].re * invRho;
-        		alpha6hat = qBCVSpin2[j].im * invRho;
-
-                	thisEvent->alpha1 = alpha1hat; 
-                	thisEvent->alpha2 = alpha2hat;
-                	thisEvent->alpha3 = alpha3hat;
-  			thisEvent->alpha4 = alpha4hat;
-  			thisEvent->alpha5 = alpha5hat;
-  			thisEvent->alpha6 = alpha6hat;
- 
                 	/* record the beta value */
                		/* eventually beta will be provided FROM 
 				the template bank */
@@ -612,22 +702,6 @@ LALFindChirpBCVSpinFilterSegment (
 	         input->segment->data->name + 3,
 	         (LALNameLength - 3) * sizeof(CHAR) );
 	         thisEvent->impulse_time = thisEvent->end_time;
-																			                                                                                                                                              
-	/*calculate and record the alpha values */
-	
- 	alpha1hat = q[j].re * invRho;
-        alpha4hat = q[j].im * invRho;
-	alpha2hat = qBCVSpin1[j].re * invRho;
-	alpha5hat = qBCVSpin1[j].im * invRho;
-	alpha3hat = qBCVSpin2[j].re * invRho;
-	alpha6hat = qBCVSpin2[j].im * invRho;
-														                                                                                                                                              
-	thisEvent->alpha1 = alpha1hat;
-	thisEvent->alpha2 = alpha2hat;
-	thisEvent->alpha3 = alpha3hat;
-	thisEvent->alpha4 = alpha4hat;
-	thisEvent->alpha5 = alpha5hat;
-	thisEvent->alpha6 = alpha6hat;
 																																	                          thisEvent->beta   = input->fcTmplt->tmplt.beta;
 	thisEvent->psi0   = (REAL4) input->fcTmplt->tmplt.psi0;
 	thisEvent->psi3   = (REAL4) input->fcTmplt->tmplt.psi3;
