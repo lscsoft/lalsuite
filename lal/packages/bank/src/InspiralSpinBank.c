@@ -257,8 +257,8 @@ LALInspiralSpinBank(
   InspiralMomentsEtc moments; 		/* Added for LALGetInspiralMoments() */
   InspiralTemplate inspiralTemplate; 	/* Added for LALGetInspiralMoments() */
   REAL4 x, y, z;             		/* psi0, psi3, beta coordinates */
-  REAL4 x0, y0, z0;          		/* minimum values of x, y, z */
-  REAL4 x1, y1, z1;          		/* maximum values of x, y, z */
+  REAL4 x0, myy0, z0;          		/* minimum values of x, y, z */
+  REAL4 x1, myy1, z1;          		/* maximum values of x, y, z */
   REAL4 xp, yp, zp;          		/* metric eigenvector coordinates */
   REAL4 xp0, yp0, zp0;       		/* minimum values of xp, yp, zp */
   REAL4 xp1, yp1, zp1;       		/* maximum values of xp, yp, zp */
@@ -371,17 +371,17 @@ LALInspiralSpinBank(
 
   /* Set box on unprimed coordinates including region. */
   x0 = 0.9*(3.0/128) / (pow(LAL_PI*f0*(m1Max+m2Max),1.666667)*(m1Max*m2Max/pow(m1Max+m2Max,2)));
-  y0 = 1.1*(-.375*LAL_PI) / (pow(LAL_PI*f0*(m1Max+m2Min),0.6666667)*(m1Max*m2Min/pow(m1Max+m2Min,2)));
+  myy0 = 1.1*(-.375*LAL_PI) / (pow(LAL_PI*f0*(m1Max+m2Min),0.6666667)*(m1Max*m2Min/pow(m1Max+m2Min,2)));
   z0 = 0;
   x1 = 1.1*(3.0/128) / (pow(LAL_PI*f0*(m1Min+m2Min),1.666667)*(m1Min*m2Min/pow(m1Min+m2Min,2)));
-  y1 = .9*(-.375*LAL_PI) / (pow(LAL_PI*f0*(m1Min+m2Max),0.6666667)*(m1Min*m2Max/pow(m1Min+m2Max,2)));
+  myy1 = .9*(-.375*LAL_PI) / (pow(LAL_PI*f0*(m1Min+m2Max),0.6666667)*(m1Min*m2Max/pow(m1Min+m2Max,2)));
   z1 = 3.8* LAL_PI/29.961432 * (1+0.75*m2Max/m1Min) * (m1Max/m2Min) * pow(LAL_MTSUN_SI*100.0/(m1Min+m2Min), 0.6666667);
 
   /* Set boundaries of box in primed coordinates. */
   xp0 = x0 + sin(theta)*sin(theta) * (x1 - x0);
-  yp0 = y0 - cos(theta)*sin(theta) * (x1 - x0);
-  yp1 = sin(theta) * (x1 - x0) + cos(theta) * (y1 - y0);
-  xp1 = sin(theta) * (y1 - y0) + cos(theta) * (x1 - x0);
+  yp0 = myy0 - cos(theta)*sin(theta) * (x1 - x0);
+  yp1 = sin(theta) * (x1 - x0) + cos(theta) * (myy1 - myy0);
+  xp1 = sin(theta) * (myy1 - myy0) + cos(theta) * (x1 - x0);
   zp0 = z0;
   zp1 = z1;
     

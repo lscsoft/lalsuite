@@ -69,6 +69,8 @@ void LALInspiralSetParams(LALStatus            *status,
       case Tau0Tau3:
          tempPars->massChoice = t03;
          break;
+      default: /* JC: DEFAULT CASE ADDED HERE */
+         ABORT( status, 9999, "Default case in switch." );
    }
 
    tempPars->ieta = 1;

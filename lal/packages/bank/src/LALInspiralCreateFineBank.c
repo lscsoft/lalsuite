@@ -142,6 +142,8 @@ void LALInspiralCreateFineBank(LALStatus            *status,
       bankPars->x0 = fineIn.templateList.params.t0;
       bankPars->x1 = fineIn.templateList.params.t3;
       break;
+    default: /* JC: DEFAULT CASE ADDED HERE */ 
+      ABORT( status, 9999, "Default case in switch." );
   }
 
   LALInspiralUpdateParams(status->statusPtr,bankPars,fineIn.templateList.metric,fineIn.coarseIn.mmCoarse); 
