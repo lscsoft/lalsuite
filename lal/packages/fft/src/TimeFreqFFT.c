@@ -152,6 +152,7 @@
 #include <lal/AVFactories.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/LALConstants.h>
+#include <lal/RngMedBias.h>
 
 NRCSID( TIMEFREQFFTC, "$Id$" );
 
@@ -465,7 +466,7 @@ LALREAL4AverageSpectrum (
   REAL4                *psdSeg;           /* storage for individual specta   */
   LALUnit               unit;
   LALUnitPair           pair;
-  RAT4                  negRootTwo = { -1, 1 };
+  /* RAT4                  negRootTwo = { -1, 1 }; */
 
   INITSTATUS (status, "LALREAL4AverageSpectrum", TIMEFREQFFTC);
   ATTATCHSTATUSPTR (status);
@@ -628,9 +629,19 @@ LALREAL4AverageSpectrum (
   }
   else if ( params->method == useMedian )
   {
+    REAL8 bias;
+
+    /* determine the running median bias */
+    /* note: this is not the correct bias if the segments are overlapped */
+    if ( params->overlap )
+    {
+      LALWarning( status, "Overlapping segments with median method causes a biased spectrum." );
+    }
+    TRY( LALRngMedBias( status->statusPtr, &bias, numSeg ), status );
+
     /* normalization constant for the median */
     psdNorm = ( 2.0 * tSeries->deltaT ) / 
-      ( LAL_LN2 * params->window->sumofsquares );
+      ( bias * params->window->sumofsquares );
 
     /* allocate memory array for insert sort */
     s = LALMalloc( numSeg * sizeof(REAL4) );
@@ -679,7 +690,7 @@ LALCOMPLEX8AverageSpectrum (
   REAL4                 fftRe0, fftIm0, fftRe1, fftIm1;
   LALUnit               unit;
   LALUnitPair           pair;
-  RAT4                  negRootTwo = { -1, 1 };
+  /* RAT4                  negRootTwo = { -1, 1 }; */
 
   INITSTATUS (status, "LALCOMPLEX8AverageSpectrum", TIMEFREQFFTC);
   ATTATCHSTATUSPTR (status);
