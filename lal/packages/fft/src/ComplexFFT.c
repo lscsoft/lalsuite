@@ -110,6 +110,9 @@
 #else
 #error "don't have either sfftw.h or fftw.h"
 #endif
+#ifndef FFTW_ENABLE_FLOAT
+#error "included fftw.h is not for single-precision"
+#endif
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -143,6 +146,8 @@ LALCreateForwardComplexFFTPlan(
   INITSTATUS( status, "LALCreateForwardComplexFFTPlan", COMPLEXFFTC );
   FFTWHOOKS;
 
+  ASSERT( fftw_sizeof_fftw_real() == 4, status,
+      COMPLEXFFTH_ESNGL, COMPLEXFFTH_MSGESNGL );
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( ! *plan, status, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
   ASSERT( size > 0, status, COMPLEXFFTH_ESIZE, COMPLEXFFTH_MSGESIZE );
@@ -185,6 +190,8 @@ LALCreateReverseComplexFFTPlan(
   INITSTATUS( status, "LALCreateReverseComplexFFTPlan", COMPLEXFFTC );
   FFTWHOOKS;
 
+  ASSERT( fftw_sizeof_fftw_real() == 4, status,
+      COMPLEXFFTH_ESNGL, COMPLEXFFTH_MSGESNGL );
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( ! *plan, status, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
   ASSERT( size > 0, status, COMPLEXFFTH_ESIZE, COMPLEXFFTH_MSGESIZE );

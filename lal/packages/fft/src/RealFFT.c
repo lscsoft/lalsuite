@@ -135,6 +135,9 @@
 #else
 #error "don't have either srfftw.h or rfftw.h"
 #endif
+#ifndef FFTW_ENABLE_FLOAT
+#error "included fftw.h is not for single-precision"
+#endif
 
 #include <lal/LALStdlib.h>
 #include <lal/SeqFactories.h>
@@ -170,6 +173,8 @@ LALCreateForwardRealFFTPlan(
   INITSTATUS( status, "LALCreateForwardRealFFTPlan", REALFFTC );
   FFTWHOOKS;
 
+  ASSERT( fftw_sizeof_fftw_real() == 4, status,
+      REALFFTH_ESNGL, REALFFTH_MSGESNGL );  
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
   ASSERT( size > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
@@ -212,6 +217,8 @@ LALCreateReverseRealFFTPlan(
   INITSTATUS( status, "LALCreateReverseRealFFTPlan", REALFFTC );
   FFTWHOOKS;
 
+  ASSERT( fftw_sizeof_fftw_real() == 4, status,
+      REALFFTH_ESNGL, REALFFTH_MSGESNGL );  
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
   ASSERT( size > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );

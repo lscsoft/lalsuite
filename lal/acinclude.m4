@@ -168,7 +168,7 @@ AC_TRY_RUN([
 #else
 #error "don't have either sfftw.h or fftw.h"
 #endif
-int main() { return sizeof(fftw_real) - 4; } ],
+int main() { return (sizeof(fftw_real)!=4 || fftw_sizeof_fftw_real()!=4); } ],
 AC_MSG_RESULT(yes),
 AC_MSG_RESULT(no)
 echo "**************************************************************"

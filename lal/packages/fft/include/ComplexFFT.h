@@ -44,6 +44,7 @@ NRCSID( COMPLEXFFTH, "$Id$" );
 #define COMPLEXFFTH_ESAME 32
 #define COMPLEXFFTH_EALOC 64
 #define COMPLEXFFTH_EFFTW 128
+#define COMPLEXFFTH_ESNGL 256
 
 #define COMPLEXFFTH_MSGENULL "Null pointer"
 #define COMPLEXFFTH_MSGENNUL "Non-null pointer"
@@ -53,6 +54,7 @@ NRCSID( COMPLEXFFTH, "$Id$" );
 #define COMPLEXFFTH_MSGESAME "Input/Output data vectors are the same"
 #define COMPLEXFFTH_MSGEFFTW "Error in FFTW"
 #define COMPLEXFFTH_MSGEALOC "Memory allocation failed"
+#define COMPLEXFFTH_MSGESNGL "FFTW library is not single-precision"
 
 /**** </lalErrTable> */
 /**** <lalLaTeX>
