@@ -414,7 +414,6 @@ int main(int argc, char **argv)
 	static LALStatus stat;
 
 	INT4 sort = FALSE;
-	size_t len = 0;
 	INT4 ndetected;
 	INT4 ninjected;
 	INT4 timeAnalyzed;
@@ -501,23 +500,17 @@ int main(int argc, char **argv)
 
 		case 'a':
 			/* create storage for the input file name */
-			len = strlen(optarg) + 1;
-			inputFile = (CHAR *) calloc(len, sizeof(CHAR));
-			memcpy(inputFile, optarg, len);
+			inputFile = optarg;
 			break;
 
 		case 'b':
 			/* create storage for the injection file name */
-			len = strlen(optarg) + 1;
-			injectionFile = (CHAR *) calloc(len, sizeof(CHAR));
-			memcpy(injectionFile, optarg, len);
+			injectionFile = optarg;
 			break;
 
 		case 'c':
 			/* create storage for the output file name */
-			len = strlen(optarg) + 1;
-			injmadeFile = (CHAR *) calloc(len, sizeof(CHAR));
-			memcpy(injmadeFile, optarg, len);
+			injmadeFile = optarg;
 			break;
 
 		case 'd':
@@ -550,9 +543,7 @@ int main(int argc, char **argv)
 
 		case 'j':
 			/* create storage for the output file name */
-			len = strlen(optarg) + 1;
-			injFoundFile = (CHAR *) calloc(len, sizeof(CHAR));
-			memcpy(injFoundFile, optarg, len);
+			injFoundFile = optarg;
 			break;
 
 		case 'o':
@@ -568,9 +559,7 @@ int main(int argc, char **argv)
 
 		case 'q':
 			/* create storage for the output file name */
-			len = strlen(optarg) + 1;
-			outSnglFile = (CHAR *) calloc(len, sizeof(CHAR));
-			memcpy(outSnglFile, optarg, len);
+			outSnglFile = optarg;
 			break;
 
 		default:
