@@ -57,11 +57,13 @@ NRCSID (SPFINDCHIRPCHISQH, "$Id$");
 #define FINDCHIRPCHISQH_ENUMZ 3
 #define FINDCHIRPCHISQH_ECHIZ 4
 #define FINDCHIRPCHISQH_EALOC 5
+#define FINDCHIRPCHISQH_EMTCH 6
 #define FINDCHIRPCHISQH_MSGENULL "Null pointer"
 #define FINDCHIRPCHISQH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPCHISQH_MSGENUMZ "Number of points is zero or negative"
 #define FINDCHIRPCHISQH_MSGECHIZ "Number of chisq bins is zero or negative"
 #define FINDCHIRPCHISQH_MSGEALOC "Memory allocation error"
+#define FINDCHIRPCHISQH_MSGEMTCH "Invalid template bank match"
 /* </lalErrTable> */
 
 #if 0
@@ -107,7 +109,8 @@ domain quantity $q_j$ as defined in \texttt{FindChirpFilter()}.
 typedef struct
 tagFindChirpChisqParams
 {
-  REAL4                         chisqNorm;
+  REAL4                         norm;
+  REAL4                         bankMatch;
   UINT4Vector                  *chisqBinVec;
   ComplexFFTPlan               *plan;
   COMPLEX8Vector               *qtildeBinVec;
@@ -128,7 +131,9 @@ function \texttt{FindChirpChisqVeto()}.  It is created and destroyed by the
 functions. The fields are:
 
 \begin{description}
-\item[\texttt{REAL4 chisqNorm}] The normalization...
+\item[\texttt{REAL4 norm}] The normalization...
+
+\item[\texttt{REAL4 bankMatch}] Template bank match...
 
 \item[\texttt{UINT4Vector *chisqBinVec}] A vector containing the...
 

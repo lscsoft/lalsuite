@@ -278,6 +278,9 @@ LALFindChirpChisqVeto (
   UINT4                 numChisqPts;
   UINT4                 numChisqBins;
   UINT4                *chisqBin;
+  REAL4                 chisqNorm;
+  REAL4                 rhosq;
+  REAL4                 mismatch;
 
   COMPLEX8             *qtildeBin;
 
@@ -331,6 +334,10 @@ LALFindChirpChisqVeto (
   ASSERT( params->qtildeBinVec->length > 0, status, 
       FINDCHIRPCHISQH_ECHIZ, FINDCHIRPCHISQH_MSGECHIZ );
 
+  /* check that the bank match has been set */
+  ASSERT( params->bankMatch > 0 && params->bankMatch <= 1, status, 
+      FINDCHIRPCHISQH_EMTCH, FINDCHIRPCHISQH_MSGEMTCH );
+
 
   /*
    *
@@ -348,6 +355,8 @@ LALFindChirpChisqVeto (
   numChisqPts  = params->chisqBinVec->length;
   numChisqBins = numChisqPts - 1;
   chisqBin     = params->chisqBinVec->data;
+  chisqNorm    = sqrt( params->norm );
+  mismatch     = 1.0 - params->bankMatch;
 
   qtildeBin = params->qtildeBinVec->data;
 
@@ -387,15 +396,21 @@ LALFindChirpChisqVeto (
     {
       REAL4 Xl = params->qBinVecPtr[l]->data[j].re;
       REAL4 Yl = params->qBinVecPtr[l]->data[j].im;
-      REAL4 deltaXl = params->chisqNorm * Xl -
-        (params->chisqNorm * q[j].re / (REAL4) (numChisqBins));
-      REAL4 deltaYl = params->chisqNorm * Yl -
-        (params->chisqNorm * q[j].im / (REAL4) (numChisqBins));
+      REAL4 deltaXl = chisqNorm * Xl -
+        (chisqNorm * q[j].re / (REAL4) (numChisqBins));
+      REAL4 deltaYl = chisqNorm * Yl -
+        (chisqNorm * q[j].im / (REAL4) (numChisqBins));
 
       chisq[j] += deltaXl * deltaXl + deltaYl * deltaYl;
     }
   }
 
+  /* now modify the value to compute the new veto */
+  for ( j = 0; j < numPoints; ++j ) 
+  {
+    rhosq = params->norm * (q[j].re * q[j].re + q[j].im * q[j].im);
+    chisq[j] /= 1.0 + rhosq * mismatch / (REAL4) numChisqBins;
+  }
 
   /* normal exit */
   DETATCHSTATUSPTR( status );

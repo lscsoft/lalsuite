@@ -710,7 +710,9 @@ LALFindChirpFilterSegment (
 
         /* pointer to the chisq bin vector in the segment */
         params->chisqParams->chisqBinVec = input->segment->chisqBinVec;
-        params->chisqParams->chisqNorm   = sqrt( norm );
+        params->chisqParams->norm        = norm;
+        /* XXX this should be passed in from the bank XXX */;
+        params->chisqParams->bankMatch   = 0.97;
 
         /* compute the chisq threshold: this is slow! */
         LALFindChirpChisqVeto( status->statusPtr, params->chisqVec, 

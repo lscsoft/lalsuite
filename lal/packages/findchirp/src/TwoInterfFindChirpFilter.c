@@ -1,5 +1,5 @@
 /*************************** <lalVerbatim file="TwoInterfFindChirpFilterCV">
-Author: Sukanta Bose
+Author: Bose, Sukanta, and Brown, D. A.
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -1339,8 +1339,7 @@ LALTwoInterfFindChirpFilterSegment (
 		  /* pointer to the chisq bin vector in segment of detector1 */
 		  params->filterParams1->chisqParams->chisqBinVec 
 		    = input->segment1->chisqBinVec;
-		  params->filterParams1->chisqParams->chisqNorm   
-		    = sqrt( norm1 );
+		  params->filterParams1->chisqParams->norm = norm1;
 		  
 		  /* compute the chisq threshold for detector 1 */
 		  LALFindChirpChisqVeto( status->statusPtr, 
@@ -1364,8 +1363,7 @@ LALTwoInterfFindChirpFilterSegment (
 		  /* pointer to the chisq bin vector in segment of detector2 */
 		  params->filterParams2->chisqParams->chisqBinVec 
 		    = input->segment2->chisqBinVec;
-		  params->filterParams2->chisqParams->chisqNorm   
-		    = sqrt( norm2 );
+		  params->filterParams2->chisqParams->norm = norm2;
 		  
 		  /* compute the chisq threshold for detector 2 */
 		  LALFindChirpChisqVeto( status->statusPtr, 
