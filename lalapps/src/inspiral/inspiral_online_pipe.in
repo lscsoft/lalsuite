@@ -154,8 +154,8 @@ run = cp.get('pipeline','run')
 cluster_cp_script = open('cluster_cp_ln.sh','w')
 cluster_cp_script.write("""#!/bin/bash
 cp -f ${1} /cluster/inspiral/%s/%s/${1}
-ln -sf /cluster/inspiral/%s/%s/${1} /cluster/inspiral/dmt/%s/${1}""" % 
-  (run,ifo,run,ifo,ifo) )
+ln -sf /cluster/inspiral/%s/%s/${1} /cluster/inspiral/dmt/%s/${1}
+""" % (run,ifo,run,ifo,ifo) )
 cluster_cp_script.close()
 os.chmod('cluster_cp_ln.sh',0755)
 
