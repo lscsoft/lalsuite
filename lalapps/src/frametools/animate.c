@@ -36,6 +36,15 @@
 
 INT4 lalDebugLevel = LALMSGLVL3;
 
+#include <config.h>
+#ifndef HAVE_LIBLALFRAME
+int main( void )
+{
+  fputs( "Disabled: LALApps compiled with non-frame-enabled LAL\n", stderr );
+  return 77;
+}
+#else
+
 /* This routine is pipes output into the xmgr graphing program */
 void graphout(float x1,float x2,int thistime, int last) {
    static int count=0;
@@ -263,3 +272,5 @@ int main( int argc, char *argv[] )
     LALCheckMemoryLeaks();
     return 0;
 }
+
+#endif

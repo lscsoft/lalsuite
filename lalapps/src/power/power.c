@@ -11,6 +11,15 @@
 
 INT4 lalDebugLevel = LALMSGLVL3;
 
+#include <config.h>
+#ifndef HAVE_LIBLALFRAME
+int main( void )
+{
+  fputs( "Disabled: LALApps compiled with non-frame-enabled LAL\n", stderr );
+  return 77;
+}
+#else
+
 #define POWERC_NARGS  17
 
 #define POWERC_ENORM  0
@@ -438,3 +447,5 @@ int main( int argc, char *argv[])
 
     return 0;
 }
+
+#endif
