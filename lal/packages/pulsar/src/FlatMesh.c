@@ -285,12 +285,12 @@ Transform( REAL4 *vectorOut, REAL4 *vectorIn, REAL4 *matrix,
 	   UINT4 dim )
 {
   INT4 i = dim;
+  memset( vectorOut, 0, dim*sizeof(REAL4) );
   matrix += dim*dim;
   while ( i-- ) {
     INT4 j = dim;
-    vectorOut[i] = 0;
     while ( j-- )
-      vectorOut[i] += *(--matrix)*vectorIn[j];
+      vectorOut[j] += *(--matrix)*vectorIn[i];
   }
   return;
 }
