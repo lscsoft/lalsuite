@@ -110,6 +110,8 @@ LALFindChirpBCVSpinTemplate (
   REAL4                 A1A2 		 = 0.0;
   REAL4                 A1A3 		 = 0.0;
   REAL4                 A2A3 		 = 0.0;
+  REAL4                 mTotal           = 0.0;
+  REAL4                 rLSOto3by2       = 0.0;
   int		        doTest;
   
   FILE                 *fpTmpltIm  	 = NULL;
@@ -213,6 +215,19 @@ LALFindChirpBCVSpinTemplate (
   kmax = fFinal / deltaF < numPoints/2 ? fFinal / deltaF : numPoints/2;
   beta = tmplt->beta; 
 
+  /* Preliminary BCVSpin bank does not populate fFinal */
+  /* will estimate fFinal form psi0, psi3 as quick fix */
+  
+  if (fFinal == 0.0)
+  {	  
+  	fprintf (stdout, "BCVSpin bank has not populated fFinal so we shall"); 
+        fprintf (stdout, "estimate its values using psi0 and psi3 \n" );
+        
+        rLSOto3by2 = 14.69693846; /* 6 to 3by2) */	 
+
+	fFinal = (-psi00 * 16 * LAL_PI) / (psi15 * rLSOto3by2);
+  }
+  
   if (doTest ==1)
   {	  
   	fprintf (stdout, "psi0      = %e \n", psi00);
