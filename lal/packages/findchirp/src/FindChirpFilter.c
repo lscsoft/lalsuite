@@ -476,16 +476,17 @@ LALFindChirpFilterSegment (
   UINT4                 deltaEventIndex;
   UINT4                 ignoreIndex;
   UINT4                 eventId = 0;
-  INT8                  chirpTimeNS;
   REAL4                 deltaT;
   REAL4                 norm;
   REAL4                 modqsqThresh;
-  BOOLEAN               haveChisq   = 0;
-  COMPLEX8             *qtilde      = NULL;
-  COMPLEX8             *q           = NULL;
-  COMPLEX8             *inputData   = NULL;
-  COMPLEX8             *tmpltSignal = NULL;
-  InspiralEvent        *thisEvent   = NULL;
+  UINT4                 eventStartIdx = 0;
+  REAL4                 chirpTime     = 0;
+  BOOLEAN               haveChisq     = 0;
+  COMPLEX8             *qtilde        = NULL;
+  COMPLEX8             *q             = NULL;
+  COMPLEX8             *inputData     = NULL;
+  COMPLEX8             *tmpltSignal   = NULL;
+  InspiralEvent        *thisEvent     = NULL;
 
   INITSTATUS( status, "LALFindChirpFilter", FINDCHIRPFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -594,10 +595,9 @@ LALFindChirpFilterSegment (
     REAL4 x3 = x*x2;
     REAL4 x4 = x2*x2;
     REAL4 x8 = x4*x4;
-    REAL4 chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8;
+    chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8;
 
     deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
-    chirpTimeNS = (INT8) (1e9 * chirpTime);
 
     /* ignore corrupted data at start and end */
     ignoreIndex = ( input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
@@ -741,6 +741,9 @@ LALFindChirpFilterSegment (
       {
         if ( ! *eventList )
         {
+          /* store the start of the crossing */
+          eventStartIdx = j;
+
           /* if this is the first event, start the list */
           thisEvent = *eventList = (InspiralEvent *) 
             LALCalloc( 1, sizeof(InspiralEvent) );
@@ -781,9 +784,7 @@ LALFindChirpFilterSegment (
           thisEvent->time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
 
           /* set the impuse time for the event */
-          timeNS -= chirpTimeNS;
-          thisEvent->impulseTime.gpsSeconds = (INT4) (timeNS/1000000000L);
-          thisEvent->impulseTime.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
+          thisEvent->templateDuration = (REAL8) chirpTime;
           
           /* record the ifo and channel name for the event */
           strncpy( thisEvent->ifoName, input->segment->data->name, 
@@ -815,7 +816,15 @@ LALFindChirpFilterSegment (
           thisEvent->effDist = sqrt( thisEvent->effDist );
 
           thisEvent->snrsq  *= norm;
+
+          /* compute the time since the snr crossing */
+          thisEvent->eventDuration = (REAL8) thisEvent->timeIndex
+            - (REAL8) eventStartIdx;
+          thisEvent->eventDuration /= (REAL8) deltaT;
           
+          /* store the start of the crossing */
+          eventStartIdx = j;
+
           /* allocate memory for the newEvent */
           lastEvent = thisEvent;
 
@@ -856,9 +865,7 @@ LALFindChirpFilterSegment (
     thisEvent->time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
 
     /* set the impuse time for the event */
-    timeNS -= chirpTimeNS;
-    thisEvent->impulseTime.gpsSeconds = (INT4) (timeNS/1000000000L);
-    thisEvent->impulseTime.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
+    thisEvent->templateDuration = (REAL8) chirpTime;
 
     /* record the ifo name for the event */
     strncpy( thisEvent->ifoName, input->segment->data->name, 
@@ -885,8 +892,13 @@ LALFindChirpFilterSegment (
     thisEvent->effDist = 
       (input->fcTmplt->tmpltNorm * input->segment->segNorm * 
        input->segment->segNorm) / thisEvent->snrsq;
-      thisEvent->effDist = sqrt( thisEvent->effDist );
+    thisEvent->effDist = sqrt( thisEvent->effDist );
     thisEvent->snrsq  *= norm;
+
+    /* compute the time since the snr crossing */
+    thisEvent->eventDuration = (REAL8) thisEvent->timeIndex
+      - (REAL8) eventStartIdx;
+    thisEvent->eventDuration /= (REAL8) deltaT;
   }    
 
 
