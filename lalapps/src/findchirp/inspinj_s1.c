@@ -334,7 +334,7 @@ int main( int argc, char *argv[] )
   double nyL[3] = { +0.2977, -0.4879, -0.8205 };
   const long gpsStartTime   = 714150013;  /* Aug 23, 2002  08:00:00 PDT */
   const long gpsStopTime    = 715618813;  /* Sep 09, 2002  08:00:00 PDT */
-  const double meanTimeStep = 1e2 / M_PI; /* seconds between injections     */
+  const double meanTimeStep = 526 / M_PI; /* seconds between injections     */
 
   long long tinj              = 1000000000LL * gpsStartTime;
   struct time_list  tlisthead = { tinj, NULL };
