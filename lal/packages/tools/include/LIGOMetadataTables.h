@@ -601,6 +601,8 @@ tagStochasticTable
   CHAR          channel_two[LIGOMETA_CHANNEL_MAX];
   LIGOTimeGPS   start_time;
   LIGOTimeGPS   duration;
+  REAL8         f_min;
+  REAL8         f_max;
   REAL8         cc_stat;
   REAL8         cc_sigma;
 }

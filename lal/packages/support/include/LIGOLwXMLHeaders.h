@@ -441,12 +441,14 @@ extern "C" {
 "      <Column Name=\"stochasticgroup:stochastic:start_time_ns\" Type=\"int_4s\"/>\n" \
 "      <Column Name=\"stochasticgroup:stochastic:duration\" Type=\"int_4s\"/>\n" \
 "      <Column Name=\"stochasticgroup:stochastic:duration_ns\" Type=\"int_4s\"/>\n" \
+"      <Column Name=\"stochasticgroup:stochastic:f_min\" Type=\"real_8\"/>\n" \
+"      <Column Name=\"stochasticgroup:stochastic:f_max\" Type=\"real_8\"/>\n" \
 "      <Column Name=\"stochasticgroup:stochastic:cc_stat\" Type=\"real_8\"/>\n" \
 "      <Column Name=\"stochasticgroup:stochastic:cc_sigma\" Type=\"real_8\"/>\n" \
 "      <Stream Name=\"stochasticgroup:stochastic:table\" Type=\"Local\" Delimiter=\",\">\n"
 
 #define STOCHASTIC_ROW \
-"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%22.16e,%22.16e"
+"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.2f,%.2f,%22.16e,%22.16e"
 
 #define LIGOLW_XML_EXT_TRIGGERS \
 " <Table Name=\"external_trigger:table\">\n" \

@@ -575,23 +575,25 @@ LALWriteLIGOLwXMLTable (
       }
       break;
 		case stochastic_table:
-			while( tablePtr.stochasticTable )
-			{
-				FIRST_TABLE_ROW
-				fprintf( xml->fp, STOCHASTIC_ROW,
-						tablePtr.stochasticTable->ifo_one,
-						tablePtr.stochasticTable->ifo_two,
-						tablePtr.stochasticTable->channel_one,
-						tablePtr.stochasticTable->channel_two,
-						tablePtr.stochasticTable->start_time.gpsSeconds,
-						tablePtr.stochasticTable->start_time.gpsNanoSeconds,
-						tablePtr.stochasticTable->duration.gpsSeconds,
-						tablePtr.stochasticTable->duration.gpsNanoSeconds,
-						tablePtr.stochasticTable->cc_stat,
-						tablePtr.stochasticTable->cc_sigma
-						);
-				tablePtr.stochasticTable = tablePtr.stochasticTable->next;
-			}  
+      while( tablePtr.stochasticTable )
+      {
+        FIRST_TABLE_ROW
+        fprintf( xml->fp, STOCHASTIC_ROW,
+            tablePtr.stochasticTable->ifo_one,
+            tablePtr.stochasticTable->ifo_two,
+            tablePtr.stochasticTable->channel_one,
+            tablePtr.stochasticTable->channel_two,
+            tablePtr.stochasticTable->start_time.gpsSeconds,
+            tablePtr.stochasticTable->start_time.gpsNanoSeconds,
+            tablePtr.stochasticTable->duration.gpsSeconds,
+            tablePtr.stochasticTable->duration.gpsNanoSeconds,
+            tablePtr.stochasticTable->f_min,
+            tablePtr.stochasticTable->f_max,
+            tablePtr.stochasticTable->cc_stat,
+            tablePtr.stochasticTable->cc_sigma
+            );
+        tablePtr.stochasticTable = tablePtr.stochasticTable->next;
+      }  
   case ext_triggers_table:
     while( tablePtr.extTriggerTable )
       {

@@ -1787,17 +1787,19 @@ LALStochasticTableFromLIGOLw (
   const MetaioParseEnv env = &parseEnv;
   MetaTableDirectory tableDir[] =
   {
-    {"ifo_one",       -1, 0},
-    {"ifo_two",       -1, 1},
-    {"channel_one",   -1, 2},
-    {"channel_two",   -1, 3},
-    {"start_time",    -1, 4},
-    {"start_time_ns", -1, 5},
-    {"duration",      -1, 6},
-    {"duration_ns",   -1, 7},
-    {"cc_stat",       -1, 8},
-    {"cc_sigma",      -1, 9},
-    {NULL,             0, 0}
+    {"ifo_one",       -1,  0},
+    {"ifo_two",       -1,  1},
+    {"channel_one",   -1,  2},
+    {"channel_two",   -1,  3},
+    {"start_time",    -1,  4},
+    {"start_time_ns", -1,  5},
+    {"duration",      -1,  6},
+    {"duration_ns",   -1,  7},
+    {"f_min",         -1,  8},
+    {"f_max",         -1,  9},
+    {"cc_stat",       -1, 10},
+    {"cc_sigma",      -1, 11},
+    {NULL,             0,  0}
   };
 
   /* check that the table handle and pointer are valid */
@@ -1901,9 +1903,17 @@ LALStochasticTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 8 )
       {
-        thisValue->cc_stat = r8colData;
+        thisValue->f_min = r8colData;
       }
       else if ( tableDir[j].idx == 9 )
+      {
+        thisValue->f_max = r8colData;
+      }
+      else if ( tableDir[j].idx == 10 )
+      {
+        thisValue->cc_stat = r8colData;
+      }
+      else if ( tableDir[j].idx == 11 )
       {
         thisValue->cc_sigma = r8colData;
       }
