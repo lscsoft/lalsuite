@@ -50,9 +50,13 @@ int main( void )
     --olapfctr olapfactor --minfbin nfbin --mintbin ntbin --flow flow \
     --delf df --lngth bandwidth --nsigma sigma --alphdef alpha \
     --segdcle nsegs --threshold threshold --etomstr nevents \
-    --framedir framedir --channel channel --simtype simtype --srate srate\
-    --spectype spectype --window window --epoch sec nsec --numpts npts \
-    [--comment comment] [--framecache filename] [--printSpectrum] \
+    --framecache filename --channel channel --simtype simtype --srate srate\
+    --spectype spectype --window window --start_time start-sec \
+    --start_time_ns start-nsec --stop_time stop-sec --stop_time_ns stop-nsec \
+    [--injfile injection file] [--calcache calibration file] \
+    [--mdccache mdccache filename] [--mdcchannel mdcchannel] \
+    [--geodata high pass corner freq] \
+    [--comment comment] [--framedir dirname] [--printSpectrum] \
     [--verbose] [--dbglevel lalDebugLevel] [--help]\n"
 
 /* Fill an array with white noise */
