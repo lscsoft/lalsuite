@@ -1,6 +1,11 @@
 NOTE:  You must install the package FFTW (Fastest Fourier Transform in the
 West) before installing this package.
 
+If you are installing LAL and LALWrapper for use with LDAS, please read the
+LALWrapper Software Documentation for instructions on installing these packages.
+This documentation is available from the LAL homepage:
+http://www.lsc-group.phys.uwm.edu/lal
+
 Contents:
   0. Installing FFTW, FrameL, and MPI.
   1. Installing LAL.
