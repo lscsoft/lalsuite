@@ -185,6 +185,7 @@ class StringNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
       str(self.get_end() - self.get_start()) + '.xml'
 
 
+
 class BurcaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   A BurcaNode runs an instance of the burca code in a Condor DAG.

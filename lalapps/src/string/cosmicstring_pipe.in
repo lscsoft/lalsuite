@@ -280,10 +280,10 @@ for seg in data:
 
     #coincidence stage
     burca = cosmicstring.BurcaNode(burca_job)
-    burca.set_ifoa(string1.get_output())
-    burca.set_ifob(string2.get_output()) 
     burca.set_start(chunk.start())
     burca.set_end(chunk.end())
+    burca.set_ifoa(string1.get_output())
+    burca.set_ifob(string2.get_output()) 
     burca.add_var_opt('outfile',burca.get_output())
     if do_datafind: 
       burca.add_parent(df1)
