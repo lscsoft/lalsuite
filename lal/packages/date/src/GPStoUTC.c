@@ -41,10 +41,10 @@ introduced.  The latest leap second included is 1999-Jan-01.
 
 \subsubsection*{Notes}
 
-\textbf{Known deficiencies:} \texttt{LALUTCtoGPS()} is not well-tested for
-dates before 1980-Jan-06, although it will produce output (negative values
-of \texttt{gpsSeconds},\texttt{gpsNanoSeconds} field set to negative as
-well).
+These routines will not convert time before 1980-01-06 00:00:00 UTC (GPS 0).
+The latest leap second that can be accounted for is the one added at the end
+1999-Dec.  These routines have accurate leap second information until 
+2002-Mar-31. 
 
 \textbf{Example:} To convert a GPS time to UTC, and then back to GPS:
 
