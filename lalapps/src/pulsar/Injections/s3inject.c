@@ -93,6 +93,8 @@ void sighandler(int sig){
   
   syserror(0, "made %d days %d hours %d minutes %d seconds of data\n",
 	   days, hours % 24, minutes % 60, secs);
+
+  syserror (0, "Received signal %d\n", sig);
   
   if (sig==SIGTERM) {
     syserror(0, "received SIGTERM, initiating graceful shutdown...\n");
