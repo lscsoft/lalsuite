@@ -176,6 +176,7 @@ case "${host_os}" in
 esac
 
 dnl Checks for libraries.
+lal_save_LIBS="$LIBS"
 AC_CHECK_LIB(m, sin)
 AC_SEARCH_LIBS(fftw_one, sfftw fftw, , LAL_FFTW_MSG_ERROR, -lm)
 AC_SEARCH_LIBS(rfftw_one, srfftw rfftw, , LAL_FFTW_MSG_ERROR, -lm)
@@ -204,6 +205,10 @@ fi
 if test "${lal_pthread_lock}" = "true"; then
   AC_CHECK_HEADERS(pthread.h, break)
 fi
+
+LALLIBADD="$LIBS"
+LIBS="$lal_save_LIBS"
+AC_SUBST(LALLIBADD)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
