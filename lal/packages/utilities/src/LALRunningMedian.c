@@ -25,8 +25,7 @@ REAL8Sequence. The routine \verb+LALSRunningMedian()+ does the same for a REAL4S
 \verb+input+ ist a REAL4/REAL8Sequence containing the input array, \verb+blocksize+
 is the length of the block the medians are calculated of.
 With n being the lenght of the input array and b being the blocksize,
-the medians array must be a REAL4/REAL8 sequence of length 
-(n-b+1).
+the medians array must be a REAL4/REAL8 sequence of length (n-b+1).
 
 \subsubsection*{Algorithm}
 
@@ -551,7 +550,7 @@ void LALSRunningMedian( LALStatus *status,
 {
   REAL4 *sorted_indices;
 
-  struct rngmed_val_index8 *index_block;
+  struct rngmed_val_index4 *index_block;
 
   /*----------------------------------
     Two types of pointers:
@@ -607,7 +606,7 @@ void LALSRunningMedian( LALStatus *status,
   /*-----------------------------------
     Sort the first block of param.blocksize samples
     ------------------------------------*/
-  index_block =(struct rngmed_val_index8 *)LALCalloc(param.blocksize, sizeof(struct rngmed_val_index8));
+  index_block =(struct rngmed_val_index4 *)LALCalloc(param.blocksize, sizeof(struct rngmed_val_index4));
 
   if(!index_block) {
     ABORT(status,LALRUNNINGMEDIANH_EMALOC1,LALRUNNINGMEDIANH_MSGEMALOC1);
@@ -617,7 +616,7 @@ void LALSRunningMedian( LALStatus *status,
     index_block[k].index=k;
   }
 
-  qsort(index_block, param.blocksize, sizeof(struct rngmed_val_index8),rngmed_sortindex8);
+  qsort(index_block, param.blocksize, sizeof(struct rngmed_val_index4),rngmed_sortindex4);
 
   sorted_indices=(REAL4 *)LALCalloc(param.blocksize,sizeof(REAL4));
 
