@@ -110,7 +110,6 @@ tagEPDataSegment
   COMPLEX8FrequencySeries      *resp;
   INT4                          endOfData;
   INT4                          newLock;
-  INT4                          newCal;
   INT4                          number;
   REAL4IIRFilter               *preprocessing_filter;
 }
