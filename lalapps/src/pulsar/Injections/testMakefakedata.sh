@@ -1,10 +1,29 @@
 #!/bin/bash
-oldcode=./makefakedata_v2_test
-newcode=./lalapps_Makefakedata
+
+#prepare test subdirectory
+if [ ! -d testMakefakedata ]; then
+    mkdir testMakefakedata && cd testMakefakedata;
+else
+## cleanup: remove previous output-SFTs
+    cd testMakefakedata
+    rm SFTtest_v2.00* || 1
+    rm SFTtest_v4.00* || 1
+fi
+  
+oldcode=../makefakedata_test
+newcode=../lalapps_Makefakedata
+
+if [ ! -x $oldcode ]; then
+    echo "Cannot run reference-code $oldcode!"
+    exit -1;
+elif [ ! -x $newcode ]; then
+    echo "Cannot run test-code $newcode!"
+    exit -1;
+fi
 
 # signal parameters
 IFO=LLO
-ephemdir=./ephems
+ephemdir=../ephems
 startTime=731210229
 refTime=$startTime
 Tsft=1800
@@ -20,13 +39,13 @@ alpha=1.7
 delta=0.9
 
 dataTMP=In.data-test
-oldCL="-i $dataTMP  -I $IFO -E $ephemdir -G $startTime -S $refTime -n SFT_v2"
-newCL="--Tsft=$Tsft --nTsft=$nTsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --latitude=$delta  --longitude=$alpha --detector=$IFO --ephemDir=$ephemdir --outSFTbname=SFT_v4 --startTime=$startTime --refTime=$refTime"
+oldCL="-i $dataTMP  -I $IFO -E $ephemdir -G $startTime -S $refTime -n SFTtest_v2"
+newCL="--Tsft=$Tsft --nTsft=$nTsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --latitude=$delta  --longitude=$alpha --detector=$IFO --ephemDir=$ephemdir --outSFTbname=SFTtest_v4 --startTime=$startTime --refTime=$refTime"
 
 ## produce In.data file for makefakedata_v2
 echo "$Tsft	%Tsft_in_sec
 $nTsft	%nTsft
-$fmin %first_SFT_frequency_in_Hz	
+$fmin   %first_SFT_frequency_in_Hz	
 $Band	%SFT_freq_band_in_Hz
 0.0	%sigma_(std_of_noise.When=0_only_signal_present)
 $aPlus	%Aplus
@@ -43,9 +62,14 @@ T8	%name_of_time-stamps_file
 echo "1) Testing isolated pulsar-signal without noise"
 echo "Running 'reference-code' $oldcode":
 $oldcode $oldCL &> /dev/null
-##rm $dataTMP
+
+# remove temporary In.data - file
+#rm $dataTMP
 
 echo "Running new code $newcode:"
 $newcode $newCL
 echo "comparison:"
-./compareSFTs -1 SFT_v2 -2 SFT_v4
+../compareSFTs -1 ./SFTtest_v2 -2 ./SFTtest_v4
+
+
+cd ..
