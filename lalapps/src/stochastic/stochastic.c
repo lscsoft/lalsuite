@@ -390,26 +390,26 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
 
 /* wrapper function to return the spectrum */
 static REAL4FrequencySeries *omega_gw(LALStatus *status,
-    REAL4 alpha,
-    REAL8 fRef,
-    REAL4 omegaRef,
+    REAL4 exponent,
+    REAL8 f_ref,
+    REAL4 omega_ref,
     UINT4 length,
     REAL8 f0,
     REAL8 deltaF,
-    LIGOTimeGPS time)
+    LIGOTimeGPS gps_time)
 {
   /* variables */
   REAL4FrequencySeries *series;
   StochasticOmegaGWParameters params;
 
   /* create and initialise frequency series */
-  LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "OmegaGW", time, f0, \
-        deltaF, lalDimensionlessUnit, length), status);
+  LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "OmegaGW", \
+        gps_time, f0, deltaF, lalDimensionlessUnit, length), status);
 
   /* set parameters */
-  params.alpha = alpha;
-  params.fRef = fRef;
-  params.omegaRef = omegaRef;
+  params.alpha = exponent;
+  params.fRef = f_ref;
+  params.omegaRef = omega_ref;
   params.length = length;
   params.f0 = f0;
   params.deltaF = deltaF;
@@ -425,9 +425,9 @@ static REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
     UINT4 length,
     REAL8 f0,
     REAL8 deltaF,
-    INT4 siteOne,
-    INT4 siteTwo,
-    LIGOTimeGPS time)
+    INT4 site_one,
+    INT4 site_two,
+    LIGOTimeGPS gps_time)
 {
   /* variables */
   REAL4FrequencySeries *series;
@@ -435,8 +435,8 @@ static REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
   LALDetectorPair detectors;
 
   /* create and initialise frequency series */
-  LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "Overlap", time, f0, \
-        deltaF, lalDimensionlessUnit, length), status);
+  LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "Overlap", \
+        gps_time, f0, deltaF, lalDimensionlessUnit, length), status);
 
   /* set parameters */
   params.length = length;
@@ -444,8 +444,8 @@ static REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
   params.deltaF = deltaF;
 
   /* set detectors */
-  detectors.detectorOne = lalCachedDetectors[siteOne];
-  detectors.detectorTwo = lalCachedDetectors[siteTwo];
+  detectors.detectorOne = lalCachedDetectors[site_one];
+  detectors.detectorTwo = lalCachedDetectors[site_two];
 
   /* calculate overlap reduction function */
   LAL_CALL(LALOverlapReductionFunction(status, series, &detectors, &params), \
@@ -457,7 +457,7 @@ static REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
 /* helper function to increment the seconds component of a gps time with
  * an integer */
 static LIGOTimeGPS increment_gps(LALStatus *status,
-    LIGOTimeGPS time,
+    LIGOTimeGPS gps_time,
     INT4 increment)
 {
   /* variables */
@@ -469,7 +469,7 @@ static LIGOTimeGPS increment_gps(LALStatus *status,
   interval.nanoSeconds = 0;
 
   /* increment GPS time */
-  LAL_CALL(LALIncrementGPS(status, &result, &time, &interval), status);
+  LAL_CALL(LALIncrementGPS(status, &result, &gps_time, &interval), status);
 
   return(result);
 }
@@ -504,14 +504,15 @@ static REAL4TimeSeries *cut_time_series(LALStatus *status,
 
 /* function to save out ccSpectra as a frame file */
 static void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
-    CHAR *ifoOne,
-    CHAR *ifoTwo,
-    LIGOTimeGPS time,
+    CHAR *ifo_one,
+    CHAR *ifo_two,
+    LIGOTimeGPS gps_time,
     INT4 duration)
 {
   /* variables */
   CHAR hertz[] = "Hz";
-  CHAR comment[] = "$Id$";
+  CHAR frame_comment[] = "$Id$";
+  CHAR frame_type[] = "CCSPECTRA";
   CHAR source[FILENAME_MAX];
   CHAR fname[FILENAME_MAX];
   CHAR units[LALUnitNameSize];
@@ -521,9 +522,9 @@ static void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
   struct FrProcData *proc;
 
   /* set frame filename */
-  LALSnprintf(source, sizeof(source), "%s%s", ifoOne, ifoTwo);
+  LALSnprintf(source, sizeof(source), "%s%s", ifo_one, ifo_two);
   LALSnprintf(fname, sizeof(fname), "%s-ccSpectra-%d-%d.gwf", source, \
-      time.gpsSeconds, duration);
+      gps_time.gpsSeconds, duration);
 
   /* setup frame file */
   frfile = FrFileONew(fname, 0);
@@ -532,8 +533,8 @@ static void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
   frame = FrameHNew(source);
   frame->run = 0;
   frame->frame = 0;
-  frame->GTimeS = time.gpsSeconds;
-  frame->GTimeN = time.gpsNanoSeconds;
+  frame->GTimeS = gps_time.gpsSeconds;
+  frame->GTimeN = gps_time.gpsNanoSeconds;
   frame->dt = duration;
 
   /* allocate memory for frame */
@@ -554,8 +555,8 @@ static void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
   vect->startX[0] = series->f0;
 
   /* set frame properties */
-  FrStrCpy(&proc->name, "CCSPECTRA");
-  FrStrCpy(&proc->comment, comment);
+  FrStrCpy(&proc->name, frame_type);
+  FrStrCpy(&proc->comment, frame_comment);
   proc->next = frame->procData;
   frame->procData = proc;
   proc->classe = FrProcDataDef();
@@ -588,15 +589,15 @@ static REAL4TimeSeries *rectangular_window(LALStatus *status,
 {
   /* variables */
   REAL4TimeSeries *series;
-  LIGOTimeGPS time;
+  LIGOTimeGPS gps_time;
   INT4 i;
 
   /* set time */
-  time.gpsSeconds = 0;
-  time.gpsNanoSeconds = 0;
+  gps_time.gpsSeconds = 0;
+  gps_time.gpsNanoSeconds = 0;
 
   /* allocate memory */
-  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, "window", time, f0, \
+  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, "window", gps_time, f0, \
         deltaT, lalDimensionlessUnit, length), status);
 
   /* generate window */
@@ -614,15 +615,15 @@ static REAL4TimeSeries *hann_window(LALStatus *status,
 {
   /* variables */
   REAL4TimeSeries *series;
-  LIGOTimeGPS time;
+  LIGOTimeGPS gps_time;
   LALWindowParams params;
 
   /* set time */
-  time.gpsSeconds = 0;
-  time.gpsNanoSeconds = 0;
+  gps_time.gpsSeconds = 0;
+  gps_time.gpsNanoSeconds = 0;
 
   /* allocate memory */
-  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, "window", time, f0, \
+  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, "window", gps_time, f0, \
         deltaT, lalDimensionlessUnit, length), status);
 
   /* set window parameters */
@@ -640,42 +641,37 @@ static REAL4TimeSeries *data_window(LALStatus *status,
     REAL8 deltaT,
     REAL8 f0,
     INT4 length,
-    INT4 hannDuration)
+    INT4 hann_duration)
 {
   /* variables */
   REAL4TimeSeries *series;
   REAL4TimeSeries *hann;
-  LIGOTimeGPS time;
-  INT4 hannLength;
+  INT4 hann_length;
   INT4 i;
 
-  /* set time */
-  time.gpsSeconds = 0;
-  time.gpsNanoSeconds = 0;
-
   /* get length of hann segment requested */
-  hannLength = (INT4)(hannDuration / deltaT);
+  hann_length = (INT4)(hann_duration / deltaT);
 
-  if (hannLength == 0)
+  if (hann_length == 0)
   {
     /* rectangular window requested */
     series = rectangular_window(status, deltaT, f0, length);
   }
-  else if (hannLength == length)
+  else if (hann_length == length)
   {
     /* pure hann window requested */
     series = hann_window(status, deltaT, f0, length);
   }
-  else if ((hannLength > 0) && (hannLength < length))
+  else if ((hann_length > 0) && (hann_length < length))
   {
     series = rectangular_window(status, deltaT, f0, length);
-    hann = hann_window(status, deltaT, f0, hannLength);
+    hann = hann_window(status, deltaT, f0, hann_length);
 
     /* construct tukey window */
-    for (i = 0; i < hannLength / 2; i++)
+    for (i = 0; i < hann_length / 2; i++)
       series->data->data[i] = hann->data->data[i];
-    for (i = hannLength / 2; i < hannLength; i++)
-      series->data->data[length - hannLength + i] = hann->data->data[i];
+    for (i = hann_length / 2; i < hann_length; i++)
+      series->data->data[length - hann_length + i] = hann->data->data[i];
 
     /* free memory for hann window */
     LAL_CALL(LALDestroyREAL4TimeSeries(status, hann), status);
@@ -747,56 +743,58 @@ static REAL4FrequencySeries *optimal_filter(LALStatus *status,
   return(series);
 }
 
-/* usage info */
-#define USAGE \
-  "Usage: " PROGRAM_NAME " [options]\n"\
-  " --help                        print this message\n"\
-  " --version                     display version\n"\
-  " --verbose                     verbose mode\n"\
-  " --debug-level N               set lalDebugLevel\n"\
-  " --gps-start-time N            GPS start time\n"\
-  " --gps-end-time N              GPS end time\n"\
-  " --interval-duration N         interval duration\n"\
-  " --segment-duration N          segment duration\n"\
-  " --resample-rate N             resample rate\n"\
-  " --f-min N                     minimal frequency\n"\
-  " --f-max N                     maximal frequency\n"\
-  " --ifo-one IFO                 ifo for first stream\n"\
-  " --ifo-two IFO                 ifo for second stream\n"\
-  " --channel-one CHANNEL         channel for first stream\n"\
-  " --channel-two CHANNEL         channel for second stream\n"\
-  " --frame-cache-one FILE        cache file for first stream\n"\
-  " --frame-cache-two FILE        cache file for second stream\n"\
-  " --calibration-cache-one FILE  first stream calibration cache\n"\
-  " --calibration-cache-two FILE  second stream calibration cache\n"\
-  " --calibration-offset N        calibration offset\n"\
-  " --apply-mask                  apply frequency masking\n"\
-  " --mask-bin N                  number of bins to mask\n"\
-  " --overlap-hann                overlaping hann windows\n"\
-  " --hann-duration N             hann duration\n"\
-  " --high-pass-filter            apply high pass filtering\n"\
-  " --hpf-frequency N             high pass filter knee frequency\n"\
-  " --hpf-attenuation N           high pass filter attenuation\n"\
-  " --hpf-order N                 high pass filter order\n"\
-  " --recentre                    recentre jobs\n"\
-  " --middle-segment              use middle segment in PSD estimation\n"\
-  " --inject                      inject a signal into the data\n"\
-  " --scale-factor N              scale factor for injection\n"\
-  " --seed N                      random seed\n"\
-  " --trials N                    number of trials for Monte Carlo\n"\
-  " --output-dir DIR              directory for output files\n"\
-  " --geo-hpf-frequency N         GEO high pass filter knee frequency\n"\
-  " --geo-hpf-attenuation N       GEO high pass filter attenuation\n"\
-  " --geo-hpf-order N             GEO high pass filter order\n"\
-  " --alpha N                     exponent on filter spectrum\n"\
-  " --f-ref N                     reference frequency for filter spectrum\n"\
-  " --omega0 N                    reference omega_0 for filter spectrum\n"\
-  " --comment STRING              set the process table comment to STRING\n"\
-  " --user-tag STRING             set the process_params usertag to STRING\n"\
-  " --cc-spectra                  save out cross correlation spectra\n"
+/* display usage information */
+static void display_usage()
+{
+  fprintf(stdout, "Usage: " PROGRAM_NAME " [options]\n");
+  fprintf(stdout, " --help                        print this message\n");
+  fprintf(stdout, " --version                     display version\n");
+  fprintf(stdout, " --verbose                     verbose mode\n");
+  fprintf(stdout, " --debug-level N               set lalDebugLevel\n");
+  fprintf(stdout, " --gps-start-time N            GPS start time\n");
+  fprintf(stdout, " --gps-end-time N              GPS end time\n");
+  fprintf(stdout, " --interval-duration N         interval duration\n");
+  fprintf(stdout, " --segment-duration N          segment duration\n");
+  fprintf(stdout, " --resample-rate N             resample rate\n");
+  fprintf(stdout, " --f-min N                     minimal frequency\n");
+  fprintf(stdout, " --f-max N                     maximal frequency\n");
+  fprintf(stdout, " --ifo-one IFO                 ifo for first stream\n");
+  fprintf(stdout, " --ifo-two IFO                 ifo for second stream\n");
+  fprintf(stdout, " --channel-one CHANNEL         channel for first stream\n");
+  fprintf(stdout, " --channel-two CHANNEL         channel for second stream\n");
+  fprintf(stdout, " --frame-cache-one FILE        cache file for first stream\n");
+  fprintf(stdout, " --frame-cache-two FILE        cache file for second stream\n");
+  fprintf(stdout, " --calibration-cache-one FILE  first stream calibration cache\n");
+  fprintf(stdout, " --calibration-cache-two FILE  second stream calibration cache\n");
+  fprintf(stdout, " --calibration-offset N        calibration offset\n");
+  fprintf(stdout, " --apply-mask                  apply frequency masking\n");
+  fprintf(stdout, " --mask-bin N                  number of bins to mask\n");
+  fprintf(stdout, " --overlap-hann                overlaping hann windows\n");
+  fprintf(stdout, " --hann-duration N             hann duration\n");
+  fprintf(stdout, " --high-pass-filter            apply high pass filtering\n");
+  fprintf(stdout, " --hpf-frequency N             high pass filter knee frequency\n");
+  fprintf(stdout, " --hpf-attenuation N           high pass filter attenuation\n");
+  fprintf(stdout, " --hpf-order N                 high pass filter order\n");
+  fprintf(stdout, " --recentre                    recentre jobs\n");
+  fprintf(stdout, " --middle-segment              use middle segment in PSD estimation\n");
+  fprintf(stdout, " --inject                      inject a signal into the data\n");
+  fprintf(stdout, " --scale-factor N              scale factor for injection\n");
+  fprintf(stdout, " --seed N                      random seed\n");
+  fprintf(stdout, " --trials N                    number of trials for Monte Carlo\n");
+  fprintf(stdout, " --output-dir DIR              directory for output files\n");
+  fprintf(stdout, " --geo-hpf-frequency N         GEO high pass filter knee frequency\n");
+  fprintf(stdout, " --geo-hpf-attenuation N       GEO high pass filter attenuation\n");
+  fprintf(stdout, " --geo-hpf-order N             GEO high pass filter order\n");
+  fprintf(stdout, " --alpha N                     exponent on filter spectrum\n");
+  fprintf(stdout, " --f-ref N                     reference frequency for filter spectrum\n");
+  fprintf(stdout, " --omega0 N                    reference omega_0 for filter spectrum\n");
+  fprintf(stdout, " --comment STRING              set the process table comment to STRING\n");
+  fprintf(stdout, " --user-tag STRING             set the process_params usertag to STRING\n");
+  fprintf(stdout, " --cc-spectra                  save out cross correlation spectra\n");
+}
 
 /* parse command line options */
-void parse_options(INT4 argc, CHAR *argv[])
+static void parse_options(INT4 argc, CHAR *argv[])
 {
   int c = -1;
   struct stat fileStatus;
@@ -890,7 +888,7 @@ void parse_options(INT4 argc, CHAR *argv[])
 
       case 'a':
         /* help */
-        fprintf(stdout, USAGE);
+        display_usage();
         exit(0);
         break;
 
