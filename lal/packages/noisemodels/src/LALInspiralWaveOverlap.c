@@ -108,8 +108,8 @@ LALInspiralWaveOverlap
 		CHECKSTATUSPTR(status);
     
 		/* 
-		 * When the approximant is BCV, TaylorF1 or TaylorF2 generate the 
-		 * template and take its FT
+		 * When the approximant is BCV, TaylorT1, TaylorT2, TaylorT3, PadeT1 or EOB
+		 * generate the template and take its FT
 		 */
 		LALREAL4VectorFFT(status->statusPtr, &filter1, &output1, overlapin->fwdp);
 		CHECKSTATUSPTR(status);

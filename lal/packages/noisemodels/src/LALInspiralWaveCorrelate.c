@@ -145,7 +145,7 @@ LALInspiralWaveCorrelate
 
   LALREAL4VectorFFT(status->statusPtr,output,&buff,corrin.revp);
   CHECKSTATUSPTR(status);
-  for (i=0; i<n; i++) output->data[i] /= ((double) n / corrin.samplingRate);
+  for (i=0; i<n; i++) output->data[i] /= ((double) n * corrin.samplingRate);
 
 
   /* 
