@@ -50,6 +50,7 @@ NRCSID( SNGLBURSTUTILSC, "$Id$" );
 \idx{XLALCompareSnglBurstSnglInspiral()}
 \idx{LALCompareSimBurstAndSnglBurst()}
 \idx{XLALCompareSimBurstAndSnglBurst()}
+\idx{XLALCompareSimInspiralAndSnglBurst()}
 \idx{LALClusterSnglBurstTable()}
 \idx{XLALClusterSnglBurstTable()}
 
@@ -470,6 +471,42 @@ LALCompareSimBurstAndSnglBurst(
 {
 	INITSTATUS(status, "LALCompareSimBurstAndSnglBurst", SNGLBURSTUTILSC);
 	*match = XLALCompareSimBurstAndSnglBurst(&a, &b);
+	RETURN(status);
+}
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+int
+XLALCompareSimInspiralAndSnglBurst(
+	const SimInspiralTable * const *a,
+	const SnglBurstTable * const *b
+)
+/* </lalVerbatim> */
+{
+	INT8 ta;
+
+	if(! strcmp("H1",(*b)->ifo))
+	  ta = XLALGPStoINT8(&(*a)->h_end_time);
+	else if(! strcmp("H2",(*b)->ifo))
+	  ta = XLALGPStoINT8(&(*a)->h_end_time);
+	else if(! strcmp("L1",(*b)->ifo))
+	  ta = XLALGPStoINT8(&(*a)->l_end_time);
+	
+	return((start_time(*b) < ta) && (ta < end_time(*b)));
+}
+
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+void
+LALCompareSimInspiralAndSnglBurst(
+	LALStatus *status,
+	const SimInspiralTable *a,
+	const SnglBurstTable *b,
+	int *match
+)
+/* </lalVerbatim> */
+{
+	INITSTATUS(status, "LALCompareSimInspiralAndSnglBurst", SNGLBURSTUTILSC);
+	*match = XLALCompareSimInspiralAndSnglBurst(&a, &b);
 	RETURN(status);
 }
 
