@@ -32,7 +32,8 @@ static void parse_options(INT4 argc, CHAR *argv[]);
 static void readDataPair(LALStatus *status, StreamPair *streamPair,
 		ReadDataPairParams *params);
 static void adam_readDataPair(LALStatus *status, StreamPair *streamPair,
-		ReadDataPairParams *params);
+		ReadDataPairParams *params, REAL4TimeSeries *seriesOne,
+		REAL4TimeSeries *seriesTwo);
 static REAL4TimeSeries *get_time_series(LALStatus *status, CHAR *ifo,
 		CHAR *cacheFile, CHAR *channel, LIGOTimeGPS start, LIGOTimeGPS end,
 		INT4 buffer);

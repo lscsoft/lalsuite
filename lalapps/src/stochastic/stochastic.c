@@ -325,7 +325,12 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* add a resample buffer, if required */
   if ((sampleRate != resampleRate) || (high_pass_flag))
+  {
     padData = 1;
+    startTime += padData;
+    endTime -= padData;
+    duration -= 2 * padData;
+  }
   else
     padData = 0;
 
@@ -348,8 +353,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   LALSPrintTimeSeries(seriesOne, "1.dat");
   LALSPrintTimeSeries(seriesTwo, "2.dat");
-
-  exit(1);
 
   /* initialize gps time structure */
   gpsStartTime.gpsSeconds = startTime;
@@ -894,8 +897,8 @@ INT4 main(INT4 argc, CHAR *argv[])
             }
 
             streamParams.start = gpsStartPadTime.gpsSeconds;
-            LAL_CALL(adam_readDataPair(&status, &streamPair, &streamParams), \
-                &status);
+            LAL_CALL(adam_readDataPair(&status, &streamPair, &streamParams, \
+                  seriesOne, seriesTwo), &status);
 
             /* skip segment if data not found or corrupted with 0 values */
             if (status.statusCode != 0)
@@ -1094,7 +1097,8 @@ INT4 main(INT4 argc, CHAR *argv[])
                 gpsStartPadTime.gpsSeconds);
           }
 
-          LAL_CALL(adam_readDataPair(&status, &streamPair, &streamParams), &status);
+          LAL_CALL(adam_readDataPair(&status, &streamPair, &streamParams, \
+                seriesOne, seriesTwo), &status);
 
           /* skip segment if data not found or corrupted with 0 values */
           if (status.statusCode != 0)
@@ -2549,7 +2553,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
   /* GEO high pass filter */
   if ((strncmp(ifoOne, "G1", 2) == 0) || (strncmp(ifoTwo, "G1", 2) == 0))
-  {
+  {  
     if (geoHighPassFreq == -1)
     {
       fprintf(stderr, "--geo-hpf-frequency must be specified\n");
@@ -2900,7 +2904,9 @@ for data with calls to an existing time series stored in memory.
 /* function to read data in frames */
 static void adam_readDataPair(LALStatus *status,
     StreamPair *streamPair,
-    ReadDataPairParams *params)
+    ReadDataPairParams *params,
+    REAL4TimeSeries *seriesOne,
+    REAL4TimeSeries *seriesTwo)
 {
   /* counters */
   INT4 i;
