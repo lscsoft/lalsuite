@@ -1,3 +1,6 @@
+#ifndef _GENBINMESH_H
+#define _GENBINMESH_H
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <fcntl.h>
@@ -8,6 +11,7 @@
 #include <time.h>
 #include <errno.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <glob.h>
 #include <getopt.h>
 #include <lal/AVFactories.h>
@@ -21,18 +25,37 @@
 #include <lal/StackMetric.h>
 #include <lal/MatrixUtils.h>
 #include <lal/LALStdio.h>
+#include <glob.h>
 #include <lal/FileIO.h>
 #include <lal/LALStdlib.h>
-
 
 #define DIM 2         /* Current hardcoded number of dimensions in parameter space  */
 #define ECC 0.0       /* circular orbit currently harcoded in */
 #define ARGP 0.0
+#define MAXSFTS 50000
 
 typedef struct CLargstag {
-  REAL8 f_max;
+  CHAR sourcefile[256];
+  CHAR source[256];
+  CHAR datadir[256];
+  LIGOTimeGPS tstart;
+  REAL8 tspan;
+  REAL8 mismatch;
+  REAL8 band;
+  CHAR ephemdir[256];
+  CHAR yr[256];
+  CHAR ifo[256];
+  CHAR meshdir[256];
+  BOOLEAN datadirflag;
+} CLargs;
+
+typedef struct GlobVartag {
+  INT4 nband;
+  INT4 *f_max;
+  INT4 band;
   REAL8 tspan;
   LIGOTimeGPS tstart;
+  LIGOTimeGPS tstartSSB;
   REAL8 RA;
   REAL8 dec;
   REAL8 period;
@@ -43,11 +66,13 @@ typedef struct CLargstag {
   LIGOTimeGPS tperi_MIN;
   LIGOTimeGPS tperi_MAX;
   REAL8 mismatch;
+  CHAR ifo[256]; 
   CHAR ephemdir[256];
   CHAR yr[256];
-  CHAR ifo[256];
-  CHAR meshfile[256];
-} CLargs;
+  CHAR meshdir[256];
+  CHAR sourcefile[256];
+  CHAR source[256];
+} GlobVar;
   
 typedef struct BinaryMeshFileHeadertag {
   REAL8 f_max;
@@ -127,10 +152,32 @@ typedef struct XYLocationtag {
   REAL8 argp;
 } XYLocation;
 
+typedef struct BinaryTemplatetag {             /* BINARY-MOD - structure to store a single binary signal template */
+  REAL8       ProjSMaxis;
+  REAL8       Period;
+  LIGOTimeGPS TperiSSB;
+  REAL8       Eccentricity;
+  REAL8       ArgPeri;
+} BinaryTemplate;
+
+typedef struct BinaryTemplateBanktag {
+  BinaryMeshFileHeader BMFheader;
+  BinaryTemplate *BTB;       
+} BinaryTemplateBank;
+
+/*struct sftheadertag {
+  REAL8 endian;
+  INT4 gps_sec;
+  INT4 gps_nsec;
+  REAL8 tbase;
+  INT4 firstfreqindex;
+  INT4 nsamples;
+  } sftheader;*/
+
 int ConvertXYtoRTperi(XYLocation *, RTPLocation *);
 int WriteMeshFileHeader(FILE *fp,BinaryMeshFileHeader *BMFheader);
 int ReadMeshFileHeader(FILE *fp,BinaryMeshFileHeader *BMFheader);
 int ConvertRTperitoXY(RTPLocation *, XYLocation *, REAL8 *);
 
-
+#endif /* end the if over GENBINMESH_H */
 
