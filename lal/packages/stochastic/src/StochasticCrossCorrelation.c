@@ -548,7 +548,7 @@ LALStochasticCrossCorrelationStatisticCal(
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
-} /* LALStochasticCrossCorrelationStatistic() */
+} /* LALStochasticCrossCorrelationStatisticCal() */
 
 
 void
@@ -818,7 +818,7 @@ LALStochasticHeterodynedCrossCorrelationStatisticCal(
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
-} /* LALStochasticHeterodynedCrossCorrelationStatistic() */
+} /* LALStochasticHeterodynedCrossCorrelationStatisticCal() */
 
 
 void
@@ -1255,7 +1255,7 @@ LALStochasticCrossCorrelationSpectrumCal(
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
-} /* LALStochasticCrossCorrelationSpectrum() */
+} /* LALStochasticCrossCorrelationSpectrumCal() */
 
 /* <lalVerbatim file="StochasticCrossCorrelationCP"> */
 void

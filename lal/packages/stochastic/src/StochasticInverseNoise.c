@@ -277,7 +277,7 @@ LALStochasticInverseNoiseCal( LALStatus                          *status,
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
-}
+} /* LALStochasticInverseNoiseCal() */
 
 /* <lalVerbatim file="StochasticInverseNoiseCP"> */
 void
