@@ -327,14 +327,15 @@ LALFindChirpInjectSignals (
     memset( &signal, 0, sizeof(REAL4TimeSeries) );
 
     /* set the start times for injection */
-    LALINT8toGPS( status->statusPtr, &(signal.epoch), &waveformStartTime );
+    LALINT8toGPS( status->statusPtr, &(waveform.a->epoch), &waveformStartTime );
     CHECKSTATUSPTR( status );
-    memcpy( &(waveform.a->epoch), &(signal.epoch), 
+    memcpy( &(waveform.f->epoch), &(waveform.a->epoch), 
         sizeof(LIGOTimeGPS) );
-    memcpy( &(waveform.f->epoch), &(signal.epoch), 
+    memcpy( &(waveform.phi->epoch), &(waveform.a->epoch), 
         sizeof(LIGOTimeGPS) );
-    memcpy( &(waveform.phi->epoch), &(signal.epoch), 
-        sizeof(LIGOTimeGPS) );
+
+    /* set the start time of the signal vector to the start time of the chan */
+    signal.epoch = chan->epoch;
 
     /* set the parameters for the signal time series */
     signal.deltaT = chan->deltaT;
@@ -345,8 +346,7 @@ LALFindChirpInjectSignals (
     signal.sampleUnits = lalADCCountUnit;
 
     /* simulate the detectors response to the inspiral */
-    LALSCreateVector( status->statusPtr, &(signal.data), 
-        (UINT4) ppnParams.length );
+    LALSCreateVector( status->statusPtr, &(signal.data), chan->length );
     CHECKSTATUSPTR( status );
 
     LALSimulateCoherentGW( status->statusPtr, 
