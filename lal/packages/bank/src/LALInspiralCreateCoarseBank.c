@@ -841,6 +841,8 @@ LALInspiralCreateBCVBank(
 		(*list)[j].params.massChoice= psi0Andpsi3;
 		(*list)[j].params.order= twoPN;
 		(*list)[j].metric = metric;
+		(*list)[j].params.alpha = coarseIn.alpha;
+
 	}
 
 	nlistOld = *nlist;
@@ -935,11 +937,25 @@ LALInspiralBCVFcutBank(
 	ATTATCHSTATUSPTR(status);
 			  
 	nf=numFcutTemplates;
+
+
+	/* Before the allocation was inside the loop and allocate the exact number of structure 
+	   related to the valid point in the bank. However if nlist is large (>5000) it is too 
+	   long to compute. Thus I put this ReAlloc outside the loop
+	*/
+	if (!(*list = (InspiralTemplateList*) LALRealloc(*list, nlist * numFcutTemplates * sizeof(InspiralTemplateList)))) 
+	  {
+	    ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+	    
+	 }
+
+
 	ndx = nlist = *NList;
 	frac = (1.L - 1.L/pow(2.L, 1.5L)) / (nf-1.L);
 	for (j=0; j<nlist; j++)
 	{
 		UINT4 valid=0;
+		/* Reaplce the following function by something more efficient ? */
 		PSItoMasses (&((*list)[j].params), &valid);
 		if (valid)
 		{
@@ -962,11 +978,13 @@ LALInspiralBCVFcutBank(
 				if (fendBCV > (*list)[j].params.fLower && fendBCV < (*list)[j].params.tSampling/2.)
 				{
 					ndx++;
-					if (!(*list = (InspiralTemplateList*) LALRealloc(*list, ndx*sizeof(InspiralTemplateList)))) 
-					{
-						ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
-	
-					}
+					/*
+					  if (!(*list = (InspiralTemplateList*) LALRealloc(*list, ndx * sizeof(InspiralTemplateList)))) 
+					  {
+					    ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+					    
+					  }
+					*/
 					(*list)[ndx-1] = (*list)[j];
 					(*list)[ndx-1].params.fendBCV = fendBCV;
 					(*list)[ndx-1].metric = (*list)[0].metric;
