@@ -469,11 +469,11 @@ int main ( int argc, char *argv[] )
       if ( vrbflg ) fprintf( stdout, "discarding events < %lld ms appart... ",
           cluster );
       prevEvent = eventHead;
-      LAL_CALL( LALGPStoINT8( &status, &prevEndTime, &(prevEvent->end_time) ),
-          &status );
       thisEvent = eventHead->next;
       while ( thisEvent )
       {
+        LAL_CALL( LALGPStoINT8( &status, &prevEndTime, &(prevEvent->end_time) ),
+            &status );
         LAL_CALL( LALGPStoINT8( &status, &thisEndTime, &(thisEvent->end_time) ),
             &status );
         if ( (thisEndTime - prevEndTime) < (cluster * 1000000LL) )
