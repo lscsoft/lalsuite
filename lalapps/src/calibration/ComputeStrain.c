@@ -100,7 +100,7 @@ REAL8 ta_interp[MAXALPHAS],alpha[MAXALPHAS],beta[MAXALPHAS];   /* Arrays that co
 LIGOTimeGPS gpsepoch;               /* Global variables epoch and duration used to calculate the calibration factors */
 INT4 duration;                      /* they are set every science segment to GPS start time and duration of segment */
 MyIIRFilter Cinv,G[NGfilt],AA,AX[NAXfilt],AY[NAYfilt];    /* Inverse sensing, servo, analog actuation, digital x actuation  digital y actuation */
-MyIIRFilter ADW, AADW;  /* dewhitening and anti dewhiytwening filters in actuation */
+MyIIRFilter ADW[NADWfilt];/* dewhitening and anti dewhiytwening filters in actuation */
 REAL8TimeSeries AS_Q,hR,hC,uphR,hCx,hCy,h;                /* AS_Q, Residual, control and total strains; up... time series are upsampled */
 REAL8TimeSeries hipasssludge,lopasssludge;                /* Sludge for high and low pass filtering of data */
 REAL8TimeSeries hipasssludgeR,hipasssludgeC;              /* Sludge for high filtering of contral and residual signals */
@@ -249,6 +249,21 @@ int i,j,DT,p;
 	    GV.hC.data->data[p]=GV.AS_Q.data->data[p];
 	  }
 
+	  /* delta test */
+	  
+/* 	  for (p=0; p<(int)GV.hR.data->length; p++) { */
+/* 	    GV.hR.data->data[p]=0.0; */
+/* 	  } */
+/* 	  for (p=0; p<(int)GV.hC.data->length; p++) { */
+/* 	    GV.hC.data->data[p]=0.0; */
+/* 	  } */
+
+/* 	  if (j==0) */
+/* 	    { */
+/* 	      GV.hR.data->data[8*16384-1]=1; */
+/* 	      GV.hC.data->data[8*16384-1]=1;  */
+/* 	    } */
+
 	  /******** COMPUTE RESIDUAL STRAIN **********/
 	  
 	  /* multiply hR by 1/alpha(t) */
@@ -315,12 +330,10 @@ int i,j,DT,p;
  	  /* filter through analog part of actuation */ 
 	  if (FilterSeries(&GV.AA,&GV.hC,SLUDGEFACTOR)) return 5;
 
- 	  /* filter through Dewhitener in actuation */ 
-	  if (FilterSeries(&GV.ADW,&GV.hC,SLUDGEFACTOR)) return 5;
-
- 	  /* filter through Anti-Dewhitener in actuation */ 
-	  if (FilterSeries(&GV.AADW,&GV.hC,SLUDGEFACTOR)) return 5;
-
+	  /* filter through Dewhitener AND ANTI-DEWHITENER in actuation */ 
+	  for(p=NADWfilt-1;p>=0;p--){
+	    if (FilterSeries(&GV.ADW[p],&GV.hC,SLUDGEFACTOR)) return 5;
+	  }
 
 	  /******** COMPUTE NET CALIBRATED STRAIN **********/
 
@@ -329,7 +342,7 @@ int i,j,DT,p;
 
 	  /* add control and residual signals together */
 	  for (p=0; p<(int)GV.h.data->length; p++) {
-	    GV.h.data->data[p]= GV.hR.data->data[p]+ GV.hC.data->data[p];
+	    GV.h.data->data[p]= GV.hR.data->data[p] + GV.hC.data->data[p];
 	  }
 
 	  /* WRITE A FRAME */
@@ -828,23 +841,17 @@ int MakeFilters(void)
   for(l=0;l<GV.AA.yOrder-1;l++) GV.AA.yhist[l]=0.0;
   for(l=0;l<GV.AA.xOrder-1;l++) GV.AA.xhist[l]=0.0;
 
-  GV.ADW.yOrder= A_DW_Ord;
-  GV.ADW.xOrder= A_DW_Ord;
+  for(n=0;n<NADWfilt;n++){
+    GV.ADW[n].yOrder=A_DW_Ord;
+    GV.ADW[n].xOrder=A_DW_Ord;
+    
+    /* Fill coefficient vectors with coefficients from filters.h */
+    for(l=0;l<GV.ADW[n].xOrder;l++) GV.ADW[n].b[l]=A_DW_D[n][l];
+    for(l=0;l<GV.ADW[n].yOrder;l++) GV.ADW[n].a[l]=A_DW_R[n][l];
+    for(l=0;l<GV.ADW[n].yOrder-1;l++) GV.ADW[n].yhist[l]=0.0;
+    for(l=0;l<GV.ADW[n].xOrder-1;l++) GV.ADW[n].xhist[l]=0.0;
+  }
 
-  /* Fill coefficient vectors with coefficients from filters.h */
-  for(l=0;l<GV.ADW.xOrder;l++) GV.ADW.b[l]=A_DW_D[l];
-  for(l=0;l<GV.ADW.yOrder;l++) GV.ADW.a[l]=A_DW_R[l];
-  for(l=0;l<GV.ADW.yOrder-1;l++) GV.ADW.yhist[l]=0.0;
-  for(l=0;l<GV.ADW.xOrder-1;l++) GV.ADW.xhist[l]=0.0;
-
-  GV.AADW.yOrder= A_ADW_Ord;
-  GV.AADW.xOrder= A_ADW_Ord;
-  
-  /* Fill coefficient vectors with coefficients from filters.h */
-  for(l=0;l<GV.AADW.xOrder;l++) GV.AADW.b[l]=A_ADW_D[l];
-  for(l=0;l<GV.AADW.yOrder;l++) GV.AADW.a[l]=A_ADW_R[l];
-  for(l=0;l<GV.AADW.yOrder-1;l++) GV.AADW.yhist[l]=0.0;
-  for(l=0;l<GV.AADW.xOrder-1;l++) GV.AADW.xhist[l]=0.0;
     
   for(n=0;n<NAXfilt;n++){
     GV.AX[n].yOrder=A_digital_Rord;
@@ -1042,7 +1049,8 @@ FILE *fpAlpha=NULL;
 
       if(CLA.alphafile != NULL)
 	{
-	  fprintf(fpAlpha,"%d %d %e %e %e %e %e %e %e %e %e %e %e %e\n",m,localgpsepoch.gpsSeconds,factors.alpha.re,factors.alpha.im,
+	  fprintf(fpAlpha,"%d %d %e %e %e %e %e %e %e %e %e %e %e %e\n",m,localgpsepoch.gpsSeconds,
+		  factors.alpha.re,factors.alpha.im,
 		  factors.beta.re,factors.beta.im,
 		  factors.alphabeta.re,factors.alphabeta.im,
 		  factors.asq.re*2/To,factors.asq.im*2/To,
