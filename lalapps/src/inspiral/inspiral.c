@@ -1224,9 +1224,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       break;
     }
 
-    /* store the length of the option string (plus the trailing null) */
-    optarg_len = strlen( optarg ) + 1;
-
     switch ( c )
     {
       case 0:
@@ -1345,6 +1342,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'c':
         {
           /* create storage for the channel name and copy it */
+          optarg_len = strlen( optarg ) + 1;
           char *channamptr = NULL;
           fqChanName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
           memcpy( fqChanName, optarg, optarg_len );
@@ -1537,6 +1535,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'p':
         /* create storage for the calibration frame cache name */
+        optarg_len = strlen( optarg ) + 1;
         calCacheName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( calCacheName, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
@@ -1619,6 +1618,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'u':
         /* create storage for the input frame cache name */
+        optarg_len = strlen( optarg ) + 1;
         frInCacheName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
         memcpy( frInCacheName, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
@@ -1626,6 +1626,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'v':
         /* create storage for the calibration frame cache name */
+        optarg_len = strlen( optarg ) + 1;
         bankFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( bankFileName, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
@@ -1633,6 +1634,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'w':
         /* create storage for the injection file name */
+        optarg_len = strlen( optarg ) + 1;
         injectionFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( injectionFile, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
@@ -1658,6 +1660,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'Z':
         /* create storage for the usertag */
+        optarg_len = strlen( optarg ) + 1;
         userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
         memcpy( userTag, optarg, optarg_len );
 

@@ -179,9 +179,6 @@ int main( int argc, char *argv[] )
       break;
     }
     
-    /* store the length of the option (plust the terminating null) */
-    optarg_len = strlen(optarg) + 1;
-
     switch ( c )
     {
       case 0:
@@ -311,6 +308,7 @@ int main( int argc, char *argv[] )
 
       case 'Z':
         /* create storage for the usertag */
+        optarg_len = strlen(optarg) + 1;
         userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
         memcpy( userTag, optarg, optarg_len );
 
