@@ -275,20 +275,9 @@ LALTimeFreqComplexFFT(
   TRY( LALUnitMultiply( status->statusPtr, &freq->sampleUnits, &unitPair ),
       status );
 
-  /*
-   *
-   * The field f0 is not consistently defined between time and freq series.
-   * Just do something....  Assume data is not heterodyned.
-   *
-   */
-  if ( time->f0 != 0 )
-  {
-    LALWarning( status, "Frequency series may have incorrect f0." );
-  }
   freq->epoch  = time->epoch;
   freq->deltaF = 1.0 / ( time->deltaT * n );
-  /* correct value for unheterodyned data */
-  freq->f0     = -freq->deltaF * floor( n / 2 );
+  freq->f0     = time->f0 - freq->deltaF * floor( n / 2 );
 
   TRY( LALUnitMultiply( status->statusPtr, &freq->sampleUnits, &unitPair ),
       status );
@@ -357,17 +346,7 @@ LALFreqTimeComplexFFT(
   TRY( LALUnitMultiply( status->statusPtr, &time->sampleUnits, &unitPair ),
       status );
 
-  /*
-   *
-   * The field f0 is not consistently defined between time and freq series.
-   * Just do something....  Assume data is not heterodyned.
-   *
-   */
-  if ( freq->f0 != -freq->deltaF * floor( n / 2 ) )
-  {
-    LALWarning( status, "Frequency series may have incorrect f0." );
-  }
-  time->f0     = 0; /* correct value for unheterodyned data */
+  time->f0     = freq->f0 + freq->deltaF * floor( n / 2 );
   time->epoch  = freq->epoch;
   time->deltaT = 1.0 / ( freq->deltaF * n );
 
