@@ -97,7 +97,7 @@ NRCSID( GENERATEPPNINSPIRALTESTC, "$Id$" );
 
 /* Default parameter settings. */
 int lalDebugLevel = 0;
-#define EPOCH (315187200000000000L) /* about Jan. 1, 1990 */
+#define EPOCH (315187200000000000LL) /* about Jan. 1, 1990 */
 #define M1    (1.4)
 #define M2    (1.4)
 #define DIST  (8.5)

@@ -187,20 +187,20 @@ int lalDebugLevel = 0;
 #define NPARAM (4)        /* number of source parameters in sourcefile */
 
 /* Range of random initial offset (nanoseconds). */
-#define INIT_OFFSET_MIN   (-30000000000L)
-#define INIT_OFFSET_RANGE (30000000000L)
+#define INIT_OFFSET_MIN   (-30000000000LL)
+#define INIT_OFFSET_RANGE (30000000000LL)
 
 /* Range of random offset between signals (nanoseconds). */
-#define OFFSET_MIN   (30000000000)
-#define OFFSET_RANGE (30000000000)
+#define OFFSET_MIN   (30000000000LL)
+#define OFFSET_RANGE (30000000000LL)
 
 /* Range of randomly-generated masses. */
 #define M_MIN   (1.0)
 #define M_RANGE (1.0)
 
 /* Parameters of internally-generated data segments. */
-/*#define EPOCH   (662342400000000000L)  start of third millenium, UTC */
-#define EPOCH   (315187200000000000L) /* about Jan. 1, 1990 */
+/*#define EPOCH   (662342400000000000LL)  start of third millenium, UTC */
+#define EPOCH   (315187200000000000LL) /* about Jan. 1, 1990 */
 #define DELTAT  (0.0009765625)
 #define NPTS_T  (65536)
 #define SIGMASQ (10.0)
