@@ -29,9 +29,11 @@ static double vorbrel;
  *   AvgVelPar as input, while LALAvgDetectorVel() takes
  *   VelocityPar as input.
  */
+/* gps = time when vel. is needed */   
+/* inputs = detector, ephemerides */
 static double doppler(LALStatus * status, 
-                      LIGOTimeGPS * gps,    /* time when vel. is needed */
-                      AvgVelPar * inputs,   /* detector, ephemerides */
+                      LIGOTimeGPS * gps,    
+                      AvgVelPar * inputs,
                       SkyPosition * source_loc)
 {
   /* the reference frame in which everything is done is the barycentric,
