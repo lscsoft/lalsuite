@@ -29,9 +29,11 @@ parameter $p_n$.
 The post-Newtonian expansion implicitly assumes an \emph{adiabatic}
 inspiral, where one can represent the waveform by an ``instantaneous''
 amplitude and frequency that vary over timescales longer than one wave
-period.  The orbital frequency of the \emph{system} to
+period.  The \emph{orbital} frequency of the system to
 post${}^{5/2}$-Newtonian order is given in Eqs.~6.4.1 and~6.9.1
-of~\cite{GRASP_1.9.8:2000} as:
+of~\cite{GRASP_1.9.8:2000}; here we work entirely in terms of the
+\emph{gravitational-wave} frequency, which is twice the orbital
+frequency:
 \begin{eqnarray}
 f(t) & = & \frac{M_\odot}{8\pi T_\odot m_\mathrm{tot}}\left\{
 	p_0\Theta^{-3/8}+
@@ -64,9 +66,8 @@ their normal post-Newtonian values, the normalization on the $p_1$
 term is completely arbitrary, since it is zero in a normal
 post-Newtonian expansion.
 
-The orbital phase as a function of time can be computed analytically
-from Eq.~\ref{eq:ppn-freq} as $\phi_\mathrm{orb}=2\pi\int f\,dt$.
-However, the phase of the \emph{waveform} is twice this, giving:
+The wave phase as a function of time can be computed analytically from
+Eq.~\ref{eq:ppn-freq} as $\phi_\mathrm{orb}=2\pi\int f\,dt$:
 \begin{eqnarray}
 \phi(t) & = & \phi_c - \frac{2}{\eta}\left\{
 	p_0\Theta^{5/8}+
