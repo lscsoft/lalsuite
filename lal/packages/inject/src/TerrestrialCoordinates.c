@@ -55,14 +55,16 @@ simple enough, it does involve several function calls, so it is
 convenient to collect these into one routine.
 
 \paragraph{Horizon coordinates:} We correct a typographical
-error in~\cite{Lang_K:1998} (the second line of Eq.~5.45 should have a
-$\cos A$), to obtain the following equations for the altitude $a$ and
-azimuth $A$:
+error on the second line of Eq.~5.45 of~\cite{Lang_K:1998} (it should
+have $\cos A$, not $\sin A$), and also reverse the sign on the first
+line (since our longitude coordinate increases clockwise, and thus
+represents $-A$, not $A$).  to obtain the following equations for the
+altitude $a$ and azimuth $A$:
 \begin{eqnarray}
 \label{eq:altitude-horizon}
 a & = & \arcsin(\sin\delta\sin\phi + \cos\delta\cos\phi\cos h) \; , \\
 \label{eq:azimuth-horizon}
-A & = & \arctan\!2(-\cos\delta\sin h, \sin\delta\cos\phi -
+-A & = & \arctan\!2(\cos\delta\sin h, \sin\delta\cos\phi -
 		\cos\delta\sin\phi\cos h) \; ,
 \end{eqnarray}
 where $\delta$ is the declination (geographic latitude) of the
@@ -80,8 +82,8 @@ observation.  The inverse transformation is:
 \label{eq:delta-horizon}
 \delta & = & \arcsin(\sin a\sin\phi + \cos a\cos A\cos\phi) \; , \\
 \label{eq:h-horizon}
-h & = & \arctan\!2(-\cos a\sin A, \sin a\cos\phi -
-		\cos a\cos A\sin\phi) \; .
+h & = & \arctan\!2[\cos a\sin(-A), \sin a\cos\phi -
+		\cos a\cos A\sin\phi] \; .
 \end{eqnarray}
 As explained in \verb@CelestialCoordinates.c@, the function
 $\arctan\!2(y,x)$ returns the argument of the complex number $x+iy$.
@@ -169,7 +171,7 @@ LALGeographicToHorizon( LALStatus   *stat,
   REAL8 h, sinH, cosH; /* hour angle, and its sine and cosine */
   REAL8 sinP, cosP;    /* sin and cos of zenith latitude */
   REAL8 sinD, cosD;    /* sin and cos of position latitude (declination) */
-  REAL8 sina, sinA, cosA; /* sin and cos of altitude and azimuth */
+  REAL8 sina, sinA, cosA; /* sin and cos of altitude and -azimuth */
 
   INITSTATUS( stat, "LALGeographicToHorizon", TERRESTRIALCOORDINATESC );
 
@@ -188,7 +190,7 @@ LALGeographicToHorizon( LALStatus   *stat,
 
   /* Compute components. */
   sina = sinD*sinP + cosD*cosP*cosH;
-  sinA = -cosD*sinH;
+  sinA = cosD*sinH;
   cosA = sinD*cosP - cosD*sinP*cosH;
 
   /* Compute final results. */
@@ -211,7 +213,7 @@ LALHorizonToGeographic( LALStatus   *stat,
 { /* </lalVerbatim> */
   REAL8 sinP, cosP;       /* sin and cos of zenith latitude */
   REAL8 sina, cosa;       /* sin and cos of altitude */
-  REAL8 sinA, cosA;       /* sin and cos of altitude */
+  REAL8 sinA, cosA;       /* sin and cos of -azimuth */
   REAL8 sinD, sinH, cosH; /* sin and cos of declination and hour angle */
 
   INITSTATUS( stat, "LALHorizonToGeographic", TERRESTRIALCOORDINATESC );
@@ -230,7 +232,7 @@ LALHorizonToGeographic( LALStatus   *stat,
 
   /* Compute components. */
   sinD = sina*sinP + cosa*cosA*cosP;
-  sinH = -cosa*sinA;
+  sinH = cosa*sinA;
   cosH = sina*cosP - cosa*cosA*sinP;
 
   /* Compute final results. */

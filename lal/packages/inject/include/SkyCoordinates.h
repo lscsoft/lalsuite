@@ -75,7 +75,7 @@ at the centre of our Galaxy).  Since we ignore translations in the
 coordinate origin, distances remain unchanged, so these routines only
 consider transformations in latitude and longitude.  To put it another
 way, these routines transform \emph{directions} in space, not
-\emph{positions} in space.  These directions are generically stored in
+\emph{locations} in space.  These directions are generically stored in
 the \verb@SkyPosition@ structure, defined below.
 
 The coordinate systems that we consider are defined as follows:
@@ -85,28 +85,30 @@ at a particular point on the Earth.  The $z$-axis is defined to be the
 direction opposite to the local acceleration due to gravity.  The
 $x$-axis is defined to lie in the plane formed by the $z$-axis and the
 Earth's rotational axis, and to be directed into the northern
-hemisphere; if the $z$-axis and rotation axis are parallel, the
-$x$-axis is defined to be the same as for geographic coordinates
-(below).  In this coordinate system, the latitude coordinate is called
-the \emph{altitude} and the longitude coordinate is called the
-\emph{azimuth}.
+hemisphere.  In this coordinate system, the latitude coordinate is
+called the \emph{altitude} and the longitude coordinate is the
+\emph{negative} of what astronomers call the \emph{azimuth}; this sign
+reversal is due to the fact that astronomers define azimuth to
+increase clockwise, and our longitudinal coordinates uniformly
+increase counterclockwise about the $z$-axis.
 
 \paragraph{Geographic coordinates:} The $z$-axis is defined to be
 parallel to the Earth's axis, in the direction of the Earth's north
 pole.  The $x$-axis is defined to be parallel to the direction
 perpendicular from the Earth's rotation axis to a reference point in
 Greenwich, UK.  Note that we adopt a longitude convention that is
-opposite to that in~\cite{Lang_K:1998}, in that our geographic
-longitudes increase \emph{eastward} like the rest of our longitudinal
+consistent with the \textit{Astronomical Almanac}, but opposite to
+that in~\cite{Lang_K:1998}, in that our geographic longitudes increase
+\emph{eastward} (counterclockwise) like the rest of our longitudinal
 coordinates.
 
 Geographic latitude and longitude are often referred to simply as
 latitude and longitude, and are represented in~\cite{Lang_K:1998} by
 the symbols $\lambda$ and $\phi$, as in Fig.~\ref{fig:lat-long}.
-However, we emphasize once again that geodetic latitude and longitude
-as defined above refer to directions in space, not to locations on the
-Earth's surface.  This can lead to some confusion.  The
-\emph{geodetic} latitude and longitude of a point on the Earth's
+However, we emphasize once again that geographic latitude and
+longitude as defined above refer to directions in space, not to
+locations on the Earth's surface.  This can lead to some confusion.
+The \emph{geodetic} latitude and longitude of a point on the Earth's
 surface are the latitude and longitude of its vertical direction,
 while the \emph{geocentric} latitude and longitude of the point are
 the latitude and longitude of the line from the geometric centre of
