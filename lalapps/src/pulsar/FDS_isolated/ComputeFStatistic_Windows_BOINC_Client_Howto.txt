@@ -1,0 +1,307 @@
+($ID$)
+
+Written by Bernd Machenschalk Jul 2004
+
+This document should tell you how to build ComputeFStatistic as a
+BOINC client for Windows.
+
+Two different cases are documented here, depending on the compiler used:
+Case A: Microsoft Visual C++ .NET with wrapper
+Case B: Cross-compiling with MinGW (e.g. on Linux)
+
+This s rather preliminary - don't expect this to work right away.
+
+
+
+Environment Prerequisites
+-------------------------
+
+Case A: Microsoft Visual C .NET with wrapper
+
+I Installation
+
+1. Install MSVS .NET
+Sounds easy. Takes its time, especially if you're short with disk space.
+Make sure you have some GB free. The need to strip the distribution down
+costs time and maybe further trouble.
+
+2. Install Cygwin (from www.cygwin.com)
+You may not need all that is available, but make sure you get the
+develoment package. I suggest that you also get "wget".
+The installation should leave you with a Cygwin icon on your desktop. By
+double-clicking it, you will open a Cygwin shell (bash).
+
+3. Make "vscygwin.bat" (or any other name you can remember)
+Each of the two installations above builds a batch file specific to your
+system and installtion options.
+Locate the file "vsvars32.bat" of the Visual Studio. On my system this
+is in "D:\Program Files\Microsoft Visual Studio .NET 2003\Common7\Tools"
+Make a copy of it, on the desktop or wherever you can find it, naming it
+"vscygwin.bat"
+Find "cygwin.bat". It is located right in the directory you installed
+Cygwin into, usually C:\cygwin .
+Open "vscygwin.bat" with an editor (right click on it and choose
+"Edit"). Add a line containing the path to cygwin.bat at the end, e.g.
+"C:\cygwin\cygwin.bat". Save and Exit. Opening (double-click)
+"vscygwin.bat" should now give you a Cygwin shell with the proper
+environment settings for command line compilation with the MSVC
+compiler. Check this by double-clicking the icon and typing "env". You
+should see environment variables like "VS71COMNTOOLS", "VSINSTALLDIR"
+etc. I will call this a VSCygwin shell.
+
+4. automake 1.8
+Make sure you have automake 1.8 (or higher, and corresponding autoconf
+version) installed on cygwin. (Type "automake --version" in a Cygwin
+shell). If not, get it as a cygwin package or get the source (from
+www.gnu.org), install and compile as you would on a Linux box ("tar
+-xzvf source.tgz && cd source && ./configure && make && make install")
+
+5. /work
+Make a working directory. I will call this /work in the following, you
+may choose any other name. Make a directory "bin" inside. Type "mkdir -p
+/work/bin" in a Cygwin shell
+
+6. wrapmsvc
+Get the source distribution of the Coin project, version 2.* (I got
+2.1.0) from ftp://ftp.coin3d.org/pub/coin/src/ and put it e.g. in /work.
+Extract wrapmsvc.exe and put it into /work/bin.
+If you have installed wget in Cygwin, just type:
+
+cd /work
+wget ftp://ftp.coin3d.org/pub/coin/src/Coin-2.1.0.tar.gz
+tar -xzvf Coin-2.1.0.tar.gz Coin-2.1.0/cfg/wrapmsvc.exe
+mv Coin-2.1.0/cfg/wrapmsvc.exe bin
+rmdir -p Coin-2.1.0/cfg
+
+7. ln replacement
+The MSVC doesn't know of symbolic links the Cygwin style, so we have to
+copy the files instead of linking them. For this we put a "ln"
+replacement into /work/bin:
+
+echo '#!/bin/sh
+if [ "$1" = "-s" ]
+ shift
+fi
+cp "$1" "$2"' >/work/bin/ln
+chmod +x /work/bin/ln
+
+
+II compilation with wrapmsvc - general overview
+
+1. Open a VSCygwin shell
+
+2. export PATH="/work/bin:$PATH"
+The problem is that the MSVC compiler does not recognise what for Cygwin
+are symbolic links. By putting /work/bin on the head of the PATH you
+ensure that the "ln" that is contained there is taken when linking is
+required. It actually copies the file instead of linking it.
+
+3. Set the compiler to the MSC wrapper.
+
+export CC=/work/bin/wrapmsvc.exe
+export CXX=$CC
+
+You may want to put something like the following in your $HOME/.bashrc
+in Cygwin to get rid of steps 2 and 3 in the future and get the propper
+setting whenever you open a VSCygwin shell:
+
+echo '
+if [ -n "$VCINSTALLDIR" ] ; then
+ export PATH="/work/bin:$PATH"
+ export CC=/work/bin/wrapmsvc.exe
+ export CXX=$CC
+ export PS1="${PS1}VSCygwin> "
+fi
+' >> $HOME/.bashrc
+
+4. Configure and make as usual
+./configure --prefix=/work && make && make install
+
+5 (libraries only). Rename the libraries
+The make procedure for libraries ends with lib<name>.lib . However the
+MS Linker doensn't recognize these files as the libraries; he expects
+them being <name>.lib. So we copy them (we may also rename them) to give
+them the names the MS linker looks for.
+
+( cd /work/lib ; for i in lib*.lib ; do
+  cp "$i" "`echo $i | sed 's/^lib//'`" ; done )
+
+
+
+Case B: Cross-compiling with MinGW
+
+I Installation
+
+Follow http://www.libsdl.org/extras/win32/cross/README.txt
+
+II Cross-compiling
+
+Basically you configure and make the source as usual, but use the
+scripts "cross-configure.sh" and "cross-make.sh" instead of the ususal
+"./configure" and "make". They just set a few environment variables
+before exec to the normal programs.
+
+
+
+
+Building ComputeFStatistic
+--------------------------
+
+The following paragraphs explain how to build the libraries and finally
+the ComputeFStatistic executable with the MSVC compiler and wrapper.
+These are shell commands which you can simply copy and paste to a
+VSCygwin shell. They expect the PATH and CC variables set as explained
+under the "compilation with wrapmsvc" topic above. If you use /work as
+your working directory, they should work without alterations. Comments
+are marked with the usual #.
+
+These instructions also apply if you are cross-compiling with MinGW,
+with some exceptions:
+- Don't execute the commands following a "#Not needed for MinGW" line.
+Most of them doesn't harm, but its at your own risk.
+- use the "cross-" scripts instead of "./configure" and "make"
+
+
+1. fftw2 (compiles faster than fftw3 and we don't actually use it):
+
+cd /work
+wget ftp://ftp.fftw.org/pub/fftw/fftw-2.1.5.tar.gz
+tar -xzvf fftw-2.1.5.tar.gz
+cd fftw/fftw-2.1.5
+export CFLAGS=-O2
+./configure --enable-float --disable-fortran --prefix=/work
+make && make install
+#Not needed for MinGW
+( cd /work/lib ; for i in lib*.lib ; do
+  cp "$i" "`echo $i | sed 's/^lib//'`" ; done )
+
+
+2. LAL (CVS)
+
+cd /work
+cvs -d ":pserver:anonymous@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft" login
+cvs -d ":pserver:anonymous@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft" co lal
+cd lal
+
+#this gives a mode to libtool and gets rid of the gsl checks
+#do this with "configure.in" instead of "00boot" if you are compiling
+the distibution
+cp 00boot 00boot.dist
+sed '/gsl/d;s%^\(ac_link=\"./libtool\)%\1 --mode=link%' 00boot.dist > 00boot
+
+#generate fake headers
+#actually it would be better to surround the corresponding includes with
+#ifdef HAVE_ s
+#than making fake headers, but that would involve modifying the whole
+source tree.
+#Not needed for MinGW
+touch /work/include/strings.h /work/include/unistd.h
+
+#get rid of LALGSL in std package
+( cd packages/std
+for i in */Makefile.am ; do
+cp $i $i.bak
+sed 's/LALGSL[^ ]*//;/^ =/d' $i.bak >$i
+done )
+
+#the -DNOMINMAX doesn't seem to work with MSVC
+#Not needed for MinGW
+f=packages/tfclusters/src/TFClusters.c
+cp $f $f.min
+sed 's/\([^0-9a-zA-Z]\)\(min[^0-9a-zA-Z]\)/\1uint4\2g;
+s/\([^0-9a-zA-Z]\)\(max[^0-9a-zA-Z]\)/\1uint4\2g' $f.min >$f
+
+#replacement for the asctime_r and gmtime_r functions
+#M$ made the asctime and gmtime functions "thread-safe"
+#(whatever this means in Windows) instead of adding
+#asctime_r and gmtime_r . So for our purpose we implement
+#them the trivial way:
+echo '
+struct tm *gmtime_r(const time_t *t, struct tm *s) {
+  memcpy(s,gmtime(t),sizeof(struct tm));
+  return(s);
+}
+char *asctime_r(const struct tm *t, char *s) {
+  strcpy(s,asctime(t));
+  return(s);
+}
+'>>packages/date/src/GPStoUTC.c
+
+#make the linker find the math library
+#Not needed for MinGW
+cp /lib/libm.a /work/lib/m.lib
+
+./00boot
+./configure --disable-fftw3 --with-extra-cppflags=-I/work/include
+--with-extra-libs=-L/work/lib --prefix=/work
+make && make install
+
+#rename libs
+#Not needed for MinGW
+( cd /work/lib ; for i in lib*.lib ; do cp "$i" "`echo $i | sed
+'s/^lib//'`" ; done )
+
+
+LALAPPS
+
+cvs -d
+":pserver:anonymous@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft" co
+lalapps
+
+cd lalapps
+
+#remove "processtable" from src/lalapps/Makefile.am
+f=src/lalapps/Makefile.am
+cp $f $f.pt
+sed 's/processtable\..//g' $f.pt > $f
+
+./00boot
+./configure --with-extra-cppflags=-I/work/include
+--with-extra-libs=-L/work/lib --prefix=/work
+
+#build the lalapps library
+cd src/lalapps
+make && make install
+
+#build the ComputeFStatistic binary
+#currently that involves manual removing / commenting out all
+#glob related stuff from ComputeFStatistic.c and ComputeFSTatistic.h
+cd ../pulsar/FDS_isolated
+make lalapps_ComputeFStatistic.exe
+
+
+
+So far building BOINC and linking it to ComputeFStatistic only works
+with MSVC. I will write a HOWTO for the cross compiling as soon as I
+know how it works there.
+
+BOINC
+
+Download the boinc source into /work (zip archive, CVS instructions may
+follow). If you have already a Cygwin shell open, you may unzip a .zip
+archive using
+
+cd /work
+unzip boinc*.zip
+
+You will get a directory boinc_public. The easiest Way to build the lib
+is to locate "boinc.sln" in boinc_public\win_build in the Windows
+Explorer and double-click it. This should open the Visual Studio IDE.
+In the first white field in the second row there will probably be
+written "Debug". I switched that to "Release" for now. From the Menu
+"Build" now select "Build solution". This will compile the BOINC dll.
+
+
+Link ComputeFStatistic to BOINC
+
+#it is assumed that you already modified lalapps
+#and built the lalapps lib as above) and built boinc
+#in /work/boinc_public
+#this curretly definetly doesn't work!
+
+cd /work/lalapps
+./configure \
+ --with-extra-cppflags='-DUSE_BOINC=1 -I/work/include -I/work/boinc_public/lib'\
+ --with-extra-libs='-L/work/lib -L/work/boinc_public/win_build' --prefix=/work
+
+
