@@ -43,4 +43,4 @@ MAINTAINERCLEANFILES = earth*.ilwd sun*.ilwd
 dvi-local: .dvi-dep
 
 SUFFIXES=.ilwd .dat
-.dat.ilwd:; cd $(srcdir) && /bin/sh ephemtoilwd.sh $< > $@
+.dat.ilwd:; $(srcdir)/ephemtoilwd.sh $< > $(srcdir)/$@
