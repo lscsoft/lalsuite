@@ -623,7 +623,7 @@ LALFindChirpBCVFilterSegment (
 
       omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
       alpha = - b2 * tan(omega) / ( a1 + b1*tan(omega) );
-      alpha *= pow(deltaT, 2/3); 
+      alpha *= pow(params->deltaT, 2/3); 
       alphaF = alpha * pow(fFinal, 2/3);
       if ( (alphaF >= 0.0 && alphaF <= 2.0) &&  
            ( ! numChisqBins || params->chisqVec->data[j] <
@@ -707,7 +707,7 @@ LALFindChirpBCVFilterSegment (
           omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
           thisEvent->alpha = - b2 * tan(omega) 
             / ( a1 + b1 * tan(omega) );
-          thisEvent->alpha *= pow(deltaT, 2/3);   
+          thisEvent->alpha *= pow(params->deltaT, 2/3);   
 
           /* copy the template into the event */
           thisEvent->psi0   = (REAL4) input->tmplt->psi0; 
@@ -743,7 +743,8 @@ LALFindChirpBCVFilterSegment (
           thisEvent->sigmasq = sqrt( norm / a1 );
           thisEvent->eff_distance =
             input->fcTmplt->tmpltNorm / norm / thisEvent->snr;
-          thisEvent->eff_distance = sqrt( thisEvent->eff_distance );
+          thisEvent->eff_distance = sqrt( thisEvent->eff_distance ) /
+            pow(params->deltaT, 1/6);
 
           thisEvent->snr *= norm;      
           thisEvent->snr = sqrt( thisEvent->snr );
@@ -824,7 +825,7 @@ LALFindChirpBCVFilterSegment (
     omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
     thisEvent->alpha = - b2 * tan(omega) 
       / ( a1 + b1 * tan(omega) );
-    thisEvent->alpha *= pow(deltaT, 2/3); 
+    thisEvent->alpha *= pow(params->deltaT, 2/3); 
 
 
     /* copy the template into the event */
@@ -863,7 +864,8 @@ LALFindChirpBCVFilterSegment (
     thisEvent->sigmasq = sqrt( norm / a1 );
     thisEvent->eff_distance = input->fcTmplt->tmpltNorm / norm /
       thisEvent->snr;
-    thisEvent->eff_distance = sqrt( thisEvent->eff_distance );
+    thisEvent->eff_distance = sqrt( thisEvent->eff_distance ) /
+      pow(params->deltaT,1/6);
 
     thisEvent->snr *=  norm ;   
     thisEvent->snr = sqrt( thisEvent->snr );
