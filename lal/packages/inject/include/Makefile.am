@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = Inject.h SimulateCoherentGW.h GeneratePPNInspiral.h SkyCoordinates.h
+pkginclude_HEADERS = Inject.h SimulateCoherentGW.h SimulateSB.h GeneratePPNInspiral.h SkyCoordinates.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 all-local: include-link
