@@ -133,7 +133,7 @@ if ( headPtr ) {                                                     \
   }                                                                  \
 } else (void)(0)
 
-static const BufferList empty;
+/* static const BufferList empty; */
 
 /* <lalVerbatim file="StreamSequenceInputCP"> */
 void
