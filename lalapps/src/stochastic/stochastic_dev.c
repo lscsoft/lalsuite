@@ -289,7 +289,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* get lengths */
   streamLength = streamDuration * resampleRate;
-  origStreamLength = streamDuration * sampleRate;
+  origStreamLength = (streamDuration + (2 * padData)) * sampleRate;
   intervalLength = intervalDuration * resampleRate;
   segmentLength = segmentDuration * resampleRate;
 
