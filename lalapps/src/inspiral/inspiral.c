@@ -35,6 +35,8 @@ RCSID( "$Id$" );
 /* debugging */
 extern int vrbflg;                      /* verbocity of lal function    */
 
+char *s = NULL;
+
 /* input data parameters */
 UINT8  gpsStartTimeNS   = 0;            /* input data GPS start time ns */
 LIGOTimeGPS gpsStartTime;               /* input data GPS start time    */
@@ -186,7 +188,8 @@ int main( int argc, char *argv[] )
   /* create the search summary and zero out the summvars table */
   searchsumm.searchSummaryTable = (SearchSummaryTable *)
     calloc( 1, sizeof(SearchSummaryTable) );
-  memset( searchsummvars.searchSummvarsTable, 0, sizeof(SearchSummvarsTable) );
+  memset( &(searchsummvars.searchSummvarsTable), 0, 
+      sizeof(SearchSummvarsTable) );
 
   /* call the argument parse and check function */
   arg_parse_check( argc, argv, procparams );
