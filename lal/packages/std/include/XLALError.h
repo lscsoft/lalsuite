@@ -221,6 +221,30 @@ XLALErrorHandlerType ** XLALGetErrorHandlerPtr( void );
 
 /*
  *
+ * Here is a macro to (i) disable the XLAL error handling and preserve the
+ * current value of xlalErrno (ii) perform a statement that involves an
+ * XLAL function call and (iii) restore the XLAL error handler and value of
+ * xlalErrno while setting variable errnum to the xlalErrno set by the
+ * statement.
+ *
+ */
+
+#define XLAL_TRY( statement, errnum ) \
+        do { \
+          XLALErrorHandlerType *xlalSaveErrorHandler; \
+          int xlalSaveErrno; \
+          xlalSaveErrorHandler = XLALSetDefaultErrorHandler(); \
+          xlalSaveErrno = xlalErrno; \
+          XLALClearErrno(); \
+          statement ; \
+          errnum = xlalErrno; \
+          xlalErrno = xlalSaveErrno; \
+          XLALSetErrorHandler( xlalSaveErrorHandler ); \
+        } while ( 0 )
+
+
+/*
+ *
  * Here are the routines and macros that are used to report errors when
  * an XLAL function fails.  They (i) set the XLAL error number and (ii)
  * invoke the XLAL error handler.  The macros also (iii) return the

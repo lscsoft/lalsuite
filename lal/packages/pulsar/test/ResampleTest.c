@@ -449,6 +449,14 @@ main( int argc, char **argv )
     SUB( LALSCreateVector( &stat, &PSOut, m/2 + 1 ), &stat );
     SUB( LALRealPowerSpectrum( &stat, PSOut, output.data, plan ),
 	 &stat );
+    /* CHANGE BACK TO ORIGINAL NORMALIZATION -- JC */
+    {
+      REAL4Vector *myvector = PSOut;
+      UINT4 mybin;
+      for ( mybin = 1; mybin < myvector->length - 1; ++mybin )
+        myvector->data[mybin] *= 0.5;
+    }
+
 
     /* Create a new output that is a decimated but not demodulated
        data set, then discard the initial input. */

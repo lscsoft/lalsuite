@@ -63,8 +63,10 @@
  * returned (integer division is rounded down, e.g., $\lfloor 7/2\rfloor=3$).
  * 
  * The routine \texttt{LALRealPowerSpectrum()} computes the power spectrum
- * $P_k=|H_k|^2$, $k=0\ldots \lfloor n/2\rfloor$, of the data $h_j$,
- * $j=0\ldots n-1$.
+ * $P_k=2|H_k|^2$, $k=1\ldots \lfloor (n-1)/2\rfloor$,
+ * $P_0=|H_0|^2$, and $P_{n/2}=|H_{n/2}|^2$ if $n$ is even, of the data $h_j$,
+ * $j=0\ldots n-1$.  The factor of two except at DC and Nyquist accounts for
+ * the power in negative frequencies.
  * 
  * The routine \texttt{LALREAL4VectorFFT()} is essentially a direct calls to
  * FFTW routines without any re-packing of the data.  This routine should not
@@ -429,7 +431,8 @@ int XLALREAL4PowerSpectrum( REAL4Vector *spec, REAL4Vector *data,
   {
     REAL4 re = tmp[k];
     REAL4 im = tmp[plan->size - k];
-    spec->data[k] = re * re + im * im;
+    spec->data[k]  = re * re + im * im;
+    spec->data[k] *= 2.0; /* accounts for negative frequency part */
   }
 
   /* Nyquist frequency */
@@ -707,7 +710,8 @@ int XLALREAL8PowerSpectrum( REAL8Vector *spec, REAL8Vector *data,
   {
     REAL8 re = tmp[k];
     REAL8 im = tmp[plan->size - k];
-    spec->data[k] = re * re + im * im;
+    spec->data[k]  = re * re + im * im;
+    spec->data[k] *= 2.0; /* accounts for negative frequency part */
   }
 
   /* Nyquist frequency */

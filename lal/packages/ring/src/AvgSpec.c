@@ -170,6 +170,13 @@ LALMedianSpectrum(
       LALDestroyVector( status->statusPtr, &window );
     }
     ENDFAIL( status );
+    /* CHANGE BACK TO ORIGINAL NORMALIZATION -- JC */
+    {
+      REAL4Vector *myvector = spectrum[seg].data;
+      UINT4 mybin;
+      for ( mybin = 1; mybin < myvector->length - 1; ++mybin )
+        myvector->data[mybin] *= 0.5;
+    }
   }
 
   /* done with temporary segment vector and window */

@@ -206,6 +206,13 @@ LALRingSearchConditionData(
     LALRealPowerSpectrum( status->statusPtr, params->invSpectrum->data, vector,
         params->forwardPlan );
     CHECKSTATUSPTR( status );
+    /* CHANGE BACK TO ORIGINAL NORMALIZATION -- JC */
+    {
+      REAL4Vector *myvector = params->invSpectrum->data;
+      UINT4 mybin;
+      for ( mybin = 1; mybin < myvector->length - 1; ++mybin )
+        myvector->data[mybin] *= 0.5;
+    }
 
     /* adjust normalization to account for reverse/forward ffting */
     norm /= (REAL4)( vector->length ) * (REAL4)( vector->length );

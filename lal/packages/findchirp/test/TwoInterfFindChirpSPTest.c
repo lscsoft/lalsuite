@@ -413,6 +413,15 @@ main (int argc, char *argv[])
 	
 	  LALRealPowerSpectrum(&status, dataSegVec[0].data[i].spec->data,
 			       dataSegVec[0].data[i].chan->data, powerFFTPlan);
+          /* CHANGE BACK TO ORIGINAL NORMALIZATION -- JC */
+          {
+            REAL4Vector *myvector = dataSegVec[0].data[i].spec->data;
+            UINT4 mybin;
+            for ( mybin = 1; mybin < myvector->length - 1; ++mybin )
+              myvector->data[mybin] *= 0.5;
+          }
+
+
 	
 	  /* scale the power spectrum to the findchirp definition */
 	  {
@@ -535,6 +544,15 @@ main (int argc, char *argv[])
 
 	  LALRealPowerSpectrum(&status, dataSegVec[1].data[i].spec->data,
 			       dataSegVec[1].data[i].chan->data, powerFFTPlan);
+          /* CHANGE BACK TO ORIGINAL NORMALIZATION -- JC */
+          {
+            REAL4Vector *myvector = dataSegVec[1].data[i].spec->data;
+            UINT4 mybin;
+            for ( mybin = 1; mybin < myvector->length - 1; ++mybin )
+              myvector->data[mybin] *= 0.5;
+          }
+
+
 
 	  /* scale the power spectrum to corresponds with the findchirp package definition */
 	 

@@ -205,6 +205,15 @@ int main ( void )
   /* compute Spectrum */
   
   LALRealPowerSpectrum(&status,Pvec,x,pfwd);
+  /* CHANGE BACK TO ORIGINAL NORMALIZATION -- JC */
+  {
+    REAL4Vector *myvector = Pvec;
+    UINT4 mybin;
+    for ( mybin = 1; mybin < myvector->length - 1; ++mybin )
+      myvector->data[mybin] *= 0.5;
+  }
+
+
 
   /* find the position of the harmonics considered */
   LALHarmonicFinder(&status,hkff,xp,hk);

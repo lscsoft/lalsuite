@@ -137,6 +137,15 @@ void LALTfrSp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
 
       /*       printf("%d\n",column); */
       LALRealPowerSpectrum (stat->statusPtr, ptmp, windSig, plan);
+      /* CHANGE BACK TO ORIGINAL NORMALIZATION -- JC */
+      {
+        REAL4Vector *myvector = ptmp;
+        UINT4 mybin;
+        for ( mybin = 1; mybin < myvector->length - 1; ++mybin )
+          myvector->data[mybin] *= 0.5;
+      }
+
+
       
       for (row = 0; row < (tfr->fRow/2 +1); ++row)
 	tfr->map[column][row] =  ptmp->data[row];
