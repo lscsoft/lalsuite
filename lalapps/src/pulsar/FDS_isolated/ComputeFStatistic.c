@@ -17,6 +17,24 @@
 
 RCSID( "$Id$");
 
+
+/* BOINC should be set to 1 to be run under BOINC */
+#define USE_BOINC 0
+#if USE_BOINC
+#define USE_BOINC_DEBUG 0
+/* for getpid() */
+#include <sys/types.h>
+#include <unistd.h>
+
+typedef int bool;
+int  boinc_init(bool standalone);
+int  boinc_finish(int);
+int  boinc_resolve_filename(const char*, char*, int len);
+
+void use_boinc_filename1(char** orig_name);
+void use_boinc_filename0(char* orig_name);
+#endif /* USE_BOINC */
+
 /*
 #define DEBG_FAFB                
 #define DEBG_ESTSIGPAR
@@ -74,6 +92,7 @@ INT4  uvar_metricType;
 REAL8 uvar_metricMismatch;
 CHAR *uvar_skyRegion;
 CHAR *uvar_DataDir;
+CHAR *uvar_mergedSFTFile;
 CHAR *uvar_BaseName;
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
@@ -97,6 +116,9 @@ FILE *fpmax;
 FILE *fpstat;
 /* #endif     */
 REAL8 medianbias=1.0;
+
+/* we use this to avoid closing then re-opening the same file */
+FILE *fp_mergedSFT=NULL;
 
 DopplerScanState thisScan;
 ConfigVariables GV;
@@ -152,6 +174,21 @@ int main(int argc,char *argv[])
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
 
+#if USE_BOINC
+  /* boinc_init() needs to be run before any boinc_api functions are used */
+  boinc_init(FALSE);
+#if USE_BOINC_DEBUG
+  {
+    char commandstring[256];
+    /* char *cmd_name = argv[0]; */
+    pid_t process_id=getpid();
+    sprintf(commandstring,"ddd %s %d &","../../projects/ein*/einstein*" ,process_id);
+    system(commandstring);
+    sleep(20);
+  }
+#endif /*USE_BOINC_DEBUG*/
+#endif /*USE_BOINC*/
+
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
 
@@ -185,6 +222,9 @@ int main(int argc,char *argv[])
   strcpy(Fmaxfilename,"Fmax");
   if (uvar_outputLabel)
     strcat(Fmaxfilename,uvar_outputLabel);
+#if USE_BOINC
+  use_boinc_filename0(Fmaxfilename);
+#endif /* USE_BOINC */
   if (!(fpmax=fopen(Fmaxfilename,"w"))){
     fprintf(stderr,"in Main: unable to open Fmax file\n");
     return 2;
@@ -195,6 +235,9 @@ int main(int argc,char *argv[])
   strcpy(Fstatsfilename,"Fstats");
   if ( LALUserVarWasSet(&uvar_outputLabel) )
     strcat(Fstatsfilename,uvar_outputLabel);
+#if USE_BOINC
+  use_boinc_filename0(Fstatsfilename);
+#endif /* USE_BOINC */
   if (!(fpstat=fopen(Fstatsfilename,"w"))){
     fprintf(stderr,"in Main: unable to open Fstats file\n");
     return 2;
@@ -315,6 +358,10 @@ int main(int argc,char *argv[])
 #endif
   LAL_CALL (Freemem(&status), &status);
 
+#if USE_BOINC
+  boinc_finish(0);
+#endif
+
   return 0;
 
 } /* main() */
@@ -375,7 +422,8 @@ initUserVars (LALStatus *stat)
   LALregREALUserVar(stat, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
   LALregREALUserVar(stat, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
   LALregREALUserVar(stat, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
-  LALregSTRINGUserVar(stat,	DataDir, 	'D', UVAR_REQUIRED, "Directory where SFT's are located");
+  LALregSTRINGUserVar(stat,	DataDir, 	'D', UVAR_OPTIONAL, "Directory where SFT's are located");
+  LALregSTRINGUserVar(stat,	mergedSFTFile, 	'B', UVAR_OPTIONAL, "Merged SFT's file to be used with BOINC"); 
   LALregSTRINGUserVar(stat,	BaseName, 	'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
   LALregSTRINGUserVar(stat,	EphemDir, 	'E', UVAR_REQUIRED, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(stat,	EphemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
@@ -993,20 +1041,31 @@ int ReadSFTData(void)
   FILE *fp;
   size_t errorcode;
   UINT4 ndeltaf;
+  INT4 k=0;
 
   SFTData=(FFT **)LALMalloc(GV.SFTno*sizeof(FFT *));
   timestamps=(LIGOTimeGPS *)LALMalloc(GV.SFTno*sizeof(LIGOTimeGPS));
+  
+  /* if using a merged SFT file, it's already open */
+  if (uvar_mergedSFTFile)
+    fp=fp_mergedSFT;
 
   for (fileno=0;fileno<GV.SFTno;fileno++)
     {
-      /* open FIRST file and get info from it*/
-
-      fp=fopen(GV.filelist[fileno],"r");
-      if (fp==NULL) 
-	{
+      /* seek to fileno'th SFT k bytes in */
+      if (uvar_mergedSFTFile){
+	if (fseek(fp,k,SEEK_SET)) {
+	  fprintf(stderr,"Unable to seek to the start of %s !\n",GV.filelist[fileno]);
+	  return 1;
+	}
+      }
+      else {
+	if (!(fp=fopen(GV.filelist[fileno],"r"))) {
 	  fprintf(stderr,"Weird... %s doesn't exist!\n",GV.filelist[fileno]);
 	  return 1;
 	}
+      }
+
       /* Read in the header from the file */
       errorcode=fread((void*)&header,sizeof(header),1,fp);
       if (errorcode!=1) 
@@ -1074,7 +1133,10 @@ int ReadSFTData(void)
       SFTData[fileno]->fft->deltaF = 1.0 / GV.tsft;
       SFTData[fileno]->fft->data->length = ndeltaf;
 
-      fclose(fp);     /* close file */
+         if (uvar_mergedSFTFile)
+	   k+=sizeof(header)+header.nsamples*8;
+	 else
+	   fclose(fp);     /* close file */
     
     }
   return 0;  
@@ -1103,9 +1165,19 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
 
-  if (uvar_DataDir == NULL)
+  if(!uvar_DataDir && !uvar_mergedSFTFile)
     {
-      LALPrintError ("No SFT directory specified (option 'DataDir')\n");
+      LALPrintError ( "Must use -D or -B option.\n"
+		      "No SFT directory specified; input directory with -D option.\n"
+		      "No merged SFT file specified; input file with -B option.\n"
+		      "Try ./ComputeFStatistic -h \n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
+    }
+
+  if(uvar_DataDir && uvar_mergedSFTFile)
+    {
+      LALPrintError ( "Cannot use -D option with -B option.\n"
+		      "Try ./ComputeFStatistic -h \n" );
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
 
@@ -1134,62 +1206,130 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
+#if USE_BOINC
+  strcat(cfg->EphemEarth,"earth");
+#else 
   strcpy(cfg->EphemEarth,uvar_EphemDir);
   strcat(cfg->EphemEarth,"/earth");
+#endif /* USE_BOINC */
   strcat(cfg->EphemEarth, uvar_EphemYear);
   strcat(cfg->EphemEarth,".dat");
 
+#if USE_BOINC
+  strcat(cfg->EphemSun,"sun");
+#else 
   strcpy(cfg->EphemSun,uvar_EphemDir);
   strcat(cfg->EphemSun,"/sun");
+#endif /* USE_BOINC */
   strcat(cfg->EphemSun, uvar_EphemYear);
   strcat(cfg->EphemSun,".dat");
 
   /* *** Make sure the e-files are really there *** */
-      fp=fopen(cfg->EphemEarth,"r");
-      if (fp==NULL) 
-	{
-	  fprintf(stderr,"Could not find %s\n",cfg->EphemEarth);
-	  ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-	}
-      fclose(fp);
-      fp=fopen(cfg->EphemSun,"r");
-      if (fp==NULL) 
-	{
-	  fprintf(stderr,"Could not find %s\n",cfg->EphemSun);
-	  ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-	}
-      fclose(fp);
-  /* ********************************************** */
 
-  strcpy(command, uvar_DataDir);
-  strcat(command,"/*");
-
-  strcat(command, uvar_BaseName);
-  strcat(command,"*");
-  
-  globbuf.gl_offs = 1;
-  glob(command, GLOB_ERR, NULL, &globbuf);
-
-  /* read file names -- MUST NOT FORGET TO PUT ERROR CHECKING IN HERE !!!! */
-
-  if(globbuf.gl_pathc==0)
+#if USE_BOINC
+  use_boinc_filename0(cfg->EphemEarth);
+#endif
+  fp=fopen(cfg->EphemEarth,"r");
+  if (fp==NULL) 
     {
-      fprintf(stderr,"No SFTs in directory %s ... Exiting.\n",uvar_DataDir);
+      fprintf(stderr,"Could not find %s\n",cfg->EphemEarth);
       ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
     }
-
-  while ((UINT4)fileno < globbuf.gl_pathc) 
+  fclose(fp);
+#if USE_BOINC
+  use_boinc_filename0(cfg->EphemSun);
+#endif
+  fp=fopen(cfg->EphemSun,"r");
+  if (fp==NULL) 
     {
-      strcpy(cfg->filelist[fileno],globbuf.gl_pathv[fileno]);
-      fileno++;
-      if (fileno > MAXFILES)
-	{
-	  fprintf(stderr,"Too many files in directory! Exiting... \n");
-	  ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-	}
+      fprintf(stderr,"Could not find %s\n",cfg->EphemSun);
+      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
     }
-  globfree(&globbuf);
+  fclose(fp);
+  /* ********************************************** */
 
+  if (uvar_mergedSFTFile) {
+    long k=0;
+#if USE_BOINC
+    use_boinc_filename1(&(uvar_mergedSFTFile));
+#endif
+    if (!(fp=fp_mergedSFT=fopen(uvar_mergedSFTFile,"r"))){
+      fprintf(stderr,"Unable to open SFT file %s\n", uvar_mergedSFTFile);
+      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+    }
+    
+    while (fread((void*)&header,sizeof(header),1,fp) == 1) {
+      char tmp[256];
+      /* check that we've still got space for more data */
+      if (fileno >= MAXFILES) {
+	fprintf(stderr,"Too many SFT's in merged file! Exiting... \n");
+	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      }
+      
+      /* store a "file name" composed of merged name + block number */
+      sprintf(tmp, "%s (block %d)", uvar_mergedSFTFile, fileno+1);
+      strcpy(cfg->filelist[fileno],tmp);
+      
+      /* check that data is correct endian order */
+      if (header.endian!=1.0) {
+	fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[fileno]);
+	fprintf(stderr,"It could be a file format error (big/little\n");
+	fprintf(stderr,"endian) or the file might be corrupted\n\n");
+	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      }
+      
+      /* if this is the first SFT, save initial time */
+      if (fileno==0) {
+	cfg->Ti=header.gps_sec;
+	starttime.gpsSeconds = header.gps_sec;
+	starttime.gpsNanoSeconds = header.gps_nsec;
+      }
+      /* increment file no and pointer to the start of the next header */
+      fileno++;
+      k=header.nsamples*8;
+      fseek(fp,k,SEEK_CUR);
+    }
+    /* save final time and time baseline */
+    cfg->Tf=header.gps_sec+header.tbase;  /* FINAL TIME */
+    cfg->tsft=header.tbase;  /* Time baseline of SFTs */
+    
+    /* NOTE: we do NOT close fp here.  If we are using merged SFT file
+       for data, we keep it open because we'll need it again in
+       ReadSFTData().
+    */
+    
+  } 
+  else {
+
+    strcpy(command, uvar_DataDir);
+    strcat(command,"/*");
+    
+    strcat(command, uvar_BaseName);
+    strcat(command,"*");
+    
+    globbuf.gl_offs = 1;
+    glob(command, GLOB_ERR, NULL, &globbuf);
+    
+    /* read file names -- MUST NOT FORGET TO PUT ERROR CHECKING IN HERE !!!! */
+    
+    if(globbuf.gl_pathc==0)
+      {
+	fprintf(stderr,"No SFTs in directory %s ... Exiting.\n",uvar_DataDir);
+	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      }
+    
+    while ((UINT4)fileno < globbuf.gl_pathc) 
+      {
+	strcpy(cfg->filelist[fileno],globbuf.gl_pathv[fileno]);
+	fileno++;
+	if (fileno > MAXFILES)
+	  {
+	    fprintf(stderr,"Too many files in directory! Exiting... \n");
+	    ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+	  }
+      }
+    globfree(&globbuf);
+  }
   cfg->SFTno=fileno; /* remember this is 1 more than the index value */
 
   /* initialize detector */
@@ -1215,53 +1355,55 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
-  /* open FIRST file and get info from it*/
-  fp=fopen(cfg->filelist[0],"r");
-  /* read in the header from the file */
-  errorcode=fread((void*)&header,sizeof(header),1,fp);
-  if (errorcode!=1) 
-    {
-      fprintf(stderr,"No header in data file %s\n",cfg->filelist[0]);
-      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-    }
+  if (!uvar_mergedSFTFile) {
+    /* open FIRST file and get info from it*/
+    fp=fopen(cfg->filelist[0],"r");
+    /* read in the header from the file */
+    errorcode=fread((void*)&header,sizeof(header),1,fp);
+    if (errorcode!=1) 
+      {
+	fprintf(stderr,"No header in data file %s\n",cfg->filelist[0]);
+	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      }
+    
+    /* check that data is correct endian order */
+    if (header.endian!=1.0)
+      {
+	fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[0]);
+	fprintf(stderr,"It could be a file format error (big/little\n");
+	fprintf(stderr,"endian) or the file might be corrupted\n\n");
+	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      }
+    fclose(fp);
+    
+    /* INITIAL TIME */
+    starttime.gpsSeconds = header.gps_sec;
+    starttime.gpsNanoSeconds = header.gps_nsec;
+    cfg->Ti = header.gps_sec; 
+    
+    /* open LAST file and get info from it*/
+    fp=fopen(cfg->filelist[fileno-1],"r");
+    /* read in the header from the file */
+    errorcode=fread((void*)&header,sizeof(header),1,fp);
+    if (errorcode!=1) 
+      {
+	fprintf(stderr,"No header in data file %s\n",cfg->filelist[fileno-1]);
+	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      }
+    /* check that data is correct endian order */
+    if (header.endian!=1.0)
+      {
+	fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[fileno-1]);
+	fprintf(stderr,"It could be a file format error (big/little\n");
+	fprintf(stderr,"endian) or the file might be corrupted\n\n");
+	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      }
+    fclose(fp);
 
-  /* check that data is correct endian order */
-  if (header.endian!=1.0)
-    {
-      fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[0]);
-      fprintf(stderr,"It could be a file format error (big/little\n");
-      fprintf(stderr,"endian) or the file might be corrupted\n\n");
-      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-    }
-  fclose(fp);
+    cfg->Tf=header.gps_sec+header.tbase;  /* FINAL TIME */
 
-  /* INITIAL TIME */
-  starttime.gpsSeconds = header.gps_sec;
-  starttime.gpsNanoSeconds = header.gps_nsec;
-  cfg->Ti = header.gps_sec; 
-
-  /* open LAST file and get info from it*/
-  fp=fopen(cfg->filelist[fileno-1],"r");
-  /* read in the header from the file */
-  errorcode=fread((void*)&header,sizeof(header),1,fp);
-  if (errorcode!=1) 
-    {
-      fprintf(stderr,"No header in data file %s\n",cfg->filelist[fileno-1]);
-      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-    }
-  /* check that data is correct endian order */
-  if (header.endian!=1.0)
-    {
-      fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[fileno-1]);
-      fprintf(stderr,"It could be a file format error (big/little\n");
-      fprintf(stderr,"endian) or the file might be corrupted\n\n");
-      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-    }
-  fclose(fp);
-
-  cfg->Tf=header.gps_sec+header.tbase;  /* FINAL TIME */
-
-  cfg->tsft=header.tbase;  /* Time baseline of SFTs */
+    cfg->tsft=header.tbase;  /* Time baseline of SFTs */
+  }
     
   /* if user has not input demodulation frequency resolution; set to 1/2*Tobs */
   if( !LALUserVarWasSet (&uvar_dFreq) ) 
@@ -2179,3 +2321,28 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
   return 0;
 }
 
+/*******************************************************************************/
+
+#if USE_BOINC
+void use_boinc_filename0(char *orig_name ) {
+  char resolved_name[512];
+  if (boinc_resolve_filename(orig_name, resolved_name, sizeof(resolved_name))) {
+    fprintf(stderr, "Can't resolve file %s\n", orig_name);
+    boinc_finish(2);
+  }
+  strcpy(orig_name, resolved_name);
+  return;
+}
+
+void use_boinc_filename1(char **orig_name ) {
+  char resolved_name[512];
+  if (boinc_resolve_filename(*orig_name, resolved_name, sizeof(resolved_name))) {
+    fprintf(stderr, "Can't resolve file %s\n", *orig_name);
+    boinc_finish(2);
+  }
+  *orig_name = calloc(strlen(resolved_name)+1,1);
+  strcpy(*orig_name, resolved_name);
+  return;
+}
+
+#endif /*USE_BOINC*/
