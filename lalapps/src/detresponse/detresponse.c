@@ -19,14 +19,20 @@
 #include "detresponse.h"
 #include <string.h>
 
-int lalDebugLevel = 0;
-int verbosity_level = 0;
+int lalDebugLevel = 1;
+int verbosity_level = 3;
 struct gengetopt_args_info args_info;
 
 int
 main(int argc, char **argv)
 {
   static LALStatus          status;
+  EphemerisData             ephemeris_data;
+  
+  status.statusPtr = NULL;
+  
+  /* initalize ephemeris_data */
+  init_ephemeris(&status, &ephemeris_data);
 
   /* parse command line options */
   if (cmdline_parser(argc, argv, &args_info) != 0)
@@ -41,7 +47,11 @@ main(int argc, char **argv)
   if (args_info.single_source_given)
     generate_timeseries_response(&status);
   else if (args_info.whole_sky_given)
-    compute_skygrid(&status);
+    compute_skygrid(&status, &ephemeris_data);
+    
+  cleanup_ephemeris(&status, &ephemeris_data);
+  
+  LALCheckMemoryLeaks();
 
   return 0;
 }

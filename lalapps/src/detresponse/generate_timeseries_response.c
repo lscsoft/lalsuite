@@ -167,6 +167,4 @@ void generate_timeseries_response(LALStatus * status)
   LALSDestroyVector(status, &(det_response_series.pCross->data));
   LALSDestroyVector(status, &(det_response_series.pScalar->data));
   LALSDestroyVector(status, &(tmp_series.data));
-
-  LALCheckMemoryLeaks();
 }

@@ -40,13 +40,15 @@ extern struct gengetopt_args_info args_info;
 
 typedef REAL8Array * skygrid_t;
 
+void init_ephemeris(LALStatus *status, EphemerisData *ephemeris_data);
+void cleanup_ephemeris(LALStatus *status, EphemerisData *ephemeris_data);
 void init_skygrid(LALStatus *status);
 skygrid_t * alloc_skygrid(LALStatus *status, skygrid_t *g);
 void free_skygrid(LALStatus *status, skygrid_t *skygrid);
 void cleanup_skygrid(LALStatus *status);
-REAL4 skygrid_avg(LALStatus *status, const skygrid_t response);
+REAL8 skygrid_avg(LALStatus *status, const skygrid_t response);
 void  skygrid_square(LALStatus *status, skygrid_t square, const skygrid_t input);
-REAL4 skygrid_rms(LALStatus *status, const skygrid_t input);
+REAL8 skygrid_rms(LALStatus *status, const skygrid_t input);
 void  skygrid_sqrt(LALStatus *status, skygrid_t result, const skygrid_t input);
 INT4  skygrid_copy(LALStatus *status, skygrid_t dest, const skygrid_t src);
 void  skygrid_print(LALStatus *status, const LIGOTimeGPS * gps, const skygrid_t input,
