@@ -270,7 +270,7 @@ INT4 main(INT4 argc, CHAR *argv[])
    {fprintf(stdout, "Calculating number of segments...\n");}
 
   /* get number of segments */
-  numSegments = (INT4)((stopTime - startTime) / segmentDuration );
+  numSegments = (INT4)floor((stopTime - startTime) / segmentDuration );
   segmentShift = segmentDuration;
 
   if (overlap_hann_flag)
