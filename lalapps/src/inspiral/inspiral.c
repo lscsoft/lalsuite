@@ -283,6 +283,7 @@ int main( int argc, char *argv[] )
   /* set the time series parameters of the input data */
   memset( &resampleParams, 0, sizeof(ResampleTSParams) );
   resampleParams.deltaT = 1.0 / (REAL8) sampleRate;
+  resampleParams.filterType = firLSOne;
   memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
 
   /* if the input and requested sample rates differ, downsample the data */
@@ -291,7 +292,7 @@ int main( int argc, char *argv[] )
     if (vrbflg) fprintf( stdout, "resampling input data from %e to %e\n",
         chan.deltaT, resampleParams.deltaT );
 
-    LAL_CALL( LALResampleREAL4TimeSeries( &status, &chan, &resampleParams ),
+    LAL_CALL( LALDecimateREAL4TimeSeries( &status, &chan, &resampleParams ),
         &status );
 
     if ( vrbflg ) fprintf( stdout, "channel %s resampled:\n"
