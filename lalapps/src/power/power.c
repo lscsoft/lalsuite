@@ -29,6 +29,13 @@
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
 
+#include <lal/FindChirp.h>
+#include <lal/FindChirpSP.h>
+#include <lal/FindChirpTD.h>
+#include <lal/FindChirpBCV.h>
+#include <lal/FindChirpBCVSpin.h>
+#include <lal/FindChirpChisq.h>
+
 #include <lalapps.h>
 #include <processtable.h>
 
@@ -91,7 +98,8 @@ CHAR *cachefile;                    /* name of file with frame cache info  */
 CHAR *dirname;                      /* name of directory with frames       */
 
 /* data conditioning parameters */
-CHAR *injectionFile;                /* file with list of injections        */
+CHAR *burstInjectionFile;                /* file with list of burst injections        */
+CHAR *inspiralInjectionFile;                /* file with list of burst injections        */
 CHAR *mdcCacheFile;                 /* name of mdc signal cache file       */
 ResampleTSFilter resampFiltType;
 
@@ -198,7 +206,8 @@ static void print_usage(char *program)
 "	 --gps-start-time-ns <nanoseconds>\n" \
 "	[--help]\n" \
 "	[--high-freq-cutoff <Hz>]\n" \
-"	[--injection-file <file name>]\n" \
+"	[--burstinjection-file <file name>]\n" \
+"	[--inspiralinjection-file <file name>]\n" \
 "	 --low-freq-cutoff <Hz>\n" \
 "	[--mdc-cache <cache file>]\n" \
 "	[--mdc-channel <channel name>]\n" \
@@ -219,7 +228,7 @@ static void print_usage(char *program)
 "	 --tfplane-method <method>\n" \
 "	 --tile-overlap-factor <factor>\n" \
 "	 --threshold <threshold>\n" \
-"	[--useOverWhitening]\n" \
+"	[--useoverwhitening]\n" \
 "	[--user-tag <comment>]\n" \
 "	[--verbose]\n" \
 "	 --window <window>\n" \
@@ -413,7 +422,7 @@ void parse_command_line(
 	char msg[240];
 	int args_are_bad = FALSE;
 	int printSpectrum;
-	int useOverWhitening;
+	int useoverwhitening;
 	int c;
 	int option_index;
 	int ram = 0;
@@ -440,7 +449,8 @@ void parse_command_line(
 		{"gps-start-time-ns",   required_argument, NULL,           'N'},
 		{"help",                no_argument,       NULL,           'O'},
 		{"high-freq-cutoff",    required_argument, NULL,           'k'},
-		{"injection-file",      required_argument, NULL,           'P'},
+		{"burstinjection-file", required_argument, NULL,           'P'},
+		{"inspiralinjection-file", required_argument, NULL,        'I'},
 		{"low-freq-cutoff",     required_argument, NULL,           'Q'},
 		{"max-tileband",        required_argument, NULL,           'l'},
 		{"max-tileduration",    required_argument, NULL,           'm'},
@@ -461,7 +471,7 @@ void parse_command_line(
 		{"tfplane-method",      required_argument, NULL,           'n'},
 		{"tile-overlap-factor", required_argument, NULL,           'f'},
 		{"threshold",           required_argument, NULL,           'g'},
-		{"useOverWhitening",    no_argument, &useOverWhitening,   TRUE},  
+		{"useoverwhitening",    no_argument, &useoverwhitening,   TRUE},  
 		{"user-tag",            required_argument, NULL,           'h'},
 		{"verbose",             no_argument, &options.verbose,    TRUE},
 		{"window",              required_argument, NULL,           'i'},
@@ -494,7 +504,7 @@ void parse_command_line(
 
 	options.calCacheFile = NULL;	/* default */
 	options.cluster = FALSE;	/* default */
-	options.comment = "";	/* default */
+	options.comment = "";	        /* default */
 	options.fcorner = 100.0;	/* default */
 	options.FilterCorruption = -1;	/* impossible */
 	options.noiseAmpl = -1.0;	/* default */
@@ -508,11 +518,12 @@ void parse_command_line(
 	dirname = NULL;	/* default */
 	geodata = FALSE;	/* default */
 	memset(ifo, 0, sizeof(ifo));	/* default */
-	injectionFile = NULL;	/* default */
+	burstInjectionFile = NULL;	/* default */
+	inspiralInjectionFile = NULL;	/* default */
 	mdcCacheFile = NULL;	/* default */
 	mdcparams = NULL;	/* default */
 	printSpectrum = FALSE;	/* default */
-	useOverWhitening = FALSE; /* default */
+	useoverwhitening = FALSE; /* default */
 	resampFiltType = -1;	/* default */
 
 	/*
@@ -580,6 +591,11 @@ void parse_command_line(
 		ADD_PROCESS_PARAM("string");
 		break;
 
+		case 'I':
+		inspiralInjectionFile = optarg;
+		ADD_PROCESS_PARAM("string");
+		break;
+
 		case 'J':
 		options.fcorner = atof(optarg);
 		if(options.fcorner <= 0) {
@@ -640,7 +656,7 @@ void parse_command_line(
 		break;
 
 		case 'P':
-		injectionFile = optarg;
+		burstInjectionFile = optarg;
 		ADD_PROCESS_PARAM("string");
 		break;
 
@@ -952,7 +968,7 @@ void parse_command_line(
 	 */
 
 	params->printSpectrum = printSpectrum;
-	params->useOverWhitening = useOverWhitening;
+	params->useOverWhitening = useoverwhitening;
 
 	if(options.verbose) {
 		fprintf(stderr, "%s: available RAM limits analysis to %d samples\n", argv[0], options.maxSeriesLength);
@@ -1199,7 +1215,7 @@ static void add_burst_injections(
 	if(options.verbose)
 		fprintf(stderr, "add_burst_injections(): reading in SimBurst Table\n");
 
-	LAL_CALL(LALSimBurstTableFromLIGOLw(stat, &injections, injectionFile, startTime, stopTime), stat);
+	LAL_CALL(LALSimBurstTableFromLIGOLw(stat, &injections, burstInjectionFile, startTime, stopTime), stat);
 
 	if(options.verbose)
 		fprintf(stderr, "add_burst_injections(): injecting signals into time series\n");
@@ -1217,6 +1233,53 @@ static void add_burst_injections(
 }
 
 
+/*
+ * ============================================================================
+ *                              Inspiral injections
+ * ============================================================================
+ */
+
+static void add_inspiral_injections(
+	LALStatus *stat,
+	REAL4TimeSeries *series,
+	COMPLEX8FrequencySeries *response
+)
+{
+	INT4 startTime = series->epoch.gpsSeconds;
+	INT4 stopTime = startTime + series->data->length * series->deltaT;
+	SimInspiralTable *injections = NULL;
+
+	INT4 numInjections = 0;
+
+	if(!response) {
+	  fprintf(stderr, "add_inspiral_injections(): must supply calibration information for injections\n");
+	  exit(1);
+	}
+
+	if(options.verbose)
+	  fprintf(stderr, "add_inspiral_injections(): reading in SimInspiral Table\n");
+
+	numInjections = SimInspiralTableFromLIGOLw(&injections, inspiralInjectionFile, startTime, stopTime);
+
+	if(numInjections < 0){
+	  fprintf(stderr,"add_inspiral_injections():error:cannot read injection file\n");
+	  exit(1);
+	}
+
+	if(options.verbose)
+	  fprintf(stderr, "add_inspiral_injections(): injecting signals into time series\n");
+	
+	LAL_CALL(LALFindChirpInjectSignals(stat, series, injections, response), stat); 
+
+	if(options.verbose)
+	  fprintf(stderr, "add_inspiral_injections(): finished making the injections\n");
+	
+	while(injections) {
+	  SimInspiralTable *thisEvent = injections;
+	  injections = injections->next;
+	  LALFree(thisEvent);
+	}
+}
 
 /*
  * ============================================================================
@@ -1480,18 +1543,26 @@ int main( int argc, char *argv[])
 			LALPrintTimeSeries(series, "./timeseriesasq.dat");
 
 		/*
-		 * Add burst injections into the time series if requested.
+		 * Add burst/inspiral injections into the time series if requested.
 		 */
 
-		if(injectionFile) {
+		if(burstInjectionFile || inspiralInjectionFile) {
 			COMPLEX8FrequencySeries  *response = NULL;
 
 			/* Create the response function */
 			if(options.calCacheFile)
 				response = generate_response(&stat, options.calCacheFile, series->deltaT, series->epoch, series->data->length);
 
+
+			if(options.printData)
+			  LALCPrintFrequencySeries(response, "./response.dat");
+
 			/* perform injections */
-			add_burst_injections(&stat, series, response);
+			if(burstInjectionFile)
+			  add_burst_injections(&stat, series, response);
+			else
+			  add_inspiral_injections(&stat, series, response);
+
 			if(options.printData)
 				LALPrintTimeSeries(series, "./injections.dat");
 
