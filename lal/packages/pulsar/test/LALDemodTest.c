@@ -263,7 +263,7 @@ int main(int argc, char **argv)
   INT4 if0Min, if0Max, ifMin, ifMax;
   REAL8 f0Min, f0Max, fMin, f0Band, fWing;
   INT4 nDeltaF,ntermsdivbytwo;
-
+  LALFstat Fstat;
 
   LIGOTimeGPS *timeStamps;
 
@@ -905,8 +905,9 @@ int main(int argc, char **argv)
       /**************************/
       /*       DEMODULATE       */
       /**************************/
-      
-      LALDemod(&status, *(xHat+k), SFTData, demParams);
+      Fstat.F = xHat+k;
+      /*      LALDemod(&status, *(xHat+k), SFTData, demParams); */
+      LALDemod(&status, &Fstat, SFTData, demParams);
 
     }
   
