@@ -340,12 +340,26 @@ LALAddFloatToGPS(
 
   INITSTATUS( status, "LALAddFloatToGPS", INCREMENTGPSC );
 
+  /* split deltaT into seconds + nanoseconds */
   secs = (INT4)(deltaT);
   tmp = (deltaT - (REAL8) secs) * oneBillion  + 0.5;
   ns = (INT4) floor( tmp );	/* careful with rounding!*/
 
+  /* add them to start-time */
   tmp_gps.gpsSeconds = startGPS->gpsSeconds + secs;
   tmp_gps.gpsNanoSeconds = startGPS->gpsNanoSeconds + ns;
+
+  /* handle over-runs in ns */
+  if (tmp_gps.gpsNanoSeconds >= oneBillion) 
+    {
+      tmp_gps.gpsNanoSeconds -= oneBillion;
+      tmp_gps.gpsSeconds += 1;
+    }
+  else if (tmp_gps.gpsNanoSeconds < 0) 
+    {
+      tmp_gps.gpsNanoSeconds += oneBillion;
+      tmp_gps.gpsSeconds -= 1;
+    }
 
    /* assign the computed values */
   *outputGPS = tmp_gps;

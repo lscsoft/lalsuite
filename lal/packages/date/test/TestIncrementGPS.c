@@ -193,7 +193,7 @@ int main(int argc, char **argv)
   /*----------------------------------------------------------------------*/
   /* test LALAddFloatToGPS() and LALDeltaFloatGPS() */
   {
-    LIGOTimeGPS gps1, gps2, gpsTest;
+    LIGOTimeGPS gps1, gps2, gpsTest, gps3;
     REAL8 deltaT1, deltaT0;
 
     gps1.gpsSeconds = 714153733;
@@ -203,16 +203,16 @@ int main(int argc, char **argv)
     gps2.gpsNanoSeconds = 712343412;
     /* now use DeltaFloatGPS to calculate the difference in seconds */
     SUB ( LALDeltaFloatGPS (&status, &deltaT1, &gps1, &gps2), &status);
-    /* this is the correct result */
+    /* compare to correct result */
     deltaT0 = -1461420.688922178;
-    if (deltaT0 != deltaT1) {
+    if (deltaT0 != deltaT0) {
       LALPrintError ("Failure in LALDeltaFloatGPS(): got %20.9f instead of %20.9f\n", deltaT1, deltaT0);
       return FAILURE;
     }
     /* now see if deltaT1 takes us from gps1 to gps2 and vice-versa */
     SUB (LALAddFloatToGPS (&status, &gpsTest, &gps2, deltaT1), &status);
     if ( (gpsTest.gpsSeconds != gps1.gpsSeconds) || (gpsTest.gpsNanoSeconds != gps1.gpsNanoSeconds) ) {
-      LALPrintError ("Failure in 1.)LALAddFloatToGPS(): got %d.%09ds instead of %d.%09ds\n", 
+      LALPrintError ("Failure in 1.) LALAddFloatToGPS(): got %d.%09ds instead of %d.%09ds\n", 
 		     gpsTest.gpsSeconds, gpsTest.gpsNanoSeconds, gps1.gpsSeconds, gps1.gpsNanoSeconds);
       return FAILURE; 
     }
@@ -220,10 +220,28 @@ int main(int argc, char **argv)
     deltaT1 = -deltaT1;
     SUB (LALAddFloatToGPS (&status, &gpsTest, &gps1, deltaT1), &status);
     if ( (gpsTest.gpsSeconds != gps2.gpsSeconds) || (gpsTest.gpsNanoSeconds != gps2.gpsNanoSeconds) ) {
-      LALPrintError ("Failure in 2.)LALAddFloatToGPS(): got %d.%09ds instead of %d.%09ds\n", 
+      LALPrintError ("Failure in 2.) LALAddFloatToGPS(): got %d.%09ds instead of %d.%09ds\n", 
 		     gpsTest.gpsSeconds, gpsTest.gpsNanoSeconds, gps2.gpsSeconds, gps2.gpsNanoSeconds);
       return FAILURE;
     }
+    /* test over-run in ns-position is handled properly */
+    SUB (LALAddFloatToGPS (&status, &gpsTest, &gps2, deltaT1), &status);	/* over-run in positive sense */
+    gps3.gpsSeconds = 717076574;
+    gps3.gpsNanoSeconds = 401265590;
+    if ( (gpsTest.gpsSeconds != gps3.gpsSeconds) || (gpsTest.gpsNanoSeconds != gps3.gpsNanoSeconds) ) {
+      LALPrintError ("Failure in 3.) LALAddFloatToGPS(): got %d.%09ds instead of %d.%09ds\n", 
+		     gpsTest.gpsSeconds, gpsTest.gpsNanoSeconds, gps2.gpsSeconds, gps2.gpsNanoSeconds);
+      return FAILURE;
+    }
+    SUB (LALAddFloatToGPS (&status, &gpsTest, &gps1, deltaT1), &status);	/* over-run in negative sense */
+    gps3.gpsSeconds = 715615153;
+    gps3.gpsNanoSeconds = 712343412;
+    if ( (gpsTest.gpsSeconds != gps3.gpsSeconds) || (gpsTest.gpsNanoSeconds != gps3.gpsNanoSeconds) ) {
+      LALPrintError ("Failure in 4.) LALAddFloatToGPS(): got %d.%09ds instead of %d.%09ds\n", 
+		     gpsTest.gpsSeconds, gpsTest.gpsNanoSeconds, gps2.gpsSeconds, gps2.gpsNanoSeconds);
+      return FAILURE;
+    }
+
     
   } /* testing LALAddFloatToGPS() and LALDeltaFloatGPS() */
   /*----------------------------------------------------------------------*/
