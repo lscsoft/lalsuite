@@ -6,19 +6,19 @@ $Id$
 /********************************************************** <lalLaTeX>
 \subsection{Module \texttt{LALWavelet.c}}
 
-[A one-line description of the function(s) defined in this module.]
+%This module defines functions used by Waveburst DSO to do standard wavelet
+%operations and transforms, percentile transform, coincidence, and clustering.
 
 \subsubsection*{Prototypes}
 \input{LALWaveletCP}
-\index{\texttt{LALWavelet()}}
 
 \subsubsection*{Description}
 
-\textbf{LALWavelet} is designed to ...
+%\textbf{LALWavelet} is designed to ...
 
-\subsubsection*{Algorithm}
+%\subsubsection*{Algorithm}
 
-Wavelet, ...
+%Wavelet, ...
 
 \subsubsection*{Uses}
 
@@ -30,7 +30,7 @@ Wavelet, ...
 
 
 
-\input{LALWaveletCTODO}
+%\input{LALWaveletCTODO}
 
 \vfill{\footnotesize\input{LALWaveletCV}}
 
@@ -68,13 +68,17 @@ NRCSID( LALWAVELETC, "$Id$" );
 ********* </lalVerbatim> *****/
 
 /********* <lalVerbatim file="LALWaveletCTODO"> 
-To compute correlation between clusters.
+%To compute correlation between clusters.
 ********* </lalVerbatim> *****/
 
+
+
+/******** <lalVerbatim file="LALWaveletCP"> ********/
 void
 LALGetLayerWavelet(LALStatus *status,
 		   OutputLayerWavelet **output,
 		   InputLayerWavelet *input)
+/******** </lalVerbatim> ********/
 {
   INITSTATUS( status, "LALGetLayerWavelet", LALWAVELETC);
   ATTATCHSTATUSPTR (status);
@@ -91,11 +95,12 @@ LALGetLayerWavelet(LALStatus *status,
   RETURN(status);
 }
 
-
+/******** <lalVerbatim file="LALWaveletCP"> ********/
 void
 LALGetMaxLayerWavelet(LALStatus *status,
 		      OutputGetMaxLayerWavelet **output,
 		      InputGetMaxLayerWavelet *input)
+/******** </lalVerbatim> ********/
 {
   INITSTATUS( status, "LALGetMaxLayerWavelet", LALWAVELETC );
   ATTATCHSTATUSPTR (status);
@@ -111,11 +116,12 @@ LALGetMaxLayerWavelet(LALStatus *status,
   RETURN(status);
 }
 
-
+/******** <lalVerbatim file="LALWaveletCP"> ********/
 void
 LALPercentileWavelet( LALStatus *status,
 		      OutputPercentileWavelet **output,
 		      InputPercentileWavelet  *input)
+/******** </lalVerbatim> ********/
 {
 
   INITSTATUS( status, "LALPercentileWavelet", LALWAVELETC );
@@ -141,10 +147,12 @@ LALPercentileWavelet( LALStatus *status,
 
 }
 
+/******** <lalVerbatim file="LALWaveletCP"> ********/
 void
 LALPixelSwapWavelet(LALStatus *status,
 		    OutputPixelSwapWavelet **output,
 		    InputPixelSwapWavelet *input)
+/******** </lalVerbatim> ********/
 {
   INT4 i, j, M, nS;
   REAL4TimeSeries *a, *b;
@@ -173,10 +181,12 @@ LALPixelSwapWavelet(LALStatus *status,
   RETURN(status);
 }
 
+/******** <lalVerbatim file="LALWaveletCP"> ********/
 void
 LALPixelMixerWavelet(LALStatus *status,
 		     OutputPixelMixerWavelet **output,
 		     InputPixelMixerWavelet *input)
+/******** </lalVerbatim> ********/
 {
   INT4 i, j, nS;
   RandomParams *rparams;
@@ -402,11 +412,12 @@ LALFractionWavelet( LALStatus *status,
 }
 */
 
-
+/******** <lalVerbatim file="LALWaveletCP"> ********/
 void
 LALCoincidenceWavelet(LALStatus *status,
 		      OutputCoincidenceWavelet **output,
 		      InputCoincidenceWavelet *input)
+/******** </lalVerbatim> ********/
 {
   int maxLayer1,maxLayer2,k,i,j;
   REAL4TimeSeries *one=NULL;
@@ -498,11 +509,13 @@ LALCoincidenceWavelet(LALStatus *status,
   RETURN(status);
 }
 
-
+/******** <lalVerbatim file="LALWaveletCP"> ********/
 void
 LALClusterWavelet(LALStatus *status,
 		  OutputClusterWavelet **output,
-		  InputClusterWavelet *input){
+		  InputClusterWavelet *input)
+/******** </lalVerbatim> ********/
+{
 
   int ncluster;
 
@@ -523,10 +536,11 @@ LALClusterWavelet(LALStatus *status,
 
 }
 
-
+/******** <lalVerbatim file="LALWaveletCP"> ********/
 void
 LALAllocateWavelet(LALStatus *status,
 		   Wavelet **wavelet)
+/******** </lalVerbatim> ********/
 {
   BOOLEAN result;
 
@@ -545,9 +559,11 @@ LALAllocateWavelet(LALStatus *status,
 
 }
 
+/******** <lalVerbatim file="LALWaveletCP"> ********/
 void
 LALFreeWavelet(LALStatus *status,
 	       Wavelet **wavelet)
+/******** </lalVerbatim> ********/
 {
   INITSTATUS( status, "LALFreeWavelet", LALWAVELETC );
   ATTATCHSTATUSPTR (status);
@@ -559,9 +575,11 @@ LALFreeWavelet(LALStatus *status,
 
 }
 
+/******** <lalVerbatim file="LALWaveletCP"> ********/
 void
 LALFreeREAL4TimeSeries(LALStatus *status,
 		       REAL4TimeSeries **t)
+/******** </lalVerbatim> ********/
 {
 
   INITSTATUS( status, "LALFreeREAL4TimeSeries", LALWAVELETC );
@@ -573,9 +591,11 @@ LALFreeREAL4TimeSeries(LALStatus *status,
   RETURN(status);
 }
 
+/******** <lalVerbatim file="LALWaveletCP"> ********/
 void
 LALFreeClusterWavelet(LALStatus *status,
 		      ClusterWavelet **w)
+/******** </lalVerbatim> ********/
 {
   INITSTATUS( status, "LALFreeClusterWavelet", LALWAVELETC );
   ATTATCHSTATUSPTR (status);
@@ -587,9 +607,11 @@ LALFreeClusterWavelet(LALStatus *status,
 
 }
 
+/******** <lalVerbatim file="LALWaveletCP"> ********/
 void
 LALFreeOutPercentile(LALStatus *status,
 		     OutputPercentileWavelet **p)
+/******** </lalVerbatim> ********/
 {
   INITSTATUS( status, "LALFreeOutPercentile", LALWAVELETC );
   ATTATCHSTATUSPTR (status);
@@ -600,9 +622,11 @@ LALFreeOutPercentile(LALStatus *status,
   RETURN(status);
 }
 
+/******** <lalVerbatim file="LALWaveletCP"> ********/
 void
 LALFreeOutCoincidence(LALStatus *status,
 		      OutputCoincidenceWavelet **co)
+/******** </lalVerbatim> ********/
 {
   INITSTATUS( status, "LALFreeOutCoincidence", LALWAVELETC );
   ATTATCHSTATUSPTR (status);
@@ -614,9 +638,11 @@ LALFreeOutCoincidence(LALStatus *status,
 
 }
 
+/******** <lalVerbatim file="LALWaveletCP"> ********/
 void
 LALFreeOutCluster(LALStatus *status,
 		  OutputClusterWavelet **cl)
+/******** </lalVerbatim> ********/
 {
   INITSTATUS( status, "LALFreeOutCluster", LALWAVELETC );
   ATTATCHSTATUSPTR (status);
@@ -628,9 +654,11 @@ LALFreeOutCluster(LALStatus *status,
 
 }
 
+/******** <lalVerbatim file="LALWaveletCP"> ********/
 void
 LALSetAmplitudesWavelet(LALStatus *status,
 			ClusterWavelet *w)
+/******** </lalVerbatim> ********/
 {
   INITSTATUS( status, "LALSetAmplitudesWavelet", LALWAVELETC );
   ATTATCHSTATUSPTR (status);
@@ -641,10 +669,12 @@ LALSetAmplitudesWavelet(LALStatus *status,
   RETURN(status);
 }
 
+/******** <lalVerbatim file="LALWaveletCP"> ********/
 void
 LALAssignREAL4TimeSeries(LALStatus *status,
 			 REAL4TimeSeries **left,
 			 REAL4TimeSeries *right)
+/******** </lalVerbatim> ********/
 {
   INITSTATUS( status, "LALSetAmplitudesWavelet", LALWAVELETC );
   ATTATCHSTATUSPTR (status);
