@@ -130,6 +130,8 @@ LALCheckMemoryLeaks()
 ********************************************   </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
+#include <getopt.h>
+
 NRCSID (MAKEFAKEDATAC, "$Id$");
 
 
@@ -252,13 +254,13 @@ char *lalWatch;
 #define MAXFILENAMELENGTH 256   
 
 /*Default input data file name*/
-char *inDataFilename="In.data";
+const char *inDataFilename="In.data";
 char timestampsname[128];
 
 /* non-null values mean to create the files! */
 char *freqbasefilename=NULL;
 char *timebasefilename=NULL;
-char *noisedir="/sft/S2-LIGO/S2_H1_FunkyCal30MinSFTs/";
+char *noisedir;
 char filelist[MAXFILES][MAXFILENAMELENGTH];
 REAL8 GPStime=-1.0;
 INT4 pulsar_defined_at_fiducial_SSB=0;
@@ -269,8 +271,8 @@ INT4 binaryoutput=0;
 REAL8 xaxis=0.0;
 INT4 doxaxis=0.0;
 char *programname=NULL;
-char *earthdata= "./" EARTHDATA;
-char *sundata= "./" SUNDATA;
+char *earthdata;
+char *sundata;
 
 /* timebaseline of SFT in sec, band SFT in Hz */
 REAL4 Tsft,B,sigma;
@@ -316,7 +318,7 @@ COMPLEX8Vector *fvecn = NULL;
 /*FFT plan*/
 RealFFTPlan *pfwd = NULL;
 
-INT4 lalDebugLevel=0;
+INT4 lalDebugLevel = 3;
 
 /* Prototypes for the functions defined in this file */
 int read_commandline_and_file(LALStatus *, int argc, char *argv[]);
@@ -338,10 +340,20 @@ int cleanup(LALStatus *);
 int freemem(LALStatus *);
 int window_data(void);
 int correct_phase(LALStatus *);
+void syserror(const char *fmt, ...);
+void error(const char *fmt, ...);
+void compute_one_SSB(LALStatus* status, LIGOTimeGPS *ssbout, LIGOTimeGPS *gpsin);
+INT4 myRound (REAL8 x); 
+int parseR4(FILE *fp, const char* vname, REAL4 *data);
+int parseR8(FILE *fp, const char* vname, REAL8 *data);
+int parseI4(FILE *fp, const char* vname, INT4 *data);
+void usage(FILE *fp);
+
+extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 
 /* Like perror() but takes variable numbers of arguments and includes
    program name*/
-void syserror(char *fmt, ...){
+void syserror(const char *fmt, ...){
   char *thiserror=NULL;
   pid_t pid=getpid();
   va_list ap;
@@ -356,7 +368,7 @@ void syserror(char *fmt, ...){
   return;
 }
 
-void error(char *fmt, ...){
+void error(const char *fmt, ...){
   pid_t pid=getpid();
   va_list ap;
   /* initialize variable argument list  */
@@ -557,7 +569,17 @@ int main(int argc,char *argv[]) {
 
     /* produce a time series simulation of a CW signal */
     SUB( LALSimulateCoherentGW(&status, timeSeries, &cgwOutput, &cwDetector), &status);
-    
+
+    if (lalDebugLevel >= 3)
+      {  
+	FILE *fp;
+	CHAR fname[512];
+	sprintf (fname, "Tseries_v2_%05d.dat", iSFT);
+	fp = fopen (fname, "w");
+	write_timeSeriesR4 (fp, timeSeries);
+	fclose (fp);
+      }
+
     /*if you want noise, make it and add to timeseries */
     if (sigma > 0.0 && make_and_add_time_domain_noise(&status))
       return 1;
@@ -577,7 +599,7 @@ int main(int argc,char *argv[]) {
       /* Perform FFTW-LAL Fast Fourier Transform */
       SUB(LALForwardRealFFT(&status, fvec, timeSeries->data, pfwd), &status);
 
-#if(1)
+#if 1
       /* correct phase */
       correct_phase(&status);
 #endif
@@ -1092,15 +1114,15 @@ int read_timestamps(REAL8 startattime) {
     fclose(fp);
   }
   else {
-    REAL8 time=startattime;
+    REAL8 time0 = startattime;
     REAL8 frac=0.0;
     
     /* set up array based on timestamps implied */    
-    for (i=0;i<nTsft;i++){
-      frac=time-(int)time;
-      timestamps[i].gpsSeconds=(int)time;
+    for (i=0; i<nTsft; i++){
+      frac=time0 -(int)time0;
+      timestamps[i].gpsSeconds=(int)time0;
       timestamps[i].gpsNanoSeconds=1000000000*frac;
-      time+=Tsft;
+      time0 += Tsft;
     }
   }
   return 0;
@@ -1113,7 +1135,7 @@ int write_modulated_amplitudes_file(LALStatus* status){
   LALDetAndSource   detectorandsource;
   LIGOTimeGPS       gps;
   LALGPSandAcc      gpsandacc;
-  char *filename="AmplMod.dat";
+  const char *filename="AmplMod.dat";
   int i;
 
   
@@ -1182,8 +1204,6 @@ int make_filelist(void) {
 
 
 int read_and_add_freq_domain_noise(LALStatus* status, int iSFT) {
-
-  INT4 myRound(REAL8);
 
   FILE *fp;
   REAL4 norm;
@@ -1453,7 +1473,7 @@ int write_timeseries(int iSFT){
   return 0;  
 }
 
-int parseR4(FILE *fp, char* vname, REAL4 *data){
+int parseR4(FILE *fp, const char* vname, REAL4 *data){
   char junk[1024], junk2[1024];
   char command[1024];
   int r;
@@ -1475,7 +1495,7 @@ int parseR4(FILE *fp, char* vname, REAL4 *data){
       return 0;
 }
 
-int parseR8(FILE *fp, char* vname, REAL8 *data){
+int parseR8(FILE *fp, const char* vname, REAL8 *data){
   char junk[1024], junk2[1024];
   char command[1024];
   int r;
@@ -1496,7 +1516,7 @@ int parseR8(FILE *fp, char* vname, REAL8 *data){
   }
       return 0;
 }
-int parseI4(FILE *fp, char* vname, INT4 *data){
+int parseI4(FILE *fp, const char* vname, INT4 *data){
   char junk[1024], junk2[1024];
   char command[1024];
   int r;
@@ -1547,8 +1567,6 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
   int r,i,msp;
   UINT4 imin, nsamples;  
   FILE *fp;
-  extern char *optarg;
-  extern int opterr, optopt;
   char *endptr;
   int detectorset=0;
   REAL8 temptime;
