@@ -554,7 +554,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
   while(fgets(line1,sizeof(line1),fp)) {
     /* check that each line ends with a newline char (no overflow of
        line1 or null chars read) */
-    if (line1[strlen(line1)] != '\n') {
+    if (strlen(line1)==0 || line1[strlen(line1)-1] != '\n') {
       fprintf(stderr,
 	      "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
 	      i+1, fname, line1);
