@@ -1308,6 +1308,211 @@ characteristics of the most common/loudest non-Gaussian noise events.
 \vfill{\footnotesize\input{ComputeLikelihoodCV}}
 
 
+%
+%
+%
+% EPSEARCH
+%
+%
+%
+
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Header \texttt{EPSearch.h}}
+\label{s:EPSearch.h}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent Provides routines which put the power search code together.
+
+\subsection*{Synopsis}
+\begin{verbatim}
+#include "EPSearch.h"
+\end{verbatim}
+
+\noindent This package provides a suite for functions to perform a
+power code search of the \texttt{REAL4} time series data.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection*{Error Conditions}
+\input{EPSearchHErrTab}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection*{Structures}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{struct \texttt{EPDataSegment}}
+\idx[Type]{EPDataSegment}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent A data segment consists of the time-series data,  a power
+spectral estimate,  a response function,  and the metadata that goes
+with it.
+
+\begin{description}
+\item[\texttt{REAL4TimeSeries              *data}] The data to be
+analyzed
+\item[\texttt{REAL4FrequencySeries         *spec}] The power spectral
+estimate used to whiten the data stream
+\item[\texttt{COMPLEX8FrequencySeries      *resp}] The frequency
+representation of the instrumental response
+\item[\texttt{INT4                          endOfData}] Flag to
+indicate there is no more data
+\item[\texttt{INT4                          newLock}] Flag to indicate
+new lock
+\item[\texttt{INT4                          newCal}] Flag to indicate
+new calibration
+\item[\texttt{INT4                          number}] Segment number
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{struct \texttt{EPDataSegmentVector}}
+\idx[Type]{EPDataSegmentVector}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent A vector of data segments.
+
+\begin{description}
+\item[\texttt{UINT4                         length}] The number of
+elements in the vector
+\item[\texttt{EPDataSegment                  *data}] A pointer to the
+data segments.
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{enum \texttt{EPMethod}}
+\idx[enum]{EPMethod}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent An enum which describes the method used to compute the power
+spectral estimate.
+
+\begin{verbatim}
+typedef enum
+{
+  useMean,
+  useMedian,
+  useUnity
+} EPMethod;
+
+\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{struct \texttt{EPInitParams}}
+\idx[Type]{EPInitParams}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent Parameters needed to set up the search
+
+\begin{verbatim}
+typedef struct
+tagEPInitParams
+{
+  UINT4                         numPoints;
+  UINT4                         numSegments;
+  UINT4                         segDutyCycle;
+  EPMethod                      method;
+}
+EPInitParams;
+\end{verbatim}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{struct \texttt{EPSearchParams}}
+\idx[Type]{EPSearchParams}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent Parameters needed to set perform the search
+
+\begin{verbatim}
+tagEPSearchParams
+{
+  BOOLEAN                       searchMaster;
+  BOOLEAN                       haveData;
+  UINT4                        *numSlaves;          
+  UINT4                         simType;
+  UINT4                         currentSegment;
+  INT4                          ntotT;
+  INT4                          numEvents;
+  UINT4                         ovrlap;
+  REAL8                         lambda;
+  REAL8                         alphaThreshold;
+  INT4                          events2Master;     /* Added Erik Kats */
+  CHAR                         *channelName;       /* Added Erik Kats */
+  EPInitParams                 *initParams;
+  EPDataSegmentVector          *epSegVec;
+  CreateTFTilingIn             *tfTilingInput;
+  TFTiling                     *tfTiling;
+  ComputeExcessPowerIn         *compEPInput;
+  LALWindowParams               winParams;
+}
+EPSearchParams;
+\end{verbatim}
+
+
+
+
+
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Module \texttt{EPSearch.c}}
+\label{ss:EPSearch.c}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+This package provides a suite for functions for implementing the
+excess power code. 
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{LALWeighTFTileListCP}
+\idx{LALWeighTFTileList()}
+\input{EPInitSearchCP}
+\idx{EPInitSearch()}
+\input{EPConditionDataCP}
+\idx{EPConditionData()}
+\input{EPFinalizeSearchCP}
+\idx{EPFinalizeSearch()}
+\input{EPSearchCP}
+\idx{EPSearch()}
+
+\subsubsection*{Description}
+
+The routine \verb+LALWeighTFTileList()+ counts the number of tile of
+each time-frequency volume and then adds a weight to each tile.  The
+weight is the number of time-frequency tiles of the same volume in the
+search.  This is used to adjust the thresholds in such a way that all
+time-frequency volumes equal probability of giving false alarms by
+chance.  
+
+The routine \verb+EPInitSearch()+ initializes parameters and memory
+needed by the \verb+EPSearch()+.     The function
+\verb+EPConditionData()+ takes a frequency series as input and breaks
+it into segments.   This routine needs to be updated so that it can
+handle the response function;  at present, it ignore it.
+
+The routine \verb+EPSearch()+ is the powerhouse of the excess-power
+code.  It is most conveniently called after \verb+EPInitSearch()+ and 
+\verb+EPConditionData()+.
+
+
+Notes:
+\begin{enumerate}
+\item These functions were originally in-line code in LALWrapper.
+This made for very inconvenient use of the EPSearch in \emph{LALApps}.
+The implementation in LAL,  which leads to yet another layer of
+translation in LALWrapper,  is much more convenient to maintain and
+test.
+\end{enumerate}
+
+\subsubsection*{Uses}
+\begin{verbatim}
+Lots o' Stuff:  coming soon
+\end{verbatim}
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{EPSearchCV}}
+
 
 
 %
