@@ -548,37 +548,27 @@ int main( int argc, char *argv[] )
       {
 
         if ( vrbflg ) 
-          fprintf( stdout, "got %d sngl_inspiral rows from %s for ifo %s\n", 
-              numFileTriggers, argv[i], inputData->ifo );
+          fprintf( stdout, "got %d sngl_inspiral rows from %s\n", 
+              numFileTriggers, argv[i] );
 
-        if ( strncmp( inputIFO, inputData->ifo, LIGOMETA_IFO_MAX ) )
+        /* store the triggers */
+        if ( ! inspiralEventList )
         {
-          /* catch an unknown ifo name among the input files */
-          fprintf( stderr, "Error: unknown interferometer %s\n", 
-              inputData->ifo );
-          exit( 1 );
+          /* store the head of the linked list */
+          inspiralEventList = currentTrigger = inputData;
         }
         else
         {
-          /* store the triggers */
-          if ( ! inspiralEventList )
-          {
-            /* store the head of the linked list */
-            inspiralEventList = currentTrigger = inputData;
-          }
-          else
-          {
-            /* append to the end of the linked list and set current    */
-            /* trigger to the first trigger of the list being appended */
-            currentTrigger = currentTrigger->next = inputData;
-          }
-
-          /* scroll to the end of the linked list of triggers */
-          for ( ; currentTrigger; currentTrigger = currentTrigger->next );
-
-          if ( vrbflg ) fprintf( stdout, "added triggers to list\n" );
-          numTriggers += numFileTriggers;
+          /* append to the end of the linked list and set current    */
+          /* trigger to the first trigger of the list being appended */
+          currentTrigger = currentTrigger->next = inputData;
         }
+
+        /* scroll to the end of the linked list of triggers */
+        for ( ; currentTrigger; currentTrigger = currentTrigger->next );
+
+        if ( vrbflg ) fprintf( stdout, "added triggers to list\n" );
+        numTriggers += numFileTriggers;
       }
       else
       {
@@ -603,7 +593,7 @@ int main( int argc, char *argv[] )
         "Checking that we have data for all times from %s\n",
         inputIFO);
     LAL_CALL( LALCheckOutTimeFromSearchSummary ( &status, searchSummList, 
-        inputIFO, &startTimeGPS, &endTimeGPS ), &status);
+          inputIFO, &startTimeGPS, &endTimeGPS ), &status);
   }
 
 
@@ -618,7 +608,7 @@ int main( int argc, char *argv[] )
   /* keep only triggers from input ifo */
   LAL_CALL( LALIfoCutSingleInspiral( &status, &inspiralEventList, inputIFO ), 
       &status );
- 
+
   /* time sort the triggers */
   if ( vrbflg ) fprintf( stdout, "Sorting triggers\n" );
   LAL_CALL( LALSortSnglInspiral( &status, &inspiralEventList,
@@ -646,7 +636,7 @@ int main( int argc, char *argv[] )
         "No triggers remain after time and playground cuts.\n" );
     goto cleanexit;
   }
-  
+
   /* Generate the triggered bank */
   LAL_CALL( LALCreateTrigBank( &status, &inspiralEventList, &test ), 
       &status );
@@ -654,10 +644,10 @@ int main( int argc, char *argv[] )
   /* count the number of triggers  */
   for( currentTrigger = inspiralEventList, numTriggers = 0; currentTrigger; 
       currentTrigger = currentTrigger->next, ++numTriggers);
-  
+
   if ( vrbflg ) fprintf( stdout, "%d triggers to be written to trigbank.\n",
       numTriggers );
-  
+
   /*
    *
    * write the output xml file
@@ -673,7 +663,7 @@ cleanexit:
   searchsumm.searchSummaryTable->out_start_time = startTimeGPS;
   searchsumm.searchSummaryTable->out_end_time = endTimeGPS;
   searchsumm.searchSummaryTable->nevents = numTriggers;
-  
+
   if ( vrbflg ) fprintf( stdout, "writing output file... " );
 
   /* set the file name correctly */
@@ -698,7 +688,7 @@ cleanexit:
         outputIFO, startTime, endTime - startTime );
   }
 
-    
+
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
   LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName), 
       &status );
@@ -793,7 +783,7 @@ cleanexit:
     inspiralEventList = inspiralEventList->next;
     LAL_CALL( LALFreeSnglInspiral( &status, &currentTrigger ), &status );
   }
-  
+
   if ( userTag ) free( userTag );
   if ( ifoTag ) free( ifoTag );
 
