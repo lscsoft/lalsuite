@@ -67,6 +67,29 @@ AC_DEFUN(LALAPPS_ENABLE_CONDOR,
         ], [ condor=false ] )
 ])
 
+AC_DEFUN(LALAPPS_ENABLE_FRAME,
+[AC_ARG_ENABLE(
+        frame,
+        [  --enable-frame          compile code that requires Frame library [default=yes] ],
+        [ case "${enableval}" in
+            yes) frame=true;;
+            no)  frame=false ;;
+            *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
+          esac
+        ], [ frame=true ] )
+])
+
+AC_DEFUN(LALAPPS_DISABLE_FRAME,
+[echo "**************************************************************"
+ echo "*                                                            *"
+ echo "* Frame support will be DISABLED:                            *"
+ echo "* LALApps is being configured with --disable-frame settings. *"
+ echo "*                                                            *"
+ echo "**************************************************************"
+ frame=false
+])
+
+
 AC_DEFUN(LALAPPS_CHECK_LAL,
 [AC_MSG_CHECKING([for -llal])
 AC_CACHE_VAL(ac_cv_lib_lal,

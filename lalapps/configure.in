@@ -9,6 +9,7 @@ LALAPPS_WITH_EXTRA_CFLAGS
 LALAPPS_WITH_EXTRA_LDFLAGS
 LALAPPS_WITH_EXTRA_LIBS
 LALAPPS_ENABLE_CONDOR
+LALAPPS_ENABLE_FRAME
 
 dnl Checks for programs.
 AC_PROG_AWK
@@ -35,6 +36,9 @@ AC_CHECK_PROGS(BIBTEX, bibtex, echo)
 
 dnl Checks for libraries.
 AC_CHECK_LIB(m, sin)
+if test "${frame}" = "true"; then
+  AC_CHECK_LIB(Frame, FrLibIni, , LALAPPS_DISABLE_FRAME)
+fi
 rm -f confjunk.c
 echo 'int lalDebugLevel=0;' > confjunk.c
 $CC -c confjunk.c
@@ -48,6 +52,11 @@ rm -f confjunk.c confjunk.o
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([lal/LALStdlib.h])
+if test "${frame}" = "true"; then
+  AC_CHECK_HEADERS(FrameL.h, , LALAPPS_DISABLE_FRAME)
+fi
+
+AM_CONDITIONAL(FRAME, test x$frame = xtrue)
 
 AC_OUTPUT( 				\
 	Makefile 			\
@@ -57,6 +66,7 @@ AC_OUTPUT( 				\
 	src/lalapps/Makefile            \
 	src/example/Makefile		\
 	src/calibration/Makefile	\
+        src/frametools/Makefile         \
 	src/findchirp/Makefile		\
 	src/stochastic/Makefile		\
 )
