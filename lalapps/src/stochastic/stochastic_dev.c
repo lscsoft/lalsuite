@@ -196,6 +196,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 respLength;
   CalibrationUpdateParams calfacts;
   LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
+  FrCache *calCacheOneCache = NULL;
+  FrCache *calCacheTwoCache = NULL;
 
   /* inverse noise data structures */
   REAL4FrequencySeries *calInvPSDOne;
@@ -897,28 +899,34 @@ INT4 main(INT4 argc, CHAR *argv[])
     respTempTwoC->epoch.gpsSeconds += calibOffset;
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoOne;
-    LAL_CALL(LALExtractFrameResponse(&status, respTempOneA, calCacheOne, \
+    LAL_CALL( LALFrCacheImport( &status, &calCacheOneCache, calCacheOne ), 
+        &status );
+    LAL_CALL( LALFrCacheImport( &status, &calCacheTwoCache, calCacheTwo ), 
+        &status );
+    LAL_CALL(LALExtractFrameResponse(&status, respTempOneA, calCacheOneCache, \
           &calfacts), &status);
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoOne;
-    LAL_CALL(LALExtractFrameResponse(&status, respTempOneB, calCacheOne, \
+    LAL_CALL(LALExtractFrameResponse(&status, respTempOneB, calCacheOneCache, \
           &calfacts), &status);
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoOne;
-    LAL_CALL(LALExtractFrameResponse(&status, respTempOneC, calCacheOne, \
+    LAL_CALL(LALExtractFrameResponse(&status, respTempOneC, calCacheOneCache, \
           &calfacts), &status);
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoTwo;
-    LAL_CALL(LALExtractFrameResponse(&status, respTempTwoA, calCacheTwo, \
+    LAL_CALL(LALExtractFrameResponse(&status, respTempTwoA, calCacheTwoCache, \
           &calfacts), &status);
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoTwo;
-    LAL_CALL(LALExtractFrameResponse(&status, respTempTwoB, calCacheTwo, \
+    LAL_CALL(LALExtractFrameResponse(&status, respTempTwoB, calCacheTwoCache, \
           &calfacts), &status);
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoTwo;
-    LAL_CALL(LALExtractFrameResponse(&status, respTempTwoC, calCacheTwo, \
+    LAL_CALL(LALExtractFrameResponse(&status, respTempTwoC, calCacheTwoCache, \
           &calfacts), &status);
+    LAL_CALL(LALDestroyFrCache(&status, &calCacheOneCache ), &status );
+    LAL_CALL(LALDestroyFrCache(&status, &calCacheTwoCache ), &status );
 
     if (vrbflg)
     {

@@ -146,14 +146,15 @@ int main ( int argc, char *argv[] )
   /* frame input data */
   FrCache      *frInCache = NULL;
   FrCache      *frGlobCache = NULL;
+  FrCache      *calCache = NULL;
   FrStream     *frStream = NULL;
   FrChanIn      frChan;
   FrCacheSieve  sieve;
-  
+
   /* frame output data */
   struct FrFile *frOutFile = NULL;
   struct FrameH *outFrame  = NULL;
-  
+
   /* raw input data storage */
   REAL4TimeSeries               chan;
   REAL8TimeSeries               geoChan;
@@ -279,7 +280,7 @@ int main ( int argc, char *argv[] )
   memset( &geoChan, 0, sizeof(REAL8TimeSeries) );
   chan.epoch = gpsStartTime;
   chan.epoch.gpsSeconds -= padData; /* subtract pad seconds from start */
-  
+
   /* copy the start time into the GEO time series */
   geoChan.epoch = chan.epoch;
 
@@ -303,7 +304,7 @@ int main ( int argc, char *argv[] )
           frInType );
       exit( 1 );
     }
-    
+
     /* sieve out the requested data type */
     memset( &sieve, 0, sizeof(FrCacheSieve) );
     LALSnprintf( ifoRegExPattern, 
@@ -338,7 +339,7 @@ int main ( int argc, char *argv[] )
 
   /* set the mode of the frame stream to fail on gaps or time errors */
   frStream->mode = LAL_FR_VERBOSE_MODE;
-  
+
   /* seek to required epoch and set chan name */
   LAL_CALL( LALFrSeek( &status, &(chan.epoch), frStream ), &status );
   frChan.name = fqChanName;
@@ -592,7 +593,7 @@ int main ( int argc, char *argv[] )
       if ( vrbflg ) fprintf( stdout, "computing median psd" );
       break;
   }
-   
+
   wpars.type = Hann;
   wpars.length = numPoints;
   avgSpecParams.overlap = numPoints / 2;
@@ -643,12 +644,14 @@ int main ( int argc, char *argv[] )
         "response parameters f0 = %e, deltaF = %e, length = %d\n",
         resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
         resp.f0, resp.deltaF, resp.data->length );
-        LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, 
+    LAL_CALL( LALFrCacheImport( &status, &calCache, calCacheName ), 
+        &status );
+    LAL_CALL( LALExtractFrameResponse( &status, &resp, calCache, 
           &calfacts ), &status );
+
     if ( vrbflg ) fprintf( stdout, "Values of calibration coefficients \n"
         "alpha = %f, alpha_beta = %f\n",
         calfacts.alpha.re, calfacts.alphabeta.re );
-
   }
 
   /* write the calibration data to a file */
@@ -730,7 +733,7 @@ int main ( int argc, char *argv[] )
 
     if ( vrbflg ) fprintf( stdout, "maximum distance for (%3.2f,%3.2f) "
         "at signal-to-noise %3.2f = ", candleMass1, candleMass2, candleSnr );
-        
+
     for ( k = cut; k < bankIn.shf.data->length; ++k )
     {
       sigmaSqSum += 
@@ -743,7 +746,7 @@ int main ( int argc, char *argv[] )
     distance = sqrt( sigmaSq ) / candleSnr;
 
     if ( vrbflg ) fprintf( stdout, "%e Mpc\n", distance );
-    
+
     /* add value to summ_value table */
     candle.summValueTable = (SummValueTable *) 
       LALCalloc( 1, sizeof(SummValueTable) );
@@ -760,7 +763,7 @@ int main ( int argc, char *argv[] )
     candle.summValueTable->value = distance;
   }
 
-  
+
   /*
    *
    * compute the template bank
@@ -799,7 +802,7 @@ int main ( int argc, char *argv[] )
     fflush( stdout );
   }
   LAL_CALL( LALInspiralBankGeneration( &status, &bankIn, &tmplt, &numCoarse),
-            &status );
+      &status );
   if ( vrbflg )
   {
     fprintf( stdout, "done. Got %d templates\n", numCoarse );
@@ -1286,25 +1289,25 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "int", "%d", sampleRate );
         break;
 
-      case 'M':	
-	/* specify which type of calibrated data */
-	{
-	  if ( ! strcmp( "real_4", optarg ) )
-	  {
-	    calData = real_4;
-	  }
-	  else if ( ! strcmp( "real_8", optarg ) )
-	  {
-	    calData = real_8;
-	  }
-	  else
-	  {
-	    fprintf( stderr, "invalid argument to --%s:\n"
-		"unknown data type specified;\n"
-		"%s (must be one of: real_4, real_8)\n",
-		long_options[option_index].name, optarg);
-	  }
-	  ADD_PROCESS_PARAM( "string", "%s", optarg );
+      case 'M':
+        /* specify which type of calibrated data */
+        {
+          if ( ! strcmp( "real_4", optarg ) )
+          {
+            calData = real_4;
+          }
+          else if ( ! strcmp( "real_8", optarg ) )
+          {
+            calData = real_8;
+          }
+          else
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "unknown data type specified;\n"
+                "%s (must be one of: real_4, real_8)\n",
+                long_options[option_index].name, optarg);
+          }
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
         break;
 
@@ -1545,7 +1548,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         }
         ADD_PROCESS_PARAM( "float", "%e", maxMass );
         break;
-        
+
       case 'P':
         psi0Min = (REAL4) atof( optarg );
         if ( psi0Min <= 0 )
@@ -1559,7 +1562,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "float", "%e", psi0Min );
         havePsi0Min = 1;
         break;
-        
+
       case 'Q':
         psi0Max = (REAL4) atof( optarg );
         if ( psi0Max <= 0 )
@@ -1587,7 +1590,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "float", "%e", psi3Min );
         havePsi3Min = 1;
         break;
-        
+
       case 'S':
         psi3Max = (REAL4) atof( optarg );
         ADD_PROCESS_PARAM( "float", "%e", psi3Max );
@@ -2072,7 +2075,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
-  
+
   /* check that the calibration frame cache has been specified */
   if ( ! calData && ! calCacheName )
   {
@@ -2167,7 +2170,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, "--high-frequency-cutoff must be specified\n" );
     exit( 1 );
   }
-  
+
   return 0;
 }
 

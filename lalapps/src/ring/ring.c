@@ -1096,6 +1096,7 @@ COMPLEX8FrequencySeries *get_response( UINT4 segsz, double dt, const char *ifo )
   RAT4 minusOne    = { -1, 0 };
   LALUnitPair unitPair;
   LALUnit     unit;
+  FrCache    *calcache = NULL;
 
   response = my_calloc( 1, sizeof( *response ) );
   LAL_CALL( LALCCreateVector( &status, &response->data, segsz / 2 + 1 ),
@@ -1131,8 +1132,10 @@ COMPLEX8FrequencySeries *get_response( UINT4 segsz, double dt, const char *ifo )
     vrbmsg( "get calibration data from frames in cache file %s", frcalib );
     memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
     calfacts.ifo = ifo;
-    LAL_CALL( LALExtractFrameResponse( &status, response, frcalib, &calfacts ),
+    LAL_CALL( LALFrCacheImport( &status, &calcache, frcalib), &status );
+    LAL_CALL( LALExtractFrameResponse( &status, response, calcache, &calfacts ),
         &status );
+    LAL_CALL( LALDestroyFrCache( &status, &calcache), &status );
   }
   else /* get fixed response function from an ascii file */
   {

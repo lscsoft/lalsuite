@@ -1014,6 +1014,7 @@ static COMPLEX8FrequencySeries *generate_response(
 	const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 	COMPLEX8 one = {1.0, 0.0};
 	CalibrationUpdateParams calfacts;
+	FrCache *calcache = NULL;
 
 	memset(&calfacts, 0, sizeof(calfacts));
 	calfacts.ifo = ifo;
@@ -1028,7 +1029,11 @@ static COMPLEX8FrequencySeries *generate_response(
 		for(i = 0; i < response->data->length; i++)
 			response->data->data[i] = one;
 	else
-		LAL_CALL(LALExtractFrameResponse(stat, response, calcachefile, &calfacts), stat);
+	{
+		LAL_CALL(LALFrCacheImport(stat, &calcache, calcachefile), stat);
+		LAL_CALL(LALExtractFrameResponse(stat, response, calcache, &calfacts), stat);
+		LAL_CALL(LALDestroyFrCache(stat, &calcache), stat);
+	}
 
 	return(response);
 } 

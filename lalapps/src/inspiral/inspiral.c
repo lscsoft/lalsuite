@@ -159,7 +159,7 @@ INT4   invSpecTrunc     = -1;           /* length of inverse spec (s)   */
 REAL4  dynRangeExponent = -1;           /* exponent of dynamic range    */
 CHAR  *calCacheName     = NULL;         /* location of calibration data */
 CHAR  *injectionFile    = NULL;         /* name of file containing injs */
-int   injectOverhead	= 0;		/* inject h+ into detector	*/
+int   injectOverhead    = 0;            /* inject h+ into detector      */
 
 /* matched filter parameters */
 CHAR *bankFileName      = NULL;         /* name of input template bank  */
@@ -209,6 +209,7 @@ int main( int argc, char *argv[] )
   /* frame input data */
   FrCache      *frInCache = NULL;
   FrCache      *frGlobCache = NULL;
+  FrCache      *calCache = NULL;
   FrStream     *frStream = NULL;
   FrChanIn      frChan;
   FrCacheSieve  sieve;
@@ -278,7 +279,7 @@ int main( int argc, char *argv[] )
   const REAL8 epsilon = 1.0e-8;
   UINT4 resampleChan = 0;
   REAL8 tsLength;
-  INT8  durationNS	= 0;
+  INT8  durationNS = 0;
   CalibrationUpdateParams calfacts, inj_calfacts;
   REAL4 alpha = 0;
   REAL4 alphabeta = 0;
@@ -305,7 +306,6 @@ int main( int argc, char *argv[] )
   SimInstParamsTable *prevSimInstParams = NULL;
   MetadataTable simResults;
 
- 
 
   /*
    *
@@ -339,10 +339,10 @@ int main( int argc, char *argv[] )
 
   /* call the argument parse and check function */
   arg_parse_check( argc, argv, procparams );
-  
+
   /* wind to the end of the process params table */
   for ( this_proc_param = procparams.processParamsTable; this_proc_param->next;
-     this_proc_param = this_proc_param->next );
+      this_proc_param = this_proc_param->next );
 
   /* can use LALMalloc() and LALCalloc() from here onwards */
 
@@ -441,7 +441,7 @@ int main( int argc, char *argv[] )
       searchsumm.searchSummaryTable->out_start_time.gpsSeconds = 
         gpsStartTime.gpsSeconds + (numPoints / (4 * sampleRate));
     }
-  
+
     if ( trigEndTimeNS )
     {
       LAL_CALL( LALINT8toGPS( &status, 
@@ -464,7 +464,7 @@ int main( int argc, char *argv[] )
     if ( vrbflg )
     {
       fprintf( stdout, "Overriding bank minimal match:\n   value in bank = %e,"
-        " new value = %e\n", bankHead->minMatch, minimalMatch );
+          " new value = %e\n", bankHead->minMatch, minimalMatch );
     }
     for ( bankCurrent = bankHead; bankCurrent; bankCurrent = bankCurrent->next )
     {
@@ -521,7 +521,7 @@ int main( int argc, char *argv[] )
   if ( globFrameData )
   {
     CHAR ifoRegExPattern[6];
-    
+
     if ( vrbflg ) fprintf( stdout, "globbing for *.gwf frame files from %c "
         "of type %s in current directory\n", fqChanName[0], frInType );
 
@@ -538,7 +538,7 @@ int main( int argc, char *argv[] )
           frInType );
       exit( 1 );
     }
-    
+
     /* sieve out the requested data type */
     memset( &sieve, 0, sizeof(FrCacheSieve) );
     LALSnprintf( ifoRegExPattern, 
@@ -832,13 +832,13 @@ int main( int argc, char *argv[] )
   /* initialize the calfacts */
   memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
   calfacts.ifo = ifo;
-  
+
   /* determine length of chunk */
   durationNS = gpsEndTimeNS - gpsStartTimeNS;
   LAL_CALL( LALINT8toGPS( &status, &(calfacts.duration), 
-	&durationNS ), &status );
+        &durationNS ), &status );
 
-  
+
   if ( cal_data )
   {
     /* if we are using calibrated data set the response to unity */
@@ -853,14 +853,16 @@ int main( int argc, char *argv[] )
   else
   {
     /* get the response from the frame data */
-    LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, 
-	  &calfacts), &status );
+    LAL_CALL( LALFrCacheImport( &status, &calCache, calCacheName ), &status );
+    LAL_CALL( LALExtractFrameResponse( &status, &resp, calCache, 
+          &calfacts), &status );
+    LAL_CALL( LALDestroyFrCache( &status, &calCache), &status );
     alpha = (REAL4) calfacts.alpha.re;
     alphabeta = (REAL4) calfacts.alphabeta.re;
     if ( vrbflg ) fprintf( stdout, 
-	"for calibration of data, alpha = %f and alphabeta = %f\n",
-	alpha, alphabeta);
- 
+        "for calibration of data, alpha = %f and alphabeta = %f\n",
+        alpha, alphabeta);
+
     if ( writeResponse ) 
       outFrame = fr_add_proc_COMPLEX8FrequencySeries( outFrame, &resp, 
           "strain/ct", "RESPONSE" );
@@ -885,7 +887,7 @@ int main( int argc, char *argv[] )
   /* slide the channel back to the fake time for background studies */
   chan.epoch.gpsSeconds += slideData.gpsSeconds;
   chan.epoch.gpsNanoSeconds += slideData.gpsNanoSeconds;
-  
+
 
   /*
    *
@@ -935,17 +937,17 @@ int main( int argc, char *argv[] )
         injResp.sampleUnits = strainPerCount;
         strcpy( injResp.name, chan.name );
 
-	if ( cal_data )
+        if ( cal_data )
         {
           /* if we are using calibrated data set the response to unity */
           if ( vrbflg ) fprintf( stdout, 
-	      "setting injection response to inverse dynRange... " );
+              "setting injection response to inverse dynRange... " );
           for ( k = 0; k < injResp.data->length; ++k )
           {
             injResp.data->data[k].re = (REAL4)(1.0/dynRange);
             injResp.data->data[k].im = 0.0;
           }
-	  injRespPtr = &injResp;
+          injRespPtr = &injResp;
           if ( writeResponse ) 
             outFrame = fr_add_proc_COMPLEX8FrequencySeries( outFrame, 
                 &injResp, "strain/ct", "RESPONSE_INJ_CAL" );
@@ -959,20 +961,24 @@ int main( int argc, char *argv[] )
               resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
               injResp.data->length, injResp.deltaF );
 
-	  /* initialize the inj_calfacts */
+          /* initialize the inj_calfacts */
           memset( &inj_calfacts, 0, sizeof(CalibrationUpdateParams) );
-	  inj_calfacts.ifo = ifo;
+          inj_calfacts.ifo = ifo;
           LAL_CALL( LALINT8toGPS( &status, &(inj_calfacts.duration), 
-		&durationNS ), &status );
+                &durationNS ), &status );
 
-
-          LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCacheName, 
+          /* extract the calibration from frames */
+          LAL_CALL( LALFrCacheImport( &status, &calCache, calCacheName ), 
+              &status );
+          LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCache, 
                 &inj_calfacts ), &status );
-	  inj_alpha = (REAL4) calfacts.alpha.re;
-	  inj_alphabeta = (REAL4) calfacts.alphabeta.re;
-	  if ( vrbflg ) fprintf( stdout, 
-	      "for injections, alpha = %f and alphabeta = %f\n",
-	      inj_alpha, inj_alphabeta);
+          LAL_CALL( LALDestroyFrCache( &status, &calCache), &status );
+
+          inj_alpha = (REAL4) calfacts.alpha.re;
+          inj_alphabeta = (REAL4) calfacts.alphabeta.re;
+          if ( vrbflg ) fprintf( stdout, 
+              "for injections, alpha = %f and alphabeta = %f\n",
+              inj_alpha, inj_alphabeta);
 
           injRespPtr = &injResp;
 
@@ -1043,7 +1049,7 @@ int main( int argc, char *argv[] )
     }
   }
 
-  
+
   /*
    *
    * resample the data to the requested rate
@@ -1307,7 +1313,7 @@ int main( int argc, char *argv[] )
    *
    */
 
-  
+
   if ( bankSim )
   {
     if ( vrbflg ) fprintf( stdout, "initializing template bank simulation\n" );
@@ -1329,7 +1335,7 @@ int main( int argc, char *argv[] )
     cut = fLow / spec.deltaF > 1 ?  fLow / spec.deltaF : 1;
     if ( vrbflg ) 
       fprintf( stdout, "psd low frequency cutoff index = %d\n", cut );
-    
+
     psdMin = spec.data->data[cut] * 
       ( ( resp.data->data[cut].re * resp.data->data[cut].re +
           resp.data->data[cut].im * resp.data->data[cut].im ) / psdScaleFac );
@@ -1415,7 +1421,7 @@ int main( int argc, char *argv[] )
    * matched filtering engine
    *
    */
-  
+
 
   /* begin loop over number of template bank simulation */
   /* if we are not doing a template bank simulation,    */
@@ -1431,13 +1437,13 @@ int main( int argc, char *argv[] )
         fprintf( stdout, "bank simulation %d/%d\n", bankSimCount, bankSim );
 
 
-    /*
-     *
-     * inject a random signal if we are doing a template bank simulation
-     *
-     */
+      /*
+       *
+       * inject a random signal if we are doing a template bank simulation
+       *
+       */
 
-      
+
       if ( vrbflg ) fprintf( stdout, 
           "zeroing data stream and adding random injection for bank sim... " );
 
@@ -1456,8 +1462,8 @@ int main( int argc, char *argv[] )
       bankInjection.mass2 += bankMinMass;
       bankInjection.eta = bankInjection.mass1 * bankInjection.mass2 /
         ( ( bankInjection.mass1 + bankInjection.mass2 ) *
-        ( bankInjection.mass1 + bankInjection.mass2 ) );
-      
+          ( bankInjection.mass1 + bankInjection.mass2 ) );
+
       if ( bankSimApproximant == TaylorT2 )
       {
         LALSnprintf( bankInjection.waveform, LIGOMETA_WAVEFORM_MAX,
@@ -1483,7 +1489,7 @@ int main( int argc, char *argv[] )
       /* restore the saved channel name */
       LALSnprintf( dataSegVec->data->chan->name,  
           LALNameLength * sizeof(CHAR), "%s", tmpChName );
-      
+
       /* write the channel data plus injection to the output frame file */
       if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
           &chan, "ct", "SIM" );
@@ -1532,9 +1538,9 @@ int main( int argc, char *argv[] )
 
       if ( vrbflg ) fprintf( stdout,
           "computing minimal match normalization... " );
-      
+
       matchNorm = 0;
-      
+
       for ( k = 0; k < fcDataParams->tmpltPowerVec->length; ++k )
       {
         if ( tmpltPower[k] ) matchNorm += ( fcData[k].re * fcData[k].re +
@@ -1593,8 +1599,8 @@ int main( int argc, char *argv[] )
         UINT4 kmax = 432 * k1 ; /* 432 = fISCO for 5-5 */
         REAL4 distNorm = 2.0 * LAL_MRSUN_SI / (cannonDist * 1e6 * LAL_PC_SI);
         REAL4 candleTmpltNorm = sqrt( (5.0*mu) / 96.0 ) *
-              pow( m/(LAL_PI*LAL_PI) , 1.0/3.0 ) * 
-              pow(LAL_MTSUN_SI / (REAL4) chan.deltaT, -1.0/6.0);
+          pow( m/(LAL_PI*LAL_PI) , 1.0/3.0 ) * 
+          pow(LAL_MTSUN_SI / (REAL4) chan.deltaT, -1.0/6.0);
         distNorm *= fcTmpltParams->dynRange;
         candleTmpltNorm *= candleTmpltNorm;
         candleTmpltNorm *= distNorm * distNorm;
@@ -1613,24 +1619,24 @@ int main( int argc, char *argv[] )
         if ( vrbflg ) 
         {
           fprintf( stdout, "candle m = %e\ncandle mu = %e\n"
-               "candle.rhosq = %e\nchan.deltaT = %e\nnumPoints = %d\n"
-               "fcSegVec->data->segNorm->data[kmax] = %e\n"
-               "kmax = %d\ncandleTmpltNorm = %e\ncandle.effDistance = %e Mpc \n"
-               "candle.sigmasq=%e\n",
-               m,mu,candle.rhosq,chan.deltaT,
-               numPoints,fcSegVec->data->segNorm->data[kmax],kmax,
-               candleTmpltNorm,candle.effDistance,candle.sigmasq);
-           fflush(stdout);
-         }
+              "candle.rhosq = %e\nchan.deltaT = %e\nnumPoints = %d\n"
+              "fcSegVec->data->segNorm->data[kmax] = %e\n"
+              "kmax = %d\ncandleTmpltNorm = %e\ncandle.effDistance = %e Mpc \n"
+              "candle.sigmasq=%e\n",
+              m,mu,candle.rhosq,chan.deltaT,
+              numPoints,fcSegVec->data->segNorm->data[kmax],kmax,
+              candleTmpltNorm,candle.effDistance,candle.sigmasq);
+          fflush(stdout);
+        }
       }
       else 
       {
         if ( vrbflg )
         {
-           fprintf( stdout, "standard candle not calculated; \n"
+          fprintf( stdout, "standard candle not calculated; \n"
               "chan.deltaT = %e\nnumPoints = %d\n",
               chan.deltaT, numPoints );
-           fflush( stdout );
+          fflush( stdout );
         }
       }  
     }
@@ -1662,7 +1668,7 @@ int main( int argc, char *argv[] )
       else if ( approximant == BCVSpin )
       {
         LAL_CALL( LALFindChirpBCVSpinTemplate( &status, fcFilterInput->fcTmplt,
-	tmpltCurrent->tmpltPtr, fcTmpltParams, fcDataParams ), &status );
+              tmpltCurrent->tmpltPtr, fcTmpltParams, fcDataParams ), &status );
         fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
       }
       else
@@ -1869,7 +1875,7 @@ int main( int argc, char *argv[] )
           memcpy( loudestEvent, event, sizeof(SnglInspiralTable) );
           loudestEvent->next = NULL;
         }
-        
+
         event = event->next;
         LALFree( tmpEvent );
       }
@@ -1953,7 +1959,6 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALDestroyFindChirpSegmentVector( &status, &fcSegVec ),
       &status );
   LALFree( fcInitParams );
-  
 
   /* free the template bank */
   while ( bankHead )
@@ -2009,7 +2014,6 @@ int main( int argc, char *argv[] )
     if ( vrbflg ) fprintf( stdout, "done\n" );
   }
 
-
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
   if ( outputPath[0] )
@@ -2049,7 +2053,7 @@ int main( int argc, char *argv[] )
     procparams.processParamsTable = this_proc_param->next;
     free( this_proc_param );
   }
-  
+
   /* write the search summary table */
   if ( vrbflg ) fprintf( stdout, "  search_summary table...\n" );
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
@@ -2057,7 +2061,7 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm, 
         search_summary_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-  
+
   /* write the search summvars table */
   if ( numTmplts )
   {
@@ -2080,13 +2084,13 @@ int main( int argc, char *argv[] )
   {
     if ( vrbflg ) fprintf( stdout, "  summ_value table...\n" );
     ADD_SUMM_VALUE( "inspiral_effective_distance", "1.4_1.4_8", 
-      candle.effDistance, 0);
+        candle.effDistance, 0);
   }
   else if ( approximant == BCV && ! bankSim )
   {
     if ( vrbflg ) fprintf( stdout, "  summ_value table...\n" );
     ADD_SUMM_VALUE( "inspiral_effective_distance", "5.0_5.0_8",
-      candle.effDistance, 0);
+        candle.effDistance, 0);
   }
   if ( !bankSim )
   {
@@ -2103,8 +2107,8 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, summvalue, 
           summ_value_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-    
-    
+
+
     while ( summvalue.summValueTable )
     {
       this_summ_value = summvalue.summValueTable;
@@ -2115,7 +2119,7 @@ int main( int argc, char *argv[] )
 
   /* free the search summary table */
   free( searchsumm.searchSummaryTable );
-  
+
   /* write the sngl_inspiral triggers to the output xml */
   if ( savedEvents.snglInspiralTable )
   {
@@ -2143,7 +2147,7 @@ int main( int argc, char *argv[] )
 
         if ( trigTimeNS &&
             ((trigStartTimeNS && (trigTimeNS < trigStartTimeNS)) ||
-            (trigEndTimeNS && (trigTimeNS >= trigEndTimeNS))) )
+             (trigEndTimeNS && (trigTimeNS >= trigEndTimeNS))) )
         {
           /* throw this trigger away */
           SnglInspiralTable *tmpEvent = event;
@@ -2172,7 +2176,7 @@ int main( int argc, char *argv[] )
 
       if ( vrbflg ) fprintf( stdout, "done\n" );
     }
-    
+
     /* if we haven't thrown all the triggers away, write sngl_inspiral table */
     if ( savedEvents.snglInspiralTable )
     {
@@ -2339,7 +2343,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"enable-output",           no_argument,       &enableOutput,     1 },
     {"disable-output",          no_argument,       &enableOutput,     0 },
     {"disable-high-pass",       no_argument,       &highPass,         0 },
-    {"inject-overhead",		no_argument,	   &injectOverhead,   1 },
+    {"inject-overhead",         no_argument,       &injectOverhead,   1 },
     {"data-checkpoint",         no_argument,       &dataCheckpoint,   1 },
     {"glob-frame-data",         no_argument,       &globFrameData,    1 },
     /* these options don't set a flag */
@@ -2692,26 +2696,25 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "int", "%d", sampleRate );
         break;
 
-
-      case 'y':	
-	/* specify which type of calibrated data */
-	{
-	  if ( ! strcmp( "real_4", optarg ) )
-	  {
-	    cal_data = real_4;
-	  }
-	  else if ( ! strcmp( "real_8", optarg ) )
-	  {
-	    cal_data = real_8;
-	  }
-	  else
-	  {
-	    fprintf( stderr, "invalid argument to --%s:\n"
-		"unknown data type specified;\n"
-		"%s (must be one of: real_4, real_8)\n",
-		long_options[option_index].name, optarg);
-	  }
-	  ADD_PROCESS_PARAM( "string", "%s", optarg );
+      case 'y':
+        /* specify which type of calibrated data */
+        {
+          if ( ! strcmp( "real_4", optarg ) )
+          {
+            cal_data = real_4;
+          }
+          else if ( ! strcmp( "real_8", optarg ) )
+          {
+            cal_data = real_8;
+          }
+          else
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "unknown data type specified;\n"
+                "%s (must be one of: real_4, real_8)\n",
+                long_options[option_index].name, optarg);
+          }
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
         break;
 
@@ -2953,7 +2956,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
-
       case 's':
         if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
         {
@@ -3193,12 +3195,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'I':
-	/* create storaged for the ifo-tag */
-	optarg_len = strlen( optarg ) + 1;
+        /* create storaged for the ifo-tag */
+        optarg_len = strlen( optarg ) + 1;
         ifoTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
         memcpy( ifoTag, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;
+        break;
 
       case 'V':
         /* print version information and exit */
@@ -3259,7 +3261,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     exit( 1 );
   }
 
-
   /* check event cluster option */
   if ( eventCluster == 1 )
   {
@@ -3299,7 +3300,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( injectOverhead )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
-	calloc( 1, sizeof(ProcessParamsTable) );
+      calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
@@ -3307,6 +3308,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
+
 
   /*
    *
@@ -3392,7 +3394,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   else if ( ! highPass )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
-	calloc( 1, sizeof(ProcessParamsTable) );
+      calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
@@ -3570,7 +3572,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
-  
   /* check that the calibration frame cache has been specified */
   if ( ! cal_data && ! calCacheName )
   {

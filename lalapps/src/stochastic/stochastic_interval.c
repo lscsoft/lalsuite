@@ -199,6 +199,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 respLength;
   CalibrationUpdateParams calfacts;
   LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
+  FrCache *calibCache = NULL;
 
 
   /* data structures for PSDs */
@@ -1052,17 +1053,21 @@ INT4 main(INT4 argc, CHAR *argv[])
          }
         memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );     
         calfacts.ifo = ifo1;        
-        LAL_CALL( LALExtractFrameResponse( &status, &responseTemp1, calCache1,
+        LAL_CALL( LALFrCacheImport( &status, &calibCache, calCache1 ), &status );
+        LAL_CALL( LALExtractFrameResponse( &status, &responseTemp1, calibCache,
                                            &calfacts), &status );
+        LAL_CALL( LALDestroyFrCache( &status, &calibCache), &status );
 
        /* exit loop if calibration not found */
         if ((status.statusCode !=0)||(responseTemp1.data==NULL))
          { break;}     
 
         memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );                      calfacts.ifo = ifo2; 
-        LAL_CALL( LALExtractFrameResponse(&status, &responseTemp2, calCache2,
+        LAL_CALL( LALFrCacheImport( &status, &calibCache, calCache2 ), &status );
+        LAL_CALL( LALExtractFrameResponse(&status, &responseTemp2, calibCache,
                  &calfacts), &status );
-                
+        LAL_CALL( LALDestroyFrCache( &status, &calibCache), &status );
+
         /* exit loop if calibration not found */
         if ((status.statusCode !=0)||(responseTemp2.data==NULL))
          {break;}   

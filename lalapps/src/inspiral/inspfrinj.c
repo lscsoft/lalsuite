@@ -139,6 +139,7 @@ int main( int argc, char *argv[] )
 
   /* frame input data */
   FrCache      *frInCache = NULL;
+  FrCache      *calCache = NULL;
   FrStream     *frStream = NULL;
   FrChanIn      frChan;
 
@@ -377,8 +378,11 @@ int main( int argc, char *argv[] )
 	LAL_CALL( LALINT8toGPS( &status, &(inj_calfacts.duration), 
 	      &durationNS ), &status );
 
-	LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCacheName, 
+        LAL_CALL( LALFrCacheImport( &status, &calCache, calCacheName ), 
+            &status );
+	LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCache, 
 	      &inj_calfacts ), &status );
+        LAL_CALL( LALDestroyFrCache( &status, &calCache ), &status );
 	inj_alpha = (REAL4) inj_calfacts.alpha.re;
 	inj_alphabeta = (REAL4) inj_calfacts.alphabeta.re;
 	if ( vrbflg ) fprintf( stdout, 
