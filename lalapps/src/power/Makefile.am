@@ -27,8 +27,14 @@ bin_SCRIPTS = lalapps_power_pipe
 pythonlibdir = ${prefix}/lib/python
 pythonlib_SCRIPTS = power.py
 
-lalapps_power_pipe: power_pipe.in
-	sed s+@PYTHONLIBDIR@+${pythonlibdir}+g power_pipe.in > lalapps_power_pipe 
+python_config.sed:
+	-rm -f python_config.sed
+	echo "s+@PYTHONLIBDIR@+${pythonlibdir}+g" > python_config.sed
+	echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
+
+lalapps_power_pipe: power_pipe.in python_config.sed
+	sed -f python_config.sed power_pipe.in > lalapps_power_pipe 
+	chmod +x lalapps_power_pipe
 
 pkgdata_DATA = power_pipe.ini
 
@@ -37,6 +43,6 @@ EXTRA_DIST = $(POWERSRCS) power_pipe.in power_pipe.ini
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-CLEANFILES = lalapps_power_pipe 
+CLEANFILES = config_python.sed lalapps_power_pipe 
 
 MOSTLYCLEANFILES = *POWER*.xml *POWER*.gwf 
