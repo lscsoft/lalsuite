@@ -1,0 +1,112 @@
+\section{Program \texttt{lalapps\_inspinj}}
+\label{program:lalapps-inspinj}
+\idx[Program]{lalapps\_inspinj}
+
+\begin{entry}
+
+\item[Name]
+\verb$lalapps_inspinj$ --- produces inspiral injection ILWD files
+
+\item[Synopsis]
+\verb$lalapps_inspinj$ [\verb$-h$] [\verb$-V$] [\verb$-v$]
+[\verb$-d$ \textit{dbglvl}]
+[\verb$-m$ \textit{mmin}\texttt{-}\textit{mmax}]
+[\verb$-r$ \textit{range}]
+[\verb$-s$ \textit{seed}]
+[\verb$-t$ \textit{tstart}\texttt{-}\textit{tend}]
+[\verb$-u$ \textit{tstep}]
+
+\item[Description]
+\verb$lalapps_inspinj$ produces  two  files,  injepochs.ilwd  and
+injparams.ilwd,  that contain, respectively, the GPS times suitable for
+inspiral injections, and the intrinsic inspiral signal parameters to be used
+for those injections.
+
+The  data  files  are  in  ILWD  format.   The  file injepochs.ilwd contains a
+sequence of integer pairs representing  the  injection GPS time in seconds and
+residual nano-seconds.  The file injparams.ilwd contains  the  intrinsic binary
+parameters for each injection, which is a sequence of eight real numbers
+representing  (in  order)  (1)  the total mass of the binary system (in solar
+masses), (2) the dimensionless reduced mass --- reduced mass per unit  total
+mass ---  in the range from 0 (extreme mass ratio) to 0.25 (equal masses), (3)
+the distance to the system in  meters, (4)  the  inclination  of  the  binary
+system orbit to the plane of the sky in radians, (5) the colaescence phase  in
+radians,  (6) the longitude to the direction of the source in radians, (7) the
+latitude  to  the  direction  of  the source  in  radians, and (8) the
+polarization angle of the source in radians.
+
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{-h}]
+Print a help message.
+\item[\texttt{-V}]
+Print the version information.
+\item[\texttt{-v}]
+Verbose output.
+\item[\texttt{-d} \textit{dbglvl}]
+Set LAL debug level to \textit{dbglvl}.
+\item[\texttt{-m} \textit{mmin}\texttt{-}\textit{mmax}]
+Set minimum and maximum of the range of masses  for the  binary companions (in
+solar masses).  (Default is 1.3--1.5.)
+\item[\texttt{-r} \textit{range}]
+Set the maximum distance range for the binary system (in kpc).  (Default is
+1.0.)
+\item[\texttt{-s} \textit{seed}]
+Set  the random number generator seed.  (Default of 0 gets the seed from the
+system clock.)
+\item[\texttt{-t} \textit{tstart}\texttt{-}\textit{tend}]
+Set the time interval for injection times  (in  GPS seconds).  (Default is
+600000000--600010240.)
+\item[\texttt{-u} \textit{tstep}]
+Set  the mean time step size in seconds for uniform time steps if positive or
+Poisson  time  steps  if negative.   (Default is $100/\pi = 31.8309886183791$.)
+\end{entry}
+
+\item[Debug levels]
+The LAL debug level can be specified as an integer or as a string of flags:
+\begin{entry}
+\item[\texttt{NDEBUG}]
+No debugging information is printed and memory debugging code is disabled.
+\item[\texttt{ERROR}]
+Error messages are printed.
+\item[\texttt{WARNING}]
+Warning messages are printed.
+\item[\texttt{INFO}]
+Information messages are printed.
+\item[\texttt{TRACE}]
+Function call tracing messages are printed.
+\item[\texttt{MEMINFO}]
+Memory  allocation  information messages are printed.
+\item[\texttt{MEMDBG}]
+Debugging of memory allocation routines is enabled but no messages are printed.
+\end{entry}
+The following composite levels are available:
+\begin{entry}
+\item[\texttt{MSGLVL1}]
+Equivalent to \verb$ERROR$
+\item[\texttt{MSGLVL2}]
+Equivalent to \verb$ERROR | WARNING$
+\item[\texttt{MSGLVL3}]
+Equivalent to \verb$ERROR | WARNING | INFO$
+\item[\texttt{ALLDBG}]
+All debugging messages are printed.
+\end{entry}
+
+For example, the command
+\begin{indented}
+\verb$lalapps_inspinj -d "ERROR | INFO"$
+\end{indented}
+will set the debug level so that error and information messages are printed.
+
+\item[Environment]\leavevmode
+
+\begin{entry}
+\item[\texttt{LAL\_DEBUG\_LEVEL}]
+Default LAL debug level to use.
+\end{entry}
+
+\item[Author]
+Jolien Creighton
+
+\end{entry}

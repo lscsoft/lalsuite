@@ -3,7 +3,7 @@
 ## Add additional tex sources (texfiles, eps&pdf figures, etc.) here
 TEXSOURCEFILES = lalapps.tex lalapps.bib lalapps.bst \
                  hello.tex ZPG2transfer.tex stochastic.tex olapredfcn.tex \
-                 ring.tex
+                 ring.tex inspinj.tex
 
 ## Don't edit below here (unless you know what you're doing)
 INSTALLFILES = lalapps.pdf lalapps.dvi lalapps.ps
