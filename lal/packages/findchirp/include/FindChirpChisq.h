@@ -123,6 +123,7 @@ tagFindChirpChisqParams
   COMPLEX8Vector               *qtildeBinVecBCV;
   COMPLEX8Vector              **qBinVecPtr;
   COMPLEX8Vector              **qBinVecPtrBCV;
+  Approximant                   approximant;
 }
 FindChirpChisqParams;
 /* </lalVerbatim> */
