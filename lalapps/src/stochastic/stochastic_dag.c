@@ -1836,7 +1836,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   " --verbose                           verbose mode\n"\
   " -z, --debug-level N                 set lalDebugLevel\n"\
   " -t, --gps-start-time N              GPS start time\n"\
-  " -T, --gps-stop-time N               GPS stop time\n"\
+  " -T, --gps-end-time N                GPS end time\n"\
   " -L, --interval-duration N           interval duration\n"\
   " -l, --segment-duration N            segment duration\n"\
   " -A, --sample-rate N                 sample rate\n"\
