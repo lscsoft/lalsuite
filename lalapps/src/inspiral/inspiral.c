@@ -302,14 +302,7 @@ int main( int argc, char *argv[] )
 
     if ( resampFiltType == 0 )
     {
-      INT8 rawStartTimeNS;
-      resampleParams.filterType = LDASorderTen;
-      /* get the time series ten sample points later */
-      LAL_CALL( LALGPStoINT8( &status, &rawStartTimeNS, &(chan.epoch) ), 
-          &status );
-      rawStartTimeNS += (INT8) (1.0e9 * 10.0 / (REAL8) sampleRate);
-      LAL_CALL( LALINT8toGPS( &status, &(chan.epoch), &rawStartTimeNS ), 
-          &status );
+      resampleParams.filterType = LDASfirLP;
     }
     else if ( resampFiltType == 1 )
     {
@@ -537,7 +530,8 @@ int main( int argc, char *argv[] )
   {
     fprintf( stderr, "error: computed channel length and requested\n"
         "input data length do not match:\nchan.data->length = %d\n"
-        "inputDataLength = %d\nyou have found a bug in the code.\n",
+        "inputDataLength = %d\nyou have found a bug in the code.\n"
+        "please report this to <duncan@gravity.phys.uwm.edu>\n",
         chan.data->length, inputDataLength );
     exit( 1 );
   }
