@@ -42,7 +42,7 @@ FindChirpFilterOutputVetoParams;
 void LALFindChirpFilterOutputVeto( 
     LALStatus                          *status,
     SnglInspiralTable                 **eventList, 
-    REAL4Vector                        *qVec,
+    COMPLEX8Vector                     *qVec,
     REAL4                               qNorm,
     FindChirpFilterOutputVetoParams    *params
     );
