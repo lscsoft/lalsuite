@@ -70,7 +70,7 @@ echo ">>> Testing $lalver [sending output to file `basename $LOG`]"
 
 test -f $LOG && rm -f $LOG
 test -d $lalver               && rm -rf $lalver 
-test -f $PREFIX/lib/lib$lal.* && rm -f  $PREFIX/lib/lib$lal.*
+rm -f $PREFIX/lib/lib$lal.*
 test -d $PREFIX/include/$lal  && rm -rf $PREFIX/include/$lal
 test -d $PREFIX/doc/$lalver   && rm -rf $PREFIX/doc/$lalver
 
