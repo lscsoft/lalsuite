@@ -362,7 +362,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
   UINT4 j;         /* index of leading nonzero PN term */
   UINT4 n, nMax;   /* index over timesteps, and its maximum + 1 */
   UINT4 nNext;     /* index where next buffer starts */
-  REAL4 t, dt;     /* dimensionless time and increment */
+  REAL8 t, dt;     /* dimensionless time and increment */
   REAL4 x, xStart, xMax; /* x = t^(-1/8), and its maximum range */
   REAL4 y, yStart, yMax; /* normalized frequency and its range */
   REAL4 yOld, dyMax;     /* previous timestep y, and maximum y - yOld */
@@ -453,7 +453,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
   dt = -output->a->deltaT * eta / ( 5.0*LAL_MTSUN_SI*mTot );
   ASSERT( dt < 0.0, stat, GENERATEPPNINSPIRALH_ETBAD,
 	  GENERATEPPNINSPIRALH_MSGETBAD );
-  f2aFac = LAL_TWOPI*LAL_MTSUN_SI*mTot*fFac;
+  f2aFac = LAL_PI*LAL_MTSUN_SI*mTot*fFac;
   ASSERT( params->d != 0.0, stat, GENERATEPPNINSPIRALH_EDBAD,
 	  GENERATEPPNINSPIRALH_MSGEDBAD );
   apFac = acFac = -2.0*mu*LAL_MRSUN_SI/params->d;

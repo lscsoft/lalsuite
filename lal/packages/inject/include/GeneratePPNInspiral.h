@@ -221,10 +221,10 @@ parameter must lie in the range $\eta\in(0,1/4]$; values outside of
 this range may be permitted in order to represent ``nonphysical''
 post-Newtonian expansions.
 
+\item[\texttt{REAL4 d}] The distance to the system, in metres.
+
 \item[\texttt{REAL4 inc}] The inclination of the system to the line of
 sight, in radians.
-
-\item[\texttt{REAL4 d}] The distance to the system, in metres.
 
 \item[\texttt{REAL4 phi}] The phase at coalescence $\phi_c$ (or
 arbitrary reference phase for a post${}^{5/2}$-Newtonian
@@ -276,8 +276,8 @@ typedef struct tagPPNParamStruc {
   /* Input parameters. */
   REAL4 mTot;       /* total system mass (Msun) */
   REAL4 eta;        /* mass ratio */
-  REAL4 inc;        /* inclination angle (radians) */
   REAL4 d;          /* distance (metres) */
+  REAL4 inc;        /* inclination angle (radians) */
   REAL4 phi;        /* coalescence phase (radians) */
   REAL4 fStartIn;   /* requested start frequency (Hz) */
   REAL4 fStopIn;    /* requested stop frequency (Hz) */
@@ -352,7 +352,7 @@ LALGetInspiralParams( LALStatus                  *stat,
 		      RandomParams               *params );
 
 /* <lalLaTeX>
-%\newpage\input{GeneratePPNInspiralTestC}
+\newpage\input{GeneratePPNInspiralTestC}
 </lalLaTeX> */
 
 #ifdef  __cplusplus

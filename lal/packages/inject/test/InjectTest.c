@@ -209,7 +209,7 @@ int lalDebugLevel = 0;
 #define F0     (50.0)
 #define DELTAF (400.0)
 #define NPTS_F (2)
-#define TRANS  (1.0e17)
+#define TRANS  (1.0e20)
 
 /* Other waveform parameters. */
 #define FSTART   (40.0)

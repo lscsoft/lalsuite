@@ -79,7 +79,7 @@ LALCreateRandomParams()         LALDestroyRandomParams()
 
 NRCSID( GETINSPIRALPARAMSC, "$Id$" );
 
-#define LAL_DGALCORE_SI (2.62e17) /* Galactic core distance (metres) */
+#define LAL_DGALCORE_SI (2.62e20) /* Galactic core distance (metres) */
 
 /* <lalVerbatim file="GetInspiralParamsCP"> */
 void
