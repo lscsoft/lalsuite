@@ -118,9 +118,6 @@ tagFindChirpChisqParams
   REAL4                         a1;
   REAL4                         b1;
   REAL4                         b2;
-#if 0
-  REAL4                         bankMatch;
-#endif
   UINT4Vector                  *chisqBinVec;
   UINT4Vector                  *chisqBinVecBCV;
   ComplexFFTPlan               *plan;
