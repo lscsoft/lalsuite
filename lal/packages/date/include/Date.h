@@ -182,7 +182,7 @@ typedef enum
   LALMONTH_SEP =  8,
   LALMONTH_OCT =  9,
   LALMONTH_NOV = 10,
-  LALMONTH_DEC = 11,
+  LALMONTH_DEC = 11
 } LALMonth;
 
 
@@ -231,7 +231,7 @@ typedef enum
 {
   LALGPS_EARLIER = -1,
   LALGPS_EQUAL   =  0,
-  LALGPS_LATER   =  1,
+  LALGPS_LATER   =  1
 } LALGPSCompareResult;
 
 
