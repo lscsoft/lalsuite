@@ -1,5 +1,5 @@
 /************************************************* <lalVerbatim file=WindowCV>
-Authors: Allen, B. and Brown, D. A.
+Authors: Allen, B., Brown, D. A., and Creighton, T.
 $Id$
 ****************************************************** </lalVerbatim>*/
 /****************************************************** <lalLaTeX>
@@ -7,21 +7,8 @@ $Id$
 \subsection{Module \texttt{Window.c}}
 \label{ss:Window.c}
 
-Creates vector structure containing a window (also called
-a taper, lag window, or apodization function).  The choices
-currently available are:
-\begin{itemize}
-\item Rectangular
-\item Hann
-\item Welch
-\item Bartlett
-\item Parzen
-\item Papoulis
-\item Hamming
-\item Kaiser
-\end{itemize}
-It should be straighforward to add additional window functions if
-they are desired.
+Creates and destroys a window structure.
+
 \subsubsection*{Prototypes}
 \input{WindowCP}
 \idx{LALWindow()}
@@ -30,40 +17,24 @@ deleted. Windows should be created and destroyed by calles to the
 \verb|LALCreateREAL4Window()| and \verb|LALDestroyREAL4Window()| functions.
 
 \subsubsection*{Description}
-This function creates a time-domain window function in a vector of
+These functions create or destroy a time-domain window function in a vector of
 specified length.  Note that this function was not written to be
 particularly efficient.  If you need a window lots of times, calculate
-it once then save it, please.
+it once then save it, please.  See the \verb|Window.h| header
+discussion for a list of available windows and their definitions.
 
-The window functions are defined for $j=0,\cdots,N-1$ by the following
-formulae.  Note that $N$ is the vector.  In these formulae, let
-$x=2 \pi j/N$, and $y=|2j/N-1|$,
-\begin{eqnarray*}
-{\rm Rectangular:\ } w_j &=& 1 \\
-{\rm Hann:\ } w_j &=& {1 \over 2} ( 1 - \cos  x  ) \\
-{\rm Welch:\ } w_j &=& 1 -  y^2 \\
-{\rm Bartlett:\ } w_j &=& 1 -  y \\
-{\rm Parzen:\ } w_j &=&  1 - 6 y^2 + 6 y^3  {\rm\ if\ } y\le 1/2\\
-                    &=&  2 (1-y)^3 {\rm\ if\ } y>1/2\\
-{\rm Papoulis:\ } w_j &=& {1 \over \pi} \sin (\pi  y  ) + ( 1 -  y  ) \cos (\pi  y  )\\
-{\rm Hamming:\ } w_j &=& 1-0.46 (1 + \cos x ) \\
-{\rm Kaiser:\ } w_j &=& I_0\left( \beta\sqrt{1 - (y - 1)^2} \right)/I_0(\beta) \\
-\end{eqnarray*}
-These window functions are shown in Fig.~\ref{f:window} for $N=1024$.
-\begin{figure}
-\noindent\includegraphics[angle=-90,width=.9\linewidth]{windowFig}
-\caption{\label{f:window} Examples of the window functions for length 1024}
-\end{figure}
+These window functions are shown in Fig.~\ref{f:window-t}.
 
 ****************************************************** </lalLaTeX> */
 
 #include <math.h>
 #include <lal/LALConstants.h>
+#include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/Window.h>
 
-NRCSID (WINDOW, "$Id$");
+NRCSID (WINDOWC, "$Id$");
 
 static const char *WindowTypeNames[] = WINDOWNAMELIST;
 
@@ -107,10 +78,10 @@ LALWindow( LALStatus       *status,
   REAL8 wss;    /* window summed and squared */
   REAL8 win;
   REAL8 x,y,z;
-  REAL8 beta, betaI0;
+  REAL8 beta = 0, betaI0 = 0;
 
   /* Initialize status structure   */
-  INITSTATUS(status,"LALWindow Function",WINDOW);
+  INITSTATUS(status,"LALWindow Function",WINDOWC);
 
   /* Check that parameter block is there. */ 
   ASSERT(parameters!=NULL,status,WINDOWH_ENULLPARAM,WINDOWH_MSGENULLPARAM);
@@ -132,12 +103,14 @@ LALWindow( LALStatus       *status,
          WINDOWH_EWRONGLENGTH,WINDOWH_MSGEWRONGLENGTH);
   ASSERT(vector->data!=NULL,status,WINDOWH_ENULLDATA,WINDOWH_MSGENULLDATA);
 
-  /* check that if the case of a Kaiser window, beta is positive */
-  if ( windowtype == Kaiser )
+  /* check that if the case of a Kaiser or Creighton window, beta is
+     positive */
+  if ( windowtype == Kaiser || windowtype == Creighton )
   {
     ASSERT(parameters->beta >= 0,status, WINDOWH_EBETA,WINDOWH_MSGEBETA);
     beta = parameters->beta;
-    betaI0 = BesselI0( beta );
+    if ( windowtype == Kaiser )
+      betaI0 = BesselI0( beta );
   }
 
   wss=0.0;
@@ -193,6 +166,15 @@ LALWindow( LALStatus       *status,
       }
       break;
 
+    case Creighton:
+      if ( y == 0.0 )
+	win = 1.0;
+      else if ( y >= 1.0 )
+	win = 0.0;
+      else
+	win = exp( beta/( 1.0 - 1.0/(y*y) ) );
+      break;
+
     /* Default case -- this will NEVER happen -- it is trapped above! */
     default:
       ABORT(status,WINDOWH_ETYPEUNKNOWN,WINDOWH_MSGETYPEUNKNOWN);
@@ -207,56 +189,416 @@ LALWindow( LALStatus       *status,
   RETURN(status);
 }
 
+
 /* <lalVerbatim file="WindowCP"> */
-void LALCreateREAL4Window (
-    LALStatus    *status,
-    REAL4Window **output,
-    LALWindowParams *params
-/* </lalVerbatim> */
-    )
-{
-  INITSTATUS( status, "LALCreateREAL4Window", WINDOW );
+void LALCreateREAL4Window ( LALStatus       *status,
+			    REAL4Window     **output,
+			    LALWindowParams *params )
+{ /* </lalVerbatim> */
+  INT4 length, i, j;    /* length of window, and indecies */
+  REAL8 beta, betaI0;   /* beta parameter, and I_0( beta ) */
+  REAL8 dy, pidy, y, w; /* dy=2/N, pidy = pi*dy, y=|j*dy - 1|, w=w(y) */
+  REAL8 z;              /* generic intermediate variable */
+  REAL8 wss = 0.0;      /* sum of squares of window values */
+  REAL4 *data1, *data2; /* pointers to window data */
+  WindowType type;      /* window type */
+
+  INITSTATUS( status, "LALCreateREAL4Window", WINDOWC );
   ATTATCHSTATUSPTR( status );
 
-  ASSERT( output, status, WINDOWH_ENULL, WINDOWH_MSGENULL );
-  ASSERT( ! *output, status, WINDOWH_ENNUL, WINDOWH_MSGENNUL );
-  ASSERT( params, status, WINDOWH_ENULL, WINDOWH_MSGENULL );
+  /* Dummy assignments so compiler won't complain. */
+  beta = betaI0 = 0.0;
 
-  /* allocate the storage for the window vector */
+  /* Check input parameters. */
+  ASSERT( output, status, WINDOWH_ENULLHANDLE, WINDOWH_MSGENULLHANDLE );
+  ASSERT( !*output, status, WINDOWH_ENNUL, WINDOWH_MSGENNUL );
+  ASSERT( params, status, WINDOWH_ENULLPARAM, WINDOWH_MSGENULLPARAM );
+  type = params->type;
+  ASSERT( type < NumberWindowTypes, status, WINDOWH_ETYPEUNKNOWN,
+	  WINDOWH_MSGETYPEUNKNOWN );
+  length = params->length;
+  ASSERT( length > 0, status, WINDOWH_EELENGTH, WINDOWH_MSGEELENGTH );
+  dy = 2.0/(REAL4)( length );
+  pidy = LAL_PI*dy;
+
+  /* Set and check value of beta, if it is used. */
+  if ( type == Kaiser || type == Creighton) {
+    beta = params->beta;
+    ASSERT( beta >= 0, status, WINDOWH_EBETA, WINDOWH_MSGEBETA );
+    if ( type == Kaiser )
+      betaI0 = BesselI0( beta );
+  }
+
+  /* Allocate the storage for the window vector */
   *output = (REAL4Window *) LALCalloc( 1, sizeof(REAL4Window) );
-  LALCreateVector( status->statusPtr, &((*output)->data), params->length );
-  CHECKSTATUSPTR( status );
+  if ( ! *output ) {
+    ABORT( status, WINDOWH_EEALLOCATE, WINDOWH_MSGEEALLOCATE );
+  }
+  LALSCreateVector( status->statusPtr, &((*output)->data), length );
+  BEGINFAIL( status ) {
+    LALFree( *output );
+    *output = NULL;
+  } ENDFAIL( status );
 
-  /* compute the window */
-  (*output)->type = params->type;
-  LALWindow( status->statusPtr, (*output)->data, params );
-  CHECKSTATUSPTR( status );
+  /* Create window. */
+  (*output)->type = type;
+  (*output)->beta = beta;
+  LALSnprintf( (*output)->windowname, LALNameLength, "%s",
+	       WindowTypeNames[type] );
+  params->windowname = WindowTypeNames[type];
+  data1 = (*output)->data->data;
+  data2 = (*output)->data->data + length - 1;
 
-  /* copy the output params to the structure */
-  (*output)->sumofsquares = params->sumofsquares;
-  (*output)->beta = params->beta;
-  strncpy( (*output)->windowname, params->windowname, 
-      LALNameLength * sizeof(CHAR) );
+  /* Set initial datum y = -1. */
+  switch ( type ) {
+  case Rectangular:
+    *(data1++) = w = 1.0;
+    break;
+  case Hamming:
+    *(data1++) = w = 0.08;
+    break;
+  case Kaiser:
+    *(data1++) = w = 1.0/betaI0;
+    break;
+  default:
+    *(data1++) = w = 0.0;
+    break;
+  }
+  wss = 0.5*w*w;
 
+  /* Set (symmetric) data for 0 < |y| < 1. */
+  j = 1;
+  i = ( length - 1 )/2;
+  switch ( type ) {
+
+  case Rectangular:
+    while ( i-- ) {
+      *(data1++) = *(data2--) = 1.0;
+      wss += 1.0;
+    }
+    break;
+
+  case Hann:
+    while ( i-- ) {
+      *(data1++) = *(data2--) = w = 0.5*( 1.0 - cos( pidy*(j++) ) );
+      wss += w*w;
+    }
+    break;
+
+  case Welch:
+    while ( i-- ) {
+      y = dy*(j++) - 1.0;
+      *(data1++) = *(data2--) = w = 1.0 - y*y;
+      wss += w*w;
+    }
+    break;
+
+  case Bartlett:
+    while ( i-- ) {
+      *(data1++) = *(data2--) = w = dy*(j++);
+      wss += w*w;
+    }
+    break;
+
+  case Parzen:
+    i /= 2;
+    while ( i-- ) {
+      z = dy*(j++);
+      *(data1++) = *(data2--) = w = 2.0*z*z*z;
+      wss += w*w;
+    }
+    i = ( length + 1 )/4;
+    while ( i-- ) {
+      y = 1.0 - dy*(j++);
+      *(data1++) = *(data2--) = w = 1.0 - 6.0*y*y*( 1.0 - y );
+      wss += w*w;
+    }
+    break;
+
+  case Papoulis:
+    while ( i-- ) {
+      y = 1.0 - dy*(j++);
+      z = LAL_PI*y;
+      *(data1++) = *(data2--) = w = LAL_1_PI*sin( z )
+	+ ( 1.0 - y )*cos( z );
+      wss += w*w;
+    }
+    break;
+
+  case Hamming:
+    while ( i-- ) {
+      *(data1++) = *(data2--) = w = 1.0
+	- 0.46*( 1.0 + cos( pidy*(j++) ) );
+      wss += w*w;
+    }
+    break;
+
+  case Kaiser:
+    while ( i-- ) {
+      y = 1.0 - dy*(j++);
+      *(data1++) = *(data2--) = w = BesselI0( beta*sqrt( 1.0 - y*y ) )
+	/betaI0;
+      wss += w*w;
+    }
+    break;
+
+  case Creighton:
+    while ( i-- ) {
+      y = 1.0 - dy*(j++);
+      *(data1++) = *(data2--) = w = exp( beta/( 1.0 - 1.0/(y*y) ) );
+      wss += w*w;
+    }
+    break;
+
+    /* Default case -- this will NEVER happen -- it is trapped above! */
+  default:
+    TRY( LALSDestroyVector( status, &((*output)->data) ), status );
+    LALFree( *output );
+    *output = NULL;
+    ABORT( status, WINDOWH_ETYPEUNKNOWN, WINDOWH_MSGETYPEUNKNOWN );
+    break;
+  }
+
+  /* NOTE: At present, all windows are symmetric.  If asymmetric
+     windows are ever added, this will need to be changed. */
+  wss *= 2.0;
+
+  /* NOTE: At present, all windows are normalized to 1 at y=0.  If
+     non-normalized windows are ever added, this will need to be
+     changed. */
+  if ( data1 == data2 ) {
+    *data1 = 1.0;
+    wss += 1.0;
+  }
+
+  /* Set sum of squares and exit. */
+  (*output)->sumofsquares = params->sumofsquares = wss;
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
 
+
 /* <lalVerbatim file="WindowCP"> */
-void LALDestroyREAL4Window (
-    LALStatus     *status,
-    REAL4Window  **output
-    )
+void LALCreateREAL8Window ( LALStatus       *status,
+			    REAL8Window     **output,
+			    LALWindowParams *params )
+{ /* </lalVerbatim> */
+  INT4 length, i, j;    /* length of window, and indecies */
+  REAL8 beta, betaI0;   /* beta parameter, and I_0( beta ) */
+  REAL8 dy, pidy, y, w; /* dy=2/N, pidy = pi*dy, y=|j*dy - 1|, w=w(y) */
+  REAL8 z;              /* generic intermediate variable */
+  REAL8 wss = 0.0;      /* sum of squares of window values */
+  REAL8 *data1, *data2; /* pointers to window data */
+  WindowType type;      /* window type */
+
+  INITSTATUS( status, "LALCreateREAL8Window", WINDOWC );
+  ATTATCHSTATUSPTR( status );
+
+  /* Dummy assignments so compiler won't complain. */
+  beta = betaI0 = 0.0;
+
+  /* Check input parameters. */
+  ASSERT( output, status, WINDOWH_ENULLHANDLE, WINDOWH_MSGENULLHANDLE );
+  ASSERT( !*output, status, WINDOWH_ENNUL, WINDOWH_MSGENNUL );
+  ASSERT( params, status, WINDOWH_ENULLPARAM, WINDOWH_MSGENULLPARAM );
+  type = params->type;
+  ASSERT( type < NumberWindowTypes, status, WINDOWH_ETYPEUNKNOWN,
+	  WINDOWH_MSGETYPEUNKNOWN );
+  length = params->length;
+  ASSERT( length > 0, status, WINDOWH_EELENGTH, WINDOWH_MSGEELENGTH );
+  dy = 2.0/(REAL8)( length );
+  pidy = LAL_PI*dy;
+
+  /* Set and check value of beta, if it is used. */
+  if ( type == Kaiser || type == Creighton) {
+    beta = params->beta;
+    ASSERT( beta >= 0, status, WINDOWH_EBETA, WINDOWH_MSGEBETA );
+    if ( type == Kaiser )
+      betaI0 = BesselI0( beta );
+  }
+
+  /* Allocate the storage for the window vector */
+  *output = (REAL8Window *) LALCalloc( 1, sizeof(REAL8Window) );
+  if ( ! *output ) {
+    ABORT( status, WINDOWH_EEALLOCATE, WINDOWH_MSGEEALLOCATE );
+  }
+  LALDCreateVector( status->statusPtr, &((*output)->data), length );
+  BEGINFAIL( status ) {
+    LALFree( *output );
+    *output = NULL;
+  } ENDFAIL( status );
+
+  /* Create window. */
+  (*output)->type = type;
+  (*output)->beta = beta;
+  LALSnprintf( (*output)->windowname, LALNameLength, "%s",
+	       WindowTypeNames[type] );
+  params->windowname = WindowTypeNames[type];
+  data1 = (*output)->data->data;
+  data2 = (*output)->data->data + length - 1;
+
+  /* Set initial datum y = -1. */
+  switch ( type ) {
+  case Rectangular:
+    *(data1++) = w = 1.0;
+    break;
+  case Hamming:
+    *(data1++) = w = 0.08;
+    break;
+  case Kaiser:
+    *(data1++) = w = 1.0/betaI0;
+    break;
+  default:
+    *(data1++) = w = 0.0;
+    break;
+  }
+  wss = 0.5*w*w;
+
+  /* Set (symmetric) data for 0 < |y| < 1. */
+  j = 1;
+  i = ( length - 1 )/2;
+  switch ( type ) {
+
+  case Rectangular:
+    while ( i-- ) {
+      *(data1++) = *(data2--) = 1.0;
+      wss += 1.0;
+    }
+    break;
+
+  case Hann:
+    while ( i-- ) {
+      *(data1++) = *(data2--) = w = 0.5*( 1.0 - cos( pidy*(j++) ) );
+      wss += w*w;
+    }
+    break;
+
+  case Welch:
+    while ( i-- ) {
+      y = dy*(j++) - 1.0;
+      *(data1++) = *(data2--) = w = 1.0 - y*y;
+      wss += w*w;
+    }
+    break;
+
+  case Bartlett:
+    while ( i-- ) {
+      *(data1++) = *(data2--) = w = dy*(j++);
+      wss += w*w;
+    }
+    break;
+
+  case Parzen:
+    i /= 2;
+    while ( i-- ) {
+      z = dy*(j++);
+      *(data1++) = *(data2--) = w = 2.0*z*z*z;
+      wss += w*w;
+    }
+    i = ( length + 1 )/4;
+    while ( i-- ) {
+      y = 1.0 - dy*(j++);
+      *(data1++) = *(data2--) = w = 1.0 - 6.0*y*y*( 1.0 - y );
+      wss += w*w;
+    }
+    break;
+
+  case Papoulis:
+    while ( i-- ) {
+      y = 1.0 - dy*(j++);
+      z = LAL_PI*y;
+      *(data1++) = *(data2--) = w = LAL_1_PI*sin( z )
+	+ ( 1.0 - y )*cos( z );
+      wss += w*w;
+    }
+    break;
+
+  case Hamming:
+    while ( i-- ) {
+      *(data1++) = *(data2--) = w = 1.0
+	- 0.46*( 1.0 + cos( pidy*(j++) ) );
+      wss += w*w;
+    }
+    break;
+
+  case Kaiser:
+    while ( i-- ) {
+      y = 1.0 - dy*(j++);
+      *(data1++) = *(data2--) = w = BesselI0( beta*sqrt( 1.0 - y*y ) )
+	/betaI0;
+      wss += w*w;
+    }
+    break;
+
+  case Creighton:
+    while ( i-- ) {
+      y = 1.0 - dy*(j++);
+      *(data1++) = *(data2--) = w = exp( beta/( 1.0 - 1.0/(y*y) ) );
+      wss += w*w;
+    }
+    break;
+
+    /* Default case -- this will NEVER happen -- it is trapped above! */
+  default:
+    TRY( LALDDestroyVector( status, &((*output)->data) ), status );
+    LALFree( *output );
+    *output = NULL;
+    ABORT( status, WINDOWH_ETYPEUNKNOWN, WINDOWH_MSGETYPEUNKNOWN );
+    break;
+  }
+
+  /* NOTE: At present, all windows are symmetric.  If asymmetric
+     windows are ever added, this will need to be changed. */
+  wss *= 2.0;
+
+  /* NOTE: At present, all windows are normalized to 1 at y=0.  If
+     non-normalized windows are ever added, this will need to be
+     changed. */
+  if ( data1 == data2 ) {
+    *data1 = 1.0;
+    wss += 1.0;
+  }
+
+  /* Set sum of squares and exit. */
+  (*output)->sumofsquares = params->sumofsquares = wss;
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+void LALDestroyREAL4Window ( LALStatus *status, REAL4Window **output )
 /* </lalVerbatim> */
 {
-  INITSTATUS( status, "LALCreateREAL4Window", WINDOW );
+  INITSTATUS( status, "LALDestroyREAL4Window", WINDOWC );
   ATTATCHSTATUSPTR( status );
 
   ASSERT( output, status, WINDOWH_ENULL, WINDOWH_MSGENULL );
   ASSERT( *output, status, WINDOWH_ENULL, WINDOWH_MSGENULL );
 
   /* destroy the window */
-  LALDestroyVector( status->statusPtr, &((*output)->data) );
+  LALSDestroyVector( status->statusPtr, &((*output)->data) );
+  CHECKSTATUSPTR( status );
+  LALFree( *output );
+  *output = NULL;
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="WindowCP"> */
+void LALDestroyREAL8Window ( LALStatus *status, REAL8Window **output )
+/* </lalVerbatim> */
+{
+  INITSTATUS( status, "LALDestroyREAL8Window", WINDOWC );
+  ATTATCHSTATUSPTR( status );
+
+  ASSERT( output, status, WINDOWH_ENULL, WINDOWH_MSGENULL );
+  ASSERT( *output, status, WINDOWH_ENULL, WINDOWH_MSGENULL );
+
+  /* destroy the window */
+  LALDDestroyVector( status->statusPtr, &((*output)->data) );
   CHECKSTATUSPTR( status );
   LALFree( *output );
   *output = NULL;

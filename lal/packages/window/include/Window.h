@@ -1,5 +1,5 @@
 /************************************************ <lalVerbatim file="WindowHV">
-Authors: Allen, B. and Brown, D. A.
+Authors: Allen, B., Brown, D. A., and Creighton, T.
 $Id$
 **************************************************** </lalVerbatim> */
 /*************************************************** <lalLaTeX>
@@ -13,16 +13,16 @@ $Id$
 \idx[Constant]{Parzen}
 \idx[Constant]{Papoulis}
 \idx[Constant]{Kaiser}
+\idx[Constant]{Creighton}
 \index{Apodize}
 \index{Taper}
 \index{Power Spectrum}
 \index{Bias in power spectrum}
 \index{Spectral Estimation}
 
-This header file contains enums that define the different types of windows,
-and a parameter block which is used as input to the window-making function.
-This allows you to crate and destroy a REAL4Window structure containing a
-window (also called a taper, lag window, or apodization function).
+This header file provides routines and structures to create and store
+window functions (also called a taper, lag window, or apodization
+function).
 
 \subsection*{Synopsis}
 \begin{verbatim}
@@ -30,56 +30,58 @@ window (also called a taper, lag window, or apodization function).
 \end{verbatim}
 
 \noindent
-The routine prototyped in this header file creates REAL4Window structure
-containing a window (also called a taper, lag window, or apodization
-function) and the sum of squares of the window elements.  The choices
-currently available are: 
-\begin{itemize}
-\item Rectangular
-\item Hann
-\item Welch
-\item Bartlett
-\item Parzen
-\item Papoulis
-\item Hamming
-\item Kaiser
-\end{itemize}
-It should be straighforward to add additional window functions if
-they are desired.
+The routines prototyped in this header file create and destroy
+\verb@REAL4Window@ and \verb@REAL8Window@ structures, each containing
+a window and ancillary information such as the the sum of squares of
+the window elements.  It is conventional to express windows as
+functions on the normalized domain $y\in[-1,1]$, where the window is
+implicitly zero outside this domain.  The available windows and their
+formulae are:
+\begin{center}\begin{tabular}{l@{\qquad$w(y)\;=\;$}l}
+Rectanglar: & $1$ \\[1ex]
+Hann:       & $\cos^2(\pi y/2)$ \\[1ex]
+Welch:      & $1-y^2$ \\[1ex]
+Bartlett:   & $1-|y|$ \\[1ex]
+Parzen:     & $\left\{\begin{array}{c@{\qquad}c}
+		1-6y^2(1-|y|) & |y|\leq1/2 \\
+		2(1-|y|)^3    & |y|>1/2 \end{array}\right.$ \\[3ex]
+Papoulis:   & $\frac{1}{\pi}\sin(\pi |y|)+(1-|y|)\cos(\pi |y|)$ \\[1ex]
+Hamming:    & $1-0.46[1-\cos(\pi y)]$ \\[1ex]
+Kaiser:     & $I_0\left(\beta\sqrt{1-(1-|y|)^2}\right)
+		/I_0\left(\beta\right)$ \\[1ex]
+Creighton:  & $\exp\left[-\beta y^2/(1-y^2)\right]$
+\end{tabular}\end{center}
 
-The window functions are defined for $j=0,\cdots,N-1$ by the following
-formulae.  Note that $N$ is the length of the vector.  In these formulae, let
-$x=2 \pi j/N$, and $y=|2j/N-1|$,
-\begin{eqnarray*}
-{\rm Rectangular:\ } w_j &=& 1 \\
-{\rm Hann:\ } w_j &=& {1 \over 2} ( 1 - \cos  x  ) \\
-{\rm Welch:\ } w_j &=& 1 -  y^2 \\
-{\rm Bartlett:\ } w_j &=& 1 -  y \\
-{\rm Parzen:\ } w_j &=&  1 - 6 y^2 + 6 y^3  {\rm\ if\ } y\le 1/2\\
-                    &=&  2 (1-y)^3 {\rm\ if\ } y>1/2\\
-{\rm Papoulis:\ } w_j &=& {1 \over \pi} \sin (\pi  y  ) + ( 1 -  y  ) \cos (\pi  y  )\\
-{\rm Hamming:\ } w_j &=& 1-0.46 (1 + \cos x ) \\
-{\rm Kaiser:\ } w_j &=& I_0\left( \beta\sqrt{1 - (y - 1)^2} \right)/I_0(\beta) \\
-\end{eqnarray*}
-where in the case of the Kaiser window $I_0(x)$ is the $0$th order, modified
-Bessel function of the first kind, and $\beta (>=0)$ is a shape parameter
-related to the amplitude of the sidelobes of the Fourier transform of the
-window.  When $\beta=0$, a Kaiser window reduces to a rectangular window.
+\begin{wrapfigure}{r}{0.65\textwidth}
+\vspace{-4ex}
+\begin{center}
+\resizebox{0.6\textwidth}{!}{\includegraphics{window_t}} \\
+\parbox{0.6\textwidth}{\caption{\label{f:window-t} Various windows as
+functions of the normalized independend variable $y$, choosing
+$\beta=6$ for Kaiser and $\beta=2$ for Creighton.}}
+\end{center}
+\vspace{-2ex}
+\end{wrapfigure}
+\noindent where $I_0(x)$ is the $0$th order, modified Bessel function
+of the first kind, and $\beta(\geq0)$ is a continuous shape parameter
+related to the amplitude of the sidelobes of the Fourier transform of
+the window.  As $\beta\rightarrow0$, the Kaiser and Creighton windows
+approach a rectangular window.
 
-These window functions are shown in Fig.~\ref{f:window} for $N=1024$.
+It is straightforward to add new window functions as the need arises.
 
-A couple of comments and warnings may be useful.  First, the definitions given
-here are taken from {\it Numerical Recipes in C} \cite{numrec} and {\it
-Spectral Analysis for Physical Applications} \cite{pw}.  The definitions of
-windows are {\it not standard}.  In particular, some authors (e.g. J.G.
-Proakis and D.G. Manolakis, {\it Digital Signal Processing} \cite{pm}) and
-some standard computer applications (e.g. {\tt Matlab}) use definitions in
-which $N$ is replaced by $N-1$ in the definitions of $x$ and $y$, with $j$
-covering the range $j=0,\cdots,N-1$.  This has the advantage of making the
-window function ``more symmetric'', typically be appending an extra ``0'' to
-the end of the array.  It has the disadvantage that it throws out more of your
-precious data.  The definition of the Kaiser window comes from ``Discrete-time
-Signal Processing'' by Oppenheim and Schafer, p.474.
+For discretely-sampled data $w_j$, $j=0,\ldots,N-1$, the
+transformation to the normalized domain $y$ is \emph{not
+standardized}.  In these routines we adopt the convention that
+$y=2j/N-1$, which is the one used by \textit{Numerical Recipes in
+C}~\cite{numrec} and \textit{Spectral Analysis for Physical
+Applications}~\cite{pw}.  Other authors (e.g.\ J.G.  Proakis and
+D.G. Manolakis, \textit{Digital Signal Processing}~\cite{pm}) and some
+standard computer applications (e.g.\ \texttt{Matlab}) adopt the
+convention that $y=2j/(N-1)-1$.  This has the advantage of making the
+window function exactly symmetric about $N/2$, typically by setting
+the final array element to zero.  It has the disadvantage that it
+throws out one more of your precious data.
 
 If you want to get a window function that agrees with either Proakis \&
 Manolakis, or with Matlab, just call \verb|LALCreateREAL4Window()| with length
@@ -87,6 +89,37 @@ parameter $M-1$.  Then create an array of length $M$, copy the $M-1$ elements
 of the window array returned by \verb|LALCreateREAL4Window()|, into it, and
 finally copy the {\it first} element of the array returned by
 \verb|LALCreateREAL4Window()| into the last element of your new array.
+
+\begin{wrapfigure}{l}{0.65\textwidth}
+\vspace{-2ex}
+\begin{center}
+\resizebox{0.6\textwidth}{!}{\includegraphics{window_f}} \\
+\parbox{0.6\textwidth}{\caption{\label{f:window-f} Frequency behaviour
+of various windows as functions of the inverse of the normalized
+independend variable $y$, choosing $\beta=6$ for Kaiser and $\beta=2$
+for Creighton.  Solid lines demark the central lobe, circles mark the
+peaks of the sidelobes.}}
+\end{center}
+\vspace{-2ex}
+\end{wrapfigure}
+These window functions are shown as functions of $y$ in
+Fig.~\ref{f:window-t}.  Their Fourier transforms are shown as
+functions of $1/y$ in Fig.~\ref{f:window-f}.  Since the Fourier
+transform of windowed data is the Fourier transform of the data
+convolved with the Fourier transform of the window,
+Fig.~\ref{f:window-f} is the major guideline for selecting a window.
+One can see that windows with a narrow central lobe tend to have
+higher sidelobes, and windows which suppress their low-order sidelobes
+tend to have more power in the high-order sidelobes.  The choice of
+window thus depends on whether one is trying to resolve nearby
+spectral features of comparable magnitude (suggesting a rectangular or
+a Welch window), to reduce spectral bias and low-order sidelobes (a
+Hamming or Kaiser window), or to measure a broad spectrum with a large
+dynamical range (a Creighton or a Papoulis window).  A second
+consideration in some circumstances is computational cost: a
+rectangular window is trivial, and polynomial windows (e.g.\ Welch,
+Bartlett, Parzen) are somewhat cheaper than windows requiring a
+function call (e.g.\ Hann, Papoulis, Kaiser, Creighton).
 
 **********************************************************************</lalLaTeX> */
 
@@ -116,7 +149,7 @@ NRCSID (WINDOWH, "$Id$");
 #define WINDOWH_ENULLDATA    128
 #define WINDOWH_ENNUL        256
 #define WINDOWH_ENULL        512
-#define WINDOWH_EBETA        1024
+#define WINDOWH_EBETA       1024
 
 #define WINDOWH_MSGENULLPARAM    "null input parameter structure pointer"
 #define WINDOWH_MSGENULLVECTOR   "null output vector pointer"
@@ -128,16 +161,16 @@ NRCSID (WINDOWH, "$Id$");
 #define WINDOWH_MSGENULLDATA     "data area of input vector is null"
 #define WINDOWH_MSGENULL         "null pointer"
 #define WINDOWH_MSGENNUL         "non-null pointer"
-#define WINDOWH_MSGEBETA         "Invalid Kaiser window shape parameter"
+#define WINDOWH_MSGEBETA         "Invalid window shape parameter"
   /*********************************************************** </lalErrTable>*/
 /*<lalLaTeX> 
 
 \subsection*{Types}
-\subsubsection*{\texttt{enum WindowType}}
+\subsubsection*{Enumeration \texttt{WindowType}}
 \idx[Type]{WindowType}
 \idx[Constant]{WINDOWNAMELIST}
 
-This enum defines the different possible types of windows that can be
+This enumeration defines the different possible types of windows that can be
 generated.  Any code should take into account that this list may grow if
 someone adds their favorite window to the list. {\bf  WARNING:} additional
 window types must be added just before \texttt{NumberWindowTypes} and after
@@ -154,12 +187,13 @@ typedef enum {Rectangular,
               Papoulis,
               Hamming,
               Kaiser,
+              Creighton,
               NumberWindowTypes} WindowType;
 \end{verbatim}
 For convenience, the following macro is also defined
 \begin{verbatim}
 #define WINDOWNAMELIST {"Rectangular","Hann","Welch","Bartlett","Parzen","Papoulis",
-                        "Hamming", "Kaiser"}
+                        "Hamming", "Kaiser", "Creighton"}
 \end{verbatim}
 This string can be used to print out the name of any of the windows (see the
 test program for an example of this).  If a new window is added, be sure to
@@ -179,34 +213,25 @@ typedef enum {Rectangular,
               Papoulis,
               Hamming,
               Kaiser,
+	      Creighton,
               /* add any new window types just before this comment */
               NumberWindowTypes} WindowType;
 
 /* if you add new windows above, be sure to add a descriptive name below. */
 #define WINDOWNAMELIST \
-{"Rectangular","Hann","Welch","Bartlett","Parzen","Papoulis","Hamming","Kaiser"}
+{"Rectangular","Hann","Welch","Bartlett","Parzen","Papoulis","Hamming","Kaiser","Creighton"}
 
 /*******************************************************************<lalLaTeX>
 
-\subsubsection*{\texttt{Structure LALWindowParams}}
+\subsubsection*{Structure \texttt{LALWindowParams}}
 \idx[Type]{LALWindowParams}
 This structure stores the parameters used to call the window function.
-It is also used to return the sum of the vector squared.
-The structure is defined by
-\begin{verbatim}
-typedef struct tagLALWindowParams {
-  INT4        length;       <==> length of window (input)
-  WindowType  type;         <==> type of window (input)
-  REAL4       beta          <==> parameter used ony for Kaiser window (input)
-  REAL8       sumofsquares; <==> sum of window squared  (output)
-  CHAR*       windowname;   <==> pointer to a char string with window name (output)
-} LALWindowParams;
-\end{verbatim}
- The four fields are:
+It is also used to return the sum of the vector squared and the window
+name.  The fields of the structure are:
 \begin{description}
 \item[\texttt{INT4 length}] The length of the window. This is used as input.
 \item[\texttt{WindowType type}] The type of the window. This is used as input.
-\item[\texttt{REAL4 beta}] The shape parameter $\beta$ of a Kaiser window.
+\item[\texttt{REAL4 beta}] The shape parameter $\beta$ of certain windows.
 This is used as input.  
 \item[\texttt{REAL8 sumofsquares}] The sum of the squares of the window
 vector. This is used as output.
@@ -218,37 +243,26 @@ vector. This is used as output.
 typedef struct tagLALWindowParams {
   INT4        length;       /* length of window (input) */
   WindowType  type;         /* type of window (input) */
-  REAL4       beta;         /* shape parameters for Kaiser Window */
+  REAL4       beta;         /* shape parameters for certain windows */
   REAL8       sumofsquares; /* sum of window squared  (output) */
   const CHAR* windowname;   /* pointer to a char string with window name (output) */
 } LALWindowParams;
 
 /*******************************************************************<lalLaTeX>
 
-\subsubsection*{\texttt{Structure REAL4Window}}
+\subsubsection*{Structure \texttt{<datatype>Window}}
 \idx[Type]{REAL4Window}
-This structure stores the window and it's parameters, such as the sum of the
-vector squared.  The structure is defined by
-\begin{verbatim}
-typedef struct 
-tagLALWindowParams 
-{
-  WindowType  type;                 <==> type of window
-  REAL4Vector *data;                <==> window vector
-  CHAR windowname[LALNameLength];   <==> char array with window name
-  REAL4       beta;                 <==> shape parameter of Kaiser window
-  REAL8       sumofsquares;         <==> sum of window squared
-} LALWindowParams;
-\end{verbatim}
- The four fields are:
+This structure stores the window and it's parameters (above), where
+\verb@<datatype>@ can be either \verb@REAL4@ or \verb@REAL8@.  The
+fields of the structure are:
 \begin{description}
 \item[\texttt{WindowType type}] The type of the window.
-\item[\texttt{REAL4Vector *data}] The window data.
-\item[\texttt{REAL4 beta}] The shape parameter $\beta$ of a Kaiser window.
+\item[\texttt{<datatype>Vector *data}] The window data.
+\item[\texttt{REAL4 beta}] The shape parameter $\beta$ of the window.
 \item[\texttt{REAL8 sumofsquares}] The sum of the squares of the window
 vector.
 \item[\texttt{CHAR windowname[LALNameLength]}] A pointer to a character string
-containing the window name.  
+containing the window name.
 \end{description}
 
 ****************************************************************</lalLaTeX> */
@@ -262,6 +276,17 @@ tagREAL4Window
   REAL8         sumofsquares;
 }
 REAL4Window;
+
+typedef struct
+tagREAL8Window
+{
+  WindowType    type;
+  REAL8Vector  *data;
+  CHAR          windowname[LALNameLength];
+  REAL4         beta;
+  REAL8         sumofsquares;
+}
+REAL8Window;
   
 void LALWindow (
     LALStatus *,
@@ -278,6 +303,17 @@ void LALCreateREAL4Window (
 void LALDestroyREAL4Window (
     LALStatus          *status,
     REAL4Window       **output
+    );
+
+void LALCreateREAL8Window (
+    LALStatus          *status,
+    REAL8Window       **output,
+    LALWindowParams    *params
+    );
+
+void LALDestroyREAL8Window (
+    LALStatus          *status,
+    REAL8Window       **output
     );
 
 /**************************************************************************** <lalLaTeX>

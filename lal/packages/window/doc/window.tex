@@ -12,7 +12,8 @@ currently available are:
 \item Parzen
 \item Papoulis
 \item Hamming
-\item Kaiser.
+\item Kaiser
+\item Creighton.
 \end{itemize}
 Using window functions is well documented in many places.  Their
 principal purpose is to reduce the {\it bias} in power spectrum
@@ -22,7 +23,7 @@ exactly at the frequency of a particular bin, the spike will have some
 height.  If a signal at the same amplitude but slighly different
 frequency is present, and the frequency is not exactly the same
 as one of the bins, then
-the spike will be broader and lower. Without widowing, this effect introduces
+the spike will be broader and lower. Without windowing, this effect introduces
 bias into spectral estimates.
 
 If the signal is first multiplied by the window function, the
@@ -38,7 +39,10 @@ Definitions of most of the window functions above may be found in {\it
 Numerical Recipes} \cite{numrec} equations 13.4.13-13.4.15.  Definitions of
 the remaining windows can be found in {\it Spectral analysis for physical
 applications} \cite{pw} Section 6.11. Definition of the Kaiser window can be
-found in ``Discrete-time Signal Processing'' by Oppenheim and Schafer, p.474.
+found in \textit{Discrete-time Signal Processing} by Oppenheim and Schafer, p.474.
+The Creighton window function is based on a fairly standard $C_\infty$
+test function used in distribution theory, e.g.\ \textit{Green's
+Functions and Boundary Value Problems}~\cite{stakgold}, by Stakgold.
 
 
 
@@ -55,4 +59,8 @@ J.G. Proakis and D.G. Manolakis, {\it Digital
 Signal Processing: principles, algorithms and applications},
 3rd Edition, 1995.
 Prentice Hall
+\bibitem{stakgold}
+I. Stakgold, {\it Green's Functions and Boundary Value Problems},
+1979.
+Wiley Interscience
 \end{thebibliography}
