@@ -132,7 +132,7 @@ static int rngmed_qsortindex8(const void *elem1, const void *elem2){
 /* <lalVerbatim file="LALRunningMedianCP"> */
 void LALDRunningMedian( LALStatus *status,
 			REAL8Sequence *medians,
-			REAL8Sequence *input,
+			const REAL8Sequence *input,
 			LALRunningMedianPar param)
 /* </lalVerbatim> */
 {
@@ -540,7 +540,7 @@ void LALDRunningMedian( LALStatus *status,
 /* <lalVerbatim file="LALRunningMedianCP"> */
 void LALSRunningMedian( LALStatus *status,
 			REAL4Sequence *medians,
-			REAL4Sequence *input,
+			const REAL4Sequence *input,
 			LALRunningMedianPar param)
 /* </lalVerbatim> */
 {
@@ -949,7 +949,7 @@ void LALSRunningMedian( LALStatus *status,
 /* <lalVerbatim file="LALRunningMedianCP"> */
 void LALDRunningMedian2( LALStatus *status,
 			 REAL8Sequence *medians,
-			 REAL8Sequence *input,
+			 const REAL8Sequence *input,
 			 LALRunningMedianPar param)
 /* </lalVerbatim> */
 {

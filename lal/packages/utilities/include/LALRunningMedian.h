@@ -101,19 +101,19 @@ LALRunningMedianPar;
 void
 LALDRunningMedian( LALStatus *status,
 		   REAL8Sequence *medians,
-		   REAL8Sequence *input,
+		   const REAL8Sequence *input,
 		   LALRunningMedianPar param);
 
 void
 LALSRunningMedian( LALStatus *status,
 		   REAL4Sequence *medians,
-		   REAL4Sequence *input,
+		   const REAL4Sequence *input,
 		   LALRunningMedianPar param);
 
 void
 LALDRunningMedian2( LALStatus *status,
 		    REAL8Sequence *medians,
-		    REAL8Sequence *input,
+		    const REAL8Sequence *input,
 		    LALRunningMedianPar param);
 
 /* <lalLaTeX>
