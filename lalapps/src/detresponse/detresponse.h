@@ -28,6 +28,10 @@
 
 #include "util.h"
 
+
+#include "cmdline.h"
+#include "mystrncasecmp.h"
+
 /* macro for minimum of two arguments */
 #define DETRESPONSE_MIN(a, b) (((a) < (b)) ? (a) : (b))
 
@@ -49,9 +53,11 @@ REAL8 deg_to_rad(REAL8 degrees);
 void  set_source_params(LALSource * source, const char * name, REAL8 ra_rad,
                         REAL8 dec_rad, REAL8 orien_rad);
 
+void generate_timeseries_response(LALStatus * status);
 
 /* globals */
 extern int lalDebugLevel;
-extern int verbose_level;
+extern int verbosity_level;
+extern struct gengetopt_args_info args_info;
 
 #endif

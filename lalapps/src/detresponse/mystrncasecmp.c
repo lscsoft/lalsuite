@@ -3,7 +3,7 @@
  */
 /* #include <utils.h> */
 
-#ifndef HAVE_STRNCASECMP
+#ifndef HAVE_MYSTRNCASECMP
 
 #include <string.h>
 #include <ctype.h>
@@ -27,4 +27,4 @@ mystrncasecmp(char *s1, char *s2, unsigned int n)
         return tolower(*(unsigned char *) s1) - tolower(*(unsigned char *) s2);
 }
 
-#endif /* HAVE_STRNCASECMP */
+#endif /* HAVE_MYSTRNCASECMP */
