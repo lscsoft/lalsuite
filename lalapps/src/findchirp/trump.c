@@ -47,7 +47,7 @@ int main(int argc, char **argv)
     candEvent *eventhead=NULL, *thisCEvent=NULL;
     candEvent *Ieventhead=NULL, *thisIEvent=NULL;
     float time_analyzed, safety=0.0;
-    int **triggerHistogram, **injectHistogram, numbins=40;
+    int **triggerHistogram, **injectHistogram, numbins=40, detection=0;
 
     /*******************************************************************
     * PARSE ARGUMENTS (arg stores the current position)               *
@@ -114,6 +114,14 @@ int main(int argc, char **argv)
                 fprintf(stderr,  USAGE, *argv );
                 return RESPONSEC_EARG;
             }
+        }
+        /*********************************************************
+        * Flag to finish after generating triggers, if in detect
+        * mode
+        *********************************************************/
+        else if ( !strcmp( argv[arg], "--detection" ) ) {
+            arg++;
+            detection = 1;
         }
         /* Check for unrecognized options. */
         else if ( argv[arg][0] == '-' ) {
@@ -364,6 +372,12 @@ int main(int argc, char **argv)
     }
     fclose(fp);
 
+    if (detection){
+        fprintf(fpout,"Finished with detections\n");
+        fprintf(fpout,"Check triggers.dat for candidates\n");
+        fclose(fpout);
+        exit(0);
+    }
 
     /******************************************************************** 
     * Read in list of injection events and apply vetoes to them.
