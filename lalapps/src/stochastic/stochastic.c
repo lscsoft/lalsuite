@@ -85,8 +85,8 @@ REAL8 deltaF = 0.25;
 
 /* data parameters */
 LIGOTimeGPS gpsStartTime;
-UINT8 startTime = 752242030;
-UINT8 stopTime = 752242212;
+UINT8 startTime = 752242050;
+UINT8 stopTime = 752242590;
 INT4 intervalDuration = 180;
 INT4 segmentDuration = 60;
 INT4 calibDuration = 60;
@@ -104,7 +104,7 @@ INT4 site2 = 1;
 
 /* frequency band */
 INT4 fMin = 50;
-INT4 fMax = 300;
+INT4 fMax = 250;
 
 /* omegaGW parameters */
 REAL4 alpha = 0.0;
@@ -1133,14 +1133,17 @@ INT4 main(INT4 argc, CHAR *argv[])
                   
         LAL_CALL( LALResponseConvert(&status, &MCresponse1, &responseTemp1), &status );
         LAL_CALL( LALResponseConvert(&status, &MCresponse2, &responseTemp2), &status );
+        
+	memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
         calfacts.ifo = ifo1;	 
         LAL_CALL( LALExtractFrameResponse(&status, &MCresponse1, calCache1,
                                           &calfacts), &status );
+	memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
         calfacts.ifo = ifo2;
         LAL_CALL( LALExtractFrameResponse(&status, &MCresponse2, calCache2,
                                           &calfacts), &status );
-	 
-
+		 
+	
         /* force DC to be 0 and nyquist to be real */
         MCresponse1.data->data[0].re = MCresponse2.data->data[0].re = 0.;
         MCresponse1.data->data[0].im = MCresponse2.data->data[0].im = 0.;
@@ -1260,10 +1263,11 @@ INT4 main(INT4 argc, CHAR *argv[])
 	     {
 	       fprintf( stdout, "compute end response function at GPS %d... \n",gpsCalibTime.gpsSeconds);
              }
-
+           memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
            calfacts.ifo = ifo1;
            LAL_CALL( LALExtractFrameResponse( &status, &responseTemp1, calCache1,
                                               &calfacts), &status );
+           memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
            calfacts.ifo = ifo2;
            LAL_CALL( LALExtractFrameResponse( &status, &responseTemp2, calCache2,
                                               &calfacts), &status );
@@ -1276,7 +1280,7 @@ INT4 main(INT4 argc, CHAR *argv[])
              response1.data->data[i] = responseTemp1.data->data[i + numPointInf];
              response2.data->data[i] = responseTemp2.data->data[i + numPointInf];
             }
-
+               
            /* print */
            if ((test_flag)&&(segLoop==testSeg)&&(jobLoop==testInter))
             {
@@ -1292,39 +1296,43 @@ INT4 main(INT4 argc, CHAR *argv[])
              resp2[numSegments-1]->data[i] = response2.data->data[i];
              } 
           
-          
+	  
            /* convert response function for use in the MC routine */
            if (inject_flag)
             {
              MCresponse1.epoch = MCresponse2.epoch = gpsCalibTime;      
-                  
+             
 	     LAL_CALL( LALResponseConvert(&status, &MCresponse1, &responseTemp1), &status );
 	     LAL_CALL( LALResponseConvert(&status, &MCresponse2, &responseTemp2), &status );
+             /*   
+             memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
 	     calfacts.ifo = ifo1;
              LAL_CALL( LALExtractFrameResponse(&status, &MCresponse1, calCache1,
                        &calfacts), &status );
+             memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
              calfacts.ifo = ifo2;
              LAL_CALL( LALExtractFrameResponse(&status, &MCresponse2, calCache2,
                        &calfacts), &status );
-	 
+	     
+	     */
+       
+           
 
              /* force DC to be 0 and nyquist to be real */
              MCresponse1.data->data[0].re = MCresponse2.data->data[0].re = 0.;
              MCresponse1.data->data[0].im = MCresponse2.data->data[0].im = 0.;
              MCresponse1.data->data[MCfreqLength-1].im = 0;
              MCresponse2.data->data[MCfreqLength-1].im = 0.;
-   
             
              /* store in memory */
              for (i = 0; i < MCfreqLength ; i++)
 	      {
-	       MCresp1[numSegments]->data[i] = MCresponse1.data->data[i];
-               MCresp2[numSegments]->data[i] = MCresponse2.data->data[i];
+	       MCresp1[numSegments-1]->data[i] = MCresponse1.data->data[i];
+               MCresp2[numSegments-1]->data[i] = MCresponse2.data->data[i];
               }             
-             }
             }
-                    
-
+	  }                    
+      
          for (segLoop = 0; segLoop < numSegments; segLoop++)
           {
             gpsStartTime.gpsSeconds = startTime + (jobLoop + segLoop)  * segmentDuration;
