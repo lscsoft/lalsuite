@@ -21,6 +21,8 @@
 #include <fcntl.h>
 #include <regex.h>
 #include <pwd.h>
+#define _XOPEN_SOURCE /* glibc2 needs this */
+#include <time.h>
 
 #include <lalapps.h>
 #include <lal/LALConfig.h>
@@ -36,6 +38,7 @@ RCSID( "$Id$" );
 
 long long atoll(const char *nptr);
 int gethostname(char *name, size_t len);
+char *strptime(const char *s, const char  *format,  struct tm *tm);
 
 
 /*
@@ -167,6 +170,8 @@ int main( int argc, char *argv[] )
     const char rev_str[] = "$Revision ";
     const char source_str[] = "$Source ";
     const char date_str[] = "$Date ";
+    const char cvs_date_format[] = "\%Y/\%m/\%d \%T";
+    char date_string[256];
     char *cvsstrstart, *cvsstrend;
     struct passwd *pwent;
     size_t cvsstrlen;
@@ -188,6 +193,25 @@ int main( int argc, char *argv[] )
         cvsstrlen < 256 ? cvsstrlen : 256 );
     process_cvs_repository[255] = '\0';
 
+    /* cvs check in time */
+    memset( date_string, 0, 256 * sizeof(CHAR) );
+    cvsstrstart = cvs_date + strlen(date_str) + 1;
+    cvsstrend   = strstr( cvs_source, " $" );
+    cvsstrlen = cvsstrend - cvsstrstart;
+    memcpy( date_string, cvsstrstart, 
+        cvsstrlen < 256 ? cvsstrlen : 256 );
+    date_string[255] = '\0';
+    if ( ! strptime( date_string, cvs_date_format, &(laldate.unixDate) ) )
+    {
+      fprintf( stderr, "could not determine cvs checkin date\n" );
+      exit( 1 );
+    }
+    laldate.residualNanoSeconds = 0;
+    LAL_CALL(
+        LALUTCtoGPS( &status, &process_cvs_entry_time, &laldate, &accuracy ),
+        &status );
+
+    /* process id, username and host */
     process_unix_procid = getpid();
     if ( gethostname( process_node, 64 ) < 0 )
     {
@@ -723,7 +747,7 @@ int main( int argc, char *argv[] )
       process_program,
       process_version,
       process_cvs_repository,
-      500000000,
+      process_cvs_entry_time.gpsSeconds,
       process_isonline,
       process_node,
       process_username,
