@@ -299,7 +299,7 @@ LALFindChirpBCVSpinFilterSegment (
   amp         = fcDataParams->ampVec->data;
   ampBCVSpin1 = fcDataParams->ampVecBCVSpin1->data;
   ampBCVSpin2 = fcDataParams->ampVecBCVSpin2->data;
-  wtilde     = input->segment->dataBCV->data->data; 
+  wtilde = fcDataParams->wtildeVec->data;
 
   beta = 0.0;
 
@@ -520,14 +520,14 @@ LALFindChirpBCVSpinFilterSegment (
  
 	
   	/*  UNCOMMENT LOOP BELOW TO NORMALISE INPUT  */
-    	/*fprintf (stdout, 
+    	fprintf (stdout, 
 		"Normalising input data (should not generally be used) \n"); 
    
   	for (k = 0; k < (numPoints/2)+1; ++k )
   	{
   		inputData1[k].re *= invRootNormData;
 		inputData1[k].im *= invRootNormData;  
-  	}*/
+  	}
   	/*  UNCOMMENT LOOP ABOVE TO NORMALISE INPUT  */
 	
   	normData = 0.;
