@@ -129,7 +129,7 @@ void LALDemod(LALStatus *stat,
   }
 
 
-  // Loop over frequencies to be demodulated
+  /* Loop over frequencies to be demodulated */
   for(i=0 ; i< params->imax  ; i++ )
   {
     Fa.re =0.0;
@@ -139,7 +139,7 @@ void LALDemod(LALStatus *stat,
 
     f=params->f0+i*params->df;
 
-    // Loop over SFTs that contribute to F-stat for a given frequency
+    /* Loop over SFTs that contribute to F-stat for a given frequency */
     for(alpha=0;alpha<params->SFTno;alpha++)
       {
 	REAL8 tsin, tcos, tempFreq;
@@ -168,7 +168,7 @@ void LALDemod(LALStatus *stat,
 		     
 	tempFreq=LAL_TWOPI*(tempFreq+params->Dterms-1);
 	k1=(INT4)xTemp-params->Dterms+1;
-	// Loop over terms in dirichlet Kernel
+	/* Loop over terms in dirichlet Kernel */
 	for(k=0;k<2*params->Dterms;k++)
 	  {
 	    COMPLEX8 Xalpha_k;

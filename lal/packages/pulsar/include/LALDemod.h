@@ -149,13 +149,13 @@ typedef struct DemodParTag{
   INT4		spinDwnOrder;	/* Maximum order of spdwn parameter */
   REAL8		*skyConst;	/* Constants computed in ComputeSky.c */
   REAL8		*spinDwn;	/* Spindown parameter set */
-  AMCoeffs      *amcoe;         //Amplitude Modulation coefficients
+  AMCoeffs      *amcoe;         /*Amplitude Modulation coefficients */
   REAL8         f0;            /*Starting Frequency to be demodulated*/
   REAL8         df;            /*Frequency index resolution*/
   INT4          SFTno;          /* No. of SFTs*/
   INT4          Dterms;         /*Terms used in the computation of the dirichlet kernel*/
-  INT4          ifmin;          //smallest frequency index in SFTs
-  INT4          imax;           //maximum # of values of F to calculate
+  INT4          ifmin;          /*smallest frequency index in SFTs */
+  INT4          imax;           /*maximum # of values of F to calculate */
 }DemodPar;
 
 
