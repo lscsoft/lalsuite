@@ -87,9 +87,7 @@ LALInspiralBankGeneration(
     bank->psi3 = coarseList[cnt].params.psi3;
     bank->f_final = coarseList[cnt].params.fFinal;
     bank->eta = coarseList[cnt].params.eta;
-#if 0
     bank->beta = coarseList[cnt].params.beta;
-#endif
   }
   /* Free first template, which is blank. */
   bank = (*first)->next;
