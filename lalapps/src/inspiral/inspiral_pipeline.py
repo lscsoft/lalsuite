@@ -162,7 +162,6 @@ queue
     site = chan[0]
     ifo  = chan[0:2]
     dag_fh = open( self.basename + ".dag", "w" )
-    print >> dag_fh, "DOT %s.dot UPDATE OVERWRITE" % self.basename
     
     # jobs to generate the frame cache files
     for seg in self.segments:
