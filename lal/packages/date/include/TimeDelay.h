@@ -67,9 +67,9 @@ structures, and a pointer to a \verb@SkyPosition@ structure.  The
 fields are:
 
 \begin{description}
-\item[\texttt{LALPlaceAndGPS *p\_det\_and\_time1}] The first detector and GPS
-\item[\texttt{LALPlaceAndGPS *p\_det\_and\_time2}] The second detector and GPS
-\item[\texttt{SkyPosition *p\_source}] The source location (equatorial
+\item[\verb@LALPlaceAndGPS *p_det_and_time1@] The first detector and GPS
+\item[\verb@LALPlaceAndGPS *p_det_and_time2@] The second detector and GPS
+\item[\verb@SkyPosition *p_source@] The source location (equatorial
     co\"{o}dinates in decimal radians)
 \end{description}
 
@@ -81,8 +81,8 @@ tagTwoDetsTimeAndASource
   LALPlaceAndGPS *p_det_and_time1; /* the first detector and detection time */
   LALPlaceAndGPS *p_det_and_time2; /* the second detector and detection time */
   SkyPosition    *p_source;        /* source Equatorial location
-                                  * (lon=RA, lat=dec) in decimal
-                                  * radians */ 
+                                    * (lon=RA, lat=dec) in decimal
+                                    * radians */ 
 }
 TwoDetsTimeAndASource;
 
@@ -99,8 +99,8 @@ structure, and a pointer to a \verb@SkyPosition@ structure.  The
 fields are:
 
 \begin{description}
-\item[\texttt{LALPlaceAndGPS *p\_det\_and\_time}] The detector and GPS
-\item[\texttt{SkyPosition *p\_source}]  The source location (equatorial
+\item[\verb@LALPlaceAndGPS *p_det_and_time@] The detector and GPS
+\item[\verb@SkyPosition *p_source@]  The source location (equatorial
     co\"{o}dinates in decimal radians)
 \end{description}
 
@@ -111,8 +111,8 @@ tagDetTimeAndASource
 {
   LALPlaceAndGPS *p_det_and_time; /* detector and detection time */
   SkyPosition    *p_source;       /* source Equatorial location
-                                 * (lon=RA, lat=dec) in decimal
-                                 * radians */ 
+                                   * (lon=RA, lat=dec) in decimal
+                                   * radians */ 
 }
 DetTimeAndASource;
     

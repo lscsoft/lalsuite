@@ -147,7 +147,7 @@ typedef enum
 \index{\texttt{LALUnixDate}}
 
 This structure is just the standard Unix \texttt{tm} structure.  We shall
-{\em always} ignore the daylight savings time field, \texttt{tm_isdst}.
+{\em always} ignore the daylight savings time field, \verb@tm_isdst@.
 
 </lalLaTeX> */
 
@@ -257,8 +257,8 @@ This structure stores pointers to a \texttt{LALDetector} and a
 structures for passing to functions.  The fields are:
 
 \begin{description}
-\item[\texttt{LALDetector *p\_detector}] Pointer to a detector
-\item[\texttt{LIGOTimeGPS *p\_gps}] Pointer to a GPS time structure
+\item[\texttt{LALDetector *detector}] Pointer to a detector
+\item[\texttt{LIGOTimeGPS *gps}] Pointer to a GPS time structure
 \end{description}
 
 </lalLaTeX> */
@@ -270,8 +270,8 @@ structures for passing to functions.  The fields are:
 typedef struct
 tagLALPlaceAndGPS
 {
-    LALDetector *p_detector;   /* pointer to a detector */
-    LIGOTimeGPS *p_gps;        /* pointer to GPS time */
+    LALDetector *detector;   /* pointer to a detector */
+    LIGOTimeGPS *gps;        /* pointer to GPS time */
 }
 LALPlaceAndGPS;
 
@@ -286,8 +286,8 @@ detector and a pointer to a date.  This is another convenience
 structure, used in calling \texttt{LALLMST1()}.  The fields are:
 
 \begin{description}
-\item[\texttt{LALDetector *p\_detector}] Pointer to a detector
-\item[\texttt{LALDate *p\_date}] Pointer to a date
+\item[\texttt{LALDetector *detector}] Pointer to a detector
+\item[\texttt{LALDate *date}] Pointer to a date
 \end{description}
 
 </lalLaTeX> */
@@ -296,8 +296,8 @@ structure, used in calling \texttt{LALLMST1()}.  The fields are:
 typedef struct
 tagLALPlaceAndDate
 {
-    LALDetector *p_detector;   /* pointer to a detector */
-    LALDate     *p_date;       /* pointer to a date */
+    LALDetector *detector;   /* pointer to a detector */
+    LALDate     *date;       /* pointer to a date */
 }
 LALPlaceAndDate;
 
@@ -358,25 +358,25 @@ void LALDateString (LALStatus     *status,
 </lalLaTeX> */
 
 void LALGMST1 (LALStatus     *status,
-               REAL8         *p_gmst,     /* output - GMST1 */
-               const LALDate *p_date,     /* input  - date and time */
+               REAL8         *gmst,     /* output - GMST1 */
+               const LALDate *date,     /* input  - date and time */
                LALMSTUnits    outunits);   /* GMST1 units */
 
 void LALGPStoGMST1( LALStatus         *status,
-                    REAL8             *p_gmst,   /* output - GMST1 */
-                    const LIGOTimeGPS *p_gps,    /* input - GPS time */
+                    REAL8             *gmst,   /* output - GMST1 */
+                    const LIGOTimeGPS *gps,    /* input - GPS time */
                     LALMSTUnits        outunits); /* GMST1 units */
 
 void LALLMST1 (LALStatus             *status,
-               REAL8                 *p_lmst,            /* output - LMST1 */
-               const LALPlaceAndDate *p_place_and_date,  /* input -
+               REAL8                 *lmst,            /* output - LMST1 */
+               const LALPlaceAndDate *place_and_date,  /* input -
                                                             location
                                                             and date */ 
                LALMSTUnits            outunits);         /* LMST1 units */
 
 void LALGPStoLMST1( LALStatus             *status,
-                    REAL8                 *p_lmst,      /* output - LMST1 */
-                    const LALPlaceAndGPS  *p_place_and_gps, /* input -
+                    REAL8                 *lmst,      /* output - LMST1 */
+                    const LALPlaceAndGPS  *place_and_gps, /* input -
                                                                location and
                                                                GPS */  
                     LALMSTUnits            outunits);       /* LMST1 units */
@@ -388,6 +388,17 @@ void LALGPStoLMST1( LALStatus             *status,
 void LALSecsToLALDate(LALStatus*,
                       LALDate*,
                       REAL8);
+
+
+
+/* FOOBAR! Put LALLATEX stuff here for GPStoUTC */
+void
+LALGPStoUTC (LALStatus                *status,
+             LALDate                  *utcDate,
+             const LIGOTimeGPS        *gpsTime,
+             const LALLeapSecAccuracy *accuracy);
+
+
 
 #ifdef  __cplusplus
 }
