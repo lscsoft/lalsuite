@@ -35,7 +35,6 @@ Usage: lalapps_stochastic_pipe [options]
   -d, --datafind           run LSCdataFind to create frame cache files
   -s, --stochastic         run lalapps_stochastic
 
-  -p, --playground-only    only create chunks that overlap with playground
   -P, --priority PRIO      run jobs with condor priority PRIO
 
   -f, --config-file FILE   use configuration file FILE
@@ -44,13 +43,12 @@ Usage: lalapps_stochastic_pipe [options]
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvdspP:f:l:"
+shortop = "hvdsP:f:l:"
 longop = [
   "help",
   "version",
   "datafind",
   "stochastic",
-  "playground-only",
   "priority=",
   "config-file=",
   "log-path="
@@ -66,7 +64,6 @@ except getopt.GetoptError:
 config_file = None
 do_datafind = None
 do_stochastic = None
-playground_only = 0
 condor_prio = None
 config_file = None
 log_path = None
@@ -83,8 +80,6 @@ for o, a in opts:
     do_datafind = 1
   elif o in ("-s", "--stochastic"):
     do_stochastic = 1
-  elif o in ("-p", "--playground-only"):
-    playground_only = 1
   elif o in ("-P", "--priority"):
     condor_prio = a
   elif o in ("-f", "--config-file"):
@@ -151,8 +146,8 @@ data = pipeline.ScienceData()
 data.read(cp.get('input','segments'),min_length)
 
 # create the chunks from the science segments
-data.make_chunks(max_length,0,playground_only)
-data.make_short_chunks_from_unused(min_length,0,playground_only)
+data.make_chunks(max_length,0,0)
+data.make_short_chunks_from_unused(min_length,0,0)
 
 # get the ifos
 ifo1 = cp.get('interferometers','ifo1')
