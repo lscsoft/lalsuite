@@ -60,6 +60,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_EFREE 12
 #define FINDCHIRPH_ERHOT 15
 #define FINDCHIRPH_ECHIT 16
+#define FINDCHIRPH_ECRUP 17
 #define FINDCHIRPH_MSGENULL "Null pointer"
 #define FINDCHIRPH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPH_MSGEALOC "Memory allocation error"
@@ -72,6 +73,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_MSGEFREE "Memory free error"
 #define FINDCHIRPH_MSGERHOT "Rhosq threshold is zero or negative"
 #define FINDCHIRPH_MSGECHIT "Chisq threshold is zero or negative"
+#define FINDCHIRPH_MSGECRUP "Attempting to filter corrupted data"
 /* </lalErrTable> */
 
 

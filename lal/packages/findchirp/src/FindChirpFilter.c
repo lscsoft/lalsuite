@@ -565,8 +565,6 @@ LALFindChirpFilterSegment (
     REAL4 x8 = x4*x4;
     REAL4 chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8;
     deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
-    fprintf( stdout, "chirp time = %f\ndeltaEventIndex = %d\n", 
-        chirpTime, deltaEventIndex );
   }
     
 
@@ -641,7 +639,16 @@ LALFindChirpFilterSegment (
   }
 
   /* ignore corrupted data at start and end */
-  ignoreIndex = (input->segment->invSpecTrunc + deltaEventIndex ) / 2;
+  ignoreIndex = (input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
+
+  /* XXX check that we are not filtering corrupted data XXX */
+  /* XXX this is hardwired to 1/4 segment length        XXX */
+  if ( ignoreIndex > numPoints / 4 )
+  {
+    ABORT( status, FINDCHIRPH_MSGECRUP, FINDCHIRPH_MSGECRUP );
+  }
+  /* XXX reset ignoreIndex to one quarter of a segment XXX */
+  ignoreIndex = numPoints / 4;
   
   /* look for an events in the filter output */
   for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )

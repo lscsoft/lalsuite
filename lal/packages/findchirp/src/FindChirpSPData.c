@@ -563,7 +563,7 @@ LALFindChirpSPData (
 
       /* transform to frequency domain */
       LALForwardRealFFT( status->statusPtr, params->wtildeVec, params->wVec, 
-          params->invPlan );
+          params->fwdPlan );
       CHECKSTATUSPTR (status);
 
       /* normalise fourier transform and square */
