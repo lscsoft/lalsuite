@@ -188,10 +188,10 @@ tagFindChirpSegment
   UINT4Vector                  *chisqBinVecBCV;
   REAL8                         deltaT;
   REAL4Vector                  *segNorm;
+  REAL4Vector                  *tmpltPowerVec;
   REAL4Vector                  *a1;     
   REAL4Vector                  *b1;
   REAL4Vector                  *b2;     
-  REAL4Vector                  *tmpltPowerVec;
   REAL4Vector                  *tmpltPowerVecBCV;
   REAL4                         fLow;
   UINT4                         invSpecTrunc;
@@ -209,8 +209,8 @@ FindChirpSegment;
 part of the matched filter correllation. The exact content of this structure 
 is determined by which data conditioning routine is called (stationary phase,
 time domain, BCV or spinning BCV). The data in this structure is denoted
-$\tilde{F}_k$. For frequency domain templates (FindChirpSP, BCV and
-BCVSpin) it contains:
+$\tilde{F}_k$ and the vetor is of length $N/2 + 1$. For frequency domain
+templates (FindChirpSP, BCV and BCVSpin) it contains:
 \begin{equation}
 \tilde{F}_k = \frac{d\tilde{v}_k  \left(\frac{k}{N}\right)^{-\frac{7}{6}}}
 {d^2|R|^2S_v\left(\left|f_k\right|\right)}.
@@ -228,7 +228,8 @@ documentation for the module \texttt{FindChirpBCVData.c}
 
 \item[\texttt{UINT4Vector *chisqBinVec}] A vector containing the indices of
 the boundaries of the bins of equal power for the $\chi^2$ veto for this
-segment.
+segment. The vector is of length $p+1$, where $p$ is the number of $\chi^2$
+bins. If no $\chi^2$ veto is performed, this may be NULL.
 
 \item[\texttt{UINT4Vector *chisqBinVecBCV}] A vector containing the indices of
 the boundaries of the bins of equal power for the second contribution to the 
@@ -238,34 +239,44 @@ $\chi^2$ statistic for the BCV templates for this segment.
 data channel used to create the \texttt{FindChirpSegment}.
 
 \item[\texttt{REAL4Vector *segNorm}] The quantity segment dependent
-normalization quantity $\mathcal{S}_k$. This for stationary phase 
-templates this is 
+normalization quantity $\mathcal{S}_k$. The vector is of length $N/2+1$.
+For stationary phase templates the segment dependent normalization is 
 \begin{equation}
 \mathcal{S}_k = \sum_{k^\prime=1}^{k} 
-\frac{\left(\frac{k^\prime}{N}\right)^{-\frac{7}{3}}}{d^2|R|^2S_v\left(\left|f_{k^\prime}\right|\right)}
+\frac{\left(\frac{k^\prime}{N}\right)^{-\frac{7}{3}}}{d^2|R|^2S_v\left(\left|f_{k^\prime}\right|\right)} \quad\quad 1 \le k \le N/2
+\label{eq:spsegnorm}
 \end{equation}
-where $1 \le k \le N/2$. For time domain templates, this quantity is 
+and can be computed once per data segment and re-used for each template.  For
+time domain templates, the segment dependent normalization is
 \begin{equation}
 \mathcal{S}_k = \sum_{k^\prime=1}^{k} 
-\frac{\tilde{h}_{k^\prime}}{d^2|R|^2S_v\left(\left|f_{k^\prime}\right|\right)}
+\frac{\tilde{h}_{k^\prime}}{d^2|R|^2S_v\left(\left|f_{k^\prime}\right|\right)} \quad\quad 1 \le k \le N/2
+\label{eq:tdsegnorm}
 \end{equation}
-and must be recomputed for each template.
+and it must be recomputed for each template $\tilde{h}_k$.
+
+\item[\texttt{REAL4Vector *tmpltPowerVec}] Vector of length $N/2+1$ containing
+the weighted power in the template. For frequency domain templates, this is
+the summand in equation (\ref{eq:spsegnorm})
+\begin{equation}
+\texttt{templtPowerVec->data[k]} = 
+\frac{\left(\frac{k}{N}\right)^{-\frac{7}{3}}}{d^2|R|^2S_v\left(\left|f_k\right|\right)}.
+\end{equation}
+and can be computed once then re-used for all templates.  For time domain
+templates, this is the summand in equation (\ref{eq:spsegnorm})
+\begin{equation}
+\texttt{templtPowerVec->data[k]} = 
+\frac{\tilde{h}_{k}}{d^2|R|^2S_v\left(\left|f_k\right|\right)}.
+\end{equation}
+which must be re-computed for each template $\tilde{h}_k$.  This quantity is
+used in the computation of the $\chi^2$ bin boundaries and the re-computation of
+$\mathcal{S}_k$ for time domain templates.
 
 \item[\texttt{REAL4 a1}] BCV-template normalization parameter.
 
 \item[\texttt{REAL4 b1}] BCV-template normalization parameter.
 
 \item[\texttt{REAL4 b2}] BCV-template normalization parameter.
-
-\item[\texttt{REAL4Vector *tmpltPowerVec}] The weighted power in the
-template. This is
-\begin{equation}
-\frac{\left(\frac{k}{N}\right)^{-\frac{7}{3}}}{d^2|R|^2S_v\left(\left|f_k\right|\right)}
-\end{equation}
-for stationary phase and BCV templates. For time domain templates, this
-quantity is recomputed for each template, with $|h(f)|^2$ replacing
-$(k/N)^{-7/3}$. This quantity is used in the computation of the $\chi^2$ bin
-boundaries.
 
 \item[\texttt{REAL4Vector *tmpltPowerVecBCV}] Additional weighted template
 power for BCV templates.
@@ -278,7 +289,7 @@ power spectrum \ospsd is truncated to in the time domain in order to truncate
 the impulse response time of the matched filter.
 
 \item[\texttt{UINT4 number}] A unique identification number for the 
-\texttt{FindChirpDataSegment}. This will generally correspond to the number in
+\texttt{FindChirpDataSegment}. This corresponds to the number in
 the \texttt{DataSegment} from which the conditioned data was computed.
 
 \item[\texttt{INT4 level}] A search level, used by the heirarchical search
@@ -347,20 +358,59 @@ FindChirpTemplate;
 #if 0
 <lalLaTeX>
 \begin{description}
-\item[\texttt{InspiralTemplate tmplt}] contains the parameters of the 
-\texttt{FindChirpTemplate}, such as the binary masses and the waveform
-approximant.
+\item[\texttt{InspiralTemplate tmplt}] The template parameters of this 
+\texttt{FindChirpTemplate}. In addition to the mass parameters the following
+fields of \texttt{tmplt} should populated by the template generation functions
+as the are used by \texttt{FindChirpFilterSegment()}:
+\begin{enumerate}
+\item[\texttt{approximant}] Used to check that the findchirp data segment 
+and the template have been created for the same type of waveform.
+\item[\texttt{tC}] The length of the chirp in seconds. Used by the max over
+chirp event finding algorithm.
+\item[\texttt{fFinal}] The highest frequency component of the chirp. Used to
+pick the appropriate value of the segment normalization constant 
+$\mathcal{S}_k$ for this template.
+\end{enumerate}
 
-\item[\texttt{COMPLEX8Vector *data}] Frequency domain data containing the
-\emph{findchirp template} $\tilde{F}_k$. For a stationary phase template
+\item[\texttt{COMPLEX8Vector *data}] Vector of length $N/2+1$ containing the
+frequency template data $\tilde{T}_k$. For a template generated in the frequency
+domain template (FindChirpSP) this should contain
 \begin{equation}
 \tilde{T}_k = \exp\left[i\Psi(f_k;M,\eta)\right] \Theta\left(k-k_\mathrm{isco}\right).
 \end{equation}
-For a time domain template $\tilde{T}_k$ contains the Fourier transform of 
-a waveform generated by the inspiral package.
+For a template generated in the time domain this should contain the discrete
+Fourier transform of the cosine phase chirp
+\begin{equation}
+\tilde{T}_k = \tilde{h}_{ck} = \mathrm{DFT}\left[ h(t) \right]
+\end{equation}
+where $h(t)$ is an inspiral waveform generated by the
+\texttt{LALInspiralWave()} function if the approximant TaylorT1, TaylorT2,
+TaylorT3, PadeT1 or EOB. Alternatively $h(t)$ can be generated by the
+\texttt{LALGeneratePPNInspiral()} function if the approximant is GeneratePPN.
+Findchirp always uses second order post-Newtonian templates.
 
 \item[\texttt{REAL4 tmpltNorm}] The template dependent normalisation constant
-$\mathcal{T}$.
+$\mathcal{T}$. For the stationary phase template FindChirpSP this is
+\begin{equation}
+\mathcal{T}(M,\mu) = \left[
+\left(\frac{2dGM_\odot}{(1\,\mathrm{Mpc})c^2}\right)
+\left(\frac{5\mu}{96M_\odot}\right)^\frac{1}{2}
+\left(\frac{M}{\pi^2M_\odot}\right)^\frac{1}{3}
+\left(\frac{GM_\odot}{\Delta tc^3}\right)^{-\frac{1}{6}}
+\right]^2
+\end{equation}
+where $d$ is the dynamic range parameter \texttt{dynRange}.
+For time domain templates generated by \texttt{LALInspiralWave()} (TaylorT1,
+TaylorT2, TaylorT3, PadeT1 and EOB) this is
+\begin{equation}
+\mathcal{T}(\mu) = \left[ \left(\frac{4dGM_\odot}{(1\,\mathrm{Mpc})c^2}\right)
+  \left(\frac{\mu}{M_\odot}\right) \right]^2.
+\end{equation}
+For time domain templates generated by \texttt{LALGeneratePPNInspiral()} 
+(GeneratePPN) it is
+\begin{equation}
+\mathcal{T} = \left(\frac{d}{1\,\mathrm{Mpc}}\right)^2.
+\end{equation}
 
 \item[\texttt{REAL8 momentI}] Undocumented BCV normalization constant.
 

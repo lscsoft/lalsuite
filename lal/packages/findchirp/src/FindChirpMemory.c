@@ -67,15 +67,7 @@ the \texttt{FindChirpSegmentVector} at address \texttt{*vector}.
 
 \subsubsection*{Algorithm}
 
-The chan pointers in the data segment vector created by \texttt{LALInitializeDataSegmentVector()} are set as follows:
-\begin{enumerate}
-\item The chan first pointer is pointed is pointed at the beginning of the
-input data chan.
-
-\item The input chan pointer is incremented by the length of the data segment
-minus the data segment overlap and the next data segment chan pointer is set
-to this memory address.
-\end{enumerate}
+None.
 
 \subsubsection*{Uses}
 \begin{verbatim}

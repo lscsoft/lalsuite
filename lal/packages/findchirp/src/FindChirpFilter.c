@@ -16,7 +16,47 @@ $Id$
 </lalVerbatim>
 
 <lalLaTeX>
-\input{FindChirpFilterCDoc}
+\subsection{Module \texttt{FindChirpFilter.c}}
+\label{ss:FindChirpFilter.c}
+
+This module provides the core of the matched filter for binary inspiral
+chirps.
+
+
+\subsection{Matched Filtering Using Post-Newtonian Templates}
+
+The gravitational wave strain induced in an interferometer by a binary 
+inspiral may be written as
+\begin{equation}
+h(t) = \frac{A(t)}{\mathcal{D}} \cos\left( 2 \phi(t) - \theta \right),
+\label{eq:rootwaveform}
+\end{equation}
+where
+\begin{equation}
+A(t) = - \frac{2G\mu}{c^4} \left[ \pi GM f(t) \right]^\frac{2}{3}
+\end{equation}
+and $\mathcal{D}$ is the \emph{effective distance}, given by
+\begin{equation}
+\mathcal{D} = \frac{r}{\sqrt{F_+^2 (1 + \cos^2 \iota)^2 + F_\times^2 4 \cos^2 \iota}}.
+\end{equation}
+The phase angle $\theta$ is
+\begin{equation}
+\tan \theta = \frac{F_\times 2\cos \iota}{F_+(1 + \cos^2 \iota)}
+\end{equation}
+and $\phi(t)$ is the phase evolution of the inspiral waveform.
+
+
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{FindChirpFilterCP}
+\idx{LALFindChirpFilterSegment()}
+
+\subsubsection*{Description}
+
+\subsubsection*{Algorithm}
+
+\subsubsection*{Notes}
 
 \vfill{\footnotesize\input{FindChirpFilterCV}}
 </lalLaTeX>
