@@ -7,7 +7,11 @@ else
 LALMETAIOPROGRAMS = 
 endif
 if LALFRAME
+if LALMETAIO
 LALFRAMEPROGRAMS = lalapps_power
+else
+LALFRAMEPROGRAMS = 
+endif
 else
 LALFRAMEPROGRAMS = 
 endif
