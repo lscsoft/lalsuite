@@ -1,11 +1,12 @@
 #-----------------------------------------------------------------------------------
 # INSTRUMENT AND QUALITY FILE SETUP
 #-----------------------------------------------------------------------------------
-INSTRUMENT=L	
+INSTRUMENT=H	#DON'T FORGET TO MAKE THIS MATCH WITH DATA CHANNEL
 TYPE=RDS_R_L1
 
-DATA_SET_NAME=S2H2v02
-DATA_QUALITY_FILE=/scratch/power/input/S2L1v02_segs.txt
+#DATA_SET_NAME=S2H2v02
+#DATA_QUALITY_FILE=/scratch/power/input/S2L1v02_segs.txt
+DATA_QUALITY_FILE=/scratch/power/input/injections.txt
 
 #To allow data outside of playground, set USE_PLAYGROUND to 0
 USE_PLAYGROUND=1
@@ -83,7 +84,7 @@ SEGDCLE=64
 
 # If the probability of an event occuring from background noise
 # is less than the threshold, then an event is considered an Event
-# trigger generator (ETG). This number should be between 1.0e-09 and
+# trigger generator (ETG). This number should be between 1.0e-15 and
 # 1.0e-05
 THRESHOLD="10.0e-10"
 

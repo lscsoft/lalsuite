@@ -15,7 +15,7 @@ use strict;
 my $DATE = f_getDateYYMMDD();
 my $LOG_FILE = "/scratch/power/LALdataFind-TimeTrials-$DATE.log";
 my $DATA_FILE = "/scratch/power/LALdataFind-TimeTrials-$DATE.dat";
-my $PLOT_FILE = "/home/dsmackin/public_html/plots/powerTrial2_$DATE.png";
+my $PLOT_FILE = "/home/dsmackin/public_html/plots/powerTrial_$DATE.png";
 
 
 open LOG, ">$LOG_FILE" or die "Couldn't open $LOG_FILE.";
@@ -23,7 +23,7 @@ open DATA, ">$DATA_FILE" or die "Couldn't open $DATA_FILE.";
 
 #my @lengths = qw(10 100 1000 10000 100000 1000000);
 #my @lengths = qw(1000 5000 10000 15000 100000);
-my @lengths = qw(700 900 1000 1100 1200);
+my @lengths = qw(1000 1200 1400 1600 1800 2000);
 
 
 my $startEpoch = 729439471;
@@ -38,6 +38,7 @@ foreach(@lengths){
 
 	my $cmd;
 	my $startTime = time();
+	my $totalTime = time() - $startTime;
 	if(! -f $cacheFile){
 		$cmd = "LALdataFind --lal-cache --instrument H --type RDS_R_L1  " .
 					" --start " . $startEpoch .
@@ -45,14 +46,16 @@ foreach(@lengths){
 		print $cmd, "\n\n";
 
 		system $cmd;
+		
+		$totalTime = time() - $startTime;
+		$lt = localtime();
+		
+		print LOG ("Completed test of length $_ at $lt.\n\n");
+		print "Completed test of length $_ at $lt.\n\n";
+		print "Length $_ took ", $totalTime, " seconds.\n";
+		print LOG "Length $_ took $totalTime seconds.\n\n";
 	}
-	my $totalTime = time() - $startTime;
-	$lt = localtime();
 	
-	print LOG ("Completed test of length $_ at $lt.\n\n");
-	print "Completed test of length $_ at $lt.\n\n";
-	print "Length $_ took ", $totalTime, " seconds.\n";
-	print LOG "Length $_ took $totalTime seconds.\n\n";
 	print DATA "$_ $totalTime";
 	
 	my $nseg = 2*($_) - 1;

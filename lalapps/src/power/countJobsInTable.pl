@@ -17,7 +17,7 @@ $programPath =~ s/(\w+)\.pl$//;
 use lib split(":", $ENV{'PATH'}), qw($programPath);
 
 #load the power tools module which contains functions shared by the scripts
-use power_tools qw(STATUS);
+use power_tools;
 
 # Check to make sure date of table is included as arg
 my $USAGE = "\nusage: countJobsTable.pl PARAMETERS_FILE YYMMDD-RUN_NUM  \n\n";
@@ -26,6 +26,14 @@ if(! $ARGV[1])
 	die $USAGE;
 }
 
+my %STATUS = (
+					P => "Pending",
+					R => "Running",
+					C => "Complete",
+					U => "User Review Required",
+					E => "Error",
+					NF => "Output file not found");
+					
 #get the date and runNum
 # NEED TO ADD ERROR CHECKING HERE !!!!
 my ($DATE, $RUN_NUM) = split '-', $ARGV[1];	

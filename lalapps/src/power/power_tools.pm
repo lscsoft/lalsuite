@@ -131,7 +131,7 @@ sub f_updateNotebook {
 	my $tableRows;
 	foreach (reverse sort keys %runTable){
 		my ($uid, $desc) = split "\t", $runTable{$_};
-		$tableRows .= "\t<tr><td><a href=\"$_/index.html\">$_</a></td><td>$uid</td><td>$desc</td></tr>\n";
+		$tableRows .= "\t<tr><td nobreak=\"nobreak\"><a href=\"$_/index.html\">$_</a></td><td>$uid</td><td>$desc</td></tr>\n";
 	}
 	my $notebook = ${$params}{'HTML_PATH'} . ${$params}{'NOTEBOOK'};
 	open NOTEBOOK, ">$notebook" or die "Couldn't open $notebook.\n";
@@ -139,7 +139,7 @@ sub f_updateNotebook {
 	print NOTEBOOK << "HTML_PAGE";
 <h1>Power Code Notebook</h1>	
 <table border="1" cellpadding="2">
-<tr><td><b>Run ID</b></td><td><b>User ID</b></td><td><b>Description</b></td></tr>
+<tr><td nobreak="nobreak"><b>Run ID</b></td><td><b>User ID</b></td><td><b>Description</b></td></tr>
 $tableRows
 </table>
 HTML_PAGE
@@ -180,7 +180,7 @@ sub f_updateNotebookPage {
 	
 	my $statusRows;
 	foreach(sort keys %statusCount){
-		$statusRows .= "\t<tr><td>$_</td><td>$statusCount{$_}</td></tr>\n";
+		$statusRows .= "\t<tr><td nobreak=\"nobreak\">$_</td><td>$statusCount{$_}</td></tr>\n";
 	}
 
 	my $parametersRows;

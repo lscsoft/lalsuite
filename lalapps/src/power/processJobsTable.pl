@@ -131,9 +131,9 @@ sub f_processJobsTable {
 		#read columns into variables
 		my ($statusCode, $startSec, $stopSec, $framecache, $outfile)  = ($fields[0],$fields[2],$fields[3],$fields[4],$fields[5]);
 
-		if($statusCode eq "C" or $statusCode eq "E"){
+		if($statusCode eq "C" or $statusCode eq "E" or $statusCode eq "NF"){
 			next; #nothing to do
-		}elsif ($statusCode eq "P"){
+		}elsif ($statusCode eq "P" ){
 			f_writeJobToCondorSubmitFile($startSec,  $stopSec, $framecache, $outfile);
 			$submitCondor = 1;
 			$statusCode = "R";
@@ -148,6 +148,7 @@ sub f_processJobsTable {
 	close TMP_TABLE;
 	close JOBS_TABLE;
 	
+	system "cp $jobsTableFile $jobsTableFile.bak";
 	rename($tmpTableFile, $jobsTableFile);
 	return $submitCondor;
 }
