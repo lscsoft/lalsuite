@@ -282,13 +282,13 @@ int main( int argc, char *argv[] )
 
       case 'a':
         /* name of interferometer a */
-        strncpy( ifoName[0], optarg, LIGOMETA_IFO_MAX * sizeof(CHAR) );
+        LALSnprintf( ifoName[0], LIGOMETA_IFO_MAX, "%s", optarg );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'b':
         /* name of interferometer b */
-        strncpy( ifoName[1], optarg, LIGOMETA_IFO_MAX * sizeof(CHAR) );
+        LALSnprintf( ifoName[1], LIGOMETA_IFO_MAX, "%s", optarg );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
@@ -1578,7 +1578,7 @@ cleanexit:
         &status );
 
     /* write process table */
-    if ( trigBankFile )
+    if ( trigBankFile || singleIfo )
     {
       LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", 
           ifoName[0] );
