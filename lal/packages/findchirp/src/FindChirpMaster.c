@@ -22,7 +22,6 @@ LALFindChirpMaster (
 {
   InitExchParams                initExchParams;
   
-  InspiralTemplate             *tmpBankHead = NULL;
 
   INT4                          myRank;
   UINT4                         i;
@@ -80,16 +79,19 @@ LALFindChirpMaster (
       case ExchInspiralTemplate:
 
         /* if there are any templates left send them to the slave */
-        if ( params->currentTmplt )
+        if ( params->tmpltCurrent )
         {
-          UINT4                 tmpNumTmplts;
-          InspiralTemplate     *tmpCurrentTmplt;
+          UINT4                        tmpNumTmplts;
+          InspiralTemplate            *tmpBankHead = NULL;
+          InspiralTemplateNode        *tmpTmpltCurrent;
 
           /* count the number of templates to send */
-          for ( tmpCurrentTmplt = params->currentTmplt, tmpNumTmplts = 0; 
-              tmpCurrentTmplt && tmpNumTmplts < numCoarseExch;
-              tmpCurrentTmplt = tmpCurrentTmplt->next, ++tmpNumTmplts )
-          { /* do nothing */ }
+          for ( tmpTmpltCurrent = params->tmpltCurrent, tmpNumTmplts = 0; 
+              tmpTmpltCurrent && tmpNumTmplts < numCoarseExch;
+              tmpTmpltCurrent = tmpTmpltCurrent->next )
+          { 
+            ++tmpNumTmplts;
+          }
 
           /* tell the slave how many templates we have for it. actually */
           /* it doesn't care about the number, as long as it is > 0     */
@@ -104,12 +106,12 @@ LALFindChirpMaster (
           /* and set the linked list pointers in the array             */
           for ( i = 0; i < tmpNumTmplts; ++i )
           {
-            memcpy( tmpBankHead + i, params->currentTmplt, 
+            memcpy( tmpBankHead + i, params->tmpltCurrent->tmpltPtr,
                 sizeof(InspiralTemplate) );
             (tmpBankHead + i)->next = NULL;
             (tmpBankHead + i)->fine = NULL;
             if ( i ) (tmpBankHead + i - 1)->next = (tmpBankHead + i);
-            params->currentTmplt = params->currentTmplt->next;
+            params->tmpltCurrent = params->tmpltCurrent->next;
           }
 
           /* exchange the temporary template bank... */
@@ -187,10 +189,10 @@ LALFindChirpMaster (
 
     /* if there are any remaining templates, calculate the fraction */
     /* remaining by the progress through the template bank          */
-    if ( params->currentTmplt )
+    if ( params->tmpltCurrent )
     {
-      *(params->fracRemaining) = 1.0 - ( (REAL4) params->currentTmplt->number + 1.0 ) /
-        (REAL4) params->numTmplts;
+      /* this is arse */
+      *(params->fracRemaining) = 1.0;
     }
     else /* we are all the way through the bank */
     {

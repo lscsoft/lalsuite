@@ -90,12 +90,22 @@ enum ExchObjectType
 };
 
 typedef struct
+tagInspiralTemplateNode
+{
+  INT4                                  level;
+  struct tagInspiralTemplateNode       *next;
+  struct tagInspiralTemplateNode       *prev;
+  InspiralTemplate                     *tmpltPtr;
+}
+InspiralTemplateNode;
+
+typedef struct
 tagFindChirpMasterParams
 {
   UINT4                         numCoarseExch;
   MPI_Comm                     *mpiComm;
   UINT4                        *numSlaves;
-  InspiralTemplate             *currentTmplt;
+  InspiralTemplateNode         *tmpltCurrent;
   UINT4                         numTmplts;
   BOOLEAN                      *notFinished;
   REAL4                        *fracRemaining;
@@ -120,16 +130,6 @@ tagFindChirpCreateBankParams
   UINT4                         numLevel;
 }
 FindChirpCreateBankParams;
-
-typedef struct
-tagInspiralTemplateNode
-{
-  UINT4                                 level;
-  struct tagInspiralTemplateNode       *next;
-  struct tagInspiralTemplateNode       *prev;
-  InspiralTemplate                     *tmpltPtr;
-}
-InspiralTemplateNode;
 
 
 void
@@ -159,6 +159,19 @@ void
 LALFindChirpDestroyInspiralBank (
     LALStatus                  *status,
     InspiralTemplate          **bankHead
+    );
+
+void
+LALFindChirpCreateTmpltNode (
+    LALStatus                  *status,
+    InspiralTemplate           *tmplt,
+    InspiralTemplateNode      **tmpltNode
+    );
+
+void
+LALFindChirpDestroyTmpltNode ( 
+    LALStatus                  *status,
+    InspiralTemplateNode      **tmpltNode
     );
 
 #ifdef  __cplusplus

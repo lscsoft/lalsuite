@@ -65,7 +65,7 @@ LALFindChirpCreateTmpltNode (
 
 
 void
-FindChirpDestroyTmpltNode ( 
+LALFindChirpDestroyTmpltNode ( 
     LALStatus                  *status,
     InspiralTemplateNode      **tmpltNode
     )
