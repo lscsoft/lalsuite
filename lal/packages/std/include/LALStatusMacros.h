@@ -773,15 +773,15 @@ extern const int lalNoDebug;
 #define INITSTATUS( statusptr, funcname, id )                                 \
   if ( (statusptr) )                                                          \
   {                                                                           \
-    INT4 level = (statusptr)->level ;                                         \
-    INT4 statp = (statusptr)->statusPtr ? 1 : 0 ;                             \
+    INT4 level_ = (statusptr)->level ;                                        \
+    INT4 statp_ = (statusptr)->statusPtr ? 1 : 0 ;                            \
     memset( (statusptr), 0, sizeof( LALStatus ) ); /* possible memory leak */ \
-    (statusptr)->level    = level > 0 ? level : 1 ;                           \
+    (statusptr)->level    = level_ > 0 ? level_ : 1 ;                         \
     (statusptr)->Id       = (id);                                             \
     (statusptr)->function = (funcname);                                       \
     SETSTATUSFILELINE( statusptr );                                           \
     (void) LALTrace( statusptr, 0 );                                          \
-    if ( statp )                                                              \
+    if ( statp_ )                                                              \
     {                                                                         \
       ABORT( statusptr, -2, "INITSTATUS: non-null status pointer" );          \
     }                                                                         \
@@ -876,30 +876,30 @@ extern const int lalNoDebug;
 #define FREESTATUSPTR( statusptr )                                            \
   do                                                                          \
   {                                                                           \
-    LALStatus *next = (statusptr)->statusPtr->statusPtr;                      \
+    LALStatus *next_ = (statusptr)->statusPtr->statusPtr;                      \
     LALFree( (statusptr)->statusPtr );                                        \
-    (statusptr)->statusPtr = next;                                            \
+    (statusptr)->statusPtr = next_;                                            \
   }                                                                           \
   while ( (statusptr)->statusPtr )
 
 #define REPORTSTATUS( statusptr )                                             \
   do                                                                          \
   {                                                                           \
-    LALStatus *ptr;                                                           \
-    for ( ptr = (statusptr); ptr; ptr = ptr->statusPtr )                      \
+    LALStatus *ptr_;                                                          \
+    for ( ptr_ = (statusptr); ptr_; ptr_ = ptr_->statusPtr )                  \
     {                                                                         \
-      LALPrintError( "\nLevel %i: %s\n", ptr->level, ptr->Id );               \
-      if ( ptr->statusCode )                                                  \
+      LALPrintError( "\nLevel %i: %s\n", ptr_->level, ptr_->Id );             \
+      if ( ptr_->statusCode )                                                 \
       {                                                                       \
-        LALPrintError( "\tStatus code %i: %s\n", ptr->statusCode,             \
-                       ptr->statusDescription );                              \
+        LALPrintError( "\tStatus code %i: %s\n", ptr_->statusCode,            \
+                       ptr_->statusDescription );                             \
       }                                                                       \
       else                                                                    \
       {                                                                       \
         LALPrintError( "\tStatus code 0: Nominal\n" );                        \
       }                                                                       \
       LALPrintError( "\tfunction %s, file %s, line %i\n",                     \
-                     ptr->function, ptr->file, ptr->line );                   \
+                     ptr_->function, ptr_->file, ptr_->line );                \
     }                                                                         \
   } while ( 0 )
 
@@ -961,7 +961,7 @@ do {                                                                          \
     ABORT( statusptr, -8, "BEGINFAIL: null status pointer pointer" );         \
   }                                                                           \
   if ( (statusptr)->statusPtr->statusCode ) {                                 \
-    LALStatus *statusPtrSave = (statusptr)->statusPtr;                        \
+    LALStatus *statusPtrSave_ = (statusptr)->statusPtr;                       \
     (statusptr)->statusPtr = NULL;                                            \
     ATTATCHSTATUSPTR( statusptr );                                            \
     do
@@ -969,7 +969,7 @@ do {                                                                          \
 #define ENDFAIL( statusptr )                                                  \
     while ( 0 );                                                              \
     DETATCHSTATUSPTR( statusptr );                                            \
-    (statusptr)->statusPtr = statusPtrSave;                                   \
+    (statusptr)->statusPtr = statusPtrSave_;                                  \
     SETSTATUS( statusptr, -1, "Recursive error" );                            \
     (void) LALError( statusptr, "ENDFAIL:" );                                 \
     (void) LALTrace( statusptr, 1 );                                          \
