@@ -16,9 +16,6 @@ long long int llabs(long long int j);	/* LAL's not written in ANSI C.  Get over 
 RCSID("$Id$");
 
 #define MAXSTR 2048
-#define PLAYGROUND_START_TIME 729273613
-#define PLAYGROUND_INTERVAL 6370
-#define PLAYGROUND_LENGTH 600
 
 /* Usage format string. */
 #define USAGE \
@@ -173,75 +170,73 @@ static void parse_command_line(int argc, char *argv[], struct options_t *options
 	};
 	int c, option_index = 0;
 
-	while (1) {
-		c = getopt_long(argc, argv, "a:c:d:e:f:g:h:i:", long_options, &option_index);
+	do switch(c = getopt_long(argc, argv, "a:c:d:e:f:g:h:i:", long_options, &option_index)) {
+	case 'a':
+		options->inputFile = optarg;
+		break;
 
-		/* detect the end of the options */
-		if (c == -1)
-			break;
+	case 'b':
+		options->injectionFile = optarg;
+		break;
 
-		switch (c) {
-		case 0:
-			/* this option sets a flag */
-			break;
+	case 'c':
+		options->injmadeFile = optarg;
+		break;
 
-		case 'a':
-			options->inputFile = optarg;
-			break;
+	case 'd':
+		/* the confidence must be smaller than this number */
+		options->maxConfidenceFlag = TRUE;
+		options->maxConfidence = atof(optarg);
+		break;
 
-		case 'b':
-			options->injectionFile = optarg;
-			break;
+	case 'e':
+		/* only events with duration greater than this are selected */
+		options->gpsStartTime = atoi(optarg);
+		break;
 
-		case 'c':
-			options->injmadeFile = optarg;
-			break;
+	case 'f':
+		/* only events with duration less than this are selected */
+		options->gpsEndTime = atoi(optarg);
+		break;
 
-		case 'd':
-			/* the confidence must be smaller than this number */
-			options->maxConfidenceFlag = TRUE;
-			options->maxConfidence = atof(optarg);
-			break;
+	case 'g':
+		/* only events with centralfreq greater than this are selected */
+		options->minCentralfreqFlag = TRUE;
+		options->minCentralfreq = atof(optarg);
+		break;
 
-		case 'e':
-			/* only events with duration greater than this are selected */
-			options->gpsStartTime = atoi(optarg);
-			break;
+	case 'h':
+		/* only events with centralfreq less than this are selected */
+		options->maxCentralfreqFlag = TRUE;
+		options->maxCentralfreq = atof(optarg);
+		break;
 
-		case 'f':
-			/* only events with duration less than this are selected */
-			options->gpsEndTime = atoi(optarg);
-			break;
+	case 'j':
+		options->injFoundFile = optarg;
+		break;
 
-		case 'g':
-			/* only events with centralfreq greater than this are selected */
-			options->minCentralfreqFlag = TRUE;
-			options->minCentralfreq = atof(optarg);
-			break;
+	case 'o':
+		/* print help */
+		LALPrintError(USAGE, *argv);
+		exit(BINJ_FIND_EARG);
 
-		case 'h':
-			/* only events with centralfreq less than this are selected */
-			options->maxCentralfreqFlag = TRUE;
-			options->maxCentralfreq = atof(optarg);
-			break;
+	case 'q':
+		options->outSnglFile = optarg;
+		break;
 
-		case 'j':
-			options->injFoundFile = optarg;
-			break;
-
-		case 'o':
-			/* print help */
-			LALPrintError(USAGE, *argv);
-			exit(BINJ_FIND_EARG);
-
-		case 'q':
-			options->outSnglFile = optarg;
-			break;
-
-		default:
-			exit(BINJ_FIND_EARG);
-		}
-	}
+	case 0:
+		/* option sets a flag */
+		break;
+	case -1:
+		/* end of arguments */
+		break;
+	case '?':
+		/* unrecognized argument */
+		exit(BINJ_FIND_EARG);
+	case ':':
+		/* missing argument for an option */
+		exit(BINJ_FIND_EARG);
+	} while(c != -1);
 
 	if (optind < argc) {
 		fprintf(stderr, "extraneous command line arguments:\n");
