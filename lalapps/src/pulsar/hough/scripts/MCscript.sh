@@ -31,7 +31,7 @@ echo $1 $2 | awk '{print $1/$2}'
 process=$$
 
 # save initial working directory
-workdir=`pwd`
+startdir=`pwd`
 
 iam=badkri
 
@@ -44,47 +44,57 @@ det=L1
 #det=H1
 #det=H2
 
-# the detector option in the hough driver is a number
+# the detector option in the hough driver is a number and choose harmonicsfile
 # 2 is L1 and 3 is H1
 if [ $det = L1 ]; then
     detnum=2
+    harmonicsfile=harmonicsS2LLO4K_200_400.txt
 fi
 if [ $det = H1 ]; then
     detnum=3
+    harmonicsfile=harmonicsS2LHO4K_200_400.txt
 fi
 if [ $det = H2 ]; then
     detnum=3
+    harmonicsfile=harmonicsS2LHO2K_200_400.txt
 fi
 
-mkdir -p $workdir/$det
-outdir=$workdir/$det/MC_${det}_$1
-sftdir=/sft/S2-LIGO/S2_${det}_Funky-v3Cal30MinSFTs
+
+# the directory where the sfts are located
+#sftdir=/sft/S2-LIGO/S2_${det}_Funky-v3Cal30MinSFTs
+sftdir=/scratch/tmp/badkri/${det}sfts
+
 
 # set a trap so if the job ends some cleanup is done
 trap "/bin/rm -rf /scratch/tmp/$iam/$1.run; exit 0" 0 1 2 9 15
 
-mkdir -p /scratch/tmp/$iam/$1.run
-cd /scratch/tmp/$iam/$1.run
+# create temporary scratch directory where we work in 
+tempworkdir=/scratch/tmp/${iam}/$1.run
+mkdir -p $tempworkdir
+
+# change to temporary working dir
+cd $tempworkdir
+
+# create temporary directory to write the output
+$tempoutdir=${tempworkdir}/${det}
+mkdir -p $tempoutdir
 
 # ----------------------------------
 # copy files from some central place
 # ----------------------------------
 
-cp -f $workdir/sun00-04.dat .
-cp -f $workdir/earth00-04.dat .
-cp -f $workdir/MCInjectComputeHough .
-cp -f $workdir/${det}_freqbands.run .
-cp -f $workdir/${det}_h0range.run .
+rsync -a $startdir/sun00-04.dat .
+rsync -a $startdir/earth00-04.dat .
+rsync -a $startdir/MCInjectComputeHough .
+rsync -a $startdir/${det}_h0range.run .
+rsync -a ${startdir}/${harmonicsfile} .
 echo finished copying stuff
 
-
 # choose freq band
-freqindex=`echo $1 1 | awk '{print $1+$2}'`
-freqbandinfo=`./${det}_freqbands.run $freqindex`
-startfreq=`echo $freqbandinfo | awk '{print $1}'`
-endfreq=`echo $freqbandinfo | awk '{print $2}'`
-band=`echo $endfreq $startfreq | awk '{print $1-$2}'`
-echo frequency range is from $startfreq Hz with bandwidth $band Hz
+startfreq=200.0
+freq=`add $1 $startfreq` 
+band=1.0
+echo frequency range is from $freq Hz with bandwidth $band Hz
 
 # choose range for h0
 h0rangeinfo=`./${det}_h0range.run $freqindex`
@@ -92,10 +102,13 @@ lowh0=`echo $h0rangeinfo | awk '{print $1}'`
 highh0=`echo $h0rangeinfo | awk '{print $2}'`
 echo range of h0 is from $lowh0 to $highh0
 
-
 # now run MCInject
-./MCInjectComputeHough -d 0 -i ${detnum} -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -o $outdir -f $startfreq -b $band -H 10 $lowh0 $highh0 -L 10000
+./MCInjectS2 -d 0 -i ${detnum} -f $freq -b 1.0 -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -o $tempoutdir/MC_$det_$freq -N 10 -m $lowh0 -M $highh0 -n 10 -H $harmonicsfile
 
-echo finished running driver
+echo finished running injections
 
-# cleanup will be done by trap!
+# create the output directory
+mkdir -p $startdir/$det
+rsync -a $tempoutdir/$det $startdir
+
+echo done!

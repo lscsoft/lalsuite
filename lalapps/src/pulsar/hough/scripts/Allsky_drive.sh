@@ -85,7 +85,7 @@ rsync -a $workdir/DriveHough_v3 .
 rsync -a $workdir/skypatchfile .
 echo finished copying stuff
 
-# choose start of freq band to be analyzed
+# choose start of freq range to be analyzed
 startfreq=200.0
 
 # the 1Hz frequency band analyzed by the i^{th} node is "startfreq+i"
