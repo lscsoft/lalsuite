@@ -450,14 +450,15 @@ int main(int argc, char **argv)
     if (  playground || hardware )
     {
       numPlayInjects = 0;
-      while( currentSimEvent->next )
+      while( currentSimEvent )
       {
 	/* if the injections are hardware, then add the starttime time to the 
 	* time contained in sim_inspiral table */
 	if ( hardware )
 	{
-	  currentSimEvent->geocent_end_time.gpsSeconds = starttime +
-	    currentSimEvent->geocent_end_time.gpsSeconds;
+	  currentSimEvent->geocent_end_time.gpsSeconds += starttime;
+	  currentSimEvent->h_end_time.gpsSeconds += starttime;
+	  currentSimEvent->l_end_time.gpsSeconds += starttime;	  
 	}
 
 	if ( (playground) && 
@@ -550,7 +551,7 @@ int main(int argc, char **argv)
          * during the times searched in the input files */
         if( numPlayInjects != 0)
         {
-          while (!( currentSimEvent == NULL) &&
+          while ( currentSimEvent &&
               currentSimEvent->geocent_end_time.gpsSeconds < 
               searchSummaryTable.out_end_time.gpsSeconds)
           {
@@ -593,9 +594,6 @@ int main(int argc, char **argv)
           fprintf(stdout,"File %i %s: processing\n", 
               fileCounter,line);
         }
-
-
-
       }
       /* close the stream */
       MetaioAbort( triggerEnv );
@@ -631,7 +629,7 @@ int main(int argc, char **argv)
   prevInspiralEvent = NULL;
   
   /* check for events and playground, and event satisfying SNR */
-  while( currentInspiralEvent->next ) 
+  while( currentInspiralEvent ) 
   {  
     if ( (( playground ) && 
           (currentInspiralEvent->end_time.gpsSeconds-729273613)%6370 > 600 )
@@ -692,7 +690,7 @@ int main(int argc, char **argv)
    * CHECK FOR COINCIDENCE OF ARRIVAL TIME BETWEEN INJECTIONS
    * AND FOUND INSPIRALS 
    **************************************************************/
-  if ( ! (injectfile == NULL))
+  if ( injectfile )
   {
     /* allowed delay time given by dt */
 
@@ -707,7 +705,7 @@ int main(int argc, char **argv)
     prevInspiralEvent = NULL;
 
     /* loop over all injections */
-    while ( currentInspiralEvent != NULL && currentSimEvent != NULL )
+    while ( currentInspiralEvent && currentSimEvent  )
     {
 
       /* compute the end time in nanosec for the injection at the 
@@ -749,7 +747,7 @@ int main(int argc, char **argv)
           /* discard the inspiral event and check the next one,
            * do nothing to the injection event */
         {
-          if (prevInspiralEvent != NULL)
+          if (prevInspiralEvent )
           {
             prevInspiralEvent->next = currentInspiralEvent->next;
             LALFree(currentInspiralEvent);
@@ -775,11 +773,11 @@ int main(int argc, char **argv)
         /* Put the injection event into the simEventMissed list and 
          * check the next one, do nothing to the inspiral event. */
       {
-        if (prevSimEvent != NULL)
+        if( prevSimEvent )
         {
           prevSimEvent->next = currentSimEvent->next;
           currentSimEvent->next = NULL;
-          if(prevSimEventMissed != NULL)
+          if( prevSimEventMissed )
           {    
             prevSimEventMissed->next = currentSimEvent;
             prevSimEventMissed = prevSimEventMissed->next;
@@ -794,7 +792,7 @@ int main(int argc, char **argv)
         {
           simEventList = simEventList->next;
           currentSimEvent->next = NULL;
-          if(prevSimEventMissed != NULL)
+          if( prevSimEventMissed )
           {    
             prevSimEventMissed->next = currentSimEvent;
             prevSimEventMissed = prevSimEventMissed->next;
@@ -817,13 +815,13 @@ int main(int argc, char **argv)
        * after the last recorded inspiral -- put them in the missed table 
        */
 
-      while ( currentSimEvent != NULL )
+      while ( currentSimEvent )
       {
-        if (prevSimEvent != NULL)
+        if ( prevSimEvent )
         {
           prevSimEvent->next = currentSimEvent->next;
           currentSimEvent->next = NULL;
-          if(prevSimEventMissed != NULL)
+          if( prevSimEventMissed )
           {    
             prevSimEventMissed->next = currentSimEvent;
             prevSimEventMissed = prevSimEventMissed->next;
@@ -838,7 +836,7 @@ int main(int argc, char **argv)
         {
           simEventList = simEventList->next;
           currentSimEvent->next = NULL;
-          if(prevSimEventMissed != NULL)
+          if( prevSimEventMissed )
           {    
             prevSimEventMissed->next = currentSimEvent;
             prevSimEventMissed = prevSimEventMissed->next;
@@ -857,9 +855,9 @@ int main(int argc, char **argv)
     {
       /* Remove all remaining inspiral events since they occur after 
        * the last recorded injection */
-      while (currentInspiralEvent != NULL )	
+      while ( currentInspiralEvent )	
       {
-        if (prevInspiralEvent != NULL)
+        if ( prevInspiralEvent )
         {
           prevInspiralEvent->next = currentInspiralEvent->next;
           LALFree(currentInspiralEvent);
