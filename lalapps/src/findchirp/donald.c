@@ -174,7 +174,7 @@ int readconfig(snglIFO *ifo, FILE *fp, FILE *logfile)
 
                     sscanf(vetoline, "%i %lf %lf %i\n", 
                             &doneflag, &dummys, &dummye, &segnum);
-                    if (doneflag) {
+                    if (doneflag == 1) {
                         if ( ! (ifo->awindows) ){
                             thiswindow = ifo->awindows = 
                                 (timeWindow *)malloc(sizeof(timeWindow));
@@ -544,7 +544,7 @@ int main(int argc, char **argv)
      *********************************************************/
     {
         FILE  *ulout,*compout;
-        float *snrbin, snrdiv, minsnr=10.0,maxsnr=minsnr+10.0,*efficiency,*numevents;
+        float *snrbin, snrdiv, minsnr=8.0,maxsnr=minsnr+10.0,*efficiency,*numevents;
         double mu;
         int    numbins=800,k,first;
         Chi2ThresholdIn  thresholdIn;
