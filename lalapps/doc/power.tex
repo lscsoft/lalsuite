@@ -27,6 +27,136 @@ resolution of the worst time freq plane
 fseglength = delta freq for the time freq plane
 
 
+The Excess Power search method is motivated by the classical theory of
+signal detection in Gaussian noise.  The method is the optimal search
+strategy~\cite{ref:power} having knowledge only of the time duration
+and frequency band of the expected signal,  but having no other
+information about the power distribution in advance of detection. 
+
+In its implementation for this search, Excess Power processed data at
+16384Hz in 1 second segments which overlapped each other by 0.5
+seconds.   The data was high-pass filtered using a 4th order
+Butterworth filter with attenuation of 0.1 at 120 Hz prior to being
+divided into 1 second segments.  Each segment is then windowed (using
+a Welch window) and transformed into the frequency domain 
+\begin{equation}
+\tilde{s}_k =  \sum_{j=0}^{N} s_j e^{-2 \pi i j k /N}
+\end{equation}
+where $N=16\, 384$ and $s_j$ is the filtered and windowed gravitational 
+wave channel.  The input to the Excess Power search code is the whitened 
+frequency domain signal.  The whitened data are given by
+\begin{equation}
+\tilde{w}_k = \frac{ 2 \tilde{s}_k } {\sqrt{ P_k }}
+\end{equation}
+where $P_k = 2 \langle \tilde{n}_k \tilde{n}_k^\ast \rangle$ is a
+power spectral estimate.  This spectrum is estimated by the median
+power at each frequency for 64 overlapping 1 second segments with a
+correction to match the normalization to the mean in Gaussian noise.
+The use of the median avoids bias in the spectrum caused by the
+presence of a gravitational wave or other large non-astrophysical
+transients present in any of the segments.   
+
+The Excess Power search then identifies triggers which may be
+gravitational wave bursts using the following algorithm.  For each
+segment $\tilde{w}_k$,  construct multiple time-frequency planes
+${\cal{P}}^a$ such that the frequency resolution of each plane is
+$2^a \times 1 \textrm{ Hz}$ and the time resolution $2^{-a} \times 1
+\textrm{ s}$ where $a=0,\ldots ,6$.  This approach allows
+multi-resolution analysis of the time-frequency structure of the input
+time series $s_j$ while insuring that all pixels have unit
+time-frequency volume (the product of time resolution by frequency
+resolution).   The power in a given pixel of time-frequency plane
+${\cal{P}}^b$ is given by
+\begin{equation}
+{\cal E}^b(t,f) = {\cal E}^b( 2^{-b} J, 2^b \Sigma ) = 4 | H^b_{J\Sigma} |^2
+\end{equation}
+where 
+\begin{equation}
+H^b_{J\Sigma} = \sum_{\gamma=0}^{N_T} e^{ 2 \pi i J \gamma / N_T }
+\tilde{w}_{N_T \Sigma + \gamma}
+\end{equation}
+and $N_T = 2^b$.
+
+The method owes its name to the fact that it searches for excess
+signal power in all the rectangular regions, called tiles, of each
+time-frequency plane.  The list of tiles is designed to explore all
+possible start times, frequency bands and durations subject to the
+following constraints.  Tiles have a minimum time duration either
+equal to the minimum time resolution of the particular time-frequency
+plane or equal to $1/64 \textrm{ s}$,  whichever is greater.  The
+maximum frequency band of any tile is $64 \textrm{ Hz}$.  The tiles
+have a maximum time duration of $0.5 \textrm{ s}$ and corresponding
+minimum frequency band of $2 \textrm{ Hz}$;  tiles always have integer
+numbers of pixels on each side and hence have time-frequency volume
+greater than or equal to unity.  For each allowed tile duration and
+bandwidth,  the associated time-frequency plane is tiled and each tile
+searched for excess power
+\begin{equation}
+{\cal{E}} = \sum_{J=J_1}^{J2-1} \sum_{\Sigma=\Sigma_1}^{\Sigma_2-1}
+{\cal E}^b( 2^{-b} J , 2^b \Sigma ) \;.
+\end{equation}
+
+In Gaussian noise,  the power in a given tile is $\chi^2$-distributed
+with $2 V$ degrees of freedom where $V$ is the time-frequency volume
+of the tile.    A burst trigger is identified if the probability of
+obtaining the excess power in a tile from Gaussian noise is smaller
+than some threshold $\alpha$.   For large bursts in the data stream,
+many tiles can be identified as triggers with different sizes and
+aspect ratios.   When the search over a particular segment is
+complete,   triggers are clustered by circumscribing a large
+rectangular tile around triggers which overlap in the time-frequency
+plane.    In the process of clustering,  information about the tile
+with the largest excess power within the cluster is used to identify
+the peak time of the burst trigger as the center time of that tile.
+This method is crude and might account for the bad timing accuracy
+currently observed for short duration bursts.  We will address these
+issues in future versions of the algorithm.
+
+%The excess power search is implemented in \textsc{lal/lalapps}.  This
+%description applies to the implimentation used in the S2 analysis.
+%There are some shortcomings of the current implementation which are
+%evident in the bad timing accuracy for short duration bursts;   these
+%issues will be addressed in the next release.   The essential features
+%of the search method will remain however. 
+
+The number of parameters available for tuning the performance of the
+Excess Power method is limited primarily to the threshold $\alpha$ for
+each of the single interferometers, i.e., the threshold on the
+probability that a measurement of excess power comes from fluctuations
+of Gaussian noise.  For the purpose of tuning the algorithm on the S2
+playground, the time series was analyzed at 16384Hz but the tiles over
+which excess power was searched were limited from $130 \textrm{ Hz}$
+to $1154 \textrm{ Hz}$.  As with the tuning of all the ETGs, a false
+alarm rate of O(10)~$\mu$Hz was targeted.  The S2 playground data set
+(time-shifted 46 times, $5 \textrm{ s}$ apart between $\pm 115
+\textrm{ s}$, in order to increase the statistics) was used for the
+tuning analysis.  Sine-Gaussian injections were used to establish the
+strain sensitivity of the Excess Power search method as well as
+establish the inter-site time coincidence windows; these were 235 Hz,
+Q=9 signals of varying amplitude so that to fully scan the algorithm's
+efficiency.  The values of $\alpha$ chosen for the three LIGO
+instruments, L1, H1, H2 were $10^{-40}$,  $10^{-9}$ and $10^{-9}$
+respectively; these resulted to single-interferometer counting rate of
+events at the $0.03 \textrm{ Hz}$,  $0.30 \textrm{ Hz}$, and $0.58
+\textrm{ Hz}$ level over the playground.  The time-coincidence of
+multi-interferometer events was established if the times of the
+single-interferometer events fall within $350 \textrm{ ms}$ from each
+other.  The false alarm rate for the Excess Power method as measured
+by the playground analysis was $32 \pm XX$~$\mu$Hz.
+
+
+%The power spectral estimation (or equivalently whitening) of the data
+%is critical to the efficiency of this method.   The non-stationarity
+%of the noise floor requires estimation of the power spectrum to be
+%done dynamically following trends in the data.    During initial 
+%testing,  it was found that a significant bias could be introduced
+%into the analysis if the a mean estimate of the power spectrum was
+%used.   In this process,  we switched to the use of a median estimate.
+%This has the benefit of correctly modeling the underlying noise
+%without any significant bias leaking in from a large amplitude signal
+%or noise burst.
+
+
 \clearpage
 
 
@@ -94,18 +224,55 @@ to be skipped.
 \begin{entry}
 
 \item[Name]
-\verb$lalapps_power\_pipe$ --- builds a single interferometer dag
+\verb$lalapps_power\_pipe$ --- builds a one interferometer
+excess-power search DAG   
 
 \item[Synopsis]
 \verb$lalapps_power_pipe$ 
 \verb$--mdccache$ \textsc{mdccache}
 $\backslash$ \newline \hspace*{0.25in}
 [\verb$--frame-cahce$ \textsc{frcache}]
+\begin{verbatim}
+  -h, --help               display this message
+  -v, --version            print version information and exit
+  -u, --user-tag TAG       tag the job with TAG (overrides value in ini file)
+
+  -d, --datafind           run LSCdataFind to create frame cache files
+  -r, --power              run lalapps_power on the first IFO
+
+  -j, --injections FILE    add simulated bursts from FILE
+
+  -p, --playground-only    only create chunks that overlap with playground
+  -P, --priority PRIO      run jobs with condor priority PRIO
+
+  -f, --config-file FILE   use configuration file FILE
+  -l, --log-path PATH      directory to write condor log file
+\end{verbatim}
 
 \item[Description] 
-\verb$lalapps_power_pipe$  .......
+\verb$lalapps_power_pipe$ builds an excess power search DAG suitable
+for running at the various LSC Data Grid sites.   The script requires
+a configuration file.   An example file can be found in
+\verb+$LALPREFIX/share/lalapps/power_pipe.ini+    Arguments to be
+passed to the search code are supplied in this file and used the DAG
+construction.    This is a standard python format configuration file.
 
 \item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--user-tag}  \textsc{tag}]   The tag for the job.  This
+will override the value set in the ini file
+
+\item[\texttt{--datafind}] run LSCdataFind as part of the DAG to
+create the cache files for each science segment
+
+\item[\texttt{--power}] run lalapps\_power on the data
+
+\item[\texttt{--priority} \textsc{prio}] run jobs with condor priority PRIO
+
+\item[\texttt{--config-file} \textsc{file}] use configuration file FILE
+
+\item[\texttt{--log-path} \textsc{path}] directory to write condor log file
+\end{entry}
 
 
 \item[Example]
