@@ -12,5 +12,5 @@ bin_PROGRAMS = lalapps_version
 lalapps_version_SOURCES = version.c lalapps.h
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 INCLUDES = -I$(top_srcdir)/src
-EXTRA_DIST = series.c series.h $(SCRIPTS)
+EXTRA_DIST = series.c series.h
 TESTS = lalapps_version
