@@ -33,6 +33,10 @@ int main(int argc, char* argv[]) {
  
   /* read file containing list of segment numbers and start times */
   fp=fopen(argv[1],"r");
+  if (fp==NULL){
+    fprintf(stderr,"Unable to open file %s for reading\n",argv[1]);
+    exit(1);
+  }
   nstart=nseg;
   tstart=tseg;
   bstart=tbase;
@@ -43,6 +47,10 @@ int main(int argc, char* argv[]) {
   /* read file containing file names "in order".  Assumes end of */
   /* filename is of the form TGPS-XX.gwf where TGPS is 9 digits */
   fp=fopen(argv[2],"r");
+    if (fp==NULL){
+    fprintf(stderr,"Unable to open file %s for reading\n",argv[2]);
+    exit(1);
+  }
   while (1==fscanf(fp,"%s",filenames[fileno])){
     /* the magic 16 in the next line follows from the file-naming convention above! */
     starttimes[fileno]=atoi(filenames[fileno]+strlen(filenames[fileno])-16);
