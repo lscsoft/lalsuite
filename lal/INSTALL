@@ -103,8 +103,8 @@ West) before installing this package.
           make dvi
 
           to run a suite of test programs and to latex the documentation files
-          to produce dvi files.  If you want to test the code that reads frame
-          files, type
+          to produce dvi (or pdf) files.  If you want to test the code that
+          reads frame files, type
 
           LAL_FRAME_PATH=<framedata path>
 
@@ -133,8 +133,8 @@ West) before installing this package.
           make dvi
 
           to run a suite of test programs and to latex the documentation files
-          to produce dvi files.  If you want to test the code that reads frame
-          files, type
+          to produce dvi (or pdf) files.  If you want to test the code that
+          reads frame files, type
 
           LAL_FRAME_PATH=<framedata path>
 
@@ -170,3 +170,5 @@ Troubleshooting:
   the program in your path.  If ranlib is on your path and you don't need
   ranlib, set the environment RANLIB to echo.
 
+* "make dvi" must be run after "make" since make dvi requires the program
+  laldoc must be compiled for "make dvi" to work.

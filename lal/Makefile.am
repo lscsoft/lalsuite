@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-SUBDIRS = include packages
+SUBDIRS = include packages doc
 LIBLAL = $(srcdir)/lib/liblal.a
 CLEANFILES = $(LIBLAL) $(srcdir)/include/*.h
 EXTRA_DIST = $(srcdir)/lib/README lalspec.pdf

@@ -1,9 +1,16 @@
-This is a preliminary release of version 0.3 of the LAL library.
+This is a preliminary release of version 0.4 of the LAL library.
 See the document lalspec.pdf for LAL specification and style guide.
+
+The latest releases of LAL are available from the LAL web-site:
+http://www.lsc-group.phys.uwm.edu/lal
 
 The various packages are in the package directory.
 
 Read the file INSTALL for installation instructions.
+
+The INSTALL file also includes instructions for compiling the documentation.
+Once compiled, the documentation will be in the file doc/lsd.dvi or
+doc/lsd.pdf
 
 This code requires the FFTW (Fastest Fourier Transform in the West) package.
 This package can be obtained from http://www.fftw.org
