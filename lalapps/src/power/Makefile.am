@@ -1,21 +1,21 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 POWERSRCS = power.c power.h 
-if DATAFLOW
-DATAFLOWPROGRAMS = lalapps_snglBurstHistogram lalapps_burca lalapps_bread
+if LALMETAIO
+LALMETAIOPROGRAMS = lalapps_snglBurstHistogram lalapps_burca lalapps_bread
 else
-DATAFLOWPROGRAMS = 
+LALMETAIOPROGRAMS = 
 endif
-if FRAME
-FRAMEPROGRAMS = lalapps_power
+if LALFRAME
+LALFRAMEPROGRAMS = lalapps_power
 else
-FRAMEPROGRAMS = 
+LALFRAMEPROGRAMS = 
 endif
-bin_PROGRAMS = $(DATAFLOWPROGRAMS) $(FRAMEPROGRAMS)
-if FRAME
+bin_PROGRAMS = $(LALMETAIOPROGRAMS) $(LALFRAMEPROGRAMS)
+if LALFRAME
 lalapps_power_SOURCES = $(POWERSRCS)
 endif
-if DATAFLOW
+if LALMETAIO
 lalapps_snglBurstHistogram_SOURCES = snglBurstHistogram.c
 lalapps_burca_SOURCES = burca.c
 lalapps_bread_SOURCES = bread.c

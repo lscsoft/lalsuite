@@ -9,8 +9,8 @@ PRINTINSPIRALSRC = print_inspiral.c ligolwbank.h ligolwbank.c
 COHERESRC = coherent_inspiral.c ligolwbank.h ligolwbank.c inspiral.h \
             inspiralfrutils.c inspiralfrutils.h
 INCASRC = inca.c ligolwbank.h ligolwbank.c
-if FRAME
-if DATAFLOW
+if LALFRAME
+if LALMETAIO
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank lalapps_trigtotmplt \
                lalapps_print_inspiral lalapps_inca lalapps_coherent_inspiral
 lalapps_inspiral_SOURCES = $(INSPIRALSRC)
