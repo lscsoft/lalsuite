@@ -18,12 +18,12 @@ ifelse(TYPECODE, `', `define(`XFUNC',`XLALDestroyVector')', `define(`XFUNC',`for
 void XFUNC ( VTYPE *vector )
 {
   if ( ! vector )
-    XLAL_ERROR_VOID( "XFUNC", XLAL_EFAULT );
-  if ( ! vector->length || ! vector->data )
+    return;
+  if ( ( ! vector->length || ! vector->data ) && ( vector->length || vector->data  ) )
     XLAL_ERROR_VOID( "XFUNC", XLAL_EINVAL );
-  LALFree( vector->data );
-  vector->length = 0;
-  vector->data = NULL;
+  if ( vector->data )
+    LALFree( vector->data );
+  vector->data = NULL; /* leave length non-zero to detect repeated frees */
   LALFree( vector );
   return;
 }

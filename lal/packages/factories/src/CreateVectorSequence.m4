@@ -21,21 +21,25 @@ STYPE * XFUNC ( UINT4 length, UINT4 veclen )
   STYPE *seq;
 
   if ( ! length || ! veclen )
-    XLAL_ERROR_NULL( "XFUNC", XLAL_EBADLEN );
 
   seq = LALMalloc( sizeof( *seq ) );
   if ( ! seq )
     XLAL_ERROR_NULL( "XFUNC", XLAL_ENOMEM );
   
-  seq->data = LALMalloc( length * veclen * sizeof( *seq->data ) );
-  if ( ! seq )
-  {
-    LALFree( seq );
-    XLAL_ERROR_NULL( "XFUNC", XLAL_ENOMEM );
-  }
-
   seq->length = length;
   seq->vectorLength = veclen;
+
+  if ( ! length || ! veclen )
+    seq->data = NULL;
+  else
+  {
+    seq->data = LALMalloc( length * veclen * sizeof( *seq->data ) );
+    if ( ! seq )
+    {
+      LALFree( seq );
+      XLAL_ERROR_NULL( "XFUNC", XLAL_ENOMEM );
+    }
+  }
 
   return seq;
 }

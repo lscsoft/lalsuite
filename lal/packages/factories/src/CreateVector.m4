@@ -18,18 +18,21 @@ ifelse( TYPECODE, `', `define(`XFUNC',`XLALCreateVector')', `define(`XFUNC',`for
 VTYPE * XFUNC ( UINT4 length )
 {
   VTYPE * vector;
-  if ( ! length )
-    XLAL_ERROR_NULL( "XFUNC", XLAL_EBADLEN );
   vector = LALMalloc( sizeof( *vector ) );
   if ( ! vector )
     XLAL_ERROR_NULL( "XFUNC", XLAL_ENOMEM );
-  vector->data = LALMalloc( length * sizeof( *vector->data ) );
-  if ( ! vector->data )
-  {
-    LALFree( vector );
-    XLAL_ERROR_NULL( "XFUNC", XLAL_ENOMEM );
-  }
   vector->length = length;
+  if ( ! length ) /* zero length: set data pointer to be NULL */
+    vector->data = NULL;
+  else /* non-zero length: allocate memory for data */
+  {
+    vector->data = LALMalloc( length * sizeof( *vector->data ) );
+    if ( ! vector->data )
+    {
+      LALFree( vector );
+      XLAL_ERROR_NULL( "XFUNC", XLAL_ENOMEM );
+    }
+  }
   return vector;
 }
 

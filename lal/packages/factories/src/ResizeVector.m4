@@ -46,6 +46,8 @@ void RESIZEVECTOR ( LALStatus *status, VTYPE **vector, UINT4 length )
   INITSTATUS( status, "RESIZEVECTOR", VECTORFACTORIESC );	
 
   ASSERT ( vector != NULL, status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR );
+  ASSERT ( ! *vector || (*vector)->length, status, AVFACTORIESH_ELENGTH, AVFACTORIESH_MSGELENGTH );
+  ASSERT ( length || *vector, status, AVFACTORIESH_ELENGTH, AVFACTORIESH_MSGELENGTH );
 
   /* Want this to behave like realloc(3), i.e.
    * *vector == NULL => create a new vector 

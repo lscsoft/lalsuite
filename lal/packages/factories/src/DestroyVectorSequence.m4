@@ -18,11 +18,14 @@ ifelse( TYPECODE, `', `define(`XFUNC',`XLALDestroyVectorSequence')', `define(`XF
 void XFUNC ( STYPE *vseq )
 {
   if ( ! vseq )
-    XLAL_ERROR_VOID( "XFUNC", XLAL_EFAULT );
-  if ( ! vseq->data || ! vseq->length || ! vseq->vectorLength )
+    return;
+  if ( ( ! vseq->length || ! vseq->vectorLength ) && vseq->data )
     XLAL_ERROR_VOID( "XFUNC", XLAL_EINVAL );
-  LALFree( vseq->data );
-  memset( vseq, 0, sizeof( *vseq ) );
+  if ( ! vseq->data && ( vseq->length || vseq->vectorLength ) )
+    XLAL_ERROR_VOID( "XFUNC", XLAL_EINVAL );
+  if ( ! vseq->data )
+    LALFree( vseq->data );
+  vseq->data = NULL; /* leave lengths as they are to indicate freed vector */
   LALFree( vseq );
   return;
 }
