@@ -41,6 +41,7 @@ lalapps_extractSFTband_SOURCES=extractSFTband.c
 lalapps_FindSh_SOURCES=FindSh.c FindSh.h clusters.c clusters.h
 
 compareFstats_SOURCES = compareFstats.c
+compareFstats_LDFLAGS = -all-static
 
 ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c clusters.c clusters.h  \
 	DopplerScan.c DopplerScan.h NeighboringGridPoints.c
