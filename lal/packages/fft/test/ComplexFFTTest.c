@@ -205,33 +205,21 @@ CheckErrorCodes( void )
   {
     aplan.size = size;
 
-    LALEstimateFwdComplexFFTPlan( &status, NULL, size );
+    LALCreateForwardComplexFFTPlan( &status, NULL, size, 0 );
     TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
-    LALEstimateInvComplexFFTPlan( &status, NULL, size );
-    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
-    LALMeasureFwdComplexFFTPlan( &status, NULL, size );
-    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
-    LALMeasureInvComplexFFTPlan( &status, NULL, size );
+    LALCreateReverseComplexFFTPlan( &status, NULL, size, 0 );
     TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
 
     plan = &aplan;
-    LALEstimateFwdComplexFFTPlan( &status, &plan, size );
+    LALCreateForwardComplexFFTPlan( &status, &plan, size, 0 );
     TestStatus( &status, CODES( COMPLEXFFTH_ENNUL ), 1 );
-    LALEstimateInvComplexFFTPlan( &status, &plan, size );
-    TestStatus( &status, CODES( COMPLEXFFTH_ENNUL ), 1 );
-    LALMeasureFwdComplexFFTPlan( &status, &plan, size );
-    TestStatus( &status, CODES( COMPLEXFFTH_ENNUL ), 1 );
-    LALMeasureInvComplexFFTPlan( &status, &plan, size );
+    LALCreateReverseComplexFFTPlan( &status, &plan, size, 0 );
     TestStatus( &status, CODES( COMPLEXFFTH_ENNUL ), 1 );
 
     plan = NULL;
-    LALEstimateFwdComplexFFTPlan( &status, &plan, 0 );
+    LALCreateForwardComplexFFTPlan( &status, &plan, 0, 0 );
     TestStatus( &status, CODES( COMPLEXFFTH_ESIZE ), 1 );
-    LALEstimateInvComplexFFTPlan( &status, &plan, 0 );
-    TestStatus( &status, CODES( COMPLEXFFTH_ESIZE ), 1 );
-    LALMeasureFwdComplexFFTPlan( &status, &plan, 0 );
-    TestStatus( &status, CODES( COMPLEXFFTH_ESIZE ), 1 );
-    LALMeasureInvComplexFFTPlan( &status, &plan, 0 );
+    LALCreateReverseComplexFFTPlan( &status, &plan, 0, 0 );
     TestStatus( &status, CODES( COMPLEXFFTH_ESIZE ), 1 );
 
     LALDestroyComplexFFTPlan( &status, &plan );
