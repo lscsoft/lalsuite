@@ -43,11 +43,13 @@ NRCSID( GENERATEBURSTH, "$Id$" );
 #define GENERATEBURSTH_EOUT 2
 #define GENERATEBURSTH_EMEM 3
 #define GENERATEBURSTH_ETYP 4
+#define GENERATEBURSTH_ELEN 5
 
 #define GENERATEBURSTH_MSGENUL "Unexpected null pointer in arguments"
 #define GENERATEBURSTH_MSGEOUT "Output field a, f, phi, or shift already exists"
 #define GENERATEBURSTH_MSGEMEM "Out of memory"
 #define GENERATEBURSTH_MSGETYP "Waveform type not implemented"
+#define GENERATEBURSTH_MSGELEN "Waveform length not correctly specified"
 /******************************************** </lalErrTable><lalLaTeX>
 
 \subsection*{Types}
@@ -77,9 +79,8 @@ waveform
 
 /******************************************** <lalVerbatim> */
 typedef struct tagBurstParamStruc {
-  LIGOTimeGPS epoch;    /* start time of output time series */
-  REAL8 deltaT;         /* requested sampling interval (s) */
-  UINT4 length;         /* length of time series */
+  REAL8 deltaT;             /* requested sampling interval (s) */
+  CoordinateSystem system;  /* coordinate system to assume for simBurst */
 } BurstParamStruc;
 /******************************************** </lalVerbatim> */
 

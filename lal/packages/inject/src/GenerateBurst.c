@@ -63,7 +63,7 @@ LALGenerateBurst(
     )
 { /* </lalVerbatim> */
   UINT4 n, i;          /* number of and index over samples */
-  REAL8 t, dt;         /* time, interval */
+  REAL8 t, dt, duration;         /* time, interval */
   REAL8 t0, tau, gtime;  /* central time, decay time, gaussian time */
   REAL8 f0, phi0;      /* initial phase and frequency */
   REAL8 twopif0;       /* 2*pi*f0 */
@@ -75,6 +75,7 @@ LALGenerateBurst(
   REAL8 *phiData;      /* pointer to phase data */
   REAL4 *aData;        /* pointer to frequency data */
   LIGOTimeGPS startTime;  /* start time of injection */
+  LALTimeInterval dummyInterval;
 
   INITSTATUS( stat, "LALGenerateBurst", GENERATEBURSTC );
   ATTATCHSTATUSPTR( stat );
@@ -96,8 +97,17 @@ LALGenerateBurst(
 	  GENERATEBURSTH_MSGEOUT );
 
   /* Set up some other constants, to avoid repeated dereferencing. */
-  n = params->length;
+  duration = (REAL8)(simBurst->dtplus + simBurst->dtminus);
   dt = params->deltaT;
+  if ( n = (INT4) (2.0 * duration / dt) == 0 )
+  {
+    ABORT(stat, GENERATEBURSTH_EMEM, GENERATEBURSTH_MSGEMEM );
+  }
+
+  /* start time of data is peak time duration */
+  TRY( LALFloatToInterval( stat->statusPtr, &dummyInterval, &duration ), stat );
+  TRY( LALDecrementGPS( stat->statusPtr, &startTime, 
+        &(simBurst->geocent_peak_time), &dummyInterval), stat);
 
   /* Generic burst parameters */
   hpeak = simBurst->hpeak;
@@ -128,9 +138,9 @@ LALGenerateBurst(
   /* Set output structure metadata fields. */
   output->position.longitude = simBurst->longitude;
   output->position.latitude = simBurst->latitude;
-  output->position.system = simBurst->system;
+  output->position.system = params->system;
   output->psi = simBurst->polarization;
-  output->a->epoch = output->f->epoch = output->phi->epoch = params->epoch;
+  output->a->epoch = output->f->epoch = output->phi->epoch = startTime;
   output->a->deltaT = params->deltaT;
   output->f->deltaT = output->phi->deltaT = params->deltaT;
   output->a->sampleUnits = lalStrainUnit;
@@ -181,12 +191,11 @@ LALGenerateBurst(
   /* this depends on the waveform type */
   if( !( strcmp( simBurst->waveform, "SineGaussian" ) ) )
   {
-    LALTimeInterval deltaT;
-
     /* find the peak time as a REAL8 relative to start of segment */
-    TRY( LALDeltaGPS( stat->statusPtr, &deltaT, &(simBurst->geocent_peak_time),
-          &(params->epoch) ), stat );
-    TRY( LALIntervalToFloat( stat->statusPtr, &t0, &deltaT ), stat );
+    TRY( LALDeltaGPS( stat->statusPtr, &dummyInterval, 
+          &(simBurst->geocent_peak_time), &startTime ), stat );
+    TRY( LALIntervalToFloat( stat->statusPtr, &t0, 
+          &dummyInterval ), stat );
 
     /* construct the signal */
     for ( i = 0; i < n; i++ ) {
@@ -200,12 +209,11 @@ LALGenerateBurst(
   }
   else if ( !( strcmp( simBurst->waveform, "Gaussian" ) ) )
   {
-    LALTimeInterval deltaT;
-
     /* find the peak time as a REAL8 relative to start of segment */
-    TRY( LALDeltaGPS( stat->statusPtr, &deltaT, &(simBurst->geocent_peak_time),
-          &(params->epoch) ), stat );
-    TRY( LALIntervalToFloat( stat->statusPtr, &t0, &deltaT ), stat );
+    TRY( LALDeltaGPS( stat->statusPtr, &dummyInterval, 
+          &(simBurst->geocent_peak_time), &startTime ), stat );
+    TRY( LALIntervalToFloat( stat->statusPtr, &t0, 
+          &dummyInterval ), stat );
 
     /* construct the signal */
     for ( i = 0; i < n; i++ ) {
@@ -244,14 +252,14 @@ LALBurstInjectSignals(
   UINT4              k;
   INT8               chanStartTime;
   DetectorResponse   detector;
-  COMPLEX8Vector     *unity = NULL;
+  COMPLEX8Vector    *unity = NULL;
   CoherentGW         waveform;
   BurstParamStruc    burstParam;
   REAL4TimeSeries    signal;
+  SimBurstTable     *simBurst=NULL;
 
   INITSTATUS( stat, "LALBurstInjectSignals", GENERATEBURSTC );
   ATTATCHSTATUSPTR( stat );
-
 
   /*  set up parameters */
   LALGPStoINT8( stat->statusPtr, &chanStartTime, &(series->epoch) );
@@ -329,31 +337,29 @@ LALBurstInjectSignals(
   LALCDestroyVector( stat->statusPtr, &unity );
   CHECKSTATUSPTR( stat );
 
-  /*
-   * inject into time series 
-   */
-
-  burstParam.deltaT = series->deltaT;
-  burstParam.length = series->data->length;
-  
-  /*generate waveform*/
-  memset( &waveform, 0, sizeof(CoherentGW) );
-
-  LALGenerateBurst( &stat, &waveform, injections, &burstParam );
-
-  /*set the parameters for the to be injected signal */
+  /* Set up a time series to hold signal in ADC counts */
   signal.deltaT = series->deltaT;
-   if ( ( signal.f0 = series->f0 ) != 0 )
-    {
-      ABORT( stat, GENERATEBURSTH_EMEM, GENERATEBURSTH_MSGEMEM );
-    }
-    signal.sampleUnits = lalADCCountUnit;
+  if ( ( signal.f0 = series->f0 ) != 0 )
+  {
+    ABORT( stat, GENERATEBURSTH_EMEM, GENERATEBURSTH_MSGEMEM );
+  }
+  signal.sampleUnits = lalADCCountUnit;
 
-   /* simulate the detectors response  */
-    LALSCreateVector( stat->statusPtr, &(signal.data), 
-        (UINT4)burstParam.length );
+  LALSCreateVector( stat->statusPtr, &(signal.data), 
+      series->data->length );
+  CHECKSTATUSPTR( stat );
+
+  /* loop over list of waveforms and inject into data stream */
+  simBurst = injections;
+  while ( simBurst )
+  {
+    /* generate the burst waveform information */
+    burstParam.deltaT = series->deltaT;
+    memset( &waveform, 0, sizeof(CoherentGW) );
+    LALGenerateBurst( &stat, &waveform, injections, &burstParam );
     CHECKSTATUSPTR( stat );
 
+    /* convert this into an ADC signal */
     LALSimulateCoherentGW( stat->statusPtr, 
         &signal, &waveform, &detector );
     CHECKSTATUSPTR( stat );
@@ -362,9 +368,24 @@ LALBurstInjectSignals(
     LALSSInjectTimeSeries( stat->statusPtr, series, &signal );
     CHECKSTATUSPTR( stat );
 
-   /* destroy the signal */
-    LALSDestroyVector( stat->statusPtr, &(signal.data) );
-    CHECKSTATUSPTR( stat );
+    /* free memory in coherent GW structure.  TODO:  fix this */
+    TRY( LALSDestroyVectorSequence( stat->statusPtr, &( waveform.a->data ) ),
+        stat );
+    TRY( LALSDestroyVector( stat->statusPtr, &( waveform.f->data ) ),
+        stat );
+    TRY( LALDDestroyVector( stat->statusPtr, &( waveform.phi->data ) ),
+        stat );
+    LALFree( waveform.a );   waveform.a = NULL;
+    LALFree( waveform.f );   waveform.f = NULL;
+    LALFree( waveform.phi );  waveform.phi = NULL;
+
+    /* move on to next one */
+    simBurst = simBurst->next;
+  }
+
+  /* destroy the signal */
+  LALSDestroyVector( stat->statusPtr, &(signal.data) );
+  CHECKSTATUSPTR( stat );
 
   LALCDestroyVector( stat->statusPtr, &( detector.transfer->data ) );
   CHECKSTATUSPTR( stat );
