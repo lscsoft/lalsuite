@@ -111,7 +111,7 @@ int main( void )
   LIGOTimeGPS      t80;
   LIGOTimeGPS      t00;
   LIGOTimeGPS      t10;
-  int i;
+  UINT4            i;
 
   t80.gpsSeconds = 0;
   t80.gpsNanoSeconds = 0;

@@ -243,6 +243,8 @@ LALUnitMultiply()
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/CoarseGrainFrequencySeries.h>
 #include <lal/Units.h>
+#include <lal/AVFactories.h>
+#include <lal/VectorOps.h>
 
 NRCSID(STOCHASTICCROSSCORRELATIONC, 
 "$Id$");

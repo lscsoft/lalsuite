@@ -248,7 +248,7 @@ main( int argc, char *argv[] )
 
    BOOLEAN                result;
    LALUnitPair            unitPair;
-   LALUnit                dimensionless = { 0 };
+
    CHARVector             *unitString;
 
    FrequencySamplingParams     params;
@@ -275,16 +275,16 @@ main( int argc, char *argv[] )
    /* allocate input and output vectors */
    LALZCreateVector(&status, &(goodInput.data),
                     ZCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0);
-   if ( code = CheckStatus(&status, 0 , "",
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
    LALZCreateVector(&status, &(goodOutput.data), ZCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0);
-   if ( code = CheckStatus(&status, 0 , "",
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -294,10 +294,10 @@ main( int argc, char *argv[] )
    {
      /* test behavior for null pointer to output series */
      LALZCoarseGrainFrequencySeries(&status, NULL, &goodInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -305,10 +305,10 @@ main( int argc, char *argv[] )
 
      /* test behavior for null pointer to input series */
      LALZCoarseGrainFrequencySeries(&status, &goodOutput, NULL, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -316,10 +316,10 @@ main( int argc, char *argv[] )
    
      /* test behavior for null pointer to parameter structure */
      LALZCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, NULL);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -327,10 +327,10 @@ main( int argc, char *argv[] )
    
      /* test behavior for null pointer to data member of output series */
      LALZCoarseGrainFrequencySeries(&status, &badOutput, &goodInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -338,10 +338,10 @@ main( int argc, char *argv[] )
 
      /* test behavior for null pointer to data member of input series */
      LALZCoarseGrainFrequencySeries(&status, &goodOutput, &badInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -349,56 +349,56 @@ main( int argc, char *argv[] )
 
      /* test behavior for null pointer to data member of data member of output series */
      LALZCreateVector(&status, &(badOutput.data), ZCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0);
-     if ( code = CheckStatus(&status, 0 , "",
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
      zPtr = badOutput.data->data;
      badOutput.data->data = NULL;
      LALZCoarseGrainFrequencySeries(&status, &badOutput, &goodInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
      printf("  PASS: null pointer to data member of data member of output series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
      badOutput.data->data = zPtr;
      LALZDestroyVector(&status, &(badOutput.data));
-     if ( code = CheckStatus(&status, 0 , "",
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
      
      /* test behavior for null pointer to data member of data member of output series */
      LALZCreateVector(&status, &(badInput.data), ZCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0);
-     if ( code = CheckStatus(&status, 0 , "",
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
      zPtr = badInput.data->data;
      badInput.data->data = NULL;
      LALZCoarseGrainFrequencySeries(&status, &goodOutput, &badInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
      printf("  PASS: null pointer to data member of data member of input series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
      badInput.data->data = zPtr;
      LALZDestroyVector(&status, &(badInput.data));
-     if ( code = CheckStatus(&status, 0 , "",
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
@@ -407,10 +407,10 @@ main( int argc, char *argv[] )
 
      /* input and output series */
      LALZCoarseGrainFrequencySeries(&status, &goodInput, &goodInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -421,10 +421,10 @@ main( int argc, char *argv[] )
 
      /* data members of input and output series */
      LALZCoarseGrainFrequencySeries(&status, &badOutput, &goodInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -435,28 +435,28 @@ main( int argc, char *argv[] )
      /* data members of data members of input and output series */
      LALZCreateVector(&status, &(badOutput.data),
 		      ZCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0);
-     if ( code = CheckStatus(&status, 0 , "",
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
      zPtr = badOutput.data->data;
      badOutput.data->data = goodInput.data->data;
      LALZCoarseGrainFrequencySeries(&status, &badOutput, &goodInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
      printf("  PASS: duplicate pointers to data members of data members of input and output series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
      badOutput.data->data = zPtr;
      LALZDestroyVector(&status, &(badOutput.data));
-     if ( code = CheckStatus(&status, 0 , "",
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
@@ -466,10 +466,10 @@ main( int argc, char *argv[] )
 
      goodInput.data->length = 0;
      LALZCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_EZEROLEN,
-                             COARSEGRAINFREQUENCYSERIESH_MSGEZEROLEN,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK)) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_EZEROLEN,
+			       COARSEGRAINFREQUENCYSERIESH_MSGEZEROLEN,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -483,10 +483,10 @@ main( int argc, char *argv[] )
 
      goodOutput.data->length = params.length = 0;
      LALZCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_EZEROLEN,
-                             COARSEGRAINFREQUENCYSERIESH_MSGEZEROLEN,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK)) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_EZEROLEN,
+			       COARSEGRAINFREQUENCYSERIESH_MSGEZEROLEN,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -500,11 +500,11 @@ main( int argc, char *argv[] )
      goodInput.deltaF = params.deltaF 
        = -ZCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF0;
      LALZCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
-     if ( code = CheckStatus(&status,
-			     COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
-			     COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF,
-			     ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-			     ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK)) 
+     if ( ( code = CheckStatus(&status,
+			       COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
+			       COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      { 
        return code;
      }
@@ -514,11 +514,11 @@ main( int argc, char *argv[] )
      /* test behavior for zero frequency spacing */
      goodInput.deltaF = params.deltaF = 0;
      LALZCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
-     if ( code = CheckStatus(&status,
-			     COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
-			     COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF,
-			     ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-			     ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK)) 
+     if ( ( code = CheckStatus(&status,
+			       COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
+			       COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      { 
        return code;
      }
@@ -533,9 +533,9 @@ main( int argc, char *argv[] )
 #endif /* LAL_NDEBUG */
 
    LALZDestroyVector(&status, &(goodOutput.data));
-   if ( code = CheckStatus(&status, 0 , "",
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -548,16 +548,16 @@ main( int argc, char *argv[] )
 
    /* allocate input and output vectors */
    LALZCreateVector(&status, &(goodOutput.data), ZCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH1);
-   if ( code = CheckStatus(&status, 0 , "",
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
 
    /* fill input time-series parameters */
    strncpy(goodInput.name,"Dummy test data",LALNameLength);
-   goodInput.sampleUnits  = dimensionless;
+   goodInput.sampleUnits  = lalDimensionlessUnit;
 
      /* fill input data */
    for (i=0; i<ZCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0; ++i)
@@ -567,9 +567,9 @@ main( int argc, char *argv[] )
 
    /* coarse grain */
    LALZCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
-   if ( code = CheckStatus( &status, 0 , "",
-                            ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                            ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) )
+   if ( ( code = CheckStatus( &status, 0 , "",
+			      ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			      ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -636,9 +636,9 @@ main( int argc, char *argv[] )
    unitPair.unitOne = goodInput.sampleUnits;
    unitPair.unitTwo = goodOutput.sampleUnits;
    LALUnitCompare(&status, &result, &unitPair);
-   if ( code = CheckStatus(&status, 0 , "",
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -647,35 +647,35 @@ main( int argc, char *argv[] )
    {
      unitString = NULL;
      LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-     if ( code = CheckStatus(&status, 0 , "",
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
     
      LALUnitAsString( &status, unitString, &(unitPair.unitTwo) );
-     if ( code = CheckStatus(&status, 0 , "",
-                            ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                            ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
      printf( "Units are \"%s\", ", unitString->data );
      
      LALUnitAsString( &status, unitString, &(unitPair.unitOne) );
-     if ( code = CheckStatus(&status, 0 , "",
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
      printf( "should be \"%s\"\n", unitString->data );
      
      LALCHARDestroyVector(&status, &unitString);
-     if ( code = CheckStatus(&status, 0 , "",
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
@@ -742,9 +742,9 @@ main( int argc, char *argv[] )
    }
 
    LALZDestroyVector(&status, &goodOutput.data);
-   if ( code = CheckStatus(&status, 0 , "",
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                            ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -758,18 +758,18 @@ main( int argc, char *argv[] )
 
    LALZCreateVector(&status, &(goodOutput.data),
                     ZCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH2);
-   if ( code = CheckStatus(&status, 0 , "",
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
 
    /* coarse grain */
    LALZCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
-   if ( code = CheckStatus( &status, 0 , "",
-                            ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                            ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) )
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -833,9 +833,9 @@ main( int argc, char *argv[] )
    unitPair.unitOne = goodInput.sampleUnits;
    unitPair.unitTwo = goodOutput.sampleUnits;
    LALUnitCompare(&status, &result, &unitPair);
-   if ( code = CheckStatus(&status, 0 , "",
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -844,35 +844,35 @@ main( int argc, char *argv[] )
    {
      unitString = NULL;
      LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-     if ( code = CheckStatus(&status, 0 , "",
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
     
      LALUnitAsString( &status, unitString, &(unitPair.unitTwo) );
-     if ( code = CheckStatus(&status, 0 , "",
-                            ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                            ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
      printf( "Units are \"%s\", ", unitString->data );
      
      LALUnitAsString( &status, unitString, &(unitPair.unitOne) );
-     if ( code = CheckStatus(&status, 0 , "",
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
      printf( "should be \"%s\"\n", unitString->data );
      
      LALCHARDestroyVector(&status, &unitString);
-     if ( code = CheckStatus(&status, 0 , "",
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
@@ -940,17 +940,17 @@ main( int argc, char *argv[] )
 
    /* clean up valid data */
    LALZDestroyVector(&status, &goodInput.data);
-   if ( code = CheckStatus(&status, 0 , "",
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                            ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
 
    LALZDestroyVector(&status, &goodOutput.data);
-   if ( code = CheckStatus(&status, 0 , "",
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                            ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -964,9 +964,9 @@ main( int argc, char *argv[] )
 
    LALZCreateVector(&status, &(goodInput.data),
                     ZCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH3);
-   if ( code = CheckStatus(&status, 0 , "",
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -983,18 +983,18 @@ main( int argc, char *argv[] )
 
    LALZCreateVector(&status, &(goodOutput.data),
                     ZCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH4);
-   if ( code = CheckStatus(&status, 0 , "",
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
 
    /* coarse grain */
    LALZCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
-   if ( code = CheckStatus( &status, 0 , "",
-                            ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                            ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) )
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -1059,9 +1059,9 @@ main( int argc, char *argv[] )
    unitPair.unitOne = goodInput.sampleUnits;
    unitPair.unitTwo = goodOutput.sampleUnits;
    LALUnitCompare(&status, &result, &unitPair);
-   if ( code = CheckStatus(&status, 0 , "",
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -1070,35 +1070,35 @@ main( int argc, char *argv[] )
    {
      unitString = NULL;
      LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-     if ( code = CheckStatus(&status, 0 , "",
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
     
      LALUnitAsString( &status, unitString, &(unitPair.unitTwo) );
-     if ( code = CheckStatus(&status, 0 , "",
-                            ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                            ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
      printf( "Units are \"%s\", ", unitString->data );
      
      LALUnitAsString( &status, unitString, &(unitPair.unitOne) );
-     if ( code = CheckStatus(&status, 0 , "",
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
      printf( "should be \"%s\"\n", unitString->data );
      
      LALCHARDestroyVector(&status, &unitString);
-     if ( code = CheckStatus(&status, 0 , "",
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
@@ -1166,17 +1166,17 @@ main( int argc, char *argv[] )
 
    /* clean up valid data */
    LALZDestroyVector(&status, &goodInput.data);
-   if ( code = CheckStatus(&status, 0 , "",
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                            ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
 
    LALZDestroyVector(&status, &goodOutput.data);
-   if ( code = CheckStatus(&status, 0 , "",
-                           ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                            ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -1197,34 +1197,34 @@ main( int argc, char *argv[] )
      goodOutput.data = NULL;
 
      LALZCreateVector(&status, &goodInput.data, optInLength);
-     if ( code = CheckStatus( &status, 0 , "",
-                              ZCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
-                              ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
+     if ( ( code = CheckStatus( &status, 0 , "",
+				ZCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+				ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) )
      {
        return code;
      }
      LALZCreateVector(&status, &goodOutput.data, optOutLength);
-     if ( code = CheckStatus( &status, 0 , "",
-                              ZCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
-                              ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
+     if ( ( code = CheckStatus( &status, 0 , "",
+				ZCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+				ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) )
      {
        return code;
      }
 
      /* Read input file */
      LALZReadFrequencySeries(&status, &goodInput, optInputFile);
-     if ( code = CheckStatus( &status, 0 , "",
-                              ZCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
-                              ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
+     if ( ( code = CheckStatus( &status, 0 , "",
+				ZCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+				ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) )
      {
        return code;
      }
      
      /* coarse grain */
      LALZCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
-     if ( code = CheckStatus( &status, 0 , "",
-                              ZCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
-                              ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
+     if ( ( code = CheckStatus( &status, 0 , "",
+				ZCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+				ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) )
      {
        return code;
      }
@@ -1235,16 +1235,16 @@ main( int argc, char *argv[] )
      
      /* clean up valid data */
      LALZDestroyVector(&status, &goodInput.data);
-     if ( code = CheckStatus( &status, 0 , "",
-                              ZCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
-                              ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
+     if ( ( code = CheckStatus( &status, 0 , "",
+				ZCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+				ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) )
      {
        return code;
      }
      LALZDestroyVector(&status, &goodOutput.data);
-     if ( code = CheckStatus( &status, 0 , "",
-                              ZCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
-                              ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
+     if ( ( code = CheckStatus( &status, 0 , "",
+				ZCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+				ZCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) )
      {
        return code;
      }

@@ -312,27 +312,34 @@ int main( int argc, char *argv[] )
 					   .3700960588e-2, .3519147931e-1};
   LALDetectorPair     detectors;
   const LALDetector         plusAtOrigin  = { {0.0, 0.0, 0.0},
-                                        { {0.5, 0.0, 0.0},
-                                          {0.0,-0.5, 0.0},
-                                          {0.0, 0.0, 0.0} },
-                                       LALDETECTORTYPE_ABSENT };
+					      { {0.5, 0.0, 0.0},
+						{0.0,-0.5, 0.0},
+						{0.0, 0.0, 0.0} },
+					      LALDETECTORTYPE_ABSENT,
+					      { "", 0, 0, 0, 0, 0, 0, 0}
+                                             };
   /*   LALDetector         crossAtOrigin = { {0.0, 0.0, 0.0},
                                         { {0.0, 0.5, 0.0},
                                           {0.5, 0.0, 0.0},
                                           {0.0, 0.0, 0.0} },
-                                       LALDETECTORTYPE_ABSENT };
+                                       LALDETECTORTYPE_ABSENT,
+					      { "", 0, 0, 0, 0, 0, 0, 0}
+                                             };
   */
   const LALDetector         plusOnZAxis   = { {0.0, 0.0, OVERLAPREDUCTIONFUNCTIONTESTC_Z},
-                                        { {0.5, 0.0, 0.0},
-                                          {0.0,-0.5, 0.0},
-                                          {0.0, 0.0, 0.0} },
-                                       LALDETECTORTYPE_ABSENT };
+					      { {0.5, 0.0, 0.0},
+						{0.0,-0.5, 0.0},
+						{0.0, 0.0, 0.0} },
+					      LALDETECTORTYPE_ABSENT,
+					      { "", 0, 0, 0, 0, 0, 0, 0}
+                                             };
   const LALDetector         crossOnZAxis  = { {0.0, 0.0, OVERLAPREDUCTIONFUNCTIONTESTC_Z},
-                                        { {0.0, 0.5, 0.0},
-                                          {0.5, 0.0, 0.0},
-                                          {0.0, 0.0, 0.0} },
-                                       LALDETECTORTYPE_ABSENT };
-
+					      { {0.0, 0.5, 0.0},
+						{0.5, 0.0, 0.0},
+						{0.0, 0.0, 0.0} },
+					      LALDETECTORTYPE_ABSENT,
+					      { "", 0, 0, 0, 0, 0, 0, 0}
+                                             };
   UINT4 i;
   REAL4 overlapVal, f;
   INT4 code;
@@ -353,8 +360,10 @@ int main( int argc, char *argv[] )
   ParseOptions( argc, argv );
 
   LALSCreateVector(&status, &(overlap.data), OVERLAPREDUCTIONFUNCTIONTESTC_LENGTH);
-  if ( code = CheckStatus(&status, 0 , "", OVERLAPREDUCTIONFUNCTIONTESTC_EFLS,
-                          OVERLAPREDUCTIONFUNCTIONTESTC_MSGEFLS) ) {
+  if ( ( code = CheckStatus(&status, 0 , "",
+			    OVERLAPREDUCTIONFUNCTIONTESTC_EFLS,
+			    OVERLAPREDUCTIONFUNCTIONTESTC_MSGEFLS) ) )
+  {
     return code;
   }
 
@@ -364,9 +373,10 @@ int main( int argc, char *argv[] )
   {
     /* test behavior for null pointer to real frequency series for output */
     LALOverlapReductionFunction(&status, NULL, &detectors, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
-                            OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -374,9 +384,10 @@ int main( int argc, char *argv[] )
 
     /* test behavior for null pointer to input structure */
     LALOverlapReductionFunction(&status, &overlap, NULL, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
-                            OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -385,9 +396,10 @@ int main( int argc, char *argv[] )
 
     /* test behavior for null pointer to parameter structure */
     LALOverlapReductionFunction(&status, &overlap, &detectors, NULL);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
-                            OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK)) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -397,9 +409,10 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to data member of real frequency
        series for output */
     LALOverlapReductionFunction(&status, &dummyOutput, &detectors, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
-                            OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -409,8 +422,9 @@ int main( int argc, char *argv[] )
 
     /* Create a vector for testing null data-data pointer */
     LALSCreateVector(&status, &(dummyOutput.data), OVERLAPREDUCTIONFUNCTIONTESTC_LENGTH);
-    if ( code = CheckStatus(&status, 0 , "", OVERLAPREDUCTIONFUNCTIONTESTC_EFLS,
-                            OVERLAPREDUCTIONFUNCTIONTESTC_MSGEFLS) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      OVERLAPREDUCTIONFUNCTIONTESTC_EFLS,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_MSGEFLS) ) )
     {
       return code;
     }
@@ -420,9 +434,10 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to data member of data member of
        real frequency series for output */
     LALOverlapReductionFunction(&status, &dummyOutput, &detectors, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
-                            OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -433,44 +448,52 @@ int main( int argc, char *argv[] )
     
     dummyOutput.data->data = tempPtr;
     LALSDestroyVector(&status, &(dummyOutput.data));
-    if ( code = CheckStatus(&status, 0 , "", OVERLAPREDUCTIONFUNCTIONTESTC_EFLS,
-                            OVERLAPREDUCTIONFUNCTIONTESTC_MSGEFLS) ) {
+    if ( ( code = CheckStatus(&status, 0 , "", 
+			      OVERLAPREDUCTIONFUNCTIONTESTC_EFLS,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_MSGEFLS) ) )
+    {
       return code;
     }
 
     /* test behavior for length parameter equal to zero */
     parameters.length = 0;
     LALOverlapReductionFunction(&status, &overlap, &detectors, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EZEROLEN,
-                            STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
-                            OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK)) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EZEROLEN,
+			      STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) )
     {
       return code;
     }
-    printf("  PASS: zero length parameter results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
+    printf("  PASS: zero length parameter results in error:       \n\"%s\"\n", 
+	   STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
     /* assign valid length parameter */
     parameters.length = OVERLAPREDUCTIONFUNCTIONTESTC_LENGTH;
 
     /* test behavior for frequency spacing less than or equal to zero */
     parameters.deltaF = -1;
     LALOverlapReductionFunction(&status, &overlap, &detectors, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
-                            STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
-                            OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
+			      STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) )
     {
       return code;
     }
-    printf("  PASS: negative frequency spacing results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
+    printf("  PASS: negative frequency spacing results in error:       \n\"%s\"\n",
+	   STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
 
     parameters.deltaF = 0;
     LALOverlapReductionFunction(&status, &overlap, &detectors, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
-                            STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
-                            OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK)) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
+			      STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) )
     {
         return code;
     }
-    printf("  PASS: zero frequency spacing results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
+    printf("  PASS: zero frequency spacing results in error:       \n\"%s\"\n",
+	   STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
     /* assign valid frequency spacing */
     parameters.deltaF = OVERLAPREDUCTIONFUNCTIONTESTC_DELTAF;
   }
@@ -480,9 +503,10 @@ int main( int argc, char *argv[] )
   /* test behavior for negative start frequency */
   parameters.f0 = -20.0;
   LALOverlapReductionFunction(&status, &overlap, &detectors, &parameters);
-  if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
-                          STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
-                          OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) 
+  if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
+			    STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN,
+			    OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
+			    OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) )
   {
     return code;
   }
@@ -496,9 +520,11 @@ int main( int argc, char *argv[] )
      for output not equal to length specified in input parameters */
   parameters.length += 1;
   LALOverlapReductionFunction(&status, &overlap, &detectors, &parameters);
-  if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN, 
-                          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
-                          OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK)) {
+  if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN, 
+			    STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
+			    OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
+			    OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) )
+  {
     return code;
   }
   printf("  PASS: mismatch between length of output series and length parameter results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
@@ -510,8 +536,10 @@ int main( int argc, char *argv[] )
 
   /* generate overlap red fcn */
   LALOverlapReductionFunction(&status, &overlap, &detectors, &parameters);
-  if ( code = CheckStatus(&status,0, "", OVERLAPREDUCTIONFUNCTIONTESTC_EFLS,
-                          OVERLAPREDUCTIONFUNCTIONTESTC_MSGEFLS) ) {
+  if ( ( code = CheckStatus(&status,0, "",
+			    OVERLAPREDUCTIONFUNCTIONTESTC_EFLS,
+			    OVERLAPREDUCTIONFUNCTIONTESTC_MSGEFLS) ) )
+  {
     return code;
   }
 
@@ -540,8 +568,10 @@ int main( int argc, char *argv[] )
 
   /* generate overlap red fcn */
   LALOverlapReductionFunction(&status, &overlap, &detectors, &parameters);
-  if ( code = CheckStatus(&status,0, "", OVERLAPREDUCTIONFUNCTIONTESTC_EFLS,
-                          OVERLAPREDUCTIONFUNCTIONTESTC_MSGEFLS) ) {
+  if ( ( code = CheckStatus(&status,0, "", 
+			    OVERLAPREDUCTIONFUNCTIONTESTC_EFLS,
+			    OVERLAPREDUCTIONFUNCTIONTESTC_MSGEFLS) ) )
+  {
     return code;
   }
 
@@ -569,8 +599,10 @@ int main( int argc, char *argv[] )
 
   /* generate overlap red fcn */
   LALOverlapReductionFunction(&status, &overlap, &detectors, &parameters);
-  if ( code = CheckStatus(&status,0, "", OVERLAPREDUCTIONFUNCTIONTESTC_EFLS,
-                          OVERLAPREDUCTIONFUNCTIONTESTC_MSGEFLS) ) {
+  if ( ( code = CheckStatus(&status,0, "",
+			    OVERLAPREDUCTIONFUNCTIONTESTC_EFLS,
+			    OVERLAPREDUCTIONFUNCTIONTESTC_MSGEFLS) ) )
+  {
     return code;
   }
 
@@ -601,8 +633,9 @@ int main( int argc, char *argv[] )
 
   /* clean up valid data */
   LALSDestroyVector(&status, &(overlap.data));
-  if ( code = CheckStatus(&status, 0 , "", OVERLAPREDUCTIONFUNCTIONTESTC_EFLS,
-                          OVERLAPREDUCTIONFUNCTIONTESTC_MSGEFLS) ) 
+  if ( ( code = CheckStatus(&status,0, "",
+			    OVERLAPREDUCTIONFUNCTIONTESTC_EFLS,
+			    OVERLAPREDUCTIONFUNCTIONTESTC_MSGEFLS) ) )
   {
     return code;
   }
@@ -633,13 +666,17 @@ int main( int argc, char *argv[] )
     }
 
     LALSCreateVector(&status, &(overlap.data), optLength);
-    if ( code = CheckStatus(&status, 0 , "", OVERLAPREDUCTIONFUNCTIONTESTC_EUSE,
-                            OVERLAPREDUCTIONFUNCTIONTESTC_MSGEUSE) ) {
+    if ( ( code = CheckStatus(&status, 0 , "", 
+			      OVERLAPREDUCTIONFUNCTIONTESTC_EUSE,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_MSGEUSE) ) )
+    {
       return code;
     }
     LALOverlapReductionFunction(&status, &overlap, &detectors, &parameters);
-    if ( code = CheckStatus(&status,0, "", OVERLAPREDUCTIONFUNCTIONTESTC_EUSE,
-                            OVERLAPREDUCTIONFUNCTIONTESTC_MSGEUSE) ) {
+    if ( ( code = CheckStatus(&status, 0 , "", 
+			      OVERLAPREDUCTIONFUNCTIONTESTC_EUSE,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_MSGEUSE) ) )
+    {
       return code;
     }
     LALSPrintFrequencySeries( &overlap, optFile );
@@ -647,8 +684,10 @@ int main( int argc, char *argv[] )
     printf("======== Overlap Reduction Function Written to File %s ========\n", optFile);
 
     LALSDestroyVector(&status, &(overlap.data));
-    if ( code = CheckStatus(&status, 0 , "", OVERLAPREDUCTIONFUNCTIONTESTC_EUSE,
-                            OVERLAPREDUCTIONFUNCTIONTESTC_MSGEUSE) ) {
+    if ( ( code = CheckStatus(&status, 0 , "", 
+			      OVERLAPREDUCTIONFUNCTIONTESTC_EUSE,
+			      OVERLAPREDUCTIONFUNCTIONTESTC_MSGEUSE) ) )
+    {
       return code;
     }
 

@@ -110,41 +110,41 @@ enum { LALUnitTextSize = sizeof("10^-32768 m^-32768/32767 kg^-32768/32767 "
 NRCSID( PRINTFREQUENCYSERIESC, "$Id$" );
 /* </lalVerbatim> */
 
-define(`TYPECODE',`Z')
+define(`TYPECODE',`Z') dnl
 include(`LALPrintFrequencySeries.m4')
 
-define(`TYPECODE',`C')
+define(`TYPECODE',`C') dnl
 include(`LALPrintFrequencySeries.m4')
 
-define(`TYPECODE',`D')
+define(`TYPECODE',`D') dnl
 include(`LALPrintFrequencySeries.m4')
 
-define(`TYPECODE',`S')
+define(`TYPECODE',`S') dnl
 include(`LALPrintFrequencySeries.m4')
 
-define(`TYPECODE',`I2')
+define(`TYPECODE',`I2') dnl
 include(`LALPrintFrequencySeries.m4')
 
-define(`TYPECODE',`I4')
+define(`TYPECODE',`I4') dnl
 include(`LALPrintFrequencySeries.m4')
 
-define(`TYPECODE',`I8')
+define(`TYPECODE',`I8') dnl
 include(`LALPrintFrequencySeries.m4')
 /* Note that LALI8PrintFrequencySeries does a typecast to REAL8 and is thus
  * inaccurate for numbers >~ 1e15 
  */
 
-define(`TYPECODE',`U2')
+define(`TYPECODE',`U2') dnl
 include(`LALPrintFrequencySeries.m4')
 
-define(`TYPECODE',`U4')
+define(`TYPECODE',`U4') dnl
 include(`LALPrintFrequencySeries.m4')
 
-define(`TYPECODE',`U8')
+define(`TYPECODE',`U8') dnl
 include(`LALPrintFrequencySeries.m4')
 /* Note that LALU8PrintFrequencySeries does a typecast to REAL8 and is thus
  * inaccurate for numbers >~ 1e15 
  */
 
-define(`TYPECODE',`')
+define(`TYPECODE',`') dnl
 include(`LALPrintFrequencySeries.m4')

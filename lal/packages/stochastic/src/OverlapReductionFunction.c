@@ -258,7 +258,7 @@ LALOverlapReductionFunction(
                       const OverlapReductionFunctionParameters *parameters)
 /* </lalVerbatim> */
 {
-  UINT4            length, halfLength;
+  UINT4            length;
   REAL8            deltaF;
   REAL8            f0; 
 
@@ -270,7 +270,6 @@ LALOverlapReductionFunction(
   REAL4  distance;
   REAL4  c1, c2, c3;
   REAL4  alpha, alpha0, deltaAlpha;
-  REAL4  *sPtr, *sStopPtr;
   REAL4  rho[3];
   REAL4  d1[3][3], d2[3][3]; 
 
@@ -404,7 +403,6 @@ LALOverlapReductionFunction(
   deltaAlpha = deltaF * distance;
   alpha0     =     f0 * distance;
 
-  sStopPtr = output->data->data + length;
   if (f0 == 0) 
   {
     for (i=0; i<length; ++i)

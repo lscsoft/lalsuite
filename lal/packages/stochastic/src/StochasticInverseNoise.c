@@ -258,7 +258,7 @@ LALStochasticInverseNoise( LALStatus                          *status,
   }
 
 
-  for ( sPtrPW, cPtrR, sPtrIP, cPtrIPHW;
+  for ( ;
         sPtrPW < sStopPtr ;
         ++sPtrPW, ++cPtrR, ++sPtrIP, ++cPtrIPHW )
   {

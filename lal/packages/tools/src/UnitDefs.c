@@ -199,6 +199,7 @@ D.~Halliday, R.~Resnick, and J.~Walker, \textit{Fundamentals of
 
 #include <lal/LALStdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <lal/Units.h>
 
 NRCSID( UNITDEFSC, "$Id$" );
@@ -449,7 +450,10 @@ LALParseUnitString ( LALStatus *status,
   *output = lalDimensionlessUnit;
   
   /* If the string is empty, it represents dimensionless */
-  if (charPtr == charStopPtr) RETURN(status);
+  if (charPtr == charStopPtr)
+  {
+    RETURN(status);
+  }
 
   /* Look for power of ten; note LALUnitsAsString is set up to say
    * "10^1" rather than "10", so need not allow for missing '^'
@@ -479,7 +483,10 @@ LALParseUnitString ( LALStatus *status,
     output->powerOfTen = sign*atoi(temp);    
 
     /* If the power of ten was all there was, return */
-    if (*charPtr == '\0') RETURN(status);
+    if (*charPtr == '\0')
+    {
+      RETURN(status);
+    }
 
     if ( *charPtr != ' ') 
     {

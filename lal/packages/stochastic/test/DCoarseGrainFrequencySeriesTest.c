@@ -217,7 +217,7 @@ main( int argc, char *argv[] )
 
    BOOLEAN                result;
    LALUnitPair            unitPair;
-   LALUnit                dimensionless = { 0 };
+
    CHARVector             *unitString;
 
    FrequencySamplingParams     params;
@@ -244,16 +244,16 @@ main( int argc, char *argv[] )
    /* allocate input and output vectors */
    LALDCreateVector(&status, &(goodInput.data),
                     DCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0);
-   if ( code = CheckStatus(&status, 0 , "",
-                           DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                           DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
    LALDCreateVector(&status, &(goodOutput.data), DCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH1);
-   if ( code = CheckStatus(&status, 0 , "",
-                           DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                           DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -263,10 +263,10 @@ main( int argc, char *argv[] )
    {
      /* test behavior for null pointer to output series */
      LALDCoarseGrainFrequencySeries(&status, NULL, &goodInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -274,10 +274,10 @@ main( int argc, char *argv[] )
 
      /* test behavior for null pointer to input series */
      LALDCoarseGrainFrequencySeries(&status, &goodOutput, NULL, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -285,10 +285,10 @@ main( int argc, char *argv[] )
    
      /* test behavior for null pointer to plan parameter */
      LALDCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, NULL);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -296,10 +296,10 @@ main( int argc, char *argv[] )
    
      /* test behavior for null pointer to data member of output series */
      LALDCoarseGrainFrequencySeries(&status, &badOutput, &goodInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -307,10 +307,10 @@ main( int argc, char *argv[] )
 
      /* test behavior for null pointer to data member of input series */
      LALDCoarseGrainFrequencySeries(&status, &goodOutput, &badInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -318,56 +318,56 @@ main( int argc, char *argv[] )
 
      /* test behavior for null pointer to data member of data member of output series */
      LALDCreateVector(&status, &(badOutput.data), DCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH1);
-     if ( code = CheckStatus(&status, 0 , "",
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
      dPtr = badOutput.data->data;
      badOutput.data->data = NULL;
      LALDCoarseGrainFrequencySeries(&status, &badOutput, &goodInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
      printf("  PASS: null pointer to data member of data member of output series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
      badOutput.data->data = dPtr;
      LALDDestroyVector(&status, &(badOutput.data));
-     if ( code = CheckStatus(&status, 0 , "",
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
      
      /* test behavior for null pointer to data member of data member of output series */
      LALDCreateVector(&status, &(badInput.data), DCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0);
-     if ( code = CheckStatus(&status, 0 , "",
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
      dPtr = badInput.data->data;
      badInput.data->data = NULL;
      LALDCoarseGrainFrequencySeries(&status, &goodOutput, &badInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
      printf("  PASS: null pointer to data member of data member of input series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
      badInput.data->data = dPtr;
      LALDDestroyVector(&status, &(badInput.data));
-     if ( code = CheckStatus(&status, 0 , "",
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
@@ -379,10 +379,10 @@ main( int argc, char *argv[] )
 
      /* input and output series */
      LALDCoarseGrainFrequencySeries(&status, &goodInput, &goodInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -393,10 +393,10 @@ main( int argc, char *argv[] )
 
      /* data members of input and output series */
      LALDCoarseGrainFrequencySeries(&status, &badOutput, &goodInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -407,28 +407,28 @@ main( int argc, char *argv[] )
      /* data members of data members of input and output series */
      LALDCreateVector(&status, &(badOutput.data),
                       DCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0);
-     if ( code = CheckStatus(&status, 0 , "",
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
      dPtr = badOutput.data->data;
      badOutput.data->data = goodInput.data->data;
      LALDCoarseGrainFrequencySeries(&status, &badOutput, &goodInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR, 
+			       COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
      printf("  PASS: duplicate pointers to data members of data members of input and output series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
      badOutput.data->data = dPtr;
      LALDDestroyVector(&status, &(badOutput.data));
-     if ( code = CheckStatus(&status, 0 , "",
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
@@ -440,10 +440,10 @@ main( int argc, char *argv[] )
 
      goodInput.data->length = 0;
      LALDCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_EZEROLEN,
-                             COARSEGRAINFREQUENCYSERIESH_MSGEZEROLEN,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK)) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_EZEROLEN,
+			       COARSEGRAINFREQUENCYSERIESH_MSGEZEROLEN,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -457,10 +457,10 @@ main( int argc, char *argv[] )
 
      goodOutput.data->length = params.length = 0;
      LALDCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_EZEROLEN,
-                             COARSEGRAINFREQUENCYSERIESH_MSGEZEROLEN,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK)) 
+     if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_EZEROLEN,
+			       COARSEGRAINFREQUENCYSERIESH_MSGEZEROLEN,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -474,11 +474,11 @@ main( int argc, char *argv[] )
      goodInput.deltaF = params.deltaF 
        = -DCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF0;
      LALDCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
-     if ( code = CheckStatus(&status,
-                             COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
-                             COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK)) 
+     if ( ( code = CheckStatus(&status,
+			       COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
+			       COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      { 
        return code;
      }
@@ -488,11 +488,11 @@ main( int argc, char *argv[] )
      /* test behavior for zero frequency spacing */
      goodInput.deltaF = params.deltaF = 0;
      LALDCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
-     if ( code = CheckStatus(&status,
-                             COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
-                             COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK)) 
+     if ( ( code = CheckStatus(&status,
+			       COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
+			       COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK) ) )
      { 
        return code;
      }
@@ -507,9 +507,9 @@ main( int argc, char *argv[] )
 #endif /* LAL_NDEBUG */
 
    LALDDestroyVector(&status, &(goodOutput.data));
-   if ( code = CheckStatus(&status, 0 , "",
-                           DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                           DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -522,16 +522,16 @@ main( int argc, char *argv[] )
 
    /* allocate input and output vectors */
    LALDCreateVector(&status, &(goodOutput.data), DCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH1);
-   if ( code = CheckStatus(&status, 0 , "",
-                           DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                           DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
 
    /* fill input time-series parameters */
    strncpy(goodInput.name,"Dummy test data",LALNameLength);
-   goodInput.sampleUnits  = dimensionless;
+   goodInput.sampleUnits  = lalDimensionlessUnit;
 
      /* fill input data */
    for (i=0; i<DCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0; ++i)
@@ -541,9 +541,9 @@ main( int argc, char *argv[] )
 
    /* coarse grain */
    LALDCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
-   if ( code = CheckStatus( &status, 0 , "",
-                            DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                            DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) )
+   if ( ( code = CheckStatus( &status, 0 , "",
+			      DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			      DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -610,9 +610,9 @@ main( int argc, char *argv[] )
    unitPair.unitOne = goodInput.sampleUnits;
    unitPair.unitTwo = goodOutput.sampleUnits;
    LALUnitCompare(&status, &result, &unitPair);
-   if ( code = CheckStatus(&status, 0 , "",
-                           DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                           DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -621,35 +621,35 @@ main( int argc, char *argv[] )
    {
      unitString = NULL;
      LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-     if ( code = CheckStatus(&status, 0 , "",
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
     
      LALUnitAsString( &status, unitString, &(unitPair.unitTwo) );
-     if ( code = CheckStatus(&status, 0 , "",
-                            DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                            DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
      printf( "Units are \"%s\", ", unitString->data );
      
      LALUnitAsString( &status, unitString, &(unitPair.unitOne) );
-     if ( code = CheckStatus(&status, 0 , "",
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
      printf( "should be \"%s\"\n", unitString->data );
      
      LALCHARDestroyVector(&status, &unitString);
-     if ( code = CheckStatus(&status, 0 , "",
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
@@ -706,9 +706,9 @@ main( int argc, char *argv[] )
    }
 
    LALDDestroyVector(&status, &goodOutput.data);
-   if ( code = CheckStatus(&status, 0 , "",
-                           DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                            DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -722,18 +722,18 @@ main( int argc, char *argv[] )
 
    LALDCreateVector(&status, &(goodOutput.data),
                     DCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH2);
-   if ( code = CheckStatus(&status, 0 , "",
-                           DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                           DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
 
    /* coarse grain */
    LALDCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
-   if ( code = CheckStatus( &status, 0 , "",
-                            DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                            DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) )
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -797,9 +797,9 @@ main( int argc, char *argv[] )
    unitPair.unitOne = goodInput.sampleUnits;
    unitPair.unitTwo = goodOutput.sampleUnits;
    LALUnitCompare(&status, &result, &unitPair);
-   if ( code = CheckStatus(&status, 0 , "",
-                           DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                           DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -808,35 +808,35 @@ main( int argc, char *argv[] )
    {
      unitString = NULL;
      LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-     if ( code = CheckStatus(&status, 0 , "",
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
     
      LALUnitAsString( &status, unitString, &(unitPair.unitTwo) );
-     if ( code = CheckStatus(&status, 0 , "",
-                            DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                            DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
      printf( "Units are \"%s\", ", unitString->data );
      
      LALUnitAsString( &status, unitString, &(unitPair.unitOne) );
-     if ( code = CheckStatus(&status, 0 , "",
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
      printf( "should be \"%s\"\n", unitString->data );
      
      LALCHARDestroyVector(&status, &unitString);
-     if ( code = CheckStatus(&status, 0 , "",
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                             DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			       DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
      {
        return code;
      }
@@ -894,17 +894,17 @@ main( int argc, char *argv[] )
 
    /* clean up valid data */
    LALDDestroyVector(&status, &goodInput.data);
-   if ( code = CheckStatus(&status, 0 , "",
-                           DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                            DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
 
    LALDDestroyVector(&status, &goodOutput.data);
-   if ( code = CheckStatus(&status, 0 , "",
-                           DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                            DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+			     DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -925,34 +925,34 @@ main( int argc, char *argv[] )
      goodOutput.data = NULL;
 
      LALDCreateVector(&status, &goodInput.data, optInLength);
-     if ( code = CheckStatus( &status, 0 , "",
-                              DCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
-                              DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
+     if ( ( code = CheckStatus( &status, 0 , "",
+				DCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+				DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) )
      {
        return code;
      }
      LALDCreateVector(&status, &goodOutput.data, optOutLength);
-     if ( code = CheckStatus( &status, 0 , "",
-                              DCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
-                              DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
+     if ( ( code = CheckStatus( &status, 0 , "",
+				DCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+				DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) )
      {
        return code;
      }
 
      /* Read input file */
      LALDReadFrequencySeries(&status, &goodInput, optInputFile);
-     if ( code = CheckStatus( &status, 0 , "",
-                              DCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
-                              DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
+     if ( ( code = CheckStatus( &status, 0 , "",
+				DCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+				DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) )
      {
        return code;
      }
      
      /* coarse grain */
      LALDCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
-     if ( code = CheckStatus( &status, 0 , "",
-                              DCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
-                              DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
+     if ( ( code = CheckStatus( &status, 0 , "",
+				DCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+				DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) )
      {
        return code;
      }
@@ -963,16 +963,16 @@ main( int argc, char *argv[] )
      
      /* clean up valid data */
      LALDDestroyVector(&status, &goodInput.data);
-     if ( code = CheckStatus( &status, 0 , "",
-                              DCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
-                              DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
+     if ( ( code = CheckStatus( &status, 0 , "",
+				DCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+				DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) )
      {
        return code;
      }
      LALDDestroyVector(&status, &goodOutput.data);
-     if ( code = CheckStatus( &status, 0 , "",
-                              DCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
-                              DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
+     if ( ( code = CheckStatus( &status, 0 , "",
+				DCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+				DCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) )
      {
        return code;
      }

@@ -227,8 +227,10 @@ int main( int argc, char *argv[] )
   ParseOptions( argc, argv );
 
   LALSCreateVector(&status, &(omegaGW.data), STOCHASTICOMEGAGWTESTC_LENGTH);
-  if ( code = CheckStatus(&status, 0 , "", STOCHASTICOMEGAGWTESTC_EFLS,
-                          STOCHASTICOMEGAGWTESTC_MSGEFLS) ) {
+  if ( ( code = CheckStatus(&status, 0 , "", 
+			    STOCHASTICOMEGAGWTESTC_EFLS,
+			    STOCHASTICOMEGAGWTESTC_MSGEFLS) ) )
+  {
     return code;
   }
 
@@ -238,32 +240,37 @@ int main( int argc, char *argv[] )
   {
     /* test behavior for null pointer to real frequency series for output */
     LALStochasticOmegaGW(&status, NULL, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,STOCHASTICOMEGAGWTESTC_ECHK,
-                            STOCHASTICOMEGAGWTESTC_MSGECHK) ) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      STOCHASTICOMEGAGWTESTC_ECHK,
+			      STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
     {
       return code;
     }
-    printf("  PASS: null pointer to output series results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    printf("  PASS: null pointer to output series results in error:       \n\"%s\"\n",
+	   STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
 
     /* test behavior for null pointer to parameter structure */
     LALStochasticOmegaGW(&status, &omegaGW, NULL);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,STOCHASTICOMEGAGWTESTC_ECHK,
-                            STOCHASTICOMEGAGWTESTC_MSGECHK)) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      STOCHASTICOMEGAGWTESTC_ECHK,
+			      STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
     {
       return code;
     }
-    printf("  PASS: null pointer to parameter structure results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    printf("  PASS: null pointer to parameter structure results in error:       \n\"%s\"\n",
+	   STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
 
     /* test behavior for null pointer to data member of real frequency
        series for output */
     LALStochasticOmegaGW(&status, &dummyOutput, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,STOCHASTICOMEGAGWTESTC_ECHK,
-                            STOCHASTICOMEGAGWTESTC_MSGECHK) ) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      STOCHASTICOMEGAGWTESTC_ECHK,
+			      STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -273,8 +280,9 @@ int main( int argc, char *argv[] )
 
     /* Create a vector for testing null data-data pointer */
     LALSCreateVector(&status, &(dummyOutput.data), STOCHASTICOMEGAGWTESTC_LENGTH);
-    if ( code = CheckStatus(&status, 0 , "", STOCHASTICOMEGAGWTESTC_EFLS,
-                            STOCHASTICOMEGAGWTESTC_MSGEFLS) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICOMEGAGWTESTC_EFLS,
+			      STOCHASTICOMEGAGWTESTC_MSGEFLS) ) )
     {
       return code;
     }
@@ -284,9 +292,10 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to data member of data member of
        real frequency series for output */
     LALStochasticOmegaGW(&status, &dummyOutput, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,STOCHASTICOMEGAGWTESTC_ECHK,
-                            STOCHASTICOMEGAGWTESTC_MSGECHK) ) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      STOCHASTICOMEGAGWTESTC_ECHK,
+			      STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -297,44 +306,52 @@ int main( int argc, char *argv[] )
     
     dummyOutput.data->data = tempPtr;
     LALSDestroyVector(&status, &(dummyOutput.data));
-    if ( code = CheckStatus(&status, 0 , "", STOCHASTICOMEGAGWTESTC_EFLS,
-                            STOCHASTICOMEGAGWTESTC_MSGEFLS) ) {
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICOMEGAGWTESTC_EFLS,
+			      STOCHASTICOMEGAGWTESTC_MSGEFLS) ) )
+    {
       return code;
     }
 
     /* test behavior for length parameter equal to zero */
     parameters.length = 0;
     LALStochasticOmegaGW(&status, &omegaGW, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EZEROLEN,
-                            STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN,STOCHASTICOMEGAGWTESTC_ECHK,
-                            STOCHASTICOMEGAGWTESTC_MSGECHK)) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EZEROLEN,
+			      STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN,
+			      STOCHASTICOMEGAGWTESTC_ECHK,
+			      STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
     {
       return code;
     }
-    printf("  PASS: zero length parameter results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
+    printf("  PASS: zero length parameter results in error:       \n\"%s\"\n",
+	   STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
     /* assign valid length parameter */
     parameters.length = STOCHASTICOMEGAGWTESTC_LENGTH;
 
     /* test behavior for frequency spacing less than or equal to zero */
     parameters.deltaF = -1;
     LALStochasticOmegaGW(&status, &omegaGW, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
-                            STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF,STOCHASTICOMEGAGWTESTC_ECHK,
-                            STOCHASTICOMEGAGWTESTC_MSGECHK) ) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
+			      STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF,
+			      STOCHASTICOMEGAGWTESTC_ECHK,
+			      STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
     {
       return code;
     }
-    printf("  PASS: negative frequency spacing results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
+    printf("  PASS: negative frequency spacing results in error:       \n\"%s\"\n",
+	   STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
 
     parameters.deltaF = 0;
     LALStochasticOmegaGW(&status, &omegaGW, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
-                            STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF,STOCHASTICOMEGAGWTESTC_ECHK,
-                            STOCHASTICOMEGAGWTESTC_MSGECHK)) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
+			      STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF,
+			      STOCHASTICOMEGAGWTESTC_ECHK,
+			      STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
     {
         return code;
     }
-    printf("  PASS: zero frequency spacing results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
+    printf("  PASS: zero frequency spacing results in error:       \n\"%s\"\n",
+	   STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
     /* assign valid frequency spacing */
     parameters.deltaF = STOCHASTICOMEGAGWTESTC_DELTAF;
   }
@@ -344,9 +361,10 @@ int main( int argc, char *argv[] )
   /* test behavior for negative start frequency */
   parameters.f0 = -20.0;
   LALStochasticOmegaGW(&status, &omegaGW, &parameters);
-  if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
-                          STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN,STOCHASTICOMEGAGWTESTC_ECHK,
-                          STOCHASTICOMEGAGWTESTC_MSGECHK) ) 
+  if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
+			    STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN,
+			    STOCHASTICOMEGAGWTESTC_ECHK,
+			    STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
   {
     return code;
   }
@@ -360,55 +378,66 @@ int main( int argc, char *argv[] )
      for output not equal to length specified in input parameters */
   parameters.length += 1;
   LALStochasticOmegaGW(&status, &omegaGW, &parameters);
-  if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN, 
-                          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,STOCHASTICOMEGAGWTESTC_ECHK,
-                          STOCHASTICOMEGAGWTESTC_MSGECHK)) {
+  if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN, 
+			    STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
+			    STOCHASTICOMEGAGWTESTC_ECHK,
+			    STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
+  {
     return code;
   }
-  printf("  PASS: mismatch between length of output series and length parameter results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+  printf("  PASS: mismatch between length of output series and length parameter results in error:       \n\"%s\"\n",
+	 STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   /* reassign valid length to data member of dummy output */
   parameters.length -= 1;
   
   /* test behavior for fRef < deltaf */
   parameters.fRef = 0;
   LALStochasticOmegaGW(&status, &omegaGW, &parameters);
-  if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EOORFREF, 
-                          STOCHASTICCROSSCORRELATIONH_MSGEOORFREF,STOCHASTICOMEGAGWTESTC_ECHK,
-                          STOCHASTICOMEGAGWTESTC_MSGECHK)) 
+  if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EOORFREF, 
+                          STOCHASTICCROSSCORRELATIONH_MSGEOORFREF,
+			  STOCHASTICOMEGAGWTESTC_ECHK,
+			    STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
   {
     return code;
   }
-  printf("  PASS: zero reference frequency results in error:       \n\"%s\"\n",STOCHASTICCROSSCORRELATIONH_MSGEOORFREF);
+  printf("  PASS: zero reference frequency results in error:       \n\"%s\"\n",
+	 STOCHASTICCROSSCORRELATIONH_MSGEOORFREF);
   parameters.fRef = STOCHASTICOMEGAGWTESTC_FREF;
   
   /* test behavior for omegaRef <=0 */
   parameters.omegaRef = -1.0;
   LALStochasticOmegaGW(&status, &omegaGW, &parameters);
-  if ( code = CheckStatus(&status,  STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA, 
-                          STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA,STOCHASTICOMEGAGWTESTC_ECHK,
-                          STOCHASTICOMEGAGWTESTC_MSGECHK)) 
+  if ( ( code = CheckStatus(&status,  STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA, 
+                          STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA,
+			  STOCHASTICOMEGAGWTESTC_ECHK,
+			    STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
   {
     return code;
   }
-  printf("  PASS: negative amplitude parameter results in error:       \n\"%s\"\n",STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA);
+  printf("  PASS: negative amplitude parameter results in error:       \n\"%s\"\n",
+	 STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA);
   
   parameters.omegaRef = 0.0;
   LALStochasticOmegaGW(&status, &omegaGW, &parameters);
-  if ( code = CheckStatus(&status,  STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA, 
-                          STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA,STOCHASTICOMEGAGWTESTC_ECHK,
-                          STOCHASTICOMEGAGWTESTC_MSGECHK)) 
+  if ( ( code = CheckStatus(&status,  STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA, 
+			    STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA,
+			    STOCHASTICOMEGAGWTESTC_ECHK,
+			    STOCHASTICOMEGAGWTESTC_MSGECHK) ) )
   {
     return code;
   }
-  printf("  PASS: zero amplitude parameter results in error:       \n\"%s\"\n",STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA);
+  printf("  PASS: zero amplitude parameter results in error:       \n\"%s\"\n",
+	 STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA);
   parameters.omegaRef = STOCHASTICOMEGAGWTESTC_OMEGAREF;
   
   /* TEST VALID DATA HERE -------------------------------------------- */
 
   /* generate omegaGW */
   LALStochasticOmegaGW(&status, &omegaGW, &parameters);
-  if ( code = CheckStatus(&status,0, "", STOCHASTICOMEGAGWTESTC_EFLS,
-                          STOCHASTICOMEGAGWTESTC_MSGEFLS) ) {
+  if ( ( code = CheckStatus(&status,0, "", 
+			    STOCHASTICOMEGAGWTESTC_EFLS,
+			    STOCHASTICOMEGAGWTESTC_MSGEFLS) ) )
+  {
     return code;
   }
 
@@ -438,8 +467,10 @@ int main( int argc, char *argv[] )
 
   /* generate omegaGW */
   LALStochasticOmegaGW(&status, &omegaGW, &parameters);
-  if ( code = CheckStatus(&status,0, "", STOCHASTICOMEGAGWTESTC_EFLS,
-                          STOCHASTICOMEGAGWTESTC_MSGEFLS) ) {
+  if ( ( code = CheckStatus(&status,0, "",
+			    STOCHASTICOMEGAGWTESTC_EFLS,
+			    STOCHASTICOMEGAGWTESTC_MSGEFLS) ) )
+  {
     return code;
   }
 
@@ -463,8 +494,9 @@ int main( int argc, char *argv[] )
 
   /* clean up valid data */
   LALSDestroyVector(&status, &(omegaGW.data));
-  if ( code = CheckStatus(&status, 0 , "", STOCHASTICOMEGAGWTESTC_EFLS,
-                          STOCHASTICOMEGAGWTESTC_MSGEFLS) ) 
+  if ( ( code = CheckStatus(&status, 0 , "", 
+			    STOCHASTICOMEGAGWTESTC_EFLS,
+			    STOCHASTICOMEGAGWTESTC_MSGEFLS) ) )
   {
     return code;
   }
@@ -481,13 +513,17 @@ int main( int argc, char *argv[] )
     parameters.omegaRef = optOmegaR;
     parameters.fRef = optFR;
     LALSCreateVector(&status, &(omegaGW.data), optLength);
-    if ( code = CheckStatus(&status, 0 , "", STOCHASTICOMEGAGWTESTC_EUSE,
-                            STOCHASTICOMEGAGWTESTC_MSGEUSE) ) {
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICOMEGAGWTESTC_EUSE,
+			      STOCHASTICOMEGAGWTESTC_MSGEUSE) ) )
+    {
       return code;
     }
     LALStochasticOmegaGW(&status, &omegaGW, &parameters);
-    if ( code = CheckStatus(&status,0, "", STOCHASTICOMEGAGWTESTC_EUSE,
-                            STOCHASTICOMEGAGWTESTC_MSGEUSE) ) {
+    if ( ( code = CheckStatus(&status,0, "",
+			      STOCHASTICOMEGAGWTESTC_EUSE,
+			      STOCHASTICOMEGAGWTESTC_MSGEUSE) ) )
+    {
       return code;
     }
     LALSPrintFrequencySeries( &omegaGW, optFile );
@@ -496,8 +532,10 @@ int main( int argc, char *argv[] )
 
 
     LALSDestroyVector(&status, &(omegaGW.data));
-    if ( code = CheckStatus(&status, 0 , "", STOCHASTICOMEGAGWTESTC_EUSE,
-                            STOCHASTICOMEGAGWTESTC_MSGEUSE) ) {
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICOMEGAGWTESTC_EUSE,
+			      STOCHASTICOMEGAGWTESTC_MSGEUSE) ) )
+    {
       return code;
     }
     LALCheckMemoryLeaks();

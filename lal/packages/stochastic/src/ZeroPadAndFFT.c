@@ -148,7 +148,7 @@ LALSZeroPadAndFFT(LALStatus                *status,
 
   UINT4          length, fullLength; /* fullLength = 2 * length - 1 */
 
-  REAL8         deltaT, deltaF; /* deltaT * deltaF = 1/fullLength */
+  REAL8         deltaT;
 
   REAL4TimeSeries  hBar;
 
@@ -284,7 +284,7 @@ LALCZeroPadAndFFT(LALStatus                *status,
 
   UINT4          length, fullLength; /* fullLength = 2 * length - 1 */
 
-  REAL8         deltaT, deltaF; /* deltaT * deltaF = 1/fullLength */
+  REAL8         deltaT;
 
   COMPLEX8TimeSeries  hBar;
 

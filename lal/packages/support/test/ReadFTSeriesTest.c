@@ -160,17 +160,17 @@ int main( void )
   /* This routine should generate a file with data */
   /* to be read by ReadFTSeries.c*/
   LIGOTimeGPS  t;
-  INT4         i;
+  UINT4         i;
 
 
   /* Data Test Variable */
-  INT4   j;
+  UINT4   j;
 
   fprintf(stderr,"Testing value of LALUnitTextSize ... ");
   if ( LALSupportUnitTextSize != LALUnitTextSize ) 
   {
-    fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
-	    status.statusDescription, READFTSERIESTESTC_MSGEFLS);
+    fprintf(stderr,"UnitTextSize mismatch: [ReadFTSeriesTest:%s]\n",
+	    READFTSERIESTESTC_MSGEFLS);
     return READFTSERIESTESTC_EFLS;
   }
   fprintf(stderr,"PASS\n");  
@@ -1098,30 +1098,30 @@ int main( void )
       READFTSERIESTEST_TOL) 
   {
     fprintf(stderr,"Mismatch DeltaT [ReadFTSeriesTest:%s]\n",
-	    READFTSERIESTESTC_MSGEFUN);
-    return READFTSERIESTESTC_EFUN;
+	    READFTSERIESTESTC_MSGEFLS);
+    return READFTSERIESTESTC_EFLS;
   }
 
 
   if (strcmp(zTimeSeries.name,zTimeSeries2.name) != 0) 
   {
-    fprintf(stderr,"Name Mismatch [ReadFTSeriesTest:%s]\n",status.statusCode,
-	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
-    return READFTSERIESTESTC_EFUN;
+    fprintf(stderr,"Name Mismatch [ReadFTSeriesTest:%s]\n",
+	    READFTSERIESTESTC_MSGEFLS);
+    return READFTSERIESTESTC_EFLS;
   }
 
   if ((zTimeSeries.epoch.gpsSeconds) != (zTimeSeries2.epoch.gpsSeconds)) 
   {
-    fprintf(stderr,"Epoch Second Mismatch [ReadFTSeriesTest:%s]\n",status.statusCode,
-	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
-    return READFTSERIESTESTC_EFUN;
+    fprintf(stderr,"Epoch Second Mismatch [ReadFTSeriesTest:%s]\n",
+	    READFTSERIESTESTC_MSGEFLS);
+    return READFTSERIESTESTC_EFLS;
   }
   if ( (zTimeSeries.epoch.gpsNanoSeconds) 
        != (zTimeSeries2.epoch.gpsNanoSeconds) ) 
   {
-    fprintf(stderr,"Epoch Nanosecond Mismatch [ReadFTSeriesTest:%s]\n",status.statusCode,
-	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
-    return READFTSERIESTESTC_EFUN;
+    fprintf(stderr,"Epoch Nanosecond Mismatch [ReadFTSeriesTest:%s]\n",
+	    READFTSERIESTESTC_MSGEFLS);
+    return READFTSERIESTESTC_EFLS;
   }
 
   if (zTimeSeries.f0 ?
@@ -1146,8 +1146,8 @@ int main( void )
 
   if (!unitComp) 
   {
-    fprintf(stderr,"Unit Mismatch [ReadFTSeriesTest:%s]\n",status.statusCode,
-	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
+    fprintf(stderr,"Unit Mismatch [ReadFTSeriesTest:%s]\n", 
+	    READFTSERIESTESTC_MSGEFLS);
     return READFTSERIESTESTC_EFUN;
   }
 
@@ -1320,8 +1320,8 @@ int main( void )
   if (!unitComp) 
   {
     fprintf(stderr,"Unit Mismatch [ReadFTSeriesTest:%s]\n",
-	    READFTSERIESTESTC_MSGEFUN);
-    return READFTSERIESTESTC_EFUN;
+	    READFTSERIESTESTC_MSGEFLS);
+    return READFTSERIESTESTC_EFLS;
   }
 
   for (j = 0; j <= dSequenceIn->length;j++)
@@ -1434,27 +1434,27 @@ int main( void )
       > READFTSERIESTEST_TOL) 
   {
     fprintf(stderr,"DeltaT Mismatch [ReadFTSeriesTest:%s]\n",
-	    READFTSERIESTESTC_MSGEFUN);
-    return READFTSERIESTESTC_EFUN;
+	    READFTSERIESTESTC_MSGEFLS);
+    return READFTSERIESTESTC_EFLS;
   }
 
   if (strcmp(cTimeSeries.name,cTimeSeries2.name) != 0) 
   {
     fprintf(stderr,"Name Mismatch [ReadFTSeriesTest:%s]\n",
-	    READFTSERIESTESTC_MSGEFUN);
-    return READFTSERIESTESTC_EFUN;
+	    READFTSERIESTESTC_MSGEFLS);
+    return READFTSERIESTESTC_EFLS;
   }
   if ((cTimeSeries.epoch.gpsSeconds) != (cTimeSeries2.epoch.gpsSeconds)) 
   {
     fprintf(stderr,"Epoch Seconds Mismatch [ReadFTSeriesTest:%s]\n",
-	    READFTSERIESTESTC_MSGEFUN);
-    return READFTSERIESTESTC_EFUN;
+	    READFTSERIESTESTC_MSGEFLS);
+    return READFTSERIESTESTC_EFLS;
   }
   if ((cTimeSeries.epoch.gpsNanoSeconds)!=(cTimeSeries2.epoch.gpsNanoSeconds))
   {
     fprintf(stderr,"Epoch Nanoseconds Mismatch [ReadFTSeriesTest:%s]\n",
-	    READFTSERIESTESTC_MSGEFUN);
-    return READFTSERIESTESTC_EFUN;
+	    READFTSERIESTESTC_MSGEFLS);
+    return READFTSERIESTESTC_EFLS;
   }
   if (cTimeSeries.f0 ?
        (fabs(cTimeSeries.f0 - cTimeSeries2.f0)/cTimeSeries.f0)
@@ -1479,8 +1479,8 @@ int main( void )
   if (!unitComp) 
   {
     fprintf(stderr,"Units Mismatch [ReadFTSeriesTest:%s]\n",
-	    READFTSERIESTESTC_MSGEFUN);
-    return READFTSERIESTESTC_EFUN;
+	    READFTSERIESTESTC_MSGEFLS);
+    return READFTSERIESTESTC_EFLS;
   }
 
   for (j = 0; j <= cSequenceIn->length;j++)

@@ -214,10 +214,7 @@ main( int argc, char *argv[] )
 
    BOOLEAN                result;
    LALUnitPair            unitPair;
-   LALUnit                dimensionless = { 0 };
    CHARVector             *unitString;
-
-   UINT4                  fullLength;
 
    for (i=0; i<CZEROPADANDFFTTESTC_FULLLENGTH; ++i)
    {
@@ -244,24 +241,25 @@ main( int argc, char *argv[] )
    LALCreateForwardComplexFFTPlan(&status, &plan, 
 				  CZEROPADANDFFTTESTC_FULLLENGTH,
 				  CZEROPADANDFFTTESTC_FALSE);
-   if ( code = CheckStatus( &status, 0 , "", CZEROPADANDFFTTESTC_EFLS,
-                            CZEROPADANDFFTTESTC_MSGEFLS ) ) 
+   if ( ( code = CheckStatus( &status, 0 , "", 
+			      CZEROPADANDFFTTESTC_EFLS,
+			      CZEROPADANDFFTTESTC_MSGEFLS ) ) )
    {
      return code;
    }
    /* allocate input and output vectors */
    LALCCreateVector(&status, &(goodInput.data), CZEROPADANDFFTTESTC_LENGTH);
-   if ( code = CheckStatus(&status, 0 , "",
-                           CZEROPADANDFFTTESTC_EFLS,
-                           CZEROPADANDFFTTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus( &status, 0 , "", 
+			      CZEROPADANDFFTTESTC_EFLS,
+			      CZEROPADANDFFTTESTC_MSGEFLS ) ) )
    {
      return code;
    }
    LALCCreateVector(&status, &(goodOutput.data),
 		    CZEROPADANDFFTTESTC_FULLLENGTH);
-   if ( code = CheckStatus(&status, 0 , "",
-                           CZEROPADANDFFTTESTC_EFLS,
-                           CZEROPADANDFFTTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus( &status, 0 , "", 
+			      CZEROPADANDFFTTESTC_EFLS,
+			      CZEROPADANDFFTTESTC_MSGEFLS ) ) )
    {
      return code;
    }
@@ -271,10 +269,10 @@ main( int argc, char *argv[] )
    {
      /* test behavior for null pointer to output series */
      LALCZeroPadAndFFT(&status, NULL, &goodInput, plan);
-     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-                             STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-                             CZEROPADANDFFTTESTC_ECHK,
-                             CZEROPADANDFFTTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+			       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			       CZEROPADANDFFTTESTC_ECHK,
+			       CZEROPADANDFFTTESTC_MSGECHK ) ) )
      {
        return code;
      }
@@ -282,10 +280,10 @@ main( int argc, char *argv[] )
 
      /* test behavior for null pointer to input series */
      LALCZeroPadAndFFT(&status, &goodOutput, NULL, plan);
-     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-                             STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-                             CZEROPADANDFFTTESTC_ECHK,
-                             CZEROPADANDFFTTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+			       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			       CZEROPADANDFFTTESTC_ECHK,
+			       CZEROPADANDFFTTESTC_MSGECHK ) ) )
      {
        return code;
      }
@@ -293,10 +291,10 @@ main( int argc, char *argv[] )
    
      /* test behavior for null pointer to plan parameter */
      LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, NULL);
-     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-                             STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-                             CZEROPADANDFFTTESTC_ECHK,
-                             CZEROPADANDFFTTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+			       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			       CZEROPADANDFFTTESTC_ECHK,
+			       CZEROPADANDFFTTESTC_MSGECHK ) ) )
      {
        return code;
      }
@@ -304,10 +302,10 @@ main( int argc, char *argv[] )
    
      /* test behavior for null pointer to data member of output series */
      LALCZeroPadAndFFT(&status, &badOutput, &goodInput, plan);
-     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-                             STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-                             CZEROPADANDFFTTESTC_ECHK,
-                             CZEROPADANDFFTTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+			       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			       CZEROPADANDFFTTESTC_ECHK,
+			       CZEROPADANDFFTTESTC_MSGECHK ) ) )
      {
        return code;
      }
@@ -315,10 +313,10 @@ main( int argc, char *argv[] )
 
      /* test behavior for null pointer to data member of input series */
      LALCZeroPadAndFFT(&status, &goodOutput, &badInput, plan);
-     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-                             STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-                             CZEROPADANDFFTTESTC_ECHK,
-                             CZEROPADANDFFTTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+			       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			       CZEROPADANDFFTTESTC_ECHK,
+			       CZEROPADANDFFTTESTC_MSGECHK ) ) )
      {
        return code;
      }
@@ -327,56 +325,56 @@ main( int argc, char *argv[] )
      /* test behavior for null pointer to data member of data member of output series */
      LALCCreateVector(&status, &(badOutput.data), 
 		      CZEROPADANDFFTTESTC_FULLLENGTH);
-     if ( code = CheckStatus(&status, 0 , "",
-                             CZEROPADANDFFTTESTC_EFLS,
-                             CZEROPADANDFFTTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       CZEROPADANDFFTTESTC_EFLS,
+			       CZEROPADANDFFTTESTC_MSGEFLS) ) )
      {
        return code;
      }
      cPtr = badOutput.data->data;
      badOutput.data->data = NULL;
      LALCZeroPadAndFFT(&status, &badOutput, &goodInput, plan);
-     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-                             STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-                             CZEROPADANDFFTTESTC_ECHK,
-                             CZEROPADANDFFTTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+			       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			       CZEROPADANDFFTTESTC_ECHK,
+			       CZEROPADANDFFTTESTC_MSGECHK ) ) )
      {
        return code;
      }
      printf("  PASS: null pointer to data member of data member of output series results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
      badOutput.data->data = cPtr;
      LALCDestroyVector(&status, &(badOutput.data));
-     if ( code = CheckStatus(&status, 0 , "",
-                             CZEROPADANDFFTTESTC_EFLS,
-                             CZEROPADANDFFTTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       CZEROPADANDFFTTESTC_EFLS,
+			       CZEROPADANDFFTTESTC_MSGEFLS) ) )
      {
        return code;
      }
      
      /* test behavior for null pointer to data member of data member of output series */
      LALCCreateVector(&status, &(badInput.data), CZEROPADANDFFTTESTC_LENGTH);
-     if ( code = CheckStatus(&status, 0 , "",
-                             CZEROPADANDFFTTESTC_EFLS,
-                             CZEROPADANDFFTTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       CZEROPADANDFFTTESTC_EFLS,
+			       CZEROPADANDFFTTESTC_MSGEFLS) ) )
      {
        return code;
      }
      cPtr = badInput.data->data;
      badInput.data->data = NULL;
      LALCZeroPadAndFFT(&status, &goodOutput, &badInput, plan);
-     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-                             STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-                             CZEROPADANDFFTTESTC_ECHK,
-                             CZEROPADANDFFTTESTC_MSGECHK )) 
+     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+			       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			       CZEROPADANDFFTTESTC_ECHK,
+			       CZEROPADANDFFTTESTC_MSGECHK ) ) )
      {
        return code;
      }
      printf("  PASS: null pointer to data member of data member of input series results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
      badInput.data->data = cPtr;
      LALCDestroyVector(&status, &(badInput.data));
-     if ( code = CheckStatus(&status, 0 , "",
-                             CZEROPADANDFFTTESTC_EFLS,
-                             CZEROPADANDFFTTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       CZEROPADANDFFTTESTC_EFLS,
+			       CZEROPADANDFFTTESTC_MSGEFLS) ) )
      {
        return code;
      }
@@ -385,10 +383,10 @@ main( int argc, char *argv[] )
      goodInput.data->length = goodOutput.data->length = 0;
      /* plan->size = -1; */
      LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, plan);
-     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EZEROLEN,
-                             STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN,
-                             CZEROPADANDFFTTESTC_ECHK,
-                             CZEROPADANDFFTTESTC_MSGECHK)) 
+     if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EZEROLEN,
+			       STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN,
+			       CZEROPADANDFFTTESTC_ECHK,
+			       CZEROPADANDFFTTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -403,11 +401,11 @@ main( int argc, char *argv[] )
      /* test behavior for negative time spacing */
      goodInput.deltaT = -CZEROPADANDFFTTESTC_DELTAT;
      LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, plan);
-     if ( code = CheckStatus(&status,
-                             STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAT,
-                             STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAT,
-                             CZEROPADANDFFTTESTC_ECHK,
-                             CZEROPADANDFFTTESTC_MSGECHK)) 
+     if ( ( code = CheckStatus(&status,
+			       STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAT,
+			       STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAT,
+			       CZEROPADANDFFTTESTC_ECHK,
+			       CZEROPADANDFFTTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -417,11 +415,11 @@ main( int argc, char *argv[] )
      /* test behavior for zero time spacing */
      goodInput.deltaT = 0;
      LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, plan);
-     if ( code = CheckStatus(&status,
-                             STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAT,
-                             STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAT,
-                             CZEROPADANDFFTTESTC_ECHK,
-                             CZEROPADANDFFTTESTC_MSGECHK)) 
+     if ( ( code = CheckStatus(&status,
+			       STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAT,
+			       STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAT,
+			       CZEROPADANDFFTTESTC_ECHK,
+			       CZEROPADANDFFTTESTC_MSGECHK) ) )
      {
        return code;
      }
@@ -436,11 +434,11 @@ main( int argc, char *argv[] )
    /* test behavior for length mismatch between input series and output series */
    goodOutput.data->length = CZEROPADANDFFTTESTC_LENGTH;
    LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, plan);
-   if ( code = CheckStatus(&status,
-                           STOCHASTICCROSSCORRELATIONH_EMMLEN,
-                           STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
-                           CZEROPADANDFFTTESTC_ECHK,
-                           CZEROPADANDFFTTESTC_MSGECHK)) 
+   if ( ( code = CheckStatus(&status,
+			     STOCHASTICCROSSCORRELATIONH_EMMLEN,
+			     STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
+			     CZEROPADANDFFTTESTC_ECHK,
+			     CZEROPADANDFFTTESTC_MSGECHK) ) )
    {
      return code;
    }
@@ -452,7 +450,7 @@ main( int argc, char *argv[] )
 
    /* fill input time-series parameters */
    strncpy(goodInput.name,"Dummy test data",LALNameLength);
-   goodInput.sampleUnits  = dimensionless;
+   goodInput.sampleUnits  = lalDimensionlessUnit;
    goodInput.sampleUnits.unitNumerator[LALUnitIndexADCCount] = 1;
 
      /* fill input time-series data */
@@ -463,8 +461,9 @@ main( int argc, char *argv[] )
 
    /* zero-pad and FFT */
    LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, plan);
-   if ( code = CheckStatus( &status, 0 , "", CZEROPADANDFFTTESTC_EFLS,
-                            CZEROPADANDFFTTESTC_MSGEFLS) )
+   if ( ( code = CheckStatus( &status, 0 , "", 
+			    CZEROPADANDFFTTESTC_EFLS,
+			      CZEROPADANDFFTTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -521,14 +520,14 @@ main( int argc, char *argv[] )
    }
 
    /* check output units */
-   unitPair.unitOne = dimensionless;
+   unitPair.unitOne = lalDimensionlessUnit;
    unitPair.unitOne.unitNumerator[LALUnitIndexADCCount] = 1;
    unitPair.unitOne.unitNumerator[LALUnitIndexSecond] = 1;
    unitPair.unitTwo = goodOutput.sampleUnits;
    LALUnitCompare(&status, &result, &unitPair);
-   if ( code = CheckStatus(&status, 0 , "",
-                           CZEROPADANDFFTTESTC_EFLS,
-                           CZEROPADANDFFTTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus( &status, 0 , "", 
+			      CZEROPADANDFFTTESTC_EFLS,
+			      CZEROPADANDFFTTESTC_MSGEFLS ) ) )
    {
      return code;
    }
@@ -537,35 +536,35 @@ main( int argc, char *argv[] )
    {
      unitString = NULL;
      LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-     if ( code = CheckStatus(&status, 0 , "",
-                             CZEROPADANDFFTTESTC_EFLS,
-                             CZEROPADANDFFTTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       CZEROPADANDFFTTESTC_EFLS,
+			       CZEROPADANDFFTTESTC_MSGEFLS) ) )
      {
        return code;
      }
     
      LALUnitAsString( &status, unitString, &(unitPair.unitTwo) );
-     if ( code = CheckStatus(&status, 0 , "",
-                            CZEROPADANDFFTTESTC_EFLS,
-                            CZEROPADANDFFTTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       CZEROPADANDFFTTESTC_EFLS,
+			       CZEROPADANDFFTTESTC_MSGEFLS) ) )
      {
        return code;
      }
      printf( "Units are \"%s\", ", unitString->data );
      
      LALUnitAsString( &status, unitString, &(unitPair.unitOne) );
-     if ( code = CheckStatus(&status, 0 , "",
-                             CZEROPADANDFFTTESTC_EFLS,
-                             CZEROPADANDFFTTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       CZEROPADANDFFTTESTC_EFLS,
+			       CZEROPADANDFFTTESTC_MSGEFLS) ) )
      {
        return code;
      }
      printf( "should be \"%s\"\n", unitString->data );
      
      LALCHARDestroyVector(&status, &unitString);
-     if ( code = CheckStatus(&status, 0 , "",
-                             CZEROPADANDFFTTESTC_EFLS,
-                             CZEROPADANDFFTTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       CZEROPADANDFFTTESTC_EFLS,
+			       CZEROPADANDFFTTESTC_MSGEFLS) ) )
      {
        return code;
      }
@@ -613,20 +612,23 @@ main( int argc, char *argv[] )
   
    /* clean up valid data */
    LALCDestroyVector(&status, &goodInput.data);
-   if ( code = CheckStatus(&status, 0 , "", CZEROPADANDFFTTESTC_EFLS,
-                            CZEROPADANDFFTTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     CZEROPADANDFFTTESTC_EFLS,
+			     CZEROPADANDFFTTESTC_MSGEFLS) ) )
    {
      return code;
    }
    LALCDestroyVector(&status, &goodOutput.data);
-   if ( code = CheckStatus(&status, 0 , "", CZEROPADANDFFTTESTC_EFLS,
-                            CZEROPADANDFFTTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     CZEROPADANDFFTTESTC_EFLS,
+			     CZEROPADANDFFTTESTC_MSGEFLS) ) )
    {
      return code;
    }
    LALDestroyComplexFFTPlan(&status, &plan);
-   if ( code = CheckStatus(&status, 0 , "", CZEROPADANDFFTTESTC_EFLS,
-                            CZEROPADANDFFTTESTC_MSGEFLS) ) 
+   if ( ( code = CheckStatus(&status, 0 , "",
+			     CZEROPADANDFFTTESTC_EFLS,
+			     CZEROPADANDFFTTESTC_MSGEFLS) ) )
    {
      return code;
    }
@@ -641,8 +643,9 @@ main( int argc, char *argv[] )
      /* construct plan*/ 
      LALCreateForwardComplexFFTPlan(&status, &plan, 2*optLength - 1,
 				   optMeasurePlan);
-     if ( code = CheckStatus(&status, 0 , "", CZEROPADANDFFTTESTC_EFLS,
-			     CZEROPADANDFFTTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       CZEROPADANDFFTTESTC_EFLS,
+			       CZEROPADANDFFTTESTC_MSGEFLS) ) )
      {
        return code;
      }
@@ -651,30 +654,34 @@ main( int argc, char *argv[] )
      goodOutput.data = NULL;
 
      LALCCreateVector(&status, &goodInput.data, optLength);
-     if ( code = CheckStatus( &status, 0 , "", CZEROPADANDFFTTESTC_EUSE,
-                              CZEROPADANDFFTTESTC_MSGEUSE) ) 
+     if ( ( code = CheckStatus( &status, 0 , "",
+				CZEROPADANDFFTTESTC_EUSE,
+				CZEROPADANDFFTTESTC_MSGEUSE) ) )
      {
        return code;
      }
      LALCCreateVector(&status, &goodOutput.data,  2*optLength - 1);
-     if ( code = CheckStatus( &status, 0 , "", CZEROPADANDFFTTESTC_EUSE,
-                              CZEROPADANDFFTTESTC_MSGEUSE) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       CZEROPADANDFFTTESTC_EFLS,
+			       CZEROPADANDFFTTESTC_MSGEFLS) ) )
      {
        return code;
      }
 
      /* Read input file */
      LALCReadTimeSeries(&status, &goodInput, optInputFile);
-     if ( code = CheckStatus( &status, 0 , "", CZEROPADANDFFTTESTC_EUSE,
-                              CZEROPADANDFFTTESTC_MSGEUSE) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       CZEROPADANDFFTTESTC_EFLS,
+			       CZEROPADANDFFTTESTC_MSGEFLS) ) )
      {
        return code;
      }
      
      /* calculate zero-pad and FFT */
      LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, plan);
-     if ( code = CheckStatus( &status, 0 , "", CZEROPADANDFFTTESTC_EUSE,
-                              CZEROPADANDFFTTESTC_MSGEUSE) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       CZEROPADANDFFTTESTC_EFLS,
+			       CZEROPADANDFFTTESTC_MSGEFLS) ) )
      {
        return code;
      }
@@ -685,20 +692,23 @@ main( int argc, char *argv[] )
      
      /* clean up valid data */
      LALCDestroyVector(&status, &goodInput.data);
-     if ( code = CheckStatus( &status, 0 , "", CZEROPADANDFFTTESTC_EUSE,
-                              CZEROPADANDFFTTESTC_MSGEUSE) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       CZEROPADANDFFTTESTC_EFLS,
+			       CZEROPADANDFFTTESTC_MSGEFLS) ) )
      {
        return code;
      }
      LALCDestroyVector(&status, &goodOutput.data);
-     if ( code = CheckStatus( &status, 0 , "", CZEROPADANDFFTTESTC_EUSE,
-                              CZEROPADANDFFTTESTC_MSGEUSE) ) 
+     if ( ( code = CheckStatus(&status, 0 , "",
+			       CZEROPADANDFFTTESTC_EFLS,
+			       CZEROPADANDFFTTESTC_MSGEFLS) ) )
      {
        return code;
      }
      LALDestroyComplexFFTPlan(&status, &plan);
-     if ( code = CheckStatus(&status, 0 , "", CZEROPADANDFFTTESTC_EFLS,
-                             CZEROPADANDFFTTESTC_MSGEFLS) ) 
+     if ( ( code = CheckStatus(&status, 0 , "", 
+			       CZEROPADANDFFTTESTC_EFLS,
+			       CZEROPADANDFFTTESTC_MSGEFLS) ) )
      {
        return code;
      }

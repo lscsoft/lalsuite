@@ -339,17 +339,15 @@ LALStochasticOptimalFilter(
   REAL8      freq2;
   REAL4      exponent;
   REAL4      omegaRef;   
-  REAL8      realFactor;
-  REAL8      constant;     /* constants used to calculate lambda */
+  REAL8      realFactor;   /* constants used to calculate lambda */
   REAL8      lambdaInv;
   REAL8      f6; 
 
-  INT4       length;
+  UINT4       length;
   
   RAT4        power;
   LALUnitPair unitPair1, unitPair2, unitPair3;
   LALUnit     unit;
-  BOOLEAN     result;
 
   /* initialize status pointer */
   INITSTATUS(status, "LALStochasticOptimalFilter", STOCHASTICOPTIMALFILTERC);

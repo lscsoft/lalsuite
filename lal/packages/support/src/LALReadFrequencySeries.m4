@@ -1,23 +1,23 @@
-ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')')
-ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')')
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')
-ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
-define(`STYPE',`format(`%sFrequencySeries',TYPE)')
-define(`VTYPE',`format(`%sSequence',TYPE)')
-define(`FUNC',`format(`LAL%sReadFrequencySeries',TYPECODE)')
-define(`FMT',`"%g %i\n"')
-ifelse(TYPECODE,`Z',`define(`FMT',`"%lf\t%lf\t%lf\n"')')
-ifelse(TYPECODE,`C',`define(`FMT',`"%lf\t%f\t%f\n"')')
-ifelse(TYPECODE,`D',`define(`FMT',`"%lf\t%lf\n"')')
-ifelse(TYPECODE,`S',`define(`FMT',`"%lf\t%f\n"')')
-ifelse(TYPECODE,`',`define(`FMT',`"%lf\t%f\n"')')
-define(`ARG',`&data')
-define(`NARGS',`1')
-ifelse(TYPECODE,`Z',`define(`ARG',`&(data.re),&(data.im)')')
-ifelse(TYPECODE,`C',`define(`ARG',`&(data.re),&(data.im)')')
-ifelse(TYPECODE,`Z',`define(`NARGS',`2')')
-ifelse(TYPECODE,`C',`define(`NARGS',`2')')
+ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')') dnl
+ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')') dnl
+ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')') dnl
+ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')') dnl
+ifelse(TYPECODE,`',`define(`TYPE',`REAL4')') dnl
+define(`STYPE',`format(`%sFrequencySeries',TYPE)') dnl
+define(`VTYPE',`format(`%sSequence',TYPE)') dnl
+define(`FUNC',`format(`LAL%sReadFrequencySeries',TYPECODE)') dnl
+define(`FMT',`"%g %i\n"') dnl
+ifelse(TYPECODE,`Z',`define(`FMT',`"%lf\t%lf\t%lf\n"')') dnl
+ifelse(TYPECODE,`C',`define(`FMT',`"%lf\t%f\t%f\n"')') dnl
+ifelse(TYPECODE,`D',`define(`FMT',`"%lf\t%lf\n"')') dnl
+ifelse(TYPECODE,`S',`define(`FMT',`"%lf\t%f\n"')') dnl
+ifelse(TYPECODE,`',`define(`FMT',`"%lf\t%f\n"')') dnl
+define(`ARG',`&data') dnl
+define(`NARGS',`1') dnl
+ifelse(TYPECODE,`Z',`define(`ARG',`&(data.re),&(data.im)')') dnl
+ifelse(TYPECODE,`C',`define(`ARG',`&(data.re),&(data.im)')') dnl
+ifelse(TYPECODE,`Z',`define(`NARGS',`2')') dnl
+ifelse(TYPECODE,`C',`define(`NARGS',`2')') dnl
 /* Maybe for consistent allocation of memory we should include a
 companion function called element counter that will notify the calling
 routine of how large we should allocate the Series to be before
@@ -36,7 +36,6 @@ void FUNC ( LALStatus* status,
   TYPE			*outputPtr;
   FILE			*fp;
   CHAR			line[MaxLineLength];  /*holds data from each line*/
-  CHAR                  *cPtr;
   LALUnit		tempUnit;
   CHARVector            *string=NULL;
   

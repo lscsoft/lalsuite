@@ -85,17 +85,17 @@ static INT2 changeCharToNull (CHAR *string, CHAR target, CHAR *offEndOfString)
 }
 
 
-define(`TYPECODE',`Z')
+define(`TYPECODE',`Z') dnl
 include(`LALReadFrequencySeries.m4')
 
-define(`TYPECODE',`C')
+define(`TYPECODE',`C') dnl
 include(`LALReadFrequencySeries.m4')
 
-define(`TYPECODE',`D')
+define(`TYPECODE',`D') dnl
 include(`LALReadFrequencySeries.m4')
 
-define(`TYPECODE',`S')
+define(`TYPECODE',`S') dnl
 include(`LALReadFrequencySeries.m4')
 
-define(`TYPECODE',`')
+define(`TYPECODE',`') dnl
 include(`LALReadFrequencySeries.m4')

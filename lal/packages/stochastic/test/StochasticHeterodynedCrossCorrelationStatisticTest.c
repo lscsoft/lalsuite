@@ -217,14 +217,13 @@ int main( int argc, char *argv[] )
   LIGOTimeGPS              epoch2 = {630720000,987654321};
   LIGOTimeGPS              epoch3 = {630722222,123456789};
 
-  LALUnit                  dimensionless = { 0 };
   LALUnitPair              unitPair;
   BOOLEAN                  result;
 
   CHARVector               *unitString = NULL;
 
   UINT4 i;
-  REAL4 omega, f, x;
+  REAL4 f, x;
   INT4 code;
   
   ParseOptions( argc, argv );
@@ -245,27 +244,27 @@ int main( int argc, char *argv[] )
   
   LALCCreateVector(&status, &(goodData1.data),
                           STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_LENGTH);
-  if ( code = CheckStatus(&status, 0 , "",
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+  if ( ( code = CheckStatus(&status, 0 , "",
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
   {
     return code;
   }
 
   LALCCreateVector(&status, &(goodData2.data),
                           STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_LENGTH);
-  if ( code = CheckStatus(&status, 0 , "",
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+  if ( ( code = CheckStatus(&status, 0 , "",
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
   {
     return code;
   }
 
   LALCCreateVector(&status, &(goodFilter.data),
                           STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_LENGTH);
-  if ( code = CheckStatus(&status, 0 , "",
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+  if ( ( code = CheckStatus(&status, 0 , "",
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
   {
     return code;
   }
@@ -279,10 +278,10 @@ int main( int argc, char *argv[] )
   {
     /* test behavior for null pointer to output structure */
     LALStochasticHeterodynedCrossCorrelationStatistic(&status, NULL, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK)) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
       {
         return code;
       }
@@ -291,10 +290,10 @@ int main( int argc, char *argv[] )
     
     /* test behavior for null pointer to input structure */
     LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, NULL, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK)) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -304,10 +303,10 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to first data stream */
     input.hBarTildeOne = NULL;
     LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK)) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -320,10 +319,10 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to second data stream */
     input.hBarTildeTwo = NULL;
     LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK)) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -336,10 +335,10 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to optimal filter */
     input.optimalFilter = NULL;
     LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK)) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -352,10 +351,10 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to data member of first data stream */
     input.hBarTildeOne = &badData1;
     LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK)) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -368,10 +367,10 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to data member of second data stream */
     input.hBarTildeTwo = &badData2;
     LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK)) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -384,10 +383,10 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to data member of optimal filter */
     input.optimalFilter = &badFilter;
     LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK)) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -400,9 +399,9 @@ int main( int argc, char *argv[] )
     /* Create a vector for testing null data-data pointers */
     LALCCreateVector(&status, &(badFilter.data),
                           STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_LENGTH);
-    if ( code = CheckStatus(&status, 0 , "",
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
     {
       return code;
     }
@@ -413,10 +412,10 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to data member of data member of first data stream */
     input.hBarTildeOne = &badData1;
     LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK)) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -429,10 +428,10 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to data member of data member of second data stream */
     input.hBarTildeTwo = &badData2;
     LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK)) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -445,10 +444,10 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to data member of data member of optimal filter */
     input.optimalFilter = &badFilter;
     LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK)) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			      STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -462,9 +461,10 @@ int main( int argc, char *argv[] )
     
     badFilter.data->data = tempPtr;
     LALCDestroyVector(&status, &(badFilter.data));
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) {
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
+    {
       return code;
     }
     badData1.data = badData2.data = badFilter.data;
@@ -473,10 +473,10 @@ int main( int argc, char *argv[] )
     goodData1.data->length = goodData2.data->length 
       = goodFilter.data->length = 0;
     LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EZEROLEN,
-                            STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK)) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EZEROLEN,
+			      STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -490,10 +490,10 @@ int main( int argc, char *argv[] )
     goodData1.deltaF = goodData2.deltaF 
       = goodFilter.deltaF = -STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_DELTAF;
     LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
-                            STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
+			      STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -504,10 +504,10 @@ int main( int argc, char *argv[] )
     goodData1.deltaF = goodData2.deltaF 
       = goodFilter.deltaF = 0;
     LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
-                            STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) 
+    if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
+			      STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
     {
       return code;
     }
@@ -523,10 +523,10 @@ int main( int argc, char *argv[] )
   goodData1.f0 = goodData2.f0 
     = goodFilter.f0 = -20.0;
   LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-  if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
-                          STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) 
+  if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
+			    STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
   {
     return code;
   }
@@ -541,10 +541,10 @@ int main( int argc, char *argv[] )
      between optimal filter and first data stream */
   goodData1.data->length = STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_LENGTH - 1;
   LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-  if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
-                          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) 
+  if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
+			    STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
   {
     return code;
   }
@@ -558,10 +558,10 @@ int main( int argc, char *argv[] )
      between optimal filter and first data stream */
   goodData2.data->length = STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_LENGTH - 1;
   LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-  if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
-                          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) 
+  if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMLEN,
+			    STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
   {
     return code;
   }
@@ -575,10 +575,10 @@ int main( int argc, char *argv[] )
      between optimal filter and first data stream */
   goodData1.deltaF = STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_DELTAF * 2.0;
   LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-  if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
-                          STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) 
+  if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
+			    STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
   {
     return code;
   }
@@ -592,10 +592,10 @@ int main( int argc, char *argv[] )
      between optimal filter and second data stream */
   goodData2.deltaF = STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_DELTAF * 2.0;
   LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-  if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
-                          STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) 
+  if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
+			    STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
   {
     return code;
   }
@@ -609,10 +609,10 @@ int main( int argc, char *argv[] )
      between optimal filter and first data stream */
   goodData1.f0 = STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_F0 + 2.0;
   LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-  if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMFMIN,
-                          STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) 
+  if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMFMIN,
+			    STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
   {
     return code;
   }
@@ -626,10 +626,10 @@ int main( int argc, char *argv[] )
      between optimal filter and second data stream */
   goodData2.f0 = STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_F0 + 2.0;
   LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-  if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMFMIN,
-                          STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) 
+  if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMFMIN,
+			    STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
   {
     return code;
   }
@@ -642,19 +642,19 @@ int main( int argc, char *argv[] )
   /* test behavior for mismatch between epochs of data streams */
   goodData2.epoch = epoch2;
   LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-  if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMTIME,
-                          STOCHASTICCROSSCORRELATIONH_MSGEMMTIME,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) 
+  if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMTIME,
+			    STOCHASTICCROSSCORRELATIONH_MSGEMMTIME,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
   {
     return code;
   }
   goodData2.epoch = epoch3;
   LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-  if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMTIME,
-                          STOCHASTICCROSSCORRELATIONH_MSGEMMTIME,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) 
+  if ( ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_EMMTIME,
+			    STOCHASTICCROSSCORRELATIONH_MSGEMMTIME,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_ECHK,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGECHK) ) )
   {
     return code;
   }
@@ -665,11 +665,11 @@ int main( int argc, char *argv[] )
   goodData2.epoch = epoch1;
   
   /******************** Test Valid Data Case #1 ***********************/
-  goodData1.sampleUnits = dimensionless;
+  goodData1.sampleUnits = lalDimensionlessUnit;
   goodData1.sampleUnits.unitNumerator[LALUnitIndexStrain] = 1;
   goodData1.sampleUnits.unitNumerator[LALUnitIndexSecond] = 1;
   goodData2.sampleUnits = goodData1.sampleUnits;
-  goodFilter.sampleUnits = dimensionless;
+  goodFilter.sampleUnits = lalDimensionlessUnit;
   goodFilter.sampleUnits.unitNumerator[LALUnitIndexStrain] = -1;
 
   goodData1.f0 = goodData2.f0 = goodFilter.f0 
@@ -697,9 +697,9 @@ int main( int argc, char *argv[] )
   }
 
   LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-  if ( code = CheckStatus(&status, 0 , "",
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+  if ( ( code = CheckStatus(&status, 0 , "",
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
   {
     return code;
   }
@@ -729,9 +729,9 @@ int main( int argc, char *argv[] )
   unitPair.unitOne = goodData1.sampleUnits;
   unitPair.unitTwo = output.units;
   LALUnitCompare(&status, &result, &unitPair);
-  if ( code = CheckStatus(&status, 0 , "",
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+  if ( ( code = CheckStatus(&status, 0 , "",
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
   {
     return code;
   }
@@ -739,35 +739,35 @@ int main( int argc, char *argv[] )
   if (optVerbose) 
   {
     LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
     {
       return code;
     }
     
     LALUnitAsString( &status, unitString, &(unitPair.unitTwo) );
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
     {
       return code;
     }
     printf( "Units are \"%s\", ", unitString->data );
     
     LALUnitAsString( &status, unitString, &(unitPair.unitOne) );
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
     {
       return code;
     }
     printf( "should be \"%s\"\n", unitString->data );
     
     LALCHARDestroyVector(&status, &unitString);
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
     {
       return code;
     }
@@ -788,13 +788,13 @@ int main( int argc, char *argv[] )
 
   
   /********************** Test Valid Data Case #2 *****************/
-  goodData1.sampleUnits = dimensionless;
+  goodData1.sampleUnits = lalDimensionlessUnit;
   goodData1.sampleUnits.unitNumerator[LALUnitIndexStrain] = 1;
   goodData1.sampleUnits.unitNumerator[LALUnitIndexSecond] = 1;
-  goodData2.sampleUnits = dimensionless;
+  goodData2.sampleUnits = lalDimensionlessUnit;
   goodData2.sampleUnits.unitNumerator[LALUnitIndexADCCount] = 1;
   goodData2.sampleUnits.unitNumerator[LALUnitIndexSecond] = 1;
-  goodFilter.sampleUnits = dimensionless;
+  goodFilter.sampleUnits = lalDimensionlessUnit;
   goodFilter.sampleUnits.unitNumerator[LALUnitIndexStrain] = -1;
   goodFilter.sampleUnits.unitNumerator[LALUnitIndexADCCount] = -1;
 
@@ -821,9 +821,9 @@ int main( int argc, char *argv[] )
   }
   
   LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-  if ( code = CheckStatus(&status, 0 , "",
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+  if ( ( code = CheckStatus(&status, 0 , "",
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
   {
     return code;
   }
@@ -851,13 +851,13 @@ int main( int argc, char *argv[] )
   }
 
 
-  unitPair.unitOne = dimensionless;
+  unitPair.unitOne = lalDimensionlessUnit;
   unitPair.unitOne.unitNumerator[LALUnitIndexSecond] = 1;
   unitPair.unitTwo = output.units;
   LALUnitCompare(&status, &result, &unitPair);
-  if ( code = CheckStatus(&status, 0 , "",
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+  if ( ( code = CheckStatus(&status, 0 , "",
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
   {
     return code;
   }
@@ -865,35 +865,35 @@ int main( int argc, char *argv[] )
   if (optVerbose) 
   {
     LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
     {
       return code;
     }
     
     LALUnitAsString( &status, unitString, &(unitPair.unitTwo) );
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
     {
       return code;
     }
     printf( "Units are \"%s\", ", unitString->data );
     
     LALUnitAsString( &status, unitString, &(unitPair.unitOne) );
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
     {
       return code;
     }
     printf( "should be \"%s\"\n", unitString->data );
     
     LALCHARDestroyVector(&status, &unitString);
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
     {
       return code;
     }
@@ -915,25 +915,25 @@ int main( int argc, char *argv[] )
   
   /* clean up */
   LALCDestroyVector(&status, &(goodFilter.data));
-  if ( code = CheckStatus(&status, 0 , "",
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+  if ( ( code = CheckStatus(&status, 0 , "",
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
   {
     return code;
   }
 
   LALCDestroyVector(&status, &(goodData1.data));
-  if ( code = CheckStatus(&status, 0 , "",
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+  if ( ( code = CheckStatus(&status, 0 , "",
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
   {
     return code;
   }
   
   LALCDestroyVector(&status, &(goodData2.data));
-  if ( code = CheckStatus(&status, 0 , "",
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                          STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+  if ( ( code = CheckStatus(&status, 0 , "",
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			    STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
   {
     return code;
   }
@@ -946,76 +946,76 @@ int main( int argc, char *argv[] )
 
     /* Allocate Memory */
     LALCCreateVector(&status, &(goodFilter.data), optLength);
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EUSE,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEUSE) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EUSE,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEUSE) ) )
     {
       return code;
     }
     LALCCreateVector(&status, &(goodData1.data), optLength);
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EUSE,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEUSE) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EUSE,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEUSE) ) )
     {
       return code;
     }
     LALCCreateVector(&status, &(goodData2.data), optLength);
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EUSE,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEUSE) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EUSE,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEUSE) ) )
     {
       return code;
     }
     /* Read Data From Files */
     LALCReadFrequencySeries(&status, &(goodFilter), optFilterFile);
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EUSE,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEUSE) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EUSE,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEUSE) ) )
     {
       return code;
     }
     LALCReadFrequencySeries(&status, &(goodData1), optData1File);
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EUSE,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEUSE) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EUSE,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEUSE) ) )
     {
       return code;
     }
     LALCReadFrequencySeries(&status, &(goodData2), optData2File);
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EUSE,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEUSE) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EUSE,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEUSE) ) )
     {
       return code;
     }
     /* Calculate CC Statistic */
     LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EUSE,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEUSE) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EUSE,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEUSE) ) )
     {
       return code;
     }
 
     /* Convert Unit Structure to String */
     LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
     {
       return code;
     }
     
     LALUnitAsString( &status, unitString, &(output.units) );
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
     {
       return code;
     }
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
     {
       return code;
     }
@@ -1026,30 +1026,30 @@ int main( int argc, char *argv[] )
 
     /* Deallocate Memory */
     LALCHARDestroyVector(&status, &unitString);
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
     {
       return code;
     }
     LALCDestroyVector(&status, &(goodFilter.data));
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
     {
       return code;
     }
     LALCDestroyVector(&status, &(goodData1.data));
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
     {
       return code;
     }
     LALCDestroyVector(&status, &(goodData2.data));
-    if ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
-                            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) 
+    if ( ( code = CheckStatus(&status, 0 , "",
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EFLS,
+			      STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
     {
       return code;
     }
