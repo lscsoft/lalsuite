@@ -56,12 +56,14 @@ void modify_bytes(const char *filename, int byte_offset, const char *new_value, 
     exit(SFTENULLFP);
   }
   if (fseek(fp, byte_offset, SEEK_SET)) {
-    perror("Failed fseek()");
+    if (errno)
+      perror("Failed fseek()");
     fprintf(stderr,"Failed seek in file %s\n", filename);
     exit(SFTESEEK);
   }
   if (1 != fwrite((const void *)new_value, nbytes, 1, fp)) {
-    perror("Failed fwrite()");
+    if (errno)
+      perror("Failed fwrite()");
     fprintf(stderr,"Failed write to file %s\n", filename);
     exit(SFTESEEK);
   }
