@@ -395,45 +395,6 @@ getSearchSummaryTable(
 
 
 
-void
-LALCompareSnglInspiral(
-        LALStatus                *status,
-        SnglInspiralTable        *aPtr,
-        SnglInspiralTable        *bPtr,
-        SnglInspiralAccuracy     *params
-    )
-{
-    INT8 ta, tb;
-    REAL4 dm1, dm2;
-    REAL4 sigmaRatio;
-
-    INITSTATUS (status, "LALCompareSnglInspiral", EVENT_UTILSC);
-    ATTATCHSTATUSPTR (status);
-
-    params->match=0;
-
-    LALGPStoINT8( status->statusPtr, &ta, &(aPtr->end_time) );
-    LALGPStoINT8( status->statusPtr, &tb, &(bPtr->end_time) );
-
-    if( labs(ta-tb) < params->dtime ){
-
-        dm1 = fabsf( aPtr->mass1 - bPtr->mass1 );
-        dm2 = fabsf( aPtr->mass2 - bPtr->mass2 );
-
-        if ( dm1 < params->dm && dm2 < params->dm ){
-
-            sigmaRatio = sqrt(bPtr->sigmasq / aPtr->sigmasq);
-
-            if ( sigmaRatio * aPtr->snr -  bPtr->snr < params->dRhoPlus &&
-                    bPtr->snr - sigmaRatio * aPtr->snr < params->dRhoMinus ){
-                params->match = 1;
-            }
-        }
-    }
-
-    DETATCHSTATUSPTR (status);
-    RETURN (status);
-}
 
 
 

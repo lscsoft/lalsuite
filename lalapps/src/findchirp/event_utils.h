@@ -88,17 +88,6 @@ tagSearchSummaryIndex
 SearchSummaryIndex;
 
 typedef struct
-tagSnglInspiralAccuracy
-{
-    INT4  match;
-    REAL4 dRhoPlus;
-    REAL4 dRhoMinus;
-    INT8  dtime;
-    REAL4 dm;
-}
-SnglInspiralAccuracy;
-    
-typedef struct
 tagcandParams{
     char       name[256];
     char       injectfile[256];
