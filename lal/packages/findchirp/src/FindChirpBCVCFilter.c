@@ -2,7 +2,7 @@
  * 
  * File Name: FindChirpBCVCFilter.c
  *
- * Author: 
+ * Author: Thomas Cokelaer 
  * 
  * Revision: $Id$
  * 
@@ -81,13 +81,15 @@ LALFindChirpBCVCFilterSegment (
 
   
   /* for BCVC */
-  REAL4 alphaMax, thetab, thetav, temp, w, thetac, alpha2Store, alphaC2Store;
+  REAL4 alphaMax, thetab, thetav, temp, w, thetac, alpha2Store;
   REAL4 rhoConstraint = 0.0;
   REAL4 rhoUnconstraint = 0.0;
   REAL4 deltaTPower2by3 ;
   REAL4 deltaTPower1by6 ;
   REAL4 ThreeByFive = 3./5.;
   REAL4 FiveByThree = 5./3.;
+  REAL4 mchirp, eta,  SQRTNormA1, tanThetavTemp;
+
   INITSTATUS( status, "LALFindChirpBCVCFilter", FINDCHIRPBCVCFILTERC );
   ATTATCHSTATUSPTR( status );
 
@@ -340,7 +342,7 @@ LALFindChirpBCVCFilterSegment (
 
 
 
-#if 0 
+#if 1 
  { 
 
    FILE *K1File, *K2File, *K3File, *K4File, *V0File, *V1File,*V2File,
@@ -378,8 +380,7 @@ LALFindChirpBCVCFilterSegment (
    alphaFileE=fopen("alphaFileE.dat","w");
    omegaFileE=fopen("omegaFileE.dat","w");
    rhoFile=fopen("rhoFile.dat","w");
-   
-   
+  
    for ( j = 0; j < numPoints; ++j )
      {      
        REAL4 K1 = q[j].re ;
@@ -410,29 +411,22 @@ LALFindChirpBCVCFilterSegment (
        fprintf(V0File,"%e\n",V0);
        fprintf(V1File,"%e\n",V1);
        fprintf(V2File,"%e\n",V2);
-       
        fprintf(omegaFile,"%e\n",thetav);
        
        fprintf(alphaFile,"%e\n", -(b2 * tan(thetav))
 	       / (a1 + b1* tan(thetav))*pow(params->deltaT*fFinal, 2.0/3.0));
-       
        omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
        
        fprintf(phaseFileE,"%e\n",0.5 * InvTan1 - 0.5 * InvTan2);
-
        fprintf(phaseFile,"%e\n",0.5 * InvTan1 - 0.5 * InvTan2);
-
-
        fprintf(omegaFileE,"%e\n",omega);
-       
-       
        fprintf(alphaFileE,"%e\n", (- b2 * tan(omega) 
 				   / ( a1 + b1 * tan(omega)))
 	       *pow(params->deltaT*fFinal, 2.0/3.0) );
        
        
        fprintf(rho1File,"%e\n",sqrt(modqsq*norm));
-       fprintf(rho2File,"%e\n",sqrt((V0 + V1)/2.*norm));
+       fprintf(rho2File,"%e\n",sqrt(.5*(V0 + V1)*norm));
        fprintf(rho3File,"%e\n",sqrt((V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.*norm));
        
        
@@ -440,14 +434,11 @@ LALFindChirpBCVCFilterSegment (
 	fprintf(rhoFile,"%e\n",sqrt(norm*modqsq));	
       }
       else if ((0 <= thetav && thetav < thetac)){
-	
-	fprintf(rhoFile, "%e\n", sqrt((V0 + V1)/2.*norm));	  
+	fprintf(rhoFile, "%e\n", sqrt(.5 * (V0 + V1) * norm));	  
 	
       }
       else if( (-LAL_PI_2-1e-6 < thetav && thetav<=-thetab  )||(thetac <= thetav && thetav< LAL_PI_2+1e-6)){
-	
 	fprintf(rhoFile,"%e\n",sqrt(norm*(V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.));
-	
       }
       else 
 	{
@@ -480,7 +471,13 @@ LALFindChirpBCVCFilterSegment (
  }
 #endif
 
-
+  mchirp = (1.0 / LAL_MTSUN_SI) * LAL_1_PI *
+    pow( 3.0 / 128.0 / psi0 , ThreeByFive );
+  m =  fabs(psi3) / 
+    (16.0 * LAL_MTSUN_SI * LAL_PI * LAL_PI * psi0) ;
+  eta = 3.0 / (128.0*psi0 * 
+	       pow( (m*LAL_MTSUN_SI*LAL_PI), FiveByThree) );
+  SQRTNormA1 = sqrt(norm/ a1);
 
 
 
@@ -521,28 +518,26 @@ LALFindChirpBCVCFilterSegment (
 	-  qBCVC[j].re * qBCVC[j].re;
       
       REAL4 V2 =  2 * ( q[j].re * qBCVC[j].re + qBCVC [j].im * q[j].im); 
+
       REAL4 rhoUnconstraint = .5*( V0 + sqrt(V1*V1 + V2*V2));
 
 
       /* <-- That piece of code is the constraint BCV code */
       thetav = 0.5 * atan2(V2,V1);
-      /* In the future, we can get rid of that since it concerns only the unconstraint code*/
-      alpha2Store  =     - b2 * tan(thetav)  / ( a1 + b1 * tan(thetav) );
+     
       
+      /**/
       if (-thetab < thetav && thetav < 0){	  
   	rhoConstraint = rhoUnconstraint;
   	w = thetav;
-	/*alphaC2Store =  - b2 * tan(thetav)  / ( a1 + b1 * tan(thetav) );*/
       }
       else if (0 <= thetav && thetav < thetac){
 	rhoConstraint = 0.5 * (V0 + V1);	  
   	w = 0.;	
-/*	alphaC2Store  = 0.;*/
       }
       else if( (-LAL_PI_2-1e-6 < thetav && thetav<=-thetab )||(thetac <= thetav && thetav< LAL_PI_2+1e-6)){
   	rhoConstraint = 0.5 * (V0 + V1*cos(thetab * 2) + V2*sin( 2 * thetab));
   	w = -thetab; 
-/*	alphaC2Store =  - b2 * tan(-thetab)  / ( a1 + b1 * tan(-thetab) );*/
       }
       else 
 	{
@@ -555,139 +550,130 @@ LALFindChirpBCVCFilterSegment (
 	 unconstraint snr now. */
       
       if ( rhoConstraint > modqsqThresh )                  
-	if ( ! *eventList )
-        {
-          /* store the start of the crossing */
-          eventStartIdx = j;
+	{
+	  /* a buffer varaible to avoid to call the function tan 
+	     twice in the alpha computation. */
+	  tanThetavTemp = tan(thetav);
+	  /* alpha computation needed*/
+	  alpha2Store  =     - b2 * tanThetavTemp  / ( a1 + b1 * tanThetavTemp );
 	  
-          /* if this is the first event, start the list */
-          thisEvent = *eventList = (SnglInspiralTable *)
-            LALCalloc( 1, sizeof(SnglInspiralTable) );
-          if ( ! thisEvent )
-          {
-            ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-          }
 
-          /* record the data that we need for the clustering algorithm */
-          thisEvent->end_time.gpsSeconds = j;
-          thisEvent->snr   = rhoConstraint;
-/*	  thisEvent->tau5  = alpha2Store * deltaTPower2by3;*/
-	  thisEvent->tau4  = rhoUnconstraint;
-	  thisEvent->alpha = alpha2Store * deltaTPower2by3; 
-        }
-        else if ( ! params->clusterMethod == noClustering &&
-		  j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
-		  rhoConstraint > thisEvent->snr )
-	  {
-	    /* if this is the same event, update the maximum */
-	    thisEvent->end_time.gpsSeconds = j;
-	    thisEvent->snr = rhoConstraint;
-/*	    thisEvent->tau5 = alpha2Store * deltaTPower2by3;*/
-	    thisEvent->tau4 = rhoUnconstraint;
-	    thisEvent->alpha = alpha2Store * deltaTPower2by3; 
-	  }
-      else if (j > thisEvent->end_time.gpsSeconds + deltaEventIndex ||
-	       params->clusterMethod == noClustering )
-        {
-          /* clean up this event */
-          SnglInspiralTable *lastEvent;
-          INT8               timeNS;
-          INT4               timeIndex = thisEvent->end_time.gpsSeconds;
-	  
-          /* set the event LIGO GPS time of the event */
-          timeNS = 1000000000L *
-            (INT8) (input->segment->data->epoch.gpsSeconds);
-          timeNS += (INT8) (input->segment->data->epoch.gpsNanoSeconds);
-          timeNS += (INT8) (1e9 * timeIndex * deltaT);
-          thisEvent->end_time.gpsSeconds = (INT4) (timeNS/1000000000L);
-          thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
-          LALGPStoGMST1( status->statusPtr, &(thisEvent->end_time_gmst),
-              &(thisEvent->end_time), &gmstUnits );
-          CHECKSTATUSPTR( status );
-
-          /* set the impuse time for the event */
-          thisEvent->template_duration = (REAL8) chirpTime;
-
-          /* record the ifo and channel name for the event */
-          strncpy( thisEvent->ifo, input->segment->data->name,
-              2 * sizeof(CHAR) );
-          strncpy( thisEvent->channel, input->segment->data->name + 3,
-              (LALNameLength - 3) * sizeof(CHAR) );
-          thisEvent->impulse_time = thisEvent->end_time;
-
-
-	  /* I have decided to not keep the coa phase for the time being since
-	   it uses two atan2 and is not used.*/
-	  /*  
-	  Num1 = qBCVC[timeIndex].re + q[timeIndex].im ;
-          Num2 = qBCVC[timeIndex].re - q[timeIndex].im ;
-          Den1 = q[timeIndex].re - qBCVC[timeIndex].im ;
-          Den2 = q[timeIndex].re + qBCVC[timeIndex].im ;
-
-          InvTan1 = (REAL4) atan2(Num1, Den1);
-          InvTan2 = (REAL4) atan2(Num2, Den2);
-
-          thisEvent->coa_phase = 0.5 * InvTan1 - 0.5 * InvTan2 ;
-	  */
-
-          /* copy the template into the event */
-          thisEvent->psi0   = (REAL4) input->fcTmplt->tmplt.psi0; 
-          thisEvent->psi3   = (REAL4) input->fcTmplt->tmplt.psi3;
-	  
-          /* chirp mass in units of M_sun */
-          thisEvent->mchirp = (1.0 / LAL_MTSUN_SI) * LAL_1_PI *
-            pow( 3.0 / 128.0 / input->fcTmplt->tmplt.psi0 , ThreeByFive );
-          m =  fabs(thisEvent->psi3) / 
-            (16.0 * LAL_MTSUN_SI * LAL_PI * LAL_PI * thisEvent->psi0) ;
-          thisEvent->eta = 3.0 / (128.0*thisEvent->psi0 * 
-              pow( (m*LAL_MTSUN_SI*LAL_PI), FiveByThree) );
-          thisEvent->f_final  = (REAL4) input->fcTmplt->tmplt.fFinal ;
-
-          /* set the type of the template used in the analysis */
-          LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-              "BCVC" );
-	  
-	  thisEvent->chisq     = 0;
-	  thisEvent->chisq_dof = 0;
-          
-          thisEvent->sigmasq = sqrt( norm / a1 );
-          thisEvent->eff_distance =
-            input->fcTmplt->tmpltNorm / norm / thisEvent->snr;
-          thisEvent->eff_distance = sqrt( thisEvent->eff_distance ) / deltaTPower1by6;
-
-          thisEvent->snr *= norm;      
-          thisEvent->snr = sqrt( thisEvent->snr );
-
-          thisEvent->tau4 *= norm;      
-          thisEvent->tau4 *= sqrt(thisEvent->tau4);      
-          /* compute the time since the snr crossing */
-          thisEvent->event_duration =  (REAL8) timeIndex - (REAL8) eventStartIdx;
-          thisEvent->event_duration *= (REAL8) deltaT;
-
-          /* store the start of the crossing */
-          eventStartIdx = j;
-
-          /* allocate memory for the newEvent */
-          lastEvent = thisEvent;
-
-          lastEvent->next = thisEvent = (SnglInspiralTable *)
-            LALCalloc( 1, sizeof(SnglInspiralTable) );
-          if ( ! lastEvent->next )
-          {
-            ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-          }
-
-          /* stick minimal data into the event */
-          thisEvent->end_time.gpsSeconds = j;
-          thisEvent->snr = rhoConstraint;
-/*	  thisEvent->tau5  = alpha2Store * deltaTPower2by3;*/
-	  thisEvent->tau4 = rhoUnconstraint;
-	  thisEvent->alpha = alpha2Store  * deltaTPower2by3; 
-        }
-  }
+	  if ( ! *eventList )
+	    {
+	      /* store the start of the crossing */
+	      eventStartIdx = j;
+	      
+	      
+	      /* if this is the first event, start the list */
+	      thisEvent = *eventList = (SnglInspiralTable *)
+		LALCalloc( 1, sizeof(SnglInspiralTable) );
+	      if ( ! thisEvent )
+		{
+		  ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+		}
+	      
+	      /* record the data that we need for the clustering algorithm */
+	      thisEvent->end_time.gpsSeconds = j;
+	      thisEvent->snr   = rhoConstraint;
+	      thisEvent->tau4  = rhoUnconstraint;
+	      thisEvent->alpha = alpha2Store * deltaTPower2by3; 
+	    }
+	  else if ( ! params->clusterMethod == noClustering &&
+		    j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
+		    rhoConstraint > thisEvent->snr )
+	    {
+	      /* if this is the same event, update the maximum */
+	      thisEvent->end_time.gpsSeconds = j;
+	      thisEvent->snr = rhoConstraint;
+	      thisEvent->tau4 = rhoUnconstraint;
+	      thisEvent->alpha = alpha2Store * deltaTPower2by3; 
+	    }
+	  else if (j > thisEvent->end_time.gpsSeconds + deltaEventIndex ||
+		   params->clusterMethod == noClustering )
+	    {
+	      /* clean up this event */
+	      SnglInspiralTable *lastEvent;
+	      INT8               timeNS;
+	      INT4               timeIndex = thisEvent->end_time.gpsSeconds;
+	      
+	      /* set the event LIGO GPS time of the event */
+	      timeNS = 1000000000L *
+		(INT8) (input->segment->data->epoch.gpsSeconds);
+	      timeNS += (INT8) (input->segment->data->epoch.gpsNanoSeconds);
+	      timeNS += (INT8) (1e9 * timeIndex * deltaT);
+	      thisEvent->end_time.gpsSeconds = (INT4) (timeNS/1000000000L);
+	      thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
+	      LALGPStoGMST1( status->statusPtr, &(thisEvent->end_time_gmst),
+			     &(thisEvent->end_time), &gmstUnits );
+	      CHECKSTATUSPTR( status );
+	      
+	      /* set the impuse time for the event */
+	      thisEvent->template_duration = (REAL8) chirpTime;
+	      
+	      /* record the ifo and channel name for the event */
+	      strncpy( thisEvent->ifo, input->segment->data->name,
+		       2 * sizeof(CHAR) );
+	      strncpy( thisEvent->channel, input->segment->data->name + 3,
+		       (LALNameLength - 3) * sizeof(CHAR) );
+	      thisEvent->impulse_time = thisEvent->end_time;
+	      
+	      
+	      /* I do not store the coa phase */
+	      
+	      /* copy the template into the event */
+	      thisEvent->psi0   = (REAL4) input->fcTmplt->tmplt.psi0; 
+	      thisEvent->psi3   = (REAL4) input->fcTmplt->tmplt.psi3;
+	      
+	      /* chirp mass in units of M_sun */
+	      thisEvent->mchirp   = mchirp;
+	      thisEvent->eta      = eta;
+	      thisEvent->f_final  = (REAL4) input->fcTmplt->tmplt.fFinal ;
+	      
+	      /* set the type of the template used in the analysis */
+	      LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+			   "BCVC" );
+	      
+	      thisEvent->chisq     = 0;
+	      thisEvent->chisq_dof = 0;
+	      
+	      thisEvent->sigmasq = SQRTNormA1;
+	      thisEvent->eff_distance =
+		input->fcTmplt->tmpltNorm / norm / thisEvent->snr;
+	      thisEvent->eff_distance = sqrt( thisEvent->eff_distance ) / deltaTPower1by6;
+	      
+	      thisEvent->snr *= norm;      
+	      thisEvent->snr = sqrt( thisEvent->snr );
+	      
+	      thisEvent->tau4 *= norm;      
+	      thisEvent->tau4 *= sqrt(thisEvent->tau4);      
+	      /* compute the time since the snr crossing */
+	      thisEvent->event_duration =  (REAL8) timeIndex - (REAL8) eventStartIdx;
+	      thisEvent->event_duration *= (REAL8) deltaT;
+	      
+	      /* store the start of the crossing */
+	      eventStartIdx = j;
+	      
+	      /* allocate memory for the newEvent */
+	      lastEvent = thisEvent;
+	      
+	      lastEvent->next = thisEvent = (SnglInspiralTable *)
+		LALCalloc( 1, sizeof(SnglInspiralTable) );
+	      if ( ! lastEvent->next )
+		{
+		  ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+		}
+	      
+	      /* stick minimal data into the event */
+	      thisEvent->end_time.gpsSeconds = j;
+	      thisEvent->snr = rhoConstraint;
+	      thisEvent->tau4 = rhoUnconstraint;
+	      thisEvent->alpha = alpha2Store  * deltaTPower2by3; 
+	    }
+	}
+    }
   
 
-
+  
   /* 
    *
    * clean up the last event if there is one
@@ -696,91 +682,83 @@ LALFindChirpBCVCFilterSegment (
 
 
   if ( thisEvent )
-  {
-    INT8           timeNS;
-    INT4           timeIndex = thisEvent->end_time.gpsSeconds;
-
-    /* set the event LIGO GPS time of the event */
-    timeNS = 1000000000L *
-      (INT8) (input->segment->data->epoch.gpsSeconds);
-    timeNS += (INT8) (input->segment->data->epoch.gpsNanoSeconds);
-    timeNS += (INT8) (1e9 * timeIndex * deltaT);
-    thisEvent->end_time.gpsSeconds = (INT4) (timeNS/1000000000L);
-    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
-    LALGPStoGMST1( status->statusPtr, &(thisEvent->end_time_gmst),
-        &(thisEvent->end_time), &gmstUnits );
-    CHECKSTATUSPTR( status );
-
-    /* set the impuse time for the event */
-    thisEvent->template_duration = (REAL8) chirpTime; 
-
-    /* record the ifo name for the event */
-    strncpy( thisEvent->ifo, input->segment->data->name,
-        2 * sizeof(CHAR) );
-    strncpy( thisEvent->channel, input->segment->data->name + 3,
-        (LALNameLength - 3) * sizeof(CHAR) );
-    thisEvent->impulse_time = thisEvent->end_time;
-
-    /* record coalescence phase and alpha */
-
-    /* calculate the numerators and the denominators */
-    /*    
-    Num1 = qBCVC[timeIndex].re + q[timeIndex].im ;
-    Num2 = qBCVC[timeIndex].re - q[timeIndex].im ;
-    Den1 = q[timeIndex].re - qBCVC[timeIndex].im ;
-    Den2 = q[timeIndex].re + qBCVC[timeIndex].im ;
-    
-    InvTan1 = (REAL4) atan2(Num1, Den1);
-    InvTan2 = (REAL4) atan2(Num2, Den2 );
-    
-    thisEvent->coa_phase = 0.5 * InvTan1 - 0.5 * InvTan2 ;
-    */
-
-    
-
-    /*thisEvent->tau5  = alpha2Store * deltaTPower2by3;*/
-    thisEvent->alpha = alpha2Store  * deltaTPower2by3; 
-    
-    /* copy the template into the event */
-    thisEvent->psi0   = (REAL4) input->fcTmplt->tmplt.psi0;   
-    thisEvent->psi3   = (REAL4) input->fcTmplt->tmplt.psi3;  
-    /* chirp mass in units of M_sun */
-    thisEvent->mchirp = (1.0 / LAL_MTSUN_SI) * LAL_1_PI *
-      pow( 3.0 / 128.0 / input->fcTmplt->tmplt.psi0, ThreeByFive);
-    thisEvent->f_final  = (REAL4) input->fcTmplt->tmplt.fFinal;
-    m =  fabs(thisEvent->psi3) /
-          (16.0 * LAL_MTSUN_SI * LAL_PI * LAL_PI * thisEvent->psi0) ;
-    thisEvent->eta = 3.0 / (128.0*thisEvent->psi0 *
-          pow( (m*LAL_MTSUN_SI*LAL_PI), FiveByThree) );
+    {
+      INT8           timeNS;
+      INT4           timeIndex = thisEvent->end_time.gpsSeconds;
+      
+      /* set the event LIGO GPS time of the event */
+      timeNS = 1000000000L *
+	(INT8) (input->segment->data->epoch.gpsSeconds);
+      timeNS += (INT8) (input->segment->data->epoch.gpsNanoSeconds);
+      timeNS += (INT8) (1e9 * timeIndex * deltaT);
+      thisEvent->end_time.gpsSeconds = (INT4) (timeNS/1000000000L);
+      thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
+      LALGPStoGMST1( status->statusPtr, &(thisEvent->end_time_gmst),
+		     &(thisEvent->end_time), &gmstUnits );
+      CHECKSTATUSPTR( status );
+      
+      /* set the impuse time for the event */
+      thisEvent->template_duration = (REAL8) chirpTime; 
+      
+      /* record the ifo name for the event */
+      strncpy( thisEvent->ifo, input->segment->data->name,
+	       2 * sizeof(CHAR) );
+      strncpy( thisEvent->channel, input->segment->data->name + 3,
+	       (LALNameLength - 3) * sizeof(CHAR) );
+      thisEvent->impulse_time = thisEvent->end_time;
+      
+      /* record coalescence phase and alpha */
+      
+      Num1 = qBCVC[timeIndex].re + q[timeIndex].im ;
+      Num2 = qBCVC[timeIndex].re - q[timeIndex].im ;
+      Den1 = q[timeIndex].re - qBCVC[timeIndex].im ;
+      Den2 = q[timeIndex].re + qBCVC[timeIndex].im ;
+      
+      InvTan1 = (REAL4) atan2(Num1, Den1);
+      InvTan2 = (REAL4) atan2(Num2, Den2 );
+      
+      omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
+      thisEvent->alpha = - b2 * tan(omega) 
+	/ ( a1 + b1 * tan(omega) );
+      thisEvent->alpha *= deltaTPower2by3; 
+      
+      
+      /* copy the template into the event */
+      thisEvent->psi0   = (REAL4) input->fcTmplt->tmplt.psi0;   
+      thisEvent->psi3   = (REAL4) input->fcTmplt->tmplt.psi3;  
+      /* chirp mass in units of M_sun */
+      thisEvent->mchirp = mchirp;
+      thisEvent->f_final  = (REAL4) input->fcTmplt->tmplt.fFinal;
+      thisEvent->eta = eta;
+      
 
 
-
-    /* set the type of the template used in the analysis */
-    LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-        "BCVC" );
-
-
-    thisEvent->chisq     = 0;
-    thisEvent->chisq_dof = 0;
-
-    thisEvent->sigmasq = sqrt( norm / a1 );
-    thisEvent->eff_distance = input->fcTmplt->tmpltNorm / norm /
-      thisEvent->snr;
-    thisEvent->eff_distance = sqrt( thisEvent->eff_distance ) /  deltaTPower1by6;
-
-    thisEvent->snr *=  norm ;   
-    thisEvent->snr = sqrt( thisEvent->snr );
-    
-    thisEvent->tau4 *= norm;      
-    thisEvent->tau4 *= sqrt(thisEvent->tau4);      
- 
-    /* compute the time since the snr crossing */
-    thisEvent->event_duration = (REAL8) timeIndex - (REAL8) eventStartIdx;
-    thisEvent->event_duration *= (REAL8) deltaT;
-
-  }
-
-
+      /* set the type of the template used in the analysis */
+      LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+		   "BCVC" );
+      
+      
+      thisEvent->chisq     = 0;
+      thisEvent->chisq_dof = 0;
+      
+      thisEvent->sigmasq = SQRTNormA1;
+      thisEvent->eff_distance = input->fcTmplt->tmpltNorm / norm /
+	thisEvent->snr;
+      thisEvent->eff_distance = sqrt( thisEvent->eff_distance ) /  deltaTPower1by6;
+      
+      thisEvent->snr *=  norm ;   
+      thisEvent->snr = sqrt( thisEvent->snr );
+      
+      thisEvent->tau4 *= norm;      
+      thisEvent->tau4 *= sqrt(thisEvent->tau4);      
+      
+      /* compute the time since the snr crossing */
+      thisEvent->event_duration = (REAL8) timeIndex - (REAL8) eventStartIdx;
+      thisEvent->event_duration *= (REAL8) deltaT;
+      
+    }
+  
+  
   /* normal exit */
   DETATCHSTATUSPTR( status );
   RETURN( status );
