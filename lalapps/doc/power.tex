@@ -792,6 +792,8 @@ Jolien Creighton, Patrick Brady, Duncan Brown
 [\verb$--max-amplitude$ \textsc{max amp}]
 [\verb$--min-snr$ \textsc{min snr}]
 [\verb$--max-snr$ \textsc{max snr}]
+[\verb$--min-start-time$ \textsc{min start time}]
+[\verb$--max-start-time$ \textsc{max start time}]
 [\verb$--verbose$]
 
 \item[Description] 
@@ -813,45 +815,51 @@ in triggers from those xml files which are listed in file.txt
 \verb$lalapps_bread$ writes all the triggers out in one single xml file, specified by filename.  The (old) option \texttt{--outfile} can also be used.
 
 \item[\texttt{--max-confidence} \textsc{maximum conf}]
-Optional. Reads in only the triggers with confidence less than the value specified by maximum conf
+Optional. Outputs only the triggers with a confidence less than or equal to the given value.
 
 \item[\texttt{--noplayground}]
-Optional. By default only triggers lying inside the playground are read. If this option is 
-specified then all the triggers will be read. 
+Optional. By default only triggers lying inside the playground are output. If this option is 
+specified then all the triggers will be output. 
 
 \item[\texttt{--sort}]
 Not properly implemented yet. Now the triggers are always sorted in time before being written
 out.
 
-\item[\texttt{--min-duration} \textsc{min dur}]
-Optional. Reads in only the triggers with duration more than the duration specified by min dur
+\item[\texttt{--min-duration} \textsc{duration}]
+Optional. Outputs only the triggers with a duration greater than or equal to the value specified.
 
-\item[\texttt{--min-duration} \textsc{max dur}]
-Optional. Reads in only the triggers with duration less than the duration specified by max dur
+\item[\texttt{--max-duration} \textsc{duration}]
+Optional. Outputs only the triggers with a durations less than or equal to the value specified.
 
-\item[\texttt{--min-centralfreq} \textsc{min centralfreq}]
-Optional. Reads in only the triggers with central freq above the frequency specified by min centralfreq
+\item[\texttt{--min-centralfreq} \textsc{frequency}]
+Optional. Outputs only the triggers with a central frequency greater than or equal to the value specified.
 
-\item[\texttt{--max-centralfreq} \textsc{max centralfreq}]
-Optional. Reads in only the triggers with central freq below the frequency specified by max centralfreq
+\item[\texttt{--max-centralfreq} \textsc{frequency}]
+Optional. Outputs only the triggers with a central frequency less than or equal to the value specified.
 
-\item[\texttt{--min-bandwidth} \textsc{min bandwidth}]
-Optional. Reads in only the triggers with bandwidth more than the bandwidth specified by min bandwidth.
+\item[\texttt{--min-bandwidth} \textsc{bandwidth}]
+Optional. Outputs only the triggers with a bandwidth greater than or equal to the value specified.
 
-\item[\texttt{--max-bandwidth} \textsc{max bandwidth}]
-Optional. Reads in only the triggers with bandwidth less than the bandwidth specified by max bandwidth.
+\item[\texttt{--max-bandwidth} \textsc{bandwidth}]
+Optional. Outputs only the triggers with a bandwidth less than or equal to the value specified.
 
-\item[\texttt{--min-amplitude} \textsc{min amplitude}]
-Optional. Reads in only the triggers with amplitude more than the amplitude specified by min amplitude.
+\item[\texttt{--min-amplitude} \textsc{amplitude}]
+Optional. Outputs only the triggers with an amplitude greater than or equal to the value specified.
 
-\item[\texttt{--max-amplitude} \textsc{max amplitude}]
-Optional. Reads in only the triggers with amplitude less than the amplitude specified by max amplitude.
+\item[\texttt{--max-amplitude} \textsc{amplitude}]
+Optional. Outputs only the triggers with an amplitude less than or equal to the value specified.
 
-\item[\texttt{--min-snr} \textsc{min snr}]
-Optional. Reads in only the triggers with snr more than the snr specified by min snr.
+\item[\texttt{--min-snr} \textsc{snr}]
+Optional. Outputs only the triggers with a SNR greater than or equal to the value specified.
 
-\item[\texttt{--max-snr} \textsc{max snr}]
-Optional. Reads in only the triggers with snr less than the snr specified by max snr.
+\item[\texttt{--max-snr} \textsc{snr}]
+Optional. Outputs only the triggers with a SNR less than or equal to the value specified.
+
+\item[\texttt{--min-start-time} \textsc{time}]
+Optional. Outputs only the triggers with a start time later than or equal to the time specified.
+
+\item[\texttt{--max-start-time} \textsc{time}]
+Optional. Outputs only the triggers with a start time earlier than or equal to the time specified.
 
 \item[\texttt{--verbose}]
 Optional. Prints out detailed message as the program runs including the total no. of triggers.
@@ -860,7 +868,7 @@ Optional. Prints out detailed message as the program runs including the total no
 
 \item[Example]
 \begin{verbatim}
-lalapps_bread --input H1.txt --outfile H1.xml --max-confidence -50 --verbose
+lalapps_bread --input H1.txt --output H1.xml --max-confidence -50 --verbose
 \end{verbatim}
 
 \item[Author] 

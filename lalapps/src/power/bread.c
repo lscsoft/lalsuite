@@ -16,12 +16,12 @@ RCSID("$Id$");
 #define MAXSTR 2048
 
 /* Usage format string. */
-#define USAGE "Usage: %s --input filename --output filename \
-    [--max-confidence maximum conf] [--noplayground] [--sort] [--min-duration min dur] \
-    [--max-duration max dur] [--min-centralfreq min central_freq] \
-    [--max-centralfreq max central_freq] [--max-bandwidth max bw] \
-    [--min-bandwidth min bw] [--min-amplitude min amp] [--max-amplitude max amp] \
-    [--min-snr min snr] [--max-snr max snr] [--help]\n"
+#define USAGE "Usage: %s --input filename --output filename " \
+	"[--max-confidence maximum conf] [--noplayground] [--sort] [--min-duration min dur] " \
+	"[--max-duration max dur] [--min-centralfreq min central_freq] " \
+	"[--max-centralfreq max central_freq] [--max-bandwidth max bw] " \
+	"[--min-bandwidth min bw] [--min-amplitude min amp] [--max-amplitude max amp] " \
+	"[--min-snr min snr] [--max-snr max snr] [--min-start-time time] [--max-start-time time] [--help]\n"
 
 #define SNGLBURSTREADER_EARG   1
 #define SNGLBURSTREADER_EROW   2
@@ -172,7 +172,9 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 		{"min-snr",         required_argument,  NULL,  'l'},
 		{"max-snr",         required_argument,  NULL,  'm'},
 		{"trig-start-time", required_argument,  NULL,  'q'},
+		{"min-start-time",  required_argument,  NULL,  'q'},
 		{"trig-stop-time",  required_argument,  NULL,  'r'},
+		{"max-start-time",  required_argument,  NULL,  'r'},
 		{"playground",      no_argument,        &options->playground, TRUE},
 		{"noplayground",    no_argument,        &options->noplayground, TRUE},
 		{"help",            no_argument,        NULL,  'o'}, 
@@ -390,51 +392,51 @@ static int isPlayground(INT4 gpsStart, INT4 gpsEnd)
 static BOOLEAN keep_this_event(SnglBurstTable *event, struct options_t options)
 {
 	/* check if in after specified time window */
-	if( options.trigStartTimeFlag && !(event->start_time.gpsSeconds > options.trigStartTime) )
+	if( options.trigStartTimeFlag && !(event->start_time.gpsSeconds >= options.trigStartTime) )
 		return(FALSE);
 
 	/* check if in before specified end time */
-	if( options.trigStopTimeFlag && !(event->start_time.gpsSeconds < options.trigStopTime) )
+	if( options.trigStopTimeFlag && !(event->start_time.gpsSeconds <= options.trigStopTime) )
 		return(FALSE);
 
 	/* check the confidence */
-	if( options.maxConfidenceFlag && !(event->confidence < options.maxConfidence) )
+	if( options.maxConfidenceFlag && !(event->confidence <= options.maxConfidence) )
 		return(FALSE);
 
 	/* check min duration */
-	if( options.minDurationFlag && !(event->duration > options.minDuration) )
+	if( options.minDurationFlag && !(event->duration >= options.minDuration) )
 		return(FALSE);
 
 	/* check max duration */
-	if( options.maxDurationFlag && !(event->duration < options.maxDuration) )
+	if( options.maxDurationFlag && !(event->duration <= options.maxDuration) )
 		return(FALSE);
 
 	/* check min centralfreq */
-	if( options.minCentralfreqFlag && !(event->central_freq > options.minCentralfreq) )
+	if( options.minCentralfreqFlag && !(event->central_freq >= options.minCentralfreq) )
 		return(FALSE);
 
 	/* check max centralfreq */
-	if( options.maxCentralfreqFlag && !(event->central_freq < options.maxCentralfreq) )
+	if( options.maxCentralfreqFlag && !(event->central_freq <= options.maxCentralfreq) )
 		return(FALSE);
 
 	/* check max bandwidth */
-	if( options.maxBandwidthFlag && !(event->bandwidth < options.maxBandwidth) )
+	if( options.maxBandwidthFlag && !(event->bandwidth <= options.maxBandwidth) )
 		return(FALSE);
 
 	/* check min amplitude */
-	if( options.minAmplitudeFlag && !(event->amplitude > options.minAmplitude) )
+	if( options.minAmplitudeFlag && !(event->amplitude >= options.minAmplitude) )
 		return(FALSE);
 
 	/* check max amplitude */
-	if( options.maxAmplitudeFlag && !(event->amplitude < options.maxAmplitude) )
+	if( options.maxAmplitudeFlag && !(event->amplitude <= options.maxAmplitude) )
 		return(FALSE);
 
 	/* check min snr */
-	if( options.minSnrFlag && !(event->snr > options.minSnr) )
+	if( options.minSnrFlag && !(event->snr >= options.minSnr) )
 		return(FALSE);
 
 	/* check max snr */
-	if( options.maxSnrFlag && !(event->snr < options.maxSnr) )
+	if( options.maxSnrFlag && !(event->snr <= options.maxSnr) )
 		return(FALSE);
 
 	/* check if trigger starts in playground */
