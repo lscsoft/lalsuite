@@ -235,7 +235,7 @@ LALReadSFTfile (LALStatus *stat,
   ASSERT (sft, stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
   ASSERT (*sft == NULL, stat, SFTFILEIOH_ENONULL, SFTFILEIOH_MSGENONULL);
   ASSERT (fname,  stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (fmin < fmax, stat, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
+  ASSERT (fmin <= fmax, stat, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
 
   /* read the header */
   TRY ( LALReadSFTheader (stat->statusPtr, &header, fname), stat);
@@ -243,12 +243,21 @@ LALReadSFTfile (LALStatus *stat,
   /* ----- figure out which data we want to read ----- */
   deltaF = 1.0 / header.timeBase;
 
-  /* find the right frequency-bin and number of bins
-   * The rounding here is chosen such that the required 
-   * frequency-interval is _guaranteed_ to lie within the 
-   * returned range  */
-  fminBinIndex = (INT4) floor (fmin * header.timeBase);  /* round this down */
-  fmaxBinIndex = (INT4) ceil  (fmax * header.timeBase);  /* round up */
+  /* special case: fmin==fmax==0 means "read all" */
+  if ( (fmin == 0) && (fmax == 0) )
+    {
+      fminBinIndex = header.fminBinIndex;
+      fmaxBinIndex = fminBinIndex + header.length - 1;
+    }
+  else
+    {
+      /* find the right frequency-bin and number of bins
+       * The rounding here is chosen such that the required 
+       * frequency-interval is _guaranteed_ to lie within the 
+       * returned range  */
+      fminBinIndex = (INT4) floor (fmin * header.timeBase);  /* round this down */
+      fmaxBinIndex = (INT4) ceil  (fmax * header.timeBase);  /* round up */
+    }
 
   readlen = (UINT4)(fmaxBinIndex - fminBinIndex) + 1;	/* number of bins to read */
 
@@ -316,7 +325,7 @@ LALReadSFTfiles (LALStatus *stat,
   ASSERT (sftvect, stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
   ASSERT (*sftvect == NULL, stat, SFTFILEIOH_ENONULL, SFTFILEIOH_MSGENONULL);
   ASSERT (globdir,  stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (fmin < fmax, stat, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
+  ASSERT (fmin <= fmax, stat, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
 
 
   /* make filelist 
@@ -913,6 +922,8 @@ void dump_SFT (const SFTtype *sft, FILE *fp)
   REAL8 Tsft, freqBand;
   REAL8 f0, df, ff;
   UINT4 nsamples;
+  REAL4 norm;
+  REAL4 P_k;
 
   f0 = sft->f0;
   df = sft->deltaF;
@@ -920,12 +931,19 @@ void dump_SFT (const SFTtype *sft, FILE *fp)
   Tsft = 1.0 / sft->deltaF;
   freqBand = nsamples * df;
 
+  norm = (REAL4)( Tsft / nsamples);
+
   for (i=0; i < nsamples; i++)
     {
       ff = f0 + i*df;
-      valre = sft->data->data[i].re;
-      valim = sft->data->data[i].im;
-      fprintf(fp, "%f %e %e %e\n", ff, valre, valim, sqrt(valre*valre + valim*valim));
+      valre = norm * sft->data->data[i].re;
+      valim = norm * sft->data->data[i].im;
+      if ( (i==0) && (i == nsamples-1) )
+	P_k = sqrt(valre*valre + valim*valim);
+      else
+	P_k = 2.0 * sqrt(valre*valre + valim*valim);
+
+      fprintf(fp, "%f %e %e %e\n", ff, valre, valim, P_k );
         
     } /* for i < nsamples */
   
