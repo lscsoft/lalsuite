@@ -253,6 +253,11 @@ class LSCDataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   in the cache directory named by site and GPS start and end times. The stderr
   is directed to the logs directory. The job always runs in the scheduler
   universe. The path to the executable is determined from the ini file.
+
+  Note: This class overrides the LSCDataFindJob class within
+  glue.pipeline, it has support for doing runing datafind jobs for
+  multiple frame types within the same DAG. This will be eventually be
+  merged into the main glue.pipeline.
   """
   def __init__(self,cache_dir,log_dir,config_file):
     """
@@ -274,7 +279,7 @@ class LSCDataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.add_opt('url-type','file')
 
     self.add_condor_cmd('environment',
-      """LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH);PYTHONPATH=$ENV(PYTHONPATH);LSC_DATAFIND_SERVER=$ENV(LSC_DATAFIND_SERVER)""" )
+      """LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH);PYTHONPATH=$ENV(PYTHONPATH);LSC_DATAFIND_SERVER=$ENV(LSC_DATAFIND_SERVER);X509_USER_CERT=$ENV(X509_USER_CERT);X509_USER_KEY=$ENV(X509_USER_KEY)""" )
 
     self.set_stderr_file(log_dir + '/datafind-$(macroobservatory)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_stdout_file(self.__cache_dir + '/$(macroobservatory)-$(macrogpsstarttime)-$(macrogpsendtime).cache')
@@ -290,6 +295,11 @@ class LSCDataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 class LSCDataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   A DataFindNode runs an instance of LSCdataFind in a Condor DAG.
+
+  Note: This class overrides the LSCDataFindNode class within
+  glue.pipeline, it has support for doing runing datafind jobs for
+  multiple frame types within the same DAG. This will be eventually be
+  merged into the main glue.pipeline.
   """
   def __init__(self,job):
     """
