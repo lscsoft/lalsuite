@@ -1,10 +1,4 @@
-This is a preliminary release of version 0.5 of the LAL library.
-See the document lalspec.pdf for LAL specification and style guide.
-
-The latest releases of LAL are available from the LAL web-site:
-http://www.lsc-group.phys.uwm.edu/lal
-
-The various packages are in the package directory.
+This is version 0.5 of the LAL library.
 
 Read the file INSTALL for installation instructions.
 
@@ -14,3 +8,24 @@ doc/lsd.pdf
 
 This code requires the FFTW (Fastest Fourier Transform in the West) package.
 This package can be obtained from http://www.fftw.org
+
+The latest releases of LAL are available from the LAL web-site:
+http://www.lsc-group.phys.uwm.edu/lal
+
+The current working version of LAL can be obtained from the LAL CVS server by
+issuing the commands:
+
+  cvs -d :pserver:anonymous@gravity.phys.uwm.edu:/usr/local/cvs/lal login
+
+(the password is lal)
+
+  cvs -d :pserver:anonymous@gravity.phys.uwm.edu:/usr/local/cvs/lal checkout lal
+  cvs -d :pserver:anonymous@gravity.phys.uwm.edu:/usr/local/cvs/lal logout
+  cd lal
+  ./00boot
+
+(you will need m4, aclocal, autoheader, automake, and autoconf).
+
+The file README.contrib gives instructions for including a package in LAL.
+
+See the document lalspec.pdf for LAL specification and style guide.
