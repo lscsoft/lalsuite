@@ -89,6 +89,9 @@
 /* 07/09/04 gam; If using running median, use LALRngMedBias to set params->normalizationParameter to correct bias in the median. */
 /* 08/02/04 gam; if (params->testFlag & 4) > 0 ComputeSky uses reference time: params->timeStamps[0].gpsSeconds, params->timeStamps[0].gpsNanoSeconds */
 /* 08/30/04 gam; if (outputEventFlag & 4) > 0 set returnOneEventPerSUM to TRUE; only the loudest event from each SUM is then returned. */
+/* 09/27/04 gam; if numBLKsPerSTK == 1 then want to ensure 1 to 1 correspondence between BLKs and STKs */
+/*               WARNING: also, should avoid other cases for now until we decide how to handle         */
+/*                        overlapping SFTs and gaps that are not multiples of tBLK!                    */
 
 /*********************************************/
 /*                                           */
@@ -986,7 +989,8 @@ void StackSlideConditionData(
 	 for(k=0;k<params->numBLKs;k++) {	 
 	         /* Which STK does this BKL go with */
 	         params->whichSTK = (params->BLKData[k]->fft->epoch.gpsSeconds - params->gpsStartTimeSec)/params->tSTK;
-	         if (params->whichSTK > params->lastWhichSTK) {
+	         /* if (params->whichSTK > params->lastWhichSTK) */ /* 09/27/04 gam; if numBLKsPerSTK == 1 ensure 1 to 1 correspondence between BLKs and STKs */
+                 if ( (params->numBLKsPerSTK == 1) || (params->whichSTK != params->lastWhichSTK) ) {
                      params->numSTKs++;
 	         }
                  #ifdef DEBUG_DRIVESTACKSLIDE
@@ -1332,14 +1336,28 @@ void StackSlideApplySearch(
 
 	    /* Which STK does this BKL go with */
 	    params->whichSTK = (params->BLKData[k]->fft->epoch.gpsSeconds - params->gpsStartTimeSec)/params->tSTK;
-	    if (params->whichSTK > params->lastWhichSTK) {
-	        kSTK++; /* increment which stack we are building */
+	    /* if (params->whichSTK > params->lastWhichSTK) */ /* 09/27/04 gam; if numBLKsPerSTK == 1 ensure 1 to 1 correspondence between BLKs and STKs */
+            if ( (params->numBLKsPerSTK == 1) || (params->whichSTK != params->lastWhichSTK) ) {
+                kSTK++; /* increment which stack we are building */
+                /* 09/27/04 gam; initialize STK here: */
+                if (params->numBLKsPerSTK == 1) {
+                  params->STKData[kSTK]->epoch.gpsSeconds = params->BLKData[k]->fft->epoch.gpsSeconds;
+                  params->STKData[kSTK]->epoch.gpsNanoSeconds = params->BLKData[k]->fft->epoch.gpsNanoSeconds;
+                } else {
+                  params->STKData[kSTK]->epoch.gpsSeconds = params->gpsStartTimeSec + params->whichSTK*params->tSTK;
+                  params->STKData[kSTK]->epoch.gpsNanoSeconds = params->gpsStartTimeNan;
+                }
+                params->STKData[kSTK]->f0=params->f0STK;
+                params->STKData[kSTK]->deltaF=params->dfSTK;
+                params->STKData[kSTK]->data->length=params->nBinsPerSTK;
 	    }
 	    for(i=params->iMinBLK; i <= params->iMaxBLK; i++)
             {
                 iSTK = i - params->iMinBLK;
-	        if (params->whichSTK > params->lastWhichSTK) {
-		   /* Starting a new STK: initialize */
+                params->STKData[kSTK]->data->data[iSTK] = params->BLKData[k]->fft->data->data[i].re*params->BLKData[k]->fft->data->data[i].re
+                        + params->BLKData[k]->fft->data->data[i].im*params->BLKData[k]->fft->data->data[i].im;
+                /* 09/27/04 gam; initialization of STK should occur above */
+	        /* if (params->whichSTK > params->lastWhichSTK) {
 	           params->STKData[kSTK]->data->data[iSTK] = params->BLKData[k]->fft->data->data[i].re*params->BLKData[k]->fft->data->data[i].re
 		       + params->BLKData[k]->fft->data->data[i].im*params->BLKData[k]->fft->data->data[i].im;
                    params->STKData[kSTK]->epoch.gpsSeconds = params->gpsStartTimeSec + params->whichSTK*params->tSTK;
@@ -1350,7 +1368,7 @@ void StackSlideApplySearch(
 	        } else {
 	           params->STKData[kSTK]->data->data[iSTK] += params->BLKData[k]->fft->data->data[i].re*params->BLKData[k]->fft->data->data[i].re
 		       + params->BLKData[k]->fft->data->data[i].im*params->BLKData[k]->fft->data->data[i].im;
-		}
+		} */
             }
             params->lastWhichSTK = params->whichSTK;
 
