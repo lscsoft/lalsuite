@@ -274,47 +274,47 @@ int main(int argc, char *argv[]){
 
  
 
-   /*****************************************************************/
-   /* read skypatch info */
-   /*****************************************************************/
-   {
-     FILE   *fpsky = NULL; 
-     INT4   r;
-     REAL8  temp1, temp2, temp3, temp4;
-
-     fpsky = fopen(uvar_skyfile, "r");
-     if ( !fpsky )
-       {
-	 fprintf(stderr, "Unable to find skyfile %s\n", uvar_skyfile);
-	 return DRIVEHOUGHCOLOR_EFILE;
-       }
-
-
-     nSkyPatches = 0;
-     do 
-       {
-	 r=fscanf(fpsky,"%lf%lf%lf%lf\n", &temp1, &temp2, &temp3, &temp4);
-	 /* make sure the line has the right number of entries or is EOF */
-	 if (r==4) nSkyPatches++;
-       } while ( r != EOF);
-     rewind(fpsky);
-
-     skyAlpha = (REAL8 *)LALMalloc(nSkyPatches*sizeof(REAL8));
-     skyDelta = (REAL8 *)LALMalloc(nSkyPatches*sizeof(REAL8));     
-     skySizeAlpha = (REAL8 *)LALMalloc(nSkyPatches*sizeof(REAL8));
-     skySizeDelta = (REAL8 *)LALMalloc(nSkyPatches*sizeof(REAL8));     
-
-
-     for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
-       {
-	 r=fscanf(fpsky,"%lf%lf%lf%lf\n", skyAlpha + skyCounter, skyDelta + skyCounter, 
-		  skySizeAlpha + skyCounter,  skySizeDelta + skyCounter);
-       }
-     
-     fclose(fpsky); 
-     
-   }
-
+  /*****************************************************************/
+  /* read skypatch info */
+  /*****************************************************************/
+  {
+    FILE   *fpsky = NULL; 
+    INT4   r;
+    REAL8  temp1, temp2, temp3, temp4;
+    
+    fpsky = fopen(uvar_skyfile, "r");
+    if ( !fpsky )
+      {
+	fprintf(stderr, "Unable to find skyfile %s\n", uvar_skyfile);
+	return DRIVEHOUGHCOLOR_EFILE;
+      }
+    
+    
+    nSkyPatches = 0;
+    do 
+      {
+	r=fscanf(fpsky,"%lf%lf%lf%lf\n", &temp1, &temp2, &temp3, &temp4);
+	/* make sure the line has the right number of entries or is EOF */
+	if (r==4) nSkyPatches++;
+      } while ( r != EOF);
+    rewind(fpsky);
+    
+    skyAlpha = (REAL8 *)LALMalloc(nSkyPatches*sizeof(REAL8));
+    skyDelta = (REAL8 *)LALMalloc(nSkyPatches*sizeof(REAL8));     
+    skySizeAlpha = (REAL8 *)LALMalloc(nSkyPatches*sizeof(REAL8));
+    skySizeDelta = (REAL8 *)LALMalloc(nSkyPatches*sizeof(REAL8));     
+    
+    
+    for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
+      {
+	r=fscanf(fpsky,"%lf%lf%lf%lf\n", skyAlpha + skyCounter, skyDelta + skyCounter, 
+		 skySizeAlpha + skyCounter,  skySizeDelta + skyCounter);
+      }
+    
+    fclose(fpsky); 
+    
+  }
+  
   /******************************************************************/
   /* Looking into the SFT data files */
   /******************************************************************/
@@ -645,7 +645,7 @@ int main(int argc, char *argv[]){
       
       /* create the directory name uvar_dirnameOut/skypatch_$j */
       strcpy(  filestats, uvar_dirnameOut);
-      strcat( filestats, "skypatch_");
+      strcat( filestats, "/skypatch_");
       {
 	CHAR tempstr[16];
 	sprintf(tempstr, "%d", skyCounter+1);
