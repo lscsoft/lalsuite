@@ -123,7 +123,8 @@ int main(int argc, char *argv[]){
   INT2 Math3DPlot = 0;			/* option flag for Mathematica plot */
   INT4 opt = 0;				/* returning value of getopt() */
   INT4 optflag = -1;			/* Command Line option */
- 
+  REAL4 PtSize = 0.02;
+
   if ((list = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
     LALError(&stat, INSPIRALSPINBANKTESTC_MSGEMEM);
     printf(INSPIRALSPINBANKTESTC_MSGEMEM);
@@ -200,7 +201,7 @@ int main(int argc, char *argv[]){
     }
     list->next = NULL;
     printf("\nCalling LALMath3DPlot()......\n");
-    LALMath3DPlot(&stat, first, &ntiles);
+    LALMath3DPlot(&stat, first, &ntiles,NULL);
     REPORTSTATUS(&stat);
     if (stat.statusCode){
       LALError(&stat, INSPIRALSPINBANKTESTC_MSGESUB);
