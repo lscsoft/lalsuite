@@ -138,7 +138,7 @@ LALFindChirpInjectSignals (
  
   ppnParams.deltaT   = chan->deltaT;
   ppnParams.fStartIn = 40.0;
-  ppnParams.fStopIn  = -1;
+  ppnParams.fStopIn  = 0;
   ppnParams.lengthIn = 0;
   ppnParams.ppn      = NULL;
 
